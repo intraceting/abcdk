@@ -118,6 +118,8 @@ CheckHavePackage()
             METHOD=2
             NAMES="pkg-config"
         }
+        elif [ "${PACKAGE}" == "fuse" ];then
+            NAMES="libfuse-dev"
         fi     
     }
 	elif [ "RPM" == "${KIT_NAME}" ];then
@@ -139,6 +141,8 @@ CheckHavePackage()
             METHOD=2
             NAMES="pkg-config"
         }
+        elif [ "${PACKAGE}" == "fuse" ];then
+            NAMES="fuse-devel"
         fi
     }
     fi 
@@ -193,7 +197,7 @@ PrintUsage()
 {
     echo "usage: [ OPTIONS ]"
     echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage"
+    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse"
     echo -e "\n\t-g"
     echo -e "\t\t生成调试符号。默认：关闭。"
     echo -e "\n\t-i < PATH >"
@@ -230,10 +234,10 @@ exit 22
 fi 
 
 #
-DEPEND_FLAGS="-D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 ${DEPEND_FLAGS}"
+DEPEND_FLAGS=" -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 ${DEPEND_FLAGS}"
 
 #
-DEPEND_LIBS="-ldl -pthread -lrt -lc -lm ${DEPEND_LIBS}"
+DEPEND_LIBS=" -ldl -pthread -lrt -lc -lm ${DEPEND_LIBS}"
 
 #
 STATUS=$(CheckHavePackage ${KIT_NAME} pkgconfig)
@@ -362,6 +366,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-freeimage") -eq 1 ];then
 fi
 
 #
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} fuse)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_FUSE="Yes"
+        DEPEND_FLAGS=" -DHAVE_FUSE ${DEPEND_FLAGS}"
+        DEPEND_FLAGS=" $(pkg-config --cflags fuse) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(pkg-config --libs fuse) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "freeimage kit not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+#
 echo "SOLUTION_NAME=${SOLUTION_NAME}"
 
 #
@@ -384,6 +408,7 @@ echo "HAVE_SQLITE=${HAVE_SQLITE}"
 echo "HAVE_OPENSSL=${HAVE_OPENSSL}"
 echo "HAVE_FFMPEG=${HAVE_FFMPEG}"
 echo "HAVE_FREEIMAGE=${HAVE_FREEIMAGE}"
+echo "HAVE_FUSE=${HAVE_FUSE}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"

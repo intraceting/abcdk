@@ -19,6 +19,11 @@
 #include "abcdkutil/crc32.h"
 #include "abcdkutil/robots.h"
 
+#ifdef HAVE_FUSE
+#define FUSE_USE_VERSION 29
+#include <fuse.h>
+#endif //
+
 
 void test_log(abcdk_tree_t *args)
 {
@@ -311,6 +316,138 @@ void test_robots(abcdk_tree_t *args)
     abcdk_tree_free(&t);
 }
 
+#ifdef _FUSE_H_
+
+#define MP4_PATH "/home/user/下载/"
+
+/**/
+int fuse_open(const char *file, struct fuse_file_info *info)
+{
+    syslog(LOG_INFO,"%s(%d): %s",__FUNCTION__,__LINE__,file);
+
+    char tmp[PATH_MAX]={0};
+    abcdk_dirdir(tmp,MP4_PATH);
+    abcdk_dirdir(tmp,file);
+
+    int fd = abcdk_open(tmp, 0, 0, 0);
+    if (fd < 0)
+        return -errno;
+
+    info->fh = fd;
+    info->direct_io = 1;
+    info->keep_cache = 0;
+
+    return 0;
+}
+
+int fuse_read(const char *file, char *buffer, size_t size, off_t offset, struct fuse_file_info *info)
+{
+    syslog(LOG_INFO, "%s(%d): %s (fd=%lu)", __FUNCTION__, __LINE__, file, info->fh);
+    syslog(LOG_INFO, "%s(%d): size=%lu off=%ld", __FUNCTION__, __LINE__, size, offset);
+
+    assert(info->fh != -1);
+
+    int fd = info->fh;
+
+    ssize_t rlen = pread(fd, buffer, size, offset);
+
+    return (rlen >= 0 ? rlen : -errno);
+}
+
+int fuse_release(const char* file, struct fuse_file_info *info)
+{
+    syslog(LOG_INFO, "%s(%d): %s (fd=%lu)", __FUNCTION__, __LINE__, file, info->fh);
+
+    assert(info->fh != -1);
+
+    int fd = info->fh;
+
+    abcdk_closep(&fd);
+}
+
+int fuse_getattr(const char *file, struct stat* attr)
+{
+    syslog(LOG_INFO,"%s(%d): %s",__FUNCTION__,__LINE__,file);
+
+    // if (abcdk_strcmp(file, "/") == 0)
+    // {
+
+    // }
+    // else
+    // {
+        char tmp[PATH_MAX] = {0};
+        abcdk_dirdir(tmp, MP4_PATH);
+        abcdk_dirdir(tmp, file);
+
+        int chk = lstat(tmp, attr);
+        if (chk != 0)
+            return -errno;
+
+        attr->st_dev = 1000;
+        clock_gettime(CLOCK_REALTIME, &attr->st_ctim);
+        attr->st_mtim = attr->st_ctim;
+    // }
+
+    return 0;
+}
+
+int fuse_fgetattr(const char* file, struct stat* attr, struct fuse_file_info * info)
+{
+    syslog(LOG_INFO, "%s(%d): %s (fd=%lu)", __FUNCTION__, __LINE__, file, info->fh);
+
+    assert(info->fh != -1);
+
+    int fd = info->fh;
+
+    int chk = fstat(fd,attr);
+    if(chk != 0 )
+        return -errno;
+
+     attr->st_dev = 1000;
+
+    return 0;
+}
+
+#endif //_FUSE_H_
+
+void test_fuse(abcdk_tree_t *args)
+{
+#ifdef _FUSE_H_
+
+    const char *name_p = abcdk_option_get(args,"--name",0,"test_fuse");
+    const char *mpoint_p = abcdk_option_get(args,"--mpoint",0,"");
+
+    if (strlen(name_p) <= 0)
+    {
+        syslog(LOG_ERR, "--name must have parameters.");
+        return;
+    }
+    if (access(mpoint_p, R_OK) != 0)
+    {
+        syslog(LOG_ERR, "--mpoint must have parameters and exist.");
+        return;
+    }
+
+    static struct fuse_operations opts = {0};
+    opts.read = fuse_read;
+    opts.open = fuse_open;
+    opts.release = fuse_release;
+    opts.getattr = fuse_getattr;
+    opts.fgetattr = fuse_fgetattr;
+
+    int fuse_argc = 4;
+    char **fuse_argv = (char**)abcdk_heap_alloc(fuse_argc*sizeof(char*));
+
+    fuse_argv[0] = abcdk_heap_clone(name_p,strlen(name_p));
+    fuse_argv[1] = abcdk_heap_clone(mpoint_p,strlen(mpoint_p));
+    fuse_argv[2] = abcdk_heap_clone("-o",2);
+    fuse_argv[3] = abcdk_heap_clone("allow_other,auto_cache,kernel_cache",35);
+
+    fuse_main(fuse_argc, fuse_argv, &opts, NULL);
+
+#endif //_FUSE_H_
+}
+
 
 int main(int argc, char **argv)
 {
@@ -352,6 +489,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_robots", 0) == 0)
         test_robots(args);
+
+    if (abcdk_strcmp(func, "test_fuse", 0) == 0)
+        test_fuse(args);
 
     abcdk_tree_free(&args);
     
