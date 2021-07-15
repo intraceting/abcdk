@@ -448,6 +448,27 @@ void test_fuse(abcdk_tree_t *args)
 #endif //_FUSE_H_
 }
 
+void test_fmp4(abcdk_tree_t *args)
+{
+    const char *name_p = abcdk_option_get(args,"--file",0,"");
+
+    abcdk_allocator_t *t = abcdk_mmap2(name_p,0,0);
+    if(!t)
+        return;
+
+    void *p = t->pptrs[0];
+
+    uint32_t size = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p,0));
+    uint32_t type = ABCDK_PTR2U32(p,sizeof(uint32_t));
+    printf("%c,%c,%c,%c\n", ABCDK_PTR2I8(p, sizeof(uint32_t) + 0),
+           ABCDK_PTR2I8(p, sizeof(uint32_t) + 1),
+           ABCDK_PTR2I8(p, sizeof(uint32_t) + 2),
+           ABCDK_PTR2I8(p, sizeof(uint32_t) + 3));
+
+
+    abcdk_allocator_unref(&t);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -492,6 +513,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_fuse", 0) == 0)
         test_fuse(args);
+
+    if (abcdk_strcmp(func, "test_fmp4", 0) == 0)
+        test_fmp4(args);
 
     abcdk_tree_free(&args);
     
