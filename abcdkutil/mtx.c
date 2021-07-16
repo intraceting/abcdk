@@ -7,7 +7,7 @@
 #include "mtx.h"
 
 int abcdk_mtx_inventory(int fd, uint16_t address, uint16_t count,
-                       uint32_t timeout, abcdk_scsi_io_stat *stat)
+                        uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
 
     uint8_t cdb[10] = {0};
@@ -18,10 +18,10 @@ int abcdk_mtx_inventory(int fd, uint16_t address, uint16_t count,
     ABCDK_PTR2U16(cdb, 6) = abcdk_endian_h_to_b16(count);
 
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 10, NULL, 0, timeout, stat);
-}                       
+}
 
 int abcdk_mtx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
-                         uint32_t timeout, abcdk_scsi_io_stat *stat)
+                          uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
 
     uint8_t cdb[12] = {0};
@@ -35,7 +35,7 @@ int abcdk_mtx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
 }
 
 int abcdk_mtx_prevent_medium_removal(int fd, int disable,
-                                    uint32_t timeout, abcdk_scsi_io_stat *stat)
+                                     uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -46,8 +46,8 @@ int abcdk_mtx_prevent_medium_removal(int fd, int disable,
 }
 
 int abcdk_mtx_mode_sense(int fd, uint8_t pctrl, uint8_t pcode, uint8_t spcode,
-                        uint8_t *transfer, uint8_t transferlen,
-                        uint32_t timeout, abcdk_scsi_io_stat *stat)
+                         uint8_t *transfer, uint8_t transferlen,
+                         uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -60,18 +60,20 @@ int abcdk_mtx_mode_sense(int fd, uint8_t pctrl, uint8_t pcode, uint8_t spcode,
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_FROM_DEV, cdb, 6, transfer, transferlen, timeout, stat);
 }
 
-int abcdk_mtx_read_element_status(int fd, uint8_t type, uint16_t address, uint16_t count,
-                                 uint8_t *transfer, uint32_t transferlen,
-                                 uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_mtx_read_element_status(int fd, uint8_t type, 
+                                  int voltag, int dvcid,
+                                  uint16_t address, uint16_t count,
+                                  uint8_t *transfer, uint32_t transferlen,
+                                  uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[12] = {0};
 
-    cdb[0] = 0xB8;                                      /* 0xB8 Read Element Status */
-    cdb[1] = 0x10 | (type & 0x0F);                      /*VolTag = 1*/
+    cdb[0] = 0xB8;                                          /* 0xB8 Read Element Status */
+    cdb[1] = (voltag ? 0x10 : 0x00) | (type & 0x0F);        /*VolTag and type*/
     ABCDK_PTR2U16(cdb, 2) = abcdk_endian_h_to_b16(address); /*2,3*/
     ABCDK_PTR2U16(cdb, 4) = abcdk_endian_h_to_b16(count);   /*4,5*/
-    cdb[6] = 0x01;                                      /*DVCID = 1*/
-    abcdk_endian_h_to_b24(cdb + 7, transferlen);           /*7,8,9*/
+    cdb[6] = (dvcid ? 0x01 : 0);                            /*DVCID*/
+    abcdk_endian_h_to_b24(cdb + 7, transferlen);            /*7,8,9*/
 
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_FROM_DEV, cdb, 12, transfer, transferlen, timeout, stat);
 }
@@ -90,8 +92,8 @@ void abcdk_mtx_parse_element_status(abcdk_tree_t *father, const uint8_t *element
     for (uint16_t i = 0; i < count; i++)
     {
         /*申请节点。*/
-        size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), 36+1, 32+1};
-        abcdk_tree_t *one = abcdk_tree_alloc2(sizes, 5,0);
+        size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), 36 + 1, 32 + 1};
+        abcdk_tree_t *one = abcdk_tree_alloc2(sizes, 5, 0);
 
         /*如果节点申请失败提结束。*/
         if (one == NULL)
@@ -102,8 +104,8 @@ void abcdk_mtx_parse_element_status(abcdk_tree_t *father, const uint8_t *element
 
         /*获取部分字段。*/
         ABCDK_PTR2U16(one->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(ptr, 0));
-        ABCDK_PTR2U8(one->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE],0) = type;
-        ABCDK_PTR2U8(one->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL],0) = ((ptr[2] & 0x01) ? 1 : 0);
+        ABCDK_PTR2U8(one->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0) = type;
+        ABCDK_PTR2U8(one->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0) = ((ptr[2] & 0x01) ? 1 : 0);
         if (volsize > 0)
             memcpy(one->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE], ptr + 12, volsize);
 
@@ -111,11 +113,11 @@ void abcdk_mtx_parse_element_status(abcdk_tree_t *father, const uint8_t *element
         uint8_t dvcid_set = ptr[12 + volsize] & 0x0F;
 
         /*0x01或0x02有效。*/
-        if(dvcid_set == 0)
+        if (dvcid_set == 0)
             goto next;
 
         /*机械臂或驱动器才有下面的数据。*/
-        if (ABCDK_MXT_ELEMENT_CHANGER == type ||ABCDK_MXT_ELEMENT_DXFER == type)
+        if (ABCDK_MXT_ELEMENT_CHANGER == type || ABCDK_MXT_ELEMENT_DXFER == type)
         {
             uint8_t dvcid_type = ptr[13 + volsize] & 0x0F;
             uint8_t dvcid_length = ptr[15 + volsize];
@@ -152,7 +154,7 @@ void abcdk_mtx_parse_element_status(abcdk_tree_t *father, const uint8_t *element
             }
         }
 
-next:
+    next:
 
         /*清除两端的空格。*/
         abcdk_strtrim(one->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE], isspace, 2);
@@ -166,7 +168,8 @@ next:
     }
 }
 
-int abcdk_mtx_inquiry_element_status(abcdk_tree_t *father,int fd,uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_mtx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag,int dvcid,
+                                     uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     char buf[255] = {0};
     int buf2size = 0;
@@ -174,58 +177,58 @@ int abcdk_mtx_inquiry_element_status(abcdk_tree_t *father,int fd,uint32_t timeou
     int chk;
 
     chk = abcdk_mtx_mode_sense(fd, 0, 0x1d, 0, buf, 255, timeout, stat);
-    if(chk != 0)
+    if (chk != 0)
         return -1;
 
     /**/
-    buf2size = 0x00ffffff;/*15MB MAX!!!*/
-    buf2 = (uint8_t*) abcdk_heap_alloc(buf2size);
-    if(!buf2)
+    buf2size = 0x00ffffff; /*15MB MAX!!!*/
+    buf2 = (uint8_t *)abcdk_heap_alloc(buf2size);
+    if (!buf2)
         return -1;
 
     /*ABCDK_MXT_ELEMENT_CHANGER:4+2,4+4*/
-    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_CHANGER,
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 2)),
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4)),
-                                       buf2, 2 * 1024 * 1024, -1, stat);
-    if(chk != 0)
+    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_CHANGER,voltag,dvcid,
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 2)),
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4)),
+                                        buf2, 2 * 1024 * 1024, -1, stat);
+    if (chk != 0)
         goto final;
 
-    abcdk_mtx_parse_element_status(father,buf2,abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4)));
+    abcdk_mtx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4)));
 
     /*ABCDK_MXT_ELEMENT_STORAGE:4+6,4+8*/
-    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_STORAGE,
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 6)),
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8)),
-                                       buf2, 2 * 1024 * 1024, -1, stat);
-    if(chk != 0)
+    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_STORAGE,voltag,dvcid,
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 6)),
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8)),
+                                        buf2, 2 * 1024 * 1024, -1, stat);
+    if (chk != 0)
         goto final;
 
-    abcdk_mtx_parse_element_status(father,buf2,abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8)));
+    abcdk_mtx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8)));
 
     /*ABCDK_MXT_ELEMENT_IE_PORT:4+10,4+12*/
-    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_IE_PORT,
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 10)),
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12)),
-                                       buf2, 2 * 1024 * 1024, -1, stat);
-    if(chk != 0)
+    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_IE_PORT,voltag,dvcid,
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 10)),
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12)),
+                                        buf2, 2 * 1024 * 1024, -1, stat);
+    if (chk != 0)
         goto final;
 
-    abcdk_mtx_parse_element_status(father,buf2,abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12)));
+    abcdk_mtx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12)));
 
     /*ABCDK_MXT_ELEMENT_DXFER:4+14,4+16*/
-    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_DXFER,
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 14)),
-                                       abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16)),
-                                       buf2, 2 * 1024 * 1024, -1, stat);
-    if(chk != 0)
+    chk = abcdk_mtx_read_element_status(fd, ABCDK_MXT_ELEMENT_DXFER,voltag,dvcid,
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 14)),
+                                        abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16)),
+                                        buf2, 2 * 1024 * 1024, -1, stat);
+    if (chk != 0)
         goto final;
 
-    abcdk_mtx_parse_element_status(father,buf2,abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16)));
+    abcdk_mtx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16)));
 
 final:
 
-    abcdk_heap_free2((void**)&buf2);
-    
+    abcdk_heap_free2((void **)&buf2);
+
     return chk;
 }

@@ -61,6 +61,12 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--dst < ADDRESS >\n");
     fprintf(stderr, "\t\tDestination Element Address.\n");
 
+    fprintf(stderr, "\n\t--exclude-barcode\n");
+    fprintf(stderr, "\t\tExclude BARCODE. default: include\n");
+
+    fprintf(stderr, "\n\t--exclude-dvcid\n");
+    fprintf(stderr, "\t\tExclude DVCID. default: include\n");
+
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
     fprintf(stderr, "\t\tCommand. default: %d\n", ABCDKMTX_STATUS);
 
@@ -214,6 +220,8 @@ void _abcdkmtx_work(abcdk_tree_t *args)
     char sn[64] = {0};
     int fd = -1;
     const char *dev_p = NULL;
+    int voltag = 1;
+    int dvcid = 1;
     int cmd = 0;
     int chk;
 
@@ -221,7 +229,10 @@ void _abcdkmtx_work(abcdk_tree_t *args)
     errno = 0;
 
     dev_p = abcdk_option_get(args, "--dev", 0, "");
+    voltag = (abcdk_option_exist(args, "--exclude-barcode") ? 0 : 1);
+    dvcid = (abcdk_option_exist(args, "--exclude-dvcid") ? 0 : 1);
     cmd = abcdk_option_get_int(args, "--cmd", 0, ABCDKMTX_STATUS);
+    
 
     if (access(dev_p, F_OK) != 0)
     {
@@ -256,7 +267,7 @@ void _abcdkmtx_work(abcdk_tree_t *args)
 
     snprintf(root->alloc->pptrs[0], root->alloc->sizes[0], "%s(%s-%s)", sn, vendor, product);
 
-    chk = abcdk_mtx_inquiry_element_status(root, fd, -1, &stat);
+    chk = abcdk_mtx_inquiry_element_status(root, fd, voltag,dvcid,-1, &stat);
     if (chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 

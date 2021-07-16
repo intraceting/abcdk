@@ -122,13 +122,17 @@ int abcdk_mtx_mode_sense(int fd, uint8_t pctrl, uint8_t pcode, uint8_t spcode,
  * 
  * cdb = 0xB8
  * 
+ * @param voltag ！0 包括条码，0 不包括。
+ * @param dvcid  ！0 包括设备ID，0 不包括。
  * @param transferlen 返回数据的最大长度。2MB是支持的最大长度，原因未知。
  * 
  * @return 0 成功，-1 失败。 
 */
-int abcdk_mtx_read_element_status(int fd, uint8_t type, uint16_t address, uint16_t count,
-                                 uint8_t *transfer, uint32_t transferlen,
-                                 uint32_t timeout, abcdk_scsi_io_stat *stat);
+int abcdk_mtx_read_element_status(int fd, uint8_t type, 
+                                  int voltag, int dvcid,
+                                  uint16_t address, uint16_t count,
+                                  uint8_t *transfer, uint32_t transferlen,
+                                  uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 /**
  * 分析设备元件状态，构造结构化数据。
@@ -145,7 +149,8 @@ void abcdk_mtx_parse_element_status(abcdk_tree_t *father,const uint8_t *element,
  * @see abcdk_mtx_read_element_status
  * @see abcdk_mtx_parse_element_status
 */
-int abcdk_mtx_inquiry_element_status(abcdk_tree_t *father,int fd,uint32_t timeout, abcdk_scsi_io_stat *stat);
+int abcdk_mtx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag, int dvcid,
+                                     uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 __END_DECLS
 

@@ -458,13 +458,29 @@ void test_fmp4(abcdk_tree_t *args)
 
     void *p = t->pptrs[0];
 
-    uint32_t size = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p,0));
-    uint32_t type = ABCDK_PTR2U32(p,sizeof(uint32_t));
-    printf("%c,%c,%c,%c\n", ABCDK_PTR2I8(p, sizeof(uint32_t) + 0),
-           ABCDK_PTR2I8(p, sizeof(uint32_t) + 1),
-           ABCDK_PTR2I8(p, sizeof(uint32_t) + 2),
-           ABCDK_PTR2I8(p, sizeof(uint32_t) + 3));
+    uint32_t size = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p, 0));
+    uint32_t type = ABCDK_PTR2U32(p, 4);
+    for (int i = 0; i < 4; i++)
+        printf("%c", ABCDK_PTR2I8(&type, i));
+    printf("\n");
+    uint32_t mb = ABCDK_PTR2U32(p, 8);
+    for (int i = 0; i < 4; i++)
+        printf("%c", ABCDK_PTR2I8(&mb, i));
+    printf("\n");
+    uint32_t mv = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p, 12));
+        printf("%u\n",mv);
 
+    uint32_t size2 = 16;
+    while(size2<size)
+    {
+        uint32_t cb = ABCDK_PTR2U32(p, size2);
+        for (int i = 0; i < 4; i++)
+            printf("%c", ABCDK_PTR2I8(&cb, i));
+        printf("\n");
+
+        size2+=4;
+    }
+   
 
     abcdk_allocator_unref(&t);
 }
