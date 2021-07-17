@@ -159,6 +159,7 @@ install:
 	ln -f -s ${MT_REALNAME} $(INSTALL_PATH_BIN)/${MT_NAME}
 	cp -f -f $(BUILD_PATH)/${LSB_REALNAME} ${INSTALL_PATH_BIN}/
 	ln -f -s ${LSB_REALNAME} $(INSTALL_PATH_BIN)/${LSB_NAME}
+
 #
 uninstall:
 #

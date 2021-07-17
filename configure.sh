@@ -417,7 +417,7 @@ echo "ROOT_PATH?=/"
 
 #
 echo "#" > ${MAKE_CONF}
-echo "# ABCDK is abcdk!" >> ${MAKE_CONF}
+echo "# A better c development kit." >> ${MAKE_CONF}
 echo "#" >> ${MAKE_CONF}
 echo "" >> ${MAKE_CONF}
 

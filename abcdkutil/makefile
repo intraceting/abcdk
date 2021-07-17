@@ -186,7 +186,7 @@ install:
 	ln -f -s ${SO_REALNAME} ${INSTALL_PATH_LIB}/${SO_NAME}
 	cp -f $(BUILD_PATH)/${A_REALNAME} ${INSTALL_PATH_LIB}/
 	ln -f -s ${A_REALNAME} ${INSTALL_PATH_LIB}/${A_NAME}
-	
+
 #
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -f $(CURDIR)/allocator.h ${INSTALL_PATH_INC}/

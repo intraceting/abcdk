@@ -110,13 +110,14 @@ abcdkcomm-install:
 	make -C $(CURDIR)/abcdkcomm/ install
 
 #
-tools-install: 
+tools-install:
 	make -C $(CURDIR)/tools/ install
 
 #
 uninstall: abcdkutil-uninstall abcdkcomm-uninstall tools-uninstall
 #
 	rm -f ${INSTALL_PATH_PKG}/${PKG_NAME}
+
 #
 abcdkutil-uninstall: 
 	make -C $(CURDIR)/abcdkutil/ uninstall
