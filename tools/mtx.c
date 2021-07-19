@@ -44,7 +44,11 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     if (only_version)
         return;
 
-    fprintf(stderr, "\nOptions:\n");
+    fprintf(stderr, "\nSYNOPSIS:\n");
+    
+    fprintf(stderr, "\n%s [ --dev < FILE > ] [ OPTIONS ] \n",name);
+
+    fprintf(stderr, "\nOPTIONS:\n");
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\tShow this help message and exit.\n");

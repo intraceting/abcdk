@@ -67,6 +67,10 @@ LSB_REALNAME = abcdk-lsb_release.exe
 LSB_NAME = abcdk-lsb_release
 
 #
+ODBC_REALNAME = abcdk-odbc.exe
+ODBC_NAME = abcdk-odbc
+
+#
 #Compiler
 CCC = gcc
 
@@ -110,7 +114,8 @@ all: ${PROJECT_NAME}
 OBJ_FILES = \
 	${OBJ_PATH}/mtx.o \
 	${OBJ_PATH}/mt.o \
-	${OBJ_PATH}/lsb_release.o
+	${OBJ_PATH}/lsb_release.o \
+	${OBJ_PATH}/odbc.o \
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}
@@ -128,6 +133,11 @@ ${PROJECT_NAME}:${OBJ_FILES}
 	$(CCC) -o $(BUILD_PATH)/${LSB_REALNAME} ${OBJ_PATH}/lsb_release.o $(LINK_FLAGS)
 	ln -f -s ${LSB_REALNAME} $(BUILD_PATH)/${LSB_NAME}
 
+	#
+	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${ODBC_REALNAME} ${OBJ_PATH}/odbc.o $(LINK_FLAGS)
+	ln -f -s ${ODBC_REALNAME} $(BUILD_PATH)/${ODBC_NAME}
+
 #
 $(OBJ_PATH)/%.o: %.c
 	mkdir -p $(OBJ_PATH)
@@ -143,6 +153,8 @@ clean:
 	rm -f $(BUILD_PATH)/${MT_NAME}
 	rm -f $(BUILD_PATH)/${LSB_REALNAME}
 	rm -f $(BUILD_PATH)/${LSB_NAME}
+	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
+	rm -f $(BUILD_PATH)/${ODBC_NAME}
 
 
 #
@@ -159,6 +171,8 @@ install:
 	ln -f -s ${MT_REALNAME} $(INSTALL_PATH_BIN)/${MT_NAME}
 	cp -f -f $(BUILD_PATH)/${LSB_REALNAME} ${INSTALL_PATH_BIN}/
 	ln -f -s ${LSB_REALNAME} $(INSTALL_PATH_BIN)/${LSB_NAME}
+	cp -f -f $(BUILD_PATH)/${ODBC_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${ODBC_REALNAME} $(INSTALL_PATH_BIN)/${ODBC_NAME}
 
 #
 uninstall:
@@ -169,3 +183,5 @@ uninstall:
 	rm -f $(INSTALL_PATH_BIN)/${MT_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${LSB_REALNAME}
 	rm -f $(INSTALL_PATH_BIN)/${LSB_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${ODBC_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${ODBC_NAME}

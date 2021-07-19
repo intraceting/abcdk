@@ -32,9 +32,13 @@ void _abcdklsb_print_usage(abcdk_tree_t *args, int only_version)
     if (only_version)
         return;
 
+    fprintf(stderr, "\nSYNOPSIS:\n");
+
     fprintf(stderr, "\n%s [ --key < NAME > ] [ OPTIONS ] \n",name);
 
-    fprintf(stderr, "\nOptions:\n");
+    fprintf(stderr, "\n%s \n",name);
+
+    fprintf(stderr, "\nOPTIONS:\n");
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\tShow this help message and exit.\n");
