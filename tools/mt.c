@@ -333,7 +333,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
 
     if (type != TYPE_TAPE)
     {
-        syslog(LOG_WARNING, "'%s' Not Sequential-Access(tape).", dev_p);
+        syslog(LOG_WARNING, "'%s' not Sequential-Access(tape).", dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 

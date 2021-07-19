@@ -261,7 +261,7 @@ void _abcdkmtx_work(abcdk_tree_t *args)
 
     if (type != TYPE_MEDIUM_CHANGER)
     {
-        syslog(LOG_WARNING, "'%s' Not Medium Changer.", dev_p);
+        syslog(LOG_WARNING, "'%s' not Medium Changer.", dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
