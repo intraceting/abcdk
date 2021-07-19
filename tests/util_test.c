@@ -167,6 +167,40 @@ void test_freeimage(abcdk_tree_t *args)
     FIBITMAP *dib = abcdk_fi_load2(src_fmt,0,src_file);
     assert(dib!=NULL);
 
+    width = FreeImage_GetWidth(dib);
+    height = FreeImage_GetHeight(dib);
+
+    double x_factor = (double)100/width;
+    double y_factor = (double)100/height;
+    double min_factor = ABCDK_MIN(x_factor, y_factor);
+
+    FIBITMAP *dib2 = FreeImage_RescaleRect(dib,min_factor*width,height*min_factor,0,0,width,height,FILTER_BICUBIC,0);
+    if(dib2)
+    {
+        FreeImage_Unload(dib);
+        dib = dib2;
+    }
+
+    dib2 = FreeImage_ConvertTo24Bits(dib);
+    if(dib2)
+    {
+        FreeImage_Unload(dib);
+        dib = dib2;
+    }
+
+    double x_shift = (100 - (min_factor * width)) / 2.0;
+	double y_shift = (100 - (min_factor * height)) / 2.0;
+
+    int left = (0.0*x_factor + x_shift);
+    int top = (0.0*y_factor + y_shift);
+    dib2 = FreeImage_Allocate(100,100,24,0,0,0);
+    FreeImage_Paste(dib2,dib,left,top,1000);
+    if(dib2)
+    {
+        FreeImage_Unload(dib);
+        dib = dib2;
+    }
+
     data = FreeImage_GetBits(dib);
     stride = FreeImage_GetPitch(dib);
     width = FreeImage_GetWidth(dib);
@@ -174,8 +208,16 @@ void test_freeimage(abcdk_tree_t *args)
     bits = FreeImage_GetBPP(dib);
     xbytes = FreeImage_GetLine(dib);
 
+   // FreeImage_FlipHorizontal(dib);
+    FreeImage_FlipVertical(dib);
+ 
+#if 1
     int chk = abcdk_fi_save2(FIF_JPEG,JPEG_QUALITYGOOD,dst_file, data, stride, width, height, bits);
     assert(chk == 0);
+#else 
+    BOOL chk = FreeImage_Save(FIF_JPEG,dib,dst_file,JPEG_QUALITYGOOD);
+    assert(chk);
+#endif 
 
 
     FreeImage_Unload(dib);
