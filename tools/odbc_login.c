@@ -72,10 +72,10 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\tPassword. \n");
 
     fprintf(stderr, "\n\t--uri < STRING >\n");
-    fprintf(stderr, "\t\tDatabase Connection String.\n");
+    fprintf(stderr, "\t\tCustom connection string.\n");
 
     fprintf(stderr, "\n\t--timeout < SECONDS >\n");
-    fprintf(stderr, "\t\tLogin timeout(seconds). default: 30\n");
+    fprintf(stderr, "\t\tTimeout(seconds). default: 30\n");
 
     fprintf(stderr, "\n\t--trace-file < FILE >\n");
     fprintf(stderr, "\t\tTrace file.\n");

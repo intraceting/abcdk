@@ -67,8 +67,8 @@ LSB_REALNAME = abcdk-lsb_release.exe
 LSB_NAME = abcdk-lsb_release
 
 #
-ODBC_REALNAME = abcdk-odbc.exe
-ODBC_NAME = abcdk-odbc
+ODBC_REALNAME = abcdk-odbc_login.exe
+ODBC_NAME = abcdk-odbc_login
 
 #
 #Compiler
@@ -115,7 +115,7 @@ OBJ_FILES = \
 	${OBJ_PATH}/mtx.o \
 	${OBJ_PATH}/mt.o \
 	${OBJ_PATH}/lsb_release.o \
-	${OBJ_PATH}/odbc.o \
+	${OBJ_PATH}/odbc_login.o \
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}
@@ -135,7 +135,7 @@ ${PROJECT_NAME}:${OBJ_FILES}
 
 	#
 	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${ODBC_REALNAME} ${OBJ_PATH}/odbc.o $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${ODBC_REALNAME} ${OBJ_PATH}/odbc_login.o $(LINK_FLAGS)
 	ln -f -s ${ODBC_REALNAME} $(BUILD_PATH)/${ODBC_NAME}
 
 #
