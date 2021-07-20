@@ -219,7 +219,7 @@ ssize_t abcdk_buffer_read(abcdk_buffer_t *buf, void *data, size_t size)
     return rsize2;
 }
 
-ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size)
+ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size, int delim)
 {
     ssize_t rsize2 = 0;
     ssize_t rsize3 = 0;
@@ -234,7 +234,7 @@ ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size)
     for (size_t i = 0; i < (buf->wsize - buf->rsize); i++)
     {
         rsize3 += 1;
-        if (ABCDK_PTR2I8(buf->data, buf->rsize + i) == '\n')
+        if (ABCDK_PTR2I8(buf->data, buf->rsize + i) == delim)
             break;
     }
 

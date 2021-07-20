@@ -340,9 +340,9 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     }
     else
     {
-        abcdk_tree_fprintf(stderr, deep, node, "%hhu: %s\n",
-                           ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_ROBOTS_FLAG], 0),
-                           ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_PATH], 0));
+        abcdk_tree_fprintf(stderr, deep, node, "%s: %s\n",
+                           ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),
+                           ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0));
     }
 
     return 1;
@@ -351,8 +351,9 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 void test_robots(abcdk_tree_t *args)
 {
     const char *file = abcdk_option_get(args,"--file",0,"");
+    const char *agent = abcdk_option_get(args,"--agent",0,"*");
 
-    abcdk_tree_t *t = abcdk_robots_parse_file(file,"Baiduspider");
+    abcdk_tree_t *t = abcdk_robots_parse_file(file,agent);
 
     abcdk_tree_iterator_t it = {0,_test_robots_dump_cb,NULL};
 

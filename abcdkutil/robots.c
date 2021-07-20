@@ -6,102 +6,70 @@
  */
 #include "robots.h"
 
-int _abcdk_robots_check_agent(const char *line, const char *agent)
-{
-    const char *b = NULL;
-    int chk = -1;
-
-    chk = abcdk_strncmp(line,"User-agent",9,0);
-    if(chk!=0)
-        ABCDK_ERRNO_AND_GOTO1(EPERM, final);
-
-    b = line;
-
-    for (;b++;)
-    {
-        if (*b == '\0')
-            ABCDK_ERRNO_AND_GOTO1(EPERM, final);
-
-        if (*b == ':')
-            break;
-    }
-
-    if (*b == ':')
-        b += 1;
-
-    for (;b++;)
-    {
-        if (*b == '\0')
-            ABCDK_ERRNO_AND_GOTO1(EPERM, final);
-
-        if(!isspace(*b))
-            break;
-    }
-
-    chk = abcdk_strcmp(b,agent,0);
-
-final:
-
-    return chk;
-}
-
 abcdk_tree_t *_abcdk_robots_parse_rule(const char *line)
 {
     abcdk_tree_t *rule = NULL;
-    const char *b = NULL;
-    const char *e = NULL;
-    int flag = 0;
+    const char *key_b = NULL,*key_e = NULL;
+    const char *val_b = NULL,*val_e = NULL;
 
-    if (abcdk_strncmp(line, "Disallow", 8, 0) == 0)
-        flag = 2;
-    else if (abcdk_strncmp(line, "Allow", 5, 0) == 0)
-        flag = 1;
-    else if (abcdk_strncmp(line, "Sitemap", 7, 0) == 0)
-        flag = 3;
-
-    /*只支持这三种。*/
-    if (flag != 1 && flag != 2 && flag != 3)
-        ABCDK_ERRNO_AND_GOTO1(EPERM, final);
-
-    b = line;
-
-    for (;b++;)
+    /* 查找KEY开始。*/
+    for (key_b = line;;key_b++)
     {
-        if (*b == '\0')
+        if (*key_b == '\0')
             ABCDK_ERRNO_AND_GOTO1(EPERM, final);
 
-        if (*b == ':')
+        if (!isspace(*key_b))
+            break;
+    }
+    
+    /* 查找KEY结束。*/
+    for (key_e = key_b;;key_e++)
+    {
+        if (*key_e == '\0')
+            ABCDK_ERRNO_AND_GOTO1(EPERM, final);
+
+        if (isspace(*key_e) || *key_e == ':')
             break;
     }
 
-    if (*b == ':')
-        b += 1;
-
-    for (;b++;)
+    for (val_b = key_e;;val_b++)
     {
-        if (*b == '\0')
+        if (*val_b == '\0')
             ABCDK_ERRNO_AND_GOTO1(EPERM, final);
 
-        if(!isspace(*b))
+        if (*val_b == ':')
             break;
     }
 
-    e = b + 1;
+    /* 跳过连字符。*/
+    if (*val_b == ':')
+        val_b += 1;
 
-    /*查找结束符。*/
-    for (; *e != '\0'; e++)
+    /* 查找VALUE开始。*/
+    for (;;val_b++)
     {
-        /*Nothing.*/;
+        if (*val_b== '\0')
+            ABCDK_ERRNO_AND_GOTO1(EPERM, final);
+
+        if(!isspace(*val_b))
+            break;
     }
 
-    size_t sizes[2] = {sizeof(uint8_t), (e - b) + 1};
+    /*查找VALUE结束。*/
+    for (val_e = val_b + 1;; val_e++)
+    {
+        if (*val_e == '\0')
+            break;
+    }
+
+    size_t sizes[2] = {(key_e - key_b) + 1, (val_e - val_b) + 1};
 
     rule = abcdk_tree_alloc2(sizes,2,0);
     if(!rule)
         goto final;
 
-    ABCDK_PTR2U8(rule->alloc->pptrs[ABCDK_ROBOTS_FLAG], 0) = flag;
-    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_PATH], b, e - b);
+    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], key_b, key_e - key_b);
+    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_b, val_e - val_b);
 
 final:
 
@@ -132,37 +100,41 @@ void _abcdk_robots_parse_real(abcdk_tree_t *root, const char *text, const char *
 
     for(;;)
     {
-        size2 = abcdk_buffer_readline(buf, line, size);
+        size2 = abcdk_buffer_readline(buf, line, size, '\n');
         if (size2 <= 0)
             break;
 
-        /*跳过太长的。*/
+        /* 跳过太长的。*/
         if (size2 == size && line[size2 - 1] != '\n')
             continue;
 
         /* 去掉字符串两端所有空白字符。 */
         abcdk_strtrim(line, isspace, 2);
 
+        /* 可能是注释。*/
+        if (*line == '#')
+            continue;
+
+        /* 解析成KEY-VALUE节点。*/
+        rule = _abcdk_robots_parse_rule(line);
+        if(!rule)
+            continue;
+
+        /* 是否为段落标记。*/
+        if(abcdk_strcmp(ABCDK_PTR2I8PTR(rule->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),"User-agent",0)==0)
+        {
+            /* 是否为新段落。*/
+            agent_ok = (abcdk_strcmp(ABCDK_PTR2I8PTR(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0),agent,0)==0);
+        }
+
+        /* 如果未找到匹配的段落则跳过。*/
         if(!agent_ok)
-        {
-            agent_ok = (_abcdk_robots_check_agent(line,agent)==0);
-        }
-        else 
-        {
-            /*只匹配有效段落。*/
-            if (*line == '\0')
-                goto final;
-
-            rule = _abcdk_robots_parse_rule(line);
-            if(!rule)
-                continue;
-
-            /*加入到树的子节点末尾.*/
-            abcdk_tree_insert2(root, rule, 0);
-        }
+            continue;
+      
+        /*加入到树的子节点末尾.*/
+        abcdk_tree_insert2(root, rule, 0);
 
     }
-
 
 final:
 

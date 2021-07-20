@@ -123,9 +123,11 @@ ssize_t abcdk_buffer_read(abcdk_buffer_t *buf, void *data, size_t size);
  * 
  * @warning 当缓存不足时，行尾部分将被读取并丢弃。
  * 
+ * @param delim 行分割符。
+ * 
  * @return > 0 读取的长度(Bytes)，= 0 末尾，< 0 出错。
 */
-ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size);
+ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size, int delim);
 
 /**
  * 排出已读数据，未读数据移动到缓存首地址。
