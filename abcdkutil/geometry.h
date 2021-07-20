@@ -27,9 +27,9 @@ typedef struct _abcdk_point
 } abcdk_point_t;
 
 /**
- * 尺寸变换比例。
+ * 尺寸变换系数。
 */
-typedef struct _abcdk_resize_ratio
+typedef struct _abcdk_resize_t
 {
 	/** X轴因子。 */
 	double x_factor;
@@ -43,7 +43,7 @@ typedef struct _abcdk_resize_ratio
     /** Y轴位移。*/
 	double y_shift;
 
-}abcdk_resize_ratio;
+}abcdk_resize_t;
 
 /**
  * 计算空间两点之间的直线距离。
@@ -80,13 +80,29 @@ double abcdk_half_line_radian(const abcdk_point_t *p1, const abcdk_point_t *p2, 
 void abcdk_point_shift(const abcdk_point_t *p1,double radian,double dist,abcdk_point_t *p2);
 
 /**
- * 生成尺寸变换比例。
+ * 生成尺寸变换系数。
  * 
+ * @param keep_ratio !0 保持纵横比，0 不保持纵横比。
 */
-void abcdk_resize_ratio_make(abcdk_resize_ratio *ratio, 
-                             double src_w, double src_h, 
-                             double dst_w, double dst_h,
-                             int keep_ratio);
+void abcdk_resize_make(abcdk_resize_t *ratio,
+                       double src_w, double src_h,
+                       double dst_w, double dst_h,
+                       int keep_ratio);
+/**
+ * 源图到目标图坐标变换。
+ * 
+ * @param x !0 X轴坐标，0 Y轴坐标。
+*/
+double abcdk_resize_src2dst(const abcdk_resize_t *ratio,
+                            double src, int x);
+
+/**
+ * 目标图到源图坐标变换。
+ * 
+ * @param x !0 X轴坐标，0 Y轴坐标。
+*/
+double abcdk_resize_dst2src(const abcdk_resize_t *ratio,
+                            double dst, int x);
 
 __END_DECLS
 

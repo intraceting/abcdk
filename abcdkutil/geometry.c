@@ -39,10 +39,10 @@ void abcdk_point_shift(const abcdk_point_t *p1, double radian, double dist, abcd
     p2->y = p1->y + dist * sin(radian);
 }
 
-void abcdk_resize_ratio_make(abcdk_resize_ratio *ratio,
-                             double src_w, double src_h,
-                             double dst_w, double dst_h,
-                             int keep_ratio)
+void abcdk_resize_make(abcdk_resize_t *ratio,
+                       double src_w, double src_h,
+                       double dst_w, double dst_h,
+                       int keep_ratio)
 {
     double min_factor;
 
@@ -62,4 +62,28 @@ void abcdk_resize_ratio_make(abcdk_resize_ratio *ratio,
 
     ratio->x_shift = (dst_w - (ratio->x_factor * src_w)) / 2.0;
     ratio->y_shift = (dst_h - (ratio->y_factor * src_h)) / 2.0;
+}
+
+double abcdk_resize_src2dst(const abcdk_resize_t *ratio,
+                            double src, int x)
+{
+    assert(ratio != NULL);
+    assert(src >= 0.0);
+
+    if (x)
+        return (src * ratio->x_factor) + ratio->x_shift;
+
+    return (src * ratio->y_factor) + ratio->y_shift;
+}
+
+double abcdk_resize_dst2src(const abcdk_resize_t *ratio,
+                            double dst, int x)
+{
+    assert(ratio != NULL);
+    assert(dst >= 0.0);
+
+    if (x)
+        return (dst - ratio->x_shift) / ratio->x_factor;
+
+    return (dst - ratio->y_shift) / ratio->y_factor;
 }

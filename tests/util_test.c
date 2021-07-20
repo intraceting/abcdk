@@ -10,6 +10,7 @@
 #include <string.h>
 #include "abcdkutil/general.h"
 #include "abcdkutil/getargs.h"
+#include "abcdkutil/geometry.h"
 #include "abcdkutil/ffmpeg.h"
 #include "abcdkutil/bmp.h"
 #include "abcdkutil/freeimage.h"
@@ -170,11 +171,14 @@ void test_freeimage(abcdk_tree_t *args)
     width = FreeImage_GetWidth(dib);
     height = FreeImage_GetHeight(dib);
 
-    double x_factor = (double)100/width;
-    double y_factor = (double)100/height;
-    double min_factor = ABCDK_MIN(x_factor, y_factor);
+    abcdk_resize_t r = {0};
 
-    FIBITMAP *dib2 = FreeImage_RescaleRect(dib,min_factor*width,height*min_factor,0,0,width,height,FILTER_BICUBIC,0);
+    int dst_w = 500;
+    int dst_h = 1100;
+
+    abcdk_resize_make(&r,width,height,dst_w,dst_h,0);
+
+    FIBITMAP *dib2 = FreeImage_RescaleRect(dib,r.x_factor *width,r.y_factor*height,0,0,width,height,FILTER_BICUBIC,0);
     if(dib2)
     {
         FreeImage_Unload(dib);
@@ -188,12 +192,9 @@ void test_freeimage(abcdk_tree_t *args)
         dib = dib2;
     }
 
-    double x_shift = (100 - (min_factor * width)) / 2.0;
-	double y_shift = (100 - (min_factor * height)) / 2.0;
-
-    int left = (0.0*x_factor + x_shift);
-    int top = (0.0*y_factor + y_shift);
-    dib2 = FreeImage_Allocate(100,100,24,0,0,0);
+    int left = abcdk_resize_src2dst(&r,0,1);
+    int top = abcdk_resize_src2dst(&r,0,0);
+    dib2 = FreeImage_Allocate(dst_w,dst_h,24,0,0,0);
     FreeImage_Paste(dib2,dib,left,top,1000);
     if(dib2)
     {
@@ -209,7 +210,7 @@ void test_freeimage(abcdk_tree_t *args)
     xbytes = FreeImage_GetLine(dib);
 
    // FreeImage_FlipHorizontal(dib);
-    FreeImage_FlipVertical(dib);
+  //  FreeImage_FlipVertical(dib);
  
 #if 1
     int chk = abcdk_fi_save2(FIF_JPEG,JPEG_QUALITYGOOD,dst_file, data, stride, width, height, bits);
