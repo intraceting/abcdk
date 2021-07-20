@@ -106,8 +106,11 @@ void _abcdkodbc_work(abcdk_tree_t *args)
     uid = abcdk_option_get(args, "--uid", 0, NULL);
     pwd = abcdk_option_get(args, "--pwd", 0, "");
     uri = abcdk_option_get(args, "--uri", 0, NULL);
-    timeout = abcdk_option_get_long(args, "--timeout", 0, "30");
+    timeout = abcdk_option_get_long(args, "--timeout", 0, 30);
     tracefile = abcdk_option_get(args, "--trace-file", 0, NULL);
+
+    /*Clear errno.*/
+    errno = 0;
 
     if (uri && *uri)
     {

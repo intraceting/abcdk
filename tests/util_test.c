@@ -211,6 +211,9 @@ void test_freeimage(abcdk_tree_t *args)
 
    // FreeImage_FlipHorizontal(dib);
   //  FreeImage_FlipVertical(dib);
+
+    //FreeImage_AdjustBrightness(dib,100);
+    FreeImage_Invert(dib);
  
 #if 1
     int chk = abcdk_fi_save2(FIF_JPEG,JPEG_QUALITYGOOD,dst_file, data, stride, width, height, bits);

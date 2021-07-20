@@ -115,7 +115,7 @@ OBJ_FILES = \
 	${OBJ_PATH}/mtx.o \
 	${OBJ_PATH}/mt.o \
 	${OBJ_PATH}/lsb_release.o \
-	${OBJ_PATH}/odbc_login.o \
+	${OBJ_PATH}/odbc_login.o 
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}

@@ -69,6 +69,9 @@ void _abcdklsb_work(abcdk_tree_t *args)
     key = abcdk_option_get(args, "--key", 0, "");
     val_short = (abcdk_option_exist(args, "--short") ? 1 : 0);
 
+    /*Clear errno.*/
+    errno = 0;
+
     if (access(osinfo_file, R_OK) != 0)
     {
         syslog(LOG_WARNING, "'%s' %s.",osinfo_file,strerror(errno));

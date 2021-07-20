@@ -308,11 +308,11 @@ void _abcdkmt_work(abcdk_tree_t *args)
     int cmd = 0;
     int chk;
 
-    /*Clear errno.*/
-    errno = 0;
-
     dev_p = abcdk_option_get(args, "--dev", 0, "");
     cmd = abcdk_option_get_int(args, "--cmd", 0, ABCDKMT_STATUS);
+
+    /*Clear errno.*/
+    errno = 0;
 
     if (access(dev_p, F_OK) != 0)
     {

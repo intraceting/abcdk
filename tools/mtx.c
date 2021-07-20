@@ -229,14 +229,13 @@ void _abcdkmtx_work(abcdk_tree_t *args)
     int cmd = 0;
     int chk;
 
-    /*Clear errno.*/
-    errno = 0;
-
     dev_p = abcdk_option_get(args, "--dev", 0, "");
     voltag = (abcdk_option_exist(args, "--exclude-barcode") ? 0 : 1);
     dvcid = (abcdk_option_exist(args, "--exclude-dvcid") ? 0 : 1);
     cmd = abcdk_option_get_int(args, "--cmd", 0, ABCDKMTX_STATUS);
-    
+
+    /*Clear errno.*/
+    errno = 0;
 
     if (access(dev_p, F_OK) != 0)
     {
