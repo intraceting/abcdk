@@ -96,21 +96,13 @@ typedef struct _abcdk_bmp_info_hdr
     */
     uint32_t compression;
 
-    /** 
-     * 图像大小(字节)。
-     * 
-     * BI_RGB 可以设置为0。
-    */
+    /** 图像大小(字节)。*/
     uint32_t size_image;
 
-    /** 
-     * 水平分辨率(像素/米)。
-    */
+    /** 水平分辨率(像素/米)。*/
     int32_t x_meter;
 
-    /**
-     * 垂直分辨率(像素/米)。
-     */
+    /** 垂直分辨率(像素/米)。*/
     int32_t y_meter;
 
     /** 位图实际使用的颜色表中的颜色数。*/
