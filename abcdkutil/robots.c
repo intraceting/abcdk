@@ -11,6 +11,7 @@ abcdk_tree_t *_abcdk_robots_parse_rule(const char *line)
     abcdk_tree_t *rule = NULL;
     const char *key_b = NULL,*key_e = NULL;
     const char *val_b = NULL,*val_e = NULL;
+    int qmask = 0;
 
     /* 查找KEY开始。*/
     for (key_b = line;;key_b++)
@@ -60,16 +61,45 @@ abcdk_tree_t *_abcdk_robots_parse_rule(const char *line)
     {
         if (*val_e == '\0')
             break;
+
+        if(*val_e == '?')
+            qmask += 1;
     }
 
-    size_t sizes[2] = {(key_e - key_b) + 1, (val_e - val_b) + 1};
+    size_t key_len = key_e - key_b;
+    size_t val_len = val_e - val_b;
+    size_t val_len2 = val_len + qmask;
+    size_t sizes[2] = {key_len + 1, val_len2 + 2};
 
     rule = abcdk_tree_alloc2(sizes,2,0);
     if(!rule)
         goto final;
 
-    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], key_b, key_e - key_b);
-    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_b, val_e - val_b);
+    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], key_b, key_len);
+
+    /*Replace "?" to "\?" for the fnmatch() function. */
+    for (size_t i = 0, j = 0; i < val_len; i++, j++)
+    {
+        if (val_b[i] == '?')
+            ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], j++) = '\\';
+        ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], j) = val_b[i];
+    }
+
+    if (abcdk_strcmp((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], "Disallow", 0) == 0 ||
+        abcdk_strcmp((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], "Allow", 0) == 0)
+    {
+        if (val_len2 > 0)
+        {
+            if (ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) == '$')
+                ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) = '\0';
+            else if (ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) == '/')
+                ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2) = '*';
+        }
+        else
+        {
+            ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2) = '*';
+        }
+    }
 
 final:
 
@@ -125,6 +155,7 @@ void _abcdk_robots_parse_real(abcdk_tree_t *root, const char *text, const char *
         {
             /* 是否为新段落。*/
             agent_ok = (abcdk_strcmp(ABCDK_PTR2I8PTR(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0),agent,0)==0);
+            continue;
         }
 
         /* 如果未找到匹配的段落则跳过。*/

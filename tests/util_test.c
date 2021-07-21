@@ -312,8 +312,11 @@ void test_html(abcdk_tree_t *args)
 
 void test_fnmatch(abcdk_tree_t *args)
 {
-    char str[]={"abcd?*Qcde"};
-    char wd[]={"abc?\\?\\*q*e"};
+ //   char str[]={"abcd?*Qcde"};
+ //   char wd[]={"abc?\\?\\*q*****e"};
+
+    char str[]={"/gp/aag/mainA?123456seller=ABVFEJU8LS620"};
+    char wd[]={"/gp/aag/main\\?\\?*seller=ABVFEJU8LS620"};
 
     int chk = abcdk_fnmatch(str,wd,0,0);
     assert(chk==0);
@@ -332,6 +335,13 @@ void test_crc32(abcdk_tree_t *args)
     }
 }
 
+typedef struct _robots_match
+{
+    int flag;
+    const char *path;
+}robots_match_t;
+
+
 static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     if (deep == 0)
@@ -340,9 +350,30 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     }
     else
     {
-        abcdk_tree_fprintf(stderr, deep, node, "%s: %s\n",
-                           ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),
-                           ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0));
+        if (opaque)
+        {
+            robots_match_t *m = (robots_match_t*)opaque;
+
+            int chk = abcdk_fnmatch(m->path,ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0),0,0);
+            if(chk==0)
+            {
+                if(abcdk_strcmp(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),"Disallow",0)==0)
+                    m->flag = 2;
+                if(abcdk_strcmp(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),"Allow",0)==0)
+                    m->flag = 1;
+
+            }
+            else
+            {
+               // m->flag = -1;
+            }
+        }
+        else
+        {
+            abcdk_tree_fprintf(stderr, deep, node, "%s: %s\n",
+                               ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),
+                               ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0));
+        }
     }
 
     return 1;
@@ -353,14 +384,21 @@ void test_robots(abcdk_tree_t *args)
     const char *file = abcdk_option_get(args,"--file",0,"");
     const char *agent = abcdk_option_get(args,"--agent",0,"*");
 
+    robots_match_t m = {0};
+    m.path = abcdk_option_get(args,"--path",0,"");
+
     abcdk_tree_t *t = abcdk_robots_parse_file(file,agent);
 
     abcdk_tree_iterator_t it = {0,_test_robots_dump_cb,NULL};
-
     abcdk_tree_scan(t,&it);
 
+    it.opaque = &m;
+    abcdk_tree_scan(t,&it);
+
+    printf("flag=%d\n",m.flag);
 
     abcdk_tree_free(&t);
+
 }
 
 #ifdef _FUSE_H_
