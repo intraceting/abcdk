@@ -502,7 +502,7 @@ void abcdk_closep(int *fd);
 int abcdk_open(const char *file, int rw, int nonblock, int create);
 
 /**
- * 打开文件2。
+ * 关联文件到已经打开的句柄。
  * 
  * 已打开的文件会被关闭，新打开的文件会绑定到fd2句柄。
  * 
@@ -511,7 +511,7 @@ int abcdk_open(const char *file, int rw, int nonblock, int create);
  * @return fd2 成功，-1 失败。
  * 
 */
-int abcdk_open2(int fd2,const char *file, int rw, int nonblock, int create);
+int abcdk_reopen(int fd2,const char *file, int rw, int nonblock, int create);
 
 /**
  * 获取标志。
@@ -584,7 +584,6 @@ void abcdk_openlog(const char *ident,int level,int copy2stderr);
 
 
 /*------------------------------------------------------------------------------------------------*/
-
 
 __END_DECLS
 

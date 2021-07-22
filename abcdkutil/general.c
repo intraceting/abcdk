@@ -1109,7 +1109,7 @@ int abcdk_open(const char *file, int rw, int nonblock, int create)
     return open(file, flag, mode);
 }
 
-int abcdk_open2(int fd2, const char *file, int rw, int nonblock, int create)
+int abcdk_reopen(int fd2, const char *file, int rw, int nonblock, int create)
 {
     int fd = -1;
     int fd3 = -1;
@@ -1196,7 +1196,7 @@ pid_t abcdk_popen(const char *cmd,char * const envp[], int *stdin_fd, int *stdou
         if (stdin_fd)
             dup2(out2in_fd[0], STDIN_FILENO);
         else
-            abcdk_open2(STDIN_FILENO, "/dev/null", 0, 0, 0);
+            abcdk_reopen(STDIN_FILENO, "/dev/null", 0, 0, 0);
 
         abcdk_closep(&out2in_fd[1]);
         abcdk_closep(&out2in_fd[0]);
@@ -1204,7 +1204,7 @@ pid_t abcdk_popen(const char *cmd,char * const envp[], int *stdin_fd, int *stdou
         if (stdout_fd)
             dup2(in2out_fd[1], STDOUT_FILENO);
         else
-            abcdk_open2(STDOUT_FILENO, "/dev/null", 1, 0, 0);
+            abcdk_reopen(STDOUT_FILENO, "/dev/null", 1, 0, 0);
 
         abcdk_closep(&in2out_fd[0]);
         abcdk_closep(&in2out_fd[1]);
@@ -1212,7 +1212,7 @@ pid_t abcdk_popen(const char *cmd,char * const envp[], int *stdin_fd, int *stdou
         if (stderr_fd)
             dup2(in2err_fd[1], STDERR_FILENO);
         else
-            abcdk_open2(STDERR_FILENO, "/dev/null", 1, 0, 0);
+            abcdk_reopen(STDERR_FILENO, "/dev/null", 1, 0, 0);
 
         abcdk_closep(&in2err_fd[0]);
         abcdk_closep(&in2err_fd[1]);

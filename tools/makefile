@@ -75,6 +75,10 @@ CRAWLER_REALNAME = abcdk-crawler.exe
 CRAWLER_NAME = abcdk-crawler
 
 #
+ROBOTS_REALNAME = abcdk-robots.exe
+ROBOTS_NAME = abcdk-robots
+
+#
 #Compiler
 CCC = gcc
 
@@ -120,7 +124,8 @@ OBJ_FILES = \
 	${OBJ_PATH}/mt.o \
 	${OBJ_PATH}/lsb_release.o \
 	${OBJ_PATH}/odbc_login.o \
-	${OBJ_PATH}/crawler.o 
+	${OBJ_PATH}/crawler.o \
+	${OBJ_PATH}/robots.o
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}
@@ -148,6 +153,11 @@ ${PROJECT_NAME}:${OBJ_FILES}
 	$(CCC) -o $(BUILD_PATH)/${CRAWLER_REALNAME} ${OBJ_PATH}/crawler.o $(LINK_FLAGS)
 	ln -f -s ${CRAWLER_REALNAME} $(BUILD_PATH)/${CRAWLER_NAME}
 
+	#
+	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${ROBOTS_REALNAME} ${OBJ_PATH}/robots.o $(LINK_FLAGS)
+	ln -f -s ${ROBOTS_REALNAME} $(BUILD_PATH)/${ROBOTS_NAME}
+
 #
 $(OBJ_PATH)/%.o: %.c
 	mkdir -p $(OBJ_PATH)
@@ -167,6 +177,8 @@ clean:
 	rm -f $(BUILD_PATH)/${ODBC_NAME}
 	rm -f $(BUILD_PATH)/${CRAWLER_REALNAME}
 	rm -f $(BUILD_PATH)/${CRAWLER_NAME}
+	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
+	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
 
 
 #
@@ -187,6 +199,8 @@ install:
 	ln -f -s ${ODBC_REALNAME} $(INSTALL_PATH_BIN)/${ODBC_NAME}
 	cp -f -f $(BUILD_PATH)/${CRAWLER_REALNAME} ${INSTALL_PATH_BIN}/
 	ln -f -s ${CRAWLER_REALNAME} $(INSTALL_PATH_BIN)/${CRAWLER_NAME}
+	cp -f -f $(BUILD_PATH)/${ROBOTS_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${ROBOTS_REALNAME} $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
 
 #
 uninstall:
@@ -201,3 +215,5 @@ uninstall:
 	rm -f $(INSTALL_PATH_BIN)/${ODBC_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${CRAWLER_REALNAME}
 	rm -f $(INSTALL_PATH_BIN)/${CRAWLER_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_NAME}

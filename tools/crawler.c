@@ -11,7 +11,6 @@
 #include "abcdkutil/general.h"
 #include "abcdkutil/getargs.h"
 #include "abcdkutil/html.h"
-#include "abcdkutil/robots.h"
 
 void _abcdkcrawler_print_usage(abcdk_tree_t *args, int only_version)
 {
@@ -68,6 +67,9 @@ void _abcdkcrawler_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--attr-hide\n");
     fprintf(stderr, "\t\tHide attributes information.\n");
+
+    fprintf(stderr, "\n\t--output < FILE >\n");
+    fprintf(stderr, "\t\tOutput to the specified file.\n");
 
 }
 
@@ -156,21 +158,18 @@ int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     attr_short = abcdk_option_exist(args,"--attr-short");
     align_left = abcdk_option_exist(args,"--align-left");
     
-    /*Clear errno.*/
-    errno = 0;
-
     if (depth == 0)
-        return 1;
+        ABCDK_ERRNO_AND_RETURN1(0,1);
 
     if (depth == 1)
     {
         chk = _abcdkcrawler_match_tag(args, (char *)node->alloc->pptrs[ABCDK_HTML_KEY]);
         if (chk != 0)
-            return 0;
+            ABCDK_ERRNO_AND_RETURN1(0,0);
 
         _abcdkcrawler_printf(depth,node,tag_short,align_left,tag_hide);
 
-        return 1;
+        ABCDK_ERRNO_AND_RETURN1(0,1);
     }
 
     if (depth == 2)
@@ -180,7 +179,7 @@ int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         if (chk == 0)
             _abcdkcrawler_printf(depth,node,attr_short,align_left,attr_hide);
 
-        return 1;
+        ABCDK_ERRNO_AND_RETURN1(0,1);
     }
 }
 
@@ -189,8 +188,10 @@ void _abcdkcrawler_work(abcdk_tree_t *args)
     int err = 0;
     abcdk_tree_t *html = NULL;
     const char *file = NULL;
+    const char *outfile = NULL;
 
     file = abcdk_option_get(args, "--html", 0, NULL);
+    outfile = abcdk_option_get(args, "--output", 0, NULL);
 
     if(!abcdk_option_exist(args, "--tag"))
     {
@@ -210,7 +211,7 @@ void _abcdkcrawler_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--html FILE' cannot be omitted.");
+        syslog(LOG_ERR, "'--html FILE' can not be omitted.");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -223,8 +224,23 @@ void _abcdkcrawler_work(abcdk_tree_t *args)
     html = abcdk_html_parse_file(file);
     if (!html)
     {
-        syslog(LOG_WARNING, "'%s' Cannot parse, or is not in HTML format.", file);
+        syslog(LOG_WARNING, "'%s' can not parsed.", file);
         goto final;
+    }
+
+    if(!abcdk_tree_child(html,1))
+    {
+        syslog(LOG_WARNING, "The '%s' may not be in HTML format.", file);
+        ABCDK_ERRNO_AND_GOTO1(EPERM, final);
+    }
+
+    if(outfile && *outfile)
+    {
+        if(abcdk_reopen(STDOUT_FILENO,outfile,1,0,1)<0)
+        {
+            syslog(LOG_WARNING, "'%s' %s.", outfile, strerror(errno));
+            goto final;
+        }
     }
 
     abcdk_tree_iterator_t it = {0, _abcdkcrawler_printf_cb, args};
