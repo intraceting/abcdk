@@ -197,6 +197,23 @@ final:
     return tag;
 }
 
+const char *_abcdkc_html_cntrl_replace(char *text, char c)
+{
+    if(!text)
+        return "";
+
+    char *tmp = text;
+    while (*tmp)
+    {
+        if (iscntrl(*tmp))
+            *tmp = c;
+
+        tmp += 1;
+    }
+
+    return text;
+}
+
 const char *_abcdk_html_value_parse(abcdk_tree_t *tag, const char *text)
 {
     const char *tmp = NULL, *tmp2 = NULL;
@@ -248,6 +265,9 @@ const char *_abcdk_html_value_parse(abcdk_tree_t *tag, const char *text)
 
     /*复制VALUE。*/
     tag->alloc->pptrs[ABCDK_HTML_VALUE] = (uint8_t *)abcdk_heap_clone(value_b, tmp - value_b);
+    
+    /*替换控制字符为空格。*/
+    _abcdkc_html_cntrl_replace((char*)tag->alloc->pptrs[ABCDK_HTML_VALUE],' ');
 
 final:
 

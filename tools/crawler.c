@@ -48,14 +48,27 @@ void _abcdkcrawler_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--html < FILE >\n");
     fprintf(stderr, "\t\tThe HTML file.\n");
 
+    fprintf(stderr, "\n\t--align-left\n");
+    fprintf(stderr, "\t\tLeft aligned format.\n");
+
     fprintf(stderr, "\n\t--tag < NAME >\n");
-    fprintf(stderr, "\t\tThe name of the tag.\n");
+    fprintf(stderr, "\t\tThe name of the tag used for the filter. default: a img video\n");
+
+    fprintf(stderr, "\n\t--tag-short\n");
+    fprintf(stderr, "\t\tShow tag information in short format.\n");
+
+    fprintf(stderr, "\n\t--tag-hide\n");
+    fprintf(stderr, "\t\tHide tag information.\n");
 
     fprintf(stderr, "\n\t--attr < KEY >\n");
-    fprintf(stderr, "\t\tThe key of the attributes.\n");
+    fprintf(stderr, "\t\tThe key of the attributes used for the filter. default: src href\n");
 
-    fprintf(stderr, "\n\t--cts\n");
-    fprintf(stderr, "\t\tCompress space characters.\n");
+    fprintf(stderr, "\n\t--attr-short\n");
+    fprintf(stderr, "\t\tShow attributes information in short format.\n");
+
+    fprintf(stderr, "\n\t--attr-hide\n");
+    fprintf(stderr, "\t\tHide attributes information.\n");
+
 }
 
 int _abcdkcrawler_match_tag(abcdk_tree_t *args, const char *name)
@@ -94,78 +107,78 @@ int _abcdkcrawler_match_attr(abcdk_tree_t *args, const char *key)
     return FNM_NOMATCH;
 }
 
-/**/
-const char *_abcdkcrawler_cntrl_replace(char *text, char c)
+void _abcdkcrawler_printf(size_t depth, const abcdk_tree_t *node, int only_val, int align_left,int hide)
 {
-    if(!text)
-        return "";
+    int have_val = (node->alloc->pptrs[ABCDK_HTML_VALUE]?1:0);
 
-    char *tmp = text;
-    while (*tmp)
+    if (hide)
     {
-        if (iscntrl(*tmp))
-            *tmp = c;
-
-        tmp += 1;
+        if (!align_left)
+            abcdk_tree_fprintf(stdout, depth, node, "\n");
+        else 
+            fprintf(stdout, "%s\n",(depth == 1 ? "\n" : ""));
     }
+    else
+    {
+        if (!align_left)
+        {
 
-    return text;
+            abcdk_tree_fprintf(stdout, depth, node, "%s%s%s\n",
+                               (only_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_KEY]),
+                               (only_val ? "" : "="),
+                               (!have_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_VALUE]));
+        }
+        else
+        {
+            fprintf(stdout, "%s%s%s%s\n",
+                    (depth == 1 ? "\n" : ""),
+                    (only_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_KEY]),
+                    (only_val ? "" : "="),
+                    (!have_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_VALUE]));
+        }
+    }
 }
 
-int _abcdkcrawler_printf_cb(size_t deep, abcdk_tree_t *node, void *opaque)
+int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     abcdk_tree_t *args = NULL;
+    int tag_hide = 0;
     int tag_short = 0;
+    int attr_hide = 0;
     int attr_short = 0;
+    int align_left = 0;
     int chk;
 
     args = (abcdk_tree_t*)opaque;
+    tag_hide = abcdk_option_exist(args,"--tag-hide");
     tag_short = abcdk_option_exist(args,"--tag-short");
+    attr_hide = abcdk_option_exist(args,"--attr-hide");
     attr_short = abcdk_option_exist(args,"--attr-short");
+    align_left = abcdk_option_exist(args,"--align-left");
     
+    /*Clear errno.*/
+    errno = 0;
 
-    if (deep == 0)
+    if (depth == 0)
         return 1;
 
-    if (deep == 1)
+    if (depth == 1)
     {
         chk = _abcdkcrawler_match_tag(args, (char *)node->alloc->pptrs[ABCDK_HTML_KEY]);
         if (chk != 0)
             return 0;
 
-        if (tag_short)
-        {
-            abcdk_tree_fprintf(stdout, deep, node, "%s\n",
-                               _abcdkcrawler_cntrl_replace(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0), ' '));
-        }
-        else
-        {
-            abcdk_tree_fprintf(stdout, deep, node, "%s=%s\n",
-                               ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_KEY], 0),
-                               _abcdkcrawler_cntrl_replace(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0), ' '));
-        }
+        _abcdkcrawler_printf(depth,node,tag_short,align_left,tag_hide);
 
         return 1;
     }
 
-    if (deep == 2)
+    if (depth == 2)
     {
         chk = _abcdkcrawler_match_attr(args, (char *)node->alloc->pptrs[ABCDK_HTML_KEY]);
 
         if (chk == 0)
-        {
-            if (attr_short)
-            {
-                abcdk_tree_fprintf(stdout, deep, node, "%s\n",
-                                   ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0));
-            }
-            else
-            {
-                abcdk_tree_fprintf(stdout, deep, node, "%s=%s\n",
-                                   ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_KEY], 0),
-                                   ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0));
-            }
-        }
+            _abcdkcrawler_printf(depth,node,attr_short,align_left,attr_hide);
 
         return 1;
     }
@@ -178,6 +191,22 @@ void _abcdkcrawler_work(abcdk_tree_t *args)
     const char *file = NULL;
 
     file = abcdk_option_get(args, "--html", 0, NULL);
+
+    if(!abcdk_option_exist(args, "--tag"))
+    {
+        abcdk_option_set(args,"--tag","a");
+        abcdk_option_set(args,"--tag","img");
+        abcdk_option_set(args,"--tag","video");
+    }
+
+    if(!abcdk_option_exist(args, "--attr"))
+    {
+        abcdk_option_set(args,"--attr","src");
+        abcdk_option_set(args,"--attr","href");
+    }
+
+    /*Clear errno.*/
+    errno = 0;
 
     if (!file || !*file)
     {
