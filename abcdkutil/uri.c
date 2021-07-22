@@ -11,7 +11,7 @@ abcdk_allocator_t *abcdk_uri_split(const char *uri)
     const char* mark = NULL;
     const char* a_mark = NULL;
     size_t len = 0;
-    size_t sizes[7] = {0};
+    size_t sizes[5] = {0};
     abcdk_allocator_t *alloc = NULL;
 
     assert(uri != NULL);
@@ -27,15 +27,13 @@ abcdk_allocator_t *abcdk_uri_split(const char *uri)
         sizes[ABCDK_URI_USER] = 64;
         sizes[ABCDK_URI_PSWD] = 128;
         sizes[ABCDK_URI_HOST] = 255;
-        sizes[ABCDK_URI_PATH] = sizes[ABCDK_URI_COND] = len + 1;
-        sizes[ABCDK_URI_SEGM] = len + 1;
+        sizes[ABCDK_URI_PATH] = len + 1;
     }
     else
     {
         sizes[ABCDK_URI_SCHEME] = sizes[ABCDK_URI_USER] = 1;
         sizes[ABCDK_URI_PSWD] = sizes[ABCDK_URI_HOST] = 1;
         sizes[ABCDK_URI_PATH] = len + 1; //set.
-        sizes[ABCDK_URI_COND] = sizes[ABCDK_URI_SEGM] = 1;
     }
 
     alloc = abcdk_allocator_alloc(sizes,ABCDK_ARRAY_SIZE(sizes),0);
@@ -63,25 +61,23 @@ abcdk_allocator_t *abcdk_uri_split(const char *uri)
             if(a_mark)
             {
                 /* 
-                 * SCHEME://user:pswd@host[:port]/abcdk/.../abcdk?cond#segm
-                 * SCHEME://user:pswd@[host][:port]/abcdk/.../abcdk?cond#segm
+                 * SCHEME://user:pswd@host[:port]/abcdk
+                 * SCHEME://user:pswd@[host][:port]/abcdk
                 */
-                sscanf(uri, "%[^:]%*3[:/]%[^:]%*1[:]%[^@]%*1[@]%[^/]%[^?]%*1[?]%[^#]%*1[#]%s",
+                sscanf(uri, "%[^:]%*3[:/]%[^:]%*1[:]%[^@]%*1[@]%[^/]%s",
                        alloc->pptrs[ABCDK_URI_SCHEME], alloc->pptrs[ABCDK_URI_USER],
                        alloc->pptrs[ABCDK_URI_PSWD], alloc->pptrs[ABCDK_URI_HOST],
-                       alloc->pptrs[ABCDK_URI_PATH], alloc->pptrs[ABCDK_URI_COND],
-                       alloc->pptrs[ABCDK_URI_SEGM]);
+                       alloc->pptrs[ABCDK_URI_PATH]);
             }
             else
             {
                 /* 
-                 * SCHEME://host[:port]/abcdk/.../abcdk?cond#segm
-                 * SCHEME://[host][:port]/abcdk/.../abcdk?cond#segm
+                 * SCHEME://host[:port]/abcdk
+                 * SCHEME://[host][:port]/abcdk
                 */
-                sscanf(uri, "%[^:]%*3[:/]%[^/]%[^?]%*1[?]%[^#]%*1[#]%s",
+                sscanf(uri, "%[^:]%*3[:/]%[^/]%s",
                        alloc->pptrs[ABCDK_URI_SCHEME], alloc->pptrs[ABCDK_URI_HOST],
-                       alloc->pptrs[ABCDK_URI_PATH], alloc->pptrs[ABCDK_URI_COND],
-                       alloc->pptrs[ABCDK_URI_SEGM]);
+                       alloc->pptrs[ABCDK_URI_PATH]);
             }
         }
     }

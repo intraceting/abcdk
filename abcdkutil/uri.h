@@ -35,14 +35,6 @@ typedef enum _abcdk_uri_field
     ABCDK_URI_PATH = 4,
 #define ABCDK_URI_PATH  ABCDK_URI_PATH
 
-    /** 查询条件*/
-    ABCDK_URI_COND = 5,
-#define ABCDK_URI_COND  ABCDK_URI_COND
-
-    /** 片段ID*/
-    ABCDK_URI_SEGM = 6
-#define ABCDK_URI_SEGM  ABCDK_URI_SEGM
-
 }abcdk_uri_field;
 
 /**

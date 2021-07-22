@@ -71,8 +71,8 @@ ODBC_REALNAME = abcdk-odbc_login.exe
 ODBC_NAME = abcdk-odbc_login
 
 #
-HTML_REALNAME = abcdk-html_parser.exe
-HTML_NAME = abcdk-html_parser
+CRAWLER_REALNAME = abcdk-crawler.exe
+CRAWLER_NAME = abcdk-crawler
 
 #
 #Compiler
@@ -120,7 +120,7 @@ OBJ_FILES = \
 	${OBJ_PATH}/mt.o \
 	${OBJ_PATH}/lsb_release.o \
 	${OBJ_PATH}/odbc_login.o \
-	${OBJ_PATH}/html_parser.o 
+	${OBJ_PATH}/crawler.o 
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}
@@ -144,9 +144,9 @@ ${PROJECT_NAME}:${OBJ_FILES}
 	ln -f -s ${ODBC_REALNAME} $(BUILD_PATH)/${ODBC_NAME}
 
 	#
-	rm -f $(BUILD_PATH)/${HTML_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${HTML_REALNAME} ${OBJ_PATH}/html_parser.o $(LINK_FLAGS)
-	ln -f -s ${HTML_REALNAME} $(BUILD_PATH)/${HTML_NAME}
+	rm -f $(BUILD_PATH)/${CRAWLER_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${CRAWLER_REALNAME} ${OBJ_PATH}/crawler.o $(LINK_FLAGS)
+	ln -f -s ${CRAWLER_REALNAME} $(BUILD_PATH)/${CRAWLER_NAME}
 
 #
 $(OBJ_PATH)/%.o: %.c
@@ -165,8 +165,8 @@ clean:
 	rm -f $(BUILD_PATH)/${LSB_NAME}
 	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
 	rm -f $(BUILD_PATH)/${ODBC_NAME}
-	rm -f $(BUILD_PATH)/${HTML_REALNAME}
-	rm -f $(BUILD_PATH)/${HTML_NAME}
+	rm -f $(BUILD_PATH)/${CRAWLER_REALNAME}
+	rm -f $(BUILD_PATH)/${CRAWLER_NAME}
 
 
 #
@@ -185,8 +185,8 @@ install:
 	ln -f -s ${LSB_REALNAME} $(INSTALL_PATH_BIN)/${LSB_NAME}
 	cp -f -f $(BUILD_PATH)/${ODBC_REALNAME} ${INSTALL_PATH_BIN}/
 	ln -f -s ${ODBC_REALNAME} $(INSTALL_PATH_BIN)/${ODBC_NAME}
-	cp -f -f $(BUILD_PATH)/${HTML_REALNAME} ${INSTALL_PATH_BIN}/
-	ln -f -s ${HTML_REALNAME} $(INSTALL_PATH_BIN)/${HTML_NAME}
+	cp -f -f $(BUILD_PATH)/${CRAWLER_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${CRAWLER_REALNAME} $(INSTALL_PATH_BIN)/${CRAWLER_NAME}
 
 #
 uninstall:
@@ -199,5 +199,5 @@ uninstall:
 	rm -f $(INSTALL_PATH_BIN)/${LSB_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${ODBC_REALNAME}
 	rm -f $(INSTALL_PATH_BIN)/${ODBC_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${HTML_REALNAME}
-	rm -f $(INSTALL_PATH_BIN)/${HTML_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${CRAWLER_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${CRAWLER_NAME}
