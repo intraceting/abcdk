@@ -19,3 +19,13 @@ configure.sh [ ... ]
 make
 sudo make install
 ```
+
+### Build-package
+
+```bash
+configure.sh [ ... ]
+make
+sudo make package
+```
+
+###

@@ -84,6 +84,7 @@ tests-clean:
 	make -C $(CURDIR)/tests/ clean
 
 #
+INSTALL_PATH_LIB = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
 INSTALL_PATH_PKG = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
 
 #
@@ -134,10 +135,10 @@ tools-uninstall:
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp/
 PACK_TAR_NAME = ${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${TARGET_PLATFORM}.tar.gz
 #
-pack: pack-tar
+package: package-tar
 
 #
-pack-tar: 
+package-tar: 
 #
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}

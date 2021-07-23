@@ -129,15 +129,19 @@ OBJ_FILES = \
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}
+	#
 	mkdir -p $(BUILD_PATH)
+	
 	#
 	rm -f $(BUILD_PATH)/${MTX_REALNAME}
 	$(CCC) -o $(BUILD_PATH)/${MTX_REALNAME} ${OBJ_PATH}/mtx.o $(LINK_FLAGS)
 	ln -f -s ${MTX_REALNAME} $(BUILD_PATH)/${MTX_NAME}
+
 	#
 	rm -f $(BUILD_PATH)/${MT_REALNAME}
 	$(CCC) -o $(BUILD_PATH)/${MT_REALNAME} ${OBJ_PATH}/mt.o $(LINK_FLAGS)
 	ln -f -s ${MT_REALNAME} $(BUILD_PATH)/${MT_NAME}
+
 	#
 	rm -f $(BUILD_PATH)/${LSB_REALNAME}
 	$(CCC) -o $(BUILD_PATH)/${LSB_REALNAME} ${OBJ_PATH}/lsb_release.o $(LINK_FLAGS)
