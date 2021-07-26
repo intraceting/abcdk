@@ -42,8 +42,7 @@ else ifeq (${ROOT_PATH},"")
 ROOT_PATH = /
 endif
 
-#
-PKG_NAME = ${SOLUTION_NAME}.pc
+
 
 #
 all: abcdkutil abcdkcomm tools tests
@@ -84,24 +83,30 @@ tests-clean:
 	make -C $(CURDIR)/tests/ clean
 
 #
-INSTALL_PATH_LIB = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
-INSTALL_PATH_PKG = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
+LDC_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
+LDC_FILE = $(abspath ${LDC_PATH}/ldconfig.sh)
+PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
+PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
 install: abcdkutil-install abcdkcomm-install tools-install
 #
-	mkdir -p ${INSTALL_PATH_PKG}
-	echo "prefix=${INSTALL_PREFIX}" > ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "libdir=\$${prefix}/lib/" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "incdir=\$${prefix}/include/" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "Name: ${SOLUTION_NAME}" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "Description: A better c development kit. " >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "Cflags: -I\$${incdir}" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "Libs: -labcdk-commn -labcdk-util -L\$${libdir}" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-	echo "Libs.private: ${DEPEND_LIBS}" >> ${INSTALL_PATH_PKG}/${PKG_NAME}
-
+	mkdir -p ${PKG_PATH}
+	echo "prefix=${INSTALL_PREFIX}" > ${PKG_FILE}
+	echo "libdir=\$${prefix}/lib/" >> ${PKG_FILE}
+	echo "incdir=\$${prefix}/include/" >> ${PKG_FILE}
+	echo "" >> ${PKG_FILE}
+	echo "Name: ${SOLUTION_NAME}" >> ${PKG_FILE}
+	echo "Description: A better c development kit. " >> ${PKG_FILE}
+	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}" >> ${PKG_FILE}
+	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
+	echo "Libs: -labcdk-commn -labcdk-util -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
+#
+	mkdir -p ${LDC_PATH}
+	echo "#!/bin/sh" > ${LDC_FILE}
+	echo "echo \"${INSTALL_PREFIX}/lib/\" >> /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
+	echo "ldconfig"  >> ${LDC_FILE}
 #
 abcdkutil-install: 
 	make -C $(CURDIR)/abcdkutil/ install
@@ -117,7 +122,8 @@ tools-install:
 #
 uninstall: abcdkutil-uninstall abcdkcomm-uninstall tools-uninstall
 #
-	rm -f ${INSTALL_PATH_PKG}/${PKG_NAME}
+	rm -f ${PKG_FILE}
+	rm -f ${LDC_FILE}
 
 #
 abcdkutil-uninstall: 
@@ -134,6 +140,7 @@ tools-uninstall:
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp/
 PACK_TAR_NAME = ${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${TARGET_PLATFORM}.tar.gz
+
 #
 package: package-tar
 
