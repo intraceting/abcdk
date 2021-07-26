@@ -105,8 +105,12 @@ install: abcdkutil-install abcdkcomm-install tools-install
 #
 	mkdir -p ${LDC_PATH}
 	echo "#!/bin/sh" > ${LDC_FILE}
-	echo "echo \"${INSTALL_PREFIX}/lib/\" >> /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
+	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${LDC_FILE}
+	echo "[ \$$UID != 0 ] &&  echo \"System configuration requires root privileges. you are not root.\" && exit" >> ${LDC_FILE}
+	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
 	echo "ldconfig"  >> ${LDC_FILE}
+	chmod 755 ${LDC_FILE}
+	
 #
 abcdkutil-install: 
 	make -C $(CURDIR)/abcdkutil/ install
@@ -139,7 +143,7 @@ tools-uninstall:
 
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp/
-PACK_TAR_NAME = ${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${TARGET_PLATFORM}.tar.gz
+PACKGE_TAR_NAME = ${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${TARGET_PLATFORM}.tar.gz
 
 #
 package: package-tar
@@ -149,10 +153,10 @@ package-tar:
 #
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${BUILD_PATH}/${PACK_TAR_NAME}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "abcdk"
+	tar -czv -f "${BUILD_PATH}/${PACKGE_TAR_NAME}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "abcdk"
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
 	make -C $(CURDIR) clean
 #
 	@echo "\n"
-	@echo "${BUILD_PATH}/${PACK_TAR_NAME}"
+	@echo "${BUILD_PATH}/${PACKGE_TAR_NAME}"
 
