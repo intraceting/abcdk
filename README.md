@@ -27,5 +27,3 @@ configure.sh [ ... ]
 make
 sudo make package
 ```
-
-###
