@@ -45,7 +45,7 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--version\n");
     fprintf(stderr, "\t\tOutput version information and exit.\n");
 
-    fprintf(stderr, "\n\t--robots-txt < FILE >\n");
+    fprintf(stderr, "\n\t--robots < FILE >\n");
     fprintf(stderr, "\t\tThe robots file.\n");
 
     fprintf(stderr, "\n\t--user-agent < NAME >\n");
@@ -136,7 +136,7 @@ void _abcdkrobots_work(abcdk_tree_t *args)
     const char *agent = NULL;
     const char *outfile = NULL;
 
-    file = abcdk_option_get(args, "--robots-txt", 0, NULL);
+    file = abcdk_option_get(args, "--robots", 0, NULL);
     agent = abcdk_option_get(args, "--user-agent", 0, "*");
     outfile = abcdk_option_get(args, "--output", 0, NULL);
 
@@ -146,7 +146,7 @@ void _abcdkrobots_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--robots-txt FILE' can not be omitted.");
+        syslog(LOG_ERR, "'--robots FILE' can not be omitted.");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 

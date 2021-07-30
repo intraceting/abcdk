@@ -553,7 +553,7 @@ void test_fmp4(abcdk_tree_t *args)
         printf("%c", ABCDK_PTR2I8(&mb, i));
     printf("\n");
     uint32_t mv = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p, 12));
-        printf("%u\n",mv);
+        printf("%x\n",mv);
 
     uint32_t size2 = 16;
     while(size2<size)
