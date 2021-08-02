@@ -294,11 +294,14 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
 
     stack = (abcdk_tree_t **)abcdk_heap_alloc(stack_size * sizeof(abcdk_tree_t *));
     if (!stack)
-        goto final;
+        return;
 
-    /* 根  */
+    /*Clear errno.*/
+    errno = 0;
+
+    /*根*/
     chk = it->dump_cb(0,root,it->opaque);
-    if(chk == 0)
+    if(chk <= 0)
         goto final;
 
     /* 从第一个孩子开始遍历。 */
@@ -337,8 +340,12 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
 
 final:
 
+    it->dump_cb(UINTMAX_MAX, NULL, it->opaque);
+
     abcdk_heap_free2((void**)&stack);
 
+    /*Clear errno.*/
+    errno = 0;
 }
 
 ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,...)

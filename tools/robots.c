@@ -68,11 +68,13 @@ typedef struct _abcdkrobots_match_param
 
 int _abcdkrobots_match_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdkrobots_match_param *param = NULL;
+    abcdkrobots_match_param *param = (abcdkrobots_match_param *)opaque;
     const char *p = NULL;
     int chk;
 
-    param = (abcdkrobots_match_param *)opaque;
+    /*已经结束。*/
+    if(depth == UINTMAX_MAX)
+        return -1;
 
     if (depth == 0)
         ABCDK_ERRNO_AND_RETURN1(0, 1);

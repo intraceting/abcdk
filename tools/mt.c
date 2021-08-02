@@ -314,6 +314,12 @@ void _abcdkmt_work(abcdk_tree_t *args)
     /*Clear errno.*/
     errno = 0;
 
+    if (!dev_p || !*dev_p)
+    {
+        syslog(LOG_ERR, "'--dev FILE' can not be omitted.");
+        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+    }
+
     if (access(dev_p, F_OK) != 0)
     {
         syslog(LOG_WARNING, "'%s' No such device.", dev_p);

@@ -143,7 +143,7 @@ void _abcdkcrawler_printf(size_t depth, const abcdk_tree_t *node, int only_val, 
 
 int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdk_tree_t *args = NULL;
+    abcdk_tree_t *args = (abcdk_tree_t*)opaque;
     int tag_hide = 0;
     int tag_short = 0;
     int attr_hide = 0;
@@ -151,12 +151,15 @@ int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     int align_left = 0;
     int chk;
 
-    args = (abcdk_tree_t*)opaque;
     tag_hide = abcdk_option_exist(args,"--tag-hide");
     tag_short = abcdk_option_exist(args,"--tag-short");
     attr_hide = abcdk_option_exist(args,"--attr-hide");
     attr_short = abcdk_option_exist(args,"--attr-short");
     align_left = abcdk_option_exist(args,"--align-left");
+
+    /*已经结束。*/
+    if(depth == UINTMAX_MAX)
+        return -1;
     
     if (depth == 0)
         ABCDK_ERRNO_AND_RETURN1(0,1);

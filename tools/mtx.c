@@ -16,7 +16,7 @@
 /**/
 enum _abcdkmtx_cmd
 {
-    /** 枚举磁带库所有元素。*/
+    /** 枚举磁带库所有元素状态。*/
     ABCDKMTX_STATUS = 1,
 #define ABCDKMTX_STATUS ABCDKMTX_STATUS
 
@@ -74,8 +74,17 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
     fprintf(stderr, "\t\tCommand. default: %d\n", ABCDKMTX_STATUS);
 
-    fprintf(stderr, "\n\t\t%d: Report elements.\n", ABCDKMTX_STATUS);
+    fprintf(stderr, "\n\t\t%d: Report element status.\n", ABCDKMTX_STATUS);
     fprintf(stderr, "\t\t%d: Move Medium.\n", ABCDKMTX_MOVE);
+
+    fprintf(stderr, "\n\t--output < FILE >\n");
+    fprintf(stderr, "\t\tOutput to the specified file.\n");
+
+    fprintf(stderr, "\n\t--xml\n");
+    fprintf(stderr, "\t\tPrints out an XML representation of the element status.\n");
+
+    fprintf(stderr, "\n\t--json\n");
+    fprintf(stderr, "\t\tPrints out an JSON representation of the element status.\n");
 }
 
 static struct _abcdkmtx_sense_dict
@@ -138,36 +147,108 @@ void _abcdkmtx_printf_sense(abcdk_scsi_io_stat *stat)
     syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, msg_p);
 }
 
-int _abcdkmtx_printf_elements_cb(size_t deep, abcdk_tree_t *node, void *opaque)
+int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    if (deep == 0)
+    long fmt = (long)opaque;
+
+    if (depth == 0)
     {
-        abcdk_tree_fprintf(stdout, deep, node, "%s\n", node->alloc->pptrs[0]);
+        if(fmt == 1)
+        {
+            fprintf(stdout,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            fprintf(stdout,"<library sn=\"%s\" vendor=\"%s\" product=\"%s\">\n",
+                            node->alloc->pptrs[0],node->alloc->pptrs[1],node->alloc->pptrs[2]);
+            fprintf(stdout,"\t<elements>\n");
+        }
+        else if(fmt == 2)
+        {
+            fprintf(stdout,"{\n");
+            fprintf(stdout,"\t\"sn\":\"%s\",\n",node->alloc->pptrs[0]);
+            fprintf(stdout,"\t\"vendor\":\"%s\",\n",node->alloc->pptrs[1]);
+            fprintf(stdout,"\t\"product\":\"%s\",\n",node->alloc->pptrs[2]);
+            fprintf(stdout,"\t\"elements\":[\n");
+        }
+        else 
+        {
+            abcdk_tree_fprintf(stdout, depth, node, "%s(%s-%s)\n",
+                               node->alloc->pptrs[0], node->alloc->pptrs[1], node->alloc->pptrs[2]);
+        }
+    }
+    else if (depth == UINTMAX_MAX)
+    {
+        if(fmt == 1)
+        {
+            fprintf(stdout,"\t</elements>\n");
+            fprintf(stdout,"</library>\n");
+        }
+        else if(fmt == 2)
+        {
+            fprintf(stdout,"\t]\n");
+            fprintf(stdout,"}\n");
+        }
     }
     else
     {
-        abcdk_tree_fprintf(stdout, deep, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
-                          ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
-                          ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
-                          ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),
-                          node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE],
-                          node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
+        if (fmt == 1)
+        {
+            fprintf(stdout, "\t\t<element addr=\"%hu\" type=\"%hhu\" isfull=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
+                    ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
+                    ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
+                    ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),
+                    node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID],
+                    node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE]);
+        }
+        else if(fmt == 2)
+        {
+            fprintf(stdout, "\t\t{\n");
+            fprintf(stdout, "\t\t\t\"addr\":\"%hu\",\n",ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0));
+            fprintf(stdout, "\t\t\t\"type\":\"%hhu\",\n",ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0));
+            fprintf(stdout, "\t\t\t\"isfull\":\"%hhu\",\n",ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0));
+            fprintf(stdout, "\t\t\t\"barcode\":\"%s\",\n",node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE]);
+            fprintf(stdout, "\t\t\t\"dvcid\":\"%s\"\n",node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
+            fprintf(stdout, "\t\t}");
+            fprintf(stdout, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
+             
+        }
+        else
+        {
+            abcdk_tree_fprintf(stdout, depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
+                               ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
+                               ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
+                               ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),
+                               node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE],
+                               node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
+        }
     }
 
     return 1;
 }
 
-void _abcdkmtx_printf_elements(abcdk_tree_t *root)
+void _abcdkmtx_printf_elements(abcdk_tree_t *args,abcdk_tree_t *root)
 {
-    abcdk_tree_iterator_t it = {0, _abcdkmtx_printf_elements_cb, NULL};
+    long fmt = 0;
+
+    if(abcdk_option_exist(args,"--xml"))
+        fmt = 1;
+    else if(abcdk_option_exist(args,"--json"))
+        fmt = 2;
+
+    /*Clear errno.*/
+    errno = 0;
+
+    abcdk_tree_iterator_t it = {0, _abcdkmtx_printf_elements_cb, (void*)fmt};
     abcdk_tree_scan(root, &it);
 }
 
-int _abcdkmtx_find_changer_cb(size_t deep, abcdk_tree_t *node, void *opaque)
+int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     uint16_t *t_p = (uint16_t *)opaque;
 
-    if (deep == 0)
+    /*已经结束。*/
+    if(depth == UINTMAX_MAX)
+        return -1;
+
+    if (depth == 0)
         return 1;
 
     if (ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0) != ABCDK_MXT_ELEMENT_CHANGER)
@@ -194,10 +275,13 @@ void _abcdkmtx_move_medium(abcdk_tree_t *args, int fd, abcdk_tree_t *root)
     int t = 0, s = 65536, d = 65536;
     int chk;
 
-    t = _abcdkmtx_find_changer(root);
     s = abcdk_option_get_int(args, "--src", 0, 65536);
     d = abcdk_option_get_int(args, "--dst", 0, 65536);
 
+    /*Clear errno.*/
+    errno = 0;
+
+    t = _abcdkmtx_find_changer(root);
     chk = abcdk_mtx_move_medium(fd, t, s, d, 1800 * 1000, &stat);
     if (chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EINVAL,print_sense);
@@ -227,15 +311,23 @@ void _abcdkmtx_work(abcdk_tree_t *args)
     int voltag = 1;
     int dvcid = 1;
     int cmd = 0;
+    const char *outfile = NULL;
     int chk;
 
-    dev_p = abcdk_option_get(args, "--dev", 0, "");
+    dev_p = abcdk_option_get(args, "--dev", 0, NULL);
     voltag = (abcdk_option_exist(args, "--exclude-barcode") ? 0 : 1);
     dvcid = (abcdk_option_exist(args, "--exclude-dvcid") ? 0 : 1);
     cmd = abcdk_option_get_int(args, "--cmd", 0, ABCDKMTX_STATUS);
+    outfile = abcdk_option_get(args, "--output", 0, NULL);
 
     /*Clear errno.*/
     errno = 0;
+
+    if (!dev_p || !*dev_p)
+    {
+        syslog(LOG_ERR, "'--dev FILE' can not be omitted.");
+        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+    }
 
     if (access(dev_p, F_OK) != 0)
     {
@@ -243,7 +335,8 @@ void _abcdkmtx_work(abcdk_tree_t *args)
         goto final;
     }
 
-    root = abcdk_tree_alloc3(200);
+    size_t sizes[3] = {100,100,100};
+    root = abcdk_tree_alloc2(sizes,3,0);
     if (!root)
         goto final;
 
@@ -268,7 +361,9 @@ void _abcdkmtx_work(abcdk_tree_t *args)
     if (chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 
-    snprintf(root->alloc->pptrs[0], root->alloc->sizes[0], "%s(%s-%s)", sn, vendor, product);
+    snprintf(root->alloc->pptrs[0], root->alloc->sizes[0], "%s", sn);
+    snprintf(root->alloc->pptrs[1], root->alloc->sizes[1], "%s", vendor);
+    snprintf(root->alloc->pptrs[2], root->alloc->sizes[2], "%s", product);
 
     chk = abcdk_mtx_inquiry_element_status(root, fd, voltag,dvcid,-1, &stat);
     if (chk != 0 || stat.status != GOOD)
@@ -276,7 +371,16 @@ void _abcdkmtx_work(abcdk_tree_t *args)
 
     if (cmd == ABCDKMTX_STATUS)
     {
-        _abcdkmtx_printf_elements(root);
+        if (outfile && *outfile)
+        {
+            if (abcdk_reopen(STDOUT_FILENO, outfile, 1, 0, 1) < 0)
+            {
+                syslog(LOG_WARNING, "'%s' %s.", outfile, strerror(errno));
+                goto final;
+            }
+        }
+
+        _abcdkmtx_printf_elements(args,root);
     }
     else if (cmd == ABCDKMTX_MOVE)
     {
