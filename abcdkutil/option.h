@@ -13,19 +13,15 @@
 __BEGIN_DECLS
 
 /**
- * 选项的字段。
+ * 选项的字段索引。
 */
 enum _abcdk_option_field
 {
-    /**
-     * Key 字段索引。
-    */
+    /** Key。*/
    ABCDK_OPTION_KEY = 0,
 #define ABCDK_OPTION_KEY     ABCDK_OPTION_KEY
 
-    /**
-     * Value 字段索引。
-    */
+    /** Value。*/
    ABCDK_OPTION_VALUE = 0
 #define ABCDK_OPTION_VALUE   ABCDK_OPTION_VALUE
 

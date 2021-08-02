@@ -61,24 +61,24 @@ typedef struct _abcdk_map
 }abcdk_map_t;
 
 /**
- * MAP的字段。
+ * MAP的字段索引。
 */
 enum _abcdk_map_field
 {
     /**
-     * Bucket 字段索引。
+     * Bucket。
     */
    ABCDK_MAP_BUCKET = 0,
 #define ABCDK_MAP_BUCKET     ABCDK_MAP_BUCKET
 
     /**
-     * Key 字段索引。
+     * Key。
     */
    ABCDK_MAP_KEY = 0,
 #define ABCDK_MAP_KEY        ABCDK_MAP_KEY
 
     /**
-     * Value 字段索引。
+     * Value。
     */
    ABCDK_MAP_VALUE = 1
 #define ABCDK_MAP_VALUE      ABCDK_MAP_VALUE

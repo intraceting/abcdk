@@ -37,27 +37,27 @@ enum _abcdk_mtx_element_type
 };
 
 /**
- * 元件的字段。
+ * 元件的字段索引。
 */
 enum _abcdk_mtx_element_field
 {
-    /** 地址字段索引。*/
+    /** 地址。*/
     ABCDK_MTX_ELEMENT_ADDR = 0,
 #define ABCDK_MTX_ELEMENT_ADDR ABCDK_MTX_ELEMENT_ADDR
 
-    /** 类型字段索引。*/
+    /** 类型。*/
     ABCDK_MTX_ELEMENT_TYPE = 1,
 #define ABCDK_MTX_ELEMENT_TYPE ABCDK_MTX_ELEMENT_TYPE
 
-    /** 介质有无字段索引。*/
+    /** 满状态。*/
     ABCDK_MTX_ELEMENT_ISFULL = 2,
 #define ABCDK_MTX_ELEMENT_ISFULL ABCDK_MTX_ELEMENT_ISFULL
 
-    /** 条码字段索引。*/
+    /** 条码。*/
     ABCDK_MTX_ELEMENT_BARCODE = 3,
 #define ABCDK_MTX_ELEMENT_BARCODE ABCDK_MTX_ELEMENT_BARCODE
 
-    /** DVCID字段索引。*/
+    /** DVCID。*/
     ABCDK_MTX_ELEMENT_DVCID = 4
 #define ABCDK_MTX_ELEMENT_DVCID ABCDK_MTX_ELEMENT_DVCID
 };

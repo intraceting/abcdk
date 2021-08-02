@@ -170,7 +170,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         }
         else 
         {
-            abcdk_tree_fprintf(stdout, depth, node, "%s(%s-%s)\n",
+            abcdk_tree_fprintf(stdout,0,depth, node, "%s(%s-%s)\n",
                                node->alloc->pptrs[0], node->alloc->pptrs[1], node->alloc->pptrs[2]);
         }
     }
@@ -212,7 +212,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         }
         else
         {
-            abcdk_tree_fprintf(stdout, depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
+            abcdk_tree_fprintf(stdout, 0,depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
                                ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
                                ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
                                ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),

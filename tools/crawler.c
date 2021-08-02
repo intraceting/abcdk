@@ -116,7 +116,7 @@ void _abcdkcrawler_printf(size_t depth, const abcdk_tree_t *node, int only_val, 
     if (hide)
     {
         if (!align_left)
-            abcdk_tree_fprintf(stdout, depth, node, "\n");
+            abcdk_tree_fprintf(stdout,0,depth, node, "\n");
         else 
             fprintf(stdout, "%s\n",(depth == 1 ? "\n" : ""));
     }
@@ -125,7 +125,7 @@ void _abcdkcrawler_printf(size_t depth, const abcdk_tree_t *node, int only_val, 
         if (!align_left)
         {
 
-            abcdk_tree_fprintf(stdout, depth, node, "%s%s%s\n",
+            abcdk_tree_fprintf(stdout,0, depth, node, "%s%s%s\n",
                                (only_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_KEY]),
                                (only_val ? "" : "="),
                                (!have_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_VALUE]));

@@ -14,7 +14,7 @@
 __BEGIN_DECLS
 
 /**
- * robots的字段。
+ * robots的字段索引。
 */
 enum _abcdk_robots_field
 {

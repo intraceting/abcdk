@@ -210,9 +210,11 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it);
  * 
  * @warning 不会在末尾添加'\n'(换行)字符。
  * 
+ * @param flag 0 打印连接线，1 打印制表符。
+ * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
-ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,...);
+ssize_t abcdk_tree_fprintf(FILE* fp,int flag,size_t depth,const abcdk_tree_t *node,const char* fmt,...);
 
 /**
  * 格式化打印。
@@ -223,7 +225,7 @@ ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const 
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
-ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,va_list args);
+ssize_t abcdk_tree_vfprintf(FILE* fp,int flag,size_t depth,const abcdk_tree_t *node,const char* fmt,va_list args);
 
 /**
  * 格式化打印。
@@ -234,7 +236,7 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const
  * 
  * @return >=0 输出的长度，< 0 失败。
 */
-ssize_t abcdk_tree_snprintf(char *buf, size_t max, size_t depth, const abcdk_tree_t *node, const char *fmt, ...);
+ssize_t abcdk_tree_snprintf(char *buf, size_t max, int flag,size_t depth, const abcdk_tree_t *node, const char *fmt, ...);
 
 /**
  * 格式化打印。
@@ -245,7 +247,7 @@ ssize_t abcdk_tree_snprintf(char *buf, size_t max, size_t depth, const abcdk_tre
  * 
  * @return >=0 输出的长度，< 0 失败。
 */
-ssize_t abcdk_tree_vsnprintf(char *buf, size_t max, size_t depth, const abcdk_tree_t *node,const char* fmt,va_list args);
+ssize_t abcdk_tree_vsnprintf(char *buf, size_t max, int flag,size_t depth, const abcdk_tree_t *node,const char* fmt,va_list args);
 
 /** 
  * 排序。

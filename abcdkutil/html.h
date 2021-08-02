@@ -13,15 +13,15 @@
 __BEGIN_DECLS
 
 /**
- * HTML的字段。
+ * HTML的字段索引。
 */
 enum _abcdk_html_field
 {
-    /** Key 字段索引。*/
+    /** Key*/
    ABCDK_HTML_KEY = 0,
 #define ABCDK_HTML_KEY  ABCDK_HTML_KEY
 
-    /** Value 字段索引。*/
+    /** Value*/
    ABCDK_HTML_VALUE = 1,
 #define ABCDK_HTML_VALUE    ABCDK_HTML_VALUE
 

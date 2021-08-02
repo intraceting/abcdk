@@ -19,6 +19,7 @@
 #include "abcdkutil/clock.h"
 #include "abcdkutil/crc32.h"
 #include "abcdkutil/robots.h"
+#include "abcdkutil/dirent.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -281,11 +282,11 @@ static int _test_html_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     if(deep==0)
     {
-        abcdk_tree_fprintf(stderr,deep,node,"%s\n",".");
+        abcdk_tree_fprintf(stderr,0,deep,node,"%s\n",".");
     }
     else
     {
-            abcdk_tree_fprintf(stderr, deep, node, "%s:<%s>\n",
+            abcdk_tree_fprintf(stderr,0, deep, node, "%s:<%s>\n",
                                ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_KEY], 0),
                                _test_html_cntrl_replace(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0), ' '));
     }
@@ -346,7 +347,7 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     if (deep == 0)
     {
-        abcdk_tree_fprintf(stderr, deep, node, "%s\n", ".");
+        abcdk_tree_fprintf(stderr,0, deep, node, "%s\n", ".");
     }
     else
     {
@@ -370,7 +371,7 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
         }
         else
         {
-            abcdk_tree_fprintf(stderr, deep, node, "%s: %s\n",
+            abcdk_tree_fprintf(stderr,0, deep, node, "%s: %s\n",
                                ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),
                                ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0));
         }
@@ -570,6 +571,69 @@ void test_fmp4(abcdk_tree_t *args)
     abcdk_allocator_unref(&t);
 }
 
+int dirent_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+
+    if(deep == -1)
+        return -1;
+
+    char *path = (char*)(node->alloc->pptrs[ABCDK_DIRENT_NAME]);
+    struct stat *stat = (struct stat *)(node->alloc->pptrs[ABCDK_DIRENT_STAT]);
+
+
+    char name[NAME_MAX] ={0};
+    abcdk_basename(name,path);
+
+#if 1
+    abcdk_tree_fprintf(stderr,1,deep,node,"[%lu, %lu, %lu] %s%s\n",
+                        ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_DIRS], 0)->nums,
+                        ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_REGS], 0)->nums,
+                        ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_REGS], 0)->sizes,
+                        name,(S_ISDIR(stat->st_mode)?"/":""));
+#else 
+    abcdk_tree_fprintf(stderr,0,deep,node,"%s(%s)\n",name,path);
+#endif
+    return 1;
+}
+
+int dirent_match_cb(size_t depth,abcdk_tree_t *node,void *opaque)
+{
+    abcdk_tree_t *args = (abcdk_tree_t *)opaque;
+    const char *wildcard = abcdk_option_get(args,"--wildcard",0,NULL);
+
+    char *name = (char*)(node->alloc->pptrs[ABCDK_DIRENT_NAME]);
+    struct stat *stat = (struct stat *)(node->alloc->pptrs[ABCDK_DIRENT_STAT]);
+
+    if(!wildcard)
+        return 0;
+
+    if(S_ISDIR(stat->st_mode))
+        return 0;
+
+    int chk = abcdk_fnmatch(name,wildcard,0,0);
+
+    if(chk == 0)
+        return 0;
+
+    return -1;
+}
+
+void test_dirent(abcdk_tree_t *args)
+{
+    const char *path_p = abcdk_option_get(args,"--path",0,"");
+
+
+    abcdk_dirent_filter_t f = {dirent_match_cb,args};
+    abcdk_tree_t * t = abcdk_dirent_scan(path_p,&f);
+
+
+    abcdk_tree_iterator_t it = {0,dirent_dump_cb,NULL};
+    abcdk_tree_scan(t,&it);
+
+    abcdk_tree_free(&t);
+    
+}
+
 
 int main(int argc, char **argv)
 {
@@ -617,6 +681,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_fmp4", 0) == 0)
         test_fmp4(args);
+
+    if (abcdk_strcmp(func, "test_dirent", 0) == 0)
+        test_dirent(args);
 
     abcdk_tree_free(&args);
     
