@@ -191,7 +191,7 @@ final:
 
     abcdk_odbc_disconnect(&ctx);
 
-    fprintf(stderr,"%d\n",((chk == SQL_SUCCESS)?0:1));
+    fprintf(stdout,"%d\n",((chk == SQL_SUCCESS)?0:1));
 
 }
 
