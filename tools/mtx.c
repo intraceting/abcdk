@@ -233,11 +233,11 @@ void _abcdkmtx_printf_elements(abcdk_tree_t *args,abcdk_tree_t *root)
     else if(abcdk_option_exist(args,"--json"))
         fmt = 2;
 
-    /*Clear errno.*/
-    errno = 0;
-
     abcdk_tree_iterator_t it = {0, _abcdkmtx_printf_elements_cb, (void*)fmt};
     abcdk_tree_scan(root, &it);
+
+    /*Clear errno.*/
+    errno = 0;
 }
 
 int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
@@ -265,6 +265,9 @@ uint16_t _abcdkmtx_find_changer(abcdk_tree_t *root)
 
     abcdk_tree_iterator_t it = {0, _abcdkmtx_find_changer_cb, &t};
     abcdk_tree_scan(root, &it);
+
+    /*Clear errno.*/
+    errno = 0;
 
     return t;
 }

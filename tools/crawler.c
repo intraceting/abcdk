@@ -162,7 +162,7 @@ int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         return -1;
     
     if (depth == 0)
-        ABCDK_ERRNO_AND_RETURN1(0,1);
+        return 1;
 
     if (depth == 1)
     {
@@ -172,7 +172,7 @@ int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
         _abcdkcrawler_printf(depth,node,tag_short,align_left,tag_hide);
 
-        ABCDK_ERRNO_AND_RETURN1(0,1);
+        return 1;
     }
 
     if (depth == 2)
@@ -182,7 +182,7 @@ int _abcdkcrawler_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         if (chk == 0)
             _abcdkcrawler_printf(depth,node,attr_short,align_left,attr_hide);
 
-        ABCDK_ERRNO_AND_RETURN1(0,1);
+        return 1;
     }
 }
 
