@@ -342,21 +342,21 @@ final:
     abcdk_heap_free2((void**)&stack);
 }
 
-ssize_t abcdk_tree_fprintf(FILE* fp,int flag,size_t depth,const abcdk_tree_t *node,const char* fmt,...)
+ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,...)
 {
     ssize_t wsize = 0;
 
     va_list vaptr;
     va_start(vaptr, fmt);
 
-    wsize = abcdk_tree_vfprintf(fp,flag,depth,node,fmt,vaptr);
+    wsize = abcdk_tree_vfprintf(fp,depth,node,fmt,vaptr);
 
     va_end(vaptr);
 
     return wsize;
 }
 
-ssize_t abcdk_tree_vfprintf(FILE* fp,int flag,size_t depth,const abcdk_tree_t *node,const char* fmt,va_list args)
+ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,va_list args)
 {
     abcdk_tree_t *tmp = NULL;
     abcdk_tree_t **stack = NULL;
@@ -387,17 +387,10 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,int flag,size_t depth,const abcdk_tree_t *n
 
         for (size_t i = 1; i < depth; i++)
         {
-            if (!flag)
-            {
-                if (abcdk_tree_sibling((abcdk_tree_t *)stack[i], 0))
-                    wsize2 = fprintf(fp, "│   ");
-                else
-                    wsize2 = fprintf(fp, "    ");
-            }
+            if (abcdk_tree_sibling((abcdk_tree_t *)stack[i], 0))
+                wsize2 = fprintf(fp, "│   ");
             else
-            {
-                wsize2 = fprintf(fp, "\t");
-            }
+                wsize2 = fprintf(fp, "    ");
 
             if (wsize2 <= 0)
                 goto final;
@@ -405,17 +398,11 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,int flag,size_t depth,const abcdk_tree_t *n
             wsize += wsize2;
         }
 
-        if (!flag)
-        {
-            if (abcdk_tree_sibling(node, 0))
-                wsize2 = fprintf(fp, "├── ");
-            else
-                wsize2 = fprintf(fp, "└── ");
-        }
+
+        if (abcdk_tree_sibling(node, 0))
+            wsize2 = fprintf(fp, "├── ");
         else
-        {
-            wsize2 = fprintf(fp, "\t");
-        }
+            wsize2 = fprintf(fp, "└── ");
 
         if (wsize2 <= 0)
             goto final;
@@ -437,7 +424,7 @@ final:
     return wsize;
 }
 
-ssize_t abcdk_tree_snprintf(char *buf, size_t max, int flag,size_t depth, const abcdk_tree_t *node, const char *fmt, ...)
+ssize_t abcdk_tree_snprintf(char *buf, size_t max, size_t depth, const abcdk_tree_t *node, const char *fmt, ...)
 {
     ssize_t wsize = 0;
 
@@ -446,14 +433,14 @@ ssize_t abcdk_tree_snprintf(char *buf, size_t max, int flag,size_t depth, const 
     va_list vaptr;
     va_start(vaptr, fmt);
 
-    wsize = abcdk_tree_vsnprintf(buf,max,flag,depth,node,fmt,vaptr);
+    wsize = abcdk_tree_vsnprintf(buf,max,depth,node,fmt,vaptr);
 
     va_end(vaptr);
     
     return wsize;
 }
 
-ssize_t abcdk_tree_vsnprintf(char *buf, size_t max, int flag,size_t depth, const abcdk_tree_t *node,const char* fmt,va_list args)
+ssize_t abcdk_tree_vsnprintf(char *buf, size_t max, size_t depth, const abcdk_tree_t *node,const char* fmt,va_list args)
 {
     FILE* fp = NULL;
     ssize_t wsize = 0;
@@ -464,7 +451,7 @@ ssize_t abcdk_tree_vsnprintf(char *buf, size_t max, int flag,size_t depth, const
     if(!fp)
         return -1;
 
-    wsize = abcdk_tree_vfprintf(fp,flag,depth,node,fmt,args);
+    wsize = abcdk_tree_vfprintf(fp,depth,node,fmt,args);
 
     fclose(fp);
     

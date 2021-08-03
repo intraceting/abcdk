@@ -13,7 +13,10 @@
 #include "abcdkutil/scsi.h"
 #include "abcdkutil/mtx.h"
 
-/**/
+/* */
+#define _(string) gettext(string)
+
+/** 命令。*/
 enum _abcdkmtx_cmd
 {
     /** 枚举磁带库所有元素状态。*/
@@ -26,12 +29,26 @@ enum _abcdkmtx_cmd
 
 };
 
+/** 元素状态格式。*/
+enum _abcdkmtx_status_fmt
+{
+    /** 文本。*/
+    ABCDKMTX_STATUS_FMT_TEXT = 1,
+#define ABCDKMTX_STATUS_FMT_TEXT ABCDKMTX_STATUS_FMT_TEXT
+
+    /** XML。*/
+    ABCDKMTX_STATUS_FMT_XML = 2,
+#define ABCDKMTX_STATUS_FMT_XML ABCDKMTX_STATUS_FMT_XML
+
+    /** JSON。*/
+    ABCDKMTX_STATUS_FMT_JSON = 3
+#define ABCDKMTX_STATUS_FMT_JSON ABCDKMTX_STATUS_FMT_JSON
+
+};
+
 void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
 {
     char name[NAME_MAX] = {0};
-
-    /*Clear errno.*/
-    errno = 0;
 
     abcdk_proc_basename(name);
 
@@ -42,7 +59,7 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
 
     if (only_version)
-        return;
+        ABCDK_ERRNO_AND_RETURN0(0);
 
     fprintf(stderr, "\nSYNOPSIS:\n");
     
@@ -80,11 +97,14 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\tOutput to the specified file.\n");
 
-    fprintf(stderr, "\n\t--xml\n");
-    fprintf(stderr, "\t\tPrints out an XML representation of the element status.\n");
+    fprintf(stderr, "\n\t--fmt < FORMAT >\n");
+    fprintf(stderr, "\t\tElement status format. default: %d\n", ABCDKMTX_STATUS_FMT_TEXT);
 
-    fprintf(stderr, "\n\t--json\n");
-    fprintf(stderr, "\t\tPrints out an JSON representation of the element status.\n");
+    fprintf(stderr, "\n\t\t%d: Prints out an TEXT representation of the element status.\n",ABCDKMTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t%d: Prints out an XML representation of the element status.\n",ABCDKMTX_STATUS_FMT_XML);
+    fprintf(stderr, "\t\t%d: Prints out an JSON representation of the element status.\n",ABCDKMTX_STATUS_FMT_JSON);
+
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 static struct _abcdkmtx_sense_dict
@@ -153,14 +173,14 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 0)
     {
-        if(fmt == 1)
+        if(fmt == ABCDKMTX_STATUS_FMT_XML)
         {
             fprintf(stdout,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
             fprintf(stdout,"<library sn=\"%s\" vendor=\"%s\" product=\"%s\">\n",
-                            node->alloc->pptrs[0],node->alloc->pptrs[1],node->alloc->pptrs[2]);
+                               node->alloc->pptrs[0], node->alloc->pptrs[1], node->alloc->pptrs[2]);
             fprintf(stdout,"\t<elements>\n");
         }
-        else if(fmt == 2)
+        else if(fmt == ABCDKMTX_STATUS_FMT_JSON)
         {
             fprintf(stdout,"{\n");
             fprintf(stdout,"\t\"sn\":\"%s\",\n",node->alloc->pptrs[0]);
@@ -168,28 +188,36 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
             fprintf(stdout,"\t\"product\":\"%s\",\n",node->alloc->pptrs[2]);
             fprintf(stdout,"\t\"elements\":[\n");
         }
-        else 
+        else if(fmt == ABCDKMTX_STATUS_FMT_TEXT)
         {
-            abcdk_tree_fprintf(stdout,0,depth, node, "%s(%s-%s)\n",
+            abcdk_tree_fprintf(stdout,depth, node, "%s(%s-%s)\n",
                                node->alloc->pptrs[0], node->alloc->pptrs[1], node->alloc->pptrs[2]);
+        }
+        else
+        {
+            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
         }
     }
     else if (depth == UINTMAX_MAX)
     {
-        if(fmt == 1)
+        if(fmt == ABCDKMTX_STATUS_FMT_XML)
         {
             fprintf(stdout,"\t</elements>\n");
             fprintf(stdout,"</library>\n");
         }
-        else if(fmt == 2)
+        else if(fmt == ABCDKMTX_STATUS_FMT_JSON)
         {
             fprintf(stdout,"\t]\n");
             fprintf(stdout,"}\n");
         }
+        else
+        {
+            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
+        }
     }
     else
     {
-        if (fmt == 1)
+        if (fmt == ABCDKMTX_STATUS_FMT_XML)
         {
             fprintf(stdout, "\t\t<element addr=\"%hu\" type=\"%hhu\" isfull=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
                     ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
@@ -198,7 +226,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
                     node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID],
                     node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE]);
         }
-        else if(fmt == 2)
+        else if(fmt == ABCDKMTX_STATUS_FMT_JSON)
         {
             fprintf(stdout, "\t\t{\n");
             fprintf(stdout, "\t\t\t\"addr\":\"%hu\",\n",ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0));
@@ -210,34 +238,30 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
             fprintf(stdout, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
              
         }
-        else
+        else if(fmt == ABCDKMTX_STATUS_FMT_TEXT)
         {
-            abcdk_tree_fprintf(stdout, 0,depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
+            abcdk_tree_fprintf(stdout, depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
                                ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
                                ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
                                ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),
                                node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE],
                                node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
         }
+        else
+        {
+            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
+        }
     }
 
-    return 1;
+    ABCDK_ERRNO_AND_RETURN1(0,1);
 }
 
 void _abcdkmtx_printf_elements(abcdk_tree_t *args,abcdk_tree_t *root)
 {
-    long fmt = 0;
-
-    if(abcdk_option_exist(args,"--xml"))
-        fmt = 1;
-    else if(abcdk_option_exist(args,"--json"))
-        fmt = 2;
+    long fmt = abcdk_option_get_long(args,"--fmt",0,ABCDKMTX_STATUS_FMT_TEXT);
 
     abcdk_tree_iterator_t it = {0, _abcdkmtx_printf_elements_cb, (void*)fmt};
     abcdk_tree_scan(root, &it);
-
-    /*Clear errno.*/
-    errno = 0;
 }
 
 int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
@@ -246,17 +270,17 @@ int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     /*已经结束。*/
     if(depth == UINTMAX_MAX)
-        return -1;
+        ABCDK_ERRNO_AND_RETURN1(0,-1);
 
     if (depth == 0)
-        return 1;
+        ABCDK_ERRNO_AND_RETURN1(0,1);
 
     if (ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0) != ABCDK_MXT_ELEMENT_CHANGER)
-        return 1;
+        ABCDK_ERRNO_AND_RETURN1(0,1);
 
     *t_p = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0);
 
-    return -1;
+    ABCDK_ERRNO_AND_RETURN1(0,-1);
 }
 
 uint16_t _abcdkmtx_find_changer(abcdk_tree_t *root)

@@ -155,12 +155,17 @@ void _abcdk_robots_parse_real(abcdk_tree_t *root, const char *text, const char *
         {
             /* 是否为新段落。*/
             agent_ok = (abcdk_strcmp(ABCDK_PTR2I8PTR(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0),agent,0)==0);
+
+            abcdk_tree_free(&rule);
             continue;
         }
 
         /* 如果未找到匹配的段落则跳过。*/
         if(!agent_ok)
+        {
+            abcdk_tree_free(&rule);
             continue;
+        }
       
         /*加入到树的子节点末尾.*/
         abcdk_tree_insert2(root, rule, 0);

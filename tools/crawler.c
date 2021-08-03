@@ -16,9 +16,6 @@ void _abcdkcrawler_print_usage(abcdk_tree_t *args, int only_version)
 {
     char name[NAME_MAX] = {0};
 
-    /*Clear errno.*/
-    errno = 0;
-
     abcdk_proc_basename(name);
 
 #ifdef BUILD_VERSION_DATETIME
@@ -28,7 +25,7 @@ void _abcdkcrawler_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
 
     if (only_version)
-        return;
+        ABCDK_ERRNO_AND_RETURN0(0);
 
     fprintf(stderr, "\nSYNOPSIS:\n");
 
@@ -70,7 +67,8 @@ void _abcdkcrawler_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\tOutput to the specified file.\n");
-
+    
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 int _abcdkcrawler_match_tag(abcdk_tree_t *args, const char *name)
@@ -116,7 +114,7 @@ void _abcdkcrawler_printf(size_t depth, const abcdk_tree_t *node, int only_val, 
     if (hide)
     {
         if (!align_left)
-            abcdk_tree_fprintf(stdout,0,depth, node, "\n");
+            abcdk_tree_fprintf(stdout, depth, node, "\n");
         else 
             fprintf(stdout, "%s\n",(depth == 1 ? "\n" : ""));
     }
@@ -125,7 +123,7 @@ void _abcdkcrawler_printf(size_t depth, const abcdk_tree_t *node, int only_val, 
         if (!align_left)
         {
 
-            abcdk_tree_fprintf(stdout,0, depth, node, "%s%s%s\n",
+            abcdk_tree_fprintf(stdout, depth, node, "%s%s%s\n",
                                (only_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_KEY]),
                                (only_val ? "" : "="),
                                (!have_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_VALUE]));

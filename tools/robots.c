@@ -17,9 +17,6 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
 {
     char name[NAME_MAX] = {0};
 
-    /*Clear errno.*/
-    errno = 0;
-
     abcdk_proc_basename(name);
 
 #ifdef BUILD_VERSION_DATETIME
@@ -29,7 +26,7 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
 
     if (only_version)
-        return;
+        ABCDK_ERRNO_AND_RETURN0(0);
 
     fprintf(stderr, "\nSYNOPSIS:\n");
 
@@ -57,6 +54,7 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\tOutput to the specified file.\n");
 
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 typedef struct _abcdkrobots_match_param
@@ -126,8 +124,7 @@ void _abcdkrobots_filter_url(abcdk_tree_t *rbts,abcdk_tree_t *args)
             fprintf(stdout, "%s\n", param.url);
     }
 
-    /*Clear errno.*/
-    errno = 0;
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 void _abcdkrobots_work(abcdk_tree_t *args)
@@ -149,20 +146,20 @@ void _abcdkrobots_work(abcdk_tree_t *args)
     if (!file || !*file)
     {
         syslog(LOG_ERR, "'--robots FILE' can not be omitted.");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_RETURN0(EINVAL);
     }
 
     if (access(file, R_OK) != 0)
     {
         syslog(LOG_WARNING, "'%s' %s.", file, strerror(errno));
-        goto final;
+        return;
     }
 
     rbts = abcdk_robots_parse_file(file,agent);
     if (!rbts)
     {
         syslog(LOG_WARNING, "'%s' can not parsed.", file);
-        goto final;
+        return;
     }
 
     if(!abcdk_tree_child(rbts,1))
@@ -184,9 +181,7 @@ void _abcdkrobots_work(abcdk_tree_t *args)
 
 final:
 
-    err = errno;
     abcdk_tree_free(&rbts);
-    errno = err;
 }
 
 int main(int argc, char **argv)

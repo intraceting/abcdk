@@ -282,11 +282,11 @@ static int _test_html_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     if(deep==0)
     {
-        abcdk_tree_fprintf(stderr,0,deep,node,"%s\n",".");
+        abcdk_tree_fprintf(stderr,deep,node,"%s\n",".");
     }
     else
     {
-            abcdk_tree_fprintf(stderr,0, deep, node, "%s:<%s>\n",
+            abcdk_tree_fprintf(stderr, deep, node, "%s:<%s>\n",
                                ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_KEY], 0),
                                _test_html_cntrl_replace(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0), ' '));
     }
@@ -347,7 +347,7 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     if (deep == 0)
     {
-        abcdk_tree_fprintf(stderr,0, deep, node, "%s\n", ".");
+        abcdk_tree_fprintf(stderr,deep, node, "%s\n", ".");
     }
     else
     {
@@ -371,7 +371,7 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
         }
         else
         {
-            abcdk_tree_fprintf(stderr,0, deep, node, "%s: %s\n",
+            abcdk_tree_fprintf(stderr,deep, node, "%s: %s\n",
                                ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),
                                ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0));
         }
@@ -577,6 +577,9 @@ int dirent_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     if(deep == -1)
         return -1;
 
+    if(deep >1)
+        return 0;
+
     char *path = (char*)(node->alloc->pptrs[ABCDK_DIRENT_NAME]);
     struct stat *stat = (struct stat *)(node->alloc->pptrs[ABCDK_DIRENT_STAT]);
 
@@ -585,7 +588,7 @@ int dirent_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_basename(name,path);
 
 #if 1
-    abcdk_tree_fprintf(stderr,1,deep,node,"[%lu, %lu, %lu] %s%s\n",
+    abcdk_tree_fprintf(stderr,deep,node,"[%lu, %lu, %lu] %s%s\n",
                         ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_DIRS], 0)->nums,
                         ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_REGS], 0)->nums,
                         ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_REGS], 0)->sizes,

@@ -61,9 +61,6 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
 {
     char name[NAME_MAX] = {0};
 
-    /*Clear errno.*/
-    errno = 0;
-
     abcdk_proc_basename(name);
 
 #ifdef BUILD_VERSION_DATETIME
@@ -73,7 +70,7 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
 
     if (only_version)
-        return;
+        ABCDK_ERRNO_AND_RETURN0(0);
 
     fprintf(stderr, "\nSYNOPSIS:\n");
         
@@ -112,6 +109,8 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t%d: Read position.\n", ABCDKMT_READ_POS);
     fprintf(stderr, "\t\t%d: Seek position.\n", ABCDKMT_SEEK_POS);
     fprintf(stderr, "\t\t%d: Write filemark.\n", ABCDKMT_WRITE_FILEMARK);
+
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 static struct _abcdkmt_sense_dict

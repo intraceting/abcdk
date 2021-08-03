@@ -19,9 +19,6 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
 {
     char name[NAME_MAX] = {0};
 
-    /*Clear errno.*/
-    errno = 0;
-
     abcdk_proc_basename(name);
 
 #ifdef BUILD_VERSION_DATETIME
@@ -31,7 +28,7 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
 
     if (only_version)
-        return;
+        ABCDK_ERRNO_AND_RETURN0(0);
 
     fprintf(stderr, "\nSYNOPSIS:\n");
 
@@ -79,6 +76,8 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--trace-file < FILE >\n");
     fprintf(stderr, "\t\tTrace file.\n");
+    
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 void _abcdkodbc_work(abcdk_tree_t *args)

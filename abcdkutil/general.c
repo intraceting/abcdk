@@ -248,12 +248,17 @@ char *abcdk_strtrim(char *str, int (*isctype_cb)(int c),int where)
         while (*tmp)
             tmp++;
 
-        while (isctype_cb(*(--tmp)))
-            *tmp = '\0';
+        while (tmp-- > str)
+        {
+            if(isctype_cb(*tmp))
+                *tmp = '\0';
+            else 
+                goto final;
+        }
     }
     else if (1 == where)
     {
-        while (isctype_cb(*(tmp)))
+        while (*tmp && isctype_cb(*tmp))
         {
             tmp++;
             blklen++;
