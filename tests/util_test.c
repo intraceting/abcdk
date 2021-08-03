@@ -534,7 +534,75 @@ void test_fuse(abcdk_tree_t *args)
 #endif //_FUSE_H_
 }
 
-void test_fmp4(abcdk_tree_t *args)
+int _mp4_read(abcdk_buffer_t *buf, void *data, size_t size)
+{
+    ssize_t r = abcdk_buffer_read(buf, data, size);
+    if (r <= 0)
+        return -2;
+    else if (r != size)
+        return -1;
+
+    return 0;
+}
+
+int _mp4_read_u16(abcdk_buffer_t *buf, uint16_t *data)
+{
+    if (_mp4_read(buf, data, sizeof(uint16_t)))
+        return -1;
+
+    *data = abcdk_endian_b_to_h16(*data);
+
+    return 0;
+}
+
+int _mp4_read_u24(abcdk_buffer_t *buf, uint8_t *data)
+{
+    if (_mp4_read(buf, data, sizeof(uint8_t)*3))
+        return -1;
+
+    abcdk_endian_b_to_h(data,3);
+
+    return 0;
+}
+
+int _mp4_read_u32(abcdk_buffer_t *buf, uint32_t *data)
+{
+    if (_mp4_read(buf, data, sizeof(uint32_t)))
+        return -1;
+
+    *data = abcdk_endian_b_to_h32(*data);
+
+    return 0;
+}
+
+int _mp4_read_u64(abcdk_buffer_t *buf,uint64_t *data)
+{
+    if (_mp4_read(buf, data, sizeof(uint64_t)))
+        return -1;
+
+    *data = abcdk_endian_b_to_h64(*data);
+
+    return 0;
+}
+
+int _mp4_skip_size(abcdk_buffer_t *buf,uint64_t size)
+{
+    size_t all = 0;
+    char tmp[1000];
+
+    while(all<size)
+    {
+        size_t s = ABCDK_MIN(1000,size-all);
+        if (_mp4_read(buf, tmp, s))
+            return -1;
+
+        all += s;
+    }
+
+    return 0;
+}
+
+void test_mp4(abcdk_tree_t *args)
 {
     const char *name_p = abcdk_option_get(args,"--file",0,"");
 
@@ -542,33 +610,47 @@ void test_fmp4(abcdk_tree_t *args)
     if(!t)
         return;
 
-    void *p = t->pptrs[0];
-
-    uint32_t size = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p, 0));
-    uint32_t type = ABCDK_PTR2U32(p, 4);
-    for (int i = 0; i < 4; i++)
-        printf("%c", ABCDK_PTR2I8(&type, i));
-    printf("\n");
-    uint32_t mb = ABCDK_PTR2U32(p, 8);
-    for (int i = 0; i < 4; i++)
-        printf("%c", ABCDK_PTR2I8(&mb, i));
-    printf("\n");
-    uint32_t mv = abcdk_endian_b_to_h32(ABCDK_PTR2U32(p, 12));
-        printf("%x\n",mv);
-
-    uint32_t size2 = 16;
-    while(size2<size)
+    abcdk_buffer_t *buf = abcdk_buffer_alloc(t);
+    if(!buf)
     {
-        uint32_t cb = ABCDK_PTR2U32(p, size2);
+        abcdk_allocator_unref(&t);
+        return;
+    }
+
+    buf->wsize = t->sizes[0];
+
+    while (1)
+    {
+        uint32_t size2 = 0;
+        uint64_t size = 0;
+        if (_mp4_read_u32(buf, &size2))
+            break;
+
+        uint32_t type = 0;
+        if (_mp4_read(buf, &type, sizeof(uint32_t)))
+            break;
+
         for (int i = 0; i < 4; i++)
-            printf("%c", ABCDK_PTR2I8(&cb, i));
+            printf("%c", ABCDK_PTR2I8(&type, i));
         printf("\n");
 
-        size2+=4;
+        if (size2 == 0)
+            break;
+        else if (size2 == 1)
+        {
+            if (_mp4_read_u64(buf, &size))
+                break;
+        }
+        
+        size = size2;
+        size_t hsize = (size2==1?16:8);
+        
+        /*skip data*/
+        if(_mp4_skip_size(buf,size-hsize))
+            break;
     }
-   
 
-    abcdk_allocator_unref(&t);
+    abcdk_buffer_free(&buf);
 }
 
 int dirent_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
@@ -682,8 +764,8 @@ int main(int argc, char **argv)
     if (abcdk_strcmp(func, "test_fuse", 0) == 0)
         test_fuse(args);
 
-    if (abcdk_strcmp(func, "test_fmp4", 0) == 0)
-        test_fmp4(args);
+    if (abcdk_strcmp(func, "test_mp4", 0) == 0)
+        test_mp4(args);
 
     if (abcdk_strcmp(func, "test_dirent", 0) == 0)
         test_dirent(args);

@@ -138,9 +138,11 @@ uint64_t abcdk_time_clock2kind(struct timespec *ts, uint8_t precision)
 
 uint64_t abcdk_time_clock2kind_with(clockid_t id,uint8_t precision)
 {
+    int chk;
     struct timespec ts = {0};
 
-    assert(clock_gettime(id, &ts)==0);
+    if (clock_gettime(id, &ts) != 0)
+        return 0;
 
     return abcdk_time_clock2kind(&ts,precision);
 }
