@@ -45,10 +45,10 @@ void _abcdk_dirent_scan(abcdk_tree_t *father, size_t depth, abcdk_dirent_filter_
         if (abcdk_strcmp(c_dir->d_name, ".", 1) == 0 || abcdk_strcmp(c_dir->d_name, "..", 1) == 0)
             continue;
 
-        size_t sizes[8] = {PATH_MAX, sizeof(struct stat), sizeof(abcdk_dirent_counter_t),
+        size_t sizes[9] = {PATH_MAX, sizeof(struct stat), sizeof(abcdk_dirent_counter_t),
                            sizeof(abcdk_dirent_counter_t), sizeof(abcdk_dirent_counter_t),
                            sizeof(abcdk_dirent_counter_t), sizeof(abcdk_dirent_counter_t),
-                           sizeof(abcdk_dirent_counter_t)};
+                           sizeof(abcdk_dirent_counter_t),sizeof(abcdk_dirent_counter_t)};
 
         node = abcdk_tree_alloc2(sizes, ABCDK_ARRAY_SIZE(sizes), 0);
         if (!node)
@@ -106,6 +106,8 @@ void _abcdk_dirent_scan(abcdk_tree_t *father, size_t depth, abcdk_dirent_filter_
                 counter_p = ABCDK_PTR2PTR(abcdk_dirent_counter_t,tmp->alloc->pptrs[ABCDK_DIRENT_LNKS], 0);
             else if (S_ISSOCK(c_stat->st_mode))
                 counter_p = ABCDK_PTR2PTR(abcdk_dirent_counter_t,tmp->alloc->pptrs[ABCDK_DIRENT_SOCKS], 0);
+            else 
+                counter_p = NULL;
 
             if(counter_p)
             {
@@ -133,10 +135,10 @@ abcdk_tree_t *abcdk_dirent_scan(const char *path, abcdk_dirent_filter_t *filter)
     if (access(path, R_OK) != 0)
         return NULL;
 
-    size_t sizes[8] = {PATH_MAX, sizeof(struct stat), sizeof(abcdk_dirent_counter_t),
+    size_t sizes[9] = {PATH_MAX, sizeof(struct stat), sizeof(abcdk_dirent_counter_t),
                        sizeof(abcdk_dirent_counter_t), sizeof(abcdk_dirent_counter_t),
                        sizeof(abcdk_dirent_counter_t), sizeof(abcdk_dirent_counter_t),
-                       sizeof(abcdk_dirent_counter_t)};
+                       sizeof(abcdk_dirent_counter_t),sizeof(abcdk_dirent_counter_t)};
 
     root = abcdk_tree_alloc2(sizes, ABCDK_ARRAY_SIZE(sizes), 0);
     if (!root)

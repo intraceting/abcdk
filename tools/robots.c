@@ -30,7 +30,7 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\nSYNOPSIS:\n");
 
-    fprintf(stderr, "\n%s [ --robots-txt < FILE > ] [--url < NAME [ NAME ... ] > ] [ OPTIONS ] \n", name);
+    fprintf(stderr, "\n%s [ --robots < FILE > ] [--url < NAME [ NAME ... ] > ] [ OPTIONS ] \n", name);
 
     fprintf(stderr, "\n%s \n", name);
 

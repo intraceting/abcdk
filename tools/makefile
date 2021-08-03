@@ -78,6 +78,7 @@ CRAWLER_NAME = abcdk-crawler
 ROBOTS_REALNAME = abcdk-robots.exe
 ROBOTS_NAME = abcdk-robots
 
+
 #
 #Compiler
 CCC = gcc
@@ -125,7 +126,7 @@ OBJ_FILES = \
 	${OBJ_PATH}/lsb_release.o \
 	${OBJ_PATH}/odbc_login.o \
 	${OBJ_PATH}/crawler.o \
-	${OBJ_PATH}/robots.o
+	${OBJ_PATH}/robots.o 
 
 #
 ${PROJECT_NAME}:${OBJ_FILES}
@@ -183,7 +184,6 @@ clean:
 	rm -f $(BUILD_PATH)/${CRAWLER_NAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
-
 
 #
 INSTALL_PATH_BIN = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/bin/)
