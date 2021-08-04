@@ -15,6 +15,34 @@ include ${MAKE_CONF}
 SOLUTION_NAME ?= abcdk
 
 #
+LIB_NAME = libabcdk.so
+LIB_REALNAME = ${LIB_NAME}.${VERSION_MAJOR}.${VERSION_MINOR}
+
+#
+MT_REALNAME = abcdk-mt.exe
+MT_NAME = abcdk-mt
+
+#
+MTX_REALNAME = abcdk-mtx.exe
+MTX_NAME = abcdk-mtx
+
+#
+RELEASE_REALNAME = abcdk-release.exe
+RELEASE_NAME = abcdk-release
+
+#
+ODBC_REALNAME = abcdk-odbc.exe
+ODBC_NAME = abcdk-odbc
+
+#
+HTML_REALNAME = abcdk-html.exe
+HTML_NAME = abcdk-html
+
+#
+ROBOTS_REALNAME = abcdk-robots.exe
+ROBOTS_NAME = abcdk-robots
+
+#
 ifeq (${VERSION_MAJOR},)
 VERSION_MAJOR = 1
 else ifeq (${VERSION_MAJOR},"")
@@ -26,6 +54,13 @@ ifeq (${VERSION_MINOR},)
 VERSION_MINOR = 0
 else ifeq (${VERSION_MINOR},"")
 VERSION_MINOR = 0
+endif
+
+#
+ifeq (${BUILD_PATH},)
+BUILD_PATH = $(abspath $(CURDIR)/build/)
+else ifeq (${BUILD_PATH},"")
+BUILD_PATH = $(abspath $(CURDIR)/build/)
 endif
 
 #
@@ -42,45 +77,155 @@ else ifeq (${ROOT_PATH},"")
 ROOT_PATH = /
 endif
 
+#Compiler
+CCC = gcc
 
+#可能在交叉编译环中。
+ifneq ($(TARGET_PLATFORM),$(HOST_PLATFORM))
+    CCC = $(TARGET_PLATFORM)-linux-gnu-gcc
+endif
 
-#
-all: abcdkutil abcdkcomm tools tests
-
-#
-abcdkutil: abcdkutil-clean
-	make -C $(CURDIR)/abcdkutil/
-
-#
-abcdkcomm: abcdkcomm-clean
-	make -C $(CURDIR)/abcdkcomm/
+#Standard
+CCC_STD = -std=c11
 
 #
-tools: tools-clean
-	make -C $(CURDIR)/tools/
+LINK_FLAGS += ${DEPEND_LIBS}
+LINK_FLAGS += -Wl,--as-needed -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
+LINK_FLAGS += -L${BUILD_PATH}
 
 #
-tests: tests-clean
-	make -C $(CURDIR)/tests/
+CCC_FLAGS += ${DEPEND_FLAGS}
+CCC_FLAGS += -fPIC -Wno-unused-result
+CCC_FLAGS += -I$(CURDIR)/include/ 
+CCC_FLAGS += -DBUILD_VERSION_MAJOR=${VERSION_MAJOR} -DBUILD_VERSION_MINOR=${VERSION_MINOR} -DBUILD_VERSION_DATETIME=\"${VERSION_DATETIME}\"
 
 #
-clean: abcdkutil-clean abcdkcomm-clean tools-clean tests-clean
+ifeq (${BUILD_TYPE},debug)
+CCC_FLAGS += -g
+else 
+CCC_FLAGS += -s -O2
+endif
+ 
+#
+OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-abcdkutil-clean: 
-	make -C $(CURDIR)/abcdkutil/ clean
+LIB_SRC_FILES = $(wildcard lib/*.c)
+LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #
-abcdkcomm-clean: 
-	make -C $(CURDIR)/abcdkcomm/ clean
+TOOL_SRC_FILES = $(wildcard tool/*.c)
+TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-tools-clean: 
-	make -C $(CURDIR)/tools/ clean
+all: ${LIB_NAME} ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME}
 
 #
-tests-clean:
-	make -C $(CURDIR)/tests/ clean
+${LIB_REALNAME}: $(LIB_OBJ_FILES)
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${LIB_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${LIB_REALNAME} $^ -Wl,--soname,${LIB_NAME}  $(LINK_FLAGS) -shared
+
+#
+${LIB_NAME}:${LIB_REALNAME}
+	ln -f -s ${LIB_REALNAME} $(BUILD_PATH)/${LIB_NAME}
+
+#
+$(OBJ_PATH)/lib/%.o: lib/%.c
+	mkdir -p $(OBJ_PATH)/lib/
+	rm -f $@
+	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+
+#
+${MTX_REALNAME}: ${OBJ_PATH}/tool/mtx.o
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${MTX_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${MTX_REALNAME} ${OBJ_PATH}/tool/mtx.o -labcdk $(LINK_FLAGS)
+
+#
+${MTX_NAME}:${MTX_REALNAME}
+	ln -f -s ${MTX_REALNAME} $(BUILD_PATH)/${MTX_NAME}
+
+#
+${MT_REALNAME}: ${OBJ_PATH}/tool/mt.o
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${MT_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${MT_REALNAME} ${OBJ_PATH}/tool/mt.o -labcdk $(LINK_FLAGS)
+
+#
+${MT_NAME}:${MT_REALNAME}
+	ln -f -s ${MT_REALNAME} $(BUILD_PATH)/${MT_NAME}
+
+#
+${RELEASE_REALNAME}: ${OBJ_PATH}/tool/release.o
+	rm -f $(BUILD_PATH)/${RELEASE_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${RELEASE_REALNAME} ${OBJ_PATH}/tool/release.o -labcdk $(LINK_FLAGS)
+
+#
+${RELEASE_NAME}: ${RELEASE_REALNAME}
+	ln -f -s ${RELEASE_REALNAME} $(BUILD_PATH)/${RELEASE_NAME}
+
+#
+${ODBC_REALNAME}: ${OBJ_PATH}/tool/odbc.o
+	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${ODBC_REALNAME} ${OBJ_PATH}/tool/odbc.o -labcdk $(LINK_FLAGS)
+
+#
+${ODBC_NAME}: ${ODBC_REALNAME}
+	ln -f -s ${ODBC_REALNAME} $(BUILD_PATH)/${ODBC_NAME}
+
+#
+${HTML_REALNAME}: ${OBJ_PATH}/tool/html.o
+	rm -f $(BUILD_PATH)/${HTML_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${HTML_REALNAME} ${OBJ_PATH}/tool/html.o -labcdk $(LINK_FLAGS)
+
+#
+${HTML_NAME}: ${HTML_REALNAME}
+	ln -f -s ${HTML_REALNAME} $(BUILD_PATH)/${HTML_NAME}
+
+#
+${ROBOTS_REALNAME}: ${OBJ_PATH}/tool/robots.o
+	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${ROBOTS_REALNAME} ${OBJ_PATH}/tool/robots.o -labcdk $(LINK_FLAGS)
+
+#
+${ROBOTS_NAME}: ${ROBOTS_REALNAME}
+	ln -f -s ${ROBOTS_REALNAME} $(BUILD_PATH)/${ROBOTS_NAME}
+
+#
+$(OBJ_PATH)/tool/%.o: tool/%.c
+	mkdir -p $(OBJ_PATH)/tool/
+	rm -f $@
+	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+
+#
+clean: clean-lib clean-tool
+	rm -rf ${OBJ_PATH}
+
+#
+clean-lib:
+	rm -f $(BUILD_PATH)/${LIB_REALNAME}
+	rm -f $(BUILD_PATH)/${LIB_NAME}
+
+#
+clean-tool:
+	rm -f $(BUILD_PATH)/${MTX_REALNAME}
+	rm -f $(BUILD_PATH)/${MTX_NAME}
+	rm -f $(BUILD_PATH)/${MT_REALNAME}
+	rm -f $(BUILD_PATH)/${MT_NAME}
+	rm -f $(BUILD_PATH)/${RELEASE_REALNAME}
+	rm -f $(BUILD_PATH)/${RELEASE_NAME}
+	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
+	rm -f $(BUILD_PATH)/${ODBC_NAME}
+	rm -f $(BUILD_PATH)/${HTML_REALNAME}
+	rm -f $(BUILD_PATH)/${HTML_NAME}
+	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
+	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
+
+#
+INSTALL_PATH_INC = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/include/)
+INSTALL_PATH_LIB = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
+INSTALL_PATH_BIN = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/bin/)
 
 #
 LDC_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
@@ -89,8 +234,33 @@ PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
 PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
-install: abcdkutil-install abcdkcomm-install tools-install
+install: install-lib install-tool install-ldc install-pkg
+
 #
+install-lib:
+	mkdir -p ${INSTALL_PATH_LIB}
+	cp -f $(BUILD_PATH)/${LIB_REALNAME} ${INSTALL_PATH_LIB}/
+	ln -f -s ${LIB_REALNAME} ${INSTALL_PATH_LIB}/${LIB_NAME}
+	mkdir -p ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/${SOLUTION_NAME} ${INSTALL_PATH_INC}/
+#
+install-tool:
+	mkdir -p ${INSTALL_PATH_BIN}
+	cp -f -f $(BUILD_PATH)/${MTX_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${MTX_REALNAME} $(INSTALL_PATH_BIN)/${MTX_NAME}
+	cp -f -f $(BUILD_PATH)/${MT_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${MT_REALNAME} $(INSTALL_PATH_BIN)/${MT_NAME}
+	cp -f -f $(BUILD_PATH)/${RELEASE_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${RELEASE_REALNAME} $(INSTALL_PATH_BIN)/${RELEASE_NAME}
+	cp -f -f $(BUILD_PATH)/${ODBC_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${ODBC_REALNAME} $(INSTALL_PATH_BIN)/${ODBC_NAME}
+	cp -f -f $(BUILD_PATH)/${HTML_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${HTML_REALNAME} $(INSTALL_PATH_BIN)/${HTML_NAME}
+	cp -f -f $(BUILD_PATH)/${ROBOTS_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${ROBOTS_REALNAME} $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
+
+#
+install-ldc:
 	mkdir -p ${PKG_PATH}
 	echo "prefix=${INSTALL_PREFIX}" > ${PKG_FILE}
 	echo "libdir=\$${prefix}/lib/" >> ${PKG_FILE}
@@ -100,9 +270,11 @@ install: abcdkutil-install abcdkcomm-install tools-install
 	echo "Description: A better c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -labcdk-commn -labcdk-util -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs: -labcdk -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
+
 #
+install-pkg:
 	mkdir -p ${LDC_PATH}
 	echo "#!/bin/sh" > ${LDC_FILE}
 	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${LDC_FILE}
@@ -110,53 +282,53 @@ install: abcdkutil-install abcdkcomm-install tools-install
 	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
 	echo "ldconfig"  >> ${LDC_FILE}
 	chmod 755 ${LDC_FILE}
-	
-#
-abcdkutil-install: 
-	make -C $(CURDIR)/abcdkutil/ install
 
 #
-abcdkcomm-install: 
-	make -C $(CURDIR)/abcdkcomm/ install
+uninstall: uninstall-lib uninstall-tool uninstall-ldc uninstall-pkg
 
 #
-tools-install:
-	make -C $(CURDIR)/tools/ install
+uninstall-lib:
+	rm -f ${INSTALL_PATH_LIB}/${LIB_REALNAME}
+	rm -f ${INSTALL_PATH_LIB}/${LIB_NAME}
+	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}
 
 #
-uninstall: abcdkutil-uninstall abcdkcomm-uninstall tools-uninstall
+uninstall-tool:
+	rm -f $(INSTALL_PATH_BIN)/${MTX_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${MTX_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${MT_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${MT_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${RELEASE_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${RELEASE_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${ODBC_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${ODBC_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${HTML_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${HTML_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
+
 #
-	rm -f ${PKG_FILE}
+uninstall-ldc:
 	rm -f ${LDC_FILE}
 
 #
-abcdkutil-uninstall: 
-	make -C $(CURDIR)/abcdkutil/ uninstall
-
+uninstall-pkg:
+	rm -f ${PKG_FILE}
+	
 #
-abcdkcomm-uninstall: 
-	make -C $(CURDIR)/abcdkcomm/ uninstall
-
-#
-tools-uninstall: 
-	make -C $(CURDIR)/tools/ uninstall
-
-#
-TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp/
+TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
 PACKGE_TAR_NAME = ${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${TARGET_PLATFORM}.tar.gz
 
 #
 package: package-tar
 
 #
-package-tar: 
-#
+package-tar: clean
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${BUILD_PATH}/${PACKGE_TAR_NAME}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "abcdk"
+	tar -czv -f "${BUILD_PATH}/${PACKGE_TAR_NAME}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
 	make -C $(CURDIR) clean
-#
 	@echo "\n"
 	@echo "${BUILD_PATH}/${PACKGE_TAR_NAME}"
 

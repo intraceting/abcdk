@@ -190,7 +190,7 @@ VERSION_DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 #
 DEPEND_FUNC="Nothing"
 BUILD_TYPE="release"
-INSTALL_PREFIX="/usr/local/${SOLUTION_NAME}/"
+INSTALL_PREFIX="/usr/local/"
 
 #
 PrintUsage()
@@ -219,7 +219,7 @@ do
         BUILD_TYPE="debug"
     ;;
     i)
-        INSTALL_PREFIX=$(realpath "${OPTARG}/")
+        INSTALL_PREFIX=$(realpath "${OPTARG}")
     ;;
     esac
 done
@@ -231,7 +231,15 @@ mkdir -p ${BUILD_PATH}
 if [ ! -d ${BUILD_PATH} ];then
 echo "'${BUILD_PATH}' must be an existing directory."
 exit 22
-fi 
+fi
+
+#
+if [ ! -d ${INSTALL_PREFIX} ];then
+echo "'${INSTALL_PREFIX}' must be an existing directory."
+exit 22
+else
+INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
+fi
 
 #
 DEPEND_FLAGS=" -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 ${DEPEND_FLAGS}"

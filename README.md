@@ -28,9 +28,3 @@ make
 sudo make package
 ```
 
-### 目录说明
-
-- abcdkcomm 网络通讯。
-- abcdkutil 基础工具。
-- tests 测试样例。
-- tools 自定义工具。
