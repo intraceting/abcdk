@@ -281,7 +281,7 @@ install-pkg:
 	mkdir -p ${LDC_PATH}
 	echo "#!/bin/sh" > ${LDC_FILE}
 	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${LDC_FILE}
-	echo "[ \$$UID != 0 ] &&  echo \"System configuration requires root privileges. you are not root.\" && exit" >> ${LDC_FILE}
+	echo "[ \$$UID != 0 ] &&  echo \"you are not root.\" && exit" >> ${LDC_FILE}
 	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
 	echo "ldconfig"  >> ${LDC_FILE}
 	chmod 755 ${LDC_FILE}
@@ -320,18 +320,54 @@ uninstall-pkg:
 	
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
-PACKGE_TAR_NAME = ${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${TARGET_PLATFORM}.tar.gz
+#
+TAR_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}-${TARGET_PLATFORM}.tar.gz
 
 #
-package: package-tar
+SPEC_FILE=$(BUILD_PATH)/${SOLUTION_NAME}.spec
+RPM_PATH=$(CURDIR)/package
+
+#
+package: package-${KIT_NAME}
 
 #
 package-tar: clean
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${BUILD_PATH}/${PACKGE_TAR_NAME}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
+#	
+	tar -czv -f "${TAR_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
+#
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
-	make -C $(CURDIR) clean
-	@echo "\n"
-	@echo "${BUILD_PATH}/${PACKGE_TAR_NAME}"
+
+#
+package-rpm: clean
+	make -C $(CURDIR)
+	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
+#
+	echo "BuildRoot: ${TMP_ROOT_PATH}" > ${SPEC_FILE}
+	echo 'Vendor: zpcoding<intraceting@outlook.com>' >> ${SPEC_FILE}
+	echo "Name: ${SOLUTION_NAME}" >> ${SPEC_FILE}
+	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}" >> ${SPEC_FILE}
+	echo "Release: ${VERSION_RELEASE}" >> ${SPEC_FILE}
+	echo 'Group: Development/Libraries' >> ${SPEC_FILE}
+	echo 'License: MIT' >> ${SPEC_FILE}
+	echo "Summary: A better c development kit." >> ${SPEC_FILE}
+	echo '' >> ${SPEC_FILE}
+	echo '%description' >> ${SPEC_FILE}
+	echo '${SOLUTION_NAME} is a toolkit for simplifying the use of C as a development language.' >> ${SPEC_FILE}
+	echo '' >> ${SPEC_FILE}
+	echo '%files' >> ${SPEC_FILE}
+	echo "${INSTALL_PREFIX}" >> ${SPEC_FILE}
+	echo '' >> ${SPEC_FILE}
+	echo '%changelog' >> ${SPEC_FILE}
+	cat $(CURDIR)/changelog >> ${SPEC_FILE}
+	echo '' >> ${SPEC_FILE}
+#
+	rpmbuild --buildroot "${TMP_ROOT_PATH}"  -bb "${SPEC_FILE}" --define="_rpmdir ${RPM_PATH}"
+#
+	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
+	
+#
+package-deb:
+	@echo "DEB Not yet supported."
 

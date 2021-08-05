@@ -32,9 +32,9 @@ CheckSystemName()
 CheckPackageKitName()
 {
 	if [ $(CheckSystemName "Ubuntu|Debian") -ge 1 ];then
-		echo "DEB"
+		echo "deb"
 	elif [ $(CheckSystemName "CentOS|Red Hat|RedHat|RHEL|fedora|Amazon|Oracle") -ge 1 ];then
-		echo "RPM"
+		echo "rpm"
 	else
 		echo ""
 	fi
@@ -53,9 +53,9 @@ CheckHavePackageFromKit()
     PACKAGE="$2"
 
     #
-	if [ "DEB" == "${KIT_NAME}" ];then 
+	if [ "deb" == "${KIT_NAME}" ];then 
         STATUS=$(dpkg -V ${PACKAGE} >> /dev/null 2>&1 ; echo $?)
-	elif [ "RPM" == "${KIT_NAME}" ];then
+	elif [ "rpm" == "${KIT_NAME}" ];then
 		STATUS=$(rpm -q ${PACKAGE} >> /dev/null 2>&1 ; echo $?)
     fi
 
@@ -99,7 +99,7 @@ CheckHavePackage()
     PACKAGE="$2"
 
     #
-	if [ "DEB" == "${KIT_NAME}" ];then 
+	if [ "deb" == "${KIT_NAME}" ];then 
 	{   
         if [ "${PACKAGE}" == "openmp" ];then
             NAMES="libomp-dev"
@@ -122,7 +122,7 @@ CheckHavePackage()
             NAMES="libfuse-dev"
         fi     
     }
-	elif [ "RPM" == "${KIT_NAME}" ];then
+	elif [ "rpm" == "${KIT_NAME}" ];then
 	{
         if [ "${PACKAGE}" == "openmp" ];then
             NAMES="gcc"
@@ -168,14 +168,16 @@ CheckKeyword()
 }
 
 #
-SOLUTION_NAME=abcdk
-
-#
 SHELL_PWD=$(cd `dirname $0`; pwd)
-KIT_NAME=$(CheckPackageKitName)
 
 #
 MAKE_CONF=${SHELL_PWD}/build/makefile.conf
+
+#
+KIT_NAME=$(CheckPackageKitName)
+
+#
+SOLUTION_NAME=abcdk
 
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -396,9 +398,9 @@ INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
 fi
 
 #
-VERSION_MAJOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 1)
-VERSION_MINOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 2)
-VERSION_RELEASE=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 3)
+VERSION_MAJOR=$(cat ${SHELL_PWD}/version | cut -d '.' -f 1)
+VERSION_MINOR=$(cat ${SHELL_PWD}/version | cut -d '.' -f 2)
+VERSION_RELEASE=$(cat ${SHELL_PWD}/version | cut -d '.' -f 3)
 
 #
 if [ ${VERSION_MAJOR} -lt 1 ];then
@@ -429,10 +431,13 @@ DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
 
 
 #
-echo "SOLUTION_NAME=${SOLUTION_NAME}"
+echo "MAKE_CONF=${MAKE_CONF}"
 
 #
-echo "MAKE_CONF=${MAKE_CONF}"
+echo "KIT_NAME=${KIT_NAME}"
+
+#
+echo "SOLUTION_NAME=${SOLUTION_NAME}"
 
 #
 echo "BUILD_TIME=${BUILD_TIME}"
@@ -468,6 +473,9 @@ checkReturnCode
 echo "# A better c development kit." >> ${MAKE_CONF}
 echo "#" >> ${MAKE_CONF}
 echo "" >> ${MAKE_CONF}
+
+#
+echo "KIT_NAME=${KIT_NAME}" >> ${MAKE_CONF}
 
 #
 echo "SOLUTION_NAME = ${SOLUTION_NAME}" >> ${MAKE_CONF}
