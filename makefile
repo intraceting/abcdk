@@ -328,6 +328,11 @@ SPEC_FILE=$(BUILD_PATH)/${SOLUTION_NAME}.spec
 RPM_PATH=$(CURDIR)/package
 
 #
+CTRL_FILE="${TMP_ROOT_PATH}/DEBIAN/control"
+CLOG_FILE="${TMP_ROOT_PATH}/DEBIAN/changlog"
+DEB_FILE=$(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}.${TARGET_PLATFORM}.deb
+
+#
 package: package-${KIT_NAME}
 
 #
@@ -369,5 +374,19 @@ package-rpm: clean
 	
 #
 package-deb:
-	@echo "DEB Not yet supported."
-
+	make -C $(CURDIR)
+	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
+#
+	mkdir -p ${TMP_ROOT_PATH}/DEBIAN/
+	echo "Package: ${SOLUTION_NAME}" > ${CTRL_FILE}
+	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}" >> ${CTRL_FILE}
+	echo "Section: Development/Libraries" >> ${CTRL_FILE}
+	echo "Priority: optional" >> ${CTRL_FILE}
+	echo "Architecture: amd64" >> ${CTRL_FILE}
+	echo "Maintainer: zpcoding<intraceting@outlook.com>" >> ${CTRL_FILE}
+	echo "Description: ${SOLUTION_NAME} is a toolkit for simplifying the use of C as a development language." >> ${CTRL_FILE}
+	cat $(CURDIR)/changelog > ${CLOG_FILE}
+#
+	dpkg-deb --build "${TMP_ROOT_PATH}/" "${DEB_FILE}"
+#
+#	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
