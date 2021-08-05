@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <locale.h>
 #include "abcdk/general.h"
 #include "abcdk/getargs.h"
 #include "abcdk/scsi.h"
@@ -52,11 +53,8 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-#ifdef BUILD_VERSION_DATETIME
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_VERSION_DATETIME);
-#endif //BUILD_VERSION_DATETIME
-
-    fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
+    fprintf(stderr, "\n%s Build %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s Version %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
@@ -352,13 +350,13 @@ void _abcdkmtx_work(abcdk_tree_t *args)
 
     if (!dev_p || !*dev_p)
     {
-        syslog(LOG_ERR, "'--dev FILE' can not be omitted.");
+        syslog(LOG_ERR, "'--dev FILE'  不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (access(dev_p, F_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' No such device.", dev_p);
+        syslog(LOG_WARNING, "'%s' %s。", dev_p, strerror(errno));
         goto final;
     }
 
@@ -435,6 +433,9 @@ final:
 int main(int argc, char **argv)
 {
     abcdk_tree_t *args;
+
+    /*中文，UTF-8*/
+    setlocale(LC_ALL,"zh_CN.UTF-8");
 
     args = abcdk_tree_alloc3(1);
     if (!args)

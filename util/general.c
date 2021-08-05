@@ -8,23 +8,6 @@
 
 /*------------------------------------------------------------------------------------------------*/
 
-/*
- * 检查内外版本号是否一致。
-*/
-#if ABCDK_VERSION_MAJOR != BUILD_VERSION_MAJOR
-#error "ABCDK_VERSION_MAJOR must be equal to BUILD_VERSION_MAJOR"
-#endif
-
-/*
- * 检查内外版本号是否一致。
-*/
-#if ABCDK_VERSION_MINOR != BUILD_VERSION_MINOR
-#error "ABCDK_VERSION_MINOR must be equal to BUILD_VERSION_MINOR"
-#endif
-
-
-/*------------------------------------------------------------------------------------------------*/
-
 size_t abcdk_align(size_t size, size_t align)
 {
     size_t pad = 0;

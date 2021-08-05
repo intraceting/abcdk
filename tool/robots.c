@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <locale.h>
 #include "abcdk/general.h"
 #include "abcdk/getargs.h"
 #include "abcdk/robots.h"
@@ -19,40 +20,39 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-#ifdef BUILD_VERSION_DATETIME
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_VERSION_DATETIME);
-#endif //BUILD_VERSION_DATETIME
-
-    fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
+    fprintf(stderr, "\n%s 创建 %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
 
-    fprintf(stderr, "\nSYNOPSIS:\n");
+    fprintf(stderr, "\n摘要:\n");
 
-    fprintf(stderr, "\n%s [ --robots < FILE > ] [--url < NAME [ NAME ... ] > ] [ OPTIONS ] \n", name);
+    fprintf(stderr, "\n%s [ --robots < FILE > ] [--url < URL [URL ...] > ] [ OPTIONS ] \n", name);
 
-    fprintf(stderr, "\n%s \n", name);
+    fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\nOPTIONS:\n");
+    fprintf(stderr, "\n\t分析Robots文件，过滤被规则禁止的URL，仅输出规则允许的URL。\n");
+
+    fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\tShow this help message and exit.\n");
+    fprintf(stderr, "\t\t帮助.\n");
 
     fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\tOutput version information and exit.\n");
+    fprintf(stderr, "\t\t显示版本信息.\n");
 
     fprintf(stderr, "\n\t--robots < FILE >\n");
-    fprintf(stderr, "\t\tThe robots file.\n");
+    fprintf(stderr, "\t\tRobots 文件名(包括路径)。\n");
 
     fprintf(stderr, "\n\t--user-agent < NAME >\n");
-    fprintf(stderr, "\t\tUA name. default: *\n");
+    fprintf(stderr, "\t\t代理名称。默认: *\n");
 
-    fprintf(stderr, "\n\t--url < NAME >\n");
-    fprintf(stderr, "\t\tThe URL used for the filter. \n");
+    fprintf(stderr, "\n\t--url < URL [URL ...] >\n");
+    fprintf(stderr, "\t\t指定需要筛选的URL。\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\tOutput to the specified file.\n");
+    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -145,26 +145,26 @@ void _abcdkrobots_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--robots FILE' can not be omitted.");
+        syslog(LOG_ERR, "'--robots FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_RETURN0(EINVAL);
     }
 
     if (access(file, R_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.", file, strerror(errno));
+        syslog(LOG_WARNING, "'%s' %s。", file, strerror(errno));
         return;
     }
 
     rbts = abcdk_robots_parse_file(file,agent);
     if (!rbts)
     {
-        syslog(LOG_WARNING, "'%s' can not parsed.", file);
+        syslog(LOG_WARNING, "'%s' 解析失败。", file);
         return;
     }
 
     if(!abcdk_tree_child(rbts,1))
     {
-        syslog(LOG_WARNING, "The user-agent '%s' not existent.", agent);
+        syslog(LOG_WARNING, "规则内未包含指定的代理名称'%s'。", agent);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 
@@ -187,6 +187,9 @@ final:
 int main(int argc, char **argv)
 {
     abcdk_tree_t *args;
+
+    /*中文，UTF-8*/
+    setlocale(LC_ALL,"zh_CN.UTF-8");
 
     args = abcdk_tree_alloc3(1);
     if (!args)

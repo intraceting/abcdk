@@ -14,7 +14,7 @@
 #include "abcdk/clock.h"
 #include "abcdk/thread.h"
 #include "abcdk/signal.h"
-#include "abcdkcomm/mux.h"
+#include "abcdk/mux.h"
 
 void* sigwaitinfo_cb(void* args)
 {

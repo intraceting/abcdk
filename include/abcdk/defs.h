@@ -59,18 +59,6 @@
 #include <net/if.h>
 
 /**
- * 主版本号。
- * 
-*/
-#define ABCDK_VERSION_MAJOR 1
-
-/** 
- * 副版本号。
- * 
-*/
-#define ABCDK_VERSION_MINOR 1
-
-/**
  * 转换指针类型。
  * 
  * @note 支持针地址偏移(Bytes)。

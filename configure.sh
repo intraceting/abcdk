@@ -175,8 +175,11 @@ SHELL_PWD=$(cd `dirname $0`; pwd)
 KIT_NAME=$(CheckPackageKitName)
 
 #
+MAKE_CONF=${SHELL_PWD}/build/makefile.conf
+
+#
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_PATH=$(realpath "${SHELL_PWD}/build/")
-MAKE_CONF=${BUILD_PATH}/makefile.conf
 
 #
 HOST_PLATFORM=$(uname -m)
@@ -185,12 +188,16 @@ TARGET_PLATFORM=${HOST_PLATFORM}
 #
 VERSION_MAJOR="1"
 VERSION_MINOR="1"
-VERSION_DATETIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+VERSION_RELEASE="1"
+
+#
+BUILD_TYPE="release"
+
+#
+INSTALL_PREFIX="/usr/local/"
 
 #
 DEPEND_FUNC="Nothing"
-BUILD_TYPE="release"
-INSTALL_PREFIX="/usr/local/"
 
 #
 PrintUsage()
@@ -224,28 +231,6 @@ do
     esac
 done
 
-#
-mkdir -p ${BUILD_PATH}
-
-#
-if [ ! -d ${BUILD_PATH} ];then
-echo "'${BUILD_PATH}' must be an existing directory."
-exit 22
-fi
-
-#
-if [ ! -d ${INSTALL_PREFIX} ];then
-echo "'${INSTALL_PREFIX}' must be an existing directory."
-exit 22
-else
-INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
-fi
-
-#
-DEPEND_FLAGS=" -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 ${DEPEND_FLAGS}"
-
-#
-DEPEND_LIBS=" -ldl -pthread -lrt -lc -lm ${DEPEND_LIBS}"
 
 #
 STATUS=$(CheckHavePackage ${KIT_NAME} pkgconfig)
@@ -394,11 +379,64 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
 fi
 
 #
+mkdir -p ${BUILD_PATH}
+
+#
+if [ ! -d ${BUILD_PATH} ];then
+echo "'${BUILD_PATH}' must be an existing directory."
+exit 22
+fi
+
+#
+if [ ! -d ${INSTALL_PREFIX} ];then
+echo "'${INSTALL_PREFIX}' must be an existing directory."
+exit 22
+else
+INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
+fi
+
+#
+VERSION_MAJOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 1)
+VERSION_MINOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 2)
+VERSION_RELEASE=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 3)
+
+#
+if [ ${VERSION_MAJOR} -lt 1 ];then
+VERSION_MAJOR="1"
+fi
+
+#
+if [ ${VERSION_MINOR} -lt 1 ];then
+VERSION_MINOR="1"
+fi
+
+#
+if [ ${VERSION_RELEASE} -lt 1 ];then
+VERSION_RELEASE="1"
+else 
+VERSION_RELEASE=$(expr ${VERSION_RELEASE} + 1)
+fi
+
+#滚动发行版本。
+echo "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" > ${SHELL_PWD}/VERSION
+checkReturnCode
+
+#
+DEPEND_FLAGS="${DEPEND_FLAGS} -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+
+#
+DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
+
+
+#
 echo "SOLUTION_NAME=${SOLUTION_NAME}"
 
 #
-echo "BUILD_PATH=${BUILD_PATH}"
 echo "MAKE_CONF=${MAKE_CONF}"
+
+#
+echo "BUILD_TIME=${BUILD_TIME}"
+echo "BUILD_PATH=${BUILD_PATH}"
 
 #
 echo "HOST_PLATFORM=${HOST_PLATFORM}"
@@ -407,7 +445,7 @@ echo "TARGET_PLATFORM=${TARGET_PLATFORM}"
 #
 echo "VERSION_MAJOR=${VERSION_MAJOR}"
 echo "VERSION_MINOR=${VERSION_MINOR}"
-echo "VERSION_DATETIME=${VERSION_DATETIME}"
+echo "VERSION_RELEASE=${VERSION_RELEASE}"
 
 #
 echo "HAVE_OPENMP=${HAVE_OPENMP}"
@@ -425,20 +463,37 @@ echo "ROOT_PATH?=/"
 
 #
 echo "#" > ${MAKE_CONF}
+checkReturnCode
+
 echo "# A better c development kit." >> ${MAKE_CONF}
 echo "#" >> ${MAKE_CONF}
 echo "" >> ${MAKE_CONF}
 
 #
 echo "SOLUTION_NAME = ${SOLUTION_NAME}" >> ${MAKE_CONF}
+
+#
+echo "BUILD_TIME = ${BUILD_TIME}" >> ${MAKE_CONF}
 echo "BUILD_PATH = ${BUILD_PATH}" >> ${MAKE_CONF}
+
+#
 echo "HOST_PLATFORM = ${HOST_PLATFORM}" >> ${MAKE_CONF}
 echo "TARGET_PLATFORM = ${TARGET_PLATFORM}" >> ${MAKE_CONF}
+
+#
 echo "VERSION_MAJOR = ${VERSION_MAJOR}" >> ${MAKE_CONF}
 echo "VERSION_MINOR = ${VERSION_MINOR}" >> ${MAKE_CONF}
-echo "VERSION_DATETIME = ${VERSION_DATETIME}" >> ${MAKE_CONF}
+echo "VERSION_RELEASE=${VERSION_RELEASE}" >> ${MAKE_CONF}
+
+#
 echo "DEPEND_FLAGS = ${DEPEND_FLAGS}" >> ${MAKE_CONF}
 echo "DEPEND_LIBS = ${DEPEND_LIBS}" >> ${MAKE_CONF}
+
+#
 echo "BUILD_TYPE = ${BUILD_TYPE}" >> ${MAKE_CONF}
+
+#
 echo "INSTALL_PREFIX = ${INSTALL_PREFIX}" >> ${MAKE_CONF}
+
+#
 echo "ROOT_PATH ?= /" >> ${MAKE_CONF}

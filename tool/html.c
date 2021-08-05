@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <locale.h>
 #include "abcdk/general.h"
 #include "abcdk/getargs.h"
 #include "abcdk/html.h"
@@ -18,11 +19,8 @@ void _abcdkhtml_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-#ifdef BUILD_VERSION_DATETIME
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_VERSION_DATETIME);
-#endif //BUILD_VERSION_DATETIME
-
-    fprintf(stderr, "\n%s Version %d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR);
+    fprintf(stderr, "\n%s Build %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s Version %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
@@ -257,6 +255,9 @@ final:
 int main(int argc, char **argv)
 {
     abcdk_tree_t *args;
+
+    /*中文，UTF-8*/
+    setlocale(LC_ALL,"zh_CN.UTF-8");
 
     args = abcdk_tree_alloc3(1);
     if (!args)

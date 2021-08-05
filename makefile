@@ -15,8 +15,8 @@ include ${MAKE_CONF}
 SOLUTION_NAME ?= abcdk
 
 #
-LIB_NAME = libabcdk.so
-LIB_REALNAME = ${LIB_NAME}.${VERSION_MAJOR}.${VERSION_MINOR}
+UTIL_NAME = libabcdk.so
+UTIL_REALNAME = ${UTIL_NAME}.${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
 #
 MT_REALNAME = abcdk-mt.exe
@@ -43,39 +43,10 @@ ROBOTS_REALNAME = abcdk-robots.exe
 ROBOTS_NAME = abcdk-robots
 
 #
-ifeq (${VERSION_MAJOR},)
-VERSION_MAJOR = 1
-else ifeq (${VERSION_MAJOR},"")
-VERSION_MAJOR = 1
-endif
+MUX_TESTNAME = mux_test.exe
 
 #
-ifeq (${VERSION_MINOR},)
-VERSION_MINOR = 0
-else ifeq (${VERSION_MINOR},"")
-VERSION_MINOR = 0
-endif
-
-#
-ifeq (${BUILD_PATH},)
-BUILD_PATH = $(abspath $(CURDIR)/build/)
-else ifeq (${BUILD_PATH},"")
-BUILD_PATH = $(abspath $(CURDIR)/build/)
-endif
-
-#
-ifeq (${INSTALL_PREFIX},)
-INSTALL_PREFIX = /usr/local/${SOLUTION_NAME}/
-else ifeq (${INSTALL_PREFIX},"")
-INSTALL_PREFIX = /usr/local/${SOLUTION_NAME}/
-endif
-
-#
-ifeq (${ROOT_PATH},)
-ROOT_PATH = /
-else ifeq (${ROOT_PATH},"")
-ROOT_PATH = /
-endif
+UTIL_TESTNAME = util_test.exe
 
 #Compiler
 CCC = gcc
@@ -91,13 +62,14 @@ CCC_STD = -std=c11
 #
 LINK_FLAGS += ${DEPEND_LIBS}
 LINK_FLAGS += -Wl,--as-needed -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
-LINK_FLAGS += -L${BUILD_PATH}
 
 #
 CCC_FLAGS += ${DEPEND_FLAGS}
 CCC_FLAGS += -fPIC -Wno-unused-result
-CCC_FLAGS += -I$(CURDIR)/include/ 
-CCC_FLAGS += -DBUILD_VERSION_MAJOR=${VERSION_MAJOR} -DBUILD_VERSION_MINOR=${VERSION_MINOR} -DBUILD_VERSION_DATETIME=\"${VERSION_DATETIME}\"
+CCC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR} 
+CCC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 
+CCC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
+CCC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 
 #
 ifeq (${BUILD_TYPE},debug)
@@ -105,88 +77,101 @@ CCC_FLAGS += -g
 else 
 CCC_FLAGS += -s -O2
 endif
- 
+
+#
+CCC_FLAGS += -I$(CURDIR)/include/ 
+#
+LINK_FLAGS += -L${BUILD_PATH}
+
 #
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-LIB_SRC_FILES = $(wildcard lib/*.c)
-LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
+UTIL_SRC_FILES = $(wildcard util/*.c)
+UTIL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${UTIL_SRC_FILES}))
 
 #
 TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-all: ${LIB_NAME} ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME}
+TEST_SRC_FILES = $(wildcard test/*.c)
+TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-${LIB_REALNAME}: $(LIB_OBJ_FILES)
+all: util tool test
+
+util: ${UTIL_NAME}
+
+#
+${UTIL_REALNAME}: $(UTIL_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${LIB_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${LIB_REALNAME} $^ -Wl,--soname,${LIB_NAME}  $(LINK_FLAGS) -shared
+	rm -f $(BUILD_PATH)/${UTIL_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${UTIL_REALNAME} $^ -Wl,--soname,${UTIL_NAME}  $(LINK_FLAGS) -shared
 
 #
-${LIB_NAME}:${LIB_REALNAME}
-	ln -f -s ${LIB_REALNAME} $(BUILD_PATH)/${LIB_NAME}
+${UTIL_NAME}:${UTIL_REALNAME}
+	ln -f -s ${UTIL_REALNAME} $(BUILD_PATH)/${UTIL_NAME}
 
 #
-$(OBJ_PATH)/lib/%.o: lib/%.c
-	mkdir -p $(OBJ_PATH)/lib/
+$(OBJ_PATH)/util/%.o: util/%.c
+	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
+tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} 
+
 #
-${MTX_REALNAME}: ${OBJ_PATH}/tool/mtx.o
+${MTX_REALNAME}:${UTIL_NAME} ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MTX_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${MTX_REALNAME} ${OBJ_PATH}/tool/mtx.o -labcdk $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${MTX_REALNAME} ${OBJ_PATH}/tool/mtx.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${MTX_NAME}:${MTX_REALNAME}
 	ln -f -s ${MTX_REALNAME} $(BUILD_PATH)/${MTX_NAME}
 
 #
-${MT_REALNAME}: ${OBJ_PATH}/tool/mt.o
+${MT_REALNAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MT_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${MT_REALNAME} ${OBJ_PATH}/tool/mt.o -labcdk $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${MT_REALNAME} ${OBJ_PATH}/tool/mt.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${MT_NAME}:${MT_REALNAME}
 	ln -f -s ${MT_REALNAME} $(BUILD_PATH)/${MT_NAME}
 
 #
-${RELEASE_REALNAME}: ${OBJ_PATH}/tool/release.o
+${RELEASE_REALNAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${RELEASE_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${RELEASE_REALNAME} ${OBJ_PATH}/tool/release.o -labcdk $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${RELEASE_REALNAME} ${OBJ_PATH}/tool/release.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${RELEASE_NAME}: ${RELEASE_REALNAME}
 	ln -f -s ${RELEASE_REALNAME} $(BUILD_PATH)/${RELEASE_NAME}
 
 #
-${ODBC_REALNAME}: ${OBJ_PATH}/tool/odbc.o
+${ODBC_REALNAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${ODBC_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${ODBC_REALNAME} ${OBJ_PATH}/tool/odbc.o -labcdk $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${ODBC_REALNAME} ${OBJ_PATH}/tool/odbc.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${ODBC_NAME}: ${ODBC_REALNAME}
 	ln -f -s ${ODBC_REALNAME} $(BUILD_PATH)/${ODBC_NAME}
 
 #
-${HTML_REALNAME}: ${OBJ_PATH}/tool/html.o
+${HTML_REALNAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${HTML_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${HTML_REALNAME} ${OBJ_PATH}/tool/html.o -labcdk $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${HTML_REALNAME} ${OBJ_PATH}/tool/html.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${HTML_NAME}: ${HTML_REALNAME}
 	ln -f -s ${HTML_REALNAME} $(BUILD_PATH)/${HTML_NAME}
 
 #
-${ROBOTS_REALNAME}: ${OBJ_PATH}/tool/robots.o
+${ROBOTS_REALNAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
-	$(CCC) -o $(BUILD_PATH)/${ROBOTS_REALNAME} ${OBJ_PATH}/tool/robots.o -labcdk $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${ROBOTS_REALNAME} ${OBJ_PATH}/tool/robots.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${ROBOTS_NAME}: ${ROBOTS_REALNAME}
@@ -198,14 +183,32 @@ $(OBJ_PATH)/tool/%.o: tool/%.c
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
+test: ${MUX_TESTNAME} ${UTIL_TESTNAME}
+
 #
-clean: clean-lib clean-tool
+${MUX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
+	rm -f $(BUILD_PATH)/${MUX_TESTNAME}
+	$(CCC) -o $(BUILD_PATH)/${MUX_TESTNAME} ${OBJ_PATH}/test/mux_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
+
+#
+${UTIL_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
+	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
+	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
+
+#
+$(OBJ_PATH)/test/%.o: test/%.c
+	mkdir -p $(OBJ_PATH)/test/
+	rm -f $@
+	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+
+#
+clean: clean-util clean-tool
 	rm -rf ${OBJ_PATH}
 
 #
-clean-lib:
-	rm -f $(BUILD_PATH)/${LIB_REALNAME}
-	rm -f $(BUILD_PATH)/${LIB_NAME}
+clean-util:
+	rm -f $(BUILD_PATH)/${UTIL_REALNAME}
+	rm -f $(BUILD_PATH)/${UTIL_NAME}
 
 #
 clean-tool:
@@ -234,13 +237,13 @@ PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
 PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
-install: install-lib install-tool install-ldc install-pkg
+install: install-util install-tool install-ldc install-pkg
 
 #
-install-lib:
+install-util:
 	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/${LIB_REALNAME} ${INSTALL_PATH_LIB}/
-	ln -f -s ${LIB_REALNAME} ${INSTALL_PATH_LIB}/${LIB_NAME}
+	cp -f $(BUILD_PATH)/${UTIL_REALNAME} ${INSTALL_PATH_LIB}/
+	ln -f -s ${UTIL_REALNAME} ${INSTALL_PATH_LIB}/${UTIL_NAME}
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/${SOLUTION_NAME} ${INSTALL_PATH_INC}/
 #
@@ -284,12 +287,12 @@ install-pkg:
 	chmod 755 ${LDC_FILE}
 
 #
-uninstall: uninstall-lib uninstall-tool uninstall-ldc uninstall-pkg
+uninstall: uninstall-util uninstall-tool uninstall-ldc uninstall-pkg
 
 #
-uninstall-lib:
-	rm -f ${INSTALL_PATH_LIB}/${LIB_REALNAME}
-	rm -f ${INSTALL_PATH_LIB}/${LIB_NAME}
+uninstall-util:
+	rm -f ${INSTALL_PATH_LIB}/${UTIL_REALNAME}
+	rm -f ${INSTALL_PATH_LIB}/${UTIL_NAME}
 	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}
 
 #
