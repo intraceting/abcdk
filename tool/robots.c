@@ -20,7 +20,7 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s 创建 %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
     fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
@@ -37,10 +37,10 @@ void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t帮助.\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\t显示版本信息.\n");
+    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--robots < FILE >\n");
     fprintf(stderr, "\t\tRobots 文件名(包括路径)。\n");

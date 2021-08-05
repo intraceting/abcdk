@@ -19,52 +19,54 @@ void _abcdkhtml_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s Version %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
+    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
 
-    fprintf(stderr, "\nSYNOPSIS:\n");
+    fprintf(stderr, "\n摘要:\n");
 
     fprintf(stderr, "\n%s [ --html < FILE > ] [ OPTIONS ] \n", name);
 
-    fprintf(stderr, "\n%s \n", name);
+    fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\nOPTIONS:\n");
+    fprintf(stderr, "\n\t简单的HTML解析工具。\n");
+
+    fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\tShow this help message and exit.\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\tOutput version information and exit.\n");
+    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--html < FILE >\n");
-    fprintf(stderr, "\t\tThe HTML file.\n");
+    fprintf(stderr, "\t\tHTML文件(包括路径)。\n");
 
     fprintf(stderr, "\n\t--align-left\n");
-    fprintf(stderr, "\t\tLeft aligned format.\n");
+    fprintf(stderr, "\t\t左对齐。默认：树型\n");
 
     fprintf(stderr, "\n\t--tag < NAME >\n");
-    fprintf(stderr, "\t\tThe name of the tag used for the filter. default: a img video\n");
+    fprintf(stderr, "\t\tTAG名称，用于筛选器。默认: a img video\n");
 
     fprintf(stderr, "\n\t--tag-short\n");
-    fprintf(stderr, "\t\tShow tag information in short format.\n");
+    fprintf(stderr, "\t\t输出TAG短格式。\n");
 
     fprintf(stderr, "\n\t--tag-hide\n");
-    fprintf(stderr, "\t\tHide tag information.\n");
+    fprintf(stderr, "\t\t隐藏TAG信息。\n");
 
     fprintf(stderr, "\n\t--attr < KEY >\n");
-    fprintf(stderr, "\t\tThe key of the attributes used for the filter. default: src href\n");
+    fprintf(stderr, "\t\tATTR名称，用于筛选器。默认: src href\n");
 
     fprintf(stderr, "\n\t--attr-short\n");
-    fprintf(stderr, "\t\tShow attributes information in short format.\n");
+    fprintf(stderr, "\t\t输出ATTR短格式。\n");
 
     fprintf(stderr, "\n\t--attr-hide\n");
-    fprintf(stderr, "\t\tHide attributes information.\n");
+    fprintf(stderr, "\t\t隐藏ATTR信息。\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\tOutput to the specified file.\n");
+    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
     
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -210,7 +212,7 @@ void _abcdkhtml_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--html FILE' can not be omitted.");
+        syslog(LOG_ERR, "'--html FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -223,13 +225,13 @@ void _abcdkhtml_work(abcdk_tree_t *args)
     html = abcdk_html_parse_file(file);
     if (!html)
     {
-        syslog(LOG_WARNING, "'%s' can not parsed.", file);
+        syslog(LOG_WARNING, "'%s' 无法解析。", file);
         goto final;
     }
 
     if(!abcdk_tree_child(html,1))
     {
-        syslog(LOG_WARNING, "The '%s' may not be in HTML format.", file);
+        syslog(LOG_WARNING, "'%s' 可能不是HTML格式。", file);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 

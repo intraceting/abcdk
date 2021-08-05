@@ -53,54 +53,58 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s Version %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
+    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
 
-    fprintf(stderr, "\nSYNOPSIS:\n");
+    fprintf(stderr, "\n摘要:\n");
     
     fprintf(stderr, "\n%s [ --dev < FILE > ] [ OPTIONS ] \n",name);
 
-    fprintf(stderr, "\nOPTIONS:\n");
+    fprintf(stderr, "\n描述:\n");
+
+    fprintf(stderr, "\n\t简单的机械手(磁带库，光盘库等)工具。\n");
+
+    fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\tShow this help message and exit.\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\tOutput version information and exit.\n");
+    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--dev < FILE >\n");
-    fprintf(stderr, "\t\tGeneric SCSI device.\n");
+    fprintf(stderr, "\t\t机械手设备文件(包括路径)。\n");
 
     fprintf(stderr, "\n\t--src < ADDRESS >\n");
-    fprintf(stderr, "\t\tSource Element Address.\n");
+    fprintf(stderr, "\t\t源地址。\n");
 
     fprintf(stderr, "\n\t--dst < ADDRESS >\n");
-    fprintf(stderr, "\t\tDestination Element Address.\n");
+    fprintf(stderr, "\t\t目标地址。\n");
 
     fprintf(stderr, "\n\t--exclude-barcode\n");
-    fprintf(stderr, "\t\tExclude BARCODE. default: include\n");
+    fprintf(stderr, "\t\t排除条码字段。default: 包括\n");
 
     fprintf(stderr, "\n\t--exclude-dvcid\n");
-    fprintf(stderr, "\t\tExclude DVCID. default: include\n");
+    fprintf(stderr, "\t\t排除DVCID字段。default: 包括\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
-    fprintf(stderr, "\t\tCommand. default: %d\n", ABCDKMTX_STATUS);
+    fprintf(stderr, "\t\t命令。默认: %d\n", ABCDKMTX_STATUS);
 
-    fprintf(stderr, "\n\t\t%d: Report element status.\n", ABCDKMTX_STATUS);
-    fprintf(stderr, "\t\t%d: Move Medium.\n", ABCDKMTX_MOVE);
+    fprintf(stderr, "\n\t\t%d: 输出状态报表。\n", ABCDKMTX_STATUS);
+    fprintf(stderr, "\t\t%d: 移动介质。\n", ABCDKMTX_MOVE);
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\tOutput to the specified file.\n");
+    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
-    fprintf(stderr, "\t\tElement status format. default: %d\n", ABCDKMTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t状态报表格式。默认: %d\n", ABCDKMTX_STATUS_FMT_TEXT);
 
-    fprintf(stderr, "\n\t\t%d: Prints out an TEXT representation of the element status.\n",ABCDKMTX_STATUS_FMT_TEXT);
-    fprintf(stderr, "\t\t%d: Prints out an XML representation of the element status.\n",ABCDKMTX_STATUS_FMT_XML);
-    fprintf(stderr, "\t\t%d: Prints out an JSON representation of the element status.\n",ABCDKMTX_STATUS_FMT_JSON);
+    fprintf(stderr, "\n\t\t%d: 输出TEXT格式的状态报表。\n",ABCDKMTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t%d: 输出XML格式的状态报表。\n",ABCDKMTX_STATUS_FMT_XML);
+    fprintf(stderr, "\t\t%d: 输出JSON格式的状态报表。\n",ABCDKMTX_STATUS_FMT_JSON);
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -124,10 +128,10 @@ static struct _abcdkmtx_sense_dict
     {0x04, 0x00, 0x00, "Hardware Error"},
     /*KEY=0x05*/
     {0x05, 0x00, 0x00, "Illegal Request"},
-    {0x05, 0x21, 0x01, "Invalid element address"},
-    {0x05, 0x24, 0x00, "Invalid field CDB or address"},
-    {0x05, 0x3b, 0x0d, "Medium destination element full"},
-    {0x05, 0x3b, 0x0e, "Medium source element empty"},
+    {0x05, 0x21, 0x01, "无效的地址"},
+    {0x05, 0x24, 0x00, "无效的地址或地址超出范围"},
+    {0x05, 0x3b, 0x0d, "目标地址有介质"},
+    {0x05, 0x3b, 0x0e, "源地址无介质"},
     {0x05, 0x53, 0x02, "Library media removal prevented state set"},
     {0x05, 0x53, 0x03, "Drive media removal prevented state set"},
     {0x05, 0x44, 0x80, "Bad status library controller"},
@@ -350,7 +354,7 @@ void _abcdkmtx_work(abcdk_tree_t *args)
 
     if (!dev_p || !*dev_p)
     {
-        syslog(LOG_ERR, "'--dev FILE'  不能省略，且不能为空。");
+        syslog(LOG_ERR, "'--dev FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -378,7 +382,7 @@ void _abcdkmtx_work(abcdk_tree_t *args)
 
     if (type != TYPE_MEDIUM_CHANGER)
     {
-        syslog(LOG_WARNING, "'%s' not Medium Changer.", dev_p);
+        syslog(LOG_WARNING, "'%s' 不是机械手.", dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
@@ -413,7 +417,7 @@ void _abcdkmtx_work(abcdk_tree_t *args)
     }
     else
     {
-        syslog(LOG_WARNING, "Not supported.");
+        syslog(LOG_WARNING, "尚未支持。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 

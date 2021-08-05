@@ -21,34 +21,36 @@ void _abcdkrelease_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s Version %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
+    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
 
-    fprintf(stderr, "\nSYNOPSIS:\n");
+    fprintf(stderr, "\n摘要:\n");
 
     fprintf(stderr, "\n%s [ --key < NAME > ] [ OPTIONS ] \n",name);
 
-    fprintf(stderr, "\n%s \n",name);
+    fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\nOPTIONS:\n");
+    fprintf(stderr, "\n\t简单的系统信息查询工具。\n");
+
+    fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\tShow this help message and exit.\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\tOutput version information and exit.\n");
+    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--key < NAME >\n");
-    fprintf(stderr, "\t\tThe name of the key. default: all\n");
+    fprintf(stderr, "\t\tKEY名称，用于筛选器。默认: 全部\n");
 
     fprintf(stderr, "\n\t--short\n");
-    fprintf(stderr, "\t\tShow requested information in short format.\n");
+    fprintf(stderr, "\t\t输出短格式。\n");
 
     fprintf(stderr, "\n\t--os-release < FILE >\n");
-    fprintf(stderr, "\t\tCompatible os-release file. default: %s\n",DEFAULT_OS_RELEASE_FILE);
+    fprintf(stderr, "\t\t指定兼容的os-release文件. 默认: %s\n",DEFAULT_OS_RELEASE_FILE);
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -96,7 +98,6 @@ void _abcdkrelease_work(abcdk_tree_t *args)
     }
     else
     {
-        //fprintf(stdout, "%s\n", osinfo_mem->pptrs[0]);
         abcdk_option_fprintf(stdout,osinfo_args,"=");
     }
 

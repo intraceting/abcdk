@@ -21,58 +21,59 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s Build %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s Version %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
+    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
+    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
 
     if (only_version)
         ABCDK_ERRNO_AND_RETURN0(0);
 
-    fprintf(stderr, "\nSYNOPSIS:\n");
+    fprintf(stderr, "\n摘要:\n");
 
     fprintf(stderr, "\n%s [ --product < NAME > ] [ OPTIONS ]\n",name);
 
     fprintf(stderr, "\n%s [ --uri < STRING > ]\n",name);
 
-    fprintf(stderr, "\nOPTIONS:\n");
+    fprintf(stderr, "\n描述:\n");
+
+    fprintf(stderr, "\n\t简单的ODBC连接测试工具。\n");
+
+    fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\tShow this help message and exit.\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\tOutput version information and exit.\n");
-
-    fprintf(stderr, "\n\t--verbose\n");
-    fprintf(stderr, "\t\tPrint details. default: No\n");
+    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--product < NAME >\n");
-    fprintf(stderr, "\t\tProduct name. support: DB2/MYSQL/ORACLE/SQLSERVER/POSTGRESQL\n");
+    fprintf(stderr, "\t\t产品名称。支持: DB2/MYSQL/ORACLE/SQLSERVER/POSTGRESQL\n");
 
     fprintf(stderr, "\n\t--driver\n");
-    fprintf(stderr, "\t\tDriver name. see /etc/odbcinst.ini\n");
+    fprintf(stderr, "\t\t驱动名称。见：/etc/odbcinst.ini\n");
 
     fprintf(stderr, "\n\t--server < ADDRESS >\n");
-    fprintf(stderr, "\t\tServer address(IP | Domain). default: localhost\n");
+    fprintf(stderr, "\t\t服务地址(域名或IP)。默认: localhost\n");
 
     fprintf(stderr, "\n\t--port < NUMBER >\n");
-    fprintf(stderr, "\t\tServer port. default: 50000(DB2)/3306(MYSQL)/1521(ORACLE)/1433(SQLSERVER)/5432(POSTGRESQL)\n");
+    fprintf(stderr, "\t\t服务端口。默认: 50000(DB2)/3306(MYSQL)/1521(ORACLE)/1433(SQLSERVER)/5432(POSTGRESQL)\n");
 
     fprintf(stderr, "\n\t--db < NAME >\n");
-    fprintf(stderr, "\t\tDatabase name. \n");
+    fprintf(stderr, "\t\t数据库名称。 \n");
 
     fprintf(stderr, "\n\t--uid < NAME >\n");
-    fprintf(stderr, "\t\tUser name. \n");
+    fprintf(stderr, "\t\t数据库账户。\n");
 
     fprintf(stderr, "\n\t--pwd < PASSWROD >\n");
-    fprintf(stderr, "\t\tPassword. \n");
+    fprintf(stderr, "\t\t数据库账户密码。 \n");
 
     fprintf(stderr, "\n\t--uri < STRING >\n");
-    fprintf(stderr, "\t\tCustom connection string.\n");
+    fprintf(stderr, "\t\t自定义连接字符串。\n");
 
     fprintf(stderr, "\n\t--timeout < SECONDS >\n");
-    fprintf(stderr, "\t\tTimeout(seconds). default: 30\n");
+    fprintf(stderr, "\t\t超时(秒)。默认: 30\n");
 
     fprintf(stderr, "\n\t--trace-file < FILE >\n");
-    fprintf(stderr, "\t\tTrace file.\n");
+    fprintf(stderr, "\t\t指定根踪文件。\n");
     
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -80,7 +81,6 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
 void _abcdkodbc_work(abcdk_tree_t *args)
 {
     abcdk_odbc_t ctx = {0};
-    int verbose = 0;
     const char *product = NULL;
     const char *driver = NULL;
     const char *server = NULL;
@@ -93,7 +93,6 @@ void _abcdkodbc_work(abcdk_tree_t *args)
     const char *tracefile = NULL;
     SQLRETURN chk = SQL_ERROR;
 
-    verbose = (abcdk_option_exist(args,"--verbose")?1:0);
     product = abcdk_option_get(args, "--product", 0, NULL);
     driver = abcdk_option_get(args, "--driver", 0, NULL);
     server = abcdk_option_get(args, "--server", 0, "localhost");
@@ -105,9 +104,7 @@ void _abcdkodbc_work(abcdk_tree_t *args)
     timeout = abcdk_option_get_long(args, "--timeout", 0, 30);
     tracefile = abcdk_option_get(args, "--trace-file", 0, NULL);
 
-    /*Clear errno.*/
-    errno = 0;
-
+    /*优先检查自定义是否可用。*/
     if (uri && *uri)
     {
         chk = abcdk_odbc_connect(&ctx, uri, timeout, tracefile);
@@ -116,8 +113,7 @@ void _abcdkodbc_work(abcdk_tree_t *args)
 
     if (!product || !*product)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--product NAME' cannot be omitted.");
+        syslog(LOG_ERR, "'--product NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -127,22 +123,19 @@ void _abcdkodbc_work(abcdk_tree_t *args)
         abcdk_strcmp(product, "SQLSERVER", 0) != 0 &&
         abcdk_strcmp(product, "POSTGRESQL", 0) != 0)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--product NAME' is one of them in DB2 MYSQL ORACLE SQLSERVER POSTGRESQL.");
+        syslog(LOG_ERR, "'--product NAME' 仅支持DB2，MYSQL，ORACLE，SQLSERVER，POSTGRESQL。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (!driver || !*driver)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--driver NAME' cannot be omitted.");
+        syslog(LOG_ERR, "'--driver NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (!server || !*server)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--server ADDRESS' cannot be omitted.");
+        syslog(LOG_ERR, "'--server ADDRESS' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -162,33 +155,30 @@ void _abcdkodbc_work(abcdk_tree_t *args)
 
     if (port == 0 || port == 65536)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--port NUMBER' range is 1~65535.");
+        syslog(LOG_ERR, "'--port NUMBER' 范围在1~65535之间(包含)。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (!db || !*db)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--db NAME' cannot be omitted.");
+        syslog(LOG_ERR, "'--db NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (!uid || !*uid)
     {
-        if(verbose)
-            syslog(LOG_ERR, "'--uid NAME' cannot be omitted.");
+        syslog(LOG_ERR, "'--uid NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     chk = abcdk_odbc_connect2(&ctx,product,driver,server,port,db,uid,pwd,timeout,tracefile);
+    ABCDK_ERRNO_AND_GOTO1(0, final);
 
 final:
 
-    abcdk_odbc_disconnect(&ctx);
-
     fprintf(stdout,"%d\n",((chk == SQL_SUCCESS)?0:1));
 
+    abcdk_odbc_disconnect(&ctx);
 }
 
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)
@@ -230,8 +220,9 @@ final:
     abcdk_tree_free(&args);
 
 #else
-    
-    fprintf(stderr, "The toolkit needs to be recompiled to support ODBC.\n");
+
+    abcdk_openlog(NULL, LOG_INFO, 1);
+    syslog(LOG_INFO, "当前构建版本未包含此工具。\n");
     errno = EPERM;
 
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)
