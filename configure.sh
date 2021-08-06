@@ -187,10 +187,12 @@ BUILD_PATH=$(realpath "${SHELL_PWD}/build/")
 HOST_PLATFORM=$(uname -m)
 TARGET_PLATFORM=${HOST_PLATFORM}
 
-#
+#主版本
 VERSION_MAJOR="1"
+#副版本
 VERSION_MINOR="1"
-VERSION_RELEASE="1"
+#发行版本
+VERSION_RELEASE="17"
 
 #
 BUILD_TYPE="release"
@@ -205,30 +207,35 @@ DEPEND_FUNC="Nothing"
 PrintUsage()
 {
     echo "usage: [ OPTIONS ]"
-    echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse"
     echo -e "\n\t-g"
-    echo -e "\t\t生成调试符号。默认：关闭。"
+    echo -e "\t\t生成调试符号。默认：关闭"
+    echo -e "\n\t-r"
+    echo -e "\t\t发行版本。默认：${VERSION_RELEASE}"
     echo -e "\n\t-i < PATH >"
     echo -e "\t\t安装路径。默认：${INSTALL_PREFIX}"
+    echo -e "\n\t-d < KEY,KEY,... >"
+    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse"
 }
 
 #
-while getopts "?d:gi:" ARGKEY 
+while getopts "?gr:i:d:" ARGKEY 
 do
     case $ARGKEY in
     \?)
         PrintUsage
         exit 22
     ;;
-    d)
-        DEPEND_FUNC="$OPTARG"
-    ;;
     g)
         BUILD_TYPE="debug"
     ;;
+    r)
+        VERSION_RELEASE="${OPTARG}"
+    ;;
     i)
         INSTALL_PREFIX=$(realpath "${OPTARG}")
+    ;;
+    d)
+        DEPEND_FUNC="$OPTARG"
     ;;
     esac
 done
@@ -397,24 +404,11 @@ else
 INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
 fi
 
-#读取版本。
-VERSION_MAJOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 1)
-VERSION_MINOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 2)
-VERSION_RELEASE=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 3)
-
-#滚动发行版本。
-VERSION_RELEASE=$(expr ${VERSION_RELEASE} + 1)
-
-#记录发行版本。
-echo "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" > ${SHELL_PWD}/VERSION
-checkReturnCode
-
 #
 DEPEND_FLAGS="${DEPEND_FLAGS} -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 
 #
 DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
-
 
 #
 echo "MAKE_CONF=${MAKE_CONF}"
