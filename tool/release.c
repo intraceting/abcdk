@@ -9,9 +9,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk/general.h"
-#include "abcdk/getargs.h"
-#include "abcdk/mman.h"
+#include "abcdk-util/general.h"
+#include "abcdk-util/getargs.h"
+#include "abcdk-util/mman.h"
 
 #define DEFAULT_OS_RELEASE_FILE "/etc/os-release"
 

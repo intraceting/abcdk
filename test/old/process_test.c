@@ -8,8 +8,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/general.h"
-#include "abcdk/signal.h"
+#include "abcdk-util/general.h"
+#include "abcdk-util/signal.h"
 
 static int lock_fd = -1;
 static char lock_file[] = {"/tmp/test_process.lock"};

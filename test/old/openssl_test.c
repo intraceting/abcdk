@@ -9,9 +9,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk/getargs.h"
-#include "abcdk/openssl.h"
-#include "abcdk/socket.h"
+#include "abcdk-util/getargs.h"
+#include "abcdk-util/openssl.h"
+#include "abcdk-util/socket.h"
 
 
 #ifdef HEADER_RSA_H

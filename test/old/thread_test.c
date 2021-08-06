@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
-#include "abcdk/thread.h"
-#include "abcdk/crc32.h"
-#include "abcdk/clock.h"
-#include "abcdk/signal.h"
+#include "abcdk-util/thread.h"
+#include "abcdk-util/crc32.h"
+#include "abcdk-util/clock.h"
+#include "abcdk-util/signal.h"
 
 void* specific_cb(void* args)
 {

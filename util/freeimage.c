@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/freeimage.h"
+#include "abcdk-util/freeimage.h"
 
 #ifdef FREEIMAGE_H
 

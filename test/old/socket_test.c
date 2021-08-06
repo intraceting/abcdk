@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/socket.h"
+#include "abcdk-util/socket.h"
 
 void test_gethostbyname()
 {

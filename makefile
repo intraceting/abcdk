@@ -15,7 +15,7 @@ include ${MAKE_CONF}
 SOLUTION_NAME ?= abcdk
 
 #
-UTIL_NAME = libabcdk.so
+UTIL_NAME = libabcdk-util.so
 UTIL_REALNAME = ${UTIL_NAME}.${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
 #
@@ -79,7 +79,8 @@ CCC_FLAGS += -s -O2
 endif
 
 #
-CCC_FLAGS += -I$(CURDIR)/include/ 
+CCC_FLAGS += -I$(CURDIR)/include/
+ 
 #
 LINK_FLAGS += -L${BUILD_PATH}
 
@@ -245,7 +246,8 @@ install-util:
 	cp -f $(BUILD_PATH)/${UTIL_REALNAME} ${INSTALL_PATH_LIB}/
 	ln -f -s ${UTIL_REALNAME} ${INSTALL_PATH_LIB}/${UTIL_NAME}
 	mkdir -p ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/${SOLUTION_NAME} ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-util ${INSTALL_PATH_INC}/
+
 #
 install-tool:
 	mkdir -p ${INSTALL_PATH_BIN}
@@ -293,7 +295,7 @@ uninstall: uninstall-util uninstall-tool uninstall-ldc uninstall-pkg
 uninstall-util:
 	rm -f ${INSTALL_PATH_LIB}/${UTIL_REALNAME}
 	rm -f ${INSTALL_PATH_LIB}/${UTIL_NAME}
-	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}
+	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-util
 
 #
 uninstall-tool:

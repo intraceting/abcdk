@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
-#include "abcdk/map.h"
-#include "abcdk/buffer.h"
+#include "abcdk-util/map.h"
+#include "abcdk-util/buffer.h"
 
 
 int dump_tree(size_t deep, abcdk_tree_t *node, void *opaque)

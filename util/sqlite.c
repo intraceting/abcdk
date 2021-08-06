@@ -4,7 +4,7 @@
  * MIT License
  * 
 */
-#include "abcdk/sqlite.h"
+#include "abcdk-util/sqlite.h"
 
 #ifdef _SQLITE3_H_
 

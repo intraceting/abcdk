@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/sqlite.h"
+#include "abcdk-util/sqlite.h"
 
 #ifdef _SQLITE3_H_
 

@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/general.h"
+#include "abcdk-util/general.h"
 
 
 int main(int argc, char **argv)

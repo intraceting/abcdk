@@ -8,10 +8,10 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/general.h"
-#include "abcdk/scsi.h"
-#include "abcdk/mtx.h"
-#include "abcdk/mt.h"
+#include "abcdk-util/general.h"
+#include "abcdk-util/scsi.h"
+#include "abcdk-util/mtx.h"
+#include "abcdk-util/mt.h"
 
 void test_get_sn()
 {

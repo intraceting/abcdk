@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/uri.h"
+#include "abcdk-util/uri.h"
 
 abcdk_allocator_t *abcdk_uri_split(const char *uri)
 {

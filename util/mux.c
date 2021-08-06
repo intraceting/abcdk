@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/mux.h"
+#include "abcdk-util/mux.h"
 
 /**
  * 多路复用器。

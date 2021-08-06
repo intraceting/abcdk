@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/dirent.h"
+#include "abcdk-util/dirent.h"
 
 void _abcdk_dirent_scan(abcdk_tree_t *father, size_t depth, abcdk_dirent_filter_t *filter)
 {

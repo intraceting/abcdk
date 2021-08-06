@@ -8,18 +8,18 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/general.h"
-#include "abcdk/getargs.h"
-#include "abcdk/geometry.h"
-#include "abcdk/ffmpeg.h"
-#include "abcdk/bmp.h"
-#include "abcdk/freeimage.h"
-#include "abcdk/uri.h"
-#include "abcdk/html.h"
-#include "abcdk/clock.h"
-#include "abcdk/crc32.h"
-#include "abcdk/robots.h"
-#include "abcdk/dirent.h"
+#include "abcdk-util/general.h"
+#include "abcdk-util/getargs.h"
+#include "abcdk-util/geometry.h"
+#include "abcdk-util/ffmpeg.h"
+#include "abcdk-util/bmp.h"
+#include "abcdk-util/freeimage.h"
+#include "abcdk-util/uri.h"
+#include "abcdk-util/html.h"
+#include "abcdk-util/clock.h"
+#include "abcdk-util/crc32.h"
+#include "abcdk-util/robots.h"
+#include "abcdk-util/dirent.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29

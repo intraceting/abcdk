@@ -8,8 +8,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk/tree.h"
-#include "abcdk/buffer.h"
+#include "abcdk-util/tree.h"
+#include "abcdk-util/buffer.h"
 
 int dump(size_t deep, abcdk_tree_t *node, void *opaque)
 {
