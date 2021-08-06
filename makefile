@@ -12,11 +12,11 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 include ${MAKE_CONF}
 
 #
-SOLUTION_NAME ?= abcdk
+VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 
 #
 UTIL_NAME = libabcdk-util.so
-UTIL_REALNAME = ${UTIL_NAME}.${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
+UTIL_REALNAME = ${UTIL_NAME}.${VERSION_STR}
 
 #
 MT_REALNAME = abcdk-mt.exe
@@ -324,7 +324,7 @@ uninstall-pkg:
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
 
 #
-TAR_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}-${TARGET_PLATFORM}.tar.gz
+TAR_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}-${TARGET_PLATFORM}.tar.gz
 
 #
 SPEC_FILE=$(BUILD_PATH)/${SOLUTION_NAME}.spec
@@ -332,7 +332,7 @@ RPM_PATH=$(CURDIR)/package
 
 #
 DEB_ARCH=$(shell dpkg-architecture |grep "DEB_TARGET_ARCH=" |cut -d '=' -f 2)
-DEB_FILE=$(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}.${DEB_ARCH}.deb
+DEB_FILE=$(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}.${DEB_ARCH}.deb
 CTRL_FILE="${TMP_ROOT_PATH}/DEBIAN/control"
 CLOG_FILE="${TMP_ROOT_PATH}/DEBIAN/changelog"
 
@@ -385,7 +385,7 @@ package-deb: clean
 	echo "Source: ${SOLUTION_NAME}" > ${CTRL_FILE}
 	echo "Maintainer: zpcoding<intraceting@outlook.com>" >> ${CTRL_FILE}
 	echo "Package: ${SOLUTION_NAME}" >> ${CTRL_FILE}
-	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}" >> ${CTRL_FILE}
+	echo "Version: ${VERSION_STR}" >> ${CTRL_FILE}
 	echo "Section: Development/Libraries" >> ${CTRL_FILE}
 	echo "Priority: optional" >> ${CTRL_FILE}
 	echo "Architecture: ${DEB_ARCH}" >> ${CTRL_FILE}
