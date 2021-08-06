@@ -320,6 +320,7 @@ uninstall-pkg:
 	
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
+
 #
 TAR_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}-${TARGET_PLATFORM}.tar.gz
 
@@ -328,9 +329,10 @@ SPEC_FILE=$(BUILD_PATH)/${SOLUTION_NAME}.spec
 RPM_PATH=$(CURDIR)/package
 
 #
+DEB_ARCH=$(shell dpkg-architecture |grep "DEB_TARGET_ARCH=" |cut -d '=' -f 2)
+DEB_FILE=$(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}.${DEB_ARCH}.deb
 CTRL_FILE="${TMP_ROOT_PATH}/DEBIAN/control"
-CLOG_FILE="${TMP_ROOT_PATH}/DEBIAN/changlog"
-DEB_FILE=$(CURDIR)/package/${SOLUTION_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}.${TARGET_PLATFORM}.deb
+CLOG_FILE="${TMP_ROOT_PATH}/DEBIAN/changelog"
 
 #
 package: package-${KIT_NAME}
@@ -364,29 +366,31 @@ package-rpm: clean
 	echo '%files' >> ${SPEC_FILE}
 	echo "${INSTALL_PREFIX}" >> ${SPEC_FILE}
 	echo '' >> ${SPEC_FILE}
-	echo '%changelog' >> ${SPEC_FILE}
-	cat $(CURDIR)/changelog >> ${SPEC_FILE}
-	echo '' >> ${SPEC_FILE}
+#	echo '%changelog' >> ${SPEC_FILE}
+#	cat $(CURDIR)/CHANGELOG >> ${SPEC_FILE}
+#	echo '' >> ${SPEC_FILE}
 #
 	rpmbuild --buildroot "${TMP_ROOT_PATH}"  -bb "${SPEC_FILE}" --define="_rpmdir ${RPM_PATH}"
 #
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
 	
 #
-package-deb:
+package-deb: clean
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
 #
 	mkdir -p ${TMP_ROOT_PATH}/DEBIAN/
-	echo "Package: ${SOLUTION_NAME}" > ${CTRL_FILE}
+	echo "Source: ${SOLUTION_NAME}" > ${CTRL_FILE}
+	echo "Maintainer: zpcoding<intraceting@outlook.com>" >> ${CTRL_FILE}
+	echo "Package: ${SOLUTION_NAME}" >> ${CTRL_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}" >> ${CTRL_FILE}
 	echo "Section: Development/Libraries" >> ${CTRL_FILE}
 	echo "Priority: optional" >> ${CTRL_FILE}
-	echo "Architecture: amd64" >> ${CTRL_FILE}
-	echo "Maintainer: zpcoding<intraceting@outlook.com>" >> ${CTRL_FILE}
+	echo "Architecture: ${DEB_ARCH}" >> ${CTRL_FILE}
+#	echo "Depends: \$${shlibs:Depends}" >> ${CTRL_FILE}
 	echo "Description: ${SOLUTION_NAME} is a toolkit for simplifying the use of C as a development language." >> ${CTRL_FILE}
-	cat $(CURDIR)/changelog > ${CLOG_FILE}
+#	cat $(CURDIR)/CHANGELOG > ${CLOG_FILE}
 #
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${DEB_FILE}"
 #
-#	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
+	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}

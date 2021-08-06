@@ -397,29 +397,15 @@ else
 INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
 fi
 
-#
-VERSION_MAJOR=$(cat ${SHELL_PWD}/version | cut -d '.' -f 1)
-VERSION_MINOR=$(cat ${SHELL_PWD}/version | cut -d '.' -f 2)
-VERSION_RELEASE=$(cat ${SHELL_PWD}/version | cut -d '.' -f 3)
-
-#
-if [ ${VERSION_MAJOR} -lt 1 ];then
-VERSION_MAJOR="1"
-fi
-
-#
-if [ ${VERSION_MINOR} -lt 1 ];then
-VERSION_MINOR="1"
-fi
-
-#
-if [ ${VERSION_RELEASE} -lt 1 ];then
-VERSION_RELEASE="1"
-else 
-VERSION_RELEASE=$(expr ${VERSION_RELEASE} + 1)
-fi
+#读取版本。
+VERSION_MAJOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 1)
+VERSION_MINOR=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 2)
+VERSION_RELEASE=$(cat ${SHELL_PWD}/VERSION | cut -d '.' -f 3)
 
 #滚动发行版本。
+VERSION_RELEASE=$(expr ${VERSION_RELEASE} + 1)
+
+#记录发行版本。
 echo "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" > ${SHELL_PWD}/VERSION
 checkReturnCode
 
