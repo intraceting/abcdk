@@ -294,7 +294,7 @@ ssize_t abcdk_buffer_vprintf(abcdk_buffer_t *buf, const char *fmt, va_list args)
     if (abcdk_buffer_privatize(buf) != 0)
         ABCDK_ERRNO_AND_RETURN1(EMLINK, -1);
 
-    assert(buf != NULL && fmt != NULL && args != NULL);
+    assert(buf != NULL && fmt != NULL);
     assert(buf->data != NULL && buf->size > 0);
 
     if (buf->wsize >= buf->size)
@@ -361,7 +361,7 @@ ssize_t abcdk_buffer_import_atmost(abcdk_buffer_t *buf, int fd, size_t howmuch)
 
 ssize_t abcdk_buffer_export(abcdk_buffer_t *buf, int fd)
 {
-    return abcdk_buffer_export_atmost(buf, fd, UINT64_MAX);
+    return abcdk_buffer_export_atmost(buf, fd, -1UL);
 }
 
 ssize_t abcdk_buffer_export_atmost(abcdk_buffer_t *buf, int fd, size_t howmuch)
