@@ -56,6 +56,11 @@ int abcdk_option_get_int(abcdk_tree_t *opt, const char *key,size_t index,int def
 long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long defval);
 
 /**
+ * 获取一个选项的值(长长整型)。
+*/
+long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval);
+
+/**
  * 获取一个选项的值(浮点型)。
 */
 double abcdk_option_get_double(abcdk_tree_t *opt, const char *key,size_t index,double defval);

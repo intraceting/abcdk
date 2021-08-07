@@ -337,7 +337,7 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
 
 final:
 
-    it->dump_cb(UINTMAX_MAX, NULL, it->opaque);
+    it->dump_cb(-1UL, NULL, it->opaque);
 
     abcdk_heap_free2((void**)&stack);
 }

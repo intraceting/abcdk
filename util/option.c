@@ -144,6 +144,16 @@ long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long 
     return atol(val);
 }
 
+long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval)
+{
+    const char *val = abcdk_option_get(opt, key, index, NULL);
+
+    if (!val)
+        return defval;
+
+    return atoll(val);
+}
+
 double abcdk_option_get_double(abcdk_tree_t *opt, const char *key,size_t index,double defval)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);

@@ -277,7 +277,7 @@ void _abcdkmt_seek_pos(abcdk_tree_t *args,int fd)
     uint32_t pos_part = 0;
     int chk;
 
-    pos_block = abcdk_option_get_long(args, "--pos-block", 0, INTMAX_MAX);
+    pos_block = abcdk_option_get_llong(args, "--pos-block", 0, INTMAX_MAX);
     pos_part = abcdk_option_get_int(args, "--pos-part", 0, 0);
 
     chk = abcdk_mt_locate(fd,1,pos_part,pos_block,1800*1000,&stat);
