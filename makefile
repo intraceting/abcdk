@@ -354,7 +354,7 @@ package-rpm: clean
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
 #
 	echo "BuildRoot: ${TMP_ROOT_PATH}" > ${SPEC_FILE}
-	echo 'Vendor: zpcoding<intraceting@outlook.com>' >> ${SPEC_FILE}
+	echo 'Vendor: intraceting<intraceting@outlook.com>' >> ${SPEC_FILE}
 	echo "Name: ${SOLUTION_NAME}" >> ${SPEC_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}" >> ${SPEC_FILE}
 	echo "Release: ${VERSION_RELEASE}" >> ${SPEC_FILE}
@@ -383,7 +383,7 @@ package-deb: clean
 #
 	mkdir -p ${TMP_ROOT_PATH}/DEBIAN/
 	echo "Source: ${SOLUTION_NAME}" > ${CTRL_FILE}
-	echo "Maintainer: zpcoding<intraceting@outlook.com>" >> ${CTRL_FILE}
+	echo "Maintainer: intraceting<intraceting@outlook.com>" >> ${CTRL_FILE}
 	echo "Package: ${SOLUTION_NAME}" >> ${CTRL_FILE}
 	echo "Version: ${VERSION_STR}" >> ${CTRL_FILE}
 	echo "Section: Development/Libraries" >> ${CTRL_FILE}
