@@ -439,6 +439,8 @@ int fuse_read(const char *file, char *buffer, size_t size, off_t offset, struct 
 
     if(rlen != size)
         sleep(10);
+    else 
+        usleep(40*1000);
 
     return (rlen >= 0 ? rlen : -errno);
 }

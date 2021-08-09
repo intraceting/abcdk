@@ -62,7 +62,7 @@ next:
             
         }
 
-        if (*key_e == '>')
+        if (isspace(*key_e) || *key_e == '>')
             goto copy_attr;
 
         r = '\0';
