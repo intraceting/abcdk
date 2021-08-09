@@ -200,7 +200,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
             ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
         }
     }
-    else if (depth == UINTMAX_MAX)
+    else if (depth == SIZE_MAX)
     {
         if(fmt == ABCDKMTX_STATUS_FMT_XML)
         {
@@ -271,7 +271,7 @@ int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     uint16_t *t_p = (uint16_t *)opaque;
 
     /*已经结束。*/
-    if(depth == UINTMAX_MAX)
+    if(depth == SIZE_MAX)
         ABCDK_ERRNO_AND_RETURN1(0,-1);
 
     if (depth == 0)

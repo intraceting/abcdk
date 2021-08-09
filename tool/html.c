@@ -156,7 +156,7 @@ int _abcdkhtml_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     align_left = abcdk_option_exist(args,"--align-left");
 
     /*已经结束。*/
-    if(depth == UINTMAX_MAX)
+    if(depth == SIZE_MAX)
         return -1;
     
     if (depth == 0)

@@ -153,7 +153,7 @@ static int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     abcdk_map_t *map = (abcdk_map_t *)opaque;
 
     /*已经结束。*/
-    if(depth == UINTMAX_MAX)
+    if(depth == SIZE_MAX)
         return -1;
 
     /*跳过组织结构。*/

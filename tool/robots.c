@@ -71,7 +71,7 @@ int _abcdkrobots_match_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     int chk;
 
     /*已经结束。*/
-    if(depth == UINTMAX_MAX)
+    if(depth == SIZE_MAX)
         return -1;
 
     if (depth == 0)

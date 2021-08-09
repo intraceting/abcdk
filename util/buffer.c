@@ -361,7 +361,7 @@ ssize_t abcdk_buffer_import_atmost(abcdk_buffer_t *buf, int fd, size_t howmuch)
 
 ssize_t abcdk_buffer_export(abcdk_buffer_t *buf, int fd)
 {
-    return abcdk_buffer_export_atmost(buf, fd, -1UL);
+    return abcdk_buffer_export_atmost(buf, fd, SIZE_MAX);
 }
 
 ssize_t abcdk_buffer_export_atmost(abcdk_buffer_t *buf, int fd, size_t howmuch)
