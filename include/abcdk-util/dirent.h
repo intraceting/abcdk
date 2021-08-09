@@ -78,10 +78,10 @@ enum _abcdk_dirent_field
 typedef struct _abcdk_dirent_counter
 {
     /** 数量。*/
-    size_t nums;
+    __off64_t nums;
 
     /** 大小。*/
-    size_t sizes;
+    __off64_t sizes;
 
 } abcdk_dirent_counter_t;
 
