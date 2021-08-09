@@ -455,7 +455,7 @@ echo "#" >> ${MAKE_CONF}
 echo "" >> ${MAKE_CONF}
 
 #
-echo "KIT_NAME=${KIT_NAME}" >> ${MAKE_CONF}
+echo "KIT_NAME = ${KIT_NAME}" >> ${MAKE_CONF}
 
 #
 echo "SOLUTION_NAME = ${SOLUTION_NAME}" >> ${MAKE_CONF}
