@@ -203,7 +203,7 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
-clean: clean-util clean-tool
+clean: clean-util clean-tool clean-test
 	rm -rf ${OBJ_PATH}
 
 #
@@ -225,6 +225,11 @@ clean-tool:
 	rm -f $(BUILD_PATH)/${HTML_NAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
+
+#
+clean-test:
+	rm -f $(BUILD_PATH)/${MUX_TESTNAME}
+	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
 
 #
 INSTALL_PATH_INC = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/include/)
@@ -372,10 +377,10 @@ package-rpm: clean
 #	cat $(CURDIR)/CHANGELOG >> ${SPEC_FILE}
 #	echo '' >> ${SPEC_FILE}
 #
-	rpmbuild --buildroot "${TMP_ROOT_PATH}"  -bb "${SPEC_FILE}" --define="_rpmdir ${RPM_PATH}"
+	rpmbuild --rmspec --buildroot "${TMP_ROOT_PATH}"  -bb "${SPEC_FILE}" --define="_rpmdir ${RPM_PATH}"
 #
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
-	
+
 #
 package-deb: clean
 	make -C $(CURDIR)
