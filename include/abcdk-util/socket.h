@@ -129,6 +129,16 @@ int abcdk_socket_ioctl(uint32_t cmd, void *args);
 char *abcdk_mac_fetch(const char *ifname, char addr[12]);
 
 /**
+ * 查询网卡连接状态。
+ * 
+ * @param flag 状态指针。返回前填充连接状态。
+ * 
+ * @return 0 成功，-1 失败。
+ * 
+*/
+int abcdk_netlink_fetch(const char *ifname, int *flag);
+
+/**
  * 获取或设置SOCKET选项。
  * 
  * @param direction 方向。 1 读，2 写。

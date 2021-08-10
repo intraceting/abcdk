@@ -20,6 +20,7 @@
 #include "abcdk-util/crc32.h"
 #include "abcdk-util/robots.h"
 #include "abcdk-util/dirent.h"
+#include "abcdk-util/socket.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -726,6 +727,27 @@ void test_dirent(abcdk_tree_t *args)
     
 }
 
+void test_netlink(abcdk_tree_t *args)
+{
+    const char *ap = abcdk_option_get(args,"--i",0,"");
+
+    int flag = 0;
+
+    int chk = abcdk_netlink_fetch(ap,&flag);
+
+    if (chk == 0)
+    {
+        printf("%s: UP=%s,BCAST=%s,MCAST=%s,LOOP=%s,P2P=%s\n", ap,
+               (flag & IFF_UP) ? "Yes" : "No",
+               (flag & IFF_BROADCAST) ? "Yes" : "No",
+               (flag & IFF_MULTICAST) ? "Yes" : "No",
+               (flag & IFF_LOOPBACK) ? "Yes" : "No",
+               (flag & IFF_POINTOPOINT) ? "Yes" : "No");
+    }
+    else
+        printf("%s: %s\n", ap, strerror(errno));
+}
+
 
 int main(int argc, char **argv)
 {
@@ -776,6 +798,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_dirent", 0) == 0)
         test_dirent(args);
+    
+    if (abcdk_strcmp(func, "test_netlink", 0) == 0)
+        test_netlink(args);
 
     abcdk_tree_free(&args);
     

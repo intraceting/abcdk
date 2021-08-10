@@ -167,6 +167,24 @@ char *abcdk_mac_fetch(const char *ifname, char addr[12])
     return addr;
 }
 
+int abcdk_netlink_fetch(const char *ifname, int *flag)
+{
+    struct ifreq args = {0};
+    int chk;
+
+    assert(ifname != NULL && flag != NULL);
+
+    strncpy(args.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
+
+    chk = abcdk_socket_ioctl(SIOCGIFFLAGS, &args);
+    if (chk == -1)
+        return -1;
+
+    *flag = args.ifr_flags;
+
+    return 0;
+}
+
 int abcdk_socket_option(int fd,int level, int name,void *data,int *len,int direction)
 {
     assert(fd >= 0 && level >= 0 && name > 0 && data != NULL && len != NULL && (direction == 1 || direction == 2));
