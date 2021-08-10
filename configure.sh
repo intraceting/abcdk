@@ -120,6 +120,8 @@ CheckHavePackage()
         }
         elif [ "${PACKAGE}" == "fuse" ];then
             NAMES="libfuse-dev"
+        elif [ "${PACKAGE}" == "networkmanager" ];then
+            NAMES="libnm-dev"
         fi     
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -143,6 +145,8 @@ CheckHavePackage()
         }
         elif [ "${PACKAGE}" == "fuse" ];then
             NAMES="fuse-devel"
+         elif [ "${PACKAGE}" == "networkmanager" ];then
+            NAMES="NetworkManager-libnm-devel"
         fi
     }
     fi 
@@ -214,7 +218,7 @@ PrintUsage()
     echo -e "\n\t-i < PATH >"
     echo -e "\t\t安装路径。默认：${INSTALL_PREFIX}"
     echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse"
+    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-networkmanager"
 }
 
 #
@@ -388,6 +392,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
 fi
 
 #
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-networkmanager") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} networkmanager)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_NETWORKMANAGER="Yes"
+        DEPEND_FLAGS=" -DHAVE_NETWORKMANAGER ${DEPEND_FLAGS}"
+        DEPEND_FLAGS=" $(pkg-config --cflags libnm) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(pkg-config --libs libnm) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "freeimage kit not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+#
 mkdir -p ${BUILD_PATH}
 
 #
@@ -440,6 +464,7 @@ echo "HAVE_OPENSSL=${HAVE_OPENSSL}"
 echo "HAVE_FFMPEG=${HAVE_FFMPEG}"
 echo "HAVE_FREEIMAGE=${HAVE_FREEIMAGE}"
 echo "HAVE_FUSE=${HAVE_FUSE}"
+echo "HAVE_NETWORKMANAGER=${HAVE_NETWORKMANAGER}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"

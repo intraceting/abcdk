@@ -57,6 +57,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <net/if.h>
+#include <net/ethernet.h>
 #include <linux/wireless.h>
 
 /**

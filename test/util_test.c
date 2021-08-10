@@ -27,6 +27,9 @@
 #include <fuse.h>
 #endif //
 
+#ifdef HAVE_NETWORKMANAGER
+#include <libnm/NetworkManager.h>
+#endif 
 
 void test_log(abcdk_tree_t *args)
 {
@@ -749,6 +752,243 @@ void test_netlink(abcdk_tree_t *args)
         printf("%s: %s\n", ap, strerror(errno));
 }
 
+#ifdef HAVE_NETWORKMANAGER
+static void
+request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	NMClient *cli = (NMClient *) user_data;
+	GError *error = NULL;
+
+	nm_device_wifi_request_scan_finish (NM_DEVICE_WIFI (object), result, &error);
+	// if (error) {
+	// 	g_string_printf (nmc->return_text, _("Error: %s."), error->message);
+	// 	nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+	// 	g_error_free (error);
+	// }
+}
+#endif //#ifdef HAVE_NETWORKMANAGER
+
+void
+iw_essid_escape(char *		dest,
+		const char *	src,
+		const int	slen)
+{
+  const unsigned char *	s = (const unsigned char *) src;
+  const unsigned char *	e = s + slen;
+  char *		d = dest;
+
+  /* Look every character of the string */
+  while(s < e)
+    {
+      int	isescape;
+
+      /* Escape the escape to avoid ambiguity.
+       * We do a fast path test for performance reason. Compiler will
+       * optimise all that ;-) */
+      if(*s == '\\')
+	{
+	  /* Check if we would confuse it with an escape sequence */
+	  if((e-s) > 4 && (s[1] == 'x')
+	     && (isxdigit(s[2])) && (isxdigit(s[3])))
+	    {
+	      isescape = 1;
+	    }
+	  else
+	    isescape = 0;
+	}
+      else
+	isescape = 0;
+      
+
+      /* Is it a non-ASCII character ??? */
+      if(isescape || !isascii(*s) || iscntrl(*s))
+	{
+	  /* Escape */
+	  sprintf(d, "\\x%02X", *s);
+	  d += 4;
+	}
+      else
+	{
+	  /* Plain ASCII, just copy */
+	  *d = *s;
+	  d++;
+	}
+      s++;
+    }
+
+  /* NUL terminate destination */
+  *d = '\0';
+}
+
+
+void test_iwscan(abcdk_tree_t *args)
+{
+#if 1
+    //
+
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+    struct	iw_scan_req scan_req = {0};
+   // scan_req.scan_type = IW_SCAN_TYPE_ACTIVE;
+    //scan_req.flags = ;
+
+    struct  iwreq req = {0};
+    strncpy(req.ifr_ifrn.ifrn_name, "wlx70f11c3c3500", IFNAMSIZ);
+    //req.u.data.pointer = &scan_req;
+    //req.u.data.length = sizeof(struct	iw_scan_req);
+    //req.u.data.flags = IW_SCAN_DEFAULT;
+
+    abcdk_allocator_t * scan_rsp = abcdk_allocator_alloc2(10000);
+
+    int chk = ioctl(sock, SIOCSIWSCAN, &req);
+    if (errno != EPERM)
+        goto END;
+
+  //  chk = abcdk_poll(sock,0x01,10000);
+
+    struct timeval	tv;	
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    /* Forever */
+    while (1)
+    {
+        fd_set rfds; /* File descriptors for select */
+        int last_fd; /* Last fd */
+        int ret;
+
+        /* Guess what ? We must re-generate rfds each time */
+        FD_ZERO(&rfds);
+        last_fd = -1;
+
+        /* In here, add the rtnetlink fd in the list */
+
+        /* Wait until something happens */
+        ret = select(last_fd + 1, &rfds, NULL, NULL, &tv);
+
+        /* Check if there was an error */
+        if (ret < 0)
+        {
+            if (errno == EAGAIN || errno == EINTR)
+                continue;
+            fprintf(stderr, "Unhandled signal - exiting...\n");
+            break;
+        }
+
+        if(ret==0)
+        {
+            struct  iwreq rsp = {0};
+            strncpy(rsp.ifr_ifrn.ifrn_name, "wlx70f11c3c3500", IFNAMSIZ);
+            rsp.u.data.pointer = scan_rsp->pptrs[0];
+            rsp.u.data.length = scan_rsp->sizes[0];
+            rsp.u.data.flags = 0;
+
+            chk = ioctl(sock, SIOCGIWSCAN, &rsp);
+            if (chk < 0)
+            {
+                if (errno == EAGAIN)
+                    continue;
+
+                goto END;
+            }
+
+            void *p = rsp.u.data.pointer;
+
+            for (;p - rsp.u.data.pointer < rsp.u.data.length;)
+            {
+                struct iw_event *event = ABCDK_PTR2PTR(struct iw_event, p, 0);
+
+                printf("cmd = %04X,len = %hu\n", event->cmd, event->len);
+
+                switch (event->cmd)
+                {
+                case SIOCGIWAP:
+                {
+                    struct ether_addr *eth = ABCDK_PTR2PTR(struct ether_addr, event->u.addr.sa_data, 0);
+
+                    printf("address: %02X:%02X:%02X:%02X:%02X:%02X\n",
+                           eth->ether_addr_octet[0], eth->ether_addr_octet[1],
+                           eth->ether_addr_octet[2], eth->ether_addr_octet[3],
+                           eth->ether_addr_octet[4], eth->ether_addr_octet[5]);
+                }
+                break;
+                case SIOCGIWNWID:
+                {
+                    if (event->u.nwid.disabled)
+                        printf("\tNWID: off/any\n");
+                    else
+                        printf("                    NWID: %X\n", event->u.nwid.value);
+                }
+                break;
+                case SIOCGIWFREQ:
+                {
+                    printf("\tchannel: %f\n",((double) event->u.freq.m) * pow(10,event->u.freq.e));
+                }
+                break;
+                case SIOCGIWESSID:
+                {
+                    break;
+                    event->u.essid.pointer = p+4+sizeof(struct iw_point);
+                    event->u.essid.length = event->len-4-sizeof(struct iw_point);
+
+                    char essid[4 * IW_ESSID_MAX_SIZE + 1];
+                    memset(essid, '\0', sizeof(essid));
+                    if ((event->u.essid.pointer) && (event->u.essid.length))
+                        iw_essid_escape(essid,
+                                        event->u.essid.pointer, event->u.essid.length);
+
+                    if (event->u.essid.flags)
+                    {
+                        if ((event->u.essid.flags & IW_ENCODE_INDEX) > 1)
+                            printf("\tESSID: %s [%d]\n",essid,(event->u.essid.flags & IW_ENCODE_INDEX));
+                        else 
+                            printf("\tESSID: %s\n",essid);
+                    }
+                    else
+                    {
+                        printf("\tESSID: off/any/hidden\n");
+                    }
+                }
+                break;
+                default:
+                    break;
+                }
+
+                p = p+event->len;
+            }
+
+            goto END;
+        }
+
+    }
+
+END:
+
+    abcdk_allocator_unref(&scan_rsp);
+
+    abcdk_closep(&sock);
+
+#else
+
+#ifdef HAVE_NETWORKMANAGER
+    GError *err = NULL;
+
+    NMClient *cli =  nm_client_new(NULL,&err);
+
+    NMDevice *dev = nm_client_get_device_by_iface(cli,"wlx70f11c3c3500");
+
+ //   gboolean chk = nm_device_wifi_request_scan(NM_DEVICE_WIFI(dev),NULL,&err);
+
+    nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (dev),
+		                                   NULL, request_rescan_cb, cli);
+
+    //nm_device_wifi_request_scan_finish(&device,&cancellable,&err);
+
+    g_error_free(err);
+
+#endif //#ifdef HAVE_NETWORKMANAGER
+#endif
+}
+
 
 int main(int argc, char **argv)
 {
@@ -802,6 +1042,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_netlink", 0) == 0)
         test_netlink(args);
+
+    if (abcdk_strcmp(func, "test_iwscan", 0) == 0)
+        test_iwscan(args);
 
     abcdk_tree_free(&args);
     
