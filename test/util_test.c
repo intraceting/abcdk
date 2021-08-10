@@ -737,12 +737,13 @@ void test_netlink(abcdk_tree_t *args)
 
     if (chk == 0)
     {
-        printf("%s: UP=%s,BCAST=%s,MCAST=%s,LOOP=%s,P2P=%s\n", ap,
+        printf("%s: UP=%s,BCAST=%s,MCAST=%s,LOOP=%s,P2P=%s,RUN=%s\n", ap,
                (flag & IFF_UP) ? "Yes" : "No",
                (flag & IFF_BROADCAST) ? "Yes" : "No",
                (flag & IFF_MULTICAST) ? "Yes" : "No",
                (flag & IFF_LOOPBACK) ? "Yes" : "No",
-               (flag & IFF_POINTOPOINT) ? "Yes" : "No");
+               (flag & IFF_POINTOPOINT) ? "Yes" : "No",
+               (flag & IFF_RUNNING) ? "Yes" : "No");
     }
     else
         printf("%s: %s\n", ap, strerror(errno));
