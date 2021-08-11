@@ -586,7 +586,9 @@ void abcdk_openlog(const char *ident,int level,int copy2stderr);
 /*------------------------------------------------------------------------------------------------*/
 
 /**
+ * 打印16进制格式。
  * 
+ * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
 */
 ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size);
 
