@@ -1021,6 +1021,17 @@ END:
 #endif
 }
 
+void test_hexdump(abcdk_tree_t *args)
+{
+    const char *file_p = abcdk_option_get(args,"--file",0,"");
+
+    abcdk_allocator_t * m = abcdk_mmap2(file_p,0,0);
+
+    if(m)
+        abcdk_hexdump(stderr,m->pptrs[0],m->sizes[0]);
+
+    abcdk_allocator_unref(&m);
+}
 
 int main(int argc, char **argv)
 {
@@ -1077,6 +1088,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_iwscan", 0) == 0)
         test_iwscan(args);
+
+    if (abcdk_strcmp(func, "test_hexdump", 0) == 0)
+        test_hexdump(args);
 
     abcdk_tree_free(&args);
     

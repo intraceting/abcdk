@@ -1299,6 +1299,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size)
     size_t remainder = 0;
     const int8_t *p = NULL;
     size_t off = 0;
+    size_t repeat = 0;
 
     assert(fd != NULL && data != NULL && size > 0);
 
@@ -1308,19 +1309,26 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size)
 
     for (off = 0; off < lines; off++, p += width)
     {
-        if (off > 0)
+        if (off > 0 && off < lines -1)
         {
-            /*同上一段重复用*号代替。*/
+            /*检查是否与上一行重复。*/
             if (memcmp(p, p - width, width) == 0)
+                repeat += 1;
+            else
+                repeat = 0;
+
+            /*当与上一行重复用*号代替，但多行重复也仅打印一行。*/
+            if (repeat == 1)
             {
                 wsize2 = fprintf(fd, "*\n");
                 if (wsize2 <= 0)
                     return wsize;
                 wsize += wsize2;
-
-                /*下一段。*/
-                continue;
             }
+
+            /*下一行。*/
+            if (repeat > 0)
+                continue;
         }
 
         if (size <= UINT32_MAX)
@@ -1361,7 +1369,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size)
     }
 
     if (remainder <= 0)
-        return wsize;
+        goto final;
 
     if (size <= UINT32_MAX)
         wsize2 = fprintf(fd, "%08lx | ", off * width);
@@ -1406,6 +1414,25 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size)
     if (wsize2 <= 0)
         return wsize;
     wsize += wsize2;
+
+final:
+
+    return wsize;
+}
+
+ssize_t abcdk_hexdump2(const char *file, const void *data, size_t size)
+{
+    FILE *fp = NULL;
+    ssize_t wsize = 0;
+
+    assert(file != NULL && data != NULL && size>0);
+
+    fp = fopen(file,"w");
+    if(fp)
+    {
+        wsize = abcdk_hexdump(fp,data,size);
+        fclose(fp);
+    }
 
     return wsize;
 }
