@@ -120,7 +120,7 @@ CheckHavePackage()
         }
         elif [ "${PACKAGE}" == "fuse" ];then
             NAMES="libfuse-dev"
-        elif [ "${PACKAGE}" == "networkmanager" ];then
+        elif [ "${PACKAGE}" == "libnm" ];then
             NAMES="libnm-dev"
         fi     
     }
@@ -145,7 +145,7 @@ CheckHavePackage()
         }
         elif [ "${PACKAGE}" == "fuse" ];then
             NAMES="fuse-devel"
-         elif [ "${PACKAGE}" == "networkmanager" ];then
+         elif [ "${PACKAGE}" == "libnm" ];then
             NAMES="NetworkManager-libnm-devel"
         fi
     }
@@ -218,7 +218,7 @@ PrintUsage()
     echo -e "\n\t-i < PATH >"
     echo -e "\t\t安装路径。默认：${INSTALL_PREFIX}"
     echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-networkmanager"
+    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-libnm"
 }
 
 #
@@ -392,9 +392,9 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-networkmanager") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-libnm") -eq 1 ];then
 {
-    STATUS=$(CheckHavePackage ${KIT_NAME} networkmanager)
+    STATUS=$(CheckHavePackage ${KIT_NAME} libnm)
     if [ ${STATUS} -eq 0 ];then
     {
         HAVE_NETWORKMANAGER="Yes"

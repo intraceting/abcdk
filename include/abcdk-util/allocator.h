@@ -106,6 +106,7 @@ abcdk_allocator_t *abcdk_allocator_clone(abcdk_allocator_t *src);
 */
 abcdk_allocator_t * abcdk_allocator_privatize(abcdk_allocator_t **dst);
 
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_ALLOCATOR_H

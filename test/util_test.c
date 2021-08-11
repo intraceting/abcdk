@@ -766,6 +766,44 @@ request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	// 	g_error_free (error);
 	// }
 }
+
+static int
+compare_devices (const void *a, const void *b)
+{
+	NMDevice *da = *(NMDevice **)a;
+	NMDevice *db = *(NMDevice **)b;
+	int cmp;
+
+	/* Sort by later device states first */
+	cmp = nm_device_get_state (db) - nm_device_get_state (da);
+	if (cmp != 0)
+		return cmp;
+
+	cmp = g_strcmp0 (nm_device_get_type_description (da),
+	                 nm_device_get_type_description (db));
+	if (cmp != 0)
+		return cmp;
+
+	return g_strcmp0 (nm_device_get_iface (da),
+	                  nm_device_get_iface (db));
+}
+
+static NMDevice **
+get_devices_sorted (NMClient *client)
+{
+	const GPtrArray *devs;
+	NMDevice **sorted;
+
+	devs = nm_client_get_devices (client);
+
+	sorted = g_new (NMDevice *, devs->len + 1);
+	memcpy (sorted, devs->pdata, devs->len * sizeof (NMDevice *));
+	sorted[devs->len] = NULL;
+
+	qsort (sorted, devs->len, sizeof (NMDevice *), compare_devices);
+	return sorted;
+}
+
 #endif //#ifdef HAVE_NETWORKMANAGER
 
 void
@@ -824,6 +862,8 @@ iw_essid_escape(char *		dest,
 void test_iwscan(abcdk_tree_t *args)
 {
 #if 1
+
+    
     //
 
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -838,58 +878,36 @@ void test_iwscan(abcdk_tree_t *args)
     //req.u.data.length = sizeof(struct	iw_scan_req);
     //req.u.data.flags = IW_SCAN_DEFAULT;
 
-    abcdk_allocator_t * scan_rsp = abcdk_allocator_alloc2(10000);
+    
+   // int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    int chk = ioctl(sock, SIOCSIWSCAN, &req);
-    if (errno != EPERM)
-        goto END;
+ //   int chk = abcdk_socket_ioctl(SIOCSIWSCAN,&req);
+    int chk = ioctl(sock, SIOCSIWSCAN,&req);
 
-  //  chk = abcdk_poll(sock,0x01,10000);
+  abcdk_allocator_t * scan_rsp = abcdk_allocator_alloc2(100000);
 
-    struct timeval	tv;	
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
     /* Forever */
     while (1)
     {
-        fd_set rfds; /* File descriptors for select */
-        int last_fd; /* Last fd */
-        int ret;
-
-        /* Guess what ? We must re-generate rfds each time */
-        FD_ZERO(&rfds);
-        last_fd = -1;
-
-        /* In here, add the rtnetlink fd in the list */
-
-        /* Wait until something happens */
-        ret = select(last_fd + 1, &rfds, NULL, NULL, &tv);
-
-        /* Check if there was an error */
-        if (ret < 0)
-        {
-            if (errno == EAGAIN || errno == EINTR)
-                continue;
-            fprintf(stderr, "Unhandled signal - exiting...\n");
-            break;
-        }
-
-        if(ret==0)
-        {
+        
             struct  iwreq rsp = {0};
             strncpy(rsp.ifr_ifrn.ifrn_name, "wlx70f11c3c3500", IFNAMSIZ);
             rsp.u.data.pointer = scan_rsp->pptrs[0];
             rsp.u.data.length = scan_rsp->sizes[0];
             rsp.u.data.flags = 0;
 
-            chk = ioctl(sock, SIOCGIWSCAN, &rsp);
-            if (chk < 0)
+            //chk = abcdk_socket_ioctl(SIOCGIWSCAN,&rsp);
+            chk = ioctl(sock,SIOCGIWSCAN,&rsp);
+            if (chk !=0)
             {
-                if (errno == EAGAIN)
+                if(errno == EAGAIN)
                     continue;
-
-                goto END;
+                else 
+                    goto END;
             }
+
+            if(rsp.u.data.length)
+            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length);
 
             void *p = rsp.u.data.pointer;
 
@@ -933,8 +951,7 @@ void test_iwscan(abcdk_tree_t *args)
                     char essid[4 * IW_ESSID_MAX_SIZE + 1];
                     memset(essid, '\0', sizeof(essid));
                     if ((event->u.essid.pointer) && (event->u.essid.length))
-                        iw_essid_escape(essid,
-                                        event->u.essid.pointer, event->u.essid.length);
+                        iw_essid_escape(essid,event->u.essid.pointer, event->u.essid.length);
 
                     if (event->u.essid.flags)
                     {
@@ -957,7 +974,7 @@ void test_iwscan(abcdk_tree_t *args)
             }
 
             goto END;
-        }
+        
 
     }
 
@@ -974,16 +991,31 @@ END:
 
     NMClient *cli =  nm_client_new(NULL,&err);
 
-    NMDevice *dev = nm_client_get_device_by_iface(cli,"wlx70f11c3c3500");
+    // NMDevice *dev = nm_client_get_device_by_iface(cli,"wlx70f11c3c3500");
 
- //   gboolean chk = nm_device_wifi_request_scan(NM_DEVICE_WIFI(dev),NULL,&err);
+    // gboolean chk = nm_device_wifi_request_scan(NM_DEVICE_WIFI(dev),NULL,&err);
 
-    nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (dev),
-		                                   NULL, request_rescan_cb, cli);
+    // nm_device_wifi_request_scan_async (NM_DEVICE_WIFI (dev),
+	// 	                                   NULL, request_rescan_cb, cli);
 
-    //nm_device_wifi_request_scan_finish(&device,&cancellable,&err);
+    // //nm_device_wifi_request_scan_finish(&device,&cancellable,&err);
 
-    g_error_free(err);
+    // g_error_free(err);
+
+    NMDevice **devices =  get_devices_sorted (cli);
+
+    for (int i = 0; devices[i]; i++)
+    {
+        NMDevice *dev = devices[i];
+
+        if (!NM_IS_DEVICE_WIFI (dev))
+            continue;
+
+        NMAccessPoint * ap = nm_device_wifi_get_active_access_point(NM_DEVICE_WIFI (dev));
+        const char * ssid = ap? nm_access_point_get_bssid (ap):"";
+
+        printf("ssid: %s\n",ssid);
+    }
 
 #endif //#ifdef HAVE_NETWORKMANAGER
 #endif

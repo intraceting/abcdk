@@ -585,6 +585,13 @@ void abcdk_openlog(const char *ident,int level,int copy2stderr);
 
 /*------------------------------------------------------------------------------------------------*/
 
+/**
+ * 
+*/
+ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size);
+
+/*------------------------------------------------------------------------------------------------*/
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_GENERAL_H

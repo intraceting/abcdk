@@ -1289,3 +1289,125 @@ void abcdk_openlog(const char *ident,int level,int copy2stderr)
 }
 
 /*------------------------------------------------------------------------------------------------*/
+
+ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size)
+{
+    ssize_t wsize2 = -1;
+    ssize_t wsize = 0;
+    size_t width = 16;
+    size_t lines = 1;
+    size_t remainder = 0;
+    const int8_t *p = NULL;
+    size_t off = 0;
+
+    assert(fd != NULL && data != NULL && size > 0);
+
+    lines = size / width;
+    remainder = size % width;
+    p = ABCDK_PTR2U8PTR(data,0);
+
+    for (off = 0; off < lines; off++, p += width)
+    {
+        if (off > 0)
+        {
+            /*同上一段重复用*号代替。*/
+            if (memcmp(p, p - width, width) == 0)
+            {
+                wsize2 = fprintf(fd, "*\n");
+                if (wsize2 <= 0)
+                    return wsize;
+                wsize += wsize2;
+
+                /*下一段。*/
+                continue;
+            }
+        }
+
+        if (size <= UINT32_MAX)
+            wsize2 = fprintf(fd, "%08lx | ", off * width);
+        else
+            wsize2 = fprintf(fd, "%016lx | ", off * width);
+
+        if (wsize2 <= 0)
+            return wsize;
+        wsize += wsize2;
+
+        for (size_t j = 0; j < width; j++)
+        {
+            wsize2 = fprintf(fd, "%02hhx ", p[j]);
+            if (wsize2 <= 0)
+                return wsize;
+            wsize += wsize2;
+        }
+
+        wsize2 = fprintf(fd, "| ");
+        if (wsize2 <= 0)
+            return wsize;
+        wsize += wsize2;
+
+        for (size_t j = 0; j < width; j++)
+        {
+            char c = p[j];
+            wsize2 = fprintf(fd, "%c", (isprint(c) ? c: '.'));
+            if (wsize2 <= 0)
+                return wsize;
+            wsize += wsize2;
+        }
+
+        wsize2 = fprintf(fd, " |\n");
+        if (wsize2 <= 0)
+            return wsize;
+        wsize += wsize2;
+    }
+
+    if (remainder <= 0)
+        return wsize;
+
+    if (size <= UINT32_MAX)
+        wsize2 = fprintf(fd, "%08lx | ", off * width);
+    else
+        wsize2 = fprintf(fd, "%016lx | ", off * width);
+
+    if (wsize2 <= 0)
+        return wsize;
+    wsize += wsize2;
+
+    for (size_t j = 0; j < width; j++)
+    {
+        if (j < remainder)
+            wsize2 = fprintf(fd, "%02hhx ", p[j]);
+        else
+            wsize2 = fprintf(fd, "   ");
+
+        if (wsize2 <= 0)
+            return wsize;
+        wsize += wsize2;
+    }
+
+    wsize2 = fprintf(fd, "| ");
+
+    for (size_t j = 0; j < width; j++)
+    {
+        if (j < remainder)
+        {
+            char c = p[j];
+            wsize2 = fprintf(fd, "%c", (isprint(c) ? c: '.'));
+        }
+        else
+        {
+            wsize2 = fprintf(fd, " ");
+        }
+        if (wsize2 <= 0)
+            return wsize;
+        wsize += wsize2;
+    }
+
+    wsize2 = fprintf(fd, " |\n");
+    if (wsize2 <= 0)
+        return wsize;
+    wsize += wsize2;
+
+    return wsize;
+}
+
+/*------------------------------------------------------------------------------------------------*/
