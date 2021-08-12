@@ -21,6 +21,7 @@
 #include "abcdk-util/robots.h"
 #include "abcdk-util/dirent.h"
 #include "abcdk-util/socket.h"
+#include "abcdk-util/hexdump.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29

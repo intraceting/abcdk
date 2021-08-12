@@ -156,4 +156,18 @@
 */
 #define ABCDK_ARRAY_SIZE(V) (sizeof((V)) / sizeof((V)[0]))
 
+/*
+ * 设置终端字符颜色。 
+*/
+
+#define ABCDK_ANSI_COLOR_RESET      "\x1b[0m"       /** 清除所有设置。*/
+#define ABCDK_ANSI_COLOR_RED        "\x1b[31m"      
+#define ABCDK_ANSI_COLOR_GREEN      "\x1b[32m"
+#define ABCDK_ANSI_COLOR_YELLOW     "\x1b[33m"
+#define ABCDK_ANSI_COLOR_BLUE       "\x1b[34m"
+#define ABCDK_ANSI_COLOR_MAGENTA    "\x1b[35m"
+#define ABCDK_ANSI_COLOR_CYAN       "\x1b[36m"
+
+
+
 #endif //ABCDK_UTIL_DEFS_H

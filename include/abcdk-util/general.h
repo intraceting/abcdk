@@ -477,14 +477,14 @@ int abcdk_poll(int fd, int event,time_t timeout);
 /**
  * 写数据。
  * 
- * @return > 0 写入的长度，<= 0 写入失败或空间不足。
+ * @return > 0 成功(写入的长度)，<= 0 失败(空间不足或出错)。
 */
 ssize_t abcdk_write(int fd, const void *data, size_t size);
 
 /**
  * 读数据。
  * 
- * @return > 0 读取的长度，<= 0 读取失败或已到末尾。
+ * @return > 0 成功(读取的长度)，<= 0 失败(已到末尾或出错)。
 */
 ssize_t abcdk_read(int fd, void *data, size_t size);
 
@@ -496,7 +496,7 @@ void abcdk_closep(int *fd);
 /**
  * 打开文件。
  * 
- * @return >= 0 句柄，-1 失败。
+ * @return >= 0 成功(句柄)，-1 失败。
  * 
 */
 int abcdk_open(const char *file, int rw, int nonblock, int create);
@@ -516,7 +516,7 @@ int abcdk_reopen(int fd2,const char *file, int rw, int nonblock, int create);
 /**
  * 获取标志。
  * 
- * @return !- 成功(标志)，-1 失败。
+ * @return !-1 成功(标志)，-1 失败。
 */
 int abcdk_fflag_get(int fd);
 
@@ -582,23 +582,6 @@ int abcdk_shm_unlink(const char* name);
  */
 void abcdk_openlog(const char *ident,int level,int copy2stderr);
 
-
-/*------------------------------------------------------------------------------------------------*/
-
-/**
- * 打印16进制格式。
- * 
- * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
-*/
-ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size);
-
-
-/**
- * 打印16进制格式。
- * 
- * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
-*/
-ssize_t abcdk_hexdump2(const char *file, const void *data, size_t size);
 
 /*------------------------------------------------------------------------------------------------*/
 
