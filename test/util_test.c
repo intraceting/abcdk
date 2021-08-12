@@ -908,7 +908,7 @@ void test_iwscan(abcdk_tree_t *args)
             }
 
             if(rsp.u.data.length)
-            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length);
+            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length,NULL,NULL);
 
             void *p = rsp.u.data.pointer;
 
@@ -1027,11 +1027,26 @@ void test_hexdump(abcdk_tree_t *args)
     const char *file_p = abcdk_option_get(args,"--file",0,"");
 
     abcdk_allocator_t * m = abcdk_mmap2(file_p,0,0);
+    abcdk_allocator_t * k = abcdk_allocator_alloc(NULL,3,0);
+    abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,3,0);
+
+    k->pptrs[0] = "\0\0\0\0";
+    k->sizes[0] = 4;
+    k->pptrs[1] = "abcd";
+    k->sizes[1] = 4;
+    k->pptrs[2] = "ffff";
+    k->sizes[2] = 4;
+
+    p->pptrs[0] = ABCDK_ANSI_COLOR_RED;
+    p->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
+    p->pptrs[2] = ABCDK_ANSI_COLOR_BLUE;
 
     if(m)
-        abcdk_hexdump(stderr,m->pptrs[0],m->sizes[0]);
+        abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],k,p);
 
     abcdk_allocator_unref(&m);
+    abcdk_allocator_unref(&k);
+    abcdk_allocator_unref(&p);
 }
 
 int main(int argc, char **argv)
