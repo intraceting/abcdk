@@ -864,6 +864,13 @@ void test_iwscan(abcdk_tree_t *args)
 {
 #if 1
 
+    abcdk_allocator_t * k = abcdk_allocator_alloc(NULL,1,0);
+    abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,1,0);
+
+    k->pptrs[0] = "GH";
+    k->sizes[0] = 2;
+
+    p->pptrs[0] = ABCDK_ANSI_COLOR_RED;
     
     //
 
@@ -908,7 +915,7 @@ void test_iwscan(abcdk_tree_t *args)
             }
 
             if(rsp.u.data.length)
-            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length,NULL,NULL);
+            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length,k,p);
 
             void *p = rsp.u.data.pointer;
 
@@ -982,6 +989,8 @@ void test_iwscan(abcdk_tree_t *args)
 END:
 
     abcdk_allocator_unref(&scan_rsp);
+    abcdk_allocator_unref(&k);
+    abcdk_allocator_unref(&p);
 
     abcdk_closep(&sock);
 
@@ -1028,7 +1037,7 @@ void test_hexdump(abcdk_tree_t *args)
 
     abcdk_allocator_t * m = abcdk_mmap2(file_p,0,0);
     abcdk_allocator_t * k = abcdk_allocator_alloc(NULL,3,0);
-    abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,3,0);
+    abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,1,0);
 
     k->pptrs[0] = "\0\0\0\0";
     k->sizes[0] = 4;
@@ -1038,11 +1047,15 @@ void test_hexdump(abcdk_tree_t *args)
     k->sizes[2] = 4;
 
     p->pptrs[0] = ABCDK_ANSI_COLOR_RED;
-    p->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
-    p->pptrs[2] = ABCDK_ANSI_COLOR_BLUE;
+  //  p->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
+  //  p->pptrs[2] = ABCDK_ANSI_COLOR_BLUE;
 
     if(m)
-        abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],k,p);
+    {
+        //ssize_t w = abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],k,p);
+        ssize_t w = abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],NULL,NULL);
+        fprintf(stderr,"w=%ld",w);
+    }
 
     abcdk_allocator_unref(&m);
     abcdk_allocator_unref(&k);

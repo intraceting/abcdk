@@ -23,7 +23,7 @@ int _abcdk_hexdump_print(size_t *total, FILE *fd, const char *fmt, ...)
     return (wsize2 > 0 ? 0 : -1);
 }
 
-int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off,size_t size, 
+int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off, size_t size,
                               const char *color, size_t color_s, size_t color_e, int flag)
 {
     int chk = -1;
@@ -51,7 +51,6 @@ int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off,siz
             if (chk != 0)
                 return chk;
         }
-
     }
     else
     {
@@ -61,7 +60,7 @@ int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off,siz
             chk = _abcdk_hexdump_print(total, fd, " ");
     }
 
-    chk = (flag ? _abcdk_hexdump_print(&total, fd, " ") : 0);
+    chk = (flag ? _abcdk_hexdump_print(total, fd, " ") : 0);
     if (chk != 0)
         return chk;
 
@@ -87,8 +86,8 @@ const char *_abcdk_hexdump_select_color(size_t kwidx, abcdk_allocator_t *palette
     if (!palette)
         return NULL;
 
-    if (kwidx < palette->numbers)
-        return palette->pptrs[kwidx];
+    if (palette->numbers > 0)
+        return palette->pptrs[kwidx % palette->numbers];
 
     return NULL;
 }
@@ -106,7 +105,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
     const char *color = NULL;
     size_t color_s = -1UL;
     size_t color_e = -1UL;
-    const uint8_t *p = NULL ,*q = NULL;
+    const uint8_t *p = NULL, *q = NULL;
     int chk;
 
     assert(fd != NULL && data != NULL && size > 0);
@@ -122,7 +121,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
         if (row > 0 && col == 0 && i < size)
         {
             /*检查是否与上一行重复。*/
-            if (memcmp(p, p - width, ABCDK_MIN(width, col + 1)) == 0)
+            if (memcmp(p, p - width, ABCDK_MIN(width, size - i)) == 0)
                 repeat += 1;
             else
                 repeat = 0;
@@ -158,7 +157,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
                 return wsize;
         }
 
-        if (i < size)
+        if (i < size && palette != NULL)
         {
             if (kwidx == -1UL || i == color_e)
             {
@@ -177,9 +176,9 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
         }
 
         /*从调色板选取颜色。*/
-        color = _abcdk_hexdump_select_color(kwidx,palette);
-        
-        chk = _abcdk_hexdump_print_char(&wsize, fd, *p, i, size,color,color_s, color_e, 1);
+        color = _abcdk_hexdump_select_color(kwidx, palette);
+
+        chk = _abcdk_hexdump_print_char(&wsize, fd, *p, i, size, color, color_s, color_e, 1);
         if (chk != 0)
             return wsize;
 

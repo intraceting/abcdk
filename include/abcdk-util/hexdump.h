@@ -13,6 +13,9 @@
 /**
  * 打印16进制格式。
  * 
+ * @param keywords 关键字，NULL(0)或无调色板时 忽略。
+ * @param palette 调色板，NULL(0) 忽略。当调色板的颜色数量少于关键字时，则循环使用颜色。
+ * 
  * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
 */
 ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
