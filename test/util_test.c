@@ -1047,15 +1047,17 @@ void test_hexdump(abcdk_tree_t *args)
 
     opt.width = abcdk_option_get_int(args,"--width",0,16);
 
-    opt.keywords = abcdk_allocator_alloc(NULL,3,0);
+    opt.keywords = abcdk_allocator_alloc(NULL,4,0);
     opt.palette = abcdk_allocator_alloc(NULL,3,0);
 
-    opt.keywords->pptrs[0] = "\0\0\0\0";
+    opt.keywords->pptrs[0] = "mvhd";
     opt.keywords->sizes[0] = 4;
-    opt.keywords->pptrs[1] = "abcd";
+    opt.keywords->pptrs[1] = "ftyp";
     opt.keywords->sizes[1] = 4;
-    opt.keywords->pptrs[2] = "JFIF";
+    opt.keywords->pptrs[2] = "moov";
     opt.keywords->sizes[2] = 4;
+    opt.keywords->pptrs[3] = "mdat";
+    opt.keywords->sizes[3] = 4;
 
     opt.palette->pptrs[0] = ABCDK_ANSI_COLOR_RED;
     opt.palette->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
