@@ -92,8 +92,7 @@ const char *_abcdk_hexdump_select_color(size_t kwidx, abcdk_allocator_t *palette
     return NULL;
 }
 
-ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
-                      abcdk_allocator_t *keywords, abcdk_allocator_t *palette)
+ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, const abcdk_hexdump_option_t *opt)
 {
     size_t wsize = 0;
     size_t size_a = 0;
@@ -101,27 +100,32 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
     size_t col = 0;
     size_t row = 0;
     size_t repeat = 0;
-    size_t kwidx = -1UL;
-    const char *color = NULL;
-    size_t color_s = -1UL;
-    size_t color_e = -1UL;
+    size_t kwidx = -1UL,kwidx2 = -1UL;
+    const char *color = NULL, *color2 = NULL;
+    size_t color_s = -1UL, color2_s = -1UL;
+    size_t color_e = -1UL, color2_e = -1UL;
     const uint8_t *p = NULL, *q = NULL;
+    abcdk_tree_t *stack = NULL,*stack_p = NULL;
     int chk;
 
-    assert(fd != NULL && data != NULL && size > 0);
+    assert(fd != NULL && data != NULL && size > 0 && opt != NULL);
+
+    if (opt->width > 0)
+        width = opt->width;
 
     size_a = abcdk_align(size, width);
     p = (uint8_t *)data;
+
 
     for (size_t i = 0; i < size_a;)
     {
         row = i / width;
         col = i % width;
 
-        if (row > 0 && col == 0 && i < size)
+        if (row > 0 && col == 0 && i+width < size)
         {
             /*检查是否与上一行重复。*/
-            if (memcmp(p, p - width, ABCDK_MIN(width, size - i)) == 0)
+            if (memcmp(p, p - width, width) == 0)
                 repeat += 1;
             else
                 repeat = 0;
@@ -131,7 +135,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
             {
                 chk = _abcdk_hexdump_print(&wsize, fd, "*\n");
                 if (chk != 0)
-                    return wsize;
+                    goto final;
             }
 
             /*下一行。*/
@@ -139,6 +143,8 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
             {
                 /**/
                 kwidx = color_s = color_e = -1UL;
+                kwidx2 = color2_s = color2_e = -1UL;
+
                 /**/
                 i += width;
                 p += width;
@@ -146,27 +152,47 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
             }
         }
 
-        if (col == 0)
+        if ((col == 0) && (opt->flag & ABCDK_HEXDEMP_SHOW_ADDR))
         {
-            if (size <= UINT32_MAX)
-                chk = _abcdk_hexdump_print(&wsize, fd, "%08lx | ", row * width);
+            if (offset + size <= UINT32_MAX)
+                chk = _abcdk_hexdump_print(&wsize, fd, "%08lx | ", offset + row * width);
             else
-                chk = _abcdk_hexdump_print(&wsize, fd, "%016lx | ", row * width);
+                chk = _abcdk_hexdump_print(&wsize, fd, "%016lx | ", offset + row * width);
 
             if (chk != 0)
-                return wsize;
+                goto final;
         }
 
-        if (i < size && palette != NULL)
+        if (i < size && opt->palette != NULL)
         {
-            if (kwidx == -1UL || i == color_e)
+            if (kwidx == -1UL || i >= color_e)
             {
                 color_s = color_e = -1UL;
-                kwidx = _abcdk_hexdump_match_keyword(p, size - i, keywords);
-                if (kwidx < keywords->numbers)
+                kwidx = _abcdk_hexdump_match_keyword(p, size - i, opt->keywords);
+                if (kwidx < opt->keywords->numbers)
                 {
                     color_s = i;
-                    color_e = i + keywords->sizes[kwidx];
+                    color_e = i + opt->keywords->sizes[kwidx];
+
+                    /*可能存在多段不同颜色，因这里准备颜色队列。*/
+                    if(!stack)
+                    {
+                        stack = abcdk_tree_alloc3(1);
+                        if (!stack)
+                            goto final;
+                    }
+
+                    stack_p = abcdk_tree_alloc2(NULL,3,0);
+                    if (!stack)
+                        goto final;
+
+                    stack_p->alloc->sizes[0] = kwidx;
+                    stack_p->alloc->sizes[1] = color_s;
+                    stack_p->alloc->sizes[2] = color_e;
+
+                    /*按顺序压入队列。*/
+                    abcdk_tree_insert2(stack,stack_p,0);
+                    stack_p = NULL;
                 }
             }
         }
@@ -176,33 +202,72 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
         }
 
         /*从调色板选取颜色。*/
-        color = _abcdk_hexdump_select_color(kwidx, palette);
+        color = _abcdk_hexdump_select_color(kwidx, opt->palette);
 
         chk = _abcdk_hexdump_print_char(&wsize, fd, *p, i, size, color, color_s, color_e, 1);
         if (chk != 0)
-            return wsize;
+            goto final;
 
         if (col == (width - 1))
         {
-            chk = _abcdk_hexdump_print(&wsize, fd, "| ");
-            if (chk != 0)
-                return wsize;
-
-            q = p - col;
-            for (size_t j = 0; j < width;)
+            if (opt->flag & ABCDK_HEXDEMP_SHOW_CHAR)
             {
-                chk = _abcdk_hexdump_print_char(&wsize, fd, *q, i - col + j, size, NULL, -1UL, -1UL, 0);
+                chk = _abcdk_hexdump_print(&wsize, fd, "| ");
                 if (chk != 0)
-                    return wsize;
+                    goto final;
 
-                j += 1;
-                q += 1;
+                q = p - col;
+                for (size_t j = 0; j < width;)
+                {
+                    size_t i2 = i - col + j;
+
+                    /*从颜色队列中取出颜色，如果存在的话。*/
+                    while(stack)
+                    {
+                        stack_p = abcdk_tree_child(stack,1);
+                        if(!stack_p)
+                            break;
+
+                        if( i2 < stack_p->alloc->sizes[1])
+                            break;
+                        
+                        if( i2 >= stack_p->alloc->sizes[2])
+                        {
+                            abcdk_tree_unlink(stack_p);
+                            abcdk_tree_free(&stack_p);
+                        }
+                        else
+                        {
+                            kwidx2 = stack_p->alloc->sizes[0];
+                            color2_s = stack_p->alloc->sizes[1];
+                            color2_e = stack_p->alloc->sizes[2];
+                            break;
+                        }
+                    }
+
+                    /*从调色板选取颜色。*/
+                    color2 = _abcdk_hexdump_select_color(kwidx2, opt->palette);
+
+                    chk = _abcdk_hexdump_print_char(&wsize, fd, *q, i2, size, color2, color2_s, color2_e, 0);
+                    if (chk != 0)
+                        goto final;
+
+                    j += 1;
+                    q += 1;
+                }
+
+                chk = _abcdk_hexdump_print(&wsize, fd, " |");
+                if (chk != 0)
+                    goto final;
             }
 
-            chk = _abcdk_hexdump_print(&wsize, fd, " |\n");
+            chk = _abcdk_hexdump_print(&wsize, fd, "\n");
             if (chk != 0)
-                return wsize;
+                goto final;
+
+            kwidx2 = color2_s = color2_e = -1UL;
         }
+
 
         i += 1;
         p += 1;
@@ -210,21 +275,22 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size,
 
 final:
 
+    abcdk_tree_free(&stack);
+
     return wsize;
 }
 
-ssize_t abcdk_hexdump2(const char *file, const void *data, size_t size,
-                       abcdk_allocator_t *keywords, abcdk_allocator_t *palette)
+ssize_t abcdk_hexdump2(const char *file, const void *data, size_t size,size_t offset, const abcdk_hexdump_option_t *opt)
 {
     FILE *fp = NULL;
     ssize_t wsize = 0;
 
-    assert(file != NULL && data != NULL && size > 0);
+    assert(file != NULL && data != NULL && size > 0 && opt != NULL);
 
     fp = fopen(file, "w");
     if (fp)
     {
-        wsize = abcdk_hexdump(fp, data, size, keywords, palette);
+        wsize = abcdk_hexdump(fp, data, size, offset, opt);
         fclose(fp);
     }
 

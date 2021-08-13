@@ -914,8 +914,9 @@ void test_iwscan(abcdk_tree_t *args)
                     goto END;
             }
 
+            abcdk_hexdump_option_t opt = {0};
             if(rsp.u.data.length)
-            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length,k,p);
+            abcdk_hexdump(stderr,rsp.u.data.pointer,rsp.u.data.length,0,&opt);
 
             void *p = rsp.u.data.pointer;
 
@@ -1036,30 +1037,40 @@ void test_hexdump(abcdk_tree_t *args)
     const char *file_p = abcdk_option_get(args,"--file",0,"");
 
     abcdk_allocator_t * m = abcdk_mmap2(file_p,0,0);
-    abcdk_allocator_t * k = abcdk_allocator_alloc(NULL,3,0);
-    abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,1,0);
 
-    k->pptrs[0] = "\0\0\0\0";
-    k->sizes[0] = 4;
-    k->pptrs[1] = "abcd";
-    k->sizes[1] = 4;
-    k->pptrs[2] = "ffff";
-    k->sizes[2] = 4;
+    abcdk_hexdump_option_t opt = {0};
 
-    p->pptrs[0] = ABCDK_ANSI_COLOR_RED;
-  //  p->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
-  //  p->pptrs[2] = ABCDK_ANSI_COLOR_BLUE;
+    if(abcdk_option_exist(args,"--show-addr"))
+        opt.flag |= ABCDK_HEXDEMP_SHOW_ADDR;
+    if(abcdk_option_exist(args,"--show-char"))
+        opt.flag |= ABCDK_HEXDEMP_SHOW_CHAR;
+
+    opt.width = abcdk_option_get_int(args,"--width",0,16);
+
+    opt.keywords = abcdk_allocator_alloc(NULL,3,0);
+    opt.palette = abcdk_allocator_alloc(NULL,3,0);
+
+    opt.keywords->pptrs[0] = "\0\0\0\0";
+    opt.keywords->sizes[0] = 4;
+    opt.keywords->pptrs[1] = "abcd";
+    opt.keywords->sizes[1] = 4;
+    opt.keywords->pptrs[2] = "JFIF";
+    opt.keywords->sizes[2] = 4;
+
+    opt.palette->pptrs[0] = ABCDK_ANSI_COLOR_RED;
+    opt.palette->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
+    opt.palette->pptrs[2] = ABCDK_ANSI_COLOR_BLUE;
 
     if(m)
     {
-        //ssize_t w = abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],k,p);
-        ssize_t w = abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],NULL,NULL);
+        //ssize_t w = abcdk_hexdump(stdout,m->pptrs[0],m->sizes[0],0,&opt);
+        ssize_t w = abcdk_hexdump(stdout,m->pptrs[0],1000,0,&opt);
         fprintf(stderr,"w=%ld",w);
     }
 
     abcdk_allocator_unref(&m);
-    abcdk_allocator_unref(&k);
-    abcdk_allocator_unref(&p);
+    abcdk_allocator_unref(&opt.keywords);
+    abcdk_allocator_unref(&opt.palette);
 }
 
 int main(int argc, char **argv)
