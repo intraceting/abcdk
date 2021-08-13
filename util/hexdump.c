@@ -67,27 +67,33 @@ int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off, si
     return chk;
 }
 
-ssize_t _abcdk_hexdump_match_keyword(const void *data, size_t size, abcdk_allocator_t *keywords)
+ssize_t _abcdk_hexdump_match_keyword(const void *data, size_t size, const abcdk_hexdump_option_t *opt)
 {
-    if (!keywords)
+    if (!opt->keyword)
         return -1UL;
 
-    for (size_t i = 0; i < keywords->numbers; i++)
+    for (size_t i = 0; i < opt->keyword->numbers; i++)
     {
-        if (memcmp(data, keywords->pptrs[i], ABCDK_MIN(keywords->sizes[i], size)) == 0)
+        if(!opt->keyword->pptrs[i] || opt->keyword->sizes[i]==0)
+            continue;
+
+        if (size < opt->keyword->sizes[i])
+            continue;
+
+        if (memcmp(data, opt->keyword->pptrs[i],opt->keyword->sizes[i]) == 0)
             return i;
     }
 
     return -1UL;
 }
 
-const char *_abcdk_hexdump_select_color(size_t kwidx, abcdk_allocator_t *palette)
+const char *_abcdk_hexdump_select_color(size_t kwidx, const abcdk_hexdump_option_t *opt)
 {
-    if (!palette)
+    if (!opt->palette)
         return NULL;
 
-    if (palette->numbers > 0)
-        return palette->pptrs[kwidx % palette->numbers];
+    if (opt->palette->numbers > 0)
+        return opt->palette->pptrs[kwidx % opt->palette->numbers];
 
     return NULL;
 }
@@ -163,16 +169,16 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                 goto final;
         }
 
-        if (i < size && opt->palette != NULL)
+        if (i < size && opt->keyword != NULL && opt->palette != NULL)
         {
             if (kwidx == -1UL || i >= color_e)
             {
                 color_s = color_e = -1UL;
-                kwidx = _abcdk_hexdump_match_keyword(p, size - i, opt->keywords);
-                if (kwidx < opt->keywords->numbers)
+                kwidx = _abcdk_hexdump_match_keyword(p, size - i, opt);
+                if (kwidx < opt->keyword->numbers)
                 {
                     color_s = i;
-                    color_e = i + opt->keywords->sizes[kwidx];
+                    color_e = i + opt->keyword->sizes[kwidx];
 
                     /*可能存在多段不同颜色，因这里准备颜色队列。*/
                     if(!stack)
@@ -202,7 +208,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
         }
 
         /*从调色板选取颜色。*/
-        color = _abcdk_hexdump_select_color(kwidx, opt->palette);
+        color = _abcdk_hexdump_select_color(kwidx, opt);
 
         chk = _abcdk_hexdump_print_char(&wsize, fd, *p, i, size, color, color_s, color_e, 1);
         if (chk != 0)
@@ -224,6 +230,8 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     /*从颜色队列中取出颜色，如果存在的话。*/
                     while(stack)
                     {
+                        kwidx2 = color2_s = color2_e = -1UL;
+                        
                         stack_p = abcdk_tree_child(stack,1);
                         if(!stack_p)
                             break;
@@ -246,7 +254,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     }
 
                     /*从调色板选取颜色。*/
-                    color2 = _abcdk_hexdump_select_color(kwidx2, opt->palette);
+                    color2 = _abcdk_hexdump_select_color(kwidx2, opt);
 
                     chk = _abcdk_hexdump_print_char(&wsize, fd, *q, i2, size, color2, color2_s, color2_e, 0);
                     if (chk != 0)
@@ -265,7 +273,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
             if (chk != 0)
                 goto final;
 
-            kwidx2 = color2_s = color2_e = -1UL;
+            
         }
 
 

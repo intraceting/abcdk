@@ -12,7 +12,7 @@
 #include "tree.h"
 
 /**
- * 16进制格式选项。
+ * 十六进制格式选项。
 */
 typedef struct _abcdk_hexdump_option
 {
@@ -29,7 +29,7 @@ typedef struct _abcdk_hexdump_option
     size_t width;
 
     /** 关键字，NULL(0)或无调色板时 忽略。*/
-    abcdk_allocator_t *keywords;
+    abcdk_allocator_t *keyword;
 
     /** 
      * 调色板，NULL(0) 忽略。
@@ -41,14 +41,14 @@ typedef struct _abcdk_hexdump_option
 }abcdk_hexdump_option_t;
 
 /**
- * 打印16进制格式。
+ * 打印十六进制格式。
  * 
  * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
 */
 ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, const abcdk_hexdump_option_t *opt);
 
 /**
- * 打印16进制格式。
+ * 打印十六进制格式。
  * 
  * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
 */

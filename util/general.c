@@ -1289,3 +1289,31 @@ void abcdk_openlog(const char *ident,int level,int copy2stderr)
 }
 
 /*------------------------------------------------------------------------------------------------*/
+
+char *abcdk_bin2hex(char* dst,const void *src,size_t size, int ABC)
+{
+    assert(dst != NULL && src != NULL && size>0);
+
+    for (size_t i = 0; i < size; i++)
+    {
+        if (ABC)
+            sprintf(ABCDK_PTR2U8PTR(dst, i * 2),"%02X", ABCDK_PTR2U8(src,i));
+        else
+            sprintf(ABCDK_PTR2U8PTR(dst, i * 2),"%02x", ABCDK_PTR2U8(src,i));
+    }  
+    return dst;
+}
+
+void *abcdk_hex2bin(void *dst, const char *src, size_t size)
+{
+    assert(dst != NULL && src != NULL && size > 0);
+
+    for (long i = 0; i < size / 2; i++)
+    {
+        sscanf(ABCDK_PTR2U8PTR(src, i * 2), "%2hhx", ABCDK_PTR2U8PTR(dst,i));
+    }
+  
+    return dst;
+}
+
+/*------------------------------------------------------------------------------------------------*/

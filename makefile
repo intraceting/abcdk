@@ -43,6 +43,10 @@ ROBOTS_REALNAME = abcdk-robots.exe
 ROBOTS_NAME = abcdk-robots
 
 #
+HEXDUMP_REALNAME = abcdk-hexdump.exe
+HEXDUMP_NAME = abcdk-hexdump
+
+#
 MUX_TESTNAME = mux_test.exe
 
 #
@@ -120,7 +124,7 @@ $(OBJ_PATH)/util/%.o: util/%.c
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
-tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} 
+tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} 
 
 #
 ${MTX_REALNAME}:${UTIL_NAME} ${TOOL_OBJ_FILES}
@@ -179,6 +183,15 @@ ${ROBOTS_NAME}: ${ROBOTS_REALNAME}
 	ln -f -s ${ROBOTS_REALNAME} $(BUILD_PATH)/${ROBOTS_NAME}
 
 #
+${HEXDUMP_REALNAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	rm -f $(BUILD_PATH)/${HEXDUMP_REALNAME}
+	$(CCC) -o $(BUILD_PATH)/${HEXDUMP_REALNAME} ${OBJ_PATH}/tool/hexdump.o -l:${UTIL_NAME} $(LINK_FLAGS)
+
+#
+${HEXDUMP_NAME}: ${HEXDUMP_REALNAME}
+	ln -f -s ${HEXDUMP_REALNAME} $(BUILD_PATH)/${HEXDUMP_NAME}
+
+#
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
@@ -225,6 +238,8 @@ clean-tool:
 	rm -f $(BUILD_PATH)/${HTML_NAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_REALNAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
+	rm -f $(BUILD_PATH)/${HEXDUMP_REALNAME}
+	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
 
 #
 clean-test:
@@ -268,6 +283,8 @@ install-tool:
 	ln -f -s ${HTML_REALNAME} $(INSTALL_PATH_BIN)/${HTML_NAME}
 	cp -f -f $(BUILD_PATH)/${ROBOTS_REALNAME} ${INSTALL_PATH_BIN}/
 	ln -f -s ${ROBOTS_REALNAME} $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
+	cp -f -f $(BUILD_PATH)/${HEXDUMP_REALNAME} ${INSTALL_PATH_BIN}/
+	ln -f -s ${HEXDUMP_REALNAME} $(INSTALL_PATH_BIN)/${HEXDUMP_NAME}
 
 #
 install-ldc:
@@ -316,6 +333,8 @@ uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/${HTML_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_REALNAME}
 	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${HEXDUMP_REALNAME}
+	rm -f $(INSTALL_PATH_BIN)/${HEXDUMP_NAME}
 
 #
 uninstall-ldc:

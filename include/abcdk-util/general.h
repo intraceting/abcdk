@@ -113,6 +113,11 @@ int abcdk_isodigit(int c);
 /*------------------------------------------------------------------------------------------------*/
 
 /**
+ * 字符串克隆。
+*/
+#define abcdk_strdup(str) abcdk_heap_clone(str,strlen(str)+1);
+
+/**
  * 字符串查找。
  * 
  * @param caseAb 0 不区分大小写，!0 区分大小写。
@@ -582,6 +587,31 @@ int abcdk_shm_unlink(const char* name);
  */
 void abcdk_openlog(const char *ident,int level,int copy2stderr);
 
+
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ * 二进制转十六进制。
+ * 
+ * @param dst 十六进制数据的指针。可用空间至少是二进制数据长度的两倍。
+ * @param src 二进制数的指针。
+ * @param size 二进制数据的长度。
+ * @param ABC 0 小写，!0 大写。
+ * 
+ * @return !NULL(0) 成功(十六进制数据的指针)，NULL(0) 失败。
+*/
+char *abcdk_bin2hex(char* dst,const void *src,size_t size,int ABC);
+
+/**
+ * 十六进制转二进制。
+ * 
+ * @param dst 二进制数据的指针。可用空间至少是十六进制数据长度的二分之一。
+ * @param src 十六进制数的指针。
+ * @param size 十六进制数据的长度。
+ * 
+ * @return !NULL(0) 成功(二进制数据的指针)，NULL(0) 失败。
+*/
+void *abcdk_hex2bin(void *dst,const char* src,size_t size);
 
 /*------------------------------------------------------------------------------------------------*/
 
