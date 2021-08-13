@@ -862,7 +862,7 @@ iw_essid_escape(char *		dest,
 
 void test_iwscan(abcdk_tree_t *args)
 {
-#if 1
+#if 0
 
     abcdk_allocator_t * k = abcdk_allocator_alloc(NULL,1,0);
     abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,1,0);
