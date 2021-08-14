@@ -49,7 +49,7 @@ void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t偏移量(0为起始)。默认：0\n");
 
     fprintf(stderr, "\n\t--size < SIZE >\n");
-    fprintf(stderr, "\t\t长度。默认：从偏移量开始到末尾总长度\n");
+    fprintf(stderr, "\t\t长度(字节)。默认：1024\n");
 
     fprintf(stderr, "\n\t--width < WIDTH >\n");
     fprintf(stderr, "\t\t宽度。默认：16\n");
@@ -73,8 +73,8 @@ void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--keyword < STRING [STRING ...] >\n");
     fprintf(stderr, "\t\t关键字。\n");
 
-    fprintf(stderr, "\n\t--keyword16 < STRING [STRING ...] >\n");
-    fprintf(stderr, "\t\t关键字(16进制)。每个关键字的长度为2的倍数，否则忽略。\n");
+    fprintf(stderr, "\n\t--keyword16 < HEXSTRING [HEXSTRING ...] >\n");
+    fprintf(stderr, "\t\t关键字(16进制)。每个关键字的长度为2的倍数，否则忽略。如：0102 0a0b \n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
@@ -108,7 +108,7 @@ void _abcdkhd_work(abcdk_tree_t *args)
 
     file = abcdk_option_get(args, "--file", 0, NULL);
     offset = abcdk_option_get_llong(args, "--offset", 0, 0);
-    size = abcdk_option_get_llong(args, "--size", 0, -1UL);
+    size = abcdk_option_get_llong(args, "--size", 0, 1024);
     width = abcdk_option_get_int(args, "--width", 0, 16);
     outfile = abcdk_option_get(args, "--output", 0, NULL);
 
