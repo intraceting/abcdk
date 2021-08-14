@@ -384,7 +384,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
     }
     else
     {
-        echo "freeimage kit not found."
+        echo "fuse kit not found."
         exit 22
     }
     fi
@@ -404,7 +404,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-libnm") -eq 1 ];then
     }
     else
     {
-        echo "freeimage kit not found."
+        echo "libnm kit not found."
         exit 22
     }
     fi
