@@ -16,6 +16,18 @@
 */
 typedef struct _abcdk_hexdump_option
 {
+    /** 进制*/
+    int base;
+
+/** 十六进制。*/
+#define ABCDK_HEXDEMP_BASE_HEX      0
+
+/** 十进制。*/
+#define ABCDK_HEXDEMP_BASE_DEC      1
+
+/** 八进制。*/
+#define ABCDK_HEXDEMP_BASE_OCT      2
+
     /** 标志。*/
     uint32_t flag;
 

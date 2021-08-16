@@ -54,6 +54,13 @@ void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--width < WIDTH >\n");
     fprintf(stderr, "\t\t宽度。默认：16\n");
 
+    fprintf(stderr, "\n\t--base < BASE >\n");
+    fprintf(stderr, "\t\t进制。默认：%d\n",ABCDK_HEXDEMP_BASE_HEX);
+
+    fprintf(stderr, "\n\t\t%d：十六进制\n",ABCDK_HEXDEMP_BASE_HEX);
+    fprintf(stderr, "\n\t\t%d：十进制\n",ABCDK_HEXDEMP_BASE_DEC);
+    fprintf(stderr, "\n\t\t%d：八进制\n",ABCDK_HEXDEMP_BASE_OCT);
+
     fprintf(stderr, "\n\t--show-addr\n");
     fprintf(stderr, "\t\t显示地址。默认：不显示\n");
 
@@ -111,6 +118,8 @@ void _abcdkhd_work(abcdk_tree_t *args)
     size = abcdk_option_get_llong(args, "--size", 0, 1024);
     width = abcdk_option_get_int(args, "--width", 0, 16);
     outfile = abcdk_option_get(args, "--output", 0, NULL);
+
+    opt.base = abcdk_option_get_int(args, "--base", 0, ABCDK_HEXDEMP_BASE_HEX);
 
     if (abcdk_option_exist(args, "--show-addr"))
         opt.flag |= ABCDK_HEXDEMP_SHOW_ADDR;

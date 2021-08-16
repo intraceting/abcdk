@@ -23,8 +23,8 @@ int _abcdk_hexdump_print(size_t *total, FILE *fd, const char *fmt, ...)
     return (wsize2 > 0 ? 0 : -1);
 }
 
-int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off, size_t size,
-                              const char *color, size_t color_s, size_t color_e, int flag)
+int _abcdk_hexdump_print2(size_t *total, FILE *fd, uint8_t c, size_t off, size_t size,
+                          const char *color, size_t color_s, size_t color_e, int iscode,int base)
 {
     int chk = -1;
 
@@ -37,8 +37,15 @@ int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off, si
                 return chk;
         }
 
-        if (flag)
-            chk = _abcdk_hexdump_print(total, fd, "%02hhx", c);
+        if (iscode)
+        {
+            if (base == ABCDK_HEXDEMP_BASE_DEC)
+                chk = _abcdk_hexdump_print(total, fd, "%03hhu", c);
+            else if (base == ABCDK_HEXDEMP_BASE_OCT)
+                chk = _abcdk_hexdump_print(total, fd, "%03hho", c);
+            else /*if(base == ABCDK_HEXDEMP_BASE_HEX)*/
+                chk = _abcdk_hexdump_print(total, fd, "%02hhx", c);
+        }
         else
             chk = _abcdk_hexdump_print(total, fd, "%c", (isprint(c) ? c : '.'));
 
@@ -54,13 +61,13 @@ int _abcdk_hexdump_print_char(size_t *total, FILE *fd, uint8_t c, size_t off, si
     }
     else
     {
-        if (flag)
+        if (iscode)
             chk = _abcdk_hexdump_print(total, fd, "  ");
         else
             chk = _abcdk_hexdump_print(total, fd, " ");
     }
 
-    chk = (flag ? _abcdk_hexdump_print(total, fd, " ") : 0);
+    chk = (iscode ? _abcdk_hexdump_print(total, fd, " ") : 0);
     if (chk != 0)
         return chk;
 
@@ -210,7 +217,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
         /*从调色板选取颜色。*/
         color = _abcdk_hexdump_select_color(kwidx, opt);
 
-        chk = _abcdk_hexdump_print_char(&wsize, fd, *p, i, size, color, color_s, color_e, 1);
+        chk = _abcdk_hexdump_print2(&wsize, fd, *p, i, size, color, color_s, color_e, 1,opt->base);
         if (chk != 0)
             goto final;
 
@@ -256,7 +263,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     /*从调色板选取颜色。*/
                     color2 = _abcdk_hexdump_select_color(kwidx2, opt);
 
-                    chk = _abcdk_hexdump_print_char(&wsize, fd, *q, i2, size, color2, color2_s, color2_e, 0);
+                    chk = _abcdk_hexdump_print2(&wsize, fd, *q, i2, size, color2, color2_s, color2_e, 0,opt->base);
                     if (chk != 0)
                         goto final;
 
