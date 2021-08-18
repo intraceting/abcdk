@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_MUX_H
-#define ABCDK_UTIL_MUX_H
+#ifndef ABCDK_UTIL_EPOLLEX_H
+#define ABCDK_UTIL_EPOLLEX_H
 
 #include "abcdk-util/map.h"
 #include "abcdk-util/pool.h"
@@ -16,20 +16,20 @@
 
 __BEGIN_DECLS
 
-/** 多路复用器。*/
-typedef struct _abcdk_mux abcdk_mux_t;
+/** epoll扩展对象。*/
+typedef struct _abcdk_epollex abcdk_epollex_t;
 
 /**
  * 销毁多路复用器环境。
 */
-void abcdk_mux_free(abcdk_mux_t **ctx);
+void abcdk_epollex_free(abcdk_epollex_t **ctx);
 
 /**
  * 创建多路复用器环境。
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_mux_t *abcdk_mux_alloc();
+abcdk_epollex_t *abcdk_epollex_alloc();
 
 /**
  * 分离句柄。
@@ -38,7 +38,7 @@ abcdk_mux_t *abcdk_mux_alloc();
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */
-int abcdk_mux_detach(abcdk_mux_t *ctx,int fd);
+int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd);
 
 /**
  * 关联句柄。
@@ -51,7 +51,7 @@ int abcdk_mux_detach(abcdk_mux_t *ctx,int fd);
  * 
  * @return 0 成功，!0 失败(或重复)。
 */
-int abcdk_mux_attach(abcdk_mux_t *ctx, int fd, const epoll_data_t *data,time_t timeout);
+int abcdk_epollex_attach(abcdk_epollex_t *ctx, int fd, const epoll_data_t *data,time_t timeout);
 
 /**
  * 关联句柄。
@@ -60,7 +60,7 @@ int abcdk_mux_attach(abcdk_mux_t *ctx, int fd, const epoll_data_t *data,time_t t
  * 
  * @return 0 成功，!0 失败(或重复)。
 */
-int abcdk_mux_attach2(abcdk_mux_t *ctx, int fd,time_t timeout);
+int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd,time_t timeout);
 
 /**
  * 注册事件。
@@ -71,7 +71,7 @@ int abcdk_mux_attach2(abcdk_mux_t *ctx, int fd,time_t timeout);
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */
-int abcdk_mux_mark(abcdk_mux_t *ctx,int fd,uint32_t want,uint32_t done);
+int abcdk_epollex_mark(abcdk_epollex_t *ctx,int fd,uint32_t want,uint32_t done);
 
 /**
  * 等待事件。
@@ -80,16 +80,16 @@ int abcdk_mux_mark(abcdk_mux_t *ctx,int fd,uint32_t want,uint32_t done);
  * 
  * @return >=0 成功，!0 失败(或超时)。
 */
-int abcdk_mux_wait(abcdk_mux_t *ctx,abcdk_epoll_event *event,time_t timeout);
+int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event *event,time_t timeout);
 
 /**
  * 引用释放。
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */
-int abcdk_mux_unref(abcdk_mux_t *ctx,int fd, uint32_t events);
+int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events);
 
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_MUX_H
+#endif //ABCDK_UTIL_EPOLLEX_H

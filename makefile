@@ -27,7 +27,7 @@ ROBOTS_NAME = abcdk-robots.exe
 HEXDUMP_NAME = abcdk-hexdump.exe
 
 #
-MUX_TESTNAME = mux_test.exe
+EPOLLEX_TESTNAME = epollex_test.exe
 UTIL_TESTNAME = util_test.exe
 
 #Compiler
@@ -56,8 +56,10 @@ CCC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 #
 ifeq (${BUILD_TYPE},debug)
 CCC_FLAGS += -g
+LINK_FLAGS += -g
 else 
-CCC_FLAGS += -s -O2
+CCC_FLAGS += -O2
+LINK_FLAGS += -s
 endif
 
 #
@@ -143,12 +145,12 @@ $(OBJ_PATH)/tool/%.o: tool/%.c
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
-test: ${MUX_TESTNAME} ${UTIL_TESTNAME}
+test: ${EPOLLEX_TESTNAME} ${UTIL_TESTNAME}
 
 #
-${MUX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
-	rm -f $(BUILD_PATH)/${MUX_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${MUX_TESTNAME} ${OBJ_PATH}/test/mux_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
+${EPOLLEX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
+	rm -f $(BUILD_PATH)/${EPOLLEX_TESTNAME}
+	$(CCC) -o $(BUILD_PATH)/${EPOLLEX_TESTNAME} ${OBJ_PATH}/test/epollex_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${UTIL_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
@@ -181,7 +183,7 @@ clean-tool:
 
 #
 clean-test:
-	rm -f $(BUILD_PATH)/${MUX_TESTNAME}
+	rm -f $(BUILD_PATH)/${EPOLLEX_TESTNAME}
 	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
 
 #

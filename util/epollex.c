@@ -4,12 +4,10 @@
  * MIT License
  * 
  */
-#include "abcdk-util/mux.h"
+#include "abcdk-util/epollex.h"
 
-/**
- * 多路复用器。
-*/
-typedef struct _abcdk_mux
+/** epoll扩展对象。*/
+typedef struct _abcdk_epollex
 {
     /** epoll句柄。 >= 0 有效。*/
     int efd;
@@ -35,12 +33,10 @@ typedef struct _abcdk_mux
     /** 广播事件。*/
     uint32_t broadcast_want;
     
-} abcdk_mux_t;
+} abcdk_epollex_t;
 
-/**
- * 多路复用器的节点。
-*/
-typedef struct _abcdk_mux_node
+/** epoll节点。*/
+typedef struct _abcdk_epollex_node
 {
     /** 句柄。>= 0 有效。*/
     int fd;
@@ -72,12 +68,12 @@ typedef struct _abcdk_mux_node
     /** 是否第一次添加。!0 是，0 否。*/
     int add_first;
 
-}abcdk_mux_node;
+}abcdk_epollex_node;
 
 
-void abcdk_mux_free(abcdk_mux_t **ctx)
+void abcdk_epollex_free(abcdk_epollex_t **ctx)
 {
-    abcdk_mux_t *ctx_p;
+    abcdk_epollex_t *ctx_p;
 
     if(!ctx || !*ctx)
         return;
@@ -96,16 +92,16 @@ void abcdk_mux_free(abcdk_mux_t **ctx)
     *ctx = NULL;
 }
 
-abcdk_mux_t *abcdk_mux_alloc()
+abcdk_epollex_t *abcdk_epollex_alloc()
 {
     int efd = -1;
-    abcdk_mux_t *ctx = NULL;
+    abcdk_epollex_t *ctx = NULL;
     
     efd = abcdk_epoll_create();
     if (efd < 0)
         goto final_error;
 
-    ctx = abcdk_heap_alloc(sizeof(abcdk_mux_t));
+    ctx = abcdk_heap_alloc(sizeof(abcdk_epollex_t));
     if(!ctx)
         goto final_error;
 
@@ -127,10 +123,10 @@ final_error:
     return NULL;
 }
 
-int abcdk_mux_detach(abcdk_mux_t *ctx,int fd)
+int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_mux_node *node = NULL;
+    abcdk_epollex_node *node = NULL;
     int chk = 0;
 
     assert(ctx != NULL && fd >= 0);
@@ -141,7 +137,7 @@ int abcdk_mux_detach(abcdk_mux_t *ctx,int fd)
     if(!p)
         goto final_error;
 
-    node = (abcdk_mux_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
 
     if (node->refcount > 0)
         ABCDK_ERRNO_AND_GOTO1(EBUSY, final_error);
@@ -164,21 +160,21 @@ final:
     return chk;
 }
 
-int abcdk_mux_attach(abcdk_mux_t *ctx,int fd,const epoll_data_t *data,time_t timeout)
+int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data,time_t timeout)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_mux_node *node = NULL;
+    abcdk_epollex_node *node = NULL;
     int chk = 0;
 
     assert(ctx != NULL && fd >= 0 && data != NULL);
 
     abcdk_mutex_lock(&ctx->mutex,1);
 
-    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd), sizeof(abcdk_mux_node));
+    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd), sizeof(abcdk_epollex_node));
     if(!p)
         goto final_error;
 
-    node = (abcdk_mux_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
 
     if (node->add_first != 0)
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final_error);
@@ -207,7 +203,7 @@ final:
     return chk;
 }
 
-int abcdk_mux_attach2(abcdk_mux_t *ctx, int fd,time_t timeout)
+int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd,time_t timeout)
 {
     epoll_data_t data;
 
@@ -215,10 +211,10 @@ int abcdk_mux_attach2(abcdk_mux_t *ctx, int fd,time_t timeout)
 
     data.fd = fd;
 
-    return abcdk_mux_attach(ctx,fd,&data,timeout);
+    return abcdk_epollex_attach(ctx,fd,&data,timeout);
 }
 
-static void _abcdk_mux_disp(abcdk_mux_t *ctx, abcdk_mux_node *node, uint32_t event)
+static void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t event)
 {
     abcdk_epoll_event disp = {0};
 
@@ -262,7 +258,7 @@ static void _abcdk_mux_disp(abcdk_mux_t *ctx, abcdk_mux_node *node, uint32_t eve
     }   
 }
 
-static void _abcdk_mux_mark(abcdk_mux_t *ctx, abcdk_mux_node *node, uint32_t want, uint32_t done)
+static void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t want, uint32_t done)
 {
     abcdk_epoll_event tmp = {0};
 
@@ -301,24 +297,24 @@ static void _abcdk_mux_mark(abcdk_mux_t *ctx, abcdk_mux_node *node, uint32_t wan
      * 2：如果当前处理的事件包括ERROR事件，则不用再次发出通知。
     */
     if (!node->stable && !(done & ABCDK_EPOLL_ERROR))
-        _abcdk_mux_disp(ctx, node, ABCDK_EPOLL_ERROR);
+        _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 
 }
 
-static int _abcdk_mux_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
+static int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 {
-    abcdk_mux_t *ctx = (abcdk_mux_t *)opaque;
-    abcdk_mux_node *node = (abcdk_mux_node *)alloc->pptrs[ABCDK_MAP_VALUE];
+    abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
+    abcdk_epollex_node *node = (abcdk_epollex_node *)alloc->pptrs[ABCDK_MAP_VALUE];
 
-    _abcdk_mux_mark(ctx,node,ctx->broadcast_want,0);
+    _abcdk_epollex_mark(ctx,node,ctx->broadcast_want,0);
 
     return 1;
 }
 
-int abcdk_mux_mark(abcdk_mux_t *ctx, int fd, uint32_t want, uint32_t done)
+int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t done)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_mux_node *node = NULL;
+    abcdk_epollex_node *node = NULL;
 
     int chk = 0;
 
@@ -334,9 +330,9 @@ int abcdk_mux_mark(abcdk_mux_t *ctx, int fd, uint32_t want, uint32_t done)
         if (!p)
             goto final_error;
 
-        node = (abcdk_mux_node *)p->pptrs[ABCDK_MAP_VALUE];
+        node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
 
-        _abcdk_mux_mark(ctx, node, want, done);
+        _abcdk_epollex_mark(ctx, node, want, done);
     }
     else
     {
@@ -344,7 +340,7 @@ int abcdk_mux_mark(abcdk_mux_t *ctx, int fd, uint32_t want, uint32_t done)
         ctx->broadcast_want = want;
 
         /*遍历。*/
-        ctx->node_map.dump_cb = _abcdk_mux_mark_scan_cb;
+        ctx->node_map.dump_cb = _abcdk_epollex_mark_scan_cb;
         ctx->node_map.opaque = ctx;
         abcdk_map_scan(&ctx->node_map);
 
@@ -366,10 +362,10 @@ final:
     return chk;   
 }
 
-static int _abcdk_mux_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
+static int _abcdk_epollex_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 {
-    abcdk_mux_t *ctx = (abcdk_mux_t *)opaque;
-    abcdk_mux_node *node = (abcdk_mux_node *)alloc->pptrs[ABCDK_MAP_VALUE];
+    abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
+    abcdk_epollex_node *node = (abcdk_epollex_node *)alloc->pptrs[ABCDK_MAP_VALUE];
 
     /*负值或零，不启用超时检查。*/
     if (node->timeout <= 0)
@@ -381,14 +377,14 @@ static int _abcdk_mux_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 
     /*如果超时，派发ERROR事件。*/
     if ((ctx->watchdog_active - node->active) >= node->timeout)
-        _abcdk_mux_disp(ctx, node, ABCDK_EPOLL_ERROR);
+        _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 
 final:
 
     return 1;
 }
 
-static void _abcdk_mux_watchdog(abcdk_mux_t *ctx)
+static void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 {
     uint64_t current = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
 
@@ -400,17 +396,17 @@ static void _abcdk_mux_watchdog(abcdk_mux_t *ctx)
     ctx->watchdog_active = current;
 
     /*遍历。*/
-    ctx->node_map.dump_cb = _abcdk_mux_watchdog_scan_cb;
+    ctx->node_map.dump_cb = _abcdk_epollex_watchdog_scan_cb;
     ctx->node_map.opaque = ctx;
     abcdk_map_scan(&ctx->node_map);
 
 }
 
-static void _abcdk_mux_wait_disp(abcdk_mux_t *ctx,abcdk_epoll_event *events,int count)
+static void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int count)
 {
     abcdk_epoll_event *e;
     abcdk_allocator_t *p;
-    abcdk_mux_node *node;
+    abcdk_epollex_node *node;
 
     for (int i = 0; i < count; i++)
     {
@@ -421,17 +417,17 @@ static void _abcdk_mux_wait_disp(abcdk_mux_t *ctx,abcdk_epoll_event *events,int 
         if (p == NULL)
             continue;
             
-        node = (abcdk_mux_node *)p->pptrs[ABCDK_MAP_VALUE];
+        node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
 
         /*派发事件。*/
-        _abcdk_mux_disp(ctx,node,e->events);
+        _abcdk_epollex_disp(ctx,node,e->events);
 
         /*更节点新活动时间*/
         node->active = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
     }
 }
 
-static uint64_t _abcdk_mux_difference_timeout(uint64_t begin,uint64_t timeout)
+static uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
 {
     uint64_t span = UINT64_MAX;
 
@@ -445,7 +441,7 @@ static uint64_t _abcdk_mux_difference_timeout(uint64_t begin,uint64_t timeout)
     return span;
 }
 
-int abcdk_mux_wait(abcdk_mux_t *ctx,abcdk_epoll_event *event,time_t timeout)
+int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event *event,time_t timeout)
 {
     abcdk_epoll_event w[20];
     uint64_t begin = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
@@ -465,7 +461,7 @@ try_again:
         goto final;
 
     /*计算剩余超时时长。*/
-    remaining = _abcdk_mux_difference_timeout(begin, timeout);
+    remaining = _abcdk_epollex_difference_timeout(begin, timeout);
     if (remaining <= 0)
         ABCDK_ERRNO_AND_GOTO1(EINTR,final_error);
 
@@ -473,7 +469,7 @@ try_again:
     if(abcdk_thread_leader_test(&ctx->wait_leader)==0)
     {
         /*通过看门狗检测长期不活动的节点。*/
-        _abcdk_mux_watchdog(ctx);
+        _abcdk_epollex_watchdog(ctx);
 
         /*唤醒其它线程，处理看门狗。*/
         abcdk_mutex_signal(&ctx->mutex,1);
@@ -488,7 +484,7 @@ try_again:
         abcdk_mutex_lock(&ctx->mutex,1);
 
         /*处理活动事件。*/
-        _abcdk_mux_wait_disp(ctx,w,count);
+        _abcdk_epollex_wait_disp(ctx,w,count);
 
         /*唤醒其它线程，处理事件。*/
         abcdk_mutex_signal(&ctx->mutex,1);
@@ -517,10 +513,10 @@ final:
     return chk; 
 }
 
-int abcdk_mux_unref(abcdk_mux_t *ctx,int fd, uint32_t events)
+int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_mux_node *node = NULL;
+    abcdk_epollex_node *node = NULL;
     abcdk_epoll_event tmp = {0};
     int chk = 0;
 
@@ -534,7 +530,7 @@ int abcdk_mux_unref(abcdk_mux_t *ctx,int fd, uint32_t events)
     if(!p)
         goto final_error;
 
-    node = (abcdk_mux_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
 
     /*无论成功或失败，记数器都要相应的减少，不然无法释放。*/
     if (events & ABCDK_EPOLL_ERROR)
@@ -551,7 +547,7 @@ int abcdk_mux_unref(abcdk_mux_t *ctx,int fd, uint32_t events)
      * 2：如果当前处理的事件包括ERROR事件，则不用再次发出通知。
     */
     if (!node->stable && !(events & ABCDK_EPOLL_ERROR))
-        _abcdk_mux_disp(ctx, node, ABCDK_EPOLL_ERROR);
+        _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 
     /*No error.*/
     goto final;

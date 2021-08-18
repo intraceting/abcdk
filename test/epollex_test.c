@@ -14,7 +14,7 @@
 #include "abcdk-util/clock.h"
 #include "abcdk-util/thread.h"
 #include "abcdk-util/signal.h"
-#include "abcdk-util/mux.h"
+#include "abcdk-util/epollex.h"
 
 void* sigwaitinfo_cb(void* args)
 {
@@ -35,7 +35,7 @@ void* sigwaitinfo_cb(void* args)
 
 void* server_loop(void* args)
 {
-    abcdk_mux_t *m = (abcdk_mux_t *)args;
+    abcdk_epollex_t *m = (abcdk_epollex_t *)args;
     static volatile pthread_t leader = 0;
     static int l = -1;
 
@@ -53,22 +53,22 @@ void* server_loop(void* args)
         abcdk_bind(l, &a);
         listen(l, SOMAXCONN);
 
-        assert(abcdk_mux_attach2(m, l, 0) == 0);
-        assert(abcdk_mux_mark(m, l, ABCDK_EPOLL_INPUT, 0) == 0);
+        assert(abcdk_epollex_attach2(m, l, 0) == 0);
+        assert(abcdk_epollex_mark(m, l, ABCDK_EPOLL_INPUT, 0) == 0);
     }
 
     while(1)
     {
         abcdk_epoll_event e;
-        int chk = abcdk_mux_wait(m, &e, -1);
+        int chk = abcdk_epollex_wait(m, &e, -1);
         if (chk < 0)
             break;
 
         if(e.events & ABCDK_EPOLL_ERROR)
         {
-            assert(abcdk_mux_mark(m,e.data.fd,0,e.events)==0);
-            assert(abcdk_mux_unref(m,e.data.fd,e.events)==0);
-            assert(abcdk_mux_detach(m,e.data.fd)==0);
+            assert(abcdk_epollex_mark(m,e.data.fd,0,e.events)==0);
+            assert(abcdk_epollex_unref(m,e.data.fd,e.events)==0);
+            assert(abcdk_epollex_detach(m,e.data.fd)==0);
             abcdk_closep(&e.data.fd);
         }
         else if(e.data.fd == l)
@@ -82,11 +82,11 @@ void* server_loop(void* args)
                 int flag=1;
                 assert(abcdk_sockopt_option_int(c, IPPROTO_TCP, TCP_NODELAY,&flag, 2) == 0);
 
-                assert(abcdk_mux_attach2(m, c,10*1000) == 0);
-                assert(abcdk_mux_mark(m,c,ABCDK_EPOLL_INPUT,0)==0);
+                assert(abcdk_epollex_attach2(m, c,10*1000) == 0);
+                assert(abcdk_epollex_mark(m,c,ABCDK_EPOLL_INPUT,0)==0);
             }
             
-            assert(abcdk_mux_mark(m,e.data.fd,ABCDK_EPOLL_INPUT,ABCDK_EPOLL_INPUT)==0);
+            assert(abcdk_epollex_mark(m,e.data.fd,ABCDK_EPOLL_INPUT,ABCDK_EPOLL_INPUT)==0);
         }
         else
         {
@@ -102,7 +102,7 @@ void* server_loop(void* args)
                         continue;
                     }
                     if (r == -1 && errno == EAGAIN)
-                        assert(abcdk_mux_mark(m,e.data.fd, ABCDK_EPOLL_INPUT|ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_INPUT) == 0);
+                        assert(abcdk_epollex_mark(m,e.data.fd, ABCDK_EPOLL_INPUT|ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_INPUT) == 0);
 
                     break;
                 }
@@ -120,7 +120,7 @@ void* server_loop(void* args)
                     if (n <= 0)
                     {
                         abcdk_closep(&fd);
-                        assert(abcdk_mux_mark(m,e.data.fd, 0, ABCDK_EPOLL_OUTPUT) == 0);
+                        assert(abcdk_epollex_mark(m,e.data.fd, 0, ABCDK_EPOLL_OUTPUT) == 0);
                         break;
                     }
 
@@ -129,7 +129,7 @@ void* server_loop(void* args)
                     if (s > 0)
                         continue;
                     if (s == -1 && errno == EAGAIN)
-                        assert(abcdk_mux_mark(m,e.data.fd, ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_OUTPUT) == 0);
+                        assert(abcdk_epollex_mark(m,e.data.fd, ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_OUTPUT) == 0);
 #else
                     ssize_t s = sendfile(e.data.fd,fd,NULL,100000000);
                     printf("s=%ld\n",s);
@@ -138,19 +138,19 @@ void* server_loop(void* args)
                     if (s == 0)
                     {
                         abcdk_closep(&fd);
-                        assert(abcdk_mux_mark(m,e.data.fd, 0, ABCDK_EPOLL_OUTPUT) == 0);
+                        assert(abcdk_epollex_mark(m,e.data.fd, 0, ABCDK_EPOLL_OUTPUT) == 0);
                         break;
                     }
                     else if (s == -1 && errno == EAGAIN)
                     {
-                        assert(abcdk_mux_mark(m,e.data.fd, ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_OUTPUT) == 0);
+                        assert(abcdk_epollex_mark(m,e.data.fd, ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_OUTPUT) == 0);
                     }
 #endif
                     break;
                 }
             }
 
-            assert(abcdk_mux_unref(m,e.data.fd,e.events)==0);
+            assert(abcdk_epollex_unref(m,e.data.fd,e.events)==0);
         }
         
     }
@@ -160,14 +160,14 @@ void test_server(abcdk_tree_t *t)
 {
     abcdk_clock_reset();
 
-    abcdk_mux_t *m = abcdk_mux_alloc();
+    abcdk_epollex_t *m = abcdk_epollex_alloc();
 #if 0
 
     printf("attach begin:%lu\n",abcdk_clock_dot(NULL));
 
     for (int i = 0; i < 100000; i++)
-        assert(abcdk_mux_attach(m, i, 100) == 0);
-    //   assert(abcdk_mux_attach(m,10000,100)==0);
+        assert(abcdk_epollex_attach(m, i, 100) == 0);
+    //   assert(abcdk_epollex_attach(m,10000,100)==0);
 
     printf("attach cast:%lu\n",abcdk_clock_step(NULL));
 
@@ -176,7 +176,7 @@ void test_server(abcdk_tree_t *t)
     printf("attach begin:%lu\n",abcdk_clock_dot(NULL));
 
     for (int i = 0; i < 100000; i++)
-        assert(abcdk_mux_detach(m, i) == 0);
+        assert(abcdk_epollex_detach(m, i) == 0);
 
     printf("detach cast:%lu\n",abcdk_clock_step(NULL));
 #else
@@ -198,7 +198,7 @@ void test_server(abcdk_tree_t *t)
 
 #endif
 
-    abcdk_mux_free(&m);
+    abcdk_epollex_free(&m);
 }
 
 void test_client(abcdk_tree_t *t)
