@@ -213,6 +213,10 @@ PrintUsage()
     echo "usage: [ OPTIONS ]"
     echo -e "\n\t-g"
     echo -e "\t\t生成调试符号。默认：关闭"
+    echo -e "\n\t-V"
+    echo -e "\t\t主版本。默认：${VERSION_MAJOR}"
+    echo -e "\n\t-v"
+    echo -e "\t\t副版本。默认：${VERSION_MINOR}"
     echo -e "\n\t-r"
     echo -e "\t\t发行版本。默认：${VERSION_RELEASE}"
     echo -e "\n\t-i < PATH >"
@@ -222,7 +226,7 @@ PrintUsage()
 }
 
 #
-while getopts "?gr:i:d:" ARGKEY 
+while getopts "?gV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     \?)
@@ -231,6 +235,12 @@ do
     ;;
     g)
         BUILD_TYPE="debug"
+    ;;
+    V)
+        VERSION_MAJOR="${OPTARG}"
+    ;;
+    v)
+        VERSION_MINOR="${OPTARG}"
     ;;
     r)
         VERSION_RELEASE="${OPTARG}"
