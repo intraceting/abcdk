@@ -18,6 +18,9 @@ VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 UTIL_NAME = libabcdk-util.so
 
 #
+MP4_NAME = libabcdk-mp4.so
+
+#
 MT_NAME = abcdk-mt.exe
 MTX_NAME = abcdk-mtx.exe
 RELEASE_NAME = abcdk-release.exe
@@ -76,6 +79,10 @@ UTIL_SRC_FILES = $(wildcard util/*.c)
 UTIL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${UTIL_SRC_FILES}))
 
 #
+MP4_SRC_FILES = $(wildcard mp4/*.c)
+MP4_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${MP4_SRC_FILES}))
+
+#
 TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
@@ -84,7 +91,7 @@ TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: util tool test
+all: util mp4 tool test
 
 util: ${UTIL_NAME}
 
@@ -99,6 +106,21 @@ $(OBJ_PATH)/util/%.o: util/%.c
 	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+
+mp4: ${MP4_NAME}
+
+#
+${MP4_NAME}: $(MP4_OBJ_FILES)
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${MP4_NAME}
+	$(CCC) -o $(BUILD_PATH)/${MP4_NAME} $^ $(LINK_FLAGS) -shared
+
+#
+$(OBJ_PATH)/mp4/%.o: mp4/%.c
+	mkdir -p $(OBJ_PATH)/mp4/
+	rm -f $@
+	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+
 
 tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} 
 
@@ -153,9 +175,9 @@ ${EPOLLEX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
 	$(CCC) -o $(BUILD_PATH)/${EPOLLEX_TESTNAME} ${OBJ_PATH}/test/epollex_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
 
 #
-${UTIL_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
+${UTIL_TESTNAME}: ${UTIL_NAME} ${MP4_NAME} ${TEST_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l:${MP4_NAME} -l:${UTIL_NAME}  $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
@@ -164,12 +186,16 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
-clean: clean-util clean-tool clean-test
+clean: clean-util clean-mp4 clean-tool clean-test
 	rm -rf ${OBJ_PATH}
 
 #
 clean-util:
 	rm -f $(BUILD_PATH)/${UTIL_NAME}
+
+#
+clean-mp4:
+	rm -f $(BUILD_PATH)/${MP4_NAME}
 
 #
 clean-tool:
@@ -198,7 +224,7 @@ PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
 PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
-install: install-util install-tool install-ldc install-pkg
+install: install-util install-mp4 install-tool install-ldc install-pkg
 
 #
 install-util:
@@ -206,6 +232,13 @@ install-util:
 	cp -f $(BUILD_PATH)/${UTIL_NAME} ${INSTALL_PATH_LIB}/
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-util ${INSTALL_PATH_INC}/
+
+#
+install-mp4:
+	mkdir -p ${INSTALL_PATH_LIB}
+	cp -f $(BUILD_PATH)/${MP4_NAME} ${INSTALL_PATH_LIB}/
+	mkdir -p ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-mp4 ${INSTALL_PATH_INC}/
 
 #
 install-tool:
@@ -229,7 +262,7 @@ install-ldc:
 	echo "Description: A better c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -l:${UTIL_NAME} -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs: -l:${UTIL_NAME} -l:${MP4_NAME} -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
 
 #
@@ -243,12 +276,17 @@ install-pkg:
 	chmod 755 ${LDC_FILE}
 
 #
-uninstall: uninstall-util uninstall-tool uninstall-ldc uninstall-pkg
+uninstall: uninstall-util uninstall-mp4 uninstall-tool uninstall-ldc uninstall-pkg
 
 #
 uninstall-util:
 	rm -f ${INSTALL_PATH_LIB}/${UTIL_NAME}
 	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-util
+
+#
+uninstall-mp4:
+	rm -f ${INSTALL_PATH_LIB}/${MP4_NAME}
+	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-mp4
 
 #
 uninstall-tool:

@@ -22,6 +22,7 @@
 #include "abcdk-util/dirent.h"
 #include "abcdk-util/socket.h"
 #include "abcdk-util/hexdump.h"
+#include "abcdk-mp4/demuxer.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -614,9 +615,32 @@ int _mp4_skip_size(abcdk_buffer_t *buf,uint64_t size)
     return 0;
 }
 
+int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    if(deep == -1)
+        return -1;
+
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+
+    if (deep == 0)
+    {
+        abcdk_tree_fprintf(stdout, deep, node, ".\n");
+    }
+    else
+    {
+        abcdk_tree_fprintf(stdout, deep, node, "offset=%lu,size=%lu,type=%c%c%c%c\n",
+                            atom->off_head, atom->size,
+                           atom->type.u8[0], atom->type.u8[1], atom->type.u8[2], atom->type.u8[3]);
+    }
+
+    return 1;
+}
+
 void test_mp4(abcdk_tree_t *args)
 {
     const char *name_p = abcdk_option_get(args,"--file",0,"");
+
+#if 0
 
     abcdk_allocator_t *t = abcdk_mmap2(name_p,0,0);
     if(!t)
@@ -663,6 +687,23 @@ void test_mp4(abcdk_tree_t *args)
     }
 
     abcdk_buffer_free(&buf);
+
+#else 
+    int fd = abcdk_open(name_p,0,0,0);
+    if(fd<0)
+        return;
+
+    abcdk_tree_t *root = abcdk_mp4_read_probe(fd);
+
+
+    abcdk_tree_iterator_t it = {0,mp4_dump_cb,NULL};
+    abcdk_tree_scan(root,&it);
+
+
+    abcdk_tree_free(&root);
+    abcdk_closep(&fd);
+
+#endif 
 }
 
 int dirent_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
