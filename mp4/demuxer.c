@@ -72,7 +72,7 @@ final_error:
     return NULL;
 }
 
-int _abcdk_mp4_read_probe_stbl(abcdk_tree_t *root, int fd)
+int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, int moov_only)
 {
     abcdk_mp4_atom_t *root_atom = NULL;
     abcdk_mp4_atom_t *atom = NULL;
@@ -91,322 +91,41 @@ int _abcdk_mp4_read_probe_stbl(abcdk_tree_t *root, int fd)
         abcdk_tree_insert2(root, node, 0);
 
         atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        // if (atom->type.u32 == )
-        // {
-        //     /*跳转文件指针到容器内部。*/
-        //     lseek(fd, atom->off_cont, SEEK_SET);
-        // }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_minf(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STBL)
+        switch (atom->type.u32)
+        {
+        case ABCDK_MP4_ATOM_TYPE_MOOV:
+        case ABCDK_MP4_ATOM_TYPE_TRAK:
+        case ABCDK_MP4_ATOM_TYPE_EDTS:
+        case ABCDK_MP4_ATOM_TYPE_MDIA:
+        case ABCDK_MP4_ATOM_TYPE_MINF:
+        case ABCDK_MP4_ATOM_TYPE_DINF:
+        case ABCDK_MP4_ATOM_TYPE_STBL:
+        case ABCDK_MP4_ATOM_TYPE_MVEX:
+        case ABCDK_MP4_ATOM_TYPE_MOOF:
+        case ABCDK_MP4_ATOM_TYPE_TRAF:
+        case ABCDK_MP4_ATOM_TYPE_MFRA:
+        case ABCDK_MP4_ATOM_TYPE_SKIP:
         {
             /*跳转文件指针到容器内部。*/
             lseek(fd, atom->off_cont, SEEK_SET);
 
-            chk = _abcdk_mp4_read_probe_stbl(node,fd);
+            chk = _abcdk_mp4_read_probe(node,fd,moov_only);
             if (chk != 0)
                 goto final_error;
+
         }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-
-int _abcdk_mp4_read_probe_edts(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        // if (atom->type.u32 == )
-        // {
-        //     /*跳转文件指针到容器内部。*/
-        //     lseek(fd, atom->off_cont, SEEK_SET);
-        // }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_mdia(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MINF)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_minf(node,fd);
-            if (chk != 0)
-                goto final_error;
-        }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_trak(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_EDTS)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_edts(node,fd);
-            if (chk != 0)
-                goto final_error;
-        }
-        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDIA)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_mdia(node,fd);
-            if (chk != 0)
-                goto final_error;
-        }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_mvex(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        // if (atom->type.u32 == )
-        // {
-        //     /*跳转文件指针到容器内部。*/
-        //     lseek(fd, atom->off_cont, SEEK_SET);
-        // }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_moov(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TRAK)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_trak(node, fd);
-            if (chk != 0)
-                goto final_error;
-        }
-        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MVEX)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_mvex(node, fd);
-            if (chk != 0)
-                goto final_error;
+            break;
+        
+        default:
+            break;
         }
  
         /*跳转文件指针到下一个atom。*/
         lseek(fd, atom->off_head + atom->size, SEEK_SET);
 
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_traf(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        // if (atom->type.u32 == )
-        // {
-        //     /*跳转文件指针到容器内部。*/
-        //     lseek(fd, atom->off_cont, SEEK_SET);
-        // }
- 
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
+        /*可能需要提前终止。*/
+        if(moov_only && atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOV)
+            break;
 
         /*限制在容器内部解析。*/
         keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
@@ -419,193 +138,33 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_read_probe_moof(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TRAF)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_traf(node, fd);
-            if (chk != 0)
-                goto final_error;
-        }
- 
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_mfra(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        // if (atom->type.u32 == )
-        // {
-        //     /*跳转文件指针到容器内部。*/
-        //     lseek(fd, atom->off_cont, SEEK_SET);
-        // }
- 
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-int _abcdk_mp4_read_probe_skip(abcdk_tree_t *root, int fd)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
-
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        // if (atom->type.u32 == )
-        // {
-        //     /*跳转文件指针到容器内部。*/
-        //     lseek(fd, atom->off_cont, SEEK_SET);
-        // }
- 
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size< root_atom->off_head+root_atom->size)?1:0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-abcdk_tree_t *abcdk_mp4_read_probe(int fd)
+abcdk_tree_t *abcdk_mp4_read_probe(int fd, int moov_only)
 {
     abcdk_mp4_atom_t *atom = NULL;
     abcdk_tree_t *root;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
+    uint64_t fsize = 0;
     int chk;
 
-    root = abcdk_tree_alloc3(1);
+    assert(fd>=0);
+
+    chk = abcdk_mp4_size(fd, &fsize);
+    if (chk != 0)
+        return NULL;
+    
+    if(fsize<8)
+        ABCDK_ERRNO_AND_RETURN1(ESPIPE,NULL);
+
+    root = abcdk_tree_alloc3(sizeof(abcdk_mp4_atom_t));
     if (!root)
-        goto final;
+        return NULL;
 
-    while (keep)
-    {
-        node = _abcdk_mp4_read_atom_header(fd);
-        if (!node)
-            goto final;
+    atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
 
-        abcdk_tree_insert2(root, node, 0);
+    atom->size = fsize;
+    atom->type.u32 = ABCDK_MP4_ATOM_MKTAG('R', 'O', 'O', 'T');
+    atom->off_head = atom->off_cont = 0;
 
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOV)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_moov(node, fd);
-            if (chk != 0)
-                goto final;
-
-            /*stop*/
-            keep = 0;
-        }
-        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOF)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_moof(node, fd);
-            if (chk != 0)
-                goto final;
-        }
-        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MFRA)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_mfra(node, fd);
-            if (chk != 0)
-                goto final;
-        }
-        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_SKIP)
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe_skip(node, fd);
-            if (chk != 0)
-                goto final;
-        }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-    }
-
-final:
+    _abcdk_mp4_read_probe(root,fd,moov_only);
 
     return root;
 }

@@ -22,6 +22,52 @@ __BEGIN_DECLS
     #define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
 #endif
 
+/** MP4原子结构。*/
+typedef struct _abcdk_mp4_atom
+{
+    /**
+     * 长度(字节，头部+内容)。
+    */
+    uint64_t size;
+
+    /**
+     * 类型。
+     * 
+     * @note 大端字节序。
+    */
+    union
+    {
+        /** char*/
+        uint8_t u8[4];
+
+        /** int*/
+        uint32_t u32;
+    } type;
+
+    /** 
+     * 头部偏移量(字节)。
+     * 
+     * -demuxer: 有效。
+     * -muxer: 无效。
+    */
+    uint64_t off_head;
+
+    /** 
+     * 内容偏移量(字节)。
+     * 
+     * -demuxer: 有效。
+     * -muxer: 无效。
+    */
+    uint64_t off_cont;
+
+    /**
+     * 数据体(头部+内容)。
+    */
+    abcdk_allocator_t *data;
+
+} abcdk_mp4_atom_t;
+
+
 /*
  * atom types
  * 
@@ -171,6 +217,9 @@ __BEGIN_DECLS
 #define ABCDK_MP4_ATOM_TYPE_SKIP ABCDK_MP4_ATOM_MKTAG('s', 'k', 'i', 'p')
 #define ABCDK_MP4_ATOM_TYPE_IPMC ABCDK_MP4_ATOM_MKTAG('i', 'p', 'm', 'c')
 
+
+
+
 /*
  * file type/brands
  *
@@ -203,52 +252,6 @@ __BEGIN_DECLS
 #define ABCDK_MP4_FILE_BRAND_HVC1 ABCDK_MP4_ATOM_MKTAG('h', 'v', 'c', '1')
 #define ABCDK_MP4_FILE_BRAND_DBY1 ABCDK_MP4_ATOM_MKTAG('d', 'b', 'y', '1')
 
-/**
- * MP4原子结构。
-*/
-typedef struct _abcdk_mp4_atom
-{
-    /**
-     * 长度(字节，头部+内容)。
-    */
-    uint64_t size;
-
-    /**
-     * 类型。
-     * 
-     * @note 大端字节序。
-    */
-    union
-    {
-        /** char*/
-        uint8_t u8[4];
-
-        /** int*/
-        uint32_t u32;
-    } type;
-
-    /** 
-     * 头部偏移量(字节)。
-     * 
-     * -demuxer: 有效。
-     * -muxer: 无效。
-    */
-    uint64_t off_head;
-
-    /** 
-     * 内容偏移量(字节)。
-     * 
-     * -demuxer: 有效。
-     * -muxer: 无效。
-    */
-    uint64_t off_cont;
-
-    /**
-     * 数据实体。
-    */
-    abcdk_allocator_t *data;
-
-} abcdk_mp4_atom_t;
 
 __END_DECLS
 

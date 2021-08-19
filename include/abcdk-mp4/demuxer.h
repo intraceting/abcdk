@@ -14,7 +14,7 @@
 __BEGIN_DECLS
 
 /**/
-abcdk_tree_t *abcdk_mp4_read_probe(int fd);
+abcdk_tree_t *abcdk_mp4_read_probe(int fd, int moov_only);
 
 
 __END_DECLS
