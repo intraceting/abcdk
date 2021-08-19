@@ -59,6 +59,17 @@ int abcdk_mp4_read_u32(int fd, uint32_t *data)
     return 0;
 }
 
+int abcdk_mp4_read_u32to64(int fd, uint64_t *data)
+{
+    uint32_t d32 = 0;
+    if (abcdk_mp4_read_u32(fd,&d32))
+        return -1;
+
+    *data = d32;
+
+    return 0;
+}
+
 int abcdk_mp4_read_u64(int fd, uint64_t *data)
 {
     if (abcdk_mp4_read(fd, data, sizeof(uint64_t)))

@@ -12,17 +12,32 @@
 
 __BEGIN_DECLS
 
+/** MP4 tag.*/
+typedef union _abcdk_mp4_tag
+{
+    /** 字符型。*/
+    uint8_t u8[4];
+
+    /** 
+     * 整型。
+     * 
+     * @note 大端字节序。
+    */
+    uint32_t u32;
+
+}abcdk_mp4_tag_t;
+
 /*
- * tag构造宏(大端字节序)。
+ * MP4 tag 构造宏(大端字节序)。
 */
 
-# if __BYTE_ORDER == __LITTLE_ENDIAN
-    #define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((uint32_t)(d) << 24))
-#else 
-    #define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((uint32_t)(d) << 24))
+#else
+#define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
 #endif
 
-/** MP4原子结构。*/
+/** MP4 原子。*/
 typedef struct _abcdk_mp4_atom
 {
     /**
@@ -32,17 +47,8 @@ typedef struct _abcdk_mp4_atom
 
     /**
      * 类型。
-     * 
-     * @note 大端字节序。
     */
-    union
-    {
-        /** char*/
-        uint8_t u8[4];
-
-        /** int*/
-        uint32_t u32;
-    } type;
+    abcdk_mp4_tag_t type;
 
     /** 
      * 头部偏移量(字节)。
@@ -217,8 +223,19 @@ typedef struct _abcdk_mp4_atom
 #define ABCDK_MP4_ATOM_TYPE_SKIP ABCDK_MP4_ATOM_MKTAG('s', 'k', 'i', 'p')
 #define ABCDK_MP4_ATOM_TYPE_IPMC ABCDK_MP4_ATOM_MKTAG('i', 'p', 'm', 'c')
 
+/** ftyp atom.*/
+typedef struct _abcdk_mp4_atom_ftyp
+{
+    /** 主版本。*/
+    abcdk_mp4_tag_t major;
 
+    /** 副版本。*/
+    uint32_t minor;
 
+    /** 兼容版本。*/
+    abcdk_allocator_t *compat;
+
+}abcdk_mp4_atom_ftyp_t;
 
 /*
  * file type/brands
@@ -252,6 +269,136 @@ typedef struct _abcdk_mp4_atom
 #define ABCDK_MP4_ATOM_FTYP_BRAND_HVC1 ABCDK_MP4_ATOM_MKTAG('h', 'v', 'c', '1')
 #define ABCDK_MP4_ATOM_FTYP_BRAND_DBY1 ABCDK_MP4_ATOM_MKTAG('d', 'b', 'y', '1')
 
+
+/** mvhd atom.*/
+typedef struct _abcdk_mp4_atom_mvhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint8_t flags[3];
+
+    /** 
+     * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 
+     * 1970 to 1904 : + 2082844800(0x7C25B080)
+    */
+    uint64_t ctime;
+
+    /** 
+     * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 
+     * 1970 to 1904 : + 2082844800(0x7C25B080)
+    */
+    uint64_t mtime;
+
+    /** 时间的刻度值(可以理解为1秒被分成多少份)。*/
+    uint32_t timescale;
+
+    /** 时长(秒×时间的刻度值)。*/
+    uint64_t duration;
+
+    /** 推荐播放速率。*/
+    uint32_t rate;
+
+    /** 推荐音量。*/
+    uint16_t volume;
+
+    /** 预留的。*/
+    uint8_t reserved[10];
+
+    /**变换矩阵。*/
+    uint32_t matrix[9];
+
+    /** 预定义。*/
+    uint32_t predefined[6];
+
+    /** 下一个TRACK ID。*/
+    uint32_t nexttrackid;
+
+}abcdk_mp4_atom_mvhd_t;
+
+
+/** tkhd atom.*/
+typedef struct _abcdk_mp4_atom_tkhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint8_t flags[3];
+
+    /** 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。*/
+    uint64_t ctime;
+
+    /** 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。*/
+    uint64_t mtime;
+
+    /** TRACK ID。*/
+    uint32_t trackid;
+
+    /** 预留。*/
+    uint32_t reserved1;
+
+    /** 时长(秒×时间的刻度值)。*/
+    uint64_t duration;
+
+    /** 预留。*/
+    uint64_t reserved2;
+
+    /** 预留。*/
+    uint16_t layer;
+
+    /** 预留。*/
+    uint16_t alternategroup;
+
+    /** 音量。*/
+    uint16_t volume;
+
+    /** 预留。*/
+    uint16_t reserved3;
+
+    /** 变换矩阵。*/
+    uint32_t matrix[9];
+
+    /** 
+     * 宽。
+     * 
+     * to pixels: * 65536
+    */
+    uint32_t width;
+
+    /** 
+     * 高。
+     * 
+     * to pixels: * 65536
+    */
+    uint32_t height;
+
+}abcdk_mp4_atom_tkhd_t;
+
+/** hdlr atom.*/
+typedef struct _abcdk_mp4_atom_hdlr
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint8_t flags[3];
+    
+    /** 类型。*/
+    abcdk_mp4_tag_t type;
+
+    /** 子类型。*/
+    abcdk_mp4_tag_t subtype;
+
+    /** 预留。*/
+    uint32_t reserved[3];
+
+    /** 名称。*/
+    abcdk_allocator_t *name;
+}abcdk_mp4_atom_hdlr_t;
 
 __END_DECLS
 

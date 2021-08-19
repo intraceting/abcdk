@@ -154,6 +154,11 @@ abcdk_allocator_t *abcdk_allocator_alloc2(size_t size)
     return abcdk_allocator_alloc(&size, 1, 0);
 }
 
+abcdk_allocator_t *abcdk_allocator_alloc3(size_t size,size_t numbers)
+{
+    return abcdk_allocator_alloc(&size, numbers, 1);
+}
+
 abcdk_allocator_t *abcdk_allocator_refer(abcdk_allocator_t *src)
 {
     abcdk_allocator_hdr *in_p = NULL;

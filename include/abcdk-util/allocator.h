@@ -69,6 +69,15 @@ abcdk_allocator_t *abcdk_allocator_alloc(size_t *sizes, size_t numbers, int drag
 */
 abcdk_allocator_t *abcdk_allocator_alloc2(size_t size);
 
+
+/**
+ * 申请多个内存块(数组)。
+ * 
+ * @param size 内存块的大小。>= 0 的整数。
+ * @param numbers 数量。> 0 的整数。
+*/
+abcdk_allocator_t *abcdk_allocator_alloc3(size_t size,size_t numbers);
+
 /**
  * 内存块引用。
  * 
