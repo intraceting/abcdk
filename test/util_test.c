@@ -670,6 +670,24 @@ void _mp4_dump_mvhd(size_t deep, abcdk_tree_t *node, void *opaque)
     fprintf(stdout, "long=%lu(sec),",cont->duration/cont->timescale);
 }
 
+void _mp4_dump_udta(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_udta_t *cont = (abcdk_mp4_atom_udta_t *)atom->cont->pptrs[0];
+
+    abcdk_tree_t *p = abcdk_tree_child(cont->entries,1);
+    while (p)
+    {
+        abcdk_mp4_atom_t *q = (abcdk_mp4_atom_t *)p->alloc->pptrs[0];
+        fprintf(stdout, "[offset=%lu,size=%lu,type=%c%c%c%c]",
+                           q->off_head, q->size, q->type.u8[0], q->type.u8[1], q->type.u8[2], q->type.u8[3]);
+        
+        p = abcdk_tree_sibling(p,0);
+    }
+    
+    abcdk_tree_free(&cont->entries);
+}
 
 void _mp4_dump_tkhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
@@ -752,16 +770,195 @@ void _mp4_dump_vmhd(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
     abcdk_mp4_atom_vmhd_t *cont = (abcdk_mp4_atom_vmhd_t *)atom->cont->pptrs[0];
 
-    fprintf(stdout, "version=%hhu,flag=[%08x]",cont->version,cont->flags);
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
 
     fprintf(stdout, "mode=%u,",cont->mode);
     fprintf(stdout, "opcolor=%hu,%hu,%hu",cont->opcolor[0],cont->opcolor[1],cont->opcolor[2]);
 }
 
+void _mp4_dump_dref(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_dref_t *cont = (abcdk_mp4_atom_dref_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    abcdk_tree_t *p = abcdk_tree_child(cont->entries,1);
+    while (p)
+    {
+        abcdk_mp4_atom_t *q = (abcdk_mp4_atom_t *)p->alloc->pptrs[0];
+        fprintf(stdout, "[offset=%lu,size=%lu,type=%c%c%c%c]",
+                           q->off_head, q->size, q->type.u8[0], q->type.u8[1], q->type.u8[2], q->type.u8[3]);
+        
+        p = abcdk_tree_sibling(p,0);
+    }
+    
+    abcdk_tree_free(&cont->entries);
+}
+
+void _mp4_dump_stsd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_stsd_t *cont = (abcdk_mp4_atom_stsd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    abcdk_tree_t *p = abcdk_tree_child(cont->entries,1);
+    while (p)
+    {
+        abcdk_mp4_atom_t *q = (abcdk_mp4_atom_t *)p->alloc->pptrs[0];
+        fprintf(stdout, "[offset=%lu,size=%lu,type=%c%c%c%c]",
+                           q->off_head, q->size, q->type.u8[0], q->type.u8[1], q->type.u8[2], q->type.u8[3]);
+        
+        p = abcdk_tree_sibling(p,0);
+    }
+    
+    abcdk_tree_free(&cont->entries);
+}
+
+void _mp4_dump_stts(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_stts_t *cont = (abcdk_mp4_atom_stts_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    {
+        fprintf(stdout, "count=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+        fprintf(stdout, "duration=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
+void _mp4_dump_ctts(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_ctts_t *cont = (abcdk_mp4_atom_ctts_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    {
+        fprintf(stdout, "count=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+        fprintf(stdout, "offset=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
+void _mp4_dump_stsc(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_stsc_t *cont = (abcdk_mp4_atom_stsc_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    {
+        fprintf(stdout, "Firstchunk=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+        fprintf(stdout, "perchunk=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
+        fprintf(stdout, "ID=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],8));
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
+void _mp4_dump_stsz(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_stsz_t *cont = (abcdk_mp4_atom_stsz_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "[samplesize=%u],",cont->samplesize);
+
+    for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
+    {
+        fprintf(stdout, "%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
+
+void _mp4_dump_stco(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_stco_t *cont = (abcdk_mp4_atom_stco_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
+    {
+        fprintf(stdout, "%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
+void _mp4_dump_stss(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_stss_t *cont = (abcdk_mp4_atom_stss_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    {
+        fprintf(stdout, "%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
+
+void _mp4_dump_gmhd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_gmhd_t *cont = (abcdk_mp4_atom_gmhd_t *)atom->cont->pptrs[0];
+
+    abcdk_tree_t *p = abcdk_tree_child(cont->entries,1);
+    while (p)
+    {
+        abcdk_mp4_atom_t *q = (abcdk_mp4_atom_t *)p->alloc->pptrs[0];
+        fprintf(stdout, "[offset=%lu,size=%lu,type=%c%c%c%c]",
+                           q->off_head, q->size, q->type.u8[0], q->type.u8[1], q->type.u8[2], q->type.u8[3]);
+        
+        p = abcdk_tree_sibling(p,0);
+    }
+    
+    abcdk_tree_free(&cont->entries);
+}
+
+
+static int atoms =0;
+
 int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     if (deep == -1)
         return -1;
+
+    atoms += 1;
 
     int fd = (int64_t)opaque;
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
@@ -781,6 +978,8 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
             _mp4_dump_ftyp(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MVHD)
             _mp4_dump_mvhd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_UDTA)
+            _mp4_dump_udta(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TKHD)
             _mp4_dump_tkhd(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDHD)
@@ -789,9 +988,31 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
             _mp4_dump_hdlr(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_VMHD)
             _mp4_dump_vmhd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_DREF)
+            _mp4_dump_dref(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSD)
+            _mp4_dump_stsd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STTS)
+            _mp4_dump_stts(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CTTS)
+            _mp4_dump_ctts(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSC)
+            _mp4_dump_stsc(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSZ)
+            _mp4_dump_stsz(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STCO)
+            _mp4_dump_stco(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSS)
+            _mp4_dump_stss(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_GMHD)
+            _mp4_dump_gmhd(deep, node, opaque);
+
 
 
         fprintf(stdout, " \n");
+
+        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOF)
+            return -1;
     }
 
     return 1;
@@ -854,11 +1075,13 @@ void test_mp4(abcdk_tree_t *args)
     if(fd<0)
         return;
 
-    abcdk_tree_t *root = abcdk_mp4_read_probe(fd,1);
+    abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL);
 
 
     abcdk_tree_iterator_t it = {0,mp4_dump_cb,(void*)(int64_t)fd};
     abcdk_tree_scan(root,&it);
+
+    printf("\natoms:%d\n",atoms);
 
 
     abcdk_tree_free(&root);
@@ -1290,6 +1513,19 @@ int main(int argc, char **argv)
     const char *func = abcdk_option_get(args,"--func",0,"");
 
     abcdk_clock_reset();
+
+    int a = 0x112233;
+    int b = 0;
+    char a8[3] = {0};
+
+    abcdk_endian_h_to_b24(a8,a);
+    b = abcdk_endian_b_to_h24(a8);
+    assert(a == b);
+
+    abcdk_endian_h_to_l24(a8,a);
+    b = abcdk_endian_l_to_h24(a8);
+    assert(a == b);
+    
 
     if(abcdk_strcmp(func,"test_ffmpeg",0)==0)
         test_ffmpeg(args);

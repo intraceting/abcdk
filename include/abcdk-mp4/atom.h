@@ -9,6 +9,7 @@
 
 #include "abcdk-util/general.h"
 #include "abcdk-util/allocator.h"
+#include "abcdk-util/tree.h"
 
 __BEGIN_DECLS
 
@@ -211,6 +212,7 @@ typedef struct _abcdk_mp4_atom
 #define ABCDK_MP4_ATOM_TYPE_SGPD ABCDK_MP4_ATOM_MKTAG('s', 'g', 'p', 'd')
 #define ABCDK_MP4_ATOM_TYPE_SKIP ABCDK_MP4_ATOM_MKTAG('s', 'k', 'i', 'p')
 #define ABCDK_MP4_ATOM_TYPE_IPMC ABCDK_MP4_ATOM_MKTAG('i', 'p', 'm', 'c')
+#define ABCDK_MP4_ATOM_TYPE_GMHD ABCDK_MP4_ATOM_MKTAG('g', 'm', 'h', 'd')
 
 /** ftyp atom.*/
 typedef struct _abcdk_mp4_atom_ftyp
@@ -317,6 +319,15 @@ typedef struct _abcdk_mp4_atom_mvhd
     uint32_t nexttrackid;
 
 }abcdk_mp4_atom_mvhd_t;
+
+
+/** udta atom.*/
+typedef struct _abcdk_mp4_atom_udta
+{
+    /** 子项。*/
+    abcdk_tree_t *entries;
+
+}abcdk_mp4_atom_udta_t;
 
 
 /** tkhd atom.*/
@@ -477,6 +488,192 @@ typedef struct _abcdk_mp4_atom_vmhd
     uint16_t opcolor[3];
 
 }abcdk_mp4_atom_vmhd_t;
+
+
+/** dref atom.*/
+typedef struct _abcdk_mp4_atom_dref
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 子项数量*/
+    uint32_t numbers;
+
+    /** 子项。*/
+    abcdk_tree_t *entries;
+
+}abcdk_mp4_atom_dref_t;
+
+/** stsd atom.*/
+typedef struct _abcdk_mp4_atom_stsd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 子项数量*/
+    uint32_t numbers;
+
+    /** 子项。*/
+    abcdk_tree_t *entries;
+
+}abcdk_mp4_atom_stsd_t;
+
+/** stts atom.*/
+typedef struct _abcdk_mp4_atom_stts
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表。
+     * 
+     * |Sample count| Sample duration| Field
+     * |4           | 4              | Bytes     
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_stts_t;
+
+
+/** ctts atom.*/
+typedef struct _abcdk_mp4_atom_ctts
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表。
+     * 
+     * |Sample count| composition Offset| Field
+     * |4           | 4                 | Bytes     
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_ctts_t;
+
+/** stsc atom.*/
+typedef struct _abcdk_mp4_atom_stsc
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表。
+     * 
+     * |First chunk| Samples per chunk|Sample description ID| Field
+     * |4          | 4                |4                    | Bytes     
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_stsc_t;
+
+/** stsz atom.*/
+typedef struct _abcdk_mp4_atom_stsz
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 
+     * 采样大小。
+     * 
+     * > 0 有效。
+     * 
+     * = 0 见采样表。
+    */
+    uint32_t samplesize;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表(包大小(字节))。
+     * 
+     * |Sample size| Field
+     * |4          | Bytes  
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_stsz_t;
+
+/** stco atom.*/
+typedef struct _abcdk_mp4_atom_stco
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表(包偏移量，以0为基值)。
+     * 
+     * |Offset| Field
+     * |4     | Bytes     
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_stco_t;
+
+
+/** stss atom.*/
+typedef struct _abcdk_mp4_atom_stss
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表(关健帧的包ID，从1开始)。
+     * 
+     * |Sync sample | Field
+     * |4           | Bytes     
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_stss_t;
+
+/** gmhd atom.*/
+typedef struct _abcdk_mp4_atom_gmhd
+{
+    /** 子项。*/
+    abcdk_tree_t *entries;
+    
+}abcdk_mp4_atom_gmhd_t;
 
 __END_DECLS
 

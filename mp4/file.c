@@ -54,10 +54,8 @@ int abcdk_mp4_read_u24to32(int fd, uint32_t *data)
     uint8_t d8[3] = {0};
     if (abcdk_mp4_read_u24(fd,d8))
         return -1;
-    
-    *data |= (uint32_t)d8[0];
-    *data |= (((uint32_t)d8[1])<<8);
-    *data |= (((uint32_t)d8[2])<<16);
+
+    *data = abcdk_endian_b_to_h24(d8);
 
     return 0;
 }

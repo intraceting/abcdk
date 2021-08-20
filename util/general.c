@@ -492,16 +492,9 @@ uint32_t abcdk_endian_b_to_h24(const uint8_t* src)
 {
     uint32_t dst = 0;
 
-    if (abcdk_endian_check(0))
-    {
-        memcpy(&dst, src, 3);
-        abcdk_endian_swap((uint8_t*)&dst, 3);
-    }
-    else
-    {
-        memcpy(&dst, src, 3);
-        dst >>= 8;
-    }
+    dst |= src[2];
+    dst |= (((uint32_t)src[1]) << 8);
+    dst |= (((uint32_t)src[0]) << 16);
 
     return dst;
 }
@@ -531,16 +524,9 @@ uint16_t abcdk_endian_h_to_b16(uint16_t src)
 
 uint8_t* abcdk_endian_h_to_b24(uint8_t* dst,uint32_t src)
 {
-    if (abcdk_endian_check(0))
-    {
-        memcpy(dst, &src, 3);
-        abcdk_endian_swap(dst, 3);
-    }
-    else
-    {
-        src <<= 8;
-        memcpy(dst, &src, 3);
-    }
+    dst[2] = (src & 0xFF);
+    dst[1] = ((src >> 8) & 0xFF);
+    dst[0] = ((src >> 16) & 0xFF);
 
     return dst;
 }
@@ -568,18 +554,13 @@ uint16_t abcdk_endian_l_to_h16(uint16_t src)
     return *((uint16_t *)abcdk_endian_l_to_h((uint8_t *)&src, sizeof(src)));
 }
 
-uint8_t* abcdk_endian_l_to_h24(uint8_t* dst,uint32_t src)
+uint32_t abcdk_endian_l_to_h24(uint8_t* src)
 {
-    if (abcdk_endian_check(1))
-    {
-        memcpy(dst, &src, 3);
-        abcdk_endian_swap(dst, 3);
-    }
-    else
-    {
-        src <<= 8;
-        memcpy(dst, &src, 3);
-    }
+    uint32_t dst = 0;
+
+    dst |= src[0];
+    dst |= (((uint32_t)src[1]) << 8);
+    dst |= (((uint32_t)src[2]) << 16);
 
     return dst;
 }
@@ -609,16 +590,9 @@ uint16_t abcdk_endian_h_to_l16(uint16_t src)
 
 uint8_t* abcdk_endian_h_to_l24(uint8_t* dst,uint32_t src)
 {
-    if (abcdk_endian_check(1))
-    {
-        memcpy(dst, &src, 3);
-        abcdk_endian_swap(dst, 3);
-    }
-    else
-    {
-        src <<= 8;
-        memcpy(dst, &src, 3);
-    }
+    dst[0] = (src & 0xFF);
+    dst[1] = ((src >> 8) & 0xFF);
+    dst[2] = ((src >> 16) & 0xFF);
 
     return dst;
 }
