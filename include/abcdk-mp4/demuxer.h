@@ -19,29 +19,12 @@ __BEGIN_DECLS
 abcdk_tree_t *abcdk_mp4_read_probe(int fd, int moov_only);
 
 /**
- * 读取ftyp数据。
+ * 读取内容数据。
  * 
  * @return 0 成功，-1 失败()
 */
-int abcdk_mp4_atom_read_ftyp(abcdk_mp4_atom_ftyp_t *cont, const abcdk_mp4_atom_t *atom, int fd);
+int abcdk_mp4_atom_read_content(int fd, abcdk_mp4_atom_t *atom);
 
-/** 
- * 读取mvhd数据。
- * 
-*/
-int abcdk_mp4_atom_read_mvhd(abcdk_mp4_atom_mvhd_t *cont, const abcdk_mp4_atom_t *atom, int fd);
-
-/** 
- * 读取tkhd数据。
- * 
-*/
-int abcdk_mp4_atom_read_tkhd(abcdk_mp4_atom_tkhd_t *cont, const abcdk_mp4_atom_t *atom, int fd);
-
-/** 
- * 读取hdlr数据。
- * 
-*/
-int abcdk_mp4_atom_read_hdlr(abcdk_mp4_atom_hdlr_t *cont, const abcdk_mp4_atom_t *atom, int fd);
 
 __END_DECLS
 

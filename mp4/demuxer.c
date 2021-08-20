@@ -169,25 +169,27 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, int moov_only)
     return root;
 }
 
-int abcdk_mp4_atom_read_ftyp(abcdk_mp4_atom_ftyp_t *cont, const abcdk_mp4_atom_t *atom, int fd)
+int _abcdk_mp4_atom_read_ftyp(int fd, abcdk_mp4_atom_t *atom)
 {
+    abcdk_mp4_atom_ftyp_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
     int chk;
 
-    assert(cont != NULL && atom != NULL && fd >= 0);
+    if(!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_ftyp_t));
+    
+    if(!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_ftyp_t *)atom->cont->pptrs[0];
 
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    chk = abcdk_mp4_read(fd, &cont->major.u32, 4);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u32(fd, &cont->minor);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read(fd, &cont->major.u32, 4);
+    abcdk_mp4_read_u32(fd, &cont->minor);
 
     /*兼容数据不能利旧，需要册除后重新创建。*/
     abcdk_allocator_unref(&cont->compat);
@@ -197,11 +199,7 @@ int abcdk_mp4_atom_read_ftyp(abcdk_mp4_atom_ftyp_t *cont, const abcdk_mp4_atom_t
         goto final_error;
 
     for (size_t i = 0; i < cont->compat->numbers; i++)
-    {
-        chk = abcdk_mp4_read(fd, cont->compat->pptrs[i], 4);
-        if (chk != 0)
-            goto final_error;
-    }
+        abcdk_mp4_read(fd, cont->compat->pptrs[i], 4);
 
     return 0;
 
@@ -213,89 +211,52 @@ final_error:
     return -1;
 }
 
-int abcdk_mp4_atom_read_mvhd(abcdk_mp4_atom_mvhd_t *cont, const abcdk_mp4_atom_t *atom, int fd)
+int _abcdk_mp4_atom_read_mvhd(int fd, abcdk_mp4_atom_t *atom)
 {
+    abcdk_mp4_atom_mvhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
     int chk;
 
-    assert(cont != NULL && atom != NULL && fd >= 0);
+    if(!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_mvhd_t));
+    
+    if(!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_mvhd_t *)atom->cont->pptrs[0];
 
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    chk = abcdk_mp4_read(fd, &cont->version,1);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read(fd,&cont->flags,3);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read(fd, &cont->version,1);
+    abcdk_mp4_read_u24to32(fd,&cont->flags);
 
     if(cont->version==0)
     {
-        chk = abcdk_mp4_read_u32to64(fd, &cont->ctime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32to64(fd, &cont->mtime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32(fd, &cont->timescale);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32to64(fd, &cont->duration);
-        if (chk != 0)
-            goto final_error;
+        abcdk_mp4_read_u32to64(fd, &cont->ctime);
+        abcdk_mp4_read_u32to64(fd, &cont->mtime);
+        abcdk_mp4_read_u32(fd, &cont->timescale);
+        abcdk_mp4_read_u32to64(fd, &cont->duration);
     }
     else
     {
-        chk = abcdk_mp4_read_u64(fd, &cont->ctime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u64(fd, &cont->mtime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32(fd, &cont->timescale);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u64(fd, &cont->duration);
-        if (chk != 0)
-            goto final_error;
+        abcdk_mp4_read_u64(fd, &cont->ctime);
+        abcdk_mp4_read_u64(fd, &cont->mtime);
+        abcdk_mp4_read_u32(fd, &cont->timescale);
+        abcdk_mp4_read_u64(fd, &cont->duration);
     }
 
-    chk = abcdk_mp4_read_u32(fd,&cont->rate);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u16(fd,&cont->volume);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read(fd,cont->reserved,10);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read_u32(fd,&cont->rate);
+    abcdk_mp4_read_u16(fd,&cont->volume);
+    abcdk_mp4_read(fd,cont->reserved,10);
 
     for (int i=0; i<9; i++) 
-    {
-        chk = abcdk_mp4_read_u32(fd, &cont->matrix[i]);
-        if (chk != 0)
-            goto final_error;
-    }
+        abcdk_mp4_read_u32(fd, &cont->matrix[i]);
     
-    chk = abcdk_mp4_read(fd,cont->predefined, sizeof(cont->predefined));
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u32(fd,&cont->nexttrackid);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read(fd,cont->predefined, sizeof(cont->predefined));
+    abcdk_mp4_read_u32(fd,&cont->nexttrackid);
 
     return 0;
 
@@ -306,105 +267,56 @@ final_error:
     return -1;
 }
 
-int abcdk_mp4_atom_read_tkhd(abcdk_mp4_atom_tkhd_t *cont, const abcdk_mp4_atom_t *atom, int fd)
+int _abcdk_mp4_atom_read_tkhd(int fd, abcdk_mp4_atom_t *atom)
 {
+    abcdk_mp4_atom_tkhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
     int chk;
 
-    assert(cont != NULL && atom != NULL && fd >= 0);
+    if(!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_tkhd_t));
+    
+    if(!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_tkhd_t *)atom->cont->pptrs[0];
 
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    chk = abcdk_mp4_read(fd, &cont->version,1);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read(fd,&cont->flags,3);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read(fd, &cont->version,1);
+    abcdk_mp4_read_u24to32(fd,&cont->flags);
 
     if(cont->version==0)
     {
-        chk = abcdk_mp4_read_u32to64(fd, &cont->ctime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32to64(fd, &cont->mtime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32(fd, &cont->trackid);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32(fd, &cont->reserved1);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32to64(fd, &cont->duration);
-        if (chk != 0)
-            goto final_error;
+        abcdk_mp4_read_u32to64(fd, &cont->ctime);
+        abcdk_mp4_read_u32to64(fd, &cont->mtime);
+        abcdk_mp4_read_u32(fd, &cont->trackid);
+        abcdk_mp4_read_u32(fd, &cont->reserved1);
+        abcdk_mp4_read_u32to64(fd, &cont->duration);
     }
     else
     {
-        chk = abcdk_mp4_read_u64(fd, &cont->ctime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u64(fd, &cont->mtime);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32(fd, &cont->trackid);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u32(fd, &cont->reserved1);
-        if (chk != 0)
-            goto final_error;
-
-        chk = abcdk_mp4_read_u64(fd, &cont->duration);
-        if (chk != 0)
-            goto final_error;
+        abcdk_mp4_read_u64(fd, &cont->ctime);
+        abcdk_mp4_read_u64(fd, &cont->mtime);
+        abcdk_mp4_read_u32(fd, &cont->trackid);
+        abcdk_mp4_read_u32(fd, &cont->reserved1);
+        abcdk_mp4_read_u64(fd, &cont->duration);
     }
 
-    chk = abcdk_mp4_read_u64(fd, &cont->reserved2);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u16(fd, &cont->layer);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u16(fd, &cont->alternategroup);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u16(fd, &cont->volume);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u16(fd, &cont->reserved3);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read_u64(fd, &cont->reserved2);
+    abcdk_mp4_read_u16(fd, &cont->layer);
+    abcdk_mp4_read_u16(fd, &cont->alternategroup);
+    abcdk_mp4_read_u16(fd, &cont->volume);
+    abcdk_mp4_read_u16(fd, &cont->reserved3);
 
     for (int i=0; i<9; i++) 
-    {
-        chk = abcdk_mp4_read_u32(fd, &cont->matrix[i]);
-        if (chk != 0)
-            goto final_error;
-    }
+        abcdk_mp4_read_u32(fd, &cont->matrix[i]);
 
-    chk = abcdk_mp4_read_u32(fd, &cont->width);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read_u32(fd, &cont->height);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read_u32(fd, &cont->width);
+    abcdk_mp4_read_u32(fd, &cont->height);
     
     return 0;
 
@@ -415,38 +327,82 @@ final_error:
     return -1;
 }
 
-int abcdk_mp4_atom_read_hdlr(abcdk_mp4_atom_hdlr_t *cont, const abcdk_mp4_atom_t *atom, int fd)
+
+int _abcdk_mp4_atom_read_mdhd(int fd, abcdk_mp4_atom_t *atom)
 {
+    abcdk_mp4_atom_mdhd_t *cont = NULL;
+    size_t hsize = 0, dsize = 0;
+    int chk;
+
+    if(!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_mdhd_t));
+    
+    if(!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_mdhd_t *)atom->cont->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_cont, SEEK_SET);
+
+    abcdk_mp4_read(fd, &cont->version,1);
+    abcdk_mp4_read_u24to32(fd,&cont->flags);
+
+    if(cont->version==0)
+    {
+        abcdk_mp4_read_u32to64(fd, &cont->ctime);
+        abcdk_mp4_read_u32to64(fd, &cont->mtime);
+        abcdk_mp4_read_u32(fd, &cont->timescale);
+        abcdk_mp4_read_u32to64(fd, &cont->duration);
+    }
+    else
+    {
+        abcdk_mp4_read_u64(fd, &cont->ctime);
+        abcdk_mp4_read_u64(fd, &cont->mtime);
+        abcdk_mp4_read_u32(fd, &cont->timescale);
+        abcdk_mp4_read_u64(fd, &cont->duration);
+    }
+
+    abcdk_mp4_read_u16(fd, &cont->language);
+    abcdk_mp4_read_u16(fd, &cont->quality);
+    
+    return 0;
+
+final_error:
+
+    memset(cont,0,sizeof(*cont));
+
+    return -1;
+}
+
+int _abcdk_mp4_atom_read_hdlr(int fd, abcdk_mp4_atom_t *atom)
+{
+    abcdk_mp4_atom_hdlr_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
     size_t nsize = 0;
     int chk;
 
-    assert(cont != NULL && atom != NULL && fd >= 0);
+    if(!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_hdlr_t));
+    
+    if(!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_hdlr_t *)atom->cont->pptrs[0];
 
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    chk = abcdk_mp4_read(fd, &cont->version,1);
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read(fd, &cont->version,1);
+    abcdk_mp4_read_u24to32(fd,&cont->flags);
 
-    chk = abcdk_mp4_read(fd,&cont->flags,3);
-    if (chk != 0)
-        goto final_error; 
-
-    chk = abcdk_mp4_read(fd, &cont->type.u32,4);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read(fd, &cont->subtype.u32,4);
-    if (chk != 0)
-        goto final_error;
-
-    chk = abcdk_mp4_read(fd,cont->reserved, sizeof(cont->reserved));
-    if (chk != 0)
-        goto final_error;
+    abcdk_mp4_read(fd, &cont->type.u32,4);
+    abcdk_mp4_read(fd, &cont->subtype.u32,4);
+    abcdk_mp4_read(fd,cont->reserved, sizeof(cont->reserved));
 
     /*名称不能利旧，需要册除后重新创建。*/
     abcdk_allocator_unref(&cont->name);
@@ -458,9 +414,7 @@ int abcdk_mp4_atom_read_hdlr(abcdk_mp4_atom_hdlr_t *cont, const abcdk_mp4_atom_t
         if (!cont->name)
             goto final_error;
 
-        chk = abcdk_mp4_read(fd,cont->name->pptrs[0],nsize);
-        if (chk != 0)
-            goto final_error;
+        abcdk_mp4_read(fd,cont->name->pptrs[0],nsize);
     }
 
     return 0;
@@ -471,4 +425,75 @@ final_error:
     memset(cont,0,sizeof(*cont));
 
     return -1; 
+}
+
+
+int _abcdk_mp4_atom_read_vmhd(int fd, abcdk_mp4_atom_t *atom)
+{
+    abcdk_mp4_atom_vmhd_t *cont = NULL;
+    size_t hsize = 0, dsize = 0;
+    size_t nsize = 0;
+    int chk;
+
+    if(!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_vmhd_t));
+    
+    if(!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_vmhd_t *)atom->cont->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_cont, SEEK_SET);
+
+    abcdk_mp4_read(fd, &cont->version,1);
+    abcdk_mp4_read_u24to32(fd,&cont->flags);
+
+    abcdk_mp4_read_u16(fd,&cont->mode);
+    abcdk_mp4_read(fd,&cont->opcolor,sizeof(cont->opcolor));
+
+    return 0;
+
+final_error:
+
+    memset(cont,0,sizeof(*cont));
+
+    return -1; 
+}
+
+static struct _abcdk_mp4_atom_read_content_methods
+{
+    uint32_t type;
+    int (*read_content)(int fd, abcdk_mp4_atom_t *atom);
+} abcdk_mp4_atom_read_content_methods[] = {
+    {ABCDK_MP4_ATOM_TYPE_FTYP, _abcdk_mp4_atom_read_ftyp},
+    {ABCDK_MP4_ATOM_TYPE_MVHD, _abcdk_mp4_atom_read_mvhd},
+    {ABCDK_MP4_ATOM_TYPE_TKHD, _abcdk_mp4_atom_read_tkhd},
+    {ABCDK_MP4_ATOM_TYPE_MDHD, _abcdk_mp4_atom_read_mdhd},
+    {ABCDK_MP4_ATOM_TYPE_HDLR, _abcdk_mp4_atom_read_hdlr},
+    {ABCDK_MP4_ATOM_TYPE_VMHD, _abcdk_mp4_atom_read_vmhd},
+};
+
+int abcdk_mp4_atom_read_content(int fd, abcdk_mp4_atom_t *atom)
+{
+    int (*read_content)(int fd, abcdk_mp4_atom_t *atom) = NULL;
+    int chk = -1;
+
+    assert(fd >= 0 && atom != NULL);
+
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_mp4_atom_read_content_methods); i++)
+    {
+        if (abcdk_mp4_atom_read_content_methods[i].type != atom->type.u32)
+            continue;
+
+        read_content = abcdk_mp4_atom_read_content_methods[i].read_content;
+        break;
+    }
+
+    if (read_content)
+        chk = read_content(fd, atom);
+
+    return chk;
 }

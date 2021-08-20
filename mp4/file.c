@@ -49,6 +49,19 @@ int abcdk_mp4_read_u24(int fd, uint8_t *data)
     return 0;
 }
 
+int abcdk_mp4_read_u24to32(int fd, uint32_t *data)
+{
+    uint8_t d8[3] = {0};
+    if (abcdk_mp4_read_u24(fd,d8))
+        return -1;
+    
+    *data |= (uint32_t)d8[0];
+    *data |= (((uint32_t)d8[1])<<8);
+    *data |= (((uint32_t)d8[2])<<16);
+
+    return 0;
+}
+
 int abcdk_mp4_read_u32(int fd, uint32_t *data)
 {
     if (abcdk_mp4_read(fd, data, sizeof(uint32_t)))

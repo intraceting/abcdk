@@ -40,36 +40,25 @@ typedef union _abcdk_mp4_tag
 /** MP4 原子。*/
 typedef struct _abcdk_mp4_atom
 {
-    /**
-     * 长度(字节，头部+内容)。
-    */
+    /** 长度(字节，头部+内容)。*/
     uint64_t size;
 
-    /**
-     * 类型。
-    */
+    /** 类型。*/
     abcdk_mp4_tag_t type;
 
-    /** 
-     * 头部偏移量(字节)。
-     * 
-     * -demuxer: 有效。
-     * -muxer: 无效。
-    */
+    /** 头部偏移量(字节)。*/
     uint64_t off_head;
 
-    /** 
-     * 内容偏移量(字节)。
-     * 
-     * -demuxer: 有效。
-     * -muxer: 无效。
+    /** 内容偏移量(字节)。
     */
     uint64_t off_cont;
 
     /**
-     * 数据体(头部+内容)。
+     * 数据体(内容)。
+     * 
+     * @note 详细结构见各类型定义。
     */
-    abcdk_allocator_t *data;
+    abcdk_allocator_t *cont;
 
 } abcdk_mp4_atom_t;
 
@@ -277,19 +266,19 @@ typedef struct _abcdk_mp4_atom_mvhd
     uint8_t version;
 
     /** 标志。*/
-    uint8_t flags[3];
+    uint32_t flags;
 
     /** 
      * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
      * 
-     * 1970 to 1904 : + 2082844800(0x7C25B080)
+     * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t ctime;
 
     /** 
      * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
      * 
-     * 1970 to 1904 : + 2082844800(0x7C25B080)
+     * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t mtime;
 
@@ -299,10 +288,20 @@ typedef struct _abcdk_mp4_atom_mvhd
     /** 时长(秒×时间的刻度值)。*/
     uint64_t duration;
 
-    /** 推荐播放速率。*/
+    /** 
+     * 推荐播放速率(以整数形式存储的定点数)。
+     * 
+     * 高16位：整数。
+     * 低16位：小数。 
+    */
     uint32_t rate;
 
-    /** 推荐音量。*/
+    /** 
+     * 推荐音量(以整数形式存储的定点数)。
+     * 
+     * 高8位：整数。
+     * 低8位：小数。 
+    */
     uint16_t volume;
 
     /** 预留的。*/
@@ -327,12 +326,20 @@ typedef struct _abcdk_mp4_atom_tkhd
     uint8_t version;
 
     /** 标志。*/
-    uint8_t flags[3];
+    uint32_t flags;
 
-    /** 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。*/
+    /** 
+     * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 
+     * 1970 to 1904 : +2082844800(0x7C25B080)
+    */
     uint64_t ctime;
 
-    /** 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。*/
+    /** 
+     * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 
+     * 1970 to 1904 : +2082844800(0x7C25B080)
+    */
     uint64_t mtime;
 
     /** TRACK ID。*/
@@ -353,7 +360,15 @@ typedef struct _abcdk_mp4_atom_tkhd
     /** 预留。*/
     uint16_t alternategroup;
 
-    /** 音量。*/
+    /** 
+     * 音量(以整数形式存储的定点数)。
+     * 
+     * 高8位：整数。
+     * 低8位：小数。 
+     * 
+     * -video: 无效。
+     * -sound: 有效。
+    */
     uint16_t volume;
 
     /** 预留。*/
@@ -363,20 +378,59 @@ typedef struct _abcdk_mp4_atom_tkhd
     uint32_t matrix[9];
 
     /** 
-     * 宽。
+     * 宽(以整数形式存储的定点数)。
      * 
-     * to pixels: * 65536
+     * 高16位：整数。
+     * 低16位：小数。 
     */
     uint32_t width;
 
     /** 
-     * 高。
+     * 高(以整数形式存储的定点数)。
      * 
-     * to pixels: * 65536
+     * 高16位：整数。
+     * 低16位：小数。 
     */
     uint32_t height;
 
 }abcdk_mp4_atom_tkhd_t;
+
+/** mdhd atom.*/
+typedef struct _abcdk_mp4_atom_mdhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 
+     * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 
+     * 1970 to 1904 : +2082844800(0x7C25B080)
+    */
+    uint64_t ctime;
+
+    /** 
+     * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 
+     * 1970 to 1904 : +2082844800(0x7C25B080)
+    */
+    uint64_t mtime;
+
+    /** 时间的刻度值(可以理解为1秒被分成多少份)。*/
+    uint32_t timescale;
+
+    /** 时长(秒×时间的刻度值)。*/
+    uint64_t duration;
+
+    /** 语言。*/
+    uint16_t language;
+
+    /** 质量。*/
+    uint16_t quality;
+
+}abcdk_mp4_atom_mdhd_t;
 
 /** hdlr atom.*/
 typedef struct _abcdk_mp4_atom_hdlr
@@ -385,7 +439,7 @@ typedef struct _abcdk_mp4_atom_hdlr
     uint8_t version;
 
     /** 标志。*/
-    uint8_t flags[3];
+    uint32_t flags;
     
     /** 类型。*/
     abcdk_mp4_tag_t type;
@@ -399,6 +453,30 @@ typedef struct _abcdk_mp4_atom_hdlr
     /** 名称。*/
     abcdk_allocator_t *name;
 }abcdk_mp4_atom_hdlr_t;
+
+
+/** vmhd atom.*/
+typedef struct _abcdk_mp4_atom_vmhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 图像模式。*/
+    uint16_t mode;
+
+    /** 
+     * 操作颜色。
+     * 
+     * [0]: red
+     * [1]: green
+     * [2]: blue
+    */
+    uint16_t opcolor[3];
+
+}abcdk_mp4_atom_vmhd_t;
 
 __END_DECLS
 

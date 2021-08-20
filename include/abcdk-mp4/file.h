@@ -42,6 +42,13 @@ int abcdk_mp4_read_u16(int fd, uint16_t *data);
 int abcdk_mp4_read_u24(int fd, uint8_t *data);
 
 /**
+ * MP4读数据(3字节整型转4字节)。
+ * 
+ * @note 自动转换为本地字节序。
+*/
+int abcdk_mp4_read_u24to32(int fd, uint32_t *data);
+
+/**
  * MP4读数据(4字节整型)。
  * 
  * @note 自动转换为本地字节序。

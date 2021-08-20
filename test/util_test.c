@@ -619,60 +619,55 @@ void _mp4_atom_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)alloc->pptrs[0];
 
-    abcdk_allocator_unref(&atom->data);
+    abcdk_allocator_unref(&atom->cont);
 }
 
 void _mp4_dump_ftyp(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_ftyp_t *cont = (abcdk_mp4_atom_ftyp_t *)atom->cont->pptrs[0];
+    
 
-    abcdk_mp4_atom_ftyp_t cont = {0};
-
-    abcdk_mp4_atom_read_ftyp(&cont,atom,fd);
-
-    fprintf(stdout, "major='%c%c%c%c',", cont.major.u8[0], cont.major.u8[1], cont.major.u8[2], cont.major.u8[3] );
-    fprintf(stdout, "minor='%d',", cont.minor);
+    fprintf(stdout, "major='%c%c%c%c',", cont->major.u8[0], cont->major.u8[1], cont->major.u8[2], cont->major.u8[3] );
+    fprintf(stdout, "minor='%d',", cont->minor);
     fprintf(stdout, "compatible=");
-    for (size_t i = 0; i < cont.compat->numbers; i++)
+    for (size_t i = 0; i < cont->compat->numbers; i++)
     {
-        abcdk_mp4_tag_t *brand = (abcdk_mp4_tag_t *)cont.compat->pptrs[i];
+        abcdk_mp4_tag_t *brand = (abcdk_mp4_tag_t *)cont->compat->pptrs[i];
         if(!brand->u32)
             continue;
         fprintf(stdout, "'%c%c%c%c' ", brand->u8[0], brand->u8[1], brand->u8[2], brand->u8[3]);
     }
 
-    abcdk_allocator_unref(&cont.compat);
+    abcdk_allocator_unref(&cont->compat);
 }
 
 void _mp4_dump_mvhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_mvhd_t *cont = (abcdk_mp4_atom_mvhd_t *)atom->cont->pptrs[0];
 
-    abcdk_mp4_atom_mvhd_t cont = {0};
+    fprintf(stdout, "version=%hhu,",cont->version);
 
-    abcdk_mp4_atom_read_mvhd(&cont,atom,fd);
-
-    fprintf(stdout, "version=%hhu,",cont.version);
-
-    if(cont.ctime>=0x7C25B080)
-        cont.ctime -= 0x7C25B080;
+    if(cont->ctime>=0x7C25B080)
+        cont->ctime -= 0x7C25B080;
 
     struct tm t;
-    gmtime_r(&cont.ctime,&t);
+    gmtime_r(&cont->ctime,&t);
     fprintf(stdout, "ctime=%d-%02d-%02d %02d:%02d:%02d,",t.tm_year+1900,t.tm_mon+1,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
      
-    if(cont.mtime>=0x7C25B080)
-        cont.mtime -= 0x7C25B080;
+    if(cont->mtime>=0x7C25B080)
+        cont->mtime -= 0x7C25B080;
 
     struct tm t2;
-    gmtime_r(&cont.mtime,&t2);
+    gmtime_r(&cont->mtime,&t2);
     fprintf(stdout, "mtime=%d-%02d-%02d %02d:%02d:%02d,",t2.tm_year+1900,t2.tm_mon+1,t2.tm_mday,t2.tm_hour,t2.tm_min,t2.tm_sec);
 
-    fprintf(stdout, "timescale=%u,",cont.timescale);
-    fprintf(stdout, "duration=%lu,",cont.duration);
-    fprintf(stdout, "long=%lu(sec),",cont.duration/cont.timescale);
+    fprintf(stdout, "timescale=%u,",cont->timescale);
+    fprintf(stdout, "duration=%lu,",cont->duration);
+    fprintf(stdout, "long=%lu(sec),",cont->duration/cont->timescale);
 }
 
 
@@ -680,51 +675,87 @@ void _mp4_dump_tkhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_tkhd_t *cont = (abcdk_mp4_atom_tkhd_t *)atom->cont->pptrs[0];
 
-    abcdk_mp4_atom_tkhd_t cont = {0};
+    fprintf(stdout, "version=%hhu,",cont->version);
 
-    abcdk_mp4_atom_read_tkhd(&cont,atom,fd);
-
-    fprintf(stdout, "version=%hhu,",cont.version);
-
-    if(cont.ctime>=0x7C25B080)
-        cont.ctime -= 0x7C25B080;
+    if(cont->ctime>=0x7C25B080)
+        cont->ctime -= 0x7C25B080;
 
     struct tm t;
-    gmtime_r(&cont.ctime,&t);
+    gmtime_r(&cont->ctime,&t);
     fprintf(stdout, "ctime=%d-%02d-%02d %02d:%02d:%02d,",t.tm_year+1900,t.tm_mon+1,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
      
-    if(cont.mtime>=0x7C25B080)
-        cont.mtime -= 0x7C25B080;
+    if(cont->mtime>=0x7C25B080)
+        cont->mtime -= 0x7C25B080;
 
     struct tm t2;
-    gmtime_r(&cont.mtime,&t2);
+    gmtime_r(&cont->mtime,&t2);
     fprintf(stdout, "mtime=%d-%02d-%02d %02d:%02d:%02d,",t2.tm_year+1900,t2.tm_mon+1,t2.tm_mday,t2.tm_hour,t2.tm_min,t2.tm_sec);
 
-    fprintf(stdout, "duration=%lu,",cont.duration);
-    fprintf(stdout, "width=%u,",cont.width/65536);
-    fprintf(stdout, "height=%u,",cont.height/65536);
+    fprintf(stdout, "duration=%lu,",cont->duration);
+    fprintf(stdout, "width=%u,",cont->width>>16);
+    fprintf(stdout, "height=%u,",cont->height>>16);
+}
+
+void _mp4_dump_mdhd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_mdhd_t *cont = (abcdk_mp4_atom_mdhd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,",cont->version);
+
+    if(cont->ctime>=0x7C25B080)
+        cont->ctime -= 0x7C25B080;
+
+    struct tm t;
+    gmtime_r(&cont->ctime,&t);
+    fprintf(stdout, "ctime=%d-%02d-%02d %02d:%02d:%02d,",t.tm_year+1900,t.tm_mon+1,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
+     
+    if(cont->mtime>=0x7C25B080)
+        cont->mtime -= 0x7C25B080;
+
+    struct tm t2;
+    gmtime_r(&cont->mtime,&t2);
+    fprintf(stdout, "mtime=%d-%02d-%02d %02d:%02d:%02d,",t2.tm_year+1900,t2.tm_mon+1,t2.tm_mday,t2.tm_hour,t2.tm_min,t2.tm_sec);
+
+    fprintf(stdout, "timescale=%u,",cont->timescale);
+    fprintf(stdout, "duration=%lu,",cont->duration);
+    fprintf(stdout, "lang=%hu,",cont->language);
+    fprintf(stdout, "quality=%hu,",cont->quality);
 }
 
 void _mp4_dump_hdlr(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_hdlr_t *cont = (abcdk_mp4_atom_hdlr_t *)atom->cont->pptrs[0];
 
-    abcdk_mp4_atom_hdlr_t cont = {0};
-
-    abcdk_mp4_atom_read_hdlr(&cont,atom,fd);
 
     fprintf(stdout,"type=%c%c%c%c, ",
-                           cont.type.u8[0], cont.type.u8[1], cont.type.u8[2], cont.type.u8[3]);
+                           cont->type.u8[0], cont->type.u8[1], cont->type.u8[2], cont->type.u8[3]);
 
     fprintf(stdout,"subtype=%c%c%c%c, ",
-                           cont.subtype.u8[0], cont.subtype.u8[1], cont.subtype.u8[2], cont.subtype.u8[3]);
+                           cont->subtype.u8[0], cont->subtype.u8[1], cont->subtype.u8[2], cont->subtype.u8[3]);
 
-    if(cont.name)
-        fprintf(stdout,"name='%s' ",cont.name->pptrs[0]);
+    if(cont->name)
+        fprintf(stdout,"name='%s' ",cont->name->pptrs[0]);
 
-    abcdk_allocator_unref(&cont.name);
+    abcdk_allocator_unref(&cont->name);
+}
+
+
+void _mp4_dump_vmhd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_vmhd_t *cont = (abcdk_mp4_atom_vmhd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x]",cont->version,cont->flags);
+
+    fprintf(stdout, "mode=%u,",cont->mode);
+    fprintf(stdout, "opcolor=%hu,%hu,%hu",cont->opcolor[0],cont->opcolor[1],cont->opcolor[2]);
 }
 
 int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
@@ -744,14 +775,20 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
         abcdk_tree_fprintf(stdout, deep, node, "offset=%lu,size=%lu,type=%c%c%c%c: ",
                            atom->off_head, atom->size, atom->type.u8[0], atom->type.u8[1], atom->type.u8[2], atom->type.u8[3]);
 
+        abcdk_mp4_atom_read_content(fd,atom);
+
         if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_FTYP)
             _mp4_dump_ftyp(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MVHD)
             _mp4_dump_mvhd(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TKHD)
             _mp4_dump_tkhd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDHD)
+            _mp4_dump_mdhd(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HDLR)
             _mp4_dump_hdlr(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_VMHD)
+            _mp4_dump_vmhd(deep, node, opaque);
 
 
         fprintf(stdout, " \n");
