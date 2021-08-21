@@ -667,7 +667,7 @@ void _mp4_dump_mvhd(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "timescale=%u,",cont->timescale);
     fprintf(stdout, "duration=%lu,",cont->duration);
-    fprintf(stdout, "duration=%hu.%hu,",cont->rate>>16,cont->rate&0xffff);
+    fprintf(stdout, "rate=%hu.%hu,",cont->rate>>16,cont->rate&0xffff);
     fprintf(stdout, "long=%lu(sec),",cont->duration/cont->timescale);
     fprintf(stdout, "nexttrackid=%u,",cont->nexttrackid);
 }
