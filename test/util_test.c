@@ -667,7 +667,9 @@ void _mp4_dump_mvhd(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "timescale=%u,",cont->timescale);
     fprintf(stdout, "duration=%lu,",cont->duration);
+    fprintf(stdout, "duration=%hu.%hu,",cont->rate>>16,cont->rate&0xffff);
     fprintf(stdout, "long=%lu(sec),",cont->duration/cont->timescale);
+    fprintf(stdout, "nexttrackid=%u,",cont->nexttrackid);
 }
 
 void _mp4_dump_udta(size_t deep, abcdk_tree_t *node, void *opaque)
@@ -711,9 +713,10 @@ void _mp4_dump_tkhd(size_t deep, abcdk_tree_t *node, void *opaque)
     gmtime_r(&cont->mtime,&t2);
     fprintf(stdout, "mtime=%d-%02d-%02d %02d:%02d:%02d,",t2.tm_year+1900,t2.tm_mon+1,t2.tm_mday,t2.tm_hour,t2.tm_min,t2.tm_sec);
 
+    fprintf(stdout, "trackid=%u,",cont->trackid);
     fprintf(stdout, "duration=%lu,",cont->duration);
-    fprintf(stdout, "width=%u,",cont->width>>16);
-    fprintf(stdout, "height=%u,",cont->height>>16);
+    fprintf(stdout, "width=%hu.%hu,",cont->width>>16,cont->width&0xffff);
+    fprintf(stdout, "height=%hu.%hu,",cont->height>>16,cont->height&0xffff);
 }
 
 void _mp4_dump_mdhd(size_t deep, abcdk_tree_t *node, void *opaque)
@@ -938,7 +941,7 @@ void _mp4_dump_stss(size_t deep, abcdk_tree_t *node, void *opaque)
     if(!cont->tables)
         return;
 
-    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    for(size_t i= 0 ;i<cont->tables->numbers && i < 10;i++)
     {
         fprintf(stdout, "%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
 
@@ -968,6 +971,40 @@ void _mp4_dump_gmhd(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_tree_free(&cont->entries);
 }
 
+void _mp4_dump_smhd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_smhd_t *cont = (abcdk_mp4_atom_smhd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "balance=%hhu.%hhu",cont->balance>>8,cont->balance&0xff);
+}
+
+void _mp4_dump_elst(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_elst_t *cont = (abcdk_mp4_atom_elst_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    if(!cont->tables)
+        return;
+
+    for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
+    {
+        fprintf(stdout, "duration=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
+        fprintf(stdout, "time=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
+        fprintf(stdout, "rate=%hu.%hu,",
+            ABCDK_PTR2U32(cont->tables->pptrs[i],8)>>16,
+            ABCDK_PTR2U32(cont->tables->pptrs[i],8)&&0xffff);
+    }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
 
 static int atoms =0;
 
@@ -1024,6 +1061,10 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
             _mp4_dump_stss(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_GMHD)
             _mp4_dump_gmhd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_SMHD)
+            _mp4_dump_smhd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ELST)
+            _mp4_dump_elst(deep, node, opaque);
 
 
 

@@ -675,6 +675,51 @@ typedef struct _abcdk_mp4_atom_gmhd
     
 }abcdk_mp4_atom_gmhd_t;
 
+/** smhd atom.*/
+typedef struct _abcdk_mp4_atom_smhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 
+     * 均衡(以整数形式存储的定点数)。
+     * 
+     * 高8位：整数。
+     * 低8位：小数。 
+    */
+    uint16_t balance;
+
+    /** 预留。*/
+    uint16_t reserved;
+    
+}abcdk_mp4_atom_smhd_t;
+
+
+/** elst atom.*/
+typedef struct _abcdk_mp4_atom_elst
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表(关健帧的包ID，从1开始)。
+     * 
+     * |Track duration |Media time|Media rate| Field
+     * |4              |4         |4         | Bytes
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_elst_t;
+
 __END_DECLS
 
 #endif //ABCDK_MP4_MP4_H

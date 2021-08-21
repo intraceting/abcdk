@@ -924,6 +924,94 @@ final_error:
     return -1;
 }
 
+int _abcdk_mp4_atom_read_smhd(int fd, abcdk_mp4_atom_t *atom)
+{
+    abcdk_mp4_atom_smhd_t *cont = NULL;
+    size_t hsize = 0, dsize = 0;
+    size_t nsize = 0;
+    int chk;
+
+    if (!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_smhd_t));
+
+    if (!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_smhd_t *)atom->cont->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_cont, SEEK_SET);
+
+    abcdk_mp4_read(fd, &cont->version, 1);
+    abcdk_mp4_read_u24to32(fd, &cont->flags);
+
+    abcdk_mp4_read_u16(fd, &cont->balance);
+    abcdk_mp4_read_u16(fd, &cont->reserved);
+    
+    return 0;
+
+final_error:
+
+    memset(cont, 0, sizeof(*cont));
+
+    return -1;
+}
+
+
+int _abcdk_mp4_atom_read_elst(int fd, abcdk_mp4_atom_t *atom)
+{
+    abcdk_mp4_atom_elst_t *cont = NULL;
+    size_t hsize = 0, dsize = 0;
+    size_t nsize = 0;
+    int chk;
+
+    if (!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_elst_t));
+
+    if (!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_elst_t *)atom->cont->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_cont, SEEK_SET);
+
+    abcdk_mp4_read(fd, &cont->version, 1);
+    abcdk_mp4_read_u24to32(fd, &cont->flags);
+
+    abcdk_mp4_read_u32(fd, &cont->numbers);
+
+    /*不能利旧，需要册除后重新创建。*/
+    abcdk_allocator_unref(&cont->tables);
+
+    if (cont->numbers > 0)
+    {
+        cont->tables = abcdk_allocator_alloc3(12, cont->numbers);
+        if (!cont->tables)
+            goto final_error;
+
+        for (size_t i = 0; i < cont->tables->numbers; i++)
+        {
+            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 0));
+            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 4));
+            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 8));
+        }
+    }
+
+    return 0;
+
+final_error:
+
+    abcdk_allocator_unref(&cont->tables);
+    memset(cont, 0, sizeof(*cont));
+
+    return -1;
+}
+
 static struct _abcdk_mp4_atom_read_content_methods
 {
     uint32_t type;
@@ -944,7 +1032,9 @@ static struct _abcdk_mp4_atom_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_STSZ, _abcdk_mp4_atom_read_stsz},
     {ABCDK_MP4_ATOM_TYPE_STCO, _abcdk_mp4_atom_read_stco},
     {ABCDK_MP4_ATOM_TYPE_STSS, _abcdk_mp4_atom_read_stss},
-    {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_atom_read_gmhd}
+    {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_atom_read_gmhd},
+    {ABCDK_MP4_ATOM_TYPE_SMHD, _abcdk_mp4_atom_read_smhd},
+    {ABCDK_MP4_ATOM_TYPE_ELST, _abcdk_mp4_atom_read_elst}
 };
 
 int abcdk_mp4_atom_read_content(int fd, abcdk_mp4_atom_t *atom)
