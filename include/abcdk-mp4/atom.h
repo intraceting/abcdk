@@ -720,6 +720,105 @@ typedef struct _abcdk_mp4_atom_elst
 
 }abcdk_mp4_atom_elst_t;
 
+/** mehd atom.*/
+typedef struct _abcdk_mp4_atom_mehd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 时长(秒×时间的刻度值)。*/
+    uint64_t duration;
+
+}abcdk_mp4_atom_mehd_t;
+
+
+/** trex atom.*/
+typedef struct _abcdk_mp4_atom_trex
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+    
+    /** TRACK ID.*/
+    uint32_t trackid; 
+
+    /** 默认的采样描述索引。*/
+    uint32_t default_sample_desc_index;
+
+    /** 默认的时长(秒×时间的刻度值)。*/
+    uint64_t default_duration; 
+
+    /** 默认的采样大小。*/
+    uint32_t default_samplesize; 
+
+    /** 默认的采样标志。*/
+    uint32_t default_sampleflags; 
+
+}abcdk_mp4_atom_trex_t;
+
+/** mfhd atom.*/
+typedef struct _abcdk_mp4_atom_mfhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 序号。*/
+    uint64_t sn;
+
+}abcdk_mp4_atom_mfhd_t;
+
+
+/**
+ * tfhd flags
+ *
+ * @note 从Bento4复制来的。
+*/
+
+#define ABCDK_MP4_TFHD_FLAG_BASE_DATA_OFFSET_PRESENT            0x00001
+#define ABCDK_MP4_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX_PRESENT    0x00002
+#define ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_DURATION_PRESENT     0x00008
+#define ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_SIZE_PRESENT         0x00010
+#define ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_FLAGS_PRESENT        0x00020
+#define ABCDK_MP4_TFHD_FLAG_DURATION_IS_EMPTY                   0x10000
+#define ABCDK_MP4_TFHD_FLAG_DEFAULT_BASE_IS_MOOF                0x20000 //此标志非常有用，用于计算数据的偏移量。
+
+/** tfhd atom.*/
+typedef struct _abcdk_mp4_atom_tfhd
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+    
+    /** TRACK ID.*/
+    uint32_t trackid; 
+
+    /** 数据偏移量的基值。*/
+    uint64_t base_data_offset;
+
+    /** 采样描述索引。*/
+    uint32_t sample_desc_index;
+
+    /** 默认的时长(秒×时间的刻度值)。*/
+    uint64_t default_duration; 
+
+    /** 默认的采样大小。*/
+    uint32_t default_samplesize; 
+
+    /** 默认的采样标志。*/
+    uint32_t default_sampleflags; 
+
+}abcdk_mp4_atom_tfhd_t;
+
 __END_DECLS
 
 #endif //ABCDK_MP4_MP4_H

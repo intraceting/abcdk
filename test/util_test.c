@@ -1006,6 +1006,61 @@ void _mp4_dump_elst(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_allocator_unref(&cont->tables);
 }
 
+void _mp4_dump_mehd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_mehd_t *cont = (abcdk_mp4_atom_mehd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "duration=%lu",cont->duration);
+}
+
+void _mp4_dump_trex(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_trex_t *cont = (abcdk_mp4_atom_trex_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "trackid=%u,",cont->trackid);
+    fprintf(stdout, "sample_desc_index=%u,",cont->default_sample_desc_index);
+    fprintf(stdout, "duration=%lu,",cont->default_duration);
+    fprintf(stdout, "sample_sample_size=%u,",cont->default_samplesize);
+    fprintf(stdout, "sample_flags=%08x",cont->default_sampleflags);
+}
+
+void _mp4_dump_mfhd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_mfhd_t *cont = (abcdk_mp4_atom_mfhd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "sn=%lu,",cont->sn);
+
+}
+
+void _mp4_dump_tfhd(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_tfhd_t *cont = (abcdk_mp4_atom_tfhd_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "trackid=%u,",cont->trackid);
+    fprintf(stdout, "base_data_offset=%lu,",cont->base_data_offset);
+    fprintf(stdout, "sample_desc_index=%u,",cont->sample_desc_index);
+    fprintf(stdout, "duration=%lu,",cont->default_duration);
+    fprintf(stdout, "sample_sample_size=%u,",cont->default_samplesize);
+    fprintf(stdout, "sample_flags=%08x",cont->default_sampleflags);
+}
+
+
 static int atoms =0;
 
 int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
@@ -1065,14 +1120,27 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
             _mp4_dump_smhd(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ELST)
             _mp4_dump_elst(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MEHD)
+            _mp4_dump_mehd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TREX)
+            _mp4_dump_trex(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MFHD)
+            _mp4_dump_mfhd(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFHD)
+            _mp4_dump_tfhd(deep, node, opaque);
 
 
 
         fprintf(stdout, " \n");
 
-        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOF)
-            return -1;
+   //     if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOF)
+   //         return -1;
+
+
     }
+
+ //   if(atoms>70)
+ //       return -1;
 
     return 1;
 }
