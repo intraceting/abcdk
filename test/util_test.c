@@ -826,6 +826,9 @@ void _mp4_dump_stts(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
 
+    if(!cont->tables)
+        return;
+
     for(size_t i= 0 ;i<cont->tables->numbers;i++)
     {
         fprintf(stdout, "count=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
@@ -844,7 +847,10 @@ void _mp4_dump_ctts(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
 
-    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    if(!cont->tables)
+        return;
+
+    for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
     {
         fprintf(stdout, "count=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
         fprintf(stdout, "offset=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
@@ -862,7 +868,10 @@ void _mp4_dump_stsc(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
 
-    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    if(!cont->tables)
+        return;
+
+    for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
     {
         fprintf(stdout, "Firstchunk=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
         fprintf(stdout, "perchunk=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
@@ -883,6 +892,9 @@ void _mp4_dump_stsz(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "[samplesize=%u],",cont->samplesize);
 
+    if(!cont->tables)
+        return;
+
     for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
     {
         fprintf(stdout, "%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
@@ -902,6 +914,9 @@ void _mp4_dump_stco(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
 
+    if(!cont->tables)
+        return;
+
     for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
     {
         fprintf(stdout, "%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
@@ -919,6 +934,9 @@ void _mp4_dump_stss(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_mp4_atom_stss_t *cont = (abcdk_mp4_atom_stss_t *)atom->cont->pptrs[0];
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    if(!cont->tables)
+        return;
 
     for(size_t i= 0 ;i<cont->tables->numbers;i++)
     {

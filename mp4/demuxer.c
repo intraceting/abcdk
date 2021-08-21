@@ -878,7 +878,7 @@ int _abcdk_mp4_atom_read_stss(int fd, abcdk_mp4_atom_t *atom)
         if (!cont->tables)
             goto final_error;
 
-        for (size_t i = 0; i < cont->tables->numbers && i<10; i++)
+        for (size_t i = 0; i < cont->tables->numbers; i++)
         {
             abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 0));
         }
