@@ -922,13 +922,34 @@ typedef struct _abcdk_mp4_atom_tfra
     /** TRACK ID.*/
     uint32_t trackid;
 
-    /** */
+    /** 
+     * traf NUMBER size.
+     * 
+     * 0 is uint8.
+     * 1 is uint16.
+     * 2 is uint24.
+     * 3 is uint32.
+    */
     uint8_t length_size_traf_num;
 
-    /** */
+    /** 
+     * trun NUMBER size.
+     * 
+     * 0 is uint8.
+     * 1 is uint16.
+     * 2 is uint24.
+     * 3 is uint32.
+    */
     uint8_t length_size_trun_num;
 
-    /** */
+    /** 
+     * sample NUMBER size.
+     * 
+     * 0 is uint8.
+     * 1 is uint16.
+     * 2 is uint24.
+     * 3 is uint32.
+    */
     uint8_t length_size_sample_num;
 
     /** 采样数量*/
