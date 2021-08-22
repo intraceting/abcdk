@@ -1086,7 +1086,7 @@ void _mp4_dump_trun(size_t deep, abcdk_tree_t *node, void *opaque)
     if(!cont->tables)
         return;
 
-    for(size_t i= 0 ;i<cont->tables->numbers && i<10;i++)
+    for(size_t i= 0 ;i<cont->tables->numbers;i++)
     {
         fprintf(stdout, "[%d]={",i);
         fprintf(stdout, "duration=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
