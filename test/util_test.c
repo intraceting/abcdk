@@ -1100,6 +1100,50 @@ void _mp4_dump_trun(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_allocator_unref(&cont->tables);
 }
 
+void _mp4_dump_mfro(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_mfro_t *cont = (abcdk_mp4_atom_mfro_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "size=%lu,",cont->size);
+
+}
+
+
+void _mp4_dump_tfra(size_t deep, abcdk_tree_t *node, void *opaque)
+{
+    int fd = (int64_t)opaque;
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_tfra_t *cont = (abcdk_mp4_atom_tfra_t *)atom->cont->pptrs[0];
+
+    fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
+
+    fprintf(stdout, "trackid=%u,",cont->trackid);
+    fprintf(stdout, "size_traf_num=%hhu,",cont->length_size_traf_num);
+    fprintf(stdout, "size_trun_num=%hhu,",cont->length_size_trun_num);
+    fprintf(stdout, "size_sample_num=%hhu,",cont->length_size_sample_num);
+
+    if(!cont->tables)
+        return;
+
+    for(size_t i= 0 ;i<cont->tables->numbers;i++)
+    {
+        fprintf(stdout, "[%d]={",i);
+        fprintf(stdout, "time=%lu,",ABCDK_PTR2U64(cont->tables->pptrs[i],0));
+        fprintf(stdout, "moof offset=%lu,",ABCDK_PTR2U64(cont->tables->pptrs[i],8));
+        fprintf(stdout, "traf=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],16));
+        fprintf(stdout, "trun=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],20));
+        fprintf(stdout, "sample=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],24));
+        fprintf(stdout, "},");
+     }
+
+    
+    abcdk_allocator_unref(&cont->tables);
+}
+
 static int atoms =0;
 
 int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
@@ -1171,6 +1215,10 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
             _mp4_dump_tfdt(deep, node, opaque);
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TRUN)
             _mp4_dump_trun(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MFRO)
+            _mp4_dump_mfro(deep, node, opaque);
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFRA)
+            _mp4_dump_tfra(deep, node, opaque);
 
 
 
@@ -1182,8 +1230,8 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
 
     }
 
-   if(atoms>70)
-        return -1;
+ //  if(atoms>70)
+ //       return -1;
 
     return 1;
 }

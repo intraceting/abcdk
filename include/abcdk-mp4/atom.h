@@ -875,7 +875,11 @@ typedef struct _abcdk_mp4_atom_trun
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 数据偏移量(选项字段)。*/
+    /** 
+     * 数据偏移量(选项字段)。
+     * 
+     * sizeof(moof)+sizeof(mdat-header)
+    */
     uint32_t data_offset;
 
     /** 第一个采样标志(选项字段)。*/
@@ -891,6 +895,54 @@ typedef struct _abcdk_mp4_atom_trun
 
 }abcdk_mp4_atom_trun_t;
 
+/** mfro atom.*/
+typedef struct _abcdk_mp4_atom_mfro
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** */
+    uint64_t size;
+
+}abcdk_mp4_atom_mfro_t;
+
+
+/** tfra atom.*/
+typedef struct _abcdk_mp4_atom_tfra
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** TRACK ID.*/
+    uint32_t trackid;
+
+    /** */
+    uint8_t length_size_traf_num;
+
+    /** */
+    uint8_t length_size_trun_num;
+
+    /** */
+    uint8_t length_size_sample_num;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 
+     * 采样表。
+     * 
+     * |time |moof offset |traf number |trun number |sample number | Field
+     * |8    |8           |4           |4           |4             | Bytes
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_tfra_t;
 
 __END_DECLS
 

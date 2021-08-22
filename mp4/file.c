@@ -29,6 +29,17 @@ int abcdk_mp4_read(int fd, void *data, size_t size)
     return 0;
 }
 
+int abcdk_mp4_read_u8to32(int fd, uint32_t *data)
+{
+    uint8_t d8 = 0;
+    if (abcdk_mp4_read(fd,&d8,1))
+        return -1;
+
+    *data = d8;
+
+    return 0;  
+}
+
 int abcdk_mp4_read_u16(int fd, uint16_t *data)
 {
     if (abcdk_mp4_read(fd, data, sizeof(uint16_t)))
@@ -37,6 +48,17 @@ int abcdk_mp4_read_u16(int fd, uint16_t *data)
     *data = abcdk_endian_b_to_h16(*data);
 
     return 0;
+}
+
+int abcdk_mp4_read_u16to32(int fd, uint32_t *data)
+{
+    uint16_t d =0;
+    if (abcdk_mp4_read_u16(fd,&d))
+        return -1;
+
+    *data = d;
+
+    return 0;  
 }
 
 int abcdk_mp4_read_u24(int fd, uint8_t *data)
