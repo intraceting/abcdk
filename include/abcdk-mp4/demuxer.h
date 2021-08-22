@@ -13,6 +13,8 @@
 
 __BEGIN_DECLS
 
+
+
 /**
  * 读取atom结构(遇到容器时递归读取)。
  * 
@@ -25,11 +27,16 @@ __BEGIN_DECLS
 abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size);
 
 /**
+ * 读取FULLBOX头部。
+*/
+int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags);
+
+/**
  * 读取内容数据。
  * 
  * @return 0 成功，-1 失败()
 */
-int abcdk_mp4_atom_read_content(int fd, abcdk_mp4_atom_t *atom);
+int abcdk_mp4_read_content(int fd, abcdk_mp4_atom_t *atom);
 
 __END_DECLS
 

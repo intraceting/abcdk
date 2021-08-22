@@ -181,7 +181,19 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size)
     return root;
 }
 
-int _abcdk_mp4_atom_read_ftyp(int fd, abcdk_mp4_atom_t *atom)
+int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
+{
+    uint32_t h = 0;
+    if (abcdk_mp4_read_u32(fd, &h))
+        return -1;
+
+    *ver = ((h >> 24) & 0x000000FF);
+    *flags = (h & 0x00FFFFFF);
+
+    return 0;
+}
+
+int _abcdk_mp4_read_ftyp(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_ftyp_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -223,7 +235,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_mvhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_mvhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_mvhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -242,8 +254,7 @@ int _abcdk_mp4_atom_read_mvhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     if (cont->version == 0)
     {
@@ -279,7 +290,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_udta(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_udta(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_udta_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -309,7 +320,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_tkhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_tkhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_tkhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -328,8 +339,7 @@ int _abcdk_mp4_atom_read_tkhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     if (cont->version == 0)
     {
@@ -369,7 +379,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_mdhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_mdhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_mdhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -388,8 +398,7 @@ int _abcdk_mp4_atom_read_mdhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     if (cont->version == 0)
     {
@@ -418,7 +427,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_hdlr(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_hdlr(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_hdlr_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -438,8 +447,7 @@ int _abcdk_mp4_atom_read_hdlr(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read(fd, &cont->type.u32, 4);
     abcdk_mp4_read(fd, &cont->subtype.u32, 4);
@@ -468,7 +476,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_vmhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_vmhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_vmhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -488,8 +496,7 @@ int _abcdk_mp4_atom_read_vmhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u16(fd, &cont->mode);
     abcdk_mp4_read(fd, &cont->opcolor, sizeof(cont->opcolor));
@@ -503,7 +510,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_dref(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_dref(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_dref_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -523,8 +530,7 @@ int _abcdk_mp4_atom_read_dref(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -544,7 +550,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_stsd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_stsd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_stsd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -564,8 +570,7 @@ int _abcdk_mp4_atom_read_stsd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -585,7 +590,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_stts(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_stts(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_stts_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -605,8 +610,7 @@ int _abcdk_mp4_atom_read_stts(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -636,7 +640,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_ctts(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_ctts(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_ctts_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -656,8 +660,7 @@ int _abcdk_mp4_atom_read_ctts(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -687,7 +690,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_stsc(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_stsc(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_stsc_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -707,8 +710,7 @@ int _abcdk_mp4_atom_read_stsc(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -739,7 +741,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_stsz(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_stsz(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_stsz_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -759,8 +761,7 @@ int _abcdk_mp4_atom_read_stsz(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->samplesize);
     abcdk_mp4_read_u32(fd, &cont->numbers);
@@ -790,7 +791,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_stco(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_stco(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_stco_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -810,8 +811,7 @@ int _abcdk_mp4_atom_read_stco(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -840,7 +840,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_stss(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_stss(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_stss_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -860,8 +860,7 @@ int _abcdk_mp4_atom_read_stss(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -890,7 +889,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_gmhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_gmhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_gmhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -920,7 +919,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_smhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_smhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_smhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -940,8 +939,7 @@ int _abcdk_mp4_atom_read_smhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u16(fd, &cont->balance);
     abcdk_mp4_read_u16(fd, &cont->reserved);
@@ -955,7 +953,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_elst(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_elst(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_elst_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -975,8 +973,7 @@ int _abcdk_mp4_atom_read_elst(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
@@ -1007,7 +1004,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_mehd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_mehd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_mehd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -1027,8 +1024,7 @@ int _abcdk_mp4_atom_read_mehd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     if (cont->version == 0)
         abcdk_mp4_read_u32to64(fd, &cont->duration);
@@ -1044,7 +1040,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_trex(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_trex(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_trex_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -1064,8 +1060,7 @@ int _abcdk_mp4_atom_read_trex(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->trackid);
     abcdk_mp4_read_u32(fd, &cont->default_sample_desc_index);
@@ -1082,7 +1077,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_mfhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_mfhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_mfhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -1102,8 +1097,7 @@ int _abcdk_mp4_atom_read_mfhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32to64(fd, &cont->sn);
 
@@ -1116,7 +1110,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_atom_read_tfhd(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_tfhd(int fd, abcdk_mp4_atom_t *atom)
 {
     abcdk_mp4_atom_tfhd_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
@@ -1136,13 +1130,17 @@ int _abcdk_mp4_atom_read_tfhd(int fd, abcdk_mp4_atom_t *atom)
 
     lseek(fd, atom->off_cont, SEEK_SET);
 
-    abcdk_mp4_read(fd, &cont->version, 1);
-    abcdk_mp4_read_u24to32(fd, &cont->flags);
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->trackid);
 
     if (cont->flags & ABCDK_MP4_TFHD_FLAG_BASE_DATA_OFFSET_PRESENT)
-        abcdk_mp4_read_u64(fd, &cont->base_data_offset);
+    {
+        if (cont->version == 0)
+            abcdk_mp4_read_u32to64(fd, &cont->base_data_offset);
+        else 
+            abcdk_mp4_read_u64(fd, &cont->base_data_offset);
+    }
     else
         cont->base_data_offset = 0;
 
@@ -1175,49 +1173,180 @@ final_error:
     return -1;
 }
 
-static struct _abcdk_mp4_atom_read_content_methods
+
+int _abcdk_mp4_read_tfdt(int fd, abcdk_mp4_atom_t *atom)
+{
+    abcdk_mp4_atom_tfdt_t *cont = NULL;
+    size_t hsize = 0, dsize = 0;
+    size_t nsize = 0;
+    int chk;
+
+    if (!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_tfdt_t));
+
+    if (!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_tfdt_t *)atom->cont->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_cont, SEEK_SET);
+
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
+
+    if (cont->version == 0)
+        abcdk_mp4_read_u32to64(fd, &cont->base_decode_time);
+    else
+        abcdk_mp4_read_u64(fd, &cont->base_decode_time);
+
+    return 0;
+
+final_error:
+
+    memset(cont, 0, sizeof(*cont));
+
+    return -1;
+}
+
+int _abcdk_mp4_read_trun(int fd, abcdk_mp4_atom_t *atom)
+{
+    abcdk_mp4_atom_trun_t *cont = NULL;
+    size_t hsize = 0, dsize = 0;
+    size_t nsize = 0;
+    uint32_t discard;
+    int chk;
+
+    if (!atom->cont)
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_trun_t));
+
+    if (!atom->cont)
+        goto final_error;
+
+    cont = (abcdk_mp4_atom_trun_t *)atom->cont->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_cont, SEEK_SET);
+
+    abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
+
+    abcdk_mp4_read_u32(fd, &cont->numbers);
+
+    /* 读取已知的选项字段。*/
+    if (cont->flags & ABCDK_MP4_TRUN_FLAG_DATA_OFFSET_PRESENT)
+        abcdk_mp4_read_u32(fd, &cont->data_offset);
+    if (cont->flags & ABCDK_MP4_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT)
+        abcdk_mp4_read_u32(fd, &cont->first_sample_flags);
+
+    /* 跳过未知的选项字段。*/
+    for (uint32_t i = 0; i < 8; i++)
+    {
+        uint32_t c = (1 << i);
+        uint32_t c2 = cont->flags & 0x0000FF;
+
+        /* 跳过未定义的选项字段。*/
+        if (!(c2 & c))
+            continue;
+        
+        if(c & ABCDK_MP4_TRUN_FLAG_OPTION_RESERVED)
+            abcdk_mp4_read_u32(fd, &discard);
+    }
+
+    /*不能利旧，需要册除后重新创建。*/
+    abcdk_allocator_unref(&cont->tables);
+
+    if (cont->numbers > 0)
+    {
+        cont->tables = abcdk_allocator_alloc3(16, cont->numbers);
+        if (!cont->tables)
+            goto final_error;
+
+        for (size_t i = 0; i < cont->tables->numbers; i++)
+        {
+            /* 读取已知采样表的字段。*/
+            if (cont->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
+                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 0));
+            if (cont->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_SIZE_PRESENT)
+                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 4));
+            if (cont->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_FLAGS_PRESENT)
+                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 8));
+            if (cont->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT)
+                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 12));
+
+            /* 跳过未知的采样表的字段。*/
+            for (uint32_t i = 0; i < 8; i++)
+            {
+                uint32_t c = (1 << (i + 8));
+                uint32_t c2 = cont->flags & 0x00FF00;
+
+                /* 跳过未定义的可选字段。*/
+                if (!(c2 & c))
+                    continue;
+                
+                if (c & ABCDK_MP4_TRUN_FLAG_SAPLME_RESERVED)
+                    abcdk_mp4_read_u32(fd, &discard);
+            }
+        }
+    }
+
+    return 0;
+
+final_error:
+
+    abcdk_allocator_unref(&cont->tables);
+    memset(cont, 0, sizeof(*cont));
+
+    return -1;
+}
+
+static struct _abcdk_mp4_read_content_methods
 {
     uint32_t type;
     int (*read_content)(int fd, abcdk_mp4_atom_t *atom);
-} abcdk_mp4_atom_read_content_methods[] = {
-    {ABCDK_MP4_ATOM_TYPE_FTYP, _abcdk_mp4_atom_read_ftyp},
-    {ABCDK_MP4_ATOM_TYPE_MVHD, _abcdk_mp4_atom_read_mvhd},
-    {ABCDK_MP4_ATOM_TYPE_UDTA, _abcdk_mp4_atom_read_udta},
-    {ABCDK_MP4_ATOM_TYPE_TKHD, _abcdk_mp4_atom_read_tkhd},
-    {ABCDK_MP4_ATOM_TYPE_MDHD, _abcdk_mp4_atom_read_mdhd},
-    {ABCDK_MP4_ATOM_TYPE_HDLR, _abcdk_mp4_atom_read_hdlr},
-    {ABCDK_MP4_ATOM_TYPE_VMHD, _abcdk_mp4_atom_read_vmhd},
-    {ABCDK_MP4_ATOM_TYPE_DREF, _abcdk_mp4_atom_read_dref},
-    {ABCDK_MP4_ATOM_TYPE_STSD, _abcdk_mp4_atom_read_stsd},
-    {ABCDK_MP4_ATOM_TYPE_STTS, _abcdk_mp4_atom_read_stts},
-    {ABCDK_MP4_ATOM_TYPE_CTTS, _abcdk_mp4_atom_read_ctts},
-    {ABCDK_MP4_ATOM_TYPE_STSC, _abcdk_mp4_atom_read_stsc},
-    {ABCDK_MP4_ATOM_TYPE_STSZ, _abcdk_mp4_atom_read_stsz},
-    {ABCDK_MP4_ATOM_TYPE_STCO, _abcdk_mp4_atom_read_stco},
-    {ABCDK_MP4_ATOM_TYPE_STSS, _abcdk_mp4_atom_read_stss},
-    {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_atom_read_gmhd},
-    {ABCDK_MP4_ATOM_TYPE_SMHD, _abcdk_mp4_atom_read_smhd},
-    {ABCDK_MP4_ATOM_TYPE_ELST, _abcdk_mp4_atom_read_elst},
-    {ABCDK_MP4_ATOM_TYPE_MEHD, _abcdk_mp4_atom_read_mehd},
-    {ABCDK_MP4_ATOM_TYPE_TREX, _abcdk_mp4_atom_read_trex},
-    {ABCDK_MP4_ATOM_TYPE_MFHD, _abcdk_mp4_atom_read_mfhd},
-    {ABCDK_MP4_ATOM_TYPE_TFHD, _abcdk_mp4_atom_read_tfhd},
+} abcdk_mp4_read_content_methods[] = {
+    {ABCDK_MP4_ATOM_TYPE_FTYP, _abcdk_mp4_read_ftyp},
+    {ABCDK_MP4_ATOM_TYPE_MVHD, _abcdk_mp4_read_mvhd},
+    {ABCDK_MP4_ATOM_TYPE_UDTA, _abcdk_mp4_read_udta},
+    {ABCDK_MP4_ATOM_TYPE_TKHD, _abcdk_mp4_read_tkhd},
+    {ABCDK_MP4_ATOM_TYPE_MDHD, _abcdk_mp4_read_mdhd},
+    {ABCDK_MP4_ATOM_TYPE_HDLR, _abcdk_mp4_read_hdlr},
+    {ABCDK_MP4_ATOM_TYPE_VMHD, _abcdk_mp4_read_vmhd},
+    {ABCDK_MP4_ATOM_TYPE_DREF, _abcdk_mp4_read_dref},
+    {ABCDK_MP4_ATOM_TYPE_STSD, _abcdk_mp4_read_stsd},
+    {ABCDK_MP4_ATOM_TYPE_STTS, _abcdk_mp4_read_stts},
+    {ABCDK_MP4_ATOM_TYPE_CTTS, _abcdk_mp4_read_ctts},
+    {ABCDK_MP4_ATOM_TYPE_STSC, _abcdk_mp4_read_stsc},
+    {ABCDK_MP4_ATOM_TYPE_STSZ, _abcdk_mp4_read_stsz},
+    {ABCDK_MP4_ATOM_TYPE_STCO, _abcdk_mp4_read_stco},
+    {ABCDK_MP4_ATOM_TYPE_STSS, _abcdk_mp4_read_stss},
+    {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_read_gmhd},
+    {ABCDK_MP4_ATOM_TYPE_SMHD, _abcdk_mp4_read_smhd},
+    {ABCDK_MP4_ATOM_TYPE_ELST, _abcdk_mp4_read_elst},
+    {ABCDK_MP4_ATOM_TYPE_MEHD, _abcdk_mp4_read_mehd},
+    {ABCDK_MP4_ATOM_TYPE_TREX, _abcdk_mp4_read_trex},
+    {ABCDK_MP4_ATOM_TYPE_MFHD, _abcdk_mp4_read_mfhd},
+    {ABCDK_MP4_ATOM_TYPE_TFHD, _abcdk_mp4_read_tfhd},
+    {ABCDK_MP4_ATOM_TYPE_TFDT, _abcdk_mp4_read_tfdt},
+    {ABCDK_MP4_ATOM_TYPE_TRUN, _abcdk_mp4_read_trun}
    
 };
 
-int abcdk_mp4_atom_read_content(int fd, abcdk_mp4_atom_t *atom)
+int abcdk_mp4_read_content(int fd, abcdk_mp4_atom_t *atom)
 {
     int (*read_content)(int fd, abcdk_mp4_atom_t *atom) = NULL;
     int chk = -1;
 
     assert(fd >= 0 && atom != NULL);
 
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_mp4_atom_read_content_methods); i++)
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_mp4_read_content_methods); i++)
     {
-        if (abcdk_mp4_atom_read_content_methods[i].type != atom->type.u32)
+        if (abcdk_mp4_read_content_methods[i].type != atom->type.u32)
             continue;
 
-        read_content = abcdk_mp4_atom_read_content_methods[i].read_content;
+        read_content = abcdk_mp4_read_content_methods[i].read_content;
         break;
     }
 

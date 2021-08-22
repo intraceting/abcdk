@@ -819,6 +819,79 @@ typedef struct _abcdk_mp4_atom_tfhd
 
 }abcdk_mp4_atom_tfhd_t;
 
+
+/** tfdt atom.*/
+typedef struct _abcdk_mp4_atom_tfdt
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** 解码时间。*/
+    uint64_t base_decode_time;
+
+}abcdk_mp4_atom_tfdt_t;
+
+/**
+ * trun flags
+ *
+ * @note 从Bento4复制来的。
+*/
+
+#define ABCDK_MP4_TRUN_FLAG_DATA_OFFSET_PRESENT                     0x0001
+#define ABCDK_MP4_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT              0x0004
+#define ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT                 0x0100
+#define ABCDK_MP4_TRUN_FLAG_SAMPLE_SIZE_PRESENT                     0x0200
+#define ABCDK_MP4_TRUN_FLAG_SAMPLE_FLAGS_PRESENT                    0x0400
+#define ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT  0x0800
+
+#define ABCDK_MP4_TRUN_FLAG_OPTION_RESERVED              \
+    (~(ABCDK_MP4_TRUN_FLAG_DATA_OFFSET_PRESENT |         \
+       ABCDK_MP4_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT) & \
+     0x0000FF)
+
+#define ABCDK_MP4_TRUN_FLAG_SAPLME_RESERVED                          \
+    (~(ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT |                 \
+       ABCDK_MP4_TRUN_FLAG_SAMPLE_SIZE_PRESENT |                     \
+       ABCDK_MP4_TRUN_FLAG_SAMPLE_FLAGS_PRESENT |                    \
+       ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT) & \
+     0x00FF00)
+
+/** trun atom.*/
+typedef struct _abcdk_mp4_atom_trun
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。
+     *      
+     * 0～7位：1选项字段‘有’，0选项字段‘无’。
+     * 8～15位：1采样表字段‘有’，0采样表字段‘无’。
+    */
+    uint32_t flags;
+
+    /** 采样数量*/
+    uint32_t numbers;
+
+    /** 数据偏移量(选项字段)。*/
+    uint32_t data_offset;
+
+    /** 第一个采样标志(选项字段)。*/
+    uint32_t first_sample_flags;
+
+    /** 
+     * 采样表。
+     * 
+     * |duration |size |flags |composition time offset | Field
+     * |4        |4    |4     |4                       | Bytes
+    */
+    abcdk_allocator_t *tables;
+
+}abcdk_mp4_atom_trun_t;
+
+
 __END_DECLS
 
 #endif //ABCDK_MP4_MP4_H
