@@ -9,7 +9,7 @@
 /*
  * 读取atom头，但不改变文件指针位置。
 */
-abcdk_tree_t *_abcdk_mp4_read_atom_header(int fd)
+abcdk_tree_t *abcdk_mp4_read_header(int fd)
 {
     uint32_t size32 = 0;
     uint64_t size64 = 0;
@@ -72,7 +72,19 @@ final_error:
     return NULL;
 }
 
-int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd)
+int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
+{
+    uint32_t h = 0;
+    if (abcdk_mp4_read_u32(fd, &h))
+        return -1;
+
+    *ver = ((h >> 24) & 0x000000FF);
+    *flags = (h & 0x00FFFFFF);
+
+    return 0;
+}
+
+int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
 {
     abcdk_mp4_atom_t *root_atom = NULL;
     abcdk_mp4_atom_t *atom = NULL;
@@ -84,7 +96,7 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd)
 
     while (keep)
     {
-        node = _abcdk_mp4_read_atom_header(fd);
+        node = abcdk_mp4_read_header(fd);
         if (!node)
             goto final_error;
 
@@ -108,7 +120,7 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd)
             /*跳转文件指针到容器内部。*/
             lseek(fd, atom->off_cont, SEEK_SET);
 
-            chk = _abcdk_mp4_read_probe(node, fd);
+            chk = _abcdk_mp4_read_probe(node, fd, stop);
             if (chk != 0)
                 goto final_error;
         }
@@ -121,6 +133,10 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd)
         /*跳转文件指针到下一个atom。*/
         lseek(fd, atom->off_head + atom->size, SEEK_SET);
 
+        /*遇到中断tag，则提前终止。*/
+        if(stop && stop->u32 == atom->type.u32)
+            break;
+
         /*限制在容器内部解析。*/
         keep = ((atom->off_head + atom->size < root_atom->off_head + root_atom->size) ? 1 : 0);
     }
@@ -132,7 +148,7 @@ final_error:
     return -1;
 }
 
-abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size)
+abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk_mp4_tag_t *stop)
 {
     abcdk_mp4_atom_t *atom = NULL;
     abcdk_tree_t *root;
@@ -176,22 +192,11 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size)
     atom->type.u32 = ABCDK_MP4_ATOM_MKTAG('!', '@', '#', '$');
     atom->off_head = atom->off_cont = offset;
 
-    _abcdk_mp4_read_probe(root, fd);
+    _abcdk_mp4_read_probe(root, fd, stop);
 
     return root;
 }
 
-int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
-{
-    uint32_t h = 0;
-    if (abcdk_mp4_read_u32(fd, &h))
-        return -1;
-
-    *ver = ((h >> 24) & 0x000000FF);
-    *flags = (h & 0x00FFFFFF);
-
-    return 0;
-}
 
 int _abcdk_mp4_read_ftyp(int fd, abcdk_mp4_atom_t *atom)
 {
@@ -308,7 +313,7 @@ int _abcdk_mp4_read_udta(int fd, abcdk_mp4_atom_t *atom)
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
-    cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont, dsize);
+    cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont, dsize, NULL);
 
     return 0;
 
@@ -538,7 +543,7 @@ int _abcdk_mp4_read_dref(int fd, abcdk_mp4_atom_t *atom)
     abcdk_tree_free(&cont->entries);
 
     if (cont->numbers > 0)
-        cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8);
+        cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8, NULL);
 
     return 0;
 
@@ -578,7 +583,7 @@ int _abcdk_mp4_read_stsd(int fd, abcdk_mp4_atom_t *atom)
     abcdk_tree_free(&cont->entries);
 
     if (cont->numbers > 0)
-        cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8);
+        cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8, NULL);
 
     return 0;
 
@@ -907,7 +912,7 @@ int _abcdk_mp4_read_gmhd(int fd, abcdk_mp4_atom_t *atom)
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
-    cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont, dsize);
+    cont->entries = abcdk_mp4_read_probe(fd, atom->off_cont, dsize, NULL);
 
     return 0;
 

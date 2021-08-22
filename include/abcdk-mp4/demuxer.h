@@ -13,18 +13,12 @@
 
 __BEGIN_DECLS
 
-
-
 /**
- * 读取atom结构(遇到容器时递归读取)。
- * 
- * @param fd 文件句柄。
- * @param offset 偏移量，以0为基值。
- * @param size 最大长度，-1UL 直到文件末尾。
- * 
+ * 读取atom结构头部。
+ *  
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size);
+abcdk_tree_t *abcdk_mp4_read_header(int fd);
 
 /**
  * 读取FULLBOX头部。
@@ -32,6 +26,19 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size);
  * @return 0 成功，-1 失败。
 */
 int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags);
+
+/**
+ * 读取atom结构(遇到容器时递归读取)。
+ * 
+ * @param fd 文件句柄。
+ * @param offset 偏移量，以0为基值。
+ * @param size 最大长度，-1UL 直到文件末尾。
+ * @param stop 中断tag，NULL(0) 忽略。 
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk_mp4_tag_t *stop);
+
 
 /**
  * 读取内容数据。
