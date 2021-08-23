@@ -188,6 +188,7 @@ typedef union _abcdk_mp4_tag
 #define ABCDK_MP4_ATOM_TYPE_SKIP ABCDK_MP4_ATOM_MKTAG('s', 'k', 'i', 'p')
 #define ABCDK_MP4_ATOM_TYPE_IPMC ABCDK_MP4_ATOM_MKTAG('i', 'p', 'm', 'c')
 #define ABCDK_MP4_ATOM_TYPE_GMHD ABCDK_MP4_ATOM_MKTAG('g', 'm', 'h', 'd')
+#define ABCDK_MP4_ATOM_TYPE_GLBL ABCDK_MP4_ATOM_MKTAG('g', 'l', 'b', 'l')
 
 /** MP4 atom.*/
 typedef struct _abcdk_mp4_atom
@@ -602,13 +603,13 @@ typedef struct _abcdk_mp4_atom_sample_desc
 
 }abcdk_mp4_atom_sample_desc_t;
 
-/** MP4 avcc atom.*/
-typedef struct _abcdk_mp4_atom_avcc
+/** MP4 glbl,avcc(h264),hvcc(h265),dvh1(h265) atom.*/
+typedef struct _abcdk_mp4_atom_glbl
 {
     /** 扩展数据(Global Header)。 */
     abcdk_allocator_t *extradata;
 
-}abcdk_mp4_atom_avcc_t;
+} abcdk_mp4_atom_glbl_t;
 
 /** MP4 stts atom.*/
 typedef struct _abcdk_mp4_atom_stts

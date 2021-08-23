@@ -1552,19 +1552,19 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_read_avcc(int fd, abcdk_mp4_atom_t *atom)
+int _abcdk_mp4_read_glbl(int fd, abcdk_mp4_atom_t *atom)
 {   
-    abcdk_mp4_atom_avcc_t *cont = NULL;
+    abcdk_mp4_atom_glbl_t *cont = NULL;
     size_t hsize = 0, dsize = 0;
     int chk;
 
     if (!atom->cont)
-        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_avcc_t));
+        atom->cont = abcdk_allocator_alloc2(sizeof(abcdk_mp4_atom_glbl_t));
 
     if (!atom->cont)
         goto final_error;
 
-    cont = (abcdk_mp4_atom_avcc_t *)atom->cont->pptrs[0];
+    cont = (abcdk_mp4_atom_glbl_t *)atom->cont->pptrs[0];
 
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
@@ -1623,7 +1623,10 @@ static struct _abcdk_mp4_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_MFRO, _abcdk_mp4_read_mfro},
     {ABCDK_MP4_ATOM_TYPE_TFRA, _abcdk_mp4_read_tfra},
     {ABCDK_MP4_ATOM_TYPE_AVC1, _abcdk_mp4_read_sample_desc_video},
-    {ABCDK_MP4_ATOM_TYPE_AVCC, _abcdk_mp4_read_avcc}
+    {ABCDK_MP4_ATOM_TYPE_GLBL, _abcdk_mp4_read_glbl},
+    {ABCDK_MP4_ATOM_TYPE_AVCC, _abcdk_mp4_read_glbl},
+    {ABCDK_MP4_ATOM_TYPE_HVCC, _abcdk_mp4_read_glbl},
+    {ABCDK_MP4_ATOM_TYPE_DVH1, _abcdk_mp4_read_glbl}
    
 };
 
