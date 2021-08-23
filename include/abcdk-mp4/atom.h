@@ -390,7 +390,7 @@ typedef struct _abcdk_mp4_atom_tkhd
     uint32_t matrix[9];
 
     /** 
-     * 宽(以整数形式存储的定点数)。
+     * 宽(以整数形式存储的定点数)(像素)。
      * 
      * 高16位：整数。
      * 低16位：小数。 
@@ -398,7 +398,7 @@ typedef struct _abcdk_mp4_atom_tkhd
     uint32_t width;
 
     /** 
-     * 高(以整数形式存储的定点数)。
+     * 高(以整数形式存储的定点数)(像素)。
      * 
      * 高16位：整数。
      * 低16位：小数。 
@@ -524,6 +524,91 @@ typedef struct _abcdk_mp4_atom_stsd
     abcdk_tree_t *entries;
 
 }abcdk_mp4_atom_stsd_t;
+
+/** MP4 sample description atom.*/
+typedef struct _abcdk_mp4_atom_sample_desc
+{   
+    /** 预留。*/
+    uint8_t reserved[6];
+
+    /** 数据引用索引。*/
+    uint16_t data_refer_index;
+
+    /** 详细*/
+    union
+    {
+        struct
+        {
+            /** 预留。*/
+            uint16_t reserved1;
+
+            /** 预留。*/
+            uint16_t reserved2;
+
+            /** 预留。*/
+            uint32_t reserved3[3];
+
+            /** 宽(像素)。*/
+            uint16_t width;
+
+            /** 高(像素)。*/
+            uint16_t height;
+
+            /** 
+             * 水平分辨率(以整数形式存储的定点数)(DPI)。
+             * 
+             * 高16位：整数。
+             * 低16位：小数。 
+            */
+            uint32_t horiz;
+
+            /** 
+             * 垂直分辨率(以整数形式存储的定点数)(DPI)。
+             * 
+             * 高16位：整数。
+             * 低16位：小数。
+            */
+            uint32_t vert;
+
+            /** 预留。*/
+            uint32_t reserved4;
+
+            /** 每个采样中包括的帧数量。*/
+            uint16_t frame_count;
+
+            /** 
+             * 编码器名字(Pascal string)(32字节)。
+             * 
+             * 第一个字符是长度。
+            */
+            char encname[33];
+
+            /** 位深(bit)。*/
+            uint16_t depth;
+
+            /** 预留。*/
+            uint16_t reserved5;
+        } video;
+
+        struct
+        {
+
+        } sound;
+
+    } detail;
+
+    /** 子项。*/
+    abcdk_tree_t *entries;
+
+}abcdk_mp4_atom_sample_desc_t;
+
+/** MP4 avcc atom.*/
+typedef struct _abcdk_mp4_atom_avcc
+{
+    /** 扩展数据(Global Header)。 */
+    abcdk_allocator_t *extradata;
+
+}abcdk_mp4_atom_avcc_t;
 
 /** MP4 stts atom.*/
 typedef struct _abcdk_mp4_atom_stts
@@ -965,6 +1050,8 @@ typedef struct _abcdk_mp4_atom_tfra
     abcdk_allocator_t *tables;
 
 }abcdk_mp4_atom_tfra_t;
+
+
 
 /** 
  * 查找atom。

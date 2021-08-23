@@ -808,6 +808,9 @@ void _mp4_dump_stsd(size_t deep, abcdk_tree_t *node, void *opaque)
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
 
+    if(!cont->entries)
+        return ;
+
     abcdk_tree_t *p = abcdk_tree_child(cont->entries,1);
     while (p)
     {
@@ -1307,7 +1310,7 @@ void test_mp4(abcdk_tree_t *args)
     if(fd<0)
         return;
 
-#if 0
+#if 1
 
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
 
