@@ -38,31 +38,6 @@ typedef union _abcdk_mp4_tag
 #define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
 #endif
 
-/** MP4 原子。*/
-typedef struct _abcdk_mp4_atom
-{
-    /** 长度(字节，头部+内容)。*/
-    uint64_t size;
-
-    /** 类型。*/
-    abcdk_mp4_tag_t type;
-
-    /** 头部偏移量(字节)。*/
-    uint64_t off_head;
-
-    /** 内容偏移量(字节)。
-    */
-    uint64_t off_cont;
-
-    /**
-     * 数据体(内容)。
-     * 
-     * @note 详细结构见各类型定义。
-    */
-    abcdk_allocator_t *cont;
-
-} abcdk_mp4_atom_t;
-
 
 /*
  * atom types
@@ -214,19 +189,31 @@ typedef struct _abcdk_mp4_atom
 #define ABCDK_MP4_ATOM_TYPE_IPMC ABCDK_MP4_ATOM_MKTAG('i', 'p', 'm', 'c')
 #define ABCDK_MP4_ATOM_TYPE_GMHD ABCDK_MP4_ATOM_MKTAG('g', 'm', 'h', 'd')
 
-/** ftyp atom.*/
-typedef struct _abcdk_mp4_atom_ftyp
+/** MP4 atom.*/
+typedef struct _abcdk_mp4_atom
 {
-    /** 主版本。*/
-    abcdk_mp4_tag_t major;
+    /** 长度(字节，头部+内容)。*/
+    uint64_t size;
 
-    /** 副版本。*/
-    uint32_t minor;
+    /** 类型。*/
+    abcdk_mp4_tag_t type;
 
-    /** 兼容版本。*/
-    abcdk_allocator_t *compat;
+    /** 头部偏移量(字节)。*/
+    uint64_t off_head;
 
-}abcdk_mp4_atom_ftyp_t;
+    /** 内容偏移量(字节)。
+    */
+    uint64_t off_cont;
+
+    /**
+     * 数据体(内容)。
+     * 
+     * @note 详细结构见各类型定义。
+    */
+    abcdk_allocator_t *cont;
+
+} abcdk_mp4_atom_t;
+
 
 /*
  * file type/brands
@@ -260,8 +247,22 @@ typedef struct _abcdk_mp4_atom_ftyp
 #define ABCDK_MP4_ATOM_FTYP_BRAND_HVC1 ABCDK_MP4_ATOM_MKTAG('h', 'v', 'c', '1')
 #define ABCDK_MP4_ATOM_FTYP_BRAND_DBY1 ABCDK_MP4_ATOM_MKTAG('d', 'b', 'y', '1')
 
+/** MP4 ftyp atom.*/
+typedef struct _abcdk_mp4_atom_ftyp
+{
+    /** 主版本。*/
+    abcdk_mp4_tag_t major;
 
-/** mvhd atom.*/
+    /** 副版本。*/
+    uint32_t minor;
+
+    /** 兼容版本。*/
+    abcdk_allocator_t *compat;
+
+}abcdk_mp4_atom_ftyp_t;
+
+
+/** MP4 mvhd atom.*/
 typedef struct _abcdk_mp4_atom_mvhd
 {
     /** 版本。*/
@@ -321,7 +322,7 @@ typedef struct _abcdk_mp4_atom_mvhd
 }abcdk_mp4_atom_mvhd_t;
 
 
-/** udta atom.*/
+/** MP4 udta atom.*/
 typedef struct _abcdk_mp4_atom_udta
 {
     /** 子项。*/
@@ -330,7 +331,7 @@ typedef struct _abcdk_mp4_atom_udta
 }abcdk_mp4_atom_udta_t;
 
 
-/** tkhd atom.*/
+/** MP4 tkhd atom.*/
 typedef struct _abcdk_mp4_atom_tkhd
 {
     /** 版本。*/
@@ -406,7 +407,7 @@ typedef struct _abcdk_mp4_atom_tkhd
 
 }abcdk_mp4_atom_tkhd_t;
 
-/** mdhd atom.*/
+/** MP4 mdhd atom.*/
 typedef struct _abcdk_mp4_atom_mdhd
 {
     /** 版本。*/
@@ -443,7 +444,7 @@ typedef struct _abcdk_mp4_atom_mdhd
 
 }abcdk_mp4_atom_mdhd_t;
 
-/** hdlr atom.*/
+/** MP4 hdlr atom.*/
 typedef struct _abcdk_mp4_atom_hdlr
 {
     /** 版本。*/
@@ -466,7 +467,7 @@ typedef struct _abcdk_mp4_atom_hdlr
 }abcdk_mp4_atom_hdlr_t;
 
 
-/** vmhd atom.*/
+/** MP4 vmhd atom.*/
 typedef struct _abcdk_mp4_atom_vmhd
 {
     /** 版本。*/
@@ -490,7 +491,7 @@ typedef struct _abcdk_mp4_atom_vmhd
 }abcdk_mp4_atom_vmhd_t;
 
 
-/** dref atom.*/
+/** MP4 dref atom.*/
 typedef struct _abcdk_mp4_atom_dref
 {
     /** 版本。*/
@@ -507,7 +508,7 @@ typedef struct _abcdk_mp4_atom_dref
 
 }abcdk_mp4_atom_dref_t;
 
-/** stsd atom.*/
+/** MP4 stsd atom.*/
 typedef struct _abcdk_mp4_atom_stsd
 {
     /** 版本。*/
@@ -524,7 +525,7 @@ typedef struct _abcdk_mp4_atom_stsd
 
 }abcdk_mp4_atom_stsd_t;
 
-/** stts atom.*/
+/** MP4 stts atom.*/
 typedef struct _abcdk_mp4_atom_stts
 {
     /** 版本。*/
@@ -547,7 +548,7 @@ typedef struct _abcdk_mp4_atom_stts
 }abcdk_mp4_atom_stts_t;
 
 
-/** ctts atom.*/
+/** MP4 ctts atom.*/
 typedef struct _abcdk_mp4_atom_ctts
 {
     /** 版本。*/
@@ -569,7 +570,7 @@ typedef struct _abcdk_mp4_atom_ctts
 
 }abcdk_mp4_atom_ctts_t;
 
-/** stsc atom.*/
+/** MP4 stsc atom.*/
 typedef struct _abcdk_mp4_atom_stsc
 {
     /** 版本。*/
@@ -591,7 +592,7 @@ typedef struct _abcdk_mp4_atom_stsc
 
 }abcdk_mp4_atom_stsc_t;
 
-/** stsz atom.*/
+/** MP4 stsz atom.*/
 typedef struct _abcdk_mp4_atom_stsz
 {
     /** 版本。*/
@@ -622,7 +623,7 @@ typedef struct _abcdk_mp4_atom_stsz
 
 }abcdk_mp4_atom_stsz_t;
 
-/** stco atom.*/
+/** MP4 stco or co64 atom.*/
 typedef struct _abcdk_mp4_atom_stco
 {
     /** 版本。*/
@@ -637,15 +638,15 @@ typedef struct _abcdk_mp4_atom_stco
     /** 
      * 采样表(包偏移量，以0为基值)。
      * 
-     * |Offset| Field
-     * |4     | Bytes     
+     * |Offset | Field
+     * |4 or 8 | Bytes     
     */
     abcdk_allocator_t *tables;
 
-}abcdk_mp4_atom_stco_t;
+}abcdk_mp4_atom_stco_t,abcdk_mp4_atom_co64_t;
 
 
-/** stss atom.*/
+/** MP4 stss atom.*/
 typedef struct _abcdk_mp4_atom_stss
 {
     /** 版本。*/
@@ -667,7 +668,7 @@ typedef struct _abcdk_mp4_atom_stss
 
 }abcdk_mp4_atom_stss_t;
 
-/** gmhd atom.*/
+/** MP4 gmhd atom.*/
 typedef struct _abcdk_mp4_atom_gmhd
 {
     /** 子项。*/
@@ -675,7 +676,7 @@ typedef struct _abcdk_mp4_atom_gmhd
     
 }abcdk_mp4_atom_gmhd_t;
 
-/** smhd atom.*/
+/** MP4 smhd atom.*/
 typedef struct _abcdk_mp4_atom_smhd
 {
     /** 版本。*/
@@ -698,7 +699,7 @@ typedef struct _abcdk_mp4_atom_smhd
 }abcdk_mp4_atom_smhd_t;
 
 
-/** elst atom.*/
+/** MP4 elst atom.*/
 typedef struct _abcdk_mp4_atom_elst
 {
     /** 版本。*/
@@ -720,7 +721,7 @@ typedef struct _abcdk_mp4_atom_elst
 
 }abcdk_mp4_atom_elst_t;
 
-/** mehd atom.*/
+/** MP4 mehd atom.*/
 typedef struct _abcdk_mp4_atom_mehd
 {
     /** 版本。*/
@@ -735,7 +736,7 @@ typedef struct _abcdk_mp4_atom_mehd
 }abcdk_mp4_atom_mehd_t;
 
 
-/** trex atom.*/
+/** MP4 trex atom.*/
 typedef struct _abcdk_mp4_atom_trex
 {
     /** 版本。*/
@@ -761,7 +762,7 @@ typedef struct _abcdk_mp4_atom_trex
 
 }abcdk_mp4_atom_trex_t;
 
-/** mfhd atom.*/
+/** MP4 mfhd atom.*/
 typedef struct _abcdk_mp4_atom_mfhd
 {
     /** 版本。*/
@@ -776,8 +777,8 @@ typedef struct _abcdk_mp4_atom_mfhd
 }abcdk_mp4_atom_mfhd_t;
 
 
-/**
- * tfhd flags
+/*
+ * MP4 tfhd flags
  *
  * @note 从Bento4复制来的。
 */
@@ -790,7 +791,7 @@ typedef struct _abcdk_mp4_atom_mfhd
 #define ABCDK_MP4_TFHD_FLAG_DURATION_IS_EMPTY                   0x10000
 #define ABCDK_MP4_TFHD_FLAG_DEFAULT_BASE_IS_MOOF                0x20000 //此标志非常有用，用于计算数据的偏移量。
 
-/** tfhd atom.*/
+/** MP4 tfhd atom.*/
 typedef struct _abcdk_mp4_atom_tfhd
 {
     /** 版本。*/
@@ -820,7 +821,7 @@ typedef struct _abcdk_mp4_atom_tfhd
 }abcdk_mp4_atom_tfhd_t;
 
 
-/** tfdt atom.*/
+/** MP4 tfdt atom.*/
 typedef struct _abcdk_mp4_atom_tfdt
 {
     /** 版本。*/
@@ -834,8 +835,8 @@ typedef struct _abcdk_mp4_atom_tfdt
 
 }abcdk_mp4_atom_tfdt_t;
 
-/**
- * trun flags
+/*
+ * MP4 trun flags
  *
  * @note 从Bento4复制来的。
 */
@@ -859,7 +860,7 @@ typedef struct _abcdk_mp4_atom_tfdt
        ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT) & \
      0x00FF00)
 
-/** trun atom.*/
+/** MP4 trun atom.*/
 typedef struct _abcdk_mp4_atom_trun
 {
     /** 版本。*/
@@ -895,7 +896,7 @@ typedef struct _abcdk_mp4_atom_trun
 
 }abcdk_mp4_atom_trun_t;
 
-/** mfro atom.*/
+/** MP4 mfro atom.*/
 typedef struct _abcdk_mp4_atom_mfro
 {
     /** 版本。*/
@@ -910,7 +911,7 @@ typedef struct _abcdk_mp4_atom_mfro
 }abcdk_mp4_atom_mfro_t;
 
 
-/** tfra atom.*/
+/** MP4 tfra atom.*/
 typedef struct _abcdk_mp4_atom_tfra
 {
     /** 版本。*/
@@ -964,6 +965,23 @@ typedef struct _abcdk_mp4_atom_tfra
     abcdk_allocator_t *tables;
 
 }abcdk_mp4_atom_tfra_t;
+
+/** 
+ * 查找atom。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root,abcdk_mp4_tag_t *type);
+
+/** 
+ * 查找atom。
+ * 
+ * @param type 类型(大端字节序)。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type);
+
 
 __END_DECLS
 

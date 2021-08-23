@@ -197,6 +197,16 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk
     return root;
 }
 
+abcdk_tree_t *abcdk_mp4_read_probe2(int fd, uint64_t offset, uint64_t size, uint32_t stop)
+{
+    abcdk_mp4_tag_t tag = {0};
+
+    assert(fd >= 0 && offset < -1UL && size >= 8);
+
+    tag.u32 = stop;
+
+    return abcdk_mp4_read_probe(fd, offset, size, stop ? &tag : NULL);
+}
 
 int _abcdk_mp4_read_ftyp(int fd, abcdk_mp4_atom_t *atom)
 {
@@ -825,13 +835,37 @@ int _abcdk_mp4_read_stco(int fd, abcdk_mp4_atom_t *atom)
 
     if (cont->numbers > 0)
     {
-        cont->tables = abcdk_allocator_alloc3(4, cont->numbers);
-        if (!cont->tables)
-            goto final_error;
-
-        for (size_t i = 0; i < cont->tables->numbers; i++)
+        if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STCO)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 0));
+            if (cont->numbers > dsize / 4)
+                cont->numbers = dsize / 4;
+
+            cont->tables = abcdk_allocator_alloc3(4, cont->numbers);
+            if (!cont->tables)
+                goto final_error;
+
+            for (size_t i = 0; i < cont->tables->numbers; i++)
+            {
+                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(cont->tables->pptrs[i], 0));
+            }
+        }
+        else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CO64)
+        {
+            if (cont->numbers > dsize / 8)
+                cont->numbers = dsize / 8;
+
+            cont->tables = abcdk_allocator_alloc3(8, cont->numbers);
+            if (!cont->tables)
+                goto final_error;
+
+            for (size_t i = 0; i < cont->tables->numbers; i++)
+            {
+                abcdk_mp4_read_u64(fd, ABCDK_PTR2U64PTR(cont->tables->pptrs[i], 0));
+            }
+        }
+        else
+        {
+            ABCDK_ERRNO_AND_GOTO1(EINVAL,final_error);
         }
     }
 
@@ -1480,6 +1514,7 @@ static struct _abcdk_mp4_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_STSC, _abcdk_mp4_read_stsc},
     {ABCDK_MP4_ATOM_TYPE_STSZ, _abcdk_mp4_read_stsz},
     {ABCDK_MP4_ATOM_TYPE_STCO, _abcdk_mp4_read_stco},
+    {ABCDK_MP4_ATOM_TYPE_CO64, _abcdk_mp4_read_stco},
     {ABCDK_MP4_ATOM_TYPE_STSS, _abcdk_mp4_read_stss},
     {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_read_gmhd},
     {ABCDK_MP4_ATOM_TYPE_SMHD, _abcdk_mp4_read_smhd},

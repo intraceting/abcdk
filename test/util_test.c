@@ -1088,7 +1088,7 @@ void _mp4_dump_trun(size_t deep, abcdk_tree_t *node, void *opaque)
 
     for(size_t i= 0 ;i<cont->tables->numbers;i++)
     {
-        fprintf(stdout, "[%d]={",i);
+        fprintf(stdout, "[%ld]={",i);
         fprintf(stdout, "duration=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],0));
         fprintf(stdout, "size=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],4));
         fprintf(stdout, "flags=%08x,",ABCDK_PTR2U32(cont->tables->pptrs[i],8));
@@ -1131,7 +1131,7 @@ void _mp4_dump_tfra(size_t deep, abcdk_tree_t *node, void *opaque)
 
     for(size_t i= 0 ;i<cont->tables->numbers;i++)
     {
-        fprintf(stdout, "[%d]={",i);
+        fprintf(stdout, "[%ld]={",i);
         fprintf(stdout, "time=%lu,",ABCDK_PTR2U64(cont->tables->pptrs[i],0));
         fprintf(stdout, "moof offset=%lu,",ABCDK_PTR2U64(cont->tables->pptrs[i],8));
         fprintf(stdout, "traf=%u,",ABCDK_PTR2U32(cont->tables->pptrs[i],16));
@@ -1236,6 +1236,20 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
+void show_mp4_info(int fd)
+{
+    abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, ABCDK_MP4_ATOM_TYPE_MOOV);
+
+    abcdk_tree_t *f = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_STCO);
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)f->alloc->pptrs[0];
+
+    abcdk_mp4_read_content(fd,atom);
+
+    _mp4_dump_stco(0, f, NULL);
+
+    abcdk_tree_free(&root);
+}
+
 void test_mp4(abcdk_tree_t *args)
 {
     const char *name_p = abcdk_option_get(args,"--file",0,"");
@@ -1293,6 +1307,8 @@ void test_mp4(abcdk_tree_t *args)
     if(fd<0)
         return;
 
+#if 0
+
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
 
 
@@ -1303,6 +1319,12 @@ void test_mp4(abcdk_tree_t *args)
 
 
     abcdk_tree_free(&root);
+#else 
+
+    show_mp4_info(fd);
+
+#endif 
+
     abcdk_closep(&fd);
 
 #endif 
