@@ -1243,7 +1243,7 @@ void show_mp4_info(int fd)
 {
     abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, ABCDK_MP4_ATOM_TYPE_MOOV);
 
-    abcdk_tree_t *f = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_STCO);
+    abcdk_tree_t *f = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_AVC1);
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)f->alloc->pptrs[0];
 
     abcdk_mp4_read_content(fd,atom);
@@ -1310,7 +1310,7 @@ void test_mp4(abcdk_tree_t *args)
     if(fd<0)
         return;
 
-#if 1
+#if 0
 
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
 

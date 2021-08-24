@@ -1052,7 +1052,10 @@ typedef struct _abcdk_mp4_atom_tfra
 
 }abcdk_mp4_atom_tfra_t;
 
-
+/**
+ * 创建atom。
+*/
+abcdk_tree_t *abcdk_mp4_alloc();
 
 /** 
  * 查找atom。

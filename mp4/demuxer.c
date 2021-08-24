@@ -18,7 +18,7 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
     abcdk_mp4_atom_t *atom = NULL;
     int chk;
 
-    node = abcdk_tree_alloc3(sizeof(abcdk_mp4_atom_t));
+    node = abcdk_mp4_alloc();
     if (!node)
         return NULL;
 
