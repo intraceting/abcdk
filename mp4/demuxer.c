@@ -607,16 +607,6 @@ int _abcdk_mp4_read_stsd(int fd, abcdk_tree_t *node)
         atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8, NULL);
         if (!atom->entries)
             goto final_error;
-
-        sub_node = abcdk_tree_child(atom->entries, 1);
-        while (sub_node)
-        {
-            chk = abcdk_mp4_read_content(fd, sub_node);
-            if (chk != 0)
-                goto final_error;
-
-            sub_node = abcdk_tree_sibling(sub_node, 0);
-        }
     }
 
     return 0;
@@ -1582,18 +1572,6 @@ int _abcdk_mp4_read_sample_video(int fd, abcdk_tree_t *node)
 
     /* 如果后面还有跟着的子项，则继续解析。 */
     atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 78, dsize - 78, NULL);
-    if (atom->entries)
-    {
-        sub_node = abcdk_tree_child(atom->entries, 1);
-        while (sub_node)
-        {
-            chk = abcdk_mp4_read_content(fd, sub_node);
-            if (chk != 0)
-                goto final_error;
-
-            sub_node = abcdk_tree_sibling(sub_node, 0);
-        }
-    }
 
     return 0;
 
@@ -1680,16 +1658,6 @@ int _abcdk_mp4_read_sample_sound(int fd, abcdk_tree_t *node)
     {
         /* 如果后面还有跟着的子项，则继续解析。 */
         atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 28, dsize - 28, NULL);
-    }
-
-    sub_node = abcdk_tree_child(atom->entries,1);
-    while(sub_node)
-    {
-        chk = abcdk_mp4_read_content(fd,sub_node);
-        if(chk!=0)
-            goto final_error;
-
-        sub_node = abcdk_tree_sibling(sub_node,0);
     }
 
     return 0;
@@ -1813,6 +1781,10 @@ int abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
         chk = read_content(fd, node);
     else 
         chk = -2;
+    
+    /*递归子项。*/
+    if(atom->entries)
+        abcdk_mp4_read_content2(fd,atom->entries);
 
     return chk;
 }

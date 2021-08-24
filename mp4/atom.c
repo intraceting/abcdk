@@ -177,10 +177,14 @@ int _abcdk_mp4_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
     ctx = (abcdk_mp4_dump_ctx_t *)opaque;
 
-    abcdk_tree_fprintf(ctx->fd, depth, node, "[%c%c%c%c] size=%lu offset=%lu\n",
+    abcdk_tree_fprintf(ctx->fd, depth, node, "[%c%c%c%c] size=%lu offset=%lu",
                        atom->type.u8[0], atom->type.u8[1], atom->type.u8[2], atom->type.u8[3],
                        atom->size, atom->off_head);
 
+    if(atom->entries)
+        fprintf(ctx->fd," entries");
+
+    fprintf(ctx->fd,"\n");
 
     return 1;
 }
