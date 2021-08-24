@@ -51,9 +51,17 @@ abcdk_tree_t *abcdk_mp4_read_probe2(int fd, uint64_t offset, uint64_t size, uint
 /**
  * 读取内容数据。
  * 
+ * @return 0 成功，-1 失败(出错)，-2 失败(未实现)。
+*/
+int abcdk_mp4_read_content(int fd, abcdk_tree_t *node);
+
+
+/**
+ * 读取内容数据(树)。
+ * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_mp4_read_content(int fd, abcdk_mp4_atom_t *atom);
+int abcdk_mp4_read_content2(int fd, abcdk_tree_t *root);
 
 __END_DECLS
 

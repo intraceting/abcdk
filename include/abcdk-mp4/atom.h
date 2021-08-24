@@ -189,6 +189,7 @@ typedef union _abcdk_mp4_tag
 #define ABCDK_MP4_ATOM_TYPE_IPMC ABCDK_MP4_ATOM_MKTAG('i', 'p', 'm', 'c')
 #define ABCDK_MP4_ATOM_TYPE_GMHD ABCDK_MP4_ATOM_MKTAG('g', 'm', 'h', 'd')
 #define ABCDK_MP4_ATOM_TYPE_GLBL ABCDK_MP4_ATOM_MKTAG('g', 'l', 'b', 'l')
+#define ABCDK_MP4_ATOM_TYPE_PRIV ABCDK_MP4_ATOM_MKTAG('p', 'r', 'i', 'v')
 
 /** MP4 atom.*/
 typedef struct _abcdk_mp4_atom
@@ -199,10 +200,10 @@ typedef struct _abcdk_mp4_atom
     /** 类型。*/
     abcdk_mp4_tag_t type;
 
-    /** 头部偏移量(字节)。*/
+    /** 头部偏移量(字节，以0为基值)。*/
     uint64_t off_head;
 
-    /** 内容偏移量(字节)。
+    /** 内容偏移量(字节，以0为基值)。
     */
     uint64_t off_cont;
 
@@ -212,6 +213,11 @@ typedef struct _abcdk_mp4_atom
      * @note 详细结构见各类型定义。
     */
     abcdk_allocator_t *cont;
+
+    /**
+     * 子项。
+    */
+    abcdk_tree_t *entries;
 
 } abcdk_mp4_atom_t;
 
@@ -321,15 +327,6 @@ typedef struct _abcdk_mp4_atom_mvhd
     uint32_t nexttrackid;
 
 }abcdk_mp4_atom_mvhd_t;
-
-
-/** MP4 udta atom.*/
-typedef struct _abcdk_mp4_atom_udta
-{
-    /** 子项。*/
-    abcdk_tree_t *entries;
-
-}abcdk_mp4_atom_udta_t;
 
 
 /** MP4 tkhd atom.*/
@@ -465,6 +462,7 @@ typedef struct _abcdk_mp4_atom_hdlr
 
     /** 名称。*/
     abcdk_allocator_t *name;
+
 }abcdk_mp4_atom_hdlr_t;
 
 
@@ -504,9 +502,6 @@ typedef struct _abcdk_mp4_atom_dref
     /** 子项数量*/
     uint32_t numbers;
 
-    /** 子项。*/
-    abcdk_tree_t *entries;
-
 }abcdk_mp4_atom_dref_t;
 
 /** MP4 stsd atom.*/
@@ -520,9 +515,6 @@ typedef struct _abcdk_mp4_atom_stsd
 
     /** 子项数量*/
     uint32_t numbers;
-
-    /** 子项。*/
-    abcdk_tree_t *entries;
 
 }abcdk_mp4_atom_stsd_t;
 
@@ -593,13 +585,84 @@ typedef struct _abcdk_mp4_atom_sample_desc
 
         struct
         {
+            /** 版本。*/
+            uint16_t version;
+
+            /** */
+            uint16_t revision;
+
+            /** 预留。*/
+            uint32_t reserved1;
+
+            /** 声道数量。*/
+            uint16_t channels; 
+
+            /** 采样大小。*/
+            uint16_t sample_size; 
+
+            /** 压缩ID。*/
+            uint16_t compression_id;
+
+            /**  包大小。*/
+            uint16_t packet_size;   
+
+            /** 采样速率(以整数形式存储的定点数)。
+             * 
+             * 高16位：整数。
+             * 低16位：小数。 
+            */
+            uint32_t sample_rate;
+
+            /** V1 描述信息。*/
+            struct
+            {
+                /** 每个包含有几个采样。*/
+                uint32_t samples_per_packet;
+
+                /** 每个包字节数。*/
+                uint32_t bytes_per_Packet;
+
+                /** 每个帧字节数。*/
+                uint32_t bytes_per_frame;
+
+                /** 每个采样字节数。*/
+                uint32_t bytes_per_sample;
+            } v1;
+
+            /** V2 描述信息。*/
+            struct
+            {
+                /** V2结构大小(包括所有字段)。*/
+                uint32_t struct_size;
+
+                /** 速率(64bits)(浮点)。*/
+                double sample_rate;
+
+                /** 声道数量。*/
+                uint32_t channels;
+
+                /** 声道数量。*/
+                uint32_t reserved;
+
+                /** 每个声道多少bit。*/
+                uint32_t bits_per_channel;
+
+                /** 标志*/
+                uint32_t format_specific_flags;
+
+                /** 每个包多少字节。*/
+                uint32_t bytes_per_audio_packet;
+
+                /** */
+                uint32_t lpcm_frames_per_audio_packet;
+
+                /** 扩展信息。*/
+                abcdk_allocator_t *extension;
+            } v2;
 
         } sound;
 
     } detail;
-
-    /** 子项。*/
-    abcdk_tree_t *entries;
 
 }abcdk_mp4_atom_sample_desc_t;
 
@@ -753,14 +816,6 @@ typedef struct _abcdk_mp4_atom_stss
     abcdk_allocator_t *tables;
 
 }abcdk_mp4_atom_stss_t;
-
-/** MP4 gmhd atom.*/
-typedef struct _abcdk_mp4_atom_gmhd
-{
-    /** 子项。*/
-    abcdk_tree_t *entries;
-    
-}abcdk_mp4_atom_gmhd_t;
 
 /** MP4 smhd atom.*/
 typedef struct _abcdk_mp4_atom_smhd
@@ -1060,9 +1115,12 @@ abcdk_tree_t *abcdk_mp4_alloc();
 /** 
  * 查找atom。
  * 
+ * @param index 索引(以1为基值)。
+ * @param recursive 0 仅查找根和一级子节点，!0 递归查找所有子节点。
+ * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root,abcdk_mp4_tag_t *type);
+abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root,abcdk_mp4_tag_t *type,size_t index,int recursive);
 
 /** 
  * 查找atom。
@@ -1071,8 +1129,13 @@ abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root,abcdk_mp4_tag_t *type);
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type);
+abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type,size_t index,int recursive);
 
+/**
+ * 打印结构。
+ * 
+*/
+void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root);
 
 __END_DECLS
 
