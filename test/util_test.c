@@ -1213,7 +1213,7 @@ void test_mp4(abcdk_tree_t *args)
     if(fd<0)
         return;
 
-#if 0
+#if 1
 
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
 
