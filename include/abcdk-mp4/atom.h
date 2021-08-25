@@ -214,11 +214,6 @@ typedef struct _abcdk_mp4_atom
     */
     abcdk_allocator_t *cont;
 
-    /**
-     * 子项。
-    */
-    abcdk_tree_t *entries;
-
 } abcdk_mp4_atom_t;
 
 

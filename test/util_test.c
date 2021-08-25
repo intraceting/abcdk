@@ -1245,9 +1245,6 @@ void show_mp4_info(int fd)
     abcdk_tree_t *ftyp = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_FTYP,1,0);
     abcdk_tree_t *moov = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_MOOV,1,0);
   
-  //  abcdk_mp4_read_content2(fd,ftyp);
-    abcdk_mp4_read_content2(fd,moov);
-
     abcdk_mp4_dump(stdout,root);
 
     abcdk_tree_t *trak1 = abcdk_mp4_find2(moov,ABCDK_MP4_ATOM_TYPE_TRAK,1,1);
@@ -1321,16 +1318,14 @@ void test_mp4(abcdk_tree_t *args)
     if(fd<0)
         return;
 
-#if 0
+#if 1
 
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
 
     abcdk_tree_t *ftyp = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_FTYP,1,0);
     abcdk_tree_t *moov = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_MOOV,1,0);
   
-    abcdk_mp4_read_content2(fd,ftyp);
-    abcdk_mp4_read_content2(fd,moov);
-    
+     
     abcdk_tree_iterator_t it = {0,mp4_dump_cb,(void*)(int64_t)fd};
     abcdk_tree_scan(root,&it);
 

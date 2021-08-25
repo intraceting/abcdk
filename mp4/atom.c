@@ -73,7 +73,6 @@ void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
 final:
 
     abcdk_allocator_unref(&atom->cont);
-    abcdk_tree_free(&atom->entries);
 }
 
 abcdk_tree_t *abcdk_mp4_alloc()
@@ -180,9 +179,6 @@ int _abcdk_mp4_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     abcdk_tree_fprintf(ctx->fd, depth, node, "[%c%c%c%c] size=%lu offset=%lu",
                        atom->type.u8[0], atom->type.u8[1], atom->type.u8[2], atom->type.u8[3],
                        atom->size, atom->off_head);
-
-    if(atom->entries)
-        fprintf(ctx->fd," entries");
 
     fprintf(ctx->fd,"\n");
 

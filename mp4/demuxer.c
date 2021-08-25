@@ -84,129 +84,8 @@ int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
     return 0;
 }
 
-int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
-{
-    abcdk_mp4_atom_t *root_atom = NULL;
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *node = NULL;
-    int keep = 1;
-    int chk;
+int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop);
 
-    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    while (keep)
-    {
-        node = abcdk_mp4_read_header(fd);
-        if (!node)
-            goto final_error;
-
-        abcdk_tree_insert2(root, node, 0);
-
-        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-        switch (atom->type.u32)
-        {
-        case ABCDK_MP4_ATOM_TYPE_MOOV:
-        case ABCDK_MP4_ATOM_TYPE_TRAK:
-        case ABCDK_MP4_ATOM_TYPE_EDTS:
-        case ABCDK_MP4_ATOM_TYPE_MDIA:
-        case ABCDK_MP4_ATOM_TYPE_MINF:
-        case ABCDK_MP4_ATOM_TYPE_DINF:
-        case ABCDK_MP4_ATOM_TYPE_STBL:
-        case ABCDK_MP4_ATOM_TYPE_MVEX:
-        case ABCDK_MP4_ATOM_TYPE_MOOF:
-        case ABCDK_MP4_ATOM_TYPE_TRAF:
-        case ABCDK_MP4_ATOM_TYPE_MFRA:
-        {
-            /*跳转文件指针到容器内部。*/
-            lseek(fd, atom->off_cont, SEEK_SET);
-
-            chk = _abcdk_mp4_read_probe(node, fd, stop);
-            if (chk != 0)
-                goto final_error;
-        }
-        break;
-
-        default:
-            break;
-        }
-
-        /*跳转文件指针到下一个atom。*/
-        lseek(fd, atom->off_head + atom->size, SEEK_SET);
-
-        /*遇到中断tag，则提前终止。*/
-        if(stop && stop->u32 == atom->type.u32)
-            break;
-
-        /*限制在容器内部解析。*/
-        keep = ((atom->off_head + atom->size < root_atom->off_head + root_atom->size) ? 1 : 0);
-    }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk_mp4_tag_t *stop)
-{
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_tree_t *root;
-    uint64_t fsize = 0;
-    uint64_t offcur = 0;
-    int chk;
-
-    assert(fd >= 0 && offset < -1UL && size >= 8);
-
-    chk = abcdk_mp4_size(fd, &fsize);
-    if (chk != 0)
-        return NULL;
-
-    /*最小的atom为8字节，文件不能比8还小。*/
-    if (fsize < 8)
-        ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
-
-    /*偏移量不能超过文件末尾。*/
-    if (offset >= fsize)
-        ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
-
-    /*偏移量到文件末尾之间的数据必须大于8字节。*/
-    if (fsize - offset < 8)
-        ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
-
-    /*修正最大值，不能超过文件末尾。*/
-    if (size > fsize - offset)
-        size = fsize - offset;
-
-    /*移动文件指针到指定位置。*/
-    if (lseek(fd, offset, SEEK_SET) == -1UL)
-        return NULL;
-
-    root = abcdk_tree_alloc3(sizeof(abcdk_mp4_atom_t));
-    if (!root)
-        return NULL;
-
-    atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
-
-    atom->size = size;
-    atom->type.u32 = ABCDK_MP4_ATOM_MKTAG('!', '@', '#', '$');
-    atom->off_head = atom->off_cont = offset;
-
-    _abcdk_mp4_read_probe(root, fd, stop);
-
-    return root;
-}
-
-abcdk_tree_t *abcdk_mp4_read_probe2(int fd, uint64_t offset, uint64_t size, uint32_t stop)
-{
-    abcdk_mp4_tag_t tag = {0};
-
-    assert(fd >= 0 && offset < -1UL && size >= 8);
-
-    tag.u32 = stop;
-
-    return abcdk_mp4_read_probe(fd, offset, size, stop ? &tag : NULL);
-}
 
 int _abcdk_mp4_read_ftyp(int fd, abcdk_tree_t *node)
 {
@@ -232,9 +111,6 @@ int _abcdk_mp4_read_ftyp(int fd, abcdk_tree_t *node)
 
     abcdk_mp4_read(fd, &cont->major.u32, 4);
     abcdk_mp4_read_u32(fd, &cont->minor);
-
-    /*兼容数据不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->compat);
 
     cont->compat = abcdk_allocator_alloc3(4, (dsize - 8) / 4);
     if (!cont->compat)
@@ -325,10 +201,10 @@ int _abcdk_mp4_read_udta(int fd, abcdk_tree_t *node)
 
     lseek(fd,atom->off_cont,SEEK_SET);
 
-    atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont, dsize,NULL);
-    if(!atom->entries)
+    chk = _abcdk_mp4_read_probe(node, fd, NULL);
+    if(chk == -1)
         return -1;
-    
+
     return 0;
 }
 
@@ -474,9 +350,6 @@ int _abcdk_mp4_read_hdlr(int fd, abcdk_tree_t *node)
     abcdk_mp4_read(fd, &cont->subtype.u32, 4);
     abcdk_mp4_read(fd, cont->reserved, sizeof(cont->reserved));
 
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->name);
-
     nsize = dsize - 1 - 3 - 4 - 4 - 4 * 3;
     if (nsize > 0)
     {
@@ -561,8 +434,8 @@ int _abcdk_mp4_read_dref(int fd, abcdk_tree_t *node)
 
     if (cont->numbers > 0)
     {
-        atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8, NULL);
-        if(!atom->entries)
+        chk = _abcdk_mp4_read_probe(node ,fd,NULL);
+        if(chk == -1)
             goto final_error;
     }
 
@@ -604,8 +477,8 @@ int _abcdk_mp4_read_stsd(int fd, abcdk_tree_t *node)
 
     if (cont->numbers > 0)
     {
-        atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 8, dsize - 8, NULL);
-        if (!atom->entries)
+        chk = _abcdk_mp4_read_probe(node ,fd,NULL);
+        if(chk == -1)
             goto final_error;
     }
 
@@ -643,9 +516,6 @@ int _abcdk_mp4_read_stts(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
-
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
 
     if (cont->numbers > 0)
     {
@@ -696,9 +566,6 @@ int _abcdk_mp4_read_ctts(int fd, abcdk_tree_t *node)
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
-
     if (cont->numbers > 0)
     {
         cont->tables = abcdk_allocator_alloc3(8, cont->numbers);
@@ -747,9 +614,6 @@ int _abcdk_mp4_read_stsc(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
-
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
 
     if (cont->numbers > 0)
     {
@@ -802,9 +666,6 @@ int _abcdk_mp4_read_stsz(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_u32(fd, &cont->samplesize);
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
-
     if (cont->numbers > 0)
     {
         cont->tables = abcdk_allocator_alloc3(4, cont->numbers);
@@ -852,9 +713,6 @@ int _abcdk_mp4_read_stco(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
-
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
 
     if (cont->numbers > 0)
     {
@@ -928,9 +786,6 @@ int _abcdk_mp4_read_stss(int fd, abcdk_tree_t *node)
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
 
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
-
     if (cont->numbers > 0)
     {
         cont->tables = abcdk_allocator_alloc3(4, cont->numbers);
@@ -955,7 +810,6 @@ final_error:
 
 int _abcdk_mp4_read_gmhd(int fd, abcdk_tree_t *node)
 {
-    abcdk_tree_t *sub_root = NULL;
     abcdk_mp4_atom_t *atom = NULL;
     size_t hsize = 0, dsize = 0;
     int chk;
@@ -965,11 +819,9 @@ int _abcdk_mp4_read_gmhd(int fd, abcdk_tree_t *node)
     hsize = atom->off_cont - atom->off_head;
     dsize = atom->size - hsize;
 
-    sub_root = abcdk_mp4_read_probe(fd, atom->off_cont, dsize, NULL);
-    if(!sub_root)
-        return -1;
-
-    abcdk_tree_insert2(node,sub_root,0);
+    lseek(fd, atom->off_cont, SEEK_SET);
+    
+    _abcdk_mp4_read_probe(node,fd,NULL);
 
     return 0;
 }
@@ -1035,9 +887,6 @@ int _abcdk_mp4_read_elst(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_fullheader(fd,&cont->version,&cont->flags);
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
-
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
 
     if (cont->numbers > 0)
     {
@@ -1326,9 +1175,6 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
             abcdk_mp4_read_u32(fd, &discard);
     }
 
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
-
     if (cont->numbers > 0)
     {
         cont->tables = abcdk_allocator_alloc3(16, cont->numbers);
@@ -1446,10 +1292,6 @@ int _abcdk_mp4_read_tfra(int fd, abcdk_tree_t *node)
     cont->length_size_sample_num = (fields)&3;
 
     abcdk_mp4_read_u32(fd, &cont->numbers);
-
-
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->tables);
 
     if (cont->numbers > 0)
     {
@@ -1571,7 +1413,9 @@ int _abcdk_mp4_read_sample_video(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_u16(fd, &cont->detail.video.reserved5);
 
     /* 如果后面还有跟着的子项，则继续解析。 */
-    atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 78, dsize - 78, NULL);
+    chk = _abcdk_mp4_read_probe(node, fd, NULL);
+    if (chk == -1)
+        goto final_error;
 
     return 0;
 
@@ -1624,9 +1468,6 @@ int _abcdk_mp4_read_sample_sound(int fd, abcdk_tree_t *node)
         abcdk_mp4_read_u32(fd, &cont->detail.sound.v1.bytes_per_Packet);
         abcdk_mp4_read_u32(fd, &cont->detail.sound.v1.bytes_per_frame);
         abcdk_mp4_read_u32(fd, &cont->detail.sound.v1.bytes_per_sample);
-
-        /* 如果后面还有跟着的子项，则继续解析。 */
-        atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 40, dsize - 40, NULL);
     }
     else if (cont->detail.sound.version == 2)
     {
@@ -1641,24 +1482,18 @@ int _abcdk_mp4_read_sample_sound(int fd, abcdk_tree_t *node)
 
         if (cont->detail.sound.v2.struct_size > 72)
         {
-            /*不能利旧，需要册除后重新创建。*/
-            abcdk_allocator_unref(&cont->detail.sound.v2.extension);
-
             cont->detail.sound.v2.extension = abcdk_allocator_alloc2(cont->detail.sound.v2.struct_size - 72);
             if (!cont->detail.sound.v2.extension)
                 goto final_error;
 
             abcdk_mp4_read(fd, cont->detail.sound.v2.extension->pptrs[0], cont->detail.sound.v2.extension->sizes[0]);
         }
+    }
 
-        /* 如果后面还有跟着的子项，则继续解析。 */
-        atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + cont->detail.sound.v2.struct_size, dsize - cont->detail.sound.v2.struct_size, NULL);
-    }
-    else 
-    {
-        /* 如果后面还有跟着的子项，则继续解析。 */
-        atom->entries = abcdk_mp4_read_probe(fd, atom->off_cont + 28, dsize - 28, NULL);
-    }
+    /* 如果后面还有跟着的子项，则继续解析。 */
+    chk = _abcdk_mp4_read_probe(node, fd, NULL);
+    if (chk == -1)
+        goto final_error;
 
     return 0;
 
@@ -1692,9 +1527,6 @@ int _abcdk_mp4_read_glbl(int fd, abcdk_tree_t *node)
 
     lseek(fd, atom->off_cont, SEEK_SET);
     
-    /*不能利旧，需要册除后重新创建。*/
-    abcdk_allocator_unref(&cont->extradata);
-
     if (dsize > 0)
     {
         cont->extradata = abcdk_allocator_alloc2(dsize);
@@ -1758,7 +1590,7 @@ static struct _abcdk_mp4_read_content_methods
    
 };
 
-int abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
+int _abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
 {
     int (*read_content)(int fd, abcdk_tree_t *node) = NULL;
     abcdk_mp4_atom_t *atom = NULL;
@@ -1781,53 +1613,141 @@ int abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
         chk = read_content(fd, node);
     else 
         chk = -2;
-    
-    /*递归子项。*/
-    if(atom->entries)
-        abcdk_mp4_read_content2(fd,atom->entries);
 
     return chk;
 }
 
-typedef struct _abcdk_mp4_read_content2_ctx
+int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
 {
-    int fd;
-    int chk;
-} abcdk_mp4_read_content2_ctx_t;
-
-int _abcdk_mp4_read_content2_cb(size_t depth, abcdk_tree_t *node, void *opaque)
-{
-    abcdk_mp4_read_content2_ctx_t *ctx;
+    abcdk_mp4_atom_t *root_atom = NULL;
     abcdk_mp4_atom_t *atom = NULL;
+    abcdk_tree_t *node = NULL;
+    size_t off_curt = -1UL;
+    int keep = 1;
+    int chk;
 
-    if (depth == -1)
-        return -1;
+    root_atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
 
-    ctx = (abcdk_mp4_read_content2_ctx_t *)opaque;
-    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    off_curt = lseek(fd, 0, SEEK_CUR);
 
-    /*自定义的类型，忽略。*/
-    if (atom->type.u32 == ABCDK_MP4_ATOM_MKTAG('!', '@', '#', '$'))
-        return 1;
+    /*限制在容器内部解析。*/
+    keep = ((off_curt < root_atom->off_head + root_atom->size) ? 1 : 0);
 
-    ctx->chk = abcdk_mp4_read_content(ctx->fd, node);
-    if (ctx->chk == -1)
-        return -1;
+    while (keep)
+    {
+        node = abcdk_mp4_read_header(fd);
+        if (!node)
+            goto final_error;
 
-    return 1;
+        abcdk_tree_insert2(root, node, 0);
+
+        atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+        switch (atom->type.u32)
+        {
+        case ABCDK_MP4_ATOM_TYPE_MOOV:
+        case ABCDK_MP4_ATOM_TYPE_TRAK:
+        case ABCDK_MP4_ATOM_TYPE_EDTS:
+        case ABCDK_MP4_ATOM_TYPE_MDIA:
+        case ABCDK_MP4_ATOM_TYPE_MINF:
+        case ABCDK_MP4_ATOM_TYPE_DINF:
+        case ABCDK_MP4_ATOM_TYPE_STBL:
+        case ABCDK_MP4_ATOM_TYPE_MVEX:
+        case ABCDK_MP4_ATOM_TYPE_MOOF:
+        case ABCDK_MP4_ATOM_TYPE_TRAF:
+        case ABCDK_MP4_ATOM_TYPE_MFRA:
+        {
+            /*跳转文件指针到容器内部。*/
+            lseek(fd, atom->off_cont, SEEK_SET);
+
+            chk = _abcdk_mp4_read_probe(node, fd, stop);
+            if (chk != 0)
+                goto final_error;
+        }
+        break;
+
+        default:
+        {
+            chk = _abcdk_mp4_read_content(fd, node);
+            if (chk == -1)
+                goto final_error;
+        }
+            break;
+        }
+
+        /*跳转文件指针到下一个atom。*/
+        lseek(fd, atom->off_head + atom->size, SEEK_SET);
+
+        /*遇到中断tag，则提前终止。*/
+        if(stop && stop->u32 == atom->type.u32)
+            break;
+
+        /*限制在容器内部解析。*/
+        keep = ((atom->off_head + atom->size < root_atom->off_head + root_atom->size) ? 1 : 0);
+    }
+
+    return 0;
+
+final_error:
+
+    return -1;
 }
 
-int abcdk_mp4_read_content2(int fd, abcdk_tree_t *root)
+abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk_mp4_tag_t *stop)
 {
-    abcdk_mp4_read_content2_ctx_t ctx;
+    abcdk_mp4_atom_t *atom = NULL;
+    abcdk_tree_t *root;
+    uint64_t fsize = 0;
+    uint64_t offcur = 0;
+    int chk;
 
-    assert(fd >= 0 && root != NULL);
+    assert(fd >= 0 && offset < -1UL && size >= 8);
 
-    ctx.fd = fd;
-    ctx.chk = -1;
+    chk = abcdk_mp4_size(fd, &fsize);
+    if (chk != 0)
+        return NULL;
 
-    abcdk_tree_iterator_t it = {0, _abcdk_mp4_read_content2_cb, &ctx};
-    abcdk_tree_scan(root, &it);
+    /*最小的atom为8字节，文件不能比8还小。*/
+    if (fsize < 8)
+        ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
 
-    return ctx.chk;
+    /*偏移量不能超过文件末尾。*/
+    if (offset >= fsize)
+        ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
+
+    /*偏移量到文件末尾之间的数据必须大于8字节。*/
+    if (fsize - offset < 8)
+        ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
+
+    /*修正最大值，不能超过文件末尾。*/
+    if (size > fsize - offset)
+        size = fsize - offset;
+
+    /*移动文件指针到指定位置。*/
+    if (lseek(fd, offset, SEEK_SET) == -1UL)
+        return NULL;
+
+    root = abcdk_tree_alloc3(sizeof(abcdk_mp4_atom_t));
+    if (!root)
+        return NULL;
+
+    atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
+
+    atom->size = size;
+    atom->type.u32 = ABCDK_MP4_ATOM_MKTAG('!', '@', '#', '$');
+    atom->off_head = atom->off_cont = offset;
+
+    _abcdk_mp4_read_probe(root, fd, stop);
+
+    return root;
+}
+
+abcdk_tree_t *abcdk_mp4_read_probe2(int fd, uint64_t offset, uint64_t size, uint32_t stop)
+{
+    abcdk_mp4_tag_t tag = {0};
+
+    assert(fd >= 0 && offset < -1UL && size >= 8);
+
+    tag.u32 = stop;
+
+    return abcdk_mp4_read_probe(fd, offset, size, stop ? &tag : NULL);
 }
