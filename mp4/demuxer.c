@@ -1399,7 +1399,16 @@ final_error:
 }
 
 int _abcdk_mp4_read_ignore(int fd, abcdk_tree_t *node)
-{
+{ 
+    abcdk_mp4_atom_t *atom = NULL;
+    size_t hsize = 0, dsize = 0;
+    int chk;
+
+    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+
+    hsize = atom->off_cont - atom->off_head;
+    dsize = atom->size - hsize;
+
     return 0;
 }
 
@@ -1445,6 +1454,7 @@ static struct _abcdk_mp4_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_DVH1, _abcdk_mp4_read_glbl},
     {ABCDK_MP4_ATOM_TYPE_PRIV, _abcdk_mp4_read_glbl},
     {ABCDK_MP4_ATOM_TYPE_ALIS, _abcdk_mp4_read_glbl},
+    {ABCDK_MP4_ATOM_TYPE_UUID, _abcdk_mp4_read_glbl},
     {ABCDK_MP4_ATOM_TYPE_FREE, _abcdk_mp4_read_ignore},
     {ABCDK_MP4_ATOM_TYPE_SKIP, _abcdk_mp4_read_ignore},
     {ABCDK_MP4_ATOM_TYPE_WIDE, _abcdk_mp4_read_ignore},
@@ -1596,7 +1606,7 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk
     atom = (abcdk_mp4_atom_t *)root->alloc->pptrs[0];
 
     atom->size = size;
-    atom->type.u32 = ABCDK_MP4_ATOM_MKTAG('!', '@', '#', '$');
+    atom->type.u32 = ABCDK_MP4_ATOM_MKTAG('.', '.', '.', '.');
     atom->off_head = atom->off_cont = offset;
 
     _abcdk_mp4_read_probe(root, fd, stop);
