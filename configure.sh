@@ -110,7 +110,7 @@ CheckHavePackage()
         elif [ "${PACKAGE}" == "openssl" ];then
             NAMES="libssl-dev"
         elif [ "${PACKAGE}" == "ffmpeg" ];then
-            NAMES="libswscale-dev libavutil-dev"
+            NAMES="libswscale-dev libavutil-dev libavcodec-dev libavformat-dev"
         elif [ "${PACKAGE}" == "freeimage" ];then
             NAMES="libfreeimage-dev"
         elif [ "${PACKAGE}" == "pkgconfig" ];then
@@ -350,8 +350,8 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-ffmpeg") -eq 1 ];then
     {
         HAVE_FFMPEG="Yes"
         DEPEND_FLAGS=" -DHAVE_FFMPEG ${DEPEND_FLAGS}"
-        DEPEND_FLAGS=" $(pkg-config --cflags libswscale libavutil) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(pkg-config --libs libswscale libavutil) ${DEPEND_LIBS}"
+        DEPEND_FLAGS=" $(pkg-config --cflags libswscale libavutil libavcodec libavformat) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(pkg-config --libs libswscale libavutil libavcodec libavformat) ${DEPEND_LIBS}"
     }
     else
     {
