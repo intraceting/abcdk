@@ -11,12 +11,18 @@
 */
 abcdk_tree_t *abcdk_mp4_read_header(int fd)
 {
+    uint64_t fsize = 0;
     uint32_t size32 = 0;
     uint64_t size64 = 0;
-    uint64_t fsize = 0;
-    abcdk_tree_t *node;
+    abcdk_tree_t *node = NULL;
     abcdk_mp4_atom_t *atom = NULL;
     int chk;
+
+    assert(fd >= 0);
+
+    chk = abcdk_mp4_size(fd, &fsize);
+    if (chk != 0)
+        goto final_error;
 
     node = abcdk_mp4_alloc();
     if (!node)
@@ -35,7 +41,7 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
     if (chk != 0)
         goto final_error;
 
-    /* 当size32==1时，需要读取扩展字段，确定长度。*/
+    /* 当size32==1时，需要读取扩展字段来确定长度。*/
     if (size32 == 1)
     {
         chk = abcdk_mp4_read_u64(fd, &size64);
@@ -47,10 +53,6 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
     }
     else if (size32 == 0)
     {
-        chk = abcdk_mp4_size(fd, &fsize);
-        if (chk != 0)
-            goto final_error;
-
         atom->size = fsize - atom->off_head;
         atom->off_cont = atom->off_head + 8;
     }
@@ -59,6 +61,10 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
         atom->size = size32;
         atom->off_cont = atom->off_head + 8;
     }
+
+    /*不能超过文件末尾。*/
+    if (atom->off_head + atom->size > fsize)
+        atom->size = fsize - atom->off_head;
 
     /* 恢复偏移量。*/
     lseek(fd, atom->off_head, SEEK_SET);
@@ -74,6 +80,8 @@ final_error:
 
 int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
 {
+    assert(fd >= 0 && ver != NULL && flags != NULL);
+
     uint32_t h = 0;
     if (abcdk_mp4_read_u32(fd, &h))
         return -1;
