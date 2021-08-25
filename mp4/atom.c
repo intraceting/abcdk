@@ -69,9 +69,13 @@ void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MP4A)
     {
         abcdk_mp4_atom_sample_desc_t * cont = (abcdk_mp4_atom_sample_desc_t *)&atom->cont;
-
         if (cont->detail.sound.version == 2)
             abcdk_allocator_unref(&cont->detail.sound.v2.extension);
+    }
+    else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STPP)
+    {
+        abcdk_mp4_atom_sample_desc_t * cont = (abcdk_mp4_atom_sample_desc_t *)&atom->cont;
+        abcdk_allocator_unref(&cont->detail.subtitle.extension);
     }
     else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MVHD) ||
              (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_UDTA) ||

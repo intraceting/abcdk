@@ -1329,7 +1329,6 @@ final_error:
 }
 
 
-
 int _abcdk_mp4_read_sample_subtitle(int fd, abcdk_tree_t *node)
 {   
     abcdk_mp4_atom_t *atom = NULL;
@@ -1348,17 +1347,17 @@ int _abcdk_mp4_read_sample_subtitle(int fd, abcdk_tree_t *node)
     abcdk_mp4_read(fd,cont->reserved,sizeof(cont->reserved));
     abcdk_mp4_read_u16(fd, &cont->data_refer_index);
 
-
-    /* 如果后面还有跟着的子项，则继续解析。 */
-    chk = _abcdk_mp4_read_probe(node, fd, NULL);
-    if (chk == -1)
+    cont->detail.subtitle.extension = abcdk_allocator_alloc2(dsize - 8);
+    if (!cont->detail.subtitle.extension)
         goto final_error;
+    
+    abcdk_mp4_read(fd, cont->detail.subtitle.extension->pptrs[0], cont->detail.subtitle.extension->sizes[0]);
 
     return 0;
 
 final_error:
 
-    abcdk_allocator_unref(&cont->detail.sound.v2.extension);
+    abcdk_allocator_unref(&cont->detail.subtitle.extension);
     memset(cont, 0, sizeof(*cont));
 
     return -1;

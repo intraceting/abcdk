@@ -634,7 +634,8 @@ typedef struct _abcdk_mp4_atom_sample_desc
 
         struct
         {
-
+            /** 扩展信息。*/
+            abcdk_allocator_t *extension;
         } subtitle;
 
     } detail;
