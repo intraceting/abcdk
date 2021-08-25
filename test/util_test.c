@@ -1120,23 +1120,39 @@ void show_mp4_info(int fd)
 {
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
    
-   
-    abcdk_tree_t *ftyp = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_FTYP,1,0);
-    abcdk_tree_t *moov = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_MOOV,1,0);
+    abcdk_tree_t *video_p = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_TRAK,1,1);
+    abcdk_tree_t *avc1_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_AVC1,1,1);
+    abcdk_tree_t *avcc_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_AVCC,1,1);
+
+    abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
   
-    abcdk_mp4_dump(stdout,root);
+    AVCodecContext *enc_ctx = abcdk_avcodec_alloc(abcdk_avcodec_find2(AV_CODEC_ID_H264,0));
 
-    abcdk_tree_t *trak1 = abcdk_mp4_find2(moov,ABCDK_MP4_ATOM_TYPE_TRAK,1,1);
-    abcdk_tree_t *trak2 = abcdk_mp4_find2(moov,ABCDK_MP4_ATOM_TYPE_TRAK,2,1);
+    enc_ctx->extradata_size = avcc->cont.glbl.extradata->sizes[0];
+    enc_ctx->extradata = av_mallocz(avcc->cont.glbl.extradata->sizes[0]);
+    memcpy(enc_ctx->extradata,avcc->cont.glbl.extradata->pptrs[0],avcc->cont.glbl.extradata->sizes[0]);
 
-    abcdk_tree_t *stco1 = abcdk_mp4_find2(trak1,ABCDK_MP4_ATOM_TYPE_STCO,1,1);
-    abcdk_tree_t *stco2 = abcdk_mp4_find2(trak2,ABCDK_MP4_ATOM_TYPE_STCO,1,1);
+    enc_ctx->width = avc1->cont.sample_desc.detail.video.width;
+    enc_ctx->height = avc1->cont.sample_desc.detail.video.height;
+    enc_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
-    _mp4_dump_stco(0, stco1, NULL);
-    _mp4_dump_stco(0, stco2, NULL);
+    assert(abcdk_avcodec_open(enc_ctx,NULL)==0);
 
-    //abcdk_tree_t *stco1 = abcdk_mp4_find2(trak1,ABCDK_MP4_ATOM_TYPE_STCO,1,1);
+    AVFrame *frame_p = av_frame_alloc();
+    AVPacket packet = {0};
+    av_init_packet(&packet);
 
+    packet.data = 0;
+    packet.size = 0;
+    packet.stream_index = 0;
+
+    assert(abcdk_avcodec_decode(enc_ctx,frame_p,&packet)>=0);
+    
+    av_frame_free(&frame_p);
+    av_packet_unref(&packet);
+
+    abcdk_avcodec_free(&enc_ctx);
     abcdk_tree_free(&root);
 }
 

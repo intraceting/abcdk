@@ -6,8 +6,7 @@
  */
 #include "abcdk-util/ffmpeg.h"
 
-
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)
+#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H)
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -243,6 +242,208 @@ struct SwsContext *abcdk_sws_alloc2(const abcdk_av_image_t *src, const abcdk_av_
                            flags);
 }
 
-#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H
+/*------------------------------------------------------------------------------------------------*/
+
+AVCodec *abcdk_avcodec_find(const char *name,int encode)
+{
+    AVCodec *ctx = NULL;
+
+    assert(name != NULL);
+    assert(*name != '\0');
+
+    avcodec_register_all();
+
+    ctx = (encode ? avcodec_find_encoder_by_name(name) : avcodec_find_decoder_by_name(name));
+
+    return ctx;
+}
+
+AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
+{
+    AVCodec *ctx = NULL;
+
+    assert(id > AV_CODEC_ID_NONE);
+
+    avcodec_register_all();
+
+    if (id == AV_CODEC_ID_HEVC)
+        ctx = abcdk_avcodec_find(encode?"hevc_nvenc":"hevc_cuvid", encode);
+    if (id == AV_CODEC_ID_H264)
+        ctx = abcdk_avcodec_find(encode?"h264_nvenc":"h264_cuvid", encode);
+    
+    if (!ctx)
+        ctx = (encode ? avcodec_find_encoder(id) : avcodec_find_decoder(id));
+    
+    return ctx;
+}
+
+void abcdk_avcodec_show_options(AVCodec *ctx)
+{
+    assert(ctx != NULL);
+
+    if (ctx->priv_class)
+        av_opt_show2((void *)&ctx->priv_class, NULL, -1, 0);
+    else
+        av_log(NULL, AV_LOG_INFO, "No options for `%s'.\n", (ctx->long_name ? ctx->long_name : ctx->name));
+}
+
+void abcdk_avcodec_free(AVCodecContext **ctx)
+{
+    assert(ctx != NULL);
+
+    if (*ctx)
+        avcodec_close(*ctx);
+
+    avcodec_free_context(ctx);
+}
+
+AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx)
+{
+    assert(ctx != NULL);
+
+    return avcodec_alloc_context3(ctx);
+}
+
+int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
+{
+    int chk = -1;
+
+    assert(ctx != NULL);
+    assert(ctx->codec != NULL);
+
+    /*如果是编码器，填写默认值。*/
+    if (av_codec_is_encoder(ctx->codec))
+    {
+        if (dict)
+        {
+            if (ctx->codec_id == AV_CODEC_ID_H265)
+                av_dict_set(dict, "x265-params", "bframes=0", 0);
+            else if (ctx->codec_id == AV_CODEC_ID_H264)
+                av_dict_set(dict, "x264opts", "bframes=0", 0);
+        }
+    }
+
+    chk = avcodec_open2(ctx, NULL, dict);
+
+    return chk;
+}
+
+int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
+{
+    int got = -1;
+
+    assert(ctx != NULL && out != NULL && in != NULL);
+
+    /*No output.*/
+    got = 0;
+    
+    if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
+    {
+        if (avcodec_decode_video2(ctx, out, &got, in) < 0)
+            got = -1;
+    }
+    else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
+    {
+        if (avcodec_decode_audio4(ctx, out, &got, in) < 0)
+            got = -1;
+    }
+    else
+    {
+        got = -2;
+    }
+
+    return got;
+}
+
+int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
+{
+    int got = -1;
+
+    assert(ctx != NULL && out != NULL && in != NULL);
+
+    /*No output.*/
+    got = 0;
+
+    if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
+    {
+        if (avcodec_encode_video2(ctx, out, in, &got) != 0)
+            got = -1;
+    }
+    else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
+    {
+        if (avcodec_encode_audio2(ctx, out, in, &got) != 0)
+            got = -1;
+    }
+    else
+    {
+        got = -2;
+    }
+
+    return got;
+}
+
+void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,int height,int gop_size,int oformat_flags)
+{
+    assert(ctx != NULL && fps > 0 && width > 0 && height > 0);
+    assert(ctx->codec != NULL);
+    assert(ctx->codec->pix_fmts[0] != AV_PIX_FMT_NONE);
+
+    /*-------------Copy from OpenCV----begin------------------*/
+
+    int frame_rate = (int)(fps + 0.5);
+    int frame_rate_base = 1;
+    while (fabs(((double)frame_rate / frame_rate_base) - fps) > 0.001)
+    {
+        frame_rate_base *= 10;
+        frame_rate = (int)(fps * frame_rate_base + 0.5);
+    }
+
+    ctx->time_base.den = frame_rate;
+    ctx->time_base.num = frame_rate_base;
+
+    /* adjust time base for supported framerates */
+    if (ctx->codec && ctx->codec->supported_framerates)
+    {
+        const AVRational *p = ctx->codec->supported_framerates;
+        AVRational req = {frame_rate, frame_rate_base};
+        const AVRational *best = NULL;
+        AVRational best_error = {INT_MAX, 1};
+        for (; p->den != 0; p++)
+        {
+            AVRational error = av_sub_q(req, *p);
+            if (error.num < 0)
+                error.num *= -1;
+            if (av_cmp_q(error, best_error) < 0)
+            {
+                best_error = error;
+                best = p;
+            }
+        }
+
+        if (best)
+        {
+            ctx->time_base.den = best->num;
+            ctx->time_base.num = best->den;
+        }
+    }
+    /*-------------Copy from OpenCV-----end---------------*/
+
+    ctx->framerate.den = ctx->time_base.num;
+    ctx->framerate.num = ctx->time_base.den;
+    ctx->width = width;
+    ctx->height = height;
+    ctx->gop_size = (gop_size > 0 ? gop_size : ctx->time_base.den);
+
+    if (ctx->codec_id == AV_CODEC_ID_H265 || ctx->codec_id == AV_CODEC_ID_H264 || ctx->codec_id == AV_CODEC_ID_MJPEG)
+        ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+    else
+        ctx->pix_fmt = ctx->codec->pix_fmts[0];
+   
+    if (oformat_flags & AVFMT_GLOBALHEADER)
+        ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+}
 
 /*------------------------------------------------------------------------------------------------*/
+
+
+#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H

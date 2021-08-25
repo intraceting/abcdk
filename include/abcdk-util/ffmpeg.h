@@ -25,8 +25,9 @@ __BEGIN_DECLS
 #include <libavutil/base64.h>
 #include <libavutil/common.h>
 #include <libavutil/log.h>
-
 #include <libswscale/swscale.h>
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 
 __END_DECLS
 
@@ -34,7 +35,7 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)
+#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H)
 
 /**
  * 简单的图像结构。
@@ -79,7 +80,7 @@ void abcdk_av_log2syslog();
  * 
  * @return > 0 成功(像素位宽)，<= 0 失败。
 */
-int abcdk_av_image_pixfmt_bits(enum AVPixelFormat  pixfmt,int padded);
+int abcdk_av_image_pixfmt_bits(enum AVPixelFormat pixfmt,int padded);
 
 /**
  * 获取像素格式名字。
@@ -188,9 +189,87 @@ struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFo
 */
 struct SwsContext *abcdk_sws_alloc2(const abcdk_av_image_t *src, const abcdk_av_image_t *dst, int flags);
 
-#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H
+/*------------------------------------------------------------------------------------------------*/
+
+/** 
+ * 根据名字查找编/解码器。
+ * 
+ * @param encode !0 查找编码器，0 查找解码器。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVCodec *abcdk_avcodec_find(const char *name,int encode);
+
+/**
+ * 根据ID查找编/解码器。
+ * 
+ * @note h264、h265会优先尝试硬件加速。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode);
+
+/**
+ * 打印编/解码器可选项。
+*/
+void abcdk_avcodec_show_options(AVCodec *ctx);
+
+/**
+ * 释放编/解码器对象。
+ * 
+ */
+void abcdk_avcodec_free(AVCodecContext **ctx);
+
+/** 
+ * 创建编/解码器对象。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx);
+
+/**
+ * 打开编/解码器对象。
+ * 
+ * @param dict 字典，!NULL(0) H264、HEVC(H265)编码器默认参数bframes=0。调用者需要主动释放字典指针。
+ *  
+ * @return  >=0 成功，1 失败。
+*/
+int abcdk_avcodec_open(AVCodecContext *ctx,AVDictionary **dict);
+
+/**
+ * 解码。
+ * 
+ * @param in 数据包，NULL(0) 处理延时解码。
+ * 
+ * @return > 0 成功(解码帧数量)，-1 失败，-2，未支持。
+ * 
+*/
+int abcdk_avcodec_decode(AVCodecContext *ctx,AVFrame *out,const AVPacket *in);
+
+/**
+ * 编码。
+ * 
+ * @return > 0 成功(编码帧数量)，-1 失败，-2，未支持。
+*/
+int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out,const AVFrame *in);
+
+/**
+ * 配置视频编码对象基本参数。
+ * 
+ * @param fps 帧速。
+ * @param width 宽(像素)。
+ * @param height 高(像素)。
+ * @param gop_size 关健帧间隔帧数，<= 0 使用帧速。
+ * @param oformat_flags 输出的流标志。
+ * 
+*/
+void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,int height,int gop_size,int oformat_flags);
 
 /*------------------------------------------------------------------------------------------------*/
+
+#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H
+
+
 
 __END_DECLS
 
