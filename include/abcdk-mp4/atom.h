@@ -191,31 +191,6 @@ typedef union _abcdk_mp4_tag
 #define ABCDK_MP4_ATOM_TYPE_GLBL ABCDK_MP4_ATOM_MKTAG('g', 'l', 'b', 'l')
 #define ABCDK_MP4_ATOM_TYPE_PRIV ABCDK_MP4_ATOM_MKTAG('p', 'r', 'i', 'v')
 
-/** MP4 atom.*/
-typedef struct _abcdk_mp4_atom
-{
-    /** 长度(字节，头部+内容)。*/
-    uint64_t size;
-
-    /** 类型。*/
-    abcdk_mp4_tag_t type;
-
-    /** 头部偏移量(字节，以0为基值)。*/
-    uint64_t off_head;
-
-    /** 内容偏移量(字节，以0为基值)。
-    */
-    uint64_t off_cont;
-
-    /**
-     * 数据体(内容)。
-     * 
-     * @note 详细结构见各类型定义。
-    */
-    abcdk_allocator_t *cont;
-
-} abcdk_mp4_atom_t;
-
 
 /*
  * file type/brands
@@ -656,6 +631,11 @@ typedef struct _abcdk_mp4_atom_sample_desc
             } v2;
 
         } sound;
+
+        struct
+        {
+
+        } subtitle;
 
     } detail;
 
@@ -1101,6 +1081,61 @@ typedef struct _abcdk_mp4_atom_tfra
     abcdk_allocator_t *tables;
 
 }abcdk_mp4_atom_tfra_t;
+
+
+/** MP4 atom.*/
+typedef struct _abcdk_mp4_atom
+{
+    /** 长度(字节，头部+内容)。*/
+    uint64_t size;
+
+    /** 类型。*/
+    abcdk_mp4_tag_t type;
+
+    /** 头部偏移量(字节，以0为基值)。*/
+    uint64_t off_head;
+
+    /** 内容偏移量(字节，以0为基值)。
+    */
+    uint64_t off_cont;
+
+    /**
+     * 数据体(内容)。
+     * 
+     * @note 详细结构见各类型定义。
+    */
+    union 
+    {
+        abcdk_mp4_atom_ftyp_t ftyp;
+        abcdk_mp4_atom_mvhd_t mvhd;
+        abcdk_mp4_atom_tkhd_t tkhd;
+        abcdk_mp4_atom_mdhd_t mdhd;
+        abcdk_mp4_atom_hdlr_t hdlr;
+        abcdk_mp4_atom_vmhd_t vmhd;
+        abcdk_mp4_atom_dref_t dref;
+        abcdk_mp4_atom_stsd_t stsd;
+        abcdk_mp4_atom_sample_desc_t sample_desc;
+        abcdk_mp4_atom_glbl_t glbl;
+        abcdk_mp4_atom_stts_t stts;
+        abcdk_mp4_atom_ctts_t ctts;
+        abcdk_mp4_atom_stsc_t stsc;
+        abcdk_mp4_atom_stsz_t stsz;
+        abcdk_mp4_atom_stco_t stco;
+        abcdk_mp4_atom_stss_t stss;
+        abcdk_mp4_atom_smhd_t smhd;
+        abcdk_mp4_atom_elst_t elst;
+        abcdk_mp4_atom_mehd_t mehd;
+        abcdk_mp4_atom_trex_t trex;
+        abcdk_mp4_atom_mfhd_t mfhd;
+        abcdk_mp4_atom_tfhd_t tfhd;
+        abcdk_mp4_atom_tfdt_t tfdt;
+        abcdk_mp4_atom_trun_t trun;
+        abcdk_mp4_atom_mfro_t mfro;
+        abcdk_mp4_atom_tfra_t tfra;
+    }cont;
+    
+} abcdk_mp4_atom_t;
+
 
 /**
  * 创建atom。
