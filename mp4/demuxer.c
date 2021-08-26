@@ -1152,53 +1152,9 @@ int _abcdk_mp4_read_tfra(int fd, abcdk_tree_t *node)
                 abcdk_mp4_read_u64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 8));
             }
 
-            switch (data->length_size_traf_num)
-            {
-            case 0:
-                abcdk_mp4_read_u8to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 16));
-                break;
-            case 1:
-                abcdk_mp4_read_u16to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 16));
-                break;
-            case 2:
-                abcdk_mp4_read_u24to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 16));
-                break;
-            case 3:
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 16));
-                break;
-            }
-
-            switch (data->length_size_trun_num)
-            {
-            case 0:
-                abcdk_mp4_read_u8to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 20));
-                break;
-            case 1:
-                abcdk_mp4_read_u16to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 20));
-                break;
-            case 2:
-                abcdk_mp4_read_u24to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 20));
-                break;
-            case 3:
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 20));
-                break;
-            }
-
-            switch (data->length_size_sample_num)
-            {
-            case 0:
-                abcdk_mp4_read_u8to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 24));
-                break;
-            case 1:
-                abcdk_mp4_read_u16to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 24));
-                break;
-            case 2:
-                abcdk_mp4_read_u24to32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 24));
-                break;
-            case 3:
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 24));
-                break;
-            }
+            abcdk_mp4_read_nbytes_u32(fd, data->length_size_traf_num, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 16));
+            abcdk_mp4_read_nbytes_u32(fd, data->length_size_trun_num, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 20));
+            abcdk_mp4_read_nbytes_u32(fd, data->length_size_sample_num, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 24));
         }
     }
 

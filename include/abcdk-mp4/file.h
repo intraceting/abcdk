@@ -83,6 +83,14 @@ int abcdk_mp4_read_u32to64(int fd, uint64_t *data);
 */
 int abcdk_mp4_read_u64(int fd, uint64_t *data);
 
+/**
+ * MP4读数据(N字节整型转4字节)。
+ * 
+ * @note 自动转换为本地字节序。
+ * 
+ * @param flag 标志。0 is 1byte, 1 is 2bytes,2 is 3bytes, 3 is 4bytes。
+*/
+int abcdk_mp4_read_nbytes_u32(int fd, int flag, uint32_t *data);
 
 __END_DECLS
 

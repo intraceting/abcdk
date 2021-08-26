@@ -1174,7 +1174,7 @@ void collect_mp4_video(int fd)
 
     abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
@@ -1185,46 +1185,55 @@ void collect_mp4_video(int fd)
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
-    printf("Sample_Size: %u\n",stsz->data.stsz.samplesize);
-    printf("Sample_Numbers: %u\n",stsz->data.stsz.numbers);
+    printf("Size: %u\n",stsz->data.stsz.samplesize);
+    printf("Numbers: %u\n",stsz->data.stsz.numbers);
     for (size_t i = 0; i < stsz->data.stsz.numbers; i++)
     {
-        printf("Sample_Size[%lu]: %u\n",i+1,ABCDK_PTR2U32(stsz->data.stsz.tables->pptrs[i],0));
+        printf("Size[%lu]: %u\n",i+1,ABCDK_PTR2U32(stsz->data.stsz.tables->pptrs[i],0));
     }
     printf("-----------------------------------stsz---------------------------------------\n");
 
     printf("-----------------------------------stss---------------------------------------\n");
-    printf("Sample_Numbers: %u\n",stss->data.stss.numbers);
+    printf("Numbers: %u\n",stss->data.stss.numbers);
     for (size_t i = 0; i < stss->data.stss.numbers; i++)
     {
-        printf("Sample_KeyFrame[%lu]: %u\n",i+1,ABCDK_PTR2U32(stss->data.stss.tables->pptrs[i],0));
+        printf("KeyFrame[%lu]: %u\n",i+1,ABCDK_PTR2U32(stss->data.stss.tables->pptrs[i],0));
     }
     printf("-----------------------------------stss---------------------------------------\n");
 
+    printf("-----------------------------------stts---------------------------------------\n");
+    printf("Numbers: %u\n",stts->data.stts.numbers);
+    for (size_t i = 0; i < stts->data.stts.numbers; i++)
+    {
+        printf("Count[%lu]: %u\n",i+1,ABCDK_PTR2U32(stts->data.stts.tables->pptrs[i],0));
+        printf("Duration[%lu]: %u\n",i+1,ABCDK_PTR2U32(stts->data.stts.tables->pptrs[i],4));
+    }
+    printf("-----------------------------------stts---------------------------------------\n");
+
      printf("-----------------------------------ctts---------------------------------------\n");
-    printf("Sample_Numbers: %u\n",ctts->data.ctts.numbers);
+    printf("Numbers: %u\n",ctts->data.ctts.numbers);
     for (size_t i = 0; i < ctts->data.ctts.numbers; i++)
     {
-        printf("Sample_Count[%lu]: %u\n",i+1,ABCDK_PTR2U32(ctts->data.ctts.tables->pptrs[i],0));
-        printf("Composition_Offset[%lu]: %u\n",i+1,ABCDK_PTR2U32(ctts->data.ctts.tables->pptrs[i],4));
+        printf("Count[%lu]: %u\n",i+1,ABCDK_PTR2U32(ctts->data.ctts.tables->pptrs[i],0));
+        printf("Offset[%lu]: %u\n",i+1,ABCDK_PTR2U32(ctts->data.ctts.tables->pptrs[i],4));
     }
     printf("-----------------------------------ctts---------------------------------------\n");
 
     printf("-----------------------------------stco---------------------------------------\n");
-    printf("Sample_Numbers: %u\n",stco->data.stco.numbers);
+    printf("Numbers: %u\n",stco->data.stco.numbers);
     for (size_t i = 0; i < stco->data.stco.numbers; i++)
     {
-        printf("Sample_Offset[%lu]: %lu\n",i+1,ABCDK_PTR2U64(stco->data.stco.tables->pptrs[i],0));
+        printf("Offset[%lu]: %lu\n",i+1,ABCDK_PTR2U64(stco->data.stco.tables->pptrs[i],0));
     }
     printf("-----------------------------------stco---------------------------------------\n");
 
     printf("-----------------------------------stsc---------------------------------------\n");
-    printf("Sample_Numbers: %u\n",stsc->data.stsc.numbers);
+    printf("Numbers: %u\n",stsc->data.stsc.numbers);
     for(size_t i= 0 ;i<stsc->data.stsc.numbers;i++)
     {
-        printf("Sample_First_Chunk: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],0));
-        printf("Sample_PerChunk: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],4));
-        printf("Sample_ID: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],8));
+        printf("First_Chunk: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],0));
+        printf("PerChunk: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],4));
+        printf("ID: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],8));
     }
     printf("-----------------------------------stsc---------------------------------------\n");
 

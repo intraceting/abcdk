@@ -112,3 +112,24 @@ int abcdk_mp4_read_u64(int fd, uint64_t *data)
 
     return 0;
 }
+
+int abcdk_mp4_read_nbytes_u32(int fd, int flag, uint32_t *data)
+{
+    switch (flag)
+    {
+    case 0:
+        return abcdk_mp4_read_u8to32(fd, data);
+        break;
+    case 1:
+        return abcdk_mp4_read_u16to32(fd, data);
+        break;
+    case 2:
+        return abcdk_mp4_read_u24to32(fd, data);
+        break;
+    case 3:
+        return abcdk_mp4_read_u32(fd, data);
+        break;
+    }
+
+    return -1;
+}
