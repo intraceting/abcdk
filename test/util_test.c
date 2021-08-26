@@ -547,6 +547,8 @@ void test_fuse(abcdk_tree_t *args)
 #endif //_FUSE_H_
 }
 
+#if 0
+
 int _mp4_read(abcdk_buffer_t *buf, void *data, size_t size)
 {
     ssize_t r = abcdk_buffer_read(buf, data, size);
@@ -1116,6 +1118,8 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
+#endif 
+
 void show_mp4_info(int fd)
 {
     abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
@@ -1175,7 +1179,7 @@ void collect_mp4_video(int fd)
     abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
@@ -1189,7 +1193,7 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",stsz->data.stsz.numbers);
     for (size_t i = 0; i < stsz->data.stsz.numbers; i++)
     {
-        printf("Size[%lu]: %u\n",i+1,ABCDK_PTR2U32(stsz->data.stsz.tables->pptrs[i],0));
+        printf("Size[%lu]: %u\n",i+1,stsz->data.stsz.tables[i].size);
     }
     printf("-----------------------------------stsz---------------------------------------\n");
 
@@ -1197,7 +1201,7 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",stss->data.stss.numbers);
     for (size_t i = 0; i < stss->data.stss.numbers; i++)
     {
-        printf("KeyFrame[%lu]: %u\n",i+1,ABCDK_PTR2U32(stss->data.stss.tables->pptrs[i],0));
+        printf("KeyFrame[%lu]: %u\n",i+1,stss->data.stss.tables[i].sync);
     }
     printf("-----------------------------------stss---------------------------------------\n");
 
@@ -1205,8 +1209,8 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",stts->data.stts.numbers);
     for (size_t i = 0; i < stts->data.stts.numbers; i++)
     {
-        printf("Count[%lu]: %u\n",i+1,ABCDK_PTR2U32(stts->data.stts.tables->pptrs[i],0));
-        printf("Duration[%lu]: %u\n",i+1,ABCDK_PTR2U32(stts->data.stts.tables->pptrs[i],4));
+        printf("Count[%lu]: %u\n",i+1,stts->data.stts.tables[i].sample_count);
+        printf("Duration[%lu]: %u\n",i+1,stts->data.stts.tables[i].sample_duration);
     }
     printf("-----------------------------------stts---------------------------------------\n");
 
@@ -1214,8 +1218,8 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",ctts->data.ctts.numbers);
     for (size_t i = 0; i < ctts->data.ctts.numbers; i++)
     {
-        printf("Count[%lu]: %u\n",i+1,ABCDK_PTR2U32(ctts->data.ctts.tables->pptrs[i],0));
-        printf("Offset[%lu]: %u\n",i+1,ABCDK_PTR2U32(ctts->data.ctts.tables->pptrs[i],4));
+        printf("Count[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].sample_count);
+        printf("Offset[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].composition_offset);
     }
     printf("-----------------------------------ctts---------------------------------------\n");
 
@@ -1223,7 +1227,7 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",stco->data.stco.numbers);
     for (size_t i = 0; i < stco->data.stco.numbers; i++)
     {
-        printf("Offset[%lu]: %lu\n",i+1,ABCDK_PTR2U64(stco->data.stco.tables->pptrs[i],0));
+        printf("Offset[%lu]: %lu\n",i+1,stco->data.stco.tables[i].offset);
     }
     printf("-----------------------------------stco---------------------------------------\n");
 
@@ -1231,9 +1235,9 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",stsc->data.stsc.numbers);
     for(size_t i= 0 ;i<stsc->data.stsc.numbers;i++)
     {
-        printf("First_Chunk: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],0));
-        printf("PerChunk: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],4));
-        printf("ID: %u\n",ABCDK_PTR2U32(stsc->data.stsc.tables->pptrs[i],8));
+        printf("First_Chunk: %u\n",stsc->data.stsc.tables[i].first_chunk);
+        printf("PerChunk: %u\n",stsc->data.stsc.tables[i].samples_perchunk);
+        printf("ID: %u\n",stsc->data.stsc.tables[i].sample_desc_id);
     }
     printf("-----------------------------------stsc---------------------------------------\n");
 
@@ -1315,7 +1319,7 @@ void test_mp4(abcdk_tree_t *args)
     abcdk_tree_free(&root);
 #else 
 
-    show_mp4_info(fd);
+  //  show_mp4_info(fd);
 
     collect_mp4_video(fd);
 

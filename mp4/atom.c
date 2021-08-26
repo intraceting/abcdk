@@ -6,6 +6,15 @@
  */
 #include "abcdk-mp4/atom.h"
 
+int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *chunk, uint32_t *offset, uint32_t *id)
+{
+    abcdk_mp4_atom_stsc_table_t *table = NULL;
+    uint32_t tell_cursor = 0;
+    
+    assert(sample > 0 && chunk != NULL && offset != NULL && id != NULL);
+
+}
+
 void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)alloc->pptrs[0];
@@ -26,48 +35,48 @@ void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STTS)
     {
         abcdk_mp4_atom_stts_t * data = (abcdk_mp4_atom_stts_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CTTS)
     {
         abcdk_mp4_atom_ctts_t * data = (abcdk_mp4_atom_ctts_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSC)
     {
         abcdk_mp4_atom_stsc_t * data = (abcdk_mp4_atom_stsc_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSZ)
     {
         abcdk_mp4_atom_stsz_t * data = (abcdk_mp4_atom_stsz_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STCO)||
             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CO64))
     {
         abcdk_mp4_atom_stco_t * data = (abcdk_mp4_atom_stco_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSS)
     {
         abcdk_mp4_atom_stss_t * data = (abcdk_mp4_atom_stss_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ELST)
     {
         abcdk_mp4_atom_elst_t * data = (abcdk_mp4_atom_elst_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TRUN)
     {
         abcdk_mp4_atom_trun_t * data = (abcdk_mp4_atom_trun_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFRA)
     {
         abcdk_mp4_atom_tfra_t * data = (abcdk_mp4_atom_tfra_t *)&atom->data;
-        abcdk_allocator_unref(&data->tables);
+        abcdk_heap_free(data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MP4A)
     {

@@ -650,6 +650,17 @@ typedef struct _abcdk_mp4_atom_glbl
     
 } abcdk_mp4_atom_glbl_t;
 
+/** MP4 stts atom table.*/
+typedef struct _abcdk_mp4_atom_stts_table
+{
+    /** sample数量。*/
+    uint32_t sample_count;
+
+    /** DTS时间差(帧与帧之间)。*/
+    uint32_t sample_duration;
+
+}abcdk_mp4_atom_stts_table_t;
+
 /** MP4 stts atom.*/
 typedef struct _abcdk_mp4_atom_stts
 {
@@ -662,16 +673,25 @@ typedef struct _abcdk_mp4_atom_stts
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表。
-     * 
-     * |Sample count| Sample duration| Field
-     * |4           | 4              | Bytes     
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_stts_table_t[numbers]*/
+    abcdk_mp4_atom_stts_table_t *tables;
 
 }abcdk_mp4_atom_stts_t;
 
+/** 
+ * MP4 ctts atom table.
+ * 
+ * 无，表示没有B帧。
+*/
+typedef struct _abcdk_mp4_atom_ctts_table
+{
+    /** sample数量。*/
+    uint32_t sample_count;
+
+    /** PTS时间差(帧与帧之间)。*/
+    uint32_t composition_offset;
+
+}abcdk_mp4_atom_ctts_table_t;
 
 /** MP4 ctts atom.*/
 typedef struct _abcdk_mp4_atom_ctts
@@ -685,15 +705,24 @@ typedef struct _abcdk_mp4_atom_ctts
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表。
-     * 
-     * |Sample count| composition Offset| Field
-     * |4           | 4                 | Bytes     
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_ctts_table_t[numbers]*/
+    abcdk_mp4_atom_ctts_table_t *tables;
 
 }abcdk_mp4_atom_ctts_t;
+
+/** MP4 stsc atom table.*/
+typedef struct _abcdk_mp4_atom_stsc_table
+{
+    /** 一组chunk中第一个chunk编号。*/
+    uint32_t first_chunk;
+
+    /** 每个chunk内包含的sample数量。*/
+    uint32_t samples_perchunk;
+
+    /** sample ID。*/
+    uint32_t sample_desc_id;
+
+}abcdk_mp4_atom_stsc_table_t;
 
 /** MP4 stsc atom.*/
 typedef struct _abcdk_mp4_atom_stsc
@@ -707,15 +736,18 @@ typedef struct _abcdk_mp4_atom_stsc
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表。
-     * 
-     * |First chunk| Samples per chunk|Sample description ID| Field
-     * |4          | 4                |4                    | Bytes     
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_stsc_table_t[numbers]*/
+    abcdk_mp4_atom_stsc_table_t *tables;
 
 }abcdk_mp4_atom_stsc_t;
+
+/** MP4 stsz atom table.*/
+typedef struct _abcdk_mp4_atom_stsz_table
+{
+    /** sample大小(字节)。*/
+    uint32_t size;
+
+}abcdk_mp4_atom_stsz_table_t;
 
 /** MP4 stsz atom.*/
 typedef struct _abcdk_mp4_atom_stsz
@@ -738,15 +770,18 @@ typedef struct _abcdk_mp4_atom_stsz
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表(包大小(字节))。
-     * 
-     * |Sample size| Field
-     * |4          | Bytes  
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_stsz_table_t[numbers]*/
+    abcdk_mp4_atom_stsz_table_t *tables;
 
 }abcdk_mp4_atom_stsz_t;
+
+/** MP4 stco or co64 atom table.*/
+typedef struct _abcdk_mp4_atom_stco_table
+{
+    /** chunk偏移量(以0为基值)。*/
+    uint64_t offset;
+
+}abcdk_mp4_atom_stco_table_t;
 
 /** MP4 stco or co64 atom.*/
 typedef struct _abcdk_mp4_atom_stco
@@ -760,16 +795,18 @@ typedef struct _abcdk_mp4_atom_stco
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表(包偏移量，以0为基值)。
-     * 
-     * |Offset | Field
-     * |8      | Bytes     
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_stco_table_t[numbers]*/
+    abcdk_mp4_atom_stco_table_t *tables;
 
-}abcdk_mp4_atom_stco_t,abcdk_mp4_atom_co64_t;
+}abcdk_mp4_atom_stco_t;
 
+/** MP4 stss atom table.*/
+typedef struct _abcdk_mp4_atom_stss_table
+{
+    /** 关健帧(sample)编号，以1为基值)。*/
+    uint32_t sync;
+
+}abcdk_mp4_atom_stss_table_t;
 
 /** MP4 stss atom.*/
 typedef struct _abcdk_mp4_atom_stss
@@ -783,13 +820,8 @@ typedef struct _abcdk_mp4_atom_stss
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表(关健帧的包ID，从1开始)。
-     * 
-     * |Sync sample | Field
-     * |4           | Bytes     
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_stss_table_t[numbers]*/
+    abcdk_mp4_atom_stss_table_t *tables;
 
 }abcdk_mp4_atom_stss_t;
 
@@ -815,6 +847,24 @@ typedef struct _abcdk_mp4_atom_smhd
     
 }abcdk_mp4_atom_smhd_t;
 
+/** MP4 elst atom table.*/
+typedef struct _abcdk_mp4_atom_elst_table
+{
+    /** 片段的时长。*/
+    uint32_t track_duration;
+
+    /** 片段的PTS。*/
+    uint32_t media_time;
+
+    /** 
+     * 片段的速率(以整数形式存储的定点数)。
+     * 
+     * 高16位：整数。
+     * 低16位：小数。 
+    */
+    uint32_t media_rate;
+
+}abcdk_mp4_atom_elst_table_t;
 
 /** MP4 elst atom.*/
 typedef struct _abcdk_mp4_atom_elst
@@ -828,13 +878,8 @@ typedef struct _abcdk_mp4_atom_elst
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表(关健帧的包ID，从1开始)。
-     * 
-     * |Track duration |Media time|Media rate| Field
-     * |4              |4         |4         | Bytes
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_elst_table_t[numbers]*/
+    abcdk_mp4_atom_elst_table_t *tables;
 
 }abcdk_mp4_atom_elst_t;
 
@@ -977,6 +1022,23 @@ typedef struct _abcdk_mp4_atom_tfdt
        ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT) & \
      0x00FF00)
 
+/** MP4 trun atom table.*/
+typedef struct _abcdk_mp4_atom_trun_table
+{
+    /** sample时长。*/
+    uint32_t duration;
+
+    /** sample大小(字节)。*/
+    uint32_t size;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** PTS时间差(帧与帧之间)。*/
+    uint32_t composition_offset;
+
+}abcdk_mp4_atom_trun_table_t;
+
 /** MP4 trun atom.*/
 typedef struct _abcdk_mp4_atom_trun
 {
@@ -1003,13 +1065,8 @@ typedef struct _abcdk_mp4_atom_trun
     /** 第一个采样标志(选项字段)。*/
     uint32_t first_sample_flags;
 
-    /** 
-     * 采样表。
-     * 
-     * |duration |size |flags |composition time offset | Field
-     * |4        |4    |4     |4                       | Bytes
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_trun_table_t[numbers]*/
+    abcdk_mp4_atom_trun_table_t *tables;
 
 }abcdk_mp4_atom_trun_t;
 
@@ -1027,6 +1084,25 @@ typedef struct _abcdk_mp4_atom_mfro
 
 }abcdk_mp4_atom_mfro_t;
 
+/** MP4 tfra atom table.*/
+typedef struct _abcdk_mp4_atom_tfra_table
+{
+    /** */
+    uint64_t time;
+
+    /** */
+    uint64_t moof_offset;
+
+    /** */
+    uint32_t traf_number;
+
+    /** */
+    uint32_t trun_number;
+
+    /** */
+    uint32_t sample_number;
+
+}abcdk_mp4_atom_tfra_table_t;
 
 /** MP4 tfra atom.*/
 typedef struct _abcdk_mp4_atom_tfra
@@ -1073,13 +1149,8 @@ typedef struct _abcdk_mp4_atom_tfra
     /** 采样数量*/
     uint32_t numbers;
 
-    /** 
-     * 采样表。
-     * 
-     * |time |moof offset |traf number |trun number |sample number | Field
-     * |8    |8           |4           |4           |4             | Bytes
-    */
-    abcdk_allocator_t *tables;
+    /** abcdk_mp4_atom_tfra_table_t[numbers]*/
+    abcdk_mp4_atom_tfra_table_t *tables;
 
 }abcdk_mp4_atom_tfra_t;
 
@@ -1152,6 +1223,17 @@ typedef struct _abcdk_mp4_atom
     
 } abcdk_mp4_atom_t;
 
+/**
+ * 查询数据包所属的chunk编号(在stco中的，以1为基值)，在chunk内部的偏移量(第几个，以0为基值)，和所属的ID。
+ * 
+ * @param sample 数据包编号(以1为基值)。
+ * @param chunk chunk编号的指针。
+ * @param offset 偏移量的指针。
+ * @param id ID的指针。
+ * 
+ * @return 0 成功，-1 失败(未找到)。
+*/
+int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *chunk,uint32_t *offset,uint32_t *id);
 
 /**
  * 创建atom。

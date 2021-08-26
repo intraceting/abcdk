@@ -464,14 +464,14 @@ int _abcdk_mp4_read_stts(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(8, data->numbers);
+        data->tables = (abcdk_mp4_atom_stts_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_stts_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 4));
+            abcdk_mp4_read_u32(fd, &data->tables[i].sample_count);
+            abcdk_mp4_read_u32(fd, &data->tables[i].sample_duration);
         }
     }
 
@@ -479,7 +479,7 @@ int _abcdk_mp4_read_stts(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -489,6 +489,7 @@ int _abcdk_mp4_read_ctts(int fd, abcdk_tree_t *node)
 {
     abcdk_mp4_atom_t *atom = NULL;
     abcdk_mp4_atom_ctts_t *data = NULL;
+    abcdk_mp4_atom_ctts_table_t *table = NULL;
     size_t hsize = 0, dsize = 0;
     int chk;
 
@@ -506,14 +507,14 @@ int _abcdk_mp4_read_ctts(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(8, data->numbers);
+        data->tables = (abcdk_mp4_atom_ctts_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_ctts_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 4));
+            abcdk_mp4_read_u32(fd, &data->tables[i].sample_count);
+            abcdk_mp4_read_u32(fd, &data->tables[i].composition_offset);
         }
     }
 
@@ -521,7 +522,7 @@ int _abcdk_mp4_read_ctts(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -548,15 +549,15 @@ int _abcdk_mp4_read_stsc(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(12, data->numbers);
+        data->tables = (abcdk_mp4_atom_stsc_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_stsc_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 4));
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 8));
+            abcdk_mp4_read_u32(fd, &data->tables[i].first_chunk);
+            abcdk_mp4_read_u32(fd, &data->tables[i].samples_perchunk);
+            abcdk_mp4_read_u32(fd, &data->tables[i].sample_desc_id);
         }
     }
 
@@ -564,7 +565,7 @@ int _abcdk_mp4_read_stsc(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -592,13 +593,13 @@ int _abcdk_mp4_read_stsz(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(4, data->numbers);
+        data->tables = (abcdk_mp4_atom_stsz_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_stsz_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
+            abcdk_mp4_read_u32(fd,&data->tables[i].size);
         }
     }
 
@@ -606,7 +607,7 @@ int _abcdk_mp4_read_stsz(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -633,32 +634,22 @@ int _abcdk_mp4_read_stco(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
+        data->tables = (abcdk_mp4_atom_stco_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_stco_table_t)*data->numbers);
+        if (!data->tables)
+            goto final_error;
+
         if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STCO)
         {
-            if (data->numbers > dsize / 4)
-                data->numbers = dsize / 4;
-
-            data->tables = abcdk_allocator_alloc3(8, data->numbers);
-            if (!data->tables)
-                goto final_error;
-
-            for (size_t i = 0; i < data->tables->numbers; i++)
+            for (size_t i = 0; i < data->numbers; i++)
             {
-                abcdk_mp4_read_u32to64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 0));
+                abcdk_mp4_read_u32to64(fd, &data->tables[i].offset);
             }
         }
         else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CO64)
         {
-            if (data->numbers > dsize / 8)
-                data->numbers = dsize / 8;
-
-            data->tables = abcdk_allocator_alloc3(8, data->numbers);
-            if (!data->tables)
-                goto final_error;
-
-            for (size_t i = 0; i < data->tables->numbers; i++)
+            for (size_t i = 0; i < data->numbers; i++)
             {
-                abcdk_mp4_read_u64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 0));
+                abcdk_mp4_read_u64(fd, &data->tables[i].offset);
             }
         }
         else
@@ -671,7 +662,7 @@ int _abcdk_mp4_read_stco(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -698,13 +689,13 @@ int _abcdk_mp4_read_stss(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(4, data->numbers);
+        data->tables = (abcdk_mp4_atom_stss_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_stss_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
+            abcdk_mp4_read_u32(fd, &data->tables[i].sync);
         }
     }
 
@@ -712,7 +703,7 @@ int _abcdk_mp4_read_stss(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -786,15 +777,15 @@ int _abcdk_mp4_read_elst(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(12, data->numbers);
+        data->tables = (abcdk_mp4_atom_elst_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_elst_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 4));
-            abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 8));
+            abcdk_mp4_read_u32(fd, &data->tables[i].track_duration);
+            abcdk_mp4_read_u32(fd, &data->tables[i].media_time);
+            abcdk_mp4_read_u32(fd, &data->tables[i].media_rate);
         }
     }
 
@@ -802,7 +793,7 @@ int _abcdk_mp4_read_elst(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1031,21 +1022,21 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(16, data->numbers);
+        data->tables = (abcdk_mp4_atom_trun_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_trun_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
-        for (size_t i = 0; i < data->tables->numbers; i++)
+        for (size_t i = 0; i < data->numbers; i++)
         {
             /* 读取已知采样表的字段。*/
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 0));
+                abcdk_mp4_read_u32(fd, &data->tables[i].duration);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_SIZE_PRESENT)
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 4));
+                abcdk_mp4_read_u32(fd, &data->tables[i].size);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_FLAGS_PRESENT)
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 8));
+                abcdk_mp4_read_u32(fd, &data->tables[i].flags);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT)
-                abcdk_mp4_read_u32(fd, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 12));
+                abcdk_mp4_read_u32(fd, &data->tables[i].composition_offset);
 
             /* 跳过未知的采样表的字段。*/
             for (uint32_t i = 0; i < 8; i++)
@@ -1067,7 +1058,7 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1135,7 +1126,7 @@ int _abcdk_mp4_read_tfra(int fd, abcdk_tree_t *node)
 
     if (data->numbers > 0)
     {
-        data->tables = abcdk_allocator_alloc3(28, data->numbers);
+        data->tables = (abcdk_mp4_atom_tfra_table_t*)abcdk_heap_alloc(sizeof(abcdk_mp4_atom_tfra_table_t)*data->numbers);
         if (!data->tables)
             goto final_error;
 
@@ -1143,18 +1134,18 @@ int _abcdk_mp4_read_tfra(int fd, abcdk_tree_t *node)
         {
             if (data->version == 0)
             {
-                abcdk_mp4_read_u32to64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 0));
-                abcdk_mp4_read_u32to64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 8));
+                abcdk_mp4_read_u32to64(fd, &data->tables[i].time);
+                abcdk_mp4_read_u32to64(fd, &data->tables[i].moof_offset);
             }
             else
             {
-                abcdk_mp4_read_u64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 0));
-                abcdk_mp4_read_u64(fd, ABCDK_PTR2U64PTR(data->tables->pptrs[i], 8));
+                abcdk_mp4_read_u64(fd, &data->tables[i].time);
+                abcdk_mp4_read_u64(fd, &data->tables[i].moof_offset);
             }
 
-            abcdk_mp4_read_nbytes_u32(fd, data->length_size_traf_num, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 16));
-            abcdk_mp4_read_nbytes_u32(fd, data->length_size_trun_num, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 20));
-            abcdk_mp4_read_nbytes_u32(fd, data->length_size_sample_num, ABCDK_PTR2U32PTR(data->tables->pptrs[i], 24));
+            abcdk_mp4_read_nbytes_u32(fd, data->length_size_traf_num, &data->tables[i].traf_number);
+            abcdk_mp4_read_nbytes_u32(fd, data->length_size_trun_num, &data->tables[i].trun_number);
+            abcdk_mp4_read_nbytes_u32(fd, data->length_size_sample_num, &data->tables[i].sample_number);
         }
     }
 
@@ -1162,7 +1153,7 @@ int _abcdk_mp4_read_tfra(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->tables);
+    abcdk_heap_free(data->tables);
     memset(data, 0, sizeof(*data));
 
     return -1;
