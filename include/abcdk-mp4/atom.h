@@ -647,7 +647,7 @@ typedef struct _abcdk_mp4_atom_glbl
 {
     /** 扩展数据(Global Header)。 */
     abcdk_allocator_t *extradata;
-
+    
 } abcdk_mp4_atom_glbl_t;
 
 /** MP4 stts atom.*/
@@ -764,7 +764,7 @@ typedef struct _abcdk_mp4_atom_stco
      * 采样表(包偏移量，以0为基值)。
      * 
      * |Offset | Field
-     * |4 or 8 | Bytes     
+     * |8      | Bytes     
     */
     abcdk_allocator_t *tables;
 
@@ -1083,11 +1083,19 @@ typedef struct _abcdk_mp4_atom_tfra
 
 }abcdk_mp4_atom_tfra_t;
 
+/** MP4 unknown atom.*/
+typedef struct _abcdk_mp4_atom_unknown
+{
+    /** 原始数据。 */
+    abcdk_allocator_t *rawbytes;
+
+} abcdk_mp4_atom_unknown_t;
+
 
 /** MP4 atom.*/
 typedef struct _abcdk_mp4_atom
 {
-    /** 长度(字节，头部+内容)。*/
+    /** 长度(字节，头部+数据)。*/
     uint64_t size;
 
     /** 类型。*/
@@ -1096,12 +1104,18 @@ typedef struct _abcdk_mp4_atom
     /** 头部偏移量(字节，以0为基值)。*/
     uint64_t off_head;
 
-    /** 内容偏移量(字节，以0为基值)。
+    /** 数据偏移量(字节，以0为基值)。*/
+    uint64_t off_data;
+
+    /** 
+     * 是否有数据。
+     * 
+     * 0 无(容器)，!0 有。
     */
-    uint64_t off_cont;
+    int have_data;
 
     /**
-     * 数据体(内容)。
+     * 数据。
      * 
      * @note 详细结构见各类型定义。
     */
@@ -1133,7 +1147,8 @@ typedef struct _abcdk_mp4_atom
         abcdk_mp4_atom_trun_t trun;
         abcdk_mp4_atom_mfro_t mfro;
         abcdk_mp4_atom_tfra_t tfra;
-    }cont;
+        abcdk_mp4_atom_unknown_t unknown;
+    }data;
     
 } abcdk_mp4_atom_t;
 

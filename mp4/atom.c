@@ -10,102 +10,105 @@ void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)alloc->pptrs[0];
 
+    if(!atom->have_data)
+        return;
+
     if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_FTYP)
     {
-        abcdk_mp4_atom_ftyp_t * cont = (abcdk_mp4_atom_ftyp_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->compat);
+        abcdk_mp4_atom_ftyp_t * data = (abcdk_mp4_atom_ftyp_t *)&atom->data;
+        abcdk_allocator_unref(&data->compat);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HDLR)
     {
-        abcdk_mp4_atom_hdlr_t * cont = (abcdk_mp4_atom_hdlr_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->name);
+        abcdk_mp4_atom_hdlr_t * data = (abcdk_mp4_atom_hdlr_t *)&atom->data;
+        abcdk_allocator_unref(&data->name);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STTS)
     {
-        abcdk_mp4_atom_stts_t * cont = (abcdk_mp4_atom_stts_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_stts_t * data = (abcdk_mp4_atom_stts_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CTTS)
     {
-        abcdk_mp4_atom_ctts_t * cont = (abcdk_mp4_atom_ctts_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_ctts_t * data = (abcdk_mp4_atom_ctts_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSC)
     {
-        abcdk_mp4_atom_stsc_t * cont = (abcdk_mp4_atom_stsc_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_stsc_t * data = (abcdk_mp4_atom_stsc_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSZ)
     {
-        abcdk_mp4_atom_stsz_t * cont = (abcdk_mp4_atom_stsz_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_stsz_t * data = (abcdk_mp4_atom_stsz_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STCO)||
             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_CO64))
     {
-        abcdk_mp4_atom_stco_t * cont = (abcdk_mp4_atom_stco_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_stco_t * data = (abcdk_mp4_atom_stco_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSS)
     {
-        abcdk_mp4_atom_stss_t * cont = (abcdk_mp4_atom_stss_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_stss_t * data = (abcdk_mp4_atom_stss_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ELST)
     {
-        abcdk_mp4_atom_elst_t * cont = (abcdk_mp4_atom_elst_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_elst_t * data = (abcdk_mp4_atom_elst_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TRUN)
     {
-        abcdk_mp4_atom_trun_t * cont = (abcdk_mp4_atom_trun_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_trun_t * data = (abcdk_mp4_atom_trun_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFRA)
     {
-        abcdk_mp4_atom_tfra_t * cont = (abcdk_mp4_atom_tfra_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->tables);
+        abcdk_mp4_atom_tfra_t * data = (abcdk_mp4_atom_tfra_t *)&atom->data;
+        abcdk_allocator_unref(&data->tables);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MP4A)
     {
-        abcdk_mp4_atom_sample_desc_t * cont = (abcdk_mp4_atom_sample_desc_t *)&atom->cont;
-        if (cont->detail.sound.version == 2)
-            abcdk_allocator_unref(&cont->detail.sound.v2.extension);
+        abcdk_mp4_atom_sample_desc_t * data = (abcdk_mp4_atom_sample_desc_t *)&atom->data;
+        if (data->detail.sound.version == 2)
+            abcdk_allocator_unref(&data->detail.sound.v2.extension);
     }
     else if(atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STPP)
     {
-        abcdk_mp4_atom_sample_desc_t * cont = (abcdk_mp4_atom_sample_desc_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->detail.subtitle.extension);
+        abcdk_mp4_atom_sample_desc_t * data = (abcdk_mp4_atom_sample_desc_t *)&atom->data;
+        abcdk_allocator_unref(&data->detail.subtitle.extension);
     }
-    else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MVHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_UDTA) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TKHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HDLR) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_VMHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_DREF) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_STSD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_SMHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MEHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TREX) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MFHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFHD) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFDT) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MFRO) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HEV1) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_FREE) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_WIDE) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_SKIP) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDAT) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVC1) )
+    else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_GLBL) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVCC) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HVCC) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_DVH1) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_PRIV) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ALIS) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_UUID))
     {
-        /*Nothing.*/
+        abcdk_mp4_atom_glbl_t *data = (abcdk_mp4_atom_glbl_t *)&atom->data;
+        abcdk_allocator_unref(&data->extradata);
+    }
+    else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TKHD) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVC1) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_VMHD) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFDT) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFHD) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_FREE) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_SKIP) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_WIDE) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDAT) )
+    {
+        /*忽略。*/
     }
     else
     {
-        abcdk_mp4_atom_glbl_t *cont = (abcdk_mp4_atom_glbl_t *)&atom->cont;
-        abcdk_allocator_unref(&cont->extradata);
+        abcdk_mp4_atom_unknown_t *data = (abcdk_mp4_atom_unknown_t *)&atom->data;
+        abcdk_allocator_unref(&data->rawbytes);
     }
+
 }
 
 abcdk_tree_t *abcdk_mp4_alloc()
@@ -208,7 +211,7 @@ int _abcdk_mp4_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
     ctx = (abcdk_mp4_dump_ctx_t *)opaque;
 
-    hsize = atom->off_cont - atom->off_head;
+    hsize = atom->off_data - atom->off_head;
     dsize = atom->size - hsize;
 
     abcdk_tree_fprintf(ctx->fd, depth, node, "[%c%c%c%c] size=%lu+%lu offset=%lu",
