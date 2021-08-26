@@ -1224,18 +1224,6 @@ typedef struct _abcdk_mp4_atom
 } abcdk_mp4_atom_t;
 
 /**
- * 查询数据包所属的chunk编号(在stco中的，以1为基值)，在chunk内部的偏移量(第几个，以0为基值)，和所属的ID。
- * 
- * @param sample 数据包编号(以1为基值)。
- * @param chunk chunk编号的指针。
- * @param offset 偏移量的指针。
- * @param id ID的指针。
- * 
- * @return 0 成功，-1 失败(未找到)。
-*/
-int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *chunk,uint32_t *offset,uint32_t *id);
-
-/**
  * 创建atom。
 */
 abcdk_tree_t *abcdk_mp4_alloc();
@@ -1264,6 +1252,18 @@ abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type,size_t index,int 
  * 
 */
 void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root);
+
+/**
+ * 查询数据包所属的chunk编号(在stco中的，以1为基值)，在chunk内部的偏移量(第几个，以0为基值)，和所属的ID。
+ * 
+ * @param sample 数据包编号(以1为基值)。
+ * @param chunk chunk编号的指针。
+ * @param offset 偏移量的指针。
+ * @param id ID的指针。
+ * 
+ * @return 0 成功，-1 失败(未找到)。
+*/
+int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *chunk,uint32_t *offset,uint32_t *id);
 
 __END_DECLS
 

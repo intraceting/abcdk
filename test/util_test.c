@@ -1185,7 +1185,7 @@ void collect_mp4_video(int fd)
     abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
 
-
+#if 0
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
@@ -1240,6 +1240,11 @@ void collect_mp4_video(int fd)
         printf("ID: %u\n",stsc->data.stsc.tables[i].sample_desc_id);
     }
     printf("-----------------------------------stsc---------------------------------------\n");
+#endif
+
+    uint32_t chunk=0, offset=0, id=0;
+    abcdk_mp4_stsc_tell(&stsc->data.stsc,333,&chunk,&offset,&id);
+
 
 
     abcdk_tree_free(&root);

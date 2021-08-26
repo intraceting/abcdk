@@ -6,14 +6,6 @@
  */
 #include "abcdk-mp4/atom.h"
 
-int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *chunk, uint32_t *offset, uint32_t *id)
-{
-    abcdk_mp4_atom_stsc_table_t *table = NULL;
-    uint32_t tell_cursor = 0;
-    
-    assert(sample > 0 && chunk != NULL && offset != NULL && id != NULL);
-
-}
 
 void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
 {
@@ -242,4 +234,17 @@ void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root)
 
     abcdk_tree_iterator_t it = {0, _abcdk_mp4_dump_cb, &ctx};
     abcdk_tree_scan(root, &it);
+}
+
+int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *chunk, uint32_t *offset, uint32_t *id)
+{
+    uint32_t chunk_cursor = 0;
+    uint32_t sample_offset = 0;
+
+    assert(sample > 0 && chunk != NULL && offset != NULL && id != NULL);
+
+    for (size_t i = 0; i < stsc->numbers; i++)
+    {
+       chunk_cursor += sample/stsc->tables[i].samples_perchunk;
+    }
 }
