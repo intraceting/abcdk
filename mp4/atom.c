@@ -238,13 +238,68 @@ void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root)
 
 int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *chunk, uint32_t *offset, uint32_t *id)
 {
-    uint32_t chunk_cursor = 0;
+    uint32_t sample_count = 0;
+    uint32_t chunk_offset = 0;
     uint32_t sample_offset = 0;
 
     assert(sample > 0 && chunk != NULL && offset != NULL && id != NULL);
 
     for (size_t i = 0; i < stsc->numbers; i++)
     {
-       chunk_cursor += sample/stsc->tables[i].samples_perchunk;
+        if (stsc->tables[i].samples_perchunk <= 0)
+            goto final_error;
+
+        if (i + 1 < stsc->numbers)
+        {
+            if(stsc->tables[i + 1].samples_perchunk<=0)
+                goto final_error;
+
+            sample_count = (stsc->tables[i + 1].first_chunk - stsc->tables[i].first_chunk) * stsc->tables[i].samples_perchunk;
+            if (sample_count < sample)
+            {
+                /* 当多行宽度不相等时，这里每次减去N*M个。*/
+                sample -= sample_count;
+            }
+            else
+            {
+                *id = stsc->tables[i].sample_desc_id;
+                if (sample % stsc->tables[i].samples_perchunk)
+                {
+                    *chunk = stsc->tables[i].first_chunk + (sample / stsc->tables[i].samples_perchunk); 
+                    *offset = sample % stsc->tables[i].samples_perchunk;
+                }
+                else
+                {
+                    *chunk = stsc->tables[i].first_chunk + (sample / stsc->tables[i].samples_perchunk) - 1;// 以1为基值。
+                    *offset = stsc->tables[i].samples_perchunk; 
+                }
+
+                return 0;
+            }
+        }
+        else
+        {
+            *id = stsc->tables[i].sample_desc_id;
+            if (sample % stsc->tables[i].samples_perchunk)
+            {
+                *chunk = stsc->tables[i].first_chunk + (sample / stsc->tables[i].samples_perchunk);
+                *offset = sample % stsc->tables[i].samples_perchunk;
+            }
+            else
+            {
+                *chunk = stsc->tables[i].first_chunk + (sample / stsc->tables[i].samples_perchunk) - 1;// 以1为基值。
+                *offset = stsc->tables[i].samples_perchunk;
+            }
+
+            return 0;
+        }
     }
+
+final_error:
+
+    *chunk = 0;
+    *offset = 0;
+    *id = 0;
+
+    return -1;
 }

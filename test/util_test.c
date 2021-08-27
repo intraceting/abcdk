@@ -1242,8 +1242,13 @@ void collect_mp4_video(int fd)
     printf("-----------------------------------stsc---------------------------------------\n");
 #endif
 
-    uint32_t chunk=0, offset=0, id=0;
-    abcdk_mp4_stsc_tell(&stsc->data.stsc,333,&chunk,&offset,&id);
+    for(size_t i = 1 ;i<=4356;i++)
+    {
+        uint32_t chunk=0, offset=0, id=0;
+        abcdk_mp4_stsc_tell(&stsc->data.stsc,i,&chunk,&offset,&id);
+
+        printf("[%lu]={chunk=%u,offset=%u,id=%u}\n",i,chunk,offset,id);
+    }
 
 
 

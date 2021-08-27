@@ -25,6 +25,7 @@ __BEGIN_DECLS
 #include <libavutil/base64.h>
 #include <libavutil/common.h>
 #include <libavutil/log.h>
+#include <libavutil/opt.h>
 #include <libswscale/swscale.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
