@@ -407,8 +407,8 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-libnm") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} libnm)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_NETWORKMANAGER="Yes"
-        DEPEND_FLAGS=" -DHAVE_NETWORKMANAGER ${DEPEND_FLAGS}"
+        HAVE_LIBNM="Yes"
+        DEPEND_FLAGS=" -DHAVE_LIBNM ${DEPEND_FLAGS}"
         DEPEND_FLAGS=" $(pkg-config --cflags libnm) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(pkg-config --libs libnm) ${DEPEND_LIBS}"
     }
@@ -474,7 +474,7 @@ echo "HAVE_OPENSSL=${HAVE_OPENSSL}"
 echo "HAVE_FFMPEG=${HAVE_FFMPEG}"
 echo "HAVE_FREEIMAGE=${HAVE_FREEIMAGE}"
 echo "HAVE_FUSE=${HAVE_FUSE}"
-echo "HAVE_NETWORKMANAGER=${HAVE_NETWORKMANAGER}"
+echo "HAVE_LIBNM=${HAVE_LIBNM}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
