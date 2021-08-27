@@ -1281,7 +1281,7 @@ void collect_mp4_video(int fd)
         abcdk_write(fd2,avcc->data.avcc.sps->pptrs[0],avcc->data.avcc.sps->sizes[0]);
         abcdk_write(fd2,&a.u32,4);
         abcdk_write(fd2,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0]);
-        memcpy(buf,&a.u32,4);
+        memcpy(buf,&a.u32,4);//替换长度
         abcdk_write(fd2,buf,size);
     }
 
