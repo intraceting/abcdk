@@ -642,13 +642,43 @@ typedef struct _abcdk_mp4_atom_sample_desc
 
 }abcdk_mp4_atom_sample_desc_t;
 
-/** MP4 glbl,avcc(h264),hvcc(h265),dvh1(h265) atom.*/
-typedef struct _abcdk_mp4_atom_glbl
+/** MP4 avcc(h264)atom.*/
+typedef struct _abcdk_mp4_atom_avcc
 {
+    /** */
+    uint8_t version;
+
+    /** */
+    uint8_t profile;
+
+    /** */
+    uint8_t level;
+
+    /** */
+    uint8_t profile_compat;
+
+    /** */
+    uint8_t nalu_length_size;
+
+    /** */
+    uint8_t chroma_format;
+
+    /** */
+    uint8_t bit_depth_luma_minus8;
+
+    /** */
+    uint8_t bit_depth_chroma_minus8;
+
+    /** */
+    abcdk_allocator_t *pps;
+
+    /** */
+    abcdk_allocator_t *sps;
+
     /** 扩展数据(Global Header)。 */
     abcdk_allocator_t *extradata;
-    
-} abcdk_mp4_atom_glbl_t;
+
+} abcdk_mp4_atom_avcc_t;
 
 /** MP4 stts atom table.*/
 typedef struct _abcdk_mp4_atom_stts_table
@@ -1201,7 +1231,7 @@ typedef struct _abcdk_mp4_atom
         abcdk_mp4_atom_dref_t dref;
         abcdk_mp4_atom_stsd_t stsd;
         abcdk_mp4_atom_sample_desc_t sample_desc;
-        abcdk_mp4_atom_glbl_t glbl;
+        abcdk_mp4_atom_avcc_t avcc;
         abcdk_mp4_atom_stts_t stts;
         abcdk_mp4_atom_ctts_t ctts;
         abcdk_mp4_atom_stsc_t stsc;
@@ -1249,21 +1279,33 @@ abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type,size_t index,int 
 
 /**
  * 打印结构。
- * 
 */
 void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root);
 
 /**
- * 查询数据包所属的chunk编号(在stco中的，以1为基值)，在chunk内部的偏移量(第几个，以1为基值)，和所属的ID。
+ * 查询数据包所属的chunk编号(在stco采样表，以1为基值)，在chunk内部的偏移量(第几个，以1为基值)，和所属的ID。
  * 
- * @param sample 数据包编号(以1为基值)。
- * @param chunk chunk编号的指针。
- * @param offset 偏移量的指针。
- * @param id ID的指针。
+ * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param chunk chunk编号的指针，返回前填写。
+ * @param offset 偏移量的指针，返回前填写。
+ * @param id ID的指针，返回前填写。
  * 
  * @return 0 成功，-1 失败(采样表有错误)。
 */
 int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *chunk,uint32_t *offset,uint32_t *id);
+
+/**
+ * 查询数据包所在chunk中的偏移量(在stco采样表，以0为基值)，和数据包的长度。
+ * 
+ * @param off_chunk 数据包所在chunk的内部编号(第几个，以1为基值)。
+ * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param offset 偏移量的指针，返回前填写。
+ * @param size 长度的指针，返回前填写。
+ * 
+ * @return 0 成功，-1 失败(超出采样表范围)。
+*/
+int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_t sample, uint32_t *offset, uint32_t *size);
+
 
 __END_DECLS
 

@@ -81,15 +81,11 @@ void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
         abcdk_mp4_atom_sample_desc_t * data = (abcdk_mp4_atom_sample_desc_t *)&atom->data;
         abcdk_allocator_unref(&data->detail.subtitle.extension);
     }
-    else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_GLBL) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVCC) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HVCC) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_DVH1) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_PRIV) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ALIS) ||
-             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_UUID))
+    else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVCC)
     {
-        abcdk_mp4_atom_glbl_t *data = (abcdk_mp4_atom_glbl_t *)&atom->data;
+        abcdk_mp4_atom_avcc_t *data = (abcdk_mp4_atom_avcc_t *)&atom->data;
+        abcdk_allocator_unref(&data->sps);
+        abcdk_allocator_unref(&data->pps);
         abcdk_allocator_unref(&data->extradata);
     }
     else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TKHD) ||
@@ -239,8 +235,6 @@ void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root)
 int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *chunk, uint32_t *offset, uint32_t *id)
 {
     uint32_t sample_count = 0;
-    uint32_t chunk_offset = 0;
-    uint32_t sample_offset = 0;
 
     assert(sample > 0 && chunk != NULL && offset != NULL && id != NULL);
 
@@ -297,9 +291,35 @@ int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *
 
 final_error:
 
-    *chunk = 0;
-    *offset = 0;
-    *id = 0;
+    *chunk = -1U;
+    *offset = -1U;
+    *id = -1U;
+
+    return -1;
+}
+
+int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_t sample, uint32_t *offset, uint32_t *size)
+{
+    assert(stsz != NULL && off_chunk > 0 && sample > 0 && offset != NULL && size != NULL);
+
+    assert(off_chunk <= sample);
+
+    if (stsz->numbers < sample)
+        goto final_error;
+
+    for (size_t i = (sample - off_chunk + 1); i <= stsz->numbers && i < sample; i++)
+    {
+        *offset += stsz->tables[i - 1].size;
+    }
+
+    *size = stsz->tables[sample - 1].size;
+
+    return 0;
+
+final_error:
+
+    *offset = -1U;
+    *size = 0;
 
     return -1;
 }

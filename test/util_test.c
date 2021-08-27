@@ -1133,9 +1133,9 @@ void show_mp4_info(int fd)
   
     AVCodecContext *enc_ctx = abcdk_avcodec_alloc(abcdk_avcodec_find2(AV_CODEC_ID_H264,0));
 
-    enc_ctx->extradata_size = avcc->data.glbl.extradata->sizes[0];
-    enc_ctx->extradata = av_mallocz(avcc->data.glbl.extradata->sizes[0]);
-    memcpy(enc_ctx->extradata,avcc->data.glbl.extradata->pptrs[0],avcc->data.glbl.extradata->sizes[0]);
+    enc_ctx->extradata_size = avcc->data.avcc.extradata->sizes[0];
+    enc_ctx->extradata = av_mallocz(avcc->data.avcc.extradata->sizes[0]);
+    memcpy(enc_ctx->extradata,avcc->data.avcc.extradata->pptrs[0],avcc->data.avcc.extradata->sizes[0]);
 
     enc_ctx->width = avc1->data.sample_desc.detail.video.width;
     enc_ctx->height = avc1->data.sample_desc.detail.video.height;
@@ -1184,6 +1184,14 @@ void collect_mp4_video(int fd)
     abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
+
+    char sps[200] = {0};
+    abcdk_bin2hex(sps,avcc->data.avcc.sps->pptrs[0],avcc->data.avcc.sps->sizes[0],0);
+    printf("SPS:[%s]\n",sps);
+
+    char pps[200] = {0};
+    abcdk_bin2hex(pps,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0],0);
+    printf("PPS:[%s]\n",pps);
 
 #if 0
 
@@ -1242,16 +1250,45 @@ void collect_mp4_video(int fd)
     printf("-----------------------------------stsc---------------------------------------\n");
 #endif
 
-    for(size_t i = 1 ;i<=4356;i++)
+    int fd2 = abcdk_open("/tmp/abcdk.h264",1,0,1);
+    ftruncate(fd2,0);
+
+    abcdk_write(fd2,avcc->data.avcc.extradata->pptrs[0],avcc->data.avcc.extradata->sizes[0]);
+
+    char *buf= abcdk_heap_alloc(1024*1024*16);
+
+    abcdk_mp4_tag_t a;
+    a.u32 = ABCDK_MP4_ATOM_MKTAG('\0','\0','\0','\1');
+
+
+    for(size_t i = 1 ;i<=stsz->data.stsz.numbers;i++)
     {
         uint32_t chunk=0, offset=0, id=0;
         abcdk_mp4_stsc_tell(&stsc->data.stsc,i,&chunk,&offset,&id);
 
         printf("[%lu]={chunk=%u,offset=%u,id=%u}\n",i,chunk,offset,id);
+
+        uint32_t offset2=0, size = 0;
+        abcdk_mp4_stsz_tell(&stsz->data.stsz,offset,i,&offset2,&size);
+
+        printf("[%lu]={offset2=%u,size=%u}\n",i,offset2,size);
+
+        lseek(fd,stco->data.stco.tables[chunk-1].offset + offset2,SEEK_SET);
+
+        abcdk_mp4_read(fd,buf,size);
+
+        abcdk_write(fd2,&a.u32,4);
+        abcdk_write(fd2,avcc->data.avcc.sps->pptrs[0],avcc->data.avcc.sps->sizes[0]);
+        abcdk_write(fd2,&a.u32,4);
+        abcdk_write(fd2,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0]);
+        memcpy(buf,&a.u32,4);
+        abcdk_write(fd2,buf,size);
     }
 
+    abcdk_closep(&fd2);
 
 
+    abcdk_heap_free(buf);
     abcdk_tree_free(&root);
 }
 
