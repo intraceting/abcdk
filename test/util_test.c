@@ -1130,7 +1130,7 @@ void show_mp4_info(int fd)
 
     abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
-  
+#ifdef HAVE_FFMPEG
     AVCodecContext *enc_ctx = abcdk_avcodec_alloc(abcdk_avcodec_find2(AV_CODEC_ID_H264,0));
 
     enc_ctx->extradata_size = avcc->data.avcc.extradata->sizes[0];
@@ -1157,6 +1157,9 @@ void show_mp4_info(int fd)
     av_packet_unref(&packet);
 
     abcdk_avcodec_free(&enc_ctx);
+
+#endif //HAVE_FFMPEG
+
     abcdk_tree_free(&root);
 }
 
