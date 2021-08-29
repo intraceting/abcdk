@@ -1165,7 +1165,7 @@ void show_mp4_info(int fd)
 
 void collect_mp4_video(int fd)
 {
-    abcdk_tree_t *root = abcdk_mp4_read_probe(fd,0,-1UL, NULL);
+    abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, ABCDK_MP4_ATOM_TYPE_MOOV);
 
     abcdk_mp4_dump(stdout,root);
 
@@ -1254,9 +1254,10 @@ void collect_mp4_video(int fd)
 #endif
 
     int fd2 = abcdk_open("/tmp/abcdk.h264",1,0,1);
-    ftruncate(fd2,0);
+   // ftruncate(fd2,0);
+   lseek(fd2,0,SEEK_END);
 
-    abcdk_write(fd2,avcc->data.avcc.extradata->pptrs[0],avcc->data.avcc.extradata->sizes[0]);
+  //  abcdk_write(fd2,avcc->data.avcc.extradata->pptrs[0],avcc->data.avcc.extradata->sizes[0]);
 
     char *buf= abcdk_heap_alloc(1024*1024*16);
 
