@@ -1196,7 +1196,7 @@ void collect_mp4_video(int fd)
     abcdk_bin2hex(pps,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0],0);
     printf("PPS:[%s]\n",pps);
 
-#if 1
+#if 0
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
