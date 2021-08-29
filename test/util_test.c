@@ -1182,7 +1182,7 @@ void collect_mp4_video(int fd)
     abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
+  //  abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
@@ -1196,7 +1196,7 @@ void collect_mp4_video(int fd)
     abcdk_bin2hex(pps,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0],0);
     printf("PPS:[%s]\n",pps);
 
-#if 0
+#if 1
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
@@ -1225,14 +1225,14 @@ void collect_mp4_video(int fd)
     }
     printf("-----------------------------------stts---------------------------------------\n");
 
-     printf("-----------------------------------ctts---------------------------------------\n");
-    printf("Numbers: %u\n",ctts->data.ctts.numbers);
-    for (size_t i = 0; i < ctts->data.ctts.numbers; i++)
-    {
-        printf("Count[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].sample_count);
-        printf("Offset[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].composition_offset);
-    }
-    printf("-----------------------------------ctts---------------------------------------\n");
+    //  printf("-----------------------------------ctts---------------------------------------\n");
+    // printf("Numbers: %u\n",ctts->data.ctts.numbers);
+    // for (size_t i = 0; i < ctts->data.ctts.numbers; i++)
+    // {
+    //     printf("Count[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].sample_count);
+    //     printf("Offset[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].composition_offset);
+    // }
+    // printf("-----------------------------------ctts---------------------------------------\n");
 
     printf("-----------------------------------stco---------------------------------------\n");
     printf("Numbers: %u\n",stco->data.stco.numbers);
@@ -1251,7 +1251,8 @@ void collect_mp4_video(int fd)
         printf("ID: %u\n",stsc->data.stsc.tables[i].sample_desc_id);
     }
     printf("-----------------------------------stsc---------------------------------------\n");
-#endif
+
+#else 
 
     int fd2 = abcdk_open("/tmp/abcdk.h264",1,0,1);
    // ftruncate(fd2,0);
@@ -1290,9 +1291,9 @@ void collect_mp4_video(int fd)
     }
 
     abcdk_closep(&fd2);
-
-
     abcdk_heap_free(buf);
+#endif
+    
     abcdk_tree_free(&root);
 }
 

@@ -89,6 +89,7 @@ void _abcdk_mp4_free_cb(abcdk_allocator_t *alloc, void *opaque)
         abcdk_allocator_unref(&data->extradata);
     }
     else if ((atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TKHD) ||
+             (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_MDHD) ||
              (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVC1) ||
              (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_VMHD) ||
              (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_TFDT) ||
