@@ -1213,21 +1213,43 @@ void collect_fmp4_video(int fd)
 
             printf("TrackID: %u\n", tfhd->data.tfhd.trackid);
             printf("Base_Data_Offset: %lu\n", tfhd->data.tfhd.base_data_offset);
-            printf("Sample_Desc_Index: %u\n", tfhd->data.tfhd.sample_desc_index);
+            printf("Sample_Desc_Index: %u\n", tfhd->data.tfhd.sample_desc_idx);
 
             printf("-----------------------------------tfhd---------------------------------------\n");
+
+            printf("-----------------------------------tfdt---------------------------------------\n");
+
+            printf("base_decode_time: %lu\n", tfdt->data.tfdt.base_decode_time);
+
+            printf("-----------------------------------tfdt---------------------------------------\n");
 
             printf("-----------------------------------trun---------------------------------------\n");
 
             printf("Data_Offset: %u\n", trun->data.trun.data_offset);
             printf("First_Sample_Flags: %08x\n", trun->data.trun.first_sample_flags);
             printf("Numbers: %u\n", trun->data.trun.numbers);
+
+            uint64_t duration_start = tfdt->data.tfdt.base_decode_time;
             for (size_t i = 0; i < trun->data.trun.numbers; i++)
             {
-                printf("Duration: %u\n", trun->data.trun.tables[i].duration);
-                printf("Size: %u\n", trun->data.trun.tables[i].size);
-                printf("Flags: %08x\n", trun->data.trun.tables[i].flags);
-                printf("Offset: %u\n", trun->data.trun.tables[i].composition_offset);
+                
+
+                uint64_t duration = tfhd->data.tfhd.sample_duration;
+                
+                duration = tfhd->data.tfhd.sample_duration;
+                if(trun->data.trun.flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
+                    duration =  trun->data.trun.tables[i].sample_duration;
+
+                duration_start += duration;
+                printf("Size: %u,PTS: %lu(%lu+%d), DUR: %lu\n", 
+                trun->data.trun.tables[i].sample_size,
+                duration_start+trun->data.trun.tables[i].composition_offset,
+                duration_start,
+                trun->data.trun.tables[i].composition_offset,
+                duration);
+                
+   
+
             }
 
             printf("-----------------------------------trun---------------------------------------\n");
@@ -1239,14 +1261,14 @@ void collect_fmp4_video(int fd)
 
                 for (size_t i = 0; i < trun->data.trun.numbers; i++)
                 {
-                    abcdk_mp4_read(fd, buf, trun->data.trun.tables[i].size);
+                    abcdk_mp4_read(fd, buf, trun->data.trun.tables[i].sample_size);
 
                     abcdk_write(fd2, &a.u32, 4);
                     abcdk_write(fd2, avcc->data.avcc.sps->pptrs[0], avcc->data.avcc.sps->sizes[0]);
                     abcdk_write(fd2, &a.u32, 4);
                     abcdk_write(fd2, avcc->data.avcc.pps->pptrs[0], avcc->data.avcc.pps->sizes[0]);
                     memcpy(buf, &a.u32, 4); //替换长度
-                    abcdk_write(fd2, buf, trun->data.trun.tables[i].size);
+                    abcdk_write(fd2, buf, trun->data.trun.tables[i].sample_size);
                 }
             }
 #endif
@@ -1299,7 +1321,7 @@ void collect_mp4_video(int fd)
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
-    printf("Size: %u\n",stsz->data.stsz.samplesize);
+    printf("Size: %u\n",stsz->data.stsz.sample_size);
     printf("Numbers: %u\n",stsz->data.stsz.numbers);
     for (size_t i = 0; i < stsz->data.stsz.numbers; i++)
     {

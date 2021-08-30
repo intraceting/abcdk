@@ -697,7 +697,7 @@ typedef struct _abcdk_mp4_atom_stts_table
     /** sample数量。*/
     uint32_t sample_count;
 
-    /** 时长差(帧与帧之间)。*/
+    /** sample时长差(帧与帧之间)。*/
     uint32_t sample_duration;
 
 }abcdk_mp4_atom_stts_table_t;
@@ -808,7 +808,7 @@ typedef struct _abcdk_mp4_atom_stsz
      * 
      * = 0 见采样表。
     */
-    uint32_t samplesize;
+    uint32_t sample_size;
 
     /** 采样数量*/
     uint32_t numbers;
@@ -897,14 +897,14 @@ typedef struct _abcdk_mp4_atom_smhd
 /** MP4 elst atom table.*/
 typedef struct _abcdk_mp4_atom_elst_table
 {
-    /** 片段的时长。*/
+    /** */
     uint32_t track_duration;
 
-    /** 片段的PTS。*/
+    /** */
     uint32_t media_time;
 
     /** 
-     * 片段的速率(以整数形式存储的定点数)。
+     * 速率(以整数形式存储的定点数)。
      * 
      * 高16位：整数。
      * 低16位：小数。 
@@ -944,7 +944,6 @@ typedef struct _abcdk_mp4_atom_mehd
 
 }abcdk_mp4_atom_mehd_t;
 
-
 /** MP4 trex atom.*/
 typedef struct _abcdk_mp4_atom_trex
 {
@@ -958,16 +957,16 @@ typedef struct _abcdk_mp4_atom_trex
     uint32_t trackid; 
 
     /** 默认的采样描述索引。*/
-    uint32_t default_sample_desc_index;
+    uint32_t sample_desc_idx;
 
-    /** 默认的时长(秒×时间的刻度值)。*/
-    uint64_t default_duration; 
+    /** 默认的sample时长。*/
+    uint64_t sample_duration;
 
-    /** 默认的采样大小。*/
-    uint32_t default_samplesize; 
+    /** 默认的sample大小(字节)。*/
+    uint32_t sample_size; 
 
-    /** 默认的采样标志。*/
-    uint32_t default_sampleflags; 
+    /** 默认的sample标志。*/
+    uint32_t sample_flags; 
 
 }abcdk_mp4_atom_trex_t;
 
@@ -1012,20 +1011,24 @@ typedef struct _abcdk_mp4_atom_tfhd
     /** TRACK ID.*/
     uint32_t trackid; 
 
-    /** 数据偏移量的基值。*/
+    /** 
+     * sample偏移量的基值。
+     * 
+     * @note 如果未设置，sample偏移量以moof起始为基值；否则，以此为基值。
+    */
     uint64_t base_data_offset;
 
-    /** 采样描述索引。*/
-    uint32_t sample_desc_index;
+    /** 默认的sample索引。*/
+    uint32_t sample_desc_idx;
 
-    /** 默认的时长(秒×时间的刻度值)。*/
-    uint64_t default_duration; 
+    /** 默认的sample时长(秒×时间的刻度值)。*/
+    uint64_t sample_duration; 
 
-    /** 默认的采样大小。*/
-    uint32_t default_samplesize; 
+    /** 默认的sample大小。*/
+    uint32_t sample_size; 
 
-    /** 默认的采样标志。*/
-    uint32_t default_sampleflags; 
+    /** 默认的标志。*/
+    uint32_t sample_flags; 
 
 }abcdk_mp4_atom_tfhd_t;
 
@@ -1039,7 +1042,7 @@ typedef struct _abcdk_mp4_atom_tfdt
     /** 标志。*/
     uint32_t flags;
 
-    /** 解码时间。*/
+    /** DTS时间基值。*/
     uint64_t base_decode_time;
 
 }abcdk_mp4_atom_tfdt_t;
@@ -1072,17 +1075,33 @@ typedef struct _abcdk_mp4_atom_tfdt
 /** MP4 trun atom table.*/
 typedef struct _abcdk_mp4_atom_trun_table
 {
-    /** sample时长。*/
-    uint32_t duration;
+    /** 
+     * sample时长。
+     *  
+     * @note 未设置时，使用默认值(在tfhd或trex中)。
+    */
+    uint32_t sample_duration;
 
-    /** sample大小(字节)。*/
-    uint32_t size;
+    /** 
+     * sample大小(字节)。
+     * 
+     * @note 未设置时，使用默认值(在tfhd或trex中)。
+    */
+    uint32_t sample_size;
 
-    /** 标志。*/
-    uint32_t flags;
+    /** 
+     * sample标志。
+     * 
+     * @note 未设置时，使用默认值(在tfhd或trex中)。
+    */
+    uint32_t sample_flags;
 
-    /** PTS时间差(帧与帧之间)。*/
-    uint32_t composition_offset;
+    /** 
+     * PTS相对于DTS的偏移量(帧与帧之间)。
+     * 
+     * @note 未设置时，使用默认值(0)。
+    */
+    int32_t composition_offset;
 
 }abcdk_mp4_atom_trun_table_t;
 
@@ -1094,8 +1113,8 @@ typedef struct _abcdk_mp4_atom_trun
 
     /** 标志。
      *      
-     * 0～7位：1选项字段‘有’，0选项字段‘无’。
-     * 8～15位：1采样表字段‘有’，0采样表字段‘无’。
+     * 0～7位：1 选项字段‘有’，0 选项字段‘无’。
+     * 8～15位：1 采样表字段‘有’，0 采样表字段‘无’。
     */
     uint32_t flags;
 
@@ -1103,13 +1122,17 @@ typedef struct _abcdk_mp4_atom_trun
     uint32_t numbers;
 
     /** 
-     * 数据偏移量(选项字段)。
+     * sample偏移量(基值在tfhd中)。
      * 
-     * sizeof(moof)+sizeof(mdat-header)
+     * @note 未设置时，使用默认值(0)。
     */
     uint32_t data_offset;
 
-    /** 第一个采样标志(选项字段)。*/
+    /** 
+     * 第一个sample标志。
+     * 
+     * @note 未设置时，使用默认值(0)。
+    */
     uint32_t first_sample_flags;
 
     /** abcdk_mp4_atom_trun_table_t[numbers]*/

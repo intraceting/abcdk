@@ -589,7 +589,7 @@ int _abcdk_mp4_read_stsz(int fd, abcdk_tree_t *node)
 
     abcdk_mp4_read_fullheader(fd,&data->version,&data->flags);
 
-    abcdk_mp4_read_u32(fd, &data->samplesize);
+    abcdk_mp4_read_u32(fd, &data->sample_size);
     abcdk_mp4_read_u32(fd, &data->numbers);
 
     if (data->numbers > 0)
@@ -849,10 +849,10 @@ int _abcdk_mp4_read_trex(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_fullheader(fd,&data->version,&data->flags);
 
     abcdk_mp4_read_u32(fd, &data->trackid);
-    abcdk_mp4_read_u32(fd, &data->default_sample_desc_index);
-    abcdk_mp4_read_u32to64(fd, &data->default_duration);
-    abcdk_mp4_read_u32(fd, &data->default_samplesize);
-    abcdk_mp4_read_u32(fd, &data->default_sampleflags);
+    abcdk_mp4_read_u32(fd, &data->sample_desc_idx);
+    abcdk_mp4_read_u32to64(fd, &data->sample_duration);
+    abcdk_mp4_read_u32(fd, &data->sample_size);
+    abcdk_mp4_read_u32(fd, &data->sample_flags);
 
     return 0;
 
@@ -921,24 +921,24 @@ int _abcdk_mp4_read_tfhd(int fd, abcdk_tree_t *node)
         data->base_data_offset = 0;
 
     if (data->flags & ABCDK_MP4_TFHD_FLAG_SAMPLE_DESCRIPTION_INDEX_PRESENT)
-        abcdk_mp4_read_u32(fd, &data->sample_desc_index);
+        abcdk_mp4_read_u32(fd, &data->sample_desc_idx);
     else
-        data->sample_desc_index = 1;
+        data->sample_desc_idx = 1;
 
     if (data->flags & ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_DURATION_PRESENT)
-        abcdk_mp4_read_u32to64(fd, &data->default_duration);
+        abcdk_mp4_read_u32to64(fd, &data->sample_duration);
     else 
-        data->default_duration = 0;
+        data->sample_duration = 0;
 
     if (data->flags & ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_SIZE_PRESENT)
-        abcdk_mp4_read_u32(fd, &data->default_samplesize);
+        abcdk_mp4_read_u32(fd, &data->sample_size);
     else
-        data->default_samplesize = 0;
+        data->sample_size = 0;
 
     if (data->flags & ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_FLAGS_PRESENT)
-        abcdk_mp4_read_u32(fd, &data->default_sampleflags);
+        abcdk_mp4_read_u32(fd, &data->sample_flags);
     else 
-        data->default_sampleflags = 0;
+        data->sample_flags = 0;
 
     return 0;
 
@@ -1031,11 +1031,11 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
         {
             /* 读取已知采样表的字段。*/
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
-                abcdk_mp4_read_u32(fd, &data->tables[i].duration);
+                abcdk_mp4_read_u32(fd, &data->tables[i].sample_duration);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_SIZE_PRESENT)
-                abcdk_mp4_read_u32(fd, &data->tables[i].size);
+                abcdk_mp4_read_u32(fd, &data->tables[i].sample_size);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_FLAGS_PRESENT)
-                abcdk_mp4_read_u32(fd, &data->tables[i].flags);
+                abcdk_mp4_read_u32(fd, &data->tables[i].sample_flags);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT)
                 abcdk_mp4_read_u32(fd, &data->tables[i].composition_offset);
 
