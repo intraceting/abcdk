@@ -365,7 +365,7 @@ int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t* o
     assert(ctts != NULL && sample > 0 && offset != NULL);
 
     /* 没有B帧时，表可能是空的。*/
-    if (stss->numbers <= 0)
+    if (ctts->numbers <= 0)
     {
         *offset = 0;
         return 0;

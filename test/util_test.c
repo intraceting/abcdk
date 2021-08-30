@@ -1202,7 +1202,7 @@ void collect_fmp4_video(int fd)
             abcdk_mp4_atom_t *tfhd = (abcdk_mp4_atom_t *)tfhd_p->alloc->pptrs[0];
             abcdk_mp4_atom_t *tfdt = (abcdk_mp4_atom_t *)tfdt_p->alloc->pptrs[0];
             abcdk_mp4_atom_t *trun = (abcdk_mp4_atom_t *)trun_p->alloc->pptrs[0];
-#if 0
+#if 1
             printf("-----------------------------------mfhd---------------------------------------\n");
 
             printf("Sequence_Number: %lu\n", mfhd->data.mfhd.sequence_number);
@@ -1481,9 +1481,9 @@ void test_mp4(abcdk_tree_t *args)
 
   //  show_mp4_info(fd);
 
-    collect_mp4_video(fd);
+    //collect_mp4_video(fd);
 
-    //collect_fmp4_video(fd);
+    collect_fmp4_video(fd);
 
 #endif 
 
