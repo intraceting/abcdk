@@ -29,7 +29,7 @@
 #include <fuse.h>
 #endif //
 
-#ifdef HAVE_NETWORKMANAGER
+#ifdef HAVE_LIBNM
 #include <libnm/NetworkManager.h>
 #endif 
 
@@ -1163,9 +1163,108 @@ void show_mp4_info(int fd)
     abcdk_tree_free(&root);
 }
 
+void collect_fmp4_video(int fd)
+{
+    int fd2 = abcdk_open("/tmp/abcdk2.h264",1,0,1);
+    // ftruncate(fd2,0);
+    lseek(fd2,0,SEEK_END);
+
+    abcdk_mp4_tag_t a;
+    a.u32 = ABCDK_MP4_ATOM_MKTAG('\0','\0','\0','\1');
+
+    char *buf= abcdk_heap_alloc(1024*1024*16);
+
+    abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, 0);
+
+    abcdk_tree_t *moov_p = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_MOOV,1,1);
+    abcdk_tree_t *mvex_p = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_MVEX,1,1);
+
+    abcdk_mp4_dump(stdout,moov_p);
+
+    abcdk_tree_t *avcc_p = abcdk_mp4_find2(moov_p,ABCDK_MP4_ATOM_TYPE_AVCC,1,1);
+    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
+
+    abcdk_tree_t *mehd_p = abcdk_mp4_find2(mvex_p,ABCDK_MP4_ATOM_TYPE_MEHD,1,1);
+    abcdk_mp4_atom_t *mehd = (abcdk_mp4_atom_t*)mehd_p->alloc->pptrs[0];
+
+    abcdk_tree_t *moof_p = abcdk_tree_child(root,1);
+    while (moof_p)
+    {
+        abcdk_mp4_atom_t *moof = (abcdk_mp4_atom_t*)moof_p->alloc->pptrs[0];
+        if(moof->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOF)
+        {
+            abcdk_tree_t *mfhd_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
+            abcdk_tree_t *tfhd_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 1);
+            abcdk_tree_t *tfdt_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
+            abcdk_tree_t *trun_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
+
+            abcdk_mp4_atom_t *mfhd = (abcdk_mp4_atom_t *)mfhd_p->alloc->pptrs[0];
+            abcdk_mp4_atom_t *tfhd = (abcdk_mp4_atom_t *)tfhd_p->alloc->pptrs[0];
+            abcdk_mp4_atom_t *tfdt = (abcdk_mp4_atom_t *)tfdt_p->alloc->pptrs[0];
+            abcdk_mp4_atom_t *trun = (abcdk_mp4_atom_t *)trun_p->alloc->pptrs[0];
+#if 0
+            printf("-----------------------------------mfhd---------------------------------------\n");
+
+            printf("Sequence_Number: %lu\n", mfhd->data.mfhd.sequence_number);
+
+            printf("-----------------------------------mfhd---------------------------------------\n");
+
+            printf("-----------------------------------tfhd---------------------------------------\n");
+
+            printf("TrackID: %u\n", tfhd->data.tfhd.trackid);
+            printf("Base_Data_Offset: %lu\n", tfhd->data.tfhd.base_data_offset);
+            printf("Sample_Desc_Index: %u\n", tfhd->data.tfhd.sample_desc_index);
+
+            printf("-----------------------------------tfhd---------------------------------------\n");
+
+            printf("-----------------------------------trun---------------------------------------\n");
+
+            printf("Data_Offset: %u\n", trun->data.trun.data_offset);
+            printf("First_Sample_Flags: %08x\n", trun->data.trun.first_sample_flags);
+            printf("Numbers: %u\n", trun->data.trun.numbers);
+            for (size_t i = 0; i < trun->data.trun.numbers; i++)
+            {
+                printf("Duration: %u\n", trun->data.trun.tables[i].duration);
+                printf("Size: %u\n", trun->data.trun.tables[i].size);
+                printf("Flags: %08x\n", trun->data.trun.tables[i].flags);
+                printf("Offset: %u\n", trun->data.trun.tables[i].composition_offset);
+            }
+
+            printf("-----------------------------------trun---------------------------------------\n");
+#else
+            if (tfhd->data.tfhd.trackid == 1)
+            {
+
+                lseek(fd, moof->off_head + trun->data.trun.data_offset, SEEK_SET);
+
+                for (size_t i = 0; i < trun->data.trun.numbers; i++)
+                {
+                    abcdk_mp4_read(fd, buf, trun->data.trun.tables[i].size);
+
+                    abcdk_write(fd2, &a.u32, 4);
+                    abcdk_write(fd2, avcc->data.avcc.sps->pptrs[0], avcc->data.avcc.sps->sizes[0]);
+                    abcdk_write(fd2, &a.u32, 4);
+                    abcdk_write(fd2, avcc->data.avcc.pps->pptrs[0], avcc->data.avcc.pps->sizes[0]);
+                    memcpy(buf, &a.u32, 4); //替换长度
+                    abcdk_write(fd2, buf, trun->data.trun.tables[i].size);
+                }
+            }
+#endif
+        }
+
+        moof_p = abcdk_tree_sibling(moof_p,0);
+    }
+    
+    abcdk_heap_free(buf);
+    abcdk_tree_free(&root);
+    abcdk_closep(&fd2);
+}
+
 void collect_mp4_video(int fd)
 {
-    abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, ABCDK_MP4_ATOM_TYPE_MOOV);
+
+
+    abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, 0);
 
     abcdk_mp4_dump(stdout,root);
 
@@ -1182,7 +1281,7 @@ void collect_mp4_video(int fd)
     abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
-  //  abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
     abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
@@ -1196,7 +1295,7 @@ void collect_mp4_video(int fd)
     abcdk_bin2hex(pps,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0],0);
     printf("PPS:[%s]\n",pps);
 
-#if 0
+#if 1
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
@@ -1204,7 +1303,14 @@ void collect_mp4_video(int fd)
     printf("Numbers: %u\n",stsz->data.stsz.numbers);
     for (size_t i = 0; i < stsz->data.stsz.numbers; i++)
     {
-        printf("Size[%lu]: %u\n",i+1,stsz->data.stsz.tables[i].size);
+        uint64_t dts = 0;
+        uint32_t dur = 0;
+        int32_t cts = 0;
+        abcdk_mp4_stts_tell(&stts->data.stts,i+1,&dts,&dur);
+        abcdk_mp4_ctts_tell(&ctts->data.ctts,i+1,&cts);
+        printf("Size[%lu]: %u, PTS: %lu(%lu+%d) DUR: %u, KEY: %s\n",
+                    i+1,stsz->data.stsz.tables[i].size,dts+cts,dts,cts,dur,
+                    (abcdk_mp4_stss_tell(&stss->data.stss,i+1)?"No":"Yes") );
     }
     printf("-----------------------------------stsz---------------------------------------\n");
 
@@ -1225,14 +1331,14 @@ void collect_mp4_video(int fd)
     }
     printf("-----------------------------------stts---------------------------------------\n");
 
-    //  printf("-----------------------------------ctts---------------------------------------\n");
-    // printf("Numbers: %u\n",ctts->data.ctts.numbers);
-    // for (size_t i = 0; i < ctts->data.ctts.numbers; i++)
-    // {
-    //     printf("Count[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].sample_count);
-    //     printf("Offset[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].composition_offset);
-    // }
-    // printf("-----------------------------------ctts---------------------------------------\n");
+     printf("-----------------------------------ctts---------------------------------------\n");
+    printf("Numbers: %u\n",ctts->data.ctts.numbers);
+    for (size_t i = 0; i < ctts->data.ctts.numbers; i++)
+    {
+        printf("Count[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].sample_count);
+        printf("Offset[%lu]: %u\n",i+1,ctts->data.ctts.tables[i].composition_offset);
+    }
+    printf("-----------------------------------ctts---------------------------------------\n");
 
     printf("-----------------------------------stco---------------------------------------\n");
     printf("Numbers: %u\n",stco->data.stco.numbers);
@@ -1251,6 +1357,8 @@ void collect_mp4_video(int fd)
         printf("ID: %u\n",stsc->data.stsc.tables[i].sample_desc_id);
     }
     printf("-----------------------------------stsc---------------------------------------\n");
+
+    
 
 #else 
 
@@ -1375,6 +1483,8 @@ void test_mp4(abcdk_tree_t *args)
 
     collect_mp4_video(fd);
 
+    //collect_fmp4_video(fd);
+
 #endif 
 
     abcdk_closep(&fd);
@@ -1470,7 +1580,7 @@ void test_netlink(abcdk_tree_t *args)
         printf("%s: %s\n", ap, strerror(errno));
 }
 
-#ifdef HAVE_NETWORKMANAGER
+#ifdef HAVE_LIBNM
 static void
 request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
@@ -1522,7 +1632,7 @@ get_devices_sorted (NMClient *client)
 	return sorted;
 }
 
-#endif //#ifdef HAVE_NETWORKMANAGER
+#endif //HAVE_LIBNM
 
 void
 iw_essid_escape(char *		dest,
@@ -1714,7 +1824,7 @@ END:
 
 #else
 
-#ifdef HAVE_NETWORKMANAGER
+#ifdef HAVE_LIBNM
     GError *err = NULL;
 
     NMClient *cli =  nm_client_new(NULL,&err);
@@ -1745,7 +1855,7 @@ END:
         printf("ssid: %s\n",ssid);
     }
 
-#endif //#ifdef HAVE_NETWORKMANAGER
+#endif //HAVE_LIBNM
 #endif
 }
 

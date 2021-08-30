@@ -657,7 +657,9 @@ typedef struct _abcdk_mp4_atom_avcc
     /** */
     uint8_t profile_compat;
 
-    /** */
+    /** 
+     * 起始码长度。
+    */
     uint8_t nalu_length_size;
 
     /** */
@@ -669,11 +671,20 @@ typedef struct _abcdk_mp4_atom_avcc
     /** */
     uint8_t bit_depth_chroma_minus8;
 
-    /** */
+    /** 
+     * SPS
+     * 
+     * @note 可能会有多组。
+    */
+    abcdk_allocator_t *sps;
+
+    /** 
+     * PPS 
+     * 
+     * @note 可能会有多组。
+    */
     abcdk_allocator_t *pps;
 
-    /** */
-    abcdk_allocator_t *sps;
 
     /** 扩展数据(Global Header)。 */
     abcdk_allocator_t *extradata;
@@ -686,12 +697,12 @@ typedef struct _abcdk_mp4_atom_stts_table
     /** sample数量。*/
     uint32_t sample_count;
 
-    /** DTS时间差(帧与帧之间)。*/
+    /** 时长差(帧与帧之间)。*/
     uint32_t sample_duration;
 
 }abcdk_mp4_atom_stts_table_t;
 
-/** MP4 stts atom.*/
+/** MP4 stts(DTS) atom.*/
 typedef struct _abcdk_mp4_atom_stts
 {
     /** 版本。*/
@@ -708,22 +719,24 @@ typedef struct _abcdk_mp4_atom_stts
 
 }abcdk_mp4_atom_stts_t;
 
-/** 
- * MP4 ctts atom table.
- * 
- * 无，表示没有B帧。
-*/
+/** MP4 ctts atom table.*/
 typedef struct _abcdk_mp4_atom_ctts_table
 {
     /** sample数量。*/
     uint32_t sample_count;
 
-    /** PTS时间差(帧与帧之间)。*/
-    uint32_t composition_offset;
+    /** PTS相对于DTS的偏移量(帧与帧之间)。*/
+    int32_t composition_offset;
 
 }abcdk_mp4_atom_ctts_table_t;
 
-/** MP4 ctts atom.*/
+/** 
+ * MP4 ctts(CTS) atom.
+ * 
+ * PTS = DTS + CTS
+ * 
+ * @note 无，表示没有B帧。
+*/
 typedef struct _abcdk_mp4_atom_ctts
 {
     /** 版本。*/
@@ -833,12 +846,16 @@ typedef struct _abcdk_mp4_atom_stco
 /** MP4 stss atom table.*/
 typedef struct _abcdk_mp4_atom_stss_table
 {
-    /** 关健帧(sample)编号，以1为基值)。*/
+    /** 关健帧编号，以1为基值)。*/
     uint32_t sync;
 
 }abcdk_mp4_atom_stss_table_t;
 
-/** MP4 stss atom.*/
+/** 
+ * MP4 stss atom.
+ * 
+ * @note 无，全部是关键帧。
+*/
 typedef struct _abcdk_mp4_atom_stss
 {
     /** 版本。*/
@@ -963,8 +980,8 @@ typedef struct _abcdk_mp4_atom_mfhd
     /** 标志。*/
     uint32_t flags;
 
-    /** 序号。*/
-    uint64_t sn;
+    /** 顺序编号。*/
+    uint64_t sequence_number;
 
 }abcdk_mp4_atom_mfhd_t;
 
@@ -1306,6 +1323,33 @@ int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *ch
 */
 int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_t sample, uint32_t *offset, uint32_t *size);
 
+/**
+ * 查询数据包的DTS，和时长。
+ * 
+ * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param dts DTS的指针，返回前填写。
+ * @param duration 时长的指针，返回前填写。
+ * 
+ * @return 0 成功，-1 失败(超出采样表范围)。
+*/
+int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts,uint32_t sample, uint64_t* dts, uint32_t* duration);
+
+/**
+ * 查询数据包的CTS(PTS相对于DTS的偏移量)。
+ * 
+ * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param offset CTS的指针，返回前填写。
+ * 
+ * @return 0 成功，-1 失败(超出采样表范围)。
+*/
+int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t* offset);
+
+/**
+ * 查询是否为关键帧。
+ * 
+ * @return 0 成功(是)，-1 失败(否，或超出采样表范围)。
+*/
+int abcdk_mp4_stss_tell(abcdk_mp4_atom_stss_t *stss,uint32_t sample);
 
 __END_DECLS
 

@@ -239,11 +239,14 @@ int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *
 
     assert(sample > 0 && chunk != NULL && offset != NULL && id != NULL);
 
+    /* 遍历采样表，找到即返回。*/
+
     for (size_t i = 0; i < stsc->numbers; i++)
     {
         if (stsc->tables[i].samples_perchunk <= 0)
             goto final_error;
 
+        /*当存在多种不同的chunk时，要检测sample是否在后面的chunk中。*/
         if (i + 1 < stsc->numbers)
         {
             if(stsc->tables[i + 1].samples_perchunk<=0)
@@ -252,7 +255,7 @@ int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc, uint32_t sample, uint32_t *
             sample_count = (stsc->tables[i + 1].first_chunk - stsc->tables[i].first_chunk) * stsc->tables[i].samples_perchunk;
             if (sample_count < sample)
             {
-                /* 当多行宽度不相等时，这里每次减去N*M个。*/
+                /* 每一种chunk存储的sample数量可能不相等，这里每次减去N*M个。*/
                 sample -= sample_count;
             }
             else
@@ -308,6 +311,8 @@ int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_
     if (stsz->numbers < sample)
         goto final_error;
 
+    /*sample在chunk内连续存储，连续累加即可找到。*/
+
     for (size_t i = (sample - off_chunk + 1); i <= stsz->numbers && i < sample; i++)
     {
         *offset += stsz->tables[i - 1].size;
@@ -321,6 +326,83 @@ final_error:
 
     *offset = -1U;
     *size = 0;
+
+    return -1;
+}
+
+int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts, uint32_t sample, uint64_t *dts, uint32_t *duration)
+{
+    uint32_t sample_start = 0;
+    uint64_t dts_start = 0;
+
+    assert(stts != NULL && sample > 0 && dts != NULL && duration != NULL);
+    
+    /* 遍历采样表，找到即返回。*/
+
+    for (size_t i = 0; i < stts->numbers; i++)
+    {
+        /* 表中记录的是一组帧的帧差，这里要找到最接近的，才能计算出真的DTS。*/
+        if (sample <= sample_start + stts->tables[i].sample_count)
+        {
+            *dts = dts_start + (uint64_t)(sample - sample_start) * (uint64_t)stts->tables[i].sample_duration;
+            *duration = stts->tables[i].sample_duration;
+
+            return 0;
+        }
+
+        /* 累加帧差，作为下一组帧的DTS开始。*/
+        sample_start += stts->tables[i].sample_count;
+        dts_start += (uint64_t)stts->tables[i].sample_count * (uint64_t)stts->tables[i].sample_duration;
+    }
+
+    return -1;
+}
+
+int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t* offset)
+{
+    uint32_t sample_start = 0;
+
+    assert(ctts != NULL && sample > 0 && offset != NULL);
+
+    /* 没有B帧时，表可能是空的。*/
+    if (stss->numbers <= 0)
+    {
+        *offset = 0;
+        return 0;
+    }
+
+    /* 遍历采样表，找到即返回。*/
+
+    for (size_t i = 0; i < ctts->numbers; i++)
+    {
+        /* 表中记录的是一组帧的帧差，这里要找到最接近的，才能计算出真的CTS。*/
+        if (sample <= sample_start + ctts->tables[i].sample_count)
+        {
+            *offset = ctts->tables[i].composition_offset;
+
+            return 0;
+        }
+
+        /* 累加帧差，作为下一组帧的CTS开始。*/
+        sample_start += ctts->tables[i].sample_count;
+    }
+
+    return -1;
+}
+
+int abcdk_mp4_stss_tell(abcdk_mp4_atom_stss_t *stss, uint32_t sample)
+{
+    assert(stss != NULL && sample > 0);
+
+    /*如果表是空的，全部是关键帧。*/
+    if (stss->numbers <= 0)
+        return 0;
+
+    for (size_t i = 0; i < stss->numbers; i++)
+    {
+        if (stss->tables[i].sync == sample)
+            return 0;
+    }
 
     return -1;
 }

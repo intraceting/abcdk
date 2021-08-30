@@ -92,6 +92,7 @@ int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
     return 0;
 }
 
+/*在这里声明一下，实现在下面。*/
 int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop);
 
 
@@ -879,7 +880,7 @@ int _abcdk_mp4_read_mfhd(int fd, abcdk_tree_t *node)
 
     abcdk_mp4_read_fullheader(fd,&data->version,&data->flags);
 
-    abcdk_mp4_read_u32to64(fd, &data->sn);
+    abcdk_mp4_read_u32to64(fd, &data->sequence_number);
 
     return 0;
 
@@ -1485,7 +1486,7 @@ static struct _abcdk_mp4_read_content_methods
    
 };
 
-int _abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
+int abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
 {
     int (*_read_content)(int fd, abcdk_tree_t *node) = NULL;
     abcdk_mp4_atom_t *atom = NULL;
@@ -1569,7 +1570,7 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
 
         default:
         {
-            chk = _abcdk_mp4_read_content(fd, node);
+            chk = abcdk_mp4_read_content(fd, node);
             if (chk == -1)
                 goto final_error;
         }
