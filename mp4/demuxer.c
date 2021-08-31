@@ -1470,8 +1470,7 @@ int _abcdk_mp4_read_esds(int fd, abcdk_tree_t *node)
             if (data->es.flags & 0x40)
             {
                 abcdk_mp4_read(fd,data->es.url,1);
-                abcdk_mp4_read(fd, data->es.url + 1, ABCDK_PTR2U8(data->es.url[0], 0));
- 
+                abcdk_mp4_read(fd, data->es.url + 1, ABCDK_PTR2U8(data->es.url, 0));
             }
 
             if (data->es.flags & 0x20)

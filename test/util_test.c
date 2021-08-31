@@ -1317,7 +1317,7 @@ void collect_mp4_video(int fd)
     abcdk_bin2hex(pps,avcc->data.avcc.pps->pptrs[0],avcc->data.avcc.pps->sizes[0],0);
     printf("PPS:[%s]\n",pps);
 
-#if 1
+#if 0
 
 
     printf("-----------------------------------stsz---------------------------------------\n");
@@ -1384,6 +1384,7 @@ void collect_mp4_video(int fd)
 
 #else 
 
+
     int fd2 = abcdk_open("/tmp/abcdk.h264",1,0,1);
    // ftruncate(fd2,0);
    lseek(fd2,0,SEEK_END);
@@ -1424,6 +1425,170 @@ void collect_mp4_video(int fd)
     abcdk_heap_free(buf);
 #endif
     
+    abcdk_tree_free(&root);
+}
+
+#define ADTS_HEADER_SIZE 7
+
+typedef struct _adtsctx
+{
+    int write_adts;
+    int objecttype;
+    int sample_rate_index;
+    int channel_conf;
+} adtsctx;
+
+int aac_decode_extradata(adtsctx *adts, unsigned char *pbuf, int bufsize)
+{
+    int aot, aotext, samfreindex;
+    int i, channelconfig;
+    unsigned char *p = pbuf;
+    if (!adts || !pbuf || bufsize < 2)
+    {
+        return -1;
+    }
+    aot = (p[0] >> 3) & 0x1f;
+    if (aot == 31)
+    {
+        aot = 32 + aotext;
+        samfreindex = (p[1] >> 1) & 0x0f;
+        if (samfreindex == 0x0f)
+        {
+
+            channelconfig = ((p[4] << 3) | (p[5] >> 5)) & 0x0f;
+        }
+        else
+        {
+
+            channelconfig = ((p[1] << 3) | (p[2] >> 5)) & 0x0f;
+        }
+    }
+    else
+    {
+        samfreindex = ((p[0] << 1) | p[1] >> 7) & 0x0f;
+        if (samfreindex == 0x0f)
+        {
+            channelconfig = (p[4] >> 3) & 0x0f;
+        }
+        else
+        {
+
+            channelconfig = (p[1] >> 3) & 0x0f;
+        }
+    }
+#ifdef AOT_PROFILE_CTRL
+
+    if (aot < 2)
+        aot = 2;
+#endif
+    
+    adts->objecttype = aot-1;
+    adts->sample_rate_index = samfreindex;
+    adts->channel_conf = channelconfig;
+    adts->write_adts = 1;
+
+    return 0;
+}
+
+int aac_set_adts_head(adtsctx *acfg, unsigned char *buf, int size)
+{
+    unsigned char byte;
+    if (size < ADTS_HEADER_SIZE)
+        return -1;
+
+    buf[0] = 0xff;
+
+    buf[1] = 0xf1;
+    byte = 0;
+    byte |= (acfg->objecttype & 0x03) << 6;
+    byte |= (acfg->sample_rate_index & 0x0f) << 2;
+    byte |= (acfg->channel_conf & 0x07) >> 2;
+
+    buf[2] = byte;
+    byte = 0;
+    byte |= (acfg->channel_conf & 0x07) << 6;
+    byte |= (ADTS_HEADER_SIZE + size) >> 11;
+
+    buf[3] = byte;
+    byte = 0;
+    byte |= (ADTS_HEADER_SIZE + size) >> 3;
+
+    buf[4] = byte;
+    byte = 0;
+    byte |= ((ADTS_HEADER_SIZE + size) & 0x7) << 5;
+    byte |= (0x7ff >> 6) & 0x1f;
+
+    buf[5] = byte;
+    byte = 0;
+    byte |= (0x7ff & 0x3f) << 2;
+
+    buf[6] = byte;
+
+    return 0;
+}
+
+void collect_mp4_sound(int fd)
+{
+
+    abcdk_tree_t *root = abcdk_mp4_read_probe2(fd,0,-1UL, 0);
+
+    abcdk_mp4_dump(stdout,root);
+
+    abcdk_tree_t *video_p = abcdk_mp4_find2(root,ABCDK_MP4_ATOM_TYPE_TRAK,2,1);
+    abcdk_tree_t *stsz_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_STSZ,1,1);
+    abcdk_tree_t *stss_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_STSS,1,1);
+    abcdk_tree_t *stts_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_STTS,1,1);
+    abcdk_tree_t *ctts_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_CTTS,1,1);
+    abcdk_tree_t *stsc_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_STSC,1,1);
+    abcdk_tree_t *stco_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_STCO,1,1);
+    abcdk_tree_t *mp4a_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_MP4A,1,1);
+    abcdk_tree_t *esds_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_ESDS,1,1);
+
+    abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
+   // abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
+   // abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *mp4a = (abcdk_mp4_atom_t*)mp4a_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *esds = (abcdk_mp4_atom_t*)esds_p->alloc->pptrs[0];
+
+
+
+    int fd2 = abcdk_open("/tmp/abcdk.acc",1,0,1);
+    // ftruncate(fd2,0);
+    lseek(fd2,0,SEEK_END);
+
+    char *buf= abcdk_heap_alloc(1024*1024*16);
+
+    adtsctx adts={0};
+    aac_decode_extradata(&adts,esds->data.esds.dec_sp_info.extradata->pptrs[0],esds->data.esds.dec_sp_info.extradata->sizes[0]);
+
+    for(size_t i = 1 ;i<=stsz->data.stsz.numbers;i++)
+    {
+        uint32_t chunk=0, offset=0, id=0;
+        abcdk_mp4_stsc_tell(&stsc->data.stsc,i,&chunk,&offset,&id);
+
+        printf("[%lu]={chunk=%u,offset=%u,id=%u}\n",i,chunk,offset,id);
+
+        uint32_t offset2=0, size = 0;
+        abcdk_mp4_stsz_tell(&stsz->data.stsz,offset,i,&offset2,&size);
+
+        printf("[%lu]={offset2=%u,size=%u}\n",i,offset2,size);
+
+        lseek(fd,stco->data.stco.tables[chunk-1].offset + offset2,SEEK_SET);
+
+        abcdk_mp4_read(fd,buf,size);
+
+        char hdr[7]={0};
+        aac_set_adts_head(&adts,hdr,size);
+        abcdk_write(fd2,hdr,7);
+        abcdk_write(fd2,buf,size);
+
+    }
+
+    abcdk_closep(&fd2);
+    abcdk_heap_free(buf);
     abcdk_tree_free(&root);
 }
 
@@ -1503,7 +1668,8 @@ void test_mp4(abcdk_tree_t *args)
 
   //  show_mp4_info(fd);
 
-    collect_mp4_video(fd);
+    //collect_mp4_video(fd);
+    collect_mp4_sound(fd);
 
     //collect_fmp4_video(fd);
 
