@@ -784,8 +784,16 @@ int _abcdk_mp4_read_elst(int fd, abcdk_tree_t *node)
 
         for (size_t i = 0; i < data->numbers; i++)
         {
-            abcdk_mp4_read_u32(fd, &data->tables[i].track_duration);
-            abcdk_mp4_read_u32(fd, &data->tables[i].media_time);
+            if(data->version==0)
+            {
+                abcdk_mp4_read_u32to64(fd, &data->tables[i].track_duration);
+                abcdk_mp4_read_u32to64(fd, &data->tables[i].media_time);
+            }
+            else
+            {
+                abcdk_mp4_read_u64(fd, &data->tables[i].track_duration);
+                abcdk_mp4_read_u64(fd, &data->tables[i].media_time);
+            }
             abcdk_mp4_read_u32(fd, &data->tables[i].media_rate);
         }
     }
@@ -795,6 +803,93 @@ int _abcdk_mp4_read_elst(int fd, abcdk_tree_t *node)
 final_error:
 
     abcdk_heap_free(data->tables);
+    memset(data, 0, sizeof(*data));
+
+    return -1;
+}
+
+int _abcdk_mp4_read_descr_tag(int fd)
+{
+    uint8_t tag = 0;
+
+    abcdk_mp4_read(fd,&tag,1);
+
+    return tag;
+}
+
+int _abcdk_mp4_read_descr_len(int fd)
+{
+    int c = 0;
+    int len = 0;
+    int count = 4;
+
+    while (count--) 
+    {
+        abcdk_mp4_read_u8to32(fd,&c);
+
+        len = (len << 7) | (c & 0x7f);
+        if (!(c & 0x80))
+            break;
+    }
+
+    return len;
+}
+
+int _abcdk_mp4_read_esds(int fd, abcdk_tree_t *node)
+{
+    abcdk_mp4_atom_t *atom = NULL;
+    abcdk_mp4_atom_esds_t *data = NULL;
+    size_t hsize = 0, dsize = 0;
+    uint8_t tag = 0;
+    int len = 0;
+    int chk;
+
+    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    data = (abcdk_mp4_atom_esds_t *)&atom->data;
+
+    hsize = atom->off_data - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_data, SEEK_SET);
+
+    abcdk_mp4_read_fullheader(fd,&data->version,&data->flags);
+
+    if (dsize > 0)
+    {
+        // data->extradata = abcdk_allocator_alloc2(dsize);
+        // if (!data->extradata)
+        //     goto final_error;
+
+        // abcdk_mp4_read(fd, data->extradata->pptrs[0], dsize);
+
+        tag = _abcdk_mp4_read_descr_tag(fd);
+        len = _abcdk_mp4_read_descr_len(fd);
+
+        if (tag == ABCDK_MP4_ESDS_ES)
+        {
+            abcdk_mp4_read_u16to32(fd,&data->es.id);
+            abcdk_mp4_read(fd,&data->es.flags,1);
+
+            if(data->es.flags&0x80)
+                abcdk_mp4_read_u16(fd,&data->es.depends);
+
+            if(data->es.flags&0x40)
+            {
+                uint8_t c = 0;
+                abcdk_mp4_read(fd,&c,1);
+                abcdk_mp4_read(fd,data->es.url,c+1);
+            }
+
+            if(data->es.flags&0x20)
+                abcdk_mp4_read_u16(fd,&data->es.ocr);
+        }
+    }
+
+    return 0;
+
+final_error:
+
+    abcdk_heap_free(data->extradata);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1466,6 +1561,7 @@ static struct _abcdk_mp4_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_read_gmhd},
     {ABCDK_MP4_ATOM_TYPE_SMHD, _abcdk_mp4_read_smhd},
     {ABCDK_MP4_ATOM_TYPE_ELST, _abcdk_mp4_read_elst},
+    {ABCDK_MP4_ATOM_TYPE_ESDS, _abcdk_mp4_read_esds},
     {ABCDK_MP4_ATOM_TYPE_MEHD, _abcdk_mp4_read_mehd},
     {ABCDK_MP4_ATOM_TYPE_TREX, _abcdk_mp4_read_trex},
     {ABCDK_MP4_ATOM_TYPE_MFHD, _abcdk_mp4_read_mfhd},

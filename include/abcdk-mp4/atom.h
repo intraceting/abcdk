@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_MP4_MP4_H
-#define ABCDK_MP4_MP4_H
+#ifndef ABCDK_MP4_ATOM_H
+#define ABCDK_MP4_ATOM_H
 
 #include "abcdk-util/general.h"
 #include "abcdk-util/allocator.h"
@@ -542,7 +542,7 @@ typedef struct _abcdk_mp4_atom_sample_desc
             /** 
              * 编码器名字(Pascal string)(32字节)。
              * 
-             * 第一个字符是长度。
+             * @note 第一个字符是长度。
             */
             char encname[33];
 
@@ -657,9 +657,7 @@ typedef struct _abcdk_mp4_atom_avcc
     /** */
     uint8_t profile_compat;
 
-    /** 
-     * 起始码长度。
-    */
+    /** 起始码长度。*/
     uint8_t nalu_length_size;
 
     /** */
@@ -898,10 +896,10 @@ typedef struct _abcdk_mp4_atom_smhd
 typedef struct _abcdk_mp4_atom_elst_table
 {
     /** */
-    uint32_t track_duration;
+    uint64_t track_duration;
 
     /** */
-    uint32_t media_time;
+    uint64_t media_time;
 
     /** 
      * 速率(以整数形式存储的定点数)。
@@ -929,6 +927,64 @@ typedef struct _abcdk_mp4_atom_elst
     abcdk_mp4_atom_elst_table_t *tables;
 
 }abcdk_mp4_atom_elst_t;
+
+#define ABCDK_MP4_ESDS_ES           0x03
+#define ABCDK_MP4_ESDS_DEC_CONF     0x04
+#define ABCDK_MP4_ESDS_DEC_SP_INFO  0x05
+
+/** MP4 esds atom.*/
+typedef struct _abcdk_mp4_atom_esds
+{
+    /** 版本。*/
+    uint8_t version;
+
+    /** 标志。*/
+    uint32_t flags;
+
+    /** tag: 0x03*/
+    struct
+    {
+        /** */
+        uint16_t id;
+
+        /*
+         * 0x80: depends
+         * 0x40: url
+         * 0x20: ocr
+        */
+        uint8_t flags;
+        
+        /** */
+        uint16_t depends;
+
+        /** 
+        * URL(Pascal string)。
+        * 
+        * @note 第一个字符是长度。
+        */
+        char url[260];
+
+        /** */
+        uint16_t ocr;
+
+    } es;
+
+    /** tag: 0x04*/
+    struct
+    {
+
+    } dec_conf;
+
+    /** tag: 0x05*/
+    struct
+    {
+
+    } dec_sp_info;
+
+    /** 扩展数据(Global Header)。 */
+    abcdk_allocator_t *extradata;
+
+} abcdk_mp4_atom_esds_t;
 
 /** MP4 mehd atom.*/
 typedef struct _abcdk_mp4_atom_mehd
@@ -1376,4 +1432,4 @@ int abcdk_mp4_stss_tell(abcdk_mp4_atom_stss_t *stss,uint32_t sample);
 
 __END_DECLS
 
-#endif //ABCDK_MP4_MP4_H
+#endif //ABCDK_MP4_ATOM_H

@@ -1503,9 +1503,9 @@ void test_mp4(abcdk_tree_t *args)
 
   //  show_mp4_info(fd);
 
-    //collect_mp4_video(fd);
+    collect_mp4_video(fd);
 
-    collect_fmp4_video(fd);
+    //collect_fmp4_video(fd);
 
 #endif 
 
