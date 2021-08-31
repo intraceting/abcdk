@@ -995,9 +995,13 @@ typedef struct _abcdk_mp4_atom_esds
     /** tag: 0x05*/
     struct
     {
-        /** */
-        abcdk_allocator_t *info;
-        
+        /** 
+         * 扩展数据(Global Header)。
+         * 
+         * @note ADTS 在这里。
+         */
+        abcdk_allocator_t *extradata;
+
     } dec_sp_info;
 
     /** tag: 0x06*/
@@ -1007,10 +1011,6 @@ typedef struct _abcdk_mp4_atom_esds
         uint8_t reserved;
         
     } dec_ld_conf;
-
-
-    /** 扩展数据(Global Header)。 */
-    abcdk_allocator_t *extradata;
 
 } abcdk_mp4_atom_esds_t;
 
