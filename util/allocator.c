@@ -142,7 +142,7 @@ abcdk_allocator_t *abcdk_allocator_alloc(size_t *sizes, size_t numbers, int drag
             /*
             * 下一块内存块地址。
             */
-            ptr_p = ABCDK_PTR2PTR(uint8_t, in_p->out.pptrs[i], in_p->out.sizes[i] * sizeof(uint8_t));
+            ptr_p = ABCDK_PTR2PTR(uint8_t, in_p->out.pptrs[i], in_p->out.sizes[i]);
         }
     }
 

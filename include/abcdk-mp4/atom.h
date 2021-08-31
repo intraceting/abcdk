@@ -931,6 +931,7 @@ typedef struct _abcdk_mp4_atom_elst
 #define ABCDK_MP4_ESDS_ES           0x03
 #define ABCDK_MP4_ESDS_DEC_CONF     0x04
 #define ABCDK_MP4_ESDS_DEC_SP_INFO  0x05
+#define ABCDK_MP4_ESDS_SL_CONF      0x06
 
 /** MP4 esds atom.*/
 typedef struct _abcdk_mp4_atom_esds
@@ -972,14 +973,41 @@ typedef struct _abcdk_mp4_atom_esds
     /** tag: 0x04*/
     struct
     {
+        /** */
+        uint8_t type_id;
 
+        /** 
+         * 7~2: Stream Type;
+         * 1~0: Up Stream; 
+        */
+        uint8_t stream_type;
+
+        /** */
+        uint32_t buffer_size;
+
+        /** */
+        uint32_t max_bitrate;
+
+        /** */
+        uint32_t avg_bitrate;
     } dec_conf;
 
     /** tag: 0x05*/
     struct
     {
-
+        /** */
+        abcdk_allocator_t *info;
+        
     } dec_sp_info;
+
+    /** tag: 0x06*/
+    struct
+    {
+        /** */
+        uint8_t reserved;
+        
+    } dec_ld_conf;
+
 
     /** 扩展数据(Global Header)。 */
     abcdk_allocator_t *extradata;
@@ -1328,6 +1356,7 @@ typedef struct _abcdk_mp4_atom
         abcdk_mp4_atom_stsd_t stsd;
         abcdk_mp4_atom_sample_desc_t sample_desc;
         abcdk_mp4_atom_avcc_t avcc;
+        abcdk_mp4_atom_esds_t esds;
         abcdk_mp4_atom_stts_t stts;
         abcdk_mp4_atom_ctts_t ctts;
         abcdk_mp4_atom_stsc_t stsc;
@@ -1379,54 +1408,54 @@ abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type,size_t index,int 
 void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root);
 
 /**
- * 查询数据包所属的chunk编号(在stco采样表，以1为基值)，在chunk内部的偏移量(第几个，以1为基值)，和所属的ID。
+ * 查询数据包所属的chunk编号(在stco中，以1为基值)，在chunk内部的偏移量(第几个，以1为基值)，和所属的ID。
  * 
- * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param sample 数据包编号(在stsz中，以1为基值)。
  * @param chunk chunk编号的指针，返回前填写。
  * @param offset 偏移量的指针，返回前填写。
  * @param id ID的指针，返回前填写。
  * 
- * @return 0 成功，-1 失败(采样表有错误)。
+ * @return 0 成功，-1 失败(值错误)。
 */
 int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *chunk,uint32_t *offset,uint32_t *id);
 
 /**
- * 查询数据包所在chunk中的偏移量(在stco采样表，以0为基值)，和数据包的长度。
+ * 查询数据包所在chunk中的偏移量(在stco中，以0为基值)，和数据包的长度。
  * 
  * @param off_chunk 数据包所在chunk的内部编号(第几个，以1为基值)。
- * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param sample 数据包编号(在stsz中，以1为基值)。
  * @param offset 偏移量的指针，返回前填写。
  * @param size 长度的指针，返回前填写。
  * 
- * @return 0 成功，-1 失败(超出采样表范围)。
+ * @return 0 成功，-1 失败(超出范围)。
 */
 int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_t sample, uint32_t *offset, uint32_t *size);
 
 /**
  * 查询数据包的DTS，和时长。
  * 
- * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param sample 数据包编号(在stsz中，以1为基值)。
  * @param dts DTS的指针，返回前填写。
  * @param duration 时长的指针，返回前填写。
  * 
- * @return 0 成功，-1 失败(超出采样表范围)。
+ * @return 0 成功，-1 失败(超出范围)。
 */
 int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts,uint32_t sample, uint64_t* dts, uint32_t* duration);
 
 /**
  * 查询数据包的CTS(PTS相对于DTS的偏移量)。
  * 
- * @param sample 数据包编号(在stsz采样表，以1为基值)。
+ * @param sample 数据包编号(在stsz中，以1为基值)。
  * @param offset CTS的指针，返回前填写。
  * 
- * @return 0 成功，-1 失败(超出采样表范围)。
+ * @return 0 成功，-1 失败(超出范围)。
 */
 int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t* offset);
 
 /**
  * 查询是否为关键帧。
  * 
- * @return 0 成功(是)，-1 失败(否，或超出采样表范围)。
+ * @return 0 成功(是)，-1 失败(否，或超出范围)。
 */
 int abcdk_mp4_stss_tell(abcdk_mp4_atom_stss_t *stss,uint32_t sample);
 

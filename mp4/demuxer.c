@@ -808,93 +808,6 @@ final_error:
     return -1;
 }
 
-int _abcdk_mp4_read_descr_tag(int fd)
-{
-    uint8_t tag = 0;
-
-    abcdk_mp4_read(fd,&tag,1);
-
-    return tag;
-}
-
-int _abcdk_mp4_read_descr_len(int fd)
-{
-    int c = 0;
-    int len = 0;
-    int count = 4;
-
-    while (count--) 
-    {
-        abcdk_mp4_read_u8to32(fd,&c);
-
-        len = (len << 7) | (c & 0x7f);
-        if (!(c & 0x80))
-            break;
-    }
-
-    return len;
-}
-
-int _abcdk_mp4_read_esds(int fd, abcdk_tree_t *node)
-{
-    abcdk_mp4_atom_t *atom = NULL;
-    abcdk_mp4_atom_esds_t *data = NULL;
-    size_t hsize = 0, dsize = 0;
-    uint8_t tag = 0;
-    int len = 0;
-    int chk;
-
-    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
-    data = (abcdk_mp4_atom_esds_t *)&atom->data;
-
-    hsize = atom->off_data - atom->off_head;
-    dsize = atom->size - hsize;
-
-    lseek(fd, atom->off_data, SEEK_SET);
-
-    abcdk_mp4_read_fullheader(fd,&data->version,&data->flags);
-
-    if (dsize > 0)
-    {
-        // data->extradata = abcdk_allocator_alloc2(dsize);
-        // if (!data->extradata)
-        //     goto final_error;
-
-        // abcdk_mp4_read(fd, data->extradata->pptrs[0], dsize);
-
-        tag = _abcdk_mp4_read_descr_tag(fd);
-        len = _abcdk_mp4_read_descr_len(fd);
-
-        if (tag == ABCDK_MP4_ESDS_ES)
-        {
-            abcdk_mp4_read_u16to32(fd,&data->es.id);
-            abcdk_mp4_read(fd,&data->es.flags,1);
-
-            if(data->es.flags&0x80)
-                abcdk_mp4_read_u16(fd,&data->es.depends);
-
-            if(data->es.flags&0x40)
-            {
-                uint8_t c = 0;
-                abcdk_mp4_read(fd,&c,1);
-                abcdk_mp4_read(fd,data->es.url,c+1);
-            }
-
-            if(data->es.flags&0x20)
-                abcdk_mp4_read_u16(fd,&data->es.ocr);
-        }
-    }
-
-    return 0;
-
-final_error:
-
-    abcdk_heap_free(data->extradata);
-    memset(data, 0, sizeof(*data));
-
-    return -1;
-}
-
 int _abcdk_mp4_read_mehd(int fd, abcdk_tree_t *node)
 {
     abcdk_mp4_atom_t *atom = NULL;
@@ -1421,61 +1334,63 @@ int _abcdk_mp4_read_avcc(int fd, abcdk_tree_t *node)
 
     lseek(fd, atom->off_data, SEEK_SET);
     
-    if (dsize > 0)
+    if (dsize <= 0)
+        goto final;
+
+    data->extradata = abcdk_allocator_alloc2(dsize);
+    if (!data->extradata)
+        goto final_error;
+
+    abcdk_mp4_read(fd, data->extradata->pptrs[0], dsize);
+
+    data->version = ABCDK_PTR2U8(data->extradata->pptrs[0], 0);
+    data->profile = ABCDK_PTR2U8(data->extradata->pptrs[0], 1);
+    data->profile_compat = ABCDK_PTR2U8(data->extradata->pptrs[0], 2);
+    data->level = ABCDK_PTR2U8(data->extradata->pptrs[0], 3);
+    data->nalu_length_size = 1 + (ABCDK_PTR2U8(data->extradata->pptrs[0], 4) & 0x03);
+
+    size_t sps_num = ABCDK_PTR2U8(data->extradata->pptrs[0], 5) & 0x1F;
+    data->sps = abcdk_allocator_alloc3(dsize, sps_num);
+    if (!data->sps)
+        goto final_error;
+
+    size_t cursor = 6;
+    for (size_t i = 0; i < sps_num; i++)
     {
-        data->extradata = abcdk_allocator_alloc2(dsize);
-        if (!data->extradata)
-            goto final_error;
-
-        abcdk_mp4_read(fd, data->extradata->pptrs[0], dsize);
-
-        data->version = ABCDK_PTR2U8(data->extradata->pptrs[0], 0);
-        data->profile = ABCDK_PTR2U8(data->extradata->pptrs[0], 1);
-        data->profile_compat = ABCDK_PTR2U8(data->extradata->pptrs[0], 2);
-        data->level = ABCDK_PTR2U8(data->extradata->pptrs[0], 3);
-        data->nalu_length_size = 1 + (ABCDK_PTR2U8(data->extradata->pptrs[0], 4) & 0x03);
-
-        size_t sps_num = ABCDK_PTR2U8(data->extradata->pptrs[0], 5) & 0x1F;
-        data->sps = abcdk_allocator_alloc3(dsize,sps_num);
-        if(!data->sps)
-            goto final_error;
-
-        size_t cursor = 6;
-        for (size_t i = 0; i < sps_num; i++)
+        if (cursor + 2 <= dsize)
         {
-            if (cursor + 2 <= dsize)
-            {
-                data->sps->sizes[i] = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
+            data->sps->sizes[i] = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
 
-                cursor += 2;
-                if (cursor + data->sps->sizes[i] > dsize)
-                    goto final_error;
+            cursor += 2;
+            if (cursor + data->sps->sizes[i] > dsize)
+                goto final_error;
 
-                memcpy(data->sps->pptrs[i], ABCDK_PTR2U8PTR(data->extradata->pptrs[0], cursor), data->sps->sizes[i]);
-                cursor += data->sps->sizes[i];
-            }
-        }
-
-        size_t pps_num = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
-        data->pps = abcdk_allocator_alloc3(dsize,pps_num);
-        if(!data->pps)
-            goto final_error;
-
-        for (size_t i = 0; i < pps_num; i++)
-        {
-            if (cursor + 2 <= dsize)
-            {
-                data->pps->sizes[i] = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
-
-                cursor += 2;
-                if (cursor + data->pps->sizes[i] > dsize)
-                    goto final_error;
-
-                memcpy(data->pps->pptrs[i], ABCDK_PTR2U8PTR(data->extradata->pptrs[0], cursor), data->pps->sizes[i]);
-                cursor += data->pps->sizes[i];
-            }
+            memcpy(data->sps->pptrs[i], ABCDK_PTR2U8PTR(data->extradata->pptrs[0], cursor), data->sps->sizes[i]);
+            cursor += data->sps->sizes[i];
         }
     }
+
+    size_t pps_num = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
+    data->pps = abcdk_allocator_alloc3(dsize, pps_num);
+    if (!data->pps)
+        goto final_error;
+
+    for (size_t i = 0; i < pps_num; i++)
+    {
+        if (cursor + 2 <= dsize)
+        {
+            data->pps->sizes[i] = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
+
+            cursor += 2;
+            if (cursor + data->pps->sizes[i] > dsize)
+                goto final_error;
+
+            memcpy(data->pps->pptrs[i], ABCDK_PTR2U8PTR(data->extradata->pptrs[0], cursor), data->pps->sizes[i]);
+            cursor += data->pps->sizes[i];
+        }
+    }
+
+final:
 
     return 0;
 
@@ -1483,6 +1398,130 @@ final_error:
 
     abcdk_allocator_unref(&data->sps);
     abcdk_allocator_unref(&data->pps);
+    abcdk_allocator_unref(&data->extradata);
+    memset(data, 0, sizeof(*data));
+
+    return -1;
+}
+
+int _abcdk_mp4_read_descr_len(abcdk_allocator_t *extradata,size_t *cursor)
+{
+    int c = 0;
+    int len = 0;
+    int count = 4;
+
+    while (count--) 
+    {
+        c = ABCDK_PTR2I8(extradata->pptrs[0],(*cursor)++);
+
+        len = (len << 7) | (c & 0x7f);
+        if (!(c & 0x80))
+            break;
+    }
+
+    return len;
+}
+
+int _abcdk_mp4_read_esds(int fd, abcdk_tree_t *node)
+{
+    abcdk_mp4_atom_t *atom = NULL;
+    abcdk_mp4_atom_esds_t *data = NULL;
+    size_t hsize = 0, dsize = 0;
+    uint8_t tag = 0;
+    int len = 0;
+    int chk;
+
+    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    data = (abcdk_mp4_atom_esds_t *)&atom->data;
+
+    hsize = atom->off_data - atom->off_head;
+    dsize = atom->size - hsize;
+
+    lseek(fd, atom->off_data, SEEK_SET);
+
+    abcdk_mp4_read_fullheader(fd,&data->version,&data->flags);
+
+    if (dsize - 4 <= 0)
+        goto final;
+
+    data->extradata = abcdk_allocator_alloc2(dsize - 4);
+    if (!data->extradata)
+        goto final_error;
+
+    abcdk_mp4_read(fd, data->extradata->pptrs[0], dsize - 4);
+
+    size_t cursor = 0;
+    while (cursor < data->extradata->sizes[0])
+    {
+        tag = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
+        len = _abcdk_mp4_read_descr_len(data->extradata,&cursor);
+
+        if (tag == ABCDK_MP4_ESDS_ES)
+        {
+            data->es.id = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
+            data->es.flags = ABCDK_PTR2I8(data->extradata->pptrs[0], cursor+2);
+            cursor += 3;
+
+            if (data->es.flags & 0x80)
+            {
+                data->es.depends = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
+                cursor += 2;
+            }
+
+            if (data->es.flags & 0x40)
+            {
+                uint8_t c = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor);
+                memcpy(data->es.url, ABCDK_PTR2I8PTR(data->extradata->pptrs[0], cursor), c + 1);
+                cursor += (c+1);
+            }
+
+            if (data->es.flags & 0x20)
+            {
+                data->es.ocr = abcdk_endian_b_to_h16(ABCDK_PTR2U16(data->extradata->pptrs[0], cursor));
+                cursor += 2;
+            }
+        }
+        else if (tag == ABCDK_MP4_ESDS_DEC_CONF)
+        {
+            data->dec_conf.type_id = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
+            data->dec_conf.stream_type = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
+
+            data->dec_conf.buffer_size = abcdk_endian_b_to_h24(ABCDK_PTR2I8PTR(data->extradata->pptrs[0], cursor));
+            cursor += 3;
+
+            data->dec_conf.max_bitrate = abcdk_endian_b_to_h32(ABCDK_PTR2U32(data->extradata->pptrs[0], cursor));
+            cursor += 4;
+
+            data->dec_conf.avg_bitrate = abcdk_endian_b_to_h32(ABCDK_PTR2U32(data->extradata->pptrs[0], cursor));
+            cursor += 4;
+        }
+        else if (tag == ABCDK_MP4_ESDS_DEC_SP_INFO)
+        {
+            data->dec_sp_info.info = abcdk_allocator_alloc2(len);
+            if (!data->dec_sp_info.info)
+                goto final_error;
+
+            memcpy(data->dec_sp_info.info->pptrs[0], ABCDK_PTR2I8PTR(data->extradata->pptrs[0], cursor), len);
+            cursor += len;
+        }
+        else if (tag == ABCDK_MP4_ESDS_SL_CONF)
+        {
+            data->dec_ld_conf.reserved = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
+        }
+        else
+        {
+            /*跳过其它的。*/
+            cursor += len;
+        }
+    }
+
+final:
+
+    return 0;
+
+final_error:
+
+    abcdk_allocator_unref(&data->dec_sp_info.info);
     abcdk_allocator_unref(&data->extradata);
     memset(data, 0, sizeof(*data));
 
@@ -1561,7 +1600,6 @@ static struct _abcdk_mp4_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_GMHD, _abcdk_mp4_read_gmhd},
     {ABCDK_MP4_ATOM_TYPE_SMHD, _abcdk_mp4_read_smhd},
     {ABCDK_MP4_ATOM_TYPE_ELST, _abcdk_mp4_read_elst},
-    {ABCDK_MP4_ATOM_TYPE_ESDS, _abcdk_mp4_read_esds},
     {ABCDK_MP4_ATOM_TYPE_MEHD, _abcdk_mp4_read_mehd},
     {ABCDK_MP4_ATOM_TYPE_TREX, _abcdk_mp4_read_trex},
     {ABCDK_MP4_ATOM_TYPE_MFHD, _abcdk_mp4_read_mfhd},
@@ -1575,6 +1613,7 @@ static struct _abcdk_mp4_read_content_methods
     {ABCDK_MP4_ATOM_TYPE_MP4A, _abcdk_mp4_read_sample_sound},
     {ABCDK_MP4_ATOM_TYPE_STPP, _abcdk_mp4_read_sample_subtitle},
     {ABCDK_MP4_ATOM_TYPE_AVCC, _abcdk_mp4_read_avcc},
+    {ABCDK_MP4_ATOM_TYPE_ESDS, _abcdk_mp4_read_esds},
     {ABCDK_MP4_ATOM_TYPE_FREE, _abcdk_mp4_read_ignore},
     {ABCDK_MP4_ATOM_TYPE_SKIP, _abcdk_mp4_read_ignore},
     {ABCDK_MP4_ATOM_TYPE_WIDE, _abcdk_mp4_read_ignore},
