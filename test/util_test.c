@@ -135,6 +135,8 @@ void test_ffmpeg(abcdk_tree_t *args)
 
     abcdk_avformat_parameters_from_context(vs,ctx->streams[0]->codec);
 
+    vs->time_base.
+
     AVDictionary *dict3[10] = {NULL};
     abcdk_avformat_output_header(ctx2,dict3,1);
 
@@ -152,7 +154,9 @@ void test_ffmpeg(abcdk_tree_t *args)
 
         //abcdk_write(fd2,pkt.data,pkt.size);
 
-        abcdk_avformat_output_write(ctx2,vs,&pkt);
+        chk = abcdk_avformat_output_write(ctx2,vs,&pkt);
+        if (chk < 0)
+            break;
 
         av_packet_unref(&pkt);
     }

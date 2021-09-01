@@ -251,7 +251,9 @@ AVCodec *abcdk_avcodec_find(const char *name,int encode)
     assert(name != NULL);
     assert(*name != '\0');
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
     avcodec_register_all();
+#endif
 
     ctx = (encode ? avcodec_find_encoder_by_name(name) : avcodec_find_decoder_by_name(name));
 
@@ -264,7 +266,9 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
 
     assert(id > AV_CODEC_ID_NONE);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
     avcodec_register_all();
+#endif
 
     if (id == AV_CODEC_ID_HEVC)
         ctx = abcdk_avcodec_find(encode?"hevc_nvenc":"hevc_cuvid", encode);
@@ -464,7 +468,7 @@ void abcdk_avio_free(AVIOContext **ctx)
 
     ctx_p = *ctx;
 
-#ifdef avio_context_free
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,54,100)
     avio_context_free(&ctx_p);
 #else
     if(ctx_p->buffer)
@@ -561,8 +565,9 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     AVInputFormat *fmt = NULL;
     AVFormatContext *ctx = NULL;
     int chk = -1;
-
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
     av_register_all();
+#endif 
     avformat_network_init();
     avdevice_register_all();
 
@@ -612,7 +617,11 @@ int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict, int du
 
     if (dump)
     {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
         av_dump_format(ctx, 0, ctx->filename, 0);
+#else
+        av_dump_format(ctx, 0, ctx->url, 0);
+#endif 
     }
 
     return chk;
@@ -709,7 +718,9 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     AVFormatContext *ctx = NULL;
     int chk = -1;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
     av_register_all();
+#endif 
     avformat_network_init();
     avdevice_register_all();
 
@@ -741,7 +752,10 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (!ctx->oformat)
         goto final_error;
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
     strncpy(ctx->filename, filename, sizeof(ctx->filename));
+#endif
+    ctx->url = av_strdup(filename);
 
     return ctx;
 
@@ -779,14 +793,21 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
     if ((ctx->oformat->flags & AVFMT_NOFILE) || ctx->pb)
         chk = 0;
     else
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
         chk = avio_open(&ctx->pb, ctx->filename, AVIO_FLAG_WRITE);
-
+#else 
+        chk = avio_open(&ctx->pb, ctx->url, AVIO_FLAG_WRITE);
+#endif
     if (chk != 0)
         return -1;
 
     if (dict)
     {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
         if (strncmp(ctx->filename, "rtsp://", 7) == 0)
+#else
+        if (strncmp(ctx->url, "rtsp://", 7) == 0)
+#endif
             av_dict_set(dict, "rtsp_transport", "tcp", 0);
     }
 
@@ -795,7 +816,13 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
         return -1;
 
     if(dump)
+    {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
         av_dump_format(ctx, 0, ctx->filename, 1);
+#else
+        av_dump_format(ctx, 0, ctx->url, 1);
+#endif 
+    }
 
     return 0;
 }
@@ -841,6 +868,9 @@ int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *c
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,54,100)
+    avcodec_parameters_from_context(vs->codecpar,ctx);
+#else
     vs->codec->codec_type = ctx->codec_type;
     vs->codec->codec_id = ctx->codec_id;
     vs->codec->codec_tag = ctx->codec_tag;
@@ -897,12 +927,16 @@ int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *c
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
+
+#endif
 }
 
 int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
 {
     assert(vs != NULL && ctx != NULL);
-
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,54,100)
+    avcodec_parameters_to_context(ctx,vs->codecpar);
+#else 
     ctx->codec_type = vs->codec->codec_type;
     ctx->codec_id = vs->codec->codec_id;
     ctx->codec_tag = vs->codec->codec_tag;
@@ -958,6 +992,7 @@ int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
+#endif
 }
 
 /*------------------------------------------------------------------------------------------------*/
