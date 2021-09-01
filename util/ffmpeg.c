@@ -6,7 +6,7 @@
  */
 #include "abcdk-util/ffmpeg.h"
 
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H)
+#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -304,6 +304,16 @@ AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx)
     return avcodec_alloc_context3(ctx);
 }
 
+AVCodecContext *abcdk_avcodec_alloc2(const char *name,int encode)
+{
+    return abcdk_avcodec_alloc(abcdk_avcodec_find(name,encode));
+}
+
+AVCodecContext *abcdk_avcodec_alloc3(enum AVCodecID id,int encode)
+{
+    return abcdk_avcodec_alloc(abcdk_avcodec_find2(id,encode));
+}
+
 int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
 {
     int chk = -1;
@@ -447,15 +457,22 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
 
 void abcdk_avio_free(AVIOContext **ctx)
 {
+    AVIOContext *ctx_p = NULL;
+
     if (!ctx || !*ctx)
         return;
 
+    ctx_p = *ctx;
+
 #ifdef avio_context_free
-    avio_context_free(ctx);
+    avio_context_free(&ctx_p);
 #else
-    av_free(*ctx);
-    *ctx = NULL;
+    if(ctx_p->buffer)
+        av_free(ctx_p->buffer);    
+    av_free(ctx_p);
 #endif
+    /* Set NULL(0).*/
+    *ctx = NULL;
 }
 
 AVIOContext *abcdk_avio_alloc(int buf_blocks, int write_flag, void *opaque)
@@ -466,7 +483,7 @@ AVIOContext *abcdk_avio_alloc(int buf_blocks, int write_flag, void *opaque)
 
     if (buf_blocks > 0)
         buf_size = buf_blocks * 4096;
-        
+
     buf = av_malloc(buf_size);
     if (!buf)
         goto final_error;
@@ -484,7 +501,466 @@ final_error:
     return NULL;
 }
 
+void abcdk_avformat_show_options(AVFormatContext *ctx)
+{
+    if (!ctx)
+        return;
+
+    if (ctx->av_class)
+        av_opt_show2((void *)&ctx->av_class, NULL, -1, 0);
+    else
+        av_log(NULL, AV_LOG_INFO, "No options for this.\n");
+
+    if (ctx->iformat)
+    {
+        if (ctx->iformat->priv_class)
+            av_opt_show2((void *)&ctx->iformat->priv_class, NULL, -1, 0);
+        else
+            av_log(NULL, AV_LOG_INFO, "No options for `%s'.\n", (ctx->iformat->long_name ? ctx->iformat->long_name : ctx->iformat->name));
+    }
+    if (ctx->oformat)
+    {
+        if (ctx->oformat->priv_class)
+            av_opt_show2((void *)&ctx->oformat->priv_class, NULL, -1, 0);
+        else
+            av_log(NULL, AV_LOG_INFO, "No options for `%s'.\n", (ctx->oformat->long_name ? ctx->oformat->long_name : ctx->oformat->name));
+    }
+}
+
+void abcdk_avformat_free(AVFormatContext **ctx)
+{
+    AVFormatContext *ctx_p = NULL;
+    AVIOContext *pb = NULL;
+
+    if (!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+
+    /*自定义IO环境不能自动释放，需要单独释放。*/
+    if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO)
+        pb = ctx_p->pb;
+
+    if (ctx_p->iformat)
+        avformat_close_input(ctx);
+    else
+        avformat_free_context(ctx_p);
+
+    /*释放自定义IO环境。*/
+    if (pb)
+        abcdk_avio_free(&pb);
+
+    /* Set NULL(0).*/
+    *ctx = NULL;
+}
+
+AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *filename,
+                                           AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
+                                           AVDictionary **dict)
+{
+    AVInputFormat *fmt = NULL;
+    AVFormatContext *ctx = NULL;
+    int chk = -1;
+
+    av_register_all();
+    avformat_network_init();
+    avdevice_register_all();
+
+    assert(filename != NULL);
+    
+    ctx = avformat_alloc_context();
+    if (!ctx)
+        return NULL;
+
+    /*如果不知道做什么用的，不要设置这个。*/
+    //ctx->flags |= AVFMT_FLAG_NOBUFFER;
+
+    if (interrupt_cb)
+        ctx->interrupt_callback = *interrupt_cb;
+
+    if (io_cb)
+        ctx->pb = io_cb;
+
+    if (dict)
+    {
+        /* RTSP默认走TCP，可以减少丢包。*/
+        if (strncmp(filename, "rtsp://", 7) == 0)
+            av_dict_set(dict, "rtsp_transport", "tcp", 0);
+
+        av_dict_set(dict, "scan_all_pmts", "1", 0);
+    }
+
+    fmt = av_find_input_format(short_name);
+    chk = avformat_open_input(&ctx, filename, fmt, dict);
+
+    if (chk != 0)
+        abcdk_avformat_free(&ctx);
+
+    return ctx;
+}
+
+int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict, int dump)
+{
+    int chk = -1;
+
+    assert(ctx != NULL);
+    assert(ctx->iformat != NULL);
+
+    chk = avformat_find_stream_info(ctx, dict);
+    if (chk < 0)
+        return chk;
+
+    if (dump)
+    {
+        av_dump_format(ctx, 0, ctx->filename, 0);
+    }
+
+    return chk;
+}
+
+int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaType only_type)
+{
+    int chk = -1;
+
+    assert(ctx != NULL && pkt != NULL);
+
+    for (;;)
+    {
+        av_packet_unref(pkt);
+        chk = av_read_frame(ctx, pkt);
+        if (chk < 0)
+            return chk;
+
+        if (only_type == AVMEDIA_TYPE_NB)
+            break;
+
+        if (ctx->streams[pkt->stream_index]->codec->codec_type == only_type)
+            break;
+    }
+
+    return 0;
+}
+
+int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStreamFilterContext **filter)
+{
+    AVBitStreamFilterContext *filter_p = NULL;
+    AVCodecContext *codec_p = NULL;
+    uint8_t *outbuf = NULL;
+    int outbuf_size = 0;
+    uint8_t *inbuf = NULL;
+    int inbuf_size = 0;
+    int chk = -1;
+
+    assert(ctx != NULL && pkt != NULL);
+
+    /*不能保存指针，什么也不做。*/
+    if (!filter)
+        return 0;
+
+    filter_p = *filter;
+    codec_p = ctx->streams[pkt->stream_index]->codec;
+
+    /*如果过滤器未创建，则在内部创建。*/
+    if (!filter_p)
+    {
+        if (codec_p->codec_id == AV_CODEC_ID_H264)
+            filter_p = av_bitstream_filter_init("h264_mp4toannexb");
+        else if (codec_p->codec_id == AV_CODEC_ID_HEVC)
+            filter_p = av_bitstream_filter_init("hevc_mp4toannexb");
+        else 
+            return 0;
+
+        if(!filter_p)
+            return -1;
+
+        /*保存过滤器环境指针。*/
+        *filter = filter_p;
+    }
+
+    inbuf = pkt->data;
+    inbuf_size = pkt->size;
+    chk = av_bitstream_filter_filter(filter_p, codec_p, NULL, &outbuf, &outbuf_size, inbuf, inbuf_size, pkt->flags & AV_PKT_FLAG_KEY);
+    if (chk < 0)
+        return -1;
+
+    /*可能仅是复制了指针。*/
+    if (outbuf == inbuf)
+        return 0;
+
+    /*释放旧的。*/
+    if (pkt->buf)
+        av_buffer_unref(&pkt->buf);
+    else
+        av_free(pkt->data);
+
+    /*绑定新的。*/
+    pkt->buf = av_buffer_create(outbuf, outbuf_size, NULL, NULL, 0);
+    pkt->data = outbuf;
+    pkt->size = outbuf_size;
+
+    return 0;
+}
+
+AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *filename, const char *mime_type,
+                                            AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
+                                            AVDictionary **dict)
+{
+    AVInputFormat *fmt = NULL;
+    AVFormatContext *ctx = NULL;
+    int chk = -1;
+
+    av_register_all();
+    avformat_network_init();
+    avdevice_register_all();
+
+    assert(filename != NULL);
+    
+    ctx = avformat_alloc_context();
+    if (!ctx)
+        return NULL;
+
+    if (interrupt_cb)
+        ctx->interrupt_callback = *interrupt_cb;
+
+    if (io_cb)
+        ctx->pb = io_cb;
+
+    av_dict_set(&ctx->metadata, "service", "ABCDK",0);
+    av_dict_set(&ctx->metadata, "service_name", "ABCDK",0);
+    av_dict_set(&ctx->metadata, "service_provider", "ABCDK",0);
+    av_dict_set(&ctx->metadata, "artist", "ABCDK",0);
+
+    if (strncmp(filename, "rtsp://", 7) == 0)
+        ctx->oformat = av_guess_format("rtsp", NULL, NULL);
+    else if (strncmp(filename, "rtmp://", 7) == 0)
+        ctx->oformat = av_guess_format("flv", NULL, NULL);
+
+    if (!ctx->oformat)
+        ctx->oformat = av_guess_format(short_name, filename, mime_type);
+
+    if (!ctx->oformat)
+        goto final_error;
+
+    strncpy(ctx->filename, filename, sizeof(ctx->filename));
+
+    return ctx;
+
+final_error:
+
+    abcdk_avformat_free(&ctx);
+
+    return NULL;
+}
+
+AVStream *abcdk_avformat_output_stream(AVFormatContext *ctx, const AVCodec *codec)
+{
+    assert(ctx != NULL && codec != NULL);
+    assert(ctx->oformat);
+
+    return avformat_new_stream(ctx, codec);
+}
+
+AVStream *abcdk_avformat_output_stream2(AVFormatContext *ctx, const char *name)
+{
+    return abcdk_avformat_output_stream(ctx,abcdk_avcodec_find(name,1));
+}
+
+AVStream *abcdk_avformat_output_stream3(AVFormatContext *ctx, enum AVCodecID id)
+{
+    return abcdk_avformat_output_stream(ctx,abcdk_avcodec_find2(id,1));
+}
+
+int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int dump)
+{
+    int chk = -1;
+    assert(ctx != NULL);
+    assert(ctx->oformat);
+
+    if ((ctx->oformat->flags & AVFMT_NOFILE) || ctx->pb)
+        chk = 0;
+    else
+        chk = avio_open(&ctx->pb, ctx->filename, AVIO_FLAG_WRITE);
+
+    if (chk != 0)
+        return -1;
+
+    if (dict)
+    {
+        if (strncmp(ctx->filename, "rtsp://", 7) == 0)
+            av_dict_set(dict, "rtsp_transport", "tcp", 0);
+    }
+
+    chk = avformat_write_header(ctx, dict);
+    if (chk != 0)
+        return -1;
+
+    if(dump)
+        av_dump_format(ctx, 0, ctx->filename, 1);
+
+    return 0;
+}
+
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVStream *vs, AVPacket *pkt)
+{
+    assert(ctx != NULL && vs != NULL && pkt != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+    assert(vs->codec);
+
+    AVRational bq = vs->codec->time_base;
+    AVRational cq = vs->time_base;
+
+    if (pkt->pts != (int64_t)AV_NOPTS_VALUE)
+        pkt->pts = av_rescale_q(pkt->pts, bq, cq);
+
+    if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
+        pkt->dts = av_rescale_q(pkt->dts, bq, cq);
+
+    if (pkt->duration)
+        pkt->duration = av_rescale_q(pkt->duration, bq, cq);
+
+    pkt->stream_index = vs->index;
+
+    return av_interleaved_write_frame(ctx, pkt);
+}
+
+int abcdk_avformat_output_trailer(AVFormatContext *ctx)
+{
+    assert(ctx != NULL);
+
+    return av_write_trailer(ctx);
+}
+
+int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *ctx)
+{
+    assert(vs != NULL && ctx != NULL);
+
+    /*如果是编码，帧率也一并复制。*/
+    if (av_codec_is_encoder(ctx->codec))
+    {
+        vs->time_base = vs->codec->time_base = ctx->time_base;
+        vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
+    }
+
+    vs->codec->codec_type = ctx->codec_type;
+    vs->codec->codec_id = ctx->codec_id;
+    vs->codec->codec_tag = ctx->codec_tag;
+    vs->codec->bit_rate = ctx->bit_rate;
+    vs->codec->bits_per_coded_sample = ctx->bits_per_coded_sample;
+    vs->codec->bits_per_raw_sample = ctx->bits_per_raw_sample;
+    vs->codec->profile = ctx->profile;
+    vs->codec->level = ctx->level;
+    vs->codec->flags = ctx->flags;
+
+    switch (ctx->codec_type)
+    {
+    case AVMEDIA_TYPE_VIDEO:
+        vs->codec->pix_fmt = ctx->pix_fmt;
+        vs->codec->width = ctx->width;
+        vs->codec->height = ctx->height;
+        vs->codec->gop_size = ctx->gop_size;
+        vs->codec->field_order = ctx->field_order;
+        vs->codec->color_range = ctx->color_range;
+        vs->codec->color_primaries = ctx->color_primaries;
+        vs->codec->color_trc = ctx->color_trc;
+        vs->codec->colorspace = ctx->colorspace;
+        vs->codec->chroma_sample_location = ctx->chroma_sample_location;
+        vs->codec->sample_aspect_ratio = ctx->sample_aspect_ratio;
+        vs->codec->has_b_frames = ctx->has_b_frames;
+        break;
+    case AVMEDIA_TYPE_AUDIO:
+        vs->codec->sample_fmt = ctx->sample_fmt;
+        vs->codec->channel_layout = ctx->channel_layout;
+        vs->codec->channels = ctx->channels;
+        vs->codec->sample_rate = ctx->sample_rate;
+        vs->codec->block_align = ctx->block_align;
+        vs->codec->frame_size = ctx->frame_size;
+        vs->codec->initial_padding = ctx->initial_padding;
+        vs->codec->seek_preroll = ctx->seek_preroll;
+        break;
+    case AVMEDIA_TYPE_SUBTITLE:
+        vs->codec->width = ctx->width;
+        vs->codec->height = ctx->height;
+        break;
+    }
+    
+    if (ctx->extradata)
+    {
+        av_freep(&vs->codec->extradata);
+        vs->codec->extradata = (uint8_t *)av_mallocz(ctx->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+        if (vs->codec->extradata)
+        {
+            memcpy(vs->codec->extradata, ctx->extradata, ctx->extradata_size);
+            vs->codec->extradata_size = ctx->extradata_size;
+        }
+        else
+        {
+            av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
+        }
+    }
+}
+
+int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
+{
+    assert(vs != NULL && ctx != NULL);
+
+    ctx->codec_type = vs->codec->codec_type;
+    ctx->codec_id = vs->codec->codec_id;
+    ctx->codec_tag = vs->codec->codec_tag;
+    ctx->bit_rate = vs->codec->bit_rate;
+    ctx->bits_per_coded_sample = vs->codec->bits_per_coded_sample;
+    ctx->bits_per_raw_sample = vs->codec->bits_per_raw_sample;
+    ctx->profile = vs->codec->profile;
+    ctx->level = vs->codec->level;
+    ctx->flags = vs->codec->flags;
+
+    switch (vs->codec->codec_type)
+    {
+    case AVMEDIA_TYPE_VIDEO:
+        ctx->pix_fmt = vs->codec->pix_fmt;
+        ctx->width = vs->codec->width;
+        ctx->height = vs->codec->height;
+        ctx->field_order = vs->codec->field_order;
+        ctx->color_range = vs->codec->color_range;
+        ctx->color_primaries = vs->codec->color_primaries;
+        ctx->color_trc = vs->codec->color_trc;
+        ctx->colorspace = vs->codec->colorspace;
+        ctx->chroma_sample_location = vs->codec->chroma_sample_location;
+        ctx->sample_aspect_ratio = vs->codec->sample_aspect_ratio;
+        ctx->has_b_frames = vs->codec->has_b_frames;
+        break;
+    case AVMEDIA_TYPE_AUDIO:
+        ctx->sample_fmt = vs->codec->sample_fmt;
+        ctx->channel_layout = vs->codec->channel_layout;
+        ctx->channels = vs->codec->channels;
+        ctx->sample_rate = vs->codec->sample_rate;
+        ctx->block_align = vs->codec->block_align;
+        ctx->frame_size = vs->codec->frame_size;
+        ctx->delay = ctx->initial_padding = vs->codec->initial_padding;
+        ctx->seek_preroll = vs->codec->seek_preroll;
+        break;
+    case AVMEDIA_TYPE_SUBTITLE:
+        ctx->width = vs->codec->width;
+        ctx->height = vs->codec->height;
+        break;
+    }
+
+    if (vs->codec->extradata)
+    {
+        av_freep(&ctx->extradata);
+        ctx->extradata = (uint8_t *)av_mallocz(vs->codec->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+        if (ctx->extradata)
+        {
+            memcpy(ctx->extradata, vs->codec->extradata, vs->codec->extradata_size);
+            ctx->extradata_size = vs->codec->extradata_size;
+        }
+        else
+        {
+            av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
+        }
+    }
+}
+
 /*------------------------------------------------------------------------------------------------*/
 
 
-#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H
+#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H

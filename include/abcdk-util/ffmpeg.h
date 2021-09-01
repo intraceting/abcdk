@@ -29,6 +29,7 @@ __BEGIN_DECLS
 #include <libswscale/swscale.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavdevice/avdevice.h>
 
 __END_DECLS
 
@@ -36,7 +37,7 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H)
+#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
 /**
  * 简单的图像结构。
@@ -228,10 +229,24 @@ void abcdk_avcodec_free(AVCodecContext **ctx);
 */
 AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx);
 
+/** 
+ * 创建编/解码器环境。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVCodecContext *abcdk_avcodec_alloc2(const char *name,int encode);
+
+/** 
+ * 创建编/解码器环境。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVCodecContext *abcdk_avcodec_alloc3(enum AVCodecID id,int encode);
+
 /**
  * 打开编/解码器环境。
  * 
- * @param dict 字典，!NULL(0) H264、HEVC(H265)编码器默认参数bframes=0。调用者需要主动释放字典指针。
+ * @param dict 字典，!NULL(0) 需要调用者释放。
  *  
  * @return  >=0 成功，1 失败。
 */
@@ -273,7 +288,6 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
 
 /**
  * 释放自定义IO环境。
- *  
 */
 void abcdk_avio_free(AVIOContext **ctx);
 
@@ -282,13 +296,143 @@ void abcdk_avio_free(AVIOContext **ctx);
  * 
  * @param buffer_blocks 4K(字节)的倍数，默认值为8。
  * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
 AVIOContext *abcdk_avio_alloc(int buf_blocks,int write_flag,void *opaque);
 
+/**
+ * 打印可选项。
+*/
+void abcdk_avformat_show_options(AVFormatContext *ctx);
+
+/**
+ * 释放AVFormatContext环境。
+ * 
+ * @note 释放所有需要释放的内存和句柄。
+*/
+void abcdk_avformat_free(AVFormatContext **ctx);
+
+/**
+ * 创建流(输入)环境。
+ * 
+ * @param interrupt_cb 中断回调环境指针。
+ * @param io_cb 自定义IO环境指针。
+ * @param dict 字典指针。!NULL(0) 需要调用者释放。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *filename,
+                                           AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
+                                           AVDictionary **dict);
+
+/**
+ * 探查流(输入)信息。
+ * 
+ * @param dict 字典指针数组，数组的高度大于或等于ctx->nb_streams。!NULL(0) 需要调用者释放。
+ * @param dump !0 打印流信息，0 忽略。
+ * 
+ * @return >=0 成功，-1 失败。
+ * 
+*/
+int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict, int dump);
+
+/**
+ * 读取流(输入)的数据包。
+ * 
+ * @param only_type AVMEDIA_TYPE_NB 任意类型，!AVMEDIA_TYPE_NB 指定类型。
+ * 
+ * @return >=0 成功，-1 失败。
+*/
+int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaType only_type);
+
+/**
+ * 过滤流(输入)的数据包。
+ * 
+ * @param filter 过滤器指针。!NULL(0) 需要调用者释放。
+ * 
+ * @return >=0 成功，-1 失败。
+ * 
+*/
+int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStreamFilterContext **filter);
+
+/**
+ * 创建流(输出)环境。
+ * 
+ * @param mime_type 媒体类型，NULL(0) 自动确定。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *filename, const char *mime_type,
+                                            AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
+                                            AVDictionary **dict);
+
+/**
+ * 创建新的流(输出)环境。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVStream *abcdk_avformat_output_stream(AVFormatContext *ctx, const AVCodec *codec);
+
+/**
+ * 创建新的流(输出)环境。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVStream *abcdk_avformat_output_stream2(AVFormatContext *ctx, const char *name);
+
+/**
+ * 创建新的流(输出)环境。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+AVStream *abcdk_avformat_output_stream3(AVFormatContext *ctx, enum AVCodecID id);
+
+/**
+ * 向流(输出)写入头部信息。
+ * 
+ * @param dict 字典指针数组，数组的高度大于或等于ctx->nb_streams。!NULL(0) 需要调用者释放。
+ * @param dump !0 打印流信息，0 忽略。
+ * 
+ * @return >=0 成功，-1 失败。
+ * 
+*/
+int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int dump);
+
+/**
+ * 向流(输出)写入数据包。
+ * 
+ * @param vs 数据流，NULL(0) 写入结束包。
+ * @param pkt 包，NULL(0) 写入结束包。
+ * 
+ * @return 0 成功，!0 失败。
+ * 
+*/
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVStream *vs, AVPacket *pkt);
+
+/**
+ * 向流(输出)写入结束信息。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_avformat_output_trailer(AVFormatContext *ctx);
+
+/**
+ * 从编/解码器环境复制参数。
+ * 
+ * @return 0 成功，!0 失败。
+ */
+int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *ctx);
+
+/**
+ * 向编/解码器环境复制参数。
+ *
+ * @return 0 成功，!0 失败。
+ */
+int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs);
 
 /*------------------------------------------------------------------------------------------------*/
 
-#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H
+#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 
 
 

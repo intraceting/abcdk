@@ -44,7 +44,9 @@ void test_log(abcdk_tree_t *args)
 void test_ffmpeg(abcdk_tree_t *args)
 {
 
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)
+#ifdef HAVE_FFMPEG
+
+#if 0 
 
     for(int i = 0;i<1000;i++)
     {
@@ -116,9 +118,64 @@ void test_ffmpeg(abcdk_tree_t *args)
     abcdk_heap_free(dst_buf);
     abcdk_heap_free(dst2_buf);
 
-#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H
+#else 
+
+    const char *file_p = abcdk_option_get(args,"--file",0,"");
+
+    AVDictionary *dict = NULL;
+    AVFormatContext *ctx = abcdk_avformat_input_open(NULL,file_p,NULL,NULL,&dict);
+    
+    AVDictionary *dict2[10] = {NULL};
+    abcdk_avformat_input_probe(ctx,dict2,1);
+
+    AVBitStreamFilterContext *filter = NULL;
+    //int fd2 = abcdk_open("/tmp/abcdk.h264",1,0,1);
+    AVFormatContext *ctx2 = abcdk_avformat_output_open(NULL,"/tmp/abcdk.mp4",NULL,NULL,NULL,NULL);
+    AVStream *vs = abcdk_avformat_output_stream3(ctx2,ctx->streams[0]->codec->codec_id);
+
+    abcdk_avformat_parameters_from_context(vs,ctx->streams[0]->codec);
+
+    AVDictionary *dict3[10] = {NULL};
+    abcdk_avformat_output_header(ctx2,dict3,1);
+
+    for (;;)
+    {
+        AVPacket pkt;
+        av_init_packet(&pkt);
+        int chk = abcdk_avformat_input_read(ctx, &pkt, AVMEDIA_TYPE_VIDEO);
+        if (chk < 0)
+            break;
+
+        chk = abcdk_avformat_input_filter(ctx,&pkt,&filter);
+        if (chk < 0)
+            break;
+
+        //abcdk_write(fd2,pkt.data,pkt.size);
+
+        abcdk_avformat_output_write(ctx2,vs,&pkt);
+
+        av_packet_unref(&pkt);
+    }
+
+    av_bitstream_filter_close(filter);
+
+    //abcdk_closep(&fd2);
+    abcdk_avformat_output_trailer(ctx2);
 
 
+    av_dict_free(&dict);
+    for (int i = 0; i < 10; i++)
+    {
+        av_dict_free(&dict2[i]);
+        av_dict_free(&dict3[i]);
+    }
+
+    abcdk_avformat_free(&ctx2);
+    abcdk_avformat_free(&ctx);
+
+#endif
+
+#endif //
 
 
 }
