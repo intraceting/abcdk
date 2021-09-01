@@ -31,3 +31,23 @@ ssize_t abcdk_iconv(iconv_t cd, const char *src, size_t slen, char *dst, size_t 
     
     return dlen - copy_dlen;
 }
+
+ssize_t abcdk_iconv2(const char *from,const char *to, const char *src, size_t slen, char *dst, size_t dlen,size_t *remain)
+{
+    iconv_t cd = 0;
+    size_t ret = -1;
+
+    assert(from != NULL && to != NULL);
+
+    assert(*from != '\0' && *to != '\0');
+
+    cd = iconv_open(to,from);
+
+    if(cd != (iconv_t)-1)
+    {
+        ret = abcdk_iconv(cd,src,slen,dst,dlen,remain);
+        iconv_close(cd);
+    }
+
+    return ret;
+}

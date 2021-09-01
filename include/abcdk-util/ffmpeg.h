@@ -216,20 +216,20 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode);
 void abcdk_avcodec_show_options(AVCodec *ctx);
 
 /**
- * 释放编/解码器对象。
+ * 释放编/解码器环境。
  * 
  */
 void abcdk_avcodec_free(AVCodecContext **ctx);
 
 /** 
- * 创建编/解码器对象。
+ * 创建编/解码器环境。
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
 AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx);
 
 /**
- * 打开编/解码器对象。
+ * 打开编/解码器环境。
  * 
  * @param dict 字典，!NULL(0) H264、HEVC(H265)编码器默认参数bframes=0。调用者需要主动释放字典指针。
  *  
@@ -240,9 +240,7 @@ int abcdk_avcodec_open(AVCodecContext *ctx,AVDictionary **dict);
 /**
  * 解码。
  * 
- * @param in 数据包，NULL(0) 处理延时解码。
- * 
- * @return > 0 成功(解码帧数量)，-1 失败，-2，未支持。
+ * @return > 0 成功(解码帧数量)，0 延时解码，-1 失败，-2，未支持。
  * 
 */
 int abcdk_avcodec_decode(AVCodecContext *ctx,AVFrame *out,const AVPacket *in);
@@ -250,12 +248,14 @@ int abcdk_avcodec_decode(AVCodecContext *ctx,AVFrame *out,const AVPacket *in);
 /**
  * 编码。
  * 
- * @return > 0 成功(编码帧数量)，-1 失败，-2，未支持。
+ * @param in 数据包，NULL(0) 处理延时编码。
+ * 
+ * @return > 0 成功(编码帧数量)，0 延时编码，-1 失败，-2，未支持。
 */
 int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out,const AVFrame *in);
 
 /**
- * 配置视频编码对象基本参数。
+ * 配置视频编码环境基本参数。
  * 
  * @param fps 帧速。
  * @param width 宽(像素)。
@@ -263,8 +263,28 @@ int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out,const AVFrame *in);
  * @param gop_size 关健帧间隔帧数，<= 0 使用帧速。
  * @param oformat_flags 输出的流标志。
  * 
+ * @note 在abcdk_avcodec_open之前使用有效。
+ * 
 */
 void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,int height,int gop_size,int oformat_flags);
+
+
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ * 释放自定义IO环境。
+ *  
+*/
+void abcdk_avio_free(AVIOContext **ctx);
+
+/**
+ * 创建自定义IO环境。
+ * 
+ * @param buffer_blocks 4K(字节)的倍数，默认值为8。
+ * 
+*/
+AVIOContext *abcdk_avio_alloc(int buf_blocks,int write_flag,void *opaque);
+
 
 /*------------------------------------------------------------------------------------------------*/
 

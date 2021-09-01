@@ -50,8 +50,6 @@ typedef struct _abcdk_pool
 
 /**
  * 销毁。
- * 
- * @warning 所有内存块必须全部在池内才能被销毁。
 */
 void abcdk_pool_destroy(abcdk_pool_t *pool);
 
@@ -76,7 +74,7 @@ ssize_t abcdk_pool_pull(abcdk_pool_t *pool, void *buf, size_t size);
 /**
  * 推送数据。
  * 
- * @return >= 0 成功(写入数据长度)，< 失败(满了)。
+ * @return >= 0 成功(写入数据长度)，< 0 失败(满了)。
  * 
 */
 ssize_t abcdk_pool_push(abcdk_pool_t *pool, const void *buf, size_t size);

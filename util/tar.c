@@ -399,6 +399,7 @@ again:
 
         attr->st_size = abcdk_tar_get_size(&hdr);
         attr->st_mode |= abcdk_tar_get_mode(&hdr);
+        attr->st_ctim.tv_sec = time(NULL);
         attr->st_mtim.tv_sec = abcdk_tar_get_mtime(&hdr);
         attr->st_gid = abcdk_tar_get_gid(&hdr);
         attr->st_uid = abcdk_tar_get_uid(&hdr);

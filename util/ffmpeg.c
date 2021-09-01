@@ -445,5 +445,46 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
 
 /*------------------------------------------------------------------------------------------------*/
 
+void abcdk_avio_free(AVIOContext **ctx)
+{
+    if (!ctx || !*ctx)
+        return;
+
+#ifdef avio_context_free
+    avio_context_free(ctx);
+#else
+    av_free(*ctx);
+    *ctx = NULL;
+#endif
+}
+
+AVIOContext *abcdk_avio_alloc(int buf_blocks, int write_flag, void *opaque)
+{
+    int buf_size = 8 * 4096; /* 4k bytes 的倍数。 */
+    void *buf = NULL;
+    AVIOContext *ctx = NULL;
+
+    if (buf_blocks > 0)
+        buf_size = buf_blocks * 4096;
+        
+    buf = av_malloc(buf_size);
+    if (!buf)
+        goto final_error;
+
+    ctx = avio_alloc_context((uint8_t *)buf, buf_size, write_flag, NULL, NULL, NULL, NULL);
+    if (!ctx)
+        goto final_error;
+
+    return ctx;
+
+final_error:
+
+    av_freep(&buf);
+
+    return NULL;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
 
 #endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H

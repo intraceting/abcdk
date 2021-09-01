@@ -1697,7 +1697,7 @@ int dirent_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     abcdk_basename(name,path);
 
 #if 1
-    abcdk_tree_fprintf(stderr,deep,node,"[%lu, %lu, %lu] %s%s\n",
+    abcdk_tree_fprintf(stderr,deep,node,"[DIRs: %lu, REGs: %lu, SIZEs: %lu] %s%s\n",
                         ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_DIRS], 0)->nums,
                         ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_REGS], 0)->nums,
                         ABCDK_PTR2PTR(abcdk_dirent_counter_t,node->alloc->pptrs[ABCDK_DIRENT_REGS], 0)->sizes,
