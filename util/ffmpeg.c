@@ -48,6 +48,8 @@ void abcdk_av_log2syslog()
 
 /*------------------------------------------------------------------------------------------------*/
 
+#define ABCDK_AVPIXFMT_CHECK(pixfmt)   ((pixfmt) > AV_PIX_FMT_NONE && (pixfmt) < AV_PIX_FMT_NB)
+
 int abcdk_av_image_pixfmt_bits(enum AVPixelFormat pixfmt, int padded)
 {
     const AVPixFmtDescriptor *desc;
@@ -130,7 +132,7 @@ int abcdk_av_image_fill_strides(int strides[4],int width,int height,enum AVPixel
     return stride_nb;
 }
 
-int abcdk_av_image_fill_strides2(abcdk_av_image_t *img,int align)
+int abcdk_av_image_fill_strides2(abcdk_image_t *img,int align)
 {
     assert (img != NULL);
 
@@ -152,7 +154,7 @@ int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int he
     return size;
 }
 
-int abcdk_av_image_fill_pointers2(abcdk_av_image_t *img,void *buffer)
+int abcdk_av_image_fill_pointers2(abcdk_image_t *img,void *buffer)
 {
     assert (img != NULL);
 
@@ -178,7 +180,7 @@ int abcdk_av_image_size2(int width,int height,enum AVPixelFormat pixfmt,int alig
     return abcdk_av_image_size(strides,height,pixfmt);
 }
 
-int abcdk_av_image_size3(const abcdk_av_image_t *img)
+int abcdk_av_image_size3(const abcdk_image_t *img)
 {
     assert (img != NULL);
 
@@ -195,7 +197,7 @@ void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_
     av_image_copy(dst_datas, dst_strides, src_datas, src_strides, pixfmt, width, height);
 }
 
-void abcdk_av_image_copy2(abcdk_av_image_t *dst, const abcdk_av_image_t *src)
+void abcdk_av_image_copy2(abcdk_image_t *dst, const abcdk_image_t *src)
 {
     assert(dst != NULL && src != NULL);
 
@@ -233,7 +235,7 @@ struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFo
                           flags, NULL, NULL, NULL);
 }
 
-struct SwsContext *abcdk_sws_alloc2(const abcdk_av_image_t *src, const abcdk_av_image_t *dst, int flags)
+struct SwsContext *abcdk_sws_alloc2(const abcdk_image_t *src, const abcdk_image_t *dst, int flags)
 {
     assert(dst != NULL && src != NULL);
 
@@ -251,7 +253,7 @@ AVCodec *abcdk_avcodec_find(const char *name,int encode)
     assert(name != NULL);
     assert(*name != '\0');
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     avcodec_register_all();
 #endif
 
@@ -266,7 +268,7 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
 
     assert(id > AV_CODEC_ID_NONE);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     avcodec_register_all();
 #endif
 
@@ -468,7 +470,7 @@ void abcdk_avio_free(AVIOContext **ctx)
 
     ctx_p = *ctx;
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,40,101)
     avio_context_free(&ctx_p);
 #else
     if(ctx_p->buffer)
@@ -565,7 +567,7 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     AVInputFormat *fmt = NULL;
     AVFormatContext *ctx = NULL;
     int chk = -1;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
     av_register_all();
 #endif 
     avformat_network_init();
@@ -617,7 +619,7 @@ int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict, int du
 
     if (dump)
     {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
         av_dump_format(ctx, 0, ctx->filename, 0);
 #else
         av_dump_format(ctx, 0, ctx->url, 0);
@@ -640,11 +642,15 @@ int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaT
         if (chk < 0)
             return chk;
 
-        if (only_type == AVMEDIA_TYPE_NB)
+        if (only_type < AVMEDIA_TYPE_NB)
+        {
+            if (ctx->streams[pkt->stream_index]->codec->codec_type == only_type)
+                break;
+        }
+        else
+        {
             break;
-
-        if (ctx->streams[pkt->stream_index]->codec->codec_type == only_type)
-            break;
+        }
     }
 
     return 0;
@@ -688,22 +694,20 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
 
     inbuf = pkt->data;
     inbuf_size = pkt->size;
-    chk = av_bitstream_filter_filter(filter_p, codec_p, NULL, &outbuf, &outbuf_size, inbuf, inbuf_size, pkt->flags & AV_PKT_FLAG_KEY);
+    chk = av_bitstream_filter_filter(filter_p, codec_p, NULL, &outbuf, &outbuf_size, inbuf, inbuf_size,0);// pkt->flags & AV_PKT_FLAG_KEY);
     if (chk < 0)
         return -1;
 
-    /*可能仅是复制了指针。*/
-    if (outbuf == inbuf)
-        return 0;
-
-    /*释放旧的。*/
-    if (pkt->buf)
+    /* 
+     * 1: 当返回值大于0时，需要释放旧的内存，绑定新的内存。
+     * 2: 当返回值等于0时，未创建新的内存，但是数据起始地址可能有变化。
+    */
+    if (chk > 0)
+    {
         av_buffer_unref(&pkt->buf);
-    else
-        av_free(pkt->data);
-
-    /*绑定新的。*/
-    pkt->buf = av_buffer_create(outbuf, outbuf_size, NULL, NULL, 0);
+        pkt->buf = av_buffer_create(outbuf, outbuf_size, NULL, NULL, 0);
+    }
+    
     pkt->data = outbuf;
     pkt->size = outbuf_size;
 
@@ -718,7 +722,7 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     AVFormatContext *ctx = NULL;
     int chk = -1;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
     av_register_all();
 #endif 
     avformat_network_init();
@@ -752,11 +756,11 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (!ctx->oformat)
         goto final_error;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
     strncpy(ctx->filename, filename, sizeof(ctx->filename));
-#endif
+#else
     ctx->url = av_strdup(filename);
-
+#endif
     return ctx;
 
 final_error:
@@ -793,7 +797,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
     if ((ctx->oformat->flags & AVFMT_NOFILE) || ctx->pb)
         chk = 0;
     else
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
         chk = avio_open(&ctx->pb, ctx->filename, AVIO_FLAG_WRITE);
 #else 
         chk = avio_open(&ctx->pb, ctx->url, AVIO_FLAG_WRITE);
@@ -803,7 +807,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
 
     if (dict)
     {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
         if (strncmp(ctx->filename, "rtsp://", 7) == 0)
 #else
         if (strncmp(ctx->url, "rtsp://", 7) == 0)
@@ -817,7 +821,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
 
     if(dump)
     {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,54,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,40,101)
         av_dump_format(ctx, 0, ctx->filename, 1);
 #else
         av_dump_format(ctx, 0, ctx->url, 1);
@@ -857,7 +861,7 @@ int abcdk_avformat_output_trailer(AVFormatContext *ctx)
     return av_write_trailer(ctx);
 }
 
-int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *ctx)
+int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *ctx)
 {
     assert(vs != NULL && ctx != NULL);
 
@@ -868,7 +872,7 @@ int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *c
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,54,100)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100)
     avcodec_parameters_from_context(vs->codecpar,ctx);
 #else
     vs->codec->codec_type = ctx->codec_type;
@@ -929,12 +933,14 @@ int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *c
     }
 
 #endif
+
+    return 0;
 }
 
-int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
+int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
 {
     assert(vs != NULL && ctx != NULL);
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,54,100)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100)
     avcodec_parameters_to_context(ctx,vs->codecpar);
 #else 
     ctx->codec_type = vs->codec->codec_type;
@@ -993,7 +999,74 @@ int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
         }
     }
 #endif
+
+    return 0;
 }
+
+/*-------------Copy from OpenCV----begin------------------*/
+
+#define ABCDK_AVSTREAM_EPS_ZERO 0.000025
+
+double _abcdk_avstream_r2d(AVRational r)
+{
+    return r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den;
+}
+
+double abcdk_avstream_get_duration(AVFormatContext *ctx,AVStream *vs)
+{
+    double sec = 0.0;
+
+    assert(ctx != NULL && vs != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+
+    if (vs->duration > 0)
+        sec = (double)vs->duration * _abcdk_avstream_r2d(vs->time_base);
+
+    return sec;
+}
+
+double abcdk_avstream_get_fps(AVFormatContext *ctx, AVStream *vs)
+{
+    double fps = -0.001;
+
+    assert(ctx != NULL && vs != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+
+    if (fps < ABCDK_AVSTREAM_EPS_ZERO)
+        fps = _abcdk_avstream_r2d(vs->avg_frame_rate);
+    if (fps < ABCDK_AVSTREAM_EPS_ZERO)
+        fps = _abcdk_avstream_r2d(vs->r_frame_rate);
+    if (fps < ABCDK_AVSTREAM_EPS_ZERO)
+        fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base);
+
+    return fps;
+}
+
+double abcdk_avstream_ts2sec(AVFormatContext *ctx,AVStream *vs,int64_t ts)
+{
+    double sec = -0.000001;
+
+    assert(ctx != NULL && vs != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+        
+    sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base);
+    
+    return sec;
+}
+
+int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs,int64_t ts)
+{
+    int64_t frame_nb = -1;
+    double sec = -0.000001;
+
+    sec = abcdk_avstream_ts2sec(ctx, vs, ts);
+    if (sec >= 0.0)
+        frame_nb = (int64_t)(abcdk_avstream_get_fps(ctx, vs) * sec + 0.5);
+
+    return frame_nb;
+}
+
+/*-------------Copy from OpenCV----end------------------*/
 
 /*------------------------------------------------------------------------------------------------*/
 

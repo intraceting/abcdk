@@ -23,6 +23,7 @@
 #include "abcdk-util/socket.h"
 #include "abcdk-util/hexdump.h"
 #include "abcdk-mp4/demuxer.h"
+#include "abcdk-util/video.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -46,14 +47,9 @@ void test_ffmpeg(abcdk_tree_t *args)
 
 #ifdef HAVE_FFMPEG
 
-#if 0 
-
     for(int i = 0;i<1000;i++)
     {
         enum AVPixelFormat pixfmt = (enum AVPixelFormat)i;
-
-        if(!ABCDK_AVPIXFMT_CHECK(pixfmt))
-            continue;
 
         int bits = abcdk_av_image_pixfmt_bits(pixfmt,0);
         int bits_pad = abcdk_av_image_pixfmt_bits(pixfmt,1);
@@ -63,9 +59,9 @@ void test_ffmpeg(abcdk_tree_t *args)
     }
 
     
-    abcdk_av_image_t src = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
-    abcdk_av_image_t dst = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
-    abcdk_av_image_t dst2 = {AV_PIX_FMT_BGR32,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
+    abcdk_image_t src = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
+    abcdk_image_t dst = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
+    abcdk_image_t dst2 = {AV_PIX_FMT_BGR32,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
 
     int src_heights[4]={0}, dst_heights[4]={0}, dst2_heights[4]={0};
 
@@ -118,69 +114,7 @@ void test_ffmpeg(abcdk_tree_t *args)
     abcdk_heap_free(dst_buf);
     abcdk_heap_free(dst2_buf);
 
-#else 
-
-    const char *file_p = abcdk_option_get(args,"--file",0,"");
-
-    AVDictionary *dict = NULL;
-    AVFormatContext *ctx = abcdk_avformat_input_open(NULL,file_p,NULL,NULL,&dict);
-    
-    AVDictionary *dict2[10] = {NULL};
-    abcdk_avformat_input_probe(ctx,dict2,1);
-
-    AVBitStreamFilterContext *filter = NULL;
-    //int fd2 = abcdk_open("/tmp/abcdk.h264",1,0,1);
-    AVFormatContext *ctx2 = abcdk_avformat_output_open(NULL,"/tmp/abcdk.mp4",NULL,NULL,NULL,NULL);
-    AVStream *vs = abcdk_avformat_output_stream3(ctx2,ctx->streams[0]->codec->codec_id);
-
-    abcdk_avformat_parameters_from_context(vs,ctx->streams[0]->codec);
-
-    vs->time_base.
-
-    AVDictionary *dict3[10] = {NULL};
-    abcdk_avformat_output_header(ctx2,dict3,1);
-
-    for (;;)
-    {
-        AVPacket pkt;
-        av_init_packet(&pkt);
-        int chk = abcdk_avformat_input_read(ctx, &pkt, AVMEDIA_TYPE_VIDEO);
-        if (chk < 0)
-            break;
-
-        chk = abcdk_avformat_input_filter(ctx,&pkt,&filter);
-        if (chk < 0)
-            break;
-
-        //abcdk_write(fd2,pkt.data,pkt.size);
-
-        chk = abcdk_avformat_output_write(ctx2,vs,&pkt);
-        if (chk < 0)
-            break;
-
-        av_packet_unref(&pkt);
-    }
-
-    av_bitstream_filter_close(filter);
-
-    //abcdk_closep(&fd2);
-    abcdk_avformat_output_trailer(ctx2);
-
-
-    av_dict_free(&dict);
-    for (int i = 0; i < 10; i++)
-    {
-        av_dict_free(&dict2[i]);
-        av_dict_free(&dict3[i]);
-    }
-
-    abcdk_avformat_free(&ctx2);
-    abcdk_avformat_free(&ctx);
-
-#endif
-
 #endif //
-
 
 }
 
@@ -2151,6 +2085,47 @@ void test_hexdump(abcdk_tree_t *args)
     abcdk_allocator_unref(&opt.palette);
 }
 
+void test_video(abcdk_tree_t *args)
+{
+#ifdef HAVE_FFMPEG
+    int chk;
+    const char *src_file_p = abcdk_option_get(args,"--src",0,"");
+    const char *dst_file_p = abcdk_option_get(args,"--dst",0,"");
+
+    abcdk_video_capture_t *src = abcdk_video_capture_open(NULL,src_file_p,-1UL,1);
+    int dst = abcdk_open(dst_file_p,1,0,1);
+
+    int stream_index = abcdk_video_capture_find_stream(src,1);
+
+    printf("LONG: %f\n",abcdk_video_capture_get_duration(src,stream_index));
+    printf("FPS: %f\n",abcdk_video_capture_get_fps(src,stream_index));
+
+    AVPacket pkt;
+    av_init_packet(&pkt);
+    AVFrame *fae = av_frame_alloc();
+    for(int i =0;i<1000;i++)
+    {   
+        chk = abcdk_video_capture_read(src,&pkt,stream_index,0);
+      //  chk = abcdk_video_capture_read2(src,fae,stream_index,0);
+        if(chk < 0)
+            break;
+
+        printf("DTS: %f ,PTS: %f\n",
+               abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.dts),
+               abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.pts));
+
+        abcdk_write(dst,pkt.data,pkt.size);
+    }
+    av_frame_free(&fae);
+    av_packet_unref(&pkt);
+
+
+    abcdk_closep(&dst);
+    abcdk_video_capture_close(src);
+
+#endif //
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2222,6 +2197,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_hexdump", 0) == 0)
         test_hexdump(args);
+
+    if (abcdk_strcmp(func, "test_video", 0) == 0)
+        test_video(args);
 
     abcdk_tree_free(&args);
     

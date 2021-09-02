@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_FFMPEG_H
 
 #include "abcdk-util/general.h"
+#include "abcdk-util/image.h"
 
 #ifdef HAVE_FFMPEG
 
@@ -38,33 +39,6 @@ __END_DECLS
 __BEGIN_DECLS
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
-
-/**
- * 简单的图像结构。
-*/
-typedef struct _abcdk_av_image
-{
-    /** 像素格式*/
-    enum AVPixelFormat pixfmt;
-
-    /** 数据指针*/
-    uint8_t *datas[4];
-
-    /** 宽步长(字节)*/
-    int strides[4];
-
-    /** 宽(像素)*/
-    int width;
-
-    /** 高(像素)*/
-    int height;
-
-}abcdk_av_image_t;
-
-
-/** 检查像素格式是否支持。*/
-#define ABCDK_AVPIXFMT_CHECK(pixfmt)   ((pixfmt) > AV_PIX_FMT_NONE && (pixfmt) < AV_PIX_FMT_NB)
-
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -114,7 +88,7 @@ int abcdk_av_image_fill_strides(int strides[4],int width,int height,enum AVPixel
  * 
  * @return > 0 成功(图层数量)， <= 0 失败。
 */
-int abcdk_av_image_fill_strides2(abcdk_av_image_t *img,int align);
+int abcdk_av_image_fill_strides2(abcdk_image_t *img,int align);
 
 /**
  * 分派存储空间。
@@ -130,7 +104,7 @@ int abcdk_av_image_fill_pointers(uint8_t *datas[4],const int strides[4],int heig
  * 
  * @return >0 成功(分派的内存大小)， <= 0 失败。
 */
-int abcdk_av_image_fill_pointers2(abcdk_av_image_t *img,void *buffer);
+int abcdk_av_image_fill_pointers2(abcdk_image_t *img,void *buffer);
 
 /**
  * 计算需要的内存大小。
@@ -151,7 +125,7 @@ int abcdk_av_image_size2(int width,int height,enum AVPixelFormat pixfmt,int alig
  * 
  * @return >0 成功(需要的内存大小)， <= 0 失败。
 */
-int abcdk_av_image_size3(const abcdk_av_image_t *img);
+int abcdk_av_image_size3(const abcdk_image_t *img);
 
 /**
  * 图像复制。
@@ -164,7 +138,7 @@ void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_
  * 图像复制。
  * 
 */
-void abcdk_av_image_copy2(abcdk_av_image_t *dst, const abcdk_av_image_t *src);
+void abcdk_av_image_copy2(abcdk_image_t *dst, const abcdk_image_t *src);
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -189,7 +163,7 @@ struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFo
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-struct SwsContext *abcdk_sws_alloc2(const abcdk_av_image_t *src, const abcdk_av_image_t *dst, int flags);
+struct SwsContext *abcdk_sws_alloc2(const abcdk_image_t *src, const abcdk_image_t *dst, int flags);
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -421,14 +395,42 @@ int abcdk_avformat_output_trailer(AVFormatContext *ctx);
  * 
  * @return 0 成功，!0 失败。
  */
-int abcdk_avformat_parameters_from_context(AVStream *vs, const AVCodecContext *ctx);
+int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *ctx);
 
 /**
  * 向编/解码器环境复制参数。
  *
  * @return 0 成功，!0 失败。
  */
-int abcdk_avformat_parameters_to_context(AVCodecContext *ctx, const AVStream *vs);
+int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs);
+
+/** 
+ * 获取流的时长(秒)。
+ * 
+ * @return 秒.毫秒
+*/
+double abcdk_avstream_get_duration(AVFormatContext *ctx,AVStream *vs);
+
+/**
+ * 获取FPS。
+ * 
+ * @return 秒.毫秒
+*/
+double abcdk_avstream_get_fps(AVFormatContext *ctx,AVStream *vs);
+
+/**
+ * DTS或PTS转秒。
+ * 
+ * @return 秒.毫秒
+*/
+double abcdk_avstream_ts2sec(AVFormatContext *ctx,AVStream *vs,int64_t ts);
+
+/**
+ * DTS或PTS转序号。
+ * 
+ * @return 秒.毫秒
+*/
+int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs,int64_t ts);
 
 /*------------------------------------------------------------------------------------------------*/
 
