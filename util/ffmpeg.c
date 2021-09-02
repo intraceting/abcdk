@@ -274,7 +274,7 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
 
     if (id == AV_CODEC_ID_HEVC)
         ctx = abcdk_avcodec_find(encode?"hevc_nvenc":"hevc_cuvid", encode);
-    if (id == AV_CODEC_ID_H264)
+    else if (id == AV_CODEC_ID_H264)
         ctx = abcdk_avcodec_find(encode?"h264_nvenc":"h264_cuvid", encode);
     
     if (!ctx)

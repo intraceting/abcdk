@@ -450,7 +450,7 @@ int abcdk_video_writer_add_stream(abcdk_video_writer_t *vw, int fps, int width, 
         chk = abcdk_avcodec_open(ctx_p, &dict_p);
         if (chk < 0)
             goto final_error;
-
+        
         abcdk_avstream_parameters_from_context(vs, ctx_p);
 
         vw->codec_ctx[vs->index] = ctx_p;
