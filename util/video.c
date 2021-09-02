@@ -11,6 +11,9 @@
 /** 最大支持16个。*/
 #define ABCDK_VIDEO_MAX_STREAMS     16
 
+/*------------------------------------------------------------------------------------------------*/
+
+
 /**
  * 视频捕获环境。
 */
@@ -38,6 +41,38 @@ typedef struct _abcdk_video_capture
     uint64_t last_packet_time;
 
 } abcdk_video_capture_t;
+
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ * 视频捕获环境。
+*/
+typedef struct _abcdk_video_writer
+{
+    /** 编码器环境。*/
+    AVCodecContext *codec_ctx[ABCDK_VIDEO_MAX_STREAMS];
+
+    /** 编码器字典。*/
+    AVDictionary *codec_dict[ABCDK_VIDEO_MAX_STREAMS];
+
+    /**
+     * 编号。
+     * 0: encocde 
+     * 1: PTS
+     * 2: DTS
+    */
+    AVDictionary *codec_nums[ABCDK_VIDEO_MAX_STREAMS][3];
+
+    /** 流环境。*/
+    AVFormatContext *ctx;
+
+    /** 流字典。*/
+    AVDictionary *dict;
+
+} abcdk_video_writer_t;
+
+/*------------------------------------------------------------------------------------------------*/
+
 
 int _abcdk_video_capture_interrupt_cb(void *args)
 {
@@ -314,10 +349,126 @@ final:
     return chk;
 }
 
-int abcdk_video_capture_read3(abcdk_video_capture_t *vc, abcdk_image_t *img, int stream_index, int only_key)
+/*------------------------------------------------------------------------------------------------*/
+
+void abcdk_video_writer_close(abcdk_video_writer_t *vw)
 {
-    
+    if(!vw)
+        return;
+
+    for (int i = 0; i < ABCDK_VIDEO_MAX_STREAMS; i++)
+    {
+        if(vw->codec_ctx[i])
+            abcdk_avcodec_free(&vw->codec_ctx[i]);
+
+        if(vw->codec_dict[i])
+            av_dict_free(&vw->codec_dict[i]);
+    }
+
+    av_dict_free(&vw->dict);
+    abcdk_avformat_free(&vw->ctx);
+
+    abcdk_heap_free(vw);
 }
+
+abcdk_video_writer_t *abcdk_video_writer_open(const char*short_name,const char *url,const char *mime_type)
+{
+    abcdk_video_writer_t *vw = NULL;
+
+    assert(url!= NULL);
+
+    vw = abcdk_heap_alloc(sizeof(abcdk_video_writer_t));
+    if(!vw)
+        return NULL;
+
+    vw->ctx = abcdk_avformat_output_open(short_name, url, mime_type, NULL, NULL, NULL);
+    if(!vw->ctx)
+        goto final_error;
+
+    return vw;
+
+final_error:
+
+    abcdk_heap_free(vw);
+
+    return NULL;
+}
+
+int abcdk_video_writer_add_stream(abcdk_video_writer_t *vw, int fps, int width, int height, enum AVCodecID id,
+                                  const void *extdata, int extsize, int have_codec)
+{
+    AVCodecContext *ctx_p = NULL;
+    AVDictionary *dict_p = NULL;
+    AVStream *vs = NULL;
+    int chk;
+
+    assert(vw!= NULL);
+
+    if (vw->ctx->nb_streams >= ABCDK_VIDEO_MAX_STREAMS)
+        return -2;
+
+    vs = abcdk_avformat_output_stream3(vw->ctx,id);
+    if(!vs)
+        return -1;
+
+    if (have_codec)
+    {
+        if (vw->ctx->oformat->flags & AVFMT_GLOBALHEADER)
+            vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+        vs->time_base = vs->codec->time_base = av_make_q(1, fps);
+        vs->avg_frame_rate = vs->r_frame_rate = av_make_q(fps, 1);
+        vs->codec->width = width;
+        vs->codec->height = height;
+
+        /*如果有扩展信息，必须复制，不然流无法解码。*/
+        if (extdata != NULL && extsize > 0)
+        {
+            if(vs->codec->extradata)
+                av_free(vs->codec->extradata);
+            
+            vs->codec->extradata = NULL;
+            vs->codec->extradata_size = extsize;
+            vs->codec->extradata = (uint8_t *)av_mallocz((size_t)(extsize + AV_INPUT_BUFFER_PADDING_SIZE));
+            memcpy(vs->codec->extradata, extdata, extsize);
+        }
+    }
+    else
+    {
+        ctx_p = abcdk_avcodec_alloc3(id, 1);
+        if (!ctx_p)
+            goto final_error;
+
+        if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
+            abcdk_avcodec_video_encode_prepare(ctx_p, fps, width, height, -1, vw->ctx->oformat->flags);
+        else 
+            goto final_error; //fix me.
+
+        ctx_p->thread_count = 2;
+        ctx_p->max_b_frames = 0; //No B-Frame.
+
+        chk = abcdk_avcodec_open(ctx_p, &dict_p);
+        if (chk < 0)
+            goto final_error;
+
+        abcdk_avstream_parameters_from_context(vs, ctx_p);
+
+        vw->codec_ctx[vs->index] = ctx_p;
+        vw->codec_dict[vs->index] = dict_p;
+    }
+
+    return 0;
+
+final_error:
+
+    abcdk_avcodec_free(&ctx_p);
+    av_dict_free(&dict_p);
+
+    return -1;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
 
 
 #endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H

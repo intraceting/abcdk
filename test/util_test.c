@@ -2093,7 +2093,10 @@ void test_video(abcdk_tree_t *args)
     const char *dst_file_p = abcdk_option_get(args,"--dst",0,"");
 
     abcdk_video_capture_t *src = abcdk_video_capture_open(NULL,src_file_p,-1UL,1);
-    int dst = abcdk_open(dst_file_p,1,0,1);
+    //int dst = abcdk_open(dst_file_p,1,0,1);
+    abcdk_video_writer_t *dst = abcdk_video_writer_open(NULL,dst_file_p,NULL);
+
+    int stream_index2 = abcdk_video_writer_add_stream(dst,50,2560,1440,AV_CODEC_ID_H264,NULL,0,0);
 
     int stream_index = abcdk_video_capture_find_stream(src,1);
 
@@ -2110,17 +2113,17 @@ void test_video(abcdk_tree_t *args)
         if(chk < 0)
             break;
 
-        printf("DTS: %f ,PTS: %f\n",
-               abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.dts),
-               abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.pts));
+        // printf("DTS: %f ,PTS: %f\n",
+        //        abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.dts),
+        //        abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.pts));
 
-        abcdk_write(dst,pkt.data,pkt.size);
+        // abcdk_write(dst,pkt.data,pkt.size);
     }
     av_frame_free(&fae);
     av_packet_unref(&pkt);
 
 
-    abcdk_closep(&dst);
+   // abcdk_closep(&dst);
     abcdk_video_capture_close(src);
 
 #endif //

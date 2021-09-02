@@ -14,12 +14,17 @@ __BEGIN_DECLS
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
+/*------------------------------------------------------------------------------------------------*/
 
 /** 视频捕获环境。*/
 typedef struct _abcdk_video_capture  abcdk_video_capture_t;
 
+/*------------------------------------------------------------------------------------------------*/
+
 /** 视频作者环境。*/
 typedef struct _abcdk_video_writer  abcdk_video_writer_t;
+
+/*------------------------------------------------------------------------------------------------*/
 
 /**
  * 关闭视频捕获环境。
@@ -78,6 +83,8 @@ double abcdk_video_capture_ts2sec(abcdk_video_capture_t *vc, int stream_index, i
  * 
  * @param timeout 超时(秒)。-1 直到有事件或出错。
  * @param dump !0 打印流信息，0 忽略。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
 abcdk_video_capture_t *abcdk_video_capture_open(const char *short_name, const char *url, int64_t timeout, int dump);
 
@@ -101,6 +108,28 @@ int abcdk_video_capture_read(abcdk_video_capture_t *vc, AVPacket *pkt, int strea
 */
 int abcdk_video_capture_read2(abcdk_video_capture_t *vc, AVFrame *fae, int stream_index, int only_key);
 
+/*------------------------------------------------------------------------------------------------*/
+
+/** 
+ * 打开视频作者环境。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+abcdk_video_writer_t *abcdk_video_writer_open(const char*short_name,const char *url,const char *mime_type);
+
+/**
+ * 向视频中添加数据流。
+ * 
+ * @param extdata 扩展数据的指针，NULL(0) 忽略。
+ * @param extsize 扩展数据的长度。
+ * @param have_codec 0 使用内部编码器(忽略扩展数据)，!0 使用外部编码器。
+ * 
+ * @return >= 0 成功(数据流索引)，< 0 失败。
+*/
+int abcdk_video_writer_add_stream(abcdk_video_writer_t *vw, int fps, int width, int height, enum AVCodecID id,
+                                  const void *extdata, int extsize, int have_codec);
+
+/*------------------------------------------------------------------------------------------------*/
 
 #endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 

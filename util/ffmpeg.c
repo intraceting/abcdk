@@ -919,7 +919,9 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     
     if (ctx->extradata)
     {
-        av_freep(&vs->codec->extradata);
+        vs->codec->extradata_size = 0;
+        av_free(vs->codec->extradata);
+
         vs->codec->extradata = (uint8_t *)av_mallocz(ctx->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
         if (vs->codec->extradata)
         {
@@ -986,7 +988,9 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 
     if (vs->codec->extradata)
     {
-        av_freep(&ctx->extradata);
+        ctx->extradata_size = 0;
+        av_free(ctx->extradata);
+        
         ctx->extradata = (uint8_t *)av_mallocz(vs->codec->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
         if (ctx->extradata)
         {
