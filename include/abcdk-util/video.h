@@ -161,6 +161,8 @@ abcdk_video_t *abcdk_video_open_writer(const char*short_name,const char *url,con
 /**
  * 向视频中添加数据流。
  * 
+ * @warning 仅支持视频流。
+ * 
  * @param extdata 扩展数据的指针，NULL(0) 忽略。
  * @param extsize 扩展数据的长度。
  * @param have_codec 0 使用内部编码器(忽略扩展数据)，!0 使用外部编码器。
@@ -200,6 +202,8 @@ int abcdk_video_write(abcdk_video_t *video, AVPacket *pkt);
 
 /**
  * 向视频中写入数据帧。
+ * 
+ * @warning 仅支持图像。
  * 
  * @return >= 0 成功，< 0 失败。
 */

@@ -300,6 +300,8 @@ int abcdk_video_read2(abcdk_video_t *video, AVFrame *fae, int stream_index, int 
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "hevc_cuvid");
         else if (vs_p->codec->codec_id == AV_CODEC_ID_H264)
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "h264_cuvid");
+        else 
+            chk = -1;
 
         if (chk < 0)
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, NULL);
@@ -457,7 +459,9 @@ int abcdk_video_add_stream(abcdk_video_t *video, int fps, int width, int height,
             chk = _abcdk_video_open_writer_codec(video,vs->index,fps,width,height,"hevc_nvenc");
         else if (id == AV_CODEC_ID_H264)
             chk = _abcdk_video_open_writer_codec(video,vs->index,fps,width,height,"h264_nvenc");
-        
+        else 
+            chk = -1;
+
         if(chk<0)
             chk = _abcdk_video_open_writer_codec(video,vs->index,fps,width,height,NULL);
 
@@ -541,17 +545,16 @@ int abcdk_video_write2(abcdk_video_t *video,int stream_index, AVFrame *fae)
     if (fae != NULL)
     {
         fae_cp = av_frame_alloc();
+
         fae_cp->width = fae->width;
         fae_cp->height = fae->height;
         fae_cp->format = fae->format;
-        fae_cp->data[0] = fae->data[0];
-        fae_cp->data[1] = fae->data[1];
-        fae_cp->data[2] = fae->data[2];
-        fae_cp->data[3] = fae->data[3];
-        fae_cp->linesize[0] = fae->linesize[0];
-        fae_cp->linesize[1] = fae->linesize[1];
-        fae_cp->linesize[2] = fae->linesize[2];
-        fae_cp->linesize[3] = fae->linesize[3];
+
+        for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
+        {
+            fae_cp->data[i] = fae->data[i];
+            fae_cp->linesize[i] = fae->linesize[i];
+        }
 
         fae_cp->pts = ++video->ts_nums[stream_index][0];
         fae_cp->quality = 1;

@@ -227,7 +227,7 @@ int abcdk_sws_scale(struct SwsContext *ctx, const AVFrame *src, AVFrame *dst)
 {
     assert(ctx != NULL && dst != NULL && src != NULL);
 
-    return sws_scale(ctx, src->data, src->linesize, 0, src->height, dst->data, dst->linesize);
+    return sws_scale(ctx, (const uint8_t *const *)src->data, src->linesize, 0, src->height, dst->data, dst->linesize);
 }
 
 /*------------------------------------------------------------------------------------------------*/

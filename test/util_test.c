@@ -2105,12 +2105,12 @@ void test_video(abcdk_tree_t *args)
     int height = abcdk_video_get_height(src,stream_index);
     enum AVCodecID id = src->ctx->streams[stream_index]->codec->codec_id;
 
-    //int stream_index2 = abcdk_video_add_stream(dst,fps,width,height,id,NULL,0,0);
+    int stream_index2 = abcdk_video_add_stream(dst,fps,width,height,id,NULL,0,0);
 
-    int stream_index2 = abcdk_video_add_stream(dst, fps, width, height, id,
-                                               src->ctx->streams[stream_index]->codec->extradata,
-                                               src->ctx->streams[stream_index]->codec->extradata_size,
-                                               1);
+    // int stream_index2 = abcdk_video_add_stream(dst, fps, width, height, id,
+    //                                            src->ctx->streams[stream_index]->codec->extradata,
+    //                                            src->ctx->streams[stream_index]->codec->extradata_size,
+    //                                            1);
 
     uint64_t c = 0;
     uint64_t s = 0;
@@ -2123,29 +2123,29 @@ void test_video(abcdk_tree_t *args)
     AVPacket pkt;
     av_init_packet(&pkt);
     AVFrame *fae = av_frame_alloc();
-    for(int i =0;i<1000;i++)
+    for(int i =0;i<100;i++)
     {   
-        chk = abcdk_video_read(src,&pkt,stream_index,0,1);
-       // chk = abcdk_video_read2(src,fae,stream_index,0);
+       // chk = abcdk_video_read(src,&pkt,stream_index,0,1);
+        chk = abcdk_video_read2(src,fae,stream_index,0);
         if(chk < 0)
             break;
 
         printf("DTS: %f ,PTS: %f\n",
-               abcdk_video_ts2sec(src, pkt.stream_index, pkt.dts),
-               abcdk_video_ts2sec(src, pkt.stream_index, pkt.pts));
-             // abcdk_video_ts2sec(src, chk, fae->pkt_dts),
-             //  abcdk_video_ts2sec(src, chk, fae->pkt_pts));
+            //   abcdk_video_ts2sec(src, pkt.stream_index, pkt.dts),
+            //   abcdk_video_ts2sec(src, pkt.stream_index, pkt.pts));
+              abcdk_video_ts2sec(src, chk, fae->pkt_dts),
+               abcdk_video_ts2sec(src, chk, fae->pkt_pts));
 
         // abcdk_write(dst,pkt.data,pkt.size);
 
-         chk = abcdk_video_write3(dst,stream_index2,pkt.data,pkt.size);
-         //chk = abcdk_video_write2(dst,stream_index2,fae);
+        // chk = abcdk_video_write3(dst,stream_index2,pkt.data,pkt.size);
+         chk = abcdk_video_write2(dst,stream_index2,fae);
          if(chk < 0)
             break;
 
-         s = abcdk_clock(c, &c) / 1000;
-         if (s < (1000 / fps))
-             usleep(((1000 / fps) - s) * 1000);
+        //  s = abcdk_clock(c, &c) / 1000;
+        //  if (s < (1000 / fps))
+        //      usleep(((1000 / fps) - s) * 1000);
     }
     av_frame_free(&fae);
     av_packet_unref(&pkt);
