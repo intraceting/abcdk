@@ -39,10 +39,10 @@ typedef struct _abcdk_video
     AVDictionary *dict;
 
     /** 超时(秒)。*/
-    uint64_t timeout;
+    int64_t timeout;
 
-    /** 最近捕获包时间(秒)。*/
-    uint64_t last_packet_time;
+    /** 最近活动包时间(秒)。*/
+    int64_t last_packet_time;
 
     /**
      * TS编号。
@@ -135,10 +135,11 @@ abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url,
  * 
  * @param stream_index >=0 数据流索引，< 0 任意数据流。
  * @param only_key !0 仅读取关键帧，0 读取所有帧。
+ * @param not_filter !0 禁用过滤器，0 启用过滤器。
  * 
  * @return >= 0 成功(数据流索引)，< 0 失败。
 */
-int abcdk_video_read(abcdk_video_t *video, AVPacket *pkt, int stream_index, int only_key);
+int abcdk_video_read(abcdk_video_t *video, AVPacket *pkt, int stream_index, int only_key,int not_filter);
 
 /**
  * 读取数据帧。

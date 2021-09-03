@@ -241,7 +241,7 @@ final_error:
     return -1;
 }
 
-int abcdk_video_read(abcdk_video_t *video, AVPacket *pkt, int stream_index, int only_key)
+int abcdk_video_read(abcdk_video_t *video, AVPacket *pkt, int stream_index, int only_key, int not_filter)
 {
     int chk;
     assert(video != NULL && pkt != NULL);
@@ -261,9 +261,12 @@ int abcdk_video_read(abcdk_video_t *video, AVPacket *pkt, int stream_index, int 
                 continue;
         }
 
-        chk = abcdk_avformat_input_filter(video->ctx,pkt,&video->vs_filter[pkt->stream_index]);
-        if (chk < 0)
-            return -1;
+        if(!not_filter)
+        {
+            chk = abcdk_avformat_input_filter(video->ctx,pkt,&video->vs_filter[pkt->stream_index]);
+            if (chk < 0)
+                return -1;
+        }
 
         if (!only_key || (pkt->flags & AV_PKT_FLAG_KEY))
             break;
@@ -286,7 +289,7 @@ int abcdk_video_read2(abcdk_video_t *video, AVFrame *fae, int stream_index, int 
 
     for (;;)
     {
-        chk = abcdk_video_read(video, &pkt, stream_index, only_key);
+        chk = abcdk_video_read(video, &pkt, stream_index, only_key, 0);
         if (chk < 0)
             return -1;
 

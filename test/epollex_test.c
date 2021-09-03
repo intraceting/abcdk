@@ -158,7 +158,7 @@ void* server_loop(void* args)
 
 void test_server(abcdk_tree_t *t)
 {
-    abcdk_clock_reset();
+ //   abcdk_clock_reset();
 
     abcdk_epollex_t *m = abcdk_epollex_alloc();
 #if 0
