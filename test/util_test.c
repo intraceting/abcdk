@@ -2092,39 +2092,57 @@ void test_video(abcdk_tree_t *args)
     const char *src_file_p = abcdk_option_get(args,"--src",0,"");
     const char *dst_file_p = abcdk_option_get(args,"--dst",0,"");
 
-    abcdk_video_capture_t *src = abcdk_video_capture_open(NULL,src_file_p,-1UL,1);
+    abcdk_video_t *src = abcdk_video_open_capture(NULL,src_file_p,-1UL,1);
     //int dst = abcdk_open(dst_file_p,1,0,1);
-    abcdk_video_writer_t *dst = abcdk_video_writer_open(NULL,dst_file_p,NULL);
+    abcdk_video_t *dst = abcdk_video_open_writer(NULL,dst_file_p,NULL);
 
-    int stream_index2 = abcdk_video_writer_add_stream(dst,50,2560,1440,AV_CODEC_ID_H264,NULL,0,0);
+    int stream_index = abcdk_video_find_stream(src,1);
 
-    int stream_index = abcdk_video_capture_find_stream(src,1);
+    double fps = abcdk_video_get_fps(src,stream_index);
+    int width = abcdk_video_get_width(src,stream_index);
+    int height = abcdk_video_get_height(src,stream_index);
+    enum AVCodecID id = src->ctx->streams[stream_index]->codec->codec_id;
 
-    printf("LONG: %f\n",abcdk_video_capture_get_duration(src,stream_index));
-    printf("FPS: %f\n",abcdk_video_capture_get_fps(src,stream_index));
+    int stream_index2 = abcdk_video_add_stream(dst,fps,width,height,id,NULL,0,0);
+
+    
+
+    abcdk_video_write_header(dst,1,1);
+
+    printf("LONG: %f\n",abcdk_video_get_duration(src,stream_index));
+    printf("FPS: %f\n",abcdk_video_get_fps(src,stream_index));
 
     AVPacket pkt;
     av_init_packet(&pkt);
     AVFrame *fae = av_frame_alloc();
-    for(int i =0;i<1000;i++)
+    for(int i =0;i<100;i++)
     {   
-        chk = abcdk_video_capture_read(src,&pkt,stream_index,0);
-      //  chk = abcdk_video_capture_read2(src,fae,stream_index,0);
+       // chk = abcdk_video_read(src,&pkt,stream_index,0);
+        chk = abcdk_video_read2(src,fae,stream_index,0);
         if(chk < 0)
             break;
 
-        // printf("DTS: %f ,PTS: %f\n",
-        //        abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.dts),
-        //        abcdk_video_capture_ts2sec(src, pkt.stream_index, pkt.pts));
+        printf("DTS: %f ,PTS: %f\n",
+              // abcdk_video_ts2sec(src, pkt.stream_index, pkt.dts),
+             //  abcdk_video_ts2sec(src, pkt.stream_index, pkt.pts));
+              abcdk_video_ts2sec(src, chk, fae->pkt_dts),
+               abcdk_video_ts2sec(src, chk, fae->pkt_pts));
 
         // abcdk_write(dst,pkt.data,pkt.size);
+
+         //chk = abcdk_video_write3(dst,stream_index2,pkt.data,pkt.size);
+         chk = abcdk_video_write2(dst,stream_index2,fae);
+         if(chk < 0)
+            break;
     }
     av_frame_free(&fae);
     av_packet_unref(&pkt);
 
+    abcdk_video_write_trailer(dst);
 
    // abcdk_closep(&dst);
-    abcdk_video_capture_close(src);
+    abcdk_video_close(dst);
+    abcdk_video_close(src);
 
 #endif //
 }

@@ -40,6 +40,7 @@ __BEGIN_DECLS
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
+
 /*------------------------------------------------------------------------------------------------*/
 
 /**
@@ -364,7 +365,7 @@ AVStream *abcdk_avformat_output_stream3(AVFormatContext *ctx, enum AVCodecID id)
 /**
  * 向流(输出)写入头部信息。
  * 
- * @param dict 字典指针数组，数组的高度大于或等于ctx->nb_streams。!NULL(0) 需要调用者释放。
+ * @param dict 字典指针。!NULL(0) 需要调用者释放。
  * @param dump !0 打印流信息，0 忽略。
  * 
  * @return >=0 成功，-1 失败。
@@ -419,7 +420,7 @@ double abcdk_avstream_get_duration(AVFormatContext *ctx,AVStream *vs);
 double abcdk_avstream_get_fps(AVFormatContext *ctx,AVStream *vs);
 
 /**
- * DTS或PTS转秒。
+ * DTS或PTS转自然时间。
  * 
  * @return 秒.毫秒
 */
@@ -428,7 +429,7 @@ double abcdk_avstream_ts2sec(AVFormatContext *ctx,AVStream *vs,int64_t ts);
 /**
  * DTS或PTS转序号。
  * 
- * @return 秒.毫秒
+ * @return 整型。
 */
 int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs,int64_t ts);
 

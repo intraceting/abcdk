@@ -8,129 +8,51 @@
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
-/** 最大支持16个。*/
-#define ABCDK_VIDEO_MAX_STREAMS     16
-
 /*------------------------------------------------------------------------------------------------*/
 
 
-/**
- * 视频捕获环境。
-*/
-typedef struct _abcdk_video_capture
+void abcdk_video_close(abcdk_video_t *video)
 {
-    /** 解码器环境。*/
-    AVCodecContext *codec_ctx[ABCDK_VIDEO_MAX_STREAMS];
-
-    /** 解码器字典。*/
-    AVDictionary *codec_dict[ABCDK_VIDEO_MAX_STREAMS];
-
-    /** 数据包过滤器。*/
-    AVBitStreamFilterContext *vs_filter[ABCDK_VIDEO_MAX_STREAMS];
-
-    /** 流环境。*/
-    AVFormatContext *ctx;
-
-    /** 流字典。*/
-    AVDictionary *dict;
-
-    /** 超时(秒)。*/
-    uint64_t timeout;
-
-    /** 最近捕获包时间(秒)。*/
-    uint64_t last_packet_time;
-
-} abcdk_video_capture_t;
-
-/*------------------------------------------------------------------------------------------------*/
-
-/**
- * 视频捕获环境。
-*/
-typedef struct _abcdk_video_writer
-{
-    /** 编码器环境。*/
-    AVCodecContext *codec_ctx[ABCDK_VIDEO_MAX_STREAMS];
-
-    /** 编码器字典。*/
-    AVDictionary *codec_dict[ABCDK_VIDEO_MAX_STREAMS];
-
-    /**
-     * 编号。
-     * 0: encocde 
-     * 1: PTS
-     * 2: DTS
-    */
-    AVDictionary *codec_nums[ABCDK_VIDEO_MAX_STREAMS][3];
-
-    /** 流环境。*/
-    AVFormatContext *ctx;
-
-    /** 流字典。*/
-    AVDictionary *dict;
-
-} abcdk_video_writer_t;
-
-/*------------------------------------------------------------------------------------------------*/
-
-
-int _abcdk_video_capture_interrupt_cb(void *args)
-{
-    abcdk_video_capture_t *vc = (abcdk_video_capture_t *)args;
-    uint64_t cur_time = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
-
-    if (vc->timeout > 0)
-    {
-        /* 如果超时，返回失败。*/
-        if ((cur_time - vc->last_packet_time) >= vc->timeout)
-            return -1;
-    }
-
-    return 0;
-}
-
-void abcdk_video_capture_close(abcdk_video_capture_t *vc)
-{
-    if(!vc)
+    if(!video)
         return;
 
     for (int i = 0; i < ABCDK_VIDEO_MAX_STREAMS; i++)
     {
-        if(vc->codec_ctx[i])
-            abcdk_avcodec_free(&vc->codec_ctx[i]);
+        if(video->codec_ctx[i])
+            abcdk_avcodec_free(&video->codec_ctx[i]);
 
-        if(vc->codec_dict[i])
-            av_dict_free(&vc->codec_dict[i]);
+        if(video->codec_dict[i])
+            av_dict_free(&video->codec_dict[i]);
 
-        if(vc->vs_filter[i])
+        if(video->vs_filter[i])
         {
-            av_bitstream_filter_close(vc->vs_filter[i]);
-            vc->vs_filter[i] = NULL;
+            av_bitstream_filter_close(video->vs_filter[i]);
+            video->vs_filter[i] = NULL;
         }
     }
 
-    av_dict_free(&vc->dict);
-    abcdk_avformat_free(&vc->ctx);
+    av_dict_free(&video->dict);
+    abcdk_avformat_free(&video->ctx);
 
-    abcdk_heap_free(vc);
+    abcdk_heap_free(video);
 }
 
-int abcdk_video_capture_nb_streams(abcdk_video_capture_t *vc)
+int abcdk_video_nb_streams(abcdk_video_t *video)
 {
-    assert(vc != NULL);
+    assert(video != NULL);
 
-    return vc->ctx->nb_streams;
+    return video->ctx->nb_streams;
 }
 
-int abcdk_video_capture_check_stream(abcdk_video_capture_t *vc,int stream_index,int type)
+int abcdk_video_check_stream(abcdk_video_t *video,int stream_index,int type)
 {
     AVStream *vs_p = NULL;
     int chk = -1;
 
-    assert(vc != NULL && stream_index >= 0 && type >= 1 && type <= 3);
-    assert(vc->ctx->nb_streams > stream_index);
+    assert(video != NULL && stream_index >= 0 && type >= 1 && type <= 3);
+    assert(video->ctx->nb_streams > stream_index);
 
-    vs_p = vc->ctx->streams[stream_index];
+    vs_p = video->ctx->streams[stream_index];
 
     if (type == 1)
         chk = ((vs_p->codec->codec_type == AVMEDIA_TYPE_VIDEO) ? 0 : -1);
@@ -144,18 +66,18 @@ int abcdk_video_capture_check_stream(abcdk_video_capture_t *vc,int stream_index,
     return chk;
 }
 
-int abcdk_video_capture_find_stream(abcdk_video_capture_t *vc,int type)
+int abcdk_video_find_stream(abcdk_video_t *video,int type)
 {
     int nb_streams = 0;
     int chk;
 
-    assert(vc != NULL && type >= 1 && type <= 3);
+    assert(video != NULL && type >= 1 && type <= 3);
 
-    nb_streams = abcdk_video_capture_nb_streams(vc);
+    nb_streams = abcdk_video_nb_streams(video);
 
     for (int i = 0; i < nb_streams; i++)
     {
-        chk = abcdk_video_capture_check_stream(vc,i,type);
+        chk = abcdk_video_check_stream(video,i,type);
         if(chk==0)
             return i;
     }
@@ -163,97 +85,140 @@ int abcdk_video_capture_find_stream(abcdk_video_capture_t *vc,int type)
     return -1;
 }
 
-double abcdk_video_capture_get_duration(abcdk_video_capture_t *vc, int stream_index)
+double abcdk_video_get_duration(abcdk_video_t *video, int stream_index)
 {
     AVStream *vs_p = NULL;
 
-    assert(vc != NULL && stream_index >= 0);
-    assert(vc->ctx->nb_streams > stream_index);
+    assert(video != NULL && stream_index >= 0);
+    assert(video->ctx->nb_streams > stream_index);
 
-    vs_p = vc->ctx->streams[stream_index];
+    vs_p = video->ctx->streams[stream_index];
 
-    return abcdk_avstream_get_duration(vc->ctx,vs_p);
+    return abcdk_avstream_get_duration(video->ctx,vs_p);
 }
 
-double abcdk_video_capture_get_fps(abcdk_video_capture_t *vc, int stream_index)
+int abcdk_video_get_width(abcdk_video_t *video, int stream_index)
 {
     AVStream *vs_p = NULL;
 
-    assert(vc != NULL && stream_index >= 0);
-    assert(vc->ctx->nb_streams > stream_index);
+    assert(video != NULL && stream_index >= 0);
+    assert(video->ctx->nb_streams > stream_index);
 
-    vs_p = vc->ctx->streams[stream_index];
+    vs_p = video->ctx->streams[stream_index];
 
-    return abcdk_avstream_get_fps(vc->ctx,vs_p);
+    return vs_p->codec->width;
 }
 
-double abcdk_video_capture_ts2sec(abcdk_video_capture_t *vc, int stream_index, int64_t ts)
+int abcdk_video_get_height(abcdk_video_t *video, int stream_index)
 {
     AVStream *vs_p = NULL;
 
-    assert(vc != NULL && stream_index >= 0);
-    assert(vc->ctx->nb_streams > stream_index);
+    assert(video != NULL && stream_index >= 0);
+    assert(video->ctx->nb_streams > stream_index);
 
-    vs_p = vc->ctx->streams[stream_index];
+    vs_p = video->ctx->streams[stream_index];
 
-    return abcdk_avstream_ts2sec(vc->ctx,vs_p,ts);
+    return vs_p->codec->height;
 }
 
-abcdk_video_capture_t *abcdk_video_capture_open(const char *short_name, const char *url, int64_t timeout, int dump)
+double abcdk_video_get_fps(abcdk_video_t *video, int stream_index)
 {
-    abcdk_video_capture_t *vc = NULL;
+    AVStream *vs_p = NULL;
+
+    assert(video != NULL && stream_index >= 0);
+    assert(video->ctx->nb_streams > stream_index);
+
+    vs_p = video->ctx->streams[stream_index];
+
+    return abcdk_avstream_get_fps(video->ctx,vs_p);
+}
+
+double abcdk_video_ts2sec(abcdk_video_t *video, int stream_index, int64_t ts)
+{
+    AVStream *vs_p = NULL;
+
+    assert(video != NULL && stream_index >= 0);
+    assert(video->ctx->nb_streams > stream_index);
+
+    vs_p = video->ctx->streams[stream_index];
+
+    return abcdk_avstream_ts2sec(video->ctx,vs_p,ts);
+}
+
+int _abcdk_video_capture_interrupt_cb(void *args)
+{
+    abcdk_video_t *video = (abcdk_video_t *)args;
+    uint64_t cur_time = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
+
+    if (video->timeout > 0)
+    {
+        /* 如果超时，返回失败。*/
+        if ((cur_time - video->last_packet_time) >= video->timeout)
+            return -1;
+    }
+
+    return 0;
+}
+
+abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, int64_t timeout, int dump)
+{
+    abcdk_video_t *video = NULL;
     int chk;
 
     assert(url != NULL);
 
-    vc= abcdk_heap_alloc(sizeof(abcdk_video_capture_t));
-    if(!vc)
+    video= abcdk_heap_alloc(sizeof(abcdk_video_t));
+    if(!video)
         return NULL;
 
-    vc->timeout = timeout;
-    vc->last_packet_time = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,0);
+    video->timeout = timeout;
+    video->last_packet_time = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,0);
 
     AVIOInterruptCB cb;
     cb.callback = _abcdk_video_capture_interrupt_cb;
-    cb.opaque = vc;
+    cb.opaque = video;
 
-    vc->ctx = abcdk_avformat_input_open(short_name,url,&cb,NULL,&vc->dict);
-    if(!vc->ctx)
+    video->ctx = abcdk_avformat_input_open(short_name,url,&cb,NULL,&video->dict);
+    if(!video->ctx)
         goto final_error;
 
-    chk = abcdk_avformat_input_probe(vc->ctx, NULL, dump);
+    chk = abcdk_avformat_input_probe(video->ctx, NULL, dump);
     if (chk < 0)
         goto final_error;
 
-    return vc;
+    return video;
 
 final_error:
 
-    abcdk_heap_free(vc);
+    abcdk_heap_free(video);
 
     return NULL;
 }
 
-int _abcdk_video_capture_open_codec(abcdk_video_capture_t *vc, int stream_index)
+int _abcdk_video_open_capture_codec(abcdk_video_t *video, int stream_index,const char *codec_name)
 {
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
     AVStream *vs_p = NULL;
     int chk;
 
-    if (stream_index >= vc->ctx->nb_streams)
+    if (stream_index >= video->ctx->nb_streams)
         return -1;
 
     if (stream_index >= ABCDK_VIDEO_MAX_STREAMS)
         return -1;
 
     /* 如果已经打开，直接返回。*/
-    if(vc->codec_ctx[stream_index])
+    if(video->codec_ctx[stream_index])
         return 0;
 
-    vs_p = vc->ctx->streams[stream_index];
+    vs_p = video->ctx->streams[stream_index];
 
-    ctx_p = abcdk_avcodec_alloc3(vs_p->codec->codec_id,0);
+    if(codec_name)
+        ctx_p = abcdk_avcodec_alloc2(codec_name,0);
+    else 
+        ctx_p = abcdk_avcodec_alloc3(vs_p->codec->codec_id,0);
+
     if(!ctx_p)
         goto final_error;
     
@@ -263,8 +228,8 @@ int _abcdk_video_capture_open_codec(abcdk_video_capture_t *vc, int stream_index)
     if(chk <0 )
         goto final_error;
 
-    vc->codec_ctx[stream_index] = ctx_p;
-    vc->codec_dict[stream_index] = dict_p;
+    video->codec_ctx[stream_index] = ctx_p;
+    video->codec_dict[stream_index] = dict_p;
 
     return 0;
 
@@ -276,19 +241,19 @@ final_error:
     return -1;
 }
 
-int abcdk_video_capture_read(abcdk_video_capture_t *vc, AVPacket *pkt, int stream_index, int only_key)
+int abcdk_video_read(abcdk_video_t *video, AVPacket *pkt, int stream_index, int only_key)
 {
     int chk;
-    assert(vc != NULL && pkt != NULL);
+    assert(video != NULL && pkt != NULL);
 
     for (;;)
     {
-        chk = abcdk_avformat_input_read(vc->ctx, pkt, AVMEDIA_TYPE_NB);
+        chk = abcdk_avformat_input_read(video->ctx, pkt, AVMEDIA_TYPE_NB);
         if (chk < 0)
             return -1;
 
         /* 更新最近包时间，不然会超时。*/
-        vc->last_packet_time = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
+        video->last_packet_time = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
 
         if (stream_index >= 0)
         {
@@ -296,7 +261,7 @@ int abcdk_video_capture_read(abcdk_video_capture_t *vc, AVPacket *pkt, int strea
                 continue;
         }
 
-        chk = abcdk_avformat_input_filter(vc->ctx,pkt,&vc->vs_filter[pkt->stream_index]);
+        chk = abcdk_avformat_input_filter(video->ctx,pkt,&video->vs_filter[pkt->stream_index]);
         if (chk < 0)
             return -1;
 
@@ -307,28 +272,40 @@ int abcdk_video_capture_read(abcdk_video_capture_t *vc, AVPacket *pkt, int strea
     return pkt->stream_index;
 }
 
-int abcdk_video_capture_read2(abcdk_video_capture_t *vc, AVFrame *fae, int stream_index, int only_key)
+int abcdk_video_read2(abcdk_video_t *video, AVFrame *fae, int stream_index, int only_key)
 {
+    AVStream *vs_p = NULL;
     AVCodecContext *codec_ctx_p;
     AVPacket pkt;
     int chk;
 
-    assert(vc != NULL && fae != NULL);
+    assert(video != NULL && fae != NULL);
 
     av_frame_unref(fae);
     av_init_packet(&pkt);
 
     for (;;)
     {
-        chk = abcdk_video_capture_read(vc, &pkt, stream_index, only_key);
+        chk = abcdk_video_read(video, &pkt, stream_index, only_key);
         if (chk < 0)
             return -1;
 
-        chk = _abcdk_video_capture_open_codec(vc, pkt.stream_index);
+        vs_p = video->ctx->streams[pkt.stream_index];
+
+        /*优先尝试硬件解码。*/
+        if (vs_p->codec->codec_id == AV_CODEC_ID_HEVC)
+            chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "hevc_cuvid");
+        else if (vs_p->codec->codec_id == AV_CODEC_ID_H264)
+            chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "h264_cuvid");
+
+        if (chk < 0)
+            chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, NULL);
+
         if (chk < 0)
             goto final;
 
-        codec_ctx_p = vc->codec_ctx[pkt.stream_index];
+        codec_ctx_p = video->codec_ctx[pkt.stream_index];
+        
         chk = abcdk_avcodec_decode(codec_ctx_p, fae, &pkt);
 
         if (chk != 0)
@@ -349,71 +326,108 @@ final:
     return chk;
 }
 
-/*------------------------------------------------------------------------------------------------*/
-
-void abcdk_video_writer_close(abcdk_video_writer_t *vw)
+abcdk_video_t *abcdk_video_open_writer(const char*short_name,const char *url,const char *mime_type)
 {
-    if(!vw)
-        return;
-
-    for (int i = 0; i < ABCDK_VIDEO_MAX_STREAMS; i++)
-    {
-        if(vw->codec_ctx[i])
-            abcdk_avcodec_free(&vw->codec_ctx[i]);
-
-        if(vw->codec_dict[i])
-            av_dict_free(&vw->codec_dict[i]);
-    }
-
-    av_dict_free(&vw->dict);
-    abcdk_avformat_free(&vw->ctx);
-
-    abcdk_heap_free(vw);
-}
-
-abcdk_video_writer_t *abcdk_video_writer_open(const char*short_name,const char *url,const char *mime_type)
-{
-    abcdk_video_writer_t *vw = NULL;
+    abcdk_video_t *video = NULL;
 
     assert(url!= NULL);
 
-    vw = abcdk_heap_alloc(sizeof(abcdk_video_writer_t));
-    if(!vw)
+    video = abcdk_heap_alloc(sizeof(abcdk_video_t));
+    if(!video)
         return NULL;
 
-    vw->ctx = abcdk_avformat_output_open(short_name, url, mime_type, NULL, NULL, NULL);
-    if(!vw->ctx)
+    video->ctx = abcdk_avformat_output_open(short_name, url, mime_type, NULL, NULL, NULL);
+    if(!video->ctx)
         goto final_error;
 
-    return vw;
+    return video;
 
 final_error:
 
-    abcdk_heap_free(vw);
+    abcdk_heap_free(video);
 
     return NULL;
 }
 
-int abcdk_video_writer_add_stream(abcdk_video_writer_t *vw, int fps, int width, int height, enum AVCodecID id,
-                                  const void *extdata, int extsize, int have_codec)
+int _abcdk_video_open_writer_codec(abcdk_video_t *video, int stream_index,
+                                   int fps, int width, int height,const char *codec_name)
+{
+    AVCodecContext *ctx_p = NULL;
+    AVDictionary *dict_p = NULL;
+    AVStream *vs_p = NULL;
+    int chk;
+
+    if (stream_index >= video->ctx->nb_streams)
+        return -1;
+
+    if (stream_index >= ABCDK_VIDEO_MAX_STREAMS)
+        return -1;
+
+    /* 如果已经打开，直接返回。*/
+    if(video->codec_ctx[stream_index])
+        return 0;
+
+    vs_p = video->ctx->streams[stream_index];
+
+    if (codec_name)
+        ctx_p = abcdk_avcodec_alloc2(codec_name, 1);
+    else
+        ctx_p = abcdk_avcodec_alloc3(vs_p->codec->codec_id, 1);
+
+    if(!ctx_p)
+        goto final_error;
+
+    if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        abcdk_avcodec_video_encode_prepare(ctx_p, fps, width, height, -1, video->ctx->oformat->flags);
+
+        ctx_p->thread_count = 2;
+        ctx_p->max_b_frames = 0;
+    }
+    else 
+    {
+        goto final_error;//fix me.
+    }
+    
+    chk = abcdk_avcodec_open(ctx_p, &dict_p);
+    if(chk <0 )
+        goto final_error;
+
+    abcdk_avstream_parameters_from_context(vs_p, ctx_p);
+
+    video->codec_ctx[stream_index] = ctx_p;
+    video->codec_dict[stream_index] = dict_p;
+
+    return 0;
+
+final_error:
+
+    abcdk_avcodec_free(&ctx_p);
+    av_dict_free(&dict_p);
+
+    return -1;
+}
+
+int abcdk_video_add_stream(abcdk_video_t *video, int fps, int width, int height, enum AVCodecID id,
+                           const void *extdata, int extsize, int have_codec)
 {
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
     AVStream *vs = NULL;
     int chk;
 
-    assert(vw!= NULL);
+    assert(video != NULL && fps > 0 && width > 0 && height > 0 && id > AV_CODEC_ID_NONE);
 
-    if (vw->ctx->nb_streams >= ABCDK_VIDEO_MAX_STREAMS)
+    if (video->ctx->nb_streams >= ABCDK_VIDEO_MAX_STREAMS)
         return -2;
 
-    vs = abcdk_avformat_output_stream3(vw->ctx,id);
+    vs = abcdk_avformat_output_stream3(video->ctx,id);
     if(!vs)
         return -1;
 
     if (have_codec)
     {
-        if (vw->ctx->oformat->flags & AVFMT_GLOBALHEADER)
+        if (video->ctx->oformat->flags & AVFMT_GLOBALHEADER)
             vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
         vs->time_base = vs->codec->time_base = av_make_q(1, fps);
@@ -435,41 +449,165 @@ int abcdk_video_writer_add_stream(abcdk_video_writer_t *vw, int fps, int width, 
     }
     else
     {
-        ctx_p = abcdk_avcodec_alloc3(id, 1);
-        if (!ctx_p)
-            goto final_error;
-
-        if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
-            abcdk_avcodec_video_encode_prepare(ctx_p, fps, width, height, -1, vw->ctx->oformat->flags);
-        else 
-            goto final_error; //fix me.
-
-        ctx_p->thread_count = 2;
-        ctx_p->max_b_frames = 0; //No B-Frame.
-
-        chk = abcdk_avcodec_open(ctx_p, &dict_p);
-        if (chk < 0)
-            goto final_error;
+        /*优先尝试硬件编码。*/
+        if (id == AV_CODEC_ID_HEVC)
+            chk = _abcdk_video_open_writer_codec(video,vs->index,fps,width,height,"hevc_nvenc");
+        else if (id == AV_CODEC_ID_H264)
+            chk = _abcdk_video_open_writer_codec(video,vs->index,fps,width,height,"h264_nvenc");
         
-        abcdk_avstream_parameters_from_context(vs, ctx_p);
+        if(chk<0)
+            chk = _abcdk_video_open_writer_codec(video,vs->index,fps,width,height,NULL);
 
-        vw->codec_ctx[vs->index] = ctx_p;
-        vw->codec_dict[vs->index] = dict_p;
+        if (chk < 0)
+            return -1;
     }
 
     return 0;
-
-final_error:
-
-    abcdk_avcodec_free(&ctx_p);
-    av_dict_free(&dict_p);
-
-    return -1;
 }
 
-/*------------------------------------------------------------------------------------------------*/
+int abcdk_video_write_header(abcdk_video_t *video, int make_mp4fragment, int dump)
+{
+    int chk;
 
+    assert(video != NULL);
 
+    if (make_mp4fragment)
+        av_dict_set(&video->dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
+
+    chk = abcdk_avformat_output_header(video->ctx, &video->dict, dump);
+    if (chk < 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_video_write_trailer(abcdk_video_t *video)
+{
+    int chk;
+
+    assert(video != NULL);
+
+    /* 写入所有延时编码数据包。*/
+    for (int i = 0; i < video->ctx->nb_streams; i++)
+        abcdk_video_write2(video, i, NULL);
+
+    chk = abcdk_avformat_output_trailer(video->ctx);
+    if (chk < 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_video_write(abcdk_video_t *video, AVPacket *pkt)
+{
+    AVStream *vs_p = NULL;
+    int chk;
+
+    assert(video != NULL && pkt != NULL);
+    assert(pkt->stream_index >= 0 && pkt->stream_index < video->ctx->nb_streams);
+
+    vs_p = video->ctx->streams[pkt->stream_index];
+
+    chk = abcdk_avformat_output_write(video->ctx, vs_p, pkt);
+    if (chk < 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_video_write2(abcdk_video_t *video,int stream_index, AVFrame *fae)
+{
+    AVCodecContext *ctx_p = NULL;
+    AVStream *vs_p = NULL;
+    AVPacket pkt;
+    AVFrame *fae_cp = NULL;
+    int chk;
+
+    assert(video != NULL && stream_index >= 0);
+    assert(stream_index < video->ctx->nb_streams);
+
+    ctx_p = video->codec_ctx[stream_index];
+    vs_p = video->ctx->streams[stream_index];
+
+    /*使用外部编器，不支持。*/
+    if (!ctx_p)
+        return -2;
+
+    av_init_packet(&pkt);
+
+    if (fae != NULL)
+    {
+        fae_cp = av_frame_alloc();
+        fae_cp->width = fae->width;
+        fae_cp->height = fae->height;
+        fae_cp->format = fae->format;
+        fae_cp->data[0] = fae->data[0];
+        fae_cp->data[1] = fae->data[1];
+        fae_cp->data[2] = fae->data[2];
+        fae_cp->data[3] = fae->data[3];
+        fae_cp->linesize[0] = fae->linesize[0];
+        fae_cp->linesize[1] = fae->linesize[1];
+        fae_cp->linesize[2] = fae->linesize[2];
+        fae_cp->linesize[3] = fae->linesize[3];
+
+        fae_cp->pts = ++video->ts_nums[stream_index][0];
+        fae_cp->quality = 1;
+    }
+
+    do
+    {
+        if (!fae)
+        {
+            /* 检查当前编码器是否支持延时编码。*/
+            if (!(vs_p->codec->codec->capabilities & AV_CODEC_CAP_DELAY))
+                break;
+        }
+
+        chk = abcdk_avcodec_encode(ctx_p, &pkt, (fae ? fae_cp : NULL));
+        if (chk <= 0)
+            break;
+
+        pkt.stream_index = stream_index;
+
+        chk = abcdk_video_write(video, &pkt);
+        if(chk < 0)
+            break;
+
+    } while (!fae);
+
+    av_frame_free(&fae_cp);
+    av_packet_unref(&pkt);
+
+    return chk;
+}
+
+int abcdk_video_write3(abcdk_video_t *video, int stream_index, void *data, int size)
+{
+    AVPacket pkt;
+    AVStream *vs_p = NULL;
+    int chk;
+
+    assert(video != NULL && stream_index >= 0 && data != NULL && size > 0);
+    assert(stream_index < video->ctx->nb_streams);
+
+    vs_p = video->ctx->streams[stream_index];
+
+    av_init_packet(&pkt);
+
+    pkt.data = (uint8_t *)data;
+    pkt.size = size;
+    pkt.stream_index = stream_index;
+
+    /*No B-frame.*/
+    pkt.dts = ++video->ts_nums[stream_index][1];
+    pkt.pts = ++video->ts_nums[stream_index][0];
+
+    chk = abcdk_video_write(video, &pkt);
+    if (chk < 0)
+        return -1;
+
+    return 0;
+}
 
 #endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 

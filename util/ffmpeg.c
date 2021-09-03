@@ -48,13 +48,12 @@ void abcdk_av_log2syslog()
 
 /*------------------------------------------------------------------------------------------------*/
 
-#define ABCDK_AVPIXFMT_CHECK(pixfmt)   ((pixfmt) > AV_PIX_FMT_NONE && (pixfmt) < AV_PIX_FMT_NB)
 
 int abcdk_av_image_pixfmt_bits(enum AVPixelFormat pixfmt, int padded)
 {
     const AVPixFmtDescriptor *desc;
 
-    assert(ABCDK_AVPIXFMT_CHECK(pixfmt));
+    assert(pixfmt > AV_PIX_FMT_NONE);
 
     desc = av_pix_fmt_desc_get(pixfmt);
     if (desc)
@@ -67,7 +66,7 @@ const char *abcdk_av_image_pixfmt_name(enum AVPixelFormat pixfmt)
 {
     const AVPixFmtDescriptor *desc;
 
-    if (ABCDK_AVPIXFMT_CHECK(pixfmt))
+    if (pixfmt > AV_PIX_FMT_NONE)
     {
         desc = av_pix_fmt_desc_get(pixfmt);
         if (desc)
@@ -83,7 +82,7 @@ int abcdk_av_image_fill_heights(int heights[4], int height, enum AVPixelFormat p
     int h;
     int planes_nb;
 
-    assert(heights != NULL && height > 0 && ABCDK_AVPIXFMT_CHECK(pixfmt));
+    assert(heights != NULL && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
     desc = av_pix_fmt_desc_get(pixfmt);
     if (!desc)
@@ -114,7 +113,7 @@ int abcdk_av_image_fill_strides(int strides[4],int width,int height,enum AVPixel
 {
     int stride_nb;
 
-    assert(strides != NULL && width > 0 && height > 0 && ABCDK_AVPIXFMT_CHECK(pixfmt));
+    assert(strides != NULL && width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
     if (av_image_fill_linesizes(strides, pixfmt, width) < 0)
         ABCDK_ERRNO_AND_RETURN1(EINVAL, -1);
@@ -143,7 +142,7 @@ int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int he
 {
     int size;
 
-    assert(datas != NULL && strides != NULL && height > 0 && ABCDK_AVPIXFMT_CHECK(pixfmt));
+    assert(datas != NULL && strides != NULL && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
     size = av_image_fill_pointers(datas, pixfmt, height, (uint8_t *)buffer, strides);
 
@@ -192,7 +191,7 @@ void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_
 {
     assert(dst_datas != NULL && dst_strides != NULL);
     assert(src_datas != NULL && src_strides != NULL);
-    assert(width > 0 && height > 0 && ABCDK_AVPIXFMT_CHECK(pixfmt));
+    assert(width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
     av_image_copy(dst_datas, dst_strides, src_datas, src_strides, pixfmt, width, height);
 }
@@ -227,8 +226,8 @@ struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFo
                                    int dst_width, int dst_height, enum AVPixelFormat dst_pixfmt,
                                    int flags)
 {
-    assert(src_width > 0 && src_height > 0 && ABCDK_AVPIXFMT_CHECK(src_pixfmt));
-    assert(dst_width > 0 && dst_height > 0 && ABCDK_AVPIXFMT_CHECK(dst_pixfmt));
+    assert(src_width > 0 && src_height > 0 && src_pixfmt > AV_PIX_FMT_NONE);
+    assert(dst_width > 0 && dst_height > 0 && dst_pixfmt > AV_PIX_FMT_NONE);
 
     return sws_getContext(src_width, src_height, src_pixfmt,
                           dst_width, dst_height, dst_pixfmt,
@@ -272,13 +271,7 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
     avcodec_register_all();
 #endif
 
-    if (id == AV_CODEC_ID_HEVC)
-        ctx = abcdk_avcodec_find(encode?"hevc_nvenc":"hevc_cuvid", encode);
-    else if (id == AV_CODEC_ID_H264)
-        ctx = abcdk_avcodec_find(encode?"h264_nvenc":"h264_cuvid", encode);
-    
-    if (!ctx)
-        ctx = (encode ? avcodec_find_encoder(id) : avcodec_find_decoder(id));
+    ctx = (encode ? avcodec_find_encoder(id) : avcodec_find_decoder(id));
     
     return ctx;
 }
@@ -312,12 +305,22 @@ AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx)
 
 AVCodecContext *abcdk_avcodec_alloc2(const char *name,int encode)
 {
-    return abcdk_avcodec_alloc(abcdk_avcodec_find(name,encode));
+    AVCodec *ctx = abcdk_avcodec_find(name,encode);
+
+    if(ctx)
+        return abcdk_avcodec_alloc(ctx);
+    
+    return NULL;
 }
 
 AVCodecContext *abcdk_avcodec_alloc3(enum AVCodecID id,int encode)
 {
-    return abcdk_avcodec_alloc(abcdk_avcodec_find2(id,encode));
+    AVCodec *ctx = abcdk_avcodec_find2(id,encode);
+
+    if(ctx)
+        return abcdk_avcodec_alloc(ctx);
+
+    return NULL;
 }
 
 int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
@@ -375,7 +378,7 @@ int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
 {
     int got = -1;
 
-    assert(ctx != NULL && out != NULL && in != NULL);
+    assert(ctx != NULL && out != NULL);
 
     /*No output.*/
     got = 0;
