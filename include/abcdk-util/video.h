@@ -30,7 +30,11 @@ typedef struct _abcdk_video
     AVDictionary *codec_dict[ABCDK_VIDEO_MAX_STREAMS];
 
     /** 数据包过滤器。*/
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+    AVBSFContext *vs_filter[ABCDK_VIDEO_MAX_STREAMS];
+#else
     AVBitStreamFilterContext *vs_filter[ABCDK_VIDEO_MAX_STREAMS];
+#endif
 
     /** 视频。*/
     AVFormatContext *ctx;

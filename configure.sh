@@ -350,8 +350,8 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-ffmpeg") -eq 1 ];then
     {
         HAVE_FFMPEG="Yes"
         DEPEND_FLAGS=" -DHAVE_FFMPEG ${DEPEND_FLAGS}"
-        DEPEND_FLAGS=" $(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice) ${DEPEND_LIBS}"
+        DEPEND_FLAGS=" $(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample) ${DEPEND_LIBS}"
     }
     else
     {

@@ -2115,7 +2115,7 @@ void test_video(abcdk_tree_t *args)
     uint64_t c = 0;
     uint64_t s = 0;
 
-    abcdk_video_write_header(dst,1,1);
+    abcdk_video_write_header(dst,0,1);
 
     printf("LONG: %f\n",abcdk_video_get_duration(src,stream_index));
     printf("FPS: %f\n",abcdk_video_get_fps(src,stream_index));

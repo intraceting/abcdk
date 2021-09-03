@@ -312,8 +312,11 @@ int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaT
  * @return >=0 成功，-1 失败。
  * 
 */
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContext **filter);
+#else 
 int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStreamFilterContext **filter);
-
+#endif
 /**
  * 创建流(输出)环境。
  * 

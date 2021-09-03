@@ -26,8 +26,12 @@ void abcdk_video_close(abcdk_video_t *video)
 
         if(video->vs_filter[i])
         {
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+            av_bsf_free(&video->vs_filter[i]);
+#else
             av_bitstream_filter_close(video->vs_filter[i]);
             video->vs_filter[i] = NULL;
+#endif
         }
     }
 
@@ -46,6 +50,11 @@ int abcdk_video_nb_streams(abcdk_video_t *video)
 
 int abcdk_video_check_stream(abcdk_video_t *video,int stream_index,int type)
 {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    AVCodecContext *codecpar = NULL;
+#else 
+    AVCodecParameters *codecpar = NULL;
+#endif
     AVStream *vs_p = NULL;
     int chk = -1;
 
@@ -54,14 +63,21 @@ int abcdk_video_check_stream(abcdk_video_t *video,int stream_index,int type)
 
     vs_p = video->ctx->streams[stream_index];
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    codecpar = vs_p->codec;
+#else 
+    codecpar = vs_p->codecpar;
+#endif
+
     if (type == 1)
-        chk = ((vs_p->codec->codec_type == AVMEDIA_TYPE_VIDEO) ? 0 : -1);
+        chk = ((codecpar->codec_type == AVMEDIA_TYPE_VIDEO) ? 0 : -1);
     else if (type == 2)
-        chk = ((vs_p->codec->codec_type == AVMEDIA_TYPE_AUDIO) ? 0 : -1);
+        chk = ((codecpar->codec_type == AVMEDIA_TYPE_AUDIO) ? 0 : -1);
     else if (type == 3)
-        chk = ((vs_p->codec->codec_type == AVMEDIA_TYPE_SUBTITLE) ? 0 : -1);
+        chk = ((codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) ? 0 : -1);
     else 
         chk = -2;
+
     
     return chk;
 }
@@ -106,7 +122,11 @@ int abcdk_video_get_width(abcdk_video_t *video, int stream_index)
 
     vs_p = video->ctx->streams[stream_index];
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     return vs_p->codec->width;
+#else 
+    return vs_p->codecpar->width;
+#endif
 }
 
 int abcdk_video_get_height(abcdk_video_t *video, int stream_index)
@@ -118,7 +138,11 @@ int abcdk_video_get_height(abcdk_video_t *video, int stream_index)
 
     vs_p = video->ctx->streams[stream_index];
 
-    return vs_p->codec->height;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    return vs_p->codec->width;
+#else 
+    return vs_p->codecpar->height;
+#endif
 }
 
 double abcdk_video_get_fps(abcdk_video_t *video, int stream_index)
