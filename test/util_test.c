@@ -58,7 +58,7 @@ void test_ffmpeg(abcdk_tree_t *args)
         printf("%s(%d): %d/%d bits.\n",name,i,bits,bits_pad);
     }
 
-    
+#if 0    
     abcdk_image_t src = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
     abcdk_image_t dst = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
     abcdk_image_t dst2 = {AV_PIX_FMT_BGR32,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
@@ -113,6 +113,8 @@ void test_ffmpeg(abcdk_tree_t *args)
     abcdk_heap_free(src_buf);
     abcdk_heap_free(dst_buf);
     abcdk_heap_free(dst2_buf);
+
+#endif
 
 #endif //
 

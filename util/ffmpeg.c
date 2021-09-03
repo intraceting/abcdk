@@ -131,14 +131,8 @@ int abcdk_av_image_fill_strides(int strides[4],int width,int height,enum AVPixel
     return stride_nb;
 }
 
-int abcdk_av_image_fill_strides2(abcdk_image_t *img,int align)
-{
-    assert (img != NULL);
-
-    return abcdk_av_image_fill_strides(img->strides, img->width, img->height, img->pixfmt, align);
-}
-
-int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int height, enum AVPixelFormat pixfmt, void *buffer)
+int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int height,
+                                 enum AVPixelFormat pixfmt, void *buffer)
 {
     int size;
 
@@ -151,13 +145,6 @@ int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int he
         memset(datas, 0, sizeof(uint8_t *));
 
     return size;
-}
-
-int abcdk_av_image_fill_pointers2(abcdk_image_t *img,void *buffer)
-{
-    assert (img != NULL);
-
-    return abcdk_av_image_fill_pointers(img->datas, img->strides, img->height, img->pixfmt, buffer);
 }
 
 int abcdk_av_image_size(const int strides[4], int height, enum AVPixelFormat pixfmt)
@@ -179,15 +166,8 @@ int abcdk_av_image_size2(int width,int height,enum AVPixelFormat pixfmt,int alig
     return abcdk_av_image_size(strides,height,pixfmt);
 }
 
-int abcdk_av_image_size3(const abcdk_image_t *img)
-{
-    assert (img != NULL);
-
-    return abcdk_av_image_size(img->strides, img->height, img->pixfmt);
-}
-
-void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4], const int src_strides[4],
-                         int width, int height, enum AVPixelFormat pixfmt)
+void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4],
+                         const int src_strides[4], int width, int height, enum AVPixelFormat pixfmt)
 {
     assert(dst_datas != NULL && dst_strides != NULL);
     assert(src_datas != NULL && src_strides != NULL);
@@ -196,16 +176,16 @@ void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_
     av_image_copy(dst_datas, dst_strides, src_datas, src_strides, pixfmt, width, height);
 }
 
-void abcdk_av_image_copy2(abcdk_image_t *dst, const abcdk_image_t *src)
+void abcdk_av_image_copy2(AVFrame *dst, const AVFrame *src)
 {
     assert(dst != NULL && src != NULL);
 
     assert(dst->width == src->width);
     assert(dst->height == src->height);
-    assert(dst->pixfmt == src->pixfmt);
+    assert(dst->format == src->format);
 
-    abcdk_av_image_copy(dst->datas,dst->strides,(const uint8_t **)src->datas,src->strides,
-                        src->width,src->height,src->pixfmt);
+    abcdk_av_image_copy(dst->data,dst->linesize,(const uint8_t **)src->data,src->linesize,
+                        src->width,src->height,src->format);
 }
 
 /*------------------------------------------------------------------------------------------------*/
@@ -234,13 +214,20 @@ struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFo
                           flags, NULL, NULL, NULL);
 }
 
-struct SwsContext *abcdk_sws_alloc2(const abcdk_image_t *src, const abcdk_image_t *dst, int flags)
+struct SwsContext *abcdk_sws_alloc2(const AVFrame *src, const AVFrame *dst, int flags)
 {
     assert(dst != NULL && src != NULL);
 
-    return abcdk_sws_alloc(src->width, src->height, src->pixfmt,
-                           dst->width, dst->height, dst->pixfmt,
+    return abcdk_sws_alloc(src->width, src->height, src->format,
+                           dst->width, dst->height, dst->format,
                            flags);
+}
+
+int abcdk_sws_scale(struct SwsContext *ctx, const AVFrame *src, AVFrame *dst)
+{
+    assert(ctx != NULL && dst != NULL && src != NULL);
+
+    return sws_scale(ctx, src->data, src->linesize, 0, src->height, dst->data, dst->linesize);
 }
 
 /*------------------------------------------------------------------------------------------------*/

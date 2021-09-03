@@ -8,7 +8,6 @@
 #define ABCDK_UTIL_FFMPEG_H
 
 #include "abcdk-util/general.h"
-#include "abcdk-util/image.h"
 
 #ifdef HAVE_FFMPEG
 
@@ -85,27 +84,14 @@ int abcdk_av_image_fill_heights(int heights[4],int height,enum AVPixelFormat pix
 int abcdk_av_image_fill_strides(int strides[4],int width,int height,enum AVPixelFormat pixfmt,int align);
 
 /**
- * 计算图像每个图层的宽步长(字节)。
- * 
- * @return > 0 成功(图层数量)， <= 0 失败。
-*/
-int abcdk_av_image_fill_strides2(abcdk_image_t *img,int align);
-
-/**
  * 分派存储空间。
  * 
  * @param buffer 内存指针，传入NULL(0)。
  * 
  * @return >0 成功(分派的内存大小)， <= 0 失败。
 */
-int abcdk_av_image_fill_pointers(uint8_t *datas[4],const int strides[4],int height,enum AVPixelFormat pixfmt,void *buffer);
-
-/** 
- * 分派存储空间。
- * 
- * @return >0 成功(分派的内存大小)， <= 0 失败。
-*/
-int abcdk_av_image_fill_pointers2(abcdk_image_t *img,void *buffer);
+int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int height,
+                                 enum AVPixelFormat pixfmt, void *buffer);
 
 /**
  * 计算需要的内存大小。
@@ -122,24 +108,15 @@ int abcdk_av_image_size(const int strides[4],int height,enum AVPixelFormat pixfm
 int abcdk_av_image_size2(int width,int height,enum AVPixelFormat pixfmt,int align);
 
 /**
- * 计算需要的内存大小。
- * 
- * @return >0 成功(需要的内存大小)， <= 0 失败。
+ * 图像复制。
 */
-int abcdk_av_image_size3(const abcdk_image_t *img);
+void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4],
+                         const int src_strides[4], int width, int height, enum AVPixelFormat pixfmt);
 
 /**
  * 图像复制。
- * 
 */
-void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4], const int src_strides[4],
-                         int width, int height, enum AVPixelFormat pixfmt);
-
-/**
- * 图像复制。
- * 
-*/
-void abcdk_av_image_copy2(abcdk_image_t *dst, const abcdk_image_t *src);
+void abcdk_av_image_copy2(AVFrame *dst, const AVFrame *src);
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -164,7 +141,14 @@ struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFo
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-struct SwsContext *abcdk_sws_alloc2(const abcdk_image_t *src, const abcdk_image_t *dst, int flags);
+struct SwsContext *abcdk_sws_alloc2(const AVFrame *src, const AVFrame *dst, int flags);
+
+/** 
+ * 转换图像格式。
+ * 
+ * @return > 0 成功(高度)，<= 0 失败。
+*/
+int abcdk_sws_scale(struct SwsContext *ctx,const AVFrame *src, AVFrame *dst);
 
 /*------------------------------------------------------------------------------------------------*/
 
