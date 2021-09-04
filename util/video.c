@@ -240,8 +240,12 @@ int _abcdk_video_open_capture_codec(abcdk_video_t *video, int stream_index,const
 
     if(codec_name)
         ctx_p = abcdk_avcodec_alloc2(codec_name,0);
-    else 
+    else
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
         ctx_p = abcdk_avcodec_alloc3(vs_p->codec->codec_id,0);
+#else
+        ctx_p = abcdk_avcodec_alloc3(vs_p->codecpar->codec_id,0);
+#endif
 
     if(!ctx_p)
         goto final_error;
@@ -320,10 +324,17 @@ int abcdk_video_read2(abcdk_video_t *video, AVFrame *fae, int stream_index, int 
         vs_p = video->ctx->streams[pkt.stream_index];
 
         /*优先尝试硬件解码。*/
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
         if (vs_p->codec->codec_id == AV_CODEC_ID_HEVC)
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "hevc_cuvid");
         else if (vs_p->codec->codec_id == AV_CODEC_ID_H264)
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "h264_cuvid");
+#else
+        if (vs_p->codecpar->codec_id == AV_CODEC_ID_HEVC)
+            chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "hevc_cuvid");
+        else if (vs_p->codecpar->codec_id == AV_CODEC_ID_H264)
+            chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, "h264_cuvid");
+#endif
         else 
             chk = -1;
 
@@ -401,7 +412,11 @@ int _abcdk_video_open_writer_codec(abcdk_video_t *video, int stream_index,
     if (codec_name)
         ctx_p = abcdk_avcodec_alloc2(codec_name, 1);
     else
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
         ctx_p = abcdk_avcodec_alloc3(vs_p->codec->codec_id, 1);
+#else
+        ctx_p = abcdk_avcodec_alloc3(vs_p->codecpar->codec_id, 1);
+#endif
 
     if(!ctx_p)
         goto final_error;
@@ -440,6 +455,11 @@ final_error:
 int abcdk_video_add_stream(abcdk_video_t *video, int fps, int width, int height, enum AVCodecID id,
                            const void *extdata, int extsize, int have_codec)
 {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar;
+#endif
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
     AVStream *vs = NULL;
@@ -456,25 +476,32 @@ int abcdk_video_add_stream(abcdk_video_t *video, int fps, int width, int height,
 
     if (have_codec)
     {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
+        codecpar = vs->codec;
+
         if (video->ctx->oformat->flags & AVFMT_GLOBALHEADER)
             vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#else
+        codecpar = vs->codecpar;
+#endif
 
-        vs->time_base = vs->codec->time_base = av_make_q(1, fps);
+        vs->time_base = vs->time_base = av_make_q(1, fps);
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(fps, 1);
-        vs->codec->width = width;
-        vs->codec->height = height;
+        vs->codecpar->width = width;
+        vs->codecpar->height = height;
 
         /*如果有扩展信息，必须复制，不然流无法解码。*/
         if (extdata != NULL && extsize > 0)
         {
-            if(vs->codec->extradata)
-                av_free(vs->codec->extradata);
+            if(vs->codecpar->extradata)
+                av_free(vs->codecpar->extradata);
             
-            vs->codec->extradata = NULL;
-            vs->codec->extradata_size = extsize;
-            vs->codec->extradata = (uint8_t *)av_mallocz((size_t)(extsize + AV_INPUT_BUFFER_PADDING_SIZE));
-            memcpy(vs->codec->extradata, extdata, extsize);
+            vs->codecpar->extradata = NULL;
+            vs->codecpar->extradata_size = extsize;
+            vs->codecpar->extradata = (uint8_t *)av_mallocz((size_t)(extsize + AV_INPUT_BUFFER_PADDING_SIZE));
+            memcpy(vs->codecpar->extradata, extdata, extsize);
         }
+
     }
     else
     {
