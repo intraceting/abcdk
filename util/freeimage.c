@@ -88,7 +88,7 @@ int abcdk_fi_save(FREE_IMAGE_FORMAT fifmt, int fiflag, int fd, const uint8_t *da
     const uint8_t *tmp = NULL;
     int chk = -1;
 
-    assert(ABCDK_FI_IMGFMT_CHECK(fifmt));
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
     assert(fd >= 0 && data != NULL && stride > 0 && width > 0 && height > 0 && bits > 0);
 
     assert(bits == 24 || bits == 32);
@@ -146,7 +146,7 @@ int abcdk_fi_save2(FREE_IMAGE_FORMAT fifmt, int fiflag, const char *file, const 
     int fd = -1;
     int chk;
 
-    assert(ABCDK_FI_IMGFMT_CHECK(fifmt));
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
     assert(file != NULL && data != NULL && stride > 0 && width > 0 && height != 0 && bits > 0);
 
     fd = abcdk_open(file,1,0,1);
@@ -165,7 +165,7 @@ FIBITMAP *abcdk_fi_load(FREE_IMAGE_FORMAT fifmt,int fiflag,int fd)
     FreeImageIO io = {0};
     FIBITMAP *dib = NULL;
     
-    assert(ABCDK_FI_IMGFMT_CHECK(fifmt));
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
     assert(fd>=0);
 
     io.read_proc = _abck_fi_read_cb;
@@ -185,7 +185,7 @@ FIBITMAP *abcdk_fi_load2(FREE_IMAGE_FORMAT fifmt,int fiflag,const char *file)
     int fd = -1;
     FIBITMAP *dib = NULL;
 
-    assert(ABCDK_FI_IMGFMT_CHECK(fifmt));
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
     assert(file != NULL);
 
     fd = abcdk_open(file,0,0,1);

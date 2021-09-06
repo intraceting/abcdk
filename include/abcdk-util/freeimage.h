@@ -21,9 +21,6 @@ __BEGIN_DECLS
 
 #ifdef FREEIMAGE_H
 
-/** 检查图像格式是否支持。*/
-#define ABCDK_FI_IMGFMT_CHECK(fifmt)   ((fifmt) >= FIF_BMP && (fifmt) <= FIF_JXR)
-
 /**
  * 日志重定向到syslog。
 */
