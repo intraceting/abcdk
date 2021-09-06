@@ -2090,6 +2090,9 @@ void test_hexdump(abcdk_tree_t *args)
 void test_video(abcdk_tree_t *args)
 {
 #ifdef HAVE_FFMPEG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
     int chk;
     const char *src_file_p = abcdk_option_get(args,"--src",0,"");
     const char *dst_file_p = abcdk_option_get(args,"--dst",0,"");
@@ -2103,7 +2106,11 @@ void test_video(abcdk_tree_t *args)
     double fps = abcdk_video_get_fps(src,stream_index);
     int width = abcdk_video_get_width(src,stream_index);
     int height = abcdk_video_get_height(src,stream_index);
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
     enum AVCodecID id = src->ctx->streams[stream_index]->codec->codec_id;
+#else 
+    enum AVCodecID id = src->ctx->streams[stream_index]->codecpar->codec_id;
+#endif 
 
     int stream_index2 = abcdk_video_add_stream(dst,fps,width,height,id,NULL,0,0);
 
@@ -2123,29 +2130,29 @@ void test_video(abcdk_tree_t *args)
     AVPacket pkt;
     av_init_packet(&pkt);
     AVFrame *fae = av_frame_alloc();
-    for(int i =0;i<100;i++)
+    for(int i =0;i<2000;i++)
     {   
-        //chk = abcdk_video_read(src,&pkt,stream_index,0,1);
+      //  chk = abcdk_video_read(src,&pkt,stream_index,0,1);
         chk = abcdk_video_read2(src,fae,stream_index,0);
         if(chk < 0)
             break;
 
         printf("DTS: %f ,PTS: %f\n",
-            //   abcdk_video_ts2sec(src, pkt.stream_index, pkt.dts),
-           //   abcdk_video_ts2sec(src, pkt.stream_index, pkt.pts));
+          //     abcdk_video_ts2sec(src, pkt.stream_index, pkt.dts),
+         //     abcdk_video_ts2sec(src, pkt.stream_index, pkt.pts));
               abcdk_video_ts2sec(src, chk, fae->pkt_dts),
                abcdk_video_ts2sec(src, chk, fae->pkt_pts));
 
         // abcdk_write(dst,pkt.data,pkt.size);
 
-       //  chk = abcdk_video_write3(dst,stream_index2,pkt.data,pkt.size);
+        // chk = abcdk_video_write3(dst,stream_index2,pkt.data,pkt.size);
          chk = abcdk_video_write2(dst,stream_index2,fae);
          if(chk < 0)
             break;
 
-        //  s = abcdk_clock(c, &c) / 1000;
-        //  if (s < (1000 / fps))
-        //      usleep(((1000 / fps) - s) * 1000);
+         s = abcdk_clock(c, &c) / 1000;
+         if (s < (1000 / fps))
+             usleep(((1000 / fps) - s) * 1000);
     }
     av_frame_free(&fae);
     av_packet_unref(&pkt);
@@ -2155,7 +2162,7 @@ void test_video(abcdk_tree_t *args)
    // abcdk_closep(&dst);
     abcdk_video_close(dst);
     abcdk_video_close(src);
-
+#pragma GCC diagnostic pop
 #endif //
 }
 

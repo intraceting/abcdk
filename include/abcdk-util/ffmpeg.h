@@ -363,13 +363,14 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
 /**
  * 向流(输出)写入数据包。
  * 
- * @param vs 数据流，NULL(0) 写入结束包。
+ * @param bq 编码时间基值。
+ * @param cq 数据流时间基值。
  * @param pkt 包，NULL(0) 写入结束包。
  * 
  * @return 0 成功，!0 失败。
  * 
 */
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVStream *vs, AVPacket *pkt);
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVRational *bq,AVRational *cq,AVPacket *pkt);
 
 /**
  * 向流(输出)写入结束信息。

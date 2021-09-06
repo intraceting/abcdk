@@ -169,7 +169,7 @@ abcdk_video_t *abcdk_video_open_writer(const char*short_name,const char *url,con
  * 
  * @param extdata 扩展数据的指针，NULL(0) 忽略。
  * @param extsize 扩展数据的长度。
- * @param have_codec 0 使用内部编码器(忽略扩展数据)，!0 使用外部编码器。
+ * @param have_codec 0 使用内部编码器(不支持B帧，并忽略外部扩展数据)，!0 使用外部编码器。
  * 
  * @return >= 0 成功(数据流索引)，< 0 失败。
 */

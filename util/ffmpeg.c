@@ -8,6 +8,9 @@
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 /*------------------------------------------------------------------------------------------------*/
 
 
@@ -342,7 +345,7 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
 
     /*No output.*/
     got = 0;
-    
+
     if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
     {
         if (avcodec_decode_video2(ctx, out, &got, in) < 0)
@@ -877,29 +880,19 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
     return 0;
 }
 
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVStream *vs, AVPacket *pkt)
+int abcdk_avformat_output_write(AVFormatContext *ctx,AVRational *bq,AVRational *cq,AVPacket *pkt)
 {
-    assert(ctx != NULL && vs != NULL && pkt != NULL);
-    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
-    AVRational bq = vs->codec->time_base;
-#else 
-    AVRational bq = vs->time_base;
-#endif 
-
-    AVRational cq = vs->time_base;
+    assert(ctx != NULL && bq != NULL && cq != NULL && pkt != NULL);
+    assert(ctx->nb_streams > pkt->stream_index);
 
     if (pkt->pts != (int64_t)AV_NOPTS_VALUE)
-        pkt->pts = av_rescale_q(pkt->pts, bq, cq);
+        pkt->pts = av_rescale_q(pkt->pts, *bq, *cq);
 
     if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
-        pkt->dts = av_rescale_q(pkt->dts, bq, cq);
+        pkt->dts = av_rescale_q(pkt->dts, *bq, *cq);
 
     if (pkt->duration)
-        pkt->duration = av_rescale_q(pkt->duration, bq, cq);
-
-    pkt->stream_index = vs->index;
+        pkt->duration = av_rescale_q(pkt->duration, *bq, *cq);
 
     return av_interleaved_write_frame(ctx, pkt);
 }
@@ -918,12 +911,7 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     /*如果是编码，帧率也一并复制。*/
     if (av_codec_is_encoder(ctx->codec))
     {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
         vs->time_base = vs->codec->time_base = ctx->time_base;
-#else
-        vs->time_base = ctx->time_base;
-#endif
-
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
@@ -1099,7 +1087,7 @@ double abcdk_avstream_get_fps(AVFormatContext *ctx, AVStream *vs)
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
         fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base);
 #else 
-        fps = 1.0 / _abcdk_avstream_r2d(vs->time_base);
+        fps = 1.0 / _abcdk_avstream_r2d(vs->avg_frame_rate);
 #endif
 
     return fps;
@@ -1133,5 +1121,6 @@ int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs,int64_t ts)
 
 /*------------------------------------------------------------------------------------------------*/
 
+#pragma GCC diagnostic pop
 
 #endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
