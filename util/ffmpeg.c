@@ -242,7 +242,7 @@ AVCodec *abcdk_avcodec_find(const char *name,int encode)
     assert(name != NULL);
     assert(*name != '\0');
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
     avcodec_register_all();
 #endif
 
@@ -257,7 +257,7 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
 
     assert(id > AV_CODEC_ID_NONE);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
     avcodec_register_all();
 #endif
 
@@ -463,7 +463,7 @@ void abcdk_avio_free(AVIOContext **ctx)
 
     ctx_p = *ctx;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57,83,100)
     avio_context_free(&ctx_p);
 #else
     if(ctx_p->buffer)
@@ -560,7 +560,7 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     AVInputFormat *fmt = NULL;
     AVFormatContext *ctx = NULL;
     int chk = -1;
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
     av_register_all();
 #endif 
     avformat_network_init();
@@ -612,7 +612,7 @@ int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict, int du
 
     if (dump)
     {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
         av_dump_format(ctx, 0, ctx->filename, 0);
 #else
         av_dump_format(ctx, 0, ctx->url, 0);
@@ -637,7 +637,7 @@ int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaT
 
         if (only_type < AVMEDIA_TYPE_NB)
         {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
             if (ctx->streams[pkt->stream_index]->codec->codec_type == only_type)
 #else 
             if (ctx->streams[pkt->stream_index]->codecpar->codec_type == only_type)
@@ -653,7 +653,7 @@ int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaT
     return 0;
 }
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57,83,100)
 int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContext **filter)
 {
     const AVBitStreamFilter *bsf = NULL;
@@ -771,7 +771,7 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     AVFormatContext *ctx = NULL;
     int chk = -1;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
     av_register_all();
 #endif 
     avformat_network_init();
@@ -805,7 +805,7 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (!ctx->oformat)
         goto final_error;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
     strncpy(ctx->filename, filename, sizeof(ctx->filename));
 #else
     ctx->url = av_strdup(filename);
@@ -846,7 +846,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
     if ((ctx->oformat->flags & AVFMT_NOFILE) || ctx->pb)
         chk = 0;
     else
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
         chk = avio_open(&ctx->pb, ctx->filename, AVIO_FLAG_WRITE);
 #else 
         chk = avio_open(&ctx->pb, ctx->url, AVIO_FLAG_WRITE);
@@ -856,7 +856,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
 
     if (dict)
     {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
         if (strncmp(ctx->filename, "rtsp://", 7) == 0)
 #else
         if (strncmp(ctx->url, "rtsp://", 7) == 0)
@@ -870,7 +870,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
 
     if(dump)
     {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(57,83,100)
         av_dump_format(ctx, 0, ctx->filename, 1);
 #else
         av_dump_format(ctx, 0, ctx->url, 1);
@@ -915,7 +915,7 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,107,100)
     avcodec_parameters_from_context(vs->codecpar,ctx);
 #else
     vs->codec->codec_type = ctx->codec_type;
@@ -985,7 +985,7 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
 int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
 {
     assert(vs != NULL && ctx != NULL);
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,107,100)
     avcodec_parameters_to_context(ctx,vs->codecpar);
 #else 
     ctx->codec_type = vs->codec->codec_type;
@@ -1084,7 +1084,7 @@ double abcdk_avstream_get_fps(AVFormatContext *ctx, AVStream *vs)
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
         fps = _abcdk_avstream_r2d(vs->r_frame_rate);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
         fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base);
 #else 
         fps = 1.0 / _abcdk_avstream_r2d(vs->avg_frame_rate);
