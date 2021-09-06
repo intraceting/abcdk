@@ -29,7 +29,7 @@ void abcdk_video_close(abcdk_video_t *video)
 
         if(video->vs_filter[i])
         {
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57,83,100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
             av_bsf_free(&video->vs_filter[i]);
 #else
             av_bitstream_filter_close(video->vs_filter[i]);
@@ -53,7 +53,7 @@ int abcdk_video_nb_streams(abcdk_video_t *video)
 
 int abcdk_video_check_stream(abcdk_video_t *video,int stream_index,int type)
 {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     AVCodecContext *codecpar = NULL;
 #else 
     AVCodecParameters *codecpar = NULL;
@@ -66,7 +66,7 @@ int abcdk_video_check_stream(abcdk_video_t *video,int stream_index,int type)
 
     vs_p = video->ctx->streams[stream_index];
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     codecpar = vs_p->codec;
 #else 
     codecpar = vs_p->codecpar;
@@ -125,7 +125,7 @@ int abcdk_video_get_width(abcdk_video_t *video, int stream_index)
 
     vs_p = video->ctx->streams[stream_index];
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     return vs_p->codec->width;
 #else 
     return vs_p->codecpar->width;
@@ -141,7 +141,7 @@ int abcdk_video_get_height(abcdk_video_t *video, int stream_index)
 
     vs_p = video->ctx->streams[stream_index];
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     return vs_p->codec->height;
 #else 
     return vs_p->codecpar->height;
@@ -322,7 +322,7 @@ int abcdk_video_read2(abcdk_video_t *video, AVFrame *fae, int stream_index, int 
         vs_p = video->ctx->streams[pkt.stream_index];
 
         /*优先尝试硬件解码。*/
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100) 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
         if (vs_p->codec->codec_id == AV_CODEC_ID_HEVC)
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, abcdk_avcodec_find("hevc_cuvid",0));
         else if (vs_p->codec->codec_id == AV_CODEC_ID_H264)
@@ -337,7 +337,7 @@ int abcdk_video_read2(abcdk_video_t *video, AVFrame *fae, int stream_index, int 
             chk = -1;
 
         if (chk < 0)
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,107,100) 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100) 
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, abcdk_avcodec_find2(vs_p->codec->codec_id,0));
 #else 
             chk = _abcdk_video_open_capture_codec(video, pkt.stream_index, abcdk_avcodec_find2(vs_p->codecpar->codec_id,0));
@@ -489,7 +489,7 @@ int abcdk_video_add_stream(abcdk_video_t *video, int fps, int width, int height,
             memcpy(vs->codec->extradata, extdata, extsize);
         }
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,107,100) 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100) 
         vs->codecpar->width = width;
         vs->codecpar->height = height;
 
