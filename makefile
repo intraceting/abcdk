@@ -15,23 +15,23 @@ include ${MAKE_CONF}
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 
 #
-UTIL_NAME = libabcdk-util.so
+UTIL_NAME = abcdk-util
 
 #
-MP4_NAME = libabcdk-mp4.so
+MP4_NAME = abcdk-mp4
 
 #
-MT_NAME = abcdk-mt.exe
-MTX_NAME = abcdk-mtx.exe
-RELEASE_NAME = abcdk-release.exe
-ODBC_NAME = abcdk-odbc.exe
-HTML_NAME = abcdk-html.exe
-ROBOTS_NAME = abcdk-robots.exe
-HEXDUMP_NAME = abcdk-hexdump.exe
+MT_NAME = abcdk-mt
+MTX_NAME = abcdk-mtx
+RELEASE_NAME = abcdk-release
+ODBC_NAME = abcdk-odbc
+HTML_NAME = abcdk-html
+ROBOTS_NAME = abcdk-robots
+HEXDUMP_NAME = abcdk-hexdump
 
 #
-EPOLLEX_TESTNAME = epollex_test.exe
-UTIL_TESTNAME = util_test.exe
+EPOLLEX_TESTNAME = epollex_test
+UTIL_TESTNAME = util_test
 
 #Compiler
 CCC = gcc
@@ -99,7 +99,8 @@ util: ${UTIL_NAME}
 ${UTIL_NAME}: $(UTIL_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${UTIL_NAME}
-	$(CCC) -o $(BUILD_PATH)/${UTIL_NAME} $^ $(LINK_FLAGS) -shared
+	$(CCC) -o $(BUILD_PATH)/lib${UTIL_NAME}.so $^ $(LINK_FLAGS) -shared
+	ar -cr $(BUILD_PATH)/lib${UTIL_NAME}.a $^
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
@@ -113,7 +114,8 @@ mp4: ${MP4_NAME}
 ${MP4_NAME}: $(MP4_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MP4_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MP4_NAME} $^ $(LINK_FLAGS) -shared
+	$(CCC) -o $(BUILD_PATH)/lib${MP4_NAME}.so $^ $(LINK_FLAGS) -shared
+	ar -cr $(BUILD_PATH)/lib${MP4_NAME}.a $^
 
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
@@ -128,38 +130,38 @@ tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_
 ${MTX_NAME}:${UTIL_NAME} ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MTX_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MTX_NAME} ${OBJ_PATH}/tool/mtx.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${MTX_NAME} ${OBJ_PATH}/tool/mtx.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${MT_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MT_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MT_NAME} ${OBJ_PATH}/tool/mt.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${MT_NAME} ${OBJ_PATH}/tool/mt.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${RELEASE_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${RELEASE_NAME}
-	$(CCC) -o $(BUILD_PATH)/${RELEASE_NAME} ${OBJ_PATH}/tool/release.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${RELEASE_NAME} ${OBJ_PATH}/tool/release.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${ODBC_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${ODBC_NAME}
-	$(CCC) -o $(BUILD_PATH)/${ODBC_NAME} ${OBJ_PATH}/tool/odbc.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${ODBC_NAME} ${OBJ_PATH}/tool/odbc.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${HTML_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${HTML_NAME}
-	$(CCC) -o $(BUILD_PATH)/${HTML_NAME} ${OBJ_PATH}/tool/html.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${HTML_NAME} ${OBJ_PATH}/tool/html.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${ROBOTS_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
-	$(CCC) -o $(BUILD_PATH)/${ROBOTS_NAME} ${OBJ_PATH}/tool/robots.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${ROBOTS_NAME} ${OBJ_PATH}/tool/robots.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${HEXDUMP_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
-	$(CCC) -o $(BUILD_PATH)/${HEXDUMP_NAME} ${OBJ_PATH}/tool/hexdump.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${HEXDUMP_NAME} ${OBJ_PATH}/tool/hexdump.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
@@ -172,12 +174,12 @@ test: ${EPOLLEX_TESTNAME} ${UTIL_TESTNAME}
 #
 ${EPOLLEX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${EPOLLEX_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${EPOLLEX_TESTNAME} ${OBJ_PATH}/test/epollex_test.o -l:${UTIL_NAME} $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${EPOLLEX_TESTNAME} ${OBJ_PATH}/test/epollex_test.o -l${UTIL_NAME} $(LINK_FLAGS)
 
 #
 ${UTIL_TESTNAME}: ${UTIL_NAME} ${MP4_NAME} ${TEST_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l:${MP4_NAME} -l:${UTIL_NAME}  $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l${MP4_NAME} -l${UTIL_NAME}  $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
@@ -191,11 +193,13 @@ clean: clean-util clean-mp4 clean-tool clean-test
 
 #
 clean-util:
-	rm -f $(BUILD_PATH)/${UTIL_NAME}
+	rm -f $(BUILD_PATH)/lib${UTIL_NAME}.so
+	rm -f $(BUILD_PATH)/lib${UTIL_NAME}.a
 
 #
 clean-mp4:
-	rm -f $(BUILD_PATH)/${MP4_NAME}
+	rm -f $(BUILD_PATH)/lib${MP4_NAME}.so
+	rm -f $(BUILD_PATH)/lib${MP4_NAME}.a
 
 #
 clean-tool:
@@ -229,14 +233,16 @@ install: install-util install-mp4 install-tool install-ldc install-pkg
 #
 install-util:
 	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/${UTIL_NAME} ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/lib${UTIL_NAME}.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/lib${UTIL_NAME}.a ${INSTALL_PATH_LIB}/
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-util ${INSTALL_PATH_INC}/
 
 #
 install-mp4:
 	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/${MP4_NAME} ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/lib${MP4_NAME}.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/lib${MP4_NAME}.a ${INSTALL_PATH_LIB}/
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-mp4 ${INSTALL_PATH_INC}/
 
@@ -262,7 +268,7 @@ install-ldc:
 	echo "Description: A better c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -l:${UTIL_NAME} -l:${MP4_NAME} -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs: -l${UTIL_NAME} -l${MP4_NAME} -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
 
 #
@@ -280,12 +286,14 @@ uninstall: uninstall-util uninstall-mp4 uninstall-tool uninstall-ldc uninstall-p
 
 #
 uninstall-util:
-	rm -f ${INSTALL_PATH_LIB}/${UTIL_NAME}
+	rm -f ${INSTALL_PATH_LIB}/lib${UTIL_NAME}.so
+	rm -f ${INSTALL_PATH_LIB}/lib${UTIL_NAME}.a
 	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-util
 
 #
 uninstall-mp4:
-	rm -f ${INSTALL_PATH_LIB}/${MP4_NAME}
+	rm -f ${INSTALL_PATH_LIB}/lib${MP4_NAME}.so
+	rm -f ${INSTALL_PATH_LIB}/lib${MP4_NAME}.a
 	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-mp4
 
 #

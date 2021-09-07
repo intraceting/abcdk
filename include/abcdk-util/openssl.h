@@ -132,7 +132,7 @@ int abcdk_openssl_rsa_to_file(const char *file, RSA *key, int type, const char *
  * @param src 明文的指针。
  * @param len 长度。
  * @param key  
- * @param type
+ * @param type !0 私钥，0 公钥。
  * @param padding 见RSA_*_PADDING。
  * 
  * @return > 0 成功，<= 0 失败。
@@ -147,7 +147,7 @@ int abcdk_openssl_rsa_encrypt(void *dst, const void *src, int len, RSA *key, int
  * @param src 密文的指针。
  * @param len 长度。
  * @param key  
- * @param type
+ * @param type !0 私钥，0 公钥。
  * @param padding 见RSA_*_PADDING。
  * 
  * @return > 0 成功，<= 0 失败。
@@ -162,7 +162,7 @@ int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int
  * @param src 明文的指针，NULL(0) 计算密文的长度。
  * @param len 长度。
  * @param key  
- * @param type
+ * @param type !0 私钥，0 公钥。
  * @param padding 见RSA_*_PADDING。
  * 
  * @return > 0 成功(密文的长度)，<= 0 失败。
@@ -177,7 +177,7 @@ ssize_t abcdk_openssl_rsa_ecb_encrypt(void *dst, const void *src, size_t len, RS
  * @param src 密文的指针。
  * @param len 长度。
  * @param key  
- * @param type
+ * @param type !0 私钥，0 公钥。
  * @param padding 见RSA_*_PADDING。
  * 
  * @return > 0 成功，<= 0 失败。
