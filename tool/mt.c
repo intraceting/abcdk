@@ -250,7 +250,7 @@ void _abcdkmt_read_pos(abcdk_tree_t *args,int fd)
     uint32_t pos_part = -1;
     int chk;
 
-    chk = abcdk_mt_read_position(fd,&pos_block,&pos_file,&pos_part,3000,&stat);
+    chk = abcdk_mt_tell(fd,&pos_block,&pos_file,&pos_part,3000,&stat);
     if (chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
@@ -280,7 +280,7 @@ void _abcdkmt_seek_pos(abcdk_tree_t *args,int fd)
     pos_block = abcdk_option_get_llong(args, "--pos-block", 0, INTMAX_MAX);
     pos_part = abcdk_option_get_int(args, "--pos-part", 0, 0);
 
-    chk = abcdk_mt_locate(fd,1,pos_part,pos_block,1800*1000,&stat);
+    chk = abcdk_mt_seek(fd,1,pos_part,pos_block,1800*1000,&stat);
     if (chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 

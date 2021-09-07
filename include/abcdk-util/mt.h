@@ -115,9 +115,8 @@ int abcdk_mt_verify(int fd,uint32_t timeout, abcdk_scsi_io_stat *stat);
  * @warning  New tape(KEY = 0x08,ASC = 0x14,ASCQ = 0x03).
  * @warning  End of data (KEY = 0x08,ASC = 0x00,ASCQ = 0x05).
 */
-int abcdk_mt_locate(int fd, int cp, uint8_t part, uint64_t block,
-                   uint32_t timeout, abcdk_scsi_io_stat *stat);
-
+int abcdk_mt_seek(int fd, int cp, uint8_t part, uint64_t block,
+                  uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 /**
  * 读取磁头当前位置。
@@ -130,8 +129,8 @@ int abcdk_mt_locate(int fd, int cp, uint8_t part, uint64_t block,
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_mt_read_position(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
-                          uint32_t timeout, abcdk_scsi_io_stat *stat);
+int abcdk_mt_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
+                  uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 /*
  * See "Medium auxiliary memory attributes (MAM)" from the manufacturer's SCSI manual.

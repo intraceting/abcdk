@@ -141,7 +141,7 @@ int abcdk_mt_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat);
 }
 
-int abcdk_mt_locate(int fd, int cp, uint8_t part, uint64_t block,
+int abcdk_mt_seek(int fd, int cp, uint8_t part, uint64_t block,
                    uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[16] = {0};
@@ -157,8 +157,8 @@ int abcdk_mt_locate(int fd, int cp, uint8_t part, uint64_t block,
     return chk;
 }
 
-int abcdk_mt_read_position(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
-                          uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_mt_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
+                  uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[10] = {0};
     uint8_t buf[32] = {0};
