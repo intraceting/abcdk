@@ -96,9 +96,17 @@ struct tm* abcdk_time_local2utc(struct tm* dst,const struct tm* src,int reverse)
 /**
  * 获取自然时间。
  * 
- * @param utc 0 本地，!0 国际。
+ * @param utc 0 获取本地，!0 获取国际。
 */
 struct tm* abcdk_time_get(struct tm* tm,int utc);
+
+/**
+ * 秒转自然时间。
+ * 
+ * @param sec 秒。
+ * @param utc 0 转本地，!0 转国际。
+*/
+struct tm* abcdk_sec2time(struct tm* tm,time_t sec,int utc);
 
 /*------------------------------------------------------------------------------------------------*/
 

@@ -6,7 +6,7 @@
  */
 #include "abcdk-util/option.h"
 
-static abcdk_tree_t *_abcdk_option_find_key(abcdk_tree_t *opt, const char *key,int create)
+abcdk_tree_t *_abcdk_option_find_key(abcdk_tree_t *opt, const char *key,int create)
 {
     abcdk_tree_t *it = NULL;
     int chk;
@@ -37,7 +37,7 @@ static abcdk_tree_t *_abcdk_option_find_key(abcdk_tree_t *opt, const char *key,i
     return it;
 }
 
-static abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
+abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
 {
     abcdk_tree_t *it = NULL;
     size_t chk = 0;
@@ -56,7 +56,7 @@ static abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
     return it;
 }
 
-static size_t _abcdk_option_count_value(abcdk_tree_t *key)
+size_t _abcdk_option_count_value(abcdk_tree_t *key)
 {
     abcdk_tree_t *it = NULL;
     size_t chk = 0;
@@ -102,6 +102,34 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value)
     
 
     return 0;
+}
+
+int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value,int unique)
+{
+    const char *p;
+    ssize_t count;
+    int chk;
+
+    assert(opt != NULL && key != NULL);
+
+    if (!value || !unique)
+        goto final;
+
+    count = abcdk_option_count(opt, key);
+    if (count <= 0)
+        goto final;
+
+    for (size_t i = 0; i < count; i++)
+    {
+        p = abcdk_option_get(opt, key, i, "");
+        
+        if (abcdk_strcmp(p, value, 1) == 0)
+            return 0;
+    }
+
+final:
+
+    return abcdk_option_set(opt, key, value);
 }
 
 const char* abcdk_option_get(abcdk_tree_t *opt, const char *key,size_t index,const char* defval)

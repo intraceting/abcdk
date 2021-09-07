@@ -32,7 +32,7 @@ void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
     }
 }
 
-static ssize_t _abcdk_getargs_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)
+ssize_t _abcdk_getargs_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)
 {
     char *line_p = NULL;
     ssize_t chk = -1;

@@ -45,7 +45,7 @@ int abcdk_map_init(abcdk_map_t *map, size_t size)
     return 0;
 }
 
-static abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)
+abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)
 {
     abcdk_tree_t *it = NULL;
     abcdk_tree_t *node = NULL;
@@ -148,7 +148,7 @@ void abcdk_map_remove(abcdk_map_t *map, const void *key, size_t ksize)
     }
 }
 
-static int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     abcdk_map_t *map = (abcdk_map_t *)opaque;
 

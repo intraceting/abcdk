@@ -154,11 +154,18 @@ struct tm* abcdk_time_get(struct tm* tm,int utc)
 {
     struct timespec ts = {0};
 
-    assert(tm);
+    assert(tm != NULL);
 
     clock_gettime(CLOCK_REALTIME,&ts);
 
-    return (utc?gmtime_r(&ts.tv_sec,tm):localtime_r(&ts.tv_sec,tm));
+    return abcdk_sec2time(tm,ts.tv_sec,utc);
+}
+
+struct tm *abcdk_sec2time(struct tm *tm, time_t sec, int utc)
+{
+    assert(tm != NULL);
+
+    return (utc ? gmtime_r(&sec, tm) : localtime_r(&sec, tm));
 }
 
 /*------------------------------------------------------------------------------------------------*/

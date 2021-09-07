@@ -21,6 +21,9 @@ UTIL_NAME = abcdk-util
 MP4_NAME = abcdk-mp4
 
 #
+AUTH_NAME = abcdk-auth
+
+#
 MT_NAME = abcdk-mt
 MTX_NAME = abcdk-mtx
 RELEASE_NAME = abcdk-release
@@ -83,6 +86,11 @@ MP4_SRC_FILES = $(wildcard mp4/*.c)
 MP4_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${MP4_SRC_FILES}))
 
 #
+AUTH_SRC_FILES = $(wildcard auth/*.c)
+AUTH_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${AUTH_SRC_FILES}))
+
+
+#
 TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
@@ -91,7 +99,7 @@ TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: util mp4 tool test
+all: util mp4 auth tool test
 
 util: ${UTIL_NAME}
 
@@ -120,6 +128,21 @@ ${MP4_NAME}: $(MP4_OBJ_FILES)
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
+	rm -f $@
+	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+
+auth: ${AUTH_NAME}
+
+#
+${AUTH_NAME}: $(AUTH_OBJ_FILES)
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${AUTH_NAME}
+	$(CCC) -o $(BUILD_PATH)/lib${AUTH_NAME}.so $^ $(LINK_FLAGS) -shared
+	ar -cr $(BUILD_PATH)/lib${AUTH_NAME}.a $^
+
+#
+$(OBJ_PATH)/auth/%.o: auth/%.c
+	mkdir -p $(OBJ_PATH)/auth/
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
@@ -179,7 +202,7 @@ ${EPOLLEX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
 #
 ${UTIL_TESTNAME}: ${UTIL_NAME} ${MP4_NAME} ${TEST_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l${MP4_NAME} -l${UTIL_NAME}  $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l${AUTH_NAME} -l${MP4_NAME} -l${UTIL_NAME}  $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
@@ -188,7 +211,7 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
-clean: clean-util clean-mp4 clean-tool clean-test
+clean: clean-util clean-mp4 clean-auth clean-tool clean-test
 	rm -rf ${OBJ_PATH}
 
 #
@@ -200,6 +223,11 @@ clean-util:
 clean-mp4:
 	rm -f $(BUILD_PATH)/lib${MP4_NAME}.so
 	rm -f $(BUILD_PATH)/lib${MP4_NAME}.a
+
+#
+clean-auth:
+	rm -f $(BUILD_PATH)/lib${AUTH_NAME}.so
+	rm -f $(BUILD_PATH)/lib${AUTH_NAME}.a
 
 #
 clean-tool:
@@ -228,7 +256,7 @@ PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
 PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
-install: install-util install-mp4 install-tool install-ldc install-pkg
+install: install-util install-mp4 install-auth install-tool install-ldc install-pkg
 
 #
 install-util:
@@ -246,6 +274,13 @@ install-mp4:
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-mp4 ${INSTALL_PATH_INC}/
 
+#
+install-auth:
+	mkdir -p ${INSTALL_PATH_LIB}
+	cp -f $(BUILD_PATH)/lib${AUTH_NAME}.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/lib${AUTH_NAME}.a ${INSTALL_PATH_LIB}/
+	mkdir -p ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-auth ${INSTALL_PATH_INC}/
 #
 install-tool:
 	mkdir -p ${INSTALL_PATH_BIN}
@@ -268,7 +303,7 @@ install-ldc:
 	echo "Description: A better c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -l${UTIL_NAME} -l${MP4_NAME} -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs: -l${UTIL_NAME} -l${MP4_NAME} -l${AUTH_NAME} -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
 
 #
@@ -282,7 +317,7 @@ install-pkg:
 	chmod 755 ${LDC_FILE}
 
 #
-uninstall: uninstall-util uninstall-mp4 uninstall-tool uninstall-ldc uninstall-pkg
+uninstall: uninstall-util uninstall-mp4 uninstall-auth uninstall-tool uninstall-ldc uninstall-pkg
 
 #
 uninstall-util:
@@ -296,6 +331,11 @@ uninstall-mp4:
 	rm -f ${INSTALL_PATH_LIB}/lib${MP4_NAME}.a
 	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-mp4
 
+#
+uninstall-auth:
+	rm -f ${INSTALL_PATH_LIB}/lib${AUTH_NAME}.so
+	rm -f ${INSTALL_PATH_LIB}/lib${AUTH_NAME}.a
+	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-auth
 #
 uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/${MTX_NAME}

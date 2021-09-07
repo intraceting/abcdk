@@ -6,7 +6,7 @@
  */
 #include "abcdk-util/crc32.h"
 
-static int _abcdk_crc32_init(void *opaque)
+int _abcdk_crc32_init(void *opaque)
 {
     uint32_t *table = (uint32_t *)opaque;
 

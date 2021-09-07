@@ -29,7 +29,7 @@ static struct _abcdk_av_log_dict
     {AV_LOG_TRACE, LOG_DEBUG}
 };
 
-static void _abcdk_av_log_cb(void *opaque, int level, const char *fmt, va_list v)
+void _abcdk_av_log_cb(void *opaque, int level, const char *fmt, va_list v)
 {
     int sys_level = LOG_DEBUG;
 

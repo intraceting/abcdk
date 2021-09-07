@@ -214,7 +214,7 @@ int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd,time_t timeout)
     return abcdk_epollex_attach(ctx,fd,&data,timeout);
 }
 
-static void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t event)
+void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t event)
 {
     abcdk_epoll_event disp = {0};
 
@@ -258,7 +258,7 @@ static void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, 
     }   
 }
 
-static void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t want, uint32_t done)
+void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t want, uint32_t done)
 {
     abcdk_epoll_event tmp = {0};
 
@@ -301,7 +301,7 @@ static void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, 
 
 }
 
-static int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
+int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
     abcdk_epollex_node *node = (abcdk_epollex_node *)alloc->pptrs[ABCDK_MAP_VALUE];
@@ -362,7 +362,7 @@ final:
     return chk;   
 }
 
-static int _abcdk_epollex_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
+int _abcdk_epollex_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
     abcdk_epollex_node *node = (abcdk_epollex_node *)alloc->pptrs[ABCDK_MAP_VALUE];
@@ -384,7 +384,7 @@ final:
     return 1;
 }
 
-static void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
+void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 {
     uint64_t current = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
 
@@ -402,7 +402,7 @@ static void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 
 }
 
-static void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int count)
+void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int count)
 {
     abcdk_epoll_event *e;
     abcdk_allocator_t *p;
@@ -427,7 +427,7 @@ static void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *eve
     }
 }
 
-static uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
+uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
 {
     uint64_t span = UINT64_MAX;
 

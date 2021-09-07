@@ -24,6 +24,7 @@
 #include "abcdk-util/hexdump.h"
 #include "abcdk-mp4/demuxer.h"
 #include "abcdk-util/video.h"
+#include "abcdk-auth/auth.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -2166,6 +2167,20 @@ void test_video(abcdk_tree_t *args)
 #endif //
 }
 
+void test_auth(abcdk_tree_t *args)
+{
+    abcdk_tree_t *auth = abcdk_tree_alloc3(1);
+
+    abcdk_auth_collect_dmi(auth);
+    abcdk_auth_collect_mac(auth);
+    abcdk_auth_make_valid_period(auth,20,NULL);
+
+    abcdk_option_fprintf(stderr,auth,NULL);
+    
+
+    abcdk_tree_free(&auth);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2240,6 +2255,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_video", 0) == 0)
         test_video(args);
+
+    if (abcdk_strcmp(func, "test_auth", 0) == 0)
+        test_auth(args);
 
     abcdk_tree_free(&args);
     

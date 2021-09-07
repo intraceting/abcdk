@@ -30,16 +30,29 @@ enum _abcdk_option_field
 /**
  * 配置一个选项。
  * 
- * @param value 值的指针，可以为NULL0)。
+ * @note 支持一对多键值组合，相同键的值次序由添加顺序决定。
  * 
- * 支持一对多键值组合，相同键的值次序由添加顺序决定。
+ * @param value 值的指针，允许为NULL(0)。
+ * 
+ * @return 0 成功，-1 失败。
 */
 int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value);
 
 /**
+ * 配置一个选项。
+ * 
+ * @note 支持一对多键值组合，相同键的值次序由添加顺序决定。
+ * 
+ * @param unique 0 允许value重复，!0 不允许value重复。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value, int unique);
+
+/**
  * 获取一个选项的值。
  * 
- * @param defval 默认值，可以为NULL(0)。
+ * @param defval 默认值，允许为NULL(0)。
  * 
  * @return !NULL(0) 成功(值的指针)， NULL(0) 失败(键不存在)。
 */
@@ -93,14 +106,14 @@ int abcdk_option_remove(abcdk_tree_t *opt, const char *key);
  * 
  * @param hyphens 连字符，NULL(0) KEY和VALUE分行打印。
  * 
- * @return >=0 输出的长度，< 0 失败。
+ * @return >=0 成功(输出的长度)，< 0 失败。
 */
 ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens);
 
 /**
  * 格式化打印。
  * 
- * @return >=0 输出的长度，< 0 失败。
+ * @return >=0 成功(输出的长度)，< 0 失败。
 */
 ssize_t abcdk_option_snprintf(char* buf,size_t max,abcdk_tree_t *opt,const char *hyphens);
 

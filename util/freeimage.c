@@ -11,7 +11,7 @@
 /* 环境初始化计数器*/
 static volatile int64_t _abcdk_fi_init_count = 0;
 
-static void _abcdk_fi_output_msg_cb(FREE_IMAGE_FORMAT fif, const char *msg)
+void _abcdk_fi_output_msg_cb(FREE_IMAGE_FORMAT fif, const char *msg)
 {
     const char * fif_str = FreeImage_GetFormatFromFIF(fif);
 
@@ -43,7 +43,7 @@ void abcdk_fi_init(int load_local_plugins_only)
         FreeImage_Initialise(load_local_plugins_only);
 }
 
-static unsigned _abck_fi_read_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
+unsigned _abck_fi_read_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
     ssize_t ret;
@@ -53,7 +53,7 @@ static unsigned _abck_fi_read_cb(void *buffer, unsigned size, unsigned count, fi
     return ret / size;
 }
 
-static unsigned _abck_fi_write_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
+unsigned _abck_fi_write_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
     ssize_t ret;
@@ -63,14 +63,14 @@ static unsigned _abck_fi_write_cb(void *buffer, unsigned size, unsigned count, f
     return ret / size;
 }
 
-static int _abck_fi_seek_cb(fi_handle handle, long offset, int origin)
+int _abck_fi_seek_cb(fi_handle handle, long offset, int origin)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
 
     return lseek(fd, offset, origin);
 }
 
-static long _abck_fi_tell_cb(fi_handle handle)
+long _abck_fi_tell_cb(fi_handle handle)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
 

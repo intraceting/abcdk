@@ -6,7 +6,7 @@
 */
 #include "abcdk-util/base64.h"
 
-static char _abcdk_base64_encode_table(int n)
+char _abcdk_base64_encode_table(int n)
 {
     return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            "abcdefghijklmnopqrstuvwxyz"
@@ -14,7 +14,7 @@ static char _abcdk_base64_encode_table(int n)
            "+/="[n];
 }
 
-static int _abcdk_base64_decode_table(char c)
+int _abcdk_base64_decode_table(char c)
 {
     if (c == '+')
         return 62;
