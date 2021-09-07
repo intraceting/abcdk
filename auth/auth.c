@@ -21,7 +21,10 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *opt)
 
         rsize = abcdk_read(fd, tmp, 254);
         if (rsize > 0)
+        {
+            abcdk_strtrim(tmp,isspace,0);
             abcdk_option_set(opt,"--system-serial-number",tmp);
+        }
 
         abcdk_closep(&fd);
     }
@@ -34,7 +37,10 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *opt)
 
         rsize = abcdk_read(fd, tmp, 254);
         if (rsize > 0)
+        {
+            abcdk_strtrim(tmp,isspace,0);
             abcdk_option_set(opt,"--system-uuid",tmp);
+        }
 
         abcdk_closep(&fd);
     }
