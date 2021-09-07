@@ -65,7 +65,6 @@ size_t abcdk_openssl_aes_set_key(AES_KEY *key, const void *pwd, size_t len, uint
 size_t abcdk_openssl_aes_set_iv(uint8_t *iv, const void *salt, size_t len, uint8_t padding);
 
 
-
 #endif //HEADER_AES_H
 
 /******************************************************************************************************/
