@@ -10,6 +10,7 @@
 #include "abcdk-util/general.h"
 #include "abcdk-util/getargs.h"
 #include "abcdk-util/socket.h"
+#include "abcdk-util/crc32.h"
 
 __BEGIN_DECLS
 
@@ -70,14 +71,14 @@ abcdk_allocator_t *abcdk_auth_serialize(abcdk_tree_t *auth);
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext);
+abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, uint32_t key);
 
 /**
  * 解密。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext);
+abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, uint32_t key);
 
 /**
  * 保存。
