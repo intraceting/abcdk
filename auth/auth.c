@@ -6,13 +6,13 @@
  */
 #include "abcdk-auth/auth.h"
 
-int abcdk_auth_collect_dmi(abcdk_tree_t *opt)
+int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
 {
     char tmp[255];
     ssize_t rsize;
     int fd = -1;
 
-    assert(opt != NULL);
+    assert(auth != NULL);
     
     fd = abcdk_open("/sys/devices/virtual/dmi/id/product_serial", 0, 0, 0);
     if (fd >= 0)
@@ -23,7 +23,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *opt)
         if (rsize > 0)
         {
             abcdk_strtrim(tmp,isspace,0);
-            abcdk_option_set(opt,"--system-serial-number",tmp);
+            abcdk_option_set(auth,"--system-serial-number",tmp);
         }
 
         abcdk_closep(&fd);
@@ -39,7 +39,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *opt)
         if (rsize > 0)
         {
             abcdk_strtrim(tmp,isspace,0);
-            abcdk_option_set(opt,"--system-uuid",tmp);
+            abcdk_option_set(auth,"--system-uuid",tmp);
         }
 
         abcdk_closep(&fd);
@@ -48,7 +48,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *opt)
     return 0;
 }
 
-int abcdk_auth_collect_mac(abcdk_tree_t *opt)
+int abcdk_auth_collect_mac(abcdk_tree_t *auth)
 {
     int max = 100;
     int count = 0;
@@ -56,7 +56,7 @@ int abcdk_auth_collect_mac(abcdk_tree_t *opt)
     char tmp[255] = {0};
     char mac[20];
 
-    assert(opt != NULL);
+    assert(auth != NULL);
 
     addrs = abcdk_heap_alloc(sizeof(abcdk_ifaddrs_t)*max);
     if(!addrs)
@@ -85,7 +85,7 @@ int abcdk_auth_collect_mac(abcdk_tree_t *opt)
         if(mac[0] == '\0')
             continue;
 
-        abcdk_option_set2(opt,"--network-interface-address",mac,1);
+        abcdk_option_set2(auth,"--network-interface-address",mac,1);
     }
 
 final:
@@ -95,13 +95,13 @@ final:
     return 0;
 }
 
-int abcdk_auth_make_valid_period(abcdk_tree_t *opt, uintmax_t days, struct tm *begin)
+int abcdk_auth_make_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *begin)
 {
     struct tm b = {0}, e = {0};
     time_t b_sec = 0, e_sec = 0;
     char tmp[100];
 
-    assert(opt != NULL && days > 0);
+    assert(auth != NULL && days > 0);
 
     if (begin)
         b = *begin;
@@ -111,17 +111,346 @@ int abcdk_auth_make_valid_period(abcdk_tree_t *opt, uintmax_t days, struct tm *b
     b_sec = timegm(&b);
     e_sec = b_sec + days * 24 * 60 * 60;
 
-    abcdk_sec2time(&e,e_sec,1);
+    abcdk_time_sec2tm(&e,e_sec,1);
 
     memset(tmp,0,sizeof(tmp));
     strftime(tmp,100,"%Y-%m-%dT%H:%M:%SZ",&b);
 
-    abcdk_option_set(opt,"--being-time",tmp);
+    abcdk_option_set(auth,"--being-time",tmp);
 
     memset(tmp,0,sizeof(tmp));
     strftime(tmp,100,"%Y-%m-%dT%H:%M:%SZ",&e);
 
-    abcdk_option_set(opt,"--end-time",tmp);
+    abcdk_option_set(auth,"--end-time",tmp);
 
     return 0;
+}
+
+int abcdk_auth_make_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t delay)
+{
+    struct tm b = {0};
+    time_t b_sec = 0;
+
+    assert(auth != NULL && days > 0);
+
+    abcdk_time_get(&b,1);
+    
+    b_sec = timegm(&b);
+    b_sec += delay * 24 * 60 * 60;
+
+    abcdk_time_sec2tm(&b,b_sec,1);
+
+    return abcdk_auth_make_valid_period(auth,days,&b);
+}
+
+int _abcdk_auth_verify_dmi(abcdk_tree_t *auth,abcdk_tree_t *local)
+{
+    const char *p1 = NULL, *p2 = NULL;
+
+    p1 = abcdk_option_get(auth, "--system-serial-number", 0, NULL);
+    p2 = abcdk_option_get(local, "--system-serial-number", 0, NULL);
+    if (p1 && p2)
+    {
+        if (abcdk_strcmp(p1, p2, 1) != 0)
+            return -1;
+    }
+
+    p1 = abcdk_option_get(auth, "--system-uuid", 0, NULL);
+    p2 = abcdk_option_get(local, "--system-uuid", 0, NULL);
+    if (p1 && p2)
+    {
+        if (abcdk_strcmp(p1, p2, 1) != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+int _abcdk_auth_verify_mac(abcdk_tree_t *auth, abcdk_tree_t *local)
+{
+    const char *p1 = NULL, *p2 = NULL;
+    ssize_t c1 = 0, c2 = 0;
+
+    c1 = abcdk_option_count(auth,"--network-interface-address");
+    c2 = abcdk_option_count(local,"--network-interface-address");
+
+    for (size_t i = 0; i < c1; i++)
+    {
+        p1 = abcdk_option_get(auth, "--network-interface-address", i, NULL);
+        if (!p1)
+            continue;
+
+        for (size_t j = 0; j < c2; j++)
+        {
+            p2 = abcdk_option_get(local, "--network-interface-address", j, NULL);
+            if (!p1)
+                continue;
+
+            if (abcdk_strcmp(p1, p2, 0) == 0)
+                return 0;
+        }
+    }
+
+    return -1;
+}
+
+int _abcdk_auth_verify_valid_period(abcdk_tree_t *auth)
+{
+    const char *p1 = NULL, *p2 = NULL;
+    struct tm b = {0}, e = {0}, l = {0};
+    time_t b_sec = 0, e_sec = 0, l_sec = 0;
+    double d = 0.0;
+
+    p1 = abcdk_option_get(auth, "--being-time", 0, NULL);
+    p2 = abcdk_option_get(auth, "--end-time", 0, NULL);
+
+    if (!p2 || !p2)
+        return -2;
+
+    strptime(p1,"%Y-%m-%dT%H:%M:%SZ",&b);
+    strptime(p2,"%Y-%m-%dT%H:%M:%SZ",&e);
+    abcdk_time_get(&l,1);
+
+    b_sec = timegm(&b);
+    e_sec = timegm(&e);
+    l_sec = timegm(&l);
+
+    d = difftime(l_sec, b_sec);
+    if (d < 0)
+        return -2;
+
+    d = difftime(l_sec, e_sec);
+    if (d >= 0)
+        return -2;
+
+    return 0;
+}
+
+int abcdk_auth_verify(abcdk_tree_t *auth)
+{
+    const char *p1 = NULL, *p2 = NULL;
+    abcdk_tree_t *local = NULL;
+    int chk = 0;
+
+    assert(auth != NULL);
+
+    local = abcdk_tree_alloc3(1);
+    if (!local)
+        return -3;
+
+    abcdk_auth_collect_dmi(local);
+    abcdk_auth_collect_mac(local);
+
+    chk = _abcdk_auth_verify_dmi(auth,local);
+    if (chk != 0)
+        goto final;
+
+    chk = _abcdk_auth_verify_mac(auth,local);
+    if (chk != 0)
+        goto final;
+
+    chk = _abcdk_auth_verify_valid_period(auth);
+
+final:
+
+    abcdk_tree_free(&local);
+
+    return chk;
+}
+
+abcdk_allocator_t *abcdk_auth_serialize(abcdk_tree_t *auth)
+{
+    size_t max = 1024 * 1024;
+    abcdk_allocator_t *buf = NULL;
+
+    assert(auth != NULL);
+
+    buf = abcdk_allocator_alloc2(max);
+    if(!buf)
+        return NULL;
+
+    buf->sizes[0] = abcdk_option_snprintf(buf->pptrs[0],buf->sizes[0],auth,NULL);
+    if((ssize_t)buf->sizes[0] <= 0)
+        goto final_error;
+
+    return buf;
+
+final_error:
+
+    abcdk_allocator_unref(&buf);
+
+    return NULL;
+}
+
+abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext)
+{
+    abcdk_allocator_t *buf = NULL;
+    
+    assert(plaintext != NULL);
+
+    buf = abcdk_allocator_clone(plaintext);
+    if(!buf)
+        return NULL;
+
+    abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
+
+    for (size_t j = 0; j < buf->sizes[0]; j++)
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= 0xFF;
+
+    abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 3, 1);
+
+    abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
+
+    for (size_t j = 0; j < buf->sizes[0]; j++)
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= 0xFF;
+
+    abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 7, 2);
+
+    abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
+
+    return buf;
+}
+
+abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext)
+{
+    abcdk_allocator_t *buf = NULL;
+    
+    assert(ciphertext != NULL);
+
+    buf = abcdk_allocator_clone(ciphertext);
+    if(!buf)
+        return NULL;
+
+    abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
+
+    abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 7, 1);
+
+    for (size_t j = 0; j < buf->sizes[0]; j++)
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= 0xFF;
+
+    abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
+
+    abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 3, 2);
+
+    for (size_t j = 0; j < buf->sizes[0]; j++)
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= 0xFF;
+    
+    abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
+
+    return buf;
+}
+
+int abcdk_auth_save(int fd, const void *auth,size_t len, uint32_t magic)
+{
+    uint32_t dsize = 0;
+    ssize_t chk = 0;
+
+    assert(fd >= 0 && auth != NULL && len > 0);
+
+    /*移动指针到文件末尾。*/
+    lseek(fd, 0, SEEK_END);
+
+    /* 转大端字节序存储。*/
+    magic = abcdk_endian_h_to_b32(magic);
+
+    chk = abcdk_write(fd, &magic, 4);
+    if (chk != 4)
+        return -1;
+
+    chk = abcdk_write(fd, auth, len);
+    if (chk != len)
+        return -1;
+
+    /* 
+     * 1: 长度为所有数据的总和。magic[4]+data[N]+size[4]
+     * 2: 转大端字节序存储。
+     */
+    dsize = abcdk_endian_h_to_b32(4 + len + 4);
+
+    chk = abcdk_write(fd, &dsize, 4);
+    if (chk != 4)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_auth_save2(const char *file,const void *auth,size_t len, uint32_t magic)
+{
+    int fd;
+    int chk;
+
+    assert(file != NULL && auth != NULL && len > 0);
+
+    fd = abcdk_open(file, 1, 0, 1);
+    if (fd < 0)
+        return -1;
+
+    chk = abcdk_auth_save(fd, auth,len,magic);
+
+    abcdk_closep(&fd);
+
+    return chk;
+}
+
+abcdk_allocator_t *abcdk_auth_load(int fd, uint32_t magic)
+{
+    uint32_t magic2 = 0;
+    abcdk_allocator_t *auth = NULL;
+    uint32_t dsize = 0;
+    ssize_t chk = 0;
+
+    assert(fd >= 0);
+
+    /*从末尾开始读。*/
+    lseek(fd, -4, SEEK_END);
+
+    chk = abcdk_read(fd, &dsize, 4);
+    if (chk != 4)
+        goto final_error;
+
+    dsize = abcdk_endian_b_to_h32(dsize);
+
+    /*移动到数据开始的位置。*/
+    off_t a = lseek(fd, -(int32_t)dsize, SEEK_END);
+
+    chk = abcdk_read(fd, &magic2, 4);
+    if (chk != 4)
+        goto final_error;
+
+    if (abcdk_endian_b_to_h32(magic2) != magic)
+        goto final_error;
+
+    auth = abcdk_allocator_alloc2(dsize - 4 - 4);
+    if(!auth)
+        goto final_error;
+
+    chk = abcdk_read(fd,auth->pptrs[0],auth->sizes[0]);
+    if (chk != auth->sizes[0])
+        goto final_error;
+
+    return auth;
+
+final_error:
+
+    abcdk_allocator_unref(&auth);
+
+    return NULL;
+}
+
+abcdk_allocator_t *abcdk_auth_load2(const char *file,uint32_t magic)
+{
+    int fd;
+    abcdk_allocator_t *auth = NULL;
+    
+    assert(file != NULL);
+
+    fd = abcdk_open(file, 0, 0, 0);
+    if (fd < 0)
+        return -1;
+
+    auth = abcdk_auth_load(fd,magic);
+
+    abcdk_closep(&fd);
+
+    return auth;
 }

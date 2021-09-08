@@ -2173,11 +2173,35 @@ void test_auth(abcdk_tree_t *args)
 
     abcdk_auth_collect_dmi(auth);
     abcdk_auth_collect_mac(auth);
-    abcdk_auth_make_valid_period(auth,20,NULL);
+    abcdk_auth_make_valid_period2(auth,20,0);
 
-    abcdk_option_fprintf(stderr,auth,NULL);
+ //   abcdk_option_fprintf(stderr,auth,NULL);
+
+    assert(abcdk_auth_verify(auth)==0);
+
+    abcdk_allocator_t *dump = abcdk_auth_serialize(auth);
+
+    fprintf(stderr,"%s\n",dump->pptrs[0]);
+
+    abcdk_allocator_t *ciphertext = abcdk_auth_encrypt(dump);
+    abcdk_allocator_t *plaintext = abcdk_auth_decrypt(ciphertext);
+
+    assert(memcmp(plaintext->pptrs[0],dump->pptrs[0],dump->sizes[0])==0);
+
+    uint32_t magic = 'abcd';
+    abcdk_auth_save2("/tmp/abcdk.auth",ciphertext->pptrs[0],ciphertext->sizes[0],magic);
+    abcdk_allocator_t *ciphertext2 = abcdk_auth_load2("/tmp/abcdk.auth",magic);
+
+    assert(memcmp(ciphertext->pptrs[0],ciphertext2->pptrs[0],ciphertext2->sizes[0])==0);
+    abcdk_allocator_t *plaintext2 = abcdk_auth_decrypt(ciphertext2);
+
+    assert(memcmp(plaintext2->pptrs[0],dump->pptrs[0],dump->sizes[0])==0);
     
-
+    abcdk_allocator_unref(&dump);
+    abcdk_allocator_unref(&ciphertext);
+    abcdk_allocator_unref(&plaintext);
+    abcdk_allocator_unref(&ciphertext2);
+    abcdk_allocator_unref(&plaintext2);
     abcdk_tree_free(&auth);
 }
 

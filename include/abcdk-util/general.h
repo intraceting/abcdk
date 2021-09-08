@@ -106,7 +106,7 @@ struct tm* abcdk_time_get(struct tm* tm,int utc);
  * @param sec 秒。
  * @param utc 0 转本地，!0 转国际。
 */
-struct tm* abcdk_sec2time(struct tm* tm,time_t sec,int utc);
+struct tm* abcdk_time_sec2tm(struct tm* tm,time_t sec,int utc);
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -619,6 +619,17 @@ char *abcdk_bin2hex(char* dst,const void *src,size_t size,int ABC);
  * @return !NULL(0) 成功(二进制数据的指针)，NULL(0) 失败。
 */
 void *abcdk_hex2bin(void *dst,const char* src,size_t size);
+
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ * 循环移位。
+ *  
+ * @param size 数据长度(节字)。
+ * @param bits 移动位数。
+ * @param direction 1 由低向高，2 由高向低。
+*/
+void *abcdk_cyclic_shift(void *data,size_t size,size_t bits, int direction);
 
 /*------------------------------------------------------------------------------------------------*/
 

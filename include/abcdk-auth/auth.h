@@ -20,7 +20,7 @@ __BEGIN_DECLS
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_auth_collect_dmi(abcdk_tree_t *opt);
+int abcdk_auth_collect_dmi(abcdk_tree_t *auth);
 
 /**
  * 收集MAC地址。
@@ -29,15 +29,91 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *opt);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_auth_collect_mac(abcdk_tree_t *opt);
+int abcdk_auth_collect_mac(abcdk_tree_t *auth);
 
 /**
  * 生成有效期限。
  * 
  * @param days 使用天数。
- * @param begin 开始日期(UTC)，NULL(0) 当前时间。
+ * @param begin 开始日期(UTC)，NULL(0) 使用当前时间。
+ * 
+ * @return 0 成功，-1 失败。
 */
-int abcdk_auth_make_valid_period(abcdk_tree_t *opt, uintmax_t days, struct tm *begin);
+int abcdk_auth_make_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *begin);
+
+/**
+ * 生成有效期限。
+ * 
+ * @param days 使用天数。
+ * @param delay 延时多少天开始(以当前时间为基准)。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_auth_make_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t delay);
+
+/**
+ * 验证。
+ * 
+ * @return 0 成功，-1 失败(DMI或MAC不符合)，-2 失败(未在有效期限内)，-3 失败(其它)。
+*/
+int abcdk_auth_verify(abcdk_tree_t *auth);
+
+/**
+ * 序列化。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_allocator_t *abcdk_auth_serialize(abcdk_tree_t *auth);
+
+/**
+ * 加密。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext);
+
+/**
+ * 解密。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext);
+
+/**
+ * 保存。
+ * 
+ * @warning 追加到文件末尾。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_auth_save(int fd,const void *auth,size_t len,uint32_t magic);
+
+/**
+ * 保存。
+ * 
+ * @warning 追加到文件末尾。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_auth_save2(const char *file,const void *auth,size_t len,uint32_t magic);
+
+/**
+ * 加载。
+ * 
+ * @warning 从文件末尾加载。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_allocator_t *abcdk_auth_load(int fd,uint32_t magic);
+
+/**
+ * 加载。
+ * 
+ * @warning 从文件末尾加载。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_allocator_t *abcdk_auth_load2(const char *file,uint32_t magic);
 
 __END_DECLS
 
