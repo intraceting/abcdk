@@ -1440,7 +1440,7 @@ int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_
  * 
  * @return 0 成功，-1 失败(超出范围)。
 */
-int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts,uint32_t sample, uint64_t* dts, uint32_t* duration);
+int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts, uint32_t sample, uint64_t *dts, uint32_t *duration);
 
 /**
  * 查询数据包的CTS(PTS相对于DTS的偏移量)。
@@ -1450,7 +1450,7 @@ int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts,uint32_t sample, uint64_t* d
  * 
  * @return 0 成功，-1 失败(超出范围)。
 */
-int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t* offset);
+int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t *offset);
 
 /**
  * 查询是否为关键帧。
