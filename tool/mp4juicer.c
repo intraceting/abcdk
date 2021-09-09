@@ -244,12 +244,15 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
     memset(ctx->out_file, 0, PATH_MAX);
     sprintf(ctx->out_file, "%s/%s-%u.h264", ctx->save, ctx->in_name, ctx->tkhd->data.tkhd.trackid);
 
+    if (access(ctx->out_file, F_OK) == 0)
+    {
+        syslog(LOG_ERR, "'%s' 已经存在，忽略当前视频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
+    }
+
     ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
     if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
-
-    /*清空文件。*/
-    ftruncate(ctx->out_fd,0);
 
 #if 0
     abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.extradata->pptrs[0],
@@ -347,12 +350,15 @@ void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
     memset(ctx->out_file,0,PATH_MAX);
     sprintf(ctx->out_file,"%s/%s-%u.aac",ctx->save,ctx->in_name,ctx->tkhd->data.tkhd.trackid);
 
+    if (access(ctx->out_file, F_OK) == 0)
+    {
+        syslog(LOG_ERR, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
+    }
+
     ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
     if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
-
-    /*清空文件。*/
-    ftruncate(ctx->out_fd,0);
 
     /*解析ADTS信息。*/
     _abcdkm4j_aac_decode_extradata(ctx,ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
@@ -525,7 +531,7 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
     if(!ctx->out_file)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
-    ctx->buf_size = 8 * 8192 * 8192;//支持8K视频。
+    ctx->buf_size = 16 * 1024 * 1024; //希望够用。
     ctx->buf = abcdk_heap_alloc(ctx->buf_size);
     if(!ctx->buf)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
@@ -540,7 +546,7 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     if(!abcdk_mp4_find2(ctx->doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        syslog(LOG_WARNING, "'%s' 可能不是MP4文件，或尚未支持此格式。", ctx->file);
+        syslog(LOG_WARNING, "'%s' 可能不是MP4文件。", ctx->file);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 
