@@ -67,6 +67,15 @@ int abcdk_auth_verify(abcdk_tree_t *auth);
 abcdk_allocator_t *abcdk_auth_serialize(abcdk_tree_t *auth);
 
 /**
+ * 结构化。
+ * 
+ * @param plaintext 序列化的授权信息。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败。
+*/
+abcdk_tree_t *abcdk_auth_structure(abcdk_allocator_t *plaintext);
+
+/**
  * 加密。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。

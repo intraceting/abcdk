@@ -282,6 +282,21 @@ final_error:
     return NULL;
 }
 
+abcdk_tree_t *abcdk_auth_structure(abcdk_allocator_t *plaintext)
+{
+    abcdk_tree_t *auth = NULL;
+
+    assert(plaintext != NULL);
+    
+    auth = abcdk_tree_alloc3(1);
+    if(!auth)
+        return NULL;
+    
+    abcdk_getargs_text(auth,plaintext->pptrs[0],plaintext->sizes[0],'\n','#',NULL,"--");
+
+    return auth;
+}
+
 abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, uint32_t key)
 {
     abcdk_allocator_t *buf = NULL;
