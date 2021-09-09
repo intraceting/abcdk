@@ -439,7 +439,7 @@ abcdk_allocator_t *abcdk_auth_load(int fd, uint32_t magic)
     dsize = abcdk_endian_b_to_h32(dsize);
 
     /*移动到数据开始的位置。*/
-    off_t a = lseek(fd, -(int32_t)dsize, SEEK_END);
+    lseek(fd, -(int32_t)dsize, SEEK_END);
 
     chk = abcdk_read(fd, &magic2, 4);
     if (chk != 4)
