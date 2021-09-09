@@ -474,7 +474,7 @@ abcdk_allocator_t *abcdk_auth_load2(const char *file,uint32_t magic)
 
     fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
-        return -1;
+        return NULL;
 
     auth = abcdk_auth_load(fd,magic);
 

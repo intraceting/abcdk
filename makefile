@@ -31,6 +31,8 @@ ODBC_NAME = abcdk-odbc
 HTML_NAME = abcdk-html
 ROBOTS_NAME = abcdk-robots
 HEXDUMP_NAME = abcdk-hexdump
+MP4DUMP_NAME = abcdk-mp4dump
+MP4JUICER_NAME = abcdk-mp4juicer
 
 #
 EPOLLEX_TESTNAME = epollex_test
@@ -147,7 +149,7 @@ $(OBJ_PATH)/auth/%.o: auth/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 
-tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} 
+tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} ${MP4DUMP_NAME} ${MP4JUICER_NAME}
 
 #
 ${MTX_NAME}:${UTIL_NAME} ${TOOL_OBJ_FILES}
@@ -163,28 +165,45 @@ ${MT_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
 
 #
 ${RELEASE_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${RELEASE_NAME}
 	$(CCC) -o $(BUILD_PATH)/${RELEASE_NAME} ${OBJ_PATH}/tool/release.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${ODBC_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${ODBC_NAME}
 	$(CCC) -o $(BUILD_PATH)/${ODBC_NAME} ${OBJ_PATH}/tool/odbc.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${HTML_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${HTML_NAME}
 	$(CCC) -o $(BUILD_PATH)/${HTML_NAME} ${OBJ_PATH}/tool/html.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${ROBOTS_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
 	$(CCC) -o $(BUILD_PATH)/${ROBOTS_NAME} ${OBJ_PATH}/tool/robots.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 ${HEXDUMP_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
 	$(CCC) -o $(BUILD_PATH)/${HEXDUMP_NAME} ${OBJ_PATH}/tool/hexdump.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
+
+#
+${MP4DUMP_NAME}: ${MP4_NAME} ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${MP4DUMP_NAME}
+	$(CCC) -o $(BUILD_PATH)/${MP4DUMP_NAME} ${OBJ_PATH}/tool/mp4dump.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
+
+#
+${MP4JUICER_NAME}: ${MP4_NAME} ${UTIL_NAME} ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${MP4JUICER_NAME}
+	$(CCC) -o $(BUILD_PATH)/${MP4JUICER_NAME} ${OBJ_PATH}/tool/mp4juicer.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
@@ -238,6 +257,8 @@ clean-tool:
 	rm -f $(BUILD_PATH)/${HTML_NAME}
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
 	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
+	rm -f $(BUILD_PATH)/${MP4DUMP_NAME}
+	rm -f $(BUILD_PATH)/${MP4JUICER_NAME}
 
 #
 clean-test:
@@ -284,13 +305,15 @@ install-auth:
 #
 install-tool:
 	mkdir -p ${INSTALL_PATH_BIN}
-	cp -f -f $(BUILD_PATH)/${MTX_NAME} ${INSTALL_PATH_BIN}/
-	cp -f -f $(BUILD_PATH)/${MT_NAME} ${INSTALL_PATH_BIN}/
-	cp -f -f $(BUILD_PATH)/${RELEASE_NAME} ${INSTALL_PATH_BIN}/
-	cp -f -f $(BUILD_PATH)/${ODBC_NAME} ${INSTALL_PATH_BIN}/
-	cp -f -f $(BUILD_PATH)/${HTML_NAME} ${INSTALL_PATH_BIN}/
-	cp -f -f $(BUILD_PATH)/${ROBOTS_NAME} ${INSTALL_PATH_BIN}/
-	cp -f -f $(BUILD_PATH)/${HEXDUMP_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${MTX_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${MT_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${RELEASE_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${ODBC_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${HTML_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${ROBOTS_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${HEXDUMP_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${MP4DUMP_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${MP4JUICER_NAME} ${INSTALL_PATH_BIN}/
 
 #
 install-ldc:
@@ -345,6 +368,8 @@ uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/${HTML_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${HEXDUMP_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${MP4DUMP_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${MP4JUICER_NAME}
 
 #
 uninstall-ldc:
