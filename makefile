@@ -326,7 +326,7 @@ install-ldc:
 	echo "Description: A better c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -l${UTIL_NAME} -l${MP4_NAME} -l${AUTH_NAME} -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs: -l${AUTH_NAME} -l${MP4_NAME} -l${UTIL_NAME} -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
 
 #
