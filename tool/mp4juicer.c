@@ -22,10 +22,17 @@ typedef struct _abcdkm4j_ctx
     const char *file;
     const char *save;
 
+    int ignore_video;
+    int ignore_audio;
+
     char in_name[NAME_MAX];
+    size_t buf_size;
+    char *buf;
+    char *out_file;
+    abcdk_mp4_tag_t h264_sc4;//StartCode(4 Bytes)
 
     int in_fd;
-    int out_fd[16];
+    int out_fd;
 
     abcdk_tree_t *doc;
 
@@ -58,6 +65,18 @@ typedef struct _abcdkm4j_ctx
     abcdk_mp4_atom_t *avcc;
     abcdk_mp4_atom_t *mp4a;
     abcdk_mp4_atom_t *esds;
+
+    abcdk_tree_t *moof_p;
+    abcdk_tree_t *mfhd_p;
+    abcdk_tree_t *tfhd_p;
+    abcdk_tree_t *tfdt_p;
+    abcdk_tree_t *trun_p;
+
+    abcdk_mp4_atom_t *moof;
+    abcdk_mp4_atom_t *mfhd;
+    abcdk_mp4_atom_t *tfhd;
+    abcdk_mp4_atom_t *tfdt;
+    abcdk_mp4_atom_t *trun;
 
     struct
     {
@@ -102,6 +121,12 @@ void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--save < PATH >\n");
     fprintf(stderr, "\t\t保存路径。默认：./\n");
+
+    fprintf(stderr, "\n\t--ignore-video\n");
+    fprintf(stderr, "\t\t忽略视频。默认：提取\n");
+
+    fprintf(stderr, "\n\t--ignore-audio\n");
+    fprintf(stderr, "\t\t忽略音频。默认：提取\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -199,175 +224,179 @@ int _abcdkm4j_aac_set_adts_head(abcdkm4j_ctx *ctx, unsigned char *buf, int size)
     return 0;
 }
 
-void _abcdkm4j_fmp4_dump(abcdkm4j_ctx *ctx)
-{
-    
-}
-
 void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 {
-    size_t buf_size = 4*8192*8192;
-    char *buf = NULL;
-    char *out_file = NULL;
-    abcdk_mp4_tag_t sc4;//StartCode(4 Bytes)
+    ctx->h264_sc4.u32 = ABCDK_MP4_ATOM_MKTAG('\0', '\0', '\0', '\1');
 
     ctx->avc1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVC1, 1, 1);
     ctx->avcc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVCC, 1, 1);
 
-    ctx->avc1 = (abcdk_mp4_atom_t*)(ctx->avc1_p?ctx->avc1_p->alloc->pptrs[0]:NULL);
-    ctx->avcc = (abcdk_mp4_atom_t*)(ctx->avcc_p?ctx->avcc_p->alloc->pptrs[0]:NULL);
+    ctx->avc1 = (abcdk_mp4_atom_t *)(ctx->avc1_p ? ctx->avc1_p->alloc->pptrs[0] : NULL);
+    ctx->avcc = (abcdk_mp4_atom_t *)(ctx->avcc_p ? ctx->avcc_p->alloc->pptrs[0] : NULL);
 
-    if(!ctx->avc1)
+    if (!ctx->avc1)
     {
-        syslog(LOG_ERR, "仅支持H264编码提取。");
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
+        syslog(LOG_ERR, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    sc4.u32 = ABCDK_MP4_ATOM_MKTAG('\0','\0','\0','\1');
+    /*构造文件名。*/
+    memset(ctx->out_file, 0, PATH_MAX);
+    sprintf(ctx->out_file, "%s/%s-%u.h264", ctx->save, ctx->in_name, ctx->tkhd->data.tkhd.trackid);
 
-    out_file = abcdk_heap_alloc(PATH_MAX);
-    if(!out_file)
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
-
-    buf = abcdk_heap_alloc(buf_size);
-    if(!buf)
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
-
-    memset(out_file,0,PATH_MAX);
-    sprintf(out_file,"%s/%s-%u.h264",ctx->save,ctx->in_name,ctx->tkhd->data.tkhd.trackid);
-
-    ctx->out_fd[0] = abcdk_open(out_file, 1, 0, 1);
-    if (ctx->out_fd[0] < 0)
+    ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
+    if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
     /*清空文件。*/
-    ftruncate(ctx->out_fd[0],0);
+    ftruncate(ctx->out_fd,0);
 
 #if 0
-    abcdk_write(ctx->out_fd[0], ctx->avcc->data.avcc.extradata->pptrs[0],
+    abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.extradata->pptrs[0],
                 ctx->avcc->data.avcc.extradata->sizes[0]);
 #endif
 
-    for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
+    if (ctx->mvex_p)
     {
-        uint32_t chunk = 0, offset = 0, id = 0;
-        abcdk_mp4_stsc_tell(&ctx->stsc->data.stsc, i, &chunk, &offset, &id);
-
-        uint32_t offset2 = 0, size = 0;
-        abcdk_mp4_stsz_tell(&ctx->stsz->data.stsz, offset, i, &offset2, &size);
-
-        if (buf_size < size)
+        ctx->moof_p = abcdk_tree_child(ctx->doc, 1);
+        while (ctx->moof_p)
         {
-            syslog(LOG_ERR, "仅支持长度小于%lu字节的数据帧。",buf_size);
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE, final);
+            ctx->moof = (abcdk_mp4_atom_t *)ctx->moof_p->alloc->pptrs[0];
+            if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
+                goto moof_next;
+
+            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 1);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
+            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
+
+            ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->alloc->pptrs[0];
+            ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->alloc->pptrs[0];
+            ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->alloc->pptrs[0];
+            ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->alloc->pptrs[0];
+
+            if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
+            {
+
+                lseek(ctx->in_fd, ctx->moof->off_head + ctx->trun->data.trun.data_offset, SEEK_SET);
+
+                for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
+                {
+                    abcdk_mp4_read(ctx->in_fd, ctx->buf, ctx->trun->data.trun.tables[i].sample_size);
+
+                    abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+                    abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
+                    abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+                    abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
+                    abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);                                        //用起始码替换长度字段。
+                    abcdk_write(ctx->out_fd, ctx->buf + 4, ctx->trun->data.trun.tables[i].sample_size - 4); //跳过长度字段。
+                }
+            }
+
+        moof_next:
+            ctx->moof_p = abcdk_tree_sibling(ctx->moof_p, 0);
         }
+    }
+    else
+    {
+        for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
+        {
+            uint32_t chunk = 0, offset = 0, id = 0;
+            abcdk_mp4_stsc_tell(&ctx->stsc->data.stsc, i, &chunk, &offset, &id);
 
-        lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
+            uint32_t offset2 = 0, size = 0;
+            abcdk_mp4_stsz_tell(&ctx->stsz->data.stsz, offset, i, &offset2, &size);
 
-        abcdk_mp4_read(ctx->in_fd, buf, size);
+            lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
 
-        abcdk_write(ctx->out_fd[0], &sc4.u32, 4);
-        abcdk_write(ctx->out_fd[0], ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
-        abcdk_write(ctx->out_fd[0], &sc4.u32, 4);
-        abcdk_write(ctx->out_fd[0], ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
-        abcdk_write(ctx->out_fd[0], &sc4.u32, 4); //用起始码替换长度字段。
-        abcdk_write(ctx->out_fd[0], buf + 4, size - 4);//跳过长度字段。
+            abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
+
+            abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+            abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
+            abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+            abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
+            abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4); //用起始码替换长度字段。
+            abcdk_write(ctx->out_fd, ctx->buf + 4, size - 4);//跳过长度字段。
+        }
     }
 
 final:
 
-    abcdk_closep(&ctx->out_fd[0]);
-    abcdk_heap_free(buf);
-    abcdk_heap_free(out_file);
+    abcdk_closep(&ctx->out_fd);
 }
-
 
 void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
 {
-    size_t buf_size = 1024*1024;
-    char *buf = NULL;
-    char *out_file = NULL;
-
     ctx->mp4a_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_MP4A, 1, 1);
     ctx->esds_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_ESDS, 1, 1);
 
-    ctx->mp4a = (abcdk_mp4_atom_t*)(ctx->mp4a_p?ctx->mp4a_p->alloc->pptrs[0]:NULL);
-    ctx->esds = (abcdk_mp4_atom_t*)(ctx->esds_p?ctx->esds_p->alloc->pptrs[0]:NULL);
+    ctx->mp4a = (abcdk_mp4_atom_t *)(ctx->mp4a_p ? ctx->mp4a_p->alloc->pptrs[0] : NULL);
+    ctx->esds = (abcdk_mp4_atom_t *)(ctx->esds_p ? ctx->esds_p->alloc->pptrs[0] : NULL);
 
-    if(!ctx->mp4a)
+    if (!ctx->mp4a)
     {
-        syslog(LOG_ERR, "仅支持AAC编码提取。");
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
+        syslog(LOG_ERR, "仅支持AAC编码提取，忽略当前音频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    out_file = abcdk_heap_alloc(PATH_MAX);
-    if(!out_file)
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+    memset(ctx->out_file,0,PATH_MAX);
+    sprintf(ctx->out_file,"%s/%s-%u.aac",ctx->save,ctx->in_name,ctx->tkhd->data.tkhd.trackid);
 
-    buf = abcdk_heap_alloc(buf_size);
-    if(!buf)
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
-
-    memset(out_file,0,PATH_MAX);
-    sprintf(out_file,"%s/%s-%u.aac",ctx->save,ctx->in_name,ctx->tkhd->data.tkhd.trackid);
-
-    ctx->out_fd[0] = abcdk_open(out_file, 1, 0, 1);
-    if (ctx->out_fd[0] < 0)
+    ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
+    if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
     /*清空文件。*/
-    ftruncate(ctx->out_fd[0],0);
+    ftruncate(ctx->out_fd,0);
 
     /*解析ADTS信息。*/
     _abcdkm4j_aac_decode_extradata(ctx,ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
                                    ctx->esds->data.esds.dec_sp_info.extradata->sizes[0]);
 
-    for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
+    if(ctx->mvex_p)
     {
-        uint32_t chunk = 0, offset = 0, id = 0;
-        abcdk_mp4_stsc_tell(&ctx->stsc->data.stsc, i, &chunk, &offset, &id);
+       
+    }
+    else
+    {
+        for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
+        {
+            uint32_t chunk = 0, offset = 0, id = 0;
+            abcdk_mp4_stsc_tell(&ctx->stsc->data.stsc, i, &chunk, &offset, &id);
 
-        uint32_t offset2 = 0, size = 0;
-        abcdk_mp4_stsz_tell(&ctx->stsz->data.stsz, offset, i, &offset2, &size);
+            uint32_t offset2 = 0, size = 0;
+            abcdk_mp4_stsz_tell(&ctx->stsz->data.stsz, offset, i, &offset2, &size);
 
-        lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
+            lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
 
-        abcdk_mp4_read(ctx->in_fd, buf, size);
+            abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
-        char hdr[7] = {0};
-        _abcdkm4j_aac_set_adts_head(ctx, hdr, size);
+            char hdr[7] = {0};
+            _abcdkm4j_aac_set_adts_head(ctx, hdr, size); //size是数据帧的大小。
 
-        abcdk_write(ctx->out_fd[0], hdr, 7);
-        abcdk_write(ctx->out_fd[0], buf, size);
+            abcdk_write(ctx->out_fd, hdr, 7);
+            abcdk_write(ctx->out_fd, ctx->buf, size);
+        }
     }
 
 final:
 
-    abcdk_closep(&ctx->out_fd[0]);
-    abcdk_heap_free(buf);
-    abcdk_heap_free(out_file);
-}
+    abcdk_closep(&ctx->out_fd);
 
+}
 
 void _abcdkm4j_dump(abcdkm4j_ctx *ctx)
 {
-    /*一定要初始化，否则关闭时可能会出现异想不到的问题。*/
-    for (int i = 0; i <= ABCDK_ARRAY_SIZE(ctx->out_fd); i++)
-        ctx->out_fd[i] = -1;
+    ctx->out_fd = -1;
 
     ctx->moov_p = abcdk_mp4_find2(ctx->doc,ABCDK_MP4_ATOM_TYPE_MOOV,1,1);
     if(!ctx->moov_p)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE, final);
 
+    /*查找mvex，用于区别MP4和FMP4。*/
     ctx->mvex_p = abcdk_mp4_find2(ctx->moov_p,ABCDK_MP4_ATOM_TYPE_MVEX,1,1);
 
-    if(ctx->mvex_p)
-    {
-        _abcdkm4j_fmp4_dump(ctx);
-        goto final;
-    }
-
-    for (int i = 0; i < ABCDK_ARRAY_SIZE(ctx->out_fd); i++)
+    for (int i = 0; i < 1000; i++)
     {
         ctx->trak_p = abcdk_mp4_find2(ctx->moov_p, ABCDK_MP4_ATOM_TYPE_TRAK, i + 1, 0);
         if (!ctx->trak_p)
@@ -391,11 +420,17 @@ void _abcdkm4j_dump(abcdkm4j_ctx *ctx)
         ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->alloc->pptrs[0]:NULL);
         ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->alloc->pptrs[0]:NULL);
 
-        if(ctx->hdlr->data.hdlr.subtype.u32 == ABCDK_MP4_ATOM_MKTAG('v', 'i', 'd', 'e'))
+        if (ctx->hdlr->data.hdlr.subtype.u32 == ABCDK_MP4_ATOM_MKTAG('v', 'i', 'd', 'e') &&
+            !ctx->ignore_video)
+        {
             _abcdkm4j_dump_video(ctx);
-        else if(ctx->hdlr->data.hdlr.subtype.u32 == ABCDK_MP4_ATOM_MKTAG('s', 'o', 'u', 'n'))
+        }
+        else if (ctx->hdlr->data.hdlr.subtype.u32 == ABCDK_MP4_ATOM_MKTAG('s', 'o', 'u', 'n') &&
+                 !ctx->ignore_audio)
+        {
             _abcdkm4j_dump_audio(ctx);
-        
+        }
+
         /*有错误发生，提前终止。*/
         if(ctx->errcode)
             break;
@@ -403,8 +438,8 @@ void _abcdkm4j_dump(abcdkm4j_ctx *ctx)
 
 final:
 
-    for (int i = 0; i <= ABCDK_ARRAY_SIZE(ctx->out_fd); i++)
-        abcdk_closep(&ctx->out_fd[i]);
+    abcdk_closep(&ctx->out_fd);
+
 }
 
 void _abcdkm4j_work(abcdkm4j_ctx *ctx)
@@ -413,6 +448,8 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     ctx->file = abcdk_option_get(ctx->args, "--file", 0, NULL);
     ctx->save = abcdk_option_get(ctx->args, "--save", 0, "./");
+    ctx->ignore_video = abcdk_option_exist(ctx->args, "--ignore-video");
+    ctx->ignore_audio = abcdk_option_exist(ctx->args, "--ignore-audio");
 
     if (!ctx->file || !*ctx->file)
     {
@@ -438,6 +475,15 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
+    ctx->out_file = abcdk_heap_alloc(PATH_MAX);
+    if(!ctx->out_file)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+
+    ctx->buf_size = 8 * 8192 * 8192;//支持8K视频。
+    ctx->buf = abcdk_heap_alloc(ctx->buf_size);
+    if(!ctx->buf)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+
     ctx->in_fd = abcdk_open(ctx->file, 0, 0, 0);
     if (ctx->in_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
@@ -459,6 +505,8 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
 final:
 
+    abcdk_heap_free(ctx->buf);
+    abcdk_heap_free(ctx->out_file);
     abcdk_closep(&ctx->in_fd);
     abcdk_tree_free(&ctx->doc);
 }
