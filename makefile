@@ -124,7 +124,7 @@ mp4: ${MP4_NAME}
 ${MP4_NAME}: $(MP4_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MP4_NAME}
-	$(CCC) -o $(BUILD_PATH)/lib${MP4_NAME}.so $^ $(LINK_FLAGS) -shared
+	$(CCC) -o $(BUILD_PATH)/lib${MP4_NAME}.so $^ -l${UTIL_NAME} $(LINK_FLAGS) -shared
 	ar -cr $(BUILD_PATH)/lib${MP4_NAME}.a $^
 
 #
@@ -139,7 +139,7 @@ auth: ${AUTH_NAME}
 ${AUTH_NAME}: $(AUTH_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${AUTH_NAME}
-	$(CCC) -o $(BUILD_PATH)/lib${AUTH_NAME}.so $^ $(LINK_FLAGS) -shared
+	$(CCC) -o $(BUILD_PATH)/lib${AUTH_NAME}.so $^ -l${UTIL_NAME} $(LINK_FLAGS) -shared
 	ar -cr $(BUILD_PATH)/lib${AUTH_NAME}.a $^
 
 #
@@ -152,55 +152,55 @@ $(OBJ_PATH)/auth/%.o: auth/%.c
 tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} ${MP4DUMP_NAME} ${MP4JUICER_NAME}
 
 #
-${MTX_NAME}:${UTIL_NAME} ${TOOL_OBJ_FILES}
+${MTX_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MTX_NAME}
 	$(CCC) -o $(BUILD_PATH)/${MTX_NAME} ${OBJ_PATH}/tool/mtx.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${MT_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${MT_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MT_NAME}
 	$(CCC) -o $(BUILD_PATH)/${MT_NAME} ${OBJ_PATH}/tool/mt.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${RELEASE_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${RELEASE_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${RELEASE_NAME}
 	$(CCC) -o $(BUILD_PATH)/${RELEASE_NAME} ${OBJ_PATH}/tool/release.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${ODBC_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${ODBC_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${ODBC_NAME}
 	$(CCC) -o $(BUILD_PATH)/${ODBC_NAME} ${OBJ_PATH}/tool/odbc.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${HTML_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${HTML_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${HTML_NAME}
 	$(CCC) -o $(BUILD_PATH)/${HTML_NAME} ${OBJ_PATH}/tool/html.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${ROBOTS_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${ROBOTS_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
 	$(CCC) -o $(BUILD_PATH)/${ROBOTS_NAME} ${OBJ_PATH}/tool/robots.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${HEXDUMP_NAME}: ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${HEXDUMP_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
 	$(CCC) -o $(BUILD_PATH)/${HEXDUMP_NAME} ${OBJ_PATH}/tool/hexdump.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${MP4DUMP_NAME}: ${MP4_NAME} ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${MP4DUMP_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MP4DUMP_NAME}
 	$(CCC) -o $(BUILD_PATH)/${MP4DUMP_NAME} ${OBJ_PATH}/tool/mp4dump.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
-${MP4JUICER_NAME}: ${MP4_NAME} ${UTIL_NAME} ${TOOL_OBJ_FILES}
+${MP4JUICER_NAME}: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	rm -f $(BUILD_PATH)/${MP4JUICER_NAME}
 	$(CCC) -o $(BUILD_PATH)/${MP4JUICER_NAME} ${OBJ_PATH}/tool/mp4juicer.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
@@ -214,12 +214,12 @@ $(OBJ_PATH)/tool/%.o: tool/%.c
 test: ${EPOLLEX_TESTNAME} ${UTIL_TESTNAME}
 
 #
-${EPOLLEX_TESTNAME}: ${UTIL_NAME} ${TEST_OBJ_FILES}
+${EPOLLEX_TESTNAME}: ${TEST_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${EPOLLEX_TESTNAME}
 	$(CCC) -o $(BUILD_PATH)/${EPOLLEX_TESTNAME} ${OBJ_PATH}/test/epollex_test.o -l${UTIL_NAME} $(LINK_FLAGS)
 
 #
-${UTIL_TESTNAME}: ${UTIL_NAME} ${MP4_NAME} ${TEST_OBJ_FILES}
+${UTIL_TESTNAME}: ${TEST_OBJ_FILES}
 	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
 	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l${AUTH_NAME} -l${MP4_NAME} -l${UTIL_NAME}  $(LINK_FLAGS)
 
