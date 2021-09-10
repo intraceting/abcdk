@@ -1546,11 +1546,13 @@ int _abcdk_mp4_read_unknown(int fd, abcdk_tree_t *node)
     
     if (dsize > 0)
     {
+#if 0
         data->rawbytes = abcdk_allocator_alloc2(dsize);
         if (!data->rawbytes)
             goto final_error;
 
         abcdk_mp4_read(fd, data->rawbytes->pptrs[0], dsize);
+#endif
     }
 
     return 0;
