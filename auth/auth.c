@@ -6,6 +6,22 @@
  */
 #include "abcdk-auth/auth.h"
 
+int abcdk_auth_add_salt(abcdk_tree_t *auth)
+{
+    char tmp[100] = {0};
+
+    assert(auth != NULL);
+
+    srand(time(NULL));
+
+    for (int i = 0; i < 99; i++)
+        tmp[i] = 32 + rand() % 95;//32~126
+
+    abcdk_option_set(auth,"--",tmp);
+
+    return 0;
+}
+
 int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
 {
     char tmp[255];
@@ -310,28 +326,28 @@ abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, uint32_t key
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,0);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 0);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 3, 1);
 
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,1);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 1);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 7, 2);
 
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,2);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 2);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 2, 1);
 
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,3);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 3);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 4, 2);
 
@@ -355,28 +371,28 @@ abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, uint32_t ke
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 4, 1);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,3);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 3);
 
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 2, 2);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,2);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 2);
 
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 7, 1);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,1);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 1);
 
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 
     abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], 3, 2);
 
     for (size_t j = 0; j < buf->sizes[0]; j++)
-        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key,0);
+        ABCDK_PTR2U8(buf->pptrs[0], j) ^= ABCDK_PTR2U8(&key, 0);
     
     abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
 

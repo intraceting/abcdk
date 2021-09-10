@@ -33,6 +33,7 @@ ROBOTS_NAME = abcdk-robots
 HEXDUMP_NAME = abcdk-hexdump
 MP4DUMP_NAME = abcdk-mp4dump
 MP4JUICER_NAME = abcdk-mp4juicer
+MKLICENCE_NAME = abcdk-mklicence
 
 #
 EPOLLEX_TESTNAME = epollex_test
@@ -149,7 +150,7 @@ $(OBJ_PATH)/auth/%.o: auth/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 
-tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} ${MP4DUMP_NAME} ${MP4JUICER_NAME}
+tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} ${MP4DUMP_NAME} ${MP4JUICER_NAME} ${MKLICENCE_NAME}
 
 #
 ${MTX_NAME}: ${TOOL_OBJ_FILES}
@@ -206,6 +207,12 @@ ${MP4JUICER_NAME}: ${TOOL_OBJ_FILES}
 	$(CCC) -o $(BUILD_PATH)/${MP4JUICER_NAME} ${OBJ_PATH}/tool/mp4juicer.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
 
 #
+${MKLICENCE_NAME}: ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	rm -f $(BUILD_PATH)/${MKLICENCE_NAME}
+	$(CCC) -o $(BUILD_PATH)/${MKLICENCE_NAME} ${OBJ_PATH}/tool/mklicence.o -l:lib${AUTH_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
+
+#
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
@@ -259,6 +266,7 @@ clean-tool:
 	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
 	rm -f $(BUILD_PATH)/${MP4DUMP_NAME}
 	rm -f $(BUILD_PATH)/${MP4JUICER_NAME}
+	rm -f $(BUILD_PATH)/${MKLICENCE_NAME}
 
 #
 clean-test:
@@ -314,6 +322,7 @@ install-tool:
 	cp -f $(BUILD_PATH)/${HEXDUMP_NAME} ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/${MP4DUMP_NAME} ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/${MP4JUICER_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/${MKLICENCE_NAME} ${INSTALL_PATH_BIN}/
 
 #
 install-ldc:
@@ -370,6 +379,7 @@ uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/${HEXDUMP_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${MP4DUMP_NAME}
 	rm -f $(INSTALL_PATH_BIN)/${MP4JUICER_NAME}
+	rm -f $(INSTALL_PATH_BIN)/${MKLICENCE_NAME}
 
 #
 uninstall-ldc:

@@ -14,6 +14,21 @@
 
 __BEGIN_DECLS
 
+/**/
+#define ABCDK_AUTH_DEFAULT_KEY      123456789
+
+/**/
+#define ABCDK_AUTH_DEFAULT_MAGIC    987654321
+
+/**
+ * 加盐。
+ * 
+ * @note 用于防止两次加密生成和密文相同。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_auth_add_salt(abcdk_tree_t *auth);
+
 /**
  * 收集DMI信息。
  * 
@@ -78,12 +93,14 @@ abcdk_tree_t *abcdk_auth_structure(abcdk_allocator_t *plaintext);
 /**
  * 加密。
  * 
+ * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
 abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, uint32_t key);
 
 /**
  * 解密。
+ * 
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
