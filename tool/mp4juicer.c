@@ -24,6 +24,7 @@ typedef struct _abcdkm4j_ctx
 
     int ignore_video;
     int ignore_audio;
+    int quiet;
 
     char in_name[NAME_MAX];
     size_t buf_size;
@@ -236,7 +237,7 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 
     if (!ctx->avc1)
     {
-        syslog(LOG_ERR, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        syslog(LOG_WARNING, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -246,11 +247,12 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 
     if (access(ctx->out_file, F_OK) == 0)
     {
-        syslog(LOG_ERR, "'%s' 已经存在，忽略当前视频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+
+        syslog(LOG_WARNING, "'%s' 已经存在，忽略当前视频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    syslog(LOG_ERR, "'%s' 当前视频ID(%u)被提取到这个文件中。",ctx->out_file, ctx->tkhd->data.tkhd.trackid);
+    fprintf(stdout, "%u: %s\n", ctx->tkhd->data.tkhd.trackid, ctx->out_file);
 
     ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
     if (ctx->out_fd < 0)
@@ -345,7 +347,7 @@ void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
 
     if (!ctx->mp4a)
     {
-        syslog(LOG_ERR, "仅支持AAC编码提取，忽略当前音频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        syslog(LOG_WARNING, "仅支持AAC编码提取，忽略当前音频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -354,11 +356,11 @@ void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
 
     if (access(ctx->out_file, F_OK) == 0)
     {
-        syslog(LOG_ERR, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        syslog(LOG_WARNING, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    syslog(LOG_ERR, "'%s' 当前音频ID(%u)被提取到这个文件中。",ctx->out_file, ctx->tkhd->data.tkhd.trackid);
+    fprintf(stdout, "%u: %s\n", ctx->tkhd->data.tkhd.trackid, ctx->out_file);
 
     ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
     if (ctx->out_fd < 0)
@@ -515,7 +517,7 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     if (access(ctx->file, R_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.", ctx->file, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -527,7 +529,7 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     if (access(ctx->save, W_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.", ctx->save, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.", ctx->save, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -550,7 +552,7 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     if(!abcdk_mp4_find2(ctx->doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        syslog(LOG_WARNING, "'%s' 可能不是MP4文件。", ctx->file);
+        syslog(LOG_ERR, "'%s' 可能不是MP4文件。", ctx->file);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 
