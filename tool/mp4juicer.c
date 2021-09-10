@@ -250,6 +250,8 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
+    syslog(LOG_ERR, "'%s' 当前视频ID(%u)被提取到这个文件中。",ctx->out_file, ctx->tkhd->data.tkhd.trackid);
+
     ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
     if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
@@ -355,6 +357,8 @@ void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
         syslog(LOG_ERR, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
+
+    syslog(LOG_ERR, "'%s' 当前音频ID(%u)被提取到这个文件中。",ctx->out_file, ctx->tkhd->data.tkhd.trackid);
 
     ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
     if (ctx->out_fd < 0)

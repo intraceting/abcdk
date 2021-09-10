@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <linux/serial.h>
 #include "abcdk-util/general.h"
 #include "abcdk-util/getargs.h"
 #include "abcdk-util/geometry.h"
@@ -2206,6 +2207,63 @@ void test_auth(abcdk_tree_t *args)
     abcdk_tree_free(&auth);
 }
 
+void test_rs485(abcdk_tree_t *args)
+{
+    const char *port = abcdk_option_get(args,"--port",0,"");
+
+    int fd = open(port,O_RDWR);
+
+ //   assert(isatty(fd)==0);
+
+    struct termios opt = {0};
+
+    int chk = tcgetattr(fd,&opt);
+    
+    tcflush(fd, TCIOFLUSH);
+    cfsetispeed(&opt,B9600);
+    //cfsetispeed(&opt,B4800);
+    assert(tcsetattr(fd,TCSANOW,&opt)==0);
+
+    tcflush(fd,TCIOFLUSH);  
+
+    struct serial_rs485 conf = {0};
+
+    conf.flags |= SER_RS485_ENABLED;
+   // conf.flags |= SER_RS485_RX_DURING_TX;
+
+   // assert(ioctl(fd,TIOCSRS485,&conf)==0);
+
+    uint64_t s = 0,s1 = 0,s2 = 0;
+    char buf1[18]={0};
+    char buf2[18]={0};
+    for(int i = 0;i<999999999;i++)
+    {
+
+        int chk = abcdk_poll(fd,0x01,1000);
+        assert(chk>0);
+
+        abcdk_read(fd,buf1,17);
+
+        s1 = abcdk_clock(s,&s);
+        s2 += s1;
+
+        if(memcmp(buf1,buf2,17)!=0)
+        {
+            memcpy(buf2,buf1,17);
+            printf("[%d]: %s",i,buf2);
+        }
+        else if(s2 >= 1000000)
+        {
+            printf("[%d]: %s",i,buf1);
+            s2= 0;
+        }
+
+    }
+
+
+    abcdk_closep(&fd);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2283,6 +2341,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_auth", 0) == 0)
         test_auth(args);
+
+    if (abcdk_strcmp(func, "test_rs485", 0) == 0)
+        test_rs485(args);
 
     abcdk_tree_free(&args);
     
