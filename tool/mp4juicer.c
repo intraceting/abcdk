@@ -30,7 +30,8 @@ typedef struct _abcdkm4j_ctx
     size_t buf_size;
     char *buf;
     char *out_file;
-    abcdk_mp4_tag_t h264_sc4;//StartCode(4 Bytes)
+    int h264_scode_len;
+    uint8_t h264_startcode[4];
 
     int in_fd;
     int out_fd;
@@ -227,8 +228,6 @@ int _abcdkm4j_aac_set_adts_head(abcdkm4j_ctx *ctx, unsigned char *buf, int size)
 
 void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 {
-    ctx->h264_sc4.u32 = ABCDK_MP4_ATOM_MKTAG('\0', '\0', '\0', '\1');
-
     ctx->avc1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVC1, 1, 1);
     ctx->avcc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVCC, 1, 1);
 
@@ -238,6 +237,17 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
     if (!ctx->avc1)
     {
         syslog(LOG_WARNING, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
+    }
+
+    ctx->h264_scode_len = ctx->avcc->data.avcc.nalu_length_size;
+    if (ctx->h264_scode_len == 3)
+        memcpy(ctx->h264_startcode, "\0\0\1", 3);
+    else if (ctx->h264_scode_len == 4)
+        memcpy(ctx->h264_startcode, "\0\0\0\1", 4);
+    else
+    {
+        syslog(LOG_WARNING, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -296,12 +306,12 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 
                     abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
-                    abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+                    abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
                     abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
-                    abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+                    abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
                     abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
-                    abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);                                        //用起始码替换长度字段。
-                    abcdk_write(ctx->out_fd, ctx->buf + 4, size - 4); //跳过长度字段。
+                    abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);//用起始码替换长度字段。
+                    abcdk_write(ctx->out_fd, ctx->buf + ctx->h264_scode_len, size - ctx->h264_scode_len); //跳过长度字段。
                 }
             }
 
@@ -323,12 +333,12 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 
             abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
-            abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+            abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
             abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
-            abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4);
+            abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
             abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
-            abcdk_write(ctx->out_fd, &ctx->h264_sc4.u32, 4); //用起始码替换长度字段。
-            abcdk_write(ctx->out_fd, ctx->buf + 4, size - 4);//跳过长度字段。
+            abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len); //用起始码替换长度字段。
+            abcdk_write(ctx->out_fd, ctx->buf + ctx->h264_scode_len, size - ctx->h264_scode_len);//跳过长度字段。
         }
     }
 
