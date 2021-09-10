@@ -46,7 +46,7 @@ int abcdk_auth_make_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *
  * 生成有效期限。
  * 
  * @param days 使用天数。
- * @param delay 延时多少天开始(以当前时间为基准)。
+ * @param delay 延时多少天开始(以当前时间(UTC)为基准)。
  * 
  * @return 0 成功，-1 失败。
 */
