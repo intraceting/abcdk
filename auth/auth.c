@@ -6,6 +6,91 @@
  */
 #include "abcdk-auth/auth.h"
 
+int abcdk_auth_add_dmi(abcdk_tree_t *auth,const char *system_sn,const char * system_uuid)
+{
+    int chk;
+    assert(auth != NULL);
+
+    if(system_sn)
+    {
+        chk = abcdk_option_set2(auth,"--system-serial-number",system_sn,1);
+        if(chk != 0)
+            return -1;
+    }
+
+    if(system_uuid)
+    {
+        chk = abcdk_option_set2(auth,"--system-uuid",system_uuid,1);
+        if(chk != 0)
+            return -2;
+    }
+
+    return 0;
+}
+
+int abcdk_auth_add_mac(abcdk_tree_t *auth,const char *mac)
+{
+    int chk;
+    assert(auth != NULL);
+
+    if(mac)
+    {
+        chk = abcdk_option_set2(auth,"--network-interface-address",mac,1);
+        if(chk != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
+int abcdk_auth_add_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *begin)
+{
+    struct tm b = {0}, e = {0};
+    time_t b_sec = 0, e_sec = 0;
+    char tmp[100];
+
+    assert(auth != NULL && days > 0);
+
+    if (begin)
+        b = *begin;
+    else 
+        abcdk_time_get(&b,1);
+
+    b_sec = timegm(&b);
+    e_sec = b_sec + days * 24 * 60 * 60;
+
+    abcdk_time_sec2tm(&e,e_sec,1);
+
+    memset(tmp,0,sizeof(tmp));
+    strftime(tmp,100,"%Y-%m-%dT%H:%M:%SZ",&b);
+
+    abcdk_option_set(auth,"--being-time",tmp);
+
+    memset(tmp,0,sizeof(tmp));
+    strftime(tmp,100,"%Y-%m-%dT%H:%M:%SZ",&e);
+
+    abcdk_option_set(auth,"--end-time",tmp);
+
+    return 0;
+}
+
+int abcdk_auth_add_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t delay)
+{
+    struct tm b = {0};
+    time_t b_sec = 0;
+
+    assert(auth != NULL && days > 0);
+
+    abcdk_time_get(&b,1);
+    
+    b_sec = timegm(&b);
+    b_sec += delay * 24 * 60 * 60;
+
+    abcdk_time_sec2tm(&b,b_sec,1);
+
+    return abcdk_auth_add_valid_period(auth,days,&b);
+}
+
 int abcdk_auth_add_salt(abcdk_tree_t *auth)
 {
     char tmp[100] = {0};
@@ -39,7 +124,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
         if (rsize > 0)
         {
             abcdk_strtrim(tmp,isspace,0);
-            abcdk_option_set(auth,"--system-serial-number",tmp);
+            abcdk_auth_add_dmi(auth,tmp,NULL);
         }
 
         abcdk_closep(&fd);
@@ -55,7 +140,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
         if (rsize > 0)
         {
             abcdk_strtrim(tmp,isspace,0);
-            abcdk_option_set(auth,"--system-uuid",tmp);
+            abcdk_auth_add_dmi(auth,NULL,tmp);
         }
 
         abcdk_closep(&fd);
@@ -101,7 +186,7 @@ int abcdk_auth_collect_mac(abcdk_tree_t *auth)
         if(mac[0] == '\0')
             continue;
 
-        abcdk_option_set2(auth,"--network-interface-address",mac,1);
+        abcdk_auth_add_mac(auth,mac);
     }
 
 final:
@@ -109,54 +194,6 @@ final:
     abcdk_heap_free(addrs);
 
     return 0;
-}
-
-int abcdk_auth_make_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *begin)
-{
-    struct tm b = {0}, e = {0};
-    time_t b_sec = 0, e_sec = 0;
-    char tmp[100];
-
-    assert(auth != NULL && days > 0);
-
-    if (begin)
-        b = *begin;
-    else 
-        abcdk_time_get(&b,1);
-
-    b_sec = timegm(&b);
-    e_sec = b_sec + days * 24 * 60 * 60;
-
-    abcdk_time_sec2tm(&e,e_sec,1);
-
-    memset(tmp,0,sizeof(tmp));
-    strftime(tmp,100,"%Y-%m-%dT%H:%M:%SZ",&b);
-
-    abcdk_option_set(auth,"--being-time",tmp);
-
-    memset(tmp,0,sizeof(tmp));
-    strftime(tmp,100,"%Y-%m-%dT%H:%M:%SZ",&e);
-
-    abcdk_option_set(auth,"--end-time",tmp);
-
-    return 0;
-}
-
-int abcdk_auth_make_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t delay)
-{
-    struct tm b = {0};
-    time_t b_sec = 0;
-
-    assert(auth != NULL && days > 0);
-
-    abcdk_time_get(&b,1);
-    
-    b_sec = timegm(&b);
-    b_sec += delay * 24 * 60 * 60;
-
-    abcdk_time_sec2tm(&b,b_sec,1);
-
-    return abcdk_auth_make_valid_period(auth,days,&b);
 }
 
 int _abcdk_auth_verify_dmi(abcdk_tree_t *auth,abcdk_tree_t *local)
@@ -190,6 +227,9 @@ int _abcdk_auth_verify_mac(abcdk_tree_t *auth, abcdk_tree_t *local)
     c1 = abcdk_option_count(auth,"--network-interface-address");
     c2 = abcdk_option_count(local,"--network-interface-address");
 
+    if (c1 <= 0)
+        return 0;
+
     for (size_t i = 0; i < c1; i++)
     {
         p1 = abcdk_option_get(auth, "--network-interface-address", i, NULL);
@@ -217,11 +257,8 @@ int _abcdk_auth_verify_valid_period(abcdk_tree_t *auth)
     time_t b_sec = 0, e_sec = 0, l_sec = 0;
     double d = 0.0;
 
-    p1 = abcdk_option_get(auth, "--being-time", 0, NULL);
-    p2 = abcdk_option_get(auth, "--end-time", 0, NULL);
-
-    if (!p2 || !p2)
-        return -2;
+    p1 = abcdk_option_get(auth, "--being-time", 0, "2011-01-01T00:00:00Z");
+    p2 = abcdk_option_get(auth, "--end-time", 0, "2110-12-31T23:59:59Z");
 
     strptime(p1,"%Y-%m-%dT%H:%M:%SZ",&b);
     strptime(p2,"%Y-%m-%dT%H:%M:%SZ",&e);

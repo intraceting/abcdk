@@ -2174,7 +2174,7 @@ void test_auth(abcdk_tree_t *args)
 
     abcdk_auth_collect_dmi(auth);
     abcdk_auth_collect_mac(auth);
-    abcdk_auth_make_valid_period2(auth,20,0);
+    abcdk_auth_add_valid_period2(auth,20,0);
 
  //   abcdk_option_fprintf(stderr,auth,NULL);
 

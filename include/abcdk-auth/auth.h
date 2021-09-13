@@ -21,9 +21,43 @@ __BEGIN_DECLS
 #define ABCDK_AUTH_DEFAULT_MAGIC    987654321
 
 /**
+ * 添加DMI信息。
+ * 
+ * @return 0 成功，-1 失败(SN已经存在)，-2 失败(UUID已经存在)。
+*/
+int abcdk_auth_add_dmi(abcdk_tree_t *auth,const char *system_sn,const char * system_uuid);
+
+/**
+ * 添加MAC地址。
+ * 
+ * @return 0 成功，-1 失败(MAC已经存在)。
+*/
+int abcdk_auth_add_mac(abcdk_tree_t *auth,const char *mac);
+
+/**
+ * 添加有效期限。
+ * 
+ * @param days 使用天数。
+ * @param begin 开始日期(UTC)，NULL(0) 使用当前时间。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_auth_add_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *begin);
+
+/**
+ * 添加有效期限。
+ * 
+ * @param days 使用天数。
+ * @param delay 延时多少天开始(以当前时间(UTC)为基准)。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_auth_add_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t delay);
+
+/**
  * 加盐。
  * 
- * @note 用于防止两次加密生成和密文相同。
+ * @note 用于防止两次加密生成的密文相同。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -46,26 +80,6 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *auth);
  * @return 0 成功，-1 失败。
 */
 int abcdk_auth_collect_mac(abcdk_tree_t *auth);
-
-/**
- * 生成有效期限。
- * 
- * @param days 使用天数。
- * @param begin 开始日期(UTC)，NULL(0) 使用当前时间。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_auth_make_valid_period(abcdk_tree_t *auth, uintmax_t days, struct tm *begin);
-
-/**
- * 生成有效期限。
- * 
- * @param days 使用天数。
- * @param delay 延时多少天开始(以当前时间(UTC)为基准)。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_auth_make_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t delay);
 
 /**
  * 验证。

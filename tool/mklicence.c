@@ -102,7 +102,7 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
     if (ctx->delay > 30)
         syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意，生效延迟超过30天。" ABCDK_ANSI_COLOR_RESET);
 
-    abcdk_auth_make_valid_period2(ctx->auth,ctx->days,ctx->delay);
+    abcdk_auth_add_valid_period2(ctx->auth,ctx->days,ctx->delay);
     abcdk_auth_add_salt(ctx->auth);
     abcdk_auth_add_salt(ctx->auth);
 
