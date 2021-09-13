@@ -14,31 +14,6 @@ include ${MAKE_CONF}
 #
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 
-#
-UTIL_NAME = abcdk-util
-
-#
-MP4_NAME = abcdk-mp4
-
-#
-AUTH_NAME = abcdk-auth
-
-#
-MT_NAME = abcdk-mt
-MTX_NAME = abcdk-mtx
-RELEASE_NAME = abcdk-release
-ODBC_NAME = abcdk-odbc
-HTML_NAME = abcdk-html
-ROBOTS_NAME = abcdk-robots
-HEXDUMP_NAME = abcdk-hexdump
-MP4DUMP_NAME = abcdk-mp4dump
-MP4JUICER_NAME = abcdk-mp4juicer
-MKLICENCE_NAME = abcdk-mklicence
-
-#
-EPOLLEX_TESTNAME = epollex_test
-UTIL_TESTNAME = util_test
-
 #Compiler
 CCC = gcc
 
@@ -92,7 +67,6 @@ MP4_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${MP4_SRC_FILES}))
 AUTH_SRC_FILES = $(wildcard auth/*.c)
 AUTH_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${AUTH_SRC_FILES}))
 
-
 #
 TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
@@ -102,16 +76,13 @@ TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: util mp4 auth tool test
-
-util: ${UTIL_NAME}
+all: lib tool test
 
 #
-${UTIL_NAME}: $(UTIL_OBJ_FILES)
+lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(AUTH_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${UTIL_NAME}
-	$(CCC) -o $(BUILD_PATH)/lib${UTIL_NAME}.so $^ $(LINK_FLAGS) -shared
-	ar -cr $(BUILD_PATH)/lib${UTIL_NAME}.a $^
+	$(CCC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
+	ar -cr $(BUILD_PATH)/libabcdk.a $^
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
@@ -119,29 +90,11 @@ $(OBJ_PATH)/util/%.o: util/%.c
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
-mp4: ${MP4_NAME}
-
-#
-${MP4_NAME}: $(MP4_OBJ_FILES)
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${MP4_NAME}
-	$(CCC) -o $(BUILD_PATH)/lib${MP4_NAME}.so $^ -l${UTIL_NAME} $(LINK_FLAGS) -shared
-	ar -cr $(BUILD_PATH)/lib${MP4_NAME}.a $^
-
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
-
-auth: ${AUTH_NAME}
-
-#
-${AUTH_NAME}: $(AUTH_OBJ_FILES)
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${AUTH_NAME}
-	$(CCC) -o $(BUILD_PATH)/lib${AUTH_NAME}.so $^ -l${UTIL_NAME} $(LINK_FLAGS) -shared
-	ar -cr $(BUILD_PATH)/lib${AUTH_NAME}.a $^
 
 #
 $(OBJ_PATH)/auth/%.o: auth/%.c
@@ -150,67 +103,18 @@ $(OBJ_PATH)/auth/%.o: auth/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 
-tool: ${MTX_NAME} ${MT_NAME} ${RELEASE_NAME} ${ODBC_NAME} ${HTML_NAME} ${ROBOTS_NAME} ${HEXDUMP_NAME} ${MP4DUMP_NAME} ${MP4JUICER_NAME} ${MKLICENCE_NAME}
-
-#
-${MTX_NAME}: ${TOOL_OBJ_FILES}
+tool: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${MTX_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MTX_NAME} ${OBJ_PATH}/tool/mtx.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${MT_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${MT_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MT_NAME} ${OBJ_PATH}/tool/mt.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${RELEASE_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${RELEASE_NAME}
-	$(CCC) -o $(BUILD_PATH)/${RELEASE_NAME} ${OBJ_PATH}/tool/release.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${ODBC_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${ODBC_NAME}
-	$(CCC) -o $(BUILD_PATH)/${ODBC_NAME} ${OBJ_PATH}/tool/odbc.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${HTML_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${HTML_NAME}
-	$(CCC) -o $(BUILD_PATH)/${HTML_NAME} ${OBJ_PATH}/tool/html.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${ROBOTS_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
-	$(CCC) -o $(BUILD_PATH)/${ROBOTS_NAME} ${OBJ_PATH}/tool/robots.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${HEXDUMP_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
-	$(CCC) -o $(BUILD_PATH)/${HEXDUMP_NAME} ${OBJ_PATH}/tool/hexdump.o -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${MP4DUMP_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${MP4DUMP_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MP4DUMP_NAME} ${OBJ_PATH}/tool/mp4dump.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${MP4JUICER_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${MP4JUICER_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MP4JUICER_NAME} ${OBJ_PATH}/tool/mp4juicer.o -l:lib${MP4_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
-
-#
-${MKLICENCE_NAME}: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	rm -f $(BUILD_PATH)/${MKLICENCE_NAME}
-	$(CCC) -o $(BUILD_PATH)/${MKLICENCE_NAME} ${OBJ_PATH}/tool/mklicence.o -l:lib${AUTH_NAME}.a -l:lib${UTIL_NAME}.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-mtx ${OBJ_PATH}/tool/mtx.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-mt ${OBJ_PATH}/tool/mt.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-lsb ${OBJ_PATH}/tool/release.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-odbc ${OBJ_PATH}/tool/odbc.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-html ${OBJ_PATH}/tool/html.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-robots ${OBJ_PATH}/tool/robots.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/abcdk-mklicence ${OBJ_PATH}/tool/mklicence.o -l:libabcdk.a $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
@@ -218,17 +122,10 @@ $(OBJ_PATH)/tool/%.o: tool/%.c
 	rm -f $@
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
-test: ${EPOLLEX_TESTNAME} ${UTIL_TESTNAME}
-
-#
-${EPOLLEX_TESTNAME}: ${TEST_OBJ_FILES}
-	rm -f $(BUILD_PATH)/${EPOLLEX_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${EPOLLEX_TESTNAME} ${OBJ_PATH}/test/epollex_test.o -l${UTIL_NAME} $(LINK_FLAGS)
-
-#
-${UTIL_TESTNAME}: ${TEST_OBJ_FILES}
-	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
-	$(CCC) -o $(BUILD_PATH)/${UTIL_TESTNAME} ${OBJ_PATH}/test/util_test.o -l${AUTH_NAME} -l${MP4_NAME} -l${UTIL_NAME}  $(LINK_FLAGS)
+test: ${TEST_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	$(CCC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CCC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so  $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
@@ -237,41 +134,31 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
-clean: clean-util clean-mp4 clean-auth clean-tool clean-test
+clean: clean-lib clean-tool clean-test
 	rm -rf ${OBJ_PATH}
 
 #
-clean-util:
-	rm -f $(BUILD_PATH)/lib${UTIL_NAME}.so
-	rm -f $(BUILD_PATH)/lib${UTIL_NAME}.a
-
-#
-clean-mp4:
-	rm -f $(BUILD_PATH)/lib${MP4_NAME}.so
-	rm -f $(BUILD_PATH)/lib${MP4_NAME}.a
-
-#
-clean-auth:
-	rm -f $(BUILD_PATH)/lib${AUTH_NAME}.so
-	rm -f $(BUILD_PATH)/lib${AUTH_NAME}.a
+clean-lib:
+	rm -f $(BUILD_PATH)/libabcdk.so
+	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
 clean-tool:
-	rm -f $(BUILD_PATH)/${MTX_NAME}
-	rm -f $(BUILD_PATH)/${MT_NAME}
-	rm -f $(BUILD_PATH)/${RELEASE_NAME}
-	rm -f $(BUILD_PATH)/${ODBC_NAME}
-	rm -f $(BUILD_PATH)/${HTML_NAME}
-	rm -f $(BUILD_PATH)/${ROBOTS_NAME}
-	rm -f $(BUILD_PATH)/${HEXDUMP_NAME}
-	rm -f $(BUILD_PATH)/${MP4DUMP_NAME}
-	rm -f $(BUILD_PATH)/${MP4JUICER_NAME}
-	rm -f $(BUILD_PATH)/${MKLICENCE_NAME}
+	rm -f $(BUILD_PATH)/abcdk-mtx
+	rm -f $(BUILD_PATH)/abcdk-mt
+	rm -f $(BUILD_PATH)/abcdk-lsb
+	rm -f $(BUILD_PATH)/abcdk-odbc
+	rm -f $(BUILD_PATH)/abcdk-html
+	rm -f $(BUILD_PATH)/abcdk-robots
+	rm -f $(BUILD_PATH)/abcdk-hexdump
+	rm -f $(BUILD_PATH)/abcdk-mp4dump
+	rm -f $(BUILD_PATH)/abcdk-mp4juicer
+	rm -f $(BUILD_PATH)/abcdk-mklicence
 
 #
 clean-test:
-	rm -f $(BUILD_PATH)/${EPOLLEX_TESTNAME}
-	rm -f $(BUILD_PATH)/${UTIL_TESTNAME}
+	rm -f $(BUILD_PATH)/epollex_test
+	rm -f $(BUILD_PATH)/util_test
 
 #
 INSTALL_PATH_INC = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/include/)
@@ -285,44 +172,30 @@ PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
 PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
-install: install-util install-mp4 install-auth install-tool install-ldc install-pkg
+install: install-lib install-tool install-ldc install-pkg
 
 #
-install-util:
+install-lib:
 	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/lib${UTIL_NAME}.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/lib${UTIL_NAME}.a ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 	mkdir -p ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-util ${INSTALL_PATH_INC}/
-
-#
-install-mp4:
-	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/lib${MP4_NAME}.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/lib${MP4_NAME}.a ${INSTALL_PATH_LIB}/
-	mkdir -p ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-mp4 ${INSTALL_PATH_INC}/
-
-#
-install-auth:
-	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/lib${AUTH_NAME}.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/lib${AUTH_NAME}.a ${INSTALL_PATH_LIB}/
-	mkdir -p ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/${SOLUTION_NAME}-auth ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/abcdk-util ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/abcdk-mp4 ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/abcdk-auth ${INSTALL_PATH_INC}/
 #
 install-tool:
 	mkdir -p ${INSTALL_PATH_BIN}
-	cp -f $(BUILD_PATH)/${MTX_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${MT_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${RELEASE_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${ODBC_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${HTML_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${ROBOTS_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${HEXDUMP_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${MP4DUMP_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${MP4JUICER_NAME} ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/${MKLICENCE_NAME} ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-mtx ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-mt ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-lsb ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-odbc ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-html ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-robots ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-hexdump ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-mp4dump ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-mp4juicer ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-mklicence ${INSTALL_PATH_BIN}/
 
 #
 install-ldc:
@@ -335,7 +208,7 @@ install-ldc:
 	echo "Description: A better c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -l${AUTH_NAME} -l${MP4_NAME} -l${UTIL_NAME} -L\$${libdir}" >> ${PKG_FILE}
+	echo "Libs: -labcdk -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
 
 #
@@ -349,37 +222,27 @@ install-pkg:
 	chmod 755 ${LDC_FILE}
 
 #
-uninstall: uninstall-util uninstall-mp4 uninstall-auth uninstall-tool uninstall-ldc uninstall-pkg
+uninstall: uninstall-lib uninstall-tool uninstall-ldc uninstall-pkg
 
 #
-uninstall-util:
-	rm -f ${INSTALL_PATH_LIB}/lib${UTIL_NAME}.so
-	rm -f ${INSTALL_PATH_LIB}/lib${UTIL_NAME}.a
-	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-util
-
-#
-uninstall-mp4:
-	rm -f ${INSTALL_PATH_LIB}/lib${MP4_NAME}.so
-	rm -f ${INSTALL_PATH_LIB}/lib${MP4_NAME}.a
-	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-mp4
-
-#
-uninstall-auth:
-	rm -f ${INSTALL_PATH_LIB}/lib${AUTH_NAME}.so
-	rm -f ${INSTALL_PATH_LIB}/lib${AUTH_NAME}.a
-	rm -rf ${INSTALL_PATH_INC}/${SOLUTION_NAME}-auth
+uninstall-lib:
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
+	rm -rf ${INSTALL_PATH_INC}/abcdk-util
+	rm -rf ${INSTALL_PATH_INC}/abcdk-mp4
+	rm -rf ${INSTALL_PATH_INC}/abcdk-auth
 #
 uninstall-tool:
-	rm -f $(INSTALL_PATH_BIN)/${MTX_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${MT_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${RELEASE_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${ODBC_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${HTML_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${ROBOTS_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${HEXDUMP_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${MP4DUMP_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${MP4JUICER_NAME}
-	rm -f $(INSTALL_PATH_BIN)/${MKLICENCE_NAME}
+	rm -f $(INSTALL_PATH_BIN)/abcdk-mtx
+	rm -f $(INSTALL_PATH_BIN)/abcdk-mt
+	rm -f $(INSTALL_PATH_BIN)/abcdk-lsb
+	rm -f $(INSTALL_PATH_BIN)/abcdk-odbc
+	rm -f $(INSTALL_PATH_BIN)/abcdk-html
+	rm -f $(INSTALL_PATH_BIN)/abcdk-robots
+	rm -f $(INSTALL_PATH_BIN)/abcdk-hexdump
+	rm -f $(INSTALL_PATH_BIN)/abcdk-mp4dump
+	rm -f $(INSTALL_PATH_BIN)/abcdk-mp4juicer
+	rm -f $(INSTALL_PATH_BIN)/abcdk-mklicence
 
 #
 uninstall-ldc:
