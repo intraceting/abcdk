@@ -1770,7 +1770,7 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk
 
 abcdk_tree_t *abcdk_mp4_read_probe2(int fd, uint64_t offset, uint64_t size, uint32_t stop)
 {
-    abcdk_mp4_tag_t tag = {0};
+    abcdk_mp4_tag_t tag;
 
     assert(fd >= 0 && offset < -1UL && size >= 8);
 

@@ -154,6 +154,8 @@ void* server_loop(void* args)
         }
         
     }
+
+    return NULL;
 }
 
 void test_server(abcdk_tree_t *t)

@@ -40,8 +40,12 @@ void _abcdk_dirent_scan(abcdk_tree_t *father, size_t depth, abcdk_dirent_filter_
     if (!f_dir)
         return;
 
-    while (c_dir = readdir(f_dir))
+    for(;;)
     {
+        c_dir = readdir(f_dir);
+        if(!c_dir)
+            break;
+
         if (abcdk_strcmp(c_dir->d_name, ".", 1) == 0 || abcdk_strcmp(c_dir->d_name, "..", 1) == 0)
             continue;
 
@@ -90,8 +94,12 @@ void _abcdk_dirent_scan(abcdk_tree_t *father, size_t depth, abcdk_dirent_filter_
 
         /* 统计。*/
         tmp = node;
-        while(tmp = abcdk_tree_father(tmp))
+        for(;;)
         {
+            tmp = abcdk_tree_father(tmp);
+            if(!tmp)
+                break;
+
             if (S_ISDIR(c_stat->st_mode))
                 counter_p = ABCDK_PTR2PTR(abcdk_dirent_counter_t,tmp->alloc->pptrs[ABCDK_DIRENT_DIRS], 0);
             else if (S_ISCHR(c_stat->st_mode))

@@ -34,6 +34,10 @@
 
 #ifdef HAVE_LIBNM
 #include <libnm/NetworkManager.h>
+#endif
+
+#ifdef HAVE_MPI
+#include <mpi.h>
 #endif 
 
 void test_log(abcdk_tree_t *args)
@@ -459,6 +463,8 @@ int fuse_release(const char* file, struct fuse_file_info *info)
     int fd = info->fh;
 
     abcdk_closep(&fd);
+
+    return 0;
 }
 
 int fuse_getattr(const char *file, struct stat* attr)
@@ -1449,6 +1455,7 @@ int aac_decode_extradata(adtsctx *adts, unsigned char *pbuf, int bufsize)
     aot = (p[0] >> 3) & 0x1f;
     if (aot == 31)
     {
+        aotext = (p[0]<<3 | (p[1]>>5)) & 0x3f;
         aot = 32 + aotext;
         samfreindex = (p[1] >> 1) & 0x0f;
         if (samfreindex == 0x0f)
@@ -1768,8 +1775,7 @@ void test_netlink(abcdk_tree_t *args)
 }
 
 #ifdef HAVE_LIBNM
-static void
-request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+void request_rescan_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 {
 	NMClient *cli = (NMClient *) user_data;
 	GError *error = NULL;
@@ -2262,6 +2268,27 @@ void test_rs485(abcdk_tree_t *args)
     abcdk_closep(&fd);
 }
 
+void test_mpi(abcdk_tree_t *args)
+{
+    // int argc = 1;
+    // char *argv[1] = {
+    //     abcdk_option_get(args,"--",0,""),
+    // };
+
+    int rank,size;
+
+ //   MPI_Init(&argc, &argv);
+    MPI_Init(NULL,NULL);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    printf("Hello World from thread %d of %d\n", rank, size);
+
+    MPI_Finalize();
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2342,6 +2369,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_rs485", 0) == 0)
         test_rs485(args);
+
+    if (abcdk_strcmp(func, "test_mpi", 0) == 0)
+        test_mpi(args);
 
     abcdk_tree_free(&args);
     

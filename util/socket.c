@@ -150,11 +150,12 @@ final:
 
 char *abcdk_mac_fetch(const char *ifname, char addr[12])
 {
-    struct ifreq args = {0};
+    struct ifreq args;
     int chk;
 
     assert(ifname != NULL && addr != NULL);
 
+    memset(&args,0,sizeof(args));
     strncpy(args.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
 
     chk = abcdk_socket_ioctl(SIOCGIFHWADDR, &args);
@@ -169,11 +170,12 @@ char *abcdk_mac_fetch(const char *ifname, char addr[12])
 
 int abcdk_netlink_fetch(const char *ifname, int *flag)
 {
-    struct ifreq args = {0};
+    struct ifreq args;
     int chk;
 
     assert(ifname != NULL && flag != NULL);
 
+    memset(&args,0,sizeof(args));
     strncpy(args.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
 
     chk = abcdk_socket_ioctl(SIOCGIFFLAGS, &args);
@@ -226,14 +228,16 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
 {
     socklen_t len = sizeof(struct ip_mreq);
     socklen_t len6 = sizeof(struct ipv6_mreq);
-    struct ip_mreq st_mreq = {0};
-    struct ipv6_mreq st_mreq6 = {0};
+    struct ip_mreq st_mreq;
+    struct ipv6_mreq st_mreq6;
     int name;
-    int chk;
+    int chk = -1;
 
     assert(fd >= 0 && multiaddr != NULL);
-
     assert(multiaddr->family == ABCDK_IPV4 || multiaddr->family == ABCDK_IPV6);
+
+    memset(&st_mreq,0,sizeof(st_mreq));
+    memset(&st_mreq6,0,sizeof(st_mreq6));
 
     if(multiaddr->family == ABCDK_IPV4)
     {
@@ -251,7 +255,7 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
 
         name = (enable ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP);
 
-        chk = abcdk_socket_option(fd,IPPROTO_IP,name,&st_mreq,&len,2); 
+        chk = abcdk_socket_option(fd,IPPROTO_IP,name,&st_mreq6,&len,2); 
     }
 
     return chk;
@@ -425,7 +429,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
     abcdk_ifaddrs_t *addrs = NULL;
     abcdk_ifaddrs_t *addr_p = NULL;
     int match_num = 0;
-    int chk;
+    int chk = -1;
 
     assert(test != NULL && (where ==1 || where ==2));
 
@@ -459,4 +463,6 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
         return ((match_num > 0) ? 1 : 0);
     if (where == 2)
         return ((match_num <= 0) ? 1 : 0);
+
+    return 0;
 }

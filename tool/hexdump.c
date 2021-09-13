@@ -135,12 +135,12 @@ void _abcdkhd_work(abcdk_tree_t *args)
         if (!opt.palette)
             goto final;
 
-        opt.palette->pptrs[0] = ABCDK_ANSI_COLOR_RED;
-        opt.palette->pptrs[1] = ABCDK_ANSI_COLOR_GREEN;
-        opt.palette->pptrs[2] = ABCDK_ANSI_COLOR_YELLOW;
-        opt.palette->pptrs[3] = ABCDK_ANSI_COLOR_BLUE;
-        opt.palette->pptrs[4] = ABCDK_ANSI_COLOR_MAGENTA;
-        opt.palette->pptrs[5] = ABCDK_ANSI_COLOR_CYAN;
+        opt.palette->pptrs[0] = (uint8_t*)ABCDK_ANSI_COLOR_RED;
+        opt.palette->pptrs[1] = (uint8_t*)ABCDK_ANSI_COLOR_GREEN;
+        opt.palette->pptrs[2] = (uint8_t*)ABCDK_ANSI_COLOR_YELLOW;
+        opt.palette->pptrs[3] = (uint8_t*)ABCDK_ANSI_COLOR_BLUE;
+        opt.palette->pptrs[4] = (uint8_t*)ABCDK_ANSI_COLOR_MAGENTA;
+        opt.palette->pptrs[5] = (uint8_t*)ABCDK_ANSI_COLOR_CYAN;
     }
     else
     {

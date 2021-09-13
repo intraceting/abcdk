@@ -188,7 +188,7 @@ abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root, abcdk_mp4_tag_t *type,size_t in
 
 abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type,size_t index,int recursive)
 {
-    abcdk_mp4_tag_t tag = {0};
+    abcdk_mp4_tag_t tag;
 
     assert(root != NULL && type != 0 && index > 0);
 

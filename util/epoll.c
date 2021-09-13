@@ -21,10 +21,12 @@ int abcdk_epoll_create()
 int abcdk_epoll_mark(int efd, int fd, const abcdk_epoll_event *event, int first)
 {
     int opt = 0;
-    abcdk_epoll_event mark = {0, 0};
+    abcdk_epoll_event mark;
 
     assert(efd >= 0 && fd >= 0 && event != NULL);
     assert((event->events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_INOOB | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
+
+    memset(&mark,0,sizeof(mark));
 
     /*如果注册事件中包括错误事件，则直接跳转出错流程。*/
     if (event->events & ABCDK_EPOLL_ERROR)

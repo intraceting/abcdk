@@ -146,6 +146,7 @@ int _abcdkm4j_aac_decode_extradata(abcdkm4j_ctx *ctx, unsigned char *pbuf, int b
 
     if (aot == 31)
     {
+        aotext = (p[0]<<3 | (p[1]>>5)) & 0x3f;
         aot = 32 + aotext;
         samfreindex = (p[1] >> 1) & 0x0f;
         if (samfreindex == 0x0f)

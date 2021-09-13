@@ -589,7 +589,7 @@ int abcdk_video_write2(abcdk_video_t *video,int stream_index, AVFrame *fae)
     AVStream *vs_p = NULL;
     AVPacket pkt;
     AVFrame *fae_cp = NULL;
-    int chk;
+    int chk = -1;
 
     assert(video != NULL && stream_index >= 0);
     assert(stream_index < video->ctx->nb_streams);

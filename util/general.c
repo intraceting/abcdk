@@ -1312,27 +1312,27 @@ void *abcdk_cyclic_shift(void *data, size_t size, size_t bits, int direction)
 
     if (direction == 1)
     {
-        m = (0xFF << 8 - bits);
+        m = (0xFF << (8 - bits));
         t = (ABCDK_PTR2U8(data, 0) & m);
         for (size_t i = 0; i < size - 1; i++)
         {
             ABCDK_PTR2U8(data, i) <<= bits;
-            ABCDK_PTR2U8(data, i) |= (ABCDK_PTR2U8(data, i + 1) >> 8 - bits);
+            ABCDK_PTR2U8(data, i) |= (ABCDK_PTR2U8(data, i + 1) >> (8 - bits));
         }
         ABCDK_PTR2U8(data, size - 1) <<= bits;
-        ABCDK_PTR2U8(data, size - 1) |= (t >> 8 - bits);
+        ABCDK_PTR2U8(data, size - 1) |= (t >> (8 - bits));
     }
     else /*if (direction == 2)*/
     {
-        m = (0xFF >> 8 - bits);
+        m = (0xFF >> (8 - bits));
         t = (ABCDK_PTR2U8(data, size - 1) & m);
         for (size_t i = size - 1; i > 0; i--)
         {
             ABCDK_PTR2U8(data, i) >>= bits;
-            ABCDK_PTR2U8(data, i) |= (ABCDK_PTR2U8(data, i - 1) << 8 - bits);
+            ABCDK_PTR2U8(data, i) |= (ABCDK_PTR2U8(data, i - 1) << (8 - bits));
         }
         ABCDK_PTR2U8(data, 0) >>= bits;
-        ABCDK_PTR2U8(data, 0) |= (t << 8 - bits);
+        ABCDK_PTR2U8(data, 0) |= (t << (8 - bits));
     }
 
     return data;

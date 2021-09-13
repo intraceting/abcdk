@@ -322,13 +322,14 @@ int abcdk_tar_write_trailer(abcdk_tar_t *tar, uint8_t stuffing)
 
 int abcdk_tar_read_hdr(abcdk_tar_t *tar, char name[PATH_MAX], struct stat *attr, char linkname[PATH_MAX])
 {
-    abcdk_tar_hdr hdr = {0};
+    abcdk_tar_hdr hdr;
     int namelen = 0;
     int linknamelen = 0;
 
     assert(tar != NULL && name != NULL && attr != NULL && linkname != NULL);
-
     assert(tar->fd >= 0);
+
+    memset(&hdr,0,sizeof(hdr));
 
     /*完整的头部可能由多个组成，因此可能要多次读取多个头部。*/
 
@@ -419,16 +420,16 @@ final_error:
 
 int abcdk_tar_write_hdr(abcdk_tar_t *tar, const char *name, const struct stat *attr, const char *linkname)
 {
-    abcdk_tar_hdr hdr = {0};
+    abcdk_tar_hdr hdr;
     int namelen = 0;
     int linknamelen = 0;
     int chk;
 
     assert(tar != NULL && name != NULL && attr != NULL);
-
-    assert(tar->fd >= 0);
-    assert(name[0] != '\0');
+    assert(tar->fd >= 0 && name[0] != '\0');
     assert(S_ISREG(attr->st_mode) || S_ISDIR(attr->st_mode) || S_ISLNK(attr->st_mode));
+
+    memset(&hdr,0,sizeof(hdr));
 
     /*计算文件名的长度。*/
     namelen = strlen(name);

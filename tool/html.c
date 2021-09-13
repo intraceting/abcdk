@@ -182,6 +182,8 @@ int _abcdkhtml_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
         return 1;
     }
+
+    return 1;
 }
 
 void _abcdkhtml_work(abcdk_tree_t *args)

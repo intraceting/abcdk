@@ -958,6 +958,8 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
         vs->codec->width = ctx->width;
         vs->codec->height = ctx->height;
         break;
+    default:
+        break;
     }
     
     if (ctx->extradata)
@@ -1026,6 +1028,8 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
     case AVMEDIA_TYPE_SUBTITLE:
         ctx->width = vs->codec->width;
         ctx->height = vs->codec->height;
+        break;
+    default:
         break;
     }
 
