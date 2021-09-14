@@ -15,11 +15,13 @@ include ${MAKE_CONF}
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 
 #Compiler
-CCC = gcc
+CC = gcc
+AR = ar
 
 #可能在交叉编译环中。
 ifneq ($(TARGET_PLATFORM),$(HOST_PLATFORM))
-    CCC = $(TARGET_PLATFORM)-linux-gnu-gcc
+CC = $(TARGET_PLATFORM)-linux-gnu-gcc
+AR = $(TARGET_PLATFORM)-linux-gnu-ar
 endif
 
 #Standard
@@ -88,57 +90,57 @@ all: lib tool test
 #
 lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(AUTH_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
-	$(CCC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
-	ar -cr $(BUILD_PATH)/libabcdk.a $^
+	$(CC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
+	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
 	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
-	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
 	rm -f $@
-	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
 $(OBJ_PATH)/auth/%.o: auth/%.c
 	mkdir -p $(OBJ_PATH)/auth/
 	rm -f $@
-	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 
 tool: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CCC) -o $(BUILD_PATH)/abcdk-mtx ${OBJ_PATH}/tool/mtx.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-mt ${OBJ_PATH}/tool/mt.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-lsb ${OBJ_PATH}/tool/release.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-odbc ${OBJ_PATH}/tool/odbc.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-html ${OBJ_PATH}/tool/html.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-robots ${OBJ_PATH}/tool/robots.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/abcdk-mklicence ${OBJ_PATH}/tool/mklicence.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mtx ${OBJ_PATH}/tool/mtx.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mt ${OBJ_PATH}/tool/mt.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-lsb ${OBJ_PATH}/tool/release.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-odbc ${OBJ_PATH}/tool/odbc.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-html ${OBJ_PATH}/tool/html.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-robots ${OBJ_PATH}/tool/robots.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mklicence ${OBJ_PATH}/tool/mklicence.o -l:libabcdk.a $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 test: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CCC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk.so $(LINK_FLAGS)
-	$(CCC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so  $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so  $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CCC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
 
 #
 clean: clean-lib clean-tool clean-test
