@@ -32,6 +32,7 @@ LINK_FLAGS += ${DEPEND_LIBS}
 LINK_FLAGS += -fPIC
 LINK_FLAGS += -Wl,--as-needed 
 LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
+
 #
 CCC_FLAGS += ${DEPEND_FLAGS}
 CCC_FLAGS += -fPIC 
