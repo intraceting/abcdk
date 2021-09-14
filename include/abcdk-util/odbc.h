@@ -11,7 +11,7 @@
 #include "abcdk-util/allocator.h"
 
 #ifdef FREEIMAGE_H
-#error "There is a conflict in the header files of FreeImage and unixODBC, so we can't use 'include' reference directly."
+#error "Unixodbc is incompatible with the header file of FreeImage and cannot be referenced at the same time."
 #endif //FREEIMAGE_H
 
 #ifdef HAVE_UNIXODBC
