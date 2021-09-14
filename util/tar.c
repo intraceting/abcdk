@@ -150,7 +150,7 @@ uint32_t abcdk_tar_get_checksum(abcdk_tar_hdr *hdr)
     assert(hdr != NULL);
 
     /*较验和的字段长度8个字节，但只有6个数字，跟着一个NULL(0)，最后一个是空格。*/
-    if (abcdk_tar_char2num(hdr->chksum, 7, &val) != 0)
+    if (abcdk_tar_char2num(hdr->posix.chksum, 7, &val) != 0)
         return -1;
 
     return val;
@@ -162,7 +162,7 @@ int64_t abcdk_tar_get_size(abcdk_tar_hdr *hdr)
 
     assert(hdr != NULL);
 
-    if (abcdk_tar_char2num(hdr->size, sizeof(hdr->size), &val) != 0)
+    if (abcdk_tar_char2num(hdr->posix.size, sizeof(hdr->posix.size), &val) != 0)
         return -1;
 
     return val;
@@ -174,7 +174,7 @@ time_t abcdk_tar_get_mtime(abcdk_tar_hdr *hdr)
 
     assert(hdr != NULL);
 
-    if (abcdk_tar_char2num(hdr->mtime, sizeof(hdr->mtime), &val) != 0)
+    if (abcdk_tar_char2num(hdr->posix.mtime, sizeof(hdr->posix.mtime), &val) != 0)
         return -1;
 
     return val;
@@ -186,7 +186,7 @@ mode_t abcdk_tar_get_mode(abcdk_tar_hdr *hdr)
 
     assert(hdr != NULL);
 
-    if (abcdk_tar_char2num(hdr->mode, sizeof(hdr->mode), &val) != 0)
+    if (abcdk_tar_char2num(hdr->posix.mode, sizeof(hdr->posix.mode), &val) != 0)
         return -1;
 
     return val;
@@ -198,7 +198,7 @@ uid_t abcdk_tar_get_uid(abcdk_tar_hdr *hdr)
 
     assert(hdr != NULL);
 
-    if (abcdk_tar_char2num(hdr->uid, sizeof(hdr->uid), &val) != 0)
+    if (abcdk_tar_char2num(hdr->posix.uid, sizeof(hdr->posix.uid), &val) != 0)
         return -1;
 
     return val;
@@ -210,7 +210,7 @@ gid_t abcdk_tar_get_gid(abcdk_tar_hdr *hdr)
 
     assert(hdr != NULL);
 
-    if (abcdk_tar_char2num(hdr->gid, sizeof(hdr->gid), &val) != 0)
+    if (abcdk_tar_char2num(hdr->posix.gid, sizeof(hdr->posix.gid), &val) != 0)
         return -1;
 
     return val;
@@ -225,25 +225,25 @@ void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
     assert(name[0] != '\0');
 
     /**/
-    hdr->typeflag = typeflag;
+    hdr->posix.typeflag = typeflag;
 
     /*Max 99 bytes.*/
-    strncpy(hdr->name, name, sizeof(hdr->name) - 1);
+    strncpy(hdr->posix.name, name, sizeof(hdr->posix.name) - 1);
 
     /*Max 99 bytes, may be NULL(0).*/
     if (linkname)
-        strncpy(hdr->linkname, linkname, sizeof(hdr->linkname) - 1);
+        strncpy(hdr->posix.linkname, linkname, sizeof(hdr->posix.linkname) - 1);
 
-    strncpy(hdr->magic, TMAGIC, TMAGLEN);
-    strncpy(hdr->version, TVERSION, TVERSLEN);
+    strncpy(hdr->posix.magic, TMAGIC, TMAGLEN);
+    strncpy(hdr->posix.version, TVERSION, TVERSLEN);
 
-    abcdk_tar_num2char(size, hdr->size, sizeof(hdr->size));
-    abcdk_tar_num2char(time, hdr->mtime, sizeof(hdr->mtime));
-    abcdk_tar_num2char((mode & (S_IRWXU | S_IRWXG | S_IRWXO)), hdr->mode, sizeof(hdr->mode));
+    abcdk_tar_num2char(size, hdr->posix.size, sizeof(hdr->posix.size));
+    abcdk_tar_num2char(time, hdr->posix.mtime, sizeof(hdr->posix.mtime));
+    abcdk_tar_num2char((mode & (S_IRWXU | S_IRWXG | S_IRWXO)), hdr->posix.mode, sizeof(hdr->posix.mode));
 
     /*较验和的字段长度8个字节，但只有6个数字，跟着一个NULL(0)，最后一个是空格。*/
-    memset(hdr->chksum,' ',sizeof(hdr->chksum));
-    abcdk_tar_num2char(abcdk_tar_calc_checksum(hdr), hdr->chksum, 7);
+    memset(hdr->posix.chksum,' ',sizeof(hdr->posix.chksum));
+    abcdk_tar_num2char(abcdk_tar_calc_checksum(hdr), hdr->posix.chksum, 7);
 }
 
 int abcdk_tar_verify(abcdk_tar_hdr *hdr, const char *magic, size_t size)
@@ -253,7 +253,7 @@ int abcdk_tar_verify(abcdk_tar_hdr *hdr, const char *magic, size_t size)
 
     assert(hdr != NULL && magic != NULL && size > 0);
 
-    if (abcdk_strncmp(hdr->magic, magic, size, 1) != 0)
+    if (abcdk_strncmp(hdr->posix.magic, magic, size, 1) != 0)
         return 0;
 
     old_sum = abcdk_tar_get_checksum(hdr);
@@ -341,11 +341,11 @@ again:
     if (!abcdk_tar_verify(&hdr, TMAGIC, TMAGLEN))
         goto final_error;
 
-    if (hdr.typeflag == ABCDK_USTAR_LONGLINK_TYPE)
+    if (hdr.posix.typeflag == ABCDK_USTAR_LONGLINK_TYPE)
     {
         /*长链接名需要特殊处理。*/
 
-        if (abcdk_strncmp(hdr.name, ABCDK_USTAR_LONGNAME_MAGIC, ABCDK_USTAR_LONGNAME_MAGIC_LEN - 1, 1) != 0)
+        if (abcdk_strncmp(hdr.posix.name, ABCDK_USTAR_LONGNAME_MAGIC, ABCDK_USTAR_LONGNAME_MAGIC_LEN - 1, 1) != 0)
             goto final_error;
 
         linknamelen = abcdk_tar_get_size(&hdr);
@@ -361,11 +361,11 @@ again:
         /*头部信息还不完整，继续读取。*/
         goto again;
     }
-    else if (hdr.typeflag == ABCDK_USTAR_LONGNAME_TYPE)
+    else if (hdr.posix.typeflag == ABCDK_USTAR_LONGNAME_TYPE)
     {
         /*长文件名需要特殊处理。*/
 
-        if (abcdk_strncmp(hdr.name, ABCDK_USTAR_LONGNAME_MAGIC, ABCDK_USTAR_LONGNAME_MAGIC_LEN - 1, 1) != 0)
+        if (abcdk_strncmp(hdr.posix.name, ABCDK_USTAR_LONGNAME_MAGIC, ABCDK_USTAR_LONGNAME_MAGIC_LEN - 1, 1) != 0)
             goto final_error;
 
         namelen = abcdk_tar_get_size(&hdr);
@@ -383,17 +383,17 @@ again:
     }
     else
     {
-        if (REGTYPE == hdr.typeflag || AREGTYPE == hdr.typeflag)
+        if (REGTYPE == hdr.posix.typeflag || AREGTYPE == hdr.posix.typeflag)
             attr->st_mode = __S_IFREG;
-        else if (SYMTYPE == hdr.typeflag)
+        else if (SYMTYPE == hdr.posix.typeflag)
             attr->st_mode = __S_IFLNK;
-        else if (DIRTYPE == hdr.typeflag)
+        else if (DIRTYPE == hdr.posix.typeflag)
             attr->st_mode = __S_IFDIR;
-        else if (CHRTYPE == hdr.typeflag)
+        else if (CHRTYPE == hdr.posix.typeflag)
             attr->st_mode = __S_IFCHR;
-        else if (BLKTYPE == hdr.typeflag)
+        else if (BLKTYPE == hdr.posix.typeflag)
             attr->st_mode = __S_IFBLK;
-        else if (FIFOTYPE == hdr.typeflag)
+        else if (FIFOTYPE == hdr.posix.typeflag)
             attr->st_mode = __S_IFIFO;
         else
             goto final_error;
@@ -406,9 +406,9 @@ again:
         attr->st_uid = abcdk_tar_get_uid(&hdr);
 
         if (namelen <= 100)
-            strncpy(name, hdr.name,sizeof(hdr.name));
+            strncpy(name, hdr.posix.name,sizeof(hdr.posix.name));
         if (linknamelen <= 100)
-            strncpy(linkname, hdr.linkname,sizeof(hdr.linkname));
+            strncpy(linkname, hdr.posix.linkname,sizeof(hdr.posix.linkname));
     }
 
     return 0;
