@@ -29,11 +29,13 @@ CCC_STD = -std=c11
 
 #
 LINK_FLAGS += ${DEPEND_LIBS}
-LINK_FLAGS += -Wl,--as-needed -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
-
+LINK_FLAGS += -fPIC
+LINK_FLAGS += -Wl,--as-needed 
+LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 #
 CCC_FLAGS += ${DEPEND_FLAGS}
 CCC_FLAGS += -fPIC 
+CCC_FLAGS += -Wl,--as-needed 
 CCC_FLAGS += -Wno-unused-result 
 CCC_FLAGS += -Wno-unused-variable 
 CCC_FLAGS += -Wno-pointer-sign 

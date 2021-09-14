@@ -2270,6 +2270,8 @@ void test_rs485(abcdk_tree_t *args)
 
 void test_mpi(abcdk_tree_t *args)
 {
+
+#ifdef  HAVE_MPI
     // int argc = 1;
     // char *argv[1] = {
     //     abcdk_option_get(args,"--",0,""),
@@ -2287,6 +2289,8 @@ void test_mpi(abcdk_tree_t *args)
     printf("Hello World from thread %d of %d\n", rank, size);
 
     MPI_Finalize();
+
+#endif 
 }
 
 int main(int argc, char **argv)

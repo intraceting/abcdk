@@ -10,8 +10,10 @@
 #include "abcdk-util/defs.h"
 #include "abcdk-util/atomic.h"
 
-#if defined(HAVE_OPENMP) && defined(_OPENMP)
+#ifdef HAVE_OPENMP
+#ifdef _OPENMP
 #include <omp.h>
+#endif //_OPENMP
 #endif //HAVE_OPENMP
 
 __BEGIN_DECLS
