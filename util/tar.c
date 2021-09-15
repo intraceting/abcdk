@@ -323,7 +323,7 @@ int abcdk_tar_write_trailer(abcdk_tar_t *tar, uint8_t stuffing)
 int abcdk_tar_read_hdr(abcdk_tar_t *tar, char name[PATH_MAX], struct stat *attr, char linkname[PATH_MAX])
 {
     abcdk_tar_hdr hdr;
-    int namelen = 0;
+    int longnamelen = 0;
     int linknamelen = 0;
 
     assert(tar != NULL && name != NULL && attr != NULL && linkname != NULL);
@@ -368,14 +368,14 @@ again:
         if (abcdk_strncmp(hdr.posix.name, ABCDK_USTAR_LONGNAME_MAGIC, ABCDK_USTAR_LONGNAME_MAGIC_LEN - 1, 1) != 0)
             goto final_error;
 
-        namelen = abcdk_tar_get_size(&hdr);
-        if (namelen <= 0)
+        longnamelen = abcdk_tar_get_size(&hdr);
+        if (longnamelen <= 0)
             goto final_error;
 
-        if (abcdk_tar_read(tar, name, namelen) != namelen)
+        if (abcdk_tar_read(tar, name, longnamelen) != longnamelen)
             goto final_error;
 
-        if (abcdk_tar_read_align(tar, namelen) != 0)
+        if (abcdk_tar_read_align(tar, longnamelen) != 0)
             goto final_error;
 
         /*头部信息还不完整，继续读取。*/
@@ -405,9 +405,19 @@ again:
         attr->st_gid = abcdk_tar_get_gid(&hdr);
         attr->st_uid = abcdk_tar_get_uid(&hdr);
 
-        if (namelen <= 100)
-            strncpy(name, hdr.posix.name,sizeof(hdr.posix.name));
-        if (linknamelen <= 100)
+        if (longnamelen <= 0)
+        {
+            /*name字段的前缀路径，见：POSIX.1-1996 section 10.1.1.*/
+            if (hdr.posix.prefix[0])
+            {
+                strncpy(name, hdr.posix.prefix, sizeof(hdr.posix.prefix));
+                abcdk_dirdir(name, "/");
+            }
+
+            strncpy(name + strlen(name), hdr.posix.name, sizeof(hdr.posix.name));
+        }
+
+        if (linknamelen <= 0)
             strncpy(linkname, hdr.posix.linkname,sizeof(hdr.posix.linkname));
     }
 
