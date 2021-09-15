@@ -64,7 +64,7 @@ void _abcdk_dirent_scan(abcdk_tree_t *father, size_t depth, abcdk_dirent_filter_
         abcdk_dirdir(c_path, f_path);
         abcdk_dirdir(c_path, c_dir->d_name);
 
-        /*node->d_type 在有些文件系统中并未正确填写有效值，因此不能直接使用，这里用替待方案。 */
+        /*node->d_type 在某些文件系统中并未正确填写有效值，因此不能直接使用，这里用替待方案。 */
         if (lstat(c_path, c_stat) == -1)
         {
             abcdk_tree_free(&node);
