@@ -20,12 +20,12 @@ __BEGIN_DECLS
 typedef struct _abcdk_epollex abcdk_epollex_t;
 
 /**
- * 销毁多路复用器环境。
+ * 销毁环境。
 */
 void abcdk_epollex_free(abcdk_epollex_t **ctx);
 
 /**
- * 创建多路复用器环境。
+ * 创建环境。
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
