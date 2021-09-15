@@ -48,7 +48,34 @@ typedef union _abcdk_tar_hdr
         char devmajor[8];       /* 329 */
         char devminor[8];       /* 337 */
         char prefix[155];       /* 345 */
+                                /* 500 */
     } posix;
+
+    /**
+     * ustar header.
+    */
+    struct
+    {
+        char name[100];         /*   0 */
+        char mode[8];           /* 100 */
+        char uid[8];            /* 108 */
+        char gid[8];            /* 116 */
+        char size[12];          /* 124 */
+        char mtime[12];         /* 136 */
+        char chksum[8];         /* 148 */
+        char typeflag;          /* 156 */
+        char linkname[100];     /* 157 */
+        char magic[TMAGLEN];    /* 257 */
+        char version[TVERSLEN]; /* 263 */
+        char uname[32];         /* 265 */
+        char gname[32];         /* 297 */
+        char devmajor[8];       /* 329 */
+        char devminor[8];       /* 337 */
+        char prefix[131];       /* 345 */
+        char atime[12];         /* 476 */
+        char ctime[12];         /* 488 */
+                                /* 500 */
+    } ustar;
 
 } __attribute__((packed)) abcdk_tar_hdr;
 
@@ -140,8 +167,8 @@ gid_t abcdk_tar_get_gid(abcdk_tar_hdr *hdr);
 /** 
  * 填充TAR头部的字段。
  * 
- * @param name 文件名(包括路径)。including NULL byte。
- * @param linkname 链接名。including NULL byte。
+ * @param name 文件名(包括路径)。长度包括NULL(0)结束符。
+ * @param linkname 链接名。长度包括NULL(0)结束符。
 */
 void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
                    const char name[100], const char linkname[100],
