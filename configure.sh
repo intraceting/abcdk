@@ -124,6 +124,8 @@ CheckHavePackage()
             NAMES="libnm-dev"
         elif [ "${PACKAGE}" == "mpi" ];then
             NAMES="libmpich-dev"
+        elif [ "${PACKAGE}" == "lz4" ];then
+            NAMES="liblz4-dev"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -151,6 +153,8 @@ CheckHavePackage()
             NAMES="NetworkManager-libnm-devel"
         elif [ "${PACKAGE}" == "mpi" ];then
             NAMES="mpich-3.2-devel"
+        elif [ "${PACKAGE}" == "lz4" ];then
+            NAMES="liblz4-devel"
         fi
     }
     fi 
@@ -196,6 +200,8 @@ GetDependFlags()
             echo "$(pkg-config --cflags libnm)"
         elif [ "${PACKAGE}" == "mpi" ];then
             echo "$(pkg-config --cflags mpi)"
+        elif [ "${PACKAGE}" == "lz4" ];then
+            echo "$(pkg-config --cflags liblz4)"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -221,6 +227,8 @@ GetDependFlags()
             export PKG_CONFIG_PATH=/usr/lib64/mpich-3.2/lib/pkgconfig
             echo "$(pkg-config --cflags mpich)"
         }
+        elif [ "${PACKAGE}" == "lz4" ];then
+            echo "$(pkg-config --cflags liblz4)"
         fi
     }
     fi 
@@ -257,6 +265,8 @@ GetDependLibs()
             echo "$(pkg-config --libs libnm)"
         elif [ "${PACKAGE}" == "mpi" ];then
             echo "$(pkg-config --libs mpi)"
+        elif [ "${PACKAGE}" == "lz4" ];then
+            echo "$(pkg-config --libs liblz4)"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -282,6 +292,8 @@ GetDependLibs()
             export PKG_CONFIG_PATH=/usr/lib64/mpich-3.2/lib/pkgconfig
             echo "$(pkg-config --libs mpich)"
         }
+        elif [ "${PACKAGE}" == "lz4" ];then
+            echo "$(pkg-config --libs liblz4)"
         fi
     }
     fi 
@@ -347,7 +359,7 @@ PrintUsage()
     echo -e "\n\t-i < PATH >"
     echo -e "\t\t安装路径。默认：${INSTALL_PREFIX}"
     echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-libnm,have-mpi"
+    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-libnm,have-mpi,have-lz4"
 }
 
 #
@@ -560,6 +572,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-mpi") -eq 1 ];then
 }
 fi
 
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-lz4") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} lz4)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_LZ4="Yes"
+        DEPEND_FLAGS=" -DHAVE_LZ4 $(GetDependFlags ${KIT_NAME} lz4) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(GetDependLibs ${KIT_NAME} lz4) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "lz4 kit not found."
+        exit 22
+    }
+    fi
+}
+fi
+
 #
 mkdir -p ${BUILD_PATH}
 
@@ -615,6 +647,7 @@ echo "HAVE_FREEIMAGE=${HAVE_FREEIMAGE}"
 echo "HAVE_FUSE=${HAVE_FUSE}"
 echo "HAVE_LIBNM=${HAVE_LIBNM}"
 echo "HAVE_MPI=${HAVE_MPI}"
+echo "HAVE_LZ4=${HAVE_LZ4}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"

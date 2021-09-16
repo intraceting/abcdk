@@ -40,6 +40,10 @@
 #include <mpi.h>
 #endif 
 
+#ifdef HAVE_LZ4
+#include <lz4.h>
+#endif
+
 void test_log(abcdk_tree_t *args)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2293,6 +2297,36 @@ void test_mpi(abcdk_tree_t *args)
 #endif 
 }
 
+void test_lz4(abcdk_tree_t *args)
+{
+#ifdef  HAVE_LZ4
+
+    const char *src = abcdk_option_get(args,"--src",0,"");
+    const char *dst = abcdk_option_get(args,"--dst",0,"");
+
+    abcdk_allocator_t *s = abcdk_mmap2(src,0,0);
+
+    size_t dsize = abcdk_endian_b_to_h32(ABCDK_PTR2U32(s->pptrs[0],0));
+
+    abcdk_allocator_t *d = abcdk_allocator_alloc2(dsize);
+
+    LZ4_decompress_fast(s->pptrs[0]+4,d->pptrs[0],dsize);
+
+    //LZ4_decompress_safe(s->pptrs[0],d->pptrs[0],s->sizes[0],dst);
+    //printf("%s\n",d->pptrs[0]);
+
+    int fd = abcdk_open(dst,1,0,1);
+    ftruncate(fd,0);
+    abcdk_write(fd,d->pptrs[0],dsize);
+    abcdk_closep(&fd);
+
+    abcdk_allocator_unref(&s);
+    abcdk_allocator_unref(&d);
+
+
+#endif 
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2376,6 +2410,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_mpi", 0) == 0)
         test_mpi(args);
+
+    if (abcdk_strcmp(func, "test_lz4", 0) == 0)
+        test_lz4(args);
 
     abcdk_tree_free(&args);
     
