@@ -154,7 +154,7 @@ CheckHavePackage()
         elif [ "${PACKAGE}" == "mpi" ];then
             NAMES="mpich-3.2-devel"
         elif [ "${PACKAGE}" == "lz4" ];then
-            NAMES="liblz4-devel"
+            NAMES="lz4-devel"
         fi
     }
     fi 
