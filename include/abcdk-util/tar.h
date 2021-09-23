@@ -171,8 +171,8 @@ gid_t abcdk_tar_get_gid(abcdk_tar_hdr *hdr);
  * @param linkname 链接名。长度包括NULL(0)结束符。
 */
 void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
-                   const char name[100], const char linkname[100],
-                   int64_t size, time_t time, mode_t mode);
+                    const char name[100], const char linkname[100],
+                    int64_t size, time_t mtime, mode_t mode);
 
 /**
  * 较验TAR头部的较验和是否一致。

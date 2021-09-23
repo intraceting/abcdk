@@ -218,7 +218,7 @@ gid_t abcdk_tar_get_gid(abcdk_tar_hdr *hdr)
 
 void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
                    const char name[100], const char linkname[100],
-                   int64_t size, time_t time, mode_t mode)
+                   int64_t size, time_t mtime, mode_t mode)
 {
     assert(hdr != NULL && name != NULL);
     assert(size >= 0);
@@ -238,7 +238,7 @@ void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
     strncpy(hdr->posix.version, TVERSION, TVERSLEN);
 
     abcdk_tar_num2char(size, hdr->posix.size, sizeof(hdr->posix.size));
-    abcdk_tar_num2char(time, hdr->posix.mtime, sizeof(hdr->posix.mtime));
+    abcdk_tar_num2char(mtime, hdr->posix.mtime, sizeof(hdr->posix.mtime));
     abcdk_tar_num2char((mode & (S_IRWXU | S_IRWXG | S_IRWXO)), hdr->posix.mode, sizeof(hdr->posix.mode));
 
     /*较验和的字段长度8个字节，但只有6个数字，跟着一个NULL(0)，最后一个是空格。*/
