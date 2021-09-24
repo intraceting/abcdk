@@ -154,7 +154,7 @@ CheckHavePackage()
         elif [ "${PACKAGE}" == "libnm" ];then
             NAMES="NetworkManager-libnm-devel"
         elif [ "${PACKAGE}" == "mpi" ];then
-            NAMES="mpich-3.2-devel"
+            NAMES="mpich-devel"
         elif [ "${PACKAGE}" == "lz4" ];then
             NAMES="lz4-devel"
         elif [ "${PACKAGE}" == "zlib" ];then
@@ -230,7 +230,7 @@ GetDependFlags()
             echo "$(pkg-config --cflags libnm)"
         elif [ "${PACKAGE}" == "mpi" ];then
         {
-            export PKG_CONFIG_PATH=/usr/lib64/mpich-3.2/lib/pkgconfig
+            export PKG_CONFIG_PATH=/usr/lib64/mpich/lib/pkgconfig
             echo "$(pkg-config --cflags mpich)"
         }
         elif [ "${PACKAGE}" == "lz4" ];then
@@ -299,7 +299,7 @@ GetDependLibs()
             echo "$(pkg-config --libs libnm)"
         elif [ "${PACKAGE}" == "mpi" ];then
         {
-            export PKG_CONFIG_PATH=/usr/lib64/mpich-3.2/lib/pkgconfig
+            export PKG_CONFIG_PATH=/usr/lib64/mpich/lib/pkgconfig
             echo "$(pkg-config --libs mpich)"
         }
         elif [ "${PACKAGE}" == "lz4" ];then
