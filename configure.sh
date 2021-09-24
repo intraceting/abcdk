@@ -126,6 +126,8 @@ CheckHavePackage()
             NAMES="libmpich-dev"
         elif [ "${PACKAGE}" == "lz4" ];then
             NAMES="liblz4-dev"
+        elif [ "${PACKAGE}" == "zlib" ];then
+            NAMES="zlib1g-dev"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -155,6 +157,8 @@ CheckHavePackage()
             NAMES="mpich-3.2-devel"
         elif [ "${PACKAGE}" == "lz4" ];then
             NAMES="lz4-devel"
+        elif [ "${PACKAGE}" == "zlib" ];then
+            NAMES="zlib-devel"
         fi
     }
     fi 
@@ -202,6 +206,8 @@ GetDependFlags()
             echo "$(pkg-config --cflags mpi)"
         elif [ "${PACKAGE}" == "lz4" ];then
             echo "$(pkg-config --cflags liblz4)"
+        elif [ "${PACKAGE}" == "zlib" ];then
+            echo "$(pkg-config --cflags zlib)"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -229,6 +235,8 @@ GetDependFlags()
         }
         elif [ "${PACKAGE}" == "lz4" ];then
             echo "$(pkg-config --cflags liblz4)"
+        elif [ "${PACKAGE}" == "zlib" ];then
+            echo "$(pkg-config --cflags zlib)"
         fi
     }
     fi 
@@ -267,6 +275,8 @@ GetDependLibs()
             echo "$(pkg-config --libs mpi)"
         elif [ "${PACKAGE}" == "lz4" ];then
             echo "$(pkg-config --libs liblz4)"
+        elif [ "${PACKAGE}" == "zlib" ];then
+            echo "$(pkg-config --libs zlib)"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -294,6 +304,8 @@ GetDependLibs()
         }
         elif [ "${PACKAGE}" == "lz4" ];then
             echo "$(pkg-config --libs liblz4)"
+        elif [ "${PACKAGE}" == "zlib" ];then
+            echo "$(pkg-config --libs zlib)"
         fi
     }
     fi 
@@ -359,7 +371,7 @@ PrintUsage()
     echo -e "\n\t-i < PATH >"
     echo -e "\t\t安装路径。默认：${INSTALL_PREFIX}"
     echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-libnm,have-mpi,have-lz4"
+    echo -e "\t\t依赖项目。关键字：have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg,have-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib"
 }
 
 #
@@ -592,6 +604,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-lz4") -eq 1 ];then
 }
 fi
 
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-zlib") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} zlib)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_ZLIB="Yes"
+        DEPEND_FLAGS=" -DHAVE_ZLIB $(GetDependFlags ${KIT_NAME} zlib) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(GetDependLibs ${KIT_NAME} zlib) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "zlib kit not found."
+        exit 22
+    }
+    fi
+}
+fi
+
 #
 mkdir -p ${BUILD_PATH}
 
@@ -648,6 +680,7 @@ echo "HAVE_FUSE=${HAVE_FUSE}"
 echo "HAVE_LIBNM=${HAVE_LIBNM}"
 echo "HAVE_MPI=${HAVE_MPI}"
 echo "HAVE_LZ4=${HAVE_LZ4}"
+echo "HAVE_ZLIB=${HAVE_ZLIB}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
