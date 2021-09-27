@@ -23,6 +23,7 @@
 #include "abcdk-util/dirent.h"
 #include "abcdk-util/socket.h"
 #include "abcdk-util/hexdump.h"
+#include "abcdk-util/termios.h"
 #include "abcdk-mp4/demuxer.h"
 #include "abcdk-util/video.h"
 #include "abcdk-auth/auth.h"
@@ -2215,24 +2216,166 @@ void test_auth(abcdk_tree_t *args)
     abcdk_tree_free(&auth);
 }
 
+/**@brief   设置串口参数：波特率，数据位，停止位和效验位
+ * @param[in]  fd         类型  int      打开的串口文件句柄
+ * @param[in]  nSpeed     类型  int     波特率
+ * @param[in]  nBits     类型  int     数据位   取值 为 7 或者8
+ * @param[in]  nParity     类型  int     停止位   取值为 1 或者2
+ * @param[in]  nStop      类型  int      效验类型 取值为N,E,O,,S
+ * @return     返回设置结果
+ * - 0         设置成功
+ * - -1     设置失败
+ */
+int setOpt(int fd, int nSpeed, int nBits, int nParity, int nStop)
+{
+    struct termios newtio, oldtio;
+
+    // 保存测试现有串口参数设置，在这里如果串口号等出错，会有相关的出错信息
+    if (tcgetattr(fd, &oldtio) != 0)
+    {
+        perror("SetupSerial 1");
+        return -1;
+    }
+
+    bzero(&newtio, sizeof(newtio));        //新termios参数清零
+    newtio.c_cflag |= CLOCAL | CREAD;    //CLOCAL--忽略 modem 控制线,本地连线, 不具数据机控制功能, CREAD--使能接收标志
+    // 设置数据位数
+    newtio.c_cflag &= ~CSIZE;    //清数据位标志
+    switch (nBits)
+    {
+        case 7:
+            newtio.c_cflag |= CS7;
+        break;
+        case 8:
+            newtio.c_cflag |= CS8;
+        break;
+        default:
+            fprintf(stderr, "Unsupported data size\n");
+            return -1;
+    }
+    // 设置校验位
+    switch (nParity)
+    {
+        case 'o':
+        case 'O':                     //奇校验
+            newtio.c_cflag |= PARENB;
+            newtio.c_cflag |= PARODD;
+            newtio.c_iflag |= (INPCK | ISTRIP);
+            break;
+        case 'e':
+        case 'E':                     //偶校验
+            newtio.c_iflag |= (INPCK | ISTRIP);
+            newtio.c_cflag |= PARENB;
+            newtio.c_cflag &= ~PARODD;
+            break;
+        case 'n':
+        case 'N':                    //无校验
+            newtio.c_cflag &= ~PARENB;
+            break;
+        default:
+            fprintf(stderr, "Unsupported parity\n");
+            return -1;
+    }
+    // 设置停止位
+    switch (nStop)
+    {
+        case 1:
+            newtio.c_cflag &= ~CSTOPB;
+        break;
+        case 2:
+            newtio.c_cflag |= CSTOPB;
+        break;
+        default:
+            fprintf(stderr,"Unsupported stop bits\n");
+            return -1;
+    }
+    // 设置波特率 2400/4800/9600/19200/38400/57600/115200/230400
+    switch (nSpeed)
+    {
+        case 2400:
+            cfsetispeed(&newtio, B2400);
+            cfsetospeed(&newtio, B2400);
+            break;
+        case 4800:
+            cfsetispeed(&newtio, B4800);
+            cfsetospeed(&newtio, B4800);
+            break;
+        case 9600:
+            cfsetispeed(&newtio, B9600);
+            cfsetospeed(&newtio, B9600);
+            break;
+        case 19200:
+            cfsetispeed(&newtio, B19200);
+            cfsetospeed(&newtio, B19200);
+            break;
+        case 38400:
+            cfsetispeed(&newtio, B38400);
+            cfsetospeed(&newtio, B38400);
+            break;
+        case 57600:
+            cfsetispeed(&newtio, B57600);
+            cfsetospeed(&newtio, B57600);
+            break;
+        case 115200:
+            cfsetispeed(&newtio, B115200);
+            cfsetospeed(&newtio, B115200);
+            break;
+        case 230400:
+            cfsetispeed(&newtio, B230400);
+            cfsetospeed(&newtio, B230400);
+            break;
+        default:
+            printf("\tSorry, Unsupported baud rate, set default 9600!\n\n");
+            cfsetispeed(&newtio, B9600);
+            cfsetospeed(&newtio, B9600);
+            break;
+    }
+    // 设置read读取最小字节数和超时时间
+    newtio.c_cc[VTIME] = 1;     // 读取一个字符等待1*(1/10)s
+    newtio.c_cc[VMIN] = 1;        // 读取字符的最少个数为1
+
+      tcflush(fd,TCIFLUSH);         //清空缓冲区
+      if (tcsetattr(fd, TCSANOW, &newtio) != 0)    //激活新设置
+      {
+        perror("SetupSerial 3");
+          return -1;
+     }
+      printf("Serial set done!\n");
+    return 0;
+}
+
 void test_rs485(abcdk_tree_t *args)
 {
     const char *port = abcdk_option_get(args,"--port",0,"");
 
-    int fd = open(port,O_RDWR);
+    int fd = open(port,O_RDWR|O_NOCTTY);
+
 
  //   assert(isatty(fd)==0);
 
+#if 0
     struct termios opt = {0};
 
     int chk = tcgetattr(fd,&opt);
     
-    tcflush(fd, TCIOFLUSH);
+   // tcflush(fd, TCIOFLUSH);
     cfsetispeed(&opt,B9600);
+    cfsetospeed(&opt,B9600);
+    
+    opt.c_cflag |=(CLOCAL|CREAD);
+    opt.c_cflag &= ~PARENB; 
+    opt.c_cflag &= ~CSTOPB; 
+    opt.c_cflag &= ~CSIZE; 
+    opt.c_cflag |= ~CS8;
+    opt.c_cc[VTIME] = 0;
+    opt.c_cc[VMIN] = 0;
+
+    tcflush(fd,TCIOFLUSH);  
+
     //cfsetispeed(&opt,B4800);
     assert(tcsetattr(fd,TCSANOW,&opt)==0);
 
-    tcflush(fd,TCIOFLUSH);  
+
 
     struct serial_rs485 conf = {0};
 
@@ -2240,14 +2383,18 @@ void test_rs485(abcdk_tree_t *args)
    // conf.flags |= SER_RS485_RX_DURING_TX;
 
    // assert(ioctl(fd,TIOCSRS485,&conf)==0);
+#else 
+    //assert(setOpt(fd, 9600, 8, 'N', 1)== 0);
 
+    assert(abcdk_tcattr_serial(fd, 9600, 8, 'N', 1,NULL)== 0);
+#endif 
     uint64_t s = 0,s1 = 0,s2 = 0;
     char buf1[18]={0};
     char buf2[18]={0};
     for(int i = 0;i<999999999;i++)
     {
 
-        int chk = abcdk_poll(fd,0x01,1000);
+        int chk = abcdk_poll(fd,0x01,-1);
         assert(chk>0);
 
         abcdk_read(fd,buf1,17);
@@ -2258,11 +2405,11 @@ void test_rs485(abcdk_tree_t *args)
         if(memcmp(buf1,buf2,17)!=0)
         {
             memcpy(buf2,buf1,17);
-            printf("[%d]: %s",i,buf2);
+            printf("1 [%d]: %s\n",i,buf2);
         }
         else if(s2 >= 1000000)
         {
-            printf("[%d]: %s",i,buf1);
+            printf("2 [%d]: %s\n",i,buf1);
             s2= 0;
         }
 
