@@ -106,14 +106,17 @@ CheckHavePackage()
     FLAG="$3"
 
     #
+    SYS_VERID=$(GetSystemVersion)
+
+    #
 	if [ "deb" == "${KIT_NAME}" ];then 
 	{  
         if [ "${PKG_NAME}" == "pkgconfig" ];then
         {
             if [ ${FLAG} -eq 1 ];then
                 echo "$(CheckHavePackageFromWhich ${KIT_NAME} pkg-config)"
-            else
-                echo ""
+            else 
+                echo "pkg-config"
             fi
         } 
         elif [ "${PKG_NAME}" == "openmp" ];then
@@ -124,6 +127,8 @@ CheckHavePackage()
                 echo "-fopenmp"
             elif [ ${FLAG} -eq 3 ];then
                 echo "-fopenmp"
+            else
+                echo "libomp-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "unixodbc" ];then
@@ -134,6 +139,8 @@ CheckHavePackage()
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lodbc"
+            else
+                echo "unixodbc-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "sqlite" ];then
@@ -144,6 +151,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags sqlite3)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs sqlite3)"
+            else
+                echo "libsqlite3-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "openssl" ];then
@@ -154,6 +163,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags openssl)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs openssl)"
+            else
+                echo "libssl-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "ffmpeg" ];then
@@ -164,6 +175,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+            else
+                echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "freeimage" ];then
@@ -174,6 +187,8 @@ CheckHavePackage()
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lfreeimage"
+            else
+                echo "libfreeimage-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "fuse" ];then
@@ -184,6 +199,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags fuse)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs fuse)"
+            else
+                echo "libfuse-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "libnm" ];then
@@ -194,6 +211,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libnm)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libnm)"
+            else
+                echo "libnm-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "mpi" ];then
@@ -204,6 +223,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags mpi)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs mpi)"
+            else
+                echo "libmpich-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "lz4" ];then
@@ -214,6 +235,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags liblz4)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs liblz4)"
+            else
+                echo "liblz4-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "zlib" ];then
@@ -224,8 +247,24 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags zlib)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs zlib)"
+            else
+                echo "zlib1g-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "archive" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libarchive-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libarchive)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libarchive)"
+            else
+                echo "libarchive-dev"
+            fi
+        }
+        else
+            echo "1"
         fi
     }
 	elif [ "rpm" == "${KIT_NAME}" ];then
@@ -235,7 +274,7 @@ CheckHavePackage()
             if [ ${FLAG} -eq 1 ];then
                 echo "$(CheckHavePackageFromWhich ${KIT_NAME} pkg-config)"
             else
-                echo ""
+                echo "pkgconfig"
             fi
         }
         elif [ "${PKG_NAME}" == "openmp" ];then
@@ -246,6 +285,8 @@ CheckHavePackage()
                 echo "-fopenmp"
             elif [ ${FLAG} -eq 3 ];then
                 echo "-fopenmp"
+            else
+                echo "gcc"
             fi
         }
         elif [ "${PKG_NAME}" == "unixodbc" ];then
@@ -256,6 +297,8 @@ CheckHavePackage()
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lodbc"
+            else
+                echo "unixODBC-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "sqlite" ];then
@@ -266,6 +309,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags sqlite3)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs sqlite3)"
+            else
+                echo "sqlite-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "openssl" ];then
@@ -276,6 +321,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags openssl)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs openssl)"
+            else
+                echo "openssl-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "ffmpeg" ];then
@@ -286,6 +333,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+            else
+                echo "ffmpeg-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "freeimage" ];then
@@ -296,6 +345,8 @@ CheckHavePackage()
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lfreeimage"
+            else
+                echo "freeimage-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "fuse" ];then
@@ -306,6 +357,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags fuse)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs fuse)"
+            else
+                echo "fuse-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "libnm" ];then
@@ -316,16 +369,16 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libnm)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libnm)"
+            else
+                echo "NetworkManager-libnm-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "mpi" ];then
         {
-            
             if [ ${FLAG} -eq 1 ];then
             {
-                SYS_VERID=$(GetSystemVersion)
                 if [ ${SYS_VERID} -lt 8 ];then
-                    PKG_SATUS="$(CheckHavePackageFromKit ${KIT_NAME} mpich-3.0-devel mpich-3.2-devel)"
+                    PKG_SATUS="$(CheckHavePackageFromKit ${KIT_NAME} mpich-3.2-devel)"
                 else 
                     PKG_SATUS="$(CheckHavePackageFromKit ${KIT_NAME} mpich-devel)"
                 fi 
@@ -333,7 +386,7 @@ CheckHavePackage()
                 if [ ${PKG_SATUS} -eq 0 ];then
                 {
                     if [ ${SYS_VERID} -lt 8 ];then
-                        export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich-3.0/lib/pkgconfig:/usr/lib64/mpich-3.2/lib/pkgconfig
+                        export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich-3.2/lib/pkgconfig
                     else 
                         export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich/lib/pkgconfig
                     fi
@@ -345,6 +398,14 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags mpich)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs mpich)"
+            else
+            {
+                if [ ${SYS_VERID} -lt 8 ];then
+                    echo "mpich-3.2-devel"
+                else
+                    echo "mpich-devel"
+                fi
+            }
             fi
         }
         elif [ "${PKG_NAME}" == "lz4" ];then
@@ -355,6 +416,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags liblz4)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs liblz4)"
+            else
+                echo "lz4-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "zlib" ];then
@@ -365,10 +428,28 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags zlib)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs zlib)"
+            else
+                echo "zlib-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "archive" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libarchive-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libarchive)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libarchive)"
+            else
+                echo "libarchive-devel"
+            fi
+        }
+        else 
+            echo "1"
         fi
     }
+    else 
+        echo "1"
     fi
 }
 
@@ -435,6 +516,7 @@ PrintUsage()
     echo -e "\t\t依赖项目，以英文“,”为分割符。支持以下关键字："
     echo -e "\n\t\thave-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg"
     echo -e "\t\thave-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib"
+    echo -e "\t\thave-archive"
 }
 
 #
@@ -471,7 +553,7 @@ done
 STATUS=$(CheckHavePackage ${KIT_NAME} pkgconfig 1)
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "pkgconfig kit not found."
+    echo "$(CheckHavePackage ${KIT_NAME} pkgconfig 0) not found."
     exit 22
 }
 fi
@@ -488,7 +570,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-openmp") -eq 1 ];then
     }
     else
     {
-        echo "openmp kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} openmp 0) not found."
         exit 22
     }
     fi
@@ -507,7 +589,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-unixodbc") -eq 1 ];then
     }
     else
     {
-        echo "unixodbc kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} unixodbc 0) not found."
         exit 22
     }
     fi
@@ -526,7 +608,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-sqlite") -eq 1 ];then
     }
     else
     {
-        echo "sqlite kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} sqlite 0) not found."
         exit 22
     }
     fi
@@ -545,7 +627,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-openssl") -eq 1 ];then
     }
     else
     {
-        echo "openssl kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} openssl 0) not found."
         exit 22
     }
     fi
@@ -564,7 +646,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-ffmpeg") -eq 1 ];then
     }
     else
     {
-        echo "ffmpeg kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} ffmpeg 0) not found."
         exit 22
     }
     fi
@@ -583,7 +665,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-freeimage") -eq 1 ];then
     }
     else
     {
-        echo "freeimage kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} freeimage 0) not found."
         exit 22
     }
     fi
@@ -602,7 +684,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
     }
     else
     {
-        echo "fuse kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} fuse 0) not found."
         exit 22
     }
     fi
@@ -621,7 +703,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-libnm") -eq 1 ];then
     }
     else
     {
-        echo "libnm kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} libnm 0) not found."
         exit 22
     }
     fi
@@ -640,7 +722,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-mpi") -eq 1 ];then
     }
     else
     {
-        echo "mpich kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} mpi 0) not found."
         exit 22
     }
     fi
@@ -660,7 +742,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-lz4") -eq 1 ];then
     }
     else
     {
-        echo "lz4 kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} lz4 0) not found."
         exit 22
     }
     fi
@@ -680,7 +762,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-zlib") -eq 1 ];then
     }
     else
     {
-        echo "zlib kit not found."
+        echo "$(CheckHavePackage ${KIT_NAME} zlib 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-archive") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} archive 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_ARCHIVE="Yes"
+        DEPEND_FLAGS=" -DHAVE_ARCHIVE $(CheckHavePackage ${KIT_NAME} archive 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} archive 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} archive 0) not found."
         exit 22
     }
     fi
@@ -744,6 +845,7 @@ echo "HAVE_LIBNM=${HAVE_LIBNM}"
 echo "HAVE_MPI=${HAVE_MPI}"
 echo "HAVE_LZ4=${HAVE_LZ4}"
 echo "HAVE_ZLIB=${HAVE_ZLIB}"
+echo "HAVE_ARCHIVE=${HAVE_ARCHIVE}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
