@@ -44,6 +44,7 @@ CCC_FLAGS += -Wno-unused-but-set-variable
 CCC_FLAGS += -Wno-unused-label
 CCC_FLAGS += -Wno-strict-aliasing
 CCC_FLAGS += -Wno-unused-function
+CCC_FLAGS += -Wno-sizeof-pointer-memaccess
 CCC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR} 
 CCC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 
 CCC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 

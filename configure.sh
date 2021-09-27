@@ -378,32 +378,31 @@ CheckHavePackage()
             if [ ${FLAG} -eq 1 ];then
             {
                 if [ ${SYS_VERID} -lt 8 ];then
-                    PKG_SATUS="$(CheckHavePackageFromKit ${KIT_NAME} mpich-3.2-devel)"
+                    echo "$(CheckHavePackageFromKit ${KIT_NAME} mpich-3.2-devel)"
                 else 
-                    PKG_SATUS="$(CheckHavePackageFromKit ${KIT_NAME} mpich-devel)"
-                fi 
-
-                if [ ${PKG_SATUS} -eq 0 ];then
-                {
-                    if [ ${SYS_VERID} -lt 8 ];then
-                        export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich-3.2/lib/pkgconfig
-                    else 
-                        export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich/lib/pkgconfig
-                    fi
-                }
+                    echo "$(CheckHavePackageFromKit ${KIT_NAME} mpich-devel hwloc-devel)"
                 fi
-                echo "${PKG_SATUS}"
             }
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags mpich)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs mpich)"
             else
             {
                 if [ ${SYS_VERID} -lt 8 ];then
-                    echo "mpich-3.2-devel"
+                    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich-3.2/lib/pkgconfig
+                else 
+                    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich/lib/pkgconfig
+                fi
+
+                if [ ${FLAG} -eq 2 ];then
+                    echo "$(pkg-config --cflags mpich)"
+                elif [ ${FLAG} -eq 3 ];then
+                    echo "$(pkg-config --libs mpich)"
                 else
-                    echo "mpich-devel"
+                {
+                    if [ ${SYS_VERID} -lt 8 ];then
+                        echo "mpich-3.2-devel"
+                    else
+                    echo "mpich-devel hwloc-devel"
+                    fi
+                }
                 fi
             }
             fi

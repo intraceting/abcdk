@@ -132,7 +132,7 @@ RSA *abcdk_openssl_rsa_create(int bits, unsigned long e)
 
 final:
         
-    if(bne);
+    if(bne)
         BN_clear_free(bne);
 
     return key;
@@ -336,7 +336,7 @@ final_error:
 
 int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 {
-    int chk;
+    int chk = -1;
 
     assert(hmac != NULL && key != NULL && len > 0);
     assert(type >= ABCDK_OPENSSL_HMAC_MD2 && type <= ABCDK_OPENSSL_HMAC_WHIRLPOOL);
