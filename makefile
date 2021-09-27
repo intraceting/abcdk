@@ -28,13 +28,12 @@ endif
 CCC_STD = -std=c11
 
 #
-LINK_FLAGS += ${DEPEND_LIBS}
 LINK_FLAGS += -fPIC
 LINK_FLAGS += -Wl,--as-needed 
 LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
+LINK_FLAGS += ${DEPEND_LIBS}
 
 #
-CCC_FLAGS += ${DEPEND_FLAGS}
 CCC_FLAGS += -fPIC 
 CCC_FLAGS += -Wl,--as-needed 
 CCC_FLAGS += -Wno-unused-result 
@@ -49,7 +48,7 @@ CCC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR}
 CCC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 
 CCC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
 CCC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
-
+CCC_FLAGS += ${DEPEND_FLAGS}
 #
 ifeq (${BUILD_TYPE},debug)
 CCC_FLAGS += -g
