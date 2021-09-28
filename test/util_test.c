@@ -48,6 +48,10 @@
 #include <archive_entry.h>
 #endif
 
+#ifdef HAVE_MODBUS
+#include <modbus.h>
+#endif 
+
 void test_log(abcdk_tree_t *args)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2424,6 +2428,44 @@ void test_archive(abcdk_tree_t *args)
 #endif
 }
 
+void test_modbus(abcdk_tree_t *args)
+{
+#ifdef HAVE_MODBUS
+
+    modbus_t *m = modbus_new_rtu("/dev/ttyUSB0", 9600, 'N', 8, 1);
+    modbus_set_debug(m, 0);
+    modbus_set_slave(m,1);
+    modbus_connect(m);
+
+    struct timeval t;
+    t.tv_sec = 10;
+    t.tv_usec = 0;
+    modbus_set_response_timeout(m, &t);
+
+    //int chk = modbus_rtu_set_serial_mode(m,MODBUS_RTU_RS232);
+
+    int f2 = 0;
+    while(1)
+    {
+        uint16_t buf[20]={0};
+        int regs = modbus_read_registers(m,3,2,buf);
+
+        int f = ABCDK_PTR2OBJ(float, buf, 0) * 1000;
+        if (f != f2)
+        {
+            printf("%f\n", (float)f / 1000);
+            f2 = f;
+        }
+    }
+
+  
+    modbus_close(m);
+    modbus_free(m);
+  
+
+#endif
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2513,6 +2555,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_archive", 0) == 0)
         test_archive(args);
+
+    if (abcdk_strcmp(func, "test_modbus", 0) == 0)
+        test_modbus(args);
 
     abcdk_tree_free(&args);
     

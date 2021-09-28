@@ -263,6 +263,18 @@ CheckHavePackage()
                 echo "libarchive-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "modbus" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmodbus-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libmodbus)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libmodbus)"
+            else
+                echo "libmodbus-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -443,6 +455,18 @@ CheckHavePackage()
                 echo "libarchive-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "modbus" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmodbus-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libmodbus)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libmodbus)"
+            else
+                echo "libmodbus-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -515,7 +539,7 @@ PrintUsage()
     echo -e "\t\t依赖项目，以英文“,”为分割符。支持以下关键字："
     echo -e "\n\t\thave-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg"
     echo -e "\t\thave-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib"
-    echo -e "\t\thave-archive"
+    echo -e "\t\thave-archive,have-modbus"
 }
 
 #
@@ -788,6 +812,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-archive") -eq 1 ];then
 fi
 
 #
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-modbus") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} modbus 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_MODBUS="Yes"
+        DEPEND_FLAGS=" -DHAVE_MODBUS $(CheckHavePackage ${KIT_NAME} modbus 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} modbus 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} modbus 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+
+#
 mkdir -p ${BUILD_PATH}
 
 #
@@ -845,6 +889,7 @@ echo "HAVE_MPI=${HAVE_MPI}"
 echo "HAVE_LZ4=${HAVE_LZ4}"
 echo "HAVE_ZLIB=${HAVE_ZLIB}"
 echo "HAVE_ARCHIVE=${HAVE_ARCHIVE}"
+echo "HAVE_MODBUS=${HAVE_MODBUS}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
