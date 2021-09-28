@@ -48,14 +48,14 @@ int abcdk_tcattr_cbreak(int fd, struct termios *old)
     return abcdk_tcattr_option(fd,&now,old);
 }
 
-int abcdk_tcattr_serial(int fd, int speed, int bits, int parity, int stop,struct termios *old)
+int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,struct termios *old)
 {
     struct termios now = {0};
 
     assert(fd >= 0);
 
     /*设置波特率。*/
-    switch (speed)
+    switch (baudrate)
     {
         case 2400:
             cfsetispeed(&now, B2400);
@@ -108,15 +108,14 @@ int abcdk_tcattr_serial(int fd, int speed, int bits, int parity, int stop,struct
         now.c_cflag |= CS8;
 
     /*设置校验位。*/
-    if (toupper(parity) == 'O')
+    if (parity == 1)
     {
         /*奇。*/
         now.c_cflag |= PARENB;
         now.c_cflag |= PARODD;
         now.c_iflag |= (INPCK | ISTRIP);
     }
-
-    if (toupper(parity) == 'E')
+    else if (parity == 2)
     {
         /*偶。*/
         now.c_iflag |= (INPCK | ISTRIP);

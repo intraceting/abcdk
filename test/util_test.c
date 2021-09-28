@@ -2222,7 +2222,7 @@ void test_auth(abcdk_tree_t *args)
 }
 
 
-void test_rs485(abcdk_tree_t *args)
+void test_com(abcdk_tree_t *args)
 {
     const char *port = abcdk_option_get(args,"--port",0,"");
 
@@ -2262,7 +2262,7 @@ void test_rs485(abcdk_tree_t *args)
 
    // assert(ioctl(fd,TIOCSRS485,&conf)==0);
 #else 
-    assert(abcdk_tcattr_serial(fd, 9600, 8, 'N', 1,NULL)== 0);
+    assert(abcdk_tcattr_serial(fd, 9600, 8, 0, 1,NULL)== 0);
 #endif 
     uint64_t s = 0,s1 = 0,s2 = 0;
     char buf1[18]={0};
@@ -2361,12 +2361,12 @@ void test_archive(abcdk_tree_t *args)
     struct archive_entry *entry = archive_entry_new();
 
   //  archive_write_add_filter_bzip2(a);
-    archive_write_set_format_zip(a);
+  //  archive_write_set_format_zip(a);
 
   //  archive_write_add_filter_gzip(a);
   //  archive_write_set_format_pax_restricted(a); // Note 1
 
-  //  archive_write_set_format_ustar(a);
+    archive_write_set_format_gnutar(a);
 
     archive_write_open_filename(a, dst);
 
@@ -2491,8 +2491,8 @@ int main(int argc, char **argv)
     if (abcdk_strcmp(func, "test_auth", 0) == 0)
         test_auth(args);
 
-    if (abcdk_strcmp(func, "test_rs485", 0) == 0)
-        test_rs485(args);
+    if (abcdk_strcmp(func, "test_com", 0) == 0)
+        test_com(args);
 
     if (abcdk_strcmp(func, "test_mpi", 0) == 0)
         test_mpi(args);
