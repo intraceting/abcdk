@@ -28,6 +28,17 @@ __BEGIN_DECLS
 */
 int abcdk_lz4_dec_fast(void* plaintext, int plaintext_size, const void* ciphertext);
 
+/**
+ * 默认压缩。
+ * 
+ * @param plaintext 明文的指针。
+ * @param plaintext_size 明文的长度。
+ * @param ciphertext 密文的指针。
+ * 
+ * @return > 0 成功(已经解压的密文长度)，<= 0 失败(密文格式错误)。
+*/
+int abcdk_lz4_enc_default(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size);
+
 #endif //LZ4_VERSION_NUMBER
 
 __END_DECLS

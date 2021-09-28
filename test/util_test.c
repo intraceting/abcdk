@@ -2334,6 +2334,20 @@ void test_lz4(abcdk_tree_t *args)
     //LZ4_decompress_fast(s->pptrs[0]+4,d->pptrs[0],dsize);
     int m = abcdk_lz4_dec_fast(d->pptrs[0],dsize,s->pptrs[0]+4);
 
+    abcdk_allocator_t *q = abcdk_allocator_alloc2(2000);
+
+    int n = abcdk_lz4_enc_default(q->pptrs[0],q->sizes[0],d->pptrs[0],dsize);
+
+    //assert(memcmp(q->pptrs[0],s->pptrs[0]+4,s->sizes[0]-4)==0);
+
+    abcdk_allocator_t *p = abcdk_allocator_alloc2(dsize);
+
+    int m2 = abcdk_lz4_dec_fast(p->pptrs[0],dsize,q->pptrs[0]);
+
+    assert(memcmp(p->pptrs[0],d->pptrs[0],d->sizes[0])==0);
+
+    abcdk_allocator_unref(&q);
+    abcdk_allocator_unref(&p);
 
     int fd = abcdk_open(dst,1,0,1);
     ftruncate(fd,0);
