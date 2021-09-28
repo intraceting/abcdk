@@ -27,6 +27,7 @@
 #include "abcdk-mp4/demuxer.h"
 #include "abcdk-util/video.h"
 #include "abcdk-auth/auth.h"
+#include "abcdk-util/lz4.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -41,9 +42,6 @@
 #include <mpi.h>
 #endif 
 
-#ifdef HAVE_LZ4
-#include <lz4.h>
-#endif
 
 #ifdef HAVE_ARCHIVE
 #include <archive.h>
@@ -2333,10 +2331,9 @@ void test_lz4(abcdk_tree_t *args)
 
     abcdk_allocator_t *d = abcdk_allocator_alloc2(dsize);
 
-    LZ4_decompress_fast(s->pptrs[0]+4,d->pptrs[0],dsize);
+    //LZ4_decompress_fast(s->pptrs[0]+4,d->pptrs[0],dsize);
+    int m = abcdk_lz4_dec_fast(d->pptrs[0],dsize,s->pptrs[0]+4);
 
-    //LZ4_decompress_safe(s->pptrs[0],d->pptrs[0],s->sizes[0],dst);
-    //printf("%s\n",d->pptrs[0]);
 
     int fd = abcdk_open(dst,1,0,1);
     ftruncate(fd,0);
