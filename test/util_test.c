@@ -2281,14 +2281,18 @@ void test_com(abcdk_tree_t *args)
         s2 += s1;
 
         if(memcmp(buf1,buf2,17)!=0)
+            s2 = 0;
+        else if(s2 >= 1000000)
+            s2 = 0;
+
+        if(s2 ==0 )
         {
             memcpy(buf2,buf1,17);
-            printf("1 [%d]: %s\n",i,buf2);
-        }
-        else if(s2 >= 1000000)
-        {
-            printf("2 [%d]: %s\n",i,buf1);
-            s2= 0;
+
+            char buf3[35]={0};
+            abcdk_bin2hex(buf3,buf1,17,0);
+
+            printf("[%d]: '%s' '%s'\n",i,buf1,buf3);
         }
 
     }
@@ -2431,8 +2435,9 @@ void test_archive(abcdk_tree_t *args)
 void test_modbus(abcdk_tree_t *args)
 {
 #ifdef HAVE_MODBUS
+    const char *port = abcdk_option_get(args,"--port",0,"");
 
-    modbus_t *m = modbus_new_rtu("/dev/ttyUSB0", 9600, 'N', 8, 1);
+    modbus_t *m = modbus_new_rtu(port, 9600, 'N', 8, 1);
     modbus_set_debug(m, 0);
     modbus_set_slave(m,1);
     modbus_connect(m);
@@ -2456,6 +2461,8 @@ void test_modbus(abcdk_tree_t *args)
             printf("%f\n", (float)f / 1000);
             f2 = f;
         }
+
+        usleep(1000);
     }
 
   
