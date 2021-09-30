@@ -342,6 +342,46 @@ final:
     abcdk_heap_free2((void**)&stack);
 }
 
+void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order)
+{
+    abcdk_tree_t *t1 = NULL;
+    abcdk_tree_t *t2 = NULL;
+    abcdk_tree_t *t3 = NULL;
+    int chk;
+
+    assert(father != NULL && order != NULL);
+    assert(order->compare_cb != NULL);
+
+    t2 = abcdk_tree_child(father, 1);
+    while (t2)
+    {
+        t3 = abcdk_tree_sibling(t1 = t2, 0);
+        while (t3)
+        {
+            chk = order->compare_cb(t1,t3,order->opaque);
+
+            if(order->by)
+            {
+                if (chk > 0)
+                    t1 = t3;
+            }
+            else
+            {
+                if (chk < 0)
+                    t1 = t3;
+            }
+
+            t3 = abcdk_tree_sibling(t3, 0);
+        }
+
+        /*需要交换时，再进行交换。*/
+        if (t1 != t2)
+            abcdk_tree_swap(t1, t2);
+
+        t2 = abcdk_tree_sibling(t1, 0);
+    }
+}
+
 ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,...)
 {
     ssize_t wsize = 0;
@@ -456,44 +496,4 @@ ssize_t abcdk_tree_vsnprintf(char *buf, size_t max, size_t depth, const abcdk_tr
     fclose(fp);
     
     return wsize;
-}
-
-void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order)
-{
-    abcdk_tree_t *t1 = NULL;
-    abcdk_tree_t *t2 = NULL;
-    abcdk_tree_t *t3 = NULL;
-    int chk;
-
-    assert(father != NULL && order != NULL);
-    assert(order->compare_cb != NULL);
-
-    t2 = abcdk_tree_child(father, 1);
-    while (t2)
-    {
-        t3 = abcdk_tree_sibling(t1 = t2, 0);
-        while (t3)
-        {
-            chk = order->compare_cb(t1,t3,order->opaque);
-
-            if(order->by)
-            {
-                if (chk > 0)
-                    t1 = t3;
-            }
-            else
-            {
-                if (chk < 0)
-                    t1 = t3;
-            }
-
-            t3 = abcdk_tree_sibling(t3, 0);
-        }
-
-        /*需要交换时，再进行交换。*/
-        if (t1 != t2)
-            abcdk_tree_swap(t1, t2);
-
-        t2 = abcdk_tree_sibling(t1, 0);
-    }
 }

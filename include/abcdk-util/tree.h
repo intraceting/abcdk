@@ -203,6 +203,15 @@ abcdk_tree_t *abcdk_tree_alloc3(size_t size);
 */
 void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it);
 
+/** 
+ * 排序。
+ * 
+ * 选择法排序。
+ * 
+ * 只排序子节点，如需要对整颗树排序，需要接合迭代器。
+*/
+void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order);
+
 /**
  * 格式化打印。
  * 
@@ -247,14 +256,6 @@ ssize_t abcdk_tree_snprintf(char *buf, size_t max,size_t depth, const abcdk_tree
 */
 ssize_t abcdk_tree_vsnprintf(char *buf, size_t max,size_t depth, const abcdk_tree_t *node,const char* fmt,va_list args);
 
-/** 
- * 排序。
- * 
- * 选择法排序。
- * 
- * 只排序子节点，如需要对整颗树排序，需要接合迭代器。
-*/
-void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order);
 
 __END_DECLS
 

@@ -114,6 +114,24 @@ typedef struct _abcdk_dirent_filter
 */
 abcdk_tree_t *abcdk_dirent_scan(const char *path, abcdk_dirent_filter_t *filter);
 
+/**
+ * 打开目录。
+ * 
+ * @note 已打开目录进行压栈缓存。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_dirent_open(abcdk_tree_t *dir,const char *path);
+
+/**
+ * 读取目录。
+ * 
+ * @note 如果已经当前目录没有未读取的子项，则关闭当前目录，回退到一个打开的目录。
+ * 
+ * @return 0 成功，-1 失败(无子项)。
+*/
+int abcdk_dirent_read(abcdk_tree_t *dir,char file[PATH_MAX]);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_DIRENT_H
