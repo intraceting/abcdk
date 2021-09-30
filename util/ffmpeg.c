@@ -397,6 +397,8 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
     assert(ctx->codec != NULL);
     assert(ctx->codec->pix_fmts[0] != AV_PIX_FMT_NONE);
 
+#if 1
+
     /*-------------Copy from OpenCV----begin------------------*/
 
     int frame_rate = (int)(fps + 0.5);
@@ -436,7 +438,9 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
         }
     }
     /*-------------Copy from OpenCV-----end---------------*/
-
+#else 
+    ctx->time_base = (AVRational){1, fps};
+#endif
     ctx->framerate.den = ctx->time_base.num;
     ctx->framerate.num = ctx->time_base.den;
     ctx->width = width;
