@@ -216,6 +216,7 @@ next:
     c_dir = readdir((DIR*)tmp->alloc->pptrs[1]);
     if(!c_dir)
     {
+        abcdk_tree_unlink(tmp);
         abcdk_tree_free(&tmp);
         goto prev;
     }

@@ -1752,6 +1752,7 @@ void test_dirent(abcdk_tree_t *args)
 {
     const char *path_p = abcdk_option_get(args,"--path",0,"");
 
+#if 0
 
     abcdk_dirent_filter_t f = {dirent_match_cb,args};
     abcdk_tree_t * t = abcdk_dirent_scan(path_p,&f);
@@ -1761,7 +1762,25 @@ void test_dirent(abcdk_tree_t *args)
     abcdk_tree_scan(t,&it);
 
     abcdk_tree_free(&t);
-    
+#else 
+
+    abcdk_tree_t *t = abcdk_tree_alloc3(1);
+
+    abcdk_dirent_open(t,path_p);
+
+    for(;;)
+    {
+        char file[PATH_MAX]={0};
+        int chk = abcdk_dirent_read(t,file);
+        if(chk != 0)
+            break;
+        
+        printf("%s\n",file);
+        
+        abcdk_dirent_open(t,file);
+    }
+
+#endif 
 }
 
 void test_netlink(abcdk_tree_t *args)
