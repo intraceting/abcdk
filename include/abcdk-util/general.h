@@ -406,14 +406,14 @@ char *abcdk_dirname(char *dst, const char *src);
 /**
  * 截取目录或文件名称。
  * 
- * 最后一级的名称'/'(包括)之前的会被裁剪，并且无论目录结构是否真存在都会截取。 
+ * @note 最后一级的名称'/'(包括)之前的会被裁剪，并且无论目录结构是否真存在都会截取。 
 */
 char *abcdk_basename(char *dst, const char *src);
 
 /**
  * 美化目录。
  * 
- * 不会检测目录结构是否存在。
+ * @note 不会检测目录结构是否存在。
  * 
  * 例：/aaaa/bbbb/../ccc -> /aaaa/ccc
  * 例：/aaaa/bbbb/./ccc -> /aaaa/bbbb/ccc
@@ -423,7 +423,7 @@ char *abcdk_dirnice(char *dst, const char *src);
 /**
  * 修补文件或目录的绝对路径。
  * 
- * 不会检测目录结构是否存在。
+ * @note 不会检测目录结构是否存在。
  * 
  * @param file 文件或目录的指针。
  * @param path 路径的指针，NULL(0) 当前工作路径。
@@ -457,9 +457,9 @@ char* abcdk_proc_basename(char* buf);
  * 
  * 进程ID以十进制文本格式写入文件，例：2021 。
  * 
- * @param pid 当接口返回时，被赋值正在运行的进程ID。NULL(0) 忽略。
+ * @param pid 正在运行的进程ID，当接口返回时填写。NULL(0) 忽略。
  * 
- * @return >= 0 文件句柄(当前进程是唯一进程)，-1 已有实例正在运行。
+ * @return >= 0 成功(文件句柄，当前进程是唯一进程)，-1 失败(已有实例正在运行)。
 */
 int abcdk_proc_singleton(const char* lockfile,int* pid);
 

@@ -412,7 +412,7 @@ CheckHavePackage()
                     if [ ${SYS_VERID} -lt 8 ];then
                         echo "mpich-3.2-devel"
                     else
-                    echo "mpich-devel hwloc-devel"
+                        echo "mpich-devel hwloc-devel"
                     fi
                 }
                 fi
