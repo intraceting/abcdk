@@ -19,7 +19,7 @@ int abcdk_dirent_open(abcdk_tree_t *dir,const char *path)
     assert(dir != NULL && path != NULL);
 
     if (access(path, R_OK) != 0)
-        return NULL;
+        return -1;
 
     size_t sizes[2] = {PATH_MAX,0};
     tmp = abcdk_tree_alloc2(sizes,2,0);

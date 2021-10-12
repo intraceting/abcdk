@@ -525,6 +525,8 @@ DEPEND_FUNC="Nothing"
 PrintUsage()
 {
     echo "usage: [ OPTIONS ]"
+    echo -e "\n\t-p"
+    echo -e "\t\t目标系统。默认：${TARGET_PLATFORM}"
     echo -e "\n\t-g"
     echo -e "\t\t生成调试符号。默认：关闭"
     echo -e "\n\t-V"
@@ -543,12 +545,15 @@ PrintUsage()
 }
 
 #
-while getopts "?gV:v:r:i:d:" ARGKEY 
+while getopts "?p:gV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     \?)
         PrintUsage
         exit 22
+    ;;
+    p)
+        TARGET_PLATFORM="${OPTARG}"
     ;;
     g)
         BUILD_TYPE="debug"
@@ -571,6 +576,17 @@ do
     esac
 done
 
+#Compiler
+CC=gcc
+CX=g++
+AR=ar
+
+#可能在交叉编译环中。
+if [ "${TARGET_PLATFORM}" != "${HOST_PLATFORM}" ];then
+CC=${TARGET_PLATFORM}-linux-gnu-gcc
+CX=${TARGET_PLATFORM}-linux-gnu-g++
+AR=${TARGET_PLATFORM}-linux-gnu-ar
+fi
 
 #
 STATUS=$(CheckHavePackage ${KIT_NAME} pkgconfig 1)
@@ -872,6 +888,11 @@ echo "HOST_PLATFORM=${HOST_PLATFORM}"
 echo "TARGET_PLATFORM=${TARGET_PLATFORM}"
 
 #
+echo "CC=${CC}"
+echo "CX=${CX}"
+echo "AR=${AR}"
+
+#
 echo "VERSION_MAJOR=${VERSION_MAJOR}"
 echo "VERSION_MINOR=${VERSION_MINOR}"
 echo "VERSION_RELEASE=${VERSION_RELEASE}"
@@ -917,6 +938,10 @@ echo "BUILD_PATH = ${BUILD_PATH}" >> ${MAKE_CONF}
 #
 echo "HOST_PLATFORM = ${HOST_PLATFORM}" >> ${MAKE_CONF}
 echo "TARGET_PLATFORM = ${TARGET_PLATFORM}" >> ${MAKE_CONF}
+#
+echo "CC= ${CC}" >> ${MAKE_CONF}
+echo "CX= ${CX}" >> ${MAKE_CONF}
+echo "AR= ${AR}" >> ${MAKE_CONF}
 
 #
 echo "VERSION_MAJOR = ${VERSION_MAJOR}" >> ${MAKE_CONF}

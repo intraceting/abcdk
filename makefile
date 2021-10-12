@@ -14,16 +14,6 @@ include ${MAKE_CONF}
 #
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 
-#Compiler
-CC = gcc
-AR = ar
-
-#可能在交叉编译环中。
-ifneq ($(TARGET_PLATFORM),$(HOST_PLATFORM))
-CC = $(TARGET_PLATFORM)-linux-gnu-gcc
-AR = $(TARGET_PLATFORM)-linux-gnu-ar
-endif
-
 #Standard
 CCC_STD = -std=c11
 
@@ -49,6 +39,7 @@ CCC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR}
 CCC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
 CCC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 CCC_FLAGS += ${DEPEND_FLAGS}
+
 #
 ifeq (${BUILD_TYPE},debug)
 CCC_FLAGS += -g

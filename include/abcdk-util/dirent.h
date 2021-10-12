@@ -17,7 +17,7 @@ __BEGIN_DECLS
  * 
  * @note 已打开目录进行压栈缓存。
  * 
- * @return 0 成功，-1 失败。
+ * @return 0 成功，-1 失败(不影响已经打开目录)。
 */
 int abcdk_dirent_open(abcdk_tree_t *dir,const char *path);
 
