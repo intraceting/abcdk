@@ -25,6 +25,6 @@ sudo make install
 ```bash
 configure.sh [ ... ]
 make
-sudo make package
+make package
 ```
 
