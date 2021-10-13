@@ -8,14 +8,14 @@
 #
 MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 
-#加载配置项。
+# 加载配置项。
 include ${MAKE_CONF}
 
 #
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 
-#Standard
-CCC_STD = -std=c11
+# C Standard
+CC_STD = -std=c11
 
 #
 LINK_FLAGS += -fPIC
@@ -24,33 +24,33 @@ LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 LINK_FLAGS += ${DEPEND_LIBS}
 
 #
-CCC_FLAGS += -fPIC 
-CCC_FLAGS += -Wl,--as-needed 
-CCC_FLAGS += -Wno-unused-result 
-CCC_FLAGS += -Wno-unused-variable 
-CCC_FLAGS += -Wno-pointer-sign 
-CCC_FLAGS += -Wno-unused-but-set-variable 
-CCC_FLAGS += -Wno-unused-label
-CCC_FLAGS += -Wno-strict-aliasing
-CCC_FLAGS += -Wno-unused-function
-CCC_FLAGS += -Wno-sizeof-pointer-memaccess
-CCC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR} 
-CCC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 
-CCC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
-CCC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
-CCC_FLAGS += ${DEPEND_FLAGS}
+CC_FLAGS += -fPIC 
+CC_FLAGS += -Wl,--as-needed 
+CC_FLAGS += -Wno-unused-result 
+CC_FLAGS += -Wno-unused-variable 
+CC_FLAGS += -Wno-pointer-sign 
+CC_FLAGS += -Wno-unused-but-set-variable 
+CC_FLAGS += -Wno-unused-label
+CC_FLAGS += -Wno-strict-aliasing
+CC_FLAGS += -Wno-unused-function
+CC_FLAGS += -Wno-sizeof-pointer-memaccess
+CC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR} 
+CC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 
+CC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
+CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
+CC_FLAGS += ${DEPEND_FLAGS}
 
 #
 ifeq (${BUILD_TYPE},debug)
-CCC_FLAGS += -g
+CC_FLAGS += -g
 LINK_FLAGS += -g
 else 
-CCC_FLAGS += -O2
+CC_FLAGS += -O2
 LINK_FLAGS += -s
 endif
 
 #
-CCC_FLAGS += -I$(CURDIR)/include/
+CC_FLAGS += -I$(CURDIR)/include/
  
 #
 LINK_FLAGS += -L${BUILD_PATH}
@@ -91,19 +91,19 @@ lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(AUTH_OBJ_FILES)
 $(OBJ_PATH)/util/%.o: util/%.c
 	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
-	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
 	rm -f $@
-	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 #
 $(OBJ_PATH)/auth/%.o: auth/%.c
 	mkdir -p $(OBJ_PATH)/auth/
 	rm -f $@
-	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 
 tool: ${TOOL_OBJ_FILES}
@@ -123,7 +123,7 @@ tool: ${TOOL_OBJ_FILES}
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 test: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
@@ -134,7 +134,7 @@ test: ${TEST_OBJ_FILES}
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CC) $(CCC_STD) $(CCC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 #
 clean: clean-lib clean-tool clean-test

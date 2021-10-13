@@ -118,7 +118,7 @@ CheckHavePackage()
             else 
                 echo "pkg-config"
             fi
-        } 
+        }
         elif [ "${PKG_NAME}" == "openmp" ];then
         {
             if [ ${FLAG} -eq 1 ];then
@@ -576,16 +576,32 @@ do
     esac
 done
 
-#Compiler
+# Compiler
 CC=gcc
-CX=g++
 AR=ar
 
-#可能在交叉编译环中。
+# 可能在交叉编译环中。
 if [ "${TARGET_PLATFORM}" != "${HOST_PLATFORM}" ];then
 CC=${TARGET_PLATFORM}-linux-gnu-gcc
-CX=${TARGET_PLATFORM}-linux-gnu-g++
 AR=${TARGET_PLATFORM}-linux-gnu-ar
+fi
+
+#
+STATUS=$(CheckHavePackageFromWhich ${KIT_NAME} ${CC})
+if [ ${STATUS} -ne 0 ];then
+{
+    echo "${CC} not found."
+    exit 22
+}
+fi
+
+#
+STATUS=$(CheckHavePackageFromWhich ${KIT_NAME} ${AR})
+if [ ${STATUS} -ne 0 ];then
+{
+    echo "${AR} not found."
+    exit 22
+}
 fi
 
 #
@@ -889,7 +905,6 @@ echo "TARGET_PLATFORM=${TARGET_PLATFORM}"
 
 #
 echo "CC=${CC}"
-echo "CX=${CX}"
 echo "AR=${AR}"
 
 #
@@ -939,9 +954,8 @@ echo "BUILD_PATH = ${BUILD_PATH}" >> ${MAKE_CONF}
 echo "HOST_PLATFORM = ${HOST_PLATFORM}" >> ${MAKE_CONF}
 echo "TARGET_PLATFORM = ${TARGET_PLATFORM}" >> ${MAKE_CONF}
 #
-echo "CC= ${CC}" >> ${MAKE_CONF}
-echo "CX= ${CX}" >> ${MAKE_CONF}
-echo "AR= ${AR}" >> ${MAKE_CONF}
+echo "CC = ${CC}" >> ${MAKE_CONF}
+echo "AR = ${AR}" >> ${MAKE_CONF}
 
 #
 echo "VERSION_MAJOR = ${VERSION_MAJOR}" >> ${MAKE_CONF}
