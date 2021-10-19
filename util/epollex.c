@@ -239,8 +239,6 @@ void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
         node->refcount += 1;
     if (disp.events & ABCDK_EPOLL_INPUT)
         node->refcount += 1;
-    if (disp.events & ABCDK_EPOLL_INOOB)
-        node->refcount += 1;
     if (disp.events & ABCDK_EPOLL_OUTPUT)
         node->refcount += 1;
 
@@ -319,8 +317,8 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
     int chk = 0;
 
     assert(ctx != NULL);
-    assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_INOOB | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
-    assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_INOOB | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
+    assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
+    assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
 
     abcdk_mutex_lock(&ctx->mutex,1);
 
@@ -522,7 +520,7 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
 
     assert(ctx != NULL && fd >= 0);
 
-    assert((events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_INOOB | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
+    assert((events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
 
     abcdk_mutex_lock(&ctx->mutex,1);
 
@@ -536,8 +534,6 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
     if (events & ABCDK_EPOLL_ERROR)
         node->refcount -= 1;
     if (events & ABCDK_EPOLL_INPUT)
-        node->refcount -= 1;
-    if (events & ABCDK_EPOLL_INOOB)
         node->refcount -= 1;
     if (events & ABCDK_EPOLL_OUTPUT)
         node->refcount -= 1;

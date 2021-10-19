@@ -23,12 +23,6 @@ enum _abcdk_epoll_event
 #define ABCDK_EPOLL_INPUT ABCDK_EPOLL_INPUT
 
     /**
-     * 带外(OOB)输入事件。
-    */
-    ABCDK_EPOLL_INOOB = 0x00000002,
-#define ABCDK_EPOLL_INOOB ABCDK_EPOLL_INOOB
-
-    /**
      * 输出事件。
     */
     ABCDK_EPOLL_OUTPUT = 0x00000100,

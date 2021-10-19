@@ -24,7 +24,7 @@ int abcdk_epoll_mark(int efd, int fd, const abcdk_epoll_event *event, int first)
     abcdk_epoll_event mark;
 
     assert(efd >= 0 && fd >= 0 && event != NULL);
-    assert((event->events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_INOOB | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
+    assert((event->events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
 
     memset(&mark,0,sizeof(mark));
 
@@ -38,8 +38,6 @@ int abcdk_epoll_mark(int efd, int fd, const abcdk_epoll_event *event, int first)
     /*转换事件。*/
     if (event->events & ABCDK_EPOLL_INPUT)
         mark.events |= EPOLLIN;
-    if (event->events & ABCDK_EPOLL_INOOB)
-        mark.events |= EPOLLPRI;
     if (event->events & ABCDK_EPOLL_OUTPUT)
         mark.events |= EPOLLOUT;
 
@@ -76,8 +74,6 @@ int abcdk_epoll_wait(int efd,abcdk_epoll_event* events,int max,time_t timeout)
 
         if(tmp & EPOLLIN)
             events[i].events |= ABCDK_EPOLL_INPUT;
-        if(tmp & EPOLLPRI)
-            events[i].events |= ABCDK_EPOLL_INOOB;
         if(tmp & EPOLLOUT)
             events[i].events |= ABCDK_EPOLL_OUTPUT;
         if(tmp & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
