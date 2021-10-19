@@ -2490,6 +2490,12 @@ int test_libusb(abcdk_tree_t *args)
 
 #ifdef HAVE_OPENSSL
 
+int openssl_verify_cb(int ok, X509_STORE_CTX *ctx)
+{
+
+    return 1;
+}
+
 void test_openssl_server(abcdk_tree_t *args)
 {
 #if OPENSSL_VERSION_NUMBER <= 0x100020bfL  
@@ -2500,11 +2506,14 @@ void test_openssl_server(abcdk_tree_t *args)
 
     SSL_CTX * ctx = SSL_CTX_new(method);
 
-    int chk = abcdk_openssl_ctx_load_cert(ctx, NULL,
-                                          abcdk_option_get(args, "--rsa-key-pri-file", 0, "/tmp/abc-pri.pem"),
-                                          abcdk_option_get(args, "--rsa-key-pwd", 0, "12345678"));
+
+    int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
+                                          abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
+                                          abcdk_option_get(args, "--rsa-key-pwd", 0, NULL));
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
+
+    SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
@@ -2525,6 +2534,8 @@ void test_openssl_server(abcdk_tree_t *args)
 
     char buf[100]={0};
     SSL_read(s,buf,5);
+
+    printf("{%s}\n",buf);
 
     SSL_write(s,"abcdk",5);
 
@@ -2547,13 +2558,17 @@ void test_openssl_client(abcdk_tree_t *args)
 
     SSL_CTX * ctx = SSL_CTX_new(method);
 
-    int chk = abcdk_openssl_ctx_load_cert(ctx, NULL,
-                                          abcdk_option_get(args, "--rsa-key-pub-file", 0, "/tmp/abc-pub.pem"),
-                                          abcdk_option_get(args, "--rsa-key-pwd", 0, "12345678"));
+
+
+    int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
+                                          abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
+                                          abcdk_option_get(args, "--rsa-key-pwd", 0, NULL));
 
     assert(chk == 0);
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
+
+  //  SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_from_string(&addr,
@@ -2571,6 +2586,7 @@ void test_openssl_client(abcdk_tree_t *args)
     char buf[100]={0};
     SSL_read(s,buf,100);
 
+    printf("{%s}\n",buf);
 
     abcdk_closep(&c);
 
