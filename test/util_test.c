@@ -28,6 +28,7 @@
 #include "abcdk-util/video.h"
 #include "abcdk-auth/auth.h"
 #include "abcdk-util/lz4.h"
+#include "abcdk-util/openssl.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -2487,6 +2488,116 @@ int test_libusb(abcdk_tree_t *args)
 #endif
 }
 
+#ifdef HAVE_OPENSSL
+
+void test_openssl_server(abcdk_tree_t *args)
+{
+#if OPENSSL_VERSION_NUMBER <= 0x100020bfL  
+    const SSL_METHOD *method = TLSv1_2_server_method();
+#else
+    const SSL_METHOD *method = TLS_server_method();
+#endif 
+
+    SSL_CTX * ctx = SSL_CTX_new(method);
+
+    int chk = abcdk_openssl_ctx_load_cert(ctx, NULL,
+                                          abcdk_option_get(args, "--rsa-key-pri-file", 0, "/tmp/abc-pri.pem"),
+                                          abcdk_option_get(args, "--rsa-key-pwd", 0, "12345678"));
+
+    SSL* s = abcdk_openssl_ssl_alloc(ctx);
+
+    abcdk_sockaddr_t addr = {0};
+    abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
+
+    int l = abcdk_socket(addr.family,0);
+
+    int flag = 1;
+    abcdk_sockopt_option_int(l, SOL_SOCKET, SO_REUSEPORT, &flag, 2);
+    abcdk_sockopt_option_int(l, SOL_SOCKET, SO_REUSEADDR, &flag, 2);
+
+    abcdk_bind(l,&addr);
+    listen(l, SOMAXCONN);
+
+    int c = accept(l,NULL,NULL);
+
+    assert(abcdk_openssl_ssl_handshake(c,s,1,10000)==0);
+
+
+    char buf[100]={0};
+    SSL_read(s,buf,5);
+
+    SSL_write(s,"abcdk",5);
+
+
+    abcdk_closep(&c);
+    abcdk_closep(&l);
+
+    abcdk_openssl_ssl_free(&s);
+
+    SSL_CTX_free(ctx);
+}
+
+void test_openssl_client(abcdk_tree_t *args)
+{
+#if OPENSSL_VERSION_NUMBER <= 0x100020bfL  
+    const SSL_METHOD *method = TLSv1_2_client_method();
+#else
+    const SSL_METHOD *method = TLS_client_method();
+#endif 
+
+    SSL_CTX * ctx = SSL_CTX_new(method);
+
+    int chk = abcdk_openssl_ctx_load_cert(ctx, NULL,
+                                          abcdk_option_get(args, "--rsa-key-pub-file", 0, "/tmp/abc-pub.pem"),
+                                          abcdk_option_get(args, "--rsa-key-pwd", 0, "12345678"));
+
+    assert(chk == 0);
+
+    SSL* s = abcdk_openssl_ssl_alloc(ctx);
+
+    abcdk_sockaddr_t addr = {0};
+    abcdk_sockaddr_from_string(&addr,
+                               abcdk_option_get(args, "--server-addr", 0, "localhost:12345"),
+                               1);
+
+    int c = abcdk_socket(addr.family,0);
+    
+    assert(abcdk_connect(c,&addr,10000)==0);
+
+    assert(abcdk_openssl_ssl_handshake(c,s,0,10000)==0);
+
+    SSL_write(s,"abcdk",5);
+
+    char buf[100]={0};
+    SSL_read(s,buf,100);
+
+
+    abcdk_closep(&c);
+
+    abcdk_openssl_ssl_free(&s);
+
+    SSL_CTX_free(ctx);
+}
+
+#endif
+
+int test_openssl(abcdk_tree_t *args)
+{
+    int sub_func = abcdk_option_get_int(args, "--sub-func", 0, 0);
+
+#ifdef HAVE_OPENSSL
+
+   SSL_library_init();
+   OpenSSL_add_all_algorithms();
+   SSL_load_error_strings();
+
+    if (sub_func == 1)
+        test_openssl_server(args);
+    else if (sub_func == 2)
+        test_openssl_client(args);
+
+#endif
+}
 
 int main(int argc, char **argv)
 {
@@ -2583,6 +2694,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_libusb", 0) == 0)
         test_libusb(args);
+
+    if (abcdk_strcmp(func, "test_openssl", 0) == 0)
+        test_openssl(args);
 
     abcdk_tree_free(&args);
     
