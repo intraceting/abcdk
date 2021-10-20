@@ -70,6 +70,10 @@ typedef struct _abcdk_epollex_node
 
 }abcdk_epollex_node;
 
+time_t abcdk_epollex_clock()
+{
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+}
 
 void abcdk_epollex_free(abcdk_epollex_t **ctx)
 {
@@ -110,7 +114,7 @@ abcdk_epollex_t *abcdk_epollex_alloc()
     abcdk_map_init(&ctx->node_map,400);
     abcdk_mutex_init2(&ctx->mutex,0);
     ctx->watchdog_intvl = 5000;
-    ctx->watchdog_active = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+    ctx->watchdog_active = abcdk_epollex_clock();
     ctx->wait_leader = 0;
 
     return ctx;
@@ -177,13 +181,13 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data,ti
     node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
 
     if (node->add_first != 0)
-        ABCDK_ERRNO_AND_GOTO1(EINVAL,final_error);
+        ABCDK_ERRNO_AND_GOTO1(EEXIST,final_error);
 
     node->fd = fd;
     node->data = *data;
     node->timeout = timeout;
     node->stable = 1;
-    node->active = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+    node->active = abcdk_epollex_clock();
     node->mark_first = 1;
     node->add_first = 1;
     node->event_mark = node->event_disp = 0;
@@ -287,7 +291,7 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
         node->mark_first = 0;
 
         /*更节点新活动时间。*/
-        node->active = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+        node->active = abcdk_epollex_clock();
     }
 
     /*
@@ -384,7 +388,7 @@ final:
 
 void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 {
-    uint64_t current = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+    uint64_t current = abcdk_epollex_clock();
 
     /*看门狗活动间隔时间不能太密集。*/
     if ((current - ctx->watchdog_active) < ctx->watchdog_intvl)
@@ -421,7 +425,7 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int
         _abcdk_epollex_disp(ctx,node,e->events);
 
         /*更节点新活动时间*/
-        node->active = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+        node->active = abcdk_epollex_clock();
     }
 }
 
@@ -431,7 +435,7 @@ uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
 
     if(timeout >= 0)
     {
-        span = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3) - begin;
+        span = abcdk_epollex_clock() - begin;
 
         return timeout - span;
     }
@@ -442,7 +446,7 @@ uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
 int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event *event,time_t timeout)
 {
     abcdk_epoll_event w[20];
-    uint64_t begin = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+    uint64_t begin = abcdk_epollex_clock();
     uint64_t remaining = 0;
     int count;
     int chk = 0;
@@ -469,7 +473,7 @@ try_again:
         /*通过看门狗检测长期不活动的节点。*/
         _abcdk_epollex_watchdog(ctx);
 
-        /*唤醒其它线程，处理看门狗。*/
+        /*唤醒其它线程，处理看门狗检测结果。*/
         abcdk_mutex_signal(&ctx->mutex,1);
 
         /*解锁，使其它接口被访问。*/

@@ -2532,7 +2532,9 @@ void test_openssl_server(abcdk_tree_t *args)
     //SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
-    abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
+    //abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
+    addr.family = ABCDK_UNIX;
+    strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
     int l = abcdk_socket(addr.family,0);
 
@@ -2540,10 +2542,13 @@ void test_openssl_server(abcdk_tree_t *args)
     abcdk_sockopt_option_int(l, SOL_SOCKET, SO_REUSEPORT, &flag, 2);
     abcdk_sockopt_option_int(l, SOL_SOCKET, SO_REUSEADDR, &flag, 2);
 
-    abcdk_bind(l,&addr);
-    listen(l, SOMAXCONN);
+    unlink(addr.addr_un.sun_path);
 
-    int c = accept(l,NULL,NULL);
+    assert(abcdk_bind(l,&addr)==0);
+    assert(listen(l, SOMAXCONN)==0);
+
+    abcdk_sockaddr_t addr2 = {0};
+    int c = abcdk_accept(l,&addr2);
 
     assert(abcdk_openssl_ssl_handshake(c,s,1,10000)==0);
 
@@ -2585,9 +2590,12 @@ void test_openssl_client(abcdk_tree_t *args)
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
 
     abcdk_sockaddr_t addr = {0};
-    abcdk_sockaddr_from_string(&addr,
-                               abcdk_option_get(args, "--server-addr", 0, "localhost:12345"),
-                               1);
+  //  abcdk_sockaddr_from_string(&addr,
+  //                             abcdk_option_get(args, "--server-addr", 0, "localhost:12345"),
+  //                             1);
+
+    addr.family = ABCDK_UNIX;
+    strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
     int c = abcdk_socket(addr.family,0);
     

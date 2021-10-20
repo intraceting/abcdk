@@ -11,40 +11,33 @@
 
 __BEGIN_DECLS
 
-/**
- * IPv4
-*/
+/** UNIX */
+#define ABCDK_UNIX AF_UNIX
+
+/** IPv4 */
 #define ABCDK_IPV4 AF_INET
 
-/**
- * IPv6
-*/
+/** IPv6 */
 #define ABCDK_IPV6 AF_INET6
 
-/**
- * Socket地址
-*/
+/** Socket地址 */
 typedef union _abcdk_sockaddr
 {
-    /**
-     * 协议。
-    */
+    /** 协议。*/
     sa_family_t family;
 
-    /**
-     * 通用的地址。
-    */
+    /** 通用的地址。*/
     struct sockaddr addr;
 
-    /**
-     * IPv4地址。
-    */
+    /** UNIX地址。*/
+    struct sockaddr_un addr_un;
+
+    /** IPv4地址。*/
     struct sockaddr_in addr4;
 
-    /**
-     * IPv6地址。
-    */
+    /** IPv6地址。*/
     struct sockaddr_in6 addr6;
+
 } abcdk_sockaddr_t;
 
 /*
@@ -57,20 +50,14 @@ typedef struct _abcdk_ifaddrs
     */
     char name[IF_NAMESIZE];
 
-    /**
-     * 接口地址。
-     * 
-    */
+    /** 接口地址。*/
     abcdk_sockaddr_t addr;
 
-    /**
-     * 掩码地址。
-     * 
-    */
+    /** 掩码地址。*/
     abcdk_sockaddr_t mark;
 
-    /**
-     * 广播地址。
+    /** 
+     * 广播地址。 
      * 
      * @warning IPv6无效。
     */
@@ -188,11 +175,11 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
 /**
  * 创建一个SOCKET句柄。
  * 
- * @param udp 0 创建TCP句柄，!0 创建UDP句柄。
+ * @param flag 标志。0 创建数据流(TCP)句柄，!0 创建数据报(UDP)句柄。
  * 
  * @return >= 0 成功(SOCKET句柄)，-1 失败。
 */
-int abcdk_socket(sa_family_t family, int udp);
+int abcdk_socket(sa_family_t family, int flag);
 
 /**
  * 绑定地址到SOCKET句柄。

@@ -51,6 +51,7 @@
 #include <sys/ioctl.h>
 #include <sys/epoll.h>
 #include <sys/mtio.h>
+#include <sys/un.h>
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>

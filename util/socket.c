@@ -62,6 +62,7 @@ int abcdk_inet_pton(const char *name, sa_family_t family, abcdk_sockaddr_t *addr
 char *abcdk_inet_ntop(const abcdk_sockaddr_t *addr, char *name, size_t max)
 {
     assert(addr != NULL && name != NULL && max > 0);
+    
     assert(addr->family == ABCDK_IPV4 || addr->family == ABCDK_IPV6);
     assert((addr->family == ABCDK_IPV4) ? (max >= INET_ADDRSTRLEN) : 1);
     assert((addr->family == ABCDK_IPV6) ? (max >= INET6_ADDRSTRLEN) : 1);
@@ -234,6 +235,7 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
     int chk = -1;
 
     assert(fd >= 0 && multiaddr != NULL);
+
     assert(multiaddr->family == ABCDK_IPV4 || multiaddr->family == ABCDK_IPV6);
 
     memset(&st_mreq,0,sizeof(st_mreq));
@@ -261,22 +263,31 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
     return chk;
 }
 
-int abcdk_socket(sa_family_t family, int udp)
+int abcdk_socket(sa_family_t family, int flag)
 {
     int type = SOCK_CLOEXEC;
 
-    assert(family == ABCDK_IPV4 || family == ABCDK_IPV6);
-
-    type |= (udp ? SOCK_DGRAM : SOCK_STREAM);
+    type |= (flag ? SOCK_DGRAM : SOCK_STREAM);
 
     return socket(family, type, 0);
 }
 
 int abcdk_bind(int fd, const abcdk_sockaddr_t *addr)
 {
+    socklen_t len;
+
     assert(fd >= 0 && addr != NULL);
 
-    return bind(fd, &addr->addr, sizeof(abcdk_sockaddr_t));
+    len = sizeof(abcdk_sockaddr_t);
+    if(addr->family == AF_UNIX)
+#ifdef SUN_LEN
+        len = SUN_LEN(&addr->addr_un);
+#else 
+        len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
+#endif
+        
+
+    return bind(fd, &addr->addr,len);
 }
 
 int abcdk_accept(int fd, abcdk_sockaddr_t *addr)
@@ -302,6 +313,7 @@ int abcdk_accept(int fd, abcdk_sockaddr_t *addr)
 
 int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout)
 {
+    socklen_t len;
     int flags = 0;
     int eno = 0;
     int chk;
@@ -320,7 +332,15 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout)
     if (chk != 0)
         return -1;
 
-    chk = connect(fd, &addr->addr, sizeof(abcdk_sockaddr_t));
+    len = sizeof(abcdk_sockaddr_t);
+    if(addr->family == AF_UNIX)
+#ifdef SUN_LEN
+        len = SUN_LEN(&addr->addr_un);
+#else 
+        len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
+#endif
+
+    chk = connect(fd, &addr->addr, len);
     if(chk == 0)
         goto final;
 
