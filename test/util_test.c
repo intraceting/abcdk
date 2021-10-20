@@ -2492,6 +2492,21 @@ int test_libusb(abcdk_tree_t *args)
 
 int openssl_verify_cb(int ok, X509_STORE_CTX *ctx)
 {
+    X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+
+    //X509_print_fp(stderr,cert);
+    EVP_PKEY *pkey = X509_get_pubkey(cert);
+    printf("type:%d\n",X509_get_signature_type(cert));
+
+    char buf[100]={0};
+    char * p = X509_NAME_oneline(X509_get_subject_name(cert),buf,100);
+    assert(p == buf);
+    printf("{%s}\n",buf);
+
+    char buf2[100]={0};
+    char * p2 = X509_NAME_oneline(X509_get_issuer_name(cert),buf2,100);
+    assert(p2 == buf2);
+    printf("{%s}\n",buf2);
 
     return 1;
 }
@@ -2506,6 +2521,7 @@ void test_openssl_server(abcdk_tree_t *args)
 
     SSL_CTX * ctx = SSL_CTX_new(method);
 
+    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
     int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
                                           abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
@@ -2513,7 +2529,7 @@ void test_openssl_server(abcdk_tree_t *args)
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
 
-    SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
+    //SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
@@ -2558,7 +2574,7 @@ void test_openssl_client(abcdk_tree_t *args)
 
     SSL_CTX * ctx = SSL_CTX_new(method);
 
-
+    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
     int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
                                           abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
@@ -2567,8 +2583,6 @@ void test_openssl_client(abcdk_tree_t *args)
     assert(chk == 0);
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
-
-  //  SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_from_string(&addr,
