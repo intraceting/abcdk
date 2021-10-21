@@ -287,6 +287,18 @@ CheckHavePackage()
                 echo "libusb-1.0-0-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "mqtt" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmosquitto-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo "-lmosquitto"
+            else
+                echo "libmosquitto-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -491,6 +503,18 @@ CheckHavePackage()
                 echo "libusbx-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "mqtt" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} mosquitto-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libmosquitto)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libmosquitto)"
+            else
+                echo "mosquitto-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -565,7 +589,7 @@ PrintUsage()
     echo -e "\t\t依赖项目，以英文“,”为分割符。支持以下关键字："
     echo -e "\n\t\thave-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg"
     echo -e "\t\thave-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib"
-    echo -e "\t\thave-archive,have-modbus,have-libusb"
+    echo -e "\t\thave-archive,have-modbus,have-libusb,have-mqtt"
 }
 
 #
@@ -906,6 +930,25 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-libusb") -eq 1 ];then
 fi
 
 #
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-mqtt") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} mqtt 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_MQTT="Yes"
+        DEPEND_FLAGS=" -DHAVE_MQTT $(CheckHavePackage ${KIT_NAME} mqtt 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} mqtt 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} mqtt 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+#
 mkdir -p ${BUILD_PATH}
 
 #
@@ -969,7 +1012,7 @@ echo "HAVE_ZLIB=${HAVE_ZLIB}"
 echo "HAVE_ARCHIVE=${HAVE_ARCHIVE}"
 echo "HAVE_MODBUS=${HAVE_MODBUS}"
 echo "HAVE_LIBUSB=${HAVE_LIBUSB}"
-
+echo "HAVE_MQTT=${HAVE_MQTT}"
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
 echo "INSTALL_PREFIX=${INSTALL_PREFIX}"
