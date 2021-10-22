@@ -2083,6 +2083,7 @@ void test_video(abcdk_tree_t *args)
     const char *dst_file_p = abcdk_option_get(args,"--dst",0,"");
 
     abcdk_video_t *src = abcdk_video_open_capture(NULL,src_file_p,-1UL,1);
+
     //int dst = abcdk_open(dst_file_p,1,0,1);
     abcdk_video_t *dst = abcdk_video_open_writer(NULL,dst_file_p,NULL);
 
@@ -2116,7 +2117,16 @@ void test_video(abcdk_tree_t *args)
     AVPacket pkt;
     av_init_packet(&pkt);
     AVFrame *fae = av_frame_alloc();
-    for(int i =0;i<2000;i++)
+
+    AVFrame *fae2 = av_frame_alloc();
+    fae2->format = dst->codec_ctx[0]->pix_fmt;
+    fae2->height = height;
+    fae2->width = width;
+    av_frame_get_buffer(fae2,1);
+
+    struct SwsContext *sws = NULL;
+
+    for(int i =0;i<100;i++)
     {   
       //  chk = abcdk_video_read(src,&pkt,stream_index,0,1);
         chk = abcdk_video_read2(src,fae,stream_index,0);
@@ -2132,7 +2142,13 @@ void test_video(abcdk_tree_t *args)
         // abcdk_write(dst,pkt.data,pkt.size);
 
         // chk = abcdk_video_write3(dst,stream_index2,pkt.data,pkt.size);
-         chk = abcdk_video_write2(dst,stream_index2,fae);
+
+        if(!sws)
+            sws = abcdk_sws_alloc2(fae, fae2, 0);
+
+        abcdk_sws_scale(sws,fae,fae2);
+
+         chk = abcdk_video_write2(dst,stream_index2,fae2);
          if(chk < 0)
             break;
 
