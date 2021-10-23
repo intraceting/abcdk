@@ -2744,6 +2744,34 @@ int test_mqtt(abcdk_tree_t *args)
     return 0;
 }
 
+void test_http(abcdk_tree_t *args)
+{
+    int s = abcdk_socket(ABCDK_IPV4,0);
+
+    abcdk_sockaddr_t a;
+    a.family = ABCDK_IPV4;
+    abcdk_sockaddr_from_string(&a,"0.0.0.0:12345",0);
+    abcdk_bind(s,&a);
+    listen(s,10);
+
+    int c = abcdk_accept(s,NULL);
+
+    char buf[10]={0};
+
+    printf("--->>>\r\n");
+
+    while(read(c,buf,1)>0)
+    {
+        printf("%s",buf);
+    }
+
+    printf("<<<---\r\n");
+
+    abcdk_closep(&c);
+    abcdk_closep(&s);
+    
+}
+
 
 
 int main(int argc, char **argv)
@@ -2847,6 +2875,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_mqtt", 0) == 0)
        test_mqtt(args);
+
+    if (abcdk_strcmp(func, "test_http", 0) == 0)
+       test_http(args);
 
     abcdk_tree_free(&args);
     
