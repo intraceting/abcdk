@@ -2082,7 +2082,17 @@ void test_video(abcdk_tree_t *args)
     const char *src_file_p = abcdk_option_get(args,"--src",0,"");
     const char *dst_file_p = abcdk_option_get(args,"--dst",0,"");
 
-    abcdk_video_t *src = abcdk_video_open_capture(NULL,src_file_p,-1UL,1);
+    AVDictionary *dict = NULL;
+#if 1
+    av_dict_set(&dict,"framerate","120",0);
+    //av_dict_set(&dict,"video_size","1920x1080",0);
+    av_dict_set(&dict,"video_size","640x480",0);
+    //av_dict_set(&dict,"input_format","mjpeg",0);
+    av_dict_set(&dict,"input_format","yuyv422",0);
+#endif 
+    abcdk_video_t *src = abcdk_video_open_capture(NULL,src_file_p,-1UL,1,dict);
+
+    av_dict_free(&dict);
 
     //int dst = abcdk_open(dst_file_p,1,0,1);
     abcdk_video_t *dst = abcdk_video_open_writer(NULL,dst_file_p,NULL);
@@ -2126,7 +2136,7 @@ void test_video(abcdk_tree_t *args)
 
     struct SwsContext *sws = NULL;
 
-    for(int i =0;i<100;i++)
+    for(int i =0;i<1000;i++)
     {   
       //  chk = abcdk_video_read(src,&pkt,stream_index,0,1);
         chk = abcdk_video_read2(src,fae,stream_index,0);

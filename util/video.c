@@ -187,7 +187,8 @@ int _abcdk_video_capture_interrupt_cb(void *args)
     return 0;
 }
 
-abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, int64_t timeout, int dump)
+abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, int64_t timeout, int dump,
+                                        const AVDictionary *dict)
 {
     abcdk_video_t *video = NULL;
     int chk;
@@ -204,6 +205,9 @@ abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url,
     AVIOInterruptCB cb;
     cb.callback = _abcdk_video_capture_interrupt_cb;
     cb.opaque = video;
+
+    if(dict)
+        av_dict_copy(&video->dict,dict,0);
 
     video->ctx = abcdk_avformat_input_open(short_name,url,&cb,NULL,&video->dict);
     if(!video->ctx)

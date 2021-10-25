@@ -132,7 +132,8 @@ double abcdk_video_ts2sec(abcdk_video_t *video, int stream_index, int64_t ts);
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, int64_t timeout, int dump);
+abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, int64_t timeout, int dump,
+                                        const AVDictionary *dict);
 
 /**
  * 读取数据包。
