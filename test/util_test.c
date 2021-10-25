@@ -2094,6 +2094,8 @@ void test_video(abcdk_tree_t *args)
 
     av_dict_free(&dict);
 
+    //abcdk_avformat_show_options(src->ctx);
+
     //int dst = abcdk_open(dst_file_p,1,0,1);
     abcdk_video_t *dst = abcdk_video_open_writer(NULL,dst_file_p,NULL);
 
