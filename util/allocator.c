@@ -19,10 +19,8 @@ typedef struct _abcdk_allocator_hdr
     */
     uint32_t magic;
 
-    /**
-     * 'ABCDK' ASCII
-    */
-#define ABCDK_ALLOCATOR_MAGIC 0x474F4F44
+    /** */
+#define ABCDK_ALLOCATOR_MAGIC 123456789
 
     /**
     * 引用计数器。
