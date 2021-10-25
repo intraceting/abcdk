@@ -29,6 +29,7 @@
 #include "abcdk-auth/auth.h"
 #include "abcdk-util/lz4.h"
 #include "abcdk-util/openssl.h"
+#include "abcdk-util/redis.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -2784,7 +2785,39 @@ void test_http(abcdk_tree_t *args)
     
 }
 
+void test_redis(abcdk_tree_t *args)
+{
+#ifdef __HIREDIS_H
 
+    const char *server = abcdk_option_get(args, "--server", 0, "127.0.0.1");
+    int port = abcdk_option_get_int(args, "--port", 0, 6379);
+
+    redisContext *c = abcdk_redis_connect(server, port, 20);
+    if (!c)
+        return;
+
+    //printf("%s\n", c->errstr);
+
+    int chk = abcdk_redis_auth(c,"12345678");
+    assert(chk==0);
+
+    char buf[128]={0};
+    abcdk_redis_get_auth(c,buf);
+    printf("{%s}\n",buf);
+
+    chk = abcdk_redis_set_auth(c,"12345678");
+    assert(chk==0);
+
+    chk = abcdk_redis_auth(c,"12345678");
+    assert(chk==0);
+
+    char buf2[128]={0};
+    abcdk_redis_get_auth(c,buf2);
+    printf("{%s}\n",buf2);
+
+    redisFree(c);
+#endif //
+}
 
 int main(int argc, char **argv)
 {
@@ -2890,6 +2923,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_http", 0) == 0)
        test_http(args);
+
+    if (abcdk_strcmp(func, "test_redis", 0) == 0)
+       test_redis(args);
 
     abcdk_tree_free(&args);
     

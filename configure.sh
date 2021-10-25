@@ -299,6 +299,18 @@ CheckHavePackage()
                 echo "libmosquitto-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "redis" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libhiredis-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags hiredis)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs hiredis)"
+            else
+                echo "libhiredis-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -515,6 +527,18 @@ CheckHavePackage()
                 echo "mosquitto-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "redis" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} hiredis-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags hiredis)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs hiredis)"
+            else
+                echo "hiredis-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -589,7 +613,7 @@ PrintUsage()
     echo -e "\t\t依赖项目，以英文“,”为分割符。支持以下关键字："
     echo -e "\n\t\thave-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg"
     echo -e "\t\thave-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib"
-    echo -e "\t\thave-archive,have-modbus,have-libusb,have-mqtt"
+    echo -e "\t\thave-archive,have-modbus,have-libusb,have-mqtt,have-redis"
 }
 
 #
@@ -949,6 +973,25 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-mqtt") -eq 1 ];then
 fi
 
 #
+if [ $(CheckKeyword ${DEPEND_FUNC} "have-redis") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} redis 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_REDIS="Yes"
+        DEPEND_FLAGS=" -DHAVE_REDIS $(CheckHavePackage ${KIT_NAME} redis 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} redis 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} redis 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+#
 mkdir -p ${BUILD_PATH}
 
 #
@@ -1013,6 +1056,8 @@ echo "HAVE_ARCHIVE=${HAVE_ARCHIVE}"
 echo "HAVE_MODBUS=${HAVE_MODBUS}"
 echo "HAVE_LIBUSB=${HAVE_LIBUSB}"
 echo "HAVE_MQTT=${HAVE_MQTT}"
+echo "HAVE_REDIS=${HAVE_REDIS}"
+
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
 echo "INSTALL_PREFIX=${INSTALL_PREFIX}"
