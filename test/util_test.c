@@ -2555,7 +2555,7 @@ void test_openssl_server(abcdk_tree_t *args)
 
     SSL_CTX * ctx = SSL_CTX_new(method);
 
-    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
+    //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
     int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
                                           abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
@@ -2563,7 +2563,7 @@ void test_openssl_server(abcdk_tree_t *args)
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
 
-    //SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
+    SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
     //abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
@@ -2613,7 +2613,7 @@ void test_openssl_client(abcdk_tree_t *args)
 
     SSL_CTX * ctx = SSL_CTX_new(method);
 
-    SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
+    //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
     int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
                                           abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
@@ -2622,6 +2622,8 @@ void test_openssl_client(abcdk_tree_t *args)
     assert(chk == 0);
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
+
+    SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
 
     abcdk_sockaddr_t addr = {0};
   //  abcdk_sockaddr_from_string(&addr,
