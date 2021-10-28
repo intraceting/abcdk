@@ -2821,6 +2821,57 @@ void test_redis(abcdk_tree_t *args)
 #endif //
 }
 
+#ifdef HAVE_OPENSSL
+
+X509 *load_cert(const char *pem)
+{
+    X509 *pCert = NULL;
+    BIO *pbio = NULL;
+
+    pbio = BIO_new_file(pem, "r");
+    pCert = PEM_read_bio_X509(pbio, NULL, NULL, NULL);
+    BIO_free(pbio);
+
+    return pCert;
+}
+
+#endif 
+
+void test_cert_verify(abcdk_tree_t *args)
+{
+#ifdef HAVE_OPENSSL
+
+    const char *ca = abcdk_option_get(args, "--ca-cert", 0, "");
+    const char *user = abcdk_option_get(args, "--user-cert", 0, "");
+
+    SSLeay_add_all_algorithms();
+
+    X509 *pUserCert = load_cert(user);
+    X509 *pCaCert = load_cert(ca);
+
+    X509_STORE *pCaCertStore = X509_STORE_new();
+
+    int chk = X509_STORE_add_cert(pCaCertStore, pCaCert);
+    assert(chk ==1);
+    
+    X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+
+    STACK_OF(X509) *CertStack = NULL;
+    chk = X509_STORE_CTX_init(ctx,pCaCertStore,pUserCert,CertStack);
+    assert(chk ==1);
+
+    chk = X509_verify_cert(ctx);
+    assert(chk ==1);
+    
+    X509_free(pUserCert);
+    X509_free(pCaCert);
+    X509_STORE_CTX_cleanup(ctx);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(pCaCertStore);
+
+#endif 
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -2928,6 +2979,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_redis", 0) == 0)
        test_redis(args);
+    
+    if (abcdk_strcmp(func, "test_cert_verify", 0) == 0)
+       test_cert_verify(args);
 
     abcdk_tree_free(&args);
     
