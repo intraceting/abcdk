@@ -2842,16 +2842,21 @@ void test_cert_verify(abcdk_tree_t *args)
 #ifdef HAVE_OPENSSL
 
     const char *ca = abcdk_option_get(args, "--ca-cert", 0, "");
+    const char *ca_sub = abcdk_option_get(args, "--ca-sub-cert", 0, "");
     const char *user = abcdk_option_get(args, "--user-cert", 0, "");
 
     SSLeay_add_all_algorithms();
 
     X509 *pUserCert = load_cert(user);
+    X509 *pCaCert_sub = load_cert(ca_sub);
     X509 *pCaCert = load_cert(ca);
 
     X509_STORE *pCaCertStore = X509_STORE_new();
 
     int chk = X509_STORE_add_cert(pCaCertStore, pCaCert);
+    assert(chk ==1);
+
+    chk = X509_STORE_add_cert(pCaCertStore, pCaCert_sub);
     assert(chk ==1);
     
     X509_STORE_CTX *ctx = X509_STORE_CTX_new();
@@ -2864,6 +2869,7 @@ void test_cert_verify(abcdk_tree_t *args)
     assert(chk ==1);
     
     X509_free(pUserCert);
+    X509_free(pCaCert_sub);
     X509_free(pCaCert);
     X509_STORE_CTX_cleanup(ctx);
     X509_STORE_CTX_free(ctx);
