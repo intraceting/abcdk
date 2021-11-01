@@ -2524,10 +2524,23 @@ int test_libusb(abcdk_tree_t *args)
 
 #ifdef HAVE_OPENSSL
 
+X509 *load_cert(const char *pem)
+{
+    X509 *pCert = NULL;
+    BIO *pbio = NULL;
+
+    pbio = BIO_new_file(pem, "r");
+    pCert = PEM_read_bio_X509(pbio, NULL, NULL, NULL);
+    BIO_free(pbio);
+
+    return pCert;
+}
+
 int openssl_verify_cb(int ok, X509_STORE_CTX *ctx)
 {
     X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
-
+    int chk = 0;
+#if 0
     //X509_print_fp(stderr,cert);
     EVP_PKEY *pkey = X509_get_pubkey(cert);
     printf("type:%d\n",X509_get_signature_type(cert));
@@ -2542,7 +2555,41 @@ int openssl_verify_cb(int ok, X509_STORE_CTX *ctx)
     assert(p2 == buf2);
     printf("{%s}\n",buf2);
 
+
     return 1;
+
+#else
+
+    X509 * pCaCert_sub = load_cert("");
+    X509 * pCaCert = load_cert("");
+
+    X509_STORE *pCaCertStore = X509_STORE_new();
+
+    chk = X509_STORE_add_cert(pCaCertStore, pCaCert);
+    assert(chk ==1);
+
+    chk = X509_STORE_add_cert(pCaCertStore, pCaCert_sub);
+    assert(chk ==1);
+    
+    X509_STORE_CTX *ctx2 = X509_STORE_CTX_new();
+
+    STACK_OF(X509) *CertStack = NULL;
+    chk = X509_STORE_CTX_init(ctx2,pCaCertStore,cert,CertStack);
+    assert(chk ==1);
+
+    chk = X509_verify_cert(ctx2);
+    assert(chk ==1);
+    
+    X509_free(pCaCert_sub);
+    X509_free(pCaCert);
+    X509_STORE_CTX_cleanup(ctx2);
+    X509_STORE_CTX_free(ctx2);
+    X509_STORE_free(pCaCertStore);
+
+    return 1;
+
+#endif
+
 }
 
 void test_openssl_server(abcdk_tree_t *args)
@@ -2557,9 +2604,9 @@ void test_openssl_server(abcdk_tree_t *args)
 
     //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
-    int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
-                                          abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
-                                          abcdk_option_get(args, "--rsa-key-pwd", 0, NULL));
+    int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+                                          abcdk_option_get(args, "--key-file", 0, NULL),
+                                          abcdk_option_get(args, "--key-pwd", 0, NULL));
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
 
@@ -2615,9 +2662,9 @@ void test_openssl_client(abcdk_tree_t *args)
 
     //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
-    int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--rsa-crs-file", 0, NULL),
-                                          abcdk_option_get(args, "--rsa-key-pri-file", 0, NULL),
-                                          abcdk_option_get(args, "--rsa-key-pwd", 0, NULL));
+    int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+                                          abcdk_option_get(args, "--key-file", 0, NULL),
+                                          abcdk_option_get(args, "--key-pwd", 0, NULL));
 
     assert(chk == 0);
 
@@ -2821,21 +2868,6 @@ void test_redis(abcdk_tree_t *args)
 #endif //
 }
 
-#ifdef HAVE_OPENSSL
-
-X509 *load_cert(const char *pem)
-{
-    X509 *pCert = NULL;
-    BIO *pbio = NULL;
-
-    pbio = BIO_new_file(pem, "r");
-    pCert = PEM_read_bio_X509(pbio, NULL, NULL, NULL);
-    BIO_free(pbio);
-
-    return pCert;
-}
-
-#endif 
 
 void test_cert_verify(abcdk_tree_t *args)
 {
