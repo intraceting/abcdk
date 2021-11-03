@@ -13,19 +13,16 @@
 #include <openssl/opensslconf.h>
 #include <openssl/opensslv.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
 
 #ifndef OPENSSL_NO_RSA
 #include <openssl/rsa.h>
-#include <openssl/pem.h>
 #endif //OPENSSL_NO_RSA
 
 #ifndef OPENSSL_NO_AES
 #include <openssl/aes.h>
 #endif //OPENSSL_NO_AES
-
-#ifndef OPENSSL_NO_HMAC
-#include <openssl/ssl.h>
-#endif //OPENSSL_NO_HMAC
 
 #ifndef OPENSSL_NO_HMAC
 #include <openssl/hmac.h>
@@ -249,8 +246,27 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
 /**
  * 加载证书、私钥。
  * 
- * @param cert 证书文件的指针。
- * @param key 私钥文件的指针，NULL(0) 忽略。
+ * @param cert 证书文件的指针。仅支持PEM格式。
+ * 
+ * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
+*/
+X509 *abcdk_openssl_load_cert(const char *cert);
+
+/**
+ * 验证证书。
+ * 
+ * @param store 父级证书的容器。
+ * @param x509 子级证书。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_openssl_verify_cert(X509_STORE *store,X509 *x509);
+
+/**
+ * CTX加载证书、私钥。
+ * 
+ * @param cert 证书文件的指针。仅支持PEM格式。
+ * @param key 私钥文件的指针，NULL(0) 忽略。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
  * 
  * @return 0 成功(句柄)，-1 失败。

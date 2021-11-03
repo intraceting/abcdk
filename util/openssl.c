@@ -400,6 +400,50 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 
 #ifdef HEADER_SSL_H
 
+X509 *abcdk_openssl_load_cert(const char *cert)
+{
+    X509 *ctx = NULL;
+    BIO *bio_ctx = NULL;
+
+    assert(cert != NULL);
+
+    bio_ctx = BIO_new_file(cert, "r");
+    if(!bio_ctx)
+        return NULL;
+    
+    ctx = PEM_read_bio_X509(bio_ctx, NULL, NULL, NULL);
+        
+    BIO_free(bio_ctx);
+
+    return ctx;
+}
+
+int abcdk_openssl_verify_cert(X509_STORE *store, X509 *x509)
+{
+    X509_STORE_CTX *ctx = NULL;
+    int chk;
+
+    assert(store != NULL && x509 != NULL);
+
+    ctx = X509_STORE_CTX_new();
+    if (!ctx)
+        return -1;
+
+    chk = X509_STORE_CTX_init(ctx, store, x509, NULL);
+    if (chk != 1)
+        goto final;
+
+    chk = X509_verify_cert(ctx);
+
+final:
+
+    X509_STORE_CTX_cleanup(ctx);
+    X509_STORE_CTX_free(ctx);
+
+    /*转换返回值。*/
+    return ((chk == 1) ? 0 : -1);
+}
+
 int abcdk_openssl_ctx_load_cert(SSL_CTX *ctx, const char *cert, const char *key, const char *pwd)
 {
     int chk;

@@ -2592,6 +2592,36 @@ int openssl_verify_cb(int ok, X509_STORE_CTX *ctx)
 
 }
 
+//int cert_cb (X509_STORE_CTX *ctx, void *arg)
+int cert_cb (SSL *ssl, void *arg)
+{
+    //X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+    X509 *cert = SSL_get_peer_certificate(ssl);
+    int chk;
+
+    if(!cert)
+        return 1;
+
+    X509 * pCaCert_sub = load_cert("/home/devel/job/tmp/未命名文件夹/signCA/pem.crt");
+   // X509 * pCaCert = load_cert("/home/devel/job/tmp/未命名文件夹/myCA/pem.crt");
+
+    X509_STORE *pCaCertStore = X509_STORE_new();
+
+  //  chk = X509_STORE_add_cert(pCaCertStore, pCaCert);
+  //  assert(chk ==1);
+
+    chk = X509_STORE_add_cert(pCaCertStore, pCaCert_sub);
+    assert(chk ==1);
+
+    abcdk_openssl_verify_cert(pCaCertStore,cert);
+
+    X509_STORE_free(pCaCertStore);
+    X509_free(pCaCert_sub);
+  //  X509_free(pCaCert);
+
+    return 1;
+}
+
 void test_openssl_server(abcdk_tree_t *args)
 {
 #if OPENSSL_VERSION_NUMBER <= 0x100020bfL  
@@ -2604,13 +2634,18 @@ void test_openssl_server(abcdk_tree_t *args)
 
     //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
+    //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,NULL);
+    //SSL_CTX_set_cert_verify_callback(ctx,cert_cb,NULL);
+
     int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
                                           abcdk_option_get(args, "--key-file", 0, NULL),
                                           abcdk_option_get(args, "--key-pwd", 0, NULL));
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
 
-    SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
+    //SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
+    SSL_set_verify(s,SSL_VERIFY_PEER,NULL);
+    SSL_set_cert_cb(s,cert_cb,NULL);
 
     abcdk_sockaddr_t addr = {0};
     //abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
@@ -2662,6 +2697,9 @@ void test_openssl_client(abcdk_tree_t *args)
 
     //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,openssl_verify_cb);
 
+    //SSL_CTX_set_verify(ctx,SSL_VERIFY_PEER,NULL);
+    //SSL_CTX_set_cert_verify_callback(ctx,cert_cb,NULL);
+
     int chk = abcdk_openssl_ctx_load_cert(ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
                                           abcdk_option_get(args, "--key-file", 0, NULL),
                                           abcdk_option_get(args, "--key-pwd", 0, NULL));
@@ -2670,7 +2708,10 @@ void test_openssl_client(abcdk_tree_t *args)
 
     SSL* s = abcdk_openssl_ssl_alloc(ctx);
 
-    SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
+   // SSL_set_verify(s,SSL_VERIFY_PEER,openssl_verify_cb);
+
+    SSL_set_verify(s,SSL_VERIFY_PEER,NULL);
+    SSL_set_cert_cb(s,cert_cb,NULL);
 
     abcdk_sockaddr_t addr = {0};
   //  abcdk_sockaddr_from_string(&addr,
