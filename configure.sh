@@ -596,24 +596,38 @@ DEPEND_FUNC="Nothing"
 #
 PrintUsage()
 {
-    echo "usage: [ OPTIONS ]"
-    echo -e "\n\t-p"
-    echo -e "\t\t目标系统。默认：${TARGET_PLATFORM}"
-    echo -e "\n\t-g"
-    echo -e "\t\t生成调试符号。默认：关闭"
-    echo -e "\n\t-V"
-    echo -e "\t\t主版本。默认：${VERSION_MAJOR}"
-    echo -e "\n\t-v"
-    echo -e "\t\t副版本。默认：${VERSION_MINOR}"
-    echo -e "\n\t-r"
-    echo -e "\t\t发行版本。默认：${VERSION_RELEASE}"
-    echo -e "\n\t-i < PATH >"
-    echo -e "\t\t安装路径。默认：${INSTALL_PREFIX}"
-    echo -e "\n\t-d < KEY,KEY,... >"
-    echo -e "\t\t依赖项目，以英文“,”为分割符。支持以下关键字："
-    echo -e "\n\t\thave-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg"
-    echo -e "\t\thave-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib"
-    echo -e "\t\thave-archive,have-modbus,have-libusb,have-mqtt,have-redis"
+cat << EOF
+usage: [ OPTIONS ]
+    -p < STRING >  
+     目标系统平台。支持x86_64，aarch64。
+     默认：${TARGET_PLATFORM}
+
+    -g  
+     生成调试符号。
+     默认：关闭
+
+    -V < NUMBER > 
+     主版本。
+     默认：${VERSION_MAJOR}
+
+    -v < NUMBER > 
+     副版本。
+     默认：${VERSION_MINOR}
+
+    -r < NUMBER > 
+     发行版本。
+     默认：${VERSION_RELEASE}
+
+    -i < PATH > 
+     安装路径。
+     默认：${INSTALL_PREFIX}
+
+    -d < KEY,KEY,... > 
+     依赖项目，以英文“,”为分割符。支持以下关键字：
+     have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg
+     have-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib
+     have-archive,have-modbus,have-libusb,have-mqtt,have-redis
+EOF
 }
 
 #
