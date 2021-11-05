@@ -603,24 +603,19 @@ usage: [ OPTIONS ]
      默认：${TARGET_PLATFORM}
 
     -g  
-     生成调试符号。
-     默认：关闭
+     生成调试符号。默认：关闭
 
     -V < NUMBER > 
-     主版本。
-     默认：${VERSION_MAJOR}
+     主版本。默认：${VERSION_MAJOR}
 
     -v < NUMBER > 
-     副版本。
-     默认：${VERSION_MINOR}
+     副版本。默认：${VERSION_MINOR}
 
     -r < NUMBER > 
-     发行版本。
-     默认：${VERSION_RELEASE}
+     发行版本。默认：${VERSION_RELEASE}
 
     -i < PATH > 
-     安装路径。
-     默认：${INSTALL_PREFIX}
+     安装路径。默认：${INSTALL_PREFIX}
 
     -d < KEY,KEY,... > 
      依赖项目，以英文“,”为分割符。支持以下关键字：

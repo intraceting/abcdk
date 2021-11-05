@@ -481,10 +481,10 @@ char* abcdk_user_dirname(char* buf,const char* append);
 /**
  * 在描述符上等待事件。
  * 
- * @param event 事件。0x01 读，0x02 写，0x03读写。
+ * @param event 事件。0x01 读，0x02 写。可用“|”连接事件同时等待。
  * @param timeout 超时(毫秒)。>= 0 有事件或时间过期，< 0 直到有事件或出错。
  * 
- * @return > 0 有事件，0 超时，< 0 出错。
+ * @return > 0 有事件(事件)，0 超时，< 0 出错。
 */
 int abcdk_poll(int fd, int event,time_t timeout);
 

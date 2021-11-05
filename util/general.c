@@ -988,21 +988,32 @@ char *abcdk_user_dirname(char *buf, const char *append)
 
 /*------------------------------------------------------------------------------------------------*/
 
-int abcdk_poll(int fd, int event,time_t timeout)
+int abcdk_poll(int fd, int event, time_t timeout)
 {
     struct pollfd arr = {0};
+    int chk = 0;
+    int ret = 0;
 
     assert(fd >= 0 && (event & 0x03));
 
     arr.fd = fd;
     arr.events = 0;
-    
-    if((event & 0x01))
+
+    if ((event & 0x01))
         arr.events |= POLLIN;
-    if((event & 0x02))
+    if ((event & 0x02))
         arr.events |= POLLOUT;
 
-    return poll(&arr, 1, (timeout >= INT32_MAX ? -1 : timeout));
+    chk = poll(&arr, 1, (timeout >= INT32_MAX ? -1 : timeout));
+    if (chk <= 0)
+        return chk;
+
+    if (chk & POLLIN)
+        ret |= 0x01;
+    if (chk & POLLOUT)
+        ret |= 0x02;
+
+    return ret;
 }
 
 ssize_t abcdk_write(int fd, const void *data, size_t size)
