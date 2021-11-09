@@ -122,13 +122,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "openmp" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libomp-dev)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libgomp1)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "-fopenmp"
             elif [ ${FLAG} -eq 3 ];then
                 echo "-fopenmp"
             else
-                echo "libomp-dev"
+                echo "libgomp1"
             fi
         }
         elif [ "${PKG_NAME}" == "unixodbc" ];then
@@ -328,13 +328,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "openmp" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} gcc)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libgomp)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "-fopenmp"
             elif [ ${FLAG} -eq 3 ];then
                 echo "-fopenmp"
             else
-                echo "gcc"
+                echo "libgomp"
             fi
         }
         elif [ "${PKG_NAME}" == "unixodbc" ];then
