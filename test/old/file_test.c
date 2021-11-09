@@ -10,7 +10,7 @@
 #include <string.h>
 #include <limits.h>
 #include "abcdk-util/dirent.h"
-#include "abcdk-util/mman.h"
+#include "abcdk-util/mmap.h"
 #include "abcdk-util/notify.h"
 #include "abcdk-util/iconv.h"
 #include "abcdk-util/tar.h"

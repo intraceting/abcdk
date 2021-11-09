@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "abcdk-util/general.h"
 #include "abcdk-util/getargs.h"
-#include "abcdk-util/mman.h"
+#include "abcdk-util/mmap.h"
 
 #define DEFAULT_OS_RELEASE_FILE "/etc/os-release"
 

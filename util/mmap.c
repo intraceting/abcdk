@@ -4,7 +4,7 @@
  * MIT License
  * 
 */
-#include "abcdk-util/mman.h"
+#include "abcdk-util/mmap.h"
 
 void _abcdk_munmap_cb(abcdk_allocator_t *alloc, void *opaque)
 {

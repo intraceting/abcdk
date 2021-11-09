@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "abcdk-util/general.h"
 #include "abcdk-util/getargs.h"
-#include "abcdk-util/mman.h"
+#include "abcdk-util/mmap.h"
 #include "abcdk-util/hexdump.h"
 
 void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
