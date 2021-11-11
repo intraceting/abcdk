@@ -16,6 +16,9 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+#include <openssl/x509_vfy.h>
 
 #if !defined(OPENSSL_NO_SHA) && (!defined(OPENSSL_NO_SHA0) || !defined(OPENSSL_NO_SHA1))
 #include <openssl/sha.h>
@@ -231,47 +234,66 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
  * 
  * @return !NULL(0) 成功(公钥指针), NULL(0) 失败。
 */
-RSA *abcdk_openssl_pubkey_cert(X509 *x509);
+RSA *abcdk_openssl_pubkey_crt(X509 *x509);
 
 /**
  * 加载证书。
  * 
- * @param cert 证书文件的指针。仅支持PEM格式。
+ * @param crt 证书文件的指针。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
  * 
  * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
 */
-X509 *abcdk_openssl_load_cert(const char *cert, const char *pwd);
+X509 *abcdk_openssl_load_crt(const char *cert, const char *pwd);
+
+/**
+ * 加载证书吊销列表。
+ * 
+ * @param crl 证书吊销列表的指针。仅支持PEM格式。
+ * @param pwd 密码的指针，NULL(0) 忽略。
+ * 
+ * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
+*/
+X509_CRL *abcdk_openssl_load_crl(const char *crl, const char *pwd);
 
 /**
  * 加载证书到证书存储池。
  * 
  * @param ... 证书文件的指针，NULL(0) 结束。仅支持PEM格式。
  * 
- * @return 已经加载证书的索引最大值(从1开始)。索引号大于此值的证书尚未加载。
+ * @return 已经加载的索引最大值(从1开始)。索引号大于此值的尚未加载。
 */
-int abcdk_openssl_load_cert2store(X509_STORE *store,...);
+int abcdk_openssl_load_crt2store(X509_STORE *store,...);
 
 /**
- * 验证证书。
+ * 加载证书吊销列表到证书存储池。
+ * 
+ * @param ... 证书吊销列表的指针，NULL(0) 结束。仅支持PEM格式。
+ * 
+ * @return 已经加载的索引最大值(从1开始)。索引号大于此值的尚未加载。
+*/
+int abcdk_openssl_load_crl2store(X509_STORE *store,...);
+
+/**
+ * 准备证书验证环境。
  * 
  * @param store 父级证书的容器。
- * @param x509 子级证书。
+ * @param crt 子级证书。
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功(句柄)，-1 失败。
 */
-int abcdk_openssl_verify_cert(X509_STORE *store,X509 *x509);
+X509_STORE_CTX *abcdk_openssl_verify_crt_prepare(X509_STORE *store, X509 *crt);
 
 /**
  * SSL_CTX加载证书、私钥。
  * 
- * @param cert 证书文件的指针。仅支持PEM格式。
+ * @param crt 证书文件的指针。仅支持PEM格式。
  * @param key 私钥文件的指针，NULL(0) 忽略。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
  * 
  * @return 0 成功(句柄)，-1 失败。
 */
-int abcdk_openssl_ssl_ctx_load_cert(SSL_CTX *ctx,const char *cert,const char *key,const char *pwd);
+int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx,const char *crt,const char *key,const char *pwd);
 
 /**
  * 释放SSL句柄。

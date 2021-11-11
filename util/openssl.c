@@ -335,7 +335,7 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 
 #ifdef HEADER_SSL_H
 
-RSA *abcdk_openssl_pubkey_cert(X509 *x509)
+RSA *abcdk_openssl_pubkey_crt(X509 *x509)
 {
     RSA *rsa = NULL;
     EVP_PKEY *pkey = NULL;
@@ -354,27 +354,45 @@ RSA *abcdk_openssl_pubkey_cert(X509 *x509)
     return rsa;
 }
 
-X509 *abcdk_openssl_load_cert(const char *cert, const char *pwd)
+X509 *abcdk_openssl_load_crt(const char *crt, const char *pwd)
 {
     X509 *ctx = NULL;
     FILE *fp = NULL;
 
-    assert(cert != NULL);
+    assert(crt != NULL);
 
-    fp = fopen(cert, "r");
+    fp = fopen(crt, "r");
     if(!fp)
         return NULL;
     
-    ctx = PEM_read_X509(fp, NULL, NULL, pwd);
+    ctx = PEM_read_X509(fp, NULL, NULL, (void*)pwd);
         
     fclose(fp);
 
     return ctx;
 }
 
-int abcdk_openssl_load_cert2store(X509_STORE *store,...)
+X509_CRL *abcdk_openssl_load_crl(const char *crl, const char *pwd)
 {
-    X509 *x509 = NULL;
+    X509_CRL *ctx = NULL;
+    FILE *fp = NULL;
+
+    assert(crl != NULL);
+
+    fp = fopen(crl, "r");
+    if(!fp)
+        return NULL;
+    
+    ctx = PEM_read_X509_CRL(fp, NULL, NULL, (void*)pwd);
+        
+    fclose(fp);
+
+    return ctx;
+}
+
+int abcdk_openssl_load_crt2store(X509_STORE *store,...)
+{
+    X509 *crt = NULL;
     const char *file_p = NULL;
     int count = 0;
 
@@ -389,61 +407,98 @@ int abcdk_openssl_load_cert2store(X509_STORE *store,...)
         if (!file_p)
             break;
 
-        x509 = abcdk_openssl_load_cert(file_p, NULL);
-        if (!x509)
+        crt = abcdk_openssl_load_crt(file_p, NULL);
+        if (!crt)
             break;
 
-        if (X509_STORE_add_cert(store, x509) != 1)
+        if (X509_STORE_add_cert(store, crt) != 1)
             break;
 
-        X509_free(x509);
-        x509 = NULL;
+        X509_free(crt);
+        crt = NULL;
     }
 
     va_end(vaptr);
 
     /*很重要，因为在循环中有未释放的可能。*/
-    if(x509)
-        X509_free(x509);
+    if(crt)
+        X509_free(crt);
 
     return count;
 }
 
-int abcdk_openssl_verify_cert(X509_STORE *store, X509 *x509)
+int abcdk_openssl_load_crl2store(X509_STORE *store,...)
+{
+    X509_CRL *crl = NULL;
+    const char *file_p = NULL;
+    int count = 0;
+
+    assert (store != NULL);
+
+    va_list vaptr;
+    va_start(vaptr, store);
+
+    for (;; count++)
+    {
+        file_p = va_arg(vaptr, const char *);
+        if (!file_p)
+            break;
+
+        crl = abcdk_openssl_load_crl(file_p, NULL);
+        if (!crl)
+            break;
+
+        if (X509_STORE_add_crl(store, crl) != 1)
+            break;
+
+        X509_CRL_free(crl);
+        crl = NULL;
+    }
+
+    va_end(vaptr);
+
+    /*很重要，因为在循环中有未释放的可能。*/
+    if(crl)
+        X509_CRL_free(crl);
+
+    return count;
+}
+
+X509_STORE_CTX *abcdk_openssl_verify_crt_prepare(X509_STORE *store, X509 *crt)
 {
     X509_STORE_CTX *ctx = NULL;
     int chk;
 
-    assert(store != NULL && x509 != NULL);
+    assert(store != NULL && crt != NULL);
 
     ctx = X509_STORE_CTX_new();
     if (!ctx)
-        return -1;
+        return NULL;
 
-    chk = X509_STORE_CTX_init(ctx, store, x509, NULL);
-    if (chk != 1)
-        goto final;
-
-    chk = X509_verify_cert(ctx);
+    chk = X509_STORE_CTX_init(ctx, store, crt, NULL);
+    if (chk == 1)
+        return ctx;
 
 final:
 
-    X509_STORE_CTX_cleanup(ctx);
-    X509_STORE_CTX_free(ctx);
+    if(ctx)
+    {
+        X509_STORE_CTX_cleanup(ctx);
+        X509_STORE_CTX_free(ctx);
+    }
 
-    /*转换返回值。*/
-    return ((chk == 1) ? 0 : -1);
+    return NULL;
 }
 
-int abcdk_openssl_ssl_ctx_load_cert(SSL_CTX *ctx, const char *cert, const char *key, const char *pwd)
+int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx, const char *crt, const char *key, const char *pwd)
 {
     int chk;
 
     assert(ctx != NULL);
 
-    if (cert)
+    if (crt)
     {
-        chk = SSL_CTX_use_certificate_file(ctx, cert, SSL_FILETYPE_PEM);
+        chk = SSL_CTX_use_certificate_file(ctx, crt, SSL_FILETYPE_PEM);
         if (chk != 1)
             ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
     }
@@ -458,7 +513,7 @@ int abcdk_openssl_ssl_ctx_load_cert(SSL_CTX *ctx, const char *cert, const char *
             ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
     }
 
-    if (cert && key)
+    if (crt && key)
     {
         chk = SSL_CTX_check_private_key(ctx);
         if (chk != 1)
