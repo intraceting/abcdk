@@ -116,7 +116,8 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
                 val_p += 1;
 
                 /* 去掉value两端所有控制字符、双引号、单引号。 */
-                abcdk_strtrim(val_p, _abcdk_getargs_valtrim, 2);
+                //abcdk_strtrim(val_p, _abcdk_getargs_valtrim, 2);
+                abcdk_strtrim(val_p, isspace, 2);
             }
 
             /* 去掉key两端所有空白字符。 */
