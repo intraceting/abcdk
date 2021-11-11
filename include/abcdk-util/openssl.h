@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_OPENSSL_H
 
 #include "abcdk-util/general.h"
+#include "abcdk-util/tree.h"
 
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslconf.h>
@@ -15,6 +16,10 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
+
+#if !defined(OPENSSL_NO_SHA) && (!defined(OPENSSL_NO_SHA0) || !defined(OPENSSL_NO_SHA1))
+#include <openssl/sha.h>
+#endif //!defined(OPENSSL_NO_SHA) && (!defined(OPENSSL_NO_SHA0) || !defined(OPENSSL_NO_SHA1))
 
 #ifndef OPENSSL_NO_RSA
 #include <openssl/rsa.h>
@@ -122,14 +127,21 @@ int abcdk_openssl_rsa_to_fp(FILE *fp, RSA *key, int type, const char *pwd);
 int abcdk_openssl_rsa_to_file(const char *file, RSA *key, int type, const char *pwd);
 
 /**
+ * 获取KEY长度(字节)。
+ * 
+ * @return > 0 成功，<= 0 失败。
+*/
+int abcdk_openssl_rsa_size(RSA *key);
+
+/**
  * 加密。
  * 
  * @param dst 密文的指针。
  * @param src 明文的指针。
- * @param len 长度。
+ * @param len 长度，不包含补齐数据(盐)的长度。
  * @param key  
  * @param type !0 私钥，0 公钥。
- * @param padding 见RSA_*_PADDING。
+ * @param padding 补齐方式，见RSA_*_PADDING。
  * 
  * @return > 0 成功，<= 0 失败。
  * 
@@ -141,44 +153,15 @@ int abcdk_openssl_rsa_encrypt(void *dst, const void *src, int len, RSA *key, int
  * 
  * @param dst 明文的指针。
  * @param src 密文的指针。
- * @param len 长度。
+ * @param len 长度，必须等于KEY的长度。
  * @param key  
  * @param type !0 私钥，0 公钥。
- * @param padding 见RSA_*_PADDING。
+ * @param padding 补齐方式，见RSA_*_PADDING。
  * 
  * @return > 0 成功，<= 0 失败。
  * 
  */
 int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int type, int padding);
-
-/**
- * 加密，ECB模式。
- * 
- * @param dst 密文的指针，NULL(0) 计算密文的长度。
- * @param src 明文的指针，NULL(0) 计算密文的长度。
- * @param len 长度。
- * @param key  
- * @param type !0 私钥，0 公钥。
- * @param padding 见RSA_*_PADDING。
- * 
- * @return > 0 成功(密文的长度)，<= 0 失败。
- * 
- */
-ssize_t abcdk_openssl_rsa_ecb_encrypt(void *dst, const void *src, size_t len, RSA *key, int type, int padding);
-
-/**
- * 解密，ECB模式。
- * 
- * @param dst 明文的指针，可用空间至少与密文长度的相等。
- * @param src 密文的指针。
- * @param len 长度。
- * @param key  
- * @param type !0 私钥，0 公钥。
- * @param padding 见RSA_*_PADDING。
- * 
- * @return > 0 成功，<= 0 失败。
- */
-int abcdk_openssl_rsa_ecb_decrypt(void *dst, const void *src, size_t len, RSA *key, int type, int padding);
 
 
 #endif //EADER_RSA_H
@@ -244,13 +227,30 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
 #ifdef HEADER_SSL_H
 
 /**
- * 加载证书、私钥。
+ * 从证书中获取公钥。
+ * 
+ * @return !NULL(0) 成功(公钥指针), NULL(0) 失败。
+*/
+RSA *abcdk_openssl_pubkey_cert(X509 *x509);
+
+/**
+ * 加载证书。
  * 
  * @param cert 证书文件的指针。仅支持PEM格式。
+ * @param pwd 密码的指针，NULL(0) 忽略。
  * 
  * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
 */
-X509 *abcdk_openssl_load_cert(const char *cert);
+X509 *abcdk_openssl_load_cert(const char *cert, const char *pwd);
+
+/**
+ * 加载证书到证书存储池。
+ * 
+ * @param ... 证书文件的指针，NULL(0) 结束。仅支持PEM格式。
+ * 
+ * @return 已经加载证书的索引最大值(从1开始)。索引号大于此值的证书尚未加载。
+*/
+int abcdk_openssl_load_cert2store(X509_STORE *store,...);
 
 /**
  * 验证证书。
@@ -263,7 +263,7 @@ X509 *abcdk_openssl_load_cert(const char *cert);
 int abcdk_openssl_verify_cert(X509_STORE *store,X509 *x509);
 
 /**
- * CTX加载证书、私钥。
+ * SSL_CTX加载证书、私钥。
  * 
  * @param cert 证书文件的指针。仅支持PEM格式。
  * @param key 私钥文件的指针，NULL(0) 忽略。仅支持PEM格式。
@@ -271,7 +271,7 @@ int abcdk_openssl_verify_cert(X509_STORE *store,X509 *x509);
  * 
  * @return 0 成功(句柄)，-1 失败。
 */
-int abcdk_openssl_ctx_load_cert(SSL_CTX *ctx,const char *cert,const char *key,const char *pwd);
+int abcdk_openssl_ssl_ctx_load_cert(SSL_CTX *ctx,const char *cert,const char *key,const char *pwd);
 
 /**
  * 释放SSL句柄。

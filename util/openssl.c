@@ -204,11 +204,31 @@ int abcdk_openssl_rsa_to_file(const char *file, RSA *key, int type, const char *
     return chk;
 }
 
+int abcdk_openssl_rsa_size(RSA *key)
+{
+    assert(key != NULL);
+
+    return RSA_size(key);
+}
+
 int abcdk_openssl_rsa_encrypt(void *dst, const void *src, int len, RSA *key, int type, int padding)
 {
     int chk;
+    int ksize;
+    int psize;
 
     assert(dst != NULL && src != NULL && len > 0 && key != NULL);
+
+    /*
+     * --------------------
+     * | Buffer[KEY_SIZE] |
+     * --------------------
+     * | 数据       | 盐   |
+     * --------------------
+    */
+    ksize = abcdk_openssl_rsa_size(key);
+    psize = abcdk_openssl_rsa_padding_size(padding);
+    assert((ksize - psize) == len);
 
     if (type)
         chk = RSA_private_encrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
@@ -221,8 +241,19 @@ int abcdk_openssl_rsa_encrypt(void *dst, const void *src, int len, RSA *key, int
 int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int type, int padding)
 {
     int chk;
+    int ksize;
 
     assert(dst != NULL && src != NULL && len > 0 && key != NULL);
+
+    /*
+     * --------------------
+     * | Buffer[KEY_SIZE] |
+     * --------------------
+     * | 数据              |
+     * --------------------
+    */
+    ksize = abcdk_openssl_rsa_size(key);
+    assert(ksize == len);
 
     if (type)
         chk = RSA_private_decrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
@@ -230,102 +261,6 @@ int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int
         chk = RSA_public_decrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
 
     return chk;
-}
-
-ssize_t abcdk_openssl_rsa_ecb_encrypt(void *dst, const void *src, size_t len, RSA *key, int type, int padding)
-{
-    int key_size;
-    size_t padding_size;
-    size_t block_size;
-    size_t blocks;
-    size_t fixlen;
-    void *fix_buf = NULL;
-    ssize_t ret = -1;
-    int chk;
-
-    assert(len > 0 && key != NULL);
-
-    key_size = RSA_size(key);
-    padding_size = abcdk_openssl_rsa_padding_size(padding);
-    block_size = key_size - padding_size;
-
-    blocks = len / block_size;
-    fixlen = len % block_size;
-
-    if (!dst || !src)
-        goto final;
-
-    for (size_t i = 0; i < blocks; i++)
-    {
-        chk = abcdk_openssl_rsa_encrypt(ABCDK_PTR2VPTR(dst, i * key_size), ABCDK_PTR2VPTR(src, i * block_size),
-                                       block_size, key, type, padding);
-
-        if (chk <= 0)
-            goto final_error;
-    }
-
-    if (fixlen > 0)
-    {
-        fix_buf = abcdk_heap_alloc(block_size);
-        if (!fix_buf)
-            goto final_error;
-
-        memcpy(fix_buf, ABCDK_PTR2VPTR(src, blocks * block_size), fixlen);
-
-        chk = abcdk_openssl_rsa_encrypt(ABCDK_PTR2VPTR(dst, blocks * key_size), fix_buf,
-                                       block_size, key, type, padding);
-
-        if (chk <= 0)
-            goto final_error;
-    }
-
-final:
-
-    ret = blocks * key_size + ((fixlen > 0) ? key_size : 0);
-
-final_error:
-
-    if (fix_buf)
-        abcdk_heap_free2(&fix_buf);
-
-    return ret;
-}
-
-int abcdk_openssl_rsa_ecb_decrypt(void *dst, const void *src, size_t len, RSA *key, int type, int padding)
-{
-    int key_size;
-    size_t padding_size;
-    size_t block_size;
-    size_t blocks;
-    size_t fixlen;
-    int chk;
-
-    assert(dst != NULL && src != NULL && len > 0 && key != NULL);
-
-    key_size = RSA_size(key);
-    padding_size = abcdk_openssl_rsa_padding_size(padding);
-    block_size = key_size - padding_size;
-
-    blocks = len / key_size;
-    fixlen = len % key_size;
-
-    if (fixlen != 0)
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
-
-    for (size_t i = 0; i < blocks; i++)
-    {
-        chk = abcdk_openssl_rsa_decrypt(ABCDK_PTR2VPTR(dst, i * block_size), ABCDK_PTR2VPTR(src, i * key_size),
-                                       key_size, key, type, padding);
-
-        if (chk <= 0)
-            goto final_error;
-    }
-
-    return 1;
-
-final_error:
-
-    return -1;
 }
 
 #endif //EADER_RSA_H
@@ -400,22 +335,78 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 
 #ifdef HEADER_SSL_H
 
-X509 *abcdk_openssl_load_cert(const char *cert)
+RSA *abcdk_openssl_pubkey_cert(X509 *x509)
+{
+    RSA *rsa = NULL;
+    EVP_PKEY *pkey = NULL;
+
+    assert(x509 != NULL);
+
+    pkey = X509_get_pubkey(x509);
+    if(!pkey)
+        return NULL;
+#ifndef OPENSSL_NO_RSA
+    rsa = EVP_PKEY_get1_RSA(pkey);
+#endif
+
+    EVP_PKEY_free(pkey);
+
+    return rsa;
+}
+
+X509 *abcdk_openssl_load_cert(const char *cert, const char *pwd)
 {
     X509 *ctx = NULL;
-    BIO *bio_ctx = NULL;
+    FILE *fp = NULL;
 
     assert(cert != NULL);
 
-    bio_ctx = BIO_new_file(cert, "r");
-    if(!bio_ctx)
+    fp = fopen(cert, "r");
+    if(!fp)
         return NULL;
     
-    ctx = PEM_read_bio_X509(bio_ctx, NULL, NULL, NULL);
+    ctx = PEM_read_X509(fp, NULL, NULL, pwd);
         
-    BIO_free(bio_ctx);
+    fclose(fp);
 
     return ctx;
+}
+
+int abcdk_openssl_load_cert2store(X509_STORE *store,...)
+{
+    X509 *x509 = NULL;
+    const char *file_p = NULL;
+    int count = 0;
+
+    assert (store != NULL);
+
+    va_list vaptr;
+    va_start(vaptr, store);
+
+    for (;; count++)
+    {
+        file_p = va_arg(vaptr, const char *);
+        if (!file_p)
+            break;
+
+        x509 = abcdk_openssl_load_cert(file_p, NULL);
+        if (!x509)
+            break;
+
+        if (X509_STORE_add_cert(store, x509) != 1)
+            break;
+
+        X509_free(x509);
+        x509 = NULL;
+    }
+
+    va_end(vaptr);
+
+    /*很重要，因为在循环中有未释放的可能。*/
+    if(x509)
+        X509_free(x509);
+
+    return count;
 }
 
 int abcdk_openssl_verify_cert(X509_STORE *store, X509 *x509)
@@ -444,7 +435,7 @@ final:
     return ((chk == 1) ? 0 : -1);
 }
 
-int abcdk_openssl_ctx_load_cert(SSL_CTX *ctx, const char *cert, const char *key, const char *pwd)
+int abcdk_openssl_ssl_ctx_load_cert(SSL_CTX *ctx, const char *cert, const char *key, const char *pwd)
 {
     int chk;
 

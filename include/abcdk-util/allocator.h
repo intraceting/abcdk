@@ -13,8 +13,6 @@ __BEGIN_DECLS
 
 /**
  * 带引用计数器的内存块信息。
- *
- * 
 */
 typedef struct _abcdk_allocator
 {
