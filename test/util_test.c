@@ -2533,10 +2533,19 @@ void test_openssl_server(abcdk_tree_t *args)
 #endif 
 
     SSL_CTX * ctx = SSL_CTX_new(method);
-    
-    /*如果使用证书路径加载证书，则需要使用工具生成证收的hash文件名。c_rehash <CApath> */
-    int chk = SSL_CTX_load_verify_locations(ctx,NULL,"/home/devel/job/tmp/未命名文件夹/app-trust");
-    assert(chk ==1);
+    int chk;
+    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
+
+    if (capath)
+    {
+        /*如果使用证书路径加载证书，则需要使用工具生成证收的hash文件名。c_rehash <CApath> */
+        chk = SSL_CTX_load_verify_locations(ctx, NULL, capath);
+        assert(chk == 1);
+
+        X509_VERIFY_PARAM *param = SSL_CTX_get0_param(ctx);
+        //X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
+        X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    }
 
     chk = abcdk_openssl_ssl_ctx_load_crt(ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
                                           abcdk_option_get(args, "--key-file", 0, NULL),
@@ -2599,9 +2608,17 @@ void test_openssl_client(abcdk_tree_t *args)
     int chk ;
     SSL_CTX * ctx = SSL_CTX_new(method);
 
-    chk = SSL_CTX_load_verify_locations(ctx,NULL,"/home/devel/job/tmp/未命名文件夹/app-trust");
-    assert(chk ==1);
+    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
 
+    if (capath)
+    {
+        chk = SSL_CTX_load_verify_locations(ctx, NULL, capath);
+        assert(chk == 1);
+
+        X509_VERIFY_PARAM *param = SSL_CTX_get0_param(ctx);
+        //X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
+        X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    }
 
     chk = abcdk_openssl_ssl_ctx_load_crt(ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
                                           abcdk_option_get(args, "--key-file", 0, NULL),
@@ -2674,7 +2691,7 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
 {
     if (message->payloadlen)
     {
-        printf("%s %s\n", message->topic, message->payload);
+        printf("%s %s\n", message->topic, (char*)message->payload);
     }
     else
     {
@@ -2851,18 +2868,23 @@ void test_cert_verify(abcdk_tree_t *args)
         abcdk_openssl_load_crl2store(store,ca,NULL);
     }
 
-    //X509_STORE_set_flags(store,X509_V_FLAG_CRL_CHECK);
+    
 
     X509_STORE_CTX *store_ctx = abcdk_openssl_verify_crt_prepare(store,cert);
 
-    X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
-   // X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
-   // X509_VERIFY_PARAM_set_flags(param,X509_V_FLAG_CRL_CHECK);
+    X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(store_ctx);
+    /*
+     * X509_V_FLAG_CRL_CHECK 只验证叶证书是否被吊销，并且只要求叶证书的父级证书存在吊销列表即可。
+     * X509_V_FLAG_CRL_CHECK_ALL 验证证书链，并且要求所有父级证书(根证书除外)的吊销列表都存在。
+     * 
+     * X509_V_FLAG_CRL_CHECK_ALL 单独启用无效，至少要配合X509_V_FLAG_CRL_CHECK启用。
+    */
+    X509_VERIFY_PARAM_set_flags(param,X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
 
     int chk = X509_verify_cert(store_ctx);
-    assert(chk == 0);
+    assert(chk == 1);
 
-    X509_VERIFY_PARAM_free(param);
+    //X509_VERIFY_PARAM_free(param);
 
     X509_free(cert);
     X509_STORE_free(store);
