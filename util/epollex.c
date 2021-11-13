@@ -322,7 +322,7 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
 
     assert(ctx != NULL);
     assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
-    assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
+    assert((done & ~(ABCDK_EPOLL_ERROR | ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
 
     abcdk_mutex_lock(&ctx->mutex,1);
 

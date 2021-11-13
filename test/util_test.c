@@ -2520,6 +2520,7 @@ int test_libusb(abcdk_tree_t *args)
 
 	libusb_exit(NULL);
 #endif
+    return 0;
 }
 
 #ifdef HAVE_OPENSSL
@@ -2684,6 +2685,8 @@ int test_openssl(abcdk_tree_t *args)
         test_openssl_client(args);
 
 #endif
+
+    return 0;
 }
 
 #ifdef HAVE_MQTT
@@ -2841,7 +2844,7 @@ void test_cert_verify(abcdk_tree_t *args)
 
     const char *user = abcdk_option_get(args, "--user-crt", 0, "");
 
-    SSLeay_add_all_algorithms();
+    //SSLeay_add_all_algorithms();
 
     X509 *cert = abcdk_openssl_load_crt(user,NULL);
 
