@@ -66,7 +66,7 @@ void* server_loop(void* args)
 
         if(e.events & ABCDK_EPOLL_ERROR)
         {
-            assert(abcdk_epollex_mark(m,e.data.fd,0,e.events)==0);
+            //assert(abcdk_epollex_mark(m,e.data.fd,0,e.events)==0);
             assert(abcdk_epollex_unref(m,e.data.fd,e.events)==0);
             assert(abcdk_epollex_detach(m,e.data.fd)==0);
             abcdk_closep(&e.data.fd);
@@ -113,7 +113,7 @@ void* server_loop(void* args)
                 {
                     static int fd = -1;
                     if(fd ==-1)
-                        fd = abcdk_open("/var/log/syslog",0,0,0);
+                        fd = abcdk_open("/var/log/kdump.log",0,0,0);
 #if 0 
                     char buf[100];
                     size_t n = abcdk_read(fd, buf, 100);

@@ -228,14 +228,14 @@ void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
 
     if (node->stable)
     {
-        /*在已注册事件中，排除已被分派的事件才是当前线程需要返回的。*/
+        /*在已注册事件中，排除已被分派的事件，才是需要分派的事件。*/
         disp.events = ((event & node->event_mark) & (~node->event_disp));
     }
     else
     {
-        /*如果发生错误，并且计数器为0，返回出错事件。*/
+        /*当错误发生后，如果计数器为0，则分派(仅分派一次)出错事件。*/
         if (node->refcount <= 0)
-            disp.events = ABCDK_EPOLL_ERROR;
+            disp.events = (ABCDK_EPOLL_ERROR & (~node->event_disp));
     }
 
     /*根据发生的事件增加计数器。*/
@@ -294,11 +294,8 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
         node->active = abcdk_epollex_clock();
     }
 
-    /*
-     * 1：如果发生错误，进入异常流程。
-     * 2：如果当前处理的事件包括ERROR事件，则不用再次发出通知。
-    */
-    if (!node->stable && !(done & ABCDK_EPOLL_ERROR))
+    /* 如果发生错误，分派出错事件(是否真分派事件，由分派算法决定)。*/
+    if (!node->stable)
         _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 
 }
@@ -322,7 +319,7 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
 
     assert(ctx != NULL);
     assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
-    assert((done & ~(ABCDK_EPOLL_ERROR | ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
+    assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
 
     abcdk_mutex_lock(&ctx->mutex,1);
 
@@ -415,7 +412,7 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int
         e = &events[i];
         p = abcdk_map_find(&ctx->node_map, &e->data.fd,sizeof(e->data.fd), 0);
 
-        /*有那么一瞬间，当前返回的事件并不在(可能被分离)锁保护范围内的，因此这要做些处理。*/
+        /*有那么一瞬间，当前返回的事件并不在锁(可能被分离)的保护范围内，因此这要做些特殊处理。*/
         if (p == NULL)
             continue;
             
@@ -542,11 +539,8 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
     if (events & ABCDK_EPOLL_OUTPUT)
         node->refcount -= 1;
 
-    /*
-     * 1：如果发生错误，进入异常流程。
-     * 2：如果当前处理的事件包括ERROR事件，则不用再次发出通知。
-    */
-    if (!node->stable && !(events & ABCDK_EPOLL_ERROR))
+    /* 如果发生错误，分派出错事件(是否真分派事件，由分派算法决定)。*/
+    if (!node->stable)
         _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 
     /*No error.*/
