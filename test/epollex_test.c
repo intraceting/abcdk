@@ -53,7 +53,7 @@ void* server_loop(void* args)
         abcdk_bind(l, &a);
         listen(l, SOMAXCONN);
 
-        assert(abcdk_epollex_attach2(m, l, 0) == 0);
+        assert(abcdk_epollex_attach2(m, l) == 0);
         assert(abcdk_epollex_mark(m, l, ABCDK_EPOLL_INPUT, 0) == 0);
     }
 
@@ -82,7 +82,8 @@ void* server_loop(void* args)
                 int flag=1;
                 assert(abcdk_sockopt_option_int(c, IPPROTO_TCP, TCP_NODELAY,&flag, 2) == 0);
 
-                assert(abcdk_epollex_attach2(m, c,10*1000) == 0);
+                assert(abcdk_epollex_attach2(m, c) == 0);
+                assert(abcdk_epollex_timeout(m, c, 5*1000) == 0);
                 assert(abcdk_epollex_mark(m,c,ABCDK_EPOLL_INPUT,0)==0);
             }
             

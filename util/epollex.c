@@ -68,7 +68,7 @@ typedef struct _abcdk_epollex_node
     /** 是否第一次添加。!0 是，0 否。*/
     int add_first;
 
-}abcdk_epollex_node;
+} abcdk_epollex_node;
 
 time_t abcdk_epollex_clock()
 {
@@ -110,7 +110,7 @@ abcdk_epollex_t *abcdk_epollex_alloc()
         goto final_error;
 
     ctx->efd = efd;
-    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event), 4 * 20 + 20);
+    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event), 100);
     abcdk_map_init(&ctx->node_map,400);
     abcdk_mutex_init2(&ctx->mutex,0);
     ctx->watchdog_intvl = 5000;
@@ -164,7 +164,7 @@ final:
     return chk;
 }
 
-int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data,time_t timeout)
+int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
 {
     abcdk_allocator_t *p = NULL;
     abcdk_epollex_node *node = NULL;
@@ -185,7 +185,7 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data,ti
 
     node->fd = fd;
     node->data = *data;
-    node->timeout = timeout;
+    node->timeout = -1;
     node->stable = 1;
     node->active = abcdk_epollex_clock();
     node->mark_first = 1;
@@ -207,7 +207,7 @@ final:
     return chk;
 }
 
-int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd,time_t timeout)
+int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd)
 {
     epoll_data_t data;
 
@@ -215,7 +215,7 @@ int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd,time_t timeout)
 
     data.fd = fd;
 
-    return abcdk_epollex_attach(ctx,fd,&data,timeout);
+    return abcdk_epollex_attach(ctx,fd,&data);
 }
 
 void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t event)
@@ -264,7 +264,7 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
 {
     abcdk_epoll_event tmp = {0};
 
-    /*清除分派的事件。*/
+    /*清除分派的事件(不会清除出错事件)。*/
     node->event_disp &= ~done;
 
     /*绑定关注的事件，如果事件没有被激活，这里需要继续绑定。*/
@@ -293,11 +293,10 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
         /*更节点新活动时间。*/
         node->active = abcdk_epollex_clock();
     }
-
-    /* 如果发生错误，分派出错事件(是否真分派事件，由分派算法决定)。*/
+    
+    /* 如果发生错误，分派出错事件。*/
     if (!node->stable)
         _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
-
 }
 
 int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
@@ -310,6 +309,42 @@ int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
     return 1;
 }
 
+int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout)
+{
+    abcdk_allocator_t *p = NULL;
+    abcdk_epollex_node *node = NULL;
+    int chk = 0;
+
+    assert(ctx != NULL && fd >= 0);
+
+    abcdk_mutex_lock(&ctx->mutex,1);
+
+    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd),0);
+    if(!p)
+        goto final_error;
+
+    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+    
+    node->timeout = timeout;
+
+    /* 如果发生错误，分派出错事件。*/
+    if (!node->stable)
+        _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
+
+    /*No error.*/
+    goto final;
+
+final_error:
+
+    chk = -1;
+
+final:
+
+    abcdk_mutex_unlock(&ctx->mutex);
+
+    return chk; 
+}
+
 int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t done)
 {
     abcdk_allocator_t *p = NULL;
@@ -318,8 +353,8 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
     int chk = 0;
 
     assert(ctx != NULL);
-    assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
-    assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);
+    assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);//不允许注册出错事件。
+    assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);//完成事件中不能包含出错事件。
 
     abcdk_mutex_lock(&ctx->mutex,1);
 
@@ -539,7 +574,7 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
     if (events & ABCDK_EPOLL_OUTPUT)
         node->refcount -= 1;
 
-    /* 如果发生错误，分派出错事件(是否真分派事件，由分派算法决定)。*/
+    /* 如果发生错误，分派出错事件。*/
     if (!node->stable)
         _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 
