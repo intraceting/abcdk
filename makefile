@@ -71,6 +71,10 @@ AUTH_SRC_FILES = $(wildcard auth/*.c)
 AUTH_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${AUTH_SRC_FILES}))
 
 #
+TLS_SRC_FILES = $(wildcard tls/*.c)
+TLS_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TLS_SRC_FILES}))
+
+#
 TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
@@ -82,7 +86,7 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 all: lib tool test
 
 #
-lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(AUTH_OBJ_FILES)
+lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(AUTH_OBJ_FILES) $(TLS_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
@@ -105,6 +109,11 @@ $(OBJ_PATH)/auth/%.o: auth/%.c
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
+#
+$(OBJ_PATH)/tls/%.o: tls/%.c
+	mkdir -p $(OBJ_PATH)/tls/
+	rm -f $@
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 tool: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
@@ -188,6 +197,7 @@ install-lib:
 	cp  -rf $(CURDIR)/include/abcdk-util ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/abcdk-mp4 ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/abcdk-auth ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/abcdk-tls ${INSTALL_PATH_INC}/
 #
 install-tool:
 	mkdir -p ${INSTALL_PATH_BIN}
@@ -237,6 +247,7 @@ uninstall-lib:
 	rm -rf ${INSTALL_PATH_INC}/abcdk-util
 	rm -rf ${INSTALL_PATH_INC}/abcdk-mp4
 	rm -rf ${INSTALL_PATH_INC}/abcdk-auth
+	rm -rf ${INSTALL_PATH_INC}/abcdk-tls
 #
 uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/abcdk-mtx

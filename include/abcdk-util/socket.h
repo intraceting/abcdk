@@ -171,7 +171,6 @@ int abcdk_socket_option_linger(int fd, struct linger *lg, int direction);
 */
 int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char *ifaddr,int enable);
 
-
 /**
  * 创建一个SOCKET句柄。
  * 

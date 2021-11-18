@@ -32,11 +32,13 @@ int _abcdk_crc32_init(void *opaque)
 
 uint32_t abcdk_crc32_sum(const void *data,size_t size,uint32_t old)
 {
+    uint32_t sum = ~0;
     static volatile int init = 0;
     static uint32_t table[256] = {0};
     int chk;
 
-    uint32_t sum = ~old;
+    /*continue.*/
+    sum = ~old;
 
     assert(data != NULL && size > 0);
 

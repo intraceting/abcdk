@@ -30,15 +30,12 @@ int abcdk_once(volatile int *status, int (*routine)(void *opaque), void *opaque)
     if (abcdk_atomic_compare_and_swap(status,0, 1))
     {
         ret = 0;
-
         chk = routine(opaque);
-
         abcdk_atomic_store(status, ((chk == 0) ? 2 : 0));
     }
     else
     {
         ret = 1;
-
         while (abcdk_atomic_load(status) == 1)
             pthread_yield();
     }

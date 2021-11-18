@@ -33,7 +33,7 @@ size_t abcdk_align(size_t size,size_t align);
  * @param status 状态，一般是静态类型。必须初始化为0。
  * @param routine 执行函数。0 成功，!0 失败。
  * 
- * @return 0 第一次，1 第2~N次，-1 失败。
+ * @return  >=0 成功，-1 失败。
 */
 int abcdk_once(volatile int* status,int (*routine)(void *opaque),void *opaque);
 
