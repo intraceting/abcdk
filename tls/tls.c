@@ -285,15 +285,15 @@ ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size)
     return rsize_all;
 }
 
-int abcdk_tls_read_watch(uint64_t tls)
+int abcdk_tls_read_watch(uint64_t tls, int done)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+    abcdk_tls_node *node = (abcdk_tls_node *)tls;
     int chk;
 
     assert(node != NULL);
 
-    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx,node->fd,ABCDK_EPOLL_INPUT,0);
+    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, (done ? ABCDK_EPOLL_INPUT : 0));
 
     return chk;
 }
@@ -332,7 +332,7 @@ int abcdk_tls_write_watch(uint64_t tls)
 
     assert(node != NULL);
 
-    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx,node->fd,ABCDK_EPOLL_OUTPUT,0);
+    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_OUTPUT, 0);
 
     return chk;
 }
@@ -379,10 +379,13 @@ void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque)
                             abcdk_tls_handshake(node_sub);
                             if (node_sub->status == ABCDK_TLS_STATUS_STABLE)
                                 event_cb((uint64_t)node_sub, ABCDK_TLS_EVENT_CONNECT, node_sub->opaque);
+
                         }
+                        
+                        abcdk_epollex_mark(tls_ctx->epollex_ctx, node_sub->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
                     }
 
-                    abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
+                    abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
                 }
                 else 
                 {
@@ -391,6 +394,8 @@ void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque)
                         abcdk_tls_handshake(node);
                         if(node->status == ABCDK_TLS_STATUS_STABLE)
                             event_cb((uint64_t)node,ABCDK_TLS_EVENT_CONNECT,node->opaque);
+
+                        abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
                     }
                     else
                     {
@@ -398,7 +403,8 @@ void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque)
                     }
                 }
             }
-            else if (e.events & ABCDK_EPOLL_OUTPUT)
+            
+            if (e.events & ABCDK_EPOLL_OUTPUT)
             {
                 if (node->status != ABCDK_TLS_STATUS_STABLE)
                 {
@@ -410,9 +416,10 @@ void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque)
                 {
                     event_cb((uint64_t)node, ABCDK_TLS_EVENT_OUTPUT, node->opaque);
                 }
+
+                abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_OUTPUT);
             }
-            
-            chk = abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, 0, e.events);
+
             chk = abcdk_epollex_unref(tls_ctx->epollex_ctx,node->fd,e.events);
             assert(chk == 0);
         }

@@ -20,11 +20,25 @@ __BEGIN_DECLS
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
-/**/
-#define ABCDK_TLS_EVENT_CONNECT     1
-#define ABCDK_TLS_EVENT_INPUT       2
-#define ABCDK_TLS_EVENT_OUTPUT      3
-#define ABCDK_TLS_EVENT_CLOSE       4
+/* TLS事件。*/
+enum _abcdk_tls_event
+{
+    /*已连接。*/
+    ABCDK_TLS_EVENT_CONNECT = 1,
+#define ABCDK_TLS_EVENT_CONNECT ABCDK_TLS_EVENT_CONNECT
+
+    /*有数据到达。*/
+    ABCDK_TLS_EVENT_INPUT = 2,
+#define ABCDK_TLS_EVENT_INPUT ABCDK_TLS_EVENT_INPUT
+
+    /*链路空闲，可以发送。*/
+    ABCDK_TLS_EVENT_OUTPUT = 3,
+#define ABCDK_TLS_EVENT_OUTPUT ABCDK_TLS_EVENT_OUTPUT
+
+    /*已断开。*/
+    ABCDK_TLS_EVENT_CLOSE = 4
+#define ABCDK_TLS_EVENT_CLOSE ABCDK_TLS_EVENT_CLOSE
+};
 
 /**
  * 设置超时。
@@ -50,13 +64,15 @@ int abcdk_tls_get_peername(uint64_t tls, abcdk_sockaddr_t *addr);
 ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size);
 
 /**
- * 监听数据到达。
+ * 监听是否可读。
  * 
- * @warning 每次监听只会通知一次。
+ * @note 当读权利被占用时，不会有其它线程会获得允许读事件。
+ * 
+ * @param done 0 仅监听，!0 释放读权利。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tls_read_watch(uint64_t tls);
+int abcdk_tls_read_watch(uint64_t tls,int done);
 
 /**
  * 写。
@@ -66,9 +82,9 @@ int abcdk_tls_read_watch(uint64_t tls);
 ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size);
 
 /**
- * 监听链路空闲。
+ * 监听是否可写。
  * 
- * @warning 每次监听只会通知一次。
+ * @note 当写权利被占用时，不会有其它线程会获得允许写事件。
  * 
  * @return 0 成功，!0 失败。
 */

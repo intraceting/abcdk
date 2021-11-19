@@ -2910,7 +2910,7 @@ void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
         {
             printf("Connected: %s\n",addr_str);
 
-            abcdk_tls_read_watch(tls);
+            abcdk_tls_read_watch(tls,0);
         }
         break;
         case ABCDK_TLS_EVENT_INPUT:
@@ -2925,7 +2925,7 @@ void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
                 printf("%s",buf);
             }
 
-            abcdk_tls_read_watch(tls);
+            abcdk_tls_read_watch(tls,1);
             abcdk_tls_write_watch(tls);
             
         }
