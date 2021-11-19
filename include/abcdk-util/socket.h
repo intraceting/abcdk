@@ -209,9 +209,9 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
 /**
  * 字符地址转SOCKET地址。
  * 
- * IPv4： Address:Port 
- * IPv6： Address,Port
- * IPv6： [Address]:Port
+ * IPv4：Address:Port 
+ * IPv6：Address,Port
+ * IPv6：[Address]:Port
  * 
  * @param try_lookup !0 尝式域名解析，0 禁用载名解析。
  * 
@@ -222,8 +222,8 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lo
 /**
  * SOCKET地址转字符地址。
  * 
- * IPv4： Address:Port 
- * IPv6： [Address]:Port
+ * IPv4：Address:Port 
+ * IPv6：[Address]:Port
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */

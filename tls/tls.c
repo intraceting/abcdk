@@ -29,12 +29,13 @@ typedef struct _abcdk_tls_node
 
     void *opaque;
 
-    SSL_CTX *ssl_ctx;
-    SSL *ssl;
+    abcdk_sockaddr_t remote;
     int fd;
 
-    abcdk_sockaddr_t local;
-    abcdk_sockaddr_t remote;
+#ifdef HEADER_SSL_H
+    SSL_CTX *ssl_ctx;
+    SSL *ssl;
+#endif //HEADER_SSL_H
 
 } abcdk_tls_node;
 
@@ -46,7 +47,9 @@ void _abcdk_tls_node_free(abcdk_tls_node **node)
 
     node_p = *node;
 
+#ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->ssl);
+#endif //HEADER_SSL_H
 
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
     struct linger l = {1,0};
@@ -84,52 +87,48 @@ abcdk_tls_ctx *_abcdk_tls_get_ctx()
 abcdk_tls_node *_abcdk_tls_accept(abcdk_tls_node *node)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node_new = NULL;
+    abcdk_tls_node *node_sub = NULL;
+    epoll_data_t ep_data;
     int sokc_flag = 1;
     int chk;
 
-    node_new = _abcdk_tls_node_alloc();
-    if (!node_new)
+    node_sub = _abcdk_tls_node_alloc();
+    if (!node_sub)
         return NULL;
     
-    node_new->flag = ABCDK_TLS_FLAG_ACCPET;
-    node_new->status = ABCDK_TLS_STATUS_STABLE;
-    node_new->opaque = node->opaque;
-    
+    node_sub->flag = ABCDK_TLS_FLAG_ACCPET;
+    node_sub->status = ABCDK_TLS_STATUS_SYNC;
+    node_sub->opaque = node->opaque;
+
+#ifdef HEADER_SSL_H    
     if(node->ssl_ctx)
     {
-        node_new->ssl = abcdk_openssl_ssl_alloc(node->ssl_ctx);
-        if(!node_new->ssl)
+        node_sub->ssl = abcdk_openssl_ssl_alloc(node->ssl_ctx);
+        if(!node_sub->ssl)
             goto final_error;
-
-        node_new->status = ABCDK_TLS_STATUS_SSL_SYNC;
     }
+#endif //HEADER_SSL_H
 
-    node_new->fd = abcdk_accept(node->fd, &node_new->remote);
-    if (node_new->fd < 0)
+    node_sub->fd = abcdk_accept(node->fd, &node_sub->remote);
+    if (node_sub->fd < 0)
         goto final_error;
     
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sokc_flag, 2);
     if(chk != 0)
         goto final_error;
 
-    epoll_data_t data = {.ptr = node};
-    chk = abcdk_epollex_attach(tls_ctx->epollex_ctx, node_new->fd, &data);
+    ep_data.ptr = node;
+    chk = abcdk_epollex_attach(tls_ctx->epollex_ctx, node_sub->fd, &ep_data);
     if(chk != 0)
         goto final_error;
 
-    chk = abcdk_epollex_timeout(tls_ctx->epollex_ctx, node_new->fd, 5*1000);
-    if(chk != 0)
-    {
-        abcdk_epollex_detach(tls_ctx->epollex_ctx,node_new->fd);
-        goto final_error;
-    }
+    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node_sub->fd, 5*1000);
 
-    return node_new;
+    return node_sub;
 
 final_error:
 
-    _abcdk_tls_node_free(&node_new);
+    _abcdk_tls_node_free(&node_sub);
     
     return NULL;
 }
@@ -147,7 +146,12 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
         chk = abcdk_poll(node->fd, 0x02, 0);
         if (chk > 0)
         {
-            node->status = ABCDK_TLS_STATUS_STABLE;
+#ifdef HEADER_SSL_H    
+            if(node->ssl)
+                node->status = ABCDK_TLS_STATUS_SSL_SYNC;
+            else 
+#endif //HEADER_SSL_H
+                node->status = ABCDK_TLS_STATUS_STABLE;
         }
         else
         {
@@ -156,7 +160,9 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
                 goto final_error;
         }
     }
-    else if (node->status == ABCDK_TLS_STATUS_SSL_SYNC)
+
+#ifdef HEADER_SSL_H      
+    if (node->status == ABCDK_TLS_STATUS_SSL_SYNC)
     {
         if (node->flag == ABCDK_TLS_FLAG_ACCPET)
         {
@@ -199,6 +205,7 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
                 goto final_error;
         }
     }
+#endif //HEADER_SSL_H
 
     /*修改保活参数，以防在远程断电的情况下，本地无法检测到连接断开信号。*/
     if(node->status == ABCDK_TLS_STATUS_STABLE)
@@ -206,7 +213,7 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
         /*开启keepalive属性*/
         sock_flag = 1;
         abcdk_sockopt_option_int(node->fd,SOL_SOCKET, SO_KEEPALIVE,&sock_flag,2);
-        /*如该连接在60秒内没有任何数据往来，则进行探测。*/
+        /*连接在60秒内没有任何数据往来，则进行探测。*/
         sock_flag = 60;
         abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPIDLE,&sock_flag,2);
         /*探测时发包的时间间隔为5秒。*/
@@ -225,11 +232,114 @@ final_error:
     abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 1);
 }
 
+int abcdk_tls_set_timeout(uint64_t tls,time_t timeout)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+    int chk;
+
+    assert(node != NULL);
+
+    chk = abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, timeout);
+
+    return chk;
+}
+
+int abcdk_tls_get_peername(uint64_t tls, abcdk_sockaddr_t *addr)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+
+    assert(node != NULL && addr != NULL);
+
+    *addr = node->remote;
+
+    return 0;
+}
+
+ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+    ssize_t rsize = 0,rsize_all = 0;
+
+    assert(node != NULL && buf != NULL && size >0);
+
+    while (rsize_all < size)
+    {
+#ifdef HEADER_SSL_H
+        if(node->ssl)
+            rsize = SSL_read(node->ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
+        else 
+#endif //HEADER_SSL_H
+            rsize = recv(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all,0);
+        
+        if(rsize <=0)
+            break;
+        
+        rsize_all += rsize;
+    }
+
+    return rsize_all;
+}
+
+int abcdk_tls_read_watch(uint64_t tls)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+    int chk;
+
+    assert(node != NULL);
+
+    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx,node->fd,ABCDK_EPOLL_INPUT,0);
+
+    return chk;
+}
+
+ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+    ssize_t wsize = 0,wsize_all = 0;
+
+    assert(node != NULL && buf != NULL && size >0);
+
+    while (wsize_all < size)
+    {
+#ifdef HEADER_SSL_H
+        if(node->ssl)
+            wsize = SSL_read(node->ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
+        else 
+#endif //HEADER_SSL_H
+            wsize = recv(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all,0);
+        
+        if(wsize <=0)
+            break;
+        
+        wsize_all += wsize;
+    }
+
+    return wsize_all;
+}
+
+int abcdk_tls_write_watch(uint64_t tls)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = (abcdk_tls_node*)tls;
+    int chk;
+
+    assert(node != NULL);
+
+    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx,node->fd,ABCDK_EPOLL_OUTPUT,0);
+
+    return chk;
+}
+
 void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque))
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
     abcdk_tls_node *node = NULL;
-    abcdk_tls_node *node_new = NULL;
+    abcdk_tls_node *node_sub = NULL;
     abcdk_epoll_event e = {0};
     int chk;
     
@@ -259,14 +369,14 @@ void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque)
             {
                 if (node->flag == ABCDK_TLS_FLAG_LISTEN)
                 {
-                    node_new = _abcdk_tls_accept(node);
-                    if (node_new)
+                    node_sub = _abcdk_tls_accept(node);
+                    if (node_sub)
                     {
-                        if (node_new->status != ABCDK_TLS_STATUS_STABLE)
+                        if (node_sub->status != ABCDK_TLS_STATUS_STABLE)
                         {
-                            abcdk_tls_handshake(node_new);
-                            if (node_new->status == ABCDK_TLS_STATUS_STABLE)
-                                event_cb((uint64_t)node_new, ABCDK_TLS_EVENT_CONNECT, node_new->opaque);
+                            abcdk_tls_handshake(node_sub);
+                            if (node_sub->status == ABCDK_TLS_STATUS_STABLE)
+                                event_cb((uint64_t)node_sub, ABCDK_TLS_EVENT_CONNECT, node_sub->opaque);
                         }
                     }
 
@@ -311,6 +421,7 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
     abcdk_tls_node *node = NULL;
+    epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
 
@@ -321,10 +432,12 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
         return -1;
 
     node->flag = ABCDK_TLS_FLAG_LISTEN;
-    node->ssl_ctx = ssl_ctx;
-    node->remote = *addr;
     node->status = ABCDK_TLS_STATUS_STABLE;
-
+#ifdef HEADER_SSL_H
+    node->ssl_ctx = ssl_ctx;
+#endif //HEADER_SSL_H
+    node->remote = *addr;
+    
     node->fd = abcdk_socket(addr->family, 0);
     if (node->fd)
         goto final_error;
@@ -348,21 +461,93 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     if (chk != 0)
         goto final_error;
 
-    epoll_data_t data = {.ptr = node};
-    chk = abcdk_epollex_attach(tls_ctx->epollex_ctx,node->fd, &data);
+    ep_data.ptr = node;
+    chk = abcdk_epollex_attach(tls_ctx->epollex_ctx,node->fd, &ep_data);
     if (chk != 0)
-        goto final_error;
+        goto final2_error;
+    
+    /*关闭超时。*/
+    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 0);
+    abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
 
-    chk = abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
-    if (chk != 0)
-    {
-        abcdk_epollex_detach(tls_ctx->epollex_ctx,node->fd);
-        goto final_error;
-    }
+    return 0;
 
 final_error:
 
     _abcdk_tls_node_free(&node);
+
+final2_error:
+
+    return -1;
+}
+
+int abcdk_tls_connect(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    abcdk_tls_node *node = NULL;
+    epoll_data_t ep_data;
+    socklen_t addr_len;
+    int sock_flag = 1;
+    int chk;
+
+    assert(addr != NULL);
+
+    node = _abcdk_tls_node_alloc();
+    if (!node)
+        return -1;
+
+    node->flag = ABCDK_TLS_FLAG_CLIENT;
+    node->status = ABCDK_TLS_STATUS_SYNC;
+    node->remote = *addr;
+    
+    node->fd = abcdk_socket(addr->family, 0);
+    if (node->fd)
+        goto final_error;
+#ifdef HEADER_SSL_H
+    if(ssl_ctx)
+    {
+        node->ssl = abcdk_openssl_ssl_alloc(ssl_ctx);
+        if(!node->ssl)
+            goto final_error;
+    }
+#endif //HEADER_SSL_H
+
+    chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
+    if(chk != 0 )
+        goto final_error;
+
+    addr_len = sizeof(abcdk_sockaddr_t);
+    if(addr->family == AF_UNIX)
+#ifdef SUN_LEN
+        addr_len = SUN_LEN(&addr->addr_un);
+#else 
+        addr_len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
+#endif
+
+    chk = connect(node->fd, &addr->addr, addr_len);
+    if(chk == 0)
+        goto final;
+
+    if (errno != EINPROGRESS && errno != EWOULDBLOCK && errno != EAGAIN)
+        goto final_error;
+
+final:
+
+    ep_data.ptr = node;
+    chk = abcdk_epollex_attach(tls_ctx->epollex_ctx, node->fd, &ep_data);
+    if (chk != 0)
+        goto final2_error;
+
+    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 5 * 1000);
+    abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
+
+    return 0;
+
+final_error:
+
+    _abcdk_tls_node_free(&node);
+
+final2_error:
 
     return -1;
 }

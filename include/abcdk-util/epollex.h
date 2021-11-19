@@ -44,6 +44,7 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd);
  * 关联句柄。
  * 
  * @warning 关联成功后，句柄在分离前不可被关闭或释放。
+ * @warning 默认空闲超时30秒。
  * 
  * @param fd 句柄。
  * @param data 关联数据。
@@ -54,8 +55,6 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx, int fd, const epoll_data_t *data)
 
 /**
  * 关联句柄。
- * 
- * @warning 关联成功后，句柄在分离前不可被关闭或释放。
  * 
  * @return 0 成功，!0 失败(或重复)。
 */

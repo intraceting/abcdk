@@ -185,7 +185,7 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
 
     node->fd = fd;
     node->data = *data;
-    node->timeout = -1;
+    node->timeout = 30*1000;
     node->stable = 1;
     node->active = abcdk_epollex_clock();
     node->mark_first = 1;
