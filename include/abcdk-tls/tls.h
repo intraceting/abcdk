@@ -52,6 +52,8 @@ ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size);
 /**
  * 监听数据到达。
  * 
+ * @warning 每次监听只会通知一次。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_tls_read_watch(uint64_t tls);
@@ -59,12 +61,15 @@ int abcdk_tls_read_watch(uint64_t tls);
 /**
  * 写。
  * 
+ * 
  * @return >0 成功(已写入数据的长度)，<=0 失败(未写入或正在关闭)。
 */
 ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size);
 
 /**
  * 监听链路空闲。
+ * 
+ * @warning 每次监听只会通知一次。
  * 
  * @return 0 成功，!0 失败。
 */

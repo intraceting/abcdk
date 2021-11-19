@@ -2952,7 +2952,8 @@ void test_tls(abcdk_tree_t *args)
 
     assert(abcdk_tls_listen(&addr,NULL,NULL)==0);
 
-    while(1)
+    #pragma omp parallel for num_threads(3)
+    for (int i = 0; i < 3; i++)
     {
         abcdk_tls_loop(tls_event_cb);
     }
