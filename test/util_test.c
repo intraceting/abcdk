@@ -2975,6 +2975,11 @@ void test_tls(abcdk_tree_t *args)
 
     assert(abcdk_tls_listen(&addr,ssl_ctx,NULL)==0);
 
+    abcdk_sockaddr_t addr2 = {0};
+    abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
+
+    assert(abcdk_tls_connect(&addr2,NULL,NULL)==0);
+
     #pragma omp parallel for num_threads(3)
     for (int i = 0; i < 3; i++)
     {

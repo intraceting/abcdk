@@ -511,7 +511,7 @@ int abcdk_tls_connect(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     node->remote = *addr;
     
     node->fd = abcdk_socket(addr->family, 0);
-    if (node->fd)
+    if (node->fd < 0)
         goto final_error;
 #ifdef HEADER_SSL_H
     if(ssl_ctx)
@@ -549,7 +549,7 @@ final:
         goto final_error;
 
     abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 30 * 1000);
-    abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
+    abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_OUTPUT, 0);
 
     return 0;
 
