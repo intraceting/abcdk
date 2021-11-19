@@ -2945,12 +2945,35 @@ void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
 
 void test_tls(abcdk_tree_t *args)
 {
+
+    SSL_CTX *ssl_ctx = NULL;
+
+#ifdef HAVE_OPENSSL
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
+    ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1,NULL,capath,2);
+
+
+    abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+                                          abcdk_option_get(args, "--key-file", 0, NULL),
+                                          abcdk_option_get(args, "--key-pwd", 0, NULL));
+
+
+    SSL_CTX_set_verify(ssl_ctx,SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT,NULL);
+
+#endif //HAVE_OPENSSL
+
     abcdk_sockaddr_t addr = {0};
-    abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
+    //abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
+    abcdk_sockaddr_from_string(&addr,"[::]:12345",0);
    // addr.family = ABCDK_UNIX;
     //strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
-    assert(abcdk_tls_listen(&addr,NULL,NULL)==0);
+    assert(abcdk_tls_listen(&addr,ssl_ctx,NULL)==0);
 
     #pragma omp parallel for num_threads(3)
     for (int i = 0; i < 3; i++)

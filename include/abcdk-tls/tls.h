@@ -61,8 +61,7 @@ int abcdk_tls_read_watch(uint64_t tls);
 /**
  * 写。
  * 
- * 
- * @return >0 成功(已写入数据的长度)，<=0 失败(未写入或正在关闭)。
+ * @return >0 成功(已写入数据的长度)，<=0 失败(链路忙或正在关闭)。
 */
 ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size);
 

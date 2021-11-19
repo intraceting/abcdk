@@ -490,6 +490,63 @@ final:
     return NULL;
 }
 
+void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx)
+{
+    if (!ctx || !*ctx)
+        return;
+
+    SSL_CTX_free(*ctx);
+
+    /*Set to NULL(0).*/
+    *ctx = NULL;
+}
+
+SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath,int crl_check)
+{
+    const SSL_METHOD *method = NULL;
+    SSL_CTX *ctx = NULL;
+    int chk;
+
+#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    method = (server ? TLSv1_2_server_method() : TLSv1_2_client_method());
+#else
+    method = (server ? TLS_server_method() : TLS_client_method());
+#endif
+
+    ctx = SSL_CTX_new(method);
+    if(!ctx)
+        return NULL;
+
+    if (cafile || capath)
+    {
+        chk = SSL_CTX_load_verify_locations(ctx, cafile, capath);
+        if (chk != 1)
+            goto final_error;
+    }
+
+    X509_VERIFY_PARAM *param = SSL_CTX_get0_param(ctx);
+    if(!param && crl_check)
+        goto final_error;
+
+    if(crl_check == 2)
+        chk = X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    else if(crl_check == 1)
+        chk = X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
+    else 
+        chk = 1;
+
+    if(chk != 1)
+        goto final_error;
+
+    return ctx;
+
+final_error:
+
+    SSL_CTX_free(ctx);
+
+    return NULL;
+}
+
 int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx, const char *crt, const char *key, const char *pwd)
 {
     int chk;

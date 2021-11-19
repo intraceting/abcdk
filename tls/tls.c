@@ -179,7 +179,7 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
             if (SSL_get_fd(node->ssl) != node->fd)
             {
                 SSL_set_fd(node->ssl, node->fd);
-                SSL_set_accept_state(node->ssl);
+                SSL_set_connect_state(node->ssl);
             }
         }
 
@@ -456,6 +456,15 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     if (chk != 0)
         goto final_error;
 
+    if(addr->family == ABCDK_IPV6)
+    {
+        /*IPv6仅支持IPv6。*/
+        sock_flag = 1;
+        chk = abcdk_sockopt_option_int(node->fd, IPPROTO_IPV6, IPV6_V6ONLY, &sock_flag, 2);
+        if (chk != 0)
+            goto final_error;
+    }
+
     chk = abcdk_bind(node->fd, &node->remote);
     if (chk != 0) 
         goto final_error;
@@ -467,7 +476,7 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     ep_data.ptr = node;
     chk = abcdk_epollex_attach(tls_ctx->epollex_ctx,node->fd, &ep_data);
     if (chk != 0)
-        goto final2_error;
+        goto final_error;
     
     /*关闭超时。*/
     abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 0);
@@ -478,8 +487,6 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
 final_error:
 
     _abcdk_tls_node_free(&node);
-
-final2_error:
 
     return -1;
 }
@@ -539,7 +546,7 @@ final:
     ep_data.ptr = node;
     chk = abcdk_epollex_attach(tls_ctx->epollex_ctx, node->fd, &ep_data);
     if (chk != 0)
-        goto final2_error;
+        goto final_error;
 
     abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 30 * 1000);
     abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
@@ -549,8 +556,6 @@ final:
 final_error:
 
     _abcdk_tls_node_free(&node);
-
-final2_error:
 
     return -1;
 }

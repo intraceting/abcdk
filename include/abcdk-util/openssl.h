@@ -285,6 +285,24 @@ int abcdk_openssl_load_crl2store(X509_STORE *store,...);
 X509_STORE_CTX *abcdk_openssl_verify_crt_prepare(X509_STORE *store, X509 *crt);
 
 /**
+ * 释放SSL_CTX句柄。
+*/
+void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx);
+
+/**
+ * 创建SSL_CTX句柄。
+ * 
+ * @warning 
+ * 
+ * @param cafile CA证书文件的指针，NULL(0) 忽略。仅支持PEM格式。
+ * @param capath CA证书目录的指针，NULL(0) 忽略。仅支持PEM格式。
+ * @param crl_check 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
+ * 
+ * @return !NULL(0) 成功(句柄)，NULL(0) 失败。
+*/
+SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath,int crl_check);
+
+/**
  * SSL_CTX加载证书、私钥。
  * 
  * @param crt 证书文件的指针。仅支持PEM格式。
