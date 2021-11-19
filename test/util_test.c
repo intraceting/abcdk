@@ -30,6 +30,7 @@
 #include "abcdk-util/lz4.h"
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
+#include "abcdk-tls/tls.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -2896,6 +2897,67 @@ void test_cert_verify(abcdk_tree_t *args)
 #endif 
 }
 
+void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
+{
+    abcdk_sockaddr_t addr;
+    abcdk_tls_get_peername(tls,&addr);
+    char addr_str[100] = {0};
+    abcdk_sockaddr_to_string(addr_str,&addr);
+
+    switch(event)
+    {
+        case ABCDK_TLS_EVENT_CONNECT:
+        {
+            printf("Connected: %s\n",addr_str);
+
+            abcdk_tls_read_watch(tls);
+        }
+        break;
+        case ABCDK_TLS_EVENT_INPUT:
+        {
+            while(1)
+            {
+                char buf[100]={0};
+                ssize_t r = abcdk_tls_read(tls,buf,100);
+                if(r<=0)
+                    break;
+
+                printf("%s",buf);
+            }
+
+            abcdk_tls_read_watch(tls);
+            abcdk_tls_write_watch(tls);
+            
+        }
+        break;
+        case ABCDK_TLS_EVENT_OUTPUT:
+        {
+            abcdk_tls_write(tls,"abcdk\n",6);
+        }
+        break;
+        case ABCDK_TLS_EVENT_CLOSE:
+        {
+            printf("Disconnected: %s\n",addr_str);
+        }
+        break;
+    }
+}
+
+void test_tls(abcdk_tree_t *args)
+{
+    abcdk_sockaddr_t addr = {0};
+    abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
+   // addr.family = ABCDK_UNIX;
+    //strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
+
+    assert(abcdk_tls_listen(&addr,NULL,NULL)==0);
+
+    while(1)
+    {
+        abcdk_tls_loop(tls_event_cb);
+    }
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3006,6 +3068,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_cert_verify", 0) == 0)
        test_cert_verify(args);
+        
+    if (abcdk_strcmp(func, "test_tls", 0) == 0)
+       test_tls(args);
 
     abcdk_tree_free(&args);
     

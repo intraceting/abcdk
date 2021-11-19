@@ -70,6 +70,8 @@ int _abcdk_tls_ctx_init(void *opaque)
     abcdk_tls_ctx *ctx = (abcdk_tls_ctx *)opaque;
 
     ctx->epollex_ctx = abcdk_epollex_alloc();
+
+    return 0;
 }
 
 abcdk_tls_ctx *_abcdk_tls_get_ctx()
@@ -117,12 +119,12 @@ abcdk_tls_node *_abcdk_tls_accept(abcdk_tls_node *node)
     if(chk != 0)
         goto final_error;
 
-    ep_data.ptr = node;
+    ep_data.ptr = node_sub;
     chk = abcdk_epollex_attach(tls_ctx->epollex_ctx, node_sub->fd, &ep_data);
     if(chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node_sub->fd, 5*1000);
+    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node_sub->fd, 30*1000);
 
     return node_sub;
 
@@ -308,10 +310,10 @@ ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size)
     {
 #ifdef HEADER_SSL_H
         if(node->ssl)
-            wsize = SSL_read(node->ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
+            wsize = SSL_write(node->ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else 
 #endif //HEADER_SSL_H
-            wsize = recv(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all,0);
+            wsize = send(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all,0);
         
         if(wsize <=0)
             break;
@@ -439,7 +441,7 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     node->remote = *addr;
     
     node->fd = abcdk_socket(addr->family, 0);
-    if (node->fd)
+    if (node->fd < 0)
         goto final_error;
 
     /*端口复用，用于快速重启恢复。*/
@@ -455,7 +457,8 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
         goto final_error;
 
     chk = abcdk_bind(node->fd, &node->remote);
-        if (chk != 0) goto final_error;
+    if (chk != 0) 
+        goto final_error;
 
     chk = listen(node->fd, SOMAXCONN);
     if (chk != 0)
@@ -538,7 +541,7 @@ final:
     if (chk != 0)
         goto final2_error;
 
-    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 5 * 1000);
+    abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 30 * 1000);
     abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, 0);
 
     return 0;

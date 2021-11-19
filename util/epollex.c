@@ -574,6 +574,8 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
     if (events & ABCDK_EPOLL_OUTPUT)
         node->refcount -= 1;
 
+    assert(node->refcount >= 0);
+
     /* 如果发生错误，分派出错事件。*/
     if (!node->stable)
         _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
