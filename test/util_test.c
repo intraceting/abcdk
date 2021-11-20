@@ -2955,16 +2955,17 @@ void test_tls(abcdk_tree_t *args)
     SSL_load_error_strings();
 
     const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
-    ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1,NULL,capath,2);
 
+    if (capath)
+    {
+        ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
 
-    abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
-                                          abcdk_option_get(args, "--key-file", 0, NULL),
-                                          abcdk_option_get(args, "--key-pwd", 0, NULL));
+        abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+                                       abcdk_option_get(args, "--key-file", 0, NULL),
+                                       abcdk_option_get(args, "--key-pwd", 0, NULL));
 
-
-    SSL_CTX_set_verify(ssl_ctx,SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT,NULL);
-
+        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+    }
 #endif //HAVE_OPENSSL
 
     abcdk_sockaddr_t addr = {0};

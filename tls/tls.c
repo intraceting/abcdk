@@ -107,7 +107,6 @@ abcdk_tls_node *_abcdk_tls_accept(abcdk_tls_node *node)
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
     abcdk_tls_node *node_sub = NULL;
     epoll_data_t ep_data;
-    int sokc_flag = 1;
     int chk;
 
     node_sub = _abcdk_tls_node_alloc();
@@ -129,10 +128,6 @@ abcdk_tls_node *_abcdk_tls_accept(abcdk_tls_node *node)
 
     node_sub->fd = abcdk_accept(node->fd, &node_sub->remote);
     if (node_sub->fd < 0)
-        goto final_error;
-    
-    chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sokc_flag, 2);
-    if(chk != 0)
         goto final_error;
 
     ep_data.ptr = node_sub;
@@ -231,15 +226,23 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
         /*开启keepalive属性*/
         sock_flag = 1;
         abcdk_sockopt_option_int(node->fd,SOL_SOCKET, SO_KEEPALIVE,&sock_flag,2);
+
         /*连接在60秒内没有任何数据往来，则进行探测。*/
         sock_flag = 60;
         abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPIDLE,&sock_flag,2);
+
         /*探测时发包的时间间隔为5秒。*/
         sock_flag = 5;
         abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPINTVL,&sock_flag,2);
-        /*探测尝试的次数.如果第1次探测包就收到响应，则后2次的不再发。*/
+
+        /*探测尝试的次数.如果第一次探测包就收到响应，则后两次的不再发。*/
         sock_flag = 3;
         abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPCNT,&sock_flag,2);
+
+        /*关闭延迟发送。*/
+        sock_flag = 1;
+        abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sock_flag, 2);
+
     }
 
     return;
@@ -370,7 +373,7 @@ void _abcdk_tsl_event_cb(abcdk_tls_event_cb event_cb,abcdk_tls_node *node,uint32
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
 
-    /*读权利只能由消息循环通知。*/
+    /*读权利绑定到线程，并由线程释放读权利。*/
     if(event == ABCDK_TLS_EVENT_INPUT)
         abcdk_thread_leader_vote(&node->input_user);
 
@@ -414,7 +417,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
                     /*接收新连接。*/
                     node_sub = _abcdk_tls_accept(node);
 
-                    /*释放监听新连接权利。*/
+                    /*释放监听权利，并注册监听事件。*/
                     abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
 
                     if (node_sub)
@@ -428,7 +431,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
                         }
 
                         /*释放读权利。*/
-                        abcdk_epollex_mark(tls_ctx->epollex_ctx, node_sub->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
+                        abcdk_epollex_mark(tls_ctx->epollex_ctx, node_sub->fd, 0, ABCDK_EPOLL_INPUT);
                     }
                     
                 }
@@ -441,7 +444,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
                             _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_CONNECT);
 
                         /*释放读权利。*/
-                        abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
+                        abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, 0, ABCDK_EPOLL_INPUT);
                     }
                     else
                     {
@@ -466,7 +469,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
                 }
                 
                 /*释放写权利。*/
-                abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, ABCDK_EPOLL_OUTPUT, ABCDK_EPOLL_OUTPUT);
+                abcdk_epollex_mark(tls_ctx->epollex_ctx, node->fd, 0, ABCDK_EPOLL_OUTPUT);
             }
 
             /*释放引用计数。*/
