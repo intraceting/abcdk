@@ -40,6 +40,9 @@ enum _abcdk_tls_event
 #define ABCDK_TLS_EVENT_CLOSE ABCDK_TLS_EVENT_CLOSE
 };
 
+/*事件回调函数。*/
+typedef void (*abcdk_tls_event_cb)(uint64_t tls, uint32_t event, void *opaque);
+
 /**
  * 设置超时。
  * 
@@ -93,7 +96,7 @@ int abcdk_tls_write_watch(uint64_t tls);
 /**
  * 消息循环。
 */
-void abcdk_tls_loop(void (*event_cb)(uint64_t tls, uint32_t event, void *opaque));
+void abcdk_tls_loop(abcdk_tls_event_cb event_cb);
 
 /**
  * 监听客户端连接。

@@ -500,7 +500,7 @@ try_again:
         ABCDK_ERRNO_AND_GOTO1(EINTR,final_error);
 
     /*多线程选主，只能有一个线程进入IO等待，其它线程等待事件通知。*/
-    if(abcdk_thread_leader_test(&ctx->wait_leader)==0)
+    if(abcdk_thread_leader_vote(&ctx->wait_leader)==0)
     {
         /*通过看门狗检测长期不活动的节点。*/
         _abcdk_epollex_watchdog(ctx);

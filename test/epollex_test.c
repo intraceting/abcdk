@@ -39,7 +39,7 @@ void* server_loop(void* args)
     static volatile pthread_t leader = 0;
     static int l = -1;
 
-    if (abcdk_thread_leader_test(&leader) == 0)
+    if (abcdk_thread_leader_vote(&leader) == 0)
     {
 
         l = abcdk_socket(ABCDK_IPV4, 0);

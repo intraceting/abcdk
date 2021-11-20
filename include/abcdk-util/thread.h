@@ -176,18 +176,29 @@ int abcdk_thread_getname(char name[16]);
 /*------------------------------------------------------------------------------------------------*/
 
 /**
- * 选举主线程
+ * 选举主线程。
  * 
- * @return 0 成功；!0 出错。
+ * @note 非主线程调用此函数不会影向数据变化。
  * 
+ * @return 0 当前线程为主线程；!0 当前线程非主线程。
  */
-int abcdk_thread_leader_test(volatile pthread_t *tid);
+int abcdk_thread_leader_vote(volatile pthread_t *tid);
 
 /**
- * 主线程退出
- *
- *  @return 0 成功；!0 出错。
+ * 测试主线程。
  * 
+ * @note 任何线程调用此函数不会影向数据变化。
+ * 
+ * @return 0 当前线程为主线程；!0 当前线程非主线程。
+ */
+int abcdk_thread_leader_test(const volatile pthread_t *tid);
+
+/**
+ * 主线程退出。
+ * 
+ * @note 非主线程调用此函数不会影向数据变化。
+ *
+ * @return 0 当前线程为主线程；!0 当前线程非主线程。
  */
 int abcdk_thread_leader_quit(volatile pthread_t *tid);
 

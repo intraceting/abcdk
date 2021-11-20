@@ -211,11 +211,21 @@ int abcdk_thread_getname(char name[16])
 
 /*------------------------------------------------------------------------------------------------*/
 
-int abcdk_thread_leader_test(volatile pthread_t *tid)
+int abcdk_thread_leader_vote(volatile pthread_t *tid)
 {
     pthread_t self_tid = pthread_self();
 
     if(abcdk_atomic_compare_and_swap(tid, 0, self_tid))
+        return 0;
+
+    return -1;
+}
+
+int abcdk_thread_leader_test(const volatile pthread_t *tid)
+{
+    pthread_t self_tid = pthread_self();
+
+    if(abcdk_atomic_compare((volatile pthread_t *)tid,self_tid))
         return 0;
 
     return -1;
