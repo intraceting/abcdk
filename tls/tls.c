@@ -397,7 +397,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
 
         if(e.events & ABCDK_EPOLL_ERROR)
         {
-            event_cb((uint64_t)node,ABCDK_TLS_EVENT_CLOSE,node->opaque);
+            _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_CLOSE);
 
             /*释放引用，解除绑定，回收资源。*/
             abcdk_epollex_unref(tls_ctx->epollex_ctx,node->fd,e.events);

@@ -21,7 +21,7 @@ typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
 /**/
-typedef struct _abcdk_tls_node *abcdk_tls_node;
+typedef struct _abcdk_tls_node abcdk_tls_node;
 
 /* TLS事件。*/
 enum _abcdk_tls_event
