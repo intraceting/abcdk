@@ -2980,17 +2980,19 @@ void test_tls(abcdk_tree_t *args)
 #endif //HAVE_OPENSSL
 
     abcdk_sockaddr_t addr = {0};
-    //abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
-    abcdk_sockaddr_from_string(&addr,"[::]:12345",0);
+
+    const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
+    abcdk_sockaddr_from_string(&addr,listen_p,0);
+   // abcdk_sockaddr_from_string(&addr,"[::]:12345",0);
    // addr.family = ABCDK_UNIX;
     //strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
     assert(abcdk_tls_listen(&addr,ssl_ctx,NULL)==0);
 
     abcdk_sockaddr_t addr2 = {0};
-    abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
+  //  abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
 
-    assert(abcdk_tls_connect(&addr2,NULL,NULL)==0);
+  //  assert(abcdk_tls_connect(&addr2,NULL,NULL)==0);
 
     #pragma omp parallel for num_threads(3)
     for (int i = 0; i < 3; i++)
