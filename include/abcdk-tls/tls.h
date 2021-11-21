@@ -62,16 +62,16 @@ int abcdk_tls_get_peername(uint64_t tls, abcdk_sockaddr_t *addr);
 /**
  * 读。
  * 
- * @return >0 成功(已读取数据的长度)，<=0 失败(无数据或正在关闭)。
+ * @return > 0 已读取数据的长度，0 正在关闭，-1 无数据。
 */
 ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size);
 
 /**
  * 监听是否可读。
  * 
- * @note 当读权利被占用时，不会有其它线程会获得允许读事件。
+ * @note 当读权利被占用时，不会有其它线程获得读事件。
  * 
- * @param done 0 仅监听，!0 释放读权利。
+ * @param done 0 仅监听，!0 释放读权利(非权利拥有者无效)。
  * 
  * @return 0 成功，!0 失败。
 */
@@ -80,14 +80,14 @@ int abcdk_tls_read_watch(uint64_t tls,int done);
 /**
  * 写。
  * 
- * @return >0 成功(已写入数据的长度)，<=0 失败(链路忙或正在关闭)。
+ * @return > 0 已写入数据的长度，0 正在关闭，-1 链路忙。
 */
 ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size);
 
 /**
  * 监听是否可写。
  * 
- * @note 当写权利被占用时，不会有其它线程会获得允许写事件。
+ * @note 当写权利被占用时，不会有其它线程获得写事件。
  * 
  * @return 0 成功，!0 失败。
 */

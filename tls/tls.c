@@ -372,11 +372,12 @@ int abcdk_tls_write_watch(uint64_t tls)
 void _abcdk_tsl_event_cb(abcdk_tls_event_cb event_cb,abcdk_tls_node *node,uint32_t event)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-
-    /*读权利绑定到线程，并由线程释放读权利。*/
+    
+    /*读权利绑定到线程。*/
     if(event == ABCDK_TLS_EVENT_INPUT)
         abcdk_thread_leader_vote(&node->input_user);
 
+    /*通知应用层处理事件。*/
     event_cb((uint64_t)node,event,node->opaque);
 }
 
