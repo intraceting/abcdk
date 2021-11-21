@@ -528,6 +528,10 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
     if(!param && crl_check)
         goto final_error;
 
+    chk = X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
+    if(chk != 1)
+        goto final_error;
+
     if(crl_check == 2)
         chk = X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
     else if(crl_check == 1)

@@ -2882,15 +2882,15 @@ void test_cert_verify(abcdk_tree_t *args)
 
     X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(store_ctx);
 
-    X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
+   // X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
     /*
      * X509_V_FLAG_CRL_CHECK 只验证叶证书是否被吊销，并且只要求叶证书的父级证书存在吊销列表即可。
      * X509_V_FLAG_CRL_CHECK_ALL 验证证书链，并且要求所有父级证书(根证书除外)的吊销列表都存在。
      * 
      * X509_V_FLAG_CRL_CHECK_ALL 单独启用无效，至少要配合X509_V_FLAG_CRL_CHECK启用。
     */
-  //  X509_VERIFY_PARAM_set_flags(param,X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
-    X509_VERIFY_PARAM_set_flags(param,X509_V_FLAG_CRL_CHECK);
+    X509_VERIFY_PARAM_set_flags(param,X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+  //  X509_VERIFY_PARAM_set_flags(param,X509_V_FLAG_CRL_CHECK);
 
     int chk = X509_verify_cert(store_ctx);
     assert(chk == 1);
@@ -2966,6 +2966,8 @@ void test_tls(abcdk_tree_t *args)
     if (capath)
     {
         ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
+
+        //X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
 
         abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
                                        abcdk_option_get(args, "--key-file", 0, NULL),
