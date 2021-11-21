@@ -2904,10 +2904,10 @@ void test_cert_verify(abcdk_tree_t *args)
 #endif 
 }
 
-void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
+void tls_event_cb(abcdk_tls_node *node, uint32_t event, void *opaque)
 {
     abcdk_sockaddr_t addr;
-    abcdk_tls_get_peername(tls,&addr);
+    abcdk_tls_get_peername(node,&addr);
     char addr_str[100] = {0};
     abcdk_sockaddr_to_string(addr_str,&addr);
 
@@ -2917,7 +2917,7 @@ void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
         {
             printf("Connected: %s\n",addr_str);
 
-            abcdk_tls_read_watch(tls,0);
+            abcdk_tls_read_watch(node,0);
         }
         break;
         case ABCDK_TLS_EVENT_INPUT:
@@ -2925,21 +2925,21 @@ void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
             while(1)
             {
                 char buf[100]={0};
-                ssize_t r = abcdk_tls_read(tls,buf,100);
+                ssize_t r = abcdk_tls_read(node,buf,100);
                 if(r<=0)
                     break;
 
                 printf("%s",buf);
             }
 
-            abcdk_tls_read_watch(tls,1);
-            abcdk_tls_write_watch(tls);
+            abcdk_tls_read_watch(node,1);
+            abcdk_tls_write_watch(node);
             
         }
         break;
         case ABCDK_TLS_EVENT_OUTPUT:
         {
-            abcdk_tls_write(tls,"abcdk\n",6);
+            abcdk_tls_write(node,"abcdk\n",6);
         }
         break;
         case ABCDK_TLS_EVENT_CLOSE:

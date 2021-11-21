@@ -20,6 +20,9 @@ __BEGIN_DECLS
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
+/**/
+typedef struct _abcdk_tls_node *abcdk_tls_node;
+
 /* TLS事件。*/
 enum _abcdk_tls_event
 {
@@ -41,7 +44,7 @@ enum _abcdk_tls_event
 };
 
 /*事件回调函数。*/
-typedef void (*abcdk_tls_event_cb)(uint64_t tls, uint32_t event, void *opaque);
+typedef void (*abcdk_tls_event_cb)(abcdk_tls_node *node, uint32_t event, void *opaque);
 
 /**
  * 设置超时。
@@ -50,21 +53,21 @@ typedef void (*abcdk_tls_event_cb)(uint64_t tls, uint32_t event, void *opaque);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tls_set_timeout(uint64_t tls, time_t timeout);
+int abcdk_tls_set_timeout(abcdk_tls_node *node, time_t timeout);
 
 /**
  * 获取远端地址。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tls_get_peername(uint64_t tls, abcdk_sockaddr_t *addr);
+int abcdk_tls_get_peername(abcdk_tls_node *node, abcdk_sockaddr_t *addr);
 
 /**
  * 读。
  * 
  * @return > 0 已读取数据的长度，0 正在关闭，-1 无数据。
 */
-ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size);
+ssize_t abcdk_tls_read(abcdk_tls_node *node, void *buf, size_t size);
 
 /**
  * 监听是否可读。
@@ -75,14 +78,14 @@ ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tls_read_watch(uint64_t tls,int done);
+int abcdk_tls_read_watch(abcdk_tls_node *node,int done);
 
 /**
  * 写。
  * 
  * @return > 0 已写入数据的长度，0 正在关闭，-1 链路忙。
 */
-ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size);
+ssize_t abcdk_tls_write(abcdk_tls_node *node, void *buf, size_t size);
 
 /**
  * 监听是否可写。
@@ -91,7 +94,7 @@ ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tls_write_watch(uint64_t tls);
+int abcdk_tls_write_watch(abcdk_tls_node *node);
 
 /**
  * 消息循环。

@@ -253,10 +253,9 @@ final_error:
     abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 1);
 }
 
-int abcdk_tls_set_timeout(uint64_t tls,time_t timeout)
+int abcdk_tls_set_timeout(abcdk_tls_node *node,time_t timeout)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node*)tls;
     int chk;
 
     assert(node != NULL);
@@ -266,10 +265,9 @@ int abcdk_tls_set_timeout(uint64_t tls,time_t timeout)
     return chk;
 }
 
-int abcdk_tls_get_peername(uint64_t tls, abcdk_sockaddr_t *addr)
+int abcdk_tls_get_peername(abcdk_tls_node *node, abcdk_sockaddr_t *addr)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node*)tls;
 
     assert(node != NULL && addr != NULL);
 
@@ -278,12 +276,12 @@ int abcdk_tls_get_peername(uint64_t tls, abcdk_sockaddr_t *addr)
     return 0;
 }
 
-ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size)
+ssize_t abcdk_tls_read(abcdk_tls_node *node, void *buf, size_t size)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node*)tls;
     ssize_t rsize = 0,rsize_all = 0;
     int chk;
+
     assert(node != NULL && buf != NULL && size >0);
 
     /*仅消息循环线程拥有读权利。*/
@@ -308,10 +306,9 @@ ssize_t abcdk_tls_read(uint64_t tls, void *buf, size_t size)
     return rsize_all;
 }
 
-int abcdk_tls_read_watch(uint64_t tls, int done)
+int abcdk_tls_read_watch(abcdk_tls_node *node, int done)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node *)tls;
     int done_flag = 0;
     int chk;
 
@@ -330,10 +327,9 @@ int abcdk_tls_read_watch(uint64_t tls, int done)
     return chk;
 }
 
-ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size)
+ssize_t abcdk_tls_write(abcdk_tls_node *node, void *buf, size_t size)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node*)tls;
     ssize_t wsize = 0,wsize_all = 0;
 
     assert(node != NULL && buf != NULL && size >0);
@@ -356,10 +352,9 @@ ssize_t abcdk_tls_write(uint64_t tls, void *buf, size_t size)
     return wsize_all;
 }
 
-int abcdk_tls_write_watch(uint64_t tls)
+int abcdk_tls_write_watch(abcdk_tls_node *node)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
-    abcdk_tls_node *node = (abcdk_tls_node*)tls;
     int chk;
 
     assert(node != NULL);
@@ -378,7 +373,7 @@ void _abcdk_tsl_event_cb(abcdk_tls_event_cb event_cb,abcdk_tls_node *node,uint32
         abcdk_thread_leader_vote(&node->input_user);
 
     /*通知应用层处理事件。*/
-    event_cb((uint64_t)node,event,node->opaque);
+    event_cb(node,event,node->opaque);
 }
 
 void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
