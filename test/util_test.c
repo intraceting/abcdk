@@ -2953,6 +2953,8 @@ void tls_event_cb(uint64_t tls, uint32_t event, void *opaque)
 void test_tls(abcdk_tree_t *args)
 {
 
+    signal(SIGPIPE,NULL);
+
     SSL_CTX *ssl_ctx = NULL;
 
 #ifdef HAVE_OPENSSL
