@@ -311,6 +311,18 @@ CheckHavePackage()
                 echo "libhiredis-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "json-c" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libjson-c-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags json-c)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs json-c)"
+            else
+                echo "libjson-c-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -539,6 +551,18 @@ CheckHavePackage()
                 echo "hiredis-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "json-c" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libjson-c-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags json-c)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs json-c)"
+            else
+                echo "libjson-c-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -619,9 +643,9 @@ usage: [ OPTIONS ]
 
     -d < KEY,KEY,... > 
      依赖项目，以英文“,”为分割符。支持以下关键字：
-     have-openmp,have-unixodbc,have-sqlite,have-openssl,have-ffmpeg
-     have-freeimage,have-fuse,have-libnm,have-mpi,have-lz4,have-zlib
-     have-archive,have-modbus,have-libusb,have-mqtt,have-redis
+     openmp,unixodbc,sqlite,openssl,ffmpeg
+     freeimage,fuse,libnm,mpi,lz4,zlib
+     archive,modbus,libusb,mqtt,redis,json-c
 EOF
 }
 
@@ -695,7 +719,7 @@ if [ ${STATUS} -ne 0 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-openmp") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "openmp") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} openmp 1)
     if [ ${STATUS} -eq 0 ];then
@@ -714,7 +738,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-openmp") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-unixodbc") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "unixodbc") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} unixodbc 1)
     if [ ${STATUS} -eq 0 ];then
@@ -733,7 +757,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-unixodbc") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-sqlite") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "sqlite") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} sqlite 1)
     if [ ${STATUS} -eq 0 ];then
@@ -752,7 +776,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-sqlite") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-openssl") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "openssl") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} openssl 1)
     if [ ${STATUS} -eq 0 ];then
@@ -771,7 +795,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-openssl") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-ffmpeg") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "ffmpeg") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} ffmpeg 1)
     if [ ${STATUS} -eq 0 ];then
@@ -790,7 +814,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-ffmpeg") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-freeimage") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "freeimage") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} freeimage 1)
     if [ ${STATUS} -eq 0 ];then
@@ -809,7 +833,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-freeimage") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "fuse") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} fuse 1)
     if [ ${STATUS} -eq 0 ];then
@@ -828,7 +852,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-fuse") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-libnm") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "libnm") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} libnm 1)
     if [ ${STATUS} -eq 0 ];then
@@ -847,7 +871,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-libnm") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-mpi") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "mpi") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} mpi 1)
     if [ ${STATUS} -eq 0 ];then
@@ -867,7 +891,7 @@ fi
 
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-lz4") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "lz4") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} lz4 1)
     if [ ${STATUS} -eq 0 ];then
@@ -887,7 +911,7 @@ fi
 
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-zlib") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "zlib") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} zlib 1)
     if [ ${STATUS} -eq 0 ];then
@@ -906,7 +930,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-zlib") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-archive") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "archive") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} archive 1)
     if [ ${STATUS} -eq 0 ];then
@@ -925,7 +949,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-archive") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-modbus") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "modbus") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} modbus 1)
     if [ ${STATUS} -eq 0 ];then
@@ -944,7 +968,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-modbus") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-libusb") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "libusb") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} libusb 1)
     if [ ${STATUS} -eq 0 ];then
@@ -963,7 +987,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-libusb") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-mqtt") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "mqtt") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} mqtt 1)
     if [ ${STATUS} -eq 0 ];then
@@ -982,7 +1006,7 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-mqtt") -eq 1 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "have-redis") -eq 1 ];then
+if [ $(CheckKeyword ${DEPEND_FUNC} "redis") -eq 1 ];then
 {
     STATUS=$(CheckHavePackage ${KIT_NAME} redis 1)
     if [ ${STATUS} -eq 0 ];then
@@ -994,6 +1018,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "have-redis") -eq 1 ];then
     else
     {
         echo "$(CheckHavePackage ${KIT_NAME} redis 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "json-c") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} json-c 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_JSON_C="Yes"
+        DEPEND_FLAGS=" -DHAVE_JSON_C $(CheckHavePackage ${KIT_NAME} json-c 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} json-c 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} json-c 0) not found."
         exit 22
     }
     fi
@@ -1066,6 +1110,7 @@ echo "HAVE_MODBUS=${HAVE_MODBUS}"
 echo "HAVE_LIBUSB=${HAVE_LIBUSB}"
 echo "HAVE_MQTT=${HAVE_MQTT}"
 echo "HAVE_REDIS=${HAVE_REDIS}"
+echo "HAVE_JSON_C=${HAVE_JSON_C}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
