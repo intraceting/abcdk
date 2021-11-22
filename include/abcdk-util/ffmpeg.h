@@ -35,6 +35,8 @@ __END_DECLS
 
 #endif //HAVE_FFMPEG
 
+
+
 __BEGIN_DECLS
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
