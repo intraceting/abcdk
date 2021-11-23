@@ -3011,17 +3011,7 @@ void test_json(abcdk_tree_t *args)
 
     json_object *src_obj = json_object_from_file(src);
 
-    struct json_object_iterator it;
-    struct json_object_iterator itEnd;
-
-    it = json_object_iter_begin(src_obj);
-    itEnd = json_object_iter_end(src_obj);
-
-    while (!json_object_iter_equal(&it, &itEnd))
-    {
-        printf("%s\n",json_object_iter_peek_name(&it));
-        json_object_iter_next(&it);
-    }
+    abcdk_json_readable(stdout,1,0,src_obj);
 
     abcdk_json_unref(&src_obj);
 
