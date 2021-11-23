@@ -98,11 +98,15 @@ int abcdk_tls_write_watch(abcdk_tls_node *node);
 
 /**
  * 消息循环。
+ * 
+ * @warning 一直运行，不会退出。
 */
 void abcdk_tls_loop(abcdk_tls_event_cb event_cb);
 
 /**
  * 监听客户端连接。
+ * 
+ * @param opaque 监听环境指针。所有客户端连接都会复制这个指针。
  * 
  * @return 0 成功，!0 失败。
 */
@@ -112,6 +116,8 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque);
  * 连接远程服务器。
  * 
  * @warning 仅发出连接指令，连接是否成功以消息通知。
+ * 
+ * @param opaque 客户端环境指针。
  * 
  * @return 0 成功，!0 失败。
 */
