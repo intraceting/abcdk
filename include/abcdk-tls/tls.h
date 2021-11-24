@@ -106,6 +106,8 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb);
 /**
  * 监听客户端连接。
  * 
+ * @param addr 监听地址指针。
+ * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param opaque 监听环境指针。所有客户端连接都会复制这个指针。
  * 
  * @return 0 成功，!0 失败。
@@ -117,6 +119,8 @@ int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque);
  * 
  * @warning 仅发出连接指令，连接是否成功以消息通知。
  * 
+ * @param addr 服务端地址指针。
+ * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param opaque 客户端环境指针。
  * 
  * @return 0 成功，!0 失败。
