@@ -90,6 +90,13 @@ int _abcdk_tls_ctx_init(void *opaque)
     return 0;
 }
 
+void _abcdk_tls_ctx_uninit(void *opaque)
+{
+    abcdk_tls_ctx *ctx = (abcdk_tls_ctx *)opaque;
+
+    abcdk_epollex_free(&ctx->epollex_ctx);
+}
+
 abcdk_tls_ctx *_abcdk_tls_get_ctx()
 {
     static volatile int init = 0;

@@ -99,7 +99,10 @@ int abcdk_tls_write_watch(abcdk_tls_node *node);
 /**
  * 消息循环。
  * 
- * @warning 一直运行，不会退出。
+ * @warning 一直循环，直到取消事件发生。
+ * 
+ * @param event_cb 事件回调函数指针。
+ * 
 */
 void abcdk_tls_loop(abcdk_tls_event_cb event_cb);
 

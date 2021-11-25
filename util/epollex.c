@@ -111,9 +111,9 @@ abcdk_epollex_t *abcdk_epollex_alloc()
 
     ctx->efd = efd;
     abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event), 100);
-    abcdk_map_init(&ctx->node_map,400);
-    abcdk_mutex_init2(&ctx->mutex,0);
-    ctx->watchdog_intvl = 5000;
+    abcdk_map_init(&ctx->node_map, 400);
+    abcdk_mutex_init2(&ctx->mutex, 0);
+    ctx->watchdog_intvl = 3000;
     ctx->watchdog_active = abcdk_epollex_clock();
     ctx->wait_leader = 0;
 
