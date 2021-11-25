@@ -323,6 +323,18 @@ CheckHavePackage()
                 echo "libjson-c-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "bluez" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libbluetooth-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags bluez)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs bluez)"
+            else
+                echo "libbluetooth-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -563,6 +575,18 @@ CheckHavePackage()
                 echo "libjson-c-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "bluez" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} bluez-libs-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags bluez)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs bluez)"
+            else
+                echo "bluez-libs-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -645,7 +669,8 @@ usage: [ OPTIONS ]
      依赖项目，以英文“,”为分割符。支持以下关键字：
      openmp,unixodbc,sqlite,openssl,ffmpeg
      freeimage,fuse,libnm,mpi,lz4,zlib
-     archive,modbus,libusb,mqtt,redis,json-c
+     archive,modbus,libusb,mqtt,redis,json-c,
+     bluez
 EOF
 }
 
@@ -1024,7 +1049,6 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "redis") -eq 1 ];then
 }
 fi
 
-
 #
 if [ $(CheckKeyword ${DEPEND_FUNC} "json-c") -eq 1 ];then
 {
@@ -1038,6 +1062,25 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "json-c") -eq 1 ];then
     else
     {
         echo "$(CheckHavePackage ${KIT_NAME} json-c 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "bluez") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} bluez 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_BLUEZ="Yes"
+        DEPEND_FLAGS=" -DHAVE_BLUEZ $(CheckHavePackage ${KIT_NAME} bluez 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} bluez 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} bluez 0) not found."
         exit 22
     }
     fi
@@ -1111,6 +1154,7 @@ echo "HAVE_LIBUSB=${HAVE_LIBUSB}"
 echo "HAVE_MQTT=${HAVE_MQTT}"
 echo "HAVE_REDIS=${HAVE_REDIS}"
 echo "HAVE_JSON_C=${HAVE_JSON_C}"
+echo "HAVE_BLUEZ=${HAVE_BLUEZ}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
