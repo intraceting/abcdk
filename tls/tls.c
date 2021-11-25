@@ -9,7 +9,11 @@
 /**/
 typedef struct _abcdk_tls_ctx
 {
+    /* epollex 环境。*/
     abcdk_epollex_t *epollex_ctx;
+
+    /*事件循环标志。0 持续运行，!0 中止运行。*/
+    volatile int loop_abort;
 
 } abcdk_tls_ctx;
 
@@ -81,20 +85,23 @@ abcdk_tls_node *_abcdk_tls_node_alloc()
     return (abcdk_tls_node *)abcdk_heap_alloc(sizeof(abcdk_tls_node));
 }
 
+void _abcdk_tls_ctx_cleanup_cb(epoll_data_t *data, void *opaque)
+{
+    abcdk_tls_ctx *ctx = (abcdk_tls_ctx *)opaque;
+    abcdk_tls_node *node = NULL;
+
+    node = (abcdk_tls_node *)data->ptr;
+    _abcdk_tls_node_free(&node);
+}
+
 int _abcdk_tls_ctx_init(void *opaque)
 {
     abcdk_tls_ctx *ctx = (abcdk_tls_ctx *)opaque;
 
-    ctx->epollex_ctx = abcdk_epollex_alloc();
+    ctx->epollex_ctx = abcdk_epollex_alloc(_abcdk_tls_ctx_cleanup_cb,ctx);
+    ctx->loop_abort = 0;
 
     return 0;
-}
-
-void _abcdk_tls_ctx_uninit(void *opaque)
-{
-    abcdk_tls_ctx *ctx = (abcdk_tls_ctx *)opaque;
-
-    abcdk_epollex_free(&ctx->epollex_ctx);
 }
 
 abcdk_tls_ctx *_abcdk_tls_get_ctx()
@@ -260,6 +267,13 @@ final_error:
     abcdk_epollex_timeout(tls_ctx->epollex_ctx, node->fd, 1);
 }
 
+void abcdk_tls_cleanup()
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+
+    abcdk_epollex_free(&tls_ctx->epollex_ctx);
+}
+
 int abcdk_tls_set_timeout(abcdk_tls_node *node,time_t timeout)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
@@ -396,20 +410,27 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
     while(1)
     {
         memset(&e,0,sizeof(abcdk_epoll_event));
-        int chk = abcdk_epollex_wait(tls_ctx->epollex_ctx, &e, -1);
+        chk = abcdk_epollex_wait(tls_ctx->epollex_ctx, &e, 3*1000);
         if (chk < 0)
-            break;
+        {
+            if(abcdk_atomic_load(&tls_ctx->loop_abort)==0)
+                continue;
+            else 
+                break;
+        }
 
         node = (abcdk_tls_node *)e.data.ptr;
 
         if(e.events & ABCDK_EPOLL_ERROR)
         {
-            _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_CLOSE);
+            if (node->flag == ABCDK_TLS_FLAG_LISTEN)
+                _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_LISTEN_CLOSE);
+            else 
+                _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_CLOSE);
 
             /*释放引用，解除绑定，回收资源。*/
             abcdk_epollex_unref(tls_ctx->epollex_ctx,node->fd,e.events);
             abcdk_epollex_detach(tls_ctx->epollex_ctx,node->fd);
-            _abcdk_tls_node_free(&node);
         }
         else
         {            
@@ -480,6 +501,13 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
             assert(chk == 0);
         }
     }
+}
+
+void abcdk_tls_loop_abort()
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+
+    abcdk_atomic_store(&tls_ctx->loop_abort,1);
 }
 
 int abcdk_tls_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)

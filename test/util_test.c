@@ -2919,6 +2919,8 @@ void tls_event_cb(abcdk_tls_node *node, uint32_t event, void *opaque)
         {
             printf("Connected: %s\n",addr_str);
 
+            abcdk_tls_set_timeout(node,5*1000);
+
             abcdk_tls_read_watch(node,0);
         }
         break;
@@ -3001,6 +3003,8 @@ void test_tls(abcdk_tree_t *args)
     {
         abcdk_tls_loop(tls_event_cb);
     }
+
+    abcdk_tls_cleanup();
 }
 
 void test_json(abcdk_tree_t *args)

@@ -32,6 +32,12 @@ typedef struct _abcdk_epollex
 
     /** 广播事件。*/
     uint32_t broadcast_want;
+
+    /** 清理回调函数。*/
+    abcdk_epollex_cleanup_cb cleanup_cb;
+
+    /* 清理环境指针。*/
+    void *opaque;
     
 } abcdk_epollex_t;
 
@@ -68,6 +74,7 @@ typedef struct _abcdk_epollex_node
     /** 是否第一次添加。!0 是，0 否。*/
     int add_first;
 
+
 } abcdk_epollex_node;
 
 time_t abcdk_epollex_clock()
@@ -96,7 +103,15 @@ void abcdk_epollex_free(abcdk_epollex_t **ctx)
     *ctx = NULL;
 }
 
-abcdk_epollex_t *abcdk_epollex_alloc()
+void _abcdk_epollex_destructor_cb(abcdk_allocator_t *p, void *opaque)
+{
+    abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
+    abcdk_epollex_node *node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+
+    ctx->cleanup_cb(&node->data,ctx->opaque);
+}
+
+abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *opaque)
 {
     int efd = -1;
     abcdk_epollex_t *ctx = NULL;
@@ -113,9 +128,13 @@ abcdk_epollex_t *abcdk_epollex_alloc()
     abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event), 100);
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
-    ctx->watchdog_intvl = 3000;
+    ctx->watchdog_intvl = 5000;
     ctx->watchdog_active = abcdk_epollex_clock();
     ctx->wait_leader = 0;
+    ctx->node_map.destructor_cb = _abcdk_epollex_destructor_cb;
+    ctx->node_map.opaque = ctx;
+    ctx->cleanup_cb = cleanup_cb;
+    ctx->opaque = opaque;
 
     return ctx;
 
@@ -420,7 +439,7 @@ final:
 
 void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 {
-    uint64_t current = abcdk_epollex_clock();
+    time_t current = abcdk_epollex_clock();
 
     /*看门狗活动间隔时间不能太密集。*/
     if ((current - ctx->watchdog_active) < ctx->watchdog_intvl)
@@ -461,9 +480,9 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int
     }
 }
 
-uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
+time_t _abcdk_epollex_difference_timeout(time_t begin,time_t timeout)
 {
-    uint64_t span = UINT64_MAX;
+    time_t span = INTPTR_MAX;
 
     if(timeout >= 0)
     {
@@ -478,8 +497,8 @@ uint64_t _abcdk_epollex_difference_timeout(uint64_t begin,uint64_t timeout)
 int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event *event,time_t timeout)
 {
     abcdk_epoll_event w[20];
-    uint64_t begin = abcdk_epollex_clock();
-    uint64_t remaining = 0;
+    time_t begin = abcdk_epollex_clock();
+    time_t remaining = 0;
     int count;
     int chk = 0;
 

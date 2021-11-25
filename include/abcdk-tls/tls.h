@@ -39,12 +39,23 @@ enum _abcdk_tls_event
 #define ABCDK_TLS_EVENT_OUTPUT ABCDK_TLS_EVENT_OUTPUT
 
     /*已断开。*/
-    ABCDK_TLS_EVENT_CLOSE = 4
+    ABCDK_TLS_EVENT_CLOSE = 4,
 #define ABCDK_TLS_EVENT_CLOSE ABCDK_TLS_EVENT_CLOSE
+
+    /*监听关闭。*/
+    ABCDK_TLS_EVENT_LISTEN_CLOSE = 5
+#define ABCDK_TLS_EVENT_LISTEN_CLOSE ABCDK_TLS_EVENT_LISTEN_CLOSE
 };
 
 /*事件回调函数。*/
 typedef void (*abcdk_tls_event_cb)(abcdk_tls_node *node, uint32_t event, void *opaque);
+
+/**
+ * 环境清理。
+ * 
+ * @warning 仅所有的消息处理线程退出后使用，否则可能发生意料之外的错误。
+*/
+void abcdk_tls_cleanup();
 
 /**
  * 设置超时。
@@ -99,12 +110,16 @@ int abcdk_tls_write_watch(abcdk_tls_node *node);
 /**
  * 消息循环。
  * 
- * @warning 一直循环，直到取消事件发生。
+ * @warning 持续运行，直到被中止。
  * 
  * @param event_cb 事件回调函数指针。
- * 
 */
 void abcdk_tls_loop(abcdk_tls_event_cb event_cb);
+
+/**
+ * 中止消息循环。
+*/
+void abcdk_tls_loop_abort();
 
 /**
  * 监听客户端连接。

@@ -19,6 +19,9 @@ __BEGIN_DECLS
 /** epoll扩展对象。*/
 typedef struct _abcdk_epollex abcdk_epollex_t;
 
+/** 清理回调函数。*/
+typedef void (*abcdk_epollex_cleanup_cb)(epoll_data_t *data, void *opaque);
+
 /**
  * 销毁环境。
 */
@@ -29,7 +32,7 @@ void abcdk_epollex_free(abcdk_epollex_t **ctx);
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_epollex_t *abcdk_epollex_alloc();
+abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *opaque);
 
 /**
  * 分离句柄。
