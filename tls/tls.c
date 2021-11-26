@@ -410,7 +410,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
     while(1)
     {
         memset(&e,0,sizeof(abcdk_epoll_event));
-        chk = abcdk_epollex_wait(tls_ctx->epollex_ctx, &e, 3*1000);
+        chk = abcdk_epollex_wait(tls_ctx->epollex_ctx, &e, 3000);
         if (chk < 0)
         {
             if(abcdk_atomic_load(&tls_ctx->loop_abort)==0)
