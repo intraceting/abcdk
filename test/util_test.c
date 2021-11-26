@@ -3022,6 +3022,25 @@ void test_json(abcdk_tree_t *args)
 #endif //_json_h_
 }
 
+void test_refer_count(abcdk_tree_t *args)
+{
+    int user = abcdk_option_get_int(args,"--user",0,10);
+
+    abcdk_allocator_t * p= abcdk_allocator_alloc2(100);
+
+#pragma omp parallel for num_threads(user)
+    for (int i = 0; i < 1000; i++)
+    {
+        abcdk_allocator_t *q = abcdk_allocator_refer(p);
+
+        usleep(10*1000);
+
+        abcdk_allocator_unref(&q);
+    }
+
+    abcdk_allocator_unref(&p);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3138,6 +3157,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_json", 0) == 0)
        test_json(args);
+    
+    if (abcdk_strcmp(func, "test_refer_count", 0) == 0)
+       test_refer_count(args);
 
     abcdk_tree_free(&args);
     
