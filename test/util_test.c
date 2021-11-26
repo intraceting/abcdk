@@ -3029,7 +3029,7 @@ void test_refer_count(abcdk_tree_t *args)
     abcdk_allocator_t * p= abcdk_allocator_alloc2(100);
 
 #pragma omp parallel for num_threads(user)
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100000; i++)
     {
         abcdk_allocator_t *q = abcdk_allocator_refer(p);
 
