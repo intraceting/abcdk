@@ -566,13 +566,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "json-c" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libjson-c-devel)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} json-c-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "$(pkg-config --cflags json-c)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs json-c)"
             else
-                echo "libjson-c-devel"
+                echo "json-c-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "bluez" ];then
