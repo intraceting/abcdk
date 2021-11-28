@@ -137,7 +137,7 @@ int abcdk_mutex_signal(abcdk_mutex_t *ctx, int broadcast);
 /**
  * 创建线程。
  * 
- * @param joinable 0 结束后自回收资源，!0 结束后需要调用者回收资源。
+ * @param joinable 0 结束后自动回收资源，!0 结束后需要调用者回收资源。
  * 
  * @return 0 成功；!0 出错。
  * 
@@ -147,7 +147,7 @@ int abcdk_thread_create(abcdk_thread_t *ctx,int joinable);
 /**
  * 等待线程结束并回收资源。
  * 
- * 当线程被已经分离或已经分离模式创建的，直接返回。
+ * @note 当线程不支持等待时，直接返回。
  * 
  * @return 0 成功；!0 出错。
 */

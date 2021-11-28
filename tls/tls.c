@@ -234,7 +234,7 @@ void abcdk_tls_handshake(abcdk_tls_node *node)
     }
 #endif //HEADER_SSL_H
 
-    /*修改保活参数，以防在远程断电的情况下，本地无法检测到连接断开信号。*/
+    /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
     if(node->status == ABCDK_TLS_STATUS_STABLE)
     {
         /*开启keepalive属性*/
