@@ -45,7 +45,7 @@ CheckPackageKitName()
 {
 	if [ $(CheckSystemName "Ubuntu|Debian") -ge 1 ];then
 		echo "deb"
-	elif [ $(CheckSystemName "CentOS|Red Hat|RedHat|RHEL|fedora|Amazon|Oracle") -ge 1 ];then
+	elif [ $(CheckSystemName "CentOS|Red Hat|RedHat|RHEL|fedora|Amazon|amzn|Oracle") -ge 1 ];then
 		echo "rpm"
 	else
 		echo ""
