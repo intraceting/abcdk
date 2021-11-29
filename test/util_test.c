@@ -2906,7 +2906,7 @@ void test_cert_verify(abcdk_tree_t *args)
 #endif 
 }
 
-void tls_event_cb(abcdk_tls_node *node, uint32_t event, void *opaque)
+void tls_event_cb(abcdk_tls_node *node, uint32_t event)
 {
     abcdk_sockaddr_t addr;
     abcdk_tls_get_peername(node,&addr);

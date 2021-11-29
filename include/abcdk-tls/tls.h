@@ -20,35 +20,40 @@ __BEGIN_DECLS
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
-/**/
+/** */
 typedef struct _abcdk_tls_node abcdk_tls_node;
+
 
 /* TLS事件。*/
 enum _abcdk_tls_event
 {
     /*已连接。*/
-    ABCDK_TLS_EVENT_CONNECT = 1,
+    ABCDK_TLS_EVENT_ACCEPT = 1,
+#define ABCDK_TLS_EVENT_ACCEPT ABCDK_TLS_EVENT_ACCEPT
+
+    /*已连接。*/
+    ABCDK_TLS_EVENT_CONNECT = 2,
 #define ABCDK_TLS_EVENT_CONNECT ABCDK_TLS_EVENT_CONNECT
 
     /*有数据到达。*/
-    ABCDK_TLS_EVENT_INPUT = 2,
+    ABCDK_TLS_EVENT_INPUT = 3,
 #define ABCDK_TLS_EVENT_INPUT ABCDK_TLS_EVENT_INPUT
 
     /*链路空闲，可以发送。*/
-    ABCDK_TLS_EVENT_OUTPUT = 3,
+    ABCDK_TLS_EVENT_OUTPUT = 4,
 #define ABCDK_TLS_EVENT_OUTPUT ABCDK_TLS_EVENT_OUTPUT
 
     /*已断开。*/
-    ABCDK_TLS_EVENT_CLOSE = 4,
+    ABCDK_TLS_EVENT_CLOSE = 5,
 #define ABCDK_TLS_EVENT_CLOSE ABCDK_TLS_EVENT_CLOSE
 
     /*监听关闭。*/
-    ABCDK_TLS_EVENT_LISTEN_CLOSE = 5
+    ABCDK_TLS_EVENT_LISTEN_CLOSE = 6
 #define ABCDK_TLS_EVENT_LISTEN_CLOSE ABCDK_TLS_EVENT_LISTEN_CLOSE
 };
 
 /*事件回调函数。*/
-typedef void (*abcdk_tls_event_cb)(abcdk_tls_node *node, uint32_t event, void *opaque);
+typedef void (*abcdk_tls_event_cb)(abcdk_tls_node *node, uint32_t event);
 
 /**
  * 环境清理。
@@ -72,6 +77,20 @@ int abcdk_tls_set_timeout(abcdk_tls_node *node, time_t timeout);
  * @return 0 成功，!0 失败。
 */
 int abcdk_tls_get_peername(abcdk_tls_node *node, abcdk_sockaddr_t *addr);
+
+/**
+ * 设置用户环境指针。
+ * 
+ * @return 旧的用户环境指针。
+*/
+void *abcdk_tls_set_userdata(abcdk_tls_node *node, void *opaque);
+
+/**
+ * 获取用户环境指针。
+ * 
+ * @return 旧的用户环境指针。
+*/
+void *abcdk_tls_get_userdata(abcdk_tls_node *node);
 
 /**
  * 读。
@@ -126,7 +145,7 @@ void abcdk_tls_loop_abort();
  * 
  * @param addr 监听地址指针。
  * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
- * @param opaque 监听环境指针。所有客户端连接都会复制这个指针。
+ * @param opaque 监听环境指针。
  * 
  * @return 0 成功，!0 失败。
 */

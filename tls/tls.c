@@ -6,56 +6,58 @@
  */
 #include "abcdk-tls/tls.h"
 
-/**/
+/** */
 typedef struct _abcdk_tls_ctx
 {
-    /* epollex 环境。*/
+    /** epollex 环境。*/
     abcdk_epollex_t *epollex_ctx;
 
-    /*事件循环标志。0 持续运行，!0 中止运行。*/
+    /** 事件循环标志。0 持续运行，!0 中止运行。*/
     volatile int loop_abort;
 
 } abcdk_tls_ctx;
 
-/**/
+/** */
 typedef struct _abcdk_tls_node
 {
-    /*标识句柄来源。*/
+    /** 标识句柄来源。*/
     int flag;
 #define ABCDK_TLS_FLAG_CLIENT   1
 #define ABCDK_TLS_FLAG_LISTEN   2
 #define ABCDK_TLS_FLAG_ACCPET   3
 
-    /*标识当前句柄状态。*/
+    /** 标识当前句柄状态。*/
     int status;
 #define ABCDK_TLS_STATUS_SYNC       1
 #define ABCDK_TLS_STATUS_SSL_SYNC   2
 #define ABCDK_TLS_STATUS_STABLE     3
+
+
+    /** 本机地址。*/
+    abcdk_sockaddr_t local;
+
+    /** 远端地址。*/
+    abcdk_sockaddr_t remote;
+
+    /** 句柄。*/
+    int fd;
+
+    /** SSL/TLS环境指针。*/
+#ifdef HEADER_SSL_H
+    SSL_CTX *ssl_ctx;
+    SSL *ssl;
+#endif //HEADER_SSL_H
+
+    /** Input事件读权利拥有者。*/
+    volatile pthread_t input_user;
 
     /*
      * 应用层环境指针。
      *
      * 1、服务端指针会被新句柄复制使用。
      * 2、客户端指针仅会被当前句柄使用。
-     */
+    */
     void *opaque;
-
-    /*本机地址。*/
-    abcdk_sockaddr_t local;
-
-    /*远端地址。*/
-    abcdk_sockaddr_t remote;
-
-    /*句柄。*/
-    int fd;
-
-    /*SSL/TLS环境指针。*/
-#ifdef HEADER_SSL_H
-    SSL_CTX *ssl_ctx;
-    SSL *ssl;
-#endif //HEADER_SSL_H
-
-    volatile pthread_t input_user;
 
 } abcdk_tls_node;
 
@@ -129,7 +131,6 @@ abcdk_tls_node *_abcdk_tls_accept(abcdk_tls_node *node)
     
     node_sub->flag = ABCDK_TLS_FLAG_ACCPET;
     node_sub->status = ABCDK_TLS_STATUS_SYNC;
-    node_sub->opaque = node->opaque;
 
 #ifdef HEADER_SSL_H    
     if(node->ssl_ctx)
@@ -297,6 +298,31 @@ int abcdk_tls_get_peername(abcdk_tls_node *node, abcdk_sockaddr_t *addr)
     return 0;
 }
 
+void *abcdk_tls_set_userdata(abcdk_tls_node *node, void *opaque)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    void *old = NULL;
+
+    assert(node != NULL);
+
+    old = node->opaque;
+    node->opaque = opaque;
+    
+    return old;
+}
+
+void *abcdk_tls_get_userdata(abcdk_tls_node *node)
+{
+    abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
+    void *old = NULL;
+
+    assert(node != NULL);
+
+    old = node->opaque;
+    
+    return old;
+}
+
 ssize_t abcdk_tls_read(abcdk_tls_node *node, void *buf, size_t size)
 {
     abcdk_tls_ctx *tls_ctx = _abcdk_tls_get_ctx();
@@ -393,8 +419,16 @@ void _abcdk_tsl_event_cb(abcdk_tls_event_cb event_cb,abcdk_tls_node *node,uint32
     if(event == ABCDK_TLS_EVENT_INPUT)
         abcdk_thread_leader_vote(&node->input_user);
 
+    /*重定向监听关闭事件ID。*/
+    if ((event == ABCDK_TLS_EVENT_CLOSE) && (node->flag == ABCDK_TLS_FLAG_LISTEN))
+        event = ABCDK_TLS_EVENT_LISTEN_CLOSE;
+
+    /*重定向已连接事件ID。*/
+    if ((event == ABCDK_TLS_EVENT_CONNECT) && (node->flag == ABCDK_TLS_FLAG_ACCPET))
+        event = ABCDK_TLS_EVENT_ACCEPT;
+
     /*通知应用层处理事件。*/
-    event_cb(node,event,node->opaque);
+    event_cb(node,event);
 }
 
 void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
@@ -423,10 +457,7 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
 
         if(e.events & ABCDK_EPOLL_ERROR)
         {
-            if (node->flag == ABCDK_TLS_FLAG_LISTEN)
-                _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_LISTEN_CLOSE);
-            else 
-                _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_CLOSE);
+            _abcdk_tsl_event_cb(event_cb,node,ABCDK_TLS_EVENT_CLOSE);
 
             /*释放引用，解除绑定，回收资源。*/
             abcdk_epollex_unref(tls_ctx->epollex_ctx,node->fd,e.events);
@@ -451,7 +482,6 @@ void abcdk_tls_loop(abcdk_tls_event_cb event_cb)
                             abcdk_tls_handshake(node_sub);
                             if (node_sub->status == ABCDK_TLS_STATUS_STABLE)
                                 _abcdk_tsl_event_cb(event_cb,node_sub, ABCDK_TLS_EVENT_CONNECT);
-
                         }
 
                         /*释放读权利。*/
