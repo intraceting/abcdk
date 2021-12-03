@@ -793,10 +793,10 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (io_cb)
         ctx->pb = io_cb;
 
-    av_dict_set(&ctx->metadata, "service", "ABCDK",0);
-    av_dict_set(&ctx->metadata, "service_name", "ABCDK",0);
-    av_dict_set(&ctx->metadata, "service_provider", "ABCDK",0);
-    av_dict_set(&ctx->metadata, "artist", "ABCDK",0);
+    av_dict_set(&ctx->metadata, "service", ABCDK_STR(SOLUTION_NAME),0);
+    av_dict_set(&ctx->metadata, "service_name", ABCDK_STR(SOLUTION_NAME),0);
+    av_dict_set(&ctx->metadata, "service_provider", ABCDK_STR(SOLUTION_NAME),0);
+    av_dict_set(&ctx->metadata, "artist", ABCDK_STR(SOLUTION_NAME),0);
 
     if (strncmp(filename, "rtsp://", 7) == 0)
         ctx->oformat = av_guess_format("rtsp", NULL, NULL);

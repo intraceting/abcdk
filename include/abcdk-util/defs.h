@@ -61,6 +61,9 @@
 #include <net/if.h>
 #include <net/ethernet.h>
 
+/** 转字符串*/
+#define ABCDK_STR_NOT_USE(s) #s
+#define ABCDK_STR(s) ABCDK_STR_NOT_USE(s)
 
 /**
  * 转换指针类型。
