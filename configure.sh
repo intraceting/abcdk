@@ -667,8 +667,8 @@ usage: [ OPTIONS ]
 
     -d < KEY,KEY,... > 
      依赖项目，以英文“,”为分割符。支持以下关键字：
-     openmp,unixodbc,sqlite,openssl,ffmpeg
-     freeimage,fuse,libnm,mpi,lz4,zlib
+     openmp,unixodbc,sqlite,openssl,ffmpeg,
+     freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez
 EOF
