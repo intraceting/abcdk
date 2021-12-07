@@ -522,7 +522,7 @@ int abcdk_open(const char *file, int rw, int nonblock, int create);
  * 
  * @param fd2 已打开的句柄。
  * 
- * @return fd2 成功，-1 失败。
+ * @return >= 0 成功(fd2)，-1 失败。
  * 
 */
 int abcdk_reopen(int fd2,const char *file, int rw, int nonblock, int create);

@@ -248,6 +248,8 @@ void _abcdkhtml_work(abcdk_tree_t *args)
 
     abcdk_tree_iterator_t it = {0, _abcdkhtml_printf_cb, args};
     abcdk_tree_scan(html, &it);
+    
+    fflush(stdout);
 
 final:
 

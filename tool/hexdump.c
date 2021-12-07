@@ -231,6 +231,9 @@ void _abcdkhd_work(abcdk_tree_t *args)
     }
 
     abcdk_hexdump(stdout, mfile->pptrs[0] + offset, size, offset, &opt);
+    
+    fflush(stdout);
+
     ABCDK_ERRNO_AND_GOTO1(0, final);
 
 final:

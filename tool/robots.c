@@ -179,6 +179,8 @@ void _abcdkrobots_work(abcdk_tree_t *args)
 
     _abcdkrobots_filter_url(rbts,args);
 
+    fflush(stdout);
+    
 final:
 
     abcdk_tree_free(&rbts);

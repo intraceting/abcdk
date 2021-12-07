@@ -421,6 +421,8 @@ void _abcdkmtx_work(abcdk_tree_t *args)
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
+    fflush(stdout);
+
     /*No error.*/
     goto final;
 
