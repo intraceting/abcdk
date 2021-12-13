@@ -1,0 +1,169 @@
+/*
+ * This file is part of ABCDK.
+ * 
+ * MIT License
+ * 
+ */
+#ifndef ABCDK_COMM_COMM_H
+#define ABCDK_COMM_COMM_H
+
+#include "abcdk-util/general.h"
+#include "abcdk-util/getargs.h"
+#include "abcdk-util/socket.h"
+#include "abcdk-util/epollex.h"
+#include "abcdk-util/openssl.h"
+
+__BEGIN_DECLS
+
+/**/
+#ifndef HEADER_SSL_H
+typedef struct ssl_ctx_st SSL_CTX;
+#endif //HEADER_SSL_H
+
+/** */
+typedef struct _abcdk_comm_node abcdk_comm_node;
+
+
+/* COMM事件。*/
+enum _abcdk_comm_event
+{
+    /*已连接。*/
+    ABCDK_COMM_EVENT_ACCEPT = 1,
+#define ABCDK_COMM_EVENT_ACCEPT ABCDK_COMM_EVENT_ACCEPT
+
+    /*已连接。*/
+    ABCDK_COMM_EVENT_CONNECT = 2,
+#define ABCDK_COMM_EVENT_CONNECT ABCDK_COMM_EVENT_CONNECT
+
+    /*有数据到达。*/
+    ABCDK_COMM_EVENT_INPUT = 3,
+#define ABCDK_COMM_EVENT_INPUT ABCDK_COMM_EVENT_INPUT
+
+    /*链路空闲，可以发送。*/
+    ABCDK_COMM_EVENT_OUTPUT = 4,
+#define ABCDK_COMM_EVENT_OUTPUT ABCDK_COMM_EVENT_OUTPUT
+
+    /*已断开。*/
+    ABCDK_COMM_EVENT_CLOSE = 5,
+#define ABCDK_COMM_EVENT_CLOSE ABCDK_COMM_EVENT_CLOSE
+
+    /*监听关闭。*/
+    ABCDK_COMM_EVENT_LISTEN_CLOSE = 6
+#define ABCDK_COMM_EVENT_LISTEN_CLOSE ABCDK_COMM_EVENT_LISTEN_CLOSE
+};
+
+/*事件回调函数。*/
+typedef void (*abcdk_comm_event_cb)(abcdk_comm_node *node, uint32_t event);
+
+/**
+ * 环境清理。
+ * 
+ * @warning 仅所有的消息处理线程退出后使用，否则可能发生意料之外的错误。
+*/
+void abcdk_comm_cleanup();
+
+/**
+ * 设置超时。
+ * 
+ * @param timeout 超时(毫秒)
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_set_timeout(abcdk_comm_node *node, time_t timeout);
+
+/**
+ * 获取远端地址。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_get_peername(abcdk_comm_node *node, abcdk_sockaddr_t *addr);
+
+/**
+ * 设置用户环境指针。
+ * 
+ * @return 旧的用户环境指针。
+*/
+void *abcdk_comm_set_userdata(abcdk_comm_node *node, void *opaque);
+
+/**
+ * 获取用户环境指针。
+ * 
+ * @return 旧的用户环境指针。
+*/
+void *abcdk_comm_get_userdata(abcdk_comm_node *node);
+
+/**
+ * 读。
+ * 
+ * @note 当读权利被占用时，不会有其它线程获得读事件。
+ * 
+ * @return > 0 已读取数据的长度，0 正在关闭，-1 无数据。
+*/
+ssize_t abcdk_comm_read(abcdk_comm_node *node, void *buf, size_t size);
+
+/**
+ * 监听是否可读。
+ * 
+ * @param done 0 仅监听，!0 释放读权利(非权利拥有者无效)。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_read_watch(abcdk_comm_node *node,int done);
+
+/**
+ * 写。
+ * 
+ * @note 当写权利被占用时，不会有其它线程获得写事件。
+ * 
+ * @return > 0 已写入数据的长度，0 正在关闭，-1 链路忙。
+*/
+ssize_t abcdk_comm_write(abcdk_comm_node *node, void *buf, size_t size);
+
+/**
+ * 监听是否可写。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_write_watch(abcdk_comm_node *node);
+
+/**
+ * 消息循环。
+ * 
+ * @warning 持续运行，直到被中止。
+ * 
+ * @param event_cb 事件回调函数指针。
+*/
+void abcdk_comm_loop(abcdk_comm_event_cb event_cb);
+
+/**
+ * 中止消息循环。
+*/
+void abcdk_comm_loop_abort();
+
+/**
+ * 监听客户端连接。
+ * 
+ * @param addr 监听地址指针。
+ * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param opaque 监听环境指针。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque);
+
+/**
+ * 连接远程服务器。
+ * 
+ * @warning 仅发出连接指令，连接是否成功以消息通知。
+ * 
+ * @param addr 服务端地址指针。
+ * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param opaque 客户端环境指针。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_connect(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque);
+
+__END_DECLS
+
+#endif //ABCDK_COMM_COMM_H
