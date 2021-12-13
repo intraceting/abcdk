@@ -30,7 +30,7 @@
 #include "abcdk-util/lz4.h"
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
-#include "abcdk-tls/tls.h"
+#include "abcdk-comm/comm.h"
 #include "abcdk-util/json.h"
 
 #ifdef HAVE_FUSE
@@ -2906,47 +2906,47 @@ void test_cert_verify(abcdk_tree_t *args)
 #endif 
 }
 
-void tls_event_cb(abcdk_tls_node *node, uint32_t event)
+void comm_event_cb(abcdk_comm_node *node, uint32_t event)
 {
     abcdk_sockaddr_t addr;
-    abcdk_tls_get_peername(node,&addr);
+    abcdk_comm_get_peername(node,&addr);
     char addr_str[100] = {0};
     abcdk_sockaddr_to_string(addr_str,&addr);
 
     switch(event)
     {
-        case ABCDK_TLS_EVENT_CONNECT:
+        case ABCDK_COMM_EVENT_CONNECT:
         {
             printf("Connected: %s\n",addr_str);
 
-            abcdk_tls_set_timeout(node,5*1000);
+            abcdk_comm_set_timeout(node,5*1000);
 
-            abcdk_tls_read_watch(node,0);
+            abcdk_comm_read_watch(node,0);
         }
         break;
-        case ABCDK_TLS_EVENT_INPUT:
+        case ABCDK_COMM_EVENT_INPUT:
         {
             while(1)
             {
                 char buf[100]={0};
-                ssize_t r = abcdk_tls_read(node,buf,100);
+                ssize_t r = abcdk_comm_read(node,buf,100);
                 if(r<=0)
                     break;
 
                 printf("%s",buf);
             }
 
-            abcdk_tls_read_watch(node,1);
-            abcdk_tls_write_watch(node);
+            abcdk_comm_read_watch(node,1);
+            abcdk_comm_write_watch(node);
             
         }
         break;
-        case ABCDK_TLS_EVENT_OUTPUT:
+        case ABCDK_COMM_EVENT_OUTPUT:
         {
-            abcdk_tls_write(node,"abcdk\n",6);
+            abcdk_comm_write(node,"abcdk\n",6);
         }
         break;
-        case ABCDK_TLS_EVENT_CLOSE:
+        case ABCDK_COMM_EVENT_CLOSE:
         {
             printf("Disconnected: %s\n",addr_str);
         }
@@ -2954,7 +2954,7 @@ void tls_event_cb(abcdk_tls_node *node, uint32_t event)
     }
 }
 
-void test_tls(abcdk_tree_t *args)
+void test_comm(abcdk_tree_t *args)
 {
 
     signal(SIGPIPE,NULL);
@@ -2991,20 +2991,20 @@ void test_tls(abcdk_tree_t *args)
    // addr.family = ABCDK_UNIX;
     //strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
-    assert(abcdk_tls_listen(&addr,ssl_ctx,NULL)==0);
+    assert(abcdk_comm_listen(&addr,ssl_ctx,NULL)==0);
 
     abcdk_sockaddr_t addr2 = {0};
   //  abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
 
-  //  assert(abcdk_tls_connect(&addr2,NULL,NULL)==0);
+  //  assert(abcdk_comm_connect(&addr2,NULL,NULL)==0);
 
     #pragma omp parallel for num_threads(3)
     for (int i = 0; i < 3; i++)
     {
-        abcdk_tls_loop(tls_event_cb);
+        abcdk_comm_loop(comm_event_cb);
     }
 
-    abcdk_tls_cleanup();
+    abcdk_comm_cleanup();
 }
 
 void test_json(abcdk_tree_t *args)
@@ -3152,8 +3152,8 @@ int main(int argc, char **argv)
     if (abcdk_strcmp(func, "test_cert_verify", 0) == 0)
        test_cert_verify(args);
         
-    if (abcdk_strcmp(func, "test_tls", 0) == 0)
-       test_tls(args);
+    if (abcdk_strcmp(func, "test_comm", 0) == 0)
+       test_comm(args);
     
     if (abcdk_strcmp(func, "test_json", 0) == 0)
        test_json(args);
