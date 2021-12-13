@@ -6,7 +6,7 @@
  */
 #include "abcdk-comm/comm.h"
 
-/** */
+/** 通信环境。*/
 typedef struct _abcdk_comm_ctx
 {
     /** epollex 环境。*/
@@ -17,7 +17,7 @@ typedef struct _abcdk_comm_ctx
 
 } abcdk_comm_ctx;
 
-/** */
+/** 节点信息。*/
 typedef struct _abcdk_comm_node
 {
     /** 标识句柄来源。*/
