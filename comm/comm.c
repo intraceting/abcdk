@@ -630,6 +630,7 @@ int abcdk_comm_connect(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     node->flag = ABCDK_COMM_FLAG_CLIENT;
     node->status = ABCDK_COMM_STATUS_SYNC;
     node->remote = *addr;
+    node->opaque = opaque;
     
     node->fd = abcdk_socket(addr->family, 0);
     if (node->fd < 0)
