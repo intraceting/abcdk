@@ -20,6 +20,9 @@ typedef struct _abcdk_comm_ctx
 /** 节点信息。*/
 typedef struct _abcdk_comm_node
 {
+    /** 引用计数器。*/
+    volatile int refcount;
+
     /** 标识句柄来源。*/
     int flag;
 #define ABCDK_COMM_FLAG_CLIENT   1
@@ -61,13 +64,18 @@ typedef struct _abcdk_comm_node
 
 } abcdk_comm_node;
 
-void _abcdk_comm_node_free(abcdk_comm_node **node)
+void abcdk_comm_node_unref(abcdk_comm_node **node)
 {
     abcdk_comm_node *node_p = NULL;
     if (!node)
         return;
 
     node_p = *node;
+
+    if (abcdk_atomic_fetch_and_add(&node_p->refcount, -1) != 1)
+        goto final;
+
+    assert(node_p->refcount == 0);
 
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->ssl);
@@ -78,13 +86,37 @@ void _abcdk_comm_node_free(abcdk_comm_node **node)
     abcdk_socket_option_linger(node_p->fd,&l,2);
     abcdk_closep(&node_p->fd);
 
-    /*free and set NULL(0).*/
-    abcdk_heap_free2((void **)node);
+    abcdk_heap_free(node);
+
+final:
+
+    /*set NULL(0).*/
+    *node = NULL;
+}
+
+abcdk_comm_node *abcdk_comm_node_refer(abcdk_comm_node *src)
+{
+    int chk;
+
+    assert(src != NULL);
+
+    chk = abcdk_atomic_fetch_and_add(&src->refcount, 1);
+    assert(chk > 0);
+
+    return src;
 }
 
 abcdk_comm_node *_abcdk_comm_node_alloc()
 {
-    return (abcdk_comm_node *)abcdk_heap_alloc(sizeof(abcdk_comm_node));
+    abcdk_comm_node *node = NULL;
+
+    node = (abcdk_comm_node *)abcdk_heap_alloc(sizeof(abcdk_comm_node));
+    if(!node)
+        return NULL;
+
+    node->refcount = 1;
+
+    return node;
 }
 
 void _abcdk_comm_ctx_cleanup_cb(epoll_data_t *data, void *opaque)
@@ -93,7 +125,7 @@ void _abcdk_comm_ctx_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_node *node = NULL;
 
     node = (abcdk_comm_node *)data->ptr;
-    _abcdk_comm_node_free(&node);
+    abcdk_comm_node_unref(&node);
 }
 
 int _abcdk_comm_ctx_init(void *opaque)
@@ -156,7 +188,7 @@ abcdk_comm_node *_abcdk_comm_accept(abcdk_comm_node *node)
 
 final_error:
 
-    _abcdk_comm_node_free(&node_sub);
+    abcdk_comm_node_unref(&node_sub);
     
     return NULL;
 }
@@ -607,7 +639,7 @@ int abcdk_comm_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
 
 final_error:
 
-    _abcdk_comm_node_free(&node);
+    abcdk_comm_node_unref(&node);
 
     return -1;
 }
@@ -677,7 +709,7 @@ final:
 
 final_error:
 
-    _abcdk_comm_node_free(&node);
+    abcdk_comm_node_unref(&node);
 
     return -1;
 }

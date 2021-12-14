@@ -14,27 +14,17 @@
 */
 typedef struct _abcdk_allocator_hdr
 {
-    /**
-     * 魔法数。
-    */
+    /** 魔法数。*/
     uint32_t magic;
-
-    /** */
 #define ABCDK_ALLOCATOR_MAGIC 123456789
 
-    /**
-    * 引用计数器。
-    */
+    /** 引用计数器。*/
     volatile int refcount;
 
-    /**
-    * 析构函数。
-    */
+    /** 析构函数。*/
     void (*destroy_cb)(abcdk_allocator_t *ptr, void *opaque);
 
-    /**
-    * 环境指针。
-    */
+    /** 环境指针。*/
     void *opaque;
 
     /**
@@ -55,8 +45,8 @@ typedef struct _abcdk_allocator_hdr
     ABCDK_PTR2PTR(abcdk_allocator_t, (PTR), sizeof(abcdk_allocator_hdr) - sizeof(abcdk_allocator_t))
 
 void abcdk_allocator_atfree(abcdk_allocator_t *alloc,
-                           void (*destroy_cb)(abcdk_allocator_t *alloc, void *opaque),
-                           void *opaque)
+                            void (*destroy_cb)(abcdk_allocator_t *alloc, void *opaque),
+                            void *opaque)
 {
     abcdk_allocator_hdr *in_p = NULL;
 
@@ -79,25 +69,19 @@ abcdk_allocator_t *abcdk_allocator_alloc(size_t *sizes, size_t numbers, int drag
 
     assert(numbers > 0);
 
-    /*
-     * 计算基本的空间。
-    */
+    /* 计算基本的空间。*/
     need_size += sizeof(abcdk_allocator_hdr);
     need_size += numbers * sizeof(size_t);
     need_size += numbers * sizeof(uint8_t *);
 
-    /*
-     * 计算每个内存块的空间。
-    */
+    /* 计算每个内存块的空间。*/
     if (sizes)
     {
         for (size_t i = 0; i < numbers; i++)
             need_size += (drag ? sizes[0] : sizes[i]);
     }
 
-    /*
-     * 一次性申请多个内存块，以便减少多次申请内存块时，碎片化内存块导致内存分页利用率低的问题。
-    */
+    /* 一次性申请多个内存块，以便减少多次申请内存块时，碎片化内存块导致内存分页利用率低的问题。*/
     in_p = (abcdk_allocator_hdr *)abcdk_heap_alloc(need_size);
 
     if (!in_p)
@@ -113,33 +97,23 @@ abcdk_allocator_t *abcdk_allocator_alloc(size_t *sizes, size_t numbers, int drag
     in_p->out.sizes = ABCDK_PTR2PTR(size_t, in_p, sizeof(abcdk_allocator_hdr));
     in_p->out.pptrs = ABCDK_PTR2PTR(uint8_t *, in_p->out.sizes, numbers * sizeof(size_t));
 
-    /*
-     * 第一块内存地址。
-    */
+    /* 第一块内存地址。*/
     ptr_p = ABCDK_PTR2PTR(uint8_t, in_p->out.pptrs, numbers * sizeof(uint8_t *));
 
-    /*
-     * 分配每个内存块地址。
-    */
+    /* 分配每个内存块地址。*/
     if (sizes)
     {
         for (size_t i = 0; i < numbers; i++)
         {
-            /*
-             * 内存块容量可能为0，需要跳过。
-            */
+            /* 内存块容量可能为0，需要跳过。*/
             in_p->out.sizes[i] = (drag ? sizes[0] : sizes[i]);
             if (in_p->out.sizes[i] <= 0) //(drag == 0 && sizes[i] <= 0)
                 continue;
 
-            /*
-             * 复制内存块地址。
-            */
+            /* 复制内存块地址。*/
             in_p->out.pptrs[i] = ptr_p;
 
-            /*
-            * 下一块内存块地址。
-            */
+            /* 下一块内存块地址。*/
             ptr_p = ABCDK_PTR2PTR(uint8_t, in_p->out.pptrs[i], in_p->out.sizes[i]);
         }
     }
@@ -185,22 +159,26 @@ void abcdk_allocator_unref(abcdk_allocator_t **dst)
 
     assert(in_p->magic == ABCDK_ALLOCATOR_MAGIC);
 
-    if (abcdk_atomic_fetch_and_add(&in_p->refcount, -1) == 1)
-    {
-        if (in_p->destroy_cb)
-            in_p->destroy_cb(&in_p->out, in_p->opaque);
+    if (abcdk_atomic_fetch_and_add(&in_p->refcount, -1) != 1)
+        goto final;
 
-        in_p->magic = ~(ABCDK_ALLOCATOR_MAGIC);
-        in_p->destroy_cb = NULL;
-        in_p->opaque = NULL;
-        in_p->out.refcount = NULL;
-        in_p->out.numbers = 0;
-        in_p->out.sizes = NULL;
-        in_p->out.pptrs = NULL;
+    assert(in_p->refcount == 0);
 
-        /* 只要释放一次即可全部释放，因为内存是一次性申请的。*/
-        abcdk_heap_free2((void **)&in_p);
-    }
+    if (in_p->destroy_cb)
+        in_p->destroy_cb(&in_p->out, in_p->opaque);
+
+    in_p->magic = ~(ABCDK_ALLOCATOR_MAGIC);
+    in_p->destroy_cb = NULL;
+    in_p->opaque = NULL;
+    in_p->out.refcount = NULL;
+    in_p->out.numbers = 0;
+    in_p->out.sizes = NULL;
+    in_p->out.pptrs = NULL;
+
+    /* 只要释放一次即可全部释放，因为内存是一次性申请的。*/
+    abcdk_heap_free2((void **)&in_p);
+
+final:
 
     /*Set to NULL(0)*/
     *dst = NULL;

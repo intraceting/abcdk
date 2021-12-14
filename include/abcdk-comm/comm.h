@@ -63,6 +63,18 @@ typedef void (*abcdk_comm_event_cb)(abcdk_comm_node *node, uint32_t event);
 void abcdk_comm_cleanup();
 
 /**
+ * 节点引用释放。
+*/
+void abcdk_comm_node_unref(abcdk_comm_node **node);
+
+/**
+ * 节点增加引用。
+ * 
+ * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
+*/
+abcdk_comm_node *abcdk_comm_node_refer(abcdk_comm_node *src);
+
+/**
  * 设置超时。
  * 
  * @param timeout 超时(毫秒)

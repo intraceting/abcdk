@@ -21,7 +21,7 @@ typedef struct _abcdk_notify_event
     /**
      * 缓存。
      * 
-     * 由调用者申请和释放。
+     * @note 调用者申请和释放。
     */
     abcdk_buffer_t *buf;
 
