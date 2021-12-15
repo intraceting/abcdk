@@ -12,6 +12,9 @@
 #include "abcdk-util/socket.h"
 #include "abcdk-util/epollex.h"
 #include "abcdk-util/openssl.h"
+#include "abcdk-util/thread.h"
+#include "abcdk-util/tree.h"
+#include "abcdk-util/map.h"
 
 __BEGIN_DECLS
 
@@ -20,9 +23,8 @@ __BEGIN_DECLS
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
-/** */
+/** 通信节点。 */
 typedef struct _abcdk_comm_node abcdk_comm_node_t;
-
 
 /* COMM事件。*/
 enum _abcdk_comm_event
@@ -146,7 +148,7 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size);
 int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 
 /**
- * 事件驱动。
+ * 通信事件驱动。
  * 
  * @note 每次调用，仅处理一个事件。
  * 

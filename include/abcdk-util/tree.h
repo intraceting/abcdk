@@ -181,7 +181,7 @@ void abcdk_tree_free(abcdk_tree_t **root);
 /**
  * 创建节点。
  * 
- * @param alloc 内存块指针，可以为NULL(0)。仅复制指针，不是指针对像引用。
+ * @param alloc 内存块指针，可以为NULL(0)。仅复制指针，不会改变对象的引用计数。
  * 
 */
 abcdk_tree_t *abcdk_tree_alloc(abcdk_allocator_t *alloc);
