@@ -2915,6 +2915,7 @@ void comm_event_cb(abcdk_comm_node_t *node, uint32_t event)
 
     switch(event)
     {
+        case ABCDK_COMM_EVENT_ACCEPT:
         case ABCDK_COMM_EVENT_CONNECT:
         {
             printf("Connected: %s\n",addr_str);
