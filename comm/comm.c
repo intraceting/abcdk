@@ -188,6 +188,7 @@ final_error:
 void abcdk_comm_handshake(abcdk_comm_node_t *node)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    socklen_t sock_len = 0;
     int sock_flag = 1;
     int ssl_chk;
     int ssl_err;
@@ -282,6 +283,8 @@ void abcdk_comm_handshake(abcdk_comm_node_t *node)
         sock_flag = 1;
         abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sock_flag, 2);
 
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getsockname(node->fd, &node->local.addr, &sock_len);
     }
 
     return;
@@ -309,6 +312,17 @@ int abcdk_comm_set_timeout(abcdk_comm_node_t *node,time_t timeout)
     chk = abcdk_epollex_timeout(ctx->epollex, node->fd, timeout);
 
     return chk;
+}
+
+int abcdk_comm_get_sockname(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr)
+{
+    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+
+    assert(node != NULL && addr != NULL);
+
+    *addr = node->local;
+
+    return 0;
 }
 
 int abcdk_comm_get_peername(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr)
@@ -570,6 +584,7 @@ int abcdk_comm_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque)
     node->ssl_ctx = ssl_ctx;
 #endif //HEADER_SSL_H
     node->local = *addr;
+    node->opaque = opaque;
     
     node->fd = abcdk_socket(addr->family, 0);
     if (node->fd < 0)

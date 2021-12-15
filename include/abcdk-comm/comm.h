@@ -84,6 +84,13 @@ void abcdk_comm_cleanup();
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout);
 
 /**
+ * 获取本机地址。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_comm_get_sockname(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr);
+
+/**
  * 获取远端地址。
  * 
  * @return 0 成功，!0 失败。
@@ -93,14 +100,14 @@ int abcdk_comm_get_peername(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr);
 /**
  * 设置应用层环境指针。
  * 
- * @return 旧的应用层环境指针。
+ * @return 旧的指针。
 */
 void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque);
 
 /**
  * 获取应用层环境指针。
  * 
- * @return 旧的应用层环境指针。
+ * @return 旧的指针。
 */
 void *abcdk_comm_get_userdata(abcdk_comm_node_t *node);
 
