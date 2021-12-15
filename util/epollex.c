@@ -75,7 +75,7 @@ typedef struct _abcdk_epollex_node
     int add_first;
 
 
-} abcdk_epollex_node;
+} abcdk_epollex_node_t;
 
 time_t abcdk_epollex_clock()
 {
@@ -106,7 +106,7 @@ void abcdk_epollex_free(abcdk_epollex_t **ctx)
 void _abcdk_epollex_destructor_cb(abcdk_allocator_t *p, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
-    abcdk_epollex_node *node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+    abcdk_epollex_node_t *node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
 
     ctx->cleanup_cb(&node->data,ctx->opaque);
 }
@@ -125,7 +125,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
         goto final_error;
 
     ctx->efd = efd;
-    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event), 100);
+    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 100);
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
     ctx->watchdog_intvl = 5000;
@@ -149,7 +149,7 @@ final_error:
 int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_epollex_node *node = NULL;
+    abcdk_epollex_node_t *node = NULL;
     int chk = 0;
 
     assert(ctx != NULL && fd >= 0);
@@ -160,7 +160,7 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
     if(!p)
         goto final_error;
 
-    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
 
     if (node->refcount > 0)
         ABCDK_ERRNO_AND_GOTO1(EBUSY, final_error);
@@ -186,18 +186,18 @@ final:
 int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_epollex_node *node = NULL;
+    abcdk_epollex_node_t *node = NULL;
     int chk = 0;
 
     assert(ctx != NULL && fd >= 0 && data != NULL);
 
     abcdk_mutex_lock(&ctx->mutex,1);
 
-    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd), sizeof(abcdk_epollex_node));
+    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd), sizeof(abcdk_epollex_node_t));
     if(!p)
         goto final_error;
 
-    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
 
     if (node->add_first != 0)
         ABCDK_ERRNO_AND_GOTO1(EEXIST,final_error);
@@ -237,9 +237,9 @@ int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd)
     return abcdk_epollex_attach(ctx,fd,&data);
 }
 
-void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t event)
+void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint32_t event)
 {
-    abcdk_epoll_event disp = {0};
+    abcdk_epoll_event_t disp = {0};
 
     /*如果有错误，记录到节点上。*/
     if (event & ABCDK_EPOLL_ERROR)
@@ -279,9 +279,9 @@ void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
     }   
 }
 
-void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_t want, uint32_t done)
+void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint32_t want, uint32_t done)
 {
-    abcdk_epoll_event tmp = {0};
+    abcdk_epoll_event_t tmp = {0};
 
     /*清除分派的事件(不会清除出错事件)。*/
     node->event_disp &= ~done;
@@ -321,7 +321,7 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node *node, uint32_
 int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
-    abcdk_epollex_node *node = (abcdk_epollex_node *)alloc->pptrs[ABCDK_MAP_VALUE];
+    abcdk_epollex_node_t *node = (abcdk_epollex_node_t *)alloc->pptrs[ABCDK_MAP_VALUE];
 
     _abcdk_epollex_mark(ctx,node,ctx->broadcast_want,0);
 
@@ -331,7 +331,7 @@ int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_epollex_node *node = NULL;
+    abcdk_epollex_node_t *node = NULL;
     int chk = 0;
 
     assert(ctx != NULL && fd >= 0);
@@ -342,7 +342,7 @@ int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout)
     if(!p)
         goto final_error;
 
-    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
     
     node->timeout = timeout;
 
@@ -367,7 +367,7 @@ final:
 int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t done)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_epollex_node *node = NULL;
+    abcdk_epollex_node_t *node = NULL;
 
     int chk = 0;
 
@@ -383,7 +383,7 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
         if (!p)
             goto final_error;
 
-        node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+        node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
 
         _abcdk_epollex_mark(ctx, node, want, done);
     }
@@ -418,7 +418,7 @@ final:
 int _abcdk_epollex_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
-    abcdk_epollex_node *node = (abcdk_epollex_node *)alloc->pptrs[ABCDK_MAP_VALUE];
+    abcdk_epollex_node_t *node = (abcdk_epollex_node_t *)alloc->pptrs[ABCDK_MAP_VALUE];
 
     /*负值或零，不启用超时检查。*/
     if (node->timeout <= 0)
@@ -455,11 +455,11 @@ void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 
 }
 
-void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int count)
+void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,int count)
 {
-    abcdk_epoll_event *e;
+    abcdk_epoll_event_t *e;
     abcdk_allocator_t *p;
-    abcdk_epollex_node *node;
+    abcdk_epollex_node_t *node;
 
     for (int i = 0; i < count; i++)
     {
@@ -470,7 +470,7 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event *events,int
         if (p == NULL)
             continue;
             
-        node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+        node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
 
         /*派发事件。*/
         _abcdk_epollex_disp(ctx,node,e->events);
@@ -494,9 +494,9 @@ time_t _abcdk_epollex_difference_timeout(time_t begin,time_t timeout)
     return span;
 }
 
-int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event *event,time_t timeout)
+int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t timeout)
 {
-    abcdk_epoll_event w[20];
+    abcdk_epoll_event_t w[20];
     time_t begin = abcdk_epollex_clock();
     time_t remaining = 0;
     int count;
@@ -516,7 +516,7 @@ try_again:
     /*计算剩余超时时长。*/
     remaining = _abcdk_epollex_difference_timeout(begin, timeout);
     if (remaining <= 0)
-        ABCDK_ERRNO_AND_GOTO1(EINTR,final_error);
+        ABCDK_ERRNO_AND_GOTO1(ETIME,final_error);
 
     /*多线程选主，只能有一个线程进入IO等待，其它线程等待事件通知。*/
     if(abcdk_thread_leader_vote(&ctx->wait_leader)==0)
@@ -569,8 +569,8 @@ final:
 int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
 {
     abcdk_allocator_t *p = NULL;
-    abcdk_epollex_node *node = NULL;
-    abcdk_epoll_event tmp = {0};
+    abcdk_epollex_node_t *node = NULL;
+    abcdk_epoll_event_t tmp = {0};
     int chk = 0;
 
     assert(ctx != NULL && fd >= 0);
@@ -583,7 +583,7 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
     if(!p)
         goto final_error;
 
-    node = (abcdk_epollex_node *)p->pptrs[ABCDK_MAP_VALUE];
+    node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
 
     /*无论成功或失败，记数器都要相应的减少，不然无法释放。*/
     if (events & ABCDK_EPOLL_ERROR)

@@ -59,7 +59,7 @@ void* server_loop(void* args)
 
     while(1)
     {
-        abcdk_epoll_event e;
+        abcdk_epoll_event_t e;
         int chk = abcdk_epollex_wait(m, &e, -1);
         if (chk < 0)
             break;

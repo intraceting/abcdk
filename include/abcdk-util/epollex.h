@@ -88,9 +88,9 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx,int fd,uint32_t want,uint32_t done);
  * 
  * @param timeout 超时(毫秒)。>= 0 有事件或时间过期，< 0 直到有事件或出错。
  * 
- * @return >=0 成功，!0 失败(或超时)。
+ * @return >=0 成功，< 0 失败(或超时)。
 */
-int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event *event,time_t timeout);
+int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t timeout);
 
 /**
  * 引用释放。

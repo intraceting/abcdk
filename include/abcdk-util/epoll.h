@@ -40,7 +40,7 @@ enum _abcdk_epoll_event
  * 
  * @warning 不能使用原始事件的值。
 */
-typedef struct epoll_event abcdk_epoll_event;
+typedef struct epoll_event abcdk_epoll_event_t;
 
 /**
  * 创建EPOLL句柄
@@ -56,7 +56,7 @@ int abcdk_epoll_create();
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_epoll_mark(int efd, int fd,const abcdk_epoll_event *event, int first);
+int abcdk_epoll_mark(int efd, int fd,const abcdk_epoll_event_t *event, int first);
 
 /**
  * 删除句柄(文件或SOCKET)和事件。
@@ -72,7 +72,7 @@ int abcdk_epoll_drop(int efd, int fd);
  * 
  * @return > 0 事件数量，<= 0 超时或出错。
 */
-int abcdk_epoll_wait(int efd,abcdk_epoll_event *events,int max,time_t timeout);
+int abcdk_epoll_wait(int efd,abcdk_epoll_event_t *events,int max,time_t timeout);
 
 __END_DECLS
 

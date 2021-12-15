@@ -21,7 +21,7 @@ typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
 /** */
-typedef struct _abcdk_comm_node abcdk_comm_node;
+typedef struct _abcdk_comm_node abcdk_comm_node_t;
 
 
 /* COMM事件。*/
@@ -53,26 +53,26 @@ enum _abcdk_comm_event
 };
 
 /*事件回调函数。*/
-typedef void (*abcdk_comm_event_cb)(abcdk_comm_node *node, uint32_t event);
-
-/**
- * 环境清理。
- * 
- * @warning 仅所有的消息处理线程退出后使用，否则可能发生意料之外的错误。
-*/
-void abcdk_comm_cleanup();
+typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event);
 
 /**
  * 节点引用释放。
 */
-void abcdk_comm_node_unref(abcdk_comm_node **node);
+void abcdk_comm_node_unref(abcdk_comm_node_t **node);
 
 /**
  * 节点增加引用。
  * 
  * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
 */
-abcdk_comm_node *abcdk_comm_node_refer(abcdk_comm_node *src);
+abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
+
+/**
+ * 清理通信环境。
+ * 
+ * @warning 仅所有的消息处理线程退出后使用，否则可能发生意料之外的错误。
+*/
+void abcdk_comm_cleanup();
 
 /**
  * 设置超时。
@@ -81,28 +81,28 @@ abcdk_comm_node *abcdk_comm_node_refer(abcdk_comm_node *src);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_set_timeout(abcdk_comm_node *node, time_t timeout);
+int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout);
 
 /**
  * 获取远端地址。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_get_peername(abcdk_comm_node *node, abcdk_sockaddr_t *addr);
+int abcdk_comm_get_peername(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr);
 
 /**
- * 设置用户环境指针。
+ * 设置应用层环境指针。
  * 
- * @return 旧的用户环境指针。
+ * @return 旧的应用层环境指针。
 */
-void *abcdk_comm_set_userdata(abcdk_comm_node *node, void *opaque);
+void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque);
 
 /**
- * 获取用户环境指针。
+ * 获取应用层环境指针。
  * 
- * @return 旧的用户环境指针。
+ * @return 旧的应用层环境指针。
 */
-void *abcdk_comm_get_userdata(abcdk_comm_node *node);
+void *abcdk_comm_get_userdata(abcdk_comm_node_t *node);
 
 /**
  * 读。
@@ -111,7 +111,7 @@ void *abcdk_comm_get_userdata(abcdk_comm_node *node);
  * 
  * @return > 0 已读取数据的长度，0 正在关闭，-1 无数据。
 */
-ssize_t abcdk_comm_read(abcdk_comm_node *node, void *buf, size_t size);
+ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
  * 监听是否可读。
@@ -120,7 +120,7 @@ ssize_t abcdk_comm_read(abcdk_comm_node *node, void *buf, size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_read_watch(abcdk_comm_node *node,int done);
+int abcdk_comm_read_watch(abcdk_comm_node_t *node,int done);
 
 /**
  * 写。
@@ -129,35 +129,33 @@ int abcdk_comm_read_watch(abcdk_comm_node *node,int done);
  * 
  * @return > 0 已写入数据的长度，0 正在关闭，-1 链路忙。
 */
-ssize_t abcdk_comm_write(abcdk_comm_node *node, void *buf, size_t size);
+ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
  * 监听是否可写。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_write_watch(abcdk_comm_node *node);
+int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 
 /**
- * 消息循环。
+ * 事件驱动。
  * 
- * @warning 持续运行，直到被中止。
+ * @note 每次调用，仅处理一个事件。
  * 
  * @param event_cb 事件回调函数指针。
+ * @param timeout 超时(毫秒)。
+ * 
+ * @return >= 0 成功(有事件)，< 0 失败(超时)。
 */
-void abcdk_comm_loop(abcdk_comm_event_cb event_cb);
-
-/**
- * 中止消息循环。
-*/
-void abcdk_comm_loop_abort();
+int abcdk_comm_perform(abcdk_comm_event_cb event_cb,time_t timeout);
 
 /**
  * 监听客户端连接。
  * 
  * @param addr 监听地址指针。
  * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
- * @param opaque 监听环境指针。
+ * @param opaque 监听环境指针(新的连接会复制这个指针)。
  * 
  * @return 0 成功，!0 失败。
 */

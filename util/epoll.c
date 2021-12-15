@@ -18,10 +18,10 @@ int abcdk_epoll_create()
     return fd;
 }
 
-int abcdk_epoll_mark(int efd, int fd, const abcdk_epoll_event *event, int first)
+int abcdk_epoll_mark(int efd, int fd, const abcdk_epoll_event_t *event, int first)
 {
     int opt = 0;
-    abcdk_epoll_event mark;
+    abcdk_epoll_event_t mark;
 
     assert(efd >= 0 && fd >= 0 && event != NULL);
     assert((event->events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
@@ -57,7 +57,7 @@ int abcdk_epoll_drop(int efd, int fd)
     return epoll_ctl(efd,EPOLL_CTL_DEL,fd, NULL);
 }
 
-int abcdk_epoll_wait(int efd,abcdk_epoll_event* events,int max,time_t timeout)
+int abcdk_epoll_wait(int efd,abcdk_epoll_event_t* events,int max,time_t timeout)
 {
     int chk;
     uint32_t tmp;

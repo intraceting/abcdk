@@ -2906,7 +2906,7 @@ void test_cert_verify(abcdk_tree_t *args)
 #endif 
 }
 
-void comm_event_cb(abcdk_comm_node *node, uint32_t event)
+void comm_event_cb(abcdk_comm_node_t *node, uint32_t event)
 {
     abcdk_sockaddr_t addr;
     abcdk_comm_get_peername(node,&addr);
@@ -3001,7 +3001,8 @@ void test_comm(abcdk_tree_t *args)
     #pragma omp parallel for num_threads(3)
     for (int i = 0; i < 3; i++)
     {
-        abcdk_comm_loop(comm_event_cb);
+        while(1)
+            abcdk_comm_perform(comm_event_cb,3000);
     }
 
     abcdk_comm_cleanup();
