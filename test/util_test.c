@@ -2992,7 +2992,7 @@ void test_comm(abcdk_tree_t *args)
    // addr.family = ABCDK_UNIX;
     //strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
-    assert(abcdk_comm_listen(&addr,ssl_ctx,NULL)==0);
+    assert(abcdk_comm_listen(ssl_ctx,&addr,comm_event_cb,NULL)==0);
 
     abcdk_sockaddr_t addr2 = {0};
   //  abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
@@ -3003,7 +3003,7 @@ void test_comm(abcdk_tree_t *args)
     for (int i = 0; i < 3; i++)
     {
         while(1)
-            abcdk_comm_perform(comm_event_cb,3000);
+            abcdk_comm_perform(3000);
     }
 
     abcdk_comm_cleanup();

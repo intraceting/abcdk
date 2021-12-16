@@ -150,38 +150,39 @@ int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 /**
  * 通信事件驱动。
  * 
- * @note 每次调用，仅处理一个事件。
+ * @note 每次调用仅处理一个事件。
  * 
- * @param event_cb 事件回调函数指针。
  * @param timeout 超时(毫秒)。
  * 
  * @return >= 0 成功(有事件)，< 0 失败(超时)。
 */
-int abcdk_comm_perform(abcdk_comm_event_cb event_cb,time_t timeout);
+int abcdk_comm_perform(time_t timeout);
 
 /**
  * 监听客户端连接。
  * 
- * @param addr 监听地址指针。
  * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param addr 监听地址指针。
+ * @param event_cb 事件回调函数指针。
  * @param opaque 监听环境指针(新的连接会复制这个指针)。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_listen(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque);
+int abcdk_comm_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
 
 /**
  * 连接远程服务器。
  * 
  * @warning 仅发出连接指令，连接是否成功以消息通知。
  * 
- * @param addr 服务端地址指针。
  * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param addr 服务端地址指针。
+ * @param event_cb 事件回调函数指针。
  * @param opaque 客户端环境指针。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_connect(abcdk_sockaddr_t *addr, SSL_CTX *ssl_ctx, void *opaque);
+int abcdk_comm_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
 
 __END_DECLS
 
