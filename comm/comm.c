@@ -371,7 +371,7 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    ssize_t rsize = 0,rsize_all = 0;
+    ssize_t rsize = 0,rsize_all = -1;
     int chk;
 
     assert(node != NULL && buf != NULL && size >0);
@@ -422,7 +422,7 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node, int done)
 ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    ssize_t wsize = 0,wsize_all = 0;
+    ssize_t wsize = 0,wsize_all = -1;
 
     assert(node != NULL && buf != NULL && size >0);
 
