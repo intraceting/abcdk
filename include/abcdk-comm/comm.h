@@ -72,7 +72,9 @@ abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
 /**
  * 设置超时。
  * 
- * @param timeout 超时(毫秒)
+ * @warning 1、看门狗精度为5000毫秒；2、超时生效时间受引擎的工作周期影响。
+ * 
+ * @param timeout 超时(毫秒)。
  * 
  * @return 0 成功，!0 失败。
 */

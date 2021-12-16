@@ -2959,7 +2959,7 @@ void test_comm(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_start(4);
+    abcdk_comm_start(1);
 
     SSL_CTX *ssl_ctx = NULL;
 

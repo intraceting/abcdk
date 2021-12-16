@@ -90,7 +90,7 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
     abcdk_socket_option_linger(node_p->fd,&l,2);
     abcdk_closep(&node_p->fd);
 
-    abcdk_heap_free(node);
+    abcdk_heap_free(node_p);
 
 final:
 
@@ -309,7 +309,7 @@ final_error:
     abcdk_epollex_timeout(ctx->epollex, node->fd, 1);
 }
 
-int abcdk_comm_set_timeout(abcdk_comm_node_t *node,time_t timeout)
+int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     int chk;
@@ -572,7 +572,7 @@ void *_abcdk_comm_worker(void *args)
     abcdk_comm_t *ctx = (abcdk_comm_t *)args;
 
     while (abcdk_atomic_load(&ctx->work_cmd) == 1)
-        _abcdk_comm_perform(3000);
+        _abcdk_comm_perform(5000);
 
     /*线程结束前，回滚计数器。*/
     abcdk_atomic_fetch_and_add(&ctx->workers, -1);
