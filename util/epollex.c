@@ -533,7 +533,7 @@ try_again:
         /*IO等待。*/
         count = abcdk_epoll_wait(ctx->efd,w,ABCDK_ARRAY_SIZE(w),ABCDK_MIN(remaining,ctx->watchdog_intvl));
 
-        /*加锁，禁其它接口被访问。*/
+        /*加锁，禁止其它接口被访问。*/
         abcdk_mutex_lock(&ctx->mutex,1);
 
         /*处理活动事件。*/
