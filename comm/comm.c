@@ -168,6 +168,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
     node_sub->flag = ABCDK_COMM_FLAG_ACCPET;
     node_sub->status = ABCDK_COMM_STATUS_SYNC;
     node_sub->opaque = node->opaque;//复制监听环境的指针。
+    node_sub->event_cb = node->event_cb;//复制监听环境的回调函数指针。
 
 #ifdef HEADER_SSL_H    
     if(node->ssl_ctx)

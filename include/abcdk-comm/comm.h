@@ -165,7 +165,7 @@ void abcdk_comm_stop();
  * 
  * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param addr 监听地址指针。
- * @param event_cb 事件回调函数指针。
+ * @param event_cb 事件回调函数指针(新的连接会复制这个指针)。
  * @param opaque 监听环境指针(新的连接会复制这个指针)。
  * 
  * @return 0 成功，!0 失败。
