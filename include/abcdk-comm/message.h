@@ -54,14 +54,14 @@ uint32_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint32_t flag);
 /** 
  * 获取消息顺序号。
  * 
- * @return 旧的标志。
+ * @return 旧的顺序号。
 */
 uint64_t abcdk_comm_msg_mid(abcdk_comm_msg_t *msg);
 
 /**
  * 设置消息顺序号。
  * 
- * @return 旧的标志。
+ * @return 旧的顺序号。
 */
 uint64_t abcdk_comm_msg_mid_set(abcdk_comm_msg_t *msg, uint64_t mid);
 
