@@ -241,7 +241,7 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
     else if (wsize < 0)
         return 0;
     else if (wsize > 0)
-        msg->offset = wsize;
+        msg->offset += wsize;
 
     /*检测发送的数据是否完整。*/
     if (msg->size == msg->offset)
