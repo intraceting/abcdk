@@ -9,8 +9,17 @@
 /** 通信环境。*/
 typedef struct _abcdk_comm
 {
+    /** 环境初始化状态。*/
+    volatile int init_status;
+
     /** epollex 环境。*/
     abcdk_epollex_t *epollex;
+
+    /** 工人数量。*/
+    volatile int workers;
+
+    /** 工作命令。1： 运行，2：停止。*/
+    volatile int work_cmd;
 
 } abcdk_comm_t;
 
@@ -128,17 +137,18 @@ int _abcdk_comm_init(void *opaque)
     abcdk_comm_t *ctx = (abcdk_comm_t *)opaque;
 
     ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb,ctx);
+    ctx->workers = 0;
+    ctx->work_cmd = 2;
 
     return 0;
 }
 
 abcdk_comm_t *_abcdk_comm_get_ctx()
 {
-    static volatile int init = 0;
     static abcdk_comm_t ctx = {0};
     int chk;
 
-    chk = abcdk_once(&init, _abcdk_comm_init, &ctx);
+    chk = abcdk_once(&ctx.init_status, _abcdk_comm_init, &ctx);
     assert(chk >= 0);
 
     return &ctx;
@@ -188,7 +198,7 @@ final_error:
     return NULL;
 }
 
-void abcdk_comm_handshake(abcdk_comm_node_t *node)
+void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     socklen_t sock_len = 0;
@@ -296,13 +306,6 @@ final_error:
 
     /*修改超时，使用超时检测器关闭。*/
     abcdk_epollex_timeout(ctx->epollex, node->fd, 1);
-}
-
-void abcdk_comm_cleanup()
-{
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-
-    abcdk_epollex_free(&ctx->epollex);
 }
 
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node,time_t timeout)
@@ -472,7 +475,7 @@ void _abcdk_tsl_event_cb(abcdk_comm_node_t *node,uint32_t event)
     node->event_cb(node,event);
 }
 
-int abcdk_comm_perform(time_t timeout)
+void _abcdk_comm_perform(time_t timeout)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     abcdk_comm_node_t *node = NULL;
@@ -483,7 +486,7 @@ int abcdk_comm_perform(time_t timeout)
     memset(&e, 0, sizeof(abcdk_epoll_event_t));
     chk = abcdk_epollex_wait(ctx->epollex, &e, timeout);
     if (chk < 0)
-        return -1;
+        return;
 
     node = (abcdk_comm_node_t *)e.data.ptr;
 
@@ -511,7 +514,7 @@ int abcdk_comm_perform(time_t timeout)
                 {
                     if (node_sub->status != ABCDK_COMM_STATUS_STABLE)
                     {
-                        abcdk_comm_handshake(node_sub);
+                        _abcdk_comm_handshake(node_sub);
                         if (node_sub->status == ABCDK_COMM_STATUS_STABLE)
                             _abcdk_tsl_event_cb(node_sub, ABCDK_COMM_EVENT_CONNECT);
                     }
@@ -524,7 +527,7 @@ int abcdk_comm_perform(time_t timeout)
             {
                 if (node->status != ABCDK_COMM_STATUS_STABLE)
                 {
-                    abcdk_comm_handshake(node);
+                    _abcdk_comm_handshake(node);
                     if (node->status == ABCDK_COMM_STATUS_STABLE)
                         _abcdk_tsl_event_cb(node, ABCDK_COMM_EVENT_CONNECT);
 
@@ -544,7 +547,7 @@ int abcdk_comm_perform(time_t timeout)
         {
             if (node->status != ABCDK_COMM_STATUS_STABLE)
             {
-                abcdk_comm_handshake(node);
+                _abcdk_comm_handshake(node);
                 if (node->status == ABCDK_COMM_STATUS_STABLE)
                     _abcdk_tsl_event_cb(node, ABCDK_COMM_EVENT_CONNECT);
             }
@@ -561,8 +564,68 @@ int abcdk_comm_perform(time_t timeout)
         chk = abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
         assert(chk == 0);
     }
+}
 
-    return 1;
+void *_abcdk_comm_worker(void *args)
+{
+    abcdk_comm_t *ctx = (abcdk_comm_t *)args;
+
+    while (abcdk_atomic_load(&ctx->work_cmd) == 1)
+        _abcdk_comm_perform(3000);
+
+    /*线程结束前，回滚计数器。*/
+    abcdk_atomic_fetch_and_add(&ctx->workers, -1);
+}
+
+int abcdk_comm_start(int workers)
+{
+    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_thread_t t;
+    int chk;
+
+    assert(workers > 0);
+
+    /*检测是否已经启动。*/
+    if(!abcdk_atomic_compare_and_swap(&ctx->work_cmd,2,1))
+        goto final;
+
+    t.routine = _abcdk_comm_worker;
+    t.opaque = ctx;
+
+    for (int i = 0; i < workers; i++)
+    {
+        abcdk_atomic_fetch_and_add(&ctx->workers, 1);
+
+        t.handle = -1;
+        chk = abcdk_thread_create(&t, 0);
+        if (chk == 0)
+            continue;
+        
+        /*线程启动失败，回滚计数器。*/
+        abcdk_atomic_fetch_and_add(&ctx->workers, -1);
+        break;
+    }
+
+final:
+
+    return abcdk_atomic_load(&ctx->workers);
+}
+
+void abcdk_comm_stop()
+{
+    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    
+    /*检测是否需要停止。*/
+    if (!abcdk_atomic_compare_and_swap(&ctx->work_cmd, 1, 2))
+        return;
+
+    /*停等所有线程退出。*/
+    while (abcdk_atomic_load(&ctx->workers) > 0)
+        pthread_yield();
+    
+    /*清理通信环境。*/
+    abcdk_epollex_free(&ctx->epollex);
+    ctx->init_status = 0;
 }
 
 int abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)

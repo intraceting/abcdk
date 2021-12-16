@@ -70,13 +70,6 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node);
 abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
 
 /**
- * 清理通信环境。
- * 
- * @warning 仅所有的消息处理线程退出后使用，否则可能发生意料之外的错误。
-*/
-void abcdk_comm_cleanup();
-
-/**
  * 设置超时。
  * 
  * @param timeout 超时(毫秒)
@@ -148,15 +141,24 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size);
 int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 
 /**
- * 通信事件驱动。
+ * 启动通信引擎。
  * 
- * @note 每次调用仅处理一个事件。
+ * @warning 工作线程异步运行，不会阻塞当前线程。
+ * @warning 不支持多程调用。
  * 
- * @param timeout 超时(毫秒)。
+ * @param workers 工作线程数量。
  * 
- * @return >= 0 成功(有事件)，< 0 失败(超时)。
+ * @return 已启动的线程数量。
 */
-int abcdk_comm_perform(time_t timeout);
+int abcdk_comm_start(int workers);
+
+/**
+ * 停止通信引擎。
+ * 
+ * @warning 等待所有工作线程退出。
+ * @warning 不支持多程调用。
+*/
+void abcdk_comm_stop();
 
 /**
  * 监听客户端连接。

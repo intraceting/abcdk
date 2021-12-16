@@ -2957,8 +2957,9 @@ void comm_event_cb(abcdk_comm_node_t *node, uint32_t event)
 
 void test_comm(abcdk_tree_t *args)
 {
-
     signal(SIGPIPE,NULL);
+
+    abcdk_comm_start(4);
 
     SSL_CTX *ssl_ctx = NULL;
 
@@ -2999,14 +3000,10 @@ void test_comm(abcdk_tree_t *args)
 
   //  assert(abcdk_comm_connect(&addr2,NULL,NULL)==0);
 
-    #pragma omp parallel for num_threads(3)
-    for (int i = 0; i < 3; i++)
-    {
-        while(1)
-            abcdk_comm_perform(3000);
-    }
+    while (getchar() != 'Q')
+        ;
 
-    abcdk_comm_cleanup();
+    abcdk_comm_stop();
 }
 
 void test_json(abcdk_tree_t *args)
