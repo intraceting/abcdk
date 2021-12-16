@@ -91,7 +91,7 @@ final_error:
     return NULL;
 }
 
-int abcdk_comm_msg_resize(abcdk_comm_msg_t *msg,size_t size)
+int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg,size_t size)
 {
     void * new_buf = NULL;
 
@@ -194,7 +194,7 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
 
         if(msg->size != size)
         {
-            chk = abcdk_comm_msg_resize(msg,size);
+            chk = abcdk_comm_msg_realloc(msg,size);
             if(chk != 0)
                 return -1;
         }

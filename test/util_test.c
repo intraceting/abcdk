@@ -31,6 +31,7 @@
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
 #include "abcdk-comm/comm.h"
+#include "abcdk-comm/message.h"
 #include "abcdk-util/json.h"
 
 #ifdef HAVE_FUSE
@@ -2999,6 +3000,10 @@ void test_comm(abcdk_tree_t *args)
   //  abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
 
   //  assert(abcdk_comm_connect(&addr2,NULL,NULL)==0);
+
+    // abcdk_comm_msg_t *msg = abcdk_comm_msg_alloc(200);
+    // abcdk_comm_msg_realloc(msg,1000000000);
+    // abcdk_comm_msg_free(&msg);
 
     while (getchar() != 'Q')
         ;

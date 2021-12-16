@@ -35,7 +35,7 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_msg_resize(abcdk_comm_msg_t *msg, size_t size);
+int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg, size_t size);
 
 /** 
  * 获取消息标志。
