@@ -8,7 +8,11 @@
 
 int abcdk_epoll_create()
 {
+#if 0
     int fd = epoll_create(1024);
+#else 
+    int fd = epoll_create1(0);
+#endif 
     if (fd < 0)
         return -1;
 

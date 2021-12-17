@@ -527,7 +527,8 @@ try_again:
         _abcdk_epollex_watchdog(ctx);
 
         /*唤醒其它线程，处理看门狗检测结果。*/
-        abcdk_mutex_signal(&ctx->mutex,1);
+        if (ctx->event_pool.count > 0)
+            abcdk_mutex_signal(&ctx->mutex, 0);
 
         /*解锁，使其它接口被访问。*/
         abcdk_mutex_unlock(&ctx->mutex);
@@ -540,9 +541,6 @@ try_again:
 
         /*处理活动事件。*/
         _abcdk_epollex_wait_disp(ctx,w,count);
-
-        /*唤醒其它线程，处理事件。*/
-        abcdk_mutex_signal(&ctx->mutex,1);
 
         /*主线程退出。*/
         abcdk_thread_leader_quit(&ctx->wait_leader);
@@ -562,6 +560,10 @@ final_error:
     chk = -1;
 
 final:
+
+    /*唤醒其它线程，处理事件。*/
+    if (ctx->event_pool.count > 0)
+        abcdk_mutex_signal(&ctx->mutex, 0);
 
     abcdk_mutex_unlock(&ctx->mutex);
 
