@@ -38,6 +38,20 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size);
 int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg, size_t size);
 
 /** 
+ * 获取消息协议。
+ * 
+ * @return 旧的协议。
+*/
+uint32_t abcdk_comm_msg_protocol(abcdk_comm_msg_t *msg);
+
+/**
+ * 设置消息协议。
+ * 
+ * @return 旧的协议。
+*/
+uint32_t abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg, uint32_t protocol);
+
+/** 
  * 获取消息标志。
  * 
  * @return 旧的标志。
@@ -52,18 +66,18 @@ uint32_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg);
 uint32_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint32_t flag);
 
 /** 
- * 获取消息ID。
+ * 获取消息编号。
  * 
- * @return 旧的ID。
+ * @return 旧的编号。
 */
-uint64_t abcdk_comm_msg_mid(abcdk_comm_msg_t *msg);
+uint64_t abcdk_comm_msg_number(abcdk_comm_msg_t *msg);
 
 /**
- * 设置消息ID。
+ * 设置消息编号。
  * 
- * @return 旧的ID。
+ * @return 旧的编号。
 */
-uint64_t abcdk_comm_msg_mid_set(abcdk_comm_msg_t *msg, uint64_t mid);
+uint64_t abcdk_comm_msg_number_set(abcdk_comm_msg_t *msg, uint64_t number);
 
 /**
  * 获取数据区指针。

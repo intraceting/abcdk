@@ -9,44 +9,52 @@
 /*
  * 消息格式。
  *
- * ------------------------------------------
- * |Message Data                            |
- * ------------------------------------------
- * |Length  |Flag    |Message ID |Customer  |
- * |4 Bytes |4 Bytes |8 Bytes    |N Bytes   |
- * ------------------------------------------
+ * -------------------------------------------------------------
+ * |Message Data                                               |
+ * -------------------------------------------------------------
+ * |Length  |Protocol |Reserve |Flag    |Message ID |Customer  |
+ * |4 Bytes |4 Bytes  |4 Bytes |4 Bytes |8 Bytes    |N Bytes   |
+ * -------------------------------------------------------------
 */
 
-#define ABCDK_COMM_MSG_HDR_SIZE             16
+#define ABCDK_COMM_MSG_HDR_SIZE             32
 #define ABCDK_COMM_MSG_MAX_SIZE             (256*1024*1024-1)
 
-/***/
+/** 消息缓存区*/
 typedef struct _abcdk_comm_msg
 {
-    /** 缓存区指针。*/
+    /** 内存块指针。*/
     void *buf;
-
-    /** 缓存区容量。*/
-    size_t capacity;
-
-    /** 消息长度。*/
-    uint32_t size;
-
-    /** 消息标志。*/
-    uint32_t flag; 
-
-    /** 消息编号。*/
-    uint32_t mid;
 
     /* 读写偏移量。*/
     size_t offset;
+
+    /** 容量。*/
+    size_t capacity;
+
+    /** 长度。*/
+    uint32_t size;
+
+    /** 协议。*/
+    uint32_t protocol;
+
+    /** 预留。*/
+    uint32_t reserve;
+
+    /** 标志。*/
+    uint32_t flag; 
+
+    /** 编号。*/
+    uint64_t number;
 
 }abcdk_comm_msg_t;
 
 
 #define ABCDK_COMM_MSG_FIELD_LEN(msg)       ABCDK_PTR2U32((msg)->buf, 0)
-#define ABCDK_COMM_MSG_FIELD_FLAG(msg)      ABCDK_PTR2U32((msg)->buf, 4)
-#define ABCDK_COMM_MSG_FIELD_MID(msg)       ABCDK_PTR2U64((msg)->buf, 8)
+#define ABCDK_COMM_MSG_FIELD_PROT(msg)      ABCDK_PTR2U32((msg)->buf, 4)
+#define ABCDK_COMM_MSG_FIELD_RESE(msg)      ABCDK_PTR2U32((msg)->buf, 8)
+#define ABCDK_COMM_MSG_FIELD_FLAG(msg)      ABCDK_PTR2U32((msg)->buf, 12)
+#define ABCDK_COMM_MSG_FIELD_NUM(msg)       ABCDK_PTR2U64((msg)->buf, 16)
 #define ABCDK_COMM_MSG_FIELD_CUST(msg)      ABCDK_PTR2U8PTR((msg)->buf, ABCDK_COMM_MSG_HDR_SIZE)
 
 void abcdk_comm_msg_free(abcdk_comm_msg_t **msg)
@@ -114,6 +122,25 @@ int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg,size_t size)
     return 0;
 }
 
+uint32_t abcdk_comm_msg_protocol(abcdk_comm_msg_t *msg)
+{
+    assert(msg != NULL);
+
+    return msg->protocol;
+}
+
+uint32_t abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg, uint32_t protocol)
+{
+    uint32_t old;
+
+    assert(msg != NULL);
+
+    old = msg->protocol;
+    msg->protocol = protocol;
+
+    return old;
+}
+
 uint32_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);
@@ -133,21 +160,21 @@ uint32_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint32_t flag)
     return old;
 }
 
-uint64_t abcdk_comm_msg_mid(abcdk_comm_msg_t *msg)
+uint64_t abcdk_comm_msg_number(abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);
 
-    return msg->flag;
+    return msg->number;
 }
 
-uint64_t abcdk_comm_msg_mid_set(abcdk_comm_msg_t *msg, uint64_t mid)
+uint64_t abcdk_comm_msg_number_set(abcdk_comm_msg_t *msg, uint64_t number)
 {
     uint64_t old;
 
     assert(msg != NULL);
 
-    old = msg->mid;
-    msg->mid = mid;
+    old = msg->number;
+    msg->number = number;
 
     return old;
 }
@@ -192,6 +219,7 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
         if(size - ABCDK_COMM_MSG_HDR_SIZE > ABCDK_COMM_MSG_MAX_SIZE)
             return -1;
 
+        /*可能需要重新调整缓存区大小。*/
         if(msg->size != size)
         {
             chk = abcdk_comm_msg_realloc(msg,size);
@@ -213,8 +241,13 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
         return 0;
 
     /*转换部分字段的字节序。*/
+    msg->protocol = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_PROT(msg));
+    msg->reserve = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_RESE(msg));
     msg->flag = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_FLAG(msg));
-    msg->mid = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_MID(msg));
+    msg->number = abcdk_endian_b_to_h64(ABCDK_COMM_MSG_FIELD_NUM(msg));
+
+    /*复位偏移量，以便于可能的重复利用。*/
+    msg->offset = 0;
     
     return 1;
 }
@@ -231,8 +264,10 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
     {
         /*转换部分字段的字节序。*/
         ABCDK_COMM_MSG_FIELD_LEN(msg) = abcdk_endian_h_to_b32(msg->size);
+        ABCDK_COMM_MSG_FIELD_PROT(msg) = abcdk_endian_h_to_b32(msg->protocol);
+        ABCDK_COMM_MSG_FIELD_RESE(msg) = abcdk_endian_h_to_b32(msg->reserve);
         ABCDK_COMM_MSG_FIELD_FLAG(msg) = abcdk_endian_h_to_b32(msg->flag);
-        ABCDK_COMM_MSG_FIELD_MID(msg) = abcdk_endian_h_to_b32(msg->mid);
+        ABCDK_COMM_MSG_FIELD_NUM(msg) = abcdk_endian_h_to_b64(msg->number);
     }
 
     wsize = abcdk_comm_write(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
@@ -244,8 +279,11 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
         msg->offset += wsize;
 
     /*检测发送的数据是否完整。*/
-    if (msg->size == msg->offset)
-        return 1;
+    if (msg->size != msg->offset)
+        return 0;
 
-    return 0;
+    /*复位偏移量，以便于可能的重复利用。*/
+    msg->offset = 0;
+
+    return 1;
 }

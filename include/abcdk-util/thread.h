@@ -100,12 +100,12 @@ void abcdk_mutex_init2(abcdk_mutex_t *ctx, int shared);
 /**
  * 互斥量加锁。
  * 
- * @param nonblock 0 直到成功或出错返回，!0 尝试一下即返回。
+ * @param block !0 直到成功或出错返回，0 尝试一下即返回。
  * 
  * @return 0 成功，!0 出错。
  * 
 */
-int abcdk_mutex_lock(abcdk_mutex_t *ctx, int nonblock);
+int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block);
 
 /**
  * 互斥量解锁。

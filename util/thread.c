@@ -50,13 +50,13 @@ void abcdk_mutex_init2(abcdk_mutex_t* ctx,int shared)
     abcdk_mutex_init(ctx);
 }
 
-int abcdk_mutex_lock(abcdk_mutex_t *ctx, int nonblock)
+int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block)
 {
     int err = -1;
 
     assert(ctx);
 
-    if(nonblock)
+    if(block)
         err = pthread_mutex_lock(&ctx->mutex);
     else 
         err = pthread_mutex_trylock(&ctx->mutex);
