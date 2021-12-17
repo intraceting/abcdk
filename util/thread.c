@@ -68,7 +68,7 @@ int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block)
         pthread_mutex_consistent(&ctx->mutex);
         pthread_mutex_unlock(&ctx->mutex);
         /*回调自己，重试。*/
-        err = abcdk_mutex_lock(ctx,nonblock);
+        err = abcdk_mutex_lock(ctx,block);
     }    
 
     return err;
@@ -190,7 +190,7 @@ int abcdk_thread_setname(const char* fmt,...)
 
     va_list vaptr;
     va_start(vaptr, fmt);
-    snprintf(name,16,fmt,vaptr);
+    vsnprintf(name,16,fmt,vaptr);
     va_end(vaptr);
 
     err = pthread_setname_np(pthread_self(),name);

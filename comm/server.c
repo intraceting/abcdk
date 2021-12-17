@@ -6,9 +6,12 @@
  */
 #include "abcdk-comm/server.h"
 
-/** */
+/**通信节点。*/
 typedef struct _abcdk_comm_svr_node
 {
+    /*通信链路。*/
+    abcdk_comm_node_t *comm;
+
     /*消息回调。*/
     abcdk_comm_svr_message_cb message_cb;
 
@@ -42,6 +45,7 @@ void _abcdk_comm_svr_node_free(abcdk_comm_svr_node_t **node)
     abcdk_tree_free(&node_p->out_buffer);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_mutex_destroy(&node_p->out_locker);
+    abcdk_comm_node_unref(&node_p->comm);
 
     abcdk_heap_free2((void **)node);
 }
@@ -129,12 +133,16 @@ void _abcdk_comm_svr_accept_event(abcdk_comm_node_t *comm)
 
     node_accpet->message_cb = node_listen->message_cb;
     node_accpet->opaque = node_listen->opaque;
+    node_accpet->comm = abcdk_comm_node_refer(comm);
 
     /*通过listen节点建立的连接，初始环境是listen节点的环境指针，现在替换成私有环境指针。*/
     abcdk_comm_set_userdata(comm, node_accpet);
 
     /*默认30秒超时。*/
     abcdk_comm_set_timeout(comm, 30000);
+
+    /*监听接收事件。*/
+    abcdk_comm_read_watch(comm,0);
 }
 
 void _abcdk_comm_svr_input_event(abcdk_comm_node_t *comm)
@@ -163,7 +171,8 @@ void _abcdk_comm_svr_input_event(abcdk_comm_node_t *comm)
         }
     }
 
-    msg_req_p = (abcdk_comm_msg_t *)node->in_buffer->alloc->pptrs[0];
+    msg_req = node->in_buffer;
+    msg_req_p = (abcdk_comm_msg_t *)msg_req->alloc->pptrs[0];
 
     chk = abcdk_comm_msg_recv(comm, msg_req_p);
     if (chk < 0)
@@ -172,7 +181,7 @@ void _abcdk_comm_svr_input_event(abcdk_comm_node_t *comm)
     }
     else if (chk == 0)
     {
-        /*数据包水完整，继续接收。*/
+        /*数据包不完整，继续接收。*/
         abcdk_comm_read_watch(comm, 1);
     }
     else if (chk > 0)
@@ -181,9 +190,13 @@ void _abcdk_comm_svr_input_event(abcdk_comm_node_t *comm)
         node->in_buffer = NULL;
         abcdk_comm_read_watch(comm, 1);
 
-        /*通知应消息达到。*/
-        node->message_cb(comm, msg_req_p, &msg_rsp_p, node->opaque);
+        /*通知应用层请求消息达到。*/
+        node->message_cb(node, msg_req_p, &msg_rsp_p, node->opaque);
 
+        /*删除请求消息。*/
+        abcdk_tree_free(&msg_req);
+
+        /*如果有应答则加入到发送队列。*/
         if (msg_rsp_p)
         {
             msg_rsp = _abcdk_comm_svr_msg_alloc(0);
@@ -254,6 +267,31 @@ NEXT_MSG:
     abcdk_comm_write_watch(comm);
 }
 
+void _abcdk_comm_svr_close_event(abcdk_comm_node_t *comm)
+{
+    abcdk_comm_svr_node_t *node;
+
+    node = (abcdk_comm_svr_node_t *)abcdk_comm_get_userdata(comm);
+    if (!node)
+        return;
+
+    /*通知应连接关闭。*/
+    node->message_cb(node, NULL, NULL, node->opaque);
+
+    _abcdk_comm_svr_node_free(&node);
+}
+
+void _abcdk_comm_svr_listen_close_event(abcdk_comm_node_t *comm)
+{
+    abcdk_comm_svr_node_t *node;
+
+    node = (abcdk_comm_svr_node_t *)abcdk_comm_get_userdata(comm);
+    if (!node)
+        return;
+
+    _abcdk_comm_svr_node_free(&node);
+}
+
 void _abcdk_comm_svr_event_cb(abcdk_comm_node_t *node, uint32_t event)
 {
     switch (event)
@@ -268,5 +306,82 @@ void _abcdk_comm_svr_event_cb(abcdk_comm_node_t *node, uint32_t event)
         _abcdk_comm_svr_input_event(node);
     }
     break;
+    case ABCDK_COMM_EVENT_OUTPUT:
+    {
+        _abcdk_comm_svr_output_event(node);
     }
+    break;
+    case ABCDK_COMM_EVENT_CLOSE:
+    {
+        _abcdk_comm_svr_close_event(node);
+    }
+    break;
+    case ABCDK_COMM_EVENT_LISTEN_CLOSE:
+    {
+        _abcdk_comm_svr_listen_close_event(node);
+    }
+    break;
+    }
+}
+
+int abcdk_comm_svr_set_timeout(abcdk_comm_svr_node_t *node, time_t timeout)
+{
+    int chk;
+
+    assert(node != NULL);
+
+    chk = abcdk_comm_set_timeout(node->comm,timeout);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_comm_svr_get_sockname(abcdk_comm_svr_node_t *node, abcdk_sockaddr_t *addr)
+{
+    int chk;
+
+    assert(node != NULL);
+
+    chk = abcdk_comm_get_sockname(node->comm,addr);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_comm_svr_get_peername(abcdk_comm_svr_node_t *node, abcdk_sockaddr_t *addr)
+{
+    int chk;
+
+    assert(node != NULL);
+
+    chk = abcdk_comm_get_peername(node->comm,addr);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_comm_svr_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_svr_message_cb message_cb, void *opaque)
+{
+    abcdk_comm_svr_node_t *node;
+    int chk;
+
+    assert(addr != NULL && message_cb != NULL);
+
+    node = _abcdk_comm_svr_node_alloc();
+    if (!node)
+        return -1;
+
+    node->message_cb = message_cb;
+    node->opaque = opaque;
+
+    chk = abcdk_comm_listen(ssl_ctx, addr, _abcdk_comm_svr_event_cb, node);
+    if (chk == 0)
+        return 0;
+
+    _abcdk_comm_svr_node_free(&node);
+
+    return -1;
 }

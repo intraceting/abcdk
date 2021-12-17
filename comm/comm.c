@@ -371,7 +371,7 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    ssize_t rsize = 0,rsize_all = -1;
+    ssize_t rsize = 0,rsize_all = 0;
     int chk;
 
     assert(node != NULL && buf != NULL && size >0);
@@ -422,7 +422,7 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node, int done)
 ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    ssize_t wsize = 0,wsize_all = -1;
+    ssize_t wsize = 0,wsize_all = 0;
 
     assert(node != NULL && buf != NULL && size >0);
 
@@ -570,6 +570,12 @@ void _abcdk_comm_perform(time_t timeout)
 void *_abcdk_comm_worker(void *args)
 {
     abcdk_comm_t *ctx = (abcdk_comm_t *)args;
+    
+#if 0
+    static volatile int a = 1;
+    int b = abcdk_atomic_fetch_and_add(&a,1);
+    abcdk_thread_setname("b=%d",b);
+#endif
 
     while (abcdk_atomic_load(&ctx->work_cmd) == 1)
         _abcdk_comm_perform(5000);
@@ -583,6 +589,10 @@ int abcdk_comm_start(int workers)
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     abcdk_thread_t t;
     int chk;
+
+    /*如果未指定工作线程数，则使用CPU核心数。*/
+    if (workers <= 0)
+        workers = sysconf(_SC_NPROCESSORS_ONLN);
 
     assert(workers > 0);
 

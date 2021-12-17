@@ -168,7 +168,7 @@ void abcdk_map_scan(abcdk_map_t *map)
     assert(map != NULL);
     assert(map->dump_cb != NULL);
 
-    abcdk_tree_iterator_t it = {0,_abcdk_map_scan_cb,(void*)map};
+    abcdk_tree_iterator_t it = {5,_abcdk_map_scan_cb,(void*)map};
 
     abcdk_tree_scan(map->table,&it);
 }

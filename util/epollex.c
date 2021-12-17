@@ -452,7 +452,6 @@ void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
     ctx->node_map.dump_cb = _abcdk_epollex_watchdog_scan_cb;
     ctx->node_map.opaque = ctx;
     abcdk_map_scan(&ctx->node_map);
-
 }
 
 void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,int count)
@@ -497,12 +496,15 @@ time_t _abcdk_epollex_difference_timeout(time_t begin,time_t timeout)
 int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t timeout)
 {
     abcdk_epoll_event_t w[20];
-    time_t begin = abcdk_epollex_clock();
-    time_t remaining = 0;
+    time_t time_end;
+    time_t time_span;
     int count;
     int chk = 0;
 
     assert(ctx != NULL && event != NULL);
+
+    /*计算过期时间。*/
+    time_end = abcdk_epollex_clock() + timeout;
     
     abcdk_mutex_lock(&ctx->mutex,1);
 
@@ -514,8 +516,8 @@ try_again:
         goto final;
 
     /*计算剩余超时时长。*/
-    remaining = _abcdk_epollex_difference_timeout(begin, timeout);
-    if (remaining <= 0)
+    time_span = time_end - abcdk_epollex_clock();
+    if (time_span <= 0)
         ABCDK_ERRNO_AND_GOTO1(ETIME,final_error);
 
     /*多线程选主，只能有一个线程进入IO等待，其它线程等待事件通知。*/
@@ -531,7 +533,7 @@ try_again:
         abcdk_mutex_unlock(&ctx->mutex);
 
         /*IO等待。*/
-        count = abcdk_epoll_wait(ctx->efd,w,ABCDK_ARRAY_SIZE(w),ABCDK_MIN(remaining,ctx->watchdog_intvl));
+        count = abcdk_epoll_wait(ctx->efd,w,ABCDK_ARRAY_SIZE(w),ABCDK_MIN(time_span,ctx->watchdog_intvl));
 
         /*加锁，禁止其它接口被访问。*/
         abcdk_mutex_lock(&ctx->mutex,1);
@@ -549,7 +551,7 @@ try_again:
     else
     {   
         /*等待主线程的通知，或超时退出。*/
-        abcdk_mutex_wait(&ctx->mutex,remaining);
+        abcdk_mutex_wait(&ctx->mutex,time_span);
     }
 
     /*No error, no event, try again.*/

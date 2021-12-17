@@ -113,7 +113,7 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node);
  * 
  * @note 当读权利被占用时，不会有其它线程获得读事件。
  * 
- * @return > 0 已读取数据的长度，0 正在关闭，-1 无数据。
+ * @return > 0 已读取数据的长度，0 无数据。
 */
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size);
 
@@ -131,7 +131,7 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node,int done);
  * 
  * @note 当写权利被占用时，不会有其它线程获得写事件。
  * 
- * @return > 0 已写入数据的长度，0 正在关闭，-1 链路忙。
+ * @return > 0 已写入数据的长度，0 链路忙。
 */
 ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size);
 
@@ -148,7 +148,7 @@ int abcdk_comm_write_watch(abcdk_comm_node_t *node);
  * @warning 工作线程异步运行，不会阻塞当前线程。
  * @warning 不支持多程调用。
  * 
- * @param workers 工作线程数量。
+ * @param workers 工作线程数量，<= 0 使用CPU核心数量作为工作线程量。
  * 
  * @return 已启动的线程数量。
 */

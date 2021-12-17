@@ -31,7 +31,7 @@
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
 #include "abcdk-comm/comm.h"
-#include "abcdk-comm/message.h"
+#include "abcdk-comm/server.h"
 #include "abcdk-util/json.h"
 
 #ifdef HAVE_FUSE
@@ -2679,10 +2679,6 @@ int test_openssl(abcdk_tree_t *args)
 
 #ifdef HAVE_OPENSSL
 
-   SSL_library_init();
-   OpenSSL_add_all_algorithms();
-   SSL_load_error_strings();
-
     if (sub_func == 1)
         test_openssl_server(args);
     else if (sub_func == 2)
@@ -2846,10 +2842,6 @@ void test_cert_verify(abcdk_tree_t *args)
 {
 #ifdef HAVE_OPENSSL
 
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-
     const char *user = abcdk_option_get(args, "--user-crt", 0, "");
 
     //SSLeay_add_all_algorithms();
@@ -2966,10 +2958,6 @@ void test_comm(abcdk_tree_t *args)
 
 #ifdef HAVE_OPENSSL
 
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-
     const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
 
     if (capath)
@@ -3045,6 +3033,62 @@ void test_refer_count(abcdk_tree_t *args)
     abcdk_allocator_unref(&p);
 }
 
+void test_server_message_cb(abcdk_comm_svr_node_t *node,const abcdk_comm_msg_t *req, abcdk_comm_msg_t **rsp,void *opaque)
+{
+    abcdk_sockaddr_t sockname,peername;
+    abcdk_comm_svr_get_sockname(node,&sockname);
+    abcdk_comm_svr_get_peername(node,&peername);
+
+    char sockname_str[100] = {0},peername_str[100] = {0};
+    abcdk_sockaddr_to_string(sockname_str,&sockname);
+    abcdk_sockaddr_to_string(peername_str,&peername);
+
+    printf("Socket: %s -> %s",sockname_str,peername_str);
+
+    if(!req)
+        printf(" Disconnected.");
+    printf("\n");
+}
+
+void test_server(abcdk_tree_t *args)
+{
+    signal(SIGPIPE,NULL);
+
+    abcdk_comm_start(2);
+
+    SSL_CTX *ssl_ctx = NULL;
+
+#ifdef HAVE_OPENSSL
+
+    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
+
+    if (capath)
+    {
+        ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
+
+        //X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
+
+        abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+                                       abcdk_option_get(args, "--key-file", 0, NULL),
+                                       abcdk_option_get(args, "--key-pwd", 0, NULL));
+
+        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+    }
+#endif //HAVE_OPENSSL
+
+    abcdk_sockaddr_t addr = {0};
+
+    const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
+    abcdk_sockaddr_from_string(&addr,listen_p,0);
+
+    assert(abcdk_comm_svr_listen(ssl_ctx,&addr,test_server_message_cb,NULL)==0);
+
+    while (getchar() != 'Q')
+        ;
+
+    abcdk_comm_stop();
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3070,6 +3114,15 @@ int main(int argc, char **argv)
     abcdk_endian_h_to_l24(a8,a);
     b = abcdk_endian_l_to_h24(a8);
     assert(a == b);
+
+
+#ifdef HAVE_OPENSSL
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+#endif //HAVE_OPENSSL
     
 
     if(abcdk_strcmp(func,"test_ffmpeg",0)==0)
@@ -3164,6 +3217,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_refer_count", 0) == 0)
        test_refer_count(args);
+    
+    if (abcdk_strcmp(func, "test_server", 0) == 0)
+       test_server(args);
 
     abcdk_tree_free(&args);
     

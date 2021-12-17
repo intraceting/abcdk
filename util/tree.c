@@ -289,7 +289,7 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
     assert(it->dump_cb!= NULL);
         
     /* 如果调用者不确定，则在内部自动确定。  */
-    if (it->depth_max > stack_size)
+    if (it->depth_max > 0)
         stack_size = it->depth_max;
 
     stack = (abcdk_tree_t **)abcdk_heap_alloc(stack_size * sizeof(abcdk_tree_t *));
