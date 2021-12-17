@@ -3054,7 +3054,7 @@ void test_server(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_start(2);
+    abcdk_comm_start(0);
 
     SSL_CTX *ssl_ctx = NULL;
 
