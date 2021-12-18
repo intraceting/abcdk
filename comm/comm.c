@@ -582,6 +582,8 @@ void *_abcdk_comm_worker(void *args)
 
     /*线程结束前，回滚计数器。*/
     abcdk_atomic_fetch_and_add(&ctx->workers, -1);
+
+    return NULL;
 }
 
 int abcdk_comm_start(int workers)
