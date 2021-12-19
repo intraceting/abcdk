@@ -14,11 +14,8 @@ __BEGIN_DECLS
 /** 消息缓存对象。*/
 typedef struct _abcdk_comm_msg abcdk_comm_msg_t;
 
-/** 消息请求标志。*/
-#define ABCDK_COMM_MSG_FLAG_REQ             0x01
-
 /** 消息应答标志。*/
-#define ABCDK_COMM_MSG_FLAG_RSP             0x02
+#define ABCDK_COMM_MSG_FLAG_RSP             0x01
 
 /**
  * 释放消息缓存对象。
