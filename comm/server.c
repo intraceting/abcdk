@@ -208,6 +208,10 @@ void _abcdk_comm_svr_input_event(abcdk_comm_node_t *comm)
 
             msg_rsp->alloc->pptrs[0] = (uint8_t *)msg_rsp_p;
 
+            abcdk_comm_msg_protocol_set(msg_rsp_p,abcdk_comm_msg_protocol(msg_req_p));
+            abcdk_comm_msg_number_set(msg_rsp_p,abcdk_comm_msg_number(msg_req_p));
+            abcdk_comm_msg_flag_set(msg_rsp_p,ABCDK_COMM_MSG_FLAG_RSP);
+
             abcdk_mutex_lock(&node->out_locker, 1);
             abcdk_tree_insert2(node->out_queue, msg_rsp, 0);
             abcdk_mutex_unlock(&node->out_locker);
@@ -275,7 +279,7 @@ void _abcdk_comm_svr_close_event(abcdk_comm_node_t *comm)
     if (!node)
         return;
 
-    /*通知应连接关闭。*/
+    /*通知应用层连接已关闭。*/
     node->message_cb(node, NULL, NULL, node->opaque);
 
     _abcdk_comm_svr_node_free(&node);
