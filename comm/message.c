@@ -122,6 +122,17 @@ int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg,size_t size)
     return 0;
 }
 
+void abcdk_comm_msg_reset(abcdk_comm_msg_t *msg)
+{
+    assert(msg != NULL);
+
+    msg->protocol = 0;
+    msg->reserve = 0;
+    msg->flag = 0;
+    msg->number = 0;
+    msg->offset = 0;
+}
+
 uint32_t abcdk_comm_msg_protocol(abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);

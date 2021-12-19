@@ -37,6 +37,12 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size);
 */
 int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg, size_t size);
 
+/**
+ * 重置。
+ * 
+*/
+void abcdk_comm_msg_reset(abcdk_comm_msg_t *msg);
+
 /** 
  * 获取消息协议。
  * 
@@ -90,18 +96,19 @@ void *abcdk_comm_msg_data(const abcdk_comm_msg_t *msg);
 size_t abcdk_comm_msg_size(const abcdk_comm_msg_t *msg);
 
 /**
- * 接收数据。
+ * 接收消息。
  * 
  * @return 1 消息完整，0 消息不完整，-1 出错。
 */
 int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg);
 
 /**
- * 发送数据。
+ * 发送消息。
  * 
  * @return 1 消息完整，0 消息不完整，-1 出错。
 */
 int abcdk_comm_msg_send(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg);
+
 
 
 __END_DECLS
