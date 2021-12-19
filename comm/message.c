@@ -12,12 +12,12 @@
  * -------------------------------------------------------------
  * |Message Data                                               |
  * -------------------------------------------------------------
- * |Length  |Protocol |Reserve |Flag    |Message ID |Customer  |
- * |4 Bytes |4 Bytes  |4 Bytes |4 Bytes |8 Bytes    |N Bytes   |
+ * |Length  |Protocol |Message ID |Flag    |Reserve |Customer  |
+ * |4 Bytes |4 Bytes  |8 Bytes    |1 Bytes |3 Bytes |N Bytes   |
  * -------------------------------------------------------------
 */
 
-#define ABCDK_COMM_MSG_HDR_SIZE             32
+#define ABCDK_COMM_MSG_HDR_SIZE             (4+4+8+1+3)
 #define ABCDK_COMM_MSG_MAX_SIZE             (256*1024*1024-1)
 
 /** 消息缓存区*/
@@ -38,23 +38,19 @@ typedef struct _abcdk_comm_msg
     /** 协议。*/
     uint32_t protocol;
 
-    /** 预留。*/
-    uint32_t reserve;
+    /** 编号。*/
+    uint64_t number;
 
     /** 标志。*/
     uint32_t flag; 
-
-    /** 编号。*/
-    uint64_t number;
 
 }abcdk_comm_msg_t;
 
 
 #define ABCDK_COMM_MSG_FIELD_LEN(msg)       ABCDK_PTR2U32((msg)->buf, 0)
 #define ABCDK_COMM_MSG_FIELD_PROT(msg)      ABCDK_PTR2U32((msg)->buf, 4)
-#define ABCDK_COMM_MSG_FIELD_RESE(msg)      ABCDK_PTR2U32((msg)->buf, 8)
-#define ABCDK_COMM_MSG_FIELD_FLAG(msg)      ABCDK_PTR2U32((msg)->buf, 12)
-#define ABCDK_COMM_MSG_FIELD_NUM(msg)       ABCDK_PTR2U64((msg)->buf, 16)
+#define ABCDK_COMM_MSG_FIELD_NUM(msg)       ABCDK_PTR2U64((msg)->buf, 8)
+#define ABCDK_COMM_MSG_FIELD_FLAG(msg)      ABCDK_PTR2U8((msg)->buf, 9)
 #define ABCDK_COMM_MSG_FIELD_CUST(msg)      ABCDK_PTR2U8PTR((msg)->buf, ABCDK_COMM_MSG_HDR_SIZE)
 
 void abcdk_comm_msg_free(abcdk_comm_msg_t **msg)
@@ -82,6 +78,9 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size)
     if (!msg)
         goto final_error;
     
+    msg->protocol = 0;
+    msg->number = 0;
+    msg->flag = 0;
     msg->offset = 0;
     msg->size = ABCDK_COMM_MSG_HDR_SIZE + size;
     msg->capacity = ABCDK_MAX(msg->size,1024UL);
@@ -127,9 +126,8 @@ void abcdk_comm_msg_reset(abcdk_comm_msg_t *msg)
     assert(msg != NULL);
 
     msg->protocol = 0;
-    msg->reserve = 0;
-    msg->flag = 0;
     msg->number = 0;
+    msg->flag = 0;
     msg->offset = 0;
 }
 
@@ -152,16 +150,16 @@ uint32_t abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg, uint32_t protocol)
     return old;
 }
 
-uint32_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg)
+uint8_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);
 
     return msg->flag;
 }
 
-uint32_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint32_t flag)
+uint8_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint8_t flag)
 {
-    uint32_t old;
+    uint8_t old;
 
     assert(msg != NULL);
 
@@ -253,12 +251,8 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
 
     /*转换部分字段的字节序。*/
     msg->protocol = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_PROT(msg));
-    msg->reserve = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_RESE(msg));
-    msg->flag = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_FLAG(msg));
     msg->number = abcdk_endian_b_to_h64(ABCDK_COMM_MSG_FIELD_NUM(msg));
-
-    /*复位偏移量，以便于可能的重复利用。*/
-    msg->offset = 0;
+    msg->flag = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_FLAG(msg));
     
     return 1;
 }
@@ -276,9 +270,8 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
         /*转换部分字段的字节序。*/
         ABCDK_COMM_MSG_FIELD_LEN(msg) = abcdk_endian_h_to_b32(msg->size);
         ABCDK_COMM_MSG_FIELD_PROT(msg) = abcdk_endian_h_to_b32(msg->protocol);
-        ABCDK_COMM_MSG_FIELD_RESE(msg) = abcdk_endian_h_to_b32(msg->reserve);
-        ABCDK_COMM_MSG_FIELD_FLAG(msg) = abcdk_endian_h_to_b32(msg->flag);
         ABCDK_COMM_MSG_FIELD_NUM(msg) = abcdk_endian_h_to_b64(msg->number);
+        ABCDK_COMM_MSG_FIELD_FLAG(msg) = abcdk_endian_h_to_b32(msg->flag);
     }
 
     wsize = abcdk_comm_write(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
@@ -292,9 +285,6 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
     /*检测发送的数据是否完整。*/
     if (msg->size != msg->offset)
         return 0;
-
-    /*复位偏移量，以便于可能的重复利用。*/
-    msg->offset = 0;
-
+        
     return 1;
 }

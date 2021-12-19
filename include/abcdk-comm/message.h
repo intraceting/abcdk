@@ -15,10 +15,10 @@ __BEGIN_DECLS
 typedef struct _abcdk_comm_msg abcdk_comm_msg_t;
 
 /** 消息请求标志。*/
-#define ABCDK_COMM_MSG_FLAG_REQ             0x00000000
+#define ABCDK_COMM_MSG_FLAG_REQ             0x01
 
 /** 消息应答标志。*/
-#define ABCDK_COMM_MSG_FLAG_RSP             0x00000001
+#define ABCDK_COMM_MSG_FLAG_RSP             0x02
 
 /**
  * 释放消息缓存对象。
@@ -62,14 +62,14 @@ uint32_t abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg, uint32_t protocol);
  * 
  * @return 旧的标志。
 */
-uint32_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg);
+uint8_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg);
 
 /**
  * 设置消息标志。
  * 
  * @return 旧的标志。
 */
-uint32_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint32_t flag);
+uint8_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint8_t flag);
 
 /** 
  * 获取消息编号。
