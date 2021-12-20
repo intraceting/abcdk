@@ -20,7 +20,14 @@ typedef struct _abcdk_comm_msg abcdk_comm_msg_t;
 /**
  * 释放消息缓存对象。
 */
-void abcdk_comm_msg_free(abcdk_comm_msg_t **msg);
+void abcdk_comm_msg_unref(abcdk_comm_msg_t **msg);
+
+/**
+ * 息缓存对象增加引用。
+ * 
+ * @return !NULL(0) 成功(对象的指针)，NULL(0) 失败。
+*/
+abcdk_comm_msg_t *abcdk_comm_msg_refer(abcdk_comm_msg_t *src);
 
 /**
  * 申请消息缓存对象。

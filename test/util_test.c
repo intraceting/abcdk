@@ -3033,7 +3033,7 @@ void test_refer_count(abcdk_tree_t *args)
     abcdk_allocator_unref(&p);
 }
 
-void test_broker_message_cb(abcdk_broker_node_t *node,const abcdk_comm_msg_t *req, abcdk_comm_msg_t **rsp,void *opaque)
+void test_broker_message_cb(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,void *opaque)
 {
     abcdk_sockaddr_t sockname,peername;
     abcdk_broker_get_sockname(node,&sockname);
@@ -3045,8 +3045,44 @@ void test_broker_message_cb(abcdk_broker_node_t *node,const abcdk_comm_msg_t *re
 
     printf("Socket: %s -> %s",sockname_str,peername_str);
 
-    if(!req)
+    if(!msg)
         printf(" Disconnected.");
+    else
+    {
+        printf(" {%u,%lu,<%s>}",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
+
+        abcdk_comm_msg_t *rsp=abcdk_comm_msg_alloc(100);
+        abcdk_comm_msg_protocol_set(rsp,abcdk_comm_msg_protocol(msg));
+        abcdk_comm_msg_number_set(rsp,abcdk_comm_msg_number(msg));
+        abcdk_comm_msg_flag_set(rsp,ABCDK_COMM_MSG_FLAG_RSP);
+        snprintf(abcdk_comm_msg_data(rsp),abcdk_comm_msg_size(rsp),"[%s]",abcdk_comm_msg_data(msg));
+
+        abcdk_broker_post(node,rsp);
+    }
+
+    printf("\n");
+}
+
+
+void test_broker_message2_cb(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,void *opaque)
+{
+    abcdk_sockaddr_t sockname,peername;
+    abcdk_broker_get_sockname(node,&sockname);
+    abcdk_broker_get_peername(node,&peername);
+
+    char sockname_str[100] = {0},peername_str[100] = {0};
+    abcdk_sockaddr_to_string(sockname_str,&sockname);
+    abcdk_sockaddr_to_string(peername_str,&peername);
+
+    printf("Socket: %s -> %s",sockname_str,peername_str);
+
+    if(!msg)
+        printf(" Disconnected.");
+    else
+    {
+        printf(" {%u,%lu,<%s>}",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
+    }
+
     printf("\n");
 }
 
@@ -3083,11 +3119,29 @@ void test_broker(abcdk_tree_t *args)
 
     assert(abcdk_broker_listen(ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
 
+    abcdk_broker_node_t *node1 = abcdk_broker_connect(NULL,&addr,test_broker_message2_cb,NULL);
+    for(int i = 0;i<10;i++)
+    {
+        sleep(3);
+
+        abcdk_comm_msg_t *req=abcdk_comm_msg_alloc(100);
+        abcdk_comm_msg_protocol_set(req,1234567890);
+        uint64_t a = abcdk_time_clock2kind_with(0,3);
+        abcdk_comm_msg_number_set(req,a);
+        abcdk_comm_msg_flag_set(req,ABCDK_COMM_MSG_FLAG_RSP);
+        snprintf(abcdk_comm_msg_data(req),abcdk_comm_msg_size(req),"%lu",abcdk_comm_msg_number(req));
+
+        abcdk_broker_post(node1,req);
+    }
+    
+    abcdk_broker_node_unref(&node1);
+
     while (getchar() != 'Q')
         ;
 
     abcdk_comm_stop();
 }
+
 
 int main(int argc, char **argv)
 {
@@ -3114,6 +3168,13 @@ int main(int argc, char **argv)
     abcdk_endian_h_to_l24(a8,a);
     b = abcdk_endian_l_to_h24(a8);
     assert(a == b);
+
+    uint64_t c = 1234567890987654321;
+    uint64_t d = 0,e = 0;
+    d = abcdk_endian_h_to_b64(c);
+    e = abcdk_endian_b_to_h64(d);
+    assert(c == e);
+
 
 
 #ifdef HAVE_OPENSSL
