@@ -150,25 +150,6 @@ uint32_t abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg, uint32_t protocol)
     return old;
 }
 
-uint8_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg)
-{
-    assert(msg != NULL);
-
-    return msg->flag;
-}
-
-uint8_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint8_t flag)
-{
-    uint8_t old;
-
-    assert(msg != NULL);
-
-    old = msg->flag;
-    msg->flag = flag;
-
-    return old;
-}
-
 uint64_t abcdk_comm_msg_number(abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);
@@ -184,6 +165,25 @@ uint64_t abcdk_comm_msg_number_set(abcdk_comm_msg_t *msg, uint64_t number)
 
     old = msg->number;
     msg->number = number;
+
+    return old;
+}
+
+uint8_t abcdk_comm_msg_flag(abcdk_comm_msg_t *msg)
+{
+    assert(msg != NULL);
+
+    return msg->flag;
+}
+
+uint8_t abcdk_comm_msg_flag_set(abcdk_comm_msg_t *msg, uint8_t flag)
+{
+    uint8_t old;
+
+    assert(msg != NULL);
+
+    old = msg->flag;
+    msg->flag = flag;
 
     return old;
 }

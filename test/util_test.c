@@ -31,7 +31,7 @@
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
 #include "abcdk-comm/comm.h"
-#include "abcdk-comm/server.h"
+#include "abcdk-comm/broker.h"
 #include "abcdk-util/json.h"
 
 #ifdef HAVE_FUSE
@@ -3033,11 +3033,11 @@ void test_refer_count(abcdk_tree_t *args)
     abcdk_allocator_unref(&p);
 }
 
-void test_server_message_cb(abcdk_comm_svr_node_t *node,const abcdk_comm_msg_t *req, abcdk_comm_msg_t **rsp,void *opaque)
+void test_broker_message_cb(abcdk_broker_node_t *node,const abcdk_comm_msg_t *req, abcdk_comm_msg_t **rsp,void *opaque)
 {
     abcdk_sockaddr_t sockname,peername;
-    abcdk_comm_svr_get_sockname(node,&sockname);
-    abcdk_comm_svr_get_peername(node,&peername);
+    abcdk_broker_get_sockname(node,&sockname);
+    abcdk_broker_get_peername(node,&peername);
 
     char sockname_str[100] = {0},peername_str[100] = {0};
     abcdk_sockaddr_to_string(sockname_str,&sockname);
@@ -3050,7 +3050,7 @@ void test_server_message_cb(abcdk_comm_svr_node_t *node,const abcdk_comm_msg_t *
     printf("\n");
 }
 
-void test_server(abcdk_tree_t *args)
+void test_broker(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
@@ -3081,7 +3081,7 @@ void test_server(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    assert(abcdk_comm_svr_listen(ssl_ctx,&addr,test_server_message_cb,NULL)==0);
+    assert(abcdk_broker_listen(ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
 
     while (getchar() != 'Q')
         ;
@@ -3218,8 +3218,8 @@ int main(int argc, char **argv)
     if (abcdk_strcmp(func, "test_refer_count", 0) == 0)
        test_refer_count(args);
     
-    if (abcdk_strcmp(func, "test_server", 0) == 0)
-       test_server(args);
+    if (abcdk_strcmp(func, "test_broker", 0) == 0)
+       test_broker(args);
 
     abcdk_tree_free(&args);
     

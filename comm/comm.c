@@ -71,7 +71,8 @@ typedef struct _abcdk_comm_node
 void abcdk_comm_node_unref(abcdk_comm_node_t **node)
 {
     abcdk_comm_node_t *node_p = NULL;
-    if (!node)
+
+    if (!node || !*node)
         return;
 
     node_p = *node;
