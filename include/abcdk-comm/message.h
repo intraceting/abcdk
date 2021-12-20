@@ -37,7 +37,7 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size);
 /**
  * 调整消息缓存大小。
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg, size_t size);
 

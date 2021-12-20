@@ -37,21 +37,21 @@ abcdk_broker_node_t *abcdk_broker_node_refer(abcdk_broker_node_t *src);
  * 
  * @param timeout 超时(毫秒)。
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_broker_set_timeout(abcdk_broker_node_t *node, time_t timeout);
 
 /**
  * 获取本机地址。
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_broker_get_sockname(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr);
 
 /**
  * 获取远端地址。
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_broker_get_peername(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr);
 
@@ -70,7 +70,7 @@ int abcdk_broker_post(abcdk_broker_node_t *node, abcdk_comm_msg_t *msg);
  * @param message_cb 消息回调函数指针。
  * @param opaque 应用层环境指针。
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_broker_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_broker_message_cb message_cb, void *opaque);
 
