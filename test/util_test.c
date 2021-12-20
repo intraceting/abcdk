@@ -3134,6 +3134,7 @@ void test_broker(abcdk_tree_t *args)
         abcdk_broker_post(node1,req);
     }
     
+    abcdk_broker_set_timeout(node1,1000);
     abcdk_broker_node_unref(&node1);
 
     while (getchar() != 'Q')
