@@ -54,7 +54,7 @@ enum _abcdk_comm_event
 #define ABCDK_COMM_EVENT_LISTEN_CLOSE ABCDK_COMM_EVENT_LISTEN_CLOSE
 };
 
-/*事件回调函数。*/
+/** 事件回调函数。*/
 typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event);
 
 /**

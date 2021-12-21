@@ -15,7 +15,7 @@ __BEGIN_DECLS
 /** 通信节点。*/
 typedef struct _abcdk_broker_node abcdk_broker_node_t;
 
-/*消息回调函数。*/
+/** 消息回调函数。*/
 typedef void (*abcdk_broker_message_cb)(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,void *opaque);
 
 /**

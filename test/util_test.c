@@ -3087,7 +3087,8 @@ void test_broker(abcdk_tree_t *args)
 
     abcdk_comm_start(0);
 
-    SSL_CTX *ssl_ctx = NULL;
+    SSL_CTX *server_ssl_ctx = NULL;
+    SSL_CTX *client_ssl_ctx = NULL;
 
 #ifdef HAVE_OPENSSL
 
@@ -3095,15 +3096,24 @@ void test_broker(abcdk_tree_t *args)
 
     if (capath)
     {
-        ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
+        server_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
 
-        //X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
-
-        abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+        abcdk_openssl_ssl_ctx_load_crt(server_ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
                                        abcdk_option_get(args, "--key-file", 0, NULL),
                                        abcdk_option_get(args, "--key-pwd", 0, NULL));
 
-        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+   //     SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+
+        client_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0, NULL, capath, 2);
+
+        abcdk_openssl_ssl_ctx_load_crt(client_ssl_ctx, abcdk_option_get(args, "--crt2-file", 0, NULL),
+                                       abcdk_option_get(args, "--key2-file", 0, NULL),
+                                       abcdk_option_get(args, "--key2-pwd", 0, NULL));
+
+        SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, NULL);
+
     }
 #endif //HAVE_OPENSSL
 
@@ -3113,10 +3123,10 @@ void test_broker(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    assert(abcdk_broker_listen(ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
+    assert(abcdk_broker_listen(server_ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
 #if 1
     abcdk_sockaddr_from_string(&addr2,"127.0.0.1:12345",0);
-    abcdk_broker_node_t *node1 = abcdk_broker_connect(NULL,&addr2,test_broker_message2_cb,NULL);
+    abcdk_broker_node_t *node1 = abcdk_broker_connect(client_ssl_ctx,&addr2,test_broker_message2_cb,NULL);
     for(int i = 0;i<1000000;i++)
     {
         usleep(1000);
