@@ -3120,13 +3120,13 @@ void test_broker(abcdk_tree_t *args)
 
     assert(abcdk_broker_listen(ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
 
-    abcdk_sockaddr_from_string(&addr2,"127.0.0.1:12345",0);
+    abcdk_sockaddr_from_string(&addr2,"192.167.200.100:12345",0);
     abcdk_broker_node_t *node1 = abcdk_broker_connect(NULL,&addr2,test_broker_message2_cb,NULL);
     for(int i = 0;i<1000000;i++)
     {
         usleep(1000);
 
-        abcdk_comm_msg_t *req=abcdk_comm_msg_alloc(100);
+        abcdk_comm_msg_t *req=abcdk_comm_msg_alloc(128*1024);
         abcdk_comm_msg_protocol_set(req,1234567890);
         uint64_t a = abcdk_time_clock2kind_with(0,3);
         abcdk_comm_msg_number_set(req,a);
