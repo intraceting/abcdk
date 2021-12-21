@@ -527,8 +527,7 @@ try_again:
         _abcdk_epollex_watchdog(ctx);
 
         /*唤醒其它线程，处理看门狗检测结果。*/
-        if (ctx->event_pool.count > 0)
-            abcdk_mutex_signal(&ctx->mutex, 0);
+        abcdk_mutex_signal(&ctx->mutex, 0);
 
         /*解锁，使其它接口被访问。*/
         abcdk_mutex_unlock(&ctx->mutex);

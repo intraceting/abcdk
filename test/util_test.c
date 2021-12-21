@@ -3050,13 +3050,8 @@ void test_broker_message_cb(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,void
     }
     else
     {
-        //    printf(" {%u,%lu,<%s>}",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
-
         abcdk_comm_msg_t *rsp = abcdk_comm_msg_alloc(100);
-        abcdk_comm_msg_protocol_set(rsp, abcdk_comm_msg_protocol(msg));
-        abcdk_comm_msg_number_set(rsp, abcdk_comm_msg_number(msg));
-        abcdk_comm_msg_flag_set(rsp, ABCDK_COMM_MSG_FLAG_RSP);
-        snprintf(abcdk_comm_msg_data(rsp), abcdk_comm_msg_size(rsp), "[%s]", abcdk_comm_msg_data(msg));
+        memcpy(abcdk_comm_msg_data(rsp), abcdk_comm_msg_data(msg),8);
 
         abcdk_broker_post(node, rsp);
     }
@@ -3079,7 +3074,7 @@ void test_broker_message2_cb(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,voi
     }
     else
     {
-        uint64_t a = abcdk_comm_msg_number(msg);
+        uint64_t a = ABCDK_PTR2U64(abcdk_comm_msg_data(msg),0);
         uint64_t b = abcdk_time_clock2kind_with(0,3);
         printf("(%lu-%lu)=%lu\n",b,a,b-a);
         //printf(" {%u,%lu,<%s>}\n",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
@@ -3119,25 +3114,24 @@ void test_broker(abcdk_tree_t *args)
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
     assert(abcdk_broker_listen(ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
-
-    abcdk_sockaddr_from_string(&addr2,"192.167.200.100:12345",0);
+#if 1
+    abcdk_sockaddr_from_string(&addr2,"127.0.0.1:12345",0);
     abcdk_broker_node_t *node1 = abcdk_broker_connect(NULL,&addr2,test_broker_message2_cb,NULL);
     for(int i = 0;i<1000000;i++)
     {
         usleep(1000);
 
         abcdk_comm_msg_t *req=abcdk_comm_msg_alloc(128*1024);
-        abcdk_comm_msg_protocol_set(req,1234567890);
-        uint64_t a = abcdk_time_clock2kind_with(0,3);
-        abcdk_comm_msg_number_set(req,a);
-        abcdk_comm_msg_flag_set(req,ABCDK_COMM_MSG_FLAG_RSP);
-        snprintf(abcdk_comm_msg_data(req),abcdk_comm_msg_size(req),"%lu",abcdk_comm_msg_number(req));
+        ABCDK_PTR2U64(abcdk_comm_msg_data(req),0) = abcdk_time_clock2kind_with(0,3);
+
 
         abcdk_broker_post(node1,req);
     }
     
     abcdk_broker_set_timeout(node1,1000);
     abcdk_broker_node_unref(&node1);
+
+#endif
 
     printf("aaaa\n");
 

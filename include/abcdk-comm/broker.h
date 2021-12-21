@@ -78,7 +78,7 @@ int abcdk_broker_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_broker_m
  * 启动连接。
  * 
  * @warning 只要消息回调函数没有通知连接已经断开，则链路可用。
- * @warning 当通信节点指针不在需要时，需要应用层主动释放。
+ * @warning 当通信节点指针不再需要时，需要应用层主动释放。
  * 
  * @param message_cb 消息回调函数指针。
  * @param opaque 应用层环境指针。
