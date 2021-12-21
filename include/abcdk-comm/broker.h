@@ -33,7 +33,7 @@ abcdk_broker_node_t *abcdk_broker_node_refer(abcdk_broker_node_t *src);
 /**
  * 设置超时。
  * 
- * @warning 1、看门狗精度为5000毫秒；2、超时生效时间受引擎的工作周期影响。
+ * @warning 1、看门狗精度为200毫秒；2、超时生效时间受引擎的工作周期影响。
  * 
  * @param timeout 超时(毫秒)。
  * 

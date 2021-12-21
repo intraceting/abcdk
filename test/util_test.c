@@ -3135,7 +3135,9 @@ void test_broker(abcdk_tree_t *args)
         ABCDK_PTR2U64(abcdk_comm_msg_data(req),0) = abcdk_time_clock2kind_with(0,3);
 
 
-        abcdk_broker_post(node1,req);
+        int chk = abcdk_broker_post(node1,req);
+        if(chk !=0)
+            break;
     }
     
     abcdk_broker_set_timeout(node1,1000);

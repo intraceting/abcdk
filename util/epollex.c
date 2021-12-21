@@ -128,7 +128,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
     abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 100);
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
-    ctx->watchdog_intvl = 5000;
+    ctx->watchdog_intvl = 200;
     ctx->watchdog_active = abcdk_epollex_clock();
     ctx->wait_leader = 0;
     ctx->node_map.destructor_cb = _abcdk_epollex_destructor_cb;
@@ -359,6 +359,9 @@ final_error:
 
 final:
 
+    /*通知处理可能的发生事件。*/
+    abcdk_mutex_signal(&ctx->mutex,0);
+
     abcdk_mutex_unlock(&ctx->mutex);
 
     return chk; 
@@ -409,6 +412,9 @@ final_error:
     chk = -1;
 
 final:
+
+    /*通知处理可能的发生事件。*/
+    abcdk_mutex_signal(&ctx->mutex,0);
 
     abcdk_mutex_unlock(&ctx->mutex);
 
@@ -610,6 +616,9 @@ final_error:
     chk = -1;
 
 final:
+
+    /*通知处理可能的发生事件。*/
+    abcdk_mutex_signal(&ctx->mutex,0);
 
     abcdk_mutex_unlock(&ctx->mutex);
 
