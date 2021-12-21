@@ -110,6 +110,10 @@ int abcdk_mutex_wait(abcdk_mutex_t* ctx,time_t timeout)
         out_ts.tv_sec = sys_ts.tv_sec + (timeout / 1000);
         out_ts.tv_nsec = sys_ts.tv_nsec + (timeout % 1000) * 1000000;
 
+        /*纳秒时间必须小于1秒，因此可能存在进位。*/
+        out_ts.tv_sec += out_ts.tv_nsec / 1000000000L;
+        out_ts.tv_nsec = out_ts.tv_nsec % 1000000000L;
+
         err = pthread_cond_timedwait(&ctx->cond, &ctx->mutex, &out_ts);
     }
     else

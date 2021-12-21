@@ -3035,55 +3035,55 @@ void test_refer_count(abcdk_tree_t *args)
 
 void test_broker_message_cb(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,void *opaque)
 {
-    abcdk_sockaddr_t sockname,peername;
-    abcdk_broker_get_sockname(node,&sockname);
-    abcdk_broker_get_peername(node,&peername);
 
-    char sockname_str[100] = {0},peername_str[100] = {0};
-    abcdk_sockaddr_to_string(sockname_str,&sockname);
-    abcdk_sockaddr_to_string(peername_str,&peername);
+    if (!msg)
+    {
+        abcdk_sockaddr_t sockname, peername;
+        abcdk_broker_get_sockname(node, &sockname);
+        abcdk_broker_get_peername(node, &peername);
 
-    printf("Socket: %s -> %s",sockname_str,peername_str);
+        char sockname_str[100] = {0}, peername_str[100] = {0};
+      //  abcdk_sockaddr_to_string(sockname_str, &sockname);
+      //  abcdk_sockaddr_to_string(peername_str, &peername);
 
-    if(!msg)
-        printf(" Disconnected.");
+        printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
+    }
     else
     {
-        printf(" {%u,%lu,<%s>}",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
+        //    printf(" {%u,%lu,<%s>}",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
 
-        abcdk_comm_msg_t *rsp=abcdk_comm_msg_alloc(100);
-        abcdk_comm_msg_protocol_set(rsp,abcdk_comm_msg_protocol(msg));
-        abcdk_comm_msg_number_set(rsp,abcdk_comm_msg_number(msg));
-        abcdk_comm_msg_flag_set(rsp,ABCDK_COMM_MSG_FLAG_RSP);
-        snprintf(abcdk_comm_msg_data(rsp),abcdk_comm_msg_size(rsp),"[%s]",abcdk_comm_msg_data(msg));
+        abcdk_comm_msg_t *rsp = abcdk_comm_msg_alloc(100);
+        abcdk_comm_msg_protocol_set(rsp, abcdk_comm_msg_protocol(msg));
+        abcdk_comm_msg_number_set(rsp, abcdk_comm_msg_number(msg));
+        abcdk_comm_msg_flag_set(rsp, ABCDK_COMM_MSG_FLAG_RSP);
+        snprintf(abcdk_comm_msg_data(rsp), abcdk_comm_msg_size(rsp), "[%s]", abcdk_comm_msg_data(msg));
 
-        abcdk_broker_post(node,rsp);
+        abcdk_broker_post(node, rsp);
     }
-
-    printf("\n");
 }
 
 
 void test_broker_message2_cb(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg,void *opaque)
 {
-    abcdk_sockaddr_t sockname,peername;
-    abcdk_broker_get_sockname(node,&sockname);
-    abcdk_broker_get_peername(node,&peername);
+    if (!msg)
+    {
+        abcdk_sockaddr_t sockname, peername;
+        abcdk_broker_get_sockname(node, &sockname);
+        abcdk_broker_get_peername(node, &peername);
 
-    char sockname_str[100] = {0},peername_str[100] = {0};
-    abcdk_sockaddr_to_string(sockname_str,&sockname);
-    abcdk_sockaddr_to_string(peername_str,&peername);
+        char sockname_str[100] = {0}, peername_str[100] = {0};
+        //abcdk_sockaddr_to_string(sockname_str, &sockname);
+        //abcdk_sockaddr_to_string(peername_str, &peername);
 
-    printf("Socket: %s -> %s",sockname_str,peername_str);
-
-    if(!msg)
-        printf(" Disconnected.");
+        printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
+    }
     else
     {
-        printf(" {%u,%lu,<%s>}",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
+        uint64_t a = abcdk_comm_msg_number(msg);
+        uint64_t b = abcdk_time_clock2kind_with(0,3);
+        printf("(%lu-%lu)=%lu\n",b,a,b-a);
+        //printf(" {%u,%lu,<%s>}\n",abcdk_comm_msg_protocol(msg),abcdk_comm_msg_number(msg),abcdk_comm_msg_data(msg));
     }
-
-    printf("\n");
 }
 
 void test_broker(abcdk_tree_t *args)
@@ -3113,16 +3113,18 @@ void test_broker(abcdk_tree_t *args)
 #endif //HAVE_OPENSSL
 
     abcdk_sockaddr_t addr = {0};
+    abcdk_sockaddr_t addr2 = {0};
 
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
     assert(abcdk_broker_listen(ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
 
-    abcdk_broker_node_t *node1 = abcdk_broker_connect(NULL,&addr,test_broker_message2_cb,NULL);
-    for(int i = 0;i<10;i++)
+    abcdk_sockaddr_from_string(&addr2,"127.0.0.1:12345",0);
+    abcdk_broker_node_t *node1 = abcdk_broker_connect(NULL,&addr2,test_broker_message2_cb,NULL);
+    for(int i = 0;i<1000000;i++)
     {
-        sleep(3);
+        usleep(1000);
 
         abcdk_comm_msg_t *req=abcdk_comm_msg_alloc(100);
         abcdk_comm_msg_protocol_set(req,1234567890);
@@ -3136,6 +3138,8 @@ void test_broker(abcdk_tree_t *args)
     
     abcdk_broker_set_timeout(node1,1000);
     abcdk_broker_node_unref(&node1);
+
+    printf("aaaa\n");
 
     while (getchar() != 'Q')
         ;

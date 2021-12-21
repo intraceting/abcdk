@@ -60,7 +60,7 @@ int abcdk_broker_get_peername(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
  * 
  * @warning 消息将被托管，应用层不可以继续访问被投递的消息对象。
  * 
- * @return 0 成功，-1 失败。
+ * @return 0 成功，-1 失败(已断开)。
 */
 int abcdk_broker_post(abcdk_broker_node_t *node, abcdk_comm_msg_t *msg);
 

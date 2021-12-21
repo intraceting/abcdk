@@ -239,9 +239,7 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
     if (msg->offset < ABCDK_COMM_MSG_HDR_SIZE)
     {
         rsize = abcdk_comm_read(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), ABCDK_COMM_MSG_HDR_SIZE - msg->offset);
-        if (rsize == 0)
-            return -1;
-        else if (rsize < 0)
+        if (rsize <= 0)
             return 0;
         else if (rsize > 0)
             msg->offset += rsize;
@@ -263,9 +261,7 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
         }
 
         rsize = abcdk_comm_read(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
-        if (rsize == 0)
-            return -1;
-        else if (rsize < 0)
+        if (rsize <= 0)
             return 0;
         else if (rsize > 0)
             msg->offset += rsize;
@@ -301,9 +297,7 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
     }
 
     wsize = abcdk_comm_write(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
-    if (wsize == 0)
-        return -1;
-    else if (wsize < 0)
+    if (wsize <= 0)
         return 0;
     else if (wsize > 0)
         msg->offset += wsize;

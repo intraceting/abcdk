@@ -499,7 +499,7 @@ int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t ti
     time_t time_end;
     time_t time_span;
     int count;
-    int chk = 0;
+    int chk = 0,wait_chk = 0;
 
     assert(ctx != NULL && event != NULL);
 
@@ -549,7 +549,8 @@ try_again:
     else
     {   
         /*等待主线程的通知，或超时退出。*/
-        abcdk_mutex_wait(&ctx->mutex,time_span);
+        wait_chk = abcdk_mutex_wait(&ctx->mutex,time_span);
+        //printf("a = %d\n",a);
     }
 
     /*No error, no event, try again.*/
@@ -562,8 +563,7 @@ final_error:
 final:
 
     /*唤醒其它线程，处理事件。*/
-    if (ctx->event_pool.count > 0)
-        abcdk_mutex_signal(&ctx->mutex, 0);
+    abcdk_mutex_signal(&ctx->mutex, 0);
 
     abcdk_mutex_unlock(&ctx->mutex);
 

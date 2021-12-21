@@ -416,6 +416,9 @@ int abcdk_broker_set_timeout(abcdk_broker_node_t *node, time_t timeout)
 
     assert(node != NULL);
 
+    if (abcdk_atomic_load(&node->stable) != 2)
+        return -1;
+
     chk = abcdk_comm_set_timeout(node->comm, timeout);
     if (chk != 0)
         return -1;
@@ -429,6 +432,9 @@ int abcdk_broker_get_sockname(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
 
     assert(node != NULL);
 
+    if (abcdk_atomic_load(&node->stable) != 2)
+        return -1;
+
     chk = abcdk_comm_get_sockname(node->comm, addr);
     if (chk != 0)
         return -1;
@@ -441,6 +447,9 @@ int abcdk_broker_get_peername(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
     int chk;
 
     assert(node != NULL);
+
+    if (abcdk_atomic_load(&node->stable) != 2)
+        return -1;
 
     chk = abcdk_comm_get_peername(node->comm, addr);
     if (chk != 0)
