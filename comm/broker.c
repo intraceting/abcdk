@@ -16,7 +16,7 @@ typedef struct _abcdk_broker_node
     volatile int stable;
 
     /** 通信链路。*/
-    abcdk_comm_node_t *comm;
+    volatile abcdk_comm_node_t *comm;
 
     /** 消息回调。*/
     abcdk_broker_message_cb message_cb;
@@ -212,8 +212,8 @@ void _abcdk_broker_accept_event(abcdk_comm_node_t *comm)
 
     node_accpet->message_cb = node_listen->message_cb;
     node_accpet->opaque = node_listen->opaque;
-    abcdk_atomic_store(&node_accpet->stable,2);
-    node_accpet->comm = abcdk_comm_node_refer(comm);
+    abcdk_atomic_store(&node_accpet->stable, 2);
+    abcdk_atomic_store(&node_accpet->comm, abcdk_comm_node_refer(comm));
 
     /*通过listen节点建立的连接，初始环境是listen节点的环境指针，现在替换成私有环境指针。*/
     abcdk_comm_set_userdata(comm, node_accpet);
@@ -238,7 +238,7 @@ void _abcdk_broker_connect_event(abcdk_comm_node_t *comm)
     }
 
     abcdk_atomic_store(&node->stable,2);
-    node->comm = abcdk_comm_node_refer(comm);
+    abcdk_atomic_store(&node->comm,abcdk_comm_node_refer(comm));
 
     /*默认30秒超时。*/
     abcdk_comm_set_timeout(comm, 30000);
@@ -419,7 +419,7 @@ int abcdk_broker_set_timeout(abcdk_broker_node_t *node, time_t timeout)
     if (abcdk_atomic_load(&node->stable) != 2)
         return -1;
 
-    chk = abcdk_comm_set_timeout(node->comm, timeout);
+    chk = abcdk_comm_set_timeout(abcdk_atomic_load(&node->comm), timeout);
     if (chk != 0)
         return -1;
 
@@ -432,10 +432,10 @@ int abcdk_broker_get_sockname(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
 
     assert(node != NULL);
 
-    if (abcdk_atomic_load(&node->stable) != 2)
+    if (!abcdk_atomic_load(&node->comm))
         return -1;
 
-    chk = abcdk_comm_get_sockname(node->comm, addr);
+    chk = abcdk_comm_get_sockname(abcdk_atomic_load(&node->comm), addr);
     if (chk != 0)
         return -1;
 
@@ -448,10 +448,10 @@ int abcdk_broker_get_peername(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
 
     assert(node != NULL);
 
-    if (abcdk_atomic_load(&node->stable) != 2)
+    if (!abcdk_atomic_load(&node->comm))
         return -1;
 
-    chk = abcdk_comm_get_peername(node->comm, addr);
+    chk = abcdk_comm_get_peername(abcdk_atomic_load(&node->comm), addr);
     if (chk != 0)
         return -1;
 
