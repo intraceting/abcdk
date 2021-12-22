@@ -312,6 +312,10 @@ void _abcdk_broker_close_event(abcdk_comm_node_t *comm)
     if (!node)
         return;
 
+    /*尚未建立连接，就已经被关闭了。*/
+    if(!node->comm)
+        node->comm = abcdk_comm_node_refer(comm);
+
     abcdk_atomic_store(&node->stable,0);
 
     /*通知应用层连接已关闭。*/
@@ -327,6 +331,10 @@ void _abcdk_broker_listen_close_event(abcdk_comm_node_t *comm)
     node = (abcdk_broker_node_t *)abcdk_comm_get_userdata(comm);
     if (!node)
         return;
+
+    /*监听被关闭，还未绑定连接。*/
+    if(!node->comm)
+        node->comm = abcdk_comm_node_refer(comm);
     
     abcdk_atomic_store(&node->stable,0);
 
@@ -418,11 +426,11 @@ void *abcdk_broker_get_userdata(abcdk_broker_node_t *node)
     return old;
 }
 
-ssize_t abcdk_broker_read(abcdk_broker_node_t *node, void *buf, size_t size)
+int abcdk_broker_read(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg)
 {
-    assert(node != NULL);
+    assert(node != NULL && msg != NULL);
 
-    return abcdk_comm_read(node->comm,buf,size);
+    return abcdk_comm_msg_recv(node->comm,msg);
 }
 
 int abcdk_broker_read_watch(abcdk_broker_node_t *node)

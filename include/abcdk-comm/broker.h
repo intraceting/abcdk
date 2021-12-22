@@ -72,11 +72,9 @@ void *abcdk_broker_get_userdata(abcdk_broker_node_t *node);
 /**
  * 读。
  * 
- * @note 当读权利被占用时，不会有其它线程获得读事件。
- * 
- * @return > 0 已读取数据的长度，0 无数据。
+ * @return 1 消息完整，0 消息不完整。
 */
-ssize_t abcdk_broker_read(abcdk_broker_node_t *node, void *buf, size_t size);
+int abcdk_broker_read(abcdk_broker_node_t *node,abcdk_comm_msg_t *msg);
 
 /**
  * 监听是否可读。

@@ -24,6 +24,9 @@ typedef struct _abcdk_comm_msg
     /** 长度。*/
     uint32_t size;
 
+    /** 数据包协议回调函数指针。*/
+    abcdk_comm_msg_protocol_cb protocol_cb;
+
 }abcdk_comm_msg_t;
 
 void abcdk_comm_msg_unref(abcdk_comm_msg_t **msg)
@@ -75,6 +78,7 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size)
     
     msg->refcount = 1;
     msg->offset = 0;
+    msg->protocol_cb = NULL;
     msg->size = size;
     msg->capacity = ABCDK_MAX(msg->size,1024UL);
     msg->buf = abcdk_heap_alloc(msg->capacity);
@@ -153,6 +157,13 @@ size_t abcdk_comm_msg_offset(const abcdk_comm_msg_t *msg)
     return msg->offset;
 }
 
+void abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg,abcdk_comm_msg_protocol_cb protocol_cb)
+{
+    assert(msg != NULL && protocol_cb != NULL);
+
+    msg->protocol_cb = protocol_cb;
+}
+
 int abcdk_comm_msg_recv(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
 {
     uint32_t size;
@@ -161,8 +172,7 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
 
     assert(node != NULL && msg != NULL);
 
-    if (msg->offset >= msg->size)
-        return 1;
+MORE_DATA:
 
     rsize = abcdk_comm_read(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
     if (rsize <= 0)
@@ -171,8 +181,12 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
         msg->offset += rsize;
 
     /*检测接收的数据是否完整。*/
-    if (msg->size != msg->offset)
-        return 0;
+    if(msg->protocol_cb)
+    {
+        chk = msg->protocol_cb(node,msg);
+        if(chk == 0)
+            goto MORE_DATA;
+    }
 
     return 1;
 }

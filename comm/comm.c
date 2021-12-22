@@ -15,6 +15,9 @@ typedef struct _abcdk_comm
     /** epollex 环境。*/
     abcdk_epollex_t *epollex;
 
+    /** 工作线程。*/
+    abcdk_thread_t *tids;
+
     /** 工人数量。*/
     volatile int workers;
 
@@ -569,18 +572,9 @@ void _abcdk_comm_perform(time_t timeout)
 void *_abcdk_comm_worker(void *args)
 {
     abcdk_comm_t *ctx = (abcdk_comm_t *)args;
-    
-#if 0
-    static volatile int a = 1;
-    int b = abcdk_atomic_fetch_and_add(&a,1);
-    abcdk_thread_setname("worker=%d",b);
-#endif
 
     while (abcdk_atomic_load(&ctx->work_cmd) == 1)
         _abcdk_comm_perform(5000);
-
-    /*线程结束前，回滚计数器。*/
-    abcdk_atomic_fetch_and_add(&ctx->workers, -1);
 
     return NULL;
 }
@@ -588,7 +582,6 @@ void *_abcdk_comm_worker(void *args)
 int abcdk_comm_start(int workers)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    abcdk_thread_t t;
     int chk;
 
     /*如果未指定工作线程数，则使用CPU核心数。*/
@@ -597,19 +590,20 @@ int abcdk_comm_start(int workers)
 
     assert(workers > 0);
 
+    ctx->tids = abcdk_heap_alloc(workers * sizeof(abcdk_thread_t));
+
     /*检测是否已经启动。*/
     if(!abcdk_atomic_compare_and_swap(&ctx->work_cmd,2,1))
         goto final;
 
-    t.routine = _abcdk_comm_worker;
-    t.opaque = ctx;
-
     for (int i = 0; i < workers; i++)
     {
         abcdk_atomic_fetch_and_add(&ctx->workers, 1);
-
-        t.handle = -1;
-        chk = abcdk_thread_create(&t, 0);
+        
+        ctx->tids[i].handle = 0;
+        ctx->tids[i].routine = _abcdk_comm_worker;
+        ctx->tids[i].opaque = ctx;
+        chk = abcdk_thread_create(&ctx->tids[i], 1);
         if (chk == 0)
             continue;
         
@@ -631,11 +625,12 @@ void abcdk_comm_stop()
     if (!abcdk_atomic_compare_and_swap(&ctx->work_cmd, 1, 2))
         return;
 
-    /*停等所有线程退出。*/
-    while (abcdk_atomic_load(&ctx->workers) > 0)
-        pthread_yield();
-    
-    /*清理通信环境。*/
+    /*回收线程资源。*/
+    for (int i = 0; i < ctx->workers; i++)
+        abcdk_thread_join(&ctx->tids[i]);
+
+    ctx->workers = 0;
+    abcdk_heap_free2((void **)&ctx->tids);
     abcdk_epollex_free(&ctx->epollex);
     ctx->init_status = 0;
 }

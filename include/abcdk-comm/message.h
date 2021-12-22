@@ -14,6 +14,12 @@ __BEGIN_DECLS
 /** 消息缓存对象。*/
 typedef struct _abcdk_comm_msg abcdk_comm_msg_t;
 
+/** 数据包协议回调函数。
+ * 
+ * @return 1 数据包完整，0 需要更多数据。
+*/
+typedef int (*abcdk_comm_msg_protocol_cb)(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg);
+
 /**
  * 释放消息缓存对象。
 */
@@ -59,16 +65,21 @@ size_t abcdk_comm_msg_size(const abcdk_comm_msg_t *msg);
 size_t abcdk_comm_msg_offset(const abcdk_comm_msg_t *msg);
 
 /**
+ * 设置数据包协议。
+*/
+void abcdk_comm_msg_protocol_set(abcdk_comm_msg_t *msg,abcdk_comm_msg_protocol_cb protocol_cb);
+
+/**
  * 接收消息。
  * 
- * @return 1 消息完整，0 消息不完整，-1 出错。
+ * @return 1 消息完整，0 消息不完整。
 */
 int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg);
 
 /**
  * 发送消息。
  * 
- * @return 1 消息完整，0 消息不完整，-1 出错。
+ * @return 1 消息完整，0 消息不完整。
 */
 int abcdk_comm_msg_send(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg);
 
