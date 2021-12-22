@@ -6,20 +6,6 @@
  */
 #include "abcdk-comm/message.h"
 
-/*
- * 消息格式。
- *
- * ---------------------
- * |Message Data       |
- * ---------------------
- * |Length  |Customer  |
- * |4 Bytes |N Bytes   |
- * ---------------------
-*/
-
-#define ABCDK_COMM_MSG_HDR_SIZE (4)
-#define ABCDK_COMM_MSG_MAX_SIZE (256 * 1024 * 1024 - 1) //256MB - 1bytes
-
 /** 消息缓存区*/
 typedef struct _abcdk_comm_msg
 {
@@ -39,9 +25,6 @@ typedef struct _abcdk_comm_msg
     uint32_t size;
 
 }abcdk_comm_msg_t;
-
-#define ABCDK_COMM_MSG_FIELD_LEN(msg) ABCDK_PTR2U32((msg)->buf, 0)
-#define ABCDK_COMM_MSG_FIELD_CUS(msg) ABCDK_PTR2U8PTR((msg)->buf, ABCDK_COMM_MSG_HDR_SIZE)
 
 void abcdk_comm_msg_unref(abcdk_comm_msg_t **msg)
 {
@@ -84,7 +67,7 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size)
 {
     abcdk_comm_msg_t *msg = NULL;
 
-    assert(size > 0 && size <= (ABCDK_COMM_MSG_MAX_SIZE - ABCDK_COMM_MSG_HDR_SIZE));
+    assert(size > 0);
 
     msg = abcdk_heap_alloc(sizeof(abcdk_comm_msg_t));
     if (!msg)
@@ -92,7 +75,7 @@ abcdk_comm_msg_t *abcdk_comm_msg_alloc(size_t size)
     
     msg->refcount = 1;
     msg->offset = 0;
-    msg->size = ABCDK_COMM_MSG_HDR_SIZE + size;
+    msg->size = size;
     msg->capacity = ABCDK_MAX(msg->size,1024UL);
     msg->buf = abcdk_heap_alloc(msg->capacity);
 
@@ -112,13 +95,18 @@ int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg,size_t size)
 {
     void * new_buf = NULL;
 
-    assert(msg != NULL && size > 0 && size <= (ABCDK_COMM_MSG_MAX_SIZE - ABCDK_COMM_MSG_HDR_SIZE));
+    assert(msg != NULL && size > 0);
 
-    /*可能不需要调整。*/
-    if (msg->size == size + ABCDK_COMM_MSG_HDR_SIZE)
-        return 0;
+    /*新的大小与旧的大小一样时，不需要调整。*/
+    if (msg->size == size)
+        goto final;
 
-    msg->size = ABCDK_COMM_MSG_HDR_SIZE + size;
+    msg->size = size;
+
+    /*新的容量与旧的容量一样时，不需要调整。*/
+    if (msg->capacity == ABCDK_MAX(msg->size,1024UL))
+        goto final;
+
     msg->capacity = ABCDK_MAX(msg->size,1024UL);
 
     new_buf = abcdk_heap_realloc(msg->buf,msg->capacity);
@@ -128,8 +116,10 @@ int abcdk_comm_msg_realloc(abcdk_comm_msg_t *msg,size_t size)
     /*绑定新内存。*/
     msg->buf = new_buf;
 
+final:
+
     /*修正编移量。*/
-    if(msg->offset > msg->size)
+    if (msg->offset > msg->size)
         msg->offset = msg->size;
 
     return 0;
@@ -146,17 +136,24 @@ void *abcdk_comm_msg_data(const abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);
 
-    return ABCDK_COMM_MSG_FIELD_CUS(msg);
+    return msg->buf;
 }
 
 size_t abcdk_comm_msg_size(const abcdk_comm_msg_t *msg)
 {
     assert(msg != NULL);
 
-    return msg->size - ABCDK_COMM_MSG_HDR_SIZE;
+    return msg->size;
 }
 
-int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
+size_t abcdk_comm_msg_offset(const abcdk_comm_msg_t *msg)
+{
+    assert(msg != NULL);
+    
+    return msg->offset;
+}
+
+int abcdk_comm_msg_recv(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
 {
     uint32_t size;
     ssize_t rsize;
@@ -164,38 +161,19 @@ int abcdk_comm_msg_recv(abcdk_comm_node_t *node,abcdk_comm_msg_t *msg)
 
     assert(node != NULL && msg != NULL);
 
-    if (msg->offset < ABCDK_COMM_MSG_HDR_SIZE)
-    {
-        rsize = abcdk_comm_read(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), ABCDK_COMM_MSG_HDR_SIZE - msg->offset);
-        if (rsize <= 0)
-            return 0;
-        else if (rsize > 0)
-            msg->offset += rsize;
+    if (msg->offset >= msg->size)
+        return 1;
 
-        return abcdk_comm_msg_recv(node,msg);
-    }
-    else 
-    {
-        size = abcdk_endian_b_to_h32(ABCDK_COMM_MSG_FIELD_LEN(msg));
-        if(size > ABCDK_COMM_MSG_MAX_SIZE)
-            return -1;
-
-        /*重新调整缓存区大小。*/
-        chk = abcdk_comm_msg_realloc(msg, size - ABCDK_COMM_MSG_HDR_SIZE);
-        if (chk != 0)
-            return -1;
-
-        rsize = abcdk_comm_read(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
-        if (rsize <= 0)
-            return 0;
-        else if (rsize > 0)
-            msg->offset += rsize;
-    }
+    rsize = abcdk_comm_read(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
+    if (rsize <= 0)
+        return 0;
+    else if (rsize > 0)
+        msg->offset += rsize;
 
     /*检测接收的数据是否完整。*/
-    if(msg->size != msg->offset)
+    if (msg->size != msg->offset)
         return 0;
-    
+
     return 1;
 }
 
@@ -207,11 +185,8 @@ int abcdk_comm_msg_send(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
 
     assert(node != NULL && msg != NULL);
 
-    if (msg->offset < 1)
-    {
-        /*转换部分字段的字节序。*/
-        ABCDK_COMM_MSG_FIELD_LEN(msg) = abcdk_endian_h_to_b32(msg->size);
-    }
+    if (msg->offset >= msg->size)
+        return 1;
 
     wsize = abcdk_comm_write(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
     if (wsize <= 0)

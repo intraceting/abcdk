@@ -120,11 +120,9 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size);
 /**
  * 监听是否可读。
  * 
- * @param done 0 仅监听，!0 释放读权利(非权利拥有者无效)。
- * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_read_watch(abcdk_comm_node_t *node,int done);
+int abcdk_comm_read_watch(abcdk_comm_node_t *node);
 
 /**
  * 写。

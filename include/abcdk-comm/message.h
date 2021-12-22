@@ -54,6 +54,11 @@ void *abcdk_comm_msg_data(const abcdk_comm_msg_t *msg);
 size_t abcdk_comm_msg_size(const abcdk_comm_msg_t *msg);
 
 /**
+ * 获取读写偏移量。
+*/
+size_t abcdk_comm_msg_offset(const abcdk_comm_msg_t *msg);
+
+/**
  * 接收消息。
  * 
  * @return 1 消息完整，0 消息不完整，-1 出错。

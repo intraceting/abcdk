@@ -16,16 +16,13 @@ typedef struct _abcdk_broker_node
     volatile int stable;
 
     /** 通信链路。*/
-    volatile abcdk_comm_node_t *comm;
+    abcdk_comm_node_t *comm;
 
-    /** 消息回调。*/
-    abcdk_broker_message_cb message_cb;
+    /** 事件回调函数。*/
+    abcdk_broker_event_cb event_cb;
 
-    /*应用层环境指针。*/
+    /** 应用层环境指针。*/
     void *opaque;
-
-    /** 接收缓存区。*/
-    abcdk_tree_t *in_buffer;
 
     /** 发送缓存区。*/
     abcdk_tree_t *out_buffer;
@@ -52,7 +49,6 @@ void abcdk_broker_node_unref(abcdk_broker_node_t **node)
 
     assert(node_p->refcount == 0);
 
-    abcdk_tree_free(&node_p->in_buffer);
     abcdk_tree_free(&node_p->out_buffer);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_mutex_destroy(&node_p->out_locker);
@@ -89,10 +85,9 @@ abcdk_broker_node_t *_abcdk_broker_node_alloc()
     node->refcount = 1;
     node->stable = 1;
     node->comm = NULL;
-    node->message_cb = NULL;
+    node->event_cb = NULL;
     node->opaque = NULL;
 
-    node->in_buffer = NULL;
     node->out_buffer = NULL;
 
     abcdk_mutex_init2(&node->out_locker, 0);
@@ -161,19 +156,13 @@ int _abcdk_broker_out_push(abcdk_broker_node_t *node, abcdk_comm_msg_t *msg)
 {
     abcdk_tree_t *msg_node;
 
-    if (msg)
-    {
-        msg_node = _abcdk_broker_msg_alloc2(msg);
-        if (!msg_node)
-            return -1;
+    msg_node = _abcdk_broker_msg_alloc2(msg);
+    if (!msg_node)
+        return -1;
 
-        abcdk_mutex_lock(&node->out_locker, 1);
-        abcdk_tree_insert2(node->out_queue, msg_node, 0);
-        abcdk_mutex_unlock(&node->out_locker);
-    }
-
-    if (abcdk_atomic_load(&node->stable) == 2)
-        abcdk_comm_write_watch(node->comm);
+    abcdk_mutex_lock(&node->out_locker, 1);
+    abcdk_tree_insert2(node->out_queue, msg_node, 0);
+    abcdk_mutex_unlock(&node->out_locker);
 
     return 0;
 }
@@ -210,10 +199,10 @@ void _abcdk_broker_accept_event(abcdk_comm_node_t *comm)
         return;
     }
 
-    node_accpet->message_cb = node_listen->message_cb;
+    node_accpet->event_cb = node_listen->event_cb;
     node_accpet->opaque = node_listen->opaque;
     abcdk_atomic_store(&node_accpet->stable, 2);
-    abcdk_atomic_store(&node_accpet->comm, abcdk_comm_node_refer(comm));
+    node_accpet->comm = abcdk_comm_node_refer(comm);
 
     /*通过listen节点建立的连接，初始环境是listen节点的环境指针，现在替换成私有环境指针。*/
     abcdk_comm_set_userdata(comm, node_accpet);
@@ -221,8 +210,8 @@ void _abcdk_broker_accept_event(abcdk_comm_node_t *comm)
     /*默认30秒超时。*/
     abcdk_comm_set_timeout(comm, 30000);
 
-    /*监听接收事件。*/
-    abcdk_comm_read_watch(comm, 0);
+    /*通知应用层有新的连接到达。*/
+    node_accpet->event_cb(node_accpet, ABCDK_COMM_EVENT_ACCEPT);
 }
 
 void _abcdk_broker_connect_event(abcdk_comm_node_t *comm)
@@ -238,16 +227,13 @@ void _abcdk_broker_connect_event(abcdk_comm_node_t *comm)
     }
 
     abcdk_atomic_store(&node->stable,2);
-    abcdk_atomic_store(&node->comm,abcdk_comm_node_refer(comm));
+    node->comm = abcdk_comm_node_refer(comm);
 
     /*默认30秒超时。*/
     abcdk_comm_set_timeout(comm, 30000);
 
-    /*监听接收事件。*/
-    abcdk_comm_read_watch(comm, 0);
-
-    /*可能有需要发送的已经在排队中。*/
-    _abcdk_broker_out_push(node, NULL);
+    /*通知应用层已经连接。*/
+    node->event_cb(node, ABCDK_COMM_EVENT_CONNECT);
 }
 
 void _abcdk_broker_input_event(abcdk_comm_node_t *comm)
@@ -264,41 +250,8 @@ void _abcdk_broker_input_event(abcdk_comm_node_t *comm)
         return;
     }
 
-    if (!node->in_buffer)
-    {
-        node->in_buffer = _abcdk_broker_msg_alloc(64);
-        if (!node->in_buffer)
-        {
-            abcdk_comm_set_timeout(comm, 1);
-            return;
-        }
-    }
-
-    msg_in = node->in_buffer;
-    msg_in_p = (abcdk_comm_msg_t *)msg_in->alloc->pptrs[0];
-
-    chk = abcdk_comm_msg_recv(comm, msg_in_p);
-    if (chk < 0)
-    {
-        abcdk_comm_set_timeout(comm, 1);
-    }
-    else if (chk == 0)
-    {
-        /*数据包不完整，继续接收。*/
-        abcdk_comm_read_watch(comm, 1);
-    }
-    else if (chk > 0)
-    {
-        /*接收缓存区复位，链路复用。*/
-        node->in_buffer = NULL;
-        abcdk_comm_read_watch(comm, 1);
-
-        /*通知应用层消息达到。*/
-        node->message_cb(node, msg_in_p, node->opaque);
-
-        /*删除已经处理的消息。*/
-        abcdk_tree_free(&msg_in);
-    }
+    /*通知应用层消息达到。*/
+    node->event_cb(node, ABCDK_COMM_EVENT_INPUT);
 }
 
 void _abcdk_broker_output_event(abcdk_comm_node_t *comm)
@@ -329,6 +282,8 @@ NEXT_MSG:
 
     msg_out = node->out_buffer;
     msg_out_p = (abcdk_comm_msg_t *)msg_out->alloc->pptrs[0];
+    if(!msg_out_p)
+        goto MSG_SEND_OK;
 
     chk = abcdk_comm_msg_send(comm, msg_out_p);
     if (chk < 0)
@@ -336,14 +291,17 @@ NEXT_MSG:
         abcdk_comm_set_timeout(comm, 1);
         return;
     }
-    else if (chk > 0)
+    else if (chk == 0)
     {
-        /*释放消息缓存，并继续发送。*/
-        abcdk_tree_free(&node->out_buffer);
-        goto NEXT_MSG;
+        abcdk_comm_write_watch(comm);
+        return;
     }
+    
+MSG_SEND_OK:
 
-    abcdk_comm_write_watch(comm);
+    /*释放消息缓存，并继续发送。*/
+    abcdk_tree_free(&node->out_buffer);
+    goto NEXT_MSG;
 }
 
 void _abcdk_broker_close_event(abcdk_comm_node_t *comm)
@@ -357,7 +315,7 @@ void _abcdk_broker_close_event(abcdk_comm_node_t *comm)
     abcdk_atomic_store(&node->stable,0);
 
     /*通知应用层连接已关闭。*/
-    node->message_cb(node, NULL, node->opaque);
+    node->event_cb(node, ABCDK_COMM_EVENT_CLOSE);
 
     abcdk_broker_node_unref(&node);
 }
@@ -369,6 +327,11 @@ void _abcdk_broker_listen_close_event(abcdk_comm_node_t *comm)
     node = (abcdk_broker_node_t *)abcdk_comm_get_userdata(comm);
     if (!node)
         return;
+    
+    abcdk_atomic_store(&node->stable,0);
+
+    /*通知应用层监听已关闭。*/
+    node->event_cb(node, ABCDK_COMM_EVENT_LISTEN_CLOSE);
 
     abcdk_broker_node_unref(&node);
 }
@@ -412,50 +375,61 @@ void _abcdk_broker_event_cb(abcdk_comm_node_t *node, uint32_t event)
 
 int abcdk_broker_set_timeout(abcdk_broker_node_t *node, time_t timeout)
 {
-    int chk;
-
     assert(node != NULL);
 
-    if (abcdk_atomic_load(&node->stable) != 2)
-        return -1;
-
-    chk = abcdk_comm_set_timeout(abcdk_atomic_load(&node->comm), timeout);
-    if (chk != 0)
-        return -1;
-
-    return 0;
+    return abcdk_comm_set_timeout(node->comm, timeout);
 }
 
 int abcdk_broker_get_sockname(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
 {
-    int chk;
-
     assert(node != NULL);
 
-    if (!abcdk_atomic_load(&node->comm))
-        return -1;
-
-    chk = abcdk_comm_get_sockname(abcdk_atomic_load(&node->comm), addr);
-    if (chk != 0)
-        return -1;
-
-    return 0;
+    return abcdk_comm_get_sockname(node->comm, addr);
 }
 
 int abcdk_broker_get_peername(abcdk_broker_node_t *node, abcdk_sockaddr_t *addr)
 {
-    int chk;
 
     assert(node != NULL);
 
-    if (!abcdk_atomic_load(&node->comm))
-        return -1;
+    return abcdk_comm_get_peername(node->comm, addr);
+}
 
-    chk = abcdk_comm_get_peername(abcdk_atomic_load(&node->comm), addr);
-    if (chk != 0)
-        return -1;
+void *abcdk_broker_set_userdata(abcdk_broker_node_t *node, void *opaque)
+{
+    void *old = NULL;
 
-    return 0;
+    assert(node != NULL);
+
+    old = node->opaque;
+    node->opaque = opaque;
+    
+    return old;
+}
+
+void *abcdk_broker_get_userdata(abcdk_broker_node_t *node)
+{
+    void *old = NULL;
+
+    assert(node != NULL);
+
+    old = node->opaque;
+    
+    return old;
+}
+
+ssize_t abcdk_broker_read(abcdk_broker_node_t *node, void *buf, size_t size)
+{
+    assert(node != NULL);
+
+    return abcdk_comm_read(node->comm,buf,size);
+}
+
+int abcdk_broker_read_watch(abcdk_broker_node_t *node)
+{
+    assert(node != NULL);
+
+    return abcdk_comm_read_watch(node->comm);
 }
 
 int abcdk_broker_post(abcdk_broker_node_t *node, abcdk_comm_msg_t *msg)
@@ -472,6 +446,9 @@ int abcdk_broker_post(abcdk_broker_node_t *node, abcdk_comm_msg_t *msg)
     chk = _abcdk_broker_out_push(node, msg);
     if (chk != 0)
         goto final_error;
+    
+    if (abcdk_atomic_load(&node->stable) == 2)
+        abcdk_comm_write_watch(node->comm);
 
     return 0;
 
@@ -482,18 +459,18 @@ final_error:
     return -1;
 }
 
-int abcdk_broker_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_broker_message_cb message_cb, void *opaque)
+int abcdk_broker_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_broker_event_cb event_cb, void *opaque)
 {
     abcdk_broker_node_t *node;
     int chk;
 
-    assert(addr != NULL && message_cb != NULL);
+    assert(addr != NULL && event_cb != NULL);
 
     node = _abcdk_broker_node_alloc();
     if (!node)
         return -1;
 
-    node->message_cb = message_cb;
+    node->event_cb = event_cb;
     node->opaque = opaque;
 
     chk = abcdk_comm_listen(ssl_ctx, addr, _abcdk_broker_event_cb, node);
@@ -505,30 +482,25 @@ int abcdk_broker_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_broker_m
     return -1;
 }
 
-abcdk_broker_node_t *abcdk_broker_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_broker_message_cb message_cb, void *opaque)
+int abcdk_broker_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_broker_event_cb event_cb, void *opaque)
 {
     abcdk_broker_node_t *node;
-    abcdk_broker_node_t *node_p;
     int chk;
 
-    assert(addr != NULL && message_cb != NULL);
+    assert(addr != NULL && event_cb != NULL);
 
     node = _abcdk_broker_node_alloc();
     if (!node)
-        return NULL;
+        return -1;
 
-    /*增加对象引用计数，用于应用层使用。*/
-    node_p = abcdk_broker_node_refer(node);
-
-    node->message_cb = message_cb;
+    node->event_cb = event_cb;
     node->opaque = opaque;
 
     chk = abcdk_comm_connect(ssl_ctx, addr, _abcdk_broker_event_cb, node);
     if (chk == 0)
-        return node_p;
+        return 0;
 
     abcdk_broker_node_unref(&node);
-    abcdk_broker_node_unref(&node_p);
 
-    return NULL;
+    return -1;
 }

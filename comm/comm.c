@@ -124,6 +124,7 @@ abcdk_comm_node_t *_abcdk_comm_node_alloc()
     return node;
 }
 
+
 void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
 {
     abcdk_comm_t *ctx = (abcdk_comm_t *)opaque;
@@ -399,7 +400,7 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
     return rsize_all;
 }
 
-int abcdk_comm_read_watch(abcdk_comm_node_t *node, int done)
+int abcdk_comm_read_watch(abcdk_comm_node_t *node)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     int done_flag = 0;
@@ -407,13 +408,10 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node, int done)
 
     assert(node != NULL);
 
-    if (done)
-    {
-        /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
-        chk = abcdk_thread_leader_quit(&node->input_user);
-        if (chk == 0)
-            done_flag = ABCDK_EPOLL_INPUT;
-    }
+    /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
+    chk = abcdk_thread_leader_quit(&node->input_user);
+    if (chk == 0)
+        done_flag = ABCDK_EPOLL_INPUT;
 
     chk = abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, done_flag);
 
@@ -474,7 +472,7 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event)
         event = ABCDK_COMM_EVENT_ACCEPT;
 
     /*通知应用层处理事件。*/
-    node->event_cb(node,event);
+    node->event_cb(node, event);
 }
 
 void _abcdk_comm_perform(time_t timeout)
@@ -575,7 +573,7 @@ void *_abcdk_comm_worker(void *args)
 #if 0
     static volatile int a = 1;
     int b = abcdk_atomic_fetch_and_add(&a,1);
-    abcdk_thread_setname("b=%d",b);
+    abcdk_thread_setname("worker=%d",b);
 #endif
 
     while (abcdk_atomic_load(&ctx->work_cmd) == 1)
