@@ -31,7 +31,7 @@
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
 #include "abcdk-comm/comm.h"
-#include "abcdk-comm/broker.h"
+#include "abcdk-comm/message.h"
 #include "abcdk-util/json.h"
 
 #ifdef HAVE_FUSE
@@ -2899,106 +2899,6 @@ void test_cert_verify(abcdk_tree_t *args)
 #endif 
 }
 
-void comm_event_cb(abcdk_comm_node_t *node, uint32_t event)
-{
-    abcdk_sockaddr_t addr;
-    abcdk_comm_get_peername(node,&addr);
-    char addr_str[100] = {0};
-    abcdk_sockaddr_to_string(addr_str,&addr);
-
-    switch(event)
-    {
-        case ABCDK_COMM_EVENT_ACCEPT:
-        case ABCDK_COMM_EVENT_CONNECT:
-        {
-            printf("Connected: %s\n",addr_str);
-
-            abcdk_comm_set_timeout(node,5*1000);
-
-            abcdk_comm_read_watch(node);
-        }
-        break;
-        case ABCDK_COMM_EVENT_INPUT:
-        {
-            while(1)
-            {
-                char buf[100]={0};
-                ssize_t r = abcdk_comm_read(node,buf,100);
-                if(r<=0)
-                    break;
-
-                printf("%s",buf);
-            }
-
-            abcdk_comm_read_watch(node);
-            abcdk_comm_write_watch(node);
-            
-        }
-        break;
-        case ABCDK_COMM_EVENT_OUTPUT:
-        {
-            abcdk_comm_write(node,"abcdk\n",6);
-        }
-        break;
-        case ABCDK_COMM_EVENT_CLOSE:
-        {
-            printf("Disconnected: %s\n",addr_str);
-        }
-        break;
-    }
-}
-
-void test_comm(abcdk_tree_t *args)
-{
-    signal(SIGPIPE,NULL);
-
-    abcdk_comm_start(1);
-
-    SSL_CTX *ssl_ctx = NULL;
-
-#ifdef HAVE_OPENSSL
-
-    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
-
-    if (capath)
-    {
-        ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
-
-        //X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
-
-        abcdk_openssl_ssl_ctx_load_crt(ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
-                                       abcdk_option_get(args, "--key-file", 0, NULL),
-                                       abcdk_option_get(args, "--key-pwd", 0, NULL));
-
-        SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-    }
-#endif //HAVE_OPENSSL
-
-    abcdk_sockaddr_t addr = {0};
-
-    const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
-    abcdk_sockaddr_from_string(&addr,listen_p,0);
-   // abcdk_sockaddr_from_string(&addr,"[::]:12345",0);
-   // addr.family = ABCDK_UNIX;
-    //strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
-
-    assert(abcdk_comm_listen(ssl_ctx,&addr,comm_event_cb,NULL)==0);
-
-    abcdk_sockaddr_t addr2 = {0};
-  //  abcdk_sockaddr_from_string(&addr2,"www.baidu.com:80",1);
-
-  //  assert(abcdk_comm_connect(&addr2,NULL,NULL)==0);
-
-    // abcdk_comm_msg_t *msg = abcdk_comm_msg_alloc(200);
-    // abcdk_comm_msg_realloc(msg,1000000000);
-    // abcdk_comm_msg_free(&msg);
-
-    while (getchar() != 'Q')
-        ;
-
-    abcdk_comm_stop();
-}
-
 void test_json(abcdk_tree_t *args)
 {
 #ifdef _json_h_
@@ -3039,7 +2939,10 @@ typedef struct _one_node
 
     abcdk_comm_msg_t *in_buffer;
 
-    abcdk_broker_node_t *node;
+    abcdk_comm_msg_t *out_buffer;
+    abcdk_comm_msg_queue_t *out_queue;
+
+    abcdk_comm_node_t *node;
 
 }one_node_t;
 
@@ -3063,9 +2966,39 @@ int smb_protocol(abcdk_comm_node_t *node, abcdk_comm_msg_t *msg)
     return 1;
 }
 
-void test_broker_message_cb(abcdk_broker_node_t *node, uint32_t event)
+void _output_event(one_node_t *one)
 {
-    one_node_t *one = (one_node_t *)abcdk_broker_get_userdata(node);
+    int chk;
+
+NEXT_MSG:
+
+    if (!one->out_buffer)
+    {
+        one->out_buffer = abcdk_comm_msg_queue_pop(one->out_queue);
+        if (!one->out_buffer)
+            return;
+    }
+
+    chk = abcdk_comm_msg_send(one->node, one->out_buffer);
+    if (chk < 0)
+    {
+        abcdk_comm_set_timeout(one->node, 1);
+        return;
+    }
+    else if (chk == 0)
+    {
+        abcdk_comm_write_watch(one->node);
+        return;
+    }
+    
+    /*释放消息缓存，并继续发送。*/
+    abcdk_comm_msg_unref(&one->out_buffer);
+    goto NEXT_MSG;
+}
+
+void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event)
+{
+    one_node_t *one = (one_node_t *)abcdk_comm_get_userdata(node);
 
     switch (event)
     {
@@ -3073,10 +3006,11 @@ void test_broker_message_cb(abcdk_broker_node_t *node, uint32_t event)
     {
         assert(one == NULL);
         one = (one_node_t*)abcdk_heap_alloc(sizeof(one_node_t));
-        one->node = abcdk_broker_node_refer(node);
-        abcdk_broker_set_userdata(node,one);
+        one->out_queue = abcdk_comm_msg_queue_alloc();
+        one->node = abcdk_comm_node_refer(node);
+        abcdk_comm_set_userdata(node,one);
 
-        abcdk_broker_read_watch(node);
+        abcdk_comm_read_watch(node);
     }
         break;
     case ABCDK_COMM_EVENT_INPUT:
@@ -3087,34 +3021,34 @@ void test_broker_message_cb(abcdk_broker_node_t *node, uint32_t event)
                 abcdk_comm_msg_protocol_set(one->in_buffer,smb_protocol);
             }
             
-            int chk = abcdk_broker_read(node,one->in_buffer);
+            int chk = abcdk_comm_msg_recv(node,one->in_buffer);
             if(chk != 1)
             {
-                abcdk_broker_read_watch(node);
+                abcdk_comm_read_watch(node);
             }
             else
             {
                 abcdk_comm_msg_t *msg_copy = abcdk_comm_msg_refer(one->in_buffer);
                 abcdk_comm_msg_unref(&one->in_buffer);
-                abcdk_broker_read_watch(node);
+                abcdk_comm_read_watch(node);
 
                 usleep(rand()%10000+1000);
 
                 abcdk_comm_msg_reset(msg_copy);
-                abcdk_broker_post(node,msg_copy);
-
+                abcdk_comm_msg_queue_push(one->out_queue,msg_copy);
+                abcdk_comm_write_watch(one->node);
             }
         }
         break;
     case ABCDK_COMM_EVENT_OUTPUT:
-           
+            _output_event(one);
         break;
     case ABCDK_COMM_EVENT_CLOSE:
     default:
     {
         abcdk_sockaddr_t sockname, peername;
-        abcdk_broker_get_sockname(node, &sockname);
-        abcdk_broker_get_peername(node, &peername);
+        abcdk_comm_get_sockname(node, &sockname);
+        abcdk_comm_get_peername(node, &peername);
 
         char sockname_str[100] = {0}, peername_str[100] = {0};
         if (sockname.family)
@@ -3125,7 +3059,8 @@ void test_broker_message_cb(abcdk_broker_node_t *node, uint32_t event)
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
         abcdk_comm_msg_unref(&one->in_buffer);
-        abcdk_broker_node_unref(&one->node);
+        abcdk_comm_msg_queue_free(&one->out_queue);
+        abcdk_comm_node_unref(&one->node);
         abcdk_heap_free(one);
     }
     break;
@@ -3146,23 +3081,27 @@ void *test_send_msg(void *args)
         ABCDK_PTR2U64(abcdk_comm_msg_data(msg), 4) = abcdk_endian_h_to_b64(abcdk_time_clock2kind_with(0, 3));
         ABCDK_PTR2U32(abcdk_comm_msg_data(msg), 12) = abcdk_endian_h_to_b32(i+1);
 
-        abcdk_broker_post(one->node, msg);
+        abcdk_comm_msg_queue_push(one->out_queue, msg);
+        abcdk_comm_write_watch(one->node);
     }
 }
 
-void test_broker_message2_cb(abcdk_broker_node_t *node, uint32_t event)
+
+
+void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event)
 {
 
-    one_node_t *one = (one_node_t *)abcdk_broker_get_userdata(node);
+    one_node_t *one = (one_node_t *)abcdk_comm_get_userdata(node);
 
     switch (event)
     {
     case ABCDK_COMM_EVENT_CONNECT:
         {
-            one->node = abcdk_broker_node_refer(node);
-            abcdk_broker_set_userdata(node,one);
+            one->out_queue = abcdk_comm_msg_queue_alloc();
+            one->node = abcdk_comm_node_refer(node);
+        //    abcdk_comm_set_userdata(node,one);
 
-            abcdk_broker_read_watch(node);
+            abcdk_comm_read_watch(node);
 
             abcdk_thread_t t;
             t.routine = test_send_msg;
@@ -3180,17 +3119,17 @@ void test_broker_message2_cb(abcdk_broker_node_t *node, uint32_t event)
                 abcdk_comm_msg_protocol_set(one->in_buffer,smb_protocol);
             }
 
-            int chk = abcdk_broker_read(node,one->in_buffer);
+            int chk = abcdk_comm_msg_recv(node,one->in_buffer);
             if(chk != 1)
             {
-                abcdk_broker_read_watch(node);
+                abcdk_comm_read_watch(node);
             }
             else
             {
                 abcdk_comm_msg_t *msg_copy = abcdk_comm_msg_refer(one->in_buffer);
                 abcdk_comm_msg_unref(&one->in_buffer);
 
-                abcdk_broker_read_watch(node);
+                abcdk_comm_read_watch(node);
 
                 size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_msg_data(msg_copy),0));
                 uint64_t mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(abcdk_comm_msg_data(msg_copy),4));
@@ -3205,13 +3144,13 @@ void test_broker_message2_cb(abcdk_broker_node_t *node, uint32_t event)
         }
         break;
     case ABCDK_COMM_EVENT_OUTPUT:
-           
+           _output_event(one);
         break;
     default:
     {
         abcdk_sockaddr_t sockname, peername;
-        abcdk_broker_get_sockname(node, &sockname);
-        abcdk_broker_get_peername(node, &peername);
+        abcdk_comm_get_sockname(node, &sockname);
+        abcdk_comm_get_peername(node, &peername);
 
         char sockname_str[100] = {0}, peername_str[100] = {0};
         if (sockname.family)
@@ -3222,7 +3161,8 @@ void test_broker_message2_cb(abcdk_broker_node_t *node, uint32_t event)
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
         abcdk_comm_msg_unref(&one->in_buffer);
-        abcdk_broker_node_unref(&one->node);
+        abcdk_comm_msg_queue_free(&one->out_queue);
+        abcdk_comm_node_unref(&one->node);
         abcdk_heap_free(one);
     }
     break;
@@ -3230,7 +3170,7 @@ void test_broker_message2_cb(abcdk_broker_node_t *node, uint32_t event)
 }
 
 
-void test_broker(abcdk_tree_t *args)
+void test_comm(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
@@ -3272,11 +3212,11 @@ void test_broker(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    assert(abcdk_broker_listen(server_ssl_ctx,&addr,test_broker_message_cb,NULL)==0);
+    assert(abcdk_comm_listen(server_ssl_ctx,&addr,test_comm_message_cb,NULL)==0);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    abcdk_broker_connect(client_ssl_ctx,&addr2,test_broker_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
+    abcdk_comm_connect(client_ssl_ctx,&addr2,test_comm_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
  
 
 
@@ -3414,9 +3354,6 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_cert_verify", 0) == 0)
        test_cert_verify(args);
-        
-    if (abcdk_strcmp(func, "test_comm", 0) == 0)
-       test_comm(args);
     
     if (abcdk_strcmp(func, "test_json", 0) == 0)
        test_json(args);
@@ -3424,8 +3361,8 @@ int main(int argc, char **argv)
     if (abcdk_strcmp(func, "test_refer_count", 0) == 0)
        test_refer_count(args);
     
-    if (abcdk_strcmp(func, "test_broker", 0) == 0)
-       test_broker(args);
+    if (abcdk_strcmp(func, "test_comm", 0) == 0)
+       test_comm(args);
 
     abcdk_tree_free(&args);
     
