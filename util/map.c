@@ -6,12 +6,12 @@
 */
 #include "abcdk-util/map.h"
 
-uint64_t abcdk_map_hash(const void *data, size_t size, void *opaque)
+uint64_t _abcdk_map_hash(const void *data, size_t size, void *opaque)
 {
     return abcdk_hash_bkdr64(data, size);
 }
 
-int abcdk_map_compare(const void *data1, const void *data2, size_t size, void *opaque)
+int _abcdk_map_compare(const void *data1, const void *data2, size_t size, void *opaque)
 {
     return memcmp(data1, data2, size);
 }
@@ -38,9 +38,9 @@ int abcdk_map_init(abcdk_map_t *map, size_t size)
 
     /* 如果未指定，则启用默认函数。 */
     if (!map->hash_cb)
-        map->hash_cb = abcdk_map_hash;
+        map->hash_cb = _abcdk_map_hash;
     if (!map->compare_cb)
-        map->compare_cb = abcdk_map_compare;
+        map->compare_cb = _abcdk_map_compare;
 
     return 0;
 }

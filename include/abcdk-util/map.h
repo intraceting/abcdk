@@ -33,6 +33,8 @@ typedef struct _abcdk_map
 
     /**
      * KEY比较函数。
+     * 
+     * @return > 0 is key1 > key2，0 is key1 == key2，< 0 is key1 < key2。
     */
     int (*compare_cb)(const void *key1, const void *key2, size_t size,void *opaque);
 
@@ -84,17 +86,6 @@ enum _abcdk_map_field
 #define ABCDK_MAP_VALUE      ABCDK_MAP_VALUE
 };
 
-/**
- * HASH函数。
-*/
-uint64_t abcdk_map_hash(const void* data,size_t size,void *opaque);
-
-/**
- * 比较函数。
- * 
- * @return > 0 is data1 > data2，0 is data1 == data2，< 0 is data1 < data2。
-*/
-int abcdk_map_compare(const void *data1, const void *data2, size_t size,void *opaque);
 
 /**
  * 销毁。
