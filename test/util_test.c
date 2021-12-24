@@ -3281,10 +3281,10 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req, ab
 
        // usleep(rand()%1000+1000);
 
-        *rsp = abcdk_comm_message_alloc(100);
+        *rsp = abcdk_comm_message_alloc(abcdk_comm_message_size(req));
         memcpy(abcdk_comm_message_data(*rsp),abcdk_comm_message_data(req),abcdk_comm_message_size(req));
 
-        abcdk_comm_message_t *req2 = abcdk_comm_message_alloc(100);
+        abcdk_comm_message_t *req2 = abcdk_comm_message_alloc(abcdk_comm_message_size(req));
 
         sprintf(abcdk_comm_message_data(req2),"[%s]",(char*)abcdk_comm_message_data(req));
 
@@ -3364,7 +3364,7 @@ void test_easy(abcdk_tree_t *args)
 
         s = abcdk_clock(d,&d);
 
-        printf("s = %lu,d = %lu\n",s,d);
+        printf("[%d]:s = %lu,d = %lu\n",i,s,d);
     }
 
     s = abcdk_clock(d,&d);

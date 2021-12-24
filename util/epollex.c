@@ -128,7 +128,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
     abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 100);
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
-    ctx->watchdog_intvl = 200;
+    ctx->watchdog_intvl = 1000;
     ctx->watchdog_active = abcdk_epollex_clock();
     ctx->wait_leader = 0;
     ctx->node_map.destructor_cb = _abcdk_epollex_destructor_cb;
@@ -555,7 +555,7 @@ try_again:
     {   
         /*等待主线程的通知，或超时退出。*/
         wait_chk = abcdk_mutex_wait(&ctx->mutex,time_span);
-        //printf("a = %d\n",a);
+        //printf("a = %d\n",wait_chk);
     }
 
     /*No error, no event, try again.*/
