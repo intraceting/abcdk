@@ -3347,7 +3347,7 @@ void test_easy(abcdk_tree_t *args)
         s = abcdk_clock(d,&d);
 
 
-        abcdk_comm_message_t *req= abcdk_comm_message_alloc(100);
+        abcdk_comm_message_t *req= abcdk_comm_message_alloc(100000);
         abcdk_comm_message_t *rsp= NULL;
 
         sprintf(abcdk_comm_message_data(req),"%d",i);
@@ -3371,9 +3371,9 @@ void test_easy(abcdk_tree_t *args)
 
     printf("s = %lu,d = %lu\n",s,d);
 
-    abcdk_comm_easy_set_timeout(easy_listen,1);
+ //   abcdk_comm_easy_set_timeout(easy_listen,1);
     abcdk_comm_easy_set_timeout(easy_client,1);
-    abcdk_comm_easy_unref(&easy_listen);
+  //  abcdk_comm_easy_unref(&easy_listen);
     abcdk_comm_easy_unref(&easy_client);
 
     while (getchar() != 'Q')
