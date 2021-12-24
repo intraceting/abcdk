@@ -3269,7 +3269,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req, ab
     if (peername.family)
         abcdk_sockaddr_to_string(peername_str, &peername);
 
-    printf("Socket(%s -> %s): ", sockname_str, peername_str);
+  //  printf("Socket(%s -> %s): ", sockname_str, peername_str);
 
     if(!req)
     {
@@ -3277,14 +3277,47 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req, ab
     }
     else
     {
-        printf(" %s\n",(char*)abcdk_comm_message_data(req));
+    //    printf(" %s\n",(char*)abcdk_comm_message_data(req));
 
-       // usleep(rand()%10000+1000);
+       // usleep(rand()%1000+1000);
 
         *rsp = abcdk_comm_message_alloc(100);
         memcpy(abcdk_comm_message_data(*rsp),abcdk_comm_message_data(req),abcdk_comm_message_size(req));
+
+        abcdk_comm_message_t *req2 = abcdk_comm_message_alloc(100);
+
+        sprintf(abcdk_comm_message_data(req2),"[%s]",(char*)abcdk_comm_message_data(req));
+
+        abcdk_comm_easy_request(easy,req2,NULL,0);
+
+        abcdk_comm_message_unref(&req2);
     }
 }
+
+void test_easy_request2_cb(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req, abcdk_comm_message_t **rsp)
+{
+    abcdk_sockaddr_t sockname, peername;
+    abcdk_comm_easy_get_sockname(easy, &sockname);
+    abcdk_comm_easy_get_peername(easy, &peername);
+
+    char sockname_str[100] = {0}, peername_str[100] = {0};
+    if (sockname.family)
+        abcdk_sockaddr_to_string(sockname_str, &sockname);
+    if (peername.family)
+        abcdk_sockaddr_to_string(peername_str, &peername);
+
+  //  printf("Socket(%s -> %s): ", sockname_str, peername_str);
+
+    if(!req)
+    {
+        printf(" Disconnected.\n");
+    }
+    else
+    {
+      //  printf(" %s\n",(char*)abcdk_comm_message_data(req));
+    }
+}
+
 
 void test_easy(abcdk_tree_t *args)
 {
@@ -3302,11 +3335,18 @@ void test_easy(abcdk_tree_t *args)
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    abcdk_comm_easy_t *easy_client = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request_cb,NULL);
+    abcdk_comm_easy_t *easy_client = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
 
-    #pragma omp parallel for num_threads(3)
-    for(int i = 0;i<1000;i++)
+    uint64_t d = 0,s = 0;
+    s = abcdk_clock(d,&d);
+
+    #pragma omp parallel for num_threads(8)
+    for(int i = 0;i<100000;i++)
     {
+        uint64_t d = 0,s = 0;
+        s = abcdk_clock(d,&d);
+
+
         abcdk_comm_message_t *req= abcdk_comm_message_alloc(100);
         abcdk_comm_message_t *rsp= NULL;
 
@@ -3318,10 +3358,18 @@ void test_easy(abcdk_tree_t *args)
         assert(rsp);
             
 
-        printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
+       // printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
 
         abcdk_comm_message_unref(&rsp);
+
+        s = abcdk_clock(d,&d);
+
+        printf("s = %lu,d = %lu\n",s,d);
     }
+
+    s = abcdk_clock(d,&d);
+
+    printf("s = %lu,d = %lu\n",s,d);
 
     abcdk_comm_easy_set_timeout(easy_listen,1);
     abcdk_comm_easy_set_timeout(easy_client,1);

@@ -12,7 +12,7 @@ typedef struct _abcdk_comm_waiter
     /** 锁。*/
     abcdk_mutex_t locker;
 
-    /** */
+    /** 表。*/
     abcdk_map_t map;
 
 } abcdk_comm_waiter_t;

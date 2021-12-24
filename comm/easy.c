@@ -275,6 +275,7 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     int chk;
 
     assert(easy != NULL && req != NULL);
+    assert(abcdk_comm_message_size(req) <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
 
     if(!abcdk_atomic_load(&easy->status))
         return -2;
@@ -288,12 +289,13 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     if (chk != 0)
         return -1;
 
-    if (rsp)
-    {
-        rsp_queue = abcdk_comm_waiter_wait2(easy->rsp_waiter, &mid, 1, timeout);
-        if (!rsp_queue)
-            return -1;
-    }
+    /*不需要应答直接返回。*/
+    if (!rsp)
+        return 0;
+
+    rsp_queue = abcdk_comm_waiter_wait2(easy->rsp_waiter, &mid, 1, timeout);
+    if (!rsp_queue)
+        return -1;
 
     rsp_msg = abcdk_comm_queue_pop(rsp_queue);
     if (rsp_msg)
@@ -346,6 +348,7 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
     abcdk_comm_get_peername(node, &easy->remote);
 
     abcdk_comm_read_watch(node);
+    abcdk_comm_write_watch(node);
 }
 
 int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
@@ -385,13 +388,13 @@ int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t 
 void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
 {
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
+    abcdk_comm_message_t *msg = NULL;
+    abcdk_comm_message_t *req_cargo = NULL;
+    abcdk_comm_message_t *rsp_cargo = NULL;
     void *msg_ptr;
     size_t msg_len;
     uint64_t mid;
     uint8_t flag;
-    abcdk_comm_message_t *msg;
-    abcdk_comm_message_t *req_cargo;
-    abcdk_comm_message_t *rsp_cargo;
     int chk;
 
     /*准备接收数的缓存。*/
@@ -456,7 +459,11 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
                 easy->request_cb(easy, req_cargo, &rsp_cargo);
 
             if (rsp_cargo)
+            {
+                assert(abcdk_comm_message_size(rsp_cargo) <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
+
                 _abcdk_comm_easy_post(easy, rsp_cargo, mid, ABCDK_COMM_EASY_MD_FLAG_RSP);
+            }
     
             abcdk_comm_message_unref(&rsp_cargo);
             abcdk_comm_message_unref(&req_cargo);

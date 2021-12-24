@@ -12,11 +12,8 @@
 
 __BEGIN_DECLS
 
-
 /**
  * 计时器(微秒)。
- * 
- * @note 使用系统运行时长计算时间刻度。
  * 
  * @param start 起始刻度。
  * @param dot 打点刻度，NULL(0) 忽略。
