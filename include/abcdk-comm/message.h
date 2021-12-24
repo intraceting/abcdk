@@ -21,14 +21,14 @@ typedef struct _abcdk_comm_message abcdk_comm_message_t;
 typedef int (*abcdk_comm_message_protocol_cb)(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
 
 /**
- * 释放消息对象。
+ * 减少对象的引用计数。
+ * 
+ * @warning 当引用计数为0时，对像将被删除。
 */
 void abcdk_comm_message_unref(abcdk_comm_message_t **msg);
 
 /**
- * 消息对象增加引用。
- * 
- * @return !NULL(0) 成功(对象的指针)，NULL(0) 失败。
+ * 增加对象的引用计数。
 */
 abcdk_comm_message_t *abcdk_comm_message_refer(abcdk_comm_message_t *src);
 

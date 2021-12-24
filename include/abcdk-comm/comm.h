@@ -58,14 +58,14 @@ enum _abcdk_comm_event
 typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event);
 
 /**
- * 节点引用释放。
+ * 减少对象的引用计数。
+ * 
+ * @warning 当引用计数为0时，对像将被删除。
 */
 void abcdk_comm_node_unref(abcdk_comm_node_t **node);
 
 /**
- * 节点增加引用。
- * 
- * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
+ * 增加对象的引用计数。
 */
 abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
 
