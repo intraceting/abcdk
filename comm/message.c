@@ -183,7 +183,9 @@ MORE_DATA:
     if (msg->protocol_cb)
     {
         chk = msg->protocol_cb(node, msg);
-        if (chk == 0)
+        if (chk < 0)
+            return -1;
+        else if (chk == 0)
             goto MORE_DATA;
     }
 

@@ -168,9 +168,9 @@ void abcdk_comm_stop();
  * @param event_cb 事件回调函数指针(新的连接会复制这个指针)。
  * @param opaque 监听环境指针(新的连接会复制这个指针)。
  * 
- * @return 0 成功，!0 失败。
+ * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
 */
-int abcdk_comm_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
+abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
 
 /**
  * 连接远程服务器。
@@ -182,9 +182,9 @@ int abcdk_comm_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_
  * @param event_cb 事件回调函数指针。
  * @param opaque 客户端环境指针。
  * 
- * @return 0 成功，!0 失败。
+ * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
 */
-int abcdk_comm_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
+abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
 
 __END_DECLS
 

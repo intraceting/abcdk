@@ -635,10 +635,10 @@ void abcdk_comm_stop()
     ctx->init_status = 0;
 }
 
-int abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    abcdk_comm_node_t *node = NULL;
+    abcdk_comm_node_t *node = NULL,*node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
@@ -647,7 +647,10 @@ int abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_
 
     node = _abcdk_comm_node_alloc();
     if (!node)
-        return -1;
+        return NULL;
+
+    /*应用层需要保持这个对象引用。*/
+    node_p = abcdk_comm_node_refer(node);
 
     node->flag = ABCDK_COMM_FLAG_LISTEN;
     node->status = ABCDK_COMM_STATUS_STABLE;
@@ -700,19 +703,20 @@ int abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_
     abcdk_epollex_timeout(ctx->epollex, node->fd, 0);
     abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
 
-    return 0;
+    return node_p;
 
 final_error:
 
     abcdk_comm_node_unref(&node);
+    abcdk_comm_node_unref(&node_p);
 
-    return -1;
+    return NULL;
 }
 
-int abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    abcdk_comm_node_t *node = NULL;
+    abcdk_comm_node_t *node = NULL,*node_p = NULL;
     epoll_data_t ep_data;
     socklen_t addr_len;
     int sock_flag = 1;
@@ -722,7 +726,10 @@ int abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event
 
     node = _abcdk_comm_node_alloc();
     if (!node)
-        return -1;
+        return NULL;
+    
+    /*应用层需要保持这个对象引用。*/
+    node_p = abcdk_comm_node_refer(node);
 
     node->flag = ABCDK_COMM_FLAG_CLIENT;
     node->status = ABCDK_COMM_STATUS_SYNC;
@@ -771,11 +778,12 @@ final:
     abcdk_epollex_timeout(ctx->epollex, node->fd, 30 * 1000);
     abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
 
-    return 0;
+    return node_p;
 
 final_error:
 
     abcdk_comm_node_unref(&node);
+    abcdk_comm_node_unref(&node_p);
 
-    return -1;
+    return NULL;
 }

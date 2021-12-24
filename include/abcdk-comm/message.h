@@ -16,7 +16,7 @@ typedef struct _abcdk_comm_message abcdk_comm_message_t;
 
 /** 数据包协议回调函数。
  * 
- * @return 1 数据包完整，0 需要更多数据。
+ * @return 1 数据包完整，0 需要更多数据，-1 不支持的协议。
 */
 typedef int (*abcdk_comm_message_protocol_cb)(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
 

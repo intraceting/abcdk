@@ -35,6 +35,7 @@
 #include "abcdk-comm/queue.h"
 #include "abcdk-comm/waiter.h"
 #include "abcdk-util/json.h"
+#include "abcdk-comm/easy.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -3026,7 +3027,11 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event)
             }
             
             int chk = abcdk_comm_message_recv(node,one->in_buffer);
-            if(chk != 1)
+            if(chk < 0)
+            {
+                abcdk_comm_set_timeout(node,1);
+            }
+            else if(chk == 0)
             {
                 abcdk_comm_read_watch(node);
             }
@@ -3237,7 +3242,7 @@ void test_comm(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    assert(abcdk_comm_listen(server_ssl_ctx,&addr,test_comm_message_cb,NULL)==0);
+    abcdk_comm_listen(server_ssl_ctx,&addr,test_comm_message_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
@@ -3252,6 +3257,83 @@ void test_comm(abcdk_tree_t *args)
 
 }
 
+void test_easy_request_cb(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req, abcdk_comm_message_t **rsp)
+{
+    abcdk_sockaddr_t sockname, peername;
+    abcdk_comm_easy_get_sockname(easy, &sockname);
+    abcdk_comm_easy_get_peername(easy, &peername);
+
+    char sockname_str[100] = {0}, peername_str[100] = {0};
+    if (sockname.family)
+        abcdk_sockaddr_to_string(sockname_str, &sockname);
+    if (peername.family)
+        abcdk_sockaddr_to_string(peername_str, &peername);
+
+    printf("Socket(%s -> %s): ", sockname_str, peername_str);
+
+    if(!req)
+    {
+        printf(" Disconnected.\n");
+    }
+    else
+    {
+        printf(" %s\n",(char*)abcdk_comm_message_data(req));
+
+       // usleep(rand()%10000+1000);
+
+        *rsp = abcdk_comm_message_alloc(100);
+        memcpy(abcdk_comm_message_data(*rsp),abcdk_comm_message_data(req),abcdk_comm_message_size(req));
+    }
+}
+
+void test_easy(abcdk_tree_t *args)
+{
+    signal(SIGPIPE,NULL);
+
+    abcdk_comm_start(0);
+
+    abcdk_sockaddr_t addr = {0};
+    abcdk_sockaddr_t addr2 = {0};
+
+    const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
+    abcdk_sockaddr_from_string(&addr,listen_p,0);
+
+    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(NULL,&addr,test_easy_request_cb,NULL);
+
+    const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
+    abcdk_sockaddr_from_string(&addr2,connect_p,0);
+    abcdk_comm_easy_t *easy_client = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request_cb,NULL);
+
+    #pragma omp parallel for num_threads(3)
+    for(int i = 0;i<1000;i++)
+    {
+        abcdk_comm_message_t *req= abcdk_comm_message_alloc(100);
+        abcdk_comm_message_t *rsp= NULL;
+
+        sprintf(abcdk_comm_message_data(req),"%d",i);
+
+        abcdk_comm_easy_request(easy_client,req,&rsp,1000);
+        abcdk_comm_message_unref(&req);
+
+        assert(rsp);
+            
+
+        printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
+
+        abcdk_comm_message_unref(&rsp);
+    }
+
+    abcdk_comm_easy_set_timeout(easy_listen,1);
+    abcdk_comm_easy_set_timeout(easy_client,1);
+    abcdk_comm_easy_unref(&easy_listen);
+    abcdk_comm_easy_unref(&easy_client);
+
+    while (getchar() != 'Q')
+        ;
+    abcdk_comm_stop();
+
+
+}
 
 int main(int argc, char **argv)
 {
@@ -3388,6 +3470,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_comm", 0) == 0)
        test_comm(args);
+        
+    if (abcdk_strcmp(func, "test_easy", 0) == 0)
+       test_easy(args);
 
     abcdk_tree_free(&args);
     

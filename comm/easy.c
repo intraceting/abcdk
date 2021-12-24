@@ -20,6 +20,9 @@
 /** 数据包最大长度。*/
 #define ABCDK_COMM_EASY_MD_MAX_SIZE ((256 * 1024 * 1024) - 1)
 
+/** 数据协议。*/
+#define ABCDK_COMM_EASY_MD_PROTOCOL 1234567890
+
 /** 应答标志。*/
 #define ABCDK_COMM_EASY_MD_FLAG_RSP 0x01
 
@@ -123,9 +126,9 @@ abcdk_comm_easy_t *_abcdk_comm_easy_alloc()
     if (!easy)
         return NULL;
 
+    easy->refcount = 1;
     easy->flag = 0;
     easy->status = 1;
-
     easy->in_buffer = NULL;
     easy->out_buffer = NULL;
     easy->out_queue = abcdk_comm_queue_alloc();
@@ -140,7 +143,7 @@ int abcdk_comm_easy_set_timeout(abcdk_comm_easy_t *easy, time_t timeout)
 
     assert(easy != NULL);
 
-    if (abcdk_atomic_load(&easy->status) != 2)
+    if (!abcdk_atomic_load(&easy->status))
         return -1;
 
     chk = abcdk_comm_set_timeout(easy->comm, timeout);
@@ -218,7 +221,7 @@ int _abcdk_comm_easy_post(abcdk_comm_easy_t *easy, abcdk_comm_message_t *cargo, 
     msg_len = abcdk_comm_message_size(msg);
 
     ABCDK_PTR2U32(msg_ptr, 0) = abcdk_endian_h_to_b32(msg_len);
-    ABCDK_PTR2U32(msg_ptr, 4) = abcdk_endian_h_to_b32(123456789);
+    ABCDK_PTR2U32(msg_ptr, 4) = abcdk_endian_h_to_b32(ABCDK_COMM_EASY_MD_PROTOCOL);
     ABCDK_PTR2U64(msg_ptr, 8) = abcdk_endian_h_to_b64(num);
     ABCDK_PTR2U8(msg_ptr, 17) = flag;
     memcpy(ABCDK_PTR2VPTR(msg_ptr, ABCDK_COMM_EASY_MD_HDR_SIZE), cargo_ptr, cargo_len);
@@ -239,8 +242,9 @@ final_error:
     return -1;
 }
 
-int _abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg, abcdk_comm_message_t *cargo)
+abcdk_comm_message_t *_abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg)
 {
+    abcdk_comm_message_t *cargo;
     void *msg_ptr;
     size_t msg_len;
     void *cargo_ptr;
@@ -250,16 +254,16 @@ int _abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg, abcdk_comm_message_
     msg_ptr = abcdk_comm_message_data(msg);
     msg_len = abcdk_comm_message_size(msg);
 
-    chk = abcdk_comm_message_realloc(cargo, msg_len - ABCDK_COMM_EASY_MD_HDR_SIZE);
-    if (chk != 0)
-        return -1;
+    cargo = abcdk_comm_message_alloc(msg_len - ABCDK_COMM_EASY_MD_HDR_SIZE);
+    if(!cargo)
+        return NULL;
 
     cargo_ptr = abcdk_comm_message_data(cargo);
     cargo_len = abcdk_comm_message_size(cargo);
 
     memcpy(cargo_ptr, ABCDK_PTR2VPTR(msg_ptr, ABCDK_COMM_EASY_MD_HDR_SIZE), cargo_len);
 
-    return 0;
+    return cargo;
 }
 
 int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
@@ -271,6 +275,9 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     int chk;
 
     assert(easy != NULL && req != NULL);
+
+    if(!abcdk_atomic_load(&easy->status))
+        return -2;
 
     mid = _abcdk_comm_easy_make_mid();
 
@@ -291,7 +298,7 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     rsp_msg = abcdk_comm_queue_pop(rsp_queue);
     if (rsp_msg)
     {
-        _abcdk_comm_easy_extrac_cargo(rsp_msg, *rsp);
+        *rsp = _abcdk_comm_easy_extrac_cargo(rsp_msg);
         abcdk_comm_message_unref(&rsp_msg);
     }
 
@@ -308,6 +315,8 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node)
     easy = _abcdk_comm_easy_alloc();
     if (!easy)
     {
+        /*替换复制来的环境指针。*/
+        abcdk_comm_set_userdata(node, NULL);
         abcdk_comm_set_timeout(node, 1);
         return;
     }
@@ -331,7 +340,6 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
 {
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
 
-    easy->comm = abcdk_comm_node_refer(node);
     abcdk_atomic_store(&easy->status, 2);
 
     abcdk_comm_get_sockname(node, &easy->local);
@@ -342,11 +350,25 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
 
 int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
 {
-    size_t off = abcdk_comm_message_offset(msg);
-    if (off < 4)
+    uint32_t len;
+    uint32_t pro;
+    size_t off;
+    
+    off = abcdk_comm_message_offset(msg);
+    if (off < 20)
         return 0;
 
-    size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 0));
+    len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 0));
+    pro = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 4));
+
+    /*不支持太大的数据包。*/
+    if (len > ABCDK_COMM_EASY_MD_MAX_SIZE)
+        return -1;
+
+    /*仅支持相同的协议。*/
+    if(pro != ABCDK_COMM_EASY_MD_PROTOCOL)
+        return -1;
+
     if (len != abcdk_comm_message_size(msg))
     {
         abcdk_comm_message_realloc(msg, len);
@@ -375,7 +397,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     /*准备接收数的缓存。*/
     if (!easy->in_buffer)
     {
-        easy->in_buffer = abcdk_comm_message_alloc(4);
+        easy->in_buffer = abcdk_comm_message_alloc(ABCDK_COMM_EASY_MD_HDR_SIZE);
         abcdk_comm_message_protocol_set(easy->in_buffer, _abcdk_comm_easy_msg_protocol);
     }
 
@@ -387,7 +409,12 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     }
 
     chk = abcdk_comm_message_recv(easy->comm, easy->in_buffer);
-    if (chk != 1)
+    if (chk < 0)
+    {
+        abcdk_comm_set_timeout(easy->comm, 1);
+        return;
+    }
+    else if (chk == 0)
     {
         abcdk_comm_read_watch(easy->comm);
         return;
@@ -411,15 +438,15 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     else
     {
         /*提取请求数据。*/
-        chk = _abcdk_comm_easy_extrac_cargo(easy->in_buffer, req_cargo);
-        if (chk != 0)
+        req_cargo = _abcdk_comm_easy_extrac_cargo(easy->in_buffer);
+        if (!req_cargo)
         {
             abcdk_comm_set_timeout(easy->comm, 1);
         }
         else
         {
             /*复用缓存。*/
-            abcdk_comm_message_realloc(easy->in_buffer, 4);
+            abcdk_comm_message_realloc(easy->in_buffer, ABCDK_COMM_EASY_MD_HDR_SIZE);
             abcdk_comm_message_reset(easy->in_buffer);
             /*复用链路。*/
             abcdk_comm_read_watch(easy->comm);
@@ -429,14 +456,10 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
                 easy->request_cb(easy, req_cargo, &rsp_cargo);
 
             if (rsp_cargo)
-            {
-                chk = _abcdk_comm_easy_post(easy, rsp_cargo, mid, ABCDK_COMM_EASY_MD_FLAG_RSP);
-                if (chk != 0)
-                {
-                    abcdk_comm_message_unref(&rsp_cargo);
-                    abcdk_comm_set_timeout(easy->comm, 1);
-                }
-            }
+                _abcdk_comm_easy_post(easy, rsp_cargo, mid, ABCDK_COMM_EASY_MD_FLAG_RSP);
+    
+            abcdk_comm_message_unref(&rsp_cargo);
+            abcdk_comm_message_unref(&req_cargo);
         }
     }
 }
@@ -550,8 +573,8 @@ abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *ad
     easy->request_cb = request_cb;
     easy->opaque = opaque;
 
-    chk = abcdk_comm_listen(ssl_ctx, &easy->local, _abcdk_comm_easy_event_cb, easy);
-    if (chk != 0)
+    easy->comm = abcdk_comm_listen(ssl_ctx, &easy->local, _abcdk_comm_easy_event_cb, easy);
+    if (!easy->comm)
         goto final_error;
 
     return easy_p;
@@ -586,8 +609,8 @@ abcdk_comm_easy_t *abcdk_comm_easy_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *a
     easy->request_cb = request_cb;
     easy->opaque = opaque;
 
-    chk = abcdk_comm_connect(ssl_ctx, &easy->local, _abcdk_comm_easy_event_cb, easy);
-    if (chk != 0)
+    easy->comm = abcdk_comm_connect(ssl_ctx, &easy->remote, _abcdk_comm_easy_event_cb, easy);
+    if (!easy->comm)
         goto final_error;
 
     return easy_p;

@@ -74,7 +74,7 @@ void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
 /** 
  * 发送请求。
  * 
- * @return 0 成功，-1 失败(超时)。
+ * @return 0 成功，-1 失败(超时)，-2 失败(已断开)。
 */
 int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
                             abcdk_comm_message_t **rsp, time_t timeout);
