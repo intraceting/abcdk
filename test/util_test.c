@@ -3062,10 +3062,13 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event)
 
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
+        if(one)
+        {
         abcdk_comm_message_unref(&one->in_buffer);
         abcdk_comm_queue_free(&one->out_queue);
         abcdk_comm_node_unref(&one->node);
         abcdk_heap_free(one);
+        }
     }
     break;
     }
@@ -3077,11 +3080,11 @@ void *test_send_msg(void *args)
 
     for (int i = 0; i < 1000; i++)
     {
-        usleep(1000);
+      //  usleep(10);
 
         abcdk_comm_message_t *msg = abcdk_comm_message_alloc(128);
 
-        uint64_t mid = abcdk_time_clock2kind_with(0, 3);
+        uint64_t mid = abcdk_time_clock2kind_with(0, 6);
 
         abcdk_comm_waiter_request2(one->rsp,&mid);
 
@@ -3096,7 +3099,7 @@ void *test_send_msg(void *args)
         if(!q)
             continue;
 
-        uint64_t a = abcdk_time_clock2kind_with(0,3);
+        uint64_t a = abcdk_time_clock2kind_with(0,6);
 
         printf("mid(%lu),timeout(%lu), count(%lu)\n",mid,a-mid,abcdk_comm_queue_count(q));
         
@@ -3215,7 +3218,7 @@ void test_comm(abcdk_tree_t *args)
 
    //     SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
-        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+    //    SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
 
         client_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0, NULL, capath, 2);
 
@@ -3223,7 +3226,7 @@ void test_comm(abcdk_tree_t *args)
                                        abcdk_option_get(args, "--key2-file", 0, NULL),
                                        abcdk_option_get(args, "--key2-pwd", 0, NULL));
 
-        SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, NULL);
+   //     SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, NULL);
 
     }
 #endif //HAVE_OPENSSL
