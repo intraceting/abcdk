@@ -77,6 +77,9 @@ typedef struct _abcdk_comm_easy
     /** 应答服务员。*/
     abcdk_comm_waiter_t *rsp_waiter;
 
+    /** 请求消息线程KEY。*/
+    pthread_key_t req_ptkey;
+
 } abcdk_comm_easy_t;
 
 void abcdk_comm_easy_unref(abcdk_comm_easy_t **easy)
@@ -97,7 +100,7 @@ void abcdk_comm_easy_unref(abcdk_comm_easy_t **easy)
     abcdk_comm_message_unref(&easy_p->in_buffer);
     abcdk_comm_queue_free(&easy_p->out_queue);
     abcdk_comm_waiter_free(&easy_p->rsp_waiter);
-
+    pthread_key_delete(easy_p->req_ptkey);
     abcdk_heap_free(easy_p);
 
 final:
@@ -133,6 +136,7 @@ abcdk_comm_easy_t *_abcdk_comm_easy_alloc()
     easy->out_buffer = NULL;
     easy->out_queue = abcdk_comm_queue_alloc();
     easy->rsp_waiter = abcdk_comm_waiter_alloc();
+    pthread_key_create(&easy->req_ptkey,NULL);
 
     return easy;
 }
@@ -454,9 +458,15 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
             /*复用链路。*/
             abcdk_comm_read_watch(easy->comm);
 
+            /*绑定线程的MID(用于应答)。*/
+            pthread_setspecific(easy->req_ptkey,&mid);
+
             /*通知应用层，数据到达。*/
             if (easy->request_cb)
                 easy->request_cb(easy, req_cargo, &rsp_cargo);
+
+            /*解除线程的MID。*/
+            pthread_setspecific(easy->req_ptkey,&mid);
 
             if (rsp_cargo)
             {
