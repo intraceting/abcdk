@@ -114,7 +114,7 @@ abcdk_comm_message_t *abcdk_comm_queue_pop(abcdk_comm_queue_t *queue)
     if (msg_node)
     {
         abcdk_tree_unlink(msg_node);
-        queue->count += 1;
+        queue->count -= 1;
     }
 
     abcdk_mutex_unlock(&queue->locker);
