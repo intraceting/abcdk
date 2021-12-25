@@ -82,8 +82,6 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
 /**
  * 启动监听。
  * 
- * @warning 当通信对象不再需要时，
- *
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
 abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
