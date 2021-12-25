@@ -358,7 +358,7 @@ int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t 
     size_t off;
     
     off = abcdk_comm_message_offset(msg);
-    if (off < 20)
+    if (off < ABCDK_COMM_EASY_MD_HDR_SIZE)
         return 0;
 
     len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 0));
