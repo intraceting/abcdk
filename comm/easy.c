@@ -205,19 +205,14 @@ uint64_t _abcdk_comm_easy_make_mid()
     return abcdk_atomic_fetch_and_add(&mid, 1);
 }
 
-int _abcdk_comm_easy_post(abcdk_comm_easy_t *easy, abcdk_comm_message_t *cargo, uint64_t num, uint8_t flag)
+int _abcdk_comm_easy_post(abcdk_comm_easy_t *easy, const void *cargo,size_t len, uint64_t num, uint8_t flag)
 {
     abcdk_comm_message_t *msg = NULL;
     void *msg_ptr;
     size_t msg_len;
-    void *cargo_ptr;
-    size_t cargo_len;
     int chk;
 
-    cargo_ptr = abcdk_comm_message_data(cargo);
-    cargo_len = abcdk_comm_message_size(cargo);
-
-    msg = abcdk_comm_message_alloc(4 + 4 + 8 + 4 + cargo_len);
+    msg = abcdk_comm_message_alloc(4 + 4 + 8 + 4 + len);
     if (!msg)
         goto final_error;
 
@@ -228,7 +223,7 @@ int _abcdk_comm_easy_post(abcdk_comm_easy_t *easy, abcdk_comm_message_t *cargo, 
     ABCDK_PTR2U32(msg_ptr, 4) = abcdk_endian_h_to_b32(ABCDK_COMM_EASY_MD_PROTOCOL);
     ABCDK_PTR2U64(msg_ptr, 8) = abcdk_endian_h_to_b64(num);
     ABCDK_PTR2U8(msg_ptr, 17) = flag;
-    memcpy(ABCDK_PTR2VPTR(msg_ptr, ABCDK_COMM_EASY_MD_HDR_SIZE), cargo_ptr, cargo_len);
+    memcpy(ABCDK_PTR2VPTR(msg_ptr, ABCDK_COMM_EASY_MD_HDR_SIZE), cargo, len);
 
     chk = abcdk_comm_queue_push(easy->out_queue, msg);
     if (chk != 0)
@@ -270,7 +265,7 @@ abcdk_comm_message_t *_abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg)
     return cargo;
 }
 
-int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
+int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
                             abcdk_comm_message_t **rsp, time_t timeout)
 {
     abcdk_comm_queue_t *rsp_queue = NULL;
@@ -278,8 +273,8 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     uint64_t mid;
     int chk;
 
-    assert(easy != NULL && req != NULL);
-    assert(abcdk_comm_message_size(req) <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
+    assert(easy != NULL && data != NULL && len > 0);
+    assert(len <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
 
     if(!abcdk_atomic_load(&easy->status))
         return -2;
@@ -289,7 +284,7 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     if (rsp)
         abcdk_comm_waiter_request2(easy->rsp_waiter, &mid);
 
-    chk = _abcdk_comm_easy_post(easy, req, mid, 0);
+    chk = _abcdk_comm_easy_post(easy, data, len, mid, 0);
     if (chk != 0)
         return -1;
 
@@ -309,6 +304,29 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
     }
 
     abcdk_comm_queue_free(&rsp_queue);
+
+    return 0;
+}
+
+int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t len)
+{
+    uint64_t *mid_p;
+    int chk;
+
+    assert(easy != NULL && data != NULL && len > 0);
+    assert(len <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
+
+    if(!abcdk_atomic_load(&easy->status))
+        return -2;
+
+    /*获取请求MID。*/
+    mid_p = pthread_getspecific(easy->req_ptkey);
+    if(!mid_p)
+        return -1;
+
+    chk = _abcdk_comm_easy_post(easy, data, len, *mid_p, ABCDK_COMM_EASY_MD_FLAG_RSP);
+    if (chk != 0)
+        return -1;   
 
     return 0;
 }
@@ -394,7 +412,6 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
     abcdk_comm_message_t *msg = NULL;
     abcdk_comm_message_t *req_cargo = NULL;
-    abcdk_comm_message_t *rsp_cargo = NULL;
     void *msg_ptr;
     size_t msg_len;
     uint64_t mid;
@@ -463,19 +480,12 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
 
             /*通知应用层，数据到达。*/
             if (easy->request_cb)
-                easy->request_cb(easy, req_cargo, &rsp_cargo);
+                easy->request_cb(easy, abcdk_comm_message_data(req_cargo),abcdk_comm_message_size(req_cargo));
 
             /*解除线程的MID。*/
-            pthread_setspecific(easy->req_ptkey,&mid);
+            pthread_setspecific(easy->req_ptkey,NULL);
 
-            if (rsp_cargo)
-            {
-                assert(abcdk_comm_message_size(rsp_cargo) <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
-
-                _abcdk_comm_easy_post(easy, rsp_cargo, mid, ABCDK_COMM_EASY_MD_FLAG_RSP);
-            }
-    
-            abcdk_comm_message_unref(&rsp_cargo);
+            /*删除请求数据。*/
             abcdk_comm_message_unref(&req_cargo);
         }
     }
@@ -524,7 +534,7 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
 
         /*通知连接已断开。*/
         if (easy->request_cb)
-            easy->request_cb(easy, NULL, NULL);
+            easy->request_cb(easy, NULL, 0);
 
         abcdk_comm_easy_unref(&easy);
     }

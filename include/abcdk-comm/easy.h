@@ -18,7 +18,7 @@ __BEGIN_DECLS
 typedef struct _abcdk_comm_easy abcdk_comm_easy_t;
 
 /** 请求回调函数。*/
-typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req, abcdk_comm_message_t **rsp);
+typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_easy_t *easy, const void *req, size_t len);
 
 /**
  * 减少对象的引用计数。
@@ -76,8 +76,17 @@ void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
  * 
  * @return 0 成功，-1 失败(超时)，-2 失败(已断开)。
 */
-int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, abcdk_comm_message_t *req,
+int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
                             abcdk_comm_message_t **rsp, time_t timeout);
+
+/** 
+ * 发送应答。
+ * 
+ * @warning 仅可以用于请求回调函数中。
+ * 
+ * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
+*/
+int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t len);
 
 /**
  * 启动监听。
