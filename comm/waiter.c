@@ -15,6 +15,9 @@ typedef struct _abcdk_comm_waiter
     /** 表。*/
     abcdk_map_t map;
 
+    /** 比较函数。*/
+    abcdk_comm_waiter_compare_cb compare_cb;
+
 } abcdk_comm_waiter_t;
 
 
@@ -36,8 +39,19 @@ void abcdk_comm_waiter_free(abcdk_comm_waiter_t **waiter)
     *waiter = NULL;
 }
 
+int _abcdk_comm_waiter_compare_cb(const void *key1, const void *key2, size_t size, void *opaque)
+{
+    abcdk_comm_waiter_t *waiter = (abcdk_comm_waiter_t*)opaque;
+
+    if(waiter->compare_cb)
+        return waiter->compare_cb(key1,key2,size);
+    else 
+        return memcmp(key1, key2, size);
+}
+
 void _abcdk_comm_waiter_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
 {
+    abcdk_comm_waiter_t *waiter = (abcdk_comm_waiter_t*)opaque;
     void *val_p = NULL;
     abcdk_comm_queue_t *queue_p = NULL;
 
@@ -62,8 +76,10 @@ abcdk_comm_waiter_t *abcdk_comm_waiter_alloc()
     abcdk_mutex_init2(&waiter->locker, 0);
     abcdk_map_init(&waiter->map, 16);
 
-    /*注册析构函数。*/
+    waiter->compare_cb = NULL;
+    waiter->map.compare_cb = _abcdk_comm_waiter_compare_cb;
     waiter->map.destructor_cb = _abcdk_comm_waiter_destroy_cb;
+    waiter->map.opaque = waiter;    
 
     return waiter;
 }
@@ -76,7 +92,7 @@ void abcdk_comm_waiter_set_compare_callback(abcdk_comm_waiter_t *waiter,
 
     abcdk_mutex_lock(&waiter->locker, 1); 
 
-    waiter->map.compare_cb = compare_cb;
+    waiter->compare_cb = compare_cb;
 
     abcdk_mutex_unlock(&waiter->locker);
 }

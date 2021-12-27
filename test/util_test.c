@@ -3279,12 +3279,15 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
     }
     else
     {
-     //   printf(" %s\n",(char*)data);
+            uint64_t a = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+            uint64_t b = atoll((char*)data);
+
+    //       printf("%lu-%lu=%lu\n",a,b,a-b);
 
  //       usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
-    //    abcdk_comm_easy_request(easy,data,len,NULL,0);
+        abcdk_comm_easy_request(easy,data,len,NULL,0);
 
 
     }
@@ -3319,7 +3322,7 @@ void test_easy(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_start(0);
+    abcdk_comm_start(1);
 
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_t addr2 = {0};
@@ -3337,7 +3340,7 @@ void test_easy(abcdk_tree_t *args)
     s = abcdk_clock(d,&d);
 
     #pragma omp parallel for num_threads(2)
-    for(int i = 0;i<100000;i++)
+    for(int i = 0;i<1000000;i++)
     {
         uint64_t d = 0,s = 0;
         s = abcdk_clock(d,&d);
@@ -3346,7 +3349,7 @@ void test_easy(abcdk_tree_t *args)
         char *req= (char*)abcdk_heap_alloc(len);
         abcdk_comm_message_t *rsp= NULL;
 
-        sprintf(req,"%d",i);
+        sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
         abcdk_comm_easy_request(easy_client,req,len,&rsp,100000);
         abcdk_heap_free(req);
@@ -3361,7 +3364,7 @@ void test_easy(abcdk_tree_t *args)
 
         s = abcdk_clock(d,&d);
 
-        printf("[%d]:s = %lu,d = %lu\n",i,s,d);
+      //  printf("[%d]:s = %lu,d = %lu\n",i,s,d);
     }
 
     s = abcdk_clock(d,&d);

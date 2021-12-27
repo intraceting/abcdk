@@ -582,11 +582,13 @@ void *_abcdk_comm_worker(void *args)
 int abcdk_comm_start(int workers)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    long nps = sysconf(_SC_NPROCESSORS_ONLN);
+    cpu_set_t cpu_set;
     int chk;
 
     /*如果未指定工作线程数，则使用CPU核心数。*/
     if (workers <= 0)
-        workers = sysconf(_SC_NPROCESSORS_ONLN);
+        workers = nps;
 
     assert(workers > 0);
 
@@ -605,11 +607,17 @@ int abcdk_comm_start(int workers)
         ctx->tids[i].opaque = ctx;
         chk = abcdk_thread_create(&ctx->tids[i], 1);
         if (chk == 0)
-            continue;
-        
-        /*线程启动失败，回滚计数器。*/
-        abcdk_atomic_fetch_and_add(&ctx->workers, -1);
-        break;
+        {
+            CPU_ZERO(&cpu_set);
+            CPU_SET(i%nps, &cpu_set);
+            pthread_setaffinity_np(ctx->tids[i].handle,sizeof(cpu_set_t),&cpu_set);
+        }
+        else
+        {
+            /*线程启动失败，回滚计数器。*/
+            abcdk_atomic_fetch_and_add(&ctx->workers, -1);
+            break;
+        }
     }
 
 final:
