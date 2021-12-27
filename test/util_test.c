@@ -215,7 +215,7 @@ void test_freeimage(abcdk_tree_t *args)
     int dst_w = 500;
     int dst_h = 1100;
 
-    abcdk_resize_make(&r,width,height,dst_w,dst_h,0);
+    abcdk_resize_ratio_2d(&r,width,height,dst_w,dst_h,0);
 
     FIBITMAP *dib2 = FreeImage_RescaleRect(dib,r.x_factor *width,r.y_factor*height,0,0,width,height,FILTER_BICUBIC,0);
     if(dib2)
@@ -231,8 +231,8 @@ void test_freeimage(abcdk_tree_t *args)
         dib = dib2;
     }
 
-    int left = abcdk_resize_src2dst(&r,0,1);
-    int top = abcdk_resize_src2dst(&r,0,0);
+    int left = abcdk_resize_src2dst_2d(&r,0,1);
+    int top = abcdk_resize_src2dst_2d(&r,0,0);
     dib2 = FreeImage_Allocate(dst_w,dst_h,24,0,0,0);
     FreeImage_Paste(dib2,dib,left,top,1000);
     if(dib2)
