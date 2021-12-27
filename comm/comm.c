@@ -588,7 +588,7 @@ int abcdk_comm_start(int workers)
 
     /*如果未指定工作线程数，则使用CPU核心数。*/
     if (workers <= 0)
-        workers = nps;
+        workers = abcdk_align(nps/2,1);
 
     assert(workers > 0);
 

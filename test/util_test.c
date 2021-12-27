@@ -3322,7 +3322,7 @@ void test_easy(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_start(1);
+    abcdk_comm_start(0);
 
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_t addr2 = {0};
@@ -3339,13 +3339,13 @@ void test_easy(abcdk_tree_t *args)
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
 
-    #pragma omp parallel for num_threads(2)
+    #pragma omp parallel for num_threads(4)
     for(int i = 0;i<1000000;i++)
     {
         uint64_t d = 0,s = 0;
         s = abcdk_clock(d,&d);
 
-        int len = 1024;
+        int len = 128*1024;
         char *req= (char*)abcdk_heap_alloc(len);
         abcdk_comm_message_t *rsp= NULL;
 
