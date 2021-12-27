@@ -326,7 +326,10 @@ int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t l
 
     chk = _abcdk_comm_easy_post(easy, data, len, *mid_p, ABCDK_COMM_EASY_MD_FLAG_RSP);
     if (chk != 0)
-        return -1;   
+        return -1;  
+
+    /*解除线程的MID(应答一次就好)。*/
+    pthread_setspecific(easy->req_ptkey, NULL); 
 
     return 0;
 }
@@ -367,7 +370,7 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
     abcdk_atomic_store(&easy->status, 2);
 
     abcdk_comm_get_sockname(node, &easy->local);
-    abcdk_comm_get_peername(node, &easy->remote);
+    //abcdk_comm_get_peername(node, &easy->remote);
 
     abcdk_comm_read_watch(node);
     abcdk_comm_write_watch(node);
@@ -411,11 +414,12 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
 {
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
     abcdk_comm_message_t *msg = NULL;
-    abcdk_comm_message_t *req_cargo = NULL;
     void *msg_ptr;
     size_t msg_len;
     uint64_t mid;
     uint8_t flag;
+    void *cargo_ptr;
+    size_t cargo_len;
     int chk;
 
     /*准备接收数的缓存。*/
@@ -444,50 +448,41 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
         return;
     }
 
-    msg_ptr = abcdk_comm_message_data(easy->in_buffer);
-    msg_len = abcdk_comm_message_size(easy->in_buffer);
+    /*托管缓存。*/
+    msg = easy->in_buffer;
+    /*缓存已经被托管，这里不能再继续使用了。*/
+    easy->in_buffer = NULL;
+    /*复用链路。*/
+    abcdk_comm_read_watch(easy->comm);
+
+    msg_ptr = abcdk_comm_message_data(msg);
+    msg_len = abcdk_comm_message_size(msg);
 
     mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(msg_ptr, 8));
     flag = ABCDK_PTR2U8(msg_ptr, 17);
 
+    cargo_ptr = ABCDK_PTR2VPTR(msg_ptr, ABCDK_COMM_EASY_MD_HDR_SIZE);
+    cargo_len = msg_len - ABCDK_COMM_EASY_MD_HDR_SIZE;
+
     /*检测是请求还是应答。*/
     if (flag & ABCDK_COMM_EASY_MD_FLAG_RSP)
     {
-        abcdk_comm_waiter_response2(easy->rsp_waiter, &mid, easy->in_buffer);
-
-        /*缓存已经被托管，这里不能再继续使用了。*/
-        easy->in_buffer = NULL;
-        abcdk_comm_read_watch(easy->comm);
+        abcdk_comm_waiter_response2(easy->rsp_waiter, &mid, msg);
     }
     else
     {
-        /*提取请求数据。*/
-        req_cargo = _abcdk_comm_easy_extrac_cargo(easy->in_buffer);
-        if (!req_cargo)
-        {
-            abcdk_comm_set_timeout(easy->comm, 1);
-        }
-        else
-        {
-            /*复用缓存。*/
-            abcdk_comm_message_realloc(easy->in_buffer, ABCDK_COMM_EASY_MD_HDR_SIZE);
-            abcdk_comm_message_reset(easy->in_buffer);
-            /*复用链路。*/
-            abcdk_comm_read_watch(easy->comm);
+        /*绑定线程的MID(用于应答)。*/
+        pthread_setspecific(easy->req_ptkey, &mid);
 
-            /*绑定线程的MID(用于应答)。*/
-            pthread_setspecific(easy->req_ptkey,&mid);
+        /*通知应用层，数据到达。*/
+        if (easy->request_cb)
+            easy->request_cb(easy,cargo_ptr,cargo_len);
 
-            /*通知应用层，数据到达。*/
-            if (easy->request_cb)
-                easy->request_cb(easy, abcdk_comm_message_data(req_cargo),abcdk_comm_message_size(req_cargo));
+        /*解除线程的MID。*/
+        pthread_setspecific(easy->req_ptkey, NULL);
 
-            /*解除线程的MID。*/
-            pthread_setspecific(easy->req_ptkey,NULL);
-
-            /*删除请求数据。*/
-            abcdk_comm_message_unref(&req_cargo);
-        }
+        /*删除请求数据。*/
+        abcdk_comm_message_unref(&msg);
     }
 }
 

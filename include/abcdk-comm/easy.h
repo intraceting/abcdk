@@ -82,7 +82,7 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t le
 /** 
  * 发送应答。
  * 
- * @warning 仅可以用于请求回调函数中。
+ * @warning 仅限在请求回调函数中使用。
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */

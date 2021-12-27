@@ -485,20 +485,6 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,i
     }
 }
 
-time_t _abcdk_epollex_difference_timeout(time_t begin,time_t timeout)
-{
-    time_t span = INTPTR_MAX;
-
-    if(timeout >= 0)
-    {
-        span = abcdk_epollex_clock() - begin;
-
-        return timeout - span;
-    }
-
-    return span;
-}
-
 int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t timeout)
 {
     abcdk_epoll_event_t w[20];

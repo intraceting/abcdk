@@ -34,6 +34,12 @@ void abcdk_comm_waiter_free(abcdk_comm_waiter_t **waiter);
 abcdk_comm_waiter_t *abcdk_comm_waiter_alloc();
 
 /**
+ * 设置比较回调函数。
+*/
+void abcdk_comm_waiter_set_compare_callback(abcdk_comm_waiter_t *waiter,
+                                            abcdk_comm_waiter_compare_cb compare_cb);
+
+/**
  * 消息请求(注册)。
  * 
  * @return 0 成功，-1 失败(KEY重复)。

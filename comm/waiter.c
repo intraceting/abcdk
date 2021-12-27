@@ -68,6 +68,19 @@ abcdk_comm_waiter_t *abcdk_comm_waiter_alloc()
     return waiter;
 }
 
+void abcdk_comm_waiter_set_compare_callback(abcdk_comm_waiter_t *waiter,
+                                            abcdk_comm_waiter_compare_cb compare_cb)
+{
+   
+    assert(waiter != NULL && compare_cb != NULL);
+
+    abcdk_mutex_lock(&waiter->locker, 1); 
+
+    waiter->map.compare_cb = compare_cb;
+
+    abcdk_mutex_unlock(&waiter->locker);
+}
+
 int abcdk_comm_waiter_request(abcdk_comm_waiter_t *waiter,
                               const void *key, size_t ksize)
 {

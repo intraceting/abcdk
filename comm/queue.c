@@ -6,11 +6,18 @@
  */
 #include "abcdk-comm/queue.h"
 
+/**/
+//#define ABCDK_COMM_QUEUE_SPINLOCK   1
+
 /** 消息队列。*/
 typedef struct _abcdk_comm_queue
 {
     /** 锁。*/
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_t locker;
+#else 
+    pthread_spinlock_t locker;
+#endif 
 
     /** 队列。*/
     abcdk_tree_t *root;
@@ -30,7 +37,11 @@ void abcdk_comm_queue_free(abcdk_comm_queue_t **queue)
     queue_p = *queue;
 
     abcdk_tree_free(&queue_p->root);
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_destroy(&queue_p->locker);
+#else 
+    pthread_spin_destroy(&queue_p->locker);
+#endif 
 
     abcdk_heap_free(queue_p);
 
@@ -47,7 +58,11 @@ abcdk_comm_queue_t *abcdk_comm_queue_alloc()
         return NULL;
 
     queue->count = 0;
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_init2(&queue->locker, 0);
+#else 
+    pthread_spin_init(&queue->locker,PTHREAD_PROCESS_PRIVATE);
+#endif 
     queue->root = abcdk_tree_alloc3(1);
     if (!queue->root)
         goto final_error;
@@ -93,12 +108,20 @@ int abcdk_comm_queue_push(abcdk_comm_queue_t *queue, abcdk_comm_message_t *msg)
     /*绑定到节点。*/
     msg_node->alloc->pptrs[0] = (uint8_t *)msg;
 
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_lock(&queue->locker, 1);
+#else 
+    pthread_spin_lock(&queue->locker);
+#endif 
 
     abcdk_tree_insert2(queue->root, msg_node, 0);
     queue->count += 1;
 
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_unlock(&queue->locker);
+#else 
+    pthread_spin_unlock(&queue->locker);
+#endif 
 
     return 0;
 }
@@ -108,7 +131,11 @@ abcdk_comm_message_t *abcdk_comm_queue_pop(abcdk_comm_queue_t *queue)
     abcdk_tree_t *msg_node = NULL;
     abcdk_comm_message_t *msg_p = NULL;
 
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_lock(&queue->locker, 1);
+#else 
+    pthread_spin_lock(&queue->locker);
+#endif 
 
     msg_node = abcdk_tree_child(queue->root, 1);
     if (msg_node)
@@ -117,7 +144,11 @@ abcdk_comm_message_t *abcdk_comm_queue_pop(abcdk_comm_queue_t *queue)
         queue->count -= 1;
     }
 
+#ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_unlock(&queue->locker);
+#else 
+    pthread_spin_unlock(&queue->locker);
+#endif 
 
     if (!msg_node)
         return NULL;
