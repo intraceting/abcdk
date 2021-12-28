@@ -3284,7 +3284,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
     //       printf("%lu-%lu=%lu\n",a,b,a-b);
 
- //       usleep(rand()%10000+1000);
+        usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
         abcdk_comm_easy_request(easy,data,len,NULL,0);
@@ -3356,16 +3356,22 @@ void test_easy(abcdk_tree_t *args)
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp,100000);
+        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp,10);
+        
+
+        if (rsp)
+        {
+
+            // printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
+
+            abcdk_comm_message_unref(&rsp);
+        }
+        else
+        {
+            printf("%s timeout\n",req);
+        }
+
         abcdk_heap_free(req);
-
-
-        assert(rsp);
-            
-
-       // printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
-
-        abcdk_comm_message_unref(&rsp);
 
         s = abcdk_clock(d,&d);
 

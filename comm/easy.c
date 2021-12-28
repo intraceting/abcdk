@@ -212,7 +212,7 @@ int _abcdk_comm_easy_post(abcdk_comm_easy_t *easy, const void *cargo,size_t len,
     size_t msg_len;
     int chk;
 
-    msg = abcdk_comm_message_alloc(4 + 4 + 8 + 4 + len);
+    msg = abcdk_comm_message_alloc(4 + 4 + 8 + 1 + 3 + len);
     if (!msg)
         goto final_error;
 
