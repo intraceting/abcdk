@@ -104,8 +104,7 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_polygon_t *poly
 			continue;  
 
 		/*求交点的x坐标(由直线两点式方程转化而来)。*/
- 
-		x = (double)(p->y - p1.y) * (double)(p2.x - p1.x) / (double)(p2.y - p1.y) + p1.x;  
+ 		x = (double)(p->y - p1.y) * (double)(p2.x - p1.x) / (double)(p2.y - p1.y) + p1.x;  
  
 		/*只统计p1p2与p向右射线的交点。*/
 		if ( x > p->x )  
