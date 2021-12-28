@@ -3334,7 +3334,12 @@ void test_easy(abcdk_tree_t *args)
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    abcdk_comm_easy_t *easy_client = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
+
+    abcdk_comm_easy_t *easy_client[4] ={NULL};
+    easy_client[0] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
+    easy_client[1] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
+    easy_client[2] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
+    easy_client[3] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
 
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
@@ -3345,13 +3350,13 @@ void test_easy(abcdk_tree_t *args)
         uint64_t d = 0,s = 0;
         s = abcdk_clock(d,&d);
 
-        int len = 128*1024;
+        int len = 100;
         char *req= (char*)abcdk_heap_alloc(len);
         abcdk_comm_message_t *rsp= NULL;
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client,req,len,&rsp,100000);
+        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp,100000);
         abcdk_heap_free(req);
 
 
@@ -3372,9 +3377,11 @@ void test_easy(abcdk_tree_t *args)
     printf("s = %lu,d = %lu\n",s,d);
 
  //   abcdk_comm_easy_set_timeout(easy_listen,1);
-    abcdk_comm_easy_set_timeout(easy_client,1);
+
   //  abcdk_comm_easy_unref(&easy_listen);
-    abcdk_comm_easy_unref(&easy_client);
+    
+    for(int i = 0;i<4;i++)
+        abcdk_comm_easy_unref(&easy_client[i]);
 
     while (getchar() != 'Q')
         ;
