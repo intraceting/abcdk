@@ -82,6 +82,15 @@ int abcdk_comm_waiter_response(abcdk_comm_waiter_t *waiter,
 #define abcdk_comm_waiter_response2(waiter, key, msg) \
     abcdk_comm_waiter_response((waiter), (key), sizeof(*(key)), (msg))
 
+/** 
+ * 注销(仅影响等待)。
+*/
+void abcdk_comm_waiter_cancel(abcdk_comm_waiter_t *waiter);
+
+/** 
+ * 恢复(仅影响等待)。
+*/
+void abcdk_comm_waiter_resume(abcdk_comm_waiter_t *waiter);
 
 __END_DECLS
 

@@ -527,6 +527,9 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
     {
         abcdk_atomic_store(&easy->status, 0);
 
+        /*通知所有在这个线路上等待应答的请求，连接已经关闭。*/
+        abcdk_comm_waiter_cancel(easy->rsp_waiter);
+
         /*通知连接已断开。*/
         if (easy->request_cb)
             easy->request_cb(easy, NULL, 0);
