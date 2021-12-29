@@ -187,6 +187,10 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
     node_sub->fd = abcdk_accept(node->fd, &node_sub->remote);
     if (node_sub->fd < 0)
         goto final_error;
+    
+    chk = abcdk_fflag_add(node_sub->fd,O_NONBLOCK);
+    if(chk != 0 )
+        goto final_error;
 
     ep_data.ptr = node_sub;
     chk = abcdk_epollex_attach(ctx->epollex, node_sub->fd, &ep_data);

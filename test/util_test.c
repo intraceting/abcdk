@@ -3284,7 +3284,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
     //       printf("%lu-%lu=%lu\n",a,b,a-b);
 
-        usleep(rand()%10000+1000);
+    //    usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
         abcdk_comm_easy_request(easy,data,len,NULL,0);
@@ -3324,22 +3324,53 @@ void test_easy(abcdk_tree_t *args)
 
     abcdk_comm_start(0);
 
+    SSL_CTX *server_ssl_ctx = NULL;
+    SSL_CTX *client_ssl_ctx[4] = {NULL};
+
+#ifdef HAVE_OPENSSL
+
+    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
+
+    if (capath)
+    {
+        server_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 2);
+
+        abcdk_openssl_ssl_ctx_load_crt(server_ssl_ctx, abcdk_option_get(args, "--crt-file", 0, NULL),
+                                       abcdk_option_get(args, "--key-file", 0, NULL),
+                                       abcdk_option_get(args, "--key-pwd", 0, NULL));
+
+   //     SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+    //    SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+
+        for(int i =0;i<4;i++)
+        {
+            client_ssl_ctx[i] = abcdk_openssl_ssl_ctx_alloc(0, NULL, capath, 2);
+
+        abcdk_openssl_ssl_ctx_load_crt(client_ssl_ctx[i], abcdk_option_get(args, "--crt2-file", i, NULL),
+                                       abcdk_option_get(args, "--key2-file", i, NULL),
+                                       abcdk_option_get(args, "--key2-pwd", i, NULL));
+
+   //     SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, NULL);
+        }
+
+    }
+#endif //HAVE_OPENSSL
+
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_t addr2 = {0};
 
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(NULL,&addr,test_easy_request_cb,NULL);
+    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(server_ssl_ctx,&addr,test_easy_request_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
 
-    abcdk_comm_easy_t *easy_client[4] ={NULL};
-    easy_client[0] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
-    easy_client[1] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
-    easy_client[2] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
-    easy_client[3] = abcdk_comm_easy_connect(NULL,&addr2,test_easy_request2_cb,NULL);
+    abcdk_comm_easy_t *easy_client[4] = {NULL};
+    for (int i = 0; i < 4; i++)
+        easy_client[i] = abcdk_comm_easy_connect(client_ssl_ctx[i], &addr2, test_easy_request2_cb, NULL);
 
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
@@ -3350,13 +3381,13 @@ void test_easy(abcdk_tree_t *args)
         uint64_t d = 0,s = 0;
         s = abcdk_clock(d,&d);
 
-        int len = 100;
+        int len = 10000;
         char *req= (char*)abcdk_heap_alloc(len);
         abcdk_comm_message_t *rsp= NULL;
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp,10);
+        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp,1000);
         
 
         if (rsp)
@@ -3368,7 +3399,7 @@ void test_easy(abcdk_tree_t *args)
         }
         else
         {
-            printf("%s timeout\n",req);
+            printf("Pipe(%d) %s timeout\n",i%4,req);
         }
 
         abcdk_heap_free(req);
