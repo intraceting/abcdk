@@ -221,7 +221,7 @@ install-ldc:
 	echo "incdir=\$${prefix}/include/" >> ${PKG_FILE}
 	echo "" >> ${PKG_FILE}
 	echo "Name: ${SOLUTION_NAME}" >> ${PKG_FILE}
-	echo "Description: A better c development kit. " >> ${PKG_FILE}
+	echo "Description: A bad c development kit. " >> ${PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
 	echo "Libs: -labcdk -L\$${libdir}" >> ${PKG_FILE}
@@ -287,10 +287,10 @@ CTRL_FILE="${TMP_ROOT_PATH}/DEBIAN/control"
 CLOG_FILE="${TMP_ROOT_PATH}/DEBIAN/changelog"
 
 #
-package: package-${KIT_NAME}
+package: ${KIT_NAME}
 
 #
-package-tar: clean
+tar: clean
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
 #	
@@ -299,7 +299,7 @@ package-tar: clean
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
 
 #
-package-rpm: clean
+rpm: clean
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
 #
@@ -310,10 +310,10 @@ package-rpm: clean
 	echo "Release: ${VERSION_RELEASE}" >> ${SPEC_FILE}
 	echo 'Group: Development/Libraries' >> ${SPEC_FILE}
 	echo 'License: MIT' >> ${SPEC_FILE}
-	echo "Summary: A better c development kit." >> ${SPEC_FILE}
+	echo "Summary: A bad c development kit." >> ${SPEC_FILE}
 	echo '' >> ${SPEC_FILE}
 	echo '%description' >> ${SPEC_FILE}
-	echo '${SOLUTION_NAME} is a toolkit for simplifying the use of C as a development language.' >> ${SPEC_FILE}
+	echo '${SOLUTION_NAME}.' >> ${SPEC_FILE}
 	echo '' >> ${SPEC_FILE}
 	echo '%files' >> ${SPEC_FILE}
 	echo "${INSTALL_PREFIX}" >> ${SPEC_FILE}
@@ -327,7 +327,7 @@ package-rpm: clean
 	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
 
 #
-package-deb: clean
+deb: clean
 	make -C $(CURDIR)
 	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
 #
@@ -340,7 +340,7 @@ package-deb: clean
 	echo "Priority: optional" >> ${CTRL_FILE}
 	echo "Architecture: ${DEB_ARCH}" >> ${CTRL_FILE}
 #	echo "Depends: \$${shlibs:Depends}" >> ${CTRL_FILE}
-	echo "Description: ${SOLUTION_NAME} is a toolkit for simplifying the use of C as a development language." >> ${CTRL_FILE}
+	echo "Description: ${SOLUTION_NAME}." >> ${CTRL_FILE}
 #	cat $(CURDIR)/CHANGELOG > ${CLOG_FILE}
 #
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${DEB_FILE}"
