@@ -74,6 +74,11 @@ void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
 /** 
  * 发送请求。
  * 
+ * @param data 请求数据的指针。
+ * @param len 请求数据的长度。
+ * @param rsp 应答容器的指针，NULL(0) 不需要应答。
+ * @param timeout 超时(毫秒)。
+ * 
  * @return 0 成功，-1 失败(超时)，-2 失败(已断开)。
 */
 int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
@@ -83,6 +88,9 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t le
  * 发送应答。
  * 
  * @warning 仅限在请求回调函数中使用。
+ * 
+ * @param data 应答数据的指针。
+ * @param len 应答数据的长度。
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */
