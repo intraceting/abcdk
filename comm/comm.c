@@ -237,6 +237,13 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         }
     }
 
+    /*获取本机地址。*/
+    if (!node->local.family)
+    {
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getsockname(node->fd, &node->local.addr, &sock_len);
+    }
+
 #ifdef HEADER_SSL_H      
     if (node->status == ABCDK_COMM_STATUS_SSL_SYNC)
     {
@@ -305,14 +312,15 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         /*关闭延迟发送。*/
         sock_flag = 1;
         abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sock_flag, 2);
-
-        sock_len = sizeof(abcdk_sockaddr_t);
-        getsockname(node->fd, &node->local.addr, &sock_len);
     }
 
     return;
 
 final_error:
+
+    /*当握手失败后，清空这个复制得来的应用层环境指针。*/
+    if(node->flag == ABCDK_COMM_FLAG_ACCPET)
+        node->opaque = NULL;
 
     /*修改超时，使用超时检测器关闭。*/
     abcdk_epollex_timeout(ctx->epollex, node->fd, 1);

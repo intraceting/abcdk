@@ -3341,7 +3341,7 @@ void test_easy(abcdk_tree_t *args)
 
    //     SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
-    //    SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
 
         for(int i =0;i<4;i++)
         {
@@ -3351,7 +3351,7 @@ void test_easy(abcdk_tree_t *args)
                                        abcdk_option_get(args, "--key2-file", i, NULL),
                                        abcdk_option_get(args, "--key2-pwd", i, NULL));
 
-   //     SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, NULL);
+            SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, NULL);
         }
 
     }
@@ -3399,7 +3399,7 @@ void test_easy(abcdk_tree_t *args)
         }
         else
         {
-            printf("Pipe(%d) %s timeout\n",i%4,req);
+          //  printf("Pipe(%d) %s timeout\n",i%4,req);
         }
 
         abcdk_heap_free(req);
