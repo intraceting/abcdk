@@ -705,6 +705,10 @@ abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, ab
     chk = listen(node->fd, SOMAXCONN);
     if (chk != 0)
         goto final_error;
+    
+    chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
+    if(chk != 0 )
+        goto final_error;
 
     ep_data.ptr = node;
     chk = abcdk_epollex_attach(ctx->epollex,node->fd, &ep_data);

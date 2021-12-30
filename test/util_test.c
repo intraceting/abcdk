@@ -3284,7 +3284,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
     //       printf("%lu-%lu=%lu\n",a,b,a-b);
 
-    //    usleep(rand()%10000+1000);
+        usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
         abcdk_comm_easy_request(easy,data,len,NULL,0);

@@ -289,14 +289,6 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint3
     /*绑定关注的事件，如果事件没有被激活，这里需要继续绑定。*/
     node->event_mark |= want;
 
-    /*如果是第一次注册。*/
-    if (node->mark_first)
-    {
-        /*这里设置为非阻塞*/
-        if (abcdk_fflag_add(node->fd, O_NONBLOCK) != 0)
-            node->stable = 0;
-    }
-
     /*如果未发生错误，进入正常流程。*/
     if (node->stable)
     {
