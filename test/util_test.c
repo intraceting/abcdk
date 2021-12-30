@@ -3399,7 +3399,7 @@ void test_easy(abcdk_tree_t *args)
         }
         else
         {
-          //  printf("Pipe(%d) %s timeout\n",i%4,req);
+            printf("Pipe(%d) %s timeout\n",i%4,req);
         }
 
         abcdk_heap_free(req);
