@@ -356,6 +356,9 @@ abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, uint32_t key
     
     assert(plaintext != NULL);
 
+    /*key取反。*/
+    key = ~key;
+
     buf = abcdk_allocator_clone(plaintext);
     if(!buf)
         return NULL;
@@ -398,6 +401,9 @@ abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, uint32_t ke
     abcdk_allocator_t *buf = NULL;
     
     assert(ciphertext != NULL);
+    
+    /*key取反。*/
+    key = ~key;
 
     buf = abcdk_allocator_clone(ciphertext);
     if(!buf)
