@@ -104,7 +104,7 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value)
     return 0;
 }
 
-int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value,int unique)
+int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value,int merge)
 {
     const char *p;
     ssize_t count;
@@ -112,7 +112,7 @@ int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value,int 
 
     assert(opt != NULL && key != NULL);
 
-    if (!value || !unique)
+    if (!value || !merge)
         goto final;
 
     count = abcdk_option_count(opt, key);
