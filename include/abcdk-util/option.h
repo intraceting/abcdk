@@ -41,7 +41,7 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value);
 /**
  * 配置一个选项。
  * 
- * @note 支持一对多键值组合，相同键的值次序由添加顺序决定。
+ * @note 支持一对多键值组合，相同键值的次序由添加顺序决定。
  * 
  * @param unique 0 允许value重复，!0 不允许value重复。
  * 
