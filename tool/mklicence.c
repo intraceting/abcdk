@@ -123,13 +123,13 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
     if (strlen(ctx->key) < 6)
-        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "警告：密钥长度小于6个字符。" ABCDK_ANSI_COLOR_RESET);
+        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意：密钥长度小于6个字符。" ABCDK_ANSI_COLOR_RESET);
 
     if (ctx->days > 365 * 99)
-        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "警告：有效期限超过99年。" ABCDK_ANSI_COLOR_RESET);
+        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意：有效期限超过99年。" ABCDK_ANSI_COLOR_RESET);
 
     if (ctx->delay > 30)
-        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "警告：生效延迟超过30天。" ABCDK_ANSI_COLOR_RESET);
+        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意：生效延迟超过30天。" ABCDK_ANSI_COLOR_RESET);
 
     abcdk_auth_add_salt(ctx->auth);
     abcdk_auth_add_valid_period2(ctx->auth,ctx->days,ctx->delay);
