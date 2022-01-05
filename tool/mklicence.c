@@ -105,6 +105,12 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
+    if (strlen(ctx->key) <= 0)
+    {
+        syslog(LOG_ERR, "'--key STRING' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
+    }
+
     ctx->out_fd = abcdk_open(ctx->save, 1, 0, 1);
     if (ctx->out_fd < 0)
     {
