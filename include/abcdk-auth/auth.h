@@ -25,7 +25,7 @@ __BEGIN_DECLS
  * 
  * @return 0 成功，-1 失败(SN已经存在)，-2 失败(UUID已经存在)。
 */
-int abcdk_auth_add_dmi(abcdk_tree_t *auth,const char *system_sn,const char * system_uuid);
+int abcdk_auth_add_dmi(abcdk_tree_t *auth,const char *serial,const char * uuid);
 
 /**
  * 添加MAC地址。
@@ -66,7 +66,7 @@ int abcdk_auth_add_salt(abcdk_tree_t *auth);
 /**
  * 收集DMI信息。
  * 
- * @note 仅包括system-serial-number和system-uuid。
+ * @note 仅包括system-serial和system-uuid。
  * 
  * @return 0 成功，-1 失败。
 */

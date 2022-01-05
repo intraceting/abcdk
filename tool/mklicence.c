@@ -22,6 +22,9 @@ typedef struct _abcdkmkl_ctx
     const char *save;
     uint32_t days;
     uint32_t delay;
+    const char *serial;
+    const char *uuid;
+    const char *mac;
 
     abcdk_tree_t *auth;
     abcdk_allocator_t *dec_auth;
@@ -67,6 +70,15 @@ void _abcdkmkl_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--time-on-delay < NUMBER >\n");
     fprintf(stderr, "\t\t生效延迟(天)。默认：0\n");
 
+    fprintf(stderr, "\n\t--product-serial < STRING >\n");
+    fprintf(stderr, "\t\t机器序列号。默认：无\n");
+
+    fprintf(stderr, "\n\t--product-uuid < STRING >\n");
+    fprintf(stderr, "\t\t机器UUID。默认：无\n");
+
+    fprintf(stderr, "\n\t--physical-mac < STRING >\n");
+    fprintf(stderr, "\t\t物理网卡(AABBCCDDEEFF)。默认：无\n");
+
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
@@ -78,6 +90,9 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
     ctx->save = abcdk_option_get(ctx->args, "--save", 0, NULL);
     ctx->days = abcdk_option_get_int(ctx->args,"--valid-days",0,30);
     ctx->delay = abcdk_option_get_int(ctx->args,"--time-on-delay",0,0);
+    ctx->serial = abcdk_option_get(ctx->args,"--product-serial",0, NULL);
+    ctx->uuid = abcdk_option_get(ctx->args,"--product-uuid",0, NULL);
+    ctx->mac = abcdk_option_get(ctx->args,"--physical-mac",0, NULL);
 
     if (!ctx->save || !*ctx->save)
     {
@@ -103,6 +118,8 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
         syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意，生效延迟超过30天。" ABCDK_ANSI_COLOR_RESET);
 
     abcdk_auth_add_valid_period2(ctx->auth,ctx->days,ctx->delay);
+    abcdk_auth_add_dmi(ctx->auth,ctx->serial,ctx->uuid);
+    abcdk_auth_add_mac(ctx->auth,ctx->mac);
     abcdk_auth_add_salt(ctx->auth);
     abcdk_auth_add_salt(ctx->auth);
 

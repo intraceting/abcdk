@@ -6,21 +6,21 @@
  */
 #include "abcdk-auth/auth.h"
 
-int abcdk_auth_add_dmi(abcdk_tree_t *auth,const char *system_sn,const char * system_uuid)
+int abcdk_auth_add_dmi(abcdk_tree_t *auth,const char *serial,const char * uuid)
 {
     int chk;
     assert(auth != NULL);
 
-    if(system_sn)
+    if(serial)
     {
-        chk = abcdk_option_set2(auth,"--system-serial-number",system_sn,1);
+        chk = abcdk_option_set2(auth,"--product-serial",serial,1);
         if(chk != 0)
             return -1;
     }
 
-    if(system_uuid)
+    if(uuid)
     {
-        chk = abcdk_option_set2(auth,"--system-uuid",system_uuid,1);
+        chk = abcdk_option_set2(auth,"--product-uuid",uuid,1);
         if(chk != 0)
             return -2;
     }
@@ -35,7 +35,7 @@ int abcdk_auth_add_mac(abcdk_tree_t *auth,const char *mac)
 
     if(mac)
     {
-        chk = abcdk_option_set2(auth,"--network-interface-address",mac,1);
+        chk = abcdk_option_set2(auth,"--physical-mac",mac,1);
         if(chk != 0)
             return -1;
     }
@@ -112,6 +112,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
     char tmp[255];
     ssize_t rsize;
     int fd = -1;
+    int count = 0;
 
     assert(auth != NULL);
     
@@ -127,6 +128,7 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
             abcdk_auth_add_dmi(auth,tmp,NULL);
         }
 
+        count += 1;
         abcdk_closep(&fd);
     }
 
@@ -143,16 +145,18 @@ int abcdk_auth_collect_dmi(abcdk_tree_t *auth)
             abcdk_auth_add_dmi(auth,NULL,tmp);
         }
 
+        count += 1;
         abcdk_closep(&fd);
     }
 
-    return 0;
+    return ((count > 0) ? 0 : -1);
 }
 
 int abcdk_auth_collect_mac(abcdk_tree_t *auth)
 {
     int max = 100;
     int count = 0;
+    int count2 = 0;
     abcdk_ifaddrs_t *addrs = NULL;
     char tmp[255] = {0};
     char mac[20];
@@ -187,29 +191,30 @@ int abcdk_auth_collect_mac(abcdk_tree_t *auth)
             continue;
 
         abcdk_auth_add_mac(auth,mac);
+        count2 += 1;
     }
 
 final:
 
     abcdk_heap_free(addrs);
 
-    return 0;
+    return ((count > 0) ? 0 : -1);
 }
 
 int _abcdk_auth_verify_dmi(abcdk_tree_t *auth,abcdk_tree_t *local)
 {
     const char *p1 = NULL, *p2 = NULL;
 
-    p1 = abcdk_option_get(auth, "--system-serial-number", 0, NULL);
-    p2 = abcdk_option_get(local, "--system-serial-number", 0, NULL);
+    p1 = abcdk_option_get(auth, "--product-serial", 0, NULL);
+    p2 = abcdk_option_get(local, "--product-serial", 0, NULL);
     if (p1 && p2)
     {
         if (abcdk_strcmp(p1, p2, 1) != 0)
             return -1;
     }
 
-    p1 = abcdk_option_get(auth, "--system-uuid", 0, NULL);
-    p2 = abcdk_option_get(local, "--system-uuid", 0, NULL);
+    p1 = abcdk_option_get(auth, "--product-uuid", 0, NULL);
+    p2 = abcdk_option_get(local, "--product-uuid", 0, NULL);
     if (p1 && p2)
     {
         if (abcdk_strcmp(p1, p2, 1) != 0)
@@ -224,21 +229,21 @@ int _abcdk_auth_verify_mac(abcdk_tree_t *auth, abcdk_tree_t *local)
     const char *p1 = NULL, *p2 = NULL;
     ssize_t c1 = 0, c2 = 0;
 
-    c1 = abcdk_option_count(auth,"--network-interface-address");
-    c2 = abcdk_option_count(local,"--network-interface-address");
+    c1 = abcdk_option_count(auth,"--physical-mac");
+    c2 = abcdk_option_count(local,"--physical-mac");
 
     if (c1 <= 0)
         return 0;
 
     for (size_t i = 0; i < c1; i++)
     {
-        p1 = abcdk_option_get(auth, "--network-interface-address", i, NULL);
+        p1 = abcdk_option_get(auth, "--physical-mac", i, NULL);
         if (!p1)
             continue;
 
         for (size_t j = 0; j < c2; j++)
         {
-            p2 = abcdk_option_get(local, "--network-interface-address", j, NULL);
+            p2 = abcdk_option_get(local, "--physical-mac", j, NULL);
             if (!p1)
                 continue;
 

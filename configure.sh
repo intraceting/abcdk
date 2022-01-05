@@ -335,6 +335,18 @@ CheckHavePackage()
                 echo "libbluetooth-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "blkid" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libblkid-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags blkid)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs blkid)"
+            else
+                echo "libblkid-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -587,6 +599,18 @@ CheckHavePackage()
                 echo "bluez-libs-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "blkid" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libblkid-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags blkid)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs blkid)"
+            else
+                echo "libblkid-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -670,7 +694,7 @@ usage: [ OPTIONS ]
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
-     bluez
+     bluez,blkid
 EOF
 }
 
@@ -1088,6 +1112,24 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "bluez") -eq 1 ];then
 fi
 
 #
+if [ $(CheckKeyword ${DEPEND_FUNC} "blkid") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} blkid 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_BLKID="Yes"
+        DEPEND_FLAGS=" -DHAVE_BLKID $(CheckHavePackage ${KIT_NAME} blkid 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} blkid 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} blkid 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+#
 mkdir -p ${BUILD_PATH}
 
 #
@@ -1155,6 +1197,7 @@ echo "HAVE_MQTT=${HAVE_MQTT}"
 echo "HAVE_REDIS=${HAVE_REDIS}"
 echo "HAVE_JSON_C=${HAVE_JSON_C}"
 echo "HAVE_BLUEZ=${HAVE_BLUEZ}"
+echo "HAVE_BLKID=${HAVE_BLKID}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"
