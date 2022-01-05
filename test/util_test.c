@@ -3525,6 +3525,8 @@ int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
 
+    srand(time(NULL));
+
     abcdk_tree_t *args = abcdk_tree_alloc3(1);
 
     abcdk_getargs(args,argc,argv,"--");

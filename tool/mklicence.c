@@ -183,6 +183,7 @@ int main(int argc, char **argv)
     }
     else
     {
+        srand(time(NULL));
         _abcdkmkl_work(&ctx);
     }
 

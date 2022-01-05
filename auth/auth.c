@@ -98,8 +98,6 @@ int abcdk_auth_add_salt(abcdk_tree_t *auth)
 
     assert(auth != NULL);
 
-    srand(time(NULL));
-
     for (int j = 0; j < 9; j++)
     {
         memset(key, 0, sizeof(key));
@@ -386,7 +384,7 @@ abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, const void *
 
         for (size_t j = 0; j < buf->sizes[0]; j++)
             ABCDK_PTR2U8(buf->pptrs[0], j) ^= k;
-
+        
         abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], k, 1);
         abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
     }
@@ -414,7 +412,7 @@ abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, const void 
 
         for (size_t j = 0; j < buf->sizes[0]; j++)
             ABCDK_PTR2U8(buf->pptrs[0], j) ^= k;
-
+        
         abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
         abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], k, 2);
     }
