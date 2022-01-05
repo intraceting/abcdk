@@ -20,6 +20,7 @@ typedef struct _abcdkmkl_ctx
     abcdk_tree_t *args;
 
     const char *save;
+    const char *key;
     uint32_t days;
     uint32_t delay;
     const char *serial;
@@ -64,6 +65,9 @@ void _abcdkmkl_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--save < FILE >\n");
     fprintf(stderr, "\t\t许可证文件(包括路径)。\n");
 
+    fprintf(stderr, "\n\t--key < STRING >\n");
+    fprintf(stderr, "\t\t密钥。\n");
+
     fprintf(stderr, "\n\t--valid-days < NUMBER >\n");
     fprintf(stderr, "\t\t有效时长(天)。默认：30\n");
 
@@ -88,6 +92,7 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
     int chk;
 
     ctx->save = abcdk_option_get(ctx->args, "--save", 0, NULL);
+    ctx->key = abcdk_option_get(ctx->args, "--key", 0, "");
     ctx->days = abcdk_option_get_int(ctx->args,"--valid-days",0,30);
     ctx->delay = abcdk_option_get_int(ctx->args,"--time-on-delay",0,0);
     ctx->serial = abcdk_option_get(ctx->args,"--product-serial",0, NULL);
@@ -111,20 +116,25 @@ void _abcdkmkl_work(abcdkmkl_ctx *ctx)
     if(!ctx->auth)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
+    if (strlen(ctx->key) < 6)
+        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "警告：密钥长度小于6个字符。" ABCDK_ANSI_COLOR_RESET);
+
     if (ctx->days > 365 * 99)
-        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意，有效期限超过99年。" ABCDK_ANSI_COLOR_RESET);
+        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "警告：有效期限超过99年。" ABCDK_ANSI_COLOR_RESET);
 
     if (ctx->delay > 30)
-        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "注意，生效延迟超过30天。" ABCDK_ANSI_COLOR_RESET);
+        syslog(LOG_WARNING, ABCDK_ANSI_COLOR_RED "警告：生效延迟超过30天。" ABCDK_ANSI_COLOR_RESET);
 
-    abcdk_auth_add_valid_period2(ctx->auth,ctx->days,ctx->delay);
-    abcdk_auth_add_dmi(ctx->auth,ctx->serial,ctx->uuid);
-    abcdk_auth_add_mac(ctx->auth,ctx->mac);
     abcdk_auth_add_salt(ctx->auth);
+    abcdk_auth_add_valid_period2(ctx->auth,ctx->days,ctx->delay);
+    abcdk_auth_add_salt(ctx->auth);
+    abcdk_auth_add_dmi(ctx->auth,ctx->serial,ctx->uuid);
+    abcdk_auth_add_salt(ctx->auth);
+    abcdk_auth_add_mac(ctx->auth,ctx->mac);
     abcdk_auth_add_salt(ctx->auth);
 
     ctx->dec_auth = abcdk_auth_serialize(ctx->auth);
-    ctx->enc_auth = abcdk_auth_encrypt(ctx->dec_auth,ABCDK_AUTH_DEFAULT_KEY);
+    ctx->enc_auth = abcdk_auth_encrypt(ctx->dec_auth,ctx->key,strlen(ctx->key));
 
     chk = abcdk_auth_save(ctx->out_fd,ctx->enc_auth->pptrs[0],ctx->enc_auth->sizes[0],ABCDK_AUTH_DEFAULT_MAGIC);
     if(chk != 0)

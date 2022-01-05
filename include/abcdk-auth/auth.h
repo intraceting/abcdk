@@ -15,10 +15,7 @@
 __BEGIN_DECLS
 
 /**/
-#define ABCDK_AUTH_DEFAULT_KEY      123456789
-
-/**/
-#define ABCDK_AUTH_DEFAULT_MAGIC    987654321
+#define ABCDK_AUTH_DEFAULT_MAGIC    0x33333333
 
 /**
  * 添加DMI信息。
@@ -107,18 +104,16 @@ abcdk_tree_t *abcdk_auth_structure(abcdk_allocator_t *plaintext);
 /**
  * 加密。
  * 
- * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, uint32_t key);
+abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, const void *key, int klen);
 
 /**
  * 解密。
  * 
- * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, uint32_t key);
+abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, const void *key, int klen);
 
 /**
  * 保存。

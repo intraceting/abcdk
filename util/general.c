@@ -1311,8 +1311,11 @@ void *abcdk_cyclic_shift(void *data, size_t size, size_t bits, int direction)
 {
     uint8_t m, t;
 
-    assert(data != NULL && size > 0 && bits > 0);
+    assert(data != NULL && size > 0);
     assert(direction == 1 || direction == 2);
+
+    if (bits <= 0)
+        goto final;
 
     /* 每个字节8bit，移位超过8bit时需要特殊处理。*/
     for (; bits > 8; bits -= 8)
@@ -1342,6 +1345,8 @@ void *abcdk_cyclic_shift(void *data, size_t size, size_t bits, int direction)
         ABCDK_PTR2U8(data, 0) >>= bits;
         ABCDK_PTR2U8(data, 0) |= (t << (8 - bits));
     }
+
+final:
 
     return data;
 }
