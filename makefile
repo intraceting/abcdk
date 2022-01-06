@@ -126,7 +126,6 @@ tool: ${TOOL_OBJ_FILES}
 	$(CC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk.a $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk.a $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mklicence ${OBJ_PATH}/tool/mklicence.o -l:libabcdk.a $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/abcdk-serial ${OBJ_PATH}/tool/serial.o -l:libabcdk.a $(LINK_FLAGS)
 
 #
@@ -166,7 +165,6 @@ clean-tool:
 	rm -f $(BUILD_PATH)/abcdk-hexdump
 	rm -f $(BUILD_PATH)/abcdk-mp4dump
 	rm -f $(BUILD_PATH)/abcdk-mp4juicer
-	rm -f $(BUILD_PATH)/abcdk-mklicence
 	rm -f $(BUILD_PATH)/abcdk-serial
 
 #
@@ -210,7 +208,6 @@ install-tool:
 	cp -f $(BUILD_PATH)/abcdk-hexdump ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/abcdk-mp4dump ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/abcdk-mp4juicer ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-mklicence ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/abcdk-serial ${INSTALL_PATH_BIN}/
 
 #
@@ -259,7 +256,6 @@ uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/abcdk-hexdump
 	rm -f $(INSTALL_PATH_BIN)/abcdk-mp4dump
 	rm -f $(INSTALL_PATH_BIN)/abcdk-mp4juicer
-	rm -f $(INSTALL_PATH_BIN)/abcdk-mklicence
 	rm -f $(INSTALL_PATH_BIN)/abcdk-serial
 
 #

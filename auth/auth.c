@@ -93,25 +93,22 @@ int abcdk_auth_add_valid_period2(abcdk_tree_t *auth, uintmax_t days, uintmax_t d
 
 int abcdk_auth_add_salt(abcdk_tree_t *auth)
 {
-    char key[12] = {0};
-    char val[10] = {0};
+    char key[22] = {0};
+    char val[22] = {0};
+    int v;
 
     assert(auth != NULL);
 
-    for (int j = 0; j < 9; j++)
+    for (int i = 0; i < 21; i++)
     {
-        memset(key, 0, sizeof(key));
-        memset(val, 0, sizeof(val));
+        v = rand() % 127;
+        key[i] = ABCDK_CLAMP(v, 33, 126);
 
-        key[0] = key[1] = '-';
-        for (int i = 0; i < 9; i++)
-        {
-            key[i + 2] = 32 + rand() % 95; //32~126
-            val[i] = 32 + rand() % 95;     //32~126
-        }
-
-        abcdk_option_set(auth, key, val);
+        v = rand() % 127;
+        val[i] = ABCDK_CLAMP(v, 33, 126);
     }
+
+    abcdk_option_set(auth, key, val);
 
     return 0;
 }
@@ -362,62 +359,6 @@ abcdk_tree_t *abcdk_auth_structure(abcdk_allocator_t *plaintext)
     abcdk_getargs_text(auth,plaintext->pptrs[0],plaintext->sizes[0],'\n','#',NULL,"--");
 
     return auth;
-}
-
-abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, const void *key, int klen)
-{
-    abcdk_allocator_t *buf = NULL;
-    uint8_t k = 0;
-    
-    assert(plaintext != NULL && key != NULL && klen >0);
-
-    buf = abcdk_allocator_clone(plaintext);
-    if(!buf)
-        return NULL;
-
-    for (int i = 0; i < klen; i++)
-    {
-        k = ABCDK_PTR2U8(key, i);
-
-        abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], k, 1);
-        abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
-
-        for (size_t j = 0; j < buf->sizes[0]; j++)
-            ABCDK_PTR2U8(buf->pptrs[0], j) ^= k;
-        
-        abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], k, 1);
-        abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
-    }
-
-    return buf;
-}
-
-abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, const void *key, int klen)
-{
-    abcdk_allocator_t *buf = NULL;
-    uint8_t k = 0;
-    
-    assert(ciphertext != NULL && key != NULL && klen >0);
-    
-    buf = abcdk_allocator_clone(ciphertext);
-    if(!buf)
-        return NULL;
-
-    for (int i = 0; i < klen; i++)
-    {
-        k = ABCDK_PTR2U8(key, (klen - i - 1));
-
-        abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
-        abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], k, 2);
-
-        for (size_t j = 0; j < buf->sizes[0]; j++)
-            ABCDK_PTR2U8(buf->pptrs[0], j) ^= k;
-        
-        abcdk_endian_swap(buf->pptrs[0], buf->sizes[0]);
-        abcdk_cyclic_shift(buf->pptrs[0], buf->sizes[0], k, 2);
-    }
-
-    return buf;
 }
 
 int abcdk_auth_save(int fd, const void *auth,size_t len, uint32_t magic)

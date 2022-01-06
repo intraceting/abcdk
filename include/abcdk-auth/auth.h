@@ -102,20 +102,6 @@ abcdk_allocator_t *abcdk_auth_serialize(abcdk_tree_t *auth);
 abcdk_tree_t *abcdk_auth_structure(abcdk_allocator_t *plaintext);
 
 /**
- * 加密。
- * 
- * @return !NULL(0) 成功，NULL(0) 失败。
-*/
-abcdk_allocator_t *abcdk_auth_encrypt(abcdk_allocator_t *plaintext, const void *key, int klen);
-
-/**
- * 解密。
- * 
- * @return !NULL(0) 成功，NULL(0) 失败。
-*/
-abcdk_allocator_t *abcdk_auth_decrypt(abcdk_allocator_t *ciphertext, const void *key, int klen);
-
-/**
  * 保存。
  * 
  * @warning 追加到文件末尾。

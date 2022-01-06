@@ -61,7 +61,7 @@
 #include <net/if.h>
 #include <net/ethernet.h>
 
-/** 转字符串*/
+/** 转字符串。*/
 #define ABCDK_STR_NOT_USE(s) #s
 #define ABCDK_STR(s) ABCDK_STR_NOT_USE(s)
 
@@ -106,22 +106,17 @@
 #define ABCDK_PTR2SIZE(P, OF) ABCDK_PTR2OBJ(ssize_t, P, OF)
 #define ABCDK_PTR2USIZE(P, OF) ABCDK_PTR2OBJ(size_t, P, OF)
 
-/**
- * 数值比较，返回最大值。
- * 
-*/
+/** 数值比较，返回最大值。*/
 #define ABCDK_MAX(A, B) (((A) > (B)) ? (A) : (B))
 
-/**
- * 数值比较，返回最小值。
- * 
-*/
+/** 数值比较，返回最小值。*/
 #define ABCDK_MIN(A, B) (((A) < (B)) ? (A) : (B))
 
-/**
- * 交换两个数值变量的值。
- * 
-*/
+/** 规划数值到区间内。*/
+#define ABCDK_CLAMP(V, A, B) \
+    ABCDK_MIN(ABCDK_MAX((A), (B)), ABCDK_MAX(ABCDK_MIN((A), (B)), (V)))
+
+/** 交换两个数值变量的值。*/
 #define ABCDK_INTEGER_SWAP(A, B) ( \
     {                              \
         (A) ^= (B);                \
@@ -129,50 +124,37 @@
         (A) ^= (B);                \
     })
 
-/**
- * 设置出错码，并返回。
-*/
+/** 设置出错码，并返回。*/
 #define ABCDK_ERRNO_AND_RETURN0(E) ( \
     {                                \
         errno = (E);                 \
         return;                      \
     })
 
-/**
- * 设置出错码，并返回值。
-*/
+/** 设置出错码，并返回值。*/
 #define ABCDK_ERRNO_AND_RETURN1(E, V) ( \
     {                                   \
         errno = (E);                    \
         return (V);                     \
     })
 
-/**
- * 设置出错码，并跳转。
-*/
+/** 设置出错码，并跳转。*/
 #define ABCDK_ERRNO_AND_GOTO1(E, M) ( \
     {                                 \
         errno = (E);                  \
         goto M;                       \
     })
 
-/**
- * 计算数组大小。
-*/
+/** 计算数组大小。*/
 #define ABCDK_ARRAY_SIZE(V) (sizeof((V)) / sizeof((V)[0]))
 
-/*
- * 设置终端字符颜色。 
-*/
-
-#define ABCDK_ANSI_COLOR_RESET      "\x1b[0m"       /** 清除所有设置。*/
-#define ABCDK_ANSI_COLOR_RED        "\x1b[31m"      
-#define ABCDK_ANSI_COLOR_GREEN      "\x1b[32m"
-#define ABCDK_ANSI_COLOR_YELLOW     "\x1b[33m"
-#define ABCDK_ANSI_COLOR_BLUE       "\x1b[34m"
-#define ABCDK_ANSI_COLOR_MAGENTA    "\x1b[35m"
-#define ABCDK_ANSI_COLOR_CYAN       "\x1b[36m"
-
-
+/** 清除终端字符颜色设置。*/
+#define ABCDK_ANSI_COLOR_RESET "\x1b[0m"
+#define ABCDK_ANSI_COLOR_RED "\x1b[31m"
+#define ABCDK_ANSI_COLOR_GREEN "\x1b[32m"
+#define ABCDK_ANSI_COLOR_YELLOW "\x1b[33m"
+#define ABCDK_ANSI_COLOR_BLUE "\x1b[34m"
+#define ABCDK_ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ABCDK_ANSI_COLOR_CYAN "\x1b[36m"
 
 #endif //ABCDK_UTIL_DEFS_H

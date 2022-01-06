@@ -2212,33 +2212,17 @@ void test_auth(abcdk_tree_t *args)
 
     fprintf(stderr,"%s\n",dump->pptrs[0]);
 
-    const char *key = "123456";
-    int klen = strlen(key);
+    abcdk_auth_save2("/tmp/abcdk.auth",dump->pptrs[0],dump->sizes[0],ABCDK_AUTH_DEFAULT_MAGIC);
+    abcdk_allocator_t *load = abcdk_auth_load2("/tmp/abcdk.auth",ABCDK_AUTH_DEFAULT_MAGIC);
 
-    abcdk_allocator_t *ciphertext = abcdk_auth_encrypt(dump,key,klen);
+    abcdk_tree_t *auth2 = abcdk_auth_structure(load);
 
-    abcdk_hexdump_option_t o = {0};
-    o.flag = ABCDK_HEXDEMP_SHOW_CHAR;
-    abcdk_hexdump(stdout,ciphertext->pptrs[0],ciphertext->sizes[0],0,&o);
-    
-    abcdk_allocator_t *plaintext = abcdk_auth_decrypt(ciphertext,key,klen);
-
-    assert(memcmp(plaintext->pptrs[0],dump->pptrs[0],dump->sizes[0])==0);
-
-    abcdk_auth_save2("/tmp/abcdk.auth",ciphertext->pptrs[0],ciphertext->sizes[0],ABCDK_AUTH_DEFAULT_MAGIC);
-    abcdk_allocator_t *ciphertext2 = abcdk_auth_load2("/tmp/abcdk.auth",ABCDK_AUTH_DEFAULT_MAGIC);
-
-    assert(memcmp(ciphertext->pptrs[0],ciphertext2->pptrs[0],ciphertext2->sizes[0])==0);
-    abcdk_allocator_t *plaintext2 = abcdk_auth_decrypt(ciphertext2,key,klen);
-
-    assert(memcmp(plaintext2->pptrs[0],dump->pptrs[0],dump->sizes[0])==0);
+    assert(abcdk_auth_verify(auth2)==0);
     
     abcdk_allocator_unref(&dump);
-    abcdk_allocator_unref(&ciphertext);
-    abcdk_allocator_unref(&plaintext);
-    abcdk_allocator_unref(&ciphertext2);
-    abcdk_allocator_unref(&plaintext2);
+    abcdk_allocator_unref(&load);
     abcdk_tree_free(&auth);
+    abcdk_tree_free(&auth2);
 }
 
 
@@ -3564,6 +3548,13 @@ int main(int argc, char **argv)
     }
     g = abcdk_clock(f,&f);
     printf("g = %lu,f = %lu\n",g,f);
+
+    for (int i = 0; i < 10000; i++)
+    {
+        int v = rand() % 127;
+        int k = ABCDK_CLAMP(v,33,126);
+        assert(k >= 33 && k <= 126);
+    }
 
 #ifdef HAVE_OPENSSL
 
