@@ -93,10 +93,11 @@ char *abcdk_inet_ntop(const abcdk_sockaddr_t *addr, char *name, size_t max);
  * 获取网络接口信息
  * 
  * @param ex_loopback 0 包括回环接口，!0 排除回环接口。
+ * @param ex_virtual 0 包括虚拟接口，!0 排除虚拟接口。
  * 
  * @return >= 0 网络接口数量， < 0 出错。
 */
-int abcdk_ifname_fetch(abcdk_ifaddrs_t *addrs, int max, int ex_loopback);
+int abcdk_ifname_fetch(abcdk_ifaddrs_t *addrs, int max, int ex_loopback,int ex_virtual);
 
 /**
  * SOCKET IO control

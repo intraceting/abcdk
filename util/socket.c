@@ -75,11 +75,12 @@ char *abcdk_inet_ntop(const abcdk_sockaddr_t *addr, char *name, size_t max)
     return NULL;
 }
 
-int abcdk_ifname_fetch(abcdk_ifaddrs_t *addrs, int max, int ex_loopback)
+int abcdk_ifname_fetch(abcdk_ifaddrs_t *addrs, int max, int ex_loopback,int ex_virtual)
 {
     struct ifaddrs *results = NULL;
     struct ifaddrs *it = NULL;
     abcdk_ifaddrs_t *p = NULL;
+    char tmp[255] = {0};
     int chk;
     int count = 0;
 
@@ -97,8 +98,24 @@ int abcdk_ifname_fetch(abcdk_ifaddrs_t *addrs, int max, int ex_loopback)
         if (it->ifa_addr->sa_family != ABCDK_IPV4 && it->ifa_addr->sa_family != ABCDK_IPV6)
             continue;
 
-        if ((it->ifa_flags & IFF_LOOPBACK) && ex_loopback)
-            continue;
+        if (ex_loopback)
+        {
+            /*跳过回环接口。*/
+            if ((it->ifa_flags & IFF_LOOPBACK))
+                continue;
+        }
+
+        if (ex_virtual)
+        {
+            /*虚拟接口会在这个目录存在相同名字的目录。*/
+            memset(tmp, 0, sizeof(tmp));
+            abcdk_dirdir(tmp, "/sys/devices/virtual/net/");
+            abcdk_dirdir(tmp, it->ifa_name);
+
+            /*跳过虚拟接口。*/
+            if (access(tmp, F_OK) == 0)
+                continue;
+        }
 
         p = &addrs[count++];
 
@@ -457,7 +474,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
     if(!addrs)
         ABCDK_ERRNO_AND_RETURN1(errno,0);
 
-    addr_num = abcdk_ifname_fetch(addrs,addr_max,1);
+    addr_num = abcdk_ifname_fetch(addrs,addr_max,1,0);
 
     for (int i = 0; i < addr_num; i++)
     {

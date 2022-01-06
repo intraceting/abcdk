@@ -110,6 +110,26 @@ struct tm* abcdk_time_get(struct tm* tm,int utc);
 */
 struct tm* abcdk_time_sec2tm(struct tm* tm,time_t sec,int utc);
 
+/**
+ * 计算时间差。
+ * 
+ * @param utc 0 本地时间，!0 国际时间。
+ * 
+ * @return 返回相差的时长(秒)。
+*/
+time_t abcdk_difftime(struct tm *t1, struct tm *t0, int utc);
+
+/**
+ * 计算时间差。
+ * 
+ * @note yyyy-mm-ddThh:MM:SSZ
+ * 
+ * @param utc 0 本地时间，!0 国际时间。
+ * 
+ * @return 返回相差的时长(秒)。
+*/
+time_t abcdk_difftime2(const char *t1, const char *t0, int utc);
+
 /*------------------------------------------------------------------------------------------------*/
 
 /**

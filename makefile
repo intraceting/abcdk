@@ -67,10 +67,6 @@ MP4_SRC_FILES = $(wildcard mp4/*.c)
 MP4_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${MP4_SRC_FILES}))
 
 #
-AUTH_SRC_FILES = $(wildcard auth/*.c)
-AUTH_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${AUTH_SRC_FILES}))
-
-#
 COMM_SRC_FILES = $(wildcard comm/*.c)
 COMM_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${COMM_SRC_FILES}))
 
@@ -86,7 +82,7 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 all: lib tool test
 
 #
-lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(AUTH_OBJ_FILES) $(COMM_OBJ_FILES)
+lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(COMM_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
@@ -100,12 +96,6 @@ $(OBJ_PATH)/util/%.o: util/%.c
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
-	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
-
-#
-$(OBJ_PATH)/auth/%.o: auth/%.c
-	mkdir -p $(OBJ_PATH)/auth/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 

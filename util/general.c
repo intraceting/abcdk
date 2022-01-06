@@ -165,6 +165,39 @@ struct tm *abcdk_time_sec2tm(struct tm *tm, time_t sec, int utc)
     return (utc ? gmtime_r(&sec, tm) : localtime_r(&sec, tm));
 }
 
+time_t abcdk_difftime(struct tm *t1, struct tm *t0, int utc)
+{
+    time_t b = 0, e = 0;
+    double d = 0.0;
+
+    assert(t1 != NULL && t0 != NULL);
+
+    if (utc)
+    {
+        b = timegm(t0);
+        e = timegm(t1);
+    }
+    else
+    {
+        b = timelocal(t0);
+        e = timelocal(t1);
+    }
+
+    d = difftime(e, b);
+
+    return (time_t)d;
+}
+
+time_t abcdk_difftime2(const char *t1, const char *t0, int utc)
+{
+    struct tm b = {0}, e = {0};
+
+    strptime(t0,"%Y-%m-%dT%H:%M:%SZ",&b);
+    strptime(t1,"%Y-%m-%dT%H:%M:%SZ",&e);
+
+    return abcdk_difftime(&e,&b,utc);
+}
+
 /*------------------------------------------------------------------------------------------------*/
 
 int abcdk_isodigit(int c)

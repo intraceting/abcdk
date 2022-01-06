@@ -26,7 +26,6 @@
 #include "abcdk-util/termios.h"
 #include "abcdk-mp4/demuxer.h"
 #include "abcdk-util/video.h"
-#include "abcdk-auth/auth.h"
 #include "abcdk-util/lz4.h"
 #include "abcdk-util/openssl.h"
 #include "abcdk-util/redis.h"
@@ -2192,39 +2191,6 @@ void test_video(abcdk_tree_t *args)
 #endif //
 }
 
-void test_auth(abcdk_tree_t *args)
-{
-    abcdk_tree_t *auth = abcdk_tree_alloc3(1);
-
-    abcdk_auth_add_salt(auth);
-    abcdk_auth_collect_dmi(auth);
-    abcdk_auth_add_salt(auth);
-    abcdk_auth_collect_mac(auth);
-    abcdk_auth_add_salt(auth);
-    abcdk_auth_add_valid_period2(auth,20,0);
-    abcdk_auth_add_salt(auth);
-
- //   abcdk_option_fprintf(stderr,auth,NULL);
-
-    assert(abcdk_auth_verify(auth)==0);
-
-    abcdk_allocator_t *dump = abcdk_auth_serialize(auth);
-
-    fprintf(stderr,"%s\n",dump->pptrs[0]);
-
-    abcdk_auth_save2("/tmp/abcdk.auth",dump->pptrs[0],dump->sizes[0],ABCDK_AUTH_DEFAULT_MAGIC);
-    abcdk_allocator_t *load = abcdk_auth_load2("/tmp/abcdk.auth",ABCDK_AUTH_DEFAULT_MAGIC);
-
-    abcdk_tree_t *auth2 = abcdk_auth_structure(load);
-
-    assert(abcdk_auth_verify(auth2)==0);
-    
-    abcdk_allocator_unref(&dump);
-    abcdk_allocator_unref(&load);
-    abcdk_tree_free(&auth);
-    abcdk_tree_free(&auth2);
-}
-
 
 void test_com(abcdk_tree_t *args)
 {
@@ -3612,9 +3578,6 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_video", 0) == 0)
         test_video(args);
-
-    if (abcdk_strcmp(func, "test_auth", 0) == 0)
-        test_auth(args);
 
     if (abcdk_strcmp(func, "test_com", 0) == 0)
         test_com(args);
