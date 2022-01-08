@@ -692,6 +692,22 @@ int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number)
     return 0;
 }
 
+void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val)
+{
+    if(val)
+        abcdk_bloom_mark(pool,size,offset);
+    else 
+        abcdk_bloom_unset(pool,size,offset);
+
+    /*Clear error number.*/
+    errno = 0;
+}
+
+int abcdk_bloom_read(uint8_t* pool,size_t size,size_t offset)
+{
+    return abcdk_bloom_filter(pool,size,offset);
+}
+
 /*------------------------------------------------------------------------------------------------*/
 
 char *abcdk_dirdir(char *path, const char *suffix)

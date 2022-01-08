@@ -371,7 +371,7 @@ uint64_t abcdk_endian_h_to_l64(uint64_t src);
  * 布隆-插旗
  * 
  * @param size 池大小(Bytes)
- * @param number 编号。有效范围：0 ～ size*8-1。
+ * @param number 编号(Bits)。有效范围：0 ～ size*8-1。
  * 
  * @return 0 成功，1 成功（或重复操作）。
 */
@@ -381,10 +381,9 @@ int abcdk_bloom_mark(uint8_t* pool,size_t size,size_t number);
  * 布隆-拔旗
  * 
  * @param size 池大小(Bytes)
- * @param number 编号。有效范围：0 ～ size*8-1。
+ * @param number 编号(Bits)。有效范围：0 ～ size*8-1。
  * 
  * @return 0 成功，1 成功（或重复操作）。
- * 
 */
 int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number);
 
@@ -392,11 +391,30 @@ int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number);
  * 布隆-过滤
  * 
  * @param size 池大小(Bytes)
- * @param number 编号。有效范围：0 ～ size*8-1。
+ * @param number 编号(Bits)。有效范围：0 ～ size*8-1。
  * 
  * @return 0 不存在，1 已存在。
 */
 int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number);
+
+/**
+ * 布隆-写 
+ * 
+ * @param size 池大小(Bytes)
+ * @param offset 偏移量(Bits)。有效范围：0 ～ size*8-1。
+ * @param val 值。0 = 0 ；!0 = 1。
+*/
+void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val);
+
+/**
+ * 布隆-读
+ * 
+ * @param size 池大小(Bytes)
+ * @param offset 偏移量(Bits)。有效范围：0 ～ size*8-1。
+ * 
+ * @return 0 或 1。
+ */
+int abcdk_bloom_read(uint8_t* pool,size_t size,size_t offset);
 
 /*------------------------------------------------------------------------------------------------*/
 

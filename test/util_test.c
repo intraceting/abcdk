@@ -3471,6 +3471,46 @@ done:
 	return EXIT_SUCCESS;
 }
 
+void test_bloom(abcdk_tree_t *args)
+{
+
+    size_t s = 1234567;
+    uint8_t* buf = (uint8_t*)abcdk_heap_alloc(s);
+#if 0
+    for(size_t i = 0;i<s*8;i++)
+    {
+        assert(abcdk_bloom_mark(buf,s,i)==0);
+    }
+
+    for(size_t i = 0;i<s;i++)
+    {
+        assert(buf[i]==255);
+    }
+    
+
+    for(size_t i = 0;i<s*8;i++)
+    {
+        assert(abcdk_bloom_filter(buf,s,i)==1);
+        assert(abcdk_bloom_unset(buf,s,i)==0);
+    }
+
+    for(size_t i = 0;i<s;i++)
+    {
+        assert(buf[i]==0);
+    }
+#else
+
+    for (int i = 0; i < s * 8; i++)
+        abcdk_bloom_write(buf, s, i, i % 2);
+
+    for (int i = 0; i < s * 8; i++)
+        assert(abcdk_bloom_read(buf, s, i) == i % 2);
+
+#endif
+
+    abcdk_heap_free(buf);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3626,6 +3666,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_blkid", 0) == 0)
         test_blkid(args);
+
+    if (abcdk_strcmp(func, "test_bloom", 0) == 0)
+        test_bloom(args);
 
     abcdk_tree_free(&args);
     
