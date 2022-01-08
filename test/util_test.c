@@ -3498,13 +3498,39 @@ void test_bloom(abcdk_tree_t *args)
     {
         assert(buf[i]==0);
     }
-#else
+#elif 0
 
     for (int i = 0; i < s * 8; i++)
         abcdk_bloom_write(buf, s, i, i % 2);
 
     for (int i = 0; i < s * 8; i++)
         assert(abcdk_bloom_read(buf, s, i) == i % 2);
+#else 
+
+    char dict[]={"23456789ABCDEFGHJKLMNPQRSTUVWXYZ"};
+
+    int l = abcdk_align((12+2+8+8)*8,5);
+    // for (int i = 0; i < l; i++)
+    //     abcdk_bloom_write(buf, s, i, i % 2);
+
+    abcdk_mac_fetch("ens33",ABCDK_PTR2I8PTR(buf,0));
+    ABCDK_PTR2U16(buf,12) = 3<<8;
+    ABCDK_PTR2U64(buf,14) = abcdk_time_clock2kind_with(CLOCK_REALTIME,0);
+    ABCDK_PTR2U64(buf,22) = ABCDK_PTR2U64(buf,14)+366*24*60*60;
+
+    for (int i = 0; i < l; i += 5)
+    {
+        int v = 0;
+        for (int j = 4; j >= 0; j--)
+        {
+            int a = abcdk_bloom_read(buf, s, i + j);
+            v |= (a << j);
+        }
+
+        printf("%c", dict[v]);
+    }
+
+    printf("\n");
 
 #endif
 
