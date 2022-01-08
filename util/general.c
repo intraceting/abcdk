@@ -650,7 +650,7 @@ int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t number)
 {
     assert(pool && size > 0 && size * 8 > number);
 
-    size_t bloom_pos = number & 7;
+    size_t bloom_pos = 7 - (number & 7);
     size_t byte_pos = number >> 3;
     size_t value = 1 << bloom_pos;
 
@@ -666,7 +666,7 @@ int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number)
 {
     assert(pool && size > 0 && size * 8 > number);
 
-    size_t bloom_pos = number & 7;
+    size_t bloom_pos = 7 - (number & 7);
     size_t byte_pos = number >> 3;
     size_t value = 1 << bloom_pos;
 
@@ -682,7 +682,7 @@ int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number)
 {
     assert(pool && size > 0 && size * 8 > number);
 
-    size_t bloom_pos = number & 7;
+    size_t bloom_pos = 7 - (number & 7);
     size_t byte_pos = number >> 3;
     size_t value = 1 << bloom_pos;
 

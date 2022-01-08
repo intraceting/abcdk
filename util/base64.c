@@ -47,7 +47,7 @@ ssize_t abcdk_base64_encode(const uint8_t *src, size_t slen, char *dst, size_t d
     if (dst == NULL)
         return ABCDK_BASE64_ENCODE_LEN(slen);
 
-    assert(ABCDK_BASE64_ENCODE_LEN(slen) >= dmaxlen);
+    assert(ABCDK_BASE64_ENCODE_LEN(slen) <= dmaxlen);
 
     /*原文长度除以3的余数*/
     remain = slen % 3;
@@ -155,7 +155,7 @@ ssize_t abcdk_base64_decode(const char *src, size_t slen, uint8_t *dst, size_t d
     if (dst == NULL)
         return ABCDK_BASE64_DECODE_LEN(slen, src[slen - 2], src[slen - 1]);
 
-    assert(ABCDK_BASE64_DECODE_LEN(slen, src[slen - 2], src[slen - 1]) >= dmaxlen);
+    assert(ABCDK_BASE64_DECODE_LEN(slen, src[slen - 2], src[slen - 1]) <= dmaxlen);
 
     /*原文长度减去4。*/
     formal = slen - 4;

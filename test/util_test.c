@@ -35,6 +35,7 @@
 #include "abcdk-comm/waiter.h"
 #include "abcdk-util/json.h"
 #include "abcdk-comm/easy.h"
+#include "abcdk-util/base64.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -3505,18 +3506,18 @@ void test_bloom(abcdk_tree_t *args)
 
     for (int i = 0; i < s * 8; i++)
         assert(abcdk_bloom_read(buf, s, i) == i % 2);
-#else 
+#elif 0
 
     char dict[]={"23456789ABCDEFGHJKLMNPQRSTUVWXYZ"};
 
-    int l = abcdk_align((12+2+8+8)*8,5);
+    int l = abcdk_align((12+2+8+2)*8,5);
     // for (int i = 0; i < l; i++)
     //     abcdk_bloom_write(buf, s, i, i % 2);
 
     abcdk_mac_fetch("ens33",ABCDK_PTR2I8PTR(buf,0));
     ABCDK_PTR2U16(buf,12) = 3<<8;
     ABCDK_PTR2U64(buf,14) = abcdk_time_clock2kind_with(CLOCK_REALTIME,0);
-    ABCDK_PTR2U64(buf,22) = ABCDK_PTR2U64(buf,14)+366*24*60*60;
+    ABCDK_PTR2U16(buf,22) = 65535;
 
     for (int i = 0; i < l; i += 5)
     {
@@ -3531,6 +3532,42 @@ void test_bloom(abcdk_tree_t *args)
     }
 
     printf("\n");
+#else
+    
+    char dict[]={"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="};
+
+    int l = 12+2+8+2;
+    int l2 = abcdk_align(l*8,6);
+    int l3 = l2/8;
+
+    abcdk_mac_fetch("ens33",ABCDK_PTR2I8PTR(buf,0));
+    ABCDK_PTR2U16(buf,12) = 3<<8;
+    ABCDK_PTR2U64(buf,14) = abcdk_time_clock2kind_with(CLOCK_REALTIME,0);
+    ABCDK_PTR2U16(buf,22) = 65535;
+
+    
+
+    for (int i = 0; i < l2;)
+    {
+        int v = 0, a = 0;
+        for (int j = 0; j < 6; j++)
+        {
+            a = abcdk_bloom_read(buf, s, i++);
+            v |= (a << (6 - j - 1));
+        }
+        printf("%c", dict[v]);
+    }
+
+    for (int i = 0; i < 4-(l2 / 6 % 4); i++)
+        printf("=");
+
+    printf("\n");
+
+    char buf2[200]={0};
+    abcdk_base64_encode(buf,l3,buf2,200);
+    //abcdk_base64_encode("qwer\n",5,buf2,200);
+
+    printf("%s\n",buf2);
 
 #endif
 
