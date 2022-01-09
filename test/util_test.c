@@ -3506,9 +3506,9 @@ void test_bloom(abcdk_tree_t *args)
 
     for (int i = 0; i < s * 8; i++)
         assert(abcdk_bloom_read(buf, s, i) == i % 2);
-#elif 0
+#elif 1
 
-    char dict[]={"23456789ABCDEFGHJKLMNPQRSTUVWXYZ"};
+    char dict[]={"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"};
 
     int l = abcdk_align((12+2+8+2)*8,5);
     // for (int i = 0; i < l; i++)
@@ -3519,17 +3519,17 @@ void test_bloom(abcdk_tree_t *args)
     ABCDK_PTR2U64(buf,14) = abcdk_time_clock2kind_with(CLOCK_REALTIME,0);
     ABCDK_PTR2U16(buf,22) = 65535;
 
-    for (int i = 0; i < l; i += 5)
+     for (int i = 0; i < l;)
     {
-        int v = 0;
-        for (int j = 4; j >= 0; j--)
+        int v = 0, a = 0;
+        for (int j = 0; j < 5; j++)
         {
-            int a = abcdk_bloom_read(buf, s, i + j);
-            v |= (a << j);
+            a = abcdk_bloom_read(buf, s, i++);
+            v |= (a << (5 - j - 1));
         }
-
         printf("%c", dict[v]);
     }
+
 
     printf("\n");
 #else
