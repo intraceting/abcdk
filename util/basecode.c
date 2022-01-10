@@ -38,7 +38,7 @@ uint8_t _abcdk_basecode_en_table32(uint8_t n)
 
 uint8_t _abcdk_basecode_de_table32(uint8_t c)
 {
-    if (c <= '9')
+    if (c <= '7')
         return (uint8_t)(c - '2' + 26);
     else if (c <= 'Z')
         return (uint8_t)(c - 'A');
@@ -47,7 +47,6 @@ uint8_t _abcdk_basecode_de_table32(uint8_t c)
 void abcdk_basecode_init(abcdk_basecode_t *ctx, uint8_t base)
 {
     assert(ctx != NULL && base != 0);
-    assert(base == 8 || base == 16 || base == 32 || base == 64 || base == 128 || base == 256);
 
     ctx->base = base;
 
@@ -70,27 +69,28 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
                               const uint8_t *src, size_t slen,
                               uint8_t *dst, size_t dmaxlen)
 {
+    size_t base_bits = 0;
     size_t bit_align = 1;
     size_t src_bits = 0, src_bits_align = 0;
-    size_t base_bits = 0;
     size_t dlen = 0, dlen_align = 0, dst_bits_align = 0;
     uint8_t v = 0, a = 0;
 
     assert(ctx != NULL && src != NULL && slen > 0 && dst != NULL && dmaxlen > 0);
-    assert(ctx->base == 8 || ctx->base == 16 || ctx->base == 32 || ctx->base == 64 || ctx->base == 128 || ctx->base == 256);
-    assert(ctx->encode_table_cb != NULL);
+    assert(ctx->base != 0 && ctx->encode_table_cb != NULL);
 
     /*计算每个编码的bit数。*/
     for (size_t i = 1; i < ctx->base; i <<= 1)
         base_bits += 1;
 
+    /*最小公倍数。*/
     bit_align = abcdk_math_lcm(base_bits, 8);
+
     src_bits = slen * 8;
     src_bits_align = abcdk_align(src_bits, base_bits);
     dst_bits_align = abcdk_align(src_bits, bit_align);
     dlen_align = dst_bits_align / base_bits;
 
-    /*不能超出缓存。*/
+    /*不能超过目标缓存大小。*/
     assert(dlen_align <= dmaxlen);
 
     for (size_t i = 0; i < src_bits_align;)
@@ -105,7 +105,7 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
         dst[dlen++] = ctx->encode_table_cb(v);
     }
 
-    dlen_align = dst_bits_align / base_bits;
+    /*补齐数据。*/
     for (; dlen < dlen_align;)
         dst[dlen++] = ctx->pad;
 
@@ -118,5 +118,40 @@ ssize_t abcdk_basecode_decode(const abcdk_basecode_t *ctx,
                               const uint8_t *src, size_t slen,
                               uint8_t *dst, size_t dmaxlen)
 {
+    size_t base_bits = 0;
+    size_t src_bits = 0, src_bits_align = 0;
+    size_t dlen = 0, dlen_align = 0,dst_bits_pos = 0;
+    uint8_t v = 0, a = 0;
 
+    assert(ctx != NULL && src != NULL && slen > 0 && dst != NULL && dmaxlen > 0);
+    assert(ctx->base != 0 && ctx->decode_table_cb != NULL);
+
+    /*计算每个编码的bit数。*/
+    for (size_t i = 1; i < ctx->base; i <<= 1)
+        base_bits += 1;
+
+    src_bits = slen * base_bits;
+    dlen_align = src_bits / 8;
+
+    /*不能超过目标缓存大小。*/
+    assert(dlen_align <= dmaxlen);
+
+    for (size_t i = 0; i < slen; i++)
+    {
+        /*遇到补齐数据则停止。*/
+        if (src[i] == ctx->pad)
+            break;
+
+        a = 0;
+        v = ctx->decode_table_cb(src[i]);
+        for (size_t j = 0; j < base_bits; j++)
+        {
+            a = v & (1 << (base_bits - j - 1));
+            abcdk_bloom_write(dst, dmaxlen, dst_bits_pos++, a);
+        }
+
+        dlen = dst_bits_pos / 8;
+    }
+
+    return dlen;
 }

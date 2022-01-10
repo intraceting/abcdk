@@ -3579,17 +3579,56 @@ void test_basecode(abcdk_tree_t *args)
 {
     abcdk_basecode_t bctx = {0};
 
-    abcdk_basecode_init(&bctx,32);
+#if 0
 
-    //char buf[100]={"abcdefghijklmnopqrstuvwxyz\n"};
-    char buf[100]={"abc\n"};
+    abcdk_basecode_init(&bctx, 64);
+
+    char buf[100]={"abcdefghijklmnopqrstuvwxyz\n"};
+    //char buf[100] = {"abc\n"};
     //char buf[100]={"a\n"};
-    char buf2[100]={0};
+    char buf2[100] = {0};
 
     //bctx.bit_align=1;
-    int n = abcdk_basecode_encode(&bctx,buf,strlen(buf),buf2,100);
+    int n = abcdk_basecode_encode(&bctx, buf, strlen(buf), buf2, 100);
 
-    printf("%s\n",buf2);
+    printf("n=%d,%s\n", n, buf2);
+
+    char buf3[100] = {0};
+
+    int m = abcdk_basecode_decode(&bctx, buf2, n, buf3, 100);
+
+    printf("m = %d,%s\n", m, buf3);
+
+#else 
+
+    abcdk_basecode_init(&bctx, 32);
+
+    int l = 12 + 2 + 8 + 2;
+    int l2 = abcdk_align(l,abcdk_math_lcm(8, 5)/8);
+
+    char *buf = (char*)abcdk_heap_alloc(l2);
+    char buf2[100] = {0};
+
+    abcdk_mac_fetch("eno1",ABCDK_PTR2I8PTR(buf,0));
+    ABCDK_PTR2U16(buf,12) = 3<<8;
+    ABCDK_PTR2U64(buf,14) = abcdk_time_clock2kind_with(CLOCK_REALTIME,0);
+    ABCDK_PTR2U16(buf,22) = 65535;
+
+    int n = abcdk_basecode_encode(&bctx, buf, l2, buf2, 100);
+    printf("n=%d,%s\n", n, buf2);
+
+    char *buf3 = (char*)abcdk_heap_alloc(100);
+
+    int m = abcdk_basecode_decode(&bctx, buf2, n, buf3, 100);
+
+    assert(memcmp(buf,buf3,m)==0);
+
+    abcdk_heap_free(buf3);
+
+    abcdk_heap_free(buf);
+
+#endif 
+
 }
 
 int main(int argc, char **argv)
