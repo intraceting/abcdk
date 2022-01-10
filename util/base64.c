@@ -168,7 +168,7 @@ ssize_t abcdk_base64_decode(const char *src, size_t slen, uint8_t *dst, size_t d
 
         /* 
          * four bytes
-         * a = 26,b = 27,c = 28,d = 28  (in decode table)
+         * a = 26,b = 27,c = 28,d = 29  (in decode table)
          * 
         */
 
