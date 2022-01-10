@@ -42,6 +42,8 @@ uint8_t _abcdk_basecode_de_table32(uint8_t c)
         return (uint8_t)(c - '2' + 26);
     else if (c <= 'Z')
         return (uint8_t)(c - 'A');
+
+    return c;
 }
 
 void abcdk_basecode_init(abcdk_basecode_t *ctx, uint8_t base)
