@@ -3614,6 +3614,13 @@ void test_basecode(abcdk_tree_t *args)
     ABCDK_PTR2U64(buf,14) = abcdk_time_clock2kind_with(CLOCK_REALTIME,0);
     ABCDK_PTR2U16(buf,22) = 65535;
 
+    abcdk_endian_swap(buf,l2);
+    abcdk_cyclic_shift(buf,l2,3,2);
+    abcdk_endian_swap(buf,l2);
+    abcdk_cyclic_shift(buf,l2,3,2);
+    abcdk_endian_swap(buf,l2);
+    abcdk_cyclic_shift(buf,l2,3,2);
+
     int n = abcdk_basecode_encode(&bctx, buf, l2, buf2, 100);
     printf("n=%d,%s\n", n, buf2);
 
