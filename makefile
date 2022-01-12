@@ -25,7 +25,6 @@ LINK_FLAGS += ${DEPEND_LIBS}
 
 #
 CC_FLAGS += -fPIC 
-CC_FLAGS += -Wl,--as-needed 
 CC_FLAGS += -Wno-unused-result 
 CC_FLAGS += -Wno-unused-variable 
 CC_FLAGS += -Wno-pointer-sign 
