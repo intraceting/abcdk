@@ -633,6 +633,10 @@ CheckKeyword()
 SHELL_PWD=$(cd `dirname $0`; pwd)
 
 #
+OS_ID=$(grep "^ID=" /etc/os-release |cut -d = -f 2 |sed 's/\"//g' |tr 'A-Z' 'a-z')
+OS_VER=$(grep "^VERSION_ID=" /etc/os-release |cut -d = -f 2 |sed 's/\"//g' |tr 'A-Z' 'a-z')
+
+#
 MAKE_CONF=${SHELL_PWD}/build/makefile.conf
 
 #
@@ -1156,6 +1160,10 @@ DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
 echo "MAKE_CONF=${MAKE_CONF}"
 
 #
+echo "OS_ID=${OS_ID}"
+echo "OS_VER=${OS_VER}"
+
+#
 echo "KIT_NAME=${KIT_NAME}"
 
 #
@@ -1211,6 +1219,10 @@ checkReturnCode
 echo "# A better c development kit." >> ${MAKE_CONF}
 echo "#" >> ${MAKE_CONF}
 echo "" >> ${MAKE_CONF}
+
+#
+echo "OS_ID=${OS_ID}" >> ${MAKE_CONF}
+echo "OS_VER=${OS_VER}" >> ${MAKE_CONF}
 
 #
 echo "KIT_NAME = ${KIT_NAME}" >> ${MAKE_CONF}
