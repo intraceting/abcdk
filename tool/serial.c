@@ -44,7 +44,7 @@ void _abcdkserial_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n摘要:\n");
 
-    fprintf(stderr, "\n%s [ --file < FILE > ] [ OPTIONS ] \n", name);
+    fprintf(stderr, "\n%s [ --dev < DEVICE > ] [ OPTIONS ] \n", name);
 
     fprintf(stderr, "\n描述:\n");
 
