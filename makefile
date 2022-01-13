@@ -201,6 +201,16 @@ install-tool:
 
 #
 install-ldc:
+	mkdir -p ${LDC_PATH}
+	echo "#!/bin/bash" > ${LDC_FILE}
+	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${LDC_FILE}
+	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${LDC_FILE}
+	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
+	echo "ldconfig"  >> ${LDC_FILE}
+	chmod 755 ${LDC_FILE}
+	
+#
+install-pkg:
 	mkdir -p ${PKG_PATH}
 	echo "prefix=${INSTALL_PREFIX}" > ${PKG_FILE}
 	echo "libdir=\$${prefix}/lib/" >> ${PKG_FILE}
@@ -213,15 +223,6 @@ install-ldc:
 	echo "Libs: -labcdk -L\$${libdir}" >> ${PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
 
-#
-install-pkg:
-	mkdir -p ${LDC_PATH}
-	echo "#!/bin/bash" > ${LDC_FILE}
-	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${LDC_FILE}
-	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${LDC_FILE}
-	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
-	echo "ldconfig"  >> ${LDC_FILE}
-	chmod 755 ${LDC_FILE}
 
 #
 uninstall: uninstall-lib uninstall-tool uninstall-ldc uninstall-pkg
