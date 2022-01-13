@@ -183,7 +183,6 @@ install-lib:
 	mkdir -p ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/abcdk-util ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/abcdk-mp4 ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/abcdk-auth ${INSTALL_PATH_INC}/
 	cp  -rf $(CURDIR)/include/abcdk-comm ${INSTALL_PATH_INC}/
 #
 install-tool:
@@ -233,7 +232,6 @@ uninstall-lib:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 	rm -rf ${INSTALL_PATH_INC}/abcdk-util
 	rm -rf ${INSTALL_PATH_INC}/abcdk-mp4
-	rm -rf ${INSTALL_PATH_INC}/abcdk-auth
 	rm -rf ${INSTALL_PATH_INC}/abcdk-comm
 #
 uninstall-tool:
