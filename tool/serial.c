@@ -58,9 +58,6 @@ void _abcdkserial_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--version\n");
     fprintf(stderr, "\t  显示版本信息。\n");
 
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t  显示版本信息。\n");
-
     fprintf(stderr, "\n\t--dev < DEVICE >\n");
     fprintf(stderr, "\t  串口设备。\n");
 
