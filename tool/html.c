@@ -9,9 +9,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk-util/general.h"
-#include "abcdk-util/getargs.h"
-#include "abcdk-util/html.h"
+#include "util/general.h"
+#include "util/getargs.h"
+#include "util/html.h"
 
 void _abcdkhtml_print_usage(abcdk_tree_t *args, int only_version)
 {

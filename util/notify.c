@@ -4,7 +4,7 @@
  * MIT License
  * 
 */
-#include "abcdk-util/notify.h"
+#include "util/notify.h"
 
 int abcdk_notify_init(int nonblock)
 {

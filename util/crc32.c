@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/crc32.h"
+#include "util/crc32.h"
 
 int _abcdk_crc32_init(void *opaque)
 {

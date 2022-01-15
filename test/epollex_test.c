@@ -9,12 +9,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/sendfile.h>
-#include "abcdk-util/general.h"
-#include "abcdk-util/getargs.h"
-#include "abcdk-util/clock.h"
-#include "abcdk-util/thread.h"
-#include "abcdk-util/signal.h"
-#include "abcdk-util/epollex.h"
+#include "util/general.h"
+#include "util/getargs.h"
+#include "util/clock.h"
+#include "util/thread.h"
+#include "util/signal.h"
+#include "util/epollex.h"
 
 void* sigwaitinfo_cb(void* args)
 {

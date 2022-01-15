@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/getargs.h"
+#include "util/getargs.h"
 
 void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
                    const char *prefix)

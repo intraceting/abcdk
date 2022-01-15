@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/mt.h"
+#include "util/mt.h"
 
 static struct _abcdk_mt_density_dict
 {

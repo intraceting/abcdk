@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/dirent.h"
+#include "util/dirent.h"
 
 void _abcdk_dirent_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
 {

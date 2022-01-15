@@ -4,7 +4,7 @@
  * MIT License
  * 
 */
-#include "abcdk-util/signal.h"
+#include "util/signal.h"
 
 void abcdk_sigwaitinfo(abcdk_signal_t *sig, time_t timeout)
 {

@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/freeimage.h"
+#include "util/freeimage.h"
 
 #ifdef FREEIMAGE_H
 
@@ -43,7 +43,7 @@ void abcdk_fi_init(int load_local_plugins_only)
         FreeImage_Initialise(load_local_plugins_only);
 }
 
-unsigned _abck_fi_read_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
+unsigned _abcdk_fi_read_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
     ssize_t ret;
@@ -53,7 +53,7 @@ unsigned _abck_fi_read_cb(void *buffer, unsigned size, unsigned count, fi_handle
     return ret / size;
 }
 
-unsigned _abck_fi_write_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
+unsigned _abcdk_fi_write_cb(void *buffer, unsigned size, unsigned count, fi_handle handle)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
     ssize_t ret;
@@ -63,14 +63,14 @@ unsigned _abck_fi_write_cb(void *buffer, unsigned size, unsigned count, fi_handl
     return ret / size;
 }
 
-int _abck_fi_seek_cb(fi_handle handle, long offset, int origin)
+int _abcdk_fi_seek_cb(fi_handle handle, long offset, int origin)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
 
     return lseek(fd, offset, origin);
 }
 
-long _abck_fi_tell_cb(fi_handle handle)
+long _abcdk_fi_tell_cb(fi_handle handle)
 {
     int fd = ABCDK_PTR2OBJ(int, handle, 0);
 
@@ -121,10 +121,10 @@ int abcdk_fi_save(FREE_IMAGE_FORMAT fifmt, int fiflag, int fd, const uint8_t *da
         dib_tmp += dib_stride;
     }
 
-    io.read_proc = _abck_fi_read_cb;
-    io.seek_proc = _abck_fi_seek_cb;
-    io.tell_proc = _abck_fi_tell_cb;
-    io.write_proc = _abck_fi_write_cb;
+    io.read_proc = _abcdk_fi_read_cb;
+    io.seek_proc = _abcdk_fi_seek_cb;
+    io.tell_proc = _abcdk_fi_tell_cb;
+    io.write_proc = _abcdk_fi_write_cb;
 
     if(!FreeImage_SaveToHandle(fifmt,dib,&io,(fi_handle)&fd,fiflag))
         ABCDK_ERRNO_AND_GOTO1(EPERM,final);
@@ -168,10 +168,10 @@ FIBITMAP *abcdk_fi_load(FREE_IMAGE_FORMAT fifmt,int fiflag,int fd)
     assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
     assert(fd>=0);
 
-    io.read_proc = _abck_fi_read_cb;
-    io.seek_proc = _abck_fi_seek_cb;
-    io.tell_proc = _abck_fi_tell_cb;
-    io.write_proc = _abck_fi_write_cb;
+    io.read_proc = _abcdk_fi_read_cb;
+    io.seek_proc = _abcdk_fi_seek_cb;
+    io.tell_proc = _abcdk_fi_tell_cb;
+    io.write_proc = _abcdk_fi_write_cb;
 
     dib = FreeImage_LoadFromHandle(fifmt,&io,(fi_handle)&fd,fiflag);
     if(!dib)

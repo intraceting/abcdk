@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-comm/queue.h"
+#include "comm/queue.h"
 
 /**/
 //#define ABCDK_COMM_QUEUE_SPINLOCK   1

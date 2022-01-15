@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/math.h"
+#include "util/math.h"
 
 uint64_t abcdk_math_lcm(uint64_t a, uint64_t b)
 {

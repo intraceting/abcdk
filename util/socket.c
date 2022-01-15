@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/socket.h"
+#include "util/socket.h"
 
 int abcdk_gethostbyname(const char *name, sa_family_t family, abcdk_sockaddr_t *addrs, int max, char canonname[1000])
 {

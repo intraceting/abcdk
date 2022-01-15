@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/bmp.h"
+#include "util/bmp.h"
 
 int abcdk_bmp_save(int fd, const uint8_t *data, uint32_t stride, uint32_t width, int32_t height, uint8_t bits)
 {

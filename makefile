@@ -49,7 +49,7 @@ LINK_FLAGS += -s
 endif
 
 #
-CC_FLAGS += -I$(CURDIR)/include/
+CC_FLAGS += -I$(CURDIR)
  
 #
 LINK_FLAGS += -L${BUILD_PATH}
@@ -246,11 +246,11 @@ install-runtime:
 #
 install-devel:
 #
-	mkdir -p ${INSTALL_PATH_INC}/
+	mkdir -p ${INSTALL_PATH_INC}/{util,mp4,comm}
 #
-	cp  -rf $(CURDIR)/include/abcdk-util ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/abcdk-mp4 ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/abcdk-comm ${INSTALL_PATH_INC}/
+	cp  -f $(CURDIR)/util/*.h ${INSTALL_PATH_INC}/util/
+	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
+	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
 #
 	mkdir -p ${INSTALL_PKG_PATH}
 	echo "prefix=${INSTALL_PREFIX}" > ${INSTALL_PKG_FILE}
@@ -294,85 +294,33 @@ uninstall-runtime:
 #
 uninstall-devel:
 #
-	rm -rf ${INSTALL_PATH_INC}/abcdk-util
-	rm -rf ${INSTALL_PATH_INC}/abcdk-mp4
-	rm -rf ${INSTALL_PATH_INC}/abcdk-comm
+	rm -rf ${INSTALL_PATH_INC}/util
+	rm -rf ${INSTALL_PATH_INC}/mp4
+	rm -rf ${INSTALL_PATH_INC}/comm
 #
 	rm -f ${INSTALL_PKG_FILE}
 	
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
+#
+RUNTIME_PACKAGE_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}-${OS_ID}-${OS_VER}-${TARGET_PLATFORM}.tar.gz
+#
+DEVEL_PACKAGE_FILE = $(CURDIR)/package/${SOLUTION_NAME}-devel-${VERSION_STR}.tar.gz
 
 #
-TAR_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}-${TARGET_PLATFORM}.tar.gz
+package: package-runtime package-devel
 
 #
-SPEC_FILE=$(BUILD_PATH)/${SOLUTION_NAME}.spec
-RPM_PATH=$(CURDIR)/package
-
+package-runtime:
+	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	tar -czv -f "${RUNTIME_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
+#	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	rm -rf ${TMP_ROOT_PATH}
 #
-DEB_ARCH=$(shell dpkg-architecture |grep "DEB_TARGET_ARCH=" |cut -d '=' -f 2)
-DEB_FILE=$(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}.${DEB_ARCH}.deb
-CTRL_FILE="${TMP_ROOT_PATH}/DEBIAN/control"
-CLOG_FILE="${TMP_ROOT_PATH}/DEBIAN/changelog"
-
-#
-package: ${KIT_NAME}
-
-#
-tar: clean
-	make -C $(CURDIR)
-	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
-#	
-	tar -czv -f "${TAR_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
-#
-	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
-
-#
-rpm: clean
-	make -C $(CURDIR)
-	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
-#
-	echo "BuildRoot: ${TMP_ROOT_PATH}" > ${SPEC_FILE}
-	echo 'Vendor: intraceting<intraceting@outlook.com>' >> ${SPEC_FILE}
-	echo "Name: ${SOLUTION_NAME}" >> ${SPEC_FILE}
-	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}" >> ${SPEC_FILE}
-	echo "Release: ${VERSION_RELEASE}" >> ${SPEC_FILE}
-	echo 'Group: Development/Libraries' >> ${SPEC_FILE}
-	echo 'License: MIT' >> ${SPEC_FILE}
-	echo "Summary: A bad c development kit." >> ${SPEC_FILE}
-	echo '' >> ${SPEC_FILE}
-	echo '%description' >> ${SPEC_FILE}
-	echo '${SOLUTION_NAME}.' >> ${SPEC_FILE}
-	echo '' >> ${SPEC_FILE}
-	echo '%files' >> ${SPEC_FILE}
-	echo "${INSTALL_PREFIX}" >> ${SPEC_FILE}
-	echo '' >> ${SPEC_FILE}
-#	echo '%changelog' >> ${SPEC_FILE}
-#	cat $(CURDIR)/CHANGELOG >> ${SPEC_FILE}
-#	echo '' >> ${SPEC_FILE}
-#
-	rpmbuild --rmspec --buildroot "${TMP_ROOT_PATH}"  -bb "${SPEC_FILE}" --define="_rpmdir ${RPM_PATH}"
-#
-	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
-
-#
-deb: clean
-	make -C $(CURDIR)
-	make -C $(CURDIR) install ROOT_PATH=${TMP_ROOT_PATH}
-#
-	mkdir -p ${TMP_ROOT_PATH}/DEBIAN/
-	echo "Source: ${SOLUTION_NAME}" > ${CTRL_FILE}
-	echo "Maintainer: intraceting<intraceting@outlook.com>" >> ${CTRL_FILE}
-	echo "Package: ${SOLUTION_NAME}" >> ${CTRL_FILE}
-	echo "Version: ${VERSION_STR}" >> ${CTRL_FILE}
-	echo "Section: Development/Libraries" >> ${CTRL_FILE}
-	echo "Priority: optional" >> ${CTRL_FILE}
-	echo "Architecture: ${DEB_ARCH}" >> ${CTRL_FILE}
-#	echo "Depends: \$${shlibs:Depends}" >> ${CTRL_FILE}
-	echo "Description: ${SOLUTION_NAME}." >> ${CTRL_FILE}
-#	cat $(CURDIR)/CHANGELOG > ${CLOG_FILE}
-#
-	dpkg-deb --build "${TMP_ROOT_PATH}/" "${DEB_FILE}"
-#
-	make -C $(CURDIR) uninstall ROOT_PATH=${TMP_ROOT_PATH}
+package-devel:
+	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
+	tar -czv -f "${DEVEL_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
+#	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
+	rm -rf ${TMP_ROOT_PATH}

@@ -8,8 +8,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk-util/option.h"
-#include "abcdk-util/getargs.h"
+#include "util/option.h"
+#include "util/getargs.h"
 
 
 int dump2(size_t deep, abcdk_tree_t *node, void *opaque)

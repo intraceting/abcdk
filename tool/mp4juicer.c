@@ -9,9 +9,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk-util/general.h"
-#include "abcdk-util/getargs.h"
-#include "abcdk-mp4/demuxer.h"
+#include "util/general.h"
+#include "util/getargs.h"
+#include "mp4/demuxer.h"
 
 typedef struct _abcdkm4j_ctx
 {

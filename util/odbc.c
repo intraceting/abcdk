@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/odbc.h"
+#include "util/odbc.h"
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 

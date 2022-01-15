@@ -9,10 +9,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk-util/general.h"
-#include "abcdk-util/getargs.h"
-#include "abcdk-util/termios.h"
-#include "abcdk-util/thread.h"
+#include "util/general.h"
+#include "util/getargs.h"
+#include "util/termios.h"
+#include "util/thread.h"
 
 typedef struct _abcdkserial_ctx
 {

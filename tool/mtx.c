@@ -9,10 +9,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk-util/general.h"
-#include "abcdk-util/getargs.h"
-#include "abcdk-util/scsi.h"
-#include "abcdk-util/mtx.h"
+#include "util/general.h"
+#include "util/getargs.h"
+#include "util/scsi.h"
+#include "util/mtx.h"
 
 /* */
 #define _(string) gettext(string)

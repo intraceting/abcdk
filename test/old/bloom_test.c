@@ -8,8 +8,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk-util/general.h"
-#include "abcdk-util/base64.h"
+#include "util/general.h"
+#include "util/base64.h"
 
 void test_bloom()
 {

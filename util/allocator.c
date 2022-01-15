@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/allocator.h"
+#include "util/allocator.h"
 
 /**
  * 带引用计数器的内存块头部。

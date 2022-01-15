@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-comm/message.h"
+#include "comm/message.h"
 
 /** 消息对象。*/
 typedef struct _abcdk_comm_message

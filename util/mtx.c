@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-util/mtx.h"
+#include "util/mtx.h"
 
 int abcdk_mtx_inventory(int fd, uint16_t address, uint16_t count,
                         uint32_t timeout, abcdk_scsi_io_stat *stat)

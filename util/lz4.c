@@ -4,7 +4,7 @@
  * MIT License
  * 
 */
-#include "abcdk-util/lz4.h"
+#include "util/lz4.h"
 
 #ifdef LZ4_VERSION_NUMBER
 

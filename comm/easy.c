@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk-comm/easy.h"
+#include "comm/easy.h"
 
 /*
  * --------------------------------------------------------

@@ -8,8 +8,8 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "abcdk-util/buffer.h"
-#include "abcdk-util/pool.h"
+#include "util/buffer.h"
+#include "util/pool.h"
 
 void test1()
 {

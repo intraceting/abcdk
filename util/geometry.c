@@ -4,7 +4,7 @@
  * MIT License
  * 
 */
-#include "abcdk-util/geometry.h"
+#include "util/geometry.h"
 
 double abcdk_line_length_3d(const abcdk_point_t *p1, const abcdk_point_t *p2)
 {
