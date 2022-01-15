@@ -78,13 +78,55 @@ TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: lib tool test
+all: util mp4 comm tool test
 
 #
-lib: $(UTIL_OBJ_FILES) $(MP4_OBJ_FILES) $(COMM_OBJ_FILES)
+util: util-src
+#
+util-src: $(UTIL_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
-	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
+	$(CC) -o $(BUILD_PATH)/libabcdk-util.so $^ $(LINK_FLAGS) -shared
+	$(AR) -cr $(BUILD_PATH)/libabcdk-util.a $^
+
+#
+mp4: util mp4-src
+#
+mp4-src: $(MP4_OBJ_FILES)
+	mkdir -p $(BUILD_PATH)
+	$(CC) -o $(BUILD_PATH)/libabcdk-mp4.so $^ -l:libabcdk-util.so $(LINK_FLAGS) -shared
+	$(AR) -cr $(BUILD_PATH)/libabcdk-mp4.a $^
+
+#
+comm: util comm-src
+#
+comm-src: $(COMM_OBJ_FILES)
+	mkdir -p $(BUILD_PATH)
+	$(CC) -o $(BUILD_PATH)/libabcdk-comm.so $^ -l:libabcdk-util.so $(LINK_FLAGS) -shared
+	$(AR) -cr $(BUILD_PATH)/libabcdk-comm.a $^ 
+
+#
+tool: util mp4 tool-src
+#
+tool-src: ${TOOL_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	$(CC) -o $(BUILD_PATH)/abcdk-mtx ${OBJ_PATH}/tool/mtx.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mt ${OBJ_PATH}/tool/mt.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-lsb ${OBJ_PATH}/tool/release.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-odbc ${OBJ_PATH}/tool/odbc.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-html ${OBJ_PATH}/tool/html.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-robots ${OBJ_PATH}/tool/robots.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk-util.a -l:libabcdk-mp4.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk-util.a -l:libabcdk-mp4.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-serial ${OBJ_PATH}/tool/serial.o -l:libabcdk-util.a $(LINK_FLAGS)
+
+#
+test: util test-src
+#
+test-src: ${TEST_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk-util.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk-util.so -l:libabcdk-mp4.so -l:libabcdk-comm.so $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
@@ -104,29 +146,11 @@ $(OBJ_PATH)/comm/%.o: comm/%.c
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
-tool: ${TOOL_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-mtx ${OBJ_PATH}/tool/mtx.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mt ${OBJ_PATH}/tool/mt.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-lsb ${OBJ_PATH}/tool/release.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-odbc ${OBJ_PATH}/tool/odbc.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-html ${OBJ_PATH}/tool/html.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-robots ${OBJ_PATH}/tool/robots.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-serial ${OBJ_PATH}/tool/serial.o -l:libabcdk.a $(LINK_FLAGS)
-
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
-
-test: ${TEST_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk.so $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so  $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
@@ -135,13 +159,23 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 #
-clean: clean-lib clean-tool clean-test
+clean: clean-util clean-mp4 clean-comm  clean-tool clean-test
 	rm -rf ${OBJ_PATH}
 
 #
-clean-lib:
-	rm -f $(BUILD_PATH)/libabcdk.so
-	rm -f $(BUILD_PATH)/libabcdk.a
+clean-util:
+	rm -f $(BUILD_PATH)/libabcdk-util.so
+	rm -f $(BUILD_PATH)/libabcdk-util.a
+
+#
+clean-mp4:
+	rm -f $(BUILD_PATH)/libabcdk-mp4.so
+	rm -f $(BUILD_PATH)/libabcdk-mp4.a
+
+#
+clean-comm:
+	rm -f $(BUILD_PATH)/libabcdk-comm.so
+	rm -f $(BUILD_PATH)/libabcdk-comm.a
 
 #
 clean-tool:
@@ -162,31 +196,42 @@ clean-test:
 	rm -f $(BUILD_PATH)/util_test
 
 #
-INSTALL_PATH_INC = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/include/)
-INSTALL_PATH_LIB = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
-INSTALL_PATH_BIN = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/bin/)
+INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
+INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
+INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
+INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 
 #
-LDC_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/lib/)
-LDC_FILE = $(abspath ${LDC_PATH}/ldconfig.sh)
-PKG_PATH = $(abspath ${ROOT_PATH}/${INSTALL_PREFIX}/pkgconfig/)
-PKG_FILE = $(abspath ${PKG_PATH}/${SOLUTION_NAME}.pc)
+INSTALL_LDC_PATH = $(abspath ${INSTALL_PATH}/lib/)
+INSTALL_LDC_FILE = $(abspath ${INSTALL_LDC_PATH}/ldconfig.sh)
+INSTALL_PKG_PATH = $(abspath ${INSTALL_PATH}/pkgconfig/)
+INSTALL_PKG_FILE = $(abspath ${INSTALL_PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
-install: install-lib install-tool install-ldc install-pkg
+install: install-runtime install-devel
 
 #
-install-lib:
+install-runtime:
+#
 	mkdir -p ${INSTALL_PATH_LIB}
-	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
-	mkdir -p ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/abcdk-util ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/abcdk-mp4 ${INSTALL_PATH_INC}/
-	cp  -rf $(CURDIR)/include/abcdk-comm ${INSTALL_PATH_INC}/
 #
-install-tool:
+	cp -f $(BUILD_PATH)/libabcdk-util.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk-util.a ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk-mp4.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk-mp4.a ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk-comm.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk-comm.a ${INSTALL_PATH_LIB}/
+#
+	mkdir -p ${INSTALL_LDC_PATH}
+	echo "#!/bin/bash" > ${INSTALL_LDC_FILE}
+	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${INSTALL_LDC_FILE}
+	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${INSTALL_LDC_FILE}
+	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${INSTALL_LDC_FILE}
+	echo "ldconfig"  >> ${INSTALL_LDC_FILE}
+	chmod 755 ${INSTALL_LDC_FILE}
+#
 	mkdir -p ${INSTALL_PATH_BIN}
+#
 	cp -f $(BUILD_PATH)/abcdk-mtx ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/abcdk-mt ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/abcdk-lsb ${INSTALL_PATH_BIN}/
@@ -199,42 +244,42 @@ install-tool:
 	cp -f $(BUILD_PATH)/abcdk-serial ${INSTALL_PATH_BIN}/
 
 #
-install-ldc:
-	mkdir -p ${LDC_PATH}
-	echo "#!/bin/bash" > ${LDC_FILE}
-	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${LDC_FILE}
-	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${LDC_FILE}
-	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${LDC_FILE}
-	echo "ldconfig"  >> ${LDC_FILE}
-	chmod 755 ${LDC_FILE}
-	
+install-devel:
 #
-install-pkg:
-	mkdir -p ${PKG_PATH}
-	echo "prefix=${INSTALL_PREFIX}" > ${PKG_FILE}
-	echo "libdir=\$${prefix}/lib/" >> ${PKG_FILE}
-	echo "incdir=\$${prefix}/include/" >> ${PKG_FILE}
-	echo "" >> ${PKG_FILE}
-	echo "Name: ${SOLUTION_NAME}" >> ${PKG_FILE}
-	echo "Description: A bad c development kit. " >> ${PKG_FILE}
-	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${PKG_FILE}
-	echo "Cflags: -I\$${incdir}" >> ${PKG_FILE}
-	echo "Libs: -labcdk -L\$${libdir}" >> ${PKG_FILE}
-	echo "Libs.private: ${DEPEND_LIBS}" >> ${PKG_FILE}
+	mkdir -p ${INSTALL_PATH_INC}/
+#
+	cp  -rf $(CURDIR)/include/abcdk-util ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/abcdk-mp4 ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/include/abcdk-comm ${INSTALL_PATH_INC}/
+#
+	mkdir -p ${INSTALL_PKG_PATH}
+	echo "prefix=${INSTALL_PREFIX}" > ${INSTALL_PKG_FILE}
+	echo "libdir=\$${prefix}/lib/" >> ${INSTALL_PKG_FILE}
+	echo "incdir=\$${prefix}/include/" >> ${INSTALL_PKG_FILE}
+	echo "" >> ${INSTALL_PKG_FILE}
+	echo "Name: ${SOLUTION_NAME}" >> ${INSTALL_PKG_FILE}
+	echo "Description: A bad c development kit. " >> ${INSTALL_PKG_FILE}
+	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${INSTALL_PKG_FILE}
+	echo "Cflags: -I\$${incdir}" >> ${INSTALL_PKG_FILE}
+	echo "Libs: -labcdk-util -labcdk-mp4 -labcdk-comm -L\$${libdir}" >> ${INSTALL_PKG_FILE}
+	echo "Libs.private: ${DEPEND_LIBS}" >> ${INSTALL_PKG_FILE}
 
 
 #
-uninstall: uninstall-lib uninstall-tool uninstall-ldc uninstall-pkg
+uninstall: uninstall-runtime uninstall-devel
 
 #
-uninstall-lib:
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
-	rm -rf ${INSTALL_PATH_INC}/abcdk-util
-	rm -rf ${INSTALL_PATH_INC}/abcdk-mp4
-	rm -rf ${INSTALL_PATH_INC}/abcdk-comm
+uninstall-runtime:
 #
-uninstall-tool:
+	rm -f ${INSTALL_PATH_LIB}/libabcdk-util.so
+	rm -f ${INSTALL_PATH_LIB}/libabcdk-util.a
+	rm -f ${INSTALL_PATH_LIB}/libabcdk-mp4.so
+	rm -f ${INSTALL_PATH_LIB}/libabcdk-mp4.a
+	rm -f ${INSTALL_PATH_LIB}/libabcdk-comm.so
+	rm -f ${INSTALL_PATH_LIB}/libabcdk-comm.a
+#
+	rm -f ${INSTALL_LDC_FILE}
+#
 	rm -f $(INSTALL_PATH_BIN)/abcdk-mtx
 	rm -f $(INSTALL_PATH_BIN)/abcdk-mt
 	rm -f $(INSTALL_PATH_BIN)/abcdk-lsb
@@ -247,12 +292,13 @@ uninstall-tool:
 	rm -f $(INSTALL_PATH_BIN)/abcdk-serial
 
 #
-uninstall-ldc:
-	rm -f ${LDC_FILE}
-
+uninstall-devel:
 #
-uninstall-pkg:
-	rm -f ${PKG_FILE}
+	rm -rf ${INSTALL_PATH_INC}/abcdk-util
+	rm -rf ${INSTALL_PATH_INC}/abcdk-mp4
+	rm -rf ${INSTALL_PATH_INC}/abcdk-comm
+#
+	rm -f ${INSTALL_PKG_FILE}
 	
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
