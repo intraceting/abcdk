@@ -17,25 +17,25 @@ typedef enum _abcdk_uri_field
 {
     /** 协议名称*/
     ABCDK_URI_SCHEME = 0,
-#define ABCDK_URI_SCHEME    ABCDK_URI_SCHEME
+#define ABCDK_URI_SCHEME ABCDK_URI_SCHEME
 
     /** 用户名称*/
     ABCDK_URI_USER = 1,
-#define ABCDK_URI_USER  ABCDK_URI_USER
+#define ABCDK_URI_USER ABCDK_URI_USER
 
     /** 访问密码*/
     ABCDK_URI_PSWD = 2,
-#define ABCDK_URI_PSWD  ABCDK_URI_PSWD
+#define ABCDK_URI_PSWD ABCDK_URI_PSWD
 
     /** 主机地址(包括端口)*/
     ABCDK_URI_HOST = 3,
-#define ABCDK_URI_HOST  ABCDK_URI_HOST
+#define ABCDK_URI_HOST ABCDK_URI_HOST
 
     /** 资源路径*/
     ABCDK_URI_PATH = 4,
-#define ABCDK_URI_PATH  ABCDK_URI_PATH
+#define ABCDK_URI_PATH ABCDK_URI_PATH
 
-}abcdk_uri_field;
+} abcdk_uri_field;
 
 /**
  * URI拆分。
