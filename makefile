@@ -12,7 +12,7 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 include ${MAKE_CONF}
 
 #
-VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
+VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
 # C Standard
 CC_STD = -std=c11
