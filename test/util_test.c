@@ -279,16 +279,19 @@ void test_freeimage(abcdk_tree_t *args)
 
 void test_uri(abcdk_tree_t *args)
 {
-    const char *uri = abcdk_option_get(args,"--uri",0,"");
+    int n = abcdk_option_count(args, "--uri");
+    for (int i = 0; i < n; i++)
+    {
+        const char *uri = abcdk_option_get(args, "--uri", i, "");
 
-    abcdk_allocator_t * alloc = abcdk_uri_split(uri);
-    assert(alloc);
+        abcdk_allocator_t *alloc = abcdk_uri_split(uri);
+        assert(alloc);
 
+        for (size_t i = 0; i < alloc->numbers; i++)
+            printf("[%ld]: %s\n", i, alloc->pptrs[i]);
 
-    for(size_t i = 0;i<alloc->numbers;i++)
-        printf("[%ld]: %s\n",i,alloc->pptrs[i]);
-
-    abcdk_allocator_unref(&alloc);
+        abcdk_allocator_unref(&alloc);
+    }
 }
 
 void test_strrep(abcdk_tree_t *args)

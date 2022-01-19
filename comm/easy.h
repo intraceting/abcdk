@@ -17,7 +17,13 @@ __BEGIN_DECLS
 /** 简单的通信对象。*/
 typedef struct _abcdk_comm_easy abcdk_comm_easy_t;
 
-/** 请求回调函数。*/
+/** 
+ * 请求回调函数。
+ * 
+ * @param easy 应用层环境指针。
+ * @param req 请求数据指针。NULL(0) 连接或监听关闭。
+ * @param len 请求数据长度。0 连接或监听关闭。
+*/
 typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_easy_t *easy, const void *req, size_t len);
 
 /**
