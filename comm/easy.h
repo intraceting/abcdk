@@ -105,6 +105,11 @@ int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t l
 /**
  * 启动监听。
  * 
+ * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param addr 监听地址指针。
+ * @param event_cb 事件回调函数指针(新的连接会复制这个指针)。
+ * @param opaque 监听环境指针(新的连接会复制这个指针)。
+ * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
 abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
@@ -112,7 +117,12 @@ abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *ad
 
 /**
  * 启动连接。
- *
+ * 
+ * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param addr 服务端地址指针。
+ * @param event_cb 事件回调函数指针。
+ * @param opaque 客户端环境指针。
+ * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
 abcdk_comm_easy_t *abcdk_comm_easy_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
