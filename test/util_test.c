@@ -3336,7 +3336,7 @@ void test_easy(abcdk_tree_t *args)
 
     abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(server_ssl_ctx,&addr,test_easy_request_cb,NULL);
 
-    const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
+    const char *connect_p = abcdk_option_get(args,"--connect",0,"192.168.1.203:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
 
     abcdk_comm_easy_t *easy_client[4] = {NULL};
@@ -3346,7 +3346,7 @@ void test_easy(abcdk_tree_t *args)
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
 
-    #pragma omp parallel for num_threads(4)
+   // #pragma omp parallel for num_threads(4)
     for(int i = 0;i<1000000;i++)
     {
         uint64_t d = 0,s = 0;
