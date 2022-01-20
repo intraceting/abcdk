@@ -83,12 +83,11 @@ void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
  * @param data 请求数据的指针。
  * @param len 请求数据的长度。
  * @param rsp 应答容器的指针，NULL(0) 不需要应答。
- * @param timeout 超时(毫秒)。
  * 
- * @return 0 成功，-1 失败(超时)，-2 失败(已断开)。
+ * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(已断开)。
 */
 int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
-                            abcdk_comm_message_t **rsp, time_t timeout);
+                            abcdk_comm_message_t **rsp);
 
 /** 
  * 发送应答。

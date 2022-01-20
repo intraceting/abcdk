@@ -266,7 +266,7 @@ abcdk_comm_message_t *_abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg)
 }
 
 int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
-                            abcdk_comm_message_t **rsp, time_t timeout)
+                            abcdk_comm_message_t **rsp)
 {
     abcdk_comm_queue_t *rsp_queue = NULL;
     abcdk_comm_message_t *rsp_msg = NULL;
@@ -284,6 +284,7 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t le
     if (rsp)
         abcdk_comm_waiter_request2(easy->rsp_waiter, &mid);
 
+    /*发送请求(仅向输出队列注册事件和消息)。*/
     chk = _abcdk_comm_easy_post(easy, data, len, mid, 0);
     if (chk != 0)
         return -1;
@@ -292,18 +293,19 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t le
     if (!rsp)
         return 0;
 
-    rsp_queue = abcdk_comm_waiter_wait2(easy->rsp_waiter, &mid, 1, timeout);
+    rsp_queue = abcdk_comm_waiter_wait2(easy->rsp_waiter, &mid, 1, INTMAX_MAX);
     if (!rsp_queue)
         return -1;
 
     rsp_msg = abcdk_comm_queue_pop(rsp_queue);
-    if (rsp_msg)
-    {
-        *rsp = _abcdk_comm_easy_extrac_cargo(rsp_msg);
-        abcdk_comm_message_unref(&rsp_msg);
-    }
-
     abcdk_comm_queue_free(&rsp_queue);
+
+    if (!rsp_msg)
+        return -2;
+
+    /*提取应答货物(应用层数据包)。*/
+    *rsp = _abcdk_comm_easy_extrac_cargo(rsp_msg);
+    abcdk_comm_message_unref(&rsp_msg);
 
     return 0;
 }

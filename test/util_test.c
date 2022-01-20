@@ -3258,7 +3258,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
         usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
-        abcdk_comm_easy_request(easy,data,len,NULL,0);
+        abcdk_comm_easy_request(easy,data,len,NULL);
 
 
     }
@@ -3358,7 +3358,7 @@ void test_easy(abcdk_tree_t *args)
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp,1000);
+        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp);
         
 
         if (rsp)

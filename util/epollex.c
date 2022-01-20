@@ -485,7 +485,7 @@ int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t ti
     int count;
     int chk = 0,wait_chk = 0;
 
-    assert(ctx != NULL && event != NULL);
+    assert(ctx != NULL && event != NULL && timeout > 0);
 
     /*计算过期时间。*/
     time_end = abcdk_epollex_clock() + timeout;

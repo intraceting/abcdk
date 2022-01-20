@@ -154,7 +154,7 @@ abcdk_comm_queue_t *abcdk_comm_waiter_wait(abcdk_comm_waiter_t *waiter,
     abcdk_comm_queue_t *queue_p = NULL;
     abcdk_allocator_t *it;
 
-    assert(waiter != NULL && key != NULL && ksize > 0);
+    assert(waiter != NULL && key != NULL && ksize > 0 && max > 0 && timeout > 0);
 
     /*计算过期时间。*/
     time_end = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3) + timeout;

@@ -131,6 +131,8 @@ abcdk_comm_message_t *abcdk_comm_queue_pop(abcdk_comm_queue_t *queue)
     abcdk_tree_t *msg_node = NULL;
     abcdk_comm_message_t *msg_p = NULL;
 
+    assert(queue != NULL);
+
 #ifndef ABCDK_COMM_QUEUE_SPINLOCK 
     abcdk_mutex_lock(&queue->locker, 1);
 #else 
