@@ -10,11 +10,9 @@
 #include "util/defs.h"
 #include "util/atomic.h"
 
-#ifdef HAVE_OPENMP
 #ifdef _OPENMP
 #include <omp.h>
 #endif //_OPENMP
-#endif //HAVE_OPENMP
 
 __BEGIN_DECLS
 
