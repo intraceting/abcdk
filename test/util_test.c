@@ -3346,9 +3346,11 @@ void test_easy(abcdk_tree_t *args)
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
 
-   // #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(4)
     for(int i = 0;i<1000000;i++)
     {
+        omp_get_thread_num();
+        
         uint64_t d = 0,s = 0;
         s = abcdk_clock(d,&d);
 
