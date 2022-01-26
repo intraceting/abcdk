@@ -47,14 +47,18 @@ void abcdk_comm_waiter_free(abcdk_comm_waiter_t **waiter)
     *waiter = NULL;
 }
 
-int _abcdk_comm_waiter_compare_cb(const void *key1, const void *key2, size_t size, void *opaque)
+int _abcdk_comm_waiter_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
-    abcdk_comm_waiter_t *waiter = (abcdk_comm_waiter_t*)opaque;
+    abcdk_comm_waiter_t *waiter = (abcdk_comm_waiter_t *)opaque;
 
-    if(waiter->compare_cb)
-        return waiter->compare_cb(key1,key2,size);
-    else 
-        return memcmp(key1, key2, size);
+    if (waiter->compare_cb)
+        return waiter->compare_cb(key1, size1, key2, size2);
+    else if (size1 > size2)
+        return 1;
+    else if (size1 < size2)
+        return -1;
+
+    return memcmp(key1, key2, size2);
 }
 
 void _abcdk_comm_waiter_destroy_cb(abcdk_allocator_t *alloc, void *opaque)

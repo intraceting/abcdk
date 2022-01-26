@@ -19,9 +19,9 @@ typedef struct _abcdk_comm_waiter abcdk_comm_waiter_t;
 /** 
  * 消息KEY比较函数。
  * 
- * @return > 0 is key1 > key2，0 is key1 == key2，< 0 is key1 < key2。
+ * @return 0 key1等于key2，!0 key1不等于key2。
 */
-typedef int (*abcdk_comm_waiter_compare_cb)(const void *key1, const void *key2, size_t size);
+typedef int (*abcdk_comm_waiter_compare_cb)(const void *key1, size_t size1, const void *key2, size_t size2);
 
 /**
  * 释放消息服务员。

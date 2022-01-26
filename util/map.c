@@ -11,9 +11,14 @@ uint64_t _abcdk_map_hash(const void *data, size_t size, void *opaque)
     return abcdk_hash_bkdr64(data, size);
 }
 
-int _abcdk_map_compare(const void *data1, const void *data2, size_t size, void *opaque)
+int _abcdk_map_compare(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
-    return memcmp(data1, data2, size);
+    if (size1 > size2)
+        return 1;
+    else if (size1 < size2)
+        return -1;
+
+    return memcmp(key1, key2, size2);
 }
 
 void abcdk_map_destroy(abcdk_map_t *map)
@@ -85,12 +90,9 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
     node = abcdk_tree_child(it, 1);
     while (node)
     {
-        if (node->alloc->sizes[ABCDK_MAP_KEY] == ksize)
-        {
-            chk = map->compare_cb(node->alloc->pptrs[ABCDK_MAP_KEY], key, ksize, map->opaque);
-            if (chk == 0)
-                break;
-        }
+        chk = map->compare_cb(node->alloc->pptrs[ABCDK_MAP_KEY],node->alloc->sizes[ABCDK_MAP_KEY], key, ksize, map->opaque);
+        if (chk == 0)
+            break;
 
         node = abcdk_tree_sibling(node, 0);
     }
