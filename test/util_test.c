@@ -3586,9 +3586,9 @@ void test_basecode(abcdk_tree_t *args)
 {
     abcdk_basecode_t bctx = {0};
 
-#if 0
+#if 1
 
-    abcdk_basecode_init(&bctx, 64);
+    abcdk_basecode_init(&bctx, 32);
 
     char buf[100]={"abcdefghijklmnopqrstuvwxyz\n"};
     //char buf[100] = {"abc\n"};
@@ -3606,7 +3606,7 @@ void test_basecode(abcdk_tree_t *args)
 
     printf("m = %d,%s\n", m, buf3);
 
-#else 
+#else
 
     abcdk_basecode_init(&bctx, 32);
 
