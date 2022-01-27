@@ -474,7 +474,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
     if(!addrs)
         ABCDK_ERRNO_AND_RETURN1(errno,0);
 
-    addr_num = abcdk_ifname_fetch(addrs,addr_max,1,0);
+    addr_num = abcdk_ifname_fetch(addrs,addr_max,0,0);
 
     for (int i = 0; i < addr_num; i++)
     {
