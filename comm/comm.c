@@ -19,7 +19,7 @@ typedef struct _abcdk_comm
     abcdk_thread_t *tids;
 
     /** 工人数量。*/
-    volatile int workers;
+    int workers;
 
     /** 工作命令。1： 运行，2：停止。*/
     volatile int work_cmd;
@@ -612,29 +612,25 @@ int abcdk_comm_start(int workers)
 
     for (int i = 0; i < workers; i++)
     {
-        abcdk_atomic_fetch_and_add(&ctx->workers, 1);
-        
         ctx->tids[i].handle = 0;
         ctx->tids[i].routine = _abcdk_comm_worker;
         ctx->tids[i].opaque = ctx;
         chk = abcdk_thread_create(&ctx->tids[i], 1);
-        if (chk == 0)
-        {
-            CPU_ZERO(&cpu_set);
-            CPU_SET(i % nps, &cpu_set);
-            pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
-        }
-        else
-        {
-            /*线程启动失败，回滚计数器。*/
-            abcdk_atomic_fetch_and_add(&ctx->workers, -1);
+        if (chk != 0)
             break;
-        }
+
+        /*线程启动，累加计数器。*/
+        ctx->workers += 1;
+
+        /*设置线程的CPU亲源性。*/
+        CPU_ZERO(&cpu_set);
+        CPU_SET(i % nps, &cpu_set);
+        pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
     }
 
 final:
 
-    return abcdk_atomic_load(&ctx->workers);
+    return ctx->workers;
 }
 
 void abcdk_comm_stop()
