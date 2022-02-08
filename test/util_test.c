@@ -3645,6 +3645,27 @@ void test_basecode(abcdk_tree_t *args)
 
 }
 
+void test_setns(abcdk_tree_t *args)
+{
+    int pid = abcdk_option_get_int(args, "--pid", 0, -1);
+    const char *cmd = abcdk_option_get(args, "--cmd", 0, "/bin/bash");
+
+    char buf[100] = {0};
+
+    sprintf(buf, "/proc/%d/ns/pid", pid);
+
+    int fd = abcdk_open(buf, 0, 0, 0);
+    assert(fd >= 0);
+
+    int chk = setns(fd, 0);
+    assert(chk == 0);
+
+    const char *argv[2] = {cmd,NULL};
+    chk = execvp(cmd, argv);
+    printf("%d\n",errno);
+    assert(chk == 0);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3806,6 +3827,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_basecode", 0) == 0)
         test_basecode(args);
+    
+    if (abcdk_strcmp(func, "test_setns", 0) == 0)
+        test_setns(args);
 
     abcdk_tree_free(&args);
     
