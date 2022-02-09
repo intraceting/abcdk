@@ -13,62 +13,46 @@
 #include "util/getargs.h"
 #include "util/mmap.h"
 #include "util/hexdump.h"
+#include "entry.h"
 
 void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-
-    fprintf(stderr, "\n%s [ --file < FILE > ] [ OPTIONS ] \n", name);
-
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n  简单的十六进制格式查看工具。\n");
+    fprintf(stderr, "\n\t简单的十六进制格式查看工具。\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t  显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t  显示版本信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--file < FILE >\n");
-    fprintf(stderr, "\t  文件(包括路径)。\n");
+    fprintf(stderr, "\t\t文件(包括路径)。\n");
 
     fprintf(stderr, "\n\t--offset < OFFSET >\n");
-    fprintf(stderr, "\t  偏移量(0为起始)。默认：0\n");
+    fprintf(stderr, "\t\t偏移量(0为起始)。默认：0\n");
 
     fprintf(stderr, "\n\t--size < SIZE >\n");
-    fprintf(stderr, "\t  长度(字节)。默认：1024\n");
+    fprintf(stderr, "\t\t长度(字节)。默认：1024\n");
 
     fprintf(stderr, "\n\t--width < WIDTH >\n");
-    fprintf(stderr, "\t  宽度。默认：16\n");
+    fprintf(stderr, "\t\t宽度。默认：16\n");
 
     fprintf(stderr, "\n\t--base < BASE >\n");
-    fprintf(stderr, "\t  进制。默认：%d\n",ABCDK_HEXDEMP_BASE_HEX);
+    fprintf(stderr, "\t\t进制。默认：%d\n",ABCDK_HEXDEMP_BASE_HEX);
 
-    fprintf(stderr, "\n\t  %d：十六进制\n",ABCDK_HEXDEMP_BASE_HEX);
-    fprintf(stderr, "\t  %d：十进制\n",ABCDK_HEXDEMP_BASE_DEC);
-    fprintf(stderr, "\t  %d：八进制\n",ABCDK_HEXDEMP_BASE_OCT);
+    fprintf(stderr, "\n\t\t%d：十六进制\n",ABCDK_HEXDEMP_BASE_HEX);
+    fprintf(stderr, "\t\t%d：十进制\n",ABCDK_HEXDEMP_BASE_DEC);
+    fprintf(stderr, "\t\t%d：八进制\n",ABCDK_HEXDEMP_BASE_OCT);
 
     fprintf(stderr, "\n\t--show-addr\n");
-    fprintf(stderr, "\t  显示地址。默认：不显示\n");
+    fprintf(stderr, "\t\t显示地址。默认：不显示\n");
 
     fprintf(stderr, "\n\t--show-char\n");
-    fprintf(stderr, "\t  显示字符。默认：不显示\n");
+    fprintf(stderr, "\t\t显示字符。默认：不显示\n");
 
     fprintf(stderr, "\n\t--palette < COLOR [COLOR ...] >\n");
-    fprintf(stderr, "\t  调色板。默认：");
+    fprintf(stderr, "\t\t调色板。默认：");
     fprintf(stderr, ABCDK_ANSI_COLOR_RED "\\x1b\[31m " ABCDK_ANSI_COLOR_RESET);
     fprintf(stderr, ABCDK_ANSI_COLOR_GREEN "\\x1b\[32m " ABCDK_ANSI_COLOR_RESET);
     fprintf(stderr, ABCDK_ANSI_COLOR_YELLOW "\\x1b\[33m " ABCDK_ANSI_COLOR_RESET);
@@ -78,13 +62,13 @@ void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n");
 
     fprintf(stderr, "\n\t--keyword < STRING [STRING ...] >\n");
-    fprintf(stderr, "\t  关键字。\n");
+    fprintf(stderr, "\t\t关键字。\n");
 
     fprintf(stderr, "\n\t--keyword16 < HEXSTRING [HEXSTRING ...] >\n");
-    fprintf(stderr, "\t  关键字(16进制)。每个关键字的长度为2的倍数，否则忽略。如：0102 0a0b \n");
+    fprintf(stderr, "\t\t关键字(16进制)。每个关键字的长度为2的倍数，否则忽略。如：0102 0a0b \n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t  输出到指定的文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -245,37 +229,16 @@ final:
     errno = err;
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_hexdump(abcdk_tree_t *args)
 {
-    abcdk_tree_t *args;
-
-    /*中文，UTF-8*/
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-
-    args = abcdk_tree_alloc3(1);
-    if (!args)
-        goto final;
-
-    abcdk_getargs(args, argc, argv, "--");
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
-
     if (abcdk_option_exist(args, "--help"))
     {
         _abcdkhd_print_usage(args, 0);
-    }
-    else if (abcdk_option_exist(args, "--version"))
-    {
-        _abcdkhd_print_usage(args, 1);
     }
     else
     {
         _abcdkhd_work(args);
     }
-
-final:
-
-    abcdk_tree_free(&args);
 
     return errno;
 }

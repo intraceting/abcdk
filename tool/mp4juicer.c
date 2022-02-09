@@ -12,6 +12,7 @@
 #include "util/general.h"
 #include "util/getargs.h"
 #include "mp4/demuxer.h"
+#include "entry.h"
 
 typedef struct _abcdkm4j_ctx
 {
@@ -92,20 +93,6 @@ typedef struct _abcdkm4j_ctx
 
 void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-
-    fprintf(stderr, "\n%s [ --file < FILE > ] [ OPTIONS ] \n", name);
-
     fprintf(stderr, "\n描述:\n");
 
     fprintf(stderr, "\n\tMP4视音频提取器，仅支持H264和ACC。\n");
@@ -114,9 +101,6 @@ void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--file < FILE >\n");
     fprintf(stderr, "\t\t文件(包括路径)。\n");
@@ -580,37 +564,20 @@ final:
     abcdk_tree_free(&ctx->doc);
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_mp4juicer(abcdk_tree_t *args)
 {
     abcdkm4j_ctx ctx = {0};
 
-    /*中文，UTF-8*/
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-
-    ctx.args = abcdk_tree_alloc3(1);
-    if (!ctx.args)
-        goto final;
-
-    abcdk_getargs(ctx.args, argc, argv, "--");
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
+    ctx.args = args;
 
     if (abcdk_option_exist(ctx.args, "--help"))
     {
         _abcdkm4j_print_usage(ctx.args, 0);
     }
-    else if (abcdk_option_exist(ctx.args, "--version"))
-    {
-        _abcdkm4j_print_usage(ctx.args, 1);
-    }
     else
     {
         _abcdkm4j_work(&ctx);
     }
-
-final:
-    
-    abcdk_tree_free(&ctx.args);
 
     return ctx.errcode;
 }

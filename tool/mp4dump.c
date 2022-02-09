@@ -12,23 +12,10 @@
 #include "util/general.h"
 #include "util/getargs.h"
 #include "mp4/demuxer.h"
+#include "entry.h"
 
 void _abcdkm4d_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-
-    fprintf(stderr, "\n%s [ --file < FILE > ] [ OPTIONS ] \n", name);
-
     fprintf(stderr, "\n描述:\n");
 
     fprintf(stderr, "\n\t简单的MP4结构查看工具。\n");
@@ -37,9 +24,6 @@ void _abcdkm4d_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--file < FILE >\n");
     fprintf(stderr, "\t\t文件(包括路径)。\n");
@@ -118,37 +102,16 @@ final:
 
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_mp4dump(abcdk_tree_t *args)
 {
-    abcdk_tree_t *args;
-
-    /*中文，UTF-8*/
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-
-    args = abcdk_tree_alloc3(1);
-    if (!args)
-        goto final;
-
-    abcdk_getargs(args, argc, argv, "--");
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
-
     if (abcdk_option_exist(args, "--help"))
     {
         _abcdkm4d_print_usage(args, 0);
-    }
-    else if (abcdk_option_exist(args, "--version"))
-    {
-        _abcdkm4d_print_usage(args, 1);
     }
     else
     {
         _abcdkm4d_work(args);
     }
-
-final:
-
-    abcdk_tree_free(&args);
 
     return errno;
 }

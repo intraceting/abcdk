@@ -3685,6 +3685,8 @@ int test_clone_func(void *args)
     }
 
 #endif
+
+    return 0;
 }
 
 pid_t clone_wrapper(int (*func)(void *args), int flag, const char *cmd)

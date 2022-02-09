@@ -109,16 +109,7 @@ tool: util mp4 tool-src
 #
 tool-src: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-mtx ${OBJ_PATH}/tool/mtx.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mt ${OBJ_PATH}/tool/mt.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-lsb ${OBJ_PATH}/tool/release.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-odbc ${OBJ_PATH}/tool/odbc.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-html ${OBJ_PATH}/tool/html.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-robots ${OBJ_PATH}/tool/robots.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-hexdump ${OBJ_PATH}/tool/hexdump.o -l:libabcdk-util.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mp4dump ${OBJ_PATH}/tool/mp4dump.o -l:libabcdk-util.a -l:libabcdk-mp4.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-mp4juicer ${OBJ_PATH}/tool/mp4juicer.o -l:libabcdk-util.a -l:libabcdk-mp4.a $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/abcdk-serial ${OBJ_PATH}/tool/serial.o -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk $^ -l:libabcdk-util.a -l:libabcdk-mp4.a $(LINK_FLAGS)
 
 #
 test: util test-src
@@ -179,16 +170,8 @@ clean-comm:
 
 #
 clean-tool:
-	rm -f $(BUILD_PATH)/abcdk-mtx
-	rm -f $(BUILD_PATH)/abcdk-mt
-	rm -f $(BUILD_PATH)/abcdk-lsb
-	rm -f $(BUILD_PATH)/abcdk-odbc
-	rm -f $(BUILD_PATH)/abcdk-html
-	rm -f $(BUILD_PATH)/abcdk-robots
-	rm -f $(BUILD_PATH)/abcdk-hexdump
-	rm -f $(BUILD_PATH)/abcdk-mp4dump
-	rm -f $(BUILD_PATH)/abcdk-mp4juicer
-	rm -f $(BUILD_PATH)/abcdk-serial
+	rm -f $(BUILD_PATH)/abcdk
+
 
 #
 clean-test:
@@ -232,16 +215,7 @@ install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_BIN}
 #
-	cp -f $(BUILD_PATH)/abcdk-mtx ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-mt ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-lsb ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-odbc ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-html ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-robots ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-hexdump ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-mp4dump ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-mp4juicer ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-serial ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}
 
 #
 install-devel:
@@ -282,16 +256,7 @@ uninstall-runtime:
 #
 	rm -f ${INSTALL_LDC_FILE}
 #
-	rm -f $(INSTALL_PATH_BIN)/abcdk-mtx
-	rm -f $(INSTALL_PATH_BIN)/abcdk-mt
-	rm -f $(INSTALL_PATH_BIN)/abcdk-lsb
-	rm -f $(INSTALL_PATH_BIN)/abcdk-odbc
-	rm -f $(INSTALL_PATH_BIN)/abcdk-html
-	rm -f $(INSTALL_PATH_BIN)/abcdk-robots
-	rm -f $(INSTALL_PATH_BIN)/abcdk-hexdump
-	rm -f $(INSTALL_PATH_BIN)/abcdk-mp4dump
-	rm -f $(INSTALL_PATH_BIN)/abcdk-mp4juicer
-	rm -f $(INSTALL_PATH_BIN)/abcdk-serial
+	rm -f $(INSTALL_PATH_BIN)/abcdk
 
 #
 uninstall-devel:

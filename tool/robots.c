@@ -12,35 +12,17 @@
 #include "util/general.h"
 #include "util/getargs.h"
 #include "util/robots.h"
-
+#include "entry.h"
 
 void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-
-    fprintf(stderr, "\n%s [ --robots < FILE > ] [--url < URL [URL ...] > ] [ OPTIONS ] \n", name);
-
     fprintf(stderr, "\n描述:\n");
-
     fprintf(stderr, "\n\t分析Robots文件，过滤被规则禁止的URL，仅输出规则允许的URL。\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--robots < FILE >\n");
     fprintf(stderr, "\t\tRobots 文件名(包括路径)。\n");
@@ -186,38 +168,16 @@ final:
     abcdk_tree_free(&rbts);
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_robots(abcdk_tree_t *args)
 {
-    abcdk_tree_t *args;
-
-    /*中文，UTF-8*/
-    setlocale(LC_ALL,"zh_CN.UTF-8");
-
-    args = abcdk_tree_alloc3(1);
-    if (!args)
-        goto final;
-
-    abcdk_getargs(args, argc, argv, "--");
-    //abcdk_option_fprintf(stderr, args);
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
-
     if (abcdk_option_exist(args, "--help"))
     {
         _abcdkrobots_print_usage(args, 0);
-    }
-    else if (abcdk_option_exist(args, "--version"))
-    {
-        _abcdkrobots_print_usage(args, 1);
     }
     else
     {
         _abcdkrobots_work(args);
     }
-
-final:
-
-    abcdk_tree_free(&args);
 
     return errno;
 }

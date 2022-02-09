@@ -13,6 +13,7 @@
 #include "util/getargs.h"
 #include "util/scsi.h"
 #include "util/mtx.h"
+#include "entry.h"
 
 /* */
 #define _(string) gettext(string)
@@ -49,20 +50,6 @@ enum _abcdkmtx_status_fmt
 
 void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-    
-    fprintf(stderr, "\n%s [ --dev < FILE > ] [ OPTIONS ] \n",name);
-
     fprintf(stderr, "\n描述:\n");
 
     fprintf(stderr, "\n\t简单的机械手(磁带库，光盘库等)工具。\n");
@@ -71,9 +58,6 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--dev < FILE >\n");
     fprintf(stderr, "\t\t机械手设备文件(包括路径)。\n");
@@ -436,37 +420,16 @@ final:
     abcdk_tree_free(&root);
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_mtx(abcdk_tree_t *args)
 {
-    abcdk_tree_t *args;
-
-    /*中文，UTF-8*/
-    setlocale(LC_ALL,"zh_CN.UTF-8");
-
-    args = abcdk_tree_alloc3(1);
-    if (!args)
-        goto final;
-
-    abcdk_getargs(args, argc, argv, "--");
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
-
     if (abcdk_option_exist(args, "--help"))
     {
         _abcdkmtx_print_usage(args, 0);
-    }
-    else if (abcdk_option_exist(args, "--version"))
-    {
-        _abcdkmtx_print_usage(args, 1);
     }
     else
     {
         _abcdkmtx_work(args);
     }
-
-final:
-
-    abcdk_tree_free(&args);
-
+    
     return errno;
 }

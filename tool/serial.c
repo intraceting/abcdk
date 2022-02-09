@@ -13,6 +13,7 @@
 #include "util/getargs.h"
 #include "util/termios.h"
 #include "util/thread.h"
+#include "entry.h"
 
 typedef struct _abcdkserial_ctx
 {
@@ -32,54 +33,37 @@ typedef struct _abcdkserial_ctx
 
 void _abcdkserial_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-
-    fprintf(stderr, "\n%s [ --dev < DEVICE > ] [ OPTIONS ] \n", name);
-
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n  简单的串口调试工具。\n");
+    fprintf(stderr, "\n\t简单的串口调试工具。\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t  显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t  显示版本信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--dev < DEVICE >\n");
-    fprintf(stderr, "\t  串口设备。\n");
+    fprintf(stderr, "\t\t串口设备。\n");
 
     fprintf(stderr, "\n\t--baudrate < NUMBER >\n");
-    fprintf(stderr, "\t  波特率。默认：9600\n");
+    fprintf(stderr, "\t\t波特率。默认：9600\n");
 
     fprintf(stderr, "\n\t--bits < NUMBER >\n");
-    fprintf(stderr, "\t  数据位。默认：8\n");
-    fprintf(stderr, "\n\t  5：5 bits\n");
-    fprintf(stderr, "\t  6：6 bits\n");
-    fprintf(stderr, "\t  7：7 bits\n");
-    fprintf(stderr, "\t  8：8 bits\n");
+    fprintf(stderr, "\t\t数据位。默认：8\n");
+    fprintf(stderr, "\n\t\t5：5 bits\n");
+    fprintf(stderr, "\t\t6：6 bits\n");
+    fprintf(stderr, "\t\t7：7 bits\n");
+    fprintf(stderr, "\t\t8：8 bits\n");
 
     fprintf(stderr, "\n\t--parity < NUMBER >\n");
-    fprintf(stderr, "\t  效验位。默认：无\n");
-    fprintf(stderr, "\n\t  1：奇校验\n");
-    fprintf(stderr, "\t  2：偶校验\n");
+    fprintf(stderr, "\t\t效验位。默认：无\n");
+    fprintf(stderr, "\n\t\t1：奇校验\n");
+    fprintf(stderr, "\t\t2：偶校验\n");
 
     fprintf(stderr, "\n\t--stop < NUMBER >\n");
-    fprintf(stderr, "\t  停止位。默认：1\n");
-    fprintf(stderr, "\n\t  1：1 bits\n");
-    fprintf(stderr, "\t  2：2 bits\n");
+    fprintf(stderr, "\t\t停止位。默认：1\n");
+    fprintf(stderr, "\n\t\t1：1 bits\n");
+    fprintf(stderr, "\t\t2：2 bits\n");
 
 
 
@@ -178,37 +162,20 @@ final:
     abcdk_closep(&ctx->fd);
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_serial(abcdk_tree_t *args)
 {
     abcdkserial_ctx ctx = {0};
 
-    /*中文，UTF-8*/
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-
-    ctx.args = abcdk_tree_alloc3(1);
-    if (!ctx.args)
-        goto final;
-
-    abcdk_getargs(ctx.args, argc, argv, "--");
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
+    ctx.args = args;
 
     if (abcdk_option_exist(ctx.args, "--help"))
     {
         _abcdkserial_print_usage(ctx.args, 0);
     }
-    else if (abcdk_option_exist(ctx.args, "--version"))
-    {
-        _abcdkserial_print_usage(ctx.args, 1);
-    }
     else
     {
         _abcdkserial_work(&ctx);
     }
-
-final:
-    
-    abcdk_tree_free(&ctx.args);
 
     return ctx.errcode;
 }

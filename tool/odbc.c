@@ -12,27 +12,12 @@
 #include "util/general.h"
 #include "util/getargs.h"
 #include "util/odbc.h"
+#include "entry.h"
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
 void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
 {
-    char name[NAME_MAX] = {0};
-
-    abcdk_proc_basename(name);
-
-    fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
-
-    if (only_version)
-        ABCDK_ERRNO_AND_RETURN0(0);
-
-    fprintf(stderr, "\n摘要:\n");
-
-    fprintf(stderr, "\n%s [ --product < NAME > ] [ OPTIONS ]\n",name);
-
-    fprintf(stderr, "\n%s [ --uri < STRING > ]\n",name);
-
     fprintf(stderr, "\n描述:\n");
 
     fprintf(stderr, "\n\t简单的ODBC连接测试工具。\n");
@@ -41,9 +26,6 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
-
-    fprintf(stderr, "\n\t--version\n");
-    fprintf(stderr, "\t\t显示版本信息。\n");
 
     fprintf(stderr, "\n\t--product < NAME >\n");
     fprintf(stderr, "\t\t产品名称。支持: DB2/MYSQL/ORACLE/SQLSERVER/POSTGRESQL\n");
@@ -184,44 +166,21 @@ final:
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)
 
 
-int main(int argc, char **argv)
+int abcdk_tool_odbc(abcdk_tree_t *args)
 {
 #if defined(__SQL_H) && defined(__SQLEXT_H)
-
-    abcdk_tree_t *args;
-
-    /*中文，UTF-8*/
-    setlocale(LC_ALL,"zh_CN.UTF-8");
-
-    args = abcdk_tree_alloc3(1);
-    if (!args)
-        goto final;
-
-    abcdk_getargs(args, argc, argv, "--");
-    //abcdk_option_fprintf(stderr, args);
-
-    abcdk_openlog(NULL, LOG_INFO, 1);
 
     if (abcdk_option_exist(args, "--help"))
     {
         _abcdkodbc_print_usage(args, 0);
-    }
-    else if (abcdk_option_exist(args, "--version"))
-    {
-        _abcdkodbc_print_usage(args, 1);
     }
     else
     {
         _abcdkodbc_work(args);
     }
 
-final:
-
-    abcdk_tree_free(&args);
-
 #else
 
-    abcdk_openlog(NULL, LOG_INFO, 1);
     syslog(LOG_INFO, "当前构建版本未包含此工具。\n");
     errno = EPERM;
 
