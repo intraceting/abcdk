@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <linux/serial.h>
 #include "util/general.h"
 #include "util/getargs.h"
@@ -3645,6 +3646,57 @@ void test_basecode(abcdk_tree_t *args)
 
 }
 
+int test_clone_func(void *args)
+{
+    printf("child pid=%d\n",getpid());
+
+#if 1
+
+    const char root_path[] = {"/var/lib/docker/overlay2/b4f13ee76e071ee9278153556d34b4c9bd9061efd7627b4208156b68097390aa/merged"};
+
+    chdir(root_path);
+    chroot(root_path);
+
+    int chk;
+    
+    // chk = mount("tmpfs", "/dev", "tmpfs", MS_NOSUID, "mode=0755");
+    // chk = mkdir("/dev/pts", 0755);
+    // assert(chk == 0);
+    // chk = mkdir("/dev/socket", 0755);
+    // assert(chk == 0);
+    // chk = mount("devpts", "/dev/pts", "devpts", 0, NULL);
+    // assert(chk == 0);
+    // chk = mount("proc", "/proc", "proc", 0, NULL);
+    // assert(chk == 0);
+    // chk = mount("sysfs", "/sys", "sysfs", 0, NULL);
+    // assert(chk == 0);
+
+    char *argv[2] = {args, NULL};
+    chk = execvp(argv[0], argv);
+    printf("%d\n", errno);
+    assert(chk == 0);
+#else 
+
+    for(int i = 0;i<1000;i++)
+    {
+        printf("i = %d\n",i);
+
+        sleep(1);
+    }
+
+#endif
+}
+
+pid_t clone_wrapper(int (*func)(void *args), int flag, const char *cmd)
+{
+    printf("father pid=%d\n", getpid());
+
+    int stack_size = 1024 * 1024;
+    void *stack = malloc(stack_size);
+
+    return clone(func, ABCDK_PTR2VPTR(stack, stack_size), flag, (void*)cmd);
+}
+
 void test_setns(abcdk_tree_t *args)
 {
     int pid = abcdk_option_get_int(args, "--pid", 0, -1);
@@ -3660,10 +3712,10 @@ void test_setns(abcdk_tree_t *args)
     int chk = setns(fd, 0);
     assert(chk == 0);
 
-    const char *argv[2] = {cmd,NULL};
-    chk = execvp(cmd, argv);
-    printf("%d\n",errno);
-    assert(chk == 0);
+    int fd2 = clone_wrapper(test_clone_func, SIGCHLD, cmd);
+    assert(fd2 != 0);
+
+    waitpid(fd2, NULL, 0);
 }
 
 int main(int argc, char **argv)
