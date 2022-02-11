@@ -23,6 +23,7 @@ int abcdk_tool_mp4juicer(abcdk_tree_t *args);
 int abcdk_tool_mp4dump(abcdk_tree_t *args);
 int abcdk_tool_html(abcdk_tree_t *args);
 int abcdk_tool_hexdump(abcdk_tree_t *args);
+int abcdk_tool_json(abcdk_tree_t *args);
 
 __END_DECLS
 

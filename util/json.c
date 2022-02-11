@@ -31,7 +31,7 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
         str_ptr = json_object_get_string(obj);
         str_len = json_object_get_string_len(obj);
         if (better && str_len > 80)
-            fprintf(fp, "\"(len=%d)\"", str_len);
+            fprintf(fp, "\"(len=%d)%.80s\"",str_len,str_ptr);
         else
             fprintf(fp, "\"%s\"",str_ptr);
     }
@@ -47,11 +47,11 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
             if (i > 0)
                 fprintf(fp, ",\n");
 
-            for (size_t i = 0; i < depth; i++)
+            for (size_t i = 0; i < depth + 1; i++)
                 fprintf(fp, "\t");
 
             sub = json_object_array_get_idx(obj, i);
-            abcdk_json_readable(fp, better, depth, sub);
+            abcdk_json_readable(fp, better, depth + 1, sub);
         }
 
         fprintf(fp, "\n");
@@ -81,7 +81,7 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
             for (size_t i = 0; i < depth; i++)
                 fprintf(fp, "\t");
 
-            fprintf(fp, "\"%s\": ", key);
+            fprintf(fp, "\t\"%s\": ", key);
             abcdk_json_readable(fp, better, depth + 1, sub);
 
             json_object_iter_next(&it);
@@ -94,6 +94,7 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
     }
     else
         fprintf(fp, "null");
+
 }
 
 void abcdk_json_unref(json_object **obj)

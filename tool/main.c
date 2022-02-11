@@ -33,7 +33,8 @@ static struct _abcdk_tool_entry
     {"mp4juicer",abcdk_tool_mp4juicer},
     {"mp4dump",abcdk_tool_mp4dump},
     {"html",abcdk_tool_html},
-    {"hexdump",abcdk_tool_hexdump}
+    {"hexdump",abcdk_tool_hexdump},
+    {"json",abcdk_tool_json},
 };
 
 void _abcdk_tool_print_usage()
