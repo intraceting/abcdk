@@ -38,6 +38,7 @@
 #include "comm/easy.h"
 #include "util/base64.h"
 #include "util/basecode.h"
+#include "util/notify.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -3720,6 +3721,59 @@ void test_setns(abcdk_tree_t *args)
     waitpid(fd2, NULL, 0);
 }
 
+void test_notify(abcdk_tree_t *args)
+{
+    const char* dir = abcdk_option_get(args,"--dir",0,"./");
+
+    int fd = abcdk_notify_init(1);
+
+    abcdk_notify_event_t t = {0};
+
+    t.buf = abcdk_buffer_alloc2(4096);
+
+    //int wd = abcdk_notify_add(fd,dir,IN_ALL_EVENTS);
+    int wd = abcdk_notify_add(fd,dir,IN_CREATE|IN_DELETE|IN_MOVE_SELF|IN_MOVE);
+
+    for(;;)
+    {
+        
+
+        if(abcdk_notify_watch(fd,&t,-1)<0)
+            break;
+
+        if(t.event.mask & IN_ACCESS )
+            printf("Access:");
+        if(t.event.mask & IN_MODIFY )
+            printf("Modify:");
+        if(t.event.mask & IN_ATTRIB )
+            printf("Metadata changed:");
+        if(t.event.mask & IN_CLOSE )
+            printf("Close:");
+        if(t.event.mask & IN_OPEN )
+            printf("Open:");
+        if(t.event.mask & IN_MOVED_FROM )
+            printf("Moved from(%u):",t.event.cookie);
+        if(t.event.mask & IN_MOVED_TO )
+            printf("Moved to(%u):",t.event.cookie);
+        if(t.event.mask & IN_CREATE )
+            printf("Created:");
+        if(t.event.mask & IN_DELETE )
+            printf("Deleted:");
+        if(t.event.mask & IN_MOVE_SELF )
+            printf("Deleted self:");
+        if(t.event.mask & IN_UNMOUNT )
+            printf("Umount:");
+        if(t.event.mask & IN_IGNORED )
+            printf("Ignored:");
+
+        printf("%s\n",t.name);
+    }
+
+    abcdk_buffer_free(&t.buf);
+
+    abcdk_closep(&fd);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3884,6 +3938,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_setns", 0) == 0)
         test_setns(args);
+    
+    if (abcdk_strcmp(func, "test_notify", 0) == 0)
+        test_notify(args);
 
     abcdk_tree_free(&args);
     

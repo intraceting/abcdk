@@ -165,7 +165,7 @@ ssize_t abcdk_buffer_import(abcdk_buffer_t *buf,int fd);
 /**
  * 从文件导入数据。
  * 
- * 阻塞模式的句柄，可能会因为导入数据不足而阻塞。
+ * @warning 当句柄阻塞为模式时，可能会因为数据输入不足而阻塞。
 */
 ssize_t abcdk_buffer_import_atmost(abcdk_buffer_t *buf,int fd,size_t howmuch);
 
@@ -176,6 +176,8 @@ ssize_t abcdk_buffer_export(abcdk_buffer_t *buf,int fd);
 
 /**
  * 导出数据到文件。
+ * 
+ * @warning 当句柄阻塞为模式时，可能会因为数据输出缓存区满而阻塞。
 */
 ssize_t abcdk_buffer_export_atmost(abcdk_buffer_t *buf,int fd,size_t howmuch);
 
