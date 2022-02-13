@@ -194,7 +194,10 @@ void _abcdkhd_work(abcdk_tree_t *args)
 
     mfile = abcdk_mmap2(file, 0, 0);
     if (!mfile)
+    {
+        syslog(LOG_WARNING, "'%s' %s.", file, strerror(errno));
         goto final;
+    }
 
     if (offset >= mfile->sizes[0])
     {
