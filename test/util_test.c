@@ -1742,7 +1742,7 @@ void test_dirent(abcdk_tree_t *args)
         
         printf("%s\n",file);
         
-        abcdk_dirent_open(t,file);
+ //       abcdk_dirent_open(t,file);
     }
 
 }

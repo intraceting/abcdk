@@ -1346,7 +1346,7 @@ void *abcdk_hex2bin(void *dst, const char *src, size_t size)
 {
     assert(dst != NULL && src != NULL && size > 0);
 
-    for (long i = 0; i < size / 2; i++)
+    for (size_t i = 0; i < size / 2; i++)
     {
         sscanf(ABCDK_PTR2U8PTR(src, i * 2), "%2hhx", ABCDK_PTR2U8PTR(dst,i));
     }
