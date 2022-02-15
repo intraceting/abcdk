@@ -39,6 +39,7 @@
 #include "util/base64.h"
 #include "util/basecode.h"
 #include "util/notify.h"
+#include "util/scsi.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -3774,6 +3775,23 @@ void test_notify(abcdk_tree_t *args)
     abcdk_closep(&fd);
 }
 
+void test_scsi(abcdk_tree_t *args)
+{
+    const char*dev = abcdk_option_get(args,"--dev",0,"./a");
+
+    int fd = abcdk_open(dev,1,0,0);
+    assert(fd>=0);
+
+    uint8_t type = 255;
+    char serial[255]={0};
+    abcdk_scsi_io_stat stat = {0};
+    abcdk_scsi_inquiry_serial(fd,&type,serial,0,&stat);
+
+    printf("type(%hhu),serial(%s)\n",type,serial);
+
+    abcdk_closep(&fd);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3794,7 +3812,7 @@ int main(int argc, char **argv)
     int b = 0;
     char a8[3] = {0};
 
-    abcdk_endian_h_to_b24(a8,a);
+    abcdk_endian_h_to_b24(a8,a);;
     b = abcdk_endian_b_to_h24(a8);
     assert(a == b);
 
@@ -3941,6 +3959,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_notify", 0) == 0)
         test_notify(args);
+    
+    if (abcdk_strcmp(func, "test_scsi", 0) == 0)
+        test_scsi(args);
 
     abcdk_tree_free(&args);
     
