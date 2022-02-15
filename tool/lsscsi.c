@@ -11,6 +11,7 @@
 #include <locale.h>
 #include "util/general.h"
 #include "util/getargs.h"
+#include "util/scsi.h"
 #include "shell/scsi.h"
 #include "entry.h"
 
