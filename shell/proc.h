@@ -1,0 +1,48 @@
+/*
+ * This file is part of ABCDK.
+ * 
+ * MIT License
+ * 
+ */
+#ifndef ABCDK_SHELL_PROC_H
+#define ABCDK_SHELL_PROC_H
+
+#include "util/general.h"
+
+__BEGIN_DECLS
+
+/**
+ * 获取当前程序的完整路径和文件名。
+*/
+char* abcdk_proc_pathfile(char* buf);
+
+/**
+ * 获取当前程序的完整路径。
+ * 
+ * @param append 拼接目录或文件名。NULL(0) 忽略。
+ * 
+*/
+char* abcdk_proc_dirname(char* buf,const char* append);
+
+/**
+ * 获取当前程序的文件名。
+*/
+char* abcdk_proc_basename(char* buf);
+
+/**
+ * 单实例模式运行。
+ * 
+ * 文件句柄在退出前不要关闭，否则会使文件解除锁定状态。
+ * 
+ * 进程ID以十进制文本格式写入文件，例：2021 。
+ * 
+ * @param pid 正在运行的进程ID，当接口返回时填写。NULL(0) 忽略。
+ * 
+ * @return >= 0 成功(文件句柄，当前进程是唯一进程)，-1 失败(已有实例正在运行)。
+*/
+int abcdk_proc_singleton(const char* lockfile,int* pid);
+
+
+__END_DECLS
+
+#endif //ABCDK_SHELL_PROC_H

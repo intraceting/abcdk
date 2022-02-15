@@ -460,51 +460,6 @@ char *abcdk_dirnice(char *dst, const char *src);
 */
 char *abcdk_abspath(char *buf, const char *file, const char *path);
 
-/*------------------------------------------------------------------------------------------------*/
-
-/**
- * 获取当前程序的完整路径和文件名。
-*/
-char* abcdk_proc_pathfile(char* buf);
-
-/**
- * 获取当前程序的完整路径。
- * 
- * @param append 拼接目录或文件名。NULL(0) 忽略。
- * 
-*/
-char* abcdk_proc_dirname(char* buf,const char* append);
-
-/**
- * 获取当前程序的文件名。
-*/
-char* abcdk_proc_basename(char* buf);
-
-/**
- * 单实例模式运行。
- * 
- * 文件句柄在退出前不要关闭，否则会使文件解除锁定状态。
- * 
- * 进程ID以十进制文本格式写入文件，例：2021 。
- * 
- * @param pid 正在运行的进程ID，当接口返回时填写。NULL(0) 忽略。
- * 
- * @return >= 0 成功(文件句柄，当前进程是唯一进程)，-1 失败(已有实例正在运行)。
-*/
-int abcdk_proc_singleton(const char* lockfile,int* pid);
-
-/*------------------------------------------------------------------------------------------------*/
-
-/**
- * 获取当前用户的运行路径。
- * 
- * 可能不存在，使用前最好检查一下。
- *
- * /var/run/user/$UID/
- * 
- * @param append 拼接目录或文件名。NULL(0) 忽略。
-*/
-char* abcdk_user_dirname(char* buf,const char* append);
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -662,6 +617,22 @@ void *abcdk_hex2bin(void *dst,const char* src,size_t size);
  * @param direction 1 由低向高，2 由高向低。
 */
 void *abcdk_cyclic_shift(void *data,size_t size,size_t bits, int direction);
+
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ * 从文件加载数据。
+ * 
+ * @return >= 0 成功(长度)，< 0 失败(文件不存在或没有权限访问)。
+*/
+ssize_t abcdk_load(const char *file, void *buf, size_t size, size_t offset);
+
+/**
+ * 向文件保存数据。
+ * 
+ * @return >= 0 成功(长度)，< 0 失败(文件不存在或没有权限访问)。
+*/
+ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset);
 
 /*------------------------------------------------------------------------------------------------*/
 

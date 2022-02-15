@@ -10,6 +10,7 @@
 #include "util/general.h"
 #include "util/option.h"
 #include "util/getargs.h"
+#include "shell/proc.h"
 
 __BEGIN_DECLS
 
@@ -24,6 +25,7 @@ int abcdk_tool_mp4dump(abcdk_tree_t *args);
 int abcdk_tool_html(abcdk_tree_t *args);
 int abcdk_tool_hexdump(abcdk_tree_t *args);
 int abcdk_tool_json(abcdk_tree_t *args);
+int abcdk_tool_lsscsi(abcdk_tree_t *args);
 
 __END_DECLS
 
