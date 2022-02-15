@@ -46,8 +46,8 @@ void _abcdklsscsi_work(abcdklsscsi_ctx *ctx)
     for (int i = 0; i < count; i++)
     {
         dev_p = &devs[i];
-        fprintf(stdout, "%-10s,%-5d,%-32s,%-8s,%-16s,%-4s,/dev/%s,/dev/%s\n",
-            dev_p->bus,dev_p->type,dev_p->serial, dev_p->vendor, dev_p->model, dev_p->revision,
+        fprintf(stdout, "%-10s,%-20s,%-32s,%-8s,%-16s,%-4s,/dev/%s,/dev/%s\n",
+            dev_p->bus,abcdk_scsi_type2string(dev_p->type),dev_p->serial, dev_p->vendor, dev_p->model, dev_p->revision,
             dev_p->devname,dev_p->generic);
     }
 }
