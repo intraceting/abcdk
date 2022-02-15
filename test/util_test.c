@@ -3787,6 +3787,12 @@ void test_scsi(abcdk_tree_t *args)
     abcdk_scsi_io_stat stat = {0};
     abcdk_scsi_inquiry_serial(fd,&type,serial,0,&stat);
 
+    uint8_t key = abcdk_scsi_sense_key(stat.sense);
+    uint8_t asc = abcdk_scsi_sense_code(stat.sense);
+    uint8_t ascq = abcdk_scsi_sense_qualifier(stat.sense);
+
+    printf("key(%hhu),asc(%hhu),ascq(%hhu)\n",key,asc,ascq);
+
     printf("type(%hhu),serial(%s)\n",type,serial);
 
     abcdk_closep(&fd);
