@@ -60,11 +60,11 @@ void _abcdklsscsi_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
-    fprintf(stderr, "\t\t输出格式。默认: %d\n", ABCDKLSSCSI_FMT_TEXT);
+    fprintf(stderr, "\t\t指定报表格式。默认: %d\n", ABCDKLSSCSI_FMT_TEXT);
 
-    fprintf(stderr, "\n\t\t%d: 输出TEXT格式的。\n",ABCDKLSSCSI_FMT_TEXT);
-    fprintf(stderr, "\t\t%d: 输出XML格式的。\n",ABCDKLSSCSI_FMT_XML);
-    fprintf(stderr, "\t\t%d: 输出JSON格式的。\n",ABCDKLSSCSI_FMT_JSON);
+    fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDKLSSCSI_FMT_TEXT);
+    fprintf(stderr, "\t\t%d: XML。\n",ABCDKLSSCSI_FMT_XML);
+    fprintf(stderr, "\t\t%d: JSON。\n",ABCDKLSSCSI_FMT_JSON);
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }

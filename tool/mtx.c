@@ -77,18 +77,18 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
     fprintf(stderr, "\t\t命令。默认: %d\n", ABCDKMTX_STATUS);
 
-    fprintf(stderr, "\n\t\t%d: 输出状态报表。\n", ABCDKMTX_STATUS);
+    fprintf(stderr, "\n\t\t%d: 打印报表。\n", ABCDKMTX_STATUS);
     fprintf(stderr, "\t\t%d: 移动介质。\n", ABCDKMTX_MOVE);
 
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
-    fprintf(stderr, "\t\t状态报表格式。默认: %d\n", ABCDKMTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t指定报表格式。默认: %d\n", ABCDKMTX_STATUS_FMT_TEXT);
 
-    fprintf(stderr, "\n\t\t%d: 输出TEXT格式的状态报表。\n",ABCDKMTX_STATUS_FMT_TEXT);
-    fprintf(stderr, "\t\t%d: 输出XML格式的状态报表。\n",ABCDKMTX_STATUS_FMT_XML);
-    fprintf(stderr, "\t\t%d: 输出JSON格式的状态报表。\n",ABCDKMTX_STATUS_FMT_JSON);
+    fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDKMTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t%d: XML。\n",ABCDKMTX_STATUS_FMT_XML);
+    fprintf(stderr, "\t\t%d: JSON。\n",ABCDKMTX_STATUS_FMT_JSON);
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
