@@ -6,7 +6,7 @@
  */
 #include "shell/scsi.h"
 
-int _abcdk_scsi_get_type(const char* path,int *type)
+int _abcdk_scsi_get_type(const char* path,uint32_t *type)
 {
     char buf[20] = {0};
     ssize_t rlen = 0;
@@ -105,6 +105,8 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
 {
     char buf[PATH_MAX] = {0};
     char buf2[PATH_MAX] = {0};
+    char buf3[40] = {0};
+    int deflag = 0,major = -1,minor = -1;
     abcdk_tree_t *dir = NULL;
     char path2[PATH_MAX] = {0};
     int chk;
@@ -114,6 +116,8 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
         abcdk_dirdir(path2, "block");
     else if(type == TYPE_TAPE)
         abcdk_dirdir(path2, "scsi_tape");
+    if(type == TYPE_ROM)
+        abcdk_dirdir(path2, "block");
     else if(type == TYPE_MEDIUM_CHANGER)
         abcdk_dirdir(path2, "scsi_changer");
 
@@ -130,16 +134,57 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
         memset(buf, 0, PATH_MAX);
         chk = abcdk_dirent_read(dir, buf);
         if (chk != 0)
-            goto final;
+            break;
 
+        /*暂存设备名字。*/
+        memset(devname, 0, NAME_MAX);
+        abcdk_dirdir(devname, "/dev/");
+        abcdk_basename(devname + strlen(devname), buf);
+
+        /*检查/dev/下是否存在。*/
+        if (access(devname, F_OK) != 0)
+            continue;
+
+        /*获取设备号(主，次)。*/
+        major = -1, minor = -1;
         memset(buf2, 0, PATH_MAX);
+
         abcdk_dirdir(buf2, buf);
-        abcdk_dirdir(buf2, "device/type");
-        if (access(buf2, R_OK) == 0)
+        abcdk_dirdir(buf2, "dev");
+
+        abcdk_load(buf2, buf3, 39, 0);
+        sscanf(buf3, "%d:%d", &major, &minor);
+
+        if (type == TYPE_TAPE)
         {
-            abcdk_basename(devname, buf);
+            /* https://www.kernel.org/doc/Documentation/scsi/st.txt */
+            
+            memset(buf2, 0, PATH_MAX);
+            abcdk_dirdir(buf2, buf);
+            abcdk_dirdir(buf2, "defined");
+            abcdk_load(buf2,buf3,39,0);
+
+            /*只查找已经定义的设备。*/
+            deflag = 0;
+            sscanf(buf3, "%d", &deflag);
+            if (deflag == 0)
+                continue;
+
+            /*次设备号 >= 128，关闭设备后不执行自动倒带。*/
+            if (minor >= 128)
+                break;
+        }
+        else if (type == TYPE_MEDIUM_CHANGER)
+        {
+            /* https://www.kernel.org/doc/Documentation/scsi/scsi-changer.txt */
+            if (major == 86 && minor == 0)
+                break;
+        }
+        else
+        {
             break;
         }
+
     }
 
     /*No error.*/
@@ -176,16 +221,16 @@ int _abcdk_scsi_get_generic(const char *path, char generic[NAME_MAX])
         memset(buf, 0, PATH_MAX);
         chk = abcdk_dirent_read(dir, buf);
         if (chk != 0)
-            goto final;
-
-        memset(buf2, 0, PATH_MAX);
-        abcdk_dirdir(buf2, buf);
-        abcdk_dirdir(buf2, "device/type");
-        if (access(buf2, R_OK) == 0)
-        {
-            abcdk_basename(generic, buf);
             break;
-        }
+
+        /*暂存设备名字。*/
+        memset(generic, 0, NAME_MAX);
+        abcdk_dirdir(generic, "/dev/");
+        abcdk_basename(generic + strlen(generic), buf);
+
+        /*检查/dev/下是否存在。*/
+        if (access(generic, F_OK) != 0)
+            continue;
     }
 
     /*No error.*/
@@ -198,16 +243,16 @@ final:
     return chk;
 }
 
-int abcdk_scsi_list(abcdk_scsi_info_t *devs,int max)
+void abcdk_scsi_list(abcdk_tree_t *list)
 {
+    abcdk_tree_t *dev = NULL;
     abcdk_scsi_info_t *dev_p = NULL;
     abcdk_tree_t *dir = NULL;
     char path[PATH_MAX] = {0};
-    int type;
-    int count = 0;
+    uint32_t type;
     int chk;
 
-    assert(devs != NULL && max > 0);
+    assert(list != NULL);
 
     dir = abcdk_tree_alloc3(1);
     if (!dir)
@@ -217,7 +262,7 @@ int abcdk_scsi_list(abcdk_scsi_info_t *devs,int max)
     if (chk != 0)
         goto final;
 
-    while (count < max)
+    while (1)
     {
         memset(path, 0, PATH_MAX);
         chk = abcdk_dirent_read(dir, path);
@@ -229,10 +274,15 @@ int abcdk_scsi_list(abcdk_scsi_info_t *devs,int max)
         if (chk != 0)
             continue;
 
-        dev_p = &devs[count++];
-        dev_p->type = type;
+        dev = abcdk_tree_alloc3(sizeof(abcdk_scsi_info_t));
+        if(!dev)
+            break;
+
+        dev_p = (abcdk_scsi_info_t*)dev->alloc->pptrs[0];
+        abcdk_tree_insert2(list,dev,0);
 
         abcdk_basename(dev_p->bus,path);
+        dev_p->type = type;
         _abcdk_scsi_get_serial(path,dev_p->serial);
         _abcdk_scsi_get_vendor(path,dev_p->vendor);
         _abcdk_scsi_get_model(path,dev_p->model);
@@ -245,5 +295,5 @@ final:
 
     abcdk_tree_free(&dir);
 
-    return count;
+    return;
 }

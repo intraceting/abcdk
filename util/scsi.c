@@ -6,31 +6,84 @@
  */
 #include "util/scsi.h"
 
-const char *abcdk_scsi_type2string(uint8_t type)
+const char *abcdk_scsi_type2string(uint8_t type, int longname)
 {
-    switch (type)
-    {
-    case TYPE_DISK:
-        return "Direct-Access";
-    case TYPE_TAPE:
-        return "Sequential-Access";
-    case 0x02:
-        return "Printer";
-    case TYPE_PROCESSOR:
-        return "Processor";
-    case TYPE_WORM:
-        return "Write-once";
-    case TYPE_ROM:
-        return "CD-ROM";
-    case TYPE_SCANNER:
-        return "Scanner";
-    case TYPE_MEDIUM_CHANGER:
-        return "Medium Changer";
-    case TYPE_ENCLOSURE:
-        return "Enclosure";
-    default:
-        return "Reserved";
-    }
+    static const char *types_table[] =
+        {
+            "Direct-Access",
+            "Sequential-Access",
+            "Printer",
+            "Processor",
+            "Write-once",
+            "CD-ROM",
+            "Scanner",
+            "Optical memory",
+            "Medium Changer",
+            "Communications",
+            "Unknown (0xa)",
+            "Unknown (0xb)",
+            "Storage array",
+            "Enclosure",
+            "Simplified direct-access",
+            "Optical card read/writer",
+            "Bridge controller",
+            "Object based storage",
+            "Automation Drive interface",
+            "Reserved (0x13)",
+            "Reserved (0x14)",
+            "Reserved (0x15)",
+            "Reserved (0x16)",
+            "Reserved (0x17)",
+            "Reserved (0x18)",
+            "Reserved (0x19)",
+            "Reserved (0x1a)",
+            "Reserved (0x1b)",
+            "Reserved (0x1c)",
+            "Reserved (0x1e)",
+            "Well known LU",
+            "No device",
+        };
+
+    static const char *short_types_table[] =
+        {
+            "disk",
+            "tape",
+            "printer",
+            "process",
+            "worm",
+            "cd/dvd",
+            "scanner",
+            "optical",
+            "mediumx",
+            "comms",
+            "(0xa)",
+            "(0xb)",
+            "storage",
+            "enclosu",
+            "sim dsk",
+            "opti rd",
+            "bridge",
+            "osd",
+            "adi",
+            "(0x13)",
+            "(0x14)",
+            "(0x15)",
+            "(0x16)",
+            "(0x17)",
+            "(0x18)",
+            "(0x19)",
+            "(0x1a)",
+            "(0x1b)",
+            "(0x1c)",
+            "(0x1e)",
+            "wlun",
+            "no dev",
+        };
+
+    /*已知的定义。*/
+    type = (0x1f &type);
+
+    return (longname?types_table[type]:short_types_table[type]);
 }
 
 int abcdk_scsi_sgioctl(int fd, struct sg_io_hdr *hdr)

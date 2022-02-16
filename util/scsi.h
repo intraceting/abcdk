@@ -49,13 +49,15 @@ typedef struct _abcdk_scsi_io_stat
 } abcdk_scsi_io_stat;
 
 /**
- * 设备类型数字编码转字符串编码。
+ * 设备类型数字编码转字符串名称。
  *
- * 参考lsscsi命令。
- *
- * @return 字符串的指针。
+ * @note 参考lsscsi命令。
+ * 
+ * @param type 类型。见TYPE_*。
+ * @param longname !0 完整名称，0 缩写名称。
+ * 
  */
-const char *abcdk_scsi_type2string(uint8_t type);
+const char *abcdk_scsi_type2string(uint8_t type, int longname);
 
 /**
  * 通用的SCSI-V3指令接口。

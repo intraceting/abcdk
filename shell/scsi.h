@@ -50,7 +50,7 @@ typedef struct _abcdk_scsi_info
 /**
  * 枚举SCSI设备。
 */
-int abcdk_scsi_list(abcdk_scsi_info_t *devs,int max);
+void abcdk_scsi_list(abcdk_tree_t *list);
 
 
 __END_DECLS

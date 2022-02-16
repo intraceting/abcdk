@@ -162,7 +162,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         if(fmt == ABCDKMTX_STATUS_FMT_XML)
         {
             fprintf(stdout,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            fprintf(stdout,"<library sn=\"%s\" vendor=\"%s\" product=\"%s\">\n",
+            fprintf(stdout,"<library sn=\"%s\" vendor=\"%s\" model=\"%s\">\n",
                                node->alloc->pptrs[0], node->alloc->pptrs[1], node->alloc->pptrs[2]);
             fprintf(stdout,"\t<elements>\n");
         }
@@ -171,12 +171,12 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
             fprintf(stdout,"{\n");
             fprintf(stdout,"\t\"sn\":\"%s\",\n",node->alloc->pptrs[0]);
             fprintf(stdout,"\t\"vendor\":\"%s\",\n",node->alloc->pptrs[1]);
-            fprintf(stdout,"\t\"product\":\"%s\",\n",node->alloc->pptrs[2]);
+            fprintf(stdout,"\t\"model\":\"%s\",\n",node->alloc->pptrs[2]);
             fprintf(stdout,"\t\"elements\":[\n");
         }
         else if(fmt == ABCDKMTX_STATUS_FMT_TEXT)
         {
-            abcdk_tree_fprintf(stdout,depth, node, "%s(%s-%s)\n",
+            abcdk_tree_fprintf(stdout,depth, node, "%s(%s,%s)\n",
                                node->alloc->pptrs[0], node->alloc->pptrs[1], node->alloc->pptrs[2]);
         }
         else
