@@ -69,10 +69,10 @@ void _abcdkmtx_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t目标地址。\n");
 
     fprintf(stderr, "\n\t--exclude-barcode\n");
-    fprintf(stderr, "\t\t排除条码字段。default: 包括\n");
+    fprintf(stderr, "\t\t排除条码字段。默认：包括\n");
 
     fprintf(stderr, "\n\t--exclude-dvcid\n");
-    fprintf(stderr, "\t\t排除DVCID字段。default: 包括\n");
+    fprintf(stderr, "\t\t排除DVCID字段。默认：包括\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
     fprintf(stderr, "\t\t命令。默认: %d\n", ABCDKMTX_STATUS);
