@@ -674,47 +674,48 @@ PrintUsage()
 {
 cat << EOF
 usage: [ OPTIONS ]
-    -p < STRING >  
+    -p < string >  
      目标系统平台。支持x86_64，aarch64。
      默认：${TARGET_PLATFORM}
 
     -g  
      生成调试符号。默认：关闭
 
-    -V < NUMBER > 
+    -V < number > 
      主版本。默认：${VERSION_MAJOR}
 
-    -v < NUMBER > 
+    -v < number > 
      副版本。默认：${VERSION_MINOR}
 
-    -r < NUMBER > 
+    -r < number > 
      发行版本。默认：${VERSION_RELEASE}
 
-    -i < PATH > 
+    -i < path > 
      安装路径。默认：${INSTALL_PREFIX}
 
-    -d < KEY,KEY,... > 
+    -d < key,key,... > 
      依赖项目，以英文“,”为分割符。支持以下关键字：
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid
+
 EOF
 }
 
 #
-while getopts "?p:gV:v:r:i:d:" ARGKEY 
+while getopts "hgp:V:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
-    \?)
+    h)
         PrintUsage
         exit 22
     ;;
-    p)
-        TARGET_PLATFORM="${OPTARG}"
-    ;;
     g)
         BUILD_TYPE="debug"
+    ;;
+    p)
+        TARGET_PLATFORM="${OPTARG}"
     ;;
     V)
         VERSION_MAJOR="${OPTARG}"
@@ -729,7 +730,7 @@ do
         INSTALL_PREFIX=$(realpath "${OPTARG}")
     ;;
     d)
-        DEPEND_FUNC="$OPTARG"
+        DEPEND_FUNC="${OPTARG}"
     ;;
     esac
 done
