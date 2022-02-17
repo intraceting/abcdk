@@ -58,20 +58,11 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-UTIL_SRC_FILES = $(wildcard util/*.c)
-UTIL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${UTIL_SRC_FILES}))
-
-#
-SHELL_SRC_FILES = $(wildcard shell/*.c)
-SHELL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${SHELL_SRC_FILES}))
-
-#
-MP4_SRC_FILES = $(wildcard mp4/*.c)
-MP4_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${MP4_SRC_FILES}))
-
-#
-COMM_SRC_FILES = $(wildcard comm/*.c)
-COMM_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${COMM_SRC_FILES}))
+BASE_SRC_FILES += $(wildcard util/*.c)
+BASE_SRC_FILES += $(wildcard shell/*.c)
+BASE_SRC_FILES += $(wildcard mp4/*.c)
+BASE_SRC_FILES += $(wildcard comm/*.c)
+BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
 TOOL_SRC_FILES = $(wildcard tool/*.c)
@@ -82,54 +73,30 @@ TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: util shell mp4 comm tool test
+all: base tool test
 
 #
-util: util-src
+base: base-src
 #
-util-src: $(UTIL_OBJ_FILES)
+base-src: $(BASE_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/libabcdk-util.so $^ $(LINK_FLAGS) -shared
-	$(AR) -cr $(BUILD_PATH)/libabcdk-util.a $^
+	$(CC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
+	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
 
 #
-shell: util shell-src
-#
-shell-src: $(SHELL_OBJ_FILES)
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/libabcdk-shell.so $^ -l:libabcdk-util.so $(LINK_FLAGS) -shared
-	$(AR) -cr $(BUILD_PATH)/libabcdk-shell.a $^
-	
-#
-mp4: util mp4-src
-#
-mp4-src: $(MP4_OBJ_FILES)
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/libabcdk-mp4.so $^ -l:libabcdk-util.so $(LINK_FLAGS) -shared
-	$(AR) -cr $(BUILD_PATH)/libabcdk-mp4.a $^
-
-#
-comm: util comm-src
-#
-comm-src: $(COMM_OBJ_FILES)
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/libabcdk-comm.so $^ -l:libabcdk-util.so $(LINK_FLAGS) -shared
-	$(AR) -cr $(BUILD_PATH)/libabcdk-comm.a $^ 
-
-#
-tool: util mp4 tool-src
+tool: base tool-src
 #
 tool-src: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk $^  -l:libabcdk-mp4.a -l:libabcdk-shell.a -l:libabcdk-util.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk $^  -l:libabcdk.a $(LINK_FLAGS)
 
 #
-test: util test-src
+test: base test-src
 #
 test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk-util.so $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk-mp4.so -l:libabcdk-comm.so -l:libabcdk-shell.so -l:libabcdk-util.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
@@ -167,33 +134,17 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
 
 #
-clean: clean-util clean-shell clean-mp4 clean-comm  clean-tool clean-test
+clean: clean-base clean-tool clean-test
 	rm -rf ${OBJ_PATH}
 
 #
-clean-util:
-	rm -f $(BUILD_PATH)/libabcdk-util.so
-	rm -f $(BUILD_PATH)/libabcdk-util.a
-
-#
-clean-shell:
-	rm -f $(BUILD_PATH)/libabcdk-shell.so
-	rm -f $(BUILD_PATH)/libabcdk-shell.a
-
-#
-clean-mp4:
-	rm -f $(BUILD_PATH)/libabcdk-mp4.so
-	rm -f $(BUILD_PATH)/libabcdk-mp4.a
-
-#
-clean-comm:
-	rm -f $(BUILD_PATH)/libabcdk-comm.so
-	rm -f $(BUILD_PATH)/libabcdk-comm.a
+clean-base:
+	rm -f $(BUILD_PATH)/libabcdk.so
+	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
 clean-tool:
 	rm -f $(BUILD_PATH)/abcdk
-
 
 #
 clean-test:
@@ -220,14 +171,8 @@ install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
 #
-	cp -f $(BUILD_PATH)/libabcdk-util.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-util.a ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-shell.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-shell.a ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-mp4.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-mp4.a ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-comm.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk-comm.a ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
 	mkdir -p ${INSTALL_LDC_PATH}
 	echo "#!/bin/bash" > ${INSTALL_LDC_FILE}
@@ -263,7 +208,7 @@ install-devel:
 	echo "Description: A bad c development kit. " >> ${INSTALL_PKG_FILE}
 	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${INSTALL_PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${INSTALL_PKG_FILE}
-	echo "Libs: -labcdk-util -labcdk-shell -labcdk-mp4 -labcdk-comm -L\$${libdir}" >> ${INSTALL_PKG_FILE}
+	echo "Libs: -labcdk -L\$${libdir}" >> ${INSTALL_PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${INSTALL_PKG_FILE}
 
 
@@ -273,14 +218,8 @@ uninstall: uninstall-runtime uninstall-devel
 #
 uninstall-runtime:
 #
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-util.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-util.a
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-shell.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-shell.a
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-mp4.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-mp4.a
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-comm.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk-comm.a
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
 	rm -f ${INSTALL_LDC_FILE}
 #
