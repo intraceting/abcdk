@@ -52,7 +52,6 @@ typedef struct _abcdk_scsi_info
 */
 void abcdk_scsi_list(abcdk_tree_t *list);
 
-
 __END_DECLS
 
 #endif //ABCDK_SHELL_SCSI_H

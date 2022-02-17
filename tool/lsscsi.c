@@ -18,7 +18,6 @@
 typedef struct _abcdklsscsi_ctx
 {
     int errcode;
-
     abcdk_tree_t *args;
 
     int fmt;
@@ -57,10 +56,10 @@ void _abcdklsscsi_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到文件(包括路径)。默认：终端\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
-    fprintf(stderr, "\t\t指定报表格式。默认: %d\n", ABCDKLSSCSI_FMT_TEXT);
+    fprintf(stderr, "\t\t报表格式。默认: %d\n", ABCDKLSSCSI_FMT_TEXT);
 
     fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDKLSSCSI_FMT_TEXT);
     fprintf(stderr, "\t\t%d: XML。\n",ABCDKLSSCSI_FMT_XML);
@@ -92,7 +91,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-16s |%-10s |%-8s |%-16s |%-4.4s |%-20s |%-20s |%-20s |\n",
+            fprintf(stdout, "|%-16s\t|%-10s\t|%-8s\t|%-16s\t|%-4.4s\t|%-20s\t|%-20s\t|%-20s\t|\n",
                     "bus", "type", "vendor", "model", "revision", "serial", "devname", "generic");
         }
         else
@@ -148,7 +147,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-16s |%-10s |%-8s |%-16s |%-4s |%-20s |%-20s |%-20s |\n",
+            fprintf(stdout, "|%-16s\t|%-10s\t|%-8s\t|%-16s\t|%-4s\t|%-20s\t|%-20s\t|%-20s\t|\n",
                     dev_p->bus, abcdk_scsi_type2string(dev_p->type, 0), dev_p->vendor,
                     dev_p->model, dev_p->revision, dev_p->serial, dev_p->devname, dev_p->generic);
         }

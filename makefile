@@ -6,7 +6,7 @@
 #
 
 #
-MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
+MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.inc)
 
 # 加载配置项。
 include ${MAKE_CONF}
@@ -318,3 +318,17 @@ package-devel:
 	tar -czv -f "${DEVEL_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 #	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
+
+
+help:
+	@echo "make"
+	@echo "make clean"
+	@echo "make install"
+	@echo "make install-runtime"
+	@echo "make install-devel"
+	@echo "make uninstall"
+	@echo "make uninstall-runtime"
+	@echo "make uninstall-devel"
+	@echo "make package"
+	@echo "make package-runtime"
+	@echo "make package-devel"

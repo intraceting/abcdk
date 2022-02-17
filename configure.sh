@@ -637,7 +637,7 @@ OS_ID=$(grep "^ID=" /etc/os-release |cut -d = -f 2 |sed 's/\"//g' |tr 'A-Z' 'a-z
 OS_VER=$(grep "^VERSION_ID=" /etc/os-release |cut -d = -f 2 |sed 's/\"//g' |tr 'A-Z' 'a-z')
 
 #
-MAKE_CONF=${SHELL_PWD}/build/makefile.conf
+MAKE_CONF=${SHELL_PWD}/build/makefile.inc
 
 #
 KIT_NAME=$(CheckPackageKitName)
@@ -658,7 +658,7 @@ VERSION_MAJOR="1"
 #副版本
 VERSION_MINOR="3"
 #发行版本
-VERSION_RELEASE="1"
+VERSION_RELEASE="2"
 
 #
 BUILD_TYPE="release"
