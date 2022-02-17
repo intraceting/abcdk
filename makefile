@@ -245,10 +245,12 @@ install-runtime:
 install-devel:
 #
 	mkdir -p ${INSTALL_PATH_INC}/util
+	mkdir -p ${INSTALL_PATH_INC}/shell
 	mkdir -p ${INSTALL_PATH_INC}/mp4
 	mkdir -p ${INSTALL_PATH_INC}/comm
 #
 	cp  -f $(CURDIR)/util/*.h ${INSTALL_PATH_INC}/util/
+	cp  -f $(CURDIR)/shell/*.h ${INSTALL_PATH_INC}/shell/
 	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
 	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
 #
