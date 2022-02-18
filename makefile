@@ -95,7 +95,7 @@ test: base test-src
 #
 test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
 
 #
