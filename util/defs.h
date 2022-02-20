@@ -52,6 +52,7 @@
 #include <sys/epoll.h>
 #include <sys/mtio.h>
 #include <sys/un.h>
+#include <sys/time.h>
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>
@@ -112,7 +113,7 @@
 /** 数值比较，返回最小值。*/
 #define ABCDK_MIN(A, B) (((A) < (B)) ? (A) : (B))
 
-/** 规划数值到区间内。*/
+/** 规划数值到区间内(包括两端极值)。*/
 #define ABCDK_CLAMP(V, A, B) \
     ABCDK_MIN(ABCDK_MAX((A), (B)), ABCDK_MAX(ABCDK_MIN((A), (B)), (V)))
 

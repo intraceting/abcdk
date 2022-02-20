@@ -1215,6 +1215,7 @@ char *abcdk_bin2hex(char* dst,const void *src,size_t size, int ABC)
 void *abcdk_hex2bin(void *dst, const char *src, size_t size)
 {
     assert(dst != NULL && src != NULL && size > 0);
+    assert(size % 2 == 0);
 
     for (size_t i = 0; i < size / 2; i++)
     {
@@ -1276,13 +1277,17 @@ ssize_t abcdk_load(const char *file, void *buf, size_t size, size_t offset)
 {
     int fd = -1;
     ssize_t rlen = 0;
+    off_t off;
     int chk;
 
     fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
         return -1;
 
-    lseek(fd,offset,SEEK_SET);
+    off = lseek(fd, offset, SEEK_SET);
+    if (off != offset)
+        return -1;
+
     rlen = abcdk_read(fd, buf, size);
 
 final:
@@ -1295,21 +1300,25 @@ final:
 ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset)
 {
     int fd = -1;
-    ssize_t rlen = 0;
+    ssize_t wlen = 0;
+    off_t off;
     int chk;
 
     fd = abcdk_open(file, 1, 0, 1);
     if (fd < 0)
         return -1;
 
-    lseek(fd,offset,SEEK_SET);
-    rlen = abcdk_write(fd, buf, size);
+    off = lseek(fd, offset, SEEK_SET);
+    if (off != offset)
+        return -1;
+
+    wlen = abcdk_write(fd, buf, size);
 
 final:
 
     abcdk_closep(&fd);
     
-    return rlen;
+    return wlen;
 }
 
 /*------------------------------------------------------------------------------------------------*/

@@ -121,7 +121,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         {
             fprintf(stdout, "\t<device>\n");
             fprintf(stdout, "\t\t<bus>%s</bus>\n",dev_p->bus);
-            fprintf(stdout, "\t\t<type num=\"%d\">%s</type>\n",dev_p->type,abcdk_scsi_type2string(dev_p->type,0));
+            fprintf(stdout, "\t\t<type name=\"%s\">%u</type>\n",abcdk_scsi_type2string(dev_p->type,0),dev_p->type);
             fprintf(stdout, "\t\t<vendor>%s</vendor>\n",dev_p->vendor);
             fprintf(stdout, "\t\t<model>%s</model>\n",dev_p->model);
             fprintf(stdout, "\t\t<revision>%s</revision>\n",dev_p->revision);
@@ -134,7 +134,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         {
             fprintf(stdout, "\t{\n");
             fprintf(stdout,"\t\t\"bus\":\"%s\",\n",dev_p->bus);
-            fprintf(stdout,"\t\t\"type\":{\"num\":\"%d\",\"name\":\"%s\"},\n",dev_p->type,abcdk_scsi_type2string(dev_p->type,0));
+            fprintf(stdout,"\t\t\"type\":{\"num\":\"%u\",\"name\":\"%s\"},\n",dev_p->type,abcdk_scsi_type2string(dev_p->type,0));
             fprintf(stdout,"\t\t\"vendor\":\"%s\",\n",dev_p->vendor);
             fprintf(stdout,"\t\t\"model\":\"%s\",\n",dev_p->model);
             fprintf(stdout,"\t\t\"revison\":\"%s\",\n",dev_p->revision);

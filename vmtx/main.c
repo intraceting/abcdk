@@ -15,8 +15,7 @@
 
 int main(int argc, char **argv)
 {
-    abcdk_tree_t *args = NULL;
-    int errcode = 0;
+    abcdk_vmtx_t ctx = {0};
 
     /*中文；UTF-8。*/
     setlocale(LC_ALL, "zh_CN.UTF-8");
@@ -24,20 +23,20 @@ int main(int argc, char **argv)
     /*随机数种子。*/
     srand(time(NULL));
 
+    /*申请参数存储空间。*/
+    ctx.args = abcdk_tree_alloc3(1);
+    if (!ctx.args)
+        ABCDK_ERRNO_AND_GOTO1(ctx.errcode = errno,final);
+
+    /*解析参数。*/
+    abcdk_getargs(ctx.args, argc, argv, "--");
+
     /*记录日志。*/
     abcdk_openlog(NULL, LOG_INFO, 1);
 
-    /*申请参数存储空间。*/
-    args = abcdk_tree_alloc3(1);
-    if (!args)
-        ABCDK_ERRNO_AND_GOTO1(errcode = errno,final);
-    
-    /*解析参数。*/
-    abcdk_getargs(args, argc, argv, "--");
-
 final:
     
-    abcdk_tree_free(&args);
+    abcdk_tree_free(&ctx.args);
 
-    return errcode;
+    return ctx.errcode;
 }

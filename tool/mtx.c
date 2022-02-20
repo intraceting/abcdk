@@ -47,47 +47,26 @@ typedef struct _abcdkmtx_ctx
 }abcdkmtx_ctx;
 
 
-/** 命令。*/
-enum _abcdkmtx_cmd
+/** 常量。*/
+enum _abcdkmtx_constant
 {
-    /** 枚举所有元素状态。*/
+    /** 打印报表。*/
     ABCDKMTX_STATUS = 1,
 #define ABCDKMTX_STATUS ABCDKMTX_STATUS
 
-    /** 枚举机械手。*/
-    ABCDKMTX_STATUS_CHANGER = 11,
-#define ABCDKMTX_STATUS_CHANGER ABCDKMTX_STATUS_CHANGER
-
-    /** 枚举存储槽位。*/
-    ABCDKMTX_STATUS_STORAGE = 12,
-#define ABCDKMTX_STATUS_STORAGE ABCDKMTX_STATUS_STORAGE
-
-    /** 枚举IE槽位。*/
-    ABCDKMTX_STATUS_IE_PORT = 13,
-#define ABCDKMTX_STATUS_IE_PORT ABCDKMTX_STATUS_IE_PORT
-
-    /** 枚举驱动器。*/
-    ABCDKMTX_STATUS_DXFER = 14,
-#define ABCDKMTX_STATUS_DXFER ABCDKMTX_STATUS_DXFER
-
     /** 移动介质。*/
-    ABCDKMTX_MOVE = 2
+    ABCDKMTX_MOVE = 2,
 #define ABCDKMTX_MOVE ABCDKMTX_MOVE
 
-};
-
-/** 元素状态格式。*/
-enum _abcdkmtx_status_fmt
-{
-    /** 文本。*/
+    /** 文本报表。*/
     ABCDKMTX_STATUS_FMT_TEXT = 1,
 #define ABCDKMTX_STATUS_FMT_TEXT ABCDKMTX_STATUS_FMT_TEXT
 
-    /** XML。*/
+    /** XML报表。*/
     ABCDKMTX_STATUS_FMT_XML = 2,
 #define ABCDKMTX_STATUS_FMT_XML ABCDKMTX_STATUS_FMT_XML
 
-    /** JSON。*/
+    /** JSON报表。*/
     ABCDKMTX_STATUS_FMT_JSON = 3
 #define ABCDKMTX_STATUS_FMT_JSON ABCDKMTX_STATUS_FMT_JSON
 
@@ -148,8 +127,6 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDKMTX_STATUS_FMT_TEXT);
     fprintf(stderr, "\t\t%d: XML。\n",ABCDKMTX_STATUS_FMT_XML);
     fprintf(stderr, "\t\t%d: JSON。\n",ABCDKMTX_STATUS_FMT_JSON);
-
-    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 static struct _abcdkmtx_sense_dict
@@ -432,7 +409,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     if (access(ctx->dev_p, F_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s。", ctx->dev_p, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s。", ctx->dev_p, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -444,7 +421,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
     ctx->fd = abcdk_open(ctx->dev_p, 0, 0, 0);
     if (ctx->fd < 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.",ctx->dev_p,strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.",ctx->dev_p,strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -454,7 +431,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     if (ctx->type != TYPE_MEDIUM_CHANGER)
     {
-        syslog(LOG_WARNING, "'%s' 不是机械手.", ctx->dev_p);
+        syslog(LOG_ERR, "'%s' 不是机械手.", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
@@ -476,7 +453,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
         {
             if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
             {
-                syslog(LOG_WARNING, "'%s' %s.", ctx->outfile, strerror(errno));
+                syslog(LOG_ERR, "'%s' %s.", ctx->outfile, strerror(errno));
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
             }
         }
@@ -489,7 +466,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
     }
     else
     {
-        syslog(LOG_WARNING, "尚未支持。");
+        syslog(LOG_INFO, "尚未支持。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 

@@ -16,7 +16,7 @@
 #include "entry.h"
 
 /**/
-enum _abcdkmt_cmd
+enum _abcdkmt_constant
 {
     /** 查询驱动器信息。*/
     ABCDKMT_HWINFO = 1,
@@ -307,14 +307,14 @@ void _abcdkmt_work(abcdk_tree_t *args)
 
     if (access(dev_p, F_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s。", dev_p, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s。", dev_p, strerror(errno));
         goto final;
     }
 
     fd = abcdk_open(dev_p, 1, 1, 0);
     if (fd < 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.",dev_p,strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.",dev_p,strerror(errno));
         goto final;
     }
 
@@ -324,7 +324,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
 
     if (type != TYPE_TAPE)
     {
-        syslog(LOG_WARNING, "'%s' 不是磁带驱动器。", dev_p);
+        syslog(LOG_ERR, "'%s' 不是磁带驱动器。", dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
@@ -347,7 +347,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
         chk = abcdk_mt_rewind(fd,0);
         if (chk != 0)
         {   
-            syslog(LOG_WARNING, "'%s' %s.", dev_p, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
     }
@@ -356,7 +356,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
         chk = abcdk_mt_load(fd);
         if (chk != 0)
         {   
-            syslog(LOG_WARNING, "'%s' %s.", dev_p, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
     }
@@ -365,7 +365,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
         chk = abcdk_mt_unload(fd);
         if (chk != 0)
         {   
-            syslog(LOG_WARNING, "'%s' %s.", dev_p, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
     }
@@ -374,7 +374,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
         chk = abcdk_mt_lock(fd);
         if (chk != 0)
         {   
-            syslog(LOG_WARNING, "'%s' %s.", dev_p, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
     }
@@ -383,7 +383,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
         chk = abcdk_mt_unlock(fd);
         if (chk != 0)
         {   
-            syslog(LOG_WARNING, "'%s' %s.", dev_p, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
     }
@@ -401,13 +401,13 @@ void _abcdkmt_work(abcdk_tree_t *args)
         chk = abcdk_mt_writefm(fd,filemarks);
         if (chk != 0)
         {   
-            syslog(LOG_WARNING, "'%s' %s.", dev_p, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
     }
     else
     {
-        syslog(LOG_WARNING, "尚未支持。");
+        syslog(LOG_INFO, "尚未支持。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 

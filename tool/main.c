@@ -36,6 +36,7 @@ static struct _abcdk_tool_entry
     {"hexdump",abcdk_tool_hexdump},
     {"json",abcdk_tool_json},
     {"lsscsi",abcdk_tool_lsscsi},
+    {"archive",abcdk_tool_archive},
 };
 
 void _abcdk_tool_print_usage()
