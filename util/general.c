@@ -1322,3 +1322,27 @@ final:
 }
 
 /*------------------------------------------------------------------------------------------------*/
+
+int abcdk_futimens(int fd, const struct timespec *atime, const struct timespec *mtime)
+{
+    struct timespec times[2] = {0};
+    int chk;
+
+    if (atime && atime->tv_sec > 0)
+        times[0] = *atime;
+    else
+        clock_gettime(CLOCK_REALTIME, &times[0]);
+
+    if (mtime && mtime->tv_sec > 0)
+        times[1] = *mtime;
+    else
+        clock_gettime(CLOCK_REALTIME, &times[1]);
+
+    chk = futimens(fd, times);
+    if (chk != 0)
+        return -1;
+
+    return 0;
+}
+
+/*------------------------------------------------------------------------------------------------*/

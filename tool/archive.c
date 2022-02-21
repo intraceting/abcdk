@@ -206,14 +206,14 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--option < STRING >\n");
     fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
-    fprintf(stderr, "\n\t--filename < NAME [ NAME2 NAME3 ... ] >\n");
+    fprintf(stderr, "\n\t--filename < NAME-part-0 [ NAME-part-1 NAME-part-2 ... ] >\n");
     fprintf(stderr, "\n\t档案文件名(包括路径)。");
 
     fprintf(stderr, "\n\t--extract-to < PATH >\n");
     fprintf(stderr, "\n\t回迁输出位置(存储路径)。");
 }
 
-char *_abcdkarchive_name2local(int from_win, const char *src, char dst[PATH_MAX])
+char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
 {
     size_t slen;
     size_t slen_vf;
@@ -221,30 +221,23 @@ char *_abcdkarchive_name2local(int from_win, const char *src, char dst[PATH_MAX]
     /*猜测可能的长度。*/
     slen = strlen(src);
 
-    if (from_win)
+    slen_vf = abcdk_verify_utf8(src, PATH_MAX);
+    if (slen_vf != slen)
     {
-        slen_vf = abcdk_verify_utf8(src, 256);
-        if (slen_vf != slen)
+        slen_vf = abcdk_verify_gbk(src, PATH_MAX);
+        if (slen_vf == slen)
         {
-            slen_vf = abcdk_verify_gbk(src, 256);
-            if (slen_vf == slen)
-            {
-                abcdk_iconv2("GBK", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
-            }
-            else
-            {
-                slen_vf = abcdk_verify_ucs2(src, 256 * 2, 0);
-                abcdk_iconv2("UCS-2", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
-            }
+            abcdk_iconv2("cp936", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
         }
         else
         {
-            strncpy(dst, src, slen_vf);
+            slen_vf = abcdk_verify_ucs2(src, PATH_MAX, 0);
+            abcdk_iconv2("UCS-2", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
         }
     }
     else
     {
-        strncpy(dst, src, slen);
+        strncpy(dst, src, slen_vf);
     }
 
     return dst;
@@ -263,7 +256,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     int chk = 0;
 
     name = archive_entry_pathname(ctx->r.src_entry);
-    _abcdkarchive_name2local(0, name, name_cp);
+    _abcdkarchive_name2local(name, name_cp);
 
     syslog(LOG_INFO, "%s\n", name_cp);
 
@@ -287,12 +280,15 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             }
 
             lkname = archive_entry_symlink(ctx->r.src_entry);
-            _abcdkarchive_name2local(0, lkname, lkname_cp);
+            _abcdkarchive_name2local(lkname, lkname_cp);
 
             abcdk_mkdir(pathfile, 0664);
             chk = symlink(lkname, pathfile);
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+
+            /*不需要恢复软链接属性。*/
+            goto final;
         }
         else if (S_ISDIR(file_stat.st_mode))
         {
@@ -334,16 +330,18 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             goto final;
         }
 
-        /*恢复文件属性。*/
-        struct timespec times[2] = {0};
-        times[0] = file_stat.st_atim;
-        times[1] = file_stat.st_mtim;
-        chk = futimens(ctx->r.dst_fd, times);
+        /*恢复文件和目录属性。*/
+        chk = abcdk_futimens(ctx->r.dst_fd, &file_stat.st_atim,&file_stat.st_mtim);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
-        chk = fchmod(ctx->r.dst_fd, file_stat.st_mode & ACCESSPERMS);
-        if (chk != 0)
-            syslog(LOG_WARNING, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
+
+        if(file_stat.st_mode & ACCESSPERMS)
+        {
+            chk = fchmod(ctx->r.dst_fd, file_stat.st_mode & ACCESSPERMS);
+            if (chk != 0)
+                syslog(LOG_WARNING, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
+        }
+
         chk = fchown(ctx->r.dst_fd, file_stat.st_uid, file_stat.st_gid);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件用户和组，忽略。\n", name_cp);

@@ -636,6 +636,18 @@ ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset
 
 /*------------------------------------------------------------------------------------------------*/
 
+/**
+ * 设置文件的访问和修改时间。
+ * 
+ * @param atime 访问时间。
+ * @param mtime 访问时间。
+ * 
+ * 0 成功，-1 失败。
+*/
+int abcdk_futimens(int fd,const struct timespec *atime,const struct timespec *mtime);
+
+/*------------------------------------------------------------------------------------------------*/
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_GENERAL_H
