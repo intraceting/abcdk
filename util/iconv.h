@@ -28,8 +28,6 @@ ssize_t abcdk_iconv(iconv_t cd, const char *src, size_t slen, char *dst, size_t 
 ssize_t abcdk_iconv2(const char *from,const char *to, const char *src, size_t slen, char *dst, size_t dlen,size_t *remain);
 
 
-
-
 __END_DECLS
 
 #endif //ABCDK_UTIL_ICONV_H

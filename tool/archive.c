@@ -13,7 +13,7 @@
 #include "util/getargs.h"
 #include "util/scsi.h"
 #include "util/iconv.h"
-#include "util/unicode.h"
+#include "util/charset.h"
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE
@@ -36,18 +36,12 @@ typedef struct _abcdkarchive_ctx
         int src_num;
         const char *src[256];
         const char *dst;
+        int justlist;
 
         int flt;
         int fmt;
         const char *opt;
         const char *pwd;
-
-        uid_t uid;
-        gid_t gid;
-        uid_t oid;
-
-        const char *ctime;
-        const char *mtime;
 
         struct archive *src_fd;
         struct archive_entry *src_entry;
@@ -90,8 +84,10 @@ static struct _abcdkarchive_filter_dict
     {10, ARCHIVE_FILTER_LRZIP, "LRZIP"},
     {11, ARCHIVE_FILTER_LZOP, "LZOP"},
     {12, ARCHIVE_FILTER_GRZIP, "GRZIP"},
+#if ARCHIVE_VERSION_NUMBER >= 3003003
     {13, ARCHIVE_FILTER_LZ4, "LZ4"},
     {14, ARCHIVE_FILTER_ZSTD, "ZSTD"},
+#endif // ARCHIVE_VERSION_NUMBER >= 3003003
 };
 
 static struct _abcdkarchive_format_dict
@@ -128,14 +124,16 @@ static struct _abcdkarchive_format_dict
     {26, ARCHIVE_FORMAT_CAB, "CAB"},
     {27, ARCHIVE_FORMAT_RAR, "RAR"},
     {28, ARCHIVE_FORMAT_7ZIP, "7ZIP"},
+#if ARCHIVE_VERSION_NUMBER >= 3003003
     {29, ARCHIVE_FORMAT_WARC, "WARC"}
+#endif // ARCHIVE_VERSION_NUMBER >= 3003003
 };
 
 int abcdkarchive_find_filter(int code)
 {
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_filter_dict); i++)
     {
-        if(abcdkarchive_filter_dict[i].code == code)
+        if (abcdkarchive_filter_dict[i].code == code)
             return abcdkarchive_filter_dict[i].filter;
     }
 
@@ -146,7 +144,7 @@ int abcdkarchive_find_format(int code)
 {
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_format_dict); i++)
     {
-        if(abcdkarchive_format_dict[i].code == code)
+        if (abcdkarchive_format_dict[i].code == code)
             return abcdkarchive_format_dict[i].format;
     }
 
@@ -158,7 +156,12 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n描述:\n");
 
     fprintf(stderr, "\n\t简单的文件归档工具。\n");
-    fprintf(stderr, "\n\t%s\n", archive_version_details());
+    fprintf(stderr, "\n\t%s\n",
+#if ARCHIVE_VERSION_NUMBER >= 3003003
+            archive_version_details());
+#else  // ARCHIVE_VERSION_NUMBER >= 3003003
+            archive_version_string());
+#endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
     fprintf(stderr, "\n选项:\n");
 
@@ -195,11 +198,173 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     }
     fprintf(stderr, "\n");
 
+#if ARCHIVE_VERSION_NUMBER >= 3003003
     fprintf(stderr, "\n\t--passphrase < STRING >\n");
     fprintf(stderr, "\t\t密码。默认：无\n");
+#endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
     fprintf(stderr, "\n\t--option < STRING >\n");
     fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
+
+    fprintf(stderr, "\n\t--filename < NAME [ NAME2 NAME3 ... ] >\n");
+    fprintf(stderr, "\n\t档案文件名(包括路径)。");
+
+    fprintf(stderr, "\n\t--extract-to < PATH >\n");
+    fprintf(stderr, "\n\t回迁输出位置(存储路径)。");
+}
+
+char *_abcdkarchive_name2local(int from_win, const char *src, char dst[PATH_MAX])
+{
+    size_t slen;
+    size_t slen_vf;
+
+    /*猜测可能的长度。*/
+    slen = strlen(src);
+
+    if (from_win)
+    {
+        slen_vf = abcdk_verify_utf8(src, 256);
+        if (slen_vf != slen)
+        {
+            slen_vf = abcdk_verify_gbk(src, 256);
+            if (slen_vf == slen)
+            {
+                abcdk_iconv2("GBK", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
+            }
+            else
+            {
+                slen_vf = abcdk_verify_ucs2(src, 256 * 2, 0);
+                abcdk_iconv2("UCS-2", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
+            }
+        }
+        else
+        {
+            strncpy(dst, src, slen_vf);
+        }
+    }
+    else
+    {
+        strncpy(dst, src, slen);
+    }
+
+    return dst;
+}
+
+int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
+{
+    const char *name = NULL;
+    char name_cp[PATH_MAX] = {0};
+    char pathfile[PATH_MAX] = {0};
+    struct stat file_stat = {0};
+    size_t lkname_len = 0;
+    const char *lkname = NULL;
+    char lkname_cp[PATH_MAX] = {0};
+    ssize_t lkname_cp_len = 0;
+    int chk = 0;
+
+    name = archive_entry_pathname(ctx->r.src_entry);
+    _abcdkarchive_name2local(0, name, name_cp);
+
+    syslog(LOG_INFO, "%s\n", name_cp);
+
+    if (ctx->r.justlist)
+    {
+        archive_read_data_skip(ctx->r.src_fd);
+    }
+    else
+    {
+        file_stat = *archive_entry_stat(ctx->r.src_entry);
+
+        abcdk_dirdir(pathfile, ctx->r.dst);
+        abcdk_dirdir(pathfile, name_cp);
+
+        if (S_ISLNK(file_stat.st_mode))
+        {
+            if (access(pathfile, F_OK) == 0)
+            {
+                syslog(LOG_WARNING, "%s -> 同名软链接已经存在，跳过。 \n", name_cp);
+                goto final;
+            }
+
+            lkname = archive_entry_symlink(ctx->r.src_entry);
+            _abcdkarchive_name2local(0, lkname, lkname_cp);
+
+            abcdk_mkdir(pathfile, 0664);
+            chk = symlink(lkname, pathfile);
+            if (chk != 0)
+                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+        }
+        else if (S_ISDIR(file_stat.st_mode))
+        {
+            if (access(pathfile, F_OK) == 0)
+                goto final;
+
+            abcdk_dirdir(pathfile, "/");
+            pathfile[strlen(pathfile) - 1] = '\0';
+
+            abcdk_mkdir(pathfile, 0664);
+            chk = mkdir(pathfile, 0664);
+            if (chk != 0)
+                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+
+            ctx->r.dst_fd = open(pathfile, __O_DIRECTORY | __O_CLOEXEC, 0); //打开目录。
+            if (ctx->r.dst_fd < 0)
+                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+        }
+        else if (S_ISREG((file_stat.st_mode)))
+        {
+            if (access(pathfile, F_OK) == 0)
+            {
+                syslog(LOG_WARNING, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
+                goto final;
+            }
+
+            abcdk_mkdir(pathfile, 0664);
+            ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1);
+            if (ctx->r.dst_fd < 0)
+                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+
+            chk = archive_read_data_into_fd(ctx->r.src_fd, ctx->r.dst_fd);
+            if (chk != ARCHIVE_OK)
+                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        }
+        else
+        {
+            syslog(LOG_WARNING, "%s -> 不支持的类型，跳过。 \n", name_cp);
+            goto final;
+        }
+
+        /*恢复文件属性。*/
+        struct timespec times[2] = {0};
+        times[0] = file_stat.st_atim;
+        times[1] = file_stat.st_mtim;
+        chk = futimens(ctx->r.dst_fd, times);
+        if (chk != 0)
+            syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
+        chk = fchmod(ctx->r.dst_fd, file_stat.st_mode & ACCESSPERMS);
+        if (chk != 0)
+            syslog(LOG_WARNING, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
+        chk = fchown(ctx->r.dst_fd, file_stat.st_uid, file_stat.st_gid);
+        if (chk != 0)
+            syslog(LOG_WARNING, "%s -> 未能恢复文件用户和组，忽略。\n", name_cp);
+
+        /*忽略恢复文件属性过程中发生的错误。*/
+        chk = 0;
+    }
+
+    /*No error.*/
+    goto final;
+
+final_error:
+
+    /*error.*/
+    chk = -1;
+
+final:
+
+    abcdk_closep(&ctx->r.dst_fd);
+
+    return chk;
 }
 
 void _abcdkarchive_read(abcdkarchive_ctx *ctx)
@@ -210,17 +375,13 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
     ctx->r.src_num = abcdk_option_count(ctx->args, "--src");
     ctx->r.src_num = ABCDK_CLAMP(ctx->r.src_num, 1, 255);
     for (int i = 0; i < ctx->r.src_num; i++)
-        ctx->r.src[i] = abcdk_option_get(ctx->args, "--src", i, NULL);
-    ctx->r.dst = abcdk_option_get(ctx->args, "--dst", 0, NULL);
+        ctx->r.src[i] = abcdk_option_get(ctx->args, "--filename", i, NULL);
+    ctx->r.dst = abcdk_option_get(ctx->args, "--extract-to", 0, NULL);
+    ctx->r.justlist = abcdk_option_exist(ctx->args, "--just-list");
     ctx->r.flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
     ctx->r.fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1);
     ctx->r.pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
     ctx->r.opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
-    ctx->r.uid = 0;
-    ctx->r.gid = 0;
-    ctx->r.oid = 0;
-    ctx->r.ctime = NULL;
-    ctx->r.mtime = NULL;
     ctx->r.src_fd = NULL;
     ctx->r.dst_fd = -1;
 
@@ -264,48 +425,30 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
     }
 
+#if ARCHIVE_VERSION_NUMBER >= 3003003
     if (ctx->r.pwd)
     {
         chk = archive_read_add_passphrase(ctx->r.src_fd, ctx->r.pwd);
         if (chk != ARCHIVE_OK)
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
     }
+#endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
     chk = archive_read_open_filenames(ctx->r.src_fd, ctx->r.src, ctx->r.src_bksize);
     if (chk != ARCHIVE_OK)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
 
-    while (archive_read_next_header(ctx->r.src_fd, &ctx->r.src_entry) == ARCHIVE_OK)
+    while (1)
     {
-        char *src = archive_entry_pathname(ctx->r.src_entry);
-        int src_len = strlen(src);
+        chk = archive_read_next_header(ctx->r.src_fd, &ctx->r.src_entry);
+        if (chk == ARCHIVE_EOF)
+            goto final;
+        if (chk != ARCHIVE_OK)
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
 
-        ssize_t m =  abcdk_verify_utf8(src,src_len);
-        if(m!=src_len)
-        {
-            m =  abcdk_verify_gbk(src,src_len);
-            char buf[100]={0};
-            if(m == src_len)
-            {
-                ssize_t n =  abcdk_iconv2("GBK","UTF-8",src,src_len,buf,100,NULL);
-            }
-            printf("'%s'\n", buf);
-        }
-        else
-        {
-            printf("'%s'\n", src);
-        }
-
-        
-         
-        
-
-        // char buf[100];
-        // ssize_t s = archive_read_data(ctx->r.src_fd,buf,100);
-
-     //   chk = archive_read_data_into_fd(ctx->r.src_fd, STDERR_FILENO);
-
-        archive_read_data_skip(ctx->r.src_fd);
+        chk = _abcdkarchive_read_one(ctx);
+        if (chk != 0)
+            goto final_error;
     }
 
     /*No error.*/
@@ -313,16 +456,13 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 
 final_error:
 
-    if (ctx->r.src_fd)
+    if (ctx->r.src_fd && archive_errno(ctx->r.src_fd) != ARCHIVE_OK)
         syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
 
 final:
 
-    abcdk_closep(&ctx->r.dst_fd);
-
     if (ctx->r.src_fd)
     {
-        archive_read_close(ctx->r.src_fd);
         archive_read_free(ctx->r.src_fd);
         ctx->r.src_fd = NULL;
     }
