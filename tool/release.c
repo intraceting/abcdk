@@ -57,7 +57,7 @@ void _abcdkrelease_work(abcdk_tree_t *args)
 
     if (access(osinfo_file, R_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.",osinfo_file,strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.",osinfo_file,strerror(errno));
         goto final;
     }
 

@@ -347,6 +347,18 @@ CheckHavePackage()
                 echo "libblkid-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "libcap" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libcap-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libcap)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libcap)"
+            else
+                echo "libcap-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -611,6 +623,18 @@ CheckHavePackage()
                 echo "libblkid-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "libcap" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libcap-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libcap)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libcap)"
+            else
+                echo "libcap-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -698,7 +722,7 @@ usage: [ OPTIONS ]
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
-     bluez,blkid
+     bluez,blkid,libcap
 
 EOF
 }
@@ -1134,6 +1158,26 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "blkid") -eq 1 ];then
     fi
 }
 fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "libcap") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} libcap 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        HAVE_LIBCAP="Yes"
+        DEPEND_FLAGS=" -DHAVE_LIBCAP $(CheckHavePackage ${KIT_NAME} libcap 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libcap 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        echo "$(CheckHavePackage ${KIT_NAME} libcap 0) not found."
+        exit 22
+    }
+    fi
+}
+fi
+
 #
 mkdir -p ${BUILD_PATH}
 
@@ -1207,6 +1251,7 @@ echo "HAVE_REDIS=${HAVE_REDIS}"
 echo "HAVE_JSON_C=${HAVE_JSON_C}"
 echo "HAVE_BLUEZ=${HAVE_BLUEZ}"
 echo "HAVE_BLKID=${HAVE_BLKID}"
+echo "HAVE_LIBCAP=${HAVE_LIBCAP}"
 
 #
 echo "BUILD_TYPE=${BUILD_TYPE}"

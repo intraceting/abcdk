@@ -14,6 +14,7 @@
 #include "util/scsi.h"
 #include "util/iconv.h"
 #include "util/charset.h"
+#include "util/cap.h"
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE
@@ -32,6 +33,10 @@ typedef struct _abcdkarchive_ctx
 
     struct
     {
+        /*is getuid(), not geteuid().*/
+        uid_t uid;
+        int chown_proc;
+        
         int src_bksize;
         int src_num;
         const char *src[256];
@@ -207,10 +212,13 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
     fprintf(stderr, "\n\t--filename < NAME-part-0 [ NAME-part-1 NAME-part-2 ... ] >\n");
-    fprintf(stderr, "\n\t档案文件名(包括路径)。");
+    fprintf(stderr, "\t\t档案文件名(包括路径)。\n");
 
-    fprintf(stderr, "\n\t--extract-to < PATH >\n");
-    fprintf(stderr, "\n\t回迁输出位置(存储路径)。");
+    fprintf(stderr, "\n\t--extract < PATH >\n");
+    fprintf(stderr, "\t\t回迁位置(存储路径)。默认：./\n");
+
+    fprintf(stderr, "\n\t--extract-just-list\n");
+    fprintf(stderr, "\t\t仅打印回迁列表。\n");
 }
 
 char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
@@ -316,7 +324,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             }
 
             abcdk_mkdir(pathfile, 0664);
-            ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1);
+            ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1);//打开文件。
             if (ctx->r.dst_fd < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
@@ -330,7 +338,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             goto final;
         }
 
-        /*恢复文件和目录属性。*/
+        /*恢复文件(目录)属性。*/
         chk = abcdk_futimens(ctx->r.dst_fd, &file_stat.st_atim,&file_stat.st_mtim);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
@@ -342,11 +350,19 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
                 syslog(LOG_WARNING, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
         }
 
-        chk = fchown(ctx->r.dst_fd, file_stat.st_uid, file_stat.st_gid);
-        if (chk != 0)
-            syslog(LOG_WARNING, "%s -> 未能恢复文件用户和组，忽略。\n", name_cp);
+        /*仅所有者或特权者才能改变文件(目录)的所有者和所属组。*/
+#ifdef _SYS_CAPABILITY_H
+        if (ctx->r.uid == file_stat.st_uid || ctx->r.chown_proc || ctx->r.uid == 0)
+#else
+        if (ctx->r.uid == file_stat.st_uid || ctx->r.uid == 0)
+#endif //_SYS_CAPABILITY_H
+        {
+            chk = fchown(ctx->r.dst_fd, file_stat.st_uid, file_stat.st_gid);
+            if (chk != 0)
+                syslog(LOG_WARNING, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
+        }
 
-        /*忽略恢复文件属性过程中发生的错误。*/
+        /*忽略恢复文件(目录)属性过程中发生的错误。*/
         chk = 0;
     }
 
@@ -369,19 +385,54 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 {
     int chk;
 
+    ctx->r.uid = getuid();
+#ifdef _SYS_CAPABILITY_H
+    ctx->r.chown_proc = abcdk_cap_get_pid(getpid(),CAP_CHOWN,CAP_EFFECTIVE);
+#endif //_SYS_CAPABILITY_H
+
     ctx->r.src_bksize = abcdk_option_get_int(ctx->args, "--filter", 0, 0);
     ctx->r.src_num = abcdk_option_count(ctx->args, "--src");
     ctx->r.src_num = ABCDK_CLAMP(ctx->r.src_num, 1, 255);
     for (int i = 0; i < ctx->r.src_num; i++)
         ctx->r.src[i] = abcdk_option_get(ctx->args, "--filename", i, NULL);
-    ctx->r.dst = abcdk_option_get(ctx->args, "--extract-to", 0, NULL);
-    ctx->r.justlist = abcdk_option_exist(ctx->args, "--just-list");
+    ctx->r.dst = abcdk_option_get(ctx->args, "--extract", 0, "./");
+    ctx->r.justlist = abcdk_option_exist(ctx->args, "--extract-just-list");
     ctx->r.flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
     ctx->r.fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1);
     ctx->r.pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
     ctx->r.opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
     ctx->r.src_fd = NULL;
     ctx->r.dst_fd = -1;
+
+    if(ctx->r.src[0] == NULL || *ctx->r.src[0] == '\0')
+    {
+        syslog(LOG_ERR, "'--filename NAME-part-0 [ NAME-part-1 NAME-part-2 ... ] ' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final_error);
+    }
+
+    for (int i = 0; i < ctx->r.src_num; i++)
+    {
+        if (access(ctx->r.src[0], R_OK) != 0)
+        {
+            syslog(LOG_ERR, "'%s' %s。", ctx->r.src[0], strerror(errno));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+        }
+    }
+
+    if (!ctx->r.justlist)
+    {
+        if (ctx->r.dst == NULL || *ctx->r.dst == '\0')
+        {
+            syslog(LOG_ERR, "'--extract PATH ' 不能省略，且不能为空。");
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final_error);
+        }
+
+        if (access(ctx->r.dst, W_OK) != 0)
+        {
+            syslog(LOG_ERR, "'%s' %s。", ctx->r.dst, strerror(errno));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+        }
+    }
 
     ctx->r.src_fd = archive_read_new();
     if (!ctx->r.src_fd)

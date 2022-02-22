@@ -62,7 +62,7 @@ void _abcdkm4d_work(abcdk_tree_t *args)
 
     if (access(file, R_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.", file, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.", file, strerror(errno));
         goto final;
     }
 
@@ -78,14 +78,14 @@ void _abcdkm4d_work(abcdk_tree_t *args)
     {
         if (abcdk_reopen(STDOUT_FILENO, outfile, 1, 0, 1) < 0)
         {
-            syslog(LOG_WARNING, "'%s' %s.", outfile, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", outfile, strerror(errno));
             goto final;
         }
     }
 
     if(!abcdk_mp4_find2(doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        syslog(LOG_WARNING, "'%s' 可能不是MP4文件，或尚未支持此格式。", file);
+        syslog(LOG_ERR, "'%s' 可能不是MP4文件，或尚未支持此格式。", file);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 

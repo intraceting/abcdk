@@ -127,7 +127,7 @@ void _abcdkserial_work(abcdkserial_ctx *ctx)
 
     if (access(ctx->dev, F_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.", ctx->dev, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.", ctx->dev, strerror(errno));
         goto final;
     }
 
@@ -141,7 +141,7 @@ void _abcdkserial_work(abcdkserial_ctx *ctx)
 
     if (ctx->fd < 0)
     {
-        syslog(LOG_WARNING, "'%s' %s.", ctx->dev, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.", ctx->dev, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 

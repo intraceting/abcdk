@@ -69,7 +69,7 @@ void _abcdkjson_wrok(abcdkjson_ctx *ctx)
 
     if (access(ctx->file, R_OK) != 0)
     {
-        syslog(LOG_WARNING, "'%s' %s。", ctx->file, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s。", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
     }
 
@@ -78,7 +78,7 @@ void _abcdkjson_wrok(abcdkjson_ctx *ctx)
     {
         if(abcdk_reopen(STDOUT_FILENO,ctx->outfile,1,0,1)<0)
         {
-            syslog(LOG_WARNING, "'%s' %s.", ctx->outfile, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s.", ctx->outfile, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
         }
     }
@@ -86,7 +86,7 @@ void _abcdkjson_wrok(abcdkjson_ctx *ctx)
     ctx->obj = json_object_from_file(ctx->file);
     if(!ctx->obj)
     {
-        syslog(LOG_WARNING, "'%s' %s。", ctx->file, strerror(ESPIPE));
+        syslog(LOG_ERR, "'%s' %s。", ctx->file, strerror(ESPIPE));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE,final);
     }
 
