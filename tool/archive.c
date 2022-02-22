@@ -33,9 +33,11 @@ typedef struct _abcdkarchive_ctx
 
     struct
     {
-        /*is getuid(), not geteuid().*/
+        /*getuid(), not geteuid().*/
         uid_t uid;
-        int chown_proc;
+
+        /* 0 no power, !0 have power.*/
+        int chown_power;
         
         int src_bksize;
         int src_num;
@@ -290,7 +292,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             lkname = archive_entry_symlink(ctx->r.src_entry);
             _abcdkarchive_name2local(lkname, lkname_cp);
 
-            abcdk_mkdir(pathfile, 0664);
+            abcdk_mkdir(pathfile, 0700);
             chk = symlink(lkname, pathfile);
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
@@ -306,8 +308,8 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             abcdk_dirdir(pathfile, "/");
             pathfile[strlen(pathfile) - 1] = '\0';
 
-            abcdk_mkdir(pathfile, 0664);
-            chk = mkdir(pathfile, 0664);
+            abcdk_mkdir(pathfile, 0700);
+            chk = mkdir(pathfile, 0700);
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
@@ -323,7 +325,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
                 goto final;
             }
 
-            abcdk_mkdir(pathfile, 0664);
+            abcdk_mkdir(pathfile, 0700);
             ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1);//打开文件。
             if (ctx->r.dst_fd < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
@@ -338,11 +340,12 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             goto final;
         }
 
-        /*恢复文件(目录)属性。*/
+        /*恢复文件(目录)属性的时间。*/
         chk = abcdk_futimens(ctx->r.dst_fd, &file_stat.st_atim,&file_stat.st_mtim);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
-
+#if 0
+        /*恢复文件(目录)属性的权限。*/
         if(file_stat.st_mode & ACCESSPERMS)
         {
             chk = fchmod(ctx->r.dst_fd, file_stat.st_mode & ACCESSPERMS);
@@ -351,17 +354,13 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         }
 
         /*仅所有者或特权者才能改变文件(目录)的所有者和所属组。*/
-#ifdef _SYS_CAPABILITY_H
-        if (ctx->r.uid == file_stat.st_uid || ctx->r.chown_proc || ctx->r.uid == 0)
-#else
-        if (ctx->r.uid == file_stat.st_uid || ctx->r.uid == 0)
-#endif //_SYS_CAPABILITY_H
+        if (ctx->r.uid == file_stat.st_uid || ctx->r.chown_power || ctx->r.uid == 0)
         {
             chk = fchown(ctx->r.dst_fd, file_stat.st_uid, file_stat.st_gid);
             if (chk != 0)
                 syslog(LOG_WARNING, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
         }
-
+#endif
         /*忽略恢复文件(目录)属性过程中发生的错误。*/
         chk = 0;
     }
@@ -387,7 +386,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 
     ctx->r.uid = getuid();
 #ifdef _SYS_CAPABILITY_H
-    ctx->r.chown_proc = abcdk_cap_get_pid(getpid(),CAP_CHOWN,CAP_EFFECTIVE);
+    ctx->r.chown_power = abcdk_cap_get_pid(getpid(),CAP_CHOWN,CAP_EFFECTIVE);
 #endif //_SYS_CAPABILITY_H
 
     ctx->r.src_bksize = abcdk_option_get_int(ctx->args, "--filter", 0, 0);
