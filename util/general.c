@@ -753,7 +753,7 @@ void abcdk_mkdir(const char *path, mode_t mode)
     if (!tmp)
         ABCDK_ERRNO_AND_RETURN0(ENOMEM);
 
-    /* 必须允许当前用户具有读、写、访问权限。 */
+    /* 必须允许当前用户具有读、写、执行权限。 */
     mode |= S_IRWXU;
 
     for (size_t i = 1; i < len; i++)
