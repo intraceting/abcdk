@@ -15,6 +15,7 @@
 #include "util/iconv.h"
 #include "util/charset.h"
 #include "util/cap.h"
+#include "util/dirent.h"
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE
@@ -31,6 +32,12 @@ typedef struct _abcdkarchive_ctx
 
     int cmd;
 
+    int blk;
+    int flt;
+    int fmt;
+    const char *opt;
+    const char *pwd;
+
     struct
     {
         /*getuid(), not geteuid().*/
@@ -38,17 +45,11 @@ typedef struct _abcdkarchive_ctx
 
         /* 0 no power, !0 have power.*/
         int chown_power;
-        
-        int src_bksize;
+
         int src_num;
         const char *src[256];
         const char *dst;
         int justlist;
-
-        int flt;
-        int fmt;
-        const char *opt;
-        const char *pwd;
 
         struct archive *src_fd;
         struct archive_entry *src_entry;
@@ -57,6 +58,17 @@ typedef struct _abcdkarchive_ctx
 
     struct
     {
+        int src_num;
+        const char *src[256];
+        const char *dst;
+
+        int src_fd;
+        const char src_file[PATH_MAX];
+        const char src_link[PATH_MAX];
+        struct stat src_stat;
+        abcdk_tree_t *src_dir;
+        struct archive *dst_fd;
+        struct archive_entry *dst_entry;
     } w;
 
 } abcdkarchive_ctx;
@@ -213,14 +225,17 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--option < STRING >\n");
     fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
-    fprintf(stderr, "\n\t--filename < NAME-part-0 [ NAME-part-1 NAME-part-2 ... ] >\n");
+    fprintf(stderr, "\n\t--blksize < SIZE >\n");
+    fprintf(stderr, "\t\t每次读写块大小(字节)。默认：自动\n");
+
+    fprintf(stderr, "\n\t--filename < FILENAME [ FILENAME-part1 FILENAME-part2 ... ] >\n");
     fprintf(stderr, "\t\t档案文件名(包括路径)。\n");
 
-    fprintf(stderr, "\n\t--extract < PATH >\n");
-    fprintf(stderr, "\t\t回迁位置(存储路径)。默认：./\n");
+    fprintf(stderr, "\n\t--extract-to < PATH >\n");
+    fprintf(stderr, "\t\t回迁文件保存位置。默认：./\n");
 
     fprintf(stderr, "\n\t--extract-just-list\n");
-    fprintf(stderr, "\t\t仅打印回迁列表。\n");
+    fprintf(stderr, "\t\t仅打印待回迁文件列表。\n");
 }
 
 char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
@@ -326,7 +341,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             }
 
             abcdk_mkdir(pathfile, 0700);
-            ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1);//打开文件。
+            ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1); //打开文件。
             if (ctx->r.dst_fd < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
@@ -341,7 +356,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         }
 
         /*恢复文件(目录)属性的时间。*/
-        chk = abcdk_futimens(ctx->r.dst_fd, &file_stat.st_atim,&file_stat.st_mtim);
+        chk = abcdk_futimens(ctx->r.dst_fd, &file_stat.st_atim, &file_stat.st_mtim);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
 #if 0
@@ -384,37 +399,39 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 {
     int chk;
 
+    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
+    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1);
+    ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
+    ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
+    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 0);
+
     ctx->r.uid = getuid();
 #ifdef _SYS_CAPABILITY_H
-    ctx->r.chown_power = abcdk_cap_get_pid(getpid(),CAP_CHOWN,CAP_EFFECTIVE);
+    ctx->r.chown_power = abcdk_cap_get_pid(getpid(), CAP_CHOWN, CAP_EFFECTIVE);
 #endif //_SYS_CAPABILITY_H
 
-    ctx->r.src_bksize = abcdk_option_get_int(ctx->args, "--filter", 0, 0);
-    ctx->r.src_num = abcdk_option_count(ctx->args, "--src");
+    ctx->r.src_num = abcdk_option_count(ctx->args, "--filename");
     ctx->r.src_num = ABCDK_CLAMP(ctx->r.src_num, 1, 255);
     for (int i = 0; i < ctx->r.src_num; i++)
         ctx->r.src[i] = abcdk_option_get(ctx->args, "--filename", i, NULL);
-    ctx->r.dst = abcdk_option_get(ctx->args, "--extract", 0, "./");
+    ctx->r.dst = abcdk_option_get(ctx->args, "--extract-to", 0, "./");
     ctx->r.justlist = abcdk_option_exist(ctx->args, "--extract-just-list");
-    ctx->r.flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
-    ctx->r.fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1);
-    ctx->r.pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
-    ctx->r.opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
+
     ctx->r.src_fd = NULL;
     ctx->r.dst_fd = -1;
 
-    if(ctx->r.src[0] == NULL || *ctx->r.src[0] == '\0')
+    if (ctx->r.src[0] == NULL || *ctx->r.src[0] == '\0')
     {
-        syslog(LOG_ERR, "'--filename NAME-part-0 [ NAME-part-1 NAME-part-2 ... ] ' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final_error);
+        syslog(LOG_ERR, "'--filename FILENAME [ FILENAME-part1 FILENAME-part2 ... ] ' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     for (int i = 0; i < ctx->r.src_num; i++)
     {
         if (access(ctx->r.src[0], R_OK) != 0)
         {
-            syslog(LOG_ERR, "'%s' %s。", ctx->r.src[0], strerror(errno));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+            syslog(LOG_ERR, "'%s' %s。", ctx->r.src[i], strerror(errno));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
 
@@ -423,7 +440,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         if (ctx->r.dst == NULL || *ctx->r.dst == '\0')
         {
             syslog(LOG_ERR, "'--extract PATH ' 不能省略，且不能为空。");
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final_error);
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
         }
 
         if (access(ctx->r.dst, W_OK) != 0)
@@ -437,54 +454,75 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
     if (!ctx->r.src_fd)
     {
         syslog(LOG_ERR, "%s。", strerror(errno));
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
-    if (ctx->r.flt > 0)
+    if (ctx->flt > 0)
     {
-        chk = archive_read_append_filter(ctx->r.src_fd, abcdkarchive_find_filter(ctx->r.flt));
+        chk = archive_read_append_filter(ctx->r.src_fd, abcdkarchive_find_filter(ctx->flt));
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
     }
     else
     {
         chk = archive_read_support_filter_all(ctx->r.src_fd);
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
     }
 
-    if (ctx->r.fmt > 0)
+    if (ctx->fmt > 0)
     {
-        chk = archive_read_set_format(ctx->r.src_fd, abcdkarchive_find_format(ctx->r.fmt));
+        chk = archive_read_set_format(ctx->r.src_fd, abcdkarchive_find_format(ctx->fmt));
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
     }
     else
     {
         chk = archive_read_support_format_all(ctx->r.src_fd);
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
     }
 
-    if (ctx->r.opt)
+    if (ctx->opt)
     {
-        chk = archive_read_set_options(ctx->r.src_fd, ctx->r.opt);
+        chk = archive_read_set_options(ctx->r.src_fd, ctx->opt);
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
     }
 
 #if ARCHIVE_VERSION_NUMBER >= 3003003
-    if (ctx->r.pwd)
+    if (ctx->pwd)
     {
-        chk = archive_read_add_passphrase(ctx->r.src_fd, ctx->r.pwd);
+        chk = archive_read_add_passphrase(ctx->r.src_fd, ctx->pwd);
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
     }
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
-    chk = archive_read_open_filenames(ctx->r.src_fd, ctx->r.src, ctx->r.src_bksize);
+    chk = archive_read_open_filenames(ctx->r.src_fd, ctx->r.src, ctx->blk);
     if (chk != ARCHIVE_OK)
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+    {
+        syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+    }
 
     while (1)
     {
@@ -492,20 +530,15 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         if (chk == ARCHIVE_EOF)
             goto final;
         if (chk != ARCHIVE_OK)
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+        {
+            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+        }
 
         chk = _abcdkarchive_read_one(ctx);
         if (chk != 0)
-            goto final_error;
+            goto final;
     }
-
-    /*No error.*/
-    goto final;
-
-final_error:
-
-    if (ctx->r.src_fd && archive_errno(ctx->r.src_fd) != ARCHIVE_OK)
-        syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
 
 final:
 
@@ -521,7 +554,9 @@ void _abcdkarchive_work(abcdkarchive_ctx *ctx)
     ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ);
 
     if (ctx->cmd == ABCDKARCHIVE_READ)
+    {
         _abcdkarchive_read(ctx);
+    }
     else
     {
         syslog(LOG_INFO, "尚未支持。");
