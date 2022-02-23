@@ -37,7 +37,7 @@ int abcdk_once(volatile int *status, int (*routine)(void *opaque), void *opaque)
     {
         ret = 1;
         while (abcdk_atomic_load(status) == 1)
-            pthread_yield();
+            sched_yield();
     }
 
     chk = ((abcdk_atomic_load(status) == 2) ? 0 : -1);

@@ -38,7 +38,7 @@ typedef struct _abcdkmtx_ctx
     uint8_t type;
     char vendor[32];
     char product[64];
-    char sn[64];
+    char sn[256];
     abcdk_scsi_io_stat stat;
     abcdk_tree_t *root;
     uint16_t changer;

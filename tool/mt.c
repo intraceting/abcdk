@@ -286,7 +286,7 @@ void _abcdkmt_work(abcdk_tree_t *args)
     uint8_t type = 0;
     char vendor[32] = {0};
     char product[64] = {0};
-    char sn[64] = {0};
+    char sn[256] = {0};
     int fd = -1;
     const char *dev_p = NULL;
     int filemarks = 0;

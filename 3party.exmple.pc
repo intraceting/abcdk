@@ -1,9 +1,0 @@
-prefix=/usr/
-libdir=${prefix}/lib/
-incdir=${prefix}/include/
-
-Name: 3party
-Description: 3party development kit. 
-Version: x.y.z
-Cflags: -I${incdir}
-Libs: -l3party -l:3party.so -l:3party.a -L${libdir}

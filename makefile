@@ -18,6 +18,15 @@ VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 CC_STD = -std=c11
 
 #
+ifeq (${BUILD_TYPE},debug)
+CC_FLAGS += -g 
+LINK_FLAGS += -g
+else 
+CC_FLAGS += -O2
+LINK_FLAGS += -s
+endif
+
+#
 LINK_FLAGS += -fPIC
 LINK_FLAGS += -Wl,--as-needed 
 LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
@@ -38,15 +47,6 @@ CC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR}
 CC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
 CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 CC_FLAGS += ${DEPEND_FLAGS}
-
-#
-ifeq (${BUILD_TYPE},debug)
-CC_FLAGS += -g
-LINK_FLAGS += -g
-else 
-CC_FLAGS += -O2
-LINK_FLAGS += -s
-endif
 
 #
 CC_FLAGS += -I$(CURDIR)
@@ -113,42 +113,42 @@ vmtx-src: ${VMTX_OBJ_FILES}
 $(OBJ_PATH)/util/%.o: util/%.c
 	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 #
 $(OBJ_PATH)/shell/%.o: shell/%.c
 	mkdir -p $(OBJ_PATH)/shell/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/comm/%.o: comm/%.c
 	mkdir -p $(OBJ_PATH)/comm/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/vmtx/%.o: vmtx/%.c
 	mkdir -p $(OBJ_PATH)/vmtx/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o "$@"
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 clean: clean-base clean-tool clean-test clean-vmtx
@@ -261,7 +261,7 @@ uninstall-devel:
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
 #
-RUNTIME_PACKAGE_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}-${OS_ID}-${OS_VER}-${TARGET_PLATFORM}.tar.gz
+RUNTIME_PACKAGE_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}-${TARGET_PLATFORM}.tar.gz
 #
 DEVEL_PACKAGE_FILE = $(CURDIR)/package/${SOLUTION_NAME}-devel-${VERSION_STR}.tar.gz
 

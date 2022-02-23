@@ -217,7 +217,7 @@ gid_t abcdk_tar_get_gid(abcdk_tar_hdr *hdr)
 }
 
 void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
-                   const char name[100], const char linkname[100],
+                   const char *name, const char *linkname,
                    int64_t size, time_t mtime, mode_t mode)
 {
     assert(hdr != NULL && name != NULL);
@@ -228,11 +228,11 @@ void abcdk_tar_fill(abcdk_tar_hdr *hdr, char typeflag,
     hdr->posix.typeflag = typeflag;
 
     /*Max 99 bytes.*/
-    strncpy(hdr->posix.name, name, sizeof(hdr->posix.name) - 1);
+    strncpy(hdr->posix.name, name, 99);
 
     /*Max 99 bytes, may be NULL(0).*/
     if (linkname)
-        strncpy(hdr->posix.linkname, linkname, sizeof(hdr->posix.linkname) - 1);
+        strncpy(hdr->posix.linkname, linkname, 99);
 
     strncpy(hdr->posix.magic, TMAGIC, TMAGLEN);
     strncpy(hdr->posix.version, TVERSION, TVERSLEN);

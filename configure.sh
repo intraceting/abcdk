@@ -359,6 +359,18 @@ CheckHavePackage()
                 echo "libcap-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "fastcgi" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} fcgi-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo "-lfcgi"
+            else
+                echo "fcgi-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -390,9 +402,9 @@ CheckHavePackage()
             if [ ${FLAG} -eq 1 ];then
                 echo "$(CheckHavePackageFromKit ${KIT_NAME} unixODBC-devel)"
             elif [ ${FLAG} -eq 2 ];then
-                echo ""
+                echo "$(pkg-config --cflags odbc)"
             elif [ ${FLAG} -eq 3 ];then
-                echo "-lodbc"
+                echo "$(pkg-config --libs odbc)"
             else
                 echo "unixODBC-devel"
             fi
@@ -635,6 +647,18 @@ CheckHavePackage()
                 echo "libcap-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "fastcgi" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} fcgi-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo "-lfcgi"
+            else
+                echo "fcgi-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -657,10 +681,6 @@ CheckKeyword()
 SHELL_PWD=$(cd `dirname $0`; pwd)
 
 #
-OS_ID=$(grep "^ID=" /etc/os-release |cut -d = -f 2 |sed 's/\"//g' |tr 'A-Z' 'a-z')
-OS_VER=$(grep "^VERSION_ID=" /etc/os-release |cut -d = -f 2 |sed 's/\"//g' |tr 'A-Z' 'a-z')
-
-#
 MAKE_CONF=${SHELL_PWD}/build/makefile.conf
 
 #
@@ -673,9 +693,6 @@ SOLUTION_NAME=abcdk
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_PATH=$(realpath "${SHELL_PWD}/build/")
 
-#
-HOST_PLATFORM=$(uname -m)
-TARGET_PLATFORM=${HOST_PLATFORM}
 
 #主版本
 VERSION_MAJOR="1"
@@ -692,18 +709,19 @@ INSTALL_PREFIX="/usr/local/"
 
 #
 DEPEND_FUNC="Nothing"
+DEPEND_NOFOUND=""
 
 #
 PrintUsage()
 {
 cat << EOF
 usage: [ OPTIONS ]
-    -p < string >  
-     目标系统平台。支持x86_64，aarch64。
-     默认：${TARGET_PLATFORM}
-
     -g  
      生成调试符号。默认：关闭
+
+     自定义编译器。如下：
+     export CC=gcc
+     export AR=ar
 
     -V < number > 
      主版本。默认：${VERSION_MAJOR}
@@ -722,13 +740,16 @@ usage: [ OPTIONS ]
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
-     bluez,blkid,libcap
+     bluez,blkid,libcap,fastcgi
 
+     自定义依赖项。如下：
+     export DEPEND_FLAGS="-DHAVE_3PARTY -I/tmp/3party/include/"
+     export DEPEND_LIBS="-l:3party.so -l:3party.a -l3party -L/tmp/3party/lib/"
 EOF
 }
 
 #
-while getopts "hgp:V:v:r:i:d:" ARGKEY 
+while getopts "hgV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -737,9 +758,6 @@ do
     ;;
     g)
         BUILD_TYPE="debug"
-    ;;
-    p)
-        TARGET_PLATFORM="${OPTARG}"
     ;;
     V)
         VERSION_MAJOR="${OPTARG}"
@@ -759,14 +777,12 @@ do
     esac
 done
 
-# Compiler
-CC=gcc
-AR=ar
-
-# 可能在交叉编译环中。
-if [ "${TARGET_PLATFORM}" != "${HOST_PLATFORM}" ];then
-CC=${TARGET_PLATFORM}-linux-gnu-gcc
-AR=${TARGET_PLATFORM}-linux-gnu-ar
+# 设置编译器。
+if [ "${CC}" == "" ];then
+    CC=gcc
+fi
+if [ "${AR}" == "" ];then
+    AR=ar
 fi
 
 #
@@ -802,14 +818,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "openmp") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} openmp 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_OPENMP="Yes"
         DEPEND_FLAGS=" -DHAVE_OPENMP $(CheckHavePackage ${KIT_NAME} openmp 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} openmp 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} openmp 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} openmp 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -821,14 +835,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "unixodbc") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} unixodbc 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_UNIXODBC="Yes"
         DEPEND_FLAGS=" -DHAVE_UNIXODBC $(CheckHavePackage ${KIT_NAME} unixodbc 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage  ${KIT_NAME} unixodbc 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} unixodbc 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} unixodbc 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -840,14 +852,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "sqlite") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} sqlite 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_SQLITE="Yes"
         DEPEND_FLAGS=" -DHAVE_SQLITE $(CheckHavePackage ${KIT_NAME} sqlite 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} sqlite 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} sqlite 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} sqlite 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -859,14 +869,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "openssl") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} openssl 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_OPENSSL="Yes"
         DEPEND_FLAGS=" -DHAVE_OPENSSL $(CheckHavePackage ${KIT_NAME} openssl 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} openssl 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} openssl 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} openssl 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -878,14 +886,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "ffmpeg") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} ffmpeg 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_FFMPEG="Yes"
         DEPEND_FLAGS=" -DHAVE_FFMPEG $(CheckHavePackage ${KIT_NAME} ffmpeg 2 ) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage  ${KIT_NAME} ffmpeg 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} ffmpeg 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} ffmpeg 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -897,14 +903,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "freeimage") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} freeimage 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_FREEIMAGE="Yes"
         DEPEND_FLAGS=" -DHAVE_FREEIMAGE $(CheckHavePackage ${KIT_NAME} freeimage 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} freeimage 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} freeimage 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} freeimage 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -916,14 +920,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "fuse") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} fuse 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_FUSE="Yes"
         DEPEND_FLAGS=" -DHAVE_FUSE $(CheckHavePackage ${KIT_NAME} fuse 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} fuse 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} fuse 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} fuse 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -935,14 +937,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "libnm") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} libnm 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_LIBNM="Yes"
         DEPEND_FLAGS=" -DHAVE_LIBNM $(CheckHavePackage ${KIT_NAME} libnm 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libnm 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} libnm 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libnm 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -954,14 +954,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "mpi") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} mpi 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_MPI="Yes"
         DEPEND_FLAGS=" -DHAVE_MPI $(CheckHavePackage ${KIT_NAME} mpi 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} mpi 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} mpi 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} mpi 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -974,14 +972,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "lz4") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} lz4 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_LZ4="Yes"
         DEPEND_FLAGS=" -DHAVE_LZ4 $(CheckHavePackage ${KIT_NAME} lz4 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} lz4 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} lz4 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} lz4 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -994,14 +990,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "zlib") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} zlib 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_ZLIB="Yes"
         DEPEND_FLAGS=" -DHAVE_ZLIB $(CheckHavePackage ${KIT_NAME} zlib 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} zlib 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} zlib 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} zlib 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1013,14 +1007,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "archive") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} archive 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_ARCHIVE="Yes"
         DEPEND_FLAGS=" -DHAVE_ARCHIVE $(CheckHavePackage ${KIT_NAME} archive 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} archive 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} archive 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} archive 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1032,14 +1024,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "modbus") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} modbus 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_MODBUS="Yes"
         DEPEND_FLAGS=" -DHAVE_MODBUS $(CheckHavePackage ${KIT_NAME} modbus 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} modbus 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} modbus 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} modbus 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1051,14 +1041,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "libusb") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} libusb 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_LIBUSB="Yes"
         DEPEND_FLAGS=" -DHAVE_LIBUSB $(CheckHavePackage ${KIT_NAME} libusb 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libusb 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} libusb 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libusb 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1070,14 +1058,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "mqtt") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} mqtt 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_MQTT="Yes"
         DEPEND_FLAGS=" -DHAVE_MQTT $(CheckHavePackage ${KIT_NAME} mqtt 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} mqtt 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} mqtt 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} mqtt 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1089,14 +1075,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "redis") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} redis 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_REDIS="Yes"
         DEPEND_FLAGS=" -DHAVE_REDIS $(CheckHavePackage ${KIT_NAME} redis 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} redis 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} redis 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} redis 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1108,14 +1092,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "json-c") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} json-c 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_JSON_C="Yes"
         DEPEND_FLAGS=" -DHAVE_JSON_C $(CheckHavePackage ${KIT_NAME} json-c 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} json-c 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} json-c 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} json-c 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1127,14 +1109,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "bluez") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} bluez 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_BLUEZ="Yes"
         DEPEND_FLAGS=" -DHAVE_BLUEZ $(CheckHavePackage ${KIT_NAME} bluez 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} bluez 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} bluez 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} bluez 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1146,14 +1126,12 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "blkid") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} blkid 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_BLKID="Yes"
         DEPEND_FLAGS=" -DHAVE_BLKID $(CheckHavePackage ${KIT_NAME} blkid 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} blkid 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} blkid 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} blkid 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
@@ -1165,18 +1143,42 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "libcap") -eq 1 ];then
     STATUS=$(CheckHavePackage ${KIT_NAME} libcap 1)
     if [ ${STATUS} -eq 0 ];then
     {
-        HAVE_LIBCAP="Yes"
         DEPEND_FLAGS=" -DHAVE_LIBCAP $(CheckHavePackage ${KIT_NAME} libcap 2) ${DEPEND_FLAGS}"
         DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libcap 3) ${DEPEND_LIBS}"
     }
     else
     {
-        echo "$(CheckHavePackage ${KIT_NAME} libcap 0) not found."
-        exit 22
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libcap 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
 fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "fastcgi") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} fastcgi 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_FASTCGI $(CheckHavePackage ${KIT_NAME} fastcgi 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} fastcgi 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} fastcgi 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ "${DEPEND_NOFOUND}" != "" ];then
+echo "${DEPEND_NOFOUND} no found."
+exit 22
+fi 
+
+#
+TARGET_PLATFORM=$(${CC} -dumpmachine)
 
 #
 mkdir -p ${BUILD_PATH}
@@ -1205,13 +1207,6 @@ DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
 echo "MAKE_CONF=${MAKE_CONF}"
 
 #
-echo "OS_ID=${OS_ID}"
-echo "OS_VER=${OS_VER}"
-
-#
-echo "KIT_NAME=${KIT_NAME}"
-
-#
 echo "SOLUTION_NAME=${SOLUTION_NAME}"
 
 #
@@ -1219,7 +1214,6 @@ echo "BUILD_TIME=${BUILD_TIME}"
 echo "BUILD_PATH=${BUILD_PATH}"
 
 #
-echo "HOST_PLATFORM=${HOST_PLATFORM}"
 echo "TARGET_PLATFORM=${TARGET_PLATFORM}"
 
 #
@@ -1232,28 +1226,6 @@ echo "VERSION_MINOR=${VERSION_MINOR}"
 echo "VERSION_RELEASE=${VERSION_RELEASE}"
 
 #
-echo "HAVE_OPENMP=${HAVE_OPENMP}"
-echo "HAVE_UNIXODBC=${HAVE_UNIXODBC}"
-echo "HAVE_SQLITE=${HAVE_SQLITE}"
-echo "HAVE_OPENSSL=${HAVE_OPENSSL}"
-echo "HAVE_FFMPEG=${HAVE_FFMPEG}"
-echo "HAVE_FREEIMAGE=${HAVE_FREEIMAGE}"
-echo "HAVE_FUSE=${HAVE_FUSE}"
-echo "HAVE_LIBNM=${HAVE_LIBNM}"
-echo "HAVE_MPI=${HAVE_MPI}"
-echo "HAVE_LZ4=${HAVE_LZ4}"
-echo "HAVE_ZLIB=${HAVE_ZLIB}"
-echo "HAVE_ARCHIVE=${HAVE_ARCHIVE}"
-echo "HAVE_MODBUS=${HAVE_MODBUS}"
-echo "HAVE_LIBUSB=${HAVE_LIBUSB}"
-echo "HAVE_MQTT=${HAVE_MQTT}"
-echo "HAVE_REDIS=${HAVE_REDIS}"
-echo "HAVE_JSON_C=${HAVE_JSON_C}"
-echo "HAVE_BLUEZ=${HAVE_BLUEZ}"
-echo "HAVE_BLKID=${HAVE_BLKID}"
-echo "HAVE_LIBCAP=${HAVE_LIBCAP}"
-
-#
 echo "BUILD_TYPE=${BUILD_TYPE}"
 echo "INSTALL_PREFIX=${INSTALL_PREFIX}"
 echo "ROOT_PATH?=/"
@@ -1262,16 +1234,10 @@ echo "ROOT_PATH?=/"
 echo "#" > ${MAKE_CONF}
 checkReturnCode
 
+#
 echo "# A bad c development kit." >> ${MAKE_CONF}
 echo "#" >> ${MAKE_CONF}
 echo "" >> ${MAKE_CONF}
-
-#
-echo "OS_ID=${OS_ID}" >> ${MAKE_CONF}
-echo "OS_VER=${OS_VER}" >> ${MAKE_CONF}
-
-#
-echo "KIT_NAME = ${KIT_NAME}" >> ${MAKE_CONF}
 
 #
 echo "SOLUTION_NAME = ${SOLUTION_NAME}" >> ${MAKE_CONF}
@@ -1281,8 +1247,8 @@ echo "BUILD_TIME = ${BUILD_TIME}" >> ${MAKE_CONF}
 echo "BUILD_PATH = ${BUILD_PATH}" >> ${MAKE_CONF}
 
 #
-echo "HOST_PLATFORM = ${HOST_PLATFORM}" >> ${MAKE_CONF}
 echo "TARGET_PLATFORM = ${TARGET_PLATFORM}" >> ${MAKE_CONF}
+
 #
 echo "CC = ${CC}" >> ${MAKE_CONF}
 echo "AR = ${AR}" >> ${MAKE_CONF}
