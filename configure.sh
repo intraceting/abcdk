@@ -362,13 +362,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "fastcgi" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} fcgi-dev)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libfcgi-dev)"
             elif [ ${FLAG} -eq 2 ];then
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lfcgi"
             else
-                echo "fcgi-dev"
+                echo "libfcgi-dev"
             fi
         }
         else

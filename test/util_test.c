@@ -2744,6 +2744,8 @@ int test_mqtt(abcdk_tree_t *args)
 
     mosquitto_loop_forever(mosq, -1, 1);
 
+    
+
     mosquitto_destroy(mosq);
     mosquitto_lib_cleanup();
 
