@@ -16,7 +16,6 @@ __BEGIN_DECLS
 
 int abcdk_tool_serial(abcdk_tree_t *args);
 int abcdk_tool_robots(abcdk_tree_t *args);
-int abcdk_tool_release(abcdk_tree_t *args);
 int abcdk_tool_odbc(abcdk_tree_t *args);
 int abcdk_tool_mtx(abcdk_tree_t *args);
 int abcdk_tool_mt(abcdk_tree_t *args);

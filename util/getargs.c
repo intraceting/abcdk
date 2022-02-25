@@ -66,64 +66,33 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
     char *key_p = NULL;
     char *val_p = NULL;
 
-    assert(opt != NULL && fp != NULL);
+    assert(opt != NULL && fp != NULL && prefix != NULL);
 
-    if (prefix != NULL)
+    prefix_len = strlen(prefix);
+    it_key = prefix;
+
+    if (argv0)
+        abcdk_option_set(opt, it_key, argv0);
+
+    while (_abcdk_getargs_getline(fp, &line, &len, delim, note) != -1)
     {
-        prefix_len = strlen(prefix);
-        it_key = prefix;
+        /* 去掉字符串两端所有空白字符。 */
+        abcdk_strtrim(line, isspace, 2);
 
-        if (argv0)
-            abcdk_option_set(opt, it_key, argv0);
-
-        while (_abcdk_getargs_getline(fp, &line, &len, delim, note) != -1)
+        if (abcdk_strncmp(line, prefix, prefix_len, 1) != 0)
         {
-            /* 去掉字符串两端所有空白字符。 */
-            abcdk_strtrim(line, isspace, 2);
-
-            if (abcdk_strncmp(line, prefix, prefix_len, 1) != 0)
-            {
-                abcdk_option_set(opt, it_key, line);
-            }
-            else
-            {
-                if (it_key != prefix)
-                    abcdk_heap_free2((void **)&it_key);
-
-                it_key = abcdk_heap_clone(line, len + 1);
-                if (!it_key)
-                    break;
-
-                abcdk_option_set(opt, it_key, NULL);
-            }
+            abcdk_option_set(opt, it_key, line);
         }
-    }
-    else
-    {
-        while (_abcdk_getargs_getline(fp, &line, &len, delim, note) != -1)
+        else
         {
-            /* Find key.*/
-            key_p = line;
+            if (it_key != prefix)
+                abcdk_heap_free2((void **)&it_key);
 
-            /* Find Value.*/
-            val_p = strchr(line, '=');
-            if (!val_p)
-                val_p = strchr(line, ':');
+            it_key = abcdk_heap_clone(line, len + 1);
+            if (!it_key)
+                break;
 
-            if (val_p)
-            {
-                *val_p = '\0'; // for key end.
-                val_p += 1;
-
-                /* 去掉value两端所有控制字符、双引号、单引号。 */
-                //abcdk_strtrim(val_p, _abcdk_getargs_valtrim, 2);
-                abcdk_strtrim(val_p, isspace, 2);
-            }
-
-            /* 去掉key两端所有空白字符。 */
-            abcdk_strtrim(key_p, isspace, 2);
-
-            abcdk_option_set(opt, key_p, val_p);
+            abcdk_option_set(opt, it_key, NULL);
         }
     }
 

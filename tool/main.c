@@ -26,7 +26,6 @@ static struct _abcdk_tool_entry
 }abcdk_tool_entry[] = {
     {"serial",abcdk_tool_serial},
     {"robots",abcdk_tool_robots},
-    {"release",abcdk_tool_release},
     {"odbc",abcdk_tool_odbc},
     {"mtx",abcdk_tool_mtx},
     {"mt",abcdk_tool_mt},

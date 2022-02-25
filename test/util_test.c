@@ -76,6 +76,10 @@
 #include <blkid/blkid.h>
 #endif
 
+#ifdef HAVE_FASTCGI
+#include <fcgiapp.h>
+#endif
+
 
 void test_log(abcdk_tree_t *args)
 {
@@ -3800,6 +3804,37 @@ void test_scsi(abcdk_tree_t *args)
     abcdk_closep(&fd);
 }
 
+
+void test_fcgi(abcdk_tree_t *args)
+{
+    int chk;
+    chk = FCGX_Init();
+
+    int sock = FCGX_OpenSocket("127.0.0.1:9000",0);
+
+    FCGX_Request request = {0};
+    chk = FCGX_InitRequest(&request,sock,0);
+    while (1)
+    {
+        chk = FCGX_Accept_r(&request);
+
+        FCGX_FPrintF(request.out, "Content-Type: text/plain\r\n\r\n" );
+
+        for(int i = 0;i<1000;i++)
+        {
+            if(!request.envp[i])
+                break;
+
+            FCGX_FPrintF(request.out,"[%d]=%s\r\n",i,request.envp[i]);
+
+        }
+
+        
+
+        FCGX_Finish_r(&request);
+    }
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -3970,6 +4005,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_scsi", 0) == 0)
         test_scsi(args);
+    
+    if (abcdk_strcmp(func, "test_fcgi", 0) == 0)
+        test_fcgi(args);
 
     abcdk_tree_free(&args);
     
