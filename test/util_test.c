@@ -3829,6 +3829,24 @@ void test_fcgi(abcdk_tree_t *args)
 
         }
 
+
+        char *a = FCGX_GetParam("REQUEST_METHOD",request.envp);
+        char *b = FCGX_GetParam("CONTENT_LENGTH",request.envp);
+
+        if(b)
+        {
+            int bb = atoi(b);
+            char *c = (char *)abcdk_heap_alloc(bb);
+
+            int bbb = FCGX_GetStr(c,bb,request.in);
+
+            printf("bbb=%d\n",bbb);
+
+            abcdk_save("/tmp/bbbb.tar.gz",c,bbb,0);
+
+            abcdk_heap_free(c);
+
+        }
         
 
         FCGX_Finish_r(&request);
