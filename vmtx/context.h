@@ -13,6 +13,21 @@
 #include "comm/easy.h"
 #include "shell/proc.h"
 
+
+/**/
+enum _abcdk_status
+{
+    ABCDK_STATUS_LOOKING = 1,
+#define ABCDK_STATUS_LOOKING    ABCDK_STATUS_LOOKING
+
+    ABCDK_STATUS_LEADER = 2,
+#define ABCDK_STATUS_LEADER     ABCDK_STATUS_LEADER
+
+    ABCDK_STATUS_FOLLOWER = 3
+#define ABCDK_STATUS_FOLLOWER   ABCDK_STATUS_FOLLOWER
+};
+
+
 /**/
 typedef struct _abcdk_vmtx
 {
@@ -23,11 +38,16 @@ typedef struct _abcdk_vmtx
     int lock_fd;
     const char *lock_file;
 
+    int16_t my_id;
+
     abcdk_sockaddr_t listen_addr;
     const char *listen_str;
 
     /** 0：非领导者；!0：领导者。*/
     volatile int isleader;
+
+    int16_t node_num;
+    struct _abcdk_vmtx_node *nodes;
 
 } abcdk_vmtx_t;
 
@@ -44,7 +64,7 @@ typedef struct _abcdk_vmtx_node
     abcdk_comm_easy_t *downlink;
     
     /** 主机ID。*/
-    char uuid[37];
+    int16_t my_id;
 
     /** 主机名字。*/
     char name[256];
