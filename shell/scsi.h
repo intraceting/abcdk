@@ -52,6 +52,13 @@ typedef struct _abcdk_scsi_info
 */
 void abcdk_scsi_list(abcdk_tree_t *list);
 
+/**
+ * 观察SCSI设备变化。
+ * 
+ * @warning 仅匹配总线地址和设备名称。
+*/
+void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t **del);
+
 
 __END_DECLS
 
