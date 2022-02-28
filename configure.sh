@@ -371,6 +371,18 @@ CheckHavePackage()
                 echo "libfcgi-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "samba" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} samba-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
+            else
+                echo "samba-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -659,6 +671,18 @@ CheckHavePackage()
                 echo "fcgi-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "samba" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} samba-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
+            else
+                echo "samba-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -740,7 +764,7 @@ usage: [ OPTIONS ]
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
-     bluez,blkid,libcap,fastcgi
+     bluez,blkid,libcap,fastcgi,samba
 
      自定义依赖项。如下：
      export DEPEND_FLAGS="-DHAVE_3PARTY -I/tmp/3party/include/"
@@ -1166,6 +1190,23 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "fastcgi") -eq 1 ];then
     else
     {
         DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} fastcgi 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "samba") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} samba 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_SAMBA $(CheckHavePackage ${KIT_NAME} samba 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} samba 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} samba 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
