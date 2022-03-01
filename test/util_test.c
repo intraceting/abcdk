@@ -3853,6 +3853,32 @@ void test_fcgi(abcdk_tree_t *args)
     }
 }
 
+void test_geom(abcdk_tree_t *args)
+{
+    abcdk_polygon_t a;
+
+    a.numbers = 4;
+    a.points = (abcdk_point_t*)abcdk_heap_alloc(a.numbers*sizeof(abcdk_point_t));
+
+    a.points[0].x = 100;
+    a.points[0].y = 100;
+    a.points[1].x = 200;
+    a.points[1].y = 100;
+    a.points[2].x = 200;
+    a.points[2].y = 200;
+    a.points[3].x = 100;
+    a.points[3].y = 200;
+
+    abcdk_point_t b;
+    b.x = abcdk_option_get_int(args,"--x",0,150);
+    b.y = abcdk_option_get_int(args,"--y",0,150);
+
+    int c = abcdk_point_in_polygon_2d(&b,&a);
+    printf("c=%d\n",c);
+
+    abcdk_heap_free(a.points);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -4026,6 +4052,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_fcgi", 0) == 0)
         test_fcgi(args);
+
+    if (abcdk_strcmp(func, "test_geom", 0) == 0)
+        test_geom(args);
 
     abcdk_tree_free(&args);
     

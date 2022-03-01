@@ -94,7 +94,7 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_polygon_t *poly
 	{  
         /*点P1与P2形成连线段。*/
 		p1 = polygon->points[i];  
-		p2 = polygon->points[(i + 1) % polygon->numbers];
+		p2 = polygon->points[(i + 1) % polygon->numbers];//最后的点连起来，组成封闭的多边形。
  
 		if ( p1.y == p2.y )  
 			continue;  
