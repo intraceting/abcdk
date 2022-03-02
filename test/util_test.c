@@ -3858,6 +3858,7 @@ void test_fcgi(abcdk_tree_t *args)
 
 void test_geom(abcdk_tree_t *args)
 {
+#if 0 
     abcdk_polygon_t a;
 
     a.numbers = 4;
@@ -3880,6 +3881,22 @@ void test_geom(abcdk_tree_t *args)
     printf("c=%d\n",c);
 
     abcdk_heap_free(a.points);
+#elif 1
+
+    double pi = 3.141592;
+    abcdk_point_t a = {0},b = {0};
+
+    a.x = 1369;
+    a.y = 376;
+    b.x = 1430;
+    b.y = 378;
+
+    double d = abcdk_line_length_3d(&a,&b);
+    double r = abcdk_line_radian_2d(&a,&b,'x');
+    double R = r*180/pi;
+    printf("d = %lf,r = %lf(%lf)\n",d,r,R);
+
+#endif 
 }
 
 int main(int argc, char **argv)
