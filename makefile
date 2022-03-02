@@ -11,9 +11,6 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 # 加载配置项。
 include ${MAKE_CONF}
 
-#
-VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-
 # C Standard
 CC_STD = -std=c11
 
@@ -228,7 +225,7 @@ install-devel:
 	echo "" >> ${INSTALL_PKG_FILE}
 	echo "Name: ${SOLUTION_NAME}" >> ${INSTALL_PKG_FILE}
 	echo "Description: A bad c development kit. " >> ${INSTALL_PKG_FILE}
-	echo "Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}" >> ${INSTALL_PKG_FILE}
+	echo "Version: ${VERSION_STR}" >> ${INSTALL_PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${INSTALL_PKG_FILE}
 	echo "Libs: -labcdk -L\$${libdir}" >> ${INSTALL_PKG_FILE}
 	echo "Libs.private: ${DEPEND_LIBS}" >> ${INSTALL_PKG_FILE}
@@ -259,7 +256,7 @@ uninstall-devel:
 	rm -f ${INSTALL_PKG_FILE}
 	
 #
-TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
+TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-${VERSION_STR}-build-installer.tmp
 #
 RUNTIME_PACKAGE_FILE = $(CURDIR)/package/${SOLUTION_NAME}-${VERSION_STR}-${TARGET_PLATFORM}.tar.gz
 #
@@ -272,14 +269,14 @@ package: package-runtime package-devel
 package-runtime:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${RUNTIME_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
+	tar -czv -f "${RUNTIME_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}-${VERSION_STR}"
 #	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 #
 package-devel:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${DEVEL_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
+	tar -czv -f "${DEVEL_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}-${VERSION_STR}"
 #	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 

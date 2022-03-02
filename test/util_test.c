@@ -3807,6 +3807,7 @@ void test_scsi(abcdk_tree_t *args)
 
 void test_fcgi(abcdk_tree_t *args)
 {
+#ifdef _FCGIAPP_H
     int chk;
     chk = FCGX_Init();
 
@@ -3851,6 +3852,8 @@ void test_fcgi(abcdk_tree_t *args)
 
         FCGX_Finish_r(&request);
     }
+
+#endif //_FCGIAPP_H
 }
 
 void test_geom(abcdk_tree_t *args)
