@@ -3858,29 +3858,29 @@ void test_fcgi(abcdk_tree_t *args)
 
 void test_geom(abcdk_tree_t *args)
 {
-#if 0 
-    abcdk_polygon_t a;
+#if 0
+    abcdk_point_t *points;
 
-    a.numbers = 4;
-    a.points = (abcdk_point_t*)abcdk_heap_alloc(a.numbers*sizeof(abcdk_point_t));
+    int numbers = 4;
+    points = (abcdk_point_t*)abcdk_heap_alloc(numbers*sizeof(abcdk_point_t));
 
-    a.points[0].x = 100;
-    a.points[0].y = 100;
-    a.points[1].x = 200;
-    a.points[1].y = 100;
-    a.points[2].x = 200;
-    a.points[2].y = 200;
-    a.points[3].x = 100;
-    a.points[3].y = 200;
+    points[0].x = 100;
+    points[0].y = 100;
+    points[1].x = 200;
+    points[1].y = 100;
+    points[2].x = 200;
+    points[2].y = 200;
+    points[3].x = 100;
+    points[3].y = 200;
 
     abcdk_point_t b;
     b.x = abcdk_option_get_int(args,"--x",0,150);
     b.y = abcdk_option_get_int(args,"--y",0,150);
 
-    int c = abcdk_point_in_polygon_2d(&b,&a);
+    int c = abcdk_point_in_polygon_2d(&b,points,numbers);
     printf("c=%d\n",c);
 
-    abcdk_heap_free(a.points);
+    abcdk_heap_free(points);
 #elif 1
 
     double pi = 3.141592;
