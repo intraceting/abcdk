@@ -52,8 +52,6 @@ double abcdk_line_length_3d(const abcdk_point_t *b, const abcdk_point_t *e);
 /**
  * 计算平面中的射线弧度。
  * 
- * Z轴忽略。
- * 
  * 角度=弧度*180/PI(3.1415926...)。
  * 
  * @param b 起点。
@@ -65,8 +63,6 @@ double abcdk_line_radian_2d(const abcdk_point_t *b, const abcdk_point_t *e, int 
 
 /**
  * 计算平面中点的位移坐标。
- * 
- * Z轴忽略。
  * 
  * @param b 起点。
  * @param radian 弧度。
@@ -110,7 +106,7 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_point_t *polygo
  * 计算两条直接交点。
  *
  * @return 1 交点在延长线上，2 交点在两条线段上，0 无交点(平行或共线)。
- */
+*/
 int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1_e,
                         const abcdk_point_t *line2_b, const abcdk_point_t *line2_e,
                         abcdk_point_t *p);
