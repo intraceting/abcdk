@@ -41,25 +41,13 @@ typedef struct _abcdk_resize
 
 }abcdk_resize_t;
 
-/** 多边型。*/
-typedef struct _abcdk_polygon
-{
-    /** 顶点数量。*/
-    size_t numbers;
-    
-    /** 顶点坐标。*/
-    abcdk_point_t *points;
-
-}abcdk_polygon_t;
-
-
 /**
  * 计算空间两点之间的直线距离。
  * 
- * @param p1 起点。
- * @param p2 终点。
+ * @param b 起点。
+ * @param e 终点。
  */
-double abcdk_line_length_3d(const abcdk_point_t *p1, const abcdk_point_t *p2);
+double abcdk_line_length_3d(const abcdk_point_t *b, const abcdk_point_t *e);
 
 /**
  * 计算平面中的射线弧度。
@@ -68,24 +56,24 @@ double abcdk_line_length_3d(const abcdk_point_t *p1, const abcdk_point_t *p2);
  * 
  * 角度=弧度*180/PI(3.1415926...)。
  * 
- * @param p1 起点。
- * @param p2 终点。
+ * @param b 起点。
+ * @param e 终点。
  * @param axis 仅支持X轴或者Y轴。
  * 
 */
-double abcdk_line_radian_2d(const abcdk_point_t *p1, const abcdk_point_t *p2, int axis);
+double abcdk_line_radian_2d(const abcdk_point_t *b, const abcdk_point_t *e, int axis);
 
 /**
  * 计算平面中点的位移坐标。
  * 
  * Z轴忽略。
  * 
- * @param p1 起点。
+ * @param b 起点。
  * @param radian 弧度。
  * @param dist 距离。
- * @param p2 终点。
+ * @param e 终点。
  */
-void abcdk_point_shift_2d(const abcdk_point_t *p1,double radian,double dist,abcdk_point_t *p2);
+void abcdk_point_shift_2d(const abcdk_point_t *b,double radian,double dist,abcdk_point_t *e);
 
 /**
  * 生成尺寸变换系数。
@@ -111,9 +99,21 @@ double abcdk_resize_dst2src_2d(const abcdk_resize_t *ratio,double dst, int x);
 /**
  * 测试点是否多边形内部。
  * 
+ * @param polygon 多边形顶点坐标，顺时针排列。
+ * @param numbers 顶点数量。
+ * 
  * @return !0 在内部，0 在外部。
 */
-int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_polygon_t *polygon);
+int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_point_t *polygon,size_t numbers);
+
+/**
+ * 计算两条直接交点。
+ *
+ * @return 1 交点在延长线上，2 交点在两条线段上，0 无交点(平行或共线)。
+ */
+int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1_e,
+                        const abcdk_point_t *line2_b, const abcdk_point_t *line2_e,
+                        abcdk_point_t *p);
 
 __END_DECLS
 

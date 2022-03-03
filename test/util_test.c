@@ -3887,26 +3887,15 @@ void test_geom(abcdk_tree_t *args)
     abcdk_point_t a = {0},b = {0};
     abcdk_point_t a2 = {0},b2 = {0};
 
-    a.x = 1369;
-    a.y = 376;
-    b.x = 1430;
-    b.y = 378;
-
-    a2.x = 1372;
-    a2.y = 421;
-    b2.x = 1422;
-    b2.y = 421;
+    a.x = 315;
+    a.y = 151;
+    b.x = 336;
+    b.y = 140;
 
     double d = abcdk_line_length_3d(&a,&b);
     double r = abcdk_line_radian_2d(&a,&b,'x');
     double R = r*180.0/pi;
     printf("d = %lf,r = %lf(%lf)\n",d,r,R);
-
-    double d2 = abcdk_line_length_3d(&a2,&b2);
-    double r2 = abcdk_line_radian_2d(&a2,&b2,'x');
-    double R2 = r2*180.0/pi;
-    printf("d = %lf,r = %lf(%lf)\n",d2,r2,R2);
-
 
     abcdk_point_t ma = {0},mb = {0};
 
@@ -3920,15 +3909,39 @@ void test_geom(abcdk_tree_t *args)
 
     abcdk_point_t ma2 = {0},mb2 = {0};
 
-    abcdk_point_shift_2d(&ma,r,-50,&ma2);
-    abcdk_point_shift_2d(&mb,r,50,&mb2);
+    abcdk_point_shift_2d(&ma,r,-100,&ma2);
+    abcdk_point_shift_2d(&mb,r,100,&mb2);
 
     double md2 = abcdk_line_length_3d(&ma2,&mb2);
     double mr2 = abcdk_line_radian_2d(&ma2,&mb2,'x');
     double mR2 = mr2*180.0/pi;
     printf("d = %lf,r = %lf(%lf)\n",md2,mr2,mR2);
 
+  //  326 178 
+  //  342 170
+    abcdk_point_t p1,p2,p3,p4,p5;
 
+    p1.x =0;
+    p1.x =0;
+    p2.x = 100;
+    p2.y = 0;
+    p3 = p1;
+    p4 = p2;
+    
+    p3.x = 100;
+    //p3.y = 102;
+    p4.x = 100;
+    p4.y = 101;
+    int  chk = abcdk_line_cross_2d(&p1,&p2,&p3,&p4,&p5);
+
+    // ma2.x = (int)ma2.x;
+    // ma2.y = (int)ma2.y;
+    // mb2.x = (int)mb2.x;
+    // mb2.y = (int)mb2.y;
+    // int  chk = abcdk_line_cross_2d(&a,&b,&ma2,&mb2,&p5);
+
+    printf("chk=%d\n",chk);
+    printf("x=%lf,y=%lf\n",p5.x,p5.y);
 
 #endif 
 }

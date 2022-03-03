@@ -6,37 +6,37 @@
 */
 #include "util/geometry.h"
 
-double abcdk_line_length_3d(const abcdk_point_t *p1, const abcdk_point_t *p2)
+double abcdk_line_length_3d(const abcdk_point_t *b, const abcdk_point_t *e)
 {
-    assert(p1 && p2);
+    assert(b && e);
 
-    return fabs(sqrt(pow(p1->x - p2->x, 2) + pow(p1->y - p2->y, 2) + pow(p1->z - p2->z, 2)));
+    return fabs(sqrt(pow(b->x - e->x, 2) + pow(b->y - e->y, 2) + pow(b->z - e->z, 2)));
 }
 
-double abcdk_line_radian_2d(const abcdk_point_t *p1, const abcdk_point_t *p2, int axis)
+double abcdk_line_radian_2d(const abcdk_point_t *b, const abcdk_point_t *e, int axis)
 {
     double radian;
 
-    assert(p1 && p2);
+    assert(b && e);
 
     /*To upper*/
     axis = toupper(axis);
     assert((axis == 'X') || (axis == 'Y'));
 
     if (axis == 'X')
-        radian = atan2((p2->y - p1->y), (p2->x - p1->x));
+        radian = atan2((e->y - b->y), (e->x - b->x));
     else if (axis == 'Y')
-        radian = atan2((p2->x - p1->x), (p2->y - p1->y));
+        radian = atan2((e->x - b->x), (e->y - b->y));
 
     return radian;
 }
 
-void abcdk_point_shift_2d(const abcdk_point_t *p1, double radian, double dist, abcdk_point_t *p2)
+void abcdk_point_shift_2d(const abcdk_point_t *b, double radian, double dist, abcdk_point_t *e)
 {
-    assert(p1 && p2);
+    assert(b && e);
 
-    p2->x = p1->x + dist * cos(radian);
-    p2->y = p1->y + dist * sin(radian);
+    e->x = b->x + dist * cos(radian);
+    e->y = b->y + dist * sin(radian);
 }
 
 void abcdk_resize_ratio_2d(abcdk_resize_t *ratio,double src_w, double src_h,double dst_w, double dst_h,int keep_ratio)
@@ -83,30 +83,32 @@ double abcdk_resize_dst2src_2d(const abcdk_resize_t *ratio,double dst, int x)
     return (dst - ratio->y_shift) / ratio->y_factor;
 }
 
-int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_polygon_t *polygon)
+int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_point_t *polygon,size_t numbers)
 {
-    abcdk_point_t p1,p2;
+    abcdk_point_t b,e;
     int cross = 0;
     double x;
     int chk;
 
-	for (size_t i = 0; i < polygon->numbers; i++)   
+    assert(p != NULL && polygon != NULL);
+
+	for (size_t i = 0; i < numbers; i++)   
 	{  
-        /*点P1与P2形成连线段。*/
-		p1 = polygon->points[i];  
-		p2 = polygon->points[(i + 1) % polygon->numbers];//最后的点连起来，组成封闭的多边形。
+        /*点b与e形成连线段。*/
+		b = polygon[i];  
+		e = polygon[(i + 1) % numbers];//最后的点连起来，组成封闭的多边形。
  
-		if ( p1.y == p2.y )  
+		if ( b.y == e.y )
 			continue;  
-		if ( p->y < ABCDK_MIN(p1.y, p2.y) )  
+		if ( p->y < ABCDK_MIN(b.y, e.y) )  
 			continue;  
-		if ( p->y >= ABCDK_MAX(p1.y, p2.y) )  
+		if ( p->y >= ABCDK_MAX(b.y, e.y) )  
 			continue;  
 
 		/*求交点的x坐标(由直线两点式方程转化而来)。*/
- 		x = (double)(p->y - p1.y) * (double)(p2.x - p1.x) / (double)(p2.y - p1.y) + p1.x;  
+ 		x = (double)(p->y - b.y) * (double)(e.x - b.x) / (double)(e.y - b.y) + b.x;  
  
-		/*只统计p1p2与p向右射线的交点。*/
+		/*只统计b和e与p向右射线的交点。*/
 		if ( x > p->x )  
 			cross++;
  
@@ -120,4 +122,49 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_polygon_t *poly
 	chk = ((cross % 2) == 1);
 
 	return chk;
+}
+
+int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1_e,
+                        const abcdk_point_t *line2_b, const abcdk_point_t *line2_e,
+                        abcdk_point_t *p)
+{
+    double a1,b1,c1;
+    double a2,b2,c2;
+    double d;
+    double rx0,ry0,rx1,ry1;
+    int chk1,chk2;
+
+    assert(line1_b != NULL && line1_e != NULL);
+    assert(line2_b != NULL && line2_e != NULL);
+    assert(p != NULL);
+
+    a1 = line1_e->y - line1_b->y;
+    b1 = line1_b->x - line1_e->x;
+    c1 = a1 * line1_b->x + b1 * line1_b->y;
+    a2 = line2_e->y - line2_b->y;
+    b2 = line2_b->x - line2_e->x;
+    c2 = a2 * line2_b->x + b2 * line2_b->y;
+    d = a1 * b2 - a2 * b1;
+
+    /*如果分母为0，则平行或共线，无交点。*/
+    if(d == 0)
+        return 0;
+    
+    p->x = (b2 * c1 - b1 * c2) / d;
+	p->y = (a1 * c2 - a2 * c1) / d;
+
+    rx0 = (p->x - line1_b->x) / (line1_e->x - line1_b->x),
+	ry0 = (p->y - line1_b->y) / (line1_e->y - line1_b->y),
+	rx1 = (p->x - line2_b->x) / (line2_e->x - line2_b->x),
+	ry1 = (p->y - line2_b->y) / (line2_e->y - line2_b->y);
+
+    /* 判断交点是否在线段1上。*/
+    chk1 = ((rx0 >= 0 && rx0 <= 1) || (ry0 >= 0 && ry0 <= 1));
+    /* 判断交点是否在线段2上。*/
+    chk2 = ((rx1 >= 0 && rx1 <= 1) || (ry1 >= 0 && ry1 <= 1));
+
+    if (chk1 && chk2)
+        return 2;
+
+    return 1;
 }
