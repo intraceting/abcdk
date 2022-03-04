@@ -3928,8 +3928,8 @@ void test_geom(abcdk_tree_t *args)
     p3 = p1;
     p4 = p2;
     
-    p3.x = 100;
-    //p3.y = 102;
+    p3.x = 101;
+    p3.y = 0;
     p4.x = 100;
     p4.y = 101;
     int  chk = abcdk_line_cross_2d(&p1,&p2,&p3,&p4,&p5);

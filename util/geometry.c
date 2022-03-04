@@ -148,7 +148,7 @@ int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1
 
     /*如果分母为0，则平行或共线，无交点。*/
     if(d == 0)
-        return 0;
+        return -1;
     
     p->x = (b2 * c1 - b1 * c2) / d;
 	p->y = (a1 * c2 - a2 * c1) / d;
@@ -164,7 +164,11 @@ int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1
     chk2 = ((rx1 >= 0 && rx1 <= 1) || (ry1 >= 0 && ry1 <= 1));
 
     if (chk1 && chk2)
+        return 3;
+    else if (chk2)
         return 2;
+    else if (chk1)
+        return 1;
 
-    return 1;
+    return 0;
 }

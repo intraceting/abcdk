@@ -105,7 +105,7 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p,const abcdk_point_t *polygo
 /**
  * 计算两条直接交点。
  *
- * @return 1 交点在延长线上，2 交点在两条线段上，0 无交点(平行或共线)。
+ * @return 0 交点在延长线上，1 交点在第一条线段，2 交点在第二条线段上，3 交点在两条线段上，-1 无交点(平行或共线)。
 */
 int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1_e,
                         const abcdk_point_t *line2_b, const abcdk_point_t *line2_e,
