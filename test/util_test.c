@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/mount.h>
+#include <linux/fb.h>
 #include <linux/serial.h>
 #include "util/general.h"
 #include "util/getargs.h"
@@ -3946,6 +3947,46 @@ void test_geom(abcdk_tree_t *args)
 #endif 
 }
 
+void test_fb(abcdk_tree_t *args)
+{
+    int fd = 0;
+    struct fb_var_screeninfo vinfo = {0};
+    struct fb_fix_screeninfo finfo = {0};
+
+    fd = abcdk_open("/dev/fb0",1,0,0);
+
+    ioctl(fd, FBIOGET_FSCREENINFO, &finfo);
+    ioctl(fd, FBIOGET_VSCREENINFO, &vinfo);
+
+    printf("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel );
+    printf("%dx%d\n", vinfo.xres_virtual, vinfo.yres_virtual);
+
+    long screen_size = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel/8;
+
+    void *p = mmap(NULL,screen_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+
+    vinfo.xoffset = 0;
+    vinfo.yoffset = 0;
+
+    ioctl(fd,FBIOPAN_DISPLAY,&vinfo);
+
+    sleep(1);
+
+    for(int i = 0;i<vinfo.yres;i++)
+    for(int j = 0;j<vinfo.xres;j++)
+        ABCDK_PTR2U8(p,i*vinfo.xres*3+j*3) = 0xff;
+
+    vinfo.xoffset = 0;
+    vinfo.yoffset = vinfo.yres;
+
+    ioctl(fd,FBIOPAN_DISPLAY,&vinfo);
+
+    sleep(1);
+
+
+    abcdk_closep(&fd);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -4122,6 +4163,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_geom", 0) == 0)
         test_geom(args);
+
+    if (abcdk_strcmp(func, "test_fb", 0) == 0)
+        test_fb(args);
 
     abcdk_tree_free(&args);
     
