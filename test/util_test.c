@@ -4009,8 +4009,9 @@ void test_udev(abcdk_tree_t *args)
 
     /* Create a list of the devices in the 'hidraw' subsystem. */
     enumerate = udev_enumerate_new(udev);
-    udev_enumerate_add_match_subsystem(enumerate, "block");
-    udev_enumerate_scan_devices(enumerate);
+    //udev_enumerate_add_match_subsystem(enumerate, "class");
+    //udev_enumerate_scan_devices(enumerate);
+    udev_enumerate_scan_subsystems(enumerate);
     devices = udev_enumerate_get_list_entry(enumerate);
     /* For each item enumerated, print out its information.
        udev_list_entry_foreach is a macro which expands to
@@ -4025,6 +4026,10 @@ void test_udev(abcdk_tree_t *args)
            and create a udev_device object (dev) representing it */
         path = udev_list_entry_get_name(dev_list_entry);
         dev = udev_device_new_from_syspath(udev, path);
+
+        if(strstr(path,"bus")==NULL)
+            continue;
+        printf("\n%s\n",path);
 
         /* usb_device_get_devnode() returns the path to the device node
            itself in /dev. */
@@ -4043,7 +4048,7 @@ void test_udev(abcdk_tree_t *args)
         if (!dev)
         {
             printf("Unable to find parent usb device.");
-            return;
+            continue;
         }
 
         /* From here, we can call get_sysattr_value() for each file
