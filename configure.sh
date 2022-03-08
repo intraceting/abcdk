@@ -383,6 +383,30 @@ CheckHavePackage()
                 echo "samba-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "systemd" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libsystemd-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libsystemd)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libsystemd)"
+            else
+                echo "libsystemd-dev"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "libudev" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libudev-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libudev)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libudev)"
+            else
+                echo "libudev-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -683,6 +707,30 @@ CheckHavePackage()
                 echo "samba-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "systemd" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libsystemd-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libsystemd)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libsystemd)"
+            else
+                echo "libsystemd-devel"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "libudev" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libsystemd-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libudev)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libudev)"
+            else
+                echo "libsystemd-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -764,7 +812,8 @@ usage: [ OPTIONS ]
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
-     bluez,blkid,libcap,fastcgi,samba
+     bluez,blkid,libcap,fastcgi,samba,
+     systemd,libudev
 
      自定义依赖项。如下：
      export DEPEND_FLAGS="-DHAVE_3PARTY -I/tmp/3party/include/"
@@ -1207,6 +1256,40 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "samba") -eq 1 ];then
     else
     {
         DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} samba 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "systemd") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} systemd 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_SYSTEMD $(CheckHavePackage ${KIT_NAME} systemd 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} systemd 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} systemd 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "libudev") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} libudev 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_LIBUDEV $(CheckHavePackage ${KIT_NAME} libudev 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libudev 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libudev 0) ${DEPEND_NOFOUND}"
     }
     fi
 }
