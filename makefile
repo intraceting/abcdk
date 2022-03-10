@@ -228,8 +228,6 @@ install-devel:
 	echo "Version: ${VERSION_STR}" >> ${INSTALL_PKG_FILE}
 	echo "Cflags: -I\$${incdir}" >> ${INSTALL_PKG_FILE}
 	echo "Libs: -labcdk -L\$${libdir}" >> ${INSTALL_PKG_FILE}
-	echo "Libs.private: ${DEPEND_LIBS}" >> ${INSTALL_PKG_FILE}
-
 
 #
 uninstall: uninstall-runtime uninstall-devel
