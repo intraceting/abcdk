@@ -3993,7 +3993,7 @@ void test_fb(abcdk_tree_t *args)
 
 void test_udev(abcdk_tree_t *args)
 {
-
+#ifdef _LIBUDEV_H_
     struct udev *udev;
     struct udev_enumerate *enumerate;
     struct udev_list_entry *devices, *dev_list_entry;
@@ -4072,6 +4072,8 @@ void test_udev(abcdk_tree_t *args)
     udev_enumerate_unref(enumerate);
 
     udev_unref(udev);
+
+#endif //_LIBUDEV_H_
 }
 
 int main(int argc, char **argv)
