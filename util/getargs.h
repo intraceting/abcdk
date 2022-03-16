@@ -36,9 +36,6 @@ void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
  * [ VALUE ]
  * [ VALUE ]
  * [ ... ]
- * 
- * KEY = VALUE
- * KEY : VALUE
  *  
 */
 void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,

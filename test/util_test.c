@@ -85,6 +85,22 @@
 #include <libudev.h>
 #endif
 
+#ifdef HAVE_LIBDMTX
+#include <dmtx.h>
+#endif
+
+#ifdef HAVE_QRENCODE
+#include <qrencode.h>
+#endif
+
+#ifdef HAVE_ZBAR
+#include <zbar.h>
+#endif 
+
+#ifdef HAVE_MAGICKWAND
+#include <wand/MagickWand.h>
+#endif 
+
 
 void test_log(abcdk_tree_t *args)
 {
@@ -4076,6 +4092,210 @@ void test_udev(abcdk_tree_t *args)
 #endif //_LIBUDEV_H_
 }
 
+void test_dmtx(abcdk_tree_t *args)
+{
+#if defined(HAVE_LIBDMTX) && defined(HAVE_FREEIMAGE)
+    abcdk_fi_init(0);
+
+    DmtxImage *img = NULL;
+    DmtxDecode *dec = NULL;
+    DmtxRegion *reg = NULL;
+    DmtxMessage *msg = NULL;
+
+    const char *file = abcdk_option_get(args, "--img", 0, "");
+
+    FREE_IMAGE_FORMAT file_fmt = FreeImage_GetFileType(file,0);
+    FIBITMAP *fi = abcdk_fi_load2(file_fmt, 0, file);
+
+    uint8_t*ptr = FreeImage_GetBits(fi);
+    int width = FreeImage_GetWidth(fi);
+    int height = FreeImage_GetHeight(fi);
+    int channels = FreeImage_GetBPP(fi) / 8;
+    FREE_IMAGE_COLOR_TYPE type = FreeImage_GetColorType(fi);
+
+    if(type == FIC_RGB)
+    img = dmtxImageCreate(ptr, width, height, DmtxPack24bppRGB);
+    else if(type == FIC_RGBALPHA)
+        img = dmtxImageCreate(ptr, width, height, DmtxPack32bppRGBX);
+    dec = dmtxDecodeCreate(img, 1);
+    reg = dmtxRegionFindNext(dec, NULL);
+    msg = dmtxDecodeMatrixRegion(dec, reg, DmtxModuleOnRGB);
+    //msg = dmtxDecodeMosaicRegion(dec, reg,DmtxUndefined);
+
+    printf("{%s}\n",msg->output);
+    
+
+    dmtxMessageDestroy(&msg);
+    dmtxRegionDestroy(&reg);
+    dmtxDecodeDestroy(&dec);
+    dmtxImageDestroy(&img);
+    FreeImage_Unload(fi);
+    abcdk_fi_uninit();
+
+#endif
+}
+
+void test_zbar(abcdk_tree_t *args)
+{
+#ifdef HAVE_ZBAR
+
+#ifdef HAVE_FREEIMAGE2
+    abcdk_fi_init(0);
+
+    const char *file = abcdk_option_get(args, "--img", 0, "");
+
+    FREE_IMAGE_FORMAT file_fmt = FreeImage_GetFileType(file, 0);
+    FIBITMAP *fi = abcdk_fi_load2(file_fmt, 0, file);
+
+    uint8_t *ptr = FreeImage_GetBits(fi);
+    int width = FreeImage_GetWidth(fi);
+    int height = FreeImage_GetHeight(fi);
+    int channels = FreeImage_GetBPP(fi) / 8;
+    FREE_IMAGE_COLOR_TYPE type = FreeImage_GetColorType(fi);
+
+    FIBITMAP *fig = FreeImage_ConvertToGreyscale(fi);
+    uint8_t *gptr = FreeImage_GetBits(fig);
+    int width2 = FreeImage_GetWidth(fig);
+    int height2 = FreeImage_GetHeight(fig);
+    int channels2 = FreeImage_GetBPP(fig) / 8;
+    int len2 = FreeImage_GetPitch(fig);
+
+    zbar_image_scanner_t *scaner = zbar_image_scanner_create();
+    zbar_image_scanner_set_config(scaner, ZBAR_NONE, ZBAR_CFG_ENABLE, 0);
+
+    zbar_image_t *image = zbar_image_create();
+    // zbar_image_set_format(image,ABCDK_FOURCC_MKTAG('G','R','A','Y'));
+    zbar_image_set_format(image, ABCDK_FOURCC_MKTAG('Y', '8', '0', '0'));
+    zbar_image_set_size(image, len2, height2);
+
+    zbar_image_set_data(image, gptr, height2 * len2, NULL);
+
+    int chk = zbar_scan_image(scaner, image);
+
+    zbar_image_scanner_destroy(scaner);
+    zbar_image_destroy(image);
+    FreeImage_Unload(fi);
+    FreeImage_Unload(fig);
+    abcdk_fi_uninit();
+#elif defined(HAVE_MAGICKWAND)
+
+    static int notfound = 0, exit_code = 0;
+    static int num_images = 0, num_symbols = 0;
+    static int xmllvl = 0;
+
+    char *xmlbuf = NULL;
+    unsigned xmlbuflen = 0;
+
+    static zbar_processor_t *processor = NULL;
+
+    const char *filename = abcdk_option_get(args, "--img", 0, "");
+
+    MagickWandGenesis();
+
+    processor = zbar_processor_create(0);
+
+    zbar_processor_init(processor, NULL, 1);
+
+    int found = 0;
+    MagickWand *images = NewMagickWand();
+    if (!MagickReadImage(images, filename))
+        return ;
+
+    unsigned seq, n = MagickGetNumberImages(images);
+    for (seq = 0; seq < n; seq++)
+    {
+        if (exit_code == 3)
+            return;
+
+        if (!MagickSetIteratorIndex(images, seq))
+            return;
+
+        zbar_image_t *zimage = zbar_image_create();
+        assert(zimage);
+        zbar_image_set_format(zimage, *(unsigned long *)"Y800");
+
+        int width = MagickGetImageWidth(images);
+        int height = MagickGetImageHeight(images);
+        zbar_image_set_size(zimage, width, height);
+
+        // extract grayscale image pixels
+        // FIXME color!! ...preserve most color w/422P
+        // (but only if it's a color image)
+        size_t bloblen = width * height;
+        unsigned char *blob = malloc(bloblen);
+        zbar_image_set_data(zimage, blob, bloblen, zbar_image_free_data);
+
+        if (!MagickExportImagePixels(images, 0, 0, width, height,
+                                     "I", CharPixel, blob))
+            return;
+
+        if (xmllvl == 1)
+        {
+            xmllvl++;
+            printf("<source href='%s'>\n", filename);
+        }
+
+        zbar_process_image(processor, zimage);
+
+        // output result data
+        const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
+        for (; sym; sym = zbar_symbol_next(sym))
+        {
+            zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+            if (typ == ZBAR_PARTIAL)
+                continue;
+            else if (!xmllvl)
+                printf("%s%s:%s\n",
+                       zbar_get_symbol_name(typ),
+                       zbar_get_addon_name(typ),
+                       zbar_symbol_get_data(sym));
+            else if (xmllvl < 0)
+                printf("%s\n", zbar_symbol_get_data(sym));
+            else
+            {
+                if (xmllvl < 3)
+                {
+                    xmllvl++;
+                    printf("<index num='%u'>\n", seq);
+                }
+                zbar_symbol_xml(sym, &xmlbuf, &xmlbuflen);
+                printf("%s\n", xmlbuf);
+            }
+            found++;
+            num_symbols++;
+        }
+        if (xmllvl > 2)
+        {
+            xmllvl--;
+            printf("</index>\n");
+        }
+        fflush(stdout);
+
+        zbar_image_destroy(zimage);
+
+        num_images++;
+        if (zbar_processor_is_visible(processor))
+        {
+            int rc = zbar_processor_user_wait(processor, -1);
+            if (rc < 0 || rc == 'q' || rc == 'Q')
+                exit_code = 3;
+        }
+    }
+
+    if (xmllvl > 1)
+    {
+        xmllvl--;
+        printf("</source>\n");
+    }
+
+    if (!found)
+        notfound++;
+
+    DestroyMagickWand(images);
+#endif
+#endif
+}
+
 int main(int argc, char **argv)
 {
     abcdk_openlog(NULL,LOG_DEBUG,1);
@@ -4258,6 +4478,12 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_udev", 0) == 0)
         test_udev(args);
+
+    if (abcdk_strcmp(func, "test_dmtx", 0) == 0)
+        test_dmtx(args);
+
+    if (abcdk_strcmp(func, "test_zbar", 0) == 0)
+        test_zbar(args);
 
     abcdk_tree_free(&args);
     

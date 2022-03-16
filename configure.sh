@@ -407,6 +407,54 @@ CheckHavePackage()
                 echo "libudev-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "dmtx" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libdmtx-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libdmtx)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libdmtx)"
+            else
+                echo "libdmtx-dev"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "qrencode" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libqrencode-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libqrencode)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libqrencode)"
+            else
+                echo "libqrencode-dev"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "zbar" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libzbar-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags zbar)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs zbar)"
+            else
+                echo "libzbar-dev"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "magickwand" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmagickwand-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags MagickWand)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs MagickWand)"
+            else
+                echo "libmagickwand-dev"
+            fi
+        }
         else
             echo "1"
         fi
@@ -731,6 +779,54 @@ CheckHavePackage()
                 echo "libsystemd-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "dmtx" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libdmtx-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libdmtx)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libdmtx)"
+            else
+                echo "libdmtx-devel"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "qrencode" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libqrencode-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libqrencode)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libqrencode)"
+            else
+                echo "libqrencode-devel"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "zbar" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libzbar-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags zbar)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs zbar)"
+            else
+                echo "libzbar-devel"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "magickwand" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmagickwand-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags MagickWand)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs MagickWand)"
+            else
+                echo "libmagickwand-devel"
+            fi
+        }
         else 
             echo "1"
         fi
@@ -813,7 +909,8 @@ usage: [ OPTIONS ]
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,samba,
-     systemd,libudev
+     systemd,libudev,dmtx,qrencode,zbar,
+     magickwand
 
      自定义依赖项。如下：
      export DEPEND_FLAGS="-DHAVE_3PARTY -I/tmp/3party/include/"
@@ -1290,6 +1387,74 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "libudev") -eq 1 ];then
     else
     {
         DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libudev 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "dmtx") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} dmtx 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_LIBDMTX $(CheckHavePackage ${KIT_NAME} dmtx 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} dmtx 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} dmtx 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "qrencode") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} qrencode 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_QRENCODE $(CheckHavePackage ${KIT_NAME} qrencode 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} qrencode 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} qrencode 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "zbar") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} zbar 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_ZBAR $(CheckHavePackage ${KIT_NAME} zbar 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} zbar 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} zbar 0) ${DEPEND_NOFOUND}"
+    }
+    fi
+}
+fi
+
+#
+if [ $(CheckKeyword ${DEPEND_FUNC} "magickwand") -eq 1 ];then
+{
+    STATUS=$(CheckHavePackage ${KIT_NAME} magickwand 1)
+    if [ ${STATUS} -eq 0 ];then
+    {
+        DEPEND_FLAGS=" -DHAVE_MAGICKWAND $(CheckHavePackage ${KIT_NAME} magickwand 2) ${DEPEND_FLAGS}"
+        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} magickwand 3) ${DEPEND_LIBS}"
+    }
+    else
+    {
+        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} magickwand 0) ${DEPEND_NOFOUND}"
     }
     fi
 }

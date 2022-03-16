@@ -28,16 +28,8 @@ typedef union _abcdk_mp4_tag
 
 }abcdk_mp4_tag_t;
 
-/*
- * MP4 tag 构造宏(大端字节序)。
-*/
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((uint32_t)(d) << 24))
-#else
-#define ABCDK_MP4_ATOM_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
-#endif
-
+/** MP4 tag 构造宏。*/
+#define ABCDK_MP4_ATOM_MKTAG    ABCDK_FOURCC_MKTAG
 
 /*
  * atom types

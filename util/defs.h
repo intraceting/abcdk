@@ -150,7 +150,7 @@
 /** 计算数组大小。*/
 #define ABCDK_ARRAY_SIZE(V) (sizeof((V)) / sizeof((V)[0]))
 
-/** 清除终端字符颜色设置。*/
+/** 终端字符颜色设置。*/
 #define ABCDK_ANSI_COLOR_RESET "\x1b[0m"
 #define ABCDK_ANSI_COLOR_RED "\x1b[31m"
 #define ABCDK_ANSI_COLOR_GREEN "\x1b[32m"
@@ -158,5 +158,12 @@
 #define ABCDK_ANSI_COLOR_BLUE "\x1b[34m"
 #define ABCDK_ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ABCDK_ANSI_COLOR_CYAN "\x1b[36m"
+
+/** 4字节TAG生成器(整型数值以大端字节序存储)。*/
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define ABCDK_FOURCC_MKTAG(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((uint32_t)(d) << 24))
+#else
+#define ABCDK_FOURCC_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
+#endif
 
 #endif //ABCDK_UTIL_DEFS_H
