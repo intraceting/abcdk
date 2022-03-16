@@ -4139,7 +4139,7 @@ void test_zbar(abcdk_tree_t *args)
 {
 #ifdef HAVE_ZBAR
 
-#ifdef HAVE_FREEIMAGE2
+#ifdef HAVE_FREEIMAGE
     abcdk_fi_init(0);
 
     const char *file = abcdk_option_get(args, "--img", 0, "");
@@ -4151,31 +4151,67 @@ void test_zbar(abcdk_tree_t *args)
     int width = FreeImage_GetWidth(fi);
     int height = FreeImage_GetHeight(fi);
     int channels = FreeImage_GetBPP(fi) / 8;
+    int pitch = FreeImage_GetPitch(fi);
     FREE_IMAGE_COLOR_TYPE type = FreeImage_GetColorType(fi);
-
-    FIBITMAP *fig = FreeImage_ConvertToGreyscale(fi);
-    uint8_t *gptr = FreeImage_GetBits(fig);
-    int width2 = FreeImage_GetWidth(fig);
-    int height2 = FreeImage_GetHeight(fig);
-    int channels2 = FreeImage_GetBPP(fig) / 8;
-    int len2 = FreeImage_GetPitch(fig);
-
-    zbar_image_scanner_t *scaner = zbar_image_scanner_create();
-    zbar_image_scanner_set_config(scaner, ZBAR_NONE, ZBAR_CFG_ENABLE, 0);
+    
 
     zbar_image_t *image = zbar_image_create();
-    // zbar_image_set_format(image,ABCDK_FOURCC_MKTAG('G','R','A','Y'));
+    //zbar_image_set_format(image,ABCDK_FOURCC_MKTAG('G','R','E','Y'));
     zbar_image_set_format(image, ABCDK_FOURCC_MKTAG('Y', '8', '0', '0'));
-    zbar_image_set_size(image, len2, height2);
+    zbar_image_set_size(image, width, height);
 
-    zbar_image_set_data(image, gptr, height2 * len2, NULL);
+#if 1 
+    uint8_t *data = (uint8_t*)abcdk_heap_alloc(width * height);
 
+    uint8_t *tmp = ptr;
+    uint8_t *tmp2 = data + width * (height-1);//FreeImage 解码的图像头下脚上(没有自动翻转)，这里转灰度时要翻转一下。
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            int pos = x * channels;
+            uint8_t r = tmp[pos], g = tmp[pos + 1], b = tmp[pos + 2];
+            // uint8_t gray = (r * 38 + g * 75 + b * 15) >> 7;
+            uint8_t gray = r * 0.299 + g * 0.587 + b * 0.114;
+            tmp2[x] = gray;
+            printf("%c",tmp2[x]>128?' ':'.');
+        }
+        printf("\n");
+
+        tmp += pitch;
+        tmp2 -= width;
+    }
+
+    zbar_image_set_data(image, data, width * height, NULL);
+
+#else 
+
+    zbar_image_set_data(image, ptr, width * height, NULL);
+#endif 
+
+    zbar_image_scanner_t *scaner = zbar_image_scanner_create();
+    zbar_image_scanner_set_config(scaner, ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
     int chk = zbar_scan_image(scaner, image);
+   // const zbar_symbol_set_t *sym = zbar_image_scanner_get_results(scaner);
 
-    zbar_image_scanner_destroy(scaner);
+   // zbar_processor_t *processor = zbar_processor_create(0);
+   // zbar_processor_init(processor, NULL, 1);
+
+   // zbar_process_image(processor, image);
+
+    const zbar_symbol_t *sym = zbar_image_first_symbol(image);
+    for (; sym; sym = zbar_symbol_next(sym))
+    {
+        zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+        if (typ == ZBAR_PARTIAL)
+            continue;
+        else
+            printf("%s%s:%s\n", zbar_get_symbol_name(typ), zbar_get_addon_name(typ), zbar_symbol_get_data(sym));
+    }
+
+   // zbar_image_scanner_destroy(scaner);
     zbar_image_destroy(image);
     FreeImage_Unload(fi);
-    FreeImage_Unload(fig);
     abcdk_fi_uninit();
 #elif defined(HAVE_MAGICKWAND)
 
@@ -4228,6 +4264,17 @@ void test_zbar(abcdk_tree_t *args)
         if (!MagickExportImagePixels(images, 0, 0, width, height,
                                      "I", CharPixel, blob))
             return;
+
+        uint8_t *tmp2 = blob;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                printf("%c", tmp2[x] > 128 ? ' ' : '.');
+            }
+            printf("\n");
+            tmp2 += width;
+        }
 
         if (xmllvl == 1)
         {

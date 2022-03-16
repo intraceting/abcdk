@@ -43,6 +43,10 @@ void abcdk_fi_init(int load_local_plugins_only);
 /**
  * 保存图像。
  * 
+ * @param data RGB或RGBX数据指针。
+ * @param stride 宽度对齐(字节)。
+ * @param width 宽度(像素)。
+ * @param height 高度(像素)。
  * @param bits 像素位宽，支持24、32位。
  * 
  * @return 0 成功，!0 失败。
