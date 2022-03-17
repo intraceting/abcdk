@@ -41,6 +41,7 @@
 #include "util/basecode.h"
 #include "util/notify.h"
 #include "util/scsi.h"
+#include "util/ndarray.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -4163,23 +4164,52 @@ void test_zbar(abcdk_tree_t *args)
 #if 1 
     uint8_t *data = (uint8_t*)abcdk_heap_alloc(width * height);
 
+    abcdk_ndarray_t src = {0} ,dst = {0};
+    src.fmt = ABCDK_NDARRAY_NHWC;
+    src.blocks =1;
+    src.width = width;
+    src.height = height;
+    src.depth = channels;
+    src.width_bytes = pitch;
+    src.cell_bytes = 1;
+
+    dst.fmt = ABCDK_NDARRAY_NHWC;
+    dst.blocks = 1;
+    dst.width = width;
+    dst.height = height;
+    dst.depth = 1;
+    dst.width_bytes = width;
+    dst.cell_bytes = 1;
+
     uint8_t *tmp = ptr;
-    uint8_t *tmp2 = data + width * (height-1);//FreeImage 解码的图像头下脚上(没有自动翻转)，这里转灰度时要翻转一下。
+    uint8_t *tmp2 = data;
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
-            int pos = x * channels;
-            uint8_t r = tmp[pos], g = tmp[pos + 1], b = tmp[pos + 2];
-            // uint8_t gray = (r * 38 + g * 75 + b * 15) >> 7;
-            uint8_t gray = r * 0.299 + g * 0.587 + b * 0.114;
-            tmp2[x] = gray;
-            printf("%c",tmp2[x]>128?' ':'.');
+            size_t r_pos = abcdk_ndarray_offset(&src,0,x,y,0,0);
+            size_t g_pos = abcdk_ndarray_offset(&src,0,x,y,1,0);
+            size_t b_pos = abcdk_ndarray_offset(&src,0,x,y,2,0);
+            uint8_t r = tmp[r_pos], g = tmp[g_pos], b = tmp[b_pos];
+
+             uint8_t gray = (r * 38 + g * 75 + b * 15) >> 7;
+            //uint8_t gray = r * 0.299 + g * 0.587 + b * 0.114;
+ 
+            size_t gray_pos = abcdk_ndarray_offset(&dst,0,x,y,0,ABCDK_NDARRAY_ROTATE_C);//FreeImage 解码的图像头下脚上(没有自动翻转)，这里转灰度时要翻转一下。
+            tmp2[gray_pos] = gray;
+        }
+        
+
+    }
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            size_t gray_pos = abcdk_ndarray_offset(&dst, 0, x, y, 0, 0);
+            printf("%c", tmp2[gray_pos] > 128 ? ' ' : '.');
         }
         printf("\n");
-
-        tmp += pitch;
-        tmp2 -= width;
     }
 
     zbar_image_set_data(image, data, width * height, NULL);
