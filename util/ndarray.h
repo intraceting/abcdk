@@ -50,20 +50,24 @@ enum _abcdk_ndarray_constant
     /** 垂直翻转。*/
     ABCDK_NDARRAY_FLIP_V = 2,
 #define ABCDK_NDARRAY_FLIP_V ABCDK_NDARRAY_FLIP_V
-
-    /**顺时针旋转。*/
-    ABCDK_NDARRAY_ROTATE_C = 3,
-#define ABCDK_NDARRAY_ROTATE_C ABCDK_NDARRAY_ROTATE_C
-
-    /**逆时针旋转。*/
-    ABCDK_NDARRAY_ROTATE_AC = 4
-#define ABCDK_NDARRAY_ROTATE_AC ABCDK_NDARRAY_ROTATE_AC
 };
+
+/**
+ * 计算多维数组占用的空间(字节)。
+*/
+size_t abcdk_ndarray_size(abcdk_ndarray_t *ndarray);
+
+/**
+ * 设置多维数组宽度占用的空间(字节)。
+*/
+void abcdk_ndarray_set_width_bytes(abcdk_ndarray_t *ndarray,size_t align);
 
 /**
  * 计算多维数组单元格的偏移量。
  */
 size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t y, size_t z, int flag);
+
+
 
 __END_DECLS
 

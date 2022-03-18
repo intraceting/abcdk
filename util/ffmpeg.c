@@ -76,7 +76,7 @@ const char *abcdk_av_image_pixfmt_name(enum AVPixelFormat pixfmt)
             return av_get_pix_fmt_name(pixfmt);
     }
 
-    return "Unknown";
+    return NULL;
 }
 
 int abcdk_av_image_fill_heights(int heights[4], int height, enum AVPixelFormat pixfmt)

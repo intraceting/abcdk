@@ -116,6 +116,10 @@ void test_ffmpeg(abcdk_tree_t *args)
 
 #ifdef HAVE_FFMPEG
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+    av_register_all();
+#endif 
+
     for(int i = 0;i<1000;i++)
     {
         enum AVPixelFormat pixfmt = (enum AVPixelFormat)i;
@@ -123,8 +127,27 @@ void test_ffmpeg(abcdk_tree_t *args)
         int bits = abcdk_av_image_pixfmt_bits(pixfmt,0);
         int bits_pad = abcdk_av_image_pixfmt_bits(pixfmt,1);
         const char *name = abcdk_av_image_pixfmt_name(pixfmt);
+        if(!name)
+            continue;
 
         printf("%s(%d): %d/%d bits.\n",name,i,bits,bits_pad);
+    }
+
+    AVInputFormat *in = NULL;
+    while(in = av_iformat_next(in))
+    {
+        if(!in->priv_class)
+            continue;
+        av_opt_show2((void *)&in->priv_class, NULL, -1, 0);
+    }
+
+
+    AVOutputFormat *out = NULL;
+    while(out = av_oformat_next(out))
+    {
+        if(!out->priv_class)
+            continue;
+        av_opt_show2((void *)&out->priv_class, NULL, -1, 0);
     }
 
 #if 0    
@@ -4195,7 +4218,7 @@ void test_zbar(abcdk_tree_t *args)
              uint8_t gray = (r * 38 + g * 75 + b * 15) >> 7;
             //uint8_t gray = r * 0.299 + g * 0.587 + b * 0.114;
  
-            size_t gray_pos = abcdk_ndarray_offset(&dst,0,x,y,0,ABCDK_NDARRAY_ROTATE_C);//FreeImage 解码的图像头下脚上(没有自动翻转)，这里转灰度时要翻转一下。
+            size_t gray_pos = abcdk_ndarray_offset(&dst,0,x,y,0,ABCDK_NDARRAY_FLIP_V);//FreeImage 解码的图像头下脚上(没有自动翻转)，这里转灰度时要翻转一下。
             tmp2[gray_pos] = gray;
         }
         
@@ -4207,7 +4230,7 @@ void test_zbar(abcdk_tree_t *args)
         for (int x = 0; x < width; x++)
         {
             size_t gray_pos = abcdk_ndarray_offset(&dst, 0, x, y, 0, 0);
-            printf("%c", tmp2[gray_pos] > 128 ? ' ' : '.');
+            printf("%c", tmp2[gray_pos] > 128 ? '.' : ' ');
         }
         printf("\n");
     }
@@ -4371,6 +4394,79 @@ void test_zbar(abcdk_tree_t *args)
     DestroyMagickWand(images);
 #endif
 #endif
+}
+
+void test_ndarray(abcdk_tree_t *args)
+{
+    abcdk_ndarray_t src = {0}, dst = {0};
+    src.fmt = ABCDK_NDARRAY_NCHW;
+    src.blocks = 2;
+    src.width = 10;
+    src.height = 10;
+    src.depth = 3;
+    src.cell_bytes = 2;
+    abcdk_ndarray_set_width_bytes(&src, 4);
+    src.data = abcdk_heap_alloc(abcdk_ndarray_size(&src));
+
+    dst.fmt = ABCDK_NDARRAY_NHWC;
+    dst.blocks = 2;
+    dst.width = 10;
+    dst.height = 10;
+    dst.depth = 3;
+    dst.cell_bytes = 2;
+    abcdk_ndarray_set_width_bytes(&dst, 1);
+    dst.data = abcdk_heap_alloc(abcdk_ndarray_size(&dst));
+
+    for (int n = 0; n < src.blocks; n++)
+    {
+        for (int y = 0; y < src.height; y++)
+        {
+            for (int x = 0; x < src.width; x++)
+            {
+                for (int z = 0; z < src.depth; z++)
+                {
+                    size_t pos_src = abcdk_ndarray_offset(&src, n, x, y, z, 0);
+                    ABCDK_PTR2U16(src.data, pos_src) = z+1;
+                }
+            }
+        }
+    }
+
+    for (int n = 0; n < src.blocks; n++)
+    {
+        for (int y = 0; y < src.height; y++)
+        {
+            for (int x = 0; x < src.width; x++)
+            {
+                for (int z = 0; z < src.depth; z++)
+                {
+                    size_t pos_src = abcdk_ndarray_offset(&src, n, x, y, z, 0);
+                    size_t pos_dst = abcdk_ndarray_offset(&dst, n, x, y, z, 0);
+                    ABCDK_PTR2U16(dst.data, pos_dst) = ABCDK_PTR2U16(src.data, pos_src);
+                }
+            }
+        }
+    }
+
+
+    for (int n = 0; n < src.blocks; n++)
+    {
+        for (int y = 0; y < src.height; y++)
+        {
+            for (int x = 0; x < src.width; x++)
+            {
+                for (int z = 0; z < src.depth; z++)
+                {
+                    //size_t pos_src = abcdk_ndarray_offset(&src, n, x, y, z, 0);
+                    //printf("%hu",ABCDK_PTR2U16(src.data, pos_src));
+                    size_t pos_dst = abcdk_ndarray_offset(&dst, n, x, y, z, 0);
+                    printf("%hu",ABCDK_PTR2U16(dst.data, pos_dst));
+                }
+                printf("\n");
+            }
+        }
+    }
+
 }
 
 int main(int argc, char **argv)
@@ -4561,6 +4657,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_zbar", 0) == 0)
         test_zbar(args);
+    
+    if (abcdk_strcmp(func, "test_ndarray", 0) == 0)
+        test_ndarray(args);
 
     abcdk_tree_free(&args);
     
