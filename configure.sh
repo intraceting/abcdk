@@ -371,18 +371,6 @@ CheckHavePackage()
                 echo "libfcgi-dev"
             fi
         }
-        elif [ "${PKG_NAME}" == "samba" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} samba-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
-            else
-                echo "samba-dev"
-            fi
-        }
         elif [ "${PKG_NAME}" == "systemd" ];then
         {
             if [ ${FLAG} -eq 1 ];then
@@ -743,40 +731,28 @@ CheckHavePackage()
                 echo "fcgi-devel"
             fi
         }
-        elif [ "${PKG_NAME}" == "samba" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} samba-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs samba-util samba-hostconfig samdb samba-credentials samba-policy smbclient-raw)"
-            else
-                echo "samba-devel"
-            fi
-        }
         elif [ "${PKG_NAME}" == "systemd" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libsystemd-devel)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} systemd-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "$(pkg-config --cflags libsystemd)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libsystemd)"
             else
-                echo "libsystemd-devel"
+                echo "systemd-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "libudev" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libsystemd-devel)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} systemd-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "$(pkg-config --cflags libudev)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libudev)"
             else
-                echo "libsystemd-devel"
+                echo "systemd-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "dmtx" ];then
@@ -827,8 +803,18 @@ CheckHavePackage()
                 echo "ImageMagick-devel"
             fi
         }
-        else 
-            echo "1"
+        else
+        {
+            if [ ${FLAG} -eq 1 ];then 
+                echo "1"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo ""
+            else
+                echo "${PKG_NAME}"
+            fi
+        }
         fi
     }
     else 
@@ -908,9 +894,8 @@ usage: [ OPTIONS ]
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,mpi,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
-     bluez,blkid,libcap,fastcgi,samba,
-     systemd,libudev,dmtx,qrencode,zbar,
-     magickwand
+     bluez,blkid,libcap,fastcgi,systemd,
+     libudev,dmtx,qrencode,zbar,magickwand
 
      自定义依赖项。如下：
      export DEPEND_FLAGS="-DHAVE_3PARTY -I/tmp/3party/include/"
