@@ -794,37 +794,37 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "qrencode" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libqrencode-devel)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} qrencode-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "$(pkg-config --cflags libqrencode)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libqrencode)"
             else
-                echo "libqrencode-devel"
+                echo "qrencode-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "zbar" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libzbar-devel)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} zbar-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "$(pkg-config --cflags zbar)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs zbar)"
             else
-                echo "libzbar-devel"
+                echo "zbar-devel"
             fi
         }
         elif [ "${PKG_NAME}" == "magickwand" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmagickwand-devel)"
+                echo "$(CheckHavePackageFromKit ${KIT_NAME} ImageMagick-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo "$(pkg-config --cflags MagickWand)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs MagickWand)"
             else
-                echo "libmagickwand-devel"
+                echo "ImageMagick-devel"
             fi
         }
         else 
