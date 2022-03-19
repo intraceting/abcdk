@@ -10,7 +10,8 @@
 ### 查看编译帮助
 
 ```bash
-configure.sh -?
+configure.sh -h
+make help
 ```
 ### 编译和安装
 

@@ -98,14 +98,14 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t--exclude-dvcid\n");
     fprintf(stderr, "\t\t排除DVCID字段。默认：包括\n");
 
-    fprintf(stderr, "\n\t--match-type\n");
-    fprintf(stderr, "\t\t仅指定类型。默认：全部\n");
-
     fprintf(stderr, "\n\t--addr-min < ADDRESS >\n");
     fprintf(stderr, "\t\t最小地址(包含)。默认：0\n");
 
     fprintf(stderr, "\n\t--addr-max < ADDRESS >\n");
     fprintf(stderr, "\t\t最大地址(包含)。默认：65536\n");
+
+    fprintf(stderr, "\n\t--match-type\n");
+    fprintf(stderr, "\t\t仅指定类型。默认：全部\n");
 
     fprintf(stderr, "\n\t\t%d: 机械手。\n", ABCDK_MXT_ELEMENT_CHANGER);
     fprintf(stderr, "\n\t\t%d: 存储槽位。\n", ABCDK_MXT_ELEMENT_STORAGE);
@@ -304,8 +304,8 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
             fprintf(stdout, "\t\t\t\"addr\":\"%hu\",\n",addr);
             fprintf(stdout, "\t\t\t\"type\":\"%hhu\",\n",type);
             fprintf(stdout, "\t\t\t\"isfull\":\"%hhu\",\n",isfull);
-            fprintf(stdout, "\t\t\t\"barcode\":\"%s\",\n",dvcid);
-            fprintf(stdout, "\t\t\t\"dvcid\":\"%s\"\n",barcode);
+            fprintf(stdout, "\t\t\t\"dvcid\":\"%s\",\n",dvcid);
+            fprintf(stdout, "\t\t\t\"barcode\":\"%s\"\n",barcode);
             fprintf(stdout, "\t\t}");
             fprintf(stdout, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
              

@@ -64,7 +64,7 @@ typedef struct _abcdk_vmtx_node
     abcdk_comm_easy_t *downlink;
     
     /** 主机ID。*/
-    int16_t my_id;
+    int16_t id;
 
     /** 主机名字。*/
     char name[256];
