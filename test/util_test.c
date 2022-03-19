@@ -2805,10 +2805,10 @@ int test_mqtt(abcdk_tree_t *args)
 
 void test_http(abcdk_tree_t *args)
 {
-    int s = abcdk_socket(ABCDK_IPV4,0);
+    int s = abcdk_socket(AF_INET,0);
 
     abcdk_sockaddr_t a;
-    a.family = ABCDK_IPV4;
+    a.family = AF_INET;
     abcdk_sockaddr_from_string(&a,"0.0.0.0:12345",0);
     abcdk_bind(s,&a);
     listen(s,10);

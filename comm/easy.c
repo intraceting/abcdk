@@ -545,9 +545,9 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
         abcdk_comm_get_sockname(node, &sockname);
         abcdk_comm_get_peername(node, &peername);
 
-        if (sockname.family == ABCDK_IPV4 || sockname.family == ABCDK_IPV6)
+        if (sockname.family == AF_INET || sockname.family == AF_INET6)
             abcdk_sockaddr_to_string(sockname_str, &sockname);
-        if (peername.family == ABCDK_IPV4 || peername.family == ABCDK_IPV6)
+        if (peername.family == AF_INET || peername.family == AF_INET6)
             abcdk_sockaddr_to_string(peername_str, &peername);
 
         syslog(LOG_WARNING, "sockname(%s) -> peername(%s) disconnected.\n",sockname_str, peername_str);

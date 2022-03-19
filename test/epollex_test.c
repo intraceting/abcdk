@@ -42,7 +42,7 @@ void* server_loop(void* args)
     if (abcdk_thread_leader_vote(&leader) == 0)
     {
 
-        l = abcdk_socket(ABCDK_IPV4, 0);
+        l = abcdk_socket(AF_INET, 0);
         abcdk_sockaddr_t a = {0};
         abcdk_sockaddr_from_string(&a, "localhost:12345", 1);
 
@@ -206,7 +206,7 @@ void test_server(abcdk_tree_t *t)
 
 void test_client(abcdk_tree_t *t)
 {
-    int c = abcdk_socket(ABCDK_IPV4, 0);
+    int c = abcdk_socket(AF_INET, 0);
     abcdk_sockaddr_t a = {0};
     abcdk_sockaddr_from_string(&a, abcdk_option_get(t,"--",1,"localhost:12345"), 1);
 

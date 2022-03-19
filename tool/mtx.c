@@ -78,7 +78,7 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
 
     fprintf(stderr, "\n\t简单的机械手(磁带库，光盘库等)工具。\n");
 
-    fprintf(stderr, "\n选项:\n");
+    fprintf(stderr, "\n通用选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
@@ -86,11 +86,21 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t--dev < FILE >\n");
     fprintf(stderr, "\t\t机械手设备文件(包括路径)。\n");
 
+    fprintf(stderr, "\n\t--cmd < NUMBER >\n");
+    fprintf(stderr, "\t\t命令。默认: %d\n", ABCDKMTX_STATUS);
+
+    fprintf(stderr, "\n\t\t%d: 打印报表。\n", ABCDKMTX_STATUS);
+    fprintf(stderr, "\t\t%d: 移动介质。\n", ABCDKMTX_MOVE);
+
+    fprintf(stderr, "\n移动介质可选项:\n");
+
     fprintf(stderr, "\n\t--src < ADDRESS >\n");
     fprintf(stderr, "\t\t源地址。\n");
 
     fprintf(stderr, "\n\t--dst < ADDRESS >\n");
     fprintf(stderr, "\t\t目标地址。\n");
+
+    fprintf(stderr, "\n打印报表可选项:\n");
 
     fprintf(stderr, "\n\t--exclude-barcode\n");
     fprintf(stderr, "\t\t排除条码字段。默认：包括\n");
@@ -102,21 +112,15 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\t\t最小地址(包含)。默认：0\n");
 
     fprintf(stderr, "\n\t--addr-max < ADDRESS >\n");
-    fprintf(stderr, "\t\t最大地址(包含)。默认：65536\n");
+    fprintf(stderr, "\t\t最大地址(包含)。默认：65535\n");
 
     fprintf(stderr, "\n\t--match-type\n");
     fprintf(stderr, "\t\t仅指定类型。默认：全部\n");
 
     fprintf(stderr, "\n\t\t%d: 机械手。\n", ABCDK_MXT_ELEMENT_CHANGER);
-    fprintf(stderr, "\n\t\t%d: 存储槽位。\n", ABCDK_MXT_ELEMENT_STORAGE);
-    fprintf(stderr, "\n\t\t%d: IE槽位。\n", ABCDK_MXT_ELEMENT_IE_PORT);
-    fprintf(stderr, "\n\t\t%d: 驱动器。\n", ABCDK_MXT_ELEMENT_DXFER);
-
-    fprintf(stderr, "\n\t--cmd < NUMBER >\n");
-    fprintf(stderr, "\t\t命令。默认: %d\n", ABCDKMTX_STATUS);
-
-    fprintf(stderr, "\n\t\t%d: 打印报表。\n", ABCDKMTX_STATUS);
-    fprintf(stderr, "\t\t%d: 移动介质。\n", ABCDKMTX_MOVE);
+    fprintf(stderr, "\t\t%d: 存储槽位。\n", ABCDK_MXT_ELEMENT_STORAGE);
+    fprintf(stderr, "\t\t%d: IE槽位。\n", ABCDK_MXT_ELEMENT_IE_PORT);
+    fprintf(stderr, "\t\t%d: 驱动器。\n", ABCDK_MXT_ELEMENT_DXFER);
 
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\t输出到文件(包括路径)。默认：终端\n");

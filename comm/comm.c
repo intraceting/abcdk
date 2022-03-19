@@ -693,7 +693,7 @@ abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, ab
     if (chk != 0)
         goto final_error;
 
-    if(addr->family == ABCDK_IPV6)
+    if(addr->family == AF_INET6)
     {
         /*IPv6仅支持IPv6。*/
         sock_flag = 1;

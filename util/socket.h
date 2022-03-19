@@ -11,15 +11,6 @@
 
 __BEGIN_DECLS
 
-/** UNIX */
-#define ABCDK_UNIX AF_UNIX
-
-/** IPv4 */
-#define ABCDK_IPV4 AF_INET
-
-/** IPv6 */
-#define ABCDK_IPV6 AF_INET6
-
 /** Socket地址 */
 typedef union _abcdk_sockaddr
 {
