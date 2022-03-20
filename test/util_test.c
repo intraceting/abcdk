@@ -2590,7 +2590,7 @@ void test_openssl_server(abcdk_tree_t *args)
 
     abcdk_sockaddr_t addr = {0};
     //abcdk_sockaddr_from_string(&addr,"0.0.0.0:12345",0);
-    addr.family = ABCDK_UNIX;
+    addr.family = AF_UNIX;
     strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
     int l = abcdk_socket(addr.family,0);
@@ -2670,7 +2670,7 @@ void test_openssl_client(abcdk_tree_t *args)
   //                             abcdk_option_get(args, "--server-addr", 0, "localhost:12345"),
   //                             1);
 
-    addr.family = ABCDK_UNIX;
+    addr.family = AF_UNIX;
     strcpy(addr.addr_un.sun_path,"/tmp/abcdk.txt2");
 
     int c = abcdk_socket(addr.family,0);
@@ -3291,9 +3291,9 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
     abcdk_comm_easy_get_peername(easy, &peername);
 
     char sockname_str[100] = {0}, peername_str[100] = {0};
-    if (sockname.family)
+    if (sockname.family != AF_UNIX)
         abcdk_sockaddr_to_string(sockname_str, &sockname);
-    if (peername.family)
+    if (peername.family != AF_UNIX)
         abcdk_sockaddr_to_string(peername_str, &peername);
 
   //  printf("Server(%s -> %s): ", sockname_str, peername_str);
@@ -3309,7 +3309,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
     //       printf("%lu-%lu=%lu\n",a,b,a-b);
 
-        usleep(rand()%10000+1000);
+    //    usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
         abcdk_comm_easy_request(easy,data,len,NULL);
@@ -3325,9 +3325,9 @@ void test_easy_request2_cb(abcdk_comm_easy_t *easy, const void *data, size_t len
     abcdk_comm_easy_get_peername(easy, &peername);
 
     char sockname_str[100] = {0}, peername_str[100] = {0};
-    if (sockname.family)
+    if (sockname.family != AF_UNIX)
         abcdk_sockaddr_to_string(sockname_str, &sockname);
-    if (peername.family)
+    if (peername.family != AF_UNIX)
         abcdk_sockaddr_to_string(peername_str, &peername);
 
   //  printf("Client(%s -> %s): ", sockname_str, peername_str);
@@ -3338,7 +3338,7 @@ void test_easy_request2_cb(abcdk_comm_easy_t *easy, const void *data, size_t len
     }
     else
     {
-      //  printf(" %s\n",(char*)data);
+     //   printf(" %s\n",(char*)data);
     }
 }
 
@@ -3382,16 +3382,23 @@ void test_easy(abcdk_tree_t *args)
     }
 #endif //HAVE_OPENSSL
 
+    const char *sunpath = "/tmp/test_easy.sock";
+    unlink(sunpath);
+
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_t addr2 = {0};
 
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
-    abcdk_sockaddr_from_string(&addr,listen_p,0);
+    //abcdk_sockaddr_from_string(&addr,listen_p,0);
+    addr.family = AF_UNIX;
+    strcpy(&addr.addr_un.sun_path,sunpath);
 
     abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(server_ssl_ctx,&addr,test_easy_request_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
-    abcdk_sockaddr_from_string(&addr2,connect_p,0);
+    //abcdk_sockaddr_from_string(&addr2,connect_p,0);
+    addr2.family = AF_UNIX;
+    strcpy(&addr2.addr_un.sun_path,sunpath);
 
     abcdk_comm_easy_t *easy_client[4] = {NULL};
     for (int i = 0; i < 4; i++)
@@ -3401,7 +3408,7 @@ void test_easy(abcdk_tree_t *args)
     s = abcdk_clock(d,&d);
 
     #pragma omp parallel for num_threads(4)
-    for(int i = 0;i<1000000;i++)
+    for(int i = 0;i<100000;i++)
     {
 #ifdef _OPENMP
         omp_get_thread_num();
