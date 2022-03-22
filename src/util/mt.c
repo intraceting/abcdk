@@ -234,7 +234,7 @@ int abcdk_mt_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr
     cdb[7] = part;
     ABCDK_PTR2U32(cdb, 10) = abcdk_endian_h_to_b32(sizeof(buf)); /*10,11,12,13*/
 
-    ABCDK_PTR2U32(buf, 0) = abcdk_endian_h_to_b32(4 + 5 + ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
+    ABCDK_PTR2U32(buf, 0) = abcdk_endian_h_to_b32(5 + ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
     ABCDK_PTR2U32(buf, 4) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_ID], 0));
     ABCDK_PTR2U32(buf, 6) |= (ABCDK_PTR2U8(attr->pptrs[ABCDK_MT_ATTR_FORMAT], 0) & 0x03);
     ABCDK_PTR2U32(buf, 7) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
