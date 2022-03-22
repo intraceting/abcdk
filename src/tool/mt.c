@@ -175,14 +175,14 @@ void _abcdkmt_report_status(abcdk_tree_t *args,int fd)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
     abcdk_endian_b_to_h(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(attr_p[0]->pptrs[ABCDK_MT_ATTR_LENGTH],0));
-    fprintf(stdout,"剩余容量:\t\t%lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
+    fprintf(stdout,"剩余容量:\t%lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
     
     attr_p[1] = abcdk_mt_read_attribute(fd,0,0x0001,3000,&stat);
     if(!attr_p[1] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
     abcdk_endian_b_to_h(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(attr_p[1]->pptrs[ABCDK_MT_ATTR_LENGTH],0));
-    fprintf(stdout,"最大容量:\t\t%lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
+    fprintf(stdout,"最大容量:\t%lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
     
     attr_p[2] = abcdk_mt_read_attribute(fd,0,0x0400,3000,&stat);
     if(!attr_p[2] || stat.status != GOOD)
@@ -241,8 +241,8 @@ void _abcdkmt_read_pos(abcdk_tree_t *args,int fd)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
     fprintf(stdout,"块索引:\t\t%lu\n",pos_block);
-    fprintf(stdout,"文件索引:\t\t%lu\n",pos_file);
-    fprintf(stdout,"分区编号:\t\t%u\n",pos_part);
+    fprintf(stdout,"文件索引:\t%lu\n",pos_file);
+    fprintf(stdout,"分区编号:\t%u\n",pos_part);
 
     /*No error.*/
     goto final;
