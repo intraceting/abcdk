@@ -225,20 +225,23 @@ int abcdk_mt_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr
 {
     uint8_t buf[255] = {0};
     uint8_t cdb[16] = {0};
+    uint8_t len = 0;
 
     assert(attr != NULL);
-    assert(4 + 5 + ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0) <= 255);
+
+    len = 2 + 1 + 2 + ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0);
+    assert(4 + len <= 255);
 
     cdb[0] = 0x8D; /* 0x8D Write Attribute */
     cdb[1] = 0x01; /* 0x01 Write SYNC */
     cdb[7] = part;
-    ABCDK_PTR2U32(cdb, 10) = abcdk_endian_h_to_b32(sizeof(buf)); /*10,11,12,13*/
+    ABCDK_PTR2U32(cdb, 10) = abcdk_endian_h_to_b32(4 + len); /*10,11,12,13*/
 
-    ABCDK_PTR2U32(buf, 0) = abcdk_endian_h_to_b32(5 + ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
-    ABCDK_PTR2U32(buf, 4) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_ID], 0));
-    ABCDK_PTR2U32(buf, 6) |= (ABCDK_PTR2U8(attr->pptrs[ABCDK_MT_ATTR_FORMAT], 0) & 0x03);
-    ABCDK_PTR2U32(buf, 7) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
+    ABCDK_PTR2U32(buf, 0) = abcdk_endian_h_to_b32(len);
+    ABCDK_PTR2U16(buf, 4) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_ID], 0));
+    ABCDK_PTR2U8(buf, 6) |= (ABCDK_PTR2U8(attr->pptrs[ABCDK_MT_ATTR_FORMAT], 0) & 0x03);
+    ABCDK_PTR2U16(buf, 7) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
     memcpy(ABCDK_PTR2PTR(void, buf, 9), attr->pptrs[ABCDK_MT_ATTR_VALUE], ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
 
-    return abcdk_scsi_sgioctl2(fd, SG_DXFER_TO_DEV, cdb, 16, buf, sizeof(buf), timeout, stat);
+    return abcdk_scsi_sgioctl2(fd, SG_DXFER_TO_DEV, cdb, 16, buf, 4 + len, timeout, stat);
 }
