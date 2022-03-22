@@ -54,9 +54,13 @@ enum _abcdkmt_constant
     ABCDKMT_SEEK_POS = 9,
 #define ABCDKMT_SEEK_POS ABCDKMT_SEEK_POS
 
-    /** 写FILEMARK。*/
-    ABCDKMT_WRITE_FILEMARK = 10
+    /** 写文件标记(filemark)。*/
+    ABCDKMT_WRITE_FILEMARK = 10,
 #define ABCDKMT_WRITE_FILEMARK ABCDKMT_WRITE_FILEMARK
+
+    /** 写条码(barcode)。*/
+    ABCDKMT_WRITE_BARCODE = 11
+#define ABCDKMT_WRITE_BARCODE ABCDKMT_WRITE_BARCODE
 };
 
 void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
@@ -85,7 +89,8 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t%d: 驱动器仓门解锁(允许磁带被移出驱动器)。\n", ABCDKMT_UNLOCK);
     fprintf(stderr, "\t\t%d: 读取磁头位置。\n", ABCDKMT_READ_POS);
     fprintf(stderr, "\t\t%d: 移动磁头位置。\n", ABCDKMT_SEEK_POS);
-    fprintf(stderr, "\t\t%d: 写FILEMARK。\n", ABCDKMT_WRITE_FILEMARK);
+    fprintf(stderr, "\t\t%d: 写文件标记(filemark)。\n", ABCDKMT_WRITE_FILEMARK);
+    fprintf(stderr, "\t\t%d: 写条码(barcode)。\n", ABCDKMT_WRITE_BARCODE);
 
     fprintf(stderr, "\n移动磁头位置可选项:\n");
 
@@ -95,8 +100,15 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--pos-part < NUMBER >\n");
     fprintf(stderr, "\t\t分区编号。 默认: 0\n");
 
+    fprintf(stderr, "\n写文件标记可选项:\n");
+
     fprintf(stderr, "\n\t--filemarks < NUMBER >\n");
-    fprintf(stderr, "\t\tFILEMARK数量。 默认: 1\n");
+    fprintf(stderr, "\t\t文件标记的数量。 默认: 1\n");
+
+    fprintf(stderr, "\n写条码可选项:\n");
+
+    fprintf(stderr, "\n\t--barcode < STRING >\n");
+    fprintf(stderr, "\t\t条码(MAX=32)。\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -282,6 +294,51 @@ final:
     return;
 }
 
+void _abcdkmt_write_barcode(abcdk_tree_t *args,int fd)
+{   
+    abcdk_scsi_io_stat stat = {0};
+    const char *barcode_p = NULL;
+    abcdk_allocator_t *attr_p = NULL;
+    int chk;
+
+    barcode_p = abcdk_option_get(args, "--barcode", 0, "");
+
+    if (!barcode_p || !*barcode_p)
+    {
+        syslog(LOG_ERR, "'--barcode STRING' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+    }
+
+    if (strlen(barcode_p) > 32)
+    {
+        syslog(LOG_ERR, "条码长度不能超过32个字符。");
+        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+    }
+
+    attr_p = abcdk_mt_read_attribute(fd,0,0x0806,3000,&stat);
+    if(!attr_p || stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+    
+    memcpy(attr_p->pptrs[ABCDK_MT_ATTR_VALUE],barcode_p,ABCDK_PTR2U16(attr_p->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
+
+    chk = abcdk_mt_write_attribute(fd,0,attr_p,3000,&stat);
+    if(chk != 0 || stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+
+    /*No error.*/
+    goto final;
+
+print_sense:
+
+    _abcdkmt_printf_sense(&stat);
+
+final:
+
+    abcdk_allocator_unref(&attr_p);
+
+    return;
+}
+
 void _abcdkmt_work(abcdk_tree_t *args)
 {
     abcdk_scsi_io_stat stat = {0};
@@ -406,6 +463,10 @@ void _abcdkmt_work(abcdk_tree_t *args)
             syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
             goto final;
         }
+    }
+    else if (cmd == ABCDKMT_WRITE_BARCODE)
+    {
+        _abcdkmt_write_barcode(args,fd);
     }
     else
     {
