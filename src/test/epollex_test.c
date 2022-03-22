@@ -15,6 +15,7 @@
 #include "util/thread.h"
 #include "util/signal.h"
 #include "util/epollex.h"
+#include "util/log.h"
 
 void* sigwaitinfo_cb(void* args)
 {
@@ -237,7 +238,7 @@ void test_mux(abcdk_tree_t *args)
 
 int main(int argc, char **argv)
 {
-    abcdk_openlog(NULL,LOG_DEBUG,1);
+    abcdk_log_open(NULL,LOG_DEBUG,1);
 
     abcdk_thread_t p;
     p.routine = sigwaitinfo_cb;

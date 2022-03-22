@@ -110,7 +110,7 @@ int main(int argc, char **argv)
     srand(time(NULL));
 
     /*记录日志。*/
-    abcdk_openlog(NULL, LOG_INFO, 1);
+    abcdk_log_open(NULL, LOG_INFO, 1);
 
     /*申请参数存储空间。*/
     args = abcdk_tree_alloc3(1);

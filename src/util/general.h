@@ -567,19 +567,6 @@ int abcdk_shm_open(const char* name,int rw, int create);
 */
 int abcdk_shm_unlink(const char* name);
 
-/*------------------------------------------------------------------------------------------------*/
-
-/**
- * 日志初始化。
- * 
- * 只能执行一次。
- * 
- * @param ident NULL(0) 进程名做为标识，!NULL(0) 自定义标识。
- * @param level 记录级别。LOG_*宏定义在syslog.h文件中。
- * @param copy2stderr 0 仅记录，!0 复制到stderr。
- * 
- */
-void abcdk_openlog(const char *ident,int level,int copy2stderr);
 
 
 /*------------------------------------------------------------------------------------------------*/

@@ -42,6 +42,7 @@
 #include "util/notify.h"
 #include "util/scsi.h"
 #include "util/ndarray.h"
+#include "util/log.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -100,15 +101,21 @@
 
 #ifdef HAVE_MAGICKWAND
 #include <wand/MagickWand.h>
-#endif 
-
+#endif
 
 void test_log(abcdk_tree_t *args)
 {
-    abcdk_openlog(NULL,LOG_DEBUG,1);
+    abcdk_log_open(NULL, LOG_DEBUG, 1);
 
-    for(int i = LOG_EMERG ;i<= LOG_DEBUG;i++)
-        syslog(i,"haha-%d",i);
+#pragma omp parallel for num_threads(4)
+    for (int j = 0; j < 4; j++)
+    {
+#ifdef _OPENMP
+        abcdk_thread_setname("abcdk-%d", omp_get_thread_num());
+#endif
+        for (int i = LOG_EMERG; i <= LOG_DEBUG; i++)
+            abcdk_log_printf(i, "haha-%d", i);
+    }
 }
 
 void test_ffmpeg(abcdk_tree_t *args)
@@ -134,7 +141,11 @@ void test_ffmpeg(abcdk_tree_t *args)
     }
 
     AVInputFormat *in = NULL;
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
     while(in = av_iformat_next(in))
+#else 
+    while(0)
+#endif 
     {
         if(!in->priv_class)
             continue;
@@ -143,7 +154,11 @@ void test_ffmpeg(abcdk_tree_t *args)
 
 
     AVOutputFormat *out = NULL;
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
     while(out = av_oformat_next(out))
+#else 
+    while(0)
+#endif 
     {
         if(!out->priv_class)
             continue;
@@ -3391,14 +3406,14 @@ void test_easy(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     //abcdk_sockaddr_from_string(&addr,listen_p,0);
     addr.family = AF_UNIX;
-    strcpy(&addr.addr_un.sun_path,sunpath);
+    strncpy(addr.addr_un.sun_path,sunpath,108);
 
     abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(server_ssl_ctx,&addr,test_easy_request_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     //abcdk_sockaddr_from_string(&addr2,connect_p,0);
     addr2.family = AF_UNIX;
-    strcpy(&addr2.addr_un.sun_path,sunpath);
+    strncpy(addr2.addr_un.sun_path,sunpath,108);
 
     abcdk_comm_easy_t *easy_client[4] = {NULL};
     for (int i = 0; i < 4; i++)
@@ -4480,7 +4495,7 @@ void test_ndarray(abcdk_tree_t *args)
 
 int main(int argc, char **argv)
 {
-    abcdk_openlog(NULL,LOG_DEBUG,1);
+    abcdk_log_open(NULL,LOG_DEBUG,1);
 
     srand(time(NULL));
 
@@ -4537,6 +4552,8 @@ int main(int argc, char **argv)
 
 #endif //HAVE_OPENSSL
     
+    if(abcdk_strcmp(func,"test_log",0)==0)
+        test_log(args);
 
     if(abcdk_strcmp(func,"test_ffmpeg",0)==0)
         test_ffmpeg(args);
