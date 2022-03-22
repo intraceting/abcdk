@@ -393,9 +393,9 @@ void _abcdkmt_work(abcdk_tree_t *args)
     
     if(cmd == ABCDKMT_HWINFO)
     {
-        fprintf(stdout,"供货商: %s\n",vendor);
-        fprintf(stdout,"产品名称: %s\n",product);
-        fprintf(stdout,"序列号: %s\n",sn);
+        fprintf(stdout,"供货商:\t\t%s\n",vendor);
+        fprintf(stdout,"产品名称:\t%s\n",product);
+        fprintf(stdout,"序列号:\t\t%s\n",sn);
     }
     else if (cmd == ABCDKMT_STATUS)
     {
