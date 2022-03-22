@@ -1,7 +1,7 @@
 
 ## ABCDK
 
-* A bad c development kit. 
+* A Bad C Development Kit. 
 
 ### License
 
