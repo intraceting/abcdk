@@ -65,22 +65,13 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\n\t简单的磁带驱动器和磁带工具。\n");
 
-    fprintf(stderr, "\n选项:\n");
+    fprintf(stderr, "\n通用选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--dev < FILE >\n");
     fprintf(stderr, "\t\t驱动器设备文件(包括路径)。\n");
-
-    fprintf(stderr, "\n\t--pos-block < NUMBER >\n");
-    fprintf(stderr, "\t\t块索引。默认: 末尾\n");
-
-    fprintf(stderr, "\n\t--pos-part < NUMBER >\n");
-    fprintf(stderr, "\t\t分区编号。 默认: 0\n");
-
-    fprintf(stderr, "\n\t--filemarks < NUMBER >\n");
-    fprintf(stderr, "\t\tFILEMARK数量。 默认: 1\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
     fprintf(stderr, "\t\t命令。 默认: %d\n", ABCDKMT_STATUS);
@@ -95,6 +86,17 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t%d: 读取磁头位置。\n", ABCDKMT_READ_POS);
     fprintf(stderr, "\t\t%d: 移动磁头位置。\n", ABCDKMT_SEEK_POS);
     fprintf(stderr, "\t\t%d: 写FILEMARK。\n", ABCDKMT_WRITE_FILEMARK);
+
+    fprintf(stderr, "\n移动磁头位置可选项:\n");
+
+    fprintf(stderr, "\n\t--pos-block < NUMBER >\n");
+    fprintf(stderr, "\t\t块索引。默认: 末尾\n");
+
+    fprintf(stderr, "\n\t--pos-part < NUMBER >\n");
+    fprintf(stderr, "\t\t分区编号。 默认: 0\n");
+
+    fprintf(stderr, "\n\t--filemarks < NUMBER >\n");
+    fprintf(stderr, "\t\tFILEMARK数量。 默认: 1\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -173,40 +175,40 @@ void _abcdkmt_report_status(abcdk_tree_t *args,int fd)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
     abcdk_endian_b_to_h(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(attr_p[0]->pptrs[ABCDK_MT_ATTR_LENGTH],0));
-    fprintf(stdout,"剩余容量: %lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
+    fprintf(stdout,"剩余容量:\t\t%lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
     
     attr_p[1] = abcdk_mt_read_attribute(fd,0,0x0001,3000,&stat);
     if(!attr_p[1] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
     abcdk_endian_b_to_h(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(attr_p[1]->pptrs[ABCDK_MT_ATTR_LENGTH],0));
-    fprintf(stdout,"最大容量: %lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
+    fprintf(stdout,"最大容量:\t\t%lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
     
     attr_p[2] = abcdk_mt_read_attribute(fd,0,0x0400,3000,&stat);
     if(!attr_p[2] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"制造商 : %s\n",attr_p[2]->pptrs[ABCDK_MT_ATTR_VALUE]);
+    fprintf(stdout,"制造商:\t\t%s\n",attr_p[2]->pptrs[ABCDK_MT_ATTR_VALUE]);
     
     attr_p[3] = abcdk_mt_read_attribute(fd,0,0x0401,3000,&stat);
     if(!attr_p[3] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"序列号: %s\n",attr_p[3]->pptrs[ABCDK_MT_ATTR_VALUE]);
+    fprintf(stdout,"序列号:\t\t%s\n",attr_p[3]->pptrs[ABCDK_MT_ATTR_VALUE]);
     
 
     attr_p[4] = abcdk_mt_read_attribute(fd,0,0x0405,3000,&stat);
     if(!attr_p[4] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"型号: %s\n",abcdk_mt_density2string(ABCDK_PTR2U8(attr_p[4]->pptrs[ABCDK_MT_ATTR_VALUE], 0)));
+    fprintf(stdout,"型号:\t\t%s\n",abcdk_mt_density2string(ABCDK_PTR2U8(attr_p[4]->pptrs[ABCDK_MT_ATTR_VALUE], 0)));
     
 
     attr_p[5] = abcdk_mt_read_attribute(fd,0,0x0806,3000,&stat);
     if(!attr_p[5] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"条码: %s\n",attr_p[5]->pptrs[ABCDK_MT_ATTR_VALUE]);
+    fprintf(stdout,"条码:\t\t%s\n",attr_p[5]->pptrs[ABCDK_MT_ATTR_VALUE]);
     
    
     /*No error.*/
@@ -238,9 +240,9 @@ void _abcdkmt_read_pos(abcdk_tree_t *args,int fd)
     if (chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"块索引: %lu\n",pos_block);
-    fprintf(stdout,"文件索引: %lu\n",pos_file);
-    fprintf(stdout,"分区编号: %u\n",pos_part);
+    fprintf(stdout,"块索引:\t\t%lu\n",pos_block);
+    fprintf(stdout,"文件索引:\t\t%lu\n",pos_file);
+    fprintf(stdout,"分区编号:\t\t%u\n",pos_part);
 
     /*No error.*/
     goto final;
