@@ -364,9 +364,11 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 0)
     {
+        fprintf(stdout,"|%-4s |%-1s |%-1s |%-5% |%-40s|\n","id","ro","fmt","length","value");
     }
     else if (depth == SIZE_MAX)
     {
+        
     }
     else
     {
@@ -376,16 +378,8 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         len = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
         val = node->alloc->pptrs[ABCDK_TAPE_ATTR_VALUE];
 
-        fprintf(stdout,"%04xh\n", id);
-        fprintf(stdout,"%hhxh\n", rd);
-        fprintf(stdout,"%hhxh\n", fmt);
-        fprintf(stdout,"%hxh\n", len);
-        if(fmt==0x00)
-            fprintf(stdout,"aaa\n");
-        else if(fmt==0x01)
-            fprintf(stdout,"%s\n",val);
-        else if(fmt==0x02)
-            fprintf(stdout,"%s\n",val);
+        fprintf(stdout,"|%-04x |%-1hhu |%-1hhu |%-5hu | \n", id,rd,fmt,len);
+        
     }
 }
 
