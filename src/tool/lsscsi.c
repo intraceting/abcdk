@@ -91,7 +91,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-12s\t|%-10s\t|%-8s\t|%-16s\t|%-4.4s\t|%-20s\t|%-20s\t|%-20s\t|\n",
+            fprintf(stdout, "|%-12s\t|%-10s\t|%-8s\t|%-16s\t|%-4.4s\t|%-20s\t|%-15s\t|%-15s\t|\n",
                     "bus", "type", "vendor", "model", "revision", "serial", "devname", "generic");
         }
         else
@@ -147,7 +147,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-12s\t|%-10s\t|%-8s\t|%-16s\t|%-4s\t|%-20s\t|%-20s\t|%-20s\t|\n",
+            fprintf(stdout, "|%-8s\t|%-8s\t|%-8s\t|%-8s\t|%-4s\t|%-8s\t|%-8s\t|%-8s\t|\n",
                     dev_p->bus, abcdk_scsi_type2string(dev_p->type, 0), dev_p->vendor,
                     dev_p->model, dev_p->revision, dev_p->serial, dev_p->devname, dev_p->generic);
         }
