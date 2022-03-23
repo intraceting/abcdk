@@ -12,7 +12,7 @@
 #include "util/general.h"
 #include "util/getargs.h"
 #include "util/scsi.h"
-#include "util/mtx.h"
+#include "util/mediumx.h"
 #include "shell/scsi.h"
 #include "entry.h"
 

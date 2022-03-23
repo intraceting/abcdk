@@ -48,12 +48,13 @@ enum _abcdk_tape_attr_field
 
 /**
  * 磁带型号数字编码转字符串编码。
- *
- * 参考mt命令。
- *
- * @return 字符串的指针。
- */
+*/
 const char *abcdk_tape_density2string(uint8_t density);
+
+/**
+ * 磁带类型数字编码转字符串编码。
+ */
+const char *abcdk_tape_type2string(uint8_t type);
 
 /**
  * 磁带操作。

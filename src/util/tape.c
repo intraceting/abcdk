@@ -118,6 +118,26 @@ const char *abcdk_tape_density2string(uint8_t density)
     return msg_p;
 }
 
+const char *abcdk_tape_type2string(uint8_t type)
+{
+    switch (type)
+    {
+    case 0x00:
+        return "Data medium";
+        break;
+    case 0x01:
+        return "Cleaning medium";
+        break;
+    case 0x80:
+        return "Write-once medium";
+        break;
+    default:
+        break;
+    }
+
+    return "Reserved";
+}
+
 int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat)
 {
     struct mtop mp = {0};

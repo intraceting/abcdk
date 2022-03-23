@@ -12,7 +12,7 @@
 #include "util/general.h"
 #include "util/getargs.h"
 #include "util/scsi.h"
-#include "util/mt.h"
+#include "util/tape.h"
 #include "entry.h"
 
 
@@ -73,8 +73,9 @@ enum _abcdkmt_constant
 #define ABCDKMT_READ_MAM ABCDKMT_READ_MAM
 
     /** 写入MAM信息。*/
-    ABCDKMT_WRITE_MAM = 10
+    ABCDKMT_WRITE_MAM = 10,
 #define ABCDKMT_WRITE_MAM ABCDKMT_WRITE_MAM
+
 };
 
 void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
@@ -111,7 +112,7 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t块索引。默认: 末尾\n");
 
     fprintf(stderr, "\n\t--partition < NUMBER >\n");
-    fprintf(stderr, "\t\t分区编号。 默认: 0\n");
+    fprintf(stderr, "\t\t分区号。 默认: 0\n");
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_FILEMARK);
 
@@ -120,16 +121,16 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_READ_MAM);
 
-    fprintf(stderr, "\n\t--id < ID >\n");
-    fprintf(stderr, "\t\t编号(十六进制)。默认：全部\n");
+    fprintf(stderr, "\n\t--id < NUMBER >\n");
+    fprintf(stderr, "\t\t编号。默认：全部\n");
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_MAM);
 
-    fprintf(stderr, "\n\t--id < ID >\n");
-    fprintf(stderr, "\t\t编号(十六进制)。\n");
+    fprintf(stderr, "\n\t--id < NUMBER >\n");
+    fprintf(stderr, "\t\t编号。\n");
 
     fprintf(stderr, "\n\t--value < VALUE >\n");
-    fprintf(stderr, "\t\t值(TEXT,ASCII,BINARY)。\n");
+    fprintf(stderr, "\t\t内容(TEXT,ASCII,BINARY)。\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -247,71 +248,6 @@ void _abcdkmt_printf_sense(abcdk_scsi_io_stat *stat)
     syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, msg_p);
 }
 
-void _abcdkmt_report_status(abcdk_tree_t *args,int fd)
-{
-    abcdk_scsi_io_stat stat = {0};
-    abcdk_allocator_t *attr_p[6] = {NULL};
-    int chk;
-
-    attr_p[0] = abcdk_tape_read_attribute(fd,0,0x0000,3000,&stat);
-    if(!attr_p[0] || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    abcdk_endian_b_to_h(attr_p[0]->pptrs[ABCDK_TAPE_ATTR_VALUE],ABCDK_PTR2U16(attr_p[0]->pptrs[ABCDK_TAPE_ATTR_LENGTH],0));
-    fprintf(stdout,"剩余容量:\t%lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_TAPE_ATTR_VALUE], 0));
-    
-    attr_p[1] = abcdk_tape_read_attribute(fd,0,0x0001,3000,&stat);
-    if(!attr_p[1] || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    abcdk_endian_b_to_h(attr_p[1]->pptrs[ABCDK_TAPE_ATTR_VALUE],ABCDK_PTR2U16(attr_p[1]->pptrs[ABCDK_TAPE_ATTR_LENGTH],0));
-    fprintf(stdout,"最大容量:\t%lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_TAPE_ATTR_VALUE], 0));
-    
-    attr_p[2] = abcdk_tape_read_attribute(fd,0,0x0400,3000,&stat);
-    if(!attr_p[2] || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    fprintf(stdout,"制造商:\t\t%s\n",attr_p[2]->pptrs[ABCDK_TAPE_ATTR_VALUE]);
-    
-    attr_p[3] = abcdk_tape_read_attribute(fd,0,0x0401,3000,&stat);
-    if(!attr_p[3] || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    fprintf(stdout,"序列号:\t\t%s\n",attr_p[3]->pptrs[ABCDK_TAPE_ATTR_VALUE]);
-    
-
-    attr_p[4] = abcdk_tape_read_attribute(fd,0,0x0405,3000,&stat);
-    if(!attr_p[4] || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    fprintf(stdout,"型号:\t\t%s\n",abcdk_tape_density2string(ABCDK_PTR2U8(attr_p[4]->pptrs[ABCDK_TAPE_ATTR_VALUE], 0)));
-    
-
-    attr_p[5] = abcdk_tape_read_attribute(fd,0,0x0806,3000,&stat);
-    if(!attr_p[5] || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    fprintf(stdout,"条码:\t\t%s\n",attr_p[5]->pptrs[ABCDK_TAPE_ATTR_VALUE]);
-    
-   
-    /*No error.*/
-    goto final;
-
-print_sense:
-
-    _abcdkmt_printf_sense(&stat);
-
-final:
-
-    for(size_t i = 0;i<ABCDK_ARRAY_SIZE(attr_p);i++)
-    {
-        if(!attr_p[i])
-            continue;
-
-        abcdk_allocator_unref(&attr_p[i]);
-    }
-}
-
 void _abcdkmt_operate(abcdkmtx_ctx *ctx)
 {
     int chk;
@@ -416,6 +352,90 @@ final:
     return;
 }
 
+
+int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+{
+    abcdkmtx_ctx *ctx = (abcdkmtx_ctx *)opaque;
+
+    if (depth == 0)
+    {
+    }
+    else if (depth == SIZE_MAX)
+    {
+    }
+    else
+    {
+        fprintf(stdout,"%04xh\n", ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0));
+        fprintf(stdout,"%hhxh\n", ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_READONLY], 0));
+        fprintf(stdout,"%hhxh\n", ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0));
+        fprintf(stdout,"%hxh\n", ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
+    }
+}
+
+abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmtx_ctx *ctx,int id)
+{
+    abcdk_tree_t *node = NULL;
+
+    node = abcdk_tree_alloc3(1);
+    if(!node)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ENOMEM, final_error);
+
+    node->alloc = abcdk_tape_read_attribute(ctx->fd, 0, id, 3000, &ctx->stat);
+    if (!node->alloc || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
+
+    return node;
+
+print_sense:
+
+    _abcdkmt_printf_sense(&ctx->stat);
+
+final_error:
+
+    abcdk_tree_free(&node);
+}
+
+void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
+{
+    abcdk_allocator_t *attr_p = NULL;
+    abcdk_tree_t *root = NULL, *node = NULL;
+    abcdk_tree_iterator_t it = {0, _abcdkmt_printf_mam_cb, ctx};
+    int id;
+    int chk;
+
+    root = abcdk_tree_alloc3(1);
+    if(!root)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ENOMEM, final);
+
+    id = abcdk_option_get_int(ctx->args, "--id", 0, -1);
+    if (id >= 0)
+    {
+        node = _abcdkmt_read_mam_one(ctx, id);
+        if (!node)
+            goto final;
+
+        abcdk_tree_insert2(root,node,0);
+    }
+    else 
+    {
+        for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_mam_dict); i++)
+        {
+            node = _abcdkmt_read_mam_one(ctx, abcdkmt_mam_dict[i].id);
+            if (!node)
+                continue;
+
+            abcdk_tree_insert2(root,node,0);
+        }
+    }
+
+final:
+
+    /*打印。*/
+    abcdk_tree_scan(root, &it);
+
+    abcdk_tree_free(&root);
+}
+
 void _abcdkmt_write_barcode(abcdk_tree_t *args,int fd)
 {   
     abcdk_scsi_io_stat stat = {0};
@@ -473,7 +493,8 @@ static struct _abcdkmt_methods
     {ABCDKMT_UNLOCK,_abcdkmt_operate},
     {ABCDKMT_WRITE_FILEMARK,_abcdkmt_write_filemark},
     {ABCDKMT_TELL_POS, _abcdkmt_tell_pos},
-    {ABCDKMT_SEEK_POS, _abcdkmt_seek_pos}
+    {ABCDKMT_SEEK_POS, _abcdkmt_seek_pos},
+    {ABCDKMT_READ_MAM,_abcdkmt_read_mam}
 };
 
 void _abcdkmt_work(abcdkmtx_ctx *ctx)
