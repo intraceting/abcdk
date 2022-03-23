@@ -359,8 +359,8 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     uint16_t id,len;
     uint8_t rd ,fmt;
     uint8_t *val;
-    char rd_str[] = {"RW","RO"};
-    char fmt_str[] = {"BINARY","ASCII","TEXT","Reserved"};
+    char *rd_str[] = {"RW","RO"};
+    char *fmt_str[] = {"BINARY","ASCII","TEXT","Reserved"};
 
     if (depth == 0)
     {
