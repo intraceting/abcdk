@@ -421,7 +421,10 @@ void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
         for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_mam_dict); i++)
         {
             node = _abcdkmt_read_mam_one(ctx, abcdkmt_mam_dict[i].id);
-            if (!node)
+            if (!node &&
+                abcdk_scsi_sense_key(ctx->stat.sense) != 0x02 &&
+                abcdk_scsi_sense_code(ctx->stat.sense) != 0x3A &&
+                abcdk_scsi_sense_qualifier(ctx->stat.sense != 0x00))
                 continue;
 
             abcdk_tree_insert2(root,node,0);
