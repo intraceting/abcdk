@@ -378,7 +378,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         len = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
         val = node->alloc->pptrs[ABCDK_TAPE_ATTR_VALUE];
 
-        fprintf(stdout,"|%-04hX\t|%-2s\t|%-5s\t|%-5hu\t| \n", id,rd_str[rd],fmt_str[fmt],len);
+        fprintf(stdout,"|%04hX\t|%-2s\t|%-5s\t|%-5hu\t| \n", id,rd_str[rd],fmt_str[fmt],len);
         
     }
 }
