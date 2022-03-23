@@ -1,16 +1,16 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
-#include "util/mt.h"
+#include "util/tape.h"
 
-static struct _abcdk_mt_density_dict
+static struct _abcdk_tape_density_dict
 {
     uint8_t type;
     const char *msg;
-} abcdk_mt_density_dict[] = {
+} abcdk_tape_density_dict[] = {
     /* Copy from mt-st*/
     {0x00, "default"},
     {0x01, "NRZI (800 bpi)"},
@@ -100,38 +100,46 @@ static struct _abcdk_mt_density_dict
     {0x90, "SDLT110 uncompr/EXB-8205 compr"},
     {0x91, "SDLT110 compressed"},
     {0x92, "SDLT160 uncompressed"},
-    {0x93, "SDLT160 comprssed"}
-};
+    {0x93, "SDLT160 comprssed"}};
 
-const char *abcdk_mt_density2string(uint8_t density)
+const char *abcdk_tape_density2string(uint8_t density)
 {
     const char *msg_p = "Reserved";
 
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_mt_density_dict); i++)
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tape_density_dict); i++)
     {
-        if (abcdk_mt_density_dict[i].type != density)
+        if (abcdk_tape_density_dict[i].type != density)
             continue;
 
-        msg_p = abcdk_mt_density_dict[i].msg;
+        msg_p = abcdk_tape_density_dict[i].msg;
         break;
     }
 
     return msg_p;
 }
 
-int abcdk_mt_operate(int fd, short cmd, int param)
+int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat)
 {
     struct mtop mp = {0};
+    int chk;
 
     assert(fd >= 0);
+    assert(stat != NULL);
+
+    /*clear*/
+    memset(stat, 0, sizeof(*stat));
 
     mp.mt_op = cmd;
     mp.mt_count = param;
 
-    return ioctl(fd, MTIOCTOP, &mp);
+    chk = ioctl(fd, MTIOCTOP, &mp);
+    if (chk != 0)
+        abcdk_scsi_request_sense(fd, 3000, stat);
+
+    return chk;
 }
 
-int abcdk_mt_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -141,8 +149,8 @@ int abcdk_mt_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat);
 }
 
-int abcdk_mt_seek(int fd, int cp, uint8_t part, uint64_t block,
-                   uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_tape_seek(int fd, int cp, uint8_t part, uint64_t block,
+                    uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[16] = {0};
     int chk;
@@ -157,8 +165,8 @@ int abcdk_mt_seek(int fd, int cp, uint8_t part, uint64_t block,
     return chk;
 }
 
-int abcdk_mt_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
-                  uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
+                    uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[10] = {0};
     uint8_t buf[32] = {0};
@@ -182,8 +190,8 @@ int abcdk_mt_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
     return 0;
 }
 
-abcdk_allocator_t *abcdk_mt_read_attribute(int fd, uint8_t part, uint16_t id,
-                                         uint32_t timeout, abcdk_scsi_io_stat *stat)
+abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
+                                             uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     abcdk_allocator_t *alloc = NULL;
     uint16_t len = 0;
@@ -202,7 +210,7 @@ abcdk_allocator_t *abcdk_mt_read_attribute(int fd, uint8_t part, uint16_t id,
     if (chk != 0 || stat->status != GOOD)
         return NULL;
 
-    //printf("%u\n",abcdk_endian_b_to_h32(ABCDK_PTR2U32(buf, 0)));
+    // printf("%u\n",abcdk_endian_b_to_h32(ABCDK_PTR2U32(buf, 0)));
 
     len = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
 
@@ -211,17 +219,17 @@ abcdk_allocator_t *abcdk_mt_read_attribute(int fd, uint8_t part, uint16_t id,
     if (!alloc)
         return NULL;
 
-    ABCDK_PTR2U16(alloc->pptrs[ABCDK_MT_ATTR_ID], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 4)); /*4,5*/
-    ABCDK_PTR2U8(alloc->pptrs[ABCDK_MT_ATTR_READONLY], 0) = (buf[6] >> 7);
-    ABCDK_PTR2U8(alloc->pptrs[ABCDK_MT_ATTR_FORMAT], 0) = (buf[6] & 0x03);
-    ABCDK_PTR2U16(alloc->pptrs[ABCDK_MT_ATTR_LENGTH], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
-    memcpy(alloc->pptrs[ABCDK_MT_ATTR_VALUE], ABCDK_PTR2PTR(void, buf, 9), len);
+    ABCDK_PTR2U16(alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 4)); /*4,5*/
+    ABCDK_PTR2U8(alloc->pptrs[ABCDK_TAPE_ATTR_READONLY], 0) = (buf[6] >> 7);
+    ABCDK_PTR2U8(alloc->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0) = (buf[6] & 0x03);
+    ABCDK_PTR2U16(alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
+    memcpy(alloc->pptrs[ABCDK_TAPE_ATTR_VALUE], ABCDK_PTR2PTR(void, buf, 9), len);
 
     return alloc;
 }
 
-int abcdk_mt_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr,
-                            uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr,
+                               uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t buf[255] = {0};
     uint8_t cdb[16] = {0};
@@ -229,7 +237,7 @@ int abcdk_mt_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr
 
     assert(attr != NULL);
 
-    len = 2 + 1 + 2 + ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0);
+    len = 2 + 1 + 2 + ABCDK_PTR2U16(attr->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
     assert(4 + len <= 255);
 
     cdb[0] = 0x8D; /* 0x8D Write Attribute */
@@ -238,10 +246,10 @@ int abcdk_mt_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr
     ABCDK_PTR2U32(cdb, 10) = abcdk_endian_h_to_b32(4 + len); /*10,11,12,13*/
 
     ABCDK_PTR2U32(buf, 0) = abcdk_endian_h_to_b32(len);
-    ABCDK_PTR2U16(buf, 4) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_ID], 0));
-    ABCDK_PTR2U8(buf, 6) |= (ABCDK_PTR2U8(attr->pptrs[ABCDK_MT_ATTR_FORMAT], 0) & 0x03);
-    ABCDK_PTR2U16(buf, 7) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
-    memcpy(ABCDK_PTR2PTR(void, buf, 9), attr->pptrs[ABCDK_MT_ATTR_VALUE], ABCDK_PTR2U16(attr->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
+    ABCDK_PTR2U16(buf, 4) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_TAPE_ATTR_ID], 0));
+    ABCDK_PTR2U8(buf, 6) |= (ABCDK_PTR2U8(attr->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0) & 0x03);
+    ABCDK_PTR2U16(buf, 7) = abcdk_endian_h_to_b16(ABCDK_PTR2U16(attr->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
+    memcpy(ABCDK_PTR2PTR(void, buf, 9), attr->pptrs[ABCDK_TAPE_ATTR_VALUE], ABCDK_PTR2U16(attr->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
 
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_TO_DEV, cdb, 16, buf, 4 + len, timeout, stat);
 }

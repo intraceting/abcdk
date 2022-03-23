@@ -15,52 +15,66 @@
 #include "util/mt.h"
 #include "entry.h"
 
+
+typedef struct _abcdkmtx_ctx
+{
+    int errcode;
+    abcdk_tree_t *args;
+
+    const char *dev_p;
+    int cmd;
+
+    abcdk_scsi_io_stat stat;
+    uint8_t type;
+    char vendor[32];
+    char product[64];
+    char sn[256];
+    int fd;
+
+}abcdkmtx_ctx;
+
 /**/
 enum _abcdkmt_constant
 {
-    /** 查询驱动器信息。*/
-    ABCDKMT_HWINFO = 1,
-#define ABCDKMT_HWINFO ABCDKMT_HWINFO
-
-    /** 查询磁带状态。*/
-    ABCDKMT_STATUS = 2,
-#define ABCDKMT_STATUS ABCDKMT_STATUS
-
     /** 倒带。*/
-    ABCDKMT_REWIND = 3,
+    ABCDKMT_REWIND = 1,
 #define ABCDKMT_REWIND ABCDKMT_REWIND
 
     /** 加载。*/
-    ABCDKMT_LOAD = 4,
+    ABCDKMT_LOAD = 2,
 #define ABCDKMT_LOAD ABCDKMT_LOAD
 
     /** 卸载。*/
-    ABCDKMT_UNLOAD = 5,
+    ABCDKMT_UNLOAD = 3,
 #define ABCDKMT_UNLOAD ABCDKMT_UNLOAD
 
     /** 加锁。*/
-    ABCDKMT_LOCK = 6,
+    ABCDKMT_LOCK = 4,
 #define ABCDKMT_LOCK ABCDKMT_LOCK
 
     /** 解锁。*/
-    ABCDKMT_UNLOCK = 7,
+    ABCDKMT_UNLOCK = 5,
 #define ABCDKMT_UNLOCK ABCDKMT_UNLOCK
 
     /** 读取磁头位置(逻辑)。*/
-    ABCDKMT_READ_POS = 8,
-#define ABCDKMT_READ_POS ABCDKMT_READ_POS
+    ABCDKMT_TELL_POS = 6,
+#define ABCDKMT_TELL_POS ABCDKMT_TELL_POS
 
     /** 移动磁头位置(逻辑)。*/
-    ABCDKMT_SEEK_POS = 9,
+    ABCDKMT_SEEK_POS = 7,
 #define ABCDKMT_SEEK_POS ABCDKMT_SEEK_POS
 
     /** 写文件标记(filemark)。*/
-    ABCDKMT_WRITE_FILEMARK = 10,
+    ABCDKMT_WRITE_FILEMARK = 8,
 #define ABCDKMT_WRITE_FILEMARK ABCDKMT_WRITE_FILEMARK
 
-    /** 写条码(barcode)。*/
-    ABCDKMT_WRITE_BARCODE = 11
-#define ABCDKMT_WRITE_BARCODE ABCDKMT_WRITE_BARCODE
+    /** 读取MAM信息。*/
+    ABCDKMT_READ_MAM = 9,
+#define ABCDKMT_READ_MAM ABCDKMT_READ_MAM
+
+    /** 写入MAM信息。*/
+    ABCDKMT_WRITE_MAM = 10
+#define ABCDKMT_WRITE_MAM ABCDKMT_WRITE_MAM
 };
 
 void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
@@ -74,41 +88,48 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
-    fprintf(stderr, "\n\t--dev < FILE >\n");
+    fprintf(stderr, "\n\t--dev < DEVICE >\n");
     fprintf(stderr, "\t\t驱动器设备文件(包括路径)。\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
-    fprintf(stderr, "\t\t命令。 默认: %d\n", ABCDKMT_STATUS);
+    fprintf(stderr, "\t\t命令。 默认: %d\n", ABCDKMT_READ_MAM);
 
-    fprintf(stderr, "\n\t\t%d: 输出驱动器基本信息。\n", ABCDKMT_HWINFO);
-    fprintf(stderr, "\t\t%d: 输出磁带基本信息。\n", ABCDKMT_STATUS);
     fprintf(stderr, "\t\t%d: 倒带。\n", ABCDKMT_REWIND);
     fprintf(stderr, "\t\t%d: 加载磁带。\n", ABCDKMT_LOAD);
     fprintf(stderr, "\t\t%d: 卸载磁带。\n", ABCDKMT_UNLOAD);
-    fprintf(stderr, "\t\t%d: 驱动器仓门加锁(禁止磁带被移出驱动器)。\n", ABCDKMT_LOCK);
-    fprintf(stderr, "\t\t%d: 驱动器仓门解锁(允许磁带被移出驱动器)。\n", ABCDKMT_UNLOCK);
-    fprintf(stderr, "\t\t%d: 读取磁头位置。\n", ABCDKMT_READ_POS);
-    fprintf(stderr, "\t\t%d: 移动磁头位置。\n", ABCDKMT_SEEK_POS);
-    fprintf(stderr, "\t\t%d: 写文件标记(filemark)。\n", ABCDKMT_WRITE_FILEMARK);
-    fprintf(stderr, "\t\t%d: 写条码(barcode)。\n", ABCDKMT_WRITE_BARCODE);
+    fprintf(stderr, "\t\t%d: 仓门加锁(禁止磁带被移出驱动器)。\n", ABCDKMT_LOCK);
+    fprintf(stderr, "\t\t%d: 仓门解锁(允许磁带被移出驱动器)。\n", ABCDKMT_UNLOCK);
+    fprintf(stderr, "\t\t%d: 读取磁头位置(逻辑)。\n", ABCDKMT_TELL_POS);
+    fprintf(stderr, "\t\t%d: 移动磁头位置(逻辑)。\n", ABCDKMT_SEEK_POS);
+    fprintf(stderr, "\t\t%d: 写入文件标记(filemark)。\n", ABCDKMT_WRITE_FILEMARK);
+    fprintf(stderr, "\t\t%d: 读取MAM信息。\n", ABCDKMT_READ_MAM);
+    fprintf(stderr, "\t\t%d: 写入MAM信息。\n", ABCDKMT_WRITE_MAM);
 
-    fprintf(stderr, "\n移动磁头位置可选项:\n");
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_SEEK_POS);
 
-    fprintf(stderr, "\n\t--pos-block < NUMBER >\n");
+    fprintf(stderr, "\n\t--block < NUMBER >\n");
     fprintf(stderr, "\t\t块索引。默认: 末尾\n");
 
-    fprintf(stderr, "\n\t--pos-part < NUMBER >\n");
+    fprintf(stderr, "\n\t--partition < NUMBER >\n");
     fprintf(stderr, "\t\t分区编号。 默认: 0\n");
 
-    fprintf(stderr, "\n写文件标记可选项:\n");
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_FILEMARK);
 
-    fprintf(stderr, "\n\t--filemarks < NUMBER >\n");
-    fprintf(stderr, "\t\t文件标记的数量。 默认: 1\n");
+    fprintf(stderr, "\n\t--count < NUMBER >\n");
+    fprintf(stderr, "\t\t数量。 默认: 1\n");
 
-    fprintf(stderr, "\n写条码可选项:\n");
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_READ_MAM);
 
-    fprintf(stderr, "\n\t--barcode < STRING >\n");
-    fprintf(stderr, "\t\t条码(MAX=32)。\n");
+    fprintf(stderr, "\n\t--id < ID >\n");
+    fprintf(stderr, "\t\t编号(十六进制)。默认：全部\n");
+
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_MAM);
+
+    fprintf(stderr, "\n\t--id < ID >\n");
+    fprintf(stderr, "\t\t编号(十六进制)。\n");
+
+    fprintf(stderr, "\n\t--value < VALUE >\n");
+    fprintf(stderr, "\t\t值(TEXT,ASCII,BINARY)。\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -149,6 +170,56 @@ static struct _abcdkmt_sense_dict
     {0x0d, 0x00, 0x00, "Volume Overflow"}
 };
 
+static struct _abcdkmt_mam_dict
+{
+    uint16_t id;
+    const char *name;
+}abcdkmt_mam_dict[]={
+    /*MAM Device type attributes*/
+    {0x0000,"REMAINING CAPACITY IN PARTITION"},
+    {0x0001,"MAXIMUM CAPACITY IN PARTITION"},
+    {0x0002,"TAPEALERT FLAGS"},
+    {0x0003,"LOAD COUNT"},
+    {0x0004,"MAM SPACE REMAINING"},
+    {0x0005,"ASSIGNING ORGANIZATION"},
+    {0x0006,"FORMATTED DENSITY CODE"},
+    {0x0007,"INITIALIZATION COUNT"},
+    {0x0009,"VOLUME CHANGE REFERENCE"},
+    {0x020A,"DEVICE VENDOR/SERIAL NUMBER AT LAST LOAD"},
+    {0x020B,"DEVICE VENDOR/SERIAL NUMBER AT LOAD-1"},
+    {0x020C,"DEVICE VENDOR/SERIAL NUMBER AT LOAD-2"},
+    {0x020D,"DEVICE VENDOR/SERIAL NUMBER AT LOAD-3"},
+    {0x0220,"TOTAL MBYTES WRITTEN IN MEDIUM LIFE"},
+    {0x0221,"TOTAL MBYTES READ IN MEDIUM LIFE"},
+    {0x0222,"TOTAL MBYTES WRITTEN IN CURRENT/LAST LOAD"},
+    {0x0223,"TOTAL MBYTES READ IN CURRENT/LAST LOAD"},
+    /*MAM Medium type attributes*/
+    {0x0400,"MEDIUM MANUFACTURER"},
+    {0x0401,"MEDIUM SERIAL NUMBER"},
+    {0x0402,"MEDIUM LENGTH"},
+    {0x0403,"MEDIUM WIDTH"},
+    {0x0404,"ASSIGNING ORGANIZATION"},
+    {0x0405,"MEDIUM DENSITY CODE"},
+    {0x0406,"MEDIUM MANUFACTURE DATE"},
+    {0x0407,"MAM CAPACITY"},
+    {0x0408,"MEDIUM TYPE"},
+    {0x0409,"MEDIUM TYPE INFORMATION"},
+    /*MAM Host type attributes*/
+    {0x0800,"APPLICATION VENDOR"},
+    {0x0801,"APPLICATION NAME"},
+    {0x0802,"APPLICATION VERSION"},
+    {0x0803,"USER MEDIUM TEXT LABEL"},
+    {0x0804,"DATE AND TIME LAST WRITTEN"},
+    {0x0805,"TEXT LOCALIZATION IDENTIFIER"},
+    {0x0806,"BARCODE(条码)"},
+    {0x0807,"OWNING HOST TEXTUAL NAME"},
+    {0x0808,"MEDIA POOL"},
+    {0x080B,"APPLICATION FORMAT VERSION"},
+    {0x080C,"VOLUME COHERENCY INFORMATION"},
+    {0x0820,"MEDIUM GLOBALLY UNIQUE IDENTIFIER"},
+    {0x0821,"MEDIA POOL GLOBALLY UNIQUE IDENTIFIER"}
+};
+
 void _abcdkmt_printf_sense(abcdk_scsi_io_stat *stat)
 {
     uint8_t key = 0, asc = 0, ascq = 0;
@@ -182,45 +253,45 @@ void _abcdkmt_report_status(abcdk_tree_t *args,int fd)
     abcdk_allocator_t *attr_p[6] = {NULL};
     int chk;
 
-    attr_p[0] = abcdk_mt_read_attribute(fd,0,0x0000,3000,&stat);
+    attr_p[0] = abcdk_tape_read_attribute(fd,0,0x0000,3000,&stat);
     if(!attr_p[0] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    abcdk_endian_b_to_h(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(attr_p[0]->pptrs[ABCDK_MT_ATTR_LENGTH],0));
-    fprintf(stdout,"剩余容量:\t%lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
+    abcdk_endian_b_to_h(attr_p[0]->pptrs[ABCDK_TAPE_ATTR_VALUE],ABCDK_PTR2U16(attr_p[0]->pptrs[ABCDK_TAPE_ATTR_LENGTH],0));
+    fprintf(stdout,"剩余容量:\t%lu\n",ABCDK_PTR2U64(attr_p[0]->pptrs[ABCDK_TAPE_ATTR_VALUE], 0));
     
-    attr_p[1] = abcdk_mt_read_attribute(fd,0,0x0001,3000,&stat);
+    attr_p[1] = abcdk_tape_read_attribute(fd,0,0x0001,3000,&stat);
     if(!attr_p[1] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    abcdk_endian_b_to_h(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(attr_p[1]->pptrs[ABCDK_MT_ATTR_LENGTH],0));
-    fprintf(stdout,"最大容量:\t%lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_MT_ATTR_VALUE], 0));
+    abcdk_endian_b_to_h(attr_p[1]->pptrs[ABCDK_TAPE_ATTR_VALUE],ABCDK_PTR2U16(attr_p[1]->pptrs[ABCDK_TAPE_ATTR_LENGTH],0));
+    fprintf(stdout,"最大容量:\t%lu\n",ABCDK_PTR2U64(attr_p[1]->pptrs[ABCDK_TAPE_ATTR_VALUE], 0));
     
-    attr_p[2] = abcdk_mt_read_attribute(fd,0,0x0400,3000,&stat);
+    attr_p[2] = abcdk_tape_read_attribute(fd,0,0x0400,3000,&stat);
     if(!attr_p[2] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"制造商:\t\t%s\n",attr_p[2]->pptrs[ABCDK_MT_ATTR_VALUE]);
+    fprintf(stdout,"制造商:\t\t%s\n",attr_p[2]->pptrs[ABCDK_TAPE_ATTR_VALUE]);
     
-    attr_p[3] = abcdk_mt_read_attribute(fd,0,0x0401,3000,&stat);
+    attr_p[3] = abcdk_tape_read_attribute(fd,0,0x0401,3000,&stat);
     if(!attr_p[3] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"序列号:\t\t%s\n",attr_p[3]->pptrs[ABCDK_MT_ATTR_VALUE]);
+    fprintf(stdout,"序列号:\t\t%s\n",attr_p[3]->pptrs[ABCDK_TAPE_ATTR_VALUE]);
     
 
-    attr_p[4] = abcdk_mt_read_attribute(fd,0,0x0405,3000,&stat);
+    attr_p[4] = abcdk_tape_read_attribute(fd,0,0x0405,3000,&stat);
     if(!attr_p[4] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"型号:\t\t%s\n",abcdk_mt_density2string(ABCDK_PTR2U8(attr_p[4]->pptrs[ABCDK_MT_ATTR_VALUE], 0)));
+    fprintf(stdout,"型号:\t\t%s\n",abcdk_tape_density2string(ABCDK_PTR2U8(attr_p[4]->pptrs[ABCDK_TAPE_ATTR_VALUE], 0)));
     
 
-    attr_p[5] = abcdk_mt_read_attribute(fd,0,0x0806,3000,&stat);
+    attr_p[5] = abcdk_tape_read_attribute(fd,0,0x0806,3000,&stat);
     if(!attr_p[5] || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    fprintf(stdout,"条码:\t\t%s\n",attr_p[5]->pptrs[ABCDK_MT_ATTR_VALUE]);
+    fprintf(stdout,"条码:\t\t%s\n",attr_p[5]->pptrs[ABCDK_TAPE_ATTR_VALUE]);
     
    
     /*No error.*/
@@ -241,53 +312,104 @@ final:
     }
 }
 
-void _abcdkmt_read_pos(abcdk_tree_t *args,int fd)
-{    
-    abcdk_scsi_io_stat stat = {0};
-    uint64_t pos_block = -1, pos_file = -1;
-    uint32_t pos_part = -1;
+void _abcdkmt_operate(abcdkmtx_ctx *ctx)
+{
     int chk;
 
-    chk = abcdk_mt_tell(fd,&pos_block,&pos_file,&pos_part,3000,&stat);
-    if (chk != 0 || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    fprintf(stdout,"块索引:\t\t%lu\n",pos_block);
-    fprintf(stdout,"文件索引:\t%lu\n",pos_file);
-    fprintf(stdout,"分区编号:\t%u\n",pos_part);
+    if(ctx->cmd == ABCDKMT_REWIND)
+        chk = abcdk_tape_operate(ctx->fd, MTREW, 0, &ctx->stat);
+    else if(ctx->cmd == ABCDKMT_LOAD)
+        chk = abcdk_tape_operate(ctx->fd, MTLOAD, 0, &ctx->stat);
+    else if(ctx->cmd == ABCDKMT_UNLOAD)
+        chk = abcdk_tape_operate(ctx->fd, MTUNLOAD, 0, &ctx->stat);
+    else if(ctx->cmd == ABCDKMT_LOCK)
+        chk = abcdk_tape_operate(ctx->fd, MTLOCK, 0, &ctx->stat);
+    else if(ctx->cmd == ABCDKMT_UNLOCK)
+        chk = abcdk_tape_operate(ctx->fd, MTUNLOCK, 0, &ctx->stat);
+
+    if (chk != 0 || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
 
     /*No error.*/
     goto final;
 
 print_sense:
 
-    _abcdkmt_printf_sense(&stat);
+    _abcdkmt_printf_sense(&ctx->stat);
 
 final:
 
     return;
 }
 
-void _abcdkmt_seek_pos(abcdk_tree_t *args,int fd)
-{    
-    abcdk_scsi_io_stat stat = {0};
-    uint64_t pos_block = INTMAX_MAX;
-    uint32_t pos_part = 0;
+void _abcdkmt_write_filemark(abcdkmtx_ctx *ctx)
+{
+    int count;
     int chk;
 
-    pos_block = abcdk_option_get_llong(args, "--pos-block", 0, INTMAX_MAX);
-    pos_part = abcdk_option_get_int(args, "--pos-part", 0, 0);
+    count = abcdk_option_get_int(ctx->args, "--count", 0, 1);
 
-    chk = abcdk_mt_seek(fd,1,pos_part,pos_block,1800*1000,&stat);
-    if (chk != 0 || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+    chk = abcdk_tape_operate(ctx->fd, MTWEOF, count, &ctx->stat);
+    if (chk != 0 || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
 
     /*No error.*/
     goto final;
 
 print_sense:
 
-    _abcdkmt_printf_sense(&stat);
+    _abcdkmt_printf_sense(&ctx->stat);
+
+final:
+
+    return;
+}
+
+void _abcdkmt_tell_pos(abcdkmtx_ctx *ctx)
+{    
+    abcdk_scsi_io_stat stat = {0};
+    uint64_t block = -1, file = -1;
+    uint32_t part = -1;
+    int chk;
+
+    chk = abcdk_tape_tell(ctx->fd,&block,&file,&part,3000,&ctx->stat);
+    if (chk != 0 || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
+    
+    fprintf(stdout,"|%-10s\t|%-10s\t|%-10s\t|\n","BLock","Logical File","Partition");
+    fprintf(stdout,"|%-10lu\t|%-10lu\t|%-10u\t|\n",block,file,part);
+
+    /*No error.*/
+    goto final;
+
+print_sense:
+
+    _abcdkmt_printf_sense(&ctx->stat);
+
+final:
+
+    return;
+}
+
+void _abcdkmt_seek_pos(abcdkmtx_ctx *ctx)
+{    
+    uint64_t block;
+    uint32_t part;
+    int chk;
+
+    block = abcdk_option_get_llong(ctx->args, "--block", 0, INTMAX_MAX);
+    part = abcdk_option_get_int(ctx->args, "--partition", 0, 0);
+
+    chk = abcdk_tape_seek(ctx->fd, 1, part, block, 1800 * 1000, &ctx->stat);
+    if (chk != 0 || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
+
+    /*No error.*/
+    goto final;
+
+print_sense:
+
+    _abcdkmt_printf_sense(&ctx->stat);
 
 final:
 
@@ -315,13 +437,13 @@ void _abcdkmt_write_barcode(abcdk_tree_t *args,int fd)
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
-    attr_p = abcdk_mt_read_attribute(fd,0,0x0806,3000,&stat);
+    attr_p = abcdk_tape_read_attribute(fd,0,0x0806,3000,&stat);
     if(!attr_p || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
     
-    memcpy(attr_p->pptrs[ABCDK_MT_ATTR_VALUE],barcode_p,ABCDK_PTR2U16(attr_p->pptrs[ABCDK_MT_ATTR_LENGTH], 0));
+    memcpy(attr_p->pptrs[ABCDK_TAPE_ATTR_VALUE],barcode_p,ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
 
-    chk = abcdk_mt_write_attribute(fd,0,attr_p,3000,&stat);
+    chk = abcdk_tape_write_attribute(fd,0,attr_p,3000,&stat);
     if(chk != 0 || stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 
@@ -339,163 +461,108 @@ final:
     return;
 }
 
-void _abcdkmt_work(abcdk_tree_t *args)
+static struct _abcdkmt_methods
 {
-    abcdk_scsi_io_stat stat = {0};
-    uint8_t type = 0;
-    char vendor[32] = {0};
-    char product[64] = {0};
-    char sn[256] = {0};
-    int fd = -1;
-    const char *dev_p = NULL;
-    int filemarks = 0;
-    int cmd = 0;
+    int cmd;
+    void (*method)(abcdkmtx_ctx *ctx);
+} abcdkmt_methods[] = {
+    {ABCDKMT_REWIND,_abcdkmt_operate},
+    {ABCDKMT_LOAD,_abcdkmt_operate},
+    {ABCDKMT_UNLOAD,_abcdkmt_operate},
+    {ABCDKMT_LOCK,_abcdkmt_operate},
+    {ABCDKMT_UNLOCK,_abcdkmt_operate},
+    {ABCDKMT_WRITE_FILEMARK,_abcdkmt_write_filemark},
+    {ABCDKMT_TELL_POS, _abcdkmt_tell_pos},
+    {ABCDKMT_SEEK_POS, _abcdkmt_seek_pos}
+};
+
+void _abcdkmt_work(abcdkmtx_ctx *ctx)
+{
+    void (*_method)(abcdkmtx_ctx *ctx) = NULL;
     int chk;
 
-    dev_p = abcdk_option_get(args, "--dev", 0, "");
-    cmd = abcdk_option_get_int(args, "--cmd", 0, ABCDKMT_STATUS);
+    ctx->fd = -1;
+    ctx->dev_p = abcdk_option_get(ctx->args, "--dev", 0, "");
+    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMT_READ_MAM);
 
-    /*Clear errno.*/
-    errno = 0;
-
-    if (!dev_p || !*dev_p)
+    if (!ctx->dev_p || !*ctx->dev_p)
     {
-        syslog(LOG_ERR, "'--dev FILE' 不能省略，且不能为空。");
+        syslog(LOG_ERR, "'--dev DEVICE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
-    if (access(dev_p, F_OK) != 0)
+    if (access(ctx->dev_p, F_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s。", dev_p, strerror(errno));
+        syslog(LOG_ERR, "'%s' %s。", ctx->dev_p, strerror(errno));
         goto final;
     }
 
-    fd = abcdk_open(dev_p, 1, 1, 0);
-    if (fd < 0)
+    ctx->fd = abcdk_open(ctx->dev_p, 1, 1, 0);
+    if (ctx->fd < 0)
     {
-        syslog(LOG_ERR, "'%s' %s.",dev_p,strerror(errno));
+        syslog(LOG_ERR, "'%s' %s.",ctx->dev_p,strerror(errno));
         goto final;
     }
 
-    chk = abcdk_scsi_inquiry_standard(fd, &type, vendor, product, 3000, &stat);
-    if (chk != 0 || stat.status != GOOD)
+    chk = abcdk_scsi_inquiry_standard(ctx->fd, &ctx->type, ctx->vendor, ctx->product, 3000, &ctx->stat);
+    if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 
-    if (type != TYPE_TAPE)
+    if (ctx->type != TYPE_TAPE)
     {
-        syslog(LOG_ERR, "'%s' 不是磁带驱动器。", dev_p);
+        syslog(LOG_ERR, "'%s' 不是磁带驱动器。", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
-    chk = abcdk_scsi_inquiry_serial(fd, NULL, sn, 3000, &stat);
-    if (chk != 0 || stat.status != GOOD)
+    chk = abcdk_scsi_inquiry_serial(ctx->fd, NULL, ctx->sn, 3000, &ctx->stat);
+    if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
-    
-    if(cmd == ABCDKMT_HWINFO)
+
+    syslog(LOG_INFO,"Driver: %s(%s,%s)",ctx->sn,ctx->vendor,ctx->product);
+
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_methods); i++)
     {
-        fprintf(stdout,"供货商:\t\t%s\n",vendor);
-        fprintf(stdout,"产品名称:\t%s\n",product);
-        fprintf(stdout,"序列号:\t\t%s\n",sn);
+        if (abcdkmt_methods[i].cmd != ctx->cmd)
+            continue;
+
+        _method = abcdkmt_methods[i].method;
+        break;
     }
-    else if (cmd == ABCDKMT_STATUS)
+
+    if (!_method)
     {
-        _abcdkmt_report_status(args, fd);
+        syslog(LOG_ERR, "CMD(%d)尚未支持。", ctx->cmd);
+        ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
-    else if (cmd == ABCDKMT_REWIND)
-    {
-        chk = abcdk_mt_rewind(fd,0);
-        if (chk != 0)
-        {   
-            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
-            goto final;
-        }
-    }
-    else if (cmd == ABCDKMT_LOAD)
-    {
-        chk = abcdk_mt_load(fd);
-        if (chk != 0)
-        {   
-            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
-            goto final;
-        }
-    }
-    else if (cmd == ABCDKMT_UNLOAD)
-    {
-        chk = abcdk_mt_unload(fd);
-        if (chk != 0)
-        {   
-            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
-            goto final;
-        }
-    }
-    else if (cmd == ABCDKMT_LOCK)
-    {
-        chk = abcdk_mt_lock(fd);
-        if (chk != 0)
-        {   
-            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
-            goto final;
-        }
-    }
-    else if (cmd == ABCDKMT_UNLOCK)
-    {
-        chk = abcdk_mt_unlock(fd);
-        if (chk != 0)
-        {   
-            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
-            goto final;
-        }
-    }
-    else if (cmd == ABCDKMT_READ_POS)
-    {
-        _abcdkmt_read_pos(args,fd);
-    }
-    else if (cmd == ABCDKMT_SEEK_POS)
-    {
-        _abcdkmt_seek_pos(args,fd);
-    }
-    else if (cmd == ABCDKMT_WRITE_FILEMARK)
-    {
-        filemarks = abcdk_option_get_int(args, "--filemarks", 0, 1);
-        chk = abcdk_mt_writefm(fd,filemarks);
-        if (chk != 0)
-        {   
-            syslog(LOG_ERR, "'%s' %s.", dev_p, strerror(errno));
-            goto final;
-        }
-    }
-    else if (cmd == ABCDKMT_WRITE_BARCODE)
-    {
-        _abcdkmt_write_barcode(args,fd);
-    }
-    else
-    {
-        syslog(LOG_INFO, "尚未支持。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
-    }
+
+    _method(ctx);
 
     /*No error.*/
     goto final;
 
 print_sense:
 
-    _abcdkmt_printf_sense(&stat);
+    _abcdkmt_printf_sense(&ctx->stat);
 
 final:
 
-    abcdk_closep(&fd);
+    abcdk_closep(&ctx->fd);
 }
 
 int abcdk_tool_mt(abcdk_tree_t *args)
 {
-    if (abcdk_option_exist(args, "--help"))
+    abcdkmtx_ctx ctx = {0};
+
+    ctx.args = args;
+
+    if (abcdk_option_exist(ctx.args, "--help"))
     {
-        _abcdkmt_print_usage(args, 0);
+        _abcdkmt_print_usage(ctx.args, 0);
     }
     else
     {
-        _abcdkmt_work(args);
+        _abcdkmt_work(&ctx);
     }
 
-    return errno;
+    return ctx.errcode;
 }

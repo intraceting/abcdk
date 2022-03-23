@@ -169,11 +169,12 @@ int abcdk_scsi_test(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat);
 }
 
-int abcdk_mtx_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_scsi_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[6] = {0};
 
     cdb[0] = 0x03; /*03H is Request Sense*/
+    cdb[4] = sizeof(stat->sense);
 
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat);
 }

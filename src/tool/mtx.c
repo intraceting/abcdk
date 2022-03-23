@@ -83,7 +83,7 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
-    fprintf(stderr, "\n\t--dev < FILE >\n");
+    fprintf(stderr, "\n\t--dev < DEVICE >\n");
     fprintf(stderr, "\t\t机械手设备文件(包括路径)。\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
@@ -92,15 +92,7 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t\t%d: 打印报表。\n", ABCDKMTX_STATUS);
     fprintf(stderr, "\t\t%d: 移动介质。\n", ABCDKMTX_MOVE);
 
-    fprintf(stderr, "\n移动介质可选项:\n");
-
-    fprintf(stderr, "\n\t--src < ADDRESS >\n");
-    fprintf(stderr, "\t\t源地址。\n");
-
-    fprintf(stderr, "\n\t--dst < ADDRESS >\n");
-    fprintf(stderr, "\t\t目标地址。\n");
-
-    fprintf(stderr, "\n打印报表可选项:\n");
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMTX_STATUS);
 
     fprintf(stderr, "\n\t--exclude-barcode\n");
     fprintf(stderr, "\t\t排除条码字段。默认：包括\n");
@@ -117,10 +109,10 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t--match-type\n");
     fprintf(stderr, "\t\t仅指定类型。默认：全部\n");
 
-    fprintf(stderr, "\n\t\t%d: 机械手。\n", ABCDK_MXT_ELEMENT_CHANGER);
-    fprintf(stderr, "\t\t%d: 存储槽位。\n", ABCDK_MXT_ELEMENT_STORAGE);
-    fprintf(stderr, "\t\t%d: IE槽位。\n", ABCDK_MXT_ELEMENT_IE_PORT);
-    fprintf(stderr, "\t\t%d: 驱动器。\n", ABCDK_MXT_ELEMENT_DXFER);
+    fprintf(stderr, "\n\t\t%d: 机械手。\n", ABCDK_MEDIUMX_ELEMENT_CHANGER);
+    fprintf(stderr, "\t\t%d: 存储槽位。\n", ABCDK_MEDIUMX_ELEMENT_STORAGE);
+    fprintf(stderr, "\t\t%d: IE槽位。\n", ABCDK_MEDIUMX_ELEMENT_IE_PORT);
+    fprintf(stderr, "\t\t%d: 驱动器。\n", ABCDK_MEDIUMX_ELEMENT_DXFER);
 
     fprintf(stderr, "\n\t--output < FILE >\n");
     fprintf(stderr, "\t\t输出到文件(包括路径)。默认：终端\n");
@@ -131,6 +123,14 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDKMTX_STATUS_FMT_TEXT);
     fprintf(stderr, "\t\t%d: XML。\n",ABCDKMTX_STATUS_FMT_XML);
     fprintf(stderr, "\t\t%d: JSON。\n",ABCDKMTX_STATUS_FMT_JSON);
+
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMTX_MOVE);
+
+    fprintf(stderr, "\n\t--src < ADDRESS >\n");
+    fprintf(stderr, "\t\t源地址。\n");
+
+    fprintf(stderr, "\n\t--dst < ADDRESS >\n");
+    fprintf(stderr, "\t\t目标地址。\n");
 }
 
 static struct _abcdkmtx_sense_dict
@@ -153,7 +153,7 @@ static struct _abcdkmtx_sense_dict
     /*KEY=0x05*/
     {0x05, 0x00, 0x00, "Illegal Request"},
     {0x05, 0x21, 0x01, "无效的地址"},
-    {0x05, 0x24, 0x00, "无效的地址或地址超出范围"},
+    {0x05, 0x24, 0x00, "无效的地址或超出范围"},
     {0x05, 0x3b, 0x0d, "目标地址有介质"},
     {0x05, 0x3b, 0x0e, "源地址无介质"},
     {0x05, 0x53, 0x02, "Library media removal prevented state set"},
@@ -203,13 +203,13 @@ const char *_abcdkmtx_translate_devname(abcdkmtx_ctx *ctx, uint8_t type, const c
     {
         dev_p = (abcdk_scsi_info_t *)node_p->alloc->pptrs[0];
 
-        if (dev_p->type == TYPE_TAPE && type == ABCDK_MXT_ELEMENT_DXFER)
+        if (dev_p->type == TYPE_TAPE && type == ABCDK_MEDIUMX_ELEMENT_DXFER)
         {
             if (abcdk_strcmp(dev_p->serial, sn, 1) == 0)
                 return dev_p->devname;
         }
 
-        if (dev_p->type == TYPE_MEDIUM_CHANGER && type == ABCDK_MXT_ELEMENT_CHANGER)
+        if (dev_p->type == TYPE_MEDIUM_CHANGER && type == ABCDK_MEDIUMX_ELEMENT_CHANGER)
         {
             if (abcdk_strcmp(dev_p->serial, sn, 1) == 0)
                 return dev_p->generic;
@@ -283,11 +283,11 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     }
     else
     {
-        addr = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0);
-        type = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0);
-        isfull = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0);
-        dvcid = _abcdkmtx_translate_devname(ctx,type,(char*)node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
-        barcode = (char*)node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE];
+        addr = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
+        type = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0);
+        isfull = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0);
+        dvcid = _abcdkmtx_translate_devname(ctx,type,(char*)node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID]);
+        barcode = (char*)node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE];
 
         /*可能仅打印指定类型的元素状态。*/
         if (ctx->match_type != 0 && ctx->match_type != type)
@@ -353,10 +353,10 @@ int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     if (depth == 0)
         return 1;
 
-    if (ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0) != ABCDK_MXT_ELEMENT_CHANGER)
+    if (ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) != ABCDK_MEDIUMX_ELEMENT_CHANGER)
         return 1;
 
-    ctx->changer = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0);
+    ctx->changer = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
 
     return -1;
 }
@@ -372,7 +372,7 @@ void _abcdkmtx_move_medium(abcdkmtx_ctx *ctx)
     int chk;
 
     _abcdkmtx_find_changer(ctx);
-    chk = abcdk_mtx_move_medium(ctx->fd, ctx->changer, ctx->src, ctx->dst, 1800 * 1000, &ctx->stat);
+    chk = abcdk_mediumx_move_medium(ctx->fd, ctx->changer, ctx->src, ctx->dst, 1800 * 1000, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,print_sense);
 
@@ -407,7 +407,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
-        syslog(LOG_ERR, "'--dev FILE' 不能省略，且不能为空。");
+        syslog(LOG_ERR, "'--dev DEVICE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -447,7 +447,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
     snprintf(ctx->root->alloc->pptrs[1], ctx->root->alloc->sizes[1], "%s", ctx->vendor);
     snprintf(ctx->root->alloc->pptrs[2], ctx->root->alloc->sizes[2], "%s", ctx->product);
 
-    chk = abcdk_mtx_inquiry_element_status(ctx->root, ctx->fd, ctx->voltag,ctx->dvcid,-1, &ctx->stat);
+    chk = abcdk_mediumx_inquiry_element_status(ctx->root, ctx->fd, ctx->voltag,ctx->dvcid,-1, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
 

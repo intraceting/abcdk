@@ -111,7 +111,7 @@ int abcdk_scsi_test(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
  *
  * @return 0 成功，-1 失败。
  */
-int abcdk_mtx_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
+int abcdk_scsi_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 /**
  * 查询设备信息。
