@@ -312,8 +312,8 @@ void _abcdkmt_tell_pos(abcdkmtx_ctx *ctx)
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
     
-    fprintf(stdout,"|%-10s\t|%-10s\t|%-10s\t|\n","BLock","Logical File","Partition");
-    fprintf(stdout,"|%-10lu\t|%-10lu\t|%-10u\t|\n",block,file,part);
+    fprintf(stdout,"|%-10s\t|%-10s\t|%-2s\t|\n","BLock","Logical File","Partition");
+    fprintf(stdout,"|%-10lu\t|%-10lu\t|%-2u\t|\n",block,file,part);
 
     /*No error.*/
     goto final;
@@ -364,7 +364,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 0)
     {
-        fprintf(stdout,"|%-4s |%-1s |%-1s |%-5% |%-40s|\n","id","ro","fmt","length","value");
+        fprintf(stdout,"|%4s\t|%1s\t|%1s\t|%5s\t|%40s\t|\n","id","ro","fmt","length","value");
     }
     else if (depth == SIZE_MAX)
     {
@@ -378,7 +378,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         len = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
         val = node->alloc->pptrs[ABCDK_TAPE_ATTR_VALUE];
 
-        fprintf(stdout,"|%-04x |%-1hhu |%-1hhu |%-5hu | \n", id,rd,fmt,len);
+        fprintf(stdout,"|%04X\t|%-1hhu\t|%-1hhu\t|%-5hu\t| \n", id,rd,fmt,len);
         
     }
 }
