@@ -91,7 +91,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-12s\t|%-10s\t|%-8s\t|%-16s\t|%-4.4s\t|%-20s\t|%-15s\t|%-15s\t|\n",
+            fprintf(stdout, "|%-8s |%-8s |%-10s |%-16s |%-4.4s |%-16s |%-10s |%-10s |\n",
                     "bus", "type", "vendor", "model", "revision", "serial", "devname", "generic");
         }
         else

@@ -356,6 +356,11 @@ final:
 int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     abcdkmtx_ctx *ctx = (abcdkmtx_ctx *)opaque;
+    uint16_t id;
+    uint8_t rd;
+    uint8_t fmt;
+    uint16_t len;
+    uint8_t *val;
 
     if (depth == 0)
     {
@@ -365,10 +370,22 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     }
     else
     {
-        fprintf(stdout,"%04xh\n", ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0));
-        fprintf(stdout,"%hhxh\n", ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_READONLY], 0));
-        fprintf(stdout,"%hhxh\n", ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0));
-        fprintf(stdout,"%hxh\n", ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
+        id = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0);
+        rd = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_READONLY], 0);
+        fmt = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0);
+        len = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
+        val = node->alloc->pptrs[ABCDK_TAPE_ATTR_VALUE];
+
+        fprintf(stdout,"%04xh\n", id);
+        fprintf(stdout,"%hhxh\n", rd);
+        fprintf(stdout,"%hhxh\n", fmt);
+        fprintf(stdout,"%hxh\n", len);
+        if(fmt==0x00)
+            fprintf(stdout,"aaa\n");
+        else if(fmt==0x01)
+            fprintf(stdout,"%s\n",val);
+        else if(fmt==0x02)
+            fprintf(stdout,"%s\n",val);
     }
 }
 
