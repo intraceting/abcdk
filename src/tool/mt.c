@@ -312,7 +312,7 @@ void _abcdkmt_tell_pos(abcdkmtx_ctx *ctx)
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
     
-    fprintf(stdout,"|%-10s\t|%-10s\t|%-10s\t|\n","BLock","Logical File","Partition");
+    fprintf(stdout,"|%-10s\t|%-10s\t|%-10s\t|\n","block","file","partition");
     fprintf(stdout,"|%-10lu\t|%-10lu\t|%-10u\t|\n",block,file,part);
 
     /*No error.*/
