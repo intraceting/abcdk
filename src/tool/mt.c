@@ -119,15 +119,22 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--count < NUMBER >\n");
     fprintf(stderr, "\t\t数量。 默认: 1\n");
 
-    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_READ_MAM);
-
-    fprintf(stderr, "\n\t--id < NUMBER >\n");
-    fprintf(stderr, "\t\t编号。默认：全部\n");
-
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_MAM);
 
     fprintf(stderr, "\n\t--id < NUMBER >\n");
     fprintf(stderr, "\t\t编号。\n");
+
+    fprintf(stderr, "\n");
+    for (size_t i = 0,j = 0; i < 65536; i++)
+    {
+        const char *str = abcdk_tape_attr2string(i);
+        if (!str)
+            continue;
+
+        fprintf(stderr,"\t\t%04hX: %-40s",i,str);
+        if ((++j) % 2 == 0)
+            fprintf(stderr, "\n");
+    }
 
     fprintf(stderr, "\n\t--value < VALUE >\n");
     fprintf(stderr, "\t\t内容(TEXT,ASCII,BINARY)。\n");
@@ -260,13 +267,14 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     uint16_t id,len;
     uint8_t rd ,fmt;
     uint8_t *val;
-    uint64_t val_int;
+    uint64_t val_int = 0;
+    uint8_t val_buf[400] = {0};
     char *rd_str[] = {"RW","RO"};
     char *fmt_str[] = {"BINARY","ASCII","TEXT","Reserved"};
 
     if (depth == 0)
     {
-        fprintf(stdout,"|%-4s\t|%-2s\t|%-5s\t|%-5s\t|%-40s\t|\n","id","ro/rw","format","length","value");
+        fprintf(stdout,"|%-40s\t|%-2s\t|%-5s\t|%-5s\t|%-40s\t|\n","name","ro/rw","format","length","value");
     }
     else if (depth == SIZE_MAX)
     {
@@ -283,7 +291,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         if (len <= 0)
             return 1;
 
-        fprintf(stdout,"|%04hX\t|%-2s\t|%-5s\t|%-5hu\t", id,rd_str[rd],fmt_str[fmt],len);
+        fprintf(stdout,"|%-40s\t|%-2s\t|%-5s\t|%-5hu\t", abcdk_tape_attr2string(id),rd_str[rd],fmt_str[fmt],len);
 
         if (fmt == 0x00)
         {
@@ -295,16 +303,42 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
                 val_int = abcdk_endian_b_to_h32(ABCDK_PTR2U32(val,0));
             else if(len == 8)
                 val_int = abcdk_endian_b_to_h64(ABCDK_PTR2U64(val,0));
+            else
+                abcdk_bin2hex(val_buf,val,len,0);
 
-            fprintf(stdout,"|%-40lu\t|",val_int);    
+            if(id == 0x0405)
+            {
+                sprintf(val_buf,"%lu(%#lx),%s",val_int,val_int,abcdk_tape_density2string(val_int));
+                fprintf(stdout, "|%-40s\t|", val_buf);
+            }
+            else if(id == 0x0408)
+            {
+                sprintf(val_buf,"%lu(%#lx),%s",val_int,val_int,abcdk_tape_type2string(val_int));
+                fprintf(stdout, "|%-40s\t|", val_buf);
+            }
+            else if (len <= 8)
+            {
+                sprintf(val_buf,"%lu(%#lx)",val_int,val_int);
+                fprintf(stdout, "|%-40s\t|", val_buf);
+            }
+            else if (len <= 40)
+                fprintf(stdout, "|%-40s\t|", val_buf);
+            else
+                fprintf(stdout, "|%-37.37s...\t|", val_buf);
         }
         else if (fmt == 0x01)
         {
-            fprintf(stdout, "|%-40s\t|",val);
+            if (strlen(val) <= 40)
+                fprintf(stdout, "|%-40s\t|",val);
+            else
+                fprintf(stdout, "|%-37.37s\t|",val);
         }
         else if (fmt == 0x02)
         {
-            fprintf(stdout, "|%-40s\t|",val);
+            if (strlen(val) <= 40)
+                fprintf(stdout, "|%-40s\t|",val);
+            else
+                fprintf(stdout, "|%-37.37s\t|",val);
         }
 
         fprintf(stdout,"\n");
@@ -335,6 +369,8 @@ print_sense:
 final_error:
 
     abcdk_tree_free(&node);
+
+    return NULL;
 }
 
 void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
@@ -349,36 +385,24 @@ void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
     if(!root)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ENOMEM, final);
 
-    id = abcdk_option_get_int(ctx->args, "--id", 0, -1);
-    if (id >= 0)
+    for (size_t i = 0; i < 65536; i++)
     {
-        node = _abcdkmt_read_mam_one(ctx, id);
+        if (!abcdk_tape_attr2string(i))
+            continue;
+
+        node = _abcdkmt_read_mam_one(ctx, i);
         if (!node)
-            goto final;
-
-        abcdk_tree_insert2(root,node,0);
-    }
-    else 
-    {
-        for (size_t i = 0; i < 65536; i++)
         {
-            if(!abcdk_tape_attr2string(i))
+            /*如果磁带没准备好，直接跳出。*/
+            if (abcdk_scsi_sense_key(ctx->stat.sense) == 0x02 &&
+                abcdk_scsi_sense_code(ctx->stat.sense) == 0x3A &&
+                abcdk_scsi_sense_qualifier(ctx->stat.sense) == 0x00)
+                break;
+            else
                 continue;
-
-            node = _abcdkmt_read_mam_one(ctx, i);
-            if (!node)
-            {
-                /*如果磁带没准备好，直接跳出。*/
-                if (abcdk_scsi_sense_key(ctx->stat.sense) == 0x02 &&
-                    abcdk_scsi_sense_code(ctx->stat.sense) == 0x3A &&
-                    abcdk_scsi_sense_qualifier(ctx->stat.sense) == 0x00)
-                    break;
-                else
-                    continue;
-            }
-
-            abcdk_tree_insert2(root,node,0);
         }
+
+        abcdk_tree_insert2(root, node, 0);
     }
 
 final:
