@@ -135,117 +135,18 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-static struct _abcdkmt_sense_dict
-{   
-    uint8_t key;
-    uint8_t asc;
-    uint8_t ascq;
-    const char *msg;
-}abcdkmt_sense_dict[] = {
-    /*KEY=0x00*/
-    {0x00, 0x00, 0x00, "No Sense"},
-    /*KEY=0x01*/
-    {0x01, 0x00, 0x00, "Recovered Error"},
-    /*KEY=0x02*/
-    {0x02, 0x00, 0x00, "Not Ready"},
-    {0x02, 0x30, 0x03, "Cleaning in progess"},
-    {0x02, 0x30, 0x07, "Cleaning failure"},
-    {0x02, 0x3a, 0x00, "Medium not present"},
-    /*KEY=0x03*/
-    {0x03, 0x00, 0x00, "Medium Error"},
-    /*KEY=0x04*/
-    {0x04, 0x00, 0x00, "Hardware Error"},
-    /*KEY=0x05*/
-    {0x05, 0x00, 0x00, "Illegal Request"},
-    /*KEY=0x06*/
-    {0x06, 0x00, 0x00, "Unit Attention"},
-    /*KEY=0x07*/
-    {0x07, 0x00, 0x00, "Data Protect"},
-    /*KEY=0x08*/
-    {0x08, 0x00, 0x00, "Blank Check"},
-    {0x08, 0x00, 0x05, "End of data"},
-    {0x08, 0x14, 0x03, "New tape"},
-    /*KEY=0x0b*/
-    {0x0b, 0x00, 0x00, "Command Aborted"},
-    /*KEY=0x0d*/
-    {0x0d, 0x00, 0x00, "Volume Overflow"}
-};
-
-static struct _abcdkmt_mam_dict
-{
-    uint16_t id;
-    const char *name;
-}abcdkmt_mam_dict[]={
-    /*MAM Device type attributes*/
-    {0x0000,"REMAINING CAPACITY IN PARTITION"},
-    {0x0001,"MAXIMUM CAPACITY IN PARTITION"},
-    {0x0002,"TAPEALERT FLAGS"},
-    {0x0003,"LOAD COUNT"},
-    {0x0004,"MAM SPACE REMAINING"},
-    {0x0005,"ASSIGNING ORGANIZATION"},
-    {0x0006,"FORMATTED DENSITY CODE"},
-    {0x0007,"INITIALIZATION COUNT"},
-    {0x0009,"VOLUME CHANGE REFERENCE"},
-    {0x020A,"DEVICE VENDOR/SERIAL NUMBER AT LAST LOAD"},
-    {0x020B,"DEVICE VENDOR/SERIAL NUMBER AT LOAD-1"},
-    {0x020C,"DEVICE VENDOR/SERIAL NUMBER AT LOAD-2"},
-    {0x020D,"DEVICE VENDOR/SERIAL NUMBER AT LOAD-3"},
-    {0x0220,"TOTAL MBYTES WRITTEN IN MEDIUM LIFE"},
-    {0x0221,"TOTAL MBYTES READ IN MEDIUM LIFE"},
-    {0x0222,"TOTAL MBYTES WRITTEN IN CURRENT/LAST LOAD"},
-    {0x0223,"TOTAL MBYTES READ IN CURRENT/LAST LOAD"},
-    /*MAM Medium type attributes*/
-    {0x0400,"MEDIUM MANUFACTURER"},
-    {0x0401,"MEDIUM SERIAL NUMBER"},
-    {0x0402,"MEDIUM LENGTH"},
-    {0x0403,"MEDIUM WIDTH"},
-    {0x0404,"ASSIGNING ORGANIZATION"},
-    {0x0405,"MEDIUM DENSITY CODE"},
-    {0x0406,"MEDIUM MANUFACTURE DATE"},
-    {0x0407,"MAM CAPACITY"},
-    {0x0408,"MEDIUM TYPE"},
-    {0x0409,"MEDIUM TYPE INFORMATION"},
-    /*MAM Host type attributes*/
-    {0x0800,"APPLICATION VENDOR"},
-    {0x0801,"APPLICATION NAME"},
-    {0x0802,"APPLICATION VERSION"},
-    {0x0803,"USER MEDIUM TEXT LABEL"},
-    {0x0804,"DATE AND TIME LAST WRITTEN"},
-    {0x0805,"TEXT LOCALIZATION IDENTIFIER"},
-    {0x0806,"BARCODE(条码)"},
-    {0x0807,"OWNING HOST TEXTUAL NAME"},
-    {0x0808,"MEDIA POOL"},
-    {0x080B,"APPLICATION FORMAT VERSION"},
-    {0x080C,"VOLUME COHERENCY INFORMATION"},
-    {0x0820,"MEDIUM GLOBALLY UNIQUE IDENTIFIER"},
-    {0x0821,"MEDIA POOL GLOBALLY UNIQUE IDENTIFIER"}
-};
-
 void _abcdkmt_printf_sense(abcdk_scsi_io_stat *stat)
 {
     uint8_t key = 0, asc = 0, ascq = 0;
-    const char *msg_p = "Unknown";
+    const char *msg_p = NULL;
 
     key = abcdk_scsi_sense_key(stat->sense);
     asc = abcdk_scsi_sense_code(stat->sense);
     ascq = abcdk_scsi_sense_qualifier(stat->sense);
 
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_sense_dict); i++)
-    {
-        if (abcdkmt_sense_dict[i].key != key)
-            continue;
+    msg_p = abcdk_tape_sense2string(key, asc, ascq);
 
-        msg_p = abcdkmt_sense_dict[i].msg;
-
-        if (abcdkmt_sense_dict[i].asc != asc || abcdkmt_sense_dict[i].ascq != ascq)
-            continue;
-
-        msg_p = abcdkmt_sense_dict[i].msg;
-        break;
-    }
-
-
-    syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, msg_p);
+    syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
 void _abcdkmt_operate(abcdkmtx_ctx *ctx)
@@ -359,6 +260,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     uint16_t id,len;
     uint8_t rd ,fmt;
     uint8_t *val;
+    uint64_t val_int;
     char *rd_str[] = {"RW","RO"};
     char *fmt_str[] = {"BINARY","ASCII","TEXT","Reserved"};
 
@@ -378,9 +280,38 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         len = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
         val = node->alloc->pptrs[ABCDK_TAPE_ATTR_VALUE];
 
-        fprintf(stdout,"|%04hX\t|%-2s\t|%-5s\t|%-5hu\t| \n", id,rd_str[rd],fmt_str[fmt],len);
+        if (len <= 0)
+            return 1;
+
+        fprintf(stdout,"|%04hX\t|%-2s\t|%-5s\t|%-5hu\t", id,rd_str[rd],fmt_str[fmt],len);
+
+        if (fmt == 0x00)
+        {
+            if(len == 1)
+                val_int = ABCDK_PTR2U8(val,0);
+            else if(len == 2)
+                val_int = abcdk_endian_b_to_h16(ABCDK_PTR2U16(val,0));
+            else if(len == 4)
+                val_int = abcdk_endian_b_to_h32(ABCDK_PTR2U32(val,0));
+            else if(len == 8)
+                val_int = abcdk_endian_b_to_h64(ABCDK_PTR2U64(val,0));
+
+            fprintf(stdout,"|%-40lu\t|",val_int);    
+        }
+        else if (fmt == 0x01)
+        {
+            fprintf(stdout, "|%-40s\t|",val);
+        }
+        else if (fmt == 0x02)
+        {
+            fprintf(stdout, "|%-40s\t|",val);
+        }
+
+        fprintf(stdout,"\n");
         
     }
+
+    return 1;
 }
 
 abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmtx_ctx *ctx,int id)
@@ -429,9 +360,12 @@ void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
     }
     else 
     {
-        for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_mam_dict); i++)
+        for (size_t i = 0; i < 65536; i++)
         {
-            node = _abcdkmt_read_mam_one(ctx, abcdkmt_mam_dict[i].id);
+            if(!abcdk_tape_attr2string(i))
+                continue;
+
+            node = _abcdkmt_read_mam_one(ctx, i);
             if (!node)
             {
                 /*如果磁带没准备好，直接跳出。*/

@@ -133,64 +133,20 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\t\t目标地址。\n");
 }
 
-static struct _abcdkmtx_sense_dict
-{   
-    uint8_t key;
-    uint8_t asc;
-    uint8_t ascq;
-    const char *msg;
-}abcdkmtx_sense_dict[] = {
-    /*KEY=0x00*/
-    {0x00, 0x00, 0x00, "No Sense"},
-    /*KEY=0x01*/
-    {0x01, 0x00, 0x00, "Recovered Error"},
-    /*KEY=0x02*/
-    {0x02, 0x00, 0x00, "Not Ready"},
-    /*KEY=0x03*/
-    {0x03, 0x00, 0x00, "Medium Error"},
-    /*KEY=0x04*/
-    {0x04, 0x00, 0x00, "Hardware Error"},
-    /*KEY=0x05*/
-    {0x05, 0x00, 0x00, "Illegal Request"},
-    {0x05, 0x21, 0x01, "无效的地址"},
-    {0x05, 0x24, 0x00, "无效的地址或超出范围"},
-    {0x05, 0x3b, 0x0d, "目标地址有介质"},
-    {0x05, 0x3b, 0x0e, "源地址无介质"},
-    {0x05, 0x53, 0x02, "Library media removal prevented state set"},
-    {0x05, 0x53, 0x03, "Drive media removal prevented state set"},
-    {0x05, 0x44, 0x80, "Bad status library controller"},
-    {0x05, 0x44, 0x81, "Source not ready"},
-    {0x05, 0x44, 0x82, "Destination not ready"},
-    /*KEY=0x06*/
-    {0x06, 0x00, 0x00, "Unit Attention"},
-    /*KEY=0x0b*/
-    {0x0b, 0x00, 0x00, "Command Aborted"}
-};
+
 
 void _abcdkmtx_printf_sense(abcdk_scsi_io_stat *stat)
 {
     uint8_t key = 0, asc = 0, ascq = 0;
-    const char *msg_p = "Unknown";
+    const char *msg_p = NULL;
 
     key = abcdk_scsi_sense_key(stat->sense);
     asc = abcdk_scsi_sense_code(stat->sense);
     ascq = abcdk_scsi_sense_qualifier(stat->sense);
 
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmtx_sense_dict); i++)
-    {
-        if (abcdkmtx_sense_dict[i].key != key)
-            continue;
+    msg_p = abcdk_mediumx_sense2string(key, asc, ascq);
 
-        msg_p = abcdkmtx_sense_dict[i].msg;
-
-        if (abcdkmtx_sense_dict[i].asc != asc || abcdkmtx_sense_dict[i].ascq != ascq)
-            continue;
-
-        msg_p = abcdkmtx_sense_dict[i].msg;
-        break;
-    }
-
-    syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, msg_p);
+    syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
 const char *_abcdkmtx_translate_devname(abcdkmtx_ctx *ctx, uint8_t type, const char *sn)
@@ -229,7 +185,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     const char *model;
     uint16_t addr;
     uint8_t type;
-    uint8_t isfull;
+    uint8_t full;
     const char *dvcid;
     const char *barcode;
 
@@ -285,7 +241,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     {
         addr = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
         type = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0);
-        isfull = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0);
+        full = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0);
         dvcid = _abcdkmtx_translate_devname(ctx,type,(char*)node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID]);
         barcode = (char*)node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE];
 
@@ -299,25 +255,25 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
         if (ctx->fmt == ABCDKMTX_STATUS_FMT_XML)
         {
-            fprintf(stdout, "\t\t<element addr=\"%hu\" type=\"%hhu\" isfull=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
-                    addr,type,isfull,dvcid,barcode);
+            fprintf(stdout, "\t\t<element addr=\"%hu\" type=\"%hhu\" full=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
+                    addr,type,full,dvcid,barcode);
         }
         else if(ctx->fmt == ABCDKMTX_STATUS_FMT_JSON)
         {
             fprintf(stdout, "\t\t{\n");
             fprintf(stdout, "\t\t\t\"addr\":\"%hu\",\n",addr);
             fprintf(stdout, "\t\t\t\"type\":\"%hhu\",\n",type);
-            fprintf(stdout, "\t\t\t\"isfull\":\"%hhu\",\n",isfull);
-            fprintf(stdout, "\t\t\t\"dvcid\":\"%s\",\n",dvcid);
+            fprintf(stdout, "\t\t\t\"full\":\"%hhu\",\n",full);
             fprintf(stdout, "\t\t\t\"barcode\":\"%s\"\n",barcode);
+            fprintf(stdout, "\t\t\t\"dvcid\":\"%s\",\n",dvcid);
             fprintf(stdout, "\t\t}");
             fprintf(stdout, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
              
         }
         else if(ctx->fmt == ABCDKMTX_STATUS_FMT_TEXT)
         {
-            abcdk_tree_fprintf(stdout, depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
-                               addr,type,isfull,dvcid,barcode);
+            abcdk_tree_fprintf(stdout, depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-7s\t|%-10s\t|\n",
+                               addr,type,full,barcode,dvcid);
         }
         else
         {

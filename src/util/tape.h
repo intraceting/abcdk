@@ -10,6 +10,7 @@
 #include "util/general.h"
 #include "util/allocator.h"
 #include "util/scsi.h"
+#include "util/iconv.h"
 
 __BEGIN_DECLS
 
@@ -47,14 +48,30 @@ enum _abcdk_tape_attr_field
 };
 
 /**
- * 磁带型号数字编码转字符串编码。
+ * SENSE编码转字符串。
+*/
+const char *abcdk_tape_sense2string(uint8_t key, uint8_t asc , uint8_t ascq);
+
+/**
+ * 磁带型号编码转字符串。
 */
 const char *abcdk_tape_density2string(uint8_t density);
 
 /**
- * 磁带类型数字编码转字符串编码。
- */
+ * 磁带类型编码转字符串。
+*/
 const char *abcdk_tape_type2string(uint8_t type);
+
+/**
+ * 磁带属性编码转字符串。
+*/
+const char *abcdk_tape_attr2string(uint16_t id);
+
+/**
+ * 磁带属性文本转本地化。
+*/
+ssize_t abcdk_tape_text2local(uint8_t from, const char *to, const void *src, size_t slen,
+                              void *dst, size_t dlen, size_t *remain);
 
 /**
  * 磁带操作。

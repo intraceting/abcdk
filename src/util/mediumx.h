@@ -63,6 +63,11 @@ enum _abcdk_mediumx_element_field
 };
 
 /**
+ * SENSE编码转字符串。
+*/
+const char *abcdk_mediumx_sense2string(uint8_t key, uint8_t asc , uint8_t ascq);
+
+/**
  * 初始化设备元件状态。
  *
  * 可能会花费较长的间。

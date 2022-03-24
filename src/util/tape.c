@@ -6,6 +6,64 @@
  */
 #include "util/tape.h"
 
+
+static struct _abcdk_tape_sense_dict
+{   
+    uint8_t key;
+    uint8_t asc;
+    uint8_t ascq;
+    const char *msg;
+}abcdk_tape_sense_dict[] = {
+    /*KEY=0x00*/
+    {0x00, 0x00, 0x00, "No Sense"},
+    {0x00, 0x00, 0x01, "FILEMARK DETECTED"},
+    {0x00, 0x00, 0x16, "OPERATION IN PROGRESS"},
+    {0x00, 0x82, 0x82, "DRIVE REQUIRES CLEARING"},
+    /*KEY=0x01*/
+    {0x01, 0x00, 0x00, "Recovered Error"},
+    /*KEY=0x02*/
+    {0x02, 0x00, 0x00, "Not Ready"},
+    {0x02, 0x30, 0x03, "Cleaning in progess"},
+    {0x02, 0x30, 0x07, "Cleaning failure"},
+    {0x02, 0x3a, 0x00, "Medium not present"},
+    /*KEY=0x03*/
+    {0x03, 0x00, 0x00, "Medium Error"},
+    /*KEY=0x04*/
+    {0x04, 0x00, 0x00, "Hardware Error"},
+    /*KEY=0x05*/
+    {0x05, 0x00, 0x00, "Illegal Request"},
+    /*KEY=0x06*/
+    {0x06, 0x00, 0x00, "Unit Attention"},
+    /*KEY=0x07*/
+    {0x07, 0x27, 0x00, "Write Protected"},
+    {0x07, 0x05, 0x01, "Write Append Position error (WORM)"},
+    /*KEY=0x08*/
+    {0x08, 0x00, 0x00, "Blank Check"},
+    {0x08, 0x00, 0x05, "End of data"},
+    {0x08, 0x14, 0x03, "New tape"}
+};
+
+const char *abcdk_tape_sense2string(uint8_t key, uint8_t asc , uint8_t ascq)
+{
+    const char *msg_p = NULL;
+
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tape_sense_dict); i++)
+    {
+        if (abcdk_tape_sense_dict[i].key != key)
+            continue;
+
+        msg_p = abcdk_tape_sense_dict[i].msg;
+
+        if (abcdk_tape_sense_dict[i].asc != asc || abcdk_tape_sense_dict[i].ascq != ascq)
+            continue;
+
+        msg_p = abcdk_tape_sense_dict[i].msg;
+        break;
+    }
+
+    return msg_p;
+}
+
 static struct _abcdk_tape_density_dict
 {
     uint8_t type;
@@ -100,7 +158,8 @@ static struct _abcdk_tape_density_dict
     {0x90, "SDLT110 uncompr/EXB-8205 compr"},
     {0x91, "SDLT110 compressed"},
     {0x92, "SDLT160 uncompressed"},
-    {0x93, "SDLT160 comprssed"}};
+    {0x93, "SDLT160 comprssed"}
+};
 
 const char *abcdk_tape_density2string(uint8_t density)
 {
@@ -135,7 +194,100 @@ const char *abcdk_tape_type2string(uint8_t type)
         break;
     }
 
-    return "Reserved";
+    return NULL;
+}
+
+static struct _abcdk_tape_attr_dict
+{
+    uint16_t id;
+    const char *name;
+} abcdk_tape_attr_dict[] = {
+    /*MAM Device type attributes*/
+    {0x0000, "REMAINING CAPACITY IN PARTITION"},
+    {0x0001, "MAXIMUM CAPACITY IN PARTITION"},
+    {0x0002, "TAPEALERT FLAGS"},
+    {0x0003, "LOAD COUNT"},
+    {0x0004, "MAM SPACE REMAINING"},
+    {0x0005, "ASSIGNING ORGANIZATION"},
+    {0x0006, "FORMATTED DENSITY CODE"},
+    {0x0007, "INITIALIZATION COUNT"},
+    {0x0009, "VOLUME CHANGE REFERENCE"},
+    {0x020A, "DEVICE VENDOR/SERIAL NUMBER AT LAST LOAD"},
+    {0x020B, "DEVICE VENDOR/SERIAL NUMBER AT LOAD-1"},
+    {0x020C, "DEVICE VENDOR/SERIAL NUMBER AT LOAD-2"},
+    {0x020D, "DEVICE VENDOR/SERIAL NUMBER AT LOAD-3"},
+    {0x0220, "TOTAL MBYTES WRITTEN IN MEDIUM LIFE"},
+    {0x0221, "TOTAL MBYTES READ IN MEDIUM LIFE"},
+    {0x0222, "TOTAL MBYTES WRITTEN IN CURRENT/LAST LOAD"},
+    {0x0223, "TOTAL MBYTES READ IN CURRENT/LAST LOAD"},
+    /*MAM Medium type attributes*/
+    {0x0400, "MEDIUM MANUFACTURER"},
+    {0x0401, "MEDIUM SERIAL NUMBER"},
+    {0x0402, "MEDIUM LENGTH"},
+    {0x0403, "MEDIUM WIDTH"},
+    {0x0404, "ASSIGNING ORGANIZATION"},
+    {0x0405, "MEDIUM DENSITY CODE"},
+    {0x0406, "MEDIUM MANUFACTURE DATE"},
+    {0x0407, "MAM CAPACITY"},
+    {0x0408, "MEDIUM TYPE"},
+    {0x0409, "MEDIUM TYPE INFORMATION"},
+    /*MAM Host type attributes*/
+    {0x0800, "APPLICATION VENDOR"},
+    {0x0801, "APPLICATION NAME"},
+    {0x0802, "APPLICATION VERSION"},
+    {0x0803, "USER MEDIUM TEXT LABEL"},
+    {0x0804, "DATE AND TIME LAST WRITTEN"},
+    {0x0805, "TEXT LOCALIZATION IDENTIFIER"},
+    {0x0806, "BARCODE"},
+    {0x0807, "OWNING HOST TEXTUAL NAME"},
+    {0x0808, "MEDIA POOL"},
+    {0x080B, "APPLICATION FORMAT VERSION"},
+    {0x080C, "VOLUME COHERENCY INFORMATION"},
+    {0x0820, "MEDIUM GLOBALLY UNIQUE IDENTIFIER"},
+    {0x0821, "MEDIA POOL GLOBALLY UNIQUE IDENTIFIER"}
+};
+
+const char *abcdk_tape_attr2string(uint16_t id)
+{
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tape_attr_dict); i++)
+    {
+        if (abcdk_tape_attr_dict[i].id != id)
+            continue;
+
+        return abcdk_tape_attr_dict[i].name;
+    }
+
+    return NULL;
+}
+
+ssize_t abcdk_tape_text2local(uint8_t from, const char *to, const void *src, size_t slen,
+                              void *dst, size_t dlen, size_t *remain)
+{
+    ssize_t rlen = -1;
+    char buf[100] = {0};
+    iconv_t cd = NULL;
+
+    assert(to != NULL && src != NULL && slen >0 && dst != NULL && dlen >0);
+
+    if(from == 0x00)
+        cd = iconv_open(to,"ASCII");
+    else if(from >=0x01 && from <=0x0A)     
+    {
+        sprintf(buf,"ISO-8859-%d",from);
+        cd = iconv_open(to,buf);
+    }
+    else if(from == 0x80)
+        cd = iconv_open(to,"UCS-2BE");
+    else if(from == 0x81)
+        cd = iconv_open(to,"UTF-8");
+    
+    if(cd != (iconv_t)-1)
+    {
+        rlen = abcdk_iconv(cd,src,slen,dst,dlen,remain);
+        iconv_close(cd);
+    }
+
+    return rlen;
 }
 
 int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat)

@@ -6,6 +6,61 @@
  */
 #include "util/mediumx.h"
 
+static struct _abcdk_mediumx_sense_dict
+{   
+    uint8_t key;
+    uint8_t asc;
+    uint8_t ascq;
+    const char *msg;
+}abcdk_mediumx_sense_dict[] = {
+    /*KEY=0x00*/
+    {0x00, 0x00, 0x00, "No Sense"},
+    /*KEY=0x01*/
+    {0x01, 0x00, 0x00, "Recovered Error"},
+    /*KEY=0x02*/
+    {0x02, 0x00, 0x00, "Not Ready"},
+    /*KEY=0x03*/
+    {0x03, 0x00, 0x00, "Medium Error"},
+    /*KEY=0x04*/
+    {0x04, 0x00, 0x00, "Hardware Error"},
+    /*KEY=0x05*/
+    {0x05, 0x00, 0x00, "Illegal Request"},
+    {0x05, 0x21, 0x01, "无效的地址"},
+    {0x05, 0x24, 0x00, "无效的地址或超出范围"},
+    {0x05, 0x3b, 0x0d, "目标地址有介质"},
+    {0x05, 0x3b, 0x0e, "源地址无介质"},
+    {0x05, 0x53, 0x02, "Library media removal prevented state set"},
+    {0x05, 0x53, 0x03, "Drive media removal prevented state set"},
+    {0x05, 0x44, 0x80, "Bad status library controller"},
+    {0x05, 0x44, 0x81, "Source not ready"},
+    {0x05, 0x44, 0x82, "Destination not ready"},
+    /*KEY=0x06*/
+    {0x06, 0x00, 0x00, "Unit Attention"},
+    /*KEY=0x0b*/
+    {0x0b, 0x00, 0x00, "Command Aborted"}
+};
+
+const char *abcdk_mediumx_sense2string(uint8_t key, uint8_t asc , uint8_t ascq)
+{
+    const char *msg_p = NULL;
+
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_mediumx_sense_dict); i++)
+    {
+        if (abcdk_mediumx_sense_dict[i].key != key)
+            continue;
+
+        msg_p = abcdk_mediumx_sense_dict[i].msg;
+
+        if (abcdk_mediumx_sense_dict[i].asc != asc || abcdk_mediumx_sense_dict[i].ascq != ascq)
+            continue;
+
+        msg_p = abcdk_mediumx_sense_dict[i].msg;
+        break;
+    }
+
+    return msg_p;
+}
+
 int abcdk_mediumx_inventory(int fd, uint16_t address, uint16_t count,
                             uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
