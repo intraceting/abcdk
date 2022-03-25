@@ -306,7 +306,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
             else
                 abcdk_bin2hex(val_buf,val,len,0);
 
-            if(id == 0x0405)
+            if(id == 0x0006 || id == 0x0405)
             {
                 sprintf(val_buf,"%lu(%#lx),%s",val_int,val_int,abcdk_tape_density2string(val_int));
                 fprintf(stdout, "|%-40s\t|", val_buf);
