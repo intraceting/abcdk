@@ -50,7 +50,7 @@
 #endif //
 
 #ifdef HAVE_LIBNM
-#include <libnm/NetworkManager.h>
+#include <NetworkManager.h>
 #endif
 
 #ifdef HAVE_MPI
@@ -2093,6 +2093,8 @@ END:
 
     // g_error_free(err);
 
+#if 0
+
     NMDevice **devices =  get_devices_sorted (cli);
 
     for (int i = 0; devices[i]; i++)
@@ -2107,6 +2109,20 @@ END:
 
         printf("ssid: %s\n",ssid);
     }
+#else 
+
+    const GPtrArray *devs = nm_client_get_devices (cli);
+
+    for(int i = 0;i<devs->len;i++)
+	{
+        NMDevice *dev = ((NMDevice **)devs->pdata)[i];
+        printf("iface: %s\n",nm_device_get_iface(dev));
+        printf("ip_iface: %s\n",nm_device_get_ip_iface(dev));
+        printf("udi: %s\n",nm_device_get_udi(dev));
+        printf("hw: %s\n",nm_device_get_hw_address(dev));
+    }
+
+#endif //
 
 #endif //HAVE_LIBNM
 #endif
