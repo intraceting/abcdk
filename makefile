@@ -157,8 +157,6 @@ INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 #
 INSTALL_LDC_PATH = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_LDC_FILE = $(abspath ${INSTALL_LDC_PATH}/ldconfig.sh)
-INSTALL_PKG_PATH = $(abspath ${INSTALL_PATH}/pkgconfig/)
-INSTALL_PKG_FILE = $(abspath ${INSTALL_PKG_PATH}/${SOLUTION_NAME}.pc)
 
 #
 install: install-runtime install-devel
@@ -195,17 +193,6 @@ install-devel:
 	cp  -f $(CURDIR)/src/shell/*.h ${INSTALL_PATH_INC}/shell/
 	cp  -f $(CURDIR)/src/mp4/*.h ${INSTALL_PATH_INC}/mp4/
 	cp  -f $(CURDIR)/src/comm/*.h ${INSTALL_PATH_INC}/comm/
-#
-	mkdir -p ${INSTALL_PKG_PATH}
-	echo "prefix=${INSTALL_PREFIX}" > ${INSTALL_PKG_FILE}
-	echo "libdir=\$${prefix}/lib/" >> ${INSTALL_PKG_FILE}
-	echo "incdir=\$${prefix}/include/" >> ${INSTALL_PKG_FILE}
-	echo "" >> ${INSTALL_PKG_FILE}
-	echo "Name: ${SOLUTION_NAME}" >> ${INSTALL_PKG_FILE}
-	echo "Description: A bad c development kit. " >> ${INSTALL_PKG_FILE}
-	echo "Version: ${VERSION_STR}" >> ${INSTALL_PKG_FILE}
-	echo "Cflags: -I\$${incdir}" >> ${INSTALL_PKG_FILE}
-	echo "Libs: -labcdk -L\$${libdir}" >> ${INSTALL_PKG_FILE}
 
 #
 uninstall: uninstall-runtime uninstall-devel
@@ -227,9 +214,6 @@ uninstall-devel:
 	rm -rf ${INSTALL_PATH_INC}/shell
 	rm -rf ${INSTALL_PATH_INC}/mp4
 	rm -rf ${INSTALL_PATH_INC}/comm
-#
-	rm -f ${INSTALL_PKG_FILE}
-	
 #
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-${VERSION_STR}-build-installer.tmp
 #

@@ -215,18 +215,6 @@ CheckHavePackage()
                 echo "libnm-dev"
             fi
         }
-        elif [ "${PKG_NAME}" == "mpi" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ${KIT_NAME} libmpich-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags mpi)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs mpi)"
-            else
-                echo "libmpich-dev"
-            fi
-        }
         elif [ "${PKG_NAME}" == "lz4" ];then
         {
             if [ ${FLAG} -eq 1 ];then
@@ -465,6 +453,8 @@ CheckHavePackage()
                 echo "-fopenmp"
             elif [ ${FLAG} -eq 3 ];then
                 echo "-fopenmp"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libgomp"
             else
                 echo "libgomp"
             fi
@@ -477,6 +467,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags odbc)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs odbc)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "unixODBC"
             else
                 echo "unixODBC-devel"
             fi
@@ -489,6 +481,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags sqlite3)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs sqlite3)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "sqlite-libs"
             else
                 echo "sqlite-devel"
             fi
@@ -501,6 +495,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags openssl)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs openssl)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "openssl-libs"
             else
                 echo "openssl-devel"
             fi
@@ -513,6 +509,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "ffmpeg-libs"
             else
                 echo "ffmpeg-devel"
             fi
@@ -525,6 +523,8 @@ CheckHavePackage()
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lfreeimage"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "freeimage"
             else
                 echo "freeimage-devel"
             fi
@@ -537,6 +537,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags fuse)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs fuse)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "fuse-libs"
             else
                 echo "fuse-devel"
             fi
@@ -549,42 +551,10 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libnm)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libnm)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "NetworkManager-libnm"
             else
                 echo "NetworkManager-libnm-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "mpi" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-            {
-                if [ ${SYS_VERID} -lt 8 ];then
-                    echo "$(CheckHavePackageFromKit ${KIT_NAME} mpich-3.2-devel)"
-                else 
-                    echo "$(CheckHavePackageFromKit ${KIT_NAME} mpich-devel hwloc-devel)"
-                fi
-            }
-            else
-            {
-                if [ ${SYS_VERID} -lt 8 ];then
-                    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich-3.2/lib/pkgconfig
-                else 
-                    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/usr/lib64/mpich/lib/pkgconfig
-                fi
-
-                if [ ${FLAG} -eq 2 ];then
-                    echo "$(pkg-config --cflags mpich)"
-                elif [ ${FLAG} -eq 3 ];then
-                    echo "$(pkg-config --libs mpich)"
-                else
-                {
-                    if [ ${SYS_VERID} -lt 8 ];then
-                        echo "mpich-3.2-devel"
-                    else
-                        echo "mpich-devel hwloc-devel"
-                    fi
-                }
-                fi
-            }
             fi
         }
         elif [ "${PKG_NAME}" == "lz4" ];then
@@ -595,6 +565,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags liblz4)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs liblz4)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "lz4-libs"
             else
                 echo "lz4-devel"
             fi
@@ -607,6 +579,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags zlib)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs zlib)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "zlib"
             else
                 echo "zlib-devel"
             fi
@@ -619,6 +593,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libarchive)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libarchive)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libarchive"
             else
                 echo "libarchive-devel"
             fi
@@ -631,6 +607,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libmodbus)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libmodbus)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libmodbus-libs"
             else
                 echo "libmodbus-devel"
             fi
@@ -643,6 +621,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libusb-1.0)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libusb-1.0)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libusbx"
             else
                 echo "libusbx-devel"
             fi
@@ -655,6 +635,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libmosquitto)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libmosquitto)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "mosquitto"
             else
                 echo "mosquitto-devel"
             fi
@@ -667,6 +649,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags hiredis)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs hiredis)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "hiredis"
             else
                 echo "hiredis-devel"
             fi
@@ -679,6 +663,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags json-c)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs json-c)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "json-c"
             else
                 echo "json-c-devel"
             fi
@@ -691,6 +677,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags bluez)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs bluez)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "bluez-libs"
             else
                 echo "bluez-libs-devel"
             fi
@@ -703,6 +691,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags blkid)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs blkid)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libblkid"
             else
                 echo "libblkid-devel"
             fi
@@ -715,6 +705,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libcap)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libcap)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libcap"
             else
                 echo "libcap-devel"
             fi
@@ -727,6 +719,8 @@ CheckHavePackage()
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lfcgi"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "fcgi"
             else
                 echo "fcgi-devel"
             fi
@@ -739,6 +733,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libsystemd)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libsystemd)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "systemd-libs"
             else
                 echo "systemd-devel"
             fi
@@ -751,6 +747,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libudev)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libudev)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "systemd-libs"
             else
                 echo "systemd-devel"
             fi
@@ -763,6 +761,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libdmtx)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libdmtx)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "libdmtx"
             else
                 echo "libdmtx-devel"
             fi
@@ -775,6 +775,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags libqrencode)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs libqrencode)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "qrencode-libs"
             else
                 echo "qrencode-devel"
             fi
@@ -787,6 +789,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags zbar)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs zbar)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "zbar"
             else
                 echo "zbar-devel"
             fi
@@ -799,6 +803,8 @@ CheckHavePackage()
                 echo "$(pkg-config --cflags MagickWand)"
             elif [ ${FLAG} -eq 3 ];then
                 echo "$(pkg-config --libs MagickWand)"
+            elif [ ${FLAG} -eq 4 ];then
+                echo "ImageMagick-libs"
             else
                 echo "ImageMagick-devel"
             fi
@@ -864,6 +870,7 @@ INSTALL_PREFIX="/usr/local/"
 #
 DEPEND_FUNC="Nothing"
 DEPEND_NOFOUND=""
+DEPEND_REQUIRES=""
 
 #
 PrintUsage()
@@ -892,7 +899,7 @@ usage: [ OPTIONS ]
     -d < key,key,... > 
      依赖项目，以英文“,”为分割符。支持以下关键字：
      openmp,unixodbc,sqlite,openssl,ffmpeg,
-     freeimage,fuse,libnm,mpi,lz4,zlib,
+     freeimage,fuse,libnm,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand
@@ -1102,24 +1109,6 @@ if [ $(CheckKeyword ${DEPEND_FUNC} "libnm") -eq 1 ];then
     fi
 }
 fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "mpi") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} mpi 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_MPI $(CheckHavePackage ${KIT_NAME} mpi 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} mpi 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} mpi 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
 
 #
 if [ $(CheckKeyword ${DEPEND_FUNC} "lz4") -eq 1 ];then
