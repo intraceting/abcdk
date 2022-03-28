@@ -68,10 +68,9 @@ const char *abcdk_tape_type2string(uint8_t type);
 const char *abcdk_tape_attr2string(uint16_t id);
 
 /**
- * 磁带属性文本转本地化。
+ * 磁带属性文本编码转字符串。
 */
-ssize_t abcdk_tape_text2local(uint8_t from, const char *to, const void *src, size_t slen,
-                              void *dst, size_t dlen, size_t *remain);
+const char *abcdk_tape_textid2string(uint8_t id);
 
 /**
  * 磁带操作。

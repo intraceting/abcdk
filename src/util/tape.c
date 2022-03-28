@@ -262,34 +262,39 @@ const char *abcdk_tape_attr2string(uint16_t id)
     return NULL;
 }
 
-ssize_t abcdk_tape_text2local(uint8_t from, const char *to, const void *src, size_t slen,
-                              void *dst, size_t dlen, size_t *remain)
-{
-    ssize_t rlen = -1;
-    char buf[100] = {0};
-    iconv_t cd = NULL;
-
-    assert(to != NULL && src != NULL && slen >0 && dst != NULL && dlen >0);
-
-    if(from == 0x00)
-        cd = iconv_open(to,"ASCII");
-    else if(from >=0x01 && from <=0x0A)     
+const char *abcdk_tape_textid2string(uint8_t id)
+{ 
+    switch (id)
     {
-        sprintf(buf,"ISO-8859-%d",from);
-        cd = iconv_open(to,buf);
-    }
-    else if(from == 0x80)
-        cd = iconv_open(to,"UCS-2BE");
-    else if(from == 0x81)
-        cd = iconv_open(to,"UTF-8");
-    
-    if(cd != (iconv_t)-1)
-    {
-        rlen = abcdk_iconv(cd,src,slen,dst,dlen,remain);
-        iconv_close(cd);
+        case 0x00:
+            return "ASCII";
+        case 0x01:
+            return "ISO-8859-1";
+        case 0x02:
+            return "ISO-8859-2";
+        case 0x03:
+            return "ISO-8859-3";
+        case 0x04:
+            return "ISO-8859-4";
+        case 0x05:
+            return "ISO-8859-5";
+        case 0x06:
+            return "ISO-8859-6";
+        case 0x07:
+            return "ISO-8859-7";
+        case 0x08:
+            return "ISO-8859-8";
+        case 0x09:
+            return "ISO-8859-9";
+        case 0x0A:
+            return "ISO-8859-10";
+        case 0x80:
+            return "UCS-2BE";
+        case 0x81:
+            return "UTF-8";
     }
 
-    return rlen;
+    return NULL;
 }
 
 int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat)

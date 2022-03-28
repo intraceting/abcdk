@@ -272,6 +272,11 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         }
         else if(ctx->fmt == ABCDKMTX_STATUS_FMT_TEXT)
         {
+            static int print_head = 0;
+            if (print_head++ <= 0)
+                abcdk_tree_fprintf(stdout, depth, node, "%-6s\t|%-2s\t|%-2s\t|%-7s\t|%-10s\t|\n",
+                                   "addr", "type", "full", "barcode", "dvcid");
+
             abcdk_tree_fprintf(stdout, depth, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-7s\t|%-10s\t|\n",
                                addr,type,full,barcode,dvcid);
         }
