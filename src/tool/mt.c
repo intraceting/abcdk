@@ -125,13 +125,13 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\t\t编号。\n");
 
     fprintf(stderr, "\n");
-    for (size_t i = 0,j = 0; i < 65536; i++)
+    for (int i = 0,j = 0; i < 65536; i++)
     {
         const char *str = abcdk_tape_attr2string(i);
         if (!str)
             continue;
 
-        fprintf(stderr,"\t\t%04hX: %-40s",i,str);
+        fprintf(stderr,"\t\t%04X: %-40s",i,str);
         if ((++j) % 2 == 0)
             fprintf(stderr, "\n");
     }
