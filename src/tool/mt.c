@@ -481,7 +481,8 @@ static struct _abcdkmt_methods
     {ABCDKMT_WRITE_FILEMARK,_abcdkmt_write_filemark},
     {ABCDKMT_TELL_POS, _abcdkmt_tell_pos},
     {ABCDKMT_SEEK_POS, _abcdkmt_seek_pos},
-    {ABCDKMT_READ_MAM, _abcdkmt_read_mam}
+    {ABCDKMT_READ_MAM, _abcdkmt_read_mam},
+    {ABCDKMT_WRITE_MAM, _abcdkmt_write_mam},
 };
 
 void _abcdkmt_work(abcdkmtx_ctx *ctx)
