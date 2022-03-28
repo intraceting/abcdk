@@ -413,43 +413,53 @@ final:
     abcdk_tree_free(&root);
 }
 
-void _abcdkmt_write_barcode(abcdk_tree_t *args,int fd)
+void _abcdkmt_write_mam(abcdkmtx_ctx *ctx)
 {   
-    abcdk_scsi_io_stat stat = {0};
-    const char *barcode_p = NULL;
+    int id = 0xffff;
+    const char *value = NULL;
+    int val_len = -1;
     abcdk_allocator_t *attr_p = NULL;
     int chk;
 
-    barcode_p = abcdk_option_get(args, "--barcode", 0, "");
+    id = abcdk_option_get_int(ctx->args,"--id",0,0xFFFF);
+    value = abcdk_option_get(ctx->args, "--value", 0, "");
+    val_len = strlen(value);
 
-    if (!barcode_p || !*barcode_p)
+    if (!abcdk_tape_attr2string(id))
     {
-        syslog(LOG_ERR, "'--barcode STRING' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        syslog(LOG_ERR, "'--id < NUMBER >' 不能省略，且不能为空，同时必须在有效范围内。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
-    if (strlen(barcode_p) > 32)
+    if (val_len <= 0)
     {
-        syslog(LOG_ERR, "条码长度不能超过32个字符。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        syslog(LOG_WARNING, "没有输入ID值，MAM中ID的值将被清空。");
     }
 
-    attr_p = abcdk_tape_read_attribute(fd,0,0x0806,3000,&stat);
-    if(!attr_p || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+    attr_p = abcdk_tape_read_attribute(ctx->fd,0,id,3000,&ctx->stat);
+    if(!attr_p || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
     
-    memcpy(attr_p->pptrs[ABCDK_TAPE_ATTR_VALUE],barcode_p,ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
+    memset(attr_p->pptrs[ABCDK_TAPE_ATTR_VALUE],0,ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
 
-    chk = abcdk_tape_write_attribute(fd,0,attr_p,3000,&stat);
-    if(chk != 0 || stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+    if (val_len > ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0))
+    {
+        val_len = ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
+        syslog(LOG_WARNING, "ID的值将被截断为%d字节。",val_len);
+    }
+
+    memcpy(attr_p->pptrs[ABCDK_TAPE_ATTR_VALUE],value,val_len);
+
+    chk = abcdk_tape_write_attribute(ctx->fd,0,attr_p,3000,&ctx->stat);
+    if(chk != 0 || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
 
     /*No error.*/
     goto final;
 
 print_sense:
 
-    _abcdkmt_printf_sense(&stat);
+    _abcdkmt_printf_sense(&ctx->stat);
 
 final:
 
@@ -471,7 +481,7 @@ static struct _abcdkmt_methods
     {ABCDKMT_WRITE_FILEMARK,_abcdkmt_write_filemark},
     {ABCDKMT_TELL_POS, _abcdkmt_tell_pos},
     {ABCDKMT_SEEK_POS, _abcdkmt_seek_pos},
-    {ABCDKMT_READ_MAM,_abcdkmt_read_mam}
+    {ABCDKMT_READ_MAM, _abcdkmt_read_mam}
 };
 
 void _abcdkmt_work(abcdkmtx_ctx *ctx)
