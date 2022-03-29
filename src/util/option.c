@@ -80,7 +80,6 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value)
     abcdk_tree_t *it_val = NULL;
 
     assert(opt != NULL && key != NULL);
-
     assert(key[0] != '\0');
 
     it_key = _abcdk_option_find_key(opt,key,1);
@@ -138,7 +137,6 @@ const char* abcdk_option_get(abcdk_tree_t *opt, const char *key,size_t index,con
     abcdk_tree_t *it_val = NULL;
 
     assert(opt != NULL && key != NULL);
-
     assert(key[0] != '\0');
 
     it_key = _abcdk_option_find_key(opt,key,0);
@@ -152,34 +150,35 @@ const char* abcdk_option_get(abcdk_tree_t *opt, const char *key,size_t index,con
     return it_val->alloc->pptrs[ABCDK_OPTION_VALUE];
 }
 
-int abcdk_option_get_int(abcdk_tree_t *opt, const char *key, size_t index, int defval)
+int abcdk_option_get_int(abcdk_tree_t *opt, const char *key, size_t index, int defval,int base)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);
 
     if (!val)
         return defval;
 
-    return atoi(val);
+    return strtol(val,NULL,base);
 }
 
-long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long defval)
+
+long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long defval,int base)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);
 
     if (!val)
         return defval;
 
-    return atol(val);
+    return strtol(val,NULL,base);
 }
 
-long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval)
+long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval,int base)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);
 
     if (!val)
         return defval;
 
-    return atoll(val);
+    return strtoll(val,NULL,base);
 }
 
 double abcdk_option_get_double(abcdk_tree_t *opt, const char *key,size_t index,double defval)
@@ -197,7 +196,6 @@ ssize_t abcdk_option_count(abcdk_tree_t *opt, const char *key)
     abcdk_tree_t *it_key = NULL;
 
     assert(opt != NULL && key != NULL);
-
     assert(key[0] != '\0');
 
     it_key = _abcdk_option_find_key(opt,key,0);
@@ -212,7 +210,6 @@ int abcdk_option_remove(abcdk_tree_t *opt, const char *key)
     abcdk_tree_t *it_key = NULL;
 
     assert(opt != NULL && key != NULL);
-
     assert(key[0] != '\0');
 
     it_key = _abcdk_option_find_key(opt,key,0);
@@ -232,7 +229,6 @@ ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens)
     ssize_t wsize = 0, wsize2 = 0;
 
     assert(fp != NULL && opt != NULL);
-
     assert(hyphens == NULL || hyphens[0] != '\0');
 
     it_key = abcdk_tree_child(opt,1);

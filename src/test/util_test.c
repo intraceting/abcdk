@@ -2141,7 +2141,7 @@ void test_hexdump(abcdk_tree_t *args)
     if(abcdk_option_exist(args,"--show-char"))
         opt.flag |= ABCDK_HEXDEMP_SHOW_CHAR;
 
-    opt.width = abcdk_option_get_int(args,"--width",0,16);
+    opt.width = abcdk_option_get_int(args,"--width",0,16,0);
 
     opt.keyword = abcdk_allocator_alloc(NULL,4,0);
     opt.palette = abcdk_allocator_alloc(NULL,3,0);
@@ -2732,7 +2732,7 @@ void test_openssl_client(abcdk_tree_t *args)
 
 int test_openssl(abcdk_tree_t *args)
 {
-    int sub_func = abcdk_option_get_int(args, "--sub-func", 0, 0);
+    int sub_func = abcdk_option_get_int(args, "--sub-func", 0, 0,0);
 
 #ifdef HAVE_OPENSSL
 
@@ -2975,7 +2975,7 @@ void test_json(abcdk_tree_t *args)
 
 void test_refer_count(abcdk_tree_t *args)
 {
-    int user = abcdk_option_get_int(args,"--user",0,10);
+    int user = abcdk_option_get_int(args,"--user",0,10,0);
 
     abcdk_allocator_t * p= abcdk_allocator_alloc2(100);
 
@@ -3794,7 +3794,7 @@ pid_t clone_wrapper(int (*func)(void *args), int flag, const char *cmd)
 
 void test_setns(abcdk_tree_t *args)
 {
-    int pid = abcdk_option_get_int(args, "--pid", 0, -1);
+    int pid = abcdk_option_get_int(args, "--pid", 0, -1,0);
     const char *cmd = abcdk_option_get(args, "--cmd", 0, "/bin/bash");
 
     char buf[100] = {0};
@@ -4559,6 +4559,9 @@ int main(int argc, char **argv)
         int k = ABCDK_CLAMP(v,33,126);
         assert(k >= 33 && k <= 126);
     }
+
+    long h = strtol("B",NULL,16);
+    
 
 #ifdef HAVE_OPENSSL
 

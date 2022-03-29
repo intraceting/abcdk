@@ -191,7 +191,7 @@ void _abcdkmt_write_filemark(abcdkmtx_ctx *ctx)
     int count;
     int chk;
 
-    count = abcdk_option_get_int(ctx->args, "--count", 0, 1);
+    count = abcdk_option_get_int(ctx->args, "--count", 0, 1,0);
 
     chk = abcdk_tape_operate(ctx->fd, MTWEOF, count, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
@@ -241,8 +241,8 @@ void _abcdkmt_seek_pos(abcdkmtx_ctx *ctx)
     uint32_t part;
     int chk;
 
-    block = abcdk_option_get_llong(ctx->args, "--block", 0, INTMAX_MAX);
-    part = abcdk_option_get_int(ctx->args, "--partition", 0, 0);
+    block = abcdk_option_get_llong(ctx->args, "--block", 0, INTMAX_MAX,0);
+    part = abcdk_option_get_int(ctx->args, "--partition", 0, 0,0);
 
     chk = abcdk_tape_seek(ctx->fd, 1, part, block, 1800 * 1000, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
@@ -421,7 +421,7 @@ void _abcdkmt_write_mam(abcdkmtx_ctx *ctx)
     abcdk_allocator_t *attr_p = NULL;
     int chk;
 
-    id = abcdk_option_get_int(ctx->args,"--id",0,0xFFFF);
+    id = abcdk_option_get_int(ctx->args, "--id", 0, 0xFFFF, 0);
     value = abcdk_option_get(ctx->args, "--value", 0, "");
     val_len = strlen(value);
 
@@ -433,7 +433,7 @@ void _abcdkmt_write_mam(abcdkmtx_ctx *ctx)
 
     if (val_len <= 0)
     {
-        syslog(LOG_WARNING, "没有输入ID值，MAM中ID的值将被清空。");
+        syslog(LOG_WARNING, "没有输入ID的值，MAM中ID的值将被清空。");
     }
 
     attr_p = abcdk_tape_read_attribute(ctx->fd,0,id,3000,&ctx->stat);
@@ -492,7 +492,7 @@ void _abcdkmt_work(abcdkmtx_ctx *ctx)
 
     ctx->fd = -1;
     ctx->dev_p = abcdk_option_get(ctx->args, "--dev", 0, "");
-    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMT_READ_MAM);
+    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMT_READ_MAM,0);
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
