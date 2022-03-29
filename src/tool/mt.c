@@ -137,7 +137,7 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     }
 
     fprintf(stderr, "\n\t--value < VALUE >\n");
-    fprintf(stderr, "\t\t内容(TEXT,ASCII,BINARY)。\n");
+    fprintf(stderr, "\t\t内容(TEXT,ASCII)。\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
