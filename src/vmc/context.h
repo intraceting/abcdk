@@ -70,9 +70,10 @@ typedef struct _abcdk_vmc
     /** 主机ID。*/
     char uuid[37];
 
-    
-    abcdk_sockaddr_t listen_addr;
-    const char *listen_str;
+
+    abcdk_sockaddr_t master_team[2];
+    volatile uint64_t master_active[2];
+    abcdk_comm_easy_t *master_easy[2];
 
     volatile int status;
 
