@@ -2867,7 +2867,7 @@ void test_redis(abcdk_tree_t *args)
 #ifdef __HIREDIS_H
 
     const char *server = abcdk_option_get(args, "--server", 0, "127.0.0.1");
-    int port = abcdk_option_get_int(args, "--port", 0, 6379);
+    int port = abcdk_option_get_int(args, "--port", 0, 6379,0);
 
     redisContext *c = abcdk_redis_connect(server, port, 20);
     if (!c)

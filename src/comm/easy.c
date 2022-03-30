@@ -15,7 +15,7 @@
  * --------------------------------------------------------
 */
 
-/** 数据包头部长度。*/
+/** 数据包头部长度(4+4+8+1+3)。*/
 #define ABCDK_COMM_EASY_MD_HDR_SIZE (20)
 
 /** 数据包最大长度。*/
@@ -197,6 +197,27 @@ void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy)
     old = easy->opaque;
 
     return old;
+}
+
+void *abcdk_comm_easy_private_resize(abcdk_comm_easy_t *easy, size_t size)
+{
+    assert(easy != NULL);
+
+    return abcdk_comm_private_resize(easy->comm,size);
+}
+
+void *abcdk_comm_easy_private_data(abcdk_comm_easy_t *easy)
+{
+    assert(easy != NULL);
+
+    return abcdk_comm_private_data(easy->comm);
+}
+
+size_t abcdk_comm_easy_private_size(abcdk_comm_easy_t *easy)
+{
+    assert(easy != NULL);
+
+    return abcdk_comm_private_size(easy->comm);
 }
 
 uint64_t _abcdk_comm_easy_make_mid()

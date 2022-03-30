@@ -69,6 +69,12 @@ typedef struct _abcdk_comm_node
     /** 事件回调函数指针。*/
     abcdk_comm_event_cb event_cb;
 
+    /** 私有数据。*/
+    void *private_data;
+
+    /** 私有数据大小。*/
+    size_t private_size;
+
 } abcdk_comm_node_t;
 
 void abcdk_comm_node_unref(abcdk_comm_node_t **node)
@@ -93,6 +99,10 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
     struct linger l = {1,0};
     abcdk_socket_option_linger(node_p->fd,&l,2);
     abcdk_closep(&node_p->fd);
+
+    /*释放私有空间。*/
+    abcdk_heap_free2(&node_p->private_data);
+    node_p->private_size = 0;
 
     abcdk_heap_free(node_p);
 
@@ -123,6 +133,10 @@ abcdk_comm_node_t *_abcdk_comm_node_alloc()
         return NULL;
 
     node->refcount = 1;
+    node->fd = -1;
+    node->opaque = NULL;
+    node->private_data = NULL;
+    node->private_size = 0;
 
     return node;
 }
@@ -385,6 +399,49 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
     return old;
 }
 
+void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size)
+{
+    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    void *new_buf = NULL;
+
+    assert(node != NULL);
+
+    if(size == 0)
+    {
+        abcdk_heap_free2(&node->private_data);
+        node->private_size = 0;
+    }
+    else if (size != node->private_size)
+    {
+        new_buf = abcdk_heap_realloc(node->private_data, size);
+        if (new_buf)
+        {
+            node->private_data = new_buf;
+            node->private_size = size;
+        }
+    }
+
+    return node->private_data;
+}
+
+void *abcdk_comm_private_data(abcdk_comm_node_t *node)
+{
+    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+
+    assert(node != NULL);
+
+    return node->private_data;
+}
+
+size_t abcdk_comm_private_size(abcdk_comm_node_t *node)
+{
+    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+
+    assert(node != NULL);
+
+    return node->private_size;
+}
+
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
@@ -598,17 +655,16 @@ int abcdk_comm_start(int workers)
     cpu_set_t cpu_set;
     int chk;
 
+    /*检测是否已经启动。*/
+    if(!abcdk_atomic_compare_and_swap(&ctx->work_cmd,2,1))
+        goto final;
+
     /*如果未指定工作线程数，则使用CPU核心数。*/
     if (workers <= 0)
         workers = abcdk_align(nps/2,1);
 
-    assert(workers > 0);
-
+    /*申请线程资源。*/
     ctx->tids = abcdk_heap_alloc(workers * sizeof(abcdk_thread_t));
-
-    /*检测是否已经启动。*/
-    if(!abcdk_atomic_compare_and_swap(&ctx->work_cmd,2,1))
-        goto final;
 
     for (int i = 0; i < workers; i++)
     {

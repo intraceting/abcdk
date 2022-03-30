@@ -70,7 +70,11 @@ TEST_SRC_FILES = $(wildcard src/test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: base tool test
+VMC_SRC_FILES = $(wildcard src/vmc/*.c)
+VMC_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${VMC_SRC_FILES}))
+
+#
+all: base tool test vmc
 
 #
 base: base-src
@@ -94,6 +98,13 @@ test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/src/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/src/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
+
+#
+vmc: base vmc-src
+#
+vmc-src: ${VMC_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	$(CC) -o $(BUILD_PATH)/abcdk-vmc $^  -l:libabcdk.a $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/src/util/%.o: src/util/%.c
@@ -131,7 +142,13 @@ $(OBJ_PATH)/src/test/%.o: src/test/%.c
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-base clean-tool clean-test
+$(OBJ_PATH)/src/vmc/%.o: src/vmc/%.c
+	mkdir -p $(OBJ_PATH)/src/vmc/
+	rm -f $@
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+
+#
+clean: clean-base clean-tool clean-test clean-vmc
 	rm -rf ${OBJ_PATH}
 
 #
@@ -147,6 +164,10 @@ clean-tool:
 clean-test:
 	rm -f $(BUILD_PATH)/epollex_test
 	rm -f $(BUILD_PATH)/util_test
+
+#
+clean-vmc:
+	rm -f $(BUILD_PATH)/abcdk-vmc
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
@@ -179,7 +200,9 @@ install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_BIN}
 #
-	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}
+	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
+#
+	cp -f $(BUILD_PATH)/abcdk-vmc ${INSTALL_PATH_BIN}/
 
 #
 install-devel:
@@ -206,6 +229,8 @@ uninstall-runtime:
 	rm -f ${INSTALL_LDC_FILE}
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk-tool
+#
+	rm -f $(INSTALL_PATH_BIN)/abcdk-vmc
 
 #
 uninstall-devel:

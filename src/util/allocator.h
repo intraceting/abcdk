@@ -67,7 +67,6 @@ abcdk_allocator_t *abcdk_allocator_alloc(size_t *sizes, size_t numbers, int drag
 */
 abcdk_allocator_t *abcdk_allocator_alloc2(size_t size);
 
-
 /**
  * 申请多个内存块(数组)。
  * 

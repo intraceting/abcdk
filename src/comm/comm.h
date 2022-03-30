@@ -109,6 +109,25 @@ void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque);
 void *abcdk_comm_get_userdata(abcdk_comm_node_t *node);
 
 /**
+ * 调整私有数据空间大小。
+ * 
+ * @return !NULL(0) 成功(私有数据指针)，NULL(0) 失败。
+*/
+void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size);
+
+/**
+ * 获取私有数据空间指针。
+ * 
+ * @return !NULL(0) 成功(私有数据指针)，NULL(0) 失败。
+*/
+void *abcdk_comm_private_data(abcdk_comm_node_t *node);
+
+/**
+ * 获取私有数据空间大小。
+*/
+size_t abcdk_comm_private_size(abcdk_comm_node_t *node);
+
+/**
  * 读。
  * 
  * @note 当读权利被占用时，不会有其它线程获得读事件。

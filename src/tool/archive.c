@@ -399,11 +399,11 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 {
     int chk;
 
-    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
-    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1);
+    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1,0);
+    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1,0);
     ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
     ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
-    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 0);
+    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 0,0);
 
     ctx->r.uid = getuid();
 #ifdef _SYS_CAPABILITY_H
@@ -551,7 +551,7 @@ final:
 
 void _abcdkarchive_work(abcdkarchive_ctx *ctx)
 {
-    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ);
+    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ,0);
 
     if (ctx->cmd == ABCDKARCHIVE_READ)
     {
