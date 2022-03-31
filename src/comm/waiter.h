@@ -83,7 +83,7 @@ int abcdk_comm_waiter_response(abcdk_comm_waiter_t *waiter,
     abcdk_comm_waiter_response((waiter), (key), sizeof(*(key)), (msg))
 
 /** 
- * 注销(仅影响等待)。
+ * 取销(仅影响等待)。
 */
 void abcdk_comm_waiter_cancel(abcdk_comm_waiter_t *waiter);
 

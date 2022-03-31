@@ -230,6 +230,16 @@ char *abcdk_sockaddr_to_string(char dst[68],const abcdk_sockaddr_t *src);
 */
 int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where);
 
+/**
+ * 比较SOCKET地址。
+ * 
+ * 0x01 地址相同。
+ * 0x02 端口相同。
+ * 
+ * @return 比较结果(或组合值)。
+*/
+int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1,const abcdk_sockaddr_t *addr2);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_SOCKET_H

@@ -252,7 +252,6 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
     int chk = -1;
 
     assert(fd >= 0 && multiaddr != NULL);
-
     assert(multiaddr->family == AF_INET || multiaddr->family == AF_INET6);
 
     memset(&st_mreq,0,sizeof(st_mreq));
@@ -407,7 +406,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else
     {
-        strncpy(name,src,62);
+        return -1;
     }
 
     /*尝试直接转换。*/
@@ -419,11 +418,11 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
 
     /*地址转换成功后，再转换端口号。*/
-    if(chk==0)
+    if (chk == 0)
     {
-        if(dst->family == AF_INET6)
+        if (dst->family == AF_INET6)
             dst->addr6.sin6_port = abcdk_endian_h_to_b16(port);
-        if(dst->family == AF_INET)
+        if (dst->family == AF_INET)
             dst->addr4.sin_port = abcdk_endian_h_to_b16(port);
     }
 
@@ -435,7 +434,6 @@ char *abcdk_sockaddr_to_string(char dst[68],const abcdk_sockaddr_t *src)
     char buf[INET6_ADDRSTRLEN] = {0};
 
     assert(dst != NULL && src != NULL);
-
     assert(src->family == AF_INET || src->family == AF_INET6);
 
     if (abcdk_inet_ntop(src, buf, INET6_ADDRSTRLEN) == NULL)
@@ -502,4 +500,35 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
         return ((match_num <= 0) ? 1 : 0);
 
     return 0;
+}
+
+int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2)
+{
+    int chk = 0;
+
+    assert(addr1 != NULL && addr2 != NULL);
+    assert(addr1->family == AF_INET || addr1->family == AF_INET6);
+    assert(addr2->family == AF_INET || addr2->family == AF_INET6);
+
+    if (addr1->family != addr2->family)
+        return 0;
+
+    if (addr1->family == AF_INET)
+    {
+        if (memcpy(&addr1->addr4.sin_addr, &addr2->addr4.sin_addr, sizeof(struct in_addr)) == 0)
+            chk |= 0x01;
+
+        if (addr1->addr4.sin_port == addr2->addr4.sin_port)
+            chk |= 0x02;
+    }
+    else if (addr1->family == AF_INET6)
+    {
+        if (memcpy(&addr1->addr6.sin6_addr, &addr2->addr6.sin6_addr, sizeof(struct in6_addr)) == 0)
+            chk |= 0x01;
+
+        if (addr1->addr6.sin6_port == addr2->addr6.sin6_port)
+            chk |= 0x02;
+    }
+
+    return chk;
 }
