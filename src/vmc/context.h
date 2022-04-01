@@ -37,12 +37,6 @@ enum _abcdk_stbs_vmc_constant
 
 typedef struct _abcdk_vmc_node
 {
-    /** 节点状态。*/
-    volatile int status;
-
-    /** 节点ID。*/
-    uint16_t id;
-
     /** 节点名字。*/
     char name[256];
 
@@ -50,20 +44,6 @@ typedef struct _abcdk_vmc_node
     char addr[256];
 
 } abcdk_vmc_node_t;
-
-/**主机(master)信息。*/
-typedef struct _abcdk_vmc_master
-{
-    /** 地址。*/
-    abcdk_sockaddr_t addr;
-
-    /** 链路。*/
-    abcdk_comm_easy_t *easy;
-
-    /** 角色。*/
-    volatile int role;
-
-}abcdk_vmc_master_t;
 
 /**服务环境。*/
 typedef struct _abcdk_vmc
@@ -74,15 +54,15 @@ typedef struct _abcdk_vmc
     int lock_pid;
     int lock_fd;
     const char *lock_file;
-
-    /** ID。*/
-    uint16_t id;
         
     /** 角色。*/
     volatile int role;
 
+    /** 主节点链路。*/
+    volatile abcdk_comm_easy_t *master_easy;
+
     /** */
-    abcdk_vmc_master_t masters[2];
+    abcdk_vmc_master_t masters_addr[2];
     
 } abcdk_vmc_t;
 
