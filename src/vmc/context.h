@@ -29,10 +29,6 @@ enum _abcdk_stbs_vmc_constant
     /** 从机。*/
     ABCDK_VMC_ROLE_SLAVE = 3,
 #define ABCDK_VMC_ROLE_SLAVE ABCDK_VMC_ROLE_SLAVE
-
-    
-    ABCDK_VMC_STATUS_REGISTER = 1
-#define ABCDK_VMC_STATUS_REGISTER
 };
 
 typedef struct _abcdk_vmc_node
