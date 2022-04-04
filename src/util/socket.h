@@ -14,6 +14,9 @@ __BEGIN_DECLS
 /** Socket地址 */
 typedef union _abcdk_sockaddr
 {
+    /** 预留空间。*/
+    uint8_t padding[255];
+
     /** 协议。*/
     sa_family_t family;
 

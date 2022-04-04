@@ -3322,12 +3322,16 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
     abcdk_comm_easy_get_peername(easy, &peername);
 
     char sockname_str[100] = {0}, peername_str[100] = {0};
-    if (sockname.family != AF_UNIX)
+    if (sockname.family == AF_UNIX)
+        strcpy(sockname_str,sockname.addr_un.sun_path);
+    else 
         abcdk_sockaddr_to_string(sockname_str, &sockname);
-    if (peername.family != AF_UNIX)
+    if (peername.family == AF_UNIX)
+        strcpy(peername_str,peername.addr_un.sun_path);
+    else 
         abcdk_sockaddr_to_string(peername_str, &peername);
 
-  //  printf("Server(%s -> %s): ", sockname_str, peername_str);
+    printf("Server(%s -> %s): ", sockname_str, peername_str);
 
     if(!data)
     {
@@ -3420,16 +3424,16 @@ void test_easy(abcdk_tree_t *args)
     abcdk_sockaddr_t addr2 = {0};
 
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
-    //abcdk_sockaddr_from_string(&addr,listen_p,0);
-    addr.family = AF_UNIX;
-    strncpy(addr.addr_un.sun_path,sunpath,108);
+    abcdk_sockaddr_from_string(&addr,listen_p,0);
+ //   addr.family = AF_UNIX;
+  //  strncpy(addr.addr_un.sun_path,sunpath,108);
 
     abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(server_ssl_ctx,&addr,test_easy_request_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
-    //abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    addr2.family = AF_UNIX;
-    strncpy(addr2.addr_un.sun_path,sunpath,108);
+    abcdk_sockaddr_from_string(&addr2,connect_p,0);
+  //  addr2.family = AF_UNIX;
+  //  strncpy(addr2.addr_un.sun_path,sunpath,108);
 
     abcdk_comm_easy_t *easy_client[4] = {NULL};
     for (int i = 0; i < 4; i++)
@@ -4509,6 +4513,74 @@ void test_ndarray(abcdk_tree_t *args)
 
 }
 
+void test_unix_sock(abcdk_tree_t *args)
+{
+    const char *sunpath = "/tmp/test_unix_sock.sock";
+
+    int isserver = abcdk_option_exist(args,"--isserver");
+
+    if (isserver)
+    {
+        unlink(sunpath);
+
+        abcdk_sockaddr_t addr = {0};
+        addr.family = AF_UNIX;
+        strncpy(addr.addr_un.sun_path, sunpath, 108);
+
+        int sock_listen = abcdk_socket(AF_UNIX, 0);
+        
+        abcdk_bind(sock_listen, &addr);
+        listen(sock_listen, 5);
+        //fchmod(sock_listen,0777);
+       // chmod(addr.addr_un.sun_path,0777);
+
+        while(1)
+        {
+            abcdk_sockaddr_t addr2 = {0};
+            int sock = abcdk_accept(sock_listen,&addr2);
+            if(sock<0)
+                break;
+
+            while (1)
+            {
+                char buf[100];
+                int r = recv(sock, buf, 99, 0);
+                if (r <= 0)
+                    break;
+
+                printf("{%s}\n",buf);
+
+                send(sock,"2000",4,0);
+            }
+
+            abcdk_closep(&sock);
+        }
+
+        abcdk_closep(&sock_listen);
+    }
+    else 
+    {
+        abcdk_sockaddr_t addr = {0};
+        addr.family = AF_UNIX;
+        strncpy(addr.addr_un.sun_path, sunpath, 108);
+
+        int sock = abcdk_socket(AF_UNIX, 0);
+
+        int chk = abcdk_connect(sock,&addr,1000);
+        if(chk==0)
+        {
+            send(sock,"1000",4,0);
+
+            char buf[100];
+            recv(sock,buf,100,0);
+
+            printf("{%s}\n",buf);
+        }
+
+        abcdk_closep(&sock);
+    }
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -4705,6 +4777,9 @@ int main(int argc, char **argv)
     
     if (abcdk_strcmp(func, "test_ndarray", 0) == 0)
         test_ndarray(args);
+
+    if (abcdk_strcmp(func, "test_unix_sock", 0) == 0)
+        test_unix_sock(args);
 
     abcdk_tree_free(&args);
     

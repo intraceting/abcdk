@@ -369,7 +369,8 @@ int abcdk_comm_get_peername(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr)
 
     assert(node != NULL && addr != NULL);
 
-    *addr = node->remote;
+    /*AF_UNIX远程地址要特殊处理，accept返回时并不会填充路径。*/
+    *addr = ((node->remote.family == AF_UNIX) ? node->local : node->remote);
 
     return 0;
 }

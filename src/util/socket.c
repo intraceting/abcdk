@@ -515,7 +515,7 @@ int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t
 
     if (addr1->family == AF_INET)
     {
-        if (memcpy(&addr1->addr4.sin_addr, &addr2->addr4.sin_addr, sizeof(struct in_addr)) == 0)
+        if (memcmp(&addr1->addr4.sin_addr, &addr2->addr4.sin_addr, sizeof(struct in_addr)) == 0)
             chk |= 0x01;
 
         if (addr1->addr4.sin_port == addr2->addr4.sin_port)
@@ -523,7 +523,7 @@ int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t
     }
     else if (addr1->family == AF_INET6)
     {
-        if (memcpy(&addr1->addr6.sin6_addr, &addr2->addr6.sin6_addr, sizeof(struct in6_addr)) == 0)
+        if (memcmp(&addr1->addr6.sin6_addr, &addr2->addr6.sin6_addr, sizeof(struct in6_addr)) == 0)
             chk |= 0x01;
 
         if (addr1->addr6.sin6_port == addr2->addr6.sin6_port)
