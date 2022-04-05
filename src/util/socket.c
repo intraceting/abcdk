@@ -296,11 +296,22 @@ int abcdk_bind(int fd, const abcdk_sockaddr_t *addr)
 
     len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
+    {
 #ifdef SUN_LEN
         len = SUN_LEN(&addr->addr_un);
 #else 
         len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
 #endif
+    }
+    else if(addr->family == AF_INET)
+    {
+        len = sizeof(struct sockaddr_in);
+    }
+    else if(addr->family == AF_INET6)
+    {
+        len = sizeof(struct sockaddr_in6);
+    }
+
         
 
     return bind(fd, &addr->addr,len);
