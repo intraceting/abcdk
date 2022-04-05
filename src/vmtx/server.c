@@ -39,16 +39,18 @@ typedef struct _abcdk_vmtxsvr
     int lock_fd;
     const char *lock_file;
 
-    /** 客户端地址(Unix Socket)。*/
+    /* 客户端地址(Unix Socket)。*/
     const char *client_listen;
+    abcdk_sockaddr_t client_sockaddr;
 
-    /** Master地址(主、备)。*/
+    /* Master地址(主、备)。*/
     const char *master_addr[2];
+    abcdk_sockaddr_t master_sockaddr[2];
         
-    /** 角色。*/
+    /* 角色。*/
     volatile int role;
 
-    /** 主节点链路。*/
+    /* 主节点链路。*/
     volatile abcdk_comm_easy_t *master_easy;
     
 } abcdk_vmtxsvr_t;
@@ -64,6 +66,9 @@ void _abcdk_vmtxsvr_usage()
     fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
 
     fprintf(stderr, "\n\t--help\n");
+
+    fprintf(stderr, "\n\t--client-listen < FILE >\n");
+    fprintf(stderr, "\t\t客户端命令监听地址（unixsock）。默认：/tmp/abcdk-vmtx.sock\n");
 
     fprintf(stderr, "\n\t--master-address < ADDRESS [ ADDRESS ] >\n");
     fprintf(stderr, "\t\t主管理节点地址（IPv4,IPv6）。\n");
@@ -117,13 +122,49 @@ void _abcdk_vmtxsvr_wait_signal(abcdk_vmtxsvr_t *ctx)
     abcdk_sigwaitinfo(&sig, -1);
 }
 
+void _abcdk_vmtxsvr_server_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
+{
+
+}
+
+void _abcdk_vmtxsvr_client_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
+{
+
+}
+
+int _abcdk_vmtxsvr_start(abcdk_vmtxsvr_t *ctx)
+{
+    int chk;
+
+    ctx->.family = AF_UNIX;
+    strncpy(addr.addr_un.sun_path,sunpath,108);
+
+    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(NULL,&addr,test_easy_request_cb,NULL);
+
+
+
+
+    abcdk_comm_start(1);
+    return 0;
+
+final_error:
+
+    return -1;
+}
+
+void _abcdk_vmtxsvr_stop(abcdk_vmtxsvr_t *ctx)
+{
+    abcdk_comm_stop();
+}
+
 void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
 {
-    abcdk_sockaddr_t addr[2] = {0};
     int addr_num = 0;
     int chk;
 
-    abcdk_thread_setname("svc-main");
+    abcdk_thread_setname("vmtxsvr-dowork");
+
+    ctx->client_listen = abcdk_option_get(ctx->args,"--client-listen",0,"/tmp/abcdk-vmtx.sock");
 
     for (int i = 0; i < 2; i++)
     {
@@ -131,8 +172,8 @@ void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
         if (!ctx->master_addr[i])
             continue;
 
-        addr[i].family = AF_INET;//设置默认的IP协议。
-        chk = abcdk_sockaddr_from_string(&addr[i], ctx->master_addr[i], 1);
+        ctx->master_sockaddr[i].family = AF_INET;//设置默认的IP协议。
+        chk = abcdk_sockaddr_from_string(&ctx->master_sockaddr[i], ctx->master_addr[i], 1);
         if (chk != 0)
         {
             abcdk_log_printf(LOG_WARNING, "‘%s’格式错误或无法解析。",ctx->master_addr[i]);
@@ -152,14 +193,14 @@ void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
     chk = 0;
     for (int i = 0; i < 2; i++)
     {
-        if (addr[i].family == AF_INET || addr[i].family == AF_INET6)
-            chk += (abcdk_sockaddr_where(&addr[i], 1)? 1 : 0);
+        if (ctx->master_sockaddr[i].family == AF_INET || ctx->master_sockaddr[i].family == AF_INET6)
+            chk += (abcdk_sockaddr_where(&ctx->master_sockaddr[i], 1)? 1 : 0);
     }
 
     /*如果地址未同时指向本节点，则检查地址是否指向相同的节点。*/
     if (chk != 2 && addr_num == 2)
     {
-        if (abcdk_sockaddr_compare(&addr[0], &addr[1]) & 0x01)
+        if (abcdk_sockaddr_compare(&ctx->master_sockaddr[0], &ctx->master_sockaddr[1]) & 0x01)
             chk = 2;
     }
 
@@ -169,12 +210,16 @@ void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 
-    abcdk_comm_start(1);
+   
+
+
+
+    _abcdk_vmtxsvr_start(ctx);
     _abcdk_vmtxsvr_wait_signal(ctx);
 
 final:
 
-    abcdk_comm_stop();
+    _abcdk_vmtxsvr_stop(ctx);
 
     return;
 }
