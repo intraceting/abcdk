@@ -406,7 +406,8 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else
     {
-        return -1;
+        if(dst->family != AF_INET && dst->family != AF_INET6)
+            return -1;
     }
 
     /*尝试直接转换。*/

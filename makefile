@@ -70,7 +70,12 @@ TEST_SRC_FILES = $(wildcard src/test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #
-all: base tool test
+VMTX_SRC_FILES = $(wildcard src/vmtx/*.c)
+VMTX_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${VMTX_SRC_FILES}))
+
+
+#
+all: base tool test vmtx
 
 #
 base: base-src
@@ -94,6 +99,14 @@ test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/src/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/src/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
+
+#
+vmtx: base vmtx-src
+#
+vmtx-src: ${VMTX_OBJ_FILES}
+	mkdir -p $(BUILD_PATH)
+	$(CC) -o $(BUILD_PATH)/abcdk-vmtx $^  -l:libabcdk.a $(LINK_FLAGS)
+
 
 #
 $(OBJ_PATH)/src/util/%.o: src/util/%.c
@@ -131,7 +144,14 @@ $(OBJ_PATH)/src/test/%.o: src/test/%.c
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-base clean-tool clean-test
+$(OBJ_PATH)/src/vmtx/%.o: src/vmtx/%.c
+	mkdir -p $(OBJ_PATH)/src/vmtx/
+	rm -f $@
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+
+
+#
+clean: clean-base clean-tool clean-test clean-vmtx
 	rm -rf ${OBJ_PATH}
 
 #
@@ -147,6 +167,10 @@ clean-tool:
 clean-test:
 	rm -f $(BUILD_PATH)/epollex_test
 	rm -f $(BUILD_PATH)/util_test
+
+#
+clean-vmtx:
+	rm -f $(BUILD_PATH)/abcdk-vmtx
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
