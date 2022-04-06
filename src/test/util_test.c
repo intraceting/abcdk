@@ -4588,6 +4588,21 @@ void test_mtab(abcdk_tree_t *args)
 
     abcdk_mtab_list(list);
 
+    abcdk_tree_t *p;
+
+    p = abcdk_tree_child(list,1);
+    while(p)
+    {
+        abcdk_mtab_info_t *dev_p  = (abcdk_mtab_info_t*)p->alloc->pptrs[0];
+
+        struct statfs s = {0};
+        statfs(dev_p->mpoint,&s);
+
+        printf("%s %s %lu %lu\n",dev_p->fs,dev_p->mpoint,s.f_bsize*s.f_blocks,s.f_bsize*s.f_bavail);
+
+        p = abcdk_tree_sibling(p,0);
+    }
+
     abcdk_tree_free(&list);
 }
 
