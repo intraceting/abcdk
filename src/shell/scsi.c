@@ -116,10 +116,12 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
         abcdk_dirdir(path2, "block");
     else if(type == TYPE_TAPE)
         abcdk_dirdir(path2, "scsi_tape");
-    if(type == TYPE_ROM)
+    else if(type == TYPE_ROM)
         abcdk_dirdir(path2, "block");
     else if(type == TYPE_MEDIUM_CHANGER)
         abcdk_dirdir(path2, "scsi_changer");
+    else 
+        return -1;
 
     dir = abcdk_tree_alloc3(1);
     if (!dir)
@@ -262,6 +264,7 @@ void abcdk_scsi_list(abcdk_tree_t *list)
     if (chk != 0)
         goto final;
 
+    /*遍历目录。*/
     while (1)
     {
         memset(path, 0, PATH_MAX);
@@ -269,8 +272,10 @@ void abcdk_scsi_list(abcdk_tree_t *list)
         if (chk != 0)
             break;
 
-        /*跳过无法获取类型的设备。*/
+        /*获取设备类型(可能会失败)。*/
         chk = _abcdk_scsi_get_type(path,&type);
+
+        /*跳过无法获取类型的设备。*/
         if (chk != 0)
             continue;
 

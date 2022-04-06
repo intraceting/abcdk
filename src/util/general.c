@@ -1337,3 +1337,23 @@ int abcdk_futimens(int fd, const struct timespec *atime, const struct timespec *
 }
 
 /*------------------------------------------------------------------------------------------------*/
+
+ssize_t abcdk_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)
+{
+    char *line_p = NULL;
+    ssize_t rlen = -1;
+
+    while ((rlen = getdelim(line, len, delim, fp)) != -1)
+    {
+        line_p = *line;
+
+        if (*line_p == '\0' || *line_p == note || iscntrl(*line_p))
+            continue;
+        else
+            break;
+    }
+
+    return rlen;
+}
+
+/*------------------------------------------------------------------------------------------------*/

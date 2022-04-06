@@ -43,6 +43,7 @@
 #include "util/scsi.h"
 #include "util/ndarray.h"
 #include "util/log.h"
+#include "shell/mtab.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -4581,6 +4582,15 @@ void test_unix_sock(abcdk_tree_t *args)
     }
 }
 
+void test_mtab(abcdk_tree_t *args)
+{
+    abcdk_tree_t *list = abcdk_tree_alloc3(1);
+
+    abcdk_mtab_list(list);
+
+    abcdk_tree_free(&list);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -4780,6 +4790,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_unix_sock", 0) == 0)
         test_unix_sock(args);
+
+    if (abcdk_strcmp(func, "test_mtab", 0) == 0)
+        test_mtab(args);
 
     abcdk_tree_free(&args);
     

@@ -91,7 +91,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-8s|%-8s|%-10s|%-16s|%-4.4s|%-16s|%-10s\t|%-10s\t|\n",
+            fprintf(stdout, "|%-10s|%-8s|%-10s|%-16s|%-4.4s|%-16s|%-10s\t|%-10s\t|\n",
                     "bus", "type", "vendor", "model", "revision", "serial", "generic", "devname");
         }
         else
@@ -147,7 +147,7 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
         }
         else if(ctx->fmt == ABCDKLSSCSI_FMT_TEXT)
         {
-            fprintf(stdout, "|%-8s|%-8s|%-10s|%-16s|%-4s|%-16s|%-10s\t|%-10s\t|\n",
+            fprintf(stdout, "|%-10s|%-8s|%-10s|%-16s|%-4s|%-16s|%-10s\t|%-10s\t|\n",
                     dev_p->bus, abcdk_scsi_type2string(dev_p->type, 0), dev_p->vendor,
                     dev_p->model, dev_p->revision, dev_p->serial, dev_p->generic, dev_p->devname);
         }
@@ -171,11 +171,9 @@ void _abcdklsscsi_work(abcdklsscsi_ctx *ctx)
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
     ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSSCSI_FMT_TEXT,0);
 
-    ctx->list = abcdk_tree_alloc3(1);
-    if (!ctx->list)
+    abcdk_scsi_watch(&ctx->list,NULL,NULL);
+    if(!ctx->list)
         goto final;
-
-    abcdk_scsi_list(ctx->list);
 
     if (ctx->outfile && *ctx->outfile)
     {

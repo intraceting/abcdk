@@ -17,11 +17,7 @@ __BEGIN_DECLS
 */
 typedef struct _abcdk_scsi_info
 {
-    /** 
-     * 总线。
-     * 
-     * Host:Channel:Target:Lun
-    */
+    /** 总线。*/
     char bus[NAME_MAX];
 
     /** 设备类型。*/
@@ -39,10 +35,10 @@ typedef struct _abcdk_scsi_info
     /** 修订。*/
     char revision[NAME_MAX];
 
-    /** 设备名称。*/
+    /** 设备名称(可不能存在)。*/
     char devname[NAME_MAX];
 
-    /** 设备名称(sg)。*/
+    /** 设备名称(可不能存在)。*/
     char generic[NAME_MAX];
 
 }abcdk_scsi_info_t;
@@ -54,8 +50,6 @@ void abcdk_scsi_list(abcdk_tree_t *list);
 
 /**
  * 观察SCSI设备变化。
- * 
- * @warning 仅匹配总线地址和设备名称。
 */
 void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t **del);
 

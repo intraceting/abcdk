@@ -32,29 +32,6 @@ void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
     }
 }
 
-ssize_t _abcdk_getargs_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)
-{
-    char *line_p = NULL;
-    ssize_t chk = -1;
-
-    while ((chk = getdelim(line, len, delim, fp)) != -1)
-    {
-        line_p = *line;
-
-        if (*line_p == '\0' || *line_p == note || iscntrl(*line_p))
-            continue;
-        else
-            break;
-    }
-
-    return chk;
-}
-
-int _abcdk_getargs_valtrim(int c)
-{
-    return (iscntrl(c) || (c == '\"') || (c == '\''));
-}
-
 void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
                       const char *argv0, const char *prefix)
 {
@@ -74,7 +51,7 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
     if (argv0)
         abcdk_option_set(opt, it_key, argv0);
 
-    while (_abcdk_getargs_getline(fp, &line, &len, delim, note) != -1)
+    while (abcdk_getline(fp, &line, &len, delim, note) != -1)
     {
         /* 去掉字符串两端所有空白字符。 */
         abcdk_strtrim(line, isspace, 2);
