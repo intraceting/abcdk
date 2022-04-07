@@ -202,7 +202,7 @@ install-runtime:
 #
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 #
-	cp -f $(BUILD_PATH)/abcdk-vmc ${INSTALL_PATH_BIN}/
+	cp -f $(BUILD_PATH)/abcdk-vmtx ${INSTALL_PATH_BIN}/
 
 #
 install-devel:
@@ -230,7 +230,7 @@ uninstall-runtime:
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk-tool
 #
-	rm -f $(INSTALL_PATH_BIN)/abcdk-vmc
+	rm -f $(INSTALL_PATH_BIN)/abcdk-vmtx
 
 #
 uninstall-devel:
