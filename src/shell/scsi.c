@@ -245,6 +245,35 @@ final:
     return chk;
 }
 
+int abcdk_scsi_get_info(const char *path, abcdk_scsi_info_t *info)
+{
+    int chk;
+
+    assert(path != NULL && info != NULL);
+
+    chk = _abcdk_scsi_get_type(path, &info->type);
+    if (chk != 0)
+        return -1;
+
+    chk = _abcdk_scsi_get_revision(path, info->revision);
+    if (chk != 0)
+        return -1;
+
+    chk = _abcdk_scsi_get_vendor(path, info->vendor);
+    if (chk != 0)
+        return -1;
+
+    chk = _abcdk_scsi_get_model(path, info->model);
+    if (chk != 0)
+        return -1;
+
+    _abcdk_scsi_get_serial(path, info->serial);
+    _abcdk_scsi_get_devname(path, info->type, info->devname);
+    _abcdk_scsi_get_generic(path, info->generic);
+
+    return 0;
+}
+
 void abcdk_scsi_list(abcdk_tree_t *list)
 {
     abcdk_tree_t *dev = NULL;
@@ -258,9 +287,9 @@ void abcdk_scsi_list(abcdk_tree_t *list)
 
     dir = abcdk_tree_alloc3(1);
     if (!dir)
-        goto final;
+        return;
 
-    chk = abcdk_dirent_open(dir, "/sys/bus/scsi/devices");
+    chk = abcdk_dirent_open(dir, "/sys/bus/scsi/devices/");
     if (chk != 0)
         goto final;
 
@@ -272,11 +301,9 @@ void abcdk_scsi_list(abcdk_tree_t *list)
         if (chk != 0)
             break;
 
-        /*获取设备类型(可能会失败)。*/
+        /*如果无法识别类型则跳过。*/
         chk = _abcdk_scsi_get_type(path,&type);
-
-        /*跳过无法获取类型的设备。*/
-        if (chk != 0)
+        if(chk != 0)
             continue;
 
         dev = abcdk_tree_alloc3(sizeof(abcdk_scsi_info_t));
@@ -286,14 +313,10 @@ void abcdk_scsi_list(abcdk_tree_t *list)
         dev_p = (abcdk_scsi_info_t*)dev->alloc->pptrs[0];
         abcdk_tree_insert2(list,dev,0);
 
+        /*从路径中分离bus并保存。*/
         abcdk_basename(dev_p->bus,path);
-        dev_p->type = type;
-        _abcdk_scsi_get_serial(path,dev_p->serial);
-        _abcdk_scsi_get_vendor(path,dev_p->vendor);
-        _abcdk_scsi_get_model(path,dev_p->model);
-        _abcdk_scsi_get_revision(path,dev_p->revision);
-        _abcdk_scsi_get_devname(path,type,dev_p->devname);
-        _abcdk_scsi_get_generic(path,dev_p->generic);
+        /*提取其它字段并保存。*/
+        abcdk_scsi_get_info(path,dev_p);
     }
 
 final:

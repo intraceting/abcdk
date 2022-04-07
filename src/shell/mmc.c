@@ -113,6 +113,29 @@ final:
     return chk;
 }
 
+int abcdk_mmc_get_info(const char *path,abcdk_mmc_info_t *info)
+{
+    int chk;
+
+    assert(path != NULL && info != NULL);
+
+    chk = _abcdk_mmc_get_type(path, info->type);
+    if (chk != 0)
+        return -1;
+
+    chk = _abcdk_mmc_get_cid(path,info->cid);
+    if (chk != 0)
+        return -1;
+
+    chk = _abcdk_mmc_get_name(path,info->name);
+    if (chk != 0)
+        return -1;
+
+    _abcdk_mmc_get_devname(path,info->type,info->devname);
+
+    return 0;
+}
+
 void abcdk_mmc_list(abcdk_tree_t *list)
 {
     abcdk_tree_t *dev = NULL;
@@ -126,7 +149,7 @@ void abcdk_mmc_list(abcdk_tree_t *list)
 
     dir = abcdk_tree_alloc3(1);
     if (!dir)
-        goto final;
+        return;
 
     chk = abcdk_dirent_open(dir, "/sys/bus/mmc/devices");
     if (chk != 0)
@@ -142,10 +165,10 @@ void abcdk_mmc_list(abcdk_tree_t *list)
 
         /*获取设备类型(可能会失败)。*/
         memset(type, 0, NAME_MAX);
-        _abcdk_mmc_get_type(path,type);
+        chk = _abcdk_mmc_get_type(path,type);
 
         /*跳过无法获取类型的设备。*/
-        if (!type[0])
+        if (chk != 0)
             continue;
 
         dev = abcdk_tree_alloc3(sizeof(abcdk_mmc_info_t));
@@ -154,12 +177,11 @@ void abcdk_mmc_list(abcdk_tree_t *list)
 
         dev_p = (abcdk_mmc_info_t*)dev->alloc->pptrs[0];
         abcdk_tree_insert2(list,dev,0);
-
+        
+        /*从路径中分离bus并保存。*/
         abcdk_basename(dev_p->bus,path);
-        strcpy(dev_p->type,type);
-        _abcdk_mmc_get_cid(path,dev_p->cid);
-        _abcdk_mmc_get_name(path,dev_p->name);
-        _abcdk_mmc_get_devname(path,type,dev_p->devname);
+        /*提取其它字段并保存。*/
+        abcdk_mmc_get_info(path,dev_p);
         
     }
 

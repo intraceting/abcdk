@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_SHELL_BLOCK_H
-#define ABCDK_SHELL_BLOCK_H
+#ifndef ABCDK_SHELL_MMC_H
+#define ABCDK_SHELL_MMC_H
 
 #include "util/general.h"
 #include "util/dirent.h"
@@ -35,6 +35,15 @@ typedef struct _abcdk_mmc_info
 }abcdk_mmc_info_t;
 
 /**
+ * 获取MMC设备信息。
+ * 
+ * @warning 不包括bus字段。
+ * 
+ * @return 0 成功，-1 失败(可能不是MMC设备)。
+*/
+int abcdk_mmc_get_info(const char *path,abcdk_mmc_info_t *info);
+
+/**
  * 枚举MMC设备。
 */
 void abcdk_mmc_list(abcdk_tree_t *list);
@@ -46,4 +55,4 @@ void abcdk_mmc_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t *
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_BLOCK_H
+#endif //ABCDK_SHELL_MMC_H

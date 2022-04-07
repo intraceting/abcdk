@@ -44,6 +44,15 @@ typedef struct _abcdk_scsi_info
 }abcdk_scsi_info_t;
 
 /**
+ * 获取SCSI设备信息。
+ * 
+ * @warning 不包括bus字段。
+ * 
+ * @return 0 成功，-1 失败(可能不是SCSI设备)。
+*/
+int abcdk_scsi_get_info(const char *path,abcdk_scsi_info_t *info);
+
+/**
  * 枚举SCSI设备。
 */
 void abcdk_scsi_list(abcdk_tree_t *list);

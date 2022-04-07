@@ -44,6 +44,9 @@
 #include "util/ndarray.h"
 #include "util/log.h"
 #include "shell/mtab.h"
+#include "shell/block.h"
+#include "shell/mmc.h"
+#include "shell/scsi.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -4606,6 +4609,30 @@ void test_mtab(abcdk_tree_t *args)
     abcdk_tree_free(&list);
 }
 
+void test_block(abcdk_tree_t *args)
+{
+    const char *name = abcdk_option_get(args,"--name",0,"");
+
+    char path[PATH_MAX] = {0};
+    int chk = abcdk_block_find_device(name,path);
+    assert(chk == 0);
+
+    abcdk_mmc_info_t mmc = {0};
+    abcdk_scsi_info_t scsi = {0};
+
+    chk = abcdk_mmc_get_info(path,&mmc);
+    if(chk != 0)
+    {
+        chk = abcdk_scsi_get_info(path,&scsi);
+        printf("scsi:%s,%s\n", scsi.serial ,scsi.devname);
+    }
+    else
+    {
+        printf("mmc:%s,%s\n", mmc.cid,mmc.devname);
+    }
+
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -4658,6 +4685,10 @@ int main(int argc, char **argv)
     }
 
     long h = strtol("B",NULL,16);
+
+    char name[NAME_MAX] = {0};
+    realpath("/dev/disk/by-uuid/8d110083-0761-4887-8106-cea62b375936",name);
+    printf("%s\n",name);
     
 
 #ifdef HAVE_OPENSSL
@@ -4808,6 +4839,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_mtab", 0) == 0)
         test_mtab(args);
+
+    if (abcdk_strcmp(func, "test_block", 0) == 0)
+        test_block(args);
 
     abcdk_tree_free(&args);
     
