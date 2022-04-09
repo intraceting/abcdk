@@ -222,7 +222,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lo
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-char *abcdk_sockaddr_to_string(char dst[68],const abcdk_sockaddr_t *src);
+char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src);
 
 /**
  * 判断SOCKET地址位置。

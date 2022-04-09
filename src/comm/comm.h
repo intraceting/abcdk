@@ -81,18 +81,20 @@ abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout);
 
 /**
- * 获取本机地址。
+ * 获取地址。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_get_sockname(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr);
+int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote);
 
 /**
- * 获取远端地址。
+ * 获取地址(转换成字符串)。
+ * 
+ * @warning IPv4/IPv6有效。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_get_peername(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr);
+int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX]);
 
 /**
  * 设置应用层环境指针。

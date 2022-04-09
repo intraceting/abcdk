@@ -352,25 +352,42 @@ int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
     return chk;
 }
 
-int abcdk_comm_get_sockname(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr)
+int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
 
-    assert(node != NULL && addr != NULL);
+    assert(node != NULL);
 
-    *addr = node->local;
+    if(local)
+        *local = node->local;
+
+    /*AF_UNIX远程地址要特殊处理，accept返回时并不会填充路径。*/
+    if(remote)
+        *remote = ((node->remote.family == AF_UNIX) ? node->local : node->remote);
 
     return 0;
 }
 
-int abcdk_comm_get_peername(abcdk_comm_node_t *node, abcdk_sockaddr_t *addr)
+int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
 {
     abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
 
-    assert(node != NULL && addr != NULL);
+    assert(node != NULL);
 
-    /*AF_UNIX远程地址要特殊处理，accept返回时并不会填充路径。*/
-    *addr = ((node->remote.family == AF_UNIX) ? node->local : node->remote);
+    if(local && node->local.family)
+    {
+        if(node->local.family == AF_UNIX)
+            strncpy(local,node->local.addr_un.sun_path,NAME_MAX);
+        else if(node->local.family == AF_INET ||node->local.family == AF_INET6)
+            abcdk_sockaddr_to_string(local,&node->local);
+    }
+    if(remote && node->remote.family)
+    {
+        if(node->remote.family == AF_UNIX)
+            strncpy(remote,node->remote.addr_un.sun_path,NAME_MAX);
+        else if(node->remote.family == AF_INET ||node->remote.family == AF_INET6)
+            abcdk_sockaddr_to_string(remote,&node->remote);
+    }
 
     return 0;
 }

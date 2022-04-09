@@ -42,6 +42,11 @@ typedef struct _abcdk_signal
 */
 void abcdk_sigwaitinfo(abcdk_signal_t *sig, time_t timeout);
 
+/**
+ * 等待信号(异步)。
+*/
+void abcdk_sigwaitinfo_async(abcdk_signal_t *sig);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_SIGNAL_H

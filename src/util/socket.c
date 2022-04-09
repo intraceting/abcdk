@@ -441,7 +441,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     return chk;
 }
 
-char *abcdk_sockaddr_to_string(char dst[68],const abcdk_sockaddr_t *src)
+char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
 {
     char buf[INET6_ADDRSTRLEN] = {0};
 
@@ -458,7 +458,7 @@ char *abcdk_sockaddr_to_string(char dst[68],const abcdk_sockaddr_t *src)
         else
             strcpy(dst,buf);
     }
-    if (src->family == AF_INET)
+    else if (src->family == AF_INET)
     {
         if(src->addr4.sin_port)
             sprintf(dst,"%s:%hu",buf,abcdk_endian_b_to_h16(src->addr4.sin_port));

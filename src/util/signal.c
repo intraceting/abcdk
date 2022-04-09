@@ -47,3 +47,22 @@ void abcdk_sigwaitinfo(abcdk_signal_t *sig, time_t timeout)
 
     return;
 }
+
+void* _abcdk_sigwaitinfo_routine(void *opaque)
+{
+    abcdk_signal_t *sig = (abcdk_signal_t *)opaque;
+
+    abcdk_sigwaitinfo(sig,-1);
+}
+
+void abcdk_sigwaitinfo_async(abcdk_signal_t *sig)
+{
+    abcdk_thread_t td = {0};
+
+    assert(sig != NULL);
+
+    td.opaque = sig;
+    td.routine = _abcdk_sigwaitinfo_routine;
+
+    abcdk_thread_create(&td,0);
+}

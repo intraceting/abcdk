@@ -158,20 +158,36 @@ int abcdk_comm_easy_set_timeout(abcdk_comm_easy_t *easy, time_t timeout)
     return -1;
 }
 
-int abcdk_comm_easy_get_sockname(abcdk_comm_easy_t *easy, abcdk_sockaddr_t *addr)
+int abcdk_comm_easy_get_sockaddr(abcdk_comm_easy_t *easy, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
     assert(easy != NULL);
 
-    *addr = easy->local;
+    if(local)
+        *local = easy->local;
+    if(remote)
+        *remote = easy->remote;
 
     return 0;
 }
 
-int abcdk_comm_easy_get_peername(abcdk_comm_easy_t *easy, abcdk_sockaddr_t *addr)
+int abcdk_comm_easy_get_sockaddr_str(abcdk_comm_easy_t *easy, char local[NAME_MAX],char remote[NAME_MAX])
 {
     assert(easy != NULL);
 
-    *addr = easy->remote;
+     if(local && easy->local.family)
+    {
+        if(easy->local.family == AF_UNIX)
+            strncpy(local,easy->local.addr_un.sun_path,NAME_MAX);
+        else if(easy->local.family == AF_INET ||easy->local.family == AF_INET6)
+            abcdk_sockaddr_to_string(local,&easy->local);
+    }
+    if(remote && easy->remote.family)
+    {
+        if(easy->remote.family == AF_UNIX)
+            strncpy(remote,easy->remote.addr_un.sun_path,NAME_MAX);
+        else if(easy->remote.family == AF_INET ||easy->remote.family == AF_INET6)
+            abcdk_sockaddr_to_string(remote,&easy->remote);
+    }
 
     return 0;
 }
@@ -378,8 +394,7 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node)
     easy->request_cb = easy_listen->request_cb;
     easy->opaque = easy_listen->opaque;
 
-    abcdk_comm_get_sockname(node, &easy->local);
-    abcdk_comm_get_peername(node, &easy->remote);
+    abcdk_comm_get_sockaddr(node, &easy->local, &easy->remote);
 
     /*替换环境指针*/
     abcdk_comm_set_userdata(node, easy);
@@ -393,8 +408,7 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
 
     abcdk_atomic_store(&easy->status, 2);
 
-    abcdk_comm_get_sockname(node, &easy->local);
-    //abcdk_comm_get_peername(node, &easy->remote);
+    abcdk_comm_get_sockaddr(node, &easy->local,NULL);
 
     abcdk_comm_read_watch(node);
     abcdk_comm_write_watch(node);
@@ -544,7 +558,6 @@ NEXT_MSG:
 void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
 {
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
-    abcdk_sockaddr_t sockname, peername;
     char sockname_str[100] = {0}, peername_str[100] = {0};
 
     if (easy)
@@ -564,14 +577,7 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
     {
         /*可能还未完成连接就已经断开了。*/
 
-        abcdk_comm_get_sockname(node, &sockname);
-        abcdk_comm_get_peername(node, &peername);
-
-        if (sockname.family == AF_INET || sockname.family == AF_INET6)
-            abcdk_sockaddr_to_string(sockname_str, &sockname);
-        if (peername.family == AF_INET || peername.family == AF_INET6)
-            abcdk_sockaddr_to_string(peername_str, &peername);
-
+        abcdk_comm_get_sockaddr_str(node, sockname_str, peername_str);
         syslog(LOG_WARNING, "sockname(%s) -> peername(%s) disconnected.\n",sockname_str, peername_str);
     }
 }

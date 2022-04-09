@@ -22,7 +22,7 @@ static struct _abcdk_tool_entry
      * 
      * @return 出错码
     */
-    int (*entry_cb)(abcdk_tree_t *args);
+    int (*func_cb)(abcdk_tree_t *args);
 }abcdk_tool_entry[] = {
     {"serial",abcdk_tool_serial},
     {"robots",abcdk_tool_robots},
@@ -92,7 +92,7 @@ int _abcdk_tool_dispatch(abcdk_tree_t *args)
         ABCDK_ERRNO_AND_GOTO1(errcode = EINVAL, final);
     }
 
-    errcode = entry_p->entry_cb(args);
+    errcode = entry_p->func_cb(args);
 
 final:
 

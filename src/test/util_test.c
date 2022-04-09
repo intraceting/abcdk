@@ -3115,15 +3115,8 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event)
     case ABCDK_COMM_EVENT_CLOSE:
     default:
     {
-        abcdk_sockaddr_t sockname, peername;
-        abcdk_comm_get_sockname(node, &sockname);
-        abcdk_comm_get_peername(node, &peername);
-
         char sockname_str[100] = {0}, peername_str[100] = {0};
-        if (sockname.family)
-            abcdk_sockaddr_to_string(sockname_str, &sockname);
-        if (peername.family)
-            abcdk_sockaddr_to_string(peername_str, &peername);
+        abcdk_comm_get_sockaddr_str(one->node, sockname_str,peername_str);
 
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
@@ -3239,15 +3232,8 @@ void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event)
         break;
     default:
     {
-        abcdk_sockaddr_t sockname, peername;
-        abcdk_comm_get_sockname(node, &sockname);
-        abcdk_comm_get_peername(node, &peername);
-
         char sockname_str[100] = {0}, peername_str[100] = {0};
-        if (sockname.family)
-            abcdk_sockaddr_to_string(sockname_str, &sockname);
-        if (peername.family)
-            abcdk_sockaddr_to_string(peername_str, &peername);
+        abcdk_comm_get_sockaddr_str(one->node, sockname_str, peername_str);
 
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
@@ -3321,19 +3307,9 @@ void test_comm(abcdk_tree_t *args)
 
 void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 {
-    abcdk_sockaddr_t sockname, peername;
-    abcdk_comm_easy_get_sockname(easy, &sockname);
-    abcdk_comm_easy_get_peername(easy, &peername);
-
     char sockname_str[100] = {0}, peername_str[100] = {0};
-    if (sockname.family == AF_UNIX)
-        strcpy(sockname_str,sockname.addr_un.sun_path);
-    else 
-        abcdk_sockaddr_to_string(sockname_str, &sockname);
-    if (peername.family == AF_UNIX)
-        strcpy(peername_str,peername.addr_un.sun_path);
-    else 
-        abcdk_sockaddr_to_string(peername_str, &peername);
+
+    abcdk_comm_easy_get_sockaddr_str(easy,sockname_str,peername_str);
 
     printf("Server(%s -> %s): ", sockname_str, peername_str);
 
@@ -3359,15 +3335,9 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
 void test_easy_request2_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 {
-    abcdk_sockaddr_t sockname, peername;
-    abcdk_comm_easy_get_sockname(easy, &sockname);
-    abcdk_comm_easy_get_peername(easy, &peername);
-
     char sockname_str[100] = {0}, peername_str[100] = {0};
-    if (sockname.family != AF_UNIX)
-        abcdk_sockaddr_to_string(sockname_str, &sockname);
-    if (peername.family != AF_UNIX)
-        abcdk_sockaddr_to_string(peername_str, &peername);
+    
+    abcdk_comm_easy_get_sockaddr_str(easy,sockname_str,peername_str);
 
   //  printf("Client(%s -> %s): ", sockname_str, peername_str);
 
