@@ -20,10 +20,11 @@ __BEGIN_DECLS
 #define ABCDK_VMTX_COMMAND_ECHO 1000
 
 /*
- * 选举主节点。
+ * 选举主节点。比较IP地址，地址大的为领导者。
  * 
- * REQ: cmd(2)
- * RSP: cmd(2) + errno(4) + opinion(1)  
+ * REQ: cmd(2) + round(8)
+ *   round: 轮次，从1开始。
+ * RSP: cmd(2) + errno(4) + round(8) +  opinion(1)  
  *   opinion: 1 同意，2 不同意。
 */
 #define ABCDK_VMTX_COMMAND_VOTE 1

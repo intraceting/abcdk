@@ -33,7 +33,7 @@ enum _abcdk_vmtxsvr_constant
 #define ABCDK_VMTXSVR_STATUS_LEADING ABCDK_VMTXSVR_STATUS_LEADING
 
     /** 跟随者。*/
-    ABCDK_VMTXSVR_STATUS_FOLLOWING = 3,
+    ABCDK_VMTXSVR_STATUS_FOLLOWING = 3
 #define ABCDK_VMTXSVR_STATUS_FOLLOWING ABCDK_VMTXSVR_STATUS_FOLLOWING
 
 };
@@ -64,6 +64,10 @@ typedef struct _abcdk_vmtxsvr
     /* 角色和状态。*/
     int role;
     int status;
+
+    /* 选主。*/
+    abcdk_comm_waiter_t *vote_waiter;
+    int64_t vote_round;
 
     /* 领导者。*/
     volatile abcdk_comm_easy_t *leader_easy;
@@ -144,10 +148,10 @@ void _abcdk_vmtxsvr_register_signal(abcdk_vmtxsvr_t *ctx)
 
 void _abcdk_vmtxsvr_vote_req(abcdk_vmtxsvr_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
-    char localaddr[64] = {0},remoteaddr[64] = {0};
+    abcdk_sockaddr_t localaddr = {0},remoteaddr = {0};
     uint8_t rsp[7];
     
-    abcdk_comm_easy_get_sockaddr_str(easy,localaddr,remoteaddr);
+    abcdk_comm_easy_get_sockaddr(easy,&localaddr,&remoteaddr);
 
     ABCDK_PTR2U16(rsp, 0) = ABCDK_PTR2U16(req,0);
 
@@ -155,12 +159,13 @@ void _abcdk_vmtxsvr_vote_req(abcdk_vmtxsvr_t *ctx,abcdk_comm_easy_t *easy, const
     {
         if(ctx->status == ABCDK_VMTXSVR_STATUS_LEADING)
         {
+            /*如果本机为领导者，则拒绝其它主机选主。*/
             ABCDK_PTR2U8(rsp, 6) = 2;
         }
         else if(ctx->status == ABCDK_VMTXSVR_STATUS_LOOKING)
         {
             /*当两个主机同时在线，选IP地址大的为主节点。*/
-            ABCDK_PTR2U8(rsp, 6) = ((abcdk_strcmp(localaddr, remoteaddr, 1) > 0) ? 2 : 1);
+            ABCDK_PTR2U8(rsp, 6) = ((abcdk_sockaddr_compare(&localaddr, &remoteaddr) > 0) ? 2 : 1);
         }
     }
     else
@@ -316,8 +321,13 @@ void _abcdk_vmtxsvr_do_vote(abcdk_vmtxsvr_t *ctx)
     if (!ctx->master_easy[pipe])
         return;
 
+    /*滚动选举轮次。*/
+    abcdk_atomic_fetch_and_add(&ctx->vote_round,1);
+
     ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_COMMAND_VOTE);
-    ABCDK_PTR2U8(req, 2) = 1;
+    ABCDK_PTR2U64(req, 2) = abcdk_endian_b_to_h64(ctx->vote_round);
+
+    abcdk_comm_waiter_request2(ctx->vote_waiter,&ctx->vote_round);
 
     chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 3, &rsp);
     if (chk == 0)
@@ -398,7 +408,7 @@ void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
     /*如果地址未同时指向本节点，则检查地址是否指向相同的节点。*/
     if (chk != 2 && addr_num == 2)
     {
-        if (abcdk_sockaddr_compare(&ctx->master_sockaddr[0], &ctx->master_sockaddr[1]) & 0x01)
+        if (abcdk_sockaddr_compare(&ctx->master_sockaddr[0], &ctx->master_sockaddr[1]) == 0)
             chk = 2;
     }
 
