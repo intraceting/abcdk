@@ -11,13 +11,24 @@
 
 __BEGIN_DECLS
 
+
 /*
-* REQ: cmd(2) + vote(1)
-*   vote: 1 选我， 2 选你。
-* REQ: cmd(2) + errno(4) + assert(1)
-*   assert: 1 同意，2 不同意。
+ * 回显。
+ *
+ * REQ: cmd(2)
 */
-#define ABCDK_VMTX_COMMAND_ELECT_LEADER 1000
+#define ABCDK_VMTX_COMMAND_ECHO 1000
+
+/*
+ * 选举主节点。
+ * 
+ * REQ: cmd(2)
+ * RSP: cmd(2) + errno(4) + opinion(1)  
+ *   opinion: 1 同意，2 不同意。
+*/
+#define ABCDK_VMTX_COMMAND_VOTE 1
+
+
 
 __END_DECLS
 

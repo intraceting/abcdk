@@ -16,17 +16,26 @@
 
 enum _abcdk_vmtxsvr_constant
 {
-    /** 备机。*/
-    ABCDK_VMTXSVR_ROLE_STANDBY = 1,
-#define ABCDK_VMTXSVR_ROLE_STANDBY ABCDK_VMTXSVR_ROLE_STANDBY
-
     /** 主机。*/
-    ABCDK_VMTXSVR_ROLE_MASTER = 2,
+    ABCDK_VMTXSVR_ROLE_MASTER = 1,
 #define ABCDK_VMTXSVR_ROLE_MASTER ABCDK_VMTXSVR_ROLE_MASTER
 
     /** 从机。*/
-    ABCDK_VMTXSVR_ROLE_SLAVE = 3,
+    ABCDK_VMTXSVR_ROLE_SLAVE = 2,
 #define ABCDK_VMTXSVR_ROLE_SLAVE ABCDK_VMTXSVR_ROLE_SLAVE
+
+    /** 寻找中。*/
+    ABCDK_VMTXSVR_STATUS_LOOKING = 1,
+#define ABCDK_VMTXSVR_STATUS_LOOKING ABCDK_VMTXSVR_STATUS_LOOKING
+
+    /** 领导者。*/
+    ABCDK_VMTXSVR_STATUS_LEADING = 2,
+#define ABCDK_VMTXSVR_STATUS_LEADING ABCDK_VMTXSVR_STATUS_LEADING
+
+    /** 跟随者。*/
+    ABCDK_VMTXSVR_STATUS_FOLLOWING = 3,
+#define ABCDK_VMTXSVR_STATUS_FOLLOWING ABCDK_VMTXSVR_STATUS_FOLLOWING
+
 };
 
 /** 环境。*/
@@ -35,10 +44,10 @@ typedef struct _abcdk_vmtxsvr
     int errcode;
     abcdk_tree_t *args;
 
-    /*退出标记。*/
+    /* 退出标记。*/
     volatile int exit_flag;
 
-    /*运行锁。*/
+    /* 运行锁。*/
     int lock_pid;
     int lock_fd;
     const char *lock_file;
@@ -50,12 +59,15 @@ typedef struct _abcdk_vmtxsvr
     /* Master地址(主、备)。*/
     const char *master_addr[2];
     abcdk_sockaddr_t master_sockaddr[2];
+    abcdk_comm_easy_t *master_easy[2];
 
-    /* 角色。*/
-    volatile int role;
+    /* 角色和状态。*/
+    int role;
+    int status;
 
-    /* 主节点链路。*/
-    volatile abcdk_comm_easy_t *master_easy;
+    /* 领导者。*/
+    volatile abcdk_comm_easy_t *leader_easy;
+
 
 } abcdk_vmtxsvr_t;
 
@@ -130,60 +142,25 @@ void _abcdk_vmtxsvr_register_signal(abcdk_vmtxsvr_t *ctx)
     abcdk_sigwaitinfo_async(&sig);
 }
 
-void _abcdk_vmtxsvr_elect_leader_req(abcdk_comm_easy_t *easy, const void *req, size_t len)
+void _abcdk_vmtxsvr_vote_req(abcdk_vmtxsvr_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
-    abcdk_vmtxsvr_t *ctx;
     char localaddr[64] = {0},remoteaddr[64] = {0};
-    uint8_t cmd;
-    uint8_t vote;
     uint8_t rsp[7];
-    
-    ctx = (abcdk_vmtxsvr_t *)abcdk_comm_easy_get_userdata(easy);
     
     abcdk_comm_easy_get_sockaddr_str(easy,localaddr,remoteaddr);
 
-    cmd = abcdk_endian_b_to_h16(ABCDK_PTR2U16(req,0));
-    vote = ABCDK_PTR2I8(req,2);
-    if(vote == 1) //选对方。
+    ABCDK_PTR2U16(rsp, 0) = ABCDK_PTR2U16(req,0);
+
+    if(ctx->role == ABCDK_VMTXSVR_ROLE_MASTER)
     {
-        if (ctx->role == ABCDK_VMTXSVR_ROLE_MASTER)
+        if(ctx->status == ABCDK_VMTXSVR_STATUS_LEADING)
         {
-            ABCDK_PTR2U32(rsp, 2) = 0;
-            ABCDK_PTR2U8(rsp, 6) = 2;//不同意。
+            ABCDK_PTR2U8(rsp, 6) = 2;
         }
-        else
+        else if(ctx->status == ABCDK_VMTXSVR_STATUS_LOOKING)
         {
-            if (abcdk_strcmp(localaddr, remoteaddr, 1) > 0)
-            {
-                ABCDK_PTR2U32(rsp, 2) = 0;
-                ABCDK_PTR2U8(rsp, 6) = 1;//同意。
-            }
-            else
-            {
-                ABCDK_PTR2U32(rsp, 2) = 0;
-                ABCDK_PTR2U8(rsp, 6) = 2;//不同意。
-            }
-        }
-    }
-    else if(vote == 2) //选自己。
-    {
-        if (ctx->role == ABCDK_VMTXSVR_ROLE_MASTER)
-        {
-            ABCDK_PTR2U32(rsp, 2) = 0;
-            ABCDK_PTR2U8(rsp, 6) = 1;//同意。
-        }
-        else
-        {
-            if (abcdk_strcmp(localaddr, remoteaddr, 1) > 0)
-            {
-                ABCDK_PTR2U32(rsp, 2) = 0;
-                ABCDK_PTR2U8(rsp, 6) = 2;//不同意。
-            }
-            else
-            {
-                ABCDK_PTR2U32(rsp, 2) = 0;
-                ABCDK_PTR2U8(rsp, 6) = 1;//同意。
-            }
+            /*当两个主机同时在线，选IP地址大的为主节点。*/
+            ABCDK_PTR2U8(rsp, 6) = ((abcdk_strcmp(localaddr, remoteaddr, 1) > 0) ? 2 : 1);
         }
     }
     else
@@ -197,9 +174,9 @@ void _abcdk_vmtxsvr_elect_leader_req(abcdk_comm_easy_t *easy, const void *req, s
 static struct _abcdk_vmtxsvr_request_entry
 {
     uint16_t cmd;
-    void (*func_cb)(abcdk_comm_easy_t *easy, const void *req, size_t len);
+    void (*func_cb)(abcdk_vmtxsvr_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len);
 } abcdk_vmtxsvr_request_entry[] = {
-    {ABCDK_VMTX_COMMAND_ELECT_LEADER, _abcdk_vmtxsvr_elect_leader_req}
+    {ABCDK_VMTX_COMMAND_VOTE, _abcdk_vmtxsvr_vote_req}
 };
 
 struct _abcdk_vmtxsvr_request_entry *
@@ -219,7 +196,7 @@ _abcdk_vmtxsvr_find_entry(uint16_t cmd)
 void _abcdk_vmtxsvr_server_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
     abcdk_vmtxsvr_t *ctx;
-    struct _abcdk_vmtxsvr_request_entry * entry_cb = NULL;
+    struct _abcdk_vmtxsvr_request_entry *entry_cb = NULL;
     uint16_t cmd;
 
     ctx = (abcdk_vmtxsvr_t *)abcdk_comm_easy_get_userdata(easy);
@@ -229,11 +206,11 @@ void _abcdk_vmtxsvr_server_request_cb(abcdk_comm_easy_t *easy, const void *req, 
         cmd = abcdk_endian_b_to_h16(ABCDK_PTR2U16(req, 0));
         entry_cb = _abcdk_vmtxsvr_find_entry(cmd);
         if (entry_cb)
-            entry_cb->func_cb(easy, req, len);
+            entry_cb->func_cb(ctx, easy, req, len);
     }
     else
     {
-
+        printf("aaa\n");
     }
 }
 
@@ -250,7 +227,7 @@ void _abcdk_vmtxsvr_client_request_cb(abcdk_comm_easy_t *easy, const void *req, 
         cmd = abcdk_endian_b_to_h16(ABCDK_PTR2U16(req, 0));
         entry_cb = _abcdk_vmtxsvr_find_entry(cmd);
         if (entry_cb)
-            entry_cb->func_cb(easy, req, len);
+            entry_cb->func_cb(ctx, easy, req, len);
     }
     else
     {
@@ -260,6 +237,10 @@ void _abcdk_vmtxsvr_client_request_cb(abcdk_comm_easy_t *easy, const void *req, 
 
 void _abcdk_vmtxsvr_server_client_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
+    if (req != NULL && len > 0)
+    {
+        printf("bb\n");
+    }
 }
 
 
@@ -272,8 +253,7 @@ int _abcdk_vmtxsvr_start(abcdk_vmtxsvr_t *ctx)
     unlink(ctx->client_listen);
 
     /*监听客户端命令地址。*/
-    ctx->client_sockaddr.family = AF_UNIX;
-    strncpy(ctx->client_sockaddr.addr_un.sun_path, ctx->client_listen, 108);
+    abcdk_sockaddr_from_string(&ctx->client_sockaddr,ctx->client_listen,0);
     easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->client_sockaddr, _abcdk_vmtxsvr_client_request_cb, ctx);
     if (!easy_tmp)
     {
@@ -321,17 +301,25 @@ void _abcdk_vmtxsvr_stop(abcdk_vmtxsvr_t *ctx)
     abcdk_comm_stop();
 }
 
-int _abcdk_vmtxsvr_do_elect_leader(abcdk_comm_easy_t *easy, uint8_t *iswin)
+void _abcdk_vmtxsvr_do_vote(abcdk_vmtxsvr_t *ctx)
 {
     abcdk_comm_message_t *rsp = NULL;
+    abcdk_comm_easy_t *easy = NULL;
+    int pipe = 0;
     uint8_t *rsp_p = NULL;
     uint8_t req[3];
     int chk;
 
-    ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_COMMAND_ELECT_LEADER);
+    /*只给远程的master发就行了。*/
+    pipe = (abcdk_sockaddr_where(&ctx->master_sockaddr[1], 1) ? 1 : 0);
+
+    if (!ctx->master_easy[pipe])
+        return;
+
+    ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_COMMAND_VOTE);
     ABCDK_PTR2U8(req, 2) = 1;
 
-    chk = abcdk_comm_easy_request(easy, req, 3, &rsp);
+    chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 3, &rsp);
     if (chk == 0)
     {
         rsp_p = abcdk_comm_message_data(rsp);
@@ -344,42 +332,24 @@ int _abcdk_vmtxsvr_do_elect_leader(abcdk_comm_easy_t *easy, uint8_t *iswin)
 
 void _abcdk_vmtxsvr_runloop(abcdk_vmtxsvr_t *ctx)
 {
-    abcdk_comm_easy_t *master_easy[2] = {0};
-    int easy_pipe = 0;
-    uint8_t iswin = 0;
-    int chk;
-
     while(1)
     {
         for (int i = 0; i < 2; i++)
         {
-            if (!master_easy[i])
-                master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtxsvr_server_client_request_cb, NULL);
-            if (master_easy[i])
-                abcdk_comm_easy_set_timeout(master_easy[i],-1);
+            if (!ctx->master_easy[i])
+                ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtxsvr_server_client_request_cb, NULL);
+            if (ctx->master_easy[i])
+                abcdk_comm_easy_set_timeout(ctx->master_easy[i],-1);
         }
 
-        if(ctx->role == ABCDK_VMTXSVR_ROLE_STANDBY)
+        if(abcdk_atomic_compare(&ctx->status,ABCDK_VMTXSVR_STATUS_LOOKING))
         {
-            easy_pipe = 1;
-            if(abcdk_sockaddr_where(&ctx->master_sockaddr[1], 1))
-                easy_pipe = 0;
-            else if(abcdk_sockaddr_where(&ctx->master_sockaddr[1], 2))
-                easy_pipe = 1;
 
-            chk = _abcdk_vmtxsvr_do_elect_leader(master_easy[easy_pipe],&iswin);
-
-            if(chk != 0)
-            {
-                abcdk_comm_easy_unref(&master_easy[easy_pipe]);
-            }
-            else
-            {
-                ctx->role = ABCDK_VMTXSVR_ROLE_MASTER;
-                abcdk_log_printf(LOG_INFO,"I am MASTER!!!");
-            }
         }
+        else
+        {
 
+        }
 
         sleep(1);
     }
@@ -437,14 +407,10 @@ void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
         abcdk_log_printf(LOG_ERR, "主节点和备用主节点需要在不同的主机部署。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
-    else if(chk == 1)
-    {
-        ctx->role = ABCDK_VMTXSVR_ROLE_STANDBY;
-    }
-    else 
-    {
-        ctx->role = ABCDK_VMTXSVR_ROLE_SLAVE;
-    }
+
+    /*初始化角色和状态。*/
+    ctx->role = ((chk == 1)?ABCDK_VMTXSVR_ROLE_MASTER:ABCDK_VMTXSVR_ROLE_SLAVE);
+    ctx->status = ABCDK_VMTXSVR_STATUS_LOOKING;
 
     chk = _abcdk_vmtxsvr_start(ctx);
     if (chk != 0)

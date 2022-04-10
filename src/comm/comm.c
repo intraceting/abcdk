@@ -96,8 +96,12 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
 #endif //HEADER_SSL_H
 
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
-    struct linger l = {1,0};
-    abcdk_socket_option_linger(node_p->fd,&l,2);
+    if (node_p->fd >= 0)
+    {
+        struct linger l = {1, 0};
+        abcdk_socket_option_linger(node_p->fd, &l, 2);
+    }
+
     abcdk_closep(&node_p->fd);
 
     /*释放私有空间。*/

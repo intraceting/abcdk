@@ -204,6 +204,8 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
 /**
  * 字符地址转SOCKET地址。
  * 
+ * Unix: /File
+ * Unix: /Path/File
  * IPv4：Address:Port 
  * IPv6：Address,Port
  * IPv6：[Address]:Port

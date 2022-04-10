@@ -400,7 +400,13 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
 
     assert(dst != NULL && src != NULL);
 
-    if (strchr(src, '['))
+    if (src[0] == '/')
+    {
+        dst->family = AF_UNIX;
+        strncpy(dst->addr_un.sun_path, src, 108);
+        ABCDK_ERRNO_AND_GOTO1(chk = 0,final);
+    }
+    else if (strchr(src, '['))
     {
         dst->family = AF_INET6;
         sscanf(src, "%*[[ ]%[^] ]%*[] :,]%hu", name, &port);
@@ -438,6 +444,8 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
             dst->addr4.sin_port = abcdk_endian_h_to_b16(port);
     }
 
+final:
+
     return chk;
 }
 
@@ -446,24 +454,31 @@ char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
     char buf[INET6_ADDRSTRLEN] = {0};
 
     assert(dst != NULL && src != NULL);
-    assert(src->family == AF_INET || src->family == AF_INET6);
+    assert(src->family == AF_UNIX || src->family == AF_INET || src->family == AF_INET6);
 
-    if (abcdk_inet_ntop(src, buf, INET6_ADDRSTRLEN) == NULL)
-        return NULL;
-
-    if (src->family == AF_INET6)
+    if (src->family == AF_UNIX)
     {
-        if(src->addr6.sin6_port)
-            sprintf(dst,"[%s]:%hu",buf,abcdk_endian_b_to_h16(src->addr6.sin6_port));
-        else
-            strcpy(dst,buf);
+        strncpy(dst, src->addr_un.sun_path, NAME_MAX);
     }
-    else if (src->family == AF_INET)
+    else
     {
-        if(src->addr4.sin_port)
-            sprintf(dst,"%s:%hu",buf,abcdk_endian_b_to_h16(src->addr4.sin_port));
-        else
-            strcpy(dst,buf);
+        if (abcdk_inet_ntop(src, buf, INET6_ADDRSTRLEN) == NULL)
+            return NULL;
+
+        if (src->family == AF_INET6)
+        {
+            if (src->addr6.sin6_port)
+                sprintf(dst, "[%s]:%hu", buf, abcdk_endian_b_to_h16(src->addr6.sin6_port));
+            else
+                strcpy(dst, buf);
+        }
+        else if (src->family == AF_INET)
+        {
+            if (src->addr4.sin_port)
+                sprintf(dst, "%s:%hu", buf, abcdk_endian_b_to_h16(src->addr4.sin_port));
+            else
+                strcpy(dst, buf);
+        }
     }
 
     return dst;
