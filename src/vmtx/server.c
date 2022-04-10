@@ -308,10 +308,10 @@ void _abcdk_vmtxsvr_stop(abcdk_vmtxsvr_t *ctx)
 
 void _abcdk_vmtxsvr_do_vote(abcdk_vmtxsvr_t *ctx)
 {
+    abcdk_comm_queue_t *qrsp = NULL;
     abcdk_comm_message_t *rsp = NULL;
     abcdk_comm_easy_t *easy = NULL;
     int pipe = 0;
-    uint8_t *rsp_p = NULL;
     uint8_t req[3];
     int chk;
 
@@ -321,23 +321,23 @@ void _abcdk_vmtxsvr_do_vote(abcdk_vmtxsvr_t *ctx)
     if (!ctx->master_easy[pipe])
         return;
 
-    /*滚动选举轮次。*/
+    /*滚动更新选举轮次。*/
     abcdk_atomic_fetch_and_add(&ctx->vote_round,1);
+    abcdk_comm_waiter_request2(ctx->vote_waiter,&ctx->vote_round);
 
     ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_COMMAND_VOTE);
     ABCDK_PTR2U64(req, 2) = abcdk_endian_b_to_h64(ctx->vote_round);
 
-    abcdk_comm_waiter_request2(ctx->vote_waiter,&ctx->vote_round);
-
     chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 3, &rsp);
     if (chk == 0)
     {
-        rsp_p = abcdk_comm_message_data(rsp);
+        qrsp = abcdk_comm_waiter_wait2(ctx->vote_waiter,&ctx->vote_round,1,1000);
+        if(qrsp)
+        {
+            rsp = abcdk_comm_queue_pop(qrsp);
 
-        *iswin = (ABCDK_PTR2I8(rsp_p, 6) == 1 ? 1 : 0);
+        }
     }
-
-    return chk;
 }
 
 void _abcdk_vmtxsvr_runloop(abcdk_vmtxsvr_t *ctx)
@@ -418,9 +418,11 @@ void _abcdk_vmtxsvr_dowork(abcdk_vmtxsvr_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 
-    /*初始化角色和状态。*/
+    /*初始化其它信息。*/
     ctx->role = ((chk == 1)?ABCDK_VMTXSVR_ROLE_MASTER:ABCDK_VMTXSVR_ROLE_SLAVE);
     ctx->status = ABCDK_VMTXSVR_STATUS_LOOKING;
+    ctx->vote_round = 0;
+    ctx->vote_waiter = abcdk_comm_waiter_alloc();
 
     chk = _abcdk_vmtxsvr_start(ctx);
     if (chk != 0)
