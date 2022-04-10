@@ -167,6 +167,11 @@ void _abcdk_vmtxsvr_vote_req(abcdk_vmtxsvr_t *ctx,abcdk_comm_easy_t *easy, const
             /*当两个主机同时在线，选IP地址大的为主节点。*/
             ABCDK_PTR2U8(rsp, 6) = ((abcdk_sockaddr_compare(&localaddr, &remoteaddr) > 0) ? 2 : 1);
         }
+        else 
+        {
+            /*已经连接到领导者，拒绝当前的选主流程。*/
+            ABCDK_PTR2U8(rsp, 6) = 2;
+        }
     }
     else
     {
@@ -244,6 +249,10 @@ void _abcdk_vmtxsvr_server_client_request_cb(abcdk_comm_easy_t *easy, const void
 {
     if (req != NULL && len > 0)
     {
+
+    }
+    else
+    {
         printf("bb\n");
     }
 }
@@ -312,7 +321,9 @@ void _abcdk_vmtxsvr_do_vote(abcdk_vmtxsvr_t *ctx)
     abcdk_comm_message_t *rsp = NULL;
     abcdk_comm_easy_t *easy = NULL;
     int pipe = 0;
-    uint8_t req[3];
+    uint8_t req[6];
+    uint8_t *rsp_p;
+    uint8_t opinion;
     int chk;
 
     /*只给远程的master发就行了。*/
@@ -328,16 +339,31 @@ void _abcdk_vmtxsvr_do_vote(abcdk_vmtxsvr_t *ctx)
     ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_COMMAND_VOTE);
     ABCDK_PTR2U64(req, 2) = abcdk_endian_b_to_h64(ctx->vote_round);
 
-    chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 3, &rsp);
-    if (chk == 0)
-    {
-        qrsp = abcdk_comm_waiter_wait2(ctx->vote_waiter,&ctx->vote_round,1,1000);
-        if(qrsp)
-        {
-            rsp = abcdk_comm_queue_pop(qrsp);
+    /*假定远程同意本次选举。*/
+    opinion = 1;
 
-        }
+    chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 3, &rsp);
+    if (chk = 0)
+        goto final;
+
+    qrsp = abcdk_comm_waiter_wait2(ctx->vote_waiter, &ctx->vote_round, 1, 1000);
+    if (!qrsp)
+        goto final;
+
+    rsp = abcdk_comm_queue_pop(qrsp);
+    if (rsp)
+    {
+        rsp_p = abcdk_comm_message_data(rsp);
+        opinion = ABCDK_PTR2I8(rsp_p, 14);
+        abcdk_comm_message_unref(&rsp);
     }
+
+final:
+
+    /*更改状态。*/
+    ctx->status = ((opinion==1)?ABCDK_VMTXSVR_STATUS_LEADING:ABCDK_VMTXSVR_STATUS_FOLLOWING);
+
+    abcdk_comm_queue_free(&qrsp);
 }
 
 void _abcdk_vmtxsvr_runloop(abcdk_vmtxsvr_t *ctx)
@@ -347,7 +373,7 @@ void _abcdk_vmtxsvr_runloop(abcdk_vmtxsvr_t *ctx)
         for (int i = 0; i < 2; i++)
         {
             if (!ctx->master_easy[i])
-                ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtxsvr_server_client_request_cb, NULL);
+                ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtxsvr_server_client_request_cb, ctx);
             if (ctx->master_easy[i])
                 abcdk_comm_easy_set_timeout(ctx->master_easy[i],-1);
         }
