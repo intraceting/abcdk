@@ -37,6 +37,7 @@ typedef struct _abcdkarchive_ctx
     int fmt;
     const char *opt;
     const char *pwd;
+    const char *wksp;
 
     struct
     {
@@ -48,7 +49,6 @@ typedef struct _abcdkarchive_ctx
 
         int src_num;
         const char *src[256];
-        const char *dst;
         int justlist;
 
         struct archive *src_fd;
@@ -61,6 +61,7 @@ typedef struct _abcdkarchive_ctx
         int src_num;
         const char *src[256];
         const char *dst;
+        int save_fullpath;
 
         int src_fd;
         const char src_file[PATH_MAX];
@@ -182,7 +183,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
             archive_version_string());
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
-    fprintf(stderr, "\n选项:\n");
+    fprintf(stderr, "\n通用选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
@@ -228,14 +229,24 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--blksize < SIZE >\n");
     fprintf(stderr, "\t\t每次读写块大小(字节)。默认：自动\n");
 
-    fprintf(stderr, "\n\t--filename < FILENAME [ FILENAME-part1 FILENAME-part2 ... ] >\n");
-    fprintf(stderr, "\t\t档案文件名(包括路径)。\n");
+    fprintf(stderr, "\n\t--workspace < PATH >\n");
+    fprintf(stderr, "\t\t工作目录。默认：./\n");
 
-    fprintf(stderr, "\n\t--extract-to < PATH >\n");
-    fprintf(stderr, "\t\t回迁文件保存位置。默认：./\n");
+    fprintf(stderr, "\n\t--filename < NAME [ NAME-2 NAME-3 ... ] >\n");
+    fprintf(stderr, "\t\t档案名称(包括路径)。\n");
 
-    fprintf(stderr, "\n\t--extract-just-list\n");
-    fprintf(stderr, "\t\t仅打印待回迁文件列表。\n");
+    fprintf(stderr, "\n回迁选项:\n");
+
+    fprintf(stderr, "\n\t--just-list\n");
+    fprintf(stderr, "\t\t仅打印文件列表。\n");
+
+    fprintf(stderr, "\n归档选项:\n");
+
+    fprintf(stderr, "\n\t--file-from < FILE [ FILE ... ] >\n");
+    fprintf(stderr, "\t\t文件来源。\n");
+
+    fprintf(stderr, "\n\t--save-fullpath\n");
+    fprintf(stderr, "\t\t保留完整路径。默认：不保留。\n");
 }
 
 char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
@@ -293,14 +304,14 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     {
         file_stat = *archive_entry_stat(ctx->r.src_entry);
 
-        abcdk_dirdir(pathfile, ctx->r.dst);
+        abcdk_dirdir(pathfile, ctx->wksp);
         abcdk_dirdir(pathfile, name_cp);
 
         if (S_ISLNK(file_stat.st_mode))
         {
             if (access(pathfile, F_OK) == 0)
             {
-                syslog(LOG_WARNING, "%s -> 同名软链接已经存在，跳过。 \n", name_cp);
+                syslog(LOG_WARNING, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
                 goto final;
             }
 
@@ -399,12 +410,6 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 {
     int chk;
 
-    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1,0);
-    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1,0);
-    ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
-    ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
-    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 0,0);
-
     ctx->r.uid = getuid();
 #ifdef _SYS_CAPABILITY_H
     ctx->r.chown_power = abcdk_cap_get_pid(getpid(), CAP_CHOWN, CAP_EFFECTIVE);
@@ -414,8 +419,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
     ctx->r.src_num = ABCDK_CLAMP(ctx->r.src_num, 1, 255);
     for (int i = 0; i < ctx->r.src_num; i++)
         ctx->r.src[i] = abcdk_option_get(ctx->args, "--filename", i, NULL);
-    ctx->r.dst = abcdk_option_get(ctx->args, "--extract-to", 0, "./");
-    ctx->r.justlist = abcdk_option_exist(ctx->args, "--extract-just-list");
+    ctx->r.justlist = abcdk_option_exist(ctx->args, "--just-list");
 
     ctx->r.src_fd = NULL;
     ctx->r.dst_fd = -1;
@@ -437,15 +441,15 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 
     if (!ctx->r.justlist)
     {
-        if (ctx->r.dst == NULL || *ctx->r.dst == '\0')
+        if (ctx->wksp == NULL || *ctx->wksp == '\0')
         {
-            syslog(LOG_ERR, "'--extract PATH ' 不能省略，且不能为空。");
+            syslog(LOG_ERR, "'--workspace PATH' 不能省略，且不能为空。");
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
         }
 
-        if (access(ctx->r.dst, W_OK) != 0)
+        if (access(ctx->wksp, W_OK) != 0)
         {
-            syslog(LOG_ERR, "'%s' %s。", ctx->r.dst, strerror(errno));
+            syslog(LOG_ERR, "'%s' %s。", ctx->wksp, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -549,13 +553,34 @@ final:
     }
 }
 
+void _abcdkarchive_write(abcdkarchive_ctx *ctx)
+{
+    int chk;
+
+    ctx->w.src_num = abcdk_option_count(ctx->args, "--file-from");
+    for (int i = 0; i < ctx->w.src_num; i++)
+        ctx->w.src[i] = abcdk_option_get(ctx->args, "--file-from", i, NULL);
+    ctx->w.save_fullpath = abcdk_option_exist(ctx->args,"--save-fullpath");
+    
+}
+
 void _abcdkarchive_work(abcdkarchive_ctx *ctx)
 {
     ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ,0);
+    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1,0);
+    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1,0);
+    ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
+    ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
+    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 0,0);
+    ctx->wksp = abcdk_option_get(ctx->args, "--workspace", 0, "./");
 
     if (ctx->cmd == ABCDKARCHIVE_READ)
     {
         _abcdkarchive_read(ctx);
+    }
+    else if (ctx->cmd == ABCDKARCHIVE_WRITE)
+    {
+        _abcdkarchive_write(ctx);
     }
     else
     {
