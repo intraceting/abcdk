@@ -224,13 +224,13 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
     fprintf(stderr, "\n\t--blksize < SIZE >\n");
-    fprintf(stderr, "\t\t每次读写块大小(字节)。默认：10240\n");
+    fprintf(stderr, "\t\t每次读写块大小（字节）。默认：10240\n");
 
     fprintf(stderr, "\n\t--workspace < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
     fprintf(stderr, "\n\t--volume < NAME [ NAME-2 NAME-3 ... ] >\n");
-    fprintf(stderr, "\t\t卷名(包括路径)。\n");
+    fprintf(stderr, "\t\t卷名（包括路径）。\n");
 
     fprintf(stderr, "\n回迁选项:\n");
 
