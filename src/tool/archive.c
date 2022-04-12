@@ -595,6 +595,8 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
         return -2;
     }
 
+    syslog(LOG_INFO, "%s\n", file);
+
     entry = archive_entry_new();
     if(!entry)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
