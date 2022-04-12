@@ -251,6 +251,9 @@ char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
     size_t slen;
     size_t slen_vf;
 
+    if(!src)
+        return NULL;
+
     /*猜测可能的长度。*/
     slen = strlen(src);
 
@@ -291,11 +294,17 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     name = archive_entry_pathname(ctx->read.src_entry);
     _abcdkarchive_name2local(name, name_cp);
 
-    syslog(LOG_INFO, "%s\n", name_cp);
+    if(name_cp)
+        syslog(LOG_INFO, "%s\n", name_cp);
 
     if (ctx->read.justlist)
     {
-        archive_read_data_skip(ctx->read.src_fd);
+        chk = archive_read_data_skip(ctx->read.src_fd);
+        if (chk != ARCHIVE_OK)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final_error);
+        }
     }
     else
     {
@@ -417,7 +426,7 @@ void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
     while (1)
     {
         chk = archive_read_next_header(ctx->read.src_fd, &ctx->read.src_entry);
-        if (chk == ARCHIVE_EOF)
+        if (chk == ARCHIVE_EOF || !ctx->read.src_entry)
             goto final;
         if (chk != ARCHIVE_OK)
         {
@@ -431,6 +440,13 @@ void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
     }
 
 final:
+
+    // if(ctx->read.src_entry)
+    // {
+    //     archive_entry_free(ctx->read.src_entry);
+    //     ctx->read.src_entry = NULL;
+    // }
+
 
     return;
 }
