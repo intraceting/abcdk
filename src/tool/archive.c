@@ -251,9 +251,6 @@ char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
     size_t slen;
     size_t slen_vf;
 
-    if(!src)
-        return NULL;
-
     /*猜测可能的长度。*/
     slen = strlen(src);
 
@@ -283,6 +280,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
 {
     const char *name = NULL;
     char name_cp[PATH_MAX] = {0};
+    char *bname_p = NULL;
     char pathfile[PATH_MAX] = {0};
     struct stat file_stat = {0};
     size_t lkname_len = 0;
@@ -294,8 +292,14 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     name = archive_entry_pathname(ctx->read.src_entry);
     _abcdkarchive_name2local(name, name_cp);
 
-    if(name_cp)
-        syslog(LOG_INFO, "%s\n", name_cp);
+    syslog(LOG_INFO, "%s\n", name_cp);
+
+    /*跳过.和..*/
+    bname_p = strrchr(name_cp, '/');
+    bname_p = (bname_p?(bname_p + 1):name_cp);
+    if (abcdk_strcmp(bname_p, ".", 1) == 0 || abcdk_strcmp(bname_p, "..", 1) == 0)
+        return 0;
+    
 
     if (ctx->read.justlist)
     {
@@ -318,7 +322,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             if (access(pathfile, F_OK) == 0)
             {
                 syslog(LOG_WARNING, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
-                goto final;
+                ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
             }
 
             lkname = archive_entry_symlink(ctx->read.src_entry);
@@ -330,12 +334,12 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
             /*不需要恢复软链接属性。*/
-            goto final;
+            ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
         }
         else if (S_ISDIR(file_stat.st_mode))
         {
             if (access(pathfile, F_OK) == 0)
-                goto final;
+                ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
 
             abcdk_dirdir(pathfile, "/");
             pathfile[strlen(pathfile) - 1] = '\0';
@@ -354,7 +358,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             if (access(pathfile, F_OK) == 0)
             {
                 syslog(LOG_WARNING, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
-                goto final;
+                ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
             }
 
             abcdk_mkdir(pathfile, 0700);
@@ -369,7 +373,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         else
         {
             syslog(LOG_WARNING, "%s -> 不支持的类型，跳过。 \n", name_cp);
-            goto final;
+            ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
         }
 
         /*恢复文件(目录)属性的时间。*/
@@ -669,6 +673,7 @@ void _abcdkarchive_write_real(abcdkarchive_ctx *ctx)
     struct stat attr = {0};
     char file[PATH_MAX] = {0};
     abcdk_tree_t *dir = NULL;
+    char *bname_p = NULL;
     int chk;
 
     dir = abcdk_tree_alloc3(1);
@@ -680,6 +685,12 @@ void _abcdkarchive_write_real(abcdkarchive_ctx *ctx)
         memset(file,0,PATH_MAX);
         abcdk_dirdir(file,ctx->wksp);
         abcdk_dirdir(file,ctx->write.files[i]);
+
+        /*跳过.和..*/
+        bname_p = strrchr(file, '/');
+        bname_p = (bname_p?(bname_p + 1):file);
+        if (abcdk_strcmp(bname_p, ".", 1) == 0 || abcdk_strcmp(bname_p, "..", 1) == 0)
+            continue;
 
         chk = lstat(file,&attr);
         if(chk != 0)
