@@ -44,33 +44,30 @@ typedef struct _abcdkarchive_ctx
         /*getuid(), not geteuid().*/
         uid_t uid;
 
-        /* 0 no power, !0 have power.*/
+        /* 0 no power, !0 have poweread.*/
         int chown_power;
 
-        int src_num;
-        const char *src[256];
+        int volume_num;
+        const char *volumes[256];
         int justlist;
 
         struct archive *src_fd;
         struct archive_entry *src_entry;
         int dst_fd;
-    } r;
+    } read;
 
     struct
     {
-        int src_num;
-        const char *src[256];
-        const char *dst;
+        int file_num;
+        const char *files[256];
+        const char *volume;
         int save_fullpath;
 
-        int src_fd;
-        const char src_file[PATH_MAX];
-        const char src_link[PATH_MAX];
-        struct stat src_stat;
-        abcdk_tree_t *src_dir;
         struct archive *dst_fd;
-        struct archive_entry *dst_entry;
-    } w;
+        size_t buf_size;
+        void *buf;
+        
+    } write;
 
 } abcdkarchive_ctx;
 
@@ -195,7 +192,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t%d：归档。\n", ABCDKARCHIVE_WRITE);
 
     fprintf(stderr, "\n\t--filter < NUMBER >\n");
-    fprintf(stderr, "\t\t过滤器。默认：自动\n");
+    fprintf(stderr, "\t\t过滤器。默认：自动（回迁）\n");
 
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_filter_dict); i++)
@@ -207,7 +204,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n");
 
     fprintf(stderr, "\n\t--format < NUMBER >\n");
-    fprintf(stderr, "\t\t格式。默认：自动\n");
+    fprintf(stderr, "\t\t格式。默认：自动（回迁）\n");
 
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_format_dict); i++)
@@ -232,7 +229,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--workspace < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
-    fprintf(stderr, "\n\t--filename < NAME [ NAME-2 NAME-3 ... ] >\n");
+    fprintf(stderr, "\n\t--name < NAME [ NAME-2 NAME-3 ... ] >\n");
     fprintf(stderr, "\t\t档案名称(包括路径)。\n");
 
     fprintf(stderr, "\n回迁选项:\n");
@@ -242,7 +239,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
 
     fprintf(stderr, "\n归档选项:\n");
 
-    fprintf(stderr, "\n\t--file-from < FILE [ FILE ... ] >\n");
+    fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
     fprintf(stderr, "\t\t文件来源。\n");
 
     fprintf(stderr, "\n\t--save-fullpath\n");
@@ -291,18 +288,18 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     ssize_t lkname_cp_len = 0;
     int chk = 0;
 
-    name = archive_entry_pathname(ctx->r.src_entry);
+    name = archive_entry_pathname(ctx->read.src_entry);
     _abcdkarchive_name2local(name, name_cp);
 
     syslog(LOG_INFO, "%s\n", name_cp);
 
-    if (ctx->r.justlist)
+    if (ctx->read.justlist)
     {
-        archive_read_data_skip(ctx->r.src_fd);
+        archive_read_data_skip(ctx->read.src_fd);
     }
     else
     {
-        file_stat = *archive_entry_stat(ctx->r.src_entry);
+        file_stat = *archive_entry_stat(ctx->read.src_entry);
 
         abcdk_dirdir(pathfile, ctx->wksp);
         abcdk_dirdir(pathfile, name_cp);
@@ -315,7 +312,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
                 goto final;
             }
 
-            lkname = archive_entry_symlink(ctx->r.src_entry);
+            lkname = archive_entry_symlink(ctx->read.src_entry);
             _abcdkarchive_name2local(lkname, lkname_cp);
 
             abcdk_mkdir(pathfile, 0700);
@@ -339,8 +336,8 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
-            ctx->r.dst_fd = open(pathfile, __O_DIRECTORY | __O_CLOEXEC, 0); //打开目录。
-            if (ctx->r.dst_fd < 0)
+            ctx->read.dst_fd = open(pathfile, __O_DIRECTORY | __O_CLOEXEC, 0); //打开目录。
+            if (ctx->read.dst_fd < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
         }
         else if (S_ISREG((file_stat.st_mode)))
@@ -352,13 +349,13 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             }
 
             abcdk_mkdir(pathfile, 0700);
-            ctx->r.dst_fd = abcdk_open(pathfile, 1, 0, 1); //打开文件。
-            if (ctx->r.dst_fd < 0)
+            ctx->read.dst_fd = abcdk_open(pathfile, 1, 0, 1); //打开文件。
+            if (ctx->read.dst_fd < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
-            chk = archive_read_data_into_fd(ctx->r.src_fd, ctx->r.dst_fd);
+            chk = archive_read_data_into_fd(ctx->read.src_fd, ctx->read.dst_fd);
             if (chk != ARCHIVE_OK)
-                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final_error);
+                ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final_error);
         }
         else
         {
@@ -367,22 +364,22 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         }
 
         /*恢复文件(目录)属性的时间。*/
-        chk = abcdk_futimens(ctx->r.dst_fd, &file_stat.st_atim, &file_stat.st_mtim);
+        chk = abcdk_futimens(ctx->read.dst_fd, &file_stat.st_atim, &file_stat.st_mtim);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
 #if 0
         /*恢复文件(目录)属性的权限。*/
         if(file_stat.st_mode & ACCESSPERMS)
         {
-            chk = fchmod(ctx->r.dst_fd, file_stat.st_mode & ACCESSPERMS);
+            chk = fchmod(ctx->read.dst_fd, file_stat.st_mode & ACCESSPERMS);
             if (chk != 0)
                 syslog(LOG_WARNING, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
         }
 
         /*仅所有者或特权者才能改变文件(目录)的所有者和所属组。*/
-        if (ctx->r.uid == file_stat.st_uid || ctx->r.chown_power || ctx->r.uid == 0)
+        if (ctx->read.uid == file_stat.st_uid || ctx->read.chown_power || ctx->read.uid == 0)
         {
-            chk = fchown(ctx->r.dst_fd, file_stat.st_uid, file_stat.st_gid);
+            chk = fchown(ctx->read.dst_fd, file_stat.st_uid, file_stat.st_gid);
             if (chk != 0)
                 syslog(LOG_WARNING, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
         }
@@ -391,55 +388,87 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         chk = 0;
     }
 
-    /*No error.*/
+    /*No erroread.*/
     goto final;
 
 final_error:
 
-    /*error.*/
+    /*erroread.*/
     chk = -1;
 
 final:
 
-    abcdk_closep(&ctx->r.dst_fd);
+    abcdk_closep(&ctx->read.dst_fd);
 
     return chk;
+}
+
+void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
+{
+    int chk;
+
+    chk = archive_read_open_filenames(ctx->read.src_fd, ctx->read.volumes, ctx->blk);
+    if (chk != ARCHIVE_OK)
+    {
+        syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
+    }
+
+    while (1)
+    {
+        chk = archive_read_next_header(ctx->read.src_fd, &ctx->read.src_entry);
+        if (chk == ARCHIVE_EOF)
+            goto final;
+        if (chk != ARCHIVE_OK)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
+        }
+
+        chk = _abcdkarchive_read_one(ctx);
+        if (chk != 0)
+            goto final;
+    }
+
+final:
+
+    return;
 }
 
 void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 {
     int chk;
 
-    ctx->r.uid = getuid();
+    ctx->read.uid = getuid();
 #ifdef _SYS_CAPABILITY_H
-    ctx->r.chown_power = abcdk_cap_get_pid(getpid(), CAP_CHOWN, CAP_EFFECTIVE);
+    ctx->read.chown_power = abcdk_cap_get_pid(getpid(), CAP_CHOWN, CAP_EFFECTIVE);
 #endif //_SYS_CAPABILITY_H
 
-    ctx->r.src_num = abcdk_option_count(ctx->args, "--filename");
-    ctx->r.src_num = ABCDK_CLAMP(ctx->r.src_num, 1, 255);
-    for (int i = 0; i < ctx->r.src_num; i++)
-        ctx->r.src[i] = abcdk_option_get(ctx->args, "--filename", i, NULL);
-    ctx->r.justlist = abcdk_option_exist(ctx->args, "--just-list");
+    ctx->read.volume_num = abcdk_option_count(ctx->args, "--volume");
+    ctx->read.volume_num = ABCDK_CLAMP(ctx->read.volume_num, 1, 255);
+    for (int i = 0; i < ctx->read.volume_num; i++)
+        ctx->read.volumes[i] = abcdk_option_get(ctx->args, "--volume", i, NULL);
+    ctx->read.justlist = abcdk_option_exist(ctx->args, "--just-list");
 
-    ctx->r.src_fd = NULL;
-    ctx->r.dst_fd = -1;
+    ctx->read.src_fd = NULL;
+    ctx->read.dst_fd = -1;
 
-    if (ctx->r.src[0] == NULL || *ctx->r.src[0] == '\0')
+    if (ctx->read.volumes[0] == NULL || ctx->read.volumes[0][0] == '\0')
     {
-        syslog(LOG_ERR, "'--filename FILENAME [ FILENAME-part1 FILENAME-part2 ... ] ' 不能省略，且不能为空。");
+        syslog(LOG_ERR, "'--name NAME [ NAME-1 NAME-2 ... ]' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
-    for (int i = 0; i < ctx->r.src_num; i++)
+    for (int i = 0; i < ctx->read.volume_num; i++)
     {
-        if (access(ctx->r.src[0], R_OK) != 0)
+        if (access(ctx->read.volumes[0], R_OK) != 0)
         {
-            syslog(LOG_ERR, "'%s' %s。", ctx->r.src[i], strerror(errno));
+            syslog(LOG_ERR, "'%s' %s。", ctx->read.volumes[i], strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
 
-    if (!ctx->r.justlist)
+    if (!ctx->read.justlist)
     {
         if (ctx->wksp == NULL || *ctx->wksp == '\0')
         {
@@ -454,8 +483,8 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         }
     }
 
-    ctx->r.src_fd = archive_read_new();
-    if (!ctx->r.src_fd)
+    ctx->read.src_fd = archive_read_new();
+    if (!ctx->read.src_fd)
     {
         syslog(LOG_ERR, "%s。", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
@@ -463,105 +492,346 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 
     if (ctx->flt > 0)
     {
-        chk = archive_read_append_filter(ctx->r.src_fd, abcdkarchive_find_filter(ctx->flt));
+        chk = archive_read_append_filter(ctx->read.src_fd, abcdkarchive_find_filter(ctx->flt));
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
         }
     }
     else
     {
-        chk = archive_read_support_filter_all(ctx->r.src_fd);
+        chk = archive_read_support_filter_all(ctx->read.src_fd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
         }
     }
 
     if (ctx->fmt > 0)
     {
-        chk = archive_read_set_format(ctx->r.src_fd, abcdkarchive_find_format(ctx->fmt));
+        chk = archive_read_set_format(ctx->read.src_fd, abcdkarchive_find_format(ctx->fmt));
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
         }
     }
     else
     {
-        chk = archive_read_support_format_all(ctx->r.src_fd);
+        chk = archive_read_support_format_all(ctx->read.src_fd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
         }
     }
 
     if (ctx->opt)
     {
-        chk = archive_read_set_options(ctx->r.src_fd, ctx->opt);
+        chk = archive_read_set_options(ctx->read.src_fd, ctx->opt);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
         }
     }
 
 #if ARCHIVE_VERSION_NUMBER >= 3003003
     if (ctx->pwd)
     {
-        chk = archive_read_add_passphrase(ctx->r.src_fd, ctx->pwd);
+        chk = archive_read_add_passphrase(ctx->read.src_fd, ctx->pwd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->read.src_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->read.src_fd), final);
         }
     }
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
-    chk = archive_read_open_filenames(ctx->r.src_fd, ctx->r.src, ctx->blk);
-    if (chk != ARCHIVE_OK)
-    {
-        syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
-    }
-
-    while (1)
-    {
-        chk = archive_read_next_header(ctx->r.src_fd, &ctx->r.src_entry);
-        if (chk == ARCHIVE_EOF)
-            goto final;
-        if (chk != ARCHIVE_OK)
-        {
-            syslog(LOG_ERR, "%s", archive_error_string(ctx->r.src_fd));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->r.src_fd), final);
-        }
-
-        chk = _abcdkarchive_read_one(ctx);
-        if (chk != 0)
-            goto final;
-    }
+    _abcdkarchive_read_real(ctx);
 
 final:
 
-    if (ctx->r.src_fd)
+    if (ctx->read.src_fd)
     {
-        archive_read_free(ctx->r.src_fd);
-        ctx->r.src_fd = NULL;
+        archive_read_free(ctx->read.src_fd);
+        ctx->read.src_fd = NULL;
     }
+}
+
+int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *attr)
+{
+    struct archive_entry *entry = NULL;
+    char linkname[PATH_MAX] = {0};
+    int fd = -1;
+    ssize_t rlen = 0,wlen = 0;
+    int chk = -1;
+
+    if (!(S_ISREG(attr->st_mode) || S_ISLNK(attr->st_mode) || S_ISDIR(attr->st_mode)))
+    {
+        syslog(LOG_WARNING, "'%s' 不支持此类文件归档。", file);
+        return -2;
+    }
+
+    entry = archive_entry_new();
+    if(!entry)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+
+    if (ctx->write.save_fullpath)
+        archive_entry_copy_pathname(entry, file);
+    else
+        archive_entry_copy_pathname(entry, file + strlen(ctx->wksp));
+
+    if(S_ISLNK(attr->st_mode))
+    {
+        readlink(file,linkname,PATH_MAX);
+        archive_entry_copy_symlink(entry, linkname);
+    }
+
+    archive_entry_copy_stat(entry,attr);
+
+    chk = archive_write_header(ctx->write.dst_fd, entry);
+    if (chk != ARCHIVE_OK)
+    {
+        syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+    }
+
+    /*目录和软链接没有实体。*/
+    if (S_ISDIR(attr->st_mode) || S_ISLNK(attr->st_mode))
+        ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
+
+    fd = abcdk_open(file, 0, 0, 0);
+    if (fd < 0)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+
+    if(!ctx->write.buf)
+    {    
+        ctx->write.buf = abcdk_heap_alloc(ctx->write.buf_size);
+        if(!ctx->write.buf)
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+    }
+
+    for(;;)
+    {
+        rlen = abcdk_read(fd, ctx->write.buf, ctx->write.buf_size);
+        if (rlen <= 0)
+            break;
+
+        wlen = archive_write_data(ctx->write.dst_fd, ctx->write.buf, rlen);
+        if (wlen != rlen)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+        }
+    }
+
+    chk = archive_write_finish_entry(ctx->write.dst_fd);
+    if (chk != ARCHIVE_OK)
+    {
+        syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+    }
+   
+    /*No error.*/
+    chk = 0;
+
+final:
+
+    abcdk_closep(&fd);
+    
+    if(entry)
+        archive_entry_free(entry);
+
+    return chk;
+}
+
+void _abcdkarchive_write_real(abcdkarchive_ctx *ctx)
+{
+    struct stat attr = {0};
+    char file[PATH_MAX] = {0};
+    abcdk_tree_t *dir = NULL;
+    int chk;
+
+    dir = abcdk_tree_alloc3(1);
+    if(!dir)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+
+    for (int i = 0; i < ctx->write.file_num; i++)
+    {
+        memset(file,0,PATH_MAX);
+        abcdk_dirdir(file,ctx->wksp);
+        abcdk_dirdir(file,ctx->write.files[i]);
+
+        chk = lstat(file,&attr);
+        if(chk != 0)
+        {
+            syslog(LOG_WARNING, "'%s' %s。",file,strerror(errno));
+            continue;
+        }
+
+        if(S_ISDIR(attr.st_mode))
+        {
+            chk = abcdk_dirent_open(dir,file);
+            if(chk != 0)
+            {
+                syslog(LOG_WARNING, "'%s' %s。",file,strerror(errno));
+                continue;
+            }
+        }
+
+        chk = _abcdkarchive_write_one(ctx, file, &attr);
+        if (chk != 0 && chk != -2)
+            goto final;
+    }
+
+    for(;;)
+    {
+        memset(file,0,PATH_MAX);
+        chk = abcdk_dirent_read(dir, file);
+        if (chk != 0)
+            break;
+
+        chk = lstat(file, &attr);
+        if (chk != 0)
+        {
+            syslog(LOG_WARNING, "'%s' %s。", file, strerror(errno));
+            continue;
+        }
+
+        if(S_ISDIR(attr.st_mode))
+        {
+            chk = abcdk_dirent_open(dir,file);
+            if(chk != 0)
+            {
+                syslog(LOG_WARNING, "'%s' %s。",file,strerror(errno));
+                continue;
+            }
+        }
+
+        chk = _abcdkarchive_write_one(ctx, file, &attr);
+        if (chk != 0 && chk != -2)
+            goto final;
+    }
+    
+final:
+
+    abcdk_tree_free(&dir);
 }
 
 void _abcdkarchive_write(abcdkarchive_ctx *ctx)
 {
     int chk;
 
-    ctx->w.src_num = abcdk_option_count(ctx->args, "--file-from");
-    for (int i = 0; i < ctx->w.src_num; i++)
-        ctx->w.src[i] = abcdk_option_get(ctx->args, "--file-from", i, NULL);
-    ctx->w.save_fullpath = abcdk_option_exist(ctx->args,"--save-fullpath");
+    ctx->write.volume = abcdk_option_get(ctx->args, "--volume", 0, NULL);
+    ctx->write.file_num = abcdk_option_count(ctx->args, "--file-list");
+    for (int i = 0; i < ctx->write.file_num; i++)
+        ctx->write.files[i] = abcdk_option_get(ctx->args, "--file-list", i, NULL);
+    ctx->write.save_fullpath = abcdk_option_exist(ctx->args,"--save-fullpath");
     
+    ctx->write.dst_fd = NULL;
+    ctx->write.buf_size = 1024*1024;
+
+    if (ctx->write.volume == NULL || ctx->write.volume[0] == '\0')
+    {
+        syslog(LOG_ERR, "'--volume NAME' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
+    }
+
+    if (ctx->write.files[0] == NULL || *ctx->write.files[0] == '\0')
+    {
+        syslog(LOG_ERR, "'--file-from FILE|DIR [ FILE|DIR ... ]' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
+    }
+
+    if (ctx->wksp == NULL || *ctx->wksp == '\0')
+    {
+        syslog(LOG_ERR, "'--workspace PATH' 不能省略，且不能为空。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
+    }
+
+    if (access(ctx->wksp, R_OK) != 0)
+    {
+        syslog(LOG_ERR, "'%s' %s。", ctx->wksp, strerror(errno));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+    }
+
+    ctx->write.dst_fd = archive_write_new();
+    if (!ctx->write.dst_fd)
+    {
+        syslog(LOG_ERR, "%s。", strerror(errno));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+    }
+
+    chk = archive_write_set_bytes_per_block(ctx->write.dst_fd, ctx->blk);
+    if (chk != ARCHIVE_OK)
+    {
+        syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+    }
+
+    if (ctx->flt > 0)
+    {
+        chk = archive_write_add_filter(ctx->write.dst_fd, abcdkarchive_find_filter(ctx->flt));
+        if (chk != ARCHIVE_OK)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+        }
+    }
+
+    if (ctx->fmt > 0)
+    {
+        chk = archive_write_set_format(ctx->write.dst_fd, abcdkarchive_find_format(ctx->fmt));
+        if (chk != ARCHIVE_OK)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+        }
+    }
+
+    if (ctx->opt)
+    {
+        chk = archive_write_set_options(ctx->write.dst_fd, ctx->opt);
+        if (chk != ARCHIVE_OK)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+        }
+    }
+
+#if ARCHIVE_VERSION_NUMBER >= 3003003
+    if (ctx->pwd)
+    {
+        chk = archive_write_set_passphrase(ctx->write.dst_fd, ctx->pwd);
+        if (chk != ARCHIVE_OK)
+        {
+            syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+        }
+    }
+#endif // ARCHIVE_VERSION_NUMBER >= 3003003
+
+    chk = archive_write_open_filename(ctx->write.dst_fd, ctx->write.volume);
+    if (chk != ARCHIVE_OK)
+    {
+        syslog(LOG_ERR, "%s。", archive_error_string(ctx->write.dst_fd));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->write.dst_fd), final);
+    }
+    
+    _abcdkarchive_write_real(ctx);
+
+final:
+
+    if (ctx->write.dst_fd)
+    {
+        archive_write_free(ctx->write.dst_fd);
+        ctx->write.dst_fd = NULL;
+    }
+
+    abcdk_heap_free2(&ctx->write.buf);
 }
 
 void _abcdkarchive_work(abcdkarchive_ctx *ctx)
