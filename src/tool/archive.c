@@ -229,8 +229,8 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--workspace < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
-    fprintf(stderr, "\n\t--name < NAME [ NAME-2 NAME-3 ... ] >\n");
-    fprintf(stderr, "\t\t档案名称(包括路径)。\n");
+    fprintf(stderr, "\n\t--volume < NAME [ NAME-2 NAME-3 ... ] >\n");
+    fprintf(stderr, "\t\t卷名(包括路径)。\n");
 
     fprintf(stderr, "\n回迁选项:\n");
 
