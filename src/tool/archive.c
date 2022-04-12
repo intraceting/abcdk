@@ -426,7 +426,7 @@ void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
     while (1)
     {
         chk = archive_read_next_header(ctx->read.src_fd, &ctx->read.src_entry);
-        if (chk == ARCHIVE_EOF || !ctx->read.src_entry)
+        if (chk == ARCHIVE_EOF)
             goto final;
         if (chk != ARCHIVE_OK)
         {
