@@ -224,7 +224,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
     fprintf(stderr, "\n\t--blksize < SIZE >\n");
-    fprintf(stderr, "\t\t每次读写块大小(字节)。默认：自动\n");
+    fprintf(stderr, "\t\t每次读写块大小(字节)。默认：10240\n");
 
     fprintf(stderr, "\n\t--workspace < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
@@ -841,7 +841,7 @@ void _abcdkarchive_work(abcdkarchive_ctx *ctx)
     ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1,0);
     ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
     ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
-    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 0,0);
+    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 10240, 0);
     ctx->wksp = abcdk_option_get(ctx->args, "--workspace", 0, "./");
 
     if (ctx->cmd == ABCDKARCHIVE_READ)
