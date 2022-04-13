@@ -1487,3 +1487,5 @@ echo "INSTALL_PREFIX = ${INSTALL_PREFIX}" >> ${MAKE_CONF}
 
 #
 echo "ROOT_PATH ?= /" >> ${MAKE_CONF}
+
+
