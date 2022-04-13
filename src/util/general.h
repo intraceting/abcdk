@@ -142,7 +142,7 @@ int abcdk_isodigit(int c);
 /**
  * 字符串克隆。
 */
-#define abcdk_strdup(str) abcdk_heap_clone(str,strlen(str)+1);
+char *abcdk_strdup(const char *str);
 
 /**
  * 字符串查找。
@@ -651,6 +651,15 @@ ssize_t abcdk_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char no
 
 /*------------------------------------------------------------------------------------------------*/
 
+/**
+ * 计算字符串长度。
+ * 
+ * @param width 字符宽度。1：多字节，2：两字节，4：四字节。
+*/
+size_t abcdk_cslen(const void *str,int width);
+
+
+/*------------------------------------------------------------------------------------------------*/
 
 
 __END_DECLS

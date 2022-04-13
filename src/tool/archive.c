@@ -37,6 +37,10 @@ typedef struct _abcdkarchive_ctx
     int fmt;
     const char *opt;
     const char *pwd;
+
+    const char *md_cst;
+    int md_cst_w;
+
     const char *wksp;
 
     struct
@@ -226,6 +230,16 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--blksize < SIZE >\n");
     fprintf(stderr, "\t\t每次读写块大小（字节）。默认：10240\n");
 
+    fprintf(stderr, "\n\t--metadata-charset < CODE >\n");
+    fprintf(stderr, "\t\t元数据编码。默认：UTF-8，其它参考iconv -l\n");
+
+    fprintf(stderr, "\n\t--metadata-char-width\n");
+    fprintf(stderr, "\t\t元数据编码字符宽度。默认：-1\n");
+
+    fprintf(stderr, "\n\t\t\t1：多字节(变长)。\n");
+    fprintf(stderr, "\t\t\t 2：二字节(定长)。\n");
+    fprintf(stderr, "\t\t\t 4：四字节(定长)。\n");
+
     fprintf(stderr, "\n\t--workspace < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
@@ -246,36 +260,6 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t保留完整路径。默认：不保留。\n");
 }
 
-char *_abcdkarchive_name2local(const char *src, char dst[PATH_MAX])
-{
-    size_t slen;
-    size_t slen_vf;
-
-    /*猜测可能的长度。*/
-    slen = strlen(src);
-
-    slen_vf = abcdk_verify_utf8(src, PATH_MAX);
-    if (slen_vf != slen)
-    {
-        slen_vf = abcdk_verify_gbk(src, PATH_MAX);
-        if (slen_vf == slen)
-        {
-            abcdk_iconv2("cp936", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
-        }
-        else
-        {
-            slen_vf = abcdk_verify_ucs2(src, PATH_MAX, 0);
-            abcdk_iconv2("UCS-2", "UTF-8", src, slen_vf, dst, PATH_MAX, NULL);
-        }
-    }
-    else
-    {
-        strncpy(dst, src, slen_vf);
-    }
-
-    return dst;
-}
-
 int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
 {
     const char *name = NULL;
@@ -290,7 +274,9 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     int chk = 0;
 
     name = archive_entry_pathname(ctx->read.src_entry);
-    _abcdkarchive_name2local(name, name_cp);
+
+    /*转成本地的字符集编码。*/
+    abcdk_iconv2(ctx->md_cst, "UTF-8", name, abcdk_cslen(name,ctx->md_cst_w) * ctx->md_cst_w, name_cp, PATH_MAX, NULL);
 
     syslog(LOG_INFO, "%s\n", name_cp);
 
@@ -326,7 +312,9 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
             }
 
             lkname = archive_entry_symlink(ctx->read.src_entry);
-            _abcdkarchive_name2local(lkname, lkname_cp);
+
+            /*转成本地的字符集编码。*/
+            abcdk_iconv2(ctx->md_cst, "UTF-8", lkname, abcdk_cslen(lkname,ctx->md_cst_w) * ctx->md_cst_w, lkname_cp, PATH_MAX, NULL);
 
             abcdk_mkdir(pathfile, 0700);
             chk = symlink(lkname, pathfile);
@@ -595,7 +583,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
         return -2;
     }
 
-    syslog(LOG_INFO, "%s\n", file);
+    syslog(LOG_INFO, "%s\n", file + strlen(ctx->wksp));
 
     entry = archive_entry_new();
     if(!entry)
@@ -871,6 +859,8 @@ void _abcdkarchive_work(abcdkarchive_ctx *ctx)
     ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
     ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
     ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 10240, 0);
+    ctx->md_cst = abcdk_option_get(ctx->args, "--metadata-charset", 0, "UTF-8");
+    ctx->md_cst_w = abcdk_option_get_int(ctx->args, "--metadata-char-width", 0, 1,0);
     ctx->wksp = abcdk_option_get(ctx->args, "--workspace", 0, "./");
 
     if (ctx->cmd == ABCDKARCHIVE_READ)

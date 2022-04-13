@@ -207,6 +207,13 @@ int abcdk_isodigit(int c)
 
 /*------------------------------------------------------------------------------------------------*/
 
+char *abcdk_strdup(const char *str)
+{
+    assert(str != NULL);
+
+    return (char*)abcdk_heap_clone(str,strlen(str)+1);
+}
+
 const char *abcdk_strstr(const char *str, const char *sub, int caseAb)
 {
     assert(str != NULL && sub != NULL);
@@ -418,6 +425,7 @@ final_error:
 
     return NULL;
 }
+
 
 /*------------------------------------------------------------------------------------------------*/
 
@@ -1354,6 +1362,34 @@ ssize_t abcdk_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char no
     }
 
     return rlen;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
+size_t abcdk_cslen(const void *str, int width)
+{
+    size_t len = 0;
+
+    assert(str != NULL);
+    assert(width == 1 || width == 2 || width == 4);
+
+    if (width == 4)
+    {
+        while (ABCDK_PTR2U32(str, len))
+            len += 1;
+    }
+    else if (width == 2)
+    {
+        while (ABCDK_PTR2U16(str, len))
+            len += 1;
+    }
+    else if (width == 1)
+    {
+        while (ABCDK_PTR2U8(str, len))
+            len += 1;
+    }
+
+    return len;
 }
 
 /*------------------------------------------------------------------------------------------------*/

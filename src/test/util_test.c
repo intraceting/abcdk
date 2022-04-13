@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <wchar.h>
 #include <sys/mount.h>
 #include <linux/fb.h>
 #include <linux/serial.h>
@@ -47,6 +48,7 @@
 #include "shell/block.h"
 #include "shell/mmc.h"
 #include "shell/scsi.h"
+#include "util/iconv.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -4659,6 +4661,15 @@ int main(int argc, char **argv)
     char name[NAME_MAX] = {0};
     realpath("/dev/disk/by-uuid/8d110083-0761-4887-8106-cea62b375936",name);
     printf("%s\n",name);
+    
+    char src1[] = {"测试test测试知道"};
+    uint8_t dst1[100] = {0};
+    uint8_t dst2[100] = {0};
+    ssize_t r1 = abcdk_iconv2("UTF-8","UCS-4",  src1, strlen(src1), dst1, 100, NULL);
+
+    int r3 = abcdk_cslen(dst1,4);
+    ssize_t r = abcdk_iconv2("UCS-4", "UTF-8", dst1, r1, dst2, 100, NULL);
+
     
 
 #ifdef HAVE_OPENSSL
