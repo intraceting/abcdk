@@ -234,7 +234,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t元数据编码。默认：UTF-8，其它参考iconv -l\n");
 
     fprintf(stderr, "\n\t--metadata-char-width\n");
-    fprintf(stderr, "\t\t元数据编码字符宽度。默认：-1\n");
+    fprintf(stderr, "\t\t元数据编码字符宽度。默认：1\n");
 
     fprintf(stderr, "\n\t\t\t1：多字节(变长)。\n");
     fprintf(stderr, "\t\t\t 2：二字节(定长)。\n");
