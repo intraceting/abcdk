@@ -196,7 +196,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t%d：归档。\n", ABCDKARCHIVE_WRITE);
 
     fprintf(stderr, "\n\t--filter < NUMBER >\n");
-    fprintf(stderr, "\t\t过滤器。默认：自动（回迁）\n");
+    fprintf(stderr, "\t\t过滤器。默认：回迁（自动）\n");
 
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_filter_dict); i++)
@@ -208,7 +208,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n");
 
     fprintf(stderr, "\n\t--format < NUMBER >\n");
-    fprintf(stderr, "\t\t格式。默认：自动（回迁）\n");
+    fprintf(stderr, "\t\t格式。默认：回迁（自动）\n");
 
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_format_dict); i++)
