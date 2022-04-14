@@ -176,10 +176,6 @@ INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 
 #
-INSTALL_LDC_PATH = $(abspath ${INSTALL_PATH}/lib/)
-INSTALL_LDC_FILE = $(abspath ${INSTALL_LDC_PATH}/ldconfig.sh)
-
-#
 install: install-runtime install-devel
 
 #
@@ -190,20 +186,23 @@ install-runtime:
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
-	mkdir -p ${INSTALL_LDC_PATH}
-	echo "#!/bin/bash" > ${INSTALL_LDC_FILE}
-	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${INSTALL_LDC_FILE}
-	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${INSTALL_LDC_FILE}
-	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${INSTALL_LDC_FILE}
-	echo "ldconfig"  >> ${INSTALL_LDC_FILE}
-	chmod 755 ${INSTALL_LDC_FILE}
+	echo "#!/bin/bash" > ${INSTALL_PATH_LIB}/ldconfig.sh
+	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${INSTALL_PATH_LIB}/ldconfig.sh
+	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${INSTALL_PATH_LIB}/ldconfig.sh
+	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${INSTALL_PATH_LIB}/ldconfig.sh
+	echo "ldconfig"  >> ${INSTALL_PATH_LIB}/ldconfig.sh
+	chmod 755 ${INSTALL_PATH_LIB}/ldconfig.sh
 #
 	mkdir -p ${INSTALL_PATH_BIN}
 #
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
-#
 	cp -f $(BUILD_PATH)/abcdk-vmtx ${INSTALL_PATH_BIN}/
-
+#
+	echo "#!/bin/bash" > ${INSTALL_PATH_BIN}/setenvpath.sh
+	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${INSTALL_PATH_BIN}/setenvpath.sh
+	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${INSTALL_PATH_BIN}/setenvpath.sh
+	echo "echo \"export PATH=\$${SHELL_PWD}/:\\\$${PATH}\" > /etc/profile.d/${SOLUTION_NAME}.sh" >> ${INSTALL_PATH_BIN}/setenvpath.sh
+	chmod 755 ${INSTALL_PATH_BIN}/setenvpath.sh
 #
 install-devel:
 #
@@ -226,12 +225,12 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
-	rm -f ${INSTALL_LDC_FILE}
+	rm -f ${INSTALL_PATH_LIB}/ldconfig.sh
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk-tool
-#
 	rm -f $(INSTALL_PATH_BIN)/abcdk-vmtx
-
+#
+	rm -f ${INSTALL_PATH_BIN}/setenvpath.sh
 #
 uninstall-devel:
 #
