@@ -37,6 +37,7 @@ static struct _abcdk_tool_entry
     {"lsscsi",abcdk_tool_lsscsi},
     {"archive",abcdk_tool_archive},
     {"lsmmc",abcdk_tool_lsmmc},
+    {"backup",abcdk_tool_backup}
 };
 
 void _abcdk_tool_print_usage()

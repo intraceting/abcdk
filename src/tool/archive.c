@@ -225,7 +225,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
     fprintf(stderr, "\n\t--option < STRING >\n");
-    fprintf(stderr, "\t\t选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
+    fprintf(stderr, "\t\t附加选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
     fprintf(stderr, "\n\t--blksize < SIZE >\n");
     fprintf(stderr, "\t\t每次读写块大小（字节）。默认：10240\n");
@@ -236,15 +236,15 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--metadata-char-width\n");
     fprintf(stderr, "\t\t元数据编码字符宽度。默认：1\n");
 
-    fprintf(stderr, "\n\t\t\t1：多字节(变长)。\n");
-    fprintf(stderr, "\t\t\t 2：二字节(定长)。\n");
-    fprintf(stderr, "\t\t\t 4：四字节(定长)。\n");
+    fprintf(stderr, "\n\t\t1：多字节(变长)。\n");
+    fprintf(stderr, "\t\t2：二字节(定长)。\n");
+    fprintf(stderr, "\t\t4：四字节(定长)。\n");
 
     fprintf(stderr, "\n\t--workspace < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
-    fprintf(stderr, "\n\t--volume < NAME [ NAME-2 NAME-3 ... ] >\n");
-    fprintf(stderr, "\t\t卷名（包括路径）。\n");
+    fprintf(stderr, "\n\t--volume < NAME [ NAME-part2 NAME-part3 ... ] >\n");
+    fprintf(stderr, "\t\t卷名（包括路径）。注：归档不支持分卷\n");
 
     fprintf(stderr, "\n回迁选项:\n");
 
