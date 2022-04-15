@@ -25,6 +25,19 @@
 
 #if defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
+
+/** 常量。*/
+enum _abcdkarchive_constant
+{
+    /** 回迁。*/
+    ABCDKARCHIVE_READ = 1,
+#define ABCDKARCHIVE_READ ABCDKARCHIVE_READ
+
+    /** 归档。*/
+    ABCDKARCHIVE_WRITE = 2
+#define ABCDKARCHIVE_WRITE ABCDKARCHIVE_WRITE
+};
+
 typedef struct _abcdkarchive_ctx
 {
     int errcode;
@@ -74,18 +87,6 @@ typedef struct _abcdkarchive_ctx
     } write;
 
 } abcdkarchive_ctx;
-
-/** 常量。*/
-enum _abcdkarchive_constant
-{
-    /** 回迁。*/
-    ABCDKARCHIVE_READ = 1,
-#define ABCDKARCHIVE_READ ABCDKARCHIVE_READ
-
-    /** 归档。*/
-    ABCDKARCHIVE_WRITE = 2
-#define ABCDKARCHIVE_WRITE ABCDKARCHIVE_WRITE
-};
 
 static struct _abcdkarchive_filter_dict
 {
@@ -172,6 +173,7 @@ int abcdkarchive_find_format(int code)
     return 0;
 }
 
+
 void _abcdkarchive_print_usage(abcdk_tree_t *args)
 {
     fprintf(stderr, "\n描述:\n");
@@ -220,14 +222,14 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n");
 
 #if ARCHIVE_VERSION_NUMBER >= 3003003
-    fprintf(stderr, "\n\t--passphrase < STRING >\n");
+    fprintf(stderr, "\n\t--password < STRING >\n");
     fprintf(stderr, "\t\t密码。默认：无\n");
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
     fprintf(stderr, "\n\t--option < STRING >\n");
     fprintf(stderr, "\t\t附加选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
 
-    fprintf(stderr, "\n\t--blksize < SIZE >\n");
+    fprintf(stderr, "\n\t--block-size < SIZE >\n");
     fprintf(stderr, "\t\t每次读写块大小（字节）。默认：10240\n");
 
     fprintf(stderr, "\n\t--metadata-charset < CODE >\n");
@@ -240,7 +242,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t2：二字节(定长)。\n");
     fprintf(stderr, "\t\t4：四字节(定长)。\n");
 
-    fprintf(stderr, "\n\t--workspace < PATH >\n");
+    fprintf(stderr, "\n\t--work-space < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
     fprintf(stderr, "\n\t--volume < NAME [ NAME-part2 NAME-part3 ... ] >\n");
@@ -856,12 +858,12 @@ void _abcdkarchive_work(abcdkarchive_ctx *ctx)
     ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ,0);
     ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1,0);
     ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1,0);
-    ctx->pwd = abcdk_option_get(ctx->args, "--passphrase", 0, NULL);
+    ctx->pwd = abcdk_option_get(ctx->args, "--password", 0, NULL);
     ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
-    ctx->blk = abcdk_option_get_int(ctx->args, "--blksize", 0, 10240, 0);
+    ctx->blk = abcdk_option_get_int(ctx->args, "--block-size", 0, 10240, 0);
     ctx->md_cst = abcdk_option_get(ctx->args, "--metadata-charset", 0, "UTF-8");
     ctx->md_cst_w = abcdk_option_get_int(ctx->args, "--metadata-char-width", 0, 1,0);
-    ctx->wksp = abcdk_option_get(ctx->args, "--workspace", 0, "./");
+    ctx->wksp = abcdk_option_get(ctx->args, "--work-space", 0, "./");
 
     if (ctx->cmd == ABCDKARCHIVE_READ)
     {
