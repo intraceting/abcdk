@@ -853,11 +853,21 @@ abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, a
 
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
+    {
 #ifdef SUN_LEN
         addr_len = SUN_LEN(&addr->addr_un);
 #else 
         addr_len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
 #endif
+    }
+    else if(addr->family == AF_INET)
+    {
+        addr_len = sizeof(struct sockaddr_in);
+    }
+    else if(addr->family == AF_INET6)
+    {
+        addr_len = sizeof(struct sockaddr_in6);
+    }
 
     chk = connect(node->fd, &addr->addr, addr_len);
     if(chk == 0)

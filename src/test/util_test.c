@@ -3313,7 +3313,7 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
     abcdk_comm_easy_get_sockaddr_str(easy,sockname_str,peername_str);
 
-    printf("Server(%s -> %s): ", sockname_str, peername_str);
+ //   printf("Server(%s -> %s): ", sockname_str, peername_str);
 
     if(!data)
     {
@@ -4670,7 +4670,9 @@ int main(int argc, char **argv)
     int r3 = abcdk_cslen(dst1,4);
     ssize_t r = abcdk_iconv2("UCS-4", "UTF-8", dst1, r1, dst2, 100, NULL);
 
-    
+    abcdk_sockaddr_t dd = {0};
+
+    abcdk_sockaddr_from_string(&dd,"127.0.0.1:17007",1);
 
 #ifdef HAVE_OPENSSL
 
