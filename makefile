@@ -63,16 +63,16 @@ TOOL_SRC_FILES = $(wildcard src/tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-TEST_SRC_FILES = $(wildcard src/test/*.c)
-TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
-
-#
 VMTX_SRC_FILES = $(wildcard src/vmtx/*.c)
 VMTX_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${VMTX_SRC_FILES}))
 
+#
+TEST_SRC_FILES = $(wildcard test/*.c)
+TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
+
 
 #
-all: base tool test vmtx
+all: base tool vmtx test
 
 #
 base: base-src
@@ -94,8 +94,8 @@ test: base test-src
 #
 test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/src/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/src/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
 
 #
 vmtx: base vmtx-src
@@ -134,11 +134,6 @@ $(OBJ_PATH)/src/tool/%.o: src/tool/%.c
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
-#
-$(OBJ_PATH)/src/test/%.o: src/test/%.c
-	mkdir -p $(OBJ_PATH)/src/test/
-	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/src/vmtx/%.o: src/vmtx/%.c
@@ -146,6 +141,11 @@ $(OBJ_PATH)/src/vmtx/%.o: src/vmtx/%.c
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
+#
+$(OBJ_PATH)/test/%.o: test/%.c
+	mkdir -p $(OBJ_PATH)/test/
+	rm -f $@
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
 clean: clean-base clean-tool clean-test clean-vmtx
@@ -186,23 +186,10 @@ install-runtime:
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
-	echo "#!/bin/bash" > ${INSTALL_PATH_LIB}/ldconfig.sh
-	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${INSTALL_PATH_LIB}/ldconfig.sh
-	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${INSTALL_PATH_LIB}/ldconfig.sh
-	echo "echo \"\$${SHELL_PWD}/\" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf" >> ${INSTALL_PATH_LIB}/ldconfig.sh
-	echo "ldconfig"  >> ${INSTALL_PATH_LIB}/ldconfig.sh
-	chmod 755 ${INSTALL_PATH_LIB}/ldconfig.sh
-#
 	mkdir -p ${INSTALL_PATH_BIN}
 #
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -f $(BUILD_PATH)/abcdk-vmtx ${INSTALL_PATH_BIN}/
-#
-	echo "#!/bin/bash" > ${INSTALL_PATH_BIN}/setenvpath.sh
-	echo "SHELL_PWD=\$$(cd \`dirname \$$0\`; pwd)" >> ${INSTALL_PATH_BIN}/setenvpath.sh
-	echo "[ \$$UID -ne 0 ] &&  echo \"you are not root.\" && exit" >> ${INSTALL_PATH_BIN}/setenvpath.sh
-	echo "echo \"export PATH=\$${SHELL_PWD}/:\\\$${PATH}\" > /etc/profile.d/${SOLUTION_NAME}.sh" >> ${INSTALL_PATH_BIN}/setenvpath.sh
-	chmod 755 ${INSTALL_PATH_BIN}/setenvpath.sh
 #
 install-devel:
 #
@@ -225,12 +212,8 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
-	rm -f ${INSTALL_PATH_LIB}/ldconfig.sh
-#
 	rm -f $(INSTALL_PATH_BIN)/abcdk-tool
 	rm -f $(INSTALL_PATH_BIN)/abcdk-vmtx
-#
-	rm -f ${INSTALL_PATH_BIN}/setenvpath.sh
 #
 uninstall-devel:
 #
@@ -253,14 +236,14 @@ package-runtime:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	tar -czv -f "${RUNTIME_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}-${VERSION_STR}"
-#	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 #
 package-devel:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	tar -czv -f "${DEVEL_PACKAGE_FILE}" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}-${VERSION_STR}"
-#	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
+	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 
 
