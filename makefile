@@ -43,7 +43,7 @@ CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #
-CC_FLAGS += -I$(CURDIR)/src/
+CC_FLAGS += -I$(CURDIR)/
  
 #
 LINK_FLAGS += -L${BUILD_PATH}
@@ -52,18 +52,18 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-BASE_SRC_FILES += $(wildcard src/util/*.c)
-BASE_SRC_FILES += $(wildcard src/shell/*.c)
-BASE_SRC_FILES += $(wildcard src/mp4/*.c)
-BASE_SRC_FILES += $(wildcard src/comm/*.c)
+BASE_SRC_FILES += $(wildcard util/*.c)
+BASE_SRC_FILES += $(wildcard shell/*.c)
+BASE_SRC_FILES += $(wildcard mp4/*.c)
+BASE_SRC_FILES += $(wildcard comm/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
-TOOL_SRC_FILES = $(wildcard src/tool/*.c)
+TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-VMTX_SRC_FILES = $(wildcard src/vmtx/*.c)
+VMTX_SRC_FILES = $(wildcard vmtx/*.c)
 VMTX_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${VMTX_SRC_FILES}))
 
 #
@@ -106,38 +106,38 @@ vmtx-src: ${VMTX_OBJ_FILES}
 
 
 #
-$(OBJ_PATH)/src/util/%.o: src/util/%.c
-	mkdir -p $(OBJ_PATH)/src/util/
+$(OBJ_PATH)/util/%.o: util/%.c
+	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 #
-$(OBJ_PATH)/src/shell/%.o: src/shell/%.c
-	mkdir -p $(OBJ_PATH)/src/shell/
-	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/mp4/%.o: src/mp4/%.c
-	mkdir -p $(OBJ_PATH)/src/mp4/
+$(OBJ_PATH)/shell/%.o: shell/%.c
+	mkdir -p $(OBJ_PATH)/shell/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/src/comm/%.o: src/comm/%.c
-	mkdir -p $(OBJ_PATH)/src/comm/
+$(OBJ_PATH)/mp4/%.o: mp4/%.c
+	mkdir -p $(OBJ_PATH)/mp4/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/src/tool/%.o: src/tool/%.c
-	mkdir -p $(OBJ_PATH)/src/tool/
+$(OBJ_PATH)/comm/%.o: comm/%.c
+	mkdir -p $(OBJ_PATH)/comm/
+	rm -f $@
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/tool/%.o: tool/%.c
+	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 
 #
-$(OBJ_PATH)/src/vmtx/%.o: src/vmtx/%.c
-	mkdir -p $(OBJ_PATH)/src/vmtx/
+$(OBJ_PATH)/vmtx/%.o: vmtx/%.c
+	mkdir -p $(OBJ_PATH)/vmtx/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
@@ -198,10 +198,10 @@ install-devel:
 	mkdir -p ${INSTALL_PATH_INC}/mp4
 	mkdir -p ${INSTALL_PATH_INC}/comm
 #
-	cp  -f $(CURDIR)/src/util/*.h ${INSTALL_PATH_INC}/util/
-	cp  -f $(CURDIR)/src/shell/*.h ${INSTALL_PATH_INC}/shell/
-	cp  -f $(CURDIR)/src/mp4/*.h ${INSTALL_PATH_INC}/mp4/
-	cp  -f $(CURDIR)/src/comm/*.h ${INSTALL_PATH_INC}/comm/
+	cp  -f $(CURDIR)/util/*.h ${INSTALL_PATH_INC}/util/
+	cp  -f $(CURDIR)/shell/*.h ${INSTALL_PATH_INC}/shell/
+	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
+	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
 
 #
 uninstall: uninstall-runtime uninstall-devel
