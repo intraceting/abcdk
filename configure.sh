@@ -5,6 +5,8 @@
 # MIT License
 ##
 
+#
+CURDIR=$(cd `dirname $0`; pwd)
 
 # Functions
 checkReturnCode()
@@ -785,11 +787,9 @@ CheckKeyword()
     echo ${NUM}
 }
 
-#
-SHELL_PWD=$(cd `dirname $0`; pwd)
 
 #
-MAKE_CONF=${SHELL_PWD}/build/makefile.conf
+MAKE_CONF=${CURDIR}/build/makefile.conf
 
 #
 KIT_NAME=$(CheckPackageKitName)
@@ -799,7 +799,7 @@ SOLUTION_NAME=abcdk
 
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUILD_PATH=$(realpath "${SHELL_PWD}/build/")
+BUILD_PATH=$(realpath "${CURDIR}/build/")
 
 
 #主版本
