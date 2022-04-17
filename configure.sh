@@ -63,13 +63,13 @@ CheckHavePackageFromKit()
     STATUS="1"
 
     #
-    KIT_NAME="$1"
+    KITNAME="$1"
     PACKAGE="$2"
 
     #
-	if [ "deb" == "${KIT_NAME}" ];then 
+	if [ "deb" == "${KITNAME}" ];then 
         STATUS=$(dpkg -V ${PACKAGE} >> /dev/null 2>&1 ; echo $?)
-	elif [ "rpm" == "${KIT_NAME}" ];then
+	elif [ "rpm" == "${KITNAME}" ];then
 		STATUS=$(rpm -q ${PACKAGE} >> /dev/null 2>&1 ; echo $?)
     fi
 
@@ -828,7 +828,7 @@ usage: [ OPTIONS ]
     -g  
      生成调试符号。默认：关闭
 
-     自定义编译器。如下：
+     自定义编译器，并且定义环境变量。如下：
      export CC=gcc
      export AR=ar
 
@@ -852,8 +852,8 @@ usage: [ OPTIONS ]
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand
 
-     自定义依赖项。如下：
-     export DEPEND_FLAGS="-DHAVE_3PARTY -I/tmp/3party/include/"
+     自定义依赖项，key前缀增加“with-”，并且定义环境变量。如下：
+     export DEPEND_FLAGS="-I/tmp/3party/include/"
      export DEPEND_LIBS="-l:3party.so -l:3party.a -l3party -L/tmp/3party/lib/"
 EOF
 }
@@ -923,469 +923,76 @@ if [ ${STATUS} -ne 0 ];then
 fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "openmp") -eq 1 ];then
+DependPackageCheck()
+# 1 key
+# 2 def
 {
-    STATUS=$(CheckHavePackage ${KIT_NAME} openmp 1)
-    if [ ${STATUS} -eq 0 ];then
+    PACKAGE_KEY=$1
+    PACKAGE_DEF=$2
+    #
+    if [ $(CheckKeyword ${DEPEND_FUNC} ${PACKAGE_KEY}) -eq 1 ];then
     {
-        DEPEND_FLAGS=" -DHAVE_OPENMP $(CheckHavePackage ${KIT_NAME} openmp 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} openmp 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} openmp 0) ${DEPEND_NOFOUND}"
+        if [ $(CheckKeyword ${DEPEND_FUNC} with-${PACKAGE_KEY}) -eq 1 ];then
+        {
+            DEPEND_FLAGS=" -D${PACKAGE_DEF} ${DEPEND_FLAGS}"
+        }
+        else
+        {
+            CHK=$(CheckHavePackage ${KIT_NAME} ${PACKAGE_KEY} 1)
+            if [ ${CHK} -eq 0 ];then
+            {
+                DEPEND_FLAGS=" -D${PACKAGE_DEF} $(CheckHavePackage ${KIT_NAME} ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
+                DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
+            }
+            else
+            {
+                DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} ${PACKAGE_KEY} 0) ${DEPEND_NOFOUND}"
+            }
+            fi
+        }
+        fi
     }
     fi
+
+#    echo ${DEPEND_FLAGS} 
+#    echo ${DEPEND_LIBS}
 }
-fi
 
 #
-if [ $(CheckKeyword ${DEPEND_FUNC} "unixodbc") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} unixodbc 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_UNIXODBC $(CheckHavePackage ${KIT_NAME} unixodbc 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage  ${KIT_NAME} unixodbc 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} unixodbc 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "sqlite") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} sqlite 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_SQLITE $(CheckHavePackage ${KIT_NAME} sqlite 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} sqlite 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} sqlite 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "openssl") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} openssl 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_OPENSSL $(CheckHavePackage ${KIT_NAME} openssl 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} openssl 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} openssl 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "ffmpeg") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} ffmpeg 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_FFMPEG $(CheckHavePackage ${KIT_NAME} ffmpeg 2 ) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage  ${KIT_NAME} ffmpeg 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} ffmpeg 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "freeimage") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} freeimage 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_FREEIMAGE $(CheckHavePackage ${KIT_NAME} freeimage 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} freeimage 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} freeimage 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "fuse") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} fuse 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_FUSE $(CheckHavePackage ${KIT_NAME} fuse 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} fuse 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} fuse 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "libnm") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} libnm 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_LIBNM $(CheckHavePackage ${KIT_NAME} libnm 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libnm 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libnm 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "lz4") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} lz4 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_LZ4 $(CheckHavePackage ${KIT_NAME} lz4 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} lz4 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} lz4 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "zlib") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} zlib 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_ZLIB $(CheckHavePackage ${KIT_NAME} zlib 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} zlib 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} zlib 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "archive") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} archive 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_ARCHIVE $(CheckHavePackage ${KIT_NAME} archive 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} archive 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} archive 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "modbus") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} modbus 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_MODBUS $(CheckHavePackage ${KIT_NAME} modbus 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} modbus 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} modbus 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "libusb") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} libusb 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_LIBUSB $(CheckHavePackage ${KIT_NAME} libusb 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libusb 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libusb 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "mqtt") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} mqtt 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_MQTT $(CheckHavePackage ${KIT_NAME} mqtt 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} mqtt 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} mqtt 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "redis") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} redis 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_REDIS $(CheckHavePackage ${KIT_NAME} redis 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} redis 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} redis 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "json-c") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} json-c 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_JSON_C $(CheckHavePackage ${KIT_NAME} json-c 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} json-c 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} json-c 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "bluez") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} bluez 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_BLUEZ $(CheckHavePackage ${KIT_NAME} bluez 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} bluez 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} bluez 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "blkid") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} blkid 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_BLKID $(CheckHavePackage ${KIT_NAME} blkid 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} blkid 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} blkid 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "libcap") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} libcap 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_LIBCAP $(CheckHavePackage ${KIT_NAME} libcap 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libcap 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libcap 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "fastcgi") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} fastcgi 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_FASTCGI $(CheckHavePackage ${KIT_NAME} fastcgi 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} fastcgi 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} fastcgi 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "samba") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} samba 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_SAMBA $(CheckHavePackage ${KIT_NAME} samba 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} samba 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} samba 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "systemd") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} systemd 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_SYSTEMD $(CheckHavePackage ${KIT_NAME} systemd 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} systemd 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} systemd 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "libudev") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} libudev 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_LIBUDEV $(CheckHavePackage ${KIT_NAME} libudev 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} libudev 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} libudev 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "dmtx") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} dmtx 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_LIBDMTX $(CheckHavePackage ${KIT_NAME} dmtx 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} dmtx 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} dmtx 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "qrencode") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} qrencode 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_QRENCODE $(CheckHavePackage ${KIT_NAME} qrencode 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} qrencode 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} qrencode 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "zbar") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} zbar 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_ZBAR $(CheckHavePackage ${KIT_NAME} zbar 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} zbar 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} zbar 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
-
-#
-if [ $(CheckKeyword ${DEPEND_FUNC} "magickwand") -eq 1 ];then
-{
-    STATUS=$(CheckHavePackage ${KIT_NAME} magickwand 1)
-    if [ ${STATUS} -eq 0 ];then
-    {
-        DEPEND_FLAGS=" -DHAVE_MAGICKWAND $(CheckHavePackage ${KIT_NAME} magickwand 2) ${DEPEND_FLAGS}"
-        DEPEND_LIBS=" $(CheckHavePackage ${KIT_NAME} magickwand 3) ${DEPEND_LIBS}"
-    }
-    else
-    {
-        DEPEND_NOFOUND="$(CheckHavePackage ${KIT_NAME} magickwand 0) ${DEPEND_NOFOUND}"
-    }
-    fi
-}
-fi
+DependPackageCheck openmp HAVE_OPENMP
+DependPackageCheck unixodbc HAVE_UNIXODBC
+DependPackageCheck sqlite HAVE_SQLITE
+DependPackageCheck openssl HAVE_OPENSSL
+DependPackageCheck ffmpeg HAVE_FFMPEG
+DependPackageCheck freeimage HAVE_FREEIMAGE
+DependPackageCheck fuse HAVE_FUSE
+DependPackageCheck libnm HAVE_LIBNM
+DependPackageCheck lz4 HAVE_LZ4
+DependPackageCheck zlib HAVE_ZLIB
+DependPackageCheck archive HAVE_ARCHIVE
+DependPackageCheck modbus HAVE_MODBUS
+DependPackageCheck libusb HAVE_LIBUSB
+DependPackageCheck mqtt HAVE_MQTT
+DependPackageCheck redis HAVE_REDIS
+DependPackageCheck json-c HAVE_JSON_C
+DependPackageCheck bluez HAVE_BLUEZ
+DependPackageCheck blkid HAVE_BLKID
+DependPackageCheck libcap HAVE_LIBCAP
+DependPackageCheck fastcgi HAVE_FASTCGI
+DependPackageCheck samba HAVE_SAMBA
+DependPackageCheck systemd HAVE_SYSTEMD
+DependPackageCheck libudev HAVE_LIBUDEV
+DependPackageCheck dmtx HAVE_LIBDMTX
+DependPackageCheck qrencode HAVE_QRENCODE
+DependPackageCheck zbar HAVE_ZBAR
+DependPackageCheck magickwand HAVE_MAGICKWAND
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
-echo "${DEPEND_NOFOUND} no found."
-exit 22
+{
+    echo "${DEPEND_NOFOUND} no found."
+    exit 22
+}
 fi 
 
 #
@@ -1399,16 +1006,22 @@ mkdir -p ${BUILD_PATH}
 
 #
 if [ ! -d ${BUILD_PATH} ];then
-echo "'${BUILD_PATH}' must be an existing directory."
-exit 22
+{
+    echo "'${BUILD_PATH}' must be an existing directory."
+    exit 22
+}
 fi
 
 #
 if [ ! -d ${INSTALL_PREFIX} ];then
-echo "'${INSTALL_PREFIX}' must be an existing directory."
-exit 22
+{
+    echo "'${INSTALL_PREFIX}' must be an existing directory."
+    exit 22
+}
 else
-INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}-${VERSION_STR}/"
+{
+    INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}-${VERSION_STR}/"
+}
 fi
 
 #
