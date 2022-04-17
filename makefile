@@ -63,16 +63,12 @@ TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-VMTX_SRC_FILES = $(wildcard vmtx/*.c)
-VMTX_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${VMTX_SRC_FILES}))
-
-#
 TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 
 #
-all: base tool vmtx test
+all: base tool test
 
 #
 base: base-src
@@ -96,14 +92,6 @@ test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
 	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
-
-#
-vmtx: base vmtx-src
-#
-vmtx-src: ${VMTX_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-vmtx $^  -l:libabcdk.a $(LINK_FLAGS)
-
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
@@ -134,13 +122,6 @@ $(OBJ_PATH)/tool/%.o: tool/%.c
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
-
-#
-$(OBJ_PATH)/vmtx/%.o: vmtx/%.c
-	mkdir -p $(OBJ_PATH)/vmtx/
-	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
-
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
@@ -148,26 +129,27 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-base clean-tool clean-test clean-vmtx
-	rm -rf ${OBJ_PATH}
+clean: clean-base clean-tool clean-test
 
 #
 clean-base:
+	rm -rf ${OBJ_PATH}/util
+	rm -rf ${OBJ_PATH}/mp4
+	rm -rf ${OBJ_PATH}/comm
+	rm -rf ${OBJ_PATH}/shell
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
 clean-tool:
+	rm -rf ${OBJ_PATH}/tool
 	rm -f $(BUILD_PATH)/abcdk-tool
 
 #
 clean-test:
+	rm -rf ${OBJ_PATH}/test
 	rm -f $(BUILD_PATH)/epollex_test
 	rm -f $(BUILD_PATH)/util_test
-
-#
-clean-vmtx:
-	rm -f $(BUILD_PATH)/abcdk-vmtx
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
@@ -189,7 +171,6 @@ install-runtime:
 	mkdir -p ${INSTALL_PATH_BIN}
 #
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
-	cp -f $(BUILD_PATH)/abcdk-vmtx ${INSTALL_PATH_BIN}/
 #
 install-devel:
 #
@@ -213,7 +194,7 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk-tool
-	rm -f $(INSTALL_PATH_BIN)/abcdk-vmtx
+
 #
 uninstall-devel:
 #
