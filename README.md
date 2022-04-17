@@ -3,10 +3,6 @@
 
 * 一个不太好的C开发工具包。 
 
-### License
-
-* MIT-licensed。
-
 ### 查看编译帮助
 
 ```bash
