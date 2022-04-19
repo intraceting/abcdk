@@ -1,11 +1,7 @@
 
 ## ABCDK
 
-* A Bad C Development Kit. 
-
-### License
-
-* ABCDK is MIT-licensed.
+* 一个不太好的C开发工具包。 
 
 ### 查看编译帮助
 
