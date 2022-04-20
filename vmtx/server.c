@@ -15,32 +15,34 @@
 
 enum _abcdk_vmtx_server_constant
 {
-    /** 寻找中。*/
-    ABCDK_VMTX_SERVER_STATUS_LOOKING = 1,
-#define ABCDK_VMTX_SERVER_STATUS_LOOKING ABCDK_VMTX_SERVER_STATUS_LOOKING
+    /** 主机。*/
+    ABCDK_VMTX_SERVER_STATUS_MASTER = 1,
+#define ABCDK_VMTX_SERVER_STATUS_MASTER ABCDK_VMTX_SERVER_STATUS_MASTER
 
-    /** 领导中。*/
-    ABCDK_VMTX_SERVER_STATUS_LEADING = 2,
-#define ABCDK_VMTX_SERVER_STATUS_LEADING ABCDK_VMTX_SERVER_STATUS_LEADING
+    /** 备机。*/
+    ABCDK_VMTX_SERVER_STATUS_STANDBY = 2,
+#define ABCDK_VMTX_SERVER_STATUS_STANDBY ABCDK_VMTX_SERVER_STATUS_STANDBY
 
-    /** 跟随中。*/
-    ABCDK_VMTX_SERVER_STATUS_FOLLOWING = 3,
-#define ABCDK_VMTX_SERVER_STATUS_FOLLOWING ABCDK_VMTX_SERVER_STATUS_FOLLOWING
+    /** 从机。*/
+    ABCDK_VMTX_SERVER_STATUS_SLAVE = 3,
+#define ABCDK_VMTX_SERVER_STATUS_SLAVE ABCDK_VMTX_SERVER_STATUS_SLAVE
 
     /**
-     * 回显。
+     * 注册。
      *
      * REQ: cmd(2)
-     */
-    ABCDK_VMTX_SERVER_COMMAND_ECHO = 1,
-#define ABCDK_VMTX_SERVER_COMMAND_ECHO ABCDK_VMTX_SERVER_COMMAND_ECHO
+     * RSP: cmd(2) + errno(4) + status(1)
+     *      status: 1 主机，2 备机。
+    */
+    ABCDK_VMTX_SERVER_COMMAND_REGISTER = 1,
+#define ABCDK_VMTX_SERVER_COMMAND_REGISTER ABCDK_VMTX_SERVER_COMMAND_REGISTER
 
     /**
      * 选举主节点。比较IP地址，地址大的为领导者。
      *
      * REQ: cmd(2)
      * RSP: cmd(2) + errno(4) +  opinion(1)
-     *   opinion: 1 同意，2 不同意。
+     *      opinion: 1 同意，2 不同意。
     */
     ABCDK_VMTX_SERVER_COMMAND_VOTE = 2
 #define ABCDK_VMTX_SERVER_COMMAND_VOTE ABCDK_VMTX_SERVER_COMMAND_VOTE
@@ -74,6 +76,11 @@ typedef struct _abcdk_vmtx_server
 
 } abcdk_vmtx_server_t;
 
+typedef struct _abcdk_vmtx_server_io
+{
+    uint8_t mod;
+    abcdk_vmtx_server_t *ctx;
+} abcdk_vmtx_server_io_t;
 
 void _abcdk_vmtx_server_usage()
 {
@@ -146,7 +153,7 @@ void _abcdk_vmtx_server_register_signal(abcdk_vmtx_server_t *ctx)
     abcdk_sigwaitinfo_async(&sig);
 }
 
-void _abcdk_vmtx_server_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
+void _abcdk_vmtx_server_msg_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
     abcdk_sockaddr_t localaddr = {0},remoteaddr = {0};
     uint8_t rsp[7];
@@ -155,13 +162,13 @@ void _abcdk_vmtx_server_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, c
 
     ABCDK_PTR2U16(rsp, 0) = ABCDK_PTR2U16(req,0);
 
-    if (ctx->status == ABCDK_VMTX_SERVER_STATUS_LEADING)
+    if (ctx->status == ABCDK_VMTX_SERVER_STATUS_MASTER)
     {
         /*如果本机为领导者，则拒绝其它主机选主。*/
         ABCDK_PTR2U32(rsp, 2) = 0;
         ABCDK_PTR2U8(rsp, 6) = 2;
     }
-    else if (ctx->status == ABCDK_VMTX_SERVER_STATUS_LOOKING)
+    else if (ctx->status == ABCDK_VMTX_SERVER_STATUS_STANDBY)
     {
         /*当两个主机同时在线，选IP地址大的为主节点。*/
         ABCDK_PTR2U32(rsp, 2) = 0;
@@ -180,77 +187,54 @@ void _abcdk_vmtx_server_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, c
     abcdk_comm_easy_response(easy,rsp,7);
 }
 
-static struct _abcdk_vmtx_server_entry
+void _abcdk_vmtx_server_msg_reg(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
+
+}
+
+void _abcdk_vmtx_server_msg_reg_rsp(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
+{
+
+}
+
+static struct _abcdk_vmtx_server_msg_entry
+{
+    uint8_t mod;
     uint16_t cmd;
-    void (*func_cb)(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len);
-} abcdk_vmtx_server_entry[] = {
-    {ABCDK_VMTX_COMMAND_VOTE, _abcdk_vmtx_server_vote}
+    void (*func_cb)(abcdk_vmtx_server_t *ctx, abcdk_comm_easy_t *easy, const void *req, size_t len);
+} abcdk_vmtx_server_msg_entry[] = {
+    {2,ABCDK_VMTX_SERVER_COMMAND_REGISTER,_abcdk_vmtx_server_msg_reg},
+    {2,ABCDK_VMTX_SERVER_COMMAND_VOTE, _abcdk_vmtx_server_msg_vote},
+    {3,ABCDK_VMTX_SERVER_COMMAND_REGISTER,_abcdk_vmtx_server_msg_reg_rsp}
 };
 
-void _abcdk_vmtx_server_dispatch(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
+void _abcdk_vmtx_server_msg_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
+    abcdk_vmtx_server_io_t *io;
     uint16_t cmd;
 
-    cmd = abcdk_endian_b_to_h16(ABCDK_PTR2U16(req, 0));
-
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_vmtx_server_entry); i++)
-    {
-        if (abcdk_vmtx_server_entry[i].cmd != cmd)
-            continue;
-
-        abcdk_vmtx_server_entry[i].func_cb(ctx,easy,req,len);
-    }
-}
-
-void _abcdk_vmtx_server_server_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
-{
-    abcdk_vmtx_server_t *ctx;
-
-    ctx = (abcdk_vmtx_server_t *)abcdk_comm_easy_get_userdata(easy);
+    io = (abcdk_vmtx_server_io_t *)abcdk_comm_easy_get_userdata(easy);
 
     if (req != NULL && len > 0)
     {
-        _abcdk_vmtx_server_dispatch(ctx,easy,req,len);
+        cmd = abcdk_endian_b_to_h16(ABCDK_PTR2U16(req, 0));
+
+        for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_vmtx_server_msg_entry); i++)
+        {
+            if (abcdk_vmtx_server_msg_entry[i].mod != io->mod)
+                continue;
+
+            if (abcdk_vmtx_server_msg_entry[i].cmd != cmd)
+                continue;
+
+            abcdk_vmtx_server_msg_entry[i].func_cb(io->ctx, easy, req, len);
+        }
     }
     else
     {
-        printf("%s\n",__FUNCTION__);
+        printf("%s\n", __FUNCTION__);
     }
 }
-
-void _abcdk_vmtx_server_client_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
-{
-    abcdk_vmtx_server_t *ctx;
-
-    ctx = (abcdk_vmtx_server_t *)abcdk_comm_easy_get_userdata(easy);
-
-    if (req != NULL && len > 0)
-    {
-        _abcdk_vmtx_server_dispatch(ctx,easy,req,len);
-    }
-    else
-    {
-        printf("%s\n",__FUNCTION__);
-    }
-}
-
-void _abcdk_vmtx_server_server_client_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
-{
-    abcdk_vmtx_server_t *ctx;
-
-    ctx = (abcdk_vmtx_server_t *)abcdk_comm_easy_get_userdata(easy);
-
-    if (req != NULL && len > 0)
-    {
-        _abcdk_vmtx_server_dispatch(ctx,easy,req,len);
-    }
-    else
-    {
-        printf("%s\n",__FUNCTION__);
-    }
-}
-
 
 int _abcdk_vmtx_server_start(abcdk_vmtx_server_t *ctx)
 {
@@ -262,7 +246,11 @@ int _abcdk_vmtx_server_start(abcdk_vmtx_server_t *ctx)
 
     /*监听客户端命令地址。*/
     abcdk_sockaddr_from_string(&ctx->client_sockaddr,ctx->client_listen,0);
-    easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->client_sockaddr, _abcdk_vmtx_server_client_cb, ctx);
+
+    static abcdk_vmtx_server_io_t client_io = {0};
+    client_io.mod = 1, client_io.ctx = ctx;
+
+    easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->client_sockaddr, _abcdk_vmtx_server_msg_cb, &client_io);
     if (!easy_tmp)
     {
         abcdk_log_printf(LOG_ERR, "监听'%s'失败。", ctx->client_listen);
@@ -283,7 +271,10 @@ int _abcdk_vmtx_server_start(abcdk_vmtx_server_t *ctx)
         if (!abcdk_sockaddr_where(&ctx->master_sockaddr[i], 1))
             continue;
 
-        easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_server_cb, ctx);
+        static abcdk_vmtx_server_io_t service_io = {0};
+        service_io.mod = 2, service_io.ctx = ctx;
+
+        easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_msg_cb, &service_io);
         if (!easy_tmp)
         {
             abcdk_log_printf(LOG_ERR, "监听'%s'失败。", ctx->master_addr[i]);
@@ -348,7 +339,7 @@ final:
 
     /*选举成功后，更改自身的状态。*/
     if (opinion == 1)
-        ctx->status = ABCDK_VMTX_SERVER_STATUS_LEADING;
+        ctx->status = ABCDK_VMTX_SERVER_STATUS_MASTER;
 
     abcdk_comm_message_unref(&rsp);
 }
@@ -361,13 +352,16 @@ void _abcdk_vmtx_server_runloop(abcdk_vmtx_server_t *ctx)
         {
             if (!ctx->master_easy[i])
             {
-                ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_server_client_cb, ctx);
+                static abcdk_vmtx_server_io_t service_io = {0};
+                service_io.mod = 3, service_io.ctx = ctx;
+
+                ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_msg_cb, &service_io);
                 if (ctx->master_easy[i])
                     abcdk_comm_easy_set_timeout(ctx->master_easy[i], 5);
             }
         }
 
-        if(abcdk_atomic_compare(&ctx->status,ABCDK_VMTX_SERVER_STATUS_LOOKING))
+        if(ctx->status == ABCDK_VMTX_SERVER_STATUS_STANDBY)
         {
 
         }
@@ -434,7 +428,7 @@ void _abcdk_vmtx_server_dowork(abcdk_vmtx_server_t *ctx)
     }
 
     /*初始化状态。*/
-    ctx->status = ((chk == 1) ? ABCDK_VMTX_SERVER_STATUS_LOOKING : ABCDK_VMTX_SERVER_STATUS_FOLLOWING);
+    ctx->status = ((chk == 1) ? ABCDK_VMTX_SERVER_STATUS_STANDBY : ABCDK_VMTX_SERVER_STATUS_SLAVE);
 
     chk = _abcdk_vmtx_server_start(ctx);
     if (chk != 0)

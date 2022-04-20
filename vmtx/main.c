@@ -9,8 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "client.h"
-#include "server.h"
+#include "entry.h"
 
 /** 工具集合。*/
 static struct _abcdk_vmtx_entry
