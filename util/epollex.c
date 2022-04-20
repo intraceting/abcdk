@@ -66,7 +66,7 @@ typedef struct _abcdk_epollex_node
     time_t active;
 
     /** 超时(毫秒)。*/
-    time_t timeout;
+    volatile time_t timeout;
 
     /** 是否第一次注册。!0 是，0 否。*/
     int mark_first;

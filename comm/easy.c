@@ -490,9 +490,13 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     msg = easy->in_buffer;
     /*缓存已经被托管，这里不能再继续使用了。*/
     easy->in_buffer = NULL;
+    
+    /*复用链路前要增加引用计数，不然当多线程操作同一个链路释放回收内存后，会造成应用层内存非法访问的异常。*/
+    abcdk_comm_easy_refer(easy);
     /*复用链路。*/
     abcdk_comm_read_watch(easy->comm);
 
+    /*处理接收到的数据。*/
     msg_ptr = abcdk_comm_message_data(msg);
     msg_len = abcdk_comm_message_size(msg);
 
@@ -522,6 +526,9 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
         /*删除请求数据。*/
         abcdk_comm_message_unref(&msg);
     }
+
+    /*减少引用计数。*/
+    abcdk_comm_easy_unref(easy);
 }
 
 void _abcdk_comm_easy_event_output(abcdk_comm_node_t *node)

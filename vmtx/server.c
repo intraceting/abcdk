@@ -15,23 +15,15 @@
 
 enum _abcdk_vmtx_server_constant
 {
-    /** 主机。*/
-    ABCDK_VMTX_SERVER_ROLE_MASTER = 1,
-#define ABCDK_VMTX_SERVER_ROLE_MASTER ABCDK_VMTX_SERVER_ROLE_MASTER
-
-    /** 从机。*/
-    ABCDK_VMTX_SERVER_ROLE_SLAVE = 2,
-#define ABCDK_VMTX_SERVER_ROLE_SLAVE ABCDK_VMTX_SERVER_ROLE_SLAVE
-
     /** 寻找中。*/
     ABCDK_VMTX_SERVER_STATUS_LOOKING = 1,
 #define ABCDK_VMTX_SERVER_STATUS_LOOKING ABCDK_VMTX_SERVER_STATUS_LOOKING
 
-    /** 领导者。*/
+    /** 领导中。*/
     ABCDK_VMTX_SERVER_STATUS_LEADING = 2,
 #define ABCDK_VMTX_SERVER_STATUS_LEADING ABCDK_VMTX_SERVER_STATUS_LEADING
 
-    /** 跟随者。*/
+    /** 跟随中。*/
     ABCDK_VMTX_SERVER_STATUS_FOLLOWING = 3,
 #define ABCDK_VMTX_SERVER_STATUS_FOLLOWING ABCDK_VMTX_SERVER_STATUS_FOLLOWING
 
@@ -77,16 +69,8 @@ typedef struct _abcdk_vmtx_server
     abcdk_sockaddr_t master_sockaddr[2];
     abcdk_comm_easy_t *master_easy[2];
 
-    /* 角色和状态。*/
-    int role;
+    /* 状态。*/
     int status;
-
-    /* 选主。*/
-    abcdk_comm_waiter_t *vote_waiter;
-    int64_t vote_round;
-
-    /* 领导者。*/
-    volatile abcdk_comm_easy_t *leader_easy;
 
 } abcdk_vmtx_server_t;
 
@@ -171,27 +155,26 @@ void _abcdk_vmtx_server_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, c
 
     ABCDK_PTR2U16(rsp, 0) = ABCDK_PTR2U16(req,0);
 
-    if(ctx->role == ABCDK_VMTX_SERVER_ROLE_MASTER)
+    if (ctx->status == ABCDK_VMTX_SERVER_STATUS_LEADING)
     {
-        if(ctx->status == ABCDK_VMTX_SERVER_STATUS_LEADING)
-        {
-            /*如果本机为领导者，则拒绝其它主机选主。*/
-            ABCDK_PTR2U8(rsp, 6) = 2;
-        }
-        else if(ctx->status == ABCDK_VMTX_SERVER_STATUS_LOOKING)
-        {
-            /*当两个主机同时在线，选IP地址大的为主节点。*/
-            ABCDK_PTR2U8(rsp, 6) = ((abcdk_sockaddr_compare(&localaddr, &remoteaddr) > 0) ? 2 : 1);
-        }
-        else 
-        {
-            /*已经连接到领导者，拒绝当前的选主流程。*/
-            ABCDK_PTR2U8(rsp, 6) = 2;
-        }
+        /*如果本机为领导者，则拒绝其它主机选主。*/
+        ABCDK_PTR2U32(rsp, 2) = 0;
+        ABCDK_PTR2U8(rsp, 6) = 2;
+    }
+    else if (ctx->status == ABCDK_VMTX_SERVER_STATUS_LOOKING)
+    {
+        /*当两个主机同时在线，选IP地址大的为主节点。*/
+        ABCDK_PTR2U32(rsp, 2) = 0;
+        ABCDK_PTR2U8(rsp, 6) = ((abcdk_sockaddr_compare(&localaddr, &remoteaddr) > 0) ? 2 : 1);
     }
     else
     {
-        ABCDK_PTR2U32(rsp, 2) = abcdk_endian_h_to_b32(EINTR);//不支持。
+        /* 
+         * 1：当前是跟随者，拒绝当前的选主流程。
+         * 2：应当不会走这个分支。
+        */
+        ABCDK_PTR2U32(rsp, 2) = abcdk_endian_h_to_b32(EINTR); //不支持。
+        ABCDK_PTR2U8(rsp, 6) = 2;
     }
 
     abcdk_comm_easy_response(easy,rsp,7);
@@ -328,12 +311,12 @@ void _abcdk_vmtx_server_stop(abcdk_vmtx_server_t *ctx)
 
 void _abcdk_vmtx_server_do_vote(abcdk_vmtx_server_t *ctx)
 {
-    abcdk_comm_queue_t *qrsp = NULL;
     abcdk_comm_message_t *rsp = NULL;
     abcdk_comm_easy_t *easy = NULL;
     int pipe = 0;
-    uint8_t req[6];
+    uint8_t req[2];
     uint8_t *rsp_p;
+    uint32_t err;
     uint8_t opinion;
     int chk;
 
@@ -343,38 +326,31 @@ void _abcdk_vmtx_server_do_vote(abcdk_vmtx_server_t *ctx)
     if (!ctx->master_easy[pipe])
         return;
 
-    /*滚动更新选举轮次。*/
-    abcdk_atomic_fetch_and_add(&ctx->vote_round,1);
-    abcdk_comm_waiter_request2(ctx->vote_waiter,&ctx->vote_round);
-
-    ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_COMMAND_VOTE);
-    ABCDK_PTR2U64(req, 2) = abcdk_endian_b_to_h64(ctx->vote_round);
-
     /*假定远程同意本次选举。*/
     opinion = 1;
 
-    chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 3, &rsp);
-    if (chk = 0)
+    /*填充请求命令。*/
+    ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_SERVER_COMMAND_VOTE);
+
+    chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 2, &rsp);
+    if (chk == 0)
         goto final;
 
-    qrsp = abcdk_comm_waiter_wait2(ctx->vote_waiter, &ctx->vote_round, 1, 1000);
-    if (!qrsp)
-        goto final;
-
-    rsp = abcdk_comm_queue_pop(qrsp);
     if (rsp)
     {
+        /*解析应答命令。*/
         rsp_p = abcdk_comm_message_data(rsp);
-        opinion = ABCDK_PTR2I8(rsp_p, 14);
-        abcdk_comm_message_unref(&rsp);
+        err = abcdk_endian_b_to_h32(ABCDK_PTR2U32(rsp_p, 2));
+        opinion = ABCDK_PTR2I8(rsp_p, 6);
     }
 
 final:
 
-    /*更改状态。*/
-    ctx->status = ((opinion==1)?ABCDK_VMTX_SERVER_STATUS_LEADING:ABCDK_VMTX_SERVER_STATUS_FOLLOWING);
+    /*选举成功后，更改自身的状态。*/
+    if (opinion == 1)
+        ctx->status = ABCDK_VMTX_SERVER_STATUS_LEADING;
 
-    abcdk_comm_queue_free(&qrsp);
+    abcdk_comm_message_unref(&rsp);
 }
 
 void _abcdk_vmtx_server_runloop(abcdk_vmtx_server_t *ctx)
@@ -384,9 +360,11 @@ void _abcdk_vmtx_server_runloop(abcdk_vmtx_server_t *ctx)
         for (int i = 0; i < 2; i++)
         {
             if (!ctx->master_easy[i])
+            {
                 ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_server_client_cb, ctx);
-            if (ctx->master_easy[i])
-                abcdk_comm_easy_set_timeout(ctx->master_easy[i],-1);
+                if (ctx->master_easy[i])
+                    abcdk_comm_easy_set_timeout(ctx->master_easy[i], 5);
+            }
         }
 
         if(abcdk_atomic_compare(&ctx->status,ABCDK_VMTX_SERVER_STATUS_LOOKING))
@@ -455,11 +433,8 @@ void _abcdk_vmtx_server_dowork(abcdk_vmtx_server_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 
-    /*初始化其它信息。*/
-    ctx->role = ((chk == 1)?ABCDK_VMTX_SERVER_ROLE_MASTER:ABCDK_VMTX_SERVER_ROLE_SLAVE);
-    ctx->status = ABCDK_VMTX_SERVER_STATUS_LOOKING;
-    ctx->vote_round = 0;
-    ctx->vote_waiter = abcdk_comm_waiter_alloc();
+    /*初始化状态。*/
+    ctx->status = ((chk == 1) ? ABCDK_VMTX_SERVER_STATUS_LOOKING : ABCDK_VMTX_SERVER_STATUS_FOLLOWING);
 
     chk = _abcdk_vmtx_server_start(ctx);
     if (chk != 0)
