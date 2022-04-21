@@ -50,15 +50,13 @@ redisContext *abcdk_redis_connect(const char *server, uint16_t port, time_t time
 int abcdk_redis_auth(redisContext *ctx, const char *auth)
 {
     redisReply *reply = NULL;
-    int chk;
+    int chk = 0;
 
     assert(ctx != NULL && auth != NULL);
 
-    chk = 0;
     reply = redisCommand(ctx, "auth %s", auth);
-
     if (!reply || reply->type == REDIS_REPLY_ERROR)
-        errno = EPERM, chk = -1;
+        chk = -1;
 
     //abcdk_redis_reply_dump(stderr,reply);
 
@@ -71,15 +69,13 @@ int abcdk_redis_auth(redisContext *ctx, const char *auth)
 int abcdk_redis_set_auth(redisContext *ctx,const char *auth)
 {
     redisReply *reply = NULL;
-    int chk;
+    int chk = 0;
 
     assert(ctx != NULL && auth != NULL);
 
-    chk = 0;
     reply = redisCommand(ctx, "config set requirepass %s", auth);
-
     if (!reply || reply->type == REDIS_REPLY_ERROR)
-        errno = EPERM, chk = -1;
+        chk = -1;
 
     //abcdk_redis_reply_dump(stderr,reply);
 
@@ -92,15 +88,13 @@ int abcdk_redis_set_auth(redisContext *ctx,const char *auth)
 int abcdk_redis_get_auth(redisContext *ctx,char auth[128])
 {
     redisReply *reply = NULL;
-    int chk;
+    int chk = 0;
 
     assert(ctx != NULL && auth != NULL);
 
-    chk = 0;
     reply = redisCommand(ctx, "config get requirepass");
-
     if (!reply || reply->type == REDIS_REPLY_ERROR)
-        errno = EPERM, chk = -1;
+        chk = -1;
 
     //abcdk_redis_reply_dump(stderr,reply);
 

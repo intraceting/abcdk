@@ -543,8 +543,8 @@ int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t
     int chk = 0;
 
     assert(addr1 != NULL && addr2 != NULL);
-    assert(addr1->family == AF_INET && addr1->family == AF_INET6);
-    assert(addr2->family == AF_INET && addr2->family == AF_INET6);
+    assert(addr1->family == AF_INET || addr1->family == AF_INET6);
+    assert(addr2->family == AF_INET || addr2->family == AF_INET6);
     assert(addr1->family == addr2->family);
 
     if (addr1->family == AF_INET)

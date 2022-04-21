@@ -66,10 +66,10 @@ typedef struct _abcdk_vmtx_server
     const char *client_listen;
     abcdk_sockaddr_t client_sockaddr;
 
-    /* Master地址(主、备)。*/
-    const char *master_addr[2];
-    abcdk_sockaddr_t master_sockaddr[2];
-    abcdk_comm_easy_t *master_easy[2];
+    /* 管理节点地址(主、备)。*/
+    const char *manager_addr[2];
+    abcdk_sockaddr_t manager_sockaddr[2];
+    abcdk_comm_easy_t *manager_easy[2];
 
     /* 状态。*/
     int status;
@@ -96,8 +96,8 @@ void _abcdk_vmtx_server_usage()
     fprintf(stderr, "\n\t--client-listen < FILE >\n");
     fprintf(stderr, "\t\t客户端命令监听地址（unixsock）。默认：/tmp/abcdk-vmtx.sock\n");
 
-    fprintf(stderr, "\n\t--master-address < ADDRESS [ ADDRESS ] >\n");
-    fprintf(stderr, "\t\t主管理节点地址（IPv4,IPv6）。\n");
+    fprintf(stderr, "\n\t--manager-address < ADDRESS [ ADDRESS ] >\n");
+    fprintf(stderr, "\t\t管理节点地址（IPv4,IPv6）。\n");
     fprintf(stderr, "\n\t\tIPv4：Address:Port\n");
     fprintf(stderr, "\t\tIPv6：[Address]:Port\n");
 }
@@ -177,7 +177,7 @@ void _abcdk_vmtx_server_msg_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *eas
     else
     {
         /* 
-         * 1：当前是跟随者，拒绝当前的选主流程。
+         * 1：当前是从机，拒绝当前的选主流程。
          * 2：应当不会走这个分支。
         */
         ABCDK_PTR2U32(rsp, 2) = abcdk_endian_h_to_b32(EINTR); //不支持。
@@ -189,6 +189,33 @@ void _abcdk_vmtx_server_msg_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *eas
 
 void _abcdk_vmtx_server_msg_reg(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
+    uint16_t cmd;
+    uint8_t rsp[7];
+
+    ABCDK_PTR2U16(rsp, 0) = ABCDK_PTR2U16(req,0);
+
+    if (ctx->status == ABCDK_VMTX_SERVER_STATUS_MASTER)
+    {
+        ABCDK_PTR2U32(rsp, 2) = 0;
+        ABCDK_PTR2U8(rsp, 6) = 1;
+    }
+    else if (ctx->status == ABCDK_VMTX_SERVER_STATUS_STANDBY)
+    {
+        ABCDK_PTR2U32(rsp, 2) = 0;
+        ABCDK_PTR2U8(rsp, 6) = 1;
+    }
+    else
+    {
+        /* 
+         * 1：当前是从机，不应当有其它从机连接。
+         * 2：应当不会走这个分支。
+        */
+        ABCDK_PTR2U32(rsp, 2) = abcdk_endian_h_to_b32(EINTR); //不支持。
+        ABCDK_PTR2U8(rsp, 6) = 0;
+    }
+
+    /*同一个链路，应答ID可能冲突，要分开上行和下行。*/
+    abcdk_comm_easy_request(ctx,rsp,7,NULL);
 
 }
 
@@ -236,6 +263,93 @@ void _abcdk_vmtx_server_msg_cb(abcdk_comm_easy_t *easy, const void *req, size_t 
     }
 }
 
+
+void _abcdk_vmtx_server_do_vote(abcdk_vmtx_server_t *ctx)
+{
+    abcdk_comm_message_t *rsp = NULL;
+    abcdk_comm_easy_t *easy = NULL;
+    int pipe = 0;
+    uint8_t req[2];
+    uint8_t *rsp_p;
+    uint32_t err;
+    uint8_t opinion;
+    int chk;
+
+    /*备机状态才需要选举。*/
+    if (ctx->status != ABCDK_VMTX_SERVER_STATUS_STANDBY)
+        return;
+
+    /*只给远程的master发就行了。*/
+    pipe = (abcdk_sockaddr_where(&ctx->manager_sockaddr[1], 1) ? 1 : 0);
+
+    if (!ctx->manager_easy[pipe])
+        return;
+
+    /*假定远程同意本次选举。*/
+    opinion = 1;
+
+    /*填充请求命令。*/
+    ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_SERVER_COMMAND_VOTE);
+
+    chk = abcdk_comm_easy_request(ctx->manager_easy[pipe], req, 2, &rsp);
+    if (chk == 0)
+        goto final;
+
+    if (rsp)
+    {
+        /*解析应答命令。*/
+        rsp_p = abcdk_comm_message_data(rsp);
+        err = abcdk_endian_b_to_h32(ABCDK_PTR2U32(rsp_p, 2));
+        opinion = ABCDK_PTR2I8(rsp_p, 6);
+    }
+
+final:
+
+    /*选举成功后，更改自身的状态。*/
+    if (opinion == 1)
+        ctx->status = ABCDK_VMTX_SERVER_STATUS_MASTER;
+
+    abcdk_comm_message_unref(&rsp);
+}
+
+void _abcdk_vmtx_server_do_register(abcdk_vmtx_server_t *ctx)
+{
+    uint8_t req[2];
+    int chk;
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (!ctx->manager_easy[i])
+        {
+            static abcdk_vmtx_server_io_t service_io = {0};
+            service_io.mod = 3, service_io.ctx = ctx;
+
+            ctx->manager_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->manager_sockaddr[i], _abcdk_vmtx_server_msg_cb, &service_io);
+            if (ctx->manager_easy[i])
+                abcdk_comm_easy_set_timeout(ctx->manager_easy[i], 5);
+        }
+
+        if (ctx->manager_easy[i])
+        {
+            ABCDK_PTR2I16(req,0) = abcdk_endian_b_to_h16(ABCDK_VMTX_SERVER_COMMAND_REGISTER);
+            chk = abcdk_comm_easy_request(ctx->manager_easy[i],req,2,NULL);
+            if(chk != 0)
+                abcdk_comm_easy_unref(&ctx->manager_easy[i]);
+        }
+    }
+}
+
+void _abcdk_vmtx_server_runloop(abcdk_vmtx_server_t *ctx)
+{
+    while(1)
+    {
+        _abcdk_vmtx_server_do_register(ctx);
+        _abcdk_vmtx_server_do_vote(ctx);
+
+        sleep(1);
+    }
+}
+
 int _abcdk_vmtx_server_start(abcdk_vmtx_server_t *ctx)
 {
     abcdk_comm_easy_t *easy_tmp;
@@ -268,16 +382,16 @@ int _abcdk_vmtx_server_start(abcdk_vmtx_server_t *ctx)
     for (int i = 0; i < 2; i++)
     {
         /*跳过不在本机的IP。*/
-        if (!abcdk_sockaddr_where(&ctx->master_sockaddr[i], 1))
+        if (!abcdk_sockaddr_where(&ctx->manager_sockaddr[i], 1))
             continue;
 
         static abcdk_vmtx_server_io_t service_io = {0};
         service_io.mod = 2, service_io.ctx = ctx;
 
-        easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_msg_cb, &service_io);
+        easy_tmp = abcdk_comm_easy_listen(NULL, &ctx->manager_sockaddr[i], _abcdk_vmtx_server_msg_cb, &service_io);
         if (!easy_tmp)
         {
-            abcdk_log_printf(LOG_ERR, "监听'%s'失败。", ctx->master_addr[i]);
+            abcdk_log_printf(LOG_ERR, "监听'%s'失败。", ctx->manager_addr[i]);
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
         }
         else
@@ -300,80 +414,6 @@ void _abcdk_vmtx_server_stop(abcdk_vmtx_server_t *ctx)
     abcdk_comm_stop();
 }
 
-void _abcdk_vmtx_server_do_vote(abcdk_vmtx_server_t *ctx)
-{
-    abcdk_comm_message_t *rsp = NULL;
-    abcdk_comm_easy_t *easy = NULL;
-    int pipe = 0;
-    uint8_t req[2];
-    uint8_t *rsp_p;
-    uint32_t err;
-    uint8_t opinion;
-    int chk;
-
-    /*只给远程的master发就行了。*/
-    pipe = (abcdk_sockaddr_where(&ctx->master_sockaddr[1], 1) ? 1 : 0);
-
-    if (!ctx->master_easy[pipe])
-        return;
-
-    /*假定远程同意本次选举。*/
-    opinion = 1;
-
-    /*填充请求命令。*/
-    ABCDK_PTR2U16(req, 0) = abcdk_endian_h_to_b16(ABCDK_VMTX_SERVER_COMMAND_VOTE);
-
-    chk = abcdk_comm_easy_request(ctx->master_easy[pipe], req, 2, &rsp);
-    if (chk == 0)
-        goto final;
-
-    if (rsp)
-    {
-        /*解析应答命令。*/
-        rsp_p = abcdk_comm_message_data(rsp);
-        err = abcdk_endian_b_to_h32(ABCDK_PTR2U32(rsp_p, 2));
-        opinion = ABCDK_PTR2I8(rsp_p, 6);
-    }
-
-final:
-
-    /*选举成功后，更改自身的状态。*/
-    if (opinion == 1)
-        ctx->status = ABCDK_VMTX_SERVER_STATUS_MASTER;
-
-    abcdk_comm_message_unref(&rsp);
-}
-
-void _abcdk_vmtx_server_runloop(abcdk_vmtx_server_t *ctx)
-{
-    while(1)
-    {
-        for (int i = 0; i < 2; i++)
-        {
-            if (!ctx->master_easy[i])
-            {
-                static abcdk_vmtx_server_io_t service_io = {0};
-                service_io.mod = 3, service_io.ctx = ctx;
-
-                ctx->master_easy[i] = abcdk_comm_easy_connect(NULL, &ctx->master_sockaddr[i], _abcdk_vmtx_server_msg_cb, &service_io);
-                if (ctx->master_easy[i])
-                    abcdk_comm_easy_set_timeout(ctx->master_easy[i], 5);
-            }
-        }
-
-        if(ctx->status == ABCDK_VMTX_SERVER_STATUS_STANDBY)
-        {
-
-        }
-        else
-        {
-
-        }
-
-        sleep(1);
-    }
-}
-
 void _abcdk_vmtx_server_dowork(abcdk_vmtx_server_t *ctx)
 {
     int addr_num = 0;
@@ -385,15 +425,15 @@ void _abcdk_vmtx_server_dowork(abcdk_vmtx_server_t *ctx)
 
     for (int i = 0; i < 2; i++)
     {
-        ctx->master_addr[i] = abcdk_option_get(ctx->args, "--master-address", i, NULL);
-        if (!ctx->master_addr[i])
+        ctx->manager_addr[i] = abcdk_option_get(ctx->args, "--manager-address", i, NULL);
+        if (!ctx->manager_addr[i])
             continue;
 
-        ctx->master_sockaddr[i].family = AF_INET; //设置默认的IP协议。
-        chk = abcdk_sockaddr_from_string(&ctx->master_sockaddr[i], ctx->master_addr[i], 1);
+        ctx->manager_sockaddr[i].family = AF_INET; //设置默认的IP协议。
+        chk = abcdk_sockaddr_from_string(&ctx->manager_sockaddr[i], ctx->manager_addr[i], 1);
         if (chk != 0)
         {
-            abcdk_log_printf(LOG_WARNING, "‘%s’格式错误或无法解析。", ctx->master_addr[i]);
+            abcdk_log_printf(LOG_WARNING, "‘%s’格式错误或无法解析。", ctx->manager_addr[i]);
             continue;
         }
 
@@ -402,7 +442,7 @@ void _abcdk_vmtx_server_dowork(abcdk_vmtx_server_t *ctx)
 
     if (addr_num <= 0)
     {
-        abcdk_log_printf(LOG_ERR, "集群需要指定一个主节点（可以是本机），一个备用主节点（非必须）。");
+        abcdk_log_printf(LOG_ERR, "集群需要指定一个主管理节点（可以是本机），一个备用主管理节点（非必须）。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 
@@ -410,14 +450,14 @@ void _abcdk_vmtx_server_dowork(abcdk_vmtx_server_t *ctx)
     chk = 0;
     for (int i = 0; i < 2; i++)
     {
-        if (ctx->master_sockaddr[i].family == AF_INET || ctx->master_sockaddr[i].family == AF_INET6)
-            chk += (abcdk_sockaddr_where(&ctx->master_sockaddr[i], 1) ? 1 : 0);
+        if (ctx->manager_sockaddr[i].family == AF_INET || ctx->manager_sockaddr[i].family == AF_INET6)
+            chk += (abcdk_sockaddr_where(&ctx->manager_sockaddr[i], 1) ? 1 : 0);
     }
 
     /*如果地址未同时指向本节点，则检查地址是否指向相同的节点。*/
     if (chk != 2 && addr_num == 2)
     {
-        if (abcdk_sockaddr_compare(&ctx->master_sockaddr[0], &ctx->master_sockaddr[1]) == 0)
+        if (abcdk_sockaddr_compare(&ctx->manager_sockaddr[0], &ctx->manager_sockaddr[1]) == 0)
             chk = 2;
     }
 

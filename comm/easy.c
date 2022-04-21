@@ -528,7 +528,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     }
 
     /*减少引用计数。*/
-    abcdk_comm_easy_unref(easy);
+    abcdk_comm_easy_unref(&easy);
 }
 
 void _abcdk_comm_easy_event_output(abcdk_comm_node_t *node)
