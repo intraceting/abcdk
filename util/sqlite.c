@@ -51,7 +51,7 @@ int  abcdk_sqlite_close(sqlite3 *ctx)
 int abcdk_sqlite_busy_melt(void *opaque,int count)
 {
     /**/
-    pthread_yield();
+    sched_yield();
 
     /*
      * 1: try again.

@@ -153,6 +153,24 @@ void _abcdk_vmtx_server_register_signal(abcdk_vmtx_server_t *ctx)
     abcdk_sigwaitinfo_async(&sig);
 }
 
+void _abcdk_vmtx_server_msg_offline(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
+{
+    char remoteaddr[NAME_MAX] = {0};
+
+    abcdk_comm_easy_get_sockaddr_str(easy,NULL,remoteaddr);
+
+    abcdk_log_printf(LOG_INFO,"'%s' offline.",remoteaddr);
+}
+
+void _abcdk_vmtx_server_msg_online(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
+{
+    char remoteaddr[NAME_MAX] = {0};
+
+    abcdk_comm_easy_get_sockaddr_str(easy,NULL,remoteaddr);
+
+    abcdk_log_printf(LOG_INFO,"'%s' online.",remoteaddr);
+}
+
 void _abcdk_vmtx_server_msg_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
     abcdk_sockaddr_t localaddr = {0},remoteaddr = {0};
@@ -189,20 +207,22 @@ void _abcdk_vmtx_server_msg_vote(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *eas
 
 void _abcdk_vmtx_server_msg_reg(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
-    uint16_t cmd;
-    uint8_t rsp[7];
+    char remoteaddr[NAME_MAX] = {0};
+    uint8_t rsp[7] = {0};
+
+    abcdk_comm_easy_get_sockaddr_str(easy,NULL,remoteaddr);
+
+    abcdk_log_printf(LOG_INFO,"'%s' on line.",remoteaddr);
 
     ABCDK_PTR2U16(rsp, 0) = ABCDK_PTR2U16(req,0);
 
     if (ctx->status == ABCDK_VMTX_SERVER_STATUS_MASTER)
     {
-        ABCDK_PTR2U32(rsp, 2) = 0;
         ABCDK_PTR2U8(rsp, 6) = 1;
     }
     else if (ctx->status == ABCDK_VMTX_SERVER_STATUS_STANDBY)
     {
-        ABCDK_PTR2U32(rsp, 2) = 0;
-        ABCDK_PTR2U8(rsp, 6) = 1;
+        ABCDK_PTR2U8(rsp, 6) = 2;
     }
     else
     {
@@ -215,16 +235,12 @@ void _abcdk_vmtx_server_msg_reg(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy
     }
 
     abcdk_comm_easy_request(easy,rsp,7,NULL);
-
 }
 
 void _abcdk_vmtx_server_msg_reg_rsp(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
-    char peername[NAME_MAX] = {0};
     uint32_t err = 0;
     uint8_t status = 0;
-
-    abcdk_comm_easy_get_sockaddr_str(easy,NULL,peername);
 
     err = abcdk_endian_b_to_h32(ABCDK_PTR2U32(req, 2));
     status = ABCDK_PTR2U8(req, 6);
@@ -236,7 +252,6 @@ void _abcdk_vmtx_server_msg_reg_rsp(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *
         return;
     }
 
-    abcdk_log_printf(LOG_INFO,"%s",peername);
 
 }
 
