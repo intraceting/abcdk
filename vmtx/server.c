@@ -214,13 +214,29 @@ void _abcdk_vmtx_server_msg_reg(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy
         ABCDK_PTR2U8(rsp, 6) = 0;
     }
 
-    /*同一个链路，应答ID可能冲突，要分开上行和下行。*/
-    abcdk_comm_easy_request(ctx,rsp,7,NULL);
+    abcdk_comm_easy_request(easy,rsp,7,NULL);
 
 }
 
 void _abcdk_vmtx_server_msg_reg_rsp(abcdk_vmtx_server_t *ctx,abcdk_comm_easy_t *easy, const void *req, size_t len)
 {
+    char peername[NAME_MAX] = {0};
+    uint32_t err = 0;
+    uint8_t status = 0;
+
+    abcdk_comm_easy_get_sockaddr_str(easy,NULL,peername);
+
+    err = abcdk_endian_b_to_h32(ABCDK_PTR2U32(req, 2));
+    status = ABCDK_PTR2U8(req, 6);
+
+    if(err != 0)
+    {
+        abcdk_log_printf(LOG_ERR,"服务启动参数配置错误，连接到非管理节点，即将退出。");
+        abcdk_atomic_store(&ctx->exit_flag,1);
+        return;
+    }
+
+    abcdk_log_printf(LOG_INFO,"%s",peername);
 
 }
 
@@ -345,6 +361,14 @@ void _abcdk_vmtx_server_runloop(abcdk_vmtx_server_t *ctx)
     {
         _abcdk_vmtx_server_do_register(ctx);
         _abcdk_vmtx_server_do_vote(ctx);
+
+        if(ctx->status == ABCDK_VMTX_SERVER_STATUS_MASTER)
+            abcdk_log_printf(LOG_INFO,"我是主机");
+        else if(ctx->status == ABCDK_VMTX_SERVER_STATUS_STANDBY)
+            abcdk_log_printf(LOG_INFO,"我是备机");
+        else /*if(ctx->status == ABCDK_VMTX_SERVER_STATUS_SLAVE)*/
+            abcdk_log_printf(LOG_INFO,"我是从机");
+        
 
         sleep(1);
     }
