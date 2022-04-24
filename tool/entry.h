@@ -28,7 +28,6 @@ int abcdk_tool_json(abcdk_tree_t *args);
 int abcdk_tool_lsscsi(abcdk_tree_t *args);
 int abcdk_tool_archive(abcdk_tree_t *args);
 int abcdk_tool_lsmmc(abcdk_tree_t *args);
-int abcdk_tool_backup(abcdk_tree_t *args);
 
 __END_DECLS
 

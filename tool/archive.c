@@ -170,7 +170,7 @@ int abcdkarchive_find_format(int code)
             return abcdkarchive_format_dict[i].format;
     }
 
-    return 0;
+    return -1;
 }
 
 
