@@ -18,6 +18,10 @@ checkReturnCode()
 }
 
 #
+git submodule update --recursive --remote --merge --force  --init
+checkReturnCode
+
+#
 CheckSystemName()
 # $1 System Name
 {
