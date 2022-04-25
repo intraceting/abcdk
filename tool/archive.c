@@ -465,7 +465,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 
     if (ctx->read.volumes[0] == NULL || ctx->read.volumes[0][0] == '\0')
     {
-        syslog(LOG_ERR, "'--name NAME [ NAME-1 NAME-2 ... ]' 不能省略，且不能为空。");
+        syslog(LOG_ERR, "'--volume NAME [ NAME-1 NAME-2 ... ]' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
