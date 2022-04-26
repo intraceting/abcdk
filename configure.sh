@@ -68,8 +68,8 @@ CheckKeyword()
 }
 
 #拉取子项目
-git submodule update --init --remote  --force  --merge --recursive
-checkReturnCode
+#git submodule update --init --remote  --force  --merge --recursive
+#checkReturnCode
 
 #
 MAKE_CONF=${CURDIR}/build/makefile.conf
