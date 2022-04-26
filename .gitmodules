@@ -2,3 +2,4 @@
 [submodule "3party/myscript"]
 	path = 3party/myscript
 	url = https://github.com/intraceting/myscript.git
+	branch = main
