@@ -355,11 +355,6 @@ echo "#" > ${MAKE_CONF}
 checkReturnCode
 
 #
-echo "# A bad c development kit." >> ${MAKE_CONF}
-echo "#" >> ${MAKE_CONF}
-echo "" >> ${MAKE_CONF}
-
-#
 echo "SOLUTION_NAME = ${SOLUTION_NAME}" >> ${MAKE_CONF}
 
 #
