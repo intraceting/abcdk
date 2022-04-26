@@ -68,7 +68,7 @@ CheckKeyword()
 }
 
 #拉取子项目
-git submodule update --init --remote --merge --recursive
+git submodule update --init --remote  --force  --merge --recursive
 checkReturnCode
 
 #
