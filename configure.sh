@@ -67,15 +67,8 @@ CheckKeyword()
     echo ${NUM}
 }
 
-#拉取子项目
-git submodule update --init --remote  --force  --merge --recursive
-checkReturnCode
-
 #
 MAKE_CONF=${CURDIR}/build/makefile.conf
-
-#
-KIT_NAME=$(CheckPackageKitName)
 
 #
 SOLUTION_NAME=abcdk
@@ -84,6 +77,8 @@ SOLUTION_NAME=abcdk
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_PATH=$(realpath "${CURDIR}/build/")
 
+#0 不拉取最新的子项目，!0 拉取最新的子项目。
+PULL_SUBMODULE="0"
 
 #主版本
 VERSION_MAJOR="1"
@@ -108,6 +103,9 @@ PrintUsage()
 {
 cat << EOF
 usage: [ OPTIONS ]
+    -p 
+     拉取最新的子项目。
+
     -g  
      生成调试符号。默认：关闭
 
@@ -142,12 +140,15 @@ EOF
 }
 
 #
-while getopts "hgV:v:r:i:d:" ARGKEY 
+while getopts "hpgV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
         PrintUsage
         exit 22
+    ;;
+    p)
+        PULL_SUBMODULE="1"
     ;;
     g)
         BUILD_TYPE="debug"
@@ -169,6 +170,14 @@ do
     ;;
     esac
 done
+
+#拉取子项目
+if [ ${PULL_SUBMODULE} -ne 0 ];then
+{
+    git submodule update --init --remote  --force  --merge --recursive
+    checkReturnCode
+}
+fi
 
 # 设置编译器。
 if [ "${CC}" == "" ];then
