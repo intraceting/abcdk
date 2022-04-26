@@ -67,6 +67,10 @@ CheckKeyword()
     echo ${NUM}
 }
 
+#拉取子项目
+git submodule update --init --remote --merge --recursive
+checkReturnCode
+
 #
 MAKE_CONF=${CURDIR}/build/makefile.conf
 
