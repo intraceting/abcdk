@@ -18,10 +18,6 @@ checkReturnCode()
 }
 
 #
-git submodule update --recursive --remote --merge --force  --init
-checkReturnCode
-
-#
 CheckSystemName()
 # $1 System Name
 {
@@ -70,7 +66,6 @@ CheckKeyword()
 	NUM=$(echo "$1" |grep -wi "$2" | wc -l)
     echo ${NUM}
 }
-
 
 #
 MAKE_CONF=${CURDIR}/build/makefile.conf
