@@ -49,6 +49,7 @@
 #include "shell/mmc.h"
 #include "shell/scsi.h"
 #include "util/iconv.h"
+#include "util/sqlite.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -4605,6 +4606,55 @@ void test_block(abcdk_tree_t *args)
 
 }
 
+
+void test_sqlite(abcdk_tree_t *args)
+{
+#ifdef _SQLITE3_H_
+
+    const char *name = abcdk_option_get(args,"--name",0,"/tmp/aaaa.sqlite");
+
+    sqlite3* ctx = abcdk_sqlite_open(name);
+
+    char *sql[] = {"CREATE TABLE files (file_number INTEGER NOT NULL,file_path_name TEXT(4096) NOT NULL,file_hash_code TEXT(256),file_hash_type INTEGER,file_status INTEGER NOT NULL);",
+    "CREATE UNIQUE INDEX files_file_number_IDX ON files (file_number);",
+    "CREATE INDEX files_file_status_IDX ON files (file_status);",
+    "CREATE UNIQUE INDEX files_file_path_name_IDX ON files (file_path_name);",
+    "CREATE INDEX files_file_number_status_IDX ON files (file_number,file_status);",
+    "CREATE TABLE volumes (volume_number INTEGER NOT NULL,volume_name TEXT(4096) NOT NULL,volume_status INTEGER NOT NULL);",
+    "CREATE UNIQUE INDEX volumes_volume_number_IDX ON volumes (volume_number);",
+    "CREATE UNIQUE INDEX volumes_volume_name_IDX ON volumes (volume_name);",
+    "CREATE INDEX volumes_volume_status_IDX ON volumes (volume_status);",
+    "CREATE TABLE indexes (file_number INTEGER NOT NULL,volume_number INTEGER NOT NULL,block_offset INTEGER NOT NULL,file_offset INTEGER NOT NULL);",
+    "CREATE INDEX indexes_file_number_vol_number_IDX ON indexes (file_number,volume_number);",
+    NULL};
+
+    abcdk_sqlite_tran_begin(ctx);
+
+    for(int i = 0;sql[i];i++)
+        abcdk_sqlite_exec_direct(ctx,sql[i]);
+
+    abcdk_sqlite_tran_commit(ctx);
+
+    abcdk_sqlite_tran_begin(ctx);
+
+    char buf[1000] = {0};
+    for(int i = 0;i<1000000;i++)
+    {
+        memset(buf,0,1000);
+        sprintf(buf,"insert into files(file_number,file_path_name,file_hash_code,file_hash_type,file_status) "
+             " values('%d','aaaaaaaaaaaaaa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000aaaa_%d','bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_%d','%d','%d');",i,i,i,1,1);
+
+     //   printf("%s\n",buf);
+        abcdk_sqlite_exec_direct(ctx,buf);
+    }
+
+    abcdk_sqlite_tran_commit(ctx);
+
+    abcdk_sqlite_close(ctx);
+
+#endif //
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -4620,7 +4670,7 @@ int main(int argc, char **argv)
     const char *func = abcdk_option_get(args,"--func",0,"");
 
    // abcdk_clock_reset();
-
+#if 0
     int a = 0x112233;
     int b = 0;
     char a8[3] = {0};
@@ -4673,6 +4723,8 @@ int main(int argc, char **argv)
     abcdk_sockaddr_t dd = {0};
 
     abcdk_sockaddr_from_string(&dd,"127.0.0.1:17007",1);
+
+#endif
 
 #ifdef HAVE_OPENSSL
 
@@ -4825,6 +4877,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_block", 0) == 0)
         test_block(args);
+
+    if (abcdk_strcmp(func, "test_sqlite", 0) == 0)
+        test_sqlite(args);
 
     abcdk_tree_free(&args);
     

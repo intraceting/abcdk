@@ -163,21 +163,21 @@ int abcdk_sqlite_finalize(sqlite3_stmt *stmt)
     return sqlite3_finalize(stmt);
 }
 
-int abcdk_sqlite_exec_direct(sqlite3 *ctx,const char *sql)
+int abcdk_sqlite_exec_direct(sqlite3 *ctx, const char *sql)
 {
     sqlite3_stmt *stmt;
     int chk;
 
     assert(ctx != NULL && sql != NULL);
 
-     stmt = abcdk_sqlite_prepare(ctx,sql);
-     if(!stmt)
+    stmt = abcdk_sqlite_prepare(ctx, sql);
+    if (!stmt)
         return -1;
 
-     chk = abcdk_sqlite_step(stmt);
-     abcdk_sqlite_finalize(stmt);
+    chk = abcdk_sqlite_step(stmt);
+    abcdk_sqlite_finalize(stmt);
 
-     return chk;
+    return chk;
 }
 
 int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name)
