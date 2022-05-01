@@ -4609,9 +4609,9 @@ void test_block(abcdk_tree_t *args)
 
 void test_sqlite(abcdk_tree_t *args)
 {
-#ifdef _SQLITE3_H_
+#if defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
-    const char *name = abcdk_option_get(args,"--name",0,"/tmp/aaaa.sqlite");
+    const char *name = abcdk_option_get(args,"--name",0,"/mnt/local/20GB/aaaa.sqlite");
 
     sqlite3* ctx = abcdk_sqlite_open(name);
 
@@ -4638,14 +4638,22 @@ void test_sqlite(abcdk_tree_t *args)
     abcdk_sqlite_tran_begin(ctx);
 
     char buf[1000] = {0};
-    for(int i = 0;i<1000000;i++)
+    for(int i = 0;i<10000000;i++)
     {
         memset(buf,0,1000);
         sprintf(buf,"insert into files(file_number,file_path_name,file_hash_code,file_hash_type,file_status) "
              " values('%d','aaaaaaaaaaaaaa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000aaaa_%d','bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb_%d','%d','%d');",i,i,i,1,1);
+        abcdk_sqlite_exec_direct(ctx,buf);
+
+        for(int j=0;j<8;j++)
+        {   memset(buf,0,1000);
+            sprintf(buf,"insert into indexes(file_number,volume_number,block_offset,file_offset) "
+            " values('%d','%d','%d','%d');",i,j,i,i);
+        
 
      //   printf("%s\n",buf);
         abcdk_sqlite_exec_direct(ctx,buf);
+        }
     }
 
     abcdk_sqlite_tran_commit(ctx);

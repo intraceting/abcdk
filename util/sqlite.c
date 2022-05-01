@@ -6,7 +6,7 @@
 */
 #include "util/sqlite.h"
 
-#ifdef _SQLITE3_H_
+#if defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
 int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param)
 {
@@ -201,4 +201,4 @@ int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name)
     return idx;
 }
 
-#endif //_SQLITE3_H_
+#endif //defined(_SQLITE3_H_) || defined(SQLITE3_H)

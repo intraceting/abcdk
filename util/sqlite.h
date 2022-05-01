@@ -15,7 +15,7 @@
 
 __BEGIN_DECLS
 
-#ifdef _SQLITE3_H_
+#if defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
 /**
  * 字段类型。
@@ -216,7 +216,7 @@ int abcdk_sqlite_exec_direct(sqlite3 *ctx,const char *sql);
 int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name);
 
 
-#endif //_SQLITE3_H_
+#endif //defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
 __END_DECLS
 
