@@ -4611,7 +4611,7 @@ void test_sqlite(abcdk_tree_t *args)
 {
 #if defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
-    const char *name = abcdk_option_get(args,"--name",0,"/mnt/local/20GB/aaaa.sqlite");
+    const char *name = abcdk_option_get(args,"--name",0,"/tmp/aaaa.sqlite");
 
     sqlite3* ctx = abcdk_sqlite_open(name);
 
