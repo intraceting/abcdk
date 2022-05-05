@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
 #include <stdio.h>
 #include <assert.h>
@@ -20,16 +20,41 @@ typedef struct _abcdkbc_ctx
     int errcode;
     abcdk_tree_t *args;
 
+    int decode;
     uint8_t base;
-    int sn;
     const char *in;
     const char *out;
+    int no_amb;
 
-}abcdkbc_ctx;
+} abcdkbc_ctx;
 
 void _abcdkbc_print_usage(abcdk_tree_t *args)
 {
+    fprintf(stderr, "\n描述:\n");
 
+    fprintf(stderr, "\n\tbasecode编解码工具。\n");
+
+    fprintf(stderr, "\n选项:\n");
+
+    fprintf(stderr, "\n\t--help\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
+
+    fprintf(stderr, "\n\t--decode\n");
+    fprintf(stderr, "\t\t解码。默认：编码\n");
+
+    fprintf(stderr, "\n\t--base < CODE >\n");
+    fprintf(stderr, "\t\t基值（32|64）。默认：64\n");
+
+    fprintf(stderr, "\n\t--in < FILE | STRING >\n");
+    fprintf(stderr, "\t\t输入的文件或字符串。\n");
+
+    fprintf(stderr, "\n\t--out < FILE >\n");
+    fprintf(stderr, "\t\t输出的文件。默认: 终端\n");
+
+    fprintf(stderr, "\n\t--no-ambiguity\n");
+    fprintf(stderr, "\t\t不使用有歧义的字符。注：仅base32有效\n");
+
+    ABCDK_ERRNO_AND_RETURN0(0);
 }
 
 uint8_t _abcdkbc_en_table32_sn(uint8_t n)
@@ -50,71 +75,96 @@ uint8_t _abcdkbc_de_table32_sn(uint8_t c)
         return (uint8_t)(c - 'J' + 8);
     else if (c <= 'Z')
         return (uint8_t)(c - 'P' + 13);
-    
+
     return c;
 }
 
 void _abcdkbc_work(abcdkbc_ctx *ctx)
 {
-    abcdk_allocator_t *in_buf = NULL;
+    abcdk_allocator_t *inbuf = NULL,*outbuf = NULL;
+    ssize_t outsize = 0,outsize2 = 0;
     abcdk_basecode_t bc = {0};
 
-    ctx->base = abcdk_option_get_int(ctx->args,"--base",0,64,0);
-    ctx->sn = abcdk_option_exist(ctx->args,"--sn");
-    ctx->in = abcdk_option_get(ctx->args,"--in",0,"");
-    ctx->out = abcdk_option_get(ctx->args,"--out",0,"");
+    ctx->decode = abcdk_option_exist(ctx->args, "--decode");
+    ctx->base = abcdk_option_get_int(ctx->args, "--base", 0, 64, 0);
+    ctx->in = abcdk_option_get(ctx->args, "--in", 0, "");
+    ctx->out = abcdk_option_get(ctx->args, "--out", 0, "");
+    ctx->no_amb = abcdk_option_exist(ctx->args, "--no-ambiguity");
 
-    if(ctx->base != 32 && ctx->base != 64)
+    if (ctx->base != 32 && ctx->base != 64)
     {
         syslog(LOG_ERR, "仅支持base64或base32。");
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
-    if (strlen(ctx->in)<=0)
+    if (strlen(ctx->in) <= 0)
     {
         syslog(LOG_ERR, "'--in < FILE | STRING >' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
     else if (access(ctx->in, R_OK) == 0)
     {
-        in_buf = abcdk_mmap2(ctx->in,0,0);
-        if(!in_buf)
+        inbuf = abcdk_mmap2(ctx->in, 0, 0);
+        if (!inbuf)
         {
             syslog(LOG_ERR, "'%s' %s。", ctx->in, strerror(errno));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
     else
     {
-        in_buf = abcdk_allocator_alloc2(0);
-        if(!in_buf)
+        inbuf = abcdk_allocator_alloc2(0);
+        if (!inbuf)
         {
             syslog(LOG_ERR, "%s。", strerror(errno));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
+            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
-        
-        in_buf->pptrs[0] = (uint8_t*)ctx->in;
-        in_buf->sizes[0] = strlen(ctx->in);
+
+        inbuf->pptrs[0] = (uint8_t *)ctx->in;
+        inbuf->sizes[0] = strlen(ctx->in);
     }
 
-    if(!in_buf)
-        goto final;
+    outbuf = abcdk_allocator_alloc2(inbuf->sizes[0] * 2);
+    if (!outbuf)
+    {
+        syslog(LOG_ERR, "%s。", strerror(errno));
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+    }
 
-    
-    abcdk_basecode_init(&bc,ctx->base);
+    abcdk_basecode_init(&bc, ctx->base);
 
-    if(ctx->sn)
+    if (ctx->base == 32 && ctx->no_amb)
     {
         bc.encode_table_cb = _abcdkbc_en_table32_sn;
         bc.decode_table_cb = _abcdkbc_de_table32_sn;
     }
 
+    if (ctx->decode)
+        outsize = abcdk_basecode_decode(&bc, inbuf->pptrs[0], inbuf->sizes[0], outbuf->pptrs[0], outbuf->sizes[0]);
+    else
+        outsize = abcdk_basecode_encode(&bc, inbuf->pptrs[0], inbuf->sizes[0], outbuf->pptrs[0], outbuf->sizes[0]);
+
+    if (strlen(ctx->out) <= 0)
+    {
+        outsize2 = fprintf(stdout,"%s",outbuf->pptrs[0]);
+        fprintf(stdout,"\n");
+    }
+    else
+    {
+        outsize2 = abcdk_save(ctx->out,outbuf->pptrs[0],outsize,0);
+    }
+
+    if(outsize2 != outsize)
+    {
+        syslog(LOG_ERR, "空间不足或无法格式化输出。");
+        ctx->errcode = ENOSPC;
+    }
+
 final:
 
-
-    abcdk_allocator_unref(&in_buf);
+    abcdk_allocator_unref(&inbuf);
+    abcdk_allocator_unref(&outbuf);
 }
-
 
 int abcdk_tool_basecode(abcdk_tree_t *args)
 {
