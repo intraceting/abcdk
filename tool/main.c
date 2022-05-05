@@ -36,7 +36,8 @@ static struct _abcdk_tool_entry
     {"json",abcdk_tool_json},
     {"lsscsi",abcdk_tool_lsscsi},
     {"archive",abcdk_tool_archive},
-    {"lsmmc",abcdk_tool_lsmmc}
+    {"lsmmc",abcdk_tool_lsmmc},
+    {"basecode",abcdk_tool_basecode}
 };
 
 void _abcdk_tool_print_usage()

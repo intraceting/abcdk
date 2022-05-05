@@ -27,13 +27,13 @@ abcdk_allocator_t* abcdk_mmap(int fd,int rw,int shared)
 
     abcdk_allocator_t *alloc = NULL;
 
-    assert(fd>=0);
+    assert(fd >= 0);
 
     if (fstat(fd, &attr) == -1)
         return NULL;
 
     if (attr.st_size <= 0)
-        ABCDK_ERRNO_AND_RETURN1(ENOSPC, NULL);
+        ABCDK_ERRNO_AND_RETURN1(ENODATA, NULL);
 
     if(rw)
         prot = PROT_READ | PROT_WRITE;

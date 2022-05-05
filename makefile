@@ -86,7 +86,7 @@ tool: base tool-src
 #
 tool-src: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk $^  -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk $^ -l:libabcdk.a $(LINK_FLAGS)
 
 #
 test: base test-src
