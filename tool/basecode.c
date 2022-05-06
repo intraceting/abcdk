@@ -93,7 +93,7 @@ void _abcdkbc_work(abcdkbc_ctx *ctx)
 
     if (ctx->base != 32 && ctx->base != 64)
     {
-        syslog(LOG_ERR, "仅支持base64或base32。");
+        syslog(LOG_ERR, "仅支持base32或base64。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
