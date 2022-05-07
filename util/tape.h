@@ -17,7 +17,7 @@ __BEGIN_DECLS
 /**
  * 属性的字段。
  */
-enum _abcdk_tape_attr_field
+typedef enum _abcdk_tape_attr_field
 {
     /** ID 字段索引.*/
     ABCDK_TAPE_ATTR_ID = 0,
@@ -45,7 +45,7 @@ enum _abcdk_tape_attr_field
     ABCDK_TAPE_ATTR_VALUE = 4
 #define ABCDK_TAPE_ATTR_VALUE ABCDK_TAPE_ATTR_VALUE
 
-};
+}abcdk_tape_attr_field;
 
 /**
  * SENSE编码转字符串。
@@ -99,8 +99,8 @@ int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
  *
  * @return 0 成功，-1 失败。
  *
- * @warning  New tape(KEY = 0x08,ASC = 0x14,ASCQ = 0x03).
- * @warning  End of data (KEY = 0x08,ASC = 0x00,ASCQ = 0x05).
+ * @note  New tape(KEY = 0x08,ASC = 0x14,ASCQ = 0x03).
+ * @note  End of data (KEY = 0x08,ASC = 0x00,ASCQ = 0x05).
  */
 int abcdk_tape_seek(int fd, int cp, uint8_t part, uint64_t block,
                     uint32_t timeout, abcdk_scsi_io_stat *stat);
@@ -171,14 +171,15 @@ int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
  *
  * 如果属性值的是二进制数据，并且也是整型数据时，以网络字节序存储。
  *
+ * @note 磁带物理只读锁不影响此功能。
+ * 
  * cdb = 0x8C
  *
  * @param part 分区号。
  * @param id 字段ID。
  *
  * @return !NULL(0) 成功(属性的指针)，NULL(0) 失败。
- *
- * @warning 磁带物理只读锁不影响此功能。
+ * 
  */
 abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
                                              uint32_t timeout, abcdk_scsi_io_stat *stat);
@@ -187,12 +188,13 @@ abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
  * 写入磁带的属性。
  *
  * 如果属性值的是二进制数据，并且也是整型数据时，以网络字节序存储。
- *
+ * 
+ * @note 磁带物理只读锁不影响此功能。
+ * 
  * cdb = 0x8D
  *
  * @return 0 成功，-1 失败。
- *
- * @warning 磁带物理只读锁不影响此功能。
+ * 
  */
 int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr,
                                uint32_t timeout, abcdk_scsi_io_stat *stat);

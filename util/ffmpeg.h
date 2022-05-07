@@ -319,6 +319,7 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
 #else 
 int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStreamFilterContext **filter);
 #endif
+
 /**
  * 创建流(输出)环境。
  * 

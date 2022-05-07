@@ -141,8 +141,7 @@ int abcdk_mediumx_read_element_status(int fd, uint8_t type,
 
 /**
  * 分析设备元件状态，构造结构化数据。
- *
- * @see abcdk_mediumx_read_element_status
+ * 
  */
 void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *element, uint16_t count);
 
@@ -151,8 +150,6 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
  *
  * @return 0 成功，-1 失败。
  *
- * @see abcdk_mediumx_read_element_status
- * @see abcdk_mediumx_parse_element_status
  */
 int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag, int dvcid,
                                          uint32_t timeout, abcdk_scsi_io_stat *stat);

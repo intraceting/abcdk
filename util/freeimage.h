@@ -10,7 +10,7 @@
 #include "util/general.h"
 
 #if defined(__SQL_H) || defined(__SQLEXT_H)
-#error "FreeImage is incompatible with the header file of unixodbc and cannot be referenced at the same time."
+#error "FreeImage and Unixodbc are incompatible and cannot be referenced at the same time."
 #endif //defined(__SQL_H) || defined(__SQLEXT_H)
 
 #ifdef HAVE_FREEIMAGE

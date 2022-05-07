@@ -16,7 +16,15 @@
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
+typedef struct _abcdkodbc_ctx
+{
+    int errcode;
+    abcdk_tree_t *args;
+
+}abcdkodbc_ctx;
+
+
+void _abcdkodbc_print_usage(abcdk_tree_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -60,9 +68,9 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args, int only_version)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-void _abcdkodbc_work(abcdk_tree_t *args)
+void _abcdkodbc_work(abcdkodbc_ctx *ctx)
 {
-    abcdk_odbc_t ctx = {0};
+    abcdk_odbc_t odbc = {0};
     const char *product = NULL;
     const char *driver = NULL;
     const char *server = NULL;
@@ -75,22 +83,22 @@ void _abcdkodbc_work(abcdk_tree_t *args)
     const char *tracefile = NULL;
     SQLRETURN chk = SQL_ERROR;
 
-    product = abcdk_option_get(args, "--product", 0, NULL);
-    driver = abcdk_option_get(args, "--driver", 0, NULL);
-    server = abcdk_option_get(args, "--server", 0, "localhost");
-    port = abcdk_option_get_int(args, "--port", 0, 0,0);
-    db = abcdk_option_get(args, "--db", 0, NULL);
-    uid = abcdk_option_get(args, "--uid", 0, NULL);
-    pwd = abcdk_option_get(args, "--pwd", 0, "");
-    uri = abcdk_option_get(args, "--uri", 0, NULL);
-    timeout = abcdk_option_get_long(args, "--timeout", 0, 30,0);
-    tracefile = abcdk_option_get(args, "--trace-file", 0, NULL);
+    product = abcdk_option_get(ctx->args, "--product", 0, NULL);
+    driver = abcdk_option_get(ctx->args, "--driver", 0, NULL);
+    server = abcdk_option_get(ctx->args, "--server", 0, "localhost");
+    port = abcdk_option_get_int(ctx->args, "--port", 0, 0,0);
+    db = abcdk_option_get(ctx->args, "--db", 0, NULL);
+    uid = abcdk_option_get(ctx->args, "--uid", 0, NULL);
+    pwd = abcdk_option_get(ctx->args, "--pwd", 0, "");
+    uri = abcdk_option_get(ctx->args, "--uri", 0, NULL);
+    timeout = abcdk_option_get_long(ctx->args, "--timeout", 0, 30,0);
+    tracefile = abcdk_option_get(ctx->args, "--trace-file", 0, NULL);
 
     /*优先检查自定义是否可用。*/
     if (uri && *uri)
     {
-        chk = abcdk_odbc_connect(&ctx, uri, timeout, tracefile);
-        goto final;
+        chk = abcdk_odbc_connect(&odbc, uri, timeout, tracefile);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!product || !*product)
@@ -106,19 +114,19 @@ void _abcdkodbc_work(abcdk_tree_t *args)
         abcdk_strcmp(product, "POSTGRESQL", 0) != 0)
     {
         syslog(LOG_ERR, "'--product NAME' 仅支持DB2，MYSQL，ORACLE，SQLSERVER，POSTGRESQL。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!driver || !*driver)
     {
         syslog(LOG_ERR, "'--driver NAME' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!server || !*server)
     {
         syslog(LOG_ERR, "'--server ADDRESS' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (port == 0 || port == 65536)
@@ -138,29 +146,31 @@ void _abcdkodbc_work(abcdk_tree_t *args)
     if (port == 0 || port == 65536)
     {
         syslog(LOG_ERR, "'--port NUMBER' 范围在1~65535之间(包含)。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!db || !*db)
     {
         syslog(LOG_ERR, "'--db NAME' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!uid || !*uid)
     {
         syslog(LOG_ERR, "'--uid NAME' 不能省略，且不能为空。");
-        ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
-    chk = abcdk_odbc_connect2(&ctx,product,driver,server,port,db,uid,pwd,timeout,tracefile);
-    ABCDK_ERRNO_AND_GOTO1(0, final);
+    chk = abcdk_odbc_connect2(&odbc,product,driver,server,port,db,uid,pwd,timeout,tracefile);
+    if(chk != SQL_SUCCESS)
+    {
+        syslog(LOG_ERR, "连接失败，超时或参数错误。");
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
+    }
 
 final:
 
-    fprintf(stdout,"%d\n",((chk == SQL_SUCCESS)?0:1));
-
-    abcdk_odbc_disconnect(&ctx);
+    abcdk_odbc_disconnect(&odbc);
 }
 
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)
@@ -170,21 +180,25 @@ int abcdk_tool_odbc(abcdk_tree_t *args)
 {
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-    if (abcdk_option_exist(args, "--help"))
+    abcdkodbc_ctx ctx = {0};
+    ctx.args = args;
+
+    if (abcdk_option_exist(ctx.args, "--help"))
     {
-        _abcdkodbc_print_usage(args, 0);
+        _abcdkodbc_print_usage(ctx.args);
     }
     else
     {
-        _abcdkodbc_work(args);
+        _abcdkodbc_work(&ctx);
     }
+
+    return ctx.errcode;
 
 #else
 
     syslog(LOG_INFO, "当前构建版本未包含此工具。\n");
-    errno = EPERM;
+    return EPERM;
 
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)
 
-    return errno;
 }

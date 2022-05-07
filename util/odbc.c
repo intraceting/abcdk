@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
 #include "util/odbc.h"
 
@@ -38,8 +38,8 @@ void abcdk_odbc_free_attr(abcdk_odbc_t *ctx)
         {
             p = (abcdk_allocator_t *)ctx->attr->pptrs[i];
 
-            abcdk_allocator_unref((abcdk_allocator_t**)&p);
-        }    
+            abcdk_allocator_unref((abcdk_allocator_t **)&p);
+        }
 
         abcdk_allocator_unref(&ctx->attr);
     }
@@ -54,7 +54,7 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
     assert(ctx != NULL);
 
     /*同一份数据集只需创建一次。*/
-    if(ctx->attr != NULL)
+    if (ctx->attr != NULL)
         return SQL_SUCCESS;
 
     chk = SQLNumResultCols(ctx->stmt, &columns);
@@ -68,7 +68,7 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
         goto final_error;
     }
 
-    size_t sizes[7] = {NAME_MAX, sizeof(SQLSMALLINT), sizeof(SQLSMALLINT), sizeof(SQLULEN), sizeof(SQLSMALLINT), sizeof(SQLSMALLINT),0};
+    size_t sizes[7] = {NAME_MAX, sizeof(SQLSMALLINT), sizeof(SQLSMALLINT), sizeof(SQLULEN), sizeof(SQLSMALLINT), sizeof(SQLSMALLINT), 0};
 
     for (size_t i = 0; i < ctx->attr->numbers; i++)
     {
@@ -77,7 +77,7 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
         {
             chk = SQL_ERROR;
             goto final_error;
-        } 
+        }
 
         ctx->attr->pptrs[i] = (uint8_t *)p;
 
@@ -121,7 +121,7 @@ SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx)
 
     /*清理数据集属性。*/
     abcdk_odbc_free_attr(ctx);
-    
+
     if (ctx->stmt)
     {
         chk = SQLFreeHandle(SQL_HANDLE_STMT, ctx->stmt);
@@ -187,7 +187,7 @@ SQLRETURN abcdk_odbc_connect(abcdk_odbc_t *ctx, const char *uri, time_t timeout,
         if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
             goto final_error;
 
-        if(tracefile)
+        if (tracefile)
         {
             chk = SQLSetConnectAttr(ctx->dbc, SQL_ATTR_TRACE, (SQLPOINTER)1, 0);
             if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
@@ -211,11 +211,11 @@ final_error:
 }
 
 SQLRETURN abcdk_odbc_connect2(abcdk_odbc_t *ctx, const char *product, const char *driver,
-                             const char *host, uint16_t port, const char *db,
-                             const char *user, const char *pwd,
-                             time_t timeout, const char *tracefile)
+                              const char *host, uint16_t port, const char *db,
+                              const char *user, const char *pwd,
+                              time_t timeout, const char *tracefile)
 {
-    char uri[NAME_MAX]={0};
+    char uri[NAME_MAX] = {0};
 
     assert(product != NULL && driver != NULL && host != NULL && port > 0 &&
            db != NULL && user != NULL && pwd != NULL);
@@ -225,30 +225,30 @@ SQLRETURN abcdk_odbc_connect2(abcdk_odbc_t *ctx, const char *product, const char
         snprintf(uri, NAME_MAX, "DRIVER=%s;HOSTNAME=%s;PORT=%hu;DATABASE=%s;UID=%s;PWD=%s;PROTOCOL=TCPIP;CONNECTTYPE=1;",
                  driver, host, port, db, user, pwd);
     }
-    else if(abcdk_strcmp(product,"oracle", 0) == 0)
+    else if (abcdk_strcmp(product, "oracle", 0) == 0)
     {
         snprintf(uri, NAME_MAX, "DRIVER={%s};DBQ=%s:%hu/%s;UID=%s;PWD=%s;",
                  driver, host, port, db, user, pwd);
     }
-    else if(abcdk_strcmp(product,"mysql", 0) == 0)
+    else if (abcdk_strcmp(product, "mysql", 0) == 0)
     {
         /*CHARSET=UTF8;*/
         snprintf(uri, NAME_MAX, "DRIVER=%s;SERVER=%s;TCP_PORT=%hu;DATABASE=%s;UID=%s;PWD=%s;",
-                driver, host, port, db, user, pwd);
+                 driver, host, port, db, user, pwd);
     }
-    else if(abcdk_strcmp(product,"sqlserver", 0) == 0)
+    else if (abcdk_strcmp(product, "sqlserver", 0) == 0)
     {
         snprintf(uri, NAME_MAX, "Driver={%s};Server=%s;TCP_PORT=%hu;Database=%s;UID=%s;PWD=%s;",
-                driver, host, port, db, user, pwd);
+                 driver, host, port, db, user, pwd);
     }
-    else if(abcdk_strcmp(product,"postgresql", 0) == 0)
+    else if (abcdk_strcmp(product, "postgresql", 0) == 0)
     {
         /*CHARSET=UTF8;*/
         snprintf(uri, NAME_MAX, "DRIVER=%s;SERVER=%s;TCP_PORT=%hu;DATABASE=%s;UID=%s;PWD=%s;",
-                driver, host, port, db, user, pwd);
+                 driver, host, port, db, user, pwd);
     }
 
-    return abcdk_odbc_connect(ctx,uri,timeout,tracefile);
+    return abcdk_odbc_connect(ctx, uri, timeout, tracefile);
 }
 
 SQLRETURN abcdk_odbc_autocommit(abcdk_odbc_t *ctx, int enable)
@@ -344,7 +344,7 @@ SQLRETURN abcdk_odbc_finalize(abcdk_odbc_t *ctx)
 
     /*清理数据集属性。*/
     abcdk_odbc_free_attr(ctx);
-    
+
     if (ctx->stmt)
     {
         chk = SQLFreeHandle(SQL_HANDLE_STMT, ctx->stmt);
@@ -361,11 +361,11 @@ final_error:
     return chk;
 }
 
-SQLRETURN abcdk_odbc_exec_direct(abcdk_odbc_t *ctx,const char *sql)
+SQLRETURN abcdk_odbc_exec_direct(abcdk_odbc_t *ctx, const char *sql)
 {
     SQLRETURN chk;
 
-    chk = abcdk_odbc_prepare(ctx,sql);
+    chk = abcdk_odbc_prepare(ctx, sql);
     if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
         goto final_error;
 
@@ -415,14 +415,14 @@ final_error:
 }
 
 SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT type,
-                             SQLPOINTER buf, SQLULEN max, SQLULEN *len)
+                              SQLPOINTER buf, SQLULEN max, SQLULEN *len)
 {
     SQLLEN StrLen_or_Ind = 0;
     SQLLEN real_len = 0;
     abcdk_allocator_t *p = NULL;
     SQLRETURN chk;
 
-    assert(ctx != NULL && column >=0 && buf != NULL && max >0);
+    assert(ctx != NULL && column >= 0 && buf != NULL && max > 0);
 
     /*创建数据集属性。*/
     chk = abcdk_odbc_alloc_attr(ctx);
@@ -437,7 +437,7 @@ SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT
     }
 
     /*清除无效的值。*/
-    memset(p->pptrs[6],0,p->sizes[6]);
+    memset(p->pptrs[6], 0, p->sizes[6]);
 
     chk = SQLGetData(ctx->stmt, (SQLUSMALLINT)(column + 1), type, p->pptrs[6], p->sizes[6], &StrLen_or_Ind);
     if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
@@ -445,14 +445,14 @@ SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT
 
     if (StrLen_or_Ind > 0)
         real_len = ABCDK_MIN(StrLen_or_Ind, max);
-    else 
+    else
         real_len = ABCDK_MIN(p->sizes[3], max);
 
     /*复制数据。*/
-    memcpy(buf,p->pptrs[6],real_len);
+    memcpy(buf, p->pptrs[6], real_len);
 
     /*可能还需要返回长度。*/
-    if(len)
+    if (len)
         *len = real_len;
 
     return SQL_SUCCESS;
@@ -496,4 +496,4 @@ final_error:
     return -1;
 }
 
-#endif //defined(__SQL_H) && defined(__SQLEXT_H)
+#endif // defined(__SQL_H) && defined(__SQLEXT_H)
