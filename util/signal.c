@@ -6,7 +6,7 @@
 */
 #include "util/signal.h"
 
-void abcdk_sigwaitinfo(abcdk_signal_t *sig, time_t timeout)
+void abcdk_sigwaitinfo(const abcdk_signal_t *sig, time_t timeout)
 {
     sigset_t old;
     struct timespec tout;
@@ -53,16 +53,29 @@ void* _abcdk_sigwaitinfo_routine(void *opaque)
     abcdk_signal_t *sig = (abcdk_signal_t *)opaque;
 
     abcdk_sigwaitinfo(sig,-1);
+
+    /*这里要释放，不然会有内存泄漏的问题。*/
+    abcdk_heap_free(sig);
 }
 
-void abcdk_sigwaitinfo_async(abcdk_signal_t *sig)
+void abcdk_sigwaitinfo_async(const abcdk_signal_t *sig)
 {
+    abcdk_signal_t *sig_cp = NULL;
     abcdk_thread_t td = {0};
+    int chk;
 
     assert(sig != NULL);
 
-    td.opaque = sig;
+    /*在线程中使用，因此需要复制对象。*/
+    sig_cp = abcdk_heap_alloc(sizeof(abcdk_signal_t));
+    memcpy(sig_cp,sig,sizeof(abcdk_signal_t));
+
+    td.opaque = sig_cp;
     td.routine = _abcdk_sigwaitinfo_routine;
 
-    abcdk_thread_create(&td,0);
+    chk = abcdk_thread_create(&td,0);
+
+    /*如果线程未能创建，则要释放申请的内存，不然会造成内存泄漏。*/
+    if(chk != 0)
+        abcdk_heap_free(sig_cp);
 }

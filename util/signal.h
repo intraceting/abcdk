@@ -40,12 +40,12 @@ typedef struct _abcdk_signal
  * 
  * @param timeout 超时(毫秒)。 >= 0 有信号或时间过期，< 0 直到有信号或出错。
 */
-void abcdk_sigwaitinfo(abcdk_signal_t *sig, time_t timeout);
+void abcdk_sigwaitinfo(const abcdk_signal_t *sig, time_t timeout);
 
 /**
  * 等待信号(异步)。
 */
-void abcdk_sigwaitinfo_async(abcdk_signal_t *sig);
+void abcdk_sigwaitinfo_async(const abcdk_signal_t *sig);
 
 __END_DECLS
 
