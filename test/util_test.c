@@ -2432,6 +2432,62 @@ void test_lz4(abcdk_tree_t *args)
 #endif 
 }
 
+#ifdef HAVE_ARCHIVE
+
+static struct _test_archive_store
+{
+    int fd;
+    const char *volume;
+} test_archive_store[] = {
+    {-1,"/home/devel/remote/192.167.15.189-mnt/zhangpengcheng/bbbb.tar"},
+    {-1,"/home/devel/remote/192.167.15.190-mnt/zhangpengcheng/bbbb.tar"},
+  //  {-1,"/home/devel/remote/192.167.15.188-mnt/zhangpengcheng/bbbb.tar"}
+  //  {-1,"/home/devel/job/tmp/bbbb.tar"},
+  //  {-1,"/tmp/bbbb.tar"}
+};
+
+ssize_t test_archive_write_cb(struct archive *fd, void *_client_data, const void *_buffer, size_t _length)
+{
+    int num = ABCDK_ARRAY_SIZE(test_archive_store);
+    ssize_t wlen = 0,wall = 0;
+
+//#pragma omp parallel for num_threads(num)
+    for (int i = 0; i < num; i++)
+    {
+        wlen = abcdk_write(test_archive_store[i].fd, _buffer, _length);
+//#pragma omp atomic
+        wall += ((wlen>0)?wlen:0);
+    }
+
+    return wall/num;
+}
+
+int test_archive_open_cb(struct archive *fd, void *_client_data)
+{
+    int num = ABCDK_ARRAY_SIZE(test_archive_store);
+
+    for (int i = 0; i < num; i++)
+    {
+        test_archive_store[i].fd = abcdk_open(test_archive_store[i].volume, 1, 0, 1);
+    }
+
+    return ARCHIVE_OK;
+}
+
+int test_archive_close_cb(struct archive *fd, void *_client_data)
+{
+    int num = ABCDK_ARRAY_SIZE(test_archive_store);
+
+    for (int i = 0; i < num; i++)
+    {
+        abcdk_closep(&test_archive_store[i].fd);
+    }
+
+    return ARCHIVE_OK;
+}
+
+#endif
+
 void test_archive(abcdk_tree_t *args)
 {
 #ifdef HAVE_ARCHIVE
@@ -2440,7 +2496,11 @@ void test_archive(abcdk_tree_t *args)
     const char *dst = abcdk_option_get(args,"--dst",0,"");
 
     struct archive *a = archive_write_new();
-    struct archive_entry *entry = archive_entry_new();
+
+
+    archive_write_set_bytes_per_block(a,256*1024);
+
+    
 
   //  archive_write_add_filter_bzip2(a);
   //  archive_write_set_format_zip(a);
@@ -2450,7 +2510,11 @@ void test_archive(abcdk_tree_t *args)
 
     archive_write_set_format_gnutar(a);
 
-    archive_write_open_filename(a, dst);
+  //  archive_write_open_filename(a, dst);
+    archive_write_open(a,NULL,test_archive_open_cb,test_archive_write_cb,test_archive_close_cb);
+
+
+    struct archive_entry *entry = archive_entry_new();
 
     int fd = abcdk_open(src,0,0,0);
 
@@ -2458,6 +2522,8 @@ void test_archive(abcdk_tree_t *args)
     fstat(fd,&st);
 
     archive_entry_copy_pathname(entry,src+10);
+
+
 
 #if 0
     archive_entry_set_size(entry, st.st_size); // Note 3
