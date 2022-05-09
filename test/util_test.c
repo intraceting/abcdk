@@ -2439,11 +2439,12 @@ static struct _test_archive_store
     int fd;
     const char *volume;
 } test_archive_store[] = {
-    {-1,"/home/devel/remote/192.167.15.189-mnt/zhangpengcheng/bbbb.tar"},
-    {-1,"/home/devel/remote/192.167.15.190-mnt/zhangpengcheng/bbbb.tar"},
+//    {-1,"/home/devel/remote/192.167.15.189-mnt/zhangpengcheng/bbbb.tar"},
+//    {-1,"/home/devel/remote/192.167.15.190-mnt/zhangpengcheng/bbbb.tar"},
   //  {-1,"/home/devel/remote/192.167.15.188-mnt/zhangpengcheng/bbbb.tar"}
   //  {-1,"/home/devel/job/tmp/bbbb.tar"},
   //  {-1,"/tmp/bbbb.tar"}
+      {-1,"/dev/nst0"}
 };
 
 ssize_t test_archive_write_cb(struct archive *fd, void *_client_data, const void *_buffer, size_t _length)
@@ -2451,11 +2452,11 @@ ssize_t test_archive_write_cb(struct archive *fd, void *_client_data, const void
     int num = ABCDK_ARRAY_SIZE(test_archive_store);
     ssize_t wlen = 0,wall = 0;
 
-//#pragma omp parallel for num_threads(num)
+#pragma omp parallel for num_threads(num)
     for (int i = 0; i < num; i++)
     {
         wlen = abcdk_write(test_archive_store[i].fd, _buffer, _length);
-//#pragma omp atomic
+#pragma omp atomic
         wall += ((wlen>0)?wlen:0);
     }
 
