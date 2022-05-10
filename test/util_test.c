@@ -2439,12 +2439,12 @@ static struct _test_archive_store
     int fd;
     const char *volume;
 } test_archive_store[] = {
-//    {-1,"/home/devel/remote/192.167.15.189-mnt/zhangpengcheng/bbbb.tar"},
+    {-1,"/home/devel/remote/192.167.15.189-mnt/zhangpengcheng/bbbb.tar"},
 //    {-1,"/home/devel/remote/192.167.15.190-mnt/zhangpengcheng/bbbb.tar"},
-  //  {-1,"/home/devel/remote/192.167.15.188-mnt/zhangpengcheng/bbbb.tar"}
+//    {-1,"/home/devel/remote/192.167.15.188-mnt/zhangpengcheng/bbbb.tar"}
   //  {-1,"/home/devel/job/tmp/bbbb.tar"},
-  //  {-1,"/tmp/bbbb.tar"}
-      {-1,"/dev/nst0"}
+    {-1,"/tmp/bbbb.tar"}
+   //   {-1,"/dev/nst0"}
 };
 
 ssize_t test_archive_write_cb(struct archive *fd, void *_client_data, const void *_buffer, size_t _length)
@@ -2538,16 +2538,19 @@ void test_archive(abcdk_tree_t *args)
 
     archive_write_header(a, entry);
 
-    char buf[500];
+    int bufsize = 256*1024;
+    char *buf = (char*)abcdk_heap_alloc(bufsize);
 
     for(;;)
     {
-        ssize_t r = abcdk_read(fd,buf,500);
+        ssize_t r = abcdk_read(fd,buf,bufsize);
         if(r<=0)
             break;
         
         archive_write_data(a,buf,r);
     }
+
+    abcdk_heap_free(buf);
 
     archive_write_finish_entry(a);
     archive_entry_free(entry);
