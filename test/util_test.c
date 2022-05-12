@@ -50,6 +50,7 @@
 #include "shell/scsi.h"
 #include "util/iconv.h"
 #include "util/sqlite.h"
+#include "strong/reader.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -4733,6 +4734,28 @@ void test_sqlite(abcdk_tree_t *args)
 #endif //
 }
 
+void test_reader(abcdk_tree_t *args)
+{
+    abcdk_reader_t *r = abcdk_reader_create(256*1024);
+
+    int fd = abcdk_open("/home/devel/job/tmp/h5-video2.html",1,0,0);
+
+    abcdk_reader_start(r,fd);
+    abcdk_reader_start(r,fd);
+
+    char buf[1000];
+
+    int n = abcdk_reader_read(r,buf,1000);
+    
+    
+    abcdk_reader_stop(r);
+    abcdk_reader_stop(r);
+
+    abcdk_closep(&fd);
+
+    abcdk_reader_destroy(&r);
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -4958,6 +4981,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_sqlite", 0) == 0)
         test_sqlite(args);
+
+    if (abcdk_strcmp(func, "test_reader", 0) == 0)
+        test_reader(args);
 
     abcdk_tree_free(&args);
     

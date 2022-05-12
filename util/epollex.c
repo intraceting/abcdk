@@ -275,7 +275,7 @@ void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint3
     if (disp.events)
     {
         disp.data = node->data;
-        abcdk_pool_push(&ctx->event_pool,&disp,sizeof(disp));
+        abcdk_pool_push(&ctx->event_pool,&disp);
     }   
 }
 
@@ -494,9 +494,9 @@ int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t ti
 
 try_again:
 
-    /*优先从事件队列中拉取。*/
-    chk = abcdk_pool_pull(&ctx->event_pool, event, sizeof(*event));
-    if (chk >= 0)
+    /*优先从事件队列中拉取，有数据直接跳转结束，无数据进入等待。*/
+    chk = abcdk_pool_pull(&ctx->event_pool, event);
+    if (chk == 0)
         goto final;
 
     /*计算剩余超时时长。*/

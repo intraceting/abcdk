@@ -16,7 +16,7 @@ CC_STD = -std=c11
 
 #
 ifeq (${BUILD_TYPE},debug)
-CC_FLAGS += -g -O2
+CC_FLAGS += -g
 LINK_FLAGS += -g
 else 
 CC_FLAGS += -O2
@@ -59,6 +59,7 @@ BASE_SRC_FILES += $(wildcard util/*.c)
 BASE_SRC_FILES += $(wildcard shell/*.c)
 BASE_SRC_FILES += $(wildcard mp4/*.c)
 BASE_SRC_FILES += $(wildcard comm/*.c)
+BASE_SRC_FILES += $(wildcard strong/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
@@ -120,6 +121,12 @@ $(OBJ_PATH)/comm/%.o: comm/%.c
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
 #
+$(OBJ_PATH)/strong/%.o: strong/%.c
+	mkdir -p $(OBJ_PATH)/strong/
+	rm -f $@
+	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+
+#
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
@@ -140,6 +147,7 @@ clean-base:
 	rm -rf ${OBJ_PATH}/mp4
 	rm -rf ${OBJ_PATH}/comm
 	rm -rf ${OBJ_PATH}/shell
+	rm -rf ${OBJ_PATH}/strong
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 

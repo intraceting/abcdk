@@ -56,8 +56,8 @@ void abcdk_pool_destroy(abcdk_pool_t *pool);
 /**
  * 初始化。
  * 
- * @param size 大小。
- * @param number 数量。
+ * @param size 大小(单元格)。
+ * @param number 数量(单元格)。
  * 
  * @return 0 成功，!0 失败。
 */
@@ -66,18 +66,16 @@ int abcdk_pool_init(abcdk_pool_t *pool, size_t size, size_t number);
 /**
  * 拉取数据。
  * 
- * @return >= 0 成功(读取数据长度)，< 0 失败(空了)。
- * 
+ * @return 0 成功，!0 失败(空了)。
 */
-ssize_t abcdk_pool_pull(abcdk_pool_t *pool, void *buf, size_t size);
+int abcdk_pool_pull(abcdk_pool_t *pool, void *buf);
 
 /**
  * 推送数据。
  * 
- * @return >= 0 成功(写入数据长度)，< 0 失败(满了)。
- * 
+ * @return 0 成功，!0 失败(满了)。
 */
-ssize_t abcdk_pool_push(abcdk_pool_t *pool, const void *buf, size_t size);
+int abcdk_pool_push(abcdk_pool_t *pool, const void *buf);
 
 __END_DECLS
 
