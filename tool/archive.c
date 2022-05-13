@@ -16,6 +16,7 @@
 #include "util/charset.h"
 #include "util/cap.h"
 #include "util/dirent.h"
+#include "strong/reader.h"
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE
@@ -83,6 +84,7 @@ typedef struct _abcdkarchive_ctx
         struct archive *dst_fd;
         size_t buf_size;
         void *buf;
+        abcdk_reader_t *reader;
         
     } write;
 
@@ -615,9 +617,29 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
     if (S_ISDIR(attr->st_mode) || S_ISLNK(attr->st_mode))
         ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
 
+    
     fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
+    {
+        syslog(LOG_ERR, "'%s' %s。", file,strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+    }
+
+    /*大于10MB时启用加速器。*/
+    if (attr->st_size >= 10 * 1024 * 1024)
+    {
+        if (!ctx->write.reader)
+            ctx->write.reader = abcdk_reader_create(1024 * 1024);
+        if (ctx->write.reader)
+        {
+            chk = abcdk_reader_start(ctx->write.reader, fd);
+            if (chk != 0)
+            {
+                syslog(LOG_WARNING, "'启动加速器失败' %s。", strerror(errno));
+                abcdk_reader_destroy(&ctx->write.reader);
+            }
+        }
+    }
 
     if(!ctx->write.buf)
     {    
@@ -628,7 +650,10 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
 
     for(;;)
     {
-        rlen = abcdk_read(fd, ctx->write.buf, ctx->write.buf_size);
+        if(ctx->write.reader)
+            rlen = abcdk_reader_read(ctx->write.reader, ctx->write.buf, ctx->write.buf_size);
+        else 
+            rlen = abcdk_read(fd, ctx->write.buf, ctx->write.buf_size);
         if (rlen <= 0)
             break;
 
@@ -652,6 +677,8 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
 
 final:
 
+    if(ctx->write.reader)
+        abcdk_reader_stop(ctx->write.reader);
     abcdk_closep(&fd);
     
     if(entry)

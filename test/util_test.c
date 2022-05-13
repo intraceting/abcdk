@@ -4736,22 +4736,38 @@ void test_sqlite(abcdk_tree_t *args)
 
 void test_reader(abcdk_tree_t *args)
 {
-    abcdk_reader_t *r = abcdk_reader_create(256*1024);
+    const char *src = abcdk_option_get(args,"--src",0,"/dev/zero");
+    const char *dst = abcdk_option_get(args,"--dst",0,"/tmp/test_reader.data");
+    long blksize = abcdk_option_get_long(args,"--blksize",0,256*1024,0);
+    long bufsize = abcdk_option_get_long(args,"--bufsize",0,256*1024,0);
 
-    int fd = abcdk_open("/home/devel/job/tmp/h5-video2.html",1,0,0);
+    abcdk_reader_t *r = abcdk_reader_create(blksize);
 
-    abcdk_reader_start(r,fd);
-    abcdk_reader_start(r,fd);
+    int fd_src = abcdk_open(src,0,0,0);
+    int fd_dst = abcdk_open(dst,1,0,1);
 
-    char buf[1000];
+    abcdk_reader_start(r,fd_src);
+    abcdk_reader_start(r,fd_src);
 
-    int n = abcdk_reader_read(r,buf,1000);
+    char *buf = (char*)abcdk_heap_alloc(bufsize);
+    for(;;)
+    {
+        int n = abcdk_reader_read(r,buf,bufsize);
+        if(n<=0)
+            break;
+        
+        int m = abcdk_write(fd_dst,buf,n);
+        assert(m==n);
+        //printf("[%d]%d\n",i,n);
+    }
     
+    abcdk_heap_free(buf);
     
     abcdk_reader_stop(r);
     abcdk_reader_stop(r);
 
-    abcdk_closep(&fd);
+    abcdk_closep(&fd_dst);
+    abcdk_closep(&fd_src);
 
     abcdk_reader_destroy(&r);
 }
