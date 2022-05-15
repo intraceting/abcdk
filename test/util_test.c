@@ -50,7 +50,7 @@
 #include "shell/scsi.h"
 #include "util/iconv.h"
 #include "util/sqlite.h"
-#include "strong/reader.h"
+#include "util/reader.h"
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29

@@ -16,7 +16,7 @@
 #include "util/charset.h"
 #include "util/cap.h"
 #include "util/dirent.h"
-#include "strong/reader.h"
+#include "util/reader.h"
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE

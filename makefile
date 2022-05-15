@@ -59,7 +59,6 @@ BASE_SRC_FILES += $(wildcard util/*.c)
 BASE_SRC_FILES += $(wildcard shell/*.c)
 BASE_SRC_FILES += $(wildcard mp4/*.c)
 BASE_SRC_FILES += $(wildcard comm/*.c)
-BASE_SRC_FILES += $(wildcard strong/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
@@ -117,12 +116,6 @@ $(OBJ_PATH)/mp4/%.o: mp4/%.c
 #
 $(OBJ_PATH)/comm/%.o: comm/%.c
 	mkdir -p $(OBJ_PATH)/comm/
-	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/strong/%.o: strong/%.c
-	mkdir -p $(OBJ_PATH)/strong/
 	rm -f $@
 	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
 
