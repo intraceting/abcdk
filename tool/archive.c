@@ -578,8 +578,8 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
     struct archive_entry *entry = NULL;
     char linkname[PATH_MAX] = {0};
     int fd = -1;
-    ssize_t rlen = 0,wlen = 0;
-    int chk = -1;
+    ssize_t rlen = 0, wlen = 0;
+    int chk = -1, reader_chk = -1;
 
     if (!(S_ISREG(attr->st_mode) || S_ISLNK(attr->st_mode) || S_ISDIR(attr->st_mode)))
     {
@@ -625,20 +625,16 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
-    /*大于10MB时启用加速器。*/
-    if (attr->st_size >= 10 * 1024 * 1024)
+    /*当文件大小大于读写缓存时启用加速器。*/
+    if (attr->st_size > ctx->write.buf_size)
     {
         if (!ctx->write.reader)
-            ctx->write.reader = abcdk_reader_create(1024 * 1024);
-        if (ctx->write.reader)
-        {
-            chk = abcdk_reader_start(ctx->write.reader, fd);
-            if (chk != 0)
-            {
-                syslog(LOG_WARNING, "'启动加速器失败' %s。", strerror(errno));
-                abcdk_reader_destroy(&ctx->write.reader);
-            }
-        }
+            ctx->write.reader = abcdk_reader_create(ctx->write.buf_size);
+        if (!ctx->write.reader)
+            syslog(LOG_WARNING, "'启动加速器失败' %s。", strerror(errno));
+
+        if(ctx->write.reader)
+            reader_chk = abcdk_reader_start(ctx->write.reader, fd);
     }
 
     if(!ctx->write.buf)
@@ -650,7 +646,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
 
     for(;;)
     {
-        if(ctx->write.reader)
+        if(reader_chk == 0)
             rlen = abcdk_reader_read(ctx->write.reader, ctx->write.buf, ctx->write.buf_size);
         else 
             rlen = abcdk_read(fd, ctx->write.buf, ctx->write.buf_size);
