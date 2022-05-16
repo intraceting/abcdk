@@ -124,7 +124,7 @@ void _abcdkbc_work(abcdkbc_ctx *ctx)
         inbuf->sizes[0] = strlen(ctx->in);
     }
 
-    outbuf = abcdk_allocator_alloc2(inbuf->sizes[0] * 2);
+    outbuf = abcdk_allocator_alloc2(inbuf->sizes[0] * 4);
     if (!outbuf)
     {
         syslog(LOG_ERR, "%s。", strerror(errno));
