@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_STRONG_READER_H
-#define ABCDK_STRONG_READER_H
+#ifndef ABCDK_UTIL_READER_H
+#define ABCDK_UTIL_READER_H
 
 #include "util/general.h"
 #include "util/thread.h"
@@ -50,4 +50,4 @@ ssize_t abcdk_reader_read(abcdk_reader_t *reader,void *buf,size_t size);
 
 __END_DECLS
 
-#endif //ABCDK_STRONG_READER_H
+#endif //ABCDK_UTIL_READER_H

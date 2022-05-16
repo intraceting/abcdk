@@ -4709,7 +4709,7 @@ void test_sqlite(abcdk_tree_t *args)
     abcdk_sqlite_tran_begin(ctx);
 
     char buf[1000] = {0};
-    for(int i = 0;i<30000000;i++)
+    for(int i = 0;i<30000;i++)
     {
         memset(buf,0,1000);
         sprintf(buf,"insert into files(file_number,file_path_name,file_hash_code,file_hash_type,file_status) "
