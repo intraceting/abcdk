@@ -110,8 +110,8 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
     fprintf(stderr, "\t\t仅指定类型。默认：全部\n");
 
     fprintf(stderr, "\n\t\t%d: 机械手。\n", ABCDK_MEDIUMX_ELEMENT_CHANGER);
-    fprintf(stderr, "\t\t%d: 存储槽位。\n", ABCDK_MEDIUMX_ELEMENT_STORAGE);
-    fprintf(stderr, "\t\t%d: IE槽位。\n", ABCDK_MEDIUMX_ELEMENT_IE_PORT);
+    fprintf(stderr, "\t\t%d: 存储槽。\n", ABCDK_MEDIUMX_ELEMENT_STORAGE);
+    fprintf(stderr, "\t\t%d: 出入槽。\n", ABCDK_MEDIUMX_ELEMENT_IE_PORT);
     fprintf(stderr, "\t\t%d: 驱动器。\n", ABCDK_MEDIUMX_ELEMENT_DXFER);
 
     fprintf(stderr, "\n\t--output < FILE >\n");
