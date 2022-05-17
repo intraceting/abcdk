@@ -4815,12 +4815,15 @@ void test_kafka_consumer()
         if (!rkmessage)
             continue;
 
-        
-        if(rkmessage->len>0)
+        if (rkmessage->len > 0)
         {
-            char*data = abcdk_heap_clone(rkmessage->payload,rkmessage->len);
-            abcdk_log_printf(LOG_DEBUG,"%s",data);
-            abcdk_heap_free(data);
+            char *key = NULL;
+            char *val = abcdk_heap_clone(rkmessage->payload, rkmessage->len);
+            if (rkmessage->key_len > 0)
+                key = abcdk_heap_clone(rkmessage->key, rkmessage->key_len);
+            abcdk_log_printf(LOG_DEBUG, "key(%s),val(%s)", key, val);
+            abcdk_heap_free(val);
+            abcdk_heap_free2((void **)&key);
         }
 
         rd_kafka_message_destroy(rkmessage);
@@ -4839,15 +4842,96 @@ void test_kafka_consumer()
 
 }
 
+
+void test_kafka_producer()
+{
+    char errstr[1001] = {0};
+
+    int chk;
+
+    rd_kafka_conf_t *conf = rd_kafka_conf_new();
+    /* Quick termination */
+    char tmp[16] = {0};
+    snprintf(tmp, sizeof(tmp), "%i", SIGIO);
+    rd_kafka_conf_set(conf, "internal.termination.signal", tmp, NULL, 0);
+    rd_kafka_conf_set(conf, "message.timeout.ms", "3000", NULL, 0);
+    rd_kafka_conf_set(conf, "socket.timeout.ms", "3000", NULL, 0);
+    rd_kafka_conf_set(conf, "socket.keepalive.enable", "true", NULL, 0);
+    rd_kafka_conf_set(conf, "group.id", "aaaa", NULL, 0);
+
+    rd_kafka_t *k = rd_kafka_new(RD_KAFKA_PRODUCER,conf,errstr,1000);
+    chk = rd_kafka_brokers_add(k,"localhost:9092");
+
+    rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
+
+    rd_kafka_topic_t *topic = rd_kafka_topic_new(k, "aaaa", topic_conf);
+    int partition = 0;
+    
+
+    for(int i = 0;i<1000000;i++)
+    {
+        char key[100] = {0};
+        char val[100] = {0};
+
+        sprintf(key,"key-%d",i);
+        sprintf(val,"val-%d",i);
+
+        chk = rd_kafka_produce(topic,partition,RD_KAFKA_MSG_F_COPY,val,strlen(val),key,strlen(key),NULL);
+
+        if(chk !=0 )
+        {
+            rd_kafka_resp_err_t kaerrno = rd_kafka_errno2err(errno);
+            abcdk_log_printf(LOG_DEBUG, "%% Failed to produce to topic %s partition %i: %s\n",
+                    rd_kafka_topic_name(topic), partition, rd_kafka_err2str(kaerrno));
+
+            if(kaerrno != RD_KAFKA_RESP_ERR__QUEUE_FULL)
+                break;
+
+            rd_kafka_poll(k, 1000);
+            i--;
+        }
+
+        rd_kafka_poll(k, 0);
+    }
+
+     rd_kafka_poll(k, 0);
+
+    
+    while (rd_kafka_outq_len(k) > 0)
+            rd_kafka_poll(k, 10);
+    
+    /* Destroy topic */
+    rd_kafka_topic_destroy(topic);
+
+    rd_kafka_destroy(k);
+
+}
+
+
 #endif //RD_KAFKA_VERSION
 
 void test_kafka(abcdk_tree_t *args)
 {
+    int role = abcdk_option_get_int(args,"--role",0,1,0);
 #ifdef RD_KAFKA_VERSION
 
     abcdk_log_printf(LOG_INFO,"%s",rd_kafka_version_str());
 
-    test_kafka_consumer();
+#if 0 
+    if(role)
+        test_kafka_consumer();
+    else 
+        test_kafka_producer();
+#else 
+    #pragma omp parallel for num_threads(2)
+    for(int i = 0;i<2;i++)
+    {
+        if(i == 0)
+            test_kafka_consumer();
+        else if (i == 1)
+            test_kafka_producer();
+    }
+#endif 
 
 #endif //RD_KAFKA_VERSION
 }
