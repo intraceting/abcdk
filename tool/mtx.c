@@ -255,13 +255,13 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
         if (ctx->fmt == ABCDKMTX_STATUS_FMT_XML)
         {
-            fprintf(stdout, "\t\t<element addr=\"%hu\" type=\"%hhu\" full=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
+            fprintf(stdout, "\t\t<element address=\"%hu\" type=\"%hhu\" full=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
                     addr,type,full,dvcid,barcode);
         }
         else if(ctx->fmt == ABCDKMTX_STATUS_FMT_JSON)
         {
             fprintf(stdout, "\t\t{\n");
-            fprintf(stdout, "\t\t\t\"addr\":\"%hu\",\n",addr);
+            fprintf(stdout, "\t\t\t\"address\":\"%hu\",\n",addr);
             fprintf(stdout, "\t\t\t\"type\":\"%hhu\",\n",type);
             fprintf(stdout, "\t\t\t\"full\":\"%hhu\",\n",full);
             fprintf(stdout, "\t\t\t\"barcode\":\"%s\"\n",barcode);
