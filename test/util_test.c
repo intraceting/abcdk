@@ -111,6 +111,10 @@
 #include <wand/MagickWand.h>
 #endif
 
+#ifdef HAVE_KAFKA
+#include <librdkafka/rdkafka.h>
+#endif 
+
 void test_log(abcdk_tree_t *args)
 {
     abcdk_log_open(NULL, LOG_DEBUG, 1);
@@ -4772,6 +4776,82 @@ void test_reader(abcdk_tree_t *args)
     abcdk_reader_destroy(&r);
 }
 
+#ifdef RD_KAFKA_VERSION
+
+void test_kafka_consumer()
+{
+    char errstr[1001] = {0};
+
+    int chk;
+
+    rd_kafka_conf_t *conf = rd_kafka_conf_new();
+    /* Quick termination */
+    char tmp[16] = {0};
+    snprintf(tmp, sizeof(tmp), "%i", SIGIO);
+    rd_kafka_conf_set(conf, "internal.termination.signal", tmp, NULL, 0);
+    rd_kafka_conf_set(conf, "message.timeout.ms", "3000", NULL, 0);
+    rd_kafka_conf_set(conf, "socket.timeout.ms", "3000", NULL, 0);
+    rd_kafka_conf_set(conf, "socket.keepalive.enable", "true", NULL, 0);
+    rd_kafka_conf_set(conf, "group.id", "aaaa", NULL, 0);
+
+    rd_kafka_t *k = rd_kafka_new(RD_KAFKA_CONSUMER,conf,errstr,1000);
+    chk = rd_kafka_brokers_add(k,"localhost:9092");
+
+    rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
+
+    rd_kafka_topic_t *topic = rd_kafka_topic_new(k, "aaaa", topic_conf);
+    int partition = 0;
+    chk = rd_kafka_consume_start(topic,partition,RD_KAFKA_OFFSET_END);
+
+    while (1)
+    {
+        rd_kafka_message_t *rkmessage;
+        rd_kafka_resp_err_t err;
+
+        /* Poll for errors, etc. */
+        rd_kafka_poll(k, 0);
+
+        rkmessage = rd_kafka_consume(topic, partition, 1000);
+        if (!rkmessage)
+            continue;
+
+        
+        if(rkmessage->len>0)
+        {
+            char*data = abcdk_heap_clone(rkmessage->payload,rkmessage->len);
+            abcdk_log_printf(LOG_DEBUG,"%s",data);
+            abcdk_heap_free(data);
+        }
+
+        rd_kafka_message_destroy(rkmessage);
+    }
+
+    /* Stop consuming */
+    rd_kafka_consume_stop(topic, partition);
+    
+    while (rd_kafka_outq_len(k) > 0)
+            rd_kafka_poll(k, 10);
+    
+    /* Destroy topic */
+    rd_kafka_topic_destroy(topic);
+
+    rd_kafka_destroy(k);
+
+}
+
+#endif //RD_KAFKA_VERSION
+
+void test_kafka(abcdk_tree_t *args)
+{
+#ifdef RD_KAFKA_VERSION
+
+    abcdk_log_printf(LOG_INFO,"%s",rd_kafka_version_str());
+
+    test_kafka_consumer();
+
+#endif //RD_KAFKA_VERSION
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -5000,6 +5080,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_reader", 0) == 0)
         test_reader(args);
+
+    if (abcdk_strcmp(func, "test_kafka", 0) == 0)
+        test_kafka(args);
 
     abcdk_tree_free(&args);
     

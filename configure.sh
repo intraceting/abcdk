@@ -131,7 +131,8 @@ usage: [ OPTIONS ]
      freeimage,fuse,libnm,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,systemd,
-     libudev,dmtx,qrencode,zbar,magickwand
+     libudev,dmtx,qrencode,zbar,magickwand,
+     kafka
 
      自定义依赖项，key前缀增加“with-”，并且定义环境变量。如下：
      export DEPEND_FLAGS="-I/tmp/3party/include/"
@@ -278,6 +279,7 @@ DependPackageCheck dmtx HAVE_LIBDMTX
 DependPackageCheck qrencode HAVE_QRENCODE
 DependPackageCheck zbar HAVE_ZBAR
 DependPackageCheck magickwand HAVE_MAGICKWAND
+DependPackageCheck kafka HAVE_KAFKA
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
