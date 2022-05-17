@@ -396,7 +396,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     if (ctx->type != TYPE_MEDIUM_CHANGER)
     {
-        syslog(LOG_ERR, "'%s' 不是机械手.", ctx->dev_p);
+        syslog(LOG_ERR, "'%s' 不是机械手。", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
@@ -418,7 +418,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
         {
             if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
             {
-                syslog(LOG_ERR, "'%s' %s.", ctx->outfile, strerror(errno));
+                syslog(LOG_ERR, "'%s' %s。", ctx->outfile, strerror(errno));
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
             }
         }
