@@ -874,6 +874,7 @@ final:
     }
 
     abcdk_heap_free2(&ctx->write.buf);
+    abcdk_reader_destroy(&ctx->write.reader);
 }
 
 void _abcdkarchive_work(abcdkarchive_ctx *ctx)
