@@ -28,9 +28,9 @@ void abcdk_log_open(const char *ident,int level,int copy2stderr);
  * 格式化输出日志。
  * 
  * @note 自动获取线程名字添加到行首。
+ * @warning 每行日志最大长度4096字节，包括线程名字(16字节)。
  * 
  * @param priority 优先级。LOG_*宏定义在syslog.h文件中。
- * @param fmt 格式化字符串。最长支持2032字节。
  * 
 */
 void abcdk_log_vprintf(int priority,const char *fmt,va_list ap);
