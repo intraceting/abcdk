@@ -180,13 +180,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的文件归档工具。\n");
-    fprintf(stderr, "\n\t%s\n",
-#if ARCHIVE_VERSION_NUMBER >= 3003003
-            archive_version_details());
-#else  // ARCHIVE_VERSION_NUMBER >= 3003003
-            archive_version_string());
-#endif // ARCHIVE_VERSION_NUMBER >= 3003003
+    fprintf(stderr, "\n\t简单的文件回迁和归档工具。\n");
 
     fprintf(stderr, "\n通用选项:\n");
 

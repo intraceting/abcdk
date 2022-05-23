@@ -140,7 +140,6 @@ clean-base:
 	rm -rf ${OBJ_PATH}/mp4
 	rm -rf ${OBJ_PATH}/comm
 	rm -rf ${OBJ_PATH}/shell
-	rm -rf ${OBJ_PATH}/strong
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 

@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${CURDIR}/3party/myscript/linux/core/check_os_id.sh $1)"
+    echo "$(${CURDIR}/3party/myscript/linux/core/check-os-id.sh $1)"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${CURDIR}/3party/myscript/linux/core/get_os_ver.sh)"
+    echo "$(${CURDIR}/3party/myscript/linux/core/get-os-ver.sh)"
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${CURDIR}/3party/myscript/linux/core/get_kit_name.sh)"
+	echo "$(${CURDIR}/3party/myscript/linux/core/get-kit-name.sh)"
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${CURDIR}/3party/myscript/linux/core/check_package.sh $1)"
+    echo "$(${CURDIR}/3party/myscript/linux/core/check-package.sh $1)"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${CURDIR}/3party/myscript/linux/core/check_which.sh $1)"
+	echo "$(${CURDIR}/3party/myscript/linux/core/check-which.sh $1)"
 }
 
 #
@@ -55,7 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    echo "$(${CURDIR}/3party/myscript/linux/devel/check_config.sh $1 $2)"
+    echo "$(${CURDIR}/3party/myscript/linux/devel/check-config.sh $1 $2)"
 }
 
 #
