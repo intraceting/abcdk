@@ -51,6 +51,8 @@
 #include "util/iconv.h"
 #include "util/sqlite.h"
 #include "util/reader.h"
+#include "util/json.h"
+
 
 #ifdef HAVE_FUSE
 #define FUSE_USE_VERSION 29
@@ -2833,7 +2835,33 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
 {
     if (message->payloadlen)
     {
+#ifdef _json_h_
+        json_object *obj = abcdk_json_parse((char*)message->payload);
+
+        //abcdk_json_readable(stderr,1,10,obj);
+        //fprintf(stderr,"\n");
+
+        json_object *mid = NULL,*node = NULL,*rt = NULL;
+        json_object_object_get_ex(obj,"mid",&mid);
+        json_object_object_get_ex(obj,"node",&node);
+        json_object_object_get_ex(obj,"realtime",&rt);
+
+        int64_t brt = json_object_get_int64(rt);
+        int64_t ert = abcdk_time_clock2kind_with(CLOCK_REALTIME,3);
+
+        if(strncmp("431",json_object_get_string(node),3)==0)
+            syslog(LOG_DEBUG,"mid:%s,node:%s,q=%ld",json_object_get_string(mid),json_object_get_string(node),ert-brt);
+
+        
+        abcdk_json_unref(&rt);
+        abcdk_json_unref(&mid);
+        abcdk_json_unref(&node);
+        abcdk_json_unref(&obj);
+
+#else 
         printf("%s %s\n", message->topic, (char*)message->payload);
+#endif 
+        
     }
     else
     {
@@ -2849,7 +2877,8 @@ void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
     {
         /* Subscribe to broker information topics on successful connect. */
         //mosquitto_subscribe(mosq, NULL, "$SYS/#", 2);
-        mosquitto_subscribe(mosq, NULL, "hello", 2);
+        //mosquitto_subscribe(mosq, NULL, "hello", 2);
+        mosquitto_subscribe(mosq, NULL, "dagger/manager-node", 0);
     }
     else
     {
@@ -2860,19 +2889,22 @@ void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
 void my_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int qos_count, const int *granted_qos)
 {
     int i;
-
+#if 0
     printf("Subscribed (mid: %d): %d", mid, granted_qos[0]);
     for (i = 1; i < qos_count; i++)
     {
         printf(", %d", granted_qos[i]);
     }
     printf("\n");
+#endif
 }
 
 void my_log_callback(struct mosquitto *mosq, void *userdata, int level, const char *str)
 {
     /* Pring all log messages regardless of level. */
+#if 0
     printf("%s\n", str);
+#endif
 }
 #endif 
 
@@ -2880,7 +2912,7 @@ int test_mqtt(abcdk_tree_t *args)
 {
 #ifdef HAVE_MQTT
     int i;
-    char *host = "localhost";
+    char *host = "192.167.200.102";
     int port = 1883;
     int keepalive = 60;
     bool clean_session = true;
