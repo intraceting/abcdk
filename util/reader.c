@@ -259,10 +259,6 @@ ssize_t abcdk_reader_read(abcdk_reader_t *reader, void *buf, size_t size)
         /*数据读够了，返回退出。*/
         if (rall >= size)
             break;
-
-        // /*当块缓存的数据长度小于块大小时，表示文件已经结束，返回退出。*/
-        // if(ABCDK_PTR2SIZE(buf2->alloc->pptrs[1], 0) < reader->blksize)
-        //     break;
     }
 
     return rall;
