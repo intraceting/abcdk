@@ -2841,16 +2841,24 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
         //abcdk_json_readable(stderr,1,10,obj);
         //fprintf(stderr,"\n");
 
-        json_object *mid = NULL,*node = NULL,*rt = NULL;
+        json_object *mid = NULL,*node = NULL,*rt = NULL,*cmd = NULL;
         json_object_object_get_ex(obj,"mid",&mid);
         json_object_object_get_ex(obj,"node",&node);
         json_object_object_get_ex(obj,"realtime",&rt);
+        json_object_object_get_ex(obj,"cmd",&cmd);
 
         int64_t brt = json_object_get_int64(rt);
         int64_t ert = abcdk_time_clock2kind_with(CLOCK_REALTIME,3);
+        
 
-        if(strncmp("431",json_object_get_string(node),3)==0)
-            syslog(LOG_DEBUG,"mid:%s,node:%s,q=%ld",json_object_get_string(mid),json_object_get_string(node),ert-brt);
+        if(strncmp("543",json_object_get_string(node),3)==0)
+            {
+                syslog(LOG_DEBUG,"mid:%s,node:%s,cmd=%d,q=%ld",
+                        json_object_get_string(mid),
+                        json_object_get_string(node),
+                        json_object_get_int(cmd),
+                        ert-brt);
+            }
 
         
         abcdk_json_unref(&rt);
@@ -2903,7 +2911,7 @@ void my_log_callback(struct mosquitto *mosq, void *userdata, int level, const ch
 {
     /* Pring all log messages regardless of level. */
 #if 0
-    printf("%s\n", str);
+    syslog(LOG_DEBUG,"%s\n", str);
 #endif
 }
 #endif 
