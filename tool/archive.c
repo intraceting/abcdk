@@ -244,7 +244,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n归档选项:\n");
 
     fprintf(stderr, "\n\t--volume < NAME [ NAME-copy NAME-copy ... ] >\n");
-    fprintf(stderr, "\t\t卷名和副本（包括路径）。注：最大支持254个副本\\n");
+    fprintf(stderr, "\t\t卷名和副本（包括路径）。注：最大支持254个副本\n");
 
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
     fprintf(stderr, "\t\t文件来源。\n");
