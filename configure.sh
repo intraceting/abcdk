@@ -69,9 +69,17 @@ CheckKeyword()
 
 #
 MAKE_CONF=${CURDIR}/build/makefile.conf
+RPM_RT_CONF=${CURDIR}/build/rpm.rt.spec
+RPM_DEV_CONF=${CURDIR}/build/rpm.dev.spec
+DEB_RT_CONF=${CURDIR}/build/deb.rt.control
+DEB_DEV_CONF=${CURDIR}/build/deb.dev.control
 
 #
-SOLUTION_NAME=abcdk
+KIT_NAME=$(CheckPackageKitName)
+
+#
+VENDOR_NAME="zpcoding<intraceting@outlook.com>"
+SOLUTION_NAME="abcdk"
 
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -325,36 +333,17 @@ DEPEND_FLAGS="${DEPEND_FLAGS} -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_B
 DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
 
 #
-echo "MAKE_CONF=${MAKE_CONF}"
-
-#
-echo "SOLUTION_NAME=${SOLUTION_NAME}"
-
-#
-echo "BUILD_TIME=${BUILD_TIME}"
-echo "BUILD_PATH=${BUILD_PATH}"
-
-#
-echo "TARGET_PLATFORM=${TARGET_PLATFORM}"
-
-#
-echo "CC=${CC}"
-echo "AR=${AR}"
-
-#
-echo "VERSION_MAJOR=${VERSION_MAJOR}"
-echo "VERSION_MINOR=${VERSION_MINOR}"
-echo "VERSION_RELEASE=${VERSION_RELEASE}"
-echo "VERSION_STR=${VERSION_STR}"
-
-#
-echo "BUILD_TYPE=${BUILD_TYPE}"
-echo "INSTALL_PREFIX=${INSTALL_PREFIX}"
-echo "ROOT_PATH?=/"
-
-#
 echo "#" > ${MAKE_CONF}
 checkReturnCode
+
+#
+echo "RPM_RT_CONF=${RPM_RT_CONF}" >> ${MAKE_CONF}
+echo "RPM_DEV_CONF=${RPM_DEV_CONF}" >> ${MAKE_CONF}
+echo "DEB_RT_CONF=${DEB_RT_CONF}" >> ${MAKE_CONF}
+echo "DEB_DEV_CONF=${DEB_DEV_CONF}" >> ${MAKE_CONF}
+
+#
+echo "KIT_NAME=${KIT_NAME}" >> ${MAKE_CONF}
 
 #
 echo "SOLUTION_NAME = ${SOLUTION_NAME}" >> ${MAKE_CONF}
@@ -391,3 +380,71 @@ echo "INSTALL_PREFIX = ${INSTALL_PREFIX}" >> ${MAKE_CONF}
 echo "ROOT_PATH ?= /" >> ${MAKE_CONF}
 
 
+#
+if [ "${KIT_NAME}" == "rpm" ];then
+{
+
+cat >${RPM_RT_CONF} <<EOF
+Vendor: ${VENDOR_NAME}
+Name: ${SOLUTION_NAME}
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}
+Release: ${VERSION_RELEASE}
+Group: Applications/System
+License: MIT
+Summary: ${SOLUTION_NAME} for GNU/Linux system.
+AutoReqProv: yes
+
+%description
+${SOLUTION_NAME} runtime library and built-in tools.
+
+%files
+${INSTALL_PREFIX}
+
+%post
+echo "PATH=\\\${PATH}:${INSTALL_PREFIX}:${INSTALL_PREFIX}/bin" > /etc/profile.d/${SOLUTION_NAME}.sh
+
+%postun
+rm /etc/profile.d/${SOLUTION_NAME}.sh
+
+%changelog
+* Thu May 26 2022 ${VENDOR_NAME}
+-稳定版本
+
+EOF
+checkReturnCode
+
+
+cat >${RPM_DEV_CONF} <<EOF
+Vendor: ${VENDOR_NAME}
+Name: ${SOLUTION_NAME}-devel
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}
+Release: ${VERSION_RELEASE}
+Group: Applications/System
+License: MIT
+Summary: ${SOLUTION_NAME} for GNU/Linux system.
+AutoReqProv: yes
+
+%description
+Development files for ${SOLUTION_NAME}.
+
+%files
+${INSTALL_PREFIX}
+
+%post
+echo "${INSTALL_PREFIX}" > /etc/ld.so.conf.d/${SOLUTION_NAME}.conf
+echo "${INSTALL_PREFIX}/lib" >> /etc/ld.so.conf.d/${SOLUTION_NAME}.conf
+ldconfig
+
+%postun
+rm /etc/ld.so.conf.d/${SOLUTION_NAME}.conf
+ldconfig
+
+%changelog
+* Thu May 26 2022 ${VENDOR_NAME}
+-稳定版本
+
+EOF
+checkReturnCode
+
+}
+fi

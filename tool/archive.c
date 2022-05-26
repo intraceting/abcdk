@@ -231,7 +231,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t4：四字节(定长)。\n");
 
     fprintf(stderr, "\n\t--work-space < PATH >\n");
-    fprintf(stderr, "\t\t工作目录。默认：./\n");
+    fprintf(stderr, "\t\t工作路径。默认：./\n");
 
     fprintf(stderr, "\n回迁选项:\n");
 
@@ -247,7 +247,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t卷名和副本（包括路径）。注：最大支持254个副本\n");
 
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
-    fprintf(stderr, "\t\t文件来源。\n");
+    fprintf(stderr, "\t\t文件或目录。\n");
 
     fprintf(stderr, "\n\t--save-fullpath\n");
     fprintf(stderr, "\t\t保留完整路径。默认：不保留。\n");

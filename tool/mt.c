@@ -108,7 +108,7 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_SEEK_POS);
 
-    fprintf(stderr, "\n\t--partition < NUMBER >\n");
+    fprintf(stderr, "\n\t--part < NUMBER >\n");
     fprintf(stderr, "\t\t分区号。 默认: 0\n");
 
     fprintf(stderr, "\n\t--type < NUMBER >\n");
@@ -117,7 +117,7 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t\t0: 逻辑块。\n");
     fprintf(stderr, "\t\t1: 逻辑文件。\n");
 
-    fprintf(stderr, "\n\t--position < NUMBER >\n");
+    fprintf(stderr, "\n\t--pos < NUMBER >\n");
     fprintf(stderr, "\t\t索引位置。默认: 末尾\n");
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_FILEMARK);
@@ -125,6 +125,11 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--count < NUMBER >\n");
     fprintf(stderr, "\t\t数量。 默认: 1\n");
 
+    fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_READ_MAM);
+
+    fprintf(stderr, "\n\t--part < NUMBER >\n");
+    fprintf(stderr, "\t\t分区号。 默认: 0\n");
+    
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_MAM);
 
     fprintf(stderr, "\n\t--id < NUMBER >\n");
@@ -226,7 +231,7 @@ void _abcdkmt_tell_pos(abcdkmtx_ctx *ctx)
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
     
-    fprintf(stdout,"|%-10s\t|%-10s\t|%-10s\t|\n","block","file","partition");
+    fprintf(stdout,"|%-10s\t|%-10s\t|%-10s\t|\n","block","file","part");
     fprintf(stdout,"|%-10lu\t|%-10lu\t|%-10u\t|\n",block,file,part);
 
     /*No error.*/
@@ -248,9 +253,9 @@ void _abcdkmt_seek_pos(abcdkmtx_ctx *ctx)
     uint64_t pos;
     int chk;
 
-    part = abcdk_option_get_int(ctx->args, "--partition", 0,0,0);
+    part = abcdk_option_get_int(ctx->args, "--part", 0,0,0);
     type = abcdk_option_get_int(ctx->args, "--type", 0,0,0);
-    pos = abcdk_option_get_llong(ctx->args, "--position", 0, INTMAX_MAX,0);
+    pos = abcdk_option_get_llong(ctx->args, "--pos", 0, INTMAX_MAX,0);
     
     chk = abcdk_tape_seek(ctx->fd, 1, type, part, pos, 1800 * 1000, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
@@ -356,7 +361,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
-abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmtx_ctx *ctx,int id)
+abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmtx_ctx *ctx, uint8_t part, uint16_t id)
 {
     abcdk_tree_t *node = NULL;
 
@@ -364,7 +369,7 @@ abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmtx_ctx *ctx,int id)
     if(!node)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ENOMEM, final_error);
 
-    node->alloc = abcdk_tape_read_attribute(ctx->fd, 0, id, 3000, &ctx->stat);
+    node->alloc = abcdk_tape_read_attribute(ctx->fd, part, id, 3000, &ctx->stat);
     if (!node->alloc || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
 
@@ -386,8 +391,10 @@ void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
     abcdk_allocator_t *attr_p = NULL;
     abcdk_tree_t *root = NULL, *node = NULL;
     abcdk_tree_iterator_t it = {0, _abcdkmt_printf_mam_cb, ctx};
-    int id;
+    int part;
     int chk;
+
+    part = abcdk_option_get_int(ctx->args, "--part", 0,0,0);
 
     root = abcdk_tree_alloc3(1);
     if(!root)
@@ -398,7 +405,7 @@ void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
         if (!abcdk_tape_attr2string(i))
             continue;
 
-        node = _abcdkmt_read_mam_one(ctx, i);
+        node = _abcdkmt_read_mam_one(ctx,part,i);
         if (!node)
         {
             /*如果磁带没准备好，直接跳出。*/
