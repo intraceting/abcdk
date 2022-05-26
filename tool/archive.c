@@ -233,15 +233,18 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--work-space < PATH >\n");
     fprintf(stderr, "\t\t工作目录。默认：./\n");
 
-    fprintf(stderr, "\n\t--volume < NAME [ NAME-part2 NAME-part3 ... ] >\n");
-    fprintf(stderr, "\t\t卷名（包括路径）。注：归档不支持分卷\n");
-
     fprintf(stderr, "\n回迁选项:\n");
+
+    fprintf(stderr, "\n\t--volume < NAME [ NAME-part2 NAME-part3 ... ] >\n");
+    fprintf(stderr, "\t\t卷名和分卷名（包括路径）。注：最大支持254个分卷\n");
 
     fprintf(stderr, "\n\t--just-list\n");
     fprintf(stderr, "\t\t仅打印文件列表。\n");
 
     fprintf(stderr, "\n归档选项:\n");
+
+    fprintf(stderr, "\n\t--volume < NAME [ NAME-copy NAME-copy ... ] >\n");
+    fprintf(stderr, "\t\t卷名和副本（包括路径）。注：最大支持254个副本\\n");
 
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
     fprintf(stderr, "\t\t文件来源。\n");
@@ -358,7 +361,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         chk = abcdk_futimens(ctx->fd[0], &file_stat.st_atim, &file_stat.st_mtim);
         if (chk != 0)
             syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
-#if 1
+#if 0
         /*恢复文件(目录)属性的权限。*/
         if(file_stat.st_mode & ACCESSPERMS)
         {
@@ -887,7 +890,7 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
     }
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
-    chk = archive_write_open_filename(ctx->arch_fd, ctx->volumes[0]);
+    chk = archive_write_open(ctx->arch_fd,ctx,_abcdkarchive_write_open_cb,_abcdkarchive_write_write_cb,_abcdkarchive_write_close_cb);
     if (chk != ARCHIVE_OK)
     {
         syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
