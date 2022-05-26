@@ -4835,7 +4835,7 @@ void test_kafka_consumer()
     rd_kafka_conf_set(conf, "group.id", "aaaa", NULL, 0);
 
     rd_kafka_t *k = rd_kafka_new(RD_KAFKA_CONSUMER,conf,errstr,1000);
-    chk = rd_kafka_brokers_add(k,"localhost:9092");
+    chk = rd_kafka_brokers_add(k,"192.167.200.102:9092");
 
     rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
 
@@ -4900,7 +4900,7 @@ void test_kafka_producer()
     rd_kafka_conf_set(conf, "group.id", "aaaa", NULL, 0);
 
     rd_kafka_t *k = rd_kafka_new(RD_KAFKA_PRODUCER,conf,errstr,1000);
-    chk = rd_kafka_brokers_add(k,"localhost:9092");
+    chk = rd_kafka_brokers_add(k,"192.167.200.102:9092");
 
     rd_kafka_topic_conf_t *topic_conf = rd_kafka_topic_conf_new();
 

@@ -93,16 +93,17 @@ int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
  *
  * cdb = 0x92
  *
- * @param cp 是否改变当前活动分区。
+ * @param cp 是否改变当前活动分区。0 否，1 是。
+ * @param type 索引类型。 0 逻辑块，1 逻辑文件。
  * @param part 分区号。
- * @param block 逻辑块索引。
+ * @param pos 索引位置。
  *
  * @return 0 成功，-1 失败。
  *
  * @note  New tape(KEY = 0x08,ASC = 0x14,ASCQ = 0x03).
  * @note  End of data (KEY = 0x08,ASC = 0x00,ASCQ = 0x05).
  */
-int abcdk_tape_seek(int fd, int cp, uint8_t part, uint64_t block,
+int abcdk_tape_seek(int fd, uint8_t cp,uint8_t type, uint8_t part,uint64_t pos,
                     uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 /**

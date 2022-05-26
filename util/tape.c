@@ -328,16 +328,17 @@ int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat);
 }
 
-int abcdk_tape_seek(int fd, int cp, uint8_t part, uint64_t block,
+int abcdk_tape_seek(int fd, uint8_t cp, uint8_t type, uint8_t part, uint64_t pos,
                     uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t cdb[16] = {0};
     int chk;
 
-    cdb[0] = 0x92;                /* 0x92 Locate  */
-    cdb[1] |= (cp ? 0x02 : 0x00); /* 0x02 Change Partition */
+    cdb[0] = 0x92;           /* 0x92 Locate  */
+    cdb[1] |= ((cp & 0x01) << 2);   /* 00000000b Not Change Partition,00000010b Change Partition */
+    cdb[1] |= ((type & 0x01) << 3); /* 00000000b a logical object identifier,00000100b a logical file identifier.*/
     cdb[3] = part;
-    ABCDK_PTR2OBJ(uint64_t, cdb, 4) = abcdk_endian_h_to_b64(block); /*4,5,6,7,8,9,10,11*/
+    ABCDK_PTR2OBJ(uint64_t, cdb, 4) = abcdk_endian_h_to_b64(pos); /*4,5,6,7,8,9,10,11*/
 
     chk = abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 16, NULL, 0, timeout, stat);
 

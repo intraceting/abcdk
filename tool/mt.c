@@ -73,7 +73,7 @@ enum _abcdkmt_constant
 #define ABCDKMT_READ_MAM ABCDKMT_READ_MAM
 
     /** 写入MAM信息。*/
-    ABCDKMT_WRITE_MAM = 10,
+    ABCDKMT_WRITE_MAM = 10
 #define ABCDKMT_WRITE_MAM ABCDKMT_WRITE_MAM
 
 };
@@ -95,24 +95,30 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
     fprintf(stderr, "\t\t命令。 默认: %d\n", ABCDKMT_READ_MAM);
 
-    fprintf(stderr, "\t\t%d: 倒带。\n", ABCDKMT_REWIND);
+    fprintf(stderr, "\n\t\t%d: 倒带。\n", ABCDKMT_REWIND);
     fprintf(stderr, "\t\t%d: 加载磁带。\n", ABCDKMT_LOAD);
     fprintf(stderr, "\t\t%d: 卸载磁带。\n", ABCDKMT_UNLOAD);
     fprintf(stderr, "\t\t%d: 仓门加锁(禁止磁带被移出驱动器)。\n", ABCDKMT_LOCK);
     fprintf(stderr, "\t\t%d: 仓门解锁(允许磁带被移出驱动器)。\n", ABCDKMT_UNLOCK);
     fprintf(stderr, "\t\t%d: 读取磁头位置(逻辑)。\n", ABCDKMT_TELL_POS);
     fprintf(stderr, "\t\t%d: 移动磁头位置(逻辑)。\n", ABCDKMT_SEEK_POS);
-    fprintf(stderr, "\t\t%d: 写入文件标记(filemark)。\n", ABCDKMT_WRITE_FILEMARK);
+    fprintf(stderr, "\t\t%d: 写入文件结束标记(filemark)。\n", ABCDKMT_WRITE_FILEMARK);
     fprintf(stderr, "\t\t%d: 读取MAM信息。\n", ABCDKMT_READ_MAM);
     fprintf(stderr, "\t\t%d: 写入MAM信息。\n", ABCDKMT_WRITE_MAM);
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_SEEK_POS);
 
-    fprintf(stderr, "\n\t--block < NUMBER >\n");
-    fprintf(stderr, "\t\t块索引。默认: 末尾\n");
-
     fprintf(stderr, "\n\t--partition < NUMBER >\n");
     fprintf(stderr, "\t\t分区号。 默认: 0\n");
+
+    fprintf(stderr, "\n\t--type < NUMBER >\n");
+    fprintf(stderr, "\t\t索引类型。默认: 0\n");
+
+    fprintf(stderr, "\n\t\t0: 逻辑块。\n");
+    fprintf(stderr, "\t\t1: 逻辑文件。\n");
+
+    fprintf(stderr, "\n\t--position < NUMBER >\n");
+    fprintf(stderr, "\t\t索引位置。默认: 末尾\n");
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMT_WRITE_FILEMARK);
 
@@ -237,14 +243,16 @@ final:
 
 void _abcdkmt_seek_pos(abcdkmtx_ctx *ctx)
 {    
-    uint64_t block;
-    uint32_t part;
+    int part;
+    uint8_t type;
+    uint64_t pos;
     int chk;
 
-    block = abcdk_option_get_llong(ctx->args, "--block", 0, INTMAX_MAX,0);
-    part = abcdk_option_get_int(ctx->args, "--partition", 0, 0,0);
-
-    chk = abcdk_tape_seek(ctx->fd, 1, part, block, 1800 * 1000, &ctx->stat);
+    part = abcdk_option_get_int(ctx->args, "--partition", 0,0,0);
+    type = abcdk_option_get_int(ctx->args, "--type", 0,0,0);
+    pos = abcdk_option_get_llong(ctx->args, "--position", 0, INTMAX_MAX,0);
+    
+    chk = abcdk_tape_seek(ctx->fd, 1, type, part, pos, 1800 * 1000, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
 
