@@ -6,7 +6,7 @@
 ##
 
 #
-CURDIR=$(cd `dirname $0`; pwd)
+SHELLDIR=$(cd `dirname $0`; pwd)
 
 # Functions
 checkReturnCode()
@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${CURDIR}/3party/myscript/linux/core/check-os-id.sh $1)"
+    echo "$(${SHELLDIR}/3party/myscript/linux/core/check-os-id.sh $1)"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${CURDIR}/3party/myscript/linux/core/get-os-ver.sh)"
+    echo "$(${SHELLDIR}/3party/myscript/linux/core/get-os-ver.sh)"
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${CURDIR}/3party/myscript/linux/core/get-kit-name.sh)"
+	echo "$(${SHELLDIR}/3party/myscript/linux/core/get-kit-name.sh)"
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${CURDIR}/3party/myscript/linux/core/check-package.sh $1)"
+    echo "$(${SHELLDIR}/3party/myscript/linux/core/check-package.sh $1)"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${CURDIR}/3party/myscript/linux/core/check-which.sh $1)"
+	echo "$(${SHELLDIR}/3party/myscript/linux/core/check-which.sh $1)"
 }
 
 #
@@ -55,7 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    echo "$(${CURDIR}/3party/myscript/linux/devel/check-config.sh $1 $2)"
+    echo "$(${SHELLDIR}/3party/myscript/linux/devel/check-config.sh $1 $2)"
 }
 
 #
@@ -68,14 +68,14 @@ CheckKeyword()
 }
 
 #
-MAKE_CONF=${CURDIR}/build/makefile.conf
+MAKE_CONF=${SHELLDIR}/build/makefile.conf
 
 #
 SOLUTION_NAME="abcdk"
 
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUILD_PATH=$(realpath "${CURDIR}/build/")
+BUILD_PATH=$(realpath "${SHELLDIR}/build/")
 
 #0 不拉取最新的子项目，!0 拉取最新的子项目。
 PULL_SUBMODULE="0"
