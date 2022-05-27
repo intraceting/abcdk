@@ -207,7 +207,7 @@ uninstall-devel:
 	rm -rf ${INSTALL_PATH_INC}/comm
 
 #占位预定义，实际会随机生成。
-TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-${VERSION_STR}-build-installer.tmp
+TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
 #
 PACKAGE_PATH = $(CURDIR)/package/
 #
@@ -223,8 +223,7 @@ package: package-runtime package-devel
 package-runtime:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}-${VERSION_STR}"
-	rpmbuild --buildroot "${TMP_ROOT_PATH}" --bb "${RPM_RT_CONF}" --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RUNTIME_PACKAGE_NAME}.rpm" 
+	tar -czv -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 	
@@ -232,8 +231,7 @@ package-runtime:
 package-devel:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
-	tar -czv -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}-${VERSION_STR}"
-	rpmbuild --buildroot "${TMP_ROOT_PATH}" --bb "${RPM_DEV_CONF}" --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEVEL_PACKAGE_NAME}.rpm"
+	tar -czv -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 
