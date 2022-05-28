@@ -156,9 +156,11 @@ clean-test:
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
+INSTALL_PATH_3PARTY = $(abspath ${INSTALL_PATH}/3party/)
 INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
+
 
 #
 install: install-runtime install-devel
@@ -167,13 +169,14 @@ install: install-runtime install-devel
 install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
-#
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
 	mkdir -p ${INSTALL_PATH_BIN}
-#
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
+#
+	mkdir -p ${INSTALL_PATH_3PARTY}/myscript
+	cp -rf $(CURDIR)/3party/myscript/linux/* ${INSTALL_PATH_3PARTY}/myscript/
 #
 install-devel:
 #
@@ -197,7 +200,8 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
-
+#
+	rm -rf $(INSTALL_PATH_3PARTY)/myscript
 #
 uninstall-devel:
 #
