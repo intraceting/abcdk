@@ -68,6 +68,7 @@ CheckKeyword()
 }
 
 #
+DEPEND_CONF=${SHELLDIR}/build/depend.conf
 MAKE_CONF=${SHELLDIR}/build/makefile.conf
 
 #
@@ -225,22 +226,34 @@ DependPackageCheck()
     #
     if [ $(CheckKeyword ${DEPEND_FUNC} ${PACKAGE_KEY}) -eq 1 ];then
     {
+        
+
         if [ $(CheckKeyword ${DEPEND_FUNC} with-${PACKAGE_KEY}) -eq 1 ];then
         {
             DEPEND_FLAGS=" -D${PACKAGE_DEF} ${DEPEND_FLAGS}"
         }
         else
         {
+            
+
             CHK=$(CheckHavePackage ${PACKAGE_KEY} 1)
             if [ ${CHK} -eq 0 ];then
             {
-                DEPEND_FLAGS=" -D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
-                DEPEND_LIBS=" $(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
+                DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
+                DEPEND_LIBS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
+                DEPEND_REQUIRES="$(CheckHavePackage ${PACKAGE_KEY} 1000) ${DEPEND_REQUIRES}"
             }
             else
             {
-                DEPEND_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 0) ${DEPEND_NOFOUND}"
+                DEPEND_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${DEPEND_NOFOUND}"
             }
+            fi
+
+            echo -n "Check ${PACKAGE_KEY}"
+            if [ ${CHK} -eq 0 ];then
+                echo -e "\x1b[32m Ok \x1b[0m"
+            else 
+                echo -e "\x1b[31m Failed \x1b[0m"
             fi
         }
         fi
@@ -285,10 +298,19 @@ DependPackageCheck uuid HAVE_UUID
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
 {
-    echo "${DEPEND_NOFOUND} no found."
+    echo -e "\x1b[33m${DEPEND_NOFOUND}\x1b[31m Not Found \x1b[0m"
     exit 22
 }
 fi 
+
+#
+echo "" >${DEPEND_CONF}
+if [ "${DEPEND_REQUIRES}" != "" ];then
+{
+    echo "${DEPEND_REQUIRES}" >${DEPEND_CONF}
+    checkReturnCode
+}
+fi
 
 #
 TARGET_PLATFORM=$(${CC} -dumpmachine)

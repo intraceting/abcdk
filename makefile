@@ -168,15 +168,18 @@ install: install-runtime install-devel
 #
 install-runtime:
 #
+	mkdir -p ${INSTALL_PATH_3PARTY}/
 	mkdir -p ${INSTALL_PATH_LIB}
+	mkdir -p ${INSTALL_PATH_BIN}
+#
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
-	mkdir -p ${INSTALL_PATH_BIN}
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 #
-	mkdir -p ${INSTALL_PATH_3PARTY}/myscript
-	cp -rf $(CURDIR)/3party/myscript/linux/* ${INSTALL_PATH_3PARTY}/myscript/
+	cp -f $(BUILD_PATH)/depend.conf ${INSTALL_PATH_3PARTY}/
+	cp -rf $(CURDIR)/3party/myscript/linux ${INSTALL_PATH_3PARTY}/myscript
+	
 #
 install-devel:
 #
@@ -201,7 +204,9 @@ uninstall-runtime:
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
 #
+	rm -f ${INSTALL_PATH_3PARTY}/depend.conf
 	rm -rf $(INSTALL_PATH_3PARTY)/myscript
+	
 #
 uninstall-devel:
 #
