@@ -225,16 +225,12 @@ DependPackageCheck()
     #
     if [ $(CheckKeyword ${DEPEND_FUNC} ${PACKAGE_KEY}) -eq 1 ];then
     {
-        
-
         if [ $(CheckKeyword ${DEPEND_FUNC} with-${PACKAGE_KEY}) -eq 1 ];then
         {
             DEPEND_FLAGS=" -D${PACKAGE_DEF} ${DEPEND_FLAGS}"
         }
         else
         {
-            
-
             CHK=$(CheckHavePackage ${PACKAGE_KEY} 1)
             if [ ${CHK} -eq 0 ];then
             {
