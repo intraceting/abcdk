@@ -68,7 +68,6 @@ CheckKeyword()
 }
 
 #
-DEPEND_CONF=${SHELLDIR}/build/depend.conf
 MAKE_CONF=${SHELLDIR}/build/makefile.conf
 
 #
@@ -241,7 +240,6 @@ DependPackageCheck()
             {
                 DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
                 DEPEND_LIBS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
-                DEPEND_REQUIRES="$(CheckHavePackage ${PACKAGE_KEY} 1000) ${DEPEND_REQUIRES}"
             }
             else
             {
@@ -302,15 +300,6 @@ if [ "${DEPEND_NOFOUND}" != "" ];then
     exit 22
 }
 fi 
-
-#
-echo "" >${DEPEND_CONF}
-if [ "${DEPEND_REQUIRES}" != "" ];then
-{
-    echo "${DEPEND_REQUIRES}" >${DEPEND_CONF}
-    checkReturnCode
-}
-fi
 
 #
 TARGET_PLATFORM=$(${CC} -dumpmachine)

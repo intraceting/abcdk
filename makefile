@@ -16,7 +16,7 @@ CC_STD = -std=c11
 
 #
 ifeq (${BUILD_TYPE},debug)
-CC_FLAGS += -g
+CC_FLAGS += -g -O2
 LINK_FLAGS += -g
 else 
 CC_FLAGS += -O2
@@ -177,7 +177,6 @@ install-runtime:
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 #
-	cp -f $(BUILD_PATH)/depend.conf ${INSTALL_PATH_3PARTY}/
 	cp -rf $(CURDIR)/3party/myscript/linux ${INSTALL_PATH_3PARTY}/myscript
 	
 #
@@ -204,7 +203,6 @@ uninstall-runtime:
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
 #
-	rm -f ${INSTALL_PATH_3PARTY}/depend.conf
 	rm -rf $(INSTALL_PATH_3PARTY)/myscript
 	
 #
