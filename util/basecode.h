@@ -32,7 +32,7 @@ typedef struct _abcdk_basecode
     */
     uint8_t (*decode_table_cb)(uint8_t c);
 
-    /** 补齐字符(密文有效)。*/
+    /** 补齐字符。*/
     uint8_t pad;
 
 }abcdk_basecode_t;
