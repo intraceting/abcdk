@@ -139,7 +139,11 @@ void test_ffmpeg(abcdk_tree_t *args)
 
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
     av_register_all();
-#endif 
+#endif
+
+#if LIBAVDEVICE_VERSION_INT <= AV_VERSION_INT(56,4,100)
+    avdevice_register_all();
+#endif
 
     for(int i = 0;i<1000;i++)
     {
@@ -178,6 +182,35 @@ void test_ffmpeg(abcdk_tree_t *args)
             continue;
         av_opt_show2((void *)&out->priv_class, NULL, -1, 0);
     }
+
+    printf("-----\n");
+
+    AVInputFormat *vi = NULL;
+    while (vi = av_input_video_device_next(vi))
+    {
+        printf("%s,%s\n", vi->name, vi->long_name);
+
+        AVFormatContext *ctx = avformat_alloc_context();
+        AVInputFormat *fmt = av_find_input_format(vi->name);
+        AVDeviceInfoList *device_list = NULL;
+        int err = avformat_open_input(&ctx, NULL, fmt, NULL);
+        if (err != 0)
+            fprintf(stderr, "ffmpeg: Unable to openinput: %d\n", err);
+        else
+        {
+            int k = avdevice_list_devices(ctx, &device_list);
+            for(int i = 0;i<device_list->nb_devices;i++)
+            {
+                printf("%s,%s\n",device_list->devices[i]->device_name,device_list->devices[i]->device_description);
+            }
+        }
+
+        abcdk_avformat_free(&ctx);
+    }
+
+    printf("-----\n");
+
+    
 
 #if 0    
     abcdk_image_t src = {AV_PIX_FMT_YUV420P,{NULL,NULL,NULL,NULL},{0,0,0,0},1920,1080};
