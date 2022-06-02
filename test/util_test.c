@@ -4997,6 +4997,50 @@ void test_kafka(abcdk_tree_t *args)
 #endif //RD_KAFKA_VERSION
 }
 
+
+void test_record(abcdk_tree_t *args)
+{
+    const char *src = abcdk_option_get(args,"--src",0,"");
+    const char *dst = abcdk_option_get(args,"--dst",0,"/tmp/");
+
+     //-map 0:v  -dframes 5 -f rawvideo -pix_fmt rgb24  pipe:1 
+    //char cmd[] = {"ffmpeg -y -rtsp_transport tcp -i rtsp://admin:a1234567@192.167.10.106:554 -map 0:v -vf select='eq(pict_type\\,I)' -vsync 2 -f rawvideo -pix_fmt rgb24  pipe:1 -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 /tmp/bbbb/abcdk_%d.mp4"};
+
+    char cmd[1024] = {0};
+  //  sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -i %s -map 0:v -vf select='eq(pict_type\\,I)' -vsync 2 -f rawvideo -pix_fmt rgb24  pipe:1 -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 %s/%%d.mp4",
+    sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -i %s -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 %s/%%d.mp4",
+        src,dst);
+
+    int out = -1;
+    pid_t p = abcdk_popen(cmd,NULL,NULL,&out,NULL);
+
+    size_t bsize = 1920*1080*3;
+    void *buf = abcdk_heap_alloc(bsize);
+
+    for(int i = 0;i<10000;i++)
+    {
+        ssize_t r = abcdk_read(out,buf,bsize);
+        if(r != bsize)
+            continue;
+
+        char file[100] = {0};
+        //sprintf(file,"/tmp/bbbb/bmp/%02X/%04d.bmp",i/256,i);
+        sprintf(file,"/tmp/bbbb/bmp/%04d.bmp",i);
+
+  //      abcdk_mkdir(file,0700);
+  //      abcdk_bmp_save2(file,buf,1920*3,1920,1080,24);
+
+    }
+    abcdk_heap_free(buf);
+    abcdk_closep(&out);
+
+    kill(p,SIGTERM);
+    int status;
+    waitpid(p,&status,0);
+
+    printf("%d\n",WEXITSTATUS(status));
+}
+
 int main(int argc, char **argv)
 {
     abcdk_log_open(NULL,LOG_DEBUG,1);
@@ -5228,6 +5272,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_kafka", 0) == 0)
         test_kafka(args);
+
+    if (abcdk_strcmp(func, "test_record", 0) == 0)
+        test_record(args);
 
     abcdk_tree_free(&args);
     
