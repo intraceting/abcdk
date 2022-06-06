@@ -1,7 +1,7 @@
 
 ## ABCDK
 
-* A better c language development kit. 
+* A Better C language Development Kit. 
 
 ### 查看编译帮助
 
