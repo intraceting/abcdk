@@ -228,6 +228,8 @@ DependPackageCheck()
         if [ $(CheckKeyword ${DEPEND_FUNC} with-${PACKAGE_KEY}) -eq 1 ];then
         {
             DEPEND_FLAGS=" -D${PACKAGE_DEF} ${DEPEND_FLAGS}"
+
+            echo -e "With ${PACKAGE_KEY}"
         }
         else
         {
