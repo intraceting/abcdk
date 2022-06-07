@@ -100,6 +100,7 @@ PrintUsage()
 {
 cat << EOF
 usage: [ OPTIONS ]
+
     -g  
      生成调试符号。默认：关闭
 
