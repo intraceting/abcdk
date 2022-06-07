@@ -3122,6 +3122,15 @@ void test_json(abcdk_tree_t *args)
     json_object *src_obj = json_object_from_file(src);
 
     abcdk_json_readable(stdout,1,0,src_obj);
+    printf("\n");
+
+    json_object *it = abcdk_json_locate(src_obj,"frame","detector",NULL);
+
+    json_object *it2 = json_object_array_get_idx(it,0);
+
+    json_object *it3 = abcdk_json_locate(it2,"?box",NULL);
+
+    printf("'%s'\n",json_object_get_string(it3));
 
     abcdk_json_unref(&src_obj);
 

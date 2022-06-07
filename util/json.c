@@ -118,6 +118,34 @@ json_object *abcdk_json_refer(json_object *obj)
     return json_object_get(obj);
 }
 
+json_object* abcdk_json_locate(json_object *father,...)
+{
+    const char *key_p = NULL;
+    json_object *prev = NULL,*next = NULL;
+    json_bool chk = 0;
+
+    assert(father != NULL);
+    
+    va_list vaptr;
+    va_start(vaptr, father);
+
+    for (prev = father;;prev = next)
+    {
+        key_p = va_arg(vaptr, const char *);
+        if (!key_p)
+            break;
+
+        next = NULL;
+        chk = json_object_object_get_ex(prev,key_p,&next);
+        if(!chk)
+            break;
+    }
+
+    va_end(vaptr);
+
+    return next;
+}
+
 json_object *abcdk_json_parse(const char *str)
 {
     assert(str != NULL);
@@ -132,16 +160,16 @@ const char *abcdk_json_string(json_object *obj)
     return json_object_to_json_string(obj);
 }
 
-void abcdk_json_add(json_object *prev, const char *key, json_object *val)
+void abcdk_json_add(json_object *father, const char *key, json_object *val)
 {
-    assert(prev != NULL && key != NULL && val != NULL);
+    assert(father != NULL && key != NULL && val != NULL);
     assert(key[0] != '\0');
 
     /*不会改变子节点的引用计数。*/
-    json_object_object_add(prev, key, val);
+    json_object_object_add(father, key, val);
 }
 
-json_object *abcdk_json_add_vformat(json_object *prev, const char *key, const char *val_fmt, va_list val_args)
+json_object *abcdk_json_add_vformat(json_object *father, const char *key, const char *val_fmt, va_list val_args)
 {
     json_object *sub = NULL;
     char buf[1024] = {0};
@@ -153,70 +181,70 @@ json_object *abcdk_json_add_vformat(json_object *prev, const char *key, const ch
     if (!sub)
         return NULL;
 
-    if (prev && key)
-        abcdk_json_add(prev, key, sub);
+    if (father && key)
+        abcdk_json_add(father, key, sub);
 
     return sub;
 }
 
-json_object *abcdk_json_add_format(json_object *prev,const char *key, const char *val_fmt, ...)
+json_object *abcdk_json_add_format(json_object *father,const char *key, const char *val_fmt, ...)
 {
     json_object *sub = NULL;
 
     va_list vaptr;
     va_start(vaptr, val_fmt);
 
-    sub = abcdk_json_add_vformat(prev,key,val_fmt, vaptr);
+    sub = abcdk_json_add_vformat(father,key,val_fmt, vaptr);
 
     va_end(vaptr);
 
     return sub;
 }
 
-json_object *abcdk_json_add_int32(json_object *prev,const char *key,int32_t val)
+json_object *abcdk_json_add_int32(json_object *father,const char *key,int32_t val)
 {
     json_object *sub = NULL;
 
     sub = json_object_new_int(val);
     
-    if (prev && key)
-        abcdk_json_add(prev, key, sub);
+    if (father && key)
+        abcdk_json_add(father, key, sub);
 
     return sub;
 }
 
-json_object *abcdk_json_add_int64(json_object *prev,const char *key,int64_t val)
+json_object *abcdk_json_add_int64(json_object *father,const char *key,int64_t val)
 {
     json_object *sub = NULL;
 
     sub = json_object_new_int64(val);
     
-    if (prev && key)
-        abcdk_json_add(prev, key, sub);
+    if (father && key)
+        abcdk_json_add(father, key, sub);
 
     return sub;
 }
 
-json_object *abcdk_json_add_boolean(json_object *prev,const char *key,json_bool val)
+json_object *abcdk_json_add_boolean(json_object *father,const char *key,json_bool val)
 {
     json_object *sub = NULL;
 
     sub = json_object_new_boolean(val);
     
-    if (prev && key)
-        abcdk_json_add(prev, key, sub);
+    if (father && key)
+        abcdk_json_add(father, key, sub);
 
     return sub;
 }
 
-json_object* abcdk_json_add_double(json_object *prev,const char *key,double val)
+json_object* abcdk_json_add_double(json_object *father,const char *key,double val)
 {
     json_object *sub = NULL;
 
     sub = json_object_new_double(val);
     
-    if (prev && key)
-        abcdk_json_add(prev, key, sub);
+    if (father && key)
+        abcdk_json_add(father, key, sub);
 
     return sub;
 }
