@@ -915,14 +915,14 @@ final:
 
 void _abcdkarchive_work(abcdkarchive_ctx *ctx)
 {
-    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ,0);
-    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1,0);
-    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1,0);
+    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ);
+    ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
+    ctx->fmt = abcdk_option_get_int(ctx->args, "--format", 0, -1);
     ctx->pwd = abcdk_option_get(ctx->args, "--password", 0, NULL);
     ctx->opt = abcdk_option_get(ctx->args, "--option", 0, NULL);
-    ctx->blk = abcdk_option_get_int(ctx->args, "--block-size", 0, 10240, 0);
+    ctx->blk = abcdk_option_get_int(ctx->args, "--block-size", 0, 10240);
     ctx->md_cst = abcdk_option_get(ctx->args, "--metadata-charset", 0, "UTF-8");
-    ctx->md_cst_w = abcdk_option_get_int(ctx->args, "--metadata-char-width", 0, 1,0);
+    ctx->md_cst_w = abcdk_option_get_int(ctx->args, "--metadata-char-width", 0, 1);
     ctx->wksp = abcdk_option_get(ctx->args, "--work-space", 0, "./");
     ctx->volume_num = ABCDK_CLAMP(abcdk_option_count(ctx->args, "--volume"), 1, 255);
     for (int i = 0; i < ctx->volume_num; i++)

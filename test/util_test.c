@@ -2188,7 +2188,7 @@ void test_hexdump(abcdk_tree_t *args)
     if(abcdk_option_exist(args,"--show-char"))
         opt.flag |= ABCDK_HEXDEMP_SHOW_CHAR;
 
-    opt.width = abcdk_option_get_int(args,"--width",0,16,0);
+    opt.width = abcdk_option_get_int(args,"--width",0,16);
 
     opt.keyword = abcdk_allocator_alloc(NULL,4,0);
     opt.palette = abcdk_allocator_alloc(NULL,3,0);
@@ -2849,7 +2849,7 @@ void test_openssl_client(abcdk_tree_t *args)
 
 int test_openssl(abcdk_tree_t *args)
 {
-    int sub_func = abcdk_option_get_int(args, "--sub-func", 0, 0,0);
+    int sub_func = abcdk_option_get_int(args, "--sub-func", 0, 0);
 
 #ifdef HAVE_OPENSSL
 
@@ -3022,7 +3022,7 @@ void test_redis(abcdk_tree_t *args)
 #ifdef __HIREDIS_H
 
     const char *server = abcdk_option_get(args, "--server", 0, "127.0.0.1");
-    int port = abcdk_option_get_int(args, "--port", 0, 6379,0);
+    int port = abcdk_option_get_int(args, "--port", 0, 6379);
 
     redisContext *c = abcdk_redis_connect(server, port, 20);
     if (!c)
@@ -3130,7 +3130,7 @@ void test_json(abcdk_tree_t *args)
 
 void test_refer_count(abcdk_tree_t *args)
 {
-    int user = abcdk_option_get_int(args,"--user",0,10,0);
+    int user = abcdk_option_get_int(args,"--user",0,10);
 
     abcdk_allocator_t * p= abcdk_allocator_alloc2(100);
 
@@ -3923,7 +3923,7 @@ pid_t clone_wrapper(int (*func)(void *args), int flag, const char *cmd)
 
 void test_setns(abcdk_tree_t *args)
 {
-    int pid = abcdk_option_get_int(args, "--pid", 0, -1,0);
+    int pid = abcdk_option_get_int(args, "--pid", 0, -1);
     const char *cmd = abcdk_option_get(args, "--cmd", 0, "/bin/bash");
 
     char buf[100] = {0};
@@ -4803,8 +4803,8 @@ void test_reader(abcdk_tree_t *args)
 {
     const char *src = abcdk_option_get(args,"--src",0,"/dev/zero");
     const char *dst = abcdk_option_get(args,"--dst",0,"/tmp/test_reader.data");
-    long blksize = abcdk_option_get_long(args,"--blksize",0,256*1024,0);
-    long bufsize = abcdk_option_get_long(args,"--bufsize",0,256*1024,0);
+    long blksize = abcdk_option_get_long(args,"--blksize",0,256*1024);
+    long bufsize = abcdk_option_get_long(args,"--bufsize",0,256*1024);
 
     abcdk_reader_t *r = abcdk_reader_create(blksize);
 
@@ -4973,7 +4973,7 @@ void test_kafka_producer()
 
 void test_kafka(abcdk_tree_t *args)
 {
-    int role = abcdk_option_get_int(args,"--role",0,1,0);
+    int role = abcdk_option_get_int(args,"--role",0,1);
 #ifdef RD_KAFKA_VERSION
 
     abcdk_log_printf(LOG_INFO,"%s",rd_kafka_version_str());

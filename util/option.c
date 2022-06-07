@@ -150,35 +150,35 @@ const char* abcdk_option_get(abcdk_tree_t *opt, const char *key,size_t index,con
     return it_val->alloc->pptrs[ABCDK_OPTION_VALUE];
 }
 
-int abcdk_option_get_int(abcdk_tree_t *opt, const char *key, size_t index, int defval,int base)
+int abcdk_option_get_int(abcdk_tree_t *opt, const char *key, size_t index, int defval)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);
 
     if (!val)
         return defval;
 
-    return strtol(val,NULL,base);
+    return strtol(val,NULL,0);
 }
 
 
-long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long defval,int base)
+long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long defval)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);
 
     if (!val)
         return defval;
 
-    return strtol(val,NULL,base);
+    return strtol(val,NULL,0);
 }
 
-long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval,int base)
+long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval)
 {
     const char *val = abcdk_option_get(opt, key, index, NULL);
 
     if (!val)
         return defval;
 
-    return strtoll(val,NULL,base);
+    return strtoll(val,NULL,0);
 }
 
 double abcdk_option_get_double(abcdk_tree_t *opt, const char *key,size_t index,double defval)

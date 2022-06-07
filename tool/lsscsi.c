@@ -169,7 +169,7 @@ void _abcdklsscsi_printf_elements(abcdklsscsi_ctx *ctx)
 void _abcdklsscsi_work(abcdklsscsi_ctx *ctx)
 {
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
-    ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSSCSI_FMT_TEXT,0);
+    ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSSCSI_FMT_TEXT);
 
     abcdk_scsi_watch(&ctx->list,NULL,NULL);
     if(!ctx->list)

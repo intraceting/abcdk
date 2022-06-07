@@ -86,12 +86,12 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
     product = abcdk_option_get(ctx->args, "--product", 0, NULL);
     driver = abcdk_option_get(ctx->args, "--driver", 0, NULL);
     server = abcdk_option_get(ctx->args, "--server", 0, "localhost");
-    port = abcdk_option_get_int(ctx->args, "--port", 0, 0,0);
+    port = abcdk_option_get_int(ctx->args, "--port", 0, 0);
     db = abcdk_option_get(ctx->args, "--db", 0, NULL);
     uid = abcdk_option_get(ctx->args, "--uid", 0, NULL);
     pwd = abcdk_option_get(ctx->args, "--pwd", 0, "");
     uri = abcdk_option_get(ctx->args, "--uri", 0, NULL);
-    timeout = abcdk_option_get_long(ctx->args, "--timeout", 0, 30,0);
+    timeout = abcdk_option_get_long(ctx->args, "--timeout", 0, 30);
     tracefile = abcdk_option_get(ctx->args, "--trace-file", 0, NULL);
 
     /*优先检查自定义是否可用。*/

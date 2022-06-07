@@ -114,10 +114,10 @@ void _abcdkserial_work(abcdkserial_ctx *ctx)
     int chk;
     
     ctx->dev = abcdk_option_get(ctx->args, "--dev", 0, NULL);
-    ctx->baudrate = abcdk_option_get_int(ctx->args, "--baudrate", 0, 9600,0);
-    ctx->bits = abcdk_option_get_int(ctx->args, "--bits", 0, 8,0);
-    ctx->parity = abcdk_option_get_int(ctx->args, "--parity", 0, -1,0);
-    ctx->stop = abcdk_option_get_int(ctx->args, "--stop", 0, 1,0);
+    ctx->baudrate = abcdk_option_get_int(ctx->args, "--baudrate", 0, 9600);
+    ctx->bits = abcdk_option_get_int(ctx->args, "--bits", 0, 8);
+    ctx->parity = abcdk_option_get_int(ctx->args, "--parity", 0, -1);
+    ctx->stop = abcdk_option_get_int(ctx->args, "--stop", 0, 1);
 
     if (!ctx->dev || !*ctx->dev)
     {

@@ -355,15 +355,15 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     ctx->fd = -1;
     ctx->dev_p = abcdk_option_get(ctx->args, "--dev", 0, NULL);
-    ctx->src = abcdk_option_get_int(ctx->args, "--src", 0, 65536,0);
-    ctx->dst = abcdk_option_get_int(ctx->args, "--dst", 0, 65536,0);
+    ctx->src = abcdk_option_get_int(ctx->args, "--src", 0, 65536);
+    ctx->dst = abcdk_option_get_int(ctx->args, "--dst", 0, 65536);
     ctx->voltag = (abcdk_option_exist(ctx->args, "--exclude-barcode") ? 0 : 1);
     ctx->dvcid = (abcdk_option_exist(ctx->args, "--exclude-dvcid") ? 0 : 1);
-    ctx->match_type = abcdk_option_get_int(ctx->args, "--match-type", 0, 0,0);
-    ctx->addr_min = abcdk_option_get_int(ctx->args, "--addr-min", 0, 0,0);
-    ctx->addr_max = abcdk_option_get_int(ctx->args, "--addr-max", 0, 65536,0);
-    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMTX_STATUS,0);
-    ctx->fmt = abcdk_option_get_int(ctx->args,"--fmt",0,ABCDKMTX_STATUS_FMT_TEXT,0);
+    ctx->match_type = abcdk_option_get_int(ctx->args, "--match-type", 0, 0);
+    ctx->addr_min = abcdk_option_get_int(ctx->args, "--addr-min", 0, 0);
+    ctx->addr_max = abcdk_option_get_int(ctx->args, "--addr-max", 0, 65536);
+    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMTX_STATUS);
+    ctx->fmt = abcdk_option_get_int(ctx->args,"--fmt",0,ABCDKMTX_STATUS_FMT_TEXT);
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
 
     if (!ctx->dev_p || !*ctx->dev_p)

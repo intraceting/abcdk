@@ -98,12 +98,12 @@ void _abcdkhd_work(abcdk_tree_t *args)
     ssize_t keywords = 0, keywords_a = 0, keywords_b = 0;
 
     file = abcdk_option_get(args, "--file", 0, NULL);
-    offset = abcdk_option_get_llong(args, "--offset", 0, 0,0);
-    size = abcdk_option_get_llong(args, "--size", 0, 1024,0);
-    width = abcdk_option_get_int(args, "--width", 0, 16,0);
+    offset = abcdk_option_get_llong(args, "--offset", 0, 0);
+    size = abcdk_option_get_llong(args, "--size", 0, 1024);
+    width = abcdk_option_get_int(args, "--width", 0, 16);
     outfile = abcdk_option_get(args, "--output", 0, NULL);
 
-    opt.base = abcdk_option_get_int(args, "--base", 0, ABCDK_HEXDEMP_BASE_HEX,0);
+    opt.base = abcdk_option_get_int(args, "--base", 0, ABCDK_HEXDEMP_BASE_HEX);
 
     if (abcdk_option_exist(args, "--show-addr"))
         opt.flag |= ABCDK_HEXDEMP_SHOW_ADDR;

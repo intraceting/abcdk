@@ -202,7 +202,7 @@ void _abcdkmt_write_filemark(abcdkmtx_ctx *ctx)
     int count;
     int chk;
 
-    count = abcdk_option_get_int(ctx->args, "--count", 0, 1,0);
+    count = abcdk_option_get_int(ctx->args, "--count", 0, 1);
 
     chk = abcdk_tape_operate(ctx->fd, MTWEOF, count, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
@@ -253,9 +253,9 @@ void _abcdkmt_seek_pos(abcdkmtx_ctx *ctx)
     uint64_t pos;
     int chk;
 
-    part = abcdk_option_get_int(ctx->args, "--part", 0,0,0);
-    type = abcdk_option_get_int(ctx->args, "--type", 0,0,0);
-    pos = abcdk_option_get_llong(ctx->args, "--pos", 0, INTMAX_MAX,0);
+    part = abcdk_option_get_int(ctx->args, "--part", 0,0);
+    type = abcdk_option_get_int(ctx->args, "--type", 0,0);
+    pos = abcdk_option_get_llong(ctx->args, "--pos", 0, INTMAX_MAX);
     
     chk = abcdk_tape_seek(ctx->fd, 1, type, part, pos, 1800 * 1000, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
@@ -394,7 +394,7 @@ void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
     int part;
     int chk;
 
-    part = abcdk_option_get_int(ctx->args, "--part", 0,0,0);
+    part = abcdk_option_get_int(ctx->args, "--part", 0,0);
 
     root = abcdk_tree_alloc3(1);
     if(!root)
@@ -436,7 +436,7 @@ void _abcdkmt_write_mam(abcdkmtx_ctx *ctx)
     abcdk_allocator_t *attr_p = NULL;
     int chk;
 
-    id = abcdk_option_get_int(ctx->args, "--id", 0, 0xFFFF, 0);
+    id = abcdk_option_get_int(ctx->args, "--id", 0, 0xFFFF);
     value = abcdk_option_get(ctx->args, "--value", 0, "");
     val_len = strlen(value);
 
@@ -507,7 +507,7 @@ void _abcdkmt_work(abcdkmtx_ctx *ctx)
 
     ctx->fd = -1;
     ctx->dev_p = abcdk_option_get(ctx->args, "--dev", 0, "");
-    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMT_READ_MAM,0);
+    ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKMT_READ_MAM);
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {

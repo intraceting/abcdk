@@ -161,7 +161,7 @@ void _abcdklsmmc_printf_elements(abcdklsmmc_ctx *ctx)
 void _abcdklsmmc_work(abcdklsmmc_ctx *ctx)
 {
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
-    ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSMMC_FMT_TEXT,0);
+    ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSMMC_FMT_TEXT);
 
     abcdk_mmc_watch(&ctx->list,NULL,NULL);
     if(!ctx->list)

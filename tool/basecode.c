@@ -86,7 +86,7 @@ void _abcdkbc_work(abcdkbc_ctx *ctx)
     abcdk_basecode_t bc = {0};
 
     ctx->decode = abcdk_option_exist(ctx->args, "--decode");
-    ctx->base = abcdk_option_get_int(ctx->args, "--base", 0, 64, 0);
+    ctx->base = abcdk_option_get_int(ctx->args, "--base", 0, 64);
     ctx->in = abcdk_option_get(ctx->args, "--in", 0, "");
     ctx->out = abcdk_option_get(ctx->args, "--out", 0, "");
     ctx->no_amb = abcdk_option_exist(ctx->args, "--no-ambiguity");
