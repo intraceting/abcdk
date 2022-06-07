@@ -3,6 +3,12 @@
 
 * A Better C language Development Kit. 
 
+### 拉取子项目
+
+```bash
+$ git submodule update --init --remote  --force  --merge --recursive
+```
+
 ### 查看编译帮助
 
 ```bash
