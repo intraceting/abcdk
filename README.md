@@ -1,7 +1,7 @@
 
 ## ABCDK
 
-* 一个不太好的C开发工具包。 
+* A Better C language Development Kit. 
 
 ### 查看编译帮助
 
