@@ -5015,6 +5015,7 @@ void test_record(abcdk_tree_t *args)
      //-map 0:v  -dframes 5 -f rawvideo -pix_fmt rgb24  pipe:1 
     //char cmd[] = {"ffmpeg -y -rtsp_transport tcp -i rtsp://admin:a1234567@192.167.10.106:554 -map 0:v -vf select='eq(pict_type\\,I)' -vsync 2 -f rawvideo -pix_fmt rgb24  pipe:1 -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 /tmp/bbbb/abcdk_%d.mp4"};
 
+    //ffmpeg -y -pattern_type glob -i "images/*.jpg" -r 2 -vc h264 -f mp4 video.mp4
     char cmd[1024] = {0};
   //  sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -i %s -map 0:v -vf select='eq(pict_type\\,I)' -vsync 2 -f rawvideo -pix_fmt rgb24  pipe:1 -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 %s/%%d.mp4",
     sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -i %s -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 %s/%%d.mp4",
