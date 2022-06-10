@@ -167,7 +167,9 @@ void test_ffmpeg(abcdk_tree_t *args)
     {
         if(!in->priv_class)
             continue;
-        av_opt_show2((void *)&in->priv_class, NULL, -1, 0);
+        
+        printf("%s _ %s _ %s\n",in->name,in->long_name,in->mime_type);
+  //      av_opt_show2((void *)&in->priv_class, NULL, -1, 0);
     }
 
 
@@ -199,7 +201,7 @@ void test_ffmpeg(abcdk_tree_t *args)
         else
         {
             int k = avdevice_list_devices(ctx, &device_list);
-            for(int i = 0;i<device_list->nb_devices;i++)
+            for(int i = 0;i<k;i++)
             {
                 printf("%s,%s\n",device_list->devices[i]->device_name,device_list->devices[i]->device_description);
             }
