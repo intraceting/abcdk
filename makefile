@@ -7,9 +7,11 @@
 
 #
 MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
+PACK_CONF ?= $(abspath $(CURDIR)/build/package.conf)
 
 # 加载配置项。
 include ${MAKE_CONF}
+include ${PACK_CONF}
 
 # C Standard
 CC_STD = -std=c11
@@ -174,7 +176,6 @@ install-runtime:
 	mkdir -p ${INSTALL_PATH_BIN}
 #
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 #
@@ -183,10 +184,13 @@ install-runtime:
 #
 install-devel:
 #
+	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_INC}/util
 	mkdir -p ${INSTALL_PATH_INC}/shell
 	mkdir -p ${INSTALL_PATH_INC}/mp4
 	mkdir -p ${INSTALL_PATH_INC}/comm
+#
+	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
 	cp  -f $(CURDIR)/util/*.h ${INSTALL_PATH_INC}/util/
 	cp  -f $(CURDIR)/shell/*.h ${INSTALL_PATH_INC}/shell/
@@ -209,6 +213,8 @@ uninstall-runtime:
 #
 uninstall-devel:
 #
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
+#
 	rm -rf ${INSTALL_PATH_INC}/util
 	rm -rf ${INSTALL_PATH_INC}/shell
 	rm -rf ${INSTALL_PATH_INC}/mp4
@@ -221,11 +227,11 @@ PACKAGE_PATH = $(CURDIR)/package/
 #
 RUNTIME_PACKAGE_NAME=${SOLUTION_NAME}-${VERSION_STR}-${TARGET_PLATFORM}
 #
-DEVEL_PACKAGE_NAME=${SOLUTION_NAME}-devel-${VERSION_STR}
+DEVEL_PACKAGE_NAME=${SOLUTION_NAME}-devel-${VERSION_STR}-${TARGET_PLATFORM}
 
 
 #
-package: package-runtime package-devel
+package: package-runtime package-devel package-runtime-${KIT_NAME} package-devel-${KIT_NAME}
 
 #
 package-runtime:
@@ -244,6 +250,29 @@ package-devel:
 	rm -rf ${TMP_ROOT_PATH}
 
 
+#
+package-runtime-rpm:
+	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RT_RPM_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RUNTIME_PACKAGE_NAME}.rpm"
+	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	rm -rf ${TMP_ROOT_PATH}
+	
+#
+package-devel-rpm:
+	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
+	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${DEV_RPM_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEVEL_PACKAGE_NAME}.rpm"
+	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
+	rm -rf ${TMP_ROOT_PATH}
+
+#
+package-runtime-deb:
+	echo "Not supported."
+
+package-devel-deb:
+	echo "Not supported."
+
 help:
 	@echo "make"
 	@echo "make clean"
@@ -256,3 +285,6 @@ help:
 	@echo "make package"
 	@echo "make package-runtime"
 	@echo "make package-devel"
+	@echo "make package"
+	@echo "make package-runtime-${KIT_NAME}"
+	@echo "make package-devel-${KIT_NAME}"

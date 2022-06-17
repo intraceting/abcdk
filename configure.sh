@@ -69,6 +69,16 @@ CheckKeyword()
 
 #
 MAKE_CONF=${SHELLDIR}/build/makefile.conf
+PACK_CONF=${SHELLDIR}/build/package.conf
+#
+RT_RPM_SPEC=${SHELLDIR}/build/rt_rpm.spec
+DEV_RPM_SPEC=${SHELLDIR}/build/devel_rpm.spec
+#
+RT_DEB_CTL=${SHELLDIR}/build/rt_deb.ctl
+DEV_DEB_CTL=${SHELLDIR}/build/devel_deb.ctl
+
+#
+KIT_NAME=$(CheckPackageKitName)
 
 #
 SOLUTION_NAME="abcdk"
@@ -321,6 +331,8 @@ DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
 #
 cat >${MAKE_CONF} <<EOF
 #
+KIT_NAME = ${KIT_NAME}
+#
 SOLUTION_NAME = ${SOLUTION_NAME}
 #
 BUILD_TIME = ${BUILD_TIME}
@@ -347,3 +359,82 @@ ROOT_PATH ?= /
 
 EOF
 checkReturnCode
+
+if [ ${KIT_NAME} == "rpm" ];then
+{
+
+#
+cat >${PACK_CONF} <<EOF
+#
+RT_RPM_SPEC = ${RT_RPM_SPEC}
+DEV_RPM_SPEC = ${DEV_RPM_SPEC}
+EOF
+checkReturnCode
+
+#
+cat >${RT_RPM_SPEC} <<EOF
+Summary: A Better C language Development Kit (a.k.a ABCDK).
+Vendor: https://github.com/intraceting/abcdk
+Name: ${SOLUTION_NAME}
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}
+Release: ${VERSION_RELEASE}
+Group: Applications/System
+License: MIT
+AutoReqProv: yes
+
+%description
+The C language and C-interface style secondary development kit, 
+only supports gnu/linux compatible platforms.
+.
+This package contains the development files (tools,libraries)
+%files
+${INSTALL_PREFIX}
+
+%post
+echo export PATH=\\\$PATH:${INSTALL_PREFIX}/bin > /etc/profile.d/${SOLUTION_NAME}.sh
+echo export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib >> /etc/profile.d/${SOLUTION_NAME}.sh
+
+%postun
+rm /etc/profile.d/${SOLUTION_NAME}.sh
+EOF
+checkReturnCode
+
+
+#
+cat >${DEV_RPM_SPEC} <<EOF
+Summary: A Better C language Development Kit (a.k.a ABCDK).
+Vendor: https://github.com/intraceting/abcdk
+Name: ${SOLUTION_NAME}-devel
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}
+Release: ${VERSION_RELEASE}
+Group: Applications/System
+License: MIT
+Requires: ${SOLUTION_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
+AutoReqProv: yes
+
+%description
+The C language and C-interface style secondary development kit, 
+only supports gnu/linux compatible platforms.
+.
+This package contains the development files (headers, static libraries)
+
+%files
+${INSTALL_PREFIX}
+
+EOF
+checkReturnCode
+
+}
+elif [ ${KIT_NAME} == "deb" ];then
+{
+
+#
+cat >${PACK_CONF} <<EOF
+#
+RT_DEB_CTL = ${RT_DEB_CTL}
+DEV_DEB_CTL = ${DEV_DEB_CTL}
+EOF
+checkReturnCode
+
+}
+fi
