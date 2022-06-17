@@ -702,7 +702,7 @@ int abcdk_comm_start(int workers)
 
         /*设置线程的CPU亲源性。*/
         CPU_ZERO(&cpu_set);
-        CPU_SET(i % nps, &cpu_set);
+        CPU_SET((workers - i) % nps, &cpu_set);
         pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
     }
 
