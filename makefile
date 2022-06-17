@@ -268,10 +268,10 @@ package-devel-rpm:
 
 #
 package-runtime-deb:
-	echo "Not supported."
+	@echo "The DEB package is not yet supported."
 
 package-devel-deb:
-	echo "Not supported."
+	@echo "The DEB package is not yet supported."
 
 help:
 	@echo "make"
