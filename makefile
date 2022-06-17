@@ -7,11 +7,9 @@
 
 #
 MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
-PACK_CONF ?= $(abspath $(CURDIR)/build/package.conf)
 
 # 加载配置项。
 include ${MAKE_CONF}
-include ${PACK_CONF}
 
 # C Standard
 CC_STD = -std=c11
@@ -163,6 +161,7 @@ INSTALL_PATH_3PARTY = $(abspath ${INSTALL_PATH}/3party/)
 INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
+INSTALL_PATH_PC = $(abspath ${INSTALL_PATH}/pkgconfig/)
 
 
 #
@@ -189,6 +188,7 @@ install-devel:
 	mkdir -p ${INSTALL_PATH_INC}/shell
 	mkdir -p ${INSTALL_PATH_INC}/mp4
 	mkdir -p ${INSTALL_PATH_INC}/comm
+	mkdir -p ${INSTALL_PATH_PC}/
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
@@ -196,6 +196,8 @@ install-devel:
 	cp  -f $(CURDIR)/shell/*.h ${INSTALL_PATH_INC}/shell/
 	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
 	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
+#  
+	cp  -f $(BUILD_PATH)/abcdk.pc ${INSTALL_PATH_PC}/
 
 #
 uninstall: uninstall-runtime uninstall-devel
@@ -219,6 +221,8 @@ uninstall-devel:
 	rm -rf ${INSTALL_PATH_INC}/shell
 	rm -rf ${INSTALL_PATH_INC}/mp4
 	rm -rf ${INSTALL_PATH_INC}/comm
+#
+	rm -f  ${INSTALL_PATH_PC}/abcdk.pc
 
 #占位预定义，实际会随机生成。
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp

@@ -68,8 +68,17 @@ CheckKeyword()
 }
 
 #
+KIT_NAME=$(CheckPackageKitName)
+
+#
+SOLUTION_NAME="abcdk"
+
+#
 MAKE_CONF=${SHELLDIR}/build/makefile.conf
-PACK_CONF=${SHELLDIR}/build/package.conf
+
+#
+DEV_PKG_PC=${SHELLDIR}/build/abcdk.pc
+
 #
 RT_RPM_SPEC=${SHELLDIR}/build/rt_rpm.spec
 DEV_RPM_SPEC=${SHELLDIR}/build/devel_rpm.spec
@@ -77,11 +86,6 @@ DEV_RPM_SPEC=${SHELLDIR}/build/devel_rpm.spec
 RT_DEB_CTL=${SHELLDIR}/build/rt_deb.ctl
 DEV_DEB_CTL=${SHELLDIR}/build/devel_deb.ctl
 
-#
-KIT_NAME=$(CheckPackageKitName)
-
-#
-SOLUTION_NAME="abcdk"
 
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -364,7 +368,9 @@ if [ ${KIT_NAME} == "rpm" ];then
 {
 
 #
-cat >${PACK_CONF} <<EOF
+cat >>${MAKE_CONF} <<EOF
+#
+DEV_PKG_PC = ${DEV_PKG_PC}
 #
 RT_RPM_SPEC = ${RT_RPM_SPEC}
 DEV_RPM_SPEC = ${DEV_RPM_SPEC}
@@ -391,11 +397,11 @@ This package contains the development files (tools,libraries)
 ${INSTALL_PREFIX}
 
 %post
-echo export PATH=\\\$PATH:${INSTALL_PREFIX}/bin > /etc/profile.d/${SOLUTION_NAME}.sh
-echo export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib >> /etc/profile.d/${SOLUTION_NAME}.sh
+echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
+echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
 
 %postun
-rm /etc/profile.d/${SOLUTION_NAME}.sh
+rm /etc/profile.d/abcdk.sh
 EOF
 checkReturnCode
 
@@ -421,6 +427,12 @@ This package contains the development files (headers, static libraries)
 %files
 ${INSTALL_PREFIX}
 
+%post
+echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
+
+%postun
+rm /etc/profile.d/abcdk-devel.sh
+
 EOF
 checkReturnCode
 
@@ -429,7 +441,9 @@ elif [ ${KIT_NAME} == "deb" ];then
 {
 
 #
-cat >${PACK_CONF} <<EOF
+cat >>${MAKE_CONF} <<EOF
+#
+DEV_PKG_PC = ${DEV_PKG_PC}
 #
 RT_DEB_CTL = ${RT_DEB_CTL}
 DEV_DEB_CTL = ${DEV_DEB_CTL}
@@ -438,3 +452,18 @@ checkReturnCode
 
 }
 fi
+
+#
+cat >${DEV_PKG_PC} <<EOF
+prefix=${INSTALL_PREFIX}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: ${SOLUTION_NAME}
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
+Description: The Sandbox Libraries
+Requires:
+Libs: -L\${libdir} -labcdk
+Cflags: -I\${includedir}
+EOF
+checkReturnCode
