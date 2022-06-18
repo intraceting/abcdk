@@ -84,12 +84,12 @@ MAKE_CONF=${BUILD_PATH}/makefile.conf
 PKG_PC=${BUILD_PATH}/abcdk.pc
 
 #
-RT_RPM_SPEC=${BUILD_PATH}/rt_rpm.spec
-DEV_RPM_SPEC=${BUILD_PATH}/devel_rpm.spec
+RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
+RPM_DEV_SPEC=${BUILD_PATH}/rpm_devel.spec
 
 #
-RT_DEB_CTL=${BUILD_PATH}/rt_deb.ctl
-DEV_DEB_CTL=${BUILD_PATH}/devel_deb.ctl
+DEB_RT_CTL=${BUILD_PATH}/deb_rt.ctl
+DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
 
 #主版本
 VERSION_MAJOR="1"
@@ -372,8 +372,8 @@ cat >>${MAKE_CONF} <<EOF
 #
 PKG_PC = ${PKG_PC}
 #
-RT_RPM_SPEC = ${RT_RPM_SPEC}
-DEV_RPM_SPEC = ${DEV_RPM_SPEC}
+RPM_RT_SPEC = ${RPM_RT_SPEC}
+RPM_DEV_SPEC = ${RPM_DEV_SPEC}
 EOF
 checkReturnCode
 
@@ -445,8 +445,8 @@ cat >>${MAKE_CONF} <<EOF
 #
 PKG_PC = ${PKG_PC}
 #
-RT_DEB_CTL = ${RT_DEB_CTL}
-DEV_DEB_CTL = ${DEV_DEB_CTL}
+DEB_RT_CTL = ${DEB_RT_CTL}
+DEB_DEV_CTL = ${DEB_DEV_CTL}
 EOF
 checkReturnCode
 
@@ -461,7 +461,7 @@ includedir=\${prefix}/include
 
 Name: ${SOLUTION_NAME}
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Description: The Sandbox Libraries
+Description: The ${SOLUTION_NAME} Libraries
 Requires:
 Libs: -L\${libdir} -labcdk
 Cflags: -I\${includedir}

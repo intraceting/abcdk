@@ -258,7 +258,7 @@ package-devel:
 package-runtime-rpm:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
-	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RT_RPM_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RUNTIME_PACKAGE_NAME}.rpm"
+	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RPM_RT_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RUNTIME_PACKAGE_NAME}.rpm"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 	
@@ -266,7 +266,7 @@ package-runtime-rpm:
 package-devel-rpm:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
-	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${DEV_RPM_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEVEL_PACKAGE_NAME}.rpm"
+	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RPM_DEV_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEVEL_PACKAGE_NAME}.rpm"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 
