@@ -74,22 +74,22 @@ KIT_NAME=$(CheckPackageKitName)
 SOLUTION_NAME="abcdk"
 
 #
-MAKE_CONF=${SHELLDIR}/build/makefile.conf
-
-#
-DEV_PKG_PC=${SHELLDIR}/build/abcdk.pc
-
-#
-RT_RPM_SPEC=${SHELLDIR}/build/rt_rpm.spec
-DEV_RPM_SPEC=${SHELLDIR}/build/devel_rpm.spec
-#
-RT_DEB_CTL=${SHELLDIR}/build/rt_deb.ctl
-DEV_DEB_CTL=${SHELLDIR}/build/devel_deb.ctl
-
-
-#
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_PATH=$(realpath "${SHELLDIR}/build/")
+
+#
+MAKE_CONF=${BUILD_PATH}/makefile.conf
+
+#
+PKG_PC=${BUILD_PATH}/abcdk.pc
+
+#
+RT_RPM_SPEC=${BUILD_PATH}/rt_rpm.spec
+DEV_RPM_SPEC=${BUILD_PATH}/devel_rpm.spec
+
+#
+RT_DEB_CTL=${BUILD_PATH}/rt_deb.ctl
+DEV_DEB_CTL=${BUILD_PATH}/devel_deb.ctl
 
 #主版本
 VERSION_MAJOR="1"
@@ -370,7 +370,7 @@ if [ ${KIT_NAME} == "rpm" ];then
 #
 cat >>${MAKE_CONF} <<EOF
 #
-DEV_PKG_PC = ${DEV_PKG_PC}
+PKG_PC = ${PKG_PC}
 #
 RT_RPM_SPEC = ${RT_RPM_SPEC}
 DEV_RPM_SPEC = ${DEV_RPM_SPEC}
@@ -443,7 +443,7 @@ elif [ ${KIT_NAME} == "deb" ];then
 #
 cat >>${MAKE_CONF} <<EOF
 #
-DEV_PKG_PC = ${DEV_PKG_PC}
+PKG_PC = ${PKG_PC}
 #
 RT_DEB_CTL = ${RT_DEB_CTL}
 DEV_DEB_CTL = ${DEV_DEB_CTL}
@@ -454,7 +454,7 @@ checkReturnCode
 fi
 
 #
-cat >${DEV_PKG_PC} <<EOF
+cat >${PKG_PC} <<EOF
 prefix=${INSTALL_PREFIX}
 libdir=\${prefix}/lib
 includedir=\${prefix}/include

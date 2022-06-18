@@ -197,7 +197,7 @@ install-devel:
 	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
 	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
 #  
-	cp  -f $(BUILD_PATH)/abcdk.pc ${INSTALL_PATH_PC}/
+	cp  -f ${PKG_PC} ${INSTALL_PATH_PC}/abcdk.pc
 
 #
 uninstall: uninstall-runtime uninstall-devel
