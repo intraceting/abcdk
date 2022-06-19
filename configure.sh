@@ -378,7 +378,7 @@ EOF
 checkReturnCode
 
 #
-cat >${RT_RPM_SPEC} <<EOF
+cat >${RPM_RT_SPEC} <<EOF
 Summary: A Better C language Development Kit (a.k.a ABCDK).
 Vendor: https://github.com/intraceting/abcdk
 Name: ${SOLUTION_NAME}
@@ -407,7 +407,7 @@ checkReturnCode
 
 
 #
-cat >${DEV_RPM_SPEC} <<EOF
+cat >${RPM_DEV_SPEC} <<EOF
 Summary: A Better C language Development Kit (a.k.a ABCDK).
 Vendor: https://github.com/intraceting/abcdk
 Name: ${SOLUTION_NAME}-devel
