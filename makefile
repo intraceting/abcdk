@@ -179,6 +179,7 @@ install-runtime:
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 #
 	cp -rf $(CURDIR)/3party/myscript/linux ${INSTALL_PATH_3PARTY}/myscript
+
 	
 #
 install-devel:
@@ -272,10 +273,22 @@ package-devel-rpm:
 
 #
 package-runtime-deb:
-	@echo "The DEB package is not yet supported."
+	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	ln -s ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
+	ln -s ${DEB_RT_CTL} ${TMP_ROOT_PATH}/debian
+	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.deb"
+	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	rm -rf ${TMP_ROOT_PATH}
 
 package-devel-deb:
-	@echo "The DEB package is not yet supported."
+	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
+	ln -s ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
+	ln -s ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/debian
+	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.deb"
+	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
+	rm -rf ${TMP_ROOT_PATH}
 
 help:
 	@echo "make"

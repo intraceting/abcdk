@@ -327,6 +327,9 @@ else
 fi
 
 #
+INSTALL_PREFIX=$(realpath "${INSTALL_PREFIX}")
+
+#
 DEPEND_FLAGS="${DEPEND_FLAGS} -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 
 #
@@ -364,6 +367,23 @@ ROOT_PATH ?= /
 EOF
 checkReturnCode
 
+#
+cat >${PKG_PC} <<EOF
+prefix=${INSTALL_PREFIX}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: ${SOLUTION_NAME}
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
+Description: The ${SOLUTION_NAME} Libraries
+Requires:
+Libs: -L\${libdir} -labcdk
+Cflags: -I\${includedir}
+EOF
+checkReturnCode
+
+
+#
 if [ ${KIT_NAME} == "rpm" ];then
 {
 
@@ -399,12 +419,13 @@ ${INSTALL_PREFIX}
 %post
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
+exit 0
 
 %postun
 rm /etc/profile.d/abcdk.sh
+exit 0
 EOF
 checkReturnCode
-
 
 #
 cat >${RPM_DEV_SPEC} <<EOF
@@ -429,16 +450,21 @@ ${INSTALL_PREFIX}
 
 %post
 echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
+exit 0
 
 %postun
 rm /etc/profile.d/abcdk-devel.sh
-
+exit 0
 EOF
 checkReturnCode
 
 }
 elif [ ${KIT_NAME} == "deb" ];then
 {
+
+#
+mkdir -p ${DEB_RT_CTL}
+mkdir -p ${DEB_DEV_CTL}
 
 #
 cat >>${MAKE_CONF} <<EOF
@@ -450,20 +476,77 @@ DEB_DEV_CTL = ${DEB_DEV_CTL}
 EOF
 checkReturnCode
 
-}
-fi
-
 #
-cat >${PKG_PC} <<EOF
-prefix=${INSTALL_PREFIX}
-libdir=\${prefix}/lib
-includedir=\${prefix}/include
-
-Name: ${SOLUTION_NAME}
+cat >${DEB_RT_CTL}/control <<EOF
+Source: ${SOLUTION_NAME}
+Package: ${SOLUTION_NAME}
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Description: The ${SOLUTION_NAME} Libraries
-Requires:
-Libs: -L\${libdir} -labcdk
-Cflags: -I\${includedir}
+Section: Applications/System
+Priority: optional
+Architecture: amd64
+Maintainer: https://github.com/intraceting/abcdk
+Description: The C language and C-interface style secondary development kit,
+ only supports gnu/linux compatible platforms.
+ .
+ This package contains the development files (tools, libraries)
 EOF
 checkReturnCode
+
+#
+cat >${DEB_RT_CTL}/postinst <<EOF
+#!/bin/sh
+echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
+echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
+exit 0
+EOF
+checkReturnCode
+
+#
+cat >${DEB_RT_CTL}/postrm <<EOF
+#!/bin/sh
+rm /etc/profile.d/abcdk.sh
+exit 0
+EOF
+checkReturnCode
+
+#
+cat >${DEB_DEV_CTL}/control <<EOF
+Source: ${SOLUTION_NAME}
+Package: ${SOLUTION_NAME}-devel
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
+Section: Applications/System
+Priority: optional
+Architecture: amd64
+Maintainer: https://github.com/intraceting/abcdk
+Pre-Depends: ${SOLUTION_NAME} (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
+Description: The C language and C-interface style secondary development kit, 
+ only supports gnu/linux compatible platforms.
+ .
+ This package contains the development files (headers, static libraries)
+EOF
+checkReturnCode
+
+#
+cat >${DEB_DEV_CTL}/postinst <<EOF
+#!/bin/sh
+echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
+exit 0
+EOF
+checkReturnCode
+
+#
+cat >${DEB_DEV_CTL}/postrm <<EOF
+#!/bin/sh
+rm /etc/profile.d/abcdk-devel.sh
+exit 0
+EOF
+checkReturnCode
+
+#
+chmod 755 ${DEB_RT_CTL}/postinst
+chmod 755 ${DEB_RT_CTL}/postrm
+chmod 755 ${DEB_DEV_CTL}/postinst
+chmod 755 ${DEB_DEV_CTL}/postrm
+
+}
+fi
