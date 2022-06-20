@@ -406,7 +406,7 @@ Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
 Group: Applications/System
 License: MIT
-AutoReqProv: yes
+AutoReqProv: no
 
 %description
 The C language and C-interface style secondary development kit, 
@@ -437,7 +437,7 @@ Release: ${VERSION_RELEASE}
 Group: Applications/System
 License: MIT
 Requires: ${SOLUTION_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
-AutoReqProv: yes
+AutoReqProv: no
 
 %description
 The C language and C-interface style secondary development kit, 
