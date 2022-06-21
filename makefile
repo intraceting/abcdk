@@ -177,9 +177,6 @@ install-runtime:
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
-#
-	cp -rf $(CURDIR)/3party/myscript/linux ${INSTALL_PATH_3PARTY}/myscript
-
 	
 #
 install-devel:
@@ -210,8 +207,6 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
-#
-	rm -rf $(INSTALL_PATH_3PARTY)/myscript
 	
 #
 uninstall-devel:
