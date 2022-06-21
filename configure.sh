@@ -406,7 +406,7 @@ Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
 Group: Applications/System
 License: MIT
-AutoReqProv: no
+AutoReqProv: yes
 
 %description
 The C language and C-interface style secondary development kit, 
@@ -417,11 +417,13 @@ This package contains the development files (tools,libraries)
 ${INSTALL_PREFIX}
 
 %post
+#!/bin/sh
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
 exit 0
 
 %postun
+#!/bin/sh
 rm /etc/profile.d/abcdk.sh
 exit 0
 EOF
@@ -437,7 +439,7 @@ Release: ${VERSION_RELEASE}
 Group: Applications/System
 License: MIT
 Requires: ${SOLUTION_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
-AutoReqProv: no
+AutoReqProv: yes
 
 %description
 The C language and C-interface style secondary development kit, 
@@ -449,10 +451,12 @@ This package contains the development files (headers, static libraries)
 ${INSTALL_PREFIX}
 
 %post
+#!/bin/sh
 echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
 exit 0
 
 %postun
+#!/bin/sh
 rm /etc/profile.d/abcdk-devel.sh
 exit 0
 EOF
@@ -465,6 +469,10 @@ elif [ ${KIT_NAME} == "deb" ];then
 #
 mkdir -p ${DEB_RT_CTL}
 mkdir -p ${DEB_DEV_CTL}
+
+#
+rm -rf ${DEB_RT_CTL}/*
+rm -rf ${DEB_DEV_CTL}/*
 
 #
 cat >>${MAKE_CONF} <<EOF

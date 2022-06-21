@@ -236,10 +236,14 @@ DEVEL_PACKAGE_NAME=${SOLUTION_NAME}-devel-${VERSION_STR}-${TARGET_PLATFORM}
 
 
 #
-package: package-runtime package-devel package-runtime-${KIT_NAME} package-devel-${KIT_NAME}
+package: package-tar package-${KIT_NAME}
 
 #
-package-runtime:
+package-tar: package-runtime-tar package-devel-tar
+
+
+#
+package-runtime-tar:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	tar -czv -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
@@ -247,13 +251,16 @@ package-runtime:
 	rm -rf ${TMP_ROOT_PATH}
 	
 #
-package-devel:
+package-devel-tar:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	tar -czv -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 
+
+#
+package-${KIT_NAME}: package-runtime-${KIT_NAME} package-devel-${KIT_NAME}
 
 #
 package-runtime-rpm:
@@ -275,8 +282,8 @@ package-devel-rpm:
 package-runtime-deb:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
-	ln -s ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
-	ln -s ${DEB_RT_CTL} ${TMP_ROOT_PATH}/debian
+	ln -s -f ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
+	ln -s -f ${DEB_RT_CTL} ${TMP_ROOT_PATH}/debian
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.deb"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -284,8 +291,8 @@ package-runtime-deb:
 package-devel-deb:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
-	ln -s ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
-	ln -s ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/debian
+	ln -s -f ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
+	ln -s -f ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/debian
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.deb"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -300,8 +307,5 @@ help:
 	@echo "make uninstall-runtime"
 	@echo "make uninstall-devel"
 	@echo "make package"
-	@echo "make package-runtime"
-	@echo "make package-devel"
-	@echo "make package"
-	@echo "make package-runtime-${KIT_NAME}"
-	@echo "make package-devel-${KIT_NAME}"
+	@echo "make package-tar"
+	@echo "make package-${KIT_NAME}"
