@@ -5020,9 +5020,13 @@ void test_record(abcdk_tree_t *args)
     //ffmpeg -y -pattern_type glob -i "images/*.jpg" -r 2 -vc h264 -f mp4 video.mp4
     char cmd[1024] = {0};
   //  sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -i %s -map 0:v -vf select='eq(pict_type\\,I)' -vsync 2 -f rawvideo -pix_fmt rgb24  pipe:1 -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 %s/%%d.mp4",
-    sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -i %s -c:v copy -f segment -segment_format mp4 -segment_time 5 -reset_timestamps 1 %s/%%d.mp4",
+    sprintf(cmd,"ffmpeg -y -rtsp_transport tcp -stimeout 5000000 -i %s -c:v copy -c:a copy -f segment -segment_format mp4 -segment_time 60 -reset_timestamps 1 %s/%%09d.mp4",
         src,dst);
 
+    printf("%s\n",cmd);
+
+    pid_t p = abcdk_popen(cmd,NULL,NULL,NULL,NULL);
+#if 0
     int out = -1;
     pid_t p = abcdk_popen(cmd,NULL,NULL,&out,NULL);
 
@@ -5047,10 +5051,31 @@ void test_record(abcdk_tree_t *args)
     abcdk_closep(&out);
 
     kill(p,SIGTERM);
+#endif
     int status;
     waitpid(p,&status,0);
 
     printf("%d\n",WEXITSTATUS(status));
+}
+
+void test_dup(abcdk_tree_t *args)
+{
+    int fd = abcdk_socket(AF_INET,0);
+
+    abcdk_sockaddr_t a = {0};
+    abcdk_sockaddr_from_string(&a,"www.baidu.com:443",1);
+    abcdk_connect(fd,&a,5000);
+
+    int fd2 = dup2(fd,1);
+    abcdk_closep(&fd);
+
+
+    struct pollfd arr = {0};
+    arr.fd = fd2;
+    arr.events = POLLERR |POLLHUP|POLLNVAL;
+    poll(&arr,1,-1);
+
+    abcdk_closep(&fd2);
 }
 
 int main(int argc, char **argv)
@@ -5287,6 +5312,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_record", 0) == 0)
         test_record(args);
+
+    if (abcdk_strcmp(func, "test_dup", 0) == 0)
+        test_dup(args);
 
     abcdk_tree_free(&args);
     
