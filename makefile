@@ -170,7 +170,6 @@ install: install-runtime install-devel
 #
 install-runtime:
 #
-	mkdir -p ${INSTALL_PATH_3PARTY}/
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_BIN}
 #
