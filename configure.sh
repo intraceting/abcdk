@@ -424,7 +424,7 @@ exit 0
 
 %postun
 #!/bin/sh
-rm /etc/profile.d/abcdk.sh
+rm -f /etc/profile.d/abcdk.sh
 exit 0
 EOF
 checkReturnCode
@@ -457,7 +457,7 @@ exit 0
 
 %postun
 #!/bin/sh
-rm /etc/profile.d/abcdk-devel.sh
+rm -f /etc/profile.d/abcdk-devel.sh
 exit 0
 EOF
 checkReturnCode
@@ -481,6 +481,8 @@ PKG_PC = ${PKG_PC}
 #
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
+#
+DEB_TOOL_ROOT= ${SHELLDIR}/3party/myscript/linux/dpkg
 EOF
 checkReturnCode
 
@@ -493,6 +495,7 @@ Section: Applications/System
 Priority: optional
 Architecture: amd64
 Maintainer: https://github.com/intraceting/abcdk
+Pre-Depends: \${shlibs:Depends}
 Description: The C language and C-interface style secondary development kit,
  only supports gnu/linux compatible platforms.
  .
@@ -512,7 +515,7 @@ checkReturnCode
 #
 cat >${DEB_RT_CTL}/postrm <<EOF
 #!/bin/sh
-rm /etc/profile.d/abcdk.sh
+rm -f /etc/profile.d/abcdk.sh
 exit 0
 EOF
 checkReturnCode
@@ -545,7 +548,7 @@ checkReturnCode
 #
 cat >${DEB_DEV_CTL}/postrm <<EOF
 #!/bin/sh
-rm /etc/profile.d/abcdk-devel.sh
+rm -f /etc/profile.d/abcdk-devel.sh
 exit 0
 EOF
 checkReturnCode

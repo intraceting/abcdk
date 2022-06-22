@@ -277,8 +277,10 @@ package-devel-rpm:
 package-runtime-deb:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
-	ln -s -f ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
-	ln -s -f ${DEB_RT_CTL} ${TMP_ROOT_PATH}/debian
+	cp -rf ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
+	ln -s -f ${TMP_ROOT_PATH}/DEBIAN ${TMP_ROOT_PATH}/debian
+	${DEB_TOOL_ROOT}/dpkg-shlibdeps2control.sh "${TMP_ROOT_PATH}"
+	unlink ${TMP_ROOT_PATH}/debian
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.deb"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -286,8 +288,7 @@ package-runtime-deb:
 package-devel-deb:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
-	ln -s -f ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
-	ln -s -f ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/debian
+	cp -rf ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.deb"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
