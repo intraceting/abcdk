@@ -118,7 +118,7 @@ usage: [ OPTIONS ]
     -g  
      生成调试符号。默认：关闭
 
-     自定义编译器，并且定义环境变量。如下：
+     自定义编译器（定义环境变量）。如下：
      export CC=gcc
      export AR=ar
 
@@ -143,7 +143,7 @@ usage: [ OPTIONS ]
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid
 
-     自定义依赖项，key前缀增加“with-”，并且定义环境变量。如下：
+     自定义依赖项（定义环境变量），并且key前缀增加“with-”。如下：
      export DEPEND_FLAGS="-I/tmp/3party/include/"
      export DEPEND_LIBS="-l:3party.so -l:3party.a -l3party -L/tmp/3party/lib/"
 EOF
