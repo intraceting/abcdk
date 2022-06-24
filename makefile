@@ -239,6 +239,7 @@ package-tar: package-runtime-tar package-devel-tar
 package-runtime-tar:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	mkdir -p ${PACKAGE_PATH}
 	tar -czv -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -247,6 +248,7 @@ package-runtime-tar:
 package-devel-tar:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
+	mkdir -p ${PACKAGE_PATH}
 	tar -czv -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -259,6 +261,7 @@ package-${KIT_NAME}: package-runtime-${KIT_NAME} package-devel-${KIT_NAME}
 package-runtime-rpm:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
+	mkdir -p ${PACKAGE_PATH}
 	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RPM_RT_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RUNTIME_PACKAGE_NAME}.rpm"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -267,6 +270,7 @@ package-runtime-rpm:
 package-devel-rpm:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
+	mkdir -p ${PACKAGE_PATH}
 	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RPM_DEV_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEVEL_PACKAGE_NAME}.rpm"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -276,9 +280,12 @@ package-runtime-deb:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	cp -rf ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
+#	创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
 	ln -s -f ${TMP_ROOT_PATH}/DEBIAN ${TMP_ROOT_PATH}/debian
 	${DEB_TOOL_ROOT}/dpkg-shlibdeps2control.sh "${TMP_ROOT_PATH}"
+#	删除软链接，因为dpkg-deb会把这个当成普通文件复制。下同。
 	unlink ${TMP_ROOT_PATH}/debian
+	mkdir -p ${PACKAGE_PATH}
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.deb"
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
@@ -287,6 +294,7 @@ package-devel-deb:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	cp -rf ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
+	mkdir -p ${PACKAGE_PATH}
 	dpkg-deb --build "${TMP_ROOT_PATH}/" "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.deb"
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
