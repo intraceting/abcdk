@@ -187,6 +187,9 @@ if [ "${AR}" == "" ];then
 fi
 
 #
+TARGET_PLATFORM=$(${CC} -dumpmachine)
+
+#
 STATUS=$(CheckHavePackageFromWhich ${CC})
 if [ ${STATUS} -ne 0 ];then
 {
@@ -298,15 +301,7 @@ if [ "${DEPEND_NOFOUND}" != "" ];then
 fi 
 
 #
-TARGET_PLATFORM=$(${CC} -dumpmachine)
-
-#
-VERSION_STR=${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-
-#
 mkdir -p ${BUILD_PATH}
-
-#
 if [ ! -d ${BUILD_PATH} ];then
 {
     echo "'${BUILD_PATH}' must be an existing directory."
@@ -353,7 +348,7 @@ AR = ${AR}
 VERSION_MAJOR = ${VERSION_MAJOR}
 VERSION_MINOR = ${VERSION_MINOR}
 VERSION_RELEASE = ${VERSION_RELEASE}
-VERSION_STR = ${VERSION_STR}
+VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 #
 DEPEND_FLAGS = ${DEPEND_FLAGS}
 DEPEND_LIBS = ${DEPEND_LIBS}
@@ -482,7 +477,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT= ${SHELLDIR}/3party/myscript/linux/dpkg
+DEB_TOOL_ROOT = ${SHELLDIR}/3party/myscript/linux/dpkg
 EOF
 checkReturnCode
 
