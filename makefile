@@ -203,7 +203,6 @@ uninstall: uninstall-runtime uninstall-devel
 uninstall-runtime:
 #
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
 	
