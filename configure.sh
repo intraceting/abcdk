@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${SHELLDIR}/3party/myscript/linux/core/check-os-id.sh $1)"
+    echo "$(${SHELLDIR}/myscript/linux/core/check-os-id.sh $1)"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${SHELLDIR}/3party/myscript/linux/core/get-os-ver.sh)"
+    echo "$(${SHELLDIR}/myscript/linux/core/get-os-ver.sh)"
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${SHELLDIR}/3party/myscript/linux/core/get-kit-name.sh)"
+	echo "$(${SHELLDIR}/myscript/linux/core/get-kit-name.sh)"
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${SHELLDIR}/3party/myscript/linux/core/check-package.sh $1)"
+    echo "$(${SHELLDIR}/myscript/linux/core/check-package.sh $1)"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${SHELLDIR}/3party/myscript/linux/core/check-which.sh $1)"
+	echo "$(${SHELLDIR}/myscript/linux/core/check-which.sh $1)"
 }
 
 #
@@ -55,7 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    echo "$(${SHELLDIR}/3party/myscript/linux/devel/check-config.sh $1 $2)"
+    echo "$(${SHELLDIR}/myscript/linux/devel/check-config.sh $1 $2)"
 }
 
 #
@@ -477,7 +477,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/3party/myscript/linux/dpkg
+DEB_TOOL_ROOT = ${SHELLDIR}/myscript/linux/dpkg
 EOF
 checkReturnCode
 
