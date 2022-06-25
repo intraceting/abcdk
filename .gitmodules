@@ -1,0 +1,4 @@
+[submodule "myscript"]
+	path = myscript
+	url = https://github.com/intraceting/myscript.git
+	branch = main
