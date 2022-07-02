@@ -141,9 +141,7 @@ void test_ffmpeg(abcdk_tree_t *args)
     av_register_all();
 #endif
 
-#if LIBAVDEVICE_VERSION_INT <= AV_VERSION_INT(56,4,100)
     avdevice_register_all();
-#endif
 
     for(int i = 0;i<1000;i++)
     {
@@ -168,8 +166,8 @@ void test_ffmpeg(abcdk_tree_t *args)
         if(!in->priv_class)
             continue;
         
-        printf("%s _ %s _ %s\n",in->name,in->long_name,in->mime_type);
-  //      av_opt_show2((void *)&in->priv_class, NULL, -1, 0);
+    //    printf("%s _ %s _ %s\n",in->name,in->long_name,in->mime_type);
+        av_opt_show2((void *)&in->priv_class, NULL, -1, 0);
     }
 
 
@@ -182,7 +180,8 @@ void test_ffmpeg(abcdk_tree_t *args)
     {
         if(!out->priv_class)
             continue;
-        av_opt_show2((void *)&out->priv_class, NULL, -1, 0);
+         printf("%s _ %s _ %s\n",out->name,out->long_name,out->mime_type);
+        //av_opt_show2((void *)&out->priv_class, NULL, -1, 0);
     }
 
     printf("-----\n");
@@ -191,23 +190,27 @@ void test_ffmpeg(abcdk_tree_t *args)
     while (vi = av_input_video_device_next(vi))
     {
         printf("%s,%s\n", vi->name, vi->long_name);
-
-        AVFormatContext *ctx = avformat_alloc_context();
-        AVInputFormat *fmt = av_find_input_format(vi->name);
+        
         AVDeviceInfoList *device_list = NULL;
-        int err = avformat_open_input(&ctx, NULL, fmt, NULL);
-        if (err != 0)
-            fprintf(stderr, "ffmpeg: Unable to openinput: %d\n", err);
-        else
-        {
-            int k = avdevice_list_devices(ctx, &device_list);
-            for(int i = 0;i<k;i++)
-            {
-                printf("%s,%s\n",device_list->devices[i]->device_name,device_list->devices[i]->device_description);
-            }
-        }
+        int err = avdevice_list_input_sources(NULL,vi->name,NULL,&device_list);
+        if(err <0 || !device_list)
+            continue;
 
-        abcdk_avformat_free(&ctx);
+        for (int i = 0; i < device_list->nb_devices; i++)
+        {
+            printf("%s,%s\n", device_list->devices[i]->device_name, device_list->devices[i]->device_description);
+
+            AVFormatContext *ctx = abcdk_avformat_input_open(vi->name,device_list->devices[i]->device_name,NULL,NULL,NULL);
+
+            AVOptionRanges *ranges = NULL;
+            //av_opt_query_ranges(&ranges,(void *)&ctx->iformat->priv_class,"frame_size",AV_OPT_MULTI_COMPONENT_RANGE);
+            av_opt_query_ranges(&ranges,(void *)&ctx->av_class,"list_formats",AV_OPT_MULTI_COMPONENT_RANGE);
+            av_opt_freep_ranges(&ranges);
+
+            abcdk_avformat_free(&ctx);
+        }
+        
+        avdevice_free_list_devices(&device_list);
     }
 
     printf("-----\n");
