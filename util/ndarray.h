@@ -59,6 +59,8 @@ size_t abcdk_ndarray_size(abcdk_ndarray_t *ndarray);
 
 /**
  * 设置多维数组宽度占用的空间(字节)。
+ * 
+ * @param align 对齐字节。
 */
 void abcdk_ndarray_set_width_bytes(abcdk_ndarray_t *ndarray,size_t align);
 
