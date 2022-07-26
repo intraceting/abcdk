@@ -25,7 +25,6 @@ LINK_FLAGS += -s
 endif
 
 #
-LINK_FLAGS += -fPIC
 LINK_FLAGS += -Wl,--as-needed 
 LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 LINK_FLAGS += ${DEPEND_LIBS}
@@ -79,7 +78,7 @@ base: base-src
 #
 base-src: $(BASE_OBJ_FILES)
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS) -shared
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS)
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
 
 #
