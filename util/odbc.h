@@ -11,7 +11,7 @@
 #include "util/allocator.h"
 
 #ifdef FREEIMAGE_H
-#error "Unixodbc and FreeImage are incompatible and cannot be referenced at the same time."
+#error "Unixodbc与FreeImage的头文件有冲突，不能同时引用。"
 #endif // FREEIMAGE_H
 
 #ifdef HAVE_UNIXODBC

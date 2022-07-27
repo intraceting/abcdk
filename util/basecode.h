@@ -45,6 +45,9 @@ void abcdk_basecode_init(abcdk_basecode_t *ctx, uint8_t base);
 /**
  * 编码。
  * 
+ * @param [in] src 原文(指针)。
+ * @param [out] dst 密文(指针)。
+ * 
  * @return 原文编码后的长度。
 */
 ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
@@ -53,6 +56,9 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
 
 /**
  * 解码。
+ * 
+ * @param [in] src 密文(指针)。
+ * @param [out] dst 原文(指针)。
  * 
  * @return 密文解码后的长度。
 */

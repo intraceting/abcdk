@@ -90,7 +90,7 @@ int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abc
 /**
  * 获取地址(转换成字符串)。
  * 
- * @warning IPv4/IPv6有效。
+ * @note unix/IPv4/IPv6有效。
  * 
  * @return 0 成功，!0 失败。
 */

@@ -52,7 +52,7 @@ int abcdk_epoll_create();
 /**
  * 注册句柄(文件或SOCKET)和事件。
  * 
- * @param first 是否首次注册。0 否，!0 是。
+ * @param [in] first 是否首次注册。0 否，!0 是。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -68,7 +68,7 @@ int abcdk_epoll_drop(int efd, int fd);
 /**
  * 等待事件。
  * 
- * @param timeout 超时(毫秒)。>= 0 有事件或时间过期，< 0 直到有事件或出错。
+ * @param [in] timeout 超时(毫秒)。>= 0 有事件或时间过期，< 0 直到有事件或出错。
  * 
  * @return > 0 事件数量，<= 0 超时或出错。
 */

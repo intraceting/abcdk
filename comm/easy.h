@@ -59,6 +59,8 @@ int abcdk_comm_easy_get_sockaddr(abcdk_comm_easy_t *easy, abcdk_sockaddr_t *loca
 /**
  * 获取地址(转换成字符串)。
  * 
+ * @note unix/IPv4/IPv6有效。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_comm_easy_get_sockaddr_str(abcdk_comm_easy_t *easy, char local[NAME_MAX],char remote[NAME_MAX]);

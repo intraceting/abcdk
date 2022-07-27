@@ -15,8 +15,8 @@ __BEGIN_DECLS
 /**
  * 计时器(微秒)。
  * 
- * @param start 起始刻度。
- * @param dot 打点刻度，NULL(0) 忽略。
+ * @param [in] start 起始刻度。
+ * @param [out] dot 打点刻度，NULL(0) 忽略。
  * 
  * @return 两次打点间隔时长。
 */

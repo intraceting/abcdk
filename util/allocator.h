@@ -45,7 +45,7 @@ typedef struct _abcdk_allocator
 /**
  * 注册内存块析构函数。
  *
- * @param opaque 环境指针。
+ * @param opaque  环境指针。
 */
 void abcdk_allocator_atfree(abcdk_allocator_t *alloc,
                            void (*destroy_cb)(abcdk_allocator_t *alloc, void *opaque),
@@ -89,7 +89,7 @@ abcdk_allocator_t *abcdk_allocator_refer(abcdk_allocator_t *src);
  * 
  * 当前是最后一个引用者才会释放。
  * 
- * @param buf 指针的指针。函数返回前设置为NULL(0)。
+ * @param [in out] dst 指针的指针。函数返回前设置为NULL(0)。
 */
 void abcdk_allocator_unref(abcdk_allocator_t **dst);
 
@@ -106,7 +106,7 @@ abcdk_allocator_t *abcdk_allocator_clone(abcdk_allocator_t *src);
  * 当前是唯一引用者时，直接返回。
  * 当前不是唯一引用者时，执行克隆，然后执行释放。
  *
- * @param src 内存块指针的指针。私有化成功后，指针不可再被访问；如果私有化失败，指针依然有效。
+ * @param [in out] dst 内存块指针的指针。私有化成功后，指针不可再被访问；如果私有化失败，指针依然有效。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */

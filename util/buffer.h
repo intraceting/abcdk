@@ -51,7 +51,7 @@ typedef struct _abcdk_buffer
 /**
  * 创建。
  * 
- * @param alloc 内存块的指针。仅复制指针，不是指针对像引用。
+ * @param [in] alloc 内存块的指针。仅复制指针，不是指针对像引用。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
  */
@@ -60,7 +60,7 @@ abcdk_buffer_t *abcdk_buffer_alloc(abcdk_allocator_t *alloc);
 /**
  * 创建。
  * 
- * @param size 容量(Bytes)。
+ * @param [in] size 容量(Bytes)。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
  * 
@@ -70,7 +70,7 @@ abcdk_buffer_t *abcdk_buffer_alloc2(size_t size);
 /**
  * 释放。
  * 
- * @param dst 缓存指针的指针。函数返回前修改为NULL(0);
+ * @param [in out] dst 缓存指针的指针。函数返回前修改为NULL(0);
 */
 void abcdk_buffer_free(abcdk_buffer_t **dst);
 
@@ -91,7 +91,7 @@ abcdk_buffer_t *abcdk_buffer_clone(abcdk_buffer_t *src);
 /**
  * 私有化。
  * 
- * 用于写前复制，或克隆引用的内存块。如果是非引用内存块，直接返回成功。
+ * @note 用于写前复制，或克隆引用的内存块。如果是非引用内存块，直接返回成功。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -123,7 +123,7 @@ ssize_t abcdk_buffer_read(abcdk_buffer_t *buf, void *data, size_t size);
  * 
  * @warning 当缓存不足时，行尾部分将被截断并丢弃。
  * 
- * @param delim 行分割符。
+ * @param [in] delim 行分割符。
  * 
  * @return > 0 读取的长度(Bytes)，= 0 末尾，< 0 出错。
 */
@@ -132,13 +132,12 @@ ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size, int 
 /**
  * 排出已读数据，未读数据移动到缓存首地址。
 */
-
 void abcdk_buffer_drain(abcdk_buffer_t *buf);
 
 /**
  * 填满缓存。
  * 
- * @param stuffing 填充物。
+ * @param [in] stuffing 填充物。
  * 
  * @return > 0 添加的长度(Bytes)，= 0 已满，< 0 出错。
 */

@@ -49,8 +49,8 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd);
  * @warning 关联成功后，句柄在分离前不可被关闭或释放。
  * @warning 默认空闲超时30秒。
  * 
- * @param fd 句柄。
- * @param data 关联数据。
+ * @param [in] fd 句柄。
+ * @param [in] data 关联数据。
  * 
  * @return 0 成功，!0 失败(或重复)。
 */
@@ -68,7 +68,7 @@ int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd);
  * 
  * @warning 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
  * 
- * @param timeout 超时(毫秒)，<=0 不启用。
+ * @param [in] timeout 超时(毫秒)，<=0 不启用。
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */
@@ -77,9 +77,9 @@ int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout);
 /**
  * 注册事件。
  * 
- * @param fd 句柄，-1 广播到所有句柄。
- * @param want 希望的事件。
- * @param done 完成的事件，广播无效。
+ * @param [in] fd 句柄，-1 广播到所有句柄。
+ * @param [in] want 希望的事件。
+ * @param [in] done 完成的事件，广播无效。
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */
@@ -88,7 +88,7 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx,int fd,uint32_t want,uint32_t done);
 /**
  * 等待事件。
  * 
- * @param timeout 超时(毫秒)。
+ * @param [in] timeout 超时(毫秒)。
  * 
  * @return 0 成功，< 0 失败(或超时)。
 */

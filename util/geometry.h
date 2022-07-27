@@ -52,7 +52,7 @@ double abcdk_line_length_3d(const abcdk_point_t *b, const abcdk_point_t *e);
 /**
  * 计算平面中的射线弧度。
  * 
- * 角度=弧度*180/PI(3.1415926...)。
+ * @note 角度=弧度*180/PI(3.1415926...)。
  * 
  * @param b 起点。
  * @param e 终点。

@@ -219,6 +219,8 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lo
 /**
  * SOCKET地址转字符地址。
  * 
+ * Unix: /File
+ * Unix: /Path/File
  * IPv4：Address:Port 
  * IPv6：[Address]:Port
  * 

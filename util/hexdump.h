@@ -46,7 +46,7 @@ typedef struct _abcdk_hexdump_option
     /** 
      * 调色板，NULL(0) 忽略。
      * 
-     * 当调色板的颜色数量少于关键字时，则循环使用颜色。
+     * @note 当调色板的颜色数量少于关键字时，则循环使用颜色。
     */
     abcdk_allocator_t *palette;
 

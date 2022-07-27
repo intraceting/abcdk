@@ -156,7 +156,7 @@ const char* abcdk_strstr(const char *str, const char *sub,int caseAb);
 /**
  * 字符串查找。
  * 
- * @return !NULL(0) 匹配字符串尾地址之后，NULL(0) 未找到。
+ * @return !NULL(0) 匹配字符串的尾地址之后，NULL(0) 未找到。
 */
 const char* abcdk_strstr_eod(const char *str, const char *sub,int caseAb);
 
@@ -165,7 +165,7 @@ const char* abcdk_strstr_eod(const char *str, const char *sub,int caseAb);
  * 
  * @param caseAb 0 不区分大小写，!0 区分大小写。
  * 
- * @return 1: s1 > s2, 0: s1 = s2, -1: s1 < s2
+ * @return 1(s1 > s2), 0(s1 = s2), -1(s1 < s2)
 */
 int abcdk_strcmp(const char *s1, const char *s2,int caseAb);
 
@@ -174,7 +174,7 @@ int abcdk_strcmp(const char *s1, const char *s2,int caseAb);
  * 
  * @param caseAb 0 不区分大小写，!0 区分大小写。
  * 
- * @return 1: s1 > s2, 0: s1 = s2, -1: s1 < s2
+ * @return 1(s1 > s2), 0(s1 = s2), -1(s1 < s2)
 */
 int abcdk_strncmp(const char *s1, const char *s2,size_t len,int caseAb);
 
@@ -209,6 +209,8 @@ int abcdk_strtype(const char* str,int (*isctype_cb)(int c));
 
 /**
  * 字符串查找并替换。
+ * 
+ * @warning 被替换目标较多时效率不高。
  * 
  * @return  !NULL(0) 成功(指针需要用abcdk_heap_free去释放)， NULL(0) 失败。
 */
@@ -258,7 +260,7 @@ uint8_t* abcdk_endian_swap(uint8_t* dst,int len);
 /**
  * 大端字节序转本地字节序。
  * 
- * 如果本地是大端字节序，会忽略。
+ * @note 如果本地是大端字节序，会忽略。
 */
 uint8_t* abcdk_endian_b_to_h(uint8_t* dst,int len);
 
@@ -285,7 +287,7 @@ uint64_t abcdk_endian_b_to_h64(uint64_t src);
 /**
  * 本地字节序转大端字节序。
  * 
- * 如果本地是大端字节序，会忽略。
+ * @note 如果本地是大端字节序，会忽略。
 */
 uint8_t* abcdk_endian_h_to_b(uint8_t* dst,int len);
 
@@ -312,7 +314,7 @@ uint64_t abcdk_endian_h_to_b64(uint64_t src);
 /**
  * 小端字节序转本地字节序。
  * 
- * 如果本地是小端字节序，会忽略。
+ * @note 如果本地是小端字节序，会忽略。
 */
 uint8_t* abcdk_endian_l_to_h(uint8_t* dst,int len);
 
@@ -339,7 +341,7 @@ uint64_t abcdk_endian_l_to_h64(uint64_t src);
 /**
  * 本地字节序转小端字节序。
  * 
- * 如果本地是小端字节序，会忽略。
+ * @note 如果本地是小端字节序，会忽略。
 */
 uint8_t* abcdk_endian_h_to_l(uint8_t* dst,int len);
 
@@ -395,7 +397,7 @@ int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number);
  * 布隆-写 
  * 
  * @param offset 偏移量(Bits)。有效范围：0 ～ size*8-1。
- * @param val 值。0 = 0 ；!0 = 1。
+ * @param val 值。0(0)，1 (!0)。
 */
 void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val);
 
@@ -404,7 +406,7 @@ void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val);
  * 
  * @param offset 偏移量(Bits)。有效范围：0 ～ size*8-1。
  * 
- * @return 0 或 1。
+ * @return 0 或 !0。
  */
 int abcdk_bloom_read(uint8_t* pool,size_t size,size_t offset);
 
@@ -413,7 +415,7 @@ int abcdk_bloom_read(uint8_t* pool,size_t size,size_t offset);
 /**
  * 拼接目录。
  * 
- * 自动检查前后的'/'字符，接拼位置只保留一个'/'字符，或自动添加一个'/'字符。
+ * @note 自动检查前后的'/'字符，接拼位置只保留一个'/'字符，或自动添加一个'/'字符。
  * 
  * @warning 要有足够的可用空间，不然会溢出。
 */
@@ -422,14 +424,14 @@ char *abcdk_dirdir(char *path,const char *suffix);
 /**
  * 创建目录。
  * 
- * 支持创建多级目录。如果末尾不是'/'，则最后一级的名称会被当做文件名而忽略。
+ * @note 支持创建多级目录。如果末尾不是'/'，则最后一级的名称会被当做文件名而忽略。
 */
 void abcdk_mkdir(const char *path,mode_t mode);
 
 /**
  * 截取目录。
  * 
- * 最后一级的名称会被裁剪，并且无论目录结构是否真存在都会截取。 
+ * @note 最后一级的名称会被裁剪，并且无论目录结构是否真存在都会截取。 
 */
 char *abcdk_dirname(char *dst, const char *src);
 
@@ -503,7 +505,7 @@ int abcdk_open(const char *file, int rw, int nonblock, int create);
 /**
  * 关联文件到已经打开的句柄。
  * 
- * 已打开的文件会被关闭，新打开的文件会绑定到fd2句柄。
+ * @note 已打开的文件会被关闭，新打开的文件会绑定到fd2句柄。
  * 
  * @param fd2 已打开的句柄。
  * 
@@ -554,7 +556,7 @@ pid_t abcdk_popen(const char* cmd,char * const envp[],int* stdin_fd, int* stdout
 /**
  * 打开共享内存文件。
  *
- * 通常是在'/dev/shm/'目录内创建。
+ * @note 通常是在'/dev/shm/'目录内创建。
  * 
  * @return >= 0 句柄，-1 失败。
 */
