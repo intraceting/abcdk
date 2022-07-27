@@ -139,7 +139,9 @@ size_t abcdk_comm_private_size(abcdk_comm_node_t *node);
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
- * 监听是否可读。
+ * 注册读事件。
+ * 
+ * @note 重复调用不影使用。
  * 
  * @return 0 成功，!0 失败。
 */
