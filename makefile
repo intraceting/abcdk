@@ -11,9 +11,6 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 # 加载配置项。
 include ${MAKE_CONF}
 
-# C Standard
-CC_STD = -std=c11
-
 #
 ifeq (${BUILD_TYPE},debug)
 CC_FLAGS += -g
@@ -30,6 +27,7 @@ LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 LINK_FLAGS += ${DEPEND_LIBS}
 
 #
+CC_FLAGS += -std=c11
 CC_FLAGS += -fPIC 
 CC_FLAGS += -Wno-unused-result 
 CC_FLAGS += -Wno-unused-variable 
@@ -93,43 +91,42 @@ test: base test-src
 #
 test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/epollex_test ${OBJ_PATH}/test/epollex_test.o  -l:libabcdk.so $(LINK_FLAGS)
-	$(CC) -o $(BUILD_PATH)/util_test ${OBJ_PATH}/test/util_test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/test ${OBJ_PATH}/test/test.o -l:libabcdk.so $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c
 	mkdir -p $(OBJ_PATH)/util/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
 #
 $(OBJ_PATH)/shell/%.o: shell/%.c
 	mkdir -p $(OBJ_PATH)/shell/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/mp4/%.o: mp4/%.c
 	mkdir -p $(OBJ_PATH)/mp4/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/comm/%.o: comm/%.c
 	mkdir -p $(OBJ_PATH)/comm/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CC) $(CC_STD) $(CC_FLAGS) -c $< -o $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
 clean: clean-base clean-tool clean-test
@@ -151,8 +148,7 @@ clean-tool:
 #
 clean-test:
 	rm -rf ${OBJ_PATH}/test
-	rm -f $(BUILD_PATH)/epollex_test
-	rm -f $(BUILD_PATH)/util_test
+	rm -f $(BUILD_PATH)/test
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}

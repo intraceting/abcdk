@@ -84,7 +84,7 @@ BUILD_PATH=$(realpath "${SHELLDIR}/build/")
 MAKE_CONF=${BUILD_PATH}/makefile.conf
 
 #
-PKG_PC=${BUILD_PATH}/pkgconfig.pc
+PKG_PC=${BUILD_PATH}/pkg_conf.pc
 
 #
 RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
