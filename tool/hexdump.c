@@ -73,7 +73,7 @@ void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-void _abcdkhd_keyword_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
+void _abcdkhd_keyword_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     for(size_t i = 0;i<alloc->numbers;i++)
     {
@@ -87,7 +87,7 @@ void _abcdkhd_keyword_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
 void _abcdkhd_work(abcdk_tree_t *args)
 {
     int err = 0;
-    abcdk_allocator_t *mfile = NULL;
+    abcdk_object_t *mfile = NULL;
     abcdk_hexdump_option_t opt = {0};
     const char *file = NULL;
     const char *outfile = NULL;
@@ -115,7 +115,7 @@ void _abcdkhd_work(abcdk_tree_t *args)
     palettes = abcdk_option_count(args, "--palette");
     if (palettes <= 0)
     {
-        opt.palette = abcdk_allocator_alloc(NULL, 6, 0);
+        opt.palette = abcdk_object_alloc(NULL, 6, 0);
         if (!opt.palette)
             goto final;
 
@@ -128,7 +128,7 @@ void _abcdkhd_work(abcdk_tree_t *args)
     }
     else
     {
-        opt.palette = abcdk_allocator_alloc(NULL, palettes, 0);
+        opt.palette = abcdk_object_alloc(NULL, palettes, 0);
         if (!opt.palette)
             goto final;
 
@@ -143,11 +143,11 @@ void _abcdkhd_work(abcdk_tree_t *args)
 
     if (keywords > 0)
     {
-        opt.keyword = abcdk_allocator_alloc(NULL, keywords, 0);
+        opt.keyword = abcdk_object_alloc(NULL, keywords, 0);
         if (!opt.keyword)
             goto final;
 
-        abcdk_allocator_atfree(opt.keyword,_abcdkhd_keyword_destroy_cb,NULL);
+        abcdk_object_atfree(opt.keyword,_abcdkhd_keyword_destroy_cb,NULL);
 
         for (size_t i = 0; i < keywords; i++)
         {
@@ -226,9 +226,9 @@ void _abcdkhd_work(abcdk_tree_t *args)
 final:
 
     err = errno;
-    abcdk_allocator_unref(&mfile);
-    abcdk_allocator_unref(&opt.keyword);
-    abcdk_allocator_unref(&opt.palette);
+    abcdk_object_unref(&mfile);
+    abcdk_object_unref(&opt.keyword);
+    abcdk_object_unref(&opt.palette);
     errno = err;
 }
 

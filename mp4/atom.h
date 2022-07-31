@@ -8,7 +8,7 @@
 #define ABCDK_MP4_ATOM_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 #include "util/tree.h"
 
 __BEGIN_DECLS
@@ -226,7 +226,7 @@ typedef struct _abcdk_mp4_atom_ftyp
     uint32_t minor;
 
     /** 兼容版本。*/
-    abcdk_allocator_t *compat;
+    abcdk_object_t *compat;
 
 }abcdk_mp4_atom_ftyp_t;
 
@@ -423,7 +423,7 @@ typedef struct _abcdk_mp4_atom_hdlr
     uint32_t reserved[3];
 
     /** 名称。*/
-    abcdk_allocator_t *name;
+    abcdk_object_t *name;
 
 }abcdk_mp4_atom_hdlr_t;
 
@@ -619,7 +619,7 @@ typedef struct _abcdk_mp4_atom_sample_desc
                 uint32_t lpcm_frames_per_audio_packet;
 
                 /** 扩展信息。*/
-                abcdk_allocator_t *extension;
+                abcdk_object_t *extension;
             } v2;
 
         } sound;
@@ -627,7 +627,7 @@ typedef struct _abcdk_mp4_atom_sample_desc
         struct
         {
             /** 扩展信息。*/
-            abcdk_allocator_t *extension;
+            abcdk_object_t *extension;
         } subtitle;
 
     } detail;
@@ -666,18 +666,18 @@ typedef struct _abcdk_mp4_atom_avcc
      * 
      * @note 可能会有多组。
     */
-    abcdk_allocator_t *sps;
+    abcdk_object_t *sps;
 
     /** 
      * PPS 
      * 
      * @note 可能会有多组。
     */
-    abcdk_allocator_t *pps;
+    abcdk_object_t *pps;
 
 
     /** 扩展数据(Global Header)。 */
-    abcdk_allocator_t *extradata;
+    abcdk_object_t *extradata;
 
 } abcdk_mp4_atom_avcc_t;
 
@@ -992,7 +992,7 @@ typedef struct _abcdk_mp4_atom_esds
          * 
          * @note ADTS 在这里。
          */
-        abcdk_allocator_t *extradata;
+        abcdk_object_t *extradata;
 
     } dec_sp_info;
 
@@ -1304,7 +1304,7 @@ typedef struct _abcdk_mp4_atom_tfra
 typedef struct _abcdk_mp4_atom_unknown
 {
     /** 原始数据。 */
-    abcdk_allocator_t *rawbytes;
+    abcdk_object_t *rawbytes;
 
 } abcdk_mp4_atom_unknown_t;
 

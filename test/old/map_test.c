@@ -28,7 +28,7 @@ int dump_tree(size_t deep, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
-int dump_cb(abcdk_allocator_t *alloc, void *opaque)
+int dump_cb(abcdk_object_t *alloc, void *opaque)
 {
     fprintf(stderr, "%d:%s\n",
                           *ABCDK_PTR2PTR(int, alloc->pptrs[ABCDK_MAP_KEY], 0),
@@ -52,7 +52,7 @@ int dump2_tree(size_t deep, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
-int dump2_cb(abcdk_allocator_t *alloc, void *opaque)
+int dump2_cb(abcdk_object_t *alloc, void *opaque)
 {
 fprintf(stderr,"%s:%s\n",
                           ABCDK_PTR2PTR(char, alloc->pptrs[ABCDK_MAP_KEY], 0),
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     {
         //int d = rand();
         int d = i;
-        abcdk_allocator_t *n = abcdk_map_find(&m,&d,sizeof(d),100);
+        abcdk_object_t *n = abcdk_map_find(&m,&d,sizeof(d),100);
         if(!n)
             break;
         
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 
         printf("%d=%s\n",i,buf);
 
-        abcdk_allocator_t *n = abcdk_map_find(&m,buf,strlen(buf)+1,100);
+        abcdk_object_t *n = abcdk_map_find(&m,buf,strlen(buf)+1,100);
         if(!n)
             continue;
             

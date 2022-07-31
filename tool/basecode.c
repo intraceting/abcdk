@@ -81,7 +81,7 @@ uint8_t _abcdkbc_de_table32_sn(uint8_t c)
 
 void _abcdkbc_work(abcdkbc_ctx *ctx)
 {
-    abcdk_allocator_t *inbuf = NULL,*outbuf = NULL;
+    abcdk_object_t *inbuf = NULL,*outbuf = NULL;
     ssize_t outsize = 0,outsize2 = 0;
     abcdk_basecode_t bc = {0};
 
@@ -113,7 +113,7 @@ void _abcdkbc_work(abcdkbc_ctx *ctx)
     }
     else
     {
-        inbuf = abcdk_allocator_alloc2(0);
+        inbuf = abcdk_object_alloc2(0);
         if (!inbuf)
         {
             syslog(LOG_ERR, "%s。", strerror(errno));
@@ -124,7 +124,7 @@ void _abcdkbc_work(abcdkbc_ctx *ctx)
         inbuf->sizes[0] = strlen(ctx->in);
     }
 
-    outbuf = abcdk_allocator_alloc2(inbuf->sizes[0] * 4);
+    outbuf = abcdk_object_alloc2(inbuf->sizes[0] * 4);
     if (!outbuf)
     {
         syslog(LOG_ERR, "%s。", strerror(errno));
@@ -162,8 +162,8 @@ void _abcdkbc_work(abcdkbc_ctx *ctx)
 
 final:
 
-    abcdk_allocator_unref(&inbuf);
-    abcdk_allocator_unref(&outbuf);
+    abcdk_object_unref(&inbuf);
+    abcdk_object_unref(&outbuf);
 }
 
 int abcdk_tool_basecode(abcdk_tree_t *args)

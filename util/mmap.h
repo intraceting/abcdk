@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_MMAN_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 
 __BEGIN_DECLS
 
@@ -18,7 +18,7 @@ __BEGIN_DECLS
  * @return NULL(0) 失败，!NULL(0) 成功。
  *
 */
-abcdk_allocator_t* abcdk_mmap(int fd,int rw,int shared);
+abcdk_object_t* abcdk_mmap(int fd,int rw,int shared);
 
 /**
  * 映射文件到内存页面。
@@ -28,7 +28,7 @@ abcdk_allocator_t* abcdk_mmap(int fd,int rw,int shared);
  * @return NULL(0) 失败，!NULL(0) 成功。
  *  
 */
-abcdk_allocator_t* abcdk_mmap2(const char* name,int rw,int shared);
+abcdk_object_t* abcdk_mmap2(const char* name,int rw,int shared);
 
 /**
  * 刷新数据。
@@ -39,7 +39,7 @@ abcdk_allocator_t* abcdk_mmap2(const char* name,int rw,int shared);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_msync(abcdk_allocator_t* alloc,int async);
+int abcdk_msync(abcdk_object_t* alloc,int async);
 
 /**
  * 解除内存页面映射。
@@ -49,7 +49,7 @@ int abcdk_msync(abcdk_allocator_t* alloc,int async);
  * @param alloc 指针的指针。当接口返回时，被赋值NULL(0)。
  * 
 */
-void abcdk_munmap(abcdk_allocator_t** alloc);
+void abcdk_munmap(abcdk_object_t** alloc);
 
 __END_DECLS
 

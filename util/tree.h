@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_TREE_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 
 __BEGIN_DECLS
 
@@ -29,9 +29,9 @@ typedef struct _abcdk_tree
     /**
      * 数据。
      * 
-     * 当节点被删除时，如果不为NULL(0)，自动调用abcdk_allocator_unref()释放。
+     * 当节点被删除时，如果不为NULL(0)，自动调用abcdk_object_unref()释放。
     */
-    abcdk_allocator_t *alloc;
+    abcdk_object_t *alloc;
 
 }abcdk_tree_t;
 
@@ -184,7 +184,7 @@ void abcdk_tree_free(abcdk_tree_t **root);
  * @param alloc 内存块指针，可以为NULL(0)。仅复制指针，不会改变对象的引用计数。
  * 
 */
-abcdk_tree_t *abcdk_tree_alloc(abcdk_allocator_t *alloc);
+abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *alloc);
 
 /**
  * 创建节点，同时申请数据内存块。

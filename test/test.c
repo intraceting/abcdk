@@ -624,13 +624,13 @@ void test_uri(abcdk_tree_t *args)
     {
         const char *uri = abcdk_option_get(args, "--uri", i, "");
 
-        abcdk_allocator_t *alloc = abcdk_uri_split(uri);
+        abcdk_object_t *alloc = abcdk_uri_split(uri);
         assert(alloc);
 
         for (size_t i = 0; i < alloc->numbers; i++)
             printf("[%ld]: %s\n", i, alloc->pptrs[i]);
 
-        abcdk_allocator_unref(&alloc);
+        abcdk_object_unref(&alloc);
     }
 }
 
@@ -1981,14 +1981,14 @@ void test_mp4(abcdk_tree_t *args)
 
 #if 0
 
-    abcdk_allocator_t *t = abcdk_mmap2(name_p,0,0);
+    abcdk_object_t *t = abcdk_mmap2(name_p,0,0);
     if(!t)
         return;
 
     abcdk_buffer_t *buf = abcdk_buffer_alloc(t);
     if(!buf)
     {
-        abcdk_allocator_unref(&t);
+        abcdk_object_unref(&t);
         return;
     }
 
@@ -2217,8 +2217,8 @@ void test_iwscan(abcdk_tree_t *args)
 {
 #if 0
 
-    abcdk_allocator_t * k = abcdk_allocator_alloc(NULL,1,0);
-    abcdk_allocator_t * p = abcdk_allocator_alloc(NULL,1,0);
+    abcdk_object_t * k = abcdk_object_alloc(NULL,1,0);
+    abcdk_object_t * p = abcdk_object_alloc(NULL,1,0);
 
     k->pptrs[0] = "GH";
     k->sizes[0] = 2;
@@ -2245,7 +2245,7 @@ void test_iwscan(abcdk_tree_t *args)
  //   int chk = abcdk_socket_ioctl(SIOCSIWSCAN,&req);
     int chk = ioctl(sock, SIOCSIWSCAN,&req);
 
-  abcdk_allocator_t * scan_rsp = abcdk_allocator_alloc2(100000);
+  abcdk_object_t * scan_rsp = abcdk_object_alloc2(100000);
 
     /* Forever */
     while (1)
@@ -2342,9 +2342,9 @@ void test_iwscan(abcdk_tree_t *args)
 
 END:
 
-    abcdk_allocator_unref(&scan_rsp);
-    abcdk_allocator_unref(&k);
-    abcdk_allocator_unref(&p);
+    abcdk_object_unref(&scan_rsp);
+    abcdk_object_unref(&k);
+    abcdk_object_unref(&p);
 
     abcdk_closep(&sock);
 
@@ -2405,7 +2405,7 @@ void test_hexdump(abcdk_tree_t *args)
 {
     const char *file_p = abcdk_option_get(args,"--file",0,"");
 
-    abcdk_allocator_t * m = abcdk_mmap2(file_p,0,0);
+    abcdk_object_t * m = abcdk_mmap2(file_p,0,0);
 
     abcdk_hexdump_option_t opt = {0};
 
@@ -2416,8 +2416,8 @@ void test_hexdump(abcdk_tree_t *args)
 
     opt.width = abcdk_option_get_int(args,"--width",0,16);
 
-    opt.keyword = abcdk_allocator_alloc(NULL,4,0);
-    opt.palette = abcdk_allocator_alloc(NULL,3,0);
+    opt.keyword = abcdk_object_alloc(NULL,4,0);
+    opt.palette = abcdk_object_alloc(NULL,3,0);
 
     opt.keyword->pptrs[0] = "mvhd";
     opt.keyword->sizes[0] = 4;
@@ -2439,9 +2439,9 @@ void test_hexdump(abcdk_tree_t *args)
         fprintf(stderr,"w=%ld",w);
     }
 
-    abcdk_allocator_unref(&m);
-    abcdk_allocator_unref(&opt.keyword);
-    abcdk_allocator_unref(&opt.palette);
+    abcdk_object_unref(&m);
+    abcdk_object_unref(&opt.keyword);
+    abcdk_object_unref(&opt.palette);
 }
 
 void test_video(abcdk_tree_t *args)
@@ -2662,37 +2662,37 @@ void test_lz4(abcdk_tree_t *args)
     const char *src = abcdk_option_get(args,"--src",0,"");
     const char *dst = abcdk_option_get(args,"--dst",0,"");
 
-    abcdk_allocator_t *s = abcdk_mmap2(src,0,0);
+    abcdk_object_t *s = abcdk_mmap2(src,0,0);
 
     size_t dsize = abcdk_endian_b_to_h32(ABCDK_PTR2U32(s->pptrs[0],0));
 
-    abcdk_allocator_t *d = abcdk_allocator_alloc2(dsize);
+    abcdk_object_t *d = abcdk_object_alloc2(dsize);
 
     //LZ4_decompress_fast(s->pptrs[0]+4,d->pptrs[0],dsize);
     int m = abcdk_lz4_dec_fast(d->pptrs[0],dsize,s->pptrs[0]+4);
 
-    abcdk_allocator_t *q = abcdk_allocator_alloc2(2000);
+    abcdk_object_t *q = abcdk_object_alloc2(2000);
 
     int n = abcdk_lz4_enc_default(q->pptrs[0],q->sizes[0],d->pptrs[0],dsize);
 
     //assert(memcmp(q->pptrs[0],s->pptrs[0]+4,s->sizes[0]-4)==0);
 
-    abcdk_allocator_t *p = abcdk_allocator_alloc2(dsize);
+    abcdk_object_t *p = abcdk_object_alloc2(dsize);
 
     int m2 = abcdk_lz4_dec_fast(p->pptrs[0],dsize,q->pptrs[0]);
 
     assert(memcmp(p->pptrs[0],d->pptrs[0],d->sizes[0])==0);
 
-    abcdk_allocator_unref(&q);
-    abcdk_allocator_unref(&p);
+    abcdk_object_unref(&q);
+    abcdk_object_unref(&p);
 
     int fd = abcdk_open(dst,1,0,1);
     ftruncate(fd,0);
     abcdk_write(fd,d->pptrs[0],dsize);
     abcdk_closep(&fd);
 
-    abcdk_allocator_unref(&s);
-    abcdk_allocator_unref(&d);
+    abcdk_object_unref(&s);
+    abcdk_object_unref(&d);
 
 
 #endif 
@@ -3367,19 +3367,19 @@ void test_refer_count(abcdk_tree_t *args)
 {
     int user = abcdk_option_get_int(args,"--user",0,10);
 
-    abcdk_allocator_t * p= abcdk_allocator_alloc2(100);
+    abcdk_object_t * p= abcdk_object_alloc2(100);
 
 #pragma omp parallel for num_threads(user)
     for (int i = 0; i < 100000; i++)
     {
-        abcdk_allocator_t *q = abcdk_allocator_refer(p);
+        abcdk_object_t *q = abcdk_object_refer(p);
 
         usleep(10*1000);
 
-        abcdk_allocator_unref(&q);
+        abcdk_object_unref(&q);
     }
 
-    abcdk_allocator_unref(&p);
+    abcdk_object_unref(&p);
 }
 
 typedef struct _one_node

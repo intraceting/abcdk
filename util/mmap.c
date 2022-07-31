@@ -6,7 +6,7 @@
 */
 #include "util/mmap.h"
 
-void _abcdk_munmap_cb(abcdk_allocator_t *alloc, void *opaque)
+void _abcdk_munmap_cb(abcdk_object_t *alloc, void *opaque)
 {
     int chk;
 
@@ -18,14 +18,14 @@ void _abcdk_munmap_cb(abcdk_allocator_t *alloc, void *opaque)
     assert(chk == 0);
 }
 
-abcdk_allocator_t* abcdk_mmap(int fd,int rw,int shared)
+abcdk_object_t* abcdk_mmap(int fd,int rw,int shared)
 {
     void* mmptr = MAP_FAILED;
     int prot = PROT_READ;
     int flags = MAP_PRIVATE;
     struct stat attr;
 
-    abcdk_allocator_t *alloc = NULL;
+    abcdk_object_t *alloc = NULL;
 
     assert(fd >= 0);
 
@@ -44,7 +44,7 @@ abcdk_allocator_t* abcdk_mmap(int fd,int rw,int shared)
     if(mmptr == MAP_FAILED)
         return NULL;
 
-    alloc = abcdk_allocator_alloc(NULL,1,0);
+    alloc = abcdk_object_alloc(NULL,1,0);
     if (alloc)
     {
         /*绑定内存和特定的释放函数，用于支持引用计数器。*/
@@ -52,7 +52,7 @@ abcdk_allocator_t* abcdk_mmap(int fd,int rw,int shared)
         alloc->sizes[0] = attr.st_size;
 
         /* 注册特定的析构函数。 */
-        abcdk_allocator_atfree(alloc,_abcdk_munmap_cb,NULL);
+        abcdk_object_atfree(alloc,_abcdk_munmap_cb,NULL);
     }
 
 final:
@@ -63,11 +63,11 @@ final:
     return alloc;
 }
 
-abcdk_allocator_t *abcdk_mmap2(const char *name, int rw, int shared)
+abcdk_object_t *abcdk_mmap2(const char *name, int rw, int shared)
 {
     int fd = -1;
 
-    abcdk_allocator_t *alloc = NULL;
+    abcdk_object_t *alloc = NULL;
 
     assert(name);
 
@@ -82,7 +82,7 @@ abcdk_allocator_t *abcdk_mmap2(const char *name, int rw, int shared)
     return alloc;
 }
 
-int abcdk_msync(abcdk_allocator_t *alloc, int async)
+int abcdk_msync(abcdk_object_t *alloc, int async)
 {
     int flags;
 
@@ -94,10 +94,10 @@ int abcdk_msync(abcdk_allocator_t *alloc, int async)
     return msync(alloc->pptrs[0], alloc->sizes[0], flags);
 }
 
-void abcdk_munmap(abcdk_allocator_t** alloc)
+void abcdk_munmap(abcdk_object_t** alloc)
 {
     if(!alloc || !*alloc)
         ABCDK_ERRNO_AND_RETURN0(EINVAL);
 
-    abcdk_allocator_unref(alloc);
+    abcdk_object_unref(alloc);
 }

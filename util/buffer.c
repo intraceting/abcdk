@@ -6,7 +6,7 @@
 */
 #include "util/buffer.h"
 
-abcdk_buffer_t *abcdk_buffer_alloc(abcdk_allocator_t *alloc)
+abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *alloc)
 {
     abcdk_buffer_t *buf = NULL;
 
@@ -39,11 +39,11 @@ abcdk_buffer_t *abcdk_buffer_alloc(abcdk_allocator_t *alloc)
 abcdk_buffer_t *abcdk_buffer_alloc2(size_t size)
 {
     abcdk_buffer_t *buf = NULL;
-    abcdk_allocator_t *alloc = NULL;
+    abcdk_object_t *alloc = NULL;
 
     if(size > 0)
     {
-        alloc = abcdk_allocator_alloc2(size);
+        alloc = abcdk_object_alloc2(size);
         if (!alloc)
             goto final_error;
     }
@@ -56,7 +56,7 @@ abcdk_buffer_t *abcdk_buffer_alloc2(size_t size)
 
 final_error:
 
-    abcdk_allocator_unref(&alloc);
+    abcdk_object_unref(&alloc);
 
     return NULL;
 }
@@ -70,7 +70,7 @@ void abcdk_buffer_free(abcdk_buffer_t **dst)
 
     buf_p = *dst;
 
-    abcdk_allocator_unref(&buf_p->alloc);
+    abcdk_object_unref(&buf_p->alloc);
 
     abcdk_heap_free2((void **)dst);
 }
@@ -87,7 +87,7 @@ abcdk_buffer_t *abcdk_buffer_copy(abcdk_buffer_t *src)
         if (!src->alloc)
             return buf = abcdk_buffer_clone(src);
 
-        buf = abcdk_buffer_alloc(abcdk_allocator_refer(src->alloc));
+        buf = abcdk_buffer_alloc(abcdk_object_refer(src->alloc));
         if (!buf)
             return NULL;
 
@@ -129,13 +129,13 @@ abcdk_buffer_t *abcdk_buffer_clone(abcdk_buffer_t *src)
 
 int abcdk_buffer_privatize(abcdk_buffer_t *dst)
 {
-    abcdk_allocator_t *new_p = NULL;
+    abcdk_object_t *new_p = NULL;
 
     assert(dst);
 
     if (dst->alloc)
     {
-        new_p = abcdk_allocator_privatize(&dst->alloc);
+        new_p = abcdk_object_privatize(&dst->alloc);
         if (!new_p)
             ABCDK_ERRNO_AND_RETURN1(ENOMEM, -1);
 
@@ -151,14 +151,14 @@ int abcdk_buffer_privatize(abcdk_buffer_t *dst)
 
 int abcdk_buffer_resize(abcdk_buffer_t *buf, size_t size)
 {
-    abcdk_allocator_t *alloc_new = NULL;
+    abcdk_object_t *alloc_new = NULL;
 
     assert(buf != NULL && size > 0);
 
     if (buf->size == size)
         return 0;
 
-    alloc_new = abcdk_allocator_alloc2(size);
+    alloc_new = abcdk_object_alloc2(size);
     if (!alloc_new)
         return -1;
 
@@ -166,7 +166,7 @@ int abcdk_buffer_resize(abcdk_buffer_t *buf, size_t size)
     memcpy(alloc_new->pptrs[0], buf->data, buf->size);
 
     /*解除旧的内存块*/
-    abcdk_allocator_unref(&buf->alloc);
+    abcdk_object_unref(&buf->alloc);
 
     /*绑定新的内存块。*/
     buf->alloc = alloc_new;

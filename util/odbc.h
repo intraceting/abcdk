@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_ODBC_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 
 #ifdef FREEIMAGE_H
 #error "Unixodbc与FreeImage的头文件有冲突，不能同时引用。"
@@ -42,7 +42,7 @@ typedef struct _abcdk_odbc
      *
      * @note 尽量不要直接修改。
      */
-    abcdk_allocator_t *attr;
+    abcdk_object_t *attr;
 
 } abcdk_odbc_t;
 

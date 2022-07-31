@@ -108,7 +108,7 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
 
         /* 注册数据节点的析构函数。*/
         if (map->destructor_cb)
-            abcdk_allocator_atfree(node->alloc, map->destructor_cb, map->opaque);
+            abcdk_object_atfree(node->alloc, map->destructor_cb, map->opaque);
 
         /*复制KEY。*/
         memcpy(node->alloc->pptrs[ABCDK_MAP_KEY], key, ksize);
@@ -124,7 +124,7 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
     return node;
 }
 
-abcdk_allocator_t *abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)
+abcdk_object_t *abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)
 {
     abcdk_tree_t *node = _abcdk_map_find(map, key, ksize, vsize);
 

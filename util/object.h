@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_ALLOCATOR_H
-#define ABCDK_UTIL_ALLOCATOR_H
+#ifndef ABCDK_UTIL_OBJECT_H
+#define ABCDK_UTIL_OBJECT_H
 
 #include "util/general.h"
 
@@ -14,7 +14,7 @@ __BEGIN_DECLS
 /**
  * 带引用计数器的内存块信息。
 */
-typedef struct _abcdk_allocator
+typedef struct _abcdk_object
 {
     /**
      * 引用计数器指针。
@@ -40,15 +40,15 @@ typedef struct _abcdk_allocator
      */
     uint8_t **pptrs;
 
-} abcdk_allocator_t;
+} abcdk_object_t;
 
 /**
  * 注册内存块析构函数。
  *
  * @param opaque  环境指针。
 */
-void abcdk_allocator_atfree(abcdk_allocator_t *alloc,
-                           void (*destroy_cb)(abcdk_allocator_t *alloc, void *opaque),
+void abcdk_object_atfree(abcdk_object_t *alloc,
+                           void (*destroy_cb)(abcdk_object_t *alloc, void *opaque),
                            void *opaque);
 
 /**
@@ -58,14 +58,14 @@ void abcdk_allocator_atfree(abcdk_allocator_t *alloc,
  * @param numbers 数量。> 0 的整数。
  * @param drag 拖拽式申请。0 忽略，!0 复制sizes[0]的大小。
 */
-abcdk_allocator_t *abcdk_allocator_alloc(size_t *sizes, size_t numbers, int drag);
+abcdk_object_t *abcdk_object_alloc(size_t *sizes, size_t numbers, int drag);
 
 /**
  * 申请一个内存块。
  * 
  * @param size 内存块的大小。>= 0 的整数。
 */
-abcdk_allocator_t *abcdk_allocator_alloc2(size_t size);
+abcdk_object_t *abcdk_object_alloc2(size_t size);
 
 /**
  * 申请多个内存块(数组)。
@@ -73,7 +73,7 @@ abcdk_allocator_t *abcdk_allocator_alloc2(size_t size);
  * @param size 内存块的大小。>= 0 的整数。
  * @param numbers 数量。> 0 的整数。
 */
-abcdk_allocator_t *abcdk_allocator_alloc3(size_t size,size_t numbers);
+abcdk_object_t *abcdk_object_alloc3(size_t size,size_t numbers);
 
 /**
  * 内存块引用。
@@ -82,7 +82,7 @@ abcdk_allocator_t *abcdk_allocator_alloc3(size_t size,size_t numbers);
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t *abcdk_allocator_refer(abcdk_allocator_t *src);
+abcdk_object_t *abcdk_object_refer(abcdk_object_t *src);
 
 /**
  * 内存块释放。
@@ -91,14 +91,14 @@ abcdk_allocator_t *abcdk_allocator_refer(abcdk_allocator_t *src);
  * 
  * @param [in out] dst 指针的指针。函数返回前设置为NULL(0)。
 */
-void abcdk_allocator_unref(abcdk_allocator_t **dst);
+void abcdk_object_unref(abcdk_object_t **dst);
 
 /**
  * 内存块克隆。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t *abcdk_allocator_clone(abcdk_allocator_t *src);
+abcdk_object_t *abcdk_object_clone(abcdk_object_t *src);
 
 /**
  * 内存块私有化。
@@ -110,9 +110,9 @@ abcdk_allocator_t *abcdk_allocator_clone(abcdk_allocator_t *src);
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-abcdk_allocator_t * abcdk_allocator_privatize(abcdk_allocator_t **dst);
+abcdk_object_t * abcdk_object_privatize(abcdk_object_t **dst);
 
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_ALLOCATOR_H
+#endif //ABCDK_UTIL_OBJECT_H

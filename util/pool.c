@@ -10,7 +10,7 @@ void abcdk_pool_destroy(abcdk_pool_t *pool)
 {
     assert(pool != NULL);
 
-    abcdk_allocator_unref(&pool->table);
+    abcdk_object_unref(&pool->table);
 
     memset(pool, 0, sizeof(*pool));
 }
@@ -19,7 +19,7 @@ int abcdk_pool_init(abcdk_pool_t *pool, size_t size, size_t number)
 {
     assert(pool != NULL && size > 0 && number > 0);
 
-    pool->table = abcdk_allocator_alloc(&size, number, 1);
+    pool->table = abcdk_object_alloc(&size, number, 1);
     if (!pool->table)
         return -1;
 

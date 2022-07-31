@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_POOL_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 #include "util/thread.h"
 
 __BEGIN_DECLS
@@ -23,7 +23,7 @@ typedef struct _abcdk_pool
      * 
      * @note 尽量不要直接修改。
     */
-    abcdk_allocator_t *table;
+    abcdk_object_t *table;
 
     /**
      * 队列长度。

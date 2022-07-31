@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_TAPE_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 #include "util/scsi.h"
 #include "util/iconv.h"
 
@@ -182,7 +182,7 @@ int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
  * @return !NULL(0) 成功(属性的指针)，NULL(0) 失败。
  * 
  */
-abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
+abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
                                              uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 /**
@@ -197,7 +197,7 @@ abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
  * @return 0 成功，-1 失败。
  * 
  */
-int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr,
+int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_object_t *attr,
                                uint32_t timeout, abcdk_scsi_io_stat *stat);
 
 __END_DECLS

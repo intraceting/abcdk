@@ -41,19 +41,19 @@ typedef struct _abcdk_map
     /** 
      * 构造函数。
     */
-    void (*construct_cb)(abcdk_allocator_t *alloc, void *opaque);
+    void (*construct_cb)(abcdk_object_t *alloc, void *opaque);
 
     /**
      * 析构函数。
     */
-    void (*destructor_cb)(abcdk_allocator_t *alloc, void *opaque);
+    void (*destructor_cb)(abcdk_object_t *alloc, void *opaque);
 
     /**
      * 回显函数。
      * 
      * @return -1 终止，1 继续。
     */
-    int (*dump_cb)(abcdk_allocator_t *alloc, void *opaque);
+    int (*dump_cb)(abcdk_object_t *alloc, void *opaque);
 
     /**
     * 环境指针。
@@ -109,7 +109,7 @@ int abcdk_map_init(abcdk_map_t* map,size_t size);
  * @return !NULL(0) 成功(复制的指针，不需要主动释放)，NULL(0) 不存在或创建失败。
  * 
 */
-abcdk_allocator_t* abcdk_map_find(abcdk_map_t* map,const void* key,size_t ksize,size_t vsize);
+abcdk_object_t* abcdk_map_find(abcdk_map_t* map,const void* key,size_t ksize,size_t vsize);
 
 /**
  * 查找或创建。

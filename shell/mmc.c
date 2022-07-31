@@ -244,7 +244,7 @@ void _abcdk_mmc_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t 
     {
         if (!_abcdk_mmc_find((add ? old_list : new_list), p))
         {
-            tmp = abcdk_tree_alloc(abcdk_allocator_refer(p->alloc));//增加引用计数。
+            tmp = abcdk_tree_alloc(abcdk_object_refer(p->alloc));//增加引用计数。
             if (!tmp)
                 return;
 

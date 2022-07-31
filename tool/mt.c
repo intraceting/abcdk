@@ -388,7 +388,7 @@ final_error:
 
 void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
 {
-    abcdk_allocator_t *attr_p = NULL;
+    abcdk_object_t *attr_p = NULL;
     abcdk_tree_t *root = NULL, *node = NULL;
     abcdk_tree_iterator_t it = {0, _abcdkmt_printf_mam_cb, ctx};
     int part;
@@ -433,7 +433,7 @@ void _abcdkmt_write_mam(abcdkmtx_ctx *ctx)
     int id = 0xffff;
     const char *value = NULL;
     int val_len = -1;
-    abcdk_allocator_t *attr_p = NULL;
+    abcdk_object_t *attr_p = NULL;
     int chk;
 
     id = abcdk_option_get_int(ctx->args, "--id", 0, 0xFFFF);
@@ -478,7 +478,7 @@ print_sense:
 
 final:
 
-    abcdk_allocator_unref(&attr_p);
+    abcdk_object_unref(&attr_p);
 
     return;
 }

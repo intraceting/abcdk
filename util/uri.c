@@ -6,13 +6,13 @@
  */
 #include "util/uri.h"
 
-abcdk_allocator_t *abcdk_uri_split(const char *uri)
+abcdk_object_t *abcdk_uri_split(const char *uri)
 {
     const char* mark = NULL;
     const char* a_mark = NULL;
     size_t len = 0;
     size_t sizes[5] = {0};
-    abcdk_allocator_t *alloc = NULL;
+    abcdk_object_t *alloc = NULL;
 
     assert(uri != NULL);
 
@@ -36,7 +36,7 @@ abcdk_allocator_t *abcdk_uri_split(const char *uri)
         sizes[ABCDK_URI_PATH] = len + 1; //set.
     }
 
-    alloc = abcdk_allocator_alloc(sizes,ABCDK_ARRAY_SIZE(sizes),0);
+    alloc = abcdk_object_alloc(sizes,ABCDK_ARRAY_SIZE(sizes),0);
     if(!alloc)
         goto final;
     

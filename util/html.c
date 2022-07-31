@@ -6,7 +6,7 @@
  */
 #include "util/html.h"
 
-void _abcdk_html_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
+void _abcdk_html_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     if(alloc->pptrs[ABCDK_HTML_KEY])
         abcdk_heap_free(alloc->pptrs[ABCDK_HTML_KEY]);
@@ -111,7 +111,7 @@ copy_attr:
     attr->alloc->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, key_e - key_b);
 
     /*注册专用内存回收函数。*/
-    abcdk_allocator_atfree(attr->alloc, _abcdk_html_destroy_cb, NULL);
+    abcdk_object_atfree(attr->alloc, _abcdk_html_destroy_cb, NULL);
 
     /*加入到树的子节点末尾.*/
     abcdk_tree_insert2(tag,attr, 0);
@@ -308,7 +308,7 @@ void _abcdk_html_parse_real(abcdk_tree_t *root, const char *text)
             tmp = _abcdk_html_value_parse(tag, e);
 
             /*注册专用内存回收函数。*/
-            abcdk_allocator_atfree(tag->alloc,_abcdk_html_destroy_cb,NULL);
+            abcdk_object_atfree(tag->alloc,_abcdk_html_destroy_cb,NULL);
 
             /*加入到树的子节点末尾.*/
             abcdk_tree_insert2(root, tag, 0);
@@ -336,7 +336,7 @@ final:
 abcdk_tree_t *abcdk_html_parse_file(const char *file)
 {
     abcdk_tree_t *root = NULL;
-    abcdk_allocator_t *fmem = NULL;
+    abcdk_object_t *fmem = NULL;
 
     assert(file != NULL);
 
@@ -348,7 +348,7 @@ abcdk_tree_t *abcdk_html_parse_file(const char *file)
 
 final:
 
-    abcdk_allocator_unref(&fmem);
+    abcdk_object_unref(&fmem);
 
     return root;
 }

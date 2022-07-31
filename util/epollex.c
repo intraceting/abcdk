@@ -103,7 +103,7 @@ void abcdk_epollex_free(abcdk_epollex_t **ctx)
     *ctx = NULL;
 }
 
-void _abcdk_epollex_destructor_cb(abcdk_allocator_t *p, void *opaque)
+void _abcdk_epollex_destructor_cb(abcdk_object_t *p, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
     abcdk_epollex_node_t *node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
@@ -148,7 +148,7 @@ final_error:
 
 int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
 {
-    abcdk_allocator_t *p = NULL;
+    abcdk_object_t *p = NULL;
     abcdk_epollex_node_t *node = NULL;
     int chk = 0;
 
@@ -185,7 +185,7 @@ final:
 
 int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
 {
-    abcdk_allocator_t *p = NULL;
+    abcdk_object_t *p = NULL;
     abcdk_epollex_node_t *node = NULL;
     int chk = 0;
 
@@ -310,7 +310,7 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint3
         _abcdk_epollex_disp(ctx, node, ABCDK_EPOLL_ERROR);
 }
 
-int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
+int _abcdk_epollex_mark_scan_cb(abcdk_object_t *alloc, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
     abcdk_epollex_node_t *node = (abcdk_epollex_node_t *)alloc->pptrs[ABCDK_MAP_VALUE];
@@ -322,7 +322,7 @@ int _abcdk_epollex_mark_scan_cb(abcdk_allocator_t *alloc, void *opaque)
 
 int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout)
 {
-    abcdk_allocator_t *p = NULL;
+    abcdk_object_t *p = NULL;
     abcdk_epollex_node_t *node = NULL;
     int chk = 0;
 
@@ -361,7 +361,7 @@ final:
 
 int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t done)
 {
-    abcdk_allocator_t *p = NULL;
+    abcdk_object_t *p = NULL;
     abcdk_epollex_node_t *node = NULL;
 
     int chk = 0;
@@ -413,7 +413,7 @@ final:
     return chk;   
 }
 
-int _abcdk_epollex_watchdog_scan_cb(abcdk_allocator_t *alloc, void *opaque)
+int _abcdk_epollex_watchdog_scan_cb(abcdk_object_t *alloc, void *opaque)
 {
     abcdk_epollex_t *ctx = (abcdk_epollex_t *)opaque;
     abcdk_epollex_node_t *node = (abcdk_epollex_node_t *)alloc->pptrs[ABCDK_MAP_VALUE];
@@ -455,7 +455,7 @@ void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,int count)
 {
     abcdk_epoll_event_t *e;
-    abcdk_allocator_t *p;
+    abcdk_object_t *p;
     abcdk_epollex_node_t *node;
 
     for (int i = 0; i < count; i++)
@@ -555,7 +555,7 @@ final:
 
 int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
 {
-    abcdk_allocator_t *p = NULL;
+    abcdk_object_t *p = NULL;
     abcdk_epollex_node_t *node = NULL;
     abcdk_epoll_event_t tmp = {0};
     int chk = 0;

@@ -150,12 +150,12 @@ void test_mt()
 
      printf("%lu,%lu,%u\n",block,file,part);
 
-     abcdk_allocator_t *a = abcdk_mt_read_attribute(fd,0,0x0000,100,&stat);
-     abcdk_allocator_t *b = abcdk_mt_read_attribute(fd,0,0x0001,100,&stat);
-     abcdk_allocator_t *c = abcdk_mt_read_attribute(fd,0,0x0400,100,&stat);
-     abcdk_allocator_t *d = abcdk_mt_read_attribute(fd,0,0x0401,100,&stat);
-     abcdk_allocator_t *e = abcdk_mt_read_attribute(fd,0,0x0405,100,&stat);
-     abcdk_allocator_t *f = abcdk_mt_read_attribute(fd,0,0x0806,100,&stat);
+     abcdk_object_t *a = abcdk_mt_read_attribute(fd,0,0x0000,100,&stat);
+     abcdk_object_t *b = abcdk_mt_read_attribute(fd,0,0x0001,100,&stat);
+     abcdk_object_t *c = abcdk_mt_read_attribute(fd,0,0x0400,100,&stat);
+     abcdk_object_t *d = abcdk_mt_read_attribute(fd,0,0x0401,100,&stat);
+     abcdk_object_t *e = abcdk_mt_read_attribute(fd,0,0x0405,100,&stat);
+     abcdk_object_t *f = abcdk_mt_read_attribute(fd,0,0x0806,100,&stat);
 
      abcdk_endian_b_to_h(a->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(a->pptrs[ABCDK_MT_ATTR_LENGTH],0));
      abcdk_endian_b_to_h(b->pptrs[ABCDK_MT_ATTR_VALUE],ABCDK_PTR2U16(b->pptrs[ABCDK_MT_ATTR_LENGTH],0));
@@ -169,7 +169,7 @@ void test_mt()
 
 
     size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), sizeof(uint16_t), 32+1};
-    abcdk_allocator_t *g = abcdk_allocator_alloc(sizes,5,0);
+    abcdk_object_t *g = abcdk_object_alloc(sizes,5,0);
 
     ABCDK_PTR2U16(g->pptrs[ABCDK_MT_ATTR_ID],0) = 0x0806;
     ABCDK_PTR2U16(g->pptrs[ABCDK_MT_ATTR_FORMAT],0) = 1;
@@ -180,13 +180,13 @@ void test_mt()
     assert(abcdk_mt_write_attribute(fd,0,g,3000,&stat)==0);
 
 
-     abcdk_allocator_unref(&a);
-     abcdk_allocator_unref(&b);
-     abcdk_allocator_unref(&c);
-     abcdk_allocator_unref(&d);
-     abcdk_allocator_unref(&e);
-     abcdk_allocator_unref(&f);
-     abcdk_allocator_unref(&g);
+     abcdk_object_unref(&a);
+     abcdk_object_unref(&b);
+     abcdk_object_unref(&c);
+     abcdk_object_unref(&d);
+     abcdk_object_unref(&e);
+     abcdk_object_unref(&f);
+     abcdk_object_unref(&g);
 
     abcdk_closep(&fd);
 }

@@ -114,7 +114,7 @@ int _abcdk_mp4_read_ftyp(int fd, abcdk_tree_t *node)
     abcdk_mp4_read(fd, &data->major.u32, 4);
     abcdk_mp4_read_u32(fd, &data->minor);
 
-    data->compat = abcdk_allocator_alloc3(4, (dsize - 8) / 4);
+    data->compat = abcdk_object_alloc3(4, (dsize - 8) / 4);
     if (!data->compat)
         goto final_error;
 
@@ -125,7 +125,7 @@ int _abcdk_mp4_read_ftyp(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->compat);
+    abcdk_object_unref(&data->compat);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -327,7 +327,7 @@ int _abcdk_mp4_read_hdlr(int fd, abcdk_tree_t *node)
     nsize = dsize - 1 - 3 - 4 - 4 - 4 * 3;
     if (nsize > 0)
     {
-        data->name = abcdk_allocator_alloc2(nsize + 1);
+        data->name = abcdk_object_alloc2(nsize + 1);
         if (!data->name)
             goto final_error;
 
@@ -338,7 +338,7 @@ int _abcdk_mp4_read_hdlr(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->name);
+    abcdk_object_unref(&data->name);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1261,7 +1261,7 @@ int _abcdk_mp4_read_sample_sound(int fd, abcdk_tree_t *node)
 
         if (data->detail.sound.v2.struct_size > 72)
         {
-            data->detail.sound.v2.extension = abcdk_allocator_alloc2(data->detail.sound.v2.struct_size - 72);
+            data->detail.sound.v2.extension = abcdk_object_alloc2(data->detail.sound.v2.struct_size - 72);
             if (!data->detail.sound.v2.extension)
                 goto final_error;
 
@@ -1278,7 +1278,7 @@ int _abcdk_mp4_read_sample_sound(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->detail.sound.v2.extension);
+    abcdk_object_unref(&data->detail.sound.v2.extension);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1303,7 +1303,7 @@ int _abcdk_mp4_read_sample_subtitle(int fd, abcdk_tree_t *node)
     abcdk_mp4_read(fd,data->reserved,sizeof(data->reserved));
     abcdk_mp4_read_u16(fd, &data->data_refer_index);
 
-    data->detail.subtitle.extension = abcdk_allocator_alloc2(dsize - 8);
+    data->detail.subtitle.extension = abcdk_object_alloc2(dsize - 8);
     if (!data->detail.subtitle.extension)
         goto final_error;
     
@@ -1313,7 +1313,7 @@ int _abcdk_mp4_read_sample_subtitle(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->detail.subtitle.extension);
+    abcdk_object_unref(&data->detail.subtitle.extension);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1337,7 +1337,7 @@ int _abcdk_mp4_read_avcc(int fd, abcdk_tree_t *node)
     if (dsize <= 0)
         goto final;
 
-    data->extradata = abcdk_allocator_alloc2(dsize);
+    data->extradata = abcdk_object_alloc2(dsize);
     if (!data->extradata)
         goto final_error;
 
@@ -1350,7 +1350,7 @@ int _abcdk_mp4_read_avcc(int fd, abcdk_tree_t *node)
     data->nalu_length_size = 1 + (ABCDK_PTR2U8(data->extradata->pptrs[0], 4) & 0x03);
 
     size_t sps_num = ABCDK_PTR2U8(data->extradata->pptrs[0], 5) & 0x1F;
-    data->sps = abcdk_allocator_alloc3(dsize, sps_num);
+    data->sps = abcdk_object_alloc3(dsize, sps_num);
     if (!data->sps)
         goto final_error;
 
@@ -1371,7 +1371,7 @@ int _abcdk_mp4_read_avcc(int fd, abcdk_tree_t *node)
     }
 
     size_t pps_num = ABCDK_PTR2U8(data->extradata->pptrs[0], cursor++);
-    data->pps = abcdk_allocator_alloc3(dsize, pps_num);
+    data->pps = abcdk_object_alloc3(dsize, pps_num);
     if (!data->pps)
         goto final_error;
 
@@ -1396,9 +1396,9 @@ final:
 
 final_error:
 
-    abcdk_allocator_unref(&data->sps);
-    abcdk_allocator_unref(&data->pps);
-    abcdk_allocator_unref(&data->extradata);
+    abcdk_object_unref(&data->sps);
+    abcdk_object_unref(&data->pps);
+    abcdk_object_unref(&data->extradata);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1486,7 +1486,7 @@ int _abcdk_mp4_read_esds(int fd, abcdk_tree_t *node)
         }
         else if (tag == ABCDK_MP4_ESDS_DEC_SP_INFO)
         {
-            data->dec_sp_info.extradata = abcdk_allocator_alloc2(len);
+            data->dec_sp_info.extradata = abcdk_object_alloc2(len);
             if (!data->dec_sp_info.extradata)
                 goto final_error;
 
@@ -1509,7 +1509,7 @@ final:
 
 final_error:
 
-    abcdk_allocator_unref(&data->dec_sp_info.extradata);
+    abcdk_object_unref(&data->dec_sp_info.extradata);
     memset(data, 0, sizeof(*data));
 
     return -1;
@@ -1547,7 +1547,7 @@ int _abcdk_mp4_read_unknown(int fd, abcdk_tree_t *node)
     if (dsize > 0)
     {
 #if 0
-        data->rawbytes = abcdk_allocator_alloc2(dsize);
+        data->rawbytes = abcdk_object_alloc2(dsize);
         if (!data->rawbytes)
             goto final_error;
 
@@ -1559,7 +1559,7 @@ int _abcdk_mp4_read_unknown(int fd, abcdk_tree_t *node)
 
 final_error:
 
-    abcdk_allocator_unref(&data->rawbytes);
+    abcdk_object_unref(&data->rawbytes);
     memset(data, 0, sizeof(*data));
 
     return -1;

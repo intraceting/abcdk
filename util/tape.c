@@ -372,10 +372,10 @@ int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
     return 0;
 }
 
-abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
+abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
                                              uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
-    abcdk_allocator_t *alloc = NULL;
+    abcdk_object_t *alloc = NULL;
     uint16_t len = 0;
 
     uint8_t buf[255] = {0};
@@ -397,7 +397,7 @@ abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
     len = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
 
     size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), sizeof(uint16_t), len + 1};
-    alloc = abcdk_allocator_alloc(sizes, 5, 0);
+    alloc = abcdk_object_alloc(sizes, 5, 0);
     if (!alloc)
         return NULL;
 
@@ -410,7 +410,7 @@ abcdk_allocator_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
     return alloc;
 }
 
-int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_allocator_t *attr,
+int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_object_t *attr,
                                uint32_t timeout, abcdk_scsi_io_stat *stat)
 {
     uint8_t buf[255] = {0};

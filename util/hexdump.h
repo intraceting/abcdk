@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_HEXDUMP_H
 
 #include "general.h"
-#include "allocator.h"
+#include "object.h"
 #include "tree.h"
 
 /**
@@ -41,14 +41,14 @@ typedef struct _abcdk_hexdump_option
     size_t width;
 
     /** 关键字，NULL(0)或无调色板时 忽略。*/
-    abcdk_allocator_t *keyword;
+    abcdk_object_t *keyword;
 
     /** 
      * 调色板，NULL(0) 忽略。
      * 
      * @note 当调色板的颜色数量少于关键字时，则循环使用颜色。
     */
-    abcdk_allocator_t *palette;
+    abcdk_object_t *palette;
 
 }abcdk_hexdump_option_t;
 

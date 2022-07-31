@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_URI_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 
 /**
  * URI的字段索引。
@@ -41,6 +41,6 @@ typedef enum _abcdk_uri_field
  * URI拆分。
  * 
 */
-abcdk_allocator_t *abcdk_uri_split(const char *uri);
+abcdk_object_t *abcdk_uri_split(const char *uri);
 
 #endif //ABCDK_UTIL_URI_H

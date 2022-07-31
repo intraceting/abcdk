@@ -20,7 +20,7 @@ SQLRETURN _abcdk_odbc_check_return(SQLRETURN ret)
     return chk;
 }
 
-void _abcdk_odbc_free_attr_destroy(abcdk_allocator_t *alloc, void *opaque)
+void _abcdk_odbc_free_attr_destroy(abcdk_object_t *alloc, void *opaque)
 {
     /*只有这个单独申请的。*/
     void *p = alloc->pptrs[6];
@@ -30,25 +30,25 @@ void _abcdk_odbc_free_attr_destroy(abcdk_allocator_t *alloc, void *opaque)
 
 void abcdk_odbc_free_attr(abcdk_odbc_t *ctx)
 {
-    abcdk_allocator_t *p;
+    abcdk_object_t *p;
 
     if (ctx->attr)
     {
         for (size_t i = 0; i < ctx->attr->numbers; i++)
         {
-            p = (abcdk_allocator_t *)ctx->attr->pptrs[i];
+            p = (abcdk_object_t *)ctx->attr->pptrs[i];
 
-            abcdk_allocator_unref((abcdk_allocator_t **)&p);
+            abcdk_object_unref((abcdk_object_t **)&p);
         }
 
-        abcdk_allocator_unref(&ctx->attr);
+        abcdk_object_unref(&ctx->attr);
     }
 }
 
 SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
 {
     SQLSMALLINT columns;
-    abcdk_allocator_t *p;
+    abcdk_object_t *p;
     SQLRETURN chk;
 
     assert(ctx != NULL);
@@ -61,7 +61,7 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
     if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
         goto final_error;
 
-    ctx->attr = abcdk_allocator_alloc(NULL, columns, 0);
+    ctx->attr = abcdk_object_alloc(NULL, columns, 0);
     if (!ctx->attr)
     {
         chk = SQL_ERROR;
@@ -72,7 +72,7 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
 
     for (size_t i = 0; i < ctx->attr->numbers; i++)
     {
-        p = abcdk_allocator_alloc(sizes, ABCDK_ARRAY_SIZE(sizes), 0);
+        p = abcdk_object_alloc(sizes, ABCDK_ARRAY_SIZE(sizes), 0);
         if (!p)
         {
             chk = SQL_ERROR;
@@ -101,7 +101,7 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
         p->sizes[6] = ABCDK_PTR2OBJ(SQLULEN, p->pptrs[3], 0) + 1;
 
         /*注册清理函数。*/
-        abcdk_allocator_atfree(p, _abcdk_odbc_free_attr_destroy, NULL);
+        abcdk_object_atfree(p, _abcdk_odbc_free_attr_destroy, NULL);
     }
 
     return SQL_SUCCESS;
@@ -419,7 +419,7 @@ SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT
 {
     SQLLEN StrLen_or_Ind = 0;
     SQLLEN real_len = 0;
-    abcdk_allocator_t *p = NULL;
+    abcdk_object_t *p = NULL;
     SQLRETURN chk;
 
     assert(ctx != NULL && column >= 0 && buf != NULL && max > 0);
@@ -429,7 +429,7 @@ SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT
     if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
         goto final_error;
 
-    p = (abcdk_allocator_t *)ctx->attr->pptrs[column];
+    p = (abcdk_object_t *)ctx->attr->pptrs[column];
     if (!p)
     {
         chk = SQL_ERROR;
@@ -465,7 +465,7 @@ final_error:
 SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name)
 {
     SQLSMALLINT columns;
-    abcdk_allocator_t *p;
+    abcdk_object_t *p;
     SQLSMALLINT index;
     SQLRETURN chk;
 
@@ -478,7 +478,7 @@ SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name)
 
     for (index = ctx->attr->numbers - 1; index >= 0; index--)
     {
-        p = (abcdk_allocator_t *)ctx->attr->pptrs[index];
+        p = (abcdk_object_t *)ctx->attr->pptrs[index];
         if (!p)
         {
             chk = SQL_ERROR;

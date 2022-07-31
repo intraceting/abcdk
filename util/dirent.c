@@ -6,7 +6,7 @@
  */
 #include "util/dirent.h"
 
-void _abcdk_dirent_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
+void _abcdk_dirent_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     if (alloc->pptrs[1])
         closedir((DIR *)alloc->pptrs[1]);
@@ -26,7 +26,7 @@ int abcdk_dirent_open(abcdk_tree_t *dir,const char *path)
     if(!tmp)
         return -1;
 
-    abcdk_allocator_atfree(tmp->alloc,_abcdk_dirent_destroy_cb,NULL);
+    abcdk_object_atfree(tmp->alloc,_abcdk_dirent_destroy_cb,NULL);
 
     tmp->alloc->pptrs[1] = (uint8_t*)opendir(path);
     if (!tmp->alloc->pptrs[1])

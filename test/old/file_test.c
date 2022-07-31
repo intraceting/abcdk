@@ -175,10 +175,10 @@ void test_file(const char *f1, const char *f2)
 
 void test_mman()
 {
-    abcdk_allocator_t * buf = abcdk_mmap2("/tmp/test_mman.txt",1,1);
+    abcdk_object_t * buf = abcdk_mmap2("/tmp/test_mman.txt",1,1);
 
     /*支持引用访问。*/
-    abcdk_allocator_t * buf2 = abcdk_allocator_refer(buf);
+    abcdk_object_t * buf2 = abcdk_object_refer(buf);
 
     memset(buf->pptrs[0],'A',buf->sizes[0]);
 
@@ -190,7 +190,7 @@ void test_mman()
 
 
     /*如果映射的内存页面是私有模式，则对内存数据修改不会影响原文件。*/
-    abcdk_allocator_t * buf3 = abcdk_mmap2("/tmp/test_mman.txt",1,0);
+    abcdk_object_t * buf3 = abcdk_mmap2("/tmp/test_mman.txt",1,0);
 
     memset(buf3->pptrs[0],'B',buf3->sizes[0]);
 
@@ -204,11 +204,11 @@ void test_mman()
     /*划拔点内存空间。*/
     ftruncate(fd,100);
 
-    abcdk_allocator_t * buf4 = abcdk_mmap(fd,1,1);
+    abcdk_object_t * buf4 = abcdk_mmap(fd,1,1);
 
     memset(buf4->pptrs[0],'C',buf4->sizes[0]);
 
-    abcdk_allocator_t * buf5  = abcdk_allocator_refer(buf4);
+    abcdk_object_t * buf5  = abcdk_object_refer(buf4);
 
     abcdk_munmap(&buf4);
 
@@ -216,7 +216,7 @@ void test_mman()
 
     abcdk_munmap(&buf5);
 
-    abcdk_allocator_t * buf6 = abcdk_mmap(fd,1,0);
+    abcdk_object_t * buf6 = abcdk_mmap(fd,1,0);
 
     printf("%s\n",buf6->pptrs[0]);
 
@@ -339,7 +339,7 @@ void test_tar_read(const char* tarfile)
 
 int tar_dump(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdk_allocator_t* m = NULL;
+    abcdk_object_t* m = NULL;
     abcdk_tar_t *t = (abcdk_tar_t*)opaque;
 
     if(depth == 0)

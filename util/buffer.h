@@ -8,7 +8,7 @@
 #define ABCDK_UTIL_BUFFER_H
 
 #include "util/general.h"
-#include "util/allocator.h"
+#include "util/object.h"
 
 __BEGIN_DECLS
 
@@ -23,7 +23,7 @@ typedef struct _abcdk_buffer
      *
      * @note 尽量不要直接访问。
     */
-    abcdk_allocator_t *alloc;
+    abcdk_object_t *alloc;
 
     /**
      * 内存指针。
@@ -55,7 +55,7 @@ typedef struct _abcdk_buffer
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
  */
-abcdk_buffer_t *abcdk_buffer_alloc(abcdk_allocator_t *alloc);
+abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *alloc);
 
 /**
  * 创建。

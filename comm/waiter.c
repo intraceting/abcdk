@@ -61,7 +61,7 @@ int _abcdk_comm_waiter_compare_cb(const void *key1, size_t size1, const void *ke
     return memcmp(key1, key2, size2);
 }
 
-void _abcdk_comm_waiter_destroy_cb(abcdk_allocator_t *alloc, void *opaque)
+void _abcdk_comm_waiter_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     abcdk_comm_waiter_t *waiter = (abcdk_comm_waiter_t*)opaque;
     void *val_p = NULL;
@@ -115,7 +115,7 @@ int abcdk_comm_waiter_request(abcdk_comm_waiter_t *waiter,
 {
     void *val_p = NULL;
     abcdk_comm_queue_t *queue = NULL;
-    abcdk_allocator_t *it;
+    abcdk_object_t *it;
     int chk = -1;
 
     assert(waiter != NULL && key != NULL && ksize > 0);
@@ -156,7 +156,7 @@ abcdk_comm_queue_t *abcdk_comm_waiter_wait(abcdk_comm_waiter_t *waiter,
     time_t time_span;
     void *val_p = NULL;
     abcdk_comm_queue_t *queue_p = NULL;
-    abcdk_allocator_t *it;
+    abcdk_object_t *it;
 
     assert(waiter != NULL && key != NULL && ksize > 0 && max > 0 && timeout > 0);
 
@@ -206,7 +206,7 @@ int abcdk_comm_waiter_response(abcdk_comm_waiter_t *waiter,
 {
     void *val_p = NULL;
     abcdk_comm_queue_t *queue_p = NULL;
-    abcdk_allocator_t *it;
+    abcdk_object_t *it;
     int chk = -1;
 
     assert(waiter != NULL && key != NULL && ksize > 0 && msg != NULL);

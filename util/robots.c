@@ -198,7 +198,7 @@ final:
 abcdk_tree_t *abcdk_robots_parse_file(const char *file,const char *agent)
 {
     abcdk_tree_t *root = NULL;
-    abcdk_allocator_t *fmem = NULL;
+    abcdk_object_t *fmem = NULL;
 
     assert(file != NULL);
 
@@ -210,7 +210,7 @@ abcdk_tree_t *abcdk_robots_parse_file(const char *file,const char *agent)
 
 final:
 
-    abcdk_allocator_unref(&fmem);
+    abcdk_object_unref(&fmem);
 
     return root;
 }
