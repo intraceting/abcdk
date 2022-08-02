@@ -30,10 +30,21 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * @note 在原文件所在的目录进行文件分段。
  * 
  * @param [in] file 文件名(包括路径)。
- * @param [in] fmt 分段的文件名格式。仅支持%d或%0Nd格式符，N为数值宽度。
+ * @param [in] fmt 分段的文件名格式，仅支持一个数值格式控制符。 @see printf
  * @param [in] max 最大分段数量。
  * 
  * @return 0 成功，-1 失败(访问被拒绝)。
+ * 
+ * @code
+ * //1
+ * abcdk_file_subsection("/aaa/bbb.log","bbb.%d.log",10);
+ * //2
+ * abcdk_file_subsection("/aaa/bbb.log","bbb.log.%04d",10);
+ * //3
+ * abcdk_file_subsection("/aaa/bbb.log","%d.bbb.log",10);
+ * //4
+ * abcdk_file_subsection("/aaa/bbb.log","%04d.bbb.log",10);
+ * @endcode
  * 
 */
 int abcdk_file_subsection(const char *file, const char *fmt, int max);
