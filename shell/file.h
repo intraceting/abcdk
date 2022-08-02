@@ -30,7 +30,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * @note 在原文件所在的目录进行文件分段。
  * 
  * @param [in] file 文件名(包括路径)。
- * @param [in] fmt 分段的文件名格式。仅支持%d或%0Nd格式符，N为数字宽度。
+ * @param [in] fmt 分段的文件名格式。仅支持%d或%0Nd格式符，N为数值宽度。
  * @param [in] max 最大分段数量。
  * 
  * @return 0 成功，-1 失败(访问被拒绝)。
