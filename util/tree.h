@@ -136,7 +136,7 @@ abcdk_tree_t *abcdk_tree_child(const abcdk_tree_t *self,int first);
 /**
  * 断开自己在树中的关系链。
  * 
- * 自己的孩子，以孩子的孩子都会跟随自己从树节点中断开。
+ * @note 自己的孩子，以孩子的孩子都会跟随自己从树节点中断开。
  * 
 */
 void abcdk_tree_unlink(abcdk_tree_t *self);
@@ -172,7 +172,7 @@ void abcdk_tree_swap(abcdk_tree_t *src,abcdk_tree_t *dst);
 /**
  * 删除节点。
  * 
- * 包括自己，自己的孩子，以孩子的孩子都会被删除。
+ * @note 包括自己，自己的孩子，以孩子的孩子都会被删除。
  * 
  * @param root 节点指针的指针。当接口返回时，被赋值NULL(0)。
 */
@@ -199,24 +199,22 @@ abcdk_tree_t *abcdk_tree_alloc3(size_t size);
 /**
  * 扫描树节点。
  * 
- * 深度优先遍历节点。
+ * @note 深度优先遍历节点。
 */
 void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it);
 
 /** 
  * 排序。
  * 
- * 选择法排序。
+ * @note 选择法排序。只排序子节点，如需要对整颗树排序，需要接合迭代器。
  * 
- * 只排序子节点，如需要对整颗树排序，需要接合迭代器。
 */
 void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order);
 
 /**
  * 格式化打印。
  * 
- * 输出有层次感的树形图。
- * 
+ * @note 输出有层次感的树形图。
  * @warning 不会在末尾添加'\n'(换行)字符。
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
@@ -226,9 +224,7 @@ ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const 
 /**
  * 格式化打印。
  * 
- * 输出有层次感的树形图。
- * 
- * @warning 不会在末尾添加'\n'(换行)字符。
+ * @see abcdk_tree_fprintf
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
@@ -237,9 +233,7 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const
 /**
  * 格式化打印。
  * 
- * 输出有层次感的树形图。
- * 
- * @warning 不会在末尾添加'\n'(换行)字符。
+ * @see abcdk_tree_fprintf
  * 
  * @return >=0 输出的长度，< 0 失败。
 */
@@ -248,9 +242,7 @@ ssize_t abcdk_tree_snprintf(char *buf, size_t max,size_t depth, const abcdk_tree
 /**
  * 格式化打印。
  * 
- * 输出有层次感的树形图。
- * 
- * @warning 不会在末尾添加'\n'(换行)字符。
+ * @see abcdk_tree_fprintf
  * 
  * @return >=0 输出的长度，< 0 失败。
 */
