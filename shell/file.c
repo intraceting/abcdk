@@ -62,7 +62,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     return line_c;
 }
 
-int abcdk_file_subsection(const char *file, const char *fmt, int max)
+int abcdk_file_segment(const char *file, const char *fmt, int max)
 {
     char path[PATH_MAX] = {0};
     char name[NAME_MAX] = {0};

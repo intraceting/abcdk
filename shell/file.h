@@ -37,17 +37,17 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * 
  * @code
  * //1
- * abcdk_file_subsection("/aaa/bbb.log","bbb.%d.log",10);
+ * abcdk_file_segment("/aaa/bbb.log","bbb.%d.log",10);
  * //2
- * abcdk_file_subsection("/aaa/bbb.log","bbb.log.%04d",10);
+ * abcdk_file_segment("/aaa/bbb.log","bbb.log.%04d",10);
  * //3
- * abcdk_file_subsection("/aaa/bbb.log","%d.bbb.log",10);
+ * abcdk_file_segment("/aaa/bbb.log","%d.bbb.log",10);
  * //4
- * abcdk_file_subsection("/aaa/bbb.log","%04d.bbb.log",10);
+ * abcdk_file_segment("/aaa/bbb.log","%04d.bbb.log",10);
  * @endcode
  * 
 */
-int abcdk_file_subsection(const char *file, const char *fmt, int max);
+int abcdk_file_segment(const char *file, const char *fmt, int max);
 
 /**
  * 文件均衡存储。
