@@ -167,4 +167,8 @@
 #define ABCDK_FOURCC_MKTAG(a, b, c, d) ((d) | ((c) << 8) | ((b) << 16) | ((uint32_t)(a) << 24))
 #endif
 
+/** 断言提示。 */
+#define ABCDK_ASSERT(expr, tips) \
+    ((expr) ? (void)(0) : ({fprintf(stderr,"%s(%d): %s: %s\n",__FILE__, __LINE__,__FUNCTION__,#tips);abort(); }))
+
 #endif //ABCDK_UTIL_DEFS_H

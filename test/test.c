@@ -5384,7 +5384,9 @@ int main(int argc, char **argv)
     SSL_load_error_strings();
 
 #endif //HAVE_OPENSSL
-    
+
+    ABCDK_ASSERT(abcdk_option_count(args, "--func") > 0, "未指定命令。");
+
     if(abcdk_strcmp(func,"test_mux",0)==0)
         test_mux(args);
         
