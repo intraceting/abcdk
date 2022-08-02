@@ -45,7 +45,7 @@ typedef enum _abcdk_tape_attr_field
     ABCDK_TAPE_ATTR_VALUE = 4
 #define ABCDK_TAPE_ATTR_VALUE ABCDK_TAPE_ATTR_VALUE
 
-}abcdk_tape_attr_field;
+}abcdk_tape_attr_field_t;
 
 /**
  * SENSE编码转字符串。
