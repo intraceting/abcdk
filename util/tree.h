@@ -38,7 +38,7 @@ typedef struct _abcdk_tree
 /**
  * 树节点关系。
 */
-enum _abcdk_tree_chain
+typedef enum _abcdk_tree_chain
 {
 
     /** 父。*/
@@ -61,7 +61,7 @@ enum _abcdk_tree_chain
    ABCDK_TREE_CHAIN_CHILD_LEAST = 4
 #define ABCDK_TREE_CHAIN_CHILD_LEAST     ABCDK_TREE_CHAIN_CHILD_LEAST
 
-};
+}abcdk_tree_chain_t;
 
 /**
  * 树节点迭代器。
