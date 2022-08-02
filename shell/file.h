@@ -25,9 +25,9 @@ __BEGIN_DECLS
 int abcdk_file_wholockme(const char *file,int pids[],int max);
 
 /**
- * 文件分段。
+ * 文件分段存储。
  * 
- * @note 在原文件所在的目录进行文件分段。
+ * @note 在原文件所在的目录进行文件分段存储。
  * 
  * @param [in] file 文件名(包括路径)。
  * @param [in] fmt 分段的文件名格式，仅支持一个数值格式控制符。 @see printf
@@ -50,9 +50,11 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
 int abcdk_file_subsection(const char *file, const char *fmt, int max);
 
 /**
- * 文件备份。
+ * 文件均衡存储。
+ * 
+ * @note 在原文件所在的目录进行文件均衡存储。
 */
-int abcdk_file_backup(const char *file,);
+int abcdk_file_balance(const char *file,);
 
 __END_DECLS
 
