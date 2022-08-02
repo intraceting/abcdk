@@ -49,6 +49,7 @@
 #include "shell/block.h"
 #include "shell/mmc.h"
 #include "shell/scsi.h"
+#include "shell/file.h"
 #include "util/iconv.h"
 #include "util/sqlite.h"
 #include "util/reader.h"
@@ -5302,6 +5303,33 @@ void test_dup(abcdk_tree_t *args)
     abcdk_closep(&fd2);
 }
 
+void test_file_wholockme(abcdk_tree_t *args)
+{
+    const char *file = abcdk_option_get(args,"--file",0,"");
+
+    int pids[1000] = {0};
+
+    int c = abcdk_file_wholockme(file,pids,1000);
+
+    for (int i = 0; i < c; i++)
+    {
+        printf("pid:%d\n",pids[i]);
+    }
+}
+
+void test_file_subsection(abcdk_tree_t *args)
+{
+    const char *file = abcdk_option_get(args,"--file",0,"");
+    const char *fmt = abcdk_option_get(args,"--fmt",0,"%d");
+    int max = abcdk_option_get_int(args,"--max",0,6);
+
+    for(int i = 0;i<100;i++)
+    {
+        abcdk_save(file,&i,4,0);
+        abcdk_file_subsection(file,fmt,max);
+    }
+}
+
 int main(int argc, char **argv)
 {
     abcdk_thread_t p;
@@ -5548,6 +5576,12 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_dup", 0) == 0)
         test_dup(args);
+
+    if (abcdk_strcmp(func, "test_file_wholockme", 0) == 0)
+        test_file_wholockme(args);
+
+    if (abcdk_strcmp(func, "test_file_subsection", 0) == 0)
+        test_file_subsection(args);
 
     abcdk_tree_free(&args);
     

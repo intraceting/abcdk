@@ -42,7 +42,6 @@ char* abcdk_proc_basename(char* buf);
 */
 int abcdk_proc_singleton(const char* lockfile,int* pid);
 
-
 __END_DECLS
 
 #endif //ABCDK_SHELL_PROC_H
