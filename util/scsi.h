@@ -46,7 +46,7 @@ typedef struct _abcdk_scsi_io_stat
      */
     uint16_t driver_status;
 
-} abcdk_scsi_io_stat;
+} abcdk_scsi_io_stat_t;
 
 /**
  * 设备类型数字编码转字符串名称。
