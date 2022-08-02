@@ -361,8 +361,7 @@ int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t l
 
     /*获取请求MID。*/
     mid_p = pthread_getspecific(easy->req_ptkey);
-    if(!mid_p)
-        return -1;
+    ABCDK_ASSERT(mid_p != NULL,"每次请求仅允许应答一次。");
 
     chk = _abcdk_comm_easy_post(easy, data, len, *mid_p, ABCDK_COMM_EASY_MD_FLAG_RSP);
     if (chk != 0)

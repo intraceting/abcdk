@@ -87,7 +87,7 @@ int abcdk_msync(abcdk_object_t *alloc, int async)
     int flags;
 
     assert(alloc);
-    assert(alloc->pptrs[0] != MAP_FAILED && alloc->sizes[0] > 0);
+    assert(alloc->pptrs[0] != NULL && alloc->pptrs[0] != MAP_FAILED && alloc->sizes[0] > 0);
 
     flags = (async?MS_ASYNC:MS_SYNC);
 

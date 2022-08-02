@@ -474,7 +474,7 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 
     /*仅消息循环线程拥有读权利。*/
     chk = abcdk_thread_leader_test(&node->input_user);
-    assert(chk == 0);
+    ABCDK_ASSERT(chk == 0,"仅消息循环线程拥有读权利。");
 
     while (rsize_all < size)
     {
