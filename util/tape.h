@@ -77,7 +77,7 @@ const char *abcdk_tape_textid2string(uint8_t id);
  *
  * @return 0 成功，-1 失败。
  */
-int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat);
+int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 磁带较验。
@@ -86,7 +86,7 @@ int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat);
  *
  * @return 0 成功，-1 失败。
  */
-int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
+int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 定位磁头的位置。
@@ -104,7 +104,7 @@ int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat);
  * @note  End of data (KEY = 0x08,ASC = 0x00,ASCQ = 0x05).
  */
 int abcdk_tape_seek(int fd, uint8_t cp,uint8_t type, uint8_t part,uint64_t pos,
-                    uint32_t timeout, abcdk_scsi_io_stat *stat);
+                    uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 读取磁头当前位置。
@@ -118,7 +118,7 @@ int abcdk_tape_seek(int fd, uint8_t cp,uint8_t type, uint8_t part,uint64_t pos,
  * @return 0 成功，-1 失败。
  */
 int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
-                    uint32_t timeout, abcdk_scsi_io_stat *stat);
+                    uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /*
  * See "Medium auxiliary memory attributes (MAM)" from the manufacturer's SCSI manual.
@@ -183,7 +183,7 @@ int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
  * 
  */
 abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
-                                             uint32_t timeout, abcdk_scsi_io_stat *stat);
+                                             uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 写入磁带的属性。
@@ -198,7 +198,7 @@ abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
  * 
  */
 int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_object_t *attr,
-                               uint32_t timeout, abcdk_scsi_io_stat *stat);
+                               uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 __END_DECLS
 

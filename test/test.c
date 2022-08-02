@@ -4239,7 +4239,7 @@ void test_scsi(abcdk_tree_t *args)
 
     uint8_t type = 255;
     char serial[255]={0};
-    abcdk_scsi_io_stat stat = {0};
+    abcdk_scsi_io_stat_t stat = {0};
     abcdk_scsi_inquiry_serial(fd,&type,serial,0,&stat);
 
     uint8_t key = abcdk_scsi_sense_key(stat.sense);

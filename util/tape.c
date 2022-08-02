@@ -297,7 +297,7 @@ const char *abcdk_tape_textid2string(uint8_t id)
     return NULL;
 }
 
-int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat)
+int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat_t *stat)
 {
     struct mtop mp = {0};
     int chk;
@@ -318,7 +318,7 @@ int abcdk_tape_operate(int fd, short cmd, int param, abcdk_scsi_io_stat *stat)
     return chk;
 }
 
-int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -329,7 +329,7 @@ int abcdk_tape_verify(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
 }
 
 int abcdk_tape_seek(int fd, uint8_t cp, uint8_t type, uint8_t part, uint64_t pos,
-                    uint32_t timeout, abcdk_scsi_io_stat *stat)
+                    uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[16] = {0};
     int chk;
@@ -348,7 +348,7 @@ int abcdk_tape_seek(int fd, uint8_t cp, uint8_t type, uint8_t part, uint64_t pos
 }
 
 int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
-                    uint32_t timeout, abcdk_scsi_io_stat *stat)
+                    uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[10] = {0};
     uint8_t buf[32] = {0};
@@ -373,7 +373,7 @@ int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
 }
 
 abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
-                                             uint32_t timeout, abcdk_scsi_io_stat *stat)
+                                             uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     abcdk_object_t *alloc = NULL;
     uint16_t len = 0;
@@ -411,7 +411,7 @@ abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
 }
 
 int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_object_t *attr,
-                               uint32_t timeout, abcdk_scsi_io_stat *stat)
+                               uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t buf[255] = {0};
     uint8_t cdb[16] = {0};

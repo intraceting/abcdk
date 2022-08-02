@@ -24,7 +24,7 @@ typedef struct _abcdkmtx_ctx
     const char *dev_p;
     int cmd;
 
-    abcdk_scsi_io_stat stat;
+    abcdk_scsi_io_stat_t stat;
     uint8_t type;
     char vendor[32];
     char product[64];
@@ -153,7 +153,7 @@ void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-void _abcdkmt_printf_sense(abcdk_scsi_io_stat *stat)
+void _abcdkmt_printf_sense(abcdk_scsi_io_stat_t *stat)
 {
     uint8_t key = 0, asc = 0, ascq = 0;
     const char *msg_p = NULL;
@@ -222,7 +222,7 @@ final:
 
 void _abcdkmt_tell_pos(abcdkmtx_ctx *ctx)
 {    
-    abcdk_scsi_io_stat stat = {0};
+    abcdk_scsi_io_stat_t stat = {0};
     uint64_t block = -1, file = -1;
     uint32_t part = -1;
     int chk;

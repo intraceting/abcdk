@@ -103,7 +103,7 @@ int abcdk_scsi_sgioctl(int fd, struct sg_io_hdr *hdr)
 int abcdk_scsi_sgioctl2(int fd, int direction,
                         uint8_t *cdb, uint8_t cdblen,
                         uint8_t *transfer, uint32_t transferlen,
-                        uint32_t timeout, abcdk_scsi_io_stat *stat)
+                        uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     struct sg_io_hdr hdr = {0};
     int chk;
@@ -160,7 +160,7 @@ uint8_t abcdk_scsi_sense_qualifier(uint8_t *sense)
     return sense[13];
 }
 
-int abcdk_scsi_test(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_scsi_test(int fd, uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -169,7 +169,7 @@ int abcdk_scsi_test(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat);
 }
 
-int abcdk_scsi_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
+int abcdk_scsi_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -181,7 +181,7 @@ int abcdk_scsi_request_sense(int fd, uint32_t timeout, abcdk_scsi_io_stat *stat)
 
 int abcdk_scsi_inquiry(int fd, int vpd, uint8_t vid,
                        uint8_t *transfer, uint32_t transferlen,
-                       uint32_t timeout, abcdk_scsi_io_stat *stat)
+                       uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -194,7 +194,7 @@ int abcdk_scsi_inquiry(int fd, int vpd, uint8_t vid,
 }
 
 int abcdk_scsi_inquiry_standard(int fd, uint8_t *type, char vendor[8], char product[16],
-                                uint32_t timeout, abcdk_scsi_io_stat *stat)
+                                uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t tmp[255] = {0};
     int chk;
@@ -224,7 +224,7 @@ int abcdk_scsi_inquiry_standard(int fd, uint8_t *type, char vendor[8], char prod
 }
 
 int abcdk_scsi_inquiry_serial(int fd, uint8_t *type, char serial[255],
-                              uint32_t timeout, abcdk_scsi_io_stat *stat)
+                              uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t tmp[255] = {0};
     int chk;

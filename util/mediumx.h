@@ -79,7 +79,7 @@ const char *abcdk_mediumx_sense2string(uint8_t key, uint8_t asc , uint8_t ascq);
  *
  */
 int abcdk_mediumx_inventory(int fd, uint16_t address, uint16_t count,
-                            uint32_t timeout, abcdk_scsi_io_stat *stat);
+                            uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 移动介质。
@@ -95,7 +95,7 @@ int abcdk_mediumx_inventory(int fd, uint16_t address, uint16_t count,
  * @warning  SENSE key = 0x06 设备仓门被打开过，需要重新盘点介质。
  */
 int abcdk_mediumx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
-                              uint32_t timeout, abcdk_scsi_io_stat *stat);
+                              uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 限制介质是否允许能被移动到出入仓位。
@@ -109,7 +109,7 @@ int abcdk_mediumx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
  * @return 0 成功，-1 失败。
  */
 int abcdk_mediumx_prevent_medium_removal(int fd, int disable,
-                                         uint32_t timeout, abcdk_scsi_io_stat *stat);
+                                         uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 查询设备信息。
@@ -120,7 +120,7 @@ int abcdk_mediumx_prevent_medium_removal(int fd, int disable,
  */
 int abcdk_mediumx_mode_sense(int fd, uint8_t pctrl, uint8_t pcode, uint8_t spcode,
                              uint8_t *transfer, uint8_t transferlen,
-                             uint32_t timeout, abcdk_scsi_io_stat *stat);
+                             uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 查询设备元件状态。
@@ -137,7 +137,7 @@ int abcdk_mediumx_read_element_status(int fd, uint8_t type,
                                       int voltag, int dvcid,
                                       uint16_t address, uint16_t count,
                                       uint8_t *transfer, uint32_t transferlen,
-                                      uint32_t timeout, abcdk_scsi_io_stat *stat);
+                                      uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 /**
  * 分析设备元件状态，构造结构化数据。
@@ -152,7 +152,7 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
  *
  */
 int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag, int dvcid,
-                                         uint32_t timeout, abcdk_scsi_io_stat *stat);
+                                         uint32_t timeout, abcdk_scsi_io_stat_t *stat);
 
 __END_DECLS
 

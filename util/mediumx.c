@@ -62,7 +62,7 @@ const char *abcdk_mediumx_sense2string(uint8_t key, uint8_t asc , uint8_t ascq)
 }
 
 int abcdk_mediumx_inventory(int fd, uint16_t address, uint16_t count,
-                            uint32_t timeout, abcdk_scsi_io_stat *stat)
+                            uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
 
     uint8_t cdb[10] = {0};
@@ -76,7 +76,7 @@ int abcdk_mediumx_inventory(int fd, uint16_t address, uint16_t count,
 }
 
 int abcdk_mediumx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
-                              uint32_t timeout, abcdk_scsi_io_stat *stat)
+                              uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
 
     uint8_t cdb[12] = {0};
@@ -90,7 +90,7 @@ int abcdk_mediumx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
 }
 
 int abcdk_mediumx_prevent_medium_removal(int fd, int disable,
-                                         uint32_t timeout, abcdk_scsi_io_stat *stat)
+                                         uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -102,7 +102,7 @@ int abcdk_mediumx_prevent_medium_removal(int fd, int disable,
 
 int abcdk_mediumx_mode_sense(int fd, uint8_t pctrl, uint8_t pcode, uint8_t spcode,
                              uint8_t *transfer, uint8_t transferlen,
-                             uint32_t timeout, abcdk_scsi_io_stat *stat)
+                             uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[6] = {0};
 
@@ -119,7 +119,7 @@ int abcdk_mediumx_read_element_status(int fd, uint8_t type,
                                       int voltag, int dvcid,
                                       uint16_t address, uint16_t count,
                                       uint8_t *transfer, uint32_t transferlen,
-                                      uint32_t timeout, abcdk_scsi_io_stat *stat)
+                                      uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     uint8_t cdb[12] = {0};
 
@@ -224,7 +224,7 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
 }
 
 int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag, int dvcid,
-                                         uint32_t timeout, abcdk_scsi_io_stat *stat)
+                                         uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     char buf[255] = {0};
     int buf2size = 0;

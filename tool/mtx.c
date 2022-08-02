@@ -39,7 +39,7 @@ typedef struct _abcdkmtx_ctx
     char vendor[32];
     char product[64];
     char sn[256];
-    abcdk_scsi_io_stat stat;
+    abcdk_scsi_io_stat_t stat;
     abcdk_tree_t *root;
     uint16_t changer;
     abcdk_tree_t *devlist;
@@ -135,7 +135,7 @@ void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
 
 
 
-void _abcdkmtx_printf_sense(abcdk_scsi_io_stat *stat)
+void _abcdkmtx_printf_sense(abcdk_scsi_io_stat_t *stat)
 {
     uint8_t key = 0, asc = 0, ascq = 0;
     const char *msg_p = NULL;
