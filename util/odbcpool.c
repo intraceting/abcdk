@@ -63,11 +63,11 @@ void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
     /*通知所有pop停止等待。*/
     abcdk_mutex_signal(&p->mutex,1);
 
-    /*等待所有弹出连接回收。*/
+    /*等待所有已弹出连接被回收。*/
     while (p->pop_nbs > 0)
     {
         abcdk_mutex_wait(&p->mutex, 60 * 60 * 1000);
-        ABCDK_ASSERT(p->pop_nbs <= 0, "当您看见这个消息时，表示已弹出的连接还没有被回收。");
+        ABCDK_ASSERT(p->pop_nbs <= 0, "当您看见这个消息时，表示已弹出的连接还有未被回收的。");
     }
 
     /*关闭所有连接。*/
