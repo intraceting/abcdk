@@ -23,44 +23,20 @@ __BEGIN_DECLS
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-/**
- * ODBC接口。
- */
-typedef struct _abcdk_odbc
-{
-    /** 环境。 */
-    SQLHENV env;
+/** ODBC接口。*/
+typedef struct _abcdk_odbc abcdk_odbc_t;
 
-    /** 连接。 */
-    SQLHDBC dbc;
+/** 释放对象。*/
+void abcdk_odbc_free(abcdk_odbc_t **ctx);
 
-    /** 数据集。 */
-    SQLHSTMT stmt;
+/** 创建对象。*/
+abcdk_odbc_t *abcdk_odbc_alloc();
 
-    /**
-     * 数据集属性。
-     *
-     * @note 尽量不要直接修改。
-     */
-    abcdk_object_t *attr;
-
-} abcdk_odbc_t;
-
-/**
- * 释放数据集属性。
- */
-void abcdk_odbc_free_attr(abcdk_odbc_t *ctx);
-
-/**
- * 创建数据集属性。
- *
- * @warning 同一份数据集只会创建一次。
- */
-SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx);
-
-/**
+/** 
  * 断开连接。
- */
+ * 
+ * @note 连接断开后，环境对象可以重复利用。
+*/
 SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx);
 
 /**

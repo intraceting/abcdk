@@ -14,7 +14,8 @@ __BEGIN_DECLS
 /** 消息对象。*/
 typedef struct _abcdk_comm_message abcdk_comm_message_t;
 
-/** 数据包协议回调函数。
+/** 
+ * 数据包协议回调函数。
  * 
  * @return 1 数据包完整，0 需要更多数据，-1 不支持的协议。
 */

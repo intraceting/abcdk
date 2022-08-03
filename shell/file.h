@@ -54,7 +54,7 @@ int abcdk_file_segment(const char *file, const char *fmt, int max);
  * 
  * @note 在原文件所在的目录进行文件均衡存储。
 */
-int abcdk_file_balance(const char *file,);
+//int abcdk_file_balance(const char *file,);
 
 __END_DECLS
 

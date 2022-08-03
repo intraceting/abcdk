@@ -70,7 +70,7 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args)
 
 void _abcdkodbc_work(abcdkodbc_ctx *ctx)
 {
-    abcdk_odbc_t odbc = {0};
+    abcdk_odbc_t *odbc = abcdk_odbc_alloc();
     const char *product = NULL;
     const char *driver = NULL;
     const char *server = NULL;
@@ -97,7 +97,7 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
     /*优先检查自定义是否可用。*/
     if (uri && *uri)
     {
-        chk = abcdk_odbc_connect(&odbc, uri, timeout, tracefile);
+        chk = abcdk_odbc_connect(odbc, uri, timeout, tracefile);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -161,7 +161,7 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
-    chk = abcdk_odbc_connect2(&odbc,product,driver,server,port,db,uid,pwd,timeout,tracefile);
+    chk = abcdk_odbc_connect2(odbc,product,driver,server,port,db,uid,pwd,timeout,tracefile);
     if(chk != SQL_SUCCESS)
     {
         syslog(LOG_ERR, "连接失败，超时或参数错误。");
@@ -170,7 +170,8 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
 
 final:
 
-    abcdk_odbc_disconnect(&odbc);
+    abcdk_odbc_disconnect(odbc);
+    abcdk_odbc_free(&odbc);
 }
 
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)

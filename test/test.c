@@ -55,6 +55,7 @@
 #include "util/reader.h"
 #include "util/json.h"
 #include "util/signal.h"
+#include "util/odbcpool.h"
 
 
 #ifdef HAVE_FUSE
@@ -5330,6 +5331,50 @@ void test_file_segment(abcdk_tree_t *args)
     }
 }
 
+
+#ifdef HAVE_UNIXODBC
+abcdk_odbc_t *test_odbcpool_connect(void *opaque)
+{
+    abcdk_tree_t *args = (abcdk_tree_t *)opaque;
+
+    const char *product = abcdk_option_get(args, "--product", 0, "");
+    const char *driver = abcdk_option_get(args, "--driver", 0, "");
+    const char *host = abcdk_option_get(args, "--host", 0, "localhost");
+    uint16_t port = abcdk_option_get_int(args, "--port", 0,12345);
+    const char *db = abcdk_option_get(args, "--db", 0, "");
+    const char *user = abcdk_option_get(args, "--user", 0, "");
+    const char *pwd = abcdk_option_get(args, "--pwd", 0, "");
+    time_t timeout = abcdk_option_get_long(args, "--timeout", 0, 30);
+    const char *tracefile = abcdk_option_get(args, "--tracefile", 0, NULL);
+
+    abcdk_odbc_t *odbc = abcdk_odbc_alloc();
+    SQLRETURN ret = abcdk_odbc_connect2(odbc,product,driver,host,port,db,user,pwd,timeout,tracefile);
+    if(ret == SQL_SUCCESS)
+        return odbc;
+    
+    abcdk_odbc_free(&odbc);
+
+}
+#endif
+
+void test_odbcpool(abcdk_tree_t *args)
+{
+#ifdef HAVE_UNIXODBC
+    abcdk_odbcpool_t *h = abcdk_odbcpool_create(10,test_odbcpool_connect,args);
+
+    #pragma omp parallel for num_threads(30)
+    for (int i = 0; i < 100; i++)
+    {
+        printf("[%d]\n",i);
+        abcdk_odbc_t *odbc = abcdk_odbcpool_pop(h);
+        usleep(rand() % 1000000);
+        abcdk_odbcpool_push(h, &odbc);
+    }
+
+    abcdk_odbcpool_destroy(&h);
+#endif
+}
+
 int main(int argc, char **argv)
 {
     abcdk_thread_t p;
@@ -5582,6 +5627,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_file_segment", 0) == 0)
         test_file_segment(args);
+
+    if (abcdk_strcmp(func, "test_odbcpool", 0) == 0)
+        test_odbcpool(args);
 
     abcdk_tree_free(&args);
     

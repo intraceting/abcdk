@@ -8,6 +8,25 @@
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
+/**
+ * ODBC接口。
+ */
+typedef struct _abcdk_odbc
+{
+    /** 环境。 */
+    SQLHENV env;
+
+    /** 连接。 */
+    SQLHDBC dbc;
+
+    /** 数据集。 */
+    SQLHSTMT stmt;
+
+    /** 数据集属性。*/
+    abcdk_object_t *attr;
+
+} abcdk_odbc_t;
+
 SQLRETURN _abcdk_odbc_check_return(SQLRETURN ret)
 {
     SQLRETURN chk = SQL_ERROR;
@@ -28,7 +47,7 @@ void _abcdk_odbc_free_attr_destroy(abcdk_object_t *alloc, void *opaque)
     abcdk_heap_free2(&p);
 }
 
-void abcdk_odbc_free_attr(abcdk_odbc_t *ctx)
+void _abcdk_odbc_free_attr(abcdk_odbc_t *ctx)
 {
     abcdk_object_t *p;
 
@@ -45,7 +64,7 @@ void abcdk_odbc_free_attr(abcdk_odbc_t *ctx)
     }
 }
 
-SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
+SQLRETURN _abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
 {
     SQLSMALLINT columns;
     abcdk_object_t *p;
@@ -108,9 +127,28 @@ SQLRETURN abcdk_odbc_alloc_attr(abcdk_odbc_t *ctx)
 
 final_error:
 
-    abcdk_odbc_free_attr(ctx);
+    _abcdk_odbc_free_attr(ctx);
 
     return chk;
+}
+
+void abcdk_odbc_free(abcdk_odbc_t **ctx)
+{
+    abcdk_odbc_t *p = NULL;
+
+    if(!ctx || !*ctx)
+        return;
+
+    p = *ctx;
+    *ctx = NULL;
+
+    abcdk_odbc_disconnect(p);
+    abcdk_heap_free(p);
+}
+
+abcdk_odbc_t *abcdk_odbc_alloc()
+{
+    return (abcdk_odbc_t *)abcdk_heap_alloc(sizeof(abcdk_odbc_t));
 }
 
 SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx)
@@ -120,7 +158,7 @@ SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx)
     assert(ctx != NULL);
 
     /*清理数据集属性。*/
-    abcdk_odbc_free_attr(ctx);
+    _abcdk_odbc_free_attr(ctx);
 
     if (ctx->stmt)
     {
@@ -295,7 +333,7 @@ SQLRETURN abcdk_odbc_prepare(abcdk_odbc_t *ctx, const char *sql)
     assert(ctx != NULL && sql != NULL);
 
     /*清理旧的数据集属性。*/
-    abcdk_odbc_free_attr(ctx);
+    _abcdk_odbc_free_attr(ctx);
 
     if (!ctx->stmt)
     {
@@ -343,7 +381,7 @@ SQLRETURN abcdk_odbc_finalize(abcdk_odbc_t *ctx)
     assert(ctx != NULL);
 
     /*清理数据集属性。*/
-    abcdk_odbc_free_attr(ctx);
+    _abcdk_odbc_free_attr(ctx);
 
     if (ctx->stmt)
     {
@@ -425,7 +463,7 @@ SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT
     assert(ctx != NULL && column >= 0 && buf != NULL && max > 0);
 
     /*创建数据集属性。*/
-    chk = abcdk_odbc_alloc_attr(ctx);
+    chk = _abcdk_odbc_alloc_attr(ctx);
     if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
         goto final_error;
 
@@ -472,7 +510,7 @@ SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name)
     assert(ctx != NULL && name != NULL);
 
     /*创建数据集属性。*/
-    chk = abcdk_odbc_alloc_attr(ctx);
+    chk = _abcdk_odbc_alloc_attr(ctx);
     if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
         goto final_error;
 
