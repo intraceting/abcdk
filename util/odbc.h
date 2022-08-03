@@ -29,8 +29,15 @@ typedef struct _abcdk_odbc abcdk_odbc_t;
 /** 释放对象。*/
 void abcdk_odbc_free(abcdk_odbc_t **ctx);
 
-/** 创建对象。*/
-abcdk_odbc_t *abcdk_odbc_alloc();
+/** 
+ * 创建对象。
+ * 
+ * @param [in] pool 连接池ID。
+*/
+abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool);
+
+/** 获取连接池ID。*/
+uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx);
 
 /** 
  * 断开连接。

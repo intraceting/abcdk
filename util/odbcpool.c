@@ -15,6 +15,9 @@
 */
 typedef struct _abcdk_odbcpool
 {
+    /** 魔法数。*/
+    uint32_t magic;
+
     /** 同步锁。*/
     abcdk_mutex_t mutex;
 
@@ -35,6 +38,12 @@ typedef struct _abcdk_odbcpool
     void *opaque;
 
 }abcdk_odbcpool_t;
+
+
+time_t _abcdk_odbcpool_clock()
+{
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+}
 
 void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
 {
@@ -58,7 +67,7 @@ void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
     while (p->pop_nbs > 0)
     {
         abcdk_mutex_wait(&p->mutex, 60 * 60 * 1000);
-        ABCDK_ASSERT(p->pop_nbs <= 0, "还有已弹出的连接没有被回收。");
+        ABCDK_ASSERT(p->pop_nbs <= 0, "当您看见这个消息时，表示已弹出的连接还没有被回收。");
     }
 
     /*关闭所有连接。*/
@@ -66,7 +75,7 @@ void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
     {
         ABCDK_ASSERT(odbc_p != NULL, "当您看见这个消息时，表示应用程序已经发生严重的错误。");
         abcdk_odbc_disconnect(odbc_p);
-        odbc_p = NULL;
+        abcdk_odbc_free(&odbc_p);
     }
 
     abcdk_mutex_unlock(&p->mutex);
@@ -80,6 +89,7 @@ void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
 abcdk_odbcpool_t *abcdk_odbcpool_create(size_t size, abcdk_odbcpool_connect_cb connect_cb, void *opaque)
 {
     abcdk_odbcpool_t *p = NULL;
+    static volatile uint32_t magic = 1;
     int chk;
 
     ABCDK_ASSERT(size > 0 && connect_cb != NULL, "池大小不能为0，且连接回调函数指针不能为空。");
@@ -94,6 +104,7 @@ abcdk_odbcpool_t *abcdk_odbcpool_create(size_t size, abcdk_odbcpool_connect_cb c
     if(chk != 0)
         goto ERR_END;
     
+    p->magic = abcdk_atomic_fetch_and_add(&magic,1);
     p->pool_size = size;
     p->exitflag = 0;
     p->pop_nbs = 0;
@@ -108,15 +119,21 @@ ERR_END:
     abcdk_heap_free(p);
 }
 
-abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx)
+
+abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx,time_t timeout)
 {
     abcdk_odbcpool_t *p = NULL;
     abcdk_odbc_t *odbc_p = NULL;
+    time_t time_end;
+    time_t time_span;
     int chk;
 
-    assert(ctx != NULL);
+    assert(ctx != NULL && timeout > 0);
 
     p = ctx;
+
+    /*计算过期时间。*/
+    time_end = _abcdk_odbcpool_clock() + timeout;
 
     abcdk_mutex_lock(&p->mutex,1);
 
@@ -128,23 +145,37 @@ abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx)
         if(chk == 0)
             break;
 
+        /*计算剩余超时时长。*/
+        time_span = time_end - _abcdk_odbcpool_clock();
+        if (time_span <= 0)
+            break;
+
         /*如果未达到连接池上限，则创建新的连接。*/
         if(p->pop_nbs < p->pool_size)
         {
-            odbc_p = p->connect_cb(p->opaque);
-            if(odbc_p)
+            odbc_p = abcdk_odbc_alloc(p->magic);
+            if(!odbc_p)
                 break;
+
+            chk = p->connect_cb(odbc_p, p->opaque);
+            if (chk == 0)
+                break;
+            else 
+                abcdk_odbc_free(&odbc_p);
         }
         else
         {
             /*所有连接都已经弹出，等待连接回收复用。*/
-            abcdk_mutex_wait(&p->mutex,-1);
+            abcdk_mutex_wait(&p->mutex,time_span);
         }
     }
 
     /*累加弹出数量(非常重要)，线程池销毁前要根据此值确定是否还有未回收的连接。*/
     if(odbc_p)
         p->pop_nbs += 1;
+
+    /*唤醒其它线程，处理事件。*/
+    abcdk_mutex_signal(&p->mutex, 0);
     
     abcdk_mutex_unlock(&p->mutex);
 
@@ -167,6 +198,8 @@ void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
     odbc_p = *odbc;
     *odbc = NULL;
 
+    ABCDK_ASSERT(p->magic == abcdk_odbc_get_pool(odbc_p),"不属于当前连池。");
+
     abcdk_mutex_lock(&p->mutex,1);
 
     if (p->pop_nbs > 0)
@@ -176,6 +209,9 @@ void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
         {
             /*递减弹出数量(非常重要)，线程池销毁前要根据此值确定是否还有未回收的连接。*/
             p->pop_nbs -= 1;
+            
+            /*通知pop有可用连接。*/
+            abcdk_mutex_signal(&p->mutex,0);
         }
     }
 

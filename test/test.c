@@ -5333,7 +5333,7 @@ void test_file_segment(abcdk_tree_t *args)
 
 
 #ifdef HAVE_UNIXODBC
-abcdk_odbc_t *test_odbcpool_connect(void *opaque)
+int test_odbcpool_connect(abcdk_odbc_t *odbc,void *opaque)
 {
     abcdk_tree_t *args = (abcdk_tree_t *)opaque;
 
@@ -5347,12 +5347,11 @@ abcdk_odbc_t *test_odbcpool_connect(void *opaque)
     time_t timeout = abcdk_option_get_long(args, "--timeout", 0, 30);
     const char *tracefile = abcdk_option_get(args, "--tracefile", 0, NULL);
 
-    abcdk_odbc_t *odbc = abcdk_odbc_alloc();
     SQLRETURN ret = abcdk_odbc_connect2(odbc,product,driver,host,port,db,user,pwd,timeout,tracefile);
     if(ret == SQL_SUCCESS)
-        return odbc;
+        return 0;
     
-    abcdk_odbc_free(&odbc);
+    return -1;
 
 }
 #endif
@@ -5366,7 +5365,7 @@ void test_odbcpool(abcdk_tree_t *args)
     for (int i = 0; i < 100; i++)
     {
         printf("[%d]\n",i);
-        abcdk_odbc_t *odbc = abcdk_odbcpool_pop(h);
+        abcdk_odbc_t *odbc = abcdk_odbcpool_pop(h,10*1000);
         usleep(rand() % 1000000);
         abcdk_odbcpool_push(h, &odbc);
     }

@@ -70,7 +70,7 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args)
 
 void _abcdkodbc_work(abcdkodbc_ctx *ctx)
 {
-    abcdk_odbc_t *odbc = abcdk_odbc_alloc();
+    abcdk_odbc_t *odbc = abcdk_odbc_alloc(0);
     const char *product = NULL;
     const char *driver = NULL;
     const char *server = NULL;

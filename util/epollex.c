@@ -77,7 +77,7 @@ typedef struct _abcdk_epollex_node
 
 } abcdk_epollex_node_t;
 
-time_t abcdk_epollex_clock()
+time_t _abcdk_epollex_clock()
 {
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
 }
@@ -129,7 +129,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
     ctx->watchdog_intvl = 1000;
-    ctx->watchdog_active = abcdk_epollex_clock();
+    ctx->watchdog_active = _abcdk_epollex_clock();
     ctx->wait_leader = 0;
     ctx->node_map.destructor_cb = _abcdk_epollex_destructor_cb;
     ctx->node_map.opaque = ctx;
@@ -206,7 +206,7 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
     node->data = *data;
     node->timeout = 30*1000;
     node->stable = 1;
-    node->active = abcdk_epollex_clock();
+    node->active = _abcdk_epollex_clock();
     node->mark_first = 1;
     node->add_first = 1;
     node->event_mark = node->event_disp = 0;
@@ -302,7 +302,7 @@ void _abcdk_epollex_mark(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint3
         node->mark_first = 0;
 
         /*更节点新活动时间。*/
-        node->active = abcdk_epollex_clock();
+        node->active = _abcdk_epollex_clock();
     }
     
     /* 如果发生错误，分派出错事件。*/
@@ -437,7 +437,7 @@ final:
 
 void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
 {
-    time_t current = abcdk_epollex_clock();
+    time_t current = _abcdk_epollex_clock();
 
     /*看门狗活动间隔时间不能太密集。*/
     if ((current - ctx->watchdog_active) < ctx->watchdog_intvl)
@@ -473,7 +473,7 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,i
         _abcdk_epollex_disp(ctx,node,e->events);
 
         /*更节点新活动时间*/
-        node->active = abcdk_epollex_clock();
+        node->active = _abcdk_epollex_clock();
     }
 }
 
@@ -488,7 +488,7 @@ int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t ti
     assert(ctx != NULL && event != NULL && timeout > 0);
 
     /*计算过期时间。*/
-    time_end = abcdk_epollex_clock() + timeout;
+    time_end = _abcdk_epollex_clock() + timeout;
     
     abcdk_mutex_lock(&ctx->mutex,1);
 
@@ -500,7 +500,7 @@ try_again:
         goto final;
 
     /*计算剩余超时时长。*/
-    time_span = time_end - abcdk_epollex_clock();
+    time_span = time_end - _abcdk_epollex_clock();
     if (time_span <= 0)
         ABCDK_ERRNO_AND_GOTO1(ETIME,final_error);
 

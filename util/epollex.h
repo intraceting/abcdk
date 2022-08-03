@@ -68,7 +68,7 @@ int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd);
  * 
  * @warning 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
  * 
- * @param [in] timeout 超时(毫秒)，<=0 不启用。
+ * @param [in] timeout 超时(毫秒)。
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */

@@ -13,6 +13,9 @@
  */
 typedef struct _abcdk_odbc
 {
+    /** 连接池ID。*/
+    uint32_t pool;
+
     /** 环境。 */
     SQLHENV env;
 
@@ -146,9 +149,26 @@ void abcdk_odbc_free(abcdk_odbc_t **ctx)
     abcdk_heap_free(p);
 }
 
-abcdk_odbc_t *abcdk_odbc_alloc()
+abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool)
 {
-    return (abcdk_odbc_t *)abcdk_heap_alloc(sizeof(abcdk_odbc_t));
+    abcdk_odbc_t *odbc = (abcdk_odbc_t *)abcdk_heap_alloc(sizeof(abcdk_odbc_t));
+    if(!odbc)
+        return NULL;
+    
+    odbc->attr = NULL;
+    odbc->dbc = NULL;
+    odbc->env = NULL;
+    odbc->stmt = NULL;
+    odbc->pool = pool;
+
+    return odbc;
+}
+
+uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx)
+{
+    assert(ctx != NULL);
+
+    return ctx->pool;
 }
 
 SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx)
