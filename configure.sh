@@ -103,6 +103,7 @@ VERSION_RELEASE="9"
 
 #
 BUILD_TYPE="release"
+BUILD_OPTIMIZE="No"
 
 #
 INSTALL_PREFIX="/usr/local/"
@@ -117,6 +118,12 @@ PrintUsage()
 {
 cat << EOF
 usage: [ OPTIONS ]
+
+    -h 
+     打印帮助信息。
+
+    -O
+     编译优化。默认：关闭。
 
     -g  
      生成调试符号。默认：关闭
@@ -153,12 +160,15 @@ EOF
 }
 
 #
-while getopts "hgV:v:r:i:d:" ARGKEY 
+while getopts "hOgV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
         PrintUsage
         exit 22
+    ;;
+    O)
+        BUILD_OPTIMIZE="yes"
     ;;
     g)
         BUILD_TYPE="debug"
@@ -357,6 +367,7 @@ DEPEND_FLAGS = ${DEPEND_FLAGS}
 DEPEND_LIBS = ${DEPEND_LIBS}
 #
 BUILD_TYPE = ${BUILD_TYPE}
+BUILD_OPTIMIZE = ${BUILD_OPTIMIZE}
 #
 INSTALL_PREFIX = ${INSTALL_PREFIX}
 #

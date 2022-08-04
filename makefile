@@ -14,11 +14,14 @@ include ${MAKE_CONF}
 #
 ifeq (${BUILD_TYPE},debug)
 CC_FLAGS += -g
-#CC_FLAGS += -g -O2
 LINK_FLAGS += -g
 else 
-CC_FLAGS += -O2
 LINK_FLAGS += -s
+endif
+
+#
+ifeq (${BUILD_OPTIMIZE},yes)
+CC_FLAGS += -O2
 endif
 
 #
