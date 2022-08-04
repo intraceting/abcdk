@@ -377,6 +377,25 @@ final_error:
     return chk;
 }
 
+SQLRETURN abcdk_odbc_bind_parameter(abcdk_odbc_t *ctx, SQLUSMALLINT ipar, SQLSMALLINT fParamType,
+                                    SQLSMALLINT fCType, SQLSMALLINT fSqlType, SQLULEN cbColDef,
+                                    SQLSMALLINT ibScale, SQLPOINTER rgbValue, SQLLEN cbValueMax)
+{
+    SQLRETURN chk;
+
+    assert(ctx != NULL && ipar > 0 && rgbValue != NULL && cbValueMax > 0);
+
+    chk = SQLBindParameter(ctx->stmt, ipar, fParamType, fCType, fSqlType, cbColDef, ibScale, rgbValue, cbValueMax, NULL);
+    if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
+        goto final_error;
+
+    return SQL_SUCCESS;
+
+final_error:
+
+    return chk;
+}
+
 SQLRETURN abcdk_odbc_execute(abcdk_odbc_t *ctx)
 {
     SQLRETURN chk;
@@ -552,6 +571,24 @@ SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name)
 final_error:
 
     return -1;
+}
+
+SQLRETURN abcdk_odbc_error_info(abcdk_odbc_t *ctx, SQLCHAR *Sqlstate, SQLINTEGER *NativeError,
+                                SQLCHAR *MessageText, SQLSMALLINT BufferLength)
+{
+    SQLRETURN chk;
+
+    assert(ctx != NULL);
+
+    chk = SQLError(ctx->env, ctx->dbc, ctx->stmt, Sqlstate, NativeError, MessageText, BufferLength, NULL);
+    if (_abcdk_odbc_check_return(chk) != SQL_SUCCESS)
+        goto final_error;
+
+    return SQL_SUCCESS;
+
+final_error:
+
+    return chk;
 }
 
 #endif // defined(__SQL_H) && defined(__SQLEXT_H)

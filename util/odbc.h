@@ -110,6 +110,23 @@ SQLRETURN abcdk_odbc_tran_end(abcdk_odbc_t *ctx, SQLSMALLINT type);
 SQLRETURN abcdk_odbc_prepare(abcdk_odbc_t *ctx, const char *sql);
 
 /**
+ * 绑定参数。
+ *
+ * @param [in] ipar 参数编号，从1开始。
+ * @param [in] fParamType 参数的类型(出/入)。
+ * @param [in] fCType 字段的C语言类型。
+ * @param [in] fSqlType 字段的SQL类型。
+ * @param [in] cbColDef 字段长度。
+ * @param [in] ibScale 浮点数精度。
+ * @param [in] rgbValue 参数值的指针。
+ * @param [in] cbValueMax 参数值的长度。
+ * 
+*/
+SQLRETURN abcdk_odbc_bind_parameter(abcdk_odbc_t *ctx, SQLUSMALLINT ipar, SQLSMALLINT fParamType,
+                                    SQLSMALLINT fCType, SQLSMALLINT fSqlType, SQLULEN cbColDef,
+                                    SQLSMALLINT ibScale, SQLPOINTER rgbValue, SQLLEN cbValueMax);
+
+/**
  * 执行SQL语句。
  *
  * @return SQL_SUCCESS(0) 成功，SQL_NO_DATA(100) 无数据，< 0 失败。
@@ -168,6 +185,18 @@ SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT
  * @return >= 0 成功(索引)，< 0 失败(未找到)。
  */
 SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name);
+
+/**
+ * 获取ERROR信息。
+ * 
+ * @param [out] Sqlstate 返回SQL状态，NULL(0)忽略。
+ * @param [out] NativeError 返回本机状态，NULL(0)忽略。
+ * @param [out] MessageText 返回描述信息，NULL(0)忽略。
+ * @param [in] MessageMax 返回描述信息的最大长度。
+ * 
+*/
+SQLRETURN abcdk_odbc_error_info(abcdk_odbc_t *ctx, SQLCHAR *Sqlstate, SQLINTEGER *NativeError,
+                                SQLCHAR *MessageText, SQLSMALLINT MessageMax);
 
 #endif // defined(__SQL_H) && defined(__SQLEXT_H)
 
