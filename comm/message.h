@@ -73,7 +73,7 @@ void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_messa
 /**
  * 接收消息。
  * 
- * @return 1 缓存区已满，0 缓存区未满。
+ * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */
 int abcdk_comm_message_recv(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
 
