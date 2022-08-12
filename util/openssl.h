@@ -292,8 +292,7 @@ void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx);
 /**
  * 创建SSL_CTX句柄。
  * 
- * @warning 
- * 
+ * @param server !0 服务端环境，0 客户端环境。
  * @param cafile CA证书文件的指针，NULL(0) 忽略。仅支持PEM格式。
  * @param capath CA证书目录的指针，NULL(0) 忽略。仅支持PEM格式。
  * @param crl_check 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。

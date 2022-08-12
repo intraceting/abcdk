@@ -4,43 +4,73 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_LOG_H
-#define ABCDK_UTIL_LOG_H
+#ifndef ABCDK_LOG_LOG_H
+#define ABCDK_LOG_LOG_H
 
 #include "util/general.h"
-#include "util/thread.h"
 
 __BEGIN_DECLS
 
-/**
- * 日志初始化。
- * 
- * 只能执行一次。
- * 
- * @param ident NULL(0) 进程名做为标识，!NULL(0) 自定义标识。
- * @param level 记录级别。LOG_*宏定义在syslog.h文件中。
- * @param copy2stderr 0 仅记录，!0 复制到stderr。
- * 
- */
-void abcdk_log_open(const char *ident,int level,int copy2stderr);
+/** 日志类型。*/
+typedef enum _abcdk_log_type
+{
+    /** 错误。*/
+    ABCDK_LOG_ERROR = 0,
+#define ABCDK_LOG_ERROR ABCDK_LOG_ERROR
+
+    /** 警告。*/
+    ABCDK_LOG_WARN = 1,
+#define ABCDK_LOG_WARN ABCDK_LOG_WARN
+
+    /** 重要。*/
+    ABCDK_LOG_INFO = 2,
+#define ABCDK_LOG_INFO ABCDK_LOG_INFO
+
+    /** 调式。*/
+    ABCDK_LOG_DEBUG = 3,
+#define ABCDK_LOG_DEBUG ABCDK_LOG_DEBUG
+
+    /** 最大值。*/
+    ABCDK_LOG_MAX = 32
+
+} abcdk_log_type_t;
+
 
 /**
- * 格式化输出日志。
+ * 初始化。
  * 
- * @note 自动获取线程名字添加到行首。
- * @warning 每行日志最大长度4096字节，包括线程名字(16字节)。
+ * @warning 如果在其它接调用之后才进行初始化，将不会起作用。
  * 
- * @param priority 优先级。LOG_*宏定义在syslog.h文件中。
+ * @param [in] ident 标识，为NULL(0)时，以进程名做为标识。
+ * @param [in] consignee 收货地址。默认：本机。
  * 
 */
-void abcdk_log_vprintf(int priority,const char *fmt,va_list ap);
+void abcdk_log_open(const char *ident,const char *consignee);
 
 /**
- * 格式化输出日志。
+ * 设置掩码。
+ * 
+ * @param [in] type 类型。
+ * @param [in] type,... 更多的类型，-1 结束。
 */
-void abcdk_log_printf(int priority,const char *fmt,...);
+void abcdk_log_mask(uint8_t type,...);
+
+/**
+ * 格式化输出。
+ * 
+ * @param [in] type 类型。
+ * @param [in] fmt 格式化字符串。@see vprintf
+ * @param [in] ap 可变参数。
+ * 
+*/
+void abcdk_log_vprintf(int type,const char *fmt,va_list ap);
+
+/**
+ * 格式化输出。
+*/
+void abcdk_log_printf(int type,const char *fmt,...);
 
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_LOG_H
+#endif //ABCDK_LOG_LOG_H
