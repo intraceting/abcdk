@@ -121,27 +121,27 @@ void _abcdkserial_work(abcdkserial_ctx *ctx)
 
     if (!ctx->dev || !*ctx->dev)
     {
-        syslog(LOG_ERR, "'--dev DEVICE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->dev, F_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s.", ctx->dev, strerror(errno));
+        fprintf(stderr, "'%s' %s.", ctx->dev, strerror(errno));
         goto final;
     }
 
     ctx->fd = abcdk_open(ctx->dev, 1, 1, 0);
     if (ctx->fd < 0)
     {
-        syslog(LOG_WARNING, "以读写权限打开设备失败，尝试以只读权限打开。");
+        fprintf(stderr, "以读写权限打开设备失败，尝试以只读权限打开。");
         
         ctx->fd = abcdk_open(ctx->dev, 0, 1, 0);
     }
 
     if (ctx->fd < 0)
     {
-        syslog(LOG_ERR, "'%s' %s.", ctx->dev, strerror(errno));
+        fprintf(stderr, "'%s' %s.", ctx->dev, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -151,7 +151,7 @@ void _abcdkserial_work(abcdkserial_ctx *ctx)
     chk = abcdk_thread_create(&ctx->io, 1);
     if (chk != 0)
     {
-        syslog(LOG_ERR, " %s.",strerror(errno));
+        fprintf(stderr, " %s.",strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 

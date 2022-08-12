@@ -127,26 +127,26 @@ void _abcdkrobots_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--robots FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--robots FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_RETURN0(EINVAL);
     }
 
     if (access(file, R_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s。", file, strerror(errno));
+        fprintf(stderr, "'%s' %s。", file, strerror(errno));
         return;
     }
 
     rbts = abcdk_robots_parse_file(file,agent);
     if (!rbts)
     {
-        syslog(LOG_ERR, "'%s' 解析失败。", file);
+        fprintf(stderr, "'%s' 解析失败。", file);
         return;
     }
 
     if(!abcdk_tree_child(rbts,1))
     {
-        syslog(LOG_ERR, "规则内未包含指定的代理名称'%s'。", agent);
+        fprintf(stderr, "规则内未包含指定的代理名称'%s'。", agent);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 
@@ -154,7 +154,7 @@ void _abcdkrobots_work(abcdk_tree_t *args)
     {
         if(abcdk_reopen(STDOUT_FILENO,outfile,1,0,1)<0)
         {
-            syslog(LOG_ERR, "'%s' %s.", outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.", outfile, strerror(errno));
             goto final;
         }
     }

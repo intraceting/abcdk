@@ -10,7 +10,6 @@
 #include "util/general.h"
 #include "util/thread.h"
 #include "util/tree.h"
-#include "util/log.h"
 
 __BEGIN_DECLS
 

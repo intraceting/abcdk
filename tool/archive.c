@@ -271,7 +271,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
     /*转成本地的字符集编码。*/
     abcdk_iconv2(ctx->md_cst, "UTF-8", name, abcdk_cslen(name,ctx->md_cst_w) * ctx->md_cst_w, name_cp, PATH_MAX, NULL);
 
-    syslog(LOG_INFO, "%s\n", name_cp);
+    fprintf(stderr, "%s\n", name_cp);
 
     /*跳过.和..*/
     bname_p = strrchr(name_cp, '/');
@@ -285,7 +285,7 @@ int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
         chk = archive_read_data_skip(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final_error);
         }
     }
@@ -404,7 +404,7 @@ void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
     chk = archive_read_open_filenames(ctx->arch_fd, ctx->volumes, ctx->blk);
     if (chk != ARCHIVE_OK)
     {
-        syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
 
@@ -415,7 +415,7 @@ void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
             goto final;
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
 
@@ -452,7 +452,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
 
     if (ctx->volumes[0] == NULL || ctx->volumes[0][0] == '\0')
     {
-        syslog(LOG_ERR, "'--volume NAME [ NAME-part1 NAME-part2 ... ]' 不能省略，且不能为空。");
+        fprintf(stderr, "'--volume NAME [ NAME-part1 NAME-part2 ... ]' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -460,7 +460,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
     {
         if (access(ctx->volumes[0], R_OK) != 0)
         {
-            syslog(LOG_ERR, "'%s' %s。", ctx->volumes[i], strerror(errno));
+            fprintf(stderr, "'%s' %s。", ctx->volumes[i], strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -469,13 +469,13 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
     {
         if (ctx->wksp == NULL || *ctx->wksp == '\0')
         {
-            syslog(LOG_ERR, "'--workspace PATH' 不能省略，且不能为空。");
+            fprintf(stderr, "'--workspace PATH' 不能省略，且不能为空。");
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
         }
 
         if (access(ctx->wksp, W_OK) != 0)
         {
-            syslog(LOG_ERR, "'%s' %s。", ctx->wksp, strerror(errno));
+            fprintf(stderr, "'%s' %s。", ctx->wksp, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -483,7 +483,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
     ctx->arch_fd = archive_read_new();
     if (!ctx->arch_fd)
     {
-        syslog(LOG_ERR, "%s。", strerror(errno));
+        fprintf(stderr, "%s。", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -492,7 +492,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         chk = archive_read_append_filter(ctx->arch_fd, abcdkarchive_find_filter(ctx->flt));
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -501,7 +501,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         chk = archive_read_support_filter_all(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -511,7 +511,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         chk = archive_read_set_format(ctx->arch_fd, abcdkarchive_find_format(ctx->fmt));
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -520,7 +520,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         chk = archive_read_support_format_all(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -530,7 +530,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         chk = archive_read_set_options(ctx->arch_fd, ctx->opt);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -541,7 +541,7 @@ void _abcdkarchive_read(abcdkarchive_ctx *ctx)
         chk = archive_read_add_passphrase(ctx->arch_fd, ctx->pwd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -572,7 +572,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
         return -2;
     }
 
-    syslog(LOG_INFO, "%s\n", file + strlen(ctx->wksp));
+    fprintf(stderr, "%s\n", file + strlen(ctx->wksp));
 
     entry = archive_entry_new();
     if(!entry)
@@ -594,7 +594,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
     chk = archive_write_header(ctx->arch_fd, entry);
     if (chk != ARCHIVE_OK)
     {
-        syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
 
@@ -606,7 +606,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
     fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
     {
-        syslog(LOG_ERR, "'%s' %s。", file,strerror(errno));
+        fprintf(stderr, "'%s' %s。", file,strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -641,7 +641,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
         wlen = archive_write_data(ctx->arch_fd, ctx->buf, rlen);
         if (wlen != rlen)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -649,7 +649,7 @@ int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *
     chk = archive_write_finish_entry(ctx->arch_fd);
     if (chk != ARCHIVE_OK)
     {
-        syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
    
@@ -757,7 +757,7 @@ int _abcdkarchive_write_open_cb(struct archive *fd, void *opaque)
         ctx->fd[i] = abcdk_open(ctx->volumes[i], 1, 0, 1);
         if (ctx->fd[i] < 0)
         {
-            syslog(LOG_ERR, "'%s' %s。", ctx->volumes[i], strerror(errno));
+            fprintf(stderr, "'%s' %s。", ctx->volumes[i], strerror(errno));
             ABCDK_ERRNO_AND_RETURN1(ctx->errcode = errno, ARCHIVE_FAILED);
         }
     }
@@ -812,39 +812,39 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
 
     if (ctx->volumes[0] == NULL || ctx->volumes[0][0] == '\0')
     {
-        syslog(LOG_ERR, "'--volume NAME [ NAME-1 NAME-2 ... ]' 不能省略，且不能为空。");
+        fprintf(stderr, "'--volume NAME [ NAME-1 NAME-2 ... ]' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (ctx->files[0] == NULL || *ctx->files[0] == '\0')
     {
-        syslog(LOG_ERR, "'--file-from FILE|DIR [ FILE|DIR ... ]' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file-from FILE|DIR [ FILE|DIR ... ]' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (ctx->wksp == NULL || *ctx->wksp == '\0')
     {
-        syslog(LOG_ERR, "'--workspace PATH' 不能省略，且不能为空。");
+        fprintf(stderr, "'--workspace PATH' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->wksp, R_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s。", ctx->wksp, strerror(errno));
+        fprintf(stderr, "'%s' %s。", ctx->wksp, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
     ctx->arch_fd = archive_write_new();
     if (!ctx->arch_fd)
     {
-        syslog(LOG_ERR, "%s。", strerror(errno));
+        fprintf(stderr, "%s。", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
     chk = archive_write_set_bytes_per_block(ctx->arch_fd, ctx->blk);
     if (chk != ARCHIVE_OK)
     {
-        syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
 
@@ -853,7 +853,7 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
         chk = archive_write_add_filter(ctx->arch_fd, abcdkarchive_find_filter(ctx->flt));
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -863,7 +863,7 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
         chk = archive_write_set_format(ctx->arch_fd, abcdkarchive_find_format(ctx->fmt));
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -873,7 +873,7 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
         chk = archive_write_set_options(ctx->arch_fd, ctx->opt);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -884,7 +884,7 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
         chk = archive_write_set_passphrase(ctx->arch_fd, ctx->pwd);
         if (chk != ARCHIVE_OK)
         {
-            syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -893,7 +893,7 @@ void _abcdkarchive_write(abcdkarchive_ctx *ctx)
     chk = archive_write_open(ctx->arch_fd,ctx,_abcdkarchive_write_open_cb,_abcdkarchive_write_write_cb,_abcdkarchive_write_close_cb);
     if (chk != ARCHIVE_OK)
     {
-        syslog(LOG_ERR, "%s。", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
     
@@ -938,7 +938,7 @@ void _abcdkarchive_work(abcdkarchive_ctx *ctx)
     }
     else
     {
-        syslog(LOG_INFO, "尚未支持。");
+        fprintf(stderr, "尚未支持。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -969,7 +969,7 @@ int abcdk_tool_archive(abcdk_tree_t *args)
 
 #else // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
-    syslog(LOG_INFO, "当前构建版本未包含此工具。\n");
+    fprintf(stderr, "当前构建版本未包含此工具。\n");
     return EPERM;
 
 #endif // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)

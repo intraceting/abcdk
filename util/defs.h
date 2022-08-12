@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <syslog.h>
 #include <pthread.h>
 #include <ctype.h>
 #include <memory.h>

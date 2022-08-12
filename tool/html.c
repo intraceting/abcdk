@@ -198,26 +198,26 @@ void _abcdkhtml_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--html FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--html FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (access(file, R_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s.", file, strerror(errno));
+        fprintf(stderr, "'%s' %s.", file, strerror(errno));
         goto final;
     }
 
     html = abcdk_html_parse_file(file);
     if (!html)
     {
-        syslog(LOG_ERR, "'%s' 无法解析。", file);
+        fprintf(stderr, "'%s' 无法解析。", file);
         goto final;
     }
 
     if(!abcdk_tree_child(html,1))
     {
-        syslog(LOG_ERR, "'%s' 可能不是HTML格式。", file);
+        fprintf(stderr, "'%s' 可能不是HTML格式。", file);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 
@@ -225,7 +225,7 @@ void _abcdkhtml_work(abcdk_tree_t *args)
     {
         if(abcdk_reopen(STDOUT_FILENO,outfile,1,0,1)<0)
         {
-            syslog(LOG_ERR, "'%s' %s.", outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.", outfile, strerror(errno));
             goto final;
         }
     }

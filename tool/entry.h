@@ -11,7 +11,6 @@
 #include "util/option.h"
 #include "util/getargs.h"
 #include "shell/proc.h"
-#include "util/log.h"
 
 __BEGIN_DECLS
 

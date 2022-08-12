@@ -221,7 +221,7 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
 
     if (!ctx->avc1)
     {
-        syslog(LOG_WARNING, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -232,7 +232,7 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
         memcpy(ctx->h264_startcode, "\0\0\0\1", 4);
     else
     {
-        syslog(LOG_WARNING, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -243,7 +243,7 @@ void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
     if (access(ctx->out_file, F_OK) == 0)
     {
 
-        syslog(LOG_WARNING, "'%s' 已经存在，忽略当前视频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -342,7 +342,7 @@ void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
 
     if (!ctx->mp4a)
     {
-        syslog(LOG_WARNING, "仅支持AAC编码提取，忽略当前音频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -351,7 +351,7 @@ void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
 
     if (access(ctx->out_file, F_OK) == 0)
     {
-        syslog(LOG_WARNING, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -506,25 +506,25 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     if (!ctx->file || !*ctx->file)
     {
-        syslog(LOG_ERR, "'--file FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->file, R_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s.", ctx->file, strerror(errno));
+        fprintf(stderr, "'%s' %s.", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
     if (!ctx->save || !*ctx->save)
     {
-        syslog(LOG_ERR, "'--save PATH' 不能省略，且不能为空。");
+        fprintf(stderr, "'--save PATH' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->save, W_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s.", ctx->save, strerror(errno));
+        fprintf(stderr, "'%s' %s.", ctx->save, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -547,7 +547,7 @@ void _abcdkm4j_work(abcdkm4j_ctx *ctx)
 
     if(!abcdk_mp4_find2(ctx->doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        syslog(LOG_ERR, "'%s' 可能不是MP4文件。", ctx->file);
+        fprintf(stderr, "'%s' 可能不是MP4文件。", ctx->file);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 

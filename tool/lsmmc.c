@@ -171,7 +171,7 @@ void _abcdklsmmc_work(abcdklsmmc_ctx *ctx)
     {
         if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
         {
-            syslog(LOG_ERR, "'%s' %s.", ctx->outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.", ctx->outfile, strerror(errno));
             goto final;
         }
     }

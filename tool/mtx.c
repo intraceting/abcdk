@@ -146,7 +146,7 @@ void _abcdkmtx_printf_sense(abcdk_scsi_io_stat_t *stat)
 
     msg_p = abcdk_mediumx_sense2string(key, asc, ascq);
 
-    syslog(LOG_INFO, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
+    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
 const char *_abcdkmtx_translate_devname(abcdkmtx_ctx *ctx, uint8_t type, const char *sn)
@@ -368,13 +368,13 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
-        syslog(LOG_ERR, "'--dev DEVICE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->dev_p, F_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s。", ctx->dev_p, strerror(errno));
+        fprintf(stderr, "'%s' %s。", ctx->dev_p, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -386,7 +386,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
     ctx->fd = abcdk_open(ctx->dev_p, 0, 0, 0);
     if (ctx->fd < 0)
     {
-        syslog(LOG_ERR, "'%s' %s.",ctx->dev_p,strerror(errno));
+        fprintf(stderr, "'%s' %s.",ctx->dev_p,strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -396,7 +396,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
 
     if (ctx->type != TYPE_MEDIUM_CHANGER)
     {
-        syslog(LOG_ERR, "'%s' 不是机械手。", ctx->dev_p);
+        fprintf(stderr, "'%s' 不是机械手。", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
@@ -418,7 +418,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
         {
             if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
             {
-                syslog(LOG_ERR, "'%s' %s。", ctx->outfile, strerror(errno));
+                fprintf(stderr, "'%s' %s。", ctx->outfile, strerror(errno));
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
             }
         }
@@ -431,7 +431,7 @@ void _abcdkmtx_work(abcdkmtx_ctx *ctx)
     }
     else
     {
-        syslog(LOG_INFO, "尚未支持。");
+        fprintf(stderr, "尚未支持。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 

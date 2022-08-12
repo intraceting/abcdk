@@ -63,13 +63,13 @@ void _abcdkjson_wrok(abcdkjson_ctx *ctx)
 
     if (!ctx->file || !*ctx->file)
     {
-        syslog(LOG_ERR, "'--file FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
     if (access(ctx->file, R_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s。", ctx->file, strerror(errno));
+        fprintf(stderr, "'%s' %s。", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
     }
 
@@ -78,7 +78,7 @@ void _abcdkjson_wrok(abcdkjson_ctx *ctx)
     {
         if(abcdk_reopen(STDOUT_FILENO,ctx->outfile,1,0,1)<0)
         {
-            syslog(LOG_ERR, "'%s' %s.", ctx->outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.", ctx->outfile, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
         }
     }
@@ -86,7 +86,7 @@ void _abcdkjson_wrok(abcdkjson_ctx *ctx)
     ctx->obj = json_object_from_file(ctx->file);
     if(!ctx->obj)
     {
-        syslog(LOG_ERR, "'%s' %s。", ctx->file, strerror(ESPIPE));
+        fprintf(stderr, "'%s' %s。", ctx->file, strerror(ESPIPE));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE,final);
     }
 
@@ -121,7 +121,7 @@ int abcdk_tool_json(abcdk_tree_t *args)
 
 #else 
     
-    syslog(LOG_INFO, "当前构建版本未包含此工具。\n");
+    fprintf(stderr, "当前构建版本未包含此工具。\n");
     ctx.errcode = EPERM;
 
 #endif //_json_h_

@@ -182,26 +182,26 @@ void _abcdkhd_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        syslog(LOG_ERR, "'--file FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (access(file, R_OK) != 0)
     {
-        syslog(LOG_ERR, "'%s' %s.", file, strerror(errno));
+        fprintf(stderr, "'%s' %s.", file, strerror(errno));
         goto final;
     }
 
     mfile = abcdk_mmap2(file, 0, 0);
     if (!mfile)
     {
-        syslog(LOG_ERR, "'%s' %s.", file, strerror(errno));
+        fprintf(stderr, "'%s' %s.", file, strerror(errno));
         goto final;
     }
 
     if (offset >= mfile->sizes[0])
     {
-        syslog(LOG_ERR, "'--offset OFFSET' 不能超过文件长度(%lu)。", mfile->sizes[0]);
+        fprintf(stderr, "'--offset OFFSET' 不能超过文件长度(%lu)。", mfile->sizes[0]);
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -212,7 +212,7 @@ void _abcdkhd_work(abcdk_tree_t *args)
     {
         if (abcdk_reopen(STDOUT_FILENO, outfile, 1, 0, 1) < 0)
         {
-            syslog(LOG_ERR, "'%s' %s.", outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.", outfile, strerror(errno));
             goto final;
         }
     }

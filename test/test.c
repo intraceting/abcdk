@@ -44,7 +44,6 @@
 #include "util/notify.h"
 #include "util/scsi.h"
 #include "util/ndarray.h"
-#include "util/log.h"
 #include "shell/mtab.h"
 #include "shell/block.h"
 #include "shell/mmc.h"
@@ -338,21 +337,6 @@ void test_mux(abcdk_tree_t *args)
         test_server(args);
     else 
         test_client(args);
-}
-
-void test_log(abcdk_tree_t *args)
-{
-    abcdk_log_open(NULL, LOG_DEBUG, 1);
-
-#pragma omp parallel for num_threads(4)
-    for (int j = 0; j < 4; j++)
-    {
-#ifdef _OPENMP
-        abcdk_thread_setname("abcdk-%d", omp_get_thread_num());
-#endif
-        for (int i = LOG_EMERG; i <= LOG_DEBUG; i++)
-            abcdk_log_printf(i, "haha-%d", i);
-    }
 }
 
 void test_ffmpeg(abcdk_tree_t *args)
@@ -5388,8 +5372,6 @@ int main(int argc, char **argv)
     abcdk_option_fprintf(stderr,args,NULL);
 
     const char *func = abcdk_option_get(args,"--func",0,"");
-
-    abcdk_log_open(NULL,LOG_DEBUG,1);
     
 
    // abcdk_clock_reset();
@@ -5461,9 +5443,6 @@ int main(int argc, char **argv)
 
     if(abcdk_strcmp(func,"test_mux",0)==0)
         test_mux(args);
-        
-    if(abcdk_strcmp(func,"test_log",0)==0)
-        test_log(args);
 
     if(abcdk_strcmp(func,"test_ffmpeg",0)==0)
         test_ffmpeg(args);

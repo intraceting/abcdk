@@ -103,7 +103,7 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
 
     if (!product || !*product)
     {
-        syslog(LOG_ERR, "'--product NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--product NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -113,19 +113,19 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
         abcdk_strcmp(product, "SQLSERVER", 0) != 0 &&
         abcdk_strcmp(product, "POSTGRESQL", 0) != 0)
     {
-        syslog(LOG_ERR, "'--product NAME' 仅支持DB2，MYSQL，ORACLE，SQLSERVER，POSTGRESQL。");
+        fprintf(stderr, "'--product NAME' 仅支持DB2，MYSQL，ORACLE，SQLSERVER，POSTGRESQL。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!driver || !*driver)
     {
-        syslog(LOG_ERR, "'--driver NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--driver NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!server || !*server)
     {
-        syslog(LOG_ERR, "'--server ADDRESS' 不能省略，且不能为空。");
+        fprintf(stderr, "'--server ADDRESS' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -145,26 +145,26 @@ void _abcdkodbc_work(abcdkodbc_ctx *ctx)
 
     if (port == 0 || port == 65536)
     {
-        syslog(LOG_ERR, "'--port NUMBER' 范围在1~65535之间(包含)。");
+        fprintf(stderr, "'--port NUMBER' 范围在1~65535之间(包含)。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!db || !*db)
     {
-        syslog(LOG_ERR, "'--db NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--db NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!uid || !*uid)
     {
-        syslog(LOG_ERR, "'--uid NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--uid NAME' 不能省略，且不能为空。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     chk = abcdk_odbc_connect2(odbc,product,driver,server,port,db,uid,pwd,timeout,tracefile);
     if(chk != SQL_SUCCESS)
     {
-        syslog(LOG_ERR, "连接失败，超时或参数错误。");
+        fprintf(stderr, "连接失败，超时或参数错误。");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -197,7 +197,7 @@ int abcdk_tool_odbc(abcdk_tree_t *args)
 
 #else
 
-    syslog(LOG_INFO, "当前构建版本未包含此工具。\n");
+    fprintf(stderr, "当前构建版本未包含此工具。\n");
     return EPERM;
 
 #endif //defined(__SQL_H) && defined(__SQLEXT_H)
