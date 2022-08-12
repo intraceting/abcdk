@@ -197,8 +197,6 @@ void *_abcdk_reader_readfile(void *opaque)
 
     /*无论什么原因，走到这里表示文件已经结束。*/
     abcdk_atomic_store(&reader->eof,1);
-
-    abcdk_log_printf(LOG_DEBUG, "%s exit.", __FUNCTION__);
 }
 
 ssize_t abcdk_reader_read(abcdk_reader_t *reader, void *buf, size_t size)
