@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
 #ifndef ABCDK_LOG_LOG_H
 #define ABCDK_LOG_LOG_H
@@ -10,6 +10,17 @@
 #include "util/general.h"
 
 __BEGIN_DECLS
+
+/**
+ * 收件人环境变量名字。
+ *
+ * @code
+ * IPV4:PORT
+ * IPV6,PORT
+ * [IPV6]:PORT
+ * @endcode
+ */
+#define ABCDK_LOG_CONSIGNEE "ABCDK_LOG_CONSIGNEE"
 
 /** 日志类型。*/
 typedef enum _abcdk_log_type
@@ -35,42 +46,39 @@ typedef enum _abcdk_log_type
 
 } abcdk_log_type_t;
 
-
 /**
  * 初始化。
- * 
+ *
  * @warning 如果在其它接调用之后才进行初始化，将不会起作用。
- * 
- * @param [in] ident 标识，为NULL(0)时，以进程名做为标识。
+ *
  * @param [in] consignee 收货地址。默认：本机。
- * 
-*/
-void abcdk_log_open(const char *ident,const char *consignee);
+ *
+ */
+void abcdk_log_open(const char *consignee);
 
 /**
  * 设置掩码。
- * 
+ *
  * @param [in] type 类型。
  * @param [in] type,... 更多的类型，-1 结束。
-*/
-void abcdk_log_mask(uint8_t type,...);
+ */
+void abcdk_log_mask(int type, ...);
 
 /**
  * 格式化输出。
- * 
+ *
  * @param [in] type 类型。
  * @param [in] fmt 格式化字符串。@see vprintf
  * @param [in] ap 可变参数。
- * 
-*/
-void abcdk_log_vprintf(int type,const char *fmt,va_list ap);
+ *
+ */
+void abcdk_log_vprintf(int type, const char *fmt, va_list ap);
 
 /**
  * 格式化输出。
-*/
-void abcdk_log_printf(int type,const char *fmt,...);
-
+ */
+void abcdk_log_printf(int type, const char *fmt, ...);
 
 __END_DECLS
 
-#endif //ABCDK_LOG_LOG_H
+#endif // ABCDK_LOG_LOG_H

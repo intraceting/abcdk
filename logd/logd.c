@@ -4,11 +4,17 @@
  * MIT License
  * 
 */
+#include <stdio.h>
+#include <assert.h>
+#include <unistd.h>
+#include <string.h>
+#include <locale.h>
 #include "util/general.h"
 #include "util/thread.h"
 #include "util/getargs.h"
 #include "util/openssl.h"
 #include "shell/file.h"
+#include "shell/proc.h"
 #include "comm/easy.h"
 
 typedef struct _abcdk_logd
@@ -62,7 +68,7 @@ int main(int argc, char **argv)
 
 final:
     
-    abcdk_tree_free(&args);
+    abcdk_tree_free(&ctx.args);
 
     return ctx.errcode;
 }

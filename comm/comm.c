@@ -9,9 +9,6 @@
 /** 通信环境。*/
 typedef struct _abcdk_comm
 {
-    /** 环境初始化状态。*/
-    volatile int init_status;
-
     /** epollex 环境。*/
     abcdk_epollex_t *epollex;
 
@@ -21,8 +18,8 @@ typedef struct _abcdk_comm
     /** 工人数量。*/
     int workers;
 
-    /** 工作命令。1： 运行，2：停止。*/
-    volatile int work_cmd;
+    /** 退出标志。0： 运行，!0：停止。*/
+    volatile int exitflag;
 
 } abcdk_comm_t;
 
@@ -31,6 +28,13 @@ typedef struct _abcdk_comm_node
 {
     /** 引用计数器。*/
     volatile int refcount;
+
+    /** 
+     * 通信环境指针。
+     * 
+     * @warning 仅复制。
+    */
+    abcdk_comm_t *ctx;
 
     /** 标识句柄来源。*/
     int flag;
@@ -128,7 +132,7 @@ abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src)
     return src;
 }
 
-abcdk_comm_node_t *_abcdk_comm_node_alloc()
+abcdk_comm_node_t *_abcdk_comm_node_alloc(abcdk_comm_t *ctx)
 {
     abcdk_comm_node_t *node = NULL;
 
@@ -137,6 +141,7 @@ abcdk_comm_node_t *_abcdk_comm_node_alloc()
         return NULL;
 
     node->refcount = 1;
+    node->ctx = ctx;
     node->fd = -1;
     node->opaque = NULL;
     node->private_data = NULL;
@@ -155,36 +160,14 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_node_unref(&node);
 }
 
-int _abcdk_comm_init(void *opaque)
-{
-    abcdk_comm_t *ctx = (abcdk_comm_t *)opaque;
-
-    ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb,ctx);
-    ctx->workers = 0;
-    ctx->work_cmd = 2;
-
-    return 0;
-}
-
-abcdk_comm_t *_abcdk_comm_get_ctx()
-{
-    static abcdk_comm_t ctx = {0};
-    int chk;
-
-    chk = abcdk_once(&ctx.init_status, _abcdk_comm_init, &ctx);
-    assert(chk >= 0);
-
-    return &ctx;
-}
-
 abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     abcdk_comm_node_t *node_sub = NULL;
     epoll_data_t ep_data;
     int chk;
 
-    node_sub = _abcdk_comm_node_alloc();
+    node_sub = _abcdk_comm_node_alloc(ctx);
     if (!node_sub)
         return NULL;
     
@@ -228,7 +211,7 @@ final_error:
 
 void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     socklen_t sock_len = 0;
     int sock_flag = 1;
     int ssl_chk;
@@ -253,6 +236,13 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
             if (chk != 0)
                 goto final_error;
         }
+    }
+
+    /*获取远程地址。*/
+    if (!node->remote.family)
+    {
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getpeername(node->fd, &node->remote.addr, &sock_len);
     }
 
     /*获取本机地址。*/
@@ -346,7 +336,7 @@ final_error:
 
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     int chk;
 
     assert(node != NULL);
@@ -358,47 +348,37 @@ int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
 
 int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
 
     assert(node != NULL);
 
-    if(local)
-        *local = node->local;
+    if (local && node->local.family)
+        abcdk_sockaddr_copy(&node->local,local);
 
-    /*AF_UNIX远程地址要特殊处理，accept返回时并不会填充路径。*/
-    if(remote)
-        *remote = ((node->remote.family == AF_UNIX) ? node->local : node->remote);
+    if (remote && node->remote.family)
+        abcdk_sockaddr_copy(&node->remote,remote);
 
     return 0;
 }
 
 int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
 
     assert(node != NULL);
 
     if(local && node->local.family)
-    {
-        if(node->local.family == AF_UNIX)
-            strncpy(local,node->local.addr_un.sun_path,NAME_MAX);
-        else if(node->local.family == AF_INET ||node->local.family == AF_INET6)
-            abcdk_sockaddr_to_string(local,&node->local);
-    }
+        abcdk_sockaddr_to_string(local,&node->local);
+
     if(remote && node->remote.family)
-    {
-        if(node->remote.family == AF_UNIX)
-            strncpy(remote,node->remote.addr_un.sun_path,NAME_MAX);
-        else if(node->remote.family == AF_INET ||node->remote.family == AF_INET6)
-            abcdk_sockaddr_to_string(remote,&node->remote);
-    }
+        abcdk_sockaddr_to_string(remote,&node->remote);
 
     return 0;
 }
 
 void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     void *old = NULL;
 
     assert(node != NULL);
@@ -411,7 +391,7 @@ void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque)
 
 void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     void *old = NULL;
 
     assert(node != NULL);
@@ -423,7 +403,7 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
 
 void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     void *new_buf = NULL;
 
     assert(node != NULL);
@@ -448,7 +428,7 @@ void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size)
 
 void *abcdk_comm_private_data(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
 
     assert(node != NULL);
 
@@ -457,7 +437,7 @@ void *abcdk_comm_private_data(abcdk_comm_node_t *node)
 
 size_t abcdk_comm_private_size(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
 
     assert(node != NULL);
 
@@ -466,7 +446,7 @@ size_t abcdk_comm_private_size(abcdk_comm_node_t *node)
 
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     ssize_t rsize = 0,rsize_all = 0;
     int chk;
 
@@ -496,7 +476,7 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 
 int abcdk_comm_read_watch(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     int done_flag = 0;
     int chk;
 
@@ -514,7 +494,7 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node)
 
 ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     ssize_t wsize = 0,wsize_all = 0;
 
     assert(node != NULL && buf != NULL && size >0);
@@ -539,7 +519,7 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 
 int abcdk_comm_write_watch(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     int chk;
 
     assert(node != NULL);
@@ -551,7 +531,7 @@ int abcdk_comm_write_watch(abcdk_comm_node_t *node)
 
 void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = node->ctx;
     
     /*读权利绑定到线程。*/
     if(event == ABCDK_COMM_EVENT_INPUT)
@@ -569,9 +549,8 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event)
     node->event_cb(node, event);
 }
 
-void _abcdk_comm_perform(time_t timeout)
+void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     abcdk_comm_node_t *node = NULL;
     abcdk_comm_node_t *node_sub = NULL;
     abcdk_epoll_event_t e = {0};
@@ -664,22 +643,27 @@ void *_abcdk_comm_worker(void *args)
 {
     abcdk_comm_t *ctx = (abcdk_comm_t *)args;
 
-    while (abcdk_atomic_load(&ctx->work_cmd) == 1)
-        _abcdk_comm_perform(5000);
+    /*每隔5秒检查一次，给退出检测留出时间。*/
+    while (!abcdk_atomic_load(&ctx->exitflag))
+        _abcdk_comm_perform(ctx, 5000);
 
     return NULL;
 }
 
-int abcdk_comm_start(int workers)
+abcdk_comm_t * abcdk_comm_start(int workers)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
+    abcdk_comm_t *ctx = NULL;
     long nps = sysconf(_SC_NPROCESSORS_ONLN);
     cpu_set_t cpu_set;
     int chk;
 
-    /*检测是否已经启动。*/
-    if(!abcdk_atomic_compare_and_swap(&ctx->work_cmd,2,1))
-        goto final;
+    ctx = abcdk_heap_alloc(sizeof(abcdk_comm_t));
+    if(!ctx)
+        return NULL;
+
+    ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb,ctx);
+    ctx->workers = 0;
+    ctx->exitflag = 0;
 
     /*如果未指定工作线程数，则使用CPU核心数。*/
     if (workers <= 0)
@@ -695,51 +679,59 @@ int abcdk_comm_start(int workers)
         ctx->tids[i].opaque = ctx;
         chk = abcdk_thread_create(&ctx->tids[i], 1);
         if (chk != 0)
-            break;
+            goto final_error;
 
         /*线程启动，累加计数器。*/
         ctx->workers += 1;
 
         /*设置线程的CPU亲源性。*/
         CPU_ZERO(&cpu_set);
-        CPU_SET((workers - i) % nps, &cpu_set);
+        CPU_SET((ctx->workers - i) % nps, &cpu_set);
         pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
     }
 
-final:
+    return ctx;
 
-    return ctx->workers;
+final_error:
+    
+    abcdk_comm_stop(&ctx);
+
+    return NULL;
 }
 
-void abcdk_comm_stop()
+void abcdk_comm_stop(abcdk_comm_t **ctx)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
-    
-    /*检测是否需要停止。*/
-    if (!abcdk_atomic_compare_and_swap(&ctx->work_cmd, 1, 2))
+    abcdk_comm_t *ctx_p = NULL;
+
+    if(!ctx || !*ctx);
         return;
 
-    /*回收线程资源。*/
-    for (int i = 0; i < ctx->workers; i++)
-        abcdk_thread_join(&ctx->tids[i]);
+    /*复制，清空。*/
+    ctx_p = *ctx;
+    *ctx = NULL;
 
-    ctx->workers = 0;
-    abcdk_heap_free2((void **)&ctx->tids);
-    abcdk_epollex_free(&ctx->epollex);
-    ctx->init_status = 0;
+    /*退出。*/
+    abcdk_atomic_store(&ctx_p->exitflag, 1);
+
+    /*回收线程资源。*/
+    for (int i = 0; i < ctx_p->workers; i++)
+        abcdk_thread_join(&ctx_p->tids[i]);
+
+    abcdk_heap_free2((void **)&ctx_p->tids);
+    abcdk_epollex_free(&ctx_p->epollex);
+    abcdk_heap_free(ctx_p);
 }
 
-abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+abcdk_comm_node_t *abcdk_comm_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     abcdk_comm_node_t *node = NULL,*node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
 
-    assert(addr != NULL && event_cb != NULL);
+    assert(ctx != NULL && addr != NULL && event_cb != NULL);
 
-    node = _abcdk_comm_node_alloc();
+    node = _abcdk_comm_node_alloc(ctx);
     if (!node)
         return NULL;
 
@@ -751,11 +743,21 @@ abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, ab
 #ifdef HEADER_SSL_H
     node->ssl_ctx = ssl_ctx;
 #endif //HEADER_SSL_H
-    node->local = *addr;
     node->opaque = opaque;
     node->event_cb = event_cb;
+
+    /*UNIX需要特殊复制一下。*/
+    if(addr->family == AF_UNIX)
+    {
+        node->local.family = AF_UNIX;
+        strcpy(node->local.addr_un.sun_path,addr->addr_un.sun_path);
+    }
+    else
+    {
+        node->local = *addr;
+    }
     
-    node->fd = abcdk_socket(addr->family, 0);
+    node->fd = abcdk_socket(node->local.family, 0);
     if (node->fd < 0)
         goto final_error;
 
@@ -811,18 +813,17 @@ final_error:
     return NULL;
 }
 
-abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+abcdk_comm_node_t *abcdk_comm_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
 {
-    abcdk_comm_t *ctx = _abcdk_comm_get_ctx();
     abcdk_comm_node_t *node = NULL,*node_p = NULL;
     epoll_data_t ep_data;
     socklen_t addr_len;
     int sock_flag = 1;
     int chk;
 
-    assert(addr != NULL && event_cb != NULL);
+    assert(ctx != NULL && addr != NULL && event_cb != NULL);
 
-    node = _abcdk_comm_node_alloc();
+    node = _abcdk_comm_node_alloc(ctx);
     if (!node)
         return NULL;
     
@@ -831,11 +832,28 @@ abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, a
 
     node->flag = ABCDK_COMM_FLAG_CLIENT;
     node->status = ABCDK_COMM_STATUS_SYNC;
-    node->remote = *addr;
     node->opaque = opaque;
     node->event_cb = event_cb;
     
-    node->fd = abcdk_socket(addr->family, 0);
+    addr_len = sizeof(abcdk_sockaddr_t);
+    if(addr->family == AF_UNIX)
+    {
+        addr_len = SUN_LEN(&addr->addr_un);
+        node->remote.family = AF_UNIX;
+        strcpy(node->remote.addr_un.sun_path,addr->addr_un.sun_path);
+    }
+    else if(addr->family == AF_INET)
+    {
+        addr_len = sizeof(struct sockaddr_in);
+        node->remote = *addr;
+    }
+    else if(addr->family == AF_INET6)
+    {
+        addr_len = sizeof(struct sockaddr_in6);
+        node->remote = *addr;
+    }
+
+    node->fd = abcdk_socket(node->remote.family, 0);
     if (node->fd < 0)
         goto final_error;
 #ifdef HEADER_SSL_H
@@ -851,25 +869,8 @@ abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, a
     if(chk != 0 )
         goto final_error;
 
-    addr_len = sizeof(abcdk_sockaddr_t);
-    if(addr->family == AF_UNIX)
-    {
-#ifdef SUN_LEN
-        addr_len = SUN_LEN(&addr->addr_un);
-#else 
-        addr_len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
-#endif
-    }
-    else if(addr->family == AF_INET)
-    {
-        addr_len = sizeof(struct sockaddr_in);
-    }
-    else if(addr->family == AF_INET6)
-    {
-        addr_len = sizeof(struct sockaddr_in6);
-    }
 
-    chk = connect(node->fd, &addr->addr, addr_len);
+    chk = connect(node->fd, &node->remote.addr, addr_len);
     if(chk == 0)
         goto final;
 

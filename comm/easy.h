@@ -107,8 +107,7 @@ size_t abcdk_comm_easy_private_size(abcdk_comm_easy_t *easy);
  * 
  * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(已断开)。
 */
-int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
-                            abcdk_comm_message_t **rsp);
+int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len, abcdk_comm_message_t **rsp);
 
 /** 
  * 发送应答。
@@ -125,28 +124,28 @@ int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t l
 /**
  * 启动监听。
  * 
- * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
- * @param addr 监听地址指针。
- * @param event_cb 事件回调函数指针(新的连接会复制这个指针)。
- * @param opaque 监听环境指针(新的连接会复制这个指针)。
+ * @param [in] ctx 通信环境指针。
+ * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param [in] addr 监听地址指针。
+ * @param [in] event_cb 事件回调函数指针(新的连接会复制这个指针)。
+ * @param [in] opaque 监听环境指针(新的连接会复制这个指针)。
  * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
-abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
-                                          abcdk_comm_easy_request_cb request_cb, void *opaque);
+abcdk_comm_easy_t *abcdk_comm_easy_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb, void *opaque);
 
 /**
  * 启动连接。
  * 
- * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
- * @param addr 服务端地址指针。
- * @param event_cb 事件回调函数指针。
- * @param opaque 客户端环境指针。
+ * @param [in] ctx 通信环境指针。
+ * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param [in] addr 服务端地址指针。
+ * @param [in] event_cb 事件回调函数指针。
+ * @param [in] opaque 客户端环境指针。
  * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
-abcdk_comm_easy_t *abcdk_comm_easy_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
-                                           abcdk_comm_easy_request_cb request_cb, void *opaque);
+abcdk_comm_easy_t *abcdk_comm_easy_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb, void *opaque);
 
 __END_DECLS
 

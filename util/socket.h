@@ -11,6 +11,11 @@
 
 __BEGIN_DECLS
 
+/***/
+#ifndef SUN_LEN
+#define SUN_LEN(ptr) ((size_t)(((struct sockaddr_un *)0)->sun_path) + strlen((ptr)->sun_path))
+#endif
+
 /** Socket地址 */
 typedef union _abcdk_sockaddr
 {
@@ -57,6 +62,11 @@ typedef struct _abcdk_ifaddrs
     */
     abcdk_sockaddr_t broa;
 } abcdk_ifaddrs_t;
+
+/**
+ * SOCKADDR复制。
+ */
+void abcdk_sockaddr_copy(const abcdk_sockaddr_t *src,abcdk_sockaddr_t *dst);
 
 /**
  * 域名解析。

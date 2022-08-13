@@ -55,6 +55,7 @@
 #include "util/json.h"
 #include "util/signal.h"
 #include "util/odbcpool.h"
+#include "log/log.h"
 
 
 #ifdef HAVE_FUSE
@@ -3624,7 +3625,7 @@ void test_comm(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_start(0);
+    abcdk_comm_t *ctx = abcdk_comm_start(0);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx = NULL;
@@ -3662,28 +3663,28 @@ void test_comm(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    abcdk_comm_listen(server_ssl_ctx,&addr,test_comm_message_cb,NULL);
+    abcdk_comm_listen(ctx,server_ssl_ctx,&addr,test_comm_message_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    abcdk_comm_connect(client_ssl_ctx,&addr2,test_comm_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
+    abcdk_comm_connect(ctx,client_ssl_ctx,&addr2,test_comm_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
  
 
 
     while (getchar() != 'Q')
         ;
 
-    abcdk_comm_stop();
+    abcdk_comm_stop(&ctx);
 
 }
 
 void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 {
-    char sockname_str[100] = {0}, peername_str[100] = {0};
+    char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
 
     abcdk_comm_easy_get_sockaddr_str(easy,sockname_str,peername_str);
 
- //   printf("Server(%s -> %s): ", sockname_str, peername_str);
+ //   printf("Server(%s -> %s): \n", sockname_str, peername_str);
 
     if(!data)
     {
@@ -3707,11 +3708,11 @@ void test_easy_request_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 
 void test_easy_request2_cb(abcdk_comm_easy_t *easy, const void *data, size_t len)
 {
-    char sockname_str[100] = {0}, peername_str[100] = {0};
+    char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
     
     abcdk_comm_easy_get_sockaddr_str(easy,sockname_str,peername_str);
 
-  //  printf("Client(%s -> %s): ", sockname_str, peername_str);
+   // printf("Client(%s -> %s): \n", sockname_str, peername_str);
 
     if(!data)
     {
@@ -3728,7 +3729,7 @@ void test_easy(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_start(0);
+    abcdk_comm_t *ctx = abcdk_comm_start(0);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx[4] = {NULL};
@@ -3771,26 +3772,27 @@ void test_easy(abcdk_tree_t *args)
 
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
- //   addr.family = AF_UNIX;
-  //  strncpy(addr.addr_un.sun_path,sunpath,108);
+    //addr.family = AF_UNIX;
+    //strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(server_ssl_ctx,&addr,test_easy_request_cb,NULL);
+    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(ctx,server_ssl_ctx,&addr,test_easy_request_cb,NULL);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
-  //  addr2.family = AF_UNIX;
-  //  strncpy(addr2.addr_un.sun_path,sunpath,108);
+    //addr2.family = AF_UNIX;
+    //strncpy(addr2.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_easy_t *easy_client[4] = {NULL};
-    for (int i = 0; i < 4; i++)
-        easy_client[i] = abcdk_comm_easy_connect(client_ssl_ctx[i], &addr2, test_easy_request2_cb, NULL);
+    int nn = 4;
+    abcdk_comm_easy_t *easy_client[40] = {NULL};
+    for (int i = 0; i < nn; i++)
+        easy_client[i] = abcdk_comm_easy_connect(ctx,client_ssl_ctx[i], &addr2, test_easy_request2_cb, NULL);
 
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
 
     
 
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(nn)
     for(int i = 0;i<100000;i++)
     {
 #ifdef _OPENMP
@@ -3806,7 +3808,7 @@ void test_easy(abcdk_tree_t *args)
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client[i%4],req,len,&rsp);
+        abcdk_comm_easy_request(easy_client[i%nn],req,len,&rsp);
         
 
         if (rsp)
@@ -3836,12 +3838,12 @@ void test_easy(abcdk_tree_t *args)
 
   //  abcdk_comm_easy_unref(&easy_listen);
     
-    for(int i = 0;i<4;i++)
+    for(int i = 0;i<nn;i++)
         abcdk_comm_easy_unref(&easy_client[i]);
 
     while (getchar() != 'Q')
         ;
-    abcdk_comm_stop();
+    abcdk_comm_stop(&ctx);
 
 
 }
@@ -5358,6 +5360,17 @@ void test_odbcpool(abcdk_tree_t *args)
 #endif
 }
 
+void test_log(abcdk_tree_t *args)
+{
+    abcdk_log_mask(1,2,3,4,-1);
+
+    for(int j =0;j<ABCDK_LOG_MAX;j++)
+    {
+        for (int i = 0; i < 1000; i++)
+            abcdk_log_printf(-j, "%d", j);
+    }
+}
+
 int main(int argc, char **argv)
 {
     abcdk_thread_t p;
@@ -5608,6 +5621,9 @@ int main(int argc, char **argv)
 
     if (abcdk_strcmp(func, "test_odbcpool", 0) == 0)
         test_odbcpool(args);
+
+    if (abcdk_strcmp(func, "test_log", 0) == 0)
+        test_log(args);
 
     abcdk_tree_free(&args);
     

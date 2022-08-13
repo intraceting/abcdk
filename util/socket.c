@@ -6,6 +6,21 @@
  */
 #include "util/socket.h"
 
+void abcdk_sockaddr_copy(const abcdk_sockaddr_t *src,abcdk_sockaddr_t *dst)
+{
+    assert(src != NULL && dst != NULL);
+
+    if(src->family == AF_UNIX)
+    {
+        dst->family = src->family;
+        strcpy(dst->addr_un.sun_path,src->addr_un.sun_path);
+    }
+    else
+    {
+        *dst = *src;
+    }
+}
+
 int abcdk_gethostbyname(const char *name, sa_family_t family, abcdk_sockaddr_t *addrs, int max, char canonname[1000])
 {
     struct addrinfo *results = NULL;
@@ -297,11 +312,7 @@ int abcdk_bind(int fd, const abcdk_sockaddr_t *addr)
     len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
     {
-#ifdef SUN_LEN
         len = SUN_LEN(&addr->addr_un);
-#else 
-        len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
-#endif
     }
     else if(addr->family == AF_INET)
     {
@@ -360,11 +371,7 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout)
     len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
     {
-#ifdef SUN_LEN
         len = SUN_LEN(&addr->addr_un);
-#else 
-        len = offsetof(struct sockaddr_un,sun_path)+strlen(addr->addr_un.sun_path);
-#endif
     }
     else if(addr->family == AF_INET)
     {
@@ -466,7 +473,7 @@ char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
 
     if (src->family == AF_UNIX)
     {
-        strncpy(dst, src->addr_un.sun_path, NAME_MAX);
+        strcpy(dst, src->addr_un.sun_path);
     }
     else
     {

@@ -51,12 +51,6 @@ typedef struct _abcdk_comm_easy
     */
     volatile int status;
 
-    /** 本机地址。*/
-    abcdk_sockaddr_t local;
-
-    /** 远端地址。*/
-    abcdk_sockaddr_t remote;
-
     /** 链路。*/
     abcdk_comm_node_t *comm;
 
@@ -160,36 +154,18 @@ int abcdk_comm_easy_set_timeout(abcdk_comm_easy_t *easy, time_t timeout)
 
 int abcdk_comm_easy_get_sockaddr(abcdk_comm_easy_t *easy, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
+    socklen_t len;
+
     assert(easy != NULL);
 
-    if(local)
-        *local = easy->local;
-    if(remote)
-        *remote = easy->remote;
-
-    return 0;
+    return abcdk_comm_get_sockaddr(easy->comm,local,remote);
 }
 
 int abcdk_comm_easy_get_sockaddr_str(abcdk_comm_easy_t *easy, char local[NAME_MAX],char remote[NAME_MAX])
 {
     assert(easy != NULL);
 
-     if(local && easy->local.family)
-    {
-        if(easy->local.family == AF_UNIX)
-            strncpy(local,easy->local.addr_un.sun_path,NAME_MAX);
-        else if(easy->local.family == AF_INET ||easy->local.family == AF_INET6)
-            abcdk_sockaddr_to_string(local,&easy->local);
-    }
-    if(remote && easy->remote.family)
-    {
-        if(easy->remote.family == AF_UNIX)
-            strncpy(remote,easy->remote.addr_un.sun_path,NAME_MAX);
-        else if(easy->remote.family == AF_INET ||easy->remote.family == AF_INET6)
-            abcdk_sockaddr_to_string(remote,&easy->remote);
-    }
-
-    return 0;
+    return abcdk_comm_get_sockaddr_str(easy->comm,local,remote);
 }
 
 void *abcdk_comm_easy_set_userdata(abcdk_comm_easy_t *easy, void *opaque)
@@ -303,8 +279,7 @@ abcdk_comm_message_t *_abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg)
     return cargo;
 }
 
-int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len,
-                            abcdk_comm_message_t **rsp)
+int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len, abcdk_comm_message_t **rsp)
 {
     abcdk_comm_queue_t *rsp_queue = NULL;
     abcdk_comm_message_t *rsp_msg = NULL;
@@ -393,8 +368,6 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node)
     easy->request_cb = easy_listen->request_cb;
     easy->opaque = easy_listen->opaque;
 
-    abcdk_comm_get_sockaddr(node, &easy->local, &easy->remote);
-
     /*替换环境指针*/
     abcdk_comm_set_userdata(node, easy);
 
@@ -406,8 +379,6 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
 
     abcdk_atomic_store(&easy->status, 2);
-
-    abcdk_comm_get_sockaddr(node, &easy->local,NULL);
 
     abcdk_comm_read_watch(node);
     abcdk_comm_write_watch(node);
@@ -564,7 +535,7 @@ NEXT_MSG:
 void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
 {
     abcdk_comm_easy_t *easy = (abcdk_comm_easy_t *)abcdk_comm_get_userdata(node);
-    char sockname_str[100] = {0}, peername_str[100] = {0};
+    char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
 
     if (easy)
     {
@@ -612,14 +583,13 @@ void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event)
     }
 }
 
-abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
-                                          abcdk_comm_easy_request_cb request_cb, void *opaque)
+abcdk_comm_easy_t *abcdk_comm_easy_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb, void *opaque)
 {
     abcdk_comm_easy_t *easy = NULL;
     abcdk_comm_easy_t *easy_p = NULL;
     int chk;
 
-    assert(addr != NULL && request_cb != NULL);
+    assert(ctx != NULL && addr != NULL && request_cb != NULL);
 
     easy = _abcdk_comm_easy_alloc();
     if (!easy)
@@ -630,11 +600,10 @@ abcdk_comm_easy_t *abcdk_comm_easy_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *ad
 
     easy->flag = 3;
     easy->status = 2;
-    easy->local = *addr;
     easy->request_cb = request_cb;
     easy->opaque = opaque;
 
-    easy->comm = abcdk_comm_listen(ssl_ctx, &easy->local, _abcdk_comm_easy_event_cb, easy);
+    easy->comm = abcdk_comm_listen(ctx, ssl_ctx, addr, _abcdk_comm_easy_event_cb, easy);
     if (!easy->comm)
         goto final_error;
 
@@ -648,14 +617,13 @@ final_error:
     return NULL;
 }
 
-abcdk_comm_easy_t *abcdk_comm_easy_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,
-                                           abcdk_comm_easy_request_cb request_cb, void *opaque)
+abcdk_comm_easy_t *abcdk_comm_easy_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb, void *opaque)
 {
     abcdk_comm_easy_t *easy = NULL;
     abcdk_comm_easy_t *easy_p = NULL;
     int chk;
 
-    assert(addr != NULL && request_cb != NULL);
+    assert(ctx != NULL && addr != NULL && request_cb != NULL);
 
     easy = _abcdk_comm_easy_alloc();
     if (!easy)
@@ -666,11 +634,10 @@ abcdk_comm_easy_t *abcdk_comm_easy_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *a
 
     easy->flag = 1;
     easy->status = 1;
-    easy->remote = *addr;
     easy->request_cb = request_cb;
     easy->opaque = opaque;
 
-    easy->comm = abcdk_comm_connect(ssl_ctx, &easy->remote, _abcdk_comm_easy_event_cb, easy);
+    easy->comm = abcdk_comm_connect(ctx, ssl_ctx, addr, _abcdk_comm_easy_event_cb, easy);
     if (!easy->comm)
         goto final_error;
 

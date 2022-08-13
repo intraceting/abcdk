@@ -23,6 +23,8 @@ __BEGIN_DECLS
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
+/** 通信环境。 */
+typedef struct _abcdk_comm abcdk_comm_t;
 /** 通信节点。 */
 typedef struct _abcdk_comm_node abcdk_comm_node_t;
 
@@ -166,48 +168,48 @@ int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 /**
  * 启动通信引擎。
  * 
- * @warning 工作线程异步运行，不会阻塞当前线程。
- * @warning 不支持多程调用。
+ * @param [in] workers 工作线程数量，<= 0 使用CPU核心数量作为工作线程量。
  * 
- * @param workers 工作线程数量，<= 0 使用CPU核心数量作为工作线程量。
- * 
- * @return 已启动的线程数量。
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-int abcdk_comm_start(int workers);
+abcdk_comm_t *abcdk_comm_start(int workers);
 
 /**
  * 停止通信引擎。
  * 
- * @warning 等待所有工作线程退出。
- * @warning 不支持多程调用。
+ * @warning 环境指针不支持多程调用。
+ * 
+ * @param [in out] ctx 环境指针。
 */
-void abcdk_comm_stop();
+void abcdk_comm_stop(abcdk_comm_t **ctx);
 
 /**
  * 监听客户端连接。
  * 
- * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
- * @param addr 监听地址指针。
- * @param event_cb 事件回调函数指针(新的连接会复制这个指针)。
- * @param opaque 监听环境指针(新的连接会复制这个指针)。
+ * @param [in] ctx 通信环境指针。
+ * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param [in] addr 监听地址指针。
+ * @param [in] event_cb 事件回调函数指针(新的连接会复制这个指针)。
+ * @param [in] opaque 监听环境指针(新的连接会复制这个指针)。
  * 
  * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
 */
-abcdk_comm_node_t *abcdk_comm_listen(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
+abcdk_comm_node_t *abcdk_comm_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
 
 /**
  * 连接远程服务器。
  * 
  * @warning 仅发出连接指令，连接是否成功以消息通知。
  * 
- * @param ssl_ctx SSL环境指针，NULL(0) 忽略。
- * @param addr 服务端地址指针。
- * @param event_cb 事件回调函数指针。
- * @param opaque 客户端环境指针。
+ * @param [in] ctx 通信环境指针。
+ * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param [in] addr 服务端地址指针。
+ * @param [in] event_cb 事件回调函数指针。
+ * @param [in] opaque 客户端环境指针。
  * 
  * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
 */
-abcdk_comm_node_t *abcdk_comm_connect(SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
+abcdk_comm_node_t *abcdk_comm_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
 
 __END_DECLS
 
