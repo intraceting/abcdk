@@ -5362,12 +5362,12 @@ void test_odbcpool(abcdk_tree_t *args)
 
 void test_log(abcdk_tree_t *args)
 {
-    abcdk_log_mask(1,2,3,4,-1);
+    abcdk_log_mask(1,2,3,4,20,10,-1);
 
     for(int j =0;j<ABCDK_LOG_MAX;j++)
     {
         for (int i = 0; i < 1000; i++)
-            abcdk_log_printf(-j, "%d", j);
+            abcdk_log_printf(j, "%d", j);
     }
 }
 

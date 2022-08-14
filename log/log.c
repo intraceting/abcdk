@@ -24,6 +24,9 @@ typedef struct _abcdk_log
     /** 通讯链路。*/
     abcdk_comm_easy_t *easy;
 
+    /** 通讯状态。*/
+    volatile int easy_state;
+
     /** 收货人。*/
     char consignee[NAME_MAX];
 
@@ -58,7 +61,7 @@ int _abcdk_log_init(void *opaque)
     if (cons_p && *cons_p)
         strncpy(ctx->consignee, cons_p, NAME_MAX);
     else
-        strncpy(ctx->consignee, "/tmp/abcdk.log.consignee.sock", NAME_MAX);
+        strncpy(ctx->consignee, "127.0.0.1:65535", NAME_MAX);
 
     ctx->comm = abcdk_comm_start(1);
 
@@ -70,6 +73,7 @@ void _abcdk_log_uninit()
     abcdk_log_t *ctx = _abcdk_log_ctx();
 
     abcdk_comm_stop(&ctx->comm);
+    abcdk_comm_easy_unref(&ctx->easy);
     pthread_key_delete(ctx->ptkey);
 }
 
