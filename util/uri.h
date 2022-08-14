@@ -35,12 +35,9 @@ typedef enum _abcdk_uri_field
     ABCDK_URI_PATH = 4,
 #define ABCDK_URI_PATH ABCDK_URI_PATH
 
-} abcdk_uri_field;
+} abcdk_uri_field_t;
 
-/**
- * URI拆分。
- * 
-*/
+/** URI拆分。*/
 abcdk_object_t *abcdk_uri_split(const char *uri);
 
 #endif //ABCDK_UTIL_URI_H

@@ -85,9 +85,10 @@ void abcdk_comm_easy_unref(abcdk_comm_easy_t **easy)
         return;
 
     easy_p = *easy;
+    *easy = NULL;
 
     if (abcdk_atomic_fetch_and_add(&easy_p->refcount, -1) != 1)
-        goto final;
+        return;
 
     assert(easy_p->refcount == 0);
 
@@ -97,11 +98,6 @@ void abcdk_comm_easy_unref(abcdk_comm_easy_t **easy)
     abcdk_comm_waiter_free(&easy_p->rsp_waiter);
     pthread_key_delete(easy_p->req_ptkey);
     abcdk_heap_free(easy_p);
-
-final:
-
-    /*set NULL(0).*/
-    *easy = NULL;
 }
 
 abcdk_comm_easy_t *abcdk_comm_easy_refer(abcdk_comm_easy_t *src)

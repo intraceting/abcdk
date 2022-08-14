@@ -89,9 +89,10 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
         return;
 
     node_p = *node;
+    *node = NULL;
 
     if (abcdk_atomic_fetch_and_add(&node_p->refcount, -1) != 1)
-        goto final;
+        return;
 
     assert(node_p->refcount == 0);
 
@@ -113,11 +114,6 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
     node_p->private_size = 0;
 
     abcdk_heap_free(node_p);
-
-final:
-
-    /*set NULL(0).*/
-    *node = NULL;
 }
 
 abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src)

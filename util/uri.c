@@ -15,7 +15,6 @@ abcdk_object_t *abcdk_uri_split(const char *uri)
     abcdk_object_t *alloc = NULL;
 
     assert(uri != NULL);
-
     assert(uri[0] != '\0');
 
     len = strlen(uri);

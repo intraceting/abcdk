@@ -6,6 +6,7 @@
  */
 #include "log/log.h"
 #include "util/object.h"
+#include "util/uri.h"
 #include "shell/proc.h"
 #include "comm/easy.h"
 
@@ -24,7 +25,13 @@ typedef struct _abcdk_log
     /** 通讯链路。*/
     abcdk_comm_easy_t *easy;
 
-    /** 通讯状态。*/
+    /** 
+     * 通讯状态。
+     * 
+     * 1：未连接。
+     * 2：已连接。
+     * 3：已断开。
+    */
     volatile int easy_state;
 
     /** 收货人。*/
@@ -52,16 +59,17 @@ int _abcdk_log_init(void *opaque)
     abcdk_log_t *ctx = (abcdk_log_t *)opaque;
     char *cons_p = NULL;
 
+    pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
     ctx->comm = NULL;
     ctx->easy = NULL;
+    ctx->easy_state = 1;
     ctx->mask = 0xFFFFFFFF;
-    pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
 
     cons_p = getenv(ABCDK_LOG_CONSIGNEE);
     if (cons_p && *cons_p)
-        strncpy(ctx->consignee, cons_p, NAME_MAX);
+        strncpy(ctx->consignee,cons_p,NAME_MAX);
     else
-        strncpy(ctx->consignee, "127.0.0.1:65535", NAME_MAX);
+        strncpy(ctx->consignee,"127.0.0.1:65535",NAME_MAX);
 
     ctx->comm = abcdk_comm_start(1);
 
@@ -106,7 +114,6 @@ void abcdk_log_mask(int type, ...)
 
     va_list vaptr;
     va_start(vaptr, type);
-
     for (;;)
     {
         if (type < ABCDK_LOG_ERROR || type >= ABCDK_LOG_MAX)
@@ -117,11 +124,24 @@ void abcdk_log_mask(int type, ...)
         /*遍历后续的。*/
         type = va_arg(vaptr, int);
     }
-
     va_end(vaptr);
 
     /*覆盖现有的。*/
     abcdk_atomic_store(&ctx->mask, mask);
+}
+
+abcdk_comm_easy_t *_abcdk_log_get_easy()
+{
+    abcdk_log_t *ctx = _abcdk_log_get_ctx();
+
+    if (abcdk_atomic_compare_and_swap(ctx->easy_state,3, 1))
+    {
+
+    }
+    else
+    {
+
+    }
 }
 
 void abcdk_log_vprintf(int type, const char *fmt, va_list ap)

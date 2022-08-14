@@ -43,7 +43,7 @@ typedef enum _abcdk_log_type
 
     /** 最大值。*/
     ABCDK_LOG_MAX = 32
-
+#define ABCDK_LOG_MAX ABCDK_LOG_MAX
 } abcdk_log_type_t;
 
 /**
