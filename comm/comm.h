@@ -23,9 +23,9 @@ __BEGIN_DECLS
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
-/** 通信环境。 */
+/** 通讯环境。 */
 typedef struct _abcdk_comm abcdk_comm_t;
-/** 通信节点。 */
+/** 通讯节点。 */
 typedef struct _abcdk_comm_node abcdk_comm_node_t;
 
 /* COMM事件。*/
@@ -60,16 +60,25 @@ enum _abcdk_comm_event
 typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event);
 
 /**
- * 减少对象的引用计数。
+ * 减少通讯对象的引用计数。
  * 
- * @warning 当引用计数为0时，对像将被删除。
+ * @warning 当引用计数为0时，通讯对像将被删除。
 */
 void abcdk_comm_node_unref(abcdk_comm_node_t **node);
 
 /**
- * 增加对象的引用计数。
+ * 增加通讯对象的引用计数。
 */
 abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
+
+/**
+ * 申请通讯对象。
+ * 
+ * @param [in] ctx 通讯环境指针。
+ * 
+ * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
+ */
+abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx);
 
 /**
  * 设置超时。
@@ -166,7 +175,7 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size);
 int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 
 /**
- * 启动通信引擎。
+ * 启动通讯引擎。
  * 
  * @param [in] workers 工作线程数量，<= 0 使用CPU核心数量作为工作线程量。
  * 
@@ -175,7 +184,7 @@ int abcdk_comm_write_watch(abcdk_comm_node_t *node);
 abcdk_comm_t *abcdk_comm_start(int workers);
 
 /**
- * 停止通信引擎。
+ * 停止通讯引擎。
  * 
  * @warning 环境指针不支持多程调用。
  * 
@@ -186,30 +195,30 @@ void abcdk_comm_stop(abcdk_comm_t **ctx);
 /**
  * 监听客户端连接。
  * 
- * @param [in] ctx 通信环境指针。
+ * @param [in] node 通讯对象指针。
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 监听地址指针。
  * @param [in] event_cb 事件回调函数指针(新的连接会复制这个指针)。
  * @param [in] opaque 监听环境指针(新的连接会复制这个指针)。
  * 
- * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
+ * @return 0 成功，-1 失败。
 */
-abcdk_comm_node_t *abcdk_comm_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
+int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb,void *opaque);
 
 /**
  * 连接远程服务器。
  * 
  * @warning 仅发出连接指令，连接是否成功以消息通知。
  * 
- * @param [in] ctx 通信环境指针。
+ * @param [in] node 通讯对象指针。
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 服务端地址指针。
  * @param [in] event_cb 事件回调函数指针。
  * @param [in] opaque 客户端环境指针。
  * 
- * @return !NULL(0) 成功(节点的指针)，NULL(0) 失败。
+ * @return 0 成功，-1 失败。
 */
-abcdk_comm_node_t *abcdk_comm_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
+int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque);
 
 __END_DECLS
 

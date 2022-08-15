@@ -6,7 +6,7 @@
  */
 #include "comm/comm.h"
 
-/** 通信环境。*/
+/** 通讯环境。*/
 typedef struct _abcdk_comm
 {
     /** epollex 环境。*/
@@ -30,7 +30,7 @@ typedef struct _abcdk_comm_node
     volatile int refcount;
 
     /** 
-     * 通信环境指针。
+     * 通讯环境指针。
      * 
      * @warning 仅复制。
     */
@@ -128,9 +128,11 @@ abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src)
     return src;
 }
 
-abcdk_comm_node_t *_abcdk_comm_node_alloc(abcdk_comm_t *ctx)
+abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx)
 {
     abcdk_comm_node_t *node = NULL;
+
+    assert(ctx != NULL);
 
     node = (abcdk_comm_node_t *)abcdk_heap_alloc(sizeof(abcdk_comm_node_t));
     if(!node)
@@ -158,12 +160,11 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
 
 abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
     abcdk_comm_node_t *node_sub = NULL;
     epoll_data_t ep_data;
     int chk;
 
-    node_sub = _abcdk_comm_node_alloc(ctx);
+    node_sub = _abcdk_comm_node_alloc(node->ctx);
     if (!node_sub)
         return NULL;
     
@@ -190,11 +191,11 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
         goto final_error;
 
     ep_data.ptr = node_sub;
-    chk = abcdk_epollex_attach(ctx->epollex, node_sub->fd, &ep_data);
+    chk = abcdk_epollex_attach(node->ctx->epollex, node_sub->fd, &ep_data);
     if(chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(ctx->epollex, node_sub->fd, 30*1000);
+    abcdk_epollex_timeout(node->ctx->epollex, node_sub->fd, 30*1000);
 
     return node_sub;
 
@@ -207,7 +208,6 @@ final_error:
 
 void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
     socklen_t sock_len = 0;
     int sock_flag = 1;
     int ssl_chk;
@@ -228,7 +228,7 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         }
         else
         {
-            chk = abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+            chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
             if (chk != 0)
                 goto final_error;
         }
@@ -278,13 +278,13 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
             ssl_err = SSL_get_error(node->ssl, ssl_chk);
             if (ssl_err == SSL_ERROR_WANT_WRITE)
             {
-                chk = abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
                 if (chk != 0)
                     goto final_error;
             }
             else if (ssl_err == SSL_ERROR_WANT_READ)
             {
-                chk = abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
+                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
                 if (chk != 0)
                     goto final_error;
             }
@@ -327,7 +327,7 @@ final_error:
         node->opaque = NULL;
 
     /*修改超时，使用超时检测器关闭。*/
-    abcdk_epollex_timeout(ctx->epollex, node->fd, 1);
+    abcdk_epollex_timeout(node->ctx->epollex, node->fd, 1);
 }
 
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
@@ -703,54 +703,50 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_comm_node_t *abcdk_comm_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
 {
-    abcdk_comm_node_t *node = NULL,*node_p = NULL;
+    abcdk_comm_node_t *node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
 
-    assert(ctx != NULL && addr != NULL && event_cb != NULL);
+    assert(node != NULL && addr != NULL && event_cb != NULL);
 
-    node = _abcdk_comm_node_alloc(ctx);
-    if (!node)
-        return NULL;
-
-    /*应用层需要保持这个对象引用。*/
+    /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_comm_node_refer(node);
 
-    node->flag = ABCDK_COMM_FLAG_LISTEN;
-    node->status = ABCDK_COMM_STATUS_STABLE;
+    node_p->flag = ABCDK_COMM_FLAG_LISTEN;
+    node_p->status = ABCDK_COMM_STATUS_STABLE;
 #ifdef HEADER_SSL_H
-    node->ssl_ctx = ssl_ctx;
+    node_p->ssl_ctx = ssl_ctx;
 #endif //HEADER_SSL_H
-    node->opaque = opaque;
-    node->event_cb = event_cb;
+    node_p->opaque = opaque;
+    node_p->event_cb = event_cb;
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
     {
-        node->local.family = AF_UNIX;
-        strcpy(node->local.addr_un.sun_path,addr->addr_un.sun_path);
+        node_p->local.family = AF_UNIX;
+        strcpy(node_p->local.addr_un.sun_path,addr->addr_un.sun_path);
     }
     else
     {
-        node->local = *addr;
+        node_p->local = *addr;
     }
     
-    node->fd = abcdk_socket(node->local.family, 0);
-    if (node->fd < 0)
+    node_p->fd = abcdk_socket(node_p->local.family, 0);
+    if (node_p->fd < 0)
         goto final_error;
 
     /*端口复用，用于快速重启恢复。*/
     sock_flag = 1;
-    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node_p->fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag, 2);
     if (chk != 0)
         goto final_error;
 
     /*地址复用，用于快速重启恢复。*/
     sock_flag = 1;
-    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_REUSEADDR, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node_p->fd, SOL_SOCKET, SO_REUSEADDR, &sock_flag, 2);
     if (chk != 0)
         goto final_error;
 
@@ -758,100 +754,95 @@ abcdk_comm_node_t *abcdk_comm_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx,abcdk_s
     {
         /*IPv6仅支持IPv6。*/
         sock_flag = 1;
-        chk = abcdk_sockopt_option_int(node->fd, IPPROTO_IPV6, IPV6_V6ONLY, &sock_flag, 2);
+        chk = abcdk_sockopt_option_int(node_p->fd, IPPROTO_IPV6, IPV6_V6ONLY, &sock_flag, 2);
         if (chk != 0)
             goto final_error;
     }
 
-    chk = abcdk_bind(node->fd, &node->local);
+    chk = abcdk_bind(node_p->fd, &node_p->local);
     if (chk != 0) 
         goto final_error;
 
-    chk = listen(node->fd, SOMAXCONN);
+    chk = listen(node_p->fd, SOMAXCONN);
     if (chk != 0)
         goto final_error;
     
-    chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
+    chk = abcdk_fflag_add(node_p->fd,O_NONBLOCK);
     if(chk != 0 )
         goto final_error;
 
-    ep_data.ptr = node;
-    chk = abcdk_epollex_attach(ctx->epollex,node->fd, &ep_data);
+    ep_data.ptr = node_p;
+    chk = abcdk_epollex_attach(ctx->epollex,node_p->fd, &ep_data);
     if (chk != 0)
         goto final_error;
     
     /*关闭超时。*/
-    abcdk_epollex_timeout(ctx->epollex, node->fd, 0);
-    abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
+    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 0);
+    abcdk_epollex_mark(node_p->ctx->epollex, node_p->fd, ABCDK_EPOLL_INPUT, 0);
 
-    return node_p;
+    return 0;
 
 final_error:
 
-    abcdk_comm_node_unref(&node);
     abcdk_comm_node_unref(&node_p);
 
-    return NULL;
+    return -1;
 }
 
-abcdk_comm_node_t *abcdk_comm_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
 {
-    abcdk_comm_node_t *node = NULL,*node_p = NULL;
+    abcdk_comm_node_t *node_p = NULL;
     epoll_data_t ep_data;
     socklen_t addr_len;
     int sock_flag = 1;
     int chk;
 
-    assert(ctx != NULL && addr != NULL && event_cb != NULL);
-
-    node = _abcdk_comm_node_alloc(ctx);
-    if (!node)
-        return NULL;
+    assert(node != NULL && addr != NULL && event_cb != NULL);
     
-    /*应用层需要保持这个对象引用。*/
+    /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_comm_node_refer(node);
 
-    node->flag = ABCDK_COMM_FLAG_CLIENT;
-    node->status = ABCDK_COMM_STATUS_SYNC;
-    node->opaque = opaque;
-    node->event_cb = event_cb;
+    node_p->flag = ABCDK_COMM_FLAG_CLIENT;
+    node_p->status = ABCDK_COMM_STATUS_SYNC;
+    node_p->opaque = opaque;
+    node_p->event_cb = event_cb;
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
     {
         addr_len = SUN_LEN(&addr->addr_un);
-        node->remote.family = AF_UNIX;
-        strcpy(node->remote.addr_un.sun_path,addr->addr_un.sun_path);
+        node_p->remote.family = AF_UNIX;
+        strcpy(node_p->remote.addr_un.sun_path,addr->addr_un.sun_path);
     }
     else if(addr->family == AF_INET)
     {
         addr_len = sizeof(struct sockaddr_in);
-        node->remote = *addr;
+        node_p->remote = *addr;
     }
     else if(addr->family == AF_INET6)
     {
         addr_len = sizeof(struct sockaddr_in6);
-        node->remote = *addr;
+        node_p->remote = *addr;
     }
 
-    node->fd = abcdk_socket(node->remote.family, 0);
-    if (node->fd < 0)
+    node_p->fd = abcdk_socket(node_p->remote.family, 0);
+    if (node_p->fd < 0)
         goto final_error;
 #ifdef HEADER_SSL_H
     if(ssl_ctx)
     {
-        node->ssl = abcdk_openssl_ssl_alloc(ssl_ctx);
-        if(!node->ssl)
+        node_p->ssl = abcdk_openssl_ssl_alloc(ssl_ctx);
+        if(!node_p->ssl)
             goto final_error;
     }
 #endif //HEADER_SSL_H
 
-    chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
+    chk = abcdk_fflag_add(node_p->fd,O_NONBLOCK);
     if(chk != 0 )
         goto final_error;
 
 
-    chk = connect(node->fd, &node->remote.addr, addr_len);
+    chk = connect(node_p->fd, &node_p->remote.addr, addr_len);
     if(chk == 0)
         goto final;
 
@@ -860,20 +851,19 @@ abcdk_comm_node_t *abcdk_comm_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx,abcdk_
 
 final:
 
-    ep_data.ptr = node;
-    chk = abcdk_epollex_attach(ctx->epollex, node->fd, &ep_data);
+    ep_data.ptr = node_p;
+    chk = abcdk_epollex_attach(node_p->ctx->epollex, node_p->fd, &ep_data);
     if (chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(ctx->epollex, node->fd, 30 * 1000);
-    abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 30 * 1000);
+    abcdk_epollex_mark(node_p->ctx->epollex, node_p->fd, ABCDK_EPOLL_OUTPUT, 0);
 
-    return node_p;
+    return 0;
 
 final_error:
 
-    abcdk_comm_node_unref(&node);
     abcdk_comm_node_unref(&node_p);
 
-    return NULL;
+    return -1;
 }
