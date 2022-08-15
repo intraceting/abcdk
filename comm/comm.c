@@ -332,20 +332,18 @@ final_error:
 
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
 {
-    abcdk_comm_t *ctx = node->ctx;
     int chk;
 
     assert(node != NULL);
+    assert(node->ctx != NULL);
 
-    chk = abcdk_epollex_timeout(ctx->epollex, node->fd, timeout);
+    chk = abcdk_epollex_timeout(node->ctx->epollex, node->fd, timeout);
 
     return chk;
 }
 
 int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
-    abcdk_comm_t *ctx = node->ctx;
-
     assert(node != NULL);
 
     if (local && node->local.family)
@@ -359,8 +357,6 @@ int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abc
 
 int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
 {
-    abcdk_comm_t *ctx = node->ctx;
-
     assert(node != NULL);
 
     if(local && node->local.family)
@@ -374,7 +370,6 @@ int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],ch
 
 void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque)
 {
-    abcdk_comm_t *ctx = node->ctx;
     void *old = NULL;
 
     assert(node != NULL);
@@ -387,7 +382,6 @@ void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque)
 
 void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
     void *old = NULL;
 
     assert(node != NULL);
@@ -399,7 +393,6 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
 
 void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size)
 {
-    abcdk_comm_t *ctx = node->ctx;
     void *new_buf = NULL;
 
     assert(node != NULL);
@@ -424,8 +417,6 @@ void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size)
 
 void *abcdk_comm_private_data(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
-
     assert(node != NULL);
 
     return node->private_data;
@@ -433,8 +424,6 @@ void *abcdk_comm_private_data(abcdk_comm_node_t *node)
 
 size_t abcdk_comm_private_size(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
-
     assert(node != NULL);
 
     return node->private_size;
@@ -442,7 +431,6 @@ size_t abcdk_comm_private_size(abcdk_comm_node_t *node)
 
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 {
-    abcdk_comm_t *ctx = node->ctx;
     ssize_t rsize = 0,rsize_all = 0;
     int chk;
 
@@ -472,25 +460,24 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
 
 int abcdk_comm_read_watch(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
     int done_flag = 0;
     int chk;
 
     assert(node != NULL);
+    assert(node->ctx != NULL);
 
     /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
     chk = abcdk_thread_leader_quit(&node->input_user);
     if (chk == 0)
         done_flag = ABCDK_EPOLL_INPUT;
 
-    chk = abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, done_flag);
+    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, done_flag);
 
     return chk;
 }
 
 ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 {
-    abcdk_comm_t *ctx = node->ctx;
     ssize_t wsize = 0,wsize_all = 0;
 
     assert(node != NULL && buf != NULL && size >0);
@@ -515,20 +502,18 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 
 int abcdk_comm_write_watch(abcdk_comm_node_t *node)
 {
-    abcdk_comm_t *ctx = node->ctx;
     int chk;
 
     assert(node != NULL);
+    assert(node->ctx != NULL);
 
-    chk = abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
 
     return chk;
 }
 
 void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event)
 {
-    abcdk_comm_t *ctx = node->ctx;
-    
     /*读权利绑定到线程。*/
     if(event == ABCDK_COMM_EVENT_INPUT)
         abcdk_thread_leader_vote(&node->input_user);

@@ -104,6 +104,11 @@ abcdk_log_t *_abcdk_log_get_ctx()
     return ctx;
 }
 
+void abcdk_log_close()
+{
+    _abcdk_log_uninit();
+}
+
 void abcdk_log_open(const char *consignee)
 {
     /*设置环境变量，具体的初始，按需执行一次。*/
@@ -138,7 +143,8 @@ void _abcdk_log_easy_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t
 {
     char sockname[NAME_MAX] = {0}, peername[NAME_MAX] = {0};
     
-    abcdk_comm_easy_get_sockaddr_str(easy,sockname,peername);
+    if(easy)
+        abcdk_comm_easy_get_sockaddr_str(easy,sockname,peername);
 
     if(!req)
         fprintf(stderr,"Disconnected(%s -> %s).\n",sockname, peername);

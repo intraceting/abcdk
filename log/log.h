@@ -47,6 +47,11 @@ typedef enum _abcdk_log_type
 } abcdk_log_type_t;
 
 /**
+ * 关闭。
+*/
+void abcdk_log_close();
+
+/**
  * 初始化。
  *
  * @warning 如果在其它接调用之后才进行初始化，将不会起作用。

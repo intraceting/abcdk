@@ -26,6 +26,13 @@ typedef struct _abcdk_logd
     const char *ca_path;
     int ca_check_crl;
 
+    const char *workspace;
+
+    const char *bind;
+
+    abcdk_comm_t *comm;
+    abcdk_comm_easy_t *easy;
+
 } abcdk_logd_t;
 
 void _abcdk_logd_print_usage()
@@ -40,7 +47,10 @@ void _abcdk_logd_print_usage()
 
 void _abcdk_logd_work(abcdk_logd_t *ctx)
 {
+    ctx->comm = abcdk_comm_start(0);
 
+
+    abcdk_comm_stop(&ctx->comm);
 }
 
 int main(int argc, char **argv)

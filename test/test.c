@@ -5369,13 +5369,15 @@ void test_log(abcdk_tree_t *args)
         for (int i = 0; i < 1000; i++)
             abcdk_log_printf(j, "%d", j);
     }
+
+    abcdk_log_close();
 }
 
 int main(int argc, char **argv)
 {
-    abcdk_thread_t p;
-    p.routine = sigwaitinfo_cb;
-    abcdk_thread_create(&p,0);
+  //  abcdk_thread_t p;
+  //  p.routine = sigwaitinfo_cb;
+  //  abcdk_thread_create(&p,0);
 
     srand(time(NULL));
 
