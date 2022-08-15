@@ -132,6 +132,16 @@ abcdk_comm_easy_t *_abcdk_comm_easy_alloc()
     return easy;
 }
 
+int abcdk_comm_easy_state(abcdk_comm_easy_t *easy)
+{
+    assert(easy != NULL);
+
+    if (!abcdk_atomic_load(&easy->status))
+        return -1;
+
+    return 0;
+}
+
 int abcdk_comm_easy_set_timeout(abcdk_comm_easy_t *easy, time_t timeout)
 {
     int chk;

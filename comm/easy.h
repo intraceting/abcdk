@@ -39,6 +39,13 @@ void abcdk_comm_easy_unref(abcdk_comm_easy_t **easy);
 abcdk_comm_easy_t *abcdk_comm_easy_refer(abcdk_comm_easy_t *src);
 
 /**
+ * 获取状态。
+ * 
+ * @return 0 已连接(连接中，监听中)，-1 未连接。
+*/
+int abcdk_comm_easy_state(abcdk_comm_easy_t *easy);
+
+/**
  * 设置超时。
  * 
  * @warning 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。

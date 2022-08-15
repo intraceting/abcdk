@@ -10,6 +10,15 @@
 #include "shell/proc.h"
 #include "comm/easy.h"
 
+/*
+ * -----------------------------------------------------------
+ * |Message Data                                             |
+ * -----------------------------------------------------------
+ * |Microsecond  |Name      |Reserve  |Cargo Length |Cargo   |
+ * |8 Bytes      |16 Bytes  |1 Bytes  |4 Bytes      |N Bytes |
+ * -----------------------------------------------------------
+*/
+
 /** 日志接口。*/
 typedef struct _abcdk_log
 {
@@ -25,14 +34,8 @@ typedef struct _abcdk_log
     /** 通讯链路。*/
     abcdk_comm_easy_t *easy;
 
-    /** 
-     * 通讯状态。
-     * 
-     * 1：未连接。
-     * 2：已连接。
-     * 3：已断开。
-    */
-    volatile int easy_state;
+    /** 通讯链路锁。*/
+    abcdk_mutex_t easy_mutex;
 
     /** 收货人。*/
     char consignee[NAME_MAX];
@@ -59,11 +62,11 @@ int _abcdk_log_init(void *opaque)
     abcdk_log_t *ctx = (abcdk_log_t *)opaque;
     char *cons_p = NULL;
 
-    pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
     ctx->comm = NULL;
     ctx->easy = NULL;
-    ctx->easy_state = 1;
     ctx->mask = 0xFFFFFFFF;
+    pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
+    abcdk_mutex_init2(&ctx->easy_mutex,0);
 
     cons_p = getenv(ABCDK_LOG_CONSIGNEE);
     if (cons_p && *cons_p)
@@ -83,6 +86,7 @@ void _abcdk_log_uninit()
     abcdk_comm_stop(&ctx->comm);
     abcdk_comm_easy_unref(&ctx->easy);
     pthread_key_delete(ctx->ptkey);
+    abcdk_mutex_unlock(&ctx->easy_mutex);
 }
 
 abcdk_log_t *_abcdk_log_get_ctx()
@@ -130,28 +134,68 @@ void abcdk_log_mask(int type, ...)
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
+void _abcdk_log_easy_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
+{
+    char sockname[NAME_MAX] = {0}, peername[NAME_MAX] = {0};
+    
+    abcdk_comm_easy_get_sockaddr_str(easy,sockname,peername);
+
+    if(!req)
+        fprintf(stderr,"Disconnected(%s -> %s).\n",sockname, peername);
+
+}
+
 abcdk_comm_easy_t *_abcdk_log_get_easy()
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
+    abcdk_sockaddr_t addr = {0};
+    abcdk_comm_easy_t *easy_p = NULL;
 
-    if (abcdk_atomic_compare_and_swap(ctx->easy_state,3, 1))
+    abcdk_mutex_lock(&ctx->easy_mutex,1);
+
+    if (!ctx->easy || abcdk_comm_easy_state(ctx->easy) != 0)
     {
-
+        abcdk_comm_easy_unref(&ctx->easy);
+        abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
+        ctx->easy = abcdk_comm_easy_connect(ctx->comm, NULL, &addr, _abcdk_log_easy_request_cb, NULL);
+        if (ctx->easy)
+            abcdk_comm_easy_set_timeout(ctx->easy, -1);
     }
-    else
+
+    if(ctx->easy)
+        easy_p = abcdk_comm_easy_refer(ctx->easy);
+
+    abcdk_mutex_unlock(&ctx->easy_mutex);
+
+    return easy_p;
+}
+
+abcdk_object_t *_abcdk_log_get_buffer()
+{
+    abcdk_log_t *ctx = _abcdk_log_get_ctx();
+    abcdk_object_t *buf_p = NULL;
+
+    buf_p = pthread_getspecific(ctx->ptkey);
+    if (!buf_p)
     {
-
+        /*没有缓存，申请一个。*/
+        buf_p = abcdk_object_alloc2(16 * 1024 * 1024);
+        if (buf_p)
+            pthread_setspecific(ctx->ptkey, buf_p);
     }
+
+    return buf_p;
 }
 
 void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
     abcdk_object_t *buf_p = NULL;
-    struct timespec ts = {0};
+    abcdk_comm_easy_t *easy_p = NULL;
+    uint64_t ts = 0;
     char name[17] = {0};
-    struct tm tm = {0};
-    int prefix_len = 0;
+    uint32_t len = 0;
+    int chk;
 
     assert(fmt != NULL && ap != NULL);
 
@@ -164,32 +208,32 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
         return;
 
     /*获取自然时间。*/
-    clock_gettime(CLOCK_REALTIME, &ts);
+    ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
     /*获取线程名称。*/
     abcdk_thread_getname(name);
-    /*秒转本地时间。*/
-    abcdk_time_sec2tm(&tm, ts.tv_sec, 0);
-
+    
     /*获取缓存。*/
-    buf_p = pthread_getspecific(ctx->ptkey);
+    buf_p = _abcdk_log_get_buffer();
     if (!buf_p)
-    {
-        /*创建缓存。*/
-        buf_p = abcdk_object_alloc2(16 * 1024 * 1024);
-        if (buf_p)
-            pthread_setspecific(ctx->ptkey, buf_p);
-    }
+        return;
 
-    /*格式化前缀。*/
-    snprintf(buf_p->pptrs[0], buf_p->sizes[0], "%d-%02d-%02d %02d:%02d:%02d [%d] %s: ",
-             tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour + 1, tm.tm_min, tm.tm_sec,
-             getpid(), name);
+    /*格式化货物。*/
+    vsnprintf(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 29), buf_p->sizes[0] - 29, fmt, ap);
+    len = strlen(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 29));
+    /*填充其它信息。*/
+    ABCDK_PTR2I64(buf_p->pptrs[0], 0) = abcdk_endian_h_to_b64(ts);
+    strncpy(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 8), name, 16);
+    ABCDK_PTR2I8(buf_p->pptrs[0], 24) = 0;
+    ABCDK_PTR2I32(buf_p->pptrs[0], 25) = abcdk_endian_h_to_b32(len);
 
-    /*拼接日志。*/
-    prefix_len = strlen((char *)buf_p->pptrs[0]);
-    vsnprintf(ABCDK_PTR2I8PTR(buf_p->pptrs[0], prefix_len), buf_p->sizes[0] - prefix_len, fmt, ap);
+    /*获取通讯链路。*/
+    easy_p = _abcdk_log_get_easy();
+    if (!easy_p)
+        return;
 
-    fprintf(stderr, "%s\n", (char *)buf_p->pptrs[0]);
+    /*发送到远程。*/
+    abcdk_comm_easy_request(easy_p, buf_p->pptrs[0], 29 + len, NULL);
+    abcdk_comm_easy_unref(&easy_p);
 }
 
 void abcdk_log_printf(int type, const char *fmt, ...)
