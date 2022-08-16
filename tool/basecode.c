@@ -79,7 +79,7 @@ uint8_t _abcdkbc_de_table32_sn(uint8_t c)
     return c;
 }
 
-void _abcdkbc_work(abcdkarchive_t *ctx)
+void _abcdkbc_work(abcdkbc_t *ctx)
 {
     abcdk_object_t *inbuf = NULL,*outbuf = NULL;
     ssize_t outsize = 0,outsize2 = 0;
@@ -168,7 +168,7 @@ final:
 
 int abcdk_tool_basecode(abcdk_tree_t *args)
 {
-    abcdkarchive_t ctx = {0};
+    abcdkbc_t ctx = {0};
 
     ctx.args = args;
 

@@ -68,16 +68,12 @@ TOOL_SRC_FILES = $(wildcard tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-LOGD_SRC_FILES = $(wildcard logd/*.c)
-LOGD_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LOGD_SRC_FILES}))
-
-#
 TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 
 #
-all: base tool logd test
+all: base tool test
 
 #
 base: base-src
@@ -93,13 +89,6 @@ tool: base tool-src
 tool-src: ${TOOL_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/abcdk $^ -l:libabcdk.a $(LINK_FLAGS)
-
-#
-logd: base logd-src
-#
-logd-src: ${LOGD_OBJ_FILES}
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-logd $^ -l:libabcdk.a $(LINK_FLAGS)
 
 #
 test: base test-src
@@ -138,12 +127,6 @@ $(OBJ_PATH)/log/%.o: log/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/logd/%.o: logd/%.c
-	mkdir -p $(OBJ_PATH)/logd/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
@@ -156,7 +139,7 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-base clean-tool clean-logd clean-test
+clean: clean-base clean-tool clean-test
 
 #
 clean-base:
@@ -172,12 +155,6 @@ clean-base:
 clean-tool:
 	rm -rf ${OBJ_PATH}/tool
 	rm -f $(BUILD_PATH)/abcdk
-
-#
-clean-logd:
-	rm -rf ${OBJ_PATH}/logd
-	rm -f $(BUILD_PATH)/abcdk-logd
-
 #
 clean-test:
 	rm -rf ${OBJ_PATH}/test
@@ -235,7 +212,6 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
-	rm -f $(INSTALL_PATH_BIN)/abcdk-logd
 	
 #
 uninstall-devel:

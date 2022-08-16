@@ -13,6 +13,7 @@
 #include "util/thread.h"
 #include "util/getargs.h"
 #include "util/openssl.h"
+#include "util/map.h"
 #include "shell/file.h"
 #include "shell/proc.h"
 #include "comm/easy.h"
@@ -30,10 +31,19 @@ typedef struct _abcdklogd
 
     const char *bind;
 
+    abcdk_map_t policy;
     abcdk_comm_t *comm;
     abcdk_comm_easy_t *easy;
 
 } abcdklogd_t;
+
+typedef struct _abcdklogd_policy
+{
+    
+    int segment_max;
+    int segment_size;
+
+}abcdklogd_policy_t;
 
 void _abcdklog_print_usage()
 {
@@ -60,13 +70,9 @@ int abcdk_tool_logd(abcdk_tree_t *args)
     ctx.args = args;
 
     if (abcdk_option_exist(ctx.args, "--help"))
-    {
         _abcdkbc_print_usage(ctx.args);
-    }
     else
-    {
         _abcdkbc_work(&ctx);
-    }
 
     return ctx.errcode;
 }

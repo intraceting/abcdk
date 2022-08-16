@@ -12,7 +12,7 @@
 __BEGIN_DECLS
 
 /**
- * 收件人环境变量名字。
+ * 收件人的环境变量名字。
  *
  * @code
  * IPV4:PORT
@@ -55,7 +55,7 @@ typedef enum _abcdk_log_type
  * @param [in] copy2stderr !0 复制到stderr，0 不复制。
  *
  */
-void abcdk_log_open(const char *consignee,int copy2stderr);
+void abcdk_log_open(const char *consignee, int copy2stderr);
 
 /**
  * 设置掩码。
