@@ -11,12 +11,12 @@
 #include "comm/easy.h"
 
 /*
- * -------------------------------------------------------------------
- * |Message Data                                                     |
- * -------------------------------------------------------------------
- * |Microsecond  |PID    |Name      |Reserve  |Cargo Length |Cargo   |
- * |8 Bytes      |4Bytes |16 Bytes  |1 Bytes  |4 Bytes      |N Bytes |
- * -------------------------------------------------------------------
+ * -----------------------------------------------------------------------------------
+ * |Message Data                                                                     |
+ * -----------------------------------------------------------------------------------
+ * |Microsecond  |Service ID |Process ID |Name      |Reserve  |Cargo Length |Cargo   |
+ * |8 Bytes      |2 Bytes    |4 Bytes    |16 Bytes  |1 Bytes  |4 Bytes      |N Bytes |
+ * -----------------------------------------------------------------------------------
 */
 
 /** 日志接口。*/
@@ -36,6 +36,9 @@ typedef struct _abcdk_log
 
     /** 通讯链路锁。*/
     abcdk_mutex_t easy_mutex;
+
+    /** 服务编号。*/
+    uint16_t service;
 
     /** 收货人。*/
     char consignee[NAME_MAX];
@@ -67,16 +70,15 @@ int _abcdk_log_init(void *opaque)
 
     ctx->comm = NULL;
     ctx->easy = NULL;
+    ctx->service = 0;
     ctx->copy2stderr = 0;
     ctx->mask = 0xFFFFFFFF;
     pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
     abcdk_mutex_init2(&ctx->easy_mutex,0);
 
-    cons_p = getenv(ABCDK_LOG_CONSIGNEE);
+    cons_p = getenv("ABCDK_LOG_CONSIGNEE");
     if (cons_p && *cons_p)
         strncpy(ctx->consignee,cons_p,NAME_MAX);
-    else
-        strncpy(ctx->consignee,"127.0.0.1:65535",NAME_MAX);
 
     ctx->comm = abcdk_comm_start(1);
 
@@ -108,20 +110,16 @@ abcdk_log_t *_abcdk_log_get_ctx()
     return ctx;
 }
 
-// void abcdk_log_close()
-// {
-//     _abcdk_log_uninit();
-// }
-
-void abcdk_log_open(const char *consignee, int copy2stderr)
+void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr)
 {
     abcdk_log_t *ctx = NULL;
 
-    /*设置环境变量，具体的初始，按需执行一次。*/
+    /*设置环境变量，具体的初始化，按需执行一次。*/
     if (consignee)
-        setenv(ABCDK_LOG_CONSIGNEE, consignee, 1);
+        setenv("ABCDK_LOG_CONSIGNEE", consignee, 1);
 
     ctx = _abcdk_log_get_ctx();
+    ctx->service = service;
     ctx->copy2stderr = copy2stderr;
 }
 
@@ -233,18 +231,19 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
         return;
 
     /*格式化货物。*/
-    vsnprintf(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 33), buf_p->sizes[0] - 33, fmt, ap);
-    len = strlen(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 33));
+    vsnprintf(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35), buf_p->sizes[0] - 35, fmt, ap);
+    len = strlen(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
     /*填充其它信息。*/
     ABCDK_PTR2I64(buf_p->pptrs[0], 0) = abcdk_endian_h_to_b64(ts);
-    ABCDK_PTR2I32(buf_p->pptrs[0], 8) = abcdk_endian_h_to_b32(getpid());
-    strncpy(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 12), name, 16);
-    ABCDK_PTR2I8(buf_p->pptrs[0], 28) = 0;
-    ABCDK_PTR2I32(buf_p->pptrs[0], 29) = abcdk_endian_h_to_b32(len);
+    ABCDK_PTR2I16(buf_p->pptrs[0], 8) = abcdk_endian_h_to_b16(ctx->service);
+    ABCDK_PTR2I32(buf_p->pptrs[0], 10) = abcdk_endian_h_to_b32(getpid());
+    strncpy(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 14), name, 16);
+    ABCDK_PTR2I8(buf_p->pptrs[0], 30) = 0;
+    ABCDK_PTR2I32(buf_p->pptrs[0], 31) = abcdk_endian_h_to_b32(len);
 
     /*可能需要复制到stderr。*/
     if (ctx->copy2stderr)
-        fprintf(stderr, "%lu.%lu [%d] %s: %s\n", ts / 1000000, ts % 1000000, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 33));
+        fprintf(stderr, "%lu.%lu [%hu][%d] %s: %s\n", ts / 1000000, ts % 1000000, ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
 
     /*获取通讯链路。*/
     easy_p = _abcdk_log_get_easy();

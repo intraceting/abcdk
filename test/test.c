@@ -5363,7 +5363,7 @@ void test_odbcpool(abcdk_tree_t *args)
 
 void test_log(abcdk_tree_t *args)
 {
-    abcdk_log_open(NULL,1);
+    abcdk_log_open(NULL,0,1);
     abcdk_log_mask(1,2,3,4,20,10,-1);
 
     #pragma omp parallel for num_threads(30)

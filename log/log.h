@@ -11,17 +11,6 @@
 
 __BEGIN_DECLS
 
-/**
- * 收件人的环境变量名字。
- *
- * @code
- * IPV4:PORT
- * IPV6,PORT
- * [IPV6]:PORT
- * @endcode
- */
-#define ABCDK_LOG_CONSIGNEE "ABCDK_LOG_CONSIGNEE"
-
 /** 日志类型。*/
 typedef enum _abcdk_log_type
 {
@@ -49,13 +38,20 @@ typedef enum _abcdk_log_type
 /**
  * 初始化。
  *
- * @warning 如果在其它接调用之后才进行初始化，将不会起作用。
+ * @warning 如果在其它接调用之后才进行初始化，将使用参数默认值。
+ * @warning 如果未指定收货地址，将尝试从环境变量(ABCDK_LOG_CONSIGNEE)中获取。
+ * @code
+ * IPV4:PORT
+ * IPV6,PORT
+ * [IPV6]:PORT
+ * @endcode
  *
  * @param [in] consignee 收货地址。默认：127.0.0.1:65535
- * @param [in] copy2stderr !0 复制到stderr，0 不复制。
+ * @param [in] service 服务ID。默认：0
+ * @param [in] copy2stderr !0 复制到stderr，0 不复制。默认：0
  *
- */
-void abcdk_log_open(const char *consignee, int copy2stderr);
+*/
+void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr);
 
 /**
  * 设置掩码。
