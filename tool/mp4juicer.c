@@ -14,7 +14,7 @@
 #include "mp4/demuxer.h"
 #include "entry.h"
 
-typedef struct _abcdkm4j_ctx
+typedef struct _abcdkm4j
 {
     int errcode;
 
@@ -89,7 +89,7 @@ typedef struct _abcdkm4j_ctx
         int channel_conf;
     } adts_ctx;
 
-}abcdkm4j_ctx;
+}abcdkm4j_t;
 
 void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
 {
@@ -118,7 +118,7 @@ void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
 }
 
 /*代码来源于网络，稍有修改。*/
-int _abcdkm4j_aac_decode_extradata(abcdkm4j_ctx *ctx, unsigned char *pbuf, int bufsize)
+int _abcdkm4j_aac_decode_extradata(abcdkm4j_t *ctx, unsigned char *pbuf, int bufsize)
 {
     int aot, aotext, samfreindex;
     int i, channelconfig;
@@ -172,7 +172,7 @@ int _abcdkm4j_aac_decode_extradata(abcdkm4j_ctx *ctx, unsigned char *pbuf, int b
 }
 
 /*代码来源于网络，稍有修改。*/
-int _abcdkm4j_aac_set_adts_head(abcdkm4j_ctx *ctx, unsigned char *buf, int size)
+int _abcdkm4j_aac_set_adts_head(abcdkm4j_t *ctx, unsigned char *buf, int size)
 {
 #define ABCDKM4J_ADTS_HEADER_SIZE   7
 
@@ -211,7 +211,7 @@ int _abcdkm4j_aac_set_adts_head(abcdkm4j_ctx *ctx, unsigned char *buf, int size)
     return 0;
 }
 
-void _abcdkm4j_dump_video(abcdkm4j_ctx *ctx)
+void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
 {
     ctx->avc1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVC1, 1, 1);
     ctx->avcc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVCC, 1, 1);
@@ -332,7 +332,7 @@ final:
     abcdk_closep(&ctx->out_fd);
 }
 
-void _abcdkm4j_dump_audio(abcdkm4j_ctx *ctx)
+void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
 {
     ctx->mp4a_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_MP4A, 1, 1);
     ctx->esds_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_ESDS, 1, 1);
@@ -438,7 +438,7 @@ final:
 
 }
 
-void _abcdkm4j_dump(abcdkm4j_ctx *ctx)
+void _abcdkm4j_dump(abcdkm4j_t *ctx)
 {
     ctx->out_fd = -1;
 
@@ -495,7 +495,7 @@ final:
 
 }
 
-void _abcdkm4j_work(abcdkm4j_ctx *ctx)
+void _abcdkm4j_work(abcdkm4j_t *ctx)
 {
     ctx->in_fd = -1;
 
@@ -566,7 +566,7 @@ final:
 
 int abcdk_tool_mp4juicer(abcdk_tree_t *args)
 {
-    abcdkm4j_ctx ctx = {0};
+    abcdkm4j_t ctx = {0};
 
     ctx.args = args;
 

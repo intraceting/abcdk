@@ -16,7 +16,7 @@
 #include "entry.h"
 
 
-typedef struct _abcdkmtx_ctx
+typedef struct _abcdkmt
 {
     int errcode;
     abcdk_tree_t *args;
@@ -31,7 +31,7 @@ typedef struct _abcdkmtx_ctx
     char sn[256];
     int fd;
 
-}abcdkmtx_ctx;
+}abcdkmt_t;
 
 /**/
 enum _abcdkmt_constant
@@ -167,7 +167,7 @@ void _abcdkmt_printf_sense(abcdk_scsi_io_stat_t *stat)
     fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
-void _abcdkmt_operate(abcdkmtx_ctx *ctx)
+void _abcdkmt_operate(abcdkmt_t *ctx)
 {
     int chk;
 
@@ -197,7 +197,7 @@ final:
     return;
 }
 
-void _abcdkmt_write_filemark(abcdkmtx_ctx *ctx)
+void _abcdkmt_write_filemark(abcdkmt_t *ctx)
 {
     int count;
     int chk;
@@ -220,7 +220,7 @@ final:
     return;
 }
 
-void _abcdkmt_tell_pos(abcdkmtx_ctx *ctx)
+void _abcdkmt_tell_pos(abcdkmt_t *ctx)
 {    
     abcdk_scsi_io_stat_t stat = {0};
     uint64_t block = -1, file = -1;
@@ -246,7 +246,7 @@ final:
     return;
 }
 
-void _abcdkmt_seek_pos(abcdkmtx_ctx *ctx)
+void _abcdkmt_seek_pos(abcdkmt_t *ctx)
 {    
     int part;
     uint8_t type;
@@ -276,7 +276,7 @@ final:
 
 int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdkmtx_ctx *ctx = (abcdkmtx_ctx *)opaque;
+    abcdkmt_t *ctx = (abcdkmt_t *)opaque;
     uint16_t id,len;
     uint8_t rd ,fmt;
     uint8_t *val;
@@ -361,7 +361,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
-abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmtx_ctx *ctx, uint8_t part, uint16_t id)
+abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmt_t *ctx, uint8_t part, uint16_t id)
 {
     abcdk_tree_t *node = NULL;
 
@@ -386,7 +386,7 @@ final_error:
     return NULL;
 }
 
-void _abcdkmt_read_mam(abcdkmtx_ctx *ctx)
+void _abcdkmt_read_mam(abcdkmt_t *ctx)
 {
     abcdk_object_t *attr_p = NULL;
     abcdk_tree_t *root = NULL, *node = NULL;
@@ -428,7 +428,7 @@ final:
     abcdk_tree_free(&root);
 }
 
-void _abcdkmt_write_mam(abcdkmtx_ctx *ctx)
+void _abcdkmt_write_mam(abcdkmt_t *ctx)
 {   
     int id = 0xffff;
     const char *value = NULL;
@@ -486,7 +486,7 @@ final:
 static struct _abcdkmt_methods
 {
     int cmd;
-    void (*method)(abcdkmtx_ctx *ctx);
+    void (*method)(abcdkmt_t *ctx);
 } abcdkmt_methods[] = {
     {ABCDKMT_REWIND,_abcdkmt_operate},
     {ABCDKMT_LOAD,_abcdkmt_operate},
@@ -500,9 +500,9 @@ static struct _abcdkmt_methods
     {ABCDKMT_WRITE_MAM, _abcdkmt_write_mam},
 };
 
-void _abcdkmt_work(abcdkmtx_ctx *ctx)
+void _abcdkmt_work(abcdkmt_t *ctx)
 {
-    void (*_method)(abcdkmtx_ctx *ctx) = NULL;
+    void (*_method)(abcdkmt_t *ctx) = NULL;
     int chk;
 
     ctx->fd = -1;
@@ -575,7 +575,7 @@ final:
 
 int abcdk_tool_mt(abcdk_tree_t *args)
 {
-    abcdkmtx_ctx ctx = {0};
+    abcdkmt_t ctx = {0};
 
     ctx.args = args;
 

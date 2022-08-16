@@ -47,19 +47,15 @@ typedef enum _abcdk_log_type
 } abcdk_log_type_t;
 
 /**
- * 关闭。
-*/
-void abcdk_log_close();
-
-/**
  * 初始化。
  *
  * @warning 如果在其它接调用之后才进行初始化，将不会起作用。
  *
- * @param [in] consignee 收货地址。默认：本机。
+ * @param [in] consignee 收货地址。默认：127.0.0.1:65535
+ * @param [in] copy2stderr !0 复制到stderr，0 不复制。
  *
  */
-void abcdk_log_open(const char *consignee);
+void abcdk_log_open(const char *consignee,int copy2stderr);
 
 /**
  * 设置掩码。

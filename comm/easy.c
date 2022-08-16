@@ -377,6 +377,7 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node)
     /*替换环境指针*/
     abcdk_comm_set_userdata(node, easy);
 
+    /*新的连接到来，注册读事件。*/
     abcdk_comm_read_watch(node);
 }
 
@@ -386,6 +387,7 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
 
     abcdk_atomic_store(&easy->status, 2);
 
+    /*已连接到远端，注册读写事件。*/
     abcdk_comm_read_watch(node);
     abcdk_comm_write_watch(node);
 }
@@ -554,6 +556,7 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
         if (easy->request_cb)
             easy->request_cb(easy, NULL, 0);
 
+        /*断开后，做最后的清理工作。*/
         abcdk_comm_easy_unref(&easy);
     }
     else
@@ -608,9 +611,10 @@ abcdk_comm_easy_t *abcdk_comm_easy_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, a
     easy->status = 2;
     easy->request_cb = request_cb;
     easy->opaque = opaque;
+    easy->comm = abcdk_comm_node_alloc(ctx);
 
-    easy->comm = abcdk_comm_listen(ctx, ssl_ctx, addr, _abcdk_comm_easy_event_cb, easy);
-    if (!easy->comm)
+    chk = abcdk_comm_listen(easy->comm, ssl_ctx, addr, _abcdk_comm_easy_event_cb, easy);
+    if (chk != 0)
         goto final_error;
 
     return easy_p;
@@ -642,9 +646,10 @@ abcdk_comm_easy_t *abcdk_comm_easy_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, 
     easy->status = 1;
     easy->request_cb = request_cb;
     easy->opaque = opaque;
+    easy->comm = abcdk_comm_node_alloc(ctx);
 
-    easy->comm = abcdk_comm_connect(ctx, ssl_ctx, addr, _abcdk_comm_easy_event_cb, easy);
-    if (!easy->comm)
+    chk = abcdk_comm_connect(easy->comm, ssl_ctx, addr, _abcdk_comm_easy_event_cb, easy);
+    if (chk != 0)
         goto final_error;
 
     return easy_p;

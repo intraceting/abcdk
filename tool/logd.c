@@ -17,7 +17,7 @@
 #include "shell/proc.h"
 #include "comm/easy.h"
 
-typedef struct _abcdk_logd
+typedef struct _abcdklogd
 {
     int errcode;
     abcdk_tree_t *args;
@@ -33,9 +33,9 @@ typedef struct _abcdk_logd
     abcdk_comm_t *comm;
     abcdk_comm_easy_t *easy;
 
-} abcdk_logd_t;
+} abcdklogd_t;
 
-void _abcdk_logd_print_usage()
+void _abcdklog_print_usage()
 {
     char name[NAME_MAX] = {0};
 
@@ -45,7 +45,7 @@ void _abcdk_logd_print_usage()
     fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
 }
 
-void _abcdk_logd_work(abcdk_logd_t *ctx)
+void _abcdklog_work(abcdklogd_t *ctx)
 {
     ctx->comm = abcdk_comm_start(0);
 
@@ -53,32 +53,20 @@ void _abcdk_logd_work(abcdk_logd_t *ctx)
     abcdk_comm_stop(&ctx->comm);
 }
 
-int main(int argc, char **argv)
+int abcdk_tool_logd(abcdk_tree_t *args)
 {
-    abcdk_logd_t ctx = {0};
+    abcdklogd_t ctx = {0};
 
-    /*中文；UTF-8。*/
-    setlocale(LC_ALL, "zh_CN.UTF-8");
-
-    /*随机数种子。*/
-    srand(time(NULL));
-
-    /*申请参数存储空间。*/
-    ctx.args = abcdk_tree_alloc3(1);
-    if (!ctx.args)
-        ABCDK_ERRNO_AND_GOTO1(ctx.errcode = errno,final);
-    
-    /*解析参数。*/
-    abcdk_getargs(ctx.args, argc, argv, "--");
+    ctx.args = args;
 
     if (abcdk_option_exist(ctx.args, "--help"))
-        _abcdk_logd_print_usage(ctx.args);
+    {
+        _abcdkbc_print_usage(ctx.args);
+    }
     else
-        _abcdk_logd_work(&ctx);
-
-final:
-    
-    abcdk_tree_free(&ctx.args);
+    {
+        _abcdkbc_work(&ctx);
+    }
 
     return ctx.errcode;
 }

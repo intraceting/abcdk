@@ -15,7 +15,7 @@
 #include "util/mmap.h"
 #include "entry.h"
 
-typedef struct _abcdkbc_ctx
+typedef struct _abcdkbc
 {
     int errcode;
     abcdk_tree_t *args;
@@ -26,7 +26,7 @@ typedef struct _abcdkbc_ctx
     const char *out;
     int no_amb;
 
-} abcdkbc_ctx;
+} abcdkbc_t;
 
 void _abcdkbc_print_usage(abcdk_tree_t *args)
 {
@@ -79,7 +79,7 @@ uint8_t _abcdkbc_de_table32_sn(uint8_t c)
     return c;
 }
 
-void _abcdkbc_work(abcdkbc_ctx *ctx)
+void _abcdkbc_work(abcdkarchive_t *ctx)
 {
     abcdk_object_t *inbuf = NULL,*outbuf = NULL;
     ssize_t outsize = 0,outsize2 = 0;
@@ -168,7 +168,7 @@ final:
 
 int abcdk_tool_basecode(abcdk_tree_t *args)
 {
-    abcdkbc_ctx ctx = {0};
+    abcdkarchive_t ctx = {0};
 
     ctx.args = args;
 

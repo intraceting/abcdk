@@ -15,7 +15,7 @@
 #include "shell/scsi.h"
 #include "entry.h"
 
-typedef struct _abcdklsscsi_ctx
+typedef struct _abcdklsscsi
 {
     int errcode;
     abcdk_tree_t *args;
@@ -25,7 +25,7 @@ typedef struct _abcdklsscsi_ctx
 
     abcdk_tree_t *list;
 
-}abcdklsscsi_ctx;
+}abcdklsscsi_t;
 
 /** 输出格式。*/
 enum _abcdklsscsi_fmt
@@ -71,7 +71,7 @@ void _abcdklsscsi_print_usage(abcdk_tree_t *args)
 
 int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdklsscsi_ctx *ctx = (abcdklsscsi_ctx*)opaque;
+    abcdklsscsi_t *ctx = (abcdklsscsi_t*)opaque;
     abcdk_scsi_info_t *dev_p = NULL;
     
     if(node && node->alloc)
@@ -160,13 +160,13 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
     ABCDK_ERRNO_AND_RETURN1(0,1);
 }
 
-void _abcdklsscsi_printf_elements(abcdklsscsi_ctx *ctx)
+void _abcdklsscsi_printf_elements(abcdklsscsi_t *ctx)
 {
     abcdk_tree_iterator_t it = {0, _abcdklsscsi_printf_elements_cb, ctx};
     abcdk_tree_scan(ctx->list, &it);
 }
 
-void _abcdklsscsi_work(abcdklsscsi_ctx *ctx)
+void _abcdklsscsi_work(abcdklsscsi_t *ctx)
 {
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
     ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSSCSI_FMT_TEXT);
@@ -195,7 +195,7 @@ final:
 
 int abcdk_tool_lsscsi(abcdk_tree_t *args)
 {
-    abcdklsscsi_ctx ctx = {0};
+    abcdklsscsi_t ctx = {0};
 
     ctx.args = args;
 

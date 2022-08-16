@@ -14,7 +14,7 @@
 #include "shell/mmc.h"
 #include "entry.h"
 
-typedef struct _abcdklsmmc_ctx
+typedef struct _abcdklsmmc
 {
     int errcode;
     abcdk_tree_t *args;
@@ -24,7 +24,7 @@ typedef struct _abcdklsmmc_ctx
 
     abcdk_tree_t *list;
 
-}abcdklsmmc_ctx;
+}abcdklsmmc_t;
 
 /** 输出格式。*/
 enum _abcdklsmmc_fmt
@@ -70,7 +70,7 @@ void _abcdklsmmc_print_usage(abcdk_tree_t *args)
 
 int _abcdklsmmc_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdklsmmc_ctx *ctx = (abcdklsmmc_ctx*)opaque;
+    abcdklsmmc_t *ctx = (abcdklsmmc_t*)opaque;
     abcdk_mmc_info_t *dev_p = NULL;
     
     if(node && node->alloc)
@@ -152,13 +152,13 @@ int _abcdklsmmc_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaqu
     ABCDK_ERRNO_AND_RETURN1(0,1);
 }
 
-void _abcdklsmmc_printf_elements(abcdklsmmc_ctx *ctx)
+void _abcdklsmmc_printf_elements(abcdklsmmc_t *ctx)
 {
     abcdk_tree_iterator_t it = {0, _abcdklsmmc_printf_elements_cb, ctx};
     abcdk_tree_scan(ctx->list, &it);
 }
 
-void _abcdklsmmc_work(abcdklsmmc_ctx *ctx)
+void _abcdklsmmc_work(abcdklsmmc_t *ctx)
 {
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
     ctx->fmt = abcdk_option_get_int(ctx->args, "--fmt", 0, ABCDKLSMMC_FMT_TEXT);
@@ -187,7 +187,7 @@ final:
 
 int abcdk_tool_lsmmc(abcdk_tree_t *args)
 {
-    abcdklsmmc_ctx ctx = {0};
+    abcdklsmmc_t ctx = {0};
 
     ctx.args = args;
 

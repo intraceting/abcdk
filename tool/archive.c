@@ -39,7 +39,7 @@ enum _abcdkarchive_constant
 #define ABCDKARCHIVE_WRITE ABCDKARCHIVE_WRITE
 };
 
-typedef struct _abcdkarchive_ctx
+typedef struct _abcdkarchive
 {
     int errcode;
     abcdk_tree_t *args;
@@ -80,7 +80,7 @@ typedef struct _abcdkarchive_ctx
     void *buf;
     abcdk_reader_t *reader;
 
-} abcdkarchive_ctx;
+} abcdkarchive_t;
 
 static struct _abcdkarchive_filter_dict
 {
@@ -253,7 +253,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t保留完整路径。默认：不保留。\n");
 }
 
-int _abcdkarchive_read_one(abcdkarchive_ctx *ctx)
+int _abcdkarchive_read_one(abcdkarchive_t *ctx)
 {
     const char *name = NULL;
     char name_cp[PATH_MAX] = {0};
@@ -397,7 +397,7 @@ final:
     return chk;
 }
 
-void _abcdkarchive_read_real(abcdkarchive_ctx *ctx)
+void _abcdkarchive_read_real(abcdkarchive_t *ctx)
 {
     int chk;
 
@@ -436,7 +436,7 @@ final:
     return;
 }
 
-void _abcdkarchive_read(abcdkarchive_ctx *ctx)
+void _abcdkarchive_read(abcdkarchive_t *ctx)
 {
     int chk;
 
@@ -558,7 +558,7 @@ final:
     }
 }
 
-int _abcdkarchive_write_one(abcdkarchive_ctx *ctx,const char *file,struct stat *attr)
+int _abcdkarchive_write_one(abcdkarchive_t *ctx,const char *file,struct stat *attr)
 {
     struct archive_entry *entry = NULL;
     char linkname[PATH_MAX] = {0};
@@ -668,7 +668,7 @@ final:
     return chk;
 }
 
-void _abcdkarchive_write_real(abcdkarchive_ctx *ctx)
+void _abcdkarchive_write_real(abcdkarchive_t *ctx)
 {
     struct stat attr = {0};
     char file[PATH_MAX] = {0};
@@ -750,7 +750,7 @@ final:
 
 int _abcdkarchive_write_open_cb(struct archive *fd, void *opaque)
 {
-    abcdkarchive_ctx *ctx = (abcdkarchive_ctx *)opaque;
+    abcdkarchive_t *ctx = (abcdkarchive_t *)opaque;
 
     for (int i = 0; i < ctx->volume_num; i++)
     {
@@ -767,7 +767,7 @@ int _abcdkarchive_write_open_cb(struct archive *fd, void *opaque)
 
 ssize_t _abcdkarchive_write_write_cb(struct archive *fd, void *opaque, const void *_buffer, size_t _length)
 {
-    abcdkarchive_ctx *ctx = (abcdkarchive_ctx *)opaque;
+    abcdkarchive_t *ctx = (abcdkarchive_t *)opaque;
     ssize_t wlen = 0, wall = 0;
 
 #pragma omp parallel for num_threads(ctx->volume_num)
@@ -784,7 +784,7 @@ ssize_t _abcdkarchive_write_write_cb(struct archive *fd, void *opaque, const voi
 
 int _abcdkarchive_write_close_cb(struct archive *fd, void *opaque)
 {
-    abcdkarchive_ctx *ctx = (abcdkarchive_ctx *)opaque;
+    abcdkarchive_t *ctx = (abcdkarchive_t *)opaque;
 
     for (int i = 0; i < ctx->volume_num; i++)
     {
@@ -794,7 +794,7 @@ int _abcdkarchive_write_close_cb(struct archive *fd, void *opaque)
     return ARCHIVE_OK;
 }
 
-void _abcdkarchive_write(abcdkarchive_ctx *ctx)
+void _abcdkarchive_write(abcdkarchive_t *ctx)
 {
     int chk;
 
@@ -913,7 +913,7 @@ final:
         abcdk_closep(&ctx->fd[i]);
 }
 
-void _abcdkarchive_work(abcdkarchive_ctx *ctx)
+void _abcdkarchive_work(abcdkarchive_t *ctx)
 {
     ctx->cmd = abcdk_option_get_int(ctx->args, "--cmd", 0, ABCDKARCHIVE_READ);
     ctx->flt = abcdk_option_get_int(ctx->args, "--filter", 0, -1);
@@ -952,7 +952,7 @@ final:
 int abcdk_tool_archive(abcdk_tree_t *args)
 {
 #if defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
-    abcdkarchive_ctx ctx = {0};
+    abcdkarchive_t ctx = {0};
 
     ctx.args = args;
 

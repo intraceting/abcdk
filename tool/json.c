@@ -14,7 +14,7 @@
 #include "util/json.h"
 #include "entry.h"
 
-typedef struct _abcdkjson_ctx
+typedef struct _abcdkjson
 {
     int errcode;
 
@@ -28,7 +28,7 @@ typedef struct _abcdkjson_ctx
     json_object *obj;
 #endif //_json_h_
 
-}abcdkjson_ctx;
+}abcdkjson_t;
 
 #ifdef _json_h_
 
@@ -55,7 +55,7 @@ void _abcdkjson_print_usage(abcdk_tree_t *args)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-void _abcdkjson_wrok(abcdkjson_ctx *ctx)
+void _abcdkjson_wrok(abcdkjson_t *ctx)
 {
     ctx->file = abcdk_option_get(ctx->args,"--file",0,NULL);
     ctx->readable = abcdk_option_exist(ctx->args,"--readable");
@@ -104,7 +104,7 @@ final:
 
 int abcdk_tool_json(abcdk_tree_t *args)
 {
-    abcdkjson_ctx ctx = {0};
+    abcdkjson_t ctx = {0};
 
 #ifdef _json_h_
 

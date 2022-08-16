@@ -17,7 +17,7 @@
 #include "entry.h"
 
 
-typedef struct _abcdkmtx_ctx
+typedef struct _abcdkmtx
 {
     int errcode;
     abcdk_tree_t *args;
@@ -44,7 +44,7 @@ typedef struct _abcdkmtx_ctx
     uint16_t changer;
     abcdk_tree_t *devlist;
 
-}abcdkmtx_ctx;
+}abcdkmtx_t;
 
 
 /** 常量。*/
@@ -72,7 +72,7 @@ enum _abcdkmtx_constant
 
 };
 
-void _abcdkmtx_print_usage(abcdkmtx_ctx *ctx)
+void _abcdkmtx_print_usage(abcdkmtx_t *ctx)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -149,7 +149,7 @@ void _abcdkmtx_printf_sense(abcdk_scsi_io_stat_t *stat)
     fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
-const char *_abcdkmtx_translate_devname(abcdkmtx_ctx *ctx, uint8_t type, const char *sn)
+const char *_abcdkmtx_translate_devname(abcdkmtx_t *ctx, uint8_t type, const char *sn)
 {
     abcdk_tree_t *node_p = NULL;
     abcdk_scsi_info_t *dev_p = NULL;
@@ -179,7 +179,7 @@ const char *_abcdkmtx_translate_devname(abcdkmtx_ctx *ctx, uint8_t type, const c
 
 int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdkmtx_ctx *ctx = (abcdkmtx_ctx *)opaque;
+    abcdkmtx_t *ctx = (abcdkmtx_t *)opaque;
     const char *sn;
     const char *vendor;
     const char *model;
@@ -289,7 +289,7 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
-void _abcdkmtx_printf_elements(abcdkmtx_ctx *ctx)
+void _abcdkmtx_printf_elements(abcdkmtx_t *ctx)
 {   
     ctx->devlist = abcdk_tree_alloc3(1);
     if (!ctx->devlist)
@@ -305,7 +305,7 @@ void _abcdkmtx_printf_elements(abcdkmtx_ctx *ctx)
 
 int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdkmtx_ctx *ctx = (abcdkmtx_ctx *)opaque;
+    abcdkmtx_t *ctx = (abcdkmtx_t *)opaque;
 
     /*已经结束。*/
     if(depth == SIZE_MAX)
@@ -322,13 +322,13 @@ int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     return -1;
 }
 
-void _abcdkmtx_find_changer(abcdkmtx_ctx *ctx)
+void _abcdkmtx_find_changer(abcdkmtx_t *ctx)
 {
     abcdk_tree_iterator_t it = {0, _abcdkmtx_find_changer_cb, ctx};
     abcdk_tree_scan(ctx->root, &it);
 }
 
-void _abcdkmtx_move_medium(abcdkmtx_ctx *ctx)
+void _abcdkmtx_move_medium(abcdkmtx_t *ctx)
 {
     int chk;
 
@@ -349,7 +349,7 @@ final:
     return;
 }
 
-void _abcdkmtx_work(abcdkmtx_ctx *ctx)
+void _abcdkmtx_work(abcdkmtx_t *ctx)
 {
     int chk;
 
@@ -452,7 +452,7 @@ final:
 
 int abcdk_tool_mtx(abcdk_tree_t *args)
 {
-    abcdkmtx_ctx ctx = {0};
+    abcdkmtx_t ctx = {0};
 
     ctx.args = args;
 

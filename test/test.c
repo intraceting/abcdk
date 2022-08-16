@@ -3663,11 +3663,11 @@ void test_comm(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    abcdk_comm_listen(ctx,server_ssl_ctx,&addr,test_comm_message_cb,NULL);
+    // abcdk_comm_listen(ctx,server_ssl_ctx,&addr,test_comm_message_cb,NULL);
 
-    const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
-    abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    abcdk_comm_connect(ctx,client_ssl_ctx,&addr2,test_comm_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
+    // const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
+    // abcdk_sockaddr_from_string(&addr2,connect_p,0);
+    // abcdk_comm_connect(ctx,client_ssl_ctx,&addr2,test_comm_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
  
 
 
@@ -3837,12 +3837,13 @@ void test_easy(abcdk_tree_t *args)
  //   abcdk_comm_easy_set_timeout(easy_listen,1);
 
   //  abcdk_comm_easy_unref(&easy_listen);
-    
+    while (getchar() != 'Q')
+        ;
+
     for(int i = 0;i<nn;i++)
         abcdk_comm_easy_unref(&easy_client[i]);
 
-    while (getchar() != 'Q')
-        ;
+
     abcdk_comm_stop(&ctx);
 
 
@@ -5362,15 +5363,16 @@ void test_odbcpool(abcdk_tree_t *args)
 
 void test_log(abcdk_tree_t *args)
 {
+    abcdk_log_open(NULL,1);
     abcdk_log_mask(1,2,3,4,20,10,-1);
 
-    for(int j =0;j<ABCDK_LOG_MAX;j++)
+    #pragma omp parallel for num_threads(30)
+    for (int j = 0; j < 1000; j++)
     {
-        for (int i = 0; i < 1000; i++)
-            abcdk_log_printf(j, "%d", j);
+        abcdk_log_printf(j % ABCDK_LOG_MAX, "log%d", j);
     }
 
-    abcdk_log_close();
+    //  abcdk_log_close();
 }
 
 int main(int argc, char **argv)

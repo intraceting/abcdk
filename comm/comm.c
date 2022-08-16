@@ -164,7 +164,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
     epoll_data_t ep_data;
     int chk;
 
-    node_sub = _abcdk_comm_node_alloc(node->ctx);
+    node_sub = abcdk_comm_node_alloc(node->ctx);
     if (!node_sub)
         return NULL;
     
@@ -548,8 +548,9 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
     {
         _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CLOSE);
 
-        /*释放引用，解除绑定，回收资源。*/
+        /*释放引用。*/
         abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
+        /*解除绑定关系。*/
         abcdk_epollex_detach(ctx->epollex, node->fd);
     }
     else
@@ -626,7 +627,7 @@ void *_abcdk_comm_worker(void *args)
 
     /*每隔5秒检查一次，给退出检测留出时间。*/
     while (!abcdk_atomic_load(&ctx->exitflag))
-        _abcdk_comm_perform(ctx, 5000);
+        _abcdk_comm_perform(ctx, 3000);
 
     return NULL;
 }
@@ -684,7 +685,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
 {
     abcdk_comm_t *ctx_p = NULL;
 
-    if(!ctx || !*ctx);
+    if(!ctx || !*ctx)
         return;
 
     /*复制，清空。*/
@@ -771,8 +772,9 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
     if(chk != 0 )
         goto final_error;
 
+    /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
     ep_data.ptr = node_p;
-    chk = abcdk_epollex_attach(ctx->epollex,node_p->fd, &ep_data);
+    chk = abcdk_epollex_attach(node_p->ctx->epollex,node_p->fd, &ep_data);
     if (chk != 0)
         goto final_error;
     
@@ -851,6 +853,7 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
 
 final:
 
+    /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
     ep_data.ptr = node_p;
     chk = abcdk_epollex_attach(node_p->ctx->epollex, node_p->fd, &ep_data);
     if (chk != 0)

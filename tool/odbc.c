@@ -16,12 +16,12 @@
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-typedef struct _abcdkodbc_ctx
+typedef struct _abcdkodbc
 {
     int errcode;
     abcdk_tree_t *args;
 
-}abcdkodbc_ctx;
+}abcdkodbc_t;
 
 
 void _abcdkodbc_print_usage(abcdk_tree_t *args)
@@ -68,7 +68,7 @@ void _abcdkodbc_print_usage(abcdk_tree_t *args)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-void _abcdkodbc_work(abcdkodbc_ctx *ctx)
+void _abcdkodbc_work(abcdkodbc_t *ctx)
 {
     abcdk_odbc_t *odbc = abcdk_odbc_alloc(0);
     const char *product = NULL;
@@ -181,7 +181,7 @@ int abcdk_tool_odbc(abcdk_tree_t *args)
 {
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-    abcdkodbc_ctx ctx = {0};
+    abcdkodbc_t ctx = {0};
     ctx.args = args;
 
     if (abcdk_option_exist(ctx.args, "--help"))

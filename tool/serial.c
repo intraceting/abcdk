@@ -15,7 +15,7 @@
 #include "util/thread.h"
 #include "entry.h"
 
-typedef struct _abcdkserial_ctx
+typedef struct _abcdkserial
 {
     int errcode;
 
@@ -29,7 +29,7 @@ typedef struct _abcdkserial_ctx
     int parity;
     int stop;
     
-}abcdkserial_ctx;
+}abcdkserial_t;
 
 void _abcdkserial_print_usage(abcdk_tree_t *args, int only_version)
 {
@@ -72,7 +72,7 @@ void _abcdkserial_print_usage(abcdk_tree_t *args, int only_version)
 
 void *_abcdkserial_io(void *param)
 {
-    abcdkserial_ctx *ctx = (abcdkserial_ctx*)param;
+    abcdkserial_t *ctx = (abcdkserial_t*)param;
     int events = 0;
     uint8_t rbuf[100] = {0};
     ssize_t rlen = -1;
@@ -107,7 +107,7 @@ void *_abcdkserial_io(void *param)
 }
 
 
-void _abcdkserial_work(abcdkserial_ctx *ctx)
+void _abcdkserial_work(abcdkserial_t *ctx)
 {
     ctx->io.handle = -1;
     ctx->fd = -1;
@@ -164,7 +164,7 @@ final:
 
 int abcdk_tool_serial(abcdk_tree_t *args)
 {
-    abcdkserial_ctx ctx = {0};
+    abcdkserial_t ctx = {0};
 
     ctx.args = args;
 
