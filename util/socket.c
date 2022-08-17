@@ -477,23 +477,8 @@ char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
     }
     else
     {
-        if (abcdk_inet_ntop(src, buf, INET6_ADDRSTRLEN) == NULL)
+        if (abcdk_inet_ntop(src, dst, INET6_ADDRSTRLEN) == NULL)
             return NULL;
-
-        if (src->family == AF_INET6)
-        {
-            if (src->addr6.sin6_port)
-                sprintf(dst, "[%s]:%hu", buf, abcdk_endian_b_to_h16(src->addr6.sin6_port));
-            else
-                strcpy(dst, buf);
-        }
-        else if (src->family == AF_INET)
-        {
-            if (src->addr4.sin_port)
-                sprintf(dst, "%s:%hu", buf, abcdk_endian_b_to_h16(src->addr4.sin_port));
-            else
-                strcpy(dst, buf);
-        }
     }
 
     return dst;

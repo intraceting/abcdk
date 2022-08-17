@@ -1351,6 +1351,8 @@ ssize_t abcdk_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char no
     char *line_p = NULL;
     ssize_t rlen = -1;
 
+    assert(fp != NULL && line != NULL);
+
     while ((rlen = getdelim(line, len, delim, fp)) != -1)
     {
         line_p = *line;
@@ -1362,6 +1364,37 @@ ssize_t abcdk_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char no
     }
 
     return rlen;
+}
+
+void abcdk_fclosep(FILE **fp)
+{
+    FILE *fp_p = NULL;
+
+    if(!fp || !*fp)
+        return;
+
+    fp_p = *fp;
+    *fp = NULL;
+
+    fclose(fp_p);
+}
+
+int64_t abcdk_fsize(FILE *fp)
+{
+    int64_t size = -1;
+    int64_t pos = -1;
+
+    assert(fp != NULL);
+
+    pos = ftell(fp);
+    if (pos >= 0)
+    {
+        fseek(fp, 0, SEEK_END);
+        size = ftell(fp);
+        fseek(fp, pos, SEEK_SET);
+    }
+
+    return size;
 }
 
 /*------------------------------------------------------------------------------------------------*/

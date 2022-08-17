@@ -86,24 +86,6 @@ void *abcdk_comm_easy_set_userdata(abcdk_comm_easy_t *easy, void *opaque);
 */
 void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
 
-/**
- * 调整私有数据空间大小。
- * 
- * @return !NULL(0) 成功(私有数据指针)，NULL(0) 失败。
-*/
-void *abcdk_comm_easy_private_resize(abcdk_comm_easy_t *easy, size_t size);
-
-/**
- * 获取私有数据空间指针。
- * 
- * @return !NULL(0) 成功(私有数据指针)，NULL(0) 失败。
-*/
-void *abcdk_comm_easy_private_data(abcdk_comm_easy_t *easy);
-
-/**
- * 获取私有数据空间大小。
-*/
-size_t abcdk_comm_easy_private_size(abcdk_comm_easy_t *easy);
 
 /** 
  * 发送请求。

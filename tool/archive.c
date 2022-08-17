@@ -300,7 +300,7 @@ int _abcdkarchive_read_one(abcdkarchive_t *ctx)
         {
             if (access(pathfile, F_OK) == 0)
             {
-                syslog(LOG_WARNING, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
+                fprintf(stderr, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
                 ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
             }
 
@@ -338,7 +338,7 @@ int _abcdkarchive_read_one(abcdkarchive_t *ctx)
         {
             if (access(pathfile, F_OK) == 0)
             {
-                syslog(LOG_WARNING, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
+                fprintf(stderr, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
                 ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
             }
 
@@ -353,21 +353,21 @@ int _abcdkarchive_read_one(abcdkarchive_t *ctx)
         }
         else
         {
-            syslog(LOG_WARNING, "%s -> 不支持的类型，跳过。 \n", name_cp);
+            fprintf(stderr, "%s -> 不支持的类型，跳过。 \n", name_cp);
             ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
         }
 
         /*恢复文件(目录)属性的时间。*/
         chk = abcdk_futimens(ctx->fd[0], &file_stat.st_atim, &file_stat.st_mtim);
         if (chk != 0)
-            syslog(LOG_WARNING, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
+            fprintf(stderr, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
 #if 0
         /*恢复文件(目录)属性的权限。*/
         if(file_stat.st_mode & ACCESSPERMS)
         {
             chk = fchmod(ctx->fd[0], file_stat.st_mode & ACCESSPERMS);
             if (chk != 0)
-                syslog(LOG_WARNING, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
+                fprintf(stderr, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
         }
 
         /*仅所有者或特权者才能改变文件(目录)的所有者和所属组。*/
@@ -375,7 +375,7 @@ int _abcdkarchive_read_one(abcdkarchive_t *ctx)
         {
             chk = fchown(ctx->fd[0], file_stat.st_uid, file_stat.st_gid);
             if (chk != 0)
-                syslog(LOG_WARNING, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
+                fprintf(stderr, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
         }
 #endif
         /*忽略恢复文件(目录)属性过程中发生的错误。*/
@@ -568,7 +568,7 @@ int _abcdkarchive_write_one(abcdkarchive_t *ctx,const char *file,struct stat *at
 
     if (!(S_ISREG(attr->st_mode) || S_ISLNK(attr->st_mode) || S_ISDIR(attr->st_mode)))
     {
-        syslog(LOG_WARNING, "'%s' 不支持此类文件归档。", file);
+        fprintf(stderr, "'%s' 不支持此类文件归档。", file);
         return -2;
     }
 
@@ -616,7 +616,7 @@ int _abcdkarchive_write_one(abcdkarchive_t *ctx,const char *file,struct stat *at
         if (!ctx->reader)
             ctx->reader = abcdk_reader_create(ctx->buf_size);
         if (!ctx->reader)
-            syslog(LOG_WARNING, "'启动加速器失败' %s。", strerror(errno));
+            fprintf(stderr, "'启动加速器失败' %s。", strerror(errno));
 
         if(ctx->reader)
             reader_chk = abcdk_reader_start(ctx->reader, fd);
@@ -695,7 +695,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
         chk = lstat(file,&attr);
         if(chk != 0)
         {
-            syslog(LOG_WARNING, "'%s' %s。",file,strerror(errno));
+            fprintf(stderr, "'%s' %s。",file,strerror(errno));
             continue;
         }
 
@@ -704,7 +704,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
             chk = abcdk_dirent_open(dir,file);
             if(chk != 0)
             {
-                syslog(LOG_WARNING, "'%s' %s。",file,strerror(errno));
+                fprintf(stderr, "'%s' %s。",file,strerror(errno));
                 continue;
             }
         }
@@ -724,7 +724,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
         chk = lstat(file, &attr);
         if (chk != 0)
         {
-            syslog(LOG_WARNING, "'%s' %s。", file, strerror(errno));
+            fprintf(stderr, "'%s' %s。", file, strerror(errno));
             continue;
         }
 
@@ -733,7 +733,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
             chk = abcdk_dirent_open(dir,file);
             if(chk != 0)
             {
-                syslog(LOG_WARNING, "'%s' %s。",file,strerror(errno));
+                fprintf(stderr, "'%s' %s。",file,strerror(errno));
                 continue;
             }
         }

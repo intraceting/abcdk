@@ -651,6 +651,16 @@ int abcdk_futimens(int fd,const struct timespec *atime,const struct timespec *mt
 */
 ssize_t abcdk_getline(FILE *fp, char **line, size_t *len, uint8_t delim, char note);
 
+/**
+ * 关闭文件句柄。
+*/
+void abcdk_fclosep(FILE **fp);
+
+/**
+ * 获取文件大小。
+*/
+int64_t abcdk_fsize(FILE *fp);
+
 /*------------------------------------------------------------------------------------------------*/
 
 /**

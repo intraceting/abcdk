@@ -41,7 +41,7 @@ typedef struct _abcdk_log
     uint16_t service;
 
     /** 收货人。*/
-    char consignee[NAME_MAX];
+    const char *consignee;
 
     /** 是否复制到stderr。!0 是，0 否。*/
     volatile int copy2stderr;
@@ -72,13 +72,14 @@ int _abcdk_log_init(void *opaque)
     ctx->easy = NULL;
     ctx->service = 0;
     ctx->copy2stderr = 0;
+    ctx->consignee = NULL;
     ctx->mask = 0xFFFFFFFF;
     pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
     abcdk_mutex_init2(&ctx->easy_mutex,0);
 
     cons_p = getenv("ABCDK_LOG_CONSIGNEE");
     if (cons_p && *cons_p)
-        strncpy(ctx->consignee,cons_p,NAME_MAX);
+        ctx->consignee = abcdk_strdup(cons_p);
 
     ctx->comm = abcdk_comm_start(1);
 
@@ -93,6 +94,7 @@ void _abcdk_log_uninit()
     abcdk_comm_easy_unref(&ctx->easy);
     pthread_key_delete(ctx->ptkey);
     abcdk_mutex_unlock(&ctx->easy_mutex);
+    abcdk_heap_free2((void**)&ctx->consignee);
 }
 
 abcdk_log_t *_abcdk_log_get_ctx()
@@ -168,11 +170,17 @@ abcdk_comm_easy_t *_abcdk_log_get_easy()
 
     if (!ctx->easy || abcdk_comm_easy_state(ctx->easy) != 0)
     {
+        /*释放已经断开的。*/
         abcdk_comm_easy_unref(&ctx->easy);
-        abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-        ctx->easy = abcdk_comm_easy_connect(ctx->comm, NULL, &addr, _abcdk_log_easy_request_cb, NULL);
-        if (ctx->easy)
-            abcdk_comm_easy_set_timeout(ctx->easy, -1);
+        
+        /*指定收货人再尝试连接，否则没意义。*/
+        if (ctx->consignee)
+        {
+            abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
+            ctx->easy = abcdk_comm_easy_connect(ctx->comm, NULL, &addr, _abcdk_log_easy_request_cb, NULL);
+            if (ctx->easy)
+                abcdk_comm_easy_set_timeout(ctx->easy, -1);
+        }
     }
 
     if(ctx->easy)
@@ -200,13 +208,31 @@ abcdk_object_t *_abcdk_log_get_buffer()
     return buf_p;
 }
 
+int _abcdk_log_send(const void *data, size_t len)
+{
+    abcdk_log_t *ctx = _abcdk_log_get_ctx();
+    abcdk_comm_easy_t *easy_p = NULL;
+    int chk;
+
+    /*获取通讯链路。*/
+    easy_p = _abcdk_log_get_easy();
+    if (!easy_p)
+        return -2;
+
+    /*发送到远程。*/
+    chk = abcdk_comm_easy_request(easy_p, data, len, NULL);
+    abcdk_comm_easy_unref(&easy_p);
+
+    return chk;
+}
+
 void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
     abcdk_object_t *buf_p = NULL;
-    abcdk_comm_easy_t *easy_p = NULL;
     uint64_t ts = 0;
     char name[17] = {0};
+    struct tm tm = {0};
     uint32_t len = 0;
     int chk;
 
@@ -243,16 +269,16 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 
     /*可能需要复制到stderr。*/
     if (ctx->copy2stderr)
-        fprintf(stderr, "%lu.%lu [%hu][%d] %s: %s\n", ts / 1000000, ts % 1000000, ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
+    {
+        abcdk_time_sec2tm(&tm, ts / 1000000, 0);
+        fprintf(stderr, "%d%02d%02d.%02d%02d%02d.%lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+                ts % 1000000, ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
+    }
 
-    /*获取通讯链路。*/
-    easy_p = _abcdk_log_get_easy();
-    if (!easy_p)
-        return;
-
-    /*发送到远程。*/
-    abcdk_comm_easy_request(easy_p, buf_p->pptrs[0], 29 + len, NULL);
-    abcdk_comm_easy_unref(&easy_p);
+    /*发送到远程。因连接有可能被断开，尝试重发一次。*/
+    chk = _abcdk_log_send(buf_p->pptrs[0], 35 + len);
+    if (chk != 0)
+        chk = _abcdk_log_send(buf_p->pptrs[0], 35 + len);
 }
 
 void abcdk_log_printf(int type, const char *fmt, ...)

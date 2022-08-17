@@ -231,8 +231,8 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lo
  * 
  * Unix: /File
  * Unix: /Path/File
- * IPv4：Address:Port 
- * IPv6：[Address]:Port
+ * IPv4：*.*.*.* 
+ * IPv6：*:*::*
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */

@@ -73,12 +73,6 @@ typedef struct _abcdk_comm_node
     /** 事件回调函数指针。*/
     abcdk_comm_event_cb event_cb;
 
-    /** 私有数据。*/
-    void *private_data;
-
-    /** 私有数据大小。*/
-    size_t private_size;
-
 } abcdk_comm_node_t;
 
 void abcdk_comm_node_unref(abcdk_comm_node_t **node)
@@ -108,11 +102,6 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
     }
 
     abcdk_closep(&node_p->fd);
-
-    /*释放私有空间。*/
-    abcdk_heap_free2(&node_p->private_data);
-    node_p->private_size = 0;
-
     abcdk_heap_free(node_p);
 }
 
@@ -142,8 +131,6 @@ abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx)
     node->ctx = ctx;
     node->fd = -1;
     node->opaque = NULL;
-    node->private_data = NULL;
-    node->private_size = 0;
 
     return node;
 }
@@ -389,44 +376,6 @@ void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
     old = node->opaque;
     
     return old;
-}
-
-void *abcdk_comm_private_resize(abcdk_comm_node_t *node, size_t size)
-{
-    void *new_buf = NULL;
-
-    assert(node != NULL);
-
-    if(size == 0)
-    {
-        abcdk_heap_free2(&node->private_data);
-        node->private_size = 0;
-    }
-    else if (size != node->private_size)
-    {
-        new_buf = abcdk_heap_realloc(node->private_data, size);
-        if (new_buf)
-        {
-            node->private_data = new_buf;
-            node->private_size = size;
-        }
-    }
-
-    return node->private_data;
-}
-
-void *abcdk_comm_private_data(abcdk_comm_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->private_data;
-}
-
-size_t abcdk_comm_private_size(abcdk_comm_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->private_size;
 }
 
 ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)

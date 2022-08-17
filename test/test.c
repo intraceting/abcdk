@@ -5363,8 +5363,8 @@ void test_odbcpool(abcdk_tree_t *args)
 
 void test_log(abcdk_tree_t *args)
 {
-    abcdk_log_open(NULL,0,1);
-    abcdk_log_mask(1,2,3,4,20,10,-1);
+    abcdk_log_open(NULL,100,1);
+   // abcdk_log_mask(1,2,3,4,20,10,-1);
 
     #pragma omp parallel for num_threads(30)
     for (int j = 0; j < 1000; j++)
@@ -5372,7 +5372,15 @@ void test_log(abcdk_tree_t *args)
         abcdk_log_printf(j % ABCDK_LOG_MAX, "log%d", j);
     }
 
-    //  abcdk_log_close();
+    sleep(40);
+
+    #pragma omp parallel for num_threads(30)
+    for (int j = 0; j < 100000; j++)
+    {
+        abcdk_log_printf(j % ABCDK_LOG_MAX, "log%d", j);
+    }
+
+    while('Q' != getchar());
 }
 
 int main(int argc, char **argv)
