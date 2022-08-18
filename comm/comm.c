@@ -67,11 +67,14 @@ typedef struct _abcdk_comm_node
     /** Input事件读权利拥有者。*/
     volatile pthread_t input_user;
 
-    /** 应用层环境指针。*/
-    void *opaque;
-
     /** 事件回调函数指针。*/
     abcdk_comm_event_cb event_cb;
+
+    /** 附加物。*/
+    abcdk_object_t *append;
+
+    /** 用户环境指针。*/
+    abcdk_object_t *userdata;
 
 } abcdk_comm_node_t;
 
@@ -102,6 +105,8 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
     }
 
     abcdk_closep(&node_p->fd);
+    abcdk_object_unref(&node_p->append);
+    abcdk_object_unref(&node_p->userdata);
     abcdk_heap_free(node_p);
 }
 
@@ -130,11 +135,146 @@ abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx)
     node->refcount = 1;
     node->ctx = ctx;
     node->fd = -1;
-    node->opaque = NULL;
+    node->append = abcdk_object_alloc3(0,1);
+    node->userdata = abcdk_object_alloc3(0,1);
 
     return node;
 }
 
+abcdk_object_t *abcdk_comm_node_append(abcdk_comm_node_t *node)
+{
+    assert(node != NULL);
+
+    return abcdk_object_refer(node->append);
+}
+
+abcdk_object_t *abcdk_comm_node_userdata(abcdk_comm_node_t *node)
+{
+    assert(node != NULL);
+
+    return abcdk_object_refer(node->userdata);
+}
+
+int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
+{
+    int chk;
+
+    assert(node != NULL);
+    assert(node->ctx != NULL);
+
+    chk = abcdk_epollex_timeout(node->ctx->epollex, node->fd, timeout);
+
+    return chk;
+}
+
+int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
+{
+    assert(node != NULL);
+
+    if (local && node->local.family)
+        abcdk_sockaddr_copy(&node->local,local);
+
+    if (remote && node->remote.family)
+        abcdk_sockaddr_copy(&node->remote,remote);
+
+    return 0;
+}
+
+int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
+{
+    assert(node != NULL);
+
+    if(local && node->local.family)
+        abcdk_sockaddr_to_string(local,&node->local);
+
+    if(remote && node->remote.family)
+        abcdk_sockaddr_to_string(remote,&node->remote);
+
+    return 0;
+}
+
+ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
+{
+    ssize_t rsize = 0,rsize_all = 0;
+    int chk;
+
+    assert(node != NULL && buf != NULL && size >0);
+
+    /*仅消息循环线程拥有读权利。*/
+    chk = abcdk_thread_leader_test(&node->input_user);
+    ABCDK_ASSERT(chk == 0,"仅消息循环线程拥有读权利。");
+
+    while (rsize_all < size)
+    {
+#ifdef HEADER_SSL_H
+        if(node->ssl)
+            rsize = SSL_read(node->ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
+        else 
+#endif //HEADER_SSL_H
+            rsize = recv(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all,0);
+        
+        if(rsize <=0)
+            break;
+        
+        rsize_all += rsize;
+    }
+
+    return rsize_all;
+}
+
+int abcdk_comm_read_watch(abcdk_comm_node_t *node)
+{
+    int done_flag = 0;
+    int chk;
+
+    assert(node != NULL);
+    assert(node->ctx != NULL);
+
+    /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
+    chk = abcdk_thread_leader_quit(&node->input_user);
+    if (chk == 0)
+        done_flag = ABCDK_EPOLL_INPUT;
+
+    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, done_flag);
+
+    return chk;
+}
+
+ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
+{
+    ssize_t wsize = 0,wsize_all = 0;
+
+    assert(node != NULL && buf != NULL && size >0);
+
+    while (wsize_all < size)
+    {
+#ifdef HEADER_SSL_H
+        if(node->ssl)
+            wsize = SSL_write(node->ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
+        else 
+#endif //HEADER_SSL_H
+            wsize = send(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all,0);
+        
+        if(wsize <=0)
+            break;
+        
+        wsize_all += wsize;
+    }
+
+    return wsize_all;
+}
+
+int abcdk_comm_write_watch(abcdk_comm_node_t *node)
+{
+    int chk;
+
+    assert(node != NULL);
+    assert(node->ctx != NULL);
+
+    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+
+    return chk;
+}
 
 void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
 {
@@ -157,7 +297,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
     
     node_sub->flag = ABCDK_COMM_FLAG_ACCPET;
     node_sub->status = ABCDK_COMM_STATUS_SYNC;
-    node_sub->opaque = node->opaque;//复制监听环境的指针。
+    node_sub->userdata = (node->userdata?abcdk_object_refer(node->userdata):NULL);//复制监听环境的用户环境指针。
     node_sub->event_cb = node->event_cb;//复制监听环境的回调函数指针。
 
 #ifdef HEADER_SSL_H    
@@ -309,156 +449,12 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 
 final_error:
 
-    /*当握手失败后，清空这个复制得来的应用层环境指针。*/
+    /*当握手失败后，清空这个复制得来的用户环境指针。*/
     if(node->flag == ABCDK_COMM_FLAG_ACCPET)
-        node->opaque = NULL;
+        abcdk_object_unref(&node->userdata);
 
     /*修改超时，使用超时检测器关闭。*/
     abcdk_epollex_timeout(node->ctx->epollex, node->fd, 1);
-}
-
-int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
-{
-    int chk;
-
-    assert(node != NULL);
-    assert(node->ctx != NULL);
-
-    chk = abcdk_epollex_timeout(node->ctx->epollex, node->fd, timeout);
-
-    return chk;
-}
-
-int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
-{
-    assert(node != NULL);
-
-    if (local && node->local.family)
-        abcdk_sockaddr_copy(&node->local,local);
-
-    if (remote && node->remote.family)
-        abcdk_sockaddr_copy(&node->remote,remote);
-
-    return 0;
-}
-
-int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
-{
-    assert(node != NULL);
-
-    if(local && node->local.family)
-        abcdk_sockaddr_to_string(local,&node->local);
-
-    if(remote && node->remote.family)
-        abcdk_sockaddr_to_string(remote,&node->remote);
-
-    return 0;
-}
-
-void *abcdk_comm_set_userdata(abcdk_comm_node_t *node, void *opaque)
-{
-    void *old = NULL;
-
-    assert(node != NULL);
-
-    old = node->opaque;
-    node->opaque = opaque;
-    
-    return old;
-}
-
-void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
-{
-    void *old = NULL;
-
-    assert(node != NULL);
-
-    old = node->opaque;
-    
-    return old;
-}
-
-ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
-{
-    ssize_t rsize = 0,rsize_all = 0;
-    int chk;
-
-    assert(node != NULL && buf != NULL && size >0);
-
-    /*仅消息循环线程拥有读权利。*/
-    chk = abcdk_thread_leader_test(&node->input_user);
-    ABCDK_ASSERT(chk == 0,"仅消息循环线程拥有读权利。");
-
-    while (rsize_all < size)
-    {
-#ifdef HEADER_SSL_H
-        if(node->ssl)
-            rsize = SSL_read(node->ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
-        else 
-#endif //HEADER_SSL_H
-            rsize = recv(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all,0);
-        
-        if(rsize <=0)
-            break;
-        
-        rsize_all += rsize;
-    }
-
-    return rsize_all;
-}
-
-int abcdk_comm_read_watch(abcdk_comm_node_t *node)
-{
-    int done_flag = 0;
-    int chk;
-
-    assert(node != NULL);
-    assert(node->ctx != NULL);
-
-    /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
-    chk = abcdk_thread_leader_quit(&node->input_user);
-    if (chk == 0)
-        done_flag = ABCDK_EPOLL_INPUT;
-
-    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, done_flag);
-
-    return chk;
-}
-
-ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
-{
-    ssize_t wsize = 0,wsize_all = 0;
-
-    assert(node != NULL && buf != NULL && size >0);
-
-    while (wsize_all < size)
-    {
-#ifdef HEADER_SSL_H
-        if(node->ssl)
-            wsize = SSL_write(node->ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
-        else 
-#endif //HEADER_SSL_H
-            wsize = send(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all,0);
-        
-        if(wsize <=0)
-            break;
-        
-        wsize_all += wsize;
-    }
-
-    return wsize_all;
-}
-
-int abcdk_comm_write_watch(abcdk_comm_node_t *node)
-{
-    int chk;
-
-    assert(node != NULL);
-    assert(node->ctx != NULL);
-
-    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
-
-    return chk;
 }
 
 void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event)
@@ -653,7 +649,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb)
 {
     abcdk_comm_node_t *node_p = NULL;
     epoll_data_t ep_data;
@@ -670,7 +666,6 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
 #ifdef HEADER_SSL_H
     node_p->ssl_ctx = ssl_ctx;
 #endif //HEADER_SSL_H
-    node_p->opaque = opaque;
     node_p->event_cb = event_cb;
 
     /*UNIX需要特殊复制一下。*/
@@ -740,7 +735,7 @@ final_error:
     return -1;
 }
 
-int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb, void *opaque)
+int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb)
 {
     abcdk_comm_node_t *node_p = NULL;
     epoll_data_t ep_data;
@@ -755,7 +750,6 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
 
     node_p->flag = ABCDK_COMM_FLAG_CLIENT;
     node_p->status = ABCDK_COMM_STATUS_SYNC;
-    node_p->opaque = opaque;
     node_p->event_cb = event_cb;
     
     addr_len = sizeof(abcdk_sockaddr_t);

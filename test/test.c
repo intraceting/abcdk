@@ -3446,7 +3446,7 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event)
         one = (one_node_t*)abcdk_heap_alloc(sizeof(one_node_t));
         one->out_queue = abcdk_comm_queue_alloc();
         one->node = abcdk_comm_node_refer(node);
-        abcdk_comm_set_userdata(node,one);
+        abcdk_comm_set_userdata2(node,one);
 
         abcdk_comm_read_watch(node);
     }
@@ -3775,7 +3775,8 @@ void test_easy(abcdk_tree_t *args)
     //addr.family = AF_UNIX;
     //strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_listen(ctx,server_ssl_ctx,&addr,test_easy_request_cb,NULL);
+    abcdk_comm_easy_t *easy_listen = abcdk_comm_easy_alloc(ctx);
+    abcdk_comm_easy_listen(easy_listen,server_ssl_ctx,&addr,test_easy_request_cb);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
@@ -3785,7 +3786,10 @@ void test_easy(abcdk_tree_t *args)
     int nn = 4;
     abcdk_comm_easy_t *easy_client[40] = {NULL};
     for (int i = 0; i < nn; i++)
-        easy_client[i] = abcdk_comm_easy_connect(ctx,client_ssl_ctx[i], &addr2, test_easy_request2_cb, NULL);
+    {
+        easy_client[i] = abcdk_comm_easy_alloc(ctx);
+        abcdk_comm_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, test_easy_request2_cb);
+    }
 
     uint64_t d = 0,s = 0;
     s = abcdk_clock(d,&d);
@@ -5363,21 +5367,26 @@ void test_odbcpool(abcdk_tree_t *args)
 
 void test_log(abcdk_tree_t *args)
 {
-    abcdk_log_open(NULL,100,1);
+    int service = abcdk_option_get_int(args,"--service",0,1);
+
+    abcdk_log_open("127.0.0.1:65535",service,1);
    // abcdk_log_mask(1,2,3,4,20,10,-1);
 
-    #pragma omp parallel for num_threads(30)
+  //  #pragma omp parallel for num_threads(30)
     for (int j = 0; j < 1000; j++)
     {
         abcdk_log_printf(j % ABCDK_LOG_MAX, "log%d", j);
+
+        usleep(1000);
     }
 
-    sleep(40);
+    //sleep(4000);
 
-    #pragma omp parallel for num_threads(30)
-    for (int j = 0; j < 100000; j++)
+ //   #pragma omp parallel for num_threads(30)
+    for (int j = 0; j < 10000000; j++)
     {
         abcdk_log_printf(j % ABCDK_LOG_MAX, "log%d", j);
+        usleep(1000);
     }
 
     while('Q' != getchar());

@@ -14,78 +14,30 @@
 
 __BEGIN_DECLS
 
-/** 简单的通信对象。*/
-typedef struct _abcdk_comm_easy abcdk_comm_easy_t;
 
 /** 
  * 请求回调函数。
  * 
- * @param easy 应用层环境指针。
  * @param req 请求数据指针。NULL(0) 连接或监听关闭。
  * @param len 请求数据长度。0 连接或监听关闭。
 */
-typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_easy_t *easy, const void *req, size_t len);
+typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_node_t *node, const void *req, size_t len);
 
 /**
- * 减少对象的引用计数。
- * 
- * @warning 当引用计数为0时，对像将被删除。
-*/
-void abcdk_comm_easy_unref(abcdk_comm_easy_t **easy);
-
-/**
- * 增加对象的引用计数。
-*/
-abcdk_comm_easy_t *abcdk_comm_easy_refer(abcdk_comm_easy_t *src);
+ * 申请通讯对象。
+ *
+ * @param [in] ctx 通讯环境指针。
+ *
+ * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
+ */
+abcdk_comm_node_t *abcdk_comm_easy_node_alloc(abcdk_comm_t *ctx);
 
 /**
  * 获取状态。
  * 
  * @return 0 已连接(连接中，监听中)，-1 未连接。
 */
-int abcdk_comm_easy_state(abcdk_comm_easy_t *easy);
-
-/**
- * 设置超时。
- * 
- * @warning 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
- * 
- * @param timeout 超时(毫秒)。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_comm_easy_set_timeout(abcdk_comm_easy_t *easy, time_t timeout);
-
-/**
- * 获取地址。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_comm_easy_get_sockaddr(abcdk_comm_easy_t *easy, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote);
-
-/**
- * 获取地址(转换成字符串)。
- * 
- * @note unix/IPv4/IPv6有效。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_comm_easy_get_sockaddr_str(abcdk_comm_easy_t *easy, char local[NAME_MAX],char remote[NAME_MAX]);
-
-/**
- * 设置应用层环境指针。
- * 
- * @return 旧的指针。
-*/
-void *abcdk_comm_easy_set_userdata(abcdk_comm_easy_t *easy, void *opaque);
-
-/**
- * 获取应用层环境指针。
- * 
- * @return 旧的指针。
-*/
-void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
-
+int abcdk_comm_easy_state(abcdk_comm_node_t *node);
 
 /** 
  * 发送请求。
@@ -96,7 +48,7 @@ void *abcdk_comm_easy_get_userdata(abcdk_comm_easy_t *easy);
  * 
  * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(已断开)。
 */
-int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t len, abcdk_comm_message_t **rsp);
+int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_comm_message_t **rsp);
 
 /** 
  * 发送应答。
@@ -108,33 +60,31 @@ int abcdk_comm_easy_request(abcdk_comm_easy_t *easy, const void *data, size_t le
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */
-int abcdk_comm_easy_response(abcdk_comm_easy_t *easy, const void *data, size_t len);
+int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t len);
 
 /**
  * 启动监听。
  * 
- * @param [in] ctx 通讯环境指针。
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 监听地址指针。
  * @param [in] event_cb 事件回调函数指针(新的连接会复制这个指针)。
- * @param [in] opaque 监听环境指针(新的连接会复制这个指针)。
  * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
-abcdk_comm_easy_t *abcdk_comm_easy_listen(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb, void *opaque);
+int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb);
 
 /**
  * 启动连接。
  * 
- * @param [in] ctx 通讯环境指针。
+ * @warning 仅发出连接指令，连接是否成功以消息通知。
+ * 
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 服务端地址指针。
  * @param [in] event_cb 事件回调函数指针。
- * @param [in] opaque 客户端环境指针。
  * 
- * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
+ * @return 0 成功，-1 失败。
 */
-abcdk_comm_easy_t *abcdk_comm_easy_connect(abcdk_comm_t *ctx, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb, void *opaque);
+int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb);
 
 __END_DECLS
 

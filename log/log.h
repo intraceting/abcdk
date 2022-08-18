@@ -47,8 +47,8 @@ typedef enum _abcdk_log_type
  * @endcode
  *
  * @param [in] consignee 收货地址。默认：127.0.0.1:65535
- * @param [in] service 服务ID。默认：0
- * @param [in] copy2stderr !0 复制到stderr，0 不复制。默认：0
+ * @param [in] service 服务ID。默认：1
+ * @param [in] copy2stderr 是否复制到stderr。默认：否
  *
 */
 void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr);

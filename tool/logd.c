@@ -148,12 +148,12 @@ void _abcdklogd_file_request(abcdklogd_t *ctx, abcdklogd_service_t *svc, uint64_
     }
 
     if (!svc->fp)
-        svc->fp = fopen(svc->pathfile, "w+");
+        svc->fp = fopen(svc->pathfile, "a");
 
     if (svc->fp)
     {
         abcdk_time_sec2tm(&tm, ts / 1000000, 0);
-        fprintf(svc->fp, "%d%02d%02d.%02d%02d%02d.%lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        fprintf(svc->fp, "%d%02d%02d.%02d%02d%02d.%06lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
                 ts % 1000000, sid, pid, name, msg);
         fflush(svc->fp);
     }
@@ -236,7 +236,7 @@ void _abcdklogd_service_construct(abcdk_object_t *alloc, void *opaque)
     svc->namefmt = abcdk_heap_alloc(NAME_MAX);
     svc->fp = NULL;
 
-    snprintf((char*)svc->pathfile,PATH_MAX,"%s/%hu/%s/%hu/s%hu.log",svc->policy->workspace,sid,node->from,sid,sid);
+    snprintf((char*)svc->pathfile,PATH_MAX,"%s/%s/s%hu/s%hu.log",svc->policy->workspace,node->from,sid,sid);
     snprintf((char*)svc->namefmt,NAME_MAX,"s%hu_%%d.log",sid);
 
     abcdk_mkdir(svc->pathfile,0600);
@@ -334,9 +334,11 @@ void _abcdklogd_work(abcdklogd_t *ctx)
         ctx->policys[i].segment_size = abcdk_option_get_int(ctx->args, "--segment-size", 0, 10);
     }
 
-    ctx->comm = abcdk_comm_start(0);
-    ctx->listen_easy = abcdk_comm_easy_listen(ctx->comm,NULL,&addr,_abcdklogd_node_request,ctx);
-    if(!ctx->listen_easy)
+    ctx->comm = abcdk_comm_start(1);
+    ctx->listen_easy = abcdk_comm_easy_alloc(ctx->comm);
+    abcdk_comm_easy_set_userdata(ctx->listen_easy,ctx);
+    chk = abcdk_comm_easy_listen(ctx->listen_easy,NULL,&addr,_abcdklogd_node_request);
+    if(chk != 0)
         goto END;
 
     /*填充信号及回调函数。*/
@@ -349,7 +351,7 @@ void _abcdklogd_work(abcdklogd_t *ctx)
 
     /*等待退出信号。*/
     abcdk_sigwaitinfo(&sig,-1);
-
+    //sleep(30000);
 END:
     abcdk_comm_stop(&ctx->comm);
     abcdk_comm_easy_unref(&ctx->listen_easy);

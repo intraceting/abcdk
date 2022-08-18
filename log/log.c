@@ -70,7 +70,7 @@ int _abcdk_log_init(void *opaque)
 
     ctx->comm = NULL;
     ctx->easy = NULL;
-    ctx->service = 0;
+    ctx->service = 1;
     ctx->copy2stderr = 0;
     ctx->consignee = NULL;
     ctx->mask = 0xFFFFFFFF;
@@ -115,6 +115,8 @@ abcdk_log_t *_abcdk_log_get_ctx()
 void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr)
 {
     abcdk_log_t *ctx = NULL;
+
+    ABCDK_ASSERT(service > 0 && service <= 65535, "service在1~65535之间有效。");
 
     /*设置环境变量，具体的初始化，按需执行一次。*/
     if (consignee)
@@ -165,6 +167,7 @@ abcdk_comm_easy_t *_abcdk_log_get_easy()
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
     abcdk_sockaddr_t addr = {0};
     abcdk_comm_easy_t *easy_p = NULL;
+    int chk;
 
     abcdk_mutex_lock(&ctx->easy_mutex,1);
 
@@ -177,9 +180,13 @@ abcdk_comm_easy_t *_abcdk_log_get_easy()
         if (ctx->consignee)
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->easy = abcdk_comm_easy_connect(ctx->comm, NULL, &addr, _abcdk_log_easy_request_cb, NULL);
-            if (ctx->easy)
+            ctx->easy = abcdk_comm_easy_alloc(ctx->comm);
+            chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, _abcdk_log_easy_request_cb);
+            if (chk != 0)
+            {
                 abcdk_comm_easy_set_timeout(ctx->easy, -1);
+                abcdk_comm_easy_unref(&ctx->easy);
+            }
         }
     }
 
@@ -271,7 +278,7 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
     if (ctx->copy2stderr)
     {
         abcdk_time_sec2tm(&tm, ts / 1000000, 0);
-        fprintf(stderr, "%d%02d%02d.%02d%02d%02d.%lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        fprintf(stderr, "%d%02d%02d.%02d%02d%02d.%06lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
                 ts % 1000000, ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
     }
 
