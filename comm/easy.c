@@ -500,7 +500,7 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
     }
     else
     {
-        /*ACCEPT可能还未完成连接就已经断开了。*/
+        /*可能还未完成连接就已经断开了。*/
 
         abcdk_comm_get_sockaddr_str(node, sockname_str, peername_str);
         fprintf(stderr, "sockname(%s) -> peername(%s) disconnected.\n",sockname_str, peername_str);
