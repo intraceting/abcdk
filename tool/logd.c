@@ -312,12 +312,14 @@ void _abcdklogd_work(abcdklogd_t *ctx)
         abcdk_getargs_file(policy_args,policy_file,'\n','#',NULL,"--");
 
         sid = abcdk_option_get_int(policy_args, "--service", i, -1);
-        if (sid < 0 || sid >= ABCDKLOGD_SERVICE_MAX)
-            continue;
+        if (sid > 0 && sid < ABCDKLOGD_SERVICE_MAX)
+        {
+            ctx->policys[sid].workspace = abcdk_option_get(policy_args, "--workspace", 0, "/tmp/abcdk.logd/");
+            ctx->policys[sid].segment_max = abcdk_option_get_int(policy_args, "--segment-max", 0, 10);
+            ctx->policys[sid].segment_size = abcdk_option_get_int(policy_args, "--segment-size", 0, 10);
+        }
 
-        ctx->policys[sid].workspace = abcdk_option_get(policy_args, "--workspace", 0, "/tmp/abcdk.logd/");
-        ctx->policys[sid].segment_max = abcdk_option_get_int(policy_args, "--segment-max", 0, 10);
-        ctx->policys[sid].segment_size = abcdk_option_get_int(policy_args, "--segment-size", 0, 10);
+        abcdk_tree_free(&policy_args);
     }
 
     /*未指定特殊策略的，初始化为全局策略。*/
