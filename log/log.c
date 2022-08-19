@@ -243,7 +243,7 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
     uint32_t len = 0;
     int chk;
 
-    assert(fmt != NULL && ap != NULL);
+    assert(fmt != NULL);
 
     /*不知道什么类型，直接跳过。*/
     if (type < ABCDK_LOG_ERROR || type >= ABCDK_LOG_MAX)
