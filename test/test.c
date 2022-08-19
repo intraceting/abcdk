@@ -3684,7 +3684,7 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
 
     abcdk_comm_get_sockaddr_str(easy,sockname_str,peername_str);
 
-    printf("Server(%s -> %s): \n", sockname_str, peername_str);
+    printf("Server(%s -> %s): ", sockname_str, peername_str);
 
     if(!data)
     {
@@ -3695,15 +3695,17 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
             uint64_t a = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
             uint64_t b = atoll((char*)data);
 
-    //       printf("%lu-%lu=%lu\n",a,b,a-b);
+           printf("%lu-%lu=%lu",a,b,a-b);
 
-    //    usleep(rand()%10000+1000);
+        usleep(rand()%10000+1000);
 
         abcdk_comm_easy_response(easy,data,len);
         abcdk_comm_easy_request(easy,data,len,NULL);
 
 
     }
+
+     printf("\n");
 }
 
 void test_easy_request2_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
@@ -3712,16 +3714,18 @@ void test_easy_request2_cb(abcdk_comm_node_t *easy, const void *data, size_t len
     
     abcdk_comm_get_sockaddr_str(easy,sockname_str,peername_str);
 
-    printf("Client(%s -> %s): \n", sockname_str, peername_str);
+    printf("Client(%s -> %s): ", sockname_str, peername_str);
 
     if(!data)
     {
-        printf(" Disconnected.\n");
+        printf(" Disconnected.");
     }
     else
     {
      //   printf(" %s\n",(char*)data);
     }
+
+     printf("\n");
 }
 
 
