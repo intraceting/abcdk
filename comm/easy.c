@@ -497,9 +497,6 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
         /*通知连接已断开。*/
         if (easy_p->request_cb)
             easy_p->request_cb(node, NULL, 0);
-
-        // /*断开后，做最后的清理工作。*/
-        // abcdk_comm_node_unref(&node);
     }
     else
     {
