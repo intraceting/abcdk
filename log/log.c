@@ -276,7 +276,7 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 
     /*可能需要复制到syslog。*/
     if (ctx->copy2syslog)
-        syslog(type, " s%hu.p%d %s: %s\n", ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
+        syslog(type, "s%hu.p%d %s: %s\n", ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
 
     /*发送到远程。因连接有可能被断开，尝试重发一次。*/
     chk = _abcdk_log_send(buf_p->pptrs[0], 35 + len);
