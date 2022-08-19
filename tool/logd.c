@@ -120,7 +120,7 @@ int _abcdklogd_signal_cb(const siginfo_t *info, void *opaque)
     if (SIGILL == info->si_signo || SIGTERM == info->si_signo || SIGINT == info->si_signo || SIGQUIT == info->si_signo)
         return -1;
     else
-        fprintf(stderr, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d", getpid());
+        fprintf(stderr, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
 
     return 0;
 }
