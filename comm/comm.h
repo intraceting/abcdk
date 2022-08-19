@@ -57,7 +57,7 @@ enum _abcdk_comm_event
 };
 
 /** 事件回调函数。*/
-typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event);
+typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event, abcdk_comm_node_t *listen);
 
 /**
  * 通讯对象的释放。
@@ -89,6 +89,34 @@ abcdk_object_t *abcdk_comm_node_append(abcdk_comm_node_t *node);
  * 通讯对象的用户环境。
 */
 abcdk_object_t *abcdk_comm_node_userdata(abcdk_comm_node_t *node);
+
+/**
+ * 设置通讯对象的附加物指针。
+ * 
+ * @return 旧的指针。
+ */
+void *abcdk_comm_set_append(abcdk_comm_node_t *node,void *opaque);
+
+/**
+ * 获取通讯对象的附加物指针。
+ * 
+ * @return 旧的指针。
+*/
+void *abcdk_comm_get_append(abcdk_comm_node_t *node);
+
+/**
+ * 设置通讯对象的用户环境指针。
+ * 
+ * @return 旧的指针。
+*/
+void *abcdk_comm_set_userdata(abcdk_comm_node_t *node,void *opaque);
+
+/**
+ * 获取通讯对象的用户环境指针。
+ * 
+ * @return 旧的指针。
+*/
+void *abcdk_comm_get_userdata(abcdk_comm_node_t *node);
 
 /**
  * 设置超时。

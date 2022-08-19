@@ -32,7 +32,7 @@ typedef struct _abcdk_log
     abcdk_comm_t *comm;
 
     /** 通讯链路。*/
-    abcdk_comm_easy_t *easy;
+    abcdk_comm_node_t *easy;
 
     /** 通讯链路锁。*/
     abcdk_mutex_t easy_mutex;
@@ -91,7 +91,7 @@ void _abcdk_log_uninit()
     abcdk_log_t *ctx = _abcdk_log_ctx();
 
     abcdk_comm_stop(&ctx->comm);
-    abcdk_comm_easy_unref(&ctx->easy);
+    abcdk_comm_node_unref(&ctx->easy);
     pthread_key_delete(ctx->ptkey);
     abcdk_mutex_unlock(&ctx->easy_mutex);
     abcdk_heap_free2((void**)&ctx->consignee);
@@ -150,23 +150,23 @@ void abcdk_log_mask(int type, ...)
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
-void _abcdk_log_easy_request_cb(abcdk_comm_easy_t *easy, const void *req, size_t len)
+void _abcdk_log_easy_request_cb(abcdk_comm_node_t *easy, const void *req, size_t len)
 {
     char sockname[NAME_MAX] = {0}, peername[NAME_MAX] = {0};
     
     if(easy)
-        abcdk_comm_easy_get_sockaddr_str(easy,sockname,peername);
+        abcdk_comm_get_sockaddr_str(easy,sockname,peername);
 
     // if(!req)
     //     fprintf(stderr,"Disconnected(%s -> %s).\n",sockname, peername);
 
 }
 
-abcdk_comm_easy_t *_abcdk_log_get_easy()
+abcdk_comm_node_t *_abcdk_log_get_easy()
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
     abcdk_sockaddr_t addr = {0};
-    abcdk_comm_easy_t *easy_p = NULL;
+    abcdk_comm_node_t *easy_p = NULL;
     int chk;
 
     abcdk_mutex_lock(&ctx->easy_mutex,1);
@@ -174,24 +174,24 @@ abcdk_comm_easy_t *_abcdk_log_get_easy()
     if (!ctx->easy || abcdk_comm_easy_state(ctx->easy) != 0)
     {
         /*释放已经断开的。*/
-        abcdk_comm_easy_unref(&ctx->easy);
+        abcdk_comm_node_unref(&ctx->easy);
         
         /*指定收货人再尝试连接，否则没意义。*/
         if (ctx->consignee)
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->easy = abcdk_comm_easy_alloc(ctx->comm);
+            ctx->easy = abcdk_comm_node_alloc(ctx->comm);
             chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, _abcdk_log_easy_request_cb);
             if (chk != 0)
             {
-                abcdk_comm_easy_set_timeout(ctx->easy, -1);
-                abcdk_comm_easy_unref(&ctx->easy);
+                abcdk_comm_set_timeout(ctx->easy, -1);
+                abcdk_comm_node_unref(&ctx->easy);
             }
         }
     }
 
     if(ctx->easy)
-        easy_p = abcdk_comm_easy_refer(ctx->easy);
+        easy_p = abcdk_comm_node_refer(ctx->easy);
 
     abcdk_mutex_unlock(&ctx->easy_mutex);
 
@@ -218,7 +218,7 @@ abcdk_object_t *_abcdk_log_get_buffer()
 int _abcdk_log_send(const void *data, size_t len)
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
-    abcdk_comm_easy_t *easy_p = NULL;
+    abcdk_comm_node_t *easy_p = NULL;
     int chk;
 
     /*获取通讯链路。*/
@@ -228,7 +228,7 @@ int _abcdk_log_send(const void *data, size_t len)
 
     /*发送到远程。*/
     chk = abcdk_comm_easy_request(easy_p, data, len, NULL);
-    abcdk_comm_easy_unref(&easy_p);
+    abcdk_comm_node_unref(&easy_p);
 
     return chk;
 }

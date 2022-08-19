@@ -155,6 +155,45 @@ abcdk_object_t *abcdk_comm_node_userdata(abcdk_comm_node_t *node)
     return abcdk_object_refer(node->userdata);
 }
 
+
+void *abcdk_comm_set_append(abcdk_comm_node_t *node,void *opaque)
+{
+    void *old = NULL;
+
+    assert(node != NULL);
+
+    old = node->append->pptrs[0];
+    node->append->pptrs[0] = (uint8_t*)opaque;
+
+    return old;
+}
+
+void *abcdk_comm_get_append(abcdk_comm_node_t *node)
+{
+    assert(node != NULL);
+
+    return node->append->pptrs[0];
+}
+
+void *abcdk_comm_set_userdata(abcdk_comm_node_t *node,void *opaque)
+{
+    void *old = NULL;
+
+    assert(node != NULL);
+
+    old = node->userdata->pptrs[0];
+    node->userdata->pptrs[0] = (uint8_t*)opaque;
+
+    return old;
+}
+
+void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
+{
+    assert(node != NULL);
+
+    return node->userdata->pptrs[0];
+}
+
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
 {
     int chk;
@@ -285,31 +324,47 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_node_unref(&node);
 }
 
-abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
+void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, abcdk_comm_node_t *listen)
+{
+    /*读权利绑定到线程。*/
+    if(event == ABCDK_COMM_EVENT_INPUT)
+        abcdk_thread_leader_vote(&node->input_user);
+
+    /*重定向监听关闭事件ID。*/
+    if ((event == ABCDK_COMM_EVENT_CLOSE) && (node->flag == ABCDK_COMM_FLAG_LISTEN))
+        event = ABCDK_COMM_EVENT_LISTEN_CLOSE;
+
+    /*通知应用层处理事件。*/
+    node->event_cb(node, event, listen);
+}
+
+abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
 {
     abcdk_comm_node_t *node_sub = NULL;
     epoll_data_t ep_data;
     int chk;
 
-    node_sub = abcdk_comm_node_alloc(node->ctx);
+    node_sub = abcdk_comm_node_alloc(listen->ctx);
     if (!node_sub)
         return NULL;
-    
+
     node_sub->flag = ABCDK_COMM_FLAG_ACCPET;
     node_sub->status = ABCDK_COMM_STATUS_SYNC;
-    node_sub->userdata = (node->userdata?abcdk_object_refer(node->userdata):NULL);//复制监听环境的用户环境指针。
-    node_sub->event_cb = node->event_cb;//复制监听环境的回调函数指针。
+    node_sub->event_cb = listen->event_cb;//复制监听环境的回调函数指针。
+
+    /*通知初始化。*/
+    _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_ACCEPT, listen);
 
 #ifdef HEADER_SSL_H    
     if(node->ssl_ctx)
     {
-        node_sub->ssl = abcdk_openssl_ssl_alloc(node->ssl_ctx);
+        node_sub->ssl = abcdk_openssl_ssl_alloc(listen->ssl_ctx);
         if(!node_sub->ssl)
             goto final_error;
     }
 #endif //HEADER_SSL_H
 
-    node_sub->fd = abcdk_accept(node->fd, &node_sub->remote);
+    node_sub->fd = abcdk_accept(listen->fd, &node_sub->remote);
     if (node_sub->fd < 0)
         goto final_error;
     
@@ -318,11 +373,11 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *node)
         goto final_error;
 
     ep_data.ptr = node_sub;
-    chk = abcdk_epollex_attach(node->ctx->epollex, node_sub->fd, &ep_data);
+    chk = abcdk_epollex_attach(node_sub->ctx->epollex, node_sub->fd, &ep_data);
     if(chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(node->ctx->epollex, node_sub->fd, 30*1000);
+    abcdk_epollex_timeout(node_sub->ctx->epollex, node_sub->fd, 30*1000);
 
     return node_sub;
 
@@ -449,30 +504,8 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 
 final_error:
 
-    /*当握手失败后，清空这个复制得来的用户环境指针。*/
-    if(node->flag == ABCDK_COMM_FLAG_ACCPET)
-        abcdk_object_unref(&node->userdata);
-
     /*修改超时，使用超时检测器关闭。*/
     abcdk_epollex_timeout(node->ctx->epollex, node->fd, 1);
-}
-
-void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event)
-{
-    /*读权利绑定到线程。*/
-    if(event == ABCDK_COMM_EVENT_INPUT)
-        abcdk_thread_leader_vote(&node->input_user);
-
-    /*重定向监听关闭事件ID。*/
-    if ((event == ABCDK_COMM_EVENT_CLOSE) && (node->flag == ABCDK_COMM_FLAG_LISTEN))
-        event = ABCDK_COMM_EVENT_LISTEN_CLOSE;
-
-    /*重定向已连接事件ID。*/
-    if ((event == ABCDK_COMM_EVENT_CONNECT) && (node->flag == ABCDK_COMM_FLAG_ACCPET))
-        event = ABCDK_COMM_EVENT_ACCEPT;
-
-    /*通知应用层处理事件。*/
-    node->event_cb(node, event);
 }
 
 void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
@@ -491,7 +524,7 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
 
     if (e.events & ABCDK_EPOLL_ERROR)
     {
-        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CLOSE);
+        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CLOSE,NULL);
 
         /*释放引用。*/
         abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
@@ -516,7 +549,7 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
                     {
                         _abcdk_comm_handshake(node_sub);
                         if (node_sub->status == ABCDK_COMM_STATUS_STABLE)
-                            _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_CONNECT);
+                            _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_CONNECT,NULL);
                     }
 
                     /*释放读权利。*/
@@ -529,14 +562,14 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
                 {
                     _abcdk_comm_handshake(node);
                     if (node->status == ABCDK_COMM_STATUS_STABLE)
-                        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT);
+                        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,NULL);
 
                     /*释放读权利。*/
                     abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
                 }
                 else
                 {
-                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INPUT);
+                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INPUT,NULL);
 
                     /*数据的传输过程中，读权利的释放由应用层决定。*/
                 }
@@ -549,11 +582,11 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
             {
                 _abcdk_comm_handshake(node);
                 if (node->status == ABCDK_COMM_STATUS_STABLE)
-                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT);
+                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,NULL);
             }
             else
             {
-                _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT);
+                _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT,NULL);
             }
 
             /*释放写权利。*/

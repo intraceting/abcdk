@@ -11,18 +11,6 @@
 /* 环境初始化计数器*/
 static volatile int64_t _abcdk_fi_init_count = 0;
 
-void _abcdk_fi_output_msg_cb(FREE_IMAGE_FORMAT fif, const char *msg)
-{
-    const char * fif_str = FreeImage_GetFormatFromFIF(fif);
-
-    syslog(LOG_ERR,"FreeImage: %s %s.",fif_str,msg);
-}
-
-void abcdk_fi_log2syslog()
-{
-    FreeImage_SetOutputMessage(_abcdk_fi_output_msg_cb);
-}
-
 void abcdk_fi_uninit()
 {
     int64_t chk = abcdk_atomic_fetch_and_add(&_abcdk_fi_init_count, -1);

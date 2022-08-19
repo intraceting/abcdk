@@ -32,6 +32,7 @@ typedef struct _abcdk_comm_easy
 {
     /** 魔法数。*/
     uint32_t magic;
+#define ABCDK_COMM_EASY_MAGIC 20220819
 
     /** 
      * 标志。
@@ -71,14 +72,16 @@ typedef struct _abcdk_comm_easy
 
 } abcdk_comm_easy_t;
 
-
-
 void _abcdk_comm_easy_free(abcdk_comm_easy_t **easy)
 {
     abcdk_comm_easy_t *easy_p = NULL;
 
     if(!easy || !*easy)
         return;
+
+    easy_p = *easy;
+    *easy = NULL;
+
 
     abcdk_comm_message_unref(&easy_p->in_buffer);
     abcdk_comm_queue_free(&easy_p->out_queue);
@@ -95,6 +98,7 @@ abcdk_comm_easy_t *_abcdk_comm_easy_alloc()
     if (!easy)
         return NULL;
 
+    easy->magic = ABCDK_COMM_EASY_MAGIC;
     easy->flag = 0;
     easy->status = 1;
     easy->in_buffer = NULL;
@@ -116,61 +120,7 @@ void _abcdk_comm_easy_destroy_cb(abcdk_object_t *alloc, void *opaque)
     easy_p = (abcdk_comm_easy_t *)alloc->pptrs[0];
     alloc->pptrs[0] = NULL;
 
-}
-
-abcdk_comm_node_t *abcdk_comm_easy_node_alloc(abcdk_comm_t *ctx)
-{
-    abcdk_comm_node_t *node = NULL;
-    abcdk_comm_easy_t *easy = NULL;
-    abcdk_object_t *append_p = NULL;
-
-    node = abcdk_comm_node_alloc(ctx);
-    if (!node)
-        goto final_error;
-
-    easy = _abcdk_comm_easy_alloc();
-    if (!easy)
-        goto final_error;
-
-    append_p = abcdk_comm_node_append(node);
-    append_p->pptrs[0] = (uint8_t*)easy;
-    abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
-    abcdk_object_unref(&append_p);
-
-    return node;
-
-final_error:
-
-    _abcdk_comm_easy_free(&easy);
-    abcdk_comm_node_unref(&node);
-
-    return NULL;
-}
-
-abcdk_comm_easy_t *_abcdk_comm_easy_from_node(abcdk_comm_node_t *node)
-{
-    abcdk_comm_easy_t *easy_p = NULL;
-    abcdk_object_t *append_p = NULL;
-
-    append_p = abcdk_comm_node_append(node);
-    easy_p = (abcdk_comm_easy_t *)append_p->pptrs[0];
-    abcdk_object_unref(&append_p);
-
-    return easy_p;
-}
-
-int abcdk_comm_easy_state(abcdk_comm_node_t *node)
-{
-    abcdk_comm_easy_t *easy_p = NULL;
-
-    assert(node != NULL);
-
-    easy_p = _abcdk_comm_easy_from_node(node);
-
-    if (!abcdk_atomic_load(&easy_p->status))
-        return -1;
-
-    return 0;
+    _abcdk_comm_easy_free(&easy_p);
 }
 
 uint64_t _abcdk_comm_easy_make_mid()
@@ -188,7 +138,7 @@ int _abcdk_comm_easy_post(abcdk_comm_node_t *node, const void *cargo,size_t len,
     size_t msg_len;
     int chk;
 
-    easy_p = _abcdk_comm_easy_from_node(node);
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
 
     msg = abcdk_comm_message_alloc(4 + 4 + 8 + 1 + 3 + len);
     if (!msg)
@@ -243,6 +193,23 @@ abcdk_comm_message_t *_abcdk_comm_easy_extrac_cargo(abcdk_comm_message_t *msg)
     return cargo;
 }
 
+int abcdk_comm_easy_state(abcdk_comm_node_t *node)
+{
+    abcdk_comm_easy_t *easy_p = NULL;
+
+    assert(node != NULL);
+
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(easy_p->magic == ABCDK_COMM_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
+    
+
+    if (!abcdk_atomic_load(&easy_p->status))
+        return -1;
+
+    return 0;
+}
+
+
 int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_comm_message_t **rsp)
 {
     abcdk_comm_easy_t *easy_p = NULL;
@@ -254,7 +221,8 @@ int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t le
     assert(node != NULL && data != NULL && len > 0);
     assert(len <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
 
-    easy_p = _abcdk_comm_easy_from_node(node);
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(easy_p->magic == ABCDK_COMM_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
 
     if(!abcdk_atomic_load(&easy_p->status))
         return -2;
@@ -299,7 +267,8 @@ int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t l
     assert(node != NULL && data != NULL && len > 0);
     assert(len <= ABCDK_COMM_EASY_MD_MAX_SIZE - ABCDK_COMM_EASY_MD_HDR_SIZE);
 
-    easy_p = _abcdk_comm_easy_from_node(node);
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(easy_p->magic == ABCDK_COMM_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
 
     if(!abcdk_atomic_load(&easy_p->status))
         return -2;
@@ -318,35 +287,38 @@ int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t l
     return 0;
 }
 
-void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node)
+void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
 {
+    abcdk_comm_easy_t *listen_easy_p = NULL;
     abcdk_object_t *append_p = NULL;
     abcdk_comm_easy_t *easy_p = NULL;
 
+    listen_easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(listen);
+
     easy_p = _abcdk_comm_easy_alloc();
     if (!easy_p)
-    {
-        abcdk_comm_set_timeout(node, 1);
         return;
-    }
 
-    /*绑定到节点。*/
     append_p = abcdk_comm_node_append(node);
     append_p->pptrs[0] = (uint8_t*)easy_p;
     abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
     abcdk_object_unref(&append_p);
 
-    /*标记已连接。*/
     easy_p->flag = 2;
-    abcdk_atomic_store(&easy_p->status, 2);
 
-    /*新的连接到来，注册读事件。*/
-    abcdk_comm_read_watch(node);
+    /*复制请求回调函数指针。*/
+    easy_p->request_cb = listen_easy_p->request_cb;
+
+    /*复制监听的用户环境指针。*/
+    abcdk_comm_set_userdata(node,abcdk_comm_get_userdata(listen));
+
 }
 
 void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
 {
-    abcdk_comm_easy_t *easy_p = _abcdk_comm_easy_from_node(node);
+    abcdk_comm_easy_t *easy_p = NULL;
+
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
 
     abcdk_atomic_store(&easy_p->status, 2);
 
@@ -391,7 +363,7 @@ int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t 
 
 void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
 {
-    abcdk_comm_easy_t *easy_p = _abcdk_comm_easy_from_node(node);
+    abcdk_comm_easy_t *easy_p = NULL;
     abcdk_comm_message_t *msg = NULL;
     void *msg_ptr;
     size_t msg_len;
@@ -400,6 +372,8 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     void *cargo_ptr;
     size_t cargo_len;
     int chk;
+
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
 
     /*准备接收数的缓存。*/
     if (!easy_p->in_buffer)
@@ -474,8 +448,10 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
 
 void _abcdk_comm_easy_event_output(abcdk_comm_node_t *node)
 {
-    abcdk_comm_easy_t *easy_p = _abcdk_comm_easy_from_node(node);
+    abcdk_comm_easy_t *easy_p = NULL;
     int chk;
+
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
 
 NEXT_MSG:
 
@@ -505,8 +481,11 @@ NEXT_MSG:
 
 void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
 {
-    abcdk_comm_easy_t *easy_p = _abcdk_comm_easy_from_node(node);
-    char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
+    abcdk_comm_easy_t *easy_p = NULL;
+    char sockname_str[NAME_MAX] = {0};
+    char peername_str[NAME_MAX] = {0};
+
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
 
     if (easy_p)
     {
@@ -519,8 +498,8 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
         if (easy_p->request_cb)
             easy_p->request_cb(node, NULL, 0);
 
-        /*断开后，做最后的清理工作。*/
-        abcdk_comm_node_unref(&node);
+        // /*断开后，做最后的清理工作。*/
+        // abcdk_comm_node_unref(&node);
     }
     else
     {
@@ -531,12 +510,12 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
     }
 }
 
-void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event)
+void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event, abcdk_comm_node_t *listen)
 {
     switch (event)
     {
     case ABCDK_COMM_EVENT_ACCEPT:
-        _abcdk_comm_easy_event_accept(node);
+        _abcdk_comm_easy_event_accept(node,listen);
         break;
     case ABCDK_COMM_EVENT_CONNECT:
         _abcdk_comm_easy_event_connect(node);
@@ -558,22 +537,26 @@ void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event)
 
 int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb)
 {
-    abcdk_comm_node_t *node_p = NULL;
-    abcdk_comm_easy_t *easy_p = NULL;
+    abcdk_comm_easy_t *easy = NULL;
+    abcdk_object_t *append_p = NULL;
     int chk;
 
     assert(node != NULL && addr != NULL && request_cb != NULL);
 
-    /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_comm_node_refer(node);
+    easy = _abcdk_comm_easy_alloc();
+    if (!easy)
+        goto final_error;
+    
+    append_p = abcdk_comm_node_append(node);
+    append_p->pptrs[0] = (uint8_t*)easy;
+    abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
+    abcdk_object_unref(&append_p);
 
-    easy_p = _abcdk_comm_easy_from_node(node_p);
+    easy->flag = 3;
+    easy->status = 2;
+    easy->request_cb = request_cb;
 
-    easy_p->flag = 3;
-    easy_p->status = 2;
-    easy_p->request_cb = request_cb;
-
-    chk = abcdk_comm_listen(node_p, ssl_ctx, addr, _abcdk_comm_easy_event_cb);
+    chk = abcdk_comm_listen(node, ssl_ctx, addr, _abcdk_comm_easy_event_cb);
     if (chk != 0)
         goto final_error;
 
@@ -581,27 +564,29 @@ int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sock
 
 final_error:
 
-    abcdk_comm_node_unref(&node_p);
-
     return -1;
 }
 
 int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb)
 {
-    abcdk_comm_node_t *node_p = NULL;
-    abcdk_comm_easy_t *easy_p = NULL;
+    abcdk_comm_easy_t *easy = NULL;
+    abcdk_object_t *append_p = NULL;
     int chk;
 
     assert(node != NULL && addr != NULL && request_cb != NULL);
 
-    /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_comm_node_refer(node);
+    easy = _abcdk_comm_easy_alloc();
+    if (!easy)
+        goto final_error;
     
-    easy_p = _abcdk_comm_easy_from_node(node);
+    append_p = abcdk_comm_node_append(node);
+    append_p->pptrs[0] = (uint8_t*)easy;
+    abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
+    abcdk_object_unref(&append_p);
 
-    easy_p->flag = 1;
-    easy_p->status = 1;
-    easy_p->request_cb = request_cb;
+    easy->flag = 1;
+    easy->status = 1;
+    easy->request_cb = request_cb;
 
     chk = abcdk_comm_connect(node, ssl_ctx, addr, _abcdk_comm_easy_event_cb);
     if (chk != 0)
@@ -610,8 +595,6 @@ int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_soc
     return 0;
 
 final_error:
-
-    abcdk_comm_node_unref(&node_p);
 
     return -1;
 }

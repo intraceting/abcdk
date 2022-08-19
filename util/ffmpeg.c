@@ -11,43 +11,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-/*------------------------------------------------------------------------------------------------*/
-
-
-static struct _abcdk_av_log_dict
-{
-    int av_log_level;
-    int sys_log_level;
-} abcdk_av_log_dict[] = {
-    {AV_LOG_PANIC, LOG_ERR},
-    {AV_LOG_FATAL, LOG_ERR},
-    {AV_LOG_ERROR, LOG_ERR},
-    {AV_LOG_WARNING, LOG_WARNING},
-    {AV_LOG_INFO, LOG_INFO},
-    {AV_LOG_VERBOSE, LOG_DEBUG},
-    {AV_LOG_DEBUG, LOG_DEBUG},
-    {AV_LOG_TRACE, LOG_DEBUG}
-};
-
-void _abcdk_av_log_cb(void *opaque, int level, const char *fmt, va_list v)
-{
-    int sys_level = LOG_DEBUG;
-
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_av_log_dict); i++)
-    {
-        if (abcdk_av_log_dict[i].av_log_level != level)
-            continue;
-
-        sys_level = abcdk_av_log_dict[i].sys_log_level;
-    }
-    
-    vsyslog(sys_level,fmt,v);
-}
-
-void abcdk_av_log2syslog()
-{
-    av_log_set_callback(_abcdk_av_log_cb);
-}
 
 /*------------------------------------------------------------------------------------------------*/
 

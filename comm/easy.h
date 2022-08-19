@@ -14,7 +14,6 @@
 
 __BEGIN_DECLS
 
-
 /** 
  * 请求回调函数。
  * 
@@ -22,15 +21,6 @@ __BEGIN_DECLS
  * @param len 请求数据长度。0 连接或监听关闭。
 */
 typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_node_t *node, const void *req, size_t len);
-
-/**
- * 申请通讯对象。
- *
- * @param [in] ctx 通讯环境指针。
- *
- * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
- */
-abcdk_comm_node_t *abcdk_comm_easy_node_alloc(abcdk_comm_t *ctx);
 
 /**
  * 获取状态。

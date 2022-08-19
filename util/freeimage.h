@@ -22,11 +22,6 @@ __BEGIN_DECLS
 #ifdef FREEIMAGE_H
 
 /**
- * 日志重定向到syslog。
-*/
-void abcdk_fi_log2syslog();
-
-/**
  * 销毁环境。
  * 
  * @warning 需要与abcdk_fi_init配对使用。

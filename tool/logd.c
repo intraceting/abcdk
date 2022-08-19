@@ -38,8 +38,6 @@ typedef struct _abcdklogd
     int errcode;
     abcdk_tree_t *args;
 
-    int daemon;
-
     const char *ca_file;
     const char *ca_path;
     int ca_check_crl;
@@ -50,7 +48,7 @@ typedef struct _abcdklogd
     abcdk_mutex_t node_mutex;
     abcdk_map_t node_lists;
     abcdk_comm_t *comm;
-    abcdk_comm_easy_t *listen_easy;
+    abcdk_comm_node_t *listen_easy;
 
 } abcdklogd_t;
 
@@ -86,9 +84,6 @@ void _abcdklogd_print_usage()
 
     fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE);
     fprintf(stderr, "\n%s 构建 %s\n", name, BUILD_TIME);
-
-    fprintf(stderr, "\n\t--daemon\n");
-    fprintf(stderr, "\t\t驻留到后台。\n");
 
     fprintf(stderr, "\n\t--listen < ADDRESS >\n");
     fprintf(stderr, "\t\t监听地址。默认：127.0.0.1:65535\n");
@@ -153,7 +148,9 @@ void _abcdklogd_file_request(abcdklogd_t *ctx, abcdklogd_service_t *svc, uint64_
     if (svc->fp)
     {
         abcdk_time_sec2tm(&tm, ts / 1000000, 0);
-        fprintf(svc->fp, "%d%02d%02d.%02d%02d%02d.%06lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        fprintf(svc->fp, "%d%02d%02d.%02d%02d%02d.%06lu s%hu.p%d %s: %s\n",
+                tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                tm.tm_hour, tm.tm_min, tm.tm_sec,
                 ts % 1000000, sid, pid, name, msg);
         fflush(svc->fp);
     }
@@ -191,13 +188,14 @@ void _abcdklogd_service_request(abcdklogd_t *ctx,const char *from, abcdklogd_nod
     }
 }
 
-void _abcdklogd_node_request(abcdk_comm_easy_t *easy, const void *req, size_t len)
+void _abcdklogd_node_request(abcdk_comm_node_t *easy, const void *req, size_t len)
 {
-    abcdklogd_t *ctx = (abcdklogd_t *)abcdk_comm_easy_get_userdata(easy);
+    abcdklogd_t *ctx = NULL;
     char remote[NAME_MAX] = {0};
     abcdk_object_t *obj = NULL;
 
-    abcdk_comm_easy_get_sockaddr_str(easy,NULL,remote);
+    ctx = (abcdklogd_t *)abcdk_comm_get_userdata(easy);
+    abcdk_comm_get_sockaddr_str(easy,NULL,remote);
     
     if(!req)
     {
@@ -295,7 +293,6 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     ctx->node_lists.destructor_cb = _abcdklogd_node_destructor;
     ctx->node_lists.opaque = ctx;
 
-    ctx->daemon = (abcdk_option_exist(ctx->args, "--daemon") ? 1 : 0);
     ctx->listen = abcdk_option_get(ctx->args,"--listen",0,"127.0.0.1:65535");
 
     chk = abcdk_sockaddr_from_string(&addr, ctx->listen, 1);
@@ -334,9 +331,9 @@ void _abcdklogd_work(abcdklogd_t *ctx)
         ctx->policys[i].segment_size = abcdk_option_get_int(ctx->args, "--segment-size", 0, 10);
     }
 
-    ctx->comm = abcdk_comm_start(1);
-    ctx->listen_easy = abcdk_comm_easy_alloc(ctx->comm);
-    abcdk_comm_easy_set_userdata(ctx->listen_easy,ctx);
+    ctx->comm = abcdk_comm_start(0);
+    ctx->listen_easy = abcdk_comm_node_alloc(ctx->comm);
+    abcdk_comm_set_userdata(ctx->listen_easy,ctx);
     chk = abcdk_comm_easy_listen(ctx->listen_easy,NULL,&addr,_abcdklogd_node_request);
     if(chk != 0)
         goto END;
@@ -351,10 +348,11 @@ void _abcdklogd_work(abcdklogd_t *ctx)
 
     /*等待退出信号。*/
     abcdk_sigwaitinfo(&sig,-1);
-    //sleep(30000);
+    //sleep(30);
+
 END:
+    abcdk_comm_node_unref(&ctx->listen_easy);
     abcdk_comm_stop(&ctx->comm);
-    abcdk_comm_easy_unref(&ctx->listen_easy);
     abcdk_heap_free(ctx->policys);
     abcdk_map_destroy(&ctx->node_lists);
     abcdk_mutex_destroy(&ctx->node_mutex);
