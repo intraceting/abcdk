@@ -15,19 +15,19 @@ __BEGIN_DECLS
 typedef enum _abcdk_log_type
 {
     /** 错误。*/
-    ABCDK_LOG_ERROR = 0,
+    ABCDK_LOG_ERROR = LOG_ERR,
 #define ABCDK_LOG_ERROR ABCDK_LOG_ERROR
 
     /** 警告。*/
-    ABCDK_LOG_WARN = 1,
+    ABCDK_LOG_WARN = LOG_WARNING,
 #define ABCDK_LOG_WARN ABCDK_LOG_WARN
 
     /** 重要。*/
-    ABCDK_LOG_INFO = 2,
+    ABCDK_LOG_INFO = LOG_INFO,
 #define ABCDK_LOG_INFO ABCDK_LOG_INFO
 
     /** 调式。*/
-    ABCDK_LOG_DEBUG = 3,
+    ABCDK_LOG_DEBUG = LOG_DEBUG,
 #define ABCDK_LOG_DEBUG ABCDK_LOG_DEBUG
 
     /** 最大值。*/
@@ -48,10 +48,10 @@ typedef enum _abcdk_log_type
  *
  * @param [in] consignee 收货地址。默认：127.0.0.1:65535
  * @param [in] service 服务ID。默认：1
- * @param [in] copy2stderr 是否复制到stderr。默认：否
+ * @param [in] copy2syslog 是否复制到syslog。默认：否
  *
 */
-void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr);
+void abcdk_log_open(const char *consignee,uint16_t service, int copy2syslog);
 
 /**
  * 设置掩码。

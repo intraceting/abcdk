@@ -41,6 +41,7 @@
 #include <termios.h>
 #include <dlfcn.h>
 #include <sched.h>
+#include <syslog.h>
 #include <sys/socket.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>

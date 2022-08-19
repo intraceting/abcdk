@@ -43,8 +43,8 @@ typedef struct _abcdk_log
     /** 收货人。*/
     const char *consignee;
 
-    /** 是否复制到stderr。!0 是，0 否。*/
-    volatile int copy2stderr;
+    /** 是否复制到syslog。!0 是，0 否。*/
+    volatile int copy2syslog;
 
     /** 掩码。*/
     volatile uint32_t mask;
@@ -71,7 +71,7 @@ int _abcdk_log_init(void *opaque)
     ctx->comm = NULL;
     ctx->easy = NULL;
     ctx->service = 1;
-    ctx->copy2stderr = 0;
+    ctx->copy2syslog = 0;
     ctx->consignee = NULL;
     ctx->mask = 0xFFFFFFFF;
     pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
@@ -112,7 +112,7 @@ abcdk_log_t *_abcdk_log_get_ctx()
     return ctx;
 }
 
-void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr)
+void abcdk_log_open(const char *consignee,uint16_t service, int copy2syslog)
 {
     abcdk_log_t *ctx = NULL;
 
@@ -124,7 +124,7 @@ void abcdk_log_open(const char *consignee,uint16_t service, int copy2stderr)
 
     ctx = _abcdk_log_get_ctx();
     ctx->service = service;
-    ctx->copy2stderr = copy2stderr;
+    ctx->copy2syslog = copy2syslog;
 }
 
 void abcdk_log_mask(int type, ...)
@@ -274,12 +274,13 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
     ABCDK_PTR2I8(buf_p->pptrs[0], 30) = 0;
     ABCDK_PTR2I32(buf_p->pptrs[0], 31) = abcdk_endian_h_to_b32(len);
 
-    /*可能需要复制到stderr。*/
-    if (ctx->copy2stderr)
+    /*可能需要复制到syslog。*/
+    if (ctx->copy2syslog)
     {
         abcdk_time_sec2tm(&tm, ts / 1000000, 0);
-        fprintf(stderr, "%d%02d%02d.%02d%02d%02d.%06lu s%hu.p%d %s: %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
-                ts % 1000000, ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
+        syslog(type, "%d%02d%02d.%02d%02d%02d.%06lu s%hu.p%d %s: %s\n",
+               tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,tm.tm_hour, tm.tm_min, tm.tm_sec,
+               ts % 1000000, ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
     }
 
     /*发送到远程。因连接有可能被断开，尝试重发一次。*/
