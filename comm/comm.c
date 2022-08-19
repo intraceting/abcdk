@@ -356,7 +356,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
     _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_ACCEPT, listen);
 
 #ifdef HEADER_SSL_H    
-    if(node->ssl_ctx)
+    if(listen->ssl_ctx)
     {
         node_sub->ssl = abcdk_openssl_ssl_alloc(listen->ssl_ctx);
         if(!node_sub->ssl)
