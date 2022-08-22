@@ -3260,7 +3260,7 @@ void test_redis(abcdk_tree_t *args)
     abcdk_redis_get_auth(c,buf2);
     printf("{%s}\n",buf2);
 
-    redisFree(c);
+    abcdk_redis_disconnect(&c);
 #endif //
 }
 

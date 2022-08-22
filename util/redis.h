@@ -23,6 +23,11 @@ __BEGIN_DECLS
 void abcdk_redis_reply_dump(FILE *fp, redisReply *rep);
 
 /**
+ * 断开连接。
+*/
+void abcdk_redis_disconnect(redisContext **ctx);
+
+/**
  * 连接redis服务器。
  * 
  * @param server 服务器地地址(域名或IP)。

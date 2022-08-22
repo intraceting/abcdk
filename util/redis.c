@@ -35,6 +35,19 @@ void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)
 
 }
 
+void abcdk_redis_disconnect(redisContext **ctx)
+{
+    redisContext *ctx_p = NULL;
+
+    if(!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    redisFree(ctx_p);
+}
+
 redisContext *abcdk_redis_connect(const char *server, uint16_t port, time_t timeout)
 {
     struct timeval tv;
