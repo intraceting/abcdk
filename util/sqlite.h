@@ -21,7 +21,7 @@ __BEGIN_DECLS
  * 字段类型。
  * 
 */
-enum _abcdk_sqlite_column_type
+typedef enum _abcdk_sqlite_column_type
 {
     ABCDK_SQLITE_COLUMN_INT = 1,
 #define ABCDK_SQLITE_COLUMN_INT ABCDK_SQLITE_COLUMN_INT
@@ -38,12 +38,12 @@ enum _abcdk_sqlite_column_type
     ABCDK_SQLITE_COLUMN_BLOB = 5
 #define ABCDK_SQLITE_COLUMN_BLOB ABCDK_SQLITE_COLUMN_BLOB
 
-};
+}abcdk_sqlite_column_type_t;
 
 /**
  * 日志模式。
 */
-enum _abcdk_sqlite_journal_mode
+typedef enum _abcdk_sqlite_journal_mode
 {
     ABCDK_SQLITE_JOURNAL_OFF = 0,
 #define ABCDK_SQLITE_JOURNAL_OFF ABCDK_SQLITE_JOURNAL_OFF
@@ -62,7 +62,7 @@ enum _abcdk_sqlite_journal_mode
 
     ABCDK_SQLITE_JOURNAL_WAL = 5
 #define ABCDK_SQLITE_JOURNAL_WAL ABCDK_SQLITE_JOURNAL_WAL
-};
+}abcdk_sqlite_journal_mode_t;
 
 /**
  * 备份参数
