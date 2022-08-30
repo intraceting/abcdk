@@ -305,10 +305,8 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *l
     abcdk_object_unref(&append_p);
 
     easy_p->flag = 2;
-
     /*复制请求回调函数指针。*/
     easy_p->request_cb = listen_easy_p->request_cb;
-
     /*复制监听的用户环境指针。*/
     abcdk_comm_set_userdata(node,abcdk_comm_get_userdata(listen));
 
