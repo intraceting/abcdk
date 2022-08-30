@@ -350,7 +350,8 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
 
     node_sub->flag = ABCDK_COMM_FLAG_ACCPET;
     node_sub->status = ABCDK_COMM_STATUS_SYNC;
-    node_sub->event_cb = listen->event_cb;//复制监听环境的回调函数指针。
+    /*复制监听环境的回调函数指针。*/
+    node_sub->event_cb = listen->event_cb;
 
     /*通知初始化。*/
     _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_ACCEPT, listen);

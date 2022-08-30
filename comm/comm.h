@@ -106,7 +106,7 @@ void *abcdk_comm_get_append(abcdk_comm_node_t *node);
 
 /**
  * 设置通讯对象的用户环境指针。
- * 
+ *  
  * @return 旧的指针。
 */
 void *abcdk_comm_set_userdata(abcdk_comm_node_t *node,void *opaque);
