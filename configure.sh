@@ -393,7 +393,7 @@ checkReturnCode
 
 
 #
-if [ ${KIT_NAME} == "rpm" ];then
+if [ "${KIT_NAME}" == "rpm" ];then
 {
 
 #
@@ -472,7 +472,7 @@ EOF
 checkReturnCode
 
 }
-elif [ ${KIT_NAME} == "deb" ];then
+elif [ "${KIT_NAME}" == "deb" ];then
 {
 
 #

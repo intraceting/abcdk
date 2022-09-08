@@ -82,11 +82,15 @@ abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx);
 
 /**
  * 通讯对象的附加物。
+ * 
+ * @warning 增加引用，调用者需要主动释放。
  */
 abcdk_object_t *abcdk_comm_node_append(abcdk_comm_node_t *node);
 
 /**
  * 通讯对象的用户环境。
+ * 
+ * @warning 增加引用，调用者需要主动释放。
 */
 abcdk_object_t *abcdk_comm_node_userdata(abcdk_comm_node_t *node);
 
