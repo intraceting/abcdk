@@ -283,7 +283,7 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
 
-    assert(node != NULL && buf != NULL && size >0);
+    assert(node != NULL && buf != NULL && size > 0);
 
     while (wsize_all < size)
     {
@@ -299,6 +299,29 @@ ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
         
         wsize_all += wsize;
     }
+
+    return wsize_all;
+}
+
+ssize_t abcdk_comm_sendfile(abcdk_comm_node_t *node, int fd, off_t *offset, size_t count)
+{
+    ssize_t wsize = 0, wsize_all = 0;
+
+    assert(node != NULL && fd >= 0 && count > 0);
+
+#ifdef HEADER_SSL_H
+    if (node->ssl)
+    {
+        ABCDK_ASSERT(0, "SSL不支持此接口。");
+    }
+    else
+#endif // HEADER_SSL_H
+    {
+        wsize = sendfile(node->fd, fd, offset, count);
+    }
+
+    if (wsize > 0)
+        wsize_all += wsize;
 
     return wsize_all;
 }

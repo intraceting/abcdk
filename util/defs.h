@@ -55,6 +55,7 @@
 #include <sys/un.h>
 #include <sys/time.h>
 #include <sys/vfs.h>
+#include <sys/sendfile.h>
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>
