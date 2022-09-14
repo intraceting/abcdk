@@ -162,8 +162,7 @@ clean-test:
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
-INSTALL_PATH_3PARTY = $(abspath ${INSTALL_PATH}/3party/)
-INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
+INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/abcdk/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 INSTALL_PATH_PC = $(abspath ${INSTALL_PATH}/pkgconfig/)
