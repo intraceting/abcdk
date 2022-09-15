@@ -25,7 +25,7 @@ CC_FLAGS += -O2
 endif
 
 #
-#LINK_FLAGS += -Wl,--as-needed
+LINK_FLAGS += -Wl,--as-needed
 LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 LINK_FLAGS += ${DEPEND_LIBS}
 
