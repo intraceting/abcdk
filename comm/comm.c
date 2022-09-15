@@ -232,7 +232,7 @@ int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],ch
     return 0;
 }
 
-ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
+ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     ssize_t rsize = 0,rsize_all = 0;
     int chk;
@@ -261,7 +261,7 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size)
     return rsize_all;
 }
 
-int abcdk_comm_read_watch(abcdk_comm_node_t *node)
+int abcdk_comm_recv_watch(abcdk_comm_node_t *node)
 {
     int done_flag = 0;
     int chk;
@@ -279,7 +279,7 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node)
     return chk;
 }
 
-ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size)
+ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
 
@@ -326,7 +326,7 @@ ssize_t abcdk_comm_sendfile(abcdk_comm_node_t *node, int fd, off_t *offset, size
     return wsize_all;
 }
 
-int abcdk_comm_write_watch(abcdk_comm_node_t *node)
+int abcdk_comm_send_watch(abcdk_comm_node_t *node)
 {
     int chk;
 

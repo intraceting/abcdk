@@ -158,7 +158,7 @@ int _abcdk_comm_easy_post(abcdk_comm_node_t *node, const void *cargo,size_t len,
         goto final_error;
 
     if (abcdk_atomic_load(&easy_p->status) == 2)
-        abcdk_comm_write_watch(node);
+        abcdk_comm_send_watch(node);
 
     return 0;
 
@@ -321,8 +321,8 @@ void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
     abcdk_atomic_store(&easy_p->status, 2);
 
     /*已连接到远端，注册读写事件。*/
-    abcdk_comm_read_watch(node);
-    abcdk_comm_write_watch(node);
+    abcdk_comm_recv_watch(node);
+    abcdk_comm_send_watch(node);
 }
 
 int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
@@ -395,7 +395,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     }
     else if (chk == 0)
     {
-        abcdk_comm_read_watch(node);
+        abcdk_comm_recv_watch(node);
         return;
     }
 
@@ -407,7 +407,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     /*复用链路前要增加引用计数，以防止多线程操作同一个链路在释放回收内存后，造成应用层内存非法访问的异常。*/
     abcdk_comm_node_refer(node);
     /*复用链路。*/
-    abcdk_comm_read_watch(node);
+    abcdk_comm_recv_watch(node);
 
     /*处理接收到的数据。*/
     msg_ptr = abcdk_comm_message_data(msg);
@@ -468,7 +468,7 @@ NEXT_MSG:
     }
     else if (chk == 0)
     {
-        abcdk_comm_write_watch(node);
+        abcdk_comm_send_watch(node);
         return;
     }
 

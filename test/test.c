@@ -3425,7 +3425,7 @@ NEXT_MSG:
     }
     else if (chk == 0)
     {
-        abcdk_comm_write_watch(one->node);
+        abcdk_comm_send_watch(one->node);
         return;
     }
     
@@ -3448,7 +3448,7 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_nod
         one->node = abcdk_comm_node_refer(node);
         abcdk_comm_set_userdata(node,one);
 
-        abcdk_comm_read_watch(node);
+        abcdk_comm_recv_watch(node);
     }
         break;
     case ABCDK_COMM_EVENT_INPUT:
@@ -3466,19 +3466,19 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_nod
             }
             else if(chk == 0)
             {
-                abcdk_comm_read_watch(node);
+                abcdk_comm_recv_watch(node);
             }
             else
             {
                 abcdk_comm_message_t *msg_copy = abcdk_comm_message_refer(one->in_buffer);
                 abcdk_comm_message_unref(&one->in_buffer);
-                abcdk_comm_read_watch(node);
+                abcdk_comm_recv_watch(node);
 
             //    usleep(rand()%10000+1000);
 
                 abcdk_comm_message_reset(msg_copy);
                 abcdk_comm_queue_push(one->out_queue,msg_copy);
-                abcdk_comm_write_watch(one->node);
+                abcdk_comm_send_watch(one->node);
             }
         }
         break;
@@ -3524,7 +3524,7 @@ void *test_send_msg(void *args)
         ABCDK_PTR2U32(abcdk_comm_message_data(msg), 12) = abcdk_endian_h_to_b32(i+1);
 
         abcdk_comm_queue_push(one->out_queue, msg);
-        abcdk_comm_write_watch(one->node);
+        abcdk_comm_send_watch(one->node);
 
         abcdk_comm_queue_t * q = abcdk_comm_waiter_wait2(one->rsp,&mid,1,10);
         if(!q)
@@ -3556,7 +3556,7 @@ void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_no
             one->node = abcdk_comm_node_refer(node);
         //    abcdk_comm_set_userdata(node,one);
 
-            abcdk_comm_read_watch(node);
+            abcdk_comm_recv_watch(node);
 
             abcdk_thread_t t;
             t.routine = test_send_msg;
@@ -3577,14 +3577,14 @@ void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_no
             int chk = abcdk_comm_message_recv(node,one->in_buffer);
             if(chk != 1)
             {
-                abcdk_comm_read_watch(node);
+                abcdk_comm_recv_watch(node);
             }
             else
             {
                 abcdk_comm_message_t *msg_copy = abcdk_comm_message_refer(one->in_buffer);
                 abcdk_comm_message_unref(&one->in_buffer);
 
-                abcdk_comm_read_watch(node);
+                abcdk_comm_recv_watch(node);
 
                 size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg_copy),0));
                 uint64_t mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(abcdk_comm_message_data(msg_copy),4));

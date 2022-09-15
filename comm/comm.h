@@ -156,7 +156,7 @@ int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],ch
  * 
  * @return > 0 已读取数据的长度，0 无数据。
 */
-ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size);
+ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
  * 注册读事件。
@@ -165,7 +165,7 @@ ssize_t abcdk_comm_read(abcdk_comm_node_t *node, void *buf, size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_read_watch(abcdk_comm_node_t *node);
+int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
 
 /**
  * 写。
@@ -174,7 +174,7 @@ int abcdk_comm_read_watch(abcdk_comm_node_t *node);
  * 
  * @return > 0 已写入数据的长度，0 链路忙。
 */
-ssize_t abcdk_comm_write(abcdk_comm_node_t *node, void *buf, size_t size);
+ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
  * 写(从文件)。
@@ -194,7 +194,7 @@ ssize_t abcdk_comm_sendfile(abcdk_comm_node_t *node, int fd, off_t *offset, size
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_write_watch(abcdk_comm_node_t *node);
+int abcdk_comm_send_watch(abcdk_comm_node_t *node);
 
 /**
  * 启动通讯引擎。
