@@ -11,7 +11,7 @@
 #include "util/object.h"
 
 #ifdef FREEIMAGE_H
-#error "Unixodbc与FreeImage的头文件有冲突，不能同时引用。"
+#error "Unixodbc与FreeImage的头文件内的BOOL有冲突，不能同时包含。如果在同一个项目中同时引用这个两个依赖包，需要在不直接相关的源码中分别包含。"
 #endif // FREEIMAGE_H
 
 #ifdef HAVE_UNIXODBC

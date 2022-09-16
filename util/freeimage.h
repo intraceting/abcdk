@@ -10,7 +10,7 @@
 #include "util/general.h"
 
 #if defined(__SQL_H) || defined(__SQLEXT_H)
-#error "FreeImage与Unixodbc的头文件有冲突，不能同时引用。"
+#error "FreeImage与Unixodbc的头文件有冲突，不能同时引用。如果在同一个项目中同时引用这个两个依赖包，需要在不直接相关的源码中分别包含。"
 #endif //defined(__SQL_H) || defined(__SQLEXT_H)
 
 #ifdef HAVE_FREEIMAGE

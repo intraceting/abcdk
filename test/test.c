@@ -54,7 +54,7 @@
 #include "util/reader.h"
 #include "util/json.h"
 #include "util/signal.h"
-#include "util/odbcpool.h"
+//#include "util/odbcpool.h"
 #include "log/log.h"
 
 
@@ -522,7 +522,7 @@ void test_freeimage(abcdk_tree_t *args)
     abcdk_fi_init(1);
     abcdk_fi_init(1);//test run once.
 
-    abcdk_fi_log2syslog();
+    //abcdk_fi_log2syslog();
 
     const char *src_file = abcdk_option_get(args,"--src-file",0,"");
     const char *dst_file = abcdk_option_get(args,"--dst-file",0,"");
@@ -5327,7 +5327,7 @@ void test_file_segment(abcdk_tree_t *args)
 }
 
 
-#ifdef HAVE_UNIXODBC
+#if defined(__SQL_H) && defined(__SQLEXT_H)
 int test_odbcpool_connect(abcdk_odbc_t *odbc,void *opaque)
 {
     abcdk_tree_t *args = (abcdk_tree_t *)opaque;
@@ -5353,7 +5353,7 @@ int test_odbcpool_connect(abcdk_odbc_t *odbc,void *opaque)
 
 void test_odbcpool(abcdk_tree_t *args)
 {
-#ifdef HAVE_UNIXODBC
+#if defined(__SQL_H) && defined(__SQLEXT_H)
     abcdk_odbcpool_t *h = abcdk_odbcpool_create(10,test_odbcpool_connect,args);
 
     #pragma omp parallel for num_threads(30)
