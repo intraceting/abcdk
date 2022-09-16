@@ -595,7 +595,8 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
                 {
                     _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INPUT,NULL);
 
-                    /*数据的传输过程中，读权利的释放由应用层决定。*/
+                    /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
+                    //abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
                 }
             }
         }
@@ -613,7 +614,7 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
                 _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT,NULL);
             }
 
-            /*释放写权利。*/
+            /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
             abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_OUTPUT);
         }
 

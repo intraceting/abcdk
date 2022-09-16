@@ -31,7 +31,7 @@ typedef struct _abcdk_comm_node abcdk_comm_node_t;
 /* COMM事件。*/
 enum _abcdk_comm_event
 {
-    /*已连接。*/
+    /*新连接(为新连接做准备工作的通知)。*/
     ABCDK_COMM_EVENT_ACCEPT = 1,
 #define ABCDK_COMM_EVENT_ACCEPT ABCDK_COMM_EVENT_ACCEPT
 
