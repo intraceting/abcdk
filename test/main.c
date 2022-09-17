@@ -11,8 +11,8 @@
 #include <locale.h>
 #include "entry.h"
 
-/** 工具集合。*/
-static struct _abcdk_tool_entry
+
+static struct _abcdk_test_entry
 {
     /** 名字。*/
     const char *name;
@@ -23,25 +23,11 @@ static struct _abcdk_tool_entry
      * @return 出错码。
     */
     int (*func_cb)(abcdk_tree_t *args);
-}abcdk_tool_entry[] = {
-    {"serial",abcdk_tool_serial},
-    {"robots",abcdk_tool_robots},
-    {"odbc",abcdk_tool_odbc},
-    {"mtx",abcdk_tool_mtx},
-    {"mt",abcdk_tool_mt},
-    {"mp4juicer",abcdk_tool_mp4juicer},
-    {"mp4dump",abcdk_tool_mp4dump},
-    {"html",abcdk_tool_html},
-    {"hexdump",abcdk_tool_hexdump},
-    {"json",abcdk_tool_json},
-    {"lsscsi",abcdk_tool_lsscsi},
-    {"archive",abcdk_tool_archive},
-    {"lsmmc",abcdk_tool_lsmmc},
-    {"basecode",abcdk_tool_basecode},
-    {"logd",abcdk_tool_logd},
+}abcdk_test_entry[] = {
+    {"httpd",abcdk_test_httpd}
 };
 
-void _abcdk_tool_print_usage()
+void _abcdk_test_print_usage()
 {
     char name[NAME_MAX] = {0};
 
@@ -53,44 +39,43 @@ void _abcdk_tool_print_usage()
     fprintf(stderr, "\n命令：\n");
     fprintf(stderr, "\n\t");
 
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tool_entry); i++)
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_test_entry); i++)
     {
-        fprintf(stderr, "%s ",abcdk_tool_entry[i].name);
+        fprintf(stderr, "%s ",abcdk_test_entry[i].name);
     }
 
     fprintf(stderr, "\n");
 
     fprintf(stderr, "\n示例：\n");
-    fprintf(stderr, "\n\t%s < CMD > --help\n", name);
     fprintf(stderr, "\n\t%s < CMD > [ ... ]\n", name);
 }
 
-struct _abcdk_tool_entry *_abcdk_tool_entry_find(abcdk_tree_t *args)
+struct _abcdk_test_entry *_abcdk_test_entry_find(abcdk_tree_t *args)
 {
     const char *name_p = abcdk_option_get(args,"--",1,NULL);
 
     if(!name_p)
         return NULL;
     
-    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tool_entry); i++)
+    for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_test_entry); i++)
     {
-        if(abcdk_strcmp(abcdk_tool_entry[i].name,name_p,0)==0)
-            return &abcdk_tool_entry[i];
+        if(abcdk_strcmp(abcdk_test_entry[i].name,name_p,0)==0)
+            return &abcdk_test_entry[i];
     }
 
     return NULL;
 }
 
-int _abcdk_tool_dispatch(abcdk_tree_t *args)
+int _abcdk_test_dispatch(abcdk_tree_t *args)
 {
     int errcode = 0;
-    struct _abcdk_tool_entry *entry_p = NULL;
+    struct _abcdk_test_entry *entry_p = NULL;
 
-    entry_p = _abcdk_tool_entry_find(args);
+    entry_p = _abcdk_test_entry_find(args);
 
     if (!entry_p)
     {
-        _abcdk_tool_print_usage();
+        _abcdk_test_print_usage();
         ABCDK_ERRNO_AND_GOTO1(errcode = EINVAL, final);
     }
 
@@ -120,7 +105,7 @@ int main(int argc, char **argv)
     /*解析参数。*/
     abcdk_getargs(args, argc, argv, "--");
 
-    errcode = _abcdk_tool_dispatch(args);
+    errcode = _abcdk_test_dispatch(args);
 
 final:
     

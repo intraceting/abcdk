@@ -96,7 +96,7 @@ test: base test-src
 #
 test-src: ${TEST_OBJ_FILES}
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/test ${OBJ_PATH}/test/test.o -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/test $^ -l:libabcdk.so $(LINK_FLAGS)
 
 #
 $(OBJ_PATH)/util/%.o: util/%.c

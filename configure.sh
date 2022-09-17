@@ -6,7 +6,7 @@
 ##
 
 #
-SHELLDIR=$(cd `dirname $0`; pwd)
+SHELLDIR=$(cd `dirname "$0"`; pwd)
 
 # Functions
 checkReturnCode()
@@ -21,7 +21,7 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${SHELLDIR}/myscript/linux/core/check-os-id.sh $1)"
+    echo "$(${SHELLDIR}/myscript/linux/core/check-os-id.sh "$1")"
 }
 
 #
@@ -40,14 +40,14 @@ CheckPackageKitName()
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${SHELLDIR}/myscript/linux/core/check-package.sh $1)"
+    echo "$(${SHELLDIR}/myscript/linux/core/check-package.sh "$1")"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${SHELLDIR}/myscript/linux/core/check-which.sh $1)"
+	echo "$(${SHELLDIR}/myscript/linux/core/check-which.sh "$1")"
 }
 
 #
@@ -55,7 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    echo "$(${SHELLDIR}/myscript/linux/devel/check-config.sh $1 $2)"
+    echo "$(${SHELLDIR}/myscript/linux/devel/check-config.sh "$1" "$2")"
 }
 
 #
