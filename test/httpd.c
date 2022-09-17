@@ -43,7 +43,7 @@ void _abcdk_test_httpd_input(abcdk_comm_node_t *node)
 {
     while (1)
     {
-        char buf[100] = {0};
+        char buf[101] = {0};
         ssize_t r = abcdk_comm_recv(node, buf, 100);
         if (r <= 0)
         {
