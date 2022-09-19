@@ -12,6 +12,7 @@
 #include "util/general.h"
 #include "comm/comm.h"
 #include "comm/message.h"
+#include "util/uri.h"
 #include "entry.h"
 
 typedef struct _abcdk_test_httpd

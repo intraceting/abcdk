@@ -40,4 +40,29 @@ typedef enum _abcdk_uri_field
 /** URI拆分。*/
 abcdk_object_t *abcdk_uri_split(const char *uri);
 
+/** 
+ * URI编码。
+ * 
+ * @param [in] src 明文指针。
+ * @param [in] slen 明文长度。
+ * @param [out] dst 密文指针。
+ * @param [in out] dlen 密文长度。
+ * @param [in] component !0 是组件，0 是URI。
+ * 
+ * @return 未编码的明文长度。
+*/
+ssize_t abcdk_uri_encode(const char *src,size_t slen,char *dst,size_t *dlen, int component);
+
+/** 
+ * URI解码。
+ * 
+ * @param [in] src 密文指针。
+ * @param [in] slen 密文长度。
+ * @param [out] dst 明文指针。
+ * @param [in out] dlen 明文长度。
+ * 
+ * @return 未解码的密文长度。
+*/
+ssize_t abcdk_uri_decode(const char *src,size_t slen,char *dst,size_t *dlen);
+
 #endif //ABCDK_UTIL_URI_H

@@ -89,3 +89,101 @@ final:
 
     return alloc;
 }
+
+int _abcdk_uri_encode_check_escape(int c, int component)
+{
+    if (c >= 'A' && c <= 'Z')
+        return 1;
+    if (c >= 'a' && c <= 'z')
+        return 1;
+    if (c >= '0' && c <= '9')
+        return 1;
+
+    if (component)
+    {
+        static char dict[] = {"!’()*-._~"};
+        for (int i = 0; i < sizeof(dict); i++)
+        {
+            if (c == dict[i])
+                return 1;
+        }
+    }
+    else
+    {
+        static char dict[] = {"!#$&’()*+,/:;=?@-._~"};
+        for (int i = 0; i < sizeof(dict); i++)
+        {
+            if (c == dict[i])
+                return 1;
+        }
+    }
+
+    return 0;
+}
+
+ssize_t abcdk_uri_encode(const char *src, size_t slen, char *dst, size_t *dlen, int component)
+{
+    int s = 0, d = 0;
+
+    assert(src != NULL && slen > 0 && dst != NULL && dlen != NULL && *dlen > 0);
+
+    for (; s < slen && d < *dlen; s++)
+    {
+        if (_abcdk_uri_encode_check_escape(src[s],component))
+        {
+            dst[d] = src[s];
+            d += 1;
+        }
+        else
+        {
+            /*不通超过密文可用空间。*/
+            if (d + 3 > *dlen)
+                break;
+
+            sprintf(dst + d, "%%%02X", (uint8_t)src[s]);
+            d += 3;
+        }
+    }
+
+    /*更新密文长度。*/
+    *dlen = d;
+
+    return (slen - s);
+}
+
+ssize_t abcdk_uri_decode(const char *src,size_t slen,char *dst,size_t *dlen)
+{
+    int s = 0, d = 0;
+    int tmp;
+
+    assert(src != NULL && slen > 0 && dst != NULL && dlen != NULL && *dlen > 0);
+
+    for (; s < slen && d < *dlen;)
+    {
+        if (src[s] == '+')
+        {
+            dst[d] = ' ';
+            d += 1;
+            s += 1;
+        }
+        else if (src[s] != '%')
+        {
+            dst[d] = src[s];
+            d += 1;
+            s += 1;
+        }
+        else
+        {
+            tmp = 0;
+            sscanf(src + s + 1, "%02x",&tmp);
+            dst[d] = tmp;
+            d += 1;
+            s += 3;
+        }
+    }
+
+    /*更新明文长度。*/
+    *dlen = d;
+
+    return (slen - s);
+}

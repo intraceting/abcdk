@@ -24,7 +24,8 @@ static struct _abcdk_test_entry
     */
     int (*func_cb)(abcdk_tree_t *args);
 }abcdk_test_entry[] = {
-    {"httpd",abcdk_test_httpd}
+    {"httpd",abcdk_test_httpd},
+    {"uri",abcdk_test_uri}
 };
 
 void _abcdk_test_print_usage()

@@ -141,6 +141,8 @@ int abcdk_isodigit(int c);
 
 /**
  * 字符串克隆。
+ * 
+ * @warning 克隆的指针需要用abcdk_heap_free释放。
 */
 char *abcdk_strdup(const char *str);
 
