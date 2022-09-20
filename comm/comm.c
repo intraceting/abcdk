@@ -78,7 +78,7 @@ typedef struct _abcdk_comm_node
 
 } abcdk_comm_node_t;
 
-void abcdk_comm_node_unref(abcdk_comm_node_t **node)
+void abcdk_comm_unref(abcdk_comm_node_t **node)
 {
     abcdk_comm_node_t *node_p = NULL;
 
@@ -110,7 +110,7 @@ void abcdk_comm_node_unref(abcdk_comm_node_t **node)
     abcdk_heap_free(node_p);
 }
 
-abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src)
+abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src)
 {
     int chk;
 
@@ -122,11 +122,11 @@ abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src)
     return src;
 }
 
-abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx)
+abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
 {
     abcdk_comm_node_t *node = NULL;
 
-    assert(ctx != NULL);
+    ABCDK_ASSERT(ctx != NULL,"通讯对象需要通讯环境才能被创建。");
 
     node = (abcdk_comm_node_t *)abcdk_heap_alloc(sizeof(abcdk_comm_node_t));
     if(!node)
@@ -141,14 +141,14 @@ abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx)
     return node;
 }
 
-abcdk_object_t *abcdk_comm_node_append(abcdk_comm_node_t *node)
+abcdk_object_t *abcdk_comm_append(abcdk_comm_node_t *node)
 {
     assert(node != NULL);
 
     return abcdk_object_refer(node->append);
 }
 
-abcdk_object_t *abcdk_comm_node_userdata(abcdk_comm_node_t *node)
+abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node)
 {
     assert(node != NULL);
 
@@ -344,7 +344,7 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_node_t *node = NULL;
 
     node = (abcdk_comm_node_t *)data->ptr;
-    abcdk_comm_node_unref(&node);
+    abcdk_comm_unref(&node);
 }
 
 void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, abcdk_comm_node_t *listen)
@@ -367,7 +367,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
     epoll_data_t ep_data;
     int chk;
 
-    node_sub = abcdk_comm_node_alloc(listen->ctx);
+    node_sub = abcdk_comm_alloc(listen->ctx);
     if (!node_sub)
         return NULL;
 
@@ -407,7 +407,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
 
 final_error:
 
-    abcdk_comm_node_unref(&node_sub);
+    abcdk_comm_unref(&node_sub);
     
     return NULL;
 }
@@ -717,7 +717,7 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
     assert(node != NULL && addr != NULL && event_cb != NULL);
 
     /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_comm_node_refer(node);
+    node_p = abcdk_comm_refer(node);
 
     node_p->flag = ABCDK_COMM_FLAG_LISTEN;
     node_p->status = ABCDK_COMM_STATUS_STABLE;
@@ -788,7 +788,7 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
 
 final_error:
 
-    abcdk_comm_node_unref(&node_p);
+    abcdk_comm_unref(&node_p);
 
     return -1;
 }
@@ -804,7 +804,7 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     assert(node != NULL && addr != NULL && event_cb != NULL);
     
     /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_comm_node_refer(node);
+    node_p = abcdk_comm_refer(node);
 
     node_p->flag = ABCDK_COMM_FLAG_CLIENT;
     node_p->status = ABCDK_COMM_STATUS_SYNC;
@@ -867,7 +867,7 @@ final:
 
 final_error:
 
-    abcdk_comm_node_unref(&node_p);
+    abcdk_comm_unref(&node_p);
 
     return -1;
 }

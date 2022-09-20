@@ -239,7 +239,7 @@ ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens)
         /*有连字符时不在这里输出。*/
         if (hyphens == NULL)
         {
-            wsize2 = fprintf(fp, "%s\n", key);
+            wsize2 = fprintf(fp, "%s\r\n", key);
             if (wsize2 <= 0)
                 break;
 
@@ -254,7 +254,7 @@ ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens)
             /*无连字符时在这里输出。*/
             if (hyphens == NULL)
             {
-                wsize2 = fprintf(fp, "%s\n", val);
+                wsize2 = fprintf(fp, "%s\r\n", val);
                 if (wsize2 <= 0)
                     break;
 
@@ -262,7 +262,7 @@ ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens)
             }
             else /*有连字符时在这里输出。*/
             {
-                wsize2 = fprintf(fp, "%s%s%s\n",key,hyphens,val);
+                wsize2 = fprintf(fp, "%s%s%s\r\n",key,hyphens,val);
                 if (wsize2 <= 0)
                     break;
 

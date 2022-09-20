@@ -334,7 +334,7 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     }
 
     ctx->comm = abcdk_comm_start(0);
-    ctx->listen_easy = abcdk_comm_node_alloc(ctx->comm);
+    ctx->listen_easy = abcdk_comm_alloc(ctx->comm);
     abcdk_comm_set_userdata(ctx->listen_easy,ctx);
     chk = abcdk_comm_easy_listen(ctx->listen_easy,NULL,&addr,_abcdklogd_node_request);
     if(chk != 0)
@@ -353,7 +353,7 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     //sleep(30);
 
 END:
-    abcdk_comm_node_unref(&ctx->listen_easy);
+    abcdk_comm_unref(&ctx->listen_easy);
     abcdk_comm_stop(&ctx->comm);
     abcdk_heap_free(ctx->policys);
     abcdk_map_destroy(&ctx->node_lists);

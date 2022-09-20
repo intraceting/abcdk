@@ -39,6 +39,15 @@ abcdk_comm_message_t *abcdk_comm_message_refer(abcdk_comm_message_t *src);
 abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size);
 
 /**
+ * 创建消息对象。
+ * 
+ * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
+ * 
+ * @param [in] obj 内存对象指针，索引为0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+*/
+abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj);
+
+/**
  * 调整消息对象大小。
  * 
  * @return 0 成功，-1 失败。

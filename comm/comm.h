@@ -64,12 +64,12 @@ typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event, abc
  * 
  * @warning 当引用计数为0时，通讯对像将被删除。
 */
-void abcdk_comm_node_unref(abcdk_comm_node_t **node);
+void abcdk_comm_unref(abcdk_comm_node_t **node);
 
 /**
  * 通讯对象的引用。
 */
-abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
+abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src);
 
 /**
  * 申请通讯对象。
@@ -78,21 +78,21 @@ abcdk_comm_node_t *abcdk_comm_node_refer(abcdk_comm_node_t *src);
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_comm_node_alloc(abcdk_comm_t *ctx);
+abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx);
 
 /**
  * 通讯对象的附加物。
  * 
  * @warning 增加引用，调用者需要主动释放。
  */
-abcdk_object_t *abcdk_comm_node_append(abcdk_comm_node_t *node);
+abcdk_object_t *abcdk_comm_append(abcdk_comm_node_t *node);
 
 /**
  * 通讯对象的用户环境。
  * 
  * @warning 增加引用，调用者需要主动释放。
 */
-abcdk_object_t *abcdk_comm_node_userdata(abcdk_comm_node_t *node);
+abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node);
 
 /**
  * 设置通讯对象的附加物指针。

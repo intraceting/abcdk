@@ -11,6 +11,9 @@ typedef struct _abcdk_comm_message
 {
     /** 引用计数器。*/
     volatile int refcount;
+    
+    /** 内存对象指针。*/
+    abcdk_object_t *user_obj;
 
     /** 内存块指针。*/
     void *buf;
@@ -43,7 +46,11 @@ void abcdk_comm_message_unref(abcdk_comm_message_t **msg)
 
     assert(msg_p->refcount == 0);
 
-    abcdk_heap_free2(&msg_p->buf);
+    /*创建时，如果绑定外部内部对象，则内部对象没有创建内存。*/
+    if(msg_p->user_obj)
+        abcdk_object_unref(&msg_p->user_obj);
+    else
+        abcdk_heap_free2(&msg_p->buf); 
 
     abcdk_heap_free(msg_p);
 
@@ -78,6 +85,7 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size)
     msg->refcount = 1;
     msg->offset = 0;
     msg->protocol_cb = NULL;
+    msg->user_obj = NULL;
     msg->size = size;
     msg->capacity = ABCDK_MAX(msg->size, 1024UL);
     msg->buf = abcdk_heap_alloc(msg->capacity);
@@ -94,11 +102,34 @@ final_error:
     return NULL;
 }
 
+abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj)
+{
+    abcdk_comm_message_t *msg = NULL;
+
+    assert(obj != NULL && obj->pptrs[0] != NULL && obj->sizes[0] > 0);
+
+    msg = abcdk_heap_alloc(sizeof(abcdk_comm_message_t));
+    if (!msg)
+        return NULL;
+
+    msg->refcount = 1;
+    msg->offset = 0;
+    msg->protocol_cb = NULL;
+    msg->user_obj = obj;
+    msg->size = msg->user_obj->sizes[0];
+    msg->capacity = msg->user_obj->sizes[0];
+    msg->buf = msg->user_obj->pptrs[0];
+
+    return msg;
+}
+
 int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size)
 {
     void *new_buf = NULL;
 
     assert(msg != NULL && size > 0);
+
+    ABCDK_ASSERT(msg->user_obj == NULL,"绑定外部内部对象时，不支持重新调整大小。");
 
     /*新的大小与旧的大小一样时，不需要调整。*/
     if (msg->size == size)

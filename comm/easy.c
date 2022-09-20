@@ -299,7 +299,7 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *l
     if (!easy_p)
         return;
 
-    append_p = abcdk_comm_node_append(node);
+    append_p = abcdk_comm_append(node);
     append_p->pptrs[0] = (uint8_t*)easy_p;
     abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
     abcdk_object_unref(&append_p);
@@ -405,7 +405,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     easy_p->in_buffer = NULL;
     
     /*复用链路前要增加引用计数，以防止多线程操作同一个链路在释放回收内存后，造成应用层内存非法访问的异常。*/
-    abcdk_comm_node_refer(node);
+    abcdk_comm_refer(node);
     /*复用链路。*/
     abcdk_comm_recv_watch(node);
 
@@ -441,7 +441,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     }
 
     /*减少引用计数。*/
-    abcdk_comm_node_unref(&node);
+    abcdk_comm_unref(&node);
 }
 
 void _abcdk_comm_easy_event_output(abcdk_comm_node_t *node)
@@ -542,7 +542,7 @@ int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sock
     if (!easy)
         goto final_error;
     
-    append_p = abcdk_comm_node_append(node);
+    append_p = abcdk_comm_append(node);
     append_p->pptrs[0] = (uint8_t*)easy;
     abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
     abcdk_object_unref(&append_p);
@@ -574,7 +574,7 @@ int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_soc
     if (!easy)
         goto final_error;
     
-    append_p = abcdk_comm_node_append(node);
+    append_p = abcdk_comm_append(node);
     append_p->pptrs[0] = (uint8_t*)easy;
     abcdk_object_atfree(append_p,_abcdk_comm_easy_destroy_cb,NULL);
     abcdk_object_unref(&append_p);

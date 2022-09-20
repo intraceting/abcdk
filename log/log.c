@@ -92,7 +92,7 @@ void _abcdk_log_uninit()
     abcdk_log_t *ctx = _abcdk_log_ctx();
 
     abcdk_comm_stop(&ctx->comm);
-    abcdk_comm_node_unref(&ctx->easy);
+    abcdk_comm_unref(&ctx->easy);
     pthread_key_delete(ctx->ptkey);
     abcdk_mutex_unlock(&ctx->easy_mutex);
     abcdk_heap_free2((void**)&ctx->consignee);
@@ -175,24 +175,24 @@ abcdk_comm_node_t *_abcdk_log_get_easy()
     if (!ctx->easy || abcdk_comm_easy_state(ctx->easy) != 0)
     {
         /*释放已经断开的。*/
-        abcdk_comm_node_unref(&ctx->easy);
+        abcdk_comm_unref(&ctx->easy);
         
         /*指定收货人再尝试连接，否则没意义。*/
         if (ctx->consignee)
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->easy = abcdk_comm_node_alloc(ctx->comm);
+            ctx->easy = abcdk_comm_alloc(ctx->comm);
             chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, _abcdk_log_easy_request_cb);
             if (chk != 0)
             {
                 abcdk_comm_set_timeout(ctx->easy, -1);
-                abcdk_comm_node_unref(&ctx->easy);
+                abcdk_comm_unref(&ctx->easy);
             }
         }
     }
 
     if(ctx->easy)
-        easy_p = abcdk_comm_node_refer(ctx->easy);
+        easy_p = abcdk_comm_refer(ctx->easy);
 
     abcdk_mutex_unlock(&ctx->easy_mutex);
 
@@ -229,7 +229,7 @@ int _abcdk_log_send(const void *data, size_t len)
 
     /*发送到远程。*/
     chk = abcdk_comm_easy_request(easy_p, data, len, NULL);
-    abcdk_comm_node_unref(&easy_p);
+    abcdk_comm_unref(&easy_p);
 
     return chk;
 }

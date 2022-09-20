@@ -13,7 +13,7 @@
 __BEGIN_DECLS
 
 /**
- * MAP。
+ * 简单的MAP容器。
  * 
  * HASH和DEQUE存储结构。
 */
@@ -56,7 +56,7 @@ typedef struct _abcdk_map
     int (*dump_cb)(abcdk_object_t *alloc, void *opaque);
 
     /**
-    * 环境指针。
+     * 环境指针。
     */
     void *opaque;
     

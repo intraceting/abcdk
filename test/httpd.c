@@ -85,7 +85,7 @@ void _abcdk_test_httpd_work(abcdk_test_httpd_t *ctx)
 
     ctx->comm = abcdk_comm_start(1);
 
-    ctx->listen_node = abcdk_comm_node_alloc(ctx->comm);
+    ctx->listen_node = abcdk_comm_alloc(ctx->comm);
     abcdk_comm_set_userdata(ctx->listen_node,ctx);
 
     abcdk_sockaddr_from_string(&addr,ctx->listen,1);
@@ -97,7 +97,7 @@ void _abcdk_test_httpd_work(abcdk_test_httpd_t *ctx)
         sleep(1);
     }
 
-    abcdk_comm_node_unref(&ctx->listen_node);
+    abcdk_comm_unref(&ctx->listen_node);
     abcdk_comm_stop(&ctx->comm);
 }
 
