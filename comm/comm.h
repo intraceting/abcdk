@@ -197,15 +197,6 @@ ssize_t abcdk_comm_sendfile(abcdk_comm_node_t *node, int fd, off_t *offset, size
 int abcdk_comm_send_watch(abcdk_comm_node_t *node);
 
 /**
- * 启动通讯引擎。
- * 
- * @param [in] workers 工作线程数量，<= 0 使用CPU核心数量作为工作线程量。
- * 
- * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
-*/
-abcdk_comm_t *abcdk_comm_start(int workers);
-
-/**
  * 停止通讯引擎。
  * 
  * @warning 环境指针不支持多程调用。
@@ -213,6 +204,16 @@ abcdk_comm_t *abcdk_comm_start(int workers);
  * @param [in out] ctx 环境指针。
 */
 void abcdk_comm_stop(abcdk_comm_t **ctx);
+
+/**
+ * 启动通讯引擎。
+ * 
+ * @param [in] workers 工作线程数量，<= 0 使用CPU核心数量的一半作为工作线程量。
+ * @param [in] max 最大连接数量。<= 0 使用文件句柄数量的一半作为最大连接数量。
+ * 
+ * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
+*/
+abcdk_comm_t *abcdk_comm_start(int workers,int max);
 
 /**
  * 监听客户端连接。

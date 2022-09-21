@@ -83,7 +83,7 @@ void _abcdk_test_httpd_work(abcdk_test_httpd_t *ctx)
     abcdk_sockaddr_t addr;
     ctx->listen = abcdk_option_get(ctx->args,"--listen",0,"0.0.0.0:8080");
 
-    ctx->comm = abcdk_comm_start(1);
+    ctx->comm = abcdk_comm_start(1,-1);
 
     ctx->listen_node = abcdk_comm_alloc(ctx->comm);
     abcdk_comm_set_userdata(ctx->listen_node,ctx);

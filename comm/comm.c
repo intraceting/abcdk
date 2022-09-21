@@ -18,6 +18,9 @@ typedef struct _abcdk_comm
     /** 工人数量。*/
     int workers;
 
+    /** 最大连接数量。*/
+    int max;
+
     /** 退出标志。0： 运行，!0：停止。*/
     volatile int exitflag;
 
@@ -392,6 +395,14 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
     if (node_sub->fd < 0)
         goto final_error;
     
+    /**
+     * 检测最大连接数量限制。
+     * 
+     * @warning 如果不把已经建立的连接从监听队列除，那么新的连接可能无法连接。
+    */
+    if(abcdk_epollex_count(node_sub->ctx->epollex) >= node_sub->ctx->max)
+        goto final_error;
+    
     chk = abcdk_fflag_add(node_sub->fd,O_NONBLOCK);
     if(chk != 0 )
         goto final_error;
@@ -635,55 +646,6 @@ void *_abcdk_comm_worker(void *args)
     return NULL;
 }
 
-abcdk_comm_t * abcdk_comm_start(int workers)
-{
-    abcdk_comm_t *ctx = NULL;
-    long nps = sysconf(_SC_NPROCESSORS_ONLN);
-    cpu_set_t cpu_set;
-    int chk;
-
-    ctx = abcdk_heap_alloc(sizeof(abcdk_comm_t));
-    if(!ctx)
-        return NULL;
-
-    ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb,ctx);
-    ctx->workers = 0;
-    ctx->exitflag = 0;
-
-    /*如果未指定工作线程数，则使用CPU核心数。*/
-    if (workers <= 0)
-        workers = abcdk_align(nps/2,1);
-
-    /*申请线程资源。*/
-    ctx->tids = abcdk_heap_alloc(workers * sizeof(abcdk_thread_t));
-
-    for (int i = 0; i < workers; i++)
-    {
-        ctx->tids[i].handle = 0;
-        ctx->tids[i].routine = _abcdk_comm_worker;
-        ctx->tids[i].opaque = ctx;
-        chk = abcdk_thread_create(&ctx->tids[i], 1);
-        if (chk != 0)
-            goto final_error;
-
-        /*线程启动，累加计数器。*/
-        ctx->workers += 1;
-
-        /*设置线程的CPU亲源性。*/
-        CPU_ZERO(&cpu_set);
-        CPU_SET((ctx->workers - i) % nps, &cpu_set);
-        pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
-    }
-
-    return ctx;
-
-final_error:
-    
-    abcdk_comm_stop(&ctx);
-
-    return NULL;
-}
-
 void abcdk_comm_stop(abcdk_comm_t **ctx)
 {
     abcdk_comm_t *ctx_p = NULL;
@@ -707,6 +669,58 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
+abcdk_comm_t * abcdk_comm_start(int workers, int max)
+{
+    abcdk_comm_t *ctx = NULL;
+    long nps = sysconf(_SC_NPROCESSORS_ONLN);
+    long opm = sysconf(_SC_OPEN_MAX);
+    cpu_set_t cpu_set;
+    int chk;
+
+    /*如果未指定工作线程数，则使用CPU核心数的一半。*/
+    if (workers <= 0)
+        workers = abcdk_align(nps/2,1);
+
+    /*如果未指定最大连接数量，则使用文件句柄数量的一半。*/
+    if (max <= 0)
+        max = abcdk_align(opm/2, 1);
+
+    ctx = abcdk_heap_alloc(sizeof(abcdk_comm_t));
+    if(!ctx)
+        return NULL;
+
+    ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb,ctx);
+    ctx->workers = workers;
+    ctx->max = max;
+    ctx->exitflag = 0;
+
+    /*申请线程资源。*/
+    ctx->tids = abcdk_heap_alloc(ctx->workers * sizeof(abcdk_thread_t));
+
+    for (int i = 0; i < ctx->workers; i++)
+    {
+        ctx->tids[i].handle = 0;
+        ctx->tids[i].routine = _abcdk_comm_worker;
+        ctx->tids[i].opaque = ctx;
+        chk = abcdk_thread_create(&ctx->tids[i], 1);
+        if (chk != 0)
+            goto final_error;
+
+        /*设置线程的CPU亲源性。*/
+        CPU_ZERO(&cpu_set);
+        CPU_SET((i % nps), &cpu_set);
+        pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
+    }
+
+    return ctx;
+
+final_error:
+    
+    abcdk_comm_stop(&ctx);
+
+    return NULL;
+}
+
 int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb)
 {
     abcdk_comm_node_t *node_p = NULL;
@@ -718,6 +732,10 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
 
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_comm_refer(node);
+
+    /*检测最大连接数量限制。*/
+    if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
+        goto final_error;
 
     node_p->flag = ABCDK_COMM_FLAG_LISTEN;
     node_p->status = ABCDK_COMM_STATUS_STABLE;
@@ -805,6 +823,10 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_comm_refer(node);
+
+    /*检测最大连接数量限制。*/
+    if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
+        goto final_error;
 
     node_p->flag = ABCDK_COMM_FLAG_CLIENT;
     node_p->status = ABCDK_COMM_STATUS_SYNC;

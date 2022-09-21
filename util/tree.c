@@ -10,7 +10,7 @@ abcdk_tree_t *abcdk_tree_father(const abcdk_tree_t *self)
 {
     assert(self);
 
-    return self->chain[ABCDK_TREE_CHAIN_FATHER];
+    return self->father;
 }
 
 abcdk_tree_t *abcdk_tree_sibling(const abcdk_tree_t *self,int elder)
@@ -18,9 +18,9 @@ abcdk_tree_t *abcdk_tree_sibling(const abcdk_tree_t *self,int elder)
     assert(self);
 
     if(elder)
-        return self->chain[ABCDK_TREE_CHAIN_SIBLING_PREV];
+        return self->prev;
     
-    return self->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT];
+    return self->next;
 }
 
 
@@ -29,9 +29,9 @@ abcdk_tree_t *abcdk_tree_child(const abcdk_tree_t *self,int first)
     assert(self);
 
     if(first)
-        return self->chain[ABCDK_TREE_CHAIN_CHILD_FIRST];
+        return self->first;
 
-    return self->chain[ABCDK_TREE_CHAIN_CHILD_LEAST];
+    return self->least;
 }
 
 void abcdk_tree_unlink(abcdk_tree_t *self)
@@ -41,7 +41,7 @@ void abcdk_tree_unlink(abcdk_tree_t *self)
     assert(self);
 
     /* 获取父节点*/
-    root = self->chain[ABCDK_TREE_CHAIN_FATHER];
+    root = self->father;
 
     if (!root)
         return;
@@ -51,31 +51,31 @@ void abcdk_tree_unlink(abcdk_tree_t *self)
      * 首<--->NODE
      * NODE<--->尾
      */
-    if (self->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT])
-        self->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT]->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = self->chain[ABCDK_TREE_CHAIN_SIBLING_PREV];
-    if (self->chain[ABCDK_TREE_CHAIN_SIBLING_PREV])
-        self->chain[ABCDK_TREE_CHAIN_SIBLING_PREV]->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = self->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT];
+    if (self->next)
+        self->next->prev = self->prev;
+    if (self->prev)
+        self->prev->next = self->next;
 
     /* NODE 是首?*/
-    if (self == root->chain[ABCDK_TREE_CHAIN_CHILD_FIRST])
+    if (self == root->first)
     {
-        root->chain[ABCDK_TREE_CHAIN_CHILD_FIRST] = self->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT];
-        if (root->chain[ABCDK_TREE_CHAIN_CHILD_FIRST])
-            root->chain[ABCDK_TREE_CHAIN_CHILD_FIRST]->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = NULL;
+        root->first = self->next;
+        if (root->first)
+            root->first->prev = NULL;
     }
 
     /* NODE 是尾? */
-    if (self == root->chain[ABCDK_TREE_CHAIN_CHILD_LEAST])
+    if (self == root->least)
     {
-        root->chain[ABCDK_TREE_CHAIN_CHILD_LEAST] = self->chain[ABCDK_TREE_CHAIN_SIBLING_PREV];
-        if (root->chain[ABCDK_TREE_CHAIN_CHILD_LEAST])
-            root->chain[ABCDK_TREE_CHAIN_CHILD_LEAST]->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = NULL;
+        root->least = self->prev;
+        if (root->least)
+            root->least->next = NULL;
     }
 
     /* 打断与父节点的关系链，但同时保留子节点关系链。*/
-    self->chain[ABCDK_TREE_CHAIN_FATHER] = NULL;
-    self->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = NULL;
-    self->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = NULL;
+    self->father = NULL;
+    self->next = NULL;
+    self->prev = NULL;
 }
 
 void abcdk_tree_insert(abcdk_tree_t *father, abcdk_tree_t *child, abcdk_tree_t *where)
@@ -83,50 +83,50 @@ void abcdk_tree_insert(abcdk_tree_t *father, abcdk_tree_t *child, abcdk_tree_t *
     assert(father && child);
 
     /*必须是根节点，或独立节点。 */
-    assert(NULL == child->chain[ABCDK_TREE_CHAIN_FATHER]);
-    assert(NULL == child->chain[ABCDK_TREE_CHAIN_SIBLING_PREV]);
-    assert(NULL == child->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT]);
+    assert(NULL == child->father);
+    assert(NULL == child->prev);
+    assert(NULL == child->next);
 
     /* 绑定新父节点。*/
-    child->chain[ABCDK_TREE_CHAIN_FATHER] = father;
+    child->father = father;
 
     if (where)
     {
-        assert(father = where->chain[ABCDK_TREE_CHAIN_FATHER]);
+        assert(father = where->father);
 
-        if (where == father->chain[ABCDK_TREE_CHAIN_CHILD_FIRST])
+        if (where == father->first)
         {
             /*添加到头节点之前。*/
-            where->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = child;
-            child->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = where;
+            where->prev = child;
+            child->next = where;
 
             /* 新的头节点。*/
-            father->chain[ABCDK_TREE_CHAIN_CHILD_FIRST] = child;
+            father->first = child;
         }
         else
         {
             /*添加到节点之前*/
-            where->chain[ABCDK_TREE_CHAIN_SIBLING_PREV]->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = child;
-            child->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = where->chain[ABCDK_TREE_CHAIN_SIBLING_PREV];
-            child->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = where;
-            where->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = child;
+            where->prev->next = child;
+            child->prev = where->prev;
+            child->next = where;
+            where->prev = child;
         }
     }
     else
     {
-        if (father->chain[ABCDK_TREE_CHAIN_CHILD_LEAST])
+        if (father->least)
         {
             /* 添加到尾节点之后。*/
-            father->chain[ABCDK_TREE_CHAIN_CHILD_LEAST]->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT] = child;
-            child->chain[ABCDK_TREE_CHAIN_SIBLING_PREV] = father->chain[ABCDK_TREE_CHAIN_CHILD_LEAST];
+            father->least->next = child;
+            child->prev = father->least;
 
             /* 新的尾节点。*/
-            father->chain[ABCDK_TREE_CHAIN_CHILD_LEAST] = child;
+            father->least = child;
         }
         else
         {
             /* 空链表，添加第一个节点。*/
-            father->chain[ABCDK_TREE_CHAIN_CHILD_LEAST] = father->chain[ABCDK_TREE_CHAIN_CHILD_FIRST] = child;
+            father->least = father->first = child;
         }
     }
 }
@@ -201,9 +201,9 @@ void abcdk_tree_free(abcdk_tree_t **root)
     root_p = *root;
 
     /* 以防清理到父和兄弟节点。 */
-    assert(NULL == root_p->chain[ABCDK_TREE_CHAIN_FATHER]);
-    assert(NULL == root_p->chain[ABCDK_TREE_CHAIN_SIBLING_PREV]);
-    assert(NULL == root_p->chain[ABCDK_TREE_CHAIN_SIBLING_NEXT]);
+    assert(NULL == root_p->father);
+    assert(NULL == root_p->prev);
+    assert(NULL == root_p->next);
 
     while (root_p)
     {

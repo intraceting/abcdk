@@ -63,6 +63,12 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx, int fd, const epoll_data_t *data)
 */
 int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd);
 
+/** 
+ * 统计关联句柄数量。
+ * 
+*/
+size_t abcdk_epollex_count(abcdk_epollex_t *ctx);
+
 /**
  * 设置超时。
  * 

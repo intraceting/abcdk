@@ -46,7 +46,7 @@ typedef enum _abcdk_log_type
  * [IPV6]:PORT
  * @endcode
  *
- * @param [in] consignee 收货地址。默认：127.0.0.1:65535
+ * @param [in] consignee 收货地址。
  * @param [in] service 服务ID。默认：1
  * @param [in] copy2syslog 是否复制到syslog。默认：否
  *

@@ -75,29 +75,6 @@ abcdk_buffer_t *abcdk_buffer_alloc2(size_t size);
 void abcdk_buffer_free(abcdk_buffer_t **dst);
 
 /**
- * 复制。
- * 
- * @return !NULL(0) 成功，NULL(0) 失败。
- */
-abcdk_buffer_t *abcdk_buffer_copy(abcdk_buffer_t *src);
-
-/**
- * 克隆。
- * 
- * @return !NULL(0) 成功，NULL(0) 失败。
- */
-abcdk_buffer_t *abcdk_buffer_clone(abcdk_buffer_t *src);
-
-/**
- * 私有化。
- * 
- * @note 用于写前复制，或克隆引用的内存块。如果是非引用内存块，直接返回成功。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_buffer_privatize(abcdk_buffer_t *dst);
-
-/**
  * 调整容量。
  * 
  * @return 0 成功，-1 失败。

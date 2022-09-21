@@ -199,6 +199,8 @@ void _abcdklogd_node_request(abcdk_comm_node_t *easy, const void *req, size_t le
     
     if(!req)
     {
+        fprintf(stderr,"Disconnect: %s\n",remote);
+
         abcdk_mutex_lock(&ctx->node_mutex,1);
         abcdk_map_remove(&ctx->node_lists,remote,strlen(remote));
         abcdk_mutex_unlock(&ctx->node_mutex);
@@ -333,8 +335,8 @@ void _abcdklogd_work(abcdklogd_t *ctx)
         ctx->policys[i].segment_size = abcdk_option_get_int(ctx->args, "--segment-size", 0, 10);
     }
 
-    ctx->comm = abcdk_comm_start(0);
-    ctx->listen_easy = abcdk_comm_alloc(ctx->comm);
+    ctx->comm = abcdk_comm_start(0,-1);
+    ctx->listen_easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
     abcdk_comm_set_userdata(ctx->listen_easy,ctx);
     chk = abcdk_comm_easy_listen(ctx->listen_easy,NULL,&addr,_abcdklogd_node_request);
     if(chk != 0)

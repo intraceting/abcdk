@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "http/response.h"
+#include "util/http.h"
 
 
 /** HTTP状态码。*/
@@ -66,11 +66,11 @@ static struct _abcdk_http_status_dict
     {511, "511 Network Authentication Required"}
 };
 
-const char *abcdk_http_resp_status_desc(uint32_t code)
+const char *abcdk_http_status_desc(uint32_t code)
 {
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_http_status_dict); i++)
     {
-        if(abcdk_http_status_dict->code==code)
+        if (abcdk_http_status_dict->code == code)
             return abcdk_http_status_dict->desc;
     }
 

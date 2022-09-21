@@ -75,80 +75,6 @@ void abcdk_buffer_free(abcdk_buffer_t **dst)
     abcdk_heap_free2((void **)dst);
 }
 
-abcdk_buffer_t *abcdk_buffer_copy(abcdk_buffer_t *src)
-{
-    abcdk_buffer_t *buf = NULL;
-
-    assert(src);
-    
-    if(src->data != NULL && src->size > 0)
-    {
-        /*如果不支持引用，则执行克隆。*/
-        if (!src->alloc)
-            return buf = abcdk_buffer_clone(src);
-
-        buf = abcdk_buffer_alloc(abcdk_object_refer(src->alloc));
-        if (!buf)
-            return NULL;
-
-        buf->rsize = src->rsize;
-        buf->wsize = src->wsize;
-    }
-    else
-    {
-        buf = abcdk_buffer_alloc(NULL);
-    }
-
-    return buf;
-}
-
-abcdk_buffer_t *abcdk_buffer_clone(abcdk_buffer_t *src)
-{
-    abcdk_buffer_t *buf = NULL;
-
-    assert(src);
-
-    if(src->data != NULL && src->size > 0)
-    {
-        buf = abcdk_buffer_alloc2(src->size);
-        if (!buf)
-            return NULL;
-
-        buf->size = src->size;
-        buf->rsize = src->rsize;
-        buf->wsize = src->wsize;
-        memcpy(buf->data, src->data, src->size);
-    }
-    else
-    {
-        buf = abcdk_buffer_alloc(NULL);
-    }
-
-    return buf;
-}
-
-int abcdk_buffer_privatize(abcdk_buffer_t *dst)
-{
-    abcdk_object_t *new_p = NULL;
-
-    assert(dst);
-
-    if (dst->alloc)
-    {
-        new_p = abcdk_object_privatize(&dst->alloc);
-        if (!new_p)
-            ABCDK_ERRNO_AND_RETURN1(ENOMEM, -1);
-
-        /*旧的指针换成新的指针。*/
-        dst->alloc = new_p;
-
-        dst->data = new_p->pptrs[0];
-        dst->size = new_p->sizes[0];
-    }
-
-    return 0;
-}
-
 int abcdk_buffer_resize(abcdk_buffer_t *buf, size_t size)
 {
     abcdk_object_t *alloc_new = NULL;
@@ -185,9 +111,6 @@ int abcdk_buffer_resize(abcdk_buffer_t *buf, size_t size)
 ssize_t abcdk_buffer_write(abcdk_buffer_t *buf, const void *data, size_t size)
 {
     ssize_t wsize2 = 0;
-
-    if (abcdk_buffer_privatize(buf) != 0)
-        ABCDK_ERRNO_AND_RETURN1(EMLINK, -1);
 
     assert(buf != NULL && data != NULL && size > 0);
     assert(buf->data != NULL && buf->size > 0);
@@ -251,9 +174,6 @@ ssize_t abcdk_buffer_readline(abcdk_buffer_t *buf, void *data, size_t size, int 
 
 void abcdk_buffer_drain(abcdk_buffer_t *buf)
 {
-    if (abcdk_buffer_privatize(buf) != 0)
-        ABCDK_ERRNO_AND_RETURN0(EMLINK);
-
     assert(buf != NULL);
     assert(buf->data != NULL && buf->size > 0);
 
@@ -271,9 +191,6 @@ ssize_t abcdk_buffer_fill(abcdk_buffer_t *buf, uint8_t stuffing)
 {
     ssize_t wsize2 = 0;
 
-    if (abcdk_buffer_privatize(buf) != 0)
-        ABCDK_ERRNO_AND_RETURN1(EMLINK, -1);
-
     assert(buf != NULL);
     assert(buf->data != NULL && buf->size > 0);
 
@@ -290,9 +207,6 @@ ssize_t abcdk_buffer_fill(abcdk_buffer_t *buf, uint8_t stuffing)
 ssize_t abcdk_buffer_vprintf(abcdk_buffer_t *buf, const char *fmt, va_list args)
 {
     ssize_t wsize2 = 0;
-
-    if (abcdk_buffer_privatize(buf) != 0)
-        ABCDK_ERRNO_AND_RETURN1(EMLINK, -1);
 
     assert(buf != NULL && fmt != NULL);
     assert(buf->data != NULL && buf->size > 0);
@@ -341,9 +255,6 @@ ssize_t abcdk_buffer_import_atmost(abcdk_buffer_t *buf, int fd, size_t howmuch)
 {
     ssize_t wsize2 = 0;
     ssize_t wsize3 = 0;
-
-    if (abcdk_buffer_privatize(buf) != 0)
-        ABCDK_ERRNO_AND_RETURN1(EMLINK, -1);
 
     assert(buf != NULL && fd >= 0 && howmuch > 0);
     assert(buf->data != NULL && buf->size > 0);

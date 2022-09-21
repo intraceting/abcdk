@@ -15,6 +15,9 @@ typedef struct _abcdk_epollex
     /** 互斥量。*/
     abcdk_mutex_t mutex;
 
+    /** 计数器。*/
+    size_t counter;
+
     /** 节点表。*/
     abcdk_map_t node_map;
 
@@ -125,6 +128,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
         goto final_error;
 
     ctx->efd = efd;
+    ctx->counter = 0;
     abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 100);
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
@@ -166,8 +170,10 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
         ABCDK_ERRNO_AND_GOTO1(EBUSY, final_error);
 
     abcdk_epoll_drop(ctx->efd,fd);
-
     abcdk_map_remove(&ctx->node_map, &fd, sizeof(fd));
+
+    /*计数器 -1。*/
+    ctx->counter -= 1;
 
     /*No error.*/
     goto final;
@@ -212,6 +218,9 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
     node->event_mark = node->event_disp = 0;
     node->refcount = 0;
 
+    /*计数器 +1。*/
+    ctx->counter += 1;
+
     /*No error.*/
     goto final;
 
@@ -235,6 +244,19 @@ int abcdk_epollex_attach2(abcdk_epollex_t *ctx, int fd)
     data.fd = fd;
 
     return abcdk_epollex_attach(ctx,fd,&data);
+}
+
+size_t abcdk_epollex_count(abcdk_epollex_t *ctx)
+{
+    size_t count = 0;
+
+    assert(ctx != NULL);
+
+    abcdk_mutex_lock(&ctx->mutex,1);
+    count = ctx->counter;
+    abcdk_mutex_unlock(&ctx->mutex);
+
+    return count;
 }
 
 void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint32_t event)

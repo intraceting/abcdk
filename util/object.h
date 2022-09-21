@@ -93,25 +93,6 @@ abcdk_object_t *abcdk_object_refer(abcdk_object_t *src);
 */
 void abcdk_object_unref(abcdk_object_t **dst);
 
-/**
- * 内存块克隆。
- * 
- * @return !NULL(0) 成功，NULL(0) 失败。
-*/
-abcdk_object_t *abcdk_object_clone(abcdk_object_t *src);
-
-/**
- * 内存块私有化。
- * 
- * 当前是唯一引用者时，直接返回。
- * 当前不是唯一引用者时，执行克隆，然后执行释放。
- *
- * @param [in out] dst 内存块指针的指针。私有化成功后，指针不可再被访问；如果私有化失败，指针依然有效。
- * 
- * @return !NULL(0) 成功，NULL(0) 失败。
-*/
-abcdk_object_t * abcdk_object_privatize(abcdk_object_t **dst);
-
 
 __END_DECLS
 

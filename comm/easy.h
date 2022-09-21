@@ -23,6 +23,18 @@ __BEGIN_DECLS
 typedef void (*abcdk_comm_easy_request_cb)(abcdk_comm_node_t *node, const void *req, size_t len);
 
 /**
+ * 申请通讯对象。
+ * 
+ * @warning 通讯协议相同才能相互收发消息。
+ *
+ * @param [in] ctx 通讯环境指针。
+ * @param [in] protocol 通讯协议。
+ *
+ * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
+ */
+abcdk_comm_node_t *abcdk_comm_easy_alloc(abcdk_comm_t *ctx,uint32_t protocol);
+
+/**
  * 获取状态。
  * 
  * @return 0 已连接(连接中，监听中)，-1 未连接。

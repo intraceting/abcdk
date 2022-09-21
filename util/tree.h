@@ -19,12 +19,20 @@ __BEGIN_DECLS
 */
 typedef struct _abcdk_tree
 {
-    /**
-     * 节点之间的关系链。
-     * 
-     * @note 尽量不要直接访问或修改。
-    */
-    struct _abcdk_tree *chain[5];
+    /** 父。*/
+    struct _abcdk_tree *father;
+
+    /** 大娃。*/
+    struct _abcdk_tree *first;
+
+    /** 么娃。*/
+    struct _abcdk_tree *least;
+
+    /** 兄长。*/
+    struct _abcdk_tree *prev;
+
+    /** 小弟。*/
+    struct _abcdk_tree *next;
 
     /**
      * 数据。
@@ -34,34 +42,6 @@ typedef struct _abcdk_tree
     abcdk_object_t *alloc;
 
 }abcdk_tree_t;
-
-/**
- * 树节点关系。
-*/
-typedef enum _abcdk_tree_chain
-{
-
-    /** 父。*/
-   ABCDK_TREE_CHAIN_FATHER = 0,
-#define ABCDK_TREE_CHAIN_FATHER          ABCDK_TREE_CHAIN_FATHER
-
-    /** 兄长。*/
-   ABCDK_TREE_CHAIN_SIBLING_PREV = 1,
-#define ABCDK_TREE_CHAIN_SIBLING_PREV    ABCDK_TREE_CHAIN_SIBLING_PREV
-
-    /** 小弟。*/
-   ABCDK_TREE_CHAIN_SIBLING_NEXT = 2,
-#define ABCDK_TREE_CHAIN_SIBLING_NEXT    ABCDK_TREE_CHAIN_SIBLING_NEXT
-
-    /** 大娃。*/
-   ABCDK_TREE_CHAIN_CHILD_FIRST = 3,
-#define ABCDK_TREE_CHAIN_CHILD_FIRST     ABCDK_TREE_CHAIN_CHILD_FIRST
-
-    /** 么娃。*/
-   ABCDK_TREE_CHAIN_CHILD_LEAST = 4
-#define ABCDK_TREE_CHAIN_CHILD_LEAST     ABCDK_TREE_CHAIN_CHILD_LEAST
-
-}abcdk_tree_chain_t;
 
 /**
  * 树节点迭代器。

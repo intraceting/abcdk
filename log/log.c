@@ -81,7 +81,7 @@ int _abcdk_log_init(void *opaque)
     if (cons_p && *cons_p)
     {
         ctx->consignee = abcdk_strdup(cons_p);
-        ctx->comm = abcdk_comm_start(1);
+        ctx->comm = abcdk_comm_start(1,-1);
     }
 
     return 0;
@@ -181,13 +181,10 @@ abcdk_comm_node_t *_abcdk_log_get_easy()
         if (ctx->consignee)
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->easy = abcdk_comm_alloc(ctx->comm);
+            ctx->easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
             chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, _abcdk_log_easy_request_cb);
             if (chk != 0)
-            {
-                abcdk_comm_set_timeout(ctx->easy, -1);
                 abcdk_comm_unref(&ctx->easy);
-            }
         }
     }
 
