@@ -25,7 +25,7 @@ typedef struct _abcdk_comm_message
     size_t capacity;
 
     /** 长度。*/
-    uint32_t size;
+    size_t size;
 
     /** 数据包协议回调函数指针。*/
     abcdk_comm_message_protocol_cb protocol_cb;
@@ -87,8 +87,8 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size)
     msg->protocol_cb = NULL;
     msg->user_obj = NULL;
     msg->size = size;
-    msg->capacity = ABCDK_MAX(msg->size, 1024UL);
-    msg->buf = abcdk_heap_alloc(msg->capacity);
+    msg->capacity = ABCDK_MAX(msg->size, 4096UL);
+    msg->buf = abcdk_heap_alloc(msg->capacity + 1);
 
     if (!msg->buf)
         goto final_error;
@@ -138,14 +138,17 @@ int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size)
     msg->size = size;
 
     /*新的容量与旧的容量一样时，不需要调整。*/
-    if (msg->capacity == ABCDK_MAX(msg->size, 1024UL))
+    if (msg->capacity == ABCDK_MAX(msg->size, 4096UL))
         goto final;
 
-    msg->capacity = ABCDK_MAX(msg->size, 1024UL);
+    msg->capacity = ABCDK_MAX(msg->size, 4096UL);
 
-    new_buf = abcdk_heap_realloc(msg->buf, msg->capacity);
+    new_buf = abcdk_heap_realloc(msg->buf, msg->capacity + 1);
     if (!new_buf)
         return -1;
+
+    /*多出的一个字节赋值为0。*/
+    ABCDK_PTR2U8(new_buf,msg->capacity) = 0;
 
     /*绑定新内存。*/
     msg->buf = new_buf;
@@ -157,6 +160,13 @@ final:
         msg->offset = msg->size;
 
     return 0;
+}
+
+int abcdk_comm_message_expand(abcdk_comm_message_t *msg, size_t size)
+{
+    assert(msg != NULL);
+
+    return abcdk_comm_message_realloc(msg, abcdk_comm_message_size(msg) + size);
 }
 
 void abcdk_comm_message_reset(abcdk_comm_message_t *msg)

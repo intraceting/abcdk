@@ -15,9 +15,9 @@ __BEGIN_DECLS
 typedef struct _abcdk_comm_message abcdk_comm_message_t;
 
 /** 
- * 数据包协议回调函数。
+ * 数据包协议回调函数(解包)。
  * 
- * @return 1 数据包完整，0 需要更多数据，-1 不支持的协议。
+ * @return 1 数据包完整，0 需要更多数据，-1 不支持的协议(或有错发生)。
 */
 typedef int (*abcdk_comm_message_protocol_cb)(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
 
@@ -53,6 +53,15 @@ abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj);
  * @return 0 成功，-1 失败。
 */
 int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size);
+
+/**
+ * 扩展消息对象大小。
+ * 
+ * @param [in] size 增量。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_comm_message_expand(abcdk_comm_message_t *msg, size_t size);
 
 /**
  * 重置。

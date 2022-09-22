@@ -16,4 +16,11 @@
 */
 const char *abcdk_http_status_desc(uint32_t code);
 
+/** 
+ * 匹配环境变量，返回变量的值。
+ * 
+ * @return !NULL(0) 环境变量值的指针，NULL(0) 不匹配。
+*/
+const char *abcdk_http_match_env(const char *line, const char *name);
+
 #endif //ABCDK_UTIL_HTTP_H

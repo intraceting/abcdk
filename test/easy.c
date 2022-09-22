@@ -146,7 +146,7 @@ int abcdk_test_easy(abcdk_tree_t *args)
         uint64_t d = 0,s = 0;
         s = abcdk_clock(d,&d);
 
-        int len = 10000;
+        int len = 1000000;
         char *req= (char*)abcdk_heap_alloc(len);
         abcdk_comm_message_t *rsp= NULL;
 

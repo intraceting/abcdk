@@ -7,6 +7,7 @@
 #ifndef ABCDK_COMM_HTTP_H
 #define ABCDK_COMM_HTTP_H
 
+#include "util/http.h"
 #include "comm/comm.h"
 #include "comm/message.h"
 #include "comm/queue.h"
@@ -14,11 +15,9 @@
 /** 
  * 请求回调函数。
  * 
- * @param method 请求方法。NULL(0) 连接或监听关闭。
- * @param query 查询字符串。NULL(0) 连接或监听关闭。
- * @param protocol 协议版本。NULL(0) 连接或监听关闭。
+ * @param location 请求头的第一行。NULL(0) 连接或监听关闭。
 */
-typedef void (*abcdk_comm_http_request_cb)(abcdk_comm_node_t *node, const char *method, size_t query,const char *protocol);
+typedef void (*abcdk_comm_http_request_cb)(abcdk_comm_node_t *node, const char *location);
 
 /**
  * 申请通讯对象。

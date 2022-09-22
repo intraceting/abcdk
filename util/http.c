@@ -76,3 +76,34 @@ const char *abcdk_http_status_desc(uint32_t code)
 
     return NULL;
 }
+
+const char *abcdk_http_match_env(const char *line, const char *name)
+{
+    const char *s, *d;
+
+    s = line;
+    d = name;
+
+    while (*s && *d)
+    {
+        if (toupper(*s) != toupper(*d))
+            break;
+
+        s += 1;
+        d += 1;
+    }
+
+    /* 提前结束，表示不匹配。*/
+    if (*s == '\0' || (!isspace(*s) && *s != ':') || *d != '\0')
+        return NULL;
+
+    while (*s)
+    {
+        if (!isspace(*s) && *s != ':')
+            return s;
+
+        s += 1;
+    }
+
+    return NULL;
+}

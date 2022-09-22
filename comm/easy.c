@@ -372,32 +372,35 @@ int _abcdk_comm_easy_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t 
     abcdk_comm_easy_t *easy_p = NULL;
     uint32_t len;
     uint32_t pro;
-    size_t off;
+    void *msg_ptr;
+    size_t msg_len;
+    size_t msg_off;
 
     easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
     
-    off = abcdk_comm_message_offset(msg);
-    if (off < ABCDK_COMM_EASY_HDR_SIZE)
+    msg_ptr = abcdk_comm_message_data(msg);
+    msg_len = abcdk_comm_message_size(msg);
+    msg_off = abcdk_comm_message_offset(msg);
+
+    if (msg_off < ABCDK_COMM_EASY_HDR_SIZE)
         return 0;
 
-    len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 0));
-    pro = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 4));
+    len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 0));
+    pro = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 4));
 
-    /*不支持太大的数据包。*/
-    if (len > ABCDK_COMM_EASY_MAX_SIZE)
+    /*数据包大小必须符合要求。*/
+    if (len > ABCDK_COMM_EASY_MAX_SIZE || len < ABCDK_COMM_EASY_HDR_SIZE)
         return -1;
 
     /*仅支持相同的协议。*/
     if(pro != easy_p->protocol)
         return -1;
 
-    if (len != abcdk_comm_message_size(msg))
+    /*如果未收完，继续收。*/
+    if (msg_off < len)
     {
-        abcdk_comm_message_realloc(msg, len);
-        return 0;
-    }
-    else if (len != abcdk_comm_message_offset(msg))
-    {
+        /*增量扩展内存。*/
+        abcdk_comm_message_expand(msg, ABCDK_MIN(524288, len - msg_len));
         return 0;
     }
 
