@@ -12,12 +12,28 @@
 #include "comm/message.h"
 #include "comm/queue.h"
 
-/** 
- * 请求回调函数。
- * 
- * @param location 请求头的第一行。NULL(0) 连接或监听关闭。
-*/
-typedef void (*abcdk_comm_http_request_cb)(abcdk_comm_node_t *node, const char *location);
+/**
+ * 通讯对象的回调函数。
+ *
+ * @warning 服务端新的连接会复制成员指针。
+ */
+typedef struct _abcdk_comm_http_callback
+{
+  /**
+   * 新连接通知回调函数。
+   *
+   * @return 0 允许连接，-1 禁止连接。
+   */
+  void (*accept_cb)(abcdk_comm_node_t *node, int *result);
+
+  /**
+   * 请求回调函数。
+   *
+   * @param location 请求头的第一行。NULL(0) 连接或监听关闭。
+   */
+  void (*request_cb)(abcdk_comm_node_t *node, const char *location);
+
+} abcdk_comm_http_callback_t;
 
 /**
  * 申请通讯对象。
@@ -89,10 +105,10 @@ int abcdk_comm_http_response_end(abcdk_comm_node_t *node);
  * 
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 监听地址指针。
- * @param [in] event_cb 事件回调函数指针(新的连接会复制这个指针)。
+ * @param [in] cb 事件回调函数指针。
  * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
-int abcdk_comm_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_http_request_cb request_cb);
+int abcdk_comm_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_http_callback_t *cb);
 
 #endif //ABCDK_COMM_HTTP_H

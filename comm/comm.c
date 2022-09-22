@@ -70,8 +70,8 @@ typedef struct _abcdk_comm_node
     /** Input事件读权利拥有者。*/
     volatile pthread_t input_user;
 
-    /** 事件回调函数指针。*/
-    abcdk_comm_event_cb event_cb;
+    /** 回调函数。*/
+    abcdk_comm_callback_t callback;
 
     /** 附加物。*/
     abcdk_object_t *append;
@@ -364,18 +364,20 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_unref(&node);
 }
 
-void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, abcdk_comm_node_t *listen)
+void _abcdk_comm_prepare_cb(abcdk_comm_node_t *node,abcdk_comm_node_t *listen)
+{
+    /*通知应用层处理事件。*/
+    node->callback.prepare_cb(node, listen);
+}
+
+void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
 {
     /*读权利绑定到线程。*/
     if(event == ABCDK_COMM_EVENT_INPUT)
         abcdk_thread_leader_vote(&node->input_user);
 
-    /*重定向监听关闭事件ID。*/
-    if ((event == ABCDK_COMM_EVENT_CLOSE) && (node->flag == ABCDK_COMM_FLAG_LISTEN))
-        event = ABCDK_COMM_EVENT_LISTEN_CLOSE;
-
     /*通知应用层处理事件。*/
-    node->event_cb(node, event, listen);
+    node->callback.event_cb(node, event, result);
 }
 
 abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
@@ -391,10 +393,10 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
     node_sub->flag = ABCDK_COMM_FLAG_ACCPET;
     node_sub->status = ABCDK_COMM_STATUS_SYNC;
     /*复制监听环境的回调函数指针。*/
-    node_sub->event_cb = listen->event_cb;
+    node_sub->callback = listen->callback;
 
     /*通知初始化。*/
-    _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_ACCEPT, listen);
+    _abcdk_comm_prepare_cb(node_sub, listen);
 
 #ifdef HEADER_SSL_H    
     if(listen->ssl_ctx)
@@ -409,12 +411,17 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
     if (node_sub->fd < 0)
         goto final_error;
     
-    /**
+    /*
      * 检测最大连接数量限制。
-     * 
-     * @warning 如果不把已经建立的连接从监听队列除，那么新的连接可能无法连接。
+     *
+     * 如果不把已经建立的连接从监听队列除，那么新的连接可能无法连接。
     */
     if(abcdk_epollex_count(node_sub->ctx->epollex) >= node_sub->ctx->max)
+        goto final_error;
+
+    /*通知应用层新连接到来。*/
+    _abcdk_comm_event_cb(node_sub,ABCDK_COMM_EVENT_ACCEPT,&chk);
+    if(chk != 0 )
         goto final_error;
     
     chk = abcdk_fflag_add(node_sub->fd,O_NONBLOCK);
@@ -433,7 +440,7 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
 final_error:
 
     /*通知关闭。*/
-    _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_CLOSE, NULL);
+    _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_INTERRUPT, NULL);
 
     abcdk_comm_unref(&node_sub);
     
@@ -738,14 +745,16 @@ final_error:
     return NULL;
 }
 
-int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb)
+int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_callback_t *cb)
 {
     abcdk_comm_node_t *node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
 
-    assert(node != NULL && addr != NULL && event_cb != NULL);
+    assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(cb->prepare_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
+    ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_comm_refer(node);
@@ -759,7 +768,7 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
 #ifdef HEADER_SSL_H
     node_p->ssl_ctx = ssl_ctx;
 #endif //HEADER_SSL_H
-    node_p->event_cb = event_cb;
+    node_p->callback = *cb;
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -828,7 +837,7 @@ final_error:
     return -1;
 }
 
-int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb)
+int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_comm_callback_t *cb)
 {
     abcdk_comm_node_t *node_p = NULL;
     epoll_data_t ep_data;
@@ -836,7 +845,8 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     int sock_flag = 1;
     int chk;
 
-    assert(node != NULL && addr != NULL && event_cb != NULL);
+    assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_comm_refer(node);
@@ -847,7 +857,7 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
 
     node_p->flag = ABCDK_COMM_FLAG_CLIENT;
     node_p->status = ABCDK_COMM_STATUS_SYNC;
-    node_p->event_cb = event_cb;
+    node_p->callback = *cb;
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)

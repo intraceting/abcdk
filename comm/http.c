@@ -31,8 +31,8 @@ typedef struct _abcdk_comm_http
      */
     volatile int status;
 
-    /** 请求回调函数指针。*/
-    abcdk_comm_http_request_cb request_cb;
+    /** 通知回调函数。*/
+    abcdk_comm_http_callback_t callback;
 
     /**
      * 链路状态。
@@ -315,7 +315,7 @@ int abcdk_comm_http_response_end(abcdk_comm_node_t *node)
     return 0;
 }
 
-void _abcdk_comm_http_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
+void _abcdk_comm_http_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
 {
     abcdk_comm_http_t *listen_http_p = NULL;
     abcdk_object_t *append_p = NULL;
@@ -337,12 +337,24 @@ void _abcdk_comm_http_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
     /*复制最大上行长度。*/
     http_p->up_max_size = listen_http_p->up_max_size;
     /*复制请求回调函数指针。*/
-    http_p->request_cb = listen_http_p->request_cb;
+    http_p->callback = listen_http_p->callback;
     /*复制监听的用户环境指针。*/
     abcdk_comm_set_userdata(node, abcdk_comm_get_userdata(listen));
 }
 
-void _abcdk_comm_http_connect(abcdk_comm_node_t *node)
+void _abcdk_comm_http_event_accept(abcdk_comm_node_t *node, int *result)
+{
+    abcdk_comm_http_t *http_p = NULL;
+
+    http_p = (abcdk_comm_http_t *)abcdk_comm_get_append(node);
+
+    if(http_p->callback.accept_cb)
+        http_p->callback.accept_cb(node,result);
+    else
+        *result = 0;
+}
+
+void _abcdk_comm_http_event_connect(abcdk_comm_node_t *node)
 {
     abcdk_comm_http_t *http_p = NULL;
 
@@ -354,15 +366,14 @@ void _abcdk_comm_http_connect(abcdk_comm_node_t *node)
     abcdk_comm_recv_watch(node);
 }
 
-void _abcdk_comm_http_close(abcdk_comm_node_t *node)
+void _abcdk_comm_http_event_close(abcdk_comm_node_t *node)
 {
     abcdk_comm_http_t *http_p = NULL;
 
     http_p = (abcdk_comm_http_t *)abcdk_comm_get_append(node);
 
     /*通知应用层，连接已经关闭。*/
-    if (http_p->request_cb)
-        http_p->request_cb(node, NULL);
+    http_p->callback.request_cb(node, NULL);
 }
 
 int _abcdk_comm_http_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
@@ -458,7 +469,7 @@ int _abcdk_comm_http_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t 
     return 1;
 }
 
-void _abcdk_comm_http_input(abcdk_comm_node_t *node)
+void _abcdk_comm_http_event_input(abcdk_comm_node_t *node)
 {
     abcdk_comm_http_t *http_p = NULL;
     void *msg_ptr;
@@ -494,11 +505,10 @@ void _abcdk_comm_http_input(abcdk_comm_node_t *node)
     }
 
     /*通知应用层，数据到达。*/
-    if (http_p->request_cb)
-        http_p->request_cb(node, http_p->req_hdr[0]);
+    http_p->callback.request_cb(node, http_p->req_hdr[0]);
 }
 
-void _abcdk_comm_http_output(abcdk_comm_node_t *node)
+void _abcdk_comm_http_event_output(abcdk_comm_node_t *node)
 {
     abcdk_comm_http_t *http_p = NULL;
     int chk;
@@ -532,26 +542,37 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-void _abcdk_comm_http_event_cb(abcdk_comm_node_t *node, uint32_t event, abcdk_comm_node_t *listen)
+void _abcdk_comm_http_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
 {
-    if (event == ABCDK_COMM_EVENT_INPUT)
-        _abcdk_comm_http_input(node);
-    if (event == ABCDK_COMM_EVENT_OUTPUT)
-        _abcdk_comm_http_output(node);
-    else if (event == ABCDK_COMM_EVENT_CONNECT)
-        _abcdk_comm_http_connect(node);
-    else if (event == ABCDK_COMM_EVENT_ACCEPT)
-        _abcdk_comm_http_accept(node, listen);
-    else if (event == ABCDK_COMM_EVENT_CLOSE)
-        _abcdk_comm_http_close(node);
+    switch (event)
+    {
+    case ABCDK_COMM_EVENT_ACCEPT:
+        _abcdk_comm_http_event_accept(node,result);
+        break;
+    case ABCDK_COMM_EVENT_CONNECT:
+        _abcdk_comm_http_event_connect(node);
+        break;
+    case ABCDK_COMM_EVENT_INPUT:
+        _abcdk_comm_http_event_input(node);
+        break;
+    case ABCDK_COMM_EVENT_OUTPUT:
+        _abcdk_comm_http_event_output(node);
+        break;
+    case ABCDK_COMM_EVENT_CLOSE:
+    case ABCDK_COMM_EVENT_INTERRUPT:
+    default:
+        _abcdk_comm_http_event_close(node);
+        break;
+    }
 }
 
-int abcdk_comm_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_http_request_cb request_cb)
+int abcdk_comm_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_http_callback_t *cb)
 {
     abcdk_comm_http_t *http_p = NULL;
     int chk;
 
-    assert(node != NULL && addr != NULL && request_cb != NULL);
+    assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(cb->request_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     http_p = (abcdk_comm_http_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_COMM_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
@@ -559,9 +580,10 @@ int abcdk_comm_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sock
     /*初始化状态，标记为监听。*/
     http_p->flag = 3;
     http_p->status = 2;
-    http_p->request_cb = request_cb;
+    http_p->callback = *cb;
 
-    chk = abcdk_comm_listen(node, ssl_ctx, addr, _abcdk_comm_http_event_cb);
+    abcdk_comm_callback_t fcb = {_abcdk_comm_http_prepare_cb,_abcdk_comm_http_event_cb};
+    chk = abcdk_comm_listen(node, ssl_ctx, addr, &fcb);
     if (chk != 0)
         goto final_error;
 

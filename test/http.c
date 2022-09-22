@@ -28,6 +28,10 @@ typedef struct _abcdk_test_http
 
 } abcdk_test_http_t;
 
+void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
+{
+    *result = 1;
+}
 
 void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  const char *location)
 {
@@ -78,7 +82,9 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
     abcdk_comm_set_userdata(ctx->listen_node,ctx);
 
     abcdk_sockaddr_from_string(&addr,ctx->listen,1);
-    abcdk_comm_http_listen(ctx->listen_node,NULL,&addr,_abcdk_test_http_event_cb);
+
+    abcdk_comm_http_callback_t cb = {_abcdk_test_http_accept_cb,_abcdk_test_http_event_cb};
+    abcdk_comm_http_listen(ctx->listen_node,NULL,&addr,&cb);
 
 
     while(getchar() != 'Q')

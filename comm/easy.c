@@ -56,8 +56,8 @@ typedef struct _abcdk_comm_easy
     */
     volatile int status;
 
-    /** 请求回调函数指针。*/
-    abcdk_comm_easy_request_cb request_cb;
+    /** 通知回调函数。*/
+    abcdk_comm_easy_callback_t callback;
 
     /** 数据包协议。*/
     uint32_t protocol;
@@ -326,7 +326,7 @@ int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t l
     return 0;
 }
 
-void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
+void _abcdk_comm_easy_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
 {
     abcdk_comm_easy_t *listen_easy_p = NULL;
     abcdk_object_t *append_p = NULL;
@@ -348,10 +348,22 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, abcdk_comm_node_t *l
     /*复制通讯协议。*/
     easy_p->protocol = listen_easy_p->protocol;
     /*复制请求回调函数指针。*/
-    easy_p->request_cb = listen_easy_p->request_cb;
+    easy_p->callback = listen_easy_p->callback;
     /*复制监听的用户环境指针。*/
     abcdk_comm_set_userdata(node,abcdk_comm_get_userdata(listen));
 
+}
+
+void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, int *result)
+{
+    abcdk_comm_easy_t *easy_p = NULL;
+
+    easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
+
+    if(easy_p->callback.accept_cb)
+        easy_p->callback.accept_cb(node,result);
+    else
+        *result = 0;
 }
 
 void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
@@ -478,8 +490,7 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
         pthread_setspecific(easy_p->req_ptkey, &mid);
 
         /*通知应用层，数据到达。*/
-        if (easy_p->request_cb)
-            easy_p->request_cb(node,cargo_ptr,cargo_len);
+        easy_p->callback.request_cb(node,cargo_ptr,cargo_len);
 
         /*解除线程的MID。*/
         pthread_setspecific(easy_p->req_ptkey, NULL);
@@ -542,8 +553,7 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
         abcdk_comm_waiter_cancel(easy_p->rsp_waiter);
 
         /*通知连接已断开。*/
-        if (easy_p->request_cb)
-            easy_p->request_cb(node, NULL, 0);
+        easy_p->callback.request_cb(node, NULL, 0);
     }
     else
     {
@@ -554,12 +564,12 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
     }
 }
 
-void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event, abcdk_comm_node_t *listen)
+void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
 {
     switch (event)
     {
     case ABCDK_COMM_EVENT_ACCEPT:
-        _abcdk_comm_easy_event_accept(node,listen);
+        _abcdk_comm_easy_event_accept(node,result);
         break;
     case ABCDK_COMM_EVENT_CONNECT:
         _abcdk_comm_easy_event_connect(node);
@@ -571,7 +581,7 @@ void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event, abcdk_co
         _abcdk_comm_easy_event_output(node);
         break;
     case ABCDK_COMM_EVENT_CLOSE:
-    case ABCDK_COMM_EVENT_LISTEN_CLOSE:
+    case ABCDK_COMM_EVENT_INTERRUPT:
     default:
         _abcdk_comm_easy_event_close(node);
         break;
@@ -579,12 +589,13 @@ void _abcdk_comm_easy_event_cb(abcdk_comm_node_t *node, uint32_t event, abcdk_co
 }
 
 
-int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb)
+int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_callback_t *cb)
 {
     abcdk_comm_easy_t *easy_p = NULL;
     int chk;
 
-    assert(node != NULL && addr != NULL && request_cb != NULL);
+    assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(cb->request_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
   
     easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(easy_p != NULL && easy_p->magic == ABCDK_COMM_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
@@ -592,9 +603,10 @@ int abcdk_comm_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sock
     /*初始化状态，标记为监听。*/
     easy_p->flag = 3;
     easy_p->status = 2;
-    easy_p->request_cb = request_cb;
+    easy_p->callback = *cb;
 
-    chk = abcdk_comm_listen(node, ssl_ctx, addr, _abcdk_comm_easy_event_cb);
+    abcdk_comm_callback_t fcb = {_abcdk_comm_easy_prepare_cb,_abcdk_comm_easy_event_cb};
+    chk = abcdk_comm_listen(node, ssl_ctx, addr, &fcb);
     if (chk != 0)
         goto final_error;
 
@@ -605,12 +617,13 @@ final_error:
     return -1;
 }
 
-int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_request_cb request_cb)
+int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_easy_callback_t *cb)
 {
     abcdk_comm_easy_t *easy_p = NULL;
     int chk;
 
-    assert(node != NULL && addr != NULL && request_cb != NULL);
+    assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(cb->request_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(easy_p != NULL && easy_p->magic == ABCDK_COMM_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
@@ -618,9 +631,10 @@ int abcdk_comm_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_soc
     /*初始化状态，标记为客户端。*/
     easy_p->flag = 1;
     easy_p->status = 1;
-    easy_p->request_cb = request_cb;
+    easy_p->callback = *cb;
 
-    chk = abcdk_comm_connect(node, ssl_ctx, addr, _abcdk_comm_easy_event_cb);
+    abcdk_comm_callback_t fcb = {_abcdk_comm_easy_prepare_cb,_abcdk_comm_easy_event_cb};
+    chk = abcdk_comm_connect(node, ssl_ctx, addr, &fcb);
     if (chk != 0)
         goto final_error;
 

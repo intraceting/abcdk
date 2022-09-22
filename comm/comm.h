@@ -29,36 +29,73 @@ typedef struct _abcdk_comm abcdk_comm_t;
 /** 通讯节点。 */
 typedef struct _abcdk_comm_node abcdk_comm_node_t;
 
-/* COMM事件。*/
-enum _abcdk_comm_event
+/* 通知事件。*/
+typedef enum _abcdk_comm_event
 {
-    /*新连接(为新连接做准备工作的通知)。*/
+    /**
+     * 新连接。
+     * 
+     * @return 0 允许连接，-1 禁止连接。
+    */
     ABCDK_COMM_EVENT_ACCEPT = 1,
 #define ABCDK_COMM_EVENT_ACCEPT ABCDK_COMM_EVENT_ACCEPT
 
-    /*已连接。*/
+    /**
+     * 已连接。
+     * 
+     * @return 忽略。
+    */
     ABCDK_COMM_EVENT_CONNECT = 2,
 #define ABCDK_COMM_EVENT_CONNECT ABCDK_COMM_EVENT_CONNECT
 
-    /*有数据到达。*/
+    /**
+     * 有数据到达。
+     * 
+     * @return 忽略。
+    */
     ABCDK_COMM_EVENT_INPUT = 3,
 #define ABCDK_COMM_EVENT_INPUT ABCDK_COMM_EVENT_INPUT
 
-    /*链路空闲，可以发送。*/
+    /**
+     * 链路空闲，可以发送。
+     * 
+     * @return 忽略。
+    */
     ABCDK_COMM_EVENT_OUTPUT = 4,
 #define ABCDK_COMM_EVENT_OUTPUT ABCDK_COMM_EVENT_OUTPUT
 
-    /*已断开。*/
+    /**
+     * 已断开。
+     * 
+     * @return 忽略。
+    */
     ABCDK_COMM_EVENT_CLOSE = 5,
 #define ABCDK_COMM_EVENT_CLOSE ABCDK_COMM_EVENT_CLOSE
 
-    /*监听关闭。*/
-    ABCDK_COMM_EVENT_LISTEN_CLOSE = 6
-#define ABCDK_COMM_EVENT_LISTEN_CLOSE ABCDK_COMM_EVENT_LISTEN_CLOSE
-};
+    /**
+     * 中断(资源不足，或禁止连接)。
+     * 
+     * @return 忽略。
+    */
+    ABCDK_COMM_EVENT_INTERRUPT = 6
+#define ABCDK_COMM_EVENT_INTERRUPT ABCDK_COMM_EVENT_INTERRUPT
 
-/** 事件回调函数。*/
-typedef void (*abcdk_comm_event_cb)(abcdk_comm_node_t *node, uint32_t event, abcdk_comm_node_t *listen);
+}abcdk_comm_event_t;
+
+/** 
+ * 通讯对象的回调函数。
+ * 
+ * @warning 服务端新的连接会复制成员指针。
+*/
+typedef struct _abcdk_comm_callback
+{
+    /** 为新连接做准备工作的通知回调函数。*/
+    void (*prepare_cb)(abcdk_comm_node_t *node, abcdk_comm_node_t *listen);
+
+    /** 事件通知回调函数。*/
+    void (*event_cb)(abcdk_comm_node_t *node, uint32_t event, int *result);
+
+} abcdk_comm_callback_t;
 
 /**
  * 通讯对象的释放。
@@ -229,11 +266,11 @@ abcdk_comm_t *abcdk_comm_start(int workers,int max);
  * @param [in] node 通讯对象指针。
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 监听地址指针。
- * @param [in] event_cb 事件回调函数指针(新的连接会复制这个指针)。
+ * @param [in] cb 回调函数指针。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_event_cb event_cb);
+int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_callback_t *cb);
 
 /**
  * 连接远程服务器。
@@ -243,11 +280,11 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
  * @param [in] node 通讯对象指针。
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 服务端地址指针。
- * @param [in] event_cb 事件回调函数指针。
+ * @param [in] cb 回调函数指针。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_comm_event_cb event_cb);
+int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_callback_t *cb);
 
 __END_DECLS
 

@@ -182,7 +182,9 @@ abcdk_comm_node_t *_abcdk_log_get_easy()
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
             ctx->easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
-            chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, _abcdk_log_easy_request_cb);
+
+            abcdk_comm_easy_callback_t cb = {NULL,_abcdk_log_easy_request_cb};
+            chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, &cb);
             if (chk != 0)
                 abcdk_comm_unref(&ctx->easy);
         }

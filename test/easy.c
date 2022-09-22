@@ -116,7 +116,9 @@ int abcdk_test_easy(abcdk_tree_t *args)
     //strncpy(addr.addr_un.sun_path,sunpath,108);
 
     abcdk_comm_node_t *easy_listen = abcdk_comm_easy_alloc(ctx,3333);
-    abcdk_comm_easy_listen(easy_listen,server_ssl_ctx,&addr,test_easy_request_cb);
+
+    abcdk_comm_easy_callback_t listencb = {NULL,test_easy_request_cb};
+    abcdk_comm_easy_listen(easy_listen,server_ssl_ctx,&addr,&listencb);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
@@ -128,7 +130,8 @@ int abcdk_test_easy(abcdk_tree_t *args)
     for (int i = 0; i < nn; i++)
     {
         easy_client[i] = abcdk_comm_easy_alloc(ctx,3333);
-        abcdk_comm_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, test_easy_request2_cb);
+        abcdk_comm_easy_callback_t clientcb = {NULL,test_easy_request2_cb};
+        abcdk_comm_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, &clientcb);
     }
 
     uint64_t d = 0,s = 0;
