@@ -20,6 +20,7 @@ __BEGIN_DECLS
 
 /**/
 #ifndef HEADER_SSL_H
+typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
@@ -79,6 +80,13 @@ abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src);
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
 abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx);
+
+/**
+ * SSL环境。
+ * 
+ * @warning 调用者不能释放。
+*/
+SSL *abcdk_comm_ssl(abcdk_comm_node_t *node);
 
 /**
  * 通讯对象的附加物。
@@ -208,7 +216,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx);
 /**
  * 启动通讯引擎。
  * 
- * @param [in] workers 工作线程数量，<= 0 使用CPU核心数量的一半作为工作线程量。
+ * @param [in] workers 工作线程数量，<= 0 使用CPU核心数量的一半作为工作线程数量。
  * @param [in] max 最大连接数量。<= 0 使用文件句柄数量的一半作为最大连接数量。
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。

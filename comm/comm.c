@@ -144,6 +144,20 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
     return node;
 }
 
+SSL *abcdk_comm_ssl(abcdk_comm_node_t *node)
+{
+    assert(node != NULL);
+
+#ifdef HEADER_SSL_H
+    if(node->ssl)
+        return node->ssl;
+#else
+    ABCDK_ASSERT(0, "未启用SSL支持。");
+#endif 
+
+    return NULL;
+}
+
 abcdk_object_t *abcdk_comm_append(abcdk_comm_node_t *node)
 {
     assert(node != NULL);
