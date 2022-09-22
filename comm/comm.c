@@ -432,6 +432,9 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
 
 final_error:
 
+    /*通知关闭。*/
+    _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_CLOSE, NULL);
+
     abcdk_comm_unref(&node_sub);
     
     return NULL;
