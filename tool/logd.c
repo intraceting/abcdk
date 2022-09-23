@@ -188,7 +188,7 @@ void _abcdklogd_service_request(abcdklogd_t *ctx,const char *from, abcdklogd_nod
     }
 }
 
-void _abcdklogd_node_request_cb(abcdk_comm_node_t *easy, const void *req, size_t len)
+void _abcdklogd_node_request_cb(abcdk_comm_node_t *easy,uint64_t mid, const void *req, size_t len)
 {
     abcdklogd_t *ctx = NULL;
     char remote[NAME_MAX] = {0};

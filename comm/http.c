@@ -357,11 +357,28 @@ void _abcdk_comm_http_event_accept(abcdk_comm_node_t *node, int *result)
 void _abcdk_comm_http_event_connect(abcdk_comm_node_t *node)
 {
     abcdk_comm_http_t *http_p = NULL;
+    SSL *ssl_p = NULL;
+    int chk;
 
     http_p = (abcdk_comm_http_t *)abcdk_comm_get_append(node);
 
-    abcdk_atomic_store(&http_p->status, 2);
+#ifdef HEADER_SSL_H
+    /*如果SSL开启，检查SSL验证结果。*/      
+    ssl_p = abcdk_comm_ssl(node);
+    if(ssl_p)
+    {
+        chk = SSL_get_verify_result(ssl_p);
+        if(chk != X509_V_OK)
+        {
+            /*修改超时，使用超时检测器关闭。*/
+            abcdk_comm_set_timeout(node,1);
+            return;
+        }
+    }
+#endif
 
+    /*标记已经连接。*/
+    abcdk_atomic_store(&http_p->status, 2);
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
 }

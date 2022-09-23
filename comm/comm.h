@@ -121,7 +121,7 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx);
 /**
  * SSL环境。
  * 
- * @warning 调用者不能释放。
+ * @warning 连接建立后有效，且调用者不能释放。
 */
 SSL *abcdk_comm_ssl(abcdk_comm_node_t *node);
 

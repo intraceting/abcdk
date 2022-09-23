@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
+
 #include "entry.h"
 
 
@@ -99,6 +100,14 @@ int main(int argc, char **argv)
 
     /*随机数种子。*/
     srand(time(NULL));
+
+#ifdef HAVE_OPENSSL
+
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+
+#endif //HAVE_OPENSSL
 
     /*申请参数存储空间。*/
     args = abcdk_tree_alloc3(1);

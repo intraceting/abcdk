@@ -30,11 +30,13 @@ typedef struct _abcdk_comm_easy_callback
 
   /**
    * 请求回调函数。
-   *
-   * @param req 请求数据指针。
-   * @param len 请求数据长度。
+   * 
+   * @param node 通讯对象。
+   * @param mid 消息ID。
+   * @param req 消息指针。
+   * @param len 消息长度。
    */
-  void (*request_cb)(abcdk_comm_node_t *node, const void *req, size_t len);
+  void (*request_cb)(abcdk_comm_node_t *node, uint64_t mid, const void *req, size_t len);
 
   /** 连接关闭通知回调函数。*/
   void (*close_cb)(abcdk_comm_node_t *node);
@@ -66,22 +68,25 @@ int abcdk_comm_easy_state(abcdk_comm_node_t *node);
  * @param data 请求数据的指针。
  * @param len 请求数据的长度。
  * @param rsp 应答容器的指针，NULL(0) 不需要应答。
+ * @param timeout 应答等待时间(秒)。注：不需要应答时，忽略此项。
  * 
- * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(已断开)。
+ * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(超时/已断开)。
 */
-int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_comm_message_t **rsp);
+int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t len,
+                            abcdk_comm_message_t **rsp, time_t timeout);
 
 /** 
  * 发送应答。
  * 
  * @warning 仅限在请求回调函数中使用。
  * 
+ * @param mid 消息ID。
  * @param data 应答数据的指针。
  * @param len 应答数据的长度。
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */
-int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t len);
+int abcdk_comm_easy_response(abcdk_comm_node_t *node, uint64_t mid, const void *data, size_t len);
 
 /**
  * 启动监听。

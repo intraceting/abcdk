@@ -74,9 +74,6 @@ typedef struct _abcdk_comm_easy
     /** 应答服务员。*/
     abcdk_comm_waiter_t *rsp_waiter;
 
-    /** 请求消息线程KEY。*/
-    pthread_key_t req_ptkey;
-
 } abcdk_comm_easy_t;
 
 void _abcdk_comm_easy_free(abcdk_comm_easy_t **easy)
@@ -93,7 +90,6 @@ void _abcdk_comm_easy_free(abcdk_comm_easy_t **easy)
     abcdk_comm_message_unref(&easy_p->out_buffer);
     abcdk_comm_queue_free(&easy_p->out_queue);
     abcdk_comm_waiter_free(&easy_p->rsp_waiter);
-    pthread_key_delete(easy_p->req_ptkey);
     abcdk_heap_free(easy_p);
 }
 
@@ -113,7 +109,6 @@ abcdk_comm_easy_t *_abcdk_comm_easy_alloc()
     easy->out_buffer = NULL;
     easy->out_queue = abcdk_comm_queue_alloc();
     easy->rsp_waiter = abcdk_comm_waiter_alloc();
-    pthread_key_create(&easy->req_ptkey,NULL);
 
     return easy;
 }
@@ -249,7 +244,8 @@ int abcdk_comm_easy_state(abcdk_comm_node_t *node)
     return 0;
 }
 
-int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_comm_message_t **rsp)
+int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t len,
+                            abcdk_comm_message_t **rsp, time_t timeout)
 {
     abcdk_comm_easy_t *easy_p = NULL;
     abcdk_comm_queue_t *rsp_queue = NULL;
@@ -259,6 +255,7 @@ int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t le
 
     assert(node != NULL && data != NULL && len > 0);
     assert(len <= ABCDK_COMM_EASY_MAX_SIZE - ABCDK_COMM_EASY_HDR_SIZE);
+    ABCDK_ASSERT(rsp == NULL || (rsp != NULL && timeout > 0), "必须指定应答等待时长。");
 
     easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(easy_p != NULL && easy_p->magic == ABCDK_COMM_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
@@ -280,7 +277,7 @@ int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t le
     if (!rsp)
         return 0;
 
-    rsp_queue = abcdk_comm_waiter_wait2(easy_p->rsp_waiter, &mid, 1, INTMAX_MAX);
+    rsp_queue = abcdk_comm_waiter_wait2(easy_p->rsp_waiter, &mid, 1, timeout*1000);
     if (!rsp_queue)
         return -1;
 
@@ -297,10 +294,9 @@ int abcdk_comm_easy_request(abcdk_comm_node_t *node, const void *data, size_t le
     return 0;
 }
 
-int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t len)
+int abcdk_comm_easy_response(abcdk_comm_node_t *node,uint64_t mid, const void *data, size_t len)
 {
     abcdk_comm_easy_t *easy_p = NULL;
-    uint64_t *mid_p;
     int chk;
 
     assert(node != NULL && data != NULL && len > 0);
@@ -312,16 +308,9 @@ int abcdk_comm_easy_response(abcdk_comm_node_t *node, const void *data, size_t l
     if(!abcdk_atomic_load(&easy_p->status))
         return -2;
 
-    /*获取请求MID。*/
-    mid_p = pthread_getspecific(easy_p->req_ptkey);
-    ABCDK_ASSERT(mid_p != NULL,"每次请求仅允许应答一次。");
-
-    chk = _abcdk_comm_easy_post(node, data, len, *mid_p, ABCDK_COMM_EASY_FLAG_RSP);
+    chk = _abcdk_comm_easy_post(node, data, len, mid, ABCDK_COMM_EASY_FLAG_RSP);
     if (chk != 0)
         return -1;  
-
-    /*解除线程的MID(应答一次就好)。*/
-    pthread_setspecific(easy_p->req_ptkey, NULL); 
 
     return 0;
 }
@@ -369,11 +358,28 @@ void _abcdk_comm_easy_event_accept(abcdk_comm_node_t *node, int *result)
 void _abcdk_comm_easy_event_connect(abcdk_comm_node_t *node)
 {
     abcdk_comm_easy_t *easy_p = NULL;
+    SSL *ssl_p = NULL;
+    int chk;
 
     easy_p = (abcdk_comm_easy_t *)abcdk_comm_get_append(node);
 
-    abcdk_atomic_store(&easy_p->status, 2);
+#ifdef HEADER_SSL_H
+    /*如果SSL开启，检查SSL验证结果。*/      
+    ssl_p = abcdk_comm_ssl(node);
+    if(ssl_p)
+    {
+        chk = SSL_get_verify_result(ssl_p);
+        if(chk != X509_V_OK)
+        {
+            /*修改超时，使用超时检测器关闭。*/
+            abcdk_comm_set_timeout(node,1);
+            return;
+        }
+    }
+#endif
 
+    /*标记已经连接。*/
+    abcdk_atomic_store(&easy_p->status, 2);
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
     abcdk_comm_send_watch(node);
@@ -486,14 +492,8 @@ void _abcdk_comm_easy_event_input(abcdk_comm_node_t *node)
     }
     else
     {
-        /*绑定线程的MID(用于应答)。*/
-        pthread_setspecific(easy_p->req_ptkey, &mid);
-
         /*通知应用层，数据到达。*/
-        easy_p->callback.request_cb(node,cargo_ptr,cargo_len);
-
-        /*解除线程的MID。*/
-        pthread_setspecific(easy_p->req_ptkey, NULL);
+        easy_p->callback.request_cb(node,mid,cargo_ptr,cargo_len);
 
         /*删除请求数据。*/
         abcdk_comm_message_unref(&msg);

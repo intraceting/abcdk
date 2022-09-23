@@ -151,15 +151,8 @@ void abcdk_log_mask(int type, ...)
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
-void _abcdk_log_easy_request_cb(abcdk_comm_node_t *easy, const void *req, size_t len)
+void _abcdk_log_easy_request_cb(abcdk_comm_node_t *easy,uint64_t mid, const void *req, size_t len)
 {
-    char sockname[NAME_MAX] = {0}, peername[NAME_MAX] = {0};
-    
-    if(easy)
-        abcdk_comm_get_sockaddr_str(easy,sockname,peername);
-
-    // if(!req)
-    //     fprintf(stderr,"Disconnected(%s -> %s).\n",sockname, peername);
 
 }
 
@@ -183,7 +176,7 @@ abcdk_comm_node_t *_abcdk_log_get_easy()
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
             ctx->easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
 
-            abcdk_comm_easy_callback_t cb = {NULL,_abcdk_log_easy_request_cb};
+            abcdk_comm_easy_callback_t cb = {NULL,_abcdk_log_easy_request_cb,NULL};
             chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, &cb);
             if (chk != 0)
                 abcdk_comm_unref(&ctx->easy);
@@ -227,7 +220,7 @@ int _abcdk_log_send(const void *data, size_t len)
         return -2;
 
     /*发送到远程。*/
-    chk = abcdk_comm_easy_request(easy_p, data, len, NULL);
+    chk = abcdk_comm_easy_request(easy_p, data, len, NULL,1);
     abcdk_comm_unref(&easy_p);
 
     return chk;

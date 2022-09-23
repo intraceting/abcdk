@@ -511,7 +511,7 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 
         ssl_chk = SSL_do_handshake(node->ssl);
         if (ssl_chk == 1)
-        {
+        {   
             node->status = ABCDK_COMM_STATUS_STABLE;
         }
         else
