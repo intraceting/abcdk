@@ -553,7 +553,8 @@ void _abcdk_comm_easy_event_close(abcdk_comm_node_t *node)
         abcdk_comm_waiter_cancel(easy_p->rsp_waiter);
 
         /*通知连接已断开。*/
-        easy_p->callback.request_cb(node, NULL, 0);
+        if(easy_p->callback.close_cb)
+            easy_p->callback.close_cb(node);
     }
     else
     {

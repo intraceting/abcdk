@@ -29,9 +29,12 @@ typedef struct _abcdk_comm_http_callback
   /**
    * 请求回调函数。
    *
-   * @param location 请求头的第一行。NULL(0) 连接或监听关闭。
+   * @param location 请求头的第一行。
    */
   void (*request_cb)(abcdk_comm_node_t *node, const char *location);
+
+  /** 连接关闭通知回调函数。*/
+  void (*close_cb)(abcdk_comm_node_t *node);
 
 } abcdk_comm_http_callback_t;
 

@@ -188,7 +188,7 @@ void _abcdklogd_service_request(abcdklogd_t *ctx,const char *from, abcdklogd_nod
     }
 }
 
-void _abcdklogd_node_request(abcdk_comm_node_t *easy, const void *req, size_t len)
+void _abcdklogd_node_request_cb(abcdk_comm_node_t *easy, const void *req, size_t len)
 {
     abcdklogd_t *ctx = NULL;
     char remote[NAME_MAX] = {0};
@@ -197,17 +197,7 @@ void _abcdklogd_node_request(abcdk_comm_node_t *easy, const void *req, size_t le
     ctx = (abcdklogd_t *)abcdk_comm_get_userdata(easy);
     abcdk_comm_get_sockaddr_str(easy,NULL,remote);
     
-    if(!req)
-    {
-        fprintf(stderr,"Disconnect: %s\n",remote);
 
-        abcdk_mutex_lock(&ctx->node_mutex,1);
-        abcdk_map_remove(&ctx->node_lists,remote,strlen(remote));
-        abcdk_mutex_unlock(&ctx->node_mutex);
-        return;
-    }
-    else
-    {
         abcdk_mutex_lock(&ctx->node_mutex, 1);
         obj = abcdk_map_find(&ctx->node_lists, remote, strlen(remote), sizeof(abcdklogd_node_t));
         if(obj)
@@ -219,7 +209,22 @@ void _abcdklogd_node_request(abcdk_comm_node_t *easy, const void *req, size_t le
             _abcdklogd_service_request(ctx, remote, (abcdklogd_node_t *)obj->pptrs[ABCDK_MAP_VALUE], req, len);
             abcdk_object_unref(&obj);
         }
-    }
+    
+}
+
+void _abcdklogd_node_close_cb(abcdk_comm_node_t *easy)
+{
+    abcdklogd_t *ctx = NULL;
+    char remote[NAME_MAX] = {0};
+
+    ctx = (abcdklogd_t *)abcdk_comm_get_userdata(easy);
+    abcdk_comm_get_sockaddr_str(easy,NULL,remote);
+
+    fprintf(stderr,"Disconnect: %s\n",remote);
+
+    abcdk_mutex_lock(&ctx->node_mutex,1);
+    abcdk_map_remove(&ctx->node_lists,remote,strlen(remote));
+    abcdk_mutex_unlock(&ctx->node_mutex);
 }
 
 void _abcdklogd_service_construct(abcdk_object_t *alloc, void *opaque)
@@ -339,7 +344,7 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     ctx->listen_easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
     abcdk_comm_set_userdata(ctx->listen_easy,ctx);
 
-    abcdk_comm_easy_callback_t cb = {NULL,_abcdklogd_node_request};
+    abcdk_comm_easy_callback_t cb = {NULL,_abcdklogd_node_request_cb,_abcdklogd_node_close_cb};
     chk = abcdk_comm_easy_listen(ctx->listen_easy,NULL,&addr,&cb);
     if(chk != 0)
         goto END;

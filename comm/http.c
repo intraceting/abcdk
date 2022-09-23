@@ -373,7 +373,8 @@ void _abcdk_comm_http_event_close(abcdk_comm_node_t *node)
     http_p = (abcdk_comm_http_t *)abcdk_comm_get_append(node);
 
     /*通知应用层，连接已经关闭。*/
-    http_p->callback.request_cb(node, NULL);
+    if(http_p->callback.close_cb)
+        http_p->callback.close_cb(node);
 }
 
 int _abcdk_comm_http_msg_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)

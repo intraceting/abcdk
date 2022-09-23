@@ -31,10 +31,13 @@ typedef struct _abcdk_comm_easy_callback
   /**
    * 请求回调函数。
    *
-   * @param req 请求数据指针。NULL(0) 连接或监听关闭。
-   * @param len 请求数据长度。0 连接或监听关闭。
+   * @param req 请求数据指针。
+   * @param len 请求数据长度。
    */
   void (*request_cb)(abcdk_comm_node_t *node, const void *req, size_t len);
+
+  /** 连接关闭通知回调函数。*/
+  void (*close_cb)(abcdk_comm_node_t *node);
 
 } abcdk_comm_easy_callback_t;
 

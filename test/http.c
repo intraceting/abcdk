@@ -30,7 +30,7 @@ typedef struct _abcdk_test_http
 
 void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
 {
-    *result = 1;
+    *result = 0;
 }
 
 void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  const char *location)
