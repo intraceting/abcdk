@@ -27,9 +27,9 @@ typedef struct _abcdk_comm_message
     /** 长度。*/
     size_t size;
 
-    /** 数据包协议回调函数指针。*/
-    abcdk_comm_message_protocol_cb protocol_cb;
-
+    /** 消息协议。*/
+    abcdk_comm_message_protocol_t protocol;
+    
 } abcdk_comm_message_t;
 
 void abcdk_comm_message_unref(abcdk_comm_message_t **msg)
@@ -84,7 +84,6 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size)
 
     msg->refcount = 1;
     msg->offset = 0;
-    msg->protocol_cb = NULL;
     msg->user_obj = NULL;
     msg->size = size;
     msg->capacity = ABCDK_MAX(msg->size, 4096UL);
@@ -114,7 +113,6 @@ abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj)
 
     msg->refcount = 1;
     msg->offset = 0;
-    msg->protocol_cb = NULL;
     msg->user_obj = obj;
     msg->size = msg->user_obj->sizes[0];
     msg->capacity = msg->user_obj->sizes[0];
@@ -169,11 +167,11 @@ int abcdk_comm_message_expand(abcdk_comm_message_t *msg, size_t size)
     return abcdk_comm_message_realloc(msg, abcdk_comm_message_size(msg) + size);
 }
 
-void abcdk_comm_message_reset(abcdk_comm_message_t *msg)
+void abcdk_comm_message_reset(abcdk_comm_message_t *msg,size_t offset)
 {
     assert(msg != NULL);
 
-    msg->offset = 0;
+    msg->offset = offset;
 }
 
 void *abcdk_comm_message_data(const abcdk_comm_message_t *msg)
@@ -197,40 +195,15 @@ size_t abcdk_comm_message_offset(const abcdk_comm_message_t *msg)
     return msg->offset;
 }
 
-void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_cb protocol_cb)
+void abcdk_comm_message_drain(abcdk_comm_message_t *msg)
 {
-    assert(msg != NULL && protocol_cb != NULL);
+    size_t remain;
 
-    msg->protocol_cb = protocol_cb;
-}
+    assert(msg != NULL);
 
-int abcdk_comm_message_recv(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
-{
-    uint32_t size;
-    ssize_t rsize;
-    int chk;
-
-    assert(node != NULL && msg != NULL);
-
-MORE_DATA:
-
-    rsize = abcdk_comm_recv(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
-    if (rsize <= 0)
-        return 0;
-    else if (rsize > 0)
-        msg->offset += rsize;
-
-    /*检测接收的数据是否完整。*/
-    if (msg->protocol_cb)
-    {
-        chk = msg->protocol_cb(node, msg);
-        if (chk < 0)
-            return -1;
-        else if (chk == 0)
-            goto MORE_DATA;
-    }
-
-    return 1;
+    remain = msg->size - msg->offset;
+    memmove(msg->buf,ABCDK_PTR2VPTR(msg->buf,msg->offset),remain);
+    msg->offset = remain;
 }
 
 int abcdk_comm_message_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
@@ -255,4 +228,88 @@ int abcdk_comm_message_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
         return 0;
 
     return 1;
+}
+
+void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_t *prot)
+{
+    assert(msg != NULL && prot != NULL);
+    ABCDK_ASSERT(prot->unpack_cb != NULL,"未绑定解包回调函数，消息对象无法正常工作。");
+
+    msg->protocol = *prot;
+}
+
+int abcdk_comm_message_recv(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
+{
+    ssize_t rsize = 0;
+    int chk = 0;
+
+    assert(node != NULL && msg != NULL);
+
+MORE_DATA:
+
+    rsize = abcdk_comm_recv(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
+    if (rsize <= 0)
+        return 0;
+    else
+        msg->offset += rsize;
+
+    /*检测接收的数据是否完整。*/
+    if (msg->protocol.unpack_cb)
+    {
+        chk = msg->protocol.unpack_cb(msg->protocol.opaque, msg);
+        if (chk < 0)
+            return -1;
+        else if (chk == 0)
+            goto MORE_DATA;
+    }
+
+    return 1;
+}
+
+int abcdk_comm_message_recv2(const void *data,size_t size,size_t *remain, abcdk_comm_message_t *msg)
+{
+    ssize_t rsize = 0;
+    size_t rall = 0;
+    int chk;
+
+    assert(data != NULL && size > 0 && remain != NULL && msg != NULL);
+
+MORE_DATA:
+
+    rsize = ABCDK_MIN(msg->size - msg->offset, size - rall);
+    if (rsize <= 0)
+    {
+        chk = 0;
+        goto FINAL_END;
+    }
+    else
+    {
+        memcpy(ABCDK_PTR2VPTR(msg->buf, msg->offset), ABCDK_PTR2VPTR(data, rall), rsize);
+        msg->offset += rsize;
+        rall += rsize;
+    }
+
+    /*检测接收的数据是否完整。*/
+    if (msg->protocol.unpack_cb)
+    {
+        chk = msg->protocol.unpack_cb(msg->protocol.opaque, msg);
+        if (chk < 0)
+        {
+            chk = -1;
+            goto FINAL_END;
+        }
+        else if (chk == 0)
+        {
+            goto MORE_DATA;
+        }
+    }
+
+    chk = 1;
+
+FINAL_END:
+
+    /*计算剩于数据长度。*/
+    *remain = size - rall;
+
+    return chk;
 }

@@ -61,6 +61,8 @@ BASE_SRC_FILES += $(wildcard util/*.c)
 BASE_SRC_FILES += $(wildcard shell/*.c)
 BASE_SRC_FILES += $(wildcard mp4/*.c)
 BASE_SRC_FILES += $(wildcard comm/*.c)
+BASE_SRC_FILES += $(wildcard easy/*.c)
+BASE_SRC_FILES += $(wildcard http/*.c)
 BASE_SRC_FILES += $(wildcard log/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
@@ -122,6 +124,18 @@ $(OBJ_PATH)/comm/%.o: comm/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
+$(OBJ_PATH)/easy/%.o: easy/%.c
+	mkdir -p $(OBJ_PATH)/easy/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+	
+#
+$(OBJ_PATH)/http/%.o: http/%.c
+	mkdir -p $(OBJ_PATH)/http/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
 $(OBJ_PATH)/log/%.o: log/%.c
 	mkdir -p $(OBJ_PATH)/log/
 	rm -f $@
@@ -149,6 +163,8 @@ clean-base:
 	rm -rf ${OBJ_PATH}/comm
 	rm -rf ${OBJ_PATH}/shell
 	rm -rf ${OBJ_PATH}/log
+	rm -rf ${OBJ_PATH}/easy
+	rm -rf ${OBJ_PATH}/http
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 
@@ -190,6 +206,8 @@ install-devel:
 	mkdir -p ${INSTALL_PATH_INC}/shell
 	mkdir -p ${INSTALL_PATH_INC}/mp4
 	mkdir -p ${INSTALL_PATH_INC}/comm
+	mkdir -p ${INSTALL_PATH_INC}/easy
+	mkdir -p ${INSTALL_PATH_INC}/http
 	mkdir -p ${INSTALL_PATH_INC}/log
 	mkdir -p ${INSTALL_PATH_PC}/
 #
@@ -200,6 +218,8 @@ install-devel:
 	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
 	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
 	cp  -f $(CURDIR)/log/*.h ${INSTALL_PATH_INC}/log/
+	cp  -f $(CURDIR)/easy/*.h ${INSTALL_PATH_INC}/easy/
+	cp  -f $(CURDIR)/http/*.h ${INSTALL_PATH_INC}/http/
 #  
 	cp  -f ${PKG_PC} ${INSTALL_PATH_PC}/abcdk.pc
 
@@ -223,6 +243,8 @@ uninstall-devel:
 	rm -rf ${INSTALL_PATH_INC}/mp4
 	rm -rf ${INSTALL_PATH_INC}/comm
 	rm -rf ${INSTALL_PATH_INC}/log
+	rm -rf ${INSTALL_PATH_INC}/easy
+	rm -rf ${INSTALL_PATH_INC}/http
 #
 	rm -f  ${INSTALL_PATH_PC}/abcdk.pc
 

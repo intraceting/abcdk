@@ -65,7 +65,15 @@ final:
 
 abcdk_object_t *abcdk_mmap2(const char *name, int rw, int shared)
 {
+    assert(name);
+    
+    return abcdk_mmap3(name,0,rw,shared);
+}
+
+abcdk_object_t *abcdk_mmap3(const char *name, size_t truncate, int rw, int shared)
+{
     int fd = -1;
+    int chk;
 
     abcdk_object_t *alloc = NULL;
 
@@ -75,10 +83,19 @@ abcdk_object_t *abcdk_mmap2(const char *name, int rw, int shared)
     if (fd < 0)
         return NULL;
 
-    alloc = abcdk_mmap(fd,rw,shared);
+    if (truncate > 0)
+    {
+        chk = ftruncate(fd, truncate);
+        if (chk != 0)
+            goto final_end;
+    }
+
+    alloc = abcdk_mmap(fd, rw, shared);
+
+final_end:
 
     abcdk_closep(&fd);
-    
+
     return alloc;
 }
 

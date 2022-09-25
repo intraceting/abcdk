@@ -10,7 +10,7 @@
 #include <string.h>
 #include <locale.h>
 #include "log/log.h"
-#include "comm/easy.h"
+#include "easy/easy.h"
 #include "entry.h"
 
 
@@ -29,8 +29,8 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, uint64_t mid,const void *data
 
         usleep(rand()%10000+1000);
 
-        abcdk_comm_easy_response(easy,mid,data,len);
-        abcdk_comm_easy_request(easy,data,len,NULL,1);
+        abcdk_easy_response(easy,mid,data,len);
+        abcdk_easy_request(easy,data,len,NULL,1);
 
 
     
@@ -174,10 +174,10 @@ int abcdk_test_easy(abcdk_tree_t *args)
     //addr.family = AF_UNIX;
     //strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_node_t *easy_listen = abcdk_comm_easy_alloc(ctx,3333);
+    abcdk_comm_node_t *easy_listen = abcdk_easy_alloc(ctx,3333);
 
-    abcdk_comm_easy_callback_t listencb = {NULL,test_easy_request_cb};
-    abcdk_comm_easy_listen(easy_listen,server_ssl_ctx,&addr,&listencb);
+    abcdk_easy_callback_t listencb = {NULL,test_easy_request_cb};
+    abcdk_easy_listen(easy_listen,server_ssl_ctx,&addr,&listencb);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
@@ -188,9 +188,9 @@ int abcdk_test_easy(abcdk_tree_t *args)
     abcdk_comm_node_t *easy_client[40] = {NULL};
     for (int i = 0; i < nn; i++)
     {
-        easy_client[i] = abcdk_comm_easy_alloc(ctx,3333);
-        abcdk_comm_easy_callback_t clientcb = {NULL,test_easy_request2_cb};
-        abcdk_comm_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, &clientcb);
+        easy_client[i] = abcdk_easy_alloc(ctx,3333);
+        abcdk_easy_callback_t clientcb = {NULL,test_easy_request2_cb};
+        abcdk_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, &clientcb);
     }
 
   //  sleep(10);
@@ -216,7 +216,7 @@ int abcdk_test_easy(abcdk_tree_t *args)
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client[i%nn],req,len,&rsp,10);
+        abcdk_easy_request(easy_client[i%nn],req,len,&rsp,10);
         
 
         if (rsp)
@@ -242,9 +242,9 @@ int abcdk_test_easy(abcdk_tree_t *args)
 
     printf("s = %lu,d = %lu\n",s,d);
 
- //   abcdk_comm_easy_set_timeout(easy_listen,1);
+ //   abcdk_easy_set_timeout(easy_listen,1);
 
-  //  abcdk_comm_easy_unref(&easy_listen);
+  //  abcdk_easy_unref(&easy_listen);
     while (getchar() != 'Q')
         ;
 

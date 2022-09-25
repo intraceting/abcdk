@@ -17,7 +17,7 @@
 #include "util/map.h"
 #include "shell/file.h"
 #include "shell/proc.h"
-#include "comm/easy.h"
+#include "easy/easy.h"
 
 #define ABCDKLOGD_SERVICE_MAX 65536
 
@@ -341,11 +341,11 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     }
 
     ctx->comm = abcdk_comm_start(0,-1);
-    ctx->listen_easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
+    ctx->listen_easy = abcdk_easy_alloc(ctx->comm,666666666);
     abcdk_comm_set_userdata(ctx->listen_easy,ctx);
 
-    abcdk_comm_easy_callback_t cb = {NULL,_abcdklogd_node_request_cb,_abcdklogd_node_close_cb};
-    chk = abcdk_comm_easy_listen(ctx->listen_easy,NULL,&addr,&cb);
+    abcdk_easy_callback_t cb = {NULL,_abcdklogd_node_request_cb,_abcdklogd_node_close_cb};
+    chk = abcdk_easy_listen(ctx->listen_easy,NULL,&addr,&cb);
     if(chk != 0)
         goto END;
 

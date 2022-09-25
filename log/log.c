@@ -8,7 +8,7 @@
 #include "util/object.h"
 #include "util/uri.h"
 #include "shell/proc.h"
-#include "comm/easy.h"
+#include "easy/easy.h"
 
 /*
  * -----------------------------------------------------------------------------------
@@ -165,7 +165,7 @@ abcdk_comm_node_t *_abcdk_log_get_easy()
 
     abcdk_mutex_lock(&ctx->easy_mutex,1);
 
-    if (!ctx->easy || abcdk_comm_easy_state(ctx->easy) != 0)
+    if (!ctx->easy || abcdk_easy_state(ctx->easy) != 0)
     {
         /*释放已经断开的。*/
         abcdk_comm_unref(&ctx->easy);
@@ -174,10 +174,10 @@ abcdk_comm_node_t *_abcdk_log_get_easy()
         if (ctx->consignee)
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->easy = abcdk_comm_easy_alloc(ctx->comm,666666666);
+            ctx->easy = abcdk_easy_alloc(ctx->comm,666666666);
 
-            abcdk_comm_easy_callback_t cb = {NULL,_abcdk_log_easy_request_cb,NULL};
-            chk = abcdk_comm_easy_connect(ctx->easy, NULL, &addr, &cb);
+            abcdk_easy_callback_t cb = {NULL,_abcdk_log_easy_request_cb,NULL};
+            chk = abcdk_easy_connect(ctx->easy, NULL, &addr, &cb);
             if (chk != 0)
                 abcdk_comm_unref(&ctx->easy);
         }
@@ -220,7 +220,7 @@ int _abcdk_log_send(const void *data, size_t len)
         return -2;
 
     /*发送到远程。*/
-    chk = abcdk_comm_easy_request(easy_p, data, len, NULL,1);
+    chk = abcdk_easy_request(easy_p, data, len, NULL,1);
     abcdk_comm_unref(&easy_p);
 
     return chk;

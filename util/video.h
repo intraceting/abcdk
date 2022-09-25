@@ -14,49 +14,8 @@ __BEGIN_DECLS
 
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
-/** 最大支持16个。*/
-#define ABCDK_VIDEO_MAX_STREAMS     16
-
-/**
- * 视频。
- * 
-*/
-typedef struct _abcdk_video
-{
-    /** 编/解码器。*/
-    AVCodecContext *codec_ctx[ABCDK_VIDEO_MAX_STREAMS];
-
-    /** 编/解码器字典。*/
-    AVDictionary *codec_dict[ABCDK_VIDEO_MAX_STREAMS];
-
-    /** 数据包过滤器。*/
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
-    AVBSFContext *vs_filter[ABCDK_VIDEO_MAX_STREAMS];
-#else
-    AVBitStreamFilterContext *vs_filter[ABCDK_VIDEO_MAX_STREAMS];
-#endif
-
-    /** 视频。*/
-    AVFormatContext *ctx;
-
-    /** 视频字典。*/
-    AVDictionary *dict;
-
-    /** 超时(秒)。*/
-    int64_t timeout;
-
-    /** 最近活动包时间(秒)。*/
-    int64_t last_packet_time;
-
-    /**
-     * TS编号。
-     * 
-     * 0: PTS
-     * 1: DTS
-    */
-    int64_t ts_nums[ABCDK_VIDEO_MAX_STREAMS][2];
-
-} abcdk_video_t;
+/** 视频对象。*/
+typedef struct _abcdk_video abcdk_video_t;
 
 /**
  * 关闭视频。

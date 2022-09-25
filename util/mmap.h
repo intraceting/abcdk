@@ -31,6 +31,15 @@ abcdk_object_t* abcdk_mmap(int fd,int rw,int shared);
 abcdk_object_t* abcdk_mmap2(const char* name,int rw,int shared);
 
 /**
+ * 映射文件到内存页面。
+ * 
+ * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_object_t* abcdk_mmap3(const char* name,size_t truncate,int rw,int shared);
+
+/**
  * 刷新数据。
  * 
  * 如果映射的内存页面是私有模式，对数据修改不会影响原文件。
