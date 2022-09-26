@@ -62,8 +62,8 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
         sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                 abcdk_http_status_desc(200), file->sizes[0]);
 
-        abcdk_http_response(node, buf, strlen(buf));
-        abcdk_http_response2(node, file);
+        abcdk_http_send2(node, buf, strlen(buf));
+        abcdk_http_send(node, file);
     }
     else
     {
@@ -72,7 +72,7 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
         sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                 abcdk_http_status_desc(404), 0);
 
-        abcdk_http_response(node, buf, strlen(buf));
+        abcdk_http_send2(node, buf, strlen(buf));
     }
 }
 

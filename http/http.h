@@ -52,25 +52,26 @@ typedef struct _abcdk_http_callback
 abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx,size_t up_max_size,const char *up_buffer_point);
 
 /** 
- * 发送应答。
- * 
- * @param data 应答数据的指针。
- * @param len 应答数据的长度。
- * 
- * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
-*/
-int abcdk_http_response(abcdk_comm_node_t *node, const void *data, size_t len);
-
-/** 
- * 发送应答。
+ * 发送数据。
  * 
  * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
  * 
- * @param [in] data 应答数据对象的指针。注：仅做指针复制，不会改变对象的引用计数。
+ * @param [in] data 数据对象的指针。注：仅做指针复制，不会改变对象的引用计数。
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */
-int abcdk_http_response2(abcdk_comm_node_t *node,abcdk_object_t *data);
+int abcdk_http_send(abcdk_comm_node_t *node,abcdk_object_t *data);
+
+/** 
+ * 发送数据。
+ * 
+ * @param data 数据的指针。
+ * @param len 数据的长度。
+ * 
+ * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
+*/
+int abcdk_http_send2(abcdk_comm_node_t *node, const void *data, size_t len);
+
 
 /**
  * 启动监听。

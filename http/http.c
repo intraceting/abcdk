@@ -148,49 +148,7 @@ final_error:
     return NULL;
 }
 
-int abcdk_http_response(abcdk_comm_node_t *node, const void *data, size_t len)
-{
-    abcdk_http_t *http_p = NULL;
-    abcdk_comm_message_t *msg = NULL;
-    void *msg_ptr;
-    size_t msg_len;
-    int chk;
-
-    assert(node != NULL && data != NULL && len > 0);
-
-    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
-    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
-
-    if (!abcdk_atomic_load(&http_p->status))
-        return -2;
-
-    msg = abcdk_comm_message_alloc(len);
-    if (!msg)
-        goto final_error;
-
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
-
-    /*复制数据。*/
-    memcpy(msg_ptr, data, len);
-
-    chk = abcdk_comm_queue_push(http_p->out_queue, msg);
-    if (chk != 0)
-        goto final_error;
-
-    if (abcdk_atomic_load(&http_p->status) == 2)
-        abcdk_comm_send_watch(node);
-
-    return 0;
-
-final_error:
-
-    abcdk_comm_message_unref(&msg);
-
-    return -1;
-}
-
-int abcdk_http_response2(abcdk_comm_node_t *node, abcdk_object_t *data)
+int abcdk_http_send(abcdk_comm_node_t *node, abcdk_object_t *data)
 {
     abcdk_http_t *http_p = NULL;
     abcdk_comm_message_t *msg = NULL;
@@ -220,6 +178,32 @@ int abcdk_http_response2(abcdk_comm_node_t *node, abcdk_object_t *data)
 final_error:
 
     abcdk_comm_message_unref(&msg);
+
+    return -1;
+}
+
+int abcdk_http_send2(abcdk_comm_node_t *node, const void *data, size_t len)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_object_t *obj = NULL;
+    int chk;
+
+    assert(node != NULL && data != NULL && len > 0);
+
+    obj = abcdk_object_alloc2(len);
+    if(!obj)
+        return -1;
+
+    memcpy(obj->pptrs[0],data,len);
+    chk = abcdk_http_send(node,obj);
+    if(chk != 0)
+        goto final_error;
+    
+    return 0;
+
+final_error:
+
+    abcdk_object_unref(&obj);
 
     return -1;
 }
