@@ -6,6 +6,8 @@
  */
 #include "comm/message.h"
 
+#define ABCDK_COMM_MSG_SIZE_DEFAULT (20*1024)
+
 /** 消息对象。*/
 typedef struct _abcdk_comm_message
 {
@@ -86,7 +88,7 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size)
     msg->offset = 0;
     msg->user_obj = NULL;
     msg->size = size;
-    msg->capacity = ABCDK_MAX(msg->size, 4096UL);
+    msg->capacity = ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT);
     msg->buf = abcdk_heap_alloc(msg->capacity + 1);
 
     if (!msg->buf)
@@ -156,10 +158,10 @@ int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size)
     msg->size = size;
 
     /*新的容量与旧的容量一样时，不需要调整。*/
-    if (msg->capacity == ABCDK_MAX(msg->size, 4096UL))
+    if (msg->capacity == ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT))
         goto final;
 
-    msg->capacity = ABCDK_MAX(msg->size, 4096UL);
+    msg->capacity = ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT);
 
     new_buf = abcdk_heap_realloc(msg->buf, msg->capacity + 1);
     if (!new_buf)

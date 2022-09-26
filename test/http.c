@@ -55,14 +55,25 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
     }
 
     abcdk_object_t *file = abcdk_mmap2("/home/devel/job/tmp/无标题文档",0,0);
+    if (file)
+    {
+        char buf[1000] = {0};
 
-    char buf[1000] = {0};
+        sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+                abcdk_http_status_desc(200), file->sizes[0]);
 
-    sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
-            abcdk_http_status_desc(200), file->sizes[0]);
+        abcdk_http_response(node, buf, strlen(buf));
+        abcdk_http_response2(node, file);
+    }
+    else
+    {
+        char buf[1000] = {0};
 
-    abcdk_http_response(node,buf,strlen(buf));
-    abcdk_http_response2(node,file);
+        sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+                abcdk_http_status_desc(404), 0);
+
+        abcdk_http_response(node, buf, strlen(buf));
+    }
 }
 
 void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
