@@ -28,7 +28,8 @@ static struct _abcdk_test_entry
     {"http",abcdk_test_http},
     {"uri",abcdk_test_uri},
     {"log",abcdk_test_log},
-    {"easy",abcdk_test_easy}
+    {"easy",abcdk_test_easy},
+    {"iconv",abcdk_test_iconv}
 };
 
 void _abcdk_test_print_usage()

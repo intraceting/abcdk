@@ -7,6 +7,7 @@
 #ifndef ABCDK_HTTP_HTTP_H
 #define ABCDK_HTTP_HTTP_H
 
+#include "util/general.h"
 #include "util/http.h"
 #include "comm/comm.h"
 #include "comm/message.h"
@@ -44,10 +45,11 @@ typedef struct _abcdk_http_callback
  *
  * @param [in] ctx 通讯环境指针。
  * @param [in] up_max_size 上行最大长度。
+ * @param [in] up_buffer_point 上行缓存目录(实体有效)。NULL(0) 不启用。
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx,size_t up_max_size);
+abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx,size_t up_max_size,const char *up_buffer_point);
 
 /** 
  * 发送应答。

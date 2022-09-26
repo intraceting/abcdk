@@ -35,19 +35,26 @@ void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
 
 void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *req)
 {
-    const char *p;
+    size_t len = 0;
+    const char *p,*val;
     for(int i = 0;i<100;i++)
     {
         p = abcdk_http_request_env(req,i);
         if(!p)
             break;
+
+        if(val = abcdk_http_match_env(p,"Content-Length"))
+            len = strtol(val,NULL,0);
         
         fprintf(stderr,"%s\n",p);
     }
 
-    fprintf(stderr,"{%s}\n",(char*)abcdk_http_request_body(req));
+    if(len>0)
+    {
+        abcdk_save("./test_http_upload.data",abcdk_http_request_body(req),len,0);
+    }
 
-    abcdk_object_t *file = abcdk_mmap2("/tmp/rsync-sleep1h.log",0,0);
+    abcdk_object_t *file = abcdk_mmap2("/home/devel/job/tmp/无标题文档",0,0);
 
     char buf[1000] = {0};
 
@@ -58,6 +65,15 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
     abcdk_http_response2(node,file);
 }
 
+void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
+{
+    char buf[NAME_MAX]={0};
+    
+    abcdk_comm_get_sockaddr_str(node,NULL,buf);
+
+    fprintf(stderr,"Disconnect: %s\n",buf);
+}
+
 void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 {
     abcdk_sockaddr_t addr;
@@ -65,12 +81,12 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
     ctx->comm = abcdk_comm_start(1,-1);
 
-    ctx->listen_node = abcdk_http_alloc(ctx->comm,102400);
+    ctx->listen_node = abcdk_http_alloc(ctx->comm,100*1024*1024,"/tmp/");
     abcdk_comm_set_userdata(ctx->listen_node,ctx);
 
     abcdk_sockaddr_from_string(&addr,ctx->listen,1);
 
-    abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb,_abcdk_test_http_event_cb};
+    abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb,_abcdk_test_http_event_cb,_abcdk_test_http_close_cb};
     abcdk_http_listen(ctx->listen_node,NULL,&addr,&cb);
 
 

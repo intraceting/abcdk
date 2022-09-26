@@ -30,10 +30,10 @@ abcdk_http_request_t *abcdk_http_request_refer(abcdk_http_request_t *src);
 /**
  * 创建请求对象。
  * 
- * @param [in] up_max_size 上行最大长度。
+ * @param [in] max_size 最大长度(头部+实体)。
  * @param [in] buffer_point 缓存目录(实体有效)。NULL(0) 不启用。
 */
-abcdk_http_request_t *abcdk_http_request_alloc(size_t up_max_size,const char *buffer_point);
+abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffer_point);
 
 /**
  * 获取实体。

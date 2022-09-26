@@ -31,11 +31,21 @@ typedef struct _abcdk_http
      */
     volatile int status;
 
+    /**
+     * 0: unknown
+     * 1: http/1.0 or http/1.1
+     * 2: http/2
+    */
+    int version;
+
     /** 通知回调函数。*/
     abcdk_http_callback_t callback;
 
     /** 上行最大长度。*/
     size_t up_max_size;
+
+    /** 上行实体缓存目录。*/
+    char up_buffer_point[PATH_MAX];
 
     /** 接收缓冲区。*/
     abcdk_comm_message_t *in_buffer;
@@ -79,6 +89,9 @@ abcdk_http_t *_abcdk_http_alloc()
     http->magic = ABCDK_HTTP_MAGIC;
     http->flag = 0;
     http->status = 1;
+    http->version = 0;
+    http->up_max_size = 4096;
+    memset(http->up_buffer_point,0,PATH_MAX);
     http->in_buffer = NULL;
     http->out_buffer = NULL;
     http->out_queue = abcdk_comm_queue_alloc();
@@ -100,13 +113,14 @@ void _abcdk_http_destroy_cb(abcdk_object_t *alloc, void *opaque)
     _abcdk_http_free(&http_p);
 }
 
-abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t up_max_size)
+abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t up_max_size,const char *up_buffer_point)
 {
     abcdk_comm_node_t *node = NULL;
     abcdk_http_t *http = NULL;
     abcdk_object_t *append_p = NULL;
 
     assert(ctx != NULL && up_max_size >= 4096);
+    assert(up_buffer_point == NULL || (up_buffer_point != NULL && strlen(up_buffer_point) <= PATH_MAX - 6));
 
     node = abcdk_comm_alloc(ctx);
     if (!node)
@@ -116,8 +130,9 @@ abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t up_max_size)
     if (!http)
         goto final_error;
 
-    /*绑定上行最大长度。*/
     http->up_max_size = up_max_size;
+    if (up_buffer_point)
+        strncpy(http->up_buffer_point, up_buffer_point, PATH_MAX);
 
     append_p = abcdk_comm_append(node);
     append_p->pptrs[0] = (uint8_t *)http;
@@ -230,6 +245,9 @@ void _abcdk_http_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
     http_p->flag = 2;
     /*复制最大上行长度。*/
     http_p->up_max_size = listen_http_p->up_max_size;
+    /*复制上行实体缓存目录。*/
+    if (listen_http_p->up_buffer_point[0])
+        strncpy(http_p->up_buffer_point, listen_http_p->up_buffer_point, PATH_MAX);
     /*复制请求回调函数指针。*/
     http_p->callback = listen_http_p->callback;
     /*复制监听的用户环境指针。*/
@@ -331,7 +349,7 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
 
     if (!http_p->request)
     {
-        http_p->request = abcdk_http_request_alloc(http_p->up_max_size, NULL);
+        http_p->request = abcdk_http_request_alloc(http_p->up_max_size, http_p->up_buffer_point);
         if (!http_p->in_buffer)
         {
             abcdk_comm_set_timeout(node, 1);
@@ -340,16 +358,6 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
     }
 
     chk = abcdk_http_request_append(http_p->request, msg_ptr, msg_off, &remain);
-    if (chk < 0)
-    {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
-    else if (chk == 0)
-    {
-        abcdk_comm_recv_watch(node);
-        return;
-    }
 
     if (remain > 0)
     {
@@ -361,6 +369,18 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
     {
         abcdk_comm_message_reset(http_p->in_buffer, 0);
     }
+
+    if (chk < 0)
+    {
+        abcdk_comm_set_timeout(node, 1);
+        return;
+    }
+    else if (chk == 0)
+    {
+        abcdk_comm_recv_watch(node);
+        return;
+    }
+
             
     /*托管请求数据。*/
     req_p = http_p->request;

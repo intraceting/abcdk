@@ -19,6 +19,7 @@ int abcdk_test_http(abcdk_tree_t *args);
 int abcdk_test_uri(abcdk_tree_t *args);
 int abcdk_test_log(abcdk_tree_t *args);
 int abcdk_test_easy(abcdk_tree_t *args);
+int abcdk_test_iconv(abcdk_tree_t *args);
 
 __END_DECLS
 
