@@ -70,8 +70,8 @@ const char *abcdk_http_status_desc(uint32_t code)
 {
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_http_status_dict); i++)
     {
-        if (abcdk_http_status_dict->code == code)
-            return abcdk_http_status_dict->desc;
+        if (abcdk_http_status_dict[i].code == code)
+            return abcdk_http_status_dict[i].desc;
     }
 
     return NULL;

@@ -79,7 +79,7 @@ abcdk_object_t *abcdk_mmap3(const char *name, size_t truncate, int rw, int share
 
     assert(name);
 
-    fd = abcdk_open(name, rw, 0, 0);
+    fd = abcdk_open(name, rw, 0, 1);
     if (fd < 0)
         return NULL;
 

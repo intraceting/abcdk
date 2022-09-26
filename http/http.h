@@ -72,15 +72,6 @@ int abcdk_http_response(abcdk_comm_node_t *node, const void *data, size_t len);
 */
 int abcdk_http_response2(abcdk_comm_node_t *node,abcdk_object_t *data);
 
-/** 
- * 应答结束。
- * 
- * @warning 连接复用前需要调用此方法，否则应答数据发送后将会关闭连接。
- * 
- * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
-*/
-int abcdk_http_response_end(abcdk_comm_node_t *node);
-
 /**
  * 启动监听。
  * 

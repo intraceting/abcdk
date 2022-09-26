@@ -121,6 +121,26 @@ abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj)
     return msg;
 }
 
+abcdk_comm_message_t* abcdk_comm_message_alloc3(const char* name,size_t truncate,int rw)
+{
+    abcdk_comm_message_t *msg;
+    abcdk_object_t *obj;
+
+    assert(name != 0);
+
+    obj = abcdk_mmap3(name,truncate,rw,0);
+    if(!obj)
+        return NULL;
+
+    msg = abcdk_comm_message_alloc2(obj);
+    if(msg)
+        return msg;
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
 int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size)
 {
     void *new_buf = NULL;
@@ -195,14 +215,15 @@ size_t abcdk_comm_message_offset(const abcdk_comm_message_t *msg)
     return msg->offset;
 }
 
-void abcdk_comm_message_drain(abcdk_comm_message_t *msg)
+void abcdk_comm_message_drain(abcdk_comm_message_t *msg, size_t size)
 {
     size_t remain;
 
-    assert(msg != NULL);
+    assert(msg != NULL && size > 0);
+    assert(size <= msg->offset);
 
-    remain = msg->size - msg->offset;
-    memmove(msg->buf,ABCDK_PTR2VPTR(msg->buf,msg->offset),remain);
+    remain = msg->offset - size;
+    memmove(msg->buf, ABCDK_PTR2VPTR(msg->buf, size), remain);
     msg->offset = remain;
 }
 

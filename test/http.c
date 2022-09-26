@@ -74,6 +74,35 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
     fprintf(stderr,"Disconnect: %s\n",buf);
 }
 
+int _abcdk_test_http_alpn_select_cb(SSL *ssl,
+                                   const unsigned char **out,
+                                   unsigned char *outlen,
+                                   const unsigned char *in,
+                                   unsigned int inlen,
+                                   void *arg)
+{
+    for (int i = 0; i < inlen; i += in[i] + 1)
+    {
+        fprintf(stderr, "SSL ALPN supported by client: %*s\n", (int)in[i], &in[i + 1]);
+    }
+
+    unsigned int      srvlen;
+    unsigned char     srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
+
+    srvlen = sizeof(srv)-1;
+
+    if (SSL_select_next_proto((unsigned char **) out, outlen, srv, srvlen,in, inlen)
+        != OPENSSL_NPN_NEGOTIATED)
+    {
+        return 2;
+    }
+
+    fprintf(stderr,"SSL ALPN selected: %*s\n", (int) *outlen, *out);
+
+    return 0;
+
+}
+
 void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 {
     abcdk_sockaddr_t addr;
@@ -81,13 +110,32 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
     ctx->comm = abcdk_comm_start(1,-1);
 
-    ctx->listen_node = abcdk_http_alloc(ctx->comm,100*1024*1024,"/tmp/");
+    ctx->listen_node = abcdk_http_alloc(ctx->comm,INT64_MAX,"/tmp/");
     abcdk_comm_set_userdata(ctx->listen_node,ctx);
 
     abcdk_sockaddr_from_string(&addr,ctx->listen,1);
 
+
+    SSL_CTX *server_ssl_ctx = NULL;
+    const char *capath = abcdk_option_get(ctx->args,"--ca-path",0,NULL);
+
+    if (capath)
+    {
+        server_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, NULL, capath, 0);
+
+        abcdk_openssl_ssl_ctx_load_crt(server_ssl_ctx, abcdk_option_get(ctx->args, "--crt-file", 0, NULL),
+                                       abcdk_option_get(ctx->args, "--key-file", 0, NULL),
+                                       abcdk_option_get(ctx->args, "--key-pwd", 0, NULL));
+
+        //  SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+
+        SSL_CTX_set_alpn_select_cb(server_ssl_ctx,_abcdk_test_http_alpn_select_cb,NULL);
+    }
+
     abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb,_abcdk_test_http_event_cb,_abcdk_test_http_close_cb};
-    abcdk_http_listen(ctx->listen_node,NULL,&addr,&cb);
+    abcdk_http_listen(ctx->listen_node,server_ssl_ctx,&addr,&cb);
 
 
     while(getchar() != 'Q')

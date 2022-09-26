@@ -7,6 +7,7 @@
 #ifndef ABCDK_COMM_MESSAGE_H
 #define ABCDK_COMM_MESSAGE_H
 
+#include "util/mmap.h"
 #include "comm/comm.h"
 
 __BEGIN_DECLS
@@ -56,6 +57,17 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size);
 abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj);
 
 /**
+ * 创建消息对象。
+ * 
+ * @param name 文件名(或全路径)的指针。
+ * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
+ * @param [in] rw !0 读写，0 只读。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_comm_message_t* abcdk_comm_message_alloc3(const char* name,size_t truncate,int rw);
+
+/**
  * 调整消息对象大小。
  * 
  * @return 0 成功，-1 失败。
@@ -92,9 +104,9 @@ size_t abcdk_comm_message_size(const abcdk_comm_message_t *msg);
 size_t abcdk_comm_message_offset(const abcdk_comm_message_t *msg);
 
 /**
- * 排出已读写的数据，未读写的数据移动到缓存首地址。
+ * 排出已读写的数据，同时重置偏移量。
 */
-void abcdk_comm_message_drain(abcdk_comm_message_t *msg);
+void abcdk_comm_message_drain(abcdk_comm_message_t *msg,size_t size);
 
 /**
  * 发送消息。
