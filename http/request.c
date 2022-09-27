@@ -246,7 +246,7 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
             abcdk_comm_message_protocol_set(req->hdr_buf, &prot);
         }
 
-        chk = abcdk_comm_message_recv2(data, size, remain, req->hdr_buf);
+        chk = abcdk_comm_message_recv2(req->hdr_buf,data, size, remain);
         if (chk != 1)
             return chk;
 
@@ -282,7 +282,7 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
             abcdk_comm_message_protocol_set(req->body_buf, &prot);
         }
 
-        chk = abcdk_comm_message_recv2(data, size, remain, req->body_buf);
+        chk = abcdk_comm_message_recv2(req->body_buf,data, size, remain);
         return chk;
     }
 }

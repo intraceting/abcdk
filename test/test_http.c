@@ -12,7 +12,9 @@
 #include "util/general.h"
 #include "util/uri.h"
 #include "util/mmap.h"
+#include "util/openssl.h"
 #include "http/http.h"
+
 
 #include "entry.h"
 
@@ -57,22 +59,15 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
     abcdk_object_t *file = abcdk_mmap2("/home/devel/job/tmp/无标题文档",0,0);
     if (file)
     {
-        char buf[1000] = {0};
-
-        sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+         abcdk_http_send3(node,1000,"HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                 abcdk_http_status_desc(200), file->sizes[0]);
 
-        abcdk_http_send2(node, buf, strlen(buf));
         abcdk_http_send(node, file);
     }
     else
     {
-        char buf[1000] = {0};
-
-        sprintf(buf, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+        abcdk_http_send3(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                 abcdk_http_status_desc(404), 0);
-
-        abcdk_http_send2(node, buf, strlen(buf));
     }
 }
 
@@ -98,7 +93,8 @@ int _abcdk_test_http_alpn_select_cb(SSL *ssl,
     }
 
     unsigned int      srvlen;
-    unsigned char     srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
+   // unsigned char     srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
+    unsigned char     srv[] = {"\x02h2"};
 
     srvlen = sizeof(srv)-1;
 
@@ -110,7 +106,7 @@ int _abcdk_test_http_alpn_select_cb(SSL *ssl,
 
     fprintf(stderr,"SSL ALPN selected: %*s\n", (int) *outlen, *out);
 
-    return 0;
+    return SSL_TLSEXT_ERR_OK;
 
 }
 

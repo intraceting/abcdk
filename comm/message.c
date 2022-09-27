@@ -229,7 +229,7 @@ void abcdk_comm_message_drain(abcdk_comm_message_t *msg, size_t size)
     msg->offset = remain;
 }
 
-int abcdk_comm_message_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
+int abcdk_comm_message_send(abcdk_comm_message_t *msg, abcdk_comm_node_t *node)
 {
     uint32_t size;
     ssize_t wsize;
@@ -261,7 +261,7 @@ void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_messa
     msg->protocol = *prot;
 }
 
-int abcdk_comm_message_recv(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
+int abcdk_comm_message_recv(abcdk_comm_message_t *msg, abcdk_comm_node_t *node)
 {
     ssize_t rsize = 0;
     int chk = 0;
@@ -289,7 +289,7 @@ MORE_DATA:
     return 1;
 }
 
-int abcdk_comm_message_recv2(const void *data,size_t size,size_t *remain, abcdk_comm_message_t *msg)
+int abcdk_comm_message_recv2(abcdk_comm_message_t *msg, const void *data,size_t size,size_t *remain)
 {
     ssize_t rsize = 0;
     size_t rall = 0;

@@ -455,7 +455,7 @@ void _abcdk_easy_event_input(abcdk_comm_node_t *node)
     }
     
 
-    chk = abcdk_comm_message_recv(node, easy_p->in_buffer);
+    chk = abcdk_comm_message_recv(easy_p->in_buffer,node);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);
@@ -522,7 +522,7 @@ NEXT_MSG:
             return;
     }
 
-    chk = abcdk_comm_message_send(node, easy_p->out_buffer);
+    chk = abcdk_comm_message_send(easy_p->out_buffer,node);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);

@@ -195,17 +195,41 @@ int abcdk_http_send2(abcdk_comm_node_t *node, const void *data, size_t len)
         return -1;
 
     memcpy(obj->pptrs[0],data,len);
+
+    chk = abcdk_http_send(node, obj);
+    if (chk != 0)
+        abcdk_object_unref(&obj);
+
+    return chk;
+}
+
+int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+{
+    abcdk_object_t *obj = NULL;
+    int chk;
+
+    assert(node != NULL && fmt != NULL && max > 0);
+
+    obj = abcdk_object_alloc2(max);
+    if(!obj)
+        return -1;
+
+    va_list ap;
+    va_start(ap, fmt);
+    chk = vsnprintf(obj->pptrs[0],max, fmt, ap);
+    va_end(ap);
+
+    if(chk <=0)
+        return -1;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = chk;
+
     chk = abcdk_http_send(node,obj);
     if(chk != 0)
-        goto final_error;
-    
-    return 0;
+        abcdk_object_unref(&obj);
 
-final_error:
-
-    abcdk_object_unref(&obj);
-
-    return -1;
+    return chk;
 }
 
 void _abcdk_http_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
@@ -415,7 +439,7 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
         abcdk_comm_message_protocol_set(http_p->in_buffer, &prot);
     }
 
-    chk = abcdk_comm_message_recv(node, http_p->in_buffer);
+    chk = abcdk_comm_message_recv(http_p->in_buffer,node);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);
@@ -452,7 +476,7 @@ NEXT_MSG:
             return;
     }
 
-    chk = abcdk_comm_message_send(node, http_p->out_buffer);
+    chk = abcdk_comm_message_send(http_p->out_buffer,node);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);
