@@ -203,22 +203,18 @@ int abcdk_http_send2(abcdk_comm_node_t *node, const void *data, size_t len)
     return chk;
 }
 
-int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap)
 {
     abcdk_object_t *obj = NULL;
     int chk;
 
-    assert(node != NULL && fmt != NULL && max > 0);
+    assert(node != NULL && fmt != NULL && max > 0 && ap != NULL);
 
     obj = abcdk_object_alloc2(max);
     if(!obj)
         return -1;
 
-    va_list ap;
-    va_start(ap, fmt);
     chk = vsnprintf(obj->pptrs[0],max, fmt, ap);
-    va_end(ap);
-
     if(chk <=0)
         return -1;
 
@@ -228,6 +224,20 @@ int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, ...)
     chk = abcdk_http_send(node,obj);
     if(chk != 0)
         abcdk_object_unref(&obj);
+
+    return chk;
+}
+
+int abcdk_http_send4(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+{
+    int chk;
+
+    assert(node != NULL && fmt != NULL && max > 0);
+
+    va_list ap;
+    va_start(ap, fmt);
+    chk = abcdk_http_send3(node,max, fmt, ap);
+    va_end(ap);
 
     return chk;
 }

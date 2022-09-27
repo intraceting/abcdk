@@ -75,12 +75,19 @@ int abcdk_http_send2(abcdk_comm_node_t *node, const void *data, size_t len);
 /** 
  * 发送数据。
  * 
- * @param data 数据的指针。
- * @param len 数据的长度。
+ * @param max 格式化数据最大长度。
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */
-int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, ...);
+int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap);
+
+/** 
+ * 发送数据。
+ * 
+ * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
+*/
+int abcdk_http_send4(abcdk_comm_node_t *node, int max, const char *fmt, ...);
+
 
 /**
  * 启动监听。
