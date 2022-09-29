@@ -9,8 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk/util/general.h"
-#include "abcdk/util/uri.h"
 #include "entry.h"
 
 int abcdk_test_uri(abcdk_tree_t *args)

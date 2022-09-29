@@ -13,23 +13,17 @@ typedef struct _abcdk_http
     uint32_t magic;
 #define ABCDK_HTTP_MAGIC 20220920
 
-    /**
-     * 标志。
-     *
-     * 1：客户端。
-     * 2：服务端。
-     * 3：服务端(监听)。
-     */
-    int flag;
-
-    /**
+    /** 
      * 状态。
-     *
-     * 0：断开或关闭。
-     * 1：连接中(或监听中)。
+     * 
+     * 0：断开(关闭)。
+     * 1：连接中(监听中)。
      * 2：已连接。
-     */
+    */
     volatile int status;
+#define ABCDK_HTTP_STATUS_BROKEN 0
+#define ABCDK_HTTP_STATUS_SYNC 1
+#define ABCDK_HTTP_STATUS_STABLE 2
 
     /**
      * 0: unknown
@@ -87,10 +81,9 @@ abcdk_http_t *_abcdk_http_alloc()
         return NULL;
 
     http->magic = ABCDK_HTTP_MAGIC;
-    http->flag = 0;
-    http->status = 1;
+     http->status = ABCDK_HTTP_STATUS_BROKEN;
     http->version = 0;
-    http->up_max_size = 4096;
+    http->up_max_size = 40960;
     memset(http->up_buffer_point,0,PATH_MAX);
     http->in_buffer = NULL;
     http->out_buffer = NULL;
@@ -259,8 +252,6 @@ void _abcdk_http_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
     abcdk_object_atfree(append_p, _abcdk_http_destroy_cb, NULL);
     abcdk_object_unref(&append_p);
 
-    /*标记为服务端。*/
-    http_p->flag = 2;
     /*复制最大上行长度。*/
     http_p->up_max_size = listen_http_p->up_max_size;
     /*复制上行实体缓存目录。*/
@@ -308,7 +299,7 @@ void _abcdk_http_event_connect(abcdk_comm_node_t *node)
 #endif
 
     /*标记已经连接。*/
-    abcdk_atomic_store(&http_p->status, 2);
+    abcdk_atomic_store(&http_p->status, ABCDK_HTTP_STATUS_STABLE);
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
 }
@@ -318,6 +309,9 @@ void _abcdk_http_event_close(abcdk_comm_node_t *node)
     abcdk_http_t *http_p = NULL;
 
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+        
+    /*标记坏了。*/
+    abcdk_atomic_store(&http_p->status, ABCDK_HTTP_STATUS_BROKEN);
 
     /*通知应用层，连接已经关闭。*/
     if(http_p->callback.close_cb)
@@ -538,9 +532,8 @@ int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
 
-    /*初始化状态，标记为监听。*/
-    http_p->flag = 3;
-    http_p->status = 2;
+    /*初始化状态。*/
+    http_p->status = ABCDK_HTTP_STATUS_SYNC;
     http_p->callback = *cb;
 
     abcdk_comm_callback_t fcb = {_abcdk_http_prepare_cb,_abcdk_http_event_cb};

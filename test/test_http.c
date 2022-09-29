@@ -9,13 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk/util/general.h"
-#include "abcdk/util/uri.h"
-#include "abcdk/util/mmap.h"
-#include "abcdk/util/openssl.h"
-#include "abcdk/http/http.h"
-
-
 #include "entry.h"
 
 typedef struct _abcdk_test_http
@@ -80,6 +73,8 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
     fprintf(stderr,"Disconnect: %s\n",buf);
 }
 
+#ifdef HEADER_SSL_H
+
 int _abcdk_test_http_alpn_select_cb(SSL *ssl,
                                    const unsigned char **out,
                                    unsigned char *outlen,
@@ -110,6 +105,8 @@ int _abcdk_test_http_alpn_select_cb(SSL *ssl,
 
 }
 
+#endif
+
 void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 {
     abcdk_sockaddr_t addr;
@@ -122,8 +119,10 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
     abcdk_sockaddr_from_string(&addr,ctx->listen,1);
 
-
     SSL_CTX *server_ssl_ctx = NULL;
+
+#ifdef HEADER_SSL_H
+   
     const char *capath = abcdk_option_get(ctx->args,"--ca-path",0,NULL);
 
     if (capath)
@@ -140,6 +139,8 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
         SSL_CTX_set_alpn_select_cb(server_ssl_ctx,_abcdk_test_http_alpn_select_cb,NULL);
     }
+
+#endif
 
     abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb,_abcdk_test_http_event_cb,_abcdk_test_http_close_cb};
     abcdk_http_listen(ctx->listen_node,server_ssl_ctx,&addr,&cb);

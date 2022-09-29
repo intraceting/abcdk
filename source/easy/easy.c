@@ -39,22 +39,16 @@ typedef struct _abcdk_easy
 #define ABCDK_EASY_MAGIC 20220819
 
     /** 
-     * 标志。
-     * 
-     * 1：客户端。
-     * 2：服务端。
-     * 3：服务端(监听)。
-    */
-    int flag;
-
-    /** 
      * 状态。
      * 
-     * 0：断开或关闭。
-     * 1：连接中(或监听中)。
+     * 0：断开(关闭)。
+     * 1：连接中(监听中)。
      * 2：已连接。
     */
     volatile int status;
+#define ABCDK_EASY_STATUS_BROKEN 0
+#define ABCDK_EASY_STATUS_SYNC 1
+#define ABCDK_EASY_STATUS_STABLE 2
 
     /** 通知回调函数。*/
     abcdk_easy_callback_t callback;
@@ -102,8 +96,7 @@ abcdk_easy_t *_abcdk_easy_alloc()
         return NULL;
 
     easy->magic = ABCDK_EASY_MAGIC;
-    easy->flag = 0;
-    easy->status = 1;
+    easy->status = ABCDK_EASY_STATUS_BROKEN;
     easy->protocol = ABCDK_EASY_PROTOCOL;
     easy->in_buffer = NULL;
     easy->out_buffer = NULL;
@@ -332,8 +325,6 @@ void _abcdk_easy_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
     abcdk_object_atfree(append_p,_abcdk_easy_destroy_cb,NULL);
     abcdk_object_unref(&append_p);
 
-    /*标记为服务端。*/
-    easy_p->flag = 2;
     /*复制通讯协议。*/
     easy_p->protocol = listen_easy_p->protocol;
     /*复制请求回调函数指针。*/
@@ -379,7 +370,7 @@ void _abcdk_easy_event_connect(abcdk_comm_node_t *node)
 #endif
 
     /*标记已经连接。*/
-    abcdk_atomic_store(&easy_p->status, 2);
+    abcdk_atomic_store(&easy_p->status, ABCDK_EASY_STATUS_STABLE);
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
     abcdk_comm_send_watch(node);
@@ -549,7 +540,8 @@ void _abcdk_easy_event_close(abcdk_comm_node_t *node)
 
     if (easy_p)
     {
-        abcdk_atomic_store(&easy_p->status, 0);
+        /*标记坏了。*/
+        abcdk_atomic_store(&easy_p->status, ABCDK_EASY_STATUS_BROKEN);
 
         /*通知所有在这个线路上等待应答的请求，连接已经关闭。*/
         abcdk_comm_waiter_cancel(easy_p->rsp_waiter);
@@ -603,9 +595,8 @@ int abcdk_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     easy_p = (abcdk_easy_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(easy_p != NULL && easy_p->magic == ABCDK_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
     
-    /*初始化状态，标记为监听。*/
-    easy_p->flag = 3;
-    easy_p->status = 2;
+    /*初始化状态。*/
+    easy_p->status = ABCDK_EASY_STATUS_SYNC;
     easy_p->callback = *cb;
 
     abcdk_comm_callback_t fcb = {_abcdk_easy_prepare_cb,_abcdk_easy_event_cb};
@@ -631,9 +622,8 @@ int abcdk_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
     easy_p = (abcdk_easy_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(easy_p != NULL && easy_p->magic == ABCDK_EASY_MAGIC,"未通过easy接口建立连接，不能调此接口。");
     
-    /*初始化状态，标记为客户端。*/
-    easy_p->flag = 1;
-    easy_p->status = 1;
+    /*初始化状态。*/
+    easy_p->status = ABCDK_EASY_STATUS_SYNC;
     easy_p->callback = *cb;
 
     abcdk_comm_callback_t fcb = {_abcdk_easy_prepare_cb,_abcdk_easy_event_cb};

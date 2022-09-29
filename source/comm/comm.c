@@ -404,6 +404,9 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
         node_sub->ssl = abcdk_openssl_ssl_alloc(listen->ssl_ctx);
         if(!node_sub->ssl)
             goto final_error;
+
+        /*绑定应用层环境指针。*/
+        SSL_set_app_data(node_sub->ssl,node_sub);
     }
 #endif //HEADER_SSL_H
 
@@ -886,6 +889,9 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
         node_p->ssl = abcdk_openssl_ssl_alloc(ssl_ctx);
         if(!node_p->ssl)
             goto final_error;
+
+        /*绑定应用层环境指针。*/
+        SSL_set_app_data(node_p->ssl,node_p);
     }
 #endif //HEADER_SSL_H
 
