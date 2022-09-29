@@ -9,10 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "util/general.h"
-#include "util/getargs.h"
-#include "util/termios.h"
-#include "util/thread.h"
 #include "entry.h"
 
 typedef struct _abcdkserial

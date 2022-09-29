@@ -9,11 +9,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "util/general.h"
-#include "util/uri.h"
-#include "util/mmap.h"
-#include "util/openssl.h"
-#include "http/http.h"
+#include "abcdk/util/general.h"
+#include "abcdk/util/uri.h"
+#include "abcdk/util/mmap.h"
+#include "abcdk/util/openssl.h"
+#include "abcdk/http/http.h"
 
 
 #include "entry.h"

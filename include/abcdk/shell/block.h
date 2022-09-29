@@ -1,0 +1,27 @@
+/*
+ * This file is part of ABCDK.
+ * 
+ * MIT License
+ * 
+ */
+#ifndef ABCDK_SHELL_BLOCK_H
+#define ABCDK_SHELL_BLOCK_H
+
+#include "abcdk/util/general.h"
+#include "abcdk/util/dirent.h"
+#include "abcdk/shell/mmc.h"
+#include "abcdk/shell/scsi.h"
+
+__BEGIN_DECLS
+
+/**
+ * 根据块名字查找设备(的路径)。
+ * 
+ * @return 0 成功，-1 失败(未找到)。
+*/
+int abcdk_block_find_device(const char *name,char devpath[PATH_MAX]);
+
+
+__END_DECLS
+
+#endif //ABCDK_SHELL_BLOCK_H

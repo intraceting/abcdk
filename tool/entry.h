@@ -7,10 +7,7 @@
 #ifndef ABCDK_TOOL_ENTRY_H
 #define ABCDK_TOOL_ENTRY_H
 
-#include "util/general.h"
-#include "util/option.h"
-#include "util/getargs.h"
-#include "shell/proc.h"
+#include "abcdk.h"
 
 __BEGIN_DECLS
 

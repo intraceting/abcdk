@@ -48,7 +48,7 @@ CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #
-CC_FLAGS += -I$(CURDIR)/
+CC_FLAGS += -I$(CURDIR)/include/
  
 #
 LINK_FLAGS += -L${BUILD_PATH}
@@ -57,13 +57,13 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-BASE_SRC_FILES += $(wildcard util/*.c)
-BASE_SRC_FILES += $(wildcard shell/*.c)
-BASE_SRC_FILES += $(wildcard mp4/*.c)
-BASE_SRC_FILES += $(wildcard comm/*.c)
-BASE_SRC_FILES += $(wildcard easy/*.c)
-BASE_SRC_FILES += $(wildcard http/*.c)
-BASE_SRC_FILES += $(wildcard log/*.c)
+BASE_SRC_FILES += $(wildcard source/util/*.c)
+BASE_SRC_FILES += $(wildcard source/shell/*.c)
+BASE_SRC_FILES += $(wildcard source/mp4/*.c)
+BASE_SRC_FILES += $(wildcard source/comm/*.c)
+BASE_SRC_FILES += $(wildcard source/easy/*.c)
+BASE_SRC_FILES += $(wildcard source/http/*.c)
+BASE_SRC_FILES += $(wildcard source/log/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
@@ -101,43 +101,43 @@ test-src: ${TEST_OBJ_FILES}
 	$(CC) -o $(BUILD_PATH)/test $^ -l:libabcdk.so $(LINK_FLAGS)
 
 #
-$(OBJ_PATH)/util/%.o: util/%.c
-	mkdir -p $(OBJ_PATH)/util/
+$(OBJ_PATH)/source/util/%.o: source/util/%.c
+	mkdir -p $(OBJ_PATH)/source/util/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 #
-$(OBJ_PATH)/shell/%.o: shell/%.c
-	mkdir -p $(OBJ_PATH)/shell/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/mp4/%.o: mp4/%.c
-	mkdir -p $(OBJ_PATH)/mp4/
+$(OBJ_PATH)/source/shell/%.o: source/shell/%.c
+	mkdir -p $(OBJ_PATH)/source/shell/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/comm/%.o: comm/%.c
-	mkdir -p $(OBJ_PATH)/comm/
+$(OBJ_PATH)/source/mp4/%.o: source/mp4/%.c
+	mkdir -p $(OBJ_PATH)/source/mp4/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/easy/%.o: easy/%.c
-	mkdir -p $(OBJ_PATH)/easy/
+$(OBJ_PATH)/source/comm/%.o: source/comm/%.c
+	mkdir -p $(OBJ_PATH)/source/comm/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/source/easy/%.o: source/easy/%.c
+	mkdir -p $(OBJ_PATH)/source/easy/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 	
 #
-$(OBJ_PATH)/http/%.o: http/%.c
-	mkdir -p $(OBJ_PATH)/http/
+$(OBJ_PATH)/source/http/%.o: source/http/%.c
+	mkdir -p $(OBJ_PATH)/source/http/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/log/%.o: log/%.c
-	mkdir -p $(OBJ_PATH)/log/
+$(OBJ_PATH)/source/log/%.o: source/log/%.c
+	mkdir -p $(OBJ_PATH)/source/log/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
@@ -158,13 +158,7 @@ clean: clean-base clean-tool clean-test
 
 #
 clean-base:
-	rm -rf ${OBJ_PATH}/util
-	rm -rf ${OBJ_PATH}/mp4
-	rm -rf ${OBJ_PATH}/comm
-	rm -rf ${OBJ_PATH}/shell
-	rm -rf ${OBJ_PATH}/log
-	rm -rf ${OBJ_PATH}/easy
-	rm -rf ${OBJ_PATH}/http
+	rm -rf ${OBJ_PATH}/source
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 
@@ -179,7 +173,7 @@ clean-test:
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
-INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/abcdk/)
+INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 INSTALL_PATH_PC = $(abspath ${INSTALL_PATH}/pkgconfig/)
@@ -202,25 +196,14 @@ install-runtime:
 install-devel:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
-	mkdir -p ${INSTALL_PATH_INC}/util
-	mkdir -p ${INSTALL_PATH_INC}/shell
-	mkdir -p ${INSTALL_PATH_INC}/mp4
-	mkdir -p ${INSTALL_PATH_INC}/comm
-	mkdir -p ${INSTALL_PATH_INC}/easy
-	mkdir -p ${INSTALL_PATH_INC}/http
-	mkdir -p ${INSTALL_PATH_INC}/log
-	mkdir -p ${INSTALL_PATH_PC}/
+	mkdir -p ${INSTALL_PATH_INC}
+	mkdir -p ${INSTALL_PATH_PC}
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
-	cp  -f $(CURDIR)/util/*.h ${INSTALL_PATH_INC}/util/
-	cp  -f $(CURDIR)/shell/*.h ${INSTALL_PATH_INC}/shell/
-	cp  -f $(CURDIR)/mp4/*.h ${INSTALL_PATH_INC}/mp4/
-	cp  -f $(CURDIR)/comm/*.h ${INSTALL_PATH_INC}/comm/
-	cp  -f $(CURDIR)/log/*.h ${INSTALL_PATH_INC}/log/
-	cp  -f $(CURDIR)/easy/*.h ${INSTALL_PATH_INC}/easy/
-	cp  -f $(CURDIR)/http/*.h ${INSTALL_PATH_INC}/http/
-#  
+	cp  -rf $(CURDIR)/include/abcdk ${INSTALL_PATH_INC}/
+	cp  -f $(CURDIR)/include/abcdk.h ${INSTALL_PATH_INC}/
+#
 	cp  -f ${PKG_PC} ${INSTALL_PATH_PC}/abcdk.pc
 
 #
@@ -238,13 +221,9 @@ uninstall-devel:
 #
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 #
-	rm -rf ${INSTALL_PATH_INC}/util
-	rm -rf ${INSTALL_PATH_INC}/shell
-	rm -rf ${INSTALL_PATH_INC}/mp4
-	rm -rf ${INSTALL_PATH_INC}/comm
-	rm -rf ${INSTALL_PATH_INC}/log
-	rm -rf ${INSTALL_PATH_INC}/easy
-	rm -rf ${INSTALL_PATH_INC}/http
+	rm -rf ${INSTALL_PATH_INC}/abcdk
+	rm -f ${INSTALL_PATH_INC}/abcdk.h
+	
 #
 	rm -f  ${INSTALL_PATH_PC}/abcdk.pc
 

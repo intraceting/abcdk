@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-
 #include "entry.h"
 
 

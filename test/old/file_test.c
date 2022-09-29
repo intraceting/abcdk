@@ -9,12 +9,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#include "util/dirent.h"
-#include "util/mmap.h"
-#include "util/notify.h"
-#include "util/iconv.h"
-#include "util/tar.h"
-#include "util/termios.h"
+#include "abcdk/util/dirent.h"
+#include "abcdk/util/mmap.h"
+#include "abcdk/util/notify.h"
+#include "abcdk/util/iconv.h"
+#include "abcdk/util/tar.h"
+#include "abcdk/util/termios.h"
 
 void test_dir()
 {

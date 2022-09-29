@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "log/log.h"
 #include "entry.h"
 
 int abcdk_test_log(abcdk_tree_t *args)

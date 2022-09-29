@@ -9,9 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "util/general.h"
-#include "util/getargs.h"
-#include "util/odbc.h"
+#include "abcdk/util/odbc.h"
 #include "entry.h"
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)

@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "util/general.h"
+#include "abcdk/util/general.h"
 
 void test_str()
 {

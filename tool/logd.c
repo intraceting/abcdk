@@ -9,15 +9,15 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "util/general.h"
-#include "util/thread.h"
-#include "util/getargs.h"
-#include "util/openssl.h"
-#include "util/signal.h"
-#include "util/map.h"
-#include "shell/file.h"
-#include "shell/proc.h"
-#include "easy/easy.h"
+#include "abcdk/util/general.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/util/getargs.h"
+#include "abcdk/util/openssl.h"
+#include "abcdk/util/signal.h"
+#include "abcdk/util/map.h"
+#include "abcdk/shell/file.h"
+#include "abcdk/shell/proc.h"
+#include "abcdk/easy/easy.h"
 
 #define ABCDKLOGD_SERVICE_MAX 65536
 

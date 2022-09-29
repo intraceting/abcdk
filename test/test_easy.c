@@ -9,8 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "log/log.h"
-#include "easy/easy.h"
 #include "entry.h"
 
 

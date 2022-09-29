@@ -9,14 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "util/general.h"
-#include "util/getargs.h"
-#include "util/scsi.h"
-#include "util/iconv.h"
-#include "util/charset.h"
-#include "util/cap.h"
-#include "util/dirent.h"
-#include "util/reader.h"
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE

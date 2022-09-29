@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
-#include "util/geometry.h"
+#include "abcdk/util/geometry.h"
 
 
 void test1()

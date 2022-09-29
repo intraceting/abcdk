@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "util/iconv.h"
+#include "abcdk/util/iconv.h"
 #include "entry.h"
 
 int abcdk_test_iconv(abcdk_tree_t *args)
