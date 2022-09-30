@@ -481,9 +481,12 @@ void _abcdkarchive_read_recover_attr(abcdkarchive_t *ctx)
         }
 
         /*恢复文件(目录)所有者和所属组。*/
-        chk = fchown(ctx->fd[0], file_stat.st_uid, file_stat.st_gid);
-        if (chk != 0)
-            fprintf(stderr, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
+        if(getuid() == 0)
+        {
+            chk = fchown(ctx->fd[0], file_stat.st_uid, file_stat.st_gid);
+            if (chk != 0)
+                fprintf(stderr, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
+        }
     }
 
     abcdk_closep(&ctx->fd[0]);
