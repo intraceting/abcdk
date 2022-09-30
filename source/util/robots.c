@@ -202,7 +202,7 @@ abcdk_tree_t *abcdk_robots_parse_file(const char *file,const char *agent)
 
     assert(file != NULL);
 
-    fmem = abcdk_mmap2(file, 0, 0);
+    fmem = abcdk_mmap2(file, 0, 0, 0);
     if (!fmem)
         goto final;
 

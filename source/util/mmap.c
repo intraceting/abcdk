@@ -18,16 +18,24 @@ void _abcdk_munmap_cb(abcdk_object_t *alloc, void *opaque)
     assert(chk == 0);
 }
 
-abcdk_object_t* abcdk_mmap(int fd,int rw,int shared)
+abcdk_object_t *abcdk_mmap(int fd, size_t truncate, int rw, int shared)
 {
     void* mmptr = MAP_FAILED;
     int prot = PROT_READ;
     int flags = MAP_PRIVATE;
     struct stat attr;
+    int chk;
 
     abcdk_object_t *alloc = NULL;
 
     assert(fd >= 0);
+
+    if (truncate > 0)
+    {
+        chk = ftruncate(fd, truncate);
+        if (chk != 0)
+            return NULL;
+    }
 
     if (fstat(fd, &attr) == -1)
         return NULL;
@@ -45,37 +53,31 @@ abcdk_object_t* abcdk_mmap(int fd,int rw,int shared)
         return NULL;
 
     alloc = abcdk_object_alloc(NULL,1,0);
-    if (alloc)
-    {
-        /*绑定内存和特定的释放函数，用于支持引用计数器。*/
-        alloc->pptrs[0] = mmptr;
-        alloc->sizes[0] = attr.st_size;
+    if (!alloc)
+        goto final_error;
 
-        /* 注册特定的析构函数。 */
-        abcdk_object_atfree(alloc,_abcdk_munmap_cb,NULL);
-    }
+    /*绑定内存和特定的释放函数，用于支持引用计数器。*/
+    alloc->pptrs[0] = mmptr;
+    alloc->sizes[0] = attr.st_size;
 
-final:
-
-    if(!alloc && mmptr != MAP_FAILED)
-        munmap(mmptr,attr.st_size);
+    /* 注册特定的析构函数。 */
+    abcdk_object_atfree(alloc, _abcdk_munmap_cb, NULL);
 
     return alloc;
+
+final_error:
+
+    if(mmptr != MAP_FAILED)
+        munmap(mmptr,attr.st_size);
+
+    return NULL;
 }
 
-abcdk_object_t *abcdk_mmap2(const char *name, int rw, int shared)
+abcdk_object_t *abcdk_mmap2(const char *name, size_t truncate, int rw, int shared)
 {
-    assert(name);
-    
-    return abcdk_mmap3(name,0,rw,shared);
-}
-
-abcdk_object_t *abcdk_mmap3(const char *name, size_t truncate, int rw, int shared)
-{
+    abcdk_object_t *alloc = NULL;
     int fd = -1;
     int chk;
-
-    abcdk_object_t *alloc = NULL;
 
     assert(name);
 
@@ -83,14 +85,7 @@ abcdk_object_t *abcdk_mmap3(const char *name, size_t truncate, int rw, int share
     if (fd < 0)
         return NULL;
 
-    if (truncate > 0)
-    {
-        chk = ftruncate(fd, truncate);
-        if (chk != 0)
-            goto final_end;
-    }
-
-    alloc = abcdk_mmap(fd, rw, shared);
+    alloc = abcdk_mmap(fd,truncate,rw, shared);
 
 final_end:
 

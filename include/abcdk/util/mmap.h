@@ -13,31 +13,23 @@
 __BEGIN_DECLS
 
 /**
- * 映射已经打开文件句柄到内存页面。
- *
- * @return NULL(0) 失败，!NULL(0) 成功。
- *
-*/
-abcdk_object_t* abcdk_mmap(int fd,int rw,int shared);
-
-/**
  * 映射文件到内存页面。
  * 
- * @param name 文件名(或全路径)的指针。
- * 
- * @return NULL(0) 失败，!NULL(0) 成功。
- *  
-*/
-abcdk_object_t* abcdk_mmap2(const char* name,int rw,int shared);
-
-/**
- * 映射文件到内存页面。
+ * @note 文件句柄可以提前关闭。
  * 
  * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
+ *
+ * @return NULL(0) 失败，!NULL(0) 成功。
+ *
+*/
+abcdk_object_t* abcdk_mmap(int fd,size_t truncate,int rw,int shared);
+
+/**
+ * 映射文件到内存页面。
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_object_t* abcdk_mmap3(const char* name,size_t truncate,int rw,int shared);
+abcdk_object_t* abcdk_mmap2(const char* name,size_t truncate,int rw,int shared);
 
 /**
  * 刷新数据。

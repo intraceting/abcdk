@@ -223,7 +223,7 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 
 int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
-    const char *p = NULL;
+    int fd = -1;
     abcdk_object_t *body_tmp = NULL;
     int chk;
 
@@ -266,9 +266,12 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
         {
             if (req->body_tmpname[0])
             {
-                p = mktemp(req->body_tmpname);
-                if (p)
-                    req->body_buf = abcdk_comm_message_alloc3(p, req->body_len, 1);
+                fd = mkstemp(req->body_tmpname);
+                if (fd >= 0)
+                {
+                    req->body_buf = abcdk_comm_message_alloc3(fd, req->body_len, 1);
+                    abcdk_closep(&fd);
+                }
             }
             else
             {

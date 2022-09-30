@@ -49,7 +49,7 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
         abcdk_save("./test_http_upload.data",abcdk_http_request_body(req),len,0);
     }
 
-    abcdk_object_t *file = abcdk_mmap2("/home/devel/job/tmp/无标题文档",0,0);
+    abcdk_object_t *file = abcdk_mmap2("/home/devel/job/tmp/无标题文档",0,0,0);
     if (file)
     {
          abcdk_http_send4(node,1000,"HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",

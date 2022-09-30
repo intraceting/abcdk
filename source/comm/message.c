@@ -123,14 +123,14 @@ abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj)
     return msg;
 }
 
-abcdk_comm_message_t* abcdk_comm_message_alloc3(const char* name,size_t truncate,int rw)
+abcdk_comm_message_t* abcdk_comm_message_alloc3(int fd,size_t truncate,int rw)
 {
     abcdk_comm_message_t *msg;
     abcdk_object_t *obj;
 
-    assert(name != 0);
+    assert(fd >= 0);
 
-    obj = abcdk_mmap3(name,truncate,rw,0);
+    obj = abcdk_mmap(fd,truncate,rw,0);
     if(!obj)
         return NULL;
 

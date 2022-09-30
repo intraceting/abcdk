@@ -59,13 +59,13 @@ abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj);
 /**
  * 创建消息对象。
  * 
- * @param name 文件名(或全路径)的指针。
+ * @param [in] fd 文件句柄。
  * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
  * @param [in] rw !0 读写，0 只读。
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_comm_message_t* abcdk_comm_message_alloc3(const char* name,size_t truncate,int rw);
+abcdk_comm_message_t* abcdk_comm_message_alloc3(int fd,size_t truncate,int rw);
 
 /**
  * 调整消息对象大小。

@@ -188,7 +188,7 @@ void _abcdkhd_work(abcdk_tree_t *args)
         goto final;
     }
 
-    mfile = abcdk_mmap2(file, 0, 0);
+    mfile = abcdk_mmap2(file,0, 0, 0);
     if (!mfile)
     {
         fprintf(stderr, "'%s' %s.", file, strerror(errno));
