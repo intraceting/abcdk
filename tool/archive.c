@@ -58,12 +58,6 @@ typedef struct _abcdkarchive
     const char *files[256];
     int save_fullpath;
 
-    /*getuid(), not geteuid().*/
-    uid_t uid;
-
-    /* 0 no power, !0 have poweread.*/
-    int chown_power;
-
     struct archive *arch_fd;
     struct archive_entry *arch_entry;
 
@@ -71,6 +65,17 @@ typedef struct _abcdkarchive
     size_t buf_size;
     void *buf;
     abcdk_reader_t *reader;
+
+    /*
+     * 属性列表(后进先出)，用于回迁后的属性恢复。
+     * 
+     * 长度，属性，路径。
+    */
+    abcdk_object_t *attr_list;
+    off_t attr_list_pos;
+
+    /*属性列表临时文件名。*/
+    char attr_list_tmpname[NAME_MAX];
 
 } abcdkarchive_t;
 
@@ -245,6 +250,62 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t保留完整路径。默认：不保留。\n");
 }
 
+void _abcdkarchive_read_push_attr(abcdkarchive_t *ctx,const char *name,struct stat *stat)
+{
+    int all_len;
+    int name_len;
+    char buf[PATH_MAX];
+
+    if (!ctx->attr_list)
+    {
+        strncpy(ctx->attr_list_tmpname, "/tmp/XXXXXX", NAME_MAX);
+
+        int fd = mkstemp(ctx->attr_list_tmpname);
+        if (fd < 0)
+            return;
+
+        ctx->attr_list = abcdk_mmap(fd, (1UL << 31) - 1, 1, 0);
+        if(ctx->attr_list)
+            ctx->attr_list_pos = ctx->attr_list->sizes[0];
+
+        abcdk_closep(&fd);
+    }
+
+    if (!ctx->attr_list)
+        return;
+
+    name_len = strlen(name);
+    all_len = 2 + name_len + sizeof(*stat);
+    if (ctx->attr_list_pos < all_len)
+        return;
+
+    ctx->attr_list_pos -= (all_len);
+
+    ABCDK_PTR2U16(ctx->attr_list->pptrs[0], ctx->attr_list_pos) = name_len;
+    memcpy(ABCDK_PTR2I8PTR(ctx->attr_list->pptrs[0], ctx->attr_list_pos + 2), name, name_len);
+    memcpy(ABCDK_PTR2I8PTR(ctx->attr_list->pptrs[0], ctx->attr_list_pos + 2 + name_len), stat, sizeof(*stat));
+    
+}
+
+int _abcdkarchive_read_pop_attr(abcdkarchive_t *ctx, char *name, struct stat *stat)
+{
+    int name_len = 0;
+
+    if (!ctx->attr_list)
+        return -1;
+
+    if (ctx->attr_list->sizes[0] <= ctx->attr_list_pos)
+        return -1;
+
+    name_len = ABCDK_PTR2U16(ctx->attr_list->pptrs[0], ctx->attr_list_pos);
+    memcpy(name, ABCDK_PTR2I8PTR(ctx->attr_list->pptrs[0], ctx->attr_list_pos + 2), name_len);
+    memcpy(stat, ABCDK_PTR2I8PTR(ctx->attr_list->pptrs[0], ctx->attr_list_pos + 2 + name_len), sizeof(*stat));
+
+    ctx->attr_list_pos += (2 + name_len + sizeof(*stat));
+
+    return 0;
+}
+
 int _abcdkarchive_read_one(abcdkarchive_t *ctx)
 {
     const char *name = NULL;
@@ -349,37 +410,16 @@ int _abcdkarchive_read_one(abcdkarchive_t *ctx)
             ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
         }
 
-        /*恢复文件(目录)属性的时间。*/
-        chk = abcdk_futimens(ctx->fd[0], &file_stat.st_atim, &file_stat.st_mtim);
-        if (chk != 0)
-            fprintf(stderr, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
-#if 0
-        /*恢复文件(目录)属性的权限。*/
-        if(file_stat.st_mode & ACCESSPERMS)
-        {
-            chk = fchmod(ctx->fd[0], file_stat.st_mode & ACCESSPERMS);
-            if (chk != 0)
-                fprintf(stderr, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
-        }
-
-        /*仅所有者或特权者才能改变文件(目录)的所有者和所属组。*/
-        if (ctx->uid == file_stat.st_uid || ctx->chown_power || ctx->uid == 0)
-        {
-            chk = fchown(ctx->fd[0], file_stat.st_uid, file_stat.st_gid);
-            if (chk != 0)
-                fprintf(stderr, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
-        }
-#endif
-        /*忽略恢复文件(目录)属性过程中发生的错误。*/
-        chk = 0;
+        /*属性和路径缓存起来。*/
+        _abcdkarchive_read_push_attr(ctx,name_cp,&file_stat);
     }
 
-    /*No erroread.*/
+    /*No error.*/
     goto final;
 
 final_error:
 
-    /*erroread.*/
+    /*error.*/
     chk = -1;
 
 final:
@@ -387,6 +427,66 @@ final:
     abcdk_closep(&ctx->fd[0]);
 
     return chk;
+}
+
+void _abcdkarchive_read_recover_attr(abcdkarchive_t *ctx)
+{
+    char name_cp[PATH_MAX] = {0};
+    char pathfile[PATH_MAX] = {0};
+    struct stat file_stat = {0};
+    int fd = -1;
+    int chk;
+
+    if(ctx->justlist)
+        return;
+
+    while (1)
+    {
+        memset(name_cp,0,PATH_MAX);
+        chk = _abcdkarchive_read_pop_attr(ctx, name_cp, &file_stat);
+        if (chk != 0)
+            break;
+        
+        memset(pathfile,0,PATH_MAX);
+        abcdk_dirdir(pathfile, ctx->wksp);
+        abcdk_dirdir(pathfile, name_cp);
+
+        abcdk_closep(&ctx->fd[0]);
+
+        if (S_ISDIR(file_stat.st_mode))
+        {
+            ctx->fd[0] = open(pathfile, __O_DIRECTORY | __O_CLOEXEC, 0); //打开目录。
+        }
+        else if (S_ISREG((file_stat.st_mode)))
+        {
+            ctx->fd[0] = abcdk_open(pathfile, 1, 0, 0);
+        }
+        else
+        {
+            /*跳过所有不支持的类型。*/
+            continue;
+        }
+
+        /*恢复文件(目录)属性的时间。*/
+        chk = abcdk_futimens(ctx->fd[0], &file_stat.st_atim, &file_stat.st_mtim);
+        if (chk != 0)
+            fprintf(stderr, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
+
+        /*恢复文件(目录)属性的权限。*/
+        if (file_stat.st_mode & ACCESSPERMS)
+        {
+            chk = fchmod(ctx->fd[0], file_stat.st_mode & ACCESSPERMS);
+            if (chk != 0)
+                fprintf(stderr, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
+        }
+
+        /*恢复文件(目录)所有者和所属组。*/
+        chk = fchown(ctx->fd[0], file_stat.st_uid, file_stat.st_gid);
+        if (chk != 0)
+            fprintf(stderr, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
+    }
+
+    abcdk_closep(&ctx->fd[0]);
 }
 
 void _abcdkarchive_read_real(abcdkarchive_t *ctx)
@@ -404,8 +504,12 @@ void _abcdkarchive_read_real(abcdkarchive_t *ctx)
     {
         chk = archive_read_next_header(ctx->arch_fd, &ctx->arch_entry);
         if (chk == ARCHIVE_EOF)
+        {
+            /*尝试恢复属性。*/
+            _abcdkarchive_read_recover_attr(ctx);
             goto final;
-        if (chk != ARCHIVE_OK)
+        }
+        else if (chk != ARCHIVE_OK)
         {
             fprintf(stderr, "%s。", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
@@ -418,24 +522,12 @@ void _abcdkarchive_read_real(abcdkarchive_t *ctx)
 
 final:
 
-    // if(ctx->arch_entry)
-    // {
-    //     archive_entry_free(ctx->arch_entry);
-    //     ctx->arch_entry = NULL;
-    // }
-
-
     return;
 }
 
 void _abcdkarchive_read(abcdkarchive_t *ctx)
 {
     int chk;
-
-    ctx->uid = getuid();
-#ifdef _SYS_CAPABILITY_H
-    ctx->chown_power = abcdk_cap_get_pid(getpid(), CAP_CHOWN, CAP_EFFECTIVE);
-#endif //_SYS_CAPABILITY_H
 
     ctx->justlist = abcdk_option_exist(ctx->args, "--just-list");
 
@@ -548,6 +640,8 @@ final:
         archive_read_free(ctx->arch_fd);
         ctx->arch_fd = NULL;
     }
+
+    abcdk_object_unref(&ctx->attr_list);
 }
 
 int _abcdkarchive_write_one(abcdkarchive_t *ctx,const char *file,struct stat *attr)
