@@ -43,13 +43,18 @@ typedef struct _abcdk_object
 } abcdk_object_t;
 
 /**
+ * 内存块析构函数。
+ * 
+ * @param [in] opaque 用户环境指针。
+ */
+typedef void (*abcdk_object_destroy_cb)(abcdk_object_t *alloc, void *opaque);
+
+/**
  * 注册内存块析构函数。
  *
  * @param opaque  环境指针。
-*/
-void abcdk_object_atfree(abcdk_object_t *alloc,
-                           void (*destroy_cb)(abcdk_object_t *alloc, void *opaque),
-                           void *opaque);
+ */
+void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destroy_cb cb,void *opaque);
 
 /**
  * 申请多个内存块。

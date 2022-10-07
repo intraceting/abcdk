@@ -22,7 +22,7 @@ typedef struct _abcdk_object_hdr
     volatile int refcount;
 
     /** 析构函数。*/
-    void (*destroy_cb)(abcdk_object_t *ptr, void *opaque);
+    abcdk_object_destroy_cb destroy_cb;
 
     /** 环境指针。*/
     void *opaque;
@@ -44,20 +44,17 @@ typedef struct _abcdk_object_hdr
 #define ABCDK_OBJECT_PTR_IN2OUT(PTR) \
     ABCDK_PTR2PTR(abcdk_object_t, (PTR), sizeof(abcdk_object_hdr) - sizeof(abcdk_object_t))
 
-void abcdk_object_atfree(abcdk_object_t *alloc,
-                            void (*destroy_cb)(abcdk_object_t *alloc, void *opaque),
-                            void *opaque)
+void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destroy_cb cb,void *opaque)
 {
     abcdk_object_hdr *in_p = NULL;
 
-    assert(alloc);
-    assert(destroy_cb);
+    assert(alloc != NULL && cb != NULL);
 
     in_p = ABCDK_OBJECT_PTR_OUT2IN(alloc);
 
     assert(in_p->magic == ABCDK_OBJECT_MAGIC);
 
-    in_p->destroy_cb = destroy_cb;
+    in_p->destroy_cb = cb;
     in_p->opaque = opaque;
 }
 

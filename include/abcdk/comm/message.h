@@ -116,7 +116,7 @@ void abcdk_comm_message_drain(abcdk_comm_message_t *msg,size_t size);
 int abcdk_comm_message_send(abcdk_comm_message_t *msg, abcdk_comm_node_t *node);
 
 /**
- * 设置数据包协议(接收有效)。
+ * 设置数据包协议。
 */
 void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_t *prot);
 

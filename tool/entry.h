@@ -7,6 +7,11 @@
 #ifndef ABCDK_TOOL_ENTRY_H
 #define ABCDK_TOOL_ENTRY_H
 
+#include <stdio.h>
+#include <assert.h>
+#include <unistd.h>
+#include <string.h>
+#include <locale.h>
 #include "abcdk.h"
 
 __BEGIN_DECLS

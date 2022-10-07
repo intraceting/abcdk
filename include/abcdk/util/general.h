@@ -542,15 +542,16 @@ int abcdk_fflag_del(int fd,int flag);
 /**
  * 创建子进程，用于执行shell。
  *
- * @param cmd 命令行字符串指针。
- * @param envp 环境变量的组数指针，不影响父进程。{"KEY=VALUE","...",NULL}。
- * @param stdin_fd 输入句柄指针，NULL(0) 忽略。
- * @param stdout_fd 输出句柄指针，NULL(0) 忽略。
- * @param stderr_fd 出错句柄指针，NULL(0) 忽略。
+ * @param cmd 命令行。
+ * @param cwd 工作路径，NULL(0) 忽略。注：不影响父进程。
+ * @param envp 环境变量的组数，NULL(0) 忽略。{"KEY=VALUE","...",NULL}。注：不影响父进程。
+ * @param stdin_fd 输入句柄，NULL(0) 忽略。
+ * @param stdout_fd 输出句柄，NULL(0) 忽略。
+ * @param stderr_fd 出错句柄，NULL(0) 忽略。
  * 
  * @return 子进程ID 成功，-1 失败。
 */
-pid_t abcdk_popen(const char* cmd,char * const envp[],int* stdin_fd, int* stdout_fd, int* stderr_fd);
+pid_t abcdk_popen(const char* cmd,const char *cwd, char * const envp[],int* stdin_fd, int* stdout_fd, int* stderr_fd);
 
 
 /*------------------------------------------------------------------------------------------------*/

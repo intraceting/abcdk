@@ -4,20 +4,7 @@
  * MIT License
  * 
 */
-#include <stdio.h>
-#include <assert.h>
-#include <unistd.h>
-#include <string.h>
-#include <locale.h>
-#include "abcdk/util/general.h"
-#include "abcdk/util/thread.h"
-#include "abcdk/util/getargs.h"
-#include "abcdk/util/openssl.h"
-#include "abcdk/util/signal.h"
-#include "abcdk/util/map.h"
-#include "abcdk/shell/file.h"
-#include "abcdk/shell/proc.h"
-#include "abcdk/easy/easy.h"
+#include "entry.h"
 
 #define ABCDKLOGD_SERVICE_MAX 65536
 

@@ -211,7 +211,7 @@ char *abcdk_strdup(const char *str)
 {
     assert(str != NULL);
 
-    return (char*)abcdk_heap_clone(str,strlen(str)+1);
+    return (char*)abcdk_heap_clone(str,strlen(str));
 }
 
 const char *abcdk_strstr(const char *str, const char *sub, int caseAb)
@@ -1075,14 +1075,18 @@ int abcdk_fflag_del(int fd, int flag)
 
 /*------------------------------------------------------------------------------------------------*/
 
-pid_t abcdk_popen(const char *cmd,char * const envp[], int *stdin_fd, int *stdout_fd, int *stderr_fd)
+pid_t abcdk_popen(const char *cmd, const char *cwd, char * const envp[], int *stdin_fd, int *stdout_fd, int *stderr_fd)
 {
     pid_t child = -1;
     int out2in_fd[2] = {-1, -1};
     int in2out_fd[2] = {-1, -1};
     int in2err_fd[2] = {-1, -1};
 
-    assert(cmd);
+    assert(cmd != NULL);
+
+    /*如果指定工作路径，则工作路径必须可以访问。*/
+    if(cwd != NULL && access(cwd,R_OK) !=0)
+        goto final;
 
     if (pipe(out2in_fd) != 0)
         goto final;
@@ -1122,6 +1126,10 @@ pid_t abcdk_popen(const char *cmd,char * const envp[], int *stdin_fd, int *stdou
 
         abcdk_closep(&in2err_fd[0]);
         abcdk_closep(&in2err_fd[1]);
+
+        /*可能需要切换工作路径。*/
+        if(cwd)
+            chdir(cwd);
 
         /* 这个基本都支持。*/
         execle("/bin/sh", "sh", "-c", cmd,NULL,envp);

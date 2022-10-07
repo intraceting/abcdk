@@ -4,11 +4,6 @@
  * MIT License
  * 
  */
-#include <stdio.h>
-#include <assert.h>
-#include <unistd.h>
-#include <string.h>
-#include <locale.h>
 #include "abcdk/util/odbc.h"
 #include "entry.h"
 

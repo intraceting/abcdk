@@ -4,11 +4,6 @@
  * MIT License
  *
  */
-#include <stdio.h>
-#include <assert.h>
-#include <unistd.h>
-#include <string.h>
-#include <locale.h>
 #include "entry.h"
 
 #ifdef HAVE_ARCHIVE
@@ -69,7 +64,7 @@ typedef struct _abcdkarchive
     /*
      * 属性列表(后进先出)，用于回迁后的属性恢复。
      * 
-     * 长度，属性，路径。
+     * 路径长度，路径，属性。
     */
     abcdk_object_t *attr_list;
     off_t attr_list_pos;
@@ -179,7 +174,7 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--cmd \n");
     fprintf(stderr, "\t\t操作码。默认：%d\n", ABCDKARCHIVE_READ);
 
-    fprintf(stderr, "\t\t%d：回迁。\n", ABCDKARCHIVE_READ);
+    fprintf(stderr, "\n\t\t%d：回迁。\n", ABCDKARCHIVE_READ);
     fprintf(stderr, "\t\t%d：归档。\n", ABCDKARCHIVE_WRITE);
 
     fprintf(stderr, "\n\t--filter < NUMBER >\n");

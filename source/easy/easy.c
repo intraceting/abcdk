@@ -16,7 +16,7 @@
 */
 
 /** 数据包最大长度。*/
-#define ABCDK_EASY_MAX_SIZE ((256 *1024 * 1024) - 1)
+#define ABCDK_EASY_MAX_SIZE ((1 << 23) - 1)
 
 /** 数据包头部长度(4+4+8+1+3)。*/
 #define ABCDK_EASY_HDR_SIZE (20)

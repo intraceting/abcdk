@@ -4,11 +4,6 @@
  * MIT License
  * 
  */
-#include <stdio.h>
-#include <assert.h>
-#include <unistd.h>
-#include <string.h>
-#include <locale.h>
 #include "entry.h"
 
 void _abcdkrobots_print_usage(abcdk_tree_t *args, int only_version)
