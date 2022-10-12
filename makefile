@@ -21,7 +21,11 @@ endif
 
 #
 ifeq (${BUILD_OPTIMIZE},yes)
+ifeq (${BUILD_TYPE},debug)
+CC_FLAGS += -Og
+else 
 CC_FLAGS += -O2
+endif
 endif
 
 #
