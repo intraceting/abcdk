@@ -201,7 +201,7 @@ int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, va_list 
     abcdk_object_t *obj = NULL;
     int chk;
 
-    assert(node != NULL && fmt != NULL && max > 0 && ap != NULL);
+    assert(node != NULL && fmt != NULL && max > 0);
 
     obj = abcdk_object_alloc2(max);
     if(!obj)
