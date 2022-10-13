@@ -13,29 +13,34 @@
 __BEGIN_DECLS
 
 /**
- * 监视器事件
- * 
+ * 简单的事件变更监视器。
 */
 typedef struct _abcdk_notify_event
 {
-    /**
+    /** 
      * 缓存。
      * 
-     * @note 调用者申请和释放。
+     * @warning 尽量不要直接修改。
     */
     abcdk_buffer_t *buf;
 
-    /**
-     * 事件。
-    */
+    /** 事件。*/
     struct inotify_event event;
 
-    /** 
-     * 名字。
-    */
-    char name[PATH_MAX];
+    /** 名字。*/
+    const char *name;
 
 } abcdk_notify_event_t;
+
+/**
+ * 释放事件对象。
+*/
+void abcdk_notify_free(abcdk_notify_event_t **event);
+
+/**
+ * 申请事件对象。
+*/
+abcdk_notify_event_t *abcdk_notify_alloc(size_t buf_size);
 
 /**
  * 初始化监视器。
@@ -49,23 +54,27 @@ int abcdk_notify_init(int nonblock);
 /**
  * 添加一个监视对象(文件或目录)。
  * 
- * @return >= 0 成功(WD)，< 0 错误。
+ * @return >= 0 成功(监视ID)，< 0 错误。
 */
 int abcdk_notify_add(int fd,const char* name,uint32_t masks);
 
 /**
  * 删除一个监视对象。
  * 
+ * @param [in] wd 监视ID。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_notify_remove(int fd,int wd);
 
 /**
- * 监视。
+ * 监视变更事件。
  * 
- * 阻塞模式的句柄，响应可能会有延迟。
+ * @warning 阻塞模式的句柄，响应可能会有延迟。
  * 
- * @param timeout 超时(毫秒)。>= 0 有事件或时间过期，< 0 直到事件或出错。
+ * @param [in] fd 句柄。
+ * @param [out] event 事件。
+ * @param [in] timeout 超时(毫秒)。
  * 
  * @return 0 成功，!0 超时或失败。
 */

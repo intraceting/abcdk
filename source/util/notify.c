@@ -6,6 +6,51 @@
 */
 #include "abcdk/util/notify.h"
 
+void abcdk_notify_free(abcdk_notify_event_t **event)
+{
+    abcdk_notify_event_t *event_p = NULL;
+
+    if(!event || !*event)
+        return;
+
+    event_p = *event;
+    *event = NULL;
+
+    abcdk_buffer_free(&event_p->buf);
+    abcdk_heap_free2((void**)&event_p->name);
+    abcdk_heap_free(event_p);
+}
+
+abcdk_notify_event_t *abcdk_notify_alloc(size_t buf_size)
+{
+    abcdk_notify_event_t *event = NULL;
+
+    if (buf_size < 4096)
+        buf_size = 4096;
+
+    event = abcdk_heap_alloc(sizeof(abcdk_notify_event_t));
+    if(!event)
+        return NULL;
+
+    event->buf = abcdk_buffer_alloc2(buf_size);
+    if(!event->buf)
+        goto final_error;
+
+    event->name = abcdk_heap_alloc(PATH_MAX);
+    if(!event->name)
+        goto final_error;
+
+    memset(&event->event,0,sizeof(event->event));
+
+    return event;
+
+final_error:
+
+    abcdk_notify_free(&event);
+
+    return NULL;
+}
+
 int abcdk_notify_init(int nonblock)
 {
     int flags = IN_CLOEXEC;
@@ -35,10 +80,11 @@ int abcdk_notify_watch(int fd,abcdk_notify_event_t *event,time_t timeout)
     ssize_t rlen = 0;
 
     assert(fd >= 0 && event != NULL);
-    assert(event->buf != NULL && event->buf->data != NULL && event->buf->size > 0);
 
-    /* 清除已经读取的。*/
+    /*清除已经读取的。*/
     abcdk_buffer_drain(event->buf);
+
+    memset((char*)event->name,0,PATH_MAX);
 
     /*缓存无数据，先等待。*/
     if (event->buf->wsize <= 0)
@@ -61,8 +107,9 @@ int abcdk_notify_watch(int fd,abcdk_notify_event_t *event,time_t timeout)
     if(event->event.len<=0)
         return 0;
 
+
     /* 事件后跟着固定长度的名字，读取的名字长度符合事件描述的大小，不能多，也不能少。*/
-    rlen = abcdk_buffer_read(event->buf,event->name,event->event.len);
+    rlen = abcdk_buffer_read(event->buf,(char*)event->name,ABCDK_MIN(event->event.len,PATH_MAX));
     if (rlen <= 0 || rlen != event->event.len)
         return -1;
 
