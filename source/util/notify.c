@@ -40,8 +40,6 @@ abcdk_notify_event_t *abcdk_notify_alloc(size_t buf_size)
     if(!event->name)
         goto final_error;
 
-    memset(&event->event,0,sizeof(event->event));
-
     return event;
 
 final_error:
@@ -78,6 +76,7 @@ int abcdk_notify_remove(int fd,int wd)
 int abcdk_notify_watch(int fd,abcdk_notify_event_t *event,time_t timeout)
 {
     ssize_t rlen = 0;
+    struct inotify_event et = {0};
 
     assert(fd >= 0 && event != NULL);
 
@@ -99,19 +98,22 @@ int abcdk_notify_watch(int fd,abcdk_notify_event_t *event,time_t timeout)
     }
 
     /*读事件，必须符合事件结构大小，不能多，也不能少。*/
-    rlen = abcdk_buffer_read(event->buf, &event->event, sizeof(struct inotify_event));
-    if (rlen <= 0 || rlen != sizeof(struct inotify_event))
+    rlen = abcdk_buffer_read(event->buf, &et, sizeof(et));
+    if (rlen <= 0 || rlen != sizeof(et))
         return -1;
 
     /* 事件后没有附带名字，直接返回。*/
-    if(event->event.len<=0)
+    if(et.len<=0)
         return 0;
 
-
     /* 事件后跟着固定长度的名字，读取的名字长度符合事件描述的大小，不能多，也不能少。*/
-    rlen = abcdk_buffer_read(event->buf,(char*)event->name,ABCDK_MIN(event->event.len,PATH_MAX));
-    if (rlen <= 0 || rlen != event->event.len)
+    rlen = abcdk_buffer_read(event->buf,(char*)event->name,ABCDK_MIN(et.len,PATH_MAX));
+    if (rlen <= 0 || rlen != et.len)
         return -1;
+
+    event->wd = et.wd;
+    event->mask = et.mask;
+    event->cookie = et.cookie;
 
     return 0;
 }

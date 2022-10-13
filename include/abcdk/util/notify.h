@@ -24,8 +24,14 @@ typedef struct _abcdk_notify_event
     */
     abcdk_buffer_t *buf;
 
-    /** 事件。*/
-    struct inotify_event event;
+    /** 监视ID。*/
+    int wd;
+
+    /** 事件掩码。*/
+    uint32_t mask;	
+
+    /** 如果两个监视ID之间存在关联，则这个值是相同的。*/
+    uint32_t cookie;
 
     /** 名字。*/
     const char *name;
