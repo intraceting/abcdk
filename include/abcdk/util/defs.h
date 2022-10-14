@@ -42,6 +42,7 @@
 #include <dlfcn.h>
 #include <sched.h>
 #include <syslog.h>
+#include <pwd.h>
 #include <sys/socket.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
@@ -65,50 +66,55 @@
 #include <net/if.h>
 #include <net/ethernet.h>
 
+
 /** 转字符串。*/
 #define ABCDK_STR_NOT_USE(s) #s
 #define ABCDK_STR(s) ABCDK_STR_NOT_USE(s)
 
 /**
- * 转换指针类型。
+ * 指针转换类型。
  * 
- * @note 支持针地址偏移(Bytes)。
+ * @param T 类型。
+ * @param P 指针。
+ * @param F 偏移量(字节)。
  * 
 */
-#define ABCDK_PTR2PTR(T, P, OF) ((T *)(((char *)(P)) + (OF)))
+#define ABCDK_PTR2PTR(T, P, F) ((T *)(((char *)(P)) + (F)))
 
 /**/
-#define ABCDK_PTR2VPTR(P, OF) ABCDK_PTR2PTR(void, P, OF)
-#define ABCDK_PTR2I8PTR(P, OF) ABCDK_PTR2PTR(int8_t, P, OF)
-#define ABCDK_PTR2U8PTR(P, OF) ABCDK_PTR2PTR(uint8_t, P, OF)
-#define ABCDK_PTR2I16PTR(P, OF) ABCDK_PTR2PTR(int16_t, P, OF)
-#define ABCDK_PTR2U16PTR(P, OF) ABCDK_PTR2PTR(uint16_t, P, OF)
-#define ABCDK_PTR2I32PTR(P, OF) ABCDK_PTR2PTR(int32_t, P, OF)
-#define ABCDK_PTR2U32PTR(P, OF) ABCDK_PTR2PTR(uint32_t, P, OF)
-#define ABCDK_PTR2I64PTR(P, OF) ABCDK_PTR2PTR(int64_t, P, OF)
-#define ABCDK_PTR2U64PTR(P, OF) ABCDK_PTR2PTR(uint64_t, P, OF)
-#define ABCDK_PTR2SIZEPTR(P, OF) ABCDK_PTR2PTR(ssize_t, P, OF)
-#define ABCDK_PTR2USIZEPTR(P, OF) ABCDK_PTR2PTR(size_t, P, OF)
+#define ABCDK_PTR2VPTR(P, F) ABCDK_PTR2PTR(void, P, F)
+#define ABCDK_PTR2I8PTR(P, F) ABCDK_PTR2PTR(int8_t, P, F)
+#define ABCDK_PTR2U8PTR(P, F) ABCDK_PTR2PTR(uint8_t, P, F)
+#define ABCDK_PTR2I16PTR(P, F) ABCDK_PTR2PTR(int16_t, P, F)
+#define ABCDK_PTR2U16PTR(P, F) ABCDK_PTR2PTR(uint16_t, P, F)
+#define ABCDK_PTR2I32PTR(P, F) ABCDK_PTR2PTR(int32_t, P, F)
+#define ABCDK_PTR2U32PTR(P, F) ABCDK_PTR2PTR(uint32_t, P, F)
+#define ABCDK_PTR2I64PTR(P, F) ABCDK_PTR2PTR(int64_t, P, F)
+#define ABCDK_PTR2U64PTR(P, F) ABCDK_PTR2PTR(uint64_t, P, F)
+#define ABCDK_PTR2SIZEPTR(P, F) ABCDK_PTR2PTR(ssize_t, P, F)
+#define ABCDK_PTR2USIZEPTR(P, F) ABCDK_PTR2PTR(size_t, P, F)
 
 /**
- * 转换指针对象。
+ * 指针转换对象。
  * 
- * @note 支持针地址偏移(Bytes)。
+ * @param T 类型。
+ * @param P 指针。
+ * @param F 偏移量(字节)。
  * 
 */
-#define ABCDK_PTR2OBJ(T, P, OF) (*ABCDK_PTR2PTR(T, P, OF))
+#define ABCDK_PTR2OBJ(T, P, F) (*ABCDK_PTR2PTR(T, P, F))
 
 /**/
-#define ABCDK_PTR2I8(P, OF) ABCDK_PTR2OBJ(int8_t, P, OF)
-#define ABCDK_PTR2U8(P, OF) ABCDK_PTR2OBJ(uint8_t, P, OF)
-#define ABCDK_PTR2I16(P, OF) ABCDK_PTR2OBJ(int16_t, P, OF)
-#define ABCDK_PTR2U16(P, OF) ABCDK_PTR2OBJ(uint16_t, P, OF)
-#define ABCDK_PTR2I32(P, OF) ABCDK_PTR2OBJ(int32_t, P, OF)
-#define ABCDK_PTR2U32(P, OF) ABCDK_PTR2OBJ(uint32_t, P, OF)
-#define ABCDK_PTR2I64(P, OF) ABCDK_PTR2OBJ(int64_t, P, OF)
-#define ABCDK_PTR2U64(P, OF) ABCDK_PTR2OBJ(uint64_t, P, OF)
-#define ABCDK_PTR2SIZE(P, OF) ABCDK_PTR2OBJ(ssize_t, P, OF)
-#define ABCDK_PTR2USIZE(P, OF) ABCDK_PTR2OBJ(size_t, P, OF)
+#define ABCDK_PTR2I8(P, F) ABCDK_PTR2OBJ(int8_t, P, F)
+#define ABCDK_PTR2U8(P, F) ABCDK_PTR2OBJ(uint8_t, P, F)
+#define ABCDK_PTR2I16(P, F) ABCDK_PTR2OBJ(int16_t, P, F)
+#define ABCDK_PTR2U16(P, F) ABCDK_PTR2OBJ(uint16_t, P, F)
+#define ABCDK_PTR2I32(P, F) ABCDK_PTR2OBJ(int32_t, P, F)
+#define ABCDK_PTR2U32(P, F) ABCDK_PTR2OBJ(uint32_t, P, F)
+#define ABCDK_PTR2I64(P, F) ABCDK_PTR2OBJ(int64_t, P, F)
+#define ABCDK_PTR2U64(P, F) ABCDK_PTR2OBJ(uint64_t, P, F)
+#define ABCDK_PTR2SIZE(P, F) ABCDK_PTR2OBJ(ssize_t, P, F)
+#define ABCDK_PTR2USIZE(P, F) ABCDK_PTR2OBJ(size_t, P, F)
 
 /** 数值比较，返回最大值。*/
 #define ABCDK_MAX(A, B) (((A) > (B)) ? (A) : (B))
