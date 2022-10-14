@@ -44,6 +44,8 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
         fprintf(stderr,"%s\n",p);
     }
 
+#if 0
+
     if(len>0)
     {
         abcdk_save("./test_http_upload.data",abcdk_http_request_body(req),len,0);
@@ -62,6 +64,11 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node,  abcdk_http_request_t *r
         abcdk_http_send4(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                 abcdk_http_status_desc(404), 0);
     }
+#else 
+
+    abcdk_http_send4(node,1000, "RTSP/1.0 200 OK\r\nCSeq: 1\r\nPublic: OPTIONS, DESCRIBE, PLAY, PAUSE, SETUP, TEARDOWN, SET_PARAMETER, GET_PARAMETER\r\nDate:  Fri, Apr 10 2020 19:07:19 GMT\r\n\r\n");
+
+#endif
 }
 
 void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
