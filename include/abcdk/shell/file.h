@@ -8,11 +8,12 @@
 #define ABCDK_SHELL_FILE_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/popen.h"
 
 __BEGIN_DECLS
 
 /**
- * 谁在占用文件。
+ * 查询哪个进程占用文件。
  * 
  * @warning 因为要遍历系统运行环境，所以效率非常慢。
  * 

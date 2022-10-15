@@ -59,6 +59,7 @@
 #include "abcdk/util/blockio.h"
 //#include "abcdk/util/freeimage.h"
 #include "abcdk/util/exec.h"
+#include "abcdk/util/popen.h"
 #include "abcdk/easy/easy.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"

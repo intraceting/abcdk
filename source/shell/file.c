@@ -16,13 +16,15 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     char *line_p = NULL;
     size_t line_l = 0;
     int line_c = 0;
+    int status = 0;
+    int exitcode = 0;
 
     assert(file != NULL && pids != NULL && max > 0);
 
     snprintf(cmd,PATH_MAX,"lsof -F pf \"%s\"",file);
 
     /*如果无法执行查询，则返回无进程占用文件。*/
-    t = abcdk_popen(cmd, NULL, NULL, NULL, &ofd, NULL);
+    t = abcdk_popen(cmd,NULL,0,0, NULL, NULL, NULL, &ofd, NULL);
     if (t < 0)
         return -1;
 
@@ -52,7 +54,8 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     }
 
     /*获取子进程退出状态，防止出现僵尸子进程。*/
-    waitpid(t,NULL,0);
+    waitpid(t,&status,0);
+    exitcode = WIFEXITED(status);
 
     if(rfd)
         fclose(rfd);
