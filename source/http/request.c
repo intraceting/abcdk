@@ -269,7 +269,7 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
                 fd = mkstemp(req->body_tmpname);
                 if (fd >= 0)
                 {
-                    req->body_buf = abcdk_comm_message_alloc3(fd, req->body_len, 1);
+                    req->body_buf = abcdk_comm_message_mmap(fd, req->body_len, 1);
                     abcdk_closep(&fd);
                 }
             }

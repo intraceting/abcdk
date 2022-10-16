@@ -103,7 +103,7 @@ final_error:
     return NULL;
 }
 
-abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj)
+abcdk_comm_message_t *abcdk_comm_message_attach(abcdk_object_t *obj)
 {
     abcdk_comm_message_t *msg = NULL;
 
@@ -123,25 +123,6 @@ abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj)
     return msg;
 }
 
-abcdk_comm_message_t* abcdk_comm_message_alloc3(int fd,size_t truncate,int rw)
-{
-    abcdk_comm_message_t *msg;
-    abcdk_object_t *obj;
-
-    assert(fd >= 0);
-
-    obj = abcdk_mmap(fd,truncate,rw,0);
-    if(!obj)
-        return NULL;
-
-    msg = abcdk_comm_message_alloc2(obj);
-    if(msg)
-        return msg;
-
-    abcdk_object_unref(&obj);
-
-    return NULL;
-}
 
 int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size)
 {
@@ -335,4 +316,108 @@ FINAL_END:
     *remain = size - rall;
 
     return chk;
+}
+
+abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw)
+{
+    abcdk_comm_message_t *msg;
+    abcdk_object_t *obj;
+
+    assert(fd >= 0);
+
+    obj = abcdk_mmap(fd,truncate,rw,0);
+    if(!obj)
+        return NULL;
+
+    msg = abcdk_comm_message_attach(obj);
+    if(msg)
+        return msg;
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
+abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,int rw)
+{
+    abcdk_comm_message_t *msg;
+    abcdk_object_t *obj;
+
+    assert(file != NULL);
+
+    obj = abcdk_mmap2(file,truncate,rw,0);
+    if(!obj)
+        return NULL;
+
+    msg = abcdk_comm_message_attach(obj);
+    if(msg)
+        return msg;
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
+abcdk_comm_message_t *abcdk_comm_message_copy(const void *data, size_t size)
+{
+    abcdk_comm_message_t *msg = NULL;
+    abcdk_object_t *obj = NULL;
+
+    assert(data != NULL && size > 0);
+
+    obj = abcdk_object_alloc2(size);
+    if(!obj)
+        return NULL;
+
+    memcpy(obj->pptrs[0],data,size);
+
+    msg = abcdk_comm_message_attach(obj);
+    if (msg)
+        return msg;
+    
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
+abcdk_comm_message_t *abcdk_comm_message_vformat(int max, const char *fmt, va_list ap)
+{
+    abcdk_comm_message_t *msg = NULL;
+    abcdk_object_t *obj = NULL;
+    int chk;
+
+    assert(max > 0 && fmt != NULL);
+
+    obj = abcdk_object_alloc2(max);
+    if(!obj)
+        return NULL;
+
+    chk = vsnprintf(obj->pptrs[0],max, fmt, ap);
+    if(chk <=0)
+        return NULL;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = chk;
+
+    msg = abcdk_comm_message_attach(obj);
+    if (msg)
+        return msg;
+    
+    abcdk_object_unref(&obj);
+    
+    return NULL;
+}
+
+abcdk_comm_message_t *abcdk_comm_message_format(int max, const char *fmt, ...)
+{
+    abcdk_comm_message_t *msg = NULL;
+
+    assert(max > 0 && fmt != NULL);
+
+    va_list ap;
+    va_start(ap, fmt);
+    msg = abcdk_comm_message_vformat(max, fmt, ap);
+    va_end(ap);
+
+    return msg;
 }

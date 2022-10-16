@@ -141,27 +141,22 @@ final_error:
     return NULL;
 }
 
-int abcdk_http_send(abcdk_comm_node_t *node, abcdk_object_t *data)
+int abcdk_http_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
 {
     abcdk_http_t *http_p = NULL;
-    abcdk_comm_message_t *msg = NULL;
     int chk;
 
-    assert(node != NULL && data != NULL);
+    assert(node != NULL && msg != NULL);
 
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
 
     if (!abcdk_atomic_load(&http_p->status))
-        return -2;
-
-    msg = abcdk_comm_message_alloc2(data);
-    if (!msg)
-        goto final_error;
+        ABCDK_ERRNO_AND_GOTO1(chk = -2, final_error);
 
     chk = abcdk_comm_queue_push(http_p->out_queue, msg);
     if (chk != 0)
-        goto final_error;
+        ABCDK_ERRNO_AND_GOTO1(chk = -1, final_error);
 
     if (abcdk_atomic_load(&http_p->status) == 2)
         abcdk_comm_send_watch(node);
@@ -171,66 +166,6 @@ int abcdk_http_send(abcdk_comm_node_t *node, abcdk_object_t *data)
 final_error:
 
     abcdk_comm_message_unref(&msg);
-
-    return -1;
-}
-
-int abcdk_http_send2(abcdk_comm_node_t *node, const void *data, size_t len)
-{
-    abcdk_http_t *http_p = NULL;
-    abcdk_object_t *obj = NULL;
-    int chk;
-
-    assert(node != NULL && data != NULL && len > 0);
-
-    obj = abcdk_object_alloc2(len);
-    if(!obj)
-        return -1;
-
-    memcpy(obj->pptrs[0],data,len);
-
-    chk = abcdk_http_send(node, obj);
-    if (chk != 0)
-        abcdk_object_unref(&obj);
-
-    return chk;
-}
-
-int abcdk_http_send3(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap)
-{
-    abcdk_object_t *obj = NULL;
-    int chk;
-
-    assert(node != NULL && fmt != NULL && max > 0);
-
-    obj = abcdk_object_alloc2(max);
-    if(!obj)
-        return -1;
-
-    chk = vsnprintf(obj->pptrs[0],max, fmt, ap);
-    if(chk <=0)
-        return -1;
-
-    /*修正格式化后的数据长度。*/
-    obj->sizes[0] = chk;
-
-    chk = abcdk_http_send(node,obj);
-    if(chk != 0)
-        abcdk_object_unref(&obj);
-
-    return chk;
-}
-
-int abcdk_http_send4(abcdk_comm_node_t *node, int max, const char *fmt, ...)
-{
-    int chk;
-
-    assert(node != NULL && fmt != NULL && max > 0);
-
-    va_list ap;
-    va_start(ap, fmt);
-    chk = abcdk_http_send3(node,max, fmt, ap);
-    va_end(ap);
 
     return chk;
 }
@@ -411,11 +346,11 @@ int _abcdk_http_event_input_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
             http_p->version = 1;
     }
 
-    /*HTTP/1.0 HTTP/1.1 是变长数据，接收多少处理多少。*/
+    /*HTTP/1.0 HTTP/1.1 头部是变长数据，接收多少处理多少。*/
     if (http_p->version == 1)
         return 1;
 
-    /*HTTP/2 是定长数据，至少要接收足够用数据才能处理。*/
+    /*HTTP/2 头部是定长数据，至少要接收足够用数据才能处理。*/
     if (msg_off < 9)
         return 0;
 

@@ -52,20 +52,9 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size);
  * 
  * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
  * 
- * @param [in] obj 内存对象指针，索引为0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * @param [in] obj 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
 */
-abcdk_comm_message_t *abcdk_comm_message_alloc2(abcdk_object_t *obj);
-
-/**
- * 创建消息对象。
- * 
- * @param [in] fd 文件句柄。
- * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
- * @param [in] rw !0 读写，0 只读。
- * 
- * @return NULL(0) 失败，!NULL(0) 成功。
-*/
-abcdk_comm_message_t* abcdk_comm_message_alloc3(int fd,size_t truncate,int rw);
+abcdk_comm_message_t *abcdk_comm_message_attach(abcdk_object_t *obj);
 
 /**
  * 调整消息对象大小。
@@ -135,6 +124,46 @@ int abcdk_comm_message_recv(abcdk_comm_message_t *msg, abcdk_comm_node_t *node);
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */
 int abcdk_comm_message_recv2(abcdk_comm_message_t *msg,const void *data,size_t size,size_t *remain);
+
+/**
+ * 创建消息对象。
+ * 
+ * @param [in] fd 文件句柄。
+ * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
+ * @param [in] rw !0 读写，0 只读。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw);
+
+/**
+ * 创建消息对象。
+ * 
+ * @param [in] file 文件名(包括路径)。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,int rw);
+
+/**
+ * 创建消息对象。
+ * 
+ * @return !NULL(0) 成功(消息指针)，NULL(0) 失败。
+ */
+abcdk_comm_message_t *abcdk_comm_message_copy(const void *data,size_t size);
+
+/** 
+ * 创建消息对象。
+ * 
+ * @param [in] max 格式化数据最大长度。 
+*/
+abcdk_comm_message_t *abcdk_comm_message_vformat(int max, const char *fmt, va_list ap);
+
+/** 
+ * 创建消息对象。
+*/
+abcdk_comm_message_t *abcdk_comm_message_format(int max, const char *fmt, ...);
+
 
 __END_DECLS
 
