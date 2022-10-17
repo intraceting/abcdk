@@ -6,6 +6,21 @@
  */
 #include "abcdk/http/http.h"
 
+/** HTTP2连接。*/
+typedef struct _abcdk_http_v2
+{
+    /**
+     * 魔法头部长度。
+     * 
+     * PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
+    */
+    int magic_len;
+
+    /**消息流池。*/
+    abcdk_map_t streams;
+
+}abcdk_http_v2_t;
+
 /** HTTP连接。*/
 typedef struct _abcdk_http
 {
@@ -50,10 +65,42 @@ typedef struct _abcdk_http
     /** 发送队列。*/
     abcdk_comm_queue_t *out_queue;
 
-    /*请求数据。*/
+    /** 请求数据。*/
     abcdk_http_request_t *request;
 
+    /** V2环境。*/
+    abcdk_http_v2_t *v2;
+
 } abcdk_http_t;
+
+
+void _abcdk_http_v2_free(abcdk_http_v2_t **http)
+{
+    abcdk_http_v2_t *http_p = NULL;
+
+    if (!http || !*http)
+        return;
+
+    http_p = *http;
+    *http = NULL;
+
+    abcdk_map_destroy(&http_p->streams);
+    abcdk_heap_free(http_p);
+}
+
+abcdk_http_v2_t *_abcdk_http_v2_alloc()
+{
+    abcdk_http_v2_t *http = NULL;
+
+    http = (abcdk_http_v2_t *)abcdk_heap_alloc(sizeof(abcdk_http_v2_t));
+    if (!http)
+        return NULL;
+    
+    http->magic_len = 0;
+    abcdk_map_init(&http->streams,10);
+
+    return http;
+}   
 
 void _abcdk_http_free(abcdk_http_t **http)
 {
@@ -69,6 +116,7 @@ void _abcdk_http_free(abcdk_http_t **http)
     abcdk_comm_message_unref(&http_p->out_buffer);
     abcdk_comm_queue_free(&http_p->out_queue);
     abcdk_http_request_unref(&http_p->request);
+    _abcdk_http_v2_free(&http_p->v2);
     abcdk_heap_free(http_p);
 }
 
@@ -214,22 +262,31 @@ void _abcdk_http_event_connect(abcdk_comm_node_t *node)
 {
     abcdk_http_t *http_p = NULL;
     SSL *ssl_p = NULL;
+    uint32_t ver_l = 0;
+    uint8_t *ver_p = NULL;
     int chk;
 
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
 
+    /*默认启用HTTP1.x。*/
+    http_p->version = 1;
+
 #ifdef HEADER_SSL_H
-    /*如果SSL开启，检查SSL验证结果。*/      
+    /*如果SSL开启，检查SSL验证结果。*/
     ssl_p = abcdk_comm_ssl(node);
-    if(ssl_p)
+    if (ssl_p)
     {
         chk = SSL_get_verify_result(ssl_p);
-        if(chk != X509_V_OK)
+        if (chk != X509_V_OK)
         {
             /*修改超时，使用超时检测器关闭。*/
-            abcdk_comm_set_timeout(node,1);
+            abcdk_comm_set_timeout(node, 1);
             return;
         }
+
+        SSL_get0_alpn_selected(ssl_p, (const uint8_t**)&ver_p, &ver_l);
+        if (ver_p != NULL && ver_l > 0)
+            http_p->version = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2),0) == 0) ? 2 : 1);
     }
 #endif
 
@@ -253,12 +310,77 @@ void _abcdk_http_event_close(abcdk_comm_node_t *node)
         http_p->callback.close_cb(node);
 }
 
-void _abcdk_http_event_input_v2(abcdk_comm_node_t *node)
+int _abcdk_http_event_input_v2_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 {
+    abcdk_http_t *http_p = NULL;
+    void *msg_ptr;
+    size_t msg_len;
+    size_t msg_off;
+    int len;
+    int type;
+    int flag;
+    int sid;
 
+    http_p = (abcdk_http_t *)opaque;
+
+    /*处理接收到的数据。*/
+    msg_ptr = abcdk_comm_message_data(msg);
+    msg_len = abcdk_comm_message_size(msg);
+    msg_off = abcdk_comm_message_offset(msg);
+    
+    if(http_p->v2->magic_len != 24)
+    {
+        http_p->v2->magic_len = msg_off;
+
+        if(msg_off != 24)
+            abcdk_comm_message_realloc(msg, 24);
+        else
+        {
+            abcdk_comm_message_realloc(msg, 9);
+            abcdk_comm_message_reset(msg, 0);
+        }
+
+        return 0;
+    }
+
+    if (msg_off < 9)
+        return 0;
+
+    len = abcdk_endian_b_to_h24(ABCDK_PTR2U8PTR(msg_ptr,0));
+    type = ABCDK_PTR2U8(msg_ptr,3);
+    flag = ABCDK_PTR2U8(msg_ptr,4);
+    sid = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr,5));
+
+    if (msg_off < 9 + len)
+    {
+        /*增量扩展内存。*/
+        abcdk_comm_message_expand(msg, ABCDK_MIN(524288, (9 + len) - msg_len));
+        return 0;
+    }
+
+    return 1;
 }
 
-void _abcdk_http_event_input_v1_v11(abcdk_comm_node_t *node)
+void _abcdk_http_event_input_v2(abcdk_comm_node_t *node)
+{
+    abcdk_http_t *http_p = NULL;
+    void *msg_ptr;
+    size_t msg_len;
+    size_t msg_off;
+    size_t remain = 0;
+
+    int chk;
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+
+    abcdk_comm_message_realloc(http_p->in_buffer, 9);
+    abcdk_comm_message_reset(http_p->in_buffer, 0);
+
+    abcdk_comm_recv_watch(node);
+    return;
+}
+
+void _abcdk_http_event_input_v1(abcdk_comm_node_t *node)
 {
     abcdk_http_t *http_p = NULL;
     abcdk_http_request_t *req_p = NULL;
@@ -276,16 +398,7 @@ void _abcdk_http_event_input_v1_v11(abcdk_comm_node_t *node)
     msg_len = abcdk_comm_message_size(http_p->in_buffer);
     msg_off = abcdk_comm_message_offset(http_p->in_buffer);
 
-    if (!http_p->request)
-    {
-        http_p->request = abcdk_http_request_alloc(http_p->up_max_size, http_p->up_buffer_point);
-        if (!http_p->request)
-        {
-            abcdk_comm_set_timeout(node, 1);
-            return;
-        }
-    }
-
+    /*填加到请求环境对象。*/
     chk = abcdk_http_request_append(http_p->request, msg_ptr, msg_off, &remain);
 
     /*从输入缓存中删除已处理数据。*/
@@ -323,40 +436,6 @@ void _abcdk_http_event_input_v1_v11(abcdk_comm_node_t *node)
     abcdk_comm_unref(&node);
 }
 
-int _abcdk_http_event_input_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
-{
-    abcdk_http_t *http_p = NULL;
-    void *msg_ptr;
-    size_t msg_len;
-    size_t msg_off;
-
-    http_p = (abcdk_http_t *)opaque;
-
-    /*处理接收到的数据。*/
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
-    msg_off = abcdk_comm_message_offset(msg);
-
-    /*如果未确定协议版本，先探测协议版本。*/
-    if(!http_p->version)
-    {
-        if(ABCDK_PTR2U8(msg_ptr,0) == '\0')
-            http_p->version = 2;
-        else 
-            http_p->version = 1;
-    }
-
-    /*HTTP/1.0 HTTP/1.1 头部是变长数据，接收多少处理多少。*/
-    if (http_p->version == 1)
-        return 1;
-
-    /*HTTP/2 头部是定长数据，至少要接收足够用数据才能处理。*/
-    if (msg_off < 9)
-        return 0;
-
-    return 1;
-}
-
 void _abcdk_http_event_input(abcdk_comm_node_t *node)
 {
     abcdk_http_t *http_p = NULL;
@@ -364,18 +443,56 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
 
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
 
-    /*准备接收数的缓存。*/
-    if (!http_p->in_buffer)
+    if (http_p->version == 1)
     {
-        http_p->in_buffer = abcdk_comm_message_alloc(512 * 1024);
-        if (!http_p->in_buffer)
+        /*准备V1环境。*/
+        if (!http_p->request)
         {
-            abcdk_comm_set_timeout(node, 1);
-            return;
+            http_p->request = abcdk_http_request_alloc(http_p->up_max_size, http_p->up_buffer_point);
+            if (!http_p->request)
+            {
+                abcdk_comm_set_timeout(node, 1);
+                return;
+            }
         }
 
-        abcdk_comm_message_protocol_t prot = {http_p, _abcdk_http_event_input_unpack_cb};
-        abcdk_comm_message_protocol_set(http_p->in_buffer, &prot);
+        /*准备接收数据的缓存。*/
+        if (!http_p->in_buffer)
+        {
+            http_p->in_buffer = abcdk_comm_message_alloc(512 * 1024);
+            if (!http_p->in_buffer)
+            {
+                abcdk_comm_set_timeout(node, 1);
+                return;
+            }
+        }
+    }
+    else if (http_p->version == 2)
+    {
+        /*准备V2环境。*/
+        if (!http_p->v2)
+        {
+            http_p->v2 = _abcdk_http_v2_alloc();
+            if (!http_p->v2)
+            {
+                abcdk_comm_set_timeout(node, 1);
+                return;
+            }
+        }
+
+        /*准备接收数据的缓存。*/
+        if (!http_p->in_buffer)
+        {
+            http_p->in_buffer = abcdk_comm_message_alloc(9);
+            if (!http_p->in_buffer)
+            {
+                abcdk_comm_set_timeout(node, 1);
+                return;
+            }
+        }
+
+        abcdk_comm_message_protocol_t cb = {http_p, _abcdk_http_event_input_v2_unpack_cb};
+        abcdk_comm_message_protocol_set(http_p->in_buffer, &cb);
     }
 
     chk = abcdk_comm_message_recv(http_p->in_buffer,node);
@@ -391,7 +508,7 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
     }
 
     if(http_p->version == 1)
-        _abcdk_http_event_input_v1_v11(node);
+        _abcdk_http_event_input_v1(node);
     else if(http_p->version == 2)
         _abcdk_http_event_input_v2(node);
     else 

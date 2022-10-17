@@ -87,6 +87,9 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
 
 int _abcdk_test_http_ssl_servername(SSL *ssl, int *ad, void *arg)
 {
+    const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+
+    SSL_set_tlsext_host_name(ssl,"localhost");
     return SSL_TLSEXT_ERR_OK;
 }
 
@@ -105,16 +108,25 @@ int _abcdk_test_http_alpn_select_cb(SSL *ssl,
     }
 
     unsigned int srvlen;
-   // unsigned char     srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
-    //unsigned char srv[] = {"\x02h2"};
-    unsigned char srv[] = {"\x08http/1.1"};
+
+    /*协议选择时，仅做指针(out)的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
+    static unsigned char srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
 
     srvlen = sizeof(srv) - 1;
 
+#if 0
+    /*协义选择时，仅做指针(out)的复制。从server列表，按顺序在client匹配，匹配成功即停止，并做指针复制。*/
     if (SSL_select_next_proto((unsigned char **)out, outlen, srv, srvlen, in, inlen) != OPENSSL_NPN_NEGOTIATED)
     {
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
+#else 
+    
+    /*协义选择时，直接复制长度和指针也行。*/
+    *outlen = in[0];
+    *out = &in[1];
+
+#endif 
 
     fprintf(stderr, "SSL ALPN selected: %*s\n", (int)*outlen, *out);
 
@@ -152,7 +164,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
         //  SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
-    //    SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
     //    SSL_CTX_set_tlsext_servername_callback(server_ssl_ctx,_abcdk_test_http_ssl_servername);
         SSL_CTX_set_alpn_select_cb(server_ssl_ctx, _abcdk_test_http_alpn_select_cb, NULL);
 
