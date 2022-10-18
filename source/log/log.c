@@ -8,7 +8,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/uri.h"
 #include "abcdk/shell/proc.h"
-#include "abcdk/easy/easy.h"
+#include "abcdk/rpc/rpc.h"
 
 /*
  * -----------------------------------------------------------------------------------
@@ -32,10 +32,10 @@ typedef struct _abcdk_log
     abcdk_comm_t *comm;
 
     /** 通讯链路。*/
-    abcdk_comm_node_t *easy;
+    abcdk_comm_node_t *rpc;
 
     /** 通讯链路锁。*/
-    abcdk_mutex_t easy_mutex;
+    abcdk_mutex_t rpc_mutex;
 
     /** 服务编号。*/
     uint16_t service;
@@ -69,13 +69,13 @@ int _abcdk_log_init(void *opaque)
     char *cons_p = NULL;
 
     ctx->comm = NULL;
-    ctx->easy = NULL;
+    ctx->rpc = NULL;
     ctx->service = 1;
     ctx->copy2syslog = 0;
     ctx->consignee = NULL;
     ctx->mask = 0xFFFFFFFF;
     pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
-    abcdk_mutex_init2(&ctx->easy_mutex,0);
+    abcdk_mutex_init2(&ctx->rpc_mutex,0);
 
     cons_p = getenv("ABCDK_LOG_CONSIGNEE");
     if (cons_p && *cons_p)
@@ -92,9 +92,9 @@ void _abcdk_log_uninit()
     abcdk_log_t *ctx = _abcdk_log_ctx();
 
     abcdk_comm_stop(&ctx->comm);
-    abcdk_comm_unref(&ctx->easy);
+    abcdk_comm_unref(&ctx->rpc);
     pthread_key_delete(ctx->ptkey);
-    abcdk_mutex_unlock(&ctx->easy_mutex);
+    abcdk_mutex_unlock(&ctx->rpc_mutex);
     abcdk_heap_free2((void**)&ctx->consignee);
 }
 
@@ -151,44 +151,44 @@ void abcdk_log_mask(int type, ...)
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
-void _abcdk_log_easy_request_cb(abcdk_comm_node_t *easy,uint64_t mid, const void *req, size_t len)
+void _abcdk_log_rpc_request_cb(abcdk_comm_node_t *rpc,uint64_t mid, const void *req, size_t len)
 {
 
 }
 
-abcdk_comm_node_t *_abcdk_log_get_easy()
+abcdk_comm_node_t *_abcdk_log_get_rpc()
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
     abcdk_sockaddr_t addr = {0};
-    abcdk_comm_node_t *easy_p = NULL;
+    abcdk_comm_node_t *rpc_p = NULL;
     int chk;
 
-    abcdk_mutex_lock(&ctx->easy_mutex,1);
+    abcdk_mutex_lock(&ctx->rpc_mutex,1);
 
-    if (!ctx->easy || abcdk_easy_state(ctx->easy) != 0)
+    if (!ctx->rpc || abcdk_rpc_state(ctx->rpc) != 0)
     {
         /*释放已经断开的。*/
-        abcdk_comm_unref(&ctx->easy);
+        abcdk_comm_unref(&ctx->rpc);
         
         /*指定收货人再尝试连接，否则没意义。*/
         if (ctx->consignee)
         {
             abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->easy = abcdk_easy_alloc(ctx->comm,666666666);
+            ctx->rpc = abcdk_rpc_alloc(ctx->comm,666666666);
 
-            abcdk_easy_callback_t cb = {NULL,_abcdk_log_easy_request_cb,NULL};
-            chk = abcdk_easy_connect(ctx->easy, NULL, &addr, &cb);
+            abcdk_rpc_callback_t cb = {NULL,_abcdk_log_rpc_request_cb,NULL};
+            chk = abcdk_rpc_connect(ctx->rpc, NULL, &addr, &cb);
             if (chk != 0)
-                abcdk_comm_unref(&ctx->easy);
+                abcdk_comm_unref(&ctx->rpc);
         }
     }
 
-    if(ctx->easy)
-        easy_p = abcdk_comm_refer(ctx->easy);
+    if(ctx->rpc)
+        rpc_p = abcdk_comm_refer(ctx->rpc);
 
-    abcdk_mutex_unlock(&ctx->easy_mutex);
+    abcdk_mutex_unlock(&ctx->rpc_mutex);
 
-    return easy_p;
+    return rpc_p;
 }
 
 abcdk_object_t *_abcdk_log_get_buffer()
@@ -211,17 +211,17 @@ abcdk_object_t *_abcdk_log_get_buffer()
 int _abcdk_log_send(const void *data, size_t len)
 {
     abcdk_log_t *ctx = _abcdk_log_get_ctx();
-    abcdk_comm_node_t *easy_p = NULL;
+    abcdk_comm_node_t *rpc_p = NULL;
     int chk;
 
     /*获取通讯链路。*/
-    easy_p = _abcdk_log_get_easy();
-    if (!easy_p)
+    rpc_p = _abcdk_log_get_rpc();
+    if (!rpc_p)
         return -2;
 
     /*发送到远程。*/
-    chk = abcdk_easy_request(easy_p, data, len, NULL,1);
-    abcdk_comm_unref(&easy_p);
+    chk = abcdk_rpc_request(rpc_p, data, len, NULL,1);
+    abcdk_comm_unref(&rpc_p);
 
     return chk;
 }

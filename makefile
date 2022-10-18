@@ -61,7 +61,7 @@ BASE_SRC_FILES += $(wildcard source/util/*.c)
 BASE_SRC_FILES += $(wildcard source/shell/*.c)
 BASE_SRC_FILES += $(wildcard source/mp4/*.c)
 BASE_SRC_FILES += $(wildcard source/comm/*.c)
-BASE_SRC_FILES += $(wildcard source/easy/*.c)
+BASE_SRC_FILES += $(wildcard source/rpc/*.c)
 BASE_SRC_FILES += $(wildcard source/http/*.c)
 BASE_SRC_FILES += $(wildcard source/log/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
@@ -124,8 +124,8 @@ $(OBJ_PATH)/source/comm/%.o: source/comm/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/source/easy/%.o: source/easy/%.c
-	mkdir -p $(OBJ_PATH)/source/easy/
+$(OBJ_PATH)/source/rpc/%.o: source/rpc/%.c
+	mkdir -p $(OBJ_PATH)/source/rpc/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 	

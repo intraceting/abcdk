@@ -35,7 +35,7 @@ typedef struct _abcdklogd
     abcdk_mutex_t node_mutex;
     abcdk_map_t node_lists;
     abcdk_comm_t *comm;
-    abcdk_comm_node_t *listen_easy;
+    abcdk_comm_node_t *listen_rpc;
 
 } abcdklogd_t;
 
@@ -175,14 +175,14 @@ void _abcdklogd_service_request(abcdklogd_t *ctx,const char *from, abcdklogd_nod
     }
 }
 
-void _abcdklogd_node_request_cb(abcdk_comm_node_t *easy,uint64_t mid, const void *req, size_t len)
+void _abcdklogd_node_request_cb(abcdk_comm_node_t *rpc,uint64_t mid, const void *req, size_t len)
 {
     abcdklogd_t *ctx = NULL;
     char remote[NAME_MAX] = {0};
     abcdk_object_t *obj = NULL;
 
-    ctx = (abcdklogd_t *)abcdk_comm_get_userdata(easy);
-    abcdk_comm_get_sockaddr_str(easy,NULL,remote);
+    ctx = (abcdklogd_t *)abcdk_comm_get_userdata(rpc);
+    abcdk_comm_get_sockaddr_str(rpc,NULL,remote);
     
 
         abcdk_mutex_lock(&ctx->node_mutex, 1);
@@ -199,13 +199,13 @@ void _abcdklogd_node_request_cb(abcdk_comm_node_t *easy,uint64_t mid, const void
     
 }
 
-void _abcdklogd_node_close_cb(abcdk_comm_node_t *easy)
+void _abcdklogd_node_close_cb(abcdk_comm_node_t *rpc)
 {
     abcdklogd_t *ctx = NULL;
     char remote[NAME_MAX] = {0};
 
-    ctx = (abcdklogd_t *)abcdk_comm_get_userdata(easy);
-    abcdk_comm_get_sockaddr_str(easy,NULL,remote);
+    ctx = (abcdklogd_t *)abcdk_comm_get_userdata(rpc);
+    abcdk_comm_get_sockaddr_str(rpc,NULL,remote);
 
     fprintf(stderr,"Disconnect: %s\n",remote);
 
@@ -328,11 +328,11 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     }
 
     ctx->comm = abcdk_comm_start(0,-1);
-    ctx->listen_easy = abcdk_easy_alloc(ctx->comm,666666666);
-    abcdk_comm_set_userdata(ctx->listen_easy,ctx);
+    ctx->listen_rpc = abcdk_rpc_alloc(ctx->comm,666666666);
+    abcdk_comm_set_userdata(ctx->listen_rpc,ctx);
 
-    abcdk_easy_callback_t cb = {NULL,_abcdklogd_node_request_cb,_abcdklogd_node_close_cb};
-    chk = abcdk_easy_listen(ctx->listen_easy,NULL,&addr,&cb);
+    abcdk_rpc_callback_t cb = {NULL,_abcdklogd_node_request_cb,_abcdklogd_node_close_cb};
+    chk = abcdk_rpc_listen(ctx->listen_rpc,NULL,&addr,&cb);
     if(chk != 0)
         goto END;
 
@@ -349,7 +349,7 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     //sleep(30);
 
 END:
-    abcdk_comm_unref(&ctx->listen_easy);
+    abcdk_comm_unref(&ctx->listen_rpc);
     abcdk_comm_stop(&ctx->comm);
     abcdk_heap_free(ctx->policys);
     abcdk_map_destroy(&ctx->node_lists);

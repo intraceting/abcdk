@@ -12,6 +12,8 @@
 #include "abcdk/util/http.h"
 #include "abcdk/comm/message.h"
 
+__BEGIN_DECLS
+
 /** HTTP请求对象。*/
 typedef struct _abcdk_http_request abcdk_http_request_t;
 
@@ -59,5 +61,7 @@ const char *abcdk_http_request_env(abcdk_http_request_t *req,int line);
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */
 int abcdk_http_request_append(abcdk_http_request_t *req,const void *data,size_t size,size_t *remain);
+
+__END_DECLS
 
 #endif //ABCDK_HTTP_REQUEST_H

@@ -12,11 +12,11 @@
 #include "entry.h"
 
 
-void test_easy_request_cb(abcdk_comm_node_t *easy, uint64_t mid,const void *data, size_t len)
+void test_rpc_request_cb(abcdk_comm_node_t *rpc, uint64_t mid,const void *data, size_t len)
 {
     char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
 
-    abcdk_comm_get_sockaddr_str(easy,sockname_str,peername_str);
+    abcdk_comm_get_sockaddr_str(rpc,sockname_str,peername_str);
 
   //  printf("Server(%s -> %s): ", sockname_str, peername_str);
 
@@ -25,10 +25,10 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, uint64_t mid,const void *data
 
     //       printf("%lu-%lu=%lu",a,b,a-b);
 
-        usleep(rand()%10000+1000);
+    //    usleep(rand()%10000+1000);
 
-        abcdk_easy_response(easy,mid,data,len);
-        abcdk_easy_request(easy,data,len,NULL,1);
+        abcdk_rpc_response(rpc,mid,data,len);
+        abcdk_rpc_request(rpc,data,len,NULL,1);
 
 
     
@@ -36,11 +36,11 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, uint64_t mid,const void *data
   //   printf("\n");
 }
 
-void test_easy_request2_cb(abcdk_comm_node_t *easy,uint64_t mid, const void *data, size_t len)
+void test_rpc_request2_cb(abcdk_comm_node_t *rpc,uint64_t mid, const void *data, size_t len)
 {
     char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
     
-    abcdk_comm_get_sockaddr_str(easy,sockname_str,peername_str);
+    abcdk_comm_get_sockaddr_str(rpc,sockname_str,peername_str);
 
   //  printf("Client(%s -> %s): ", sockname_str, peername_str);
 
@@ -119,7 +119,7 @@ int _abcdk_test_verify_callback(int ok, X509_STORE_CTX *x509_store)
 }
 #endif
 
-int abcdk_test_easy(abcdk_tree_t *args)
+int abcdk_test_rpc(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
@@ -161,7 +161,7 @@ int abcdk_test_easy(abcdk_tree_t *args)
     }
 #endif //HAVE_OPENSSL
 
-    const char *sunpath = "/tmp/test_easy.sock";
+    const char *sunpath = "/tmp/test_rpc.sock";
     unlink(sunpath);
 
     abcdk_sockaddr_t addr = {0};
@@ -172,10 +172,10 @@ int abcdk_test_easy(abcdk_tree_t *args)
     //addr.family = AF_UNIX;
     //strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_node_t *easy_listen = abcdk_easy_alloc(ctx,3333);
+    abcdk_comm_node_t *rpc_listen = abcdk_rpc_alloc(ctx,3333);
 
-    abcdk_easy_callback_t listencb = {NULL,test_easy_request_cb};
-    abcdk_easy_listen(easy_listen,server_ssl_ctx,&addr,&listencb);
+    abcdk_rpc_callback_t listencb = {NULL,test_rpc_request_cb};
+    abcdk_rpc_listen(rpc_listen,server_ssl_ctx,&addr,&listencb);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
@@ -183,12 +183,12 @@ int abcdk_test_easy(abcdk_tree_t *args)
     //strncpy(addr2.addr_un.sun_path,sunpath,108);
 
     int nn = 4;
-    abcdk_comm_node_t *easy_client[40] = {NULL};
+    abcdk_comm_node_t *rpc_client[40] = {NULL};
     for (int i = 0; i < nn; i++)
     {
-        easy_client[i] = abcdk_easy_alloc(ctx,3333);
-        abcdk_easy_callback_t clientcb = {NULL,test_easy_request2_cb};
-        abcdk_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, &clientcb);
+        rpc_client[i] = abcdk_rpc_alloc(ctx,3333);
+        abcdk_rpc_callback_t clientcb = {NULL,test_rpc_request2_cb};
+        abcdk_rpc_connect(rpc_client[i],client_ssl_ctx[i], &addr2, &clientcb);
     }
 
   //  sleep(10);
@@ -214,7 +214,7 @@ int abcdk_test_easy(abcdk_tree_t *args)
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_easy_request(easy_client[i%nn],req,len,&rsp,10);
+        abcdk_rpc_request(rpc_client[i%nn],req,len,&rsp,10);
         
 
         if (rsp)
@@ -240,14 +240,14 @@ int abcdk_test_easy(abcdk_tree_t *args)
 
     printf("s = %lu,d = %lu\n",s,d);
 
- //   abcdk_easy_set_timeout(easy_listen,1);
+ //   abcdk_rpc_set_timeout(rpc_listen,1);
 
-  //  abcdk_easy_unref(&easy_listen);
+  //  abcdk_rpc_unref(&rpc_listen);
     while (getchar() != 'Q')
         ;
 
     for(int i = 0;i<nn;i++)
-        abcdk_comm_unref(&easy_client[i]);
+        abcdk_comm_unref(&rpc_client[i]);
 
 
     abcdk_comm_stop(&ctx);

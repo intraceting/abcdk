@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_EASY_EASY_H
-#define ABCDK_EASY_EASY_H
+#ifndef ABCDK_RPC_RPC_H
+#define ABCDK_RPC_RPC_H
 
 #include "abcdk/comm/comm.h"
 #include "abcdk/comm/message.h"
@@ -19,7 +19,7 @@ __BEGIN_DECLS
  *
  * @warning 服务端新的连接会复制成员指针。
 */
-typedef struct _abcdk_easy_callback
+typedef struct _abcdk_rpc_callback
 {
   /**
    * 新连接通知回调函数。
@@ -41,7 +41,7 @@ typedef struct _abcdk_easy_callback
   /** 连接关闭通知回调函数。*/
   void (*close_cb)(abcdk_comm_node_t *node);
 
-} abcdk_easy_callback_t;
+} abcdk_rpc_callback_t;
 
 /**
  * 申请通讯对象。
@@ -53,14 +53,14 @@ typedef struct _abcdk_easy_callback
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_easy_alloc(abcdk_comm_t *ctx,uint32_t protocol);
+abcdk_comm_node_t *abcdk_rpc_alloc(abcdk_comm_t *ctx,uint32_t protocol);
 
 /**
  * 获取状态。
  * 
  * @return 0 已连接(连接中，监听中)，-1 未连接。
 */
-int abcdk_easy_state(abcdk_comm_node_t *node);
+int abcdk_rpc_state(abcdk_comm_node_t *node);
 
 /**
  * 发送请求。
@@ -72,8 +72,7 @@ int abcdk_easy_state(abcdk_comm_node_t *node);
  *
  * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(超时/已断开)。
  */
-int abcdk_easy_request(abcdk_comm_node_t *node, const void *data, size_t len,
-                       abcdk_comm_message_t **rsp, time_t timeout);
+int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len,abcdk_comm_message_t **rsp, time_t timeout);
 
 /** 
  * 发送应答。
@@ -84,7 +83,7 @@ int abcdk_easy_request(abcdk_comm_node_t *node, const void *data, size_t len,
  * 
  * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
 */
-int abcdk_easy_response(abcdk_comm_node_t *node, uint64_t mid, const void *data, size_t len);
+int abcdk_rpc_response(abcdk_comm_node_t *node, uint64_t mid, const void *data, size_t len);
 
 /**
  * 启动监听。
@@ -97,7 +96,7 @@ int abcdk_easy_response(abcdk_comm_node_t *node, uint64_t mid, const void *data,
  * 
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
-int abcdk_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_easy_callback_t *cb);
+int abcdk_rpc_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_rpc_callback_t *cb);
 
 /**
  * 启动连接。
@@ -110,8 +109,8 @@ int abcdk_easy_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_easy_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_easy_callback_t *cb);
+int abcdk_rpc_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_rpc_callback_t *cb);
 
 __END_DECLS
 
-#endif //ABCDK_EASY_EASY_H
+#endif //ABCDK_RPC_RPC_H

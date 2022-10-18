@@ -60,7 +60,6 @@
 //#include "abcdk/util/freeimage.h"
 #include "abcdk/util/exec.h"
 #include "abcdk/util/popen.h"
-#include "abcdk/easy/easy.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"
@@ -78,6 +77,7 @@
 #include "abcdk/comm/comm.h"
 #include "abcdk/comm/queue.h"
 #include "abcdk/comm/waiter.h"
+#include "abcdk/rpc/rpc.h"
 #include "abcdk/log/log.h"
 
 #endif //ABCDK_H

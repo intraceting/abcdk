@@ -16,8 +16,8 @@ typedef struct _abcdk_http_v2
     */
     int magic_len;
 
-    /**消息流池。*/
-    abcdk_map_t streams;
+    /**请求流的池。*/
+    abcdk_map_t requests;
 
 }abcdk_http_v2_t;
 
@@ -84,7 +84,7 @@ void _abcdk_http_v2_free(abcdk_http_v2_t **http)
     http_p = *http;
     *http = NULL;
 
-    abcdk_map_destroy(&http_p->streams);
+    abcdk_map_destroy(&http_p->requests);
     abcdk_heap_free(http_p);
 }
 
@@ -95,12 +95,13 @@ abcdk_http_v2_t *_abcdk_http_v2_alloc()
     http = (abcdk_http_v2_t *)abcdk_heap_alloc(sizeof(abcdk_http_v2_t));
     if (!http)
         return NULL;
-    
+
     http->magic_len = 0;
-    abcdk_map_init(&http->streams,10);
+    abcdk_map_init(&http->requests,10);
 
     return http;
-}   
+}
+
 
 void _abcdk_http_free(abcdk_http_t **http)
 {
@@ -137,6 +138,7 @@ abcdk_http_t *_abcdk_http_alloc()
     http->out_buffer = NULL;
     http->out_queue = abcdk_comm_queue_alloc();
     http->request = NULL;
+    http->v2 = _abcdk_http_v2_alloc();
 
     return http;
 }
@@ -314,12 +316,8 @@ int _abcdk_http_event_input_v2_unpack_cb(void *opaque, abcdk_comm_message_t *msg
 {
     abcdk_http_t *http_p = NULL;
     void *msg_ptr;
-    size_t msg_len;
-    size_t msg_off;
+    size_t msg_len, msg_off;
     int len;
-    int type;
-    int flag;
-    int sid;
 
     http_p = (abcdk_http_t *)opaque;
 
@@ -347,9 +345,6 @@ int _abcdk_http_event_input_v2_unpack_cb(void *opaque, abcdk_comm_message_t *msg
         return 0;
 
     len = abcdk_endian_b_to_h24(ABCDK_PTR2U8PTR(msg_ptr,0));
-    type = ABCDK_PTR2U8(msg_ptr,3);
-    flag = ABCDK_PTR2U8(msg_ptr,4);
-    sid = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr,5));
 
     if (msg_off < 9 + len)
     {
@@ -361,134 +356,47 @@ int _abcdk_http_event_input_v2_unpack_cb(void *opaque, abcdk_comm_message_t *msg
     return 1;
 }
 
-void _abcdk_http_event_input_v2(abcdk_comm_node_t *node)
+int _abcdk_http_event_input_v2_append(abcdk_http_t *http, abcdk_http_request_t **req)
 {
-    abcdk_http_t *http_p = NULL;
+    abcdk_http_request_t *req_p = NULL;
     void *msg_ptr;
-    size_t msg_len;
-    size_t msg_off;
-    size_t remain = 0;
+    size_t msg_len, msg_off;
+    int len, type, flag, sid;
 
-    int chk;
+    /*处理接收到的数据。*/
+    msg_ptr = abcdk_comm_message_data(http->in_buffer);
+    msg_len = abcdk_comm_message_size(http->in_buffer);
+    msg_off = abcdk_comm_message_offset(http->in_buffer);
 
-    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    len = abcdk_endian_b_to_h24(ABCDK_PTR2U8PTR(msg_ptr,0));
+    type = ABCDK_PTR2U8(msg_ptr,3);
+    flag = ABCDK_PTR2U8(msg_ptr,4);
+    sid = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr,5));
 
-    abcdk_comm_message_realloc(http_p->in_buffer, 9);
-    abcdk_comm_message_reset(http_p->in_buffer, 0);
+    /*fix me.*/
 
-    abcdk_comm_recv_watch(node);
-    return;
+    return 0;
 }
 
-void _abcdk_http_event_input_v1(abcdk_comm_node_t *node)
+void _abcdk_http_event_input_v2(abcdk_comm_node_t *node)
 {
     abcdk_http_t *http_p = NULL;
     abcdk_http_request_t *req_p = NULL;
     void *msg_ptr;
-    size_t msg_len;
-    size_t msg_off;
-    size_t remain = 0;
+    size_t msg_len, msg_off;
 
     int chk;
 
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
 
-    /*处理接收到的数据。*/
-    msg_ptr = abcdk_comm_message_data(http_p->in_buffer);
-    msg_len = abcdk_comm_message_size(http_p->in_buffer);
-    msg_off = abcdk_comm_message_offset(http_p->in_buffer);
-
-    /*填加到请求环境对象。*/
-    chk = abcdk_http_request_append(http_p->request, msg_ptr, msg_off, &remain);
-
-    /*从输入缓存中删除已处理数据。*/
-    abcdk_comm_message_drain(http_p->in_buffer, msg_off - remain);
-
-    if (chk < 0)
+    /*准备接收数据的缓存。*/
+    if (!http_p->in_buffer)
     {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
-    else if (chk == 0)
-    {
-        abcdk_comm_recv_watch(node);
-        return;
-    }
-
-            
-    /*托管请求数据。*/
-    req_p = http_p->request;
-    /*请求数据已经被托管，这里不能再继续使用了。*/
-    http_p->request = NULL;
-
-    /*复用链路前要增加引用计数，以防止多线程操作同一个链路在释放回收内存后，造成应用层内存非法访问的异常。*/
-    abcdk_comm_refer(node);
-    /*复用链路。*/
-    abcdk_comm_recv_watch(node);
-
-    /*通知应用层，数据到达。*/
-    http_p->callback.request_cb(node, req_p);
-
-    /*删除请求数据。*/
-    abcdk_http_request_unref(&req_p);
-    
-    /*减少引用计数。*/
-    abcdk_comm_unref(&node);
-}
-
-void _abcdk_http_event_input(abcdk_comm_node_t *node)
-{
-    abcdk_http_t *http_p = NULL;
-    int chk;
-
-    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
-
-    if (http_p->version == 1)
-    {
-        /*准备V1环境。*/
-        if (!http_p->request)
-        {
-            http_p->request = abcdk_http_request_alloc(http_p->up_max_size, http_p->up_buffer_point);
-            if (!http_p->request)
-            {
-                abcdk_comm_set_timeout(node, 1);
-                return;
-            }
-        }
-
-        /*准备接收数据的缓存。*/
+        http_p->in_buffer = abcdk_comm_message_alloc(9);
         if (!http_p->in_buffer)
         {
-            http_p->in_buffer = abcdk_comm_message_alloc(512 * 1024);
-            if (!http_p->in_buffer)
-            {
-                abcdk_comm_set_timeout(node, 1);
-                return;
-            }
-        }
-    }
-    else if (http_p->version == 2)
-    {
-        /*准备V2环境。*/
-        if (!http_p->v2)
-        {
-            http_p->v2 = _abcdk_http_v2_alloc();
-            if (!http_p->v2)
-            {
-                abcdk_comm_set_timeout(node, 1);
-                return;
-            }
-        }
-
-        /*准备接收数据的缓存。*/
-        if (!http_p->in_buffer)
-        {
-            http_p->in_buffer = abcdk_comm_message_alloc(9);
-            if (!http_p->in_buffer)
-            {
-                abcdk_comm_set_timeout(node, 1);
-                return;
-            }
+            abcdk_comm_set_timeout(node, 1);
+            return;
         }
 
         abcdk_comm_message_protocol_t cb = {http_p, _abcdk_http_event_input_v2_unpack_cb};
@@ -506,6 +414,130 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
         abcdk_comm_recv_watch(node);
         return;
     }
+
+
+    /*填加到请求环境对象。*/
+    chk = _abcdk_http_event_input_v2_append(http_p, &req_p);
+
+    /*重置缓存。*/
+    abcdk_comm_message_realloc(http_p->in_buffer, 9);
+    abcdk_comm_message_reset(http_p->in_buffer, 0);
+
+    if (chk < 0)
+    {
+        abcdk_comm_set_timeout(node, 1);
+        return;
+    }
+    else if (chk == 0)
+    {
+        abcdk_comm_recv_watch(node);
+        return;
+    }
+
+    /*复用链路前要增加引用计数，以防止多线程操作同一个链路在释放回收内存后，造成应用层内存非法访问的异常。*/
+    abcdk_comm_refer(node);
+    /*复用链路。*/
+    abcdk_comm_recv_watch(node);
+
+    /*通知应用层，数据到达。*/
+    http_p->callback.request_cb(node, req_p);
+
+    /*删除请求数据。*/
+    abcdk_http_request_unref(&req_p);
+    
+    /*减少引用计数。*/
+    abcdk_comm_unref(&node);
+
+    return;
+}
+
+void _abcdk_http_event_input_v1(abcdk_comm_node_t *node)
+{
+    abcdk_http_t *http_p = NULL;
+    void *msg_ptr;
+    size_t msg_len, msg_off, remain = 0;
+    int chk;
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+
+    /*准备接收数据的缓存。*/
+    if (!http_p->in_buffer)
+    {
+        http_p->in_buffer = abcdk_comm_message_alloc(512 * 1024);
+        if (!http_p->in_buffer)
+        {
+            abcdk_comm_set_timeout(node, 1);
+            return;
+        }
+    }
+
+    chk = abcdk_comm_message_recv(http_p->in_buffer,node);
+    if (chk < 0)
+    {
+        abcdk_comm_set_timeout(node, 1);
+        return;
+    }
+    else if (chk == 0)
+    {
+        abcdk_comm_recv_watch(node);
+        return;
+    }
+
+NEXT_REQ:
+
+
+    /*处理接收到的数据。*/
+    msg_ptr = abcdk_comm_message_data(http_p->in_buffer);
+    msg_len = abcdk_comm_message_size(http_p->in_buffer);
+    msg_off = abcdk_comm_message_offset(http_p->in_buffer);
+    
+    /*准备请求环境。*/
+    if (!http_p->request)
+    {
+        http_p->request = abcdk_http_request_alloc(http_p->up_max_size, http_p->up_buffer_point);
+        if (!http_p->request)
+        {
+            abcdk_comm_set_timeout(node, 1);
+            return;
+        }
+    }
+
+    /*填加到请求环境对象。*/
+    chk = abcdk_http_request_append(http_p->request, msg_ptr, msg_off, &remain);
+
+    /*从缓存中删除已处理数据。*/
+    abcdk_comm_message_drain(http_p->in_buffer, msg_off - remain);
+
+    if (chk < 0)
+    {
+        abcdk_comm_set_timeout(node, 1);
+        return;
+    }
+    else if (chk == 0)
+    {
+        abcdk_comm_recv_watch(node);
+        return;
+    }
+
+    /*通知应用层，数据到达。*/
+    http_p->callback.request_cb(node, http_p->request);
+
+    /*删除请求数据。*/
+    abcdk_http_request_unref(&http_p->request);
+
+    /*如果是流水线模式，缓存中可能存在未处理的数据。*/
+    if (remain > 0)
+        goto NEXT_REQ;
+    else
+        abcdk_comm_recv_watch(node);
+}
+
+void _abcdk_http_event_input(abcdk_comm_node_t *node)
+{
+    abcdk_http_t *http_p = NULL;
+    int chk;
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
 
     if(http_p->version == 1)
         _abcdk_http_event_input_v1(node);

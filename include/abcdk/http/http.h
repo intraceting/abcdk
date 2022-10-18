@@ -14,6 +14,9 @@
 #include "abcdk/comm/queue.h"
 #include "abcdk/http/request.h"
 
+
+__BEGIN_DECLS
+
 /**
  * 通讯对象的回调函数。
  *
@@ -74,5 +77,7 @@ int abcdk_http_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
  * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
 */
 int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_http_callback_t *cb);
+
+__END_DECLS
 
 #endif //ABCDK_HTTP_HTTP_H
