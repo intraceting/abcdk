@@ -286,8 +286,8 @@ int _abcdk_http_request_rtp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 int _abcdk_http_request_append_rtp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
     /*
-     * |$     |0      |Length(Header+Data) |RTP Header |RTP Data |
-     * |1 Byte|1 Byte |2 Bytes             |12 Bytes   |N Bytes  |
+     * |$     |Channel |Length(Data) |Data    |
+     * |1 Byte|1 Byte  |2 Bytes      |N Bytes |
     */
     int chk;
 
