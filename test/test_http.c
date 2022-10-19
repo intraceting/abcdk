@@ -185,19 +185,18 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
     else
     {
         const void *p = abcdk_http_request_body(req);
-        const void *p2 = ABCDK_PTR2VPTR(p,4);
 
         rtp_header_t t;
 
-        t.version = _readtonumber(p2, 12, 0, 2);
-        t.padding = _readtonumber(p2, 12, 2, 1);
-        t.extension = _readtonumber(p2, 12, 3, 1);
-        t.csrc_len = _readtonumber(p2, 12, 4, 4);
-        t.marker = _readtonumber(p2, 12, 8, 1);
-        t.payload = _readtonumber(p2, 12, 9, 7);
-        t.seq_no = _readtonumber(p2, 12, 16, 16);
-        t.timestamp = _readtonumber(p2, 12, 32, 32);
-        t.ssrc = _readtonumber(p2, 12, 64, 32);
+        t.version = _readtonumber(p, 12, 0, 2);
+        t.padding = _readtonumber(p, 12, 2, 1);
+        t.extension = _readtonumber(p, 12, 3, 1);
+        t.csrc_len = _readtonumber(p, 12, 4, 4);
+        t.marker = _readtonumber(p, 12, 8, 1);
+        t.payload = _readtonumber(p, 12, 9, 7);
+        t.seq_no = _readtonumber(p, 12, 16, 16);
+        t.timestamp = _readtonumber(p, 12, 32, 32);
+        t.ssrc = _readtonumber(p, 12, 64, 32);
 
 //        t.csrc = _readtonumber(p, 12, 97, 32);
 

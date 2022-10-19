@@ -42,6 +42,9 @@ typedef struct _abcdk_http_request
     /** 头部环境变量的指针。*/
     const char *hdr_envs[100];
 
+    /** 是否为RTP包。*/
+    int is_rtp;
+
 }abcdk_http_request_t;
 
 void abcdk_http_request_unref(abcdk_http_request_t **req)
@@ -106,6 +109,7 @@ abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffe
     req->hdr_len = 0;
     req->body_len = 0;
     memset(req->hdr_envs,0,sizeof(req->hdr_envs));
+    req->is_rtp = 0;
 
     return req;
 
@@ -118,12 +122,17 @@ final_error:
 
 const void *abcdk_http_request_body(abcdk_http_request_t *req)
 {
+    const void *p = NULL;
+
     assert(req != NULL);
     
     if(req->body_buf)
-        return abcdk_comm_message_data(req->body_buf);
+        p = abcdk_comm_message_data(req->body_buf);
 
-    return NULL;
+    if(req->is_rtp)
+        p = ABCDK_PTR2VPTR(p,4);
+
+    return p;
 }
 
 const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
@@ -211,6 +220,10 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
                 req_p->hdr_parse_line_pos += 1;
                 req_p->hdr_parse_pos = ++cur_pos;
             }
+
+            /*不支持超过100行的头部。*/
+            if (req_p->hdr_parse_line_pos == 100)
+                return -1;
         }
 
         /*请求头不完整的话，继续等待。*/
@@ -241,7 +254,7 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
     
 }
 
-int _abcdk_http_request_rtsp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
+int _abcdk_http_request_rtp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 {
     abcdk_http_request_t *req_p = NULL;
     void *msg_ptr;
@@ -265,12 +278,12 @@ int _abcdk_http_request_rtsp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
         return 0;
     }
 
-    printf("len = %d\r\n",len);
+ //   printf("len = %d\r\n",len);
 
     return 1;
 }
 
-int _abcdk_http_request_append_rtsp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
+int _abcdk_http_request_append_rtp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
     /*
      * |$     |0      |Length(Header+Data) |RTP Header |RTP Data |
@@ -285,7 +298,7 @@ int _abcdk_http_request_append_rtsp_body(abcdk_http_request_t *req, const void *
         if (!req->body_buf)
             return -1;
 
-        abcdk_comm_message_protocol_t cb = {req, _abcdk_http_request_rtsp_unpack_cb};
+        abcdk_comm_message_protocol_t cb = {req, _abcdk_http_request_rtp_unpack_cb};
         abcdk_comm_message_protocol_set(req->body_buf, &cb);
     }
 
@@ -304,9 +317,13 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
     /*如果出错，那么无剩余的数据。*/
     *remain = 0;
 
-    /*如果还没有头部数据，并且第一个字符为$，按RTSP协议解析流媒体数据包。*/
+    /*如果还没有头部数据，并且第一个字符为$，按RTP协议解析流媒体数据包。*/
     if (req->hdr_len == 0 && ABCDK_PTR2I8(data, 0) == '$')
-        return _abcdk_http_request_append_rtsp_body(req, data, size, remain);
+        req->is_rtp = 1;
+
+    /*RTP包*/
+    if(req->is_rtp)
+        return _abcdk_http_request_append_rtp_body(req, data, size, remain);
 
     /*如果未确定头部长度，则先定位头部长度。*/
     if (req->hdr_len <= 0)
