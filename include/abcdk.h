@@ -77,7 +77,6 @@
 #include "abcdk/comm/comm.h"
 #include "abcdk/comm/queue.h"
 #include "abcdk/comm/waiter.h"
-#include "abcdk/comm/easy.h"
 #include "abcdk/rpc/rpc.h"
 #include "abcdk/log/log.h"
 

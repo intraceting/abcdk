@@ -6,21 +6,6 @@
  */
 #include "abcdk/http/http.h"
 
-/** HTTP2连接。*/
-typedef struct _abcdk_http_v2
-{
-    /**
-     * 魔法头部长度。
-     * 
-     * PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n
-    */
-    int magic_len;
-
-    /**请求流的池。*/
-    abcdk_map_t requests;
-
-}abcdk_http_v2_t;
-
 /** HTTP连接。*/
 typedef struct _abcdk_http
 {
@@ -42,7 +27,7 @@ typedef struct _abcdk_http
 
     /**
      * 0: unknown
-     * 1: http/1.0 or http/1.1
+     * 1: http/1.0 or http/1.1 or http/0.9
      * 2: http/2
     */
     int version;
@@ -68,40 +53,7 @@ typedef struct _abcdk_http
     /** 请求数据。*/
     abcdk_http_request_t *request;
 
-    /** V2环境。*/
-    abcdk_http_v2_t *v2;
-
 } abcdk_http_t;
-
-
-void _abcdk_http_v2_free(abcdk_http_v2_t **http)
-{
-    abcdk_http_v2_t *http_p = NULL;
-
-    if (!http || !*http)
-        return;
-
-    http_p = *http;
-    *http = NULL;
-
-    abcdk_map_destroy(&http_p->requests);
-    abcdk_heap_free(http_p);
-}
-
-abcdk_http_v2_t *_abcdk_http_v2_alloc()
-{
-    abcdk_http_v2_t *http = NULL;
-
-    http = (abcdk_http_v2_t *)abcdk_heap_alloc(sizeof(abcdk_http_v2_t));
-    if (!http)
-        return NULL;
-
-    http->magic_len = 0;
-    abcdk_map_init(&http->requests,10);
-
-    return http;
-}
-
 
 void _abcdk_http_free(abcdk_http_t **http)
 {
@@ -117,7 +69,6 @@ void _abcdk_http_free(abcdk_http_t **http)
     abcdk_comm_message_unref(&http_p->out_buffer);
     abcdk_comm_queue_free(&http_p->out_queue);
     abcdk_http_request_unref(&http_p->request);
-    _abcdk_http_v2_free(&http_p->v2);
     abcdk_heap_free(http_p);
 }
 
@@ -131,14 +82,13 @@ abcdk_http_t *_abcdk_http_alloc()
 
     http->magic = ABCDK_HTTP_MAGIC;
      http->status = ABCDK_HTTP_STATUS_BROKEN;
-    http->version = 0;
+    http->version = 1;
     http->up_max_size = 40960;
     memset(http->up_buffer_point,0,PATH_MAX);
     http->in_buffer = NULL;
     http->out_buffer = NULL;
     http->out_queue = abcdk_comm_queue_alloc();
     http->request = NULL;
-    http->v2 = _abcdk_http_v2_alloc();
 
     return http;
 }
@@ -191,9 +141,30 @@ final_error:
     return NULL;
 }
 
-int abcdk_http_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
+int _abcdk_http_post(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
 {
     abcdk_http_t *http_p = NULL;
+    int chk;
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+
+    if (!abcdk_atomic_load(&http_p->status))
+        return -2;
+
+    chk = abcdk_comm_queue_push(http_p->out_queue, msg);
+    if (chk != 0)
+        return -1;
+
+    if (abcdk_atomic_load(&http_p->status) == ABCDK_HTTP_STATUS_STABLE)
+        abcdk_comm_send_watch(node);
+
+    return 0;
+}
+
+int abcdk_http_send(abcdk_comm_node_t *node, const void *data,size_t size)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_comm_message_t *msg = NULL;
     int chk;
 
     assert(node != NULL && msg != NULL);
@@ -201,15 +172,102 @@ int abcdk_http_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
 
-    if (!abcdk_atomic_load(&http_p->status))
-        ABCDK_ERRNO_AND_GOTO1(chk = -2, final_error);
+    msg = abcdk_comm_message_copy(data,size);
+    if(!msg)
+        return -1;
 
-    chk = abcdk_comm_queue_push(http_p->out_queue, msg);
+    chk = _abcdk_http_post(node, msg);
     if (chk != 0)
-        ABCDK_ERRNO_AND_GOTO1(chk = -1, final_error);
+        goto final_error;
 
-    if (abcdk_atomic_load(&http_p->status) == 2)
-        abcdk_comm_send_watch(node);
+    return 0;
+
+final_error:
+
+    abcdk_comm_message_unref(&msg);
+
+    return chk;
+}
+
+int abcdk_http_send_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_comm_message_t *msg = NULL;
+    int chk;
+
+    assert(node != NULL && max > 0 && msg != NULL);
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
+
+    msg = abcdk_comm_message_vformat(max,fmt,ap);
+    if(!msg)
+        return -1;
+
+    chk = _abcdk_http_post(node, msg);
+    if (chk != 0)
+        goto final_error;
+
+    return 0;
+
+final_error:
+
+    abcdk_comm_message_unref(&msg);
+
+    return chk;
+}
+
+
+int abcdk_http_send_format(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_comm_message_t *msg = NULL;
+    int chk;
+
+    assert(node != NULL && max > 0 && fmt != NULL);
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
+
+    va_list ap;
+    va_start(ap, fmt);
+    msg = abcdk_comm_message_vformat(max, fmt, ap);
+    va_end(ap);
+
+    if(!msg)
+        return -1;
+
+    chk = _abcdk_http_post(node, msg);
+    if (chk != 0)
+        goto final_error;
+
+    return 0;
+
+final_error:
+
+    abcdk_comm_message_unref(&msg);
+
+    return chk;
+}
+
+int abcdk_http_send_object(abcdk_comm_node_t *node, abcdk_object_t *obj)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_comm_message_t *msg = NULL;
+    int chk;
+
+    assert(node != NULL && obj != NULL);
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
+
+    msg = abcdk_comm_message_attach(obj);
+    if(!msg)
+        return -1;
+
+    chk = _abcdk_http_post(node, msg);
+    if (chk != 0)
+        goto final_error;
 
     return 0;
 
@@ -270,7 +328,7 @@ void _abcdk_http_event_connect(abcdk_comm_node_t *node)
 
     http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
 
-    /*默认启用HTTP1.x。*/
+    /*默认支持1.1 or 1.0 or 0.9。*/
     http_p->version = 1;
 
 #ifdef HEADER_SSL_H
@@ -296,6 +354,7 @@ void _abcdk_http_event_connect(abcdk_comm_node_t *node)
     abcdk_atomic_store(&http_p->status, ABCDK_HTTP_STATUS_STABLE);
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
+    abcdk_comm_send_watch(node);
 }
 
 void _abcdk_http_event_close(abcdk_comm_node_t *node)
@@ -310,145 +369,6 @@ void _abcdk_http_event_close(abcdk_comm_node_t *node)
     /*通知应用层，连接已经关闭。*/
     if(http_p->callback.close_cb)
         http_p->callback.close_cb(node);
-}
-
-int _abcdk_http_event_input_v2_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
-{
-    abcdk_http_t *http_p = NULL;
-    void *msg_ptr;
-    size_t msg_len, msg_off;
-    int len;
-
-    http_p = (abcdk_http_t *)opaque;
-
-    /*处理接收到的数据。*/
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
-    msg_off = abcdk_comm_message_offset(msg);
-    
-    if(http_p->v2->magic_len != 24)
-    {
-        http_p->v2->magic_len = msg_off;
-
-        if(msg_off != 24)
-            abcdk_comm_message_realloc(msg, 24);
-        else
-        {
-            abcdk_comm_message_realloc(msg, 9);
-            abcdk_comm_message_reset(msg, 0);
-        }
-
-        return 0;
-    }
-
-    if (msg_off < 9)
-        return 0;
-
-    len = abcdk_endian_b_to_h24(ABCDK_PTR2U8PTR(msg_ptr,0));
-
-    if (msg_off < 9 + len)
-    {
-        /*增量扩展内存。*/
-        abcdk_comm_message_expand(msg, ABCDK_MIN(524288, (9 + len) - msg_len));
-        return 0;
-    }
-
-    return 1;
-}
-
-int _abcdk_http_event_input_v2_append(abcdk_http_t *http, abcdk_http_request_t **req)
-{
-    abcdk_http_request_t *req_p = NULL;
-    void *msg_ptr;
-    size_t msg_len, msg_off;
-    int len, type, flag, sid;
-
-    /*处理接收到的数据。*/
-    msg_ptr = abcdk_comm_message_data(http->in_buffer);
-    msg_len = abcdk_comm_message_size(http->in_buffer);
-    msg_off = abcdk_comm_message_offset(http->in_buffer);
-
-    len = abcdk_endian_b_to_h24(ABCDK_PTR2U8PTR(msg_ptr,0));
-    type = ABCDK_PTR2U8(msg_ptr,3);
-    flag = ABCDK_PTR2U8(msg_ptr,4);
-    sid = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr,5));
-
-    /*fix me.*/
-
-    return 0;
-}
-
-void _abcdk_http_event_input_v2(abcdk_comm_node_t *node)
-{
-    abcdk_http_t *http_p = NULL;
-    abcdk_http_request_t *req_p = NULL;
-    void *msg_ptr;
-    size_t msg_len, msg_off;
-
-    int chk;
-
-    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
-
-    /*准备接收数据的缓存。*/
-    if (!http_p->in_buffer)
-    {
-        http_p->in_buffer = abcdk_comm_message_alloc(9);
-        if (!http_p->in_buffer)
-        {
-            abcdk_comm_set_timeout(node, 1);
-            return;
-        }
-
-        abcdk_comm_message_protocol_t cb = {http_p, _abcdk_http_event_input_v2_unpack_cb};
-        abcdk_comm_message_protocol_set(http_p->in_buffer, &cb);
-    }
-
-    chk = abcdk_comm_message_recv(http_p->in_buffer,node);
-    if (chk < 0)
-    {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
-    else if (chk == 0)
-    {
-        abcdk_comm_recv_watch(node);
-        return;
-    }
-
-
-    /*填加到请求环境对象。*/
-    chk = _abcdk_http_event_input_v2_append(http_p, &req_p);
-
-    /*重置缓存。*/
-    abcdk_comm_message_realloc(http_p->in_buffer, 9);
-    abcdk_comm_message_reset(http_p->in_buffer, 0);
-
-    if (chk < 0)
-    {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
-    else if (chk == 0)
-    {
-        abcdk_comm_recv_watch(node);
-        return;
-    }
-
-    /*复用链路前要增加引用计数，以防止多线程操作同一个链路在释放回收内存后，造成应用层内存非法访问的异常。*/
-    abcdk_comm_refer(node);
-    /*复用链路。*/
-    abcdk_comm_recv_watch(node);
-
-    /*通知应用层，数据到达。*/
-    http_p->callback.request_cb(node, req_p);
-
-    /*删除请求数据。*/
-    abcdk_http_request_unref(&req_p);
-    
-    /*减少引用计数。*/
-    abcdk_comm_unref(&node);
-
-    return;
 }
 
 void _abcdk_http_event_input_v1(abcdk_comm_node_t *node)
@@ -484,7 +404,6 @@ void _abcdk_http_event_input_v1(abcdk_comm_node_t *node)
     }
 
 NEXT_REQ:
-
 
     /*处理接收到的数据。*/
     msg_ptr = abcdk_comm_message_data(http_p->in_buffer);
@@ -541,8 +460,6 @@ void _abcdk_http_event_input(abcdk_comm_node_t *node)
 
     if(http_p->version == 1)
         _abcdk_http_event_input_v1(node);
-    else if(http_p->version == 2)
-        _abcdk_http_event_input_v2(node);
     else 
         abcdk_comm_set_timeout(node, 1);
 }
@@ -605,6 +522,30 @@ void _abcdk_http_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
     }
 }
 
+#ifdef HEADER_SSL_H
+
+int _abcdk_http_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
+                               const unsigned char *in, unsigned int inlen, void *arg)
+{
+    unsigned int srvlen;
+
+    /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
+    static unsigned char srv[] = {"\x08http/1.1\x08http/1.0\x08http/0.9"};
+
+    /*精确的长度。*/
+    srvlen = sizeof(srv) - 1;
+
+    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
+    if (SSL_select_next_proto((unsigned char **)out, outlen, srv, srvlen, in, inlen) != OPENSSL_NPN_NEGOTIATED)
+    {
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    return SSL_TLSEXT_ERR_OK;
+}
+
+#endif
+
 int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_http_callback_t *cb)
 {
     abcdk_http_t *http_p = NULL;
@@ -619,6 +560,11 @@ int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     /*初始化状态。*/
     http_p->status = ABCDK_HTTP_STATUS_SYNC;
     http_p->callback = *cb;
+
+#ifdef HEADER_SSL_H
+    if(ssl_ctx)
+        SSL_CTX_set_alpn_select_cb(ssl_ctx, _abcdk_http_alpn_select_cb, NULL);
+#endif
 
     abcdk_comm_callback_t fcb = {_abcdk_http_prepare_cb,_abcdk_http_event_cb};
     chk = abcdk_comm_listen(node, ssl_ctx, addr, &fcb);

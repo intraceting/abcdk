@@ -54,16 +54,39 @@ typedef struct _abcdk_http_callback
  */
 abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx,size_t up_max_size,const char *up_buffer_point);
 
+/**
+ * 发送数据。
+ * 
+ * @return 0 成功，-1 失败。
+ */
+int abcdk_http_send(abcdk_comm_node_t *node, const void *data,size_t size);
+
 /** 
  * 发送数据。
  * 
- * @warning 数据对象将被托管，应用层不可以继续访问内存对象。
+ * @param [in] max 格式化数据最大长度。 
  * 
- * @param [in] msg 数据对象的指针。注：仅做指针复制，不会改变对象的引用计数。
- * 
- * @return 0 成功，-1 失败(其它)，-2 失败(已断开)。
+ * @return 0 成功，-1 失败。
 */
-int abcdk_http_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
+int abcdk_http_send_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap);
+
+/** 
+ * 发送数据。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_send_format(abcdk_comm_node_t *node, int max, const char *fmt, ...);
+
+/**
+ * 发送数据。
+ * 
+ * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
+ * 
+ * @param [in] obj 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_send_object(abcdk_comm_node_t *node, abcdk_object_t *obj);
 
 /**
  * 启动监听。
@@ -74,7 +97,7 @@ int abcdk_http_send(abcdk_comm_node_t *node, abcdk_comm_message_t *msg);
  * @param [in] addr 监听地址指针。
  * @param [in] cb 事件回调函数指针。
  * 
- * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_http_callback_t *cb);
 

@@ -51,25 +51,22 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         abcdk_save("./test_http_upload.data", abcdk_http_request_body(req), len, 0);
     }
 
-    abcdk_comm_message_t *file = abcdk_comm_message_mmap2("/tmp/aaa.txt", 0, 0);
+    abcdk_object_t *file = abcdk_mmap2("/etc/issue", 0, 0, 0);
     if (file)
     {
-        abcdk_comm_message_t *msg = abcdk_comm_message_format(1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
-                                                            abcdk_http_status_desc(200), abcdk_comm_message_size(file));
+        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+                                                            abcdk_http_status_desc(200), file->sizes[0]);
 
-        abcdk_http_send(node, msg);
-        abcdk_http_send(node, file);
+        abcdk_http_send_object(node, file);
     }
     else
     {
-        abcdk_comm_message_t *msg = abcdk_comm_message_format(1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                                                             abcdk_http_status_desc(404), 0);
-        abcdk_http_send(node, msg);
     }
 #else
 
-    abcdk_comm_message_t *msg = abcdk_comm_message_format(1000, "RTSP/1.0 200 OK\r\nCSeq: 1\r\nPublic: OPTIONS, DESCRIBE, PLAY, PAUSE, SETUP, TEARDOWN, SET_PARAMETER, GET_PARAMETER\r\nDate:  Fri, Apr 10 2020 19:07:19 GMT\r\n\r\n");
-    abcdk_http_send(node, msg);
+    abcdk_http_send_format(1000, "RTSP/1.0 200 OK\r\nCSeq: 1\r\nPublic: OPTIONS, DESCRIBE, PLAY, PAUSE, SETUP, TEARDOWN, SET_PARAMETER, GET_PARAMETER\r\nDate:  Fri, Apr 10 2020 19:07:19 GMT\r\n\r\n");
 
 #endif
 }
@@ -82,58 +79,6 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
 
     fprintf(stderr, "Disconnect: %s\n", buf);
 }
-
-#ifdef HEADER_SSL_H
-
-int _abcdk_test_http_ssl_servername(SSL *ssl, int *ad, void *arg)
-{
-    const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-
-    SSL_set_tlsext_host_name(ssl,"localhost");
-    return SSL_TLSEXT_ERR_OK;
-}
-
-int _abcdk_test_http_alpn_select_cb(SSL *ssl,
-                                    const unsigned char **out,
-                                    unsigned char *outlen,
-                                    const unsigned char *in,
-                                    unsigned int inlen,
-                                    void *arg)
-{
-    for (int i = 0; i < inlen; i += in[i] + 1)
-    {
-        char buf[255] = {0};
-        strncpy(buf,&in[i+1],(int)in[i]);
-        fprintf(stderr, "SSL ALPN supported by client: %s\n", buf);
-    }
-
-    unsigned int srvlen;
-
-    /*协议选择时，仅做指针(out)的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
-    static unsigned char srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
-
-    srvlen = sizeof(srv) - 1;
-
-#if 0
-    /*协义选择时，仅做指针(out)的复制。从server列表，按顺序在client匹配，匹配成功即停止，并做指针复制。*/
-    if (SSL_select_next_proto((unsigned char **)out, outlen, srv, srvlen, in, inlen) != OPENSSL_NPN_NEGOTIATED)
-    {
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-#else 
-    
-    /*协义选择时，直接复制长度和指针也行。*/
-    *outlen = in[0];
-    *out = &in[1];
-
-#endif 
-
-    fprintf(stderr, "SSL ALPN selected: %*s\n", (int)*outlen, *out);
-
-    return SSL_TLSEXT_ERR_OK;
-}
-
-#endif
 
 void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 {
@@ -163,12 +108,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
                                        abcdk_option_get(ctx->args, "--key-pwd", 0, NULL));
 
         //  SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-
         SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
-    //    SSL_CTX_set_tlsext_servername_callback(server_ssl_ctx,_abcdk_test_http_ssl_servername);
-        SSL_CTX_set_alpn_select_cb(server_ssl_ctx, _abcdk_test_http_alpn_select_cb, NULL);
-
-    //    SSL_CTX_set_options(server_ssl_ctx, SSL_OP_NO_TICKET);
     }
 
 #endif

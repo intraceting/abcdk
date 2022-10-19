@@ -222,19 +222,6 @@ int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
 ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
- * 写(从文件)。
- * 
- * @note 当写权利被占用时，不会有其它线程获得写事件。
- * 
- * @param [in] fd 文件名柄。
- * @param [in out] offset 起始偏移量，函数返回时填写最新的位置。NULL(0) 使用文件内部的偏移量。
- * @param [in] count 数据长度。
- * 
- * @return > 0 已写入数据的长度，0 链路忙。
-*/
-ssize_t abcdk_comm_sendfile(abcdk_comm_node_t *node, int fd, off_t *offset, size_t count);
-
-/**
  * 监听是否可写。
  * 
  * @return 0 成功，!0 失败。

@@ -94,7 +94,7 @@ int abcdk_rpc_response(abcdk_comm_node_t *node, uint64_t mid, const void *data, 
  * @param [in] addr 监听地址指针。
  * @param [in] cb 通知回调函数指针。
  * 
- * @return !NULL(0) 成功(对象指针)，NULL(0) 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_rpc_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_rpc_callback_t *cb);
 
