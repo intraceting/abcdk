@@ -27,7 +27,7 @@ typedef struct _abcdk_http
 
     /**
      * 0: unknown
-     * 1: http/1.0 or http/1.1 or http/0.9
+     * 1: http/1.0 or http/1.1 or http/0.9 or rtsp/1.0
      * 2: http/2
     */
     int version;

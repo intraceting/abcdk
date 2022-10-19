@@ -54,6 +54,13 @@ const void *abcdk_http_request_body(abcdk_http_request_t *req);
 const char *abcdk_http_request_env(abcdk_http_request_t *req,int line);
 
 /**
+ * 匹配头部环境参数，返回变量的值。。
+ * 
+ * @return !NULL(0) 参数值的指针，NULL(0) 超出头部范围。
+*/
+const char *abcdk_http_request_getenv(abcdk_http_request_t *req, const char *name);
+
+/**
  * 附加消息。
  * 
  * @param [in out] remain 缓存剩余的数据长度，返回时填充。

@@ -136,6 +136,28 @@ const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
     return NULL;
 }
 
+const char *abcdk_http_request_getenv(abcdk_http_request_t *req, const char *name)
+{
+    const char *p = NULL;
+    const char *v = NULL;
+
+    assert(req != NULL && name != 0);
+
+    /*从1开始。*/
+    for (int i = 1; i < 100; i++)
+    {
+        p = abcdk_http_request_env(req, i);
+        if (!p)
+            break;
+
+        v = abcdk_http_match_env(p, name);
+        if(v)
+            return v;
+    }
+
+    return NULL;
+}
+
 int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 {
     abcdk_http_request_t *req_p = NULL;
@@ -221,6 +243,11 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
     
 }
 
+int _abcdk_http_request_append_rtsp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
+{
+    return 1;
+}
+
 int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
     int fd = -1;
@@ -231,6 +258,10 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
 
     /*如果出错，那么无剩余的数据。*/
     *remain = 0;
+
+    /*如果还没有头部数据，并且第一个字符为$，按RTSP协议解析流媒体数据包。*/
+    if (req->hdr_len == 0 && ABCDK_PTR2I8(data, 0) == '$')
+        return _abcdk_http_request_append_rtsp_body(req, data, size, remain);
 
     /*如果未确定头部长度，则先定位头部长度。*/
     if (req->hdr_len <= 0)
