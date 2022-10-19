@@ -656,7 +656,7 @@ uint64_t abcdk_endian_h_to_l64(uint64_t src)
 
 int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t number)
 {
-    assert(pool && size > 0 && size * 8 > number);
+    assert(pool && size > 0 && size * 8 >= number);
 
     size_t bloom_pos = 7 - (number & 7);
     size_t byte_pos = number >> 3;
@@ -672,7 +672,7 @@ int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t number)
 
 int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number)
 {
-    assert(pool && size > 0 && size * 8 > number);
+    assert(pool && size > 0 && size * 8 >= number);
 
     size_t bloom_pos = 7 - (number & 7);
     size_t byte_pos = number >> 3;
@@ -688,7 +688,7 @@ int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number)
 
 int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number)
 {
-    assert(pool && size > 0 && size * 8 > number);
+    assert(pool && size > 0 && size * 8 >= number);
 
     size_t bloom_pos = 7 - (number & 7);
     size_t byte_pos = number >> 3;

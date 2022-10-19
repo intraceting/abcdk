@@ -162,9 +162,7 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 {
     abcdk_http_request_t *req_p = NULL;
     void *msg_ptr;
-    size_t msg_len;
-    size_t msg_off;
-    size_t cur_pos;
+    size_t msg_len, msg_off, cur_pos;
     const char *p;
     size_t all_len;
 
@@ -243,9 +241,56 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
     
 }
 
+int _abcdk_http_request_rtsp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
+{
+    abcdk_http_request_t *req_p = NULL;
+    void *msg_ptr;
+    size_t msg_len, msg_off, cur_pos;
+    int len;
+
+    req_p = (abcdk_http_request_t *)opaque;
+
+    /*处理接收到的数据。*/
+    msg_ptr = abcdk_comm_message_data(msg);
+    msg_len = abcdk_comm_message_size(msg);
+    msg_off = abcdk_comm_message_offset(msg);
+
+    if(msg_off < 4)
+        return 0;
+
+    len = abcdk_endian_b_to_h16(ABCDK_PTR2U16(msg_ptr, 2));
+    if (msg_off < len + 4)
+    {
+        abcdk_comm_message_expand(msg, ABCDK_MIN(65536, len + 4 - msg_len));
+        return 0;
+    }
+
+    printf("len = %d\r\n",len);
+
+    return 1;
+}
+
 int _abcdk_http_request_append_rtsp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
-    return 1;
+    /*
+     * |$     |0      |Length(Header+Data) |RTP Header |RTP Data |
+     * |1 Byte|1 Byte |2 Bytes             |12 Bytes   |N Bytes  |
+    */
+    int chk;
+
+    /*准备实体的缓存。*/
+    if (!req->body_buf)
+    {
+        req->body_buf = abcdk_comm_message_alloc(4);
+        if (!req->body_buf)
+            return -1;
+
+        abcdk_comm_message_protocol_t cb = {req, _abcdk_http_request_rtsp_unpack_cb};
+        abcdk_comm_message_protocol_set(req->body_buf, &cb);
+    }
+
+    chk = abcdk_comm_message_recv2(req->body_buf, data, size, remain);
+    return chk;
 }
 
 int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
@@ -312,8 +357,8 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
             if(!req->body_buf)
                 return -1;
 
-            abcdk_comm_message_protocol_t prot = {req, _abcdk_http_request_unpack_cb};
-            abcdk_comm_message_protocol_set(req->body_buf, &prot);
+            abcdk_comm_message_protocol_t cb = {req, _abcdk_http_request_unpack_cb};
+            abcdk_comm_message_protocol_set(req->body_buf, &cb);
         }
 
         chk = abcdk_comm_message_recv2(req->body_buf,data, size, remain);

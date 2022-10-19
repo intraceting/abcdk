@@ -399,7 +399,7 @@ int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number);
  * 布隆-写 
  * 
  * @param offset 偏移量(Bits)。有效范围：0 ～ size*8-1。
- * @param val 值。0(0)，1 (!0)。
+ * @param val 值。0 (0)，1 (!0)。
 */
 void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val);
 
