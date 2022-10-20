@@ -23,4 +23,11 @@ const char *abcdk_http_status_desc(uint32_t code);
 */
 const char *abcdk_http_match_env(const char *line, const char *name);
 
+/** 
+ * 翻译内容类型描述。
+ * 
+ * @return !NULL(0) 描述字符串指针，NULL(0) 状态码未找到。
+*/
+const char *abcdk_http_content_type_desc(const char *ext);
+
 #endif //ABCDK_UTIL_HTTP_H

@@ -59,14 +59,14 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
     abcdk_object_t *file = abcdk_mmap2("/etc/issue", 0, 0, 0);
     if (file)
     {
-        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
-                                                            abcdk_http_status_desc(200), file->sizes[0]);
+        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+                                                           abcdk_http_content_type_desc(".txt"),abcdk_http_status_desc(200), file->sizes[0]);
 
         abcdk_http_send_object(node, file);
     }
     else
     {
-        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\ncharset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                                                             abcdk_http_status_desc(404), 0);
     }
 #else
@@ -210,10 +210,19 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             t.version,t.padding,t.extension,
             t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
 
+        if(t.payload!=96)
+            return;
+
         int *fd = (int*)abcdk_comm_get_userdata(node);
 
         if (*fd <0)
+        {
             *fd = abcdk_open("./test_rtsp_record.h264", 1, 0, 1);
+     //       abcdk_write(*fd,"\0\0\0\1",4);
+        }
+
+     //   if(t.marker)
+     //       abcdk_write(*fd,"\0\0\0\1",4);
 
         int len = abcdk_http_request_body_length(req) - 4 - 12;
 
@@ -270,7 +279,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
 #endif
 
-    //abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_http_event_cb, _abcdk_test_http_close_cb};
+  //  abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_http_event_cb, _abcdk_test_http_close_cb};
     abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_rtsp_event_cb, _abcdk_test_http_close_cb};
     abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
 
