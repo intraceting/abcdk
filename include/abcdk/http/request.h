@@ -40,9 +40,16 @@ abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffe
 /**
  * 获取实体。
  * 
+ * @param [in] off 偏移量。
+ * 
  * @return !NULL(0) 实体的指针，NULL(0) 无请实体。
 */
-const void *abcdk_http_request_body(abcdk_http_request_t *req);
+const void *abcdk_http_request_body(abcdk_http_request_t *req, off_t off);
+
+/**
+ * 获取实体长度。
+*/
+size_t abcdk_http_request_body_length(abcdk_http_request_t *req);
 
 /**
  * 获取头部环境参数。

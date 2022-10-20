@@ -120,19 +120,34 @@ final_error:
     return NULL;
 }
 
-const void *abcdk_http_request_body(abcdk_http_request_t *req)
+const void *abcdk_http_request_body(abcdk_http_request_t *req, off_t off)
 {
     const void *p = NULL;
+    size_t f = 0;
 
     assert(req != NULL);
-    
-    if(req->body_buf)
-        p = abcdk_comm_message_data(req->body_buf);
 
-    if(req->is_rtp)
-        p = ABCDK_PTR2VPTR(p,4);
+    if (req->body_buf)
+    {
+        p = abcdk_comm_message_data(req->body_buf);
+        f = abcdk_comm_message_offset(req->body_buf);
+    }
+
+    ABCDK_ASSERT(off <= f,"偏移量必须小于实体长度。");
+
+    p = ABCDK_PTR2VPTR(p, off);
 
     return p;
+}
+
+size_t abcdk_http_request_body_length(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    if(req->body_buf)
+        return abcdk_comm_message_offset(req->body_buf);
+
+    return 0;
 }
 
 const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
