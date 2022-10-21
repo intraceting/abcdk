@@ -8,6 +8,8 @@
 #define ABCDK_SHELL_PROC_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
 
 __BEGIN_DECLS
 

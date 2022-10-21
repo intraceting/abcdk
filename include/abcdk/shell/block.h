@@ -11,6 +11,8 @@
 #include "abcdk/util/dirent.h"
 #include "abcdk/shell/mmc.h"
 #include "abcdk/shell/scsi.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
 
 __BEGIN_DECLS
 

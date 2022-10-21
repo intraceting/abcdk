@@ -1,0 +1,291 @@
+/*
+ * This file is part of ABCDK.
+ * 
+ * MIT License
+ * 
+ */
+#include "abcdk/util/io.h"
+
+int abcdk_poll(int fd, int event, time_t timeout)
+{
+    struct pollfd arr = {0};
+    int chk = 0;
+    int ret = 0;
+
+    assert(fd >= 0 && (event & 0x03));
+
+    arr.fd = fd;
+    arr.events = 0;
+
+    if ((event & 0x01))
+        arr.events |= POLLIN;
+    if ((event & 0x02))
+        arr.events |= POLLOUT;
+
+    chk = poll(&arr, 1, (timeout >= INT32_MAX ? -1 : timeout));
+    if (chk <= 0)
+        return chk;
+
+    if (chk & POLLIN)
+        ret |= 0x01;
+    if (chk & POLLOUT)
+        ret |= 0x02;
+
+    return ret;
+}
+
+ssize_t abcdk_write(int fd, const void *data, size_t size)
+{
+    ssize_t wsize = 0;
+    ssize_t wsize2 = 0;
+
+    assert(fd >= 0 && data && size > 0);
+
+    wsize = write(fd, data, size);
+    if (wsize > 0)
+    {
+        if (wsize < size)
+        {
+            /*有的系统超过2GB，需要分段落盘。*/
+            wsize2 = abcdk_write(fd, ABCDK_PTR2PTR(void, data, wsize), size - wsize);
+            if (wsize2 > 0)
+                wsize += wsize2;
+        }
+    }
+
+    return wsize;
+}
+
+ssize_t abcdk_read(int fd, void *data, size_t size)
+{
+    ssize_t rsize = 0;
+    ssize_t rsize2 = 0;
+
+    assert(fd >= 0 && data && size > 0);
+
+    rsize = read(fd, data, size);
+    if (rsize > 0)
+    {
+        if (rsize < size)
+        {
+            /*有的系统超过2GB，需要分段读取。*/
+            rsize2 = abcdk_read(fd, ABCDK_PTR2PTR(char, data, rsize), size - rsize);
+            if (rsize2 > 0)
+                rsize += rsize2;
+        }
+    }
+
+    return rsize;
+}
+
+void abcdk_closep(int *fd)
+{
+    if (!fd || *fd < 0)
+        ABCDK_ERRNO_AND_RETURN0(EINVAL);
+
+    close(*fd);
+    *fd = -1;
+}
+
+int abcdk_open(const char *file, int rw, int nonblock, int create)
+{
+    int flag = O_RDONLY;
+    mode_t mode = S_IRUSR | S_IWUSR;
+
+    assert(file);
+
+    if (rw)
+        flag = O_RDWR;
+
+    if (nonblock)
+        flag |= O_NONBLOCK;
+
+    if (rw && create)
+        flag |= O_CREAT;
+
+    flag |= __O_LARGEFILE;
+    flag |= __O_CLOEXEC;
+
+    return open(file, flag, mode);
+}
+
+int abcdk_reopen(int fd2, const char *file, int rw, int nonblock, int create)
+{
+    int fd = -1;
+    int fd3 = -1;
+
+    assert(fd2 >= 0);
+
+    fd = abcdk_open(file, rw, nonblock, create);
+    if (fd < 0)
+        return -1;
+
+    fd3 = dup2(fd, fd2);
+
+    /*必须要关闭，不然句柄就会丢失，造成资源泄露。*/
+    abcdk_closep(&fd);
+
+    return fd3;
+}
+
+int abcdk_fflag_get(int fd)
+{
+    assert(fd >= 0);
+
+    return fcntl(fd, F_GETFL, 0);
+}
+
+int abcdk_fflag_add(int fd, int flag)
+{
+    int old;
+    int opt;
+
+    assert(fd >= 0 && flag != 0);
+
+    old = fcntl(fd, F_GETFL, 0);
+    if (old == -1)
+        return -1;
+
+    opt = old | flag;
+
+    return fcntl(fd, F_SETFL, opt);
+}
+
+int abcdk_fflag_del(int fd, int flag)
+{
+    int old;
+    int opt;
+
+    assert(fd >= 0 && flag != 0);
+
+    old = fcntl(fd, F_GETFL, 0);
+    if (old == -1)
+        return -1;
+
+    opt = old & ~flag;
+
+    return fcntl(fd, F_SETFL, opt);
+}
+
+
+ssize_t abcdk_load(const char *file, void *buf, size_t size, size_t offset)
+{
+    int fd = -1;
+    ssize_t rlen = 0;
+    off_t off;
+    int chk;
+
+    fd = abcdk_open(file, 0, 0, 0);
+    if (fd < 0)
+        return -1;
+
+    off = lseek(fd, offset, SEEK_SET);
+    if (off != offset)
+        return -1;
+
+    rlen = abcdk_read(fd, buf, size);
+
+final:
+
+    abcdk_closep(&fd);
+    
+    return rlen;
+}
+
+ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset)
+{
+    int fd = -1;
+    ssize_t wlen = 0;
+    off_t off;
+    int chk;
+
+    fd = abcdk_open(file, 1, 0, 1);
+    if (fd < 0)
+        return -1;
+
+    off = lseek(fd, offset, SEEK_SET);
+    if (off != offset)
+        return -1;
+
+    wlen = abcdk_write(fd, buf, size);
+
+final:
+
+    abcdk_closep(&fd);
+    
+    return wlen;
+}
+
+
+ssize_t abcdk_fgetline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)
+{
+    char *line_p = NULL;
+    ssize_t rlen = -1;
+
+    assert(fp != NULL && line != NULL);
+
+    while ((rlen = getdelim(line, len, delim, fp)) != -1)
+    {
+        line_p = *line;
+
+        if (*line_p == '\0' || *line_p == note || iscntrl(*line_p))
+            continue;
+        else
+            break;
+    }
+
+    return rlen;
+}
+
+void abcdk_fclosep(FILE **fp)
+{
+    FILE *fp_p = NULL;
+
+    if(!fp || !*fp)
+        return;
+
+    fp_p = *fp;
+    *fp = NULL;
+
+    fclose(fp_p);
+}
+
+int64_t abcdk_fsize(FILE *fp)
+{
+    int64_t size = -1;
+    int64_t pos = -1;
+
+    assert(fp != NULL);
+
+    pos = ftell(fp);
+    if (pos >= 0)
+    {
+        fseek(fp, 0, SEEK_END);
+        size = ftell(fp);
+        fseek(fp, pos, SEEK_SET);
+    }
+
+    return size;
+}
+
+int abcdk_futimens(int fd, const struct timespec *atime, const struct timespec *mtime)
+{
+    struct timespec times[2] = {0};
+    int chk;
+
+    if (atime && atime->tv_sec > 0)
+        times[0] = *atime;
+    else
+        clock_gettime(CLOCK_REALTIME, &times[0]);
+
+    if (mtime && mtime->tv_sec > 0)
+        times[1] = *mtime;
+    else
+        clock_gettime(CLOCK_REALTIME, &times[1]);
+
+    chk = futimens(fd, times);
+    if (chk != 0)
+        return -1;
+
+    return 0;
+}

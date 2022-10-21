@@ -8,6 +8,7 @@
 #define ABCDK_LOG_LOG_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/time.h"
 
 __BEGIN_DECLS
 

@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/math.h"
+#include "abcdk/util/bloom.h"
 
 __BEGIN_DECLS
 

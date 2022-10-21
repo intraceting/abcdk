@@ -32,7 +32,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     if(!rfd)
         return -2;
 
-    while (abcdk_getline(rfd, &line_p, &line_l, '\n', 0) > 0)
+    while (abcdk_fgetline(rfd, &line_p, &line_l, '\n', 0) > 0)
     {
         /*跳过无法存储的（不能超过数组容量），不然管道中有数据但无“人”读取的话，会卡死父进程。*/
         if (line_c >= max)

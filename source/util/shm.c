@@ -1,0 +1,30 @@
+/*
+ * This file is part of ABCDK.
+ * 
+ * MIT License
+ * 
+ */
+#include "abcdk/util/shm.h"
+
+int abcdk_shm_open(const char* name,int rw, int create)
+{
+    int flag = O_RDONLY;
+    mode_t mode = S_IRUSR | S_IWUSR;
+
+    assert(name);
+
+    if (rw)
+        flag = O_RDWR;
+
+    if (rw && create)
+        flag |= O_CREAT;
+
+    return shm_open(name,flag,mode);
+}
+
+int abcdk_shm_unlink(const char* name)
+{
+    assert(name);
+
+    return shm_unlink(name);
+}

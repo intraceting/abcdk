@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/scsi.h"
 #include "abcdk/util/tree.h"
+#include "abcdk/util/endian.h"
 
 __BEGIN_DECLS
 

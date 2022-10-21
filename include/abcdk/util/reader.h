@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/thread.h"
 #include "abcdk/util/tree.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 

@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_SCSI_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/endian.h"
 
 __BEGIN_DECLS
 

@@ -8,6 +8,8 @@
 #define ABCDK_MP4_FILE_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/endian.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 

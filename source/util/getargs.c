@@ -51,7 +51,7 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
     if (argv0)
         abcdk_option_set(opt, it_key, argv0);
 
-    while (abcdk_getline(fp, &line, &len, delim, note) != -1)
+    while (abcdk_fgetline(fp, &line, &len, delim, note) != -1)
     {
         /* 去掉字符串两端所有空白字符。 */
         abcdk_strtrim(line, isspace, 2);

@@ -50,7 +50,7 @@ void abcdk_mtab_list(abcdk_tree_t *list)
     if (!fp)
         return;
 
-    while (abcdk_getline(fp, &line, &len, '\n', 0) != -1)
+    while (abcdk_fgetline(fp, &line, &len, '\n', 0) != -1)
     {
         size_t sizes[] = {sizeof(abcdk_mtab_info_t), len + 1};
         dev = abcdk_tree_alloc2(sizes, 2, 0);

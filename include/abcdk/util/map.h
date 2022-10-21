@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
+#include "abcdk/util/hash.h"
 
 __BEGIN_DECLS
 

@@ -11,6 +11,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/scsi.h"
 #include "abcdk/util/iconv.h"
+#include "abcdk/util/endian.h"
 
 __BEGIN_DECLS
 

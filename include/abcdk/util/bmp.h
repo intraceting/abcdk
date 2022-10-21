@@ -8,6 +8,9 @@
 #define ABCDK_UTIL_BMP_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/endian.h"
 
 __BEGIN_DECLS
 

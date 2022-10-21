@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_OBJECT_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
 
 __BEGIN_DECLS
 

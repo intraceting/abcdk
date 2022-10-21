@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/option.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 

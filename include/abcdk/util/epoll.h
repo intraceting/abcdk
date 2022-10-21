@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_EPOLL_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 

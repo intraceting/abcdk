@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/thread.h"
+#include "abcdk/util/time.h"
 
 __BEGIN_DECLS
 

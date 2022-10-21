@@ -10,6 +10,8 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/tree.h"
+#include "abcdk/util/time.h"
+#include "abcdk/util/endian.h"
 
 __BEGIN_DECLS
 

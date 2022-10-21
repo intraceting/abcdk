@@ -66,6 +66,9 @@
 #include <net/if.h>
 #include <net/ethernet.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif //_OPENMP
 
 /** 转字符串。*/
 #define ABCDK_STR_NOT_USE(s) #s
