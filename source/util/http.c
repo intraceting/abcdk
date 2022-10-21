@@ -467,5 +467,5 @@ const char *abcdk_http_content_type_desc(const char *ext)
             return abcdk_http_content_type_dict[i].desc;
     }
 
-    return NULL;
+    return abcdk_http_content_type_desc(".*");
 }
