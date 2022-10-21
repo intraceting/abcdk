@@ -62,7 +62,7 @@ uint64_t abcdk_bloom_read_number(const uint8_t *pool, size_t size, size_t offset
 /**
  * 布隆-数值转写。
  */
-void abcdk_bloom_write_number(const uint8_t *pool, size_t size, size_t offset, int bits, uint64_t num);
+void abcdk_bloom_write_number(uint8_t *pool, size_t size, size_t offset, int bits, uint64_t num);
 
 __END_DECLS
 

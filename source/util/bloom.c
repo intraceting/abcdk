@@ -90,7 +90,7 @@ uint64_t abcdk_bloom_read_number(const uint8_t *pool, size_t size, size_t offset
     return num;
 }
 
-void abcdk_bloom_write_number(const uint8_t *pool, size_t size, size_t offset, int bits, uint64_t num)
+void abcdk_bloom_write_number(uint8_t *pool, size_t size, size_t offset, int bits, uint64_t num)
 {
     assert(pool != NULL && size > 0 && bits > 0);
     assert(size * 8 >= offset + bits);
