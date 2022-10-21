@@ -42,8 +42,8 @@ typedef struct _abcdk_http_request
     /** 头部环境变量的指针。*/
     const char *hdr_envs[100];
 
-    /** 是否为RTP包。*/
-    int is_rtp;
+    /** 是否为RTSP包。*/
+    int is_rtsp;
 
 }abcdk_http_request_t;
 
@@ -109,7 +109,7 @@ abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffe
     req->hdr_len = 0;
     req->body_len = 0;
     memset(req->hdr_envs,0,sizeof(req->hdr_envs));
-    req->is_rtp = 0;
+    req->is_rtsp = 0;
 
     return req;
 
@@ -269,7 +269,7 @@ int _abcdk_http_request_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
     
 }
 
-int _abcdk_http_request_rtp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
+int _abcdk_http_request_rtsp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
 {
     abcdk_http_request_t *req_p = NULL;
     void *msg_ptr;
@@ -298,7 +298,7 @@ int _abcdk_http_request_rtp_unpack_cb(void *opaque, abcdk_comm_message_t *msg)
     return 1;
 }
 
-int _abcdk_http_request_append_rtp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
+int _abcdk_http_request_append_rtsp_body(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
     /*
      * |$     |Channel |Length(Data) |Data    |
@@ -313,7 +313,7 @@ int _abcdk_http_request_append_rtp_body(abcdk_http_request_t *req, const void *d
         if (!req->body_buf)
             return -1;
 
-        abcdk_comm_message_protocol_t cb = {req, _abcdk_http_request_rtp_unpack_cb};
+        abcdk_comm_message_protocol_t cb = {req, _abcdk_http_request_rtsp_unpack_cb};
         abcdk_comm_message_protocol_set(req->body_buf, &cb);
     }
 
@@ -334,11 +334,11 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
 
     /*如果还没有头部数据，并且第一个字符为$，按RTP协议解析流媒体数据包。*/
     if (req->hdr_len == 0 && ABCDK_PTR2I8(data, 0) == '$')
-        req->is_rtp = 1;
+        req->is_rtsp = 1;
 
-    /*RTP包*/
-    if(req->is_rtp)
-        return _abcdk_http_request_append_rtp_body(req, data, size, remain);
+    /*RTSP包*/
+    if(req->is_rtsp)
+        return _abcdk_http_request_append_rtsp_body(req, data, size, remain);
 
     /*如果未确定头部长度，则先定位头部长度。*/
     if (req->hdr_len <= 0)
