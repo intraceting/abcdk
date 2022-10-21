@@ -91,14 +91,6 @@ typedef struct _rtp_header
     
 } rtp_header_t;
 
-uint64_t _readtonumber(const void *data, size_t size, off_t off, int bits)
-{
-    uint64_t num = 0;
-    for (int i = 0; i < bits; i++)
-        num = (num << 1) | abcdk_bloom_read((uint8_t *)data, size, off + i);
-
-    return num;
-}
 
 void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
 {
@@ -193,17 +185,17 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 
         rtp_header_t t;
 
-        t.version = _readtonumber(p, 12, 0, 2);
-        t.padding = _readtonumber(p, 12, 2, 1);
-        t.extension = _readtonumber(p, 12, 3, 1);
-        t.csrc_len = _readtonumber(p, 12, 4, 4);
-        t.marker = _readtonumber(p, 12, 8, 1);
-        t.payload = _readtonumber(p, 12, 9, 7);
-        t.seq_no = _readtonumber(p, 12, 16, 16);
-        t.timestamp = _readtonumber(p, 12, 32, 32);
-        t.ssrc = _readtonumber(p, 12, 64, 32);
+        t.version = abcdk_bloom_read_number(p, 12, 0, 2);
+        t.padding = abcdk_bloom_read_number(p, 12, 2, 1);
+        t.extension = abcdk_bloom_read_number(p, 12, 3, 1);
+        t.csrc_len = abcdk_bloom_read_number(p, 12, 4, 4);
+        t.marker = abcdk_bloom_read_number(p, 12, 8, 1);
+        t.payload = abcdk_bloom_read_number(p, 12, 9, 7);
+        t.seq_no = abcdk_bloom_read_number(p, 12, 16, 16);
+        t.timestamp = abcdk_bloom_read_number(p, 12, 32, 32);
+        t.ssrc = abcdk_bloom_read_number(p, 12, 64, 32);
 
-//        t.csrc = _readtonumber(p, 12, 97, 32);
+//        t.csrc = abcdk_bloom_read_number(p, 12, 97, 32);
 
 
         printf("version=%d,padding=%d,extension=%d,csrc_len=%u,marker=%d,payload=%u,=seq_no=%u,timestamp=%u,ssrc=%u\n",

@@ -6,12 +6,13 @@
  */
 #include "abcdk/util/bloom.h"
 
-int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t number)
+int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t index)
 {
-    assert(pool && size > 0 && size * 8 >= number);
+    assert(pool != NULL && size > 0);
+    assert(size * 8 > index);
 
-    size_t bloom_pos = 7 - (number & 7);
-    size_t byte_pos = number >> 3;
+    size_t bloom_pos = 7 - (index & 7);
+    size_t byte_pos = index >> 3;
     size_t value = 1 << bloom_pos;
 
     if((pool[byte_pos] & value) != 0)
@@ -22,12 +23,13 @@ int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t number)
     return 0;
 }
 
-int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number)
+int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t index)
 {
-    assert(pool && size > 0 && size * 8 >= number);
+    assert(pool != NULL && size > 0);
+    assert(size * 8 > index);
 
-    size_t bloom_pos = 7 - (number & 7);
-    size_t byte_pos = number >> 3;
+    size_t bloom_pos = 7 - (index & 7);
+    size_t byte_pos = index >> 3;
     size_t value = 1 << bloom_pos;
 
     if((pool[byte_pos] & value) == 0)
@@ -38,12 +40,13 @@ int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t number)
     return 0;
 }
 
-int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number)
+int abcdk_bloom_filter(const uint8_t* pool,size_t size,size_t index)
 {
-    assert(pool && size > 0 && size * 8 >= number);
+    assert(pool != NULL && size > 0);
+    assert(size * 8 > index);
 
-    size_t bloom_pos = 7 - (number & 7);
-    size_t byte_pos = number >> 3;
+    size_t bloom_pos = 7 - (index & 7);
+    size_t byte_pos = index >> 3;
     size_t value = 1 << bloom_pos;
 
     if((pool[byte_pos] & value) != 0)
@@ -54,6 +57,9 @@ int abcdk_bloom_filter(uint8_t* pool,size_t size,size_t number)
 
 void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val)
 {
+    assert(pool != NULL && size > 0);
+    assert(size * 8 > offset);
+
     if(val)
         abcdk_bloom_mark(pool,size,offset);
     else 
@@ -63,7 +69,32 @@ void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val)
     errno = 0;
 }
 
-int abcdk_bloom_read(uint8_t* pool,size_t size,size_t offset)
+int abcdk_bloom_read(const uint8_t* pool,size_t size,size_t offset)
 {
+    assert(pool != NULL && size > 0);
+    assert(size * 8 > offset);
+
     return abcdk_bloom_filter(pool,size,offset);
+}
+
+uint64_t abcdk_bloom_read_number(const uint8_t *pool, size_t size, size_t offset, int bits)
+{
+    uint64_t num = 0;
+
+    assert(pool != NULL && size > 0 && bits > 0);
+    assert(size * 8 >= offset + bits);
+    
+    for (int i = 0; i < bits; i++)
+        num = (num << 1) | abcdk_bloom_read(pool, size, offset + i);
+
+    return num;
+}
+
+void abcdk_bloom_write_number(const uint8_t *pool, size_t size, size_t offset, int bits, uint64_t num)
+{
+    assert(pool != NULL && size > 0 && bits > 0);
+    assert(size * 8 >= offset + bits);
+
+    for (int i = 0; i < bits; i++)
+        abcdk_bloom_write(pool, size, offset + i, ((num >> (bits - 1 - i)) & 1));
 }
