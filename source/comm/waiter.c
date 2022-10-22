@@ -222,7 +222,7 @@ int abcdk_comm_waiter_response(abcdk_comm_waiter_t *waiter,
     /*复制队列指针。*/
     queue_p = ABCDK_PTR2OBJ(abcdk_comm_queue_t *, val_p, 0);
 
-    chk = abcdk_comm_queue_push(queue_p, msg);
+    chk = abcdk_comm_queue_push(queue_p, msg, 0);
     if (chk != 0)
         goto final;
 

@@ -24,11 +24,20 @@ typedef struct _abcdk_test_http
 
 } abcdk_test_http_t;
 
+typedef struct _abcdk_test_h264
+{
+    int fd;
+    abcdk_comm_queue_t *q;
+}abcdk_test_h264_t;
+
 void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
 {
-    int *fd = abcdk_heap_alloc(sizeof(int));
-    *fd = -1;
-    abcdk_comm_set_userdata(node,fd);
+    abcdk_test_h264_t *h = abcdk_heap_alloc(sizeof(abcdk_test_h264_t));
+
+    h->fd = -1;
+    h->q = abcdk_comm_queue_alloc();
+
+    abcdk_comm_set_userdata(node,h);
 
     *result = 0;
 }
@@ -181,44 +190,48 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
     }
     else
     {
+        int len = abcdk_http_request_body_length(req);
+        const void *p1 = abcdk_http_request_body(req,0);
         const void *p = abcdk_http_request_body(req,4);
+        const void *p3 = abcdk_http_request_body(req,4+12);
 
-        rtp_header_t t;
+        int c = abcdk_bloom_read_number(p1,4,8,8);
 
-        t.version = abcdk_bloom_read_number(p, 12, 0, 2);
-        t.padding = abcdk_bloom_read_number(p, 12, 2, 1);
-        t.extension = abcdk_bloom_read_number(p, 12, 3, 1);
-        t.csrc_len = abcdk_bloom_read_number(p, 12, 4, 4);
-        t.marker = abcdk_bloom_read_number(p, 12, 8, 1);
-        t.payload = abcdk_bloom_read_number(p, 12, 9, 7);
-        t.seq_no = abcdk_bloom_read_number(p, 12, 16, 16);
-        t.timestamp = abcdk_bloom_read_number(p, 12, 32, 32);
-        t.ssrc = abcdk_bloom_read_number(p, 12, 64, 32);
+        abcdk_rtp_header_t t,t2={0};
 
-//        t.csrc = abcdk_bloom_read_number(p, 12, 97, 32);
+        abcdk_rtp_header_deserialize(p,100,&t);
 
+        char buf[100] = {0};
+        abcdk_rtp_header_serialize(&t,buf,100);
 
-        printf("version=%d,padding=%d,extension=%d,csrc_len=%u,marker=%d,payload=%u,=seq_no=%u,timestamp=%u,ssrc=%u\n",
+        memcmp(buf,p,12);
+
+        printf("c=%d,version=%d,padding=%d,extension=%d,csrc_len=%u,marker=%d,payload=%u,=seq_no=%u,timestamp=%u,ssrc=%u\n",
+            c,
             t.version,t.padding,t.extension,
             t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
 
         if(t.payload!=96)
             return;
 
-        int *fd = (int*)abcdk_comm_get_userdata(node);
+        abcdk_test_h264_t *h = (abcdk_test_h264_t*)abcdk_comm_get_userdata(node);
 
-        if (*fd <0)
+        if (h->fd <0)
+            h->fd = abcdk_open("./test_rtsp_record.h264", 1, 0, 1);
+     
+
+        int chk = abcdk_rtp_h264_revert(p3,len-4-12,h->q);
+        if(chk ==1)
         {
-            *fd = abcdk_open("./test_rtsp_record.h264", 1, 0, 1);
-     //       abcdk_write(*fd,"\0\0\0\1",4);
+            while(1)
+            {
+                abcdk_comm_message_t*msg = abcdk_comm_queue_pop(h->q,1);
+                if(!msg)
+                    break;
+                abcdk_write(h->fd ,"\0\0\0\1",4);
+                abcdk_write(h->fd ,abcdk_comm_message_data(msg),abcdk_comm_message_offset(msg));
+            }
         }
-
-     //   if(t.marker)
-     //       abcdk_write(*fd,"\0\0\0\1",4);
-
-        int len = abcdk_http_request_body_length(req) - 4 - 12;
-
-        abcdk_write(*fd,ABCDK_PTR2VPTR(p,12),len);
     }
 }
 
@@ -228,11 +241,12 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
 
     abcdk_comm_get_sockaddr_str(node, NULL, buf);
 
-    int *fd = (int*)abcdk_comm_get_userdata(node);
-    if(fd)
+    abcdk_test_h264_t *h = (abcdk_test_h264_t*)abcdk_comm_get_userdata(node);
+    if(h)
     {
-        abcdk_closep(fd);
-        abcdk_heap_free(fd);
+        abcdk_closep(&h->fd);
+        abcdk_comm_queue_free(&h->q);
+        abcdk_heap_free(h);
     }
 
     fprintf(stderr, "Disconnect: %s\n", buf);

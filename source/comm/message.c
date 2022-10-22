@@ -276,7 +276,7 @@ int abcdk_comm_message_recv2(abcdk_comm_message_t *msg, const void *data,size_t 
     size_t rall = 0;
     int chk;
 
-    assert(data != NULL && size > 0 && remain != NULL && msg != NULL);
+    assert(msg != NULL && data != NULL && size > 0 && remain != NULL);
 
 MORE_DATA:
 

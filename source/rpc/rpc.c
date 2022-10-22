@@ -32,7 +32,7 @@ typedef struct _abcdk_rpc
 {
     /** 魔法数。*/
     uint32_t magic;
-#define ABCDK_RPC_MAGIC 20220819
+#define ABCDK_RPC_MAGIC 123456789
 
     /** 
      * 状态。
@@ -145,11 +145,11 @@ int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint6
     ABCDK_PTR2U8(msg_ptr, 17) = flag;
     memcpy(ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), cargo, len);
 
-    chk = abcdk_comm_queue_push(rpc_p->out_queue, msg);
+    chk = abcdk_comm_queue_push(rpc_p->out_queue, msg, 0);
     if (chk != 0)
         goto final_error;
 
-    if (abcdk_atomic_load(&rpc_p->status) == 2)
+    if (abcdk_atomic_load(&rpc_p->status) == ABCDK_RPC_STATUS_STABLE)
         abcdk_comm_send_watch(node);
 
     return 0;
@@ -269,7 +269,7 @@ int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abc
     if (!rsp_queue)
         return -1;
 
-    rsp_msg = abcdk_comm_queue_pop(rsp_queue);
+    rsp_msg = abcdk_comm_queue_pop(rsp_queue, 1);
     abcdk_comm_queue_free(&rsp_queue);
 
     if (!rsp_msg)
@@ -503,7 +503,7 @@ NEXT_MSG:
     /*如果发送缓存是空的，则从待发送队列取出一份。*/
     if (!rpc_p->out_buffer)
     {
-        rpc_p->out_buffer = abcdk_comm_queue_pop(rpc_p->out_queue);
+        rpc_p->out_buffer = abcdk_comm_queue_pop(rpc_p->out_queue, 1);
         if (!rpc_p->out_buffer)
             return;
     }

@@ -88,5 +88,7 @@
 #include "abcdk/comm/waiter.h"
 #include "abcdk/log/log.h"
 #include "abcdk/rpc/rpc.h"
+#include "abcdk/rtp/rtp.h"
+#include "abcdk/rtp/h264.h"
 
 #endif //ABCDK_H

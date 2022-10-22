@@ -151,7 +151,7 @@ int _abcdk_http_post(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
     if (!abcdk_atomic_load(&http_p->status))
         return -2;
 
-    chk = abcdk_comm_queue_push(http_p->out_queue, msg);
+    chk = abcdk_comm_queue_push(http_p->out_queue, msg, 0);
     if (chk != 0)
         return -1;
 
@@ -476,7 +476,7 @@ NEXT_MSG:
     /*如果发送缓存是空的，则从待发送队列取出一份。*/
     if (!http_p->out_buffer)
     {
-        http_p->out_buffer = abcdk_comm_queue_pop(http_p->out_queue);
+        http_p->out_buffer = abcdk_comm_queue_pop(http_p->out_queue,1);
         if (!http_p->out_buffer)
             return;
     }

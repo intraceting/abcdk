@@ -17,7 +17,6 @@
 #include "abcdk/util/map.h"
 #include "abcdk/util/time.h"
 
-
 __BEGIN_DECLS
 
 /**/
@@ -199,7 +198,7 @@ int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],ch
 /**
  * 读。
  * 
- * @note 当读权利被占用时，不会有其它线程获得读事件。
+ * @warning 当读权利被占用时，不会有其它线程获得读事件。
  * 
  * @return > 0 已读取数据的长度，0 无数据。
 */
@@ -208,8 +207,6 @@ ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size);
 /**
  * 注册读事件。
  * 
- * @note 重复调用不影使用。
- * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
@@ -217,7 +214,7 @@ int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
 /**
  * 写。
  * 
- * @note 当写权利被占用时，不会有其它线程获得写事件。
+ * @warning 当写权利被占用时，不会有其它线程获得写事件。
  * 
  * @return > 0 已写入数据的长度，0 链路忙。
 */
