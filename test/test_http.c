@@ -113,6 +113,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         fprintf(stderr, "%s\n", p);
     }
 
+    
 
     const char *method_p = abcdk_http_request_env(req, 0);
     const char *cseq_p = abcdk_http_request_getenv(req,"cseq");
@@ -156,6 +157,9 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             abcdk_http_send_format(node, 1000, "Server: test_rtsp\r\n");
             abcdk_http_send_format(node, 1000, "Session: 123\r\n");
             abcdk_http_send_format(node, 1000, "\r\n");
+
+            printf("%s",abcdk_http_request_body(req,0));
+            
         }
         else if (abcdk_strncmp(method_p, "SETUP", 5, 1) == 0)
         {
@@ -195,6 +199,12 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         const void *p = abcdk_http_request_body(req,4);
         const void *p3 = abcdk_http_request_body(req,4+12);
 
+        abcdk_hexdump_option_t opt = {0};
+
+        opt.flag = ABCDK_HEXDEMP_SHOW_ADDR|ABCDK_HEXDEMP_SHOW_CHAR;
+
+        abcdk_hexdump(stderr,p1,4+12+2,0,&opt);
+
         int c = abcdk_bloom_read_number(p1,4,8,8);
 
         abcdk_rtp_header_t t,t2={0};
@@ -214,9 +224,9 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         if(t.payload!=96)
             return;
 
-        for(int i = 0;i<8;i++)
-            printf("%d",abcdk_bloom_read_number(p3,1,i,1));
-        printf("\n");
+        // for(int i = 0;i<8;i++)
+        //     printf("%d",abcdk_bloom_read_number(p3,1,i,1));
+        // printf("\n");
         
         abcdk_test_h264_t *h = (abcdk_test_h264_t*)abcdk_comm_get_userdata(node);
 

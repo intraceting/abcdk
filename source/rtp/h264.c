@@ -29,11 +29,10 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
     nri = abcdk_bloom_read_number(data, size, 1, 2);
     type = abcdk_bloom_read_number(data, size, 3, 5);
 
-    
-    if (type <= 23)
+    if(type >= 1 && type <= 12)
     {
         /* 
-        * 1~23，单个NAL包。
+        * 其它，单个NAL包。
         *
         * NAL Header + data(Nbytes)
         */
@@ -45,12 +44,14 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
         abcdk_comm_message_reset(msg,size);
 
         chk = abcdk_comm_queue_push(q, msg, 0);
-        if (chk == 0)
-            return 1;
-
-        /*加入队列失败，删除消息。*/
-        abcdk_comm_message_unref(&msg);
-        return -1;
+        if (chk != 0)
+        {       
+            /*加入队列失败，删除消息。*/
+            abcdk_comm_message_unref(&msg);
+            return -1;
+        }
+        
+        return 1;
     }
     else if (type == 24)
     {
@@ -124,12 +125,14 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
             abcdk_bloom_write_number((uint8_t*)p, 1, 1, 2, nri);
 
             chk = abcdk_comm_queue_push(q, msg, 0);
-            if (chk == 0)
-                return 0;
+            if (chk != 0)
+            {
+                /*加入队列失败，删除消息。*/
+                abcdk_comm_message_unref(&msg);
+                return -1;
+            }
 
-            /*加入队列失败，删除消息。*/
-            abcdk_comm_message_unref(&msg);
-            return -1;
+            return 0;
         }
         else
         {
@@ -146,12 +149,12 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
             abcdk_comm_message_recv2(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);
 
             chk = abcdk_comm_queue_push(q, msg, 0);
-            if (chk == 0)
-                return 0;
-
-            /*加入队列失败，删除消息。*/
-            abcdk_comm_message_unref(&msg);
-            return -1;
+            if (chk != 0)
+            {    
+                /*加入队列失败，删除消息。*/
+                abcdk_comm_message_unref(&msg);
+                return -1;
+            }
 
             if (e)
                 return 1;
@@ -159,6 +162,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
                 return 0;
         }
     }
+    
 
     return -2;
 }
