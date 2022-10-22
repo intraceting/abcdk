@@ -111,12 +111,12 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
 
         if (s)
         {
-            msg = abcdk_comm_message_copy(p, size2);
+            msg = abcdk_comm_message_alloc(size2);
             if (!msg)
                 return -1;
 
             /*模拟接收数据。*/
-            abcdk_comm_message_reset(msg,size2);
+            abcdk_comm_message_recv2(msg, p, size2, &remain);
 
             /* 还原NAL Header。分片时，原始头被拆成两部分(0~3,4~7)。*/
             p = abcdk_comm_message_data(msg);

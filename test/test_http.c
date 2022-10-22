@@ -214,6 +214,10 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         if(t.payload!=96)
             return;
 
+        for(int i = 0;i<8;i++)
+            printf("%d",abcdk_bloom_read_number(p3,1,i,1));
+        printf("\n");
+        
         abcdk_test_h264_t *h = (abcdk_test_h264_t*)abcdk_comm_get_userdata(node);
 
         if (h->fd <0)
