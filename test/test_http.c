@@ -230,6 +230,8 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
                     break;
                 abcdk_write(h->fd ,"\0\0\0\1",4);
                 abcdk_write(h->fd ,abcdk_comm_message_data(msg),abcdk_comm_message_offset(msg));
+
+                abcdk_comm_message_unref(&msg);
             }
         }
     }
