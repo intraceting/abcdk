@@ -39,6 +39,7 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
     const char *it_key = NULL;
     char *line = NULL;
     size_t len = 0;
+    ssize_t rlen = 0;
     size_t rows = 0;
     char *key_p = NULL;
     char *val_p = NULL;
@@ -51,8 +52,12 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
     if (argv0)
         abcdk_option_set(opt, it_key, argv0);
 
-    while (abcdk_fgetline(fp, &line, &len, delim, note) != -1)
+    while (1)
     {
+        rlen = abcdk_fgetline(fp, &line, &len, delim, note);
+        if(rlen < 0)
+            break;
+
         /* 去掉字符串两端所有空白字符。 */
         abcdk_strtrim(line, isspace, 2);
 
@@ -65,7 +70,7 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
             if (it_key != prefix)
                 abcdk_heap_free2((void **)&it_key);
 
-            it_key = abcdk_heap_clone(line, len + 1);
+            it_key = abcdk_heap_clone(line, rlen);
             if (!it_key)
                 break;
 
@@ -80,8 +85,8 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
         abcdk_heap_free2((void **)&it_key);
 }
 
-void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim, char note,
-                        const char *argv0, const char *prefix)
+void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim, 
+                        char note, const char *argv0, const char *prefix)
 {
     FILE *fp = NULL;
 
@@ -96,8 +101,8 @@ void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim, char
     fclose(fp);
 }
 
-void abcdk_getargs_text(abcdk_tree_t *opt, const char *text, size_t len, uint8_t delim, char note,
-                        const char *argv0, const char *prefix)
+void abcdk_getargs_text(abcdk_tree_t *opt, const char *text, size_t len, uint8_t delim, 
+                        char note, const char *argv0, const char *prefix)
 {
     FILE *fp = NULL;
 

@@ -158,7 +158,11 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             abcdk_http_send_format(node, 1000, "Session: 123\r\n");
             abcdk_http_send_format(node, 1000, "\r\n");
 
-            printf("%s",abcdk_http_request_body(req,0));
+           // printf("%s",abcdk_http_request_body(req,0));
+
+            abcdk_tree_t *sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
+            abcdk_rtsp_sdp_dump(stderr,sdp);
+            abcdk_tree_free(&sdp);
             
         }
         else if (abcdk_strncmp(method_p, "SETUP", 5, 1) == 0)

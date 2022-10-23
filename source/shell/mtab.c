@@ -42,6 +42,7 @@ void abcdk_mtab_list(abcdk_tree_t *list)
     FILE *fp = NULL;
     char *line = NULL;
     size_t len = 0;
+    ssize_t rlen = 0;
     char *pos = NULL;
 
     assert(list != NULL);
@@ -50,16 +51,20 @@ void abcdk_mtab_list(abcdk_tree_t *list)
     if (!fp)
         return;
 
-    while (abcdk_fgetline(fp, &line, &len, '\n', 0) != -1)
+    while (1)
     {
-        size_t sizes[] = {sizeof(abcdk_mtab_info_t), len + 1};
+        rlen = abcdk_fgetline(fp, &line, &len, '\n', 0);
+        if(rlen < 0)
+            break;
+
+        size_t sizes[] = {sizeof(abcdk_mtab_info_t), rlen + 1};
         dev = abcdk_tree_alloc2(sizes, 2, 0);
         if (!dev)
             break;
 
         abcdk_tree_insert2(list,dev,0);
 
-        strncpy((char*)dev->alloc->pptrs[1],line,len);
+        strncpy((char*)dev->alloc->pptrs[1],line,rlen);
         
         dev_p = (abcdk_mtab_info_t*)dev->alloc->pptrs[0];
         pos = (char*)dev->alloc->pptrs[1];

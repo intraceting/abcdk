@@ -40,6 +40,7 @@ typedef struct _abcdk_object
      * @warning 如果此项值被调用者覆盖，则需要调用者主动释放，或注册析构函数处理。
      */
     uint8_t **pptrs;
+    int8_t **pstrs;
 
 } abcdk_object_t;
 

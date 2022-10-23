@@ -69,6 +69,7 @@
 #include "abcdk/util/ffmpeg.h"
 #include "abcdk/util/blockio.h"
 //#include "abcdk/util/freeimage.h"
+#include "abcdk/util/rtsp.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"

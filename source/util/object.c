@@ -93,6 +93,7 @@ abcdk_object_t *abcdk_object_alloc(size_t *sizes, size_t numbers, int drag)
     in_p->out.numbers = numbers;
     in_p->out.sizes = ABCDK_PTR2PTR(size_t, in_p, sizeof(abcdk_object_hdr));
     in_p->out.pptrs = ABCDK_PTR2PTR(uint8_t *, in_p->out.sizes, numbers * sizeof(size_t));
+    in_p->out.pstrs = (char**)in_p->out.pptrs;//copy pointer to `char`。
 
     /* 第一块内存地址。*/
     ptr_p = ABCDK_PTR2PTR(uint8_t, in_p->out.pptrs, numbers * sizeof(uint8_t *));

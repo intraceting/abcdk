@@ -20,8 +20,7 @@ __BEGIN_DECLS
  * 
  * @param prefix 键的前缀字符串的指针。
 */
-void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
-                   const char *prefix);
+void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[], const char *prefix);
 
 /**
  * 从已经打开的文件导入参数。
@@ -56,8 +55,8 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
  * @param file 文件名(或带路径的文件名)的指针。
  * 
 */
-void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim, char note,
-                        const char *argv0, const char *prefix);
+void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim,
+                        char note, const char *argv0, const char *prefix);
 
 /**
  * 从文本导入参数。
@@ -65,8 +64,8 @@ void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim, char
  * @param text 文本的指针。
  * @param len 文本的长度。
 */
-void abcdk_getargs_text(abcdk_tree_t *opt, const char *text, size_t len, uint8_t delim, char note,
-                        const char *argv0, const char *prefix);
+void abcdk_getargs_text(abcdk_tree_t *opt, const char *text, size_t len, uint8_t delim,
+                        char note, const char *argv0, const char *prefix);
 
 __END_DECLS
 
