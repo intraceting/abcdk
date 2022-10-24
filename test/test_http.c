@@ -162,6 +162,8 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 
             abcdk_tree_t *sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
             abcdk_rtsp_sdp_dump(stderr,sdp);
+            abcdk_tree_t *rtpmap_p = abcdk_rtsp_sdp_find_media_info(sdp,96,"a","rtpmap");
+            abcdk_tree_t *fmtp_p = abcdk_rtsp_sdp_find_media_info(sdp,96,"a","fmtp");
             abcdk_tree_free(&sdp);
             
         }

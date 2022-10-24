@@ -40,5 +40,5 @@ void abcdk_rtp_header_deserialize(const void *data, size_t size, abcdk_rtp_heade
     hdr->ssrc = abcdk_bloom_read_number(data, size, 64, 32);
 
     for (int i = 0; i < hdr->csrc_len; i++)
-        hdr->csrc[i] = abcdk_bloom_read_number(data, size, 96 + (i * 4 * 8), 32);
+        hdr->csrc[i] = abcdk_bloom_read_number(data, size, 96 + (i * 32), 32);
 }

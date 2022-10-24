@@ -25,7 +25,8 @@ next_line:
     if (rlen > 0)
     {
         /*替换换行符。*/
-        line[rlen - 1] = '\0';
+        if(line[rlen - 1] == delim)
+            line[rlen - 1] = '\0';
 
         /*去掉字符串两端所有空白字符。 */
         abcdk_strtrim(line, isspace, 2);
@@ -130,7 +131,7 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
             }
             else if (*p == 'm')
             {
-                if (i < 2 || i > 5)
+                if (i < 2)
                     break;
 
                 sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
@@ -241,4 +242,54 @@ void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp)
     abcdk_tree_iterator_t it = {0,_abcdk_rtsp_sdp_dump_cb,fp};
 
     abcdk_tree_scan(sdp,&it);
+}
+
+abcdk_tree_t *abcdk_rtsp_sdp_find_media_info(abcdk_tree_t *sdp, uint8_t fmt, const char *type,const char *sub)
+{
+    abcdk_tree_t *p = NULL, *p2 = NULL;
+
+    assert(sdp != NULL && fmt != 0);
+
+    p = abcdk_tree_child(sdp,1);
+
+    while(p)
+    {
+        if(p->alloc->pstrs[1][0] != 'm' || atoi(p->alloc->pstrs[5]) != fmt)
+        {
+            p = abcdk_tree_sibling(p,0);
+        }
+        else 
+        {
+            /*如果不需要查找属性，则直接返回。*/
+            if (!type)
+                return p;
+
+            p2 = abcdk_tree_child(p,1);
+
+            while(p2)
+            {
+                if(p2->alloc->pstrs[1][0] != *type)
+                {
+                    p2 = abcdk_tree_sibling(p2,0);
+                }
+                else 
+                {
+                    /*如果不需要查找子属性，则直接返回。*/
+                    if(!sub)
+                        return p2;
+
+                    if(abcdk_strcmp(p2->alloc->pstrs[2],sub,1)!=0)
+                    {
+                        p2 = abcdk_tree_sibling(p2,0);
+                    }
+                    else 
+                    {
+                        return p2;
+                    }
+                }
+            }
+        }
+    }
+
+    return NULL;
 }
