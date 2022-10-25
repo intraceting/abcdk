@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/math.h"
 #include "abcdk/util/bloom.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 
@@ -66,6 +67,16 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
 ssize_t abcdk_basecode_decode(const abcdk_basecode_t *ctx,
                               const uint8_t *src, size_t slen,
                               uint8_t *dst, size_t dmaxlen);
+
+/**
+* 编码。
+*/
+abcdk_object_t *abcdk_basecode_encode2(const void *src,size_t len, uint8_t base);
+
+/**
+* 解码。
+*/
+abcdk_object_t *abcdk_basecode_decode2(const char *src,size_t len, uint8_t base);
 
 __END_DECLS
 

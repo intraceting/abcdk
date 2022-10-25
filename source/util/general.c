@@ -113,3 +113,34 @@ final:
 
     return data;
 }
+
+const char *abcdk_match_env(const char *line, const char *name, uint8_t delim)
+{
+    const char *s, *d;
+
+    s = line;
+    d = name;
+
+    while (*s && *d)
+    {
+        if (toupper(*s) != toupper(*d))
+            break;
+
+        s += 1;
+        d += 1;
+    }
+
+    /* 提前结束，表示不匹配。*/
+    if (*s == '\0' || (!isspace(*s) && *s != delim) || *d != '\0')
+        return NULL;
+
+    while (*s)
+    {
+        if (!isspace(*s) && *s != delim)
+            return s;
+
+        s += 1;
+    }
+
+    return NULL;
+}

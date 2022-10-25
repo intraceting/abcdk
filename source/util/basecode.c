@@ -157,3 +157,37 @@ ssize_t abcdk_basecode_decode(const abcdk_basecode_t *ctx,
 
     return dlen;
 }
+
+abcdk_object_t *abcdk_basecode_encode2(const void *src, size_t len, uint8_t base)
+{
+    abcdk_object_t *dst = NULL;
+    abcdk_basecode_t ctx;
+
+    assert(src != NULL && len > 0);
+
+    dst = abcdk_object_alloc2(len * 2);
+    if (!dst)
+        return NULL;
+
+    abcdk_basecode_init(&ctx, base);
+    dst->sizes[0] = abcdk_basecode_encode(&ctx, src, len, dst->pptrs[0], dst->sizes[0]);
+
+    return dst;
+}
+
+abcdk_object_t *abcdk_basecode_decode2(const char *src,size_t len, uint8_t base)
+{
+    abcdk_object_t *dst = NULL;
+    abcdk_basecode_t ctx;
+
+    assert(src != NULL && len > 0);
+
+    dst = abcdk_object_alloc2(len);
+    if (!dst)
+        return NULL;
+
+    abcdk_basecode_init(&ctx, base);
+    dst->sizes[0] = abcdk_basecode_decode(&ctx, (uint8_t*)src, len, dst->pptrs[0], dst->sizes[0]);
+
+    return dst;
+}

@@ -45,7 +45,7 @@ void abcdk_mkdir(const char *path, mode_t mode)
     if (len <= 0)
         ABCDK_ERRNO_AND_RETURN0(EINVAL);
 
-    tmp = (char *)abcdk_heap_clone(path, len + 1);
+    tmp = (char *)abcdk_heap_clone(path, len);
     if (!tmp)
         ABCDK_ERRNO_AND_RETURN0(ENOMEM);
 
@@ -79,7 +79,7 @@ char *abcdk_dirname(char *dst, const char *src)
 
     assert(dst != NULL && src != NULL);
 
-    path = (char *)abcdk_heap_clone(src, strlen(src) + 1);
+    path = (char *)abcdk_heap_clone(src, strlen(src));
     if (!path)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
 
@@ -99,7 +99,7 @@ char *abcdk_basename(char *dst, const char *src)
 
     assert(dst != NULL && src != NULL);
 
-    path = (char *)abcdk_heap_clone(src, strlen(src) + 1);
+    path = (char *)abcdk_heap_clone(src, strlen(src));
     if (!path)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
 
@@ -111,75 +111,6 @@ char *abcdk_basename(char *dst, const char *src)
 
     return dst;
 }
-
-char *abcdk_dirnice(char *dst, const char *src)
-{
-    char *s = NULL;
-    char *t = NULL;
-    char *d = NULL;
-    size_t deep = 0;
-    size_t stack_size = 2048;
-    char **stack;
-    char *saveptr = NULL;
-
-    assert(dst != NULL && src != NULL);
-
-    stack = abcdk_heap_alloc(stack_size * sizeof(char *));
-    if (!stack)
-        goto final;
-
-    d = dst;
-    s = abcdk_heap_clone(src, strlen(src) + 1);
-
-    if (s == NULL || *s == '\0')
-        goto final;
-
-    /*拆分目录，根据目录层级关系压入堆栈。*/
-    while (1)
-    {
-        t = abcdk_strtok(s, "/", &saveptr);
-        if (!t)
-            break;
-
-        if (*t == '\0')
-            continue;
-
-        if (abcdk_strcmp(t, ".", 1) == 0)
-            continue;
-
-        if (abcdk_strcmp(t, "..", 1) == 0)
-        {
-            if (deep > 0)
-                stack[--deep] = NULL;
-        }
-        else
-        {
-            assert(deep < stack_size);
-
-            stack[deep++] = t;
-        }
-    }
-
-    /* 拼接目录 */
-    if (*src == '/')
-        abcdk_dirdir(dst, "/");
-
-    for (size_t i = 0; i < deep; i++)
-    {
-        if (i > 0)
-            abcdk_dirdir(dst, "/");
-
-        abcdk_dirdir(dst, stack[i]);
-    }
-
-final:
-
-    abcdk_heap_free2((void **)&stack);
-    abcdk_heap_free2((void **)&s);
-
-    return dst;
-}
-
 
 char *abcdk_abspath(char *buf, const char *file, const char *path)
 {

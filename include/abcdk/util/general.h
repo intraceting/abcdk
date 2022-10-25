@@ -64,6 +64,21 @@ void *abcdk_hex2bin(void *dst,const char* src,size_t size);
 */
 void *abcdk_cyclic_shift(void *data,size_t size,size_t bits, int direction);
 
+/**
+ * 匹配环境变量。
+ * 
+ * @code
+ * name<delim>value
+ * name<delim> value
+ * @endcode
+ * 
+ * @param [in] line 行数据。
+ * @param [in] name 变量名称。
+ * @param [in] delim 分割字符。
+ * 
+ * @return !NULL(0) 成功(值的指针)，NULL(0) 失败。
+*/
+const char *abcdk_match_env(const char *line, const char *name, uint8_t delim);
 
 __END_DECLS
 

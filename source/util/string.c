@@ -117,35 +117,38 @@ final:
     return str;
 }
 
-char *abcdk_strtok(char *str,const char *delim, char **saveptr)
+const char *abcdk_strtok(const char **next, const char *delim)
 {
-    char* prev = NULL;
-    char* find = NULL;
+    const char *start_p = NULL,*find_p = NULL;
+    int dlen = 0;
 
-    assert(str && delim && saveptr);
+    assert(next != NULL && delim != NULL);
+    assert(*next != NULL && *delim != '\0');
 
-    if(*saveptr)
-        prev = *saveptr;
-    else 
-        prev = str;
+    start_p = *next;
+    dlen = strlen(delim);
 
-    find = (char *)abcdk_strstr(prev, delim, 1);
-    if (find)
+NEXT_SEGMENT:
+
+    if(*start_p == '\0')
+        return NULL;
+
+    find_p = abcdk_strstr(start_p, delim, 1);
+    if (!find_p)
     {
-        *find = '\0';
-        *saveptr = find + strlen(delim);
+        /*未找到分割符，定位字符串末尾。*/
+        find_p = start_p;
+        while (*find_p)
+            find_p++;
     }
-    else if (*prev != '\0')
+    else if (find_p == start_p)
     {
-        *saveptr = prev + strlen(prev);
-    }
-    else
-    {
-        prev = NULL;
-        *saveptr = NULL;
+        start_p += dlen;
+        goto NEXT_SEGMENT;
     }
 
-    return prev;
+    *next = find_p;
+    return start_p; 
 }
 
 int abcdk_strtype(const char* str,int (*isctype_cb)(int c))
@@ -166,68 +169,6 @@ int abcdk_strtype(const char* str,int (*isctype_cb)(int c))
     }
 
     return 1;
-}
-
-char *abcdk_strrep(const char *str, const char *src, const char *dst, int caseAb)
-{
-    size_t srclen = 0, dstlen = 0, str2len = 0,skiplen = 0;
-    char *str2 = NULL, *tmp = NULL;
-    const char *s = NULL, *e = NULL;
-
-    assert(str != NULL && src != NULL && dst != NULL);
-
-    srclen = strlen(src);
-    dstlen = strlen(dst);
-
-    s = str;
-
-    while (s && *s)
-    {
-        e = abcdk_strstr(s, src, caseAb);
-        if (e)
-        {
-            skiplen = (e - s) + dstlen;
-            tmp = abcdk_heap_realloc(str2, str2len + skiplen + 1);
-            if (!tmp)
-                goto final_error;
-            str2 = tmp;
-
-            /*Copy.*/
-            strncpy(str2 + str2len, s, e - s);
-            strncpy(str2 + str2len + (e - s), dst, dstlen);
-
-            /**/
-            str2len += skiplen;
-
-            /*Continue.*/
-            s = e + srclen;
-        }
-        else
-        {
-            skiplen = strlen(str) - (s - str); //=strlen(s)
-            tmp = abcdk_heap_realloc(str2, str2len + skiplen + 1);
-            if (!tmp)
-                goto final_error;
-            str2 = tmp;
-
-            /*Copy.*/
-            strcpy(str2 + str2len, s);
-
-            /**/
-            str2len += skiplen;
-
-            /*End.*/
-            s = NULL;
-        }
-    }
-
-    return str2;
-
-final_error:
-
-    abcdk_heap_free(str2);
-
-    return NULL;
 }
 
 int abcdk_fnmatch(const char *str,const char *wildcard,int caseAb,int ispath)

@@ -28,6 +28,13 @@ typedef struct _abcdk_test_h264
 {
     int fd;
     abcdk_comm_queue_t *q;
+
+    abcdk_tree_t *sdp;
+    abcdk_tree_t *rtpmap_p;
+    abcdk_tree_t *fmtp_p;
+
+    abcdk_object_t *sps;
+    abcdk_object_t *pps;
 }abcdk_test_h264_t;
 
 void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
@@ -85,25 +92,12 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 #endif
 }
 
-typedef struct _rtp_header
-{
-    int version;
-    int padding;
-    int extension;
-    int csrc_len;
-    int marker;
-    int payload;
-    int seq_no;
-    int timestamp;
-    int ssrc;
-    int csrc;
-    
-} rtp_header_t;
-
 
 void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
 {
-    
+            
+    abcdk_test_h264_t *h = (abcdk_test_h264_t*)abcdk_comm_get_userdata(node);
+
     for (int i = 0; i < 100; i++)
     {
         const char *p = abcdk_http_request_env(req, i);
@@ -160,11 +154,37 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 
            // printf("%s",abcdk_http_request_body(req,0));
 
-            abcdk_tree_t *sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
-            abcdk_rtsp_sdp_dump(stderr,sdp);
-            abcdk_tree_t *rtpmap_p = abcdk_rtsp_sdp_find_media_info(sdp,96,"a","rtpmap");
-            abcdk_tree_t *fmtp_p = abcdk_rtsp_sdp_find_media_info(sdp,96,"a","fmtp");
-            abcdk_tree_free(&sdp);
+            h->sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
+            abcdk_rtsp_sdp_dump(stderr,h->sdp);
+            h->rtpmap_p = abcdk_rtsp_sdp_find_media_info(h->sdp,96,"a","rtpmap");
+            h->fmtp_p = abcdk_rtsp_sdp_find_media_info(h->sdp,96,"a","fmtp");
+
+            const char *sprop_p = NULL;
+
+            for(int i = 4;i<100;i++)
+            {   
+                if(!h->fmtp_p->alloc->pstrs[i])
+                    break;
+
+                sprop_p = abcdk_match_env(h->fmtp_p->alloc->pstrs[i],"sprop-parameter-sets",'=');
+                if(sprop_p)
+                    break;
+
+                
+            }
+
+            if(sprop_p)
+            {
+                const char *p;
+
+                p = abcdk_strtok(&sprop_p,",");
+                h->sps = abcdk_basecode_decode2(p,sprop_p - p,64);
+
+                p = abcdk_strtok(&sprop_p,",");
+                h->pps = abcdk_basecode_decode2(p,sprop_p - p,64);
+
+            }
+
             
         }
         else if (abcdk_strncmp(method_p, "SETUP", 5, 1) == 0)
@@ -233,11 +253,17 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         // for(int i = 0;i<8;i++)
         //     printf("%d",abcdk_bloom_read_number(p3,1,i,1));
         // printf("\n");
-        
-        abcdk_test_h264_t *h = (abcdk_test_h264_t*)abcdk_comm_get_userdata(node);
+
 
         if (h->fd <0)
+        {
             h->fd = abcdk_open("./test_rtsp_record.h264", 1, 0, 1);
+
+            abcdk_write(h->fd ,"\0\0\0\1",4);
+            abcdk_write(h->fd,h->sps->pptrs[0],h->sps->sizes[0]);
+            abcdk_write(h->fd ,"\0\0\0\1",4);
+            abcdk_write(h->fd,h->pps->pptrs[0],h->pps->sizes[0]);
+        }
      
 
         int chk = abcdk_rtp_h264_revert(p3,len-4-12,h->q);
@@ -248,7 +274,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
                 abcdk_comm_message_t*msg = abcdk_comm_queue_pop(h->q,1);
                 if(!msg)
                     break;
-                abcdk_write(h->fd ,"\0\0\0\1",4);
+                abcdk_write(h->fd ,"\0\0\1",3);
                 abcdk_write(h->fd ,abcdk_comm_message_data(msg),abcdk_comm_message_offset(msg));
 
                 abcdk_comm_message_unref(&msg);
@@ -268,6 +294,9 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
     {
         abcdk_closep(&h->fd);
         abcdk_comm_queue_free(&h->q);
+        abcdk_tree_free(&h->sdp);
+        abcdk_object_unref(&h->sps);
+        abcdk_object_unref(&h->pps);
         abcdk_heap_free(h);
     }
 

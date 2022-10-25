@@ -70,15 +70,14 @@ int abcdk_strncmp(const char *s1, const char *s2,size_t len,int caseAb);
 char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where);
 
 /**
- * 字符串分割。
+ * 字符串分隔(逻辑)。
  * 
- * @param str 待分割字符串的指针。可能会被修改。
- * @param delim 分割字符的串指针。全字匹配，并区分大小写。
- * @param saveptr 临时的指针。不支持访问。
+ * @param [in out] next 字符串。返回前更新。
+ * @param [in] delim 分界符。全字匹配，并区分大小写。
  * 
- * @return !NULL(0) 分割后字符串的指针，NULL(0) 结束。
+ * @return !NULL(0) 成功(字符串首地址)，NULL(0) 失败(已到末尾)。
 */
-char *abcdk_strtok(char *str, const char *delim, char **saveptr);
+const char *abcdk_strtok(const char **next, const char *delim);
 
 /**
  * 检测字符串中的字符类型。
@@ -88,15 +87,6 @@ char *abcdk_strtok(char *str, const char *delim, char **saveptr);
  * @return !0 通过，0 未通过。
 */
 int abcdk_strtype(const char* str,int (*isctype_cb)(int c));
-
-/**
- * 字符串查找并替换。
- * 
- * @warning 被替换目标较多时效率不高。
- * 
- * @return  !NULL(0) 成功(指针需要用abcdk_heap_free去释放)， NULL(0) 失败。
-*/
-char* abcdk_strrep(const char* str,const char *src, const char *dst, int caseAb);
 
 /**
  * 字符串匹配。

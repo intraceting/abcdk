@@ -44,16 +44,6 @@ char *abcdk_dirname(char *dst, const char *src);
 char *abcdk_basename(char *dst, const char *src);
 
 /**
- * 美化目录。
- * 
- * @note 不会检测目录结构是否存在。
- * 
- * 例：/aaaa/bbbb/../ccc -> /aaaa/ccc
- * 例：/aaaa/bbbb/./ccc -> /aaaa/bbbb/ccc
-*/
-char *abcdk_dirnice(char *dst, const char *src);
-
-/**
  * 修补文件或目录的绝对路径。
  * 
  * @note 不会检测目录结构是否存在。

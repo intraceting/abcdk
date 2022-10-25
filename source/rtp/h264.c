@@ -141,11 +141,9 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
                 return -1;
 
             /*增量扩展缓存。*/
-            abcdk_comm_message_expand(msg, ABCDK_MAX(1500, size2 - 1));
+            abcdk_comm_message_expand(msg, size2 - 1);
 
-            /*
-             * 拼接数据包。跑过分片包的FU indicator和FU Header。
-            */
+            /* 拼接数据包。跑过分片包的FU indicator和FU Header。*/
             abcdk_comm_message_recv2(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);
 
             chk = abcdk_comm_queue_push(q, msg, 0);
