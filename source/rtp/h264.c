@@ -117,12 +117,12 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
                 return -1;
 
             /*模拟接收数据。*/
-            abcdk_comm_message_recv2(msg, p, size2, &remain);
+            abcdk_comm_message_recv2(msg, data, 1, &remain);
+            abcdk_comm_message_recv2(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);
 
-            /* 还原NAL Header。分片时，原始头被拆成两部分(0~3,4~7)。*/
+            /* 还原NAL Header。分片时，原始头type被放在FU Header中。。*/
             p = abcdk_comm_message_data(msg);
-            abcdk_bloom_write_number((uint8_t*)p, 1, 0, 1, f);
-            abcdk_bloom_write_number((uint8_t*)p, 1, 1, 2, nri);
+            abcdk_bloom_write_number(ABCDK_PTR2U8PTR(p,0), 1, 3, 5, type2);
 
             chk = abcdk_comm_queue_push(q, msg, 0);
             if (chk != 0)
@@ -143,7 +143,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
             /*增量扩展缓存。*/
             abcdk_comm_message_expand(msg, size2 - 1);
 
-            /* 拼接数据包。跑过分片包的FU indicator和FU Header。*/
+            /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
             abcdk_comm_message_recv2(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);
 
             chk = abcdk_comm_queue_push(q, msg, 0);

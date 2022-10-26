@@ -90,6 +90,7 @@
 #include "abcdk/log/log.h"
 #include "abcdk/rpc/rpc.h"
 #include "abcdk/rtp/h264.h"
+#include "abcdk/rtp/hevc.h"
 
 
 #endif //ABCDK_H
