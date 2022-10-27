@@ -14,6 +14,7 @@
 #include "abcdk/util/epoll.h"
 #include "abcdk/util/tape.h"
 #include "abcdk/util/socket.h"
+#include "abcdk/util/crc.h"
 #include "abcdk/util/crc32.h"
 #include "abcdk/util/json.h"
 #include "abcdk/util/cap.h"

@@ -157,12 +157,12 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             abcdk_http_send_format(node, 1000, "Session: 123\r\n");
             abcdk_http_send_format(node, 1000, "\r\n");
 
-           // printf("%s",abcdk_http_request_body(req,0));
+            printf("%s",abcdk_http_request_body(req,0));
 
             h->sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
             abcdk_rtsp_sdp_dump(stderr,h->sdp);
-            h->rtpmap_p = abcdk_rtsp_sdp_find_media_info(h->sdp,96,"a","rtpmap");
-            h->fmtp_p = abcdk_rtsp_sdp_find_media_info(h->sdp,96,"a","fmtp");
+            h->rtpmap_p = abcdk_rtsp_sdp_find_media(h->sdp,96);
+            h->fmtp_p = abcdk_rtsp_sdp_find_media(h->sdp,96);
 
             if (abcdk_strncmp(h->rtpmap_p->alloc->pstrs[4], "h264", 4, 0) == 0)
                 h->h264 = 1;

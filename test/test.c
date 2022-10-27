@@ -29,7 +29,8 @@ static struct _abcdk_test_entry
     {"log",abcdk_test_log},
     {"rpc",abcdk_test_rpc},
     {"iconv",abcdk_test_iconv},
-    {"exec",abcdk_test_exec}
+    {"exec",abcdk_test_exec},
+    {"com",abcdk_test_com}
 };
 
 void _abcdk_test_print_usage()

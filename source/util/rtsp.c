@@ -69,7 +69,7 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
         }
         else
         {
-            if (*p == 'v' || *p == 's' || *p == 'i' || *p == 'u' || *p == 'e' || *p == 'z' || *p == 'k' || *p == 'r')
+            if (*p == 'v' || *p == 's' || *p == 'i' || *p == 'u' || *p == 'e' || *p == 'z' || *p == 'r')
             {
                 if (i != 2)
                     break;
@@ -78,65 +78,11 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
                 if (!sdp->alloc->pstrs[i])
                     break;
             }
-            else if (*p == 'o')
+            else 
             {
-                if (i < 2 || i > 5)
-                    break;
-
                 sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
                 if (!sdp->alloc->pstrs[i])
                     break;
-            }
-            else if (*p == 'c')
-            {
-                if (i < 2 || i > 4)
-                    break;
-
-                sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
-                if (!sdp->alloc->pstrs[i])
-                    break;                
-            }
-            else if (*p == 't')
-            {
-                if (i < 2 || i > 3)
-                    break;
-
-                sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
-                if (!sdp->alloc->pstrs[i])
-                    break;                
-            }
-            else if (*p == 'a' || *p == 'b')
-            {
-                if (i == 2)
-                {
-                    sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ':');
-                    if (!sdp->alloc->pstrs[i])
-                        break;
-                }
-                else
-                {
-                    if (i == 3)
-                    {
-                        sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
-                        if (!sdp->alloc->pstrs[i])
-                            break;
-                    }
-                    else 
-                    {
-                        sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ';');
-                        if (!sdp->alloc->pstrs[i])
-                            break;
-                    }
-                }
-            }
-            else if (*p == 'm')
-            {
-                if (i < 2)
-                    break;
-
-                sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
-                if (!sdp->alloc->pstrs[i])
-                    break;                
             }
         }
     }
@@ -244,7 +190,7 @@ void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp)
     abcdk_tree_scan(sdp,&it);
 }
 
-abcdk_tree_t *abcdk_rtsp_sdp_find_media_info(abcdk_tree_t *sdp, uint8_t fmt, const char *type,const char *sub)
+abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
 {
     abcdk_tree_t *p = NULL, *p2 = NULL;
 
@@ -254,40 +200,21 @@ abcdk_tree_t *abcdk_rtsp_sdp_find_media_info(abcdk_tree_t *sdp, uint8_t fmt, con
 
     while(p)
     {
-        if(p->alloc->pstrs[1][0] != 'm' || atoi(p->alloc->pstrs[5]) != fmt)
+        if(p->alloc->pstrs[1][0] != 'm')
         {
             p = abcdk_tree_sibling(p,0);
         }
         else 
         {
-            /*如果不需要查找属性，则直接返回。*/
-            if (!type)
-                return p;
-
-            p2 = abcdk_tree_child(p,1);
-
-            while(p2)
+            for(int i = 5;i<100;i++)
             {
-                if(p2->alloc->pstrs[1][0] != *type)
-                {
-                    p2 = abcdk_tree_sibling(p2,0);
-                }
-                else 
-                {
-                    /*如果不需要查找子属性，则直接返回。*/
-                    if(!sub)
-                        return p2;
+                if(!p->alloc->pstrs[i])
+                    break;
 
-                    if(abcdk_strcmp(p2->alloc->pstrs[2],sub,1)!=0)
-                    {
-                        p2 = abcdk_tree_sibling(p2,0);
-                    }
-                    else 
-                    {
-                        return p2;
-                    }
-                }
+                if(atoi(p->alloc->pstrs[i]) == fmt)
+                    return p;
             }
+            
         }
     }
 

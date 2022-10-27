@@ -22,13 +22,11 @@ void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp);
 /** 
  * 在SDP中查找媒体信息或属性。
  * 
- * @param [in] fmt 媒体格式。
- * @param [in] type 属性类型，NULL(0) 忽略。
- * @param [in] sub 属性子类型，NULL(0) 忽略。
+ * @param [in] fmt 媒体格式(载荷)。
  * 
  * @return !NULL(0) 成功(节点指针)，NULL(0) 失败。
 */
-abcdk_tree_t *abcdk_rtsp_sdp_find_media_info(abcdk_tree_t *sdp, uint8_t fmt, const char *type, const char *sub);
+abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt);
 
 __END_DECLS
 
