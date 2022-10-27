@@ -230,7 +230,8 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             t.version,t.padding,t.extension,
             t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
 
-
+        if(t.payload !=96)
+            return;
 
         if (h->fd <0)
         {
