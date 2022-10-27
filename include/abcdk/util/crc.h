@@ -14,7 +14,7 @@ __BEGIN_DECLS
 /**
  * 计算CRC32值。
  * 
- * @warning 默认：通用
+ * @warning 默认：未分类
 */
 uint32_t abcdk_crc32(const void *data,size_t size, ...);
 
