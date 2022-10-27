@@ -30,15 +30,11 @@ typedef struct _abcdk_test_h264
     abcdk_comm_queue_t *q;
 
     abcdk_tree_t *sdp;
-    abcdk_tree_t *rtpmap_p;
-    abcdk_tree_t *fmtp_p;
-
-    abcdk_object_t *vps;
-    abcdk_object_t *sps;
-    abcdk_object_t *pps;
-    abcdk_object_t *sei;
+    abcdk_rtsp_sdp_media_base_t *v;
+    abcdk_rtsp_sdp_media_base_t *a;
 
     int h264;
+    int h265;
 
 }abcdk_test_h264_t;
 
@@ -157,66 +153,22 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             abcdk_http_send_format(node, 1000, "Session: 123\r\n");
             abcdk_http_send_format(node, 1000, "\r\n");
 
-            printf("%s",abcdk_http_request_body(req,0));
+           // printf("%s",abcdk_http_request_body(req,0));
 
             h->sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
             abcdk_rtsp_sdp_dump(stderr,h->sdp);
-            h->rtpmap_p = abcdk_rtsp_sdp_find_media(h->sdp,96);
-            h->fmtp_p = abcdk_rtsp_sdp_find_media(h->sdp,96);
 
-            if (abcdk_strncmp(h->rtpmap_p->alloc->pstrs[4], "h264", 4, 0) == 0)
+            abcdk_tree_t *m_p = abcdk_rtsp_sdp_find_media(h->sdp,96);
+            abcdk_rtsp_sdp_media_base_t *m = abcdk_rtsp_sdp_media_base_collect(m_p,96);
+            if (abcdk_strcmp(m->encoder->pstrs[0], "h264", 0) == 0)
                 h->h264 = 1;
+            if (abcdk_strcmp(m->encoder->pstrs[0], "h265", 0) == 0)
+                h->h265 = 1;
 
-            const char *sprop_p = NULL;
-            const char *sprop_vps_p = NULL;
-            const char *sprop_sps_p = NULL;
-            const char *sprop_pps_p = NULL;
-
-            for(int i = 4;i<100;i++)
-            {   
-                if(!h->fmtp_p->alloc->pstrs[i])
-                    break;
-
-                if(!sprop_p)
-                    sprop_p = abcdk_match_env(h->fmtp_p->alloc->pstrs[i],"sprop-parameter-sets",'=');
-                
-                if(!sprop_vps_p)
-                    sprop_vps_p = abcdk_match_env(h->fmtp_p->alloc->pstrs[i],"sprop-vps",'=');
-
-                if(!sprop_sps_p)
-                    sprop_sps_p = abcdk_match_env(h->fmtp_p->alloc->pstrs[i],"sprop-sps",'=');
-
-                if(!sprop_pps_p)
-                    sprop_pps_p = abcdk_match_env(h->fmtp_p->alloc->pstrs[i],"sprop-pps",'=');
-                
-            }
-
-            if (h->h264)
-            {
-                if (sprop_p)
-                {
-                    const char *p;
-                    p = abcdk_strtok(&sprop_p, ",");
-                    if (p)
-                        h->sps = abcdk_basecode_decode2(p, sprop_p - p, 64);
-
-                    p = abcdk_strtok(&sprop_p, ",");
-                    if (p)
-                        h->pps = abcdk_basecode_decode2(p, sprop_p - p, 64);
-                }
-            }
+            if (h->h264 || h->h265)
+                h->v = m;
             else
-            {
-
-                if (sprop_vps_p)
-                    h->vps = abcdk_basecode_decode2(sprop_vps_p, strlen(sprop_vps_p), 64);
-
-                if (sprop_sps_p)
-                    h->sps = abcdk_basecode_decode2(sprop_sps_p, strlen(sprop_sps_p), 64);
-
-                if (sprop_pps_p)
-                    h->pps = abcdk_basecode_decode2(sprop_pps_p, strlen(sprop_pps_p), 64);
-            }
+                h->a = m;
         }
         else if (abcdk_strncmp(method_p, "SETUP", 5, 1) == 0)
         {
@@ -278,12 +230,6 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             t.version,t.padding,t.extension,
             t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
 
-        if(t.payload!=96)
-            return;
-
-        // for(int i = 0;i<8;i++)
-        //     printf("%d",abcdk_bloom_read_number(p3,1,i,1));
-        // printf("\n");
 
 
         if (h->fd <0)
@@ -293,22 +239,22 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             if(h->h264)
             {
                 abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->sps->pptrs[0],h->sps->sizes[0]);
+                abcdk_write(h->fd,h->v->extra_sps->pptrs[0],h->v->extra_sps->sizes[0]);
                 abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->pps->pptrs[0],h->pps->sizes[0]);
+                abcdk_write(h->fd,h->v->extra_pps->pptrs[0],h->v->extra_pps->sizes[0]);
             }
-            else
+            else if(h->h265)
             {
                 abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->vps->pptrs[0],h->vps->sizes[0]);
+                abcdk_write(h->fd,h->v->extra_vps->pptrs[0],h->v->extra_vps->sizes[0]);
                 abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->sps->pptrs[0],h->sps->sizes[0]);
+                abcdk_write(h->fd,h->v->extra_sps->pptrs[0],h->v->extra_sps->sizes[0]);
                 abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->pps->pptrs[0],h->pps->sizes[0]);
-                if(h->sei)
+                abcdk_write(h->fd,h->v->extra_pps->pptrs[0],h->v->extra_pps->sizes[0]);
+                if(h->v->extra_sei)
                 {
                     abcdk_write(h->fd ,"\0\0\0\1",4);
-                    abcdk_write(h->fd,h->sei->pptrs[0],h->sei->sizes[0]);
+                    abcdk_write(h->fd,h->v->extra_sei->pptrs[0],h->v->extra_sei->sizes[0]);
                 }
             }
         }
@@ -317,7 +263,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         int chk = -1;
         if(h->h264)
             chk = abcdk_rtp_h264_revert(p3,len-4-12,h->q);
-        else 
+        else if(h->h265)
             chk = abcdk_rtp_hevc_revert(p3,len-4-12,h->q);
         if(chk ==1)
         {
@@ -347,10 +293,8 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
         abcdk_closep(&h->fd);
         abcdk_comm_queue_free(&h->q);
         abcdk_tree_free(&h->sdp);
-        abcdk_object_unref(&h->vps);
-        abcdk_object_unref(&h->sps);
-        abcdk_object_unref(&h->pps);
-        abcdk_object_unref(&h->sei);
+        abcdk_rtsp_sdp_media_base_free(&h->v);
+        abcdk_rtsp_sdp_media_base_free(&h->a);
         abcdk_heap_free(h);
     }
 

@@ -220,3 +220,200 @@ abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
 
     return NULL;
 }
+
+void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx)
+{
+    abcdk_rtsp_sdp_media_base_t *ctx_p;
+
+    if(!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    abcdk_object_unref(&ctx_p->encoder);
+    abcdk_object_unref(&ctx_p->extra_vps);
+    abcdk_object_unref(&ctx_p->extra_sps);
+    abcdk_object_unref(&ctx_p->extra_pps);
+    abcdk_object_unref(&ctx_p->extra_sei);
+    abcdk_heap_free(ctx_p);
+}
+
+abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp,uint8_t fmt)
+{
+    abcdk_rtsp_sdp_media_base_t *ctx = NULL;
+    abcdk_tree_t *a_p = NULL;
+    const char *p = NULL,*p_next = NULL,*p_next2 = NULL;
+    uint8_t payload,payload2;
+    
+    assert(sdp != NULL);
+
+    if(sdp->alloc->pstrs[1][0] != 'm')
+        return NULL;
+
+    /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
+    for (int i = 5; i < 100; i++)
+    {
+        if (!sdp->alloc->pstrs[i])
+            return NULL;
+
+        payload = atoi(sdp->alloc->pstrs[i]);
+        if (payload == fmt)
+            break;
+    }
+
+    ctx = abcdk_heap_alloc(sizeof(abcdk_rtsp_sdp_media_base_t));
+    if(!ctx)
+        return NULL;
+
+    /*遍历属性节点。*/
+    a_p = abcdk_tree_child(sdp,1);
+
+    while(a_p)
+    {
+        if (abcdk_strncmp(a_p->alloc->pstrs[2], "rtpmap:", 7, 0) == 0)
+        {
+            sscanf(a_p->alloc->pstrs[2],"%*[^:]%*[:]%hhu",&payload2);
+            if(payload2 != payload)
+            {
+                a_p = abcdk_tree_sibling(a_p,0);
+                continue;
+            }
+
+            p_next = a_p->alloc->pstrs[3];
+
+            /*拆分编码名称。*/
+            p = abcdk_strtok(&p_next,"/");
+            if(!p)
+                goto final_error;
+
+            ctx->encoder = abcdk_object_alloc2(p_next-p+1);
+            if(!ctx->encoder)
+                goto final_error;
+
+            strncpy(ctx->encoder->pstrs[0],p,p_next-p);
+
+            /*拆分时间速率。*/
+            p = abcdk_strtok(&p_next,"/");
+            if(!p)
+                goto final_error;
+
+            sscanf(p,"%u",&ctx->clock_rate);
+
+        }
+        else if (abcdk_strncmp(a_p->alloc->pstrs[2], "fmtp:", 5, 0) == 0)
+        {
+            sscanf(a_p->alloc->pstrs[2],"%*[^:]%*[:]%hhu",&payload2);
+            if(payload2 != payload)
+            {
+                a_p = abcdk_tree_sibling(a_p,0);
+                continue;
+            }
+
+            for (int i = 3; i < 100; i++)
+            {
+                if(!a_p->alloc->pstrs[i])
+                    break;
+
+                p_next = a_p->alloc->pstrs[i];
+
+                while (1)
+                {
+                    p = abcdk_strtok(&p_next, ";");
+                    if(!p)
+                        break;
+
+                    if (abcdk_strncmp(p, "sprop-parameter-sets=", p_next - p, 0) == 0)
+                    {
+                        if(ctx->extra_sps || ctx->extra_pps)
+                            goto final_error;
+
+                        p_next2 = p+strlen("sprop-parameter-sets=");
+                        p = abcdk_strtok(&p_next2, ",");
+                        if(!p)
+                            goto final_error;
+
+                        ctx->extra_sps = abcdk_basecode_decode2(p,p_next2-p,64);
+                        if(!ctx->extra_sps)
+                            goto final_error;
+
+                        p = abcdk_strtok(&p_next2, ",");
+                        if(!p)
+                            goto final_error;
+
+                        ctx->extra_pps = abcdk_basecode_decode2(p,p_next2-p,64);
+                        if(!ctx->extra_pps)
+                            goto final_error;
+
+                    }
+                    else if (abcdk_strncmp(p, "sprop-vps=", p_next - p, 0) == 0)
+                    {
+                        if(ctx->extra_vps)
+                            goto final_error;
+
+                        p_next2 = p+strlen("sprop-vps=");
+                        p = abcdk_strtok(&p_next2, ";");
+                        if(!p)
+                            goto final_error;
+
+                        ctx->extra_vps = abcdk_basecode_decode2(p,p_next2-p,64);
+                        if(!ctx->extra_vps)
+                            goto final_error;
+                    }
+                    else if (abcdk_strncmp(p, "sprop-sps=", p_next - p, 0) == 0)
+                    {
+                        if(ctx->extra_sps)
+                            goto final_error;
+
+                        p_next2 = p+strlen("sprop-sps=");
+                        p = abcdk_strtok(&p_next2, ";");
+                        if(!p)
+                            goto final_error;
+
+                        ctx->extra_sps = abcdk_basecode_decode2(p,p_next2-p,64);
+                        if(!ctx->extra_sps)
+                            goto final_error;
+                    }
+                    else if (abcdk_strncmp(p, "sprop-pps=", p_next - p, 0) == 0)
+                    {
+                        if(ctx->extra_pps)
+                            goto final_error;
+
+                        p_next2 = p+strlen("sprop-pps=");
+                        p = abcdk_strtok(&p_next2, ";");
+                        if(!p)
+                            goto final_error;
+
+                        ctx->extra_pps = abcdk_basecode_decode2(p,p_next2-p,64);
+                        if(!ctx->extra_pps)
+                            goto final_error;
+                    }
+                    else if (abcdk_strncmp(p, "sprop-sei=", p_next - p, 0) == 0)
+                    {
+                        if(ctx->extra_sei)
+                            goto final_error;
+
+                        p_next2 = p+strlen("sprop-sei=");
+                        p = abcdk_strtok(&p_next2, ";");
+                        if(!p)
+                            goto final_error;
+
+                        ctx->extra_sei = abcdk_basecode_decode2(p,p_next2-p,64);
+                        if(!ctx->extra_sei)
+                            goto final_error;
+                    }
+                }
+            }
+        }
+
+        a_p = abcdk_tree_sibling(a_p,0);
+    }
+
+    return ctx;
+
+final_error:
+
+    abcdk_rtsp_sdp_media_base_free(&ctx);
+
+    return NULL;
+}

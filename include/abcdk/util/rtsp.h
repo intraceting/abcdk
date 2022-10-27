@@ -10,23 +10,75 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/io.h"
+#include "abcdk/util/basecode.h"
 
 __BEGIN_DECLS
 
-/** SDP分析。*/
+/** RTSP媒体基本描述信息。*/
+typedef struct _abcdk_rtsp_sdp_media_base
+{
+    /** 编码名称。*/
+    abcdk_object_t *encoder;
+
+    /** 时间速率。*/
+    uint32_t clock_rate;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC有效。
+    */
+    abcdk_object_t *extra_vps;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC，H264有效。
+    */
+    abcdk_object_t *extra_sps;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC，H264有效。
+    */
+    abcdk_object_t *extra_pps;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC有效。
+    */
+    abcdk_object_t *extra_sei;
+
+} abcdk_rtsp_sdp_media_base_t;
+
+/** 分析SDP。*/
 abcdk_tree_t *abcdk_rtsp_sdp_parse(const char *data, size_t size);
 
-/** SDP打印。*/
+/** 打印SDP。*/
 void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp);
 
 /** 
- * 在SDP中查找媒体信息或属性。
+ * 在SDP中查找媒体节点。
  * 
  * @param [in] fmt 媒体格式(载荷)。
  * 
  * @return !NULL(0) 成功(节点指针)，NULL(0) 失败。
 */
 abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt);
+
+/**释放SDP媒体基本信息。*/
+void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx);
+
+/**
+ * 收集SDP中媒体基本信息。
+ *  
+ * @param [in] fmt 媒体格式(载荷)。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败(或未找到符合的媒体格式)。
+ */
+abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp,uint8_t fmt);
 
 __END_DECLS
 
