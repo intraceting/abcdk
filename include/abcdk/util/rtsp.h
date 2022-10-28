@@ -51,6 +51,13 @@ typedef struct _abcdk_rtsp_sdp_media_base
     */
     abcdk_object_t *extra_sei;
 
+    /** 
+     * 流地址。
+     * 
+     * @warning 相对地址，或绝对地址。
+    */
+    abcdk_object_t *control;
+
 } abcdk_rtsp_sdp_media_base_t;
 
 /** 分析SDP。*/
@@ -77,7 +84,7 @@ void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx);
  * @param [in] fmt 媒体格式(载荷)。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败(或未找到符合的媒体格式)。
- */
+*/
 abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp,uint8_t fmt);
 
 __END_DECLS

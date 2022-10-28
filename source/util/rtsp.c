@@ -199,12 +199,9 @@ abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
 
     while (p)
     {
-        if (p->alloc->pstrs[1][0] != 'm')
+        if (p->alloc->pstrs[1][0] == 'm')
         {
-            p = abcdk_tree_sibling(p, 0);
-        }
-        else
-        {
+            /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
             for (int i = 5; i < 100; i++)
             {
                 if (!p->alloc->pstrs[i])
@@ -214,6 +211,8 @@ abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
                     return p;
             }
         }
+
+        p = abcdk_tree_sibling(p, 0);
     }
 
     return NULL;
@@ -246,20 +245,29 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
 
     assert(sdp != NULL);
 
-    if (sdp->alloc->pstrs[1][0] != 'm')
-        return NULL;
-
-    /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
-    for (int i = 5; i < 100; i++)
+    /*也许传入的是根节点。*/ 
+    if(!abcdk_tree_father(sdp))
     {
-        if (!sdp->alloc->pstrs[i])
+        sdp = abcdk_rtsp_sdp_find_media(sdp,fmt);
+        if(!sdp)
             return NULL;
-
-        payload = atoi(sdp->alloc->pstrs[i]);
-        if (payload == fmt)
-            break;
+        
+        payload = fmt;
     }
+    else if (sdp->alloc->pstrs[1][0] == 'm')
+    {
+        /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
+        for (int i = 5; i < 100; i++)
+        {
+            if (!sdp->alloc->pstrs[i])
+                return NULL;
 
+            payload = atoi(sdp->alloc->pstrs[i]);
+            if (payload == fmt)
+                break;
+        }
+    }
+    
     ctx = abcdk_heap_alloc(sizeof(abcdk_rtsp_sdp_media_base_t));
     if (!ctx)
         return NULL;
@@ -400,6 +408,22 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
                     }
                 }
             }
+        }
+        else if (abcdk_strncmp(a_p->alloc->pstrs[2], "control:", 8, 0) == 0)
+        {
+            if (ctx->control)
+                goto final_error;
+
+            p_next2 = a_p->alloc->pstrs[2]+8;
+            p = abcdk_strtok(&p_next2, ";");
+            if (!p)
+                goto final_error;
+
+            ctx->control = abcdk_object_alloc2(p_next2 - p + 1);
+            if (!ctx->control)
+                goto final_error;
+
+            strncpy(ctx->control->pstrs[0], p, p_next2 - p);
         }
 
         a_p = abcdk_tree_sibling(a_p, 0);

@@ -158,17 +158,15 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             h->sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req,0),len);
             abcdk_rtsp_sdp_dump(stderr,h->sdp);
 
-            abcdk_tree_t *m_p = abcdk_rtsp_sdp_find_media(h->sdp,96);
-            abcdk_rtsp_sdp_media_base_t *m = abcdk_rtsp_sdp_media_base_collect(m_p,96);
+            abcdk_rtsp_sdp_media_base_t *m = abcdk_rtsp_sdp_media_base_collect(h->sdp,96);
+            abcdk_rtsp_sdp_media_base_t *m1 = abcdk_rtsp_sdp_media_base_collect(h->sdp,97);
             if (abcdk_strcmp(m->encoder->pstrs[0], "h264", 0) == 0)
                 h->h264 = 1;
             if (abcdk_strcmp(m->encoder->pstrs[0], "h265", 0) == 0)
                 h->h265 = 1;
 
-            if (h->h264 || h->h265)
-                h->v = m;
-            else
-                h->a = m;
+            h->v = m;
+            h->a = m1;
         }
         else if (abcdk_strncmp(method_p, "SETUP", 5, 1) == 0)
         {
