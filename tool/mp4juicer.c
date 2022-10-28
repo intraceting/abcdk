@@ -81,6 +81,8 @@ typedef struct _abcdkm4j
         int channel_conf;
     } adts_ctx;
 
+    abcdk_aac_adts_header_t adts_hdr;
+
 }abcdkm4j_t;
 
 void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
@@ -357,6 +359,9 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
     _abcdkm4j_aac_decode_extradata(ctx,ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
                                    ctx->esds->data.esds.dec_sp_info.extradata->sizes[0]);
 
+ //   abcdk_aac_adts_header_deserialize(ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
+ //                                  ctx->esds->data.esds.dec_sp_info.extradata->sizes[0],&ctx->adts_hdr);
+
     if(ctx->mvex_p)
     {
         ctx->moof_p = abcdk_tree_child(ctx->doc, 1);
@@ -393,6 +398,11 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
                     char hdr[7] = {0};
                     _abcdkm4j_aac_set_adts_head(ctx, hdr, size); //size是数据帧的大小。
 
+                   abcdk_aac_adts_header_deserialize(hdr,7,&ctx->adts_hdr);
+                    
+                    char hdr2[7] = {0};
+                    abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr2,7);
+
                     abcdk_write(ctx->out_fd, hdr, 7);
                     abcdk_write(ctx->out_fd, ctx->buf, size);
                 }
@@ -418,6 +428,12 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
 
             char hdr[7] = {0};
             _abcdkm4j_aac_set_adts_head(ctx, hdr, size); //size是数据帧的大小。
+
+
+                   abcdk_aac_adts_header_deserialize(hdr,7,&ctx->adts_hdr);
+                    
+                    char hdr2[7] = {0};
+                    abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr2,7);
 
             abcdk_write(ctx->out_fd, hdr, 7);
             abcdk_write(ctx->out_fd, ctx->buf, size);

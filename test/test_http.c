@@ -210,7 +210,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 
         opt.flag = ABCDK_HEXDEMP_SHOW_ADDR|ABCDK_HEXDEMP_SHOW_CHAR;
 
-        abcdk_hexdump(stderr,p1,4+12+2,0,&opt);
+        abcdk_hexdump(stderr,p1,4+12+16,0,&opt);
 
         int c = abcdk_bloom_read_number(p1,4,8,8);
 
@@ -280,7 +280,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         else if (t.payload == 97)
         {
             int chk = -1;
-            chk = abcdk_rtp_aac_revert(p3, len - 4 - 12, h->q,13,0,0,-1);
+            chk = abcdk_rtp_aac_revert(p3, len - 4 - 12, h->q,13,3,-1);
         }
 
     }

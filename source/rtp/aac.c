@@ -18,6 +18,7 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_comm_queue_t *q, i
 
     /*复制AAC数据长度。*/
     fsize_len[0] = size_length;
+    hfsize_len += fsize_len[0];
 
     /*遍历其它字段长度。*/
     va_list vaptr;
@@ -62,7 +63,7 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_comm_queue_t *q, i
         }
     }
 
-    p = ABCDK_PTR2VPTR(data, 2 + hlen / 8);
+    p = ABCDK_PTR2VPTR(data, 2 + abcdk_align(hlen,8) / 8);
 
     for (int j = 0; j < 100; j++)
     {
