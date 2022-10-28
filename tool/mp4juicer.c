@@ -73,14 +73,6 @@ typedef struct _abcdkm4j
     abcdk_mp4_atom_t *tfdt;
     abcdk_mp4_atom_t *trun;
 
-    struct
-    {
-        int write_adts;
-        int objecttype;
-        int sample_rate_index;
-        int channel_conf;
-    } adts_ctx;
-
     abcdk_aac_adts_header_t adts_hdr;
 
 }abcdkm4j_t;
@@ -111,96 +103,32 @@ void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-/*代码来源于网络，稍有修改。*/
-int _abcdkm4j_aac_decode_extradata(abcdkm4j_t *ctx, unsigned char *pbuf, int bufsize)
+int _abcdkm4j_aac_decode_extradata(abcdkm4j_t *ctx, uint8_t *data, int size)
 {
-    int aot, aotext, samfreindex;
-    int i, channelconfig;
-    unsigned char *p = pbuf;
-
-    assert(bufsize >= 2);
-
-    aot = (p[0] >> 3) & 0x1f;
-
-    if (aot == 31)
+    ctx->adts_hdr.profile = abcdk_bloom_read_number(data,size,0,5);
+    if(ctx->adts_hdr.profile == 31)
     {
-        aotext = (p[0]<<3 | (p[1]>>5)) & 0x3f;
-        aot = 32 + aotext;
-        samfreindex = (p[1] >> 1) & 0x0f;
-        if (samfreindex == 0x0f)
-        {
-
-            channelconfig = ((p[4] << 3) | (p[5] >> 5)) & 0x0f;
-        }
+        ctx->adts_hdr.profile = 32 + abcdk_bloom_read_number(data,size,5,6);
+        ctx->adts_hdr.sample_rate_index = abcdk_bloom_read_number(data,size,11,4);
+        if(ctx->adts_hdr.sample_rate_index == 15)
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15+24,4); //跳过自定义的采样率。
         else
-        {
-
-            channelconfig = ((p[1] << 3) | (p[2] >> 5)) & 0x0f;
-        }
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15,4); 
     }
     else
     {
-        samfreindex = ((p[0] << 1) | p[1] >> 7) & 0x0f;
-        if (samfreindex == 0x0f)
-        {
-            channelconfig = (p[4] >> 3) & 0x0f;
-        }
+        ctx->adts_hdr.sample_rate_index = abcdk_bloom_read_number(data,size,5,4);
+        if(ctx->adts_hdr.sample_rate_index == 15)
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9+24,4); //跳过自定义的采样率。
         else
-        {
-
-            channelconfig = (p[1] >> 3) & 0x0f;
-        }
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9,4); 
     }
-#ifdef AOT_PROFILE_CTRL
 
-    if (aot < 2)
-        aot = 2;
-#endif
-    
-    ctx->adts_ctx.objecttype = aot-1;
-    ctx->adts_ctx.sample_rate_index = samfreindex;
-    ctx->adts_ctx.channel_conf = channelconfig;
-    ctx->adts_ctx.write_adts = 1;
-
-    return 0;
-}
-
-/*代码来源于网络，稍有修改。*/
-int _abcdkm4j_aac_set_adts_head(abcdkm4j_t *ctx, unsigned char *buf, int size)
-{
-#define ABCDKM4J_ADTS_HEADER_SIZE   7
-
-    unsigned char byte;
-    if (size < ABCDKM4J_ADTS_HEADER_SIZE)
-        return -1;
-
-    buf[0] = 0xff;
-
-    buf[1] = 0xf1;
-    byte = 0;
-    byte |= (ctx->adts_ctx.objecttype & 0x03) << 6;
-    byte |= (ctx->adts_ctx.sample_rate_index & 0x0f) << 2;
-    byte |= (ctx->adts_ctx.channel_conf & 0x07) >> 2;
-
-    buf[2] = byte;
-    byte = 0;
-    byte |= (ctx->adts_ctx.channel_conf & 0x07) << 6;
-    byte |= (ABCDKM4J_ADTS_HEADER_SIZE + size) >> 11;
-
-    buf[3] = byte;
-    byte = 0;
-    byte |= (ABCDKM4J_ADTS_HEADER_SIZE + size) >> 3;
-
-    buf[4] = byte;
-    byte = 0;
-    byte |= ((ABCDKM4J_ADTS_HEADER_SIZE + size) & 0x7) << 5;
-    byte |= (0x7ff >> 6) & 0x1f;
-
-    buf[5] = byte;
-    byte = 0;
-    byte |= (0x7ff & 0x3f) << 2;
-
-    buf[6] = byte;
+    /*填充其它头部字段。*/
+    ctx->adts_hdr.syncword = 4095;
+    ctx->adts_hdr.id = 0;
+    ctx->adts_hdr.protection_absent = 1;
+    ctx->adts_hdr.adts_buffer_fullness = 0x7ff;
 
     return 0;
 }
@@ -359,9 +287,6 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
     _abcdkm4j_aac_decode_extradata(ctx,ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
                                    ctx->esds->data.esds.dec_sp_info.extradata->sizes[0]);
 
- //   abcdk_aac_adts_header_deserialize(ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
- //                                  ctx->esds->data.esds.dec_sp_info.extradata->sizes[0],&ctx->adts_hdr);
-
     if(ctx->mvex_p)
     {
         ctx->moof_p = abcdk_tree_child(ctx->doc, 1);
@@ -396,12 +321,9 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
                     abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
                     char hdr[7] = {0};
-                    _abcdkm4j_aac_set_adts_head(ctx, hdr, size); //size是数据帧的大小。
 
-                   abcdk_aac_adts_header_deserialize(hdr,7,&ctx->adts_hdr);
-                    
-                    char hdr2[7] = {0};
-                    abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr2,7);
+                    ctx->adts_hdr.aac_frame_length = 7+size;;//size是数据帧的大小。
+                    abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr,7);
 
                     abcdk_write(ctx->out_fd, hdr, 7);
                     abcdk_write(ctx->out_fd, ctx->buf, size);
@@ -427,13 +349,9 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
             abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
             char hdr[7] = {0};
-            _abcdkm4j_aac_set_adts_head(ctx, hdr, size); //size是数据帧的大小。
-
-
-                   abcdk_aac_adts_header_deserialize(hdr,7,&ctx->adts_hdr);
                     
-                    char hdr2[7] = {0};
-                    abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr2,7);
+            ctx->adts_hdr.aac_frame_length = 7+size;;//size是数据帧的大小。
+            abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr,7);
 
             abcdk_write(ctx->out_fd, hdr, 7);
             abcdk_write(ctx->out_fd, ctx->buf, size);

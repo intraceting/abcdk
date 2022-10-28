@@ -36,8 +36,8 @@ typedef struct _abcdk_aac_adts_header
     /** 1bits。'0'。*/
     uint8_t private_bit;
 
-    /** 声道数 3bit。*/
-    uint8_t channel;
+    /** 声道配置 3bit。*/
+    uint8_t channel_cfg;
 
     /** 1bits。'0'。*/
     uint8_t original_copy;
@@ -60,6 +60,7 @@ typedef struct _abcdk_aac_adts_header
     /** AAC数据块数量 2bit。'00'：一个数据块。*/
     uint8_t raw_data_blocks;
 } abcdk_aac_adts_header_t;
+
 
 /**序列化。*/
 void abcdk_aac_adts_header_serialize(const abcdk_aac_adts_header_t *hdr, void *data, size_t size);
