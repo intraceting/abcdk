@@ -23,33 +23,11 @@ typedef struct _abcdk_rtsp_sdp_media_base
     /** 时间速率。*/
     uint32_t clock_rate;
 
-    /** 
-     * 编码扩展。
-     * 
-     * @warning HEVC有效。
-    */
-    abcdk_object_t *extra_vps;
+    /** 编码参数。*/
+    abcdk_object_t *encoder_param;
 
-    /** 
-     * 编码扩展。
-     * 
-     * @warning HEVC，H264有效。
-    */
-    abcdk_object_t *extra_sps;
-
-    /** 
-     * 编码扩展。
-     * 
-     * @warning HEVC，H264有效。
-    */
-    abcdk_object_t *extra_pps;
-
-    /** 
-     * 编码扩展。
-     * 
-     * @warning HEVC有效。
-    */
-    abcdk_object_t *extra_sei;
+    /** FMTP参数。*/
+    abcdk_object_t *fmtp_param[100]; 
 
     /** 
      * 流地址。
@@ -57,6 +35,35 @@ typedef struct _abcdk_rtsp_sdp_media_base
      * @warning 相对地址，或绝对地址。
     */
     abcdk_object_t *control;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC有效。
+    */
+    abcdk_object_t *sprop_vps;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC，H264有效。
+    */
+    abcdk_object_t *sprop_sps;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC，H264有效。
+    */
+    abcdk_object_t *sprop_pps;
+
+    /** 
+     * 编码扩展。
+     * 
+     * @warning HEVC有效。
+    */
+    abcdk_object_t *sprop_sei;
+
 
 } abcdk_rtsp_sdp_media_base_t;
 

@@ -71,6 +71,7 @@
 //#include "abcdk/util/freeimage.h"
 #include "abcdk/util/rtsp.h"
 #include "abcdk/util/rtp.h"
+#include "abcdk/util/aac.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"
@@ -92,6 +93,7 @@
 #include "abcdk/rpc/rpc.h"
 #include "abcdk/rtp/h264.h"
 #include "abcdk/rtp/hevc.h"
+#include "abcdk/rtp/aac.h"
 
 
 #endif //ABCDK_H

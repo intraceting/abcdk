@@ -181,3 +181,20 @@ final:
     /*Set to NULL(0)*/
     *dst = NULL;
 }
+
+abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size)
+{
+    abcdk_object_t *obj;
+
+    assert(data != NULL && size > 0);
+
+    /*多申请一个字节。*/
+    obj = abcdk_object_alloc2(size + 1);
+    if (!obj)
+        return NULL;
+
+    memcpy(obj->pptrs[0], data, size);
+    obj->sizes[0] = size;
+
+    return obj;
+}

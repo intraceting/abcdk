@@ -228,55 +228,61 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             t.version,t.padding,t.extension,
             t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
 
-        if(t.payload !=96)
-            return;
-
-        if (h->fd <0)
+        if (t.payload == 96)
         {
-            h->fd = abcdk_open("./test_rtsp_record.h264", 1, 0, 1);
 
-            if(h->h264)
+            if (h->fd < 0)
             {
-                abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->v->extra_sps->pptrs[0],h->v->extra_sps->sizes[0]);
-                abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->v->extra_pps->pptrs[0],h->v->extra_pps->sizes[0]);
-            }
-            else if(h->h265)
-            {
-                abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->v->extra_vps->pptrs[0],h->v->extra_vps->sizes[0]);
-                abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->v->extra_sps->pptrs[0],h->v->extra_sps->sizes[0]);
-                abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd,h->v->extra_pps->pptrs[0],h->v->extra_pps->sizes[0]);
-                if(h->v->extra_sei)
+                h->fd = abcdk_open("./test_rtsp_record.h264", 1, 0, 1);
+
+                if (h->h264)
                 {
-                    abcdk_write(h->fd ,"\0\0\0\1",4);
-                    abcdk_write(h->fd,h->v->extra_sei->pptrs[0],h->v->extra_sei->sizes[0]);
+                    abcdk_write(h->fd, "\0\0\0\1", 4);
+                    abcdk_write(h->fd, h->v->sprop_sps->pptrs[0], h->v->sprop_sps->sizes[0]);
+                    abcdk_write(h->fd, "\0\0\0\1", 4);
+                    abcdk_write(h->fd, h->v->sprop_pps->pptrs[0], h->v->sprop_pps->sizes[0]);
+                }
+                else if (h->h265)
+                {
+                    abcdk_write(h->fd, "\0\0\0\1", 4);
+                    abcdk_write(h->fd, h->v->sprop_vps->pptrs[0], h->v->sprop_vps->sizes[0]);
+                    abcdk_write(h->fd, "\0\0\0\1", 4);
+                    abcdk_write(h->fd, h->v->sprop_sps->pptrs[0], h->v->sprop_sps->sizes[0]);
+                    abcdk_write(h->fd, "\0\0\0\1", 4);
+                    abcdk_write(h->fd, h->v->sprop_pps->pptrs[0], h->v->sprop_pps->sizes[0]);
+                    if (h->v->sprop_sei)
+                    {
+                        abcdk_write(h->fd, "\0\0\0\1", 4);
+                        abcdk_write(h->fd, h->v->sprop_sei->pptrs[0], h->v->sprop_sei->sizes[0]);
+                    }
+                }
+            }
+
+            int chk = -1;
+            if (h->h264)
+                chk = abcdk_rtp_h264_revert(p3, len - 4 - 12, h->q);
+            else if (h->h265)
+                chk = abcdk_rtp_hevc_revert(p3, len - 4 - 12, h->q);
+            if (chk == 1)
+            {
+                while (1)
+                {
+                    abcdk_comm_message_t *msg = abcdk_comm_queue_pop(h->q, 1);
+                    if (!msg)
+                        break;
+                    abcdk_write(h->fd, "\0\0\0\1", 4);
+                    abcdk_write(h->fd, abcdk_comm_message_data(msg), abcdk_comm_message_offset(msg));
+
+                    abcdk_comm_message_unref(&msg);
                 }
             }
         }
-     
-
-        int chk = -1;
-        if(h->h264)
-            chk = abcdk_rtp_h264_revert(p3,len-4-12,h->q);
-        else if(h->h265)
-            chk = abcdk_rtp_hevc_revert(p3,len-4-12,h->q);
-        if(chk ==1)
+        else if (t.payload == 97)
         {
-            while(1)
-            {
-                abcdk_comm_message_t*msg = abcdk_comm_queue_pop(h->q,1);
-                if(!msg)
-                    break;
-                abcdk_write(h->fd ,"\0\0\0\1",4);
-                abcdk_write(h->fd ,abcdk_comm_message_data(msg),abcdk_comm_message_offset(msg));
-
-                abcdk_comm_message_unref(&msg);
-            }
+            int chk = -1;
+            chk = abcdk_rtp_aac_revert(p3, len - 4 - 12, h->q,13,0,0,-1);
         }
+
     }
 }
 

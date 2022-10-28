@@ -100,6 +100,10 @@ abcdk_object_t *abcdk_object_refer(abcdk_object_t *src);
 */
 void abcdk_object_unref(abcdk_object_t **dst);
 
+/**
+ * 申请一个内存块，并复制数据。
+*/
+abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size);
 
 __END_DECLS
 
