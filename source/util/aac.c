@@ -47,3 +47,48 @@ void abcdk_aac_adts_header_deserialize(const void *data, size_t size, abcdk_aac_
     hdr->adts_buffer_fullness = abcdk_bloom_read_number(data, size, 43, 11);
     hdr->raw_data_blocks = abcdk_bloom_read_number(data, size, 54, 2);
 }
+
+static int _abcdk_aac_sample_rates_dict[16] = {
+        96000, 88200, 64000, 48000, 44100, 32000,
+        24000, 22050, 16000, 12000, 11025, 8000, 7350};
+
+int abcdk_aac_sample_rates(int idx)
+{
+    if (idx >= 15)
+        return _abcdk_aac_sample_rates_dict[4];
+
+    return _abcdk_aac_sample_rates_dict[idx];
+}
+
+int abcdk_aac_sample_rates2index(int rates)
+{
+    for (int i = 0; i < 15; i++)
+    {
+        if (_abcdk_aac_sample_rates_dict[i] == rates)
+            return i;
+    }
+
+    return 15;
+}
+
+static uint8_t _abcdk_aac_channels_dict[8] = {
+    0, 1, 2, 3, 4, 5, 6, 8};
+
+int abcdk_aac_channels(int idx)
+{
+    if (idx >= 8)
+        return _abcdk_aac_channels_dict[2];
+
+    return _abcdk_aac_channels_dict[idx];
+}
+
+int abcdk_aac_channels2config(int chennels)
+{
+    for (int i = 0; i < 8; i++)
+    {
+        if (_abcdk_aac_channels_dict[i] == chennels)
+            return i;
+    }
+
+    return 8;
+}

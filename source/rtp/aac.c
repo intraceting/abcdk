@@ -6,34 +6,18 @@
  */
 #include "abcdk/rtp/aac.h"
 
-int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_comm_queue_t *q, int size_length, ...)
+
+int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_comm_queue_t *q, int size_bits, int index_bits)
 {
     abcdk_comm_message_t *msg;
-    int fsize_len[8] = {0},hfsize_len = 0;
-    int hlen,flen[100][8] = {0};
+    int au_len,au_size;
+    int hlen,flen[200][2] = {0};
     const void *p;
     int chk;
 
-    assert(data != NULL && size > 0 && q != NULL && size_length > 0);
+    assert(data != NULL && size > 0 && q != NULL && size_bits > 0 && index_bits >=0);
 
-    /*复制AAC数据长度。*/
-    fsize_len[0] = size_length;
-    hfsize_len += fsize_len[0];
-
-    /*遍历其它字段长度。*/
-    va_list vaptr;
-    va_start(vaptr, size_length);
     
-    for (int i = 1; i < 7; i++)
-    {
-        fsize_len[i] = va_arg(vaptr, int);
-        if (fsize_len[i] < 0)
-            break;
-
-        hfsize_len += fsize_len[i];
-    }
-
-    va_end(vaptr);
 
     /*
      * AU Header Section.
@@ -42,30 +26,36 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_comm_queue_t *q, i
      * 
      * AU Header lengths 不包括自身。
     */
-    hlen = abcdk_bloom_read_number(data, size, 0, 16);
+
+    /*所有AU分包的头部的总长度(bits)。*/
+    au_len = abcdk_bloom_read_number(data, size, 0, 16);
+
+    /*单个包头部的长度(bits)。*/
+    au_size = size_bits + index_bits;
+
+    /*仅支持Size Length和Index Length两个可变头部组合。*/
+    if (au_len <= 0 || au_len % au_size != 0)
+        return -2;
 
     /*最大支持100个封包。*/
-    for (int j = 0, pos = 16; j < 100; j++)
+    for (int j = 0, pos = 16; j < 200; j++)
     {
         /*不能完成表达一个封包头部，表示结束。*/
-        if (pos + hfsize_len > hlen)
+        if (pos + au_size > au_len)
             break;
 
-        for (int i = 0; i < 8; i++)
-        {
-            if (fsize_len[i] < 0)
-                break;
+        if (size_bits > 0)
+            flen[j][0] = abcdk_bloom_read_number(data, size, pos, size_bits);
 
-            if (fsize_len[i] > 0)
-                flen[j][i] = abcdk_bloom_read_number(data, size, pos, fsize_len[i]);
+        if (index_bits > 0)
+            flen[j][1] = abcdk_bloom_read_number(data, size, pos, index_bits);
 
-            pos += fsize_len[i];
-        }
+        pos += au_size;
     }
 
-    p = ABCDK_PTR2VPTR(data, 2 + abcdk_align(hlen,8) / 8);
+    p = ABCDK_PTR2VPTR(data, 2 + abcdk_align(au_len,8) / 8);
 
-    for (int j = 0; j < 100; j++)
+    for (int j = 0; j < 200; j++)
     {
         if (flen[j][0] <= 0)
             break;
@@ -73,6 +63,9 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_comm_queue_t *q, i
         msg = abcdk_comm_message_copy(p, flen[j][0]);
         if (!msg)
             return -1;
+
+        /*模拟接收。*/
+        abcdk_comm_message_reset(msg,flen[j][0]);
 
         chk = abcdk_comm_queue_push(q, msg, 0);
         if (chk != 0)

@@ -27,7 +27,9 @@ typedef struct _abcdk_test_http
 typedef struct _abcdk_test_h264
 {
     int fd;
+    int fd2;
     abcdk_comm_queue_t *q;
+    abcdk_comm_queue_t *q2;
 
     abcdk_tree_t *sdp;
     abcdk_rtsp_sdp_media_base_t *v;
@@ -42,8 +44,9 @@ void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
 {
     abcdk_test_h264_t *h = abcdk_heap_alloc(sizeof(abcdk_test_h264_t));
 
-    h->fd = -1;
+    h->fd2 = h->fd = -1;
     h->q = abcdk_comm_queue_alloc();
+    h->q2 = abcdk_comm_queue_alloc();
 
     abcdk_comm_set_userdata(node,h);
 
@@ -279,8 +282,38 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         }
         else if (t.payload == 97)
         {
+            if (h->fd2 < 0)
+            {
+                h->fd2 = abcdk_open("./test_rtsp_record.aac", 1, 0, 1);
+            }
             int chk = -1;
-            chk = abcdk_rtp_aac_revert(p3, len - 4 - 12, h->q,13,3,-1);
+            chk = abcdk_rtp_aac_revert(p3, len - 4 - 12, h->q2,13,3);
+            if(chk ==1)
+            {
+                while (1)
+                {
+                    abcdk_comm_message_t *msg = abcdk_comm_queue_pop(h->q2, 1);
+                    if (!msg)
+                        break;
+                    
+                    int hdr[7];
+                    abcdk_aac_adts_header_t r;
+                    r.syncword = 0xfff;
+                    r.id = 0;
+                    r.protection_absent = 1;
+                    r.adts_buffer_fullness = 0x7ff;
+                    r.aac_frame_length = abcdk_comm_message_offset(msg) + 7;
+                    r.channel_cfg = abcdk_aac_channels2config(atoi(h->a->encoder_param->pstrs[0]));
+                    r.profile = 1;
+                    r.sample_rate_index = abcdk_aac_sample_rates2index(h->a->clock_rate);
+                    
+                    abcdk_aac_adts_header_serialize(&r,hdr,7);
+                    abcdk_write(h->fd2, hdr, 7);
+                    abcdk_write(h->fd2, abcdk_comm_message_data(msg), abcdk_comm_message_offset(msg));
+
+                    abcdk_comm_message_unref(&msg);
+                }
+            }
         }
 
     }
@@ -296,7 +329,9 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
     if(h)
     {
         abcdk_closep(&h->fd);
+        abcdk_closep(&h->fd2);
         abcdk_comm_queue_free(&h->q);
+        abcdk_comm_queue_free(&h->q2);
         abcdk_tree_free(&h->sdp);
         abcdk_rtsp_sdp_media_base_free(&h->v);
         abcdk_rtsp_sdp_media_base_free(&h->a);

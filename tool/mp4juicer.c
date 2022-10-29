@@ -111,7 +111,7 @@ int _abcdkm4j_aac_decode_extradata(abcdkm4j_t *ctx, uint8_t *data, int size)
         ctx->adts_hdr.profile = 32 + abcdk_bloom_read_number(data,size,5,6);
         ctx->adts_hdr.sample_rate_index = abcdk_bloom_read_number(data,size,11,4);
         if(ctx->adts_hdr.sample_rate_index == 15)
-            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15+24,4); //跳过自定义的采样率。
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15+24,4); //跳过24bits自定义的采样率。
         else
             ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15,4); 
     }
@@ -119,13 +119,13 @@ int _abcdkm4j_aac_decode_extradata(abcdkm4j_t *ctx, uint8_t *data, int size)
     {
         ctx->adts_hdr.sample_rate_index = abcdk_bloom_read_number(data,size,5,4);
         if(ctx->adts_hdr.sample_rate_index == 15)
-            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9+24,4); //跳过自定义的采样率。
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9+24,4); //跳过24bits自定义的采样率。
         else
             ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9,4); 
     }
 
     /*填充其它头部字段。*/
-    ctx->adts_hdr.syncword = 4095;
+    ctx->adts_hdr.syncword = 0xfff;
     ctx->adts_hdr.id = 0;
     ctx->adts_hdr.protection_absent = 1;
     ctx->adts_hdr.adts_buffer_fullness = 0x7ff;
@@ -143,7 +143,7 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
 
     if (!ctx->avc1)
     {
-        fprintf(stderr, "仅支持H264编码提取，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "仅支持H264编码提取，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -154,7 +154,7 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
         memcpy(ctx->h264_startcode, "\0\0\0\1", 4);
     else
     {
-        fprintf(stderr, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -165,7 +165,7 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
     if (access(ctx->out_file, F_OK) == 0)
     {
 
-        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u)。\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -264,7 +264,7 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
 
     if (!ctx->mp4a)
     {
-        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u)。", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -273,7 +273,7 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
 
     if (access(ctx->out_file, F_OK) == 0)
     {
-        fprintf(stderr, "'%s' 已经存在，忽略当前音频ID(%u)。",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前音频ID(%u)。\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 

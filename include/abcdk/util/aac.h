@@ -12,7 +12,7 @@
 
 __BEGIN_DECLS
 
-/** ADTS头部。*/
+/** AAC(MPEG4 Audio) ADTS头部。*/
 typedef struct _abcdk_aac_adts_header
 {
     /** 同步字(ADTS帧识别码) 12bits。'1111 1111 1111'。*/
@@ -61,12 +61,23 @@ typedef struct _abcdk_aac_adts_header
     uint8_t raw_data_blocks;
 } abcdk_aac_adts_header_t;
 
-
 /**序列化。*/
 void abcdk_aac_adts_header_serialize(const abcdk_aac_adts_header_t *hdr, void *data, size_t size);
 
 /**反序列化。*/
 void abcdk_aac_adts_header_deserialize(const void *data, size_t size, abcdk_aac_adts_header_t *hdr);
+
+/**翻译采样率。*/
+int abcdk_aac_sample_rates(int idx);
+
+/**翻译采样率索引。*/
+int abcdk_aac_sample_rates2index(int rates);
+
+/**翻译声道数。*/
+int abcdk_aac_channels(int idx);
+
+/**翻译声道数配置。*/
+int abcdk_aac_channels2config(int chennels);
 
 __END_DECLS
 
