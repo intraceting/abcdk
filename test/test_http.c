@@ -226,10 +226,10 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 
         memcmp(buf,p,12);
 
-        printf("c=%d,version=%d,padding=%d,extension=%d,csrc_len=%u,marker=%d,payload=%u,=seq_no=%u,timestamp=%u,ssrc=%u\n",
-            c,
-            t.version,t.padding,t.extension,
-            t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
+        // printf("c=%d,version=%d,padding=%d,extension=%d,csrc_len=%u,marker=%d,payload=%u,=seq_no=%u,timestamp=%u,ssrc=%u\n",
+        //     c,
+        //     t.version,t.padding,t.extension,
+        //     t.csrc_len,t.marker,t.payload, t.seq_no,t.timestamp,t.ssrc);
 
         if (t.payload == 96)
         {
