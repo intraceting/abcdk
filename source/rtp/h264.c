@@ -84,7 +84,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
             p = ABCDK_PTR2VPTR(p, len + 2);
 
             /*没有更多的数据包。*/
-            if (s <= 0)
+            if (size2 <= 0)
                 return 1;
         }
     }
