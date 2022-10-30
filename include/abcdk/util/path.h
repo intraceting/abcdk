@@ -10,6 +10,7 @@
 #include "abcdk/util/defs.h"
 #include "abcdk/util/heap.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 
@@ -44,14 +45,12 @@ char *abcdk_dirname(char *dst, const char *src);
 char *abcdk_basename(char *dst, const char *src);
 
 /**
- * 修补文件或目录的绝对路径。
+ * 去掉路径中冗余的信息。
  * 
  * @note 不会检测目录结构是否存在。
- * 
- * @param file 文件或目录的指针。
- * @param path 路径的指针，NULL(0) 当前工作路径。
 */
-char *abcdk_abspath(char *buf, const char *file, const char *path);
+char *abcdk_abspath(char *buf);
+
 
 __END_DECLS
 

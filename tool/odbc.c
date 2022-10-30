@@ -96,7 +96,7 @@ void _abcdkodbc_work(abcdkodbc_t *ctx)
 
     if (!product || !*product)
     {
-        fprintf(stderr, "'--product NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--product NAME' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -106,19 +106,19 @@ void _abcdkodbc_work(abcdkodbc_t *ctx)
         abcdk_strcmp(product, "SQLSERVER", 0) != 0 &&
         abcdk_strcmp(product, "POSTGRESQL", 0) != 0)
     {
-        fprintf(stderr, "'--product NAME' 仅支持DB2，MYSQL，ORACLE，SQLSERVER，POSTGRESQL。");
+        fprintf(stderr, "'--product NAME' 仅支持DB2，MYSQL，ORACLE，SQLSERVER，POSTGRESQL。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!driver || !*driver)
     {
-        fprintf(stderr, "'--driver NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--driver NAME' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!server || !*server)
     {
-        fprintf(stderr, "'--server ADDRESS' 不能省略，且不能为空。");
+        fprintf(stderr, "'--server ADDRESS' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -138,26 +138,26 @@ void _abcdkodbc_work(abcdkodbc_t *ctx)
 
     if (port == 0 || port == 65536)
     {
-        fprintf(stderr, "'--port NUMBER' 范围在1~65535之间(包含)。");
+        fprintf(stderr, "'--port NUMBER' 范围在1~65535之间(包含)。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!db || !*db)
     {
-        fprintf(stderr, "'--db NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--db NAME' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (!uid || !*uid)
     {
-        fprintf(stderr, "'--uid NAME' 不能省略，且不能为空。");
+        fprintf(stderr, "'--uid NAME' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     chk = abcdk_odbc_connect2(odbc,product,driver,server,port,db,uid,pwd,timeout,tracefile);
     if(chk != SQL_SUCCESS)
     {
-        fprintf(stderr, "连接失败，超时或参数错误。");
+        fprintf(stderr, "连接失败，超时或参数错误。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 

@@ -55,13 +55,13 @@ void _abcdkjson_wrok(abcdkjson_t *ctx)
 
     if (!ctx->file || !*ctx->file)
     {
-        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
     if (access(ctx->file, R_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。", ctx->file, strerror(errno));
+        fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
     }
 
@@ -70,7 +70,7 @@ void _abcdkjson_wrok(abcdkjson_t *ctx)
     {
         if(abcdk_reopen(STDOUT_FILENO,ctx->outfile,1,0,1)<0)
         {
-            fprintf(stderr, "'%s' %s.", ctx->outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", ctx->outfile, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
         }
     }
@@ -78,7 +78,7 @@ void _abcdkjson_wrok(abcdkjson_t *ctx)
     ctx->obj = json_object_from_file(ctx->file);
     if(!ctx->obj)
     {
-        fprintf(stderr, "'%s' %s。", ctx->file, strerror(ESPIPE));
+        fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(ESPIPE));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE,final);
     }
 

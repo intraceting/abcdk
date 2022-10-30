@@ -358,13 +358,13 @@ void _abcdkmtx_work(abcdkmtx_t *ctx)
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
-        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->dev_p, F_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。", ctx->dev_p, strerror(errno));
+        fprintf(stderr, "'%s' %s。\n", ctx->dev_p, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -376,7 +376,7 @@ void _abcdkmtx_work(abcdkmtx_t *ctx)
     ctx->fd = abcdk_open(ctx->dev_p, 0, 0, 0);
     if (ctx->fd < 0)
     {
-        fprintf(stderr, "'%s' %s.",ctx->dev_p,strerror(errno));
+        fprintf(stderr, "'%s' %s.\n",ctx->dev_p,strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -386,7 +386,7 @@ void _abcdkmtx_work(abcdkmtx_t *ctx)
 
     if (ctx->type != TYPE_MEDIUM_CHANGER)
     {
-        fprintf(stderr, "'%s' 不是机械手。", ctx->dev_p);
+        fprintf(stderr, "'%s' 不是机械手。\n", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
@@ -408,7 +408,7 @@ void _abcdkmtx_work(abcdkmtx_t *ctx)
         {
             if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
             {
-                fprintf(stderr, "'%s' %s。", ctx->outfile, strerror(errno));
+                fprintf(stderr, "'%s' %s。\n", ctx->outfile, strerror(errno));
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
             }
         }
@@ -421,7 +421,7 @@ void _abcdkmtx_work(abcdkmtx_t *ctx)
     }
     else
     {
-        fprintf(stderr, "尚未支持。");
+        fprintf(stderr, "尚未支持。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 

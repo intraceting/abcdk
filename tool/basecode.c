@@ -84,13 +84,13 @@ void _abcdkbc_work(abcdkbc_t *ctx)
 
     if (ctx->base != 32 && ctx->base != 64)
     {
-        fprintf(stderr, "仅支持base32或base64。");
+        fprintf(stderr, "仅支持base32或base64。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (strlen(ctx->in) <= 0)
     {
-        fprintf(stderr, "'--in < FILE | STRING >' 不能省略，且不能为空。");
+        fprintf(stderr, "'--in < FILE | STRING >' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
     else if (access(ctx->in, R_OK) == 0)
@@ -98,7 +98,7 @@ void _abcdkbc_work(abcdkbc_t *ctx)
         inbuf = abcdk_mmap2(ctx->in,0, 0, 0);
         if (!inbuf)
         {
-            fprintf(stderr, "'%s' %s。", ctx->in, strerror(errno));
+            fprintf(stderr, "'%s' %s。\n", ctx->in, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -107,7 +107,7 @@ void _abcdkbc_work(abcdkbc_t *ctx)
         inbuf = abcdk_object_alloc2(0);
         if (!inbuf)
         {
-            fprintf(stderr, "%s。", strerror(errno));
+            fprintf(stderr, "%s。\n", strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
 
@@ -118,7 +118,7 @@ void _abcdkbc_work(abcdkbc_t *ctx)
     outbuf = abcdk_object_alloc2(inbuf->sizes[0] * 4);
     if (!outbuf)
     {
-        fprintf(stderr, "%s。", strerror(errno));
+        fprintf(stderr, "%s。\n", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -147,7 +147,7 @@ void _abcdkbc_work(abcdkbc_t *ctx)
 
     if(outsize2 != outsize)
     {
-        fprintf(stderr, "空间不足或无法格式化输出。");
+        fprintf(stderr, "空间不足或无法格式化输出。\n");
         ctx->errcode = ENOSPC;
     }
 

@@ -170,7 +170,7 @@ void _abcdklsscsi_work(abcdklsscsi_t *ctx)
     {
         if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
         {
-            fprintf(stderr, "'%s' %s.", ctx->outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", ctx->outfile, strerror(errno));
             goto final;
         }
     }

@@ -155,7 +155,7 @@ void _abcdkmt_printf_sense(abcdk_scsi_io_stat_t *stat)
 
     msg_p = abcdk_tape_sense2string(key, asc, ascq);
 
-    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
+    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.\n", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
 void _abcdkmt_operate(abcdkmt_t *ctx)
@@ -433,13 +433,13 @@ void _abcdkmt_write_mam(abcdkmt_t *ctx)
 
     if (!abcdk_tape_attr2string(id))
     {
-        fprintf(stderr, "'--id < NUMBER >' 不能省略，且不能为空，同时必须在有效范围内。");
+        fprintf(stderr, "'--id < NUMBER >' 不能省略，且不能为空，同时必须在有效范围内。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (val_len <= 0)
     {
-        fprintf(stderr, "没有输入ID的值，MAM中ID的值将被清空。");
+        fprintf(stderr, "没有输入ID的值，MAM中ID的值将被清空。\n");
     }
 
     attr_p = abcdk_tape_read_attribute(ctx->fd,0,id,3000,&ctx->stat);
@@ -451,7 +451,7 @@ void _abcdkmt_write_mam(abcdkmt_t *ctx)
     if (val_len > ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0))
     {
         val_len = ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
-        fprintf(stderr, "ID的值将被截断为%d字节。",val_len);
+        fprintf(stderr, "ID的值将被截断为%d字节。\n",val_len);
     }
 
     memcpy(attr_p->pptrs[ABCDK_TAPE_ATTR_VALUE],value,val_len);
@@ -502,20 +502,20 @@ void _abcdkmt_work(abcdkmt_t *ctx)
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
-        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (access(ctx->dev_p, F_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。", ctx->dev_p, strerror(errno));
+        fprintf(stderr, "'%s' %s。\n", ctx->dev_p, strerror(errno));
         goto final;
     }
 
     ctx->fd = abcdk_open(ctx->dev_p, 1, 1, 0);
     if (ctx->fd < 0)
     {
-        fprintf(stderr, "'%s' %s.",ctx->dev_p,strerror(errno));
+        fprintf(stderr, "'%s' %s.\n",ctx->dev_p,strerror(errno));
         goto final;
     }
 
@@ -525,7 +525,7 @@ void _abcdkmt_work(abcdkmt_t *ctx)
 
     if (ctx->type != TYPE_TAPE)
     {
-        fprintf(stderr, "'%s' 不是磁带驱动器。", ctx->dev_p);
+        fprintf(stderr, "'%s' 不是磁带驱动器。\n", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
@@ -533,7 +533,7 @@ void _abcdkmt_work(abcdkmt_t *ctx)
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 
-    fprintf(stderr,"Driver: %s(%s,%s)",ctx->sn,ctx->vendor,ctx->product);
+    fprintf(stderr,"Driver: %s(%s,%s)\n",ctx->sn,ctx->vendor,ctx->product);
 
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_methods); i++)
     {
@@ -546,7 +546,7 @@ void _abcdkmt_work(abcdkmt_t *ctx)
 
     if (!_method)
     {
-        fprintf(stderr, "CMD(%d)尚未支持。", ctx->cmd);
+        fprintf(stderr, "CMD(%d)尚未支持。\n", ctx->cmd);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 

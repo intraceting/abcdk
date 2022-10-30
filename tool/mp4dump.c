@@ -48,13 +48,13 @@ void _abcdkm4d_work(abcdk_tree_t *args)
 
     if (!file || !*file)
     {
-        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (access(file, R_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s.", file, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", file, strerror(errno));
         goto final;
     }
 
@@ -70,14 +70,14 @@ void _abcdkm4d_work(abcdk_tree_t *args)
     {
         if (abcdk_reopen(STDOUT_FILENO, outfile, 1, 0, 1) < 0)
         {
-            fprintf(stderr, "'%s' %s.", outfile, strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", outfile, strerror(errno));
             goto final;
         }
     }
 
     if(!abcdk_mp4_find2(doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        fprintf(stderr, "'%s' 可能不是MP4文件，或尚未支持此格式。", file);
+        fprintf(stderr, "'%s' 可能不是MP4文件，或尚未支持此格式。\n", file);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 

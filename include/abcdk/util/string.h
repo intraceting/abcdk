@@ -89,13 +89,6 @@ const char *abcdk_strtok(const char **next, const char *delim);
 int abcdk_strtype(const char* str,int (*isctype_cb)(int c));
 
 /**
- * 字符串匹配。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_fnmatch(const char *str,const char *wildcard,int caseAb,int ispath);
-
-/**
  * 计算字符串长度。
  * 
  * @param width 字符宽度。1：多字节，2：两字节，4：四字节。

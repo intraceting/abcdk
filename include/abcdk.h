@@ -72,6 +72,7 @@
 #include "abcdk/util/rtsp.h"
 #include "abcdk/util/rtp.h"
 #include "abcdk/util/aac.h"
+#include "abcdk/util/fnmatch.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"

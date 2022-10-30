@@ -432,25 +432,25 @@ void _abcdkm4j_work(abcdkm4j_t *ctx)
 
     if (!ctx->file || !*ctx->file)
     {
-        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->file, R_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s.", ctx->file, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
     if (!ctx->save || !*ctx->save)
     {
-        fprintf(stderr, "'--save PATH' 不能省略，且不能为空。");
+        fprintf(stderr, "'--save PATH' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->save, W_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s.", ctx->save, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", ctx->save, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -473,7 +473,7 @@ void _abcdkm4j_work(abcdkm4j_t *ctx)
 
     if(!abcdk_mp4_find2(ctx->doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        fprintf(stderr, "'%s' 可能不是MP4文件。", ctx->file);
+        fprintf(stderr, "'%s' 可能不是MP4文件。\n", ctx->file);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 

@@ -18,6 +18,7 @@ int abcdk_test_rpc(abcdk_tree_t *args);
 int abcdk_test_iconv(abcdk_tree_t *args);
 int abcdk_test_exec(abcdk_tree_t *args);
 int abcdk_test_com(abcdk_tree_t *args);
+int abcdk_test_path(abcdk_tree_t *args);
 
 __END_DECLS
 

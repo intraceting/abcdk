@@ -30,7 +30,8 @@ static struct _abcdk_test_entry
     {"rpc",abcdk_test_rpc},
     {"iconv",abcdk_test_iconv},
     {"exec",abcdk_test_exec},
-    {"com",abcdk_test_com}
+    {"com",abcdk_test_com},
+    {"path",abcdk_test_path}
 };
 
 void _abcdk_test_print_usage()

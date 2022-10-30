@@ -136,7 +136,7 @@ NEXT_SEGMENT:
     find_p = abcdk_strstr(start_p, delim, 1);
     if (!find_p)
     {
-        /*未找到分割符，定位字符串末尾。*/
+        /*未找到分割符，定位到字符串末尾。*/
         find_p = start_p;
         while (*find_p)
             find_p++;
@@ -169,23 +169,6 @@ int abcdk_strtype(const char* str,int (*isctype_cb)(int c))
     }
 
     return 1;
-}
-
-int abcdk_fnmatch(const char *str,const char *wildcard,int caseAb,int ispath)
-{
-    int flag = 0;
-    int chk = FNM_NOMATCH;
-
-    assert(str && wildcard);
-
-    if (!caseAb)
-        flag |= FNM_CASEFOLD;
-    if (ispath)
-        flag |= FNM_PATHNAME | FNM_PERIOD;
-
-    chk = fnmatch(wildcard, str, flag);
-
-    return ((chk==FNM_NOMATCH)?-1:0);
 }
 
 size_t abcdk_cslen(const void *str, int width)
