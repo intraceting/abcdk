@@ -79,19 +79,19 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
     abcdk_object_t *file = abcdk_mmap2("/etc/issue", 0, 0, 0);
     if (file)
     {
-        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+        abcdk_comm_post_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                                                            abcdk_http_content_type_desc(".txt"),abcdk_http_status_desc(200), file->sizes[0]);
 
-        abcdk_http_send_object(node, file);
+        abcdk_comm_post(node, file);
     }
     else
     {
-        abcdk_http_send_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\ncharset=utf-8\r\nContent-Length: %lu\r\n\r\n",
+        abcdk_comm_post_format(node,1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\ncharset=utf-8\r\nContent-Length: %lu\r\n\r\n",
                                                             abcdk_http_status_desc(404), 0);
     }
 #else
 
-    abcdk_http_send_format(1000, "RTSP/1.0 200 OK\r\nCSeq: 1\r\nPublic: OPTIONS, DESCRIBE, PLAY, PAUSE, SETUP, TEARDOWN, SET_PARAMETER, GET_PARAMETER\r\nDate:  Fri, Apr 10 2020 19:07:19 GMT\r\n\r\n");
+    abcdk_comm_post_format(1000, "RTSP/1.0 200 OK\r\nCSeq: 1\r\nPublic: OPTIONS, DESCRIBE, PLAY, PAUSE, SETUP, TEARDOWN, SET_PARAMETER, GET_PARAMETER\r\nDate:  Fri, Apr 10 2020 19:07:19 GMT\r\n\r\n");
 
 #endif
 }
@@ -124,24 +124,24 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 
         if (abcdk_strncmp(method_p, "OPTIONS", 7, 1) == 0)
         {
-            abcdk_http_send_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
-            abcdk_http_send_format(node, 1000, "CSeq: %d\r\n", cseq);
-            abcdk_http_send_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            abcdk_http_send_format(node, 1000, "Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER\r\n");
-            abcdk_http_send_format(node, 1000, "\r\n");
+            abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
+            abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
+            abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
+            abcdk_comm_post_format(node, 1000, "Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER\r\n");
+            abcdk_comm_post_format(node, 1000, "\r\n");
         }
         else if (abcdk_strncmp(method_p, "DESCRIBE", 8, 1) == 0)
         {
             abcdk_object_t *file = abcdk_mmap2("./rtsp_ANNOUNCE.data", 0, 0, 0);
 
-            abcdk_http_send_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
-            abcdk_http_send_format(node, 1000, "CSeq: %d\r\n", cseq);
-            abcdk_http_send_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            abcdk_http_send_format(node, 1000, "Content-Base: rtsp://192.168.1.188/h264/\r\n");
-            abcdk_http_send_format(node, 1000, "Content-Type: application/sdp\r\n");
-            abcdk_http_send_format(node, 1000, "Content-Length: %lu\r\n", file->sizes[0]);
-            abcdk_http_send_format(node, 1000, "\r\n");
-            abcdk_http_send_object(node, file);
+            abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
+            abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
+            abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
+            abcdk_comm_post_format(node, 1000, "Content-Base: rtsp://192.168.1.188/h264/\r\n");
+            abcdk_comm_post_format(node, 1000, "Content-Type: application/sdp\r\n");
+            abcdk_comm_post_format(node, 1000, "Content-Length: %lu\r\n", file->sizes[0]);
+            abcdk_comm_post_format(node, 1000, "\r\n");
+            abcdk_comm_post(node, file);
         }
         else if (abcdk_strncmp(method_p, "ANNOUNCE", 8, 1) == 0)
         {
@@ -149,12 +149,12 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             if (len > 0)
                 abcdk_save("./rtsp_ANNOUNCE.data", abcdk_http_request_body(req,0), len, 0);
 
-            abcdk_http_send_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
-            abcdk_http_send_format(node, 1000, "CSeq: %d\r\n", cseq);
-            abcdk_http_send_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            abcdk_http_send_format(node, 1000, "Server: test_rtsp\r\n");
-            abcdk_http_send_format(node, 1000, "Session: 123\r\n");
-            abcdk_http_send_format(node, 1000, "\r\n");
+            abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
+            abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
+            abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
+            abcdk_comm_post_format(node, 1000, "Server: test_rtsp\r\n");
+            abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
+            abcdk_comm_post_format(node, 1000, "\r\n");
 
            // printf("%s",abcdk_http_request_body(req,0));
 
@@ -173,33 +173,33 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         }
         else if (abcdk_strncmp(method_p, "SETUP", 5, 1) == 0)
         {
-            abcdk_http_send_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
-            abcdk_http_send_format(node, 1000, "CSeq: %d\r\n", cseq);
-            abcdk_http_send_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            abcdk_http_send_format(node, 1000, "Server: test_rtsp\r\n");
-            abcdk_http_send_format(node, 1000, "Session: 123\r\n");
-            abcdk_http_send_format(node, 1000, "Transport: RTP/AVP/TCP;unicast;interleaved=0‐1;ssrc=00000000\r\n");
-            abcdk_http_send_format(node, 1000, "x‐Dynamic‐Rate: 1\r\n");
-            abcdk_http_send_format(node, 1000, "x‐Transport‐Options: late‐tolerance=1.400000\r\n");
-            abcdk_http_send_format(node, 1000, "\r\n");
+            abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
+            abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
+            abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
+            abcdk_comm_post_format(node, 1000, "Server: test_rtsp\r\n");
+            abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
+            abcdk_comm_post_format(node, 1000, "Transport: RTP/AVP/TCP;unicast;interleaved=0‐1;ssrc=00000000\r\n");
+            abcdk_comm_post_format(node, 1000, "x‐Dynamic‐Rate: 1\r\n");
+            abcdk_comm_post_format(node, 1000, "x‐Transport‐Options: late‐tolerance=1.400000\r\n");
+            abcdk_comm_post_format(node, 1000, "\r\n");
         }
         else if (abcdk_strncmp(method_p, "RECORD", 5, 1) == 0)
         {
-            abcdk_http_send_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
-            abcdk_http_send_format(node, 1000, "CSeq: %d\r\n", cseq);
-            abcdk_http_send_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            abcdk_http_send_format(node, 1000, "Server: test_rtsp\r\n");
-            abcdk_http_send_format(node, 1000, "Session: 123\r\n");
-            abcdk_http_send_format(node, 1000, "\r\n");
+            abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
+            abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
+            abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
+            abcdk_comm_post_format(node, 1000, "Server: test_rtsp\r\n");
+            abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
+            abcdk_comm_post_format(node, 1000, "\r\n");
         }
         else if(abcdk_strncmp(method_p, "TEARDOWN", 8, 1) == 0)
         {
-            // abcdk_http_send_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
-            // abcdk_http_send_format(node, 1000, "CSeq: %d\r\n", cseq);
-            // abcdk_http_send_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            // abcdk_http_send_format(node, 1000, "Server: test_rtsp\r\n");
-            // abcdk_http_send_format(node, 1000, "Session: 123\r\n");
-            // abcdk_http_send_format(node, 1000, "\r\n");
+            // abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
+            // abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
+            // abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
+            // abcdk_comm_post_format(node, 1000, "Server: test_rtsp\r\n");
+            // abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
+            // abcdk_comm_post_format(node, 1000, "\r\n");
         }
     }
     else
@@ -382,7 +382,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 #endif
 
   //  abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_http_event_cb,NULL,_abcdk_test_http_close_cb};
-    abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_rtsp_event_cb,_abcdk_test_http_fetch_cb,  _abcdk_test_http_close_cb};
+    abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_rtsp_event_cb,_abcdk_test_http_fetch_cb,_abcdk_test_http_close_cb};
     abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
 
     while (getchar() != 'Q')

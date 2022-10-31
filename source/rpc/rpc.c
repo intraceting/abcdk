@@ -55,12 +55,6 @@ typedef struct _abcdk_rpc
     /** 输入消息缓存。*/
     abcdk_comm_message_t *in_buffer;
 
-    /** 输出消息缓存。*/
-    abcdk_comm_message_t *out_buffer;
-
-    /** 输出消息队列。*/
-    abcdk_comm_queue_t *out_queue;
-
     /** 应答服务员。*/
     abcdk_comm_waiter_t *rsp_waiter;
 
@@ -77,8 +71,6 @@ void _abcdk_rpc_free(abcdk_rpc_t **rpc)
     *rpc = NULL;
 
     abcdk_comm_message_unref(&rpc_p->in_buffer);
-    abcdk_comm_message_unref(&rpc_p->out_buffer);
-    abcdk_comm_queue_free(&rpc_p->out_queue);
     abcdk_comm_waiter_free(&rpc_p->rsp_waiter);
     abcdk_heap_free(rpc_p);
 }
@@ -95,8 +87,6 @@ abcdk_rpc_t *_abcdk_rpc_alloc()
     rpc->status = ABCDK_RPC_STATUS_BROKEN;
     rpc->protocol = ABCDK_RPC_PROTOCOL;
     rpc->in_buffer = NULL;
-    rpc->out_buffer = NULL;
-    rpc->out_queue = abcdk_comm_queue_alloc();
     rpc->rsp_waiter = abcdk_comm_waiter_alloc();
 
     return rpc;
@@ -124,45 +114,6 @@ uint64_t _abcdk_rpc_make_mid()
 
 int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint64_t num, uint8_t flag)
 {
-#if 0
-    abcdk_rpc_t *rpc_p = NULL;
-    abcdk_comm_message_t *msg = NULL;
-    void *msg_ptr;
-    size_t msg_len;
-    int chk;
-
-    rpc_p = (abcdk_rpc_t *)abcdk_comm_get_append(node);
-
-    msg = abcdk_comm_message_alloc(4 + 4 + 8 + 1 + 3 + len);
-    if (!msg)
-        goto final_error;
-
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
-
-    ABCDK_PTR2U32(msg_ptr, 0) = abcdk_endian_h_to_b32(msg_len);
-    ABCDK_PTR2U32(msg_ptr, 4) = abcdk_endian_h_to_b32(rpc_p->protocol);
-    ABCDK_PTR2U64(msg_ptr, 8) = abcdk_endian_h_to_b64(num);
-    ABCDK_PTR2U8(msg_ptr, 17) = flag;
-    memcpy(ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), cargo, len);
-
-    chk = abcdk_comm_queue_push(rpc_p->out_queue, msg, 0);
-    if (chk != 0)
-        goto final_error;
-
-    if (abcdk_atomic_load(&rpc_p->status) == ABCDK_RPC_STATUS_STABLE)
-        abcdk_comm_send_watch(node);
-
-    return 0;
-
-final_error:
-
-    abcdk_comm_message_unref(&msg);
-
-    return -1;
-
-#else 
-
     abcdk_rpc_t *rpc_p = NULL;
     abcdk_object_t *msg = NULL;
     int chk;
@@ -186,8 +137,6 @@ final_error:
     /*删除未投递成功的消息。*/
     abcdk_object_unref(&msg);
     return -1;
-
-#endif
 }
 
 abcdk_comm_message_t *_abcdk_rpc_extrac_cargo(abcdk_comm_message_t *msg)
@@ -523,37 +472,6 @@ void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
 void _abcdk_rpc_event_output(abcdk_comm_node_t *node)
 {
     return;
-
-    abcdk_rpc_t *rpc_p = NULL;
-    int chk;
-
-    rpc_p = (abcdk_rpc_t *)abcdk_comm_get_append(node);
-
-NEXT_MSG:
-
-    /*如果发送缓存是空的，则从待发送队列取出一份。*/
-    if (!rpc_p->out_buffer)
-    {
-        rpc_p->out_buffer = abcdk_comm_queue_pop(rpc_p->out_queue, 1);
-        if (!rpc_p->out_buffer)
-            return;
-    }
-
-    chk = abcdk_comm_message_send(rpc_p->out_buffer,node);
-    if (chk < 0)
-    {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
-    else if (chk == 0)
-    {
-        abcdk_comm_send_watch(node);
-        return;
-    }
-
-    /*释放消息缓存，并继续发送。*/
-    abcdk_comm_message_unref(&rpc_p->out_buffer);
-    goto NEXT_MSG;
 }
 
 void _abcdk_rpc_event_close(abcdk_comm_node_t *node)

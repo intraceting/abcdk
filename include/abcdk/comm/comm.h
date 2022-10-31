@@ -283,6 +283,29 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
 */
 int abcdk_comm_post(abcdk_comm_node_t *node, abcdk_object_t *data);
 
+/**
+ * 投递数据。
+ * 
+ * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
+ */
+int abcdk_comm_post_buffer(abcdk_comm_node_t *node, const void *data,size_t size);
+
+/** 
+ * 投递数据。
+ * 
+ * @param [in] max 格式化数据最大长度。 
+ * 
+ * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
+*/
+int abcdk_comm_post_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap);
+
+/** 
+ * 投递数据。
+ * 
+ * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
+*/
+int abcdk_comm_post_format(abcdk_comm_node_t *node, int max, const char *fmt, ...);
+
 __END_DECLS
 
 #endif //ABCDK_COMM_COMM_H

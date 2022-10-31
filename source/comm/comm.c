@@ -1011,3 +1011,65 @@ int abcdk_comm_post(abcdk_comm_node_t *node, abcdk_object_t *data)
 
     return 0;
 }
+
+int abcdk_comm_post_buffer(abcdk_comm_node_t *node, const void *data,size_t size)
+{
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(node != NULL && data != NULL && size >0);
+
+    obj = abcdk_object_alloc_copyfrom(data,size);
+    if(!obj)
+        return -1;
+
+    chk = abcdk_comm_post(node,obj);
+    if(chk == 0)
+        return 0;
+
+    /*删除投递失败的。*/
+    abcdk_object_unref(&obj);
+    return chk;
+}
+
+int abcdk_comm_post_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap)
+{
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(node != NULL && max > 0 && fmt != NULL);
+
+    obj = abcdk_object_alloc2(max);
+    if(!obj)
+        return -1;
+
+    chk = vsnprintf(obj->pstrs[0],max,fmt,ap);
+    if(chk<=0)
+        ABCDK_ERRNO_AND_GOTO1(chk = -1,final_error);
+
+    obj->sizes[0] = chk;
+    
+    chk = abcdk_comm_post(node,obj);
+    if(chk == 0)
+        return 0;
+
+final_error:
+
+    /*删除投递失败的。*/
+    abcdk_object_unref(&obj);
+    return chk;
+}
+
+int abcdk_comm_post_format(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+{
+    int chk;
+
+    assert(node != NULL && max > 0 && fmt != NULL);
+
+    va_list ap;
+    va_start(ap, fmt);
+    chk = abcdk_comm_post_vformat(node, max, fmt, ap);
+    va_end(ap);
+
+    return chk;
+}
