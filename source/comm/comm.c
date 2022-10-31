@@ -40,13 +40,13 @@ typedef struct _abcdk_comm_node
     abcdk_comm_t *ctx;
 
     /** 标识句柄来源。*/
-    int flag;
+    volatile int flag;
 #define ABCDK_COMM_FLAG_CLIENT   1
 #define ABCDK_COMM_FLAG_LISTEN   2
 #define ABCDK_COMM_FLAG_ACCPET   3
 
     /** 标识当前句柄状态。*/
-    int status;
+    volatile int status;
 #define ABCDK_COMM_STATUS_SYNC       1
 #define ABCDK_COMM_STATUS_SSL_SYNC   2
 #define ABCDK_COMM_STATUS_STABLE     3
@@ -82,6 +82,15 @@ typedef struct _abcdk_comm_node
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
 
+    /** 发送队列。*/
+    abcdk_tree_t *out_queue;
+
+    /** 发送队列锁。*/
+    abcdk_mutex_t out_locker;
+
+    /** 发送游标。*/
+    size_t out_pos;
+
 } abcdk_comm_node_t;
 
 void abcdk_comm_unref(abcdk_comm_node_t **node)
@@ -113,6 +122,8 @@ void abcdk_comm_unref(abcdk_comm_node_t **node)
     abcdk_closep(&node_p->fd);
     abcdk_object_unref(&node_p->append);
     abcdk_object_unref(&node_p->userdata);
+    abcdk_tree_free(&node_p->out_queue);
+    abcdk_mutex_destroy(&node_p->out_locker);
     abcdk_heap_free(node_p);
 }
 
@@ -143,6 +154,9 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
     node->fd = -1;
     node->append = abcdk_object_alloc3(0,1);
     node->userdata = abcdk_object_alloc3(0,1);
+    node->out_queue = abcdk_tree_alloc3(1);
+    abcdk_mutex_init2(&node->out_locker,0);
+    node->out_pos = 0;
 
     return node;
 }
@@ -355,6 +369,9 @@ void _abcdk_comm_prepare_cb(abcdk_comm_node_t *node,abcdk_comm_node_t *listen)
     node->callback.prepare_cb(node, listen);
 }
 
+/*声明输出事件钩子函数。*/
+void _abcdk_comm_output_hook(abcdk_comm_node_t *node);
+
 void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
 {
     /*读权利绑定到线程。*/
@@ -366,7 +383,10 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
         abcdk_thread_leader_vote(&node->output_user);
 
     /*通知应用层处理事件。*/
-    node->callback.event_cb(node, event, result);
+    if(event == ABCDK_COMM_EVENT_OUTPUT)
+        _abcdk_comm_output_hook(node);
+    else 
+        node->callback.event_cb(node, event, result);
 
     /*写权利从线程解除。*/
     if(event == ABCDK_COMM_EVENT_OUTPUT)
@@ -458,10 +478,10 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         {
 #ifdef HEADER_SSL_H    
             if(node->ssl)
-                node->status = ABCDK_COMM_STATUS_SSL_SYNC;
+                abcdk_atomic_store(&node->status,ABCDK_COMM_STATUS_SSL_SYNC);
             else 
 #endif //HEADER_SSL_H
-                node->status = ABCDK_COMM_STATUS_STABLE;
+                abcdk_atomic_store(&node->status,ABCDK_COMM_STATUS_STABLE);
         }
         else
         {
@@ -508,7 +528,7 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         ssl_chk = SSL_do_handshake(node->ssl);
         if (ssl_chk == 1)
         {   
-            node->status = ABCDK_COMM_STATUS_STABLE;
+            abcdk_atomic_store(&node->status,ABCDK_COMM_STATUS_STABLE);
         }
         else
         {
@@ -918,4 +938,76 @@ final_error:
     abcdk_comm_unref(&node_p);
 
     return -1;
+}
+
+void _abcdk_comm_output_hook(abcdk_comm_node_t *node)
+{
+    abcdk_tree_t *p;
+    ssize_t slen;
+    int chk;
+
+NEXT_MSG:
+
+    /*从队列头部开始发送。*/
+    abcdk_mutex_lock(&node->out_locker,1);
+    p = abcdk_tree_child(node->out_queue,1);
+    abcdk_mutex_unlock(&node->out_locker);
+
+    /*通知应用层，发送队列空闲。*/
+    if(!p)
+    {
+        node->callback.event_cb(node,ABCDK_COMM_EVENT_OUTPUT,NULL);
+        return;
+    }
+
+    /*发。*/
+    slen = abcdk_comm_send(node, ABCDK_PTR2VPTR(p->alloc->pptrs[0], node->out_pos), p->alloc->sizes[0] - node->out_pos);
+    if (slen <= 0)
+    {
+        abcdk_comm_send_watch(node);
+        return;
+    }
+
+    /*滚动发送游标。*/
+    node->out_pos += slen;
+
+    /*当前节点未发送完整，则继续发送。*/
+    if (node->out_pos < p->alloc->sizes[0])
+        goto NEXT_MSG;
+
+    /*发送游标归零。*/
+    node->out_pos = 0;
+
+    /*从队列中删除已经发送完整的节点。*/
+    abcdk_mutex_lock(&node->out_locker,1);
+    abcdk_tree_unlink(p);
+    abcdk_tree_free(&p);
+    abcdk_mutex_unlock(&node->out_locker);
+
+    /*并继续发送剩余节点。*/
+    goto NEXT_MSG;
+}
+
+int abcdk_comm_post(abcdk_comm_node_t *node, abcdk_object_t *data)
+{
+    abcdk_tree_t *p;
+
+    assert(node != NULL && data != NULL);
+    assert(data->pptrs[0] != NULL && data->sizes[0] > 0);
+
+    if(node->flag == ABCDK_COMM_FLAG_LISTEN)
+        return -2;
+
+    p = abcdk_tree_alloc(data);
+    if(!p)
+        return -1;
+
+    abcdk_mutex_lock(&node->out_locker,1);
+    abcdk_tree_insert2(node->out_queue,p,0);
+    abcdk_mutex_unlock(&node->out_locker);
+
+    if(abcdk_atomic_load(&node->status) == ABCDK_COMM_STATUS_STABLE)
+        return abcdk_comm_send_watch(node);
+
+    return 0;
 }

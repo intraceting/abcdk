@@ -319,9 +319,9 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
     }
 }
 
-void _abcdk_test_http_fetch_cb(abcdk_comm_node_t *node, uint64_t *delay)
+void _abcdk_test_http_fetch_cb(abcdk_comm_node_t *node)
 {
-    *delay = 1000;
+//    *delay = 1000;
 
     fprintf(stderr,"aaaa\n");
 }

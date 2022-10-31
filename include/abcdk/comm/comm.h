@@ -272,6 +272,17 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
 */
 int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_callback_t *cb);
 
+/**
+ * 投递数据。
+ * 
+ * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
+ * 
+ * @param [in] obj 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * 
+ * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
+*/
+int abcdk_comm_post(abcdk_comm_node_t *node, abcdk_object_t *data);
+
 __END_DECLS
 
 #endif //ABCDK_COMM_COMM_H

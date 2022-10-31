@@ -124,6 +124,7 @@ uint64_t _abcdk_rpc_make_mid()
 
 int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint64_t num, uint8_t flag)
 {
+#if 0
     abcdk_rpc_t *rpc_p = NULL;
     abcdk_comm_message_t *msg = NULL;
     void *msg_ptr;
@@ -159,6 +160,34 @@ final_error:
     abcdk_comm_message_unref(&msg);
 
     return -1;
+
+#else 
+
+    abcdk_rpc_t *rpc_p = NULL;
+    abcdk_object_t *msg = NULL;
+    int chk;
+
+    rpc_p = (abcdk_rpc_t *)abcdk_comm_get_append(node);
+
+    msg = abcdk_object_alloc2(4 + 4 + 8 + 1 + 3 + len);
+    if (!msg)
+        return -1;
+
+    ABCDK_PTR2U32(msg->pptrs[0], 0) = abcdk_endian_h_to_b32(msg->sizes[0]);
+    ABCDK_PTR2U32(msg->pptrs[0], 4) = abcdk_endian_h_to_b32(rpc_p->protocol);
+    ABCDK_PTR2U64(msg->pptrs[0], 8) = abcdk_endian_h_to_b64(num);
+    ABCDK_PTR2U8(msg->pptrs[0], 17) = flag;
+    memcpy(ABCDK_PTR2VPTR(msg->pptrs[0], ABCDK_RPC_HDR_SIZE), cargo, len);
+
+    chk = abcdk_comm_post(node, msg);
+    if (chk == 0)
+        return 0;
+
+    /*删除未投递成功的消息。*/
+    abcdk_object_unref(&msg);
+    return -1;
+
+#endif
 }
 
 abcdk_comm_message_t *_abcdk_rpc_extrac_cargo(abcdk_comm_message_t *msg)
@@ -493,6 +522,8 @@ void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
 
 void _abcdk_rpc_event_output(abcdk_comm_node_t *node)
 {
+    return;
+
     abcdk_rpc_t *rpc_p = NULL;
     int chk;
 
