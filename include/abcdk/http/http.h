@@ -24,10 +24,11 @@ __BEGIN_DECLS
  */
 typedef struct _abcdk_http_callback
 {
+
   /**
    * 新连接通知回调函数。
    *
-   * @return 0 允许连接，-1 禁止连接。
+   * @param [out] result 0 允许连接，-1 禁止连接。
    */
   void (*accept_cb)(abcdk_comm_node_t *node, int *result);
 
@@ -37,6 +38,13 @@ typedef struct _abcdk_http_callback
    * @param req 请求数据。
    */
   void (*request_cb)(abcdk_comm_node_t *node, abcdk_http_request_t *req);
+
+  /**
+   * 拉取通知回调函数。
+   *
+   * @warning 仅在发送队列从忙碌状态切换到空闲状态时，发出通知。
+  */
+  void (*fetch_cb)(abcdk_comm_node_t *node);
 
   /** 连接关闭通知回调函数。*/
   void (*close_cb)(abcdk_comm_node_t *node);

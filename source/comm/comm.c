@@ -70,6 +70,9 @@ typedef struct _abcdk_comm_node
     /** Input事件读权利拥有者。*/
     volatile pthread_t input_user;
 
+    /** Output事件读权利拥有者。*/
+    volatile pthread_t output_user;
+
     /** 回调函数。*/
     abcdk_comm_callback_t callback;
 
@@ -299,8 +302,13 @@ int abcdk_comm_recv_watch(abcdk_comm_node_t *node)
 ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
+    int chk;
 
     assert(node != NULL && buf != NULL && size > 0);
+
+    /*仅消息循环线程拥有写权利。*/
+    chk = abcdk_thread_leader_test(&node->output_user);
+    ABCDK_ASSERT(chk == 0,"仅消息循环线程拥有写权利。");
 
     while (wsize_all < size)
     {
@@ -353,8 +361,16 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
     if(event == ABCDK_COMM_EVENT_INPUT)
         abcdk_thread_leader_vote(&node->input_user);
 
+    /*写权利绑定到线程。*/
+    if(event == ABCDK_COMM_EVENT_OUTPUT)
+        abcdk_thread_leader_vote(&node->output_user);
+
     /*通知应用层处理事件。*/
     node->callback.event_cb(node, event, result);
+
+    /*写权利从线程解除。*/
+    if(event == ABCDK_COMM_EVENT_OUTPUT)
+        abcdk_thread_leader_quit(&node->output_user);
 }
 
 abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)

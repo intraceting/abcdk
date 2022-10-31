@@ -354,7 +354,7 @@ void _abcdk_http_event_connect(abcdk_comm_node_t *node)
     abcdk_atomic_store(&http_p->status, ABCDK_HTTP_STATUS_STABLE);
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
-    abcdk_comm_send_watch(node);
+    //abcdk_comm_send_watch(node);
 }
 
 void _abcdk_http_event_close(abcdk_comm_node_t *node)
@@ -478,7 +478,12 @@ NEXT_MSG:
     {
         http_p->out_buffer = abcdk_comm_queue_pop(http_p->out_queue,1);
         if (!http_p->out_buffer)
+        {
+            /*如果应用层需要，通知发送队列空闲。*/
+            if(http_p->callback.fetch_cb)
+                http_p->callback.fetch_cb(node);
             return;
+        }
     }
 
     chk = abcdk_comm_message_send(http_p->out_buffer,node);

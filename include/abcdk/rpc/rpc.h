@@ -24,7 +24,7 @@ typedef struct _abcdk_rpc_callback
   /**
    * 新连接通知回调函数。
    *
-   * @return 0 允许连接，-1 禁止连接。
+   * @param [out] result 0 允许连接，-1 禁止连接。
    */
   void (*accept_cb)(abcdk_comm_node_t *node, int *result);
 

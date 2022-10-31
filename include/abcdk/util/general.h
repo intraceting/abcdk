@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_UNASSURED_H
-#define ABCDK_UTIL_UNASSURED_H
+#ifndef ABCDK_UTIL_GENERAL_H
+#define ABCDK_UTIL_GENERAL_H
 
 #include "abcdk/util/defs.h"
 #include "abcdk/util/atomic.h"
@@ -82,4 +82,4 @@ const char *abcdk_match_env(const char *line, const char *name, uint8_t delim);
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_UNASSURED_H
+#endif //ABCDK_UTIL_GENERAL_H

@@ -93,10 +93,41 @@ final:
     return errcode;
 }
 
+int _abcdk_test_signal_cb(const siginfo_t *info, void *opaque)
+{
+
+    fprintf(stderr, "收到信号（%d)。", info->si_signo);
+
+    if (SIGILL == info->si_signo ||
+        SIGTERM == info->si_signo ||
+        SIGINT == info->si_signo ||
+        SIGQUIT == info->si_signo)
+    {
+        abcdk_atomic_store((uint32_t *)abcdk_register(32, 255), 1);
+        return -1;
+    }
+    else
+    {
+
+        fprintf(stderr, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d", getpid());
+    }
+
+    return 1;
+}
+
 int main(int argc, char **argv)
 {
     abcdk_tree_t *args = NULL;
+    abcdk_signal_t sig = {0};
     int errcode = 0;
+
+    sigfillset(&sig.signals);
+    sigdelset(&sig.signals, SIGKILL);
+    sigdelset(&sig.signals, SIGSEGV);
+    sigdelset(&sig.signals, SIGSTOP);
+
+    sig.signal_cb = _abcdk_test_signal_cb;
+    abcdk_sigwaitinfo_async(&sig);
 
     /*中文；UTF-8。*/
     setlocale(LC_ALL, "zh_CN.UTF-8");
