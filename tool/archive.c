@@ -878,12 +878,12 @@ int _abcdkarchive_write_open_cb(struct archive *fd, void *opaque)
 ssize_t _abcdkarchive_write_write_cb(struct archive *fd, void *opaque, const void *_buffer, size_t _length)
 {
     abcdkarchive_t *ctx = (abcdkarchive_t *)opaque;
-    ssize_t wlen = 0, wall = 0;
+    ssize_t wall = 0;
 
 #pragma omp parallel for num_threads(ctx->volume_num)
     for (int i = 0; i < ctx->volume_num; i++)
     {
-        wlen = abcdk_write(ctx->fd[i], _buffer, _length);
+        ssize_t wlen = abcdk_write(ctx->fd[i], _buffer, _length);
 #pragma omp atomic
         wall += ((wlen > 0) ? wlen : 0);
     }
@@ -896,6 +896,7 @@ int _abcdkarchive_write_close_cb(struct archive *fd, void *opaque)
 {
     abcdkarchive_t *ctx = (abcdkarchive_t *)opaque;
 
+#pragma omp parallel for num_threads(ctx->volume_num)
     for (int i = 0; i < ctx->volume_num; i++)
     {
         abcdk_closep(&ctx->fd[i]);

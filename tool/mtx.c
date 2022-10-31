@@ -136,7 +136,7 @@ void _abcdkmtx_printf_sense(abcdk_scsi_io_stat_t *stat)
 
     msg_p = abcdk_mediumx_sense2string(key, asc, ascq);
 
-    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
+    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.\n", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
 }
 
 const char *_abcdkmtx_translate_devname(abcdkmtx_t *ctx, uint8_t type, const char *sn)
