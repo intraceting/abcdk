@@ -6,7 +6,7 @@
  */
 #include "abcdk/http/request.h"
 
-typedef struct _abcdk_http_request 
+struct _abcdk_http_request 
 {
     /** 引用计数器。*/
     volatile int refcount;
@@ -45,7 +45,7 @@ typedef struct _abcdk_http_request
     /** 是否为RTSP包。*/
     int is_rtsp;
 
-}abcdk_http_request_t;
+};// abcdk_http_request_t;
 
 void abcdk_http_request_unref(abcdk_http_request_t **req)
 {

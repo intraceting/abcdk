@@ -149,16 +149,19 @@ const char *_abcdkmtx_translate_devname(abcdkmtx_t *ctx, uint8_t type, const cha
     {
         dev_p = (abcdk_scsi_info_t *)node_p->alloc->pptrs[0];
 
-        if (dev_p->type == TYPE_TAPE && type == ABCDK_MEDIUMX_ELEMENT_DXFER)
+        if (dev_p->serial[0] != '\0')
         {
-            if (abcdk_strcmp(dev_p->serial, sn, 1) == 0)
-                return dev_p->devname;
-        }
+            if (dev_p->type == TYPE_TAPE && type == ABCDK_MEDIUMX_ELEMENT_DXFER)
+            {
+                if (abcdk_strcmp(dev_p->serial, sn, 1) == 0)
+                    return dev_p->devname;
+            }
 
-        if (dev_p->type == TYPE_MEDIUM_CHANGER && type == ABCDK_MEDIUMX_ELEMENT_CHANGER)
-        {
-            if (abcdk_strcmp(dev_p->serial, sn, 1) == 0)
-                return dev_p->generic;
+            if (dev_p->type == TYPE_MEDIUM_CHANGER && type == ABCDK_MEDIUMX_ELEMENT_CHANGER)
+            {
+                if (abcdk_strcmp(dev_p->serial, sn, 1) == 0)
+                    return dev_p->generic;
+            }
         }
 
         node_p = abcdk_tree_sibling(node_p, 0);

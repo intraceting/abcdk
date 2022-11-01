@@ -373,7 +373,7 @@ int abcdk_tape_tell(int fd, uint64_t *block, uint64_t *file, uint32_t *part,
 }
 
 abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
-                                             uint32_t timeout, abcdk_scsi_io_stat_t *stat)
+                                          uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     abcdk_object_t *alloc = NULL;
     uint16_t len = 0;

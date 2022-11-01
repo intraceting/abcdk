@@ -7,7 +7,7 @@
 #include "abcdk/comm/waiter.h"
 
 /** 消息服务员。*/
-typedef struct _abcdk_comm_waiter
+struct _abcdk_comm_waiter
 {
     /** 
      * 状态。
@@ -26,7 +26,7 @@ typedef struct _abcdk_comm_waiter
     /** 比较函数。*/
     abcdk_comm_waiter_compare_cb compare_cb;
 
-} abcdk_comm_waiter_t;
+};// abcdk_comm_waiter_t;
 
 
 void abcdk_comm_waiter_free(abcdk_comm_waiter_t **waiter)

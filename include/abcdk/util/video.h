@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_VIDEO_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/time.h"
 #include "abcdk/util/ffmpeg.h"
 
 __BEGIN_DECLS

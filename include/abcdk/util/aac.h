@@ -77,7 +77,7 @@ int abcdk_aac_sample_rates2index(int rates);
 int abcdk_aac_channels(int idx);
 
 /**翻译声道数配置。*/
-int abcdk_aac_channels2config(int chennels);
+int abcdk_aac_channels2config(int channels);
 
 __END_DECLS
 

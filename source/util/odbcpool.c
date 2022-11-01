@@ -13,7 +13,7 @@
 /**
  * ODBC连接池。
 */
-typedef struct _abcdk_odbcpool
+struct _abcdk_odbcpool
 {
     /** 魔法数。*/
     uint32_t magic;
@@ -37,7 +37,7 @@ typedef struct _abcdk_odbcpool
     /** 环境指针。*/
     void *opaque;
 
-}abcdk_odbcpool_t;
+};//abcdk_odbcpool_t;
 
 
 time_t _abcdk_odbcpool_clock()

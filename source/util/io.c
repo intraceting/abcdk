@@ -103,8 +103,8 @@ int abcdk_open(const char *file, int rw, int nonblock, int create)
     if (rw && create)
         flag |= O_CREAT;
 
-    flag |= __O_LARGEFILE;
-    flag |= __O_CLOEXEC;
+    flag |= O_LARGEFILE;
+    flag |= O_CLOEXEC;
 
     return open(file, flag, mode);
 }

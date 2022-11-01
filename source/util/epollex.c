@@ -7,7 +7,7 @@
 #include "abcdk/util/epollex.h"
 
 /** epoll扩展对象。*/
-typedef struct _abcdk_epollex
+struct _abcdk_epollex
 {
     /** epoll句柄。 >= 0 有效。*/
     int efd;
@@ -42,7 +42,7 @@ typedef struct _abcdk_epollex
     /* 清理环境指针。*/
     void *opaque;
     
-} abcdk_epollex_t;
+};// abcdk_epollex_t;
 
 /** epoll节点。*/
 typedef struct _abcdk_epollex_node

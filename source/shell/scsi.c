@@ -42,12 +42,31 @@ int _abcdk_scsi_get_serial(const char* path,char serial[NAME_MAX])
 
     rlen = abcdk_load(file, buf, 255, 0);
     if (rlen <= 0)
-    return -1;
+        return -1;
 
     memcpy(serial, buf + 4, buf[3]);
     abcdk_strtrim(serial, isspace, 2);
 
     return 0;
+}
+
+int _abcdk_scsi_get_serial_from_dev(const char* dev,char serial[NAME_MAX])
+{
+    abcdk_scsi_io_stat_t stat;
+    int fd;
+    int chk;
+
+    fd = abcdk_open(dev, 0, 0, 0);
+    if (fd < 0)
+        return -1;
+
+    chk = abcdk_scsi_inquiry_serial(fd, NULL, serial, 3000, &stat);
+    if (chk != 0 || stat.status != GOOD)
+        chk = -2;
+
+    abcdk_closep(&fd);
+
+    return chk;
 }
 
 int _abcdk_scsi_get_vendor(const char* path,char vendor[NAME_MAX])
@@ -270,6 +289,10 @@ int abcdk_scsi_get_info(const char *path, abcdk_scsi_info_t *info)
     _abcdk_scsi_get_serial(path, info->serial);
     _abcdk_scsi_get_devname(path, info->type, info->devname);
     _abcdk_scsi_get_generic(path, info->generic);
+
+    /*尝试通过设备获取，但需要具备相应的权限。*/
+    if(info->serial[0] == '\0')
+        _abcdk_scsi_get_serial_from_dev(info->generic,info->serial);
 
     return 0;
 }

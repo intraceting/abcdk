@@ -76,6 +76,30 @@ CheckHavePackage()
                 echo "binutils"
             fi
         }
+        elif [ "${PKG_NAME}" == "dpkg" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit dpkg)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo ""
+            else 
+                echo "dpkg"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "dpkg-dev" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit dpkg-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo ""
+            else 
+                echo "dpkg-dev"
+            fi
+        }
         elif [ "${PKG_NAME}" == "pkgconfig" ];then
         {
             if [ ${FLAG} -eq 1 ];then
@@ -464,6 +488,18 @@ CheckHavePackage()
                 echo "binutils"
             fi
         }
+        elif [ "${PKG_NAME}" == "rpmbuild" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit rpm-build)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo ""
+            else 
+                echo "rpm-build"
+            fi
+        }
         elif [ "${PKG_NAME}" == "pkgconfig" ];then
         {
             if [ ${FLAG} -eq 1 ];then
@@ -473,7 +509,7 @@ CheckHavePackage()
             elif [ ${FLAG} -eq 3 ];then
                 echo ""
             else
-                if [ ${SYS_VERID} -eq 7 ];then
+                if [ ${SYS_VERID} -le 7 ];then
                     echo "pkgconfig"
                 elif [ ${SYS_VERID} -eq 8 ];then
                     echo "pkgconf-pkg-config"
@@ -499,17 +535,17 @@ CheckHavePackage()
             if [ ${FLAG} -eq 1 ];then
                 echo "$(CheckHavePackageFromKit unixODBC-devel)"
             elif [ ${FLAG} -eq 2 ];then
-                if [ ${SYS_VERID} -eq 7 ];then
+                if [ `expr ${SYS_VERID} \<= 7` ];then
                     echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8"
-                elif [ ${SYS_VERID} -eq 8 ];then
+                elif [ `expr ${SYS_VERID} \>= 8` ];then
                     echo "$(pkg-config --cflags odbc)"
                 else 
                     echo ""
                 fi
             elif [ ${FLAG} -eq 3 ];then
-                if [ ${SYS_VERID} -eq 7 ];then
+                if [ `expr ${SYS_VERID} \<= 7` ];then
                     echo "-lodbc"
-                elif [ ${SYS_VERID} -eq 8 ];then
+                elif [ `expr ${SYS_VERID} \>= 8` ];then
                     echo "$(pkg-config --libs odbc)"
                 else 
                     echo ""
@@ -881,7 +917,7 @@ SOLUTION_NAME="abcdk"
 
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUILD_PATH=$(realpath "${SHELLDIR}/build/")
+BUILD_PATH="${SHELLDIR}/build/"
 
 #
 MAKE_CONF=${BUILD_PATH}/makefile.conf
@@ -902,7 +938,7 @@ VERSION_MAJOR="1"
 #副版本
 VERSION_MINOR="4"
 #发行版本
-VERSION_RELEASE="3"
+VERSION_RELEASE="5"
 
 #
 BUILD_TYPE="release"
@@ -986,7 +1022,7 @@ do
         VERSION_RELEASE="${OPTARG}"
     ;;
     i)
-        INSTALL_PREFIX=$(realpath "${OPTARG}")
+        INSTALL_PREFIX="${OPTARG}"
     ;;
     d)
         DEPEND_FUNC="${OPTARG}"
@@ -1029,6 +1065,40 @@ if [ ${STATUS} -ne 0 ];then
 {
     echo "$(CheckHavePackage pkgconfig 0) not found."
     exit 22
+}
+fi
+
+#
+if [ "${KIT_NAME}" == "rpm" ];then
+{
+    #
+    STATUS=$(CheckHavePackage rpmbuild 1)
+    if [ ${STATUS} -ne 0 ];then
+    {
+        echo "$(CheckHavePackage rpmbuild 0) not found."
+        exit 22
+    }
+    fi
+}
+elif [ "${KIT_NAME}" == "deb" ];then
+{
+    #
+    STATUS=$(CheckHavePackage dpkg 1)
+    if [ ${STATUS} -ne 0 ];then
+    {
+        echo "$(CheckHavePackage dpkg 0) not found."
+        exit 22
+    }
+    fi
+
+    #
+    STATUS=$(CheckHavePackage dpkg-dev 1)
+    if [ ${STATUS} -ne 0 ];then
+    {
+        echo "$(CheckHavePackage dpkg-dev 0) not found."
+        exit 22
+    }
+    fi
 }
 fi
 
@@ -1138,7 +1208,7 @@ else
 fi
 
 #
-INSTALL_PREFIX=$(realpath "${INSTALL_PREFIX}")
+INSTALL_PREFIX="${INSTALL_PREFIX}"
 
 #
 DEPEND_FLAGS="${DEPEND_FLAGS} -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"

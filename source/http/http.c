@@ -197,11 +197,14 @@ void _abcdk_http_event_connect(abcdk_comm_node_t *node)
             return;
         }
 
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
         SSL_get0_alpn_selected(ssl_p, (const uint8_t**)&ver_p, &ver_l);
         if (ver_p != NULL && ver_l > 0)
             http_p->version = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2),0) == 0) ? 2 : 1);
+#endif //TLSEXT_TYPE_application_layer_protocol_negotiation
+
     }
-#endif
+#endif //HEADER_SSL_H
 
     /*标记已经连接。*/
     abcdk_atomic_store(&http_p->status, ABCDK_HTTP_STATUS_STABLE);
@@ -354,7 +357,7 @@ void _abcdk_http_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
 }
 
 #ifdef HEADER_SSL_H
-
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
 int _abcdk_http_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
                                const unsigned char *in, unsigned int inlen, void *arg)
 {
@@ -375,7 +378,8 @@ int _abcdk_http_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
     return SSL_TLSEXT_ERR_OK;
 }
 
-#endif
+#endif //TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif //HEADER_SSL_H
 
 int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_http_callback_t *cb)
 {
@@ -393,9 +397,11 @@ int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     http_p->callback = *cb;
 
 #ifdef HEADER_SSL_H
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
     if(ssl_ctx)
         SSL_CTX_set_alpn_select_cb(ssl_ctx, _abcdk_http_alpn_select_cb, NULL);
-#endif
+#endif //TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif //HEADER_SSL_H
 
     abcdk_comm_callback_t fcb = {_abcdk_http_prepare_cb,_abcdk_http_event_cb};
     chk = abcdk_comm_listen(node, ssl_ctx, addr, &fcb);

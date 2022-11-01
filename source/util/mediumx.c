@@ -227,59 +227,72 @@ int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int volta
                                          uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     char buf[255] = {0};
-    int buf2size = 0;
+    int buf2size = 0,buf2max = 0;
     uint8_t *buf2 = NULL;
+    uint16_t addr[4] = {0};
+    uint16_t count[4] = {0};
     int chk;
 
     chk = abcdk_mediumx_mode_sense(fd, 0, 0x1d, 0, buf, 255, timeout, stat);
     if (chk != 0)
         return -1;
 
-    /**/
-    buf2size = 0x00ffffff; /*15MB MAX!!!*/
+    /*15MB MAX!!!*/
+    buf2size = 0x00ffffff; 
     buf2 = (uint8_t *)abcdk_heap_alloc(buf2size);
     if (!buf2)
         return -1;
 
     /*ABCDK_MEDIUMX_ELEMENT_CHANGER:4+2,4+4*/
+    addr[0] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 2));
+    count[0] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4));
+    
     chk = abcdk_mediumx_read_element_status(fd, ABCDK_MEDIUMX_ELEMENT_CHANGER, voltag, dvcid,
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 2)),
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4)),
-                                            buf2, 2 * 1024 * 1024, -1, stat);
+                                            addr[0],count[0],
+                                            buf2, 0xA000, -1, stat);
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 4)));
+    abcdk_mediumx_parse_element_status(father, buf2, count[0]);
 
     /*ABCDK_MEDIUMX_ELEMENT_STORAGE:4+6,4+8*/
+    addr[1] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 6));
+    count[1] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8));
+
+    /* Page Header(8)+ Page Status(8)+ Elements(N)*52 */
+    buf2max = ABCDK_MIN(8 + 8 + count[1] * 52, buf2size);
     chk = abcdk_mediumx_read_element_status(fd, ABCDK_MEDIUMX_ELEMENT_STORAGE, voltag, dvcid,
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 6)),
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8)),
-                                            buf2, 2 * 1024 * 1024, -1, stat);
+                                            addr[1],count[1],
+                                            buf2, buf2max, -1, stat);
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 8)));
+    abcdk_mediumx_parse_element_status(father, buf2, count[1]);
 
+    
     /*ABCDK_MEDIUMX_ELEMENT_IE_PORT:4+10,4+12*/
+    addr[2] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 10));
+    count[2] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12));
+
     chk = abcdk_mediumx_read_element_status(fd, ABCDK_MEDIUMX_ELEMENT_IE_PORT, voltag, dvcid,
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 10)),
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12)),
-                                            buf2, 2 * 1024 * 1024, -1, stat);
+                                            addr[2],count[2],
+                                            buf2, 0xA000, -1, stat);
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 12)));
+    abcdk_mediumx_parse_element_status(father, buf2, count[2]);
 
     /*ABCDK_MEDIUMX_ELEMENT_DXFER:4+14,4+16*/
+    addr[3] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 14));
+    count[3] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16));
+
     chk = abcdk_mediumx_read_element_status(fd, ABCDK_MEDIUMX_ELEMENT_DXFER, voltag, dvcid,
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 14)),
-                                            abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16)),
-                                            buf2, 2 * 1024 * 1024, -1, stat);
+                                            addr[3],count[3],
+                                            buf2, 0xA000, -1, stat);
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 16)));
+    abcdk_mediumx_parse_element_status(father, buf2, count[3]);
 
 final:
 

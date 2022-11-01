@@ -7,7 +7,7 @@
 #include "abcdk/comm/comm.h"
 
 /** 通讯环境。*/
-typedef struct _abcdk_comm
+struct _abcdk_comm
 {
     /** epollex 环境。*/
     abcdk_epollex_t *epollex;
@@ -24,10 +24,10 @@ typedef struct _abcdk_comm
     /** 退出标志。0： 运行，!0：停止。*/
     volatile int exitflag;
 
-} abcdk_comm_t;
+};// abcdk_comm_t;
 
 /** 节点信息。*/
-typedef struct _abcdk_comm_node
+struct _abcdk_comm_node
 {
     /** 引用计数器。*/
     volatile int refcount;
@@ -91,7 +91,7 @@ typedef struct _abcdk_comm_node
     /** 发送游标。*/
     size_t out_pos;
 
-} abcdk_comm_node_t;
+};// abcdk_comm_node_t;
 
 void abcdk_comm_unref(abcdk_comm_node_t **node)
 {

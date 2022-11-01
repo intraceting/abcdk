@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_ODBCPOOL_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/time.h"
 #include "abcdk/util/odbc.h"
 
 

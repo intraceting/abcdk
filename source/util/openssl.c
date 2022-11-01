@@ -524,6 +524,8 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
             goto final_error;
     }
 
+#if ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
+
     X509_VERIFY_PARAM *param = SSL_CTX_get0_param(ctx);
     if(!param && crl_check)
         goto final_error;
@@ -541,6 +543,8 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
 
     if(chk != 1)
         goto final_error;
+
+#endif //ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
 
     return ctx;
 

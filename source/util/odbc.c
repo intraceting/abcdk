@@ -11,7 +11,7 @@
 /**
  * ODBC接口。
  */
-typedef struct _abcdk_odbc
+struct _abcdk_odbc
 {
     /** 连接池ID。*/
     uint32_t pool;
@@ -28,7 +28,7 @@ typedef struct _abcdk_odbc
     /** 数据集属性。*/
     abcdk_object_t *attr;
 
-} abcdk_odbc_t;
+};// abcdk_odbc_t;
 
 SQLRETURN _abcdk_odbc_check_return(SQLRETURN ret)
 {

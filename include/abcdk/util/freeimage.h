@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_FREEIMAGE_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
 
 #if defined(__SQL_H) || defined(__SQLEXT_H)
 #error "FreeImage与Unixodbc的头文件有冲突，不能同时引用。如果在同一个项目中同时引用这个两个依赖包，需要在不直接相关的源码中分别包含。"
@@ -20,6 +21,7 @@
 __BEGIN_DECLS
 
 #ifdef FREEIMAGE_H
+
 
 /**
  * 销毁环境。

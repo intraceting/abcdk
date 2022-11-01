@@ -7,7 +7,7 @@
 #include "abcdk/comm/queue.h"
 
 /** 消息队列。*/
-typedef struct _abcdk_comm_queue
+struct _abcdk_comm_queue
 {
     /** 锁。*/
     abcdk_mutex_t locker;
@@ -18,7 +18,7 @@ typedef struct _abcdk_comm_queue
     /** 长度。*/
     size_t count;
 
-} abcdk_comm_queue_t;
+};// abcdk_comm_queue_t;
 
 void abcdk_comm_queue_free(abcdk_comm_queue_t **queue)
 {

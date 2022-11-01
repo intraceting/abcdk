@@ -76,7 +76,12 @@ int abcdk_fi_save(FREE_IMAGE_FORMAT fifmt, int fiflag, int fd, const uint8_t *da
     const uint8_t *tmp = NULL;
     int chk = -1;
 
+#if ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
     assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
+#else 
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JP2);
+#endif //ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
+
     assert(fd >= 0 && data != NULL && stride > 0 && width > 0 && height > 0 && bits > 0);
 
     assert(bits == 24 || bits == 32);
@@ -134,7 +139,12 @@ int abcdk_fi_save2(FREE_IMAGE_FORMAT fifmt, int fiflag, const char *file, const 
     int fd = -1;
     int chk;
 
+#if ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
     assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
+#else 
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JP2);
+#endif //ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
+
     assert(file != NULL && data != NULL && stride > 0 && width > 0 && height != 0 && bits > 0);
 
     fd = abcdk_open(file,1,0,1);
@@ -153,7 +163,12 @@ FIBITMAP *abcdk_fi_load(FREE_IMAGE_FORMAT fifmt,int fiflag,int fd)
     FreeImageIO io = {0};
     FIBITMAP *dib = NULL;
     
+#if ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
     assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
+#else 
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JP2);
+#endif //ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
+
     assert(fd>=0);
 
     io.read_proc = _abcdk_fi_read_cb;
@@ -173,7 +188,12 @@ FIBITMAP *abcdk_fi_load2(FREE_IMAGE_FORMAT fifmt,int fiflag,const char *file)
     int fd = -1;
     FIBITMAP *dib = NULL;
 
+#if ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
     assert(fifmt >= FIF_BMP && fifmt <= FIF_JXR);
+#else 
+    assert(fifmt >= FIF_BMP && fifmt <= FIF_JP2);
+#endif //ABCDK_VERSION_AT_LEAST(FREEIMAGE_MAJOR_VERSION,FREEIMAGE_MINOR_VERSION,3,17)
+
     assert(file != NULL);
 
     fd = abcdk_open(file,0,0,1);

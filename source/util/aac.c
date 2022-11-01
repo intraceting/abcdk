@@ -82,11 +82,11 @@ int abcdk_aac_channels(int idx)
     return _abcdk_aac_channels_dict[idx];
 }
 
-int abcdk_aac_channels2config(int chennels)
+int abcdk_aac_channels2config(int channels)
 {
     for (int i = 0; i < 8; i++)
     {
-        if (_abcdk_aac_channels_dict[i] == chennels)
+        if (_abcdk_aac_channels_dict[i] == channels)
             return i;
     }
 

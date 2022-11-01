@@ -13,6 +13,19 @@
 
 #if defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
+#if ARCHIVE_VERSION_NUMBER < 3000000
+#define	ARCHIVE_FILTER_NONE ARCHIVE_COMPRESSION_NONE	
+#define	ARCHIVE_FILTER_GZIP ARCHIVE_COMPRESSION_GZIP	
+#define	ARCHIVE_FILTER_BZIP2 ARCHIVE_COMPRESSION_BZIP2	
+#define	ARCHIVE_FILTER_COMPRESS ARCHIVE_COMPRESSION_COMPRESS	
+#define	ARCHIVE_FILTER_PROGRAM ARCHIVE_COMPRESSION_PROGRAM	
+#define	ARCHIVE_FILTER_LZMA ARCHIVE_COMPRESSION_LZMA	
+#define	ARCHIVE_FILTER_XZ ARCHIVE_COMPRESSION_XZ		
+#define	ARCHIVE_FILTER_UU ARCHIVE_COMPRESSION_UU		
+#define	ARCHIVE_FILTER_RPM ARCHIVE_COMPRESSION_RPM		
+#define	ARCHIVE_FILTER_LZIP ARCHIVE_COMPRESSION_LZIP	
+#define	ARCHIVE_FILTER_LRZIP ARCHIVE_COMPRESSION_LRZIP	
+#endif
 
 /** 常量。*/
 enum _abcdkarchive_constant
@@ -88,10 +101,12 @@ static struct _abcdkarchive_filter_dict
     {6, ARCHIVE_FILTER_XZ, "XZ"},
     {7, ARCHIVE_FILTER_UU, "UU"},
     {8, ARCHIVE_FILTER_RPM, "RPM"},
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     {9, ARCHIVE_FILTER_LZIP, "LZIP"},
     {10, ARCHIVE_FILTER_LRZIP, "LRZIP"},
     {11, ARCHIVE_FILTER_LZOP, "LZOP"},
     {12, ARCHIVE_FILTER_GRZIP, "GRZIP"},
+#endif // ARCHIVE_VERSION_NUMBER >= 3000000
 #if ARCHIVE_VERSION_NUMBER >= 3003003
     {13, ARCHIVE_FILTER_LZ4, "LZ4"},
     {14, ARCHIVE_FILTER_ZSTD, "ZSTD"},
@@ -109,7 +124,9 @@ static struct _abcdkarchive_format_dict
     {3, ARCHIVE_FORMAT_CPIO_BIN_LE, "CPIO_BIN_LE"},
     {4, ARCHIVE_FORMAT_CPIO_BIN_BE, "CPIO_BIN_BE"},
     {5, ARCHIVE_FORMAT_CPIO_SVR4_CRC, "CPIO_SVR4_CRC"},
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     {6, ARCHIVE_FORMAT_CPIO_AFIO_LARGE, "CPIO_AFIO_LARGE"},
+#endif // ARCHIVE_VERSION_NUMBER >= 3000000
     {7, ARCHIVE_FORMAT_SHAR, "SHAR"},
     {8, ARCHIVE_FORMAT_SHAR_BASE, "SHAR_BASE"},
     {9, ARCHIVE_FORMAT_SHAR_DUMP, "SHAR_DUMP"},
@@ -128,10 +145,12 @@ static struct _abcdkarchive_format_dict
     {22, ARCHIVE_FORMAT_MTREE, "MTREE"},
     {23, ARCHIVE_FORMAT_RAW, "RAW"},
     {24, ARCHIVE_FORMAT_XAR, "XAR"},
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     {25, ARCHIVE_FORMAT_LHA, "LHA"},
     {26, ARCHIVE_FORMAT_CAB, "CAB"},
     {27, ARCHIVE_FORMAT_RAR, "RAR"},
     {28, ARCHIVE_FORMAT_7ZIP, "7ZIP"},
+#endif // ARCHIVE_VERSION_NUMBER >= 3000000
 #if ARCHIVE_VERSION_NUMBER >= 3003003
     {29, ARCHIVE_FORMAT_WARC, "WARC"}
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
@@ -226,9 +245,13 @@ void _abcdkarchive_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t工作路径。默认：./\n");
 
     fprintf(stderr, "\n回迁选项:\n");
-
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     fprintf(stderr, "\n\t--volume < NAME [ NAME-part2 NAME-part3 ... ] >\n");
     fprintf(stderr, "\t\t卷名和分卷名（包括路径）。注：最大支持254个分卷\n");
+#else 
+    fprintf(stderr, "\n\t--volume < NAME >\n");
+    fprintf(stderr, "\t\t卷名和分卷名（包括路径）。\n");
+#endif //ARCHIVE_VERSION_NUMBER >= 3000000
 
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
     fprintf(stderr, "\t\t文件或目录。注：最大支持254个。\n");
@@ -400,7 +423,7 @@ MATCH_OK:
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
-            ctx->fd[0] = open(pathfile, __O_DIRECTORY | __O_CLOEXEC, 0); //打开目录。
+            ctx->fd[0] = open(pathfile, O_DIRECTORY | O_CLOEXEC, 0); //打开目录。
             if (ctx->fd[0] < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
         }
@@ -472,7 +495,7 @@ void _abcdkarchive_read_recover_attr(abcdkarchive_t *ctx)
 
         if (S_ISDIR(file_stat.st_mode))
         {
-            ctx->fd[0] = open(pathfile, __O_DIRECTORY | __O_CLOEXEC, 0); //打开目录。
+            ctx->fd[0] = open(pathfile, O_DIRECTORY | O_CLOEXEC, 0); //打开目录。
         }
         else if (S_ISREG((file_stat.st_mode)))
         {
@@ -512,8 +535,11 @@ void _abcdkarchive_read_recover_attr(abcdkarchive_t *ctx)
 void _abcdkarchive_read_real(abcdkarchive_t *ctx)
 {
     int chk;
-
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     chk = archive_read_open_filenames(ctx->arch_fd, ctx->volumes, ctx->blk);
+#else 
+    chk = archive_read_open_filename(ctx->arch_fd, ctx->volumes[0], ctx->blk);
+#endif //ARCHIVE_VERSION_NUMBER >= 3000000
     if (chk != ARCHIVE_OK)
     {
         fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
@@ -595,6 +621,7 @@ void _abcdkarchive_read(abcdkarchive_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     if (ctx->flt > 0)
     {
         chk = archive_read_append_filter(ctx->arch_fd, abcdkarchive_find_filter(ctx->flt));
@@ -613,7 +640,9 @@ void _abcdkarchive_read(abcdkarchive_t *ctx)
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
+#endif // ARCHIVE_VERSION_NUMBER >= 3000000
 
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     if (ctx->fmt > 0)
     {
         chk = archive_read_set_format(ctx->arch_fd, abcdkarchive_find_format(ctx->fmt));
@@ -624,6 +653,7 @@ void _abcdkarchive_read(abcdkarchive_t *ctx)
         }
     }
     else
+#endif // ARCHIVE_VERSION_NUMBER >= 3000000
     {
         chk = archive_read_support_format_all(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
@@ -661,7 +691,11 @@ final:
 
     if (ctx->arch_fd)
     {
+#if ARCHIVE_VERSION_NUMBER >= 3000000
         archive_read_free(ctx->arch_fd);
+#else 
+        archive_read_close(ctx->arch_fd);
+#endif //ARCHIVE_VERSION_NUMBER >= 3000000
         ctx->arch_fd = NULL;
     }
 
@@ -958,7 +992,8 @@ void _abcdkarchive_write(abcdkarchive_t *ctx)
         fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
-
+    
+#if ARCHIVE_VERSION_NUMBER >= 3000000
     if (ctx->flt > 0)
     {
         chk = archive_write_add_filter(ctx->arch_fd, abcdkarchive_find_filter(ctx->flt));
@@ -968,6 +1003,7 @@ void _abcdkarchive_write(abcdkarchive_t *ctx)
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
+#endif //ARCHIVE_VERSION_NUMBER >= 3000000
 
     if (ctx->fmt > 0)
     {
@@ -1014,7 +1050,11 @@ final:
 
     if (ctx->arch_fd)
     {
+#if ARCHIVE_VERSION_NUMBER >= 3000000
         archive_write_free(ctx->arch_fd);
+#else 
+        archive_write_close(ctx->arch_fd);
+#endif //ARCHIVE_VERSION_NUMBER >= 3000000
         ctx->arch_fd = NULL;
     }
 

@@ -181,4 +181,10 @@
 #define ABCDK_ASSERT(expr, tips) \
     ((expr) ? (void)(0) : ({fprintf(stderr,"%s(%d): %s: %s\n",__FILE__, __LINE__,__FUNCTION__,#tips);abort(); }))
 
+/** 高版本。*/
+#define ABCDK_VERSION_AT_LEAST(M, m, x, y) ((M) > (x) || (M) == (x) && (m) >= (y))
+
+/** 低版本。*/
+#define ABCDK_VERSION_AT_MOST(M, m, x, y) ((M) < (x) || (M) == (x) && (m) <= (y))
+
 #endif //ABCDK_UTIL_DEFS_H

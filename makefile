@@ -30,16 +30,16 @@ LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 LINK_FLAGS += ${DEPEND_LIBS}
 
 #
-CC_FLAGS += -std=c11
+CC_FLAGS += -std=c99
 CC_FLAGS += -fPIC 
-CC_FLAGS += -Wno-unused-result 
+#CC_FLAGS += -Wno-unused-result 
 CC_FLAGS += -Wno-unused-variable 
 CC_FLAGS += -Wno-pointer-sign 
 CC_FLAGS += -Wno-unused-but-set-variable 
 CC_FLAGS += -Wno-unused-label
 CC_FLAGS += -Wno-strict-aliasing
 CC_FLAGS += -Wno-unused-function
-CC_FLAGS += -Wno-sizeof-pointer-memaccess
+#CC_FLAGS += -Wno-sizeof-pointer-memaccess
 CC_FLAGS += -Wno-deprecated-declarations
 CC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR} 
 CC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 

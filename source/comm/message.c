@@ -9,7 +9,7 @@
 #define ABCDK_COMM_MSG_SIZE_DEFAULT (20*1024)
 
 /** 消息对象。*/
-typedef struct _abcdk_comm_message
+struct _abcdk_comm_message
 {
     /** 引用计数器。*/
     volatile int refcount;
@@ -32,7 +32,7 @@ typedef struct _abcdk_comm_message
     /** 消息协议。*/
     abcdk_comm_message_protocol_t protocol;
     
-} abcdk_comm_message_t;
+};// abcdk_comm_message_t;
 
 void abcdk_comm_message_unref(abcdk_comm_message_t **msg)
 {

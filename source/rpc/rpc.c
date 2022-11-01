@@ -271,7 +271,7 @@ int abcdk_rpc_response(abcdk_comm_node_t *node,uint64_t mid, const void *data, s
     rpc_p = (abcdk_rpc_t *)abcdk_comm_get_append(node);
     ABCDK_ASSERT(rpc_p != NULL && rpc_p->magic == ABCDK_RPC_MAGIC,"未通过rpc接口建立连接，不能调此接口。");
 
-    if(!abcdk_atomic_load(&rpc_p->status))
+    if(abcdk_atomic_load(&rpc_p->status) == ABCDK_RPC_STATUS_BROKEN)
         return -2;
 
     chk = _abcdk_rpc_post(node, data, len, mid, ABCDK_RPC_FLAG_RSP);

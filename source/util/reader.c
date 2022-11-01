@@ -7,7 +7,7 @@
 #include "abcdk/util/reader.h"
 
 /** 读者环境。*/
-typedef struct _abcdk_reader
+struct _abcdk_reader
 {
     /** 状态。1： 运行，2：停止。*/
     volatile int status;
@@ -33,7 +33,7 @@ typedef struct _abcdk_reader
     /** 队列锁。*/
     abcdk_mutex_t qlock;
 
-} abcdk_reader_t;
+};// abcdk_reader_t;
 
 void abcdk_reader_destroy(abcdk_reader_t **reader)
 {
