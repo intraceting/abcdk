@@ -368,6 +368,7 @@ abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmt_t *ctx, uint8_t part, uint16_t id)
 
 print_sense:
 
+    
     _abcdkmt_printf_sense(&ctx->stat);
 
 final_error:
@@ -391,6 +392,7 @@ void _abcdkmt_read_mam(abcdkmt_t *ctx)
     if(!root)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ENOMEM, final);
 
+
     for (size_t i = 0; i < 65536; i++)
     {
         if (!abcdk_tape_attr2string(i))
@@ -407,7 +409,7 @@ void _abcdkmt_read_mam(abcdkmt_t *ctx)
             if (abcdk_scsi_sense_key(ctx->stat.sense) == 0x02 &&
                 abcdk_scsi_sense_code(ctx->stat.sense) == 0x3A &&
                 abcdk_scsi_sense_qualifier(ctx->stat.sense) == 0x00)
-                break;
+                goto final2;
         }
     }
 
@@ -415,6 +417,8 @@ final:
 
     /*打印。*/
     abcdk_tree_scan(root, &it);
+
+final2:
 
     abcdk_tree_free(&root);
 }
@@ -534,6 +538,10 @@ void _abcdkmt_work(abcdkmt_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 
     fprintf(stderr,"Driver: %s(%s,%s)\n",ctx->sn,ctx->vendor,ctx->product);
+
+    chk = abcdk_scsi_test(ctx->fd,1000,&ctx->stat);
+    if (chk != 0 || ctx->stat.status != GOOD)
+        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
 
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_methods); i++)
     {
