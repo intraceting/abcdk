@@ -376,7 +376,8 @@ abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
                                           uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     abcdk_object_t *alloc = NULL;
-    uint16_t len = 0;
+    uint16_t rlen = 0;
+    uint16_t rid = 65535;
 
     uint8_t buf[255] = {0};
     uint8_t cdb[16] = {0};
@@ -394,18 +395,23 @@ abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
 
     // printf("%u\n",abcdk_endian_b_to_h32(ABCDK_PTR2U32(buf, 0)));
 
-    len = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
+    rid = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 4)); /*4,5*/
+    rlen = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
 
-    size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), sizeof(uint16_t), len + 1};
+    /*如果第一个区不是要找的，则直接返回。*/
+    if(rid != id)
+        return NULL;
+
+    size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), sizeof(uint16_t), rlen + 1};
     alloc = abcdk_object_alloc(sizes, 5, 0);
     if (!alloc)
         return NULL;
 
-    ABCDK_PTR2U16(alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 4)); /*4,5*/
+    ABCDK_PTR2U16(alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0) = rid; /*4,5*/
     ABCDK_PTR2U8(alloc->pptrs[ABCDK_TAPE_ATTR_READONLY], 0) = (buf[6] >> 7);
     ABCDK_PTR2U8(alloc->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0) = (buf[6] & 0x03);
-    ABCDK_PTR2U16(alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
-    memcpy(alloc->pptrs[ABCDK_TAPE_ATTR_VALUE], ABCDK_PTR2PTR(void, buf, 9), len);
+    ABCDK_PTR2U16(alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0) = rlen; /*7,8*/
+    memcpy(alloc->pptrs[ABCDK_TAPE_ATTR_VALUE], ABCDK_PTR2PTR(void, buf, 9), rlen);
 
     return alloc;
 }

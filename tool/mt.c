@@ -282,7 +282,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     }
     else if (depth == SIZE_MAX)
     {
-        
+        return -1;
     }
     else
     {
@@ -397,18 +397,18 @@ void _abcdkmt_read_mam(abcdkmt_t *ctx)
             continue;
 
         node = _abcdkmt_read_mam_one(ctx,part,i);
-        if (!node)
+        if(node)
+        {
+            abcdk_tree_insert2(root, node, 0);
+        }
+        else 
         {
             /*如果磁带没准备好，直接跳出。*/
             if (abcdk_scsi_sense_key(ctx->stat.sense) == 0x02 &&
                 abcdk_scsi_sense_code(ctx->stat.sense) == 0x3A &&
                 abcdk_scsi_sense_qualifier(ctx->stat.sense) == 0x00)
                 break;
-            else
-                continue;
         }
-
-        abcdk_tree_insert2(root, node, 0);
     }
 
 final:
