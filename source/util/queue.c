@@ -6,7 +6,7 @@
  */
 #include "abcdk/util/queue.h"
 
-/** 消息队列。*/
+/** 队列。*/
 struct _abcdk_queue
 {
     /** 锁。*/

@@ -6,7 +6,7 @@
  */
 #include "abcdk/util/waiter.h"
 
-/** 消息服务员。*/
+/** 服务员。*/
 struct _abcdk_waiter
 {
     /** 
@@ -146,7 +146,7 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
     /*复制队列指针。*/
     queue_p = (abcdk_queue_t *)it->pptrs[ABCDK_MAP_VALUE];
 
-    /*等待消息到达，或超时。*/
+    /*等待到达，或超时。*/
     while (abcdk_queue_count(queue_p) < max)
     {
         /*计算剩余超时时长。*/
@@ -194,7 +194,7 @@ int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, const void *msg)
     if (chk != 0)
         goto final;
 
-    /*通知消息到达。*/
+    /*通知到达。*/
     abcdk_mutex_signal(&waiter->locker, 1);
 
     chk = 0;

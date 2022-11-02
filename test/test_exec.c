@@ -11,18 +11,18 @@
 #include <locale.h>
 #include "entry.h"
 
-//environ
+// environ
 
 int abcdk_test_exec(abcdk_tree_t *args)
 {
 
-  int pids[100] = {0};
-  int chk = abcdk_file_wholockme("/bin/bash", pids, 100);
+    int pids[100] = {0};
+    int chk = abcdk_file_wholockme("/bin/bash", pids, 100);
 
-  for (int i = 0; i < chk; i++)
-  {
-    printf("%d\n", pids[i]);
-  }
+    for (int i = 0; i < chk; i++)
+    {
+        printf("%d\n", pids[i]);
+    }
 
-  return 0;
+    return 0;
 }

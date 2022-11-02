@@ -48,50 +48,69 @@ int abcdk_tcattr_cbreak(int fd, struct termios *old)
     return abcdk_tcattr_option(fd,&now,old);
 }
 
+static struct _abcdk_tcattr_serial_baudrate_dict
+{
+    uint64_t code;
+    speed_t speed;
+} abcdk_tcattr_serial_baudrate_dict[] = {
+    {50, B50},
+    {75, B75},
+    {110, B110},
+    {134, B134},
+    {150, B150},
+    {200, B200},
+    {300, B300},
+    {600, B600},
+    {1200, B1200},
+    {1800, B1800},
+    {2400, B2400},
+    {4800, B4800},
+    {9600, B9600},
+    {19200, B19200},
+    {38400, B38400},
+    {57600, B57600},
+    {115200, B115200},
+    {230400, B230400},
+    {230400, B230400},
+    {460800, B460800},
+    {500000, B500000},
+    {576000, B576000},
+    {921600, B921600},
+    {1000000, B1000000},
+    {1152000, B1152000},
+    {1500000, B1500000},
+    {2000000, B2000000},
+    {2500000, B2500000},
+    {3000000, B3000000},
+    {3500000, B3500000},
+    {4000000, B4000000}};
+
 int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,struct termios *old)
 {
     struct termios now = {0};
+    speed_t speed = B0;
 
     assert(fd >= 0);
 
-    /*设置波特率。*/
-    switch (baudrate)
+    /*查找波特率配置。*/
+    for (int i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tcattr_serial_baudrate_dict); i++)
     {
-        case 2400:
-            cfsetispeed(&now, B2400);
-            cfsetospeed(&now, B2400);
+        if(abcdk_tcattr_serial_baudrate_dict[i].code == baudrate)
+        {
+            speed = abcdk_tcattr_serial_baudrate_dict[i].speed;
             break;
-        case 4800:
-            cfsetispeed(&now, B4800);
-            cfsetospeed(&now, B4800);
-            break;
-        case 19200:
-            cfsetispeed(&now, B19200);
-            cfsetospeed(&now, B19200);
-            break;
-        case 38400:
-            cfsetispeed(&now, B38400);
-            cfsetospeed(&now, B38400);
-            break;
-        case 57600:
-            cfsetispeed(&now, B57600);
-            cfsetospeed(&now, B57600);
-            break;
-        case 115200:
-            cfsetispeed(&now, B115200);
-            cfsetospeed(&now, B115200);
-            break;
-        case 230400:
-            cfsetispeed(&now, B230400);
-            cfsetospeed(&now, B230400);
-            break;
-        case 9600:
-        default:
-            cfsetispeed(&now, B9600);
-            cfsetospeed(&now, B9600);
-            break;
+        }
     }
 
+    /*不支持的波特率。*/
+    if(speed == B0)
+        return -1;
+
+    /*设置波特率。*/
+    cfsetispeed(&now, speed);
+    cfsetospeed(&now, speed);
+
+    /**/
     now.c_cflag |= (CLOCAL | CREAD);
 
     /*清数据位标志*/

@@ -14,42 +14,42 @@
 
 __BEGIN_DECLS
 
-/** 消息服务员。*/
+/** 服务员。*/
 typedef struct _abcdk_waiter abcdk_waiter_t;
 
 /**
- * 释放消息服务员。
+ * 释放服务员。
 */
 void abcdk_waiter_free(abcdk_waiter_t **waiter);
 
 /** 
- * 创建消息服务员。
+ * 创建服务员。
 */
 abcdk_waiter_t *abcdk_waiter_alloc();
 
 /**
- * 消息请求(注册)。
+ * 请求(注册)。
  * 
- * @warning 消息队列将被托管理，应用层不可以继续访问消息对象。
+ * @warning 队列将被托管理，应用层不可以继续访问对象。
  * 
  * @return 0 成功，-1 失败(KEY重复)。
 */
 int abcdk_waiter_request(abcdk_waiter_t *waiter,uint64_t key, abcdk_queue_t *queue);
 
 /**
- * 等待消息。
+ * 等待。
  * 
- * @param max 最大应答消息数量。
+ * @param max 最大应答数量。
  * @param timeout 超时(毫秒)。
  * 
- * @return !NULL(0) 成功(消息队列指针)，NULL(0) 失败(KEY不存在)。
+ * @return !NULL(0) 成功(队列指针)，NULL(0) 失败(KEY不存在)。
 */
 abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max, time_t timeout);
 
 /**
- * 消息应答。
+ * 应答。
  * 
- * @warning 消息将被托管理，应用层(应答者)不可以继续访问消息对象。
+ * @warning 将被托管理，应用层(应答者)不可以继续访问对象。
  * 
  * @return 0 成功，-1 失败(KEY不存在)。
 */

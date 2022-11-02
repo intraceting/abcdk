@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_IO_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/clock.h"
 
 __BEGIN_DECLS
 
@@ -59,6 +60,15 @@ int abcdk_open(const char *file, int rw, int nonblock, int create);
  * 
 */
 int abcdk_reopen(int fd2,const char *file, int rw, int nonblock, int create);
+
+/**
+ * 设置标志。
+ * 
+ * @warning 会覆盖现存的。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_fflag_set(int fd,int flag);
 
 /**
  * 获取标志。
@@ -129,6 +139,18 @@ int64_t abcdk_fsize(FILE *fp);
 */
 int abcdk_futimens(int fd,const struct timespec *atime,const struct timespec *mtime);
 
+/**
+ * 读写数据。
+ * 
+ * @param [in] direction 方向。1：输入，2：输出。
+ * @param [in] timeout 超时(毫秒)。
+ * @param [in] magic 起始码，NULL(0) 忽略。注：仅对输入有效。
+ * @param [in] mglen 起始码长度，<= 0 忽略。注：仅对输入有效。
+ * 
+ * @return > 0 成功(读写的长度)，<= 0 失败(出错、空间不足或已到末尾、超时)。
+*/
+ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t timeout,
+                       const void *magic, size_t mglen);
 
 __END_DECLS
 

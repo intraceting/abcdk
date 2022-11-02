@@ -13,7 +13,7 @@
 
 __BEGIN_DECLS
 
-/** 消息队列。*/
+/** 简单的队列。*/
 typedef struct _abcdk_queue abcdk_queue_t;
 
 /** 
@@ -22,17 +22,17 @@ typedef struct _abcdk_queue abcdk_queue_t;
 typedef void (*abcdk_queue_msg_destroy_cb)(const void *msg);
 
 /**
- * 释放消息队列。
+ * 释放队列。
 */
 void abcdk_queue_free(abcdk_queue_t **queue);
 
 /**
- * 创建消息队列。
+ * 创建队列。
 */
 abcdk_queue_t *abcdk_queue_alloc(abcdk_queue_msg_destroy_cb cb);
 
 /**
- * 消息队列长度。
+ * 获取队列长度。
 */
 size_t abcdk_queue_count(abcdk_queue_t *queue);
 

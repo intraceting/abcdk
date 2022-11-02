@@ -76,6 +76,7 @@
 #include "abcdk/util/register.h"
 #include "abcdk/util/queue.h"
 #include "abcdk/util/waiter.h"
+#include "abcdk/util/serialport.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"

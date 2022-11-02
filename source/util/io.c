@@ -128,6 +128,13 @@ int abcdk_reopen(int fd2, const char *file, int rw, int nonblock, int create)
     return fd3;
 }
 
+int abcdk_fflag_set(int fd, int flag)
+{
+    assert(fd >= 0 && flag != 0);
+
+    return fcntl(fd, F_SETFL, flag);
+}
+
 int abcdk_fflag_get(int fd)
 {
     assert(fd >= 0);
@@ -142,13 +149,13 @@ int abcdk_fflag_add(int fd, int flag)
 
     assert(fd >= 0 && flag != 0);
 
-    old = fcntl(fd, F_GETFL, 0);
+    old = abcdk_fflag_get(fd);
     if (old == -1)
         return -1;
 
     opt = old | flag;
 
-    return fcntl(fd, F_SETFL, opt);
+    return abcdk_fflag_set(fd, opt);
 }
 
 int abcdk_fflag_del(int fd, int flag)
@@ -158,13 +165,13 @@ int abcdk_fflag_del(int fd, int flag)
 
     assert(fd >= 0 && flag != 0);
 
-    old = fcntl(fd, F_GETFL, 0);
+    old = abcdk_fflag_get(fd);
     if (old == -1)
         return -1;
 
     opt = old & ~flag;
 
-    return fcntl(fd, F_SETFL, opt);
+    return abcdk_fflag_set(fd, opt);
 }
 
 
@@ -288,4 +295,98 @@ int abcdk_futimens(int fd, const struct timespec *atime, const struct timespec *
         return -1;
 
     return 0;
+}
+
+time_t _abcdk_io_clock()
+{
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
+}
+
+ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t timeout,
+                       const void *magic, size_t mglen)
+{
+    time_t time_end, time_span;
+    ssize_t len = 0, all = 0;
+    int old_flag = 0;
+    int chk;
+
+    assert(fd >= 0 && data != NULL && size > 0 && direction != 0 && timeout > 0);
+    assert(direction == 1 || direction == 2);
+
+    /*保存旧的标志。*/
+    old_flag = abcdk_fflag_get(fd);
+    /*添加非阻塞标志。*/
+    abcdk_fflag_add(fd,O_NONBLOCK);
+
+    /*计算过期时间。*/
+    time_end = _abcdk_io_clock() + timeout;
+
+    while (all < size)
+    {
+        /*计算剩余超时时长。*/
+        time_span = time_end - _abcdk_io_clock();
+        if (time_span <= 0)
+            break;
+
+        if(direction == 2)
+            len = write(fd, ABCDK_PTR2VPTR(data, all), size - all);
+        else if(direction == 1)
+            len = read(fd, ABCDK_PTR2VPTR(data, all), size - all);
+        else
+            break;
+
+        if (len == -1 && errno == EAGAIN)
+        {
+            if(direction == 2)
+                chk = abcdk_poll(fd, 0x02, time_span);
+            else if(direction == 1)
+                chk = abcdk_poll(fd, 0x01, time_span);
+            else 
+                break;
+
+            if (chk > 0)
+                continue;
+            else
+                break;
+        }
+        else if (len == 0)
+            break;
+        else
+            all += len;
+
+
+        /*输出数据时不需要检查起始码。*/
+        if(direction != 1)
+            continue;
+
+        /*未定义起始码，忽略。*/
+        if (!magic || mglen <= 0)
+            continue;
+
+        /*已读取数据长度不能小于起始码长度。*/
+        if(all < mglen)
+            continue;
+        
+        len = 0;
+        for (size_t i = 0; i < all - mglen; i++)
+        {
+            if (memcmp(ABCDK_PTR2VPTR(data, i), magic, mglen) == 0)
+                break;
+
+            /*逐个字节查找。*/
+            len += 1;
+        }
+
+        /*根据起始码位移动数据，并重新计算数据长度。*/
+        if (len > 0)
+        {
+            memmove(data, ABCDK_PTR2VPTR(data, len), all - len);
+            all -= len;
+        }
+    }
+
+    /*恢复旧的标志。*/
+    abcdk_fflag_set(fd,old_flag);
+
+    return all;
 }
