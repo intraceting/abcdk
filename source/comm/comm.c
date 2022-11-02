@@ -143,7 +143,7 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
 {
     abcdk_comm_node_t *node = NULL;
 
-    ABCDK_ASSERT(ctx != NULL,"通讯对象需要通讯环境才能被创建。");
+    ABCDK_ASSERT(ctx != NULL,"通讯对象需要绑定通讯环境才能被创建。");
 
     node = (abcdk_comm_node_t *)abcdk_heap_alloc(sizeof(abcdk_comm_node_t));
     if(!node)
