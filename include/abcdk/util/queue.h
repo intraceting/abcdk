@@ -4,57 +4,59 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_COMM_QUEUE_H
-#define ABCDK_COMM_QUEUE_H
+#ifndef ABCDK_UTIL_QUEUE_H
+#define ABCDK_UTIL_QUEUE_H
 
-#include "abcdk/comm/comm.h"
-#include "abcdk/comm/message.h"
+#include "abcdk/util/general.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/util/tree.h"
 
 __BEGIN_DECLS
 
 /** 消息队列。*/
-typedef struct _abcdk_comm_queue abcdk_comm_queue_t;
+typedef struct _abcdk_queue abcdk_queue_t;
+
+/** 
+ * 消息销毁回调函数。
+*/
+typedef void (*abcdk_queue_msg_destroy_cb)(const void *msg);
 
 /**
  * 释放消息队列。
 */
-void abcdk_comm_queue_free(abcdk_comm_queue_t **queue);
+void abcdk_queue_free(abcdk_queue_t **queue);
 
 /**
  * 创建消息队列。
 */
-abcdk_comm_queue_t *abcdk_comm_queue_alloc();
+abcdk_queue_t *abcdk_queue_alloc(abcdk_queue_msg_destroy_cb cb);
 
 /**
  * 消息队列长度。
 */
-size_t abcdk_comm_queue_count(abcdk_comm_queue_t *queue);
+size_t abcdk_queue_count(abcdk_queue_t *queue);
 
 /**
  * 向队列中加入消息。
  * 
  * @warning 消息对象将被托管，在消息对象从队列中弹出之前，应用层不可以继续访问消息对象。
- * @warning 不会改变消息对象的引用计数。
  * 
  * @param [in] first !0 头部，0 尾部。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_queue_push(abcdk_comm_queue_t *queue, abcdk_comm_message_t *msg, int first);
+int abcdk_queue_push(abcdk_queue_t *queue, const void *msg, int first);
 
 /**
  * 从队列中弹出消息。
- * 
- * @warning 不会改变消息对象的引用计数。
  * 
  * @param [in] first !0 头部，0 尾部。
  * 
  * @return !NULL(0) 成功(消息对象指针)，NULL(0) 失败(队列为空)。
 */
-abcdk_comm_message_t *abcdk_comm_queue_pop(abcdk_comm_queue_t *queue, int first);
-
+const void *abcdk_queue_pop(abcdk_queue_t *queue, int first);
 
 
 __END_DECLS
 
-#endif //ABCDK_COMM_QUEUE_H
+#endif //ABCDK_UTIL_QUEUE_H

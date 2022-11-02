@@ -11,7 +11,6 @@
 #include "abcdk/util/http.h"
 #include "abcdk/comm/comm.h"
 #include "abcdk/comm/message.h"
-#include "abcdk/comm/queue.h"
 #include "abcdk/http/request.h"
 
 

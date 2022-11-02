@@ -56,7 +56,7 @@ typedef struct _abcdk_rpc
     abcdk_comm_message_t *in_buffer;
 
     /** 应答服务员。*/
-    abcdk_comm_waiter_t *rsp_waiter;
+    abcdk_waiter_t *rsp_waiter;
 
 } abcdk_rpc_t;
 
@@ -71,7 +71,7 @@ void _abcdk_rpc_free(abcdk_rpc_t **rpc)
     *rpc = NULL;
 
     abcdk_comm_message_unref(&rpc_p->in_buffer);
-    abcdk_comm_waiter_free(&rpc_p->rsp_waiter);
+    abcdk_waiter_free(&rpc_p->rsp_waiter);
     abcdk_heap_free(rpc_p);
 }
 
@@ -87,7 +87,7 @@ abcdk_rpc_t *_abcdk_rpc_alloc()
     rpc->status = ABCDK_RPC_STATUS_BROKEN;
     rpc->protocol = ABCDK_RPC_PROTOCOL;
     rpc->in_buffer = NULL;
-    rpc->rsp_waiter = abcdk_comm_waiter_alloc();
+    rpc->rsp_waiter = abcdk_waiter_alloc();
 
     return rpc;
 }
@@ -211,10 +211,17 @@ int abcdk_rpc_state(abcdk_comm_node_t *node)
     return 0;
 }
 
+void _abcdk_rpc_queue_msg_destroy_cb(const void *msg)
+{
+    abcdk_comm_message_t *msg_p = (abcdk_comm_message_t *)msg;
+
+    abcdk_comm_message_unref(&msg_p);
+}
+
 int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_comm_message_t **rsp, time_t timeout)
 {
     abcdk_rpc_t *rpc_p = NULL;
-    abcdk_comm_queue_t *rsp_queue = NULL;
+    abcdk_queue_t *rsp_queue = NULL;
     abcdk_comm_message_t *rsp_msg = NULL;
     uint64_t mid;
     int chk;
@@ -231,8 +238,20 @@ int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abc
 
     mid = _abcdk_rpc_make_mid();
 
+    /*需要应答时，需先创建应答等待对象。*/
     if (rsp)
-        abcdk_comm_waiter_request2(rpc_p->rsp_waiter, &mid);
+    {
+        rsp_queue = abcdk_queue_alloc(_abcdk_rpc_queue_msg_destroy_cb);
+        if(!rsp_queue)
+            return -1;
+
+        chk = abcdk_waiter_request(rpc_p->rsp_waiter, mid,rsp_queue);
+        if (chk != 0)
+        {
+            abcdk_queue_free(&rsp_queue);
+            return -1;
+        }
+    }
 
     /*发送请求(仅向输出队列注册事件和消息)。*/
     chk = _abcdk_rpc_post(node, data, len, mid, 0);
@@ -243,12 +262,11 @@ int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abc
     if (!rsp)
         return 0;
 
-    rsp_queue = abcdk_comm_waiter_wait2(rpc_p->rsp_waiter, &mid, 1, timeout*1000);
-    if (!rsp_queue)
-        return -1;
+    rsp_queue = abcdk_waiter_wait(rpc_p->rsp_waiter, mid, 1, timeout*1000);
+    assert(rsp_queue != NULL);
 
-    rsp_msg = abcdk_comm_queue_pop(rsp_queue, 1);
-    abcdk_comm_queue_free(&rsp_queue);
+    rsp_msg = (abcdk_comm_message_t*)abcdk_queue_pop(rsp_queue, 1);
+    abcdk_queue_free(&rsp_queue);
 
     if (!rsp_msg)
         return -2;
@@ -454,13 +472,15 @@ void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
     /*检测是请求还是应答。*/
     if (flag & ABCDK_RPC_FLAG_RSP)
     {
-        abcdk_comm_waiter_response2(rpc_p->rsp_waiter, &mid, msg);
+        /*等待应答失败时，直接删除消息。*/
+        chk = abcdk_waiter_response(rpc_p->rsp_waiter, mid,msg);
+        if(chk != 0)
+            abcdk_comm_message_unref(&msg);
     }
     else
     {
         /*通知应用层，数据到达。*/
         rpc_p->callback.request_cb(node,mid,cargo_ptr,cargo_len);
-
         /*删除请求数据。*/
         abcdk_comm_message_unref(&msg);
     }
@@ -488,7 +508,7 @@ void _abcdk_rpc_event_close(abcdk_comm_node_t *node)
         abcdk_atomic_store(&rpc_p->status, ABCDK_RPC_STATUS_BROKEN);
 
         /*通知所有在这个线路上等待应答的请求，连接已经关闭。*/
-        abcdk_comm_waiter_cancel(rpc_p->rsp_waiter);
+        abcdk_waiter_cancel(rpc_p->rsp_waiter);
 
         /*通知连接已断开。*/
         if(rpc_p->callback.close_cb)

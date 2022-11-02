@@ -9,8 +9,7 @@
 
 #include "abcdk/comm/comm.h"
 #include "abcdk/comm/message.h"
-#include "abcdk/comm/queue.h"
-#include "abcdk/comm/waiter.h"
+#include "abcdk/util/waiter.h"
 
 __BEGIN_DECLS
 

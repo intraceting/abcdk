@@ -28,8 +28,8 @@ typedef struct _abcdk_test_h264
 {
     int fd;
     int fd2;
-    abcdk_comm_queue_t *q;
-    abcdk_comm_queue_t *q2;
+    abcdk_queue_t *q;
+    abcdk_queue_t *q2;
 
     abcdk_tree_t *sdp;
     abcdk_rtsp_sdp_media_base_t *v;
@@ -40,13 +40,21 @@ typedef struct _abcdk_test_h264
 
 }abcdk_test_h264_t;
 
+void _abcdk_test_http_msg_destroy_cb(const void *msg)
+{
+    abcdk_comm_message_t *msg_p = (abcdk_comm_message_t *)msg;
+
+    abcdk_comm_message_unref(&msg_p);
+}
+
+
 void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
 {
     abcdk_test_h264_t *h = abcdk_heap_alloc(sizeof(abcdk_test_h264_t));
 
     h->fd2 = h->fd = -1;
-    h->q = abcdk_comm_queue_alloc();
-    h->q2 = abcdk_comm_queue_alloc();
+    h->q = abcdk_queue_alloc(_abcdk_test_http_msg_destroy_cb);
+    h->q2 = abcdk_queue_alloc(_abcdk_test_http_msg_destroy_cb);
 
     abcdk_comm_set_userdata(node,h);
 
@@ -270,7 +278,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             {
                 while (1)
                 {
-                    abcdk_comm_message_t *msg = abcdk_comm_queue_pop(h->q, 1);
+                    abcdk_comm_message_t *msg = (abcdk_comm_message_t *)abcdk_queue_pop(h->q, 1);
                     if (!msg)
                         break;
                     abcdk_write(h->fd, "\0\0\0\1", 4);
@@ -292,7 +300,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             {
                 while (1)
                 {
-                    abcdk_comm_message_t *msg = abcdk_comm_queue_pop(h->q2, 1);
+                    abcdk_comm_message_t *msg = (abcdk_comm_message_t *)abcdk_queue_pop(h->q2, 1);
                     if (!msg)
                         break;
                     
@@ -337,8 +345,8 @@ void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
     {
         abcdk_closep(&h->fd);
         abcdk_closep(&h->fd2);
-        abcdk_comm_queue_free(&h->q);
-        abcdk_comm_queue_free(&h->q2);
+        abcdk_queue_free(&h->q);
+        abcdk_queue_free(&h->q2);
         abcdk_tree_free(&h->sdp);
         abcdk_rtsp_sdp_media_base_free(&h->v);
         abcdk_rtsp_sdp_media_base_free(&h->a);

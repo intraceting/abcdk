@@ -1047,6 +1047,7 @@ int abcdk_comm_post_vformat(abcdk_comm_node_t *node, int max, const char *fmt, v
     if(chk<=0)
         ABCDK_ERRNO_AND_GOTO1(chk = -1,final_error);
 
+    /*修正格式化后的数据长度。*/
     obj->sizes[0] = chk;
     
     chk = abcdk_comm_post(node,obj);

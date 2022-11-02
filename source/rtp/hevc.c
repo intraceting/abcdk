@@ -6,7 +6,7 @@
  */
 #include "abcdk/rtp/hevc.h"
 
-int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
+int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
 {
     abcdk_comm_message_t *msg;
     int f, type, lid, tid;
@@ -45,7 +45,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
         /*模拟接收数据。*/
         abcdk_comm_message_reset(msg,size);
 
-        chk = abcdk_comm_queue_push(q, msg, 0);
+        chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)
         {       
             /*加入队列失败，删除消息。*/
@@ -88,7 +88,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
             p = abcdk_comm_message_data(msg);
             abcdk_bloom_write_number(ABCDK_PTR2U8PTR(p,0), 1, 1, 6, type2);
 
-            chk = abcdk_comm_queue_push(q, msg, 0);
+            chk = abcdk_queue_push(q, msg, 0);
             if (chk != 0)
             {
                 /*加入队列失败，删除消息。*/
@@ -100,7 +100,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
         }
         else
         {
-            msg = abcdk_comm_queue_pop(q, 0);
+            msg = (abcdk_comm_message_t *)abcdk_queue_pop(q, 0);
             if (!msg)
                 return -1;
 
@@ -110,7 +110,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_comm_queue_t *q)
             /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
             abcdk_comm_message_recv2(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
-            chk = abcdk_comm_queue_push(q, msg, 0);
+            chk = abcdk_queue_push(q, msg, 0);
             if (chk != 0)
             {    
                 /*加入队列失败，删除消息。*/
