@@ -45,8 +45,8 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
  
 
-    //uint8_t addrs[3] = {0x01,0x02,0x05};
-    uint8_t addrs[3] = {0x02,0x02,0x02};
+    uint8_t addrs[3] = {0x01,0x02,0x05};
+  //  uint8_t addrs[3] = {0x02,0x02,0x02};
     uint16_t dists[3] = {0};
 
 //#pragma omp parallel for num_threads(3)
@@ -75,6 +75,8 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
             uint64_t b;
             abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
             abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,b+1000);
+
+            printf("b=%lu\n",b+1000);
 
             continue;
         }
