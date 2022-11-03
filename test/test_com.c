@@ -43,11 +43,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     assert(memcmp(sendmsg,recvmsg,8)==0);
 #else
 
-    abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,3000);
-
-    uint64_t b;
-    abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
-    assert(b == 3000);
+ 
 
     //uint8_t addrs[3] = {0x01,0x02,0x05};
     uint8_t addrs[3] = {0x02,0x02,0x02};
@@ -75,7 +71,13 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
         int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
         if(chk != 0)
+        {
+            uint64_t b;
+            abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
+            abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,b+1000);
+
             continue;
+        }
 
      //   printf("d = %lu\n",d);
 
