@@ -145,13 +145,13 @@ try_again:
     /*多线程选主，只能有一个线程进入IO，其它线程等待事件通知。*/
     if (abcdk_thread_leader_vote(&ctx->leader) == 0)
     {
-        /*解锁，使其它接口被访问。*/
+        /*解锁，允许其它线程访问接口。*/
         abcdk_mutex_unlock(&ctx->mutex);
 
         /*实际的收发。*/
         chk = _abcdk_serialport_transfer_nonsafe(ctx, out, outlen, in, inlen, time_span, magic, mglen);
 
-        /*加锁，禁止其它接口被访问。*/
+        /*加锁，禁止其它线程访问接口。*/
         abcdk_mutex_lock(&ctx->mutex, 1);
 
         /*主线程退出。*/
