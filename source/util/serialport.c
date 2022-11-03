@@ -103,6 +103,10 @@ int _abcdk_serialport_transfer_nonsafe(abcdk_serialport_t *ctx, const void *out,
         wlen = abcdk_transfer(ctx->fd, (void *)out, outlen, 2, time_span, NULL, 0);
         if (wlen != outlen)
             return -1;
+
+        /*等待发送完成。*/
+        chk = tcdrain(ctx->fd);
+        assert(chk == 0);
     }
 
     /*按需接收。*/

@@ -45,7 +45,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
     uint8_t addrs[3] = {0x01,0x02,0x05};
 
-#pragma omp parallel for num_threads(3)
+//#pragma omp parallel for num_threads(3)
     for (int i = 0; i < 1000; i++)
     {
         int a = addrs[i%3];
@@ -59,9 +59,16 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         abcdk_bloom_write_number(sendmsg, 8, 32, 16, 0x01);
         abcdk_bloom_write_number(sendmsg, 8, 48, 16, abcdk_crc16(sendmsg, 6));
 
+        usleep(1000*3);
+
+        uint64_t s,d;
+        d = abcdk_clock(s,&s);
+
         int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 7, 10000, sendmsg, 2);
         if(chk != 0)
             continue;
+
+        printf("d = %lu\n",d);
 
         uint16_t oldcrc = abcdk_bloom_read_number(recvmsg, 7, 40, 16);
         uint16_t newcrc = abcdk_crc16(recvmsg, 5);
