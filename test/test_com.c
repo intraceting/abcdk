@@ -43,12 +43,21 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     assert(memcmp(sendmsg,recvmsg,8)==0);
 #else
 
-    uint8_t addrs[3] = {0x01,0x02,0x05};
+    abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,3000);
+
+    uint64_t b;
+    abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
+    assert(b == 3000);
+
+    //uint8_t addrs[3] = {0x01,0x02,0x05};
+    uint8_t addrs[3] = {0x02,0x02,0x02};
+    uint16_t dists[3] = {0};
 
 //#pragma omp parallel for num_threads(3)
     for (int i = 0; i < 1000; i++)
     {
-        int a = addrs[i%3];
+        int id = i%3;
+        int a = addrs[id];
 
         char sendmsg[8] = {0};
         char recvmsg[70] = {0};
@@ -59,16 +68,16 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         abcdk_bloom_write_number(sendmsg, 8, 32, 16, 0x01);
         abcdk_bloom_write_number(sendmsg, 8, 48, 16, abcdk_crc16(sendmsg, 6));
 
-        usleep(1000*3);
+       // usleep(1000*3);
 
-        uint64_t s,d;
-        d = abcdk_clock(s,&s);
+      //  uint64_t s,d;
+      //  d = abcdk_clock(s,&s);
 
-        int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 7, 10000, sendmsg, 2);
+        int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
         if(chk != 0)
             continue;
 
-        printf("d = %lu\n",d);
+     //   printf("d = %lu\n",d);
 
         uint16_t oldcrc = abcdk_bloom_read_number(recvmsg, 7, 40, 16);
         uint16_t newcrc = abcdk_crc16(recvmsg, 5);
@@ -78,8 +87,9 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         }
         else
         {
-            uint16_t dist = abcdk_bloom_read_number(recvmsg, 7, 24, 16);
-            printf("%d= %06hu\n",a,dist);
+            dists[id] = abcdk_bloom_read_number(recvmsg, 7, 24, 16);
+
+            printf("%d=[%06hu]\n",a, dists[id]);
         }
     }
 

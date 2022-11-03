@@ -18,6 +18,9 @@ struct _abcdk_serialport
     /** 主线程ID。*/
     volatile pthread_t leader;
 
+    /** 间隔(微秒)。*/
+    uint64_t interval;
+
 }; // abcdk_serialport_t;
 
 void abcdk_serialport_destroy(abcdk_serialport_t **ctx)
@@ -46,6 +49,7 @@ abcdk_serialport_t *abcdk_serialport_create(int fd)
     ctx->fd = fd;
     abcdk_mutex_init2(&ctx->mutex, 0);
     ctx->leader = 0;
+    ctx->interval = 0;
 
     return ctx;
 }
@@ -80,6 +84,62 @@ int abcdk_serialport_detach(abcdk_serialport_t *ctx)
     abcdk_mutex_unlock(&ctx->mutex);
 
     return old;
+}
+
+int abcdk_serialport_set_option(abcdk_serialport_t *ctx,int opt,...)
+{
+    int chk = 0;
+
+    assert(ctx != NULL);
+
+    va_list vaptr;
+    va_start(vaptr, opt);
+
+    abcdk_mutex_lock(&ctx->mutex, 1);
+
+    switch (opt)
+    {
+    case ABCDK_SERIALPORT_OPT_INTERVAL:
+        ctx->interval = va_arg(vaptr, uint64_t);
+        break;
+    default:
+        chk = -1;
+        break;
+    }
+
+    abcdk_mutex_unlock(&ctx->mutex);
+
+    va_end(vaptr);
+
+    return chk;
+}
+
+int abcdk_serialport_get_option(abcdk_serialport_t *ctx,int opt,...)
+{
+    int chk = 0;
+
+    assert(ctx != NULL);
+
+    va_list vaptr;
+    va_start(vaptr, opt);
+
+    abcdk_mutex_lock(&ctx->mutex, 1);
+
+    switch (opt)
+    {
+    case ABCDK_SERIALPORT_OPT_INTERVAL:
+        *(va_arg(vaptr, uint64_t*)) = ctx->interval;
+        break;
+    default:
+        chk = -1;
+        break;
+    }
+
+    abcdk_mutex_unlock(&ctx->mutex);
+
+    va_end(vaptr);
+
+    return chk;
 }
 
 time_t _abcdk_serialport_clock()
@@ -140,6 +200,10 @@ int abcdk_serialport_transfer(abcdk_serialport_t *ctx, const void *out, size_t o
     abcdk_mutex_lock(&ctx->mutex, 1);
 
 try_again:
+
+    /*两组命令之间的间隔(微秒)。*/
+    if (ctx->interval > 0)
+        usleep(ctx->interval);
 
     /*计算剩余超时时长。*/
     time_span = time_end - _abcdk_serialport_clock();

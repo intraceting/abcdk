@@ -16,6 +16,17 @@ __BEGIN_DECLS
 /** 串口通讯对象。*/
 typedef struct _abcdk_serialport abcdk_serialport_t;
 
+/**
+ * 串口通讯选项。
+ */
+typedef enum _abcdk_serialport_option
+{
+    /** 指令间隔(微秒).*/
+    ABCDK_SERIALPORT_OPT_INTERVAL = 1,
+#define ABCDK_SERIALPORT_OPT_INTERVAL ABCDK_SERIALPORT_OPT_INTERVAL
+
+} abcdk_serialport_option_t;
+
 /** 销毁串口通讯对象。*/
 void abcdk_serialport_destroy(abcdk_serialport_t **com);
 
@@ -41,6 +52,20 @@ int abcdk_serialport_attach(abcdk_serialport_t *ctx,int fd);
  * @return 旧的句柄。
 */
 int abcdk_serialport_detach(abcdk_serialport_t *ctx);
+
+/**
+ * 设置选项。
+ * 
+ * @param 0 成功，-1 失败。
+*/
+int abcdk_serialport_set_option(abcdk_serialport_t *ctx,int opt,...);
+
+/**
+ * 获取选项。
+ * 
+ * @param 0 成功，-1 失败。
+*/
+int abcdk_serialport_get_option(abcdk_serialport_t *ctx,int opt,...);
 
 /**
  * 传输数据。
