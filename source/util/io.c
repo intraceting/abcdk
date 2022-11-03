@@ -153,9 +153,13 @@ int abcdk_fflag_add(int fd, int flag)
     if (old == -1)
         return -1;
 
-    opt = old | flag;
+    if ((~old) & flag)
+    {
+        opt = old | flag;
+        return abcdk_fflag_set(fd, opt);
+    }
 
-    return abcdk_fflag_set(fd, opt);
+    return 0;
 }
 
 int abcdk_fflag_del(int fd, int flag)
@@ -297,37 +301,25 @@ int abcdk_futimens(int fd, const struct timespec *atime, const struct timespec *
     return 0;
 }
 
-time_t _abcdk_io_clock()
-{
-    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
-}
-
 ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t timeout,
                        const void *magic, size_t mglen)
 {
-    time_t time_end, time_span;
     ssize_t len = 0, all = 0;
-    int old_flag = 0;
+    int fd_flag = 0;
     int chk;
 
     assert(fd >= 0 && data != NULL && size > 0 && direction != 0 && timeout > 0);
     assert(direction == 1 || direction == 2);
 
-    /*保存旧的标志。*/
-    old_flag = abcdk_fflag_get(fd);
-    /*添加非阻塞标志。*/
-    abcdk_fflag_add(fd,O_NONBLOCK);
+    /*获取句柄标志。*/
+    fd_flag = abcdk_fflag_get(fd);
 
-    /*计算过期时间。*/
-    time_end = _abcdk_io_clock() + timeout;
+    /*仅支持带有异步标志的句柄。*/
+    if (!(fd_flag & O_NONBLOCK))
+        return -2;
 
     while (all < size)
     {
-        /*计算剩余超时时长。*/
-        time_span = time_end - _abcdk_io_clock();
-        if (time_span <= 0)
-            break;
-
         if(direction == 2)
             len = write(fd, ABCDK_PTR2VPTR(data, all), size - all);
         else if(direction == 1)
@@ -338,9 +330,9 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
         if (len == -1 && errno == EAGAIN)
         {
             if(direction == 2)
-                chk = abcdk_poll(fd, 0x02, time_span);
+                chk = abcdk_poll(fd, 0x02, timeout);
             else if(direction == 1)
-                chk = abcdk_poll(fd, 0x01, time_span);
+                chk = abcdk_poll(fd, 0x01, timeout);
             else 
                 break;
 
@@ -384,9 +376,6 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
             all -= len;
         }
     }
-
-    /*恢复旧的标志。*/
-    abcdk_fflag_set(fd,old_flag);
 
     return all;
 }

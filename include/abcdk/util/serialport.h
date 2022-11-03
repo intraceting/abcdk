@@ -21,7 +21,7 @@ typedef struct _abcdk_serialport abcdk_serialport_t;
  */
 typedef enum _abcdk_serialport_option
 {
-    /** 指令间隔(微秒).*/
+    /** 指令间隔(毫秒).*/
     ABCDK_SERIALPORT_OPT_INTERVAL = 1,
 #define ABCDK_SERIALPORT_OPT_INTERVAL ABCDK_SERIALPORT_OPT_INTERVAL
 
@@ -33,14 +33,14 @@ void abcdk_serialport_destroy(abcdk_serialport_t **com);
 /** 
  * 创建串口通讯对象。
  * 
- * @param [in] fd 绑定句柄。注：允许为-1。
- * 
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
 */
-abcdk_serialport_t *abcdk_serialport_create(int fd);
+abcdk_serialport_t *abcdk_serialport_create();
 
 /**
  * 绑定句柄。
+ * 
+ * @warning 会强制给绑定名柄添加异步标志。
  * 
  * @return 旧的句柄。
 */

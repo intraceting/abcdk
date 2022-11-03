@@ -142,6 +142,8 @@ int abcdk_futimens(int fd,const struct timespec *atime,const struct timespec *mt
 /**
  * 读写数据。
  * 
+ * @warning 仅支持带有异步标志的句柄。
+ * 
  * @param [in] direction 方向。1：输入，2：输出。
  * @param [in] timeout 超时(毫秒)。
  * @param [in] magic 起始码，NULL(0) 忽略。注：仅对输入有效。

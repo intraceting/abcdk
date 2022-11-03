@@ -17,7 +17,8 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_serialport_t *ctx = abcdk_serialport_create(fd);
+    abcdk_serialport_t *ctx = abcdk_serialport_create();
+    abcdk_serialport_attach(ctx,fd);
 
     abcdk_hexdump_option_t opt = {0};
 
@@ -43,7 +44,11 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     assert(memcmp(sendmsg,recvmsg,8)==0);
 #else
 
- 
+    //abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,3);
+    //uint64_t b;
+    //abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
+    //assert(b==3);
+    
 
     uint8_t addrs[3] = {0x01,0x02,0x05};
   //  uint8_t addrs[3] = {0x02,0x02,0x02};
@@ -66,22 +71,17 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
        // usleep(1000*3);
 
-      //  uint64_t s,d;
-      //  d = abcdk_clock(s,&s);
+        uint64_t s,d;
+        d = abcdk_clock(s,&s);
 
         int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
         if(chk != 0)
         {
-            uint64_t b;
-            abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
-            abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,b+1000);
-
-            printf("b=%lu\n",b+1000);
-
+            printf("%d timeout.\n",id);
             continue;
         }
 
-     //   printf("d = %lu\n",d);
+        printf("d = %lu\n",d);
 
         uint16_t oldcrc = abcdk_bloom_read_number(recvmsg, 7, 40, 16);
         uint16_t newcrc = abcdk_crc16(recvmsg, 5);
@@ -117,7 +117,8 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_serialport_t *ctx = abcdk_serialport_create(fd);
+    abcdk_serialport_t *ctx = abcdk_serialport_create();
+    abcdk_serialport_attach(ctx,fd);
 
     abcdk_hexdump_option_t opt = {0};
 
@@ -203,5 +204,5 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 int abcdk_test_com(abcdk_tree_t *args)
 {
      abcdk_test_com_ultrasound(args);
-   // abcdk_test_com_xyz(args);
+  //  abcdk_test_com_xyz(args);
 }

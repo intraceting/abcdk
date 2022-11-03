@@ -64,7 +64,6 @@ int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block)
     /*当互斥量的拥有者异外结束时，恢复互斥量状态的一致性。*/
     if (err == EOWNERDEAD)
     {
-        /**/
         pthread_mutex_consistent(&ctx->mutex);
         pthread_mutex_unlock(&ctx->mutex);
         /*回调自己，重试。*/
