@@ -227,7 +227,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
     assert(chk ==0);
 
-  //  abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
+   // abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
 
     printf("clear error.\n");
 
@@ -282,7 +282,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 
     for (int i = 0; i < 10; i++)
     {
-        int speed = abs(rand()%100+10);
+        int speed = i*10;
         wbits.pos = 0;
         abcdk_bit_write(&wbits, 8, 0x01);
         abcdk_bit_write(&wbits, 8, 0x10);
