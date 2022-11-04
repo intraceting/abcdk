@@ -4,10 +4,10 @@
  * MIT License
  *
  */
-#include "abcdk/util/serialport.h"
+#include "abcdk/util/muxer.h"
 
-/** 串口通讯对象。*/
-struct _abcdk_serialport
+/** 多路复用器对象。*/
+struct _abcdk_muxer
 {
     /** 句柄。*/
     int fd;
@@ -18,11 +18,11 @@ struct _abcdk_serialport
     /** 间隔(毫秒)。*/
     uint64_t interval;
 
-}; // abcdk_serialport_t;
+}; // abcdk_muxer_t;
 
-void abcdk_serialport_destroy(abcdk_serialport_t **ctx)
+void abcdk_muxer_destroy(abcdk_muxer_t **ctx)
 {
-    abcdk_serialport_t *ctx_p;
+    abcdk_muxer_t *ctx_p;
 
     if (!ctx || !*ctx)
         return;
@@ -35,11 +35,11 @@ void abcdk_serialport_destroy(abcdk_serialport_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_serialport_t *abcdk_serialport_create()
+abcdk_muxer_t *abcdk_muxer_create()
 {
-    abcdk_serialport_t *ctx;
+    abcdk_muxer_t *ctx;
 
-    ctx = abcdk_heap_alloc(sizeof(abcdk_serialport_t));
+    ctx = abcdk_heap_alloc(sizeof(abcdk_muxer_t));
     if (!ctx)
         return NULL;
 
@@ -50,7 +50,21 @@ abcdk_serialport_t *abcdk_serialport_create()
     return ctx;
 }
 
-int abcdk_serialport_attach(abcdk_serialport_t *ctx, int fd)
+void abcdk_muxer_lock(abcdk_muxer_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_mutex_lock(&ctx->mutex, 1);
+}
+
+void abcdk_muxer_unlock(abcdk_muxer_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_mutex_unlock(&ctx->mutex);
+}
+
+int abcdk_muxer_attach(abcdk_muxer_t *ctx, int fd)
 {
     int old;
 
@@ -59,33 +73,25 @@ int abcdk_serialport_attach(abcdk_serialport_t *ctx, int fd)
     /*添加异步标志。*/
     abcdk_fflag_add(fd, O_NONBLOCK);
 
-    abcdk_mutex_lock(&ctx->mutex, 1);
-
     old = ctx->fd;
     ctx->fd = fd;
-
-    abcdk_mutex_unlock(&ctx->mutex);
 
     return old;
 }
 
-int abcdk_serialport_detach(abcdk_serialport_t *ctx)
+int abcdk_muxer_detach(abcdk_muxer_t *ctx)
 {
     int old;
 
     assert(ctx != NULL);
 
-    abcdk_mutex_lock(&ctx->mutex, 1);
-
     old = ctx->fd;
     ctx->fd = -1;
-
-    abcdk_mutex_unlock(&ctx->mutex);
 
     return old;
 }
 
-int abcdk_serialport_set_option(abcdk_serialport_t *ctx,int opt,...)
+int abcdk_muxer_set_option(abcdk_muxer_t *ctx, int opt, ...)
 {
     int chk = 0;
 
@@ -94,11 +100,9 @@ int abcdk_serialport_set_option(abcdk_serialport_t *ctx,int opt,...)
     va_list vaptr;
     va_start(vaptr, opt);
 
-    abcdk_mutex_lock(&ctx->mutex, 1);
-
     switch (opt)
     {
-    case ABCDK_SERIALPORT_OPT_INTERVAL:
+    case ABCDK_MUXER_OPT_INTERVAL:
         ctx->interval = va_arg(vaptr, uint64_t);
         break;
     default:
@@ -106,14 +110,12 @@ int abcdk_serialport_set_option(abcdk_serialport_t *ctx,int opt,...)
         break;
     }
 
-    abcdk_mutex_unlock(&ctx->mutex);
-
     va_end(vaptr);
 
     return chk;
 }
 
-int abcdk_serialport_get_option(abcdk_serialport_t *ctx,int opt,...)
+int abcdk_muxer_get_option(abcdk_muxer_t *ctx, int opt, ...)
 {
     int chk = 0;
 
@@ -122,34 +124,32 @@ int abcdk_serialport_get_option(abcdk_serialport_t *ctx,int opt,...)
     va_list vaptr;
     va_start(vaptr, opt);
 
-    abcdk_mutex_lock(&ctx->mutex, 1);
-
     switch (opt)
     {
-    case ABCDK_SERIALPORT_OPT_INTERVAL:
-        *(va_arg(vaptr, uint64_t*)) = ctx->interval;
+    case ABCDK_MUXER_OPT_INTERVAL:
+        *(va_arg(vaptr, uint64_t *)) = ctx->interval;
         break;
     default:
         chk = -1;
         break;
     }
 
-    abcdk_mutex_unlock(&ctx->mutex);
-
     va_end(vaptr);
 
     return chk;
 }
 
-int _abcdk_serialport_transfer_nonsafe(abcdk_serialport_t *ctx, const void *out, size_t outlen, void *in, size_t inlen,
-                                       time_t timeout, const void *magic, size_t mglen)
+int abcdk_muxer_transfer(abcdk_muxer_t *ctx, const void *out, size_t outlen, void *in, size_t inlen,
+                         time_t timeout, const void *magic, size_t mglen)
 {
     ssize_t wlen, rlen;
     int chk;
 
+    assert(ctx != NULL && timeout > 0);
+
     /*两组命令之间的间隔(毫秒)。*/
     if (ctx->interval > 0)
-        usleep(ctx->interval*1000);
+        usleep(ctx->interval * 1000);
 
     /*按需发送。*/
     if (out != NULL && outlen > 0)
@@ -160,7 +160,7 @@ int _abcdk_serialport_transfer_nonsafe(abcdk_serialport_t *ctx, const void *out,
 
         /*等待发送完成。*/
         chk = tcdrain(ctx->fd);
- //       assert(chk == 0);
+        //       assert(chk == 0);
     }
 
     /*按需接收。*/
@@ -172,20 +172,4 @@ int _abcdk_serialport_transfer_nonsafe(abcdk_serialport_t *ctx, const void *out,
     }
 
     return 0;
-}
-
-int abcdk_serialport_transfer(abcdk_serialport_t *ctx, const void *out, size_t outlen, void *in, size_t inlen,
-                              time_t timeout, const void *magic, size_t mglen)
-{
-    int chk;
-
-    assert(ctx != NULL && timeout > 0);
-
-    abcdk_mutex_lock(&ctx->mutex, 1);
-
-    chk = _abcdk_serialport_transfer_nonsafe(ctx, out, outlen, in, inlen, timeout, magic, mglen);
-
-    abcdk_mutex_unlock(&ctx->mutex);
-
-    return chk;
 }

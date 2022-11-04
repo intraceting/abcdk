@@ -17,8 +17,8 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_serialport_t *ctx = abcdk_serialport_create();
-    abcdk_serialport_attach(ctx,fd);
+    abcdk_muxer_t *ctx = abcdk_muxer_create();
+    abcdk_muxer_attach(ctx,fd);
 
     abcdk_hexdump_option_t opt = {0};
 
@@ -38,15 +38,15 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     abcdk_bloom_write_number(sendmsg, 8, 32, 16, 0x0002);
     abcdk_bloom_write_number(sendmsg, 8, 48, 16, abcdk_crc16(sendmsg, 6));
 
-    int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 8, 1000, sendmsg, 2);
+    int chk = abcdk_muxer_transfer(ctx, sendmsg, 8, recvmsg, 8, 1000, sendmsg, 2);
     assert(chk == 0);
 
     assert(memcmp(sendmsg,recvmsg,8)==0);
 #else
 
-    //abcdk_serialport_set_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,3);
+    //abcdk_muxer_set_option(ctx,ABCDK_MUXER_OPT_INTERVAL,3);
     //uint64_t b;
-    //abcdk_serialport_get_option(ctx,ABCDK_SERIALPORT_OPT_INTERVAL,&b);
+    //abcdk_muxer_get_option(ctx,ABCDK_MUXER_OPT_INTERVAL,&b);
     //assert(b==3);
     
 
@@ -54,11 +54,12 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
   //  uint8_t addrs[3] = {0x02,0x02,0x02};
     uint16_t dists[3] = {0};
 
-//#pragma omp parallel for num_threads(3)
+#pragma omp parallel for num_threads(3)
     for (int i = 0; i < 1000; i++)
     {
         int id = i%3;
         int a = addrs[id];
+        int chk = -1;
 
         char sendmsg[8] = {0};
         char recvmsg[70] = {0};
@@ -73,8 +74,9 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
         uint64_t s,d;
         d = abcdk_clock(s,&s);
-
-        int chk = abcdk_serialport_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
+        abcdk_muxer_lock(ctx);
+        chk = abcdk_muxer_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
+        abcdk_muxer_unlock(ctx);
         if(chk != 0)
         {
             printf("%d timeout.\n",id);
@@ -99,7 +101,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
 #endif
 
-    abcdk_serialport_destroy(&ctx);
+    abcdk_muxer_destroy(&ctx);
 }
 
 uint32_t _abcdk_test_com_checksum(const void *data, size_t size)
@@ -117,8 +119,8 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_serialport_t *ctx = abcdk_serialport_create();
-    abcdk_serialport_attach(ctx,fd);
+    abcdk_muxer_t *ctx = abcdk_muxer_create();
+    abcdk_muxer_attach(ctx,fd);
 
     abcdk_hexdump_option_t opt = {0};
 
@@ -138,7 +140,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_hexdump(stderr, sendmsg, 5, 0, &opt);
 
-    chk = abcdk_serialport_transfer(ctx, sendmsg, 5, NULL, 0, 10000000, NULL, 0);
+    chk = abcdk_muxer_transfer(ctx, sendmsg, 5, NULL, 0, 10000000, NULL, 0);
     assert(chk == 0);
 
     sleep(3);
@@ -153,7 +155,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_hexdump(stderr, sendmsg2, 5, 0, &opt);
 
-    chk = abcdk_serialport_transfer(ctx, sendmsg2, 5, NULL, 0, 1000000, NULL, 0);
+    chk = abcdk_muxer_transfer(ctx, sendmsg2, 5, NULL, 0, 1000000, NULL, 0);
     assert(chk == 0);
 
     sleep(3);
@@ -162,7 +164,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     for (int i = 0; i < 100000; i++)
     {
-        chk = abcdk_serialport_transfer(ctx, NULL, 0, recvmsg, 32, 10000, sendmsg, 4);
+        chk = abcdk_muxer_transfer(ctx, NULL, 0, recvmsg, 32, 10000, sendmsg, 4);
         assert(chk == 0);
 
         //   abcdk_hexdump(stderr, recvmsg, 32, 0, &opt);
@@ -198,11 +200,93 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
         }
     }
 
-    abcdk_serialport_destroy(&ctx);
+    abcdk_muxer_destroy(&ctx);
 }
+
+
+int abcdk_test_com_driver(abcdk_tree_t *args)
+{
+    int chk;
+    int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
+
+    abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
+
+    abcdk_muxer_t *ctx = abcdk_muxer_create();
+    abcdk_muxer_attach(ctx,fd);
+
+    abcdk_hexdump_option_t opt = {0};
+
+    opt.flag = ABCDK_HEXDEMP_SHOW_ADDR | ABCDK_HEXDEMP_SHOW_CHAR;
+
+    uint8_t sendmsg[80] = {0};
+    uint8_t sendmsg2[80] = {0};
+    uint8_t recvmsg[70] = {0};
+
+    abcdk_bit_t *wbits = abcdk_bit_create();
+    abcdk_bit_t *rbits = abcdk_bit_create();
+    abcdk_bit_attach(wbits,sendmsg,80);
+    abcdk_bit_attach(rbits,recvmsg,70);
+
+    /***************************************************/
+    abcdk_bit_write(wbits,8,0x01);
+    abcdk_bit_write(wbits,8,0x06);
+    abcdk_bit_write(wbits,16,0x200D);
+    abcdk_bit_write(wbits,16,3);
+    abcdk_bit_write(wbits,16,abcdk_crc16(sendmsg, 6));
+
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL,0, 10000, NULL, 0);
+
+    /***************************************************/
+    abcdk_bit_write(wbits,8, 0x01);
+    abcdk_bit_write(wbits,8, 0x10);
+    abcdk_bit_write(wbits,16, 0x2080);
+    abcdk_bit_write(wbits,16, 4);
+    abcdk_bit_write(wbits,8, 8);
+    abcdk_bit_write(wbits,16, 500);
+    abcdk_bit_write(wbits,16, 500);
+    abcdk_bit_write(wbits,16, 500);
+    abcdk_bit_write(wbits,16, 500);
+    abcdk_bit_write(wbits,16, abcdk_crc16(sendmsg, 15));
+
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,17,NULL,0,10000, NULL, 0);
+
+    /***************************************************/
+
+    abcdk_bit_write(wbits,8, 0x01);
+    abcdk_bit_write(wbits,8, 0x10);
+    abcdk_bit_write(wbits,16, 0x2088);
+    abcdk_bit_write(wbits,16, 2);
+    abcdk_bit_write(wbits,8, 4);
+    abcdk_bit_write(wbits,16, 100);
+    abcdk_bit_write(wbits,16, 100);
+    abcdk_bit_write(wbits,16, abcdk_crc16(sendmsg, 11));
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,13,NULL,0,10000, NULL, 0);
+
+    sleep(10);
+    /***************************************************/
+    
+    abcdk_bit_write(wbits,8,0x01);
+    abcdk_bit_write(wbits,8,0x06);
+    abcdk_bit_write(wbits,16,0x200E);
+    abcdk_bit_write(wbits,16,7);
+    abcdk_bit_write(wbits,16,abcdk_crc16(sendmsg, 6));
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL,0, 10000, NULL, 0);
+
+    /***************************************************/
+
+    abcdk_bit_destroy(&wbits);
+    abcdk_bit_destroy(&rbits);
+    abcdk_muxer_destroy(&ctx);
+}
+
 
 int abcdk_test_com(abcdk_tree_t *args)
 {
      abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);
+   //abcdk_test_com_driver(args);
 }
