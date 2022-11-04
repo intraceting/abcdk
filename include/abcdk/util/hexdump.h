@@ -7,9 +7,9 @@
 #ifndef ABCDK_UTIL_HEXDUMP_H
 #define ABCDK_UTIL_HEXDUMP_H
 
-#include "general.h"
-#include "object.h"
-#include "tree.h"
+#include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/tree.h"
 
 /**
  * 十六进制格式选项。
@@ -65,7 +65,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
  * @return > 0 成功(打印的总长度)，<=0 失败(空间不足或出错)。
 */
 ssize_t abcdk_hexdump2(const char *file, const void *data, size_t size,size_t offset, const abcdk_hexdump_option_t *opt);
-/*------------------------------------------------------------------------------------------------*/
+
 
 
 #endif //

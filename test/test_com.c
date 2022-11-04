@@ -20,10 +20,6 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     abcdk_muxer_t *ctx = abcdk_muxer_create();
     abcdk_muxer_attach(ctx,fd);
 
-    abcdk_hexdump_option_t opt = {0};
-
-    opt.flag = ABCDK_HEXDEMP_SHOW_ADDR | ABCDK_HEXDEMP_SHOW_CHAR;
-
     char sendmsg[8] = {0};
     char recvmsg[70] = {0};
 
@@ -89,7 +85,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         uint16_t newcrc = abcdk_crc16(recvmsg, 5);
         if (oldcrc != newcrc)
         {
-            abcdk_hexdump(stderr, recvmsg, 7, 0, &opt);
+            abcdk_hexdump(stderr, recvmsg, 7, 0, NULL);
         }
         else
         {
@@ -122,10 +118,6 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
     abcdk_muxer_t *ctx = abcdk_muxer_create();
     abcdk_muxer_attach(ctx,fd);
 
-    abcdk_hexdump_option_t opt = {0};
-
-    opt.flag = ABCDK_HEXDEMP_SHOW_ADDR | ABCDK_HEXDEMP_SHOW_CHAR;
-
     uint8_t sendmsg[8] = {0};
     uint8_t sendmsg2[8] = {0};
     uint8_t recvmsg[70] = {0};
@@ -138,7 +130,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
     abcdk_bloom_write_number(sendmsg, 5, 24, 8, 27);
     abcdk_bloom_write_number(sendmsg, 5, 32, 8, _abcdk_test_com_checksum(sendmsg, 4));
 
-    abcdk_hexdump(stderr, sendmsg, 5, 0, &opt);
+    abcdk_hexdump(stderr, sendmsg, 5, 0, NULL);
 
     chk = abcdk_muxer_transfer(ctx, sendmsg, 5, NULL, 0, 10000000, NULL, 0);
     assert(chk == 0);
@@ -153,7 +145,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
     abcdk_bloom_write_number(sendmsg2, 5, 24, 8, 0);
     abcdk_bloom_write_number(sendmsg2, 5, 32, 8, _abcdk_test_com_checksum(sendmsg2, 4));
 
-    abcdk_hexdump(stderr, sendmsg2, 5, 0, &opt);
+    abcdk_hexdump(stderr, sendmsg2, 5, 0,NULL);
 
     chk = abcdk_muxer_transfer(ctx, sendmsg2, 5, NULL, 0, 1000000, NULL, 0);
     assert(chk == 0);
@@ -167,12 +159,12 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
         chk = abcdk_muxer_transfer(ctx, NULL, 0, recvmsg, 32, 10000, sendmsg, 4);
         assert(chk == 0);
 
-        //   abcdk_hexdump(stderr, recvmsg, 32, 0, &opt);
+        //   abcdk_hexdump(stderr, recvmsg, 32, 0, NULL);
         uint16_t crc = _abcdk_test_com_checksum(recvmsg, 31);
 
         if ((crc & 0xff) != recvmsg[31])
         {
-            abcdk_hexdump(stderr, recvmsg, 32, 0, &opt);
+            abcdk_hexdump(stderr, recvmsg, 32, 0,NULL);
         }
         else
         {
@@ -214,79 +206,125 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_muxer_t *ctx = abcdk_muxer_create();
     abcdk_muxer_attach(ctx,fd);
 
-    abcdk_hexdump_option_t opt = {0};
-
-    opt.flag = ABCDK_HEXDEMP_SHOW_ADDR | ABCDK_HEXDEMP_SHOW_CHAR;
+    abcdk_muxer_set_option(ctx,ABCDK_MUXER_OPT_INTERVAL,30);
 
     uint8_t sendmsg[80] = {0};
     uint8_t sendmsg2[80] = {0};
     uint8_t recvmsg[70] = {0};
 
-    abcdk_bit_t *wbits = abcdk_bit_create();
-    abcdk_bit_t *rbits = abcdk_bit_create();
-    abcdk_bit_attach(wbits,sendmsg,80);
-    abcdk_bit_attach(rbits,recvmsg,70);
+    abcdk_bit_t wbits = {0,sendmsg,80};
+    abcdk_bit_t rbits = {0,recvmsg,70};
 
     /***************************************************/
-    abcdk_bit_write(wbits,8,0x01);
-    abcdk_bit_write(wbits,8,0x06);
-    abcdk_bit_write(wbits,16,0x200D);
-    abcdk_bit_write(wbits,16,3);
-    abcdk_bit_write(wbits,16,abcdk_crc16(sendmsg, 6));
+    wbits.pos = 0;
+    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,0x06);
+    abcdk_bit_write(&wbits,16,0x200E);
+    abcdk_bit_write(&wbits,16,6);
+    abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
 
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL,0, 10000, NULL, 0);
+    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
+    assert(chk ==0);
 
-    /***************************************************/
-    abcdk_bit_write(wbits,8, 0x01);
-    abcdk_bit_write(wbits,8, 0x10);
-    abcdk_bit_write(wbits,16, 0x2080);
-    abcdk_bit_write(wbits,16, 4);
-    abcdk_bit_write(wbits,8, 8);
-    abcdk_bit_write(wbits,16, 500);
-    abcdk_bit_write(wbits,16, 500);
-    abcdk_bit_write(wbits,16, 500);
-    abcdk_bit_write(wbits,16, 500);
-    abcdk_bit_write(wbits,16, abcdk_crc16(sendmsg, 15));
+  //  abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
 
-
-    chk = abcdk_muxer_transfer(ctx, sendmsg,17,NULL,0,10000, NULL, 0);
+    printf("clear error.\n");
 
     /***************************************************/
+    wbits.pos = 0;
+    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,0x06);
+    abcdk_bit_write(&wbits,16,0x200D);
+    abcdk_bit_write(&wbits,16,3);
+    abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
 
-    abcdk_bit_write(wbits,8, 0x01);
-    abcdk_bit_write(wbits,8, 0x10);
-    abcdk_bit_write(wbits,16, 0x2088);
-    abcdk_bit_write(wbits,16, 2);
-    abcdk_bit_write(wbits,8, 4);
-    abcdk_bit_write(wbits,16, 100);
-    abcdk_bit_write(wbits,16, 100);
-    abcdk_bit_write(wbits,16, abcdk_crc16(sendmsg, 11));
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,13,NULL,0,10000, NULL, 0);
+    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0,10000, NULL, 0);
+    assert(chk ==0);
 
-    sleep(10);
-    /***************************************************/
-    
-    abcdk_bit_write(wbits,8,0x01);
-    abcdk_bit_write(wbits,8,0x06);
-    abcdk_bit_write(wbits,16,0x200E);
-    abcdk_bit_write(wbits,16,7);
-    abcdk_bit_write(wbits,16,abcdk_crc16(sendmsg, 6));
-
-    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL,0, 10000, NULL, 0);
+   // abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
 
     /***************************************************/
+    wbits.pos = 0;
+    abcdk_bit_write(&wbits,8, 0x01);
+    abcdk_bit_write(&wbits,8, 0x10);
+    abcdk_bit_write(&wbits,16, 0x2080);
+    abcdk_bit_write(&wbits,16, 4);
+    abcdk_bit_write(&wbits,8, 8);
+    abcdk_bit_write(&wbits,16, 1000);
+    abcdk_bit_write(&wbits,16, 1000);
+    abcdk_bit_write(&wbits,16, 10000);
+    abcdk_bit_write(&wbits,16, 10000);
+    abcdk_bit_write(&wbits,16, abcdk_crc16(sendmsg, 15));
 
-    abcdk_bit_destroy(&wbits);
-    abcdk_bit_destroy(&rbits);
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,17,NULL, 0,10000, NULL, 0);
+    assert(chk ==0);
+
+    //abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
+
+    /***************************************************/
+    wbits.pos = 0;
+    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,0x06);
+    abcdk_bit_write(&wbits,16,0x200E);
+    abcdk_bit_write(&wbits,16,8);
+    abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
+
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
+    assert(chk ==0);
+
+  //  abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
+
+    /***************************************************/
+
+    for (int i = 0; i < 10; i++)
+    {
+        int speed = abs(rand()%100+10);
+        wbits.pos = 0;
+        abcdk_bit_write(&wbits, 8, 0x01);
+        abcdk_bit_write(&wbits, 8, 0x10);
+        abcdk_bit_write(&wbits, 16, 0x2088);
+        abcdk_bit_write(&wbits, 16, 2);
+        abcdk_bit_write(&wbits, 8, 4);
+        abcdk_bit_write(&wbits, 16, speed);
+        abcdk_bit_write(&wbits, 16, -speed);
+        abcdk_bit_write(&wbits, 16, abcdk_crc16(sendmsg, 11));
+
+        chk = abcdk_muxer_transfer(ctx, sendmsg, 13, NULL, 0, 10000, NULL, 0);
+        assert(chk == 0);
+
+       // abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
+
+        sleep(10);
+    }
+
+     /***************************************************/
+    wbits.pos = 0;
+    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,0x06);
+    abcdk_bit_write(&wbits,16,0x200E);
+    abcdk_bit_write(&wbits,16,7);
+    abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
+
+    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
+    assert(chk ==0);
+
+  //  abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
+
+    printf("stop.\n");
+
+    /***************************************************/
+
     abcdk_muxer_destroy(&ctx);
 }
 
 
 int abcdk_test_com(abcdk_tree_t *args)
 {
-     abcdk_test_com_ultrasound(args);
+   //  abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);
-   //abcdk_test_com_driver(args);
+   abcdk_test_com_driver(args);
 }

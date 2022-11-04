@@ -9,7 +9,7 @@
 int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t index)
 {
     assert(pool != NULL && size > 0);
-    assert(size * 8 > index);
+    assert(index < size * 8);
 
     size_t bloom_pos = 7 - (index & 7);
     size_t byte_pos = index >> 3;
@@ -26,7 +26,7 @@ int abcdk_bloom_mark(uint8_t *pool, size_t size, size_t index)
 int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t index)
 {
     assert(pool != NULL && size > 0);
-    assert(size * 8 > index);
+    assert(index < size * 8);
 
     size_t bloom_pos = 7 - (index & 7);
     size_t byte_pos = index >> 3;
@@ -43,7 +43,7 @@ int abcdk_bloom_unset(uint8_t* pool,size_t size,size_t index)
 int abcdk_bloom_filter(const uint8_t* pool,size_t size,size_t index)
 {
     assert(pool != NULL && size > 0);
-    assert(size * 8 > index);
+    assert(index < size * 8);
 
     size_t bloom_pos = 7 - (index & 7);
     size_t byte_pos = index >> 3;
@@ -58,7 +58,7 @@ int abcdk_bloom_filter(const uint8_t* pool,size_t size,size_t index)
 void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val)
 {
     assert(pool != NULL && size > 0);
-    assert(size * 8 > offset);
+    assert(offset < size * 8);
 
     if(val)
         abcdk_bloom_mark(pool,size,offset);
@@ -72,7 +72,7 @@ void abcdk_bloom_write(uint8_t* pool,size_t size,size_t offset,int val)
 int abcdk_bloom_read(const uint8_t* pool,size_t size,size_t offset)
 {
     assert(pool != NULL && size > 0);
-    assert(size * 8 > offset);
+    assert(offset < size * 8);
 
     return abcdk_bloom_filter(pool,size,offset);
 }
@@ -82,7 +82,7 @@ uint64_t abcdk_bloom_read_number(const uint8_t *pool, size_t size, size_t offset
     uint64_t num = 0;
 
     assert(pool != NULL && size > 0 && bits > 0);
-    assert(size * 8 >= offset + bits);
+    assert(offset + bits <= size * 8);
     
     for (int i = 0; i < bits; i++)
         num = (num << 1) | abcdk_bloom_read(pool, size, offset + i);
@@ -93,7 +93,7 @@ uint64_t abcdk_bloom_read_number(const uint8_t *pool, size_t size, size_t offset
 void abcdk_bloom_write_number(uint8_t *pool, size_t size, size_t offset, int bits, uint64_t num)
 {
     assert(pool != NULL && size > 0 && bits > 0);
-    assert(size * 8 >= offset + bits);
+    assert(offset + bits <= size * 8);
 
     for (int i = 0; i < bits; i++)
         abcdk_bloom_write(pool, size, offset + i, ((num >> (bits - 1 - i)) & 1));

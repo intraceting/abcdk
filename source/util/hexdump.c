@@ -119,9 +119,16 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
     size_t color_e = -1UL, color2_e = -1UL;
     const uint8_t *p = NULL, *q = NULL;
     abcdk_tree_t *stack = NULL,*stack_p = NULL;
+    abcdk_hexdump_option_t opt_default = {0};
     int chk;
 
-    assert(fd != NULL && data != NULL && size > 0 && opt != NULL);
+    assert(fd != NULL && data != NULL && size > 0);
+
+    if (!opt)
+    {
+        opt_default.flag = ABCDK_HEXDEMP_SHOW_ADDR | ABCDK_HEXDEMP_SHOW_CHAR;
+        opt = &opt_default;
+    }
 
     if (opt->width > 0)
         width = opt->width;

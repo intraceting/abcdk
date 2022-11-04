@@ -18,30 +18,18 @@ __BEGIN_DECLS
  * 
  * @warning 以字节的二进制阅读顺序排列。如：0(7)~7(0) 8(7)~15(0) 16(7)~23(0) 24(7)~31(0) ... 
 */
-typedef struct _abcdk_bit abcdk_bit_t;
+typedef struct _abcdk_bit
+{
+    /**读写游标。*/
+    size_t pos;
 
-/** 销毁对象。*/
-void abcdk_bit_destroy(abcdk_bit_t **ctx);
+    /**数据区指针。*/
+    void *data;
 
-/** 创建对象。*/
-abcdk_bit_t *abcdk_bit_create();
-
-/**
- * 绑定数据区。
- *
- * @warning 分离数据区前，禁止绑定新的数据区。
- */
-void abcdk_bit_attach(abcdk_bit_t *ctx, void *data,size_t size);
-
-/** 分离数据区。*/
-void abcdk_bit_detach(abcdk_bit_t *ctx, void **data,size_t *size);
-
-/** 
- * 重置游标。
- * 
- * @param [in] pos 位置(bit)。
-*/
-void abcdk_bit_reset(abcdk_bit_t *ctx,size_t pos);
+    /**数据区大小。*/
+    size_t size;
+    
+} abcdk_bit_t;
 
 /** 
  * 读。
