@@ -76,7 +76,7 @@
 #include "abcdk/util/register.h"
 #include "abcdk/util/queue.h"
 #include "abcdk/util/waiter.h"
-#include "abcdk/util/muxer.h"
+#include "abcdk/util/stream.h"
 #include "abcdk/util/bit.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"

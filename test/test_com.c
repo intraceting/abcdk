@@ -17,8 +17,8 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_muxer_t *ctx = abcdk_muxer_create();
-    abcdk_muxer_attach(ctx,fd);
+    abcdk_stream_t *ctx = abcdk_stream_create();
+    abcdk_stream_attach(ctx,fd);
 
     char sendmsg[8] = {0};
     char recvmsg[70] = {0};
@@ -34,15 +34,15 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     abcdk_bloom_write_number(sendmsg, 8, 32, 16, 0x0002);
     abcdk_bloom_write_number(sendmsg, 8, 48, 16, abcdk_crc16(sendmsg, 6));
 
-    int chk = abcdk_muxer_transfer(ctx, sendmsg, 8, recvmsg, 8, 1000, sendmsg, 2);
+    int chk = abcdk_stream_transfer(ctx, sendmsg, 8, recvmsg, 8, 1000, sendmsg, 2);
     assert(chk == 0);
 
     assert(memcmp(sendmsg,recvmsg,8)==0);
 #else
 
-    //abcdk_muxer_set_option(ctx,ABCDK_MUXER_OPT_INTERVAL,3);
+    //abcdk_stream_set_option(ctx,ABCDK_STREAM_OPT_INTERVAL,3);
     //uint64_t b;
-    //abcdk_muxer_get_option(ctx,ABCDK_MUXER_OPT_INTERVAL,&b);
+    //abcdk_stream_get_option(ctx,ABCDK_STREAM_OPT_INTERVAL,&b);
     //assert(b==3);
     
 
@@ -70,9 +70,9 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
         uint64_t s,d;
         d = abcdk_clock(s,&s);
-        abcdk_muxer_lock(ctx);
-        chk = abcdk_muxer_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
-        abcdk_muxer_unlock(ctx);
+        abcdk_stream_lock(ctx);
+        chk = abcdk_stream_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
+        abcdk_stream_unlock(ctx);
         if(chk != 0)
         {
             printf("%d timeout.\n",id);
@@ -97,7 +97,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
 #endif
 
-    abcdk_muxer_destroy(&ctx);
+    abcdk_stream_destroy(&ctx);
 }
 
 uint32_t _abcdk_test_com_checksum(const void *data, size_t size)
@@ -115,8 +115,8 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_muxer_t *ctx = abcdk_muxer_create();
-    abcdk_muxer_attach(ctx,fd);
+    abcdk_stream_t *ctx = abcdk_stream_create();
+    abcdk_stream_attach(ctx,fd);
 
     uint8_t sendmsg[8] = {0};
     uint8_t sendmsg2[8] = {0};
@@ -132,7 +132,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_hexdump(stderr, sendmsg, 5, 0, NULL);
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg, 5, NULL, 0, 10000000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg, 5, NULL, 0, 10000000, NULL, 0);
     assert(chk == 0);
 
     sleep(3);
@@ -147,7 +147,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     abcdk_hexdump(stderr, sendmsg2, 5, 0,NULL);
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg2, 5, NULL, 0, 1000000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg2, 5, NULL, 0, 1000000, NULL, 0);
     assert(chk == 0);
 
     sleep(3);
@@ -156,7 +156,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 
     for (int i = 0; i < 100000; i++)
     {
-        chk = abcdk_muxer_transfer(ctx, NULL, 0, recvmsg, 32, 10000, sendmsg, 4);
+        chk = abcdk_stream_transfer(ctx, NULL, 0, recvmsg, 32, 10000, sendmsg, 4);
         assert(chk == 0);
 
         //   abcdk_hexdump(stderr, recvmsg, 32, 0, NULL);
@@ -192,7 +192,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
         }
     }
 
-    abcdk_muxer_destroy(&ctx);
+    abcdk_stream_destroy(&ctx);
 }
 
 
@@ -203,10 +203,10 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
-    abcdk_muxer_t *ctx = abcdk_muxer_create();
-    abcdk_muxer_attach(ctx,fd);
+    abcdk_stream_t *ctx = abcdk_stream_create();
+    abcdk_stream_attach(ctx,fd);
 
-    abcdk_muxer_set_option(ctx,ABCDK_MUXER_OPT_INTERVAL,30);
+    abcdk_stream_set_option(ctx,ABCDK_STREAM_OPT_INTERVAL,30);
 
     uint8_t sendmsg[80] = {0};
     uint8_t sendmsg2[80] = {0};
@@ -224,7 +224,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
 
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
     assert(chk ==0);
 
    // abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
@@ -240,7 +240,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
 
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0,10000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg,8,NULL, 0,10000, NULL, 0);
     assert(chk ==0);
 
    // abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
@@ -259,7 +259,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_bit_write(&wbits,16, abcdk_crc16(sendmsg, 15));
 
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,17,NULL, 0,10000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg,17,NULL, 0,10000, NULL, 0);
     assert(chk ==0);
 
     //abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
@@ -273,7 +273,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
 
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
     assert(chk ==0);
 
   //  abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
@@ -293,7 +293,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
         abcdk_bit_write(&wbits, 16, -speed);
         abcdk_bit_write(&wbits, 16, abcdk_crc16(sendmsg, 11));
 
-        chk = abcdk_muxer_transfer(ctx, sendmsg, 13, NULL, 0, 10000, NULL, 0);
+        chk = abcdk_stream_transfer(ctx, sendmsg, 13, NULL, 0, 10000, NULL, 0);
         assert(chk == 0);
 
        // abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
@@ -309,7 +309,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_bit_write(&wbits,16,7);
     abcdk_bit_write(&wbits,16,abcdk_crc16(sendmsg, 6));
 
-    chk = abcdk_muxer_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
+    chk = abcdk_stream_transfer(ctx, sendmsg,8,NULL, 0, 10000, NULL, 0);
     assert(chk ==0);
 
   //  abcdk_hexdump(stderr, recvmsg, 8, 0,NULL);
@@ -318,7 +318,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 
     /***************************************************/
 
-    abcdk_muxer_destroy(&ctx);
+    abcdk_stream_destroy(&ctx);
 }
 
 
