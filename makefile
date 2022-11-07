@@ -65,6 +65,7 @@ BASE_SRC_FILES += $(wildcard source/rpc/*.c)
 BASE_SRC_FILES += $(wildcard source/http/*.c)
 BASE_SRC_FILES += $(wildcard source/log/*.c)
 BASE_SRC_FILES += $(wildcard source/rtp/*.c)
+BASE_SRC_FILES += $(wildcard source/ffmpeg/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
@@ -145,6 +146,12 @@ $(OBJ_PATH)/source/log/%.o: source/log/%.c
 #
 $(OBJ_PATH)/source/rtp/%.o: source/rtp/%.c
 	mkdir -p $(OBJ_PATH)/source/rtp/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/source/ffmpeg/%.o: source/ffmpeg/%.c
+	mkdir -p $(OBJ_PATH)/source/ffmpeg/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 

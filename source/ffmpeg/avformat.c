@@ -1,425 +1,15 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
-#include "abcdk/util/ffmpeg.h"
+#include "abcdk/ffmpeg/avformat.h"
 
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H) && defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
+#if defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-
-/*------------------------------------------------------------------------------------------------*/
-
-
-int abcdk_av_image_pixfmt_bits(enum AVPixelFormat pixfmt, int padded)
-{
-    const AVPixFmtDescriptor *desc;
-
-    assert(pixfmt > AV_PIX_FMT_NONE);
-
-    desc = av_pix_fmt_desc_get(pixfmt);
-    if (desc)
-        return (padded ? av_get_padded_bits_per_pixel(desc) : av_get_bits_per_pixel(desc));
-
-    return -1;
-}
-
-const char *abcdk_av_image_pixfmt_name(enum AVPixelFormat pixfmt)
-{
-    const AVPixFmtDescriptor *desc;
-
-    if (pixfmt > AV_PIX_FMT_NONE)
-    {
-        desc = av_pix_fmt_desc_get(pixfmt);
-        if (desc)
-            return av_get_pix_fmt_name(pixfmt);
-    }
-
-    return NULL;
-}
-
-int abcdk_av_image_fill_heights(int heights[4], int height, enum AVPixelFormat pixfmt)
-{
-    const AVPixFmtDescriptor *desc;
-    int h;
-    int planes_nb;
-
-    assert(heights != NULL && height > 0 && pixfmt > AV_PIX_FMT_NONE);
-
-    desc = av_pix_fmt_desc_get(pixfmt);
-    if (!desc)
-        return -1;
-
-    planes_nb = 0;
-    for (int i = 0; i < desc->nb_components; i++)
-        planes_nb = FFMAX(planes_nb, desc->comp[i].plane + 1);
-
-    if (planes_nb <= 4)
-    {
-        for (int i = 0; i < planes_nb; i++)
-        {
-            h = height;
-            if (i == 1 || i == 2)
-            {
-                h = FF_CEIL_RSHIFT(height, desc->log2_chroma_h);
-            }
-
-            heights[i] = h;
-        }
-    }
-
-    return planes_nb;
-}
-
-int abcdk_av_image_fill_strides(int strides[4],int width,int height,enum AVPixelFormat pixfmt,int align)
-{
-    int stride_nb;
-
-    assert(strides != NULL && width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
-
-    if (av_image_fill_linesizes(strides, pixfmt, width) < 0)
-        ABCDK_ERRNO_AND_RETURN1(EINVAL, -1);
-
-    stride_nb = 0;
-    for (int i = 0; i < 4; i++)
-    {
-        if (strides[i] <= 0)
-            continue;
-
-        strides[i] = abcdk_align(strides[i], align);
-        stride_nb += 1;
-    }
-
-    return stride_nb;
-}
-
-int abcdk_av_image_fill_pointers(uint8_t *datas[4], const int strides[4], int height,
-                                 enum AVPixelFormat pixfmt, void *buffer)
-{
-    int size;
-
-    assert(datas != NULL && strides != NULL && height > 0 && pixfmt > AV_PIX_FMT_NONE);
-
-    size = av_image_fill_pointers(datas, pixfmt, height, (uint8_t *)buffer, strides);
-
-    /*只是计算大小，清空无效指针。*/
-    if (!buffer)
-        memset(datas, 0, sizeof(uint8_t *));
-
-    return size;
-}
-
-int abcdk_av_image_size(const int strides[4], int height, enum AVPixelFormat pixfmt)
-{
-    uint8_t *datas[4] = {0};
-
-    return abcdk_av_image_fill_pointers(datas, strides, height, pixfmt, NULL);
-}
-
-int abcdk_av_image_size2(int width,int height,enum AVPixelFormat pixfmt,int align)
-{
-    int strides[4] = {0};
-    int chk;
-
-    chk = abcdk_av_image_fill_strides(strides,width,height,pixfmt,align);
-    if(chk<=0)
-        return chk;
-
-    return abcdk_av_image_size(strides,height,pixfmt);
-}
-
-void abcdk_av_image_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4],
-                         const int src_strides[4], int width, int height, enum AVPixelFormat pixfmt)
-{
-    assert(dst_datas != NULL && dst_strides != NULL);
-    assert(src_datas != NULL && src_strides != NULL);
-    assert(width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
-
-    av_image_copy(dst_datas, dst_strides, src_datas, src_strides, pixfmt, width, height);
-}
-
-void abcdk_av_image_copy2(AVFrame *dst, const AVFrame *src)
-{
-    assert(dst != NULL && src != NULL);
-
-    assert(dst->width == src->width);
-    assert(dst->height == src->height);
-    assert(dst->format == src->format);
-
-    abcdk_av_image_copy(dst->data,dst->linesize,(const uint8_t **)src->data,src->linesize,
-                        src->width,src->height,src->format);
-}
-
-/*------------------------------------------------------------------------------------------------*/
-
-void abcdk_sws_free(struct SwsContext **ctx)
-{
-    if(!ctx)
-        return;
-
-    if(*ctx)
-        sws_freeContext(*ctx);
-
-    /*Set to NULL(0).*/
-    *ctx = NULL;
-}
-
-struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFormat src_pixfmt,
-                                   int dst_width, int dst_height, enum AVPixelFormat dst_pixfmt,
-                                   int flags)
-{
-    assert(src_width > 0 && src_height > 0 && src_pixfmt > AV_PIX_FMT_NONE);
-    assert(dst_width > 0 && dst_height > 0 && dst_pixfmt > AV_PIX_FMT_NONE);
-
-    return sws_getContext(src_width, src_height, src_pixfmt,
-                          dst_width, dst_height, dst_pixfmt,
-                          flags, NULL, NULL, NULL);
-}
-
-struct SwsContext *abcdk_sws_alloc2(const AVFrame *src, const AVFrame *dst, int flags)
-{
-    assert(dst != NULL && src != NULL);
-
-    return abcdk_sws_alloc(src->width, src->height, src->format,
-                           dst->width, dst->height, dst->format,
-                           flags);
-}
-
-int abcdk_sws_scale(struct SwsContext *ctx, const AVFrame *src, AVFrame *dst)
-{
-    assert(ctx != NULL && dst != NULL && src != NULL);
-
-    return sws_scale(ctx, (const uint8_t *const *)src->data, src->linesize, 0, src->height, dst->data, dst->linesize);
-}
-
-/*------------------------------------------------------------------------------------------------*/
-
-AVCodec *abcdk_avcodec_find(const char *name,int encode)
-{
-    AVCodec *ctx = NULL;
-
-    assert(name != NULL);
-    assert(*name != '\0');
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
-    avcodec_register_all();
-#endif
-
-    ctx = (encode ? avcodec_find_encoder_by_name(name) : avcodec_find_decoder_by_name(name));
-
-    return ctx;
-}
-
-AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
-{
-    AVCodec *ctx = NULL;
-
-    assert(id > AV_CODEC_ID_NONE);
-
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
-    avcodec_register_all();
-#endif
-
-    ctx = (encode ? avcodec_find_encoder(id) : avcodec_find_decoder(id));
-    
-    return ctx;
-}
-
-void abcdk_avcodec_show_options(AVCodec *ctx)
-{
-    assert(ctx != NULL);
-
-    if (ctx->priv_class)
-        av_opt_show2((void *)&ctx->priv_class, NULL, -1, 0);
-    else
-        av_log(NULL, AV_LOG_INFO, "No options for `%s'.\n", (ctx->long_name ? ctx->long_name : ctx->name));
-}
-
-void abcdk_avcodec_free(AVCodecContext **ctx)
-{
-    assert(ctx != NULL);
-
-    if (*ctx)
-        avcodec_close(*ctx);
-
-    avcodec_free_context(ctx);
-}
-
-AVCodecContext *abcdk_avcodec_alloc(const AVCodec *ctx)
-{
-    assert(ctx != NULL);
-
-    return avcodec_alloc_context3(ctx);
-}
-
-AVCodecContext *abcdk_avcodec_alloc2(const char *name,int encode)
-{
-    AVCodec *ctx = abcdk_avcodec_find(name,encode);
-
-    if(ctx)
-        return abcdk_avcodec_alloc(ctx);
-    
-    return NULL;
-}
-
-AVCodecContext *abcdk_avcodec_alloc3(enum AVCodecID id,int encode)
-{
-    AVCodec *ctx = abcdk_avcodec_find2(id,encode);
-
-    if(ctx)
-        return abcdk_avcodec_alloc(ctx);
-
-    return NULL;
-}
-
-int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
-{
-    int chk = -1;
-
-    assert(ctx != NULL);
-    assert(ctx->codec != NULL);
-
-    /*如果是编码器，填写默认值。*/
-    if (av_codec_is_encoder(ctx->codec))
-    {
-        if (dict)
-        {
-            if (ctx->codec_id == AV_CODEC_ID_H265)
-                av_dict_set(dict, "x265-params", "bframes=0", 0);
-            else if (ctx->codec_id == AV_CODEC_ID_H264)
-                av_dict_set(dict, "x264opts", "bframes=0", 0);
-        }
-    }
-
-    chk = avcodec_open2(ctx, NULL, dict);
-
-    return chk;
-}
-
-int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
-{
-    int got = -1;
-
-    assert(ctx != NULL && out != NULL && in != NULL);
-
-    /*No output.*/
-    got = 0;
-
-    if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
-    {
-        if (avcodec_decode_video2(ctx, out, &got, in) < 0)
-            got = -1;
-    }
-    else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
-    {
-        if (avcodec_decode_audio4(ctx, out, &got, in) < 0)
-            got = -1;
-    }
-    else
-    {
-        got = -2;
-    }
-
-    return got;
-}
-
-int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
-{
-    int got = -1;
-
-    assert(ctx != NULL && out != NULL);
-
-    /*No output.*/
-    got = 0;
-
-    if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
-    {
-        if (avcodec_encode_video2(ctx, out, in, &got) != 0)
-            got = -1;
-    }
-    else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
-    {
-        if (avcodec_encode_audio2(ctx, out, in, &got) != 0)
-            got = -1;
-    }
-    else
-    {
-        got = -2;
-    }
-
-    return got;
-}
-
-void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,int height,int gop_size,int oformat_flags)
-{
-    assert(ctx != NULL && fps > 0 && width > 0 && height > 0);
-    assert(ctx->codec != NULL);
-    assert(ctx->codec->pix_fmts[0] != AV_PIX_FMT_NONE);
-
-#if 1
-
-    /*-------------Copy from OpenCV----begin------------------*/
-
-    int frame_rate = (int)(fps + 0.5);
-    int frame_rate_base = 1;
-    while (fabs(((double)frame_rate / frame_rate_base) - fps) > 0.001)
-    {
-        frame_rate_base *= 10;
-        frame_rate = (int)(fps * frame_rate_base + 0.5);
-    }
-
-    ctx->time_base.den = frame_rate;
-    ctx->time_base.num = frame_rate_base;
-
-    /* adjust time base for supported framerates */
-    if (ctx->codec && ctx->codec->supported_framerates)
-    {
-        const AVRational *p = ctx->codec->supported_framerates;
-        AVRational req = {frame_rate, frame_rate_base};
-        const AVRational *best = NULL;
-        AVRational best_error = {INT_MAX, 1};
-        for (; p->den != 0; p++)
-        {
-            AVRational error = av_sub_q(req, *p);
-            if (error.num < 0)
-                error.num *= -1;
-            if (av_cmp_q(error, best_error) < 0)
-            {
-                best_error = error;
-                best = p;
-            }
-        }
-
-        if (best)
-        {
-            ctx->time_base.den = best->num;
-            ctx->time_base.num = best->den;
-        }
-    }
-    /*-------------Copy from OpenCV-----end---------------*/
-#else 
-    ctx->time_base = (AVRational){1, fps};
-#endif
-    ctx->framerate.den = ctx->time_base.num;
-    ctx->framerate.num = ctx->time_base.den;
-    ctx->width = width;
-    ctx->height = height;
-    ctx->gop_size = (gop_size > 0 ? gop_size : ctx->time_base.den);
-
-    if (ctx->codec_id == AV_CODEC_ID_H265 || ctx->codec_id == AV_CODEC_ID_H264 || ctx->codec_id == AV_CODEC_ID_MJPEG)
-        ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-    else
-        ctx->pix_fmt = ctx->codec->pix_fmts[0];
-   
-    if (oformat_flags & AVFMT_GLOBALHEADER)
-        ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-}
-
-/*------------------------------------------------------------------------------------------------*/
 
 void abcdk_avio_free(AVIOContext **ctx)
 {
@@ -430,11 +20,11 @@ void abcdk_avio_free(AVIOContext **ctx)
 
     ctx_p = *ctx;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
     avio_context_free(&ctx_p);
 #else
-    if(ctx_p->buffer)
-        av_free(ctx_p->buffer);    
+    if (ctx_p->buffer)
+        av_free(ctx_p->buffer);
     av_free(ctx_p);
 #endif
     /* Set NULL(0).*/
@@ -465,6 +55,18 @@ final_error:
     av_freep(&buf);
 
     return NULL;
+}
+
+void abcdk_avformat_dump(AVFormatContext *ctx)
+{
+    if (!ctx)
+        return;
+
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
+    av_dump_format(ctx, 0, ctx->filename, 0);
+#else
+    av_dump_format(ctx, 0, ctx->url, 0);
+#endif
 }
 
 void abcdk_avformat_show_options(AVFormatContext *ctx)
@@ -527,20 +129,20 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     AVInputFormat *fmt = NULL;
     AVFormatContext *ctx = NULL;
     int chk = -1;
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     av_register_all();
-#endif 
+#endif
     avformat_network_init();
     avdevice_register_all();
 
     assert(filename != NULL);
-    
+
     ctx = avformat_alloc_context();
     if (!ctx)
         return NULL;
 
     /*如果不知道做什么用的，不要设置这个。*/
-    //ctx->flags |= AVFMT_FLAG_NOBUFFER;
+    // ctx->flags |= AVFMT_FLAG_NOBUFFER;
 
     if (interrupt_cb)
         ctx->interrupt_callback = *interrupt_cb;
@@ -566,27 +168,14 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     return ctx;
 }
 
-int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict, int dump)
+int abcdk_avformat_input_probe(AVFormatContext *ctx, AVDictionary **dict)
 {
     int chk = -1;
 
     assert(ctx != NULL);
     assert(ctx->iformat != NULL);
 
-    chk = avformat_find_stream_info(ctx, dict);
-    if (chk < 0)
-        return chk;
-
-    if (dump)
-    {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
-        av_dump_format(ctx, 0, ctx->filename, 0);
-#else
-        av_dump_format(ctx, 0, ctx->url, 0);
-#endif 
-    }
-
-    return chk;
+    return avformat_find_stream_info(ctx, dict);
 }
 
 int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaType only_type)
@@ -604,9 +193,9 @@ int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaT
 
         if (only_type < AVMEDIA_TYPE_NB)
         {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
             if (ctx->streams[pkt->stream_index]->codec->codec_type == only_type)
-#else 
+#else
             if (ctx->streams[pkt->stream_index]->codecpar->codec_type == only_type)
 #endif
                 break;
@@ -620,7 +209,7 @@ int abcdk_avformat_input_read(AVFormatContext *ctx, AVPacket *pkt, enum AVMediaT
     return 0;
 }
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
 int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContext **filter)
 {
     const AVBitStreamFilter *bsf = NULL;
@@ -650,17 +239,17 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
             bsf = av_bsf_get_by_name("hevc_mp4toannexb");
         else if (codecpar->codec_id == AV_CODEC_ID_AAC)
             bsf = av_bsf_get_by_name("aac_adtstoasc");
-        else 
+        else
             return 0;
 
-        if(!bsf)
+        if (!bsf)
             return 0;
 
         av_bsf_alloc(bsf, &filter_p);
         avcodec_parameters_copy(filter_p->par_in, codecpar);
         av_bsf_init(filter_p);
 
-        if(!filter_p)
+        if (!filter_p)
             return -1;
 
         /*保存过滤器环境指针。*/
@@ -668,11 +257,11 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
     }
 
     av_bsf_send_packet(filter_p, pkt);
-    chk = av_bsf_receive_packet(filter_p,pkt);
+    chk = av_bsf_receive_packet(filter_p, pkt);
 
     return 0;
 }
-#else 
+#else
 int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStreamFilterContext **filter)
 {
     AVBitStreamFilterContext *filter_p = NULL;
@@ -701,10 +290,10 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
             filter_p = av_bitstream_filter_init("hevc_mp4toannexb");
         else if (codec_p->codec_id == AV_CODEC_ID_AAC)
             filter_p = av_bitstream_filter_init("aac_adtstoasc");
-        else 
+        else
             return 0;
 
-        if(!filter_p)
+        if (!filter_p)
             return -1;
 
         /*保存过滤器环境指针。*/
@@ -713,20 +302,20 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
 
     inbuf = pkt->data;
     inbuf_size = pkt->size;
-    chk = av_bitstream_filter_filter(filter_p, codec_p, NULL, &outbuf, &outbuf_size, inbuf, inbuf_size,0);// pkt->flags & AV_PKT_FLAG_KEY);
+    chk = av_bitstream_filter_filter(filter_p, codec_p, NULL, &outbuf, &outbuf_size, inbuf, inbuf_size, 0); // pkt->flags & AV_PKT_FLAG_KEY);
     if (chk < 0)
         return -1;
 
-    /* 
+    /*
      * 1: 当返回值大于0时，需要释放旧的内存，绑定新的内存。
      * 2: 当返回值等于0时，未创建新的内存，但是数据起始地址可能有变化。
-    */
+     */
     if (chk > 0)
     {
         av_buffer_unref(&pkt->buf);
         pkt->buf = av_buffer_create(outbuf, outbuf_size, NULL, NULL, 0);
     }
-    
+
     pkt->data = outbuf;
     pkt->size = outbuf_size;
 
@@ -742,14 +331,14 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     AVFormatContext *ctx = NULL;
     int chk = -1;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     av_register_all();
-#endif 
+#endif
     avformat_network_init();
     avdevice_register_all();
 
     assert(filename != NULL);
-    
+
     ctx = avformat_alloc_context();
     if (!ctx)
         return NULL;
@@ -760,10 +349,10 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (io_cb)
         ctx->pb = io_cb;
 
-    av_dict_set(&ctx->metadata, "service", ABCDK_STR(SOLUTION_NAME),0);
-    av_dict_set(&ctx->metadata, "service_name", ABCDK_STR(SOLUTION_NAME),0);
-    av_dict_set(&ctx->metadata, "service_provider", ABCDK_STR(SOLUTION_NAME),0);
-    av_dict_set(&ctx->metadata, "artist", ABCDK_STR(SOLUTION_NAME),0);
+    av_dict_set(&ctx->metadata, "service", ABCDK_STR(SOLUTION_NAME), 0);
+    av_dict_set(&ctx->metadata, "service_name", ABCDK_STR(SOLUTION_NAME), 0);
+    av_dict_set(&ctx->metadata, "service_provider", ABCDK_STR(SOLUTION_NAME), 0);
+    av_dict_set(&ctx->metadata, "artist", ABCDK_STR(SOLUTION_NAME), 0);
 
     if (strncmp(filename, "rtsp://", 7) == 0)
         ctx->oformat = av_guess_format("rtsp", NULL, NULL);
@@ -776,7 +365,7 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (!ctx->oformat)
         goto final_error;
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     strncpy(ctx->filename, filename, sizeof(ctx->filename));
 #else
     ctx->url = av_strdup(filename);
@@ -800,15 +389,15 @@ AVStream *abcdk_avformat_output_stream(AVFormatContext *ctx, const AVCodec *code
 
 AVStream *abcdk_avformat_output_stream2(AVFormatContext *ctx, const char *name)
 {
-    return abcdk_avformat_output_stream(ctx,abcdk_avcodec_find(name,1));
+    return abcdk_avformat_output_stream(ctx, abcdk_avcodec_find(name, 1));
 }
 
 AVStream *abcdk_avformat_output_stream3(AVFormatContext *ctx, enum AVCodecID id)
 {
-    return abcdk_avformat_output_stream(ctx,abcdk_avcodec_find2(id,1));
+    return abcdk_avformat_output_stream(ctx, abcdk_avcodec_find2(id, 1));
 }
 
-int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int dump)
+int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
 {
     int chk = -1;
     assert(ctx != NULL);
@@ -817,9 +406,9 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
     if ((ctx->oformat->flags & AVFMT_NOFILE) || ctx->pb)
         chk = 0;
     else
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
         chk = avio_open(&ctx->pb, ctx->filename, AVIO_FLAG_WRITE);
-#else 
+#else
         chk = avio_open(&ctx->pb, ctx->url, AVIO_FLAG_WRITE);
 #endif
     if (chk != 0)
@@ -827,7 +416,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
 
     if (dict)
     {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
         if (strncmp(ctx->filename, "rtsp://", 7) == 0)
 #else
         if (strncmp(ctx->url, "rtsp://", 7) == 0)
@@ -839,19 +428,10 @@ int abcdk_avformat_output_header(AVFormatContext *ctx,AVDictionary **dict,int du
     if (chk != 0)
         return -1;
 
-    if(dump)
-    {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,20,100)
-        av_dump_format(ctx, 0, ctx->filename, 1);
-#else
-        av_dump_format(ctx, 0, ctx->url, 1);
-#endif 
-    }
-
     return 0;
 }
 
-int abcdk_avformat_output_write(AVFormatContext *ctx,AVRational *bq,AVRational *cq,AVPacket *pkt)
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt)
 {
     assert(ctx != NULL && bq != NULL && cq != NULL && pkt != NULL);
     assert(ctx->nb_streams > pkt->stream_index);
@@ -886,8 +466,8 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100)
-    avcodec_parameters_from_context(vs->codecpar,ctx);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
+    avcodec_parameters_from_context(vs->codecpar, ctx);
 #else
     vs->codec->codec_type = ctx->codec_type;
     vs->codec->codec_id = ctx->codec_id;
@@ -932,7 +512,7 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     default:
         break;
     }
-    
+
     if (ctx->extradata)
     {
         vs->codec->extradata_size = 0;
@@ -958,9 +538,9 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
 int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
 {
     assert(vs != NULL && ctx != NULL);
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100)
-    avcodec_parameters_to_context(ctx,vs->codecpar);
-#else 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
+    avcodec_parameters_to_context(ctx, vs->codecpar);
+#else
     ctx->codec_type = vs->codec->codec_type;
     ctx->codec_id = vs->codec->codec_id;
     ctx->codec_tag = vs->codec->codec_tag;
@@ -1008,7 +588,7 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
     {
         ctx->extradata_size = 0;
         av_free(ctx->extradata);
-        
+
         ctx->extradata = (uint8_t *)av_mallocz(vs->codec->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
         if (ctx->extradata)
         {
@@ -1034,7 +614,7 @@ double _abcdk_avstream_r2d(AVRational r)
     return r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den;
 }
 
-double abcdk_avstream_get_duration(AVFormatContext *ctx,AVStream *vs)
+double abcdk_avstream_get_duration(AVFormatContext *ctx, AVStream *vs)
 {
     double sec = 0.0;
 
@@ -1059,28 +639,28 @@ double abcdk_avstream_get_fps(AVFormatContext *ctx, AVStream *vs)
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
         fps = _abcdk_avstream_r2d(vs->r_frame_rate);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
         fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base);
-#else 
+#else
         fps = 1.0 / _abcdk_avstream_r2d(vs->avg_frame_rate);
 #endif
 
     return fps;
 }
 
-double abcdk_avstream_ts2sec(AVFormatContext *ctx,AVStream *vs,int64_t ts)
+double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts)
 {
     double sec = -0.000001;
 
     assert(ctx != NULL && vs != NULL);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
-        
+
     sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base);
-    
+
     return sec;
 }
 
-int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs,int64_t ts)
+int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts)
 {
     int64_t frame_nb = -1;
     double sec = -0.000001;
@@ -1094,8 +674,6 @@ int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs,int64_t ts)
 
 /*-------------Copy from OpenCV----end------------------*/
 
-/*------------------------------------------------------------------------------------------------*/
-
 #pragma GCC diagnostic pop
 
-#endif //AVUTIL_AVUTIL_H && SWSCALE_SWSCALE_H && AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
+#endif // AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H

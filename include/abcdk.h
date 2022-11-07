@@ -9,7 +9,7 @@
 
 #include "abcdk/util/scsi.h"
 #include "abcdk/util/mediumx.h"
-#include "abcdk/util/video.h"
+//#include "abcdk/util/video.h"
 #include "abcdk/util/ndarray.h"
 #include "abcdk/util/epoll.h"
 #include "abcdk/util/tape.h"
@@ -66,7 +66,6 @@
 #include "abcdk/util/hash.h"
 #include "abcdk/util/mmap.h"
 #include "abcdk/util/hexdump.h"
-#include "abcdk/util/ffmpeg.h"
 #include "abcdk/util/blockio.h"
 //#include "abcdk/util/freeimage.h"
 #include "abcdk/util/rtsp.h"

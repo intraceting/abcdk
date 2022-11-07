@@ -226,8 +226,7 @@ int _abcdk_video_capture_interrupt_cb(void *args)
     return 0;
 }
 
-abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, int64_t timeout, int dump,
-                                        const AVDictionary *dict)
+abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url, const AVDictionary *dict, time_t timeout)
 {
     abcdk_video_t *video = NULL;
     int chk;
@@ -252,7 +251,7 @@ abcdk_video_t *abcdk_video_open_capture(const char *short_name, const char *url,
     if(!video->ctx)
         goto final_error;
 
-    chk = abcdk_avformat_input_probe(video->ctx, NULL, dump);
+    chk = abcdk_avformat_input_probe(video->ctx, NULL);
     if (chk < 0)
         goto final_error;
 
@@ -569,16 +568,16 @@ int abcdk_video_add_stream(abcdk_video_t *video, int fps, int width, int height,
     return 0;
 }
 
-int abcdk_video_write_header(abcdk_video_t *video, int make_mp4fragment, int dump)
+int abcdk_video_write_header(abcdk_video_t *video, int fmp4)
 {
     int chk;
 
     assert(video != NULL);
 
-    if (make_mp4fragment)
+    if (fmp4)
         av_dict_set(&video->dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
 
-    chk = abcdk_avformat_output_header(video->ctx, &video->dict, dump);
+    chk = abcdk_avformat_output_header(video->ctx, &video->dict);
     if (chk < 0)
         return -1;
 
