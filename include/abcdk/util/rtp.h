@@ -67,8 +67,6 @@ typedef struct _abcdk_rtp_header
 
     /**
      * 时间戳，32bits。
-     * 
-     * 必须使用90kHz时钟频率。
     */
     uint32_t timestamp;
 
