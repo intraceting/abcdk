@@ -97,6 +97,12 @@
 #include "abcdk/rtp/h264.h"
 #include "abcdk/rtp/hevc.h"
 #include "abcdk/rtp/aac.h"
+#include "abcdk/ffmpeg/avutil.h"
+#include "abcdk/ffmpeg/swscale.h"
+#include "abcdk/ffmpeg/avcodec.h"
+#include "abcdk/ffmpeg/avformat.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
+
 
 
 #endif //ABCDK_H

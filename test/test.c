@@ -31,7 +31,8 @@ static struct _abcdk_test_entry
     {"iconv",abcdk_test_iconv},
     {"exec",abcdk_test_exec},
     {"com",abcdk_test_com},
-    {"path",abcdk_test_path}
+    {"path",abcdk_test_path},
+    {"ffmpeg",abcdk_test_ffmpeg}
 };
 
 void _abcdk_test_print_usage()

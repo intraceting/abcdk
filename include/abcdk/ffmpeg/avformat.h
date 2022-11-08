@@ -8,6 +8,7 @@
 #define ABCDK_FFMPEG_AVFORMAT_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/string.h"
 #include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/ffmpeg/avcodec.h"
 
@@ -24,7 +25,7 @@ __BEGIN_DECLS
 
 #endif // HAVE_FFMPEG
 
-#if defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
+#if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
 /**
  * 释放自定义IO环境。
@@ -180,21 +181,21 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 /**
  * 获取流的时长(秒)。
  *
- * @return 秒.毫秒
+ * @return 秒.毫秒。
  */
-double abcdk_avstream_get_duration(AVFormatContext *ctx, AVStream *vs);
+double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs);
 
 /**
  * 获取FPS。
  *
- * @return 秒.毫秒
+ * @return 秒.毫秒。
  */
-double abcdk_avstream_get_fps(AVFormatContext *ctx, AVStream *vs);
+double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs);
 
 /**
  * DTS或PTS转自然时间。
  *
- * @return 秒.毫秒
+ * @return 秒.毫秒。
  */
 double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts);
 
@@ -205,7 +206,26 @@ double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts);
  */
 int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts);
 
-#endif // AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
+/**
+ * 获取指定流图像的宽。
+ * 
+ * @return 像素。
+*/
+int abcdk_avstream_width(AVFormatContext *ctx, AVStream *vs);
+
+/**
+ * 获取指定流图像的高。
+ * 
+ * @return 像素。
+*/
+int abcdk_avstream_height(AVFormatContext *ctx, AVStream *vs);
+
+/**
+ * 查找指定类型的流。
+*/
+AVStream *abcdk_avstream_find(AVFormatContext *ctx,enum AVMediaType type);
+
+#endif // AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 
 __END_DECLS
 

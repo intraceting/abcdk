@@ -6,7 +6,7 @@
  */
 #include "abcdk/ffmpeg/avformat.h"
 
-#if defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
+#if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -399,7 +399,9 @@ AVStream *abcdk_avformat_output_stream3(AVFormatContext *ctx, enum AVCodecID id)
 
 int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
 {
+    const char *url_p;
     int chk = -1;
+
     assert(ctx != NULL);
     assert(ctx->oformat);
 
@@ -417,10 +419,11 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
     if (dict)
     {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
-        if (strncmp(ctx->filename, "rtsp://", 7) == 0)
-#else
-        if (strncmp(ctx->url, "rtsp://", 7) == 0)
+        url_p = ctx->filename;
+#else   
+        url_p = ctx->url;
 #endif
+        if (abcdk_strncmp(url_p, "rtsp://", 7, 0) == 0 || abcdk_strncmp(url_p, "rtsps://", 8, 0) == 0)
             av_dict_set(dict, "rtsp_transport", "tcp", 0);
     }
 
@@ -674,6 +677,59 @@ int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts)
 
 /*-------------Copy from OpenCV----end------------------*/
 
+int abcdk_avstream_width(AVFormatContext *ctx, AVStream *vs)
+{
+
+    assert(ctx != NULL && vs != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    return vs->codec->width;
+#else 
+    return vs->codecpar->width;
+#endif
+}
+
+int abcdk_avstream_height(AVFormatContext *ctx, AVStream *vs)
+{
+
+    assert(ctx != NULL && vs != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    return vs->codec->height;
+#else 
+    return vs->codecpar->height;
+#endif
+}
+
+AVStream *abcdk_avstream_find(AVFormatContext *ctx,enum AVMediaType type)
+{
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    AVCodecContext *codecpar = NULL;
+#else 
+    AVCodecParameters *codecpar = NULL;
+#endif
+    AVStream *vs_p;
+
+    assert(ctx != NULL && type > AVMEDIA_TYPE_UNKNOWN && type < AVMEDIA_TYPE_NB);
+
+    for (int i = 0; i < ctx->nb_streams; i++)
+    {
+        vs_p = ctx->streams[i];
+    #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+        codecpar = vs_p->codec;
+    #else 
+        codecpar = vs_p->codecpar;
+    #endif
+
+        if(codecpar->codec_type == type)
+            return vs_p;
+    }
+
+    return NULL;
+}
+
 #pragma GCC diagnostic pop
 
-#endif // AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
+#endif // AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
