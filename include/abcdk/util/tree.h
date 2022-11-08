@@ -75,7 +75,7 @@ typedef struct _abcdk_tree_iterator
 */
 typedef struct _abcdk_tree_order
 {
-    /*
+    /**
      * 顺序。!0 升序，0 降序。
     */
     int by;
