@@ -582,6 +582,7 @@ int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 {
     AVCodecContext *ctx_p = NULL;
     AVStream *vs_p = NULL;
+    AVFrame *frame_cp = NULL;
     AVPacket pkt;
     int chk = -1;
 
@@ -595,12 +596,25 @@ int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
     if (!ctx_p)
         return -2;
 
-    /*填写PTS。*/
-    frame->pts = ++ctx->ts_nums[stream][0];
-    frame->quality = 1;
-    
+    frame_cp = av_frame_alloc();
+    if(!frame_cp)
+        return -1;
+
+    frame_cp->width = frame->width;
+    frame_cp->height = frame->height;
+    frame_cp->format = frame->format;
+
+    for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
+    {
+        frame_cp->data[i] = frame->data[i];
+        frame_cp->linesize[i] = frame->linesize[i];
+    }
+
+    frame_cp->pts = ++ctx->ts_nums[stream][0];
+    frame_cp->quality = frame->quality;
+
     av_init_packet(&pkt);
-    chk = abcdk_avcodec_encode(ctx_p, &pkt, frame);
+    chk = abcdk_avcodec_encode(ctx_p, &pkt, frame_cp);
     if (chk <= 0)
         goto final;
 
@@ -610,6 +624,8 @@ int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 final:
 
     av_packet_unref(&pkt);
+    av_frame_free(&frame_cp);
+    
 
     return chk;
 }
