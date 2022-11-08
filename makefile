@@ -41,10 +41,11 @@ CC_FLAGS += -Wno-strict-aliasing
 CC_FLAGS += -Wno-unused-function
 #CC_FLAGS += -Wno-sizeof-pointer-memaccess
 CC_FLAGS += -Wno-deprecated-declarations
+CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
+CC_FLAGS += -DSOLUTION_NAME=\"${SOLUTION_NAME}\"
 CC_FLAGS += -DVERSION_MAJOR=${VERSION_MAJOR} 
 CC_FLAGS += -DVERSION_MINOR=${VERSION_MINOR} 
 CC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE} 
-CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #

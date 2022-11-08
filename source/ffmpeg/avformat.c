@@ -349,14 +349,18 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (io_cb)
         ctx->pb = io_cb;
 
-    av_dict_set(&ctx->metadata, "service", ABCDK_STR(SOLUTION_NAME), 0);
-    av_dict_set(&ctx->metadata, "service_name", ABCDK_STR(SOLUTION_NAME), 0);
-    av_dict_set(&ctx->metadata, "service_provider", ABCDK_STR(SOLUTION_NAME), 0);
-    av_dict_set(&ctx->metadata, "artist", ABCDK_STR(SOLUTION_NAME), 0);
+    av_dict_set(&ctx->metadata, "service", SOLUTION_NAME, 0);
+    av_dict_set(&ctx->metadata, "service_name", SOLUTION_NAME, 0);
+    av_dict_set(&ctx->metadata, "service_provider", SOLUTION_NAME, 0);
+    av_dict_set(&ctx->metadata, "artist", SOLUTION_NAME, 0);
 
-    if (strncmp(filename, "rtsp://", 7) == 0)
+    if (abcdk_strncmp(filename, "rtsp://", 7, 0) == 0)
         ctx->oformat = av_guess_format("rtsp", NULL, NULL);
-    else if (strncmp(filename, "rtmp://", 7) == 0)
+    else if (abcdk_strncmp(filename, "rtsps://", 8, 0) == 0)
+        ctx->oformat = av_guess_format("rtsps", NULL, NULL);
+    else if (abcdk_strncmp(filename, "rtmp://", 7, 0) == 0)
+        ctx->oformat = av_guess_format("flv", NULL, NULL);
+    else if (abcdk_strncmp(filename, "rtmps://", 8, 0) == 0)
         ctx->oformat = av_guess_format("flv", NULL, NULL);
 
     if (!ctx->oformat)
