@@ -19,7 +19,6 @@ static struct _abcdk_tool_entry
     */
     int (*func_cb)(abcdk_tree_t *args);
 }abcdk_tool_entry[] = {
-    {"serial",abcdk_tool_serial},
     {"robots",abcdk_tool_robots},
     {"odbc",abcdk_tool_odbc},
     {"mtx",abcdk_tool_mtx},
