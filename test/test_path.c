@@ -22,4 +22,7 @@ int abcdk_test_path(abcdk_tree_t *args)
 
     int chk = abcdk_fnmatch("test_record/新建文件夹 (2)/test_ffmpeg/x64/Debug/test_ffmpeg.dll","*/*/*/*/*/*.dll",1,1);
     printf("chk=%d\n",chk);
+
+    chk = abcdk_fnmatch("test_record/新建文件夹 (2)/test_ffmpeg/x64/Debug/test_ffmpeg.dll","*.dll",0,0);
+    printf("chk=%d\n",chk);
 }
