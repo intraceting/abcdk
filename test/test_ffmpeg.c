@@ -30,16 +30,16 @@ int abcdk_test_ffmpeg(abcdk_tree_t *args)
 
         printf("fmt=%d\n",inframe->format);
         if(inframe->format==8)
-            abort();
+            continue;;
 
-        // if(ov<0)
-        // {
-        //     ov = abcdk_ffmpeg_add_stream(w,25,inframe->width,inframe->height,AV_CODEC_ID_H264,NULL,0,0);
-        //     abcdk_ffmpeg_write_header(w,0);
-        // }
+        if(ov<0)
+        {
+            ov = abcdk_ffmpeg_add_stream(w,25,inframe->width,inframe->height,AV_CODEC_ID_H264,NULL,0,0);
+           // abcdk_ffmpeg_write_header(w,0);
+        }
 
 
-        // abcdk_ffmpeg_write3(w,inframe,ov);
+         abcdk_ffmpeg_write3(w,inframe,ov);
         
     }
 

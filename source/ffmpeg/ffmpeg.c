@@ -50,6 +50,9 @@ typedef struct _abcdk_ffmpeg
     */
     int64_t ts_nums[ABCDK_FFMPEG_MAX_STREAMS][2];
 
+    /** 是否已经写入文件头部。*/
+    int write_header_ok;
+
 } abcdk_ffmpeg_t;
 
 
@@ -465,12 +468,19 @@ int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
 
     assert(ctx != NULL);
 
+    /*头部，写入一次就好。*/
+    if(ctx->write_header_ok)
+        return 0;
+
     if (fmp4)
         av_dict_set(&ctx->dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
 
     chk = abcdk_avformat_output_header(ctx->avctx, &ctx->dict);
     if (chk < 0)
         return -1;
+
+    /*Set OK.*/
+    ctx->write_header_ok = 1;
 
     return 0;
 }
@@ -482,6 +492,10 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
     int chk;
 
     assert(ctx != NULL);
+
+    /*写入头部后，才能写末尾。*/
+    if(!ctx->write_header_ok)
+        return -2;
 
     av_init_packet(&pkt);
 
@@ -534,6 +548,10 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet)
 
     assert(ctx != NULL && packet != NULL);
     assert(packet->stream_index >= 0 && packet->stream_index < ctx->avctx->nb_streams);
+
+    /*写入头部后，才能写正文。*/
+    if(!ctx->write_header_ok)
+        return -2;
 
     ctx_p = ctx->codec_ctx[packet->stream_index];
     vs_p = ctx->avctx->streams[packet->stream_index];
