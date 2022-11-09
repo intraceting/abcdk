@@ -7,7 +7,7 @@
 #include "abcdk/util/odbc.h"
 #include "entry.h"
 
-#if defined(__SQL_H) && defined(__SQLEXT_H)
+#ifdef HAVE_UNIXODBC
 
 typedef struct _abcdkodbc
 {
@@ -167,12 +167,12 @@ final:
     abcdk_odbc_free(&odbc);
 }
 
-#endif //defined(__SQL_H) && defined(__SQLEXT_H)
+#endif //HAVE_UNIXODBC
 
 
 int abcdk_tool_odbc(abcdk_tree_t *args)
 {
-#if defined(__SQL_H) && defined(__SQLEXT_H)
+#ifdef HAVE_UNIXODBC
 
     abcdkodbc_t ctx = {0};
     ctx.args = args;
@@ -188,11 +188,11 @@ int abcdk_tool_odbc(abcdk_tree_t *args)
 
     return ctx.errcode;
 
-#else
+#else //HAVE_UNIXODBC
 
     fprintf(stderr, "当前构建版本未包含此工具。\n");
     return EPERM;
 
-#endif //defined(__SQL_H) && defined(__SQLEXT_H)
+#endif //HAVE_UNIXODBC
 
 }

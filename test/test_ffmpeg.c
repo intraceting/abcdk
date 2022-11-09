@@ -13,6 +13,7 @@
 
 int abcdk_test_ffmpeg(abcdk_tree_t *args)
 {
+#ifdef HAVE_FFMPEG
     const char *src = abcdk_option_get(args,"--src",0,"");
     const char *dst = abcdk_option_get(args,"--dst",0,"");
 
@@ -30,7 +31,7 @@ int abcdk_test_ffmpeg(abcdk_tree_t *args)
 
         printf("fmt=%d\n",inframe->format);
         if(inframe->format==8)
-            continue;;
+            continue;
 
         if(ov<0)
         {
@@ -49,4 +50,5 @@ int abcdk_test_ffmpeg(abcdk_tree_t *args)
  //   abcdk_ffmpeg_write_trailer(w);
     abcdk_ffmpeg_destroy(&w);
     abcdk_ffmpeg_destroy(&r);
+#endif //HAVE_FFMPEG
 }
