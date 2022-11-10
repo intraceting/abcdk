@@ -460,6 +460,18 @@ CheckHavePackage()
                 echo "libopenblas-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "libmagic" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit libmagic-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo "-lmagic"
+            else
+                echo "libmagic-dev"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -878,6 +890,18 @@ CheckHavePackage()
                 echo "openblas-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "libmagic" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit libmagic-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo "-lmagic"
+            else
+                echo "libmagic-devel"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -990,7 +1014,7 @@ usage: [ OPTIONS ]
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
-     kafka,uuid
+     kafka,uuid,libmagic
 
      自定义依赖项（定义环境变量），并且key前缀增加“with-”。如下：
      export DEPEND_FLAGS="-I/tmp/3party/include/"
@@ -1177,6 +1201,7 @@ DependPackageCheck zbar HAVE_ZBAR
 DependPackageCheck magickwand HAVE_MAGICKWAND
 DependPackageCheck kafka HAVE_KAFKA
 DependPackageCheck uuid HAVE_UUID
+DependPackageCheck libmagic HAVE_LIBMAGIC
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then

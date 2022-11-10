@@ -293,9 +293,6 @@ void _abcdklogd_work(abcdklogd_t *ctx)
     if (chk != 0)
         goto END;
 
-    if(!abcdk_sockaddr_where(&addr,1))
-        goto END;
-
     for (int i = 0; i < ABCDKLOGD_SERVICE_MAX; i++)
     {
         policy_file = abcdk_option_get(ctx->args, "--policy-conf", i, NULL);
