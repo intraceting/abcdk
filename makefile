@@ -83,25 +83,28 @@ all: base tool test
 
 #
 base: base-src
+	mkdir -p $(BUILD_PATH)
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(BASE_OBJ_FILES) $(LINK_FLAGS)
+	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(BASE_OBJ_FILES)
+
 #
 base-src: $(BASE_OBJ_FILES)
-	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $^ $(LINK_FLAGS)
-	$(AR) -cr $(BUILD_PATH)/libabcdk.a $^
 
 #
-tool: base tool-src
-#
-tool-src: ${TOOL_OBJ_FILES}
+tool: tool-src base
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk $^ -l:libabcdk.a $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk ${TOOL_OBJ_FILES} -l:libabcdk.a $(LINK_FLAGS)
 
 #
-test: base test-src
+tool-src: ${TOOL_OBJ_FILES} 
+	
 #
-test-src: ${TEST_OBJ_FILES}
+test: test-src base
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/test $^ -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/test ${TEST_OBJ_FILES} -l:libabcdk.so $(LINK_FLAGS)
+
+#
+test-src: ${TEST_OBJ_FILES} 
 
 #
 $(OBJ_PATH)/source/util/%.o: source/util/%.c
