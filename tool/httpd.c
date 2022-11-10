@@ -54,6 +54,7 @@ void _abcdkhttpd_replay_nobody(abcdk_comm_node_t *node, int status)
     abcdk_comm_post_format(node, 100,
                            "HTTP/1.1 %s\r\n"
                            "Connection: Keep-Alive\r\n"
+                           "Content-Length: 0\r\n"
                            "\r\n",
                            abcdk_http_status_desc(status));
 }
@@ -80,8 +81,8 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node,const char *pathfile)
     if (file)
     {
         abcdk_comm_post_format(node, 1000,
-                               "HTTP/1.1 %s\r\n",
-                               "Connection: Keep-Alive\r\n",
+                               "HTTP/1.1 %s\r\n"
+                               "Connection: Keep-Alive\r\n"
                                "Content-Type: %s\r\n"
                                "Content-Length: %lu\r\n"
                                "\r\n",
@@ -110,6 +111,8 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
     abcdkhttpd_t *ctx = NULL;
     const char *p = NULL, *p_next = NULL;
     char pathfile[PATH_MAX] = {0};
+    char path[PATH_MAX] = {0};
+    size_t path_len = PATH_MAX;
     struct stat attr;
     int chk;
 
@@ -119,9 +122,10 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
     p = abcdk_strtok(&p_next, " ");
     p = abcdk_strtok(&p_next, " ");
 
+    abcdk_uri_decode(p, p_next - p,path, &path_len);
+
     abcdk_dirdir(pathfile, ctx->root_path);
-    abcdk_dirdir(pathfile, "/");
-    strncpy(pathfile + strlen(pathfile), p, p_next - p);
+    abcdk_dirdir(pathfile, path);
 
     chk = stat(pathfile, &attr);
     if (chk != 0)

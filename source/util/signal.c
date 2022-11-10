@@ -33,7 +33,12 @@ void abcdk_sigwaitinfo(const abcdk_signal_t *sig, time_t timeout)
         }
 
         if (chk == -1)
-            break;
+        {
+            if(errno == EINTR)
+                continue;
+            else 
+                break;;
+        }
         
         if(sig->signal_cb)
             chk = sig->signal_cb(&info,sig->opaque);
