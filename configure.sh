@@ -893,13 +893,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "libmagic" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libmagic-devel)"
+                echo "$(CheckHavePackageFromKit file-devel)"
             elif [ ${FLAG} -eq 2 ];then
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo "-lmagic"
             else
-                echo "libmagic-devel"
+                echo "file-devel"
             fi
         }
         else
