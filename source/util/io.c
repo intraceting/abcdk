@@ -327,13 +327,16 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
         else
             break;
 
-        if (len == -1 && errno == EAGAIN)
+        if (len == -1)
         {
-            if(direction == 2)
+            if (errno != EAGAIN && errno != EINTR)
+                break;
+
+            if (direction == 2)
                 chk = abcdk_poll(fd, 0x02, timeout);
-            else if(direction == 1)
+            else if (direction == 1)
                 chk = abcdk_poll(fd, 0x01, timeout);
-            else 
+            else
                 break;
 
             if (chk > 0)
