@@ -8,7 +8,7 @@
 
 #ifdef HAVE_LIBMAGIC
 #include <magic.h>
-#endif //
+#endif //HAVE_LIBMAGIC
 
 typedef struct _abcdkhttpd
 {
@@ -30,6 +30,32 @@ typedef struct _abcdkhttpd
 
 } abcdkhttpd_t;
 
+typedef struct _abcdkhttpd_node
+{
+    abcdkhttpd_t *ctx;
+
+    const char *timefmt;
+
+#ifdef HAVE_LIBMAGIC
+    struct magic_set *magic_handle;
+#endif // HAVE_LIBMAGIC
+
+    const char *line0;
+    const char *referer;
+    const char *user_agent;
+    const char *range;
+
+    char method[100];
+    char location[PATH_MAX];
+    char path[PATH_MAX];
+    char params[PATH_MAX];
+    char version[100];
+
+    char pathfile[PATH_MAX];
+    struct stat attr;
+    
+}abcdkhttpd_node_t;
+
 void _abcdkhttpd_print_usage(abcdk_tree_t *args)
 {
 }
@@ -49,85 +75,267 @@ int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
     return 0;
 }
 
+void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    fprintf(stderr, "\"%s\" %d %lu \"%s\" \"%s\" \n",
+            http_p->line0, status, size,
+            http_p->referer ? http_p->referer : "-",
+            http_p->user_agent ? http_p->user_agent : "-");
+}
+
+void _abcdkhttpd_replay_option(abcdk_comm_node_t *node, int status)
+{
+    abcdkhttpd_node_t *http_p;
+    struct tm tm;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    abcdk_time_get(&tm,1);
+
+    abcdk_comm_post_format(node, 300,
+                           "HTTP/1.1 %s\r\n"
+                           "Server: abcdk\r\n"
+                           "Data: %s\r\n"
+                           "Connection: Keep-Alive\r\n"
+                           "Content-Length: 0\r\n"
+                           "Access-Control-Allow-Origin: *\r\n"
+                           "Access-Control-Allow-Methods: GET,HEAD,OPTIONS\r\n"
+                           "Access-Control-Allow-Headers: *\r\n"
+                           "Access-Control-Allow-Age: 3600\r\n"
+                           "\r\n",
+                           abcdk_http_status_desc(status),
+                           abcdk_strftime(http_p->timefmt,&tm)
+                           );
+    
+    _abcdkhttpd_logprint(node,status,0);
+}
+
 void _abcdkhttpd_replay_nobody(abcdk_comm_node_t *node, int status)
 {
-    abcdk_comm_post_format(node, 100,
+    abcdkhttpd_node_t *http_p;
+    struct tm tm;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    abcdk_time_get(&tm,1);
+
+    abcdk_comm_post_format(node, 300,
                            "HTTP/1.1 %s\r\n"
+                           "Server: abcdk\r\n"
+                           "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
                            "Content-Length: 0\r\n"
                            "\r\n",
-                           abcdk_http_status_desc(status));
+                           abcdk_http_status_desc(status),
+                           abcdk_strftime(http_p->timefmt,&tm)
+                           );
+
+    _abcdkhttpd_logprint(node,status,0);
 }
 
-void _abcdkhttpd_replay_file(abcdk_comm_node_t *node,const char *pathfile)
+void _abcdkhttpd_replay_dirent(abcdk_comm_node_t *node)
 {
+
+}
+
+void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
+{
+    abcdkhttpd_node_t *http_p;
     abcdk_object_t *file = NULL;
-#ifdef HAVE_LIBMAGIC
-    struct magic_set *cookie = NULL;
-#endif // HAVE_LIBMAGIC
+    const char *content_type;
+    const char *p,*p_next;
+    char tmp[100] = {0};
+    size_t range_s = 0,range_e = -1,file_size = 0;
+    struct tm tm;
 
-#ifdef HAVE_LIBMAGIC
-    cookie = magic_open(MAGIC_MIME);
-    if (!cookie)
-    {
-        _abcdkhttpd_replay_nobody(node, 500);
-        return;
-    }
-#endif // HAVE_LIBMAGIC
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    magic_load(cookie, NULL);
+    abcdk_time_sec2tm(&tm,http_p->attr.st_mtim.tv_sec,1);
 
-    file = abcdk_mmap2(pathfile, 0, 0, 0);
+    file = abcdk_mmap2(http_p->pathfile, 0, 0, 0);
     if (file)
     {
-        abcdk_comm_post_format(node, 1000,
-                               "HTTP/1.1 %s\r\n"
-                               "Connection: Keep-Alive\r\n"
-                               "Content-Type: %s\r\n"
-                               "Content-Length: %lu\r\n"
-                               "\r\n",
-                               abcdk_http_status_desc(200),
-#ifdef HAVE_LIBMAGIC
-                               magic_buffer(cookie, file->pptrs[0], file->sizes[0]),
-#else  // HAVE_LIBMAGIC
-                               abcdk_http_content_type_desc(".*"),
-#endif // HAVE_LIBMAGIC
-                               file->sizes[0]);
 
-        abcdk_comm_post(node, file);
+#ifdef HAVE_LIBMAGIC
+        content_type = magic_buffer(http_p->magic_handle, file->pptrs[0], file->sizes[0]);
+#else  // HAVE_LIBMAGIC
+        content_type = abcdk_http_content_type_desc(http_p->pathfile);
+#endif // HAVE_LIBMAGIC
+
+        if (http_p->range)
+        {
+            p_next = http_p->range;
+            p = abcdk_strtok(&p_next,"=");
+            if (abcdk_strncmp("bytes", p, p_next - p, 0) != 0)
+            {
+                _abcdkhttpd_replay_nobody(node, 400);
+                return;
+            }
+
+            p = abcdk_strtok(&p_next,",");
+            strncpy(tmp,p,p_next-p);
+            abcdk_strtrim(tmp,isspace,2);
+            sscanf(p,"%*[^0-9]%lu-%lu",&range_s,&range_e);
+
+            if (range_s >= range_e || range_s >= file->sizes[0])
+            {
+                _abcdkhttpd_replay_nobody(node, 400);
+                return;
+            }
+
+            /*也许未指定末尾。*/
+            range_e = ABCDK_MIN(file->sizes[0] - 1, range_e);
+
+            /*保存文件大小。*/
+            file_size = file->sizes[0];
+
+            /*修改地址和长度为请求的数据范围。*/
+            file->pptrs[0] += range_s;
+            file->sizes[0] = range_e - range_s + 1;
+
+            abcdk_comm_post_format(node, 1000,
+                                   "HTTP/1.1 %s\r\n"
+                                   "Server: abcdk\r\n"
+                                   "Data: %s\r\n"
+                                   "Connection: Keep-Alive\r\n"
+                                   "Content-Type: %s\r\n"
+                                   "Accept-Ranges: bytes\r\n"
+                                   "Content-Range: bytes %lu-%lu/%lu\r\n"
+                                   "Content-Length: %lu\r\n"
+                                   "\r\n",
+                                   abcdk_http_status_desc(206),
+                                   abcdk_strftime(http_p->timefmt, &tm),
+                                   content_type,
+                                   range_s, range_e, file_size,
+                                   file->sizes[0]);
+        }
+        else 
+        {
+            abcdk_comm_post_format(node, 1000,
+                                   "HTTP/1.1 %s\r\n"
+                                   "Server: abcdk\r\n"
+                                   "Data: %s\r\n"
+                                   "Connection: Keep-Alive\r\n"
+                                   "Content-Type: %s\r\n"
+                                   "Content-Length: %lu\r\n"
+                                   "\r\n",
+                                   abcdk_http_status_desc(200),
+                                   abcdk_strftime(http_p->timefmt, &tm),
+                                   content_type,
+                                   file->sizes[0]);
+        }
+
+        if (abcdk_strcmp(http_p->method, "head", 0) != 0)
+            abcdk_comm_post(node, file);
+
+        _abcdkhttpd_logprint(node,200, file->sizes[0]);
     }
     else
     {
         _abcdkhttpd_replay_nobody(node, 403);
     }
 
+
+}
+
+void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
+{
+    abcdkhttpd_node_t *http;
+
+    /*设置默认返回值。*/
+    *result = 0;
+
+    /*创建用户环境。*/
+    http = abcdk_heap_alloc(sizeof(abcdkhttpd_node_t));
+    if(!http)
+    {
+        *result = -1;
+        return;
+    }
+
+    /*获取服务器环境。*/
+    http->ctx = abcdk_comm_get_userdata(node);
+
+    /*重新绑定链路环境。*/
+    abcdk_comm_set_userdata(node,http);
+
+    /*设置时间格式串。*/
+    http->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
+
 #ifdef HAVE_LIBMAGIC
-    magic_close(cookie);
+    http->magic_handle = magic_open(MAGIC_MIME);
+    if (!http->magic_handle)
+    {
+        *result = -1;
+        return;
+    }
+    
+    magic_load(http->magic_handle, NULL);
 #endif // HAVE_LIBMAGIC
+
 }
 
 void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
 {
-    abcdkhttpd_t *ctx = NULL;
+    abcdkhttpd_node_t *http_p;
     const char *p = NULL, *p_next = NULL;
-    char pathfile[PATH_MAX] = {0};
-    char path[PATH_MAX] = {0};
     size_t path_len = PATH_MAX;
-    struct stat attr;
     int chk;
 
-    ctx = (abcdkhttpd_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    p_next = abcdk_http_request_env(req, 0);
+    http_p->line0 = abcdk_http_request_env(req, 0);
+    http_p->referer = abcdk_http_request_getenv(req,"referer");
+    http_p->user_agent = abcdk_http_request_getenv(req,"user-agent");
+    http_p->range = abcdk_http_request_getenv(req,"range");
+
+    p_next = http_p->line0;
+
+    memset(http_p->method,0,100);
+    memset(http_p->location,0,PATH_MAX);
+    memset(http_p->path,0,PATH_MAX);
+    memset(http_p->params,0,PATH_MAX);
+    memset(http_p->version,0,100);
+    memset(http_p->pathfile,0,PATH_MAX);
+
     p = abcdk_strtok(&p_next, " ");
+    strncpy(http_p->method,p,p_next-p);
+
     p = abcdk_strtok(&p_next, " ");
+    strncpy(http_p->location,p,p_next-p);
 
-    abcdk_uri_decode(p, p_next - p,path, &path_len);
+    p = abcdk_strtok(&p_next, " ");
+    strncpy(http_p->version,p,p_next-p);
 
-    abcdk_dirdir(pathfile, ctx->root_path);
-    abcdk_dirdir(pathfile, path);
+    p_next = http_p->location;
+    p = abcdk_strtok(&p_next, "?");
+    abcdk_uri_decode(p, p_next - p,http_p->path, &path_len);
 
-    chk = stat(pathfile, &attr);
+    p = abcdk_strtok(&p_next, " ");
+    if(p)
+        strncpy(http_p->params,p,p_next-p);
+
+    if(abcdk_strcmp(http_p->method,"optipn",0)==0)
+    {
+        _abcdkhttpd_replay_option(node,200);
+        return;
+    }
+
+    if (abcdk_strcmp(http_p->method, "GET", 0) != 0 &&
+        abcdk_strcmp(http_p->method, "HEAD", 0) != 0)
+    {
+        _abcdkhttpd_replay_option(node, 405);
+        return;
+    }
+
+    abcdk_dirdir(http_p->pathfile, http_p->ctx->root_path);
+    abcdk_dirdir(http_p->pathfile, http_p->path);
+
+    chk = stat(http_p->pathfile, &http_p->attr);
     if (chk != 0)
     {
         if (errno == ENOENT)
@@ -135,12 +343,13 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
         else
             _abcdkhttpd_replay_nobody(node, 403);
     }
-    else if (S_ISDIR(attr.st_mode))
+    else if (S_ISDIR(http_p->attr.st_mode))
     {
+        _abcdkhttpd_replay_dirent(node);
     }
-    else if (S_ISREG(attr.st_mode))
+    else if (S_ISREG(http_p->attr.st_mode))
     {
-        _abcdkhttpd_replay_file(node,pathfile);
+        _abcdkhttpd_replay_file(node);
     }
     else
     {
@@ -150,6 +359,18 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
 
 void _abcdkhttpd_close_cb(abcdk_comm_node_t *node)
 {
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+#ifdef HAVE_LIBMAGIC
+    if(http_p->magic_handle)
+        magic_close(http_p->magic_handle);
+    http_p->magic_handle = NULL;
+#endif // HAVE_LIBMAGIC
+
+    abcdk_heap_free2((void**)&http_p);
+
 }
 
 void _abcdkhttpd_work(abcdkhttpd_t *ctx)
@@ -213,7 +434,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     abcdk_comm_set_userdata(ctx->comm_listen, ctx);
 
-    abcdk_http_callback_t cb = {NULL, _abcdkhttpd_request_cb, NULL, _abcdkhttpd_close_cb};
+    abcdk_http_callback_t cb = {_abcdkhttpd_accept_cb, _abcdkhttpd_request_cb, NULL, _abcdkhttpd_close_cb};
     chk = abcdk_http_listen(ctx->comm_listen, ctx->ssl_ctx, &addr, &cb);
     if (chk != 0)
     {
@@ -245,6 +466,9 @@ final:
 int abcdk_tool_httpd(abcdk_tree_t *args)
 {
     abcdkhttpd_t ctx;
+
+    /*英文；UTF-8。*/
+    setlocale(LC_ALL, "en_US.UTF-8");
 
     ctx.args = args;
 

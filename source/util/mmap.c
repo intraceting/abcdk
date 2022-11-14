@@ -11,10 +11,10 @@ void _abcdk_munmap_cb(abcdk_object_t *alloc, void *opaque)
     int chk;
 
     assert(alloc);
-    assert(alloc->pptrs[0] != MAP_FAILED);
-    assert(alloc->sizes[0] > 0);
+    assert(alloc->pptrs[1] != MAP_FAILED);
+    assert(alloc->sizes[1] > 0);
 
-    chk = munmap(alloc->pptrs[0], alloc->sizes[0]);
+    chk = munmap(alloc->pptrs[1], alloc->sizes[1]);
     assert(chk == 0);
 }
 
@@ -52,13 +52,15 @@ abcdk_object_t *abcdk_mmap(int fd, size_t truncate, int rw, int shared)
     if(mmptr == MAP_FAILED)
         return NULL;
 
-    alloc = abcdk_object_alloc(NULL,1,0);
+    alloc = abcdk_object_alloc(NULL,2,0);
     if (!alloc)
         goto final_error;
 
     /*绑定内存和特定的释放函数，用于支持引用计数器。*/
     alloc->pptrs[0] = mmptr;
     alloc->sizes[0] = attr.st_size;
+    alloc->pptrs[1] = mmptr;
+    alloc->sizes[1] = attr.st_size;
 
     /* 注册特定的析构函数。 */
     abcdk_object_atfree(alloc, _abcdk_munmap_cb, NULL);
@@ -99,11 +101,11 @@ int abcdk_msync(abcdk_object_t *alloc, int async)
     int flags;
 
     assert(alloc);
-    assert(alloc->pptrs[0] != NULL && alloc->pptrs[0] != MAP_FAILED && alloc->sizes[0] > 0);
+    assert(alloc->pptrs[1] != NULL && alloc->pptrs[1] != MAP_FAILED && alloc->sizes[1] > 0);
 
     flags = (async?MS_ASYNC:MS_SYNC);
 
-    return msync(alloc->pptrs[0], alloc->sizes[0], flags);
+    return msync(alloc->pptrs[1], alloc->sizes[1], flags);
 }
 
 void abcdk_munmap(abcdk_object_t** alloc)

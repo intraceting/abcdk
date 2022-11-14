@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_TIME_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/general.h"
 
 __BEGIN_DECLS
 
@@ -68,6 +69,11 @@ time_t abcdk_time_diff(struct tm *t1, struct tm *t0, int utc);
  * @return 返回相差的时长(秒)。
 */
 time_t abcdk_time_diff2(const char *t1, const char *t0, int utc);
+
+/**
+ * 格式化时间。
+*/
+const char *abcdk_strftime(const char *fmt, const struct tm *tm);
 
 __END_DECLS
 

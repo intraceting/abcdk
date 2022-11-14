@@ -6,7 +6,6 @@
  */
 #include "abcdk/util/http.h"
 
-
 /** HTTP状态码。*/
 static struct _abcdk_http_status_dict
 {
@@ -435,9 +434,17 @@ static struct _abcdk_http_content_type_dict
 
 const char *abcdk_http_content_type_desc(const char *ext)
 {
+    const char *p;
+
+    assert(ext != NULL);
+
+    p = strrchr(ext, '.');
+    if (!p)
+        return NULL;
+
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_http_content_type_dict); i++)
     {
-        if (abcdk_strcmp(abcdk_http_content_type_dict[i].ext,ext,0)==0)
+        if (abcdk_strcmp(abcdk_http_content_type_dict[i].ext,p,0)==0)
             return abcdk_http_content_type_dict[i].desc;
     }
 

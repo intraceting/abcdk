@@ -110,3 +110,49 @@ time_t abcdk_time_diff2(const char *t1, const char *t0, int utc)
 
     return abcdk_time_diff(&e,&b,utc);
 }
+
+int _abcdk_strftime_init(void *opaque)
+{
+    pthread_key_t *key_p = (pthread_key_t*)opaque;
+
+    pthread_key_create(key_p,abcdk_heap_free);
+    return 0;
+}
+
+const char *abcdk_strftime(const char *fmt, const struct tm *tm)
+{
+    static volatile int status = 0;
+    static pthread_key_t key = -1;
+
+    struct tm tmp;
+    char *buf;
+    int chk;
+
+    assert(fmt != NULL);
+
+    /*如果未输入时间，则使用本地时间。*/
+    if(!tm)
+    {
+        abcdk_time_get(&tmp,0);
+        return abcdk_strftime(fmt,&tmp);
+    }
+
+    chk = abcdk_once(&status,_abcdk_strftime_init,&key);
+    if(chk < 0)
+        return NULL;
+
+    buf = pthread_getspecific(key);
+    if(!buf)
+    {
+        buf = abcdk_heap_alloc(PATH_MAX);
+        if(!buf)
+            return NULL;
+
+        pthread_setspecific(key,buf);
+    }
+    
+    chk = strftime(buf,PATH_MAX,fmt,tm);
+    buf[chk] = '\0';
+
+    return buf;
+}
