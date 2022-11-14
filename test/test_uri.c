@@ -13,7 +13,7 @@
 
 int abcdk_test_uri(abcdk_tree_t *args)
 {
-    char src[] = {"http://localhoat:1234/中 文?aaa=bbb&ccc=dddd#aaaa"};
+    char src[] = {"http://localhoat:1234/考试?aaa=bbb&ccc=dddd#aaaa"};
     char dst[1000] = {0};
 
     size_t slen = strlen(src);

@@ -111,7 +111,7 @@ time_t abcdk_time_diff2(const char *t1, const char *t0, int utc)
     return abcdk_time_diff(&e,&b,utc);
 }
 
-int _abcdk_strftime_init(void *opaque)
+int _abcdk_time_format_init(void *opaque)
 {
     pthread_key_t *key_p = (pthread_key_t*)opaque;
 
@@ -119,7 +119,7 @@ int _abcdk_strftime_init(void *opaque)
     return 0;
 }
 
-const char *abcdk_strftime(const char *fmt, const struct tm *tm)
+const char *abcdk_time_format(const char *fmt, const struct tm *tm)
 {
     static volatile int status = 0;
     static pthread_key_t key = -1;
@@ -134,10 +134,10 @@ const char *abcdk_strftime(const char *fmt, const struct tm *tm)
     if(!tm)
     {
         abcdk_time_get(&tmp,0);
-        return abcdk_strftime(fmt,&tmp);
+        return abcdk_time_format(fmt,&tmp);
     }
 
-    chk = abcdk_once(&status,_abcdk_strftime_init,&key);
+    chk = abcdk_once(&status,_abcdk_time_format_init,&key);
     if(chk < 0)
         return NULL;
 

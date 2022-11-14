@@ -90,7 +90,7 @@ final:
     return alloc;
 }
 
-int _abcdk_uri_encode_check_escape(int c, int component)
+int _abcdk_uri_encode_check_escape(uint8_t c, int component)
 {
     if (c >= 'A' && c <= 'Z')
         return 1;
@@ -101,19 +101,19 @@ int _abcdk_uri_encode_check_escape(int c, int component)
 
     if (component)
     {
-        static char dict[] = {"!’()*-._~"};
+        static char dict[] = {"!'()*-._~"};
         for (int i = 0; i < sizeof(dict); i++)
         {
-            if (c == dict[i])
+            if (c == (uint8_t)dict[i])
                 return 1;
         }
     }
     else
     {
-        static char dict[] = {"!#$&’()*+,/:;=?@-._~"};
+        static char dict[] = {"!#$&'()*+,/:;=?@-._~"};
         for (int i = 0; i < sizeof(dict); i++)
         {
-            if (c == dict[i])
+            if (c == (uint8_t)dict[i])
                 return 1;
         }
     }
@@ -136,7 +136,7 @@ ssize_t abcdk_uri_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
         }
         else
         {
-            /*不通超过密文可用空间。*/
+            /*不能超过密文可用空间。*/
             if (d + 3 > *dlen)
                 break;
 

@@ -73,7 +73,7 @@ time_t abcdk_time_diff2(const char *t1, const char *t0, int utc);
 /**
  * 格式化时间。
 */
-const char *abcdk_strftime(const char *fmt, const struct tm *tm);
+const char *abcdk_time_format(const char *fmt, const struct tm *tm);
 
 __END_DECLS
 
