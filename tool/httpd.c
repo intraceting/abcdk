@@ -301,6 +301,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     char tmp[100] = {0};
     size_t range_s = 0, range_e = -1, file_size = 0;
     struct tm tm;
+    int chk;
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
@@ -309,6 +310,8 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     file = abcdk_mmap2(http_p->pathfile, 0, 0, 0);
     if (file)
     {
+        /*保存文件大小。*/
+        file_size = file->sizes[0];
 
 #ifdef HAVE_LIBMAGIC
         content_type = magic_buffer(http_p->magic_handle, file->pptrs[0], file->sizes[0]);
@@ -339,9 +342,6 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
             /*也许未指定末尾。*/
             range_e = ABCDK_MIN(file->sizes[0] - 1, range_e);
-
-            /*保存文件大小。*/
-            file_size = file->sizes[0];
 
             /*修改地址和长度为请求的数据范围。*/
             file->pptrs[0] += range_s;
@@ -381,10 +381,15 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    file->sizes[0]);
         }
 
+        chk = -1;
         if (abcdk_strcmp(http_p->method, "head", 0) != 0)
-            abcdk_comm_post(node, file);
+            chk = abcdk_comm_post(node, file);
 
-        _abcdkhttpd_logprint(node, 200, file->sizes[0]);
+        /*不需要发送或发送失败时，需要主动删除。*/
+        if (chk != 0)
+            abcdk_object_unref(&file);
+
+        _abcdkhttpd_logprint(node, 200, file_size);
     }
     else
     {
@@ -444,6 +449,12 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
     http_p->referer = abcdk_http_request_getenv(req, "referer");
     http_p->user_agent = abcdk_http_request_getenv(req, "user-agent");
     http_p->range = abcdk_http_request_getenv(req, "range");
+
+    if (!http_p->line0)
+    {
+        abcdk_comm_set_timeout(node, 1);
+        return;
+    }
 
     p_next = http_p->line0;
 

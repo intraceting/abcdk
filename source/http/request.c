@@ -68,6 +68,7 @@ void abcdk_http_request_unref(abcdk_http_request_t **req)
 
     abcdk_comm_message_unref(&req_p->hdr_buf);
     abcdk_comm_message_unref(&req_p->body_buf);
+    abcdk_heap_free2((void**)&req_p);
 
 }
 
