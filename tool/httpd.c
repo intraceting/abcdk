@@ -16,13 +16,13 @@ typedef struct _abcdkhttpd
     abcdk_tree_t *args;
 
     abcdk_comm_t *comm;
-    abcdk_comm_node_t *comm_listen;
+    abcdk_comm_node_t *comm_listen[16];
     SSL_CTX *ssl_ctx;
 
     int workers;
     const char *server_name;
     const char *root_path;
-    const char *listen;
+    const char *listen[16];
     const char *ca_file;
     const char *ca_path;
     const char *cert_file;
@@ -34,7 +34,10 @@ typedef struct _abcdkhttpd_node
 {
     abcdkhttpd_t *ctx;
 
+    char remote[100];
+
     const char *timefmt;
+    const char *timefmt_lc;
 
 #ifdef HAVE_LIBMAGIC
     struct magic_set *magic_handle;
@@ -58,6 +61,47 @@ typedef struct _abcdkhttpd_node
 
 void _abcdkhttpd_print_usage(abcdk_tree_t *args)
 {
+    fprintf(stderr, "\n描述:\n");
+
+    fprintf(stderr, "\n\t简单的HTTP服务器。\n");
+
+    fprintf(stderr, "\n选项:\n");
+
+    fprintf(stderr, "\n\t--help\n");
+    fprintf(stderr, "\t\t显示帮助信息。\n");
+
+    fprintf(stderr, "\n\t--workers < NUMBER >\n");
+    fprintf(stderr, "\t\t工作线程数量。默认：CPU核心数量一半\n");
+
+    fprintf(stderr, "\n\t--server-name < NAME >\n");
+    fprintf(stderr, "\t\t服务器名称。默认：abcdk-httpd\n");
+
+    fprintf(stderr, "\n\t--root-path < PATH >\n");
+    fprintf(stderr, "\t\t服务器根据路径。默认：/tmp/abcdk-httpd/\n");
+
+    fprintf(stderr, "\n\t--root-path < PATH >\n");
+    fprintf(stderr, "\t\t服务器根据路径。默认：/tmp/abcdk-httpd/\n");
+
+    fprintf(stderr, "\n\t--listen < ADDR [ ADDR ...] >\n");
+    fprintf(stderr, "\t\t监听地址。\n");
+
+    fprintf(stderr, "\n\t\tIPv4：IP:PORT\n");
+    fprintf(stderr, "\t\tIPv4：DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tIPv6：IP,PORT\n");
+    fprintf(stderr, "\t\tIPv6：[IP]:PORT\n");
+    fprintf(stderr, "\t\tIPv6：DOMAIN,PORT\n");
+
+    fprintf(stderr, "\n\t--ca-file < FILE >\n");
+    fprintf(stderr, "\t\tCA证书文件。注：仅支持PEM格式。\n");
+
+    fprintf(stderr, "\n\t--ca-path < PATH >\n");
+    fprintf(stderr, "\t\tCA证书路径。注：仅支持PEM格式。\n");
+
+    fprintf(stderr, "\n\t--cert-file < FILE >\n");
+    fprintf(stderr, "\t\t服务器证书文件。注：仅支持PEM格式。\n");
+
+    fprintf(stderr, "\n\t--key-file < FILE >\n");
+    fprintf(stderr, "\t\t服务器私钥文件。注：仅支持PEM格式。\n");
 }
 
 int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
@@ -81,13 +125,14 @@ void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    fprintf(stderr, "\"%s\" %d %ld \"%s\" \"%s\" \n",
+    fprintf(stderr, "\"%s\" \"%s\" %d %ld \"%s\" \"%s\" \n",
+            http_p->remote,
             http_p->line0, status, (ssize_t)size,
             http_p->referer ? http_p->referer : "-",
             http_p->user_agent ? http_p->user_agent : "-");
 }
 
-void _abcdkhttpd_replay_option(abcdk_comm_node_t *node, int status)
+void _abcdkhttpd_reply_option(abcdk_comm_node_t *node, int status)
 {
     abcdkhttpd_node_t *http_p;
     struct tm tm;
@@ -98,7 +143,7 @@ void _abcdkhttpd_replay_option(abcdk_comm_node_t *node, int status)
 
     abcdk_comm_post_format(node, 300,
                            "HTTP/1.1 %s\r\n"
-                           "Server: abcdk\r\n"
+                           "Server: %s\r\n"
                            "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
                            "Content-Length: 0\r\n"
@@ -108,12 +153,13 @@ void _abcdkhttpd_replay_option(abcdk_comm_node_t *node, int status)
                            "Access-Control-Allow-Age: 3600\r\n"
                            "\r\n",
                            abcdk_http_status_desc(status),
+                           http_p->ctx->server_name,
                            abcdk_time_format(http_p->timefmt, &tm));
 
     _abcdkhttpd_logprint(node, status, 0);
 }
 
-void _abcdkhttpd_replay_nobody(abcdk_comm_node_t *node, int status)
+void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status)
 {
     abcdkhttpd_node_t *http_p;
     struct tm tm;
@@ -124,32 +170,24 @@ void _abcdkhttpd_replay_nobody(abcdk_comm_node_t *node, int status)
 
     abcdk_comm_post_format(node, 300,
                            "HTTP/1.1 %s\r\n"
-                           "Server: abcdk\r\n"
+                           "Server: %s\r\n"
                            "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
                            "Content-Length: 0\r\n"
                            "\r\n",
                            abcdk_http_status_desc(status),
+                           http_p->ctx->server_name,
                            abcdk_time_format(http_p->timefmt, &tm));
 
     _abcdkhttpd_logprint(node, status, 0);
 }
 
-void _abcdkhttpd_replay_chunked(abcdk_comm_node_t *node, const void *data, size_t size)
-{
-    abcdk_comm_post_format(node, 20, "%x\r\n", size);
-    if (size > 0)
-        abcdk_comm_post_buffer(node, data, size);
-    abcdk_comm_post_buffer(node, "\r\n", 2);
-}
-
-void _abcdkhttpd_replay_dirent(abcdk_comm_node_t *node)
+void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     abcdk_tree_t *dir;
     char tmp[PATH_MAX], tmp2[PATH_MAX], tmp3[NAME_MAX];
     size_t path_len = PATH_MAX;
-    abcdk_object_t *buf;
     struct stat attr;
     struct tm tm;
     int chk;
@@ -159,45 +197,52 @@ void _abcdkhttpd_replay_dirent(abcdk_comm_node_t *node)
     abcdk_time_sec2tm(&tm, http_p->attr.st_mtim.tv_sec, 1);
 
     dir = abcdk_tree_alloc3(1);
-    buf = abcdk_object_alloc2(10000);
-
-    if (!dir || !buf)
+    if (!dir)
     {
-        _abcdkhttpd_replay_nobody(node, 500);
+        _abcdkhttpd_reply_nobody(node, 500);
         goto final;
     }
 
     chk = abcdk_dirent_open(dir, http_p->pathfile);
     if (chk != 0)
     {
-        _abcdkhttpd_replay_nobody(node, 403);
+        _abcdkhttpd_reply_nobody(node, 403);
     }
     else
     {
         abcdk_comm_post_format(node, 1000,
                                "HTTP/1.1 %s\r\n"
-                               "Server: abcdk\r\n"
+                               "Server: %s\r\n"
                                "Data: %s\r\n"
                                "Connection: Keep-Alive\r\n"
                                "Content-Type: %s; charset=utf-8\r\n"
                                "Transfer-Encoding: chunked\r\n"
                                "\r\n",
                                abcdk_http_status_desc(200),
+                               http_p->ctx->server_name,
                                abcdk_time_format(http_p->timefmt, &tm),
                                abcdk_http_content_type_desc(".html"));
 
-        chk = snprintf(buf->pstrs[0], buf->sizes[0],
-                       "<!DOCTYPE html>\r\n"
-                       "<html>\r\n"
-                       "<head><title>Index of %s</title></head>\r\n"
-                       "<body bgcolor=\"white\">\r\n"
-                       "<h1>Index of %s</h1>\r\n"
-                       "<hr>\r\n"
-                       "<pre>\r\n"
-                       "<a href=\"../\">../</a>\r\n",
-                       http_p->path,http_p->path);
-
-        _abcdkhttpd_replay_chunked(node, buf->pstrs[0], chk);
+        abcdk_comm_reply_chunked_format(node, 10000,
+                                        "<!DOCTYPE html>\r\n"
+                                        "<html>\r\n"
+                                        "<head><title>Index of %s</title></head>\r\n"
+                                        "<body bgcolor=\"white\">\r\n"
+                                        "<h1>Index of %s</h1>\r\n"
+                                        "<hr>\r\n"
+                                        "<pre>\r\n"
+                                        "<table width=\"100%\">"
+                                        "<tr>"
+                                        "<th width=\"70%\", align=\"left\">Name</th>"
+                                        "<th width=\"20%\", align=\"left\">Time</th>"
+                                        "<th width=\"10%\", align=\"right\">Size</th>"
+                                        "</tr>\r\n"
+                                        "<tr>\r\n"
+                                        "<td><a href=\"../\">../</a></td>\r\n"
+                                        "<td>-</td>\r\n"
+                                        "<td align=\"right\">-</td>\r\n"
+                                        "</tr>\r\n",
+                                        http_p->path, http_p->path);
 
         while (1)
         {
@@ -212,7 +257,7 @@ void _abcdkhttpd_replay_dirent(abcdk_comm_node_t *node)
             abcdk_basename(tmp3, tmp);
 
             path_len = PATH_MAX;
-            abcdk_uri_encode(tmp3, strlen(tmp3), tmp2, &path_len, 0);
+            abcdk_uri_encode(tmp3, strlen(tmp3), tmp2, &path_len, 1);
 
             chk = stat(tmp, &attr);
             if (chk != 0)
@@ -220,22 +265,24 @@ void _abcdkhttpd_replay_dirent(abcdk_comm_node_t *node)
 
             abcdk_time_sec2tm(&tm, attr.st_mtim.tv_sec, 1);
 
-            chk = snprintf(buf->pstrs[0], buf->sizes[0], "<a href=\"%s%s\">%s</a>\t\t\t\t\t\t\t\t%s \t%lu\r\n",
-                           tmp2 , (S_ISDIR(attr.st_mode) ? "/" : ""),tmp3,
-                           abcdk_time_format(http_p->timefmt, &tm), attr.st_size);
-
-            _abcdkhttpd_replay_chunked(node, buf->pstrs[0], chk);
+            abcdk_comm_reply_chunked_format(node, 10000,
+                                            "<tr>\r\n"
+                                            "<td><a href=\"%s%s\">%s</a></td>"
+                                            "<td>%s</td>"
+                                            "<td align=\"right\">%lu</td>\r\n"
+                                            "</tr>\r\n",
+                                            tmp2, (S_ISDIR(attr.st_mode) ? "/" : ""), tmp3,
+                                            abcdk_time_format(http_p->timefmt_lc, &tm), attr.st_size);
         }
 
-        chk = snprintf(buf->pstrs[0], buf->sizes[0],
-                       "</pre>\r\n"
-                       "<hr>\r\n"
-                       "</body>\r\n"
-                       "</html>\r\n");
+        abcdk_comm_reply_chunked_format(node, 1000,
+                                        "</table>"
+                                        "</pre>\r\n"
+                                        "<hr>\r\n"
+                                        "</body>\r\n"
+                                        "</html>\r\n");
 
-        _abcdkhttpd_replay_chunked(node, buf->pstrs[0], chk);
-
-        _abcdkhttpd_replay_chunked(node, NULL,0);
+        abcdk_http_reply_chunked(node, NULL, 0);
 
         _abcdkhttpd_logprint(node, 200, -1);
     }
@@ -243,10 +290,9 @@ void _abcdkhttpd_replay_dirent(abcdk_comm_node_t *node)
 final:
 
     abcdk_tree_free(&dir);
-    abcdk_object_unref(&buf);
 }
 
-void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
+void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     abcdk_object_t *file = NULL;
@@ -276,7 +322,7 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
             p = abcdk_strtok(&p_next, "=");
             if (abcdk_strncmp("bytes", p, p_next - p, 0) != 0)
             {
-                _abcdkhttpd_replay_nobody(node, 400);
+                _abcdkhttpd_reply_nobody(node, 400);
                 return;
             }
 
@@ -287,7 +333,7 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
 
             if (range_s >= range_e || range_s >= file->sizes[0])
             {
-                _abcdkhttpd_replay_nobody(node, 400);
+                _abcdkhttpd_reply_nobody(node, 400);
                 return;
             }
 
@@ -303,7 +349,7 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
 
             abcdk_comm_post_format(node, 1000,
                                    "HTTP/1.1 %s\r\n"
-                                   "Server: abcdk\r\n"
+                                   "Server: %s\r\n"
                                    "Data: %s\r\n"
                                    "Connection: Keep-Alive\r\n"
                                    "Content-Type: %s\r\n"
@@ -312,6 +358,7 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
                                    "Content-Length: %lu\r\n"
                                    "\r\n",
                                    abcdk_http_status_desc(206),
+                                   http_p->ctx->server_name,
                                    abcdk_time_format(http_p->timefmt, &tm),
                                    content_type,
                                    range_s, range_e, file_size,
@@ -321,13 +368,14 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
         {
             abcdk_comm_post_format(node, 1000,
                                    "HTTP/1.1 %s\r\n"
-                                   "Server: abcdk\r\n"
+                                   "Server: %s\r\n"
                                    "Data: %s\r\n"
                                    "Connection: Keep-Alive\r\n"
                                    "Content-Type: %s\r\n"
                                    "Content-Length: %lu\r\n"
                                    "\r\n",
                                    abcdk_http_status_desc(200),
+                                   http_p->ctx->server_name,
                                    abcdk_time_format(http_p->timefmt, &tm),
                                    content_type,
                                    file->sizes[0]);
@@ -340,7 +388,7 @@ void _abcdkhttpd_replay_file(abcdk_comm_node_t *node)
     }
     else
     {
-        _abcdkhttpd_replay_nobody(node, 403);
+        _abcdkhttpd_reply_nobody(node, 403);
     }
 }
 
@@ -365,8 +413,11 @@ void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
     /*重新绑定链路环境。*/
     abcdk_comm_set_userdata(node, http);
 
+    abcdk_comm_get_sockaddr_str(node,NULL,http->remote);
+
     /*设置时间格式串。*/
     http->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
+    http->timefmt_lc = "%Y-%m-%d %H:%M:%S";
 
 #ifdef HAVE_LIBMAGIC
     http->magic_handle = magic_open(MAGIC_MIME);
@@ -416,7 +467,7 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
     p = abcdk_strtok(&p_next, "?");
     abcdk_uri_decode(p, p_next - p, http_p->path, &path_len);
 
-  //  fprintf(stderr,"%s\n",http_p->path);
+    //  fprintf(stderr,"%s\n",http_p->path);
 
     p = abcdk_strtok(&p_next, " ");
     if (p)
@@ -424,7 +475,7 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
 
     if (abcdk_strcmp(http_p->method, "optipn", 0) == 0)
     {
-        _abcdkhttpd_replay_option(node, 200);
+        _abcdkhttpd_reply_option(node, 200);
         return;
     }
 
@@ -432,7 +483,7 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
         abcdk_strcmp(http_p->method, "GET", 0) != 0 &&
         abcdk_strcmp(http_p->method, "HEAD", 0) != 0)
     {
-        _abcdkhttpd_replay_option(node, 405);
+        _abcdkhttpd_reply_option(node, 405);
         return;
     }
 
@@ -443,21 +494,21 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
     if (chk != 0)
     {
         if (errno == ENOENT)
-            _abcdkhttpd_replay_nobody(node, 404);
+            _abcdkhttpd_reply_nobody(node, 404);
         else
-            _abcdkhttpd_replay_nobody(node, 403);
+            _abcdkhttpd_reply_nobody(node, 403);
     }
     else if (S_ISDIR(http_p->attr.st_mode))
     {
-        _abcdkhttpd_replay_dirent(node);
+        _abcdkhttpd_reply_dirent(node);
     }
     else if (S_ISREG(http_p->attr.st_mode))
     {
-        _abcdkhttpd_replay_file(node);
+        _abcdkhttpd_reply_file(node);
     }
     else
     {
-        _abcdkhttpd_replay_nobody(node, 403);
+        _abcdkhttpd_reply_nobody(node, 403);
     }
 }
 
@@ -485,7 +536,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->workers = abcdk_option_get_int(ctx->args, "--workers", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk-httpd");
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/tmp/abcdk-httpd/");
-    ctx->listen = abcdk_option_get(ctx->args, "--listen", 0, "0.0.0.0:80");
+    for (int i = 0; i < 16; i++)
+        ctx->listen[i] = abcdk_option_get(ctx->args, "--listen", i, NULL);
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
@@ -514,12 +566,6 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
 #endif // HAVE_OPENSSL
 
-    chk = abcdk_sockaddr_from_string(&addr, ctx->listen, 0);
-    if (chk != 0)
-    {
-        fprintf(stderr, "监听地址错误。\n");
-        goto final;
-    }
 
     ctx->comm = abcdk_comm_start(ctx->workers, -1);
     if (!ctx->comm)
@@ -528,21 +574,34 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         goto final;
     }
 
-    ctx->comm_listen = abcdk_http_alloc(ctx->comm, 1 << 31 - 1, "/tmp/");
-    if (!ctx->comm_listen)
+    for (int i = 0; i < 16; i++)
     {
-        fprintf(stderr, "内存错误。\n");
-        goto final;
-    }
+        if(!ctx->listen[i])
+            break;
+        
+        chk = abcdk_sockaddr_from_string(&addr, ctx->listen[i], 0);
+        if (chk != 0)
+        {
+            fprintf(stderr, "监听地址错误。\n");
+            goto final;
+        }
 
-    abcdk_comm_set_userdata(ctx->comm_listen, ctx);
+        ctx->comm_listen[i] = abcdk_http_alloc(ctx->comm, 10000, "/tmp/");
+        if (!ctx->comm_listen[i])
+        {
+            fprintf(stderr, "内存错误。\n");
+            goto final;
+        }
 
-    abcdk_http_callback_t cb = {_abcdkhttpd_accept_cb, _abcdkhttpd_request_cb, NULL, _abcdkhttpd_close_cb};
-    chk = abcdk_http_listen(ctx->comm_listen, ctx->ssl_ctx, &addr, &cb);
-    if (chk != 0)
-    {
-        fprintf(stderr, "监听错误，也许端口已经被占用。\n");
-        goto final;
+        abcdk_comm_set_userdata(ctx->comm_listen[i], ctx);
+
+        abcdk_http_callback_t cb = {_abcdkhttpd_accept_cb, _abcdkhttpd_request_cb, NULL, _abcdkhttpd_close_cb};
+        chk = abcdk_http_listen(ctx->comm_listen[i], ctx->ssl_ctx, &addr, &cb);
+        if (chk != 0)
+        {
+            fprintf(stderr, "监听错误，也许端口已经被占用。\n");
+            goto final;
+        }
     }
 
     /*填充信号及回调函数。*/
@@ -559,7 +618,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
 final:
 
-    abcdk_comm_unref(&ctx->comm_listen);
+    for (int i = 0; i < 16; i++)
+        abcdk_comm_unref(&ctx->comm_listen[i]);
     abcdk_comm_stop(&ctx->comm);
 #ifdef HAVE_OPENSSL
     abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);

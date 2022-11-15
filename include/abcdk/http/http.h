@@ -62,6 +62,29 @@ typedef struct _abcdk_http_callback
 abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx,size_t up_max_size,const char *up_buffer_point);
 
 /**
+ * 分块应答。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_reply_chunked(abcdk_comm_node_t *node, const void *data, size_t size);
+
+/** 
+ * 分块应答。
+ * 
+ * @param [in] max 格式化数据最大长度。 
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_comm_reply_chunked_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap);
+
+/** 
+ * 分块应答。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_comm_reply_chunked_format(abcdk_comm_node_t *node, int max, const char *fmt, ...);
+
+/**
  * 启动监听。
  * 
  * @warning 新的连接会复制“用户环境指针”。

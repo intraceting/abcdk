@@ -131,6 +131,94 @@ final_error:
     return NULL;
 }
 
+int abcdk_http_reply_chunked(abcdk_comm_node_t *node, const void *data, size_t size)
+{
+    abcdk_http_t *http_p = NULL;
+    int chk;
+
+    assert(node != NULL);
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
+
+    chk = abcdk_comm_post_format(node, 20, "%x\r\n", size);
+    if (chk != 0)
+        return -1;
+
+    if (data != NULL && size > 0)
+    {
+        chk = abcdk_comm_post_buffer(node, data, size);
+        if (chk != 0)
+            return -1;
+    }
+
+    chk = abcdk_comm_post_buffer(node, "\r\n", 2);
+    if (chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_comm_reply_chunked_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(node != NULL && fmt != NULL && max > 0);
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
+
+    obj = abcdk_object_alloc2(max);
+    if(!obj)
+        return -1;
+
+    chk = vsnprintf(obj->pstrs[0], max, fmt, ap);
+    if (chk <= 0)
+        return -1;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = chk;
+
+    chk = abcdk_comm_post_format(node, 20, "%x\r\n", obj->sizes[0]);
+    if (chk != 0)
+        return -1;
+    
+    chk = abcdk_comm_post(node,obj);
+    if(chk != 0)
+    {
+        /*删除投递失败的。*/
+        abcdk_object_unref(&obj);
+        return -1;
+    }
+
+    chk = abcdk_comm_post_buffer(node, "\r\n", 2);
+    if (chk != 0)
+        return -1;
+    
+    return 0;
+}
+
+int abcdk_comm_reply_chunked_format(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+{
+    abcdk_http_t *http_p = NULL;
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(node != NULL && fmt != NULL && max > 0);
+
+    http_p = (abcdk_http_t *)abcdk_comm_get_append(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过http接口建立连接，不能调此接口。");
+
+    va_list ap;
+    va_start(ap, fmt);
+    chk = abcdk_comm_reply_chunked_vformat(node, max, fmt, ap);
+    va_end(ap);
+
+    return chk;
+}
+
 void _abcdk_http_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
 {
     abcdk_http_t *listen_http_p = NULL;
