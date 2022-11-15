@@ -15,6 +15,11 @@ typedef struct _abcdkhttpd
     int errcode;
     abcdk_tree_t *args;
 
+#ifdef HAVE_LIBMAGIC
+    struct magic_set *magic_handle;
+#endif // HAVE_LIBMAGIC
+    abcdk_mutex_t magic_mutex;
+
     abcdk_comm_t *comm;
     abcdk_comm_node_t *comm_listen[16];
     SSL_CTX *ssl_ctx;
@@ -314,10 +319,17 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
         file_size = file->sizes[0];
 
 #ifdef HAVE_LIBMAGIC
-        content_type = magic_buffer(http_p->magic_handle, file->pptrs[0], file->sizes[0]);
-#else  // HAVE_LIBMAGIC
-        content_type = abcdk_http_content_type_desc(http_p->pathfile);
+        if(http_p->ctx->magic_handle)
+        {
+            abcdk_mutex_lock(&http_p->ctx->magic_mutex,1);
+            content_type = magic_buffer(http_p->ctx->magic_handle, file->pptrs[0], file->sizes[0]);
+            abcdk_mutex_unlock(&http_p->ctx->magic_mutex);
+        }
 #endif // HAVE_LIBMAGIC
+
+        /*如果无法通过内容判断类型，尝试通过文件名获取。*/
+        if(!content_type)
+            content_type = abcdk_http_content_type_desc(http_p->pathfile);
 
         if (http_p->range)
         {
@@ -329,7 +341,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                 return;
             }
 
-            p = abcdk_strtok(&p_next, ",");
+            p = abcdk_strtok(&p_next, "=");
             strncpy(tmp, p, p_next - p);
             abcdk_strtrim(tmp, isspace, 2);
             sscanf(p, "%*[^0-9]%lu-%lu", &range_s, &range_e);
@@ -418,22 +430,12 @@ void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
     /*重新绑定链路环境。*/
     abcdk_comm_set_userdata(node, http);
 
+    /*获取远程地址。*/
     abcdk_comm_get_sockaddr_str(node,NULL,http->remote);
 
     /*设置时间格式串。*/
     http->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
     http->timefmt_lc = "%Y-%m-%d %H:%M:%S";
-
-#ifdef HAVE_LIBMAGIC
-    http->magic_handle = magic_open(MAGIC_MIME);
-    if (!http->magic_handle)
-    {
-        *result = -1;
-        return;
-    }
-
-    magic_load(http->magic_handle, NULL);
-#endif // HAVE_LIBMAGIC
 }
 
 void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
@@ -498,6 +500,9 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
         return;
     }
 
+    /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
+    abcdk_abspath(http_p->path);
+
     abcdk_dirdir(http_p->pathfile, http_p->ctx->root_path);
     abcdk_dirdir(http_p->pathfile, http_p->path);
 
@@ -529,12 +534,6 @@ void _abcdkhttpd_close_cb(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-#ifdef HAVE_LIBMAGIC
-    if (http_p->magic_handle)
-        magic_close(http_p->magic_handle);
-    http_p->magic_handle = NULL;
-#endif // HAVE_LIBMAGIC
-
     abcdk_heap_free2((void **)&http_p);
 }
 
@@ -554,8 +553,16 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
 
-#ifdef HAVE_OPENSSL
 
+    abcdk_mutex_init2(&ctx->magic_mutex,0);
+
+#ifdef HAVE_LIBMAGIC
+    ctx->magic_handle = magic_open(MAGIC_MIME|MAGIC_SYMLINK);
+    if (ctx->magic_handle)
+        magic_load(ctx->magic_handle, NULL);
+#endif // HAVE_LIBMAGIC
+
+#ifdef HAVE_OPENSSL
     if (ctx->cert_file && ctx->key_file)
     {
         ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, 2);
@@ -574,9 +581,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
         SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
     }
-
 #endif // HAVE_OPENSSL
-
 
     ctx->comm = abcdk_comm_start(ctx->workers, -1);
     if (!ctx->comm)
@@ -584,6 +589,10 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         fprintf(stderr, "内存错误。\n");
         goto final;
     }
+
+    /*Set to NULL(0).*/
+    for (int i = 0; i < 16; i++)
+        ctx->comm_listen[i] = NULL;
 
     for (int i = 0; i < 16; i++)
     {
@@ -635,6 +644,12 @@ final:
 #ifdef HAVE_OPENSSL
     abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);
 #endif // HAVE_OPENSSL
+#ifdef HAVE_LIBMAGIC
+    if (ctx->magic_handle)
+        magic_close(ctx->magic_handle);
+    ctx->magic_handle = NULL;
+#endif // HAVE_LIBMAGIC
+    abcdk_mutex_destroy(&ctx->magic_mutex);
 }
 
 int abcdk_tool_httpd(abcdk_tree_t *args)
