@@ -409,9 +409,21 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     }
 }
 
+void _abcdkhttpd_userdata_destroy_cb(abcdk_object_t *alloc, void *opaque)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)alloc->pptrs[0];
+    if(!http_p)
+        return;
+
+    abcdk_heap_free2((void **)&http_p);
+}
+
 void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
 {
     abcdkhttpd_node_t *http;
+    abcdk_object_t *userdata_p = NULL;
 
     /*设置默认返回值。*/
     *result = 0;
@@ -428,7 +440,11 @@ void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
     http->ctx = abcdk_comm_get_userdata(node);
 
     /*重新绑定链路环境。*/
-    abcdk_comm_set_userdata(node, http);
+    userdata_p = abcdk_comm_userdata(node);
+    userdata_p->pptrs[0] = (uint8_t*)http;
+    abcdk_object_atfree(userdata_p,_abcdkhttpd_userdata_destroy_cb,NULL);
+    abcdk_object_unref(&userdata_p);
+    
 
     /*获取远程地址。*/
     abcdk_comm_get_sockaddr_str(node,NULL,http->remote);
