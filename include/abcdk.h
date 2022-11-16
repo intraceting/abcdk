@@ -18,6 +18,7 @@
 #include "abcdk/util/json.h"
 #include "abcdk/util/cap.h"
 #include "abcdk/util/basecode.h"
+#include "abcdk/util/base64.h"
 #include "abcdk/util/uri.h"
 #include "abcdk/util/signal.h"
 #include "abcdk/util/string.h"
