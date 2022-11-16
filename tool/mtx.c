@@ -147,7 +147,7 @@ const char *_abcdkmtx_translate_devname(abcdkmtx_t *ctx, uint8_t type, const cha
     node_p = abcdk_tree_child(ctx->devlist, 1);
     while (node_p)
     {
-        dev_p = (abcdk_scsi_info_t *)node_p->alloc->pptrs[0];
+        dev_p = (abcdk_scsi_info_t *)node_p->obj->pptrs[0];
 
         if (dev_p->serial[0] != '\0')
         {
@@ -184,9 +184,9 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 0)
     {
-        sn = (char*)node->alloc->pptrs[0];
-        vendor = (char*)node->alloc->pptrs[1];
-        model = (char*)node->alloc->pptrs[2];
+        sn = (char*)node->obj->pptrs[0];
+        vendor = (char*)node->obj->pptrs[1];
+        model = (char*)node->obj->pptrs[2];
 
         if(ctx->fmt == ABCDKMTX_STATUS_FMT_XML)
         {
@@ -232,11 +232,11 @@ int _abcdkmtx_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     }
     else
     {
-        addr = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
-        type = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0);
-        full = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0);
-        dvcid = _abcdkmtx_translate_devname(ctx,type,(char*)node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID]);
-        barcode = (char*)node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE];
+        addr = ABCDK_PTR2U16(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
+        type = ABCDK_PTR2U8(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0);
+        full = ABCDK_PTR2U8(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0);
+        dvcid = _abcdkmtx_translate_devname(ctx,type,(char*)node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID]);
+        barcode = (char*)node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE];
 
         /*可能仅打印指定类型的元素状态。*/
         if (ctx->match_type != 0 && ctx->match_type != type)
@@ -307,10 +307,10 @@ int _abcdkmtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     if (depth == 0)
         return 1;
 
-    if (ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) != ABCDK_MEDIUMX_ELEMENT_CHANGER)
+    if (ABCDK_PTR2U8(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) != ABCDK_MEDIUMX_ELEMENT_CHANGER)
         return 1;
 
-    ctx->changer = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
+    ctx->changer = ABCDK_PTR2U16(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
 
     return -1;
 }
@@ -397,9 +397,9 @@ void _abcdkmtx_work(abcdkmtx_t *ctx)
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);
 
-    snprintf(ctx->root->alloc->pptrs[0], ctx->root->alloc->sizes[0], "%s", ctx->sn);
-    snprintf(ctx->root->alloc->pptrs[1], ctx->root->alloc->sizes[1], "%s", ctx->vendor);
-    snprintf(ctx->root->alloc->pptrs[2], ctx->root->alloc->sizes[2], "%s", ctx->product);
+    snprintf(ctx->root->obj->pptrs[0], ctx->root->obj->sizes[0], "%s", ctx->sn);
+    snprintf(ctx->root->obj->pptrs[1], ctx->root->obj->sizes[1], "%s", ctx->vendor);
+    snprintf(ctx->root->obj->pptrs[2], ctx->root->obj->sizes[2], "%s", ctx->product);
 
     chk = abcdk_mediumx_inquiry_element_status(ctx->root, ctx->fd, ctx->voltag,ctx->dvcid,-1, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)

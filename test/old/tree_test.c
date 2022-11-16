@@ -13,7 +13,7 @@
 
 int dump(size_t deep, abcdk_tree_t *node, void *opaque)
 {
-    abcdk_tree_fprintf(stderr,deep,node,"%lu\n",node->alloc->sizes[0]);
+    abcdk_tree_fprintf(stderr,deep,node,"%lu\n",node->obj->sizes[0]);
 
     // if(deep>=1)
     //     return 0;
@@ -35,7 +35,7 @@ void traversal(abcdk_tree_t *root)
 
 int dump2(size_t deep, abcdk_tree_t *node, void *opaque)
 {
-    abcdk_tree_fprintf(stderr,deep,node,"%d\n",*ABCDK_PTR2PTR(int,node->alloc->pptrs[0],0));
+    abcdk_tree_fprintf(stderr,deep,node,"%d\n",*ABCDK_PTR2PTR(int,node->obj->pptrs[0],0));
 
     // if(deep>=1)
     //     return 0;
@@ -59,23 +59,23 @@ void test_tree()
 {
     abcdk_tree_t *d = abcdk_tree_alloc(NULL);
 
-    d->alloc = abcdk_object_alloc2(1);
+    d->obj = abcdk_object_alloc2(1);
 
     abcdk_tree_t *n = abcdk_tree_alloc(NULL);
 
-    n->alloc = abcdk_object_alloc2(2);
+    n->obj = abcdk_object_alloc2(2);
 
     abcdk_tree_insert2(d, n,1);
 
     abcdk_tree_t *n2 = n = abcdk_tree_alloc(NULL);
 
-    n->alloc = abcdk_object_alloc2(3);
+    n->obj = abcdk_object_alloc2(3);
 
     abcdk_tree_insert2(d, n,1);
 
     n = abcdk_tree_alloc(NULL);
 
-    n->alloc = abcdk_object_alloc2(4);
+    n->obj = abcdk_object_alloc2(4);
 
     abcdk_tree_insert2(d, n,1);
 
@@ -83,7 +83,7 @@ void test_tree()
 
     abcdk_tree_t *m = abcdk_tree_alloc(NULL);
 
-    m->alloc = abcdk_object_alloc2(5);
+    m->obj = abcdk_object_alloc2(5);
 
     abcdk_tree_insert2(n, m,0);
 
@@ -91,31 +91,31 @@ void test_tree()
 
     m = abcdk_tree_alloc(NULL);
 
-    m->alloc = abcdk_object_alloc2(6);
+    m->obj = abcdk_object_alloc2(6);
 
     abcdk_tree_insert2(n, m,0);
 
     abcdk_tree_t *m6 = m = abcdk_tree_alloc(NULL);
 
-    m->alloc = abcdk_object_alloc2(7);
+    m->obj = abcdk_object_alloc2(7);
 
     abcdk_tree_insert2(n, m,0);
 
     abcdk_tree_t *k = abcdk_tree_alloc(NULL);
 
-    k->alloc = abcdk_object_alloc2(8);
+    k->obj = abcdk_object_alloc2(8);
 
     abcdk_tree_insert2(m, k,0);
 
     k = abcdk_tree_alloc(NULL);
 
-    k->alloc = abcdk_object_alloc2(9);
+    k->obj = abcdk_object_alloc2(9);
 
     abcdk_tree_insert2(m, k,0);
 
     abcdk_tree_t *u = abcdk_tree_alloc(NULL);
 
-    u->alloc = abcdk_object_alloc2(10);
+    u->obj = abcdk_object_alloc2(10);
 
     abcdk_tree_insert(m, u, k);
 
@@ -142,8 +142,8 @@ void test_tree()
 
 int compare_cb(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque)
 {
-    int src = *ABCDK_PTR2PTR(int, node1->alloc->pptrs[0], 0);
-    int dst = *ABCDK_PTR2PTR(int, node2->alloc->pptrs[0], 0);
+    int src = *ABCDK_PTR2PTR(int, node1->obj->pptrs[0], 0);
+    int dst = *ABCDK_PTR2PTR(int, node2->obj->pptrs[0], 0);
     if( src > dst )
         return 1;
     if( src < dst )
@@ -163,22 +163,22 @@ void test_sort(abcdk_tree_t *t,int by)
 void test_swap()
 {
     abcdk_tree_t *d1 = abcdk_tree_alloc3(sizeof(int));
-    *ABCDK_PTR2PTR(int,d1->alloc->pptrs[0],0) = 1;
+    *ABCDK_PTR2PTR(int,d1->obj->pptrs[0],0) = 1;
 
     abcdk_tree_t *d2 = abcdk_tree_alloc3(sizeof(int));
-    *ABCDK_PTR2PTR(int,d2->alloc->pptrs[0],0) = 2;
+    *ABCDK_PTR2PTR(int,d2->obj->pptrs[0],0) = 2;
 
     abcdk_tree_t *d3 = abcdk_tree_alloc3(sizeof(int));
-    *ABCDK_PTR2PTR(int,d3->alloc->pptrs[0],0) = 3;
+    *ABCDK_PTR2PTR(int,d3->obj->pptrs[0],0) = 3;
 
     abcdk_tree_t *d4 = abcdk_tree_alloc3(sizeof(int));
-    *ABCDK_PTR2PTR(int,d4->alloc->pptrs[0],0) = 4;
+    *ABCDK_PTR2PTR(int,d4->obj->pptrs[0],0) = 4;
 
     abcdk_tree_t *d5 = abcdk_tree_alloc3(sizeof(int));
-    *ABCDK_PTR2PTR(int,d5->alloc->pptrs[0],0) = 5;
+    *ABCDK_PTR2PTR(int,d5->obj->pptrs[0],0) = 5;
 
     abcdk_tree_t *d6 = abcdk_tree_alloc3(sizeof(int));
-    *ABCDK_PTR2PTR(int,d6->alloc->pptrs[0],0) = 6;
+    *ABCDK_PTR2PTR(int,d6->obj->pptrs[0],0) = 6;
 
     abcdk_tree_insert(d1,d2,NULL);
     abcdk_tree_insert(d1,d3,NULL);

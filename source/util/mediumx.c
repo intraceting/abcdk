@@ -158,11 +158,11 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
         uint8_t volsize = (pvoltag ? 36 : 0);
 
         /*获取部分字段。*/
-        ABCDK_PTR2U16(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(ptr, 0));
-        ABCDK_PTR2U8(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) = type;
-        ABCDK_PTR2U8(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0) = ((ptr[2] & 0x01) ? 1 : 0);
+        ABCDK_PTR2U16(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(ptr, 0));
+        ABCDK_PTR2U8(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) = type;
+        ABCDK_PTR2U8(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0) = ((ptr[2] & 0x01) ? 1 : 0);
         if (volsize > 0)
-            memcpy(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE], ptr + 12, volsize);
+            memcpy(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE], ptr + 12, volsize);
 
         /*是否有机械臂或驱动器信息。*/
         uint8_t dvcid_set = ptr[12 + volsize] & 0x0F;
@@ -180,7 +180,7 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
             if (dvcid_type == 0x00)
             {
                 /*Only Serial Number.*/
-                memcpy(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], ptr + 16 + volsize, dvcid_length);
+                memcpy(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], ptr + 16 + volsize, dvcid_length);
             }
             else if (dvcid_type == 0x01)
             {
@@ -191,7 +191,7 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
                      *
                      * Is Spectra Tape Libraries?
                      */
-                    memcpy(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], ptr + 16 + volsize, dvcid_length);
+                    memcpy(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], ptr + 16 + volsize, dvcid_length);
                 }
                 else
                 {
@@ -200,7 +200,7 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
                      *
                      * VENDOR(8)+PRODUCT(16)+SERIAL(10)
                      */
-                    memcpy(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], ptr + 16 + volsize + 8 + 16, 10);
+                    memcpy(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], ptr + 16 + volsize + 8 + 16, 10);
                 }
             }
             else
@@ -212,8 +212,8 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
     next:
 
         /*清除两端的空格。*/
-        abcdk_strtrim(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE], isspace, 2);
-        abcdk_strtrim(one->alloc->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], isspace, 2);
+        abcdk_strtrim(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE], isspace, 2);
+        abcdk_strtrim(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], isspace, 2);
 
         /*添加到子节点末尾。*/
         abcdk_tree_insert2(father, one, 0);

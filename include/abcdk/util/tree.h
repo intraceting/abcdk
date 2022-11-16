@@ -35,11 +35,11 @@ typedef struct _abcdk_tree
     struct _abcdk_tree *next;
 
     /**
-     * 数据。
+     * 数据对象。
      * 
-     * 当节点被删除时，如果不为NULL(0)，自动调用abcdk_object_unref()释放。
+     * @warning 当节点被删除时，自动调用abcdk_object_unref()释放。
     */
-    abcdk_object_t *alloc;
+    abcdk_object_t *obj;
 
 }abcdk_tree_t;
 

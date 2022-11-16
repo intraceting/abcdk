@@ -75,29 +75,29 @@ abcdk_tree_t *_abcdk_robots_parse_rule(const char *line)
     if(!rule)
         goto final;
 
-    strncpy((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], key_b, key_len);
+    strncpy((char *)rule->obj->pptrs[ABCDK_ROBOTS_KEY], key_b, key_len);
 
     /*Replace "?" to "\?" for the fnmatch() function. */
     for (size_t i = 0, j = 0; i < val_len; i++, j++)
     {
         if (val_b[i] == '?')
-            ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], j++) = '\\';
-        ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], j) = val_b[i];
+            ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], j++) = '\\';
+        ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], j) = val_b[i];
     }
 
-    if (abcdk_strcmp((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], "Disallow", 0) == 0 ||
-        abcdk_strcmp((char *)rule->alloc->pptrs[ABCDK_ROBOTS_KEY], "Allow", 0) == 0)
+    if (abcdk_strcmp((char *)rule->obj->pptrs[ABCDK_ROBOTS_KEY], "Disallow", 0) == 0 ||
+        abcdk_strcmp((char *)rule->obj->pptrs[ABCDK_ROBOTS_KEY], "Allow", 0) == 0)
     {
         if (val_len2 > 0)
         {
-            if (ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) == '$')
-                ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) = '\0';
-            else if (ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) == '/')
-                ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2) = '*';
+            if (ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) == '$')
+                ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) = '\0';
+            else if (ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], val_len2 - 1) == '/')
+                ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], val_len2) = '*';
         }
         else
         {
-            ABCDK_PTR2I8(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], val_len2) = '*';
+            ABCDK_PTR2I8(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], val_len2) = '*';
         }
     }
 
@@ -151,10 +151,10 @@ void _abcdk_robots_parse_real(abcdk_tree_t *root, const char *text, const char *
             continue;
 
         /* 是否为段落标记。*/
-        if(abcdk_strcmp(ABCDK_PTR2I8PTR(rule->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),"User-agent",0)==0)
+        if(abcdk_strcmp(ABCDK_PTR2I8PTR(rule->obj->pptrs[ABCDK_ROBOTS_KEY], 0),"User-agent",0)==0)
         {
             /* 是否为新段落。*/
-            agent_ok = (abcdk_strcmp(ABCDK_PTR2I8PTR(rule->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0),agent,0)==0);
+            agent_ok = (abcdk_strcmp(ABCDK_PTR2I8PTR(rule->obj->pptrs[ABCDK_ROBOTS_VALUE], 0),agent,0)==0);
 
             abcdk_tree_free(&rule);
             continue;

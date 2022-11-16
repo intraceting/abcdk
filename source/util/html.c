@@ -54,7 +54,7 @@ next:
                 goto copy_attr;
 
             /*特殊处理一下。*/
-            if(abcdk_strcmp((char*)tag->alloc->pptrs[ABCDK_HTML_KEY],"!DOCTYPE",0)==0)
+            if(abcdk_strcmp((char*)tag->obj->pptrs[ABCDK_HTML_KEY],"!DOCTYPE",0)==0)
                 continue;
             
             if (isspace(*key_e) || *key_e == '=' || *key_e == '>')
@@ -105,13 +105,13 @@ copy_attr:
 
     /*复制VALUE。*/
     if (val_b && val_e && (val_e - val_b > 0))
-        attr->alloc->pptrs[ABCDK_HTML_VALUE] = (uint8_t *)abcdk_heap_clone(val_b, val_e - val_b);
+        attr->obj->pptrs[ABCDK_HTML_VALUE] = (uint8_t *)abcdk_heap_clone(val_b, val_e - val_b);
 
     /*复制KEY。*/
-    attr->alloc->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, key_e - key_b);
+    attr->obj->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, key_e - key_b);
 
     /*注册专用内存回收函数。*/
-    abcdk_object_atfree(attr->alloc, _abcdk_html_destroy_cb, NULL);
+    abcdk_object_atfree(attr->obj, _abcdk_html_destroy_cb, NULL);
 
     /*加入到树的子节点末尾.*/
     abcdk_tree_insert2(tag,attr, 0);
@@ -150,7 +150,7 @@ abcdk_tree_t *_abcdk_html_tag_parse(const char *b, const char *e)
         }
         
         /*复制KEY。*/
-        tag->alloc->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, tmp - key_b);
+        tag->obj->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, tmp - key_b);
     }
     else
     {
@@ -170,8 +170,8 @@ abcdk_tree_t *_abcdk_html_tag_parse(const char *b, const char *e)
         }
 
         /*复制KEY。*/
-        tag->alloc->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, tmp - key_b);
-        if (!tag->alloc->pptrs[ABCDK_HTML_KEY])
+        tag->obj->pptrs[ABCDK_HTML_KEY] = (uint8_t *)abcdk_heap_clone(key_b, tmp - key_b);
+        if (!tag->obj->pptrs[ABCDK_HTML_KEY])
             goto final;
 
         /*也许已经到EOD.*/
@@ -220,7 +220,7 @@ const char *_abcdk_html_value_parse(abcdk_tree_t *tag, const char *text)
     const char *value_b = NULL;
 
     /*也许是EOD标签。*/
-    if (abcdk_strncmp(tag->alloc->pptrs[ABCDK_HTML_KEY], "/", 1, 0) == 0)
+    if (abcdk_strncmp(tag->obj->pptrs[ABCDK_HTML_KEY], "/", 1, 0) == 0)
         return text;
 
     if (*text == '>')
@@ -232,14 +232,14 @@ const char *_abcdk_html_value_parse(abcdk_tree_t *tag, const char *text)
     value_b = tmp;
 
     /*查找VALUE尾指针。*/
-    if (abcdk_strncmp(tag->alloc->pptrs[ABCDK_HTML_KEY], "script", 6, 0) == 0)
+    if (abcdk_strncmp(tag->obj->pptrs[ABCDK_HTML_KEY], "script", 6, 0) == 0)
     {
         /*脚本。*/
         tmp2 = abcdk_strstr(tmp, "</script>", 0);
         if (tmp2)
             tmp = tmp2;
     }
-    else if (abcdk_strncmp(tag->alloc->pptrs[ABCDK_HTML_KEY], "style", 5, 0) == 0)
+    else if (abcdk_strncmp(tag->obj->pptrs[ABCDK_HTML_KEY], "style", 5, 0) == 0)
     {
         /*样式。*/
         tmp2 = abcdk_strstr(tmp, "</style>", 0);
@@ -264,10 +264,10 @@ const char *_abcdk_html_value_parse(abcdk_tree_t *tag, const char *text)
         return tmp;
 
     /*复制VALUE。*/
-    tag->alloc->pptrs[ABCDK_HTML_VALUE] = (uint8_t *)abcdk_heap_clone(value_b, tmp - value_b);
+    tag->obj->pptrs[ABCDK_HTML_VALUE] = (uint8_t *)abcdk_heap_clone(value_b, tmp - value_b);
     
     /*替换控制字符为空格。*/
-    _abcdkc_html_cntrl_replace((char*)tag->alloc->pptrs[ABCDK_HTML_VALUE],' ');
+    _abcdkc_html_cntrl_replace((char*)tag->obj->pptrs[ABCDK_HTML_VALUE],' ');
 
 final:
 
@@ -308,7 +308,7 @@ void _abcdk_html_parse_real(abcdk_tree_t *root, const char *text)
             tmp = _abcdk_html_value_parse(tag, e);
 
             /*注册专用内存回收函数。*/
-            abcdk_object_atfree(tag->alloc,_abcdk_html_destroy_cb,NULL);
+            abcdk_object_atfree(tag->obj,_abcdk_html_destroy_cb,NULL);
 
             /*加入到树的子节点末尾.*/
             abcdk_tree_insert2(root, tag, 0);

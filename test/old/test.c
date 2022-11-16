@@ -660,8 +660,8 @@ static int _test_html_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     else
     {
             abcdk_tree_fprintf(stderr, deep, node, "%s:<%s>\n",
-                               ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_KEY], 0),
-                               _test_html_cntrl_replace(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_HTML_VALUE], 0), ' '));
+                               ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_HTML_KEY], 0),
+                               _test_html_cntrl_replace(ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_HTML_VALUE], 0), ' '));
     }
 
     return 1;
@@ -728,12 +728,12 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
         {
             robots_match_t *m = (robots_match_t*)opaque;
 
-            int chk = abcdk_fnmatch(m->path,ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0),0,0);
+            int chk = abcdk_fnmatch(m->path,ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_VALUE], 0),0,0);
             if(chk==0)
             {
-                if(abcdk_strcmp(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),"Disallow",0)==0)
+                if(abcdk_strcmp(ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_KEY], 0),"Disallow",0)==0)
                     m->flag = 2;
-                if(abcdk_strcmp(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),"Allow",0)==0)
+                if(abcdk_strcmp(ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_KEY], 0),"Allow",0)==0)
                     m->flag = 1;
 
             }
@@ -745,8 +745,8 @@ static int _test_robots_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
         else
         {
             abcdk_tree_fprintf(stderr,deep, node, "%s: %s\n",
-                               ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0),
-                               ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0));
+                               ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_KEY], 0),
+                               ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_VALUE], 0));
         }
     }
 
@@ -989,7 +989,7 @@ int _mp4_skip_size(abcdk_buffer_t *buf,uint64_t size)
 void _mp4_dump_ftyp(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_ftyp_t *cont = (abcdk_mp4_atom_ftyp_t *)&atom->data;
     
 
@@ -1009,7 +1009,7 @@ void _mp4_dump_ftyp(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_mvhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_mvhd_t *cont = (abcdk_mp4_atom_mvhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,",cont->version);
@@ -1038,7 +1038,7 @@ void _mp4_dump_mvhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_tkhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_tkhd_t *cont = (abcdk_mp4_atom_tkhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,",cont->version);
@@ -1066,7 +1066,7 @@ void _mp4_dump_tkhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_mdhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_mdhd_t *cont = (abcdk_mp4_atom_mdhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,",cont->version);
@@ -1094,7 +1094,7 @@ void _mp4_dump_mdhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_hdlr(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_hdlr_t *cont = (abcdk_mp4_atom_hdlr_t *)&atom->data;
 
 
@@ -1112,7 +1112,7 @@ void _mp4_dump_hdlr(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_vmhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_vmhd_t *cont = (abcdk_mp4_atom_vmhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1125,7 +1125,7 @@ void _mp4_dump_vmhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_stts(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_stts_t *cont = (abcdk_mp4_atom_stts_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1144,7 +1144,7 @@ void _mp4_dump_stts(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_ctts(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_ctts_t *cont = (abcdk_mp4_atom_ctts_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1164,7 +1164,7 @@ void _mp4_dump_ctts(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_stsc(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_stsc_t *cont = (abcdk_mp4_atom_stsc_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1183,7 +1183,7 @@ void _mp4_dump_stsc(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_stsz(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_stsz_t *cont = (abcdk_mp4_atom_stsz_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1205,7 +1205,7 @@ void _mp4_dump_stsz(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_stco(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_stco_t *cont = (abcdk_mp4_atom_stco_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1224,7 +1224,7 @@ void _mp4_dump_stco(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_stss(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_stss_t *cont = (abcdk_mp4_atom_stss_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1243,7 +1243,7 @@ void _mp4_dump_stss(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_smhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_smhd_t *cont = (abcdk_mp4_atom_smhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1254,7 +1254,7 @@ void _mp4_dump_smhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_elst(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_elst_t *cont = (abcdk_mp4_atom_elst_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1276,7 +1276,7 @@ void _mp4_dump_elst(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_mehd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_mehd_t *cont = (abcdk_mp4_atom_mehd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1287,7 +1287,7 @@ void _mp4_dump_mehd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_trex(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_trex_t *cont = (abcdk_mp4_atom_trex_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1302,7 +1302,7 @@ void _mp4_dump_trex(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_mfhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_mfhd_t *cont = (abcdk_mp4_atom_mfhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1314,7 +1314,7 @@ void _mp4_dump_mfhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_tfhd(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_tfhd_t *cont = (abcdk_mp4_atom_tfhd_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1330,7 +1330,7 @@ void _mp4_dump_tfhd(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_tfdt(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_tfdt_t *cont = (abcdk_mp4_atom_tfdt_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1342,7 +1342,7 @@ void _mp4_dump_tfdt(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_trun(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_trun_t *cont = (abcdk_mp4_atom_trun_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1367,7 +1367,7 @@ void _mp4_dump_trun(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_mfro(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_mfro_t *cont = (abcdk_mp4_atom_mfro_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1380,7 +1380,7 @@ void _mp4_dump_mfro(size_t deep, abcdk_tree_t *node, void *opaque)
 void _mp4_dump_tfra(size_t deep, abcdk_tree_t *node, void *opaque)
 {
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     abcdk_mp4_atom_tfra_t *cont = (abcdk_mp4_atom_tfra_t *)&atom->data;
 
     fprintf(stdout, "version=%hhu,flag=[%08x],",cont->version,cont->flags);
@@ -1415,7 +1415,7 @@ int mp4_dump_cb(size_t deep, abcdk_tree_t *node, void *opaque)
     atoms += 1;
 
     int fd = (int64_t)opaque;
-    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    abcdk_mp4_atom_t *atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
 
     if (deep == 0)
     {
@@ -1497,8 +1497,8 @@ void show_mp4_info(int fd)
     abcdk_tree_t *avc1_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_AVC1,1,1);
     abcdk_tree_t *avcc_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_AVCC,1,1);
 
-    abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->obj->pptrs[0];
 #ifdef HAVE_FFMPEG
     AVCodecContext *enc_ctx = abcdk_avcodec_alloc(abcdk_avcodec_find2(AV_CODEC_ID_H264,0));
 
@@ -1551,15 +1551,15 @@ void collect_fmp4_video(int fd)
     abcdk_mp4_dump(stdout,moov_p);
 
     abcdk_tree_t *avcc_p = abcdk_mp4_find2(moov_p,ABCDK_MP4_ATOM_TYPE_AVCC,1,1);
-    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->obj->pptrs[0];
 
     abcdk_tree_t *mehd_p = abcdk_mp4_find2(mvex_p,ABCDK_MP4_ATOM_TYPE_MEHD,1,1);
-    abcdk_mp4_atom_t *mehd = (abcdk_mp4_atom_t*)mehd_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *mehd = (abcdk_mp4_atom_t*)mehd_p->obj->pptrs[0];
 
     abcdk_tree_t *moof_p = abcdk_tree_child(root,1);
     while (moof_p)
     {
-        abcdk_mp4_atom_t *moof = (abcdk_mp4_atom_t*)moof_p->alloc->pptrs[0];
+        abcdk_mp4_atom_t *moof = (abcdk_mp4_atom_t*)moof_p->obj->pptrs[0];
         if(moof->type.u32 == ABCDK_MP4_ATOM_TYPE_MOOF)
         {
             abcdk_tree_t *mfhd_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
@@ -1567,10 +1567,10 @@ void collect_fmp4_video(int fd)
             abcdk_tree_t *tfdt_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
             abcdk_tree_t *trun_p = abcdk_mp4_find2(moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
 
-            abcdk_mp4_atom_t *mfhd = (abcdk_mp4_atom_t *)mfhd_p->alloc->pptrs[0];
-            abcdk_mp4_atom_t *tfhd = (abcdk_mp4_atom_t *)tfhd_p->alloc->pptrs[0];
-            abcdk_mp4_atom_t *tfdt = (abcdk_mp4_atom_t *)tfdt_p->alloc->pptrs[0];
-            abcdk_mp4_atom_t *trun = (abcdk_mp4_atom_t *)trun_p->alloc->pptrs[0];
+            abcdk_mp4_atom_t *mfhd = (abcdk_mp4_atom_t *)mfhd_p->obj->pptrs[0];
+            abcdk_mp4_atom_t *tfhd = (abcdk_mp4_atom_t *)tfhd_p->obj->pptrs[0];
+            abcdk_mp4_atom_t *tfdt = (abcdk_mp4_atom_t *)tfdt_p->obj->pptrs[0];
+            abcdk_mp4_atom_t *trun = (abcdk_mp4_atom_t *)trun_p->obj->pptrs[0];
 #if 1
             printf("-----------------------------------mfhd---------------------------------------\n");
 
@@ -1669,14 +1669,14 @@ void collect_mp4_video(int fd)
     abcdk_tree_t *avc1_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_AVC1,1,1);
     abcdk_tree_t *avcc_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_AVCC,1,1);
 
-    abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *avc1 = (abcdk_mp4_atom_t*)avc1_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *avcc = (abcdk_mp4_atom_t*)avcc_p->obj->pptrs[0];
 
     char sps[200] = {0};
     abcdk_bin2hex(sps,avcc->data.avcc.sps->pptrs[0],avcc->data.avcc.sps->sizes[0],0);
@@ -1914,14 +1914,14 @@ void collect_mp4_sound(int fd)
     abcdk_tree_t *mp4a_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_MP4A,1,1);
     abcdk_tree_t *esds_p = abcdk_mp4_find2(video_p,ABCDK_MP4_ATOM_TYPE_ESDS,1,1);
 
-    abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->alloc->pptrs[0];
-   // abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->alloc->pptrs[0];
-   // abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *mp4a = (abcdk_mp4_atom_t*)mp4a_p->alloc->pptrs[0];
-    abcdk_mp4_atom_t *esds = (abcdk_mp4_atom_t*)esds_p->alloc->pptrs[0];
+    abcdk_mp4_atom_t *stsz = (abcdk_mp4_atom_t*)stsz_p->obj->pptrs[0];
+   // abcdk_mp4_atom_t *stss = (abcdk_mp4_atom_t*)stss_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stts = (abcdk_mp4_atom_t*)stts_p->obj->pptrs[0];
+   // abcdk_mp4_atom_t *ctts = (abcdk_mp4_atom_t*)ctts_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stco = (abcdk_mp4_atom_t*)stco_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *stsc = (abcdk_mp4_atom_t*)stsc_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *mp4a = (abcdk_mp4_atom_t*)mp4a_p->obj->pptrs[0];
+    abcdk_mp4_atom_t *esds = (abcdk_mp4_atom_t*)esds_p->obj->pptrs[0];
 
 
 
@@ -4937,7 +4937,7 @@ void test_mtab(abcdk_tree_t *args)
     p = abcdk_tree_child(list,1);
     while(p)
     {
-        abcdk_mtab_info_t *dev_p  = (abcdk_mtab_info_t*)p->alloc->pptrs[0];
+        abcdk_mtab_info_t *dev_p  = (abcdk_mtab_info_t*)p->obj->pptrs[0];
 
         struct statfs s = {0};
         statfs(dev_p->mpoint,&s);

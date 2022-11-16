@@ -43,11 +43,11 @@ int dump2(size_t deep, abcdk_tree_t *node, void *opaque)
     else
     {
         abcdk_tree_fprintf(stderr, deep, node, "%-6hu\t|%-2hhu\t|%-2hhu\t|%-10s\t|%-10s\t|\n",
-                          ABCDK_PTR2OBJ(uint16_t, node->alloc->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
-                          ABCDK_PTR2OBJ(uint8_t, node->alloc->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
-                          ABCDK_PTR2OBJ(uint8_t, node->alloc->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),
-                          node->alloc->pptrs[ABCDK_MTX_ELEMENT_BARCODE],
-                          node->alloc->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
+                          ABCDK_PTR2OBJ(uint16_t, node->obj->pptrs[ABCDK_MTX_ELEMENT_ADDR], 0),
+                          ABCDK_PTR2OBJ(uint8_t, node->obj->pptrs[ABCDK_MTX_ELEMENT_TYPE], 0),
+                          ABCDK_PTR2OBJ(uint8_t, node->obj->pptrs[ABCDK_MTX_ELEMENT_ISFULL], 0),
+                          node->obj->pptrs[ABCDK_MTX_ELEMENT_BARCODE],
+                          node->obj->pptrs[ABCDK_MTX_ELEMENT_DVCID]);
     }
 
     return 1;

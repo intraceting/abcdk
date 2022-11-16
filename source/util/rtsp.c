@@ -53,7 +53,7 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
     FILE *fp = NULL;
     char *p = NULL;
 
-    p = sdp->alloc->pstrs[0];
+    p = sdp->obj->pstrs[0];
 
     fp = fmemopen(p, strlen(p), "r");
     if (!fp)
@@ -63,8 +63,8 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
     {
         if (i == 1)
         {
-            sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, '=');
-            if (!sdp->alloc->pstrs[i])
+            sdp->obj->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, '=');
+            if (!sdp->obj->pstrs[i])
                 break;
         }
         else
@@ -74,14 +74,14 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
                 if (i != 2)
                     break;
 
-                sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, '\n');
-                if (!sdp->alloc->pstrs[i])
+                sdp->obj->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, '\n');
+                if (!sdp->obj->pstrs[i])
                     break;
             }
             else
             {
-                sdp->alloc->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
-                if (!sdp->alloc->pstrs[i])
+                sdp->obj->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
+                if (!sdp->obj->pstrs[i])
                     break;
             }
         }
@@ -117,16 +117,16 @@ abcdk_tree_t *abcdk_rtsp_sdp_parse(const char *data, size_t size)
             goto fianl_error;
 
         /*注册清理函数。*/
-        abcdk_object_atfree(sub->alloc, _abcdk_rtsp_sdp_destroy_cb, NULL);
+        abcdk_object_atfree(sub->obj, _abcdk_rtsp_sdp_destroy_cb, NULL);
 
-        sub->alloc->pstrs[0] = _abcdk_rtsp_sdp_fgetline(fp, '\n');
-        if (!sub->alloc->pstrs[0])
+        sub->obj->pstrs[0] = _abcdk_rtsp_sdp_fgetline(fp, '\n');
+        if (!sub->obj->pstrs[0])
             break;
 
         /*分解字段。*/
         _abcdk_rtsp_sdp_split(sub);
 
-        if (sub->alloc->pstrs[0][0] != 'm')
+        if (sub->obj->pstrs[0][0] != 'm')
         {
             abcdk_tree_insert2(sdp_p, sub, 0);
         }
@@ -170,11 +170,11 @@ int _abcdk_rtsp_sdp_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         abcdk_tree_fprintf(fp, depth, node, "");
         for (int i = 1; i < 100; i++)
         {
-            if (!node->alloc->pstrs[i])
+            if (!node->obj->pstrs[i])
                 break;
 
             fprintf(fp, "|");
-            fprintf(fp, "%s", node->alloc->pstrs[i]);
+            fprintf(fp, "%s", node->obj->pstrs[i]);
         }
         fprintf(fp, "|\n");
     }
@@ -199,15 +199,15 @@ abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
 
     while (p)
     {
-        if (p->alloc->pstrs[1][0] == 'm')
+        if (p->obj->pstrs[1][0] == 'm')
         {
             /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
             for (int i = 5; i < 100; i++)
             {
-                if (!p->alloc->pstrs[i])
+                if (!p->obj->pstrs[i])
                     break;
 
-                if (atoi(p->alloc->pstrs[i]) == fmt)
+                if (atoi(p->obj->pstrs[i]) == fmt)
                     return p;
             }
         }
@@ -346,15 +346,15 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
         
         payload = fmt;
     }
-    else if (sdp->alloc->pstrs[1][0] == 'm')
+    else if (sdp->obj->pstrs[1][0] == 'm')
     {
         /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
         for (int i = 5; i < 100; i++)
         {
-            if (!sdp->alloc->pstrs[i])
+            if (!sdp->obj->pstrs[i])
                 return NULL;
 
-            payload = atoi(sdp->alloc->pstrs[i]);
+            payload = atoi(sdp->obj->pstrs[i]);
             if (payload == fmt)
                 break;
         }
@@ -369,16 +369,16 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
 
     while (a_p)
     {
-        if (abcdk_strncmp(a_p->alloc->pstrs[2], "rtpmap:", 7, 0) == 0)
+        if (abcdk_strncmp(a_p->obj->pstrs[2], "rtpmap:", 7, 0) == 0)
         {
-            sscanf(a_p->alloc->pstrs[2], "%*[^:]%*[:]%hhu", &payload2);
+            sscanf(a_p->obj->pstrs[2], "%*[^:]%*[:]%hhu", &payload2);
             if (payload2 != payload)
             {
                 a_p = abcdk_tree_sibling(a_p, 0);
                 continue;
             }
 
-            p_next = a_p->alloc->pstrs[3];
+            p_next = a_p->obj->pstrs[3];
 
             /*拆分编码名称。*/
             p = abcdk_strtok(&p_next, "/");
@@ -408,9 +408,9 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
             if (!ctx->encoder_param)
                 goto final_error;
         }
-        else if (abcdk_strncmp(a_p->alloc->pstrs[2], "fmtp:", 5, 0) == 0)
+        else if (abcdk_strncmp(a_p->obj->pstrs[2], "fmtp:", 5, 0) == 0)
         {
-            sscanf(a_p->alloc->pstrs[2], "%*[^:]%*[:]%hhu", &payload2);
+            sscanf(a_p->obj->pstrs[2], "%*[^:]%*[:]%hhu", &payload2);
             if (payload2 != payload)
             {
                 a_p = abcdk_tree_sibling(a_p, 0);
@@ -419,10 +419,10 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
 
             for (int i = 3,j = 0; i < 100; i++)
             {
-                if (!a_p->alloc->pstrs[i])
+                if (!a_p->obj->pstrs[i])
                     break;
 
-                p_next = a_p->alloc->pstrs[i];
+                p_next = a_p->obj->pstrs[i];
                 while (1)
                 {
                     p = abcdk_strtok(&p_next, ";");
@@ -442,12 +442,12 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
                 }
             }
         }
-        else if (abcdk_strncmp(a_p->alloc->pstrs[2], "control:", 8, 0) == 0)
+        else if (abcdk_strncmp(a_p->obj->pstrs[2], "control:", 8, 0) == 0)
         {
             if (ctx->control)
                 goto final_error;
 
-            p_next = a_p->alloc->pstrs[2]+8;
+            p_next = a_p->obj->pstrs[2]+8;
             p = abcdk_strtok(&p_next, ";");
             if (!p)
                 goto final_error;

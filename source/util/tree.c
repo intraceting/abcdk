@@ -222,7 +222,7 @@ void abcdk_tree_free(abcdk_tree_t **root)
             {
                 abcdk_tree_unlink(node);
 
-                abcdk_object_unref(&node->alloc);
+                abcdk_object_unref(&node->obj);
                 abcdk_heap_free2((void**)&node);
             }
         }
@@ -233,7 +233,7 @@ void abcdk_tree_free(abcdk_tree_t **root)
         }
     }
 
-    abcdk_object_unref(&(*root)->alloc);
+    abcdk_object_unref(&(*root)->obj);
     abcdk_heap_free2((void**)root);
 
 }
@@ -245,7 +245,7 @@ abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *alloc)
     if (!node)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM,NULL);
 
-    node->alloc = alloc;
+    node->obj = alloc;
 
     return node;
 }
@@ -258,7 +258,7 @@ abcdk_tree_t *abcdk_tree_alloc2(size_t *sizes, size_t numbers,int drag)
     if (!node || !alloc)
         goto final_error;
 
-    node->alloc = alloc;
+    node->obj = alloc;
     
     return node;
 

@@ -550,7 +550,6 @@ void _abcdkhttpd_close_cb(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    abcdk_heap_free2((void **)&http_p);
 }
 
 void _abcdkhttpd_work(abcdkhttpd_t *ctx)

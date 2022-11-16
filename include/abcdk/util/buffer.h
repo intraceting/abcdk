@@ -20,11 +20,11 @@ __BEGIN_DECLS
 typedef struct _abcdk_buffer
 {
     /**
-     * 内存块。
+     * 内存块对象。
      *
      * @note 尽量不要直接访问。
     */
-    abcdk_object_t *alloc;
+    abcdk_object_t *obj;
 
     /**
      * 内存指针。
@@ -52,11 +52,11 @@ typedef struct _abcdk_buffer
 /**
  * 创建。
  * 
- * @param [in] alloc 内存块的指针。仅复制指针，不是指针对像引用。
+ * @param [in] obj 内存块的指针。仅复制指针，不是指针对像引用。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
  */
-abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *alloc);
+abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *obj);
 
 /**
  * 创建。

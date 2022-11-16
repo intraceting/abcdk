@@ -175,7 +175,7 @@ void abcdk_mmc_list(abcdk_tree_t *list)
         if(!dev)
             break;
 
-        dev_p = (abcdk_mmc_info_t*)dev->alloc->pptrs[0];
+        dev_p = (abcdk_mmc_info_t*)dev->obj->pptrs[0];
         abcdk_tree_insert2(list,dev,0);
         
         /*从路径中分离bus并保存。*/
@@ -202,12 +202,12 @@ int _abcdk_mmc_find(abcdk_tree_t *list, abcdk_tree_t *node)
     if (!list)
         return 0;
 
-    dev_q = (abcdk_mmc_info_t *)node->alloc->pptrs[0];
+    dev_q = (abcdk_mmc_info_t *)node->obj->pptrs[0];
 
     p = abcdk_tree_child(list, 1);
     while (p)
     {
-        dev_p = (abcdk_mmc_info_t *)p->alloc->pptrs[0];
+        dev_p = (abcdk_mmc_info_t *)p->obj->pptrs[0];
 
         if (abcdk_strcmp(dev_p->bus, dev_q->bus,1) == 0 &&
             abcdk_strcmp(dev_p->devname, dev_q->devname,1) == 0)
@@ -244,7 +244,7 @@ void _abcdk_mmc_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t 
     {
         if (!_abcdk_mmc_find((add ? old_list : new_list), p))
         {
-            tmp = abcdk_tree_alloc(abcdk_object_refer(p->alloc));//增加引用计数。
+            tmp = abcdk_tree_alloc(abcdk_object_refer(p->obj));//增加引用计数。
             if (!tmp)
                 return;
 
@@ -269,7 +269,7 @@ void _abcdk_mmc_check_ok(abcdk_tree_t *list)
     p = abcdk_tree_child(list, 1);
     while (p)
     {
-        dev_p = (abcdk_mmc_info_t *)p->alloc->pptrs[0];
+        dev_p = (abcdk_mmc_info_t *)p->obj->pptrs[0];
 
         if (dev_p->devname[0] == '\0')
         {

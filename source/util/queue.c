@@ -101,10 +101,10 @@ int abcdk_queue_push(abcdk_queue_t *queue, const void *msg, int first)
         return -1;
 
     /*注册消息对象释放函数。*/
-    abcdk_object_atfree(msg_node->alloc, _abcdk_queue_destroy_cb, queue);
+    abcdk_object_atfree(msg_node->obj, _abcdk_queue_destroy_cb, queue);
 
     /*绑定到节点。*/
-    msg_node->alloc->pptrs[0] = (uint8_t *)msg;
+    msg_node->obj->pptrs[0] = (uint8_t *)msg;
 
     abcdk_mutex_lock(&queue->locker, 1);
 
@@ -138,8 +138,8 @@ const void *abcdk_queue_pop(abcdk_queue_t *queue, int first)
         return NULL;
 
     /*复制消息对象指针，解除绑定关系。*/
-    msg_p = (void *)msg_node->alloc->pptrs[0];
-    msg_node->alloc->pptrs[0] = NULL;
+    msg_p = (void *)msg_node->obj->pptrs[0];
+    msg_node->obj->pptrs[0] = NULL;
 
     abcdk_tree_free(&msg_node);
 

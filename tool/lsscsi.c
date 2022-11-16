@@ -65,8 +65,8 @@ int _abcdklsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
     abcdklsscsi_t *ctx = (abcdklsscsi_t*)opaque;
     abcdk_scsi_info_t *dev_p = NULL;
     
-    if(node && node->alloc)
-        dev_p = (abcdk_scsi_info_t*)node->alloc->pptrs[0];
+    if(node && node->obj)
+        dev_p = (abcdk_scsi_info_t*)node->obj->pptrs[0];
 
     if (depth == 0)
     {

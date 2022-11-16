@@ -152,7 +152,7 @@ char *abcdk_abspath(char *buf)
         if(!pos)
             goto final_error;
 
-        strncpy(pos->alloc->pstrs[0], p, p_next - p);
+        strncpy(pos->obj->pstrs[0], p, p_next - p);
         abcdk_tree_insert2(stack, pos, 0);
     }
 
@@ -165,7 +165,7 @@ char *abcdk_abspath(char *buf)
     pos = abcdk_tree_child(stack,1);
     while(pos)
     {
-        abcdk_dirdir(buf,pos->alloc->pstrs[0]);
+        abcdk_dirdir(buf,pos->obj->pstrs[0]);
         pos = abcdk_tree_sibling(pos,0);
     }
 

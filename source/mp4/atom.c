@@ -123,7 +123,7 @@ abcdk_tree_t *abcdk_mp4_alloc()
     if(!node)
        return NULL;
 
-    abcdk_object_atfree(node->alloc,_abcdk_mp4_free_cb,NULL);
+    abcdk_object_atfree(node->obj,_abcdk_mp4_free_cb,NULL);
 
     return node;
 }
@@ -146,7 +146,7 @@ int _abcdk_mp4_find_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     if (depth == -1UL)
         return -1;
 
-    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     ctx = (abcdk_mp4_find_ctx_t *)opaque;
     
     if (atom->type.u32 == ctx->type.u32)
@@ -212,7 +212,7 @@ int _abcdk_mp4_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     if (depth == -1UL)
         return -1;
 
-    atom = (abcdk_mp4_atom_t *)node->alloc->pptrs[0];
+    atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
     ctx = (abcdk_mp4_dump_ctx_t *)opaque;
 
     hsize = atom->off_data - atom->off_head;

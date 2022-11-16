@@ -17,9 +17,9 @@ int dump2(size_t deep, abcdk_tree_t *node, void *opaque)
     if(deep==0)
         abcdk_tree_fprintf(stderr,deep,node,"OPT\n");
     if(deep==1)
-        abcdk_tree_fprintf(stderr,deep,node,"%s\n",node->alloc->pptrs[ABCDK_OPTION_KEY]);
+        abcdk_tree_fprintf(stderr,deep,node,"%s\n",node->obj->pptrs[ABCDK_OPTION_KEY]);
     if(deep==2)
-        abcdk_tree_fprintf(stderr,deep,node,"%s\n",node->alloc->pptrs[ABCDK_OPTION_VALUE]);
+        abcdk_tree_fprintf(stderr,deep,node,"%s\n",node->obj->pptrs[ABCDK_OPTION_VALUE]);
 
     return 1;
 }

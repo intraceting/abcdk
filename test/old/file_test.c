@@ -71,8 +71,8 @@ void test_dir()
 
 int compare_cb(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque)
 {
-    char* src = ABCDK_PTR2PTR(char, node1->alloc->pptrs[ABCDK_DIRENT_NAME], 0);
-    char* dst = ABCDK_PTR2PTR(char, node2->alloc->pptrs[ABCDK_DIRENT_NAME], 0);
+    char* src = ABCDK_PTR2PTR(char, node1->obj->pptrs[ABCDK_DIRENT_NAME], 0);
+    char* dst = ABCDK_PTR2PTR(char, node2->obj->pptrs[ABCDK_DIRENT_NAME], 0);
 
     return abcdk_strcmp(src,dst,1);
 }
@@ -89,8 +89,8 @@ int dump2(size_t deep, abcdk_tree_t *node, void *opaque)
 
     test_sort(node,0);
 
-    char *path = (char*)(node->alloc->pptrs[ABCDK_DIRENT_NAME]);
-    struct stat *stat = (struct stat *)(node->alloc->pptrs[ABCDK_DIRENT_STAT]);
+    char *path = (char*)(node->obj->pptrs[ABCDK_DIRENT_NAME]);
+    struct stat *stat = (struct stat *)(node->obj->pptrs[ABCDK_DIRENT_STAT]);
 
 
     char name[NAME_MAX] ={0};
@@ -119,19 +119,19 @@ void test_dirscan()
     size_t sizes[2] = {PATH_MAX,sizeof(struct stat)};
     abcdk_tree_t * t = abcdk_tree_alloc2(sizes,2,0);
 
-   strcpy(t->alloc->pptrs[ABCDK_DIRENT_NAME],"/tmp/");
+   strcpy(t->obj->pptrs[ABCDK_DIRENT_NAME],"/tmp/");
    abcdk_dirscan(t,100,0);
 
-//    strcpy(t->alloc->pptrs[ABCDK_DIRENT_NAME],"/proc/");
+//    strcpy(t->obj->pptrs[ABCDK_DIRENT_NAME],"/proc/");
  //   abcdk_dirscan(t,5,0);
 
- //   strcpy(t->alloc->pptrs[ABCDK_DIRENT_NAME],"/usr");
+ //   strcpy(t->obj->pptrs[ABCDK_DIRENT_NAME],"/usr");
  //   abcdk_dirscan(t,100,0);
 
- //   strcpy(t->alloc->pptrs[ABCDK_DIRENT_NAME],"/mnt");
+ //   strcpy(t->obj->pptrs[ABCDK_DIRENT_NAME],"/mnt");
  //   abcdk_dirscan(t,100,1);
 
- //   strcpy(t->alloc->pptrs[ABCDK_DIRENT_NAME],"/tmp");
+ //   strcpy(t->obj->pptrs[ABCDK_DIRENT_NAME],"/tmp");
   //  abcdk_dirscan(t,1,0);
 
     traversal(t);
@@ -346,8 +346,8 @@ int tar_dump(size_t depth, abcdk_tree_t *node, void *opaque)
         return 1;
 
 
-    char* name = node->alloc->pptrs[ABCDK_DIRENT_NAME];
-    struct stat * attr = (struct stat*)node->alloc->pptrs[ABCDK_DIRENT_STAT];
+    char* name = node->obj->pptrs[ABCDK_DIRENT_NAME];
+    struct stat * attr = (struct stat*)node->obj->pptrs[ABCDK_DIRENT_STAT];
 
     printf("%s\n",name);
 
@@ -397,7 +397,7 @@ void test_tar_write(const char* tarfile)
     size_t sizes[2] = {PATH_MAX,sizeof(struct stat)};
     abcdk_tree_t * dir = abcdk_tree_alloc2(sizes,2,0);
 
-   strcpy(dir->alloc->pptrs[ABCDK_DIRENT_NAME],"/tmp/");
+   strcpy(dir->obj->pptrs[ABCDK_DIRENT_NAME],"/tmp/");
    abcdk_dirscan(dir,100,0);
 
 

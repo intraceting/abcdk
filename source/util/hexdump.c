@@ -206,9 +206,9 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     if (!stack)
                         goto final;
 
-                    stack_p->alloc->sizes[0] = kwidx;
-                    stack_p->alloc->sizes[1] = color_s;
-                    stack_p->alloc->sizes[2] = color_e;
+                    stack_p->obj->sizes[0] = kwidx;
+                    stack_p->obj->sizes[1] = color_s;
+                    stack_p->obj->sizes[2] = color_e;
 
                     /*按顺序压入队列。*/
                     abcdk_tree_insert2(stack,stack_p,0);
@@ -250,19 +250,19 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                         if(!stack_p)
                             break;
 
-                        if( i2 < stack_p->alloc->sizes[1])
+                        if( i2 < stack_p->obj->sizes[1])
                             break;
                         
-                        if( i2 >= stack_p->alloc->sizes[2])
+                        if( i2 >= stack_p->obj->sizes[2])
                         {
                             abcdk_tree_unlink(stack_p);
                             abcdk_tree_free(&stack_p);
                         }
                         else
                         {
-                            kwidx2 = stack_p->alloc->sizes[0];
-                            color2_s = stack_p->alloc->sizes[1];
-                            color2_e = stack_p->alloc->sizes[2];
+                            kwidx2 = stack_p->obj->sizes[0];
+                            color2_s = stack_p->obj->sizes[1];
+                            color2_e = stack_p->obj->sizes[2];
                             break;
                         }
                     }

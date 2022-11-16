@@ -19,11 +19,11 @@ int dump_tree(size_t deep, abcdk_tree_t *node, void *opaque)
         abcdk_tree_fprintf(stderr,deep,node,"%s\n","map");
     else if(deep ==1)
         abcdk_tree_fprintf(stderr,deep,node,"%lu\n",
-            *ABCDK_PTR2PTR(uint64_t, node->alloc->pptrs[ABCDK_MAP_BUCKET], 0));
+            *ABCDK_PTR2PTR(uint64_t, node->obj->pptrs[ABCDK_MAP_BUCKET], 0));
     else
         abcdk_tree_fprintf(stderr, deep, node, "%d:%s\n",
-                          *ABCDK_PTR2PTR(int, node->alloc->pptrs[ABCDK_MAP_KEY], 0),
-                          ABCDK_PTR2PTR(char, node->alloc->pptrs[ABCDK_MAP_VALUE], 0));
+                          *ABCDK_PTR2PTR(int, node->obj->pptrs[ABCDK_MAP_KEY], 0),
+                          ABCDK_PTR2PTR(char, node->obj->pptrs[ABCDK_MAP_VALUE], 0));
 
     return 1;
 }
@@ -43,11 +43,11 @@ int dump2_tree(size_t deep, abcdk_tree_t *node, void *opaque)
         abcdk_tree_fprintf(stderr,deep,node,"%s\n","map");
     else if(deep ==1)
         abcdk_tree_fprintf(stderr,deep,node,"%lu\n",
-            *ABCDK_PTR2PTR(uint64_t, node->alloc->pptrs[ABCDK_MAP_BUCKET], 0));
+            *ABCDK_PTR2PTR(uint64_t, node->obj->pptrs[ABCDK_MAP_BUCKET], 0));
     else
         abcdk_tree_fprintf(stderr, deep, node, "%s:%s\n",
-                          ABCDK_PTR2PTR(char, node->alloc->pptrs[ABCDK_MAP_KEY], 0),
-                          ABCDK_PTR2PTR(char, node->alloc->pptrs[ABCDK_MAP_VALUE], 0));
+                          ABCDK_PTR2PTR(char, node->obj->pptrs[ABCDK_MAP_KEY], 0),
+                          ABCDK_PTR2PTR(char, node->obj->pptrs[ABCDK_MAP_VALUE], 0));
 
     return 1;
 }

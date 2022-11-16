@@ -178,11 +178,11 @@ void *_abcdk_reader_readfile(void *opaque)
             continue;
 
         /*清除旧的信息。*/
-        ABCDK_PTR2SIZE(buf->alloc->pptrs[1], 0) = ABCDK_PTR2SIZE(buf->alloc->pptrs[2], 0) = 0;
+        ABCDK_PTR2SIZE(buf->obj->pptrs[1], 0) = ABCDK_PTR2SIZE(buf->obj->pptrs[2], 0) = 0;
         /*读取新的数据。*/
-        rlen = abcdk_read(reader->fd, buf->alloc->pptrs[0], reader->blksize);
+        rlen = abcdk_read(reader->fd, buf->obj->pptrs[0], reader->blksize);
         if (rlen > 0)
-            ABCDK_PTR2SIZE(buf->alloc->pptrs[1], 0) = rlen;
+            ABCDK_PTR2SIZE(buf->obj->pptrs[1], 0) = rlen;
 
         /*添加到忙队列末尾。*/
         abcdk_mutex_lock(&reader->qlock, 1);
@@ -230,15 +230,15 @@ ssize_t abcdk_reader_read(abcdk_reader_t *reader, void *buf, size_t size)
             break;
 
         /*计算最多读多少。*/
-        rper = ABCDK_MIN(ABCDK_PTR2SIZE(buf2->alloc->pptrs[1], 0) - ABCDK_PTR2SIZE(buf2->alloc->pptrs[2], 0), size - rall);
-        memcpy(ABCDK_PTR2VPTR(buf, rall), buf2->alloc->pptrs[0] + ABCDK_PTR2SIZE(buf2->alloc->pptrs[2], 0), rper);
+        rper = ABCDK_MIN(ABCDK_PTR2SIZE(buf2->obj->pptrs[1], 0) - ABCDK_PTR2SIZE(buf2->obj->pptrs[2], 0), size - rall);
+        memcpy(ABCDK_PTR2VPTR(buf, rall), buf2->obj->pptrs[0] + ABCDK_PTR2SIZE(buf2->obj->pptrs[2], 0), rper);
 
         /*累加已读量。*/
-        ABCDK_PTR2SIZE(buf2->alloc->pptrs[2], 0) += rper;
+        ABCDK_PTR2SIZE(buf2->obj->pptrs[2], 0) += rper;
         rall += rper;
 
         /*判断缓存区中数据是否已经读完。*/
-        if (ABCDK_PTR2SIZE(buf2->alloc->pptrs[1], 0) > ABCDK_PTR2SIZE(buf2->alloc->pptrs[2], 0))
+        if (ABCDK_PTR2SIZE(buf2->obj->pptrs[1], 0) > ABCDK_PTR2SIZE(buf2->obj->pptrs[2], 0))
         {
             /*未读完，将缓存放入忙队列(头)。*/
             abcdk_mutex_lock(&reader->qlock, 1);

@@ -6,7 +6,7 @@
 */
 #include "abcdk/util/buffer.h"
 
-abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *alloc)
+abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *obj)
 {
     abcdk_buffer_t *buf = NULL;
 
@@ -14,22 +14,22 @@ abcdk_buffer_t *abcdk_buffer_alloc(abcdk_object_t *alloc)
     if (!buf)
         return NULL;
 
-    if (alloc)
+    if (obj)
     {
-        assert(alloc->numbers > 0 && alloc->pptrs[0] != NULL && alloc->sizes[0] > 0);
+        assert(obj->numbers > 0 && obj->pptrs[0] != NULL && obj->sizes[0] > 0);
 
         /*绑定内存块。*/
-        buf->alloc = alloc;
+        buf->obj = obj;
 
-        buf->data = buf->alloc->pptrs[0];
-        buf->size = buf->alloc->sizes[0];
+        buf->data = buf->obj->pptrs[0];
+        buf->size = buf->obj->sizes[0];
 
         buf->rsize = buf->wsize = 0;
     }
     else
     {
         /*允许空的。*/
-        buf->alloc = buf->data = NULL;
+        buf->obj = buf->data = NULL;
         buf->size = buf->rsize = buf->wsize = 0;
     }
 
@@ -70,7 +70,7 @@ void abcdk_buffer_free(abcdk_buffer_t **dst)
 
     buf_p = *dst;
 
-    abcdk_object_unref(&buf_p->alloc);
+    abcdk_object_unref(&buf_p->obj);
 
     abcdk_heap_free2((void **)dst);
 }
@@ -92,10 +92,10 @@ int abcdk_buffer_resize(abcdk_buffer_t *buf, size_t size)
     memcpy(alloc_new->pptrs[0], buf->data, buf->size);
 
     /*解除旧的内存块*/
-    abcdk_object_unref(&buf->alloc);
+    abcdk_object_unref(&buf->obj);
 
     /*绑定新的内存块。*/
-    buf->alloc = alloc_new;
+    buf->obj = alloc_new;
 
     buf->data = alloc_new->pptrs[0];
     buf->size = alloc_new->sizes[0];

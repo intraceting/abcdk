@@ -961,7 +961,7 @@ NEXT_MSG:
     }
 
     /*发。*/
-    slen = abcdk_comm_send(node, ABCDK_PTR2VPTR(p->alloc->pptrs[0], node->out_pos), p->alloc->sizes[0] - node->out_pos);
+    slen = abcdk_comm_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
     if (slen <= 0)
     {
         abcdk_comm_send_watch(node);
@@ -972,7 +972,7 @@ NEXT_MSG:
     node->out_pos += slen;
 
     /*当前节点未发送完整，则继续发送。*/
-    if (node->out_pos < p->alloc->sizes[0])
+    if (node->out_pos < p->obj->sizes[0])
         goto NEXT_MSG;
 
     /*发送游标归零。*/

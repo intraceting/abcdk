@@ -65,21 +65,21 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
     assert(map->compare_cb);
 
     hash = map->hash_cb(key, ksize, map->opaque);
-    bucket = hash % map->table->alloc->numbers;
+    bucket = hash % map->table->obj->numbers;
 
     /* 查找桶，不存在则创建。*/
-    it = (abcdk_tree_t *)map->table->alloc->pptrs[bucket];
+    it = (abcdk_tree_t *)map->table->obj->pptrs[bucket];
     if (!it)
     {
         it = abcdk_tree_alloc3(sizeof(bucket));
         if (it)
         {
             /*存放桶的索引值。*/
-            ABCDK_PTR2OBJ(uint64_t, it->alloc->pptrs[ABCDK_MAP_BUCKET], 0) = bucket;
+            ABCDK_PTR2OBJ(uint64_t, it->obj->pptrs[ABCDK_MAP_BUCKET], 0) = bucket;
 
             /* 桶加入到表格中。*/
             abcdk_tree_insert2(map->table, it, 0);
-            map->table->alloc->pptrs[bucket] = (uint8_t *)it;
+            map->table->obj->pptrs[bucket] = (uint8_t *)it;
         }
     }
 
@@ -90,7 +90,7 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
     node = abcdk_tree_child(it, 1);
     while (node)
     {
-        chk = map->compare_cb(node->alloc->pptrs[ABCDK_MAP_KEY],node->alloc->sizes[ABCDK_MAP_KEY], key, ksize, map->opaque);
+        chk = map->compare_cb(node->obj->pptrs[ABCDK_MAP_KEY],node->obj->sizes[ABCDK_MAP_KEY], key, ksize, map->opaque);
         if (chk == 0)
             break;
 
@@ -108,14 +108,14 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
 
         /* 注册数据节点的析构函数。*/
         if (map->destructor_cb)
-            abcdk_object_atfree(node->alloc, map->destructor_cb, map->opaque);
+            abcdk_object_atfree(node->obj, map->destructor_cb, map->opaque);
 
         /*复制KEY。*/
-        memcpy(node->alloc->pptrs[ABCDK_MAP_KEY], key, ksize);
+        memcpy(node->obj->pptrs[ABCDK_MAP_KEY], key, ksize);
 
         /*也许有构造函数要处理一下。*/
         if(map->construct_cb)
-            map->construct_cb(node->alloc,map->opaque);
+            map->construct_cb(node->obj,map->opaque);
 
         /* 加入到链表头。 */
         abcdk_tree_insert2(it, node, 1);
@@ -129,7 +129,7 @@ abcdk_object_t *abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, 
     abcdk_tree_t *node = _abcdk_map_find(map, key, ksize, vsize);
 
     if (node)
-        return node->alloc;
+        return node->obj;
 
     ABCDK_ERRNO_AND_RETURN1(EAGAIN, NULL);
 }
@@ -162,7 +162,7 @@ int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     if (depth <= 1)
         return 1;
 
-    return map->dump_cb(node->alloc, map->opaque);
+    return map->dump_cb(node->obj, map->opaque);
 }
 
 void abcdk_map_scan(abcdk_map_t *map)

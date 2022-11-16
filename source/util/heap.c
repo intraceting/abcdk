@@ -28,11 +28,15 @@ void abcdk_heap_free(void *data)
 
 void abcdk_heap_free2(void **data)
 {
-    if (!data || !*data)
-        ABCDK_ERRNO_AND_RETURN0(EINVAL);
+    void *data_p;
 
-    abcdk_heap_free(*data);
+    if (!data || !*data)
+        return;
+
+    data_p = *data;
     *data = NULL;
+
+    abcdk_heap_free(data_p);
 }
 
 void *abcdk_heap_clone(const void *data, size_t size)

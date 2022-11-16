@@ -286,11 +286,11 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     }
     else
     {
-        id = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_ID], 0);
-        rd = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_READONLY], 0);
-        fmt = ABCDK_PTR2U8(node->alloc->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0);
-        len = ABCDK_PTR2U16(node->alloc->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
-        val = node->alloc->pptrs[ABCDK_TAPE_ATTR_VALUE];
+        id = ABCDK_PTR2U16(node->obj->pptrs[ABCDK_TAPE_ATTR_ID], 0);
+        rd = ABCDK_PTR2U8(node->obj->pptrs[ABCDK_TAPE_ATTR_READONLY], 0);
+        fmt = ABCDK_PTR2U8(node->obj->pptrs[ABCDK_TAPE_ATTR_FORMAT], 0);
+        len = ABCDK_PTR2U16(node->obj->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
+        val = node->obj->pptrs[ABCDK_TAPE_ATTR_VALUE];
 
         if (len <= 0)
             return 1;
@@ -360,8 +360,8 @@ abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmt_t *ctx, uint8_t part, uint16_t id)
     if(!node)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ENOMEM, final_error);
 
-    node->alloc = abcdk_tape_read_attribute(ctx->fd, part, id, 3000, &ctx->stat);
-    if (!node->alloc || ctx->stat.status != GOOD)
+    node->obj = abcdk_tape_read_attribute(ctx->fd, part, id, 3000, &ctx->stat);
+    if (!node->obj || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
 
     return node;

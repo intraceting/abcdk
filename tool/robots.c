@@ -64,15 +64,15 @@ int _abcdkrobots_match_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         p = param->url;
     }
 
-    if (abcdk_strcmp(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0), "Disallow", 0) == 0)
+    if (abcdk_strcmp(ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_KEY], 0), "Disallow", 0) == 0)
     {
-        chk = abcdk_fnmatch(p, ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0), 0, 0);
+        chk = abcdk_fnmatch(p, ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_VALUE], 0), 0, 0);
         if (chk == 0)
             param->disallow += 1;
     }
-    else if (abcdk_strcmp(ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_KEY], 0), "Allow", 0) == 0)
+    else if (abcdk_strcmp(ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_KEY], 0), "Allow", 0) == 0)
     {
-        chk = abcdk_fnmatch(p, ABCDK_PTR2I8PTR(node->alloc->pptrs[ABCDK_ROBOTS_VALUE], 0), 0, 0);
+        chk = abcdk_fnmatch(p, ABCDK_PTR2I8PTR(node->obj->pptrs[ABCDK_ROBOTS_VALUE], 0), 0, 0);
         if (chk == 0)
             param->allow += 1;
     }

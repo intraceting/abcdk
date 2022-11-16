@@ -64,10 +64,10 @@ void abcdk_mtab_list(abcdk_tree_t *list)
 
         abcdk_tree_insert2(list,dev,0);
 
-        strncpy((char*)dev->alloc->pptrs[1],line,rlen);
+        strncpy((char*)dev->obj->pptrs[1],line,rlen);
         
-        dev_p = (abcdk_mtab_info_t*)dev->alloc->pptrs[0];
-        pos = (char*)dev->alloc->pptrs[1];
+        dev_p = (abcdk_mtab_info_t*)dev->obj->pptrs[0];
+        pos = (char*)dev->obj->pptrs[1];
 
         /*字段分割，顺序不能换。*/
         dev_p->fs = _abcdk_mtab_split_field(&pos);

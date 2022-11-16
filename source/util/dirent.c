@@ -26,13 +26,13 @@ int abcdk_dirent_open(abcdk_tree_t *dir,const char *path)
     if(!tmp)
         return -1;
 
-    abcdk_object_atfree(tmp->alloc,_abcdk_dirent_destroy_cb,NULL);
+    abcdk_object_atfree(tmp->obj,_abcdk_dirent_destroy_cb,NULL);
 
-    tmp->alloc->pptrs[1] = (uint8_t*)opendir(path);
-    if (!tmp->alloc->pptrs[1])
+    tmp->obj->pptrs[1] = (uint8_t*)opendir(path);
+    if (!tmp->obj->pptrs[1])
         ABCDK_ERRNO_AND_GOTO1(errno,final_error);
 
-    strncpy(tmp->alloc->pptrs[0],path,PATH_MAX);
+    strncpy(tmp->obj->pptrs[0],path,PATH_MAX);
 
     abcdk_tree_insert2(dir,tmp,0);
 
@@ -60,7 +60,7 @@ prev:
 
 next:
 
-    c_dir = readdir((DIR*)tmp->alloc->pptrs[1]);
+    c_dir = readdir((DIR*)tmp->obj->pptrs[1]);
     if(!c_dir)
     {
         abcdk_tree_unlink(tmp);
@@ -71,7 +71,7 @@ next:
     if (abcdk_strcmp(c_dir->d_name, ".", 1) == 0 || abcdk_strcmp(c_dir->d_name, "..", 1) == 0)
         goto next;
 
-    abcdk_dirdir(file, (char*)tmp->alloc->pptrs[0]);
+    abcdk_dirdir(file, (char*)tmp->obj->pptrs[0]);
     abcdk_dirdir(file, c_dir->d_name);
 
     return 0;    

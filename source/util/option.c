@@ -16,7 +16,7 @@ abcdk_tree_t *_abcdk_option_find_key(abcdk_tree_t *opt, const char *key,int crea
     it = abcdk_tree_child(opt,1);
     while(it)
     {
-        chk = abcdk_strcmp(it->alloc->pptrs[ABCDK_OPTION_KEY], key, 1);
+        chk = abcdk_strcmp(it->obj->pptrs[ABCDK_OPTION_KEY], key, 1);
         if (chk == 0)
             break;
 
@@ -29,7 +29,7 @@ abcdk_tree_t *_abcdk_option_find_key(abcdk_tree_t *opt, const char *key,int crea
 
         if(it)
         {
-            strcpy(it->alloc->pptrs[ABCDK_OPTION_KEY],key);
+            strcpy(it->obj->pptrs[ABCDK_OPTION_KEY],key);
             abcdk_tree_insert2(opt,it,0);
         }
     }
@@ -96,7 +96,7 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value)
     if (!it_val)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM, -1);
 
-    strcpy(it_val->alloc->pptrs[ABCDK_OPTION_VALUE], value);
+    strcpy(it_val->obj->pptrs[ABCDK_OPTION_VALUE], value);
     abcdk_tree_insert2(it_key, it_val, 0);
     
 
@@ -147,7 +147,7 @@ const char* abcdk_option_get(abcdk_tree_t *opt, const char *key,size_t index,con
     if(!it_val)
         ABCDK_ERRNO_AND_RETURN1(EAGAIN,defval);
 
-    return it_val->alloc->pptrs[ABCDK_OPTION_VALUE];
+    return it_val->obj->pptrs[ABCDK_OPTION_VALUE];
 }
 
 int abcdk_option_get_int(abcdk_tree_t *opt, const char *key, size_t index, int defval)
@@ -234,7 +234,7 @@ ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens)
     it_key = abcdk_tree_child(opt,1);
     while(it_key)
     {
-        key = (char*)it_key->alloc->pptrs[ABCDK_OPTION_KEY];
+        key = (char*)it_key->obj->pptrs[ABCDK_OPTION_KEY];
 
         /*有连字符时不在这里输出。*/
         if (hyphens == NULL)
@@ -249,7 +249,7 @@ ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens)
         it_val = abcdk_tree_child(it_key,1);
         while(it_val)
         {
-            val = (char*)it_val->alloc->pptrs[ABCDK_OPTION_VALUE];
+            val = (char*)it_val->obj->pptrs[ABCDK_OPTION_VALUE];
 
             /*无连字符时在这里输出。*/
             if (hyphens == NULL)

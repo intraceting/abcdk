@@ -138,8 +138,8 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
     ctx->avc1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVC1, 1, 1);
     ctx->avcc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVCC, 1, 1);
 
-    ctx->avc1 = (abcdk_mp4_atom_t *)(ctx->avc1_p ? ctx->avc1_p->alloc->pptrs[0] : NULL);
-    ctx->avcc = (abcdk_mp4_atom_t *)(ctx->avcc_p ? ctx->avcc_p->alloc->pptrs[0] : NULL);
+    ctx->avc1 = (abcdk_mp4_atom_t *)(ctx->avc1_p ? ctx->avc1_p->obj->pptrs[0] : NULL);
+    ctx->avcc = (abcdk_mp4_atom_t *)(ctx->avcc_p ? ctx->avcc_p->obj->pptrs[0] : NULL);
 
     if (!ctx->avc1)
     {
@@ -185,7 +185,7 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
         ctx->moof_p = abcdk_tree_child(ctx->doc, 1);
         while (ctx->moof_p)
         {
-            ctx->moof = (abcdk_mp4_atom_t *)ctx->moof_p->alloc->pptrs[0];
+            ctx->moof = (abcdk_mp4_atom_t *)ctx->moof_p->obj->pptrs[0];
             if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
                 goto moof_next;
 
@@ -194,10 +194,10 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
             ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
             ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
 
-            ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->alloc->pptrs[0];
-            ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->alloc->pptrs[0];
-            ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->alloc->pptrs[0];
-            ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->alloc->pptrs[0];
+            ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
+            ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
+            ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->obj->pptrs[0];
+            ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->obj->pptrs[0];
 
             if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
             {
@@ -259,8 +259,8 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
     ctx->mp4a_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_MP4A, 1, 1);
     ctx->esds_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_ESDS, 1, 1);
 
-    ctx->mp4a = (abcdk_mp4_atom_t *)(ctx->mp4a_p ? ctx->mp4a_p->alloc->pptrs[0] : NULL);
-    ctx->esds = (abcdk_mp4_atom_t *)(ctx->esds_p ? ctx->esds_p->alloc->pptrs[0] : NULL);
+    ctx->mp4a = (abcdk_mp4_atom_t *)(ctx->mp4a_p ? ctx->mp4a_p->obj->pptrs[0] : NULL);
+    ctx->esds = (abcdk_mp4_atom_t *)(ctx->esds_p ? ctx->esds_p->obj->pptrs[0] : NULL);
 
     if (!ctx->mp4a)
     {
@@ -292,7 +292,7 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
         ctx->moof_p = abcdk_tree_child(ctx->doc, 1);
         while (ctx->moof_p)
         {
-            ctx->moof = (abcdk_mp4_atom_t *)ctx->moof_p->alloc->pptrs[0];
+            ctx->moof = (abcdk_mp4_atom_t *)ctx->moof_p->obj->pptrs[0];
             if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
                 goto moof_next;
 
@@ -301,10 +301,10 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
             ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
             ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
 
-            ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->alloc->pptrs[0];
-            ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->alloc->pptrs[0];
-            ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->alloc->pptrs[0];
-            ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->alloc->pptrs[0];
+            ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
+            ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
+            ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->obj->pptrs[0];
+            ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->obj->pptrs[0];
 
             if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
             {
@@ -390,14 +390,14 @@ void _abcdkm4j_dump(abcdkm4j_t *ctx)
         ctx->stsc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSC, 1, 1);
         ctx->stco_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STCO, 1, 1);
         
-        ctx->tkhd = (abcdk_mp4_atom_t*)(ctx->tkhd_p?ctx->tkhd_p->alloc->pptrs[0]:NULL);
-        ctx->hdlr = (abcdk_mp4_atom_t*)(ctx->hdlr_p?ctx->hdlr_p->alloc->pptrs[0]:NULL);
-        ctx->stsz = (abcdk_mp4_atom_t*)(ctx->stsz_p?ctx->stsz_p->alloc->pptrs[0]:NULL);
-        ctx->stss = (abcdk_mp4_atom_t*)(ctx->stss_p?ctx->stss_p->alloc->pptrs[0]:NULL);
-        ctx->stts = (abcdk_mp4_atom_t*)(ctx->stts_p?ctx->stts_p->alloc->pptrs[0]:NULL);
-        ctx->ctts = (abcdk_mp4_atom_t*)(ctx->ctts_p?ctx->ctts_p->alloc->pptrs[0]:NULL);
-        ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->alloc->pptrs[0]:NULL);
-        ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->alloc->pptrs[0]:NULL);
+        ctx->tkhd = (abcdk_mp4_atom_t*)(ctx->tkhd_p?ctx->tkhd_p->obj->pptrs[0]:NULL);
+        ctx->hdlr = (abcdk_mp4_atom_t*)(ctx->hdlr_p?ctx->hdlr_p->obj->pptrs[0]:NULL);
+        ctx->stsz = (abcdk_mp4_atom_t*)(ctx->stsz_p?ctx->stsz_p->obj->pptrs[0]:NULL);
+        ctx->stss = (abcdk_mp4_atom_t*)(ctx->stss_p?ctx->stss_p->obj->pptrs[0]:NULL);
+        ctx->stts = (abcdk_mp4_atom_t*)(ctx->stts_p?ctx->stts_p->obj->pptrs[0]:NULL);
+        ctx->ctts = (abcdk_mp4_atom_t*)(ctx->ctts_p?ctx->ctts_p->obj->pptrs[0]:NULL);
+        ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->obj->pptrs[0]:NULL);
+        ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->obj->pptrs[0]:NULL);
 
         if (ctx->hdlr->data.hdlr.subtype.u32 == ABCDK_MP4_ATOM_MKTAG('v', 'i', 'd', 'e') &&
             !ctx->ignore_video)

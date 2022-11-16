@@ -7,10 +7,10 @@
 #include "abcdk/util/object.h"
 
 /**
- * 带引用计数器的内存块头部。
+ * 简单的数据对象。
  * 
- * 申请内存块时，头部和数据块一次性申请创建。
- * 释放内存块时，直接通过头部首地址一次性释放。
+ * @warning 申请内存块时，头部和数据块一次性申请创建。
+ * @warning 释放内存块时，直接通过头部首地址一次性释放。
 */
 typedef struct _abcdk_object_hdr
 {
@@ -22,7 +22,7 @@ typedef struct _abcdk_object_hdr
     volatile int refcount;
 
     /** 析构函数。*/
-    abcdk_object_destroy_cb destroy_cb;
+    abcdk_object_destructor_cb destructor_cb;
 
     /** 环境指针。*/
     void *opaque;
@@ -34,19 +34,19 @@ typedef struct _abcdk_object_hdr
     */
     abcdk_object_t out;
 
-} abcdk_object_hdr;
+} abcdk_object_hdr_t;
 
 /*外部指针转内部指针*/
 #define ABCDK_OBJECT_PTR_OUT2IN(PTR) \
-    ABCDK_PTR2PTR(abcdk_object_hdr, (PTR), -(sizeof(abcdk_object_hdr) - sizeof(abcdk_object_t)))
+    ABCDK_PTR2PTR(abcdk_object_hdr_t, (PTR), -(sizeof(abcdk_object_hdr_t) - sizeof(abcdk_object_t)))
 
 /*内部指针转外部指针*/
 #define ABCDK_OBJECT_PTR_IN2OUT(PTR) \
-    ABCDK_PTR2PTR(abcdk_object_t, (PTR), sizeof(abcdk_object_hdr) - sizeof(abcdk_object_t))
+    ABCDK_PTR2PTR(abcdk_object_t, (PTR), sizeof(abcdk_object_hdr_t) - sizeof(abcdk_object_t))
 
-void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destroy_cb cb,void *opaque)
+void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destructor_cb cb,void *opaque)
 {
-    abcdk_object_hdr *in_p = NULL;
+    abcdk_object_hdr_t *in_p = NULL;
 
     assert(alloc != NULL && cb != NULL);
 
@@ -54,20 +54,20 @@ void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destroy_cb cb,void *
 
     assert(in_p->magic == ABCDK_OBJECT_MAGIC);
 
-    in_p->destroy_cb = cb;
+    in_p->destructor_cb = cb;
     in_p->opaque = opaque;
 }
 
 abcdk_object_t *abcdk_object_alloc(size_t *sizes, size_t numbers, int drag)
 {
-    abcdk_object_hdr *in_p = NULL;
+    abcdk_object_hdr_t *in_p = NULL;
     size_t need_size = 0;
     uint8_t *ptr_p = NULL;
 
     assert(numbers > 0);
 
     /* 计算基本的空间。*/
-    need_size += sizeof(abcdk_object_hdr);
+    need_size += sizeof(abcdk_object_hdr_t);
     need_size += numbers * sizeof(size_t);
     need_size += numbers * sizeof(uint8_t *);
 
@@ -79,21 +79,22 @@ abcdk_object_t *abcdk_object_alloc(size_t *sizes, size_t numbers, int drag)
     }
 
     /* 一次性申请多个内存块，以便减少多次申请内存块时，碎片化内存块导致内存分页利用率低的问题。*/
-    in_p = (abcdk_object_hdr *)abcdk_heap_alloc(need_size);
+    in_p = (abcdk_object_hdr_t *)abcdk_heap_alloc(need_size);
 
     if (!in_p)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
 
     in_p->magic = ABCDK_OBJECT_MAGIC;
     in_p->refcount = 1;
-    in_p->destroy_cb = NULL;
+    in_p->destructor_cb = NULL;
     in_p->opaque = NULL;
 
+    /* 填充各项信息。*/
     in_p->out.refcount = &in_p->refcount;
     in_p->out.numbers = numbers;
-    in_p->out.sizes = ABCDK_PTR2PTR(size_t, in_p, sizeof(abcdk_object_hdr));
+    in_p->out.sizes = ABCDK_PTR2PTR(size_t, in_p, sizeof(abcdk_object_hdr_t));
     in_p->out.pptrs = ABCDK_PTR2PTR(uint8_t *, in_p->out.sizes, numbers * sizeof(size_t));
-    in_p->out.pstrs = (char**)in_p->out.pptrs;//copy pointer to `char`。
+    in_p->out.pstrs = (char**)in_p->out.pptrs;//copy pointer to `char**`。
 
     /* 第一块内存地址。*/
     ptr_p = ABCDK_PTR2PTR(uint8_t, in_p->out.pptrs, numbers * sizeof(uint8_t *));
@@ -131,7 +132,7 @@ abcdk_object_t *abcdk_object_alloc3(size_t size,size_t numbers)
 
 abcdk_object_t *abcdk_object_refer(abcdk_object_t *src)
 {
-    abcdk_object_hdr *in_p = NULL;
+    abcdk_object_hdr_t *in_p = NULL;
     int chk;
 
     assert(src);
@@ -148,7 +149,7 @@ abcdk_object_t *abcdk_object_refer(abcdk_object_t *src)
 
 void abcdk_object_unref(abcdk_object_t **dst)
 {
-    abcdk_object_hdr *in_p = NULL;
+    abcdk_object_hdr_t *in_p = NULL;
 
     if (!dst || !*dst)
         ABCDK_ERRNO_AND_RETURN0(EINVAL);
@@ -162,11 +163,11 @@ void abcdk_object_unref(abcdk_object_t **dst)
 
     assert(in_p->refcount == 0);
 
-    if (in_p->destroy_cb)
-        in_p->destroy_cb(&in_p->out, in_p->opaque);
+    if (in_p->destructor_cb)
+        in_p->destructor_cb(&in_p->out, in_p->opaque);
 
     in_p->magic = ~(ABCDK_OBJECT_MAGIC);
-    in_p->destroy_cb = NULL;
+    in_p->destructor_cb = NULL;
     in_p->opaque = NULL;
     in_p->out.refcount = NULL;
     in_p->out.numbers = 0;

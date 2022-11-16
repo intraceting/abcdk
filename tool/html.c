@@ -85,7 +85,7 @@ int _abcdkhtml_match_attr(abcdk_tree_t *args, const char *key)
 
 void _abcdkhtml_printf(size_t depth, const abcdk_tree_t *node, int only_val, int align_left,int hide)
 {
-    int have_val = (node->alloc->pptrs[ABCDK_HTML_VALUE]?1:0);
+    int have_val = (node->obj->pptrs[ABCDK_HTML_VALUE]?1:0);
 
     if (hide)
     {
@@ -100,17 +100,17 @@ void _abcdkhtml_printf(size_t depth, const abcdk_tree_t *node, int only_val, int
         {
 
             abcdk_tree_fprintf(stdout, depth, node, "%s%s%s\n",
-                               (only_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_KEY]),
+                               (only_val ? "" : (char *)node->obj->pptrs[ABCDK_HTML_KEY]),
                                (only_val ? "" : "="),
-                               (!have_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_VALUE]));
+                               (!have_val ? "" : (char *)node->obj->pptrs[ABCDK_HTML_VALUE]));
         }
         else
         {
             fprintf(stdout, "%s%s%s%s\n",
                     (depth == 1 ? "\n" : ""),
-                    (only_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_KEY]),
+                    (only_val ? "" : (char *)node->obj->pptrs[ABCDK_HTML_KEY]),
                     (only_val ? "" : "="),
-                    (!have_val ? "" : (char *)node->alloc->pptrs[ABCDK_HTML_VALUE]));
+                    (!have_val ? "" : (char *)node->obj->pptrs[ABCDK_HTML_VALUE]));
         }
     }
 }
@@ -140,7 +140,7 @@ int _abcdkhtml_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 1)
     {
-        chk = _abcdkhtml_match_tag(args, (char *)node->alloc->pptrs[ABCDK_HTML_KEY]);
+        chk = _abcdkhtml_match_tag(args, (char *)node->obj->pptrs[ABCDK_HTML_KEY]);
         if (chk != 0)
             ABCDK_ERRNO_AND_RETURN1(0,0);
 
@@ -151,7 +151,7 @@ int _abcdkhtml_printf_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 2)
     {
-        chk = _abcdkhtml_match_attr(args, (char *)node->alloc->pptrs[ABCDK_HTML_KEY]);
+        chk = _abcdkhtml_match_attr(args, (char *)node->obj->pptrs[ABCDK_HTML_KEY]);
 
         if (chk == 0)
             _abcdkhtml_printf(depth,node,attr_short,align_left,attr_hide);
