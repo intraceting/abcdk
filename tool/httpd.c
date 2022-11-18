@@ -342,6 +342,8 @@ void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
         return;
     }
 
+    assert(http_p->tunnel == NULL);
+
     http_p->tunnel = abcdk_comm_alloc(http_p->ctx->comm);
     if(!http_p->tunnel)
     {
