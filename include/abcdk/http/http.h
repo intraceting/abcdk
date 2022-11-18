@@ -32,9 +32,16 @@ typedef struct _abcdk_http_callback
   void (*accept_cb)(abcdk_comm_node_t *node, int *result);
 
   /**
-   * 请求回调函数。
+   * 输入回调函数。
+   * 
+   * @warning 当剩余数据长度等于数据长度时（未处理任何数据），表示继续走原始流程。
    *
-   * @param req 请求数据。
+   * @param [out] remain 剩余数据长度。
+  */
+  void (*input_cb)(abcdk_comm_node_t *node, const void *data,size_t size,size_t *remain);
+
+  /**
+   * 请求回调函数。
    */
   void (*request_cb)(abcdk_comm_node_t *node, abcdk_http_request_t *req);
 

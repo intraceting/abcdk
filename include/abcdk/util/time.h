@@ -72,6 +72,8 @@ time_t abcdk_time_diff2(const char *t1, const char *t0, int utc);
 
 /**
  * 格式化时间。
+ * 
+ * @param [in] tm 时间，NULL(0) 获取UTC时间。
 */
 const char *abcdk_time_format(const char *fmt, const struct tm *tm);
 

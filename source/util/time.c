@@ -130,10 +130,10 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm)
 
     assert(fmt != NULL);
 
-    /*如果未输入时间，则使用本地时间。*/
+    /*如果未输入时间，则使用UTC时间。*/
     if(!tm)
     {
-        abcdk_time_get(&tmp,0);
+        abcdk_time_get(&tmp,1);
         return abcdk_time_format(fmt,&tmp);
     }
 
