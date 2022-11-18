@@ -11,45 +11,38 @@
 #include <locale.h>
 #include "entry.h"
 
-
-void test_rpc_request_cb(abcdk_comm_node_t *rpc, uint64_t mid,const void *data, size_t len)
+void test_rpc_request_cb(abcdk_comm_node_t *rpc, uint64_t mid, const void *data, size_t len)
 {
     char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
 
-    abcdk_comm_get_sockaddr_str(rpc,sockname_str,peername_str);
+    abcdk_comm_get_sockaddr_str(rpc, sockname_str, peername_str);
 
-  //  printf("Server(%s -> %s): ", sockname_str, peername_str);
+    //  printf("Server(%s -> %s): ", sockname_str, peername_str);
 
-            uint64_t a = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
-            uint64_t b = atoll((char*)data);
+    uint64_t a = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+    uint64_t b = atoll((char *)data);
 
     //       printf("%lu-%lu=%lu",a,b,a-b);
 
     //    usleep(rand()%10000+1000);
 
-        abcdk_rpc_response(rpc,mid,data,len);
-        abcdk_rpc_request(rpc,data,len,NULL,1);
+    abcdk_rpc_response(rpc, mid, data, len);
+    abcdk_rpc_request(rpc, data, len, NULL, 1);
 
-
-    
-
-  //   printf("\n");
+    //   printf("\n");
 }
 
-void test_rpc_request2_cb(abcdk_comm_node_t *rpc,uint64_t mid, const void *data, size_t len)
+void test_rpc_request2_cb(abcdk_comm_node_t *rpc, uint64_t mid, const void *data, size_t len)
 {
     char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
-    
-    abcdk_comm_get_sockaddr_str(rpc,sockname_str,peername_str);
 
-  //  printf("Client(%s -> %s): ", sockname_str, peername_str);
+    abcdk_comm_get_sockaddr_str(rpc, sockname_str, peername_str);
 
+    //  printf("Client(%s -> %s): ", sockname_str, peername_str);
 
-    
-     //   printf(" %s\n",(char*)data);
-    
+    //   printf(" %s\n",(char*)data);
 
-   //  printf("\n");
+    //  printf("\n");
 }
 
 #ifdef HAVE_OPENSSL
@@ -75,7 +68,7 @@ int _abcdk_test_verify_callback(int ok, X509_STORE_CTX *x509_store)
         subject = X509_NAME_oneline(sname, NULL, 0);
         if (subject == NULL)
         {
-            abcdk_log_printf(LOG_WARNING,"X509_NAME_oneline() failed");
+            abcdk_log_printf(LOG_WARNING, "X509_NAME_oneline() failed");
         }
     }
     else
@@ -121,16 +114,16 @@ int _abcdk_test_verify_callback(int ok, X509_STORE_CTX *x509_store)
 
 int abcdk_test_rpc(abcdk_tree_t *args)
 {
-    signal(SIGPIPE,NULL);
+    signal(SIGPIPE, NULL);
 
-    abcdk_comm_t *ctx = abcdk_comm_start(0,-1);
+    abcdk_comm_t *ctx = abcdk_comm_start(0, -1);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx[4] = {NULL};
 
 #ifdef HAVE_OPENSSL
 
-    const char *capath = abcdk_option_get(args,"--ca-path",0,NULL);
+    const char *capath = abcdk_option_get(args, "--ca-path", 0, NULL);
 
     if (capath)
     {
@@ -140,26 +133,25 @@ int abcdk_test_rpc(abcdk_tree_t *args)
                                        abcdk_option_get(args, "--key-file", 0, NULL),
                                        abcdk_option_get(args, "--key-pwd", 0, NULL));
 
-      //  SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, _abcdk_test_verify_callback);
+        //  SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, _abcdk_test_verify_callback);
 
-       SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, _abcdk_test_verify_callback);
-      // SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, _abcdk_test_verify_callback);
+        // SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
 
-        for(int i =0;i<4;i++)
+        for (int i = 0; i < 4; i++)
         {
             client_ssl_ctx[i] = abcdk_openssl_ssl_ctx_alloc(0, NULL, capath, 0);
 
-        abcdk_openssl_ssl_ctx_load_crt(client_ssl_ctx[i], abcdk_option_get(args, "--crt2-file", 0, NULL),
-                                       abcdk_option_get(args, "--key2-file", 0, NULL),
-                                       abcdk_option_get(args, "--key2-pwd", 0, NULL));
+            abcdk_openssl_ssl_ctx_load_crt(client_ssl_ctx[i], abcdk_option_get(args, "--crt2-file", 0, NULL),
+                                           abcdk_option_get(args, "--key2-file", 0, NULL),
+                                           abcdk_option_get(args, "--key2-pwd", 0, NULL));
 
-           SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, _abcdk_test_verify_callback);
-         //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, _abcdk_test_verify_callback);
-         //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, NULL);
+            SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, _abcdk_test_verify_callback);
+            //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, _abcdk_test_verify_callback);
+            //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, NULL);
         }
-
     }
-#endif //HAVE_OPENSSL
+#endif // HAVE_OPENSSL
 
     const char *sunpath = "/tmp/test_rpc.sock";
     unlink(sunpath);
@@ -167,88 +159,89 @@ int abcdk_test_rpc(abcdk_tree_t *args)
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_t addr2 = {0};
 
-    const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
-    abcdk_sockaddr_from_string(&addr,listen_p,0);
-    //addr.family = AF_UNIX;
-    //strncpy(addr.addr_un.sun_path,sunpath,108);
+    const char *listen_p = abcdk_option_get(args, "--listen", 0, "0.0.0.0:12345");
+    abcdk_sockaddr_from_string(&addr, listen_p, 0);
+    // addr.family = AF_UNIX;
+    // strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_node_t *rpc_listen = abcdk_rpc_alloc(ctx,3333);
+    abcdk_comm_node_t *rpc_listen = abcdk_rpc_alloc(ctx, 3333);
 
-    abcdk_rpc_callback_t listencb = {NULL,test_rpc_request_cb};
-    abcdk_rpc_listen(rpc_listen,server_ssl_ctx,&addr,&listencb);
+    abcdk_rpc_callback_t listencb = {NULL, test_rpc_request_cb};
+    abcdk_rpc_listen(rpc_listen, server_ssl_ctx, &addr, &listencb);
 
-    const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
-    abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    //addr2.family = AF_UNIX;
-    //strncpy(addr2.addr_un.sun_path,sunpath,108);
+    const char *connect_p = abcdk_option_get(args, "--connect", 0, "127.0.0.1:12345");
+    abcdk_sockaddr_from_string(&addr2, connect_p, 0);
+    // addr2.family = AF_UNIX;
+    // strncpy(addr2.addr_un.sun_path,sunpath,108);
 
-    int nn = 4;
-    abcdk_comm_node_t *rpc_client[40] = {NULL};
-    for (int i = 0; i < nn; i++)
+#pragma omp parallel for num_threads(nn)
+    for (int j = 0; j < 1000; j++)
     {
-        rpc_client[i] = abcdk_rpc_alloc(ctx,3333);
-        abcdk_rpc_callback_t clientcb = {NULL,test_rpc_request2_cb};
-        abcdk_rpc_connect(rpc_client[i],client_ssl_ctx[i], &addr2, &clientcb);
-    }
 
-  //  sleep(10);
+        int nn = 4;
+        abcdk_comm_node_t *rpc_client[40] = {NULL};
+        for (int i = 0; i < nn; i++)
+        {
+            rpc_client[i] = abcdk_rpc_alloc(ctx, 3333);
+            abcdk_rpc_callback_t clientcb = {NULL, test_rpc_request2_cb};
+            abcdk_rpc_connect(rpc_client[i], client_ssl_ctx[i], &addr2, &clientcb);
+        }
 
-    uint64_t d = 0,s = 0;
-    s = abcdk_clock(d,&d);
+        //  sleep(10);
 
-    
+        uint64_t d = 0, s = 0;
+        s = abcdk_clock(d, &d);
 
-    #pragma omp parallel for num_threads(nn)
-    for(int i = 0;i<100000;i++)
-    {
+#pragma omp parallel for num_threads(nn)
+        for (int i = 0; i < 1000; i++)
+        {
 #ifdef _OPENMP
-        omp_get_thread_num();
+            omp_get_thread_num();
 #endif
-        
-        uint64_t d = 0,s = 0;
-        s = abcdk_clock(d,&d);
 
-        int len = 1000000;
-        char *req= (char*)abcdk_heap_alloc(len);
-        abcdk_comm_message_t *rsp= NULL;
+            uint64_t d = 0, s = 0;
+            s = abcdk_clock(d, &d);
 
-        sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
+            int len = 1000000;
+            char *req = (char *)abcdk_heap_alloc(len);
+            abcdk_comm_message_t *rsp = NULL;
 
-        abcdk_rpc_request(rpc_client[i%nn],req,len,&rsp,10);
-        
+            sprintf(req, "%lu", abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        if (rsp)
-        {
+            abcdk_rpc_request(rpc_client[i % nn], req, len, &rsp, 10);
 
-            // printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
+            if (rsp)
+            {
 
-            abcdk_comm_message_unref(&rsp);
+                // printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
+
+                abcdk_comm_message_unref(&rsp);
+            }
+            else
+            {
+                printf("Pipe(%d) %s timeout\n", i % 4, req);
+            }
+
+            abcdk_heap_free(req);
+
+            s = abcdk_clock(d, &d);
+
+            //  printf("[%d]:s = %lu,d = %lu\n",i,s,d);
         }
-        else
-        {
-            printf("Pipe(%d) %s timeout\n",i%4,req);
-        }
 
-        abcdk_heap_free(req);
+        s = abcdk_clock(d, &d);
 
-        s = abcdk_clock(d,&d);
+        printf("s = %lu,d = %lu\n", s, d);
 
-      //  printf("[%d]:s = %lu,d = %lu\n",i,s,d);
+        for (int i = 0; i < nn; i++)
+            abcdk_comm_unref(&rpc_client[i]);
     }
 
-    s = abcdk_clock(d,&d);
+    //   abcdk_rpc_set_timeout(rpc_listen,1);
 
-    printf("s = %lu,d = %lu\n",s,d);
-
- //   abcdk_rpc_set_timeout(rpc_listen,1);
-
-  //  abcdk_rpc_unref(&rpc_listen);
+    //  abcdk_rpc_unref(&rpc_listen);
     while (getchar() != 'Q')
         ;
-
-    for(int i = 0;i<nn;i++)
-        abcdk_comm_unref(&rpc_client[i]);
-
 
     abcdk_comm_stop(&ctx);
 

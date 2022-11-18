@@ -354,19 +354,6 @@ NEXT_REQ:
     msg_len = abcdk_comm_message_size(http_p->in_buffer);
     msg_off = abcdk_comm_message_offset(http_p->in_buffer);
 
-    if (http_p->callback.input_cb)
-    {
-        http_p->callback.input_cb(node, msg_ptr, msg_off, &remain);
-
-        /*如果已经处理部分数据，表示上层业务不希望底层继续走原始流程。*/
-        if (remain < msg_off)
-        {
-            /*从缓存中删除已处理数据。*/
-            abcdk_comm_message_drain(http_p->in_buffer, msg_off - remain);
-            goto NEXT_REQ2;
-        }
-    }
-
     /*准备请求环境。*/
     if (!http_p->request)
     {
@@ -401,8 +388,6 @@ NEXT_REQ:
 
     /*删除请求数据。*/
     abcdk_http_request_unref(&http_p->request);
-
-NEXT_REQ2:
 
     /*如果是流水线模式，缓存中可能存在未处理的数据。*/
     if (remain > 0)

@@ -155,32 +155,28 @@ void abcdk_object_unref(abcdk_object_t **dst)
         ABCDK_ERRNO_AND_RETURN0(EINVAL);
 
     in_p = ABCDK_OBJECT_PTR_OUT2IN(*dst);
-
-    assert(in_p->magic == ABCDK_OBJECT_MAGIC);
+    *dst = NULL;
 
     if (abcdk_atomic_fetch_and_add(&in_p->refcount, -1) != 1)
-        goto final;
+        return;
 
     assert(in_p->refcount == 0);
+    assert(in_p->magic == ABCDK_OBJECT_MAGIC);
 
     if (in_p->destructor_cb)
         in_p->destructor_cb(&in_p->out, in_p->opaque);
 
-    in_p->magic = ~(ABCDK_OBJECT_MAGIC);
+    in_p->magic = 0xcccccccc;
     in_p->destructor_cb = NULL;
     in_p->opaque = NULL;
     in_p->out.refcount = NULL;
     in_p->out.numbers = 0;
     in_p->out.sizes = NULL;
     in_p->out.pptrs = NULL;
+    in_p->out.pstrs = NULL;
 
     /* 只要释放一次即可全部释放，因为内存是一次性申请的。*/
     abcdk_heap_free(in_p);
-
-final:
-
-    /*Set to NULL(0)*/
-    *dst = NULL;
 }
 
 abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size)
