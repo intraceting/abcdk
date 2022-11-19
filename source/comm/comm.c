@@ -478,10 +478,10 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         {
 #ifdef HEADER_SSL_H    
             if(node->ssl)
-                abcdk_atomic_store(&node->status,ABCDK_COMM_STATUS_SSL_SYNC);
+                node->status = ABCDK_COMM_STATUS_SSL_SYNC;
             else 
 #endif //HEADER_SSL_H
-                abcdk_atomic_store(&node->status,ABCDK_COMM_STATUS_STABLE);
+                node->status = ABCDK_COMM_STATUS_STABLE;
         }
         else
         {
@@ -528,7 +528,7 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         ssl_chk = SSL_do_handshake(node->ssl);
         if (ssl_chk == 1)
         {   
-            abcdk_atomic_store(&node->status,ABCDK_COMM_STATUS_STABLE);
+            node->status = ABCDK_COMM_STATUS_STABLE;
         }
         else
         {
@@ -1006,8 +1006,8 @@ int abcdk_comm_post(abcdk_comm_node_t *node, abcdk_object_t *data)
     abcdk_tree_insert2(node->out_queue,p,0);
     abcdk_mutex_unlock(&node->out_locker);
 
-    if(abcdk_atomic_load(&node->status) == ABCDK_COMM_STATUS_STABLE)
-        return abcdk_comm_send_watch(node);
+    if(node->status == ABCDK_COMM_STATUS_STABLE)
+        abcdk_comm_send_watch(node);
 
     return 0;
 }

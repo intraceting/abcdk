@@ -133,6 +133,7 @@ int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint6
     chk = abcdk_comm_post(node, msg);
     if (chk == 0)
         return 0;
+    
 
     /*删除未投递成功的消息。*/
     abcdk_object_unref(&msg);

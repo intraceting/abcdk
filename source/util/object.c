@@ -157,12 +157,13 @@ void abcdk_object_unref(abcdk_object_t **dst)
     in_p = ABCDK_OBJECT_PTR_OUT2IN(*dst);
     *dst = NULL;
 
+    assert(in_p->magic == ABCDK_OBJECT_MAGIC);
+
     if (abcdk_atomic_fetch_and_add(&in_p->refcount, -1) != 1)
         return;
 
     assert(in_p->refcount == 0);
-    assert(in_p->magic == ABCDK_OBJECT_MAGIC);
-
+    
     if (in_p->destructor_cb)
         in_p->destructor_cb(&in_p->out, in_p->opaque);
 
