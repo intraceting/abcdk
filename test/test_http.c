@@ -357,7 +357,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
     ctx->comm = abcdk_comm_start(1, -1);
 
-    ctx->listen_node = abcdk_http_alloc(ctx->comm, INT64_MAX, "/tmp/");
+    //ctx->listen_node = abcdk_http_alloc(ctx->comm, INT64_MAX, "/tmp/");
     abcdk_comm_set_userdata(ctx->listen_node, ctx);
 
     abcdk_sockaddr_from_string(&addr, ctx->listen, 1);
@@ -383,9 +383,9 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
 #endif
 
-      abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_http_event_cb,NULL,_abcdk_test_http_close_cb};
+      //abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_http_event_cb,NULL,_abcdk_test_http_close_cb};
    // abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_rtsp_event_cb, _abcdk_test_http_fetch_cb, _abcdk_test_http_close_cb};
-    abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
+    //abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
 
     while (getchar() != 'Q')
     {

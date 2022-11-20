@@ -93,8 +93,22 @@ typedef struct _abcdk_comm_callback
     /** 为新连接做准备工作的通知回调函数。*/
     void (*prepare_cb)(abcdk_comm_node_t *node, abcdk_comm_node_t *listen);
 
-    /** 事件通知回调函数。*/
+    /** 
+     * 事件通知回调函数。
+     * 
+     * @warning 除ABCDK_COMM_EVENT_ACCEPT事件外，其余事件均忽略返回值。
+    */
     void (*event_cb)(abcdk_comm_node_t *node, uint32_t event, int *result);
+
+    /** 
+     * 请求数据到达通知回调函数。
+     * 
+     * @warning 注册此函数后，ABCDK_COMM_EVENT_INPUT将被拦截。
+     * @warning 当请求数据未被处理时，将发送ABCDK_COMM_EVENT_INPUT事件。
+     * 
+     * @param [in out] remain 剩余的数据长度，返回时填充。
+    */
+   void (*request_cb)(abcdk_comm_node_t *node, const void *data,size_t size,size_t *remain);
 
 } abcdk_comm_callback_t;
 
@@ -277,7 +291,7 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
  * 
  * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
  * 
- * @param [in] obj 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * @param [in] data 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
 */

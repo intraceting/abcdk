@@ -365,11 +365,9 @@ abcdk_comm_message_t *abcdk_comm_message_copy(const void *data, size_t size)
 
     assert(data != NULL && size > 0);
 
-    obj = abcdk_object_alloc2(size);
+    obj = abcdk_object_alloc_copyfrom(data,size);
     if(!obj)
         return NULL;
-
-    memcpy(obj->pptrs[0],data,size);
 
     msg = abcdk_comm_message_attach(obj);
     if (msg)
@@ -378,46 +376,4 @@ abcdk_comm_message_t *abcdk_comm_message_copy(const void *data, size_t size)
     abcdk_object_unref(&obj);
 
     return NULL;
-}
-
-abcdk_comm_message_t *abcdk_comm_message_vformat(int max, const char *fmt, va_list ap)
-{
-    abcdk_comm_message_t *msg = NULL;
-    abcdk_object_t *obj = NULL;
-    int chk;
-
-    assert(max > 0 && fmt != NULL);
-
-    obj = abcdk_object_alloc2(max);
-    if(!obj)
-        return NULL;
-
-    chk = vsnprintf(obj->pptrs[0],max, fmt, ap);
-    if(chk <=0)
-        return NULL;
-
-    /*修正格式化后的数据长度。*/
-    obj->sizes[0] = chk;
-
-    msg = abcdk_comm_message_attach(obj);
-    if (msg)
-        return msg;
-    
-    abcdk_object_unref(&obj);
-    
-    return NULL;
-}
-
-abcdk_comm_message_t *abcdk_comm_message_format(int max, const char *fmt, ...)
-{
-    abcdk_comm_message_t *msg = NULL;
-
-    assert(max > 0 && fmt != NULL);
-
-    va_list ap;
-    va_start(ap, fmt);
-    msg = abcdk_comm_message_vformat(max, fmt, ap);
-    va_end(ap);
-
-    return msg;
 }

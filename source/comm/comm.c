@@ -91,6 +91,12 @@ struct _abcdk_comm_node
     /** 发送游标。*/
     size_t out_pos;
 
+    /** 接收缓存。*/
+    abcdk_object_t *in_buffer;
+
+    /** 接收游标。*/
+    size_t in_pos;
+
 };// abcdk_comm_node_t;
 
 void abcdk_comm_unref(abcdk_comm_node_t **node)
@@ -124,6 +130,7 @@ void abcdk_comm_unref(abcdk_comm_node_t **node)
     abcdk_object_unref(&node_p->userdata);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_mutex_destroy(&node_p->out_locker);
+    abcdk_object_unref(&node_p->in_buffer);
     abcdk_heap_free(node_p);
 }
 
@@ -157,6 +164,8 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
     node->out_queue = abcdk_tree_alloc3(1);
     abcdk_mutex_init2(&node->out_locker,0);
     node->out_pos = 0;
+    node->in_buffer = NULL;
+    node->in_pos = 0;
 
     return node;
 }
@@ -369,6 +378,9 @@ void _abcdk_comm_prepare_cb(abcdk_comm_node_t *node,abcdk_comm_node_t *listen)
     node->callback.prepare_cb(node, listen);
 }
 
+/*声明输入事件钩子函数。*/
+void _abcdk_comm_input_hook(abcdk_comm_node_t *node);
+
 /*声明输出事件钩子函数。*/
 void _abcdk_comm_output_hook(abcdk_comm_node_t *node);
 
@@ -383,7 +395,9 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
         abcdk_thread_leader_vote(&node->output_user);
 
     /*通知应用层处理事件。*/
-    if(event == ABCDK_COMM_EVENT_OUTPUT)
+    if(event == ABCDK_COMM_EVENT_INPUT)
+        _abcdk_comm_input_hook(node);
+    else if(event == ABCDK_COMM_EVENT_OUTPUT)
         _abcdk_comm_output_hook(node);
     else 
         node->callback.event_cb(node, event, result);
@@ -938,6 +952,62 @@ final_error:
     abcdk_comm_unref(&node_p);
 
     return -1;
+}
+
+void _abcdk_comm_input_hook(abcdk_comm_node_t *node)
+{
+    ssize_t rlen;
+    size_t remain;
+
+    /*当未注册请求数据到达通知回调函数时，直接发事件通知。*/
+    if(!node->callback.request_cb)
+    {
+        node->callback.event_cb(node,ABCDK_COMM_EVENT_INPUT,NULL);
+        return;
+    }
+
+    /*准备接收数据的缓存。*/
+    if (!node->in_buffer)
+    {
+        node->in_buffer = abcdk_object_alloc2(256*1024);
+        if (!node->in_buffer)
+        {
+            abcdk_comm_set_timeout(node, 1);
+            return;
+        }
+    }
+
+    /*收。*/
+    rlen = abcdk_comm_recv(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], node->in_pos), node->in_buffer->sizes[0] - node->in_pos);
+    if (rlen <= 0)
+    {
+        abcdk_comm_recv_watch(node);
+        return;
+    }
+
+    /*累加接收长度。*/
+    node->in_pos += rlen;
+
+NEXT_REQ:
+
+    node->callback.request_cb(node,node->in_buffer->pptrs[0],node->in_pos,&remain);
+
+    if (remain < node->in_pos)
+    {
+        /*排出已读写的数据，同时重置游标。*/
+        memmove(node->in_buffer->pptrs[0], ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], node->in_pos - remain), remain);
+        node->in_pos = remain;
+
+        if (node->in_pos > 0)
+            goto NEXT_REQ;
+        else
+            abcdk_comm_recv_watch(node);
+    }
+    else
+    {
+        /*当应用层未处理任何数据时，发送事件通知。*/
+        node->callback.event_cb(node, ABCDK_COMM_EVENT_INPUT, NULL);
+    }
 }
 
 void _abcdk_comm_output_hook(abcdk_comm_node_t *node)

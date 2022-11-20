@@ -152,17 +152,6 @@ abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,
  */
 abcdk_comm_message_t *abcdk_comm_message_copy(const void *data,size_t size);
 
-/** 
- * 创建消息对象。
- * 
- * @param [in] max 格式化数据最大长度。 
-*/
-abcdk_comm_message_t *abcdk_comm_message_vformat(int max, const char *fmt, va_list ap);
-
-/** 
- * 创建消息对象。
-*/
-abcdk_comm_message_t *abcdk_comm_message_format(int max, const char *fmt, ...);
 
 
 __END_DECLS

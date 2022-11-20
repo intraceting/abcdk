@@ -33,6 +33,9 @@ typedef struct _abcdkhttpd
     const char *cert_file;
     const char *key_file;
     const char *passwd[100];
+    size_t up_max_size;
+    const char *up_tmp_path;
+    int exclude_hidden_file;
 
 } abcdkhttpd_t;
 
@@ -46,6 +49,13 @@ typedef struct _abcdkhttpd_node
 
     const char *timefmt;
     const char *timefmt_lc;
+    
+    /**
+     * 0: unknown
+     * 1: http/1.0 or http/1.1 or http/0.9 or rtsp/1.0
+     * 2: http/2
+    */
+    int protocol;
 
     const char *line0;
     const char *referer;
@@ -106,6 +116,9 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
 
     fprintf(stderr, "\n\t--key-file < FILE >\n");
     fprintf(stderr, "\t\t服务器私钥文件。注：仅支持PEM格式。\n");
+    
+    fprintf(stderr, "\n\t--exclude-hidden-file\n");
+    fprintf(stderr, "\t\t排除隐藏属性的文件和目录。\n");
 }
 
 int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
@@ -270,7 +283,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
                                abcdk_time_format(http_p->timefmt, &tm),
                                abcdk_http_content_type_desc(".html"));
 
-        abcdk_comm_reply_chunked_format(node, 10000,
+        abcdk_http_reply_chunked_format(node, 10000,
                                         "<!DOCTYPE html>\r\n"
                                         "<html>\r\n"
                                         "<head><title>Index of %s</title></head>\r\n"
@@ -303,6 +316,13 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
 
             abcdk_basename(tmp3, tmp);
 
+            if (http_p->ctx->exclude_hidden_file)
+            {
+                /*以“.”开头的文件表示具有隐藏属性。*/
+                if (tmp3[0] == '.')
+                    continue;
+            }
+
             path_len = PATH_MAX;
             abcdk_uri_encode(tmp3, strlen(tmp3), tmp2, &path_len, 1);
 
@@ -320,7 +340,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
             else
                 snprintf(strsize,20,"%lu",attr.st_size);
 
-            abcdk_comm_reply_chunked_format(node, 10000,
+            abcdk_http_reply_chunked_format(node, 10000,
                                             "<tr>\r\n"
                                             "<td><a href=\"%s%s\">%s</a></td>"
                                             "<td>%s</td>"
@@ -330,14 +350,14 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
                                             abcdk_time_format(http_p->timefmt_lc, &tm), strsize);
         }
 
-        abcdk_comm_reply_chunked_format(node, 1000,
+        abcdk_http_reply_chunked_format(node, 1000,
                                         "</table>"
                                         "</pre>\r\n"
                                         "<hr>\r\n"
                                         "</body>\r\n"
                                         "</html>\r\n");
 
-        abcdk_http_reply_chunked(node, NULL, 0);
+        abcdk_http_reply_chunked_buffer(node, NULL, 0);
 
         _abcdkhttpd_logprint(node, 200, -1);
     }
@@ -460,51 +480,6 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     }
 }
 
-void _abcdkhttpd_userdata_destroy_cb(abcdk_object_t *alloc, void *opaque)
-{
-    abcdkhttpd_node_t *http_p;
-
-    http_p = (abcdkhttpd_node_t *)alloc->pptrs[0];
-    if (!http_p)
-        return;
-
-    abcdk_http_request_unref(&http_p->req);
-
-    abcdk_heap_free2((void **)&http_p);
-}
-
-void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
-{
-    abcdkhttpd_node_t *http;
-    abcdk_object_t *userdata_p = NULL;
-
-    /*设置默认返回值。*/
-    *result = 0;
-
-    /*创建用户环境。*/
-    http = abcdk_heap_alloc(sizeof(abcdkhttpd_node_t));
-    if (!http)
-    {
-        *result = -1;
-        return;
-    }
-
-    /*获取服务器环境。*/
-    http->ctx = abcdk_comm_get_userdata(node);
-
-    /*重新绑定链路环境。*/
-    userdata_p = abcdk_comm_userdata(node);
-    userdata_p->pptrs[0] = (uint8_t *)http;
-    abcdk_object_atfree(userdata_p, _abcdkhttpd_userdata_destroy_cb, NULL);
-    abcdk_object_unref(&userdata_p);
-
-    /*获取远程地址。*/
-    abcdk_comm_get_sockaddr_str(node, NULL, http->remote);
-
-    /*设置时间格式串。*/
-    http->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
-    http->timefmt_lc = "%Y-%m-%d %H:%M:%S";
-}
 
 void _abcdkhttpd_process(abcdk_comm_node_t *node)
 {
@@ -559,7 +534,7 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
     }
 }
 
-void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
+void _abcdkhttpd_request(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     const char *p = NULL, *p_next = NULL;
@@ -568,17 +543,13 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    /*替换新的请求数据。*/
-    abcdk_http_request_unref(&http_p->req);
-    http_p->req = abcdk_http_request_refer(req);
-
-    http_p->line0 = abcdk_http_request_env(req, 0);
-    http_p->referer = abcdk_http_request_getenv(req, "Referer");
-    http_p->user_agent = abcdk_http_request_getenv(req, "User-Agent");
-    http_p->range = abcdk_http_request_getenv(req, "Range");
-    http_p->auth = abcdk_http_request_getenv(req, "Authorization");
+    http_p->line0 = abcdk_http_request_env(http_p->req, 0);
+    http_p->referer = abcdk_http_request_getenv(http_p->req, "Referer");
+    http_p->user_agent = abcdk_http_request_getenv(http_p->req, "User-Agent");
+    http_p->range = abcdk_http_request_getenv(http_p->req, "Range");
+    http_p->auth = abcdk_http_request_getenv(http_p->req, "Authorization");
     if(!http_p->auth)
-        http_p->auth = abcdk_http_request_getenv(req, "Proxy-Authorization");
+        http_p->auth = abcdk_http_request_getenv(http_p->req, "Proxy-Authorization");
 
     if (!http_p->line0)
     {
@@ -628,7 +599,155 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
     _abcdkhttpd_process(node);
 }
 
-void _abcdkhttpd_fetch_cb(abcdk_comm_node_t *node)
+void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data,size_t size,size_t *remain)
+{
+    abcdkhttpd_node_t *http_p;
+    int chk;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    if(!http_p->req)
+        http_p->req = abcdk_http_request_alloc(http_p->ctx->up_max_size,http_p->ctx->up_tmp_path);
+
+    if(!http_p->req)
+    {
+        *remain = 0;
+        abcdk_comm_set_timeout(node,1);
+        return;
+    }
+
+    chk = abcdk_http_request_append(http_p->req,data,size,remain);
+    if(chk < 0)
+    {
+        *remain = 0;
+        abcdk_comm_set_timeout(node,1);
+        return;
+    }
+    else if(chk ==0)
+    {
+        return;
+    }
+    else if(chk > 0)
+    {
+        _abcdkhttpd_request(node);
+        abcdk_http_request_unref(&http_p->req);
+    }
+}
+
+void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain)
+{
+    abcdkhttpd_node_t *http_p;
+    int chk;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    /*默认处理全部数据。*/
+    *remain = 0;
+
+    if (http_p->protocol == 1)
+        _abcdkhttpd_request_v1(node, data, size, remain);
+    else
+        abcdk_comm_set_timeout(node, 1);
+}
+
+void _abcdkhttpd_userdata_destroy_cb(abcdk_object_t *alloc, void *opaque)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)alloc->pptrs[0];
+    if (!http_p)
+        return;
+
+    abcdk_http_request_unref(&http_p->req);
+    abcdk_heap_free(http_p);
+}
+
+void _abcdkhttpd_prepare_cb(abcdk_comm_node_t *node, abcdk_comm_node_t *listen)
+{
+    abcdkhttpd_node_t *http;
+    abcdk_object_t *userdata_p = NULL;
+   
+    /*创建用户环境。*/
+    http = abcdk_heap_alloc(sizeof(abcdkhttpd_node_t));
+    if (!http)
+        return;
+
+    /*获取服务器环境。*/
+    http->ctx = abcdk_comm_get_userdata(listen);
+
+    /*重新绑定链路环境。*/
+    userdata_p = abcdk_comm_userdata(node);
+    userdata_p->pptrs[0] = (uint8_t *)http;
+    abcdk_object_atfree(userdata_p, _abcdkhttpd_userdata_destroy_cb, NULL);
+    abcdk_object_unref(&userdata_p);
+}
+
+void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    /*设置默认返回值。*/
+    *result = 0;
+
+    /*获取远程地址。*/
+    abcdk_comm_get_sockaddr_str(node, NULL, http_p->remote);
+
+    /*设置时间格式串。*/
+    http_p->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
+    http_p->timefmt_lc = "%Y-%m-%d %H:%M:%S";
+}
+
+void _abcdkhttpd_connect_cb(abcdk_comm_node_t *node)
+{
+    abcdkhttpd_node_t *http_p;
+    SSL *ssl_p;
+    void *ver_p;
+    int ver_l;
+    int chk;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    /*默认支持1.1 or 1.0 or 0.9。*/
+    http_p->protocol = 1;
+
+#ifdef HEADER_SSL_H
+    /*如果SSL开启，检查SSL验证结果。*/
+    ssl_p = abcdk_comm_ssl(node);
+    if (ssl_p)
+    {
+        chk = SSL_get_verify_result(ssl_p);
+        if (chk != X509_V_OK)
+        {
+            /*修改超时，使用超时检测器关闭。*/
+            abcdk_comm_set_timeout(node, 1);
+            return;
+        }
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+        SSL_get0_alpn_selected(ssl_p, (const uint8_t**)&ver_p, &ver_l);
+        if (ver_p != NULL && ver_l > 0)
+            http_p->protocol = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2),0) == 0) ? 2 : 1);
+#endif //TLSEXT_TYPE_application_layer_protocol_negotiation
+
+    }
+#endif //HEADER_SSL_H
+
+    /*已连接到远端，注册读写事件。*/
+    abcdk_comm_recv_watch(node);
+    //abcdk_comm_send_watch(node);
+}
+
+void _abcdkhttpd_input_cb(abcdk_comm_node_t *node)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+}
+
+void _abcdkhttpd_output_cb(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
 
@@ -643,6 +762,66 @@ void _abcdkhttpd_close_cb(abcdk_comm_node_t *node)
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
 }
+
+
+void _abcdkhttpd_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    if(!http_p)
+    {
+        abcdk_comm_set_timeout(node,1);
+        return;
+    }
+
+    switch (event)
+    {
+    case ABCDK_COMM_EVENT_ACCEPT:
+        _abcdkhttpd_accept_cb(node,result);
+        break;
+    case ABCDK_COMM_EVENT_CONNECT:
+        _abcdkhttpd_connect_cb(node);
+        break;
+    case ABCDK_COMM_EVENT_INPUT:
+        _abcdkhttpd_input_cb(node);
+        break;
+    case ABCDK_COMM_EVENT_OUTPUT:
+        _abcdkhttpd_output_cb(node);
+        break;
+    case ABCDK_COMM_EVENT_CLOSE:
+    case ABCDK_COMM_EVENT_INTERRUPT:
+    default:
+        _abcdkhttpd_close_cb(node);
+        break;
+    }
+}
+
+
+#ifdef HEADER_SSL_H
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
+                               const unsigned char *in, unsigned int inlen, void *arg)
+{
+    unsigned int srvlen;
+
+    /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
+    static unsigned char srv[] = {"\x08http/1.1\x08http/1.0\x08http/0.9"};
+
+    /*精确的长度。*/
+    srvlen = sizeof(srv) - 1;
+
+    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
+    if (SSL_select_next_proto((unsigned char **)out, outlen, srv, srvlen, in, inlen) != OPENSSL_NPN_NEGOTIATED)
+    {
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    return SSL_TLSEXT_ERR_OK;
+}
+
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif // HEADER_SSL_H
 
 void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 {
@@ -661,8 +840,29 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
     for (int i = 0; i < 100; i++)
         ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
+    ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
+    ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
+    ctx->exclude_hidden_file = abcdk_option_exist(ctx->args, "--exclude-hidden-file");
 
     abcdk_mutex_init2(&ctx->magic_mutex, 0);
+
+    if (access(ctx->root_path, R_OK) != 0)
+    {
+        fprintf(stderr, "'%s'目录不存在或无法访问。\n", ctx->root_path);
+        goto final;
+    }
+
+    if(!ctx->listen[0])
+    {
+        fprintf(stderr, "至少需要监听一个地址。\n");
+        goto final;
+    }
+
+    if (ctx->up_tmp_path && access(ctx->up_tmp_path, W_OK) != 0)
+    {
+        fprintf(stderr, "'%s'缓存目录不存在或无法访问，忽略。\n", ctx->up_tmp_path);
+        ctx->up_tmp_path = NULL;
+    }
 
 #ifdef HAVE_LIBMAGIC
     ctx->magic_handle = magic_open(MAGIC_MIME | MAGIC_SYMLINK);
@@ -688,6 +888,11 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         }
 
         SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+        SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx, _abcdkhttpd_alpn_select_cb, NULL);
+#endif //TLSEXT_TYPE_application_layer_protocol_negotiation
+
     }
 #endif // HAVE_OPENSSL
 
@@ -714,7 +919,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        ctx->comm_listen[i] = abcdk_http_alloc(ctx->comm, 10000, "/tmp/");
+        ctx->comm_listen[i] = abcdk_comm_alloc(ctx->comm);
         if (!ctx->comm_listen[i])
         {
             fprintf(stderr, "内存错误。\n");
@@ -723,8 +928,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
         abcdk_comm_set_userdata(ctx->comm_listen[i], ctx);
 
-        abcdk_http_callback_t cb = {_abcdkhttpd_accept_cb, _abcdkhttpd_request_cb, _abcdkhttpd_fetch_cb, _abcdkhttpd_close_cb};
-        chk = abcdk_http_listen(ctx->comm_listen[i], ctx->ssl_ctx, &addr, &cb);
+        abcdk_comm_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_event_cb, _abcdkhttpd_request_cb};
+        chk = abcdk_comm_listen(ctx->comm_listen[i], ctx->ssl_ctx, &addr, &cb);
         if (chk != 0)
         {
             fprintf(stderr, "监听错误，也许端口已经被占用。\n");
