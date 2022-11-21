@@ -212,7 +212,7 @@ int abcdk_test_rpc(abcdk_tree_t *args)
 
             sprintf(req, "%lu", abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-            abcdk_rpc_request(rpc_client[id], req, len, &rsp, 100000);
+            abcdk_rpc_request(rpc_client[id], req, len, &rsp, 1);
 
             if (rsp)
             {
