@@ -324,7 +324,7 @@ void _abcdklogd_work(abcdklogd_t *ctx)
         ctx->policys[i].segment_size = abcdk_option_get_int(ctx->args, "--segment-size", 0, 10);
     }
 
-    ctx->comm = abcdk_comm_start(0,-1);
+    ctx->comm = abcdk_comm_start(-1);
     ctx->listen_rpc = abcdk_rpc_alloc(ctx->comm,666666666);
     abcdk_comm_set_userdata(ctx->listen_rpc,ctx);
 

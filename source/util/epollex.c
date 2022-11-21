@@ -129,7 +129,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
 
     ctx->efd = efd;
     ctx->counter = 0;
-    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 100);
+    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 1000);
     abcdk_map_init(&ctx->node_map, 400);
     abcdk_mutex_init2(&ctx->mutex, 0);
     ctx->watchdog_intvl = 1000;
@@ -359,6 +359,7 @@ int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout)
     node = (abcdk_epollex_node_t *)p->pptrs[ABCDK_MAP_VALUE];
     
     node->timeout = timeout;
+    //assert(node->timeout != 1);
 
     /* 如果发生错误，分派出错事件。*/
     if (!node->stable)
@@ -372,9 +373,6 @@ final_error:
     chk = -1;
 
 final:
-
-    /*通知处理可能的发生事件。*/
-    abcdk_mutex_signal(&ctx->mutex,0);
 
     abcdk_mutex_unlock(&ctx->mutex);
 
@@ -427,9 +425,6 @@ final_error:
 
 final:
 
-    /*通知处理可能的发生事件。*/
-    abcdk_mutex_signal(&ctx->mutex,0);
-
     abcdk_mutex_unlock(&ctx->mutex);
 
     return chk;   
@@ -445,7 +440,7 @@ int _abcdk_epollex_watchdog_scan_cb(abcdk_object_t *alloc, void *opaque)
         goto final;
 
     /*当事件队列排队过长时，中断看门狗检查，优先处理队列中的事件。*/
-    if (ctx->event_pool.count >= 20)
+    if (ctx->event_pool.count >= 800)
         return -1;
 
     /*如果超时，派发ERROR事件。*/
@@ -499,20 +494,27 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,i
     }
 }
 
-int abcdk_epollex_wait(abcdk_epollex_t *ctx,abcdk_epoll_event_t *event,time_t timeout)
+int abcdk_epollex_wait(abcdk_epollex_t *ctx, abcdk_epoll_event_t *event, time_t timeout)
 {
     abcdk_epoll_event_t w[20];
     time_t time_end;
     time_t time_span;
     int count;
-    int chk = 0,wait_chk = 0;
+    int chk = 0, wait_chk = 0;
 
     assert(ctx != NULL && event != NULL && timeout > 0);
 
     /*计算过期时间。*/
     time_end = _abcdk_epollex_clock() + timeout;
-    
-    abcdk_mutex_lock(&ctx->mutex,1);
+
+    /*接口绑定到线程。*/
+    if (abcdk_thread_leader_test(&ctx->wait_leader) != 0)
+    {
+        if (abcdk_thread_leader_vote(&ctx->wait_leader) != 0)
+            ABCDK_ASSERT(0,"仅允许固定线程调用此接口。");
+    }
+
+    abcdk_mutex_lock(&ctx->mutex, 1);
 
 try_again:
 
@@ -524,39 +526,25 @@ try_again:
     /*计算剩余超时时长。*/
     time_span = time_end - _abcdk_epollex_clock();
     if (time_span <= 0)
-        ABCDK_ERRNO_AND_GOTO1(ETIME,final_error);
+        goto final_error;
 
-    /*多线程选主，只能有一个线程进入IO等待，其它线程等待事件通知。*/
-    if(abcdk_thread_leader_vote(&ctx->wait_leader)==0)
-    {
-        /*通过看门狗检测长期不活动的节点。*/
-        _abcdk_epollex_watchdog(ctx);
+    /*通过看门狗检测长期不活动的节点。*/
+    _abcdk_epollex_watchdog(ctx);
 
-        /*唤醒其它线程，处理看门狗检测结果。*/
-        abcdk_mutex_signal(&ctx->mutex, 0);
+    /*如果有过期节点，则不启用IO等待时。*/
+    time_span = (ctx->event_pool.count > 0) ? (0) : ABCDK_MIN(time_span, ctx->watchdog_intvl);
 
-        /*解锁，使其它接口被访问。*/
-        abcdk_mutex_unlock(&ctx->mutex);
+    /*解锁，使其它接口被访问。*/
+    abcdk_mutex_unlock(&ctx->mutex);
 
-        /*IO等待。*/
-        count = abcdk_epoll_wait(ctx->efd,w,ABCDK_ARRAY_SIZE(w),ABCDK_MIN(time_span,ctx->watchdog_intvl));
+    /*IO等待。*/
+    count = abcdk_epoll_wait(ctx->efd, w, ABCDK_ARRAY_SIZE(w), ABCDK_MIN(time_span, ctx->watchdog_intvl));
 
-        /*加锁，禁止其它接口被访问。*/
-        abcdk_mutex_lock(&ctx->mutex,1);
+    /*加锁，禁止其它接口被访问。*/
+    abcdk_mutex_lock(&ctx->mutex, 1);
 
-        /*处理活动事件。*/
-        _abcdk_epollex_wait_disp(ctx,w,count);
-
-        /*主线程退出。*/
-        abcdk_thread_leader_quit(&ctx->wait_leader);
-        
-    }
-    else
-    {   
-        /*等待主线程的通知，或超时退出。*/
-        wait_chk = abcdk_mutex_wait(&ctx->mutex,time_span);
-        //printf("a = %d\n",wait_chk);
-    }
+    /*处理活动事件。*/
+    _abcdk_epollex_wait_disp(ctx, w, count);
 
     /*No error, no event, try again.*/
     goto try_again;
@@ -567,12 +555,9 @@ final_error:
 
 final:
 
-    /*唤醒其它线程，处理事件。*/
-    abcdk_mutex_signal(&ctx->mutex, 0);
-
     abcdk_mutex_unlock(&ctx->mutex);
 
-    return chk; 
+    return chk;
 }
 
 int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
@@ -616,9 +601,6 @@ final_error:
     chk = -1;
 
 final:
-
-    /*通知处理可能的发生事件。*/
-    abcdk_mutex_signal(&ctx->mutex,0);
 
     abcdk_mutex_unlock(&ctx->mutex);
 

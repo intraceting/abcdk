@@ -13,10 +13,7 @@ struct _abcdk_comm
     abcdk_epollex_t *epollex;
 
     /** 工作线程。*/
-    abcdk_thread_t *tids;
-
-    /** 工人数量。*/
-    int workers;
+    abcdk_thread_t worker;
 
     /** 最大连接数量。*/
     int max;
@@ -71,14 +68,8 @@ struct _abcdk_comm_node
     SSL *ssl;
 #endif //HEADER_SSL_H
 
-    /** 握手拥有者。*/
-    volatile pthread_t handshake_user;
-
-    /** Input事件读权利拥有者。*/
-    volatile pthread_t input_user;
-
-    /** Output事件读权利拥有者。*/
-    volatile pthread_t output_user;
+    /** 工作线程。*/
+    volatile pthread_t worker;
 
     /** 回调函数。*/
     abcdk_comm_callback_t callback;
@@ -295,8 +286,8 @@ ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size)
     assert(node != NULL && buf != NULL && size >0);
 
     /*仅消息循环线程拥有读权利。*/
-    chk = abcdk_thread_leader_test(&node->input_user);
-    ABCDK_ASSERT(chk == 0,"仅消息循环线程拥有读权利。");
+    chk = abcdk_thread_leader_test(&node->worker);
+    ABCDK_ASSERT(chk == 0,"当前线程没有读权利。");
 
     while (rsize_all < size)
     {
@@ -325,7 +316,7 @@ int abcdk_comm_recv_watch(abcdk_comm_node_t *node)
     assert(node->ctx != NULL);
 
     /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
-    chk = abcdk_thread_leader_quit(&node->input_user);
+    chk = abcdk_thread_leader_test(&node->worker);
     if (chk == 0)
         done_flag = ABCDK_EPOLL_INPUT;
 
@@ -342,8 +333,8 @@ ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size)
     assert(node != NULL && buf != NULL && size > 0);
 
     /*仅消息循环线程拥有写权利。*/
-    chk = abcdk_thread_leader_test(&node->output_user);
-    ABCDK_ASSERT(chk == 0,"仅消息循环线程拥有写权利。");
+    chk = abcdk_thread_leader_test(&node->worker);
+    ABCDK_ASSERT(chk == 0,"当前线程没有写权利。");
 
     while (wsize_all < size)
     {
@@ -398,13 +389,8 @@ void _abcdk_comm_output_hook(abcdk_comm_node_t *node);
 
 void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
 {
-    /*读权利绑定到线程。*/
-    if(event == ABCDK_COMM_EVENT_INPUT)
-        abcdk_thread_leader_vote(&node->input_user);
-
-    /*写权利绑定到线程。*/
-    if(event == ABCDK_COMM_EVENT_OUTPUT)
-        abcdk_thread_leader_vote(&node->output_user);
+    /*绑定工作线程。*/
+    abcdk_thread_leader_vote(&node->worker);
 
     /*通知应用层处理事件。*/
     if(event == ABCDK_COMM_EVENT_INPUT)
@@ -414,9 +400,8 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
     else 
         node->callback.event_cb(node, event, result);
 
-    /*写权利从线程解除。*/
-    if(event == ABCDK_COMM_EVENT_OUTPUT)
-        abcdk_thread_leader_quit(&node->output_user);
+    /*解绑工作线程。*/
+    abcdk_thread_leader_quit(&node->worker);
 }
 
 void _abcdk_comm_accept(abcdk_comm_node_t *listen)
@@ -496,10 +481,6 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
     int ssl_chk;
     int ssl_err;
     int chk;
-
-    /*只允许一个线程执行握手。*/
-    if (abcdk_thread_leader_vote(&node->handshake_user) != 0)
-        return;
 
     if (node->status == ABCDK_COMM_STATUS_SYNC)
     {
@@ -610,8 +591,7 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
 
 final:
 
-    abcdk_thread_leader_quit(&node->handshake_user);
-
+    /*OK or AGAIN.*/
     return;
 
 final_error:
@@ -632,6 +612,8 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
         return;
 
     node = (abcdk_comm_node_t *)e.data.ptr;
+
+    //fprintf(stderr,"fd(%d)=%u\n",node->fd,e.events);
 
     if (e.events & ABCDK_EPOLL_ERROR)
     {
@@ -703,7 +685,7 @@ void *_abcdk_comm_worker(void *args)
 {
     abcdk_comm_t *ctx = (abcdk_comm_t *)args;
 
-    /*每隔5秒检查一次，给退出检测留出时间。*/
+    /*每隔3秒检查一次，给退出检测留出时间。*/
     while (!abcdk_atomic_load(&ctx->exitflag))
         _abcdk_comm_perform(ctx, 3000);
 
@@ -725,15 +707,13 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
     abcdk_atomic_store(&ctx_p->exitflag, 1);
 
     /*回收线程资源。*/
-    for (int i = 0; i < ctx_p->workers; i++)
-        abcdk_thread_join(&ctx_p->tids[i]);
+    abcdk_thread_join(&ctx_p->worker);
 
-    abcdk_heap_free2((void **)&ctx_p->tids);
     abcdk_epollex_free(&ctx_p->epollex);
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_comm_t * abcdk_comm_start(int workers, int max)
+abcdk_comm_t * abcdk_comm_start(int max)
 {
     abcdk_comm_t *ctx = NULL;
     long nps = sysconf(_SC_NPROCESSORS_ONLN);
@@ -741,40 +721,28 @@ abcdk_comm_t * abcdk_comm_start(int workers, int max)
     cpu_set_t cpu_set;
     int chk;
 
-    /*如果未指定工作线程数，则使用CPU核心数的一半。*/
-    if (workers <= 0)
-        workers = abcdk_align(nps/2,1);
-
-    /*如果未指定最大连接数量，则使用文件句柄数量的一半。*/
-    if (max <= 0)
-        max = abcdk_align(opm/2, 1);
-
     ctx = abcdk_heap_alloc(sizeof(abcdk_comm_t));
     if(!ctx)
         return NULL;
 
-    ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb,ctx);
-    ctx->workers = workers;
-    ctx->max = max;
+    ctx->epollex = abcdk_epollex_alloc(_abcdk_comm_cleanup_cb, ctx);
+
+    /*如果未指定最大连接数量，则使用文件句柄数量的一半。*/
+    ctx->max = ((max > 0) ? max : abcdk_align(opm / 2, 1));
     ctx->exitflag = 0;
 
-    /*申请线程资源。*/
-    ctx->tids = abcdk_heap_alloc(ctx->workers * sizeof(abcdk_thread_t));
+    /*创建工作线程。*/
+    ctx->worker.handle = 0;
+    ctx->worker.routine = _abcdk_comm_worker;
+    ctx->worker.opaque = ctx;
+    chk = abcdk_thread_create(&ctx->worker, 1);
+    if (chk != 0)
+        goto final_error;
 
-    for (int i = 0; i < ctx->workers; i++)
-    {
-        ctx->tids[i].handle = 0;
-        ctx->tids[i].routine = _abcdk_comm_worker;
-        ctx->tids[i].opaque = ctx;
-        chk = abcdk_thread_create(&ctx->tids[i], 1);
-        if (chk != 0)
-            goto final_error;
-
-        /*设置线程的CPU亲源性。*/
-        CPU_ZERO(&cpu_set);
-        CPU_SET((i % nps), &cpu_set);
-        pthread_setaffinity_np(ctx->tids[i].handle, sizeof(cpu_set_t), &cpu_set);
-    }
+    /*设置线程的CPU亲源性。*/
+    CPU_ZERO(&cpu_set);
+    CPU_SET((rand() % nps), &cpu_set);
+    pthread_setaffinity_np(ctx->worker.handle, sizeof(cpu_set_t), &cpu_set);
 
     return ctx;
 

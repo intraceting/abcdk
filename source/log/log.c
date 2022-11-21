@@ -81,7 +81,7 @@ int _abcdk_log_init(void *opaque)
     if (cons_p && *cons_p)
     {
         ctx->consignee = abcdk_strdup(cons_p);
-        ctx->comm = abcdk_comm_start(1,-1);
+        ctx->comm = abcdk_comm_start(-1);
     }
 
     return 0;

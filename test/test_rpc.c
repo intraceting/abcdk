@@ -26,8 +26,9 @@ void test_rpc_request_cb(abcdk_comm_node_t *rpc, uint64_t mid, const void *data,
 
     //    usleep(rand()%10000+1000);
 
-    abcdk_rpc_response(rpc, mid, data, len);
     abcdk_rpc_request(rpc, data, len, NULL, 1);
+    abcdk_rpc_response(rpc, mid, data, len);
+    
 
     //   printf("\n");
 }
@@ -113,7 +114,7 @@ int abcdk_test_rpc(abcdk_tree_t *args)
 {
     signal(SIGPIPE, NULL);
 
-    abcdk_comm_t *ctx = abcdk_comm_start(1, -1);
+    abcdk_comm_t *ctx = abcdk_comm_start(-1);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx[4] = {NULL};
@@ -177,7 +178,7 @@ int abcdk_test_rpc(abcdk_tree_t *args)
     // addr2.family = AF_UNIX;
     // strncpy(addr2.addr_un.sun_path,sunpath,108);
 
-    for (int j = 0; j < 200; j++)
+    for (int j = 0; j < 10; j++)
     {
 
         int nn = 4;
@@ -195,22 +196,23 @@ int abcdk_test_rpc(abcdk_tree_t *args)
         s = abcdk_clock(d, &d);
 
 #pragma omp parallel for num_threads(nn)
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 10000; i++)
         {
 #ifdef _OPENMP
             omp_get_thread_num();
 #endif
+            int id = i%nn;
 
             uint64_t d = 0, s = 0;
             s = abcdk_clock(d, &d);
 
-            int len = 1000;
+            int len = 1000000;
             char *req = (char *)abcdk_heap_alloc(len);
             abcdk_comm_message_t *rsp = NULL;
 
             sprintf(req, "%lu", abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-            abcdk_rpc_request(rpc_client[i%nn], req, len, &rsp, 10);
+            abcdk_rpc_request(rpc_client[id], req, len, &rsp, 100000);
 
             if (rsp)
             {
@@ -221,7 +223,7 @@ int abcdk_test_rpc(abcdk_tree_t *args)
             }
             else
             {
-                printf("Pipe(%d) %s timeout\n", i % 4, req);
+                printf("Pipe(%d) %s timeout\n", id, req);
             }
 
             abcdk_heap_free(req);

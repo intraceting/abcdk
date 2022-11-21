@@ -24,10 +24,11 @@ typedef struct _abcdkhttpd
     abcdk_comm_node_t *comm_listen[16];
     SSL_CTX *ssl_ctx;
 
-    int workers;
+    int max_client;
     const char *server_name;
     const char *root_path;
     const char *listen[16];
+    int check_cert_chain;
     const char *ca_file;
     const char *ca_path;
     const char *cert_file;
@@ -87,14 +88,14 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
-    fprintf(stderr, "\n\t--workers < NUMBER >\n");
-    fprintf(stderr, "\t\t工作线程数量。默认：CPU核心数量的一半\n");
+    fprintf(stderr, "\n\t--max-client < NUMBER >\n");
+    fprintf(stderr, "\t\t最大连接数。默认：系统限定的1/2\n");
 
     fprintf(stderr, "\n\t--server-name < NAME >\n");
-    fprintf(stderr, "\t\t服务器名称。默认：abcdk-httpd\n");
+    fprintf(stderr, "\t\t服务器名称。默认：abcdk\n");
 
     fprintf(stderr, "\n\t--root-path < PATH >\n");
-    fprintf(stderr, "\t\t服务器根据路径。默认：/tmp/abcdk-httpd/\n");
+    fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
 
     fprintf(stderr, "\n\t--listen < ADDR [ ADDR ...] >\n");
     fprintf(stderr, "\t\t监听地址。\n");
@@ -104,6 +105,9 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\tIPv6：IP,PORT\n");
     fprintf(stderr, "\t\tIPv6：[IP]:PORT\n");
     fprintf(stderr, "\t\tIPv6：DOMAIN,PORT\n");
+
+    fprintf(stderr, "\n\t--check-cert-chain\n");
+    fprintf(stderr, "\t\t检查证书链路有效性（双向验证，会要求客户端提供证书）。默认：不检查。\n");
 
     fprintf(stderr, "\n\t--ca-file < FILE >\n");
     fprintf(stderr, "\t\tCA证书文件。注：仅支持PEM格式。\n");
@@ -829,11 +833,12 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     abcdk_sockaddr_t addr;
     int chk;
 
-    ctx->workers = abcdk_option_get_int(ctx->args, "--workers", 0, -1);
-    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk-httpd");
-    ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/tmp/abcdk-httpd/");
+    ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
+    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk");
+    ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     for (int i = 0; i < 16; i++)
         ctx->listen[i] = abcdk_option_get(ctx->args, "--listen", i, NULL);
+    ctx->check_cert_chain = abcdk_option_exist(ctx->args, "--check-cert-chain");
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
@@ -862,6 +867,11 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         goto final;
     }
 
+    if(ctx->check_cert_chain && !ctx->ca_file &&ctx->ca_path)
+    {
+        fprintf(stderr, "'--check-cert-chain'未指定CA证书或CA路径，忽略。\n");
+    }
+
     if (ctx->up_tmp_path && access(ctx->up_tmp_path, W_OK) != 0)
     {
         fprintf(stderr, "'%s'缓存目录不存在或无法访问，忽略。\n", ctx->up_tmp_path);
@@ -877,7 +887,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 #ifdef HAVE_OPENSSL
     if (ctx->cert_file && ctx->key_file)
     {
-        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, 0);
+        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->check_cert_chain ? 2 : 0));
         if (!ctx->ssl_ctx)
         {
             fprintf(stderr, "加载CA证书错误。\n");
@@ -891,7 +901,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
+        SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER | (ctx->check_cert_chain ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), NULL);
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
         SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx, _abcdkhttpd_alpn_select_cb, NULL);
@@ -904,7 +914,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     }
 #endif // HAVE_OPENSSL
 
-    ctx->comm = abcdk_comm_start(ctx->workers, -1);
+    ctx->comm = abcdk_comm_start(ctx->max_client);
     if (!ctx->comm)
     {
         fprintf(stderr, "内存错误。\n");

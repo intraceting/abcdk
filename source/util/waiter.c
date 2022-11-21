@@ -125,6 +125,11 @@ final:
     return chk;
 }
 
+uint64_t _abcdk_waiter_clock()
+{
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
+}
+
 abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max, time_t timeout)
 {
     time_t time_end;
@@ -135,7 +140,7 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
     assert(waiter != NULL && max > 0 && timeout > 0);
 
     /*计算过期时间。*/
-    time_end = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3) + timeout;
+    time_end = _abcdk_waiter_clock() + timeout;
 
     abcdk_mutex_lock(&waiter->locker, 1);
 
@@ -150,7 +155,7 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
     while (abcdk_queue_count(queue_p) < max)
     {
         /*计算剩余超时时长。*/
-        time_span = time_end - abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
+        time_span = time_end - _abcdk_waiter_clock();
         if (time_span <= 0)
             break;
         
