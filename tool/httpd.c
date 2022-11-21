@@ -846,6 +846,10 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     abcdk_mutex_init2(&ctx->magic_mutex, 0);
 
+    /*Set to NULL(0).*/
+    for (int i = 0; i < 16; i++)
+        ctx->comm_listen[i] = NULL;
+
     if (access(ctx->root_path, R_OK) != 0)
     {
         fprintf(stderr, "'%s'目录不存在或无法访问。\n", ctx->root_path);
@@ -873,7 +877,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 #ifdef HAVE_OPENSSL
     if (ctx->cert_file && ctx->key_file)
     {
-        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, 2);
+        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, 0);
         if (!ctx->ssl_ctx)
         {
             fprintf(stderr, "加载CA证书错误。\n");
@@ -893,6 +897,10 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx, _abcdkhttpd_alpn_select_cb, NULL);
 #endif //TLSEXT_TYPE_application_layer_protocol_negotiation
 
+        /*禁止会话复用。*/
+        SSL_CTX_set_session_cache_mode(ctx->ssl_ctx, SSL_SESS_CACHE_OFF);
+        SSL_CTX_set_options(ctx->ssl_ctx, SSL_OP_NO_TICKET);
+
     }
 #endif // HAVE_OPENSSL
 
@@ -903,9 +911,6 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         goto final;
     }
 
-    /*Set to NULL(0).*/
-    for (int i = 0; i < 16; i++)
-        ctx->comm_listen[i] = NULL;
 
     for (int i = 0; i < 16; i++)
     {
@@ -941,6 +946,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     sig.opaque = NULL;
     sig.signal_cb = _abcdkhttpd_signal_cb;
     sigfillset(&sig.signals);
+    sigdelset(&sig.signals, SIGTRAP);
     sigdelset(&sig.signals, SIGKILL);
     sigdelset(&sig.signals, SIGSEGV);
     sigdelset(&sig.signals, SIGSTOP);

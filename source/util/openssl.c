@@ -594,14 +594,40 @@ final_error:
 
 void abcdk_openssl_ssl_free(SSL **ssl)
 {
+    SSL *ssl_p;
+    int chk,ssl_chk,ssl_err;
+    int fd;
+
     if (!ssl || !*ssl)
         return;
 
-    SSL_shutdown(*ssl);
-    SSL_free(*ssl);
-
-    /*Set to NULL(0).*/
+    ssl_p = *ssl;
     *ssl = NULL;
+
+    fd = SSL_get_fd(ssl_p);
+    if (fd < 0)
+        goto final;
+
+    // while (1)
+    // {
+    //     ssl_chk = SSL_shutdown(ssl_p);
+    //     if (ssl_chk == 1)
+    //         break;
+    //     else if (ssl_chk == 0)
+    //         continue;
+
+    //     ssl_err = SSL_get_error(ssl_p, ssl_chk);
+    //     if (ssl_err == SSL_ERROR_WANT_WRITE)
+    //         abcdk_poll(fd, 0x02, 10);
+    //     else if (ssl_err == SSL_ERROR_WANT_READ)
+    //         abcdk_poll(fd, 0x01, 10);
+    //     else
+    //         break;
+    // }
+
+final:
+
+    SSL_free(ssl_p);
 }
 
 SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx)

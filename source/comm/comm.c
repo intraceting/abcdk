@@ -29,6 +29,10 @@ struct _abcdk_comm
 /** 节点信息。*/
 struct _abcdk_comm_node
 {
+    /** 魔法数。*/
+    uint32_t magic;
+#define ABCDK_COMM_NODE_MAGIC 123456789
+
     /** 引用计数器。*/
     volatile int refcount;
 
@@ -66,6 +70,9 @@ struct _abcdk_comm_node
     SSL_CTX *ssl_ctx;
     SSL *ssl;
 #endif //HEADER_SSL_H
+
+    /** 握手拥有者。*/
+    volatile pthread_t handshake_user;
 
     /** Input事件读权利拥有者。*/
     volatile pthread_t input_user;
@@ -109,10 +116,14 @@ void abcdk_comm_unref(abcdk_comm_node_t **node)
     node_p = *node;
     *node = NULL;
 
+    assert(node_p->magic == ABCDK_COMM_NODE_MAGIC);
+
     if (abcdk_atomic_fetch_and_add(&node_p->refcount, -1) != 1)
         return;
 
     assert(node_p->refcount == 0);
+
+    node_p->magic = 0xcccccccc;
 
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->ssl);
@@ -156,6 +167,7 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
     if(!node)
         return NULL;
 
+    node->magic = ABCDK_COMM_NODE_MAGIC;
     node->refcount = 1;
     node->ctx = ctx;
     node->fd = -1;
@@ -407,38 +419,35 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
         abcdk_thread_leader_quit(&node->output_user);
 }
 
-abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
+void _abcdk_comm_accept(abcdk_comm_node_t *listen)
 {
-    abcdk_comm_node_t *node_sub = NULL;
+    abcdk_comm_node_t *node = NULL;
     epoll_data_t ep_data;
     int chk;
 
-    node_sub = abcdk_comm_alloc(listen->ctx);
-    if (!node_sub)
-        return NULL;
+    node = abcdk_comm_alloc(listen->ctx);
+    if (!node)
+        return ;
 
-    node_sub->flag = ABCDK_COMM_FLAG_ACCPET;
-    node_sub->status = ABCDK_COMM_STATUS_SYNC;
+    node->flag = ABCDK_COMM_FLAG_ACCPET;
+    node->status = ABCDK_COMM_STATUS_SYNC;
     /*复制监听环境的回调函数指针。*/
-    node_sub->callback = listen->callback;
+    node->callback = listen->callback;
 
     /*通知初始化。*/
-    _abcdk_comm_prepare_cb(node_sub, listen);
+    _abcdk_comm_prepare_cb(node, listen);
 
 #ifdef HEADER_SSL_H    
     if(listen->ssl_ctx)
     {
-        node_sub->ssl = abcdk_openssl_ssl_alloc(listen->ssl_ctx);
-        if(!node_sub->ssl)
+        node->ssl = abcdk_openssl_ssl_alloc(listen->ssl_ctx);
+        if(!node->ssl)
             goto final_error;
-
-        /*绑定应用层环境指针。*/
-        SSL_set_app_data(node_sub->ssl,node_sub);
     }
 #endif //HEADER_SSL_H
 
-    node_sub->fd = abcdk_accept(listen->fd, &node_sub->remote);
-    if (node_sub->fd < 0)
+    node->fd = abcdk_accept(listen->fd, &node->remote);
+    if (node->fd < 0)
         goto final_error;
     
     /*
@@ -446,35 +455,38 @@ abcdk_comm_node_t *_abcdk_comm_accept(abcdk_comm_node_t *listen)
      *
      * 如果不把已经建立的连接从监听队列除，那么新的连接可能无法连接。
     */
-    if(abcdk_epollex_count(node_sub->ctx->epollex) >= node_sub->ctx->max)
+    if(abcdk_epollex_count(node->ctx->epollex) >= node->ctx->max)
         goto final_error;
 
     /*通知应用层新连接到来。*/
-    _abcdk_comm_event_cb(node_sub,ABCDK_COMM_EVENT_ACCEPT,&chk);
+    _abcdk_comm_event_cb(node,ABCDK_COMM_EVENT_ACCEPT,&chk);
     if(chk != 0 )
         goto final_error;
     
-    chk = abcdk_fflag_add(node_sub->fd,O_NONBLOCK);
+    chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
     if(chk != 0 )
         goto final_error;
 
-    ep_data.ptr = node_sub;
-    chk = abcdk_epollex_attach(node_sub->ctx->epollex, node_sub->fd, &ep_data);
+    ep_data.ptr = node;
+    chk = abcdk_epollex_attach(node->ctx->epollex, node->fd, &ep_data);
     if(chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(node_sub->ctx->epollex, node_sub->fd, 30*1000);
+    abcdk_epollex_timeout(node->ctx->epollex, node->fd, 30*1000);
+    
+    /*注册输出事件用于探测连接状态。*/
+    abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+    
 
-    return node_sub;
+    return;
 
 final_error:
 
     /*通知关闭。*/
-    _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_INTERRUPT, NULL);
-
-    abcdk_comm_unref(&node_sub);
+    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INTERRUPT, NULL);
+    abcdk_comm_unref(&node);
     
-    return NULL;
+    return;
 }
 
 void _abcdk_comm_handshake(abcdk_comm_node_t *node)
@@ -484,6 +496,10 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
     int ssl_chk;
     int ssl_err;
     int chk;
+
+    /*只允许一个线程执行握手。*/
+    if (abcdk_thread_leader_vote(&node->handshake_user) != 0)
+        return;
 
     if (node->status == ABCDK_COMM_STATUS_SYNC)
     {
@@ -502,72 +518,26 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
             chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
             if (chk != 0)
                 goto final_error;
+            else 
+                goto final;
         }
-    }
 
-    /*获取远程地址。*/
-    if (!node->remote.family)
-    {
-        sock_len = sizeof(abcdk_sockaddr_t);
-        getpeername(node->fd, &node->remote.addr, &sock_len);
-    }
-
-    /*获取本机地址。*/
-    if (!node->local.family)
-    {
-        sock_len = sizeof(abcdk_sockaddr_t);
-        getsockname(node->fd, &node->local.addr, &sock_len);
-    }
-
-#ifdef HEADER_SSL_H      
-    if (node->status == ABCDK_COMM_STATUS_SSL_SYNC)
-    {
-        if (node->flag == ABCDK_COMM_FLAG_ACCPET)
+        /*获取远程地址。*/
+        if (!node->remote.family)
         {
-            if (SSL_get_fd(node->ssl) != node->fd)
-            {
-                SSL_set_fd(node->ssl, node->fd);
-                SSL_set_accept_state(node->ssl);
-            }
-        }
-        else if (node->flag == ABCDK_COMM_FLAG_CLIENT)
-        {
-            if (SSL_get_fd(node->ssl) != node->fd)
-            {
-                SSL_set_fd(node->ssl, node->fd);
-                SSL_set_connect_state(node->ssl);
-            }
+            sock_len = sizeof(abcdk_sockaddr_t);
+            getpeername(node->fd, &node->remote.addr, &sock_len);
         }
 
-        ssl_chk = SSL_do_handshake(node->ssl);
-        if (ssl_chk == 1)
-        {   
-            node->status = ABCDK_COMM_STATUS_STABLE;
-        }
-        else
+        /*获取本机地址。*/
+        if (!node->local.family)
         {
-            ssl_err = SSL_get_error(node->ssl, ssl_chk);
-            if (ssl_err == SSL_ERROR_WANT_WRITE)
-            {
-                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
-                if (chk != 0)
-                    goto final_error;
-            }
-            else if (ssl_err == SSL_ERROR_WANT_READ)
-            {
-                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
-                if (chk != 0)
-                    goto final_error;
-            }
-            else
-                goto final_error;
+            sock_len = sizeof(abcdk_sockaddr_t);
+            getsockname(node->fd, &node->local.addr, &sock_len);
         }
-    }
-#endif //HEADER_SSL_H
 
-    /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
-    if(node->status == ABCDK_COMM_STATUS_STABLE)
-    {
+        /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
+
         /*开启keepalive属性*/
         sock_flag = 1;
         abcdk_sockopt_option_int(node->fd,SOL_SOCKET, SO_KEEPALIVE,&sock_flag,2);
@@ -589,6 +559,59 @@ void _abcdk_comm_handshake(abcdk_comm_node_t *node)
         abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sock_flag, 2);
     }
 
+
+#ifdef HEADER_SSL_H      
+    if (node->status == ABCDK_COMM_STATUS_SSL_SYNC)
+    {
+        if (SSL_get_fd(node->ssl) != node->fd)
+        {
+            SSL_set_fd(node->ssl, node->fd);
+            
+            if (node->flag == ABCDK_COMM_FLAG_ACCPET)
+                SSL_set_accept_state(node->ssl);
+            else if (node->flag == ABCDK_COMM_FLAG_CLIENT)
+                SSL_set_connect_state(node->ssl);
+            else
+                goto final_error;
+
+#ifdef SSL_OP_NO_RENEGOTIATION
+            SSL_set_options(node->ssl, SSL_OP_NO_RENEGOTIATION);
+#endif
+        }
+
+        ssl_chk = SSL_do_handshake(node->ssl);
+        if (ssl_chk == 1)
+        {   
+            node->status = ABCDK_COMM_STATUS_STABLE;
+        }
+        else
+        {
+            ssl_err = SSL_get_error(node->ssl, ssl_chk);
+
+            if (ssl_err == SSL_ERROR_WANT_READ)
+            {
+                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
+                if (chk == 0)
+                    goto final;
+            }
+            else if (ssl_err == SSL_ERROR_WANT_WRITE)
+            {
+                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+                if (chk == 0)
+                    goto final;
+            }
+            
+            
+            /*Error .*/
+            goto final_error;
+        }
+    }
+#endif //HEADER_SSL_H
+
+final:
+
+    abcdk_thread_leader_quit(&node->handshake_user);
+
     return;
 
 final_error:
@@ -600,7 +623,6 @@ final_error:
 void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
 {
     abcdk_comm_node_t *node = NULL;
-    abcdk_comm_node_t *node_sub = NULL;
     abcdk_epoll_event_t e = {0};
     int chk;
 
@@ -622,28 +644,33 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
     }
     else
     {
+
+        if (e.events & ABCDK_EPOLL_OUTPUT)
+        {
+            if (node->status != ABCDK_COMM_STATUS_STABLE)
+            {
+                _abcdk_comm_handshake(node);
+                if (node->status == ABCDK_COMM_STATUS_STABLE)
+                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,NULL);
+            }
+            else
+            {
+                _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT,NULL);
+            }
+
+            /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
+            abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_OUTPUT);
+        }
+
         if (e.events & ABCDK_EPOLL_INPUT)
         {
             if (node->flag == ABCDK_COMM_FLAG_LISTEN)
             {
-                /*接收新连接。*/
-                node_sub = _abcdk_comm_accept(node);
+                /*每次处理一个新连接。*/
+                _abcdk_comm_accept(node);
 
                 /*释放监听权利，并注册监听事件。*/
                 abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
-
-                if (node_sub)
-                {
-                    if (node_sub->status != ABCDK_COMM_STATUS_STABLE)
-                    {
-                        _abcdk_comm_handshake(node_sub);
-                        if (node_sub->status == ABCDK_COMM_STATUS_STABLE)
-                            _abcdk_comm_event_cb(node_sub, ABCDK_COMM_EVENT_CONNECT,NULL);
-                    }
-
-                    /*释放读权利。*/
-                    abcdk_epollex_mark(ctx->epollex, node_sub->fd, 0, ABCDK_EPOLL_INPUT);
-                }
             }
             else
             {
@@ -664,23 +691,6 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
                     //abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
                 }
             }
-        }
-
-        if (e.events & ABCDK_EPOLL_OUTPUT)
-        {
-            if (node->status != ABCDK_COMM_STATUS_STABLE)
-            {
-                _abcdk_comm_handshake(node);
-                if (node->status == ABCDK_COMM_STATUS_STABLE)
-                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,NULL);
-            }
-            else
-            {
-                _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT,NULL);
-            }
-
-            /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
-            abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_OUTPUT);
         }
 
         /*释放引用计数。*/
@@ -910,15 +920,13 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     node_p->fd = abcdk_socket(node_p->remote.family, 0);
     if (node_p->fd < 0)
         goto final_error;
+
 #ifdef HEADER_SSL_H
     if(ssl_ctx)
     {
         node_p->ssl = abcdk_openssl_ssl_alloc(ssl_ctx);
         if(!node_p->ssl)
             goto final_error;
-
-        /*绑定应用层环境指针。*/
-        SSL_set_app_data(node_p->ssl,node_p);
     }
 #endif //HEADER_SSL_H
 
@@ -926,12 +934,11 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     if(chk != 0 )
         goto final_error;
 
-
     chk = connect(node_p->fd, &node_p->remote.addr, addr_len);
     if(chk == 0)
         goto final;
 
-    if (errno != EINPROGRESS && errno != EWOULDBLOCK && errno != EAGAIN)
+    if (errno != EAGAIN && errno != EINPROGRESS)
         goto final_error;
 
 final:
