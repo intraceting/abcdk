@@ -9,6 +9,8 @@
 
 #include "abcdk/util/general.h"
 
+__BEGIN_DECLS
+
 /** 
  * 翻译状态码描述。
  * 
@@ -29,5 +31,7 @@ const char *abcdk_http_match_env(const char *line, const char *name);
  * @return !NULL(0) 描述字符串指针，NULL(0) 状态码未找到。
 */
 const char *abcdk_http_content_type_desc(const char *ext);
+
+__END_DECLS
 
 #endif //ABCDK_UTIL_HTTP_H

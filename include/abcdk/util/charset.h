@@ -9,6 +9,9 @@
 
 #include "abcdk/util/general.h"
 
+
+__BEGIN_DECLS
+
 /**
  * 检验UTF-8编码。
  * 
@@ -24,5 +27,7 @@
  * @return 符合的长度(字节)。
 */
 ssize_t abcdk_verify_utf8(const void *data,size_t max);
+
+__END_DECLS
 
 #endif //ABCDK_UTIL_CHARSET_H

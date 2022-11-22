@@ -10,6 +10,8 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
 
+__BEGIN_DECLS
+
 /**
  * URI的字段索引。
 */
@@ -64,5 +66,7 @@ ssize_t abcdk_uri_encode(const char *src,size_t slen,char *dst,size_t *dlen, int
  * @return 未解码的密文长度。
 */
 ssize_t abcdk_uri_decode(const char *src,size_t slen,char *dst,size_t *dlen);
+
+__END_DECLS
 
 #endif //ABCDK_UTIL_URI_H

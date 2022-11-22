@@ -11,6 +11,8 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/tree.h"
 
+__BEGIN_DECLS
+
 /**
  * 十六进制格式选项。
 */
@@ -66,6 +68,6 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
 */
 ssize_t abcdk_hexdump2(const char *file, const void *data, size_t size,size_t offset, const abcdk_hexdump_option_t *opt);
 
-
+__END_DECLS
 
 #endif //
