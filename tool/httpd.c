@@ -10,6 +10,9 @@
 #include <magic.h>
 #endif // HAVE_LIBMAGIC
 
+#define ABCDKHTTPD_LISTEN_MAX   8
+#define ABCDKHTTPD_PASSWD_MAX   100
+
 typedef struct _abcdkhttpd
 {
     int errcode;
@@ -21,19 +24,18 @@ typedef struct _abcdkhttpd
     abcdk_mutex_t magic_mutex;
 
     abcdk_comm_t *comm;
-    abcdk_comm_node_t *comm_listen[16];
+    abcdk_comm_node_t *comm_listen[ABCDKHTTPD_LISTEN_MAX];
     SSL_CTX *ssl_ctx;
 
     int max_client;
     const char *server_name;
     const char *root_path;
-    const char *listen[16];
-    int check_cert_chain;
+    const char *listen[ABCDKHTTPD_LISTEN_MAX];
     const char *ca_file;
     const char *ca_path;
     const char *cert_file;
     const char *key_file;
-    const char *passwd[100];
+    const char *passwd[ABCDKHTTPD_PASSWD_MAX];
     size_t up_max_size;
     const char *up_tmp_path;
     int exclude_hidden_file;
@@ -106,14 +108,11 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\tIPv6：[IP]:PORT\n");
     fprintf(stderr, "\t\tIPv6：DOMAIN,PORT\n");
 
-    fprintf(stderr, "\n\t--check-cert-chain\n");
-    fprintf(stderr, "\t\t检查证书链路有效性（双向验证，会要求客户端提供证书）。默认：不检查。\n");
-
     fprintf(stderr, "\n\t--ca-file < FILE >\n");
-    fprintf(stderr, "\t\tCA证书文件。注：仅支持PEM格式。\n");
+    fprintf(stderr, "\t\tCA证书文件。注：仅支持PEM格式，并且要求客户提供证书。\n");
 
     fprintf(stderr, "\n\t--ca-path < PATH >\n");
-    fprintf(stderr, "\t\tCA证书路径。注：仅支持PEM格式。\n");
+    fprintf(stderr, "\t\tCA证书路径。注：仅支持PEM格式，并且要求客户提供证书，同时验证吊销列表。\n");
 
     fprintf(stderr, "\n\t--cert-file < FILE >\n");
     fprintf(stderr, "\t\t服务器证书文件。注：仅支持PEM格式。\n");
@@ -836,14 +835,13 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk");
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
         ctx->listen[i] = abcdk_option_get(ctx->args, "--listen", i, NULL);
-    ctx->check_cert_chain = abcdk_option_exist(ctx->args, "--check-cert-chain");
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < ABCDKHTTPD_PASSWD_MAX; i++)
         ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
     ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
@@ -851,8 +849,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     abcdk_mutex_init2(&ctx->magic_mutex, 0);
 
-    /*Set to NULL(0).*/
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
         ctx->comm_listen[i] = NULL;
 
     if (access(ctx->root_path, R_OK) != 0)
@@ -865,11 +862,6 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     {
         fprintf(stderr, "至少需要监听一个地址。\n");
         goto final;
-    }
-
-    if(ctx->check_cert_chain && !ctx->ca_file &&ctx->ca_path)
-    {
-        fprintf(stderr, "'--check-cert-chain'未指定CA证书或CA路径，忽略。\n");
     }
 
     if (ctx->up_tmp_path && access(ctx->up_tmp_path, W_OK) != 0)
@@ -887,7 +879,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 #ifdef HAVE_OPENSSL
     if (ctx->cert_file && ctx->key_file)
     {
-        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->check_cert_chain ? 2 : 0));
+        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
         if (!ctx->ssl_ctx)
         {
             fprintf(stderr, "加载CA证书错误。\n");
@@ -901,15 +893,12 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER | (ctx->check_cert_chain ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), NULL);
+        SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER | ( (ctx->ca_file || ctx->ca_path) ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), NULL);
+
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
         SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx, _abcdkhttpd_alpn_select_cb, NULL);
 #endif //TLSEXT_TYPE_application_layer_protocol_negotiation
-
-        /*禁止会话复用。*/
-        SSL_CTX_set_session_cache_mode(ctx->ssl_ctx, SSL_SESS_CACHE_OFF);
-        SSL_CTX_set_options(ctx->ssl_ctx, SSL_OP_NO_TICKET);
 
     }
 #endif // HAVE_OPENSSL
@@ -922,7 +911,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     }
 
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
     {
         if (!ctx->listen[i])
             break;
@@ -967,7 +956,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
 final:
 
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
         abcdk_comm_unref(&ctx->comm_listen[i]);
     abcdk_comm_stop(&ctx->comm);
 #ifdef HAVE_OPENSSL
