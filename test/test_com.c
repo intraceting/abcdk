@@ -46,7 +46,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     //assert(b==3);
     
 
-    uint8_t addrs[3] = {0x01,0x02,0x05};
+    uint8_t addrs[3] = {0x32,0x33,0x34};
   //  uint8_t addrs[3] = {0x02,0x02,0x02};
     uint16_t dists[3] = {0};
 
@@ -252,10 +252,10 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
     abcdk_bit_write(&wbits,16, 0x2080);
     abcdk_bit_write(&wbits,16, 4);
     abcdk_bit_write(&wbits,8, 8);
-    abcdk_bit_write(&wbits,16, 1000);
-    abcdk_bit_write(&wbits,16, 1000);
-    abcdk_bit_write(&wbits,16, 10000);
-    abcdk_bit_write(&wbits,16, 10000);
+    abcdk_bit_write(&wbits,16, 100);
+    abcdk_bit_write(&wbits,16, 100);
+    abcdk_bit_write(&wbits,16, 100);
+    abcdk_bit_write(&wbits,16, 100);
     abcdk_bit_write(&wbits,16, abcdk_crc16(sendmsg, 15));
 
 
