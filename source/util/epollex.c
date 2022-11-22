@@ -571,6 +571,9 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
 
     assert((events & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT | ABCDK_EPOLL_ERROR)) == 0);
 
+    if (abcdk_thread_leader_test(&ctx->wait_leader) != 0)
+        ABCDK_ASSERT(0,"仅允许固定线程调用此接口。");
+
     abcdk_mutex_lock(&ctx->mutex,1);
 
     p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd),0);
