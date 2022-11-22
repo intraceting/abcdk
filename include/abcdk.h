@@ -88,6 +88,7 @@
 #include "abcdk/mp4/muxer.h"
 #include "abcdk/mp4/file.h"
 #include "abcdk/mp4/atom.h"
+#include "abcdk/http/http.h"
 #include "abcdk/http/reply.h"
 #include "abcdk/http/request.h"
 #include "abcdk/comm/message.h"
