@@ -244,6 +244,9 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
     if (buf_p->pstrs[0][len + len2 - 1] != '\n')
         buf_p->pstrs[0][len + len2++] = '\n'; //长度会+1。
 
+    /*结束符。*/
+    buf_p->pstrs[0][len + len2] = '\0';
+
     /*可能需要复制到syslog。*/
     if (ctx->copy2syslog)
         syslog(type, "s%hu.p%d %s: %s", ctx->service, getpid(), name, buf_p->pstrs[0] + len);
