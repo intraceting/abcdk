@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/time.h"
+#include "abcdk/shell/file.h"
 
 __BEGIN_DECLS
 
@@ -40,19 +41,15 @@ typedef enum _abcdk_log_type
  * 初始化。
  *
  * @warning 如果在其它接调用之后才进行初始化，将使用参数默认值。
- * @warning 如果未指定收货地址，将尝试从环境变量(ABCDK_LOG_CONSIGNEE)中获取。
- * @code
- * IPV4:PORT
- * IPV6,PORT
- * [IPV6]:PORT
- * @endcode
  *
- * @param [in] consignee 收货地址。
+ * @param [in] name 文件名(包括路径)。默认：/tmp/abcdk/log/当前进程名
+ * @param [in] segment_max 分段数量。默认：10
+ * @param [in] segment_size 分段大小(MB)。默认：10
  * @param [in] service 服务ID。默认：1
  * @param [in] copy2syslog 是否复制到syslog。默认：否
  *
 */
-void abcdk_log_open(const char *consignee,uint16_t service, int copy2syslog);
+void abcdk_log_open(const char *name,size_t segment_max,size_t segment_size,uint16_t service, int copy2syslog);
 
 /**
  * 设置掩码。

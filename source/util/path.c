@@ -158,8 +158,12 @@ char *abcdk_abspath(char *buf)
 
     /*清空旧路径。*/
     for (int i = 0; buf[i]; i++)
-        buf[i] = 0;
+    {
+        if (i == 0 && buf[i] == '/')
+            continue;
 
+        buf[i] = 0;
+    }
 
     /*拼装路径。*/
     pos = abcdk_tree_child(stack,1);

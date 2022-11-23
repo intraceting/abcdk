@@ -8,45 +8,69 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/uri.h"
 #include "abcdk/shell/proc.h"
-#include "abcdk/rpc/rpc.h"
 
-/*
- * -----------------------------------------------------------------------------------
- * |Message Data                                                                     |
- * -----------------------------------------------------------------------------------
- * |Microsecond  |Service ID |Process ID |Name      |Reserve  |Cargo Length |Cargo   |
- * |8 Bytes      |2 Bytes    |4 Bytes    |16 Bytes  |1 Bytes  |4 Bytes      |N Bytes |
- * -----------------------------------------------------------------------------------
-*/
+/**/
+typedef struct _abcdk_log_policy
+{
+    /*工作路径。*/
+    const char *workspace;
+    /*分段数量。*/
+    size_t segment_max;
+    /*分段大小(MB)。*/
+    size_t segment_size;
+
+} abcdklogd_policy_t;
+
 
 /** 日志接口。*/
 typedef struct _abcdk_log
 {
-    /** 环境初始化状态。*/
-    volatile int init_status;
+    /** 
+     * 状态。
+     * 
+     * 0：未初始化。
+     * 1：正在。
+     * 3：完成。
+     * 
+    */
+    volatile int status;
 
     /** 线程KEY。*/
-    pthread_key_t ptkey;
+    pthread_key_t buf_key;
 
-    /** 通讯环境。*/
-    abcdk_comm_t *comm;
+    /** 文件锁。*/
+    abcdk_mutex_t mutex;
 
-    /** 通讯链路。*/
-    abcdk_comm_node_t *rpc;
+    /** 文件句柄。*/
+    int fd;
 
-    /** 通讯链路锁。*/
-    abcdk_mutex_t rpc_mutex;
+    /** 日志文件。*/
+    char name[PATH_MAX];
+
+    /** 日志文件分段格式。*/
+    char segment_fmt[NAME_MAX];
+
+    /** 分段数量。*/
+    size_t segment_max;
+    
+    /** 分段大小(MB)。*/
+    size_t segment_size;
 
     /** 服务编号。*/
     uint16_t service;
 
-    /** 收货人。*/
-    const char *consignee;
+    /** 
+     * 复制到syslog。
+     * !0： 是，
+     * 0： 否。
+    */
+    int copy2syslog;
 
-    /** 是否复制到syslog。!0 是，0 否。*/
-    volatile int copy2syslog;
-
-    /** 掩码。*/
+    /** 
+     * 掩码。
+     * 
+     * 见syslog。
+    */
     volatile uint32_t mask;
 
 } abcdk_log_t;
@@ -63,75 +87,78 @@ void _abcdk_log_buf_destroy(void *opaque)
     abcdk_object_unref(&buf_p);
 }
 
-int _abcdk_log_init(void *opaque)
-{
-    abcdk_log_t *ctx = (abcdk_log_t *)opaque;
-    char *cons_p = NULL;
-
-    ctx->comm = NULL;
-    ctx->rpc = NULL;
-    ctx->service = 1;
-    ctx->copy2syslog = 0;
-    ctx->consignee = NULL;
-    ctx->mask = 0xFFFFFFFF;
-    pthread_key_create(&ctx->ptkey, _abcdk_log_buf_destroy);
-    abcdk_mutex_init2(&ctx->rpc_mutex,0);
-
-    cons_p = getenv("ABCDK_LOG_CONSIGNEE");
-    if (cons_p && *cons_p)
-    {
-        ctx->consignee = abcdk_strdup(cons_p);
-        ctx->comm = abcdk_comm_start(-1);
-    }
-
-    return 0;
-}
-
-void _abcdk_log_uninit()
-{
-    abcdk_log_t *ctx = _abcdk_log_ctx();
-
-    abcdk_comm_stop(&ctx->comm);
-    abcdk_comm_unref(&ctx->rpc);
-    pthread_key_delete(ctx->ptkey);
-    abcdk_mutex_unlock(&ctx->rpc_mutex);
-    abcdk_heap_free2((void**)&ctx->consignee);
-}
-
-abcdk_log_t *_abcdk_log_get_ctx()
-{
-    abcdk_log_t *ctx = _abcdk_log_ctx();
-    int chk;
-
-    chk = abcdk_once(&ctx->init_status, _abcdk_log_init, ctx);
-    assert(chk >= 0);
-
-    /*第一次初始化，要注册反初始化函数。*/
-    if (chk == 0)
-        atexit(_abcdk_log_uninit);
-
-    return ctx;
-}
-
-void abcdk_log_open(const char *consignee,uint16_t service, int copy2syslog)
+void _abcdk_log_close()
 {
     abcdk_log_t *ctx = NULL;
 
-    ABCDK_ASSERT(service > 0 && service <= 65535, "service在1~65535之间有效。");
+    ctx = _abcdk_log_ctx();
 
-    /*设置环境变量，具体的初始化，按需执行一次。*/
-    if (consignee)
-        setenv("ABCDK_LOG_CONSIGNEE", consignee, 1);
+    abcdk_closep(&ctx->fd);
+    abcdk_mutex_unlock(&ctx->mutex);
+    pthread_key_delete(ctx->buf_key);
+}
 
-    ctx = _abcdk_log_get_ctx();
+void abcdk_log_open(const char *name,size_t segment_max,size_t segment_size,uint16_t service, int copy2syslog)
+{
+    abcdk_log_t *ctx = NULL;
+    int len;
+
+    ctx = _abcdk_log_ctx();
+
+    /*初始化一次。*/
+    if(!abcdk_atomic_compare_and_swap(&ctx->status,0,1))
+        return;
+
+    /*注册关闭函数。*/
+    atexit(_abcdk_log_close);
+
+    pthread_key_create(&ctx->buf_key, _abcdk_log_buf_destroy);
+    abcdk_mutex_init2(&ctx->mutex,0);
+
+    ctx->fd = -1;
+
+    /*如果未指定名字，用当前进程名字。*/
+    if (!name || !name[0])
+    {
+        strncpy(ctx->name, "/tmp/abcdk/log/", PATH_MAX);
+        len = strlen(ctx->name);
+    }
+    else
+    {
+        strncpy(ctx->name, name, PATH_MAX);
+        len = strlen(ctx->name);
+    }
+
+    /*如果指定是路径，则接接当前进程名字。*/
+    if (ctx->name[len - 1] == '/')
+        abcdk_proc_basename(ctx->name + len);
+
+    abcdk_abspath(ctx->name);
+    strncat(ctx->name, ".log", PATH_MAX - len - NAME_MAX);
+
+    abcdk_basename(ctx->segment_fmt, ctx->name);
+    strncat(ctx->segment_fmt, ".%d", NAME_MAX - 10);
+
+    ctx->segment_size = (segment_size > 0 ? segment_size : 10) * 1024 * 1024;
+    ctx->segment_max = (segment_max > 0 ? segment_max : 10);
     ctx->service = service;
     ctx->copy2syslog = copy2syslog;
+    ctx->mask = 0xFFFFFFFF;
+
+    /*完成。*/
+    abcdk_atomic_store(&ctx->status,2);
+
 }
 
 void abcdk_log_mask(int type, ...)
 {
-    abcdk_log_t *ctx = _abcdk_log_get_ctx();
+    abcdk_log_t *ctx = NULL;
     uint32_t mask = 0;
+
+    ctx = _abcdk_log_ctx();
+
+    if (!abcdk_atomic_compare(&ctx->status, 2))
+        return;
 
     va_list vaptr;
     va_start(vaptr, type);
@@ -151,91 +178,42 @@ void abcdk_log_mask(int type, ...)
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
-void _abcdk_log_rpc_request_cb(abcdk_comm_node_t *rpc,uint64_t mid, const void *req, size_t len)
-{
-
-}
-
-abcdk_comm_node_t *_abcdk_log_get_rpc()
-{
-    abcdk_log_t *ctx = _abcdk_log_get_ctx();
-    abcdk_sockaddr_t addr = {0};
-    abcdk_comm_node_t *rpc_p = NULL;
-    int chk;
-
-    abcdk_mutex_lock(&ctx->rpc_mutex,1);
-
-    if (!ctx->rpc || abcdk_rpc_state(ctx->rpc) != 0)
-    {
-        /*释放已经断开的。*/
-        abcdk_comm_unref(&ctx->rpc);
-        
-        /*指定收货人再尝试连接，否则没意义。*/
-        if (ctx->consignee)
-        {
-            abcdk_sockaddr_from_string(&addr, ctx->consignee, 1);
-            ctx->rpc = abcdk_rpc_alloc(ctx->comm,666666666);
-
-            abcdk_rpc_callback_t cb = {NULL,_abcdk_log_rpc_request_cb,NULL};
-            chk = abcdk_rpc_connect(ctx->rpc, NULL, &addr, &cb);
-            if (chk != 0)
-                abcdk_comm_unref(&ctx->rpc);
-        }
-    }
-
-    if(ctx->rpc)
-        rpc_p = abcdk_comm_refer(ctx->rpc);
-
-    abcdk_mutex_unlock(&ctx->rpc_mutex);
-
-    return rpc_p;
-}
-
 abcdk_object_t *_abcdk_log_get_buffer()
 {
-    abcdk_log_t *ctx = _abcdk_log_get_ctx();
+    abcdk_log_t *ctx = NULL;
     abcdk_object_t *buf_p = NULL;
 
-    buf_p = pthread_getspecific(ctx->ptkey);
+    ctx = _abcdk_log_ctx();
+
+    buf_p = pthread_getspecific(ctx->buf_key);
     if (!buf_p)
     {
         /*没有缓存，申请一个。*/
-        buf_p = abcdk_object_alloc2(16 * 1024 * 1024);
+        buf_p = abcdk_object_alloc2(ABCDK_MIN((16 * 1024 * 1024),ctx->segment_size));
         if (buf_p)
-            pthread_setspecific(ctx->ptkey, buf_p);
+            pthread_setspecific(ctx->buf_key, buf_p);
     }
 
     return buf_p;
 }
 
-int _abcdk_log_send(const void *data, size_t len)
-{
-    abcdk_log_t *ctx = _abcdk_log_get_ctx();
-    abcdk_comm_node_t *rpc_p = NULL;
-    int chk;
-
-    /*获取通讯链路。*/
-    rpc_p = _abcdk_log_get_rpc();
-    if (!rpc_p)
-        return -2;
-
-    /*发送到远程。*/
-    chk = abcdk_rpc_request(rpc_p, data, len, NULL,1);
-    abcdk_comm_unref(&rpc_p);
-
-    return chk;
-}
-
 void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 {
-    abcdk_log_t *ctx = _abcdk_log_get_ctx();
+    abcdk_log_t *ctx = NULL;
     abcdk_object_t *buf_p = NULL;
     uint64_t ts = 0;
+    struct tm tm;
     char name[17] = {0};
-    uint32_t len = 0;
+    int len,len2;
+    struct stat attr;
     int chk;
 
     assert(fmt != NULL);
+
+    ctx = _abcdk_log_ctx();
+
+    if (!abcdk_atomic_compare(&ctx->status, 2))
+        return;
 
     /*不知道什么类型，直接跳过。*/
     if (type < ABCDK_LOG_ERROR || type >= ABCDK_LOG_MAX)
@@ -247,6 +225,8 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 
     /*获取自然时间。*/
     ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
+    abcdk_time_sec2tm(&tm,ts/100000,0);
+
     /*获取线程名称。*/
     abcdk_thread_getname(name);
     
@@ -255,25 +235,50 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
     if (!buf_p)
         return;
 
-    /*格式化货物。*/
-    vsnprintf(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35), buf_p->sizes[0] - 35, fmt, ap);
-    len = strlen(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
-    /*填充其它信息。*/
-    ABCDK_PTR2I64(buf_p->pptrs[0], 0) = abcdk_endian_h_to_b64(ts);
-    ABCDK_PTR2I16(buf_p->pptrs[0], 8) = abcdk_endian_h_to_b16(ctx->service);
-    ABCDK_PTR2I32(buf_p->pptrs[0], 10) = abcdk_endian_h_to_b32(getpid());
-    strncpy(ABCDK_PTR2I8PTR(buf_p->pptrs[0], 14), name, 16);
-    ABCDK_PTR2I8(buf_p->pptrs[0], 30) = 0;
-    ABCDK_PTR2I32(buf_p->pptrs[0], 31) = abcdk_endian_h_to_b32(len);
+    /*格式化。*/
+    len = snprintf(buf_p->pstrs[0], buf_p->sizes[0], "%04d%02d%02d%02d%02d%02d.%06lu s%hu.p%d %s: ",
+                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 100000, ctx->service, getpid(), name);
+    len2 = vsnprintf(buf_p->pstrs[0] + len, buf_p->sizes[0] - len, fmt, ap);
+
+    /*可能还需要追加换行符。*/
+    if (buf_p->pstrs[0][len + len2 - 1] != '\n')
+        buf_p->pstrs[0][len + len2++] = '\n'; //长度会+1。
 
     /*可能需要复制到syslog。*/
     if (ctx->copy2syslog)
-        syslog(type, "s%hu.p%d %s: %s\n", ctx->service, getpid(), name, ABCDK_PTR2I8PTR(buf_p->pptrs[0], 35));
+        syslog(type, "s%hu.p%d %s: %s", ctx->service, getpid(), name, buf_p->pstrs[0] + len);
 
-    /*发送到远程。因连接有可能被断开，尝试重发一次。*/
-    chk = _abcdk_log_send(buf_p->pptrs[0], 35 + len);
+    abcdk_mutex_lock(&ctx->mutex,1);
+
+open_log:
+
+    if (ctx->fd < 0)
+    {
+        abcdk_mkdir(ctx->name,0666);
+        ctx->fd = abcdk_open(ctx->name, 1, 0, 1);
+    }
+
+    if (ctx->fd < 0)
+        goto final;
+
+    chk = fstat(ctx->fd, &attr);
     if (chk != 0)
-        chk = _abcdk_log_send(buf_p->pptrs[0], 35 + len);
+        goto final;
+
+    if (attr.st_size >= ctx->segment_size)
+    {
+        abcdk_closep(&ctx->fd);
+        abcdk_file_segment(ctx->name, ctx->segment_fmt, ctx->segment_max);
+        goto open_log;
+    }
+    else
+    {
+        abcdk_write(ctx->fd,buf_p->pstrs[0],len+len2);
+    }
+
+final:
+
+    abcdk_mutex_unlock(&ctx->mutex);
 }
 
 void abcdk_log_printf(int type, const char *fmt, ...)
