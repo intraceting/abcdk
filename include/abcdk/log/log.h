@@ -40,12 +40,10 @@ typedef enum _abcdk_log_type
 /**
  * 初始化。
  *
- * @warning 如果在其它接调用之后才进行初始化，将使用参数默认值。
- *
  * @param [in] name 文件名(包括路径)。默认：/tmp/abcdk/log/当前进程名
  * @param [in] segment_max 分段数量。默认：10
  * @param [in] segment_size 分段大小(MB)。默认：10
- * @param [in] service 服务ID。默认：1
+ * @param [in] service 服务ID。
  * @param [in] copy2syslog 是否复制到syslog。默认：否
  *
 */
