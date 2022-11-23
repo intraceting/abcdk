@@ -50,7 +50,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
   //  uint8_t addrs[3] = {0x02,0x02,0x02};
     uint16_t dists[3] = {0};
 
-#pragma omp parallel for num_threads(3)
+//#pragma omp parallel for num_threads(3)
     for (int i = 0; i < 1000; i++)
     {
         int id = i%3;
@@ -71,15 +71,15 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         uint64_t s,d;
         d = abcdk_clock(s,&s);
         abcdk_stream_lock(ctx);
-        chk = abcdk_stream_transfer(ctx, sendmsg, 8, recvmsg, 7, 1000, sendmsg, 2);
+        chk = abcdk_stream_transfer(ctx, sendmsg, 8, recvmsg, 7, 200, sendmsg, 2);
         abcdk_stream_unlock(ctx);
+        printf("[%d] d = %lu\n",a,d);
         if(chk != 0)
         {
-            printf("%d timeout.\n",id);
+            printf("%d timeout.\n",a);
             continue;
         }
 
-        printf("d = %lu\n",d);
 
         uint16_t oldcrc = abcdk_bloom_read_number(recvmsg, 7, 40, 16);
         uint16_t newcrc = abcdk_crc16(recvmsg, 5);
@@ -324,7 +324,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 
 int abcdk_test_com(abcdk_tree_t *args)
 {
-   //  abcdk_test_com_ultrasound(args);
+     abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);
-   abcdk_test_com_driver(args);
+ //  abcdk_test_com_driver(args);
 }
