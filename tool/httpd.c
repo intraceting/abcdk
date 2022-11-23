@@ -145,11 +145,11 @@ void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    fprintf(stderr, "\"%s\" \"%s\" %d %ld \"%s\" \"%s\" \n",
-            http_p->remote,
-            http_p->line0, status, (ssize_t)size,
-            http_p->referer ? http_p->referer : "-",
-            http_p->user_agent ? http_p->user_agent : "-");
+    abcdk_log_printf(LOG_INFO, "\"%s\" \"%s\" %d %ld \"%s\" \"%s\" \n",
+                     http_p->remote,
+                     http_p->line0, status, (ssize_t)size,
+                     http_p->referer ? http_p->referer : "-",
+                     http_p->user_agent ? http_p->user_agent : "-");
 }
 
 int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
@@ -973,6 +973,8 @@ final:
 int abcdk_tool_httpd(abcdk_tree_t *args)
 {
     abcdkhttpd_t ctx = {0};
+
+    abcdk_log_open(NULL, 10, 10, 13, 0);
 
     /*英文；UTF-8。*/
     setlocale(LC_ALL, "en_US.UTF-8");

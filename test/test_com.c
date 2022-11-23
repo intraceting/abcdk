@@ -13,7 +13,7 @@
 
 int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 {
-    int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
+    int fd = abcdk_open("/dev/ttyUSB1", 1, 0, 0);
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
@@ -46,10 +46,13 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     //assert(b==3);
     
 
-    uint8_t addrs[3] = {0x32,0x33,0x34};
+ //   uint8_t addrs[3] = {0x32,0x33,0x34};
   //  uint8_t addrs[3] = {0x02,0x02,0x02};
-    uint16_t dists[3] = {0};
+ uint16_t dists[3] = {0};
 
+   uint8_t addrs[3] = {0x33,0x33,0x33};
+
+    uint64_t s = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,6) ,t;
 //#pragma omp parallel for num_threads(3)
     for (int i = 0; i < 1000; i++)
     {
@@ -68,15 +71,17 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 
        // usleep(1000*3);
 
-        uint64_t s,d;
-        d = abcdk_clock(s,&s);
+
+        abcdk_clock(s,&s);
+        
         abcdk_stream_lock(ctx);
         chk = abcdk_stream_transfer(ctx, sendmsg, 8, recvmsg, 7, 200, sendmsg, 2);
         abcdk_stream_unlock(ctx);
-        printf("[%d] d = %lu\n",a,d);
+        t = abcdk_clock(s,&s);
+        printf("[%02x] t = %lu\n",a,t);
         if(chk != 0)
         {
-            printf("%d timeout.\n",a);
+            printf("%02x timeout.\n",a);
             continue;
         }
 
@@ -85,13 +90,14 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         uint16_t newcrc = abcdk_crc16(recvmsg, 5);
         if (oldcrc != newcrc)
         {
+            printf("%02x crc[%04x,%04x].\n",a,oldcrc,newcrc);
             abcdk_hexdump(stderr, recvmsg, 7, 0, NULL);
         }
         else
         {
             dists[id] = abcdk_bloom_read_number(recvmsg, 7, 24, 16);
 
-            printf("%d=[%06hu]\n",a, dists[id]);
+            printf("%02x=[%06hu]\n",a, dists[id]);
         }
     }
 

@@ -88,6 +88,9 @@ int _abcdk_tool_dispatch(abcdk_tree_t *args)
         ABCDK_ERRNO_AND_GOTO1(errcode = EINVAL, final);
     }
 
+    /*设置线程名字。*/
+    abcdk_thread_setname(entry_p->name);
+
     errcode = entry_p->func_cb(args);
 
 final:
@@ -113,6 +116,7 @@ int main(int argc, char **argv)
     SSL_load_error_strings();
 
 #endif //HAVE_OPENSSL
+
 
     /*申请参数存储空间。*/
     args = abcdk_tree_alloc3(1);
