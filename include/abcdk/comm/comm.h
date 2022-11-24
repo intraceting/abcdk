@@ -91,7 +91,7 @@ typedef enum _abcdk_comm_event
 typedef struct _abcdk_comm_callback
 {
     /** 为新连接做准备工作的通知回调函数。*/
-    void (*prepare_cb)(abcdk_comm_node_t *node, abcdk_comm_node_t *listen);
+    void (*prepare_cb)(abcdk_comm_node_t **node, abcdk_comm_node_t *listen);
 
     /** 
      * 事件通知回调函数。
@@ -104,7 +104,7 @@ typedef struct _abcdk_comm_callback
      * 请求数据到达通知回调函数。
      * 
      * @warning 注册此函数后，ABCDK_COMM_EVENT_INPUT将被拦截。
-     * @warning 当请求数据未被处理时，将发送ABCDK_COMM_EVENT_INPUT事件。
+     * @warning 当请求数据未被处理时，则通知ABCDK_COMM_EVENT_INPUT事件。
      * 
      * @param [in out] remain 剩余的数据长度，返回时填充。
     */
@@ -126,12 +126,13 @@ abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src);
 
 /**
  * 申请通讯对象。
- *
- * @param [in] ctx 通讯环境指针。
+ * 
+ * @param [in] extend 扩展数据长度。
+ * @param [in] userdata 用户数据长度。
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx);
+abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t userdata);
 
 /**
  * SSL环境。
@@ -141,11 +142,27 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx);
 SSL *abcdk_comm_ssl(abcdk_comm_node_t *node);
 
 /**
- * 通讯对象的附加物。
+ * 通讯对象的扩展数据。
  * 
  * @warning 增加引用，调用者需要主动释放。
- */
-abcdk_object_t *abcdk_comm_append(abcdk_comm_node_t *node);
+*/
+abcdk_object_t *abcdk_comm_extend(abcdk_comm_node_t *node);
+
+/**
+ * 获取通讯对象的扩展数据指针。
+ * 
+ * @return 旧的指针(0号索引)。
+*/
+void *abcdk_comm_get_extend0(abcdk_comm_node_t *node);
+#define abcdk_comm_get_extend abcdk_comm_get_extend0
+
+/**
+ * 设置通讯对象的扩展数据指针。
+ * 
+ * @return 旧的指针(0号索引)。
+*/
+void *abcdk_comm_set_extend0(abcdk_comm_node_t *node,void *opaque);
+#define abcdk_comm_set_extend abcdk_comm_set_extend0
 
 /**
  * 通讯对象的用户环境。
@@ -155,32 +172,20 @@ abcdk_object_t *abcdk_comm_append(abcdk_comm_node_t *node);
 abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node);
 
 /**
- * 设置通讯对象的附加物指针。
+ * 获取通讯对象的用户环境指针。
  * 
- * @return 旧的指针。
- */
-void *abcdk_comm_set_append(abcdk_comm_node_t *node,void *opaque);
-
-/**
- * 获取通讯对象的附加物指针。
- * 
- * @return 旧的指针。
+ * @return 旧的指针(0号索引)。
 */
-void *abcdk_comm_get_append(abcdk_comm_node_t *node);
+void *abcdk_comm_get_userdata0(abcdk_comm_node_t *node);
+#define abcdk_comm_get_userdata abcdk_comm_get_userdata0
 
 /**
  * 设置通讯对象的用户环境指针。
- *  
- * @return 旧的指针。
-*/
-void *abcdk_comm_set_userdata(abcdk_comm_node_t *node,void *opaque);
-
-/**
- * 获取通讯对象的用户环境指针。
  * 
- * @return 旧的指针。
+ * @return 旧的指针(0号索引)。
 */
-void *abcdk_comm_get_userdata(abcdk_comm_node_t *node);
+void *abcdk_comm_set_userdata0(abcdk_comm_node_t *node,void *opaque);
+#define abcdk_comm_set_userdata abcdk_comm_set_userdata0
 
 /**
  * 设置超时。

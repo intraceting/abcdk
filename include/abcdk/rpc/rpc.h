@@ -17,28 +17,41 @@ __BEGIN_DECLS
  * 通讯对象的回调函数。
  *
  * @warning 服务端新的连接会复制成员指针。
-*/
+ */
 typedef struct _abcdk_rpc_callback
 {
-  /**
-   * 新连接通知回调函数。
-   *
-   * @param [out] result 0 允许连接，-1 禁止连接。
-   */
-  void (*accept_cb)(abcdk_comm_node_t *node, int *result);
+    /** 
+     * 为新连接做准备工作的通知回调函数。
+     * 
+     * @warning 如果未指定，则创建默认节点。
+    */
+    void (*prepare_cb)(abcdk_comm_node_t **node, abcdk_comm_node_t *listen);
 
-  /**
-   * 请求回调函数。
-   * 
-   * @param node 通讯对象。
-   * @param mid 消息ID。
-   * @param req 消息指针。
-   * @param len 消息长度。
-   */
-  void (*request_cb)(abcdk_comm_node_t *node, uint64_t mid, const void *req, size_t len);
+    /**
+     * 新连接通知回调函数。
+     * 
+     * @warning 如果未指定，则接受所有连接。
+     *
+     * @param [out] result 0 允许连接，-1 禁止连接。
+     */
+    void (*accept_cb)(abcdk_comm_node_t *node, int *result);
 
-  /** 连接关闭通知回调函数。*/
-  void (*close_cb)(abcdk_comm_node_t *node);
+    /**
+     * 请求回调函数。
+     *
+     * @param node 通讯对象。
+     * @param mid 消息ID。
+     * @param req 消息指针。
+     * @param len 消息长度。
+     */
+    void (*request_cb)(abcdk_comm_node_t *node, uint64_t mid, const void *req, size_t len);
+
+    /** 
+     * 连接关闭通知回调函数。
+     * 
+     * @warning 如果未指定，直接关闭。
+    */
+    void (*close_cb)(abcdk_comm_node_t *node);
 
 } abcdk_rpc_callback_t;
 
@@ -49,17 +62,11 @@ typedef struct _abcdk_rpc_callback
  *
  * @param [in] ctx 通讯环境指针。
  * @param [in] protocol 通讯协议。
+ * @param [in] userdata 用户数据长度。
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_rpc_alloc(abcdk_comm_t *ctx,uint32_t protocol);
-
-/**
- * 获取状态。
- * 
- * @return 0 已连接(连接中，监听中)，-1 未连接。
-*/
-int abcdk_rpc_state(abcdk_comm_node_t *node);
+abcdk_comm_node_t *abcdk_rpc_alloc(abcdk_comm_t *ctx,uint32_t protocol,size_t userdata);
 
 /**
  * 发送请求。

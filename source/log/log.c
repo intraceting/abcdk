@@ -225,7 +225,7 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 
     /*获取自然时间。*/
     ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
-    abcdk_time_sec2tm(&tm,ts/100000,0);
+    abcdk_time_sec2tm(&tm,ts/1000000,0);
 
     /*获取线程名称。*/
     abcdk_thread_getname(name);
@@ -237,7 +237,7 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 
     /*格式化。*/
     len = snprintf(buf_p->pstrs[0], buf_p->sizes[0], "%04d%02d%02d%02d%02d%02d.%06lu s%hu.p%d %s: ",
-                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 100000, ctx->service, getpid(), name);
+                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000, ctx->service, getpid(), name);
     len2 = vsnprintf(buf_p->pstrs[0] + len, buf_p->sizes[0] - len, fmt, ap);
 
     /*可能还需要追加换行符。*/

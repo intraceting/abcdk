@@ -109,6 +109,9 @@ int main(int argc, char **argv)
     /*随机数种子。*/
     srand(time(NULL));
 
+    /*打开日志。*/
+    abcdk_log_open(NULL, 10, 10, 13, 0);
+
 #ifdef HAVE_OPENSSL
 
     SSL_library_init();

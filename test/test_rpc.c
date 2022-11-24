@@ -168,9 +168,9 @@ int abcdk_test_rpc(abcdk_tree_t *args)
     // addr.family = AF_UNIX;
     // strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_node_t *rpc_listen = abcdk_rpc_alloc(ctx, 3333);
+    abcdk_comm_node_t *rpc_listen = abcdk_rpc_alloc(ctx, 3333,0);
 
-    abcdk_rpc_callback_t listencb = {NULL, test_rpc_request_cb};
+    abcdk_rpc_callback_t listencb = {NULL,NULL, test_rpc_request_cb};
     abcdk_rpc_listen(rpc_listen, server_ssl_ctx, &addr, &listencb);
 
     const char *connect_p = abcdk_option_get(args, "--connect", 0, "127.0.0.1:12345");
@@ -185,8 +185,8 @@ int abcdk_test_rpc(abcdk_tree_t *args)
         abcdk_comm_node_t *rpc_client[40] = {NULL};
         for (int i = 0; i < nn; i++)
         {
-            rpc_client[i] = abcdk_rpc_alloc(ctx, 3333);
-            abcdk_rpc_callback_t clientcb = {NULL, test_rpc_request2_cb};
+            rpc_client[i] = abcdk_rpc_alloc(ctx, 3333,0);
+            abcdk_rpc_callback_t clientcb = {NULL, NULL, test_rpc_request2_cb};
             abcdk_rpc_connect(rpc_client[i], client_ssl_ctx[i], &addr2, &clientcb);
         }
 

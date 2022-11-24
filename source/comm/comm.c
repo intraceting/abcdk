@@ -72,10 +72,11 @@ struct _abcdk_comm_node
     volatile pthread_t worker;
 
     /** 回调函数。*/
-    abcdk_comm_callback_t callback;
+    abcdk_comm_callback_t *callback;
+    abcdk_comm_callback_t cb_cp;
 
-    /** 附加物。*/
-    abcdk_object_t *append;
+    /** 扩展数据指针。*/
+    abcdk_object_t *extend;
 
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
@@ -94,6 +95,9 @@ struct _abcdk_comm_node
 
     /** 接收游标。*/
     size_t in_pos;
+
+    /** 来自哪个监听节点。*/
+    struct _abcdk_comm_node *from_listen;
 
 };// abcdk_comm_node_t;
 
@@ -128,11 +132,12 @@ void abcdk_comm_unref(abcdk_comm_node_t **node)
     }
 
     abcdk_closep(&node_p->fd);
-    abcdk_object_unref(&node_p->append);
+    abcdk_object_unref(&node_p->extend);
     abcdk_object_unref(&node_p->userdata);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_mutex_destroy(&node_p->out_locker);
     abcdk_object_unref(&node_p->in_buffer);
+    abcdk_comm_unref(&node_p->from_listen);
     abcdk_heap_free(node_p);
 }
 
@@ -148,11 +153,11 @@ abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src)
     return src;
 }
 
-abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
+abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t userdata)
 {
     abcdk_comm_node_t *node = NULL;
 
-    ABCDK_ASSERT(ctx != NULL,"通讯对象需要绑定通讯环境才能被创建。");
+    assert(ctx != NULL);
 
     node = (abcdk_comm_node_t *)abcdk_heap_alloc(sizeof(abcdk_comm_node_t));
     if(!node)
@@ -162,13 +167,14 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx)
     node->refcount = 1;
     node->ctx = ctx;
     node->fd = -1;
-    node->append = abcdk_object_alloc3(0,1);
-    node->userdata = abcdk_object_alloc3(0,1);
+    node->extend = abcdk_object_alloc3(extend,1);
+    node->userdata = abcdk_object_alloc3(userdata,1);
     node->out_queue = abcdk_tree_alloc3(1);
     abcdk_mutex_init2(&node->out_locker,0);
     node->out_pos = 0;
     node->in_buffer = NULL;
     node->in_pos = 0;
+    node->from_listen = NULL;
 
     return node;
 }
@@ -187,11 +193,30 @@ SSL *abcdk_comm_ssl(abcdk_comm_node_t *node)
     return NULL;
 }
 
-abcdk_object_t *abcdk_comm_append(abcdk_comm_node_t *node)
+abcdk_object_t *abcdk_comm_extend(abcdk_comm_node_t *node)
 {
     assert(node != NULL);
 
-    return abcdk_object_refer(node->append);
+    return abcdk_object_refer(node->extend);
+}
+
+void *abcdk_comm_get_extend0(abcdk_comm_node_t *node)
+{
+    assert(node != NULL);
+
+    return node->extend->pptrs[0];
+}
+
+void *abcdk_comm_set_extend0(abcdk_comm_node_t *node,void *opaque)
+{
+    void *old;
+
+    assert(node != NULL);
+
+    old = node->extend->pptrs[0];
+    node->extend->pptrs[0] = (uint8_t*)opaque;
+
+    return old;
 }
 
 abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node)
@@ -201,29 +226,16 @@ abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node)
     return abcdk_object_refer(node->userdata);
 }
 
-
-void *abcdk_comm_set_append(abcdk_comm_node_t *node,void *opaque)
-{
-    void *old = NULL;
-
-    assert(node != NULL);
-
-    old = node->append->pptrs[0];
-    node->append->pptrs[0] = (uint8_t*)opaque;
-
-    return old;
-}
-
-void *abcdk_comm_get_append(abcdk_comm_node_t *node)
+void *abcdk_comm_get_userdata0(abcdk_comm_node_t *node)
 {
     assert(node != NULL);
 
-    return node->append->pptrs[0];
+    return node->userdata->pptrs[0];
 }
 
-void *abcdk_comm_set_userdata(abcdk_comm_node_t *node,void *opaque)
+void *abcdk_comm_set_userdata0(abcdk_comm_node_t *node,void *opaque)
 {
-    void *old = NULL;
+    void *old;
 
     assert(node != NULL);
 
@@ -231,13 +243,6 @@ void *abcdk_comm_set_userdata(abcdk_comm_node_t *node,void *opaque)
     node->userdata->pptrs[0] = (uint8_t*)opaque;
 
     return old;
-}
-
-void *abcdk_comm_get_userdata(abcdk_comm_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->userdata->pptrs[0];
 }
 
 int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout)
@@ -375,10 +380,10 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_unref(&node);
 }
 
-void _abcdk_comm_prepare_cb(abcdk_comm_node_t *node,abcdk_comm_node_t *listen)
+void _abcdk_comm_prepare_cb(abcdk_comm_node_t **node,abcdk_comm_node_t *listen)
 {
     /*通知应用层处理事件。*/
-    node->callback.prepare_cb(node, listen);
+    listen->callback->prepare_cb(node, listen);
 }
 
 /*声明输入事件钩子函数。*/
@@ -398,7 +403,7 @@ void _abcdk_comm_event_cb(abcdk_comm_node_t *node,uint32_t event, int *result)
     else if(event == ABCDK_COMM_EVENT_OUTPUT)
         _abcdk_comm_output_hook(node);
     else 
-        node->callback.event_cb(node, event, result);
+        node->callback->event_cb(node, event, result);
 
     /*解绑工作线程。*/
     abcdk_thread_leader_quit(&node->worker);
@@ -410,17 +415,22 @@ void _abcdk_comm_accept(abcdk_comm_node_t *listen)
     epoll_data_t ep_data;
     int chk;
 
-    node = abcdk_comm_alloc(listen->ctx);
+    /*通知初始化。*/
+    _abcdk_comm_prepare_cb(&node, listen);
     if (!node)
-        return ;
+        return;
 
+    /*配置参数。*/
     node->flag = ABCDK_COMM_FLAG_ACCPET;
     node->status = ABCDK_COMM_STATUS_SYNC;
+
+    /*记住来源。*/
+    node->from_listen = abcdk_comm_refer(listen);
+
+    /*复制通讯环境指针。*/
+    node->ctx = listen->ctx;
     /*复制监听环境的回调函数指针。*/
     node->callback = listen->callback;
-
-    /*通知初始化。*/
-    _abcdk_comm_prepare_cb(node, listen);
 
 #ifdef HEADER_SSL_H    
     if(listen->ssl_ctx)
@@ -761,6 +771,7 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(node->ctx != NULL,"未绑定通讯环境，通讯对象无法正常工作。");
     ABCDK_ASSERT(cb->prepare_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
@@ -773,16 +784,17 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
 
     node_p->flag = ABCDK_COMM_FLAG_LISTEN;
     node_p->status = ABCDK_COMM_STATUS_STABLE;
+    node_p->cb_cp = *cb;
+    node_p->callback = &node_p->cb_cp;
+
 #ifdef HEADER_SSL_H
     node_p->ssl_ctx = ssl_ctx;
-
     /*禁止会话复用。*/
     SSL_CTX_set_session_cache_mode(node_p->ssl_ctx, SSL_SESS_CACHE_OFF);
 #ifdef SSL_OP_NO_TICKET
     SSL_CTX_set_options(node_p->ssl_ctx, SSL_OP_NO_TICKET);
 #endif //SSL_OP_NO_TICKET
 #endif //HEADER_SSL_H
-    node_p->callback = *cb;
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -860,6 +872,7 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(node->ctx != NULL,"未绑定通讯环境，通讯对象无法正常工作。");
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     
     /*异步环境，首先得增加对象引用。*/
@@ -871,7 +884,8 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
 
     node_p->flag = ABCDK_COMM_FLAG_CLIENT;
     node_p->status = ABCDK_COMM_STATUS_SYNC;
-    node_p->callback = *cb;
+    node_p->cb_cp = *cb;
+    node_p->callback = &node_p->cb_cp;
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
@@ -941,9 +955,9 @@ void _abcdk_comm_input_hook(abcdk_comm_node_t *node)
     size_t remain;
 
     /*当未注册请求数据到达通知回调函数时，直接发事件通知。*/
-    if(!node->callback.request_cb)
+    if(!node->callback->request_cb)
     {
-        node->callback.event_cb(node,ABCDK_COMM_EVENT_INPUT,NULL);
+        node->callback->event_cb(node,ABCDK_COMM_EVENT_INPUT,NULL);
         return;
     }
 
@@ -971,7 +985,7 @@ void _abcdk_comm_input_hook(abcdk_comm_node_t *node)
 
 NEXT_REQ:
 
-    node->callback.request_cb(node,node->in_buffer->pptrs[0],node->in_pos,&remain);
+    node->callback->request_cb(node,node->in_buffer->pptrs[0],node->in_pos,&remain);
 
     if (remain < node->in_pos)
     {
@@ -987,7 +1001,7 @@ NEXT_REQ:
     else
     {
         /*当应用层未处理任何数据时，发送事件通知。*/
-        node->callback.event_cb(node, ABCDK_COMM_EVENT_INPUT, NULL);
+        node->callback->event_cb(node, ABCDK_COMM_EVENT_INPUT, NULL);
     }
 }
 
@@ -1007,7 +1021,7 @@ NEXT_MSG:
     /*通知应用层，发送队列空闲。*/
     if(!p)
     {
-        node->callback.event_cb(node,ABCDK_COMM_EVENT_OUTPUT,NULL);
+        node->callback->event_cb(node,ABCDK_COMM_EVENT_OUTPUT,NULL);
         return;
     }
 
