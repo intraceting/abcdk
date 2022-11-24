@@ -380,10 +380,13 @@ void _abcdk_comm_cleanup_cb(epoll_data_t *data, void *opaque)
     abcdk_comm_unref(&node);
 }
 
-void _abcdk_comm_prepare_cb(abcdk_comm_node_t **node,abcdk_comm_node_t *listen)
+void _abcdk_comm_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
 {
     /*通知应用层处理事件。*/
-    listen->callback->prepare_cb(node, listen);
+    if (listen->callback->prepare_cb)
+        listen->callback->prepare_cb(node, listen);
+    else
+        abcdk_comm_alloc(listen->ctx, 0, 0);
 }
 
 /*声明输入事件钩子函数。*/
@@ -771,8 +774,6 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
-    ABCDK_ASSERT(node->ctx != NULL,"未绑定通讯环境，通讯对象无法正常工作。");
-    ABCDK_ASSERT(cb->prepare_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     /*异步环境，首先得增加对象引用。*/
@@ -872,7 +873,6 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
-    ABCDK_ASSERT(node->ctx != NULL,"未绑定通讯环境，通讯对象无法正常工作。");
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     
     /*异步环境，首先得增加对象引用。*/
