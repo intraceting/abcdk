@@ -992,17 +992,12 @@ NEXT_REQ:
         /*排出已读写的数据，同时重置游标。*/
         memmove(node->in_buffer->pptrs[0], ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], node->in_pos - remain), remain);
         node->in_pos = remain;
+    }
 
-        if (node->in_pos > 0)
-            goto NEXT_REQ;
-        else
-            abcdk_comm_recv_watch(node);
-    }
+    if (node->in_pos > 0)
+        goto NEXT_REQ;
     else
-    {
-        /*当应用层未处理任何数据时，发送事件通知。*/
-        node->callback->event_cb(node, ABCDK_COMM_EVENT_INPUT, NULL);
-    }
+        abcdk_comm_recv_watch(node);
 }
 
 void _abcdk_comm_output_hook(abcdk_comm_node_t *node)
