@@ -875,6 +875,9 @@ void _abcdkhttpd_input_cb(abcdk_comm_node_t *node)
 
     if(http_p->tunnel)
     {
+
+
+NEXT_PART:
         buf = abcdk_object_alloc2(256*1024);
         if(!buf)
         {
@@ -882,6 +885,7 @@ void _abcdkhttpd_input_cb(abcdk_comm_node_t *node)
             abcdk_comm_set_timeout(http_p->tunnel,1);
             return;
         }
+
 
         chk = abcdk_comm_recv(node, buf->pptrs[0], buf->sizes[0]);
         if (chk <= 0)
@@ -902,6 +906,8 @@ void _abcdkhttpd_input_cb(abcdk_comm_node_t *node)
             abcdk_comm_set_timeout(http_p->tunnel, 1);
             return;
         }
+
+        goto NEXT_PART;
     }
     else
     {
