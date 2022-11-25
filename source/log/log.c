@@ -275,8 +275,17 @@ open_log:
         goto open_log;
     }
     else
-    {
+    {   
+        /*在末尾追加。*/
+        lseek(ctx->fd,0,SEEK_END);
+
+        /*写，内部会保正写完。如果写不完，就是出错或没空间了。*/
         abcdk_write(ctx->fd,buf_p->pstrs[0],len+len2);
+        
+#if 0
+        /*落盘，非常慢。*/
+        fsync(ctx->fd);
+#endif
     }
 
 final:
