@@ -330,7 +330,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 
 int abcdk_test_com(abcdk_tree_t *args)
 {
-     abcdk_test_com_ultrasound(args);
+   //  abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);
- //  abcdk_test_com_driver(args);
+   abcdk_test_com_driver(args);
 }
