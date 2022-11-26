@@ -71,8 +71,6 @@ typedef struct _abcdkhttpd_node
     char path[PATH_MAX];
     char params[PATH_MAX];
     char version[100];
-    char auth_method[100];
-    char passwd[100];
 
     char pathfile[PATH_MAX];
     struct stat attr;
@@ -122,6 +120,11 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
     
     fprintf(stderr, "\n\t--exclude-hidden-file\n");
     fprintf(stderr, "\t\t排除隐藏属性的文件和目录。\n");
+}
+
+uint64_t _abcdkhttpd_clock()
+{
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,6);
 }
 
 int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
@@ -204,7 +207,14 @@ void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
 int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
-    int status;
+    char auth_method[100] = {0};
+    char basic_req[100] = {0};
+    abcdk_object_t *digest_req = NULL;
+    uint8_t digest_md5_buf[16];
+    char digest_ha1[33] = {0},digest_ha2[33]={0},digest_rsp[33]={0};
+    const char *key,*value,*p,*p_next;
+    size_t klen,vlen;
+    int chk;
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
 
@@ -214,12 +224,132 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
     if (!http_p->auth)
         goto final_error;
 
-    if (abcdk_strcmp(http_p->auth_method, "Basic", 0) != 0)
-        goto final_error;
+    p_next = http_p->auth;
+    
+    p = abcdk_strtok(&p_next, " ");
+    strncpy(auth_method, p, p_next - p);
 
-    for (int i = 0; http_p->ctx->passwd[i]; i++)
+    if (abcdk_strcmp(auth_method, "Basic", 0) == 0)
     {
-        if (abcdk_strcmp(http_p->passwd, http_p->ctx->passwd[i], 1) == 0)
+        p = abcdk_strtok2(&p_next, "\r",1);
+
+        abcdk_basecode_t bc;
+        abcdk_basecode_init(&bc, 64);
+        abcdk_basecode_decode(&bc, p, p_next - p, (uint8_t *)basic_req, 100);
+
+        for (int i = 0; http_p->ctx->passwd[i]; i++)
+        {
+            if (abcdk_strcmp(basic_req, http_p->ctx->passwd[i], 1) == 0)
+                return 0;
+        }
+    }
+    else if (abcdk_strcmp(auth_method, "Digest", 0) == 0)
+    {
+        size_t sizes[] = {100,100,4096,100};
+        digest_req = abcdk_object_alloc(sizes,4,0);
+
+        for(;p_next;)
+        {
+            p = abcdk_strtok2(&p_next,",",1);
+            if(!p)
+                break;
+            
+            p_next = p;
+
+            key = abcdk_strtok2(&p_next,"=",1);
+            if(!key)
+                break;
+            klen = p_next - key;
+
+            value = abcdk_strtok2(&p_next,",",1);
+            if(!value)
+                break;
+            vlen = p_next - value;
+
+            if (abcdk_strncmp(key, "username", klen, 0) == 0)
+            {
+                strncpy(digest_req->pstrs[0], value, ABCDK_MIN(vlen, digest_req->sizes[0]));
+                abcdk_strtrim2(digest_req->pstrs[0],isspace,"=\"\'",2);
+            }
+            else if (abcdk_strncmp(key, "nonce", klen, 0) == 0)
+            {
+                strncpy(digest_req->pstrs[1], value, ABCDK_MIN(vlen, digest_req->sizes[1]));
+                abcdk_strtrim2(digest_req->pstrs[1],isspace,"=\"\'",2);
+            }
+            else if (abcdk_strncmp(key, "uri", klen, 0) == 0)
+            {
+                strncpy(digest_req->pstrs[2], value, ABCDK_MIN(vlen, digest_req->sizes[2]));
+                abcdk_strtrim2(digest_req->pstrs[2],isspace,"=\"\'",2);
+            }
+            else if (abcdk_strncmp(key, "response", klen, 0) == 0)
+            {
+                strncpy(digest_req->pstrs[3], value, ABCDK_MIN(vlen, digest_req->sizes[3]));
+                abcdk_strtrim2(digest_req->pstrs[3],isspace,"=\"\'",2);
+            }
+        }
+
+        chk = -1;
+        for (int i = 0; http_p->ctx->passwd[i]; i++)
+        {
+            p_next = http_p->ctx->passwd[i];
+            if(!p_next)
+                break;
+
+            p = abcdk_strtok(&p_next, ":");
+            if (!p)
+                continue;
+
+            /*用户名称长度必须相同。*/
+            if (p_next - p != strlen(digest_req->pstrs[0]))
+                continue;
+
+            /*比较用户名。*/
+            if (abcdk_strncmp(p, digest_req->pstrs[0], p_next - p, 0) != 0)
+                continue;
+
+            /*找到密码。*/
+            p = abcdk_strtok(&p_next, ":");
+            if (!p)
+                continue;
+
+            if (p_next - p <=0)
+                continue;
+
+#ifdef HEADER_MD5_H
+            MD5_CTX digest_md5;
+            MD5_Init(&digest_md5);
+            MD5_Update(&digest_md5, digest_req->pstrs[0], strlen(digest_req->pstrs[0]));
+            MD5_Update(&digest_md5, "::", 2);
+            MD5_Update(&digest_md5, p, p_next - p);
+            MD5_Final(digest_md5_buf,&digest_md5);
+            abcdk_bin2hex(digest_ha1,digest_md5_buf,16,0);
+
+            MD5_Init(&digest_md5);
+            MD5_Update(&digest_md5, http_p->method, strlen(http_p->method));
+            MD5_Update(&digest_md5, ":", 1);
+            MD5_Update(&digest_md5, digest_req->pstrs[2], strlen(digest_req->pstrs[2]));
+            MD5_Final(digest_md5_buf,&digest_md5);
+            abcdk_bin2hex(digest_ha2,digest_md5_buf,16,0);
+            
+            MD5_Init(&digest_md5);
+            MD5_Update(&digest_md5, digest_ha1, 32);
+            MD5_Update(&digest_md5, ":", 1);
+            MD5_Update(&digest_md5, digest_req->pstrs[1], strlen(digest_req->pstrs[1]));
+            MD5_Update(&digest_md5, ":", 1);
+            MD5_Update(&digest_md5, digest_ha2,32);
+            MD5_Final(digest_md5_buf,&digest_md5);
+            abcdk_bin2hex(digest_rsp,digest_md5_buf,16,0);
+
+            if (abcdk_strcmp(digest_rsp, digest_req->pstrs[3],0) == 0)
+            {
+                chk = 0;
+                break;
+            }
+#endif // HEADER_MD5_H
+        }
+
+        abcdk_object_unref(&digest_req);
+        if(chk == 0)
             return 0;
     }
 
@@ -230,12 +360,17 @@ final_error:
                            "Server: %s\r\n"
                            "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
+#if !defined(HEADER_MD5_H) || defined(OPENSSL_NO_MD5)
                            "WWW-Authenticate: Basic realm=\"\", charset=utf-8\r\n"
+#else //!defined(HEADER_MD5_H) || !defined(OPENSSL_NO_MD5)
+                           "WWW-Authenticate: Digest realm=\"\", nonce=\"%lu\", charset=utf-8\r\n"
+#endif //!defined(HEADER_MD5_H) || !defined(OPENSSL_NO_MD5)
                            "Content-Length: 0\r\n"
                            "\r\n",
                            abcdk_http_status_desc(401),
                            http_p->ctx->server_name,
-                           abcdk_time_format(http_p->timefmt, NULL));
+                           abcdk_time_format(http_p->timefmt, NULL),
+                           _abcdkhttpd_clock());
 
     _abcdkhttpd_logprint(node, 401, 0);
 
@@ -462,7 +597,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
             p = abcdk_strtok(&p_next, "=");
             strncpy(tmp, p, p_next - p);
-            abcdk_strtrim(tmp, isspace, 2);
+            abcdk_strtrim2(tmp, isspace,NULL, 2);
             sscanf(p, "%lu-%lu", &range_s, &range_e);
 
             if (range_s >= range_e || range_s >= file->sizes[0])
@@ -634,19 +769,6 @@ void _abcdkhttpd_parse_request(abcdk_comm_node_t *node)
     p = abcdk_strtok(&p_next, " ");
     if (p)
         strncpy(http_p->params, p, p_next - p);
-
-    if (http_p->auth)
-    {
-        p_next = http_p->auth;
-        p = abcdk_strtok(&p_next, " ");
-        strncpy(http_p->auth_method, p, p_next - p);
-
-        p = abcdk_strtok(&p_next, " ");
-
-        abcdk_basecode_t bc;
-        abcdk_basecode_init(&bc, 64);
-        abcdk_basecode_decode(&bc, p, p_next - p, (uint8_t *)http_p->passwd, 100);
-    }
 
     _abcdkhttpd_process(node);
 }
@@ -826,19 +948,25 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 {
     abcdk_signal_t sig;
     abcdk_sockaddr_t addr;
+    const char *p,*p_next,p2;
+    size_t plen,p2len;
     int chk;
 
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk");
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
+
     for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
         ctx->listen[i] = abcdk_option_get(ctx->args, "--listen", i, NULL);
+
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
+
     for (int i = 0; i < ABCDKHTTPD_PASSWD_MAX; i++)
         ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
+
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
     ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
     ctx->exclude_hidden_file = abcdk_option_exist(ctx->args, "--exclude-hidden-file");

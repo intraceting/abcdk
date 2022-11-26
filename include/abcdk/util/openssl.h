@@ -21,6 +21,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/x509_vfy.h>
 #include <openssl/ssl.h>
+#include <openssl/md5.h>
 
 #if !defined(OPENSSL_NO_SHA) && (!defined(OPENSSL_NO_SHA0) || !defined(OPENSSL_NO_SHA1))
 #include <openssl/sha.h>

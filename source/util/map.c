@@ -100,11 +100,15 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
     /*如果节点不存在并且需要创建，则添加到链表头。 */
     if (!node && vsize > 0)
     {
-        size_t sizes[2] = {ksize, vsize};
-        node = abcdk_tree_alloc2(sizes, 2,0);
-
+        /*多申请一个字节。*/
+        size_t sizes[2] = {ksize + 1, vsize + 1};
+        node = abcdk_tree_alloc2(sizes, 2, 0);
         if (!node)
             ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
+
+        /*修正。*/
+        node->obj->sizes[ABCDK_MAP_KEY] = ksize;
+        node->obj->sizes[ABCDK_MAP_VALUE] = vsize;
 
         /* 注册数据节点的析构函数。*/
         if (map->destructor_cb)

@@ -239,7 +239,7 @@ ssize_t abcdk_fgetline(FILE *fp, char **line, size_t *len, uint8_t delim, char n
     {
         line_p = *line;
 
-        if (*line_p == '\0' || *line_p == note || iscntrl(*line_p))
+        if (*line_p == '\0' || *line_p == note)
             continue;
         else
             break;
