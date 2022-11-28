@@ -371,10 +371,10 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_comm_message_t *msg)
     return 1;
 }
 
-void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
+void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_rpc_node_t *rpc_p = NULL;
-    abcdk_comm_message_t *msg = NULL;
+    abcdk_comm_message_t *msg_p = NULL;
     void *msg_ptr;
     size_t msg_len;
     uint64_t mid;
@@ -400,8 +400,7 @@ void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
         abcdk_comm_message_protocol_set(rpc_p->in_buffer, &prot);
     }
     
-
-    chk = abcdk_comm_message_recv(rpc_p->in_buffer,node);
+    chk = abcdk_comm_message_recv(rpc_p->in_buffer,data,size,remain);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);
@@ -409,23 +408,17 @@ void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
     }
     else if (chk == 0)
     {
-        abcdk_comm_recv_watch(node);
         return;
     }
 
     /*托管缓存。*/
-    msg = rpc_p->in_buffer;
+    msg_p = rpc_p->in_buffer;
     /*缓存已经被托管，这里不能再继续使用了。*/
     rpc_p->in_buffer = NULL;
-    
-    /*复用链路前要增加引用计数，以防止多线程操作同一个链路在释放回收内存后，造成应用层内存非法访问的异常。*/
-    abcdk_comm_refer(node);
-    /*复用链路。*/
-    abcdk_comm_recv_watch(node);
 
     /*处理接收到的数据。*/
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
+    msg_ptr = abcdk_comm_message_data(msg_p);
+    msg_len = abcdk_comm_message_size(msg_p);
 
     mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(msg_ptr, 8));
     flag = ABCDK_PTR2U8(msg_ptr, 17);
@@ -437,20 +430,22 @@ void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
     if (flag & ABCDK_RPC_FLAG_RSP)
     {
         /*等待应答失败时，直接删除消息。*/
-        chk = abcdk_waiter_response(rpc_p->rsp_waiter, mid,msg);
+        chk = abcdk_waiter_response(rpc_p->rsp_waiter, mid,msg_p);
         if(chk != 0)
-            abcdk_comm_message_unref(&msg);
+            abcdk_comm_message_unref(&msg_p);
     }
     else
     {
         /*通知应用层，数据到达。*/
         rpc_p->callback->request_cb(node,mid,cargo_ptr,cargo_len);
         /*删除请求数据。*/
-        abcdk_comm_message_unref(&msg);
+        abcdk_comm_message_unref(&msg_p);
     }
+}
 
-    /*减少引用计数。*/
-    abcdk_comm_unref(&node);
+void _abcdk_rpc_event_input(abcdk_comm_node_t *node)
+{
+    return;
 }
 
 void _abcdk_rpc_event_output(abcdk_comm_node_t *node)
@@ -528,7 +523,7 @@ int abcdk_rpc_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t
     rpc_p->cb_cp = *cb;
     rpc_p->callback = &rpc_p->cb_cp;
 
-    abcdk_comm_callback_t fcb = {_abcdk_rpc_prepare_cb,_abcdk_rpc_event_cb};
+    abcdk_comm_callback_t fcb = {_abcdk_rpc_prepare_cb,_abcdk_rpc_event_cb,_abcdk_rpc_request_cb};
     chk = abcdk_comm_listen(node, ssl_ctx, addr, &fcb);
     if (chk != 0)
         goto final_error;
@@ -556,7 +551,7 @@ int abcdk_rpc_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     rpc_p->cb_cp = *cb;
     rpc_p->callback = &rpc_p->cb_cp;
 
-    abcdk_comm_callback_t fcb = {_abcdk_rpc_prepare_cb,_abcdk_rpc_event_cb};
+    abcdk_comm_callback_t fcb = {_abcdk_rpc_prepare_cb,_abcdk_rpc_event_cb,_abcdk_rpc_request_cb};
     chk = abcdk_comm_connect(node, ssl_ctx, addr, &fcb);
     if (chk != 0)
         goto final_error;

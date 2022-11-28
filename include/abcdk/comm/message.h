@@ -98,23 +98,9 @@ size_t abcdk_comm_message_offset(const abcdk_comm_message_t *msg);
 void abcdk_comm_message_drain(abcdk_comm_message_t *msg,size_t size);
 
 /**
- * 发送消息。
- * 
- * @return 1 发送完毕，0 有未发送数据。
-*/
-int abcdk_comm_message_send(abcdk_comm_message_t *msg, abcdk_comm_node_t *node);
-
-/**
  * 设置数据包协议。
 */
 void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_t *prot);
-
-/**
- * 接收消息。
- * 
- * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
-*/
-int abcdk_comm_message_recv(abcdk_comm_message_t *msg, abcdk_comm_node_t *node);
 
 /**
  * 接收消息(从缓存)。
@@ -123,7 +109,7 @@ int abcdk_comm_message_recv(abcdk_comm_message_t *msg, abcdk_comm_node_t *node);
  * 
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */
-int abcdk_comm_message_recv2(abcdk_comm_message_t *msg,const void *data,size_t size,size_t *remain);
+int abcdk_comm_message_recv(abcdk_comm_message_t *msg,const void *data,size_t size,size_t *remain);
 
 /**
  * 创建消息对象。

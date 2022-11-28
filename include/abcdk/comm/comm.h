@@ -90,28 +90,28 @@ typedef enum _abcdk_comm_event
 */
 typedef struct _abcdk_comm_callback
 {
-    /** 
+    /**
      * 为新连接做准备工作的通知回调函数。
-     * 
+     *
      * @warning 如果未指定，则创建默认节点。
-    */
+     */
     void (*prepare_cb)(abcdk_comm_node_t **node, abcdk_comm_node_t *listen);
 
-    /** 
+    /**
      * 事件通知回调函数。
-     * 
+     *
      * @warning 除ABCDK_COMM_EVENT_ACCEPT事件外，其余事件均忽略返回值。
-    */
+     */
     void (*event_cb)(abcdk_comm_node_t *node, uint32_t event, int *result);
 
-    /** 
+    /**
      * 请求数据到达通知回调函数。
-     * 
+     *
      * @warning 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
-     * 
+     *
      * @param [in out] remain 剩余的数据长度，返回时填充。
-    */
-   void (*request_cb)(abcdk_comm_node_t *node, const void *data,size_t size,size_t *remain);
+     */
+    void (*request_cb)(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain);
 
 } abcdk_comm_callback_t;
 

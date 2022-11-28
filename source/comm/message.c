@@ -210,30 +210,6 @@ void abcdk_comm_message_drain(abcdk_comm_message_t *msg, size_t size)
     msg->offset = remain;
 }
 
-int abcdk_comm_message_send(abcdk_comm_message_t *msg, abcdk_comm_node_t *node)
-{
-    uint32_t size;
-    ssize_t wsize;
-    int chk;
-
-    assert(node != NULL && msg != NULL);
-
-    if (msg->offset >= msg->size)
-        return 1;
-
-    wsize = abcdk_comm_send(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
-    if (wsize <= 0)
-        return 0;
-    else if (wsize > 0)
-        msg->offset += wsize;
-
-    /*检测发送的数据是否完整。*/
-    if (msg->size != msg->offset)
-        return 0;
-
-    return 1;
-}
-
 void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_t *prot)
 {
     assert(msg != NULL && prot != NULL);
@@ -242,35 +218,7 @@ void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_messa
     msg->protocol = *prot;
 }
 
-int abcdk_comm_message_recv(abcdk_comm_message_t *msg, abcdk_comm_node_t *node)
-{
-    ssize_t rsize = 0;
-    int chk = 0;
-
-    assert(node != NULL && msg != NULL);
-
-MORE_DATA:
-
-    rsize = abcdk_comm_recv(node, ABCDK_PTR2VPTR(msg->buf, msg->offset), msg->size - msg->offset);
-    if (rsize <= 0)
-        return 0;
-    else
-        msg->offset += rsize;
-
-    /*检测接收的数据是否完整。*/
-    if (msg->protocol.unpack_cb)
-    {
-        chk = msg->protocol.unpack_cb(msg->protocol.opaque, msg);
-        if (chk < 0)
-            return -1;
-        else if (chk == 0)
-            goto MORE_DATA;
-    }
-
-    return 1;
-}
-
-int abcdk_comm_message_recv2(abcdk_comm_message_t *msg, const void *data,size_t size,size_t *remain)
+int abcdk_comm_message_recv(abcdk_comm_message_t *msg, const void *data,size_t size,size_t *remain)
 {
     ssize_t rsize = 0;
     size_t rall = 0;
