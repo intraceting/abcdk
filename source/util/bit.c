@@ -8,11 +8,15 @@
 
 uint64_t abcdk_bit_read(abcdk_bit_t *ctx, uint8_t bits)
 {
+    uint64_t chk;
+
     assert(ctx != NULL && bits > 0);
     assert(ctx->data != NULL && ctx->size > 0 && ctx->pos < ctx->size * 8);
 
-    return abcdk_bloom_read_number(ctx->data, ctx->size, ctx->pos, bits);
+    chk = abcdk_bloom_read_number(ctx->data, ctx->size, ctx->pos, bits);
     ctx->pos += bits;
+
+    return chk;
 }
 
 void abcdk_bit_write(abcdk_bit_t *ctx, uint8_t bits, uint64_t num)
