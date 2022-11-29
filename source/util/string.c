@@ -64,16 +64,19 @@ int abcdk_strncmp(const char *s1, const char *s2, size_t len, int caseAb)
 
 int _abcdk_strtrim_check(int c, int (*isctype_cb)(int c), const char *other)
 {
-    if (!isctype_cb && !other)
-        return 0;
-
-    if(isctype_cb(c))
-        return 1;
-
-    for (; *other; other++)
+    if(isctype_cb)
     {
-        if (c == *other)
+        if(isctype_cb(c))
             return 1;
+    }
+
+    if (other)
+    {
+        for (; *other; other++)
+        {
+            if (c == *other)
+                return 1;
+        }
     }
 
     return 0;
