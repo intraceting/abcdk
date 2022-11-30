@@ -13,7 +13,7 @@
 
 int abcdk_test_com_ultrasound(abcdk_tree_t *args)
 {
-    int fd = abcdk_open("/dev/ttyUSB1", 1, 0, 0);
+    int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
@@ -46,11 +46,11 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
     //assert(b==3);
     
 
- //   uint8_t addrs[3] = {0x32,0x33,0x34};
+    uint8_t addrs[3] = {0x35,0x33,0x34};
   //  uint8_t addrs[3] = {0x02,0x02,0x02};
- uint16_t dists[3] = {0};
+    uint16_t dists[3] = {0};
 
-   uint8_t addrs[3] = {0x33,0x33,0x33};
+   //uint8_t addrs[3] = {0x33,0x33,0x33};
 
     uint64_t s = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,6) ,t;
 //#pragma omp parallel for num_threads(3)
@@ -78,7 +78,7 @@ int abcdk_test_com_ultrasound(abcdk_tree_t *args)
         chk = abcdk_stream_transfer(ctx, sendmsg, 8, recvmsg, 7, 200, sendmsg, 2);
         abcdk_stream_unlock(ctx);
         t = abcdk_clock(s,&s);
-        printf("[%02x] t = %lu\n",a,t);
+    //    printf("[%02x] t = %lu\n",a,t);
         if(chk != 0)
         {
             printf("%02x timeout.\n",a);
@@ -330,7 +330,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 
 int abcdk_test_com(abcdk_tree_t *args)
 {
-   //  abcdk_test_com_ultrasound(args);
+     abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);
-   abcdk_test_com_driver(args);
+ //  abcdk_test_com_driver(args);
 }
