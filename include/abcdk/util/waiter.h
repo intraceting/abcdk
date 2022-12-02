@@ -18,12 +18,12 @@ __BEGIN_DECLS
 typedef struct _abcdk_waiter abcdk_waiter_t;
 
 /**
- * 释放服务员。
+ * 释放。
 */
 void abcdk_waiter_free(abcdk_waiter_t **waiter);
 
 /** 
- * 创建服务员。
+ * 创建。
 */
 abcdk_waiter_t *abcdk_waiter_alloc();
 
