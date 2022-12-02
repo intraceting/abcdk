@@ -119,13 +119,27 @@
 #define ABCDK_PTR2SIZE(P, F) ABCDK_PTR2OBJ(ssize_t, P, F)
 #define ABCDK_PTR2USIZE(P, F) ABCDK_PTR2OBJ(size_t, P, F)
 
-/** 数值比较，返回最大值。*/
-#define ABCDK_MAX(A, B) (((A) > (B)) ? (A) : (B))
+/** 
+ * 数值比较，返回最大值。
+ * 
+ * @warning 不同类的数值，无法返回正确的结果。
+*/
+#define ABCDK_MAX(A, B) \
+    ((A) >= (B) ? (A) : (B))
 
-/** 数值比较，返回最小值。*/
-#define ABCDK_MIN(A, B) (((A) < (B)) ? (A) : (B))
+/** 
+ * 数值比较，返回最小值。
+ * 
+ * @warning 不同类的数值，无法返回正确的结果。
+*/
+#define ABCDK_MIN(A, B) \
+    ((A) <= (B) ? (A) : (B))
 
-/** 规划数值到区间内(包括两端极值)。*/
+/** 
+ * 规划数值到区间内(包括两端极值)。
+ * 
+ * @warning 不同类的数值，无法返回正确的结果。
+*/
 #define ABCDK_CLAMP(V, A, B) \
     ABCDK_MIN(ABCDK_MAX((A), (B)), ABCDK_MAX(ABCDK_MIN((A), (B)), (V)))
 
