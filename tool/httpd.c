@@ -940,7 +940,7 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
     srvlen = sizeof(srv) - 1;
 
     /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
-    if (SSL_select_next_proto((unsigned char **)out, outlen, srv, srvlen, in, inlen) != OPENSSL_NPN_NEGOTIATED)
+    if (SSL_select_next_proto((unsigned char **)out, outlen, in, inlen, srv, srvlen) != OPENSSL_NPN_NEGOTIATED)
     {
         return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
