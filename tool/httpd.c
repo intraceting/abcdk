@@ -1016,7 +1016,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         magic_load(ctx->magic_handle, NULL);
 #endif // HAVE_LIBMAGIC
 
-    ctx->comm = abcdk_comm_start(ctx->max_client);
+    ctx->comm = abcdk_comm_start(ctx->max_client,-1);
     if (!ctx->comm)
     {
         fprintf(stderr, "内存错误。\n");

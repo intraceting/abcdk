@@ -114,7 +114,7 @@ int abcdk_test_rpc(abcdk_tree_t *args)
 {
     signal(SIGPIPE, NULL);
 
-    abcdk_comm_t *ctx = abcdk_comm_start(-1);
+    abcdk_comm_t *ctx = abcdk_comm_start(-1,-1);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx[4] = {NULL};

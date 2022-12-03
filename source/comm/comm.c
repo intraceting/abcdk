@@ -726,7 +726,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_comm_t * abcdk_comm_start(int max)
+abcdk_comm_t * abcdk_comm_start(int max,int cpu)
 {
     abcdk_comm_t *ctx = NULL;
     long nps = sysconf(_SC_NPROCESSORS_ONLN);
@@ -753,9 +753,12 @@ abcdk_comm_t * abcdk_comm_start(int max)
         goto final_error;
 
     /*设置线程的CPU亲源性。*/
-    CPU_ZERO(&cpu_set);
-    CPU_SET((rand() % nps), &cpu_set);
-    pthread_setaffinity_np(ctx->worker.handle, sizeof(cpu_set_t), &cpu_set);
+    if (cpu >= 0)
+    {
+        CPU_ZERO(&cpu_set);
+        CPU_SET((cpu % nps), &cpu_set);
+        pthread_setaffinity_np(ctx->worker.handle, sizeof(cpu_set_t), &cpu_set);
+    }
 
     return ctx;
 
