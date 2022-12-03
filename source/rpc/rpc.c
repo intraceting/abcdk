@@ -57,7 +57,7 @@ typedef struct _abcdk_rpc_node
     uint32_t protocol;
 
     /** 输入消息缓存。*/
-    abcdk_comm_message_t *in_buffer;
+    abcdk_message_t *in_buffer;
 
     /** 应答服务员。*/
     abcdk_waiter_t *rsp_waiter;
@@ -99,24 +99,24 @@ int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint6
     return -1;
 }
 
-abcdk_comm_message_t *_abcdk_rpc_extrac_cargo(abcdk_comm_message_t *msg)
+abcdk_message_t *_abcdk_rpc_extrac_cargo(abcdk_message_t *msg)
 {
-    abcdk_comm_message_t *cargo;
+    abcdk_message_t *cargo;
     void *msg_ptr;
     size_t msg_len;
     void *cargo_ptr;
     size_t cargo_len;
     int chk;
 
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
+    msg_ptr = abcdk_message_data(msg);
+    msg_len = abcdk_message_size(msg);
 
-    cargo = abcdk_comm_message_alloc(msg_len - ABCDK_RPC_HDR_SIZE);
+    cargo = abcdk_message_alloc(msg_len - ABCDK_RPC_HDR_SIZE);
     if(!cargo)
         return NULL;
 
-    cargo_ptr = abcdk_comm_message_data(cargo);
-    cargo_len = abcdk_comm_message_size(cargo);
+    cargo_ptr = abcdk_message_data(cargo);
+    cargo_len = abcdk_message_size(cargo);
 
     memcpy(cargo_ptr, ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), cargo_len);
 
@@ -129,7 +129,7 @@ void _abcdk_rpc_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 
     rpc_p = (abcdk_rpc_node_t *)obj->pptrs[0];
 
-    abcdk_comm_message_unref(&rpc_p->in_buffer);
+    abcdk_message_unref(&rpc_p->in_buffer);
     abcdk_waiter_free(&rpc_p->rsp_waiter);
 }
 
@@ -172,16 +172,16 @@ final_error:
 
 void _abcdk_rpc_queue_msg_destroy_cb(const void *msg)
 {
-    abcdk_comm_message_t *msg_p = (abcdk_comm_message_t *)msg;
+    abcdk_message_t *msg_p = (abcdk_message_t *)msg;
 
-    abcdk_comm_message_unref(&msg_p);
+    abcdk_message_unref(&msg_p);
 }
 
-int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_comm_message_t **rsp, time_t timeout)
+int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abcdk_message_t **rsp, time_t timeout)
 {
     abcdk_rpc_node_t *rpc_p = NULL;
     abcdk_queue_t *rsp_queue = NULL;
-    abcdk_comm_message_t *rsp_msg = NULL;
+    abcdk_message_t *rsp_msg = NULL;
     uint64_t mid;
     int chk;
 
@@ -224,7 +224,7 @@ int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abc
     rsp_queue = abcdk_waiter_wait(rpc_p->rsp_waiter, mid, 1, timeout*1000);
     assert(rsp_queue != NULL);
 
-    rsp_msg = (abcdk_comm_message_t*)abcdk_queue_pop(rsp_queue, 1);
+    rsp_msg = (abcdk_message_t*)abcdk_queue_pop(rsp_queue, 1);
     abcdk_queue_free(&rsp_queue);
 
     if (!rsp_msg)
@@ -232,7 +232,7 @@ int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len, abc
 
     /*提取应答货物(应用层数据包)。*/
     *rsp = _abcdk_rpc_extrac_cargo(rsp_msg);
-    abcdk_comm_message_unref(&rsp_msg);
+    abcdk_message_unref(&rsp_msg);
 
     return 0;
 }
@@ -331,7 +331,7 @@ void _abcdk_rpc_event_connect(abcdk_comm_node_t *node)
     abcdk_comm_send_watch(node);
 }
 
-int _abcdk_rpc_msg_unpack(void *opaque, abcdk_comm_message_t *msg)
+int _abcdk_rpc_msg_unpack(void *opaque, abcdk_message_t *msg)
 {   
     abcdk_rpc_node_t *rpc_p = NULL;
     uint32_t len;
@@ -342,9 +342,9 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_comm_message_t *msg)
 
     rpc_p = (abcdk_rpc_node_t *)opaque;
     
-    msg_ptr = abcdk_comm_message_data(msg);
-    msg_len = abcdk_comm_message_size(msg);
-    msg_off = abcdk_comm_message_offset(msg);
+    msg_ptr = abcdk_message_data(msg);
+    msg_len = abcdk_message_size(msg);
+    msg_off = abcdk_message_offset(msg);
 
     if (msg_off < ABCDK_RPC_HDR_SIZE)
         return 0;
@@ -364,7 +364,7 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_comm_message_t *msg)
     if (msg_off < len)
     {
         /*增量扩展内存。*/
-        abcdk_comm_message_expand(msg, ABCDK_MIN(524288, len - msg_len));
+        abcdk_message_expand(msg, ABCDK_MIN(524288, len - msg_len));
         return 0;
     }
 
@@ -374,7 +374,7 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_comm_message_t *msg)
 void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_rpc_node_t *rpc_p = NULL;
-    abcdk_comm_message_t *msg_p = NULL;
+    abcdk_message_t *msg_p = NULL;
     void *msg_ptr;
     size_t msg_len;
     uint64_t mid;
@@ -388,7 +388,7 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     /*准备接收数的缓存。*/
     if (!rpc_p->in_buffer)
     {
-        rpc_p->in_buffer = abcdk_comm_message_alloc(ABCDK_RPC_HDR_SIZE);
+        rpc_p->in_buffer = abcdk_message_alloc(ABCDK_RPC_HDR_SIZE);
         if (!rpc_p->in_buffer)
         {
             abcdk_comm_set_timeout(node, 1);
@@ -396,11 +396,11 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
         }
 
         /*设置消息协议。*/
-        abcdk_comm_message_protocol_t prot = {rpc_p,_abcdk_rpc_msg_unpack};
-        abcdk_comm_message_protocol_set(rpc_p->in_buffer, &prot);
+        abcdk_message_protocol_t prot = {rpc_p,_abcdk_rpc_msg_unpack};
+        abcdk_message_protocol_set(rpc_p->in_buffer, &prot);
     }
     
-    chk = abcdk_comm_message_recv(rpc_p->in_buffer,data,size,remain);
+    chk = abcdk_message_recv(rpc_p->in_buffer,data,size,remain);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);
@@ -417,8 +417,8 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     rpc_p->in_buffer = NULL;
 
     /*处理接收到的数据。*/
-    msg_ptr = abcdk_comm_message_data(msg_p);
-    msg_len = abcdk_comm_message_size(msg_p);
+    msg_ptr = abcdk_message_data(msg_p);
+    msg_len = abcdk_message_size(msg_p);
 
     mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(msg_ptr, 8));
     flag = ABCDK_PTR2U8(msg_ptr, 17);
@@ -432,14 +432,14 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
         /*等待应答失败时，直接删除消息。*/
         chk = abcdk_waiter_response(rpc_p->rsp_waiter, mid,msg_p);
         if(chk != 0)
-            abcdk_comm_message_unref(&msg_p);
+            abcdk_message_unref(&msg_p);
     }
     else
     {
         /*通知应用层，数据到达。*/
         rpc_p->callback->request_cb(node,mid,cargo_ptr,cargo_len);
         /*删除请求数据。*/
-        abcdk_comm_message_unref(&msg_p);
+        abcdk_message_unref(&msg_p);
     }
 }
 

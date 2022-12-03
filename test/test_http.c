@@ -41,9 +41,9 @@ typedef struct _abcdk_test_h264
 
 void _abcdk_test_http_msg_destroy_cb(const void *msg)
 {
-    abcdk_comm_message_t *msg_p = (abcdk_comm_message_t *)msg;
+    abcdk_message_t *msg_p = (abcdk_message_t *)msg;
 
-    abcdk_comm_message_unref(&msg_p);
+    abcdk_message_unref(&msg_p);
 }
 
 void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
@@ -273,13 +273,13 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             {
                 while (1)
                 {
-                    abcdk_comm_message_t *msg = (abcdk_comm_message_t *)abcdk_queue_pop(h->q, 1);
+                    abcdk_message_t *msg = (abcdk_message_t *)abcdk_queue_pop(h->q, 1);
                     if (!msg)
                         break;
                     abcdk_write(h->fd, "\0\0\0\1", 4);
-                    abcdk_write(h->fd, abcdk_comm_message_data(msg), abcdk_comm_message_offset(msg));
+                    abcdk_write(h->fd, abcdk_message_data(msg), abcdk_message_offset(msg));
 
-                    abcdk_comm_message_unref(&msg);
+                    abcdk_message_unref(&msg);
                 }
             }
         }
@@ -295,7 +295,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
             {
                 while (1)
                 {
-                    abcdk_comm_message_t *msg = (abcdk_comm_message_t *)abcdk_queue_pop(h->q2, 1);
+                    abcdk_message_t *msg = (abcdk_message_t *)abcdk_queue_pop(h->q2, 1);
                     if (!msg)
                         break;
 
@@ -305,16 +305,16 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
                     r.id = 0;
                     r.protection_absent = 1;
                     r.adts_buffer_fullness = 0x7ff;
-                    r.aac_frame_length = abcdk_comm_message_offset(msg) + 7;
+                    r.aac_frame_length = abcdk_message_offset(msg) + 7;
                     r.channel_cfg = abcdk_aac_channels2config(atoi(h->a->encoder_param->pstrs[0]));
                     r.profile = 1;
                     r.sample_rate_index = abcdk_aac_sample_rates2index(h->a->clock_rate);
 
                     abcdk_aac_adts_header_serialize(&r, hdr, 7);
                     abcdk_write(h->fd2, hdr, 7);
-                    abcdk_write(h->fd2, abcdk_comm_message_data(msg), abcdk_comm_message_offset(msg));
+                    abcdk_write(h->fd2, abcdk_message_data(msg), abcdk_message_offset(msg));
 
-                    abcdk_comm_message_unref(&msg);
+                    abcdk_message_unref(&msg);
                 }
             }
         }

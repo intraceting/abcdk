@@ -9,7 +9,7 @@
 #define ABCDK_COMM_MSG_SIZE_DEFAULT (20*1024)
 
 /** 消息对象。*/
-struct _abcdk_comm_message
+struct _abcdk_message
 {
     /** 引用计数器。*/
     volatile int refcount;
@@ -30,13 +30,13 @@ struct _abcdk_comm_message
     size_t size;
 
     /** 消息协议。*/
-    abcdk_comm_message_protocol_t protocol;
+    abcdk_message_protocol_t protocol;
     
-};// abcdk_comm_message_t;
+};// abcdk_message_t;
 
-void abcdk_comm_message_unref(abcdk_comm_message_t **msg)
+void abcdk_message_unref(abcdk_message_t **msg)
 {
-    abcdk_comm_message_t *msg_p = NULL;
+    abcdk_message_t *msg_p = NULL;
 
     if (!msg || !*msg)
         return;
@@ -62,7 +62,7 @@ final:
     *msg = NULL;
 }
 
-abcdk_comm_message_t *abcdk_comm_message_refer(abcdk_comm_message_t *src)
+abcdk_message_t *abcdk_message_refer(abcdk_message_t *src)
 {
     int chk;
 
@@ -74,13 +74,13 @@ abcdk_comm_message_t *abcdk_comm_message_refer(abcdk_comm_message_t *src)
     return src;
 }
 
-abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size)
+abcdk_message_t *abcdk_message_alloc(size_t size)
 {
-    abcdk_comm_message_t *msg = NULL;
+    abcdk_message_t *msg = NULL;
 
     assert(size > 0);
 
-    msg = abcdk_heap_alloc(sizeof(abcdk_comm_message_t));
+    msg = abcdk_heap_alloc(sizeof(abcdk_message_t));
     if (!msg)
         goto final_error;
 
@@ -98,18 +98,18 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size)
 
 final_error:
 
-    abcdk_comm_message_unref(&msg);
+    abcdk_message_unref(&msg);
 
     return NULL;
 }
 
-abcdk_comm_message_t *abcdk_comm_message_attach(abcdk_object_t *obj)
+abcdk_message_t *abcdk_message_attach(abcdk_object_t *obj)
 {
-    abcdk_comm_message_t *msg = NULL;
+    abcdk_message_t *msg = NULL;
 
     assert(obj != NULL && obj->pptrs[0] != NULL && obj->sizes[0] > 0);
 
-    msg = abcdk_heap_alloc(sizeof(abcdk_comm_message_t));
+    msg = abcdk_heap_alloc(sizeof(abcdk_message_t));
     if (!msg)
         return NULL;
 
@@ -124,7 +124,7 @@ abcdk_comm_message_t *abcdk_comm_message_attach(abcdk_object_t *obj)
 }
 
 
-int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size)
+int abcdk_message_realloc(abcdk_message_t *msg, size_t size)
 {
     void *new_buf = NULL;
 
@@ -163,42 +163,42 @@ final:
     return 0;
 }
 
-int abcdk_comm_message_expand(abcdk_comm_message_t *msg, size_t size)
+int abcdk_message_expand(abcdk_message_t *msg, size_t size)
 {
     assert(msg != NULL);
 
-    return abcdk_comm_message_realloc(msg, abcdk_comm_message_size(msg) + size);
+    return abcdk_message_realloc(msg, abcdk_message_size(msg) + size);
 }
 
-void abcdk_comm_message_reset(abcdk_comm_message_t *msg,size_t offset)
+void abcdk_message_reset(abcdk_message_t *msg,size_t offset)
 {
     assert(msg != NULL);
 
     msg->offset = offset;
 }
 
-void *abcdk_comm_message_data(const abcdk_comm_message_t *msg)
+void *abcdk_message_data(const abcdk_message_t *msg)
 {
     assert(msg != NULL);
 
     return msg->buf;
 }
 
-size_t abcdk_comm_message_size(const abcdk_comm_message_t *msg)
+size_t abcdk_message_size(const abcdk_message_t *msg)
 {
     assert(msg != NULL);
 
     return msg->size;
 }
 
-size_t abcdk_comm_message_offset(const abcdk_comm_message_t *msg)
+size_t abcdk_message_offset(const abcdk_message_t *msg)
 {
     assert(msg != NULL);
 
     return msg->offset;
 }
 
-void abcdk_comm_message_drain(abcdk_comm_message_t *msg, size_t size)
+void abcdk_message_drain(abcdk_message_t *msg, size_t size)
 {
     size_t remain;
 
@@ -210,7 +210,7 @@ void abcdk_comm_message_drain(abcdk_comm_message_t *msg, size_t size)
     msg->offset = remain;
 }
 
-void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_t *prot)
+void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *prot)
 {
     assert(msg != NULL && prot != NULL);
     ABCDK_ASSERT(prot->unpack_cb != NULL,"未绑定解包回调函数，消息对象无法正常工作。");
@@ -218,7 +218,7 @@ void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_messa
     msg->protocol = *prot;
 }
 
-int abcdk_comm_message_recv(abcdk_comm_message_t *msg, const void *data,size_t size,size_t *remain)
+int abcdk_message_recv(abcdk_message_t *msg, const void *data,size_t size,size_t *remain)
 {
     ssize_t rsize = 0;
     size_t rall = 0;
@@ -266,9 +266,9 @@ FINAL_END:
     return chk;
 }
 
-abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw)
+abcdk_message_t* abcdk_message_mmap(int fd,size_t truncate,int rw)
 {
-    abcdk_comm_message_t *msg;
+    abcdk_message_t *msg;
     abcdk_object_t *obj;
 
     assert(fd >= 0);
@@ -277,7 +277,7 @@ abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw)
     if(!obj)
         return NULL;
 
-    msg = abcdk_comm_message_attach(obj);
+    msg = abcdk_message_attach(obj);
     if(msg)
         return msg;
 
@@ -286,9 +286,9 @@ abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw)
     return NULL;
 }
 
-abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,int rw)
+abcdk_message_t* abcdk_message_mmap2(const char *file,size_t truncate,int rw)
 {
-    abcdk_comm_message_t *msg;
+    abcdk_message_t *msg;
     abcdk_object_t *obj;
 
     assert(file != NULL);
@@ -297,7 +297,7 @@ abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,
     if(!obj)
         return NULL;
 
-    msg = abcdk_comm_message_attach(obj);
+    msg = abcdk_message_attach(obj);
     if(msg)
         return msg;
 
@@ -306,9 +306,9 @@ abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,
     return NULL;
 }
 
-abcdk_comm_message_t *abcdk_comm_message_copy(const void *data, size_t size)
+abcdk_message_t *abcdk_message_copy(const void *data, size_t size)
 {
-    abcdk_comm_message_t *msg = NULL;
+    abcdk_message_t *msg = NULL;
     abcdk_object_t *obj = NULL;
 
     assert(data != NULL && size > 0);
@@ -317,7 +317,7 @@ abcdk_comm_message_t *abcdk_comm_message_copy(const void *data, size_t size)
     if(!obj)
         return NULL;
 
-    msg = abcdk_comm_message_attach(obj);
+    msg = abcdk_message_attach(obj);
     if (msg)
         return msg;
     

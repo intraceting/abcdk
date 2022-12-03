@@ -13,10 +13,10 @@
 __BEGIN_DECLS
 
 /** 消息对象。*/
-typedef struct _abcdk_comm_message abcdk_comm_message_t;
+typedef struct _abcdk_message abcdk_message_t;
 
 /**消息协议。*/
-typedef struct _abcdk_comm_message_protocol
+typedef struct _abcdk_message_protocol
 {
     /** 环境指针。*/
     void *opaque;
@@ -26,26 +26,26 @@ typedef struct _abcdk_comm_message_protocol
      *
      * @return 1 消息包完整，0 需要更多数据，-1 不支持的协议(或有错发生)。
      */
-    int (*unpack_cb)(void *opaque, abcdk_comm_message_t *msg);
+    int (*unpack_cb)(void *opaque, abcdk_message_t *msg);
 
-} abcdk_comm_message_protocol_t;
+} abcdk_message_protocol_t;
 
 /**
  * 减少对象的引用计数。
  * 
  * @warning 当引用计数为0时，对像将被删除。
 */
-void abcdk_comm_message_unref(abcdk_comm_message_t **msg);
+void abcdk_message_unref(abcdk_message_t **msg);
 
 /**
  * 增加对象的引用计数。
 */
-abcdk_comm_message_t *abcdk_comm_message_refer(abcdk_comm_message_t *src);
+abcdk_message_t *abcdk_message_refer(abcdk_message_t *src);
 
 /**
  * 创建消息对象。
 */
-abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size);
+abcdk_message_t *abcdk_message_alloc(size_t size);
 
 /**
  * 创建消息对象。
@@ -54,14 +54,14 @@ abcdk_comm_message_t *abcdk_comm_message_alloc(size_t size);
  * 
  * @param [in] obj 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
 */
-abcdk_comm_message_t *abcdk_comm_message_attach(abcdk_object_t *obj);
+abcdk_message_t *abcdk_message_attach(abcdk_object_t *obj);
 
 /**
  * 调整消息对象大小。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size);
+int abcdk_message_realloc(abcdk_message_t *msg, size_t size);
 
 /**
  * 扩展消息对象大小。
@@ -70,37 +70,37 @@ int abcdk_comm_message_realloc(abcdk_comm_message_t *msg, size_t size);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_message_expand(abcdk_comm_message_t *msg, size_t size);
+int abcdk_message_expand(abcdk_message_t *msg, size_t size);
 
 /**
  * 重置读写偏移量。
 */
-void abcdk_comm_message_reset(abcdk_comm_message_t *msg,size_t offset);
+void abcdk_message_reset(abcdk_message_t *msg,size_t offset);
 
 /**
  * 获取数据区指针。
 */
-void *abcdk_comm_message_data(const abcdk_comm_message_t *msg);
+void *abcdk_message_data(const abcdk_message_t *msg);
 
 /**
  * 获取数据区长度。
 */
-size_t abcdk_comm_message_size(const abcdk_comm_message_t *msg);
+size_t abcdk_message_size(const abcdk_message_t *msg);
 
 /**
  * 获取读写偏移量。
 */
-size_t abcdk_comm_message_offset(const abcdk_comm_message_t *msg);
+size_t abcdk_message_offset(const abcdk_message_t *msg);
 
 /**
  * 排出已读写的数据，同时重置偏移量。
 */
-void abcdk_comm_message_drain(abcdk_comm_message_t *msg,size_t size);
+void abcdk_message_drain(abcdk_message_t *msg,size_t size);
 
 /**
  * 设置数据包协议。
 */
-void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_message_protocol_t *prot);
+void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *prot);
 
 /**
  * 接收消息(从缓存)。
@@ -109,7 +109,7 @@ void abcdk_comm_message_protocol_set(abcdk_comm_message_t *msg, abcdk_comm_messa
  * 
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */
-int abcdk_comm_message_recv(abcdk_comm_message_t *msg,const void *data,size_t size,size_t *remain);
+int abcdk_message_recv(abcdk_message_t *msg,const void *data,size_t size,size_t *remain);
 
 /**
  * 创建消息对象。
@@ -120,7 +120,7 @@ int abcdk_comm_message_recv(abcdk_comm_message_t *msg,const void *data,size_t si
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw);
+abcdk_message_t* abcdk_message_mmap(int fd,size_t truncate,int rw);
 
 /**
  * 创建消息对象。
@@ -129,14 +129,14 @@ abcdk_comm_message_t* abcdk_comm_message_mmap(int fd,size_t truncate,int rw);
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_comm_message_t* abcdk_comm_message_mmap2(const char *file,size_t truncate,int rw);
+abcdk_message_t* abcdk_message_mmap2(const char *file,size_t truncate,int rw);
 
 /**
  * 创建消息对象。
  * 
  * @return !NULL(0) 成功(消息指针)，NULL(0) 失败。
  */
-abcdk_comm_message_t *abcdk_comm_message_copy(const void *data,size_t size);
+abcdk_message_t *abcdk_message_copy(const void *data,size_t size);
 
 
 

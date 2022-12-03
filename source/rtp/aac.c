@@ -9,7 +9,7 @@
 
 int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int size_bits, int index_bits)
 {
-    abcdk_comm_message_t *msg;
+    abcdk_message_t *msg;
     int au_len,au_size;
     int hlen,flen[200][2] = {0};
     const void *p;
@@ -59,18 +59,18 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
         if (flen[j][0] <= 0)
             break;
 
-        msg = abcdk_comm_message_copy(p, flen[j][0]);
+        msg = abcdk_message_copy(p, flen[j][0]);
         if (!msg)
             return -1;
 
         /*模拟接收。*/
-        abcdk_comm_message_reset(msg,flen[j][0]);
+        abcdk_message_reset(msg,flen[j][0]);
 
         chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)
         {
             /*加入队列失败，删除消息。*/
-            abcdk_comm_message_unref(&msg);
+            abcdk_message_unref(&msg);
             return -1;
         }
 

@@ -3373,9 +3373,9 @@ typedef struct _one_node
 {
     int id;
 
-    abcdk_comm_message_t *in_buffer;
+    abcdk_message_t *in_buffer;
 
-    abcdk_comm_message_t *out_buffer;
+    abcdk_message_t *out_buffer;
     abcdk_comm_queue_t *out_queue;
 
     abcdk_comm_node_t *node;
@@ -3384,19 +3384,19 @@ typedef struct _one_node
 
 }one_node_t;
 
-int smb_protocol(abcdk_comm_node_t *node, abcdk_comm_message_t *msg)
+int smb_protocol(abcdk_comm_node_t *node, abcdk_message_t *msg)
 {
-    size_t off = abcdk_comm_message_offset(msg);
+    size_t off = abcdk_message_offset(msg);
     if (off < 4)
         return 0;
 
-    size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg), 0));
-    if (len != abcdk_comm_message_size(msg))
+    size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_message_data(msg), 0));
+    if (len != abcdk_message_size(msg))
     {
-        abcdk_comm_message_realloc(msg, len);
+        abcdk_message_realloc(msg, len);
         return 0;
     }
-    else if (len != abcdk_comm_message_offset(msg))
+    else if (len != abcdk_message_offset(msg))
     {
         return 0;
     }
@@ -3417,7 +3417,7 @@ NEXT_MSG:
             return;
     }
 
-    chk = abcdk_comm_message_send(one->node, one->out_buffer);
+    chk = abcdk_message_send(one->node, one->out_buffer);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(one->node, 1);
@@ -3430,11 +3430,11 @@ NEXT_MSG:
     }
     
     /*释放消息缓存，并继续发送。*/
-    abcdk_comm_message_unref(&one->out_buffer);
+    abcdk_message_unref(&one->out_buffer);
     goto NEXT_MSG;
 }
 
-void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *listen)
+void test_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *listen)
 {
     one_node_t *one = (one_node_t *)abcdk_comm_get_userdata(node);
 
@@ -3455,11 +3455,11 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_nod
         {
             if(!one->in_buffer)
             {
-                one->in_buffer = abcdk_comm_message_alloc(4);
-                abcdk_comm_message_protocol_set(one->in_buffer,smb_protocol);
+                one->in_buffer = abcdk_message_alloc(4);
+                abcdk_message_protocol_set(one->in_buffer,smb_protocol);
             }
             
-            int chk = abcdk_comm_message_recv(node,one->in_buffer);
+            int chk = abcdk_message_recv(node,one->in_buffer);
             if(chk < 0)
             {
                 abcdk_comm_set_timeout(node,1);
@@ -3470,13 +3470,13 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_nod
             }
             else
             {
-                abcdk_comm_message_t *msg_copy = abcdk_comm_message_refer(one->in_buffer);
-                abcdk_comm_message_unref(&one->in_buffer);
+                abcdk_message_t *msg_copy = abcdk_message_refer(one->in_buffer);
+                abcdk_message_unref(&one->in_buffer);
                 abcdk_comm_recv_watch(node);
 
             //    usleep(rand()%10000+1000);
 
-                abcdk_comm_message_reset(msg_copy);
+                abcdk_message_reset(msg_copy);
                 abcdk_comm_queue_push(one->out_queue,msg_copy);
                 abcdk_comm_send_watch(one->node);
             }
@@ -3495,7 +3495,7 @@ void test_comm_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_nod
 
         if(one)
         {
-        abcdk_comm_message_unref(&one->in_buffer);
+        abcdk_message_unref(&one->in_buffer);
         abcdk_comm_queue_free(&one->out_queue);
         abcdk_comm_node_unref(&one->node);
         abcdk_heap_free(one);
@@ -3513,15 +3513,15 @@ void *test_send_msg(void *args)
     {
       //  usleep(10);
 
-        abcdk_comm_message_t *msg = abcdk_comm_message_alloc(128);
+        abcdk_message_t *msg = abcdk_message_alloc(128);
 
         uint64_t mid = abcdk_time_clock2kind_with(0, 6);
 
         abcdk_comm_waiter_request2(one->rsp,&mid);
 
-        ABCDK_PTR2U32(abcdk_comm_message_data(msg), 0) = abcdk_endian_h_to_b32(128);
-        ABCDK_PTR2U64(abcdk_comm_message_data(msg), 4) = abcdk_endian_h_to_b64(mid);
-        ABCDK_PTR2U32(abcdk_comm_message_data(msg), 12) = abcdk_endian_h_to_b32(i+1);
+        ABCDK_PTR2U32(abcdk_message_data(msg), 0) = abcdk_endian_h_to_b32(128);
+        ABCDK_PTR2U64(abcdk_message_data(msg), 4) = abcdk_endian_h_to_b64(mid);
+        ABCDK_PTR2U32(abcdk_message_data(msg), 12) = abcdk_endian_h_to_b32(i+1);
 
         abcdk_comm_queue_push(one->out_queue, msg);
         abcdk_comm_send_watch(one->node);
@@ -3542,7 +3542,7 @@ void *test_send_msg(void *args)
 
 
 
-void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *listen)
+void test_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *listen)
 {
 
     one_node_t *one = (one_node_t *)abcdk_comm_get_userdata(node);
@@ -3570,32 +3570,32 @@ void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_no
         {
             if(!one->in_buffer)
             {
-                one->in_buffer = abcdk_comm_message_alloc(4);
-                abcdk_comm_message_protocol_set(one->in_buffer,smb_protocol);
+                one->in_buffer = abcdk_message_alloc(4);
+                abcdk_message_protocol_set(one->in_buffer,smb_protocol);
             }
 
-            int chk = abcdk_comm_message_recv(node,one->in_buffer);
+            int chk = abcdk_message_recv(node,one->in_buffer);
             if(chk != 1)
             {
                 abcdk_comm_recv_watch(node);
             }
             else
             {
-                abcdk_comm_message_t *msg_copy = abcdk_comm_message_refer(one->in_buffer);
-                abcdk_comm_message_unref(&one->in_buffer);
+                abcdk_message_t *msg_copy = abcdk_message_refer(one->in_buffer);
+                abcdk_message_unref(&one->in_buffer);
 
                 abcdk_comm_recv_watch(node);
 
-                size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg_copy),0));
-                uint64_t mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(abcdk_comm_message_data(msg_copy),4));
-                uint32_t id = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_comm_message_data(msg_copy), 12));
+                size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_message_data(msg_copy),0));
+                uint64_t mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(abcdk_message_data(msg_copy),4));
+                uint32_t id = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_message_data(msg_copy), 12));
                 uint64_t a = abcdk_time_clock2kind_with(0,3);
 
                 //printf("mid=%lu,id=%u,time=%lu\n",mid,id,a-mid);
 
                 abcdk_comm_waiter_response2(one->rsp,&mid,msg_copy);
 
-               // abcdk_comm_message_unref(&msg_copy);
+               // abcdk_message_unref(&msg_copy);
                 
             }
         }
@@ -3610,7 +3610,7 @@ void test_comm_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_no
 
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
-        abcdk_comm_message_unref(&one->in_buffer);
+        abcdk_message_unref(&one->in_buffer);
         abcdk_comm_queue_free(&one->out_queue);
         abcdk_comm_node_unref(&one->node);
         abcdk_comm_waiter_free(&one->rsp);
@@ -3663,11 +3663,11 @@ void test_comm(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    // abcdk_comm_listen(ctx,server_ssl_ctx,&addr,test_comm_message_cb,NULL);
+    // abcdk_comm_listen(ctx,server_ssl_ctx,&addr,test_message_cb,NULL);
 
     // const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     // abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    // abcdk_comm_connect(ctx,client_ssl_ctx,&addr2,test_comm_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
+    // abcdk_comm_connect(ctx,client_ssl_ctx,&addr2,test_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
  
 
 
@@ -3812,7 +3812,7 @@ void test_easy(abcdk_tree_t *args)
 
         int len = 10000;
         char *req= (char*)abcdk_heap_alloc(len);
-        abcdk_comm_message_t *rsp= NULL;
+        abcdk_message_t *rsp= NULL;
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
@@ -3822,9 +3822,9 @@ void test_easy(abcdk_tree_t *args)
         if (rsp)
         {
 
-            // printf("%d=%s\n",i,(char*)abcdk_comm_message_data(rsp));
+            // printf("%d=%s\n",i,(char*)abcdk_message_data(rsp));
 
-            abcdk_comm_message_unref(&rsp);
+            abcdk_message_unref(&rsp);
         }
         else
         {

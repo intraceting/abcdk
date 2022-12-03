@@ -78,7 +78,7 @@ abcdk_comm_node_t *abcdk_rpc_alloc(abcdk_comm_t *ctx,uint32_t protocol,size_t us
  *
  * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(超时/已断开)。
  */
-int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len,abcdk_comm_message_t **rsp, time_t timeout);
+int abcdk_rpc_request(abcdk_comm_node_t *node, const void *data, size_t len,abcdk_message_t **rsp, time_t timeout);
 
 /** 
  * 发送应答。
