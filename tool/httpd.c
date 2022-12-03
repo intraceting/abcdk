@@ -10,8 +10,9 @@
 #include <magic.h>
 #endif // HAVE_LIBMAGIC
 
-#define ABCDKHTTPD_LISTEN_MAX   8
-#define ABCDKHTTPD_PASSWD_MAX   100
+#define ABCDKHTTPD_LISTEN 0
+#define ABCDKHTTPD_LISTEN_SSL 1
+#define ABCDKHTTPD_PASSWD_MAX 100
 
 typedef struct _abcdkhttpd
 {
@@ -24,13 +25,13 @@ typedef struct _abcdkhttpd
     abcdk_mutex_t magic_mutex;
 
     abcdk_comm_t *comm;
-    abcdk_comm_node_t *comm_listen[2][ABCDKHTTPD_LISTEN_MAX];
-    SSL_CTX *ssl_ctx[2][ABCDKHTTPD_LISTEN_MAX];
+    abcdk_comm_node_t *comm_listen[2];
+    SSL_CTX *ssl_ctx;
 
     int max_client;
     const char *server_name;
     const char *root_path;
-    const char *listen[2][ABCDKHTTPD_LISTEN_MAX];
+    const char *listen[2];
     const char *ca_file;
     const char *ca_path;
     const char *cert_file;
@@ -403,7 +404,7 @@ void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status)
     _abcdkhttpd_logprint(node, status, 0);
 }
 
-void _abcdkhttpd_reply_option(abcdk_comm_node_t *node, int status)
+void _abcdkhttpd_reply_options(abcdk_comm_node_t *node, int status)
 {
     abcdkhttpd_node_t *http_p;
 
@@ -684,9 +685,9 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
     if (chk != 0)
         return;
 
-    if (abcdk_strcmp(http_p->method, "OPTION", 0) == 0)
+    if (abcdk_strcmp(http_p->method, "OPTIONS", 0) == 0)
     {
-        _abcdkhttpd_reply_option(node, 200);
+        _abcdkhttpd_reply_options(node, 200);
         return;
     }
 
@@ -694,7 +695,7 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
         abcdk_strcmp(http_p->method, "GET", 0) != 0 &&
         abcdk_strcmp(http_p->method, "HEAD", 0) != 0)
     {
-        _abcdkhttpd_reply_option(node, 405);
+        _abcdkhttpd_reply_options(node, 405);
         return;
     }
 
@@ -962,35 +963,22 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk");
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
-
-    for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
-    {
-        ctx->listen[0][i] = abcdk_option_get(ctx->args, "--listen", i, NULL);
-        ctx->listen[1][i] = abcdk_option_get(ctx->args, "--listen-ssl", i, NULL);
-    }
-
+    ctx->listen[ABCDKHTTPD_LISTEN] = abcdk_option_get(ctx->args, "--listen", 0, NULL);
+    ctx->listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_option_get(ctx->args, "--listen-ssl", 0, NULL);
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
-
-    for (int i = 0; i < ABCDKHTTPD_PASSWD_MAX; i++)
-        ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
-
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
     ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
     ctx->exclude_hidden_file = abcdk_option_exist(ctx->args, "--exclude-hidden-file");
 
-    abcdk_mutex_init2(&ctx->magic_mutex, 0);
+    for (int i = 0; i < ABCDKHTTPD_PASSWD_MAX; i++)
+        ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
 
-    for (int j = 0; j < 2; j++)
-    {
-        for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
-        {
-            ctx->comm_listen[j][i] = NULL;
-            ctx->ssl_ctx[j][i] = NULL;
-        }
-    }
+    abcdk_mutex_init2(&ctx->magic_mutex, 0);
+    ctx->comm_listen[ABCDKHTTPD_LISTEN] = NULL;
+    ctx->comm_listen[ABCDKHTTPD_LISTEN_SSL] = NULL;
 
     if (access(ctx->root_path, R_OK) != 0)
     {
@@ -998,7 +986,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         goto final;
     }
 
-    if(!ctx->listen[0])
+    if(!ctx->listen[ABCDKHTTPD_LISTEN] && !ctx->listen[ABCDKHTTPD_LISTEN_SSL])
     {
         fprintf(stderr, "至少需要监听一个地址。\n");
         goto final;
@@ -1009,6 +997,32 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         fprintf(stderr, "'%s'缓存目录不存在或无法访问，忽略。\n", ctx->up_tmp_path);
         ctx->up_tmp_path = NULL;
     }
+
+#ifdef HAVE_OPENSSL
+    if (ctx->listen[ABCDKHTTPD_LISTEN_SSL] && ctx->cert_file && ctx->key_file)
+    {
+        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
+        if (!ctx->ssl_ctx)
+        {
+            fprintf(stderr, "加载CA证书错误。\n");
+            goto final;
+        }
+
+        chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx, ctx->cert_file, ctx->key_file, NULL);
+        if (chk != 0)
+        {
+            fprintf(stderr, "加载证书或私钥错误。\n");
+            goto final;
+        }
+
+        if (ctx->ca_file || ctx->ca_path)
+            SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+        SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx, _abcdkhttpd_alpn_select_cb, NULL);
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+    }
+#endif // HAVE_OPENSSL
 
 #ifdef HAVE_LIBMAGIC
     ctx->magic_handle = magic_open(MAGIC_MIME | MAGIC_SYMLINK);
@@ -1023,68 +1037,41 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         goto final;
     }
 
-    for (int j = 0; j < 2; j++)
-    {
-        for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
+
+        for (int i = 0; i < 2; i++)
         {
-            if (!ctx->listen[j][i])
+            if (!ctx->listen[i])
                 break;
 
-#ifdef HAVE_OPENSSL
-            if ((j == 1) && ctx->cert_file && ctx->key_file)
-            {
-                ctx->ssl_ctx[j][i] = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
-                if (!ctx->ssl_ctx[j][i])
-                {
-                    fprintf(stderr, "加载CA证书错误。\n");
-                    goto final;
-                }
-
-                chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx[j][i], ctx->cert_file, ctx->key_file, NULL);
-                if (chk != 0)
-                {
-                    fprintf(stderr, "加载证书或私钥错误。\n");
-                    goto final;
-                }
-
-                if (ctx->ca_file || ctx->ca_path)
-                    SSL_CTX_set_verify(ctx->ssl_ctx[j][i], SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-
-#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-                SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx[j][i], _abcdkhttpd_alpn_select_cb, NULL);
-#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
-            }
-#endif // HAVE_OPENSSL
-
-            chk = abcdk_sockaddr_from_string(&addr, ctx->listen[j][i], 0);
+            chk = abcdk_sockaddr_from_string(&addr, ctx->listen[i], 0);
             if (chk != 0)
             {
                 fprintf(stderr, "监听地址错误。\n");
                 goto final;
             }
 
-            ctx->comm_listen[j][i] = abcdk_comm_alloc(ctx->comm, sizeof(abcdkhttpd_node_t), 1);
-            if (!ctx->comm_listen[j][i])
+            ctx->comm_listen[i] = abcdk_comm_alloc(ctx->comm, sizeof(abcdkhttpd_node_t), 1);
+            if (!ctx->comm_listen[i])
             {
                 fprintf(stderr, "内存错误。\n");
                 goto final;
             }
 
             abcdkhttpd_node_t *http_p;
-            http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(ctx->comm_listen[j][i]);
+            http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(ctx->comm_listen[i]);
 
             /*绑定上下文环境指针。*/
             http_p->ctx = ctx;
 
             abcdk_comm_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_event_cb, _abcdkhttpd_request_cb};
-            chk = abcdk_comm_listen(ctx->comm_listen[j][i], ctx->ssl_ctx[j][i], &addr, &cb);
+            chk = abcdk_comm_listen(ctx->comm_listen[i], (i == ABCDKHTTPD_LISTEN_SSL ? ctx->ssl_ctx : NULL), &addr, &cb);
             if (chk != 0)
             {
                 fprintf(stderr, "监听错误，无权限或端口被占用。\n");
                 goto final;
             }
         }
-    }
+    
 
     /*填充信号及回调函数。*/
     sig.opaque = NULL;
@@ -1101,18 +1088,15 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
 final:
 
-    for (int j = 0; j < 2; j++)
-    {
-        for (int i = 0; i < ABCDKHTTPD_LISTEN_MAX; i++)
-        {
-            abcdk_comm_unref(&ctx->comm_listen[j][i]);
-#ifdef HAVE_OPENSSL
-            abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx[j][i]);
-#endif // HAVE_OPENSSL
-        }
-    }
 
     abcdk_comm_stop(&ctx->comm);
+
+    for (int i = 0; i < 2; i++)
+        abcdk_comm_unref(&ctx->comm_listen[i]);
+
+#ifdef HAVE_OPENSSL
+    abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);
+#endif // HAVE_OPENSSL
 
 #ifdef HAVE_LIBMAGIC
     if (ctx->magic_handle)
