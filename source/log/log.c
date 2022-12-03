@@ -9,19 +9,6 @@
 #include "abcdk/util/uri.h"
 #include "abcdk/shell/proc.h"
 
-/**/
-typedef struct _abcdk_log_policy
-{
-    /*工作路径。*/
-    const char *workspace;
-    /*分段数量。*/
-    size_t segment_max;
-    /*分段大小(MB)。*/
-    size_t segment_size;
-
-} abcdklogd_policy_t;
-
-
 /** 日志接口。*/
 typedef struct _abcdk_log
 {
@@ -30,7 +17,7 @@ typedef struct _abcdk_log
      * 
      * 0：未初始化。
      * 1：正在。
-     * 3：完成。
+     * 2：完成。
      * 
     */
     volatile int status;
@@ -44,11 +31,11 @@ typedef struct _abcdk_log
     /** 文件句柄。*/
     int fd;
 
-    /** 日志文件。*/
+    /** 文件名(包括路径)。*/
     char name[PATH_MAX];
 
-    /** 日志文件分段格式。*/
-    char segment_fmt[NAME_MAX];
+    /** 分段文件名(包括路径)。*/
+    char segment_name[PATH_MAX];
 
     /** 分段数量。*/
     size_t segment_max;
@@ -56,8 +43,12 @@ typedef struct _abcdk_log
     /** 分段大小(MB)。*/
     size_t segment_size;
 
-    /** 服务编号。*/
-    uint16_t service;
+    /** 
+     * 复制到stderr。
+     * !0： 是，
+     * 0： 否。
+    */
+    int copy2stderr;
 
     /** 
      * 复制到syslog。
@@ -98,10 +89,11 @@ void _abcdk_log_close()
     pthread_key_delete(ctx->buf_key);
 }
 
-void abcdk_log_open(const char *name,size_t segment_max,size_t segment_size,uint16_t service, int copy2syslog)
+void abcdk_log_open(const char *name,const char *segment_name,size_t segment_max,size_t segment_size,int copy2syslog,int copy2stderr)
 {
     abcdk_log_t *ctx = NULL;
-    int len;
+
+    assert(name != NULL);
 
     ctx = _abcdk_log_ctx();
 
@@ -114,34 +106,26 @@ void abcdk_log_open(const char *name,size_t segment_max,size_t segment_size,uint
 
     pthread_key_create(&ctx->buf_key, _abcdk_log_buf_destroy);
     abcdk_mutex_init2(&ctx->mutex,0);
-
     ctx->fd = -1;
 
-    /*如果未指定名字，用当前进程名字。*/
-    if (!name || !name[0])
+    /*复制文件名。*/
+    strncpy(ctx->name, name, PATH_MAX);
+
+    /*复制或构造分段文件名。*/
+    if (segment_name)
     {
-        strncpy(ctx->name, "/tmp/abcdk/log/", PATH_MAX);
-        len = strlen(ctx->name);
+        if (segment_name[0] == '/')
+            strncpy(ctx->segment_name, segment_name, PATH_MAX);
+        else
+        {
+            abcdk_dirname(ctx->segment_name,ctx->name);
+            abcdk_dirdir(ctx->segment_name,segment_name);
+        }
     }
-    else
-    {
-        strncpy(ctx->name, name, PATH_MAX);
-        len = strlen(ctx->name);
-    }
 
-    /*如果指定是路径，则接接当前进程名字。*/
-    if (ctx->name[len - 1] == '/')
-        abcdk_proc_basename(ctx->name + len);
-
-    abcdk_abspath(ctx->name);
-    strncat(ctx->name, ".log", PATH_MAX - len - NAME_MAX);
-
-    abcdk_basename(ctx->segment_fmt, ctx->name);
-    strncat(ctx->segment_fmt, ".%d", NAME_MAX - 10);
-
-    ctx->segment_size = (segment_size > 0 ? segment_size : 10) * 1024 * 1024;
-    ctx->segment_max = (segment_max > 0 ? segment_max : 10);
-    ctx->service = service;
+    ctx->segment_size = segment_size * 1024 * 1024;
+    ctx->segment_max = segment_max;
+    ctx->copy2stderr = copy2stderr;
     ctx->copy2syslog = copy2syslog;
     ctx->mask = 0xFFFFFFFF;
 
@@ -236,8 +220,8 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
         return;
 
     /*格式化。*/
-    len = snprintf(buf_p->pstrs[0], buf_p->sizes[0], "%04d%02d%02d%02d%02d%02d.%06lu s%hu.p%d %s: ",
-                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000, ctx->service, getpid(), name);
+    len = snprintf(buf_p->pstrs[0], buf_p->sizes[0], "%04d%02d%02d%02d%02d%02d.%06lu p%d %s: ",
+                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000, getpid(), name);
     len2 = vsnprintf(buf_p->pstrs[0] + len, buf_p->sizes[0] - len, fmt, ap);
 
     /*可能还需要追加换行符。*/
@@ -246,13 +230,19 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
 
     /*结束符。*/
     buf_p->pstrs[0][len + len2] = '\0';
+    
+
+abcdk_mutex_lock(&ctx->mutex,1);
+
+    /*可能需要复制到stderr。*/
+    if (ctx->copy2stderr)
+        fprintf(stderr, "%s", buf_p->pstrs[0]);
 
     /*可能需要复制到syslog。*/
     if (ctx->copy2syslog)
-        syslog(type, "s%hu.p%d %s: %s", ctx->service, getpid(), name, buf_p->pstrs[0] + len);
+        syslog(type, "p%d %s: %s", getpid(), name, buf_p->pstrs[0] + len);
 
-    abcdk_mutex_lock(&ctx->mutex,1);
-
+    /*写文件。*/
 open_log:
 
     if (ctx->fd < 0)
@@ -268,10 +258,13 @@ open_log:
     if (chk != 0)
         goto final;
 
-    if (attr.st_size >= ctx->segment_size)
+    if (ctx->segment_name[0] &&
+        ctx->segment_max > 0 &&
+        ctx->segment_size > 0 &&
+        attr.st_size >= ctx->segment_size)
     {
         abcdk_closep(&ctx->fd);
-        abcdk_file_segment(ctx->name, ctx->segment_fmt, ctx->segment_max);
+        abcdk_file_segment(ctx->name, ctx->segment_name, ctx->segment_max);
         goto open_log;
     }
     else

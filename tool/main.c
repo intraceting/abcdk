@@ -110,7 +110,7 @@ int main(int argc, char **argv)
     srand(time(NULL));
 
     /*打开日志。*/
-    abcdk_log_open(NULL, 10, 10, 13, 0);
+    abcdk_log_open("/tmp/abcdk.log","abcdk.%d.log", 10, 10, 0, 1);
 
 #ifdef HAVE_OPENSSL
 

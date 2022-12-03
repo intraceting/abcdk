@@ -13,9 +13,8 @@
 
 int abcdk_test_log(abcdk_tree_t *args)
 {
-    abcdk_log_open(NULL,0,0, 1, 1);
-    abcdk_log_open("/tmp/abcdk/log/aaaa",10,0, 1, 1);
-    abcdk_log_open("/tmp/abcdk/log/aaaa/",0,1, 1, 1);
+ //   abcdk_log_open("/tmp/test.log","abcdk.%d.log",10,10, 1, 1);
+    abcdk_log_open("/tmp/log/aaaa","/tmp/abcdk.%d.log",1,1, 0, 0);
 
     #pragma omp parallel // for num_threads(1)
     for (int l = ABCDK_LOG_ERROR; l <= ABCDK_LOG_DEBUG; l++)

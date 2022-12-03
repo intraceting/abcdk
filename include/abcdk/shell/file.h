@@ -34,23 +34,23 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * 
  * @code
  * //1
- * abcdk_file_segment("/aaa/bbb.log","bbb.%d.log",10);
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.%d.log",10);
  * //2
- * abcdk_file_segment("/aaa/bbb.log","bbb.log.%04d",10);
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.log.%04d",10);
  * //3
- * abcdk_file_segment("/aaa/bbb.log","%d.bbb.log",10);
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/%d.bbb.log",10);
  * //4
- * abcdk_file_segment("/aaa/bbb.log","%04d.bbb.log",10);
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/%04d.bbb.log",10);
  * @endcode
  * 
- * @param [in] file 文件名(包括路径)。
- * @param [in] fmt 分段的文件名格式，仅支持一个数值格式控制符。 @see printf
+ * @param [in] src 源文件名(包括路径)。
+ * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
  * @param [in] max 最大分段数量。
  * 
  * @return 0 成功，-1 失败(访问被拒绝)。
  * 
 */
-int abcdk_file_segment(const char *file, const char *fmt, int max);
+int abcdk_file_segment(const char *src, const char *dst, int max);
 
 __END_DECLS
 

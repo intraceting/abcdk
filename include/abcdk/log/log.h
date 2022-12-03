@@ -40,14 +40,15 @@ typedef enum _abcdk_log_type
 /**
  * 初始化。
  *
- * @param [in] name 文件名(包括路径)。默认：/tmp/abcdk/log/当前进程名
- * @param [in] segment_max 分段数量。默认：10
- * @param [in] segment_size 分段大小(MB)。默认：10
- * @param [in] service 服务ID。
- * @param [in] copy2syslog 是否复制到syslog。默认：否
+ * @param [in] name 文件名(包括路径)。
+ * @param [in] segment_name 分段文件名(包括路径)，NULL(0) 不分段。注：文件名仅支持一个数值格式控制符。
+ * @param [in] segment_max 分段数量，0 不分段。
+ * @param [in] segment_size 分段大小(MB)，0 不分段。
+ * @param [in] copy2syslog 复制到syslog。!0：是，0：否
+ * @param [in] copy2stderr 复制到stderr。!0：是，0：否
  *
 */
-void abcdk_log_open(const char *name,size_t segment_max,size_t segment_size,uint16_t service, int copy2syslog);
+void abcdk_log_open(const char *name,const char *segment_name,size_t segment_max,size_t segment_size, int copy2syslog,int copy2stderr);
 
 /**
  * 设置掩码。
