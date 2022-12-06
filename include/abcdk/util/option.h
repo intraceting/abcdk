@@ -15,7 +15,7 @@ __BEGIN_DECLS
 /**
  * 选项的字段索引。
 */
-enum _abcdk_option_field
+typedef enum _abcdk_option_field
 {
     /** Key。*/
    ABCDK_OPTION_KEY = 0,
@@ -25,7 +25,7 @@ enum _abcdk_option_field
    ABCDK_OPTION_VALUE = 0
 #define ABCDK_OPTION_VALUE   ABCDK_OPTION_VALUE
 
-};
+}abcdk_option_field_t;
 
 /**
  * 配置一个选项。

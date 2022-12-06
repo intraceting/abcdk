@@ -603,7 +603,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
             p = abcdk_strtok(&p_next, "=");
             strncpy(tmp, p, p_next - p);
-            abcdk_strtrim2(tmp, isspace,NULL, 2);
+            abcdk_strtrim(tmp, isspace, 2);
             sscanf(p, "%lu-%lu", &range_s, &range_e);
 
             if (range_s >= range_e || range_s >= file->sizes[0])
