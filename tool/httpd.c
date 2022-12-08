@@ -742,10 +742,7 @@ void _abcdkhttpd_parse_request(abcdk_comm_node_t *node)
         http_p->auth = abcdk_http_request_getenv(http_p->req, "Proxy-Authorization");
 
     if (!http_p->line0)
-    {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
+        goto final_error;
 
     p_next = http_p->line0;
 
@@ -757,29 +754,47 @@ void _abcdkhttpd_parse_request(abcdk_comm_node_t *node)
     memset(http_p->pathfile, 0, PATH_MAX);
 
     p = abcdk_strtok(&p_next, " ");
+    if(!p)
+        goto final_error;
+
     strncpy(http_p->method, p, p_next - p);
 
     p = abcdk_strtok(&p_next, " ");
+    if (!p)
+        goto final_error;
+
     strncpy(http_p->location, p, p_next - p);
 
     p = abcdk_strtok(&p_next, " ");
+    if (!p)
+        goto final_error;
+
     strncpy(http_p->version, p, p_next - p);
 
     p_next = http_p->location;
     p = abcdk_strtok(&p_next, "?");
+    if (!p)
+        goto final_error;
+
     abcdk_uri_decode(p, p_next - p, http_p->path, &path_len);
 
     if (p_next)
     {
         if (*p_next == '?')
             p_next += 1;
-            
+
         p = abcdk_strtok(&p_next, "#");
         if (p)
             strncpy(http_p->params, p, p_next - p);
     }
 
     _abcdkhttpd_process(node);
+    return;
+
+final_error:
+
+    abcdk_comm_set_timeout(node, 1);
+    return;
 }
 
 void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain)
