@@ -782,11 +782,12 @@ void _abcdkhttpd_parse_request(abcdk_comm_node_t *node)
     {
         if (*p_next == '?')
             p_next += 1;
-
-        p = abcdk_strtok(&p_next, "#");
-        if (p)
-            strncpy(http_p->params, p, p_next - p);
     }
+
+    p = abcdk_strtok(&p_next, "#");
+    if (p)
+        strncpy(http_p->params, p, p_next - p);
+    
 
     _abcdkhttpd_process(node);
     return;
