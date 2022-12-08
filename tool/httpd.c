@@ -769,9 +769,15 @@ void _abcdkhttpd_parse_request(abcdk_comm_node_t *node)
     p = abcdk_strtok(&p_next, "?");
     abcdk_uri_decode(p, p_next - p, http_p->path, &path_len);
 
-    p = abcdk_strtok(&p_next, "#");
-    if (p)
-        strncpy(http_p->params, p, p_next - p);
+    if (p_next)
+    {
+        if (*p_next == '?')
+            p_next += 1;
+            
+        p = abcdk_strtok(&p_next, "#");
+        if (p)
+            strncpy(http_p->params, p, p_next - p);
+    }
 
     _abcdkhttpd_process(node);
 }
