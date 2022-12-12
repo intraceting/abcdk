@@ -974,6 +974,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 {
     abcdk_signal_t sig;
     abcdk_sockaddr_t addr;
+    abcdk_object_t *extend_p = NULL;
+    abcdkhttpd_node_t *http_p = NULL;
     const char *p, *p_next, p2;
     size_t plen, p2len;
     int chk;
@@ -1074,8 +1076,12 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        abcdkhttpd_node_t *http_p;
-        http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(ctx->comm_listen[i]);
+        extend_p = abcdk_comm_extend(ctx->comm_listen[i]);
+        http_p = (abcdkhttpd_node_t *)extend_p->pptrs[0];
+
+        /*绑定扩展数据析构函数。*/
+        abcdk_object_atfree(extend_p, _abcdkhttpd_node_destroy_cb, NULL);
+        abcdk_object_unref(&extend_p);
 
         /*绑定上下文环境指针。*/
         http_p->ctx = ctx;
