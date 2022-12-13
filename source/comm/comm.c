@@ -712,9 +712,8 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
     if(!ctx || !*ctx)
         return;
 
-    /*复制，清空。*/
+    /*复制。*/
     ctx_p = *ctx;
-    *ctx = NULL;
 
     /*退出。*/
     abcdk_atomic_store(&ctx_p->exitflag, 1);
@@ -724,6 +723,9 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
 
     abcdk_epollex_free(&ctx_p->epollex);
     abcdk_heap_free(ctx_p);
+
+    /*清空。*/
+    *ctx = NULL;
 }
 
 abcdk_comm_t * abcdk_comm_start(int max,int cpu)

@@ -962,7 +962,10 @@ VERSION_MAJOR="1"
 #副版本
 VERSION_MINOR="4"
 #发行版本
-VERSION_RELEASE="12"
+VERSION_RELEASE="13"
+
+#目标平台
+TARGET="native"
 
 #
 BUILD_TYPE="release"
@@ -985,15 +988,22 @@ usage: [ OPTIONS ]
     -h 
      打印帮助信息。
 
+    -t < platform >
+     目标系统平台。默认：本地。
+
+     支持以下关键字：
+     native x86_64 aarch64 
+     
+     自定义编译器（定义环境变量）。如下：
+     export CC=gcc
+     export AR=ar
+
     -O
      编译优化。默认：关闭。
 
     -g  
      生成调试符号。默认：关闭
 
-     自定义编译器（定义环境变量）。如下：
-     export CC=gcc
-     export AR=ar
 
     -V < number > 
      主版本。默认：${VERSION_MAJOR}
@@ -1008,7 +1018,9 @@ usage: [ OPTIONS ]
      安装路径。默认：${INSTALL_PREFIX}
 
     -d < key,key,... > 
-     依赖项目，以英文“,”为分割符。支持以下关键字：
+     依赖项目，以英文“,”为分割符。
+     
+     支持以下关键字：
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
@@ -1023,12 +1035,15 @@ EOF
 }
 
 #
-while getopts "hOgV:v:r:i:d:" ARGKEY 
+while getopts "ht:OgV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
         PrintUsage
         exit 22
+    ;;
+    t)
+        TARGET="${OPTARG}"
     ;;
     O)
         BUILD_OPTIMIZE="yes"
@@ -1055,21 +1070,28 @@ do
 done
 
 # 设置编译器。
-if [ "${CC}" == "" ];then
+if [ "${TARGET}" == "aarch64" ];then
+{
+    CC=aarch64-linux-gnu-gcc
+    AR=aarch64-linux-gnu-ar
+}
+elif [ "${TARGET}" == "x86_64" ];then
+{
+    CC=x86_64-linux-gnu-gcc
+    AR=x86_64-linux-gnu-ar
+}
+elif [ "${TARGET}" == "native" ];then
+{
     CC=gcc
-fi
-if [ "${AR}" == "" ];then
     AR=ar
+}
 fi
-
-#
-TARGET_PLATFORM=$(${CC} -dumpmachine)
 
 #
 STATUS=$(CheckHavePackageFromWhich ${CC})
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "${CC} not found."
+    echo "CC '${CC}' not found."
     exit 22
 }
 fi
@@ -1078,10 +1100,14 @@ fi
 STATUS=$(CheckHavePackageFromWhich ${AR})
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "${AR} not found."
+    echo "AR '${AR}' not found."
     exit 22
 }
 fi
+
+
+#获取编译器目标平台。
+TARGET_PLATFORM=$(${CC} -dumpmachine)
 
 #
 STATUS=$(CheckHavePackage pkgconfig 1)

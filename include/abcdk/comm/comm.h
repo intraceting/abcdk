@@ -252,7 +252,7 @@ int abcdk_comm_send_watch(abcdk_comm_node_t *node);
 /**
  * 停止通讯引擎。
  * 
- * @warning 环境指针不支持多程调用。
+ * @warning 非线程安全。
  * 
  * @param [in out] ctx 环境指针。
 */
