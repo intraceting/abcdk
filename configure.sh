@@ -1070,20 +1070,15 @@ do
 done
 
 # 设置编译器。
-if [ "${TARGET}" == "aarch64" ];then
-{
-    CC=aarch64-linux-gnu-gcc
-    AR=aarch64-linux-gnu-ar
-}
-elif [ "${TARGET}" == "x86_64" ];then
-{
-    CC=x86_64-linux-gnu-gcc
-    AR=x86_64-linux-gnu-ar
-}
-elif [ "${TARGET}" == "native" ];then
+if [ "${TARGET}" == "native" ];then
 {
     CC=gcc
     AR=ar
+}
+elif [ "${TARGET}" != "" ];then
+{
+    CC=${TARGET}-linux-gnu-gcc
+    AR=${TARGET}-linux-gnu-ar
 }
 fi
 
