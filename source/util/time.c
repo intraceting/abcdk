@@ -119,7 +119,7 @@ int _abcdk_time_format_init(void *opaque)
     return 0;
 }
 
-const char *abcdk_time_format(const char *fmt, const struct tm *tm)
+const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc)
 {
     static volatile int status = 0;
     static pthread_key_t key = -1;
@@ -134,7 +134,7 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm)
     if(!tm)
     {
         abcdk_time_get(&tmp,1);
-        return abcdk_time_format(fmt,&tmp);
+        return abcdk_time_format(fmt,&tmp,loc);
     }
 
     chk = abcdk_once(&status,_abcdk_time_format_init,&key);
@@ -151,7 +151,10 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm)
         pthread_setspecific(key,buf);
     }
     
-    chk = strftime(buf,PATH_MAX,fmt,tm);
+    if(loc)
+        chk = strftime_l(buf,PATH_MAX,fmt,tm,loc);    
+    else 
+        chk = strftime(buf,PATH_MAX,fmt,tm);
     buf[chk] = '\0';
 
     return buf;

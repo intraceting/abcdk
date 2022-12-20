@@ -19,13 +19,11 @@ static struct _abcdk_tool_entry
     */
     int (*func_cb)(abcdk_tree_t *args);
 }abcdk_tool_entry[] = {
-    {"robots",abcdk_tool_robots},
     {"odbc",abcdk_tool_odbc},
     {"mtx",abcdk_tool_mtx},
     {"mt",abcdk_tool_mt},
     {"mp4juicer",abcdk_tool_mp4juicer},
     {"mp4dump",abcdk_tool_mp4dump},
-    {"html",abcdk_tool_html},
     {"hexdump",abcdk_tool_hexdump},
     {"json",abcdk_tool_json},
     {"lsscsi",abcdk_tool_lsscsi},

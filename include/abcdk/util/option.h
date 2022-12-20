@@ -43,7 +43,7 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value);
  * 
  * @note 支持一对多键值组合，相同键值的次序由添加顺序决定。
  * 
- * @param merge 0 允许重复的value，!0 合并重复的value。
+ * @param merge 是否合并重复的value。0 不合并，!0 合并。
  * 
  * @return 0 成功，-1 失败。
 */

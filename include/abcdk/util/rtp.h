@@ -79,9 +79,10 @@ typedef struct _abcdk_rtp_header
     uint32_t ssrc;
 
     /**
-     * 特约信源(CSRC)标识符，0~512bits
+     * 提供信源(CSRC)标识符，0~512bits。
      * 
      * 每个CSRC标识符占32bits。
+     * 每个CSRC标识了包含在RTP报文有效载荷中的所有提供信源。
     */
     uint32_t csrc[16];
 

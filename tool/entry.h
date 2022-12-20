@@ -16,13 +16,12 @@
 
 __BEGIN_DECLS
 
-int abcdk_tool_robots(abcdk_tree_t *args);
+
 int abcdk_tool_odbc(abcdk_tree_t *args);
 int abcdk_tool_mtx(abcdk_tree_t *args);
 int abcdk_tool_mt(abcdk_tree_t *args);
 int abcdk_tool_mp4juicer(abcdk_tree_t *args);
 int abcdk_tool_mp4dump(abcdk_tree_t *args);
-int abcdk_tool_html(abcdk_tree_t *args);
 int abcdk_tool_hexdump(abcdk_tree_t *args);
 int abcdk_tool_json(abcdk_tree_t *args);
 int abcdk_tool_lsscsi(abcdk_tree_t *args);

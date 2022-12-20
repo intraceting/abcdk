@@ -19,6 +19,8 @@ typedef struct _abcdkhttpd
     int errcode;
     abcdk_tree_t *args;
 
+    locale_t loc;
+
 #ifdef HAVE_LIBMAGIC
     struct magic_set *magic_handle;
 #endif // HAVE_LIBMAGIC
@@ -95,7 +97,7 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
     fprintf(stderr, "\t\t最大连接数。默认：系统限定的1/2\n");
 
     fprintf(stderr, "\n\t--server-name < NAME >\n");
-    fprintf(stderr, "\t\t服务器名称。默认：abcdk\n");
+    fprintf(stderr, "\t\t服务器名称。默认：%s\n",SOLUTION_NAME);
 
     fprintf(stderr, "\n\t--root-path < PATH >\n");
     fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
@@ -373,7 +375,7 @@ final_error:
                            "\r\n",
                            abcdk_http_status_desc(401),
                            http_p->ctx->server_name,
-                           abcdk_time_format(http_p->timefmt, NULL),
+                           abcdk_time_format(http_p->timefmt, NULL,http_p->ctx->loc),
                            (http_p->md5 ? "Digest" : "Basic"),
                            _abcdkhttpd_clock());
 
@@ -397,31 +399,7 @@ void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status)
                            "\r\n",
                            abcdk_http_status_desc(status),
                            http_p->ctx->server_name,
-                           abcdk_time_format(http_p->timefmt, NULL));
-
-    _abcdkhttpd_logprint(node, status, 0);
-}
-
-void _abcdkhttpd_reply_options(abcdk_comm_node_t *node, int status)
-{
-    abcdkhttpd_node_t *http_p;
-
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
-
-    abcdk_comm_post_format(node, 300,
-                           "HTTP/1.1 %s\r\n"
-                           "Server: %s\r\n"
-                           "Data: %s\r\n"
-                           "Connection: Keep-Alive\r\n"
-                           "Content-Length: 0\r\n"
-                           "Access-Control-Allow-Origin: *\r\n"
-                           "Access-Control-Allow-Methods: POST,GET,HEAD,OPTIONS\r\n"
-                           "Access-Control-Allow-Headers: *\r\n"
-                           "Access-Control-Allow-Age: 3600\r\n"
-                           "\r\n",
-                           abcdk_http_status_desc(status),
-                           http_p->ctx->server_name,
-                           abcdk_time_format(http_p->timefmt, NULL));
+                           abcdk_time_format(http_p->timefmt, NULL,http_p->ctx->loc));
 
     _abcdkhttpd_logprint(node, status, 0);
 }
@@ -467,7 +445,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
                                "\r\n",
                                abcdk_http_status_desc(200),
                                http_p->ctx->server_name,
-                               abcdk_time_format(http_p->timefmt, &tm),
+                               abcdk_time_format(http_p->timefmt, &tm,http_p->ctx->loc),
                                abcdk_http_content_type_desc(".html"));
 
         abcdk_http_reply_chunked_format(node, 10000,
@@ -478,11 +456,11 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
                                         "<h1>Index of %s</h1>\r\n"
                                         "<hr>\r\n"
                                         "<pre>\r\n"
-                                        "<table width=\"100%\">"
+                                        "<table width=\"100%%\">"
                                         "<tr>"
-                                        "<th width=\"70%\", align=\"left\">Name</th>"
-                                        "<th width=\"20%\", align=\"left\">Time</th>"
-                                        "<th width=\"10%\", align=\"right\">Size</th>"
+                                        "<th width=\"70%%\", align=\"left\">Name</th>"
+                                        "<th width=\"20%%\", align=\"left\">Time</th>"
+                                        "<th width=\"10%%\", align=\"right\">Size</th>"
                                         "</tr>\r\n"
                                         "<tr>\r\n"
                                         "<td><a href=\"../\">../</a></td>\r\n"
@@ -534,7 +512,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
                                             "<td align=\"right\">%s</td>\r\n"
                                             "</tr>\r\n",
                                             tmp2, (S_ISDIR(attr.st_mode) ? "/" : ""), tmp3,
-                                            abcdk_time_format(http_p->timefmt_lc, &tm), strsize);
+                                            abcdk_time_format(http_p->timefmt_lc, &tm,http_p->ctx->loc), strsize);
         }
 
         abcdk_http_reply_chunked_format(node, 1000,
@@ -631,7 +609,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    "\r\n",
                                    abcdk_http_status_desc(status = 206),
                                    http_p->ctx->server_name,
-                                   abcdk_time_format(http_p->timefmt, &tm),
+                                   abcdk_time_format(http_p->timefmt, &tm,http_p->ctx->loc),
                                    content_type,
                                    range_s, range_e, file_size,
                                    file->sizes[0]);
@@ -650,7 +628,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    "\r\n",
                                    abcdk_http_status_desc(status = 200),
                                    http_p->ctx->server_name,
-                                   abcdk_time_format(http_p->timefmt, &tm),
+                                   abcdk_time_format(http_p->timefmt, &tm,http_p->ctx->loc),
                                    content_type,
                                    file->sizes[0]);
         }
@@ -682,17 +660,11 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
     if (chk != 0)
         return;
 
-    if (abcdk_strcmp(http_p->method, "OPTIONS", 0) == 0)
-    {
-        _abcdkhttpd_reply_options(node, 200);
-        return;
-    }
-
     if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
         abcdk_strcmp(http_p->method, "GET", 0) != 0 &&
         abcdk_strcmp(http_p->method, "HEAD", 0) != 0)
     {
-        _abcdkhttpd_reply_options(node, 405);
+        _abcdkhttpd_reply_nobody(node, 405);
         return;
     }
 
@@ -981,7 +953,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     int chk;
 
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
-    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk");
+    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     ctx->listen[ABCDKHTTPD_LISTEN] = abcdk_option_get(ctx->args, "--listen", 0, NULL);
     ctx->listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_option_get(ctx->args, "--listen-ssl", 0, NULL);
@@ -995,6 +967,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     for (int i = 0; i < ABCDKHTTPD_PASSWD_MAX; i++)
         ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
+
+    ctx->loc = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
     abcdk_mutex_init2(&ctx->magic_mutex, 0);
     ctx->comm_listen[ABCDKHTTPD_LISTEN] = NULL;
@@ -1126,6 +1100,8 @@ final:
 #endif // HAVE_LIBMAGIC
 
     abcdk_mutex_destroy(&ctx->magic_mutex);
+
+    freelocale(ctx->loc);
 }
 
 int abcdk_tool_httpd(abcdk_tree_t *args)
@@ -1133,7 +1109,7 @@ int abcdk_tool_httpd(abcdk_tree_t *args)
     abcdkhttpd_t ctx = {0};
 
     /*英文；UTF-8。*/
-    setlocale(LC_ALL, "en_US.UTF-8");
+   // setlocale(LC_ALL, "en_US.UTF-8");
 
     ctx.args = args;
 
