@@ -7,18 +7,18 @@
 #include "abcdk/rpc/rpc.h"
 
 /*
- * --------------------------------------------------------
- * |Message Data                                          |
- * --------------------------------------------------------
- * |Length  |Protocol |Number  |Flag    |Reserve |Cargo   |
- * |4 Bytes |4 Bytes  |8 Bytes |1 Bytes |3 Bytes |N Bytes |
- * --------------------------------------------------------
+ * -----------------------------------------------------------------
+ * |Message Data                                                   |
+ * -----------------------------------------------------------------
+ * |Length  |Protocol |Number  |Reserve |Flag    |Reserve |Cargo   |
+ * |4 Bytes |4 Bytes  |8 Bytes |1 Bytes |1 Bytes |2 Bytes |N Bytes |
+ * -----------------------------------------------------------------
 */
 
 /** 数据包最大长度。*/
 #define ABCDK_RPC_MAX_SIZE ((1 << 23) - 1)
 
-/** 数据包头部长度(4+4+8+1+3)。*/
+/** 数据包头部长度(4+4+8+1+1+2)。*/
 #define ABCDK_RPC_HDR_SIZE (20)
 
 /** 默认的数据协议。*/
@@ -80,14 +80,22 @@ int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint6
 
     rpc_p = (abcdk_rpc_node_t *)abcdk_comm_get_extend0(node);
 
-    msg = abcdk_object_alloc2(4 + 4 + 8 + 1 + 3 + len);
+    msg = abcdk_object_alloc2(4 + 4 + 8 + 1 + 1 + 2 + len);
     if (!msg)
         return -1;
-
+#if 0
     ABCDK_PTR2U32(msg->pptrs[0], 0) = abcdk_endian_h_to_b32(msg->sizes[0]);
     ABCDK_PTR2U32(msg->pptrs[0], 4) = abcdk_endian_h_to_b32(rpc_p->protocol);
     ABCDK_PTR2U64(msg->pptrs[0], 8) = abcdk_endian_h_to_b64(num);
     ABCDK_PTR2U8(msg->pptrs[0], 17) = flag;
+#else
+    abcdk_bloom_write_number(msg->pptrs[0], 20, 0, 32, msg->sizes[0]);
+    abcdk_bloom_write_number(msg->pptrs[0], 20, 32, 32, rpc_p->protocol);
+    abcdk_bloom_write_number(msg->pptrs[0], 20, 64, 64, num);
+    abcdk_bloom_write_number(msg->pptrs[0], 20, 128, 8, 0);
+    abcdk_bloom_write_number(msg->pptrs[0], 20, 136, 8, flag);
+    abcdk_bloom_write_number(msg->pptrs[0], 20, 144, 16, 0);
+#endif
     memcpy(ABCDK_PTR2VPTR(msg->pptrs[0], ABCDK_RPC_HDR_SIZE), cargo, len);
 
     chk = abcdk_comm_post(node, msg);
@@ -349,8 +357,13 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_message_t *msg)
     if (msg_off < ABCDK_RPC_HDR_SIZE)
         return 0;
 
+#if 0
     len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 0));
     pro = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 4));
+#else
+    len = abcdk_bloom_read_number((uint8_t*)msg_ptr,20,0,32);
+    pro = abcdk_bloom_read_number((uint8_t*)msg_ptr,20,32,32);
+#endif
 
     /*数据包大小必须符合要求。*/
     if (len > ABCDK_RPC_MAX_SIZE || len < ABCDK_RPC_HDR_SIZE)
@@ -420,8 +433,13 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     msg_ptr = abcdk_message_data(msg_p);
     msg_len = abcdk_message_size(msg_p);
 
+#if 0
     mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(msg_ptr, 8));
     flag = ABCDK_PTR2U8(msg_ptr, 17);
+#else 
+    mid = abcdk_bloom_read_number((uint8_t*)msg_ptr,20,64,64);
+    flag = abcdk_bloom_read_number((uint8_t*)msg_ptr,20,136,8);
+#endif
 
     cargo_ptr = ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE);
     cargo_len = msg_len - ABCDK_RPC_HDR_SIZE;

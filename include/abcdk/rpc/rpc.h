@@ -10,6 +10,7 @@
 #include "abcdk/comm/comm.h"
 #include "abcdk/comm/message.h"
 #include "abcdk/util/waiter.h"
+#include "abcdk/util/bloom.h"
 
 __BEGIN_DECLS
 
