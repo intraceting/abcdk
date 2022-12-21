@@ -92,7 +92,7 @@ void abcdk_tree_insert(abcdk_tree_t *father, abcdk_tree_t *child, abcdk_tree_t *
 
     if (where)
     {
-        assert(father = where->father);
+        assert(father == where->father);
 
         if (where == father->first)
         {

@@ -52,7 +52,7 @@ typedef struct _abcdk_map
     /**
      * 回显函数。
      * 
-     * @return -1 终止，1 继续。
+     * @return 1 继续，-1 终止。
     */
     int (*dump_cb)(abcdk_object_t *alloc, void *opaque);
 

@@ -19,6 +19,8 @@ typedef struct _abcdkhttpd
     int errcode;
     abcdk_tree_t *args;
 
+    uint64_t realm;
+
     locale_t loc;
 
 #ifdef HAVE_LIBMAGIC
@@ -132,7 +134,7 @@ void _abcdkhttpd_print_usage(abcdk_tree_t *args)
 
 uint64_t _abcdkhttpd_clock()
 {
-    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
 }
 
 int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
@@ -221,6 +223,7 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
     char digest_ha1[33] = {0}, digest_ha2[33] = {0}, digest_rsp[33] = {0};
     const char *key, *value, *p, *p_next;
     size_t klen, vlen;
+    uint64_t nonce;
     int chk;
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
@@ -258,8 +261,8 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
         if (!http_p->md5)
             goto final_error;
 
-        size_t sizes[] = {100, 100, 4096, 100};
-        digest_req = abcdk_object_alloc(sizes, 4, 0);
+        size_t sizes[] = {100, 100, 4096, 100, 100};
+        digest_req = abcdk_object_alloc(sizes, 5, 0);
 
         for (; p_next;)
         {
@@ -299,7 +302,16 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
                 strncpy(digest_req->pstrs[3], value, ABCDK_MIN(vlen, digest_req->sizes[3]));
                 abcdk_strtrim2(digest_req->pstrs[3], isspace, "=\"\'", 2);
             }
+            else if (abcdk_strncmp(key, "realm", klen, 0) == 0)
+            {
+                strncpy(digest_req->pstrs[4], value, ABCDK_MIN(vlen, digest_req->sizes[4]));
+                abcdk_strtrim2(digest_req->pstrs[4], isspace, "=\"\'", 2);
+            }
         }
+
+        /*如果服务重启过，通知客户端重新输入验证信息。*/
+        if (strtoull(digest_req->pstrs[4], NULL, 0) != http_p->ctx->realm)
+            goto final_error;
 
         chk = -1;
         for (int i = 0; http_p->ctx->passwd[i]; i++)
@@ -330,7 +342,9 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
 
             abcdk_md5_reset(http_p->md5);
             abcdk_md5_update(http_p->md5, digest_req->pstrs[0], strlen(digest_req->pstrs[0]));
-            abcdk_md5_update(http_p->md5, "::", 2);
+            abcdk_md5_update(http_p->md5, ":", 1);
+            abcdk_md5_update(http_p->md5, digest_req->pstrs[4], strlen(digest_req->pstrs[4]));
+            abcdk_md5_update(http_p->md5, ":", 1);
             abcdk_md5_update(http_p->md5, p, p_next - p);
             abcdk_md5_final(http_p->md5, digest_md5_buf);
             abcdk_bin2hex(digest_ha1, digest_md5_buf, 16, 0);
@@ -365,19 +379,23 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
 
 final_error:
 
+    nonce = rand();
+    nonce = nonce << 32 | rand();
+
     abcdk_comm_post_format(node, 1000,
                            "HTTP/1.1 %s\r\n"
                            "Server: %s\r\n"
                            "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
-                           "WWW-Authenticate: %s realm=\"\", charset=utf-8, nonce=\"%lu\"\r\n"
+                           "WWW-Authenticate: %s realm=\"%lu\", charset=utf-8, nonce=\"%lu\"\r\n"
                            "Content-Length: 0\r\n"
                            "\r\n",
                            abcdk_http_status_desc(401),
                            http_p->ctx->server_name,
-                           abcdk_time_format(http_p->timefmt, NULL,http_p->ctx->loc),
+                           abcdk_time_format(http_p->timefmt, NULL, http_p->ctx->loc),
                            (http_p->md5 ? "Digest" : "Basic"),
-                           _abcdkhttpd_clock());
+                           http_p->ctx->realm,
+                           nonce);
 
     _abcdkhttpd_logprint(node, 401, 0);
 
@@ -942,6 +960,14 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
+int _abcdkhttpd_nonce_dump_cb(abcdk_object_t *alloc, void *opaque)
+{
+    abcdkhttpd_t *ctx = (abcdkhttpd_t *)opaque;
+
+  //  if(_abcdkhttpd_clock() - ABCDK_PTR2U64(alloc->pptrs[ABCDK_MAP_VALUE],0) > ctx->nonce_timeout)
+
+}
+
 void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 {
     abcdk_signal_t sig;
@@ -967,6 +993,9 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     for (int i = 0; i < ABCDKHTTPD_PASSWD_MAX; i++)
         ctx->passwd[i] = abcdk_option_get(ctx->args, "--passwd", i, NULL);
+
+    ctx->realm = rand();
+    ctx->realm = ctx->realm << 32 | rand();
 
     ctx->loc = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
@@ -1107,9 +1136,6 @@ final:
 int abcdk_tool_httpd(abcdk_tree_t *args)
 {
     abcdkhttpd_t ctx = {0};
-
-    /*英文；UTF-8。*/
-   // setlocale(LC_ALL, "en_US.UTF-8");
 
     ctx.args = args;
 
