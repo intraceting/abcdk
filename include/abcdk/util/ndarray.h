@@ -33,7 +33,7 @@ typedef struct _abcdk_ndarray
 } abcdk_ndarray_t;
 
 /**多维数组常量。*/
-enum _abcdk_ndarray_constant
+typedef enum _abcdk_ndarray_constant
 {
     /** NCHW (AAA...BBB...CCC)*/
     ABCDK_NDARRAY_NCHW = 1,
@@ -50,7 +50,7 @@ enum _abcdk_ndarray_constant
     /** 垂直翻转。*/
     ABCDK_NDARRAY_FLIP_V = 2,
 #define ABCDK_NDARRAY_FLIP_V ABCDK_NDARRAY_FLIP_V
-};
+}abcdk_ndarray_constant_t;
 
 /**
  * 计算多维数组占用的空间(字节)。
