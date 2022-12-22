@@ -450,6 +450,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
     if (abcdk_strcmp(http_p->method, "OPTIONS", 0) == 0)
     {
         _abcdkhttpd_reply_nobody(node, 200,"POST,GET");
+        return;
     }
     else if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
         abcdk_strcmp(http_p->method, "GET", 0) != 0)
@@ -592,6 +593,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     if (abcdk_strcmp(http_p->method, "OPTIONS", 0) == 0)
     {
         _abcdkhttpd_reply_nobody(node, 200, "POST,GET,HEAD");
+        return;
     }
     else if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
         abcdk_strcmp(http_p->method, "GET", 0) != 0 &&
