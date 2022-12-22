@@ -162,7 +162,7 @@ ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int 
         if (!component && src[s] == '?')
             qm = 1;
 
-        /*如果是RUL，则仅转换问号之前的。*/
+        /*如果是URL，则仅转换问号之前的。*/
         if (src[s] != '%' || qm)
         {
             dst[d] = src[s];
