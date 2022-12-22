@@ -149,21 +149,19 @@ ssize_t abcdk_url_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
     return (slen - s);
 }
 
-ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int component)
+ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int qm_stop)
 {
-    int s = 0, d = 0, qm = 0;
+    int s = 0, d = 0;
     int tmp;
 
     assert(src != NULL && slen > 0 && dst != NULL && dlen != NULL && *dlen > 0);
 
     for (; s < slen && d < *dlen;)
     {
-        /*如果密文是URL，则检测问号(?)位置，并且问号之后的仅做复制。*/
-        if (!component && src[s] == '?')
-            qm = 1;
+        if (qm_stop && src[s] == '?')
+            break;
 
-        /*如果是URL，则仅转换问号之前的。*/
-        if (src[s] != '%' || qm)
+        if (src[s] != '%')
         {
             dst[d] = src[s];
             d += 1;

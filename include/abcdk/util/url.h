@@ -62,11 +62,11 @@ ssize_t abcdk_url_encode(const char *src,size_t slen,char *dst,size_t *dlen, int
  * @param [in] slen 密文长度。
  * @param [out] dst 明文指针。
  * @param [in out] dlen 明文长度。
- * @param [in] component !0 是组件，0 是URL。
+ * @param [in] qm_stop 遇问号(?)终止。!0 是，0 否。
  * 
  * @return 未解码的密文长度。
 */
-ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int component);
+ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int qm_stop);
 
 __END_DECLS
 
