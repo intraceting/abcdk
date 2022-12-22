@@ -4,47 +4,47 @@
  * MIT License
  * 
  */
-#include "abcdk/util/uri.h"
+#include "abcdk/util/url.h"
 
-abcdk_object_t *abcdk_uri_split(const char *uri)
+abcdk_object_t *abcdk_url_split(const char *url)
 {
     const char* mark = NULL;
     const char* a_mark = NULL;
     size_t len = 0;
     size_t sizes[5] = {0};
-    abcdk_object_t *alloc = NULL;
+    abcdk_object_t *obj = NULL;
 
-    assert(uri != NULL);
-    assert(uri[0] != '\0');
+    assert(url != NULL);
+    assert(url[0] != '\0');
 
-    len = strlen(uri);
+    len = strlen(url);
 
-    mark = abcdk_strstr(uri,"://",0);
+    mark = abcdk_strstr(url,"://",0);
     if (mark)
     {
-        sizes[ABCDK_URI_SCHEME] = 64;
-        sizes[ABCDK_URI_USER] = 64;
-        sizes[ABCDK_URI_PSWD] = 128;
-        sizes[ABCDK_URI_HOST] = 255;
-        sizes[ABCDK_URI_PATH] = len + 1;
+        sizes[ABCDK_URL_SCHEME] = 64;
+        sizes[ABCDK_URL_USER] = 64;
+        sizes[ABCDK_URL_PSWD] = 128;
+        sizes[ABCDK_URL_HOST] = 255;
+        sizes[ABCDK_URL_PATH] = len + 1;
     }
     else
     {
-        sizes[ABCDK_URI_SCHEME] = sizes[ABCDK_URI_USER] = 1;
-        sizes[ABCDK_URI_PSWD] = sizes[ABCDK_URI_HOST] = 1;
-        sizes[ABCDK_URI_PATH] = len + 1; //set.
+        sizes[ABCDK_URL_SCHEME] = sizes[ABCDK_URL_USER] = 1;
+        sizes[ABCDK_URL_PSWD] = sizes[ABCDK_URL_HOST] = 1;
+        sizes[ABCDK_URL_PATH] = len + 1; //set.
     }
-
-    alloc = abcdk_object_alloc(sizes,ABCDK_ARRAY_SIZE(sizes),0);
-    if(!alloc)
-        goto final;
+    
+    obj = abcdk_object_alloc(sizes,ABCDK_ARRAY_SIZE(sizes),0);
+    if(!obj)
+        return NULL;
     
     if(mark)
     {
         if(ABCDK_PTR2I8(mark,3) == '/')
         {
             /* SCHEME:///abcdk/...*/
-            sscanf(uri,"%[^:]%*3[:/]%s",alloc->pptrs[ABCDK_URI_SCHEME],alloc->pptrs[ABCDK_URI_PATH]);
+            sscanf(url,"%[^:]%*3[:/]%s",obj->pstrs[ABCDK_URL_SCHEME],obj->pstrs[ABCDK_URL_PATH]);
         }
         else
         {
@@ -63,10 +63,10 @@ abcdk_object_t *abcdk_uri_split(const char *uri)
                  * SCHEME://user:pswd@host[:port]/abcdk
                  * SCHEME://user:pswd@[host][:port]/abcdk
                 */
-                sscanf(uri, "%[^:]%*3[:/]%[^:]%*1[:]%[^@]%*1[@]%[^/]%s",
-                       alloc->pptrs[ABCDK_URI_SCHEME], alloc->pptrs[ABCDK_URI_USER],
-                       alloc->pptrs[ABCDK_URI_PSWD], alloc->pptrs[ABCDK_URI_HOST],
-                       alloc->pptrs[ABCDK_URI_PATH]);
+                sscanf(url, "%[^:]%*3[:/]%[^:]%*1[:]%[^@]%*1[@]%[^/]%s",
+                       obj->pstrs[ABCDK_URL_SCHEME], obj->pstrs[ABCDK_URL_USER],
+                       obj->pstrs[ABCDK_URL_PSWD], obj->pstrs[ABCDK_URL_HOST],
+                       obj->pstrs[ABCDK_URL_PATH]);
             }
             else
             {
@@ -74,23 +74,21 @@ abcdk_object_t *abcdk_uri_split(const char *uri)
                  * SCHEME://host[:port]/abcdk
                  * SCHEME://[host][:port]/abcdk
                 */
-                sscanf(uri, "%[^:]%*3[:/]%[^/]%s",
-                       alloc->pptrs[ABCDK_URI_SCHEME], alloc->pptrs[ABCDK_URI_HOST],
-                       alloc->pptrs[ABCDK_URI_PATH]);
+                sscanf(url, "%[^:]%*3[:/]%[^/]%s",
+                       obj->pstrs[ABCDK_URL_SCHEME], obj->pstrs[ABCDK_URL_HOST],
+                       obj->pstrs[ABCDK_URL_PATH]);
             }
         }
     }
     else
     {
-        memcpy(alloc->pptrs[ABCDK_URI_PATH],uri,len);
+        strncpy(obj->pstrs[ABCDK_URL_PATH],url,len);
     }
 
-final:
-
-    return alloc;
+    return obj;
 }
 
-int _abcdk_uri_encode_check_escape(uint8_t c, int component)
+int _abcdk_url_encode_check_escape(uint8_t c, int component)
 {
     if (c >= 'A' && c <= 'Z')
         return 1;
@@ -121,7 +119,7 @@ int _abcdk_uri_encode_check_escape(uint8_t c, int component)
     return 0;
 }
 
-ssize_t abcdk_uri_encode(const char *src, size_t slen, char *dst, size_t *dlen, int component)
+ssize_t abcdk_url_encode(const char *src, size_t slen, char *dst, size_t *dlen, int component)
 {
     int s = 0, d = 0;
 
@@ -129,7 +127,7 @@ ssize_t abcdk_uri_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
 
     for (; s < slen && d < *dlen; s++)
     {
-        if (_abcdk_uri_encode_check_escape(src[s],component))
+        if (_abcdk_url_encode_check_escape(src[s],component))
         {
             dst[d] = src[s];
             d += 1;
@@ -151,24 +149,29 @@ ssize_t abcdk_uri_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
     return (slen - s);
 }
 
-ssize_t abcdk_uri_decode(const char *src,size_t slen,char *dst,size_t *dlen)
+ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int component)
 {
-    int s = 0, d = 0;
+    int s = 0, d = 0, qm = 0;
     int tmp;
 
     assert(src != NULL && slen > 0 && dst != NULL && dlen != NULL && *dlen > 0);
 
     for (; s < slen && d < *dlen;)
     {
-        if (src[s] == '+')
+        /*如果密文是URL，则检测问号(?)位置，并且问号之后的仅做复制。*/
+        if (!component && src[s] == '?')
+            qm = 1;
+
+        /*如果是RUL，则仅转换问号之前的。*/
+        if (src[s] != '%' || qm)
         {
-            dst[d] = ' ';
+            dst[d] = src[s];
             d += 1;
             s += 1;
         }
-        else if (src[s] != '%')
+        else if (src[s] == '+')
         {
-            dst[d] = src[s];
+            dst[d] = ' ';
             d += 1;
             s += 1;
         }

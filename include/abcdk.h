@@ -20,6 +20,7 @@
 #include "abcdk/util/basecode.h"
 #include "abcdk/util/base64.h"
 #include "abcdk/util/uri.h"
+#include "abcdk/util/url.h"
 #include "abcdk/util/signal.h"
 #include "abcdk/util/string.h"
 #include "abcdk/util/charset.h"

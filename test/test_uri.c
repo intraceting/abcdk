@@ -13,13 +13,13 @@
 
 int abcdk_test_uri(abcdk_tree_t *args)
 {
-    char src[] = {"http://localhoat:1234/考试?aaa=bbb&ccc=dddd#aaaa"};
+    char src[] = {"http://localhoat:1234/考试1?aaa=考试2&ccc=考试3#aaaa"};
     char dst[1000] = {0};
 
     size_t slen = strlen(src);
     size_t dlen = 1000;
 
-    ssize_t rs = abcdk_uri_encode(src,slen,dst,&dlen,1);
+    ssize_t rs = abcdk_url_encode(src,slen,dst,&dlen,1);
 
     printf("%s\n",dst);
 
@@ -27,7 +27,7 @@ int abcdk_test_uri(abcdk_tree_t *args)
 
     size_t dlen2 = 1000;
 
-    ssize_t rs2 = abcdk_uri_decode(dst,dlen,dst2,&dlen2);
+    ssize_t rs2 = abcdk_url_decode(dst,dlen,dst2,&dlen2,1);
 
     printf("%s\n",dst2);
 }
