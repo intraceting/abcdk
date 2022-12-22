@@ -410,7 +410,7 @@ final_error:
     return -1;
 }
 
-void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status)
+void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status,const char *a_c_a_m)
 {
     abcdkhttpd_node_t *http_p;
 
@@ -422,12 +422,14 @@ void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status)
                            "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
                            "Access-Control-Allow-Origin: %s\r\n"
+                           "Access-Control-Allow-Methods: %s\r\n"
                            "Content-Length: 0\r\n"
                            "\r\n",
                            abcdk_http_status_desc(status),
                            http_p->ctx->server_name,
                            abcdk_time_format(http_p->timefmt, NULL,http_p->ctx->loc),
-                           http_p->a_c_a_o);
+                           http_p->a_c_a_o,
+                           a_c_a_m);
 
     _abcdkhttpd_logprint(node, status, 0);
 }
@@ -445,10 +447,14 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
 
-    if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
+    if (abcdk_strcmp(http_p->method, "OPTIONS", 0) == 0)
+    {
+        _abcdkhttpd_reply_nobody(node, 200,"POST,GET");
+    }
+    else if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
         abcdk_strcmp(http_p->method, "GET", 0) != 0)
     {
-        _abcdkhttpd_reply_nobody(node, 405);
+        _abcdkhttpd_reply_nobody(node, 405,"");
         return;
     }
 
@@ -457,14 +463,14 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
     dir = abcdk_tree_alloc3(1);
     if (!dir)
     {
-        _abcdkhttpd_reply_nobody(node, 500);
+        _abcdkhttpd_reply_nobody(node, 500,"");
         goto final;
     }
 
     chk = abcdk_dirent_open(dir, http_p->pathfile);
     if (chk != 0)
     {
-        _abcdkhttpd_reply_nobody(node, 403);
+        _abcdkhttpd_reply_nobody(node, 403,"");
     }
     else
     {
@@ -583,11 +589,15 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
     
-    if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
+    if (abcdk_strcmp(http_p->method, "OPTIONS", 0) == 0)
+    {
+        _abcdkhttpd_reply_nobody(node, 200, "POST,GET,HEAD");
+    }
+    else if (abcdk_strcmp(http_p->method, "POST", 0) != 0 &&
         abcdk_strcmp(http_p->method, "GET", 0) != 0 &&
         abcdk_strcmp(http_p->method, "HEAD", 0) != 0)
     {
-        _abcdkhttpd_reply_nobody(node, 405);
+        _abcdkhttpd_reply_nobody(node, 405,"");
         return;
     }
 
@@ -618,7 +628,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
             p = abcdk_strtok(&p_next, "=");
             if (abcdk_strncmp("bytes", p, p_next - p, 0) != 0)
             {
-                _abcdkhttpd_reply_nobody(node, 400);
+                _abcdkhttpd_reply_nobody(node, 400, "");
                 return;
             }
 
@@ -629,7 +639,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
             if (range_s >= range_e || range_s >= file->sizes[0])
             {
-                _abcdkhttpd_reply_nobody(node, 400);
+                _abcdkhttpd_reply_nobody(node, 400, "");
                 return;
             }
 
@@ -694,7 +704,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     }
     else
     {
-        _abcdkhttpd_reply_nobody(node, 403);
+        _abcdkhttpd_reply_nobody(node, 403,"");
     }
 }
 
@@ -719,9 +729,9 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
     if (chk != 0)
     {
         if (errno == ENOENT)
-            _abcdkhttpd_reply_nobody(node, 404);
+            _abcdkhttpd_reply_nobody(node, 404,"");
         else
-            _abcdkhttpd_reply_nobody(node, 403);
+            _abcdkhttpd_reply_nobody(node, 403,"");
     }
     else if (S_ISDIR(http_p->attr.st_mode))
     {
@@ -733,7 +743,7 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
     }
     else
     {
-        _abcdkhttpd_reply_nobody(node, 403);
+        _abcdkhttpd_reply_nobody(node, 403,"");
     }
 }
 
