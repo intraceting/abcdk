@@ -114,12 +114,12 @@ char *abcdk_basename(char *dst, const char *src)
 
 char *abcdk_abspath(char *buf)
 {
-    abcdk_tree_t *stack = NULL,*pos = NULL;
-    const char *p,*p_next;
+    abcdk_tree_t *stack = NULL, *pos = NULL;
+    const char *p, *p_next;
 
     /*准备堆栈。*/
     stack = abcdk_tree_alloc3(1);
-    if(!stack)
+    if (!stack)
         return NULL;
 
     /*拆分路径。*/
@@ -127,19 +127,19 @@ char *abcdk_abspath(char *buf)
 
     while (1)
     {
-        p = abcdk_strtok(&p_next,"/");
-        if(!p)
+        p = abcdk_strtok(&p_next, "/");
+        if (!p)
             break;
 
         /*“.”表示当前目录。*/
-        if(abcdk_strncmp(p,".",p_next-p,1)==0)
+        if (abcdk_strncmp(p, ".", p_next - p, 1) == 0)
             continue;
 
         /*“..”表示上一层目录，这里要从堆栈中删除上一层。*/
-        if(abcdk_strncmp(p,"..",p_next-p,1)==0)
+        if (abcdk_strncmp(p, "..", p_next - p, 1) == 0)
         {
-            pos = abcdk_tree_child(stack,0);
-            if(pos)
+            pos = abcdk_tree_child(stack, 0);
+            if (pos)
             {
                 abcdk_tree_unlink(pos);
                 abcdk_tree_free(&pos);
@@ -148,8 +148,8 @@ char *abcdk_abspath(char *buf)
             continue;
         }
 
-        pos = abcdk_tree_alloc3(p_next-p+1);
-        if(!pos)
+        pos = abcdk_tree_alloc3(p_next - p + 1);
+        if (!pos)
             goto final_error;
 
         strncpy(pos->obj->pstrs[0], p, p_next - p);
@@ -166,11 +166,11 @@ char *abcdk_abspath(char *buf)
     }
 
     /*拼装路径。*/
-    pos = abcdk_tree_child(stack,1);
-    while(pos)
+    pos = abcdk_tree_child(stack, 1);
+    while (pos)
     {
-        abcdk_dirdir(buf,pos->obj->pstrs[0]);
-        pos = abcdk_tree_sibling(pos,0);
+        abcdk_dirdir(buf, pos->obj->pstrs[0]);
+        pos = abcdk_tree_sibling(pos, 0);
     }
 
     abcdk_tree_free(&stack);
