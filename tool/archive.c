@@ -845,7 +845,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
 
         if(S_ISDIR(attr.st_mode))
         {
-            chk = abcdk_dirent_open(dir,file);
+            chk = abcdk_dirent_open(&dir,file);
             if(chk != 0)
             {
                 fprintf(stderr, "'%s' %s。\n",file,strerror(errno));
@@ -874,7 +874,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
 
         if(S_ISDIR(attr.st_mode))
         {
-            chk = abcdk_dirent_open(dir,file);
+            chk = abcdk_dirent_open(&dir,file);
             if(chk != 0)
             {
                 fprintf(stderr, "'%s' %s。\n",file,strerror(errno));

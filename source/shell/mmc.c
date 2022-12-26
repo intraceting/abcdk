@@ -79,14 +79,14 @@ int _abcdk_mmc_get_devname(const char *path,const char *type, char devname[NAME_
     if (!dir)
         return -1;
 
-    chk = abcdk_dirent_open(dir, path2);
+    chk = abcdk_dirent_open(&dir, path2);
     if (chk != 0)
         goto final;
 
     while (1)
     {
         memset(buf, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir, buf);
+        chk = abcdk_dirent_read(dir,NULL, buf);
         if (chk != 0)
             break;
 
@@ -151,7 +151,7 @@ void abcdk_mmc_list(abcdk_tree_t *list)
     if (!dir)
         return;
 
-    chk = abcdk_dirent_open(dir, "/sys/bus/mmc/devices");
+    chk = abcdk_dirent_open(&dir, "/sys/bus/mmc/devices");
     if (chk != 0)
         goto final;
 
@@ -159,7 +159,7 @@ void abcdk_mmc_list(abcdk_tree_t *list)
     while (1)
     {
         memset(path, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir, path);
+        chk = abcdk_dirent_read(dir,NULL, path);
         if (chk != 0)
             break;
 

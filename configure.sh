@@ -962,7 +962,7 @@ VERSION_MAJOR="1"
 #副版本
 VERSION_MINOR="4"
 #发行版本
-VERSION_RELEASE="14"
+VERSION_RELEASE="15"
 
 #目标平台
 TARGET="native"
@@ -992,7 +992,7 @@ usage: [ OPTIONS ]
      目标系统平台。默认：本地。
 
      支持以下关键字：
-     native x86_64 aarch64 
+     other native x86_64 aarch64 
      
      自定义编译器（定义环境变量）。如下：
      export CC=gcc
@@ -1003,7 +1003,6 @@ usage: [ OPTIONS ]
 
     -g  
      生成调试符号。默认：关闭
-
 
     -V < number > 
      主版本。默认：${VERSION_MAJOR}
@@ -1075,7 +1074,7 @@ if [ "${TARGET}" == "native" ];then
     CC=gcc
     AR=ar
 }
-elif [ "${TARGET}" != "" ];then
+elif [ "${TARGET}" != "other" ];then
 {
     CC=${TARGET}-linux-gnu-gcc
     AR=${TARGET}-linux-gnu-ar

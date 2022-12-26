@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/path.h"
+#include "abcdk/util/fnmatch.h"
 
 __BEGIN_DECLS
 
@@ -20,16 +21,18 @@ __BEGIN_DECLS
  * 
  * @return 0 成功，-1 失败(不影响已经打开目录)。
 */
-int abcdk_dirent_open(abcdk_tree_t *dir,const char *path);
+int abcdk_dirent_open(abcdk_tree_t **dir,const char *path);
 
 /**
  * 读取目录。
  * 
  * @note 如果已经当前目录没有未读取的子项，则关闭当前目录，回退到上一个打开的目录。
  * 
+ * @param [in] pattern 通配符。NULL(0) 忽略。
+ * 
  * @return 0 成功，-1 失败(无子项)。
 */
-int abcdk_dirent_read(abcdk_tree_t *dir,char file[PATH_MAX]);
+int abcdk_dirent_read(abcdk_tree_t *dir,const char *pattern,char file[PATH_MAX]);
 
 __END_DECLS
 

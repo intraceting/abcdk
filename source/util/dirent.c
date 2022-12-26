@@ -12,11 +12,19 @@ void _abcdk_dirent_destroy_cb(abcdk_object_t *alloc, void *opaque)
         closedir((DIR *)alloc->pptrs[1]);
 }
 
-int abcdk_dirent_open(abcdk_tree_t *dir,const char *path)
+int abcdk_dirent_open(abcdk_tree_t **dir,const char *path)
 {
+    abcdk_tree_t *dir_p = NULL;
     abcdk_tree_t *tmp = NULL;
 
     assert(dir != NULL && path != NULL);
+
+    if(*dir == NULL)
+        *dir = abcdk_tree_alloc3(1);
+    
+    dir_p = *dir;
+    if(!dir_p)
+        return -1;
 
     if (access(path, R_OK) != 0)
         return -1;
@@ -34,7 +42,7 @@ int abcdk_dirent_open(abcdk_tree_t *dir,const char *path)
 
     strncpy(tmp->obj->pptrs[0],path,PATH_MAX);
 
-    abcdk_tree_insert2(dir,tmp,0);
+    abcdk_tree_insert2(dir_p,tmp,0);
 
     return 0;
 
@@ -45,7 +53,7 @@ final_error:
     return -1;
 }
 
-int abcdk_dirent_read(abcdk_tree_t *dir,char file[PATH_MAX])
+int abcdk_dirent_read(abcdk_tree_t *dir,const char *pattern,char file[PATH_MAX])
 {
     abcdk_tree_t *tmp = NULL;
     struct dirent *c_dir = NULL;
@@ -69,6 +77,9 @@ next:
     }
 
     if (abcdk_strcmp(c_dir->d_name, ".", 1) == 0 || abcdk_strcmp(c_dir->d_name, "..", 1) == 0)
+        goto next;
+
+    if (pattern && abcdk_fnmatch(c_dir->d_name, pattern, 1, 0) != 0)
         goto next;
 
     abcdk_dirdir(file, (char*)tmp->obj->pptrs[0]);

@@ -437,7 +437,7 @@ void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status,const char *a_
 void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
-    abcdk_tree_t *dir;
+    abcdk_tree_t *dir = NULL;
     char tmp[PATH_MAX], tmp2[PATH_MAX], tmp3[NAME_MAX];
     size_t path_len = PATH_MAX;
     char strsize[20] = {0};
@@ -461,14 +461,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
 
     abcdk_time_sec2tm(&tm, http_p->attr.st_mtim.tv_sec, 1);
 
-    dir = abcdk_tree_alloc3(1);
-    if (!dir)
-    {
-        _abcdkhttpd_reply_nobody(node, 500,"");
-        goto final;
-    }
-
-    chk = abcdk_dirent_open(dir, http_p->pathfile);
+    chk = abcdk_dirent_open(&dir, http_p->pathfile);
     if (chk != 0)
     {
         _abcdkhttpd_reply_nobody(node, 403,"");
@@ -516,7 +509,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
         while (1)
         {
             memset(tmp, 0, PATH_MAX);
-            chk = abcdk_dirent_read(dir, tmp);
+            chk = abcdk_dirent_read(dir,NULL, tmp);
             if (chk != 0)
                 break;
 

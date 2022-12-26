@@ -20,7 +20,7 @@ int abcdk_block_find_device(const char *name, char devpath[PATH_MAX])
     if (!dir)
         return -1;
 
-    chk = abcdk_dirent_open(dir, "/sys/block/");
+    chk = abcdk_dirent_open(&dir, "/sys/block/");
     if (chk != 0)
         goto final;
 
@@ -28,7 +28,7 @@ int abcdk_block_find_device(const char *name, char devpath[PATH_MAX])
     while (1)
     {
         memset(path, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir, path);
+        chk = abcdk_dirent_read(dir,NULL, path);
         if (chk != 0)
             break;
 
