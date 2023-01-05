@@ -9,7 +9,7 @@
 typedef struct _abcdkbc
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     int decode;
     uint8_t base;
@@ -19,7 +19,7 @@ typedef struct _abcdkbc
 
 } abcdkbc_t;
 
-void _abcdkbc_print_usage(abcdk_tree_t *args)
+void _abcdkbc_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -157,7 +157,7 @@ final:
     abcdk_object_unref(&outbuf);
 }
 
-int abcdk_tool_basecode(abcdk_tree_t *args)
+int abcdk_tool_basecode(abcdk_option_t *args)
 {
     abcdkbc_t ctx = {0};
 

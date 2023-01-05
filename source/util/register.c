@@ -18,22 +18,22 @@ typedef union _abcdk_register
 volatile void *abcdk_register(int type, uint8_t addr)
 {
     static volatile abcdk_register_t reg[256] = {0};
+    volatile void *p = NULL;
 
     ABCDK_ASSERT((type == 8 || type == 16 || type == 32 || type == 64),"仅支持8位、16位、32位、64位四种类型。");
 
     switch (type)
     {
     case 8:
-        return &reg[addr].u8;
+        p = &reg[addr].u8;
     case 16:
-        return &reg[addr].u16;
+        p = &reg[addr].u16;
     case 32:
-        return &reg[addr].u32;
+        p = &reg[addr].u32;
     case 64:
     default:
-        return &reg[addr].u64;
+        p = &reg[addr].u64;
     }
-
-    /*Fatal error.*/
-    return NULL;
+    
+    return p;
 }

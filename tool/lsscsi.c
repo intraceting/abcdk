@@ -9,7 +9,7 @@
 typedef struct _abcdklsscsi
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     int fmt;
     const char *outfile;
@@ -35,7 +35,7 @@ enum _abcdklsscsi_fmt
 
 };
 
-void _abcdklsscsi_print_usage(abcdk_tree_t *args)
+void _abcdklsscsi_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -184,7 +184,7 @@ final:
     abcdk_tree_free(&ctx->list);
 }
 
-int abcdk_tool_lsscsi(abcdk_tree_t *args)
+int abcdk_tool_lsscsi(abcdk_option_t *args)
 {
     abcdklsscsi_t ctx = {0};
 

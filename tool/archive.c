@@ -42,7 +42,7 @@ enum _abcdkarchive_constant
 typedef struct _abcdkarchive
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     int cmd;
 
@@ -179,7 +179,7 @@ int abcdkarchive_find_format(int code)
 }
 
 
-void _abcdkarchive_print_usage(abcdk_tree_t *args)
+void _abcdkarchive_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -1100,7 +1100,7 @@ final:
 
 #endif // HAVE_ARCHIVE
 
-int abcdk_tool_archive(abcdk_tree_t *args)
+int abcdk_tool_archive(abcdk_option_t *args)
 {
 #ifdef HAVE_ARCHIVE
     abcdkarchive_t ctx = {0};

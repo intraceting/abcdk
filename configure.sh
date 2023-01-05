@@ -960,9 +960,9 @@ DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
 #主版本
 VERSION_MAJOR="1"
 #副版本
-VERSION_MINOR="4"
+VERSION_MINOR="5"
 #发行版本
-VERSION_RELEASE="15"
+VERSION_RELEASE="0"
 
 #目标平台
 TARGET="native"

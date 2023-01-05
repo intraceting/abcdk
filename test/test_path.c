@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-int abcdk_test_path(abcdk_tree_t *args)
+int abcdk_test_path(abcdk_option_t *args)
 {
     char buf[PATH_MAX] ={0};
     char test[] = {"sfsdfas/fdasdf/././../ewter/../../ewrtertert/wertwertert/wertwetwert./../..//e/e/e//t/t/y/y//f/f/f/f/f/ff/"};

@@ -14,7 +14,7 @@
 typedef struct _abcdk_test_http
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     const char *listen;
 
@@ -396,7 +396,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
     abcdk_comm_stop(&ctx->comm);
 }
 
-int abcdk_test_http(abcdk_tree_t *args)
+int abcdk_test_http(abcdk_option_t *args)
 {
     abcdk_test_http_t ctx = {0};
 

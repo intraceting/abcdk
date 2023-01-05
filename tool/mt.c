@@ -10,7 +10,7 @@
 typedef struct _abcdkmt
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     const char *dev_p;
     int cmd;
@@ -69,7 +69,7 @@ enum _abcdkmt_constant
 
 };
 
-void _abcdkmt_print_usage(abcdk_tree_t *args, int only_version)
+void _abcdkmt_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -572,7 +572,7 @@ final:
     abcdk_closep(&ctx->fd);
 }
 
-int abcdk_tool_mt(abcdk_tree_t *args)
+int abcdk_tool_mt(abcdk_option_t *args)
 {
     abcdkmt_t ctx = {0};
 

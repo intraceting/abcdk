@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-int abcdk_test_iconv(abcdk_tree_t *args)
+int abcdk_test_iconv(abcdk_option_t *args)
 {
 
     size_t b = 100;

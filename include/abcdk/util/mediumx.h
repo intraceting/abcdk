@@ -17,7 +17,7 @@ __BEGIN_DECLS
 /**
  * 元件类型。
  */
-enum _abcdk_mediumx_element_type
+typedef enum _abcdk_mediumx_element_type
 {
     /** Medium transport element.*/
     ABCDK_MEDIUMX_ELEMENT_CHANGER = 1,
@@ -35,12 +35,12 @@ enum _abcdk_mediumx_element_type
     ABCDK_MEDIUMX_ELEMENT_DXFER = 4
 #define ABCDK_MEDIUMX_ELEMENT_DXFER ABCDK_MEDIUMX_ELEMENT_DXFER
 #define ABCDK_MEDIUMX_ELEMENT_DRIVER ABCDK_MEDIUMX_ELEMENT_DXFER
-};
+}abcdk_mediumx_element_type_t;
 
 /**
  * 元件的字段索引。
  */
-enum _abcdk_mediumx_element_field
+typedef enum _abcdk_mediumx_element_field
 {
     /** 地址。*/
     ABCDK_MEDIUMX_ELEMENT_ADDR = 0,
@@ -61,7 +61,7 @@ enum _abcdk_mediumx_element_field
     /** DVCID。*/
     ABCDK_MEDIUMX_ELEMENT_DVCID = 4
 #define ABCDK_MEDIUMX_ELEMENT_DVCID ABCDK_MEDIUMX_ELEMENT_DVCID
-};
+}abcdk_mediumx_element_field_t;
 
 /**
  * SENSE编码转字符串。

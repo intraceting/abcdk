@@ -6,7 +6,7 @@
  */
 #include "entry.h"
 
-void _abcdkm4d_print_usage(abcdk_tree_t *args, int only_version)
+void _abcdkm4d_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -29,7 +29,7 @@ void _abcdkm4d_print_usage(abcdk_tree_t *args, int only_version)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-void _abcdkm4d_work(abcdk_tree_t *args)
+void _abcdkm4d_work(abcdk_option_t *args)
 {
     int err;
     const char *file = NULL;
@@ -94,7 +94,7 @@ final:
 
 }
 
-int abcdk_tool_mp4dump(abcdk_tree_t *args)
+int abcdk_tool_mp4dump(abcdk_option_t *args)
 {
     if (abcdk_option_exist(args, "--help"))
     {

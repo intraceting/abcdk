@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-int abcdk_test_uri(abcdk_tree_t *args)
+int abcdk_test_uri(abcdk_option_t *args)
 {
     char src[] = {"http://localhoat:1234/考试1?aaa=考试2&ccc=考试3#aaaa"};
     char dst[1000] = {0};

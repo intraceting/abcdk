@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-int abcdk_test_log(abcdk_tree_t *args)
+int abcdk_test_log(abcdk_option_t *args)
 {
  //   abcdk_log_open("/tmp/test.log","abcdk.%d.log",10,10, 1, 1);
     abcdk_log_open("/tmp/log/aaaa","/tmp/abcdk.%d.log",1,1, 0, 0);

@@ -10,7 +10,7 @@ typedef struct _abcdkm4j
 {
     int errcode;
 
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
     
     const char *file;
     const char *save;
@@ -77,7 +77,7 @@ typedef struct _abcdkm4j
 
 }abcdkm4j_t;
 
-void _abcdkm4j_print_usage(abcdk_tree_t *args, int only_version)
+void _abcdkm4j_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -490,7 +490,7 @@ final:
     abcdk_tree_free(&ctx->doc);
 }
 
-int abcdk_tool_mp4juicer(abcdk_tree_t *args)
+int abcdk_tool_mp4juicer(abcdk_option_t *args)
 {
     abcdkm4j_t ctx = {0};
 

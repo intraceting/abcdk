@@ -110,7 +110,7 @@ int _abcdk_test_verify_callback(int ok, X509_STORE_CTX *x509_store)
 }
 #endif
 
-int abcdk_test_rpc(abcdk_tree_t *args)
+int abcdk_test_rpc(abcdk_option_t *args)
 {
     signal(SIGPIPE, NULL);
 

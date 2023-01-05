@@ -9,7 +9,7 @@
 typedef struct _abcdklsmmc
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     int fmt;
     const char *outfile;
@@ -35,7 +35,7 @@ enum _abcdklsmmc_fmt
 
 };
 
-void _abcdklsmmc_print_usage(abcdk_tree_t *args)
+void _abcdklsmmc_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -177,7 +177,7 @@ final:
     abcdk_tree_free(&ctx->list);
 }
 
-int abcdk_tool_lsmmc(abcdk_tree_t *args)
+int abcdk_tool_lsmmc(abcdk_option_t *args)
 {
     abcdklsmmc_t ctx = {0};
 

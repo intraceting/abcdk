@@ -10,7 +10,7 @@ typedef struct _abcdkjson
 {
     int errcode;
 
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     const char *file;
     int readable;
@@ -24,7 +24,7 @@ typedef struct _abcdkjson
 
 #ifdef _json_h_
 
-void _abcdkjson_print_usage(abcdk_tree_t *args)
+void _abcdkjson_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -94,7 +94,7 @@ final:
 
 #endif //_json_h_
 
-int abcdk_tool_json(abcdk_tree_t *args)
+int abcdk_tool_json(abcdk_option_t *args)
 {
     abcdkjson_t ctx = {0};
 

@@ -17,7 +17,7 @@
 typedef struct _abcdkhttpd
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     uint64_t realm;
 
@@ -87,7 +87,7 @@ typedef struct _abcdkhttpd_node
 
 } abcdkhttpd_node_t;
 
-void _abcdkhttpd_print_usage(abcdk_tree_t *args)
+void _abcdkhttpd_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -1185,7 +1185,7 @@ final:
     freelocale(ctx->loc);
 }
 
-int abcdk_tool_httpd(abcdk_tree_t *args)
+int abcdk_tool_httpd(abcdk_option_t *args)
 {
     abcdkhttpd_t ctx = {0};
 

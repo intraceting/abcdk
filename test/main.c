@@ -22,7 +22,7 @@ static struct _abcdk_test_entry
      * 
      * @return 出错码。
     */
-    int (*func_cb)(abcdk_tree_t *args);
+    int (*func_cb)(abcdk_option_t *args);
 }abcdk_test_entry[] = {
  //   {"http",abcdk_test_http},
     {"uri",abcdk_test_uri},
@@ -58,7 +58,7 @@ void _abcdk_test_print_usage()
     fprintf(stderr, "\n\t%s < CMD > [ ... ]\n", name);
 }
 
-struct _abcdk_test_entry *_abcdk_test_entry_find(abcdk_tree_t *args)
+struct _abcdk_test_entry *_abcdk_test_entry_find(abcdk_option_t *args)
 {
     const char *name_p = abcdk_option_get(args,"--",1,NULL);
 
@@ -74,7 +74,7 @@ struct _abcdk_test_entry *_abcdk_test_entry_find(abcdk_tree_t *args)
     return NULL;
 }
 
-int _abcdk_test_dispatch(abcdk_tree_t *args)
+int _abcdk_test_dispatch(abcdk_option_t *args)
 {
     int errcode = 0;
     struct _abcdk_test_entry *entry_p = NULL;
@@ -118,7 +118,7 @@ int _abcdk_test_signal_cb(const siginfo_t *info, void *opaque)
 
 int main(int argc, char **argv)
 {
-    abcdk_tree_t *args = NULL;
+    abcdk_option_t *args = NULL;
     abcdk_signal_t sig = {0};
     int errcode = 0;
 
@@ -144,8 +144,7 @@ int main(int argc, char **argv)
 
 #endif //HAVE_OPENSSL
 
-    /*申请参数存储空间。*/
-    args = abcdk_tree_alloc3(1);
+    args = abcdk_option_alloc();
     if (!args)
         ABCDK_ERRNO_AND_GOTO1(errcode = errno,final);
     
@@ -156,7 +155,7 @@ int main(int argc, char **argv)
 
 final:
     
-    abcdk_tree_free(&args);
+    abcdk_option_free(&args);
 
     return errcode;
 }

@@ -42,19 +42,19 @@ typedef struct _abcdk_map
     /** 
      * 构造函数。
     */
-    void (*construct_cb)(abcdk_object_t *alloc, void *opaque);
+    void (*construct_cb)(abcdk_object_t *obj, void *opaque);
 
     /**
      * 析构函数。
     */
-    void (*destructor_cb)(abcdk_object_t *alloc, void *opaque);
+    void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
 
     /**
      * 回显函数。
      * 
      * @return 1 继续，-1 终止。
     */
-    int (*dump_cb)(abcdk_object_t *alloc, void *opaque);
+    int (*dump_cb)(abcdk_object_t *obj, void *opaque);
 
     /**
      * 环境指针。
@@ -128,7 +128,7 @@ void abcdk_map_remove(abcdk_map_t* map,const void* key,size_t ksize);
 /**
  * 扫描节点。
  * 
- * 深度优先遍历节点。
+ * @note 深度优先遍历节点。
 */
 void abcdk_map_scan(abcdk_map_t *map);
 

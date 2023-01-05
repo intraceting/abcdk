@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-int abcdk_test_com_ultrasound(abcdk_tree_t *args)
+int abcdk_test_com_ultrasound(abcdk_option_t *args)
 {
     int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
 
@@ -114,7 +114,7 @@ uint32_t _abcdk_test_com_checksum(const void *data, size_t size)
     return sum;
 }
 
-int abcdk_test_com_xyz(abcdk_tree_t *args)
+int abcdk_test_com_xyz(abcdk_option_t *args)
 {
     int chk;
     int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
@@ -202,7 +202,7 @@ int abcdk_test_com_xyz(abcdk_tree_t *args)
 }
 
 
-int abcdk_test_com_driver(abcdk_tree_t *args)
+int abcdk_test_com_driver(abcdk_option_t *args)
 {
     int chk;
     int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
@@ -328,7 +328,7 @@ int abcdk_test_com_driver(abcdk_tree_t *args)
 }
 
 
-int abcdk_test_com(abcdk_tree_t *args)
+int abcdk_test_com(abcdk_option_t *args)
 {
      abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);

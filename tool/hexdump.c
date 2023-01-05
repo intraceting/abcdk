@@ -6,7 +6,7 @@
  */
 #include "entry.h"
 
-void _abcdkhd_print_usage(abcdk_tree_t *args, int only_version)
+void _abcdkhd_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -75,7 +75,7 @@ void _abcdkhd_keyword_destroy_cb(abcdk_object_t *alloc, void *opaque)
     }
 }
 
-void _abcdkhd_work(abcdk_tree_t *args)
+void _abcdkhd_work(abcdk_option_t *args)
 {
     int err = 0;
     abcdk_object_t *mfile = NULL;
@@ -223,7 +223,7 @@ final:
     errno = err;
 }
 
-int abcdk_tool_hexdump(abcdk_tree_t *args)
+int abcdk_tool_hexdump(abcdk_option_t *args)
 {
     if (abcdk_option_exist(args, "--help"))
     {

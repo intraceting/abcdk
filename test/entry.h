@@ -11,15 +11,15 @@
 
 __BEGIN_DECLS
 
-int abcdk_test_http(abcdk_tree_t *args);
-int abcdk_test_uri(abcdk_tree_t *args);
-int abcdk_test_log(abcdk_tree_t *args);
-int abcdk_test_rpc(abcdk_tree_t *args);
-int abcdk_test_iconv(abcdk_tree_t *args);
-int abcdk_test_exec(abcdk_tree_t *args);
-int abcdk_test_com(abcdk_tree_t *args);
-int abcdk_test_path(abcdk_tree_t *args);
-int abcdk_test_ffmpeg(abcdk_tree_t *args);
+int abcdk_test_http(abcdk_option_t *args);
+int abcdk_test_uri(abcdk_option_t *args);
+int abcdk_test_log(abcdk_option_t *args);
+int abcdk_test_rpc(abcdk_option_t *args);
+int abcdk_test_iconv(abcdk_option_t *args);
+int abcdk_test_exec(abcdk_option_t *args);
+int abcdk_test_com(abcdk_option_t *args);
+int abcdk_test_path(abcdk_option_t *args);
+int abcdk_test_ffmpeg(abcdk_option_t *args);
 
 __END_DECLS
 

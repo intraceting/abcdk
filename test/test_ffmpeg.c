@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-int abcdk_test_ffmpeg(abcdk_tree_t *args)
+int abcdk_test_ffmpeg(abcdk_option_t *args)
 {
 #ifdef HAVE_FFMPEG
     const char *src = abcdk_option_get(args,"--src",0,"");

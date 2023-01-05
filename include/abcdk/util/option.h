@@ -12,20 +12,14 @@
 
 __BEGIN_DECLS
 
-/**
- * 选项的字段索引。
-*/
-typedef enum _abcdk_option_field
-{
-    /** Key。*/
-   ABCDK_OPTION_KEY = 0,
-#define ABCDK_OPTION_KEY     ABCDK_OPTION_KEY
+/** 选项。*/
+typedef struct _abcdk_option abcdk_option_t;
 
-    /** Value。*/
-   ABCDK_OPTION_VALUE = 0
-#define ABCDK_OPTION_VALUE   ABCDK_OPTION_VALUE
+/** 释放对象。*/
+void abcdk_option_free(abcdk_option_t **opt);
 
-}abcdk_option_field_t;
+/** 创建对象。*/
+abcdk_option_t *abcdk_option_alloc();
 
 /**
  * 配置一个选项。
@@ -36,7 +30,7 @@ typedef enum _abcdk_option_field
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value);
+int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value);
 
 /**
  * 配置一个选项。
@@ -47,7 +41,7 @@ int abcdk_option_set(abcdk_tree_t *opt, const char *key, const char *value);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value, int merge);
+int abcdk_option_set2(abcdk_option_t *opt, const char *key, const char *value, int merge);
 
 /**
  * 获取一个选项的值。
@@ -56,27 +50,27 @@ int abcdk_option_set2(abcdk_tree_t *opt, const char *key, const char *value, int
  * 
  * @return !NULL(0) 成功(值的指针)， NULL(0) 失败(键不存在)。
 */
-const char* abcdk_option_get(abcdk_tree_t *opt, const char *key,size_t index,const char* defval);
+const char* abcdk_option_get(abcdk_option_t *opt, const char *key,size_t index,const char* defval);
 
 /**
  * 获取一个选项的值(整型)。
 */
-int abcdk_option_get_int(abcdk_tree_t *opt, const char *key,size_t index,int defval);
+int abcdk_option_get_int(abcdk_option_t *opt, const char *key,size_t index,int defval);
 
 /**
  * 获取一个选项的值(长整型)。
 */
-long abcdk_option_get_long(abcdk_tree_t *opt, const char *key,size_t index,long defval);
+long abcdk_option_get_long(abcdk_option_t *opt, const char *key,size_t index,long defval);
 
 /**
  * 获取一个选项的值(长长整型)。
 */
-long long abcdk_option_get_llong(abcdk_tree_t *opt, const char *key,size_t index,long long defval);
+long long abcdk_option_get_llong(abcdk_option_t *opt, const char *key,size_t index,long long defval);
 
 /**
  * 获取一个选项的值(浮点型)。
 */
-double abcdk_option_get_double(abcdk_tree_t *opt, const char *key,size_t index,double defval);
+double abcdk_option_get_double(abcdk_option_t *opt, const char *key,size_t index,double defval);
 
 /**
  * 统计选项值的数量。
@@ -85,7 +79,7 @@ double abcdk_option_get_double(abcdk_tree_t *opt, const char *key,size_t index,d
  * 
  * @return >=0 成功(值的数量)，< 0 失败(键不存在)。
 */
-ssize_t abcdk_option_count(abcdk_tree_t *opt, const char *key);
+ssize_t abcdk_option_count(abcdk_option_t *opt, const char *key);
 
 /**
  * 检测键是否存在。
@@ -99,7 +93,7 @@ ssize_t abcdk_option_count(abcdk_tree_t *opt, const char *key);
  * 
  * @return 0 成功，-1 失败(键不存在)。
 */
-int abcdk_option_remove(abcdk_tree_t *opt, const char *key);
+int abcdk_option_remove(abcdk_option_t *opt, const char *key);
 
 /**
  * 格式化打印。
@@ -108,14 +102,14 @@ int abcdk_option_remove(abcdk_tree_t *opt, const char *key);
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
-ssize_t abcdk_option_fprintf(FILE *fp,abcdk_tree_t *opt,const char *hyphens);
+ssize_t abcdk_option_fprintf(abcdk_option_t *opt,FILE *fp,const char *hyphens);
 
 /**
  * 格式化打印。
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
-ssize_t abcdk_option_snprintf(char* buf,size_t max,abcdk_tree_t *opt,const char *hyphens);
+ssize_t abcdk_option_snprintf(abcdk_option_t *opt,char* buf,size_t max,const char *hyphens);
 
 __END_DECLS
 

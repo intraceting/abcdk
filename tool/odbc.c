@@ -12,12 +12,12 @@
 typedef struct _abcdkodbc
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
 }abcdkodbc_t;
 
 
-void _abcdkodbc_print_usage(abcdk_tree_t *args)
+void _abcdkodbc_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
@@ -170,7 +170,7 @@ final:
 #endif //HAVE_UNIXODBC
 
 
-int abcdk_tool_odbc(abcdk_tree_t *args)
+int abcdk_tool_odbc(abcdk_option_t *args)
 {
 #ifdef HAVE_UNIXODBC
 

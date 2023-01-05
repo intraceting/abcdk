@@ -6,7 +6,7 @@
  */
 #include "abcdk/util/getargs.h"
 
-void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
+void abcdk_getargs(abcdk_option_t *opt, int argc, char *argv[],
                    const char *prefix)
 {
     size_t prefix_len = 0;
@@ -32,7 +32,7 @@ void abcdk_getargs(abcdk_tree_t *opt, int argc, char *argv[],
     }
 }
 
-void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
+void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,
                       const char *argv0, const char *prefix)
 {
     size_t prefix_len = 0;
@@ -85,7 +85,7 @@ void abcdk_getargs_fp(abcdk_tree_t *opt, FILE *fp, uint8_t delim, char note,
         abcdk_heap_free2((void **)&it_key);
 }
 
-void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim, 
+void abcdk_getargs_file(abcdk_option_t *opt, const char *file, uint8_t delim, 
                         char note, const char *argv0, const char *prefix)
 {
     FILE *fp = NULL;
@@ -101,7 +101,7 @@ void abcdk_getargs_file(abcdk_tree_t *opt, const char *file, uint8_t delim,
     fclose(fp);
 }
 
-void abcdk_getargs_text(abcdk_tree_t *opt, const char *text, size_t len, uint8_t delim, 
+void abcdk_getargs_text(abcdk_option_t *opt, const char *text, size_t len, uint8_t delim, 
                         char note, const char *argv0, const char *prefix)
 {
     FILE *fp = NULL;

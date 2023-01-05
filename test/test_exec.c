@@ -13,7 +13,7 @@
 
 // environ
 
-int abcdk_test_exec(abcdk_tree_t *args)
+int abcdk_test_exec(abcdk_option_t *args)
 {
 
     int pids[100] = {0};

@@ -10,7 +10,7 @@
 typedef struct _abcdkmtx
 {
     int errcode;
-    abcdk_tree_t *args;
+    abcdk_option_t *args;
 
     const char *dev_p;
     const char *outfile;
@@ -443,7 +443,7 @@ final:
     abcdk_tree_free(&ctx->root);
 }
 
-int abcdk_tool_mtx(abcdk_tree_t *args)
+int abcdk_tool_mtx(abcdk_option_t *args)
 {
     abcdkmtx_t ctx = {0};
 
