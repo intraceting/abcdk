@@ -21,7 +21,6 @@ __BEGIN_DECLS
  * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
  *
  * @return NULL(0) 失败，!NULL(0) 成功。
- *
 */
 abcdk_object_t* abcdk_mmap(int fd,size_t truncate,int rw,int shared);
 

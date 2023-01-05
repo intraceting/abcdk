@@ -178,7 +178,7 @@ int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int
 /**
  * HMAC支持的算法。
 */
-enum _abcdk_openssl_hmac_type
+typedef enum _abcdk_openssl_hmac_type
 {
     ABCDK_OPENSSL_HMAC_MD2 = 1,
 #define ABCDK_OPENSSL_HMAC_MD2 ABCDK_OPENSSL_HMAC_MD2
@@ -212,7 +212,7 @@ enum _abcdk_openssl_hmac_type
 
     ABCDK_OPENSSL_HMAC_WHIRLPOOL = 11
 #define ABCDK_OPENSSL_HMAC_WHIRLPOOL ABCDK_OPENSSL_HMAC_WHIRLPOOL
-};
+}abcdk_openssl_hmac_type_t;
 
 /**
  * 初始化环境。
