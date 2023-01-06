@@ -10,4 +10,9 @@
 #include "abcdk/http/reply.h"
 #include "abcdk/http/request.h"
 
+__BEGIN_DECLS
+
+
+__END_DECLS
+
 #endif //ABCDK_HTTP_HTTP_H

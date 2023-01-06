@@ -861,7 +861,7 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
     for(;;)
     {
         memset(file,0,PATH_MAX);
-        chk = abcdk_dirent_read(dir, file);
+        chk = abcdk_dirent_read(dir,NULL, file);
         if (chk != 0)
             break;
 

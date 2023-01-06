@@ -32,7 +32,6 @@ const char *abcdk_http_match_env(const char *line, const char *name);
 */
 const char *abcdk_http_content_type_desc(const char *ext);
 
-
 __END_DECLS
 
 #endif //ABCDK_UTIL_HTTP_H
