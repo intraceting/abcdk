@@ -357,7 +357,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
     ctx->comm = abcdk_comm_start(-1,-1);
 
-    //ctx->listen_node = abcdk_http_alloc(ctx->comm, INT64_MAX, "/tmp/");
+    ctx->listen_node = abcdk_comm_alloc(ctx->comm,1,1);
     abcdk_comm_set_userdata(ctx->listen_node, ctx);
 
     abcdk_sockaddr_from_string(&addr, ctx->listen, 1);
