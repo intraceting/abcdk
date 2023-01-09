@@ -196,3 +196,25 @@ abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size)
 
     return obj;
 }
+
+abcdk_object_t *abcdk_object_alloc_strtok(const char **next, const char *delim)
+{
+    const char *p;
+
+    p = abcdk_strtok(next, delim);
+    if (!p)
+        return NULL;
+
+    return abcdk_object_alloc_copyfrom(p, *next - p);
+}
+
+abcdk_object_t *abcdk_object_alloc_strtok2(const char **next, const char *delim, int skip_space)
+{
+    const char *p;
+
+    p = abcdk_strtok2(next, delim, skip_space);
+    if (!p)
+        return NULL;
+
+    return abcdk_object_alloc_copyfrom(p, *next - p);
+}

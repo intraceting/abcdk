@@ -60,7 +60,7 @@ typedef struct _abcdk_rtsp_sdp_media_base
     /** 
      * 编码扩展。
      * 
-     * @warning HEVC有效。
+     * @warning HEVC，H264有效。
     */
     abcdk_object_t *sprop_sei;
 

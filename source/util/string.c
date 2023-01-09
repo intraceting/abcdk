@@ -82,6 +82,11 @@ int _abcdk_strtrim_check(int c, int (*isctype_cb)(int c), const char *other)
     return 0;
 }
 
+char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where)
+{
+    return abcdk_strtrim2(str,isctype_cb,NULL,where);
+}
+
 char *abcdk_strtrim2(char *str, int (*isctype_cb)(int c), const char *other,int where)
 {
     char *tmp = NULL;
@@ -133,9 +138,9 @@ final:
     return str;
 }
 
-char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where)
+const char *abcdk_strtok(const char **next, const char *delim)
 {
-    return abcdk_strtrim2(str,isctype_cb,NULL,where);
+    return abcdk_strtok2(next,delim,0);
 }
 
 const char *abcdk_strtok2(const char **next, const char *delim, int skip_space)
@@ -181,10 +186,6 @@ NEXT_SEGMENT:
     return start_p; 
 }
 
-const char *abcdk_strtok(const char **next, const char *delim)
-{
-    return abcdk_strtok2(next,delim,0);
-}
 
 int abcdk_strtype(const char* str,int (*isctype_cb)(int c))
 {

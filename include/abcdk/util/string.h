@@ -60,34 +60,47 @@ int abcdk_strcmp(const char *s1, const char *s2,int caseAb);
 */
 int abcdk_strncmp(const char *s1, const char *s2,size_t len,int caseAb);
 
-/**
+/** 
  * 字符串修剪。
  * 
  * @note isctype等函数在ctype.h文件中。
  * 
  * @param isctype_cb 字符判定函数，!0 是，0 否。NULL(0) 忽略。
- * @param other 其它自定义字符。NULL(0) 忽略。
  * @param where 0 右端，1 左端，2 两端。
+ * 
+*/
+char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where);
+
+/**
+ * 字符串修剪。
+ * 
+ * @param other 其它自定义字符。NULL(0) 忽略。
  * 
 */
 char* abcdk_strtrim2(char* str,int (*isctype_cb)(int c), const char *other,int where);
 
-/** 字符串修剪。*/
-char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where);
-
-/**
- * 字符串分隔(逻辑)。
+/** 
+ * 字符串分隔。
+ *  
+ * @warning 仅逻辑分割。
  * 
  * @param [in out] next 字符串。返回前更新。
  * @param [in] delim 分界符。全字匹配，区分大小写。
+ * 
+ * @return !NULL(0) 成功(字符串首地址)，NULL(0) 失败(已到末尾)。
+*/
+const char *abcdk_strtok(const char **next, const char *delim);
+
+/**
+ * 字符串分隔。
+ * 
+ * @warning 仅逻辑分割。
+
  * @param [in] skip_space 是否跳过空白字符。0 不跳示，!0 跳过。
  * 
  * @return !NULL(0) 成功(字符串首地址)，NULL(0) 失败(已到末尾)。
 */
 const char *abcdk_strtok2(const char **next, const char *delim, int skip_space);
-
-/** 字符串分隔(逻辑)。*/
-const char *abcdk_strtok(const char **next, const char *delim);
 
 /**
  * 检测字符串中的字符类型。

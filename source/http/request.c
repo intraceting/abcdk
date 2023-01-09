@@ -32,7 +32,7 @@ struct _abcdk_http_request
     /**
      * 头部长度。
      *
-     * 长度为0时，表示头部还未接收完整。
+     * @note 长度为0时，表示头部还未接收完整。
      */
     size_t hdr_len;
     
@@ -45,6 +45,21 @@ struct _abcdk_http_request
     /** 是否为RTSP包。*/
     int is_rtsp;
 
+    /** 请求方法。*/
+    abcdk_object_t *method;
+
+    /** 定位符。*/
+    abcdk_object_t *location;
+
+    /** 协议和版本。*/
+    abcdk_object_t *version;
+
+    /** 路径。*/
+    abcdk_object_t *path;
+
+    /** 参数。*/
+    abcdk_object_t *params;
+    
 };// abcdk_http_request_t;
 
 void abcdk_http_request_unref(abcdk_http_request_t **req)
@@ -68,6 +83,11 @@ void abcdk_http_request_unref(abcdk_http_request_t **req)
 
     abcdk_message_unref(&req_p->hdr_buf);
     abcdk_message_unref(&req_p->body_buf);
+    abcdk_object_unref(&req_p->method);
+    abcdk_object_unref(&req_p->location);
+    abcdk_object_unref(&req_p->version);
+    abcdk_object_unref(&req_p->path);
+    abcdk_object_unref(&req_p->params);
     abcdk_heap_free2((void**)&req_p);
 
 }
@@ -111,6 +131,11 @@ abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffe
     req->body_len = 0;
     memset(req->hdr_envs,0,sizeof(req->hdr_envs));
     req->is_rtsp = 0;
+    req->method = NULL;
+    req->location = NULL;
+    req->version = NULL;
+    req->path = NULL;
+    req->params = NULL;
 
     return req;
 
@@ -121,67 +146,6 @@ final_error:
     return NULL;
 }
 
-const void *abcdk_http_request_body(abcdk_http_request_t *req, off_t off)
-{
-    const void *p = NULL;
-    size_t f = 0;
-
-    assert(req != NULL);
-
-    if (req->body_buf)
-    {
-        p = abcdk_message_data(req->body_buf);
-        f = abcdk_message_offset(req->body_buf);
-    }
-
-    ABCDK_ASSERT(off <= f,"偏移量必须小于实体长度。");
-
-    p = ABCDK_PTR2VPTR(p, off);
-
-    return p;
-}
-
-size_t abcdk_http_request_body_length(abcdk_http_request_t *req)
-{
-    assert(req != NULL);
-
-    if(req->body_buf)
-        return abcdk_message_offset(req->body_buf);
-
-    return 0;
-}
-
-const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
-{
-    assert(req != NULL && line >= 0);
-
-    if (line < sizeof(req->hdr_envs))
-        return (char *)req->hdr_envs[line];
-
-    return NULL;
-}
-
-const char *abcdk_http_request_getenv(abcdk_http_request_t *req, const char *name)
-{
-    const char *p = NULL;
-    const char *v = NULL;
-
-    assert(req != NULL && name != 0);
-
-    /*从1开始。*/
-    for (int i = 1; i < 100; i++)
-    {
-        p = abcdk_http_request_env(req, i);
-        if (!p)
-            break;
-
-        v = abcdk_http_match_env(p, name);
-        if(v)
-            return v;
-    }
-
-    return NULL;
-}
 
 int _abcdk_http_request_unpack_cb(void *opaque, abcdk_message_t *msg)
 {
@@ -397,4 +361,169 @@ int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_
         chk = abcdk_message_recv(req->body_buf,data, size, remain);
         return chk;
     }
+}
+
+const void *abcdk_http_request_body(abcdk_http_request_t *req, off_t off)
+{
+    const void *p = NULL;
+    size_t f = 0;
+
+    assert(req != NULL);
+
+    if (req->body_buf)
+    {
+        p = abcdk_message_data(req->body_buf);
+        f = abcdk_message_offset(req->body_buf);
+    }
+
+    ABCDK_ASSERT(off <= f,"偏移量必须小于实体长度。");
+
+    p = ABCDK_PTR2VPTR(p, off);
+
+    return p;
+}
+
+size_t abcdk_http_request_body_length(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    if(req->body_buf)
+        return abcdk_message_offset(req->body_buf);
+
+    return 0;
+}
+
+const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
+{
+    assert(req != NULL && line >= 0);
+
+    if (line < sizeof(req->hdr_envs))
+        return (char *)req->hdr_envs[line];
+
+    return NULL;
+}
+
+const char *abcdk_http_request_getenv(abcdk_http_request_t *req, const char *name)
+{
+    const char *p = NULL;
+    const char *v = NULL;
+
+    assert(req != NULL && name != 0);
+
+    /*从1开始。*/
+    for (int i = 1; i < 100; i++)
+    {
+        p = abcdk_http_request_env(req, i);
+        if (!p)
+            break;
+
+        v = abcdk_http_match_env(p, name);
+        if(v)
+            return v;
+    }
+
+    return NULL;
+}
+
+void _abcdk_http_request_parse_env0(abcdk_http_request_t *req)
+{
+    const char *p = NULL, *p_next = NULL;
+    size_t de_len;
+
+    if(!req->hdr_envs[0])
+        return;
+
+    if(req->method || req->location || req->version || req->path || req->params)
+        return;
+
+    p_next = req->hdr_envs[0];
+
+    req->method = abcdk_object_alloc_strtok(&p_next, " ");
+    if(!req->method)
+        return;
+
+    req->location = abcdk_object_alloc_strtok(&p_next, " ");
+    if (!req->location)
+        return;
+
+    req->version = abcdk_object_alloc_strtok(&p_next, " ");
+    if (!req->version)
+        return;
+
+    p_next = req->location;
+    p = abcdk_strtok(&p_next, "?");
+    if (!p)
+        return;
+    
+    req->path = abcdk_object_alloc2(p_next - p);
+    if (!req->path)
+        return;
+
+    abcdk_url_decode(p, p_next - p, req->path->pstrs[0], &req->path->sizes[0],0);
+
+    req->params = abcdk_object_alloc_strtok(&p_next, "\r");
+    if (!req->params)
+        return;
+    
+    return;
+}
+
+const char *abcdk_http_request_method(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    _abcdk_http_request_parse_env0(req);
+
+    if(req->method)
+        return req->method->pstrs[0];
+
+    return NULL;
+}
+
+const char *abcdk_http_request_location(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    _abcdk_http_request_parse_env0(req);
+
+    if(req->location)
+        return req->location->pstrs[0];
+
+    return NULL;
+}
+
+const char *abcdk_http_request_version(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    _abcdk_http_request_parse_env0(req);
+
+    if(req->version)
+        return req->version->pstrs[0];
+
+    return NULL;
+}
+
+const char *abcdk_http_request_path(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    _abcdk_http_request_parse_env0(req);
+
+    if(req->path)
+        return req->path->pstrs[0];
+
+    return NULL;
+}
+
+const char *abcdk_http_request_params(abcdk_http_request_t *req)
+{
+    assert(req != NULL);
+
+    _abcdk_http_request_parse_env0(req);
+
+    if(req->params)
+        return req->params->pstrs[0];
+
+    return NULL;
 }

@@ -10,6 +10,7 @@
 #include "abcdk/util/defs.h"
 #include "abcdk/util/atomic.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 

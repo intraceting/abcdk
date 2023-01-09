@@ -92,6 +92,8 @@ typedef struct _abcdk_comm_callback
 {
     /**
      * 为新连接做准备工作的通知回调函数。
+     * 
+     * @param [out] node 新的节点，返回时填写。
      *
      * @warning 如果未指定，则创建默认节点。
      */
@@ -109,7 +111,7 @@ typedef struct _abcdk_comm_callback
      *
      * @warning 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
      *
-     * @param [in out] remain 剩余的数据长度，返回时填充。
+     * @param [out] remain 剩余的数据长度，返回时填写。
      */
     void (*request_cb)(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain);
 
