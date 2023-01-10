@@ -82,7 +82,7 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         abcdk_save("./test_http_upload.data", abcdk_http_request_body(req, 0), len, 0);
     }
 
-    abcdk_object_t *file = abcdk_mmap2("/etc/issue", 0, 0, 0);
+    abcdk_object_t *file = abcdk_mmap_filename("/etc/issue", 0, 0, 0);
     if (file)
     {
         abcdk_comm_post_format(node, 1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
@@ -135,7 +135,7 @@ void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
         }
         else if (abcdk_strncmp(method_p, "DESCRIBE", 8, 1) == 0)
         {
-            abcdk_object_t *file = abcdk_mmap2("./rtsp_ANNOUNCE.data", 0, 0, 0);
+            abcdk_object_t *file = abcdk_mmap_filename("./rtsp_ANNOUNCE.data", 0, 0, 0);
 
             abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
             abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);

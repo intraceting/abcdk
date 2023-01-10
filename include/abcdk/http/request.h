@@ -33,15 +33,16 @@ abcdk_http_request_t *abcdk_http_request_refer(abcdk_http_request_t *src);
 /**
  * 创建请求对象。
  * 
- * @param [in] max_size 最大长度(头部+实体)。
- * @param [in] buffer_point 缓存目录(实体有效)。NULL(0) 不启用。
+ * @param [in] header_max 头部最大长度。
+ * @param [in] body_max 实体最大长度。
+ * @param [in] body_buffer_file 实体缓存文件。NULL(0) 使用内存作为缓存。
 */
-abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffer_point);
+abcdk_http_request_t *abcdk_http_request_alloc(size_t header_max,size_t body_max,const char *body_buffer_file);
 
 /**
  * 附加消息。
  * 
- * @param [in out] remain 缓存剩余的数据长度，返回时填充。
+ * @param [in out] remain 剩余的数据长度，返回时填充。NULL(0) 未知的流数据。
  * 
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */

@@ -221,44 +221,43 @@ void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *
 int abcdk_message_recv(abcdk_message_t *msg, const void *data,size_t size,size_t *remain)
 {
     ssize_t rsize = 0;
-    size_t rall = 0;
+    size_t rall = 0,diff = 0;
     int chk;
 
     assert(msg != NULL && data != NULL && size > 0 && remain != NULL);
 
-MORE_DATA:
-
-    rsize = ABCDK_MIN(msg->size - msg->offset, size - rall);
-    if (rsize <= 0)
+    for (;;)
     {
-        chk = 0;
-        goto FINAL_END;
-    }
-    else
-    {
-        memcpy(ABCDK_PTR2VPTR(msg->buf, msg->offset), ABCDK_PTR2VPTR(data, rall), rsize);
-        msg->offset += rsize;
-        rall += rsize;
-    }
-
-    /*检测接收的数据是否完整。*/
-    if (msg->protocol.unpack_cb)
-    {
-        chk = msg->protocol.unpack_cb(msg->protocol.opaque, msg);
-        if (chk < 0)
+        /*检测接收的数据是否完整。*/
+        if (msg->protocol.unpack_cb2)
         {
-            chk = -1;
-            goto FINAL_END;
+            diff = 0;
+            chk = msg->protocol.unpack_cb2(msg->protocol.opaque, msg, &diff);
         }
-        else if (chk == 0)
+        else
         {
-            goto MORE_DATA;
+            diff = msg->size;
+            chk = 0;
+        }
+        
+        if(chk != 0)
+            break;
+
+        rsize = ABCDK_MIN(msg->size - msg->offset, size - rall);
+        rsize = ABCDK_MIN(rsize,diff);
+        if (rsize <= 0)
+        {
+            /*如果未指定解包回调函数，则未知的流数据已经接收完整。*/
+            chk = (msg->protocol.unpack_cb2?0:1);
+            break;
+        }
+        else
+        {
+            memcpy(ABCDK_PTR2VPTR(msg->buf, msg->offset), ABCDK_PTR2VPTR(data, rall), rsize);
+            msg->offset += rsize;
+            rall += rsize;
         }
     }
-
-    chk = 1;
-
-FINAL_END:
 
     /*计算剩于数据长度。*/
     *remain = size - rall;
@@ -266,14 +265,14 @@ FINAL_END:
     return chk;
 }
 
-abcdk_message_t* abcdk_message_mmap(int fd,size_t truncate,int rw)
+abcdk_message_t* abcdk_message_mmap_fd(int fd,size_t truncate,int rw)
 {
     abcdk_message_t *msg;
     abcdk_object_t *obj;
 
     assert(fd >= 0);
 
-    obj = abcdk_mmap(fd,truncate,rw,0);
+    obj = abcdk_mmap_fd(fd,truncate,rw,0);
     if(!obj)
         return NULL;
 
@@ -286,14 +285,34 @@ abcdk_message_t* abcdk_message_mmap(int fd,size_t truncate,int rw)
     return NULL;
 }
 
-abcdk_message_t* abcdk_message_mmap2(const char *file,size_t truncate,int rw)
+abcdk_message_t* abcdk_message_mmap_filename(const char *file,size_t truncate,int rw)
 {
     abcdk_message_t *msg;
     abcdk_object_t *obj;
 
     assert(file != NULL);
 
-    obj = abcdk_mmap2(file,truncate,rw,0);
+    obj = abcdk_mmap_filename(file,truncate,rw,0);
+    if(!obj)
+        return NULL;
+
+    msg = abcdk_message_attach(obj);
+    if(msg)
+        return msg;
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
+abcdk_message_t* abcdk_message_mmap_tempfile(char *file,size_t truncate,int rw)
+{
+    abcdk_message_t *msg;
+    abcdk_object_t *obj;
+
+    assert(file != NULL);
+
+    obj = abcdk_mmap_tempfile(file,truncate,rw,0);
     if(!obj)
         return NULL;
 

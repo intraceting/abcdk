@@ -95,7 +95,7 @@ void _abcdkbc_work(abcdkbc_t *ctx)
     }
     else if (access(ctx->in, R_OK) == 0)
     {
-        inbuf = abcdk_mmap2(ctx->in,0, 0, 0);
+        inbuf = abcdk_mmap_filename(ctx->in,0, 0, 0);
         if (!inbuf)
         {
             fprintf(stderr, "'%s' %s。\n", ctx->in, strerror(errno));

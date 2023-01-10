@@ -18,7 +18,7 @@ void _abcdk_munmap_cb(abcdk_object_t *alloc, void *opaque)
     assert(chk == 0);
 }
 
-abcdk_object_t *abcdk_mmap(int fd, size_t truncate, int rw, int shared)
+abcdk_object_t *abcdk_mmap_fd(int fd, size_t truncate, int rw, int shared)
 {
     void* mmptr = MAP_FAILED;
     int prot = PROT_READ;
@@ -75,9 +75,9 @@ final_error:
     return NULL;
 }
 
-abcdk_object_t *abcdk_mmap2(const char *name, size_t truncate, int rw, int shared)
+abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, int shared)
 {
-    abcdk_object_t *alloc = NULL;
+    abcdk_object_t *obj = NULL;
     int fd = -1;
     int chk;
 
@@ -87,13 +87,27 @@ abcdk_object_t *abcdk_mmap2(const char *name, size_t truncate, int rw, int share
     if (fd < 0)
         return NULL;
 
-    alloc = abcdk_mmap(fd,truncate,rw, shared);
-
-final_end:
-
+    obj = abcdk_mmap_fd(fd,truncate,rw, shared);
     abcdk_closep(&fd);
 
-    return alloc;
+    return obj;
+}
+
+abcdk_object_t *abcdk_mmap_tempfile(char *name, size_t truncate, int rw, int shared)
+{
+    abcdk_object_t *obj = NULL;
+    int fd = -1;
+
+    assert(name);
+
+    fd = mkstemp(name);
+    if (fd < 0)
+        return NULL;
+
+    obj = abcdk_mmap_fd(fd, truncate, rw, shared);
+    abcdk_closep(&fd);
+
+    return obj;
 }
 
 int abcdk_msync(abcdk_object_t *alloc, int async)

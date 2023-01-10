@@ -27,6 +27,7 @@ typedef struct _abcdk_message_protocol
      * @return 1 消息包完整，0 需要更多数据，-1 不支持的协议(或有错发生)。
      */
     int (*unpack_cb)(void *opaque, abcdk_message_t *msg);
+    int (*unpack_cb2)(void *opaque, abcdk_message_t *msg,size_t *diff);
 
 } abcdk_message_protocol_t;
 
@@ -120,7 +121,7 @@ int abcdk_message_recv(abcdk_message_t *msg,const void *data,size_t size,size_t 
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_message_t* abcdk_message_mmap(int fd,size_t truncate,int rw);
+abcdk_message_t* abcdk_message_mmap_fd(int fd,size_t truncate,int rw);
 
 /**
  * 创建消息对象。
@@ -129,7 +130,16 @@ abcdk_message_t* abcdk_message_mmap(int fd,size_t truncate,int rw);
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_message_t* abcdk_message_mmap2(const char *file,size_t truncate,int rw);
+abcdk_message_t* abcdk_message_mmap_filename(const char *file,size_t truncate,int rw);
+
+/**
+ * 创建消息对象。
+ * 
+ * @param [in] file 文件名(包括路径)。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_message_t* abcdk_message_mmap_tempfile(char *file,size_t truncate,int rw);
 
 /**
  * 创建消息对象。

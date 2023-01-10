@@ -237,8 +237,8 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
             bsf = av_bsf_get_by_name("h264_mp4toannexb");
         else if (codecpar->codec_id == AV_CODEC_ID_HEVC)
             bsf = av_bsf_get_by_name("hevc_mp4toannexb");
-        else if (codecpar->codec_id == AV_CODEC_ID_AAC)
-            bsf = av_bsf_get_by_name("aac_adtstoasc");
+        // else if (codecpar->codec_id == AV_CODEC_ID_AAC)
+        //     bsf = av_bsf_get_by_name("aac_adtstoasc");
         else
             return 0;
 
@@ -288,8 +288,8 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
             filter_p = av_bitstream_filter_init("h264_mp4toannexb");
         else if (codec_p->codec_id == AV_CODEC_ID_HEVC)
             filter_p = av_bitstream_filter_init("hevc_mp4toannexb");
-        else if (codec_p->codec_id == AV_CODEC_ID_AAC)
-            filter_p = av_bitstream_filter_init("aac_adtstoasc");
+        // else if (codec_p->codec_id == AV_CODEC_ID_AAC)
+        //     filter_p = av_bitstream_filter_init("aac_adtstoasc");
         else
             return 0;
 

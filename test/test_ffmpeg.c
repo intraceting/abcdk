@@ -23,7 +23,7 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
     int ov = -1;
 
     AVFrame *inframe = av_frame_alloc();
-    for(int i = 0;i<100;i++)
+    for(int i = 0;i<1000;i++)
     {
         int chk = abcdk_ffmpeg_read2(r,inframe,-1);
         if(chk <0)
@@ -36,7 +36,7 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
         if(ov<0)
         {
             ov = abcdk_ffmpeg_add_stream(w,25,inframe->width,inframe->height,AV_CODEC_ID_H264,NULL,0,0);
-           // abcdk_ffmpeg_write_header(w,0);
+            abcdk_ffmpeg_write_header(w,0);
         }
 
 
@@ -47,7 +47,7 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
     av_frame_free(&inframe);
 
 
- //   abcdk_ffmpeg_write_trailer(w);
+    abcdk_ffmpeg_write_trailer(w);
     abcdk_ffmpeg_destroy(&w);
     abcdk_ffmpeg_destroy(&r);
 #endif //HAVE_FFMPEG

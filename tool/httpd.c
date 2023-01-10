@@ -577,7 +577,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
     abcdk_time_sec2tm(&tm, http_p->attr.st_mtim.tv_sec, 1);
 
-    file = abcdk_mmap2(http_p->pathfile, 0, 0, 0);
+    file = abcdk_mmap_filename(http_p->pathfile, 0, 0, 0);
     if (file)
     {
         /*保存文件大小。*/
@@ -794,7 +794,7 @@ void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
 
     if (!http_p->req)
-        http_p->req = abcdk_http_request_alloc(http_p->ctx->up_max_size, http_p->ctx->up_tmp_path);
+        http_p->req = abcdk_http_request_alloc(1024 * 1024, http_p->ctx->up_max_size, http_p->ctx->up_tmp_path);
 
     if (!http_p->req)
     {

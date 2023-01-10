@@ -93,9 +93,9 @@ typedef struct _abcdk_comm_callback
     /**
      * 为新连接做准备工作的通知回调函数。
      * 
-     * @param [out] node 新的节点，返回时填写。
-     *
      * @warning 如果未指定，则创建默认节点。
+     * 
+     * @param [out] node 新的节点，返回时填写。
      */
     void (*prepare_cb)(abcdk_comm_node_t **node, abcdk_comm_node_t *listen);
 
