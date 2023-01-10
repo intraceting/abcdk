@@ -9,6 +9,7 @@
 
 #include "abcdk/util/defs.h"
 #include "abcdk/util/heap.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 
@@ -101,6 +102,17 @@ const char *abcdk_strtok(const char **next, const char *delim);
  * @return !NULL(0) 成功(字符串首地址)，NULL(0) 失败(已到末尾)。
 */
 const char *abcdk_strtok2(const char **next, const char *delim, int skip_space);
+
+/**
+ * 字符串分隔并复制。
+ * 
+ * @warning 仅逻辑分割。
+ * 
+ * @see abcdk_strtok2
+ * 
+ * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
+*/
+abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_space);
 
 /**
  * 检测字符串中的字符类型。

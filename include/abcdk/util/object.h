@@ -9,7 +9,6 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/heap.h"
-#include "abcdk/util/string.h"
 
 __BEGIN_DECLS
 
@@ -102,27 +101,6 @@ void abcdk_object_unref(abcdk_object_t **dst);
 */
 abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size);
 
-/**
- * 字符串分隔并复制。
- * 
- * @warning 仅逻辑分割。
- * 
- * @see abcdk_strtok
- * 
- * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
-*/
-abcdk_object_t *abcdk_object_alloc_strtok(const char **next, const char *delim);
-
-/**
- * 字符串分隔并复制。
- * 
- * @warning 仅逻辑分割。
- * 
- * @see abcdk_strtok2
- * 
- * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
-*/
-abcdk_object_t *abcdk_object_alloc_strtok2(const char **next, const char *delim, int skip_space);
 
 __END_DECLS
 

@@ -74,11 +74,12 @@ typedef struct _abcdkhttpd_node
     const char *range;
     const char *auth;
 
-    char method[100];
-    char location[PATH_MAX];
-    char path[PATH_MAX];
-    char params[PATH_MAX];
-    char version[100];
+    const char *method;
+    const char *location;
+    const char *version;
+    const char *path;
+    const char *params;
+    
     char referer_de[PATH_MAX];
     char a_c_a_o[PATH_MAX];
 
@@ -346,30 +347,8 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node)
             if (p_next - p <= 0)
                 continue;
 
-            abcdk_md5_reset(http_p->md5);
-            abcdk_md5_update(http_p->md5, digest_req->pstrs[0], strlen(digest_req->pstrs[0]));
-            abcdk_md5_update(http_p->md5, ":", 1);
-            abcdk_md5_update(http_p->md5, digest_req->pstrs[4], strlen(digest_req->pstrs[4]));
-            abcdk_md5_update(http_p->md5, ":", 1);
-            abcdk_md5_update(http_p->md5, p, p_next - p);
-            abcdk_md5_final(http_p->md5, digest_md5_buf);
-            abcdk_bin2hex(digest_ha1, digest_md5_buf, 16, 0);
-
-            abcdk_md5_reset(http_p->md5);
-            abcdk_md5_update(http_p->md5, http_p->method, strlen(http_p->method));
-            abcdk_md5_update(http_p->md5, ":", 1);
-            abcdk_md5_update(http_p->md5, digest_req->pstrs[2], strlen(digest_req->pstrs[2]));
-            abcdk_md5_final(http_p->md5, digest_md5_buf);
-            abcdk_bin2hex(digest_ha2, digest_md5_buf, 16, 0);
-
-            abcdk_md5_reset(http_p->md5);
-            abcdk_md5_update(http_p->md5, digest_ha1, 32);
-            abcdk_md5_update(http_p->md5, ":", 1);
-            abcdk_md5_update(http_p->md5, digest_req->pstrs[1], strlen(digest_req->pstrs[1]));
-            abcdk_md5_update(http_p->md5, ":", 1);
-            abcdk_md5_update(http_p->md5, digest_ha2, 32);
-            abcdk_md5_final(http_p->md5, digest_md5_buf);
-            abcdk_bin2hex(digest_rsp, digest_md5_buf, 16, 0);
+            abcdk_http_auth_digest(http_p->md5,digest_req->pstrs[0],p,http_p->method,digest_req->pstrs[2],digest_req->pstrs[4],digest_req->pstrs[1]);
+            abcdk_md5_final2hex(http_p->md5,digest_rsp,0);
 
             if (abcdk_strcmp(digest_rsp, digest_req->pstrs[3], 0) == 0)
             {
@@ -714,9 +693,7 @@ void _abcdkhttpd_process(abcdk_comm_node_t *node)
     if (chk != 0)
         return;
 
-    /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
-    abcdk_abspath(http_p->path);
-
+    memset(http_p->pathfile,0,PATH_MAX);
     abcdk_dirdir(http_p->pathfile, http_p->ctx->root_path);
     abcdk_dirdir(http_p->pathfile, http_p->path);
 
@@ -762,49 +739,12 @@ void _abcdkhttpd_parse_request(abcdk_comm_node_t *node)
     if (!http_p->line0)
         goto final_error;
 
-    p_next = http_p->line0;
+    http_p->method = abcdk_http_request_method(http_p->req);
+    http_p->location = abcdk_http_request_location(http_p->req);
+    http_p->version = abcdk_http_request_version(http_p->req);
+    http_p->path = abcdk_http_request_path(http_p->req);
+    http_p->params = abcdk_http_request_params(http_p->req);
 
-    memset(http_p->method, 0, 100);
-    memset(http_p->location, 0, PATH_MAX);
-    memset(http_p->path, 0, PATH_MAX);
-    memset(http_p->params, 0, PATH_MAX);
-    memset(http_p->version, 0, 100);
-    memset(http_p->pathfile, 0, PATH_MAX);
-
-    p = abcdk_strtok(&p_next, " ");
-    if(!p)
-        goto final_error;
-
-    strncpy(http_p->method, p, p_next - p);
-
-    p = abcdk_strtok(&p_next, " ");
-    if (!p)
-        goto final_error;
-
-    strncpy(http_p->location, p, p_next - p);
-
-    p = abcdk_strtok(&p_next, " ");
-    if (!p)
-        goto final_error;
-
-    strncpy(http_p->version, p, p_next - p);
-
-    p_next = http_p->location;
-    p = abcdk_strtok(&p_next, "?");
-    if (!p)
-        goto final_error;
-
-    abcdk_url_decode(p, p_next - p, http_p->path, &path_len,0);
-
-    if (p_next)
-    {
-        if (*p_next == '?')
-            p_next += 1;
-    }
-
-    p = abcdk_strtok(&p_next, "#");
-    if (p)
-        strncpy(http_p->params, p, p_next - p);
 
     if (!http_p->ctx->a_c_a_o)
     {

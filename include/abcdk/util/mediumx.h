@@ -11,6 +11,8 @@
 #include "abcdk/util/scsi.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/endian.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 
 __BEGIN_DECLS
 

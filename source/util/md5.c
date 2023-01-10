@@ -118,3 +118,10 @@ void abcdk_md5_final(abcdk_md5_t *ctx,uint8_t hashcode[16])
     //
 #endif 
 }
+
+void abcdk_md5_final2hex(abcdk_md5_t *ctx, char hashcode[33],int ABC)
+{
+    char buf[16];
+    abcdk_md5_final(ctx, buf);
+    abcdk_bin2hex(hashcode, buf, 16, ABC);
+}

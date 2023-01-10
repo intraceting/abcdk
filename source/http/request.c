@@ -45,6 +45,9 @@ struct _abcdk_http_request
     /** 是否为RTSP包。*/
     int is_rtsp;
 
+    /** 请求行解析标志。0 未解析，1 已解析。*/
+    volatile int env0_parse_ok;
+
     /** 请求方法。*/
     abcdk_object_t *method;
 
@@ -131,6 +134,7 @@ abcdk_http_request_t *abcdk_http_request_alloc(size_t max_size,const char *buffe
     req->body_len = 0;
     memset(req->hdr_envs,0,sizeof(req->hdr_envs));
     req->is_rtsp = 0;
+    req->env0_parse_ok = 0;
     req->method = NULL;
     req->location = NULL;
     req->version = NULL;
@@ -430,27 +434,28 @@ void _abcdk_http_request_parse_env0(abcdk_http_request_t *req)
     const char *p = NULL, *p_next = NULL;
     size_t de_len;
 
-    if(!req->hdr_envs[0])
+    /*只解析一次。*/
+    if(!abcdk_atomic_compare_and_swap(&req->env0_parse_ok,0,1))
         return;
 
-    if(req->method || req->location || req->version || req->path || req->params)
+    if(!req->hdr_envs[0])
         return;
 
     p_next = req->hdr_envs[0];
 
-    req->method = abcdk_object_alloc_strtok(&p_next, " ");
+    req->method = abcdk_strtok3(&p_next, " ",0);
     if(!req->method)
         return;
 
-    req->location = abcdk_object_alloc_strtok(&p_next, " ");
+    req->location = abcdk_strtok3(&p_next, " ",0);
     if (!req->location)
         return;
 
-    req->version = abcdk_object_alloc_strtok(&p_next, " ");
+    req->version = abcdk_strtok3(&p_next, " ",0);
     if (!req->version)
         return;
 
-    p_next = req->location;
+    p_next = req->location->pstrs[0];
     p = abcdk_strtok(&p_next, "?");
     if (!p)
         return;
@@ -461,7 +466,17 @@ void _abcdk_http_request_parse_env0(abcdk_http_request_t *req)
 
     abcdk_url_decode(p, p_next - p, req->path->pstrs[0], &req->path->sizes[0],0);
 
-    req->params = abcdk_object_alloc_strtok(&p_next, "\r");
+    /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
+    abcdk_abspath(req->path->pstrs[0]);
+    /*修正路径长度。*/
+    req->path->sizes[0] = strlen(req->path->pstrs[0]);
+
+    /*可能无参数。*/
+    if(!p_next || *p_next != '?')
+        return;
+        
+    p_next += 1;
+    req->params = abcdk_strtok3(&p_next, "\r",0);
     if (!req->params)
         return;
     

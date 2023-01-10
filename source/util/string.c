@@ -84,6 +84,8 @@ int _abcdk_strtrim_check(int c, int (*isctype_cb)(int c), const char *other)
 
 char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where)
 {
+    assert(str && isctype_cb);
+
     return abcdk_strtrim2(str,isctype_cb,NULL,where);
 }
 
@@ -184,6 +186,17 @@ NEXT_SEGMENT:
 
     *next = find_p;
     return start_p; 
+}
+
+abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_space)
+{
+    const char *p;
+
+    p = abcdk_strtok2(next, delim, skip_space);
+    if (!p)
+        return NULL;
+
+    return abcdk_object_alloc_copyfrom(p, *next - p);
 }
 
 

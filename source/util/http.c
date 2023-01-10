@@ -450,3 +450,35 @@ const char *abcdk_http_content_type_desc(const char *ext)
 
     return abcdk_http_content_type_desc(".*");
 }
+
+void abcdk_http_auth_digest(abcdk_md5_t *ctx, const char *user, const char *pawd,
+                            const char *method, const char *url, const char *realm, const char *nonce)
+{
+    char digest_ha1[33] = {0}, digest_ha2[33] = {0};
+
+    assert(ctx != NULL && user != NULL && pawd != NULL && method != NULL && url != NULL && realm != NULL && nonce != NULL);
+
+    /*user:realm:passwod*/
+    abcdk_md5_reset(ctx);
+    abcdk_md5_update(ctx, user, strlen(user));
+    abcdk_md5_update(ctx, ":", 1);
+    abcdk_md5_update(ctx, realm, strlen(realm));
+    abcdk_md5_update(ctx, ":", 1);
+    abcdk_md5_update(ctx, pawd, strlen(pawd));
+    abcdk_md5_final2hex(ctx,digest_ha1,0);
+
+    /*method:url*/
+    abcdk_md5_reset(ctx);
+    abcdk_md5_update(ctx, method, strlen(method));
+    abcdk_md5_update(ctx, ":", 1);
+    abcdk_md5_update(ctx, url, strlen(url));
+    abcdk_md5_final2hex(ctx,digest_ha2,0);
+
+    /*ha1:nonce:ha2*/
+    abcdk_md5_reset(ctx);
+    abcdk_md5_update(ctx, digest_ha1, 32);
+    abcdk_md5_update(ctx, ":", 1);
+    abcdk_md5_update(ctx, nonce, strlen(nonce));
+    abcdk_md5_update(ctx, ":", 1);
+    abcdk_md5_update(ctx, digest_ha2, 32);
+}

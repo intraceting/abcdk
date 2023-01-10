@@ -9,6 +9,8 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 
 __BEGIN_DECLS
 

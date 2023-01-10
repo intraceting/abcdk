@@ -11,6 +11,8 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/basecode.h"
+#include "abcdk/util/object.h"
+#include "abcdk/util/string.h"
 
 __BEGIN_DECLS
 
