@@ -14,7 +14,7 @@ struct _abcdk_message
     /** 引用计数器。*/
     volatile int refcount;
     
-    /** 内存对象指针。*/
+    /** 外部对象指针。*/
     abcdk_object_t *user_obj;
 
     /** 内存块指针。*/
@@ -33,6 +33,7 @@ struct _abcdk_message
     abcdk_message_protocol_t protocol;
     
 };// abcdk_message_t;
+
 
 void abcdk_message_unref(abcdk_message_t **msg)
 {
@@ -74,40 +75,11 @@ abcdk_message_t *abcdk_message_refer(abcdk_message_t *src)
     return src;
 }
 
-abcdk_message_t *abcdk_message_alloc(size_t size)
+abcdk_message_t *abcdk_message_alloc(abcdk_object_t *obj)
 {
     abcdk_message_t *msg = NULL;
 
-    assert(size > 0);
-
-    msg = abcdk_heap_alloc(sizeof(abcdk_message_t));
-    if (!msg)
-        goto final_error;
-
-    msg->refcount = 1;
-    msg->offset = 0;
-    msg->user_obj = NULL;
-    msg->size = size;
-    msg->capacity = ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT);
-    msg->buf = abcdk_heap_alloc(msg->capacity + 1);
-
-    if (!msg->buf)
-        goto final_error;
-
-    return msg;
-
-final_error:
-
-    abcdk_message_unref(&msg);
-
-    return NULL;
-}
-
-abcdk_message_t *abcdk_message_attach(abcdk_object_t *obj)
-{
-    abcdk_message_t *msg = NULL;
-
-    assert(obj != NULL && obj->pptrs[0] != NULL && obj->sizes[0] > 0);
+    assert(obj == NULL ||(obj->pptrs[0] != NULL && obj->sizes[0] > 0));
 
     msg = abcdk_heap_alloc(sizeof(abcdk_message_t));
     if (!msg)
@@ -115,99 +87,103 @@ abcdk_message_t *abcdk_message_attach(abcdk_object_t *obj)
 
     msg->refcount = 1;
     msg->offset = 0;
-    msg->user_obj = obj;
-    msg->size = msg->user_obj->sizes[0];
-    msg->capacity = msg->user_obj->sizes[0];
-    msg->buf = msg->user_obj->pptrs[0];
+
+    if (obj)
+    {
+        msg->user_obj = obj;
+        msg->size = msg->user_obj->sizes[0];
+        msg->capacity = msg->user_obj->sizes[0];
+        msg->buf = msg->user_obj->pptrs[0];
+    }
+    else
+    {
+        msg->user_obj = NULL;
+        msg->size = 0;
+        msg->capacity = 0;
+        msg->buf = NULL;
+    }
 
     return msg;
 }
 
-
-int abcdk_message_realloc(abcdk_message_t *msg, size_t size)
+abcdk_message_t* abcdk_message_alloc_fd(int fd,size_t truncate,int rw)
 {
-    void *new_buf = NULL;
+    abcdk_message_t *msg;
+    abcdk_object_t *obj;
 
-    assert(msg != NULL && size > 0);
+    assert(fd >= 0);
 
-    ABCDK_ASSERT(msg->user_obj == NULL,"绑定外部内部对象时，不支持重新调整大小。");
+    obj = abcdk_mmap_fd(fd,truncate,rw,0);
+    if(!obj)
+        return NULL;
 
-    /*新的大小与旧的大小一样时，不需要调整。*/
-    if (msg->size == size)
-        goto final;
+    msg = abcdk_message_alloc(obj);
+    if(msg)
+        return msg;
 
-    msg->size = size;
+    abcdk_object_unref(&obj);
 
-    /*新的容量与旧的容量一样时，不需要调整。*/
-    if (msg->capacity == ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT))
-        goto final;
-
-    msg->capacity = ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT);
-
-    new_buf = abcdk_heap_realloc(msg->buf, msg->capacity + 1);
-    if (!new_buf)
-        return -1;
-
-    /*多出的一个字节赋值为0。*/
-    ABCDK_PTR2U8(new_buf,msg->capacity) = 0;
-
-    /*绑定新内存。*/
-    msg->buf = new_buf;
-
-final:
-
-    /*修正编移量。*/
-    if (msg->offset > msg->size)
-        msg->offset = msg->size;
-
-    return 0;
+    return NULL;
 }
 
-int abcdk_message_expand(abcdk_message_t *msg, size_t size)
+abcdk_message_t* abcdk_message_alloc_filename(const char *file,size_t truncate,int rw)
 {
-    assert(msg != NULL);
+    abcdk_message_t *msg;
+    abcdk_object_t *obj;
 
-    return abcdk_message_realloc(msg, abcdk_message_size(msg) + size);
+    assert(file != NULL);
+
+    obj = abcdk_mmap_filename(file,truncate,rw,0);
+    if(!obj)
+        return NULL;
+
+    msg = abcdk_message_alloc(obj);
+    if(msg)
+        return msg;
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
 }
 
-void abcdk_message_reset(abcdk_message_t *msg,size_t offset)
+abcdk_message_t* abcdk_message_alloc_tempfile(char *file,size_t truncate,int rw)
 {
-    assert(msg != NULL);
+    abcdk_message_t *msg;
+    abcdk_object_t *obj;
 
-    msg->offset = offset;
+    assert(file != NULL);
+
+    obj = abcdk_mmap_tempfile(file,truncate,rw,0);
+    if(!obj)
+        return NULL;
+
+    msg = abcdk_message_alloc(obj);
+    if(msg)
+        return msg;
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
 }
 
-void *abcdk_message_data(const abcdk_message_t *msg)
+abcdk_message_t *abcdk_message_alloc_copy(const void *data, size_t size)
 {
-    assert(msg != NULL);
+    abcdk_message_t *msg = NULL;
+    abcdk_object_t *obj = NULL;
 
-    return msg->buf;
-}
+    assert(data != NULL && size > 0);
 
-size_t abcdk_message_size(const abcdk_message_t *msg)
-{
-    assert(msg != NULL);
+    obj = abcdk_object_alloc_copyfrom(data,size);
+    if(!obj)
+        return NULL;
 
-    return msg->size;
-}
+    msg = abcdk_message_alloc(obj);
+    if (msg)
+        return msg;
+    
+    abcdk_object_unref(&obj);
 
-size_t abcdk_message_offset(const abcdk_message_t *msg)
-{
-    assert(msg != NULL);
-
-    return msg->offset;
-}
-
-void abcdk_message_drain(abcdk_message_t *msg, size_t size)
-{
-    size_t remain;
-
-    assert(msg != NULL && size > 0);
-    assert(size <= msg->offset);
-
-    remain = msg->offset - size;
-    memmove(msg->buf, ABCDK_PTR2VPTR(msg->buf, size), remain);
-    msg->offset = remain;
+    return NULL;
 }
 
 void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *prot)
@@ -248,7 +224,7 @@ int abcdk_message_recv(abcdk_message_t *msg, const void *data,size_t size,size_t
         if (rsize <= 0)
         {
             /*如果未指定解包回调函数，则未知的流数据已经接收完整。*/
-            chk = (msg->protocol.unpack_cb2?0:1);
+            chk = (msg->protocol.unpack_cb2 ? 0 : 1);
             break;
         }
         else
@@ -265,82 +241,69 @@ int abcdk_message_recv(abcdk_message_t *msg, const void *data,size_t size,size_t
     return chk;
 }
 
-abcdk_message_t* abcdk_message_mmap_fd(int fd,size_t truncate,int rw)
+void abcdk_message_reset(abcdk_message_t *msg,size_t offset)
 {
-    abcdk_message_t *msg;
-    abcdk_object_t *obj;
+    assert(msg != NULL);
 
-    assert(fd >= 0);
-
-    obj = abcdk_mmap_fd(fd,truncate,rw,0);
-    if(!obj)
-        return NULL;
-
-    msg = abcdk_message_attach(obj);
-    if(msg)
-        return msg;
-
-    abcdk_object_unref(&obj);
-
-    return NULL;
+    msg->offset = offset;
 }
 
-abcdk_message_t* abcdk_message_mmap_filename(const char *file,size_t truncate,int rw)
+void *abcdk_message_data(const abcdk_message_t *msg)
 {
-    abcdk_message_t *msg;
-    abcdk_object_t *obj;
+    assert(msg != NULL);
 
-    assert(file != NULL);
-
-    obj = abcdk_mmap_filename(file,truncate,rw,0);
-    if(!obj)
-        return NULL;
-
-    msg = abcdk_message_attach(obj);
-    if(msg)
-        return msg;
-
-    abcdk_object_unref(&obj);
-
-    return NULL;
+    return msg->buf;
 }
 
-abcdk_message_t* abcdk_message_mmap_tempfile(char *file,size_t truncate,int rw)
+size_t abcdk_message_size(const abcdk_message_t *msg)
 {
-    abcdk_message_t *msg;
-    abcdk_object_t *obj;
+    assert(msg != NULL);
 
-    assert(file != NULL);
-
-    obj = abcdk_mmap_tempfile(file,truncate,rw,0);
-    if(!obj)
-        return NULL;
-
-    msg = abcdk_message_attach(obj);
-    if(msg)
-        return msg;
-
-    abcdk_object_unref(&obj);
-
-    return NULL;
+    return msg->size;
 }
 
-abcdk_message_t *abcdk_message_copy(const void *data, size_t size)
+size_t abcdk_message_offset(const abcdk_message_t *msg)
 {
-    abcdk_message_t *msg = NULL;
-    abcdk_object_t *obj = NULL;
+    assert(msg != NULL);
 
-    assert(data != NULL && size > 0);
+    return msg->offset;
+}
 
-    obj = abcdk_object_alloc_copyfrom(data,size);
-    if(!obj)
-        return NULL;
+int abcdk_message_resize(abcdk_message_t *msg, size_t size)
+{
+    void *new_buf = NULL;
 
-    msg = abcdk_message_attach(obj);
-    if (msg)
-        return msg;
-    
-    abcdk_object_unref(&obj);
+    assert(msg != NULL && size > 0);
 
-    return NULL;
+    ABCDK_ASSERT(msg->user_obj == NULL,"绑定外部内部对象时，不支持重新调整大小。");
+
+    /*新的大小与旧的大小一样时，不需要调整。*/
+    if (msg->size == size)
+        goto final;
+
+    msg->size = size;
+
+    /*新的容量与旧的容量一样时，不需要调整。*/
+    if (msg->capacity == ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT))
+        goto final;
+
+    msg->capacity = ABCDK_MAX(msg->size, ABCDK_COMM_MSG_SIZE_DEFAULT);
+
+    new_buf = abcdk_heap_realloc(msg->buf, msg->capacity + 1);
+    if (!new_buf)
+        return -1;
+
+    /*多出的一个字节赋值为0。*/
+    ABCDK_PTR2U8(new_buf,msg->capacity) = 0;
+
+    /*绑定新内存。*/
+    msg->buf = new_buf;
+
+final:
+
+    /*修正编移量。*/
+    if (msg->offset > msg->size)
+        msg->offset = msg->size;
+
+    return 0;
 }

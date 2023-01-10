@@ -45,33 +45,60 @@ abcdk_message_t *abcdk_message_refer(abcdk_message_t *src);
 
 /**
  * 创建消息对象。
+ * 
+ * @param [in] obj 绑定外部对象。NULL(0) 创建空的对象。
 */
-abcdk_message_t *abcdk_message_alloc(size_t size);
+abcdk_message_t *abcdk_message_alloc(abcdk_object_t *obj);
 
 /**
  * 创建消息对象。
  * 
- * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
+ * @param [in] fd 文件句柄。
+ * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
+ * @param [in] rw !0 读写，0 只读。
  * 
- * @param [in] obj 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * @return NULL(0) 失败，!NULL(0) 成功。
 */
-abcdk_message_t *abcdk_message_attach(abcdk_object_t *obj);
+abcdk_message_t abcdk_message_alloc_fd(int fd,size_t truncate,int rw);
 
 /**
- * 调整消息对象大小。
+ * 创建消息对象。
  * 
- * @return 0 成功，-1 失败。
+ * @param [in] file 文件名(包括路径)。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
 */
-int abcdk_message_realloc(abcdk_message_t *msg, size_t size);
+abcdk_message_t abcdk_message_alloc_filename(const char *file,size_t truncate,int rw);
 
 /**
- * 扩展消息对象大小。
+ * 创建消息对象。
  * 
- * @param [in] size 增量。
+ * @param [in] file 文件名(包括路径)。
  * 
- * @return 0 成功，-1 失败。
+ * @return NULL(0) 失败，!NULL(0) 成功。
 */
-int abcdk_message_expand(abcdk_message_t *msg, size_t size);
+abcdk_message_t abcdk_message_alloc_tempfile(char *file,size_t truncate,int rw);
+
+/**
+ * 创建消息对象。
+ * 
+ * @return !NULL(0) 成功(消息指针)，NULL(0) 失败。
+ */
+abcdk_message_t abcdk_message_alloc_copy(const void *data,size_t size);
+
+/**
+ * 设置数据包协议。
+*/
+void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *prot);
+
+/**
+ * 接收消息(从缓存)。
+ * 
+ * @param [in out] remain 缓存剩余的数据长度，返回时填充。
+ * 
+ * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
+*/
+int abcdk_message_recv(abcdk_message_t *msg,const void *data,size_t size,size_t *remain);
 
 /**
  * 重置读写偏移量。
@@ -94,60 +121,11 @@ size_t abcdk_message_size(const abcdk_message_t *msg);
 size_t abcdk_message_offset(const abcdk_message_t *msg);
 
 /**
- * 排出已读写的数据，同时重置偏移量。
+ * 调整消息对象大小。
+ * 
+ * @return 0 成功，-1 失败。
 */
-void abcdk_message_drain(abcdk_message_t *msg,size_t size);
-
-/**
- * 设置数据包协议。
-*/
-void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *prot);
-
-/**
- * 接收消息(从缓存)。
- * 
- * @param [in out] remain 缓存剩余的数据长度，返回时填充。
- * 
- * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
-*/
-int abcdk_message_recv(abcdk_message_t *msg,const void *data,size_t size,size_t *remain);
-
-/**
- * 创建消息对象。
- * 
- * @param [in] fd 文件句柄。
- * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
- * @param [in] rw !0 读写，0 只读。
- * 
- * @return NULL(0) 失败，!NULL(0) 成功。
-*/
-abcdk_message_t* abcdk_message_mmap_fd(int fd,size_t truncate,int rw);
-
-/**
- * 创建消息对象。
- * 
- * @param [in] file 文件名(包括路径)。
- * 
- * @return NULL(0) 失败，!NULL(0) 成功。
-*/
-abcdk_message_t* abcdk_message_mmap_filename(const char *file,size_t truncate,int rw);
-
-/**
- * 创建消息对象。
- * 
- * @param [in] file 文件名(包括路径)。
- * 
- * @return NULL(0) 失败，!NULL(0) 成功。
-*/
-abcdk_message_t* abcdk_message_mmap_tempfile(char *file,size_t truncate,int rw);
-
-/**
- * 创建消息对象。
- * 
- * @return !NULL(0) 成功(消息指针)，NULL(0) 失败。
- */
-abcdk_message_t *abcdk_message_copy(const void *data,size_t size);
-
+int abcdk_message_resize(abcdk_message_t *msg, size_t size);
 
 
 __END_DECLS
