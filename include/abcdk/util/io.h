@@ -64,7 +64,7 @@ int abcdk_reopen(int fd2,const char *file, int rw, int nonblock, int create);
 /**
  * 设置标志。
  * 
- * @warning 会覆盖现存的。
+ * @note 会覆盖现存的。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -108,8 +108,8 @@ ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset
 /**
  * 从文件中读取一行。
  * 
- * @warning 结束读取时line指针要用free释放。
- * @warning 两次读取操作，line指针可能会指向不同地址。
+ * @note 结束读取时line指针要用free释放。
+ * @note 两次读取操作，line指针可能会指向不同地址。
  * 
  * @param line 指针的指针。
  * @param delim 分割字符。
@@ -142,7 +142,7 @@ int abcdk_futimens(int fd,const struct timespec *atime,const struct timespec *mt
 /**
  * 读写数据。
  * 
- * @warning 仅支持带有异步标志的句柄。
+ * @note 仅支持带有异步标志的句柄。
  * 
  * @param [in] direction 方向。1：输入，2：输出。
  * @param [in] timeout 超时(毫秒)。

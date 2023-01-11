@@ -38,12 +38,12 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
         *
         * NAL Header + data(Nbytes)
         */
-        msg = abcdk_message_copy(data, size);
+        msg = abcdk_message_alloc(NULL);
         if (!msg)
             return -1;
         
         /*模拟接收数据。*/
-        abcdk_message_reset(msg,size);
+        abcdk_message_recv(msg, data, size, &remain);
 
         chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)
@@ -76,7 +76,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
 
         if (s)
         {
-            msg = abcdk_message_alloc(size-1);
+            msg = abcdk_message_alloc(NULL);
             if (!msg)
                 return -1;
 
@@ -103,9 +103,6 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             msg = (abcdk_message_t *)abcdk_queue_pop(q, 0);
             if (!msg)
                 return -1;
-
-            /*增量扩展缓存。*/
-            abcdk_message_expand(msg, size - 3);
 
             /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
             abcdk_message_recv(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);

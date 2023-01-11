@@ -49,7 +49,7 @@ typedef struct _abcdk_scsi_info
 /**
  * 获取SCSI设备信息。
  * 
- * @warning 不包括bus字段。
+ * @note 不包括bus字段。
  * 
  * @return 0 成功，-1 失败(可能不是SCSI设备)。
 */

@@ -200,7 +200,7 @@ int abcdk_sqlite_finalize(sqlite3_stmt *stmt);
 /**
  * 直接执行SQL语句。
  * 
- * @warning 不能用于返回数据集。
+ * @note 不能用于返回数据集。
  * 
  * @return >= 0 成功。< 0 出错。
  * 

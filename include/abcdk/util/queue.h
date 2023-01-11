@@ -39,7 +39,7 @@ size_t abcdk_queue_count(abcdk_queue_t *queue);
 /**
  * 向队列中加入消息。
  * 
- * @warning 消息对象将被托管，在消息对象从队列中弹出之前，应用层不可以继续访问消息对象。
+ * @note 消息对象将被托管，在消息对象从队列中弹出之前，应用层不可以继续访问消息对象。
  * 
  * @param [in] first !0 头部，0 尾部。
  * 

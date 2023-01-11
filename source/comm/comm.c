@@ -36,7 +36,7 @@ struct _abcdk_comm_node
     /** 
      * 通讯环境指针。
      * 
-     * @warning 仅复制。
+     * @note 仅复制。
     */
     abcdk_comm_t *ctx;
 

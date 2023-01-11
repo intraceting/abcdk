@@ -19,7 +19,7 @@ __BEGIN_DECLS
  * 
  * @note 自动检查前后的'/'字符，接拼位置只保留一个'/'字符，或自动添加一个'/'字符。
  * 
- * @warning 要有足够的可用空间，不然会溢出。
+ * @note 要有足够的可用空间，不然会溢出。
 */
 char *abcdk_dirdir(char *path,const char *suffix);
 

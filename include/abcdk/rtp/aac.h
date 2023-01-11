@@ -17,7 +17,7 @@ __BEGIN_DECLS
 /**
  * AAC数据包还原。
  * 
- * @warning RTP的AAC封包有8个可变长度的字段，这里仅支持两个字段。
+ * @note RTP的AAC封包有8个可变长度的字段，这里仅支持两个字段。
  * 
  * @param [in] size_bits 数据包长度的长度(bits)。
  * @param [in] index_bits 数据包索引的长度(bits)。

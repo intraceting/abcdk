@@ -34,35 +34,35 @@ typedef struct _abcdk_rtsp_sdp_media_base
     /** 
      * 流地址。
      * 
-     * @warning 相对地址，或绝对地址。
+     * @note 相对地址，或绝对地址。
     */
     abcdk_object_t *control;
 
     /** 
      * 编码扩展。
      * 
-     * @warning HEVC有效。
+     * @note HEVC有效。
     */
     abcdk_object_t *sprop_vps;
 
     /** 
      * 编码扩展。
      * 
-     * @warning HEVC，H264有效。
+     * @note HEVC，H264有效。
     */
     abcdk_object_t *sprop_sps;
 
     /** 
      * 编码扩展。
      * 
-     * @warning HEVC，H264有效。
+     * @note HEVC，H264有效。
     */
     abcdk_object_t *sprop_pps;
 
     /** 
      * 编码扩展。
      * 
-     * @warning HEVC，H264有效。
+     * @note HEVC，H264有效。
     */
     abcdk_object_t *sprop_sei;
 

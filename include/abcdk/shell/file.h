@@ -17,7 +17,7 @@ __BEGIN_DECLS
 /**
  * 查询哪个进程占用文件。
  * 
- * @warning 因为要遍历系统运行环境，所以效率非常慢。
+ * @note 因为要遍历系统运行环境，所以效率非常慢。
  * 
  * @param [in] file 全路径的文件名。
  * @param [in out] pids 保存占用文件的进程PID数组。

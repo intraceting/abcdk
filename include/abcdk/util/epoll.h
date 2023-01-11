@@ -39,7 +39,7 @@ enum _abcdk_epoll_event
 /**
  * 事件结构体。
  * 
- * @warning 不能使用原始事件的值。
+ * @note 不能使用原始事件的值。
 */
 typedef struct epoll_event abcdk_epoll_event_t;
 

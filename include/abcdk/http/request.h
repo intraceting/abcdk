@@ -21,7 +21,7 @@ typedef struct _abcdk_http_request abcdk_http_request_t;
 /**
  * 减少对象的引用计数。
  * 
- * @warning 当引用计数为0时，对像将被删除。
+ * @note 当引用计数为0时，对像将被删除。
 */
 void abcdk_http_request_unref(abcdk_http_request_t **req);
 
@@ -33,11 +33,10 @@ abcdk_http_request_t *abcdk_http_request_refer(abcdk_http_request_t *src);
 /**
  * 创建请求对象。
  * 
- * @param [in] header_max 头部最大长度。
- * @param [in] body_max 实体最大长度。
- * @param [in] body_buffer_file 实体缓存文件。NULL(0) 使用内存作为缓存。
+ * @param [in] max 最大长度。
+ * @param [in] tempdir 缓存目录。NULL(0) 忽略。
 */
-abcdk_http_request_t *abcdk_http_request_alloc(size_t header_max,size_t body_max,const char *body_buffer_file);
+abcdk_http_request_t *abcdk_http_request_alloc(size_t max,const char *tempdir);
 
 /**
  * 附加消息。

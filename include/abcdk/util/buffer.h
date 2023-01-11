@@ -99,7 +99,7 @@ ssize_t abcdk_buffer_read(abcdk_buffer_t *buf, void *data, size_t size);
 /**
  * 读取一行数据。
  * 
- * @warning 当缓存不足时，行尾部分将被截断并丢弃。
+ * @note 当缓存不足时，行尾部分将被截断并丢弃。
  * 
  * @param [in] delim 行分割符。
  * 
@@ -143,7 +143,7 @@ ssize_t abcdk_buffer_import(abcdk_buffer_t *buf,int fd);
 /**
  * 从文件导入数据。
  * 
- * @warning 当句柄阻塞为模式时，可能会因为数据输入不足而阻塞。
+ * @note 当句柄阻塞为模式时，可能会因为数据输入不足而阻塞。
 */
 ssize_t abcdk_buffer_import_atmost(abcdk_buffer_t *buf,int fd,size_t howmuch);
 
@@ -155,7 +155,7 @@ ssize_t abcdk_buffer_export(abcdk_buffer_t *buf,int fd);
 /**
  * 导出数据到文件。
  * 
- * @warning 当句柄阻塞为模式时，可能会因为数据输出缓存区满而阻塞。
+ * @note 当句柄阻塞为模式时，可能会因为数据输出缓存区满而阻塞。
 */
 ssize_t abcdk_buffer_export_atmost(abcdk_buffer_t *buf,int fd,size_t howmuch);
 

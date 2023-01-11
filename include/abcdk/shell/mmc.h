@@ -39,7 +39,7 @@ typedef struct _abcdk_mmc_info
 /**
  * 获取MMC设备信息。
  * 
- * @warning 不包括bus字段。
+ * @note 不包括bus字段。
  * 
  * @return 0 成功，-1 失败(可能不是MMC设备)。
 */

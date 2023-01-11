@@ -15,23 +15,25 @@
 __BEGIN_DECLS
 
 /**
- * 通讯对象的回调函数。
+ * RPC回调函数。
  *
- * @warning 服务端新的连接会复制成员指针。
+ * @note 服务端新的连接会复制成员指针。
  */
 typedef struct _abcdk_rpc_callback
 {
     /** 
      * 为新连接做准备工作的通知回调函数。
      * 
-     * @warning 如果未指定，则创建默认节点。
+     * @note 如果未指定，则创建默认节点。
+     * 
+     * @param [out] node 新的节点，返回时填写。
     */
     void (*prepare_cb)(abcdk_comm_node_t **node, abcdk_comm_node_t *listen);
 
     /**
      * 新连接通知回调函数。
      * 
-     * @warning 如果未指定，则接受所有连接。
+     * @note 如果未指定，则接受所有连接。
      *
      * @param [out] result 0 允许连接，-1 禁止连接。
      */
@@ -50,7 +52,7 @@ typedef struct _abcdk_rpc_callback
     /** 
      * 连接关闭通知回调函数。
      * 
-     * @warning 如果未指定，直接关闭。
+     * @note 如果未指定，直接关闭。
     */
     void (*close_cb)(abcdk_comm_node_t *node);
 
@@ -59,7 +61,7 @@ typedef struct _abcdk_rpc_callback
 /**
  * 申请通讯对象。
  * 
- * @warning 通讯协议相同才能相互收发消息。
+ * @note 通讯协议相同才能相互收发消息。
  *
  * @param [in] ctx 通讯环境指针。
  * @param [in] protocol 通讯协议。
@@ -95,7 +97,7 @@ int abcdk_rpc_response(abcdk_comm_node_t *node, uint64_t mid, const void *data, 
 /**
  * 启动监听。
  * 
- * @warning 新的连接会复制“用户环境指针”。
+ * @note 新的连接会复制“用户环境指针”。
  * 
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 监听地址指针。
@@ -108,7 +110,7 @@ int abcdk_rpc_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t
 /**
  * 启动连接。
  * 
- * @warning 仅发出连接指令，连接是否成功以消息通知。
+ * @note 仅发出连接指令，连接是否成功以消息通知。
  * 
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 服务端地址指针。

@@ -86,14 +86,14 @@ typedef enum _abcdk_comm_event
 /** 
  * 通讯对象的回调函数。
  * 
- * @warning 服务端新的连接会复制成员指针。
+ * @note 服务端新的连接会复制成员指针。
 */
 typedef struct _abcdk_comm_callback
 {
     /**
      * 为新连接做准备工作的通知回调函数。
      * 
-     * @warning 如果未指定，则创建默认节点。
+     * @note 如果未指定，则创建默认节点。
      * 
      * @param [out] node 新的节点，返回时填写。
      */
@@ -102,14 +102,14 @@ typedef struct _abcdk_comm_callback
     /**
      * 事件通知回调函数。
      *
-     * @warning 除ABCDK_COMM_EVENT_ACCEPT事件外，其余事件均忽略返回值。
+     * @note 除ABCDK_COMM_EVENT_ACCEPT事件外，其余事件均忽略返回值。
      */
     void (*event_cb)(abcdk_comm_node_t *node, uint32_t event, int *result);
 
     /**
      * 请求数据到达通知回调函数。
      *
-     * @warning 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
+     * @note 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
      *
      * @param [out] remain 剩余的数据长度，返回时填写。
      */
@@ -120,7 +120,7 @@ typedef struct _abcdk_comm_callback
 /**
  * 通讯对象的释放。
  * 
- * @warning 当引用计数为0时，通讯对像将被删除。
+ * @note 当引用计数为0时，通讯对像将被删除。
 */
 void abcdk_comm_unref(abcdk_comm_node_t **node);
 
@@ -142,14 +142,14 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t user
 /**
  * SSL环境。
  * 
- * @warning 连接建立后有效，且调用者不能释放。
+ * @note 连接建立后有效，且调用者不能释放。
 */
 SSL *abcdk_comm_ssl(abcdk_comm_node_t *node);
 
 /**
  * 通讯对象的扩展数据。
  * 
- * @warning 增加引用，调用者需要主动释放。
+ * @note 增加引用，调用者需要主动释放。
 */
 abcdk_object_t *abcdk_comm_extend(abcdk_comm_node_t *node);
 
@@ -172,7 +172,7 @@ void *abcdk_comm_set_extend0(abcdk_comm_node_t *node,void *opaque);
 /**
  * 通讯对象的用户环境。
  * 
- * @warning 增加引用，调用者需要主动释放。
+ * @note 增加引用，调用者需要主动释放。
 */
 abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node);
 
@@ -195,7 +195,7 @@ void *abcdk_comm_set_userdata0(abcdk_comm_node_t *node,void *opaque);
 /**
  * 设置超时。
  * 
- * @warning 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
+ * @note 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
  * 
  * @param timeout 超时(毫秒)。
  * 
@@ -222,7 +222,7 @@ int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],ch
 /**
  * 读。
  * 
- * @warning 当读权利被占用时，不会有其它线程获得读事件。
+ * @note 当读权利被占用时，不会有其它线程获得读事件。
  * 
  * @return > 0 已读取数据的长度，0 无数据。
 */
@@ -238,7 +238,7 @@ int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
 /**
  * 写。
  * 
- * @warning 当写权利被占用时，不会有其它线程获得写事件。
+ * @note 当写权利被占用时，不会有其它线程获得写事件。
  * 
  * @return > 0 已写入数据的长度，0 链路忙。
 */
@@ -254,7 +254,7 @@ int abcdk_comm_send_watch(abcdk_comm_node_t *node);
 /**
  * 停止通讯引擎。
  * 
- * @warning 非线程安全。
+ * @note 非线程安全。
  * 
  * @param [in out] ctx 环境指针。
 */
@@ -285,7 +285,7 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
 /**
  * 连接远程服务器。
  * 
- * @warning 仅发出连接指令，连接是否成功以消息通知。
+ * @note 仅发出连接指令，连接是否成功以消息通知。
  * 
  * @param [in] node 通讯对象指针。
  * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
@@ -299,7 +299,7 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
 /**
  * 投递数据。
  * 
- * @warning 内存对象将被托管，应用层不可以继续访问内存对象。
+ * @note 内存对象将被托管，应用层不可以继续访问内存对象。
  * 
  * @param [in] data 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
  * 

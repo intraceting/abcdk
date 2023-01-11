@@ -59,7 +59,7 @@ void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
     *result = 0;
 }
 
-void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
+void _abcdk_test_http_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req,int *next_proto)
 {
     size_t len = 0;
     const char *p, *val;
@@ -86,7 +86,7 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
     if (file)
     {
         abcdk_comm_post_format(node, 1000, "HTTP/1.1 %s\r\nConnection: Keep-Alive\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %lu\r\n\r\n",
-                               abcdk_http_content_type_desc(".txt"), abcdk_http_status_desc(200), file->sizes[0]);
+                               abcdk_http_status_desc(200), abcdk_http_content_type_desc(".txt"),file->sizes[0]);
 
         abcdk_comm_post(node, file);
     }
@@ -102,7 +102,7 @@ void _abcdk_test_http_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *re
 #endif
 }
 
-void _abcdk_test_rtsp_event_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req)
+void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req,int *next_proto)
 {
 
     abcdk_test_h264_t *h = (abcdk_test_h264_t *)abcdk_comm_get_userdata(node);
@@ -357,7 +357,7 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
     ctx->comm = abcdk_comm_start(-1,-1);
 
-    ctx->listen_node = abcdk_comm_alloc(ctx->comm,1,1);
+    ctx->listen_node = abcdk_http_alloc(ctx->comm,0,10000000000,"/tmp/");
     abcdk_comm_set_userdata(ctx->listen_node, ctx);
 
     abcdk_sockaddr_from_string(&addr, ctx->listen, 1);
@@ -383,9 +383,9 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
 #endif
 
-      //abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_http_event_cb,NULL,_abcdk_test_http_close_cb};
-   // abcdk_http_callback_t cb = {_abcdk_test_http_accept_cb, _abcdk_test_rtsp_event_cb, _abcdk_test_http_fetch_cb, _abcdk_test_http_close_cb};
-    //abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
+      abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_http_request_cb,_abcdk_test_http_close_cb};
+   // abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_rtsp_request_cb, _abcdk_test_http_close_cb};
+    abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
 
     while (getchar() != 'Q')
     {

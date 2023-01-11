@@ -23,7 +23,7 @@ int abcdk_isodigit(int c);
 /**
  * 字符串克隆。
  * 
- * @warning 克隆的指针需要用abcdk_heap_free释放。
+ * @note 克隆的指针需要用abcdk_heap_free释放。
 */
 char *abcdk_strdup(const char *str);
 
@@ -83,7 +83,7 @@ char* abcdk_strtrim2(char* str,int (*isctype_cb)(int c), const char *other,int w
 /** 
  * 字符串分隔。
  *  
- * @warning 仅逻辑分割。
+ * @note 仅逻辑分割。
  * 
  * @param [in out] next 字符串。返回前更新。
  * @param [in] delim 分界符。全字匹配，区分大小写。
@@ -95,7 +95,7 @@ const char *abcdk_strtok(const char **next, const char *delim);
 /**
  * 字符串分隔。
  * 
- * @warning 仅逻辑分割。
+ * @note 仅逻辑分割。
 
  * @param [in] skip_space 是否跳过空白字符。0 不跳示，!0 跳过。
  * 
@@ -106,7 +106,7 @@ const char *abcdk_strtok2(const char **next, const char *delim, int skip_space);
 /**
  * 字符串分隔并复制。
  * 
- * @warning 仅逻辑分割。
+ * @note 仅逻辑分割。
  * 
  * @see abcdk_strtok2
  * 

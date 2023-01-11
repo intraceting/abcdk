@@ -46,7 +46,7 @@ void abcdk_stream_unlock(abcdk_stream_t *ctx);
 /**
  * 绑定句柄。
  * 
- * @warning 会为句柄添加异步标志。
+ * @note 会为句柄添加异步标志。
  * 
  * @param [in] fd 句柄。
  *

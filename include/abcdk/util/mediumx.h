@@ -95,7 +95,7 @@ int abcdk_mediumx_inventory(int fd, uint16_t address, uint16_t count,
  *
  * @return 0 成功，-1 失败。
  *
- * @warning  SENSE key = 0x06 设备仓门被打开过，需要重新盘点介质。
+ * @note  SENSE key = 0x06 设备仓门被打开过，需要重新盘点介质。
  */
 int abcdk_mediumx_move_medium(int fd, uint16_t t, uint16_t src, uint16_t dst,
                               uint32_t timeout, abcdk_scsi_io_stat_t *stat);

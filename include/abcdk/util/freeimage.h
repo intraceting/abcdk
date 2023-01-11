@@ -26,14 +26,14 @@ __BEGIN_DECLS
 /**
  * 销毁环境。
  * 
- * @warning 需要与abcdk_fi_init配对使用。
+ * @note 需要与abcdk_fi_init配对使用。
 */
 void abcdk_fi_uninit();
 
 /**
  * 初始化环境。
  *  
- * @warning 需要与abcdk_fi_uninit配对使用。
+ * @note 需要与abcdk_fi_uninit配对使用。
 */
 void abcdk_fi_init(int load_local_plugins_only);
 

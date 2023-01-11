@@ -75,35 +75,35 @@ uint64_t _abcdk_rpc_make_mid()
 int _abcdk_rpc_post(abcdk_comm_node_t *node, const void *cargo,size_t len, uint64_t num, uint8_t flag)
 {
     abcdk_rpc_node_t *rpc_p = NULL;
-    abcdk_object_t *msg = NULL;
+    abcdk_object_t *obj = NULL;
     int chk;
 
     rpc_p = (abcdk_rpc_node_t *)abcdk_comm_get_extend0(node);
 
-    msg = abcdk_object_alloc2(4 + 4 + 8 + 1 + 1 + 2 + len);
-    if (!msg)
+    obj = abcdk_object_alloc2(ABCDK_RPC_HDR_SIZE + len);
+    if (!obj)
         return -1;
 #if 0
-    ABCDK_PTR2U32(msg->pptrs[0], 0) = abcdk_endian_h_to_b32(msg->sizes[0]);
-    ABCDK_PTR2U32(msg->pptrs[0], 4) = abcdk_endian_h_to_b32(rpc_p->protocol);
-    ABCDK_PTR2U64(msg->pptrs[0], 8) = abcdk_endian_h_to_b64(num);
-    ABCDK_PTR2U8(msg->pptrs[0], 17) = flag;
+    ABCDK_PTR2U32(obj->pptrs[0], 0) = abcdk_endian_h_to_b32(obj->sizes[0]);
+    ABCDK_PTR2U32(obj->pptrs[0], 4) = abcdk_endian_h_to_b32(rpc_p->protocol);
+    ABCDK_PTR2U64(obj->pptrs[0], 8) = abcdk_endian_h_to_b64(num);
+    ABCDK_PTR2U8(obj->pptrs[0], 17) = flag;
 #else
-    abcdk_bloom_write_number(msg->pptrs[0], 20, 0, 32, msg->sizes[0]);
-    abcdk_bloom_write_number(msg->pptrs[0], 20, 32, 32, rpc_p->protocol);
-    abcdk_bloom_write_number(msg->pptrs[0], 20, 64, 64, num);
-    abcdk_bloom_write_number(msg->pptrs[0], 20, 128, 8, 0);
-    abcdk_bloom_write_number(msg->pptrs[0], 20, 136, 8, flag);
-    abcdk_bloom_write_number(msg->pptrs[0], 20, 144, 16, 0);
+    abcdk_bloom_write_number(obj->pptrs[0], 20, 0, 32, obj->sizes[0]);
+    abcdk_bloom_write_number(obj->pptrs[0], 20, 32, 32, rpc_p->protocol);
+    abcdk_bloom_write_number(obj->pptrs[0], 20, 64, 64, num);
+    abcdk_bloom_write_number(obj->pptrs[0], 20, 128, 8, 0);
+    abcdk_bloom_write_number(obj->pptrs[0], 20, 136, 8, flag);
+    abcdk_bloom_write_number(obj->pptrs[0], 20, 144, 16, 0);
 #endif
-    memcpy(ABCDK_PTR2VPTR(msg->pptrs[0], ABCDK_RPC_HDR_SIZE), cargo, len);
+    memcpy(ABCDK_PTR2VPTR(obj->pptrs[0], ABCDK_RPC_HDR_SIZE), cargo, len);
 
-    chk = abcdk_comm_post(node, msg);
+    chk = abcdk_comm_post(node, obj);
     if (chk == 0)
         return 0;
 
     /*删除未投递成功的消息。*/
-    abcdk_object_unref(&msg);
+    abcdk_object_unref(&obj);
     return -1;
 }
 
@@ -112,21 +112,17 @@ abcdk_message_t *_abcdk_rpc_extrac_cargo(abcdk_message_t *msg)
     abcdk_message_t *cargo;
     void *msg_ptr;
     size_t msg_len;
-    void *cargo_ptr;
-    size_t cargo_len;
+    size_t remain;
     int chk;
 
     msg_ptr = abcdk_message_data(msg);
     msg_len = abcdk_message_size(msg);
 
-    cargo = abcdk_message_alloc(msg_len - ABCDK_RPC_HDR_SIZE);
-    if(!cargo)
+    cargo = abcdk_message_alloc(NULL);
+    if (!cargo)
         return NULL;
 
-    cargo_ptr = abcdk_message_data(cargo);
-    cargo_len = abcdk_message_size(cargo);
-
-    memcpy(cargo_ptr, ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), cargo_len);
+    abcdk_message_recv(cargo, ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), msg_len - ABCDK_RPC_HDR_SIZE, &remain);
 
     return cargo;
 }
@@ -285,7 +281,7 @@ void _abcdk_rpc_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
         return;
 
     rpc_p = (abcdk_rpc_node_t *)abcdk_comm_get_extend0(node_p);
-    ABCDK_ASSERT(rpc_p != NULL && rpc_p->magic == ABCDK_RPC_MAGIC,"未通过rpc接口建立连接，不能调此接口。");
+    ABCDK_ASSERT(rpc_p != NULL && rpc_p->magic == ABCDK_RPC_MAGIC,"未通过RPC接口建立连接，不能调此接口。");
 
     /*复制指针。*/
     rpc_p->callback = rpc_listen_p->callback;
@@ -339,7 +335,7 @@ void _abcdk_rpc_event_connect(abcdk_comm_node_t *node)
     abcdk_comm_send_watch(node);
 }
 
-int _abcdk_rpc_msg_unpack(void *opaque, abcdk_message_t *msg)
+int _abcdk_rpc_msg_unpack(void *opaque, abcdk_message_t *msg,size_t *diff)
 {   
     abcdk_rpc_node_t *rpc_p = NULL;
     uint32_t len;
@@ -355,7 +351,11 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_message_t *msg)
     msg_off = abcdk_message_offset(msg);
 
     if (msg_off < ABCDK_RPC_HDR_SIZE)
+    {
+        /*增量扩展内存。*/
+        *diff = ABCDK_RPC_HDR_SIZE - msg_off;
         return 0;
+    }
 
 #if 0
     len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 0));
@@ -377,7 +377,7 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_message_t *msg)
     if (msg_off < len)
     {
         /*增量扩展内存。*/
-        abcdk_message_expand(msg, ABCDK_MIN(524288, len - msg_len));
+        *diff = ABCDK_MIN(524288, len - msg_off);
         return 0;
     }
 
@@ -401,16 +401,14 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     /*准备接收数的缓存。*/
     if (!rpc_p->in_buffer)
     {
-        rpc_p->in_buffer = abcdk_message_alloc(ABCDK_RPC_HDR_SIZE);
+        rpc_p->in_buffer = abcdk_message_alloc(NULL);
         if (!rpc_p->in_buffer)
         {
             abcdk_comm_set_timeout(node, 1);
             return;
         }
 
-        /*设置消息协议。*/
-        abcdk_message_protocol_t prot = {rpc_p,_abcdk_rpc_msg_unpack};
-        abcdk_message_protocol_set(rpc_p->in_buffer, &prot);
+        abcdk_message_protocol_set_simple(rpc_p->in_buffer,rpc_p,_abcdk_rpc_msg_unpack);
     }
     
     chk = abcdk_message_recv(rpc_p->in_buffer,data,size,remain);
@@ -534,7 +532,7 @@ int abcdk_rpc_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t
     ABCDK_ASSERT(cb->request_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
   
     rpc_p = (abcdk_rpc_node_t *)abcdk_comm_get_extend0(node);
-    ABCDK_ASSERT(rpc_p != NULL && rpc_p->magic == ABCDK_RPC_MAGIC,"未通过rpc接口建立连接，不能调此接口。");
+    ABCDK_ASSERT(rpc_p != NULL && rpc_p->magic == ABCDK_RPC_MAGIC,"未通过RPC接口建立连接，不能调此接口。");
     
     /*初始化状态。*/
     rpc_p->status = ABCDK_RPC_STATUS_SYNC;

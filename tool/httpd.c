@@ -794,7 +794,7 @@ void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_extend(node);
 
     if (!http_p->req)
-        http_p->req = abcdk_http_request_alloc(1024 * 1024, http_p->ctx->up_max_size, http_p->ctx->up_tmp_path);
+        http_p->req = abcdk_http_request_alloc(http_p->ctx->up_max_size, http_p->ctx->up_tmp_path);
 
     if (!http_p->req)
     {

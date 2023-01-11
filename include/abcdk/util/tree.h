@@ -37,7 +37,7 @@ typedef struct _abcdk_tree
     /**
      * 数据对象。
      * 
-     * @warning 当节点被删除时，自动调用abcdk_object_unref()释放。
+     * @note 当节点被删除时，自动调用abcdk_object_unref()释放。
     */
     abcdk_object_t *obj;
 
@@ -144,7 +144,7 @@ void abcdk_tree_insert2(abcdk_tree_t *father, abcdk_tree_t *child,int first);
 /**
  * 节点交换。
  * 
- * @warning 必须是同一个父节点的子节点。
+ * @note 必须是同一个父节点的子节点。
  * 
 */
 void abcdk_tree_swap(abcdk_tree_t *src,abcdk_tree_t *dst);
@@ -195,7 +195,7 @@ void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order);
  * 格式化打印。
  * 
  * @note 输出有层次感的树形图。
- * @warning 不会在末尾添加'\n'(换行)字符。
+ * @note 不会在末尾添加'\n'(换行)字符。
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */

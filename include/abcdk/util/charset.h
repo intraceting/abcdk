@@ -15,7 +15,7 @@ __BEGIN_DECLS
 /**
  * 检验UTF-8编码。
  * 
- * @warning 不识别BOM头。
+ * @note 不识别BOM头。
  * 
  * 1 bytes: 0xxxxxxx ;
  * 2 bytes: 110xxxxx 10xxxxxx ;

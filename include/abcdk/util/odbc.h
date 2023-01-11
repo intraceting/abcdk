@@ -49,7 +49,7 @@ SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx);
 /**
  * 连接数据库。
  *
- * @warning 默认：禁用自动提交。
+ * @note 默认：禁用自动提交。
  *
  * @param timeout 超时(秒)，仅登录时有效。
  * @param tracefile 跟踪文件，NULL(0) 忽略。
@@ -59,7 +59,7 @@ SQLRETURN abcdk_odbc_connect(abcdk_odbc_t *ctx, const char *uri, time_t timeout,
 /**
  * 连接数据库。
  *
- * @warning 默认：使用TCP连接。
+ * @note 默认：使用TCP连接。
  *
  * @param product 产品名称的指针。支持：DB2/MYSQL/ORACLE/SQLSERVER/POSTGRESQL
  * @param driver 驱动名称的指针。见：/etc/odbcinst.ini

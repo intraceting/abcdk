@@ -13,6 +13,7 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
     int au_len,au_size;
     int hlen,flen[200][2] = {0};
     const void *p;
+    size_t remain;
     int chk;
 
     assert(data != NULL && size > 0 && q != NULL && size_bits > 0 && index_bits >=0);
@@ -59,12 +60,12 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
         if (flen[j][0] <= 0)
             break;
 
-        msg = abcdk_message_copy(p, flen[j][0]);
+        msg = abcdk_message_alloc(NULL);
         if (!msg)
             return -1;
 
         /*模拟接收。*/
-        abcdk_message_reset(msg,flen[j][0]);
+        abcdk_message_recv(msg,p,flen[j][0],&remain);
 
         chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)

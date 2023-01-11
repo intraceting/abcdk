@@ -64,7 +64,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,c
 /**
  * 创建数据流。
  * 
- * @warning 仅支持视频流。
+ * @note 仅支持视频流。
  * 
  * @param extdata 扩展数据的指针，NULL(0) 忽略。
  * @param extsize 扩展数据的长度。
@@ -105,7 +105,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet);
 /**
  * 写入数据包(已编码)。
  * 
- * @warning 不支持B帧。
+ * @note 不支持B帧。
  * 
  * @return >= 0 成功，< 0 失败。
 */
@@ -114,7 +114,7 @@ int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int stream);
 /**
  * 写入数据帧(未编码)。
  * 
- * @warning 仅支持图像。
+ * @note 仅支持图像。
  * 
  * @return >= 0 成功，< 0 失败。
 */

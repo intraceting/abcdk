@@ -39,7 +39,7 @@ void abcdk_heap_free2(void **data);
 /**
  * 内存克隆。
  * 
- * @warning 申请内存大小为size+1。
+ * @note 申请内存大小为size+1。
 */
 void *abcdk_heap_clone(const void *data, size_t size);
 

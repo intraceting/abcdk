@@ -14,6 +14,17 @@
 __BEGIN_DECLS
 
 /**
+ * 刷新数据。
+ * 
+ * @warning 如果映射的内存页面是私有模式，对数据修改不会影响原文件。
+ * 
+ * @param async 0 同步，!0 异步。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_msync(abcdk_object_t* obj,int async);
+
+/**
  * 映射文件到内存页面。
  * 
  * @note 文件句柄可以提前关闭。
@@ -39,25 +50,11 @@ abcdk_object_t* abcdk_mmap_filename(const char* name,size_t truncate,int rw,int 
 abcdk_object_t* abcdk_mmap_tempfile(char* name,size_t truncate,int rw,int shared);
 
 /**
- * 刷新数据。
- * 
- * 如果映射的内存页面是私有模式，对数据修改不会影响原文件。
- * 
- * @param async 0 同步，!0 异步。
+ * 重新映射。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_msync(abcdk_object_t* alloc,int async);
-
-/**
- * 解除内存页面映射。
- * 
- * 当前是最后一个引用者才会释放。
- * 
- * @param alloc 指针的指针。当接口返回时，被赋值NULL(0)。
- * 
-*/
-void abcdk_munmap(abcdk_object_t** alloc);
+int abcdk_mremap(abcdk_object_t* obj,size_t truncate,int rw,int shared);
 
 __END_DECLS
 

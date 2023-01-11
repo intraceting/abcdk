@@ -44,7 +44,7 @@ json_object *abcdk_json_refer(json_object *obj);
 /**
  * 定位节点。
  * 
- * @warning 不会改变子节点的引用计数。
+ * @note 不会改变子节点的引用计数。
  * 
  * @param ... KEY的指针，NULL(0) 结束。
  * 
@@ -69,15 +69,15 @@ const char *abcdk_json_string(json_object *obj);
 /**
  * 添加子节点.
  * 
- * @warning 不会改变子节点的引用计数。
+ * @note 不会改变子节点的引用计数。
 */
 void abcdk_json_add(json_object *father,const char *key,json_object *val);
 
 /**
  * 添加新节点(string)。
  * 
- * @warning 不会改变子节点的引用计数。
- * @warning value的长度最大为1024字节(包括'\0'终止符)。
+ * @note 不会改变子节点的引用计数。
+ * @note value的长度最大为1024字节(包括'\0'终止符)。
  * 
  * @param father 父级节点，NULL(0) 仅创建新节点。
  * @param key 键，NULL(0) 仅创建新节点。
@@ -89,8 +89,8 @@ json_object *abcdk_json_add_vformat(json_object *father,const char *key,const ch
 /**
  * 添加新节点(string)。
  * 
- * @warning 不会改变子节点的引用计数。
- * @warning value的长度最大为1024字节(包括'\0'终止符)。
+ * @note 不会改变子节点的引用计数。
+ * @note value的长度最大为1024字节(包括'\0'终止符)。
  * 
  * @param father 父级节点，NULL(0) 仅创建新节点。
  * @param key 键，NULL(0) 仅创建新节点。
@@ -102,7 +102,7 @@ json_object *abcdk_json_add_format(json_object *father,const char *key,const cha
 /**
  * 添加新节点(int32)。
  * 
- * @warning 不会改变子节点的引用计数。
+ * @note 不会改变子节点的引用计数。
  * 
  * @param father 父级节点，NULL(0) 仅创建新节点。
  * @param key 键，NULL(0) 仅创建新节点。
@@ -114,7 +114,7 @@ json_object *abcdk_json_add_int32(json_object *father,const char *key,int32_t va
 /**
  * 添加新节点(int64)。
  * 
- * @warning 不会改变子节点的引用计数。
+ * @note 不会改变子节点的引用计数。
  * 
  * @param father 父级节点，NULL(0) 仅创建新节点。
  * @param key 键，NULL(0) 仅创建新节点。
@@ -126,7 +126,7 @@ json_object *abcdk_json_add_int64(json_object *father,const char *key,int64_t va
 /**
  * 添加新节点(boolean)。
  * 
- * @warning 不会改变子节点的引用计数。
+ * @note 不会改变子节点的引用计数。
  * 
  * @param father 父级节点，NULL(0) 仅创建新节点。
  * @param key 键，NULL(0) 仅创建新节点。
@@ -138,7 +138,7 @@ json_object *abcdk_json_add_boolean(json_object *father,const char *key,json_boo
 /**
  * 添加新节点(double)。
  * 
- * @warning 不会改变子节点的引用计数。
+ * @note 不会改变子节点的引用计数。
  * 
  * @param father 父级节点，NULL(0) 仅创建新节点。
  * @param key 键，NULL(0) 仅创建新节点。

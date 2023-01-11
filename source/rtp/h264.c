@@ -36,12 +36,12 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
         *
         * NAL Header + data(Nbytes)
         */
-        msg = abcdk_message_copy(data, size);
+        msg = abcdk_message_alloc(NULL);
         if (!msg)
             return -1;
         
         /*模拟接收数据。*/
-        abcdk_message_reset(msg,size);
+        abcdk_message_recv(msg,data,size,&remain);
 
         chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)
@@ -112,7 +112,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
 
         if (s)
         {
-            msg = abcdk_message_alloc(size2);
+            msg = abcdk_message_alloc(NULL);
             if (!msg)
                 return -1;
 
@@ -139,9 +139,6 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
             msg = (abcdk_message_t *)abcdk_queue_pop(q, 0);
             if (!msg)
                 return -1;
-
-            /*增量扩展缓存。*/
-            abcdk_message_expand(msg, size2 - 1);
 
             /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
             abcdk_message_recv(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);

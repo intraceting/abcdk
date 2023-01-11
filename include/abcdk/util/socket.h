@@ -61,7 +61,7 @@ typedef struct _abcdk_ifaddrs
     /** 
      * 广播地址。 
      * 
-     * @warning IPv6无效。
+     * @note IPv6无效。
     */
     abcdk_sockaddr_t broa;
 } abcdk_ifaddrs_t;
@@ -253,7 +253,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where);
 /**
  * 比较SOCKET地址。
  * 
- * @warning 忽略端口。
+ * @note 忽略端口。
  *
 */
 int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1,const abcdk_sockaddr_t *addr2);

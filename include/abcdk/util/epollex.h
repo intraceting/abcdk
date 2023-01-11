@@ -37,7 +37,7 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
 /**
  * 分离句柄。
  * 
- * @warning 关联成功后，句柄在分离前不可被关闭或释放。
+ * @note 关联成功后，句柄在分离前不可被关闭或释放。
  * 
  * @return 0 成功，!0 失败(或不存在)。
 */
@@ -46,8 +46,8 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd);
 /**
  * 关联句柄。
  * 
- * @warning 关联成功后，句柄在分离前不可被关闭或释放。
- * @warning 默认空闲超时30秒。
+ * @note 关联成功后，句柄在分离前不可被关闭或释放。
+ * @note 默认空闲超时30秒。
  * 
  * @param [in] fd 句柄。
  * @param [in] data 关联数据。
@@ -72,7 +72,7 @@ size_t abcdk_epollex_count(abcdk_epollex_t *ctx);
 /**
  * 设置超时。
  * 
- * @warning 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
+ * @note 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
  * 
  * @param [in] timeout 超时(毫秒)。
  * 

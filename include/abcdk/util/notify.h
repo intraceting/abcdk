@@ -20,7 +20,7 @@ typedef struct _abcdk_notify_event
     /** 
      * 缓存。
      * 
-     * @warning 尽量不要直接修改。
+     * @note 尽量不要直接修改。
     */
     abcdk_buffer_t *buf;
 
@@ -76,7 +76,7 @@ int abcdk_notify_remove(int fd,int wd);
 /**
  * 监视变更事件。
  * 
- * @warning 阻塞模式的句柄，响应可能会有延迟。
+ * @note 阻塞模式的句柄，响应可能会有延迟。
  * 
  * @param [in] fd 句柄。
  * @param [out] event 事件。
