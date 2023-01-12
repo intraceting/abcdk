@@ -41,7 +41,7 @@ typedef struct _abcdk_http_callback
     /**
      * 请求数据到达通知回调函数。
      * 
-     * @param [out] next_proto 下层协议。0 HTTP/RTSP/RTP，1 隧道。
+     * @param [out] next_proto 下层协议。
     */
     void (*request_cb)(abcdk_comm_node_t *node, abcdk_http_request_t *req,int *next_proto);
 

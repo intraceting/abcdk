@@ -7,7 +7,7 @@
 #ifndef ABCDK_HTTP_REPLY_H
 #define ABCDK_HTTP_REPLY_H
 
-#include "abcdk/comm/comm.h"
+#include "abcdk/util/comm.h"
 
 __BEGIN_DECLS
 

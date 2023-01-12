@@ -9,14 +9,34 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/mmap.h"
+#include "abcdk/util/endian.h"
 #include "abcdk/util/http.h"
 #include "abcdk/util/url.h"
-#include "abcdk/comm/message.h"
+#include "abcdk/util/receiver.h"
 
 __BEGIN_DECLS
 
 /** HTTP请求对象。*/
 typedef struct _abcdk_http_request abcdk_http_request_t;
+
+/** 请求协议。*/
+typedef enum _abcdk_http_request_protocol
+{
+    /** HTTP RTSP*/
+    ABCDK_HTTP_REQUEST_PROTO_NATURAL = 0,
+#define ABCDK_HTTP_REQUEST_PROTO_NATURAL ABCDK_HTTP_REQUEST_PROTO_NATURAL
+#define ABCDK_HTTP_REQUEST_PROTO_HTTP ABCDK_HTTP_REQUEST_PROTO_NATURAL
+#define ABCDK_HTTP_REQUEST_PROTO_RTSP ABCDK_HTTP_REQUEST_PROTO_NATURAL
+
+    /** RTCP */
+    ABCDK_HTTP_REQUEST_PROTO_RTCP = 1,
+#define ABCDK_HTTP_REQUEST_PROTO_RTCP ABCDK_HTTP_REQUEST_PROTO_RTCP
+
+    /** Tunnel */
+    ABCDK_HTTP_REQUEST_PROTO_TUNNEL = 2
+#define ABCDK_HTTP_REQUEST_PROTO_TUNNEL ABCDK_HTTP_REQUEST_PROTO_TUNNEL
+
+}abcdk_http_request_protocol_t;
 
 /**
  * 减少对象的引用计数。
@@ -33,10 +53,11 @@ abcdk_http_request_t *abcdk_http_request_refer(abcdk_http_request_t *src);
 /**
  * 创建请求对象。
  * 
+ * @param [in] proto 协议。
  * @param [in] max 最大长度。
  * @param [in] tempdir 缓存目录。NULL(0) 忽略。
 */
-abcdk_http_request_t *abcdk_http_request_alloc(size_t max,const char *tempdir);
+abcdk_http_request_t *abcdk_http_request_alloc(int proto, size_t max, const char *tempdir);
 
 /**
  * 附加消息。

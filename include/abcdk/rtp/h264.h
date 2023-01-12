@@ -10,7 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/queue.h"
 #include "abcdk/util/bloom.h"
-#include "abcdk/comm/message.h"
+#include "abcdk/util/receiver.h"
 
 __BEGIN_DECLS
 

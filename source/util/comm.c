@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/comm/comm.h"
+#include "abcdk/util/comm.h"
 
 /** 通讯环境。*/
 struct _abcdk_comm

@@ -4,10 +4,10 @@
  * MIT License
  * 
  */
-#include "abcdk/comm/message.h"
+#include "abcdk/util/receiver.h"
 
-/** 消息对象。*/
-struct _abcdk_message
+/** 接收器对象。*/
+struct _abcdk_receiver
 {
     /** 引用计数器。*/
     volatile int refcount;
@@ -31,14 +31,14 @@ struct _abcdk_message
     size_t size;
 
     /** 消息协议。*/
-    abcdk_message_protocol_t protocol;
+    abcdk_receiver_protocol_t protocol;
     
-};// abcdk_message_t;
+};// abcdk_receiver_t;
 
 
-void abcdk_message_unref(abcdk_message_t **msg)
+void abcdk_receiver_unref(abcdk_receiver_t **msg)
 {
-    abcdk_message_t *msg_p = NULL;
+    abcdk_receiver_t *msg_p = NULL;
 
     if (!msg || !*msg)
         return;
@@ -63,7 +63,7 @@ void abcdk_message_unref(abcdk_message_t **msg)
     abcdk_heap_free(msg_p);
 }
 
-abcdk_message_t *abcdk_message_refer(abcdk_message_t *src)
+abcdk_receiver_t *abcdk_receiver_refer(abcdk_receiver_t *src)
 {
     int chk;
 
@@ -75,11 +75,11 @@ abcdk_message_t *abcdk_message_refer(abcdk_message_t *src)
     return src;
 }
 
-abcdk_message_t *abcdk_message_alloc(const char *tempdir)
+abcdk_receiver_t *abcdk_receiver_alloc(const char *tempdir)
 {
-    abcdk_message_t *msg = NULL;
+    abcdk_receiver_t *msg = NULL;
     
-    msg = abcdk_heap_alloc(sizeof(abcdk_message_t));
+    msg = abcdk_heap_alloc(sizeof(abcdk_receiver_t));
     if (!msg)
         return NULL;
 
@@ -90,13 +90,13 @@ abcdk_message_t *abcdk_message_alloc(const char *tempdir)
     msg->capacity = 0;
     msg->buf = NULL;
 
-    if (tempdir)
+    if (tempdir && *tempdir)
     {
         if (access(tempdir, W_OK) != 0)
             goto final_error;
 
         strncpy(msg->tmp_file, tempdir, PATH_MAX - 6);
-        abcdk_dirdir(msg->tmp_file, "XXXXXX");
+        abcdk_dirdir(msg->tmp_file, "abcdk-receiver-XXXXXX");
 
         msg->tmp_obj = abcdk_mmap_tempfile(msg->tmp_file, 4096, 1, 1);
         if (!msg->tmp_obj)
@@ -107,33 +107,33 @@ abcdk_message_t *abcdk_message_alloc(const char *tempdir)
 
 final_error:
 
-    abcdk_message_unref(&msg);
+    abcdk_receiver_unref(&msg);
 
     return NULL;
 }
 
-void *abcdk_message_data(const abcdk_message_t *msg)
+void *abcdk_receiver_data(const abcdk_receiver_t *msg)
 {
     assert(msg != NULL);
 
     return msg->buf;
 }
 
-size_t abcdk_message_size(const abcdk_message_t *msg)
+size_t abcdk_receiver_size(const abcdk_receiver_t *msg)
 {
     assert(msg != NULL);
 
     return msg->size;
 }
 
-size_t abcdk_message_offset(const abcdk_message_t *msg)
+size_t abcdk_receiver_offset(const abcdk_receiver_t *msg)
 {
     assert(msg != NULL);
 
     return msg->offset;
 }
 
-int abcdk_message_resize(abcdk_message_t *msg, size_t size)
+int abcdk_receiver_resize(abcdk_receiver_t *msg, size_t size)
 {
     void *new_buf = NULL;
     int chk;
@@ -146,13 +146,13 @@ int abcdk_message_resize(abcdk_message_t *msg, size_t size)
 
     msg->size = size;
 
-#define ABCDK_MESSAGE_SIZE_DEFAULT (20*1024)
+#define ABCDK_RECEIVER_SIZE_DEFAULT (20*1024)
 
     /*新的容量与旧的容量一样时，不需要调整。*/
-    if (msg->capacity == ABCDK_MAX(msg->size, ABCDK_MESSAGE_SIZE_DEFAULT))
+    if (msg->capacity == ABCDK_MAX(msg->size, ABCDK_RECEIVER_SIZE_DEFAULT))
         goto final;
 
-    msg->capacity = ABCDK_MAX(msg->size, ABCDK_MESSAGE_SIZE_DEFAULT);
+    msg->capacity = ABCDK_MAX(msg->size, ABCDK_RECEIVER_SIZE_DEFAULT);
 
     if (msg->tmp_obj)
     {
@@ -192,7 +192,7 @@ final:
     return 0;
 }
 
-void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *prot)
+void abcdk_receiver_protocol_set(abcdk_receiver_t *msg, abcdk_receiver_protocol_t *prot)
 {
     assert(msg != NULL && prot != NULL);
     ABCDK_ASSERT(prot->unpack_cb != NULL,"未绑定解包回调函数，消息对象无法正常工作。");
@@ -200,7 +200,7 @@ void abcdk_message_protocol_set(abcdk_message_t *msg, abcdk_message_protocol_t *
     msg->protocol = *prot;
 }
 
-int abcdk_message_recv(abcdk_message_t *msg, const void *data,size_t size,size_t *remain)
+int abcdk_receiver_recv(abcdk_receiver_t *msg, const void *data,size_t size,size_t *remain)
 {
     ssize_t rsize = 0;
     size_t rall = 0,diff = 0;
@@ -231,7 +231,7 @@ int abcdk_message_recv(abcdk_message_t *msg, const void *data,size_t size,size_t
         /*检查可用空间。*/
         if (msg->size - msg->offset < diff)
         {
-            if (abcdk_message_resize(msg, msg->size + diff) != 0)
+            if (abcdk_receiver_resize(msg, msg->size + diff) != 0)
                 chk = -1;
         }
 

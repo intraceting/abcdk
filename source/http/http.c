@@ -20,18 +20,13 @@ typedef struct _abcdk_http_node
     abcdk_http_callback_t cb_cp;
 
     /**
-     * 0: unknown
-     * 1: http/1.0 or http/1.1 or http/0.9 or rtsp/1.0
+     * 当前协议。
+     * 1: http/1.0 http/1.1 http/0.9 rtsp/1.0
      * 2: http/2
      */
     int protocol;
 
-    /**
-     * 下层协议。
-     *
-     * 0：HTTP/RTSP/RTP
-     * 1：隧道
-     */
+    /** 下层协议。*/
     int next_proto;
 
     /** 请求消息。*/
@@ -79,7 +74,7 @@ abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t m
 
     http_p->req_max = max;
 
-    if (tempdir)
+    if (tempdir && *tempdir)
     {
         if (access(tempdir, W_OK) != 0)
             goto final_error;
@@ -146,8 +141,11 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
 
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
 
-    /*默认支持1.1 or 1.0 or 0.9。*/
+    /*默认协议。*/
     http_p->protocol = 1;
+
+    /*默认下层。*/
+    http_p->next_proto = ABCDK_HTTP_REQUEST_PROTO_NATURAL;
 
 #ifdef HEADER_SSL_H
     /*如果SSL开启，检查SSL验证结果。*/
@@ -237,23 +235,17 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend(node);
 
     if (!http_p->req)
-        http_p->req = abcdk_http_request_alloc(http_p->req_max, http_p->req_tempdir);
+        http_p->req = abcdk_http_request_alloc(http_p->next_proto, http_p->req_max, http_p->req_tempdir);
 
     if (!http_p->req)
     {
-        *remain = 0;
         abcdk_comm_set_timeout(node, 1);
         return;
     }
 
-    if(http_p->next_proto == 0)
-        chk = abcdk_http_request_append(http_p->req, data, size, remain);
-    else if(http_p->next_proto == 1)
-        chk = abcdk_http_request_append(http_p->req, data, size, NULL);
-
+    chk = abcdk_http_request_append(http_p->req, data, size, remain);
     if (chk < 0)
     {
-        *remain = 0;
         abcdk_comm_set_timeout(node, 1);
         return;
     }
@@ -263,7 +255,6 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     }
     else if (chk > 0)
     {
-
         if (http_p->callback->request_cb)
             http_p->callback->request_cb(node, http_p->req, &http_p->next_proto);
 

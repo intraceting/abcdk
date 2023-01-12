@@ -208,7 +208,7 @@ int abcdk_test_rpc(abcdk_option_t *args)
 
             int len = 1000;
             char *req = (char *)abcdk_heap_alloc(len);
-            abcdk_message_t *rsp = NULL;
+            abcdk_object_t *rsp = NULL;
 
             sprintf(req, "%lu", abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
@@ -219,7 +219,7 @@ int abcdk_test_rpc(abcdk_option_t *args)
 
                 // printf("%d=%s\n",i,(char*)abcdk_message_data(rsp));
 
-                abcdk_message_unref(&rsp);
+                abcdk_object_unref(&rsp);
             }
             else
             {

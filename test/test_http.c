@@ -41,9 +41,9 @@ typedef struct _abcdk_test_h264
 
 void _abcdk_test_http_msg_destroy_cb(const void *msg)
 {
-    abcdk_message_t *msg_p = (abcdk_message_t *)msg;
+    abcdk_receiver_t *msg_p = (abcdk_receiver_t *)msg;
 
-    abcdk_message_unref(&msg_p);
+    abcdk_receiver_unref(&msg_p);
 }
 
 void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
@@ -107,20 +107,20 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
 
     abcdk_test_h264_t *h = (abcdk_test_h264_t *)abcdk_comm_get_userdata(node);
 
-    for (int i = 0; i < 100; i++)
-    {
-        const char *p = abcdk_http_request_env(req, i);
-        if (!p)
-            break;
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     const char *p = abcdk_http_request_env(req, i);
+    //     if (!p)
+    //         break;
 
-        fprintf(stderr, "%s\n", p);
-    }
+    //     fprintf(stderr, "%s\n", p);
+    // }
 
     const char *method_p = abcdk_http_request_env(req, 0);
     const char *cseq_p = abcdk_http_request_getenv(req, "cseq");
     const char *contlen_p = abcdk_http_request_getenv(req, "Content-Length");
 
-    if (method_p)
+    if (*next_proto == ABCDK_HTTP_REQUEST_PROTO_RTSP)
     {
 
         int cseq = strtol(cseq_p, NULL, 0);
@@ -181,9 +181,9 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
             abcdk_comm_post_format(node, 1000, "Server: test_rtsp\r\n");
             abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
-            abcdk_comm_post_format(node, 1000, "Transport: RTP/AVP/TCP;unicast;interleaved=0‐1;ssrc=00000000\r\n");
-            abcdk_comm_post_format(node, 1000, "x‐Dynamic‐Rate: 1\r\n");
-            abcdk_comm_post_format(node, 1000, "x‐Transport‐Options: late‐tolerance=1.400000\r\n");
+            abcdk_comm_post_format(node, 1000, "Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=00000000\r\n");
+            abcdk_comm_post_format(node, 1000, "x-Dynamic-Rate: 1\r\n");
+            abcdk_comm_post_format(node, 1000, "x-Transport-Options: late-tolerance=1.400000\r\n");
             abcdk_comm_post_format(node, 1000, "\r\n");
         }
         else if (abcdk_strncmp(method_p, "RECORD", 5, 1) == 0)
@@ -194,6 +194,8 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             abcdk_comm_post_format(node, 1000, "Server: test_rtsp\r\n");
             abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
             abcdk_comm_post_format(node, 1000, "\r\n");
+
+            *next_proto = ABCDK_HTTP_REQUEST_PROTO_RTCP;
         }
         else if (abcdk_strncmp(method_p, "TEARDOWN", 8, 1) == 0)
         {
@@ -273,13 +275,13 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             {
                 while (1)
                 {
-                    abcdk_message_t *msg = (abcdk_message_t *)abcdk_queue_pop(h->q, 1);
+                    abcdk_receiver_t *msg = (abcdk_receiver_t *)abcdk_queue_pop(h->q, 1);
                     if (!msg)
                         break;
                     abcdk_write(h->fd, "\0\0\0\1", 4);
-                    abcdk_write(h->fd, abcdk_message_data(msg), abcdk_message_offset(msg));
+                    abcdk_write(h->fd, abcdk_receiver_data(msg), abcdk_receiver_offset(msg));
 
-                    abcdk_message_unref(&msg);
+                    abcdk_receiver_unref(&msg);
                 }
             }
         }
@@ -295,7 +297,7 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             {
                 while (1)
                 {
-                    abcdk_message_t *msg = (abcdk_message_t *)abcdk_queue_pop(h->q2, 1);
+                    abcdk_receiver_t *msg = (abcdk_receiver_t *)abcdk_queue_pop(h->q2, 1);
                     if (!msg)
                         break;
 
@@ -305,27 +307,20 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
                     r.id = 0;
                     r.protection_absent = 1;
                     r.adts_buffer_fullness = 0x7ff;
-                    r.aac_frame_length = abcdk_message_offset(msg) + 7;
+                    r.aac_frame_length = abcdk_receiver_offset(msg) + 7;
                     r.channel_cfg = abcdk_aac_channels2config(atoi(h->a->encoder_param->pstrs[0]));
                     r.profile = 1;
                     r.sample_rate_index = abcdk_aac_sample_rates2index(h->a->clock_rate);
 
                     abcdk_aac_adts_header_serialize(&r, hdr, 7);
                     abcdk_write(h->fd2, hdr, 7);
-                    abcdk_write(h->fd2, abcdk_message_data(msg), abcdk_message_offset(msg));
+                    abcdk_write(h->fd2, abcdk_receiver_data(msg), abcdk_receiver_offset(msg));
 
-                    abcdk_message_unref(&msg);
+                    abcdk_receiver_unref(&msg);
                 }
             }
         }
     }
-}
-
-void _abcdk_test_http_fetch_cb(abcdk_comm_node_t *node)
-{
-    //    *delay = 1000;
-
-    fprintf(stderr, "aaaa\n");
 }
 
 void _abcdk_test_http_close_cb(abcdk_comm_node_t *node)
@@ -383,8 +378,8 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
 #endif
 
-      abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_http_request_cb,_abcdk_test_http_close_cb};
-   // abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_rtsp_request_cb, _abcdk_test_http_close_cb};
+   //   abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_http_request_cb,_abcdk_test_http_close_cb};
+    abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_rtsp_request_cb, _abcdk_test_http_close_cb};
     abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
 
     while (getchar() != 'Q')
