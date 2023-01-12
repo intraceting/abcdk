@@ -43,7 +43,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             return -1;
         
         /*模拟接收数据。*/
-        abcdk_receiver_recv(msg, data, size, &remain);
+        abcdk_receiver_append(msg, data, size, &remain);
 
         chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)
@@ -81,8 +81,8 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
                 return -1;
 
             /*模拟接收数据。*/
-            abcdk_receiver_recv(msg, data, 2, &remain);
-            abcdk_receiver_recv(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
+            abcdk_receiver_append(msg, data, 2, &remain);
+            abcdk_receiver_append(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
             /* 还原NAL Header。分片时，原始头type被放在FU Header中。*/
             p = abcdk_receiver_data(msg);
@@ -105,7 +105,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
                 return -1;
 
             /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
-            abcdk_receiver_recv(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
+            abcdk_receiver_append(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
             chk = abcdk_queue_push(q, msg, 0);
             if (chk != 0)

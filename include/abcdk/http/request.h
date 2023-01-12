@@ -62,7 +62,7 @@ abcdk_http_request_t *abcdk_http_request_alloc(int proto, size_t max, const char
 /**
  * 附加消息。
  * 
- * @param [in out] remain 剩余的数据长度，返回时填充。NULL(0) 未知的流数据。
+ * @param [out] remain 剩余的数据长度。NULL(0) 未知的流数据。
  * 
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */

@@ -126,7 +126,7 @@ char *abcdk_mac_fetch(const char *ifname, char addr[12]);
 /**
  * 查询网卡连接状态。
  * 
- * @param flag 状态指针。返回前填充连接状态。
+ * @param [out] flag 状态。
  * 
  * @return 0 成功，-1 失败。
  * 

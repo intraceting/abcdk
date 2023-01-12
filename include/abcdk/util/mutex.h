@@ -14,7 +14,7 @@ __BEGIN_DECLS
 /**
  * 互斥量、事件。
  * 
- * 如果需要支持跨进程特性，需要让结构体数据运行在共享内存中。
+ * @note 如果需要支持跨进程特性，需要让结构体数据运行在共享内存中。
 */
 typedef struct _abcdk_mutex
 {
@@ -41,29 +41,23 @@ typedef struct _abcdk_mutex
 } abcdk_mutex_t;
 
 
-/**
- * 销毁互斥量及属性。
-*/
+/** 销毁。*/
 void abcdk_mutex_destroy(abcdk_mutex_t *ctx);
 
-/**
- * 初始化互斥量。
- * 
- * 在调用此函数前需先初始化属性。
-*/
+/** 初始化。*/
 void abcdk_mutex_init(abcdk_mutex_t *ctx);
 
 /**
- * 初始化互斥量及属性。
+ * 初始化。
  * 
- * 当互斥量拥用共享属性时，在多进程间有效。
+ * @note 当互斥量拥用共享属性时，在多进程间有效。
  * 
  * @param shared 0 私有，!0 共享。
 */
 void abcdk_mutex_init2(abcdk_mutex_t *ctx, int shared);
 
 /**
- * 互斥量加锁。
+ * 加锁。
  * 
  * @param block !0 直到成功或出错返回，0 尝试一下即返回。
  * 
@@ -73,7 +67,7 @@ void abcdk_mutex_init2(abcdk_mutex_t *ctx, int shared);
 int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block);
 
 /**
- * 互斥量解锁。
+ * 解锁。
  * 
  * @return 0 成功；!0 出错。
 */

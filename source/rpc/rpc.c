@@ -411,7 +411,7 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
         abcdk_receiver_protocol_set_simple(rpc_p->in_buffer,rpc_p,_abcdk_rpc_msg_unpack);
     }
     
-    chk = abcdk_receiver_recv(rpc_p->in_buffer,data,size,remain);
+    chk = abcdk_receiver_append(rpc_p->in_buffer,data,size,remain);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);

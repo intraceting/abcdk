@@ -65,7 +65,7 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
             return -1;
 
         /*模拟接收。*/
-        abcdk_receiver_recv(msg,p,flen[j][0],&remain);
+        abcdk_receiver_append(msg,p,flen[j][0],&remain);
 
         chk = abcdk_queue_push(q, msg, 0);
         if (chk != 0)

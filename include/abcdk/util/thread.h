@@ -13,7 +13,7 @@
 __BEGIN_DECLS
 
 /**
- * 线程句柄和返回值。
+ * 线程对象。
  * 
 */
 typedef struct _abcdk_thread_t
@@ -45,7 +45,7 @@ typedef struct _abcdk_thread_t
 /**
  * 创建线程。
  * 
- * @param joinable 0 结束后自动回收资源，!0 结束后需要调用者回收资源。
+ * @param joinable 线程结束后回收资源的方式。0 系统自动回收，!0 由调用者回收。
  * 
  * @return 0 成功；!0 出错。
  * 
@@ -64,7 +64,7 @@ int abcdk_thread_join(abcdk_thread_t* ctx);
 /**
  * 设置当前线程名字。
  * 
- * 最大支持16个字节(Bytes)。
+ * @note 最大支持16个字节(Bytes)。
  * 
  * @return 0 成功；!0 出错。
  * 

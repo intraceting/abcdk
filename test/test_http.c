@@ -130,7 +130,8 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
             abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
             abcdk_comm_post_format(node, 1000, "Date: Mon, Jul 21 2014 09:07:56 GMT\r\n");
-            abcdk_comm_post_format(node, 1000, "Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER\r\n");
+           // abcdk_comm_post_format(node, 1000, "Public: OPTIONS, DESCRIBE, SETUP, TEARDOWN, PLAY, PAUSE, GET_PARAMETER, SET_PARAMETER\r\n");
+            abcdk_comm_post_format(node, 1000, "Public: OPTIONS, DESCRIBE, TEARDOWN, PLAY, GET_PARAMETER, SET_PARAMETER\r\n");
             abcdk_comm_post_format(node, 1000, "\r\n");
         }
         else if (abcdk_strncmp(method_p, "DESCRIBE", 8, 1) == 0)

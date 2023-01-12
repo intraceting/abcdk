@@ -172,8 +172,8 @@ SQLRETURN abcdk_odbc_fetch(abcdk_odbc_t *ctx, SQLSMALLINT direction, SQLLEN offs
 /**
  * 获取数据集中指定字段的值。
  *
- * @param max 缓存区最大长度，值超过这个长度的则会被截断。
- * @param len 字段值长度的指针，返回前填充，NULL(0)忽略。
+ * @param [in] max 缓存区最大长度，值超过这个长度的则会被截断。
+ * @param [out] len 字段值长度的指针，NULL(0)忽略。
  *
  */
 SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT type,

@@ -19,6 +19,7 @@ void abcdk_avio_free(AVIOContext **ctx)
         return;
 
     ctx_p = *ctx;
+    *ctx = NULL;
 
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
     avio_context_free(&ctx_p);
@@ -27,8 +28,6 @@ void abcdk_avio_free(AVIOContext **ctx)
         av_free(ctx_p->buffer);
     av_free(ctx_p);
 #endif
-    /* Set NULL(0).*/
-    *ctx = NULL;
 }
 
 AVIOContext *abcdk_avio_alloc(int buf_blocks, int write_flag, void *opaque)
@@ -104,6 +103,7 @@ void abcdk_avformat_free(AVFormatContext **ctx)
         return;
 
     ctx_p = *ctx;
+    *ctx = NULL;
 
     /*自定义IO环境不能自动释放，需要单独释放。*/
     if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO)
@@ -117,9 +117,6 @@ void abcdk_avformat_free(AVFormatContext **ctx)
     /*释放自定义IO环境。*/
     if (pb)
         abcdk_avio_free(&pb);
-
-    /* Set NULL(0).*/
-    *ctx = NULL;
 }
 
 AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *filename,

@@ -15,7 +15,7 @@ __BEGIN_DECLS
 /** 接收器对象。*/
 typedef struct _abcdk_receiver abcdk_receiver_t;
 
-/**消息协议。*/
+/** 消息协议。*/
 typedef struct _abcdk_receiver_protocol
 {
     /** 环境指针。*/
@@ -24,7 +24,7 @@ typedef struct _abcdk_receiver_protocol
     /**
      * 消息解包回调函数。
      * 
-     * @param [out] diff 差额(待增量)。返回时填写。
+     * @param [out] diff 差额(待增量)。
      *
      * @return 1 消息包完整，0 需要更多数据，-1 不支持的协议(或有错发生)。
      */
@@ -33,14 +33,14 @@ typedef struct _abcdk_receiver_protocol
 } abcdk_receiver_protocol_t;
 
 /**
- * 减少对象的引用计数。
+ * 减少引用计数。
  * 
  * @note 当引用计数为0时，对像将被删除。
 */
 void abcdk_receiver_unref(abcdk_receiver_t **msg);
 
 /**
- * 增加对象的引用计数。
+ * 增加引用计数。
 */
 abcdk_receiver_t *abcdk_receiver_refer(abcdk_receiver_t *src);
 
@@ -52,22 +52,22 @@ abcdk_receiver_t *abcdk_receiver_refer(abcdk_receiver_t *src);
 abcdk_receiver_t *abcdk_receiver_alloc(const char *tempdir);
 
 /**
- * 获取数据区指针。
+ * 获取指针。
 */
 void *abcdk_receiver_data(const abcdk_receiver_t *msg);
 
 /**
- * 获取数据区长度。
+ * 获取长度。
 */
 size_t abcdk_receiver_size(const abcdk_receiver_t *msg);
 
 /**
- * 获取读写偏移量。
+ * 获取偏移量。
 */
 size_t abcdk_receiver_offset(const abcdk_receiver_t *msg);
 
 /**
- * 调整对象缓存大小。
+ * 调整缓存大小。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -87,13 +87,13 @@ void abcdk_receiver_protocol_set(abcdk_receiver_t *msg, abcdk_receiver_protocol_
     }
 
 /**
- * 接收消息(从缓存)。
+ * 附加消息。
  * 
- * @param [in out] remain 缓存剩余的数据长度，返回时填充。
+ * @param [out] remain 缓存剩余的数据长度。
  * 
  * @return 1 缓存区已满，0 缓存区未满，-1 有错误发生。
 */
-int abcdk_receiver_recv(abcdk_receiver_t *msg,const void *data,size_t size,size_t *remain);
+int abcdk_receiver_append(abcdk_receiver_t *msg,const void *data,size_t size,size_t *remain);
 
 
 __END_DECLS

@@ -92,7 +92,7 @@ abcdk_object_t *abcdk_object_refer(abcdk_object_t *src);
 /**
  * 释放。
  * 
- * @param [in out] dst 指针的指针。函数返回前填充为NULL(0)。
+ * @param [in out] dst 指针的指针。
 */
 void abcdk_object_unref(abcdk_object_t **dst);
 

@@ -200,7 +200,7 @@ void abcdk_receiver_protocol_set(abcdk_receiver_t *msg, abcdk_receiver_protocol_
     msg->protocol = *prot;
 }
 
-int abcdk_receiver_recv(abcdk_receiver_t *msg, const void *data,size_t size,size_t *remain)
+int abcdk_receiver_append(abcdk_receiver_t *msg, const void *data,size_t size,size_t *remain)
 {
     ssize_t rsize = 0;
     size_t rall = 0,diff = 0;

@@ -77,7 +77,7 @@ abcdk_comm_node_t *abcdk_rpc_alloc(abcdk_comm_t *ctx,uint32_t protocol,size_t us
  * @param data 请求数据的指针。
  * @param len 请求数据的长度。
  * @param rsp 应答容器的指针，NULL(0) 不需要应答。
- * @param timeout 应答等待时间(秒)。注：不需要应答时，忽略此项。
+ * @param timeout 应答等待时间(秒)。不需要应答时，此项将被忽略。
  *
  * @return 0 成功，-1 失败(未发送/无应答)，-2 失败(超时/已断开)。
  */

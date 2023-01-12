@@ -239,7 +239,7 @@ int _abcdk_http_request_append_natural(abcdk_http_request_t *req, const void *da
 {
     abcdk_receiver_protocol_set_simple(req->buf, req, _abcdk_http_request_natural_unpack_cb);
 
-    return abcdk_receiver_recv(req->buf,data, size, remain);
+    return abcdk_receiver_append(req->buf,data, size, remain);
 }
 
 int _abcdk_http_request_rtcp_unpack_cb(void *opaque, abcdk_receiver_t *msg,size_t *diff)
@@ -291,12 +291,12 @@ int _abcdk_http_request_append_rtcp(abcdk_http_request_t *req, const void *data,
 
     abcdk_receiver_protocol_set_simple(req->buf, req, _abcdk_http_request_rtcp_unpack_cb);
 
-    return abcdk_receiver_recv(req->buf, data, size, remain);
+    return abcdk_receiver_append(req->buf, data, size, remain);
 }
 
 int _abcdk_http_request_append_tunnel(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
 {
-    return abcdk_receiver_recv(req->buf, data, size, remain);
+    return abcdk_receiver_append(req->buf, data, size, remain);
 }
 
 int abcdk_http_request_append(abcdk_http_request_t *req, const void *data, size_t size, size_t *remain)
