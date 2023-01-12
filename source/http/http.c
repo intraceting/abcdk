@@ -176,37 +176,16 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
 void _abcdk_http_close_cb(abcdk_comm_node_t *node)
 {
     abcdk_http_node_t *http_p = NULL;
-    char sockname_str[NAME_MAX] = {0};
-    char peername_str[NAME_MAX] = {0};
 
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
 
-    if (http_p)
-    {
-        /*通知连接已断开。*/
-        if (http_p->callback->close_cb)
-            http_p->callback->close_cb(node);
-    }
-    else
-    {
-        /*可能还未完成连接就已经断开了。*/
-
-        abcdk_comm_get_sockaddr_str(node, sockname_str, peername_str);
-        fprintf(stderr, "warning: sockname(%s) -> peername(%s) disconnected.\n", sockname_str, peername_str);
-    }
+    /*通知连接已断开。*/
+    if (http_p->callback->close_cb)
+        http_p->callback->close_cb(node);
 }
 
 void _abcdk_http_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
 {
-    abcdk_http_node_t *http_p;
-
-    http_p = (abcdk_http_node_t *)abcdk_comm_get_extend(node);
-    if (!http_p)
-    {
-        abcdk_comm_set_timeout(node, 1);
-        return;
-    }
-
     switch (event)
     {
     case ABCDK_COMM_EVENT_ACCEPT:

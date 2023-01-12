@@ -20,11 +20,11 @@ struct _abcdk_http_request
     /** 缓存最大长度。*/
     size_t buf_max;
 
-    /** 头部分析当前的游标位置。*/
-    size_t hdr_parse_pos;
+    /** 头部接收当前的游标位置。*/
+    size_t hdr_recv_pos;
 
-    /** 头部分析当前的行位置。*/
-    size_t hdr_parse_line_pos;
+    /** 头部接收当前的行位置。*/
+    size_t hdr_recv_line_pos;
 
     /**
      * 头部长度。
@@ -36,10 +36,13 @@ struct _abcdk_http_request
     /** 实体长度。*/
     size_t body_len;
 
-    /** 是否为RTSP包。*/
-    int is_rtsp;
+    /** 头部解析标志。0 未解析，1 已解析。*/
+    volatile int hdr_parse_ok;
 
-    /** 请求行解析标志。0 未解析，1 已解析。*/
+    /** 头部环境信息。*/
+    abcdk_object_t *envs[100];
+
+    /** 零行解析标志。0 未解析，1 已解析。*/
     volatile int env0_parse_ok;
 
     /** 请求方法。*/
@@ -107,11 +110,12 @@ abcdk_http_request_t *abcdk_http_request_alloc(int proto,size_t max,const char *
         return NULL;
 
     req->refcount = 1;
-    req->hdr_parse_pos = 0;
-    req->hdr_parse_line_pos = 0;
+    req->hdr_recv_pos = 0;
+    req->hdr_recv_line_pos = 0;
     req->hdr_len = 0;
     req->body_len = 0;
-    req->is_rtsp = 0;
+    req->hdr_parse_ok = 0;
+    req->envs[0] = req->envs[1] = NULL;
     req->env0_parse_ok = 0;
     req->method = NULL;
     req->location = NULL;
@@ -154,7 +158,7 @@ int _abcdk_http_request_natural_unpack_cb(void *opaque, abcdk_receiver_t *msg,si
     if (req_p->hdr_len <= 0)
     {
         /*从上次结束位置开始找头部结束标志，目地是判断头部长度和实体长度。*/
-        cur_pos = req_p->hdr_parse_pos;
+        cur_pos = req_p->hdr_recv_pos;
         while (++cur_pos < msg_off)
         {
             /*查找行尾标志。*/
@@ -162,18 +166,18 @@ int _abcdk_http_request_natural_unpack_cb(void *opaque, abcdk_receiver_t *msg,si
                 continue;
 
             /*判断是否为头部结束标志(\r\n)。*/
-            if (cur_pos - req_p->hdr_parse_pos == 1 &&
-                ABCDK_PTR2I8(msg_ptr, req_p->hdr_parse_pos) == '\r' &&
+            if (cur_pos - req_p->hdr_recv_pos == 1 &&
+                ABCDK_PTR2I8(msg_ptr, req_p->hdr_recv_pos) == '\r' &&
                 ABCDK_PTR2I8(msg_ptr, cur_pos) == '\n')
             {
                 req_p->hdr_len = cur_pos + 1;//索引才是长度。
-                req_p->hdr_parse_pos = 0;
+                req_p->hdr_recv_pos = 0;
                 break;
             }
             else
             {
                 /*记录当前行。*/
-                p2 = ABCDK_PTR2U8PTR(msg_ptr, req_p->hdr_parse_pos);
+                p2 = ABCDK_PTR2U8PTR(msg_ptr, req_p->hdr_recv_pos);
 
                 /*尝试获取请求体长度。*/
                 if (req_p->body_len <= 0)
@@ -183,12 +187,12 @@ int _abcdk_http_request_natural_unpack_cb(void *opaque, abcdk_receiver_t *msg,si
                 }
 
                 /*下一行。*/
-                req_p->hdr_parse_line_pos += 1;
-                req_p->hdr_parse_pos = ++cur_pos;
+                req_p->hdr_recv_line_pos += 1;
+                req_p->hdr_recv_pos = ++cur_pos;
             }
 
             /*不支持超过100行的头部。*/
-            if (req_p->hdr_parse_line_pos == 100)
+            if (req_p->hdr_recv_line_pos == 100)
                 return -1;
         }
 
@@ -357,22 +361,37 @@ size_t abcdk_http_request_body_length(abcdk_http_request_t *req)
     return l;
 }
 
-const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
+void _abcdk_http_request_parse_hdr(abcdk_http_request_t *req)
 {
     const char *p = NULL, *p_next = NULL;
 
-    assert(req != NULL && line >= 0 && line < 1000);
+    /*只解析一次。*/
+    if (!abcdk_atomic_compare_and_swap(&req->hdr_parse_ok, 0, 1))
+        return;
 
     p_next = (char *)abcdk_receiver_data(req->buf);
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < ABCDK_ARRAY_SIZE(req->envs); i++)
     {
-        p = abcdk_strtok(&p_next, "\r\n");
-        if (!p)
-            return NULL;
+        req->envs[i] = abcdk_strtok3(&p_next, "\r\n",0);
+        if (!req->envs[i])
+            break;
+    }
+}
 
-        if (i == line)
-            return p;
+const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
+{
+    assert(req != NULL && line >= 0);
+
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
+
+    _abcdk_http_request_parse_hdr(req);
+
+    if (line < ABCDK_ARRAY_SIZE(req->envs))
+    {
+        if (req->envs[line])
+            return req->envs[line]->pstrs[0];
     }
 
     return NULL;
@@ -380,24 +399,25 @@ const char *abcdk_http_request_env(abcdk_http_request_t *req, int line)
 
 const char *abcdk_http_request_getenv(abcdk_http_request_t *req, const char *name)
 {
-    const char *p = NULL, *p_next = NULL;
+    const char *p = NULL;
     const char *v = NULL;
 
     assert(req != NULL && name != 0);
 
-    p_next = (char *)abcdk_receiver_data(req->buf);
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 1; ; i++)
     {
-        p = abcdk_strtok(&p_next, "\r\n");
+        p = abcdk_http_request_env(req, i);
         if (!p)
             return NULL;
 
-        if(i==0)
+        if (i == 0)
             continue;
 
         v = abcdk_http_match_env(p, name);
-        if(v)
+        if (v)
             return v;
     }
 
@@ -413,7 +433,8 @@ void _abcdk_http_request_parse_env0(abcdk_http_request_t *req)
     if(!abcdk_atomic_compare_and_swap(&req->env0_parse_ok,0,1))
         return;
 
-    p_next = abcdk_receiver_data(req->buf);
+    if(req->envs[0])
+        p_next = req->envs[0]->pstrs[0];
 
     req->method = abcdk_strtok3(&p_next, " ",0);
     if(!req->method)
@@ -459,9 +480,12 @@ const char *abcdk_http_request_method(abcdk_http_request_t *req)
 {
     assert(req != NULL);
 
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
+
     _abcdk_http_request_parse_env0(req);
 
-    if(req->method)
+    if (req->method)
         return req->method->pstrs[0];
 
     return NULL;
@@ -471,9 +495,12 @@ const char *abcdk_http_request_location(abcdk_http_request_t *req)
 {
     assert(req != NULL);
 
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
+
     _abcdk_http_request_parse_env0(req);
 
-    if(req->location)
+    if (req->location)
         return req->location->pstrs[0];
 
     return NULL;
@@ -483,9 +510,12 @@ const char *abcdk_http_request_version(abcdk_http_request_t *req)
 {
     assert(req != NULL);
 
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
+
     _abcdk_http_request_parse_env0(req);
 
-    if(req->version)
+    if (req->version)
         return req->version->pstrs[0];
 
     return NULL;
@@ -495,9 +525,12 @@ const char *abcdk_http_request_path(abcdk_http_request_t *req)
 {
     assert(req != NULL);
 
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
+
     _abcdk_http_request_parse_env0(req);
 
-    if(req->path)
+    if (req->path)
         return req->path->pstrs[0];
 
     return NULL;
@@ -507,9 +540,12 @@ const char *abcdk_http_request_params(abcdk_http_request_t *req)
 {
     assert(req != NULL);
 
+    if (req->protocol != ABCDK_HTTP_REQUEST_PROTO_NATURAL)
+        return NULL;
+
     _abcdk_http_request_parse_env0(req);
 
-    if(req->params)
+    if (req->params)
         return req->params->pstrs[0];
 
     return NULL;
