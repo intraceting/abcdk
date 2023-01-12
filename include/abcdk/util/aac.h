@@ -15,16 +15,32 @@ __BEGIN_DECLS
 /** AAC(MPEG4 Audio) ADTS头部。*/
 typedef struct _abcdk_aac_adts_header
 {
-    /** 同步字(ADTS帧识别码) 12bits。'1111 1111 1111'。*/
+    /** 
+     * 同步字(ADTS帧识别码) 12bits。
+     * 
+     * '1111 1111 1111'。
+    */
     uint16_t syncword;
 
-    /** MPEG 标示符 1bit。0 for MPEG-4，1 for MPEG-2。*/
+    /** 
+     * MPEG 标示符 1bit。
+     * 
+     * 0 for MPEG-4，1 for MPEG-2。
+    */
     uint8_t id;
 
-    /** 2bits。'00'。*/
+    /** 
+     * 2bits。
+     * 
+     * '00'。
+    */
     uint8_t layer;
 
-    /** CRC较验 1bit。1：无，0：有。 */
+    /** 
+     * CRC较验 1bit。
+     * 
+     * 1：无，0：有。
+    */
     uint8_t protection_absent;
 
     /** 级别 2bit。*/
@@ -33,31 +49,59 @@ typedef struct _abcdk_aac_adts_header
     /** 采样频率索引 4bits。*/
     uint8_t sample_rate_index;
 
-    /** 1bits。'0'。*/
+    /** 
+     * 1bits。
+     * 
+     * '0'。
+    */
     uint8_t private_bit;
 
     /** 声道配置 3bit。*/
     uint8_t channel_cfg;
 
-    /** 1bits。'0'。*/
+    /** 
+     * 1bits。
+     * 
+     * '0'。
+    */
     uint8_t original_copy;
 
-    /** 1bits。'0'。*/
+    /** 
+     * 1bits。
+     * 
+     * '0'。
+    */
     uint8_t home;
 
-    /** 1bits。'0'。*/
+    /** 
+     * 1bits。
+     * 
+     * '0'。
+    */
     uint8_t copyright_identification_bit;
 
-    /** 1bits。'0'。*/
+    /** 
+     * 1bits。
+     * 
+     * '0'。
+    */
     uint8_t copyright_identification_start;
 
     /** 帧的长度 13bit。包括ADTS头和AAC原始流。*/
     uint16_t aac_frame_length;
 
-    /** ？？？ 11bit。0x7FF：可变的码流。*/
+    /** 
+     * ？？？ 11bit。
+     * 
+     * 0x7FF：可变的码流。
+     */
     uint16_t adts_buffer_fullness;
 
-    /** AAC数据块数量 2bit。'00'：一个数据块。*/
+    /** 
+     * AAC数据块数量 2bit。
+     * 
+     * '00'：一个数据块。
+    */
     uint8_t raw_data_blocks;
 } abcdk_aac_adts_header_t;
 
