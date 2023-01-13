@@ -295,7 +295,6 @@ int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     /*初始化状态。*/
     http_p->cb_cp = *cb;
     http_p->callback = &http_p->cb_cp;
-    http_p->next_proto = ABCDK_HTTP_REQUEST_PROTO_TUNNEL;
 
     abcdk_comm_callback_t fcb = {_abcdk_http_prepare_cb, _abcdk_http_event_cb, _abcdk_http_request_cb};
     chk = abcdk_comm_listen(node, ssl_ctx, addr, &fcb);
@@ -324,6 +323,7 @@ int abcdk_http_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
     /*初始化状态。*/
     http_p->cb_cp = *cb;
     http_p->callback = &http_p->cb_cp;
+    http_p->next_proto = ABCDK_HTTP_REQUEST_PROTO_TUNNEL;
 
     abcdk_comm_callback_t fcb = {_abcdk_http_prepare_cb, _abcdk_http_event_cb, _abcdk_http_request_cb};
     chk = abcdk_comm_connect(node, ssl_ctx, addr, &fcb);
