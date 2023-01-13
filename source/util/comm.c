@@ -992,8 +992,8 @@ NEXT_REQ:
 
     if (node->in_pos > 0)
         goto NEXT_REQ;
-    else
-        abcdk_comm_recv_watch(node);
+    // else
+    //     abcdk_comm_recv_watch(node);//改由应用层决定是否继续接收。
 }
 
 void _abcdk_comm_output_hook(abcdk_comm_node_t *node)

@@ -214,6 +214,7 @@ void _abcdk_http_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
     case ABCDK_COMM_EVENT_INPUT:
         break;
     case ABCDK_COMM_EVENT_OUTPUT:
+        _abcdk_http_output_cb(node);
         break;
     case ABCDK_COMM_EVENT_CLOSE:
     case ABCDK_COMM_EVENT_INTERRUPT:
@@ -247,6 +248,8 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     }
     else if (chk == 0)
     {
+        /*数据包不完整，继接收请求数据。*/
+        abcdk_comm_recv_watch(node);
         return;
     }
     else if (chk > 0)
@@ -255,6 +258,10 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
             http_p->callback->request_cb(node, http_p->req, &http_p->next_proto);
 
         abcdk_http_request_unref(&http_p->req);
+
+        /*隧道协议，是否继续接收由应用层决定。*/
+        if (http_p->next_proto != ABCDK_HTTP_REQUEST_PROTO_TUNNEL)
+            abcdk_comm_recv_watch(node);
     }
 }
 

@@ -142,14 +142,14 @@ uint64_t _abcdkhttpd_clock()
 int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
 {
     if (SI_USER == info->si_code)
-        fprintf(stderr, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info->si_signo, info->si_errno, info->si_code, info->si_pid, info->si_uid);
+        abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info->si_signo, info->si_errno, info->si_code, info->si_pid, info->si_uid);
     else
-        fprintf(stderr, "signo(%d),errno(%d),code(%d)\n", info->si_signo, info->si_errno, info->si_code);
+        abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d)\n", info->si_signo, info->si_errno, info->si_code);
 
     if (SIGILL == info->si_signo || SIGTERM == info->si_signo || SIGINT == info->si_signo || SIGQUIT == info->si_signo)
         return -1;
     else
-        fprintf(stderr, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
+        abcdk_log_printf(LOG_WARNING, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
 
     return 0;
 }
@@ -333,7 +333,7 @@ final_error:
                            nonce);
 
     _abcdkhttpd_logprint(node, 401, 0);
-
+//Proxy-Authenticate
     return -1;
 }
 
@@ -808,7 +808,21 @@ void _abcdkhttpd_forward(abcdk_comm_node_t *node)
     p = abcdk_http_request_body(http_p->req,0);
     l = abcdk_http_request_body_length(http_p->req);
 
+    obj = abcdk_object_alloc_copyfrom(p, l);
+    if (!obj)
+        goto final_error;
 
+    chk = abcdk_comm_post(http_p->tunnel, obj);
+    if (chk != 0)
+        goto final_error;
+
+    return;
+
+final_error:
+
+    abcdk_object_unref(&obj);
+    abcdk_comm_set_timeout(node,1);
+    abcdk_comm_set_timeout(http_p->tunnel,1);
 }
 
 void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req, int *next_proto)
@@ -850,7 +864,8 @@ void _abcdkhttpd_output_cb(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    
+    if(http_p->tunnel)
+        abcdk_comm_recv_watch(http_p->tunnel);
 }
 
 #ifdef HEADER_SSL_H
@@ -1001,7 +1016,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         /*绑定上下文环境指针。*/
         http_p->ctx = ctx;
 
-        abcdk_http_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_accept_cb, _abcdkhttpd_request_cb,_abcdkhttpd_close_cb};
+        abcdk_http_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_accept_cb, _abcdkhttpd_request_cb,_abcdkhttpd_close_cb,_abcdkhttpd_output_cb};
         chk = abcdk_http_listen(ctx->comm_listen[i], (i == ABCDKHTTPD_LISTEN_SSL ? ctx->ssl_ctx : NULL), &addr, &cb);
         if (chk != 0)
         {

@@ -419,6 +419,8 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     }
     else if (chk == 0)
     {
+        /*数据包不完整，继接收请求数据。*/
+        abcdk_comm_recv_watch(node);
         return;
     }
 
@@ -453,9 +455,12 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     else
     {
         /*通知应用层，数据到达。*/
-        rpc_p->callback->request_cb(node,mid,cargo_ptr,cargo_len);
+        if(rpc_p->callback->request_cb)
+            rpc_p->callback->request_cb(node,mid,cargo_ptr,cargo_len);
         /*删除请求数据。*/
         abcdk_receiver_unref(&msg_p);
+        /*继接收请求数据。*/
+        abcdk_comm_recv_watch(node);
     }
 }
 
