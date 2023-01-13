@@ -174,7 +174,7 @@ final_error:
     return NULL;
 }
 
-void _abcdk_rpc_queue_msg_destroy_cb(const void *msg)
+void _abcdk_rpc_queue_msg_destroy_cb(void *msg)
 {
     abcdk_receiver_t *msg_p = (abcdk_receiver_t *)msg;
 

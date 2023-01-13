@@ -8,56 +8,83 @@
 
 int abcdk_thread_create(abcdk_thread_t *ctx,int joinable)
 {
-    int err = -1;
-    pthread_attr_t attr;
     char name[17] = {0};
+    int cpus[2] = {-1};
+    pthread_attr_t attr;
+    int chk = -1;
   
     assert(ctx);
     assert(ctx->routine);
 
-    abcdk_thread_getname(name);
-
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr,(joinable?PTHREAD_CREATE_JOINABLE:PTHREAD_CREATE_DETACHED));
-
-    err = pthread_create(&ctx->handle,&attr,ctx->routine,ctx->opaque);
-    if(err == 0)
-        abcdk_thread_setname(name);
-
+    chk = pthread_create(&ctx->handle,&attr,ctx->routine,ctx->opaque);
     pthread_attr_destroy(&attr);
 
-    return err;
-}
+    if(chk != 0)
+        return -1;
 
+    /*获取当前线程名称，并设置子线程的名称。*/
+    abcdk_thread_getname(pthread_self(),name);
+    abcdk_thread_setname(ctx->handle,name);
+
+    /*设置线程亲源CPU。*/
+    cpus[0] = ctx->cpu - 1;
+    cpus[1] = -1;
+    abcdk_thread_setaffinity(ctx->handle, cpus);
+
+    return 0;
+}
 
 int abcdk_thread_join(abcdk_thread_t *ctx)
 {
-    int err = -1;
     pthread_attr_t attr;
     int detachstate = -1;
+    int chk = -1;
 
     assert(ctx);
 
-    err = pthread_getattr_np(ctx->handle,&attr);
-    if (err != 0)
-        return err;
+    pthread_attr_init(&attr);
+    chk = pthread_getattr_np(ctx->handle,&attr);
+    if (chk != 0)
+        goto final;
 
-    err = pthread_attr_getdetachstate(&attr,&detachstate);
-    if (err != 0)
-        return err;
-    
-    pthread_attr_destroy(&attr);
+    chk = pthread_attr_getdetachstate(&attr,&detachstate);
+    if (chk != 0)
+        goto final;
 
     if (detachstate == PTHREAD_CREATE_JOINABLE)
-        err = pthread_join(ctx->handle, &ctx->result);
+        chk = pthread_join(ctx->handle, &ctx->result);
 
-    return err;
+final:
+
+    pthread_attr_destroy(&attr);
+
+    return chk;
 }
 
-int abcdk_thread_setname(const char* fmt,...)
+int abcdk_thread_create_group(int count, abcdk_thread_t *ctxs, int joinable)
 {
-    int err = -1;
+    int chk, num = 0;
+
+    assert(count > 0 && ctxs != NULL);
+
+    for (int i = 0; i < count; i++)
+    {
+        chk = abcdk_thread_create(ctxs + i, joinable);
+        if (chk != 0)
+            break;
+
+        num += 1;
+    }
+
+    return num;
+}
+
+int abcdk_thread_setname(pthread_t tid,const char* fmt,...)
+{
     char name[17] = {0};
+    int chk = -1;
 
     assert(fmt && fmt[0]);
 
@@ -66,20 +93,53 @@ int abcdk_thread_setname(const char* fmt,...)
     vsnprintf(name,16,fmt,vaptr);
     va_end(vaptr);
 
-    err = pthread_setname_np(pthread_self(),name);
+    chk = pthread_setname_np(tid,name);
 
-    return err;
+    return chk;
 }
 
-int abcdk_thread_getname(char name[16])
+int abcdk_thread_getname(pthread_t tid,char name[16])
 {
-    int err = -1;
+    int chk = -1;
 
     assert(name);
 
-    err = pthread_getname_np(pthread_self(),name,16);
+    chk = pthread_getname_np(tid,name,16);
 
-    return err; 
+    return chk; 
+}
+
+int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
+{
+    long nps = 1;
+    cpu_set_t mark;
+    int chk;
+
+    CPU_ZERO(&mark);
+
+    nps = sysconf(_SC_NPROCESSORS_ONLN);
+
+    for (int i = 0; i < nps; i++)
+    {
+        /*-1 结束。*/
+        if (cpus[i] < 0)
+            break;
+
+        /*检查ID范围。*/
+        if (cpus[i] >= nps)
+            continue;
+
+        /*检查是否已存在。*/
+        if(CPU_ISSET(cpus[i], &mark))
+            continue;
+
+        /*记录。*/
+        CPU_SET(cpus[i], &mark);
+    }
+
+    chk = pthread_setaffinity_np(tid, sizeof(mark), &mark);
+
+    return chk;
 }
 
 int abcdk_thread_leader_vote(volatile pthread_t *tid)

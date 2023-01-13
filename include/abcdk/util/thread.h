@@ -12,33 +12,27 @@
 
 __BEGIN_DECLS
 
-/**
- * 线程对象。
- * 
-*/
+/** 线程对象。*/
 typedef struct _abcdk_thread_t
 {
-    /**
-     * 句柄。
-     * 
-    */
+    /** 句柄。*/
     pthread_t handle;
 
-    /**
-     * 返回值。
-     * 
-    */
+    /** 返回值。*/
     void* result;
 
-    /**
-     * 线程函数。
-    */
+    /** 线程函数。*/
     void *(*routine)(void *opaque);
 
-    /**
-     * 环境指针。
-     */
+    /** 环境指针。*/
     void *opaque;
+
+    /** 
+     * 亲源CPUID。
+     * 
+     * @note CPUID从1开始。
+    */
+    int cpu;
 
 } abcdk_thread_t;
 
@@ -62,22 +56,39 @@ int abcdk_thread_create(abcdk_thread_t *ctx,int joinable);
 int abcdk_thread_join(abcdk_thread_t* ctx);
 
 /**
- * 设置当前线程名字。
+ * 创建线程组。
+ * 
+ * @param [in] count 数量。
+ * @param [in] ctxs 线程对象(数组)。
+ * 
+ * @return 0 成功(创建的数量)；!0 出错。
+*/
+int abcdk_thread_create_group(int count,abcdk_thread_t ctxs[],int joinable);
+
+/**
+ * 设置线程名字。
  * 
  * @note 最大支持16个字节(Bytes)。
  * 
  * @return 0 成功；!0 出错。
- * 
 */
-int abcdk_thread_setname(const char* fmt,...);
+int abcdk_thread_setname(pthread_t tid,const char* fmt,...);
 
 /**
- * 获取当前线程名字。
+ * 获取线程名字。
  * 
  * @return 0 成功；!0 出错。
- * 
 */
-int abcdk_thread_getname(char name[16]);
+int abcdk_thread_getname(pthread_t tid,char name[16]);
+
+/** 
+ * 设置线程亲源CPU。
+ * 
+ * @param [in] cpus CPUID数组。CPUID从0开始，-1 结束。
+ * 
+ * @return 0 成功；!0 出错。
+*/
+int abcdk_thread_setaffinity(pthread_t tid,int cpus[]);
 
 /**
  * 选举主线程。
@@ -105,8 +116,6 @@ int abcdk_thread_leader_test(const volatile pthread_t *tid);
  * @return 0 当前线程为主线程；!0 当前线程非主线程。
  */
 int abcdk_thread_leader_quit(volatile pthread_t *tid);
-
-/*------------------------------------------------------------------------------------------------*/
 
 __END_DECLS
 

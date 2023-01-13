@@ -39,7 +39,7 @@ typedef struct _abcdk_test_h264
 
 } abcdk_test_h264_t;
 
-void _abcdk_test_http_msg_destroy_cb(const void *msg)
+void _abcdk_test_http_msg_destroy_cb(void *msg)
 {
     abcdk_receiver_t *msg_p = (abcdk_receiver_t *)msg;
 

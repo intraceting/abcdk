@@ -212,7 +212,7 @@ void abcdk_log_vprintf(int type, const char *fmt, va_list ap)
     abcdk_time_sec2tm(&tm,ts/1000000,0);
 
     /*获取线程名称。*/
-    abcdk_thread_getname(name);
+    abcdk_thread_getname(pthread_self(),name);
     
     /*获取缓存。*/
     buf_p = _abcdk_log_get_buffer();

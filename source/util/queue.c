@@ -111,6 +111,8 @@ int abcdk_queue_push(abcdk_queue_t *queue, const void *msg, int first)
     abcdk_tree_insert2(queue->root, msg_node, first);
     queue->count += 1;
 
+    abcdk_mutex_signal(&queue->locker,1);
+
     abcdk_mutex_unlock(&queue->locker);
 
     return 0;
@@ -146,3 +148,15 @@ const void *abcdk_queue_pop(abcdk_queue_t *queue, int first)
     return msg_p;
 }
 
+int abcdk_queue_wait(abcdk_queue_t *queue, time_t timeout)
+{
+    int chk;
+
+    assert(queue != NULL && timeout > 0);
+
+    abcdk_mutex_lock(&queue->locker, 1);
+    chk = abcdk_mutex_wait(&queue->locker, timeout);
+    abcdk_mutex_unlock(&queue->locker);
+
+    return chk;
+}

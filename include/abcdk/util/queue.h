@@ -19,7 +19,7 @@ typedef struct _abcdk_queue abcdk_queue_t;
 /** 
  * 消息销毁回调函数。
 */
-typedef void (*abcdk_queue_msg_destroy_cb)(const void *msg);
+typedef void (*abcdk_queue_msg_destroy_cb)(void *msg);
 
 /**
  * 释放。
@@ -28,6 +28,8 @@ void abcdk_queue_free(abcdk_queue_t **queue);
 
 /**
  * 创建。
+ * 
+ * @param [in] cb 消息销毁回调函数。
 */
 abcdk_queue_t *abcdk_queue_alloc(abcdk_queue_msg_destroy_cb cb);
 
@@ -55,6 +57,15 @@ int abcdk_queue_push(abcdk_queue_t *queue, const void *msg, int first);
  * @return !NULL(0) 成功(消息对象指针)，NULL(0) 失败(队列为空)。
 */
 const void *abcdk_queue_pop(abcdk_queue_t *queue, int first);
+
+/**
+ * 等待。
+ * 
+ * @param [in] timeout 超时(毫秒)。
+ * 
+ * @return 0 有事件，!0 超时或出错。
+*/
+int abcdk_queue_wait(abcdk_queue_t *queue,time_t timeout);
 
 
 __END_DECLS
