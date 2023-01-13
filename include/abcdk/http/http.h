@@ -52,6 +52,13 @@ typedef struct _abcdk_http_callback
     */
     void (*close_cb)(abcdk_comm_node_t *node);
 
+    /** 
+     * 输出队列空闲通知回调函数。
+     * 
+     * @note 如果未指定，则忽略。
+    */
+    void (*output_cb)(abcdk_comm_node_t *node);
+
 }abcdk_http_callback_t;
 
 /**
@@ -77,6 +84,19 @@ abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t m
  * @return 0 成功，-1 失败。
 */
 int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_http_callback_t *cb);
+
+/**
+ * 启动连接。
+ * 
+ * @note 仅发出连接指令，连接是否成功以消息通知。
+ * 
+ * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
+ * @param [in] addr 服务端地址指针。
+ * @param [in] cb 通知回调函数指针。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr, abcdk_http_callback_t *cb);
 
 
 __END_DECLS

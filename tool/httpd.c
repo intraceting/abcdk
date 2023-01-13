@@ -79,6 +79,8 @@ typedef struct _abcdkhttpd_node
     char pathfile[PATH_MAX];
     struct stat attr;
 
+    abcdk_comm_node_t *tunnel;
+
 } abcdkhttpd_node_t;
 
 void _abcdkhttpd_print_usage(abcdk_option_t *args)
@@ -742,6 +744,7 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 
     abcdk_http_request_unref(&http_p->req);
     abcdk_md5_destroy(&http_p->md5);
+    abcdk_comm_unref(&http_p->tunnel);
 }
 
 void _abcdkhttpd_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
@@ -792,6 +795,22 @@ void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
     abcdk_log_printf(LOG_INFO, "Accept: %s", http_p->remote);
 }
 
+void _abcdkhttpd_forward(abcdk_comm_node_t *node)
+{
+    abcdkhttpd_node_t *http_p;
+    abcdk_object_t *obj;
+    const void *p;
+    size_t l;
+    int chk;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    p = abcdk_http_request_body(http_p->req,0);
+    l = abcdk_http_request_body_length(http_p->req);
+
+
+}
+
 void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req, int *next_proto)
 {
     abcdkhttpd_node_t *http_p;
@@ -800,7 +819,18 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req, 
 
     http_p->req = abcdk_http_request_refer(req);
 
-    _abcdkhttpd_parse_request(node);
+    if (*next_proto != ABCDK_HTTP_REQUEST_PROTO_TUNNEL)
+    {
+        _abcdkhttpd_parse_request(node);
+
+        /*切换为隧道协议。*/
+        if (http_p->tunnel)
+            *next_proto = ABCDK_HTTP_REQUEST_PROTO_TUNNEL;
+    }
+    else
+    {
+        _abcdkhttpd_forward(node);
+    }
 
     abcdk_http_request_unref(&http_p->req);
 }
@@ -812,6 +842,15 @@ void _abcdkhttpd_close_cb(abcdk_comm_node_t *node)
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
     abcdk_log_printf(LOG_INFO, "Close: %s", http_p->remote);
+}
+
+void _abcdkhttpd_output_cb(abcdk_comm_node_t *node)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    
 }
 
 #ifdef HEADER_SSL_H

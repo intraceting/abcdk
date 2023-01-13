@@ -106,6 +106,13 @@ ssize_t abcdk_load(const char *file, void *buf, size_t size, size_t offset);
 ssize_t abcdk_save(const char *file, const void *buf, size_t size, size_t offset);
 
 /**
+ * 向临时文件保存数据。
+ * 
+ * @return >= 0 成功(长度)，< 0 失败(文件不存在或没有权限访问)。
+*/
+ssize_t abcdk_save2temp(char *file, const void *buf, size_t size, size_t offset);
+
+/**
  * 从文件中读取一行。
  * 
  * @note 结束读取时line指针要用free释放。

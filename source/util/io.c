@@ -227,6 +227,31 @@ final:
     return wlen;
 }
 
+ssize_t abcdk_save2temp(char *file, const void *buf, size_t size, size_t offset)
+{
+    int fd = -1;
+    ssize_t wlen = 0;
+    off_t off;
+    int chk;
+
+    assert(file != NULL && buf != NULL && size > 0);
+
+    fd = mkstemp(file);
+    if (fd < 0)
+        return -1;
+
+    off = lseek(fd, offset, SEEK_SET);
+    if (off != offset)
+        return -1;
+
+    wlen = abcdk_write(fd, buf, size);
+
+final:
+
+    abcdk_closep(&fd);
+
+    return wlen;
+}
 
 ssize_t abcdk_fgetline(FILE *fp, char **line, size_t *len, uint8_t delim, char note)
 {

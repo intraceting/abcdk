@@ -481,7 +481,7 @@ void _abcdk_comm_accept(abcdk_comm_node_t *listen)
 final_error:
 
     /*通知关闭。*/
-    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INTERRUPT, NULL);
+    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INTERRUPT,&chk);
     abcdk_comm_unref(&node);
     
     return;
@@ -615,6 +615,7 @@ final_error:
 
 void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
 {
+    int ret = 0;
     abcdk_comm_node_t *node = NULL;
     abcdk_epoll_event_t e = {0};
     int chk;
@@ -630,7 +631,7 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
 
     if (e.events & ABCDK_EPOLL_ERROR)
     {
-        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CLOSE,NULL);
+        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CLOSE,&ret);
 
         /*释放引用。*/
         abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
@@ -646,11 +647,11 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
             {
                 _abcdk_comm_handshake(node);
                 if (node->status == ABCDK_COMM_STATUS_STABLE)
-                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,NULL);
+                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,&ret);
             }
             else
             {
-                _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT,NULL);
+                _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_OUTPUT,&ret);
             }
 
             /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
@@ -673,14 +674,14 @@ void _abcdk_comm_perform(abcdk_comm_t *ctx,time_t timeout)
                 {
                     _abcdk_comm_handshake(node);
                     if (node->status == ABCDK_COMM_STATUS_STABLE)
-                        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,NULL);
+                        _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_CONNECT,&ret);
 
                     /*释放读权利。*/
                     abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
                 }
                 else
                 {
-                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INPUT,NULL);
+                    _abcdk_comm_event_cb(node, ABCDK_COMM_EVENT_INPUT,&ret);
 
                     /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
                     //abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
@@ -714,6 +715,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
 
     /*复制。*/
     ctx_p = *ctx;
+    *ctx = NULL;
 
     /*退出。*/
     abcdk_atomic_store(&ctx_p->exitflag, 1);
@@ -723,9 +725,6 @@ void abcdk_comm_stop(abcdk_comm_t **ctx)
 
     abcdk_epollex_free(&ctx_p->epollex);
     abcdk_heap_free(ctx_p);
-
-    /*清空。*/
-    *ctx = NULL;
 }
 
 abcdk_comm_t * abcdk_comm_start(int max,int cpu)
@@ -947,13 +946,14 @@ final_error:
 
 void _abcdk_comm_input_hook(abcdk_comm_node_t *node)
 {
+    int ret = 0;
     ssize_t rlen;
     size_t remain;
 
     /*当未注册请求数据到达通知回调函数时，直接发事件通知。*/
     if(!node->callback->request_cb)
     {
-        node->callback->event_cb(node,ABCDK_COMM_EVENT_INPUT,NULL);
+        node->callback->event_cb(node,ABCDK_COMM_EVENT_INPUT,&ret);
         return;
     }
 
@@ -998,6 +998,7 @@ NEXT_REQ:
 
 void _abcdk_comm_output_hook(abcdk_comm_node_t *node)
 {
+    int ret = 0;
     abcdk_tree_t *p;
     ssize_t slen;
     int chk;
@@ -1012,7 +1013,7 @@ NEXT_MSG:
     /*通知应用层，发送队列空闲。*/
     if(!p)
     {
-        node->callback->event_cb(node,ABCDK_COMM_EVENT_OUTPUT,NULL);
+        node->callback->event_cb(node,ABCDK_COMM_EVENT_OUTPUT,&ret);
         return;
     }
 
