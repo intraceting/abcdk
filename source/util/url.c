@@ -188,3 +188,20 @@ ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int 
 
     return (slen - s);
 }
+
+char *abcdk_url_abspath(char *buf)
+{
+    const char *p1 = NULL, *p2 = NULL;
+
+    assert(buf != NULL);
+
+    p1 = abcdk_strstr_eod(buf, "://", 1);
+    if (!p1)
+        return abcdk_abspath(buf);
+    
+    p2 = abcdk_strstr(p1, "/", 1);
+    if(p2)
+        return abcdk_abspath((char*)p2);
+
+    return buf;
+}

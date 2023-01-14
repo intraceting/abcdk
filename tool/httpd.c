@@ -654,6 +654,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req, int *next_proto);
 void _abcdkhttpd_close_cb(abcdk_comm_node_t *node);
 void _abcdkhttpd_output_cb(abcdk_comm_node_t *node);
+void _abcdkhttpd_connected_cb(abcdk_comm_node_t *node);
 
 void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
 {
@@ -695,7 +696,7 @@ void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
     /*绑定到客户端对象。*/
     http_tunnel_p->tunnel = abcdk_comm_refer(node);
 
-    abcdk_http_callback_t cb = {NULL, NULL, _abcdkhttpd_request_cb, _abcdkhttpd_close_cb, _abcdkhttpd_output_cb};
+    abcdk_http_callback_t cb = {NULL, NULL, _abcdkhttpd_request_cb, _abcdkhttpd_close_cb, _abcdkhttpd_output_cb,_abcdkhttpd_connected_cb};
     chk = abcdk_http_connect(http_p->tunnel,NULL,&addr,&cb);
     if(chk != 0)
     {
@@ -705,7 +706,7 @@ void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
 
     _abcdkhttpd_reply_nobody(node,200,"");
 
-    /*继续接收客户端数据。*/
+    /*继续监听客户端数据。*/
     abcdk_comm_recv_watch(node);
 }
 
@@ -832,10 +833,12 @@ void _abcdkhttpd_forward(abcdk_comm_node_t *node)
     if (!obj)
         goto final_error;
 
+    /*转发数据到另外一端。*/
     chk = abcdk_comm_post(http_p->tunnel, obj);
     if (chk != 0)
         goto final_error;
 
+    /*继续监听当前隧道数据。*/
     abcdk_comm_recv_watch(node);
 
     return;
@@ -882,17 +885,6 @@ void _abcdkhttpd_accept_cb(abcdk_comm_node_t *node, int *result)
 
     /*设置默认返回值。*/
     *result = 0;
-
-    /*获取远程地址。*/
-    abcdk_comm_get_sockaddr_str(node, NULL, http_p->remote);
-
-    /*设置时间格式串。*/
-    http_p->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
-    http_p->timefmt_lc = "%Y-%m-%d %H:%M:%S";
-
-    http_p->md5 = abcdk_md5_create();
-
-    abcdk_log_printf(LOG_INFO, "Accept: %s", http_p->remote);
 }
 
 void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req, int *next_proto)
@@ -927,6 +919,10 @@ void _abcdkhttpd_close_cb(abcdk_comm_node_t *node)
 
     abcdk_comm_unref(&http_p->tunnel);
 
+    /*获取远程地址。*/
+    if(!http_p->remote[0])
+        abcdk_comm_get_sockaddr_str(node, NULL, http_p->remote);
+
     abcdk_log_printf(LOG_INFO, "Close: %s", http_p->remote);
 }
 
@@ -936,11 +932,30 @@ void _abcdkhttpd_output_cb(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
+    /*转发送数据完成，监听隧道另外一端的数据。*/
     if(http_p->tunnel)
         abcdk_comm_recv_watch(http_p->tunnel);
     
+    /*转发送数据完成，监听隧道应答数据。*/
     abcdk_comm_recv_watch(node);
 
+}
+void _abcdkhttpd_connected_cb(abcdk_comm_node_t *node)
+{
+    abcdkhttpd_node_t *http_p;
+
+    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+
+    /*获取远程地址。*/
+    abcdk_comm_get_sockaddr_str(node, NULL, http_p->remote);
+
+    /*设置时间格式串。*/
+    http_p->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
+    http_p->timefmt_lc = "%Y-%m-%d %H:%M:%S";
+
+    http_p->md5 = abcdk_md5_create();
+
+    abcdk_log_printf(LOG_INFO, "Connected: %s", http_p->remote);
 }
 
 #ifdef HEADER_SSL_H
@@ -1091,7 +1106,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         /*绑定上下文环境指针。*/
         http_p->ctx = ctx;
 
-        abcdk_http_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_accept_cb, _abcdkhttpd_request_cb,_abcdkhttpd_close_cb,_abcdkhttpd_output_cb};
+        abcdk_http_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_accept_cb, _abcdkhttpd_request_cb,_abcdkhttpd_close_cb,_abcdkhttpd_output_cb,_abcdkhttpd_connected_cb};
         chk = abcdk_http_listen(ctx->comm_listen[i], (i == ABCDKHTTPD_LISTEN_SSL ? ctx->ssl_ctx : NULL), &addr, &cb);
         if (chk != 0)
         {

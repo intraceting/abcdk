@@ -168,6 +168,9 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
     }
 #endif
 
+    if (http_p->callback->connected_cb)
+        http_p->callback->connected_cb(node);
+
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
     abcdk_comm_send_watch(node);

@@ -58,6 +58,13 @@ typedef struct _abcdk_http_callback
      * @note 如果未指定，则忽略。
     */
     void (*output_cb)(abcdk_comm_node_t *node);
+    
+    /** 
+     * 连接完成通知回调函数。
+     * 
+     * @note 如果未指定，则忽略。
+    */
+    void (*connected_cb)(abcdk_comm_node_t *node);
 
 }abcdk_http_callback_t;
 

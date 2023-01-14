@@ -15,20 +15,18 @@ char *abcdk_dirdir(char *path, const char *suffix)
     len = strlen(path);
     if (len > 0)
     {
-        if ((path[len - 1] == '/') && (suffix[0] == '/'))
+        if (path[len - 1] == '/')
         {
-            path[len - 1] = '\0';
-            len -= 1;
+            if (suffix[0] == '/')
+                suffix += 1;
         }
-        else if ((path[len - 1] != '/') && (suffix[0] != '/'))
+        else if (suffix[0] != '/') 
         {
-            path[len] = '/';
-            len += 1;
+            strcat(path, "/");
         }
     }
 
-    /* 要有足够的可用空间，不然会溢出。 */
-    strcat(path + len, suffix);
+    strcat(path, suffix);
 
     return path;
 }

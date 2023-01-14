@@ -110,6 +110,7 @@ typedef struct _abcdk_comm_callback
      * 请求数据到达通知回调函数。
      *
      * @note 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
+     * @note 通知完成后，当请求数据存在未处理数据时，会继续通知。
      *
      * @param [out] remain 剩余的数据长度，返回时填写。
      */
@@ -229,6 +230,9 @@ ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size);
 /**
  * 监听输入事件。
  * 
+ * @warning 当事件未被触发时，多次监听事件将会合并。
+ * @warning 当事件被触发后，监听事件自动取消，在下一次监听前不会连续触发事件。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
@@ -242,6 +246,9 @@ ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size);
 
 /**
  * 监听输出事件。
+ * 
+ * @warning 当事件未被触发时，多次监听事件将会合并。
+ * @warning 当事件被触发后，监听事件自动取消，在下一次监听前不会连续触发事件。
  * 
  * @return 0 成功，!0 失败。
 */

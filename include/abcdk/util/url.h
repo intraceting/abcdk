@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/path.h"
 
 __BEGIN_DECLS
 
@@ -68,6 +69,13 @@ ssize_t abcdk_url_encode(const char *src,size_t slen,char *dst,size_t *dlen, int
  * @return 未解码的密文长度。
 */
 ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int qm_stop);
+
+/**
+ * 去掉路径中冗余的信息。
+ * 
+ * @note 不会检测目录结构是否存在。
+*/
+char *abcdk_url_abspath(char *buf);
 
 __END_DECLS
 

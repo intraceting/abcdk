@@ -453,14 +453,14 @@ void _abcdk_http_request_parse_env0(abcdk_http_request_t *req)
     if (!p)
         return;
     
-    req->path = abcdk_object_alloc2(p_next - p);
+    req->path = abcdk_object_alloc2(p_next - p + 1);
     if (!req->path)
         return;
 
     abcdk_url_decode(p, p_next - p, req->path->pstrs[0], &req->path->sizes[0],0);
 
     /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
-    //abcdk_abspath(req->path->pstrs[0]);
+    abcdk_url_abspath(req->path->pstrs[0]);
     
     /*修正路径长度。*/
     req->path->sizes[0] = strlen(req->path->pstrs[0]);
