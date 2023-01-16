@@ -9,7 +9,9 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/option.h"
 #include "abcdk/util/md5.h"
+#include "abcdk/util/url.h"
 
 __BEGIN_DECLS
 
@@ -39,6 +41,25 @@ const char *abcdk_http_content_type_desc(const char *ext);
  */
 void abcdk_http_auth_digest(abcdk_md5_t *ctx, const char *user, const char *pawd,
                             const char *method, const char *url, const char *realm, const char *nonce);
+
+/**
+ * 解析请求头部的第一行。
+ * 
+ * @warning 旧的信息将会被释放。
+ * 
+ * @param [out] method 方法。NULL(0) 忽略。
+ * @param [out] location 定位。NULL(0) 忽略。
+ * @param [out] version 版本。NULL(0) 忽略。
+ * @param [out] path 路径。NULL(0) 忽略。
+ * @param [out] params 参数。NULL(0) 忽略。
+ */
+void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, abcdk_object_t **location, abcdk_object_t **version,
+                                      abcdk_object_t **path, abcdk_object_t **params);
+
+/**
+ * 表单解码。
+*/
+abcdk_option_t *abcdk_http_parse_form(const char *form);
 
 __END_DECLS
 

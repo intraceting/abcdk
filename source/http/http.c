@@ -19,8 +19,14 @@ typedef struct _abcdk_http_node
     abcdk_http_callback_t *callback;
     abcdk_http_callback_t cb_cp;
 
+    /** 输入消息最大长度。*/
+    size_t input_max;
+
+    /** 输入消息缓存目录。*/
+    char input_tempdir[PATH_MAX];
+
     /**
-     * 协议。
+     * 本层协议。
      * 1: http/1.0 http/1.1 http/0.9 rtsp/1.0
      * 2: http/2
      */
@@ -29,14 +35,8 @@ typedef struct _abcdk_http_node
     /** 下层协议。*/
     int next_proto;
 
-    /** 请求消息。*/
-    abcdk_http_request_t *req;
-
-    /** 请求最大长度。*/
-    size_t req_max;
-
-    /** 缓存目录。*/
-    char req_tempdir[PATH_MAX];
+    /** 输入消息。*/
+    abcdk_http_receiver_t *input_buf;
 
 } abcdk_http_node_t;
 
@@ -46,10 +46,10 @@ void _abcdk_http_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 
     http_p = (abcdk_http_node_t *)obj->pptrs[0];
 
-    abcdk_http_request_unref(&http_p->req);
+    abcdk_http_receiver_unref(&http_p->input_buf);
 }
 
-abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t max, const char *tempdir)
+abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t input_max, const char *input_tempdir)
 {
     abcdk_comm_node_t *node = NULL;
     abcdk_http_node_t *http_p = NULL;
@@ -70,16 +70,16 @@ abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t m
 
     http_p->magic = ABCDK_HTTP_MAGIC;
     http_p->ctx = ctx;
-    http_p->req = NULL;
+    http_p->input_buf = NULL;
 
-    http_p->req_max = max;
+    http_p->input_max = input_max;
 
-    if (tempdir && *tempdir)
+    if (input_tempdir && *input_tempdir)
     {
-        if (access(tempdir, W_OK) != 0)
+        if (access(input_tempdir, W_OK) != 0)
             goto final_error;
 
-        strncpy(http_p->req_tempdir, tempdir, PATH_MAX);
+        strncpy(http_p->input_tempdir, input_tempdir, PATH_MAX);
     }
 
     return node;
@@ -89,6 +89,110 @@ final_error:
     abcdk_comm_unref(&node);
 
     return NULL;
+}
+
+int abcdk_http_post_chunked(abcdk_comm_node_t *node, abcdk_object_t *data)
+{
+    abcdk_http_node_t *http_p = NULL;
+    int chk;
+
+    assert(node != NULL && data != NULL);
+
+    http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过HTTP接口建立连接，不能调此接口。");
+
+    chk = abcdk_comm_post_format(node, 20, "%x\r\n", data->sizes[0]);
+    if (chk != 0)
+        return -1;
+
+    chk = abcdk_comm_post(node,data);
+    if (chk != 0)
+        return -1;
+
+    chk = abcdk_comm_post_buffer(node, "\r\n", 2);
+    if (chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_http_post_chunked_buffer(abcdk_comm_node_t *node, const void *data, size_t size)
+{
+    abcdk_http_node_t *http_p = NULL;
+    int chk;
+
+    assert(node != NULL);
+
+    http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过HTTP接口建立连接，不能调此接口。");
+
+    chk = abcdk_comm_post_format(node, 20, "%x\r\n", size);
+    if (chk != 0)
+        return -1;
+
+    if (data != NULL && size > 0)
+    {
+        chk = abcdk_comm_post_buffer(node, data, size);
+        if (chk != 0)
+            return -1;
+    }
+
+    chk = abcdk_comm_post_buffer(node, "\r\n", 2);
+    if (chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_http_post_chunked_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap)
+{
+    abcdk_http_node_t *http_p = NULL;
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(node != NULL && fmt != NULL && max > 0);
+
+    http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过HTTP接口建立连接，不能调此接口。");
+
+    obj = abcdk_object_alloc2(max);
+    if (!obj)
+        return -1;
+
+    chk = vsnprintf(obj->pstrs[0], max, fmt, ap);
+    if (chk <= 0)
+        goto final_error;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = chk;
+
+    chk = abcdk_http_post_chunked(node, obj);
+    if (chk == 0)
+        return 0;
+
+final_error:
+
+    /*删除投递失败的。*/
+    abcdk_object_unref(&obj);
+    return -1;
+}
+
+int abcdk_http_post_chunked_format(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+{
+    abcdk_http_node_t *http_p = NULL;
+    int chk;
+
+    assert(node != NULL && fmt != NULL && max > 0);
+
+    http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
+    ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过HTTP接口建立连接，不能调此接口。");
+
+    va_list ap;
+    va_start(ap, fmt);
+    chk = abcdk_http_post_chunked_vformat(node, max, fmt, ap);
+    va_end(ap);
+
+    return chk;
 }
 
 void _abcdk_http_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
@@ -104,7 +208,7 @@ void _abcdk_http_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
     if (http_listen_p->callback->prepare_cb)
         http_listen_p->callback->prepare_cb(&node_p, listen);
     else
-        node_p = abcdk_http_alloc(http_listen_p->ctx, 0, http_listen_p->req_max, http_listen_p->req_tempdir);
+        node_p = abcdk_http_alloc(http_listen_p->ctx, 0, http_listen_p->input_max, http_listen_p->input_tempdir);
 
     if (!node_p)
         return;
@@ -115,8 +219,6 @@ void _abcdk_http_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
     /*复制指针。*/
     http_p->callback = http_listen_p->callback;
 
-    /*设置下层协议。*/
-    http_p->next_proto = ABCDK_HTTP_REQUEST_PROTO_NATURAL;
 
     /*准备完毕，返回。*/
     *node = node_p;
@@ -144,8 +246,11 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
 
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
 
-    /*默认协议。*/
+    /*设置本层协议。*/
     http_p->protocol = 1;
+
+    /*设置下层协议。*/
+    http_p->next_proto = ABCDK_HTTP_RECEIVER_PROTO_NATURAL;
 
 #ifdef HEADER_SSL_H
     /*如果SSL开启，检查SSL验证结果。*/
@@ -169,7 +274,7 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
 #endif
 
     if (http_p->callback->connected_cb)
-        http_p->callback->connected_cb(node);
+        http_p->callback->connected_cb(node,&http_p->next_proto);
 
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
@@ -234,16 +339,16 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
 
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend(node);
 
-    if (!http_p->req)
-        http_p->req = abcdk_http_request_alloc(http_p->next_proto, http_p->req_max, http_p->req_tempdir);
+    if (!http_p->input_buf)
+        http_p->input_buf = abcdk_http_receiver_alloc(http_p->next_proto, http_p->input_max, http_p->input_tempdir);
 
-    if (!http_p->req)
+    if (!http_p->input_buf)
     {
         abcdk_comm_set_timeout(node, 1);
         return;
     }
 
-    chk = abcdk_http_request_append(http_p->req, data, size, remain);
+    chk = abcdk_http_receiver_append(http_p->input_buf, data, size, remain);
     if (chk < 0)
     {
         abcdk_comm_set_timeout(node, 1);
@@ -257,13 +362,13 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     }
     else if (chk > 0)
     {
-        if (http_p->callback->request_cb)
-            http_p->callback->request_cb(node, http_p->req, &http_p->next_proto);
+        if (http_p->callback->input_cb)
+            http_p->callback->input_cb(node, http_p->input_buf, &http_p->next_proto);
 
-        abcdk_http_request_unref(&http_p->req);
+        abcdk_http_receiver_unref(&http_p->input_buf);
 
         /*隧道协议，是否继续接收由应用层决定。*/
-        if (http_p->next_proto != ABCDK_HTTP_REQUEST_PROTO_TUNNEL)
+        if (http_p->next_proto != ABCDK_HTTP_RECEIVER_PROTO_TUNNEL)
             abcdk_comm_recv_watch(node);
     }
 }
@@ -290,7 +395,7 @@ int abcdk_http_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
-    ABCDK_ASSERT(cb->request_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
+    ABCDK_ASSERT(cb->input_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
 
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
     ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过HTTP接口建立连接，不能调此接口。");
@@ -318,7 +423,7 @@ int abcdk_http_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
-    ABCDK_ASSERT(cb->request_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
+    ABCDK_ASSERT(cb->input_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
 
     http_p = (abcdk_http_node_t *)abcdk_comm_get_extend0(node);
     ABCDK_ASSERT(http_p != NULL && http_p->magic == ABCDK_HTTP_MAGIC, "未通过HTTP接口建立连接，不能调此接口。");
@@ -326,7 +431,6 @@ int abcdk_http_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
     /*初始化状态。*/
     http_p->cb_cp = *cb;
     http_p->callback = &http_p->cb_cp;
-    http_p->next_proto = ABCDK_HTTP_REQUEST_PROTO_TUNNEL;
 
     abcdk_comm_callback_t fcb = {_abcdk_http_prepare_cb, _abcdk_http_event_cb, _abcdk_http_request_cb};
     chk = abcdk_comm_connect(node, ssl_ctx, addr, &fcb);

@@ -335,34 +335,27 @@ void _abcdk_rpc_event_connect(abcdk_comm_node_t *node)
     abcdk_comm_send_watch(node);
 }
 
-int _abcdk_rpc_msg_unpack(void *opaque, abcdk_receiver_t *msg,size_t *diff)
+int _abcdk_rpc_msg_unpack(void *opaque, const void *data, size_t size,size_t *diff)
 {   
     abcdk_rpc_node_t *rpc_p = NULL;
     uint32_t len;
     uint32_t pro;
-    void *msg_ptr;
-    size_t msg_len;
-    size_t msg_off;
 
     rpc_p = (abcdk_rpc_node_t *)opaque;
-    
-    msg_ptr = abcdk_receiver_data(msg);
-    msg_len = abcdk_receiver_size(msg);
-    msg_off = abcdk_receiver_offset(msg);
 
-    if (msg_off < ABCDK_RPC_HDR_SIZE)
+    if (size < ABCDK_RPC_HDR_SIZE)
     {
         /*增量扩展内存。*/
-        *diff = ABCDK_RPC_HDR_SIZE - msg_off;
+        *diff = ABCDK_RPC_HDR_SIZE - size;
         return 0;
     }
 
 #if 0
-    len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 0));
+    len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(data, 0));
     pro = abcdk_endian_b_to_h32(ABCDK_PTR2U32(msg_ptr, 4));
 #else
-    len = abcdk_bloom_read_number((uint8_t*)msg_ptr,20,0,32);
-    pro = abcdk_bloom_read_number((uint8_t*)msg_ptr,20,32,32);
+    len = abcdk_bloom_read_number((uint8_t*)data,20,0,32);
+    pro = abcdk_bloom_read_number((uint8_t*)data,20,32,32);
 #endif
 
     /*数据包大小必须符合要求。*/
@@ -374,10 +367,10 @@ int _abcdk_rpc_msg_unpack(void *opaque, abcdk_receiver_t *msg,size_t *diff)
         return -1;
 
     /*如果未收完，继续收。*/
-    if (msg_off < len)
+    if (size < len)
     {
         /*增量扩展内存。*/
-        *diff = ABCDK_MIN(524288, len - msg_off);
+        *diff = ABCDK_MIN(524288, len - size);
         return 0;
     }
 

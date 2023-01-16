@@ -158,7 +158,7 @@ const char *abcdk_strtok2(const char **next, const char *delim, int skip_space)
 
 NEXT_SEGMENT:
 
-    if(*start_p == '\0')
+    if(start_p == NULL || *start_p == '\0')
         return NULL;
 
     if (skip_space)

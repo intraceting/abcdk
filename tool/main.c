@@ -111,11 +111,9 @@ int main(int argc, char **argv)
     abcdk_log_open("/tmp/abcdk-log/abcdk.log","abcdk.%d.log", 10, 10, 0, 1);
 
 #ifdef HAVE_OPENSSL
-
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
-
 #endif //HAVE_OPENSSL
 
     args = abcdk_option_alloc();
@@ -128,7 +126,19 @@ int main(int argc, char **argv)
     errcode = _abcdk_tool_dispatch(args);
 
 final:
-    
+
+#ifdef HAVE_OPENSSL
+    CONF_modules_free();
+#ifndef OPENSSL_NO_DEPRECATED
+    ERR_remove_state(0);
+#endif //OPENSSL_NO_DEPRECATED
+    //ENGINE_cleanup();
+    CONF_modules_unload(1);
+    ERR_free_strings();
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
+#endif // HAVE_OPENSSL
+
     abcdk_option_free(&args);
 
     return errcode;

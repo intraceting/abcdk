@@ -59,13 +59,13 @@ void _abcdk_test_http_accept_cb(abcdk_comm_node_t *node, int *result)
     *result = 0;
 }
 
-void _abcdk_test_http_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req,int *next_proto)
+void _abcdk_test_http_input_cb(abcdk_comm_node_t *node, abcdk_http_receiver_t *req,int *next_proto)
 {
     size_t len = 0;
     const char *p, *val;
     for (int i = 0; i < 100; i++)
     {
-        p = abcdk_http_request_env(req, i);
+        p = abcdk_http_receiver_header(req, i);
         if (!p)
             break;
 
@@ -79,7 +79,7 @@ void _abcdk_test_http_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
 
     if (len > 0)
     {
-        abcdk_save("./test_http_upload.data", abcdk_http_request_body(req, 0), len, 0);
+        abcdk_save("./test_http_upload.data", abcdk_http_receiver_body(req, 0), len, 0);
     }
 
     abcdk_object_t *file = abcdk_mmap_filename("/etc/issue", 0, 0, 0);
@@ -102,26 +102,27 @@ void _abcdk_test_http_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
 #endif
 }
 
-void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *req,int *next_proto)
+void _abcdk_test_rtsp_input_cb(abcdk_comm_node_t *node, abcdk_http_receiver_t *req,int *next_proto)
 {
 
     abcdk_test_h264_t *h = (abcdk_test_h264_t *)abcdk_comm_get_userdata(node);
 
     // for (int i = 0; i < 100; i++)
     // {
-    //     const char *p = abcdk_http_request_env(req, i);
+    //     const char *p = abcdk_http_receiver_env(req, i);
     //     if (!p)
     //         break;
 
     //     fprintf(stderr, "%s\n", p);
     // }
 
-    const char *method_p = abcdk_http_request_env(req, 0);
-    const char *cseq_p = abcdk_http_request_getenv(req, "cseq");
-    const char *contlen_p = abcdk_http_request_getenv(req, "Content-Length");
 
-    if (*next_proto == ABCDK_HTTP_REQUEST_PROTO_RTSP)
+
+    if (*next_proto == ABCDK_HTTP_RECEIVER_PROTO_RTSP)
     {
+        const char *method_p = abcdk_http_receiver_header(req, 0);
+        const char *cseq_p = abcdk_http_receiver_getenv(req, "cseq");
+        const char *contlen_p = abcdk_http_receiver_getenv(req, "Content-Length");
 
         int cseq = strtol(cseq_p, NULL, 0);
 
@@ -151,7 +152,7 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
         {
             int len = strtol(contlen_p, NULL, 0);
             if (len > 0)
-                abcdk_save("./rtsp_ANNOUNCE.data", abcdk_http_request_body(req, 0), len, 0);
+                abcdk_save("./rtsp_ANNOUNCE.data", abcdk_http_receiver_body(req, 0), len, 0);
 
             abcdk_comm_post_format(node, 1000, "RTSP/1.0 %s\r\n", abcdk_http_status_desc(200));
             abcdk_comm_post_format(node, 1000, "CSeq: %d\r\n", cseq);
@@ -160,9 +161,9 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
             abcdk_comm_post_format(node, 1000, "\r\n");
 
-            // printf("%s",abcdk_http_request_body(req,0));
+            // printf("%s",abcdk_http_receiver_body(req,0));
 
-            h->sdp = abcdk_rtsp_sdp_parse(abcdk_http_request_body(req, 0), len);
+            h->sdp = abcdk_rtsp_sdp_parse(abcdk_http_receiver_body(req, 0), len);
             abcdk_rtsp_sdp_dump(stderr, h->sdp);
 
             abcdk_rtsp_sdp_media_base_t *m = abcdk_rtsp_sdp_media_base_collect(h->sdp, 96);
@@ -196,7 +197,7 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
             abcdk_comm_post_format(node, 1000, "Session: 123\r\n");
             abcdk_comm_post_format(node, 1000, "\r\n");
 
-            *next_proto = ABCDK_HTTP_REQUEST_PROTO_RTCP;
+            *next_proto = ABCDK_HTTP_RECEIVER_PROTO_RTCP;
         }
         else if (abcdk_strncmp(method_p, "TEARDOWN", 8, 1) == 0)
         {
@@ -210,10 +211,10 @@ void _abcdk_test_rtsp_request_cb(abcdk_comm_node_t *node, abcdk_http_request_t *
     }
     else
     {
-        int len = abcdk_http_request_body_length(req);
-        const void *p1 = abcdk_http_request_body(req, 0);
-        const void *p = abcdk_http_request_body(req, 4);
-        const void *p3 = abcdk_http_request_body(req, 4 + 12);
+        int len = abcdk_http_receiver_body_length(req);
+        const void *p1 = abcdk_http_receiver_body(req, 0);
+        const void *p = abcdk_http_receiver_body(req, 4);
+        const void *p3 = abcdk_http_receiver_body(req, 4 + 12);
 
         abcdk_hexdump_option_t opt = {0};
 
@@ -379,8 +380,8 @@ void _abcdk_test_http_work(abcdk_test_http_t *ctx)
 
 #endif
 
-   //   abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_http_request_cb,_abcdk_test_http_close_cb};
-    abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_rtsp_request_cb, _abcdk_test_http_close_cb};
+   //   abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_http_input_cb,_abcdk_test_http_close_cb};
+    abcdk_http_callback_t cb = {NULL,_abcdk_test_http_accept_cb, _abcdk_test_rtsp_input_cb, _abcdk_test_http_close_cb};
     abcdk_http_listen(ctx->listen_node, server_ssl_ctx, &addr, &cb);
 
     while (getchar() != 'Q')

@@ -7,8 +7,8 @@
 #ifndef ABCDK_HTTP_HTTP_H
 #define ABCDK_HTTP_HTTP_H
 
-#include "abcdk/http/reply.h"
-#include "abcdk/http/request.h"
+#include "abcdk/util/comm.h"
+#include "abcdk/http/receiver.h"
 
 __BEGIN_DECLS
 
@@ -39,11 +39,11 @@ typedef struct _abcdk_http_callback
     void (*accept_cb)(abcdk_comm_node_t *node, int *result);
 
     /**
-     * 请求数据到达通知回调函数。
+     *  输入数据到达通知回调函数。
      * 
      * @param [out] next_proto 下层协议。
     */
-    void (*request_cb)(abcdk_comm_node_t *node, abcdk_http_request_t *req,int *next_proto);
+    void (*input_cb)(abcdk_comm_node_t *node, abcdk_http_receiver_t *rec,int *next_proto);
 
     /** 
      * 连接关闭通知回调函数。
@@ -64,7 +64,7 @@ typedef struct _abcdk_http_callback
      * 
      * @note 如果未指定，则忽略。
     */
-    void (*connected_cb)(abcdk_comm_node_t *node);
+    void (*connected_cb)(abcdk_comm_node_t *node,int *next_proto);
 
 }abcdk_http_callback_t;
 
@@ -73,12 +73,49 @@ typedef struct _abcdk_http_callback
  *
  * @param [in] ctx 通讯环境指针。
  * @param [in] userdata 用户数据长度。
- * @param [in] max 最大长度(封包或单次)。
- * @param [in] tempdir 缓存目录。NULL(0) 忽略。
+ * @param [in] input_max 输入消息最大长度(封包或单次)。
+ * @param [in] input_tempdir 输入消息缓存目录。NULL(0) 忽略。
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t max, const char *tempdir);
+abcdk_comm_node_t *abcdk_http_alloc(abcdk_comm_t *ctx, size_t userdata, size_t input_max, const char *input_tempdir);
+
+/**
+ * 分块应答。
+ * 
+ * @note 内存对象将被托管，应用层不可以继续访问内存对象。
+ * 
+ * @param [in] data 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_post_chunked(abcdk_comm_node_t *node, abcdk_object_t *data);
+
+/**
+ * 分块应答。
+ * 
+ * @param  [in] data 数据，NULL(0) 应答结束块。
+ * @param  [in] size 长度，<= 0 应答结束块。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_post_chunked_buffer(abcdk_comm_node_t *node, const void *data, size_t size);
+
+/** 
+ * 分块应答。
+ * 
+ * @param [in] max 格式化数据最大长度。 
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_post_chunked_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap);
+
+/** 
+ * 分块应答。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_http_post_chunked_format(abcdk_comm_node_t *node, int max, const char *fmt, ...);
 
 /**
  * 监听客户端连接。

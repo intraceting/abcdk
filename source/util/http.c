@@ -482,3 +482,144 @@ void abcdk_http_auth_digest(abcdk_md5_t *ctx, const char *user, const char *pawd
     abcdk_md5_update(ctx, ":", 1);
     abcdk_md5_update(ctx, digest_ha2, 32);
 }
+
+void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, abcdk_object_t **location, abcdk_object_t **version,
+                                      abcdk_object_t **path, abcdk_object_t **params)
+{
+    const char *p = NULL, *p_next = NULL;
+
+    assert(req != NULL);
+
+    abcdk_object_unref(method);
+    abcdk_object_unref(location);
+    abcdk_object_unref(version);
+    abcdk_object_unref(path);
+    abcdk_object_unref(params);
+
+    p_next = req;
+
+    if (method)
+    {
+        *method = abcdk_strtok3(&p_next, " ", 1);
+        if (!*method)
+            return;
+    }
+    else
+    {
+        abcdk_strtok2(&p_next, " ", 1);
+    }
+
+    if (location)
+    {
+        *location = abcdk_strtok3(&p_next, " ", 1);
+        if (!*location)
+            return;
+    }
+    else
+    {
+        abcdk_strtok2(&p_next, " ", 1);
+    }
+
+    if (version)
+    {
+        *version = abcdk_strtok3(&p_next, "\r\n", 1);
+        if (!*version)
+            return;
+    }
+    else
+    {
+        abcdk_strtok2(&p_next, " ", 1);
+    }
+
+    p_next = (*location)->pstrs[0];
+    p = abcdk_strtok(&p_next, "?");
+    if (!p)
+        return;
+
+    if (path)
+    {
+        *path = abcdk_object_alloc2(p_next - p + 1);
+        if (!*path)
+            return;
+
+        abcdk_url_decode(p, p_next - p, (*path)->pstrs[0], &(*path)->sizes[0], 0);
+
+        /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
+        abcdk_url_abspath((*path)->pstrs[0]);
+
+        /*修正路径长度。*/
+        (*path)->sizes[0] = strlen((*path)->pstrs[0]);
+    }
+
+    /*可能无参数。*/
+    if (!p_next || *p_next != '?')
+        return;
+
+    p_next += 1;
+
+    if (params)
+    {
+
+        *params = abcdk_strtok3(&p_next, "\r\n", 0);
+        if (!*params)
+            return;
+    }
+}
+
+abcdk_option_t *abcdk_http_parse_form(const char *form)
+{
+    abcdk_option_t *opt;
+    const char *p = NULL, *p_next = NULL;
+    const char *p2 = NULL, *p2_next = NULL;
+    abcdk_object_t *key = NULL, *val = NULL;
+
+    assert(form != NULL);
+
+    opt = abcdk_option_alloc();
+    if (!opt)
+        return NULL;
+
+    for (;;)
+    {
+        p = abcdk_strtok2(&p_next, "&", 1);
+        if (!p)
+            break;
+
+        abcdk_object_unref(&key);
+        abcdk_object_unref(&val);
+
+        p2_next = p;
+        p2 = abcdk_strtok(&p2_next, "=");
+        if (!p2)
+            break;
+
+        key = abcdk_object_alloc2(p2_next - p2 + 1);
+        if (!key)
+            break;
+
+        abcdk_url_decode(p2, p2_next - p2, key->pstrs[0], &key->sizes[0], 0);
+
+        if (p2_next)
+        {
+            if (*p2_next == '=')
+                p2_next += 1;
+        }
+
+        p2 = abcdk_strtok(&p2_next, "&");
+        if (!p2)
+            break;
+
+        val = abcdk_object_alloc2(p2_next - p2 + 1);
+        if (!val)
+            break;
+
+        abcdk_url_decode(p2, p2_next - p2, val->pstrs[0], &val->sizes[0], 0);
+
+        abcdk_option_set(opt,key->pstrs[0], val->pstrs[0]);
+    }
+
+    abcdk_object_unref(&key);
+    abcdk_object_unref(&val);
+
+    return opt;
+}

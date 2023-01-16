@@ -238,14 +238,14 @@ void abcdk_tree_free(abcdk_tree_t **root)
 
 }
 
-abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *alloc)
+abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *obj)
 {
     abcdk_tree_t *node = (abcdk_tree_t *)abcdk_heap_alloc(sizeof(abcdk_tree_t));
 
     if (!node)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM,NULL);
 
-    node->obj = alloc;
+    node->obj = obj;
 
     return node;
 }
@@ -253,12 +253,12 @@ abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *alloc)
 abcdk_tree_t *abcdk_tree_alloc2(size_t *sizes, size_t numbers,int drag)
 {
     abcdk_tree_t *node = abcdk_tree_alloc(NULL);
-    abcdk_object_t *alloc = abcdk_object_alloc(sizes, numbers,drag);
+    abcdk_object_t *obj = abcdk_object_alloc(sizes, numbers,drag);
 
-    if (!node || !alloc)
+    if (!node || !obj)
         goto final_error;
 
-    node->obj = alloc;
+    node->obj = obj;
     
     return node;
 
@@ -266,7 +266,7 @@ final_error:
 
     /* 走到这里出错了。 */
     abcdk_tree_free(&node);
-    abcdk_object_unref(&alloc);
+    abcdk_object_unref(&obj);
     
     ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
 }
