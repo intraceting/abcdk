@@ -149,6 +149,21 @@ ssize_t abcdk_url_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
     return (slen - s);
 }
 
+abcdk_object_t *abcdk_url_encode2(const char *src, size_t slen, int component)
+{
+    abcdk_object_t *dst = NULL;
+
+    assert(src != NULL && slen > 0);
+
+    dst = abcdk_object_alloc2(slen * 3);
+    if (!dst)
+        return NULL;
+
+    abcdk_url_encode(src, slen, dst->pstrs[0], &dst->sizes[0], component);
+
+    return dst;
+}
+
 ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int qm_stop)
 {
     int s = 0, d = 0;
@@ -189,7 +204,22 @@ ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int 
     return (slen - s);
 }
 
-char *abcdk_url_abspath(char *buf)
+abcdk_object_t *abcdk_url_decode2(const char *src,size_t slen,int qm_stop)
+{
+    abcdk_object_t *dst = NULL;
+
+    assert(src != NULL && slen > 0);
+
+    dst = abcdk_object_alloc2(slen);
+    if(!dst)
+        return NULL;
+
+    abcdk_url_decode(src,slen,dst->pstrs[0],&dst->sizes[0],qm_stop);
+
+    return dst;
+}
+
+char *abcdk_url_abspath(char *buf, size_t decrease)
 {
     const char *p1 = NULL, *p2 = NULL;
 
@@ -197,11 +227,68 @@ char *abcdk_url_abspath(char *buf)
 
     p1 = abcdk_strstr_eod(buf, "://", 1);
     if (!p1)
-        return abcdk_abspath(buf);
-    
+        return abcdk_abspath(buf, decrease);
+
     p2 = abcdk_strstr(p1, "/", 1);
-    if(p2)
-        return abcdk_abspath((char*)p2);
+    if (p2)
+        return abcdk_abspath((char *)p2, decrease);
 
     return buf;
+}
+
+abcdk_object_t *abcdk_url_fixpath(const char *target, const char *opaque)
+{
+    abcdk_object_t *dst = NULL;
+    size_t dlen = 0;
+    const char *p1 = NULL, *p2 = NULL;
+
+    assert(target != NULL && opaque != NULL);
+
+    p1 = abcdk_strstr_eod(target, "://", 1);
+    if (p1)
+    {
+        dst = abcdk_object_alloc_copyfrom(target, strlen(target));
+        goto final;
+    }
+
+    dlen += strlen(opaque);
+    dlen += strlen(target);
+
+    dst = abcdk_object_alloc2(dlen + 2);
+    if (!dst)
+        return NULL;
+
+    p1 = abcdk_strstr_eod(opaque, "://", 1);
+    if (p1)
+    {
+        if (*target == '/')
+            p2 = abcdk_strstr_eod(p1, "/", 1);
+
+        if (p2)
+            strncat(dst->pstrs[0], opaque, p2 - opaque);
+        else
+            strcat(dst->pstrs[0], opaque);
+
+        strcat(dst->pstrs[0], "/");
+        strcat(dst->pstrs[0], target);
+    }
+    else
+    {
+        if(*target == '/')
+        {
+            abcdk_dirdir(dst->pstrs[0], target);
+        }
+        else
+        {
+            abcdk_dirdir(dst->pstrs[0], opaque);
+            abcdk_dirdir(dst->pstrs[0], target);
+        }
+    }
+
+final:
+
+    abcdk_url_abspath(dst->pstrs[0],0);
+    dst->sizes[0] = strlen(dst->pstrs[0]);
+
+    return dst;
 }

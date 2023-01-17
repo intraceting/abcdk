@@ -110,7 +110,7 @@ char *abcdk_basename(char *dst, const char *src)
     return dst;
 }
 
-char *abcdk_abspath(char *buf)
+char *abcdk_abspath(char *buf, size_t decrease)
 {
     abcdk_tree_t *stack = NULL, *pos = NULL;
     const char *p, *p_next;
@@ -161,6 +161,17 @@ char *abcdk_abspath(char *buf)
             continue;
 
         buf[i] = 0;
+    }
+
+    /*缩减深度。*/
+    for (int i = 0; i < decrease; i++)
+    {
+        pos = abcdk_tree_child(stack, 0);
+        if (!pos)
+            break;
+
+        abcdk_tree_unlink(pos);
+        abcdk_tree_free(&pos);
     }
 
     /*拼装路径。*/

@@ -27,8 +27,8 @@ int abcdk_fnmatch(const char *str,const char *pattern,int caseAb,int ispath)
         
         strncpy(p->pstrs[0],str,p->sizes[0]);
         strncpy(p->pstrs[1],pattern,p->sizes[1]);
-        abcdk_abspath(p->pstrs[0]);
-        abcdk_abspath(p->pstrs[1]);
+        abcdk_abspath(p->pstrs[0],0);
+        abcdk_abspath(p->pstrs[1],0);
 
         chk = fnmatch(p->pstrs[1], p->pstrs[0], flag);
 

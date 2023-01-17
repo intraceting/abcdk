@@ -545,7 +545,7 @@ void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, 
         abcdk_url_decode(p, p_next - p, (*path)->pstrs[0], &(*path)->sizes[0], 0);
 
         /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
-        abcdk_url_abspath((*path)->pstrs[0]);
+        abcdk_url_abspath((*path)->pstrs[0],0);
 
         /*修正路径长度。*/
         (*path)->sizes[0] = strlen((*path)->pstrs[0]);

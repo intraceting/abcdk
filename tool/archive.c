@@ -353,7 +353,7 @@ int _abcdkarchive_read_one(abcdkarchive_t *ctx)
 #endif 
 
     /*去掉冗余的路径信息。*/
-    abcdk_abspath(name_cp);
+    abcdk_abspath(name_cp,0);
     if (name_cp[0] == 0)
         return 0;
 

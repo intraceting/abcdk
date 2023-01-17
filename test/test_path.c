@@ -17,7 +17,7 @@ int abcdk_test_path(abcdk_option_t *args)
     char test[] = {"sfsdfas/fdasdf/././../ewter/../../ewrtertert/wertwertert/wertwetwert./../..//e/e/e//t/t/y/y//f/f/f/f/f/ff/"};
    // char test[] = {"aaAA/bbbb.jpg"};
 
-    abcdk_abspath(test);
+    abcdk_abspath(test,0);
     fprintf(stderr,"%s\n",test);
 
     int chk = abcdk_fnmatch("test_record/新建文件夹 (2)/test_ffmpeg/x64/Debug/test_ffmpeg.dll","*/*/*/*/*/*.dll",1,1);

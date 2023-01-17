@@ -51,11 +51,16 @@ abcdk_object_t *abcdk_url_split(const char *url);
  * @param [in] slen 明文长度。
  * @param [out] dst 密文指针。
  * @param [in out] dlen 密文长度。
- * @param [in] component !0 是组件，0 是URL。
+ * @param [in] component 是否为组件。!0 是，0 否。
  * 
  * @return 未编码的明文长度。
 */
 ssize_t abcdk_url_encode(const char *src,size_t slen,char *dst,size_t *dlen, int component);
+
+/** 
+ * URL编码。
+*/
+abcdk_object_t *abcdk_url_encode2(const char *src,size_t slen, int component);
 
 /** 
  * URL解码。
@@ -70,12 +75,29 @@ ssize_t abcdk_url_encode(const char *src,size_t slen,char *dst,size_t *dlen, int
 */
 ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int qm_stop);
 
+/** 
+ * URL解码。
+*/
+abcdk_object_t *abcdk_url_decode2(const char *src,size_t slen,int qm_stop);
+
 /**
- * 去掉路径中冗余的信息。
+ * 去掉URL中冗余的信息。
  * 
  * @note 不会检测目录结构是否存在。
+ * 
+ * @param [in] decrease 缩减的深度。
 */
-char *abcdk_url_abspath(char *buf);
+char *abcdk_url_abspath(char *buf, size_t decrease);
+
+/**
+ * 依据环境信息修补URL。
+ * 
+ * @note 当目标路径为绝对路径时，直接复制。
+ * 
+ * @param [in] target 目标路径。
+ * @param [in] opaque 环境路径。
+*/
+abcdk_object_t *abcdk_url_fixpath(const char *target, const char *opaque);
 
 __END_DECLS
 
