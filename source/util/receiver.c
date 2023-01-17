@@ -95,7 +95,7 @@ abcdk_receiver_t *abcdk_receiver_alloc(const char *tempdir)
         if (access(tempdir, W_OK) != 0)
             goto final_error;
 
-        strncpy(ctx->tmp_file, tempdir, PATH_MAX - 6);
+        strncpy(ctx->tmp_file, tempdir, PATH_MAX - 64);
         abcdk_dirdir(ctx->tmp_file, "abcdk-receiver-XXXXXX");
 
         ctx->tmp_obj = abcdk_mmap_tempfile(ctx->tmp_file, 4096, 1, 1);
