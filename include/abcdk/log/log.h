@@ -40,7 +40,7 @@ typedef enum _abcdk_log_type
 /**
  * 初始化。
  * 
- * @note 分段文件名仅支持一个数值格式控制符。
+ * @note 分段文件名仅支持一个数值格式控制符。如：%d 。
  *
  * @param [in] name 文件名(包括路径)。
  * @param [in] segment_name 分段文件名(包括路径)，NULL(0) 不分段。

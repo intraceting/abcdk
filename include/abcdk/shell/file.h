@@ -32,6 +32,12 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * 
  * @note 在原文件所在的目录进行文件分段存储。
  * 
+ * @param [in] src 源文件名(包括路径)。
+ * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
+ * @param [in] max 最大分段数量。
+ * 
+ * @return 0 成功，-1 失败(访问被拒绝)。
+ * 
  * @code
  * //1
  * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.%d.log",10);
@@ -42,12 +48,6 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * //4
  * abcdk_file_segment("/aaa/bbb.log","/aaa/%04d.bbb.log",10);
  * @endcode
- * 
- * @param [in] src 源文件名(包括路径)。
- * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
- * @param [in] max 最大分段数量。
- * 
- * @return 0 成功，-1 失败(访问被拒绝)。
  * 
 */
 int abcdk_file_segment(const char *src, const char *dst, int max);

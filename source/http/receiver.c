@@ -20,12 +20,6 @@ struct _abcdk_http_receiver
     /** 缓存最大长度。*/
     size_t buf_max;
 
-    /** 头部接收当前的游标位置。*/
-    size_t hdr_recv_pos;
-
-    /** 头部接收当前的行位置。*/
-    size_t hdr_recv_line_pos;
-
     /**
      * 头部长度。
      *
@@ -35,9 +29,6 @@ struct _abcdk_http_receiver
     
     /** 实体长度。*/
     size_t body_len;
-
-    /** 头部解析标志。0 未解析，1 已解析。*/
-    volatile int hdr_parse_ok;
 
     /** 头部环境信息。*/
     abcdk_object_t *envs[100];
@@ -60,7 +51,7 @@ void abcdk_http_receiver_unref(abcdk_http_receiver_t **rec)
     assert(rec_p->refcount == 0);
 
     abcdk_receiver_unref(&rec_p->buf);
-    for(int i =0;i<100;i++)
+    for (int i = 0; i < 100; i++)
         abcdk_object_unref(&rec_p->envs[i]);
 
     abcdk_heap_free(rec_p);
@@ -89,11 +80,8 @@ abcdk_http_receiver_t *abcdk_http_receiver_alloc(int proto,size_t max,const char
         return NULL;
 
     rec->refcount = 1;
-    rec->hdr_recv_pos = 0;
-    rec->hdr_recv_line_pos = 0;
     rec->hdr_len = 0;
     rec->body_len = 0;
-    rec->hdr_parse_ok = 0;
     rec->envs[0] = rec->envs[1] = NULL;
 
     rec->protocol = proto;
@@ -115,74 +103,46 @@ final_error:
 int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_t size,size_t *diff)
 {
     abcdk_http_receiver_t *rec_p = NULL;
-    size_t cur_pos;
-    const char *p,*p2;
-    size_t all_len;
+    const char *p = NULL, *p_next = NULL;
 
     rec_p = (abcdk_http_receiver_t *)opaque;
-
 
     /*如果未确定头部长度，则先定位头部长度。*/
     if (rec_p->hdr_len <= 0)
     {
-        /*从上次结束位置开始找头部结束标志，目地是判断头部长度和实体长度。*/
-        cur_pos = rec_p->hdr_recv_pos;
-        while (++cur_pos < size)
+        /*至少需要四个字符。*/
+        if (size >= 4)
         {
-            /*查找行尾标志。*/
-            if (ABCDK_PTR2I8(data, cur_pos) != '\n')
-                continue;
-
-            /*判断是否为头部结束标志(\r\n)。*/
-            if (cur_pos - rec_p->hdr_recv_pos == 1 &&
-                ABCDK_PTR2I8(data, rec_p->hdr_recv_pos) == '\r' &&
-                ABCDK_PTR2I8(data, cur_pos) == '\n')
+            /*查找头部结束标志。*/
+            if (abcdk_strncmp(ABCDK_PTR2I8PTR(data, size - 4), "\r\n\r\n", 4, 0) == 0)
             {
-                rec_p->hdr_len = cur_pos + 1;//索引才是长度。
-                rec_p->hdr_recv_pos = 0;
-                break;
-            }
-            else
-            {
-                /*记录当前行。*/
-                p2 = ABCDK_PTR2U8PTR(data, rec_p->hdr_recv_pos);
+                rec_p->hdr_len = size;
 
-                /*尝试获取请求体长度。*/
-                if (rec_p->body_len <= 0)
+                p_next = (char *)data;
+                for (int i = 0; i < ABCDK_ARRAY_SIZE(rec_p->envs); i++)
                 {
-                    p = abcdk_http_match_env(p2, "Content-Length");
-                    rec_p->body_len = (p ? strtol(p, NULL, 0) : 0);
+                    rec_p->envs[i] = abcdk_strtok3(&p_next, "\r\n", 0);
+                    if (!rec_p->envs[i])
+                        break;
+
+                    if (rec_p->body_len <= 0)
+                    {
+                        p = abcdk_http_match_env(rec_p->envs[i]->pstrs[0], "Content-Length");
+                        rec_p->body_len = (p ? strtol(p, NULL, 0) : 0);
+                    }
                 }
 
-                /*下一行。*/
-                rec_p->hdr_recv_line_pos += 1;
-                rec_p->hdr_recv_pos = ++cur_pos;
-            }
-
-            /*不支持超过100行的头部。*/
-            if (rec_p->hdr_recv_line_pos == 100)
-                return -1;
-        }
-
-        /*检查请求头是否完整。。*/
-        if (rec_p->hdr_len > 0)
-        {
-            /*可能无实体。*/
-            if (rec_p->body_len <= 0)
-                return 1;
-            else
                 return _abcdk_http_receiver_natural_unpack_cb(opaque,data,size,diff);
+            }
         }
-        else
-        {
-            /*不能超过最大长度。*/
-            if (rec_p->buf_max < size)
-                return -1;
 
-            /*增量扩展内存。*/
-            *diff = 1;
-            return 0;
-        }
+        /*不能超过最大长度。*/
+        if (rec_p->buf_max < size)
+            return -1;
+
+        /*增量扩展内存。*/
+        *diff = 1;
+        return 0;
     }
     else
     {
@@ -200,7 +160,6 @@ int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_
 
         return 1;
     }
-    
 }
 
 int _abcdk_http_receiver_append_natural(abcdk_http_receiver_t *rec, const void *data, size_t size, size_t *remain)
@@ -208,6 +167,68 @@ int _abcdk_http_receiver_append_natural(abcdk_http_receiver_t *rec, const void *
     abcdk_receiver_protocol_set_simple(rec->buf, rec, _abcdk_http_receiver_natural_unpack_cb);
 
     return abcdk_receiver_append(rec->buf,data, size, remain);
+}
+
+int _abcdk_http_receiver_chunked_unpack_cb(void *opaque, const void *data, size_t size,size_t *diff)
+{
+    abcdk_http_receiver_t *rec_p = NULL;
+
+    rec_p = (abcdk_http_receiver_t *)opaque;
+
+    /*如果未确定头部长度，则先定位头部长度。*/
+    if (rec_p->hdr_len <= 0)
+    {
+        /*至少需要两个字符。*/
+        if (size >= 2)
+        {
+            /*查找行尾标志。*/
+            if (abcdk_strncmp(ABCDK_PTR2I8PTR(data, size - 2), "\r\n", 2, 0) == 0)
+            {
+                rec_p->hdr_len = size;
+                rec_p->body_len = strtoll(ABCDK_PTR2I8PTR(data, 0), NULL, 16);
+
+                return _abcdk_http_receiver_chunked_unpack_cb(opaque,data,size,diff);
+            }
+        }
+
+        /*不能超过最大长度。*/
+        if (rec_p->buf_max < size)
+            return -1;
+
+        /*增量扩展内存。*/
+        *diff = 1;
+        return 0;
+    }
+    else
+    {
+        /*不能超过实体限制。*/
+        if (size < rec_p->hdr_len + rec_p->body_len + 2)
+        {
+            /*不能超过最大长度。*/
+            if (rec_p->buf_max < size)
+                return -1;
+
+            /*增量扩展内存。*/
+            *diff = ABCDK_MIN(524288, rec_p->hdr_len + rec_p->body_len + 2 - size);
+            return 0;
+        }
+
+        return 1;
+    }
+}
+
+int _abcdk_http_receiver_append_chunked(abcdk_http_receiver_t *rec, const void *data, size_t size, size_t *remain)
+{
+    /*
+     * Chunked包格式。
+     *
+     * size(HEX)\r\n
+     * data\r\n
+    */
+
+    abcdk_receiver_protocol_set_simple(rec->buf, rec, _abcdk_http_receiver_chunked_unpack_cb);
+
+    return abcdk_receiver_append(rec->buf, data, size, remain);
 }
 
 int _abcdk_http_receiver_rtcp_unpack_cb(void *opaque, const void *data, size_t size,size_t *diff)
@@ -272,6 +293,8 @@ int abcdk_http_receiver_append(abcdk_http_receiver_t *rec, const void *data, siz
 
     if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_NATURAL)
         chk = _abcdk_http_receiver_append_natural(rec, data, size, remain);
+    else if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_CHUNKED)
+        chk = _abcdk_http_receiver_append_chunked(rec, data, size, remain);
     else if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_RTCP)
         chk = _abcdk_http_receiver_append_rtcp(rec, data, size, remain);
     else if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_TUNNEL)
@@ -290,6 +313,13 @@ const void *abcdk_http_receiver_body(abcdk_http_receiver_t *rec, off_t off)
     assert(rec != NULL);
 
     if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_NATURAL)
+    {
+        ABCDK_ASSERT(off < rec->body_len, "偏移量必须小于实体长度。");
+
+        p = abcdk_receiver_data(rec->buf);
+        p = ABCDK_PTR2VPTR(p, off + rec->hdr_len);
+    }
+    else if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_CHUNKED)
     {
         ABCDK_ASSERT(off < rec->body_len, "偏移量必须小于实体长度。");
 
@@ -317,28 +347,12 @@ size_t abcdk_http_receiver_body_length(abcdk_http_receiver_t *rec)
     
     if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_NATURAL)
         l = rec->body_len;
+    else if (rec->protocol == ABCDK_HTTP_RECEIVER_PROTO_CHUNKED)
+        l = rec->body_len;
     else 
         l = abcdk_receiver_offset(rec->buf);
 
     return l;
-}
-
-void _abcdk_http_receiver_parse_hdr(abcdk_http_receiver_t *rec)
-{
-    const char *p = NULL, *p_next = NULL;
-
-    /*只解析一次。*/
-    if (!abcdk_atomic_compare_and_swap(&rec->hdr_parse_ok, 0, 1))
-        return;
-
-    p_next = (char *)abcdk_receiver_data(rec->buf);
-
-    for (int i = 0; i < ABCDK_ARRAY_SIZE(rec->envs); i++)
-    {
-        rec->envs[i] = abcdk_strtok3(&p_next, "\r\n",0);
-        if (!rec->envs[i])
-            break;
-    }
 }
 
 const char *abcdk_http_receiver_header(abcdk_http_receiver_t *rec, int line)
@@ -347,8 +361,6 @@ const char *abcdk_http_receiver_header(abcdk_http_receiver_t *rec, int line)
 
     if (rec->protocol != ABCDK_HTTP_RECEIVER_PROTO_NATURAL)
         return NULL;
-
-    _abcdk_http_receiver_parse_hdr(rec);
 
     if (line < ABCDK_ARRAY_SIZE(rec->envs))
     {

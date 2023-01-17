@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_SQLITE_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/string.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>

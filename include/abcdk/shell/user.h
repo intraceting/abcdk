@@ -16,9 +16,8 @@ __BEGIN_DECLS
 /**
  * 获取当前用户的运行路径。
  * 
- * 可能不存在，使用前最好检查一下。
- *
- * /var/run/user/$UID/
+ * @note 可能不存在，使用前最好检查一下。
+ * @note /var/run/user/$UID/
  * 
  * @param append 拼接目录或文件名。NULL(0) 忽略。
 */

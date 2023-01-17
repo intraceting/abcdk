@@ -288,7 +288,7 @@ void _abcdkarchive_read_push_attr(abcdkarchive_t *ctx,const char *name,struct st
         if (fd < 0)
             return;
 
-        ctx->attr_list = abcdk_mmap(fd, (1UL << 31) - 1, 1, 0);
+        ctx->attr_list = abcdk_mmap_fd(fd, (1UL << 31) - 1, 1, 0);
         if(ctx->attr_list)
             ctx->attr_list_pos = ctx->attr_list->sizes[0];
 

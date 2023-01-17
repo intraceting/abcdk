@@ -114,5 +114,5 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
 
     /* 独占失败，关闭句柄，返回-1。*/
     abcdk_closep(&fd);
-    ABCDK_ERRNO_AND_RETURN1(EPERM,-1);
+    return -1;
 }

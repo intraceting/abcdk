@@ -715,14 +715,12 @@ void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
     abcdk_comm_recv_watch(node);
 }
 
-void _abcdkhttpd_process(abcdk_comm_node_t *node)
+void _abcdkhttpd_filter(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     int chk;
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
-
-    abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version, &http_p->path, &http_p->params);
 
     if (abcdk_strcmp(http_p->method->pstrs[0], "CONNECT", 0) == 0)
     {
@@ -807,7 +805,9 @@ void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
         strncpy(http_p->a_c_a_o, http_p->ctx->a_c_a_o, PATH_MAX);
     }
 
-    _abcdkhttpd_process(node);
+    abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version, &http_p->path, &http_p->params);
+
+    _abcdkhttpd_filter(node);
     return;
 
 final_error:
@@ -955,9 +955,11 @@ void _abcdkhttpd_connected_cb(abcdk_comm_node_t *node, int *next_proto)
 
     http_p->md5 = abcdk_md5_create();
 
-    /*隧道协议。*/
+    /*选择应用层协议。*/
     if(http_p->tunnel)
         *next_proto = ABCDK_HTTP_RECEIVER_PROTO_TUNNEL;
+    else 
+        *next_proto = ABCDK_HTTP_RECEIVER_PROTO_NATURAL;
 
     abcdk_log_printf(LOG_INFO, "Connected: %s", http_p->remote);
 }
