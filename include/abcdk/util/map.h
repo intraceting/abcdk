@@ -35,7 +35,7 @@ typedef struct _abcdk_map
     /**
      * KEY比较函数。
      * 
-     * @return 0 key1等于key2，!0 key1不等于key2。
+     * @return 0 key1 == key2，!0 key1 != key2。
     */
     int (*compare_cb)(const void *key1, size_t size1, const void *key2,size_t size2,void *opaque);
 
