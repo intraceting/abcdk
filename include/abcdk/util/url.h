@@ -42,6 +42,7 @@ typedef enum _abcdk_url_field
 } abcdk_url_field_t;
 
 /** URL拆分。*/
+ABCDK_DEPRECATED
 abcdk_object_t *abcdk_url_split(const char *url);
 
 /** 

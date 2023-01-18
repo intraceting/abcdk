@@ -72,9 +72,6 @@ typedef struct _abcdkhttpd_node
     abcdk_object_t *version;
     abcdk_object_t *path;
     abcdk_object_t *params;
-    
-    char referer_de[PATH_MAX];
-    char a_c_a_o[PATH_MAX];
 
     char pathfile[PATH_MAX];
     struct stat attr;
@@ -104,7 +101,7 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
 
     fprintf(stderr, "\n\t--access-control-allow-origin < DOMAIN >\n");
-    fprintf(stderr, "\t\t访问控制允许源。\n");
+    fprintf(stderr, "\t\t访问控制允许源。默认：*\n");
 
     fprintf(stderr, "\n\t--listen < ADDR [ ADDR ...] >\n");
     fprintf(stderr, "\t\t监听地址。\n");
@@ -344,7 +341,7 @@ final_error:
                            abcdk_http_status_desc((proxy ? 407 : 401)),
                            http_p->ctx->server_name,
                            abcdk_time_format(http_p->timefmt, NULL, http_p->ctx->loc),
-                           http_p->a_c_a_o,
+                           http_p->ctx->a_c_a_o,
                            (proxy ? "Proxy" : "WWW"),
                            (http_p->md5 ? "Digest" : "Basic"),
                            http_p->ctx->realm,
@@ -373,7 +370,7 @@ void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status,const char *a_
                            abcdk_http_status_desc(status),
                            http_p->ctx->server_name,
                            abcdk_time_format(http_p->timefmt, NULL,http_p->ctx->loc),
-                           http_p->a_c_a_o,
+                           http_p->ctx->a_c_a_o,
                            a_c_a_m);
 
     _abcdkhttpd_logprint(node, status, 0);
@@ -431,7 +428,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
                                abcdk_http_status_desc(200),
                                http_p->ctx->server_name,
                                abcdk_time_format(http_p->timefmt, &tm,http_p->ctx->loc),
-                               http_p->a_c_a_o,
+                               http_p->ctx->a_c_a_o,
                                abcdk_http_content_type_desc(".html"));
 
         abcdk_http_post_chunked_format(node, 10000,
@@ -614,7 +611,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    abcdk_http_status_desc(status = 206),
                                    http_p->ctx->server_name,
                                    abcdk_time_format(http_p->timefmt, &tm,http_p->ctx->loc),
-                                   http_p->a_c_a_o,
+                                   http_p->ctx->a_c_a_o,
                                    content_type,
                                    range_s, range_e, file_size,
                                    file->sizes[0]);
@@ -635,7 +632,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    abcdk_http_status_desc(status = 200),
                                    http_p->ctx->server_name,
                                    abcdk_time_format(http_p->timefmt, &tm,http_p->ctx->loc),
-                                   http_p->a_c_a_o,
+                                   http_p->ctx->a_c_a_o,
                                    content_type,
                                    file->sizes[0]);
         }
@@ -773,37 +770,6 @@ void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
 
     if (!http_p->line0)
         goto final_error;
-
-    if (!http_p->ctx->a_c_a_o)
-    {
-        if (http_p->referer)
-        {
-            path_len = PATH_MAX;
-            abcdk_url_decode(http_p->referer, strlen(http_p->referer), http_p->referer_de, &path_len, 1);
-            if (abcdk_strncmp(http_p->referer_de, "http://", 7, 0) == 0)
-            {
-                strncpy(http_p->a_c_a_o, "http://", PATH_MAX);
-                sscanf(http_p->referer_de + 7, "%[^/]", http_p->a_c_a_o + 7);
-            }
-            else if (abcdk_strncmp(http_p->referer_de, "https://", 8, 0) == 0)
-            {
-                strncpy(http_p->a_c_a_o, "https://", PATH_MAX);
-                sscanf(http_p->referer_de + 8, "%[^/]", http_p->a_c_a_o + 8);
-            }
-            else
-            {
-                strncpy(http_p->a_c_a_o, "*", PATH_MAX);
-            }
-        }
-        else
-        {
-            strncpy(http_p->a_c_a_o, "*", PATH_MAX);
-        }
-    }
-    else
-    {
-        strncpy(http_p->a_c_a_o, http_p->ctx->a_c_a_o, PATH_MAX);
-    }
 
     abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version, &http_p->path, &http_p->params);
 
@@ -1003,7 +969,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
-    ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin",0,NULL);
+    ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin",0,"*");
     ctx->listen[ABCDKHTTPD_LISTEN] = abcdk_option_get(ctx->args, "--listen", 0, NULL);
     ctx->listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_option_get(ctx->args, "--listen-ssl", 0, NULL);
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);

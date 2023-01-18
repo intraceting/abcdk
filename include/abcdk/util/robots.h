@@ -11,9 +11,4 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/buffer.h"
 
-__BEGIN_DECLS
-
-__END_DECLS
-
-
 #endif //ABCDK_UTIL_ROBOTS_H

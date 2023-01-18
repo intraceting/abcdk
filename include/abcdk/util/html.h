@@ -10,9 +10,4 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/mmap.h"
 
-__BEGIN_DECLS
-
-
-__END_DECLS
-
 #endif //ABCDK_UTIL_HTML_H

@@ -70,12 +70,12 @@ ssize_t abcdk_basecode_decode(const abcdk_basecode_t *ctx,
                               uint8_t *dst, size_t dmaxlen);
 
 /**
-* 编码。
+ * 编码。
 */
 abcdk_object_t *abcdk_basecode_encode2(const void *src,size_t len, uint8_t base);
 
 /**
-* 解码。
+ * 解码。
 */
 abcdk_object_t *abcdk_basecode_decode2(const char *src,size_t len, uint8_t base);
 

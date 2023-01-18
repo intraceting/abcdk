@@ -196,9 +196,24 @@
     ((expr) ? (void)(0) : ({fprintf(stderr,"%s(%d): %s: %s\n",__FILE__, __LINE__,__FUNCTION__,#tips);abort(); }))
 
 /** 高版本。*/
-#define ABCDK_VERSION_AT_LEAST(M, m, x, y) ((M) > (x) || (M) == (x) && (m) >= (y))
+#define ABCDK_VERSION_AT_LEAST(max, min, x, y) ((max) > (x) || (max) == (x) && (min) >= (y))
 
 /** 低版本。*/
-#define ABCDK_VERSION_AT_MOST(M, m, x, y) ((M) < (x) || (M) == (x) && (m) <= (y))
+#define ABCDK_VERSION_AT_MOST(max, min, x, y) ((max) < (x) || (max) == (x) && (min) <= (y))
+
+/** GCC版本。*/
+#ifdef __GNUC__
+#define ABCDK_GCC_VERSION_AT_LEAST(x, y) ABCDK_VERSION_AT_LEAST(__GNUC__, __GNUC_MINOR__, x, y)
+#define ABCDK_GCC_VERSION_AT_MOST(x, y) ABCDK_VERSION_AT_MOST(__GNUC__, __GNUC_MINOR__, x, y)
+#else
+#define ABCDK_GCC_VERSION_AT_LEAST(x, y) 0
+#define ABCDK_GCC_VERSION_AT_MOST(x, y) 0
+#endif
+
+#if ABCDK_GCC_VERSION_AT_LEAST(3, 1)
+#define ABCDK_DEPRECATED __attribute__((deprecated))
+#else
+#define ABCDK_DEPRECATED
+#endif
 
 #endif //ABCDK_UTIL_DEFS_H
