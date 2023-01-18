@@ -44,13 +44,13 @@ typedef struct _abcdk_object_hdr
 #define ABCDK_OBJECT_PTR_IN2OUT(PTR) \
     ABCDK_PTR2PTR(abcdk_object_t, (PTR), sizeof(abcdk_object_hdr_t) - sizeof(abcdk_object_t))
 
-void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destructor_cb cb,void *opaque)
+void abcdk_object_atfree(abcdk_object_t *obj,abcdk_object_destructor_cb cb,void *opaque)
 {
     abcdk_object_hdr_t *in_p = NULL;
 
-    assert(alloc != NULL && cb != NULL);
+    assert(obj != NULL && cb != NULL);
 
-    in_p = ABCDK_OBJECT_PTR_OUT2IN(alloc);
+    in_p = ABCDK_OBJECT_PTR_OUT2IN(obj);
 
     assert(in_p->magic == ABCDK_OBJECT_MAGIC);
 
@@ -180,7 +180,7 @@ void abcdk_object_unref(abcdk_object_t **dst)
     abcdk_heap_free(in_p);
 }
 
-abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size)
+abcdk_object_t *abcdk_object_copyfrom(const void *data, size_t size)
 {
     abcdk_object_t *obj;
 

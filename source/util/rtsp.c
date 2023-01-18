@@ -385,7 +385,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
             if (!p)
                 goto final_error;
 
-            ctx->encoder = abcdk_object_alloc_copyfrom(p,p_next - p);
+            ctx->encoder = abcdk_object_copyfrom(p,p_next - p);
             if (!ctx->encoder)
                 goto final_error;
 
@@ -404,7 +404,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
                 continue;
             }
 
-            ctx->encoder_param = abcdk_object_alloc_copyfrom(p,p_next - p);
+            ctx->encoder_param = abcdk_object_copyfrom(p,p_next - p);
             if (!ctx->encoder_param)
                 goto final_error;
         }
@@ -429,7 +429,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
                     if(!p)
                         break;
 
-                    ctx->fmtp_param[j] = abcdk_object_alloc_copyfrom(p,p_next - p);
+                    ctx->fmtp_param[j] = abcdk_object_copyfrom(p,p_next - p);
                     if (!ctx->fmtp_param[j])
                         goto final_error;
 
@@ -452,7 +452,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
             if (!p)
                 goto final_error;
 
-            ctx->control = abcdk_object_alloc_copyfrom(p,p_next - p);
+            ctx->control = abcdk_object_copyfrom(p,p_next - p);
             if (!ctx->control)
                 goto final_error;
         }

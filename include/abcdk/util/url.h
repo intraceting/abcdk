@@ -23,7 +23,7 @@ typedef enum _abcdk_url_field
     ABCDK_URL_SCHEME = 0,
 #define ABCDK_URL_SCHEME ABCDK_URL_SCHEME
 
-    /** 用户名称。*/
+    /** 授权账号。*/
     ABCDK_URL_USER = 1,
 #define ABCDK_URL_USER ABCDK_URL_USER
 
@@ -36,8 +36,12 @@ typedef enum _abcdk_url_field
 #define ABCDK_URL_HOST ABCDK_URL_HOST
 
     /** 资源路径(包括参数)。*/
-    ABCDK_URL_PATH = 4
+    ABCDK_URL_PATH = 4,
 #define ABCDK_URL_PATH ABCDK_URL_PATH
+
+    /** 授权(账号和密码)。*/
+    ABCDK_URL_AUTH = 5
+#define ABCDK_URL_AUTH ABCDK_URL_AUTH
 
 } abcdk_url_field_t;
 

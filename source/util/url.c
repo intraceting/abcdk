@@ -6,84 +6,96 @@
  */
 #include "abcdk/util/url.h"
 
+void _abcdk_url_split_free_cb(abcdk_object_t *obj, void *opaque)
+{
+    if(!obj)
+        return;
+
+    abcdk_heap_free(obj->pstrs[ABCDK_URL_SCHEME]);
+    abcdk_heap_free(obj->pstrs[ABCDK_URL_USER]);
+    abcdk_heap_free(obj->pstrs[ABCDK_URL_PSWD]);
+    abcdk_heap_free(obj->pstrs[ABCDK_URL_HOST]);
+    abcdk_heap_free(obj->pstrs[ABCDK_URL_PATH]);
+}
+
 abcdk_object_t *abcdk_url_split(const char *url)
 {
-    const char* mark = NULL;
-    const char* a_mark = NULL;
-    size_t len = 0;
-    size_t sizes[5] = {0};
     abcdk_object_t *obj = NULL;
-
+    const char *p = NULL ,*p_next = NULL;
+    const char *p2 = NULL ,*p2_next = NULL;
+    
     assert(url != NULL);
-    assert(url[0] != '\0');
 
-    len = strlen(url);
+    obj = abcdk_object_alloc(NULL,6,0);
+    if(!obj)
+        return NULL;
 
-    mark = abcdk_strstr(url,"://",0);
-    if (mark)
+    abcdk_object_atfree(obj,_abcdk_url_split_free_cb,NULL);
+
+    p_next = url;
+
+    p = abcdk_strstr(p_next,"://",0);
+    if(!p)
     {
-        sizes[ABCDK_URL_SCHEME] = 64;
-        sizes[ABCDK_URL_USER] = 64;
-        sizes[ABCDK_URL_PSWD] = 128;
-        sizes[ABCDK_URL_HOST] = 255;
-        sizes[ABCDK_URL_PATH] = len + 1;
+        obj->pstrs[ABCDK_URL_PATH] = abcdk_heap_clone(p_next,strlen(p_next));
+        obj->sizes[ABCDK_URL_PATH] = strlen(obj->pstrs[ABCDK_URL_PATH]);
     }
     else
     {
-        sizes[ABCDK_URL_SCHEME] = sizes[ABCDK_URL_USER] = 1;
-        sizes[ABCDK_URL_PSWD] = sizes[ABCDK_URL_HOST] = 1;
-        sizes[ABCDK_URL_PATH] = len + 1; //set.
-    }
-    
-    obj = abcdk_object_alloc(sizes,ABCDK_ARRAY_SIZE(sizes),0);
-    if(!obj)
-        return NULL;
-    
-    if(mark)
-    {
-        if(ABCDK_PTR2I8(mark,3) == '/')
+        if (p != p_next)
         {
-            /* SCHEME:///abcdk/...*/
-            sscanf(url,"%[^:]%*3[:/]%s",obj->pstrs[ABCDK_URL_SCHEME],obj->pstrs[ABCDK_URL_PATH]);
+            p = abcdk_strtok(&p_next, "://");
+            if (!p)
+                goto final;
+
+            obj->pstrs[ABCDK_URL_SCHEME] = abcdk_heap_clone(p, p_next - p);
+            obj->sizes[ABCDK_URL_SCHEME] = strlen(obj->pstrs[ABCDK_URL_SCHEME]);
+        }
+
+        if(*p_next == ':')
+            p_next += 3;
+
+        p = abcdk_strtok(&p_next,"/");
+        if(!p)
+            goto final;
+
+        p2 = abcdk_strstr(p,"@",0);
+        if(p2)
+        {
+            p2_next = p;
+            p2 = abcdk_strtok(&p2_next,"@");
+            if(!p2)
+                goto final;
+            
+            obj->pstrs[ABCDK_URL_AUTH] = abcdk_heap_clone(p2, p2_next - p2);
+            obj->sizes[ABCDK_URL_AUTH] = strlen(obj->pstrs[ABCDK_URL_AUTH]);
+
+            if(*p2_next == '@')
+                p2_next += 1;
+
+            p_next = p2_next;
+            p = abcdk_strtok(&p_next,"/");
+            if(!p)
+                goto final;
+            
+            obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
+            obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
         }
         else
         {
-            for (size_t k = 3; ABCDK_PTR2I8(mark, k); k++)
-            {
-                if (ABCDK_PTR2I8(mark, k) == '/')
-                    break;
-
-                if (ABCDK_PTR2I8(mark, k) == '@')
-                    a_mark = ABCDK_PTR2I8PTR(mark, k);
-            }
-
-            if(a_mark)
-            {
-                /* 
-                 * SCHEME://user:pswd@host[:port]/abcdk
-                 * SCHEME://user:pswd@[host][:port]/abcdk
-                */
-                sscanf(url, "%[^:]%*3[:/]%[^:]%*1[:]%[^@]%*1[@]%[^/]%s",
-                       obj->pstrs[ABCDK_URL_SCHEME], obj->pstrs[ABCDK_URL_USER],
-                       obj->pstrs[ABCDK_URL_PSWD], obj->pstrs[ABCDK_URL_HOST],
-                       obj->pstrs[ABCDK_URL_PATH]);
-            }
-            else
-            {
-                /* 
-                 * SCHEME://host[:port]/abcdk
-                 * SCHEME://[host][:port]/abcdk
-                */
-                sscanf(url, "%[^:]%*3[:/]%[^/]%s",
-                       obj->pstrs[ABCDK_URL_SCHEME], obj->pstrs[ABCDK_URL_HOST],
-                       obj->pstrs[ABCDK_URL_PATH]);
-            }
+            obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
+            obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
         }
+        
+        p = abcdk_strtok(&p_next,"\r\n");
+        if(!p)
+            goto final;
+
+        obj->pstrs[ABCDK_URL_PATH] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_PATH] = strlen(obj->pstrs[ABCDK_URL_PATH]);
     }
-    else
-    {
-        strncpy(obj->pstrs[ABCDK_URL_PATH],url,len);
-    }
+
+final:
 
     return obj;
 }
@@ -247,7 +259,7 @@ abcdk_object_t *abcdk_url_fixpath(const char *target, const char *opaque)
     p1 = abcdk_strstr_eod(target, "://", 1);
     if (p1)
     {
-        dst = abcdk_object_alloc_copyfrom(target, strlen(target));
+        dst = abcdk_object_copyfrom(target, strlen(target));
         goto final;
     }
 

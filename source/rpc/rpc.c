@@ -120,7 +120,7 @@ abcdk_object_t *_abcdk_rpc_extrac_cargo(abcdk_receiver_t *msg)
     msg_ptr = abcdk_receiver_data(msg);
     msg_len = abcdk_receiver_offset(msg);
 
-    cargo = abcdk_object_alloc_copyfrom(ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), msg_len - ABCDK_RPC_HDR_SIZE);
+    cargo = abcdk_object_copyfrom(ABCDK_PTR2VPTR(msg_ptr, ABCDK_RPC_HDR_SIZE), msg_len - ABCDK_RPC_HDR_SIZE);
     if (!cargo)
         return NULL;
 

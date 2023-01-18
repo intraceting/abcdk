@@ -1076,7 +1076,7 @@ int abcdk_comm_post_buffer(abcdk_comm_node_t *node, const void *data,size_t size
 
     assert(node != NULL && data != NULL && size >0);
 
-    obj = abcdk_object_alloc_copyfrom(data,size);
+    obj = abcdk_object_copyfrom(data,size);
     if(!obj)
         return -1;
 

@@ -795,7 +795,7 @@ void _abcdkhttpd_input_forward(abcdk_comm_node_t *node)
     p = abcdk_http_receiver_body(http_p->rec,0);
     l = abcdk_http_receiver_body_length(http_p->rec);
 
-    obj = abcdk_object_alloc_copyfrom(p, l);
+    obj = abcdk_object_copyfrom(p, l);
     if (!obj)
         goto final_error;
 

@@ -409,7 +409,7 @@ final:
 
 int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_lookup)
 {
-    char name[68] = {0};
+    char name[NAME_MAX] = {0};
     uint16_t port = 0;
     int chk;
 

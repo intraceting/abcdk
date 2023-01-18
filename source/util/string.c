@@ -196,7 +196,7 @@ abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_spa
     if (!p)
         return NULL;
 
-    return abcdk_object_alloc_copyfrom(p, *next - p);
+    return abcdk_object_copyfrom(p, *next - p);
 }
 
 

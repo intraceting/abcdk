@@ -49,14 +49,14 @@ typedef struct _abcdk_object
  * 
  * @param [in] opaque 用户环境指针。
  */
-typedef void (*abcdk_object_destructor_cb)(abcdk_object_t *alloc, void *opaque);
+typedef void (*abcdk_object_destructor_cb)(abcdk_object_t *obj, void *opaque);
 
 /**
  * 注册析构函数。
  *
  * @param opaque  环境指针。
  */
-void abcdk_object_atfree(abcdk_object_t *alloc,abcdk_object_destructor_cb cb,void *opaque);
+void abcdk_object_atfree(abcdk_object_t *obj,abcdk_object_destructor_cb cb,void *opaque);
 
 /**
  * 申请。
@@ -99,7 +99,7 @@ void abcdk_object_unref(abcdk_object_t **dst);
 /**
  * 申请一个内存块，并复制数据。
 */
-abcdk_object_t *abcdk_object_alloc_copyfrom(const void *data, size_t size);
+abcdk_object_t *abcdk_object_copyfrom(const void *data, size_t size);
 
 
 __END_DECLS
