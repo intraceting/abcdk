@@ -37,9 +37,8 @@ int abcdk_map_init(abcdk_map_t *map, size_t size)
 
     /* 创建树节点，用于表格。 */
     map->table = abcdk_tree_alloc2(NULL, size,0);
-
     if (!map->table)
-        ABCDK_ERRNO_AND_RETURN1(ENOMEM, -1);
+        return -1;
 
     /* 如果未指定，则启用默认函数。 */
     if (!map->hash_cb)
@@ -48,6 +47,43 @@ int abcdk_map_init(abcdk_map_t *map, size_t size)
         map->compare_cb = _abcdk_map_compare;
 
     return 0;
+}
+
+void abcdk_map_free(abcdk_map_t **map)
+{
+    abcdk_map_t *map_p = NULL;
+
+    if(!map || !*map)
+        return;
+
+    map_p = *map;
+    *map = NULL;
+
+    abcdk_map_destroy(map_p);
+    abcdk_heap_free(map_p);
+}
+
+abcdk_map_t *abcdk_map_alloc(size_t size)
+{
+    abcdk_map_t *map = NULL;
+    int chk;
+
+    assert(size > 0);
+
+    map = abcdk_heap_alloc(sizeof(abcdk_map_t));
+    if (!map)
+        return NULL;
+
+    chk = abcdk_map_init(map, size);
+    if (chk != 0)
+        goto final_error;
+
+    return map;
+
+final_error:
+
+    abcdk_map_free(&map);
+    return NULL;
 }
 
 abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)

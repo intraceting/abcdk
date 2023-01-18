@@ -367,9 +367,8 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
 
         abcdk_http_receiver_unref(&http_p->input_buf);
 
-        /*隧道协议，是否继续接收由应用层决定。*/
-        if (http_p->next_proto != ABCDK_HTTP_RECEIVER_PROTO_TUNNEL)
-            abcdk_comm_recv_watch(node);
+        /*继接收请求数据。*/
+        abcdk_comm_recv_watch(node);
     }
 }
 

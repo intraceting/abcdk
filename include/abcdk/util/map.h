@@ -92,6 +92,7 @@ typedef enum _abcdk_map_field
 /**
  * 销毁。
 */
+ABCDK_DEPRECATED
 void abcdk_map_destroy(abcdk_map_t* map);
 
 /**
@@ -99,10 +100,17 @@ void abcdk_map_destroy(abcdk_map_t* map);
  * 
  * @return 0 成功，!0 失败。
 */
+ABCDK_DEPRECATED
 int abcdk_map_init(abcdk_map_t* map,size_t size);
 
+/** 释放。*/
+void abcdk_map_free(abcdk_map_t **map);
+
+/** 创建。*/
+abcdk_map_t *abcdk_map_alloc(size_t size);
+
 /**
- * 查找或创建。
+ * 查找或创建节点。
  * 
  * @param key Key指针。
  * @param ksize Key长度。

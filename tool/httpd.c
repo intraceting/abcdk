@@ -803,10 +803,7 @@ void _abcdkhttpd_input_forward(abcdk_comm_node_t *node)
     chk = abcdk_comm_post(http_p->tunnel, obj);
     if (chk != 0)
         goto final_error;
-
-    /*继续监听当前隧道数据。*/
-    abcdk_comm_recv_watch(node);
-
+        
     return;
 
 final_error:

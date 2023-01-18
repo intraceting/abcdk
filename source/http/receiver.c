@@ -279,7 +279,12 @@ int _abcdk_http_receiver_append_rtcp(abcdk_http_receiver_t *rec, const void *dat
 
 int _abcdk_http_receiver_append_tunnel(abcdk_http_receiver_t *rec, const void *data, size_t size, size_t *remain)
 {
-    return abcdk_receiver_append(rec->buf, data, size, remain);
+    size_t size2 = 0,remain2 = 0;
+
+    size2 = ABCDK_MIN(rec->buf_max,size);
+    *remain = size - size2;
+
+    return abcdk_receiver_append(rec->buf, data, size2, &remain2);
 }
 
 int abcdk_http_receiver_append(abcdk_http_receiver_t *rec, const void *data, size_t size, size_t *remain)
