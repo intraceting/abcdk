@@ -230,7 +230,7 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node,int proxy)
         if (!http_p->md5)
             goto final_error;
 
-        size_t sizes[] = {100, 100, 4096, 100, 100};
+        size_t sizes[] = {100, 100, 40960, 100, 100};
         digest_req = abcdk_object_alloc(sizes, 5, 0);
 
         for (; p_next;)
