@@ -20,7 +20,7 @@ int abcdk_test_any(abcdk_option_t *args)
     //int a = ABCDK_MAX((ssize_t)c,(ssize_t)b);
 
     printf("a=%d\n",a);
-#elif 0
+#elif 1
 
     char url[]={"http://asdfasfdasdf.asdfasdf.asdfasdfasf/a/////b/cccc/../ccccc/./././eeeee/"};
 
