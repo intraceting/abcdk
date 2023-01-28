@@ -52,6 +52,7 @@ void abcdk_http_auth_digest(abcdk_md5_t *ctx, const char *user, const char *pawd
  * @param [out] version 版本。NULL(0) 忽略。
  * @param [out] path 路径。NULL(0) 忽略。
  * @param [out] params 参数。NULL(0) 忽略。
+ * @param [out] anchor 锚点。NULL(0) 忽略。
  */
 void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, abcdk_object_t **location, abcdk_object_t **version,
                                       abcdk_object_t **path, abcdk_object_t **params);

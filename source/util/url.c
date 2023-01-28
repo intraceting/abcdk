@@ -26,7 +26,7 @@ abcdk_object_t *abcdk_url_split(const char *url)
     
     assert(url != NULL);
 
-    obj = abcdk_object_alloc(NULL,6,0);
+    obj = abcdk_object_alloc(NULL,9,0);
     if(!obj)
         return NULL;
 
@@ -53,7 +53,11 @@ abcdk_object_t *abcdk_url_split(const char *url)
         }
 
         if(*p_next == ':')
+        {
+            obj->pstrs[ABCDK_URL_FLAG] = abcdk_heap_clone("://", 3);
+            obj->sizes[ABCDK_URL_FLAG] = 3;
             p_next += 3;
+        }
 
         p = abcdk_strtok(&p_next,"/");
         if(!p)
@@ -80,19 +84,57 @@ abcdk_object_t *abcdk_url_split(const char *url)
             
             obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
             obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
+
+            p2_next = obj->pstrs[ABCDK_URL_AUTH];
+            p2 = abcdk_strtok(&p2_next,":");
+            if(!p2)
+                goto final;
+
+            obj->pstrs[ABCDK_URL_USER] = abcdk_heap_clone(p2, p2_next - p2);
+            obj->sizes[ABCDK_URL_USER] = strlen(obj->pstrs[ABCDK_URL_USER]);
+
+            p2 = abcdk_strtok(&p2_next,":");
+            if(!p2)
+                goto path_spilt;
+
+            obj->pstrs[ABCDK_URL_PSWD] = abcdk_heap_clone(p2, p2_next - p2);
+            obj->sizes[ABCDK_URL_PSWD] = strlen(obj->pstrs[ABCDK_URL_PSWD]);
         }
         else
         {
             obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
             obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
         }
-        
-        p = abcdk_strtok(&p_next,"\r\n");
+
+path_spilt:
+
+        p = abcdk_strtok(&p_next,"?");
         if(!p)
             goto final;
 
         obj->pstrs[ABCDK_URL_PATH] = abcdk_heap_clone(p, p_next - p);
         obj->sizes[ABCDK_URL_PATH] = strlen(obj->pstrs[ABCDK_URL_PATH]);
+
+        if(*p_next == '?')
+            p_next += 1;
+        
+        p = abcdk_strtok(&p_next,"#");
+        if(!p)
+            goto final;
+
+        obj->pstrs[ABCDK_URL_PARAM] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_PARAM] = strlen(obj->pstrs[ABCDK_URL_PARAM]);
+
+        if(*p_next == '#')
+            p_next += 1;
+                
+        p = abcdk_strtok(&p_next,"\r\n");
+        if(!p)
+            goto final;
+
+        obj->pstrs[ABCDK_URL_ANCHOR] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_ANCHOR] = strlen(obj->pstrs[ABCDK_URL_ANCHOR]);
+        
     }
 
 final:

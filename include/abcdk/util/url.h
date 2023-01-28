@@ -40,8 +40,20 @@ typedef enum _abcdk_url_field
 #define ABCDK_URL_PATH ABCDK_URL_PATH
 
     /** 授权(账号和密码)。*/
-    ABCDK_URL_AUTH = 5
+    ABCDK_URL_AUTH = 5,
 #define ABCDK_URL_AUTH ABCDK_URL_AUTH
+
+    /**参数。*/
+    ABCDK_URL_PARAM = 6,
+#define ABCDK_URL_PARAM ABCDK_URL_PARAM
+
+    /** 锚点。*/
+    ABCDK_URL_ANCHOR = 7,
+#define ABCDK_URL_ANCHOR ABCDK_URL_ANCHOR
+
+    /** 标志。*/
+    ABCDK_URL_FLAG = 8
+#define ABCDK_URL_FLAG ABCDK_URL_FLAG
 
 } abcdk_url_field_t;
 
