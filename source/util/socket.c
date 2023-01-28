@@ -438,6 +438,9 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else
     {
+        strncpy(name,src,NAME_MAX);
+
+        /*如果外部未指定，并且也未能自动识别。*/
         if(dst->family != AF_INET && dst->family != AF_INET6)
             return -1;
     }

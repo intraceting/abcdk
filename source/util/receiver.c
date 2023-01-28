@@ -147,10 +147,10 @@ int abcdk_receiver_resize(abcdk_receiver_t *ctx, size_t size)
     ctx->size = size;
 
     /*新的容量与旧的容量一样时，不需要调整。*/
-    if (ctx->capacity == abcdk_align(ctx->size + 1, 4096))
+    if (ctx->capacity == ABCDK_MAX(ctx->size + 1, 4096UL))
         goto final;
 
-    ctx->capacity = abcdk_align(ctx->size + 1, 4096);
+    ctx->capacity = ABCDK_MAX(ctx->size + 1, 4095UL);
 
     if (ctx->tmp_obj)
     {
@@ -178,14 +178,14 @@ int abcdk_receiver_resize(abcdk_receiver_t *ctx, size_t size)
         ctx->buf = new_buf;
     }
 
-    // /*多出的一个字节赋值为0。*/
-    // ABCDK_PTR2U8(ctx->buf, ctx->capacity - 1) = 0;
-
 final:
 
     /*修正编移量。*/
     if (ctx->offset > ctx->size)
         ctx->offset = ctx->size;
+
+    /*多出的一个字节赋值为0。*/
+    ABCDK_PTR2U8(ctx->buf, ctx->size) = 0;
 
     return 0;
 }

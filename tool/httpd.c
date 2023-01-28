@@ -70,13 +70,18 @@ typedef struct _abcdkhttpd_node
     abcdk_object_t *method;
     abcdk_object_t *location;
     abcdk_object_t *version;
+
+    abcdk_object_t *url;
+
     abcdk_object_t *path;
-    abcdk_object_t *params;
+    abcdk_option_t *params;
+    abcdk_object_t *anchor;
 
     char pathfile[PATH_MAX];
     struct stat attr;
 
     abcdk_comm_node_t *tunnel;
+    SSL_CTX *tunnel_ssl_ctx;
 
 } abcdkhttpd_node_t;
 
@@ -162,11 +167,15 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
     abcdk_http_receiver_unref(&http_p->rec);
     abcdk_md5_destroy(&http_p->md5);
     abcdk_comm_unref(&http_p->tunnel);
+    abcdk_openssl_ssl_ctx_free(&http_p->tunnel_ssl_ctx);
     abcdk_object_unref(&http_p->method);
     abcdk_object_unref(&http_p->location);
     abcdk_object_unref(&http_p->version);
+    abcdk_object_unref(&http_p->url);
     abcdk_object_unref(&http_p->path);
-    abcdk_object_unref(&http_p->params);
+    abcdk_option_free(&http_p->params);
+    abcdk_object_unref(&http_p->anchor);
+    
 }
 
 void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
@@ -658,7 +667,7 @@ void _abcdkhttpd_close_cb(abcdk_comm_node_t *node);
 void _abcdkhttpd_output_cb(abcdk_comm_node_t *node);
 void _abcdkhttpd_connected_cb(abcdk_comm_node_t *node, int *next_proto);
 
-void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
+void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
 {
     abcdkhttpd_node_t *http_p,*http_tunnel_p;
     abcdk_object_t *userdata_p = NULL;
@@ -671,7 +680,26 @@ void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
     if (chk != 0)
         return;
 
-    chk = abcdk_sockaddr_from_string(&addr,http_p->path->pstrs[0],1);
+    addr.family = AF_INET;
+    if (abcdk_strcmp(http_p->method->pstrs[0], "CONNECT", 0) == 0)
+        chk = abcdk_sockaddr_from_string(&addr,http_p->location->pstrs[0],1);
+    else
+    {
+        abcdk_openssl_ssl_ctx_free(&http_p->tunnel_ssl_ctx);
+
+        if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0)
+            http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0,NULL,NULL,0);
+
+        chk = abcdk_sockaddr_from_string(&addr,http_p->url->pstrs[ABCDK_URL_HOST],1);
+        
+        if (addr.addr4.sin_port == 0)
+        {
+            addr.addr4.sin_port = abcdk_endian_h_to_b16(80);
+            if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0)
+                addr.addr4.sin_port = abcdk_endian_h_to_b16(443);
+        }
+    }
+        
     if (chk != 0)
     {
         _abcdkhttpd_reply_nobody(node,404,"");
@@ -699,14 +727,25 @@ void _abcdkhttpd_reply_connect(abcdk_comm_node_t *node)
     http_tunnel_p->tunnel = abcdk_comm_refer(node);
 
     abcdk_http_callback_t cb = {NULL, NULL, _abcdkhttpd_input_cb, _abcdkhttpd_close_cb, _abcdkhttpd_output_cb,_abcdkhttpd_connected_cb};
-    chk = abcdk_http_connect(http_p->tunnel,NULL,&addr,&cb);
+    chk = abcdk_http_connect(http_p->tunnel,http_p->tunnel_ssl_ctx,&addr,&cb);
     if(chk != 0)
     {
         _abcdkhttpd_reply_nobody(node, 500, "");
         return;
     }
 
-    _abcdkhttpd_reply_nobody(node,200,"");
+    if (abcdk_strcmp(http_p->method->pstrs[0], "CONNECT", 0) == 0)
+       _abcdkhttpd_reply_nobody(node,200,"");
+    else
+    {
+        const void *p = abcdk_http_receiver_data(http_p->rec,0);
+        size_t l = abcdk_http_receiver_length(http_p->rec);
+
+        abcdk_comm_post_buffer(http_p->tunnel,p,l);
+
+        _abcdkhttpd_logprint(node,201,0);
+    }
+
 
     /*继续监听客户端数据。*/
     abcdk_comm_recv_watch(node);
@@ -719,11 +758,28 @@ void _abcdkhttpd_filter(abcdk_comm_node_t *node)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
+    abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version);
+
     if (abcdk_strcmp(http_p->method->pstrs[0], "CONNECT", 0) == 0)
     {
-        _abcdkhttpd_reply_connect(node);
-        return;
+        _abcdkhttpd_create_tunnel(node);
+        goto final;
     }
+
+    http_p->url = abcdk_url_split(http_p->location->pstrs[0]);
+
+    if(http_p->url->pstrs[ABCDK_URL_FLAG])
+    {
+        _abcdkhttpd_create_tunnel(node);
+        goto final;
+    }
+
+    /*解码路径。*/
+    http_p->path = abcdk_url_decode2(http_p->url->pstrs[ABCDK_URL_PATH],http_p->url->sizes[ABCDK_URL_PATH],1);
+
+    /*转换成绝对路径，以防路径中存在“..”绕过根目录。*/
+    abcdk_url_abspath(http_p->path->pstrs[0],0);
+    http_p->path->sizes[0] = strlen(http_p->path->pstrs[0]);
 
     memset(http_p->pathfile,0,PATH_MAX);
     abcdk_dirdir(http_p->pathfile, http_p->ctx->root_path);
@@ -749,6 +805,16 @@ void _abcdkhttpd_filter(abcdk_comm_node_t *node)
     {
         _abcdkhttpd_reply_nobody(node, 403,"");
     }
+
+final:
+
+    abcdk_object_unref(&http_p->method);
+    abcdk_object_unref(&http_p->location);
+    abcdk_object_unref(&http_p->version);
+    abcdk_object_unref(&http_p->url);
+    abcdk_object_unref(&http_p->path);
+    abcdk_option_free(&http_p->params);
+    abcdk_object_unref(&http_p->anchor);
 }
 
 void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
@@ -770,8 +836,6 @@ void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
 
     if (!http_p->line0)
         goto final_error;
-
-    abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version, &http_p->path, &http_p->params);
 
     _abcdkhttpd_filter(node);
     return;

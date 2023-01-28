@@ -73,11 +73,25 @@ abcdk_http_receiver_t *abcdk_http_receiver_alloc(int proto, size_t max, const ch
 int abcdk_http_receiver_append(abcdk_http_receiver_t *rec,const void *data,size_t size,size_t *remain);
 
 /**
+ * 获取数据。
+ * 
+ * @param [in] off 偏移量。
+ * 
+ * @return !NULL(0) 数据的指针，NULL(0) 无数据。
+*/
+const void *abcdk_http_receiver_data(abcdk_http_receiver_t *rec, off_t off);
+
+/**
+ * 获取数据长度。
+*/
+size_t abcdk_http_receiver_length(abcdk_http_receiver_t *rec);
+
+/**
  * 获取实体。
  * 
  * @param [in] off 偏移量。
  * 
- * @return !NULL(0) 实体的指针，NULL(0) 无请实体。
+ * @return !NULL(0) 实体的指针，NULL(0) 无实体。
 */
 const void *abcdk_http_receiver_body(abcdk_http_receiver_t *rec, off_t off);
 

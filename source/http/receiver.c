@@ -310,6 +310,34 @@ int abcdk_http_receiver_append(abcdk_http_receiver_t *rec, const void *data, siz
     return chk;
 }
 
+const void *abcdk_http_receiver_data(abcdk_http_receiver_t *rec, off_t off)
+{
+    void *p = NULL;
+    size_t l = 0;
+
+    assert(rec != NULL);
+
+    p = abcdk_receiver_data(rec->buf);
+    l = abcdk_receiver_offset(rec->buf);
+
+    ABCDK_ASSERT(off < l, "偏移量必须小于数据长度。");
+
+    p = ABCDK_PTR2VPTR(p, off);
+
+    return p;
+}
+
+size_t abcdk_http_receiver_length(abcdk_http_receiver_t *rec)
+{
+    size_t l = 0;
+
+    assert(rec != NULL);
+
+    l = abcdk_receiver_offset(rec->buf);
+
+    return l;
+}
+
 const void *abcdk_http_receiver_body(abcdk_http_receiver_t *rec, off_t off)
 {
     void *p = NULL;

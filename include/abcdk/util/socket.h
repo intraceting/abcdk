@@ -223,7 +223,10 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
  * IPv6：Address,Port
  * IPv6：[Address]:Port
  * 
- * @param try_lookup !0 尝式域名解析，0 禁用载名解析。
+ * @note 调用前可以指定地址家族。
+ * 
+ * @param [in out] dst 地址。
+ * @param [in] try_lookup !0 尝式域名解析，0 禁用载名解析。
  * 
  * @return 0 成功，-1 失败。
 */

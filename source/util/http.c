@@ -483,8 +483,7 @@ void abcdk_http_auth_digest(abcdk_md5_t *ctx, const char *user, const char *pawd
     abcdk_md5_update(ctx, digest_ha2, 32);
 }
 
-void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, abcdk_object_t **location, abcdk_object_t **version,
-                                      abcdk_object_t **path, abcdk_object_t **params)
+void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, abcdk_object_t **location, abcdk_object_t **version)
 {
     const char *p = NULL, *p_next = NULL;
 
@@ -493,8 +492,6 @@ void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, 
     abcdk_object_unref(method);
     abcdk_object_unref(location);
     abcdk_object_unref(version);
-    abcdk_object_unref(path);
-    abcdk_object_unref(params);
 
     p_next = req;
 
@@ -529,40 +526,6 @@ void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, 
     else
     {
         abcdk_strtok2(&p_next, " ", 1);
-    }
-
-    p_next = (*location)->pstrs[0];
-    p = abcdk_strtok(&p_next, "?");
-    if (!p)
-        return;
-
-    if (path)
-    {
-        *path = abcdk_object_alloc2(p_next - p + 1);
-        if (!*path)
-            return;
-
-        abcdk_url_decode(p, p_next - p, (*path)->pstrs[0], &(*path)->sizes[0], 0);
-
-        /*去掉路径中的“..”和“.”，以防客户端构造特殊路径绕过WEB根目录。*/
-        abcdk_url_abspath((*path)->pstrs[0],0);
-
-        /*修正路径长度。*/
-        (*path)->sizes[0] = strlen((*path)->pstrs[0]);
-    }
-
-    /*可能无参数。*/
-    if (!p_next || *p_next != '?')
-        return;
-
-    p_next += 1;
-
-    if (params)
-    {
-
-        *params = abcdk_strtok3(&p_next, "\r\n", 0);
-        if (!*params)
-            return;
     }
 }
 
