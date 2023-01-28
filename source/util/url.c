@@ -10,7 +10,7 @@ void _abcdk_url_split_free_cb(abcdk_object_t *obj, void *opaque)
 {
     if(!obj)
         return;
-
+#if 0
     abcdk_heap_free(obj->pstrs[ABCDK_URL_SCHEME]);
     abcdk_heap_free(obj->pstrs[ABCDK_URL_USER]);
     abcdk_heap_free(obj->pstrs[ABCDK_URL_PSWD]);
@@ -20,6 +20,10 @@ void _abcdk_url_split_free_cb(abcdk_object_t *obj, void *opaque)
     abcdk_heap_free(obj->pstrs[ABCDK_URL_PARAM]);
     abcdk_heap_free(obj->pstrs[ABCDK_URL_ANCHOR]);
     abcdk_heap_free(obj->pstrs[ABCDK_URL_FLAG]);
+#else
+    for (int i = 0; i < obj->numbers; i++)
+        abcdk_heap_free(obj->pstrs[i]);
+#endif
 }
 
 abcdk_object_t *abcdk_url_split(const char *url)
