@@ -11,9 +11,7 @@
 
 __BEGIN_DECLS
 
-/**
- * 计算最小公倍数。
-*/
+/**计算最小公倍数。*/
 uint64_t abcdk_math_lcm(uint64_t a, uint64_t b);
 
 __END_DECLS
