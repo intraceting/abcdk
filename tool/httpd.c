@@ -75,8 +75,6 @@ typedef struct _abcdkhttpd_node
     abcdk_object_t *url;
 
     abcdk_object_t *path;
-    abcdk_option_t *params;
-    abcdk_object_t *anchor;
 
     char pathfile[PATH_MAX];
     struct stat attr;
@@ -168,15 +166,14 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
     abcdk_http_receiver_unref(&http_p->rec);
     abcdk_md5_destroy(&http_p->md5);
     abcdk_comm_unref(&http_p->tunnel);
+#ifdef HEADER_SSL_H
     abcdk_openssl_ssl_ctx_free(&http_p->tunnel_ssl_ctx);
+#endif //HEADER_SSL_H
     abcdk_object_unref(&http_p->method);
     abcdk_object_unref(&http_p->location);
     abcdk_object_unref(&http_p->version);
     abcdk_object_unref(&http_p->url);
-    abcdk_object_unref(&http_p->path);
-    abcdk_option_free(&http_p->params);
-    abcdk_object_unref(&http_p->anchor);
-    
+    abcdk_object_unref(&http_p->path);    
 }
 
 void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
@@ -682,10 +679,12 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
         chk = abcdk_sockaddr_from_string(&addr,http_p->location->pstrs[0],1);
     else
     {
+#ifdef HEADER_SSL_H
         abcdk_openssl_ssl_ctx_free(&http_p->tunnel_ssl_ctx);
-
+        
         if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0)
             http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0,NULL,NULL,0);
+#endif //HEADER_SSL_H
 
         chk = abcdk_sockaddr_from_string(&addr,http_p->url->pstrs[ABCDK_URL_HOST],1);
         
@@ -833,8 +832,6 @@ final:
     abcdk_object_unref(&http_p->version);
     abcdk_object_unref(&http_p->url);
     abcdk_object_unref(&http_p->path);
-    abcdk_option_free(&http_p->params);
-    abcdk_object_unref(&http_p->anchor);
 }
 
 void _abcdkhttpd_input_process(abcdk_comm_node_t *node)

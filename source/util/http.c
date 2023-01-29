@@ -562,11 +562,8 @@ abcdk_option_t *abcdk_http_parse_form(const char *form)
 
         abcdk_url_decode(p2, p2_next - p2, key->pstrs[0], &key->sizes[0], 0);
 
-        if (p2_next)
-        {
-            if (*p2_next == '=')
-                p2_next += 1;
-        }
+        if (*p2_next == '=')
+            p2_next += 1;
 
         p2 = abcdk_strtok(&p2_next, "&");
         if (!p2)
