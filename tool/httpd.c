@@ -738,10 +738,33 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
        _abcdkhttpd_reply_nobody(node,200,"");
     else
     {
+#if 0
         const void *p = abcdk_http_receiver_data(http_p->rec,0);
         size_t l = abcdk_http_receiver_length(http_p->rec);
-
         abcdk_comm_post_buffer(http_p->tunnel,p,l);
+#else 
+        /*转发请求头。*/
+        abcdk_comm_post_format(http_p->tunnel,100000,"%s %s %s\r\n",http_p->method->pstrs[0],http_p->url->pstrs[ABCDK_URL_SCRIPT],http_p->version->pstrs[0]);
+        for (int i = 1; i < 100; i++)
+        {
+            const char *p = abcdk_http_receiver_header(http_p->rec,i);
+            if(!p)
+                break;
+            
+            abcdk_comm_post_format(http_p->tunnel,100000,"%s\r\n",p);
+        }
+
+        abcdk_comm_post_buffer(http_p->tunnel,"\r\n",2);
+
+        /*转发请求实体。*/
+        size_t l = abcdk_http_receiver_body_length(http_p->rec);
+        if (l > 0)
+        {
+            const void *p = abcdk_http_receiver_body(http_p->rec, 0);
+            abcdk_comm_post_buffer(http_p->tunnel, p, l);
+        }
+
+#endif
 
         _abcdkhttpd_logprint(node,201,0);
     }

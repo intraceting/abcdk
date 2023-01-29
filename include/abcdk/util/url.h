@@ -52,8 +52,12 @@ typedef enum _abcdk_url_field
 #define ABCDK_URL_ANCHOR ABCDK_URL_ANCHOR
 
     /** 标志。*/
-    ABCDK_URL_FLAG = 8
+    ABCDK_URL_FLAG = 8,
 #define ABCDK_URL_FLAG ABCDK_URL_FLAG
+
+    /** 脚本。*/
+    ABCDK_URL_SCRIPT = 9
+#define ABCDK_URL_SCRIPT ABCDK_URL_SCRIPT
 
 } abcdk_url_field_t;
 

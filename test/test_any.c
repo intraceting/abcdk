@@ -22,7 +22,7 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("a=%d\n",a);
 #elif 0
 
-    char url[]={"http://asdfasfdasdf.asdfasdf.asdfasdfasf/a/////b/cccc/../ccccc/./././eeeee/"};
+    char url[]={"http://asdfasfdasdf.asdfasdf.asdfasdfasf/a/////b/cccc/../ccccc/./././eeeee/?dsdfadf=bbbb&ddsafsd=rrrr#dddd"};
 
     abcdk_url_abspath(url,0);
 
@@ -59,7 +59,20 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("%s\n", p->pstrs[0]);
     abcdk_object_unref(&p);
 
-    p = abcdk_url_fixpath("bbbb","http://aaaa.com/cccc/");
+    p = abcdk_url_fixpath("../bbbb","http://aaaa.com/cccc/");
+    printf("%s\n", p->pstrs[0]);
+    abcdk_object_unref(&p);
+
+    p = abcdk_url_fixpath("../../bbbb","http://aaaa.com/cccc/");
+    printf("%s\n", p->pstrs[0]);
+    abcdk_object_unref(&p);
+
+
+    p = abcdk_url_fixpath("../../bbbb/../","http://aaaa.com/cccc/");
+    printf("%s\n", p->pstrs[0]);
+    abcdk_object_unref(&p);
+
+    p = abcdk_url_fixpath("://bbbb","https://aaaa.com/cccc/");
     printf("%s\n", p->pstrs[0]);
     abcdk_object_unref(&p);
 
@@ -101,97 +114,107 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_t *p = NULL;
 
     p = abcdk_url_split("/aaa.aaa/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("/aaa.aaa/bbb?");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("/aaa.aaa/bbb?aaadd=bbbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("/aaa.aaa/bbb?aaadd=bbbb#");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("/aaa.aaa/bbb?aaadd=bbbb#ssss");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("//aaa.aaa/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("://aaa.aaa/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i,p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("file:///aaa.aaa");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("file:///aaa.aaa/");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("file:///aaa.aaa/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("http://aaa.aaa/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("http://aaa.aaa:80/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
     p = abcdk_url_split("http://[22::1]:80/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
-    p = abcdk_url_split("http://ccc:ddd@aaa.aaa/bbb");
-    for (int i = 0; i <= p->numbers; i++)
+    p = abcdk_url_split("http://user:password@aaa.aaa/bbb");
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
-    p = abcdk_url_split("http://ccc:ddd@aaa.aaa:80/bbb?asfsfd=bbbb&cccc=dddd");
-    for (int i = 0; i <= p->numbers; i++)
+    p = abcdk_url_split("http://user:password@aaa.aaa:80/bbb?asfsfd=bbbb&cccc=dddd");
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
-    p = abcdk_url_split("http://ccc:ddd@[22::1]:80/bbb?");
-    for (int i = 0; i <= p->numbers; i++)
+    p = abcdk_url_split("http://user:password@[22::1]:80/bbb?");
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
-    p = abcdk_url_split("http://ccc@aaa.aaa/bbb?asfsfd=bbbb&cccc=dddd#");
-    for (int i = 0; i <= p->numbers; i++)
+    p = abcdk_url_split("http://user@aaa.aaa/bbb?asfsfd=bbbb&cccc=dddd#");
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 
-    p = abcdk_url_split("://ccc@aaa.aaa/bbb?asfsfd=bbbb&cccc=dddd#aaaa");
-    for (int i = 0; i <= p->numbers; i++)
+    p = abcdk_url_split("://user@aaa.aaa/bbb?asfsfd=bbbb&cccc=dddd#aaaa");
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
     
-    p = abcdk_url_split("://ccc@aaa.aaa/bbb#aaaa");
-    for (int i = 0; i <= p->numbers; i++)
+    p = abcdk_url_split("://user@aaa.aaa/bbb#aaaa");
+    for (int i = 0; i < p->numbers; i++)
+        printf("[%d]={%s}\n",i, p->pstrs[i]);
+    abcdk_object_unref(&p);
+    
+    p = abcdk_url_split("://user@aaa.aaa/#aaaa");
+    for (int i = 0; i < p->numbers; i++)
+        printf("[%d]={%s}\n",i, p->pstrs[i]);
+    abcdk_object_unref(&p);
+        
+    p = abcdk_url_split("://user@aaa.aaa#又c");
+    for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
 

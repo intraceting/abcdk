@@ -10,20 +10,9 @@ void _abcdk_url_split_free_cb(abcdk_object_t *obj, void *opaque)
 {
     if(!obj)
         return;
-#if 0
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_SCHEME]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_USER]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_PSWD]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_HOST]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_PATH]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_AUTH]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_PARAM]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_ANCHOR]);
-    abcdk_heap_free(obj->pstrs[ABCDK_URL_FLAG]);
-#else
+
     for (int i = 0; i < obj->numbers; i++)
         abcdk_heap_free(obj->pstrs[i]);
-#endif
 }
 
 abcdk_object_t *abcdk_url_split(const char *url)
@@ -34,7 +23,7 @@ abcdk_object_t *abcdk_url_split(const char *url)
     
     assert(url != NULL);
 
-    obj = abcdk_object_alloc(NULL,9,0);
+    obj = abcdk_object_alloc(NULL,10,0);
     if(!obj)
         return NULL;
 
@@ -44,7 +33,7 @@ abcdk_object_t *abcdk_url_split(const char *url)
 
     p = abcdk_strstr(p_next, "://", 0);
     if (!p)
-        goto path_spilt;
+        goto path_split;
 
     if (p != p_next)
     {
@@ -63,6 +52,7 @@ abcdk_object_t *abcdk_url_split(const char *url)
         p_next += 3;
     }
 
+    /*查找HOST:PORT。*/
     p = abcdk_strtok(&p_next, "/");
     if (!p)
         goto final;
@@ -70,48 +60,74 @@ abcdk_object_t *abcdk_url_split(const char *url)
     p2 = abcdk_strstr(p, "@", 0);
     if (p2)
     {
-        p2_next = p;
-        p2 = abcdk_strtok(&p2_next, "@");
-        if (!p2)
+        p_next = p;
+        p = abcdk_strtok(&p_next, "@");
+        if (!p)
             goto final;
 
-        obj->pstrs[ABCDK_URL_AUTH] = abcdk_heap_clone(p2, p2_next - p2);
+        obj->pstrs[ABCDK_URL_AUTH] = abcdk_heap_clone(p, p_next - p);
         obj->sizes[ABCDK_URL_AUTH] = strlen(obj->pstrs[ABCDK_URL_AUTH]);
+        
+        if (*p_next == '@')
+            p_next += 1;
 
-        if (*p2_next == '@')
+        /*查找HOST:PORT。*/
+        p = abcdk_strtok(&p_next, "/");
+        if (!p)
+            goto final;
+
+        /*拆分用户名和密码。*/
+        
+        p2_next = obj->pstrs[ABCDK_URL_AUTH];
+        p2 = abcdk_strtok(&p2_next, ":");
+        if (!p2)
+            goto host_split;
+
+        obj->pstrs[ABCDK_URL_USER] = abcdk_heap_clone(p2, p2_next - p2);
+        obj->sizes[ABCDK_URL_USER] = strlen(obj->pstrs[ABCDK_URL_USER]);
+
+        if (*p2_next == ':')
             p2_next += 1;
 
-        p_next = p2_next;
-        p = abcdk_strtok(&p_next, "/");
+        p2 = abcdk_strtok(&p2_next, "@");
+        if (!p2)
+            goto host_split;
+
+        obj->pstrs[ABCDK_URL_PSWD] = abcdk_heap_clone(p2, p2_next - p2);
+        obj->sizes[ABCDK_URL_PSWD] = strlen(obj->pstrs[ABCDK_URL_PSWD]);
+    }
+
+host_split:
+
+    if (*p_next == '/')
+    {
+        obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
+    }
+    else
+    {
+        /*可能域名后面直接跟锚点。*/
+        p_next = p;
+        p = abcdk_strtok(&p_next, "#");
         if (!p)
             goto final;
 
         obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
         obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
-
-        p2_next = obj->pstrs[ABCDK_URL_AUTH];
-        p2 = abcdk_strtok(&p2_next, ":");
-        if (!p2)
-            goto final;
-
-        obj->pstrs[ABCDK_URL_USER] = abcdk_heap_clone(p2, p2_next - p2);
-        obj->sizes[ABCDK_URL_USER] = strlen(obj->pstrs[ABCDK_URL_USER]);
-
-        p2 = abcdk_strtok(&p2_next, ":");
-        if (!p2)
-            goto path_spilt;
-
-        obj->pstrs[ABCDK_URL_PSWD] = abcdk_heap_clone(p2, p2_next - p2);
-        obj->sizes[ABCDK_URL_PSWD] = strlen(obj->pstrs[ABCDK_URL_PSWD]);
-    }
-    else
-    {
-        obj->pstrs[ABCDK_URL_HOST] = abcdk_heap_clone(p, p_next - p);
-        obj->sizes[ABCDK_URL_HOST] = strlen(obj->pstrs[ABCDK_URL_HOST]);
     }
 
-path_spilt:
+path_split:
 
+    p = abcdk_strtok(&p_next, "\r\n");
+    if (!p)
+        goto final;
+
+    obj->pstrs[ABCDK_URL_SCRIPT] = abcdk_heap_clone(p, p_next - p);
+    obj->sizes[ABCDK_URL_SCRIPT] = strlen(obj->pstrs[ABCDK_URL_SCRIPT]);
+
+    p_next = obj->pstrs[ABCDK_URL_SCRIPT];
+
+    /*可能没有参数，这里要判断一下。*/
     p2 = abcdk_strstr(p_next, "?", 0);
     if (p2)
     {
