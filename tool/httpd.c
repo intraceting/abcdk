@@ -26,11 +26,12 @@ typedef struct _abcdkhttpd
 #ifdef HAVE_LIBMAGIC
     struct magic_set *magic_handle;
 #endif // HAVE_LIBMAGIC
-    abcdk_mutex_t magic_mutex;
 
     abcdk_comm_t *comm;
     abcdk_comm_node_t *comm_listen[2];
-    SSL_CTX *ssl_ctx;
+    SSL_CTX *ssl_ctx_listen;
+
+    abcdk_sockaddr_t addr_listen[2];
 
     int max_client;
     const char *server_name;
@@ -565,11 +566,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
 #ifdef HAVE_LIBMAGIC
         if (http_p->ctx->magic_handle)
-        {
-            abcdk_mutex_lock(&http_p->ctx->magic_mutex, 1);
             content_type = magic_buffer(http_p->ctx->magic_handle, file->pptrs[0], file->sizes[0]);
-            abcdk_mutex_unlock(&http_p->ctx->magic_mutex);
-        }
 #endif // HAVE_LIBMAGIC
 
         /*如果无法通过内容判断类型，尝试通过文件名获取。*/
@@ -739,6 +736,7 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
     else
     {
 #if 0
+        /*在没有找到防止递归代理的方法之前，不能启用直接转发。*/
         const void *p = abcdk_http_receiver_data(http_p->rec,0);
         size_t l = abcdk_http_receiver_length(http_p->rec);
         abcdk_comm_post_buffer(http_p->tunnel,p,l);
@@ -1042,7 +1040,6 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 {
     abcdk_signal_t sig;
-    abcdk_sockaddr_t addr;
     abcdk_object_t *userdata_p = NULL;
     abcdkhttpd_node_t *http_p = NULL;
     const char *p, *p_next, p2;
@@ -1071,7 +1068,6 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     ctx->loc = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
-    abcdk_mutex_init2(&ctx->magic_mutex, 0);
     ctx->comm_listen[ABCDKHTTPD_LISTEN] = NULL;
     ctx->comm_listen[ABCDKHTTPD_LISTEN_SSL] = NULL;
 
@@ -1096,14 +1092,14 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 #ifdef HAVE_OPENSSL
     if (ctx->listen[ABCDKHTTPD_LISTEN_SSL] && ctx->cert_file && ctx->key_file)
     {
-        ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
-        if (!ctx->ssl_ctx)
+        ctx->ssl_ctx_listen = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
+        if (!ctx->ssl_ctx_listen)
         {
             fprintf(stderr, "加载CA证书错误。\n");
             goto final;
         }
 
-        chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx, ctx->cert_file, ctx->key_file, NULL);
+        chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx_listen, ctx->cert_file, ctx->key_file, NULL);
         if (chk != 0)
         {
             fprintf(stderr, "加载证书或私钥错误。\n");
@@ -1111,10 +1107,10 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         }
 
         if (ctx->ca_file || ctx->ca_path)
-            SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+            SSL_CTX_set_verify(ctx->ssl_ctx_listen, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-        SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx, _abcdkhttpd_alpn_select_cb, NULL);
+        SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx_listen, _abcdkhttpd_alpn_select_cb, NULL);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
     }
 #endif // HAVE_OPENSSL
@@ -1137,7 +1133,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         if (!ctx->listen[i])
             break;
 
-        chk = abcdk_sockaddr_from_string(&addr, ctx->listen[i], 0);
+        chk = abcdk_sockaddr_from_string(&ctx->addr_listen[i], ctx->listen[i], 0);
         if (chk != 0)
         {
             fprintf(stderr, "监听地址错误。\n");
@@ -1162,7 +1158,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         http_p->ctx = ctx;
 
         abcdk_http_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_accept_cb, _abcdkhttpd_input_cb,_abcdkhttpd_close_cb,_abcdkhttpd_output_cb,_abcdkhttpd_connected_cb};
-        chk = abcdk_http_listen(ctx->comm_listen[i], (i == ABCDKHTTPD_LISTEN_SSL ? ctx->ssl_ctx : NULL), &addr, &cb);
+        chk = abcdk_http_listen(ctx->comm_listen[i], (i == ABCDKHTTPD_LISTEN_SSL ? ctx->ssl_ctx_listen : NULL), &ctx->addr_listen[i], &cb);
         if (chk != 0)
         {
             fprintf(stderr, "监听错误，无权限或端口被占用。\n");
@@ -1191,16 +1187,13 @@ final:
         abcdk_comm_unref(&ctx->comm_listen[i]);
 
 #ifdef HAVE_OPENSSL
-    abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);
+    abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx_listen);
 #endif // HAVE_OPENSSL
 
 #ifdef HAVE_LIBMAGIC
     if (ctx->magic_handle)
         magic_close(ctx->magic_handle);
-    ctx->magic_handle = NULL;
 #endif // HAVE_LIBMAGIC
-
-    abcdk_mutex_destroy(&ctx->magic_mutex);
 
     freelocale(ctx->loc);
 }

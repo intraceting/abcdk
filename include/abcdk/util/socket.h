@@ -256,11 +256,11 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where);
 /**
  * 比较SOCKET地址。
  * 
- * @note 忽略端口。
+ * @param [in] care_port 是否比较端口。!0 是，0 否。
  *
-*/
-int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1,const abcdk_sockaddr_t *addr2);
-
+ * @return 0 相同，!0 不同。
+ */
+int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2,int care_port);
 
 __END_DECLS
 

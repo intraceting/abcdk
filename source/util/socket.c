@@ -532,24 +532,34 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
     return 0;
 }
 
-int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2)
+int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2,int care_port)
 {
     uint32_t a1,a2;
-    int chk = 0;
+    int32_t p1,p2;
+    int chk;
 
     assert(addr1 != NULL && addr2 != NULL);
     assert(addr1->family == AF_INET || addr1->family == AF_INET6);
     assert(addr2->family == AF_INET || addr2->family == AF_INET6);
-    assert(addr1->family == addr2->family);
-
+    
+    chk = -1;
     if (addr1->family == AF_INET)
     {
-        chk = memcmp(&addr1->addr4.sin_addr,&addr2->addr4.sin_addr,sizeof(struct in_addr));
+        p1 = abcdk_endian_b_to_h16(addr1->addr4.sin_port);
+        p2 = abcdk_endian_b_to_h16(addr2->addr4.sin_port);
+
+        chk = memcmp(&addr1->addr4.sin_addr, &addr2->addr4.sin_addr, sizeof(struct in_addr));
     }
     else if (addr1->family == AF_INET6)
     {
-        chk = memcmp(&addr1->addr6.sin6_addr,&addr2->addr6.sin6_addr,sizeof(struct in6_addr));
+        p1 = abcdk_endian_b_to_h16(addr1->addr6.sin6_port);
+        p2 = abcdk_endian_b_to_h16(addr2->addr6.sin6_port);
+
+        chk = memcmp(&addr1->addr6.sin6_addr, &addr2->addr6.sin6_addr, sizeof(struct in6_addr));
     }
+
+    if (chk == 0 && care_port)
+        chk = p1 - p2;
 
     return chk;
 }
