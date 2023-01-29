@@ -112,22 +112,34 @@ abcdk_object_t *abcdk_url_split(const char *url)
 
 path_spilt:
 
-    p = abcdk_strtok(&p_next, "?");
-    if (!p)
-        goto final;
+    p2 = abcdk_strstr(p_next, "?", 0);
+    if (p2)
+    {
+        p = p_next;
+        p_next = p2;
 
-    obj->pstrs[ABCDK_URL_PATH] = abcdk_heap_clone(p, p_next - p);
-    obj->sizes[ABCDK_URL_PATH] = strlen(obj->pstrs[ABCDK_URL_PATH]);
+        obj->pstrs[ABCDK_URL_PATH] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_PATH] = strlen(obj->pstrs[ABCDK_URL_PATH]);
 
-    if (*p_next == '?')
-        p_next += 1;
+        if (*p_next == '?')
+            p_next += 1;
 
-    p = abcdk_strtok(&p_next, "#");
-    if (!p)
-        goto final;
+        p = abcdk_strtok(&p_next, "#");
+        if (!p)
+            goto final;
 
-    obj->pstrs[ABCDK_URL_PARAM] = abcdk_heap_clone(p, p_next - p);
-    obj->sizes[ABCDK_URL_PARAM] = strlen(obj->pstrs[ABCDK_URL_PARAM]);
+        obj->pstrs[ABCDK_URL_PARAM] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_PARAM] = strlen(obj->pstrs[ABCDK_URL_PARAM]);
+    }
+    else
+    {
+        p = abcdk_strtok(&p_next, "#");
+        if (!p)
+            goto final;
+
+        obj->pstrs[ABCDK_URL_PATH] = abcdk_heap_clone(p, p_next - p);
+        obj->sizes[ABCDK_URL_PATH] = strlen(obj->pstrs[ABCDK_URL_PATH]);
+    }
 
     if (*p_next == '#')
         p_next += 1;
