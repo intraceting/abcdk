@@ -763,7 +763,6 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
             const void *p = abcdk_http_receiver_body(http_p->rec, 0);
             abcdk_comm_post_buffer(http_p->tunnel, p, l);
         }
-
 #endif
 
         _abcdkhttpd_logprint(node,201,0);
