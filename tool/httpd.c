@@ -131,6 +131,12 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--root-path < PATH >\n");
     fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
 
+    fprintf(stderr, "\n\t--up-max-size < SIZE >\n");
+    fprintf(stderr, "\t\t上行数据最大长度(字节)。默认：%d\n",4*1024*1024);
+
+    fprintf(stderr, "\n\t--up-tmp-path < PATH >\n");
+    fprintf(stderr, "\t\t上行数据临时缓存目录。\n");
+
     fprintf(stderr, "\n\t--exclude-hidden-file\n");
     fprintf(stderr, "\t\t排除隐藏属性的文件和目录。\n");
 }
@@ -1045,7 +1051,6 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
-    ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin",0,"*");
     ctx->listen[ABCDKHTTPD_LISTEN] = abcdk_option_get(ctx->args, "--listen", 0, NULL);
     ctx->listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_option_get(ctx->args, "--listen-ssl", 0, NULL);
@@ -1053,6 +1058,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
+    ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
     ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
     ctx->exclude_hidden_file = abcdk_option_exist(ctx->args, "--exclude-hidden-file");
