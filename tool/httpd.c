@@ -101,9 +101,6 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--server-name < NAME >\n");
     fprintf(stderr, "\t\t服务器名称。默认：%s\n",SOLUTION_NAME);
 
-    fprintf(stderr, "\n\t--root-path < PATH >\n");
-    fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
-
     fprintf(stderr, "\n\t--access-control-allow-origin < DOMAIN >\n");
     fprintf(stderr, "\t\t访问控制允许源。默认：*\n");
 
@@ -130,6 +127,9 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--key-file < FILE >\n");
     fprintf(stderr, "\t\t服务器私钥文件。注：仅支持PEM格式。\n");
+
+    fprintf(stderr, "\n\t--root-path < PATH >\n");
+    fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
 
     fprintf(stderr, "\n\t--exclude-hidden-file\n");
     fprintf(stderr, "\t\t排除隐藏属性的文件和目录。\n");
