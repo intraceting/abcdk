@@ -249,14 +249,11 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
     /*设置本层协议。*/
     http_p->protocol = 1;
 
-    /*设置下层协议。*/
-    http_p->next_proto = ABCDK_HTTP_RECEIVER_PROTO_NATURAL;
-
 #ifdef HEADER_SSL_H
-    /*如果SSL开启，检查SSL验证结果。*/
     ssl_p = abcdk_comm_ssl(node);
     if (ssl_p)
     {
+        /*检查SSL验证结果。*/
         chk = SSL_get_verify_result(ssl_p);
         if (chk != X509_V_OK)
         {
@@ -265,6 +262,7 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
             return;
         }
 
+        /*检查SSL的本层协议。*/
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
         SSL_get0_alpn_selected(ssl_p, (const uint8_t **)&ver_p, &ver_l);
         if (ver_p != NULL && ver_l > 0)
@@ -272,6 +270,9 @@ void _abcdk_http_connect_cb(abcdk_comm_node_t *node)
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
     }
 #endif
+
+    /*设置下层协议。*/
+    http_p->next_proto = ABCDK_HTTP_RECEIVER_PROTO_NATURAL;
 
     if (http_p->callback->connected_cb)
         http_p->callback->connected_cb(node,&http_p->next_proto);

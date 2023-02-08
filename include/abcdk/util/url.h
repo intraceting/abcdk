@@ -64,6 +64,9 @@ typedef enum _abcdk_url_field
 /** URL拆分。*/
 abcdk_object_t *abcdk_url_split(const char *url);
 
+/** URL创建。*/
+abcdk_object_t *abcdk_url_create(int max, const char *fmt, ...);
+
 /** 
  * URL编码。
  * 

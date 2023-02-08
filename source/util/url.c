@@ -172,6 +172,23 @@ final:
     return obj;
 }
 
+abcdk_object_t *abcdk_url_create(int max, const char *fmt, ...)
+{
+    abcdk_object_t *buf;
+
+    assert(max > 0 && fmt != NULL);
+
+    va_list ap;
+    va_start(ap, fmt);
+    buf = abcdk_object_vprintf(max,fmt,ap);
+    va_end(ap);
+
+    if(!buf)
+        return NULL;
+
+    return abcdk_url_split(buf->pstrs[0]);
+}
+
 int _abcdk_url_encode_check_escape(uint8_t c, int component)
 {
     if (c >= 'A' && c <= 'Z')

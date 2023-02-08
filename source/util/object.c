@@ -197,3 +197,43 @@ abcdk_object_t *abcdk_object_copyfrom(const void *data, size_t size)
     return obj;
 }
 
+abcdk_object_t *abcdk_object_vprintf(int max, const char *fmt, va_list ap)
+{
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(max > 0 && fmt != NULL);
+
+    obj = abcdk_object_alloc2(max + 1);
+    if (!obj)
+        return NULL;
+
+    chk = vsnprintf(obj->pstrs[0], max, fmt, ap);
+    if (chk <= 0)
+        goto final_error;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = chk;
+
+    return obj;
+
+final_error:
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
+abcdk_object_t *abcdk_object_printf(int max, const char *fmt, ...)
+{
+    abcdk_object_t *obj;
+
+    assert(max > 0 && fmt != NULL);
+
+    va_list ap;
+    va_start(ap, fmt);
+    obj = abcdk_object_vprintf(max, fmt, ap);
+    va_end(ap);
+
+    return obj;
+}
