@@ -744,10 +744,25 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
     }
 
 #ifdef HEADER_SSL_H
-    abcdk_openssl_ssl_ctx_free(&http_p->tunnel_ssl_ctx);
-
     if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0)
-        http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0, NULL, NULL, 0);
+    {
+        http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0, http_p->ctx->ca_file, http_p->ctx->ca_path, (http_p->ctx->ca_path ? 2 : 0));
+        if (!http_p->tunnel_ssl_ctx)
+        {
+            _abcdkhttpd_reply_nobody(node, 500, "");
+            return;
+        }
+
+        chk = abcdk_openssl_ssl_ctx_load_crt(http_p->tunnel_ssl_ctx, http_p->ctx->cert_file, http_p->ctx->key_file, NULL);
+        if (chk != 0)
+        {
+            _abcdkhttpd_reply_nobody(node, 500, "");
+            return;
+        }
+
+        if (http_p->ctx->ca_file || http_p->ctx->ca_path)
+            SSL_CTX_set_verify(http_p->tunnel_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+    }
 #endif // HEADER_SSL_H
 
     /*绑定到远端服务器对象。*/
@@ -834,13 +849,9 @@ void _abcdkhttpd_filter(abcdk_comm_node_t *node)
     abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version);
 
     if (abcdk_strcmp(http_p->method->pstrs[0], "CONNECT", 0) == 0)
-    {
         http_p->url = abcdk_url_create(1000,"connect://%s",http_p->location->pstrs[0]);
-        _abcdkhttpd_create_tunnel(node);
-        goto final;
-    }
-
-    http_p->url = abcdk_url_split(http_p->location->pstrs[0]);
+    else 
+        http_p->url = abcdk_url_split(http_p->location->pstrs[0]);
 
     if(http_p->url->pstrs[ABCDK_URL_FLAG])
     {
@@ -929,7 +940,12 @@ void _abcdkhttpd_input_forward(abcdk_comm_node_t *node)
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
     if (http_p->ctx->uplink)
+    {
+        if(!http_p->url)
+            http_p->url = abcdk_url_split(http_p->ctx->uplink);
+            
         _abcdkhttpd_create_tunnel(node);
+    }
 
     p = abcdk_http_receiver_body(http_p->rec,0);
     l = abcdk_http_receiver_body_length(http_p->rec);
@@ -1150,28 +1166,36 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     }
 
 #ifdef HAVE_OPENSSL
-    if (ctx->listen[ABCDKHTTPD_LISTEN_SSL] && ctx->cert_file && ctx->key_file)
+    if (ctx->listen[ABCDKHTTPD_LISTEN_SSL])
     {
-        ctx->ssl_ctx_listen = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
-        if (!ctx->ssl_ctx_listen)
+        if (!ctx->cert_file || !ctx->key_file)
         {
-            fprintf(stderr, "加载CA证书错误。\n");
+            fprintf(stderr, "SSL环境必须配置证书和私钥。\n");
             goto final;
         }
-
-        chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx_listen, ctx->cert_file, ctx->key_file, NULL);
-        if (chk != 0)
+        else
         {
-            fprintf(stderr, "加载证书或私钥错误。\n");
-            goto final;
-        }
+            ctx->ssl_ctx_listen = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
+            if (!ctx->ssl_ctx_listen)
+            {
+                fprintf(stderr, "加载CA证书错误。\n");
+                goto final;
+            }
 
-        if (ctx->ca_file || ctx->ca_path)
-            SSL_CTX_set_verify(ctx->ssl_ctx_listen, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+            chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx_listen, ctx->cert_file, ctx->key_file, NULL);
+            if (chk != 0)
+            {
+                fprintf(stderr, "加载证书或私钥错误。\n");
+                goto final;
+            }
+
+            if (ctx->ca_file || ctx->ca_path)
+                SSL_CTX_set_verify(ctx->ssl_ctx_listen, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-        SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx_listen, _abcdkhttpd_alpn_select_cb, NULL);
+            SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx_listen, _abcdkhttpd_alpn_select_cb, NULL);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+        }
     }
 #endif // HAVE_OPENSSL
 
@@ -1191,7 +1215,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     for (int i = 0; i < 2; i++)
     {
         if (!ctx->listen[i])
-            break;
+            continue;
 
         chk = abcdk_sockaddr_from_string(&ctx->addr_listen[i], ctx->listen[i], 0);
         if (chk != 0)
