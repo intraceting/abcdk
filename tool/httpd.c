@@ -1147,12 +1147,6 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->comm_listen[ABCDKHTTPD_LISTEN] = NULL;
     ctx->comm_listen[ABCDKHTTPD_LISTEN_SSL] = NULL;
 
-    if (access(ctx->root_path, R_OK) != 0)
-    {
-        fprintf(stderr, "'%s'目录不存在或无法访问。\n", ctx->root_path);
-        goto final;
-    }
-
     if (!ctx->listen[ABCDKHTTPD_LISTEN] && !ctx->listen[ABCDKHTTPD_LISTEN_SSL])
     {
         fprintf(stderr, "至少需要监听一个地址。\n");
