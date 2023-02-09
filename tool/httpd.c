@@ -145,11 +145,9 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\tSSL监听地址。\n");
 
     fprintf(stderr, "\n\t\tIPv4：IP:PORT\n");
-    fprintf(stderr, "\t\tIPv4：DOMAIN:PORT\n");
-    fprintf(stderr, "\t\tIPv6：IP,PORT\n");
     fprintf(stderr, "\t\tIPv6：[IP]:PORT\n");
-    fprintf(stderr, "\t\tIPv6：DOMAIN,PORT\n");
-
+    fprintf(stderr, "\t\tIPv6：IP,PORT\n");
+    
     fprintf(stderr, "\n\t--ca-file < FILE >\n");
     fprintf(stderr, "\t\tCA证书文件。注：仅支持PEM格式，并且要求客户提供证书。\n");
 
@@ -170,9 +168,18 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--up-tmp-path < PATH >\n");
     fprintf(stderr, "\t\t上行数据临时缓存目录。\n");
+    
+    fprintf(stderr, "\n\t--auto-index\n");
+    fprintf(stderr, "\t\t启用自动索引。\n");
+        
+    fprintf(stderr, "\n\t--auto-index-hidden-file\n");
+    fprintf(stderr, "\t\t自动索引包含隐藏属性的文件和目录。\n");
+    
+    fprintf(stderr, "\n\t--uplink < URL >\n");
+    fprintf(stderr, "\t\t上行级地址。\n");
 
-    fprintf(stderr, "\n\t--exclude-hidden-file\n");
-    fprintf(stderr, "\t\t排除隐藏属性的文件和目录。\n");
+    fprintf(stderr, "\n\t\thttp://DOMAIN[:PORT]\n");
+    fprintf(stderr, "\t\thttps://DOMAIN[:PORT]\n");
 }
 
 uint64_t _abcdkhttpd_clock()
