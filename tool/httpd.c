@@ -138,10 +138,10 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--access-control-allow-origin < DOMAIN >\n");
     fprintf(stderr, "\t\t访问控制允许源。默认：*\n");
 
-    fprintf(stderr, "\n\t--listen < ADDR [ ADDR ...] >\n");
+    fprintf(stderr, "\n\t--listen < ADDR >\n");
     fprintf(stderr, "\t\t监听地址。\n");
 
-    fprintf(stderr, "\n\t--listen-ssl < ADDR [ ADDR ...] >\n");
+    fprintf(stderr, "\n\t--listen-ssl < ADDR >\n");
     fprintf(stderr, "\t\tSSL监听地址。\n");
 
     fprintf(stderr, "\n\t\tIPv4：IP:PORT\n");
