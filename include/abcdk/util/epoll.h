@@ -15,7 +15,7 @@ __BEGIN_DECLS
 /**
  * EOPLL的事件。
 */
-enum _abcdk_epoll_event
+typedef enum _abcdk_epoll_events
 {
     /**
      * 输入事件。
@@ -34,7 +34,7 @@ enum _abcdk_epoll_event
     */
     ABCDK_EPOLL_ERROR = 0x01000000
 #define ABCDK_EPOLL_ERROR ABCDK_EPOLL_ERROR
-};
+}abcdk_epoll_events_t;
 
 /**
  * 事件结构体。
