@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_FFMPEG_AVUTIL_H
-#define ABCDK_FFMPEG_AVUTIL_H
+#ifndef ABCDK_UTIL_AVUTIL_H
+#define ABCDK_UTIL_AVUTIL_H
 
 #include "abcdk/util/general.h"
 
@@ -105,4 +105,4 @@ void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src);
 
 __END_DECLS
 
-#endif // ABCDK_FFMPEG_AVUTIL_H
+#endif // ABCDK_UTIL_AVUTIL_H

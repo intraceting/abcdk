@@ -118,7 +118,7 @@ int _abcdk_ffmpeg_capture_interrupt_cb(void *args)
     return 0;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url, const AVDictionary *dict)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io)
 {
     abcdk_ffmpeg_t *ctx = NULL;
     int chk;
@@ -141,10 +141,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     cb.callback = _abcdk_ffmpeg_capture_interrupt_cb;
     cb.opaque = ctx;
 
-    if(dict)
-        av_dict_copy(&ctx->dict,dict,0);
-
-    ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,NULL,&ctx->dict);
+    ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);
     if(!ctx->avctx)
         goto final_error;
 
@@ -305,7 +302,7 @@ final:
     return chk;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type,AVIOContext *io)
 {
     abcdk_ffmpeg_t *ctx = NULL;
 
@@ -315,7 +312,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,c
     if(!ctx)
         return NULL;
 
-    ctx->avctx = abcdk_avformat_output_open(short_name, url, mime_type, NULL, NULL, NULL);
+    ctx->avctx = abcdk_avformat_output_open(short_name, url, mime_type, NULL, io);
     if(!ctx->avctx)
         goto final_error;
 

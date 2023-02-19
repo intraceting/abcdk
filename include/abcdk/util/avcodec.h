@@ -4,12 +4,12 @@
  * MIT License
  *
  */
-#ifndef ABCDK_FFMPEG_AVCODEC_H
-#define ABCDK_FFMPEG_AVCODEC_H
+#ifndef ABCDK_UTIL_AVCODEC_H
+#define ABCDK_UTIL_AVCODEC_H
 
 #include "abcdk/util/general.h"
-#include "abcdk/ffmpeg/avutil.h"
-#include "abcdk/ffmpeg/avformat.h"
+#include "abcdk/util/avutil.h"
+#include "abcdk/util/avformat.h"
 
 __BEGIN_DECLS
 
@@ -118,4 +118,4 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx, int fps, int width,
 
 __END_DECLS
 
-#endif // ABCDK_FFMPEG_AVCODEC_H
+#endif // ABCDK_UTIL_AVCODEC_H

@@ -18,7 +18,7 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
     const char *dst = abcdk_option_get(args,"--dst",0,"");
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,NULL);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(NULL,dst,NULL);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(NULL,dst,NULL,NULL);
 
     int ov = -1;
 

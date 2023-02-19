@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/ffmpeg/swscale.h"
+#include "abcdk/util/swscale.h"
 
 #ifdef SWSCALE_SWSCALE_H
 

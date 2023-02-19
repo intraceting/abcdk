@@ -6,17 +6,6 @@
  */
 #include "abcdk/util/md5.h"
 
-#ifdef HAVE_OPENSSL
-#include <openssl/md5.h>
-#endif //HAVE_OPENSSL
-
-#ifdef HAVE_FFMPEG
-#include <libavutil/avutil.h>
-#include <libavutil/md5.h>
-#endif //HAVE_FFMPEG
-
-#if (!defined(HEADER_MD5_H) || defined(OPENSSL_NO_MD5)) && !defined(AVUTIL_MD5_H)
-
 /*
  * This code implements the MD5 message-digest algorithm.
  * The algorithm is due to Ron Rivest.  This code was
@@ -273,18 +262,10 @@ void MD5Transform(u_int32_t buf[4], u_int32_t const in[16])
     buf[3] += d;
 }
 
-#endif 
-
 /** 简单的MD5。*/
 typedef struct _abcdk_md5
 {
-#if defined(HEADER_MD5_H) && !defined(OPENSSL_NO_MD5)
-    MD5_CTX ssl;
-#elif defined(AVUTIL_MD5_H)
-    struct AVMD5 *ff;
-#else 
     MD5_CTX self;
-#endif 
 } abcdk_md5_t;
 
 void abcdk_md5_destroy(abcdk_md5_t **ctx)
@@ -297,18 +278,6 @@ void abcdk_md5_destroy(abcdk_md5_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-#if defined(HEADER_MD5_H) && !defined(OPENSSL_NO_MD5)
-    //
-#elif defined(AVUTIL_MD5_H)
-    if(ctx_p->ff)
-    {
-        av_free(ctx_p->ff);
-        ctx_p->ff = NULL;
-    }
-#else 
-    //
-#endif 
-
     abcdk_heap_free(ctx_p);
 }
 
@@ -320,63 +289,30 @@ abcdk_md5_t *abcdk_md5_create()
     if(!ctx)
         return NULL;
 
-#if defined(HEADER_MD5_H) && !defined(OPENSSL_NO_MD5)
-    MD5_Init(&ctx->ssl);
-#elif defined(AVUTIL_MD5_H)
-    ctx->ff = av_md5_alloc();
-    if(!ctx->ff)
-        goto final_error;
-    
-    av_md5_init(ctx->ff);
-#else 
     MD5Init(&ctx->self);
-#endif 
 
     return ctx;
-
-final_error:
-
-    abcdk_md5_destroy(&ctx);
-    return NULL;
 }
 
 void abcdk_md5_reset(abcdk_md5_t *ctx)
 {
     assert(ctx != NULL);
 
-#if defined(HEADER_MD5_H) && !defined(OPENSSL_NO_MD5)
-    MD5_Init(&ctx->ssl);
-#elif defined(AVUTIL_MD5_H)
-    av_md5_init(ctx->ff);
-#else 
     MD5Init(&ctx->self);
-#endif 
 }
 
 void abcdk_md5_update(abcdk_md5_t *ctx, const void *data, size_t size)
 {
     assert(ctx != NULL && data != NULL);
-    
-#if defined(HEADER_MD5_H) && !defined(OPENSSL_NO_MD5)
-    MD5_Update(&ctx->ssl,data,size);
-#elif defined(AVUTIL_MD5_H)
-    av_md5_update(ctx->ff,data,size);
-#else 
+ 
     MD5Update(&ctx->self,data,size);
-#endif 
 }
 
 void abcdk_md5_final(abcdk_md5_t *ctx,uint8_t hashcode[16])
 {
     assert(ctx != NULL && hashcode != NULL);
-        
-#if defined(HEADER_MD5_H) && !defined(OPENSSL_NO_MD5)
-    MD5_Final(hashcode,&ctx->ssl);
-#elif defined(AVUTIL_MD5_H)
-    av_md5_final(ctx->ff,hashcode);
-#else 
+   
     MD5Final(hashcode,&ctx->self);
-#endif 
 }
 
 void abcdk_md5_final2hex(abcdk_md5_t *ctx, char hashcode[33],int ABC)

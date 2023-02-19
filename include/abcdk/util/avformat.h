@@ -4,13 +4,13 @@
  * MIT License
  *
  */
-#ifndef ABCDK_FFMPEG_AVFORMAT_H
-#define ABCDK_FFMPEG_AVFORMAT_H
+#ifndef ABCDK_UTIL_AVFORMAT_H
+#define ABCDK_UTIL_AVFORMAT_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/string.h"
-#include "abcdk/ffmpeg/avutil.h"
-#include "abcdk/ffmpeg/avcodec.h"
+#include "abcdk/util/avutil.h"
+#include "abcdk/util/avcodec.h"
 
 __BEGIN_DECLS
 
@@ -61,14 +61,14 @@ void abcdk_avformat_free(AVFormatContext **ctx);
 /**
  * 创建流(输入)环境。
  *
- * @param interrupt_cb 中断回调环境指针。
- * @param io_cb 自定义IO环境指针。
+ * @param interrupt 中断回调环境指针。
+ * @param io 自定义IO环境指针。
  * @param dict 字典指针。!NULL(0) 需要调用者释放。
  *
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
  */
 AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *filename,
-                                           AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
+                                           AVIOInterruptCB *interrupt, AVIOContext *io,
                                            AVDictionary **dict);
 
 /**
@@ -112,7 +112,7 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
  */
 AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *filename, const char *mime_type,
-                                            AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb, AVDictionary **dict);
+                                            AVIOInterruptCB *interrupt, AVIOContext *io);
 
 /**
  * 创建新的流(输出)环境。
@@ -229,4 +229,4 @@ AVStream *abcdk_avstream_find(AVFormatContext *ctx,enum AVMediaType type);
 
 __END_DECLS
 
-#endif // ABCDK_FFMPEG_AVFORMAT_H
+#endif // ABCDK_UTIL_AVFORMAT_H

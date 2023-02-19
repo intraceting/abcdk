@@ -4,7 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/ffmpeg/avformat.h"
+#include "abcdk/util/avformat.h"
 
 #if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
@@ -120,7 +120,7 @@ void abcdk_avformat_free(AVFormatContext **ctx)
 }
 
 AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *filename,
-                                           AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
+                                           AVIOInterruptCB *interrupt, AVIOContext *io,
                                            AVDictionary **dict)
 {
     AVInputFormat *fmt = NULL;
@@ -141,16 +141,16 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     /*如果不知道做什么用的，不要设置这个。*/
     // ctx->flags |= AVFMT_FLAG_NOBUFFER;
 
-    if (interrupt_cb)
-        ctx->interrupt_callback = *interrupt_cb;
+    if (interrupt)
+        ctx->interrupt_callback = *interrupt;
 
-    if (io_cb)
-        ctx->pb = io_cb;
+    if (io)
+        ctx->pb = io;
 
     if (dict)
     {
         /* RTSP默认走TCP，可以减少丢包。*/
-        if (strncmp(filename, "rtsp://", 7) == 0)
+        if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
             av_dict_set(dict, "rtsp_transport", "tcp", 0);
 
         av_dict_set(dict, "scan_all_pmts", "1", 0);
@@ -321,8 +321,7 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
 #endif
 
 AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *filename, const char *mime_type,
-                                            AVIOInterruptCB *interrupt_cb, AVIOContext *io_cb,
-                                            AVDictionary **dict)
+                                            AVIOInterruptCB *interrupt, AVIOContext *io)
 {
     AVInputFormat *fmt = NULL;
     AVFormatContext *ctx = NULL;
@@ -340,11 +339,11 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (!ctx)
         return NULL;
 
-    if (interrupt_cb)
-        ctx->interrupt_callback = *interrupt_cb;
+    if (interrupt)
+        ctx->interrupt_callback = *interrupt;
 
-    if (io_cb)
-        ctx->pb = io_cb;
+    if (io)
+        ctx->pb = io;
 
     av_dict_set(&ctx->metadata, "service", SOLUTION_NAME, 0);
     av_dict_set(&ctx->metadata, "service_name", SOLUTION_NAME, 0);

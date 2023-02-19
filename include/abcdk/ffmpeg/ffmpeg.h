@@ -9,8 +9,8 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/time.h"
-#include "abcdk/ffmpeg/avformat.h"
-#include "abcdk/ffmpeg/avcodec.h"
+#include "abcdk/util/avformat.h"
+#include "abcdk/util/avcodec.h"
 
 __BEGIN_DECLS
 
@@ -34,7 +34,7 @@ AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx);
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url, const AVDictionary *dict);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io);
 
 /**
  * 读取数据包。
@@ -59,7 +59,7 @@ int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type,AVIOContext *io);
 
 /**
  * 创建数据流。

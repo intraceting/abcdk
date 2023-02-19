@@ -4,7 +4,7 @@
  * MIT License
  * 
  */
-#include "abcdk/ffmpeg/avcodec.h"
+#include "abcdk/util/avcodec.h"
 
 #ifdef AVCODEC_AVCODEC_H
 

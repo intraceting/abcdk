@@ -4,11 +4,11 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_FFMPEG_SWSCALE_H
-#define ABCDK_FFMPEG_SWSCALE_H
+#ifndef ABCDK_UTIL_SWSCALE_H
+#define ABCDK_UTIL_SWSCALE_H
 
 #include "abcdk/util/general.h"
-#include "abcdk/ffmpeg/avutil.h"
+#include "abcdk/util/avutil.h"
 
 __BEGIN_DECLS
 
@@ -59,5 +59,5 @@ int abcdk_sws_scale(struct SwsContext *ctx,const AVFrame *src, AVFrame *dst);
 
 __END_DECLS
 
-#endif //ABCDK_FFMPEG_SWSCALE_H
+#endif //ABCDK_UTIL_SWSCALE_H
 
