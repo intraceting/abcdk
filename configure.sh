@@ -931,7 +931,7 @@ CheckKeyword()
 }
 
 #修改执行权限，不然用不了脚本。
-chmod 0755 ${SHELLDIR}/myscript/linux/* -R 
+chmod +xxx ${SHELLDIR}/myscript/linux/* -R 
 
 #
 KIT_NAME=$(CheckPackageKitName)
