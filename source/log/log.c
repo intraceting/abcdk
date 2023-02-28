@@ -173,7 +173,7 @@ abcdk_object_t *_abcdk_log_get_buffer()
     if (!buf_p)
     {
         /*没有缓存，申请一个。*/
-        buf_p = abcdk_object_alloc2(ABCDK_MIN((16 * 1024 * 1024),ctx->segment_size));
+        buf_p = abcdk_object_alloc2(ABCDK_MIN((1 * 1024 * 1024),ctx->segment_size));
         if (buf_p)
             pthread_setspecific(ctx->buf_key, buf_p);
     }
