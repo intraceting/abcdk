@@ -7,7 +7,7 @@
 #include "abcdk/util/option.h"
 
 /** 选项。*/
-typedef struct _abcdk_option
+struct _abcdk_option
 {
     abcdk_tree_t *table;
 };//abcdk_option_t;
