@@ -10,7 +10,7 @@
 typedef struct _abcdk_option
 {
     abcdk_tree_t *table;
-}abcdk_option_t;
+};//abcdk_option_t;
 
 /**
  * 选项的字段索引。
