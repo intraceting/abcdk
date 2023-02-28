@@ -22,7 +22,7 @@ void test_rpc_request_cb(abcdk_comm_node_t *rpc, uint64_t mid, const void *data,
     uint64_t a = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
     uint64_t b = atoll((char *)data);
 
-    //       printf("%lu-%lu=%lu",a,b,a-b);
+    //       printf("%lu-%lu=%lu\n",a,b,a-b);
 
     //    usleep(rand()%10000+1000);
 
@@ -134,9 +134,9 @@ int abcdk_test_rpc(abcdk_option_t *args)
 
         abcdk_openssl_ssl_ctx_load_crt(server_ssl_ctx, cert,key,NULL);
 
-        //  SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, _abcdk_test_verify_callback);
+          SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
-        SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, _abcdk_test_verify_callback);
+        //SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
         // SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER, NULL);
 
     }
@@ -149,8 +149,8 @@ int abcdk_test_rpc(abcdk_option_t *args)
 
             abcdk_openssl_ssl_ctx_load_crt(client_ssl_ctx[i], cert2, key2, NULL);
 
-            //      SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, _abcdk_test_verify_callback);
-            //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, _abcdk_test_verify_callback);
+                 SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+            //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, NULL);
             //   SSL_CTX_set_verify(client_ssl_ctx[i], SSL_VERIFY_PEER, NULL);
         }
     }

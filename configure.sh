@@ -966,6 +966,8 @@ VERSION_RELEASE="6"
 
 #目标平台
 TARGET="native"
+#目标架构
+TARGET_MACHINE="Unknown"
 
 #
 BUILD_TYPE="release"
@@ -1100,8 +1102,17 @@ if [ ${STATUS} -ne 0 ];then
 fi
 
 
-#获取编译器目标平台。
+#获取目标平台。
 TARGET_PLATFORM=$(${CC} -dumpmachine)
+#获取目标平台架构。
+TARGET_MACHINE=$(echo ${TARGET_PLATFORM} |cut -d '-' -f 1)
+
+#转换目标平台架构关键字。
+if [ "${TARGET_MACHINE}" == "x86_64" ];then
+    TARGET_MACHINE="amd64"
+elif [ "${TARGET_MACHINE}" == "aarch64" ];then
+    TARGET_MACHINE="arm64"
+fi
 
 #
 STATUS=$(CheckHavePackage pkgconfig 1)
@@ -1272,6 +1283,7 @@ BUILD_TIME = ${BUILD_TIME}
 BUILD_PATH = ${BUILD_PATH}
 #
 TARGET_PLATFORM = ${TARGET_PLATFORM}
+TARGET_MACHINE = ${TARGET_MACHINE}
 #
 CC = ${CC}
 AR = ${AR}
@@ -1420,7 +1432,7 @@ Package: ${SOLUTION_NAME}
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
-Architecture: amd64
+Architecture: ${TARGET_MACHINE}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: \${shlibs:Depends}
 Description: The C language and C-interface style secondary development kit,
@@ -1454,7 +1466,7 @@ Package: ${SOLUTION_NAME}-devel
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
-Architecture: amd64
+Architecture: ${TARGET_MACHINE}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: ${SOLUTION_NAME} (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
 Description: The C language and C-interface style secondary development kit, 

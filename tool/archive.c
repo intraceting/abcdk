@@ -11,7 +11,7 @@
 #include <archive_entry.h>
 #endif
 
-#ifdef HAVE_ARCHIVE
+#if defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
 #if ARCHIVE_VERSION_NUMBER < 3000000
 #define	ARCHIVE_FILTER_NONE ARCHIVE_COMPRESSION_NONE	
@@ -1098,11 +1098,11 @@ final:
     return;
 }
 
-#endif // HAVE_ARCHIVE
+#endif // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
 int abcdk_tool_archive(abcdk_option_t *args)
 {
-#ifdef HAVE_ARCHIVE
+#if defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
     abcdkarchive_t ctx = {0};
 
     ctx.args = args;
@@ -1118,10 +1118,10 @@ int abcdk_tool_archive(abcdk_option_t *args)
 
     return ctx.errcode;
 
-#else // HAVE_ARCHIVE
+#else // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
     fprintf(stderr, "当前构建版本未包含此工具。\n");
     return EPERM;
 
-#endif // HAVE_ARCHIVE
+#endif // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 }

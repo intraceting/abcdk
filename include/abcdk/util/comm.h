@@ -110,7 +110,6 @@ typedef struct _abcdk_comm_callback
      * 请求数据到达通知回调函数。
      *
      * @note 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
-     * @note 通知完成后，当请求数据存在未处理数据时，会继续通知。
      *
      * @param [out] remain 剩余的数据长度，返回时填写。
      */

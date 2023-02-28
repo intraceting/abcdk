@@ -357,8 +357,6 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     }
     else if (chk == 0)
     {
-        /*数据包不完整，继接收请求数据。*/
-        abcdk_comm_recv_watch(node);
         return;
     }
     else if (chk > 0)
@@ -367,9 +365,6 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
             http_p->callback->input_cb(node, http_p->input_buf, &http_p->next_proto);
 
         abcdk_http_receiver_unref(&http_p->input_buf);
-
-        /*继接收请求数据。*/
-        abcdk_comm_recv_watch(node);
     }
 }
 

@@ -110,11 +110,11 @@ int main(int argc, char **argv)
     /*打开日志。*/
     abcdk_log_open("/tmp/abcdk-log/abcdk.log","abcdk.%d.log", 10, 10, 0, 1);
 
-#ifdef HAVE_OPENSSL
+#ifdef HEADER_SSL_H
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
-#endif //HAVE_OPENSSL
+#endif //HEADER_SSL_H
 
     args = abcdk_option_alloc();
     if (!args)
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 
 final:
 
-#ifdef HAVE_OPENSSL
+#ifdef HEADER_SSL_H
     CONF_modules_free();
 #ifndef OPENSSL_NO_DEPRECATED
     ERR_remove_state(0);
@@ -137,7 +137,7 @@ final:
     ERR_free_strings();
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
-#endif // HAVE_OPENSSL
+#endif // HEADER_SSL_H
 
     abcdk_option_free(&args);
 
