@@ -20,7 +20,7 @@ LINK_FLAGS += -s
 endif
 
 #
-CC_OPLV = -02
+CC_OPLV = -O2
 ifeq (${OPTIMIZE_LEVEL},1)
 CC_OPLV = -O1
 endif
