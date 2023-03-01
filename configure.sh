@@ -472,6 +472,18 @@ CheckHavePackage()
                 echo "libmagic-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "nghttp2" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit libnghttp2-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libnghttp2)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libnghttp2)"
+            else
+                echo "libnghttp2-dev"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -902,6 +914,18 @@ CheckHavePackage()
                 echo "file-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "nghttp2" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit libnghttp2-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libnghttp2)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libnghttp2)"
+            else
+                echo "libnghttp2-devel"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -1031,7 +1055,7 @@ usage: [ OPTIONS ]
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
-     kafka,uuid,libmagic
+     kafka,uuid,libmagic,nghttp2
 
      自定义依赖项（定义环境变量），并且key前缀增加“with-”。如下：
      export DEPEND_FLAGS="-I/tmp/3party/include/"
@@ -1240,6 +1264,7 @@ DependPackageCheck magickwand HAVE_MAGICKWAND
 DependPackageCheck kafka HAVE_KAFKA
 DependPackageCheck uuid HAVE_UUID
 DependPackageCheck libmagic HAVE_LIBMAGIC
+DependPackageCheck nghttp2 HAVE_NGHTTP2
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
