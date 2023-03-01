@@ -972,6 +972,7 @@ TARGET_MACHINE="Unknown"
 #
 BUILD_TYPE="release"
 BUILD_OPTIMIZE="No"
+OPTIMIZE_LEVEL="2"
 
 #
 INSTALL_PREFIX="/usr/local/"
@@ -1002,6 +1003,9 @@ usage: [ OPTIONS ]
 
     -O
      编译优化。默认：关闭。
+
+    -L
+     优化级别，默认：${OPTIMIZE_LEVEL}。
 
     -g  
      生成调试符号。默认：关闭
@@ -1036,7 +1040,7 @@ EOF
 }
 
 #
-while getopts "ht:OgV:v:r:i:d:" ARGKEY 
+while getopts "ht:OL:gV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -1048,6 +1052,9 @@ do
     ;;
     O)
         BUILD_OPTIMIZE="yes"
+    ;;
+    L)
+        OPTIMIZE_LEVEL="$OPTARG"
     ;;
     g)
         BUILD_TYPE="debug"
@@ -1298,6 +1305,7 @@ DEPEND_LIBS = ${DEPEND_LIBS}
 #
 BUILD_TYPE = ${BUILD_TYPE}
 BUILD_OPTIMIZE = ${BUILD_OPTIMIZE}
+OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 #
 INSTALL_PREFIX = ${INSTALL_PREFIX}
 #

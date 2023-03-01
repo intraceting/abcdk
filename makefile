@@ -20,8 +20,17 @@ LINK_FLAGS += -s
 endif
 
 #
+CC_OPLV = -02
+ifeq (${OPTIMIZE_LEVEL},1)
+CC_OPLV = -O1
+endif
+ifeq (${OPTIMIZE_LEVEL},3)
+CC_OPLV = -O3
+endif
+
+#
 ifeq (${BUILD_OPTIMIZE},yes)
-CC_FLAGS += -O2
+CC_FLAGS += ${CC_OPLV}
 endif
 
 #
@@ -32,7 +41,7 @@ LINK_FLAGS += ${DEPEND_LIBS}
 #
 CC_FLAGS += -std=c99
 CC_FLAGS += -fPIC 
-#CC_FLAGS += -Wno-unused-result 
+#CC_FLAGS += -Wno-unused-result
 CC_FLAGS += -Wno-unused-variable 
 CC_FLAGS += -Wno-pointer-sign 
 CC_FLAGS += -Wno-unused-but-set-variable 
