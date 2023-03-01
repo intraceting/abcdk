@@ -135,6 +135,9 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--server-name < NAME >\n");
     fprintf(stderr, "\t\t服务器名称。默认：%s\n",SOLUTION_NAME);
 
+    fprintf(stderr, "\n\t--passwd  < USER:PASSWORD [ ... ] >\n");
+    fprintf(stderr, "\t\t账号密码。\n");
+
     fprintf(stderr, "\n\t--access-control-allow-origin < DOMAIN >\n");
     fprintf(stderr, "\t\t访问控制允许源。默认：*\n");
 
