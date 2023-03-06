@@ -221,9 +221,11 @@ int abcdk_test_com_driver(abcdk_option_t *args)
     abcdk_bit_t wbits = {0,sendmsg,80};
     abcdk_bit_t rbits = {0,recvmsg,70};
 
+    int addr = 0x01;
+
     /***************************************************/
     wbits.pos = 0;
-    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,addr);
     abcdk_bit_write(&wbits,8,0x06);
     abcdk_bit_write(&wbits,16,0x200E);
     abcdk_bit_write(&wbits,16,6);
@@ -239,7 +241,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
 
     /***************************************************/
     wbits.pos = 0;
-    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,addr);
     abcdk_bit_write(&wbits,8,0x06);
     abcdk_bit_write(&wbits,16,0x200D);
     abcdk_bit_write(&wbits,16,3);
@@ -253,7 +255,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
 
     /***************************************************/
     wbits.pos = 0;
-    abcdk_bit_write(&wbits,8, 0x01);
+    abcdk_bit_write(&wbits,8, addr);
     abcdk_bit_write(&wbits,8, 0x10);
     abcdk_bit_write(&wbits,16, 0x2080);
     abcdk_bit_write(&wbits,16, 4);
@@ -272,7 +274,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
 
     /***************************************************/
     wbits.pos = 0;
-    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,addr);
     abcdk_bit_write(&wbits,8,0x06);
     abcdk_bit_write(&wbits,16,0x200E);
     abcdk_bit_write(&wbits,16,8);
@@ -290,7 +292,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
     {
         int speed = i*10;
         wbits.pos = 0;
-        abcdk_bit_write(&wbits, 8, 0x01);
+        abcdk_bit_write(&wbits, 8, addr);
         abcdk_bit_write(&wbits, 8, 0x10);
         abcdk_bit_write(&wbits, 16, 0x2088);
         abcdk_bit_write(&wbits, 16, 2);
@@ -309,7 +311,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
 
      /***************************************************/
     wbits.pos = 0;
-    abcdk_bit_write(&wbits,8,0x01);
+    abcdk_bit_write(&wbits,8,addr);
     abcdk_bit_write(&wbits,8,0x06);
     abcdk_bit_write(&wbits,16,0x200E);
     abcdk_bit_write(&wbits,16,7);
@@ -330,7 +332,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
 
 int abcdk_test_com(abcdk_option_t *args)
 {
-     abcdk_test_com_ultrasound(args);
+  //   abcdk_test_com_ultrasound(args);
   //  abcdk_test_com_xyz(args);
- //  abcdk_test_com_driver(args);
+   abcdk_test_com_driver(args);
 }

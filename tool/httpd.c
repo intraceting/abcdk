@@ -179,7 +179,7 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t自动索引包含隐藏属性的文件和目录。\n");
     
     fprintf(stderr, "\n\t--uplink < URL >\n");
-    fprintf(stderr, "\t\t上行级地址。\n");
+    fprintf(stderr, "\t\t上行地址。\n");
 
     fprintf(stderr, "\n\t\thttp://DOMAIN[:PORT]\n");
     fprintf(stderr, "\t\thttps://DOMAIN[:PORT]\n");
