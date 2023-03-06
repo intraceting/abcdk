@@ -17,18 +17,45 @@ __BEGIN_DECLS
 /** 选项。*/
 typedef struct _abcdk_option abcdk_option_t;
 
-/** 释放对象。*/
+/**
+ * 选项迭代器。
+*/
+typedef struct _abcdk_option_iterator
+{
+    /**
+     * 回显函数。
+     * 
+     * @return -1 终止，>= 0 继续。
+    */
+    int (*dump_cb)(const char *key,const char *value, void *opaque);
+
+    /**
+     * 环境指针。
+    */
+    void *opaque;
+
+} abcdk_option_iterator_t;
+
+/** 释放。*/
 void abcdk_option_free(abcdk_option_t **opt);
 
-/** 创建对象。*/
-abcdk_option_t *abcdk_option_alloc();
+/** 
+ * 创建。
+ * 
+ * @param prefix KEY的前缀，允许为“空”。
+*/
+abcdk_option_t *abcdk_option_alloc(const char *prefix);
+
+/** 获取KEY的前缀。 */
+const char *abcdk_option_prefix(abcdk_option_t *opt);
 
 /**
  * 配置一个选项。
  * 
  * @note 支持一对多键值组合，相同键值的次序由添加顺序决定。
+ * @note 如果KEY不包含前缀则自动添加。
  * 
- * @param value 值的指针，允许为NULL(0)。
+ * @param value 值的指针，允许为“空”或NULL(0)。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -38,6 +65,7 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value);
  * 配置一个选项。
  * 
  * @note 支持一对多键值组合，相同键值的次序由添加顺序决定。
+ * @note 如果KEY不包含前缀则自动添加。
  * 
  * @param merge 是否合并重复的value。0 不合并，!0 合并。
  * 
@@ -98,20 +126,12 @@ ssize_t abcdk_option_count(abcdk_option_t *opt, const char *key);
 int abcdk_option_remove(abcdk_option_t *opt, const char *key);
 
 /**
- * 格式化打印。
+ * 扫描选项和值。
  * 
- * @param hyphens 连字符，NULL(0) KEY和VALUE分行打印。
- * 
- * @return >=0 成功(输出的长度)，< 0 失败。
+ * @note 深度优先遍。
 */
-ssize_t abcdk_option_fprintf(abcdk_option_t *opt,FILE *fp,const char *hyphens);
+void abcdk_option_scan(abcdk_option_t *opt,abcdk_option_iterator_t *it);
 
-/**
- * 格式化打印。
- * 
- * @return >=0 成功(输出的长度)，< 0 失败。
-*/
-ssize_t abcdk_option_snprintf(abcdk_option_t *opt,char* buf,size_t max,const char *hyphens);
 
 __END_DECLS
 

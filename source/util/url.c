@@ -308,17 +308,17 @@ ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int 
     return (slen - s);
 }
 
-abcdk_object_t *abcdk_url_decode2(const char *src,size_t slen,int qm_stop)
+abcdk_object_t *abcdk_url_decode2(const char *src, size_t slen, int qm_stop)
 {
     abcdk_object_t *dst = NULL;
 
     assert(src != NULL && slen > 0);
 
-    dst = abcdk_object_alloc2(slen);
-    if(!dst)
+    dst = abcdk_object_alloc2(slen + 1);
+    if (!dst)
         return NULL;
 
-    abcdk_url_decode(src,slen,dst->pstrs[0],&dst->sizes[0],qm_stop);
+    abcdk_url_decode(src, slen, dst->pstrs[0], &dst->sizes[0], qm_stop);
 
     return dst;
 }

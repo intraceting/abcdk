@@ -14,46 +14,69 @@ struct _abcdk_option
 
 /**
  * 选项的字段索引。
-*/
+ */
 typedef enum _abcdk_option_field
 {
+    /** Prefix。*/
+    ABCDK_OPTION_PREFIX = 0,
+#define ABCDK_OPTION_PREFIX ABCDK_OPTION_PREFIX
+
     /** Key。*/
-   ABCDK_OPTION_KEY = 0,
-#define ABCDK_OPTION_KEY     ABCDK_OPTION_KEY
+    ABCDK_OPTION_KEY = 0,
+#define ABCDK_OPTION_KEY ABCDK_OPTION_KEY
 
     /** Value。*/
-   ABCDK_OPTION_VALUE = 0
-#define ABCDK_OPTION_VALUE   ABCDK_OPTION_VALUE
+    ABCDK_OPTION_VALUE = 0
+#define ABCDK_OPTION_VALUE ABCDK_OPTION_VALUE
 
-}abcdk_option_field_t;
+} abcdk_option_field_t;
 
-abcdk_tree_t *_abcdk_option_find_key(abcdk_tree_t *opt, const char *key,int create)
+abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key, int create)
 {
     abcdk_tree_t *it = NULL;
+    const char *prefix;
+    size_t pfx_len;
+    char *in_key;
     int chk;
 
-    assert(opt != NULL && key != NULL);
+    prefix = opt->table->obj->pstrs[ABCDK_OPTION_PREFIX];
+    pfx_len = strlen(opt->table->obj->pstrs[ABCDK_OPTION_PREFIX]);
 
-    it = abcdk_tree_child(opt,1);
-    while(it)
+    /*检测KEY是否包含前缀，如果不包含则添加。*/
+    in_key = (char *)key;
+    if (abcdk_strncmp(prefix, key, pfx_len, 1) != 0)
     {
-        chk = abcdk_strcmp(it->obj->pptrs[ABCDK_OPTION_KEY], key, 1);
+        in_key = abcdk_heap_alloc(strlen(key) + 3);
+        if (!in_key)
+            return NULL;
+
+        sprintf(in_key, "%s%s", prefix, key);
+    }
+
+    it = abcdk_tree_child(opt->table, 1);
+    while (it)
+    {
+        chk = abcdk_strcmp(it->obj->pptrs[ABCDK_OPTION_KEY], in_key, 1);
         if (chk == 0)
             break;
 
-        it = abcdk_tree_sibling(it,0);
+        it = abcdk_tree_sibling(it, 0);
     }
 
-    if(it == NULL && create !=0 )
+    if (it == NULL && create != 0)
     {
-        it = abcdk_tree_alloc3(strlen(key)+1);
+        it = abcdk_tree_alloc3(strlen(in_key) + 1);
 
-        if(it)
+        if (it)
         {
-            strcpy(it->obj->pptrs[ABCDK_OPTION_KEY],key);
-            abcdk_tree_insert2(opt,it,0);
+            strcpy(it->obj->pptrs[ABCDK_OPTION_KEY], in_key);
+            abcdk_tree_insert2(opt->table, it, 0);
         }
     }
+
+    /*新创建要释放掉。*/
+    if(in_key != key)   
+        abcdk_heap_free(in_key);
 
     return it;
 }
@@ -62,8 +85,6 @@ abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
 {
     abcdk_tree_t *it = NULL;
     size_t chk = 0;
-
-    assert(key != NULL);
 
     it = abcdk_tree_child(key,1);
     while(it)
@@ -81,8 +102,6 @@ size_t _abcdk_option_count_value(abcdk_tree_t *key)
 {
     abcdk_tree_t *it = NULL;
     size_t chk = 0;
-
-    assert(key != NULL);
 
     it = abcdk_tree_child(key,1);
     while(it)
@@ -110,17 +129,21 @@ void abcdk_option_free(abcdk_option_t **opt)
 }
 
 /** 创建对象。*/
-abcdk_option_t *abcdk_option_alloc()
+abcdk_option_t *abcdk_option_alloc(const char *prefix)
 {
     abcdk_option_t *opt = NULL;
+    
+    assert(prefix != NULL);
 
     opt = abcdk_heap_alloc(sizeof(abcdk_option_t));
     if (!opt)
         return NULL;
 
-    opt->table = abcdk_tree_alloc3(1);
+    opt->table = abcdk_tree_alloc3(strlen(prefix)+1);
     if (!opt->table)
         goto final_error;
+
+    strcpy(opt->table->obj->pstrs[ABCDK_OPTION_PREFIX], prefix);
 
     return opt;
 
@@ -131,6 +154,13 @@ final_error:
     return NULL;
 }
 
+const char *abcdk_option_prefix(abcdk_option_t *opt)
+{
+    assert(opt != NULL);
+
+    return opt->table->obj->pstrs[ABCDK_OPTION_PREFIX];
+}
+
 int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value)
 {
     abcdk_tree_t *it_key = NULL;
@@ -139,7 +169,7 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value)
     assert(opt != NULL && key != NULL);
     assert(key[0] != '\0');
 
-    it_key = _abcdk_option_find_key(opt->table,key,1);
+    it_key = _abcdk_option_find_key(opt,key,1);
     if(!it_key)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM,-1);
 
@@ -196,7 +226,7 @@ const char* abcdk_option_get(abcdk_option_t *opt, const char *key,size_t index,c
     assert(opt != NULL && key != NULL);
     assert(key[0] != '\0');
 
-    it_key = _abcdk_option_find_key(opt->table,key,0);
+    it_key = _abcdk_option_find_key(opt,key,0);
     if(!it_key)
         ABCDK_ERRNO_AND_RETURN1(EAGAIN,defval);
 
@@ -255,7 +285,7 @@ ssize_t abcdk_option_count(abcdk_option_t *opt, const char *key)
     assert(opt != NULL && key != NULL);
     assert(key[0] != '\0');
 
-    it_key = _abcdk_option_find_key(opt->table,key,0);
+    it_key = _abcdk_option_find_key(opt,key,0);
     if(!it_key)
         ABCDK_ERRNO_AND_RETURN1(EAGAIN,-1);
 
@@ -269,7 +299,7 @@ int abcdk_option_remove(abcdk_option_t *opt, const char *key)
     assert(opt != NULL && key != NULL);
     assert(key[0] != '\0');
 
-    it_key = _abcdk_option_find_key(opt->table,key,0);
+    it_key = _abcdk_option_find_key(opt,key,0);
     if(!it_key)
         ABCDK_ERRNO_AND_RETURN1(EAGAIN,-1);
 
@@ -279,76 +309,33 @@ int abcdk_option_remove(abcdk_option_t *opt, const char *key)
     return 0;
 }
 
-ssize_t abcdk_option_fprintf(abcdk_option_t *opt,FILE *fp,const char *hyphens)
+int _abcdk_option_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdk_tree_t *it_key = NULL, *it_val = NULL;
-    const char* key = NULL, *val = NULL;
-    ssize_t wsize = 0, wsize2 = 0;
+    abcdk_option_iterator_t *it = (abcdk_option_iterator_t *)opaque;
+    abcdk_tree_t *father;
+    int chk;
 
-    assert(fp != NULL && opt != NULL);
-    assert(hyphens == NULL || hyphens[0] != '\0');
-
-    it_key = abcdk_tree_child(opt->table,1);
-    while(it_key)
-    {
-        key = (char*)it_key->obj->pptrs[ABCDK_OPTION_KEY];
-
-        /*有连字符时不在这里输出。*/
-        if (hyphens == NULL)
-        {
-            wsize2 = fprintf(fp, "%s\r\n", key);
-            if (wsize2 <= 0)
-                break;
-
-            wsize += wsize2;
-        }
-
-        it_val = abcdk_tree_child(it_key,1);
-        while(it_val)
-        {
-            val = (char*)it_val->obj->pptrs[ABCDK_OPTION_VALUE];
-
-            /*无连字符时在这里输出。*/
-            if (hyphens == NULL)
-            {
-                wsize2 = fprintf(fp, "%s\r\n", val);
-                if (wsize2 <= 0)
-                    break;
-
-                wsize += wsize2;
-            }
-            else /*有连字符时在这里输出。*/
-            {
-                wsize2 = fprintf(fp, "%s%s%s\r\n",key,hyphens,val);
-                if (wsize2 <= 0)
-                    break;
-
-                wsize += wsize2;
-            }
-
-            it_val = abcdk_tree_sibling(it_val,0);  
-        }
-
-        it_key = abcdk_tree_sibling(it_key,0);
-    }
-
-    return wsize;
-}
-
-ssize_t abcdk_option_snprintf(abcdk_option_t *opt,char* buf,size_t max,const char *hyphens)
-{
-    FILE* fp = NULL;
-    ssize_t wsize = 0;
-
-    assert(buf != NULL && max >0 && opt);
-
-    fp = fmemopen(buf,max,"w");
-    if(!fp)
+    if (depth == 0 || depth == 1)
+        return 1;
+    else if (depth == SIZE_MAX || depth != 2)
         return -1;
 
-    wsize = abcdk_option_fprintf(opt,fp,hyphens);
+    /*find key.*/
+    father = abcdk_tree_father(node);
 
-    fclose(fp);
-    
-    return wsize;
+    chk = it->dump_cb(father->obj->pstrs[ABCDK_OPTION_KEY], node->obj->pstrs[ABCDK_OPTION_VALUE], it->opaque);
+    if (chk < 0)
+        return -1;
+
+    return 1;
+}
+
+void abcdk_option_scan(abcdk_option_t *opt, abcdk_option_iterator_t *it)
+{
+    assert(opt != NULL && it != NULL);
+    assert(it->dump_cb != NULL);
+
+    abcdk_tree_iterator_t tit = {0, _abcdk_option_scan_cb, it};
+
+    abcdk_tree_scan(opt->table, &tit);
 }

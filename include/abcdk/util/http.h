@@ -55,8 +55,10 @@ void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, 
 
 /**
  * 表单解码。
+ * 
+ * @param form 表单。
 */
-abcdk_option_t *abcdk_http_parse_form(const char *form);
+void abcdk_http_parse_form(abcdk_option_t *opt,const char *form);
 
 __END_DECLS
 

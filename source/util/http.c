@@ -529,18 +529,13 @@ void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, 
     }
 }
 
-abcdk_option_t *abcdk_http_parse_form(const char *form)
+void abcdk_http_parse_form(abcdk_option_t *opt,const char *form)
 {
-    abcdk_option_t *opt;
     const char *p = NULL, *p_next = NULL;
     const char *p2 = NULL, *p2_next = NULL;
     abcdk_object_t *key = NULL, *val = NULL;
 
-    assert(form != NULL);
-
-    opt = abcdk_option_alloc();
-    if (!opt)
-        return NULL;
+    assert(opt != NULL && form != NULL);
 
     for (;;)
     {
@@ -556,11 +551,9 @@ abcdk_option_t *abcdk_http_parse_form(const char *form)
         if (!p2)
             break;
 
-        key = abcdk_object_alloc2(p2_next - p2 + 1);
+        key = abcdk_url_decode2(p2, p2_next - p2, 0);
         if (!key)
             break;
-
-        abcdk_url_decode(p2, p2_next - p2, key->pstrs[0], &key->sizes[0], 0);
 
         if (*p2_next == '=')
             p2_next += 1;
@@ -569,17 +562,13 @@ abcdk_option_t *abcdk_http_parse_form(const char *form)
         if (!p2)
             break;
 
-        val = abcdk_object_alloc2(p2_next - p2 + 1);
+        val = abcdk_url_decode2(p2, p2_next - p2, 0);
         if (!val)
             break;
-
-        abcdk_url_decode(p2, p2_next - p2, val->pstrs[0], &val->sizes[0], 0);
 
         abcdk_option_set(opt,key->pstrs[0], val->pstrs[0]);
     }
 
     abcdk_object_unref(&key);
     abcdk_object_unref(&val);
-
-    return opt;
 }

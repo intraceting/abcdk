@@ -22,7 +22,7 @@ __BEGIN_DECLS
  * 
  * @param prefix 键的前缀字符串的指针。
 */
-void abcdk_getargs(abcdk_option_t *opt, int argc, char *argv[], const char *prefix);
+void abcdk_getargs(abcdk_option_t *opt, int argc, char *argv[]);
 
 /**
  * 从已经打开的文件导入参数。
@@ -46,8 +46,7 @@ void abcdk_getargs(abcdk_option_t *opt, int argc, char *argv[], const char *pref
  * @endcode 
  *  
 */
-void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,
-                      const char *argv0, const char *prefix);
+void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,const char *argv0);
 
 /**
  * 从文件导入参数。
@@ -57,8 +56,7 @@ void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,
  * @param file 文件名(或带路径的文件名)的指针。
  * 
 */
-void abcdk_getargs_file(abcdk_option_t *opt, const char *file, uint8_t delim,
-                        char note, const char *argv0, const char *prefix);
+void abcdk_getargs_file(abcdk_option_t *opt, const char *file, uint8_t delim, char note, const char *argv0);
 
 /**
  * 从文本导入参数。
@@ -66,8 +64,22 @@ void abcdk_getargs_file(abcdk_option_t *opt, const char *file, uint8_t delim,
  * @param text 文本的指针。
  * @param len 文本的长度。
 */
-void abcdk_getargs_text(abcdk_option_t *opt, const char *text, size_t len, uint8_t delim,
-                        char note, const char *argv0, const char *prefix);
+void abcdk_getargs_text(abcdk_option_t *opt, const char *text, size_t len, uint8_t delim, char note, const char *argv0);
+
+/**
+ * 格式化打印。
+ * 
+ * @return >=0 成功(输出的长度)，< 0 失败。
+*/
+ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt,FILE *fp);
+
+/**
+ * 格式化打印。
+ * 
+ * @return >=0 成功(输出的长度)，< 0 失败。
+*/
+ssize_t abcdk_getargs_snprintf(abcdk_option_t *opt,char* buf,size_t max);
+
 
 __END_DECLS
 

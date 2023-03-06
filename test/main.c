@@ -144,12 +144,18 @@ int main(int argc, char **argv)
 
 #endif //HAVE_OPENSSL
 
-    args = abcdk_option_alloc();
+    args = abcdk_option_alloc("--");
     if (!args)
         ABCDK_ERRNO_AND_GOTO1(errcode = errno,final);
+
+    abcdk_option_set(args,"haha","haha");
+    abcdk_option_set2(args,"haha","haha",0);
+    abcdk_option_set2(args,"haha","haha",1);
     
     /*解析参数。*/
-    abcdk_getargs(args, argc, argv, "--");
+    abcdk_getargs(args, argc, argv);
+
+    abcdk_getargs_fprintf(args,stderr);
 
     errcode = _abcdk_test_dispatch(args);
 

@@ -116,12 +116,12 @@ int main(int argc, char **argv)
     SSL_load_error_strings();
 #endif //HEADER_SSL_H
 
-    args = abcdk_option_alloc();
+    args = abcdk_option_alloc("--");
     if (!args)
         ABCDK_ERRNO_AND_GOTO1(errcode = errno,final);
     
     /*解析参数。*/
-    abcdk_getargs(args, argc, argv, "--");
+    abcdk_getargs(args, argc, argv);
 
     errcode = _abcdk_tool_dispatch(args);
 
