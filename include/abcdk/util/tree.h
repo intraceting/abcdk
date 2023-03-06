@@ -195,7 +195,7 @@ void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order);
  * 格式化打印。
  * 
  * @note 输出有层次感的树形图。
- * @note 不会在末尾添加'\n'(换行)字符。
+ * @note 不会在末尾添加'\\n'(换行)字符。
  * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
@@ -204,8 +204,6 @@ ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const 
 /**
  * 格式化打印。
  * 
- * @see abcdk_tree_fprintf
- * 
  * @return >=0 成功(输出的长度)，< 0 失败。
 */
 ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,va_list args);
@@ -213,16 +211,12 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const
 /**
  * 格式化打印。
  * 
- * @see abcdk_tree_fprintf
- * 
  * @return >=0 输出的长度，< 0 失败。
 */
 ssize_t abcdk_tree_snprintf(char *buf, size_t max,size_t depth, const abcdk_tree_t *node, const char *fmt, ...);
 
 /**
  * 格式化打印。
- * 
- * @see abcdk_tree_fprintf
  * 
  * @return >=0 输出的长度，< 0 失败。
 */

@@ -31,9 +31,10 @@ int abcdk_lz4_dec_fast(void* plaintext, int plaintext_size, const void* cipherte
 /**
  * 默认压缩。
  * 
+ * @param ciphertext 密文的指针。
+ * @param ciphertext_max 密文最大的长度。
  * @param plaintext 明文的指针。
  * @param plaintext_size 明文的长度。
- * @param ciphertext 密文的指针。
  * 
  * @return > 0 成功(已经解压的密文长度)，<= 0 失败(密文格式错误)。
 */
