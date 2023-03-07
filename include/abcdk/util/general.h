@@ -55,15 +55,6 @@ char *abcdk_bin2hex(char* dst,const void *src,size_t size,int ABC);
 void *abcdk_hex2bin(void *dst,const char* src,size_t size);
 
 /**
- * 循环移位。
- *  
- * @param size 数据长度(节字)。
- * @param bits 移动位数。
- * @param direction 1 由低向高，2 由高向低。
-*/
-void *abcdk_cyclic_shift(void *data,size_t size,size_t bits, int direction);
-
-/**
  * 匹配环境变量。
  * 
  * @code
