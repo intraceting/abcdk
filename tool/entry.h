@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
-#include "abcdk.h"
+#include "abcdk/abcdk.h"
 
 __BEGIN_DECLS
 

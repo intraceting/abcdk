@@ -7,7 +7,7 @@
 #ifndef ABCDK_TEST_ENTRY_H
 #define ABCDK_TEST_ENTRY_H
 
-#include "abcdk.h"
+#include "abcdk/abcdk.h"
 
 __BEGIN_DECLS
 
