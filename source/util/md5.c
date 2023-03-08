@@ -23,6 +23,15 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
+/*转换成内部名字。*/
+#define MD5Final _abcdk_MD5Final
+#define MD5Init _abcdk_MD5Init
+#define MD5Transform _abcdk_MD5Transform
+#define MD5Update _abcdk_MD5Update
+#if __BYTE_ORDER != 1234
+#define byteReverse _abcdk_byteReverse
+#endif 
+
 #define MD5_HASHBYTES 16
 typedef unsigned int	u_int32_t;
 
