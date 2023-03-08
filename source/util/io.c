@@ -22,10 +22,20 @@ int abcdk_poll(int fd, int event, time_t timeout)
     if ((event & 0x02))
         arr.events |= POLLOUT;
 
+    arr.events |= POLLERR;
+    arr.events |= POLLHUP;
+    arr.events |= POLLNVAL;
+
     chk = poll(&arr, 1, (timeout >= INT32_MAX ? -1 : timeout));
     if (chk <= 0)
         return chk;
 
+    if (chk & POLLERR)
+        return -1;
+    if (chk & POLLHUP)
+        return -1;
+    if (chk & POLLNVAL)
+        return -1;
     if (chk & POLLIN)
         ret |= 0x01;
     if (chk & POLLOUT)
@@ -329,12 +339,18 @@ int abcdk_futimens(int fd, const struct timespec *atime, const struct timespec *
 ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t timeout,
                        const void *magic, size_t mglen)
 {
+    time_t time_end;
+    time_t time_span;
     ssize_t len = 0, all = 0;
     int fd_flag = 0;
     int chk;
 
     assert(fd >= 0 && data != NULL && size > 0 && direction != 0 && timeout > 0);
     assert(direction == 1 || direction == 2);
+
+    /*计算过期时间。*/
+    time_end = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3) + timeout;
+    time_span = timeout;
 
     /*获取句柄标志。*/
     fd_flag = abcdk_fflag_get(fd);
@@ -358,9 +374,9 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
                 break;
 
             if (direction == 2)
-                chk = abcdk_poll(fd, 0x02, timeout);
+                chk = abcdk_poll(fd, 0x02, time_span);
             else if (direction == 1)
-                chk = abcdk_poll(fd, 0x01, timeout);
+                chk = abcdk_poll(fd, 0x01, time_span);
             else
                 break;
 
@@ -402,6 +418,16 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
         {
             memmove(data, ABCDK_PTR2VPTR(data, len), all - len);
             all -= len;
+
+            /*起始码不符合，计算剩余超时时长。*/
+            time_span = time_end - abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
+            if (time_span <= 0)
+                break;
+        }
+        else
+        {
+            /*数据不足，继续按原超时等待。*/
+            time_span = timeout;
         }
     }
 
