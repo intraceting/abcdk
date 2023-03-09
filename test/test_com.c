@@ -13,7 +13,7 @@
 
 int abcdk_test_com_ultrasound(abcdk_option_t *args)
 {
-    int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
+    int fd = abcdk_open("/dev/ttyUSB0", 1, 1, 0);
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
@@ -111,7 +111,7 @@ uint32_t _abcdk_test_com_checksum(const void *data, size_t size)
 int abcdk_test_com_xyz(abcdk_option_t *args)
 {
     int chk;
-    int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
+    int fd = abcdk_open("/dev/ttyUSB0", 1, 1, 0);
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
@@ -197,7 +197,7 @@ int abcdk_test_com_xyz(abcdk_option_t *args)
 int abcdk_test_com_driver(abcdk_option_t *args)
 {
     int chk;
-    int fd = abcdk_open("/dev/ttyUSB0", 1, 0, 0);
+    int fd = abcdk_open("/dev/ttyUSB0", 1, 1, 0);
 
     abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
 
@@ -320,7 +320,7 @@ int abcdk_test_com_driver(abcdk_option_t *args)
 
 int abcdk_test_com(abcdk_option_t *args)
 {
-  //   abcdk_test_com_ultrasound(args);
-  //  abcdk_test_com_xyz(args);
-   abcdk_test_com_driver(args);
+   //  abcdk_test_com_ultrasound(args);
+    abcdk_test_com_xyz(args);
+  // abcdk_test_com_driver(args);
 }

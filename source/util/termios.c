@@ -168,7 +168,10 @@ int abcdk_tcattr_transfer(int fd, const void *out, size_t outlen, void *in, size
 
     assert(fd >=0 && timeout > 0);
 
-    /*按需发送。*/
+    /*如需要接收数据，则先清除缓存中未处理的数据。*/
+    if (in != NULL && inlen > 0)
+        tcflush(fd,TCIFLUSH);
+
     if (out != NULL && outlen > 0)
     {
         wlen = abcdk_transfer(fd, (void *)out, outlen, 2, timeout, NULL, 0);
@@ -181,12 +184,8 @@ int abcdk_tcattr_transfer(int fd, const void *out, size_t outlen, void *in, size
             return -1;
     }
 
-    /*按需接收。*/
     if (in != NULL && inlen > 0)
     {
-        /*清除缓存中未处理的数据。*/
-        tcflush(fd,TCIFLUSH);
-
         rlen = abcdk_transfer(fd, in, inlen, 1, timeout, magic, mglen);
         if (rlen != inlen)
             return -1;
