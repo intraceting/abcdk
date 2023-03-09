@@ -159,3 +159,38 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
     return abcdk_tcattr_option(fd,&now,old);
     
 }
+
+int abcdk_tcattr_transfer(int fd, const void *out, size_t outlen, void *in, size_t inlen,
+                          time_t timeout, const void *magic, size_t mglen)
+{
+    ssize_t wlen, rlen;
+    int chk;
+
+    assert(fd >=0 && timeout > 0);
+
+    /*按需发送。*/
+    if (out != NULL && outlen > 0)
+    {
+        wlen = abcdk_transfer(fd, (void *)out, outlen, 2, timeout, NULL, 0);
+        if (wlen != outlen)
+            return -1;
+
+        /*等待发送完成。*/
+        chk = tcdrain(fd);
+        if(chk != 0)
+            return -1;
+    }
+
+    /*按需接收。*/
+    if (in != NULL && inlen > 0)
+    {
+        /*清除缓存中未处理的数据。*/
+        tcflush(fd,TCIFLUSH);
+
+        rlen = abcdk_transfer(fd, in, inlen, 1, timeout, magic, mglen);
+        if (rlen != inlen)
+            return -1;
+    }
+
+    return 0;
+}

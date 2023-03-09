@@ -70,7 +70,6 @@
 #include "abcdk/util/register.h"
 #include "abcdk/util/queue.h"
 #include "abcdk/util/waiter.h"
-#include "abcdk/util/stream.h"
 #include "abcdk/util/bit.h"
 #include "abcdk/util/md5.h"
 #include "abcdk/util/mutex.h"

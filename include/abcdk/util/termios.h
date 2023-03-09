@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_TERMIOS_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 
@@ -44,6 +45,22 @@ int abcdk_tcattr_cbreak(int fd,struct termios *old);
  * 
  */
 int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,struct termios *old);
+
+/**
+ * 传输数据。
+ *
+ * @param [in] out 输出数据，NULL(0) 忽略。
+ * @param [in] outlen 输出数据长度，<= 0 忽略。
+ * @param [out] in 输入数据，NULL(0) 忽略。
+ * @param [in] inlen 输入数据长度，<= 0 忽略。
+ * @param [in] timeout 超时(毫秒)。
+ * @param [in] magic 起始码，NULL(0) 忽略。注：仅对输入有效。
+ * @param [in] mglen 起始码长度，<= 0 忽略。注：仅对输入有效。
+ *
+ * @param 0 成功，-1 失败(或超时)。
+ */
+int abcdk_tcattr_transfer(int fd, const void *out, size_t outlen, void *in, size_t inlen,
+                          time_t timeout, const void *magic, size_t mglen);
 
 __END_DECLS
 
