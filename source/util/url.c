@@ -330,12 +330,16 @@ char *abcdk_url_abspath(char *buf, size_t decrease)
     assert(buf != NULL);
 
     p1 = abcdk_strstr_eod(buf, "://", 1);
-    if (!p1)
-        return abcdk_abspath(buf, decrease);
-
-    p2 = abcdk_strstr(p1, "/", 1);
-    if (p2)
-        return abcdk_abspath((char *)p2, decrease);
+    if (p1)
+    {
+        p2 = abcdk_strstr(p1, "/", 1);
+        if (p2)
+            abcdk_abspath((char *)p2, decrease);
+    }
+    else
+    {
+        abcdk_abspath(buf, decrease);
+    }
 
     return buf;
 }
