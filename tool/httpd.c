@@ -1259,6 +1259,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     /*填充信号及回调函数。*/
     sig.opaque = NULL;
     sig.signal_cb = _abcdkhttpd_signal_cb;
+    sigemptyset(&sig.signals);
     sigfillset(&sig.signals);
     sigdelset(&sig.signals, SIGTRAP);
     sigdelset(&sig.signals, SIGKILL);
