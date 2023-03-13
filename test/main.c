@@ -97,7 +97,7 @@ final:
 int _abcdk_test_signal_cb(const siginfo_t *info, void *opaque)
 {
 
-    fprintf(stderr, "收到信号（%d)。", info->si_signo);
+    fprintf(stderr, "收到信号（%d)。\n", info->si_signo);
 
     if (SIGILL == info->si_signo ||
         SIGTERM == info->si_signo ||

@@ -71,6 +71,11 @@ void abcdk_sigwaitinfo_async(const abcdk_signal_t *sig)
 
     assert(sig != NULL);
 
+    /*必须在线程启动前拦截信号。*/
+    chk = pthread_sigmask(SIG_BLOCK, &sig->signals, NULL);
+    if (chk != 0)
+        return;
+
     /*在线程中使用，因此需要复制对象。*/
     sig_cp = abcdk_heap_alloc(sizeof(abcdk_signal_t));
     memcpy(sig_cp,sig,sizeof(abcdk_signal_t));
