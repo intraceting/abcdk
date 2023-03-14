@@ -47,7 +47,7 @@ int abcdk_signal_block(const sigset_t *news,sigset_t *olds);
  * @param sigs 信号集合。NULL(0) 全部信号（SIGKILL和SIGSTOP除外）。
  * @param timeout 超时(毫秒)。
  * 
- * @return > 0 有信号，<= 0 超时或出错。
+ * @return > 0 有信号，0 超时，-1 出错。
 */
 int abcdk_signal_wait(siginfo_t *info, const sigset_t *sigs, time_t timeout);
 

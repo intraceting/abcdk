@@ -91,11 +91,18 @@ int abcdk_signal_wait(siginfo_t *info, const sigset_t *sigs, time_t timeout)
             chk = sigwaitinfo(sigs_p, info);
         }
 
-        if (chk == -1 && errno == EINTR)
-            continue;
-        else
-            break;
+        if (chk > 0)
+            return chk;
+        else if (chk == -1)
+        {
+            if (errno == EINTR)
+                continue;
+            else if (errno == EAGAIN)
+                return 0;
+            else 
+                return -1;
+        }
     }
 
-    return chk;
+    return 0;
 }
