@@ -190,20 +190,6 @@ uint64_t _abcdkhttpd_clock()
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
 }
 
-int _abcdkhttpd_signal_cb(const siginfo_t *info, void *opaque)
-{
-    if (SI_USER == info->si_code)
-        abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info->si_signo, info->si_errno, info->si_code, info->si_pid, info->si_uid);
-    else
-        abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d)\n", info->si_signo, info->si_errno, info->si_code);
-
-    if (SIGILL == info->si_signo || SIGTERM == info->si_signo || SIGINT == info->si_signo || SIGQUIT == info->si_signo)
-        return -1;
-    else
-        abcdk_log_printf(LOG_WARNING, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
-
-    return 0;
-}
 
 void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 {
@@ -1120,10 +1106,34 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
+void _abcdkhttpd_signal_process(sigset_t *sigs)
+{
+    siginfo_t info = {0};
+    int chk;
+
+    while (1)
+    {
+        chk = abcdk_signal_wait(sigs, &info, -1);
+        if (chk <= 0)
+            break;
+
+        if (SI_USER == info.si_code)
+            abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
+        else
+            abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
+
+        if (SIGILL == info.si_signo || SIGTERM == info.si_signo || SIGINT == info.si_signo || SIGQUIT == info.si_signo)
+            break;
+        else
+            abcdk_log_printf(LOG_WARNING, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
+    }
+
+    return;
+}
 
 void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 {
-    abcdk_signal_t sig;
+    sigset_t sigs = {0};
     abcdk_object_t *userdata_p = NULL;
     abcdkhttpd_node_t *http_p = NULL;
     const char *p, *p_next, p2;
@@ -1256,19 +1266,12 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         }
     }
 
-    /*填充信号及回调函数。*/
-    sig.opaque = NULL;
-    sig.signal_cb = _abcdkhttpd_signal_cb;
-    sigemptyset(&sig.signals);
-    sigfillset(&sig.signals);
-    sigdelset(&sig.signals, SIGTRAP);
-    sigdelset(&sig.signals, SIGKILL);
-    sigdelset(&sig.signals, SIGSEGV);
-    sigdelset(&sig.signals, SIGSTOP);
+    /*阻塞信号。*/
+    abcdk_signal_fill(&sigs,SIGKILL,SIGSEGV,SIGSTOP,-1);
+    abcdk_signal_block(&sigs,NULL);
 
     /*等待退出信号。*/
-    abcdk_sigwaitinfo(&sig, -1);
-    // sleep(30);
+    _abcdkhttpd_signal_process(&sigs);
 
 final:
 

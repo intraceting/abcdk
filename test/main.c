@@ -94,47 +94,59 @@ final:
     return errcode;
 }
 
-int _abcdk_test_signal_cb(const siginfo_t *info, void *opaque)
+void *_abcdk_test_signal_cb(void *opaque)
 {
+    sigset_t *sigs = (sigset_t *)opaque;
+    siginfo_t info = {0};
+    int chk;
 
-    fprintf(stderr, "收到信号（%d)。\n", info->si_signo);
-
-    if (SIGILL == info->si_signo ||
-        SIGTERM == info->si_signo ||
-        SIGINT == info->si_signo ||
-        SIGQUIT == info->si_signo)
+    while (1)
     {
-        abcdk_atomic_store((uint32_t *)abcdk_register(32, 255), 1);
-        return -1;
-    }
-    else
-    {
+        chk = abcdk_signal_wait(sigs, &info, -1);
+        if (chk <= 0)
+            break;
 
-        fprintf(stderr, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d", getpid());
+        abcdk_log_printf(LOG_INFO,"收到信号（%d)。\n", info.si_signo);
+
+        if (SIGILL == info.si_signo ||
+            SIGTERM == info.si_signo ||
+            SIGINT == info.si_signo ||
+            SIGQUIT == info.si_signo)
+        {
+            abcdk_register32_set(255,1);
+            return NULL;
+        }
+        else
+        {
+            abcdk_log_printf(LOG_INFO, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
+        }
     }
 
-    return 1;
+    return NULL;
 }
 
 int main(int argc, char **argv)
 {
     abcdk_option_t *args = NULL;
-    abcdk_signal_t sig = {0};
+    sigset_t sigs = {0};
+    abcdk_thread_t sig_thread = {0};
     int errcode = 0;
 
-    sigfillset(&sig.signals);
-    sigdelset(&sig.signals, SIGKILL);
-    sigdelset(&sig.signals, SIGSEGV);
-    sigdelset(&sig.signals, SIGSTOP);
+    abcdk_signal_fill(&sigs,SIGKILL,SIGSEGV,SIGSTOP,-1);
+    abcdk_signal_block(&sigs,NULL);
 
-    sig.signal_cb = _abcdk_test_signal_cb;
-    abcdk_sigwaitinfo_async(&sig);
-
+    sig_thread.opaque = &sigs;
+    sig_thread.routine = _abcdk_test_signal_cb;
+    abcdk_thread_create(&sig_thread,0);
+    
     /*中文；UTF-8。*/
     setlocale(LC_ALL, "zh_CN.UTF-8");
 
     /*随机数种子。*/
     srand(time(NULL));
+
+    /*打开日志。*/
+    abcdk_log_open("/tmp/abcdk-log/test.log","test.%d.log", 10, 10, 0, 1);
 
 #ifdef HAVE_OPENSSL
 

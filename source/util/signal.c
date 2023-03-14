@@ -6,18 +6,12 @@
 */
 #include "abcdk/util/signal.h"
 
-void abcdk_sigwaitinfo(const abcdk_signal_t *sig, time_t timeout)
+int abcdk_signal_wait(const sigset_t *sigs, siginfo_t *info, time_t timeout)
 {
-    sigset_t old;
     struct timespec tout;
-    siginfo_t info;
     int chk;
 
-    assert(sig);
-
-    chk = pthread_sigmask(SIG_BLOCK, &sig->signals, &old);
-    if (chk != 0)
-        return;
+    assert(sigs != NULL && info != NULL);
 
     while (1)
     {
@@ -25,67 +19,53 @@ void abcdk_sigwaitinfo(const abcdk_signal_t *sig, time_t timeout)
         {
             tout.tv_sec = timeout / 1000;
             tout.tv_nsec = (timeout % 1000) * 1000000;
-            chk = sigtimedwait(&sig->signals, &info, &tout);
+            chk = sigtimedwait(sigs, info, &tout);
         }
         else
         {
-            chk = sigwaitinfo(&sig->signals, &info);
+            chk = sigwaitinfo(sigs, info);
         }
 
-        if (chk == -1)
-        {
-            if(errno == EINTR)
-                continue;
-            else 
-                break;;
-        }
-        
-        if(sig->signal_cb)
-            chk = sig->signal_cb(&info,sig->opaque);
-
-        /* -1 终止。 */
-        if(chk == -1)
+        if (chk == -1 && errno == EINTR)
+            continue;
+        else
             break;
     }
-    
-    pthread_sigmask(SIG_BLOCK,&old,NULL);
 
-    return;
+    return chk;
 }
 
-void* _abcdk_sigwaitinfo_routine(void *opaque)
+void abcdk_signal_fill(sigset_t *sigs,int sigdel,...)
 {
-    abcdk_signal_t *sig = (abcdk_signal_t *)opaque;
+    assert(sigs != NULL);
 
-    abcdk_sigwaitinfo(sig,-1);
+    sigemptyset(sigs);
+    sigfillset(sigs);
 
-    /*这里要释放，不然会有内存泄漏的问题。*/
-    abcdk_heap_free(sig);
+    va_list vaptr;
+    va_start(vaptr, sigdel);
+    for(;;)
+    {
+        if (sigdel == -1)
+            break;
+
+        sigdelset(sigs, sigdel);
+
+        /*遍历后续的。*/
+        sigdel = va_arg(vaptr, int);
+    }
+    va_end(vaptr);
 }
 
-void abcdk_sigwaitinfo_async(const abcdk_signal_t *sig)
+int abcdk_signal_block(const sigset_t *news,sigset_t *olds)
 {
-    abcdk_signal_t *sig_cp = NULL;
-    abcdk_thread_t td = {0};
     int chk;
 
-    assert(sig != NULL);
+    assert(news != NULL || olds != NULL);
 
-    /*必须在线程启动前拦截信号。*/
-    chk = pthread_sigmask(SIG_BLOCK, &sig->signals, NULL);
+    chk = pthread_sigmask(SIG_BLOCK, news, olds);
     if (chk != 0)
-        return;
+        return -1;
 
-    /*在线程中使用，因此需要复制对象。*/
-    sig_cp = abcdk_heap_alloc(sizeof(abcdk_signal_t));
-    memcpy(sig_cp,sig,sizeof(abcdk_signal_t));
-
-    td.opaque = sig_cp;
-    td.routine = _abcdk_sigwaitinfo_routine;
-
-    chk = abcdk_thread_create(&td,0);
-
-    /*如果线程未能创建，则要释放申请的内存，不然会造成内存泄漏。*/
-    if(chk != 0)
-        abcdk_heap_free(sig_cp);
+    return 0;
 }

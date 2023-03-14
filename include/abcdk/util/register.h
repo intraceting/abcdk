@@ -31,6 +31,17 @@ __BEGIN_DECLS
 */
 volatile void *abcdk_register(int type, uint8_t addr);
 
+/*设置寄存器的值。*/
+#define abcdk_register64_set(A, V) abcdk_atomic_store((uint64_t *)abcdk_register(64, A), V)
+#define abcdk_register32_set(A, V) abcdk_atomic_store((uint32_t *)abcdk_register(32, A), V)
+#define abcdk_register16_set(A, V) abcdk_atomic_store((uint16_t *)abcdk_register(16, A), V)
+#define abcdk_register8_set(A, V) abcdk_atomic_store((uint8_t *)abcdk_register(8, A), V)
+
+/*获取寄存器的值。*/
+#define abcdk_register64_get(A) abcdk_atomic_load((uint64_t *)abcdk_register(64, A))
+#define abcdk_register32_get(A) abcdk_atomic_load((uint32_t *)abcdk_register(32, A))
+#define abcdk_register16_get(A) abcdk_atomic_load((uint16_t *)abcdk_register(16, A))
+#define abcdk_register8_get(A) abcdk_atomic_load((uint8_t *)abcdk_register(8, A))
 
 __END_DECLS
 
