@@ -8,9 +8,8 @@
 
 int abcdk_thread_create(abcdk_thread_t *ctx,int joinable)
 {
-    char name[17] = {0};
-    int cpus[2] = {-1};
     pthread_attr_t attr;
+    char name[17] = {0};
     int chk = -1;
   
     assert(ctx);
@@ -27,11 +26,6 @@ int abcdk_thread_create(abcdk_thread_t *ctx,int joinable)
     /*获取当前线程名称，并设置子线程的名称。*/
     abcdk_thread_getname(pthread_self(),name);
     abcdk_thread_setname(ctx->handle,name);
-
-    /*设置线程亲源CPU。*/
-    cpus[0] = ctx->cpu - 1;
-    cpus[1] = -1;
-    abcdk_thread_setaffinity(ctx->handle, cpus);
 
     return 0;
 }

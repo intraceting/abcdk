@@ -1106,14 +1106,14 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
-void _abcdkhttpd_signal_process(sigset_t *sigs)
+void _abcdkhttpd_wait_exit_signal()
 {
     siginfo_t info = {0};
     int chk;
 
     while (1)
     {
-        chk = abcdk_signal_wait(sigs, &info, -1);
+        chk = abcdk_signal_wait(&info,NULL, -1);
         if (chk <= 0)
             break;
 
@@ -1139,6 +1139,10 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     const char *p, *p_next, p2;
     size_t plen, p2len;
     int chk;
+
+    /*阻塞信号。*/
+    abcdk_signal_fill(&sigs,SIGTRAP,SIGKILL,SIGSEGV,SIGSTOP,-1);
+    abcdk_signal_block(&sigs,NULL);
 
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
@@ -1266,12 +1270,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         }
     }
 
-    /*阻塞信号。*/
-    abcdk_signal_fill(&sigs,SIGKILL,SIGSEGV,SIGSTOP,-1);
-    abcdk_signal_block(&sigs,NULL);
-
     /*等待退出信号。*/
-    _abcdkhttpd_signal_process(&sigs);
+    _abcdkhttpd_wait_exit_signal();
 
 final:
 

@@ -747,10 +747,11 @@ abcdk_comm_t * abcdk_comm_start(int max,int cpu)
     ctx->worker.handle = 0;
     ctx->worker.routine = _abcdk_comm_worker;
     ctx->worker.opaque = ctx;
-    ctx->worker.cpu = cpu;
     chk = abcdk_thread_create(&ctx->worker, 1);
     if (chk != 0)
         goto final_error;
+
+    abcdk_thread_setaffinity(ctx->worker.handle,&cpu);
 
     return ctx;
 

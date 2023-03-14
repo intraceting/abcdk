@@ -6,33 +6,26 @@
 */
 #include "abcdk/util/signal.h"
 
-int abcdk_signal_wait(const sigset_t *sigs, siginfo_t *info, time_t timeout)
+void abcdk_signal_set(sigset_t *sigs,int op, int sig,...)
 {
-    struct timespec tout;
-    int chk;
+    assert(sigs != NULL);
 
-    assert(sigs != NULL && info != NULL);
-
-    while (1)
+    va_list vaptr;
+    va_start(vaptr, sig);
+    for(;;)
     {
-        if (timeout >= 0)
-        {
-            tout.tv_sec = timeout / 1000;
-            tout.tv_nsec = (timeout % 1000) * 1000000;
-            chk = sigtimedwait(sigs, info, &tout);
-        }
-        else
-        {
-            chk = sigwaitinfo(sigs, info);
-        }
-
-        if (chk == -1 && errno == EINTR)
-            continue;
-        else
+        if (sig == -1)
             break;
-    }
 
-    return chk;
+        if(op)
+            sigdelset(sigs, sig);
+        else 
+            sigaddset(sigs, sig);
+
+        /*遍历后续的。*/
+        sig = va_arg(vaptr, int);
+    }
+    va_end(vaptr);
 }
 
 void abcdk_signal_fill(sigset_t *sigs,int sigdel,...)
@@ -49,7 +42,7 @@ void abcdk_signal_fill(sigset_t *sigs,int sigdel,...)
         if (sigdel == -1)
             break;
 
-        sigdelset(sigs, sigdel);
+        abcdk_signal_set(sigs,1, sigdel);
 
         /*遍历后续的。*/
         sigdel = va_arg(vaptr, int);
@@ -68,4 +61,41 @@ int abcdk_signal_block(const sigset_t *news,sigset_t *olds)
         return -1;
 
     return 0;
+}
+
+int abcdk_signal_wait(siginfo_t *info, const sigset_t *sigs, time_t timeout)
+{
+    sigset_t in_sigs = {0},*sigs_p = NULL;
+    struct timespec tout;
+    int chk;
+
+    assert(info != NULL);
+
+    sigs_p = (sigset_t*)sigs;
+    if(!sigs_p)
+    {
+        abcdk_signal_fill(&in_sigs, SIGKILL, SIGSTOP, -1);
+        sigs_p = &in_sigs;
+    }
+
+    while (1)
+    {
+        if (timeout >= 0)
+        {
+            tout.tv_sec = timeout / 1000;
+            tout.tv_nsec = (timeout % 1000) * 1000000;
+            chk = sigtimedwait(sigs_p, info, &tout);
+        }
+        else
+        {
+            chk = sigwaitinfo(sigs_p, info);
+        }
+
+        if (chk == -1 && errno == EINTR)
+            continue;
+        else
+            break;
+    }
+
+    return chk;
 }

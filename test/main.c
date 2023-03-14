@@ -96,30 +96,27 @@ final:
 
 void *_abcdk_test_signal_cb(void *opaque)
 {
-    sigset_t *sigs = (sigset_t *)opaque;
     siginfo_t info = {0};
     int chk;
 
     while (1)
     {
-        chk = abcdk_signal_wait(sigs, &info, -1);
+#if 1
+        chk = abcdk_signal_wait(&info,NULL, -1);
+#else 
+        sigset_t sigs = {0};
+        sigemptyset(&sigs);
+        abcdk_signal_set(&sigs,0,SIGABRT,-1);
+        chk = abcdk_signal_wait(&info,&sigs, -1);
+#endif 
         if (chk <= 0)
             break;
-
-        abcdk_log_printf(LOG_INFO,"收到信号（%d)。\n", info.si_signo);
-
-        if (SIGILL == info.si_signo ||
-            SIGTERM == info.si_signo ||
-            SIGINT == info.si_signo ||
-            SIGQUIT == info.si_signo)
-        {
-            abcdk_register32_set(255,1);
-            return NULL;
-        }
+        
+        if (SI_USER == info.si_code)
+            abcdk_log_printf(LOG_INFO, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
         else
-        {
-            abcdk_log_printf(LOG_INFO, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
-        }
+            abcdk_log_printf(LOG_INFO, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
+
     }
 
     return NULL;
@@ -132,10 +129,9 @@ int main(int argc, char **argv)
     abcdk_thread_t sig_thread = {0};
     int errcode = 0;
 
-    abcdk_signal_fill(&sigs,SIGKILL,SIGSEGV,SIGSTOP,-1);
+    abcdk_signal_fill(&sigs,SIGTRAP,SIGKILL,SIGSEGV,SIGSTOP,-1);
     abcdk_signal_block(&sigs,NULL);
 
-    sig_thread.opaque = &sigs;
     sig_thread.routine = _abcdk_test_signal_cb;
     abcdk_thread_create(&sig_thread,0);
     

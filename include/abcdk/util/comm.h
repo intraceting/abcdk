@@ -266,7 +266,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx);
  * 启动通讯引擎。
  * 
  * @param [in] max 最大连接数量。<= 0 使用文件句柄数量的一半作为最大连接数量。
- * @param [in] cpu 绑定的CPU编号。从1开始，-1 不绑定。
+ * @param [in] cpu 绑定的CPU编号。从0开始，-1 不绑定。
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */

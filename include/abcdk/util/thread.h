@@ -27,13 +27,6 @@ typedef struct _abcdk_thread_t
     /** 环境指针。*/
     void *opaque;
 
-    /** 
-     * 亲源CPUID。
-     * 
-     * @note CPUID从1开始。
-    */
-    int cpu;
-
 } abcdk_thread_t;
 
 /**

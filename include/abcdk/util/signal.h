@@ -14,21 +14,22 @@
 
 __BEGIN_DECLS
 
-/**
- * 等待信号。
- * 
- * @param timeout 超时(毫秒)。
- * 
- * @return > 0 有信号，<= 0 超时或出错。
-*/
-int abcdk_signal_wait(const sigset_t *sigs, siginfo_t *info, time_t timeout);
 
 /**
- * 填充信号集合。
+ * 设置信号集合。
+ * 
+ * @param op 操作码，0 添加，!0 删除。
+ * @param sig 信号，-1 结束。
+ */
+void abcdk_signal_set(sigset_t *sigs,int op, int sig,...);
+
+/**
+ * 填充全部信号集合。
  * 
  * @param sigdel 排除的信号，-1 结束。
  */
 void abcdk_signal_fill(sigset_t *sigs,int sigdel,...);
+
 
 /**
  * 阻塞信号集合。
@@ -40,6 +41,15 @@ void abcdk_signal_fill(sigset_t *sigs,int sigdel,...);
  */
 int abcdk_signal_block(const sigset_t *news,sigset_t *olds);
 
+/**
+ * 等待信号。
+ * 
+ * @param sigs 信号集合。NULL(0) 全部信号（SIGKILL和SIGSTOP除外）。
+ * @param timeout 超时(毫秒)。
+ * 
+ * @return > 0 有信号，<= 0 超时或出错。
+*/
+int abcdk_signal_wait(siginfo_t *info, const sigset_t *sigs, time_t timeout);
 
 __END_DECLS
 
