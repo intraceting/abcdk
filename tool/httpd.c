@@ -735,12 +735,14 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
     if (addr.addr4.sin_port == 0)
     {
         addr.addr4.sin_port = abcdk_endian_h_to_b16(80);
-        if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0)
+        if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
+            abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
             addr.addr4.sin_port = abcdk_endian_h_to_b16(443);
     }
 
 #ifdef HEADER_SSL_H
-    if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0)
+    if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
+        abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
     {
         http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0, http_p->ctx->ca_file, http_p->ctx->ca_path, (http_p->ctx->ca_path ? 2 : 0));
         if (!http_p->tunnel_ssl_ctx)
