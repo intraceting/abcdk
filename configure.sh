@@ -1392,11 +1392,13 @@ ${INSTALL_PREFIX}
 #!/bin/sh
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/${SOLUTION_NAME}.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/${SOLUTION_NAME}.sh
+source /etc/profile
 exit 0
 
 %postun
 #!/bin/sh
 rm -f /etc/profile.d/${SOLUTION_NAME}.sh
+source /etc/profile
 exit 0
 EOF
 checkReturnCode
@@ -1425,11 +1427,13 @@ ${INSTALL_PREFIX}
 %post
 #!/bin/sh
 echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/${SOLUTION_NAME}-devel.sh
+source /etc/profile
 exit 0
 
 %postun
 #!/bin/sh
 rm -f /etc/profile.d/${SOLUTION_NAME}-devel.sh
+source /etc/profile
 exit 0
 EOF
 checkReturnCode
@@ -1480,6 +1484,7 @@ cat >${DEB_RT_CTL}/postinst <<EOF
 #!/bin/sh
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/${SOLUTION_NAME}.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/${SOLUTION_NAME}.sh
+source /etc/profile
 exit 0
 EOF
 checkReturnCode
@@ -1488,6 +1493,7 @@ checkReturnCode
 cat >${DEB_RT_CTL}/postrm <<EOF
 #!/bin/sh
 rm -f /etc/profile.d/${SOLUTION_NAME}.sh
+source /etc/profile
 exit 0
 EOF
 checkReturnCode
@@ -1513,6 +1519,7 @@ checkReturnCode
 cat >${DEB_DEV_CTL}/postinst <<EOF
 #!/bin/sh
 echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/${SOLUTION_NAME}-devel.sh
+source /etc/profile
 exit 0
 EOF
 checkReturnCode
@@ -1521,6 +1528,7 @@ checkReturnCode
 cat >${DEB_DEV_CTL}/postrm <<EOF
 #!/bin/sh
 rm -f /etc/profile.d/${SOLUTION_NAME}-devel.sh
+source /etc/profile
 exit 0
 EOF
 checkReturnCode
