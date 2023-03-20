@@ -537,6 +537,8 @@ void abcdk_http_parse_form(abcdk_option_t *opt,const char *form)
 
     assert(opt != NULL && form != NULL);
 
+    p_next = form;
+
     for (;;)
     {
         p = abcdk_strtok2(&p_next, "&", 1);
