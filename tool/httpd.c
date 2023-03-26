@@ -764,7 +764,7 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
 #endif // HEADER_SSL_H
 
     /*绑定到远端服务器对象。*/
-    http_p->tunnel = abcdk_http_alloc(http_p->ctx->comm, sizeof(abcdkhttpd_node_t), 40960, NULL);
+    http_p->tunnel = abcdk_http_alloc(http_p->ctx->comm, sizeof(abcdkhttpd_node_t), ctx->up_max_size, NULL);
     if (!http_p->tunnel)
     {
         _abcdkhttpd_reply_nobody(node, 500, "");
@@ -977,7 +977,7 @@ void _abcdkhttpd_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
 
     http_listen_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(listen);
 
-    node_p = abcdk_http_alloc(http_listen_p->ctx->comm, sizeof(abcdkhttpd_node_t), 40960, NULL);
+    node_p = abcdk_http_alloc(http_listen_p->ctx->comm, sizeof(abcdkhttpd_node_t), ctx->up_max_size, NULL);
     if (!node_p)
         return;
 
@@ -1248,7 +1248,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        ctx->comm_listen[i] = abcdk_http_alloc(ctx->comm, sizeof(abcdkhttpd_node_t),40960,NULL);
+        ctx->comm_listen[i] = abcdk_http_alloc(ctx->comm, sizeof(abcdkhttpd_node_t),ctx->up_max_size,NULL);
         if (!ctx->comm_listen[i])
         {
             fprintf(stderr, "内存错误。\n");
