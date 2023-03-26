@@ -918,6 +918,8 @@ void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
     if (!http_p->line0)
         goto final_error;
 
+    _abcdkhttpd_logprint(node,0,-1);
+
     _abcdkhttpd_filter(node);
     return;
 
