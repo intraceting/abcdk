@@ -407,11 +407,13 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     chk = abcdk_receiver_append(rpc_p->in_buffer,data,size,remain);
     if (chk < 0)
     {
+        abcdk_receiver_unref(&rpc_p->in_buffer);
         abcdk_comm_set_timeout(node, 1);
         return;
     }
     else if (chk == 0)
     {
+        /*数据包不完整，继续接收。*/
         return;
     }
 

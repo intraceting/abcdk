@@ -136,7 +136,10 @@ int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_
                     }
                 }
 
-                return _abcdk_http_receiver_natural_unpack_cb(opaque,data,size,diff);
+                if (rec_p->buf_max < rec_p->hdr_len + rec_p->body_len)
+                    return -1;
+                else
+                    return _abcdk_http_receiver_natural_unpack_cb(opaque,data,size,diff);
             }
         }
 
@@ -150,7 +153,7 @@ int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_
         if (size < rec_p->hdr_len + rec_p->body_len)
         {
             /*增量扩展内存。*/
-            *diff = ABCDK_MIN(524288, rec_p->hdr_len + rec_p->body_len - size);
+            *diff = ABCDK_MIN(rec_p->buf_max, rec_p->hdr_len + rec_p->body_len - size);
             return 0;
         }
 
@@ -187,7 +190,10 @@ int _abcdk_http_receiver_chunked_unpack_cb(void *opaque, const void *data, size_
                 rec_p->hdr_len = size;
                 rec_p->body_len = strtoll(ABCDK_PTR2I8PTR(data, 0), NULL, 16);
 
-                return _abcdk_http_receiver_chunked_unpack_cb(opaque,data,size,diff);
+                if (rec_p->buf_max < rec_p->hdr_len + rec_p->body_len)
+                    return -1;
+                else 
+                    return _abcdk_http_receiver_chunked_unpack_cb(opaque,data,size,diff);
             }
         }
 
@@ -201,7 +207,7 @@ int _abcdk_http_receiver_chunked_unpack_cb(void *opaque, const void *data, size_
         if (size < rec_p->hdr_len + rec_p->body_len + 2)
         {
             /*增量扩展内存。*/
-            *diff = ABCDK_MIN(524288, rec_p->hdr_len + rec_p->body_len + 2 - size);
+            *diff = ABCDK_MIN(rec_p->buf_max, rec_p->hdr_len + rec_p->body_len + 2 - size);
             return 0;
         }
 
@@ -252,7 +258,7 @@ int _abcdk_http_receiver_rtcp_unpack_cb(void *opaque, const void *data, size_t s
 
     if (size < len + 4)
     {
-        *diff = ABCDK_MIN(65536, len + 4 - size);
+        *diff = ABCDK_MIN(rec_p->buf_max, len + 4 - size);
         return 0;
     }
 

@@ -74,7 +74,7 @@ int abcdk_signal_wait(siginfo_t *info, const sigset_t *sigs, time_t timeout)
     sigs_p = (sigset_t*)sigs;
     if(!sigs_p)
     {
-        abcdk_signal_fill(&in_sigs, SIGKILL,SIGSEGV, SIGSTOP, -1);
+        abcdk_signal_fill(&in_sigs,SIGTRAP,SIGKILL,SIGSEGV, SIGSTOP, -1);
         sigs_p = &in_sigs;
     }
 
