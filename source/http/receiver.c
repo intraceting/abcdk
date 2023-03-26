@@ -107,6 +107,10 @@ int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_
 
     rec_p = (abcdk_http_receiver_t *)opaque;
 
+    /*不能超过最大长度。*/
+    if (rec_p->buf_max < size)
+        return -1;
+
     /*如果未确定头部长度，则先定位头部长度。*/
     if (rec_p->hdr_len <= 0)
     {
@@ -136,10 +140,6 @@ int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_
             }
         }
 
-        /*不能超过最大长度。*/
-        if (rec_p->buf_max < size)
-            return -1;
-
         /*增量扩展内存。*/
         *diff = 1;
         return 0;
@@ -149,10 +149,6 @@ int _abcdk_http_receiver_natural_unpack_cb(void *opaque, const void *data, size_
         /*不能超过实体限制。*/
         if (size < rec_p->hdr_len + rec_p->body_len)
         {
-            /*不能超过最大长度。*/
-            if (rec_p->buf_max < size)
-                return -1;
-
             /*增量扩展内存。*/
             *diff = ABCDK_MIN(524288, rec_p->hdr_len + rec_p->body_len - size);
             return 0;
@@ -175,6 +171,10 @@ int _abcdk_http_receiver_chunked_unpack_cb(void *opaque, const void *data, size_
 
     rec_p = (abcdk_http_receiver_t *)opaque;
 
+    /*不能超过最大长度。*/
+    if (rec_p->buf_max < size)
+        return -1;
+
     /*如果未确定头部长度，则先定位头部长度。*/
     if (rec_p->hdr_len <= 0)
     {
@@ -191,10 +191,6 @@ int _abcdk_http_receiver_chunked_unpack_cb(void *opaque, const void *data, size_
             }
         }
 
-        /*不能超过最大长度。*/
-        if (rec_p->buf_max < size)
-            return -1;
-
         /*增量扩展内存。*/
         *diff = 1;
         return 0;
@@ -204,10 +200,6 @@ int _abcdk_http_receiver_chunked_unpack_cb(void *opaque, const void *data, size_
         /*不能超过实体限制。*/
         if (size < rec_p->hdr_len + rec_p->body_len + 2)
         {
-            /*不能超过最大长度。*/
-            if (rec_p->buf_max < size)
-                return -1;
-
             /*增量扩展内存。*/
             *diff = ABCDK_MIN(524288, rec_p->hdr_len + rec_p->body_len + 2 - size);
             return 0;
@@ -239,6 +231,10 @@ int _abcdk_http_receiver_rtcp_unpack_cb(void *opaque, const void *data, size_t s
 
     rec_p = (abcdk_http_receiver_t *)opaque;
 
+    /*不能超过最大长度。*/
+    if (rec_p->buf_max < size)
+        return -1;
+        
     if (size < 4)
     {
         *diff = 4 - size;
