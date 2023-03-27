@@ -93,9 +93,6 @@ struct _abcdk_comm_node
     /** 接收缓存。*/
     abcdk_object_t *in_buffer;
 
-    /** 接收游标。*/
-    size_t in_pos;
-
     /** 来自哪个监听节点。*/
     struct _abcdk_comm_node *from_listen;
 
@@ -173,7 +170,6 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t user
     abcdk_mutex_init2(&node->out_locker,0);
     node->out_pos = 0;
     node->in_buffer = NULL;
-    node->in_pos = 0;
     node->from_listen = NULL;
 
     return node;
@@ -948,8 +944,8 @@ final_error:
 void _abcdk_comm_input_hook(abcdk_comm_node_t *node)
 {
     int ret = 0;
-    ssize_t rlen;
-    size_t remain;
+    ssize_t rlen = 0,pos = 0;
+    size_t remain = 0;
 
     /*当未注册请求数据到达通知回调函数时，直接发事件通知。*/
     if(!node->callback->request_cb)
@@ -970,28 +966,19 @@ void _abcdk_comm_input_hook(abcdk_comm_node_t *node)
     }
 
     /*收。*/
-    rlen = abcdk_comm_recv(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], node->in_pos), node->in_buffer->sizes[0] - node->in_pos);
+    rlen = abcdk_comm_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
     {
         abcdk_comm_recv_watch(node);
         return;
     }
 
-    /*累加接收长度。*/
-    node->in_pos += rlen;
-
 NEXT_REQ:
 
-    node->callback->request_cb(node,node->in_buffer->pptrs[0],node->in_pos,&remain);
+    node->callback->request_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
+    pos += (rlen - pos) - remain;
 
-    if (remain < node->in_pos)
-    {
-        /*排出已读写的数据，同时重置游标。*/
-        memmove(node->in_buffer->pptrs[0], ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], node->in_pos - remain), remain);
-        node->in_pos = remain;
-    }
-
-    if (node->in_pos > 0)
+    if (pos < rlen)
         goto NEXT_REQ;
     else
         abcdk_comm_recv_watch(node);

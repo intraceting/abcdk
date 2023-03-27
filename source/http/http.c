@@ -345,6 +345,8 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
 
     if (!http_p->input_buf)
     {
+        /*假装没有剩余数据，快速的清空接收缓存，释放连接。*/
+        *remain = 0;
         abcdk_comm_set_timeout(node, 1);
         return;
     }
@@ -352,7 +354,8 @@ void _abcdk_http_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     chk = abcdk_http_receiver_append(http_p->input_buf, data, size, remain);
     if (chk < 0)
     {
-        abcdk_http_receiver_unref(&http_p->input_buf);
+        /*假装没有剩余数据，快速的清空接收缓存，释放连接。*/
+        *remain = 0;
         abcdk_comm_set_timeout(node, 1);
         return;
     }

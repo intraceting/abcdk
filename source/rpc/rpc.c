@@ -397,6 +397,8 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
         rpc_p->in_buffer = abcdk_receiver_alloc(NULL);
         if (!rpc_p->in_buffer)
         {
+            /*假装没有剩余数据，快速的清空接收缓存，释放连接。*/
+            *remain = 0;
             abcdk_comm_set_timeout(node, 1);
             return;
         }
@@ -407,7 +409,8 @@ void _abcdk_rpc_request_cb(abcdk_comm_node_t *node, const void *data, size_t siz
     chk = abcdk_receiver_append(rpc_p->in_buffer,data,size,remain);
     if (chk < 0)
     {
-        abcdk_receiver_unref(&rpc_p->in_buffer);
+        /*假装没有剩余数据，快速的清空接收缓存，释放连接。*/
+        *remain = 0;
         abcdk_comm_set_timeout(node, 1);
         return;
     }
