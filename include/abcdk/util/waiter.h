@@ -49,7 +49,7 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
 /**
  * 应答。
  * 
- * @note 将被托管理，应用层(应答者)不可以继续访问对象。
+ * @note 将被托管理，应用层不可以继续访问应答对象。
  * 
  * @return 0 成功，-1 失败(KEY不存在)。
 */
