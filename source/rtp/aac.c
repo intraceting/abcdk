@@ -60,7 +60,7 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
         if (flen[j][0] <= 0)
             break;
 
-        msg = abcdk_receiver_alloc(NULL);
+        msg = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM,UINT32_MAX,NULL);
         if (!msg)
             return -1;
 

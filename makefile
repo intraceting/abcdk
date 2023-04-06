@@ -72,8 +72,6 @@ BASE_SRC_FILES += $(wildcard source/util/*.c)
 BASE_SRC_FILES += $(wildcard source/shell/*.c)
 BASE_SRC_FILES += $(wildcard source/mp4/*.c)
 BASE_SRC_FILES += $(wildcard source/comm/*.c)
-BASE_SRC_FILES += $(wildcard source/rpc/*.c)
-BASE_SRC_FILES += $(wildcard source/http/*.c)
 BASE_SRC_FILES += $(wildcard source/log/*.c)
 BASE_SRC_FILES += $(wildcard source/rtp/*.c)
 BASE_SRC_FILES += $(wildcard source/ffmpeg/*.c)
@@ -136,18 +134,6 @@ $(OBJ_PATH)/source/mp4/%.o: source/mp4/%.c
 #
 $(OBJ_PATH)/source/comm/%.o: source/comm/%.c
 	mkdir -p $(OBJ_PATH)/source/comm/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/source/rpc/%.o: source/rpc/%.c
-	mkdir -p $(OBJ_PATH)/source/rpc/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-	
-#
-$(OBJ_PATH)/source/http/%.o: source/http/%.c
-	mkdir -p $(OBJ_PATH)/source/http/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 

@@ -38,7 +38,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
         *
         * NAL Header + data(Nbytes)
         */
-        msg = abcdk_receiver_alloc(NULL);
+        msg = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM,UINT32_MAX,NULL);
         if (!msg)
             return -1;
         
@@ -76,7 +76,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
 
         if (s)
         {
-            msg = abcdk_receiver_alloc(NULL);
+            msg = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM,UINT32_MAX,NULL);
             if (!msg)
                 return -1;
 
@@ -85,7 +85,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             abcdk_receiver_append(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
             /* 还原NAL Header。分片时，原始头type被放在FU Header中。*/
-            p = abcdk_receiver_data(msg);
+            p = abcdk_receiver_data(msg,0);
             abcdk_bloom_write_number(ABCDK_PTR2U8PTR(p,0), 1, 1, 6, type2);
 
             chk = abcdk_queue_push(q, msg, 0);

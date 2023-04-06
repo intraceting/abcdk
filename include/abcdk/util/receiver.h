@@ -9,28 +9,40 @@
 
 #include "abcdk/util/path.h"
 #include "abcdk/util/mmap.h"
+#include "abcdk/util/endian.h"
+#include "abcdk/util/bit.h"
 
 __BEGIN_DECLS
 
 /** 接收器对象。*/
 typedef struct _abcdk_receiver abcdk_receiver_t;
 
-/** 消息协议。*/
-typedef struct _abcdk_receiver_protocol
+/** 接收器协议。*/
+typedef enum _abcdk_receiver_protocol
 {
-    /** 环境指针。*/
-    void *opaque;
+    /** Stream */
+    ABCDK_RECEIVER_PROTO_STREAM = 0,
+#define ABCDK_RECEIVER_PROTO_STREAM ABCDK_RECEIVER_PROTO_STREAM
 
-    /**
-     * 消息解包回调函数。
-     * 
-     * @param [out] diff 差额(待增量)。
-     *
-     * @return 1 消息包完整，0 需要更多数据，-1 不支持的协议(或有错发生)。
-     */
-    int (*unpack_cb)(void *opaque, const void *data, size_t size,size_t *diff);
+    /** HTTP(0.9,1.0,1.1) RTSP(1.0)*/
+    ABCDK_RECEIVER_PROTO_HTTP = 1,
+#define ABCDK_RECEIVER_PROTO_HTTP ABCDK_RECEIVER_PROTO_HTTP
+#define ABCDK_RECEIVER_PROTO_RTSP ABCDK_RECEIVER_PROTO_HTTP
 
-} abcdk_receiver_protocol_t;
+    /** HTTP-Chunked(0.9,1.0,1.1) */
+    ABCDK_RECEIVER_PROTO_CHUNKED = 2,
+#define ABCDK_RECEIVER_PROTO_CHUNKED ABCDK_RECEIVER_PROTO_CHUNKED
+
+    /** RTCP */
+    ABCDK_RECEIVER_PROTO_RTCP = 3,
+#define ABCDK_RECEIVER_PROTO_RTCP ABCDK_RECEIVER_PROTO_RTCP
+
+    /** SMB */
+    ABCDK_RECEIVER_PROTO_SMB = 4
+#define ABCDK_RECEIVER_PROTO_SMB ABCDK_RECEIVER_PROTO_SMB
+#define ABCDK_RECEIVER_PROTO_CIFS ABCDK_RECEIVER_PROTO_SMB
+    
+}abcdk_receiver_protocol_t;
 
 /**
  * 减少引用计数。
@@ -49,42 +61,7 @@ abcdk_receiver_t *abcdk_receiver_refer(abcdk_receiver_t *src);
  * 
  * @param [in] tempdir 缓存目录。NULL(0) 忽略。
 */
-abcdk_receiver_t *abcdk_receiver_alloc(const char *tempdir);
-
-/**
- * 获取指针。
-*/
-void *abcdk_receiver_data(const abcdk_receiver_t *ctx);
-
-/**
- * 获取长度。
-*/
-size_t abcdk_receiver_size(const abcdk_receiver_t *ctx);
-
-/**
- * 获取偏移量。
-*/
-size_t abcdk_receiver_offset(const abcdk_receiver_t *ctx);
-
-/**
- * 调整缓存大小。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_receiver_resize(abcdk_receiver_t *ctx, size_t size);
-
-/**
- * 设置数据包协议。
-*/
-void abcdk_receiver_protocol_set(abcdk_receiver_t *ctx, abcdk_receiver_protocol_t *prot);
-
-#define abcdk_receiver_protocol_set_simple(ctx, op, cb) \
-    {                                                   \
-        abcdk_receiver_protocol_t prot = {0};           \
-        prot.opaque = op;                               \
-        prot.unpack_cb = cb;                            \
-        abcdk_receiver_protocol_set(ctx, &prot);        \
-    }
+abcdk_receiver_t *abcdk_receiver_alloc(int protocol, size_t max, const char *tempdir);
 
 /**
  * 附加消息。
@@ -95,6 +72,49 @@ void abcdk_receiver_protocol_set(abcdk_receiver_t *ctx, abcdk_receiver_protocol_
 */
 int abcdk_receiver_append(abcdk_receiver_t *ctx,const void *data,size_t size,size_t *remain);
 
+/**
+ * 获取数据。
+ * 
+ * @param [in] off 偏移量。
+ * 
+ * @return !NULL(0) 数据的指针，NULL(0) 无数据。
+*/
+const void *abcdk_receiver_data(abcdk_receiver_t *ctx, off_t off);
+
+/**
+ * 获取数据长度。
+*/
+size_t abcdk_receiver_length(abcdk_receiver_t *ctx);
+
+/**
+ * 获取实体。
+ * 
+ * @param [in] off 偏移量。
+ * 
+ * @return !NULL(0) 实体的指针，NULL(0) 无实体。
+*/
+const void *abcdk_receiver_body(abcdk_receiver_t *ctx, off_t off);
+
+/**
+ * 获取实体长度。
+*/
+size_t abcdk_receiver_body_length(abcdk_receiver_t *ctx);
+
+/**
+ * 获取头部环境参数。
+ * 
+ * @param [in] line 行号，从0开始。
+ * 
+ * @return !NULL(0) 参数的指针，NULL(0) 超出头部范围或无头部信息。
+*/
+const char *abcdk_receiver_header_line(abcdk_receiver_t *ctx,int line);
+
+/**
+ * 查找头部环境参数的值。
+ * 
+ * @return !NULL(0) 参数值的指针，NULL(0) 超出头部范围或无头部信息。
+*/
+const char *abcdk_receiver_header_line_getenv(abcdk_receiver_t *ctx, const char *name, uint8_t delim);
 
 __END_DECLS
 

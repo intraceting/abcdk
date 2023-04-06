@@ -23,13 +23,6 @@ __BEGIN_DECLS
 const char *abcdk_http_status_desc(uint32_t code);
 
 /** 
- * 匹配环境变量，返回变量的值。
- * 
- * @return !NULL(0) 环境变量值的指针，NULL(0) 不匹配。
-*/
-const char *abcdk_http_match_env(const char *line, const char *name);
-
-/** 
  * 翻译内容类型描述。
  * 
  * @return !NULL(0) 描述字符串指针，NULL(0) 状态码未找到。
@@ -59,6 +52,29 @@ void abcdk_http_parse_request_header0(const char *req, abcdk_object_t **method, 
  * @param form 表单。
 */
 void abcdk_http_parse_form(abcdk_option_t *opt,const char *form);
+
+/**
+ * 构造块数据。
+ * 
+ * @param  [in] data 数据，NULL(0) 应答结束块。
+ * @param  [in] size 长度，<= 0 应答结束块。
+ * 
+*/
+abcdk_object_t *abcdk_http_chunked_copyfrom(const void *data, size_t size);
+
+/** 
+ * 构造块数据。
+ * 
+ * @param [in] max 格式化数据最大长度。 
+ * 
+*/
+abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap);
+
+/** 
+ * 构造块数据。
+ * 
+*/
+abcdk_object_t *abcdk_http_chunked_format(int max, const char *fmt, ...);
 
 __END_DECLS
 

@@ -109,7 +109,7 @@ int abcdk_test_any(abcdk_option_t *args)
     p = abcdk_url_fixpath("bbbb","aaaa/");
     printf("%s\n", p->pstrs[0]);
     abcdk_object_unref(&p);
-#elif 1
+#elif 0
 
     abcdk_object_t *p = NULL;
 
@@ -217,6 +217,12 @@ int abcdk_test_any(abcdk_option_t *args)
     for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
+#else
+
+    uint32_t a = 0x00123456;
+
+    printf("%08x\n",a);
+    printf("%08x\n",abcdk_endian_h_to_b32(a));
 
 #endif 
 }

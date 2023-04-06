@@ -76,11 +76,6 @@ const char *abcdk_http_status_desc(uint32_t code)
     return NULL;
 }
 
-const char *abcdk_http_match_env(const char *line, const char *name)
-{
-    return abcdk_match_env(line,name,':');
-}
-
 /** HTTP内容类型。*/
 static struct _abcdk_http_content_type_dict
 {
@@ -573,4 +568,92 @@ void abcdk_http_parse_form(abcdk_option_t *opt,const char *form)
 
     abcdk_object_unref(&key);
     abcdk_object_unref(&val);
+}
+
+abcdk_object_t *abcdk_http_chunked_copyfrom(const void *data, size_t size)
+{
+    abcdk_object_t *obj = NULL;
+    ssize_t pos = 0;
+    int chk;
+
+    obj = abcdk_object_alloc2(16 + 2 + size + 2);
+    if (!obj)
+        return NULL;
+
+    chk = sprintf(obj->pstrs[0], "%lx\r\n", size);
+    if (chk <= 0)
+        goto final_error;
+
+    pos += chk;
+
+    if(data != NULL && size >0)
+    {
+        memcpy(obj->pstrs[0] + pos, data, size);
+        pos += size;
+    }
+
+    memcpy(obj->pstrs[0] + pos, "\r\n", 2);
+    pos += 2;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = pos;
+
+    return obj;
+
+final_error:
+
+    abcdk_object_unref(&obj);
+    return NULL;
+}
+
+abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap)
+{
+    abcdk_object_t *obj;
+    ssize_t pos = 0;
+    int chk;
+
+    assert(max > 0 && fmt != NULL && ap != NULL);
+
+    obj = abcdk_object_alloc2(16 + 2 + max + 2);
+    if (!obj)
+        return NULL;
+
+    /*先格式化数据，计算出数据长度。*/
+    chk = vsprintf(obj->pstrs[0] + 18, fmt, ap);
+    if (chk <= 0)
+        goto final_error;
+
+    pos += (18 + chk);
+
+    /*再格式化长度，填充到块头部。*/
+    chk = sprintf(obj->pstrs[0], "%-16x\r\n", chk);
+    if (chk <= 0)
+        goto final_error;
+
+    memcpy(obj->pstrs[0] + pos, "\r\n", 2);
+    pos += 2;
+
+    /*修正格式化后的数据长度。*/
+    obj->sizes[0] = pos;
+
+    return obj;
+
+final_error:
+
+    abcdk_object_unref(&obj);
+    return NULL;
+}
+
+abcdk_object_t *abcdk_http_chunked_format(int max, const char *fmt, ...)
+{
+    abcdk_object_t *obj;
+
+    assert(max > 0 && fmt != NULL);
+
+    va_list ap;
+    va_start(ap, fmt);
+    obj = abcdk_http_chunked_vformat(max, fmt, ap);
+    va_end(ap);
+
+    return obj;
 }

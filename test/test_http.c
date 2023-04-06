@@ -11,6 +11,8 @@
 #include <locale.h>
 #include "entry.h"
 
+#if 0
+
 typedef struct _abcdk_test_http
 {
     int errcode;
@@ -403,3 +405,10 @@ int abcdk_test_http(abcdk_option_t *args)
 
     return ctx.errcode;
 }
+
+#else 
+int abcdk_test_http(abcdk_option_t *args)
+{
+    return 0;
+}
+#endif 

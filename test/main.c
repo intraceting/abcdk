@@ -27,7 +27,6 @@ static struct _abcdk_test_entry
     {"http",abcdk_test_http},
     {"uri",abcdk_test_uri},
     {"log",abcdk_test_log},
-    {"rpc",abcdk_test_rpc},
     {"any",abcdk_test_any},
     {"exec",abcdk_test_exec},
     {"com",abcdk_test_com},

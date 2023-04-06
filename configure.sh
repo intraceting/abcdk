@@ -984,9 +984,9 @@ DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
 #主版本
 VERSION_MAJOR="1"
 #副版本
-VERSION_MINOR="5"
+VERSION_MINOR="6"
 #发行版本
-VERSION_RELEASE="12"
+VERSION_RELEASE="1"
 
 #目标平台
 TARGET="native"
