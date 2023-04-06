@@ -75,9 +75,6 @@ struct _abcdk_comm_node
     abcdk_comm_callback_t *callback;
     abcdk_comm_callback_t cb_cp;
 
-    /** 扩展数据指针。*/
-    abcdk_object_t *extend;
-
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
 
@@ -129,7 +126,6 @@ void abcdk_comm_unref(abcdk_comm_node_t **node)
     }
 
     abcdk_closep(&node_p->fd);
-    abcdk_object_unref(&node_p->extend);
     abcdk_object_unref(&node_p->userdata);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_mutex_destroy(&node_p->out_locker);
@@ -150,7 +146,7 @@ abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src)
     return src;
 }
 
-abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t userdata)
+abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t userdata)
 {
     abcdk_comm_node_t *node = NULL;
 
@@ -164,7 +160,6 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t user
     node->refcount = 1;
     node->ctx = ctx;
     node->fd = -1;
-    node->extend = abcdk_object_alloc3(extend,1);
     node->userdata = abcdk_object_alloc3(userdata,1);
     node->out_queue = abcdk_tree_alloc3(1);
     abcdk_mutex_init2(&node->out_locker,0);
@@ -187,32 +182,6 @@ SSL *abcdk_comm_ssl(abcdk_comm_node_t *node)
 #endif 
 
     return NULL;
-}
-
-abcdk_object_t *abcdk_comm_extend(abcdk_comm_node_t *node)
-{
-    assert(node != NULL);
-
-    return abcdk_object_refer(node->extend);
-}
-
-void *abcdk_comm_get_extend0(abcdk_comm_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->extend->pptrs[0];
-}
-
-void *abcdk_comm_set_extend0(abcdk_comm_node_t *node,void *opaque)
-{
-    void *old;
-
-    assert(node != NULL);
-
-    old = node->extend->pptrs[0];
-    node->extend->pptrs[0] = (uint8_t*)opaque;
-
-    return old;
 }
 
 abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node)
@@ -382,7 +351,7 @@ void _abcdk_comm_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
     if (listen->callback->prepare_cb)
         listen->callback->prepare_cb(node, listen);
     else
-        abcdk_comm_alloc(listen->ctx, 0, 0);
+        abcdk_comm_alloc(listen->ctx, 0);
 }
 
 /*声明输入事件钩子函数。*/

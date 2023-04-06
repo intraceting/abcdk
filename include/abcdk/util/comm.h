@@ -132,12 +132,11 @@ abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src);
 /**
  * 申请通讯对象。
  * 
- * @param [in] extend 扩展数据长度。
  * @param [in] userdata 用户数据长度。
  *
  * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t userdata);
+abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t userdata);
 
 /**
  * SSL环境。
@@ -145,29 +144,6 @@ abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t extend, size_t user
  * @note 连接建立后有效，且调用者不能释放。
 */
 SSL *abcdk_comm_ssl(abcdk_comm_node_t *node);
-
-/**
- * 通讯对象的扩展数据。
- * 
- * @note 增加引用，调用者需要主动释放。
-*/
-abcdk_object_t *abcdk_comm_extend(abcdk_comm_node_t *node);
-
-/**
- * 获取通讯对象的扩展数据指针。
- * 
- * @return 旧的指针(0号索引)。
-*/
-void *abcdk_comm_get_extend0(abcdk_comm_node_t *node);
-#define abcdk_comm_get_extend abcdk_comm_get_extend0
-
-/**
- * 设置通讯对象的扩展数据指针。
- * 
- * @return 旧的指针(0号索引)。
-*/
-void *abcdk_comm_set_extend0(abcdk_comm_node_t *node,void *opaque);
-#define abcdk_comm_set_extend abcdk_comm_set_extend0
 
 /**
  * 通讯对象的用户环境。
