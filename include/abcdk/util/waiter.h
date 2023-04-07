@@ -10,7 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/time.h"
 #include "abcdk/util/map.h"
-#include "abcdk/util/queue.h"
+#include "abcdk/util/mutex.h"
 
 __BEGIN_DECLS
 
@@ -28,23 +28,20 @@ void abcdk_waiter_free(abcdk_waiter_t **waiter);
 abcdk_waiter_t *abcdk_waiter_alloc();
 
 /**
- * 请求(注册)。
- * 
- * @note 队列将被托管理，应用层不可以继续访问对象。
+ * 注册。
  * 
  * @return 0 成功，-1 失败(KEY重复)。
 */
-int abcdk_waiter_request(abcdk_waiter_t *waiter,uint64_t key, abcdk_queue_t *queue);
+int abcdk_waiter_register(abcdk_waiter_t *waiter,uint64_t key);
 
 /**
  * 等待。
  * 
- * @param max 最大应答数量。
  * @param timeout 超时(毫秒)。
  * 
- * @return !NULL(0) 成功(队列指针)，NULL(0) 失败(KEY不存在)。
+ * @return !NULL(0) 成功(对象指针)，NULL(0) 失败(超时或KEY不存在)。
 */
-abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max, time_t timeout);
+abcdk_object_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key,time_t timeout);
 
 /**
  * 应答。
@@ -53,7 +50,7 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
  * 
  * @return 0 成功，-1 失败(KEY不存在)。
 */
-int abcdk_waiter_response(abcdk_waiter_t *waiter,uint64_t key, const void *msg);
+int abcdk_waiter_response(abcdk_waiter_t *waiter,uint64_t key, abcdk_object_t *obj);
 
 /** 
  * 取消(仅影响等待)。

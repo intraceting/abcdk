@@ -62,18 +62,19 @@ int _abcdk_waiter_compare_cb(const void *key1, size_t size1, const void *key2, s
 void _abcdk_waiter_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     abcdk_waiter_t *waiter = (abcdk_waiter_t*)opaque;
-    abcdk_queue_t *queue_p = NULL;
+    abcdk_object_t *obj_p = NULL;
 
-    queue_p = (abcdk_queue_t *)alloc->pptrs[ABCDK_MAP_VALUE];
+    /*复制应答数据(可能为NULL(0))。*/
+    obj_p = (abcdk_object_t *)alloc->pptrs[ABCDK_MAP_VALUE];
 
     /*解除绑定关系。*/
     alloc->pptrs[ABCDK_MAP_VALUE] = NULL;
 
     /*可能已经被取走。*/
-    if (!queue_p)
+    if (!obj_p)
         return;
 
-    abcdk_queue_free(&queue_p);
+    abcdk_object_unref(&obj_p);
 }
 
 abcdk_waiter_t *abcdk_waiter_alloc()
@@ -95,12 +96,12 @@ abcdk_waiter_t *abcdk_waiter_alloc()
     return waiter;
 }
 
-int abcdk_waiter_request(abcdk_waiter_t *waiter, uint64_t key, abcdk_queue_t *queue)
+int abcdk_waiter_register(abcdk_waiter_t *waiter, uint64_t key)
 {
     abcdk_object_t *it;
     int chk = -1;
 
-    assert(waiter != NULL && queue != NULL);
+    assert(waiter != NULL);
 
     abcdk_mutex_lock(&waiter->locker, 1);
 
@@ -109,8 +110,13 @@ int abcdk_waiter_request(abcdk_waiter_t *waiter, uint64_t key, abcdk_queue_t *qu
     if (!it)
         goto final;
 
-    /*绑定队列指针，覆盖占位指针。*/
-    it->pptrs[ABCDK_MAP_VALUE] = (uint8_t*)queue;
+    /*未修改长度表示重复注册。*/
+    if (it->sizes[ABCDK_MAP_VALUE] == -1)
+        goto final;
+
+    /*覆盖占位指针和长度。*/
+    it->pptrs[ABCDK_MAP_VALUE] = NULL;
+    it->sizes[ABCDK_MAP_VALUE] = -1;
     
     chk = 0;
 
@@ -130,14 +136,14 @@ uint64_t _abcdk_waiter_clock()
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
 }
 
-abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max, time_t timeout)
+abcdk_object_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
 {
     time_t time_end;
     time_t time_span;
-    abcdk_queue_t *queue_p = NULL;
+    abcdk_object_t *obj_p = NULL;
     abcdk_object_t *it;
 
-    assert(waiter != NULL && max > 0 && timeout > 0);
+    assert(waiter != NULL && timeout > 0);
 
     /*计算过期时间。*/
     time_end = _abcdk_waiter_clock() + timeout;
@@ -148,11 +154,8 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
     if (!it)
         goto final;
 
-    /*复制队列指针。*/
-    queue_p = (abcdk_queue_t *)it->pptrs[ABCDK_MAP_VALUE];
-
     /*等待到达，或超时。*/
-    while (abcdk_queue_count(queue_p) < max)
+    while (!it->pptrs[ABCDK_MAP_VALUE])
     {
         /*计算剩余超时时长。*/
         time_span = time_end - _abcdk_waiter_clock();
@@ -166,8 +169,12 @@ abcdk_queue_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, size_t max
         abcdk_mutex_wait(&waiter->locker, time_span);
     }
 
+    /*复制应答数据(可能为NULL(0))。*/
+    obj_p = (abcdk_object_t *)it->pptrs[ABCDK_MAP_VALUE];
+
     /*解除绑定关系。*/
     it->pptrs[ABCDK_MAP_VALUE] = NULL;
+
     /*删除KEY。*/
     abcdk_map_remove(&waiter->map, &key, sizeof(key));
 
@@ -175,16 +182,15 @@ final:
 
     abcdk_mutex_unlock(&waiter->locker);
 
-    return queue_p;
+    return obj_p;
 }
 
-int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, const void *msg)
+int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, abcdk_object_t *obj)
 {
-    abcdk_queue_t *queue_p = NULL;
     abcdk_object_t *it;
     int chk = -1;
 
-    assert(waiter != NULL && msg != NULL);
+    assert(waiter != NULL && obj != NULL);
 
     abcdk_mutex_lock(&waiter->locker, 1);
 
@@ -192,12 +198,8 @@ int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, const void *msg)
     if (!it)
         goto final;
 
-    /*复制队列指针。*/
-    queue_p = (abcdk_queue_t *)it->pptrs[ABCDK_MAP_VALUE];
-
-    chk = abcdk_queue_push(queue_p, msg, 0);
-    if (chk != 0)
-        goto final;
+    /*复制对象指针。*/
+    it->pptrs[ABCDK_MAP_VALUE] = (uint8_t*)obj;
 
     /*通知到达。*/
     abcdk_mutex_signal(&waiter->locker, 1);
