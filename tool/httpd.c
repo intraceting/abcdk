@@ -1078,27 +1078,32 @@ void _abcdkhttpd_connect_event(abcdk_comm_node_t *node)
     /*设置默认协议。*/
     http_p->protocol = 1;
 
-#ifdef HEADER_SSL_H
     ssl_p = abcdk_comm_ssl(node);
-    if (ssl_p)
-    {
-        /*检查SSL验证结果。*/
-        chk = SSL_get_verify_result(ssl_p);
-        if (chk != X509_V_OK)
-        {
-            /*修改超时，使用超时检测器关闭。*/
-            abcdk_comm_set_timeout(node, 1);
-            return;
-        }
+    if (!ssl_p)
+        goto final;
 
-        /*检查SSL的本层协议。*/
-#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-        SSL_get0_alpn_selected(ssl_p, &ver_p, &ver_l);
-        if (ver_p != NULL && ver_l > 0)
-            http_p->protocol = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2), 0) == 0) ? 2 : 1);
-#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#ifdef HEADER_SSL_H
+    /*检查SSL验证结果。*/
+    chk = SSL_get_verify_result(ssl_p);
+    if (chk != X509_V_OK)
+    {
+        /*修改超时，使用超时检测器关闭。*/
+        abcdk_comm_set_timeout(node, 1);
+        return;
     }
-#endif
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    /*获取应用层协议。*/
+    SSL_get0_alpn_selected(ssl_p, &ver_p, &ver_l);
+    if (ver_p == NULL || ver_l <= 0)
+        goto final;
+
+    /*只区别h2版本。*/
+    http_p->protocol = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2), 0) == 0) ? 2 : 1);
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif // HEADER_SSL_H
+
+final:
 
     abcdk_log_printf(LOG_INFO, "Connected: %s", http_p->remote);
 

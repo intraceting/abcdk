@@ -177,9 +177,7 @@ SSL *abcdk_comm_ssl(abcdk_comm_node_t *node)
 #ifdef HEADER_SSL_H
     if(node->ssl)
         return node->ssl;
-#else
-    ABCDK_ASSERT(0, "未启用SSL支持。");
-#endif 
+#endif //HEADER_SSL_H
 
     return NULL;
 }
