@@ -612,7 +612,7 @@ abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap)
     ssize_t pos = 0;
     int chk;
 
-    assert(max > 0 && fmt != NULL && ap != NULL);
+    assert(max > 0 && fmt != NULL);
 
     obj = abcdk_object_alloc2(16 + 2 + max + 2);
     if (!obj)
