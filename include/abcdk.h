@@ -79,6 +79,7 @@
 #include "abcdk/util/swscale.h"
 #include "abcdk/util/avcodec.h"
 #include "abcdk/util/avformat.h"
+#include "abcdk/util/enigma.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"

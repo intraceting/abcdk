@@ -217,12 +217,34 @@ int abcdk_test_any(abcdk_option_t *args)
     for (int i = 0; i < p->numbers; i++)
         printf("[%d]={%s}\n",i, p->pstrs[i]);
     abcdk_object_unref(&p);
-#else
+#elif 0
 
     uint32_t a = 0x00123456;
 
     printf("%08x\n",a);
     printf("%08x\n",abcdk_endian_h_to_b32(a));
+
+#else 
+
+
+    /*
+        1,2,3,4,5,6,7,8,9,0
+        a,s,d,f,g,h,j,k,l,;
+        q,w,e,r,t,y,u,i,o,p
+    */
+    int len = 6;
+    char src[6] ={"aaaaaa"};
+    char dst[6] = {0};
+    char dst2[6] = {0};
+
+    uint8_t wheels[] ={1,1,1,1,1};
+
+    abcdk_enigma(dst,src,len,wheels,5);
+    abcdk_enigma(dst2,dst,len,wheels,5);
+
+    for(int i =0;i<len;i++)
+        printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
+
 
 #endif 
 }
