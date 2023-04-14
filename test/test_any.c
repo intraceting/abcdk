@@ -233,15 +233,108 @@ int abcdk_test_any(abcdk_option_t *args)
         q,w,e,r,t,y,u,i,o,p
     */
     int len = 6;
-    char src[6] ={"aaaaaa"};
+    char src[6] ={"abcdef"};
     char dst[6] = {0};
     char dst2[6] = {0};
 
-    uint8_t wheels[] ={1,1,1,1,1};
+    uint8_t wheels[4][2][256];
 
-    abcdk_enigma(dst,src,len,wheels,5);
-    abcdk_enigma(dst2,dst,len,wheels,5);
+    uint8_t pool[256 / 8] ={0},pool2[256 / 8] ={0},pool3[256 / 8] ={0},pool4[256 / 8] ={0};
+    size_t size = 256 / 8;
 
+    
+
+    for (int i = 0; i < 256; i++)
+    {
+        for(;;)
+        {
+            int c = rand()%256;
+            int chk = abcdk_bloom_mark(pool,size,c);
+            if(chk)
+                continue;
+
+            wheels[0][0][i] = (c)%256;
+            break;
+        }
+
+        
+        wheels[0][1][wheels[0][0][i]] = i;
+        
+
+        for(;;)
+        {
+            int c = rand()%256;
+            int chk = abcdk_bloom_mark(pool2,size,c);
+            if(chk)
+                continue;
+
+            wheels[1][0][i] = (c)%256;
+            break;
+        }
+        
+        wheels[1][1][wheels[1][0][i]] = i;
+
+         for(;;)
+        {
+            int c = rand()%256;
+            int chk = abcdk_bloom_mark(pool3,size,c);
+            if(chk)
+                continue;
+
+            wheels[2][0][i] = (c)%256;
+            break;
+        }
+
+        wheels[2][1][wheels[2][0][i]] = i;
+
+           for(;;)
+        {
+            int c = rand()%256;
+            int chk = abcdk_bloom_mark(pool4,size,c);
+            if(chk)
+                continue;
+
+            wheels[3][0][i] = (c)%256;
+            break;
+        }
+
+        wheels[3][1][wheels[3][0][i]] = i;
+    }
+
+    for (int i3 = 0; i3 < 3; i3++)
+    for (int i2 = 0; i2 < 4; i2++)
+    for (int i1 = 0; i1 < 5; i1++)
+    for (int i0 = 0; i0 < 6; i0++)
+    {
+        int s = 'a';
+        uint8_t c = s;
+        c = wheels[0][0][(c+i0)%256];
+        c = wheels[1][0][(c+i1)%256];
+        c = wheels[2][0][(c+i2)%256];
+        c = wheels[3][0][(c+i3)%256];
+        c = (~c) % 256;
+        c = wheels[3][1][c] - i3;
+        c = wheels[2][1][c] - i2;
+        c = wheels[1][1][c] - i1;
+        c = wheels[0][1][c] - i0;
+
+        //printf("s = %d, c=%hhd\n",s,c);
+
+        int m = c;
+
+        c = wheels[0][0][(c+i0)%256];
+        c = wheels[1][0][(c+i1)%256];
+        c = wheels[2][0][(c+i2)%256];
+        c = wheels[3][0][(c+i3)%256];
+        c = (~c) % 256;
+        c = wheels[3][1][c] - i3;
+        c = wheels[2][1][c] - i2;
+        c = wheels[1][1][c] - i1;
+        c = wheels[0][1][c] - i0;
+
+        printf("[%d,%d,%d,%d] s=%d,m=%d,c=%hhd\n",i0,i1,i2,i3,s,m, c);
+    }
+    
     for(int i =0;i<len;i++)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
 
