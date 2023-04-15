@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/heap.h"
+#include "abcdk/util/random.h"
 
 __BEGIN_DECLS
 
@@ -19,22 +20,43 @@ typedef struct _abcdk_enigma abcdk_enigma_t;
 /** 配置。*/
 typedef struct _abcdk_enigma_config
 {
-    /** 字典数量。*/
-    uint8_t count;
+    /** 字典行数。*/
+    size_t rows;
+
+    /** 字典列数。*/
+    size_t cols;
     
     /** 字典表格。*/
-    const uint8_t dict[256][256];
+    uint8_t dict[256*256];
 
     /** 反射器。*/
     uint8_t (*reflector_cb)(uint8_t s);
     
 }abcdk_enigma_config_t;
 
+/**
+ * 制作字典。
+ * 
+ * @param [in out] seed 随机种子。
+ * @param [in out] dict 字典表格。
+ * @param [in] rows 字典行数。
+ * @param [in] cols 字典列数。
+*/
+void abcdk_enigma_mkdict(uint64_t *seed,uint8_t *dict,size_t rows,size_t cols);
+
+
 /** 销毁。*/
 void abcdk_enigma_free(abcdk_enigma_t **ctx);
 
-/** 创建。*/
-abcdk_enigma_t *abcdk_enigma_create(abcdk_enigma_config_t *cfg);
+/** 
+ * 创建。
+ * 
+ * @param [in out] dict 字典表格。
+ * @param [in] rows 字典行数。
+ * @param [in] cols 字典列数。
+ * 
+*/
+abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols);
 
 /** 
  * 获取转子指针。

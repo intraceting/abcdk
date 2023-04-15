@@ -224,7 +224,7 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("%08x\n",a);
     printf("%08x\n",abcdk_endian_h_to_b32(a));
 
-#else 
+#elif 0
 
 
     /*
@@ -242,13 +242,13 @@ int abcdk_test_any(abcdk_option_t *args)
     uint8_t pool[256 / 8] ={0},pool2[256 / 8] ={0},pool3[256 / 8] ={0},pool4[256 / 8] ={0};
     size_t size = 256 / 8;
 
-    
+    uint64_t seed = 3;
 
     for (int i = 0; i < 256; i++)
     {
         for(;;)
         {
-            int c = rand()%256;
+            int c = abcdk_rand(&seed)%256;
             int chk = abcdk_bloom_mark(pool,size,c);
             if(chk)
                 continue;
@@ -263,7 +263,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
         for(;;)
         {
-            int c = rand()%256;
+            int c = abcdk_rand(&seed)%256;
             int chk = abcdk_bloom_mark(pool2,size,c);
             if(chk)
                 continue;
@@ -276,7 +276,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
          for(;;)
         {
-            int c = rand()%256;
+            int c = abcdk_rand(&seed)%256;
             int chk = abcdk_bloom_mark(pool3,size,c);
             if(chk)
                 continue;
@@ -289,7 +289,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
            for(;;)
         {
-            int c = rand()%256;
+            int c = abcdk_rand(&seed)%256;
             int chk = abcdk_bloom_mark(pool4,size,c);
             if(chk)
                 continue;
@@ -304,7 +304,7 @@ int abcdk_test_any(abcdk_option_t *args)
     for (int i3 = 0; i3 < 3; i3++)
     for (int i2 = 0; i2 < 4; i2++)
     for (int i1 = 0; i1 < 5; i1++)
-    for (int i0 = 0; i0 < 6; i0++)
+    for (int i0 = 0; i0 < 256; i0++)
     {
         int s = 'a';
         uint8_t c = s;
@@ -338,6 +338,41 @@ int abcdk_test_any(abcdk_option_t *args)
     for(int i =0;i<len;i++)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
 
+#else
+
+    uint8_t *dist = abcdk_heap_alloc(256*256);
+
+    size_t rows = 10;
+    size_t cols = 100;
+
+    uint64_t seed = 1;
+
+    abcdk_enigma_mkdict(&seed,dist,rows,cols);
+
+    abcdk_enigma_t *send_ctx = abcdk_enigma_create(dist,rows,cols);
+    abcdk_enigma_t *recv_ctx = abcdk_enigma_create(dist,rows,cols);
+
+    for (int i = 0; i < 1000000; i++)
+    {
+        char src[60] = {0};
+        char dst[60] = {0};
+        char dst2[60] = {0};
+
+        for(int j=0;j<50;j++)
+            src[j] = rand()%cols;
+
+        abcdk_enigma_execute(send_ctx, dst, src, 50);
+
+        abcdk_enigma_execute(recv_ctx, dst2, dst, 50);
+
+        int chk = memcmp(src, dst2, 50);
+        assert(chk == 0);
+    }
+
+    abcdk_enigma_free(&send_ctx);
+    abcdk_enigma_free(&recv_ctx);
+
+    abcdk_heap_free(dist);
 
 #endif 
 }

@@ -71,6 +71,7 @@ void *abcdk_hex2bin(void *dst,const char* src,size_t size);
 */
 const char *abcdk_match_env(const char *line, const char *name, uint8_t delim);
 
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_GENERAL_H
