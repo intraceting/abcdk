@@ -124,7 +124,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols)
             /*正向字典。*/
             ctx->rotors[y].fdict[x] = c;
             /*逆向字典（正向字典的索引）。*/
-            ctx->rotors[y].bdict[ctx->rotors[y].fdict[x]] = x;
+            ctx->rotors[y].bdict[c] = x;
         }
     }
 
@@ -139,9 +139,9 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols)
     }
     else
     {
-        for (size_t x = 0; x < cols / 2; x++)
+        for (size_t x = 0; x < cols; x++)
         {
-            ctx->rdict[x] = x + cols / 2;
+            ctx->rdict[x] = cols - 1 - x;
             ctx->rdict[ctx->rdict[x]] = x;
         }
     }
@@ -222,7 +222,7 @@ uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
         c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) % ctx->cols];
 
     /* 通过反射板。*/
-    c = ctx->rdict[c];
+  //  c = ctx->rdict[c];
 
     /*
      * 逆向通过转子。

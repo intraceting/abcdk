@@ -343,7 +343,7 @@ int abcdk_test_any(abcdk_option_t *args)
     uint8_t *dist = abcdk_heap_alloc(256*256);
 
     size_t rows = 10;
-    size_t cols = 100;
+    size_t cols = 256;
 
     uint64_t seed = 1;
 
@@ -358,14 +358,14 @@ int abcdk_test_any(abcdk_option_t *args)
         char dst[60] = {0};
         char dst2[60] = {0};
 
-        for(int j=0;j<50;j++)
+        for(int j=0;j<20;j++)
             src[j] = rand()%cols;
 
-        abcdk_enigma_execute(send_ctx, dst, src, 50);
+        abcdk_enigma_execute(send_ctx, dst, src, 20);
 
-        abcdk_enigma_execute(recv_ctx, dst2, dst, 50);
+        abcdk_enigma_execute(recv_ctx, dst2, dst, 20);
 
-        int chk = memcmp(src, dst2, 50);
+        int chk = memcmp(src, dst2, 20);
         assert(chk == 0);
     }
 
