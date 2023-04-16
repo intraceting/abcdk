@@ -219,7 +219,10 @@ uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
      * 
     */
     for (size_t y = 0; y < ctx->rows; y++)
+    {
         c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) % ctx->cols];
+        printf("fc[%lu]=%hhu\n",y,c);
+    }
 
     /* 通过反射板。*/
   //  c = ctx->rdict[c];
@@ -236,7 +239,10 @@ uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
     */
 
     for (size_t y = 0; y < ctx->rows; y++)
+    {
         c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] - ctx->rotors[ctx->rows - 1 - y].pos) % ctx->cols;
+        printf("bc[%lu]=%hhu\n",y,c);
+    }
 
     return c;
 }
