@@ -361,11 +361,11 @@ int abcdk_test_any(abcdk_option_t *args)
         for(int j=0;j<20;j++)
             src[j] = rand()%cols;
 
-        abcdk_enigma_execute(send_ctx, dst, src, 1);
+        abcdk_enigma_execute(send_ctx, dst, src, 10);
 
-        abcdk_enigma_execute(recv_ctx, dst2, dst, 1);
+        abcdk_enigma_execute(recv_ctx, dst2, dst, 10);
 
-        int chk = memcmp(src, dst2, 1);
+        int chk = memcmp(src, dst2, 10);
         assert(chk == 0);
     }
 
