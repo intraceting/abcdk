@@ -49,6 +49,7 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols
 
         for (size_t x = 0; x < cols; x++)
         {
+#if 0
             for (;;)
             {
                 c = abcdk_rand(seed) % cols;
@@ -59,6 +60,9 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols
                 ABCDK_PTR2U8(dict, y * cols + x) = (c) % cols;
                 break;
             }
+#else
+            ABCDK_PTR2U8(dict, y * cols + x) = x;
+#endif 
         }
     }
 }

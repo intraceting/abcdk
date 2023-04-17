@@ -17,23 +17,6 @@ __BEGIN_DECLS
 /** Enigma加密机。*/
 typedef struct _abcdk_enigma abcdk_enigma_t;
 
-/** 配置。*/
-typedef struct _abcdk_enigma_config
-{
-    /** 字典行数。*/
-    size_t rows;
-
-    /** 字典列数。*/
-    size_t cols;
-    
-    /** 字典表格。*/
-    uint8_t dict[256*256];
-
-    /** 反射器。*/
-    uint8_t (*reflector_cb)(uint8_t s);
-    
-}abcdk_enigma_config_t;
-
 /**
  * 制作字典。
  * 

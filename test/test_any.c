@@ -362,7 +362,7 @@ int abcdk_test_any(abcdk_option_t *args)
             src[j] = rand()%cols;
 
         abcdk_enigma_execute(send_ctx, dst, src, 10);
-
+        printf("---------------------------\n");
         abcdk_enigma_execute(recv_ctx, dst2, dst, 10);
 
         int chk = memcmp(src, dst2, 10);
