@@ -337,6 +337,26 @@ int abcdk_test_any(abcdk_option_t *args)
     
     for(int i =0;i<len;i++)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
+#elif 1
+
+    uint8_t dist[4] = {0};
+    uint8_t a[4] = {0};
+    uint64_t seed = 3;
+
+    abcdk_enigma_mkdict(&seed,dist,1,4);
+
+    for(int i = 0;i<4;i++)
+    {
+        a[i] = dist[i];
+        a[dist[i]] = i;
+    }
+
+    for(int i = 0;i<4;i++)
+    {
+        printf("%hhu=%hhu\r\n",i,a[i]);
+    }
+
+
 
 #else
 
