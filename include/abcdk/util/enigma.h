@@ -57,9 +57,21 @@ uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx,uint8_t rotor);
 uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx,uint8_t rotor, uint8_t pos);
 
 /**
- * 执行。
+ * 亮灯。
+ * 
+ * @note 加密和解密过程是相同的，输一个得到另一个。
+ * 
+ * @param s 源值。
+ * 
+ * @return 目标值。
+ * 
 */
-void abcdk_enigma_execute(abcdk_enigma_t *ctx,void *dst,const void *src,size_t size);
+uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s);
+
+/**
+ * 批量亮灯。
+*/
+void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size);
 
 
 __END_DECLS

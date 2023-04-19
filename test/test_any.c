@@ -339,24 +339,73 @@ int abcdk_test_any(abcdk_option_t *args)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
 #elif 0
 
-    uint8_t dist[4] = {0};
-    uint8_t a[4] = {0};
-    uint64_t seed = 3;
+    size_t rows = 3;
+    size_t cols = 256;
 
-    abcdk_enigma_mkdict(&seed,dist,1,4);
+    uint8_t *send_dist = abcdk_heap_alloc(rows * cols);
+    uint8_t *recv_dist = abcdk_heap_alloc(rows * cols);
 
-    for(int i = 0;i<4;i++)
+    uint64_t send_seed = 1 ,recv_seed = 1;
+
+    abcdk_enigma_mkdict(&send_seed, send_dist, rows, cols);
+    abcdk_enigma_mkdict(&recv_seed, recv_dist, rows, cols);
+
+    abcdk_enigma_t *send_ctx = abcdk_enigma_create(send_dist, rows, cols);
+    abcdk_enigma_t *recv_ctx = abcdk_enigma_create(recv_dist, rows, cols);
+
+    int n = 6;
+    char a[] = {"aaaaaa"};
+    char b[100] = {0},c[100] = {0};
+    
+    abcdk_enigma_light_batch(send_ctx, b, a, n);
+    abcdk_enigma_light_batch(recv_ctx, c, b, n);
+    
+    abcdk_enigma_light_batch(send_ctx, b, a, n);
+    abcdk_enigma_light_batch(recv_ctx, c, b, n);
+
+    abcdk_enigma_free(&send_ctx);
+    abcdk_enigma_free(&recv_ctx);
+
+    abcdk_heap_free(send_dist);
+    abcdk_heap_free(recv_dist);
+#elif 1
+
+    size_t rows = 3;
+    size_t cols = 256;
+
+    uint8_t *send_dist = abcdk_heap_alloc(rows * cols);
+    uint8_t *recv_dist = abcdk_heap_alloc(rows * cols);
+
+    uint64_t send_seed = 1234 ,recv_seed = 1234;
+
+    abcdk_enigma_mkdict(&send_seed, send_dist, rows, cols);
+    abcdk_enigma_mkdict(&recv_seed, recv_dist, rows, cols);
+
+    abcdk_enigma_t *send_ctx = abcdk_enigma_create(send_dist, rows, cols);
+    abcdk_enigma_t *recv_ctx = abcdk_enigma_create(recv_dist, rows, cols);
+
+    abcdk_object_t *f = abcdk_mmap_filename("./test1.mp4",0,0,0);
+
+    uint64_t st=0;
+    abcdk_clock(st,&st);
+    
+    for(size_t i =0;i<f->sizes[0];i++)
     {
-        a[i] = dist[i];
-        a[dist[i]] = i;
+        uint8_t s = f->pptrs[0][i];
+        uint8_t d = abcdk_enigma_light(send_ctx,s);
+        uint8_t d2 = abcdk_enigma_light(recv_ctx,d);
+        assert(s == d2);
     }
 
-    for(int i = 0;i<4;i++)
-    {
-        printf("%hhu=%hhu\r\n",i,a[i]);
-    }
+    printf("cast:%lu\n",abcdk_clock(st,&st));
 
+    abcdk_object_unref(&f);
 
+    abcdk_enigma_free(&send_ctx);
+    abcdk_enigma_free(&recv_ctx);
+
+    abcdk_heap_free(send_dist);
+    abcdk_heap_free(recv_dist);
 
 #else
 
@@ -389,9 +438,9 @@ int abcdk_test_any(abcdk_option_t *args)
                 for (int j = 0; j < n; j++)
                     src[j] = rand() % cols;
 
-                abcdk_enigma_execute(send_ctx, dst, src, n);
+                abcdk_enigma_light_batch(send_ctx, dst, src, n);
                 //     printf("---------------------------\n");
-                abcdk_enigma_execute(recv_ctx, dst2, dst, n);
+                abcdk_enigma_light_batch(recv_ctx, dst2, dst, n);
 
                 int chk = memcmp(src, dst2, n);
                 assert(chk == 0);

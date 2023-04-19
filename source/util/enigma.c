@@ -175,9 +175,14 @@ uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, uint8_t rotor, uint8_t pos)
     return old;
 }
 
-uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
+uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
 {
-    uint8_t c = s;
+    uint8_t c;
+
+    assert(ctx != NULL);
+    assert(s < ctx->cols);
+
+    c = s;
 
     /*
      * 第一个转子转动一位。
@@ -209,7 +214,6 @@ uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
     for (size_t y = 0; y < ctx->rows; y++)
     {
         c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) % ctx->cols];
-  //      printf("fc[%lu]=%hhu\n",y,c);
     }
 
     /* 通过反射板。*/
@@ -228,16 +232,15 @@ uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
     for (size_t y = 0; y < ctx->rows; y++)
     {
         c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] + (ctx->cols - ctx->rotors[ctx->rows - 1 - y].pos)) % ctx->cols;
-    //    printf("bc[%lu]=%hhu\n",y,c);
     }
 
     return c;
 }
 
-void abcdk_enigma_execute(abcdk_enigma_t *ctx, void *dst, const void *src, size_t size)
+void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
 {
     assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
 
     for (size_t i = 0; i < size; i++)
-        ABCDK_PTR2U8(dst, i) = _abcdk_enigma_light(ctx, ABCDK_PTR2U8(src, i));
+        ABCDK_PTR2U8(dst, i) = abcdk_enigma_light(ctx, ABCDK_PTR2U8(src, i));
 }
