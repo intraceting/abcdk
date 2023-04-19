@@ -381,7 +381,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
             for (int i = 0; i < 1000; i++)
             {
-                int n = rand() % 50 + 1;
+                int n = rand() % 500 + 1;
                 char src[600] = {0};
                 char dst[600] = {0};
                 char dst2[600] = {0};
