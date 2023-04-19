@@ -35,8 +35,8 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx);
  * 创建。
  * 
  * @param [in out] dict 字典表格。
- * @param [in] rows 字典行数。
- * @param [in] cols 字典列数。
+ * @param [in] rows 字典行数(转子的个数)。
+ * @param [in] cols 字典列数(转子的通道)。
  * 
 */
 abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols);

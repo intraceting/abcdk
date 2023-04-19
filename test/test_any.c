@@ -337,7 +337,7 @@ int abcdk_test_any(abcdk_option_t *args)
     
     for(int i =0;i<len;i++)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
-#elif 1
+#elif 0
 
     uint8_t dist[4] = {0};
     uint8_t a[4] = {0};
@@ -360,39 +360,49 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #else
 
-    uint8_t *dist = abcdk_heap_alloc(256*256);
-
-    size_t rows = 3;
-    size_t cols = 4;
-
-    uint64_t seed = 1;
-
-    abcdk_enigma_mkdict(&seed,dist,rows,cols);
-
-    abcdk_enigma_t *send_ctx = abcdk_enigma_create(dist,rows,cols);
-    abcdk_enigma_t *recv_ctx = abcdk_enigma_create(dist,rows,cols);
-
-    for (int i = 0; i < 1000000; i++)
+    for (int y = 3; y <= 256; y++)
     {
-        char src[60] = {0};
-        char dst[60] = {0};
-        char dst2[60] = {0};
+        #pragma omp parallel for num_threads(4)
+        for (int x = 4; x <= 256; x += 2)
+        {
+            printf("row=%d,col=%d\n",y,x);
 
-        for(int j=0;j<20;j++)
-            src[j] = rand()%cols;
+            size_t rows = y;
+            size_t cols = x;
 
-        abcdk_enigma_execute(send_ctx, dst, src, 10);
-        printf("---------------------------\n");
-        abcdk_enigma_execute(recv_ctx, dst2, dst, 10);
+            uint8_t *dist = abcdk_heap_alloc(rows * cols);
 
-        int chk = memcmp(src, dst2, 10);
-        assert(chk == 0);
+            uint64_t seed = x;
+
+            abcdk_enigma_mkdict(&seed, dist, rows, cols);
+
+            abcdk_enigma_t *send_ctx = abcdk_enigma_create(dist, rows, cols);
+            abcdk_enigma_t *recv_ctx = abcdk_enigma_create(dist, rows, cols);
+
+            for (int i = 0; i < 1000; i++)
+            {
+                int n = rand() % 50 + 1;
+                char src[600] = {0};
+                char dst[600] = {0};
+                char dst2[600] = {0};
+
+                for (int j = 0; j < n; j++)
+                    src[j] = rand() % cols;
+
+                abcdk_enigma_execute(send_ctx, dst, src, n);
+                //     printf("---------------------------\n");
+                abcdk_enigma_execute(recv_ctx, dst2, dst, n);
+
+                int chk = memcmp(src, dst2, n);
+                assert(chk == 0);
+            }
+
+            abcdk_enigma_free(&send_ctx);
+            abcdk_enigma_free(&recv_ctx);
+
+            abcdk_heap_free(dist);
+        }
     }
-
-    abcdk_enigma_free(&send_ctx);
-    abcdk_enigma_free(&recv_ctx);
-
-    abcdk_heap_free(dist);
 
 #endif 
 }

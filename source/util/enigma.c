@@ -49,7 +49,6 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols
 
         for (size_t x = 0; x < cols; x++)
         {
-#if 1
             for (;;)
             {
                 c = abcdk_rand(seed) % cols;
@@ -60,9 +59,6 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols
                 ABCDK_PTR2U8(dict, y * cols + x) = (c) % cols;
                 break;
             }
-#else
-            ABCDK_PTR2U8(dict, y * cols + x) = x;
-#endif 
         }
     }
 }
@@ -90,7 +86,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols)
     uint8_t c;
     int chk;
 
-    assert(dict != NULL && rows > 0 && rows <= 256 && cols >= 4 && cols <= 256 && cols % 2 == 0);
+    assert(dict != NULL && rows >= 3 && rows <= 256 && cols >= 4 && cols <= 256 && cols % 2 == 0);
 
     /*检查字典表，每张字典表中的字符不能出现重复的。*/
     for (size_t y = 0; y < rows; y++)
@@ -132,24 +128,12 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols)
         }
     }
 
-    /*初始化反射板。*/
-    if(cols == 4 || cols == 8 || cols == 16 || cols == 32 || cols == 64 || cols == 128 || cols == 256)
+    /*初始化反射板。两个索引之间形成互查字典。*/
+    for (size_t x = 0; x < cols; x++)
     {
-        for (size_t x = 0; x < cols; x++)
-        {
-            ctx->rdict[x] = (~x)%cols;
-            ctx->rdict[ctx->rdict[x]] = x;
-        }
+        ctx->rdict[x] = (~x)%cols;
     }
-    else
-    {
-        for (size_t x = 0; x < cols; x++)
-        {
-            ctx->rdict[x] = cols - 1 - x;
-            ctx->rdict[ctx->rdict[x]] = x;
-        }
-    }
-    
+
 
     ctx->cols = cols;
     ctx->rows = rows;
@@ -225,27 +209,26 @@ uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
     for (size_t y = 0; y < ctx->rows; y++)
     {
         c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) % ctx->cols];
-        printf("fc[%lu]=%hhu\n",y,c);
+  //      printf("fc[%lu]=%hhu\n",y,c);
     }
 
     /* 通过反射板。*/
-  //  c = ctx->rdict[c];
+    c = ctx->rdict[c];
 
     /*
      * 逆向通过转子。
      * 
      * 1：转子转动的实质是rotor表在POS位置，那么实际上就是：
-     * c = rotor->bdict[c] - POS
+     * c = rotor->bdict[c] + (COLS- POS)
      * 
      * 2：因为rotor只有COLS个元素，为了让转子形成环形转动效果，所以应该写成如下形式:
-     * c = (rotor->bdict[c] - POS) % COLS
+     * c = (rotor->bdict[c] + (COLS- POS)) % COLS
      * 
     */
-
     for (size_t y = 0; y < ctx->rows; y++)
     {
-        c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] - ctx->rotors[ctx->rows - 1 - y].pos) % ctx->cols;
-        printf("bc[%lu]=%hhu\n",y,c);
+        c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] + (ctx->cols - ctx->rotors[ctx->rows - 1 - y].pos)) % ctx->cols;
+    //    printf("bc[%lu]=%hhu\n",y,c);
     }
 
     return c;

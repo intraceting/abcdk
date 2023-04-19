@@ -73,6 +73,7 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
 {
     int fd = -1;
     char strpid[16] = {0};
+    int chk;
 
     assert(lockfile);
 
@@ -87,7 +88,7 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
         snprintf(strpid,15,"%d",getpid());
 
         /* 清空。*/
-        ftruncate(fd, 0);
+        chk = ftruncate(fd, 0);
 
         /*写入文件。*/
         abcdk_write(fd,strpid,strlen(strpid));
