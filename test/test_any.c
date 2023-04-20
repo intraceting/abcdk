@@ -337,7 +337,7 @@ int abcdk_test_any(abcdk_option_t *args)
     
     for(int i =0;i<len;i++)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
-#elif 0
+#elif 1
 
     size_t rows = 3;
     size_t cols = 256;
@@ -353,13 +353,21 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_enigma_t *send_ctx = abcdk_enigma_create(send_dist, rows, cols);
     abcdk_enigma_t *recv_ctx = abcdk_enigma_create(recv_dist, rows, cols);
 
-    int n = 6;
+    int n = 1;
     char a[] = {"aaaaaa"};
     char b[100] = {0},c[100] = {0};
     
-    abcdk_enigma_light_batch(send_ctx, b, a, n);
-    abcdk_enigma_light_batch(recv_ctx, c, b, n);
-    
+    uint64_t st=0;
+    abcdk_clock(st,&st);
+
+    for(int i=0;i<100000000;i++)
+    {
+        abcdk_enigma_light_batch(send_ctx, b, a, n);
+    //    abcdk_enigma_light_batch(recv_ctx, c, b, n);
+    }
+
+    printf("cast:%lu\n",abcdk_clock(st,&st));
+
     abcdk_enigma_light_batch(send_ctx, b, a, n);
     abcdk_enigma_light_batch(recv_ctx, c, b, n);
 
