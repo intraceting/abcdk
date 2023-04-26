@@ -1,0 +1,242 @@
+/*
+ * This file is part of ABCDK.
+ *
+ * MIT License
+ *
+ */
+#include "abcdk/util/logger.h"
+
+/** 日志接口。*/
+struct _abcdk_logger
+{
+    /** 文件锁。*/
+    abcdk_mutex_t mutex;
+
+    /** 文件句柄。*/
+    int fd;
+
+    /** 文件名(包括路径)。*/
+    char name[PATH_MAX];
+
+    /** 分段文件名(包括路径)。*/
+    char segment_name[PATH_MAX];
+
+    /** 分段数量。*/
+    size_t segment_max;
+    
+    /** 分段大小(MB)。*/
+    size_t segment_size;
+
+    /** 
+     * 复制到stderr。
+     * 是：!0
+     * 否： 0
+    */
+    int copy2stderr;
+
+    /** 
+     * 复制到syslog。
+     * 是：!0
+     * 否： 0
+    */
+    int copy2syslog;
+
+    /** 
+     * 掩码。
+     * 
+     * 见syslog。
+    */
+    volatile uint32_t mask;
+
+    /** 缓存。*/
+    abcdk_object_t *buf;
+
+};// abcdk_logger_t;
+
+void abcdk_logger_close(abcdk_logger_t **ctx)
+{
+    abcdk_logger_t *ctx_p = NULL;
+
+    if(!ctx ||!*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    abcdk_closep(&ctx_p->fd);
+    abcdk_mutex_unlock(&ctx_p->mutex);
+    abcdk_object_unref(&ctx_p->buf);
+}
+
+abcdk_logger_t *abcdk_logger_open(const char *name,const char *segment_name,size_t segment_max,size_t segment_size,int copy2syslog,int copy2stderr)
+{
+    abcdk_logger_t *ctx = NULL;
+
+    assert(name != NULL);
+
+    ctx = abcdk_heap_alloc(sizeof(abcdk_logger_t));
+    if(!ctx)
+        return NULL;
+    
+    ctx->fd = -1;
+    ctx->segment_size = segment_size * 1024 * 1024;
+    ctx->segment_max = segment_max;
+    ctx->copy2stderr = copy2stderr;
+    ctx->copy2syslog = copy2syslog;
+    ctx->mask = 0xFFFFFFFF;
+    ctx->buf = NULL;
+
+    abcdk_mutex_init2(&ctx->mutex,0);
+
+    /*复制文件名。*/
+    strncpy(ctx->name, name, PATH_MAX);
+
+    /*复制或构造分段文件名。*/
+    if (segment_name)
+    {
+        if (segment_name[0] == '/')
+            strncpy(ctx->segment_name, segment_name, PATH_MAX);
+        else
+        {
+            abcdk_dirname(ctx->segment_name,ctx->name);
+            abcdk_dirdir(ctx->segment_name,segment_name);
+        }
+    }
+
+    return ctx;
+}
+
+void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
+{
+    uint32_t mask = 0;
+
+    assert(ctx != NULL);
+
+    va_list vaptr;
+    va_start(vaptr, type);
+    for (;;)
+    {
+        if (type < ABCDK_LOGGER_ERROR || type >= ABCDK_LOGGER_MAX)
+            break;
+
+        mask |= (1 << type);
+
+        /*遍历后续的。*/
+        type = va_arg(vaptr, int);
+    }
+    va_end(vaptr);
+
+    /*覆盖现有的。*/
+    abcdk_atomic_store(&ctx->mask, mask);
+}
+
+void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_list ap)
+{
+    uint64_t ts = 0;
+    struct tm tm;
+    char name[17] = {0};
+    int len,len2;
+    struct stat attr;
+    int chk;
+
+    assert(ctx != NULL && fmt != NULL);
+
+    /*不知道什么类型，直接跳过。*/
+    if (type < ABCDK_LOGGER_ERROR || type >= ABCDK_LOGGER_MAX)
+        return;
+
+    /*如果不需要记录，直接跳过。*/
+    if (!(abcdk_atomic_load(&ctx->mask) & (1 << type)))
+        return;
+
+    /*获取自然时间。*/
+    ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
+    abcdk_time_sec2tm(&tm,ts/1000000,0);
+
+    /*获取线程名称。*/
+    abcdk_thread_getname(pthread_self(),name);
+    
+    /*加锁，确保每个线程写操作不被打断。*/
+    abcdk_mutex_lock(&ctx->mutex,1);
+
+    /*没有缓存，申请一个。*/
+    if(!ctx->buf)
+    {
+        ctx->buf = abcdk_object_alloc2(ABCDK_MIN((1 * 1024 * 1024UL),ctx->segment_size));
+        if (!ctx->buf)
+           return;
+    }
+
+    /*格式化。*/
+    len = snprintf(ctx->buf->pstrs[0], ctx->buf->sizes[0], "%04d%02d%02d%02d%02d%02d.%06lu p%d %s: ",
+                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), name);
+    len2 = vsnprintf(ctx->buf->pstrs[0] + len, ctx->buf->sizes[0] - len, fmt, ap);
+
+    /*可能还需要追加换行符。*/
+    if (ctx->buf->pstrs[0][len + len2 - 1] != '\n')
+        ctx->buf->pstrs[0][len + len2++] = '\n'; //长度会+1。
+
+    /*结束符。*/
+    ctx->buf->pstrs[0][len + len2] = '\0';
+    
+    /*可能需要复制到stderr。*/
+    if (ctx->copy2stderr)
+        fprintf(stderr, "%s", ctx->buf->pstrs[0]);
+
+    /*可能需要复制到syslog。*/
+    if (ctx->copy2syslog)
+        syslog(type, "p%d %s: %s", getpid(), name, ctx->buf->pstrs[0] + len);
+
+    /*写文件。*/
+open_log_file:
+
+    if (ctx->fd < 0)
+    {
+        abcdk_mkdir(ctx->name,0666);
+        ctx->fd = abcdk_open(ctx->name, 1, 0, 1);
+    }
+
+    if (ctx->fd < 0)
+        goto final;
+
+    chk = fstat(ctx->fd, &attr);
+    if (chk != 0)
+        goto final;
+
+    if (ctx->segment_name[0] &&
+        ctx->segment_max > 0 &&
+        ctx->segment_size > 0 &&
+        attr.st_size >= ctx->segment_size)
+    {
+        abcdk_closep(&ctx->fd);
+        abcdk_file_segment(ctx->name, ctx->segment_name, ctx->segment_max);
+        goto open_log_file;
+    }
+    else
+    {   
+        /*在末尾追加。*/
+        lseek(ctx->fd,0,SEEK_END);
+
+        /*写，内部会保正写完。如果写不完，就是出错或没空间了。*/
+        abcdk_write(ctx->fd,ctx->buf->pstrs[0],len+len2);
+        
+#if 0
+        /*落盘，非常慢。*/
+        fsync(ctx->fd);
+#endif
+    }
+
+final:
+
+    abcdk_mutex_unlock(&ctx->mutex);
+}
+
+void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...)
+{
+    assert(ctx != NULL && fmt != NULL);
+
+    va_list ap;
+    va_start(ap, fmt);
+    abcdk_logger_vprintf(ctx,type, fmt, ap);
+    va_end(ap);
+}
