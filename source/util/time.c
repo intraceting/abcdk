@@ -19,7 +19,7 @@ uint64_t abcdk_time_clock2kind(struct timespec *ts, uint8_t precision)
         p = powl(10, precision);
 
         kind = ts->tv_sec * p;
-        kind += ts->tv_nsec / (1000000000 / p);
+        kind += ts->tv_nsec / (1000000000UL / p);
     }
     else
     {
