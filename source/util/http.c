@@ -609,6 +609,7 @@ final_error:
 abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap)
 {
     abcdk_object_t *obj;
+    char hdr[19] = {0};
     ssize_t pos = 0;
     int chk;
 
@@ -618,18 +619,22 @@ abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap)
     if (!obj)
         return NULL;
 
+    /*头部长度。*/
+    pos += 18;
+
     /*先格式化数据，计算出数据长度。*/
-    chk = vsprintf(obj->pstrs[0] + 18, fmt, ap);
+    chk = vsprintf(obj->pstrs[0] + pos, fmt, ap);
     if (chk <= 0)
         goto final_error;
 
-    pos += (18 + chk);
+    /*格式化长度，填充到块头部。*/
+    sprintf(hdr, "%-16x\r\n", chk);
+    memcpy(obj->pstrs[0], hdr, 18);
 
-    /*再格式化长度，填充到块头部。*/
-    chk = sprintf(obj->pstrs[0], "%-16x\r\n", chk);
-    if (chk <= 0)
-        goto final_error;
+    /*累加长度。*/
+    pos += chk;
 
+    /*添加尾部。*/
     memcpy(obj->pstrs[0] + pos, "\r\n", 2);
     pos += 2;
 

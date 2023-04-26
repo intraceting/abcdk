@@ -19,6 +19,8 @@ typedef struct _abcdkhttpd
     int errcode;
     abcdk_option_t *args;
 
+    abcdk_logger_t *logger;
+
     uint64_t realm;
 
     locale_t loc;
@@ -225,11 +227,11 @@ void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    abcdk_log_printf(LOG_INFO, "\"%s\" \"%s\" %d %ld \"%s\" \"%s\" \n",
-                     http_p->remote,
-                     http_p->line0, status, (ssize_t)size,
-                     http_p->referer ? http_p->referer : "-",
-                     http_p->user_agent ? http_p->user_agent : "-");
+    abcdk_logger_printf(http_p->ctx->logger, LOG_INFO, "\"%s\" \"%s\" %d %ld \"%s\" \"%s\" \n",
+                        http_p->remote,
+                        http_p->line0, status, (ssize_t)size,
+                        http_p->referer ? http_p->referer : "-",
+                        http_p->user_agent ? http_p->user_agent : "-");
 }
 
 int _abcdkhttpd_check_auth(abcdk_comm_node_t *node,int proxy)
@@ -1045,7 +1047,7 @@ void _abcdkhttpd_close_event(abcdk_comm_node_t *node)
     /*释放另一端的隧道。*/
     abcdk_comm_unref(&http_p->tunnel);
 
-    abcdk_log_printf(LOG_INFO, "Close: %s", http_p->remote);
+    abcdk_logger_printf(http_p->ctx->logger,LOG_INFO, "Close: %s", http_p->remote);
 }
 
 void _abcdkhttpd_output_event(abcdk_comm_node_t *node)
@@ -1105,7 +1107,7 @@ void _abcdkhttpd_connect_event(abcdk_comm_node_t *node)
 
 final:
 
-    abcdk_log_printf(LOG_INFO, "Connected: %s", http_p->remote);
+    abcdk_logger_printf(http_p->ctx->logger,LOG_INFO, "Connected: %s", http_p->remote);
 
     /*已连接到远端，注册读写事件。*/
     abcdk_comm_recv_watch(node);
@@ -1215,7 +1217,7 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
-void _abcdkhttpd_wait_exit_signal()
+void _abcdkhttpd_wait_exit_signal(abcdkhttpd_t *ctx)
 {
     siginfo_t info = {0};
     int chk;
@@ -1227,14 +1229,14 @@ void _abcdkhttpd_wait_exit_signal()
             break;
 
         if (SI_USER == info.si_code)
-            abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
         else
-            abcdk_log_printf(LOG_WARNING, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
 
         if (SIGILL == info.si_signo || SIGTERM == info.si_signo || SIGINT == info.si_signo || SIGQUIT == info.si_signo)
             break;
         else
-            abcdk_log_printf(LOG_WARNING, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
     }
 
     return;
@@ -1379,8 +1381,9 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         }
     }
 
+
     /*等待退出信号。*/
-    _abcdkhttpd_wait_exit_signal();
+    _abcdkhttpd_wait_exit_signal(ctx);
 
 final:
 
@@ -1414,7 +1417,17 @@ int abcdk_tool_httpd(abcdk_option_t *args)
     }
     else
     {
+        /*打开日志。*/
+        ctx.logger = abcdk_logger_open("/tmp/abcdk/log/httpd.log","httpd.%d.log", 10, 10, 0, 1);
+
+        abcdk_logger_printf(ctx.logger,LOG_INFO, "启动……");
+
         _abcdkhttpd_work(&ctx);
+
+        abcdk_logger_printf(ctx.logger,LOG_INFO, "停止。");
+        
+        /*关闭日志。*/
+        abcdk_logger_close(&ctx.logger);
     }
 
     return ctx.errcode;

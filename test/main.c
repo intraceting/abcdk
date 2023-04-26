@@ -112,9 +112,9 @@ void *_abcdk_test_signal_cb(void *opaque)
             break;
         
         if (SI_USER == info.si_code)
-            abcdk_log_printf(LOG_INFO, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
+            fprintf(stderr, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
         else
-            abcdk_log_printf(LOG_INFO, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
+            fprintf(stderr, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
 
     }
 
@@ -139,9 +139,6 @@ int main(int argc, char **argv)
 
     /*随机数种子。*/
     srand(time(NULL));
-
-    /*打开日志。*/
-    abcdk_log_open("/tmp/abcdk-log/test.log","test.%d.log", 10, 10, 0, 1);
 
 #ifdef HAVE_OPENSSL
 

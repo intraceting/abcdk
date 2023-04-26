@@ -984,7 +984,7 @@ DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
 #主版本
 VERSION_MAJOR="1"
 #副版本
-VERSION_MINOR="6"
+VERSION_MINOR="7"
 #发行版本
 VERSION_RELEASE="1"
 
@@ -1057,9 +1057,6 @@ usage: [ OPTIONS ]
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2
 
-     自定义依赖项（定义环境变量），并且key前缀增加“with-”。如下：
-     export DEPEND_FLAGS="-I/tmp/3party/include/"
-     export DEPEND_LIBS="-l:3party.so -l:3party.a -l3party -L/tmp/3party/lib/"
 EOF
 }
 
@@ -1198,33 +1195,23 @@ DependPackageCheck()
     #
     if [ $(CheckKeyword ${DEPEND_FUNC} ${PACKAGE_KEY}) -eq 1 ];then
     {
-        if [ $(CheckKeyword ${DEPEND_FUNC} with-${PACKAGE_KEY}) -eq 1 ];then
+        CHK=$(CheckHavePackage ${PACKAGE_KEY} 1)
+        if [ ${CHK} -eq 0 ];then
         {
-            DEPEND_FLAGS=" -D${PACKAGE_DEF} ${DEPEND_FLAGS}"
-
-            echo -e "With ${PACKAGE_KEY}"
+            DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
+            DEPEND_LIBS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
         }
         else
         {
-            CHK=$(CheckHavePackage ${PACKAGE_KEY} 1)
-            if [ ${CHK} -eq 0 ];then
-            {
-                DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
-                DEPEND_LIBS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
-            }
-            else
-            {
-                DEPEND_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${DEPEND_NOFOUND}"
-            }
-            fi
-
-            echo -n "Check ${PACKAGE_KEY}"
-            if [ ${CHK} -eq 0 ];then
-                echo -e "\x1b[32m Ok \x1b[0m"
-            else 
-                echo -e "\x1b[31m Failed \x1b[0m"
-            fi
+            DEPEND_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${DEPEND_NOFOUND}"
         }
+        fi
+
+        echo -n "Check ${PACKAGE_KEY}"
+        if [ ${CHK} -eq 0 ];then
+            echo -e "\x1b[32m Ok \x1b[0m"
+        else 
+            echo -e "\x1b[31m Failed \x1b[0m"
         fi
     }
     fi
