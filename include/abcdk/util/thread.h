@@ -58,22 +58,6 @@ int abcdk_thread_join(abcdk_thread_t* ctx);
 */
 int abcdk_thread_create_group(int count,abcdk_thread_t ctxs[],int joinable);
 
-/**
- * 设置线程名字。
- * 
- * @note 最大支持16个字节(Bytes)。
- * 
- * @return 0 成功；!0 出错。
-*/
-int abcdk_thread_setname(pthread_t tid,const char* fmt,...);
-
-/**
- * 获取线程名字。
- * 
- * @return 0 成功；!0 出错。
-*/
-int abcdk_thread_getname(pthread_t tid,char name[16]);
-
 /** 
  * 设置线程亲源CPU。
  * 

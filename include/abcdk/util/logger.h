@@ -44,6 +44,9 @@ typedef enum _abcdk_logger_type
 #define ABCDK_LOGGER_MAX ABCDK_LOGGER_MAX
 } abcdk_logger_type_t;
 
+/** 检查日志类型。*/
+#define ABCDK_LOGER_TYPE_CHECK(t) ((t) >= ABCDK_LOGGER_ERROR && (t) < ABCDK_LOGGER_MAX)
+
 /**
  * 关闭。
  */
@@ -78,7 +81,18 @@ abcdk_logger_t *abcdk_logger_open(const char *name, const char *segment_name, si
 void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...);
 
 /**
+ * 输出字符串。
+ *
+ * @param [in] type 类型。
+ * @param [in] str 字符串。
+ *
+ */
+void abcdk_logger_puts(abcdk_logger_t *ctx, int type, const char *str);
+
+/**
  * 格式化输出。
+ * 
+ * @note 最大支持8000个字符(包括结束符)。
  *
  * @param [in] type 类型。
  * @param [in] fmt 格式化字符串。@see vprintf
@@ -89,6 +103,9 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
 
 /**
  * 格式化输出。
+ * 
+ * @note 最大支持8000个字符(包括结束符)。
+ * 
  */
 void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...);
 

@@ -23,10 +23,6 @@ int abcdk_thread_create(abcdk_thread_t *ctx,int joinable)
     if(chk != 0)
         return -1;
 
-    /*获取当前线程名称，并设置子线程的名称。*/
-    abcdk_thread_getname(pthread_self(),name);
-    abcdk_thread_setname(ctx->handle,name);
-
     return 0;
 }
 
@@ -73,34 +69,6 @@ int abcdk_thread_create_group(int count, abcdk_thread_t *ctxs, int joinable)
     }
 
     return num;
-}
-
-int abcdk_thread_setname(pthread_t tid,const char* fmt,...)
-{
-    char name[17] = {0};
-    int chk = -1;
-
-    assert(fmt && fmt[0]);
-
-    va_list vaptr;
-    va_start(vaptr, fmt);
-    vsnprintf(name,16,fmt,vaptr);
-    va_end(vaptr);
-
-    chk = pthread_setname_np(tid,name);
-
-    return chk;
-}
-
-int abcdk_thread_getname(pthread_t tid,char name[16])
-{
-    int chk = -1;
-
-    assert(name);
-
-    chk = pthread_getname_np(tid,name,16);
-
-    return chk; 
 }
 
 int abcdk_thread_setaffinity(pthread_t tid, int cpus[])

@@ -86,9 +86,6 @@ int _abcdk_tool_dispatch(abcdk_option_t *args)
         ABCDK_ERRNO_AND_GOTO1(errcode = EINVAL, final);
     }
 
-    /*设置线程名字。*/
-    abcdk_thread_setname(pthread_self(),entry_p->name);
-
     errcode = entry_p->func_cb(args);
 
 final:

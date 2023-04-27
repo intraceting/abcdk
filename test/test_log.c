@@ -21,7 +21,7 @@ int abcdk_test_log(abcdk_option_t *args)
     {
         for (int i = 0; i < 1000000; i++)
         {
-            abcdk_logger_printf(ctx,l, "test log :%d", i);
+            abcdk_logger_printf(ctx,l, "test log :%d\naaaa%d\r\n\n\nbbbbbb\n\n\r\ncccc\n\n", i,i-1000000);
           //  sleep(1);
         }    
     }
