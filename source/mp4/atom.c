@@ -218,7 +218,7 @@ int _abcdk_mp4_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     hsize = atom->off_data - atom->off_head;
     dsize = atom->size - hsize;
 
-    abcdk_tree_fprintf(ctx->fd, depth, node, "[%c%c%c%c] size=%lu+%lu offset=%lu",
+    abcdk_tree_fprintf(ctx->fd, depth, node, "[%c%c%c%c] size=%zu+%zu offset=%llu",
                        atom->type.u8[0], atom->type.u8[1], atom->type.u8[2], atom->type.u8[3],
                        hsize, dsize, atom->off_head);
 

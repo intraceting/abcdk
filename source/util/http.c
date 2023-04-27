@@ -580,7 +580,7 @@ abcdk_object_t *abcdk_http_chunked_copyfrom(const void *data, size_t size)
     if (!obj)
         return NULL;
 
-    chk = sprintf(obj->pstrs[0], "%lx\r\n", size);
+    chk = sprintf(obj->pstrs[0], "%zx\r\n", size);
     if (chk <= 0)
         goto final_error;
 

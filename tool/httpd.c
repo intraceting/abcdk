@@ -227,7 +227,7 @@ void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    abcdk_logger_printf(http_p->ctx->logger, LOG_INFO, "\"%s\" \"%s\" %d %ld \"%s\" \"%s\" \n",
+    abcdk_logger_printf(http_p->ctx->logger, LOG_INFO, "\"%s\" \"%s\" %d %lld \"%s\" \"%s\" \n",
                         http_p->remote,
                         http_p->line0, status, (ssize_t)size,
                         http_p->referer ? http_p->referer : "-",
@@ -387,7 +387,7 @@ final_error:
                            "Data: %s\r\n"
                            "Connection: Keep-Alive\r\n"
                            "Access-Control-Allow-Origin: %s\r\n"
-                           "%s-Authenticate: %s realm=\"%lu\", charset=utf-8, nonce=\"%lu\"\r\n"
+                           "%s-Authenticate: %s realm=\"%llu\", charset=utf-8, nonce=\"%llu\"\r\n"
                            "Content-Length: 0\r\n"
                            "\r\n",
                            abcdk_http_status_desc((proxy ? 407 : 401)),
@@ -657,7 +657,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
             p = abcdk_strtok(&p_next, "=");
             strncpy(tmp, p, p_next - p);
             abcdk_strtrim(tmp, isspace, 2);
-            sscanf(p, "%lu-%lu", &range_s, &range_e);
+            sscanf(p, "%zu-%zu", &range_s, &range_e);
 
             if (range_s >= range_e || range_s >= file->sizes[0])
             {
@@ -680,8 +680,8 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    "Access-Control-Allow-Origin: %s\r\n"
                                    "Content-Type: %s\r\n"
                                    "Accept-Ranges: bytes\r\n"
-                                   "Content-Range: bytes %lu-%lu/%lu\r\n"
-                                   "Content-Length: %lu\r\n"
+                                   "Content-Range: bytes %zu-%zu/%zu\r\n"
+                                   "Content-Length: %llu\r\n"
                                    "Cache-Control: no-cache\r\n"
                                    "Expires: 0\r\n"
                                    "\r\n",
@@ -702,7 +702,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
                                    "Connection: Keep-Alive\r\n"
                                    "Access-Control-Allow-Origin: %s\r\n"
                                    "Content-Type: %s\r\n"
-                                   "Content-Length: %lu\r\n"
+                                   "Content-Length: %llu\r\n"
                                    "Cache-Control: no-cache\r\n"
                                    "Expires: 0\r\n"
                                    "\r\n",

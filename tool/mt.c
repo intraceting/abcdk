@@ -312,17 +312,17 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
             if(id == 0x0006 || id == 0x0405)
             {
-                sprintf(val_buf,"%lu(%#lx),%s",val_int,val_int,abcdk_tape_density2string(val_int));
+                sprintf(val_buf,"%llu(%#llx),%s",val_int,val_int,abcdk_tape_density2string(val_int));
                 fprintf(stdout, "|%-40s\t|", val_buf);
             }
             else if(id == 0x0408)
             {
-                sprintf(val_buf,"%lu(%#lx),%s",val_int,val_int,abcdk_tape_type2string(val_int));
+                sprintf(val_buf,"%llu(%#llx),%s",val_int,val_int,abcdk_tape_type2string(val_int));
                 fprintf(stdout, "|%-40s\t|", val_buf);
             }
             else if (len <= 8)
             {
-                sprintf(val_buf,"%lu(%#lx)",val_int,val_int);
+                sprintf(val_buf,"%llu(%#llx)",val_int,val_int);
                 fprintf(stdout, "|%-40s\t|", val_buf);
             }
             else if (len <= 40)

@@ -192,7 +192,7 @@ void _abcdkhd_work(abcdk_option_t *args)
 
     if (offset >= mfile->sizes[0])
     {
-        fprintf(stderr, "'--offset OFFSET' 不能超过文件长度(%lu)。\n", mfile->sizes[0]);
+        fprintf(stderr, "'--offset OFFSET' 不能超过文件长度(%zu)。\n", mfile->sizes[0]);
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 

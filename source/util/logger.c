@@ -212,7 +212,7 @@ void abcdk_logger_puts(abcdk_logger_t *ctx, int type, const char *str)
     abcdk_proc_basename(name);
 
     /*格式化行的头部：时间、PID、进程名字*/
-    hdrlen = snprintf(ctx->buf->pstrs[0], ctx->buf->sizes[0], "%04d%02d%02d%02d%02d%02d.%06lu p%d %s: ",
+    hdrlen = snprintf(ctx->buf->pstrs[0], ctx->buf->sizes[0], "%04d%02d%02d%02d%02d%02d.%06llu p%d %s: ",
                       tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), name);
 
 next_line:

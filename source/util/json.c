@@ -23,9 +23,9 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
     type = json_object_get_type(obj);
 
     if (type == json_type_int)
-        fprintf(fp, "%ld", json_object_get_int64(obj));
+        fprintf(fp, "%lld", json_object_get_int64(obj));
     else if (type == json_type_boolean)
-        fprintf(fp, "%lf", json_object_get_double(obj));
+        fprintf(fp, "%llf", json_object_get_double(obj));
     else if (type == json_type_string)
     {
         str_ptr = json_object_get_string(obj);

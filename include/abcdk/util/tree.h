@@ -58,6 +58,8 @@ typedef struct _abcdk_tree_iterator
     /**
      * 回显函数。
      * 
+     * @note depth == 0 表示没有更多节点。
+     * 
      * @return -1 终止，0 忽略孩子，1 继续。
     */
     int (*dump_cb)(size_t depth, abcdk_tree_t *node, void *opaque);

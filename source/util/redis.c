@@ -28,7 +28,7 @@ void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)
     {
         for (size_t i = 0; i < reply->elements; i++)
         {
-            fprintf(fp, "%lu) ", i+1);
+            fprintf(fp, "%zu) ", i+1);
             abcdk_redis_reply_dump(fp, reply->element[i]);
         }
     }
