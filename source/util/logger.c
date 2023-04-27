@@ -151,7 +151,7 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
 
     /*获取自然时间。*/
     ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
-    abcdk_time_sec2tm(&tm,ts/1000000,0);
+    abcdk_time_sec2tm(&tm,ts/1000000UL,0);
 
     /*获取线程名称。*/
     abcdk_thread_getname(pthread_self(),name);
