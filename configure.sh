@@ -484,6 +484,18 @@ CheckHavePackage()
                 echo "libnghttp2-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "libdrm" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit libdrm-dev)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
+            else
+                echo "libdrm-dev"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -926,6 +938,18 @@ CheckHavePackage()
                 echo "libnghttp2-devel"
             fi
         }
+        elif [ "${PKG_NAME}" == "libdrm" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit libdrm-devel)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo "$(pkg-config --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
+            elif [ ${FLAG} -eq 3 ];then
+                echo "$(pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
+            else
+                echo "libdrm-devel"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -1055,7 +1079,7 @@ usage: [ OPTIONS ]
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
-     kafka,uuid,libmagic,nghttp2
+     kafka,uuid,libmagic,nghttp2,libdrm
 
 EOF
 }
@@ -1252,6 +1276,7 @@ DependPackageCheck kafka HAVE_KAFKA
 DependPackageCheck uuid HAVE_UUID
 DependPackageCheck libmagic HAVE_LIBMAGIC
 DependPackageCheck nghttp2 HAVE_NGHTTP2
+DependPackageCheck libdrm HAVE_LIBDRM
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then

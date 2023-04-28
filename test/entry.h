@@ -19,6 +19,7 @@ int abcdk_test_exec(abcdk_option_t *args);
 int abcdk_test_com(abcdk_option_t *args);
 int abcdk_test_path(abcdk_option_t *args);
 int abcdk_test_ffmpeg(abcdk_option_t *args);
+int abcdk_test_drm(abcdk_option_t *args);
 
 __END_DECLS
 

@@ -31,7 +31,8 @@ static struct _abcdk_test_entry
     {"exec",abcdk_test_exec},
     {"com",abcdk_test_com},
     {"path",abcdk_test_path},
-    {"ffmpeg",abcdk_test_ffmpeg}
+    {"ffmpeg",abcdk_test_ffmpeg},
+    {"drm",abcdk_test_drm}
 };
 
 void _abcdk_test_print_usage()
