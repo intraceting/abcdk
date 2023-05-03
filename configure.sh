@@ -1185,6 +1185,15 @@ elif [ "${TARGET}" != "other" ];then
 fi
 
 #
+STATUS=$(CheckHavePackage which 1)
+if [ ${STATUS} -ne 0 ];then
+{
+    echo "$(CheckHavePackage which 0) not found."
+    exit 22
+}
+fi
+
+#
 STATUS=$(CheckHavePackageFromWhich ${CC})
 if [ ${STATUS} -ne 0 ];then
 {
