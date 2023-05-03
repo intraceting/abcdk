@@ -415,7 +415,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_heap_free(send_dist);
     abcdk_heap_free(recv_dist);
 
-#elif 0
+#elif 1
 
     for (int y = 3; y <= 256; y++)
     {

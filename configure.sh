@@ -21,18 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
+    if [ ! -f ${SHELLDIR}/myscript/linux/core/check-os-id.sh ];then 
+        echo "'MYSCRIPT' not pulled."
+        exit 1
+    fi
+    
     echo "$(${SHELLDIR}/myscript/linux/core/check-os-id.sh "$1")"
 }
 
 #
 GetSystemVersion()
 {
+    if [ ! -f ${SHELLDIR}/myscript/linux/core/get-os-ver.sh ];then 
+        echo "'MYSCRIPT' not pulled."
+        exit 1
+    fi
+
     echo "$(${SHELLDIR}/myscript/linux/core/get-os-ver.sh)"
 }
 
 #
 CheckPackageKitName()
 {
+    if [ ! -f ${SHELLDIR}/myscript/linux/core/get-kit-name.sh ];then 
+        echo "'MYSCRIPT' not pulled."
+        exit 1
+    fi
+
 	echo "$(${SHELLDIR}/myscript/linux/core/get-kit-name.sh)"
 }
 
@@ -40,6 +55,11 @@ CheckPackageKitName()
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
+    if [ ! -f ${SHELLDIR}/myscript/linux/core/check-package.sh ];then 
+        echo "'MYSCRIPT' not pulled."
+        exit 1
+    fi
+
     echo "$(${SHELLDIR}/myscript/linux/core/check-package.sh "$1")"
 }
 
@@ -47,6 +67,11 @@ CheckHavePackageFromKit()
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
+    if [ ! -f ${SHELLDIR}/myscript/linux/core/check-which.sh ];then 
+        echo "'MYSCRIPT' not pulled."
+        exit 1
+    fi
+
 	echo "$(${SHELLDIR}/myscript/linux/core/check-which.sh "$1")"
 }
 
