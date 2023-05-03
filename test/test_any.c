@@ -337,7 +337,7 @@ int abcdk_test_any(abcdk_option_t *args)
     
     for(int i =0;i<len;i++)
         printf("|%02hhx|%02hhx|%02hhx|\n",src[i],dst[i],dst2[i]);
-#elif 1
+#elif 0
 
     size_t rows = 3;
     size_t cols = 256;
@@ -376,7 +376,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_heap_free(send_dist);
     abcdk_heap_free(recv_dist);
-#elif 1
+#elif 0
 
     size_t rows = 3;
     size_t cols = 256;
@@ -415,7 +415,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_heap_free(send_dist);
     abcdk_heap_free(recv_dist);
 
-#else
+#elif 0
 
     for (int y = 3; y <= 256; y++)
     {
@@ -460,6 +460,7 @@ int abcdk_test_any(abcdk_option_t *args)
             abcdk_heap_free(dist);
         }
     }
+
 
 #endif 
 }

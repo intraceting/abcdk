@@ -23,6 +23,11 @@ static struct _abcdk_tape_sense_dict
     {0x01, 0x00, 0x00, "Recovered Error"},
     /*KEY=0x02*/
     {0x02, 0x00, 0x00, "Not Ready"},
+    {0x02, 0x04, 0x00, "LOGICAL UNIT NOT READY, CAUSE NOT REPORTABLE"},
+    {0x02, 0x04, 0x01, "LOGICAL UNIT IS IN PROCESS OF BECOMING READY"},
+    {0x02, 0x04, 0x02, "INITIALIZING COMMAND REQUIRED: A tape is present in the drive, but it is not logically loaded"},
+    {0x02, 0x04, 0x12, "LOGICAL UNIT NOT READY, OFFLINE"},
+    {0x02, 0x04, 0x13, "LOGICAL UNIT NOT READY, SA CREATION IN PROGRESS"},
     {0x02, 0x30, 0x03, "Cleaning in progess"},
     {0x02, 0x30, 0x07, "Cleaning failure"},
     {0x02, 0x3a, 0x00, "Medium not present"},
@@ -52,7 +57,8 @@ const char *abcdk_tape_sense2string(uint8_t key, uint8_t asc , uint8_t ascq)
         if (abcdk_tape_sense_dict[i].key != key)
             continue;
 
-        msg_p = abcdk_tape_sense_dict[i].msg;
+        if (abcdk_tape_sense_dict[i].asc == 0 && abcdk_tape_sense_dict[i].ascq == 0)
+            msg_p = abcdk_tape_sense_dict[i].msg;
 
         if (abcdk_tape_sense_dict[i].asc != asc || abcdk_tape_sense_dict[i].ascq != ascq)
             continue;
@@ -440,4 +446,25 @@ int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_object_t *attr,
     memcpy(ABCDK_PTR2PTR(void, buf, 9), attr->pptrs[ABCDK_TAPE_ATTR_VALUE], ABCDK_PTR2U16(attr->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0));
 
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_TO_DEV, cdb, 16, buf, 4 + len, timeout, stat);
+}
+
+int abcdk_tape_load(int fd, int op, uint32_t timeout, abcdk_scsi_io_stat_t *stat)
+{
+    uint8_t cdb[6] = {0};
+    abcdk_bit_t wbit;
+
+    assert(op == 1 || op == 2);
+
+    wbit.data = cdb;
+    wbit.size = 6;
+    wbit.pos = 0;
+
+    abcdk_bit_write(&wbit,8,0x1b);
+    abcdk_bit_write(&wbit,31,0);
+    if(op == 1)
+        abcdk_bit_write(&wbit,1,1);
+    else if(op == 2)
+        abcdk_bit_write(&wbit,1,0);
+
+    return abcdk_scsi_sgioctl2(fd, SG_DXFER_NONE, cdb, 6, NULL, 0, timeout, stat); 
 }

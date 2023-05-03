@@ -12,6 +12,7 @@
 #include "abcdk/util/scsi.h"
 #include "abcdk/util/iconv.h"
 #include "abcdk/util/endian.h"
+#include "abcdk/util/bit.h"
 
 __BEGIN_DECLS
 
@@ -200,6 +201,20 @@ abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
  */
 int abcdk_tape_write_attribute(int fd, uint8_t part, const abcdk_object_t *attr,
                                uint32_t timeout, abcdk_scsi_io_stat_t *stat);
+
+/**
+ * 加载/卸载磁带。
+ * 
+ * cdb = 0x1B
+ * 
+ * @param [in] op 操作码。1 加载，2 卸载。   
+ * 
+ * @return 0 成功，-1 失败。 
+ * 
+ */
+int abcdk_tape_load(int fd, int op, uint32_t timeout, abcdk_scsi_io_stat_t *stat);
+
+
 
 __END_DECLS
 

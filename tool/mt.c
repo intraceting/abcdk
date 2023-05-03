@@ -165,9 +165,9 @@ void _abcdkmt_operate(abcdkmt_t *ctx)
     if(ctx->cmd == ABCDKMT_REWIND)
         chk = abcdk_tape_operate(ctx->fd, MTREW, 0, &ctx->stat);
     else if(ctx->cmd == ABCDKMT_LOAD)
-        chk = abcdk_tape_operate(ctx->fd, MTLOAD, 0, &ctx->stat);
+        chk = abcdk_tape_load(ctx->fd,1,60*1000,&ctx->stat);
     else if(ctx->cmd == ABCDKMT_UNLOAD)
-        chk = abcdk_tape_operate(ctx->fd, MTUNLOAD, 0, &ctx->stat);
+        chk = abcdk_tape_load(ctx->fd,2,180*1000,&ctx->stat);
     else if(ctx->cmd == ABCDKMT_LOCK)
         chk = abcdk_tape_operate(ctx->fd, MTLOCK, 0, &ctx->stat);
     else if(ctx->cmd == ABCDKMT_UNLOCK)
@@ -278,7 +278,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
     if (depth == 0)
     {
-        fprintf(stdout,"|%-40s\t|%-2s\t|%-5s\t|%-5s\t|%-40s\t|\n","name","ro/rw","format","length","value");
+        fprintf(stdout,"|%-4s|%-40s\t|%-2s\t|%-5s\t|%-5s\t|%-40s\t|\n","id","name","ro/rw","format","length","value");
     }
     else if (depth == SIZE_MAX)
     {
@@ -295,7 +295,7 @@ int _abcdkmt_printf_mam_cb(size_t depth, abcdk_tree_t *node, void *opaque)
         if (len <= 0)
             return 1;
 
-        fprintf(stdout,"|%-40s\t|%-2s\t|%-5s\t|%-5hu\t", abcdk_tape_attr2string(id),rd_str[rd],fmt_str[fmt],len);
+        fprintf(stdout,"|%04X|%-40s\t|%-2s\t|%-5s\t|%-5hu\t",id,abcdk_tape_attr2string(id),rd_str[rd],fmt_str[fmt],len);
 
         if (fmt == 0x00)
         {
@@ -362,12 +362,14 @@ abcdk_tree_t *_abcdkmt_read_mam_one(abcdkmt_t *ctx, uint8_t part, uint16_t id)
 
     node->obj = abcdk_tape_read_attribute(ctx->fd, part, id, 3000, &ctx->stat);
     if (!node->obj || ctx->stat.status != GOOD)
+    {
+        fprintf(stderr,"Read MAM(id(%04x),part(%hhu)) failed. \n",id,part);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, print_sense);
+    }
 
     return node;
 
 print_sense:
-
     
     _abcdkmt_printf_sense(&ctx->stat);
 
@@ -539,9 +541,13 @@ void _abcdkmt_work(abcdkmt_t *ctx)
 
     fprintf(stderr,"Driver: %s(%s,%s)\n",ctx->sn,ctx->vendor,ctx->product);
 
-    chk = abcdk_scsi_test(ctx->fd,1000,&ctx->stat);
-    if (chk != 0 || ctx->stat.status != GOOD)
-        ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+    /*加载磁带前不需要执行测试。*/
+    if(ctx->cmd != ABCDKMT_LOAD)
+    {
+        chk = abcdk_scsi_test(ctx->fd,1000,&ctx->stat);
+        if (chk != 0 || ctx->stat.status != GOOD)
+            ABCDK_ERRNO_AND_GOTO1(EPERM,print_sense);
+    }
 
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkmt_methods); i++)
     {
