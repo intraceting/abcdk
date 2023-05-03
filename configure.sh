@@ -521,6 +521,18 @@ CheckHavePackage()
                 echo "libdrm-dev"
             fi
         }
+        elif [ "${PKG_NAME}" == "which" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit which)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo ""
+            else
+                echo "which"
+            fi
+        }
         else
         {
             if [ ${FLAG} -eq 1 ];then 
@@ -973,6 +985,18 @@ CheckHavePackage()
                 echo "$(pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
             else
                 echo "libdrm-devel"
+            fi
+        }
+        elif [ "${PKG_NAME}" == "which" ];then
+        {
+            if [ ${FLAG} -eq 1 ];then
+                echo "$(CheckHavePackageFromKit which)"
+            elif [ ${FLAG} -eq 2 ];then
+                echo ""
+            elif [ ${FLAG} -eq 3 ];then
+                echo ""
+            else
+                echo "which"
             fi
         }
         else
