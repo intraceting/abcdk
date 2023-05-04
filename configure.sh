@@ -524,13 +524,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "which" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit which)"
+                echo "$(CheckHavePackageFromKit debianutils)"
             elif [ ${FLAG} -eq 2 ];then
                 echo ""
             elif [ ${FLAG} -eq 3 ];then
                 echo ""
             else
-                echo "which"
+                echo "debianutils"
             fi
         }
         else
