@@ -617,7 +617,7 @@ double _abcdk_avstream_r2d(AVRational r)
     return r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den;
 }
 
-double abcdk_avstream_get_duration(AVFormatContext *ctx, AVStream *vs)
+double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs)
 {
     double sec = 0.0;
 
@@ -630,7 +630,7 @@ double abcdk_avstream_get_duration(AVFormatContext *ctx, AVStream *vs)
     return sec;
 }
 
-double abcdk_avstream_get_fps(AVFormatContext *ctx, AVStream *vs)
+double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs)
 {
     double fps = -0.001;
 
