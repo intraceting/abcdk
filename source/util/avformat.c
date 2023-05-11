@@ -670,7 +670,7 @@ int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts)
 
     sec = abcdk_avstream_ts2sec(ctx, vs, ts);
     if (sec >= 0.0)
-        frame_nb = (int64_t)(abcdk_avstream_get_fps(ctx, vs) * sec + 0.5);
+        frame_nb = (int64_t)(abcdk_avstream_fps(ctx, vs) * sec + 0.5);
 
     return frame_nb;
 }
