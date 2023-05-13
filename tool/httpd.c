@@ -990,7 +990,7 @@ void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
 void _abcdkhttpd_input_forward(abcdk_comm_node_t *node,const void *data, size_t size)
 {
     abcdkhttpd_node_t *http_p;
-    abcdk_object_t *obj;
+    abcdk_object_t *obj = NULL;
     int chk;
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
@@ -1001,6 +1001,8 @@ void _abcdkhttpd_input_forward(abcdk_comm_node_t *node,const void *data, size_t 
             http_p->url = abcdk_url_split(http_p->ctx->uplink);
             
         _abcdkhttpd_create_tunnel(node);
+        if(!http_p->tunnel)
+            goto final_error;
     }
 
     obj = abcdk_object_copyfrom(data, size);
