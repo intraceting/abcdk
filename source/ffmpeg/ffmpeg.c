@@ -118,7 +118,7 @@ int _abcdk_ffmpeg_capture_interrupt_cb(void *args)
     return 0;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io,time_t timeout)
 {
     abcdk_ffmpeg_t *ctx = NULL;
     int chk;
@@ -129,13 +129,8 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     if(!ctx)
         return NULL;
 
-    ctx->timeout = 5;
+    ctx->timeout = timeout;
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
-
-    /*非实时流媒体，不需要检测超时。*/
-    if (abcdk_strncmp(url, "rtsp://", 7, 0) != 0 && abcdk_strncmp(url, "rtsps://", 8, 0) != 0 &&
-        abcdk_strncmp(url, "rtmp://", 7, 0) != 0 && abcdk_strncmp(url, "rtmps://", 8, 0) != 0)
-        ctx->timeout = 0;
 
     AVIOInterruptCB cb;
     cb.callback = _abcdk_ffmpeg_capture_interrupt_cb;

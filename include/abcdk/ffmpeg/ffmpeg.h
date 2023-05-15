@@ -32,9 +32,11 @@ AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx);
 /**
  * 创建读者对象。
  * 
+ * @param [in] timeout 超时(秒)。<=0 忽略。
+ * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io,time_t timeout);
 
 /**
  * 读取数据包。
