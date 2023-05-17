@@ -86,6 +86,8 @@ int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict);
 
 /**
  * 解码。
+ * 
+ * @param in 数据包，NULL(0) 忽略输入，仅获取已解码的帧图。
  *
  * @return > 0 成功(解码帧数量)，0 延时解码，-1 失败，-2，未支持。
  *
@@ -95,7 +97,7 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out, const AVPacket *in);
 /**
  * 编码。
  *
- * @param in 数据包，NULL(0) 处理延时编码。
+ * @param in 数据包，NULL(0) 忽略输入，仅获取延时编码的数据包。
  *
  * @return > 0 成功(编码帧数量)，0 延时编码，-1 失败，-2，未支持。
  */

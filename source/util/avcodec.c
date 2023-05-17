@@ -115,21 +115,26 @@ int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
 
 int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
 {
+    AVPacket tmp;
     int got = -1;
 
-    assert(ctx != NULL && out != NULL && in != NULL);
+    assert(ctx != NULL && out != NULL);
+
+    av_init_packet(&tmp);
+    tmp.data = NULL;
+    tmp.size = 0;
 
     /*No output.*/
     got = 0;
 
     if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
     {
-        if (avcodec_decode_video2(ctx, out, &got, in) < 0)
+        if (avcodec_decode_video2(ctx, out, &got, (in?in:&tmp)) < 0)
             got = -1;
     }
     else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
     {
-        if (avcodec_decode_audio4(ctx, out, &got, in) < 0)
+        if (avcodec_decode_audio4(ctx, out, &got, (in?in:&tmp)) < 0)
             got = -1;
     }
     else
