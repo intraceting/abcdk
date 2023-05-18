@@ -42,6 +42,12 @@ typedef struct _abcdk_ffmpeg
     /** 最近活动包时间(秒)。*/
     int64_t last_packet_time;
 
+    /** 读缓存包.*/
+    AVPacket read_pkt;
+
+    /** 是否已经结束。*/
+    int read_eof;
+
     /**
      * TS编号。
      * 
@@ -87,6 +93,7 @@ void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx)
 
     av_dict_free(&ctx_p->dict);
     abcdk_avformat_free(&ctx_p->avctx);
+    av_packet_unref(&ctx_p->read_pkt);
 
     abcdk_heap_free(ctx_p);
 }
@@ -135,6 +142,8 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     AVIOInterruptCB cb;
     cb.callback = _abcdk_ffmpeg_capture_interrupt_cb;
     cb.opaque = ctx;
+
+    av_init_packet(&ctx_p->read_pkt);
 
     ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);
     if(!ctx->avctx)
@@ -228,73 +237,85 @@ int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream)
     return packet->stream_index;
 }
 
-int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
+int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
 {
     AVStream *vs_p = NULL;
-    AVCodecContext *codec_ctx_p;
-    AVPacket pkt;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+    AVCodecContext *codec_ctx_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
     AVCodecContext *codecpar = NULL;
-#else 
+#else
     AVCodecParameters *codecpar = NULL;
 #endif
-    int chk;
+
+    codec_ctx_p = ctx->codec_ctx[stream];
+    if (codec_ctx_p)
+        return 0;
+
+    vs_p = ctx->avctx->streams[stream];
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    codecpar = vs_p->codec;
+#else
+    codecpar = vs_p->codecpar;
+#endif
+
+    /*优先尝试硬件解码。必须用下面的写法，因为解码器可能未安装。*/
+    if (codecpar->codec_id == AV_CODEC_ID_HEVC)
+        chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find("hevc_cuvid", 0));
+    else if (codecpar->codec_id == AV_CODEC_ID_H264)
+        chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find("h264_cuvid", 0));
+    else
+        return -1;
+
+    if (chk < 0)
+        chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find2(codecpar->codec_id, 0));
+
+    if (chk < 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
+{
+    AVCodecContext *codec_ctx_p;
+    int chk = -1;
 
     assert(ctx != NULL && frame != NULL);
 
     av_frame_unref(frame);
-    av_init_packet(&pkt);
 
-    for (;;)
+next_packet:
+
+    /*清空数输缓存。*/
+    av_packet_unref(&ctx->read_pkt);
+
+    if (!ctx->read_eof)
     {
-        chk = abcdk_ffmpeg_read(ctx, &pkt, stream);
+        chk = abcdk_ffmpeg_read(ctx, &ctx->read_pkt, stream);
+        if (chk < 0)
+            ctx->read_eof = 1;
+
+        chk = _abcdk_ffmpeg_capture_codec_init(ctx, ctx->read_pkt.stream_index);
         if (chk < 0)
             return -1;
-
-        codec_ctx_p = ctx->codec_ctx[pkt.stream_index];
-        if (!codec_ctx_p)
-        {
-            vs_p = ctx->avctx->streams[pkt.stream_index];
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
-            codecpar = vs_p->codec;
-#else
-            codecpar = vs_p->codecpar;
-#endif
-
-            /*优先尝试硬件解码。必须用下面的写法，因为解码器可能未安装。*/
-            if (codecpar->codec_id == AV_CODEC_ID_HEVC)
-                chk = _abcdk_ffmpeg_open_capture_codec(ctx, pkt.stream_index, abcdk_avcodec_find("hevc_cuvid", 0));
-            else if (codecpar->codec_id == AV_CODEC_ID_H264)
-                chk = _abcdk_ffmpeg_open_capture_codec(ctx, pkt.stream_index, abcdk_avcodec_find("h264_cuvid", 0));
-            else
-                chk = -1;
-
-            if (chk < 0)
-                chk = _abcdk_ffmpeg_open_capture_codec(ctx, pkt.stream_index, abcdk_avcodec_find2(codecpar->codec_id, 0));
-
-            if (chk < 0)
-                goto final;
-
-            codec_ctx_p = ctx->codec_ctx[pkt.stream_index];
-        }
-
-        chk = abcdk_avcodec_decode(codec_ctx_p, frame, &pkt);
-        if (chk != 0)
-        {
-            if (chk > 0)
-                chk = pkt.stream_index;
-            
-            /*退出循环。*/
-            goto final;
-        }
     }
-   
 
-final:
+    codec_ctx_p = ctx->codec_ctx[ctx->read_pkt.stream_index];
+    if (!codec_ctx_p)
+        return -1;
 
-    av_packet_unref(&pkt);
+    chk = abcdk_avcodec_decode(codec_ctx_p, frame, &ctx->read_pkt);
+    if (chk < 0)
+        return -1;
+    if (chk == 0)
+    {
+        if(!ctx->read_eof)
+            goto next_packet;
+        else 
+            return -1;
+    }
 
-    return chk;
+    return ctx->read_pkt.stream_index;
 }
 
 abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type,AVIOContext *io)

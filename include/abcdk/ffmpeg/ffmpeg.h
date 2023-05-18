@@ -43,7 +43,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
  * 
  * @param stream >=0 数据流索引，< 0 任意数据流。
  * 
- * @return >= 0 成功(数据流索引)，< 0 失败。
+ * @return >= 0 成功(数据流索引)，< 0 失败(或结束)。
 */
 int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream);
 
@@ -52,7 +52,7 @@ int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream);
  * 
  * @param stream >=0 数据流索引，< 0 任意数据流。
  * 
- * @return >= 0 成功(数据流索引)，< 0 失败。
+ * @return >= 0 成功(数据流索引)，< 0 失败(或结束)。
 */
 int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
 
