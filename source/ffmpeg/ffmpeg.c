@@ -143,7 +143,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     cb.callback = _abcdk_ffmpeg_capture_interrupt_cb;
     cb.opaque = ctx;
 
-    av_init_packet(&ctx_p->read_pkt);
+    av_init_packet(&ctx->read_pkt);
 
     ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);
     if(!ctx->avctx)
@@ -246,6 +246,7 @@ int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
 #else
     AVCodecParameters *codecpar = NULL;
 #endif
+    int chk;
 
     codec_ctx_p = ctx->codec_ctx[stream];
     if (codec_ctx_p)
