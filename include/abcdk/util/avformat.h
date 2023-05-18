@@ -44,7 +44,7 @@ AVIOContext *abcdk_avio_alloc(int buf_blocks, int write_flag, void *opaque);
 /**
  * 打印流信息。
  */
-void abcdk_avformat_dump(AVFormatContext *ctx);
+void abcdk_avformat_dump(AVFormatContext *ctx,int is_output);
 
 /**
  * 打印可选项。

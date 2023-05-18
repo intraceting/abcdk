@@ -56,15 +56,15 @@ final_error:
     return NULL;
 }
 
-void abcdk_avformat_dump(AVFormatContext *ctx)
+void abcdk_avformat_dump(AVFormatContext *ctx,int is_output)
 {
     if (!ctx)
         return;
 
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
-    av_dump_format(ctx, 0, ctx->filename, 0);
+    av_dump_format(ctx, 0, ctx->filename, is_output);
 #else
-    av_dump_format(ctx, 0, ctx->url, 0);
+    av_dump_format(ctx, 0, ctx->url, is_output);
 #endif
 }
 
