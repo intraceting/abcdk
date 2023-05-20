@@ -1061,8 +1061,8 @@ VERSION_MINOR="7"
 #发行版本
 VERSION_RELEASE="3"
 
-#目标平台
-TARGET="native"
+#编译器前缀
+COMPILER_PREFIX=""
 #目标架构
 TARGET_MACHINE="Unknown"
 
@@ -1088,15 +1088,8 @@ usage: [ OPTIONS ]
     -h 
      打印帮助信息。
 
-    -t < platform >
-     目标系统平台。默认：本地。
-
-     支持以下关键字：
-     other native x86_64 aarch64 
-     
-     自定义编译器（定义环境变量）。如下：
-     export CC=gcc
-     export AR=ar
+    -c < prefix >
+     编译器前缀。
 
     -O
      编译优化。默认：关闭。
@@ -1134,15 +1127,15 @@ EOF
 }
 
 #
-while getopts "ht:OL:gV:v:r:i:d:" ARGKEY 
+while getopts "hc:OL:gV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
         PrintUsage
         exit 22
     ;;
-    t)
-        TARGET="${OPTARG}"
+    c)
+        COMPILER_PREFIX="${OPTARG}"
     ;;
     O)
         BUILD_OPTIMIZE="yes"
@@ -1171,18 +1164,8 @@ do
     esac
 done
 
-# 设置编译器。
-if [ "${TARGET}" == "native" ];then
-{
-    CC=gcc
-    AR=ar
-}
-elif [ "${TARGET}" != "other" ];then
-{
-    CC=${TARGET}-linux-gnu-gcc
-    AR=${TARGET}-linux-gnu-ar
-}
-fi
+CC="${COMPILER_PREFIX}gcc"
+AR="${COMPILER_PREFIX}ar"
 
 #
 STATUS=$(CheckHavePackage which 1)
