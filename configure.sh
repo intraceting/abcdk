@@ -1063,6 +1063,8 @@ VERSION_RELEASE="3"
 
 #编译器前缀
 COMPILER_PREFIX=""
+#SYSROOT
+SYSROOT_PATH=""
 #目标架构
 TARGET_MACHINE="Unknown"
 
@@ -1090,6 +1092,9 @@ usage: [ OPTIONS ]
 
     -c < prefix >
      编译器前缀。
+
+    -s < path >
+     SYSROOT。
 
     -O
      编译优化。默认：关闭。
@@ -1127,7 +1132,7 @@ EOF
 }
 
 #
-while getopts "hc:OL:gV:v:r:i:d:" ARGKEY 
+while getopts "hc:s:OL:gV:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -1136,6 +1141,9 @@ do
     ;;
     c)
         COMPILER_PREFIX="${OPTARG}"
+    ;;
+    s)
+        SYSROOT_PATH="${OPTARG}"
     ;;
     O)
         BUILD_OPTIMIZE="yes"
@@ -1171,8 +1179,20 @@ AR="${COMPILER_PREFIX}ar"
 STATUS=$(CheckHavePackage which 1)
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "$(CheckHavePackage which 0) not found."
+    echo "'$(CheckHavePackage which 0)' not found."
     exit 22
+}
+fi
+
+#
+if [ ! "${SYSROOT_PATH}" == "" ];then
+{
+    if [ ! -d ${SYSROOT_PATH} ];then
+    {
+        echo "'${SYSROOT_PATH}' not found."
+        exit 22
+    }
+    fi
 }
 fi
 
@@ -1180,7 +1200,7 @@ fi
 STATUS=$(CheckHavePackageFromWhich ${CC})
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "CC '${CC}' not found."
+    echo "'${CC}' not found."
     exit 22
 }
 fi
@@ -1189,7 +1209,7 @@ fi
 STATUS=$(CheckHavePackageFromWhich ${AR})
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "AR '${AR}' not found."
+    echo "'${AR}' not found."
     exit 22
 }
 fi
@@ -1211,7 +1231,7 @@ fi
 STATUS=$(CheckHavePackage pkgconfig 1)
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "$(CheckHavePackage pkgconfig 0) not found."
+    echo "'$(CheckHavePackage pkgconfig 0)' not found."
     exit 22
 }
 fi
@@ -1223,7 +1243,7 @@ if [ "${KIT_NAME}" == "rpm" ];then
     STATUS=$(CheckHavePackage rpmbuild 1)
     if [ ${STATUS} -ne 0 ];then
     {
-        echo "$(CheckHavePackage rpmbuild 0) not found."
+        echo "'$(CheckHavePackage rpmbuild 0)' not found."
         exit 22
     }
     fi
@@ -1234,7 +1254,7 @@ elif [ "${KIT_NAME}" == "deb" ];then
     STATUS=$(CheckHavePackage dpkg 1)
     if [ ${STATUS} -ne 0 ];then
     {
-        echo "$(CheckHavePackage dpkg 0) not found."
+        echo "'$(CheckHavePackage dpkg 0)' not found."
         exit 22
     }
     fi
@@ -1243,7 +1263,7 @@ elif [ "${KIT_NAME}" == "deb" ];then
     STATUS=$(CheckHavePackage dpkg-dev 1)
     if [ ${STATUS} -ne 0 ];then
     {
-        echo "$(CheckHavePackage dpkg-dev 0) not found."
+        echo "'$(CheckHavePackage dpkg-dev 0)' not found."
         exit 22
     }
     fi
@@ -1322,7 +1342,7 @@ DependPackageCheck libdrm HAVE_LIBDRM
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
 {
-    echo -e "\x1b[33m${DEPEND_NOFOUND}\x1b[31m Not Found \x1b[0m"
+    echo -e "\x1b[33m${DEPEND_NOFOUND}\x1b[31m not found. \x1b[0m"
     exit 22
 }
 fi 
@@ -1331,7 +1351,7 @@ fi
 mkdir -p ${BUILD_PATH}
 if [ ! -d ${BUILD_PATH} ];then
 {
-    echo "'${BUILD_PATH}' must be an existing directory."
+    echo "'${BUILD_PATH}' not found."
     exit 22
 }
 fi
@@ -1339,7 +1359,7 @@ fi
 #
 if [ ! -d ${INSTALL_PREFIX} ];then
 {
-    echo "'${INSTALL_PREFIX}' must be an existing directory."
+    echo "'${INSTALL_PREFIX}' not found."
     exit 22
 }
 else
@@ -1347,15 +1367,6 @@ else
     INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
 }
 fi
-
-#
-INSTALL_PREFIX="${INSTALL_PREFIX}"
-
-#
-DEPEND_FLAGS="${DEPEND_FLAGS} -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
-
-#
-DEPEND_LIBS="${DEPEND_LIBS} -ldl -pthread -lrt -lc -lm"
 
 #
 cat >${MAKE_CONF} <<EOF
@@ -1367,11 +1378,13 @@ SOLUTION_NAME = ${SOLUTION_NAME}
 BUILD_TIME = ${BUILD_TIME}
 BUILD_PATH = ${BUILD_PATH}
 #
-TARGET_PLATFORM = ${TARGET_PLATFORM}
-TARGET_MACHINE = ${TARGET_MACHINE}
+SYSROOT_PATH = ${SYSROOT_PATH}
 #
 CC = ${CC}
 AR = ${AR}
+#
+TARGET_PLATFORM = ${TARGET_PLATFORM}
+TARGET_MACHINE = ${TARGET_MACHINE}
 #
 VERSION_MAJOR = ${VERSION_MAJOR}
 VERSION_MINOR = ${VERSION_MINOR}
