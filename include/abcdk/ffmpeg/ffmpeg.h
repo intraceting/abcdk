@@ -111,7 +111,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet);
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int stream);
+int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream);
 
 /**
  * 写入数据帧(未编码)。

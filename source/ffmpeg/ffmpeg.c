@@ -207,6 +207,46 @@ final_error:
     return -1;
 }
 
+int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
+{
+    AVStream *vs_p = NULL;
+    AVCodecContext *codec_ctx_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar = NULL;
+#endif
+    int chk;
+
+    codec_ctx_p = ctx->codec_ctx[stream];
+    if (codec_ctx_p)
+        return 0;
+
+    vs_p = ctx->avctx->streams[stream];
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    codecpar = vs_p->codec;
+#else
+    codecpar = vs_p->codecpar;
+#endif
+
+    /*优先尝试硬件解码。必须用下面的写法，因为解码器可能未安装。*/
+    if (codecpar->codec_id == AV_CODEC_ID_HEVC)
+        _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find("hevc_cuvid", 0));
+    else if (codecpar->codec_id == AV_CODEC_ID_H264)
+        _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find("h264_cuvid", 0));
+
+    /*如果硬件解码已经安装，到这里可能已经成功了。*/
+    codec_ctx_p = ctx->codec_ctx[stream];
+    if (codec_ctx_p)
+        return 0;
+
+    chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find2(codecpar->codec_id, 0));
+    if (chk < 0)
+        return -1;
+
+    return 0;
+}
+
 int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream)
 {
     int chk;
@@ -237,44 +277,6 @@ int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream)
     return packet->stream_index;
 }
 
-int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
-{
-    AVStream *vs_p = NULL;
-    AVCodecContext *codec_ctx_p = NULL;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
-    AVCodecContext *codecpar = NULL;
-#else
-    AVCodecParameters *codecpar = NULL;
-#endif
-    int chk;
-
-    codec_ctx_p = ctx->codec_ctx[stream];
-    if (codec_ctx_p)
-        return 0;
-
-    vs_p = ctx->avctx->streams[stream];
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
-    codecpar = vs_p->codec;
-#else
-    codecpar = vs_p->codecpar;
-#endif
-
-    /*优先尝试硬件解码。必须用下面的写法，因为解码器可能未安装。*/
-    if (codecpar->codec_id == AV_CODEC_ID_HEVC)
-        chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find("hevc_cuvid", 0));
-    else if (codecpar->codec_id == AV_CODEC_ID_H264)
-        chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find("h264_cuvid", 0));
-    else
-        return -1;
-
-    if (chk < 0)
-        chk = _abcdk_ffmpeg_open_capture_codec(ctx, stream, abcdk_avcodec_find2(codecpar->codec_id, 0));
-
-    if (chk < 0)
-        return -1;
-
-    return 0;
-}
 
 int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 {
@@ -581,7 +583,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet)
     return 0;
 }
 
-int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int stream)
+int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream)
 {
     AVPacket pkt;
     AVStream *vs_p = NULL;
@@ -597,6 +599,7 @@ int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int stream)
     pkt.data = (uint8_t *)data;
     pkt.size = size;
     pkt.stream_index = stream;
+    pkt.flags = (keyframe?AV_PKT_FLAG_KEY:0);
 
     /*No B-frame.*/
     pkt.dts = ++ctx->ts_nums[stream][1];
