@@ -163,13 +163,13 @@ CheckHavePackage()
         elif [ "${PKG_NAME}" == "ffmpeg" ];then
         {
             if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libavresample-dev libpostproc-dev libswresample-dev")"
+                echo "$(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev")"
             elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+                echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
             elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+                echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
             else
-                echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libavresample-dev libpostproc-dev libswresample-dev"
+                echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev"
             fi
         }
         elif [ "${PKG_NAME}" == "freeimage" ];then
@@ -631,9 +631,9 @@ CheckHavePackage()
             if [ ${FLAG} -eq 1 ];then
                 echo "$(CheckHavePackageFromKit ffmpeg-devel)"
             elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+                echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
             elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libavresample libpostproc libswresample)"
+                echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
             else 
                 echo "ffmpeg-devel"
             fi
