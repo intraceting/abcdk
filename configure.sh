@@ -21,58 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    if [ ! -f ${SHELLDIR}/myscript/linux/core/check-os-id.sh ];then 
-        echo "'MYSCRIPT' not pulled."
-        exit 1
-    fi
-    
-    echo "$(${SHELLDIR}/myscript/linux/core/check-os-id.sh "$1")"
+    echo "$(${SHELLDIR}/script/linux/core/check-os-id.sh "$1")"
 }
 
 #
 GetSystemVersion()
 {
-    if [ ! -f ${SHELLDIR}/myscript/linux/core/get-os-ver.sh ];then 
-        echo "'MYSCRIPT' not pulled."
-        exit 1
-    fi
-
-    echo "$(${SHELLDIR}/myscript/linux/core/get-os-ver.sh)"
+    echo "$(${SHELLDIR}/script/linux/core/get-os-ver.sh)"
 }
 
 #
 CheckPackageKitName()
 {
-    if [ ! -f ${SHELLDIR}/myscript/linux/core/get-kit-name.sh ];then 
-        echo "'MYSCRIPT' not pulled."
-        exit 1
-    fi
-
-	echo "$(${SHELLDIR}/myscript/linux/core/get-kit-name.sh)"
+	echo "$(${SHELLDIR}/script/linux/core/get-kit-name.sh)"
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    if [ ! -f ${SHELLDIR}/myscript/linux/core/check-package.sh ];then 
-        echo "'MYSCRIPT' not pulled."
-        exit 1
-    fi
-
-    echo "$(${SHELLDIR}/myscript/linux/core/check-package.sh "$1")"
+    echo "$(${SHELLDIR}/script/linux/core/check-package.sh "$1")"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-    if [ ! -f ${SHELLDIR}/myscript/linux/core/check-which.sh ];then 
-        echo "'MYSCRIPT' not pulled."
-        exit 1
-    fi
-
-	echo "$(${SHELLDIR}/myscript/linux/core/check-which.sh "$1")"
+	echo "$(${SHELLDIR}/script/linux/core/check-which.sh "$1")"
 }
 
 #
@@ -1028,7 +1003,7 @@ CheckKeyword()
 }
 
 #修改执行权限，不然用不了脚本。
-chmod +xxx ${SHELLDIR}/myscript/linux/* -R 
+chmod +x ${SHELLDIR}/script/linux/core/*.sh
 
 #
 KIT_NAME=$(CheckPackageKitName)
@@ -1524,7 +1499,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/myscript/linux/dpkg
+DEB_TOOL_ROOT = ${SHELLDIR}/script/linux/dpkg
 EOF
 checkReturnCode
 

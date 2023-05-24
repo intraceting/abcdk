@@ -68,7 +68,7 @@ CC_FLAGS += -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #
-CC_FLAGS += -I$(CURDIR)/include/
+CC_FLAGS += -I$(CURDIR)/lib/include/
 
 #
 LINK_FLAGS += -L${BUILD_PATH}
@@ -77,13 +77,13 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-BASE_SRC_FILES += $(wildcard source/util/*.c)
-BASE_SRC_FILES += $(wildcard source/shell/*.c)
-BASE_SRC_FILES += $(wildcard source/mp4/*.c)
-BASE_SRC_FILES += $(wildcard source/comm/*.c)
-BASE_SRC_FILES += $(wildcard source/log/*.c)
-BASE_SRC_FILES += $(wildcard source/rtp/*.c)
-BASE_SRC_FILES += $(wildcard source/ffmpeg/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/util/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/shell/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/mp4/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/comm/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/log/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/rtp/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
@@ -124,43 +124,43 @@ test: test-src base
 test-src: ${TEST_OBJ_FILES} 
 
 #
-$(OBJ_PATH)/source/util/%.o: source/util/%.c
-	mkdir -p $(OBJ_PATH)/source/util/
+$(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/util/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 #
-$(OBJ_PATH)/source/shell/%.o: source/shell/%.c
-	mkdir -p $(OBJ_PATH)/source/shell/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/source/mp4/%.o: source/mp4/%.c
-	mkdir -p $(OBJ_PATH)/source/mp4/
+$(OBJ_PATH)/lib/source/shell/%.o: lib/source/shell/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/shell/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/source/comm/%.o: source/comm/%.c
-	mkdir -p $(OBJ_PATH)/source/comm/
+$(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/mp4/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/source/log/%.o: source/log/%.c
-	mkdir -p $(OBJ_PATH)/source/log/
+$(OBJ_PATH)/lib/source/comm/%.o: lib/source/comm/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/comm/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/source/rtp/%.o: source/rtp/%.c
-	mkdir -p $(OBJ_PATH)/source/rtp/
+$(OBJ_PATH)/lib/source/log/%.o: lib/source/log/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/log/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/source/ffmpeg/%.o: source/ffmpeg/%.c
-	mkdir -p $(OBJ_PATH)/source/ffmpeg/
+$(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/rtp/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/ffmpeg/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
@@ -214,6 +214,7 @@ install-runtime:
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
+	cp -rf $(CURDIR)/script ${INSTALL_PATH_BIN}/
 	
 #
 install-devel:
@@ -224,8 +225,8 @@ install-devel:
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
-	cp  -rf $(CURDIR)/include/abcdk ${INSTALL_PATH_INC}/
-	cp  -f $(CURDIR)/include/abcdk.h ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/lib/include/abcdk ${INSTALL_PATH_INC}/
+	cp  -f $(CURDIR)/lib/include/abcdk.h ${INSTALL_PATH_INC}/
 #
 	cp  -f ${PKG_PC} ${INSTALL_PATH_PC}/abcdk.pc
 
@@ -238,6 +239,7 @@ uninstall-runtime:
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
+	rm -rf $(INSTALL_PATH_BIN)/script
 	
 #
 uninstall-devel:
