@@ -1045,8 +1045,12 @@ TARGET_MACHINE="Unknown"
 
 #
 BUILD_TYPE="release"
+#
 BUILD_OPTIMIZE="No"
 OPTIMIZE_LEVEL="3"
+#
+DEPEND_FLAGS=""
+DEPEND_LINKS=""
 
 #
 INSTALL_PREFIX="/usr/local/"
@@ -1074,11 +1078,17 @@ usage: [ OPTIONS ]
     -O
      编译优化。默认：关闭。
 
-    -L
+    -o
      优化级别，默认：${OPTIMIZE_LEVEL}。
 
     -g  
      生成调试符号。默认：关闭
+
+    -f 
+     附加的编译参数。
+
+    -l 
+     附加的链接参数。
 
     -V < number > 
      主版本。默认：${VERSION_MAJOR}
@@ -1107,7 +1117,7 @@ EOF
 }
 
 #
-while getopts "hc:s:OL:gV:v:r:i:d:" ARGKEY 
+while getopts "hc:s:Oo:gf:l:V:v:r:i:d:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -1123,11 +1133,17 @@ do
     O)
         BUILD_OPTIMIZE="yes"
     ;;
-    L)
+    o)
         OPTIMIZE_LEVEL="$OPTARG"
     ;;
     g)
         BUILD_TYPE="debug"
+    ;;
+    f)
+        DEPEND_FLAGS="$OPTARG"
+    ;;
+    l)
+        DEPEND_LINKS="$OPTARG"
     ;;
     V)
         VERSION_MAJOR="${OPTARG}"
@@ -1259,7 +1275,7 @@ DependPackageCheck()
         if [ ${CHK} -eq 0 ];then
         {
             DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
-            DEPEND_LIBS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LIBS}"
+            DEPEND_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LINKS}"
         }
         else
         {
@@ -1277,7 +1293,7 @@ DependPackageCheck()
     fi
 
 #    echo ${DEPEND_FLAGS} 
-#    echo ${DEPEND_LIBS}
+#    echo ${DEPEND_LINKS}
 }
 
 #
@@ -1367,9 +1383,10 @@ VERSION_RELEASE = ${VERSION_RELEASE}
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 #
 DEPEND_FLAGS = ${DEPEND_FLAGS}
-DEPEND_LIBS = ${DEPEND_LIBS}
+DEPEND_LINKS = ${DEPEND_LINKS}
 #
 BUILD_TYPE = ${BUILD_TYPE}
+#
 BUILD_OPTIMIZE = ${BUILD_OPTIMIZE}
 OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 #

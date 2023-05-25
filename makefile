@@ -43,7 +43,7 @@ endif
 LINK_FLAGS += -Wl,--as-needed
 LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
 LINK_FLAGS += -ldl -pthread -lrt -lc -lm
-LINK_FLAGS += ${DEPEND_LIBS}
+LINK_FLAGS += ${DEPEND_LINKS}
 
 #
 CC_FLAGS += -std=c99
