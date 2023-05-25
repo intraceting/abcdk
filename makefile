@@ -181,7 +181,7 @@ clean: clean-base clean-tool clean-test
 
 #
 clean-base:
-	rm -rf ${OBJ_PATH}/source
+	rm -rf ${OBJ_PATH}/lib
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 

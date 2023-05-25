@@ -748,12 +748,15 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t
     node_p->callback = &node_p->cb_cp;
 
 #ifdef HEADER_SSL_H
-    node_p->ssl_ctx = ssl_ctx;
-    /*禁止会话复用。*/
-    SSL_CTX_set_session_cache_mode(node_p->ssl_ctx, SSL_SESS_CACHE_OFF);
+    if(ssl_ctx)
+    {
+        node_p->ssl_ctx = ssl_ctx;
+        /*禁止会话复用。*/
+        SSL_CTX_set_session_cache_mode(node_p->ssl_ctx, SSL_SESS_CACHE_OFF);
 #ifdef SSL_OP_NO_TICKET
-    SSL_CTX_set_options(node_p->ssl_ctx, SSL_OP_NO_TICKET);
+        SSL_CTX_set_options(node_p->ssl_ctx, SSL_OP_NO_TICKET);
 #endif //SSL_OP_NO_TICKET
+    }
 #endif //HEADER_SSL_H
 
     /*UNIX需要特殊复制一下。*/
