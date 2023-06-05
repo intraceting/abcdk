@@ -23,7 +23,7 @@ int abcdk_once(volatile int *status, int (*routine)(void *opaque), void *opaque)
 {
     int chk, ret;
 
-    assert(status != NULL && opaque != NULL);
+    assert(status != NULL && routine != NULL);
 
     if (abcdk_atomic_compare_and_swap(status,0, 1))
     {
