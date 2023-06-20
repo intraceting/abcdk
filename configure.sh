@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${SHELLDIR}/script/linux/core/check-os-id.sh "$1")"
+    echo "$(${SHELLDIR}/script/core/check-os-id.sh "$1")"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${SHELLDIR}/script/linux/core/get-os-ver.sh)"
+    echo "$(${SHELLDIR}/script/core/get-os-ver.sh)"
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${SHELLDIR}/script/linux/core/get-kit-name.sh)"
+	echo "$(${SHELLDIR}/script/core/get-kit-name.sh)"
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${SHELLDIR}/script/linux/core/check-package.sh "$1")"
+    echo "$(${SHELLDIR}/script/core/check-package.sh "$1")"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${SHELLDIR}/script/linux/core/check-which.sh "$1")"
+	echo "$(${SHELLDIR}/script/core/check-which.sh "$1")"
 }
 
 #
@@ -1003,7 +1003,7 @@ CheckKeyword()
 }
 
 #修改执行权限，不然用不了脚本。
-chmod +x ${SHELLDIR}/script/linux/core/*.sh
+chmod +x ${SHELLDIR}/script/core/*.sh
 
 #
 KIT_NAME=$(CheckPackageKitName)
@@ -1516,7 +1516,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/script/linux/dpkg
+DEB_TOOL_ROOT = ${SHELLDIR}/script/dpkg
 EOF
 checkReturnCode
 

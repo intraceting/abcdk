@@ -271,7 +271,7 @@ package-tar: package-runtime-tar package-devel-tar
 
 #
 package-runtime-tar:
-	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	mkdir -p ${PACKAGE_PATH}
 	tar -czv -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
@@ -280,7 +280,7 @@ package-runtime-tar:
 	
 #
 package-devel-tar:
-	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	mkdir -p ${PACKAGE_PATH}
 	tar -czv -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "${SOLUTION_NAME}"
@@ -293,7 +293,7 @@ package-${KIT_NAME}: package-runtime-${KIT_NAME} package-devel-${KIT_NAME}
 
 #
 package-runtime-rpm:
-	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	mkdir -p ${PACKAGE_PATH}
 	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RPM_RT_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RUNTIME_PACKAGE_NAME}.rpm"
@@ -302,7 +302,7 @@ package-runtime-rpm:
 	
 #
 package-devel-rpm:
-	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	mkdir -p ${PACKAGE_PATH}
 	rpmbuild --buildroot "${TMP_ROOT_PATH}/" -bb ${RPM_DEV_SPEC} --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEVEL_PACKAGE_NAME}.rpm"
@@ -311,7 +311,7 @@ package-devel-rpm:
 
 #
 package-runtime-deb:
-	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	cp -rf ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
 #	创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
@@ -325,7 +325,7 @@ package-runtime-deb:
 	rm -rf ${TMP_ROOT_PATH}
 
 package-devel-deb:
-	$(eval TMP_ROOT_PATH := $(shell mktemp -d))
+	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	cp -rf ${DEB_DEV_CTL} ${TMP_ROOT_PATH}/DEBIAN
 	mkdir -p ${PACKAGE_PATH}
