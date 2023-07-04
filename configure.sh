@@ -1056,7 +1056,7 @@ DEPEND_LINKS=""
 INSTALL_PREFIX="/usr/local/"
 
 #
-DEPEND_FUNC="Nothing"
+DEPEND_FUNC="openmp,openssl,archive,libmagic"
 DEPEND_NOFOUND=""
 DEPEND_REQUIRES=""
 
@@ -1103,7 +1103,7 @@ usage: [ OPTIONS ]
      安装路径。默认：${INSTALL_PREFIX}
 
     -d < key,key,... > 
-     依赖项目，以英文“,”为分割符。
+     依赖项目，以英文“,”为分割符。默认：${DEPEND_FUNC}
      
      支持以下关键字：
      openmp,unixodbc,sqlite,openssl,ffmpeg,
