@@ -176,7 +176,6 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
 {
     assert(ctx != NULL && fps > 0 && width > 0 && height > 0);
     assert(ctx->codec != NULL);
-    assert(ctx->codec->pix_fmts[0] != AV_PIX_FMT_NONE);
 
 #if 1
 
@@ -227,11 +226,7 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
     ctx->width = width;
     ctx->height = height;
     ctx->gop_size = (gop_size > 0 ? gop_size : ctx->time_base.den);
-
-    if (ctx->codec_id == AV_CODEC_ID_H265 || ctx->codec_id == AV_CODEC_ID_H264 || ctx->codec_id == AV_CODEC_ID_MJPEG)
-        ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-    else
-        ctx->pix_fmt = ctx->codec->pix_fmts[0];
+    ctx->pix_fmt = (ctx->codec->pix_fmts?ctx->codec->pix_fmts[0]:AV_PIX_FMT_YUV420P);
    
     if (oformat_flags & AVFMT_GLOBALHEADER)
         ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
