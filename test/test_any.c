@@ -415,7 +415,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_heap_free(send_dist);
     abcdk_heap_free(recv_dist);
 
-#elif 1
+#elif 0
 
     for (int y = 3; y <= 256; y++)
     {
@@ -461,6 +461,24 @@ int abcdk_test_any(abcdk_option_t *args)
         }
     }
 
+#elif 1
+
+    abcdk_receiver_t *t = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP,100000,NULL);
+
+    char data[] = {"POST /api HTTP/1.1\r\n"
+    "Host: 127.0.0.1:17008\r\n"
+    "User-Agent: python-requests/2.22.0\r\n"
+    "Accept-Encoding: gzip, deflate\r\n"
+    "Accept: */*\r\n"
+    "Connection: keep-alive\r\n"
+    "Content-Length: 489\r\n"
+    "Content-Type: application/x-www-form-urlencoded\r\n"
+    "\r\n"};
+
+    size_t remain = 0;
+    int chk = abcdk_receiver_append(t,data,strlen(data),&remain);
+
+    abcdk_receiver_unref(&t);
 
 #endif 
 }

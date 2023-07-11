@@ -419,7 +419,7 @@ int _abcdk_receiver_check_weight(abcdk_receiver_t *ctx, size_t *diff)
 
 int abcdk_receiver_append(abcdk_receiver_t *ctx, const void *data,size_t size,size_t *remain)
 {
-    ssize_t rsize = 0;
+    size_t rsize = 0;
     size_t rall = 0,diff = 0;
     int chk;
 
@@ -448,12 +448,13 @@ int abcdk_receiver_append(abcdk_receiver_t *ctx, const void *data,size_t size,si
 
         rsize = ABCDK_MIN(ctx->size - ctx->offset, size - rall);
         rsize = ABCDK_MIN(rsize,diff);
-        if (rsize > 0)
-        {
-            memcpy(ABCDK_PTR2VPTR(ctx->buf, ctx->offset), ABCDK_PTR2VPTR(data, rall), rsize);
-            ctx->offset += rsize;
-            rall += rsize;
-        }
+
+        if (rsize <= 0)
+            break;
+
+        memcpy(ABCDK_PTR2VPTR(ctx->buf, ctx->offset), ABCDK_PTR2VPTR(data, rall), rsize);
+        ctx->offset += rsize;
+        rall += rsize;
     }
 
     /*计算剩于数据长度。*/
