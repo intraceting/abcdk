@@ -157,7 +157,7 @@ int _abcdk_receiver_resize(abcdk_receiver_t *ctx, size_t size)
     if (ctx->capacity == ABCDK_MAX(ctx->size + 1, 4096UL))
         goto final;
 
-    ctx->capacity = ABCDK_MAX(ctx->size + 1, 4095UL);
+    ctx->capacity = ABCDK_MAX(ctx->size + 1, 4096UL);
 
     if (ctx->tmp_obj)
     {
