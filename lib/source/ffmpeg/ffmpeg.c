@@ -266,6 +266,11 @@ int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream)
             if(packet->stream_index != stream)
                 continue;
         }
+
+
+        /*没有实体文件不需要过滤器。*/
+        if(ctx->avctx->iformat->flags & AVFMT_NOFILE)
+            break;
         
         chk = abcdk_avformat_input_filter(ctx->avctx,packet,&ctx->vs_filter[packet->stream_index]);
         if (chk < 0)
