@@ -30,6 +30,16 @@ typedef struct _abcdk_ffmpeg
     AVBitStreamFilterContext *vs_filter[ABCDK_FFMPEG_MAX_STREAMS];
 #endif
 
+    /** 输入是否为mp4(h264)。*/
+    int input_mp4_h264[ABCDK_FFMPEG_MAX_STREAMS];
+    /** 输入是否为mp4(h265)。*/
+    int input_mp4_h265[ABCDK_FFMPEG_MAX_STREAMS];
+    /** 输入是否为mp4(mpeg4)。*/
+    int input_mp4_mpeg4[ABCDK_FFMPEG_MAX_STREAMS];
+
+    /** 读数据包计数器。*/
+    uint64_t read_pkt_count[ABCDK_FFMPEG_MAX_STREAMS];
+
     /** 视频。*/
     AVFormatContext *avctx;
 
@@ -41,6 +51,7 @@ typedef struct _abcdk_ffmpeg
 
     /** 最近活动包时间(秒)。*/
     int64_t last_packet_time;
+
 
     /** 读缓存包.*/
     AVPacket read_pkt;
@@ -128,6 +139,7 @@ int _abcdk_ffmpeg_capture_interrupt_cb(void *args)
 abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io,time_t timeout)
 {
     abcdk_ffmpeg_t *ctx = NULL;
+    int is_mp4_file = 0;
     int chk;
 
     assert(url != NULL);
@@ -152,6 +164,17 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     chk = abcdk_avformat_input_probe(ctx->avctx, NULL);
     if (chk < 0)
         goto final_error;
+
+    is_mp4_file |= (strcmp(ctx->avctx->iformat->long_name, "QuickTime / MOV") == 0 ? 0x1 : 0);
+    is_mp4_file |= (strcmp(ctx->avctx->iformat->long_name, "FLV (Flash Video)") == 0 ? 0x2 : 0);
+    is_mp4_file |= (strcmp(ctx->avctx->iformat->long_name, "Matroska / WebM") == 0 ? 0x4 : 0);
+
+    for(int i = 0;i<ctx->avctx->nb_streams;i++)
+    {
+        ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
+        ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
+        ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
+    }
 
     return ctx;
 
@@ -249,7 +272,11 @@ int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
 
 int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream)
 {
+    uint8_t *extdata_p = NULL;
+    int extsize = 0;
+    int oldsize = 0;
     int chk;
+
     assert(ctx != NULL && packet != NULL);
 
     for (;;)
@@ -257,27 +284,53 @@ int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream)
         chk = abcdk_avformat_input_read(ctx->avctx, packet, AVMEDIA_TYPE_NB);
         if (chk < 0)
             return -1;
+        
+        /*读数据包 +1。*/
+        ctx->read_pkt_count[packet->stream_index] += 1;
 
         /* 更新最近包时间，不然会超时。*/
         ctx->last_packet_time = _abcdk_ffmpeg_clock();
 
+        /* 如果指定了流索引，这里筛一下。*/
         if (stream >= 0)
         {
             if(packet->stream_index != stream)
                 continue;
         }
-
-
-        /*没有实体文件不需要过滤器。*/
-        if(ctx->avctx->iformat->flags & AVFMT_NOFILE)
-            break;
         
-        chk = abcdk_avformat_input_filter(ctx->avctx,packet,&ctx->vs_filter[packet->stream_index]);
-        if (chk < 0)
-            return -1;
-        else
-            break;
-     }
+        if (ctx->input_mp4_mpeg4[packet->stream_index]) 
+        {
+            /*mp4格式的mpeg码流需要特殊处理一下。*/
+
+            // if (ctx->read_pkt_count[packet->stream_index] == 1)
+            // {
+            //     extdata_p = ctx->avctx->streams[packet->stream_index]->codec->extradata;
+            //     extsize = ctx->avctx->streams[packet->stream_index]->codec->extradata_size;
+
+            //     if (extsize > 0)
+            //     {
+            //         /*记录现有数据长度。*/
+            //         oldsize = packet->size;
+            //         /*mpeg全局头部有三个字节(0x00 0x00 0x01)的启起码，因此要减去。*/
+            //         av_grow_packet(packet, extsize - 3);
+            //         /*把现有数据向后移动。*/
+            //         memmove(packet->data + (extsize - 3), packet->data, oldsize);
+            //         /*复制全局数据到开头。*/
+            //         memcpy(packet->data, extdata_p + 3,extsize - 3);
+            //     }
+            // }
+        }
+        else if (ctx->input_mp4_h264[packet->stream_index] || ctx->input_mp4_h265[packet->stream_index])
+        {
+            /*只有mp4格式的h264、h265才需要执行下面的过滤器。*/
+
+            chk = abcdk_avformat_input_filter(ctx->avctx, packet, &ctx->vs_filter[packet->stream_index]);
+            if (chk < 0)
+                return -1;
+        }
+
+        break;
+    }
 
     return packet->stream_index;
 }
