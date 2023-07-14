@@ -82,6 +82,7 @@
 #include "abcdk/util/enigma.h"
 #include "abcdk/util/random.h"
 #include "abcdk/util/logger.h"
+#include "abcdk/util/tar.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"
