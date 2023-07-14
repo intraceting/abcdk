@@ -1203,6 +1203,7 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 
     /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
     static unsigned char srv[] = {"\x08http/1.1\x08http/1.0\x08http/0.9"};
+    //static unsigned char srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
 
     /*精确的长度。*/
     srvlen = sizeof(srv) - 1;
