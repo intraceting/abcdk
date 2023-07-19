@@ -121,12 +121,6 @@ abcdk_map_t *abcdk_map_alloc(size_t size);
 */
 abcdk_object_t* abcdk_map_find(abcdk_map_t* map,const void* key,size_t ksize,size_t vsize);
 
-/**
- * 查找或创建。
- * 
- * @return !NULL(0) 成功(复制的指针，不需要主动释放)，NULL(0) 不存在或创建失败。
-*/
-#define abcdk_map_find2(map,key,vsize) abcdk_map_find((map),(key),sizeof(*(key)),(vsize))
 
 /**
  * 删除。
