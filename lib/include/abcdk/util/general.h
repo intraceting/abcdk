@@ -71,6 +71,36 @@ void *abcdk_hex2bin(void *dst,const char* src,size_t size);
 */
 const char *abcdk_match_env(const char *line, const char *name, uint8_t delim);
 
+/**
+ * 内存复制(1D)。
+ * 
+ * @param [out] dst 目标地址。
+ * @param [in] dst_offset 目标地址偏移量。
+ * @param [in] src 源地址。
+ * @param [in] src_offset 源地址偏移量。
+ * @param [in] count 数量。
+ * 
+*/
+void abcdk_memcopy_1d(void *dst, size_t dst_offset, const void *src,size_t src_offset, size_t count);
+
+/**
+ * 内存复制(2D)。
+ * 
+ * @param [out] dst 目标地址。
+ * @param [in] dst_pitch 目标地址X方向步长(字节)。
+ * @param [in] dst_x_bytes 目标地址X方向偏移量(字节)。
+ * @param [in] dst_y 目标地址Y方向偏移量。
+ * @param [in] src 源地址。
+ * @param [in] src_pitch 源地址X方向步长(字节)。
+ * @param [in] src_x_bytes 源地址X方向偏移量(字节)。
+ * @param [in] src_y 源地址Y方向偏移量。
+ * @param [in] roi_width_bytes 复制X方向宽度(字节)。
+ * @param [in] roi_height 复制Y方向高度。
+ * 
+ */
+void abcdk_memcopy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y,
+                      const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y,
+                      size_t roi_width_bytes, size_t roi_height);
 
 __END_DECLS
 
