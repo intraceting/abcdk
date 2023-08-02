@@ -9,7 +9,6 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/avutil.h"
-#include "abcdk/util/avformat.h"
 
 __BEGIN_DECLS
 
@@ -24,6 +23,45 @@ __BEGIN_DECLS
 #endif // HAVE_FFMPEG
 
 #ifdef AVCODEC_AVCODEC_H
+
+/**常用的编解码参数。*/
+typedef struct _abcdk_avcodec_parameters
+{
+    int fps;
+    int gop;
+    enum AVMediaType codec_type;
+    enum AVCodecID codec_id;
+    uint32_t codec_tag;
+    /**
+     * @note 申请者负责释放。
+     */
+    uint8_t *extradata;
+    int extradata_size;
+    int format;
+    int64_t bit_rate;
+    int bits_per_coded_sample;
+    int bits_per_raw_sample;
+    int profile;
+    int level;
+    int width;
+    int height;
+    AVRational sample_aspect_ratio;
+    enum AVFieldOrder field_order;
+    enum AVColorRange color_range;
+    enum AVColorPrimaries color_primaries;
+    enum AVColorTransferCharacteristic color_trc;
+    enum AVColorSpace color_space;
+    enum AVChromaLocation chroma_location;
+    int video_delay;
+    uint64_t channel_layout;
+    int channels;
+    int sample_rate;
+    int block_align;
+    int frame_size;
+    int initial_padding;
+    int trailing_padding;
+    int seek_preroll;
+}abcdk_avcodec_parameters_t;
 
 /**
  * 根据名字查找编/解码器。
@@ -109,12 +147,22 @@ int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in);
  * @param fps 帧速。
  * @param width 宽(像素)。
  * @param height 高(像素)。
- * @param gop_size 关健帧间隔帧数，<= 0 使用帧速。
- * @param oformat_flags 输出的流标志。
+ * @param gop 关健帧间隔帧数，<= 0 使用帧速。
  *
  * @note 在abcdk_avcodec_open之前使用有效。
  */
-void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx, int fps, int width, int height, int gop_size, int oformat_flags);
+void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx, abcdk_avcodec_parameters_t *param);
+
+/**
+ * 配置音频编码环境基本参数。
+ *
+ * @param sample_rate 采样率。
+ * @param channels 声道数量。
+ * @param bit_rate 位速率。
+ *
+ * @note 在abcdk_avcodec_open之前使用有效。
+ */
+void abcdk_avcodec_audio_encode_prepare(AVCodecContext *ctx, abcdk_avcodec_parameters_t *param);
 
 #endif // AVCODEC_AVCODEC_H
 

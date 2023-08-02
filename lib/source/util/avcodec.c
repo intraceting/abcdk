@@ -172,21 +172,23 @@ int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
     return got;
 }
 
-void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,int height,int gop_size,int oformat_flags)
+void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,abcdk_avcodec_parameters_t *param)
 {
-    assert(ctx != NULL && fps > 0 && width > 0 && height > 0);
+    assert(ctx != NULL && param != NULL);
     assert(ctx->codec != NULL);
+    assert(param->fps > 0 && param->width > 0 && param->height > 0);
+    
 
 #if 1
 
     /*-------------Copy from OpenCV----begin------------------*/
 
-    int frame_rate = (int)(fps + 0.5);
+    int frame_rate = (int)(param->fps + 0.5);
     int frame_rate_base = 1;
-    while (fabs(((double)frame_rate / frame_rate_base) - fps) > 0.001)
+    while (fabs(((double)frame_rate / frame_rate_base) - param->fps) > 0.001)
     {
         frame_rate_base *= 10;
-        frame_rate = (int)(fps * frame_rate_base + 0.5);
+        frame_rate = (int)(param->fps * frame_rate_base + 0.5);
     }
 
     ctx->time_base.den = frame_rate;
@@ -223,13 +225,23 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,int fps,int width,in
 #endif
     ctx->framerate.den = ctx->time_base.num;
     ctx->framerate.num = ctx->time_base.den;
-    ctx->width = width;
-    ctx->height = height;
-    ctx->gop_size = (gop_size > 0 ? gop_size : ctx->time_base.den);
+    ctx->width = param->width;
+    ctx->height = param->height;
+    ctx->gop_size = (param->gop > 0 ? param->gop : ctx->time_base.den);
     ctx->pix_fmt = (ctx->codec->pix_fmts?ctx->codec->pix_fmts[0]:AV_PIX_FMT_YUV420P);
-   
-    if (oformat_flags & AVFMT_GLOBALHEADER)
-        ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+}
+
+void abcdk_avcodec_audio_encode_prepare(AVCodecContext *ctx, abcdk_avcodec_parameters_t *param)
+{
+    assert(ctx != NULL && param != NULL);
+    assert(param->sample_rate > 0 && param->channels > 0 && param->bit_rate > 0);
+
+    ctx->sample_rate = param->sample_rate;
+    ctx->channels = param->channels;
+    ctx->sample_fmt = AV_SAMPLE_FMT_FLTP; // planar float
+    ctx->channel_layout = av_get_default_channel_layout(param->channels);
+    ctx->bit_rate = param->bit_rate;
+    ctx->frame_size = param->frame_size;
 }
 
 #pragma GCC diagnostic pop

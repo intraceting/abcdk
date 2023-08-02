@@ -172,6 +172,13 @@ int abcdk_avformat_output_trailer(AVFormatContext *ctx);
 int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *ctx);
 
 /**
+ * 自定义环境参数。
+ *
+ * @return 0 成功，!0 失败。
+ */
+int abcdk_avstream_parameters_from_customize(AVStream *vs, abcdk_avcodec_parameters_t *param);
+
+/**
  * 向编/解码器环境复制参数。
  *
  * @return 0 成功，!0 失败。

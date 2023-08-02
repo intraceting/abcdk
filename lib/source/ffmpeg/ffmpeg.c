@@ -402,7 +402,7 @@ final_error:
     return NULL;
 }
 
-int _abcdk_ffmpeg_open_writer_codec(abcdk_ffmpeg_t *ctx, int stream, int fps, int width, int height,AVCodec *codec)
+int _abcdk_ffmpeg_open_writer_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *codec,abcdk_avcodec_parameters_t *param)
 {
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
@@ -430,10 +430,17 @@ int _abcdk_ffmpeg_open_writer_codec(abcdk_ffmpeg_t *ctx, int stream, int fps, in
 
     if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        abcdk_avcodec_video_encode_prepare(ctx_p, fps, width, height, -1, ctx->avctx->oformat->flags);
+        abcdk_avcodec_video_encode_prepare(ctx_p, param);
 
-   //     ctx_p->thread_count = 2;
+        if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
+            ctx_p->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+        /*No b frame.*/
         ctx_p->max_b_frames = 0;
+    }
+    else if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        abcdk_avcodec_audio_encode_prepare(ctx_p, param);
     }
     else 
     {
@@ -459,75 +466,40 @@ final_error:
     return -1;
 }
 
-int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, int fps, int width, int height, enum AVCodecID id,
-                            const void *extdata, int extsize, int have_codec)
+int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, abcdk_avcodec_parameters_t *param, int have_codec)
 {
     AVStream *vs = NULL;
     int chk;
 
-    assert(ctx != NULL && fps > 0 && width > 0 && height > 0 && id > AV_CODEC_ID_NONE);
+    assert(ctx != NULL && param != NULL);
 
     if (ctx->avctx->nb_streams >= ABCDK_FFMPEG_MAX_STREAMS)
         return -2;
 
-    vs = abcdk_avformat_output_stream(ctx->avctx,abcdk_avcodec_find2(id,1));
+    vs = abcdk_avformat_output_stream(ctx->avctx,abcdk_avcodec_find2(param->codec_id,1));
     if(!vs)
         return -1;
 
     if (have_codec)
     {
-        /* 使用外部编码器时，下面值必须填写。*/
-
-        vs->time_base = vs->codec->time_base = av_make_q(1, fps);
-        vs->avg_frame_rate = vs->r_frame_rate = av_make_q(fps, 1);
+        /*使用外部编码器时，添写自定义参数。*/
+        abcdk_avstream_parameters_from_customize(vs,param);
 
         if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
             vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-        vs->codec->width = width;
-        vs->codec->height = height;
-
-        /*如果有扩展信息，必须复制，不然流无法解码。*/
-        if (extdata != NULL && extsize > 0)
-        {
-            if(vs->codec->extradata)
-                av_free(vs->codec->extradata);
-            
-            vs->codec->extradata = NULL;
-            vs->codec->extradata_size = extsize;
-            vs->codec->extradata = (uint8_t *)av_mallocz((size_t)(extsize + AV_INPUT_BUFFER_PADDING_SIZE));
-            memcpy(vs->codec->extradata, extdata, extsize);
-        }
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58,35,100) 
-        vs->codecpar->width = width;
-        vs->codecpar->height = height;
-
-        /*如果有扩展信息，必须复制，不然流无法解码。*/
-        if (extdata != NULL && extsize > 0)
-        {
-            if(vs->codecpar->extradata)
-                av_free(vs->codecpar->extradata);
-            
-            vs->codecpar->extradata = NULL;
-            vs->codecpar->extradata_size = extsize;
-            vs->codecpar->extradata = (uint8_t *)av_mallocz((size_t)(extsize + AV_INPUT_BUFFER_PADDING_SIZE));
-            memcpy(vs->codecpar->extradata, extdata, extsize);
-        }
-#endif
     }
     else
     {
         /*优先尝试硬件编码。必须用下面的写法，因为编码器可能未安装。*/
-        if (id == AV_CODEC_ID_HEVC)
-            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,fps,width,height,abcdk_avcodec_find("hevc_nvenc",1));
-        else if (id == AV_CODEC_ID_H264)
-            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,fps,width,height,abcdk_avcodec_find("h264_nvenc",1));
+        if (param->codec_id == AV_CODEC_ID_HEVC)
+            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find("hevc_nvenc",1),param);
+        else if (param->codec_id == AV_CODEC_ID_H264)
+            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find("h264_nvenc",1),param);
         else 
             chk = -1;
 
         if(chk<0)
-            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,fps,width,height,abcdk_avcodec_find2(id,1));
+            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find2(param->codec_id,1),param);
 
         if (chk < 0)
             return -1;

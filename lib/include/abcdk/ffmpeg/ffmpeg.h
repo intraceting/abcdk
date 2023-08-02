@@ -19,6 +19,7 @@ __BEGIN_DECLS
 /** FFMPEG对象。*/
 typedef struct _abcdk_ffmpeg abcdk_ffmpeg_t;
 
+
 /**
  * 销毁对象。
 */
@@ -66,16 +67,11 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,c
 /**
  * 创建数据流。
  * 
- * @note 仅支持视频流。
- * 
- * @param extdata 扩展数据的指针，NULL(0) 忽略。
- * @param extsize 扩展数据的长度。
- * @param have_codec 0 使用内部编码器(不支持B帧，并忽略外部扩展数据)，!0 使用外部编码器。
+ * @param have_codec 0 使用内部编码器(不支持B帧，并忽略扩展数据)，!0 使用外部编码器。
  * 
  * @return >= 0 成功(数据流索引)，< 0 失败。
 */
-int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, int fps, int width, int height, enum AVCodecID id,
-                            const void *extdata, int extsize, int have_codec);
+int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, abcdk_avcodec_parameters_t *param, int have_codec);
 
 /**
  * 写入头部信息。

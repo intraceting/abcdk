@@ -538,6 +538,83 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     return 0;
 }
 
+int abcdk_avstream_parameters_from_customize(AVStream *vs, abcdk_avcodec_parameters_t *param)
+{
+    assert(vs != NULL && param != NULL);
+
+    vs->time_base = vs->codec->time_base = av_make_q(1, param->fps);
+    vs->avg_frame_rate = vs->r_frame_rate = av_make_q(param->fps, 1);
+
+    vs->codec->bit_rate = param->bit_rate;
+
+    switch (vs->codec->codec_type)
+    {
+    case AVMEDIA_TYPE_VIDEO:
+        vs->codec->width = param->width;
+        vs->codec->height = param->height;
+        break;
+    case AVMEDIA_TYPE_AUDIO:
+        vs->codec->channel_layout = param->channel_layout;
+        vs->codec->channels = param->channels;
+        vs->codec->sample_rate = param->sample_rate;
+        vs->codec->frame_size = param->frame_size;
+        break;
+    case AVMEDIA_TYPE_SUBTITLE:
+        vs->codec->width = param->width;
+        vs->codec->height = param->height;
+        break;
+    }
+
+    /*如果有扩展信息，必须复制，不然流无法解码。*/
+    if (param->extradata != NULL && param->extradata_size > 0)
+    {
+        if (vs->codec->extradata)
+            av_free(vs->codec->extradata);
+
+        vs->codec->extradata = NULL;
+        vs->codec->extradata_size = param->extradata_size;
+        vs->codec->extradata = (uint8_t *)av_mallocz((size_t)(param->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE));
+        memcpy(vs->codec->extradata, param->extradata, param->extradata_size);
+    }
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
+
+    vs->codecpar->bit_rate = param->bit_rate;
+
+    switch (vs->codecpar->codec_type)
+    {
+    case AVMEDIA_TYPE_VIDEO:
+        vs->codecpar->width = param->width;
+        vs->codecpar->height = param->height;
+        break;
+    case AVMEDIA_TYPE_AUDIO:
+        vs->codecpar->channel_layout = param->channel_layout;
+        vs->codecpar->channels = param->channels;
+        vs->codecpar->sample_rate = param->sample_rate;
+        vs->codecpar->frame_size = param->frame_size;
+        break;
+    case AVMEDIA_TYPE_SUBTITLE:
+        vs->codecpar->width = param->width;
+        vs->codecpar->height = param->height;
+        break;
+    }
+
+    /*如果有扩展信息，必须复制，不然流无法解码。*/
+    if (param->extradata != NULL && param->extradata_size > 0)
+    {
+        if (vs->codecpar->extradata)
+            av_free(vs->codecpar->extradata);
+
+        vs->codecpar->extradata = NULL;
+        vs->codecpar->extradata_size = param->extradata_size;
+        vs->codecpar->extradata = (uint8_t *)av_mallocz((size_t)(param->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE));
+        memcpy(vs->codecpar->extradata, param->extradata, param->extradata_size);
+    }
+#endif
+
+    return 0;
+}
+
 int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
 {
     assert(vs != NULL && ctx != NULL);
