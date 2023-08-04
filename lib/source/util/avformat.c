@@ -344,11 +344,12 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
 
     if (io)
         ctx->pb = io;
-
+#if 0
     av_dict_set(&ctx->metadata, "service", SOLUTION_NAME, 0);
     av_dict_set(&ctx->metadata, "service_name", SOLUTION_NAME, 0);
     av_dict_set(&ctx->metadata, "service_provider", SOLUTION_NAME, 0);
     av_dict_set(&ctx->metadata, "artist", SOLUTION_NAME, 0);
+#endif
 
     if (abcdk_strncmp(filename, "rtsp://", 7, 0) == 0)
         ctx->oformat = av_guess_format("rtsp", NULL, NULL);
@@ -434,7 +435,14 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
     return 0;
 }
 
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt)
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt)
+{
+    assert(ctx != NULL && pkt != NULL);
+
+    return av_interleaved_write_frame(ctx, pkt);
+}
+
+int abcdk_avformat_output_write2(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt)
 {
     assert(ctx != NULL && bq != NULL && cq != NULL && pkt != NULL);
     assert(ctx->nb_streams > pkt->stream_index);
@@ -448,7 +456,7 @@ int abcdk_avformat_output_write(AVFormatContext *ctx, AVRational *bq, AVRational
     if (pkt->duration)
         pkt->duration = av_rescale_q(pkt->duration, *bq, *cq);
 
-    return av_interleaved_write_frame(ctx, pkt);
+    return abcdk_avformat_output_write(ctx, pkt);
 }
 
 int abcdk_avformat_output_trailer(AVFormatContext *ctx)
@@ -463,15 +471,18 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     assert(vs != NULL && ctx != NULL);
 
     /*如果是编码，帧率也一并复制。*/
-    if (av_codec_is_encoder(ctx->codec))
+    if (av_codec_is_encoder(vs->codec->codec))
     {
         vs->time_base = vs->codec->time_base = ctx->time_base;
+        vs->codec->framerate = ctx->framerate;
         vs->avg_frame_rate = vs->r_frame_rate = av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
     avcodec_parameters_from_context(vs->codecpar, ctx);
-#else
+#endif
+
+    /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
     vs->codec->codec_type = ctx->codec_type;
     vs->codec->codec_id = ctx->codec_id;
     vs->codec->codec_tag = ctx->codec_tag;
@@ -533,84 +544,6 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
         }
     }
 
-#endif
-
-    return 0;
-}
-
-int abcdk_avstream_parameters_from_customize(AVStream *vs, abcdk_avcodec_parameters_t *param)
-{
-    assert(vs != NULL && param != NULL);
-
-    vs->time_base = vs->codec->time_base = av_make_q(1, param->fps);
-    vs->avg_frame_rate = vs->r_frame_rate = av_make_q(param->fps, 1);
-
-    vs->codec->bit_rate = param->bit_rate;
-
-    switch (vs->codec->codec_type)
-    {
-    case AVMEDIA_TYPE_VIDEO:
-        vs->codec->width = param->width;
-        vs->codec->height = param->height;
-        break;
-    case AVMEDIA_TYPE_AUDIO:
-        vs->codec->channel_layout = param->channel_layout;
-        vs->codec->channels = param->channels;
-        vs->codec->sample_rate = param->sample_rate;
-        vs->codec->frame_size = param->frame_size;
-        break;
-    case AVMEDIA_TYPE_SUBTITLE:
-        vs->codec->width = param->width;
-        vs->codec->height = param->height;
-        break;
-    }
-
-    /*如果有扩展信息，必须复制，不然流无法解码。*/
-    if (param->extradata != NULL && param->extradata_size > 0)
-    {
-        if (vs->codec->extradata)
-            av_free(vs->codec->extradata);
-
-        vs->codec->extradata = NULL;
-        vs->codec->extradata_size = param->extradata_size;
-        vs->codec->extradata = (uint8_t *)av_mallocz((size_t)(param->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE));
-        memcpy(vs->codec->extradata, param->extradata, param->extradata_size);
-    }
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
-
-    vs->codecpar->bit_rate = param->bit_rate;
-
-    switch (vs->codecpar->codec_type)
-    {
-    case AVMEDIA_TYPE_VIDEO:
-        vs->codecpar->width = param->width;
-        vs->codecpar->height = param->height;
-        break;
-    case AVMEDIA_TYPE_AUDIO:
-        vs->codecpar->channel_layout = param->channel_layout;
-        vs->codecpar->channels = param->channels;
-        vs->codecpar->sample_rate = param->sample_rate;
-        vs->codecpar->frame_size = param->frame_size;
-        break;
-    case AVMEDIA_TYPE_SUBTITLE:
-        vs->codecpar->width = param->width;
-        vs->codecpar->height = param->height;
-        break;
-    }
-
-    /*如果有扩展信息，必须复制，不然流无法解码。*/
-    if (param->extradata != NULL && param->extradata_size > 0)
-    {
-        if (vs->codecpar->extradata)
-            av_free(vs->codecpar->extradata);
-
-        vs->codecpar->extradata = NULL;
-        vs->codecpar->extradata_size = param->extradata_size;
-        vs->codecpar->extradata = (uint8_t *)av_mallocz((size_t)(param->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE));
-        memcpy(vs->codecpar->extradata, param->extradata, param->extradata_size);
-    }
-#endif
 
     return 0;
 }
@@ -618,9 +551,14 @@ int abcdk_avstream_parameters_from_customize(AVStream *vs, abcdk_avcodec_paramet
 int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs)
 {
     assert(vs != NULL && ctx != NULL);
+
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
     avcodec_parameters_to_context(ctx, vs->codecpar);
-#else
+#endif
+
+    /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
+    ctx->time_base = vs->codec->time_base;
+    ctx->framerate = vs->codec->framerate;
     ctx->codec_type = vs->codec->codec_type;
     ctx->codec_id = vs->codec->codec_id;
     ctx->codec_tag = vs->codec->codec_tag;
@@ -680,7 +618,7 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
-#endif
+
 
     return 0;
 }
@@ -715,9 +653,9 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs)
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = _abcdk_avstream_r2d(vs->avg_frame_rate);
-    if (fps < ABCDK_AVSTREAM_EPS_ZERO)
         fps = _abcdk_avstream_r2d(vs->r_frame_rate);
+    if (fps < ABCDK_AVSTREAM_EPS_ZERO)
+        fps = _abcdk_avstream_r2d(vs->avg_frame_rate);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
         fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base);

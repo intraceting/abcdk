@@ -402,7 +402,7 @@ final_error:
     return NULL;
 }
 
-int _abcdk_ffmpeg_open_writer_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *codec,abcdk_avcodec_parameters_t *param)
+int _abcdk_ffmpeg_open_writer_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *codec,const AVCodecContext *opt)
 {
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
@@ -430,22 +430,63 @@ int _abcdk_ffmpeg_open_writer_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *co
 
     if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        abcdk_avcodec_video_encode_prepare(ctx_p, param);
+        assert(opt->time_base.den > 0 && opt->time_base.num > 0);
+        assert(opt->width > 0 && opt->height > 0);
+        assert(opt->gop_size > 0);
 
-        if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
-            ctx_p->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+        ctx_p->time_base = opt->time_base;
+        ctx_p->framerate.den = opt->time_base.num;
+        ctx_p->framerate.num = opt->time_base.den;
+        
+        ctx_p->width = opt->width;
+        ctx_p->height = opt->height;
+        ctx_p->gop_size = opt->gop_size;
+        ctx_p->pix_fmt = opt->pix_fmt;
+
+        /*如果未指定像素格式，则使用默认格式。*/
+        if (ctx_p->pix_fmt == AV_PIX_FMT_NONE)
+            ctx_p->pix_fmt = (ctx_p->codec->pix_fmts ? ctx_p->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P);
 
         /*No b frame.*/
         ctx_p->max_b_frames = 0;
+        
     }
-    else if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
+    else if(ctx_p->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-        abcdk_avcodec_audio_encode_prepare(ctx_p, param);
+        assert(opt->time_base.den > 0 && opt->time_base.num > 0);
+        assert(opt->sample_rate > 0);
+        assert(opt->channels > 0);
+        assert(opt->bit_rate > 0);
+        assert(opt->frame_size > 0);
+
+        ctx_p->time_base = opt->time_base;
+        ctx_p->framerate.den = opt->time_base.num;
+        ctx_p->framerate.num = opt->time_base.den;
+
+        ctx_p->sample_rate = opt->sample_rate;
+        ctx_p->channels = opt->channels;
+        ctx_p->sample_fmt = opt->sample_fmt;
+        ctx_p->channel_layout = opt->channel_layout;
+        ctx_p->bit_rate = opt->bit_rate;
+        ctx_p->frame_size = opt->frame_size;
+
+     //   if (ctx_p->channel_layout == -1L)
+     //       ctx_p->channel_layout = av_get_default_channel_layout(opt->channels);
+
+        if (ctx_p->sample_fmt == AV_SAMPLE_FMT_NONE)
+            ctx_p->sample_fmt = AV_SAMPLE_FMT_FLTP;
+
+        if (ctx_p->codec_id == AV_CODEC_ID_AAC)
+            av_dict_set(&dict_p, "strict", "-2", 0);
     }
     else 
     {
         goto final_error;//fix me.
     }
+
+    /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
+    if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
+        ctx_p->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     
     chk = abcdk_avcodec_open(ctx_p, &dict_p);
     if(chk <0 )
@@ -466,40 +507,40 @@ final_error:
     return -1;
 }
 
-int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, abcdk_avcodec_parameters_t *param, int have_codec)
+int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int have_codec)
 {
     AVStream *vs = NULL;
     int chk;
 
-    assert(ctx != NULL && param != NULL);
+    assert(ctx != NULL && opt != NULL);
 
     if (ctx->avctx->nb_streams >= ABCDK_FFMPEG_MAX_STREAMS)
         return -2;
 
-    vs = abcdk_avformat_output_stream(ctx->avctx,abcdk_avcodec_find2(param->codec_id,1));
+    vs = abcdk_avformat_output_stream(ctx->avctx,abcdk_avcodec_find2(opt->codec_id,1));
     if(!vs)
         return -1;
 
     if (have_codec)
     {
-        /*使用外部编码器时，添写自定义参数。*/
-        abcdk_avstream_parameters_from_customize(vs,param);
+        abcdk_avstream_parameters_from_context(vs, opt);
 
+        /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
         if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
             vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
     else
     {
         /*优先尝试硬件编码。必须用下面的写法，因为编码器可能未安装。*/
-        if (param->codec_id == AV_CODEC_ID_HEVC)
-            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find("hevc_nvenc",1),param);
-        else if (param->codec_id == AV_CODEC_ID_H264)
-            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find("h264_nvenc",1),param);
+        if (opt->codec_id == AV_CODEC_ID_HEVC)
+            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find("hevc_nvenc",1),opt);
+        else if (opt->codec_id == AV_CODEC_ID_H264)
+            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find("h264_nvenc",1),opt);
         else 
             chk = -1;
 
         if(chk<0)
-            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find2(param->codec_id,1),param);
+            chk = _abcdk_ffmpeg_open_writer_codec(ctx,vs->index,abcdk_avcodec_find2(opt->codec_id,1),opt);
 
         if (chk < 0)
             return -1;
@@ -567,7 +608,7 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
 
             pkt.stream_index = ctx->avctx->streams[i]->index;
 
-            chk = abcdk_ffmpeg_write(ctx, &pkt);
+            chk = abcdk_ffmpeg_write(ctx, &pkt, NULL);
             if (chk < 0)
                 goto final;
         }
@@ -585,7 +626,7 @@ final:
     return 0;
 }
 
-int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet)
+int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet, AVRational *src_time_base)
 {
     AVRational bq,cq;
     AVCodecContext *ctx_p = NULL;
@@ -602,11 +643,23 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet)
     ctx_p = ctx->codec_ctx[packet->stream_index];
     vs_p = ctx->avctx->streams[packet->stream_index];
 
-    bq = (ctx_p ? ctx_p->time_base : vs_p->codec->time_base);
-    cq = vs_p->time_base;
-    packet->stream_index = vs_p->index;
+    if (src_time_base)
+    {
+        packet->pts = av_rescale_q_rnd(packet->pts, *src_time_base, vs_p->time_base, (enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+		packet->dts = av_rescale_q_rnd(packet->dts, *src_time_base, vs_p->time_base, (enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+		packet->duration = av_rescale_q(packet->duration, *src_time_base, vs_p->time_base);
+        packet->pos = -1;
 
-    chk = abcdk_avformat_output_write(ctx->avctx, &bq, &cq, packet);
+        chk = abcdk_avformat_output_write(ctx->avctx, packet);
+    }
+    else
+    {
+        bq = (ctx_p ? ctx_p->time_base : vs_p->codec->time_base);
+        cq = vs_p->time_base;
+
+        chk = abcdk_avformat_output_write2(ctx->avctx, &bq, &cq, packet);
+    }
+
     if (chk < 0)
         return -1;
 
@@ -635,7 +688,7 @@ int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe,
     pkt.dts = ++ctx->ts_nums[stream][1];
     pkt.pts = ++ctx->ts_nums[stream][0];
 
-    chk = abcdk_ffmpeg_write(ctx, &pkt);
+    chk = abcdk_ffmpeg_write(ctx, &pkt, NULL);
     if (chk < 0)
         return -1;
 
@@ -684,7 +737,7 @@ int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
         goto final;
 
     pkt.stream_index = stream;
-    chk = abcdk_ffmpeg_write(ctx, &pkt);
+    chk = abcdk_ffmpeg_write(ctx, &pkt,0);
 
 final:
 

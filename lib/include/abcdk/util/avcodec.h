@@ -142,27 +142,12 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out, const AVPacket *in);
 int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in);
 
 /**
- * 配置视频编码环境基本参数。
- *
- * @param fps 帧速。
- * @param width 宽(像素)。
- * @param height 高(像素)。
- * @param gop 关健帧间隔帧数，<= 0 使用帧速。
- *
- * @note 在abcdk_avcodec_open之前使用有效。
+ * 编码(视频)填充时间基值。
+ * 
+ * @param fps 
  */
-void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx, abcdk_avcodec_parameters_t *param);
+void abcdk_avcodec_encode_video_fill_time_base(AVCodecContext *ctx, double fps);
 
-/**
- * 配置音频编码环境基本参数。
- *
- * @param sample_rate 采样率。
- * @param channels 声道数量。
- * @param bit_rate 位速率。
- *
- * @note 在abcdk_avcodec_open之前使用有效。
- */
-void abcdk_avcodec_audio_encode_prepare(AVCodecContext *ctx, abcdk_avcodec_parameters_t *param);
 
 #endif // AVCODEC_AVCODEC_H
 

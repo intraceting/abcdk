@@ -106,6 +106,17 @@ int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
             else if (ctx->codec_id == AV_CODEC_ID_H264)
                 av_dict_set(dict, "x264opts", "bframes=0", 0);
         }
+
+        if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
+        {
+            if (ctx->pix_fmt == AV_PIX_FMT_NONE)
+                ctx->pix_fmt = (ctx->codec->pix_fmts ? ctx->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P);
+        }
+        else if(ctx->codec->type == AVMEDIA_TYPE_AUDIO)
+        {
+            if (ctx->sample_fmt == AV_SAMPLE_FMT_NONE)
+                ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
+        }
     }
 
     chk = avcodec_open2(ctx, NULL, dict);
@@ -172,23 +183,18 @@ int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
     return got;
 }
 
-void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,abcdk_avcodec_parameters_t *param)
+void abcdk_avcodec_encode_video_fill_time_base(AVCodecContext *ctx, double fps)
 {
-    assert(ctx != NULL && param != NULL);
-    assert(ctx->codec != NULL);
-    assert(param->fps > 0 && param->width > 0 && param->height > 0);
-    
-
 #if 1
 
     /*-------------Copy from OpenCV----begin------------------*/
 
-    int frame_rate = (int)(param->fps + 0.5);
+    int frame_rate = (int)(fps + 0.5);
     int frame_rate_base = 1;
-    while (fabs(((double)frame_rate / frame_rate_base) - param->fps) > 0.001)
+    while (fabs(((double)frame_rate / frame_rate_base) - fps) > 0.001)
     {
         frame_rate_base *= 10;
-        frame_rate = (int)(param->fps * frame_rate_base + 0.5);
+        frame_rate = (int)(fps * frame_rate_base + 0.5);
     }
 
     ctx->time_base.den = frame_rate;
@@ -220,28 +226,13 @@ void abcdk_avcodec_video_encode_prepare(AVCodecContext *ctx,abcdk_avcodec_parame
         }
     }
     /*-------------Copy from OpenCV-----end---------------*/
-#else 
+#else
     ctx->time_base = (AVRational){1, fps};
 #endif
+
+    /*非常重要。*/
     ctx->framerate.den = ctx->time_base.num;
     ctx->framerate.num = ctx->time_base.den;
-    ctx->width = param->width;
-    ctx->height = param->height;
-    ctx->gop_size = (param->gop > 0 ? param->gop : ctx->time_base.den);
-    ctx->pix_fmt = (ctx->codec->pix_fmts?ctx->codec->pix_fmts[0]:AV_PIX_FMT_YUV420P);
-}
-
-void abcdk_avcodec_audio_encode_prepare(AVCodecContext *ctx, abcdk_avcodec_parameters_t *param)
-{
-    assert(ctx != NULL && param != NULL);
-    assert(param->sample_rate > 0 && param->channels > 0 && param->bit_rate > 0);
-
-    ctx->sample_rate = param->sample_rate;
-    ctx->channels = param->channels;
-    ctx->sample_fmt = AV_SAMPLE_FMT_FLTP; // planar float
-    ctx->channel_layout = av_get_default_channel_layout(param->channels);
-    ctx->bit_rate = param->bit_rate;
-    ctx->frame_size = param->frame_size;
 }
 
 #pragma GCC diagnostic pop

@@ -16,60 +16,50 @@ int abcdk_test_record(abcdk_option_t *args)
 {
     const char *src = abcdk_option_get(args,"--src",0,"");
     const char *dst = abcdk_option_get(args,"--dst",0,"");
+    const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,NULL,0);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(NULL,dst,NULL,NULL);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,NULL);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
+    AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
+
+    abcdk_avformat_dump(rf,0);
     
-    abcdk_avcodec_parameters_t rparam[10] = {0};
     for(int i = 0;i<rf->nb_streams;i++)
     {
         AVStream * p = rf->streams[i];
-        abcdk_avcodec_parameters_t *p2 = &rparam[i];
 
-        p2->codec_id = p->codec->codec_id;
-        p2->extradata = p->codec->extradata;
-        p2->extradata_size = p->codec->extradata_size;
-        p2->bit_rate = p->codec->bit_rate;
+       
+        AVCodecContext *opt = abcdk_avcodec_alloc3(p->codec->codec_id,1);
 
-        if (p->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-        {
-            p2->fps = abcdk_avstream_fps(rf, p);
-            p2->width = abcdk_avstream_width(rf, p);
-            p2->height = abcdk_avstream_height(rf, p);
-        }
-        else if (p->codec->codec_type == AVMEDIA_TYPE_AUDIO)
-        {
-            p2->fps = p->codec->sample_rate;
-            p2->channels = p->codec->channels;
-            p2->sample_rate = p->codec->sample_rate;
-            p2->channel_layout = p->codec->channel_layout;
-            p2->frame_size = p->codec->frame_size;
-        }
-        else
-        {
-            continue;
-        }
+        abcdk_avstream_parameters_to_context(opt,p);
 
-        abcdk_ffmpeg_add_stream(w,p2,1);
+        opt->codec_tag = 0;
+        // int fps = abcdk_avstream_fps(rf,p);
+        // abcdk_avcodec_encode_video_fill_time_base(opt, fps);
+
+        abcdk_ffmpeg_add_stream(w,opt,1);
+
+        abcdk_avcodec_free(&opt);
     }
     
-    abcdk_ffmpeg_write_header(w,0);
+    abcdk_ffmpeg_write_header(w,1);
+
+    abcdk_avformat_dump(wf,1);
 
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    while(1)
+    for(int i = 0;i<1000;i++)
     {
         int n= abcdk_ffmpeg_read(r,&pkt,-1);
         if(n<0)
             break;
 
-    //    pkt.pos = -1;
-     //   abcdk_ffmpeg_write(w,&pkt);
+         abcdk_ffmpeg_write(w,&pkt,&rf->streams[n]->time_base);
 
-        abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
+     //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
     }
 
     av_packet_unref(&pkt);
@@ -79,7 +69,63 @@ int abcdk_test_record(abcdk_option_t *args)
     abcdk_ffmpeg_destroy(&w);
     abcdk_ffmpeg_destroy(&r);
 }
+
+int abcdk_test_codec(abcdk_option_t *args)
+{
+    const char *src = abcdk_option_get(args,"--src",0,"");
+    const char *dst = abcdk_option_get(args,"--dst",0,"");
+    const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
+
+    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,NULL,0);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,NULL);
+
+    AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
+    AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
+
+    abcdk_avformat_dump(rf,0);
+    
+    for(int i = 0;i<rf->nb_streams;i++)
+    {
+        AVStream * p = rf->streams[i];
+
+        AVCodecContext *opt = abcdk_avcodec_alloc3(p->codec->codec_id,1);
+
+        abcdk_avstream_parameters_to_context(opt,p);
+
+        opt->codec_tag = 0;
+        opt->gop_size = 12;
+        int fps = abcdk_avstream_fps(rf,p);
+        abcdk_avcodec_encode_video_fill_time_base(opt, fps);
+
+        abcdk_ffmpeg_add_stream(w,opt,0);
+
+        abcdk_avcodec_free(&opt);
+    }
+    
+    abcdk_ffmpeg_write_header(w,0);
+
+    abcdk_avformat_dump(wf,1);
+
+    AVFrame *inframe = av_frame_alloc();
+    for(int i = 0;i<1000;i++)
+    {
+        int n= abcdk_ffmpeg_read2(r,inframe,-1);
+        if(n<0)
+            break;
+
+         abcdk_ffmpeg_write3(w,inframe,n);
+    }
+
+    av_frame_free(&inframe);
+
+
+    abcdk_ffmpeg_write_trailer(w);
+    abcdk_ffmpeg_destroy(&w);
+    abcdk_ffmpeg_destroy(&r);
+}
+
 #endif //HAVE_FFMPEG
+
 int abcdk_test_ffmpeg(abcdk_option_t *args)
 {
 #ifdef HAVE_FFMPEG
@@ -88,6 +134,8 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
 
     if(cmd == 1)
         abcdk_test_record(args);
+    else if(cmd == 2)
+        abcdk_test_codec(args);
 
 #endif //HAVE_FFMPEG
 

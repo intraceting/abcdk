@@ -71,7 +71,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,c
  * 
  * @return >= 0 成功(数据流索引)，< 0 失败。
 */
-int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, abcdk_avcodec_parameters_t *param, int have_codec);
+int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int have_codec);
 
 /**
  * 写入头部信息。
@@ -98,7 +98,7 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx);
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet);
+int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet, AVRational *src_time_base);
 
 /**
  * 写入数据包(已编码)。

@@ -148,6 +148,16 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict);
 /**
  * 向流(输出)写入数据包。
  *
+ * @param pkt 包，NULL(0) 写入结束包。
+ *
+ * @return 0 成功，!0 失败。
+ *
+ */
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt);
+
+/**
+ * 向流(输出)写入数据包。
+ *
  * @param bq 编码时间基值。
  * @param cq 数据流时间基值。
  * @param pkt 包，NULL(0) 写入结束包。
@@ -155,7 +165,7 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict);
  * @return 0 成功，!0 失败。
  *
  */
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt);
+int abcdk_avformat_output_write2(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt);
 
 /**
  * 向流(输出)写入结束信息。
@@ -170,13 +180,6 @@ int abcdk_avformat_output_trailer(AVFormatContext *ctx);
  * @return 0 成功，!0 失败。
  */
 int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *ctx);
-
-/**
- * 自定义环境参数。
- *
- * @return 0 成功，!0 失败。
- */
-int abcdk_avstream_parameters_from_customize(AVStream *vs, abcdk_avcodec_parameters_t *param);
 
 /**
  * 向编/解码器环境复制参数。
