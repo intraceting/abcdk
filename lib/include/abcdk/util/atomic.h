@@ -31,7 +31,7 @@
 /**
  * 返回旧值。
 */
-#define abcdk_atomic_load(ptr)   __sync_and_and_fetch((ptr), *(ptr))
+#define abcdk_atomic_load(ptr)   __sync_add_and_fetch((ptr), 0)
 
 /**
  * 设置新值。
