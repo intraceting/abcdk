@@ -26,6 +26,9 @@
  * type __sync_nand_and_fetch (type *ptr, type value);
  * bool __sync_bool_compare_and_swap (type*ptr, type oldval, type newval, ...)
  * type __sync_val_compare_and_swap (type *ptr, type oldval,  type newval, ...)
+ * __sync_synchronize (...)
+ * type __sync_lock_test_and_set (type *ptr, type value, ...)
+ * void __sync_lock_release (type *ptr, ...)
 */
 
 /**
