@@ -83,6 +83,9 @@ typedef struct _abcdkhttpd
     /*上级服务器地址。*/
     const char *uplink;
 
+    /*句柄索引。*/
+    volatile uint64_t handle_idx;
+
 } abcdkhttpd_t;
 
 typedef struct _abcdkhttpd_node
@@ -100,6 +103,8 @@ typedef struct _abcdkhttpd_node
      * 2: http/2
     */
     int protocol;
+
+    uint64_t handle;
 
     abcdk_receiver_t *rec;
 
@@ -223,15 +228,32 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 
 void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
 {
+    char new_tname[18]={0},old_tname[18] = {0};
     abcdkhttpd_node_t *http_p;
 
     http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
 
-    abcdk_logger_printf(http_p->ctx->logger, LOG_INFO, "\"%s\" \"%s\" %d %lld \"%s\" \"%s\" \n",
-                        http_p->remote,
-                        http_p->line0, status, (ssize_t)size,
-                        http_p->referer ? http_p->referer : "-",
-                        http_p->user_agent ? http_p->user_agent : "-");
+    snprintf(new_tname,16,"%x",http_p->handle);
+
+    pthread_getname_np(pthread_self(),old_tname,18);
+    pthread_setname_np(pthread_self(),new_tname);
+
+    if (status)
+    {
+        abcdk_logger_printf(http_p->ctx->logger, LOG_INFO, "\"%s\" \"%s\" %d %lld \"%s\" \"%s\" \n",
+                            http_p->remote,
+                            http_p->line0, status, (ssize_t)size,
+                            http_p->referer ? http_p->referer : "-",
+                            http_p->user_agent ? http_p->user_agent : "-");
+    }
+    else
+    {
+        abcdk_logger_printf(http_p->ctx->logger, LOG_INFO, "%*s",
+                            (int)abcdk_receiver_header_length(http_p->rec),
+                            abcdk_receiver_data(http_p->rec, 0));
+    }
+
+    pthread_setname_np(pthread_self(),old_tname);
 }
 
 int _abcdkhttpd_check_auth(abcdk_comm_node_t *node,int proxy)
@@ -981,6 +1003,8 @@ void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
         return;
     }
     
+    /*绑定句柄。*/
+    http_p->handle = abcdk_atomic_add_and_fetch(&http_p->ctx->handle_idx,1);
     
     _abcdkhttpd_input_process(node);
     abcdk_receiver_unref(&http_p->rec);

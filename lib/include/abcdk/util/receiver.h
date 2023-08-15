@@ -87,6 +87,16 @@ const void *abcdk_receiver_data(abcdk_receiver_t *ctx, off_t off);
 size_t abcdk_receiver_length(abcdk_receiver_t *ctx);
 
 /**
+ * 获取头部长度。
+*/
+size_t abcdk_receiver_header_length(abcdk_receiver_t *ctx);
+
+/**
+ * 获取实体长度。
+*/
+size_t abcdk_receiver_body_length(abcdk_receiver_t *ctx);
+
+/**
  * 获取实体。
  * 
  * @param [in] off 偏移量。
@@ -95,10 +105,6 @@ size_t abcdk_receiver_length(abcdk_receiver_t *ctx);
 */
 const void *abcdk_receiver_body(abcdk_receiver_t *ctx, off_t off);
 
-/**
- * 获取实体长度。
-*/
-size_t abcdk_receiver_body_length(abcdk_receiver_t *ctx);
 
 /**
  * 获取头部环境参数。

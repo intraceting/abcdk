@@ -11,7 +11,7 @@
 #include "abcdk/util/mutex.h"
 
 /*
- * 原子操作。
+ * GCC内置的原子操作，已经不推荐使用。
  *　
  * type __sync_fetch_and_add (type *ptr, type value);
  * type __sync_fetch_and_sub (type *ptr, type value);
@@ -31,6 +31,13 @@
  * type __sync_lock_test_and_set (type *ptr, type value, ...)
  * void __sync_lock_release (type *ptr, ...)
 */
+
+/** 加锁。*/
+void abcdk_atomic_lock(void);
+
+/** 解锁。*/
+void abcdk_atomic_unlock(void);
+
 
 /**
  * 返回旧值。
@@ -65,5 +72,11 @@
  */
 #define abcdk_atomic_fetch_and_add(ptr, val) \
     __sync_fetch_and_add((ptr), (val))
+
+/**
+ * 加法，返回新值。
+ */
+#define abcdk_atomic_add_and_fetch(ptr, val) \
+    __sync_add_and_fetch((ptr), (val))
 
 #endif //ABCDK_UTIL_ATOMIC_H

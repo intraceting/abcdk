@@ -491,38 +491,24 @@ size_t abcdk_receiver_length(abcdk_receiver_t *ctx)
     return l;
 }
 
-const void *abcdk_receiver_body(abcdk_receiver_t *ctx, off_t off)
+size_t abcdk_receiver_header_length(abcdk_receiver_t *ctx)
 {
-    void *p = NULL;
     size_t l = 0;
 
     assert(ctx != NULL);
 
     if (ctx->protocol == ABCDK_RECEIVER_PROTO_HTTP)
-    {
-        ABCDK_ASSERT(off < ctx->body_len, "偏移量必须小于实体长度。");
+        l = ctx->hdr_len;
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_HTTP)
+        l = ctx->hdr_len;
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_RTCP)
+        l = 4;
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB)
+        l = 4;
+    else 
+        l = 0;
 
-        p = ctx->buf;
-        p = ABCDK_PTR2VPTR(p, off + ctx->hdr_len);
-    }
-    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_CHUNKED)
-    {
-        ABCDK_ASSERT(off < ctx->body_len, "偏移量必须小于实体长度。");
-
-        p = ctx->buf;
-        p = ABCDK_PTR2VPTR(p, off + ctx->hdr_len);
-    }
-    else
-    {
-        l = ctx->offset;
-
-        ABCDK_ASSERT(off < l, "偏移量必须小于实体长度。");
-
-        p = ctx->buf;
-        p = ABCDK_PTR2VPTR(p, off);
-    }
-
-    return p;
+    return l;
 }
 
 size_t abcdk_receiver_body_length(abcdk_receiver_t *ctx)
@@ -535,10 +521,28 @@ size_t abcdk_receiver_body_length(abcdk_receiver_t *ctx)
         l = ctx->body_len;
     else if (ctx->protocol == ABCDK_RECEIVER_PROTO_CHUNKED)
         l = ctx->body_len;
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_RTCP)
+        l = ctx->offset - 4;
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB)
+        l = ctx->offset - 4;
     else 
         l = ctx->offset;
 
     return l;
+}
+
+const void *abcdk_receiver_body(abcdk_receiver_t *ctx, off_t off)
+{
+    size_t hlen = 0, dlen = 0;
+
+    assert(ctx != NULL);
+
+    hlen = abcdk_receiver_header_length(ctx);
+    dlen = abcdk_receiver_body_length(ctx);
+
+    ABCDK_ASSERT(off < dlen, "偏移量必须小于实体长度。");
+
+    return abcdk_receiver_data(ctx, hlen + off);
 }
 
 const char *abcdk_receiver_header_line(abcdk_receiver_t *ctx, int line)
