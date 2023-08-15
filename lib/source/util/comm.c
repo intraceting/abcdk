@@ -433,7 +433,7 @@ void _abcdk_comm_accept(abcdk_comm_node_t *listen)
     if(chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(node->ctx->epollex, node->fd, 30*1000);
+    abcdk_epollex_timeout(node->ctx->epollex, node->fd, 180*1000);
     
     /*注册输出事件用于探测连接状态。*/
     abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
@@ -899,7 +899,7 @@ final:
     if (chk != 0)
         goto final_error;
 
-    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 30 * 1000);
+    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 180 * 1000);
     abcdk_epollex_mark(node_p->ctx->epollex, node_p->fd, ABCDK_EPOLL_OUTPUT, 0);
 
     return 0;
