@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_ATOMIC_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/mutex.h"
 
 /*
  * 原子操作。
@@ -30,27 +31,36 @@
 
 /**
  * 返回旧值。
-*/
-#define abcdk_atomic_load(ptr)   __sync_add_and_fetch((ptr), 0)
+ */
+#define abcdk_atomic_load(ptr) \
+    (__sync_synchronize(), *(ptr))
 
 /**
  * 设置新值。
-*/
-#define abcdk_atomic_store(ptr, newval)  __sync_val_compare_and_swap((ptr), *(ptr), (newval))
+ */
+#define abcdk_atomic_store(ptr, newval) \
+    do                                  \
+    {                                   \
+        *(ptr) = (newval);              \
+        __sync_synchronize();           \
+    } while (0)
 
 /**
  * 比较两个值。
-*/
-#define abcdk_atomic_compare(ptr, oldval)    __sync_bool_compare_and_swap((ptr), (oldval), *(ptr))
+ */
+#define abcdk_atomic_compare(ptr, oldval) \
+    (abcdk_atomic_load((ptr)) == (oldval))
 
 /**
  * 比较两个值，相同则用新值替换旧值。
-*/
-#define abcdk_atomic_compare_and_swap(ptr, oldval, newval)     __sync_bool_compare_and_swap((ptr), (oldval), newval)
+ */
+#define abcdk_atomic_compare_and_swap(ptr, oldval, newval) \
+    __sync_bool_compare_and_swap((ptr), (oldval), (newval))
 
 /**
  * 加法，返回旧值。
-*/
-#define abcdk_atomic_fetch_and_add(ptr, val)   __sync_fetch_and_add(ptr, val) 
+ */
+#define abcdk_atomic_fetch_and_add(ptr, val) \
+    __sync_fetch_and_add((ptr), (val))
 
 #endif //ABCDK_UTIL_ATOMIC_H
