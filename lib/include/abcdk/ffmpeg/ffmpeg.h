@@ -76,6 +76,13 @@ int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int 
 /**
  * 写入头部信息。
  * 
+ * @return >= 0 成功，< 0 失败。
+*/
+int abcdk_ffmpeg_write_header0(abcdk_ffmpeg_t *ctx,const AVDictionary *dict);
+
+/**
+ * 写入头部信息。
+ * 
  * @param fmp4 0 默认的格式，!0 FMP4格式。
  * 
  * @return >= 0 成功，< 0 失败。

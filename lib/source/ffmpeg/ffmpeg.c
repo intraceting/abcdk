@@ -549,7 +549,7 @@ int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int 
     return 0;
 }
 
-int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
+int abcdk_ffmpeg_write_header0(abcdk_ffmpeg_t *ctx,const AVDictionary *dict)
 {
     int chk;
 
@@ -559,8 +559,9 @@ int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
     if(ctx->write_header_ok)
         return 0;
 
-    if (fmp4)
-        av_dict_set(&ctx->dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
+    /*复制外部的字典。*/
+    if (dict)
+        av_dict_copy(&ctx->dict, dict, 0);
 
     chk = abcdk_avformat_output_header(ctx->avctx, &ctx->dict);
     if (chk < 0)
@@ -570,6 +571,20 @@ int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
     ctx->write_header_ok = 1;
 
     return 0;
+}
+
+int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
+{
+    AVDictionary *dict = NULL;
+    int chk;
+
+    av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
+
+    chk = abcdk_ffmpeg_write_header0(ctx,dict);
+
+    av_dict_free(&dict);
+
+    return chk;
 }
 
 int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)

@@ -254,7 +254,7 @@ uninstall-devel:
 #占位预定义，实际会随机生成。
 TMP_ROOT_PATH = /tmp/${SOLUTION_NAME}-build-installer.tmp
 #
-PACKAGE_PATH = $(CURDIR)/package/${VERSION_STR}/
+PACKAGE_PATH = $(CURDIR)/package/${VERSION_MAJOR}.${VERSION_MINOR}/
 #
 RUNTIME_PACKAGE_NAME=${SOLUTION_NAME}-${VERSION_STR}-${TARGET_PLATFORM}
 #

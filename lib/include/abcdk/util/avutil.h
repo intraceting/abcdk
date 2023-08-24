@@ -32,6 +32,7 @@ __BEGIN_DECLS
 
 #ifdef AVUTIL_AVUTIL_H
 
+
 /**
  * 获取像素位宽。
  *
