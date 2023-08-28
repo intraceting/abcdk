@@ -461,7 +461,7 @@ int abcdk_test_any(abcdk_option_t *args)
         }
     }
 
-#elif 1
+#elif 0
 
     abcdk_receiver_t *t = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP,100000,NULL);
 
@@ -479,6 +479,17 @@ int abcdk_test_any(abcdk_option_t *args)
     int chk = abcdk_receiver_append(t,data,strlen(data),&remain);
 
     abcdk_receiver_unref(&t);
+#elif 1
+
+    uint64_t a,b;
+
+    abcdk_clock(0,&a);
+
+    usleep(40*1000);
+
+    b = abcdk_clock(a,&a);
+
+    printf("b=%lu\n",b);
 
 #endif 
 }

@@ -17,37 +17,52 @@ checkReturnCode()
     fi
 }
 
+
 #
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${SHELLDIR}/../script/core/check-os-id.sh "$1")"
+    ${SHELLDIR}/../core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${SHELLDIR}/../script/core/get-os-ver.sh)"
+    ${SHELLDIR}/../core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${SHELLDIR}/../script/core/get-kit-name.sh)"
+	${SHELLDIR}/../core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${SHELLDIR}/../script/core/check-package.sh "$1")"
+    ${SHELLDIR}/../core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${SHELLDIR}/../script/core/check-which.sh "$1")"
+	${SHELLDIR}/../core/check-which.sh "$1"
+}
+
+#
+FindIncPath()
+# $1 HDNAME
+{
+	${SHELLDIR}/../core/find-inc-path.sh "${DEPEND_PREFIX_PATH}" "$1"
+}
+
+#
+FindLibPath()
+# $1 SONAME
+{
+	${SHELLDIR}/../core/find-lib-path.sh "${DEPEND_PREFIX_PATH}" "${DEPEND_TARGET_PLATFORM}" "${DEPEND_TARGET_BITWIDE}" "$1"
 }
 
 #
@@ -64,9 +79,21 @@ FLAG="$1"
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
     if [ "${FLAG}" == "2" ];then
-        echo ""
+    {
+        if [ `expr ${SYS_VERID} \< 20.04` -eq 1 ];then
+            echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8" 
+        else
+            pkg-config --cflags odbc 2>/dev/null
+        fi
+    }
     elif [ "${FLAG}" == "3" ];then
-        echo "-lodbc"
+     {
+        if [ `expr ${SYS_VERID} \< 20.04` -eq 1 ];then
+            echo "-lodbc"
+        else 
+            pkg-config --libs odbc 2>/dev/null
+        fi
+    }
     elif [ "${FLAG}" == "4" ];then
         echo "unixodbc-dev"
     else
@@ -80,7 +107,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         if [ ${SYS_VERID} -le 7 ];then
             echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8"
         else
-            echo "$(pkg-config --cflags odbc)"
+            pkg-config --cflags odbc 2>/dev/null
         fi
     }
     elif [ "${FLAG}" == "3" ];then
@@ -88,7 +115,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         if [ ${SYS_VERID} -le 7 ];then
             echo "-lodbc"
         else 
-            echo "$(pkg-config --libs odbc)"
+            pkg-config --libs odbc 2>/dev/null
         fi
     }
     elif [ "${FLAG}" == "4" ];then
@@ -103,4 +130,5 @@ else
 }
 fi 
 
-exit 0
+#
+exit $?

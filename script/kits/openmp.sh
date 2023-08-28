@@ -17,37 +17,52 @@ checkReturnCode()
     fi
 }
 
+
 #
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${SHELLDIR}/../script/core/check-os-id.sh "$1")"
+    ${SHELLDIR}/../core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${SHELLDIR}/../script/core/get-os-ver.sh)"
+    ${SHELLDIR}/../core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${SHELLDIR}/../script/core/get-kit-name.sh)"
+	${SHELLDIR}/../core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${SHELLDIR}/../script/core/check-package.sh "$1")"
+    ${SHELLDIR}/../core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${SHELLDIR}/../script/core/check-which.sh "$1")"
+	${SHELLDIR}/../core/check-which.sh "$1"
+}
+
+#
+FindIncPath()
+# $1 HDNAME
+{
+	${SHELLDIR}/../core/find-inc-path.sh "${DEPEND_PREFIX_PATH}" "$1"
+}
+
+#
+FindLibPath()
+# $1 SONAME
+{
+	${SHELLDIR}/../core/find-lib-path.sh "${DEPEND_PREFIX_PATH}" "${DEPEND_TARGET_PLATFORM}" "${DEPEND_TARGET_BITWIDE}" "$1"
 }
 
 #
@@ -91,4 +106,5 @@ else
 }
 fi 
 
-exit 0
+#
+exit $?

@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    echo "$(${SHELLDIR}/script/core/check-os-id.sh "$1")"
+    ${SHELLDIR}/script/core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    echo "$(${SHELLDIR}/script/core/get-os-ver.sh)"
+    ${SHELLDIR}/script/core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	echo "$(${SHELLDIR}/script/core/get-kit-name.sh)"
+	${SHELLDIR}/script/core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    echo "$(${SHELLDIR}/script/core/check-package.sh "$1")"
+    ${SHELLDIR}/script/core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	echo "$(${SHELLDIR}/script/core/check-which.sh "$1")"
+	${SHELLDIR}/script/core/check-which.sh "$1"
 }
 
 #
@@ -1037,7 +1037,7 @@ VERSION_MINOR="7"
 VERSION_RELEASE="3"
 
 #编译器前缀
-COMPILER_PREFIX=""
+COMPILER_PREFIX="/usr/bin/"
 #SYSROOT
 SYSROOT_PATH=""
 #目标架构
@@ -1188,8 +1188,7 @@ if [ ! "${SYSROOT_PATH}" == "" ];then
 fi
 
 #
-STATUS=$(CheckHavePackageFromWhich ${CC})
-if [ ${STATUS} -ne 0 ];then
+if [ ! -f ${CC} ];then
 {
     echo "'${CC}' not found."
     exit 22
@@ -1197,8 +1196,7 @@ if [ ${STATUS} -ne 0 ];then
 fi
 
 #
-STATUS=$(CheckHavePackageFromWhich ${AR})
-if [ ${STATUS} -ne 0 ];then
+if [ ! -f ${AR} ];then
 {
     echo "'${AR}' not found."
     exit 22
@@ -1233,7 +1231,7 @@ fi
 if [ "${KIT_NAME}" == "rpm" ];then
 {
     #
-    STATUS=$(CheckHavePackage rpmbuild 1)
+    STATUS=$(CheckHavePackageFromKit rpm-build)
     if [ ${STATUS} -ne 0 ];then
     {
         echo "'$(CheckHavePackage rpmbuild 0)' not found."
