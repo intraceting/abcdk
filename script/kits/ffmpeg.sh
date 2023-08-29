@@ -77,7 +77,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
@@ -89,7 +91,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "ffmpeg-devel")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null

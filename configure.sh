@@ -55,942 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    #
-    SYS_VERID=$(GetSystemVersion)
-    KIT_NAME=$(CheckPackageKitName)
-    PKG_NAME="$1"
-    FLAG="$2"
-
-    #
-	if [ "deb" == "${KIT_NAME}" ];then 
-	{  
-        if [ "${PKG_NAME}" == "binutils" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit binutils)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "binutils"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "dpkg" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit dpkg)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "dpkg"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "dpkg-dev" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit dpkg-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "dpkg-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "pkgconfig" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromWhich pkg-config)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "pkg-config"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "openmp" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libgomp1)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "-fopenmp"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-fopenmp"
-            else
-                echo "libgomp1"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "unixodbc" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit unixodbc-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lodbc"
-            else
-                echo "unixodbc-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "sqlite" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libsqlite3-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags sqlite3)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs sqlite3)"
-            else
-                echo "libsqlite3-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "openssl" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libssl-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags openssl)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs openssl)"
-            else
-                echo "libssl-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "ffmpeg" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev")"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
-            else
-                echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "freeimage" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libfreeimage-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lfreeimage"
-            else
-                echo "libfreeimage-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "fuse" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libfuse-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags fuse)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs fuse)"
-            else
-                echo "libfuse-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libnm" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libnm-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libnm)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libnm)"
-            else
-                echo "libnm-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "lz4" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit liblz4-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags liblz4)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs liblz4)"
-            else
-                echo "liblz4-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "zlib" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit zlib1g-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags zlib)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs zlib)"
-            else
-                echo "zlib1g-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "archive" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libarchive-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libarchive)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libarchive)"
-            else
-                echo "libarchive-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "modbus" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libmodbus-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libmodbus)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libmodbus)"
-            else
-                echo "libmodbus-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libusb" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libusb-1.0-0-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libusb-1.0)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libusb-1.0)"
-            else
-                echo "libusb-1.0-0-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "mqtt" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libmosquitto-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lmosquitto"
-            else
-                echo "libmosquitto-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "redis" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libhiredis-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags hiredis)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs hiredis)"
-            else
-                echo "libhiredis-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "json-c" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libjson-c-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags json-c)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs json-c)"
-            else
-                echo "libjson-c-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "bluez" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libbluetooth-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags bluez)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs bluez)"
-            else
-                echo "libbluetooth-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "blkid" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libblkid-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags blkid)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs blkid)"
-            else
-                echo "libblkid-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libcap" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libcap-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libcap)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libcap)"
-            else
-                echo "libcap-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "fastcgi" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libfcgi-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lfcgi"
-            else
-                echo "libfcgi-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "systemd" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libsystemd-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libsystemd)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libsystemd)"
-            else
-                echo "libsystemd-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libudev" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libudev-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libudev)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libudev)"
-            else
-                echo "libudev-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "dmtx" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libdmtx-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libdmtx)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libdmtx)"
-            else
-                echo "libdmtx-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "qrencode" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libqrencode-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libqrencode)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libqrencode)"
-            else
-                echo "libqrencode-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "zbar" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libzbar-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags zbar)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs zbar)"
-            else
-                echo "libzbar-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "magickwand" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libmagickwand-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags MagickWand)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs MagickWand)"
-            else
-                echo "libmagickwand-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "kafka" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit librdkafka-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags rdkafka)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs rdkafka)"
-            else
-                echo "librdkafka-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "uuid" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit uuid-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags uuid)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs uuid)"
-            else
-                echo "uuid-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "openblas" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libopenblas-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags lapack-openblas blas-openblas)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs lapack-openblas blas-openblas)"
-            else
-                echo "libopenblas-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libmagic" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libmagic-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lmagic"
-            else
-                echo "libmagic-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "nghttp2" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libnghttp2-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libnghttp2)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libnghttp2)"
-            else
-                echo "libnghttp2-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libdrm" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libdrm-dev)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
-            else
-                echo "libdrm-dev"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "which" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit debianutils)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else
-                echo "debianutils"
-            fi
-        }
-        else
-        {
-            if [ ${FLAG} -eq 1 ];then 
-                echo "1"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else
-                echo "${PKG_NAME}"
-            fi
-        }
-        fi
-    }
-	elif [ "rpm" == "${KIT_NAME}" ];then
-	{
-        if [ "${PKG_NAME}" == "binutils" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit binutils)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "binutils"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "rpmbuild" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit rpm-build)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "rpm-build"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "pkgconfig" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromWhich pkg-config)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else
-                if [ ${SYS_VERID} -le 7 ];then
-                    echo "pkgconfig"
-                elif [ ${SYS_VERID} -eq 8 ];then
-                    echo "pkgconf-pkg-config"
-                else 
-                    echo ""
-                fi
-            fi
-        }
-        elif [ "${PKG_NAME}" == "openmp" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libgomp)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "-fopenmp"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-fopenmp"
-            else
-                echo "libgomp"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "unixodbc" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit unixODBC-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                if [ `expr ${SYS_VERID} \<= 7` ];then
-                    echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8"
-                elif [ `expr ${SYS_VERID} \>= 8` ];then
-                    echo "$(pkg-config --cflags odbc)"
-                else 
-                    echo ""
-                fi
-            elif [ ${FLAG} -eq 3 ];then
-                if [ `expr ${SYS_VERID} \<= 7` ];then
-                    echo "-lodbc"
-                elif [ `expr ${SYS_VERID} \>= 8` ];then
-                    echo "$(pkg-config --libs odbc)"
-                else 
-                    echo ""
-                fi
-            else 
-                echo "unixODBC-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "sqlite" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit sqlite-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags sqlite3)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs sqlite3)"
-            else
-                echo "sqlite-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "openssl" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit openssl-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags openssl)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs openssl)"
-            else
-                echo "openssl-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "ffmpeg" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ffmpeg-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample)"
-            else 
-                echo "ffmpeg-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "freeimage" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit freeimage-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lfreeimage"
-            else
-                echo "freeimage-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "fuse" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit fuse-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags fuse)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs fuse)"
-            else
-                echo "fuse-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libnm" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit NetworkManager-libnm-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libnm)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libnm)"
-            else
-                echo "NetworkManager-libnm-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "lz4" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit lz4-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags liblz4)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs liblz4)"
-            else
-                echo "lz4-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "zlib" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit zlib-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags zlib)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs zlib)"
-            else
-                echo "zlib-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "archive" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libarchive-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libarchive)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libarchive)"
-            else
-                echo "libarchive-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "modbus" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libmodbus-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libmodbus)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libmodbus)"
-            else
-                echo "libmodbus-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libusb" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libusbx-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libusb-1.0)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libusb-1.0)"
-            else
-                echo "libusbx-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "mqtt" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit mosquitto-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libmosquitto)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libmosquitto)"
-            else
-                echo "mosquitto-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "redis" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit hiredis-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags hiredis)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs hiredis)"
-            else
-                echo "hiredis-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "json-c" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit json-c-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags json-c)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs json-c)"
-            else
-                echo "json-c-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "bluez" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit bluez-libs-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags bluez)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs bluez)"
-            else
-                echo "bluez-libs-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "blkid" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libblkid-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags blkid)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs blkid)"
-            else
-                echo "libblkid-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libcap" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libcap-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libcap)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libcap)"
-            else
-                echo "libcap-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "fastcgi" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit fcgi-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lfcgi"
-            else
-                echo "fcgi-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "systemd" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit systemd-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libsystemd)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libsystemd)"
-            else
-                echo "systemd-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libudev" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit systemd-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libudev)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libudev)"
-            else
-                echo "systemd-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "dmtx" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libdmtx-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libdmtx)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libdmtx)"
-            else
-                echo "libdmtx-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "qrencode" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit qrencode-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libqrencode)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libqrencode)"
-            else
-                echo "qrencode-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "zbar" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit zbar-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags zbar)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs zbar)"
-            else
-                echo "zbar-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "magickwand" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit ImageMagick-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags MagickWand)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs MagickWand)"
-            else
-                echo "ImageMagick-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "kafka" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit librdkafka-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags rdkafka)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs rdkafka)"
-            else
-                echo "librdkafka-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "uuid" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libuuid-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags uuid)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs uuid)"
-            else
-                echo "libuuid-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "openblas" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit openblas-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "-I/usr/include/openblas"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lopenblas"
-            else
-                echo "openblas-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libmagic" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit file-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo "-lmagic"
-            else
-                echo "file-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "nghttp2" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libnghttp2-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libnghttp2)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libnghttp2)"
-            else
-                echo "libnghttp2-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "libdrm" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit libdrm-devel)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo "$(pkg-config --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
-            elif [ ${FLAG} -eq 3 ];then
-                echo "$(pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon)"
-            else
-                echo "libdrm-devel"
-            fi
-        }
-        elif [ "${PKG_NAME}" == "which" ];then
-        {
-            if [ ${FLAG} -eq 1 ];then
-                echo "$(CheckHavePackageFromKit which)"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else
-                echo "which"
-            fi
-        }
-        else
-        {
-            if [ ${FLAG} -eq 1 ];then 
-                echo "1"
-            elif [ ${FLAG} -eq 2 ];then
-                echo ""
-            elif [ ${FLAG} -eq 3 ];then
-                echo ""
-            else 
-                echo "${PKG_NAME}"
-            fi
-        }
-        fi
-    }
-    else 
-        echo "1"
-    fi
+    ${SHELLDIR}/script/kits/$1.sh "$2"
 }
 
 #
@@ -1038,6 +103,8 @@ VERSION_RELEASE="3"
 
 #编译器前缀
 COMPILER_PREFIX="/usr/bin/"
+#工具包前缀
+KIT_PREFIX=""
 #SYSROOT
 SYSROOT_PATH=""
 #目标架构
@@ -1071,6 +138,9 @@ usage: [ OPTIONS ]
 
     -c < prefix >
      编译器前缀。
+
+    -k < prefix >
+     工具包前缀。
 
     -s < path >
      SYSROOT。
@@ -1113,11 +183,14 @@ usage: [ OPTIONS ]
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm
 
+    -e < NAME=VALUE >
+     自定义环境变量。
+
 EOF
 }
 
 #
-while getopts "hc:s:Oo:gf:l:V:v:r:i:d:" ARGKEY 
+while getopts "hc:k:s:Oo:gf:l:V:v:r:i:d:e:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -1126,6 +199,9 @@ do
     ;;
     c)
         COMPILER_PREFIX="${OPTARG}"
+    ;;
+    k)
+        KIT_PREFIX="${OPTARG}"
     ;;
     s)
         SYSROOT_PATH="${OPTARG}"
@@ -1160,32 +236,15 @@ do
     d)
         DEPEND_FUNC="${OPTARG}"
     ;;
+    e)
+        export ${OPTARG}
+    ;;
     esac
 done
 
+#
 CC="${COMPILER_PREFIX}gcc"
 AR="${COMPILER_PREFIX}ar"
-
-#
-STATUS=$(CheckHavePackage which 1)
-if [ ${STATUS} -ne 0 ];then
-{
-    echo "'$(CheckHavePackage which 0)' not found."
-    exit 22
-}
-fi
-
-#
-if [ ! "${SYSROOT_PATH}" == "" ];then
-{
-    if [ ! -d ${SYSROOT_PATH} ];then
-    {
-        echo "'${SYSROOT_PATH}' not found."
-        exit 22
-    }
-    fi
-}
-fi
 
 #
 if [ ! -f ${CC} ];then
@@ -1218,45 +277,22 @@ elif [ "${TARGET_ARCH}" == "arm" ];then
     TARGET_ARCH="arm"
 fi
 
-#
-STATUS=$(CheckHavePackage pkgconfig 1)
-if [ ${STATUS} -ne 0 ];then
-{
-    echo "'$(CheckHavePackage pkgconfig 0)' not found."
-    exit 22
-}
-fi
 
 #
 if [ "${KIT_NAME}" == "rpm" ];then
 {
     #
-    STATUS=$(CheckHavePackageFromKit rpm-build)
-    if [ ${STATUS} -ne 0 ];then
-    {
-        echo "'$(CheckHavePackage rpmbuild 0)' not found."
-        exit 22
-    }
+    CheckHavePackage rpmbuild 1
+    if [ $? -ne 0 ];then
+        echo "'$(CheckHavePackage rpmbuild 4)' not found."
     fi
 }
 elif [ "${KIT_NAME}" == "deb" ];then
 {
     #
-    STATUS=$(CheckHavePackage dpkg 1)
-    if [ ${STATUS} -ne 0 ];then
-    {
-        echo "'$(CheckHavePackage dpkg 0)' not found."
-        exit 22
-    }
-    fi
-
-    #
-    STATUS=$(CheckHavePackage dpkg-dev 1)
-    if [ ${STATUS} -ne 0 ];then
-    {
-        echo "'$(CheckHavePackage dpkg-dev 0)' not found."
-        exit 22
-    }
+    CheckHavePackage dpkg 1
+    if [ $? -ne 0 ];then
+        echo "'$(CheckHavePackage dpkg 4)' not found."
     fi
 }
 fi
@@ -1271,7 +307,9 @@ DependPackageCheck()
     #
     if [ $(CheckKeyword ${DEPEND_FUNC} ${PACKAGE_KEY}) -eq 1 ];then
     {
-        CHK=$(CheckHavePackage ${PACKAGE_KEY} 1)
+        CheckHavePackage ${PACKAGE_KEY} 3
+        CHK=$?
+
         if [ ${CHK} -eq 0 ];then
         {
             DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
@@ -1295,6 +333,17 @@ DependPackageCheck()
 #    echo ${DEPEND_FLAGS} 
 #    echo ${DEPEND_LINKS}
 }
+
+#设置环境变量，用于搜索依赖包。
+export DEPEND_PREFIX_PATH=${KIT_PREFIX}
+export DEPEND_TARGET_PLATFORM=${TARGET_PLATFORM}
+if [ "${TARGET_ARCH}" == "x86_64" ];then
+    export DEPEND_TARGET_BITWIDE="64"
+elif [ "${TARGET_ARCH}" == "aarch64" ];then
+    export DEPEND_TARGET_BITWIDE="64"
+elif [ "${TARGET_ARCH}" == "arm" ];then
+    export DEPEND_TARGET_BITWIDE="32"
+fi
 
 #
 DependPackageCheck openmp HAVE_OPENMP
@@ -1329,6 +378,11 @@ DependPackageCheck uuid HAVE_UUID
 DependPackageCheck libmagic HAVE_LIBMAGIC
 DependPackageCheck nghttp2 HAVE_NGHTTP2
 DependPackageCheck libdrm HAVE_LIBDRM
+
+#恢复默认。
+export DEPEND_PREFIX_PATH=""
+export DEPEND_TARGET_PLATFORM=""
+export DEPEND_TARGET_BITWIDE=""
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
@@ -1516,7 +570,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/script/dpkg
+DEB_TOOL_ROOT = ${SHELLDIR}/script/deb/
 EOF
 checkReturnCode
 

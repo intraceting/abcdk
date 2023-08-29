@@ -78,10 +78,12 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
-        pkg-config --cflags libusb 2>/dev/null
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libusb-1.0-0-dev")
+    elif [ ${FLAG} -eq 2 ];then
+        pkg-config --cflags libusb-1.0 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
-        pkg-config --libs libusb 2>/dev/null
+        pkg-config --libs libusb-1.0 2>/dev/null
     elif [ ${FLAG} -eq 4 ];then
         echo "libusb-1.0-0-dev"
     else
@@ -90,10 +92,12 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
-        pkg-config --cflags libusb 2>/dev/null
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libusbx-devel")
+    elif [ ${FLAG} -eq 2 ];then
+        pkg-config --cflags libusb-1.0 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
-        pkg-config --libs libusb 2>/dev/null
+        pkg-config --libs libusb-1.0 2>/dev/null
     elif [ ${FLAG} -eq 4 ];then
         echo "libusbx-devel"
     else

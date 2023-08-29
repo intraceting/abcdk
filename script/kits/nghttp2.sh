@@ -78,7 +78,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libnghttp2-dev")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libnghttp2 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libnghttp2 2>/dev/null
@@ -90,7 +92,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libnghttp2-devel")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libnghttp2 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libnghttp2 2>/dev/null

@@ -102,10 +102,8 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     {
         if [ ${SYS_VERID} -le 7 ];then
             echo "pkgconfig"
-        elif [ ${SYS_VERID} -eq 8 ];then
-            echo "pkgconf-pkg-config"
         else 
-            echo ""
+            echo "pkgconf-pkg-config"
         fi
     }
     else 

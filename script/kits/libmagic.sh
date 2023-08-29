@@ -77,7 +77,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libmagic-dev")
+    elif [ ${FLAG} -eq 2 ];then
     {
         CFLAG="-I$(FindIncPath magic.h)"
         checkReturnCode
@@ -99,7 +101,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "file-devel")
+    elif [ ${FLAG} -eq 2 ];then
     {
         CFLAG="-I$(FindIncPath magic.h)"
         checkReturnCode

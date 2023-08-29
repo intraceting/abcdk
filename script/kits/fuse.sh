@@ -78,7 +78,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libfuse-dev")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags fuse 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs fuse 2>/dev/null
@@ -90,7 +92,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "fuse-devel")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags fuse 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs fuse 2>/dev/null

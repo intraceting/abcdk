@@ -78,10 +78,12 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
-        pkg-config --cflags lz4 2>/dev/null
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "liblz4-dev")
+    elif [ ${FLAG} -eq 2 ];then
+        pkg-config --cflags liblz4 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
-        pkg-config --libs lz4 2>/dev/null
+        pkg-config --libs liblz4 2>/dev/null
     elif [ ${FLAG} -eq 4 ];then
         echo "liblz4-dev"
     else
@@ -90,10 +92,12 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
-        pkg-config --cflags lz4 2>/dev/null
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "lz4-devel")
+    elif [ ${FLAG} -eq 2 ];then
+        pkg-config --cflags liblz4 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
-        pkg-config --libs lz4 2>/dev/null
+        pkg-config --libs liblz4 2>/dev/null
     elif [ ${FLAG} -eq 4 ];then
         echo "lz4-devel"
     else

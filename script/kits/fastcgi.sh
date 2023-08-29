@@ -77,19 +77,31 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit libfcgi-dev)
+    elif [ ${FLAG} -eq 2 ];then
     {
-        CFLAG="-I$(FindIncPath fcgiapp.h)"
-        checkReturnCode
+        pkg-config --cflags fcgi
+        if [ $? -ne 0 ];then 
+        {
+            CFLAG="-I$(FindIncPath fcgiapp.h)"
+            checkReturnCode
 
-        echo "${CFLAG}"
+            echo "${CFLAG}"
+        }
+        fi
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        LDFLAG="-L$(FindLibPath libfcgi.so)"
-        checkReturnCode
+        pkg-config --libs fcgi
+        if [ $? -ne 0 ];then 
+        {
+            LDFLAG="-L$(FindLibPath libfcgi.so)"
+            checkReturnCode
 
-        echo "-lfcgi ${LDFLAG}"
+            echo "-lfcgi ${LDFLAG}"
+        }
+        fi
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "libfcgi-dev"
@@ -99,19 +111,31 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit fcgi-devel)
+    elif [ ${FLAG} -eq 2 ];then
     {
-        CFLAG="-I$(FindIncPath fcgiapp.h)"
-        checkReturnCode
+        pkg-config --cflags fcgi
+        if [ $? -ne 0 ];then 
+        {
+            CFLAG="-I$(FindIncPath fcgiapp.h)"
+            checkReturnCode
 
-        echo "${CFLAG}"
+            echo "${CFLAG}"
+        }
+        fi
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        LDFLAG="-L$(FindLibPath libfcgi.so)"
-        checkReturnCode
+        pkg-config --libs fcgi
+        if [ $? -ne 0 ];then 
+        {
+            LDFLAG="-L$(FindLibPath libfcgi.so)"
+            checkReturnCode
 
-        echo "-lfcgi ${LDFLAG}"
+            echo "-lfcgi ${LDFLAG}"
+        }
+        fi
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "fcgi-devel"

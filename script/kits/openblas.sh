@@ -77,7 +77,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libopenblas-dev")
+    elif [ ${FLAG} -eq 2 ];then
     {
         pkg-config --cflags openblas 2>/dev/null
         if [ $? -ne 0 ];then
@@ -99,7 +101,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "openblas-devel")
+    elif [ ${FLAG} -eq 2 ];then
     {
         pkg-config --cflags openblas 2>/dev/null
         if [ $? -ne 0 ];then

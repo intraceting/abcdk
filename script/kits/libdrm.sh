@@ -78,7 +78,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libdrm-dev")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
@@ -90,7 +92,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libdrm-devel")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null

@@ -78,7 +78,9 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ "${FLAG}" == "2" ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libgomp1")
+    elif [ "${FLAG}" == "2" ];then
         echo "-fopenmp"
     elif [ "${FLAG}" == "3" ];then
         echo "-fopenmp"
@@ -90,7 +92,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ "${FLAG}" == "2" ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libgomp")
+    elif [ "${FLAG}" == "2" ];then
         echo "-fopenmp"
     elif [ "${FLAG}" == "3" ];then
         echo "-fopenmp"

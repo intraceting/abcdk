@@ -78,10 +78,32 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "libmosquitto-dev")
+    elif [ ${FLAG} -eq 2 ];then
+    {
         pkg-config --cflags libmosquitto 2>/dev/null
+        if [ $? -ne 0 ];then
+        {
+            CFLAG="-I$(FindIncPath mosquitto.h)"
+            checkReturnCode
+
+            echo "${CFLAG}"
+        }
+        fi
+    }
     elif [ ${FLAG} -eq 3 ];then
+    {
         pkg-config --libs libmosquitto 2>/dev/null
+        if [ $? -ne 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath libmosquitto.so)"
+            checkReturnCode
+
+            echo "-lmosquitto ${LDFLAG}"
+        }
+        fi
+    }
     elif [ ${FLAG} -eq 4 ];then
         echo "libmosquitto-dev"
     else
@@ -90,7 +112,9 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ ${FLAG} -eq 2 ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "mosquitto-devel")
+    elif [ ${FLAG} -eq 2 ];then
         pkg-config --cflags libmosquitto 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
         pkg-config --libs libmosquitto 2>/dev/null

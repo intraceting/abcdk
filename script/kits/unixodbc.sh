@@ -78,20 +78,30 @@ FLAG="$1"
 #
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
-    if [ "${FLAG}" == "2" ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "unixodbc-dev")
+    elif [ "${FLAG}" == "2" ];then
     {
-        if [ `expr ${SYS_VERID} \< 20.04` -eq 1 ];then
-            echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8" 
-        else
-            pkg-config --cflags odbc 2>/dev/null
+        pkg-config --cflags odbc 2>/dev/null
+        if [ $? -ne 0 ];then
+        {
+            CFLAG="-I$(FindIncPath sql.h)"
+            checkReturnCode
+
+            echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8 ${CFLAG}"
+        }
         fi
     }
     elif [ "${FLAG}" == "3" ];then
      {
-        if [ `expr ${SYS_VERID} \< 20.04` -eq 1 ];then
-            echo "-lodbc"
-        else 
-            pkg-config --libs odbc 2>/dev/null
+        pkg-config --libs odbc 2>/dev/null
+        if [ $? -ne 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath libodbc.so)"
+            checkReturnCode
+
+            echo "-lodbc ${LDFLAG}"
+        }
         fi
     }
     elif [ "${FLAG}" == "4" ];then
@@ -102,20 +112,30 @@ if [ "deb" == "${KIT_NAME}" ];then
 }
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
-    if [ "${FLAG}" == "2" ];then
+    if [ ${FLAG} -eq 1 ];then
+        exit $(CheckHavePackageFromKit "unixODBC-devel")
+    elif [ "${FLAG}" == "2" ];then
     {
-        if [ ${SYS_VERID} -le 7 ];then
-            echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8"
-        else
-            pkg-config --cflags odbc 2>/dev/null
+        pkg-config --cflags odbc 2>/dev/null
+        if [ $? -ne 0 ];then
+        {
+            CFLAG="-I$(FindIncPath sql.h)"
+            checkReturnCode
+
+            echo "-DHAVE_UNISTD_H -DHAVE_PWD_H -DHAVE_SYS_TYPES_H -DHAVE_LONG_LONG -DSIZEOF_LONG_INT=8 ${CFLAG}"
+        }
         fi
     }
     elif [ "${FLAG}" == "3" ];then
     {
-        if [ ${SYS_VERID} -le 7 ];then
-            echo "-lodbc"
-        else 
-            pkg-config --libs odbc 2>/dev/null
+        pkg-config --libs odbc 2>/dev/null
+        if [ $? -ne 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath libodbc.so)"
+            checkReturnCode
+
+            echo "-lodbc ${LDFLAG}"
+        }
         fi
     }
     elif [ "${FLAG}" == "4" ];then
