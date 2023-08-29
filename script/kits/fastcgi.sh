@@ -81,7 +81,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit libfcgi-dev)
     elif [ ${FLAG} -eq 2 ];then
     {
-        pkg-config --cflags fcgi
+        pkg-config --cflags fcgi 2>/dev/null
         if [ $? -ne 0 ];then 
         {
             CFLAG="-I$(FindIncPath fcgiapp.h)"
@@ -93,7 +93,7 @@ if [ "deb" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        pkg-config --libs fcgi
+        pkg-config --libs fcgi 2>/dev/null
         if [ $? -ne 0 ];then 
         {
             LDFLAG="-L$(FindLibPath libfcgi.so)"
@@ -115,7 +115,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit fcgi-devel)
     elif [ ${FLAG} -eq 2 ];then
     {
-        pkg-config --cflags fcgi
+        pkg-config --cflags fcgi 2>/dev/null
         if [ $? -ne 0 ];then 
         {
             CFLAG="-I$(FindIncPath fcgiapp.h)"
@@ -127,7 +127,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        pkg-config --libs fcgi
+        pkg-config --libs fcgi 2>/dev/null
         if [ $? -ne 0 ];then 
         {
             LDFLAG="-L$(FindLibPath libfcgi.so)"
