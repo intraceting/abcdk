@@ -190,32 +190,16 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value)
     return 0;
 }
 
-int abcdk_option_set2(abcdk_option_t *opt, const char *key, const char *value,int merge)
+int abcdk_option_fset(abcdk_option_t *opt, const char *key, const char *valfmt, ...)
 {
-    const char *p;
-    ssize_t count;
-    int chk;
+    char value[4000] = {0};
+    va_list ap;
 
-    assert(opt != NULL && key != NULL);
+    va_start(ap, valfmt);
+    vsnprintf(value,4000,valfmt,ap);
+    va_end(ap);
 
-    if (!value || !merge)
-        goto final;
-
-    count = abcdk_option_count(opt, key);
-    if (count <= 0)
-        goto final;
-
-    for (size_t i = 0; i < count; i++)
-    {
-        p = abcdk_option_get(opt, key, i, "");
-        
-        if (abcdk_strcmp(p, value, 1) == 0)
-            return 0;
-    }
-
-final:
-
-    return abcdk_option_set(opt, key, value);
+    return abcdk_option_set(opt,key,value);
 }
 
 const char* abcdk_option_get(abcdk_option_t *opt, const char *key,size_t index,const char* defval)

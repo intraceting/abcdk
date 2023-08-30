@@ -18,8 +18,8 @@ int abcdk_test_record(abcdk_option_t *args)
     const char *dst = abcdk_option_get(args,"--dst",0,"");
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,NULL,0);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,NULL);
+    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,0,1);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,1);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
     AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
@@ -36,10 +36,13 @@ int abcdk_test_record(abcdk_option_t *args)
         abcdk_avstream_parameters_to_context(opt,p);
 
         opt->codec_tag = 0;
-        // int fps = abcdk_avstream_fps(rf,p);
-        // abcdk_avcodec_encode_video_fill_time_base(opt, fps);
+        //int fps = abcdk_avstream_fps(rf,p);
+        //abcdk_avcodec_encode_video_fill_time_base(opt, 5);
 
-        abcdk_ffmpeg_add_stream(w,opt,1);
+        int n = abcdk_ffmpeg_add_stream(w,opt,1);
+
+        wf->streams[n]->avg_frame_rate = p->avg_frame_rate;
+        wf->streams[n]->r_frame_rate = p->r_frame_rate;
 
         abcdk_avcodec_free(&opt);
     }
@@ -51,8 +54,10 @@ int abcdk_test_record(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<100000;i++)
+    for(int i = 0;i<100;i++)
     {
+        
+
         int n= abcdk_ffmpeg_read(r,&pkt,-1);
         if(n<0)
             break;
@@ -76,8 +81,8 @@ int abcdk_test_codec(abcdk_option_t *args)
     const char *dst = abcdk_option_get(args,"--dst",0,"");
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,NULL,0);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,NULL);
+    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,30,0);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,0);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
     AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
@@ -109,6 +114,8 @@ int abcdk_test_codec(abcdk_option_t *args)
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<1000;i++)
     {
+        abcdk_ffmpeg_read_delay(r,1);
+        
         int n= abcdk_ffmpeg_read2(r,inframe,-1);
         if(n<0)
             break;

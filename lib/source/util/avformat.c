@@ -243,11 +243,14 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
             return 0;
 
         av_bsf_alloc(bsf, &filter_p);
-        avcodec_parameters_copy(filter_p->par_in, codecpar);
-        av_bsf_init(filter_p);
 
         if (!filter_p)
             return -1;
+
+        avcodec_parameters_copy(filter_p->par_in, codecpar);
+        //av_opt_set_int(filter_p->priv_data, "aud", 2, 0); // 移除TYPE=9(AUD)
+
+        av_bsf_init(filter_p);
 
         /*保存过滤器环境指针。*/
         *filter = filter_p;
@@ -292,6 +295,8 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBitStream
 
         if (!filter_p)
             return -1;
+
+        //av_opt_set_int(filter_p->priv_data, "aud", 2, 0); // 移除TYPE=9(AUD)
 
         /*保存过滤器环境指针。*/
         *filter = filter_p;

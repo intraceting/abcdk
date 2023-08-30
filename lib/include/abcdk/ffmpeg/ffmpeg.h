@@ -11,6 +11,7 @@
 #include "abcdk/util/time.h"
 #include "abcdk/util/avformat.h"
 #include "abcdk/util/avcodec.h"
+#include "abcdk/util/option.h"
 
 __BEGIN_DECLS
 
@@ -31,13 +32,45 @@ void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx);
 AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx);
 
 /**
- * 创建读者对象。
+ * 创建FFMPEG对象。
  * 
- * @param [in] timeout 超时(秒)。<=0 忽略。
+ * @param [in] opt 选项。
+ * 
+ * @code
+ * --timeout < seconds >
+ *  超时(秒)。
+ * --mime-type < type >
+ *  媒体类型。
+ * --try-nvcodec < 1 | 0 >
+ *  尝试NVCODEC编解码器。
+ * @endcond
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,AVIOContext *io,time_t timeout);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char *url, AVIOContext *io, abcdk_option_t *opt);
+
+/**
+ * 创建读者对象。
+ * 
+ * @param [in] timeout 超时(秒)。
+ * @param [in] try_nvcodec 是否尝试NVCODEC硬件解码。0 不尝试，!0 尝试。
+ *
+*/ 
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int timeout, int try_nvcodec);
+
+/** 
+ * 创建作者对象。
+ * 
+ * @param [in] try_nvcodec 是否尝试NVCODEC硬件编码。0 不尝试，!0 尝试。
+*/
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,int try_nvcodec);
+
+/**
+ * 读延时。
+ * 
+ * @param [in] xspeed 倍速。
+ */
+void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed);
 
 /**
  * 读取数据包。
@@ -46,7 +79,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
  * 
  * @return >= 0 成功(数据流索引)，< 0 失败(或结束)。
 */
-int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream);
+int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream);
 
 /**
  * 读取数据帧。
@@ -57,12 +90,6 @@ int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *packet, int stream);
 */
 int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
 
-/** 
- * 创建作者对象。
- * 
- * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
-*/
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type,AVIOContext *io);
 
 /**
  * 创建数据流。
@@ -105,7 +132,7 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx);
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *packet, AVRational *src_time_base);
+int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_base);
 
 /**
  * 写入数据包(已编码)。

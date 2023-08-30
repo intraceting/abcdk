@@ -64,14 +64,11 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value);
 /**
  * 配置一个选项。
  * 
- * @note 支持一对多键值组合，相同键值的次序由添加顺序决定。
- * @note 如果KEY不包含前缀则自动添加。
- * 
- * @param merge 是否合并重复的value。0 不合并，!0 合并。
+ * @note VALUE最大支持4000字节。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_option_set2(abcdk_option_t *opt, const char *key, const char *value, int merge);
+int abcdk_option_fset(abcdk_option_t *opt, const char *key, const char *valfmt, ...);
 
 /**
  * 获取一个选项的值。
