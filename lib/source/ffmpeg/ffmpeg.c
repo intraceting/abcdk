@@ -386,7 +386,7 @@ void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed)
 
     assert(ctx != NULL);
 
-delay:
+next_delay:
 
     for (int i = 0; i < ctx->avctx->nb_streams; i++)
     {
@@ -403,7 +403,7 @@ delay:
     if (chk != 0)
     {
         usleep(1000);
-        goto delay;
+        goto next_delay;
     }
 }
 
