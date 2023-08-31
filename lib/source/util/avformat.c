@@ -669,26 +669,26 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
     return fps;
 }
 
-double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts,double xspeed)
+double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts, double xspeed)
 {
     double sec = -0.000001;
 
     assert(ctx != NULL && vs != NULL && xspeed >= 0.001);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
-    sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base,xspeed);
+    sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base, 1.0 / xspeed);
 
     return sec;
 }
 
-int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts,double xspeed)
+int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts, double xspeed)
 {
     int64_t frame_nb = -1;
     double sec = -0.000001;
 
-    sec = abcdk_avstream_ts2sec(ctx, vs, ts,xspeed);
+    sec = abcdk_avstream_ts2sec(ctx, vs, ts, xspeed);
     if (sec >= 0.0)
-        frame_nb = (int64_t)(abcdk_avstream_fps(ctx, vs,xspeed) * sec + 0.5);
+        frame_nb = (int64_t)(abcdk_avstream_fps(ctx, vs, xspeed) * sec + 0.5);
 
     return frame_nb;
 }

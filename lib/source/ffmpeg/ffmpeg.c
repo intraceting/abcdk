@@ -456,10 +456,10 @@ next_delay:
         start_time = vs_p->start_time;
 
         /*流的起始值可能不为0，这里要加上，内部计算时会减掉。*/
-        double a = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts[i] + start_time , 1.0 /xspeed);
+        double a = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts[i] + start_time , xspeed);
         double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[i]) / 1000000;
 
-       // printf("%.3f == %.3f\n", a, b);
+        //printf("%.3f == %.3f\n", a, b);
         
         /*以最慢的为准。*/
         if(block = (a > b ? 1 : 0))
