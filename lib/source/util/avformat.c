@@ -632,12 +632,14 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 
 #define ABCDK_AVSTREAM_EPS_ZERO 0.000025
 
-double _abcdk_avstream_r2d(AVRational r)
+double _abcdk_avstream_r2d(AVRational r, double xspeed)
 {
-    return r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den;
+    double a = (r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den);
+
+    return xspeed * a;
 }
 
-double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs)
+double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs,double xspeed)
 {
     double sec = 0.0;
 
@@ -645,12 +647,12 @@ double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs)
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
     if (vs->duration > 0)
-        sec = (double)vs->duration * _abcdk_avstream_r2d(vs->time_base);
+        sec = (double)vs->duration * _abcdk_avstream_r2d(vs->time_base,xspeed);
 
     return sec;
 }
 
-double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs)
+double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
 {
     double fps = -0.001;
 
@@ -658,39 +660,35 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs)
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = _abcdk_avstream_r2d(vs->r_frame_rate);
+        fps = _abcdk_avstream_r2d(vs->r_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = _abcdk_avstream_r2d(vs->avg_frame_rate);
+        fps = _abcdk_avstream_r2d(vs->avg_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
-        fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base);
-#else
-        fps = 1.0 / _abcdk_avstream_r2d(vs->avg_frame_rate);
-#endif
+        fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base,xspeed);
 
     return fps;
 }
 
-double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts)
+double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts,double xspeed)
 {
     double sec = -0.000001;
 
-    assert(ctx != NULL && vs != NULL);
+    assert(ctx != NULL && vs != NULL && xspeed >= 0.001);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
-    sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base);
+    sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base,xspeed);
 
     return sec;
 }
 
-int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts)
+int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts,double xspeed)
 {
     int64_t frame_nb = -1;
     double sec = -0.000001;
 
-    sec = abcdk_avstream_ts2sec(ctx, vs, ts);
+    sec = abcdk_avstream_ts2sec(ctx, vs, ts,xspeed);
     if (sec >= 0.0)
-        frame_nb = (int64_t)(abcdk_avstream_fps(ctx, vs) * sec + 0.5);
+        frame_nb = (int64_t)(abcdk_avstream_fps(ctx, vs,xspeed) * sec + 0.5);
 
     return frame_nb;
 }

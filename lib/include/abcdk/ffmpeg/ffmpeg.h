@@ -32,6 +32,58 @@ void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx);
 AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx);
 
 /**
+ * AVStream对象数量。
+ */
+int abcdk_ffmpeg_streams(abcdk_ffmpeg_t *ctx);
+
+/**
+ * AVStream对象指针。
+*/
+AVStream *abcdk_ffmpeg_streamptr(abcdk_ffmpeg_t *ctx,int stream);
+
+/**
+ * 获取流的时长(秒)。
+ *
+ * @return 秒.毫秒。
+ */
+double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream,double xspeed);
+
+/**
+ * 获取FPS。
+ *
+ * @return 秒.毫秒。
+ */
+double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream,double xspeed);
+
+/**
+ * DTS或PTS转自然时间。
+ *
+ * @return 秒.毫秒。
+ */
+double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts,double xspeed);
+
+/**
+ * DTS或PTS转序号。
+ *
+ * @return 整型。
+ */
+int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts,double xspeed);
+
+/**
+ * 获取指定流图像的宽。
+ * 
+ * @return 像素。
+*/
+int abcdk_ffmpeg_width(abcdk_ffmpeg_t *ctx,int stream);
+
+/**
+ * 获取指定流图像的高。
+ * 
+ * @return 像素。
+*/
+int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream);
+
+/**
  * 创建FFMPEG对象。
  * 
  * @param [in] opt 选项。
@@ -53,17 +105,14 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char
  * 创建读者对象。
  * 
  * @param [in] timeout 超时(秒)。
- * @param [in] try_nvcodec 是否尝试NVCODEC硬件解码。0 不尝试，!0 尝试。
  *
 */ 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int timeout, int try_nvcodec);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int timeout);
 
 /** 
  * 创建作者对象。
- * 
- * @param [in] try_nvcodec 是否尝试NVCODEC硬件编码。0 不尝试，!0 尝试。
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,int try_nvcodec);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type);
 
 /**
  * 读延时。

@@ -61,7 +61,6 @@ typedef struct _abcdk_ffmpeg
     /** 最近活动包时间(秒)。*/
     int64_t last_packet_time;
 
-
     /** 读缓存包.*/
     AVPacket read_pkt;
 
@@ -81,6 +80,11 @@ typedef struct _abcdk_ffmpeg
 
 } abcdk_ffmpeg_t;
 
+
+int64_t _abcdk_ffmpeg_clock()
+{
+    abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+}
 
 void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx)
 {
@@ -144,9 +148,67 @@ AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx)
     return ctx->avctx;
 }
 
-int64_t _abcdk_ffmpeg_clock()
+int abcdk_ffmpeg_streams(abcdk_ffmpeg_t *ctx)
 {
-    abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+    assert(ctx != NULL);
+
+    return ctx->avctx->nb_streams;
+}
+
+AVStream *abcdk_ffmpeg_streamptr(abcdk_ffmpeg_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return ctx->avctx->streams[stream];
+}
+
+double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream,double xspeed)
+{
+    assert(ctx != NULL && stream >= 0 && xspeed > 0.001);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return abcdk_avstream_duration(ctx->avctx,ctx->avctx->streams[stream],xspeed);
+}
+
+double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream,double xspeed)
+{
+    assert(ctx != NULL && stream >= 0 && xspeed > 0.001);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return abcdk_avstream_fps(ctx->avctx,ctx->avctx->streams[stream],xspeed);
+}
+
+double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts,double xspeed)
+{
+    assert(ctx != NULL && stream >= 0 && xspeed > 0.001);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return abcdk_avstream_ts2sec(ctx->avctx,ctx->avctx->streams[stream],ts,xspeed);
+}
+
+int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts,double xspeed)
+{
+    assert(ctx != NULL && stream >= 0 && xspeed > 0.001);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return abcdk_avstream_ts2num(ctx->avctx,ctx->avctx->streams[stream],ts,xspeed);
+}
+
+int abcdk_ffmpeg_width(abcdk_ffmpeg_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return abcdk_avstream_width(ctx->avctx,ctx->avctx->streams[stream]);
+}
+
+int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(stream < ctx->avctx->nb_streams);
+
+    return abcdk_avstream_height(ctx->avctx,ctx->avctx->streams[stream]);
 }
 
 int _abcdk_ffmpeg_capture_interrupt_cb(void *args)
@@ -249,7 +311,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char
     return NULL;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int timeout, int try_nvcodec)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int timeout)
 {
     abcdk_ffmpeg_t *ctx = NULL;
     abcdk_option_t *opt = NULL;
@@ -259,7 +321,6 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
         return NULL;
 
     abcdk_option_fset(opt,"--timeout","%d",timeout);
-    abcdk_option_fset(opt,"--try-nvcodec","%d",try_nvcodec);
 
     ctx = abcdk_ffmpeg_open(0,short_name,url,NULL,opt);
 
@@ -269,7 +330,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     return ctx;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,int try_nvcodec)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type)
 {
     abcdk_ffmpeg_t *ctx = NULL;
     abcdk_option_t *opt = NULL;
@@ -278,7 +339,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,i
     if(!opt)
         return NULL;
 
-    abcdk_option_fset(opt,"--try-nvcodec","%d",try_nvcodec);
+    abcdk_option_fset(opt,"--mime-type","%s",mime_type);
 
     ctx = abcdk_ffmpeg_open(1,short_name,url,NULL,opt);
 
@@ -381,26 +442,31 @@ int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
 
 void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed)
 {
-    AVStream *vs_p = NULL;
-    int chk;
+    AVStream * vs_p = NULL;
+    int64_t start_time = 0;
+    int block = 0;
 
     assert(ctx != NULL);
 
 next_delay:
 
-    for (int i = 0; i < ctx->avctx->nb_streams; i++)
+    for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
     {
-        vs_p = ctx->avctx->streams[i];
+        vs_p = abcdk_ffmpeg_streamptr(ctx,i);
+        start_time = vs_p->start_time;
 
-        double a = abcdk_avstream_ts2sec(ctx->avctx, vs_p, ctx->read_dts[i]);
+        /*流的起始值可能不为0，这里要加上，内部计算时会减掉。*/
+        double a = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts[i] + start_time , 1.0 /xspeed);
         double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[i]) / 1000000;
 
-      //  printf("%.3f == %.3f\n", a, b);
-
-        chk = (a < b ? 0 : -1);
+       // printf("%.3f == %.3f\n", a, b);
+        
+        /*以最慢的为准。*/
+        if(block = (a > b ? 1 : 0))
+            break;
     }
 
-    if (chk != 0)
+    if (block)
     {
         usleep(1000);
         goto next_delay;

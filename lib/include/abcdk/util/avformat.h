@@ -188,33 +188,34 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
  */
 int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs);
 
+
 /**
  * 获取流的时长(秒)。
  *
  * @return 秒.毫秒。
  */
-double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs);
+double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs,double xspeed);
 
 /**
  * 获取FPS。
  *
  * @return 秒.毫秒。
  */
-double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs);
+double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed);
 
 /**
  * DTS或PTS转自然时间。
  *
  * @return 秒.毫秒。
  */
-double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts);
+double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts,double xspeed);
 
 /**
  * DTS或PTS转序号。
  *
  * @return 整型。
  */
-int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts);
+int64_t abcdk_avstream_ts2num(AVFormatContext *ctx, AVStream *vs, int64_t ts,double xspeed);
 
 /**
  * 获取指定流图像的宽。
