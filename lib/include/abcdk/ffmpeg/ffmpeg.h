@@ -32,6 +32,11 @@ void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx);
 AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx);
 
 /**
+ * 查找指定类型的流。
+*/
+AVStream *abcdk_ffmpeg_find_stream(abcdk_ffmpeg_t *ctx,enum AVMediaType type);
+
+/**
  * AVStream对象数量。
  */
 int abcdk_ffmpeg_streams(abcdk_ffmpeg_t *ctx);

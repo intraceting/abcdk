@@ -148,6 +148,13 @@ AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx)
     return ctx->avctx;
 }
 
+AVStream *abcdk_ffmpeg_find_stream(abcdk_ffmpeg_t *ctx,enum AVMediaType type)
+{
+    assert(ctx != NULL);
+
+    return abcdk_avstream_find(ctx->avctx,type);
+}
+
 int abcdk_ffmpeg_streams(abcdk_ffmpeg_t *ctx)
 {
     assert(ctx != NULL);
