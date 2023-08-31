@@ -58,6 +58,7 @@ CC_FLAGS += -Wno-unused-function
 #CC_FLAGS += -Wno-sizeof-pointer-memaccess
 CC_FLAGS += -Wno-deprecated-declarations
 #CC_FLAGS += -Wint-to-pointer-cast
+CC_FLAGS += -Wno-attributes
 CC_FLAGS += -Wno-format
 CC_FLAGS += -DBUILD_TIME=\"${BUILD_TIME}\"
 CC_FLAGS += -DSOLUTION_NAME=\"${SOLUTION_NAME}\"
