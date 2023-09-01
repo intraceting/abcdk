@@ -79,20 +79,7 @@ SOLUTION_NAME="abcdk"
 #
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_PATH="${SHELLDIR}/build/"
-
-#
-MAKE_CONF=${BUILD_PATH}/makefile.conf
-
-#
-PKG_PC=${BUILD_PATH}/pkg_conf.pc
-
-#
-RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
-RPM_DEV_SPEC=${BUILD_PATH}/rpm_devel.spec
-
-#
-DEB_RT_CTL=${BUILD_PATH}/deb_rt.ctl
-DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
+BUILD_PACKAGE_PATH="${SHELLDIR}/package/"
 
 #主版本
 VERSION_MAJOR="1"
@@ -183,14 +170,20 @@ usage: [ OPTIONS ]
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm
 
-    -e < NAME=VALUE >
+    -e < name=value >
      自定义环境变量。
+
+    -b < path >
+     构建目录。默认：${BUILD_PATH}
+
+    -B < path >
+     发行目录。默认：${PACKAGE_PATH}
 
 EOF
 }
 
 #
-while getopts "hc:k:s:Oo:gf:l:V:v:r:i:d:e:" ARGKEY 
+while getopts "hc:k:s:Oo:gf:l:V:v:r:i:d:e:b:B:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -238,6 +231,12 @@ do
     ;;
     e)
         export ${OPTARG}
+    ;;
+    b)
+        BUILD_PATH="${OPTARG}"
+    ;;
+    B)
+        BUILD_PACKAGE_PATH="${OPTARG}"
     ;;
     esac
 done
@@ -402,6 +401,15 @@ if [ ! -d ${BUILD_PATH} ];then
 fi
 
 #
+mkdir -p ${BUILD_PACKAGE_PATH}
+if [ ! -d ${BUILD_PACKAGE_PATH} ];then
+{
+    echo "'${BUILD_PACKAGE_PATH}' not found."
+    exit 22
+}
+fi
+
+#
 if [ ! -d ${INSTALL_PREFIX} ];then
 {
     echo "'${INSTALL_PREFIX}' not found."
@@ -413,6 +421,21 @@ else
 }
 fi
 
+
+#
+MAKE_CONF=${BUILD_PATH}/makefile.conf
+
+#
+PKG_PC=${BUILD_PATH}/pkg_conf.pc
+
+#
+RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
+RPM_DEV_SPEC=${BUILD_PATH}/rpm_devel.spec
+
+#
+DEB_RT_CTL=${BUILD_PATH}/deb_rt.ctl
+DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
+
 #
 cat >${MAKE_CONF} <<EOF
 #
@@ -422,6 +445,7 @@ SOLUTION_NAME = ${SOLUTION_NAME}
 #
 BUILD_TIME = ${BUILD_TIME}
 BUILD_PATH = ${BUILD_PATH}
+BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 #
 SYSROOT_PATH = ${SYSROOT_PATH}
 #
