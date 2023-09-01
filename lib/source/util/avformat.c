@@ -139,7 +139,7 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
         return NULL;
 
     /*如果不知道做什么用的，不要设置这个。*/
-    // ctx->flags |= AVFMT_FLAG_NOBUFFER;
+    ctx->flags |= AVFMT_FLAG_NOBUFFER;
 
     if (interrupt)
         ctx->interrupt_callback = *interrupt;
