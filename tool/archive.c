@@ -250,7 +250,7 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t卷名和分卷名（包括路径）。注：最大支持254个分卷\n");
 #else 
     fprintf(stderr, "\n\t--volume < NAME >\n");
-    fprintf(stderr, "\t\t卷名和分卷名（包括路径）。\n");
+    fprintf(stderr, "\t\t卷名和（包括路径）。\n");
 #endif //ARCHIVE_VERSION_NUMBER >= 3000000
 
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
@@ -963,7 +963,7 @@ void _abcdkarchive_write(abcdkarchive_t *ctx)
 
     if (ctx->files[0] == NULL || *ctx->files[0] == '\0')
     {
-        fprintf(stderr, "'--file-from FILE|DIR [ FILE|DIR ... ]' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--file-list FILE|DIR [ FILE|DIR ... ]' 不能省略，且不能为空。\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 

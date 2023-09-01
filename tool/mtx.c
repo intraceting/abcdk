@@ -85,10 +85,10 @@ void _abcdkmtx_print_usage(abcdkmtx_t *ctx)
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDKMTX_STATUS);
 
     fprintf(stderr, "\n\t--exclude-barcode\n");
-    fprintf(stderr, "\t\t排除条码字段。默认：包括\n");
+    fprintf(stderr, "\t\t排除条码字段。\n");
 
     fprintf(stderr, "\n\t--exclude-dvcid\n");
-    fprintf(stderr, "\t\t排除DVCID字段。默认：包括\n");
+    fprintf(stderr, "\t\t排除DVCID字段。\n");
 
     fprintf(stderr, "\n\t--addr-min < ADDRESS >\n");
     fprintf(stderr, "\t\t最小地址(包含)。默认：0\n");
@@ -96,8 +96,8 @@ void _abcdkmtx_print_usage(abcdkmtx_t *ctx)
     fprintf(stderr, "\n\t--addr-max < ADDRESS >\n");
     fprintf(stderr, "\t\t最大地址(包含)。默认：65535\n");
 
-    fprintf(stderr, "\n\t--match-type\n");
-    fprintf(stderr, "\t\t仅指定类型。默认：全部\n");
+    fprintf(stderr, "\n\t--match-type < TYPE > \n");
+    fprintf(stderr, "\t\t匹配指定类型。\n");
 
     fprintf(stderr, "\n\t\t%d: 机械手。\n", ABCDK_MEDIUMX_ELEMENT_CHANGER);
     fprintf(stderr, "\t\t%d: 存储槽。\n", ABCDK_MEDIUMX_ELEMENT_STORAGE);
@@ -105,7 +105,7 @@ void _abcdkmtx_print_usage(abcdkmtx_t *ctx)
     fprintf(stderr, "\t\t%d: 驱动器。\n", ABCDK_MEDIUMX_ELEMENT_DXFER);
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\t输出到文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到文件(包括路径)。\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
     fprintf(stderr, "\t\t报表格式。默认: %d\n", ABCDKMTX_STATUS_FMT_TEXT);
