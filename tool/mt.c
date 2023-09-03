@@ -146,16 +146,7 @@ void _abcdkmt_print_usage(abcdk_option_t *args, int only_version)
 
 void _abcdkmt_printf_sense(abcdk_scsi_io_stat_t *stat)
 {
-    uint8_t key = 0, asc = 0, ascq = 0;
-    const char *msg_p = NULL;
-
-    key = abcdk_scsi_sense_key(stat->sense);
-    asc = abcdk_scsi_sense_code(stat->sense);
-    ascq = abcdk_scsi_sense_qualifier(stat->sense);
-
-    msg_p = abcdk_tape_sense2string(key, asc, ascq);
-
-    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.\n", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
+    abcdk_tape_stat_dump(stderr,stat);
 }
 
 void _abcdkmt_operate(abcdkmt_t *ctx)

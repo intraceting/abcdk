@@ -54,6 +54,11 @@ typedef enum _abcdk_tape_attr_field
 */
 const char *abcdk_tape_sense2string(uint8_t key, uint8_t asc , uint8_t ascq);
 
+/** 
+ * 打印状态信息。
+*/
+void abcdk_tape_stat_dump(FILE *fp,abcdk_scsi_io_stat_t *stat);
+
 /**
  * 磁带型号编码转字符串。
 */

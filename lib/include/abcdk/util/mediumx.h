@@ -70,6 +70,11 @@ typedef enum _abcdk_mediumx_element_field
 */
 const char *abcdk_mediumx_sense2string(uint8_t key, uint8_t asc , uint8_t ascq);
 
+/** 
+ * 打印状态信息。
+*/
+void abcdk_mediumx_stat_dump(FILE *fp,abcdk_scsi_io_stat_t *stat);
+
 /**
  * 初始化设备元件状态。
  *

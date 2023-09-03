@@ -127,16 +127,7 @@ void _abcdkmtx_print_usage(abcdkmtx_t *ctx)
 
 void _abcdkmtx_printf_sense(abcdk_scsi_io_stat_t *stat)
 {
-    uint8_t key = 0, asc = 0, ascq = 0;
-    const char *msg_p = NULL;
-
-    key = abcdk_scsi_sense_key(stat->sense);
-    asc = abcdk_scsi_sense_code(stat->sense);
-    ascq = abcdk_scsi_sense_qualifier(stat->sense);
-
-    msg_p = abcdk_mediumx_sense2string(key, asc, ascq);
-
-    fprintf(stderr, "Sense(KEY=%02X,ASC=%02X,ASCQ=%02X): %s.\n", key, asc, ascq, (msg_p ? msg_p : "Unknown"));
+    abcdk_mediumx_stat_dump(stderr,stat);
 }
 
 const char *_abcdkmtx_translate_devname(abcdkmtx_t *ctx, uint8_t type, const char *sn)

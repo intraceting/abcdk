@@ -31,7 +31,7 @@ void _abcdkbc_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
     fprintf(stderr, "\n\t--decode\n");
-    fprintf(stderr, "\t\t解码。默认：编码\n");
+    fprintf(stderr, "\t\t解码。如果未指定，则启用编码。\n");
 
     fprintf(stderr, "\n\t--base < CODE >\n");
     fprintf(stderr, "\t\t基值（32|64）。默认：64\n");
