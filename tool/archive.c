@@ -740,6 +740,7 @@ final:
     }
 
     abcdk_object_unref(&ctx->attr_list);
+    unlink(ctx->attr_list_tmpname);
 }
 
 int _abcdkarchive_write_one(abcdkarchive_t *ctx,const char *file,struct stat *attr)
