@@ -203,7 +203,7 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t显示帮助信息，并退出。\n");
 
     fprintf(stderr, "\n\t--quiet \n");
-    fprintf(stderr, "\t\t安静的工作，仅输出错误或警告信息。");
+    fprintf(stderr, "\t\t安静的工作，仅输出错误或警告信息。\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER > \n");
     fprintf(stderr, "\t\t操作码。默认：%d\n", ABCDKARCHIVE_READ);
@@ -217,8 +217,8 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_filter_dict); i++)
     {
-        fprintf(stderr, "\t\t%hu: %-16s", abcdkarchive_filter_dict[i].code, abcdkarchive_filter_dict[i].name);
-        if ((i + 1) % 4 == 0)
+        fprintf(stderr, "\t\t%hu: %-20s", abcdkarchive_filter_dict[i].code, abcdkarchive_filter_dict[i].name);
+        if ((i + 1) % 3 == 0)
             fprintf(stderr, "\n");
     }
     fprintf(stderr, "\n");
@@ -232,8 +232,8 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdkarchive_format_dict); i++)
     {
-        fprintf(stderr, "\t\t%hu: %-16s ", abcdkarchive_format_dict[i].code, abcdkarchive_format_dict[i].name);
-        if ((i + 1) % 4 == 0)
+        fprintf(stderr, "\t\t%hu: %-20s ", abcdkarchive_format_dict[i].code, abcdkarchive_format_dict[i].name);
+        if ((i + 1) % 3 == 0)
             fprintf(stderr, "\n");
     }
     fprintf(stderr, "\n");
@@ -269,10 +269,13 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t4：四字节(定长)。\n");
     
     fprintf(stderr, "\n\t\t归档：忽略。使用系统默认设置。\n");
-    fprintf(stderr, "\t\t回迁：归档时元数据的编码字符宽度。\n");
+    fprintf(stderr, "\t\t回迁：归档时元数据编码的字符宽度。\n");
 
     fprintf(stderr, "\n\t--work-space < PATH >\n");
     fprintf(stderr, "\t\t工作路径。如果未指定，则使用当前路径。\n");
+    
+    fprintf(stderr, "\n\t\t归档：从这里开始查找并读取数据。\n");
+    fprintf(stderr, "\t\t回迁：数据将回迁到这里。\n");
 
     fprintf(stderr, "\n\t--name < NAME [ NAME ... ] >\n");
     fprintf(stderr, "\t\t归档包的文件名或设备名（包括路径）。注：最大支持254个。\n");
@@ -287,13 +290,13 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
     fprintf(stderr, "\t\t文件或目录清单。注：最大支持254个。\n");
 
-    fprintf(stderr, "\n\t\t归档：相对于工作路径，匹配全路径名称（区分大小写）。如果未指定，则归档工作路径内全部文件，包括隐藏文件和目录。\n");
+    fprintf(stderr, "\n\t\t归档：相对于工作路径，匹配全路径名称（区分大小写）。\n");
     fprintf(stderr, "\t\t回迁：在归档包内，匹配全路径名称（区分大小写），并且支持通配符（“*”匹配多个连续字符；“?”匹配单个字符。）。如果未指定，则回迁归档包内的所有文件和目录。\n");
 
     fprintf(stderr, "\n\t--save-fullpath\n");
     fprintf(stderr, "\t\t保留完整路径。\n");
     
-    fprintf(stderr, "\n\t\t归档：如果未指定，表示归档包内的文件名将被剪除工作路径。\n");
+    fprintf(stderr, "\n\t\t归档：元数据将包含完整的路径。如果未指定，则归档包内的文件名将被剪除工作路径。\n");
     fprintf(stderr, "\t\t回迁：忽略，不使用。\n");
 
     fprintf(stderr, "\n\t--write-filemark < FLAG >\n");
@@ -305,11 +308,11 @@ void _abcdkarchive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t\t归档：仅对磁带有效。\n");
     fprintf(stderr, "\t\t回迁：忽略，不使用。\n");
 
-    fprintf(stderr, "\n\t--just-list\n");
-    fprintf(stderr, "\t\t仅打印匹配清单，对工作路径没有影响。\n");
+    fprintf(stderr, "\n\t--just-list-detail\n");
+    fprintf(stderr, "\t\t仅打印匹配后的清单详情。\n");
         
     fprintf(stderr, "\n\t\t归档：忽略，不使用。\n");
-    fprintf(stderr, "\t\t回迁：如果未指定，将直接回迁实体到工作路径内。\n");
+    fprintf(stderr, "\t\t回迁：对工作路径没有影响。如果未指定，将直接回迁实体到工作路径内。\n");
     
 }
 
@@ -619,7 +622,7 @@ void _abcdkarchive_read(abcdkarchive_t *ctx)
     for (int i = 0; i < ctx->file_num && i < 256; i++)
         ctx->files[i] = abcdk_option_get(ctx->args, "--file-list", i, NULL);
 
-    ctx->justlist = abcdk_option_exist(ctx->args, "--just-list");
+    ctx->justlist = abcdk_option_exist(ctx->args, "--just-list-detail");
 
     ctx->arch_fd = NULL;
     ctx->fd[0] = -1;
@@ -859,7 +862,6 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
     struct stat attr = {0};
     char file[PATH_MAX] = {0};
     abcdk_tree_t *dir = NULL;
-    char *bname_p = NULL;
     int chk;
 
     dir = abcdk_tree_alloc3(1);
@@ -871,12 +873,6 @@ void _abcdkarchive_write_real(abcdkarchive_t *ctx)
         memset(file,0,PATH_MAX);
         abcdk_dirdir(file,ctx->wksp);
         abcdk_dirdir(file,ctx->files[i]);
-
-        /*跳过.和..*/
-        bname_p = strrchr(file, '/');
-        bname_p = (bname_p?(bname_p + 1):file);
-        if (abcdk_strcmp(bname_p, ".", 1) == 0 || abcdk_strcmp(bname_p, "..", 1) == 0)
-            continue;
 
         chk = lstat(file,&attr);
         if(chk != 0)
