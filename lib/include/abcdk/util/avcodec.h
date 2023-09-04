@@ -24,44 +24,6 @@ __BEGIN_DECLS
 
 #ifdef AVCODEC_AVCODEC_H
 
-/**常用的编解码参数。*/
-typedef struct _abcdk_avcodec_parameters
-{
-    int fps;
-    int gop;
-    enum AVMediaType codec_type;
-    enum AVCodecID codec_id;
-    uint32_t codec_tag;
-    /**
-     * @note 申请者负责释放。
-     */
-    uint8_t *extradata;
-    int extradata_size;
-    int format;
-    int64_t bit_rate;
-    int bits_per_coded_sample;
-    int bits_per_raw_sample;
-    int profile;
-    int level;
-    int width;
-    int height;
-    AVRational sample_aspect_ratio;
-    enum AVFieldOrder field_order;
-    enum AVColorRange color_range;
-    enum AVColorPrimaries color_primaries;
-    enum AVColorTransferCharacteristic color_trc;
-    enum AVColorSpace color_space;
-    enum AVChromaLocation chroma_location;
-    int video_delay;
-    uint64_t channel_layout;
-    int channels;
-    int sample_rate;
-    int block_align;
-    int frame_size;
-    int initial_padding;
-    int trailing_padding;
-    int seek_preroll;
-}abcdk_avcodec_parameters_t;
 
 /**
  * 根据名字查找编/解码器。

@@ -83,6 +83,8 @@
 #include "abcdk/util/random.h"
 #include "abcdk/util/logger.h"
 #include "abcdk/util/tar.h"
+#include "abcdk/util/h264.h"
+#include "abcdk/util/hevc.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"

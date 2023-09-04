@@ -16,9 +16,9 @@ __BEGIN_DECLS
 typedef struct _abcdk_rtp_header
 {
     /**
-     * RTP协议的版本号，2bits。
+     * RTP版本号，2bits。
      * 
-     * 当前协议版本号为2。
+     * 当前版本号为2。
     */
     uint8_t version;
 
