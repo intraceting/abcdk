@@ -102,9 +102,11 @@ uint64_t _abcdk_file_segment_find_pos(const char *dst, uint64_t start)
 
 no_history_file:
 
-    /*可能不存在。*/
+    /*如果不存在则直接用起始编号，否则指向下一个编号。*/
     if (pos < start)
         pos = start;
+    else 
+        pos += 1;
 
     abcdk_tree_free(&dir);
 
