@@ -132,6 +132,49 @@ void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
+int _abcdk_logger_segment(const char *src, const char *dst, int max)
+{
+    char tmp[PATH_MAX] = {0};
+    char tmp2[PATH_MAX] = {0};
+    int chk;
+
+    assert(src != NULL && dst != NULL && max > 0);
+
+    /*依次修改分段文件编号。*/
+    for (int i = max; i > 0; i--)
+    {
+        /*编号较大的分段文件。*/
+        snprintf(tmp2, PATH_MAX, dst, i);
+
+        /*删除编号最大的分段文件。*/
+        if (i == max)
+        {
+            if (access(tmp2, F_OK) == 0)
+            {
+                chk = remove(tmp2);
+                if (chk != 0)
+                    return -1;
+            }
+        }
+
+        /*编号较小的分段文件。*/
+        if (i > 1)
+            snprintf(tmp, PATH_MAX, dst, i - 1);
+        else
+            strncpy(tmp, src, PATH_MAX);
+
+        /*跳过不存在的分段文件。*/
+        if (access(tmp, F_OK) != 0)
+            continue;
+
+        chk = rename(tmp,tmp2);
+        if (chk != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
 void _abcdk_logger_flush(abcdk_logger_t *ctx)
 {
     struct stat attr;
@@ -158,7 +201,7 @@ open_log_file:
         attr.st_size >= ctx->segment_size)
     {
         abcdk_closep(&ctx->fd);
-        abcdk_file_segment(ctx->name, ctx->segment_name, ctx->segment_max);
+        _abcdk_logger_segment(ctx->name, ctx->segment_name, ctx->segment_max);
         goto open_log_file;
     }
     else

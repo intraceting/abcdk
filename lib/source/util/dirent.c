@@ -53,7 +53,7 @@ final_error:
     return -1;
 }
 
-int abcdk_dirent_read(abcdk_tree_t *dir,const char *pattern,char file[PATH_MAX])
+int abcdk_dirent_read(abcdk_tree_t *dir,const char *pattern,char file[PATH_MAX],int fullpath)
 {
     abcdk_tree_t *tmp = NULL;
     struct dirent *c_dir = NULL;
@@ -82,7 +82,9 @@ next:
     if (pattern && abcdk_fnmatch(c_dir->d_name, pattern, 1, 0) != 0)
         goto next;
 
-    abcdk_dirdir(file, (char*)tmp->obj->pptrs[0]);
+    if(fullpath)
+        abcdk_dirdir(file, (char*)tmp->obj->pptrs[0]);
+        
     abcdk_dirdir(file, c_dir->d_name);
 
     return 0;    

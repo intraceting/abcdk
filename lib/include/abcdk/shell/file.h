@@ -11,6 +11,7 @@
 #include "abcdk/util/popen.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/path.h"
+#include "abcdk/util/dirent.h"
 
 __BEGIN_DECLS
 
@@ -30,27 +31,31 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
 /**
  * 文件分段存储。
  * 
- * @note 在原文件所在的目录进行文件分段存储。
+ * @code
+ * //1 
+ * uint64_t prev2next = 0;
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.%llu.log",1,100,&prev2next);
+ * //2
+ * uint64_t prev2next = 1;
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.log.%05llu",100,33,&prev2next);
+ * //3
+ * uint64_t prev2next = 1000;
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/%llu.bbb.log",123,44,&prev2next);
+ * //4
+ * uint64_t prev2next = 555;
+ * abcdk_file_segment("/aaa/bbb.log","/aaa/%010llu.bbb.log",55,55,&prev2next);
+ * @endcode
  * 
  * @param [in] src 源文件名(包括路径)。
  * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
- * @param [in] max 最大分段数量。
+ * @param [in] start 起始编号。
+ * @param [in] count 保留数量。
+ * @param [in out] prev2next 承上启下。输入：当前编号，输出：下一个编号。当输入编号为0时，自动查询(非常慢)。
  * 
  * @return 0 成功，-1 失败(访问被拒绝)。
  * 
- * @code
- * //1
- * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.%d.log",10);
- * //2
- * abcdk_file_segment("/aaa/bbb.log","/aaa/bbb.log.%04d",10);
- * //3
- * abcdk_file_segment("/aaa/bbb.log","/aaa/%d.bbb.log",10);
- * //4
- * abcdk_file_segment("/aaa/bbb.log","/aaa/%04d.bbb.log",10);
- * @endcode
- * 
 */
-int abcdk_file_segment(const char *src, const char *dst, int max);
+int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t count,uint64_t *prev2next);
 
 __END_DECLS
 

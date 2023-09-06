@@ -153,7 +153,7 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
     while (1)
     {
         memset(buf, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir,NULL, buf);
+        chk = abcdk_dirent_read(dir,NULL, buf,1);
         if (chk != 0)
             break;
 
@@ -240,7 +240,7 @@ int _abcdk_scsi_get_generic(const char *path, char generic[NAME_MAX])
     while (1)
     {
         memset(buf, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir,NULL, buf);
+        chk = abcdk_dirent_read(dir,NULL, buf,1);
         if (chk != 0)
             break;
 
@@ -320,7 +320,7 @@ void abcdk_scsi_list(abcdk_tree_t *list)
     while (1)
     {
         memset(path, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir,NULL, path);
+        chk = abcdk_dirent_read(dir,NULL, path,1);
         if (chk != 0)
             break;
 

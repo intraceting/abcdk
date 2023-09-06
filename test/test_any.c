@@ -479,7 +479,7 @@ int abcdk_test_any(abcdk_option_t *args)
     int chk = abcdk_receiver_append(t,data,strlen(data),&remain);
 
     abcdk_receiver_unref(&t);
-#elif 1
+#elif 0
 
     uint64_t a,b;
 
@@ -490,6 +490,16 @@ int abcdk_test_any(abcdk_option_t *args)
     b = abcdk_clock(a,&a);
 
     printf("b=%lu\n",b);
+#elif 1
+
+    uint64_t prev2next = 0;
+
+    for(int i = 0;i<10000;i++)
+    {
+        abcdk_save("/tmp/bbb/segment.log","aaaa",4,0);
+
+        abcdk_file_segment("/tmp/bbb/segment.log","/tmp/bbb/segment.%llu.log",111,23,&prev2next);
+    }
 
 #endif 
 }

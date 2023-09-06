@@ -55,19 +55,17 @@ void abcdk_logger_close(abcdk_logger_t **ctx);
 /**
  * 打开。
  *
- * @note 分段文件名仅支持一个数值格式控制符。如：%d 。
- *
- * @param [in] name 文件名(包括路径)。
- * @param [in] segment_name 分段文件名(包括路径)，NULL(0) 不分段。
- * @param [in] segment_max 分段数量，0 不分段。
- * @param [in] segment_size 分段大小(MB)，0 不分段。
- * @param [in] copy2syslog 复制到syslog。!0 是，0 否。
- * @param [in] copy2stderr 复制到stderr。!0 是，0 否。
- *
  * @code
  * //打开日志。
  * abcdk_logger_open("/tmp/abcdk-log/abcdk.log","abcdk.%d.log", 10, 10, 0, 1);
  * @endcode
+ *
+ * @param [in] name 文件名(包括路径)。
+ * @param [in] segment_name 分段文件名(包括路径)，NULL(0) 不分段。注：分段文件名仅支持一个数值格式控制符。如：%d 。
+ * @param [in] segment_max 分段数量，0 不分段。
+ * @param [in] segment_size 分段大小(MB)，0 不分段。
+ * @param [in] copy2syslog 复制到syslog。!0 是，0 否。
+ * @param [in] copy2stderr 复制到stderr。!0 是，0 否。
  *
  */
 abcdk_logger_t *abcdk_logger_open(const char *name, const char *segment_name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);

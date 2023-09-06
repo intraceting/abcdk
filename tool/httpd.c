@@ -558,7 +558,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
         while (1)
         {
             memset(tmp, 0, PATH_MAX);
-            chk = abcdk_dirent_read(dir,NULL, tmp);
+            chk = abcdk_dirent_read(dir,NULL, tmp,1);
             if (chk != 0)
                 break;
 

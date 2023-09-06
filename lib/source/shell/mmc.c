@@ -86,7 +86,7 @@ int _abcdk_mmc_get_devname(const char *path,const char *type, char devname[NAME_
     while (1)
     {
         memset(buf, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir,NULL, buf);
+        chk = abcdk_dirent_read(dir,NULL, buf,1);
         if (chk != 0)
             break;
 
@@ -159,7 +159,7 @@ void abcdk_mmc_list(abcdk_tree_t *list)
     while (1)
     {
         memset(path, 0, PATH_MAX);
-        chk = abcdk_dirent_read(dir,NULL, path);
+        chk = abcdk_dirent_read(dir,NULL, path,1);
         if (chk != 0)
             break;
 

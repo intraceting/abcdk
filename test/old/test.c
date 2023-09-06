@@ -2061,7 +2061,7 @@ void test_dirent(abcdk_tree_t *args)
     for(;;)
     {
         char file[PATH_MAX]={0};
-        int chk = abcdk_dirent_read(t,file);
+        int chk = abcdk_dirent_read(t,file,1);
         if(chk != 0)
             break;
         
