@@ -83,7 +83,7 @@ typedef struct _abcdk_ffmpeg
 
 int64_t _abcdk_ffmpeg_clock()
 {
-    abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
 }
 
 void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx)
