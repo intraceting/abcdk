@@ -22,7 +22,7 @@ void abcdk_avio_free(AVIOContext **ctx)
     *ctx = NULL;
 
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
-    avio_context_free(&ctx_p);
+    avio_closep(&ctx_p);
 #else
     if (ctx_p->buffer)
         av_free(ctx_p->buffer);
@@ -105,12 +105,17 @@ void abcdk_avformat_free(AVFormatContext **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    /*自定义IO环境不能自动释放，需要单独释放。*/
-    if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO)
+    /*
+     * IO对象在以下两个条件下，需要单独释放。
+     *
+     * 1：自定义环境。
+     * 2：输出对象。
+     */
+    if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO || (ctx_p->oformat && !(ctx_p->oformat->flags & AVFMT_NOFILE)))
         pb = ctx_p->pb;
 
     if (ctx_p->iformat)
-        avformat_close_input(ctx);
+        avformat_close_input(&ctx_p);
     else
         avformat_free_context(ctx_p);
 

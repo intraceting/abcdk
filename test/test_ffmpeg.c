@@ -30,32 +30,9 @@ int abcdk_test_record(abcdk_option_t *args)
     {
         AVStream * p = abcdk_ffmpeg_streamptr(r,i);
 
-         abcdk_hexdump(stderr,p->codec->extradata,p->codec->extradata_size,0,NULL);
+        // abcdk_hevc_extradata_t extradata = {0};
 
-    if (p->codec->codec_id == AV_CODEC_ID_H264)
-    {
-        abcdk_h264_extradata_t extradata = {0};
-
-        abcdk_h264_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
-
-        abcdk_object_unref(&extradata.sps);
-        abcdk_object_unref(&extradata.pps);
-    }
-    else if (p->codec->codec_id == AV_CODEC_ID_HEVC)
-    {
-        abcdk_hevc_extradata_t extradata = {0};
-
-        abcdk_hevc_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
-
-        for (int i = 0; i < extradata.nal_array_num; i++)
-        {
-            struct _nal_array *nal_p = &extradata.nal_array[i];
-
-            for (int j = 0; j < nal_p->nal_num; j++)
-                abcdk_object_unref(&nal_p->nal);
-        }
-    }
-
+        // abcdk_hevc_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
        
         AVCodecContext *opt = abcdk_avcodec_alloc3(p->codec->codec_id,1);
 
@@ -87,13 +64,6 @@ int abcdk_test_record(abcdk_option_t *args)
         int n= abcdk_ffmpeg_read(r,&pkt,-1);
         if(n<0)
             break;
-
-       // if(i<3)
-        if ((pkt.data[3] & 0x3f) == 32)
-        {
-            fprintf(stderr, "------------------------------\n");
-            abcdk_hexdump(stderr, pkt.data, pkt.size, 0, NULL);
-        }
 
          abcdk_ffmpeg_write(w,&pkt,&rf->streams[n]->time_base);
 
