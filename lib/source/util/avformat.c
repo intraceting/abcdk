@@ -364,7 +364,7 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     if (abcdk_strncmp(filename, "rtsp://", 7, 0) == 0)
         ctx->oformat = av_guess_format("rtsp", NULL, NULL);
     else if (abcdk_strncmp(filename, "rtsps://", 8, 0) == 0)
-        ctx->oformat = av_guess_format("rtsps", NULL, NULL);
+        ctx->oformat = av_guess_format("rtsp", NULL, NULL);
     else if (abcdk_strncmp(filename, "rtmp://", 7, 0) == 0)
         ctx->oformat = av_guess_format("flv", NULL, NULL);
     else if (abcdk_strncmp(filename, "rtmps://", 8, 0) == 0)
