@@ -121,7 +121,7 @@ int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t
     uint64_t pos;
     int chk;
 
-    assert(src != NULL && dst != NULL && start > 0 && count > 0 && prev2next != NULL);
+    assert(dst != NULL && start > 0 && count > 0 && prev2next != NULL);
 
     /*copy*/
     pos = *prev2next;
@@ -140,10 +140,13 @@ int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t
             return -1;
     }
 
-    snprintf(tmp2, PATH_MAX, dst, pos);
-    chk = rename(src,tmp2);
-    if (chk != 0)
-        return -1;
+    if (src)
+    {
+        snprintf(tmp2, PATH_MAX, dst, pos);
+        chk = rename(src, tmp2);
+        if (chk != 0)
+            return -1;
+    }
 
     /*next POS。*/
     *prev2next = pos +1;

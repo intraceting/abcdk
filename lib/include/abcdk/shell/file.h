@@ -46,13 +46,15 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * abcdk_file_segment("/aaa/bbb.log","/aaa/%010llu.bbb.log",55,55,&prev2next);
  * @endcode
  * 
- * @param [in] src 源文件名(包括路径)。
+ * @note 当未传入源文件时，仅删历史文件。
+ * 
+ * @param [in] src 源文件名(包括路径)。NULL(0) 忽略。
  * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
  * @param [in] start 起始编号。
  * @param [in] count 保留数量。
  * @param [in out] prev2next 承上启下。输入：当前编号，输出：下一个编号。当输入编号为0时，自动查询(非常慢)。
  * 
- * @return 0 成功，-1 失败(访问被拒绝)。
+ * @return 0 成功，-1 失败(无权限或不存在)。
  * 
 */
 int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t count,uint64_t *prev2next);

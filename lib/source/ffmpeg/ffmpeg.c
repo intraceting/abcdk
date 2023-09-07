@@ -874,9 +874,14 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_
 
     cq = vs_p->time_base;
 
-    pkt->dts = av_rescale_q_rnd(pkt->dts, bq, cq, (enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-    pkt->pts = av_rescale_q_rnd(pkt->pts, bq, cq, (enum AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+#if 1
+    pkt->dts = av_rescale_q(pkt->dts, bq, cq);
+    pkt->pts = av_rescale_q(pkt->pts, bq, cq);
 	pkt->duration = av_rescale_q(pkt->duration, bq, cq);
+#else
+    av_packet_rescale_ts(pkt,bq,cq);
+#endif 
+
     pkt->pos = -1;
 
     chk = abcdk_avformat_output_write(ctx->avctx, pkt);

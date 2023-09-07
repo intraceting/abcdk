@@ -57,7 +57,7 @@ int abcdk_test_record(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<1000;i++)
+    for(int i = 0;i<10000000;i++)
     {
         
 
