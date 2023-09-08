@@ -23,8 +23,6 @@ typedef struct _abcdkm4j
     size_t buf_size;
     char *buf;
     char *out_file;
-    int h264_scode_len;
-    uint8_t h264_startcode[4];
 
     int in_fd;
     int out_fd;
@@ -45,6 +43,8 @@ typedef struct _abcdkm4j
     abcdk_tree_t *stco_p;
     abcdk_tree_t *avc1_p;
     abcdk_tree_t *avcc_p;
+    abcdk_tree_t *hev1_p;
+    abcdk_tree_t *hvcc_p;
     abcdk_tree_t *mp4a_p;
     abcdk_tree_t *esds_p;
 
@@ -58,6 +58,8 @@ typedef struct _abcdkm4j
     abcdk_mp4_atom_t *stsc;
     abcdk_mp4_atom_t *avc1;
     abcdk_mp4_atom_t *avcc;
+    abcdk_mp4_atom_t *hev1;
+    abcdk_mp4_atom_t *hvcc;
     abcdk_mp4_atom_t *mp4a;
     abcdk_mp4_atom_t *esds;
 
@@ -133,25 +135,32 @@ int _abcdkm4j_aac_decode_extradata(abcdkm4j_t *ctx, uint8_t *data, int size)
     return 0;
 }
 
-void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
+void _abcdkm4j_dump_h264(abcdkm4j_t *ctx)
 {
-    ctx->avc1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVC1, 1, 1);
+    uint8_t sc[4];
+    int sc_len;
+    abcdk_h264_extradata_t exdata = {0};
+
     ctx->avcc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVCC, 1, 1);
 
-    ctx->avc1 = (abcdk_mp4_atom_t *)(ctx->avc1_p ? ctx->avc1_p->obj->pptrs[0] : NULL);
-    ctx->avcc = (abcdk_mp4_atom_t *)(ctx->avcc_p ? ctx->avcc_p->obj->pptrs[0] : NULL);
-
-    if (!ctx->avc1)
+    if (!ctx->avcc_p)
     {
-        fprintf(stderr, "仅支持H264编码提取，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "H264描述信息不存在，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    ctx->h264_scode_len = ctx->avcc->data.avcc.nalu_length_size;
-    if (ctx->h264_scode_len == 3)
-        memcpy(ctx->h264_startcode, "\0\0\1", 3);
-    else if (ctx->h264_scode_len == 4)
-        memcpy(ctx->h264_startcode, "\0\0\0\1", 4);
+    ctx->avc1 = (abcdk_mp4_atom_t *)(ctx->avc1_p->obj->pptrs[0]);
+    ctx->avcc = (abcdk_mp4_atom_t *)(ctx->avcc_p->obj->pptrs[0]);
+
+    abcdk_h264_extradata_deserialize(ctx->avcc->data.avcc.extradata->pptrs[0],ctx->avcc->data.avcc.extradata->sizes[0],&exdata);
+
+    /*比真实长度少一个字节。*/
+    sc_len = exdata.nal_length_size + 1;
+
+    if (sc_len == 3)
+        memcpy(sc, "\0\0\1", 3);
+    else if (sc_len == 4)
+        memcpy(sc, "\0\0\0\1", 4);
     else
     {
         fprintf(stderr, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
@@ -175,10 +184,14 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
     if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
-#if 0
-    abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.extradata->pptrs[0],
-                ctx->avcc->data.avcc.extradata->sizes[0]);
-#endif
+    /*
+     * 1：在流的头部写入SPS，PPS等。
+     * 2：正常的做法是在每个关键帧前都写一次，但会增加流的体积。
+    */
+    abcdk_write(ctx->out_fd, sc, sc_len);
+    abcdk_write(ctx->out_fd, exdata.sps->pptrs[0], exdata.sps->sizes[0]);
+    abcdk_write(ctx->out_fd, sc, sc_len);
+    abcdk_write(ctx->out_fd, exdata.pps->pptrs[0], exdata.pps->sizes[0]);
 
     if (ctx->mvex_p)
     {
@@ -213,12 +226,8 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
 
                     abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
-                    abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
-                    abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
-                    abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
-                    abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
-                    abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);//用起始码替换长度字段。
-                    abcdk_write(ctx->out_fd, ctx->buf + ctx->h264_scode_len, size - ctx->h264_scode_len); //跳过长度字段。
+                    abcdk_write(ctx->out_fd, sc, sc_len);//用起始码替换长度字段。
+                    abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len); //跳过长度字段。
                 }
             }
 
@@ -240,33 +249,160 @@ void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
 
             abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
-            abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
-            abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.sps->pptrs[0], ctx->avcc->data.avcc.sps->sizes[0]);
-            abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len);
-            abcdk_write(ctx->out_fd, ctx->avcc->data.avcc.pps->pptrs[0], ctx->avcc->data.avcc.pps->sizes[0]);
-            abcdk_write(ctx->out_fd, ctx->h264_startcode, ctx->h264_scode_len); //用起始码替换长度字段。
-            abcdk_write(ctx->out_fd, ctx->buf + ctx->h264_scode_len, size - ctx->h264_scode_len);//跳过长度字段。
+            abcdk_write(ctx->out_fd, sc, sc_len); //用起始码替换长度字段。
+            abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len);//跳过长度字段。
         }
     }
 
 final:
 
+    abcdk_h264_extradata_clean(&exdata);
     abcdk_closep(&ctx->out_fd);
 }
 
-void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
+
+void _abcdkm4j_dump_hevc(abcdkm4j_t *ctx)
 {
-    ctx->mp4a_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_MP4A, 1, 1);
-    ctx->esds_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_ESDS, 1, 1);
+    uint8_t sc[4];
+    int sc_len;
+    abcdk_hevc_extradata_t exdata = {0};
 
-    ctx->mp4a = (abcdk_mp4_atom_t *)(ctx->mp4a_p ? ctx->mp4a_p->obj->pptrs[0] : NULL);
-    ctx->esds = (abcdk_mp4_atom_t *)(ctx->esds_p ? ctx->esds_p->obj->pptrs[0] : NULL);
+    ctx->hvcc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_HVCC, 1, 1);
 
-    if (!ctx->mp4a)
+    if (!ctx->hvcc_p)
     {
-        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "HEVC描述信息不存在，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
+
+    ctx->hev1 = (abcdk_mp4_atom_t *)ctx->hev1_p->obj->pptrs[0];
+    ctx->hvcc = (abcdk_mp4_atom_t *)ctx->hvcc_p->obj->pptrs[0];
+
+    abcdk_hevc_extradata_deserialize(ctx->hvcc->data.hvcc.extradata->pptrs[0],ctx->hvcc->data.hvcc.extradata->sizes[0],&exdata);
+
+    /*比真实长度少一个字节。*/
+    sc_len = exdata.nal_length_size + 1;
+
+    if (sc_len == 3)
+        memcpy(sc, "\0\0\1", 3);
+    else if (sc_len == 4)
+        memcpy(sc, "\0\0\0\1", 4);
+    else
+    {
+        fprintf(stderr, "HEVC仅支持001或0001格式起始码，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
+    }
+
+    /*构造文件名。*/
+    memset(ctx->out_file, 0, PATH_MAX);
+    sprintf(ctx->out_file, "%s/%s-%u.hevc", ctx->save, ctx->in_name, ctx->tkhd->data.tkhd.trackid);
+
+    if (access(ctx->out_file, F_OK) == 0)
+    {
+
+        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u)。\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
+    }
+
+    fprintf(stdout, "%u: %s\n", ctx->tkhd->data.tkhd.trackid, ctx->out_file);
+
+    ctx->out_fd = abcdk_open(ctx->out_file, 1, 0, 1);
+    if (ctx->out_fd < 0)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
+
+    /*
+     * 1：在流的头部写入VPS，SPS，PPS，SEI等。
+     * 2：正常的做法是在每个关键帧前都写一次，但会增加流的体积。
+    */
+    for (int j = 0; j < exdata.nal_array_num; j++)
+    {
+        struct _nal_array *nal_p = &exdata.nal_array[j];
+        for (int k = 0; k < nal_p->nal_num; k++)
+        {
+            abcdk_write(ctx->out_fd, sc, sc_len);
+            abcdk_write(ctx->out_fd, nal_p->nal->pptrs[k], nal_p->nal->sizes[k]);
+        }
+    }
+
+    if (ctx->mvex_p)
+    {
+        ctx->moof_p = abcdk_tree_child(ctx->doc, 1);
+        while (ctx->moof_p)
+        {
+            ctx->moof = (abcdk_mp4_atom_t *)ctx->moof_p->obj->pptrs[0];
+            if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
+                goto moof_next;
+
+            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 1);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
+            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
+
+            ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
+            ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
+            ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->obj->pptrs[0];
+            ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->obj->pptrs[0];
+
+            if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
+            {
+                uint32_t offset2 = 0, size = 0;
+
+                offset2 = ctx->trun->data.trun.data_offset;
+
+                lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
+
+                for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
+                {
+                    size = ctx->trun->data.trun.tables[i].sample_size;
+
+                    abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
+
+                    abcdk_write(ctx->out_fd, sc, sc_len);//用起始码替换长度字段。
+                    abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len); //跳过长度字段。
+                }
+            }
+
+        moof_next:
+            ctx->moof_p = abcdk_tree_sibling(ctx->moof_p, 0);
+        }
+    }
+    else
+    {
+        for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
+        {
+            uint32_t chunk = 0, offset = 0, id = 0;
+            abcdk_mp4_stsc_tell(&ctx->stsc->data.stsc, i, &chunk, &offset, &id);
+
+            uint32_t offset2 = 0, size = 0;
+            abcdk_mp4_stsz_tell(&ctx->stsz->data.stsz, offset, i, &offset2, &size);
+
+            lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
+
+            abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
+
+            abcdk_write(ctx->out_fd, sc, sc_len); //用起始码替换长度字段。
+            abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len);//跳过长度字段。
+        }
+    }
+
+final:
+
+    abcdk_hevc_extradata_clean(&exdata);
+    abcdk_closep(&ctx->out_fd);
+}
+
+void _abcdkm4j_dump_acc(abcdkm4j_t *ctx)
+{
+    ctx->esds_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_ESDS, 1, 1);
+
+    if (!ctx->esds_p)
+    {
+        fprintf(stderr, "AAC描述信息不存在，忽略当前音频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
+    }
+
+    ctx->mp4a = (abcdk_mp4_atom_t *)(ctx->mp4a_p->obj->pptrs[0]);
+    ctx->esds = (abcdk_mp4_atom_t *)(ctx->esds_p->obj->pptrs[0]);
 
     memset(ctx->out_file,0,PATH_MAX);
     sprintf(ctx->out_file,"%s/%s-%u.aac",ctx->save,ctx->in_name,ctx->tkhd->data.tkhd.trackid);
@@ -319,7 +455,8 @@ void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
                     size = ctx->trun->data.trun.tables[i].sample_size;
 
                     abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-
+                    
+                    /*每帧都要加7字节的帧头。*/
                     char hdr[7] = {0};
 
                     ctx->adts_hdr.aac_frame_length = 7+size;;//size是数据帧的大小。
@@ -362,6 +499,38 @@ final:
 
     abcdk_closep(&ctx->out_fd);
 
+
+}
+
+void _abcdkm4j_dump_video(abcdkm4j_t *ctx)
+{
+    ctx->avc1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_AVC1, 1, 1);
+    ctx->hev1_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_HEV1, 1, 1);
+
+    if (!ctx->avc1_p && !ctx->hev1_p)
+    {
+        fprintf(stderr, "仅支持H264或HEVC编码提取，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_RETURN0(ctx->errcode = 0);
+    }
+
+    if(ctx->avc1_p)
+        _abcdkm4j_dump_h264(ctx);
+    if(ctx->hev1_p)
+        _abcdkm4j_dump_hevc(ctx);
+}
+
+void _abcdkm4j_dump_audio(abcdkm4j_t *ctx)
+{
+    ctx->mp4a_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_MP4A, 1, 1);
+
+    if (!ctx->mp4a_p)
+    {
+        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        ABCDK_ERRNO_AND_RETURN0(ctx->errcode = 0);
+    }
+
+    if(ctx->mp4a_p)
+        _abcdkm4j_dump_acc(ctx);
 }
 
 void _abcdkm4j_dump(abcdkm4j_t *ctx)

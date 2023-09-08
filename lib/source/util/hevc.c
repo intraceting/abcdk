@@ -6,6 +6,16 @@
  */
 #include "abcdk/util/hevc.h"
 
+void abcdk_hevc_extradata_clean(abcdk_hevc_extradata_t *extdata)
+{
+    assert(extdata != NULL);
+
+    for(int i = 0;i<extdata->nal_array_num;i++)
+        abcdk_object_unref(&extdata->nal_array[i].nal);
+
+    memset(extdata,0,sizeof(extdata));
+}
+
 ssize_t abcdk_hevc_extradata_serialize(const abcdk_hevc_extradata_t *extradata, void *data, size_t size)
 {
 

@@ -91,6 +91,13 @@ typedef struct _abcdk_h264_extradata
 
 }abcdk_h264_extradata_t;
 
+/**
+ * 清理。
+ * 
+ * @warning 未初始环境调用后，产生的结果不可预知。
+*/
+void abcdk_h264_extradata_clean(abcdk_h264_extradata_t *extradata);
+
 /**序列化。*/
 ssize_t abcdk_h264_extradata_serialize(const abcdk_h264_extradata_t *extdata, void *data, size_t size);
 

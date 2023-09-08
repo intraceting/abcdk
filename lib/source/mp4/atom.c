@@ -84,8 +84,11 @@ void _abcdk_mp4_free_cb(abcdk_object_t *alloc, void *opaque)
     else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_AVCC)
     {
         abcdk_mp4_atom_avcc_t *data = (abcdk_mp4_atom_avcc_t *)&atom->data;
-        abcdk_object_unref(&data->sps);
-        abcdk_object_unref(&data->pps);
+        abcdk_object_unref(&data->extradata);
+    }
+    else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_HVCC)
+    {
+        abcdk_mp4_atom_hvcc_t *data = (abcdk_mp4_atom_hvcc_t *)&atom->data;
         abcdk_object_unref(&data->extradata);
     }
     else if (atom->type.u32 == ABCDK_MP4_ATOM_TYPE_ESDS)

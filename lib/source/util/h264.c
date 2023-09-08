@@ -6,6 +6,15 @@
  */
 #include "abcdk/util/h264.h"
 
+void abcdk_h264_extradata_clean(abcdk_h264_extradata_t *extdata)
+{
+    assert(extdata != NULL);
+
+    abcdk_object_unref(&extdata->sps);
+    abcdk_object_unref(&extdata->pps);
+    memset(extdata,0,sizeof(*extdata));
+}
+
 ssize_t abcdk_h264_extradata_serialize(const abcdk_h264_extradata_t *extdata, void *data, size_t size)
 {
 

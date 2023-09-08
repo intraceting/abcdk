@@ -203,6 +203,13 @@ typedef struct _abcdk_hevc_extradata
 
 } abcdk_hevc_extradata_t;
 
+/**
+ * 清理。
+ * 
+ * @warning 未初始环境调用后，产生的结果不可预知。
+*/
+void abcdk_hevc_extradata_clean(abcdk_hevc_extradata_t *extdata);
+
 /**序列化。*/
 ssize_t abcdk_hevc_extradata_serialize(const abcdk_hevc_extradata_t *extradata, void *data, size_t size);
 

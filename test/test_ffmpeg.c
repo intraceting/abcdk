@@ -30,9 +30,16 @@ int abcdk_test_record(abcdk_option_t *args)
     {
         AVStream * p = abcdk_ffmpeg_streamptr(r,i);
 
-        // abcdk_hevc_extradata_t extradata = {0};
-
-        // abcdk_hevc_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
+        if(p->codec->codec_id == AV_CODEC_ID_HEVC)
+        {   
+            abcdk_hevc_extradata_t extradata = {0};
+            abcdk_hevc_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
+        }
+        else if(p->codec->codec_id == AV_CODEC_ID_H264)
+        {
+            abcdk_h264_extradata_t extradata = {0};
+            abcdk_h264_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
+        }
        
         AVCodecContext *opt = abcdk_avcodec_alloc3(p->codec->codec_id,1);
 

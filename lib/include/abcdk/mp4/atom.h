@@ -639,49 +639,18 @@ typedef struct _abcdk_mp4_atom_sample_desc
 /** MP4 avcc(h264)atom.*/
 typedef struct _abcdk_mp4_atom_avcc
 {
-    /** */
-    uint8_t version;
-
-    /** */
-    uint8_t profile;
-
-    /** */
-    uint8_t level;
-
-    /** */
-    uint8_t profile_compat;
-
-    /** 起始码长度。*/
-    uint8_t nalu_length_size;
-
-    /** */
-    uint8_t chroma_format;
-
-    /** */
-    uint8_t bit_depth_luma_minus8;
-
-    /** */
-    uint8_t bit_depth_chroma_minus8;
-
-    /** 
-     * SPS
-     * 
-     * @note 可能会有多组。
-    */
-    abcdk_object_t *sps;
-
-    /** 
-     * PPS 
-     * 
-     * @note 可能会有多组。
-    */
-    abcdk_object_t *pps;
-
-
     /** 扩展数据(Global Header)。 */
     abcdk_object_t *extradata;
 
 } abcdk_mp4_atom_avcc_t;
+
+/** MP4 hvcc(h265)atom.*/
+typedef struct _abcdk_mp4_atom_hvcc
+{
+    /** 扩展数据(Global Header)。 */
+    abcdk_object_t *extradata;
+
+} abcdk_mp4_atom_hvcc_t;
 
 /** MP4 stts atom table.*/
 typedef struct _abcdk_mp4_atom_stts_table
@@ -935,6 +904,9 @@ typedef struct _abcdk_mp4_atom_esds
 
     /** 标志。*/
     uint32_t flags;
+
+    /** */
+    uint8_t tag;
 
     /** tag: 0x03*/
     struct
@@ -1350,6 +1322,7 @@ typedef struct _abcdk_mp4_atom
         abcdk_mp4_atom_stsd_t stsd;
         abcdk_mp4_atom_sample_desc_t sample_desc;
         abcdk_mp4_atom_avcc_t avcc;
+        abcdk_mp4_atom_hvcc_t hvcc;
         abcdk_mp4_atom_esds_t esds;
         abcdk_mp4_atom_stts_t stts;
         abcdk_mp4_atom_ctts_t ctts;
