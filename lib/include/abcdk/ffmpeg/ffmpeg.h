@@ -116,8 +116,12 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
 
 /** 
  * 创建作者对象。
+ * 
+ * @param [in] timeout 超时(秒)。注：仅对初步建立连接有效。
+ * 
+ * 
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type,int timeout);
 
 /**
  * 读延时。

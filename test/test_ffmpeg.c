@@ -19,7 +19,7 @@ int abcdk_test_record(abcdk_option_t *args)
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,0);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,5);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
     AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
@@ -86,7 +86,7 @@ int abcdk_test_codec(abcdk_option_t *args)
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,30);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,5);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
     AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
@@ -142,7 +142,7 @@ int abcdk_test_extradata(abcdk_option_t *args)
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,0);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,5);
 
     AVStream *vs_p = abcdk_ffmpeg_streamptr(r,0);
 

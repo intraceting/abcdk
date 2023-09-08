@@ -218,7 +218,7 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream)
     return abcdk_avstream_height(ctx->avctx,ctx->avctx->streams[stream]);
 }
 
-int _abcdk_ffmpeg_capture_interrupt_cb(void *args)
+int _abcdk_ffmpeg_interrupt_cb(void *args)
 {
     abcdk_ffmpeg_t *ctx = (abcdk_ffmpeg_t *)args;
     uint64_t cur_time = _abcdk_ffmpeg_clock();
@@ -247,7 +247,7 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
 
     AVIOInterruptCB cb;
-    cb.callback = _abcdk_ffmpeg_capture_interrupt_cb;
+    cb.callback = _abcdk_ffmpeg_interrupt_cb;
     cb.opaque = ctx;
 
     av_init_packet(&ctx->read_pkt);
@@ -285,9 +285,16 @@ int _abcdk_ffmpeg_init_writer(abcdk_ffmpeg_t *ctx,const char *short_name, const 
     {
         ctx->try_nvcodec = abcdk_option_get_int(opt,"--try-nvcodec",0,0);
         mime_type_p = abcdk_option_get(opt,"--mime-type",0,NULL);
+        ctx->timeout = abcdk_option_get_int(opt,"--timeout",0,5);
     }
 
-    ctx->avctx = abcdk_avformat_output_open(short_name, url, mime_type_p, NULL, io);
+    ctx->last_packet_time = _abcdk_ffmpeg_clock();
+
+    AVIOInterruptCB cb;
+    cb.callback = _abcdk_ffmpeg_interrupt_cb;
+    cb.opaque = ctx;
+
+    ctx->avctx = abcdk_avformat_output_open(short_name, url, mime_type_p, &cb, io);
     if(!ctx->avctx)
         return -1;
 
@@ -337,7 +344,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
     return ctx;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,const char *mime_type,int timeout)
 {
     abcdk_ffmpeg_t *ctx = NULL;
     abcdk_option_t *opt = NULL;
@@ -347,6 +354,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name,const char *url,c
         return NULL;
 
     abcdk_option_fset(opt,"--mime-type","%s",mime_type);
+    abcdk_option_fset(opt,"--timeout","%d",timeout);
 
     ctx = abcdk_ffmpeg_open(1,short_name,url,NULL,opt);
 
@@ -774,7 +782,9 @@ int abcdk_ffmpeg_write_header0(abcdk_ffmpeg_t *ctx,const AVDictionary *dict)
     chk = abcdk_avformat_output_header(ctx->avctx, &ctx->dict);
     if (chk < 0)
         return -1;
-
+    
+    /*连接成功，超时就可能取消了。*/
+    ctx->timeout = -1;
     /*Set OK.*/
     ctx->write_header_ok = 1;
 
