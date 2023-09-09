@@ -203,9 +203,9 @@ void _abcdkm4j_dump_h264(abcdkm4j_t *ctx)
                 goto moof_next;
 
             ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
-            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 1);
-            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
-            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, ctx->tkhd->data.tkhd.trackid, 1);
 
             ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
             ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
@@ -334,9 +334,9 @@ void _abcdkm4j_dump_hevc(abcdkm4j_t *ctx)
                 goto moof_next;
 
             ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
-            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 1);
-            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
-            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, ctx->tkhd->data.tkhd.trackid, 1);
 
             ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
             ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
@@ -433,9 +433,9 @@ void _abcdkm4j_dump_acc(abcdkm4j_t *ctx)
                 goto moof_next;
 
             ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
-            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 1);
-            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 1);
-            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 1);
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, ctx->tkhd->data.tkhd.trackid, 1);
 
             ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
             ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
@@ -459,7 +459,7 @@ void _abcdkm4j_dump_acc(abcdkm4j_t *ctx)
                     /*每帧都要加7字节的帧头。*/
                     char hdr[7] = {0};
 
-                    ctx->adts_hdr.aac_frame_length = 7+size;;//size是数据帧的大小。
+                    ctx->adts_hdr.aac_frame_length = 7+size;//size是数据帧的大小。
                     abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr,7);
 
                     abcdk_write(ctx->out_fd, hdr, 7);
@@ -487,7 +487,7 @@ void _abcdkm4j_dump_acc(abcdkm4j_t *ctx)
 
             char hdr[7] = {0};
                     
-            ctx->adts_hdr.aac_frame_length = 7+size;;//size是数据帧的大小。
+            ctx->adts_hdr.aac_frame_length = 7+size;//size是数据帧的大小。
             abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr,7);
 
             abcdk_write(ctx->out_fd, hdr, 7);
