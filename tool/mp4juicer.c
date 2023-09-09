@@ -225,9 +225,9 @@ void _abcdkm4j_dump_h264(abcdkm4j_t *ctx)
                     size = ctx->trun->data.trun.tables[i].sample_size;
 
                     abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-
-                    abcdk_write(ctx->out_fd, sc, sc_len);//用起始码替换长度字段。
-                    abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len); //跳过长度字段。
+            
+                    abcdk_h2645_mp4toannexb(ctx->buf,size,sc_len);
+                    abcdk_write(ctx->out_fd, ctx->buf, size);
                 }
             }
 
@@ -248,9 +248,9 @@ void _abcdkm4j_dump_h264(abcdkm4j_t *ctx)
             lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
 
             abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-
-            abcdk_write(ctx->out_fd, sc, sc_len); //用起始码替换长度字段。
-            abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len);//跳过长度字段。
+            
+            abcdk_h2645_mp4toannexb(ctx->buf,size,sc_len);
+            abcdk_write(ctx->out_fd, ctx->buf, size);
         }
     }
 
@@ -356,9 +356,9 @@ void _abcdkm4j_dump_hevc(abcdkm4j_t *ctx)
                     size = ctx->trun->data.trun.tables[i].sample_size;
 
                     abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-
-                    abcdk_write(ctx->out_fd, sc, sc_len);//用起始码替换长度字段。
-                    abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len); //跳过长度字段。
+            
+                    abcdk_h2645_mp4toannexb(ctx->buf,size,sc_len);
+                    abcdk_write(ctx->out_fd, ctx->buf, size);
                 }
             }
 
@@ -379,9 +379,9 @@ void _abcdkm4j_dump_hevc(abcdkm4j_t *ctx)
             lseek(ctx->in_fd, ctx->stco->data.stco.tables[chunk - 1].offset + offset2, SEEK_SET);
 
             abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-
-            abcdk_write(ctx->out_fd, sc, sc_len); //用起始码替换长度字段。
-            abcdk_write(ctx->out_fd, ctx->buf + sc_len, size - sc_len);//跳过长度字段。
+            
+            abcdk_h2645_mp4toannexb(ctx->buf,size,sc_len);
+            abcdk_write(ctx->out_fd, ctx->buf, size);
         }
     }
 

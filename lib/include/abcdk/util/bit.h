@@ -31,6 +31,23 @@ typedef struct _abcdk_bit
     
 } abcdk_bit_t;
 
+
+/**
+ * 判断游标是否已在末尾。
+ * 
+ * @return 0 否，!0 是。
+*/
+int abcdk_bit_eof(abcdk_bit_t *ctx);
+
+/**
+ * 移动游标。
+ * 
+ * @param [in] offset 偏移量。< 0 向头部移动， > 0 向末尾移动。
+ * 
+ * @return 游标移动前的位置。
+*/
+uint64_t abcdk_bit_seek(abcdk_bit_t *ctx,ssize_t offset);
+
 /** 
  * 读。
  * 

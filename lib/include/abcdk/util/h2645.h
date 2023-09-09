@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_H2645_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/bit.h"
 
 __BEGIN_DECLS
 
@@ -31,7 +32,7 @@ const void *abcdk_h2645_packet_split(void **next,const void *e);
  * 
  * 本质上就是把帧的长度信息，替换为起始码。
  * 
- * @note 不会在IDR添加扩展信息。
+ * @note 不会在I帧前添加扩展信息。
 */
 void abcdk_h2645_mp4toannexb(void *data,size_t size,int len_size);
 

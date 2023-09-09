@@ -72,3 +72,41 @@ const void *abcdk_h2645_packet_split(void **next, const void *e)
 
     return p + i1 + msize;
 }
+
+void abcdk_h2645_mp4toannexb(void *data, size_t size, int len_size)
+{
+    abcdk_bit_t buf = {0};
+    int bits_count;
+    uint64_t n;
+
+    assert(data != NULL && size > 0 && len_size > 0 && len_size <= 8);
+
+    /*to bits count.*/
+    bits_count = len_size * 8;
+
+    buf.data = (void *)data;
+    buf.size = size;
+    buf.pos = 0;
+
+next_nal:
+
+    n = abcdk_bit_read(&buf, bits_count);
+    if (n <= 0)
+        return;
+
+    /*回滚游标。*/
+    abcdk_bit_seek(&buf, -bits_count);
+
+    /*替换长度为字流节头标识('01','001','0001',...,'00000001')。*/
+    abcdk_bit_write(&buf, bits_count - 8, 0);
+    abcdk_bit_write(&buf, 8, 1);
+
+    /*游标跳过实体数据。*/
+    abcdk_bit_seek(&buf, (n * 8));
+
+    /*未到末尾，继续下一个NAL。*/
+    if (!abcdk_bit_eof(&buf))
+        goto next_nal;
+
+    return;
+}
