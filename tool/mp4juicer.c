@@ -65,12 +65,14 @@ typedef struct _abcdkm4j
 
     abcdk_tree_t *moof_p;
     abcdk_tree_t *mfhd_p;
+    abcdk_tree_t *traf_p;
     abcdk_tree_t *tfhd_p;
     abcdk_tree_t *tfdt_p;
     abcdk_tree_t *trun_p;
 
     abcdk_mp4_atom_t *moof;
     abcdk_mp4_atom_t *mfhd;
+    abcdk_mp4_atom_t *traf;
     abcdk_mp4_atom_t *tfhd;
     abcdk_mp4_atom_t *tfdt;
     abcdk_mp4_atom_t *trun;
@@ -202,36 +204,45 @@ void _abcdkm4j_dump_h264(abcdkm4j_t *ctx)
             if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
                 goto moof_next;
 
-            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
-            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, ctx->tkhd->data.tkhd.trackid, 1);
-            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, ctx->tkhd->data.tkhd.trackid, 1);
-            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 0);
+            ctx->traf_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRAF, 1, 0);
+            
+traf_next:
+            if(!ctx->traf_p)
+                goto moof_next;
+
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 0);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 0);
+            ctx->trun_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 0);
 
             ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
             ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
             ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->obj->pptrs[0];
             ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->obj->pptrs[0];
 
-            if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
+            if (ctx->tfhd->data.tfhd.trackid != ctx->tkhd->data.tkhd.trackid)
             {
-                uint32_t offset2 = 0, size = 0;
-
-                offset2 = ctx->trun->data.trun.data_offset;
-
-                lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
-
-                for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
-                {
-                    size = ctx->trun->data.trun.tables[i].sample_size;
-
-                    abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-            
-                    abcdk_h2645_mp4toannexb(ctx->buf,size,sc_len);
-                    abcdk_write(ctx->out_fd, ctx->buf, size);
-                }
+                ctx->traf_p = abcdk_tree_sibling(ctx->traf_p, 0);
+                goto traf_next;
             }
 
-        moof_next:
+            uint32_t offset2 = 0, size = 0;
+
+            offset2 = ctx->trun->data.trun.data_offset;
+
+            lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
+
+            for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
+            {
+                size = ctx->trun->data.trun.tables[i].sample_size;
+
+                abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
+
+                abcdk_h2645_mp4toannexb(ctx->buf, size, sc_len);
+                abcdk_write(ctx->out_fd, ctx->buf, size);
+            }
+
+moof_next:
             ctx->moof_p = abcdk_tree_sibling(ctx->moof_p, 0);
         }
     }
@@ -333,36 +344,45 @@ void _abcdkm4j_dump_hevc(abcdkm4j_t *ctx)
             if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
                 goto moof_next;
 
-            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
-            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, ctx->tkhd->data.tkhd.trackid, 1);
-            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, ctx->tkhd->data.tkhd.trackid, 1);
-            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 0);
+            ctx->traf_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRAF, 1, 0);
+
+traf_next:
+            if(!ctx->traf_p)
+                goto moof_next;
+
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 0);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 0);
+            ctx->trun_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 0);
 
             ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
             ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
             ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->obj->pptrs[0];
             ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->obj->pptrs[0];
 
-            if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
+            if (ctx->tfhd->data.tfhd.trackid != ctx->tkhd->data.tkhd.trackid)
             {
-                uint32_t offset2 = 0, size = 0;
-
-                offset2 = ctx->trun->data.trun.data_offset;
-
-                lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
-
-                for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
-                {
-                    size = ctx->trun->data.trun.tables[i].sample_size;
-
-                    abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-            
-                    abcdk_h2645_mp4toannexb(ctx->buf,size,sc_len);
-                    abcdk_write(ctx->out_fd, ctx->buf, size);
-                }
+                ctx->traf_p = abcdk_tree_sibling(ctx->traf_p, 0);
+                goto traf_next;
             }
 
-        moof_next:
+            uint32_t offset2 = 0, size = 0;
+
+            offset2 = ctx->trun->data.trun.data_offset;
+
+            lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
+
+            for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
+            {
+                size = ctx->trun->data.trun.tables[i].sample_size;
+
+                abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
+
+                abcdk_h2645_mp4toannexb(ctx->buf, size, sc_len);
+                abcdk_write(ctx->out_fd, ctx->buf, size);
+            }
+
+moof_next:
             ctx->moof_p = abcdk_tree_sibling(ctx->moof_p, 0);
         }
     }
@@ -432,42 +452,51 @@ void _abcdkm4j_dump_acc(abcdkm4j_t *ctx)
             if (ctx->moof->type.u32 != ABCDK_MP4_ATOM_TYPE_MOOF)
                 goto moof_next;
 
-            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 1);
-            ctx->tfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFHD, ctx->tkhd->data.tkhd.trackid, 1);
-            ctx->tfdt_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TFDT, ctx->tkhd->data.tkhd.trackid, 1);
-            ctx->trun_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRUN, ctx->tkhd->data.tkhd.trackid, 1);
+            ctx->mfhd_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_MFHD, 1, 0);
+            ctx->traf_p = abcdk_mp4_find2(ctx->moof_p, ABCDK_MP4_ATOM_TYPE_TRAF, 1, 0);
+
+traf_next:
+            if(!ctx->traf_p)
+                goto moof_next;
+
+            ctx->tfhd_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TFHD, 1, 0);
+            ctx->tfdt_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TFDT, 1, 0);
+            ctx->trun_p = abcdk_mp4_find2(ctx->traf_p, ABCDK_MP4_ATOM_TYPE_TRUN, 1, 0);
 
             ctx->mfhd = (abcdk_mp4_atom_t *)ctx->mfhd_p->obj->pptrs[0];
             ctx->tfhd = (abcdk_mp4_atom_t *)ctx->tfhd_p->obj->pptrs[0];
             ctx->tfdt = (abcdk_mp4_atom_t *)ctx->tfdt_p->obj->pptrs[0];
             ctx->trun = (abcdk_mp4_atom_t *)ctx->trun_p->obj->pptrs[0];
 
-            if (ctx->tfhd->data.tfhd.trackid == ctx->tkhd->data.tkhd.trackid)
+            if (ctx->tfhd->data.tfhd.trackid != ctx->tkhd->data.tkhd.trackid)
             {
-                uint32_t offset2 = 0, size = 0;
-                
-                offset2 = ctx->trun->data.trun.data_offset;
-
-                lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
-
-                for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
-                {
-                    size = ctx->trun->data.trun.tables[i].sample_size;
-
-                    abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
-                    
-                    /*每帧都要加7字节的帧头。*/
-                    char hdr[7] = {0};
-
-                    ctx->adts_hdr.aac_frame_length = 7+size;//size是数据帧的大小。
-                    abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr,7);
-
-                    abcdk_write(ctx->out_fd, hdr, 7);
-                    abcdk_write(ctx->out_fd, ctx->buf, size);
-                }
+                ctx->traf_p = abcdk_tree_sibling(ctx->traf_p, 0);
+                goto traf_next;
             }
 
-        moof_next:
+            uint32_t offset2 = 0, size = 0;
+
+            offset2 = ctx->trun->data.trun.data_offset;
+
+            lseek(ctx->in_fd, ctx->moof->off_head + offset2, SEEK_SET);
+
+            for (size_t i = 0; i < ctx->trun->data.trun.numbers; i++)
+            {
+                size = ctx->trun->data.trun.tables[i].sample_size;
+
+                abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
+
+                /*每帧都要加7字节的帧头。*/
+                char hdr[7] = {0};
+
+                ctx->adts_hdr.aac_frame_length = 7 + size; // size是数据帧的大小。
+                abcdk_aac_adts_header_serialize(&ctx->adts_hdr, hdr, 7);
+
+                abcdk_write(ctx->out_fd, hdr, 7);
+                abcdk_write(ctx->out_fd, ctx->buf, size);
+            }
+
+moof_next:
             ctx->moof_p = abcdk_tree_sibling(ctx->moof_p, 0);
         }
     }
