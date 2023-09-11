@@ -248,6 +248,21 @@ moof_next:
     }
     else
     {
+
+        ctx->stsz_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSZ, 1, 1);
+        ctx->stss_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSS, 1, 1);
+        ctx->stts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STTS, 1, 1);
+        ctx->ctts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_CTTS, 1, 1);
+        ctx->stsc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSC, 1, 1);
+        ctx->stco_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STCO, 1, 1);
+                
+        ctx->stsz = (abcdk_mp4_atom_t*)(ctx->stsz_p?ctx->stsz_p->obj->pptrs[0]:NULL);
+        ctx->stss = (abcdk_mp4_atom_t*)(ctx->stss_p?ctx->stss_p->obj->pptrs[0]:NULL);
+        ctx->stts = (abcdk_mp4_atom_t*)(ctx->stts_p?ctx->stts_p->obj->pptrs[0]:NULL);
+        ctx->ctts = (abcdk_mp4_atom_t*)(ctx->ctts_p?ctx->ctts_p->obj->pptrs[0]:NULL);
+        ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->obj->pptrs[0]:NULL);
+        ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->obj->pptrs[0]:NULL);
+
         for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
         {
             uint32_t chunk = 0, offset = 0, id = 0;
@@ -388,6 +403,21 @@ moof_next:
     }
     else
     {
+
+        ctx->stsz_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSZ, 1, 1);
+        ctx->stss_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSS, 1, 1);
+        ctx->stts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STTS, 1, 1);
+        ctx->ctts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_CTTS, 1, 1);
+        ctx->stsc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSC, 1, 1);
+        ctx->stco_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STCO, 1, 1);
+                
+        ctx->stsz = (abcdk_mp4_atom_t*)(ctx->stsz_p?ctx->stsz_p->obj->pptrs[0]:NULL);
+        ctx->stss = (abcdk_mp4_atom_t*)(ctx->stss_p?ctx->stss_p->obj->pptrs[0]:NULL);
+        ctx->stts = (abcdk_mp4_atom_t*)(ctx->stts_p?ctx->stts_p->obj->pptrs[0]:NULL);
+        ctx->ctts = (abcdk_mp4_atom_t*)(ctx->ctts_p?ctx->ctts_p->obj->pptrs[0]:NULL);
+        ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->obj->pptrs[0]:NULL);
+        ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->obj->pptrs[0]:NULL);
+
         for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
         {
             uint32_t chunk = 0, offset = 0, id = 0;
@@ -502,6 +532,21 @@ moof_next:
     }
     else
     {
+
+        ctx->stsz_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSZ, 1, 1);
+        ctx->stss_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSS, 1, 1);
+        ctx->stts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STTS, 1, 1);
+        ctx->ctts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_CTTS, 1, 1);
+        ctx->stsc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSC, 1, 1);
+        ctx->stco_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STCO, 1, 1);
+                
+        ctx->stsz = (abcdk_mp4_atom_t*)(ctx->stsz_p?ctx->stsz_p->obj->pptrs[0]:NULL);
+        ctx->stss = (abcdk_mp4_atom_t*)(ctx->stss_p?ctx->stss_p->obj->pptrs[0]:NULL);
+        ctx->stts = (abcdk_mp4_atom_t*)(ctx->stts_p?ctx->stts_p->obj->pptrs[0]:NULL);
+        ctx->ctts = (abcdk_mp4_atom_t*)(ctx->ctts_p?ctx->ctts_p->obj->pptrs[0]:NULL);
+        ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->obj->pptrs[0]:NULL);
+        ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->obj->pptrs[0]:NULL);
+
         for (size_t i = 1; i <= ctx->stsz->data.stsz.numbers; i++)
         {
             uint32_t chunk = 0, offset = 0, id = 0;
@@ -581,21 +626,12 @@ void _abcdkm4j_dump(abcdkm4j_t *ctx)
 
         ctx->tkhd_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_TKHD, 1, 1);
         ctx->hdlr_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_HDLR, 1, 1);
-        ctx->stsz_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSZ, 1, 1);
-        ctx->stss_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSS, 1, 1);
-        ctx->stts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STTS, 1, 1);
-        ctx->ctts_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_CTTS, 1, 1);
-        ctx->stsc_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STSC, 1, 1);
-        ctx->stco_p = abcdk_mp4_find2(ctx->trak_p, ABCDK_MP4_ATOM_TYPE_STCO, 1, 1);
-        
-        ctx->tkhd = (abcdk_mp4_atom_t*)(ctx->tkhd_p?ctx->tkhd_p->obj->pptrs[0]:NULL);
-        ctx->hdlr = (abcdk_mp4_atom_t*)(ctx->hdlr_p?ctx->hdlr_p->obj->pptrs[0]:NULL);
-        ctx->stsz = (abcdk_mp4_atom_t*)(ctx->stsz_p?ctx->stsz_p->obj->pptrs[0]:NULL);
-        ctx->stss = (abcdk_mp4_atom_t*)(ctx->stss_p?ctx->stss_p->obj->pptrs[0]:NULL);
-        ctx->stts = (abcdk_mp4_atom_t*)(ctx->stts_p?ctx->stts_p->obj->pptrs[0]:NULL);
-        ctx->ctts = (abcdk_mp4_atom_t*)(ctx->ctts_p?ctx->ctts_p->obj->pptrs[0]:NULL);
-        ctx->stco = (abcdk_mp4_atom_t*)(ctx->stco_p?ctx->stco_p->obj->pptrs[0]:NULL);
-        ctx->stsc = (abcdk_mp4_atom_t*)(ctx->stsc_p?ctx->stsc_p->obj->pptrs[0]:NULL);
+
+        if(!ctx->tkhd_p || !ctx->hdlr_p)
+            ABCDK_ERRNO_AND_GOTO1(1, final);
+
+        ctx->tkhd = (abcdk_mp4_atom_t*)ctx->tkhd_p->obj->pptrs[0];
+        ctx->hdlr = (abcdk_mp4_atom_t*)ctx->hdlr_p->obj->pptrs[0];
 
         if (ctx->hdlr->data.hdlr.subtype.u32 == ABCDK_MP4_ATOM_MKTAG('v', 'i', 'd', 'e') &&
             !ctx->ignore_video)

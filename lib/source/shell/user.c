@@ -12,8 +12,8 @@ char *abcdk_user_dirname(char *buf, const char *append)
 
     snprintf(buf, PATH_MAX, "/var/run/user/%d/", getuid());
 
-    if (access(buf, R_OK | W_OK | X_OK | F_OK) != 0)
-        ABCDK_ERRNO_AND_RETURN1(ENOENT, NULL);
+    if (access(buf, F_OK) != 0)
+        return NULL;
 
     if (append)
         abcdk_dirdir(buf, append);

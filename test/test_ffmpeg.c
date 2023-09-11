@@ -18,7 +18,7 @@ int abcdk_test_record(abcdk_option_t *args)
     const char *dst = abcdk_option_get(args,"--dst",0,"");
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,0);
+    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,10);
     abcdk_ffmpeg_t *w = abcdk_ffmpeg_open_writer(dst_fmt,dst,NULL,5);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
@@ -64,7 +64,7 @@ int abcdk_test_record(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<10000000;i++)
+    for(int i = 0;i<1000;i++)
     {
         
 
