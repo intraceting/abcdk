@@ -93,6 +93,7 @@
 #include "abcdk/shell/file.h"
 #include "abcdk/shell/proc.h"
 #include "abcdk/shell/block.h"
+#include "abcdk/shell/dmi.h"
 #include "abcdk/mp4/demuxer.h"
 #include "abcdk/mp4/muxer.h"
 #include "abcdk/mp4/file.h"

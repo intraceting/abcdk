@@ -58,7 +58,7 @@ typedef struct _abcdk_tree_iterator
     /**
      * 回显函数。
      * 
-     * @note depth == 0 表示没有更多节点。
+     * @note depth == SIZE_MAX 表示没有更多节点。
      * 
      * @return -1 终止，0 忽略孩子，1 继续。
     */
@@ -69,19 +69,6 @@ typedef struct _abcdk_tree_iterator
     */
     void *opaque;
 
-} abcdk_tree_iterator_t;
-
-/**
- * 树节点排序规则。
- * 
-*/
-typedef struct _abcdk_tree_order
-{
-    /**
-     * 顺序。!0 升序，0 降序。
-    */
-    int by;
-
     /**
      * 比较函数。
      * 
@@ -89,12 +76,7 @@ typedef struct _abcdk_tree_order
     */
     int (*compare_cb)(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque);
 
-    /**
-     * 环境指针。
-    */
-    void *opaque;
-
-} abcdk_tree_order_t;
+} abcdk_tree_iterator_t;
 
 /**
  * 获取自己的父节指针。
@@ -179,6 +161,11 @@ abcdk_tree_t *abcdk_tree_alloc2(size_t *sizes,size_t numbers,int drag);
 abcdk_tree_t *abcdk_tree_alloc3(size_t size);
 
 /**
+ * 创建节点，同时复制内存块。
+*/
+abcdk_tree_t *abcdk_tree_alloc4(const void *data, size_t size);
+
+/**
  * 扫描树节点。
  * 
  * @note 深度优先遍历节点。
@@ -188,10 +175,20 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it);
 /** 
  * 排序。
  * 
- * @note 选择法排序。只排序子节点，如需要对整颗树排序，需要接合迭代器。
+ * @note 选择法排序，非递归。
+ * 
+ * @param [in] order 顺序规则。!0 升序，0 降序。
  * 
 */
-void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order);
+void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_iterator_t *it,int order);
+
+/**
+ * 去掉重复的。
+ * 
+ * @note 行程压缩，非递归。
+ * 
+*/
+void abcdk_tree_distinct(abcdk_tree_t *father,abcdk_tree_iterator_t *it);
 
 /**
  * 格式化打印。

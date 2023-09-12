@@ -276,6 +276,22 @@ abcdk_tree_t *abcdk_tree_alloc3(size_t size)
     return abcdk_tree_alloc2(&size,1,0);
 }
 
+abcdk_tree_t *abcdk_tree_alloc4(const void *data, size_t size)
+{
+    abcdk_tree_t *p = NULL;
+
+    assert(data != NULL && size > 0);
+
+    p = abcdk_tree_alloc3(size+1);
+    if(!p)
+        return NULL;
+
+    memcpy(p->obj->pptrs[0],data,size);
+    p->obj->sizes[0] = size;
+
+    return p;
+}
+
 void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
 {
     abcdk_tree_t *node = NULL;
@@ -342,15 +358,15 @@ final:
     abcdk_heap_free2((void**)&stack);
 }
 
-void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order)
+void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_iterator_t *it,int order)
 {
     abcdk_tree_t *t1 = NULL;
     abcdk_tree_t *t2 = NULL;
     abcdk_tree_t *t3 = NULL;
     int chk;
 
-    assert(father != NULL && order != NULL);
-    assert(order->compare_cb != NULL);
+    assert(father != NULL && it != NULL);
+    assert(it->compare_cb != NULL);
 
     t2 = abcdk_tree_child(father, 1);
     while (t2)
@@ -358,9 +374,9 @@ void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order)
         t3 = abcdk_tree_sibling(t1 = t2, 0);
         while (t3)
         {
-            chk = order->compare_cb(t1,t3,order->opaque);
+            chk = it->compare_cb(t1,t3,it->opaque);
 
-            if(order->by)
+            if(order)
             {
                 if (chk > 0)
                     t1 = t3;
@@ -381,6 +397,36 @@ void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_order_t *order)
         t2 = abcdk_tree_sibling(t1, 0);
     }
 }
+
+void abcdk_tree_distinct(abcdk_tree_t *father,abcdk_tree_iterator_t *it)
+{
+    abcdk_tree_t *t1 = NULL;
+    abcdk_tree_t *t2 = NULL;
+    abcdk_tree_t *t3 = NULL;
+    int chk;
+
+    assert(father != NULL && it != NULL);
+    assert(it->compare_cb != NULL);
+
+    t2 = abcdk_tree_child(father, 1);
+    if(!t2)
+        return;
+
+    for (;;)
+    {
+        t3 = abcdk_tree_sibling(t2, 0);
+        if (!t3)
+            return;
+
+        chk = it->compare_cb(t2, t3, it->opaque);
+
+        if (chk != 0)
+            t2 = t3;
+        else 
+            abcdk_tree_unlink(t3);
+    }
+}
+
 
 ssize_t abcdk_tree_fprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const char* fmt,...)
 {
