@@ -70,12 +70,14 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     return line_c;
 }
 
-uint64_t _abcdk_file_segment_find_pos(const char *dst, uint64_t start)
+uint64_t abcdk_file_segment_find_pos(const char *dst, uint64_t start)
 {
     abcdk_tree_t *dir = NULL;
     char tmp[PATH_MAX] = {0},tmp2[NAME_MAX] = {0},tmp3[NAME_MAX] = {0};
     uint64_t pos = 0,pos2 = 0;
     int chk;
+
+    assert(dst != NULL && start > 0);
 
     abcdk_dirname(tmp, dst);
     abcdk_basename(tmp2, dst);
@@ -128,7 +130,7 @@ int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t
 
     /*如果未输入编号，则需要主动查找现存的最大编号。*/
     if(pos < start)
-        pos = _abcdk_file_segment_find_pos(dst,start);
+        pos = abcdk_file_segment_find_pos(dst,start);
 
 
     /*如果超过保留数量，则删除编号最小的文件。*/

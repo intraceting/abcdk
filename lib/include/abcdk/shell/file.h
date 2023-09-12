@@ -29,6 +29,15 @@ __BEGIN_DECLS
 int abcdk_file_wholockme(const char *file,int pids[],int max);
 
 /**
+ * 查找文件分段游标(最大编号)。
+ * 
+ * @see abcdk_file_segment
+ * 
+ * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
+*/
+uint64_t abcdk_file_segment_find_pos(const char *dst, uint64_t start);
+
+/**
  * 文件分段存储。
  * 
  * @code
@@ -57,7 +66,8 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * @return 0 成功，-1 失败(无权限或不存在)。
  * 
 */
-int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t count,uint64_t *prev2next);
+int abcdk_file_segment(const char *src, const char *dst, uint64_t start, uint16_t count, uint64_t *prev2next);
+
 
 __END_DECLS
 
