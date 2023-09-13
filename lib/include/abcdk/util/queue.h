@@ -43,20 +43,21 @@ size_t abcdk_queue_count(abcdk_queue_t *queue);
  * 
  * @note 消息对象将被托管，在消息对象从队列中弹出之前，应用层不可以继续访问消息对象。
  * 
- * @param [in] first !0 头部，0 尾部。
+ * @param [in] refcount 引用数量。
+ * @param [in] head !0 头部，0 尾部。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_queue_push(abcdk_queue_t *queue, const void *msg, int first);
+int abcdk_queue_push(abcdk_queue_t *queue, size_t refcount, const void *msg, int head);
 
 /**
  * 从队列中弹出消息。
  * 
- * @param [in] first !0 头部，0 尾部。
+ * @param [in] head !0 头部，0 尾部。
  * 
  * @return !NULL(0) 成功(消息对象指针)，NULL(0) 失败(队列为空)。
 */
-const void *abcdk_queue_pop(abcdk_queue_t *queue, int first);
+const void *abcdk_queue_pop(abcdk_queue_t *queue, int head);
 
 /**
  * 等待。

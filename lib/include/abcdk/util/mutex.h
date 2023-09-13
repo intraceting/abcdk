@@ -76,9 +76,9 @@ int abcdk_mutex_unlock(abcdk_mutex_t *ctx);
 /**
  * 等待事件通知。
  * 
- * @param timeout 超时(毫秒)。>= 0 有事件或时间过期，< 0 直到有事件或出错。
+ * @param timeout 超时(毫秒)。< 0 直到有事件或出错。
  * 
- * @return 0 成功；!0 出错(errno)。
+ * @return 0 成功(有事件)；!0 超时或出错(errno)。
 */
 int abcdk_mutex_wait(abcdk_mutex_t *ctx, time_t timeout);
 

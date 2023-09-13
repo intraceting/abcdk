@@ -67,7 +67,7 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
         /*模拟接收。*/
         abcdk_receiver_append(msg,p,flen[j][0],&remain);
 
-        chk = abcdk_queue_push(q, msg, 0);
+        chk = abcdk_queue_push(q,1,msg, 0);
         if (chk != 0)
         {
             /*加入队列失败，删除消息。*/

@@ -45,6 +45,8 @@ typedef struct _abcdk_tree
 
 /**
  * 树节点迭代器。
+ * 
+ * @warning 成员变量的顺序不能被改变，并且只能向高地址空间增加新成员变量。
 */
 typedef struct _abcdk_tree_iterator
 {

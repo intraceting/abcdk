@@ -45,7 +45,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
         /*模拟接收数据。*/
         abcdk_receiver_append(msg, data, size, &remain);
 
-        chk = abcdk_queue_push(q, msg, 0);
+        chk = abcdk_queue_push(q,1, msg, 0);
         if (chk != 0)
         {       
             /*加入队列失败，删除消息。*/
@@ -88,7 +88,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             p = abcdk_receiver_data(msg,0);
             abcdk_bloom_write_number(ABCDK_PTR2U8PTR(p,0), 1, 1, 6, type2);
 
-            chk = abcdk_queue_push(q, msg, 0);
+            chk = abcdk_queue_push(q,1, msg, 0);
             if (chk != 0)
             {
                 /*加入队列失败，删除消息。*/
@@ -107,7 +107,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
             abcdk_receiver_append(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
-            chk = abcdk_queue_push(q, msg, 0);
+            chk = abcdk_queue_push(q,1, msg, 0);
             if (chk != 0)
             {    
                 /*加入队列失败，删除消息。*/

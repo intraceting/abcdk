@@ -104,6 +104,16 @@ int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
     return chk;
 }
 
+int abcdk_thread_setaffinity2(pthread_t tid,int cpu)
+{
+    int cpus[2] = {-1};
+
+    cpus[0] = cpu;
+    cpus[1] = -1;
+
+    return abcdk_thread_setaffinity(tid,cpus);
+}
+
 int abcdk_thread_leader_vote(volatile pthread_t *tid)
 {
     pthread_t self_tid = pthread_self();
