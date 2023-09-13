@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# This file is part of ABCDK.
+#  
+# MIT License
+#
+
+
+# 以下代码来自于网友。
 
 ipAddr=$2
 DRIVERDIR=/lib/modules/$(uname -r)/kernel/drivers/scsi
