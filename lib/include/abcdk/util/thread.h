@@ -68,6 +68,11 @@ int abcdk_thread_create_group(int count,abcdk_thread_t ctxs[],int joinable);
 int abcdk_thread_setaffinity(pthread_t tid,int cpus[]);
 
 /**
+ * 设置线程亲源CPU。
+ */
+int abcdk_thread_setaffinity2(pthread_t tid,int cpu);
+
+/**
  * 选举主线程。
  * 
  * @note 非主线程调用此函数不会影向数据变化。

@@ -86,6 +86,7 @@
 #include "abcdk/util/h2645.h"
 #include "abcdk/util/h264.h"
 #include "abcdk/util/hevc.h"
+#include "abcdk/util/parallel.h"
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"

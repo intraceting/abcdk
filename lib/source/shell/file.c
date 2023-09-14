@@ -88,7 +88,7 @@ uint64_t abcdk_file_segment_find_pos(const char *dst, uint64_t start)
 
     while (1)
     {
-        memset(tmp3, 0, PATH_MAX);
+        memset(tmp3, 0, NAME_MAX);
         chk = abcdk_dirent_read(dir, NULL, tmp3, 0);
         if (chk != 0)
             break;

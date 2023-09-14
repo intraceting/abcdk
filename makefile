@@ -48,7 +48,7 @@ LINK_FLAGS += ${DEPEND_LINKS}
 #
 CC_FLAGS += -std=c99
 CC_FLAGS += -fPIC 
-#CC_FLAGS += -Wno-unused-result
+CC_FLAGS += -Wno-unused-result
 CC_FLAGS += -Wno-unused-variable 
 CC_FLAGS += -Wno-pointer-sign 
 CC_FLAGS += -Wno-unused-but-set-variable 

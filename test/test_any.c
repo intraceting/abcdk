@@ -500,7 +500,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
         abcdk_file_segment("/tmp/bbb/segment.log","/tmp/bbb/segment.%llu.log",111,23,&prev2next);
     }
-#elif 1
+#elif 0
 
     char buf[100] = {0};
     abcdk_dmi_get_machine_hashcode(buf,0,"haha","haha","haha2",NULL);
