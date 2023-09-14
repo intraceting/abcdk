@@ -50,7 +50,7 @@ int abcdk_test_parallel(abcdk_option_t *args)
 
         abcdk_clock(s, &s);
 
-        abcdk_parallel_run(ctx, i+1, NULL, abcdk_test_parallel_routine);
+        abcdk_parallel_invoke(ctx, i+1, NULL, abcdk_test_parallel_routine);
 
         u_int64_t s2 = abcdk_clock(s, &s);
         printf("%d = %llu\n", threads, s2);

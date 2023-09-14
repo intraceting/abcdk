@@ -36,7 +36,7 @@ typedef void (*abcdk_parallel_routine_cb)(void *opaque, uint32_t tid);
  * @return 0 成功，-1 失败。
  *
  */
-int abcdk_parallel_run(abcdk_parallel_t *ctx,uint32_t number, void *opaque, abcdk_parallel_routine_cb routine_cb);
+int abcdk_parallel_invoke(abcdk_parallel_t *ctx,uint32_t number, void *opaque, abcdk_parallel_routine_cb routine_cb);
 
 __END_DECLS
 

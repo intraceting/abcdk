@@ -245,7 +245,7 @@ final_error:
     return NULL;
 }
 
-int abcdk_parallel_run(abcdk_parallel_t *ctx,uint32_t number, void *opaque, abcdk_parallel_routine_cb routine_cb)
+int abcdk_parallel_invoke(abcdk_parallel_t *ctx,uint32_t number, void *opaque, abcdk_parallel_routine_cb routine_cb)
 {
     abcdk_parallel_item_t *item;
     int chk;
