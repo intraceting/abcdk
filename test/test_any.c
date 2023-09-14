@@ -11,14 +11,6 @@
 #include <locale.h>
 #include "entry.h"
 
-void abcdk_test_parallel_routine(void *opaque, uint32_t tid)
-{
-    int *id = (int*)opaque;
-
-    id[tid%100] *= tid;
-    id[tid%100] *= tid;
-    id[tid%100] *= tid;
-}
 
 int abcdk_test_any(abcdk_option_t *args)
 {
@@ -516,27 +508,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_hexdump(stderr,buf,16,0,NULL);
 
-#elif 1
 
-    int threads = abcdk_option_get_int(args,"--threads",0,4);
-    abcdk_parallel_t *ctx = abcdk_parallel_alloc(threads);
-
-    uint64_t s = 0;
-
-    abcdk_clock(s,&s);
-
-    int id[100] = {0};
-
-    abcdk_parallel_run(ctx,3840*2160*2,id,abcdk_test_parallel_routine);
-
-    u_int64_t s2 = abcdk_clock(s,&s);
-    printf("%d = %llu\n",threads,s2);
-
-    // for(int i = 0;i<100;i++)
-    //     printf("id[%d]=%d\n",i,id[i]);
-
-
-    abcdk_parallel_free(&ctx);
 
 #endif 
 }
