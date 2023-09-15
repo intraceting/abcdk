@@ -147,15 +147,6 @@ usage: [ OPTIONS ]
     -l 
      附加的链接参数。
 
-    -V < number > 
-     主版本。默认：${VERSION_MAJOR}
-
-    -v < number > 
-     副版本。默认：${VERSION_MINOR}
-
-    -r < number > 
-     发行版本。默认：${VERSION_RELEASE}
-
     -i < path > 
      安装路径。默认：${INSTALL_PREFIX}
 
@@ -177,7 +168,7 @@ usage: [ OPTIONS ]
      构建目录。默认：${BUILD_PATH}
 
     -B < path >
-     发行目录。默认：${PACKAGE_PATH}
+     发行目录。默认：${BUILD_PACKAGE_PATH}
 
 EOF
 }
