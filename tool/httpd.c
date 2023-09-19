@@ -1429,7 +1429,8 @@ final:
         magic_close(ctx->magic_handle);
 #endif // _MAGIC_H
 
-    freelocale(ctx->loc);
+    if(ctx->loc)
+        freelocale(ctx->loc);
 }
 
 int abcdk_tool_httpd(abcdk_option_t *args)
