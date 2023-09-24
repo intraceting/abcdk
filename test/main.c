@@ -35,6 +35,7 @@ static struct _abcdk_test_entry
     {"drm",abcdk_test_drm},
     {"parallel",abcdk_test_parallel},
     {"ping",abcdk_test_ping},
+    {"onvif",abcdk_test_onvif},
 };
 
 void _abcdk_test_print_usage()
