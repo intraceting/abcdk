@@ -56,6 +56,13 @@ int abcdk_cap_set_pid(pid_t pid,cap_value_t power, cap_flag_t flag,cap_flag_valu
         goto final;
     }
 
+    chk = cap_set_proc(cap_p);
+    if (chk != 0)
+    {
+        chk = -1;
+        goto final;
+    }
+    
     /*No error.*/
     chk = 0;
 

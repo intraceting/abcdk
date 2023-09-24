@@ -22,6 +22,9 @@ struct _abcdk_waiter
 
     /** 表。*/
     abcdk_map_t map;
+    
+    /** 消息销毁回调函数。*/
+    abcdk_waiter_msg_destroy_cb msg_destroy_cb;
 
 };// abcdk_waiter_t;
 
@@ -62,22 +65,20 @@ int _abcdk_waiter_compare_cb(const void *key1, size_t size1, const void *key2, s
 void _abcdk_waiter_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     abcdk_waiter_t *waiter = (abcdk_waiter_t*)opaque;
-    abcdk_object_t *obj_p = NULL;
+    void *msg_p = NULL;
 
-    /*复制应答数据(可能为NULL(0))。*/
-    obj_p = (abcdk_object_t *)alloc->pptrs[ABCDK_MAP_VALUE];
-
-    /*解除绑定关系。*/
+    /*复制应答数据，解除绑定关系。*/
+    msg_p = (void*)alloc->pptrs[ABCDK_MAP_VALUE];
     alloc->pptrs[ABCDK_MAP_VALUE] = NULL;
 
-    /*可能已经被取走。*/
-    if (!obj_p)
+    if (!msg_p)
         return;
 
-    abcdk_object_unref(&obj_p);
+    ABCDK_ASSERT(waiter->msg_destroy_cb,"未注册销毁函数，MSG对象无法销毁。");
+    waiter->msg_destroy_cb(msg_p);
 }
 
-abcdk_waiter_t *abcdk_waiter_alloc()
+abcdk_waiter_t *abcdk_waiter_alloc(abcdk_waiter_msg_destroy_cb cb)
 {
     abcdk_waiter_t *waiter;
 
@@ -91,7 +92,8 @@ abcdk_waiter_t *abcdk_waiter_alloc()
     waiter->status = 1;
     waiter->map.compare_cb = _abcdk_waiter_compare_cb;
     waiter->map.destructor_cb = _abcdk_waiter_destroy_cb;
-    waiter->map.opaque = waiter;    
+    waiter->map.opaque = waiter;
+    waiter->msg_destroy_cb = cb;
 
     return waiter;
 }
@@ -136,11 +138,11 @@ uint64_t _abcdk_waiter_clock()
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
 }
 
-abcdk_object_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
+void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
 {
     time_t time_end;
     time_t time_span;
-    abcdk_object_t *obj_p = NULL;
+    void *msg_p = NULL;
     abcdk_object_t *it;
 
     assert(waiter != NULL && timeout > 0);
@@ -169,10 +171,8 @@ abcdk_object_t *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t ti
         abcdk_mutex_wait(&waiter->locker, time_span);
     }
 
-    /*复制应答数据(可能为NULL(0))。*/
-    obj_p = (abcdk_object_t *)it->pptrs[ABCDK_MAP_VALUE];
-
-    /*解除绑定关系。*/
+    /*复制应答数据，解除绑定关系。*/
+    msg_p = (void *)it->pptrs[ABCDK_MAP_VALUE];
     it->pptrs[ABCDK_MAP_VALUE] = NULL;
 
     /*删除KEY。*/
@@ -182,15 +182,15 @@ final:
 
     abcdk_mutex_unlock(&waiter->locker);
 
-    return obj_p;
+    return msg_p;
 }
 
-int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, abcdk_object_t *obj)
+int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, void *msg)
 {
     abcdk_object_t *it;
     int chk = -1;
 
-    assert(waiter != NULL && obj != NULL);
+    assert(waiter != NULL && msg != NULL);
 
     abcdk_mutex_lock(&waiter->locker, 1);
 
@@ -199,7 +199,7 @@ int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, abcdk_object_t *
         goto final;
 
     /*复制对象指针。*/
-    it->pptrs[ABCDK_MAP_VALUE] = (uint8_t*)obj;
+    it->pptrs[ABCDK_MAP_VALUE] = (uint8_t*)msg;
 
     /*通知到达。*/
     abcdk_mutex_signal(&waiter->locker, 1);

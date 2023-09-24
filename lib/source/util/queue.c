@@ -79,15 +79,19 @@ size_t abcdk_queue_count(abcdk_queue_t *queue)
 void _abcdk_queue_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     abcdk_queue_t *queue_p = NULL;
+    void *msg_p = NULL;
 
     queue_p = (abcdk_queue_t *)opaque;
 
-    /*可能已经解除绑定关系了。*/
-    if(!alloc->pptrs[0])
+    /*复制数据，解除绑定关系。*/
+    msg_p = (void*)alloc->pptrs[0];
+    alloc->pptrs[0] = NULL;
+
+    if(!msg_p)
         return;
 
-    if(queue_p->msg_destroy_cb)
-        queue_p->msg_destroy_cb((void *)alloc->pptrs[0]);
+    ABCDK_ASSERT(queue_p->msg_destroy_cb,"未注册销毁函数，MSG对象无法销毁。");
+    queue_p->msg_destroy_cb(msg_p);
 }
 
 int abcdk_queue_push(abcdk_queue_t *queue, size_t refcount, const void *msg, int head)

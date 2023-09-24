@@ -34,6 +34,7 @@ static struct _abcdk_test_entry
     {"ffmpeg",abcdk_test_ffmpeg},
     {"drm",abcdk_test_drm},
     {"parallel",abcdk_test_parallel},
+    {"ping",abcdk_test_ping},
 };
 
 void _abcdk_test_print_usage()
