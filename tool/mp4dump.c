@@ -20,6 +20,9 @@ void _abcdkm4d_print_usage(abcdk_option_t *args, int only_version)
     fprintf(stderr, "\n\t--file < FILE >\n");
     fprintf(stderr, "\t\t文件(包括路径)。\n");
 
+    fprintf(stderr, "\n\t--offset < OFFSET >\n");
+    fprintf(stderr, "\t\t偏移量。默认：0\n");
+
     fprintf(stderr, "\n\t--all\n");
     fprintf(stderr, "\t\t打印全部结构。默认：打印基本结构。\n");
 
@@ -36,11 +39,13 @@ void _abcdkm4d_work(abcdk_option_t *args)
     const char *outfile = NULL;
     int all = 0;
     int fd = -1;
+    uint64_t offset = 0;
     abcdk_tree_t *doc = NULL;
 
     file = abcdk_option_get(args, "--file", 0, NULL);
     outfile = abcdk_option_get(args, "--output", 0, NULL);
     all = abcdk_option_exist(args,"--all");
+    offset = abcdk_option_get_llong(args,"--offset",0,0);
     
 
     /*Clear errno.*/
@@ -62,7 +67,7 @@ void _abcdkm4d_work(abcdk_option_t *args)
     if (fd < 0)
         goto final;
 
-    doc = abcdk_mp4_read_probe2(fd, 0, -1UL, (all ? 0 : ABCDK_MP4_ATOM_TYPE_MOOV));
+    doc = abcdk_mp4_read_probe2(fd, offset, -1UL, (all ? 0 : ABCDK_MP4_ATOM_TYPE_MOOV));
     if (!doc)
         goto final;
 
