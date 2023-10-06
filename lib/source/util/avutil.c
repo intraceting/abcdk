@@ -11,6 +11,12 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+double abcdk_avmatch_r2d(AVRational r, double scale)
+{
+    double a = (r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den);
+
+    return scale * a;
+}
 
 int abcdk_avimage_pixfmt_bits(enum AVPixelFormat pixfmt, int padded)
 {

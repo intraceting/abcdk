@@ -27,11 +27,19 @@ __BEGIN_DECLS
 #include <libavutil/log.h>
 #include <libavutil/opt.h>
 #include <libavutil/frame.h>
+#include <libavutil/rational.h>
 
 #endif // HAVE_FFMPEG
 
 #ifdef AVUTIL_AVUTIL_H
 
+/**
+ * R2D(num/den)。
+ * 
+ * @param scale 比例。
+ * 
+*/
+double abcdk_avmatch_r2d(AVRational r, double scale);
 
 /**
  * 获取像素位宽。

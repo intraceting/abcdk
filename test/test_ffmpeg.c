@@ -72,6 +72,9 @@ int abcdk_test_record(abcdk_option_t *args)
         if(n<0)
             break;
 
+        fprintf(stderr,"%.6f\n",
+        (double)pkt.duration * (rf->streams[n]->time_base.num/rf->streams[n]->time_base.den));
+
          abcdk_ffmpeg_write(w,&pkt,&rf->streams[n]->time_base);
 
      //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);

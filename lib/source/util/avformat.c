@@ -635,14 +635,7 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 
 /*-------------Copy from OpenCV----begin------------------*/
 
-#define ABCDK_AVSTREAM_EPS_ZERO 0.000025
 
-double _abcdk_avstream_r2d(AVRational r, double xspeed)
-{
-    double a = (r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den);
-
-    return xspeed * a;
-}
 
 double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs,double xspeed)
 {
@@ -652,7 +645,7 @@ double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs,double xspeed)
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
     if (vs->duration > 0)
-        sec = (double)vs->duration * _abcdk_avstream_r2d(vs->time_base,xspeed);
+        sec = (double)vs->duration * abcdk_avmatch_r2d(vs->time_base,xspeed);
 
     return sec;
 }
@@ -663,13 +656,15 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
 
     assert(ctx != NULL && vs != NULL);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+    
+#define ABCDK_AVSTREAM_EPS_ZERO 0.000025
 
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = _abcdk_avstream_r2d(vs->r_frame_rate,xspeed);
+        fps = abcdk_avmatch_r2d(vs->r_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = _abcdk_avstream_r2d(vs->avg_frame_rate,xspeed);
+        fps = abcdk_avmatch_r2d(vs->avg_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = 1.0 / _abcdk_avstream_r2d(vs->codec->time_base,xspeed);
+        fps = 1.0 / abcdk_avmatch_r2d(vs->codec->time_base,xspeed);
 
     return fps;
 }
@@ -681,7 +676,7 @@ double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts, dou
     assert(ctx != NULL && vs != NULL && xspeed >= 0.001);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
-    sec = (double)(ts - vs->start_time) * _abcdk_avstream_r2d(vs->time_base, 1.0 / xspeed);
+    sec = (double)(ts - vs->start_time) * abcdk_avmatch_r2d(vs->time_base, 1.0 / xspeed);
 
     return sec;
 }
