@@ -1071,7 +1071,11 @@ void _abcdkhttpd_close_event(abcdk_comm_node_t *node)
         abcdk_comm_get_sockaddr_str(node,NULL,http_p->remote);
     
     /*释放另一端的隧道。*/
-    abcdk_comm_unref(&http_p->tunnel);
+    if(http_p->tunnel)
+    {
+        abcdk_comm_set_timeout(http_p->tunnel,1);
+        abcdk_comm_unref(&http_p->tunnel);
+    }
 
     abcdk_logger_printf(http_p->ctx->logger,LOG_INFO, "Close: %s", http_p->remote);
 }
