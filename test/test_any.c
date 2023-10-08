@@ -491,15 +491,15 @@ int abcdk_test_any(abcdk_option_t *args)
     b = abcdk_clock(a,&a);
 
     printf("b=%lu\n",b);
-#elif 0
+#elif 1
 
-    uint64_t prev2next = 0;
+    uint64_t pos[2] = {1,0};
 
     for(int i = 0;i<10000;i++)
     {
-        abcdk_save("/tmp/bbb/segment.log","aaaa",4,0);
+        abcdk_save("/tmp/ccc/segment.log","aaaa",4,0);
 
-        abcdk_file_segment("/tmp/bbb/segment.log","/tmp/bbb/segment.%llu.log",111,23,&prev2next);
+        abcdk_file_segment("/tmp/ccc/segment.log","/tmp/ccc/segment.%llu.log",2,10000000,pos);
     }
 #elif 0
 

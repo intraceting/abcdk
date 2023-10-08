@@ -70,14 +70,15 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     return line_c;
 }
 
-uint64_t abcdk_file_segment_find_pos(const char *dst, uint64_t start)
+void _abcdk_file_segment_find_pos(const char *dst, uint64_t start, uint64_t pos[2])
 {
     abcdk_tree_t *dir = NULL;
     char tmp[PATH_MAX] = {0},tmp2[NAME_MAX] = {0},tmp3[NAME_MAX] = {0};
-    uint64_t pos = 0,pos2 = 0;
+    uint64_t pos_tmp = 0;
     int chk;
-
-    assert(dst != NULL && start > 0);
+    
+    pos[0] = UINT64_MAX;
+    pos[1] = 0;
 
     abcdk_dirname(tmp, dst);
     abcdk_basename(tmp2, dst);
@@ -93,65 +94,93 @@ uint64_t abcdk_file_segment_find_pos(const char *dst, uint64_t start)
         if (chk != 0)
             break;
 
-        chk = sscanf(tmp3, tmp2, &pos2);
+        chk = sscanf(tmp3, tmp2, &pos_tmp);
         if (chk != 1)
             continue;
 
-        /*记录最大编号。*/
-        if (pos < pos2)
-            pos = pos2;
+        if (start > pos_tmp)
+            continue;
+
+        if(pos[0] > pos_tmp)
+            pos[0] = pos_tmp;
+
+        if(pos[1] < pos_tmp)
+            pos[1] = pos_tmp;
     }
 
 no_history_file:
 
-    /*如果不存在则直接用起始编号，否则指向下一个编号。*/
-    if (pos < start)
-        pos = start;
-    else 
-        pos += 1;
+    if(pos[1] == 0)
+        pos[1] = start;
+
+    if (pos[0] > pos[1])
+        pos[0] = pos[1];
 
     abcdk_tree_free(&dir);
 
-    return pos;
+    return;
 }
 
-int abcdk_file_segment(const char *src, const char *dst, uint64_t start,uint16_t count,uint64_t *prev2next)
+int abcdk_file_segment(const char *src,const char *dst, uint16_t winsize, uint64_t start, uint64_t pos[2])
 {
-    abcdk_tree_t *dir = NULL;
     char tmp[PATH_MAX] = {0};
-    char tmp2[PATH_MAX] = {0};
-    uint64_t pos;
+    uint64_t pos_min= 0,pos_max = 0;
     int chk;
 
-    assert(dst != NULL && start > 0 && count > 0 && prev2next != NULL);
+    assert(dst != NULL && winsize > 0 && start > 0 && pos != NULL);
 
-    /*copy*/
-    pos = *prev2next;
+    /*重启生产。*/
+    if (pos[0] > pos[1])
+        _abcdk_file_segment_find_pos(dst,start,pos);
 
-    /*如果未输入编号，则需要主动查找现存的最大编号。*/
-    if(pos < start)
-        pos = abcdk_file_segment_find_pos(dst,start);
-
-
-    /*如果超过保留数量，则删除编号最小的文件。*/
-    if(count <= pos - start)
+    /*有序的增长最大编号。*/
+    for (; pos[1] < UINT64_MAX; pos[1]++)
     {
-        snprintf(tmp, PATH_MAX, dst, pos - count);
-        chk = remove(tmp);
-        if (chk != 0  && errno != ENOENT)
-            return -1;
-    }
-
-    if (src)
-    {
-        snprintf(tmp2, PATH_MAX, dst, pos);
-        chk = rename(src, tmp2);
+        memset(tmp,0,PATH_MAX);
+        snprintf(tmp, PATH_MAX, dst, pos[1]);
+        chk = access(tmp, F_OK);
         if (chk != 0)
+            break;
+    }
+
+    if(src)
+    {
+        memset(tmp, 0, PATH_MAX);
+        snprintf(tmp, PATH_MAX, dst, pos[1]);
+        chk = rename(src, tmp);
+        if (chk != 0)
+            return -2;
+    }
+
+    /*删除冗余窗口之前的。*/
+    for (; pos[0] < pos[1]; pos[0]++)
+    {
+        if (pos[1] - pos[0] < winsize)
+            break;
+
+        memset(tmp, 0, PATH_MAX);
+        snprintf(tmp, PATH_MAX, dst, pos[0]);
+        chk = remove(tmp);
+        if (chk != 0 && errno != ENOENT)
             return -1;
     }
 
-    /*next POS。*/
-    *prev2next = pos +1;
+
+    return 0;
+}
+
+int abcdk_file_segment_append(const char *src, const char *dst, uint64_t pos)
+{
+    char tmp[PATH_MAX] = {0};
+    int chk;
+
+    assert(src != NULL && dst != NULL && pos > 0);
+    
+    memset(tmp,0,PATH_MAX);
+    snprintf(tmp, PATH_MAX, dst, pos);
+    chk = rename(src, tmp);
+    if (chk != 0)
+        return -1;
 
     return 0;
 }

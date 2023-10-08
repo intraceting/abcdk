@@ -56,15 +56,31 @@ int abcdk_test_record(abcdk_option_t *args)
 
         abcdk_avcodec_free(&opt);
     }
+
+    AVDictionary *dict = NULL;
+
+    av_dict_set(&dict, "hls_segment_filename", "/tmp/ccc/aaaa%d.ts", 0);
+    av_dict_set(&dict, "hls_time", "2", 0);
+    av_dict_set(&dict, "hls_list_size","5", 0);
+    av_dict_set(&dict, "start_number", "1", 0);
+  //  av_dict_set(&dict, "hls_delete_threshold","100",0);
+  //  av_dict_set(&dict, "hls_flags","+delete_segments+append_list+omit_endlist+temp_file",0);
+
+      av_dict_set(&dict, "hls_flags","append_list+omit_endlist+temp_file",0);
     
-    abcdk_ffmpeg_write_header(w,1);
+        
+    abcdk_ffmpeg_write_header0(w,dict);
+
+    av_dict_free(&dict);
 
     abcdk_avformat_dump(wf,1);
+
+    uint64_t pos[2] = {1,0};
 
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<1000;i++)
+    for(int i = 0;i<10000;i++)
     {
         
 
@@ -72,12 +88,13 @@ int abcdk_test_record(abcdk_option_t *args)
         if(n<0)
             break;
 
-        fprintf(stderr,"%.6f\n",
-        (double)pkt.duration * (rf->streams[n]->time_base.num/rf->streams[n]->time_base.den));
+        fprintf(stderr,"%.6f\n",(double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,1));
 
          abcdk_ffmpeg_write(w,&pkt,&rf->streams[n]->time_base);
 
      //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
+
+        abcdk_file_segment(NULL,"/tmp/ccc/aaaa%llu.ts",10,1,pos);
     }
 
     av_packet_unref(&pkt);
