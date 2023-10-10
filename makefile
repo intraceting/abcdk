@@ -11,6 +11,9 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 # 加载配置项。
 include ${MAKE_CONF}
 
+#gcc临时文件目录。
+export TMPDIR=${BUILD_PATH}/
+
 #
 ifeq (${BUILD_TYPE},debug)
 CC_FLAGS += -g
