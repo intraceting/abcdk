@@ -11,6 +11,8 @@
 #include "abcdk/util/socket.h"
 #include "abcdk/util/md5.h"
 
+__BEGIN_DECLS
+
 /**
  * 获取硬件散列值。
  * 
@@ -19,5 +21,7 @@
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
 const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], int flag,...);
+
+__END_DECLS
 
 #endif //ABCDK_SHELL_DMI_H
