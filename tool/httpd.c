@@ -589,7 +589,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
             if (S_ISDIR(attr.st_mode))
                 snprintf(strsize, 20, "%s", "-");
             else
-                snprintf(strsize, 20, "%lu", attr.st_size);
+                snprintf(strsize, 20, "%llu", attr.st_size);
 
             _abcdkhttpd_reply_chunked(node, 10000,
                                             "<tr>\r\n"
