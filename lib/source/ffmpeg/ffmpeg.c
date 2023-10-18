@@ -43,6 +43,9 @@ typedef struct _abcdk_ffmpeg
     /** 读开始时间(系统时间，微秒)*/
     uint64_t read_start[ABCDK_FFMPEG_MAX_STREAMS];
 
+    /** 读第一帧DTS。*/
+    int64_t read_dts_first[ABCDK_FFMPEG_MAX_STREAMS];
+
     /** 当前DTS。*/
     int64_t read_dts[ABCDK_FFMPEG_MAX_STREAMS];
 
@@ -131,6 +134,11 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_alloc()
     if(!ctx)
         return NULL;
 
+    for (int i = 0; i < ABCDK_FFMPEG_MAX_STREAMS; i++)
+    {
+        ctx->read_dts_first[i] = (int64_t)AV_NOPTS_VALUE;
+        ctx->read_dts[i] = (int64_t)AV_NOPTS_VALUE;
+    }
     
     return ctx;
 
@@ -470,11 +478,16 @@ next_delay:
         vs_p = abcdk_ffmpeg_streamptr(ctx,i);
         start_time = vs_p->start_time;
 
+        if(ctx->read_dts_first[i] == (int64_t)AV_NOPTS_VALUE)
+            ctx->read_dts_first[i] = ctx->read_dts[i];
+
         /*流的起始值可能不为0，这里要加上，内部计算时会减掉。*/
-        double a = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts[i] + start_time , xspeed);
+        double a1 = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts_first[i] + start_time , xspeed);
+        double a2 = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts[i] + start_time , xspeed);
+        double a = a2-a1;
         double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[i]) / 1000000;
 
-        //printf("%.3f == %.3f\n", a, b);
+        //printf("a1 = %.3f a2 = %.3f a = %.3f,b = %.3f\n",a1,a2, a, b);
         
         /*以最慢的为准。*/
         if(block = (a > b ? 1 : 0))
