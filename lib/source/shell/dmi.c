@@ -23,7 +23,7 @@ int _abcdk_dmi_get_machine_hashcode_compare_cb(const abcdk_tree_t *node1, const 
     return abcdk_strcmp(node1->obj->pstrs[0],node2->obj->pstrs[0],1);
 }
 
-const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16],int flag, ...)
+const uint8_t *abcdk_dmi_get_machine_hashcode0(uint8_t uuid[16], int flag,va_list ap)
 {
     abcdk_tree_t *sn_vec = NULL,*mmc_vec = NULL,*scsi_vec = NULL, *p = NULL,*p2 = NULL;
     abcdk_ifaddrs_t ifaddr_vec[100] = {0};
@@ -109,9 +109,6 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16],int flag, ...)
     abcdk_tree_distinct(sn_vec,&it);
   //  abcdk_tree_scan(sn_vec,&it);
 
-    va_list ap;
-    va_start(ap, flag);
-
     /*添加自定义干扰项。*/
     for(;;)
     {
@@ -129,7 +126,6 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16],int flag, ...)
         }
     }
 
-    va_end(ap);
     
     abcdk_tree_sort(sn_vec,&it,1);
   //  abcdk_tree_scan(sn_vec,&it);
@@ -159,4 +155,18 @@ final:
     abcdk_md5_destroy(&md5_ctx);
 
     return (chk==0?uuid:NULL);
+}
+
+const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], int flag, ...)
+{
+    va_list ap;
+    const uint8_t *p;
+
+    assert(uuid != NULL);
+
+    va_start(ap, flag);
+    p = abcdk_dmi_get_machine_hashcode0(uuid,flag,ap);
+    va_end(ap);
+
+    return p;
 }

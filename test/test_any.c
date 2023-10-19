@@ -491,7 +491,7 @@ int abcdk_test_any(abcdk_option_t *args)
     b = abcdk_clock(a,&a);
 
     printf("b=%lu\n",b);
-#elif 1
+#elif 0
 
     uint64_t pos[2] = {1,0};
 
@@ -501,7 +501,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
         abcdk_file_segment("/tmp/ccc/segment.log","/tmp/ccc/segment.%llu.log",2,10000000,pos);
     }
-#elif 0
+#elif 1
 
     char buf[100] = {0};
     abcdk_dmi_get_machine_hashcode(buf,0,"haha","haha","haha2",NULL);
