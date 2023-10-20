@@ -17,7 +17,7 @@ typedef struct _abcdk_ndarray
     /**格式。*/
     int fmt;
     /**块数量。*/
-    size_t blocks;
+    size_t block;
     /**宽(每块)。*/
     size_t width;
     /**高(每块)。*/
@@ -25,9 +25,9 @@ typedef struct _abcdk_ndarray
     /**深(每块)。*/
     size_t depth;
     /**宽占用的字节数量(包括对齐字节)。*/
-    size_t width_bytes;
+    size_t stride;
     /**单元格占用的字节数量。*/
-    size_t cell_bytes;
+    size_t cell;
     /**数据指针。*/
     void *data;
 } abcdk_ndarray_t;
@@ -62,7 +62,7 @@ size_t abcdk_ndarray_size(abcdk_ndarray_t *ndarray);
  * 
  * @param align 对齐字节。
 */
-void abcdk_ndarray_set_width_bytes(abcdk_ndarray_t *ndarray,size_t align);
+void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray,size_t align);
 
 /**
  * 计算多维数组单元格的偏移量。

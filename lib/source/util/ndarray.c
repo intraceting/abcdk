@@ -12,35 +12,35 @@ size_t abcdk_ndarray_size(abcdk_ndarray_t *ndarray)
 
     assert(ndarray != NULL);
     assert(ndarray->fmt == ABCDK_NDARRAY_NCHW || ndarray->fmt == ABCDK_NDARRAY_NHWC);
-    assert(ndarray->blocks > 0 && ndarray->width > 0 && ndarray->height > 0 && ndarray->depth > 0);
-    assert(ndarray->width_bytes >= ndarray->width && ndarray->cell_bytes > 0);
+    assert(ndarray->block > 0 && ndarray->width > 0 && ndarray->height > 0 && ndarray->depth > 0);
+    assert(ndarray->stride >= ndarray->width && ndarray->cell > 0);
 
     if (ndarray->fmt == ABCDK_NDARRAY_NCHW)
     {
-        size = ndarray->blocks * ndarray->depth * ndarray->height * ndarray->width_bytes;
+        size = ndarray->block * ndarray->depth * ndarray->height * ndarray->stride;
     }
     else if (ndarray->fmt == ABCDK_NDARRAY_NHWC)
     {
-        size = ndarray->blocks * ndarray->height * ndarray->width_bytes;
+        size = ndarray->block * ndarray->height * ndarray->stride;
     }
 
     return size;
 }
 
-void abcdk_ndarray_set_width_bytes(abcdk_ndarray_t *ndarray,size_t align)
+void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray,size_t align)
 {
     assert(ndarray != NULL);
     assert(ndarray->fmt == ABCDK_NDARRAY_NCHW || ndarray->fmt == ABCDK_NDARRAY_NHWC);
-    assert(ndarray->blocks > 0 && ndarray->width > 0 && ndarray->height > 0 && ndarray->depth > 0);
-    assert(ndarray->cell_bytes > 0);
+    assert(ndarray->block > 0 && ndarray->width > 0 && ndarray->height > 0 && ndarray->depth > 0);
+    assert(ndarray->cell > 0);
 
     if (ndarray->fmt == ABCDK_NDARRAY_NCHW)
     {
-        ndarray->width_bytes = abcdk_align(ndarray->width * ndarray->cell_bytes, align);
+        ndarray->stride = abcdk_align(ndarray->width * ndarray->cell, align);
     }
     else if (ndarray->fmt == ABCDK_NDARRAY_NHWC)
     {
-        ndarray->width_bytes = abcdk_align(ndarray->width * ndarray->depth * ndarray->cell_bytes, align);
+        ndarray->stride = abcdk_align(ndarray->width * ndarray->depth * ndarray->cell, align);
     }
 }
 
@@ -50,9 +50,9 @@ size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t
 
     assert(ndarray != NULL);
     assert(ndarray->fmt == ABCDK_NDARRAY_NCHW || ndarray->fmt == ABCDK_NDARRAY_NHWC);
-    assert(ndarray->blocks > 0 && ndarray->width > 0 && ndarray->height > 0 && ndarray->depth > 0);
-    assert(ndarray->width_bytes >= ndarray->width && ndarray->cell_bytes > 0);
-    assert(n < ndarray->blocks && x < ndarray->width && y < ndarray->height && z < ndarray->depth);
+    assert(ndarray->block > 0 && ndarray->width > 0 && ndarray->height > 0 && ndarray->depth > 0);
+    assert(ndarray->stride >= ndarray->width && ndarray->cell > 0);
+    assert(n < ndarray->block && x < ndarray->width && y < ndarray->height && z < ndarray->depth);
 
     if (flag == ABCDK_NDARRAY_FLIP_H)
     {
@@ -66,17 +66,17 @@ size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t
     {
         if (ndarray->fmt == ABCDK_NDARRAY_NCHW)
         {
-            off = x * ndarray->cell_bytes;
-            off += y * ndarray->width_bytes;
-            off += z * ndarray->height * ndarray->width_bytes;
-            off += n * ndarray->depth * ndarray->height * ndarray->width_bytes;
+            off = x * ndarray->cell;
+            off += y * ndarray->stride;
+            off += z * ndarray->height * ndarray->stride;
+            off += n * ndarray->depth * ndarray->height * ndarray->stride;
         }
         else if (ndarray->fmt == ABCDK_NDARRAY_NHWC)
         {
-            off = x * ndarray->depth * ndarray->cell_bytes;
-            off += z * ndarray->cell_bytes;
-            off += y * ndarray->width_bytes;
-            off += n * ndarray->height * ndarray->width_bytes;
+            off = x * ndarray->depth * ndarray->cell;
+            off += z * ndarray->cell;
+            off += y * ndarray->stride;
+            off += n * ndarray->height * ndarray->stride;
         }
     }
 
