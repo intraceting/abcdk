@@ -30,7 +30,8 @@ static struct _abcdk_tool_entry
     {"archive",abcdk_tool_archive},
     {"lsmmc",abcdk_tool_lsmmc},
     {"basecode",abcdk_tool_basecode},
-    {"httpd",abcdk_tool_httpd}
+    {"httpd",abcdk_tool_httpd},
+    {"mcdump",abcdk_tool_mcdump},
 };
 
 void _abcdk_tool_print_usage()

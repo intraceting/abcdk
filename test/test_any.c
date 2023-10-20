@@ -504,7 +504,7 @@ int abcdk_test_any(abcdk_option_t *args)
 #elif 1
 
     char buf[100] = {0};
-    abcdk_dmi_get_machine_hashcode(buf,0,"haha","haha","haha2",NULL);
+    abcdk_dmi_get_machine_hashcode(buf,0xf,"haha");
 
     abcdk_hexdump(stderr,buf,16,0,NULL);
 

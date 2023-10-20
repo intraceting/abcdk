@@ -23,7 +23,7 @@ int _abcdk_dmi_get_machine_hashcode_compare_cb(const abcdk_tree_t *node1, const 
     return abcdk_strcmp(node1->obj->pstrs[0],node2->obj->pstrs[0],1);
 }
 
-const uint8_t *abcdk_dmi_get_machine_hashcode0(uint8_t uuid[16], int flag,va_list ap)
+const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, const char *stuff)
 {
     abcdk_tree_t *sn_vec = NULL,*mmc_vec = NULL,*scsi_vec = NULL, *p = NULL,*p2 = NULL;
     abcdk_ifaddrs_t ifaddr_vec[100] = {0};
@@ -31,7 +31,7 @@ const uint8_t *abcdk_dmi_get_machine_hashcode0(uint8_t uuid[16], int flag,va_lis
     abcdk_md5_t *md5_ctx = NULL;
     int chk = -1;
 
-    assert(uuid != NULL);
+    assert(uuid != NULL && flag != 0);
 
     sn_vec = abcdk_tree_alloc3(1);
     if(!sn_vec)
@@ -49,10 +49,15 @@ const uint8_t *abcdk_dmi_get_machine_hashcode0(uint8_t uuid[16], int flag,va_lis
     if(!md5_ctx)
         goto final_error;
 
-    ifaddr_count = abcdk_ifname_fetch(ifaddr_vec,100,1,1);
-    abcdk_mmc_list(mmc_vec);
-    abcdk_scsi_list(scsi_vec);
-    
+    if (ABCDK_DMI_MACHINE_HC_DEVICE_MAC & flag)
+        ifaddr_count = abcdk_ifname_fetch(ifaddr_vec, 100, 1, 1);
+
+    if (ABCDK_DMI_MACHINE_HC_DEVICE_MMC & flag)
+        abcdk_mmc_list(mmc_vec);
+        
+    if (ABCDK_DMI_MACHINE_HC_DEVICE_SCSI & flag)
+        abcdk_scsi_list(scsi_vec);
+
     for(int i = 0;i<ifaddr_count;i++)
     {
         char mac[20] = {0};
@@ -110,23 +115,17 @@ const uint8_t *abcdk_dmi_get_machine_hashcode0(uint8_t uuid[16], int flag,va_lis
   //  abcdk_tree_scan(sn_vec,&it);
 
     /*添加自定义干扰项。*/
-    for(;;)
+    if (ABCDK_DMI_MACHINE_HC_STUFF & flag)
     {
-        const char *p3 = va_arg(ap, const char *);
-        if (!p3)
-            break;
-        
-        if(*p3)
-        {
-            p = abcdk_tree_alloc4(p3,strlen(p3));
-            if (!p)
-                goto final_error;
+        assert(stuff != NULL && *stuff != '\0');
 
-            abcdk_tree_insert2(sn_vec, p, 0);
-        }
+        p = abcdk_tree_alloc4(stuff, strlen(stuff));
+        if (!p)
+            goto final_error;
+
+        abcdk_tree_insert2(sn_vec, p, 0);
     }
 
-    
     abcdk_tree_sort(sn_vec,&it,1);
   //  abcdk_tree_scan(sn_vec,&it);
 
@@ -155,18 +154,4 @@ final:
     abcdk_md5_destroy(&md5_ctx);
 
     return (chk==0?uuid:NULL);
-}
-
-const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], int flag, ...)
-{
-    va_list ap;
-    const uint8_t *p;
-
-    assert(uuid != NULL);
-
-    va_start(ap, flag);
-    p = abcdk_dmi_get_machine_hashcode0(uuid,flag,ap);
-    va_end(ap);
-
-    return p;
 }
