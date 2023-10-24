@@ -317,10 +317,57 @@ int abcdk_test_com_driver(abcdk_option_t *args)
     abcdk_closep(&fd);
 }
 
+int abcdk_test_com_gripper(abcdk_option_t *args)
+{
+    int chk;
+    int fd = abcdk_open("/dev/ttyUSB0", 1, 1, 0);
+
+    abcdk_tcattr_serial(fd, 115200, 8, 0, 1, NULL);
+
+
+    uint8_t sendmsg[80] = {0};
+    uint8_t sendmsg2[80] = {0};
+    uint8_t recvmsg[70] = {0};
+
+    abcdk_bit_t wbits = {0,sendmsg,80};
+    abcdk_bit_t rbits = {0,recvmsg,70};
+
+    int addr = 0x01;
+
+    for (int i = 0; i < 100; i++)
+    {
+        int a = rand()%70;
+
+        wbits.pos = 0;
+        abcdk_bit_write(&wbits, 16, 0xEB90);
+        abcdk_bit_write(&wbits, 8, addr);
+        abcdk_bit_write(&wbits, 8, 0x03);
+        abcdk_bit_write(&wbits, 8, 0x54);
+        //   abcdk_bit_write(&wbits,8,0x11);
+        abcdk_bit_write(&wbits, 16, abcdk_endian_h_to_b16(1000 / 70 * a));
+        abcdk_bit_write(&wbits, 8, _abcdk_test_com_checksum(sendmsg + 2, 5));
+
+        chk = abcdk_tcattr_transfer(fd, sendmsg, wbits.pos / 8, recvmsg, 7, 10000, NULL, 0);
+        assert(chk == 0);
+
+        sleep(1);
+    }
+
+    abcdk_closep(&fd);
+}
 
 int abcdk_test_com(abcdk_option_t *args)
 {
-   //  abcdk_test_com_ultrasound(args);
-    abcdk_test_com_xyz(args);
-  // abcdk_test_com_driver(args);
+    int cmd = abcdk_option_get_int(args, "--cmd", 0, -1);
+
+    if (cmd == 1)
+        abcdk_test_com_ultrasound(args);
+    if (cmd == 2)
+        abcdk_test_com_xyz(args);
+    if (cmd == 3)
+        abcdk_test_com_driver(args);
+    if (cmd == 4)
+        abcdk_test_com_gripper(args);
+
+    return 0;
 }
