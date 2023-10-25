@@ -27,7 +27,7 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
 {
     abcdk_tree_t *sn_vec = NULL,*mmc_vec = NULL,*scsi_vec = NULL, *p = NULL,*p2 = NULL;
     abcdk_ifaddrs_t ifaddr_vec[100] = {0};
-    int ifaddr_count;
+    int ifaddr_count = 0;
     abcdk_md5_t *md5_ctx = NULL;
     int chk = -1;
 
