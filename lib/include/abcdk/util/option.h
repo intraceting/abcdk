@@ -17,6 +17,25 @@ __BEGIN_DECLS
 /** 选项。*/
 typedef struct _abcdk_option abcdk_option_t;
 
+/**
+ * 选项迭代器。
+*/
+typedef struct _abcdk_option_iterator
+{
+    /**
+     * 回显函数。
+     * 
+     * @return -1 终止，>= 0 继续。
+    */
+    int (*dump_cb)(const char *key,const char *value, void *opaque);
+
+    /**
+     * 环境指针。
+    */
+    void *opaque;
+
+} abcdk_option_iterator_t;
+
 /** 释放。*/
 void abcdk_option_free(abcdk_option_t **opt);
 
@@ -104,18 +123,12 @@ ssize_t abcdk_option_count(abcdk_option_t *opt, const char *key);
 int abcdk_option_remove(abcdk_option_t *opt, const char *key);
 
 /**
- * 格式化打印。
+ * 扫描选项和值。
  * 
- * @return >=0 成功(输出的长度)，< 0 失败。
+ * @note 深度优先遍。
 */
-ssize_t abcdk_option_fprintf(abcdk_option_t *opt,const char *delim, FILE *fp);
+void abcdk_option_scan(abcdk_option_t *opt,abcdk_option_iterator_t *it);
 
-/**
- * 格式化打印。
- * 
- * @return >=0 成功(输出的长度)，< 0 失败。
-*/
-ssize_t abcdk_option_snprintf(abcdk_option_t *opt,const char *delim, char* buf,size_t max);
 
 __END_DECLS
 

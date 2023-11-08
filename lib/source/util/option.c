@@ -293,20 +293,11 @@ int abcdk_option_remove(abcdk_option_t *opt, const char *key)
     return 0;
 }
 
-typedef struct _abcdk_option_fprintf_param
-{
-    const char *delim;
-    FILE *fp;
-    ssize_t wlen;
-    const char *prev_key;
-} abcdk_option_fprintf_param_t;
-
 int _abcdk_option_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
-    abcdk_option_fprintf_param_t *p = (abcdk_option_fprintf_param_t *)opaque;
+    abcdk_option_iterator_t *it = (abcdk_option_iterator_t *)opaque;
     abcdk_tree_t *father;
-    const char *key, *value;
-    ssize_t wlen = 0;
+    int chk;
 
     if (depth == 0 || depth == 1)
         return 1;
@@ -316,62 +307,19 @@ int _abcdk_option_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     /*find key.*/
     father = abcdk_tree_father(node);
 
-    key = father->obj->pstrs[ABCDK_OPTION_KEY];
-    value = node->obj->pstrs[ABCDK_OPTION_VALUE];
-    
-    if (p->prev_key != key)
-    {
-        wlen = fprintf(p->fp, "%s\r\n", key);
-        if (wlen <= 0)
-            return -1;
-
-        p->prev_key = key;
-        p->wlen += wlen;
-    }
-
-    wlen = fprintf(p->fp, "%s\r\n", value);
-    if (wlen <= 0)
+    chk = it->dump_cb(father->obj->pstrs[ABCDK_OPTION_KEY], node->obj->pstrs[ABCDK_OPTION_VALUE], it->opaque);
+    if (chk < 0)
         return -1;
-
-    p->wlen += wlen;
 
     return 1;
 }
 
-ssize_t abcdk_option_fprintf(abcdk_option_t *opt, const char *delim, FILE *fp)
+void abcdk_option_scan(abcdk_option_t *opt, abcdk_option_iterator_t *it)
 {
-    abcdk_option_fprintf_param_t p;
-    abcdk_tree_iterator_t it = {0};
+    assert(opt != NULL && it != NULL);
+    assert(it->dump_cb != NULL);
 
-    assert(opt != NULL && fp != NULL);
+    abcdk_tree_iterator_t tit = {0,_abcdk_option_scan_cb, (void*)it};
 
-    p.delim = delim;
-    p.fp = fp;
-    p.prev_key = NULL;
-    p.wlen = 0;
-
-    it.dump_cb = _abcdk_option_scan_cb;
-    it.opaque = &p;
-
-    abcdk_tree_scan(opt->table, &it);
-
-    return p.wlen;
-}
-
-ssize_t abcdk_option_snprintf(abcdk_option_t *opt, const char *delim, char *buf, size_t max)
-{
-    FILE *fp = NULL;
-    ssize_t wsize = 0;
-
-    assert(opt != NULL && buf != NULL && max > 0);
-
-    fp = fmemopen(buf, max, "w");
-    if (!fp)
-        return -1;
-
-    wsize = abcdk_option_fprintf(opt,delim,fp);
-
-    fclose(fp);
-
-    return wsize;
+    abcdk_tree_scan(opt->table, &tit);
 }

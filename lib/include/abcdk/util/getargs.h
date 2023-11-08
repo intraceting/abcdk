@@ -66,6 +66,19 @@ void abcdk_getargs_file(abcdk_option_t *opt, const char *file, uint8_t delim, ch
 */
 void abcdk_getargs_text(abcdk_option_t *opt, const char *text, size_t len, uint8_t delim, char note, const char *argv0);
 
+/**
+ * 格式化打印。
+ * 
+ * @return >=0 成功(输出的长度)，< 0 失败。
+*/
+ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt, const char *delim, FILE *fp);
+
+/**
+ * 格式化打印。
+ * 
+ * @return >=0 成功(输出的长度)，< 0 失败。
+*/
+ssize_t abcdk_getargs_snprintf(abcdk_option_t *opt, const char *delim, char* buf,size_t max);
 
 
 __END_DECLS
