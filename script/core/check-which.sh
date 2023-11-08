@@ -10,7 +10,6 @@ SHELLDIR=$(cd `dirname $0`; pwd)
 #
 if [ $# -ne 1 ];then
 {
-    echo "22"
     exit 22
 }
 fi
@@ -22,4 +21,4 @@ STATUS="1"
 STATUS=$(which ${1} >> /dev/null 2>&1 ; echo $?)
 
 #
-echo "${STATUS}"
+exit ${STATUS}

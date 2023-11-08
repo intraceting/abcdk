@@ -49,7 +49,7 @@ LINK_FLAGS += -ldl -pthread -lrt -lc -lm
 LINK_FLAGS += ${DEPEND_LINKS}
 
 #
-CC_FLAGS += -std=c99
+CC_FLAGS += -std=${CSTD}
 CC_FLAGS += -fPIC 
 CC_FLAGS += -Wno-unused-result
 CC_FLAGS += -Wno-unused-variable 

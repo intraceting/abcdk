@@ -11,7 +11,6 @@ SHELLDIR=$(cd `dirname $0`; pwd)
 STATUS=$(${SHELLDIR}/check-which.sh screen)
 if [ ${STATUS} -ne 0 ];then
 {
-    echo "'screen' is not installed."
     exit 1
 }
 fi
@@ -19,7 +18,6 @@ fi
 #
 if [ $# -lt 1 ];then
 {
-    echo "no command line."
     exit 22
 }
 fi

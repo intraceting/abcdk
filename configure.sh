@@ -67,6 +67,14 @@ CheckKeyword()
     echo ${NUM}
 }
 
+#
+CheckSTD()
+# $1 COMPILER
+# $2 STD
+{
+    ${SHELLDIR}/script/core/gcc-gxx-check-std.sh "$1" "$2"
+}
+
 #修改执行权限，不然用不了脚本。
 chmod +x ${SHELLDIR}/script/core/*.sh
 
@@ -96,6 +104,9 @@ KIT_PREFIX=""
 SYSROOT_PATH=""
 #目标架构
 TARGET_ARCH="Unknown"
+
+#
+CSTD=c99
 
 #
 BUILD_TYPE="release"
@@ -174,7 +185,7 @@ EOF
 }
 
 #
-while getopts "hc:k:s:Oo:gf:l:V:v:r:i:d:e:b:B:" ARGKEY 
+while getopts "hc:C:k:s:Oo:gf:l:V:v:r:i:d:e:b:B:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -183,6 +194,9 @@ do
     ;;
     c)
         COMPILER_PREFIX="${OPTARG}"
+    ;;
+    C)
+        CSTD="${OPTARG}"
     ;;
     k)
         KIT_PREFIX="${OPTARG}"
@@ -252,6 +266,15 @@ if [ ! -f ${AR} ];then
 }
 fi
 
+#
+CheckSTD ${CC} ${CSTD}
+CHK=$?
+if [ ${CHK} -ne 0 ];then
+{
+    echo "${CSTD} unsupported."
+    exit 22
+}
+fi
 
 #获取目标平台。
 TARGET_PLATFORM=$(${CC} -dumpmachine)
@@ -439,6 +462,8 @@ BUILD_PATH = ${BUILD_PATH}
 BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 #
 SYSROOT_PATH = ${SYSROOT_PATH}
+#
+CSTD = ${CSTD}
 #
 CC = ${CC}
 AR = ${AR}

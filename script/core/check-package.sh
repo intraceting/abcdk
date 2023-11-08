@@ -28,4 +28,4 @@ elif [ "rpm" == "${KIT_NAME}" ];then
 fi
 
 #
-echo "${STATUS}"
+exit ${STATUS}

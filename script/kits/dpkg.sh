@@ -80,8 +80,8 @@ if [ "deb" == "${KIT_NAME}" ];then
 { 
     if [ ${FLAG} -eq 1 ];then
     {
-        A=$(CheckHavePackageFromKit dpkg)
-        B=$(CheckHavePackageFromKit dpkg-dev)
+        A=$(CheckHavePackageFromKit dpkg | echo $?)
+        B=$(CheckHavePackageFromKit dpkg-dev | echo $?)
 
         if [ ${A} -eq 0 ] && [ ${B} -eq 0 ];then
             exit 0
