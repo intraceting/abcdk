@@ -60,6 +60,9 @@ typedef struct _abcdk_ffmpeg
 
     /** 超时(秒)。*/
     int64_t timeout;
+    
+    /**是否启用MP4格式转流媒格式。*/
+    int mp4toannexb;
 
     /** 最近活动包时间(秒)。*/
     int64_t last_packet_time;
@@ -250,6 +253,7 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
     {
         ctx->try_nvcodec = abcdk_option_get_int(opt,"--try-nvcodec",0,0);
         ctx->timeout = abcdk_option_get_int(opt,"--timeout",0,30);
+        ctx->mp4toannexb = abcdk_option_get_int(opt,"--mp4toannexb",0,0);
     }
 
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
@@ -333,7 +337,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char
     return NULL;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int timeout)
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url,int mp4toannexb,int timeout)
 {
     abcdk_ffmpeg_t *ctx = NULL;
     abcdk_option_t *opt = NULL;
@@ -343,6 +347,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *ur
         return NULL;
 
     abcdk_option_fset(opt,"--timeout","%d",timeout);
+    abcdk_option_fset(opt,"--mp4toannexb","%d",mp4toannexb);
 
     ctx = abcdk_ffmpeg_open(0,short_name,url,NULL,opt);
 
@@ -557,10 +562,12 @@ next_packet:
     else if (ctx->input_mp4_h264[pkt->stream_index] || ctx->input_mp4_h265[pkt->stream_index])
     {
         /*只有mp4格式的h264、h265才需要执行下面的过滤器。*/
-
-        chk = abcdk_avformat_input_filter(ctx->avctx, pkt, &ctx->vs_filter[pkt->stream_index]);
-        if (chk < 0)
-            return -1;
+        if(ctx->mp4toannexb)
+        {
+            chk = abcdk_avformat_input_filter(ctx->avctx, pkt, &ctx->vs_filter[pkt->stream_index]);
+            if (chk < 0)
+                return -1;
+        }
     }
 
     return pkt->stream_index;
