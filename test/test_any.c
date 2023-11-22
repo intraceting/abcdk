@@ -501,7 +501,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
         abcdk_file_segment("/tmp/ccc/segment.log","/tmp/ccc/segment.%llu.log",2,10000000,pos);
     }
-#elif 1
+#elif 0
 
     for (int i = 0; i < 10; i++)
     {
@@ -510,6 +510,10 @@ int abcdk_test_any(abcdk_option_t *args)
 
         abcdk_hexdump(stderr, buf, 16, 0, NULL);
     }
+
+#elif 1
+
+   // struct ifreq ifr;
 
 #endif 
 }

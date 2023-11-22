@@ -262,6 +262,8 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where);
  */
 int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2,int care_port);
 
+
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_SOCKET_H
