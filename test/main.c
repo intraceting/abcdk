@@ -36,6 +36,7 @@ static struct _abcdk_test_entry
     {"parallel",abcdk_test_parallel},
     {"ping",abcdk_test_ping},
     {"onvif",abcdk_test_onvif},
+    {"dhcp",abcdk_test_dhcp},
 };
 
 void _abcdk_test_print_usage()
