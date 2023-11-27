@@ -116,6 +116,9 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
     /*清数据位标志*/
     now.c_cflag &= ~CSIZE; 
 
+    /*禁用校验位*/
+    now.c_cflag &= ~PARENB;
+
     /*设置数据位。*/
     if(bits == 5)
         now.c_cflag |= CS5;
@@ -132,20 +135,14 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
         /*奇。*/
         now.c_cflag |= PARENB;
         now.c_cflag |= PARODD;
-        now.c_iflag |= (INPCK | ISTRIP);
     }
     else if (parity == 2)
     {
         /*偶。*/
-        now.c_iflag |= (INPCK | ISTRIP);
         now.c_cflag |= PARENB;
         now.c_cflag &= ~PARODD;
     }
-    else
-    {
-        /*无。*/
-        now.c_cflag &= ~PARENB;
-    }
+
 
     /*设置停止位。*/
     if(stop == 2)
