@@ -183,7 +183,7 @@ void _abcdkhd_work(abcdk_option_t *args)
         goto final;
     }
 
-    mfile = abcdk_mmap_filename(file,0, 0, 0);
+    mfile = abcdk_mmap_filename(file,0, 0, 0,0);
     if (!mfile)
     {
         fprintf(stderr, "'%s' %s.\n", file, strerror(errno));

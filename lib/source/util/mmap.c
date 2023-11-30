@@ -160,7 +160,7 @@ abcdk_object_t *abcdk_mmap_fd(int fd, size_t truncate, int rw, int shared)
     return _abcdk_mmap(fd, truncate, rw, shared);
 }
 
-abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, int shared)
+abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, int shared,int create)
 {
     abcdk_object_t *obj = NULL;
     int fd = -1;
@@ -168,7 +168,7 @@ abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, i
 
     assert(name);
 
-    fd = abcdk_open(name, rw, 0, 1);
+    fd = abcdk_open(name, rw, 0, create);
     if (fd < 0)
         return NULL;
 
@@ -186,6 +186,24 @@ abcdk_object_t *abcdk_mmap_tempfile(char *name, size_t truncate, int rw, int sha
     assert(name);
 
     fd = mkstemp(name);
+    if (fd < 0)
+        return NULL;
+
+    obj = abcdk_mmap_fd(fd, truncate, rw, shared);
+    abcdk_closep(&fd);
+
+    return obj;
+}
+
+abcdk_object_t* abcdk_mmap_shm(const char* name,size_t truncate,int rw,int shared,int create)
+{
+    abcdk_object_t *obj = NULL;
+    int fd = -1;
+    int chk;
+
+    assert(name);
+
+    fd = abcdk_shm_open(name, rw, create);
     if (fd < 0)
         return NULL;
 

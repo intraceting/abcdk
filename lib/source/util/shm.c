@@ -9,7 +9,7 @@
 int abcdk_shm_open(const char* name,int rw, int create)
 {
     int flag = O_RDONLY;
-    mode_t mode = S_IRUSR | S_IWUSR;
+    mode_t mode = S_IRWXU | S_IRWXG | S_IRWXO;
 
     assert(name);
 

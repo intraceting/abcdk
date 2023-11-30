@@ -651,7 +651,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
     abcdk_time_sec2tm(&tm, http_p->attr.st_mtim.tv_sec, 1);
 
-    file = abcdk_mmap_filename(http_p->pathfile, 0, 0, 0);
+    file = abcdk_mmap_filename(http_p->pathfile, 0, 0, 0,0);
     if (file)
     {
         /*保存文件大小。*/
