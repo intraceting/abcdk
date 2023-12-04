@@ -119,8 +119,8 @@ void abcdk_getargs_text(abcdk_option_t *opt, const char *text, size_t len, uint8
 typedef struct _abcdk_getargs_fprintf_param
 {
     const char *delim;
-    FILE *fp;
     ssize_t wlen;
+    FILE *fp;
     const char *prev_key;
 } abcdk_getargs_fprintf_param_t;
 
@@ -131,7 +131,7 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
 
     if (p->prev_key != key)
     {
-        wlen = fprintf(p->fp, "%s\r\n", key);
+        wlen = fprintf(p->fp, "%s%s", key,p->delim);
         if (wlen <= 0)
             return -1;
 
@@ -139,7 +139,7 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
         p->wlen += wlen;
     }
 
-    wlen = fprintf(p->fp, "%s\r\n", value);
+    wlen = fprintf(p->fp, "%s%s", value,p->delim);
     if (wlen <= 0)
         return -1;
 
@@ -148,12 +148,12 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
     return 1;
 }
 
-ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt, const char *delim, FILE *fp)
+ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt,const char *delim,FILE *fp)
 {
     abcdk_getargs_fprintf_param_t p;
     abcdk_option_iterator_t it;
 
-    assert(opt != NULL && fp != NULL);
+    assert(opt != NULL && delim != NULL && fp != NULL);
 
     p.delim = delim;
     p.fp = fp;
@@ -168,12 +168,12 @@ ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt, const char *delim, FILE *fp)
     return p.wlen;
 }
 
-ssize_t abcdk_getargs_snprintf(abcdk_option_t *opt, const char *delim, char *buf, size_t max)
+ssize_t abcdk_getargs_snprintf(abcdk_option_t *opt, const char *delim,char *buf, size_t max)
 {
     FILE *fp = NULL;
     ssize_t wsize = 0;
 
-    assert(opt != NULL && buf != NULL && max > 0);
+    assert(opt != NULL && delim != NULL && buf != NULL && max > 0);
 
     fp = fmemopen(buf, max, "w");
     if (!fp)
