@@ -131,7 +131,7 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
 
     if (p->prev_key != key)
     {
-        wlen = fprintf(p->fp, "%s%s", key,p->delim);
+        wlen = fprintf(p->fp, "%s%s", key,p->delim);//分割符加在末尾。
         if (wlen <= 0)
             return -1;
 
@@ -139,7 +139,7 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
         p->wlen += wlen;
     }
 
-    wlen = fprintf(p->fp, "%s%s", value,p->delim);
+    wlen = fprintf(p->fp, "%s%s", value,p->delim);//分割符加在末尾。
     if (wlen <= 0)
         return -1;
 
