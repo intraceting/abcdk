@@ -129,6 +129,11 @@ int abcdk_option_remove(abcdk_option_t *opt, const char *key);
 */
 void abcdk_option_scan(abcdk_option_t *opt,abcdk_option_iterator_t *it);
 
+/**
+ * 合并。
+*/
+void abcdk_option_merge(abcdk_option_t *dst,abcdk_option_t *src);
+
 
 __END_DECLS
 

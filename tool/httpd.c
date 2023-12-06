@@ -29,8 +29,8 @@ typedef struct _abcdkhttpd
     struct magic_set *magic_handle;
 #endif // _MAGIC_H
 
-    abcdk_comm_t *comm;
-    abcdk_comm_node_t *comm_listen[2];
+    abcdk_asynctcp_t *comm;
+    abcdk_asynctcp_node_t *comm_listen[2];
     SSL_CTX *ssl_ctx_listen[2];
 
     abcdk_sockaddr_t addr_listen[2];
@@ -127,7 +127,7 @@ typedef struct _abcdkhttpd_node
     char pathfile[PATH_MAX];
     struct stat attr;
 
-    abcdk_comm_node_t *tunnel;
+    abcdk_asynctcp_node_t *tunnel;
     SSL_CTX *tunnel_ssl_ctx;
 
 } abcdkhttpd_node_t;
@@ -215,7 +215,7 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 
     abcdk_receiver_unref(&http_p->rec);
     abcdk_md5_destroy(&http_p->md5);
-    abcdk_comm_unref(&http_p->tunnel);
+    abcdk_asynctcp_unref(&http_p->tunnel);
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_ctx_free(&http_p->tunnel_ssl_ctx);
 #endif //HEADER_SSL_H
@@ -226,12 +226,12 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
     abcdk_object_unref(&http_p->path);    
 }
 
-void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
+void _abcdkhttpd_logprint(abcdk_asynctcp_node_t *node, int status, size_t size)
 {
     char new_tname[18]={0},old_tname[18] = {0};
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     snprintf(new_tname,16,"%x",http_p->handle);
 
@@ -256,7 +256,7 @@ void _abcdkhttpd_logprint(abcdk_comm_node_t *node, int status, size_t size)
     pthread_setname_np(pthread_self(),old_tname);
 }
 
-int _abcdkhttpd_check_auth(abcdk_comm_node_t *node,int proxy)
+int _abcdkhttpd_check_auth(abcdk_asynctcp_node_t *node,int proxy)
 {
     abcdkhttpd_node_t *http_p;
     char auth_method[100] = {0};
@@ -269,7 +269,7 @@ int _abcdkhttpd_check_auth(abcdk_comm_node_t *node,int proxy)
     uint64_t nonce;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if (!http_p->ctx->passwd[0])
         return 0;
@@ -403,7 +403,7 @@ final_error:
     nonce = rand();
     nonce = nonce << 32 | rand();
 
-    abcdk_comm_post_format(node, 1000,
+    abcdk_asynctcp_post_format(node, 1000,
                            "HTTP/1.1 %s\r\n"
                            "Server: %s\r\n"
                            "Data: %s\r\n"
@@ -426,13 +426,13 @@ final_error:
     return -1;
 }
 
-void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status,const char *a_c_a_m)
+void _abcdkhttpd_reply_nobody(abcdk_asynctcp_node_t *node, int status,const char *a_c_a_m)
 {
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    abcdk_comm_post_format(node, 300,
+    abcdk_asynctcp_post_format(node, 300,
                            "HTTP/1.1 %s\r\n"
                            "Server: %s\r\n"
                            "Data: %s\r\n"
@@ -450,7 +450,7 @@ void _abcdkhttpd_reply_nobody(abcdk_comm_node_t *node, int status,const char *a_
     _abcdkhttpd_logprint(node, status, 0);
 }
 
-void _abcdkhttpd_reply_chunked(abcdk_comm_node_t *node, int max, const char *fmt, ...)
+void _abcdkhttpd_reply_chunked(abcdk_asynctcp_node_t *node, int max, const char *fmt, ...)
 {
     abcdk_object_t *obj = NULL;
     int chk;
@@ -467,14 +467,14 @@ void _abcdkhttpd_reply_chunked(abcdk_comm_node_t *node, int max, const char *fmt
         va_end(ap);
     }
 
-    chk = abcdk_comm_post(node, obj);
+    chk = abcdk_asynctcp_post(node, obj);
     if (chk == 0)
         return;
 
     abcdk_object_unref(&obj);
 }
 
-void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
+void _abcdkhttpd_reply_dirent(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     abcdk_tree_t *dir = NULL;
@@ -485,7 +485,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
     struct tm tm;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if(!http_p->ctx->auto_index)
     {
@@ -517,7 +517,7 @@ void _abcdkhttpd_reply_dirent(abcdk_comm_node_t *node)
     }
     else
     {
-        abcdk_comm_post_format(node, 1000,
+        abcdk_asynctcp_post_format(node, 1000,
                                "HTTP/1.1 %s\r\n"
                                "Server: %s\r\n"
                                "Data: %s\r\n"
@@ -618,7 +618,7 @@ final:
     abcdk_tree_free(&dir);
 }
 
-void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
+void _abcdkhttpd_reply_file(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     abcdk_object_t *file = NULL;
@@ -630,7 +630,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     struct tm tm;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if (abcdk_strcmp(http_p->method->pstrs[0], "OPTIONS", 0) == 0)
     {
@@ -694,7 +694,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
             file->pptrs[0] += range_s;
             file->sizes[0] = range_e - range_s + 1;
 
-            abcdk_comm_post_format(node, 1000,
+            abcdk_asynctcp_post_format(node, 1000,
                                    "HTTP/1.1 %s\r\n"
                                    "Server: %s\r\n"
                                    "Data: %s\r\n"
@@ -717,7 +717,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
         }
         else
         {
-            abcdk_comm_post_format(node, 1000,
+            abcdk_asynctcp_post_format(node, 1000,
                                    "HTTP/1.1 %s\r\n"
                                    "Server: %s\r\n"
                                    "Data: %s\r\n"
@@ -738,7 +738,7 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
 
         chk = -1;
         if (abcdk_strcmp(http_p->method->pstrs[0], "HEAD", 0) != 0)
-            chk = abcdk_comm_post(node, file);
+            chk = abcdk_asynctcp_post(node, file);
 
         /*不需要发送或发送失败时，需要主动删除。*/
         if (chk != 0)
@@ -752,17 +752,17 @@ void _abcdkhttpd_reply_file(abcdk_comm_node_t *node)
     }
 }
 
-void _abcdkhttpd_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result);
-void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain);
+void _abcdkhttpd_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result);
+void _abcdkhttpd_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain);
 
-void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
+void _abcdkhttpd_create_tunnel(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p,*http_tunnel_p;
     abcdk_object_t *userdata_p = NULL;
     abcdk_sockaddr_t addr;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
     
     /*隧道仅建立一次即可。*/
     if(http_p->tunnel)
@@ -817,14 +817,14 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
 #endif // HEADER_SSL_H
 
     /*绑定到远端服务器对象。*/
-    http_p->tunnel = abcdk_comm_alloc(http_p->ctx->comm, sizeof(abcdkhttpd_node_t));
+    http_p->tunnel = abcdk_asynctcp_alloc(http_p->ctx->comm, sizeof(abcdkhttpd_node_t));
     if (!http_p->tunnel)
     {
         _abcdkhttpd_reply_nobody(node, 500, "");
         return;
     }
 
-    userdata_p = abcdk_comm_userdata(http_p->tunnel);
+    userdata_p = abcdk_asynctcp_userdata(http_p->tunnel);
     http_tunnel_p = (abcdkhttpd_node_t *)userdata_p->pptrs[0];
 
     /*绑定扩展数据析构函数。*/
@@ -834,10 +834,10 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
     /*绑定上下文环境指针。*/
     http_tunnel_p->ctx = http_p->ctx;
     /*绑定到客户端对象。*/
-    http_tunnel_p->tunnel = abcdk_comm_refer(node);
+    http_tunnel_p->tunnel = abcdk_asynctcp_refer(node);
 
-    abcdk_comm_callback_t cb = {NULL, _abcdkhttpd_event_cb,_abcdkhttpd_request_cb};
-    chk = abcdk_comm_connect(http_p->tunnel,http_p->tunnel_ssl_ctx,&addr,&cb);
+    abcdk_asynctcp_callback_t cb = {NULL, _abcdkhttpd_event_cb,_abcdkhttpd_request_cb};
+    chk = abcdk_asynctcp_connect(http_p->tunnel,http_p->tunnel_ssl_ctx,&addr,&cb);
     if(chk != 0)
     {
         _abcdkhttpd_reply_nobody(node, 500, "");
@@ -856,39 +856,39 @@ void _abcdkhttpd_create_tunnel(abcdk_comm_node_t *node)
     else
     {
         /*转发请求头。*/
-        abcdk_comm_post_format(http_p->tunnel,100000,"%s %s %s\r\n",http_p->method->pstrs[0],http_p->url->pstrs[ABCDK_URL_SCRIPT],http_p->version->pstrs[0]);
+        abcdk_asynctcp_post_format(http_p->tunnel,100000,"%s %s %s\r\n",http_p->method->pstrs[0],http_p->url->pstrs[ABCDK_URL_SCRIPT],http_p->version->pstrs[0]);
         for (int i = 1; i < 100; i++)
         {
             const char *p = abcdk_receiver_header_line(http_p->rec,i);
             if(!p)
                 break;
             
-            abcdk_comm_post_format(http_p->tunnel,100000,"%s\r\n",p);
+            abcdk_asynctcp_post_format(http_p->tunnel,100000,"%s\r\n",p);
         }
 
-        abcdk_comm_post_buffer(http_p->tunnel,"\r\n",2);
+        abcdk_asynctcp_post_buffer(http_p->tunnel,"\r\n",2);
 
         /*转发请求实体。*/
         size_t l = abcdk_receiver_body_length(http_p->rec);
         if (l > 0)
         {
             const void *p = abcdk_receiver_body(http_p->rec, 0);
-            abcdk_comm_post_buffer(http_p->tunnel, p, l);
+            abcdk_asynctcp_post_buffer(http_p->tunnel, p, l);
         }
 
         _abcdkhttpd_logprint(node,201,0);
     }
 
     /*继续监听客户端数据。*/
-    abcdk_comm_recv_watch(node);
+    abcdk_asynctcp_recv_watch(node);
 }
 
-void _abcdkhttpd_filter(abcdk_comm_node_t *node)
+void _abcdkhttpd_filter(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     abcdk_http_parse_request_header0(http_p->line0, &http_p->method, &http_p->location, &http_p->version);
 
@@ -944,14 +944,14 @@ final:
     abcdk_object_unref(&http_p->path);
 }
 
-void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
+void _abcdkhttpd_input_process(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     const char *p = NULL, *p_next = NULL;
     size_t path_len = PATH_MAX;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     http_p->line0 = abcdk_receiver_header_line(http_p->rec, 0);
     http_p->referer = abcdk_receiver_header_line_getenv(http_p->rec, "Referer",':');
@@ -971,30 +971,30 @@ void _abcdkhttpd_input_process(abcdk_comm_node_t *node)
 
 final_error:
 
-    abcdk_comm_set_timeout(node, 1);
+    abcdk_asynctcp_set_timeout(node, 1);
     return;
 }
 
-void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain)
+void _abcdkhttpd_request_v1(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdkhttpd_node_t *http_p;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if (!http_p->rec)
         http_p->rec = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP, http_p->ctx->up_max_size, http_p->ctx->up_tmp_path);
 
     if (!http_p->rec)
     {
-        abcdk_comm_set_timeout(node, 1);
+        abcdk_asynctcp_set_timeout(node, 1);
         return;
     }
 
     chk = abcdk_receiver_append(http_p->rec, data, size, remain);
     if (chk < 0)
     {
-        abcdk_comm_set_timeout(node, 1);
+        abcdk_asynctcp_set_timeout(node, 1);
         return;
     }
     else if (chk == 0)
@@ -1011,13 +1011,13 @@ void _abcdkhttpd_request_v1(abcdk_comm_node_t *node, const void *data, size_t si
     
 }
 
-void _abcdkhttpd_input_forward(abcdk_comm_node_t *node,const void *data, size_t size)
+void _abcdkhttpd_input_forward(abcdk_asynctcp_node_t *node,const void *data, size_t size)
 {
     abcdkhttpd_node_t *http_p;
     abcdk_object_t *obj = NULL;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if (http_p->ctx->uplink)
     {
@@ -1034,7 +1034,7 @@ void _abcdkhttpd_input_forward(abcdk_comm_node_t *node,const void *data, size_t 
         goto final_error;
 
     /*转发数据到另外一端。*/
-    chk = abcdk_comm_post(http_p->tunnel, obj);
+    chk = abcdk_asynctcp_post(http_p->tunnel, obj);
     if (chk != 0)
         goto final_error;
         
@@ -1043,58 +1043,58 @@ void _abcdkhttpd_input_forward(abcdk_comm_node_t *node,const void *data, size_t 
 final_error:
 
     abcdk_object_unref(&obj);
-    abcdk_comm_set_timeout(node,1);
-    abcdk_comm_set_timeout(http_p->tunnel,1);
+    abcdk_asynctcp_set_timeout(node,1);
+    abcdk_asynctcp_set_timeout(http_p->tunnel,1);
 }
 
 
-void _abcdkhttpd_accept_event(abcdk_comm_node_t *node, int *result)
+void _abcdkhttpd_accept_event(abcdk_asynctcp_node_t *node, int *result)
 {
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     /*获取远程地址。*/
-    abcdk_comm_get_sockaddr_str(node, NULL, http_p->remote);
+    abcdk_asynctcp_get_sockaddr_str(node, NULL, http_p->remote);
 
     /*接受新的连接。*/
     *result = 0;
 }
 
-void _abcdkhttpd_close_event(abcdk_comm_node_t *node)
+void _abcdkhttpd_close_event(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if(!http_p->remote[0])
-        abcdk_comm_get_sockaddr_str(node,NULL,http_p->remote);
+        abcdk_asynctcp_get_sockaddr_str(node,NULL,http_p->remote);
     
     /*释放另一端的隧道。*/
     if(http_p->tunnel)
     {
-        abcdk_comm_set_timeout(http_p->tunnel,1);
-        abcdk_comm_unref(&http_p->tunnel);
+        abcdk_asynctcp_set_timeout(http_p->tunnel,1);
+        abcdk_asynctcp_unref(&http_p->tunnel);
     }
 
     abcdk_logger_printf(http_p->ctx->logger,LOG_INFO, "Close: %s", http_p->remote);
 }
 
-void _abcdkhttpd_output_event(abcdk_comm_node_t *node)
+void _abcdkhttpd_output_event(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     /*转发送数据完成，监听隧道另外一端的数据。*/
     if(http_p->tunnel)
-        abcdk_comm_recv_watch(http_p->tunnel);
+        abcdk_asynctcp_recv_watch(http_p->tunnel);
     
     /*转发送数据完成，监听隧道应答数据。*/
-    abcdk_comm_recv_watch(node);
+    abcdk_asynctcp_recv_watch(node);
 
 }
-void _abcdkhttpd_connect_event(abcdk_comm_node_t *node)
+void _abcdkhttpd_connect_event(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p;
     SSL *ssl_p = NULL;
@@ -1102,15 +1102,15 @@ void _abcdkhttpd_connect_event(abcdk_comm_node_t *node)
     int ver_l;
     int chk;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if(!http_p->remote[0])
-        abcdk_comm_get_sockaddr_str(node,NULL,http_p->remote);
+        abcdk_asynctcp_get_sockaddr_str(node,NULL,http_p->remote);
 
     /*设置默认协议。*/
     http_p->protocol = 1;
 
-    ssl_p = abcdk_comm_ssl(node);
+    ssl_p = abcdk_asynctcp_ssl(node);
     if (!ssl_p)
         goto final;
 
@@ -1120,7 +1120,7 @@ void _abcdkhttpd_connect_event(abcdk_comm_node_t *node)
     if (chk != X509_V_OK)
     {
         /*修改超时，使用超时检测器关闭。*/
-        abcdk_comm_set_timeout(node, 1);
+        abcdk_asynctcp_set_timeout(node, 1);
         return;
     }
 
@@ -1140,24 +1140,24 @@ final:
     abcdk_logger_printf(http_p->ctx->logger,LOG_INFO, "Connected: %s", http_p->remote);
 
     /*已连接到远端，注册读写事件。*/
-    abcdk_comm_recv_watch(node);
-    abcdk_comm_send_watch(node);
+    abcdk_asynctcp_recv_watch(node);
+    abcdk_asynctcp_send_watch(node);
 }
 
-void _abcdkhttpd_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
+void _abcdkhttpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *listen)
 {
-    abcdk_comm_node_t *node_p;
+    abcdk_asynctcp_node_t *node_p;
     abcdkhttpd_node_t *http_listen_p;
     abcdkhttpd_node_t *http_p;
     abcdk_object_t *userdata_p = NULL;
 
-    http_listen_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(listen);
+    http_listen_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(listen);
 
-    node_p = abcdk_comm_alloc(http_listen_p->ctx->comm, sizeof(abcdkhttpd_node_t));
+    node_p = abcdk_asynctcp_alloc(http_listen_p->ctx->comm, sizeof(abcdkhttpd_node_t));
     if (!node_p)
         return;
 
-    userdata_p = abcdk_comm_userdata(node_p);
+    userdata_p = abcdk_asynctcp_userdata(node_p);
     http_p = (abcdkhttpd_node_t *)userdata_p->pptrs[0];
 
     /*绑定扩展数据析构函数。*/
@@ -1177,34 +1177,34 @@ void _abcdkhttpd_prepare_cb(abcdk_comm_node_t **node, abcdk_comm_node_t *listen)
     *node = node_p;
 }
 
-void _abcdkhttpd_event_cb(abcdk_comm_node_t *node, uint32_t event, int *result)
+void _abcdkhttpd_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
 {
     switch (event)
     {
-    case ABCDK_COMM_EVENT_ACCEPT:
+    case ABCDK_ASYNCTCP_EVENT_ACCEPT:
         _abcdkhttpd_accept_event(node, result);
         break;
-    case ABCDK_COMM_EVENT_CONNECT:
+    case ABCDK_ASYNCTCP_EVENT_CONNECT:
         _abcdkhttpd_connect_event(node);
         break;
-    case ABCDK_COMM_EVENT_INPUT:
+    case ABCDK_ASYNCTCP_EVENT_INPUT:
         break;
-    case ABCDK_COMM_EVENT_OUTPUT:
+    case ABCDK_ASYNCTCP_EVENT_OUTPUT:
         _abcdkhttpd_output_event(node);
         break;
-    case ABCDK_COMM_EVENT_CLOSE:
-    case ABCDK_COMM_EVENT_INTERRUPT:
+    case ABCDK_ASYNCTCP_EVENT_CLOSE:
+    case ABCDK_ASYNCTCP_EVENT_INTERRUPT:
     default:
         _abcdkhttpd_close_event(node);
         break;
     }
 }
 
-void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain)
+void _abcdkhttpd_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)abcdk_comm_get_userdata(node);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -1218,7 +1218,7 @@ void _abcdkhttpd_request_cb(abcdk_comm_node_t *node, const void *data, size_t si
         if(http_p->protocol == 1)
             _abcdkhttpd_request_v1(node,data,size,remain);
         else 
-            abcdk_comm_set_timeout(node,1);
+            abcdk_asynctcp_set_timeout(node,1);
     }
 }
 
@@ -1367,7 +1367,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         magic_load(ctx->magic_handle, NULL);
 #endif // _MAGIC_H
 
-    ctx->comm = abcdk_comm_start(ctx->max_client, -1);
+    ctx->comm = abcdk_asynctcp_start(ctx->max_client, -1);
     if (!ctx->comm)
     {
         fprintf(stderr, "内存错误。\n");
@@ -1386,14 +1386,14 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        ctx->comm_listen[i] = abcdk_comm_alloc(ctx->comm,sizeof(abcdkhttpd_node_t));
+        ctx->comm_listen[i] = abcdk_asynctcp_alloc(ctx->comm,sizeof(abcdkhttpd_node_t));
         if (!ctx->comm_listen[i])
         {
             fprintf(stderr, "内存错误。\n");
             goto final;
         }
 
-        userdata_p = abcdk_comm_userdata(ctx->comm_listen[i]);
+        userdata_p = abcdk_asynctcp_userdata(ctx->comm_listen[i]);
         http_p = (abcdkhttpd_node_t *)userdata_p->pptrs[0];
 
         /*绑定扩展数据析构函数。*/
@@ -1403,8 +1403,8 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         /*绑定上下文环境指针。*/
         http_p->ctx = ctx;
 
-        abcdk_comm_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_event_cb, _abcdkhttpd_request_cb};
-        chk = abcdk_comm_listen(ctx->comm_listen[i], ctx->ssl_ctx_listen[i], &ctx->addr_listen[i], &cb);
+        abcdk_asynctcp_callback_t cb = {_abcdkhttpd_prepare_cb, _abcdkhttpd_event_cb, _abcdkhttpd_request_cb};
+        chk = abcdk_asynctcp_listen(ctx->comm_listen[i], ctx->ssl_ctx_listen[i], &ctx->addr_listen[i], &cb);
         if (chk != 0)
         {
             fprintf(stderr, "监听错误，无权限或端口被占用。\n");
@@ -1418,10 +1418,10 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
 final:
 
-    abcdk_comm_stop(&ctx->comm);
+    abcdk_asynctcp_stop(&ctx->comm);
 
     for (int i = 0; i < 2; i++)
-        abcdk_comm_unref(&ctx->comm_listen[i]);
+        abcdk_asynctcp_unref(&ctx->comm_listen[i]);
 
 #ifdef HEADER_SSL_H
     for (int i = 0; i < 2; i++)

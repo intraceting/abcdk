@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_COMM_H
-#define ABCDK_UTIL_COMM_H
+#ifndef ABCDK_UTIL_ASYNCTCP_H
+#define ABCDK_UTIL_ASYNCTCP_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/getargs.h"
@@ -25,70 +25,70 @@ typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 #endif //HEADER_SSL_H
 
-/** 通讯环境。 */
-typedef struct _abcdk_comm abcdk_comm_t;
-/** 通讯节点。 */
-typedef struct _abcdk_comm_node abcdk_comm_node_t;
+/** 简单的异步TCP通讯。 */
+typedef struct _abcdk_asynctcp abcdk_asynctcp_t;
+/** 异步TCP节点。 */
+typedef struct _abcdk_asynctcp_node abcdk_asynctcp_node_t;
 
 /* 通知事件。*/
-typedef enum _abcdk_comm_event
+typedef enum _abcdk_asynctcp_event
 {
     /**
      * 新连接。
      * 
      * @return 0 允许连接，-1 禁止连接。
     */
-    ABCDK_COMM_EVENT_ACCEPT = 1,
-#define ABCDK_COMM_EVENT_ACCEPT ABCDK_COMM_EVENT_ACCEPT
+    ABCDK_ASYNCTCP_EVENT_ACCEPT = 1,
+#define ABCDK_ASYNCTCP_EVENT_ACCEPT ABCDK_ASYNCTCP_EVENT_ACCEPT
 
     /**
      * 已连接。
      * 
      * @return 忽略。
     */
-    ABCDK_COMM_EVENT_CONNECT = 2,
-#define ABCDK_COMM_EVENT_CONNECT ABCDK_COMM_EVENT_CONNECT
+    ABCDK_ASYNCTCP_EVENT_CONNECT = 2,
+#define ABCDK_ASYNCTCP_EVENT_CONNECT ABCDK_ASYNCTCP_EVENT_CONNECT
 
     /**
      * 有数据到达。
      * 
      * @return 忽略。
     */
-    ABCDK_COMM_EVENT_INPUT = 3,
-#define ABCDK_COMM_EVENT_INPUT ABCDK_COMM_EVENT_INPUT
+    ABCDK_ASYNCTCP_EVENT_INPUT = 3,
+#define ABCDK_ASYNCTCP_EVENT_INPUT ABCDK_ASYNCTCP_EVENT_INPUT
 
     /**
      * 链路空闲，可以发送。
      * 
      * @return 忽略。
     */
-    ABCDK_COMM_EVENT_OUTPUT = 4,
-#define ABCDK_COMM_EVENT_OUTPUT ABCDK_COMM_EVENT_OUTPUT
+    ABCDK_ASYNCTCP_EVENT_OUTPUT = 4,
+#define ABCDK_ASYNCTCP_EVENT_OUTPUT ABCDK_ASYNCTCP_EVENT_OUTPUT
 
     /**
      * 已断开。
      * 
      * @return 忽略。
     */
-    ABCDK_COMM_EVENT_CLOSE = 5,
-#define ABCDK_COMM_EVENT_CLOSE ABCDK_COMM_EVENT_CLOSE
+    ABCDK_ASYNCTCP_EVENT_CLOSE = 5,
+#define ABCDK_ASYNCTCP_EVENT_CLOSE ABCDK_ASYNCTCP_EVENT_CLOSE
 
     /**
      * 中断(资源不足，或禁止连接)。
      * 
      * @return 忽略。
     */
-    ABCDK_COMM_EVENT_INTERRUPT = 6
-#define ABCDK_COMM_EVENT_INTERRUPT ABCDK_COMM_EVENT_INTERRUPT
+    ABCDK_ASYNCTCP_EVENT_INTERRUPT = 6
+#define ABCDK_ASYNCTCP_EVENT_INTERRUPT ABCDK_ASYNCTCP_EVENT_INTERRUPT
 
-}abcdk_comm_event_t;
+}abcdk_asynctcp_event_t;
 
 /** 
- * 通讯对象的回调函数。
+ * 回调函数。
  * 
  * @note 服务端新的连接会复制成员指针。
 */
-typedef struct _abcdk_comm_callback
+typedef struct _abcdk_asynctcp_callback
 {
     /**
      * 为新连接做准备工作的通知回调函数。
@@ -97,76 +97,76 @@ typedef struct _abcdk_comm_callback
      * 
      * @param [out] node 新的节点，返回时填写。
      */
-    void (*prepare_cb)(abcdk_comm_node_t **node, abcdk_comm_node_t *listen);
+    void (*prepare_cb)(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *listen);
 
     /**
      * 事件通知回调函数。
      *
-     * @note 除ABCDK_COMM_EVENT_ACCEPT事件外，其余事件均忽略返回值。
+     * @note 除ABCDK_ASYNCTCP_EVENT_ACCEPT事件外，其余事件均忽略返回值。
      */
-    void (*event_cb)(abcdk_comm_node_t *node, uint32_t event, int *result);
+    void (*event_cb)(abcdk_asynctcp_node_t *node, uint32_t event, int *result);
 
     /**
      * 请求数据到达通知回调函数。
      *
-     * @note 如果未指定，则通知ABCDK_COMM_EVENT_INPUT事件，否则将被拦截。
+     * @note 如果未指定，则通知ABCDK_ASYNCTCP_EVENT_INPUT事件，否则将被拦截。
      *
      * @param [out] remain 剩余的数据长度，返回时填写。
      */
-    void (*request_cb)(abcdk_comm_node_t *node, const void *data, size_t size, size_t *remain);
+    void (*request_cb)(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain);
 
-} abcdk_comm_callback_t;
+} abcdk_asynctcp_callback_t;
 
 /**
- * 通讯对象的释放。
+ * 释放。
  * 
- * @note 当引用计数为0时，通讯对像将被删除。
+ * @note 当引用计数为0时，对像将被删除。
 */
-void abcdk_comm_unref(abcdk_comm_node_t **node);
+void abcdk_asynctcp_unref(abcdk_asynctcp_node_t **node);
 
 /**
- * 通讯对象的引用。
+ * 引用。
 */
-abcdk_comm_node_t *abcdk_comm_refer(abcdk_comm_node_t *src);
+abcdk_asynctcp_node_t *abcdk_asynctcp_refer(abcdk_asynctcp_node_t *src);
 
 /**
- * 申请通讯对象。
+ * 申请节点。
  * 
  * @param [in] userdata 用户数据长度。
  *
- * @return !NULL(0) 成功(通讯对象指针)，NULL(0) 失败。
+ * @return !NULL(0) 成功(指针)，NULL(0) 失败。
  */
-abcdk_comm_node_t *abcdk_comm_alloc(abcdk_comm_t *ctx,size_t userdata);
+abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdata);
 
 /**
  * SSL环境。
  * 
  * @note 连接建立后有效，且调用者不能释放。
 */
-SSL *abcdk_comm_ssl(abcdk_comm_node_t *node);
+SSL *abcdk_asynctcp_ssl(abcdk_asynctcp_node_t *node);
 
 /**
- * 通讯对象的用户环境。
+ * 用户环境对象。
  * 
  * @note 增加引用，调用者需要主动释放。
 */
-abcdk_object_t *abcdk_comm_userdata(abcdk_comm_node_t *node);
+abcdk_object_t *abcdk_asynctcp_userdata(abcdk_asynctcp_node_t *node);
 
 /**
- * 获取通讯对象的用户环境指针。
+ * 用户环境指针。
  * 
  * @return 旧的指针(0号索引)。
 */
-void *abcdk_comm_get_userdata0(abcdk_comm_node_t *node);
-#define abcdk_comm_get_userdata abcdk_comm_get_userdata0
+void *abcdk_asynctcp_get_userdata0(abcdk_asynctcp_node_t *node);
+#define abcdk_asynctcp_get_userdata abcdk_asynctcp_get_userdata0
 
 /**
- * 设置通讯对象的用户环境指针。
+ * 设置用户环境指针。
  * 
  * @return 旧的指针(0号索引)。
 */
-void *abcdk_comm_set_userdata0(abcdk_comm_node_t *node,void *opaque);
-#define abcdk_comm_set_userdata abcdk_comm_set_userdata0
+void *abcdk_asynctcp_set_userdata0(abcdk_asynctcp_node_t *node,void *opaque);
+#define abcdk_asynctcp_set_userdata abcdk_asynctcp_set_userdata0
 
 /**
  * 设置超时。
@@ -177,14 +177,14 @@ void *abcdk_comm_set_userdata0(abcdk_comm_node_t *node,void *opaque);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_set_timeout(abcdk_comm_node_t *node, time_t timeout);
+int abcdk_asynctcp_set_timeout(abcdk_asynctcp_node_t *node, time_t timeout);
 
 /**
  * 获取地址。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote);
+int abcdk_asynctcp_get_sockaddr(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote);
 
 /**
  * 获取地址(转换成字符串)。
@@ -193,14 +193,14 @@ int abcdk_comm_get_sockaddr(abcdk_comm_node_t *node, abcdk_sockaddr_t *local,abc
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_get_sockaddr_str(abcdk_comm_node_t *node, char local[NAME_MAX],char remote[NAME_MAX]);
+int abcdk_asynctcp_get_sockaddr_str(abcdk_asynctcp_node_t *node, char local[NAME_MAX],char remote[NAME_MAX]);
 
 /**
  * 读。
  * 
  * @return > 0 已读取数据的长度，0 无数据。
 */
-ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size);
+ssize_t abcdk_asynctcp_recv(abcdk_asynctcp_node_t *node, void *buf, size_t size);
 
 /**
  * 监听输入事件。
@@ -210,14 +210,14 @@ ssize_t abcdk_comm_recv(abcdk_comm_node_t *node, void *buf, size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_recv_watch(abcdk_comm_node_t *node);
+int abcdk_asynctcp_recv_watch(abcdk_asynctcp_node_t *node);
 
 /**
  * 写。
  * 
  * @return > 0 已写入数据的长度，0 链路忙。
 */
-ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size);
+ssize_t abcdk_asynctcp_send(abcdk_asynctcp_node_t *node, void *buf, size_t size);
 
 /**
  * 监听输出事件。
@@ -227,7 +227,7 @@ ssize_t abcdk_comm_send(abcdk_comm_node_t *node, void *buf, size_t size);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_comm_send_watch(abcdk_comm_node_t *node);
+int abcdk_asynctcp_send_watch(abcdk_asynctcp_node_t *node);
 
 /**
  * 停止通讯引擎。
@@ -236,7 +236,7 @@ int abcdk_comm_send_watch(abcdk_comm_node_t *node);
  * 
  * @param [in out] ctx 环境指针。
 */
-void abcdk_comm_stop(abcdk_comm_t **ctx);
+void abcdk_asynctcp_stop(abcdk_asynctcp_t **ctx);
 
 /**
  * 启动通讯引擎。
@@ -246,7 +246,7 @@ void abcdk_comm_stop(abcdk_comm_t **ctx);
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_comm_t *abcdk_comm_start(int max,int cpu);
+abcdk_asynctcp_t *abcdk_asynctcp_start(int max,int cpu);
 
 /**
  * 监听客户端连接。
@@ -258,7 +258,7 @@ abcdk_comm_t *abcdk_comm_start(int max,int cpu);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_callback_t *cb);
+int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_asynctcp_callback_t *cb);
 
 /**
  * 连接远程服务器。
@@ -272,7 +272,7 @@ int abcdk_comm_listen(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_comm_callback_t *cb);
+int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_asynctcp_callback_t *cb);
 
 /**
  * 投递数据。
@@ -283,14 +283,14 @@ int abcdk_comm_connect(abcdk_comm_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
 */
-int abcdk_comm_post(abcdk_comm_node_t *node, abcdk_object_t *data);
+int abcdk_asynctcp_post(abcdk_asynctcp_node_t *node, abcdk_object_t *data);
 
 /**
  * 投递数据。
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
  */
-int abcdk_comm_post_buffer(abcdk_comm_node_t *node, const void *data,size_t size);
+int abcdk_asynctcp_post_buffer(abcdk_asynctcp_node_t *node, const void *data,size_t size);
 
 /** 
  * 投递数据。
@@ -299,15 +299,15 @@ int abcdk_comm_post_buffer(abcdk_comm_node_t *node, const void *data,size_t size
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
 */
-int abcdk_comm_post_vformat(abcdk_comm_node_t *node, int max, const char *fmt, va_list ap);
+int abcdk_asynctcp_post_vformat(abcdk_asynctcp_node_t *node, int max, const char *fmt, va_list ap);
 
 /** 
  * 投递数据。
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
 */
-int abcdk_comm_post_format(abcdk_comm_node_t *node, int max, const char *fmt, ...);
+int abcdk_asynctcp_post_format(abcdk_asynctcp_node_t *node, int max, const char *fmt, ...);
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_COMM_H
+#endif //ABCDK_UTIL_ASYNCTCP_H

@@ -3376,15 +3376,15 @@ typedef struct _one_node
     abcdk_message_t *in_buffer;
 
     abcdk_message_t *out_buffer;
-    abcdk_comm_queue_t *out_queue;
+    abcdk_asynctcp_queue_t *out_queue;
 
-    abcdk_comm_node_t *node;
+    abcdk_asynctcp_node_t *node;
 
-    abcdk_comm_waiter_t *rsp;
+    abcdk_asynctcp_waiter_t *rsp;
 
 }one_node_t;
 
-int smb_protocol(abcdk_comm_node_t *node, abcdk_message_t *msg)
+int smb_protocol(abcdk_asynctcp_node_t *node, abcdk_message_t *msg)
 {
     size_t off = abcdk_message_offset(msg);
     if (off < 4)
@@ -3412,7 +3412,7 @@ NEXT_MSG:
 
     if (!one->out_buffer)
     {
-        one->out_buffer = abcdk_comm_queue_pop(one->out_queue);
+        one->out_buffer = abcdk_asynctcp_queue_pop(one->out_queue);
         if (!one->out_buffer)
             return;
     }
@@ -3420,12 +3420,12 @@ NEXT_MSG:
     chk = abcdk_message_send(one->node, one->out_buffer);
     if (chk < 0)
     {
-        abcdk_comm_set_timeout(one->node, 1);
+        abcdk_asynctcp_set_timeout(one->node, 1);
         return;
     }
     else if (chk == 0)
     {
-        abcdk_comm_send_watch(one->node);
+        abcdk_asynctcp_send_watch(one->node);
         return;
     }
     
@@ -3434,24 +3434,24 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-void test_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *listen)
+void test_message_cb(abcdk_asynctcp_node_t *node, uint32_t event,abcdk_asynctcp_node_t *listen)
 {
-    one_node_t *one = (one_node_t *)abcdk_comm_get_userdata(node);
+    one_node_t *one = (one_node_t *)abcdk_asynctcp_get_userdata(node);
 
     switch (event)
     {
-    case ABCDK_COMM_EVENT_ACCEPT:
+    case ABCDK_ASYNCTCP_EVENT_ACCEPT:
     {
         assert(one == NULL);
         one = (one_node_t*)abcdk_heap_alloc(sizeof(one_node_t));
-        one->out_queue = abcdk_comm_queue_alloc();
-        one->node = abcdk_comm_node_refer(node);
-        abcdk_comm_set_userdata(node,one);
+        one->out_queue = abcdk_asynctcp_queue_alloc();
+        one->node = abcdk_asynctcp_node_refer(node);
+        abcdk_asynctcp_set_userdata(node,one);
 
-        abcdk_comm_recv_watch(node);
+        abcdk_asynctcp_recv_watch(node);
     }
         break;
-    case ABCDK_COMM_EVENT_INPUT:
+    case ABCDK_ASYNCTCP_EVENT_INPUT:
         {
             if(!one->in_buffer)
             {
@@ -3462,42 +3462,42 @@ void test_message_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *
             int chk = abcdk_message_recv(node,one->in_buffer);
             if(chk < 0)
             {
-                abcdk_comm_set_timeout(node,1);
+                abcdk_asynctcp_set_timeout(node,1);
             }
             else if(chk == 0)
             {
-                abcdk_comm_recv_watch(node);
+                abcdk_asynctcp_recv_watch(node);
             }
             else
             {
                 abcdk_message_t *msg_copy = abcdk_message_refer(one->in_buffer);
                 abcdk_message_unref(&one->in_buffer);
-                abcdk_comm_recv_watch(node);
+                abcdk_asynctcp_recv_watch(node);
 
             //    usleep(rand()%10000+1000);
 
                 abcdk_message_reset(msg_copy);
-                abcdk_comm_queue_push(one->out_queue,msg_copy);
-                abcdk_comm_send_watch(one->node);
+                abcdk_asynctcp_queue_push(one->out_queue,msg_copy);
+                abcdk_asynctcp_send_watch(one->node);
             }
         }
         break;
-    case ABCDK_COMM_EVENT_OUTPUT:
+    case ABCDK_ASYNCTCP_EVENT_OUTPUT:
             _output_event(one);
         break;
-    case ABCDK_COMM_EVENT_CLOSE:
+    case ABCDK_ASYNCTCP_EVENT_CLOSE:
     default:
     {
         char sockname_str[100] = {0}, peername_str[100] = {0};
-        abcdk_comm_get_sockaddr_str(one->node, sockname_str,peername_str);
+        abcdk_asynctcp_get_sockaddr_str(one->node, sockname_str,peername_str);
 
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
         if(one)
         {
         abcdk_message_unref(&one->in_buffer);
-        abcdk_comm_queue_free(&one->out_queue);
-        abcdk_comm_node_unref(&one->node);
+        abcdk_asynctcp_queue_free(&one->out_queue);
+        abcdk_asynctcp_node_unref(&one->node);
         abcdk_heap_free(one);
         }
     }
@@ -3517,24 +3517,24 @@ void *test_send_msg(void *args)
 
         uint64_t mid = abcdk_time_clock2kind_with(0, 6);
 
-        abcdk_comm_waiter_request2(one->rsp,&mid);
+        abcdk_asynctcp_waiter_request2(one->rsp,&mid);
 
         ABCDK_PTR2U32(abcdk_message_data(msg), 0) = abcdk_endian_h_to_b32(128);
         ABCDK_PTR2U64(abcdk_message_data(msg), 4) = abcdk_endian_h_to_b64(mid);
         ABCDK_PTR2U32(abcdk_message_data(msg), 12) = abcdk_endian_h_to_b32(i+1);
 
-        abcdk_comm_queue_push(one->out_queue, msg);
-        abcdk_comm_send_watch(one->node);
+        abcdk_asynctcp_queue_push(one->out_queue, msg);
+        abcdk_asynctcp_send_watch(one->node);
 
-        abcdk_comm_queue_t * q = abcdk_comm_waiter_wait2(one->rsp,&mid,1,10);
+        abcdk_asynctcp_queue_t * q = abcdk_asynctcp_waiter_wait2(one->rsp,&mid,1,10);
         if(!q)
             continue;
 
         uint64_t a = abcdk_time_clock2kind_with(0,6);
 
-        printf("mid(%lu),timeout(%lu), count(%lu)\n",mid,a-mid,abcdk_comm_queue_count(q));
+        printf("mid(%lu),timeout(%lu), count(%lu)\n",mid,a-mid,abcdk_asynctcp_queue_count(q));
         
-        abcdk_comm_queue_free(&q);
+        abcdk_asynctcp_queue_free(&q);
     }
 
     return NULL;
@@ -3542,21 +3542,21 @@ void *test_send_msg(void *args)
 
 
 
-void test_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t *listen)
+void test_message2_cb(abcdk_asynctcp_node_t *node, uint32_t event,abcdk_asynctcp_node_t *listen)
 {
 
-    one_node_t *one = (one_node_t *)abcdk_comm_get_userdata(node);
+    one_node_t *one = (one_node_t *)abcdk_asynctcp_get_userdata(node);
 
     switch (event)
     {
-    case ABCDK_COMM_EVENT_CONNECT:
+    case ABCDK_ASYNCTCP_EVENT_CONNECT:
         {
-            one->out_queue = abcdk_comm_queue_alloc();
-            one->rsp = abcdk_comm_waiter_alloc();
-            one->node = abcdk_comm_node_refer(node);
-        //    abcdk_comm_set_userdata(node,one);
+            one->out_queue = abcdk_asynctcp_queue_alloc();
+            one->rsp = abcdk_asynctcp_waiter_alloc();
+            one->node = abcdk_asynctcp_node_refer(node);
+        //    abcdk_asynctcp_set_userdata(node,one);
 
-            abcdk_comm_recv_watch(node);
+            abcdk_asynctcp_recv_watch(node);
 
             abcdk_thread_t t;
             t.routine = test_send_msg;
@@ -3566,7 +3566,7 @@ void test_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t 
             
         }
         break;
-    case ABCDK_COMM_EVENT_INPUT:
+    case ABCDK_ASYNCTCP_EVENT_INPUT:
         {
             if(!one->in_buffer)
             {
@@ -3577,14 +3577,14 @@ void test_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t 
             int chk = abcdk_message_recv(node,one->in_buffer);
             if(chk != 1)
             {
-                abcdk_comm_recv_watch(node);
+                abcdk_asynctcp_recv_watch(node);
             }
             else
             {
                 abcdk_message_t *msg_copy = abcdk_message_refer(one->in_buffer);
                 abcdk_message_unref(&one->in_buffer);
 
-                abcdk_comm_recv_watch(node);
+                abcdk_asynctcp_recv_watch(node);
 
                 size_t len = abcdk_endian_b_to_h32(ABCDK_PTR2U32(abcdk_message_data(msg_copy),0));
                 uint64_t mid = abcdk_endian_b_to_h64(ABCDK_PTR2U64(abcdk_message_data(msg_copy),4));
@@ -3593,27 +3593,27 @@ void test_message2_cb(abcdk_comm_node_t *node, uint32_t event,abcdk_comm_node_t 
 
                 //printf("mid=%lu,id=%u,time=%lu\n",mid,id,a-mid);
 
-                abcdk_comm_waiter_response2(one->rsp,&mid,msg_copy);
+                abcdk_asynctcp_waiter_response2(one->rsp,&mid,msg_copy);
 
                // abcdk_message_unref(&msg_copy);
                 
             }
         }
         break;
-    case ABCDK_COMM_EVENT_OUTPUT:
+    case ABCDK_ASYNCTCP_EVENT_OUTPUT:
            _output_event(one);
         break;
     default:
     {
         char sockname_str[100] = {0}, peername_str[100] = {0};
-        abcdk_comm_get_sockaddr_str(one->node, sockname_str, peername_str);
+        abcdk_asynctcp_get_sockaddr_str(one->node, sockname_str, peername_str);
 
         printf("Socket: %s -> %s Disconnected.\n", sockname_str, peername_str);
 
         abcdk_message_unref(&one->in_buffer);
-        abcdk_comm_queue_free(&one->out_queue);
-        abcdk_comm_node_unref(&one->node);
-        abcdk_comm_waiter_free(&one->rsp);
+        abcdk_asynctcp_queue_free(&one->out_queue);
+        abcdk_asynctcp_node_unref(&one->node);
+        abcdk_asynctcp_waiter_free(&one->rsp);
         abcdk_heap_free(one);
     }
     break;
@@ -3625,7 +3625,7 @@ void test_comm(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_t *ctx = abcdk_comm_start(0);
+    abcdk_asynctcp_t *ctx = abcdk_asynctcp_start(0);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx = NULL;
@@ -3663,26 +3663,26 @@ void test_comm(abcdk_tree_t *args)
     const char *listen_p = abcdk_option_get(args,"--listen",0,"0.0.0.0:12345");
     abcdk_sockaddr_from_string(&addr,listen_p,0);
 
-    // abcdk_comm_listen(ctx,server_ssl_ctx,&addr,test_message_cb,NULL);
+    // abcdk_asynctcp_listen(ctx,server_ssl_ctx,&addr,test_message_cb,NULL);
 
     // const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     // abcdk_sockaddr_from_string(&addr2,connect_p,0);
-    // abcdk_comm_connect(ctx,client_ssl_ctx,&addr2,test_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
+    // abcdk_asynctcp_connect(ctx,client_ssl_ctx,&addr2,test_message2_cb,abcdk_heap_alloc(sizeof(one_node_t)));
  
 
 
     while (getchar() != 'Q')
         ;
 
-    abcdk_comm_stop(&ctx);
+    abcdk_asynctcp_stop(&ctx);
 
 }
 
-void test_easy_request_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
+void test_easy_request_cb(abcdk_asynctcp_node_t *easy, const void *data, size_t len)
 {
     char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
 
-    abcdk_comm_get_sockaddr_str(easy,sockname_str,peername_str);
+    abcdk_asynctcp_get_sockaddr_str(easy,sockname_str,peername_str);
 
     printf("Server(%s -> %s): ", sockname_str, peername_str);
 
@@ -3699,8 +3699,8 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
 
         usleep(rand()%10000+1000);
 
-        abcdk_comm_easy_response(easy,data,len);
-        abcdk_comm_easy_request(easy,data,len,NULL);
+        abcdk_asynctcp_easy_response(easy,data,len);
+        abcdk_asynctcp_easy_request(easy,data,len,NULL);
 
 
     }
@@ -3708,11 +3708,11 @@ void test_easy_request_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
      printf("\n");
 }
 
-void test_easy_request2_cb(abcdk_comm_node_t *easy, const void *data, size_t len)
+void test_easy_request2_cb(abcdk_asynctcp_node_t *easy, const void *data, size_t len)
 {
     char sockname_str[NAME_MAX] = {0}, peername_str[NAME_MAX] = {0};
     
-    abcdk_comm_get_sockaddr_str(easy,sockname_str,peername_str);
+    abcdk_asynctcp_get_sockaddr_str(easy,sockname_str,peername_str);
 
     printf("Client(%s -> %s): ", sockname_str, peername_str);
 
@@ -3733,7 +3733,7 @@ void test_easy(abcdk_tree_t *args)
 {
     signal(SIGPIPE,NULL);
 
-    abcdk_comm_t *ctx = abcdk_comm_start(0);
+    abcdk_asynctcp_t *ctx = abcdk_asynctcp_start(0);
 
     SSL_CTX *server_ssl_ctx = NULL;
     SSL_CTX *client_ssl_ctx[4] = {NULL};
@@ -3779,8 +3779,8 @@ void test_easy(abcdk_tree_t *args)
     //addr.family = AF_UNIX;
     //strncpy(addr.addr_un.sun_path,sunpath,108);
 
-    abcdk_comm_node_t *easy_listen = abcdk_comm_node_alloc(ctx);
-    abcdk_comm_easy_listen(easy_listen,server_ssl_ctx,&addr,test_easy_request_cb);
+    abcdk_asynctcp_node_t *easy_listen = abcdk_asynctcp_node_alloc(ctx);
+    abcdk_asynctcp_easy_listen(easy_listen,server_ssl_ctx,&addr,test_easy_request_cb);
 
     const char *connect_p = abcdk_option_get(args,"--connect",0,"127.0.0.1:12345");
     abcdk_sockaddr_from_string(&addr2,connect_p,0);
@@ -3788,11 +3788,11 @@ void test_easy(abcdk_tree_t *args)
     //strncpy(addr2.addr_un.sun_path,sunpath,108);
 
     int nn = 4;
-    abcdk_comm_node_t *easy_client[40] = {NULL};
+    abcdk_asynctcp_node_t *easy_client[40] = {NULL};
     for (int i = 0; i < nn; i++)
     {
-        easy_client[i] = abcdk_comm_node_alloc(ctx);
-        abcdk_comm_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, test_easy_request2_cb);
+        easy_client[i] = abcdk_asynctcp_node_alloc(ctx);
+        abcdk_asynctcp_easy_connect(easy_client[i],client_ssl_ctx[i], &addr2, test_easy_request2_cb);
     }
 
     uint64_t d = 0,s = 0;
@@ -3816,7 +3816,7 @@ void test_easy(abcdk_tree_t *args)
 
         sprintf(req,"%lu",abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6));
 
-        abcdk_comm_easy_request(easy_client[i%nn],req,len,&rsp);
+        abcdk_asynctcp_easy_request(easy_client[i%nn],req,len,&rsp);
         
 
         if (rsp)
@@ -3842,17 +3842,17 @@ void test_easy(abcdk_tree_t *args)
 
     printf("s = %lu,d = %lu\n",s,d);
 
- //   abcdk_comm_easy_set_timeout(easy_listen,1);
+ //   abcdk_asynctcp_easy_set_timeout(easy_listen,1);
 
-  //  abcdk_comm_easy_unref(&easy_listen);
+  //  abcdk_asynctcp_easy_unref(&easy_listen);
     while (getchar() != 'Q')
         ;
 
     for(int i = 0;i<nn;i++)
-        abcdk_comm_node_unref(&easy_client[i]);
+        abcdk_asynctcp_node_unref(&easy_client[i]);
 
 
-    abcdk_comm_stop(&ctx);
+    abcdk_asynctcp_stop(&ctx);
 
 
 }

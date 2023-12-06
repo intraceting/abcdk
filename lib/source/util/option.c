@@ -323,3 +323,28 @@ void abcdk_option_scan(abcdk_option_t *opt, abcdk_option_iterator_t *it)
 
     abcdk_tree_scan(opt->table, &tit);
 }
+
+int _abcdk_option_merge_merge_cb(const char *key,const char *value, void *opaque)
+{
+    abcdk_option_t *dst = (abcdk_option_t *)opaque;
+    int chk;
+
+    chk = abcdk_option_set(dst,key,value);
+    if(chk != 0)
+        return -1;
+
+    return 1;
+}
+
+void abcdk_option_merge(abcdk_option_t *dst,abcdk_option_t *src)
+{
+    abcdk_option_iterator_t it;
+
+    assert(dst != NULL && src != NULL);
+    assert(dst != src);
+
+    it.opaque = dst;
+    it.dump_cb = _abcdk_option_merge_merge_cb;
+
+    abcdk_option_scan(src,&it);
+}

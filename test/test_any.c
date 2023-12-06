@@ -513,7 +513,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-   // struct ifreq ifr;
+    abcdk_option_merge(args,args);
 
 #endif 
 }
