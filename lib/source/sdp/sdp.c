@@ -4,15 +4,15 @@
  * MIT License
  *
  */
-#include "abcdk/rtsp/sdp.h"
+#include "abcdk/sdp/sdp.h"
 
-void _abcdk_rtsp_sdp_destroy_cb(abcdk_object_t *alloc, void *opaque)
+void _abcdk_sdp_destroy_cb(abcdk_object_t *alloc, void *opaque)
 {
     for (int i = 1; i < alloc->numbers; i++)
         abcdk_heap_free(alloc->pstrs[i]);
 }
 
-char *_abcdk_rtsp_sdp_fgetline(FILE *fp, uint8_t delim)
+char *_abcdk_sdp_fgetline(FILE *fp, uint8_t delim)
 {
     char *line = NULL;
     size_t len = 0;
@@ -48,7 +48,7 @@ final:
     return p;
 }
 
-void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
+void _abcdk_sdp_split(abcdk_tree_t *sdp)
 {
     FILE *fp = NULL;
     char *p = NULL;
@@ -63,7 +63,7 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
     {
         if (i == 1)
         {
-            sdp->obj->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, '=');
+            sdp->obj->pstrs[i] = _abcdk_sdp_fgetline(fp, '=');
             if (!sdp->obj->pstrs[i])
                 break;
         }
@@ -74,13 +74,13 @@ void _abcdk_rtsp_sdp_split(abcdk_tree_t *sdp)
                 if (i != 2)
                     break;
 
-                sdp->obj->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, '\n');
+                sdp->obj->pstrs[i] = _abcdk_sdp_fgetline(fp, '\n');
                 if (!sdp->obj->pstrs[i])
                     break;
             }
             else
             {
-                sdp->obj->pstrs[i] = _abcdk_rtsp_sdp_fgetline(fp, ' ');
+                sdp->obj->pstrs[i] = _abcdk_sdp_fgetline(fp, ' ');
                 if (!sdp->obj->pstrs[i])
                     break;
             }
@@ -93,7 +93,7 @@ fianl:
         fclose(fp);
 }
 
-abcdk_tree_t *abcdk_rtsp_sdp_parse(const char *data, size_t size)
+abcdk_tree_t *abcdk_sdp_parse(const char *data, size_t size)
 {
     abcdk_tree_t *sdp = NULL, *sub = NULL, *sdp_p = NULL;
     FILE *fp = NULL;
@@ -117,14 +117,14 @@ abcdk_tree_t *abcdk_rtsp_sdp_parse(const char *data, size_t size)
             goto fianl_error;
 
         /*注册清理函数。*/
-        abcdk_object_atfree(sub->obj, _abcdk_rtsp_sdp_destroy_cb, NULL);
+        abcdk_object_atfree(sub->obj, _abcdk_sdp_destroy_cb, NULL);
 
-        sub->obj->pstrs[0] = _abcdk_rtsp_sdp_fgetline(fp, '\n');
+        sub->obj->pstrs[0] = _abcdk_sdp_fgetline(fp, '\n');
         if (!sub->obj->pstrs[0])
             break;
 
         /*分解字段。*/
-        _abcdk_rtsp_sdp_split(sub);
+        _abcdk_sdp_split(sub);
 
         if (sub->obj->pstrs[0][0] != 'm')
         {
@@ -153,7 +153,7 @@ fianl:
     return sdp;
 }
 
-int _abcdk_rtsp_sdp_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+int _abcdk_sdp_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     FILE *fp = (FILE *)opaque;
 
@@ -182,14 +182,14 @@ int _abcdk_rtsp_sdp_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
     return 1;
 }
 
-void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp)
+void abcdk_sdp_dump(FILE *fp, abcdk_tree_t *sdp)
 {
-    abcdk_tree_iterator_t it = {0, _abcdk_rtsp_sdp_dump_cb, fp};
+    abcdk_tree_iterator_t it = {0, _abcdk_sdp_dump_cb, fp};
 
     abcdk_tree_scan(sdp, &it);
 }
 
-abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
+abcdk_tree_t *abcdk_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
 {
     abcdk_tree_t *p = NULL, *p2 = NULL;
 
@@ -218,9 +218,9 @@ abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
     return NULL;
 }
 
-void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx)
+void abcdk_sdp_media_base_free(abcdk_sdp_media_base_t **ctx)
 {
-    abcdk_rtsp_sdp_media_base_t *ctx_p;
+    abcdk_sdp_media_base_t *ctx_p;
 
     if (!ctx || !*ctx)
         return;
@@ -240,7 +240,7 @@ void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-int _abcdk_rtsp_sdp_media_sprop_decode(abcdk_rtsp_sdp_media_base_t *ctx, const char *src)
+int _abcdk_sdp_media_sprop_decode(abcdk_sdp_media_base_t *ctx, const char *src)
 {
     const char *p_next = NULL;
     const char *p = src;
@@ -327,9 +327,9 @@ int _abcdk_rtsp_sdp_media_sprop_decode(abcdk_rtsp_sdp_media_base_t *ctx, const c
     return 0;
 }
 
-abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t fmt)
+abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t fmt)
 {
-    abcdk_rtsp_sdp_media_base_t *ctx = NULL;
+    abcdk_sdp_media_base_t *ctx = NULL;
     abcdk_tree_t *a_p = NULL;
     const char *p = NULL, *p_next = NULL;
     uint8_t payload, payload2;
@@ -340,7 +340,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
     /*也许传入的是根节点。*/ 
     if(!abcdk_tree_father(sdp))
     {
-        sdp = abcdk_rtsp_sdp_find_media(sdp,fmt);
+        sdp = abcdk_sdp_find_media(sdp,fmt);
         if(!sdp)
             return NULL;
         
@@ -360,7 +360,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
         }
     }
     
-    ctx = abcdk_heap_alloc(sizeof(abcdk_rtsp_sdp_media_base_t));
+    ctx = abcdk_heap_alloc(sizeof(abcdk_sdp_media_base_t));
     if (!ctx)
         return NULL;
 
@@ -433,7 +433,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
                     if (!ctx->fmtp_param[j])
                         goto final_error;
 
-                    chk = _abcdk_rtsp_sdp_media_sprop_decode(ctx,ctx->fmtp_param[j]->pstrs[0]);
+                    chk = _abcdk_sdp_media_sprop_decode(ctx,ctx->fmtp_param[j]->pstrs[0]);
                     if(chk != 0)
                         goto final_error;
 
@@ -464,7 +464,7 @@ abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp
 
 final_error:
 
-    abcdk_rtsp_sdp_media_base_free(&ctx);
+    abcdk_sdp_media_base_free(&ctx);
 
     return NULL;
 }

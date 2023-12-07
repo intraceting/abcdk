@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_RTPS_SDP_H
-#define ABCDK_RTPS_SDP_H
+#ifndef ABCDK_SDP_SDP_H
+#define ABCDK_SDP_SDP_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
@@ -17,7 +17,7 @@
 __BEGIN_DECLS
 
 /** RTSP媒体基本描述信息。*/
-typedef struct _abcdk_rtsp_sdp_media_base
+typedef struct _abcdk_sdp_media_base
 {
     /** 编码名称。*/
     abcdk_object_t *encoder;
@@ -67,13 +67,13 @@ typedef struct _abcdk_rtsp_sdp_media_base
     abcdk_object_t *sprop_sei;
 
 
-} abcdk_rtsp_sdp_media_base_t;
+} abcdk_sdp_media_base_t;
 
 /** 分析SDP。*/
-abcdk_tree_t *abcdk_rtsp_sdp_parse(const char *data, size_t size);
+abcdk_tree_t *abcdk_sdp_parse(const char *data, size_t size);
 
 /** 打印SDP。*/
-void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp);
+void abcdk_sdp_dump(FILE *fp, abcdk_tree_t *sdp);
 
 /** 
  * 在SDP中查找媒体节点。
@@ -82,10 +82,10 @@ void abcdk_rtsp_sdp_dump(FILE *fp, abcdk_tree_t *sdp);
  * 
  * @return !NULL(0) 成功(节点指针)，NULL(0) 失败。
 */
-abcdk_tree_t *abcdk_rtsp_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt);
+abcdk_tree_t *abcdk_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt);
 
 /**释放SDP媒体基本信息。*/
-void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx);
+void abcdk_sdp_media_base_free(abcdk_sdp_media_base_t **ctx);
 
 /**
  * 收集SDP中媒体基本信息。
@@ -94,8 +94,8 @@ void abcdk_rtsp_sdp_media_base_free(abcdk_rtsp_sdp_media_base_t **ctx);
  * 
  * @return !NULL(0) 成功，NULL(0) 失败(或未找到符合的媒体格式)。
 */
-abcdk_rtsp_sdp_media_base_t *abcdk_rtsp_sdp_media_base_collect(abcdk_tree_t *sdp,uint8_t fmt);
+abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp,uint8_t fmt);
 
 __END_DECLS
 
-#endif //ABCDK_RTPS_SDP_H
+#endif //ABCDK_SDP_SDP_H

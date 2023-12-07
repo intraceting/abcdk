@@ -92,6 +92,7 @@ BASE_SRC_FILES += $(wildcard lib/source/audio/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/database/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/http/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/json/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/sdp/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/ssl/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/video/*.c)
@@ -204,6 +205,12 @@ $(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
 #
 $(OBJ_PATH)/lib/source/http/%.o: lib/source/http/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/http/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/sdp/%.o: lib/source/sdp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/sdp/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
