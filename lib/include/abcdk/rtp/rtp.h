@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_RTP_H
-#define ABCDK_UTIL_RTP_H
+#ifndef ABCDK_RTP_RTP_H
+#define ABCDK_RTP_RTP_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/bloom.h"
@@ -98,4 +98,4 @@ void abcdk_rtp_header_deserialize(const void *data, size_t size, abcdk_rtp_heade
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_RTP_H
+#endif //ABCDK_RTP_RTP_H
