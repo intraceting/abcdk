@@ -81,23 +81,23 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-BASE_SRC_FILES += $(wildcard lib/source/util/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/shell/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/mp4/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/log/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/rtp/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/asio/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/audio/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/database/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/http/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/json/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/sdp/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/ssl/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/video/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/image/*.c)
-BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
+LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/shell/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/log/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/rtp/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/asio/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/audio/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/database/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/http/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/sdp/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/ssl/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/video/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/image/*.c)
+LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #
 TOOL_SRC_FILES = $(wildcard tool/*.c)
@@ -107,21 +107,24 @@ TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
+#伪目标，告诉make这些都是标志，而不是实体目录。
+#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
+.PHONY: lib tool test
 
 #
-all: base tool test
+all: lib tool test
 
 #
-base: base-src
+lib: lib-src
 	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(BASE_OBJ_FILES) $(LINK_FLAGS)
-	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(BASE_OBJ_FILES)
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(LIB_OBJ_FILES) $(LINK_FLAGS)
+	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #
-base-src: $(BASE_OBJ_FILES)
+lib-src: $(LIB_OBJ_FILES)
 
 #
-tool: tool-src base
+tool: tool-src lib
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/abcdk ${TOOL_OBJ_FILES} -l:libabcdk.a $(LINK_FLAGS)
 
@@ -129,7 +132,7 @@ tool: tool-src base
 tool-src: ${TOOL_OBJ_FILES} 
 	
 #
-test: test-src base
+test: test-src lib
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/test ${TEST_OBJ_FILES} -l:libabcdk.so $(LINK_FLAGS)
 
@@ -245,10 +248,10 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-base clean-tool clean-test
+clean: clean-lib clean-tool clean-test
 
 #
-clean-base:
+clean-lib:
 	rm -rf ${OBJ_PATH}/lib
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
