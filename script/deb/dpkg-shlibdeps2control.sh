@@ -9,7 +9,7 @@
 SHELLDIR=$(cd `dirname $0`; pwd)
 
 #
-STATUS=$(${SHELLDIR}/../core/check-package.sh dpkg-dev)
+STATUS=$(${SHELLDIR}/../core/check-package.sh dpkg-dev; echo $?)
 if [ ${STATUS} -ne 0 ];then
     exit 1
 fi
