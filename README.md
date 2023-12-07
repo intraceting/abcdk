@@ -9,21 +9,21 @@
 
 ## 主要模块
 
--asio 异步IO
--audio 音频
--database 数据库(unixodbc,sqlite,redis)
--ffmpeg FFMPEG二次封装
--http HTTP
--image 图像(freeimage)
--json JSON(json-c)
--log 日志
--mp4 MP4
--rtp RTP
--RTSP RTSP
--shell 外部命令二次封装
--ssl SSL套件(openssl)
--util 基础工具
--vidoe 视频
+- asio 异步IO
+- audio 音频
+- database 数据库(unixodbc,sqlite,redis)
+- ffmpeg FFMPEG二次封装
+- http HTTP
+- image 图像(freeimage)
+- json JSON(json-c)
+- log 日志
+- mp4 MP4
+- rtp RTP
+- RTSP RTSP
+- shell 外部命令二次封装
+- ssl SSL套件(openssl)
+- util 基础工具
+- vidoe 视频
 
 ## 拉取子项目
 
