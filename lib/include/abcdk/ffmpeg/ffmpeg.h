@@ -9,8 +9,8 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/time.h"
-#include "abcdk/util/avformat.h"
-#include "abcdk/util/avcodec.h"
+#include "abcdk/ffmpeg/avformat.h"
+#include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/util/option.h"
 
 __BEGIN_DECLS

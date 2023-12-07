@@ -15,7 +15,6 @@
 #include "abcdk/util/socket.h"
 #include "abcdk/util/crc.h"
 #include "abcdk/util/crc32.h"
-#include "abcdk/util/json.h"
 #include "abcdk/util/cap.h"
 #include "abcdk/util/basecode.h"
 #include "abcdk/util/base64.h"
@@ -25,15 +24,12 @@
 #include "abcdk/util/string.h"
 #include "abcdk/util/charset.h"
 #include "abcdk/util/reader.h"
-#include "abcdk/util/http.h"
 #include "abcdk/util/pool.h"
-#include "abcdk/util/openssl.h"
 #include "abcdk/util/epollex.h"
 #include "abcdk/util/math.h"
 #include "abcdk/util/exec.h"
 #include "abcdk/util/endian.h"
 #include "abcdk/util/defs.h"
-#include "abcdk/util/sqlite.h"
 #include "abcdk/util/general.h"
 #include "abcdk/util/dirent.h"
 #include "abcdk/util/getargs.h"
@@ -42,13 +38,10 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/atomic.h"
-#include "abcdk/util/redis.h"
-//#include "abcdk/util/odbcpool.h"
 #include "abcdk/util/option.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/map.h"
 #include "abcdk/util/heap.h"
-#include "abcdk/util/bmp.h"
 #include "abcdk/util/iconv.h"
 #include "abcdk/util/thread.h"
 #include "abcdk/util/geometry.h"
@@ -58,14 +51,9 @@
 #include "abcdk/util/popen.h"
 #include "abcdk/util/shm.h"
 #include "abcdk/util/path.h"
-//#include "abcdk/util/odbc.h"
 #include "abcdk/util/hash.h"
 #include "abcdk/util/mmap.h"
 #include "abcdk/util/hexdump.h"
-//#include "abcdk/util/freeimage.h"
-#include "abcdk/util/rtsp.h"
-#include "abcdk/util/rtp.h"
-#include "abcdk/util/aac.h"
 #include "abcdk/util/fnmatch.h"
 #include "abcdk/util/register.h"
 #include "abcdk/util/queue.h"
@@ -74,19 +62,13 @@
 #include "abcdk/util/md5.h"
 #include "abcdk/util/mutex.h"
 #include "abcdk/util/receiver.h"
-#include "abcdk/util/asynctcp.h"
-#include "abcdk/util/avutil.h"
-#include "abcdk/util/swscale.h"
-#include "abcdk/util/avcodec.h"
-#include "abcdk/util/avformat.h"
 #include "abcdk/util/enigma.h"
 #include "abcdk/util/random.h"
-#include "abcdk/util/logger.h"
 #include "abcdk/util/tar.h"
-#include "abcdk/util/h2645.h"
-#include "abcdk/util/h264.h"
-#include "abcdk/util/hevc.h"
 #include "abcdk/util/parallel.h"
+
+#include "abcdk/log/logger.h"
+
 #include "abcdk/shell/scsi.h"
 #include "abcdk/shell/mtab.h"
 #include "abcdk/shell/mmc.h"
@@ -95,15 +77,53 @@
 #include "abcdk/shell/proc.h"
 #include "abcdk/shell/block.h"
 #include "abcdk/shell/dmi.h"
+
 #include "abcdk/mp4/demuxer.h"
 #include "abcdk/mp4/muxer.h"
 #include "abcdk/mp4/file.h"
 #include "abcdk/mp4/atom.h"
+
 #include "abcdk/rtp/h264.h"
 #include "abcdk/rtp/hevc.h"
 #include "abcdk/rtp/aac.h"
+#include "abcdk/rtp/rtp.h"
+
 #include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/avutil.h"
+#include "abcdk/ffmpeg/swscale.h"
+#include "abcdk/ffmpeg/avcodec.h"
+#include "abcdk/ffmpeg/avformat.h"
 
+#include "abcdk/rtsp/sdp.h"
 
+#include "abcdk/database/redis.h"
+#include "abcdk/database/sqlite.h"
+/*
+ *1: 与freeimage存在宏定义冲突，因此不能同时包含。
+ *2: 调用者需要在合适位置引用下面的文件。
+#include "abcdk/database/odbc.h"
+#include "abcdk/database/odbcpool.h"
+*/
+
+#include "abcdk/image/bmp.h"
+/*
+ *1: 与odbc存在宏定义冲突，因此不能同时包含。
+ *2: 调用者需要在合适位置引用下面的文件。
+#include "abcdk/image/freeimage.h"
+*/
+
+#include "abcdk/audio/aac.h"
+
+#include "abcdk/video/h2645.h"
+#include "abcdk/video/h264.h"
+#include "abcdk/video/hevc.h"
+
+#include "abcdk/asio/asynctcp.h"
+
+#include "abcdk/json/json.h"
+
+#include "abcdk/http/http.h"
+
+#include "abcdk/ssl/openssl.h"
 
 #endif //ABCDK_H

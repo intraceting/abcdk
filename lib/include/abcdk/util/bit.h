@@ -46,7 +46,7 @@ int abcdk_bit_eof(abcdk_bit_t *ctx);
  * 
  * @return 游标移动前的位置。
 */
-uint64_t abcdk_bit_seek(abcdk_bit_t *ctx,ssize_t offset);
+size_t abcdk_bit_seek(abcdk_bit_t *ctx,ssize_t offset);
 
 /** 
  * 读。
@@ -71,6 +71,8 @@ uint64_t abcdk_bit_pread(abcdk_bit_t *ctx,size_t offset, uint8_t bits);
  * 写。
  * 
  * @note 不会改变游标位置。
+ * 
+ * @param [in] offset 偏移量(bit)。
 */
 void abcdk_bit_pwrite(abcdk_bit_t *ctx, size_t offset, uint8_t bits, uint64_t num);
 

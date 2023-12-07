@@ -84,10 +84,18 @@ OBJ_PATH = ${BUILD_PATH}/tmp
 BASE_SRC_FILES += $(wildcard lib/source/util/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/shell/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/mp4/*.c)
-BASE_SRC_FILES += $(wildcard lib/source/comm/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/log/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/rtp/*.c)
 BASE_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/asio/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/audio/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/database/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/http/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/json/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/ssl/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/video/*.c)
+BASE_SRC_FILES += $(wildcard lib/source/image/*.c)
 BASE_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${BASE_SRC_FILES}))
 
 #
@@ -132,6 +140,13 @@ $(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/util/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/log/%.o: lib/source/log/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/log/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
 #
 $(OBJ_PATH)/lib/source/shell/%.o: lib/source/shell/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/shell/
@@ -145,18 +160,6 @@ $(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/comm/%.o: lib/source/comm/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/comm/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/log/%.o: lib/source/log/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/log/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
 $(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/rtp/
 	rm -f $@
@@ -165,6 +168,60 @@ $(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
 #
 $(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/ffmpeg/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/asio/%.o: lib/source/asio/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/asio/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/audio/%.o: lib/source/audio/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/audio/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/database/%.o: lib/source/database/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/database/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/image/%.o: lib/source/image/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/image/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/json/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/http/%.o: lib/source/http/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/http/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/rtsp/%.o: lib/source/rtsp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/rtsp/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/ssl/%.o: lib/source/ssl/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/ssl/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/video/%.o: lib/source/video/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/video/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 

@@ -13,9 +13,9 @@ int abcdk_bit_eof(abcdk_bit_t *ctx)
     return ((ctx->pos < ctx->size * 8) ? 0 : 1);
 }
 
-uint64_t abcdk_bit_seek(abcdk_bit_t *ctx, ssize_t offset)
+size_t abcdk_bit_seek(abcdk_bit_t *ctx, ssize_t offset)
 {
-    uint64_t old;
+    size_t old;
 
     assert(ctx != NULL);
 
