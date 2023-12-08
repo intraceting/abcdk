@@ -170,7 +170,8 @@ usage: [ OPTIONS ]
      archive,modbus,libusb,mqtt,redis,json-c,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
-     kafka,uuid,libmagic,nghttp2,libdrm
+     kafka,uuid,libmagic,nghttp2,libdrm,
+     pam
 
     -e < name=value >
      自定义环境变量。
@@ -391,6 +392,7 @@ DependPackageCheck uuid HAVE_UUID
 DependPackageCheck libmagic HAVE_LIBMAGIC
 DependPackageCheck nghttp2 HAVE_NGHTTP2
 DependPackageCheck libdrm HAVE_LIBDRM
+DependPackageCheck pam HAVE_PAM
 
 #恢复默认。
 export DEPEND_PREFIX_PATH=""
