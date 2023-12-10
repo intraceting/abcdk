@@ -515,12 +515,21 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_hexdump(stderr, buf, 16, 0, NULL);
     }
 
-#elif 1
+#elif 0
 
     //abcdk_option_merge(args,args);
         // 身份验证成功，进行其他操作...
     fprintf(stderr, "euid:%d,uid:%d\n", geteuid(), getuid());
+#elif 1
 
+    for(int i = 0;environ[i];i++)
+    {
+        fprintf(stderr,"%s\n",environ[i]);
+    }
+
+    pid_t p = abcdk_exec_new("./abcdk","--listen \"0.0.0.0:1111\" --root-path /home/zpcoding/data/files-b/ --auto-index",NULL,0,0,NULL,NULL,NULL,NULL,NULL);
+
+    waitpid(p,NULL,0);
 
 #endif 
 }

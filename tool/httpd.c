@@ -1317,13 +1317,13 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
 
     if (!ctx->listen[ABCDKHTTPD_LISTEN] && !ctx->listen[ABCDKHTTPD_LISTEN_SSL])
     {
-        fprintf(stderr, "至少需要监听一个地址。\n");
+        abcdk_logger_printf(ctx->logger, LOG_WARNING, "至少需要监听一个地址。\n");
         goto final;
     }
 
     if (ctx->up_tmp_path && access(ctx->up_tmp_path, W_OK) != 0)
     {
-        fprintf(stderr, "'%s'缓存目录不存在或无法访问，忽略。\n", ctx->up_tmp_path);
+        abcdk_logger_printf(ctx->logger, LOG_WARNING, "'%s'缓存目录不存在或无法访问，忽略。\n", ctx->up_tmp_path);
         ctx->up_tmp_path = NULL;
     }
 
@@ -1332,7 +1332,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     {
         if (!ctx->cert_file || !ctx->key_file)
         {
-            fprintf(stderr, "SSL环境必须配置证书和私钥。\n");
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "SSL环境必须配置证书和私钥。\n");
             goto final;
         }
         else
@@ -1340,14 +1340,14 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
             ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
             if (!ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL])
             {
-                fprintf(stderr, "加载CA证书错误。\n");
+                abcdk_logger_printf(ctx->logger, LOG_WARNING, "加载CA证书错误。\n");
                 goto final;
             }
 
             chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL], ctx->cert_file, ctx->key_file, NULL);
             if (chk != 0)
             {
-                fprintf(stderr, "加载证书或私钥错误。\n");
+                abcdk_logger_printf(ctx->logger, LOG_WARNING, "加载证书或私钥错误。\n");
                 goto final;
             }
 
@@ -1370,7 +1370,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
     ctx->comm = abcdk_asynctcp_start(ctx->max_client, -1);
     if (!ctx->comm)
     {
-        fprintf(stderr, "内存错误。\n");
+        abcdk_logger_printf(ctx->logger, LOG_WARNING, "内存错误。\n");
         goto final;
     }
 
@@ -1382,14 +1382,14 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         chk = abcdk_sockaddr_from_string(&ctx->addr_listen[i], ctx->listen[i], 0);
         if (chk != 0)
         {
-            fprintf(stderr, "监听地址错误。\n");
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "监听地址错误。\n");
             goto final;
         }
 
         ctx->comm_listen[i] = abcdk_asynctcp_alloc(ctx->comm,sizeof(abcdkhttpd_node_t));
         if (!ctx->comm_listen[i])
         {
-            fprintf(stderr, "内存错误。\n");
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "内存错误。\n");
             goto final;
         }
 
@@ -1407,7 +1407,7 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         chk = abcdk_asynctcp_listen(ctx->comm_listen[i], ctx->ssl_ctx_listen[i], &ctx->addr_listen[i], &cb);
         if (chk != 0)
         {
-            fprintf(stderr, "监听错误，无权限或端口被占用。\n");
+            abcdk_logger_printf(ctx->logger, LOG_WARNING, "监听错误，无权限或端口被占用。\n");
             goto final;
         }
     }
@@ -1440,6 +1440,7 @@ final:
 int abcdk_tool_httpd(abcdk_option_t *args)
 {
     abcdkhttpd_t ctx = {0};
+    int chk;
 
     ctx.args = args;
 
@@ -1450,17 +1451,17 @@ int abcdk_tool_httpd(abcdk_option_t *args)
     else
     {
         /*打开日志。*/
-        ctx.logger = abcdk_logger_open("/tmp/abcdk/log/httpd.log","httpd.%d.log", 10, 10, 0, 1);
+        ctx.logger = abcdk_logger_open("/tmp/abcdk/log/httpd.log", "httpd.%d.log", 10, 10, 0, 1);
 
-        abcdk_logger_printf(ctx.logger,LOG_INFO, "启动……");
+        abcdk_logger_printf(ctx.logger, LOG_INFO, "启动……");
 
         _abcdkhttpd_work(&ctx);
 
-        abcdk_logger_printf(ctx.logger,LOG_INFO, "停止。");
-        
+        abcdk_logger_printf(ctx.logger, LOG_INFO, "停止。");
+
         /*关闭日志。*/
         abcdk_logger_close(&ctx.logger);
     }
 
-    return ctx.errcode;
+    return 0;
 }

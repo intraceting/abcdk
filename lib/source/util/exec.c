@@ -51,7 +51,7 @@ pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
                      uid_t uid, gid_t gid, const char *rpath, const char *wpath,
                      int *stdin_fd, int *stdout_fd, int *stderr_fd)
 {
-    pid_t child = -1;
+    pid_t child = -1,sid = -1;
     int out2in_fd[2] = {-1, -1};
     int in2out_fd[2] = {-1, -1};
     int in2err_fd[2] = {-1, -1};
@@ -60,20 +60,25 @@ pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
     assert(filename != NULL && args != NULL);
 
     if (pipe(out2in_fd) != 0)
-        goto final;
+        goto error;
 
     if (pipe(in2out_fd) != 0)
-        goto final;
+        goto error;
 
     if (pipe(in2err_fd) != 0)
-        goto final;
+        goto error;
 
     child = fork();
     if (child < 0)
-        goto final;
-
+        goto error;
+    
     if (child == 0)
     {
+        /*创建一个新会话并脱离终端控制。*/
+        sid = setsid();
+        if (sid < 0)
+            exit(126);
+
         if (stdin_fd)
             dup2(out2in_fd[0], STDIN_FILENO);
         else
@@ -127,19 +132,17 @@ pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
         else
             abcdk_closep(&in2err_fd[0]);
             
+         return child;
     }
 
-final:
+error:
 
-    if (child < 0)
-    {
-        abcdk_closep(&out2in_fd[0]);
-        abcdk_closep(&out2in_fd[1]);
-        abcdk_closep(&in2out_fd[0]);
-        abcdk_closep(&in2out_fd[1]);
-        abcdk_closep(&in2err_fd[0]);
-        abcdk_closep(&in2err_fd[1]);
-    }
+    abcdk_closep(&out2in_fd[0]);
+    abcdk_closep(&out2in_fd[1]);
+    abcdk_closep(&in2out_fd[0]);
+    abcdk_closep(&in2out_fd[1]);
+    abcdk_closep(&in2err_fd[0]);
+    abcdk_closep(&in2err_fd[1]);
 
-    return child;
+    return -1;
 }
