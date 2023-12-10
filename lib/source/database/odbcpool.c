@@ -91,7 +91,7 @@ abcdk_odbcpool_t *abcdk_odbcpool_create(size_t size, abcdk_odbcpool_connect_cb c
     static volatile uint32_t magic = 1;
     int chk;
 
-    ABCDK_ASSERT(size > 0 && connect_cb != NULL, "池大小不能为0，且连接回调函数指针不能为空。");
+    ABCDK_ASSERT(size > 0 && connect_cb != NULL, "池大小不能为0，并且连接回调函数指针不能为空。");
 
     p = (abcdk_odbcpool_t*)abcdk_heap_alloc(sizeof(abcdk_odbcpool_t));
     if(!p)

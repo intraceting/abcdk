@@ -515,34 +515,12 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_hexdump(stderr, buf, 16, 0, NULL);
     }
 
-#elif 0
-
-    abcdk_option_merge(args,args);
-
 #elif 1
-    pam_handle_t *pamh = NULL;
-    struct pam_conv conv = { NULL, NULL };
-    int retval;
 
-    // 启动 PAM 会话
-    retval = pam_start("su", "root", &conv, &pamh);
-    if (retval != PAM_SUCCESS) {
-        fprintf(stderr, "pam_start failed: %s\n", pam_strerror(pamh, retval));
-        return 1;
-    }
+    //abcdk_option_merge(args,args);
+        // 身份验证成功，进行其他操作...
+    fprintf(stderr, "euid:%d,uid:%d\n", geteuid(), getuid());
 
-    // 进行身份验证
-    retval = pam_authenticate(pamh, 0);
-    if (retval != PAM_SUCCESS) {
-        fprintf(stderr, "Authentication failed: %s\n", pam_strerror(pamh, retval));
-        pam_end(pamh, retval);
-        return 1;
-    }
 
-    // 身份验证成功，进行其他操作...
-    fprintf(stderr,"euid:%d,uid:%d\n",geteuid(),getuid());
-
-    // 结束 PAM 会话
-    pam_end(pamh, retval);
 #endif 
 }
