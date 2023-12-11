@@ -111,7 +111,7 @@ void abcdk_memcopy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t ds
                       size_t roi_width_bytes, size_t roi_height)
 {
     /*一行一行的复制。*/
-    #pragma omp parallel
+//#pragma omp parallel
     for (int h = 0; h < roi_height; h++)
         abcdk_memcopy_1d(dst, (h + dst_y) * dst_pitch + dst_x_bytes, src, (h + src_y) * src_pitch + src_x_bytes, roi_width_bytes);
 }

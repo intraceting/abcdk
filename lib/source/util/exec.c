@@ -6,50 +6,8 @@
  */
 #include "abcdk/util/exec.h"
 
-int abcdk_exec(const char *filename, char *const *args, char *const *envs,
-               uid_t uid, gid_t gid, const char *rpath, const char *wpath)
-{
-    int chk;
-
-    assert(filename != NULL && args != NULL);
-
-    if (uid != 0)
-    {
-        chk = setuid(uid);
-        if (chk != 0)
-            return -2;
-    }
-
-    if (gid != 0)
-    {
-        chk = setgid(gid);
-        if (chk != 0)
-            return -3;
-    }
-
-    if (rpath)
-    {
-        chk = chroot(rpath);
-        if (chk != 0)
-            return -4;
-    }
-
-    if (wpath)
-    {
-        chk = chdir(wpath);
-        if (chk != 0)
-            return -5;
-    }
-
-    chk = execve(filename, args, (envs ? envs : environ));
-
-    /*执行到这里时，表示出错了。*/
-    return chk;
-}
-
-pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
-                     uid_t uid, gid_t gid, const char *rpath, const char *wpath,
-                     int *stdin_fd, int *stdout_fd, int *stderr_fd)
+pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
+                      int *stdin_fd, int *stdout_fd, int *stderr_fd)
 {
     pid_t child = -1,sid = -1;
     int out2in_fd[2] = {-1, -1};
@@ -57,7 +15,7 @@ pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
     int in2err_fd[2] = {-1, -1};
     int chk;
 
-    assert(filename != NULL && args != NULL);
+    assert(process_cb != NULL);
 
     if (pipe(out2in_fd) != 0)
         goto error;
@@ -103,10 +61,9 @@ pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
         abcdk_closep(&in2err_fd[0]);
         abcdk_closep(&in2err_fd[1]);
 
-        chk = abcdk_exec(filename,args,envs,uid,gid,rpath,wpath);
-
-        /*也许永远也不可能到这里.*/
-        _exit(chk);
+        /*执行子进程处理流程。*/
+        chk = process_cb(opaque);
+        exit(chk & 0x7F);
     }
     else
     {
@@ -145,4 +102,75 @@ error:
     abcdk_closep(&in2err_fd[1]);
 
     return -1;
+}
+
+typedef struct _abcdk_exec_new_param
+{
+    const char *filename;
+    char *const *args;
+    char *const *envs;
+    uid_t uid;
+    gid_t gid;
+    const char *rpath;
+    const char *wpath;
+}abcdk_exec_new_param_t;
+
+int abcdk_exec_new_process_cb(void *opaque)
+{
+    abcdk_exec_new_param_t *param_p = (abcdk_exec_new_param_t*)opaque;
+    int chk;
+
+    if (param_p->uid != 0)
+    {
+        chk = setuid(param_p->uid);
+        if (chk != 0)
+            return 125;
+    }
+
+    if (param_p->gid != 0)
+    {
+        chk = setgid(param_p->gid);
+        if (chk != 0)
+            return 124;
+    }
+
+    if (param_p->rpath)
+    {
+        chk = chroot(param_p->rpath);
+        if (chk != 0)
+            return 123;
+    }
+
+    if (param_p->wpath)
+    {
+        chk = chdir(param_p->wpath);
+        if (chk != 0)
+            return 122;
+    }
+
+    chk = execve(param_p->filename, param_p->args, (param_p->envs ? param_p->envs : environ));
+    if(chk != 0)
+        return errno;
+
+    /*正常情况下，永远也不可能到这里.*/
+    return 121;
+}
+
+pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
+                     uid_t uid, gid_t gid, const char *rpath, const char *wpath,
+                     int *stdin_fd, int *stdout_fd, int *stderr_fd)
+{
+    abcdk_exec_new_param_t param = {0};
+
+    assert(filename != NULL && args != NULL);
+
+    param.filename = filename;
+    param.args = args;
+    param.envs = envs;
+    param.uid = uid;
+    param.gid = gid;
+    param.rpath = rpath;
+    param.wpath = wpath;
+    
+    return abcdk_exec_fork(abcdk_exec_new_process_cb,&param,stdin_fd,stdout_fd,stderr_fd);
 }

@@ -527,7 +527,9 @@ int abcdk_test_any(abcdk_option_t *args)
         fprintf(stderr,"%s\n",environ[i]);
     }
 
-    pid_t p = abcdk_exec_new("./abcdk","--listen \"0.0.0.0:1111\" --root-path /home/zpcoding/data/files-b/ --auto-index",NULL,0,0,NULL,NULL,NULL,NULL,NULL);
+    char *param[] ={"--listen","0.0.0.0:1111","--root-path", "/home/zpcoding/data/files-b/", "--auto-index"};
+
+    pid_t p = abcdk_exec_new("./abcdk",param,NULL,0,0,NULL,NULL,NULL,NULL,NULL);
 
     waitpid(p,NULL,0);
 
