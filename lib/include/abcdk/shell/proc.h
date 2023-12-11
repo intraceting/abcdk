@@ -10,6 +10,11 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/path.h"
+#include "abcdk/util/signal.h"
+#include "abcdk/util/exec.h"
+#include "abcdk/util/thread.h"
+#include "abcdk/log/logger.h"
+
 
 __BEGIN_DECLS
 
@@ -43,6 +48,35 @@ char* abcdk_proc_basename(char* buf);
  * @return >= 0 成功(文件句柄，当前进程是唯一进程)，-1 失败(已有实例正在运行)。
 */
 int abcdk_proc_singleton(const char* lockfile,int* pid);
+
+/**
+ * 等待信号。
+ * 
+ * @param timeout 超时(毫秒)。
+ * 
+ * @return > 0 有信号，0 超时，-1 出错。
+*/
+int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout);
+
+/**
+ * 等待终止信号。
+ * 
+ * @param timeout 超时(毫秒)。
+ * 
+ * @return 1 收到终止信号，0 超时，-1 系统错误。
+*/
+int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout);
+
+/**
+ * 守护进程。
+ * 
+ * @param [in] interval 重启间隔(秒)。
+ * @param [in] process_cb 子进程入口函数。
+ * @param [in] opaque 子进程环境指针。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_process_cb process_cb, void *opaque);
 
 __END_DECLS
 

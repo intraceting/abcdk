@@ -117,3 +117,86 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
     abcdk_closep(&fd);
     return -1;
 }
+
+int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout)
+{
+    static volatile int init_status = 0;
+    static volatile pthread_t tid_creater = 0;
+
+    assert(info != NULL);
+    
+    ABCDK_ASSERT(!abcdk_thread_leader_vote(&tid_creater) || !abcdk_thread_leader_test(&tid_creater),"必须在同一个线程中使用。");
+
+    if (abcdk_atomic_compare_and_swap(&init_status, 0, 1))
+    {
+        sigset_t sigs = {0};
+        
+        /*阻塞信号。*/
+        abcdk_signal_fill(&sigs, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP, -1);
+        abcdk_signal_block(&sigs, NULL);
+    }
+
+    return abcdk_signal_wait(info,NULL, timeout);
+}
+
+int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout)
+{
+    siginfo_t info = {0};
+    int chk;
+
+    chk = abcdk_proc_signal_wait(&info, timeout);
+    if (chk == 0)
+        return 0;
+    else if (chk < 0)
+        return -1;
+
+    if(logger)
+        abcdk_logger_dump_siginfo(logger, LOG_WARNING, &info);
+
+    if (SIGILL == info.si_signo || SIGTERM == info.si_signo || SIGINT == info.si_signo || SIGQUIT == info.si_signo)
+        return 1;
+    
+    if(logger)
+        abcdk_logger_printf(logger, LOG_WARNING, "终止进程，请按Ctrl+c组合键或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
+    
+    return 0;
+}
+
+int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_process_cb process_cb, void *opaque)
+{
+    pid_t cid = -1,cid_chk = -1;
+    int chk;
+
+    assert(interval >0 && process_cb != NULL);
+
+    while (1)
+    {
+        if (cid < 0)
+        {
+            cid = abcdk_exec_fork(process_cb, opaque, NULL, NULL, NULL);
+            if(cid <0)
+                return -1;
+        }
+
+        /*查看终止信号。*/
+        chk = abcdk_proc_wait_exit_signal(logger, interval * 1000);
+        if (chk != 0)
+            break;
+        
+        /* > 0 子进程PID，0 正在运行，< 0 子进程不存在。*/
+        cid_chk = waitpid(cid, NULL, WNOHANG);
+        if (cid_chk != 0)
+        {
+            cid = -1;
+        }
+    }
+
+    /*父进程退出前，通知子进程退出。*/
+    if (cid >= 0)
+    {
+        kill(cid, 15);
+        waitpid(cid, NULL, 0);
+    }
+
+    return 0;
+}

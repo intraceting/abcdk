@@ -51,6 +51,7 @@ int abcdk_signal_block(const sigset_t *news,sigset_t *olds);
 */
 int abcdk_signal_wait(siginfo_t *info, const sigset_t *sigs, time_t timeout);
 
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_SIGNAL_H

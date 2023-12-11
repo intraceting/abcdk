@@ -5,6 +5,8 @@
  *
  */
 #include "abcdk/log/logger.h"
+#include "abcdk/shell/file.h"
+#include "abcdk/shell/proc.h"
 
 /** 日志接口。*/
 struct _abcdk_logger
@@ -341,4 +343,14 @@ void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...)
     va_start(ap, fmt);
     abcdk_logger_vprintf(ctx, type, fmt, ap);
     va_end(ap);
+}
+
+void abcdk_logger_dump_siginfo(abcdk_logger_t *ctx, int type, siginfo_t *info)
+{
+    assert(ctx != NULL && ABCDK_LOGER_TYPE_CHECK(type) && info != NULL);
+
+    if (SI_USER == info->si_code)
+        abcdk_logger_printf(ctx, type, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info->si_signo, info->si_errno, info->si_code, info->si_pid, info->si_uid);
+    else
+        abcdk_logger_printf(ctx, type, "signo(%d),errno(%d),code(%d)\n", info->si_signo, info->si_errno, info->si_code);
 }

@@ -12,8 +12,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/uri.h"
 #include "abcdk/util/mutex.h"
-#include "abcdk/shell/file.h"
-#include "abcdk/shell/proc.h"
+
 
 __BEGIN_DECLS
 
@@ -106,6 +105,12 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
  * 
  */
 void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...);
+
+/**
+ * 格式化输出信号信息。
+ */
+void abcdk_logger_dump_siginfo(abcdk_logger_t *ctx, int type, siginfo_t *info);
+
 
 __END_DECLS
 

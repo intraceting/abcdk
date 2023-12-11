@@ -1248,43 +1248,18 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
-void _abcdkhttpd_wait_exit_signal(abcdkhttpd_t *ctx)
+void _abcdkhttpd_process(abcdkhttpd_t *ctx)
 {
-    siginfo_t info = {0};
-    int chk;
-
-    while (1)
-    {
-        chk = abcdk_signal_wait(&info,NULL, -1);
-        if (chk <= 0)
-            break;
-
-        if (SI_USER == info.si_code)
-            abcdk_logger_printf(ctx->logger, LOG_WARNING, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info.si_signo, info.si_errno, info.si_code, info.si_pid, info.si_uid);
-        else
-            abcdk_logger_printf(ctx->logger, LOG_WARNING, "signo(%d),errno(%d),code(%d)\n", info.si_signo, info.si_errno, info.si_code);
-
-        if (SIGILL == info.si_signo || SIGTERM == info.si_signo || SIGINT == info.si_signo || SIGQUIT == info.si_signo)
-            break;
-        else
-            abcdk_logger_printf(ctx->logger, LOG_WARNING, "如果希望停止服务，按Ctrl+c组合键，或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
-    }
-
-    return;
-}
-
-void _abcdkhttpd_work(abcdkhttpd_t *ctx)
-{
-    sigset_t sigs = {0};
     abcdk_object_t *userdata_p = NULL;
     abcdkhttpd_node_t *http_p = NULL;
     const char *p, *p_next, p2;
     size_t plen, p2len;
     int chk;
 
-    /*阻塞信号。*/
-    abcdk_signal_fill(&sigs,SIGTRAP,SIGKILL,SIGSEGV,SIGSTOP,-1);
-    abcdk_signal_block(&sigs,NULL);
+    /*打开日志。*/
+    ctx->logger = abcdk_logger_open("/tmp/abcdk/log/httpd.log", "httpd.%d.log", 10, 10, 0, 1);
+
+    abcdk_logger_printf(ctx->logger, LOG_INFO, "启动……");
 
     ctx->max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
@@ -1412,9 +1387,13 @@ void _abcdkhttpd_work(abcdkhttpd_t *ctx)
         }
     }
 
-
-    /*等待退出信号。*/
-    _abcdkhttpd_wait_exit_signal(ctx);
+    /*等待终止信号。*/
+    while (1)
+    {
+        chk = abcdk_proc_wait_exit_signal(ctx->logger, -1);
+        if (chk != 0)
+            break;
+    }
 
 final:
 
@@ -1435,11 +1414,27 @@ final:
 
     if(ctx->loc)
         freelocale(ctx->loc);
+
+
+    abcdk_logger_printf(ctx->logger, LOG_INFO, "停止。");
+
+    /*关闭日志。*/
+    abcdk_logger_close(&ctx->logger);
+}
+
+int _abcdkhttpd_daemon_process_cb(void *opaque)
+{
+    abcdkhttpd_t *ctx = (abcdkhttpd_t*)opaque;
+
+    _abcdkhttpd_process(ctx);
+
+    return 0;
 }
 
 int abcdk_tool_httpd(abcdk_option_t *args)
 {
     abcdkhttpd_t ctx = {0};
+    int interval;
     int chk;
 
     ctx.args = args;
@@ -1450,17 +1445,19 @@ int abcdk_tool_httpd(abcdk_option_t *args)
     }
     else
     {
-        /*打开日志。*/
-        ctx.logger = abcdk_logger_open("/tmp/abcdk/log/httpd.log", "httpd.%d.log", 10, 10, 0, 1);
-
-        abcdk_logger_printf(ctx.logger, LOG_INFO, "启动……");
-
-        _abcdkhttpd_work(&ctx);
-
-        abcdk_logger_printf(ctx.logger, LOG_INFO, "停止。");
-
-        /*关闭日志。*/
-        abcdk_logger_close(&ctx.logger);
+        interval = abcdk_option_get_int(ctx.args, "--daemon", 0, -1);
+        if (interval > 0)
+        {
+            
+            // fprintf(stderr, "进入后台驻留模式。\n");
+            // daemon(1, 0);
+            
+            abcdk_proc_daemon(NULL, interval, _abcdkhttpd_daemon_process_cb, &ctx);
+        }
+        else
+        {
+            _abcdkhttpd_process(&ctx);
+        }
     }
 
     return 0;

@@ -32,7 +32,8 @@ static struct _abcdk_tool_entry
     {"basecode",abcdk_tool_basecode},
     {"httpd",abcdk_tool_httpd},
     {"mcdump",abcdk_tool_mcdump},
-    {"uart",abcdk_tool_uart}
+    {"uart",abcdk_tool_uart},
+    {"watchdog",abcdk_tool_watchdog}
 };
 
 void _abcdk_tool_print_usage()
