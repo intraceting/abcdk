@@ -99,6 +99,11 @@ int abcdk_thread_leader_test(const volatile pthread_t *tid);
  */
 int abcdk_thread_leader_quit(volatile pthread_t *tid);
 
+/**
+ * 设置线程名字。
+ */ 
+void abcdk_thread_setname(const char *fmt, ...);
+
 __END_DECLS
 
 #endif // ABCDK_UTIL_THREAD_H

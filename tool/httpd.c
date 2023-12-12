@@ -143,6 +143,10 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
+    fprintf(stderr, "\n\t--daemon < INTERVAL > \n");
+    fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
+    fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
+
     fprintf(stderr, "\n\t--max-client < NUMBER >\n");
     fprintf(stderr, "\t\t最大连接数。默认：系统限定的1/2\n");
 
@@ -1388,12 +1392,7 @@ void _abcdkhttpd_process(abcdkhttpd_t *ctx)
     }
 
     /*等待终止信号。*/
-    while (1)
-    {
-        chk = abcdk_proc_wait_exit_signal(ctx->logger, -1);
-        if (chk != 0)
-            break;
-    }
+    abcdk_proc_wait_exit_signal(ctx->logger, -1);
 
 final:
 
@@ -1431,10 +1430,26 @@ int _abcdkhttpd_daemon_process_cb(void *opaque)
     return 0;
 }
 
+void _abcdkhttpd_daemon(abcdkhttpd_t *ctx)
+{
+    abcdk_logger_t *logger;
+    int interval;
+
+    interval = abcdk_option_get_int(ctx->args, "--daemon", 0, 30);
+    interval = ABCDK_CLAMP(interval,1,60);
+
+    /*打开日志。*/
+    logger = abcdk_logger_open("/tmp/abcdk/log/httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
+            
+    abcdk_proc_daemon(logger, interval, _abcdkhttpd_daemon_process_cb, ctx);
+
+    /*关闭日志。*/
+    abcdk_logger_close(&logger);
+}
+
 int abcdk_tool_httpd(abcdk_option_t *args)
 {
     abcdkhttpd_t ctx = {0};
-    int interval;
     int chk;
 
     ctx.args = args;
@@ -1445,14 +1460,12 @@ int abcdk_tool_httpd(abcdk_option_t *args)
     }
     else
     {
-        interval = abcdk_option_get_int(ctx.args, "--daemon", 0, -1);
-        if (interval > 0)
+        if (abcdk_option_exist(ctx.args,"--daemon"))
         {
+            fprintf(stderr, "进入后台守护模式。\n");
+            daemon(1, 0);
             
-            // fprintf(stderr, "进入后台驻留模式。\n");
-            // daemon(1, 0);
-            
-            abcdk_proc_daemon(NULL, interval, _abcdkhttpd_daemon_process_cb, &ctx);
+            _abcdkhttpd_daemon(&ctx);
         }
         else
         {

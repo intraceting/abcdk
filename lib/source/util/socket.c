@@ -563,3 +563,40 @@ int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t
 
     return chk;
 }
+
+void abcdk_sockaddr_make_netmask(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t *addr, int prefix)
+{
+    int iplen;
+
+    assert(mask != NULL && addr != NULL && prefix >0);
+    assert(addr->family == AF_INET || addr->family == AF_INET6);
+
+    iplen = ((addr->family == AF_INET6) ? 16 * 8 : 4 * 8);
+
+    assert(iplen >= prefix);
+
+    /*copy*/
+    *mask = *addr;
+
+    for (int i = prefix; i < iplen; i++)
+    {
+        if (mask->family == AF_INET6)
+            abcdk_bloom_write((uint8_t *)&mask->addr6.sin6_addr, 16, i, 0);
+        else
+            abcdk_bloom_write((uint8_t *)&mask->addr4.sin_addr, 4, i, 0);
+    }
+}
+
+char *abcdk_sockaddr_make_netmask2(char buf[100], sa_family_t family, const char *host, int prefix)
+{
+    abcdk_sockaddr_t mask,addr;
+
+    assert(buf != NULL && (family == AF_INET||family == AF_INET6) && host != NULL && prefix >0);
+
+    abcdk_inet_pton(host, family, &addr);
+    abcdk_sockaddr_make_netmask(&mask,&addr,prefix);
+
+    return abcdk_inet_ntop(&mask, buf, 100);
+}
+
+

@@ -144,9 +144,11 @@ int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout)
     siginfo_t info = {0};
     int chk;
 
+RETRY: 
+
     chk = abcdk_proc_signal_wait(&info, timeout);
     if (chk == 0)
-        return 0;
+        goto CHECK_RETRY;
     else if (chk < 0)
         return -1;
 
@@ -158,8 +160,14 @@ int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout)
     
     if(logger)
         abcdk_logger_printf(logger, LOG_WARNING, "终止进程，请按Ctrl+c组合键或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
-    
-    return 0;
+
+CHECK_RETRY:
+
+    /*如果死等就重试。*/
+    if (timeout < 0)
+        goto RETRY;
+    else
+        return 0;
 }
 
 int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_process_cb process_cb, void *opaque)
@@ -174,8 +182,16 @@ int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_proc
         if (cid < 0)
         {
             cid = abcdk_exec_fork(process_cb, opaque, NULL, NULL, NULL);
-            if(cid <0)
+            if (cid < 0)
+            {
+                if(logger)
+                    abcdk_logger_printf(logger, LOG_ERR, "父进程无法创建子进程，结束守护服务。\n");
+
                 return -1;
+            }
+
+            if(logger)
+                abcdk_logger_printf(logger, LOG_INFO, "子进程(PID=%d)启动完成。\n",cid);
         }
 
         /*查看终止信号。*/
@@ -188,15 +204,60 @@ int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_proc
         if (cid_chk != 0)
         {
             cid = -1;
+
+            if(logger)
+                abcdk_logger_printf(logger, LOG_INFO, "子进程(PID=%d)已终止。\n",cid_chk);
         }
     }
 
-    /*父进程退出前，通知子进程退出。*/
+    if(logger)
+        abcdk_logger_printf(logger, LOG_INFO, "父进程即将结束守护服务，通知子进程退出。\n");
+
     if (cid >= 0)
     {
         kill(cid, 15);
         waitpid(cid, NULL, 0);
     }
 
+    if(logger)
+        abcdk_logger_printf(logger, LOG_INFO, "父进程结束守护服务。\n");
+
     return 0;
+}
+
+pid_t abcdk_proc_popen(abcdk_logger_t *logger, int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...)
+{
+    char *buf = NULL;
+    pid_t pid = -1;
+
+    buf = abcdk_heap_alloc(40*1024);
+    if(!buf)
+        goto ERR;
+
+    va_list ap;
+    va_start(ap, cmd);
+    vsnprintf(buf,40*1024,cmd,ap);
+    va_end(ap);
+
+    if(logger)
+        abcdk_logger_printf(logger,LOG_INFO,"popen: %s",buf);
+
+    pid = abcdk_popen(buf, NULL, 0, 0, NULL, NULL, stdin_fd, stdout_fd, stderr_fd);
+    if (pid < 0)
+    {
+        if(logger)
+            abcdk_logger_printf(logger,LOG_ERR, "'%s'执行失败。");
+
+        goto ERR;
+    }
+
+    abcdk_heap_free2((void**)&buf);
+
+    return pid;
+
+ERR:
+
+    abcdk_heap_free2((void**)&buf);
+
+    return -1;
 }

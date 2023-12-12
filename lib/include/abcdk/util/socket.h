@@ -11,6 +11,7 @@
 #include "abcdk/util/path.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/endian.h"
+#include "abcdk/util/bloom.h"
 
 __BEGIN_DECLS
 
@@ -262,7 +263,15 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where);
  */
 int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2,int care_port);
 
+/**
+ * 生成网络掩码。
+*/
+void abcdk_sockaddr_make_netmask(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t *addr, int prefix);
 
+/**
+ * 生成网络掩码。
+*/
+char *abcdk_sockaddr_make_netmask2(char buf[100], sa_family_t family, const char *host, int prefix);
 
 __END_DECLS
 

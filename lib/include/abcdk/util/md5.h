@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/mmap.h"
 
 __BEGIN_DECLS
 
@@ -33,6 +34,21 @@ void abcdk_md5_final(abcdk_md5_t *ctx,uint8_t hashcode[16]);
 
 /** 结束。*/
 void abcdk_md5_final2hex(abcdk_md5_t *ctx,char hashcode[33],int ABC);
+
+/**
+ * 计算内存块的MD5。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_md5_from_buffer(const void *data,size_t size,char hashcode[33],int ABC);
+
+/**
+ * 计算文件的MD5。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_md5_from_file(const char *file,char hashcode[33],int ABC);
+
 
 __END_DECLS
 

@@ -13,6 +13,7 @@
 #include "abcdk/util/signal.h"
 #include "abcdk/util/exec.h"
 #include "abcdk/util/thread.h"
+#include "abcdk/util/popen.h"
 #include "abcdk/log/logger.h"
 
 
@@ -77,6 +78,12 @@ int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout);
  * @return 0 成功，-1 失败。
 */
 int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_process_cb process_cb, void *opaque);
+
+/**
+ * 执行外部命令。
+*/
+pid_t abcdk_proc_popen(abcdk_logger_t *logger, int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
+
 
 __END_DECLS
 

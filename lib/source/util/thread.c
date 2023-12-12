@@ -143,3 +143,15 @@ int abcdk_thread_leader_quit(volatile pthread_t *tid)
 
     return -1;
 }
+
+void abcdk_thread_setname(const char *fmt, ...)
+{
+    char name[18] = {0};
+
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(name, 17, fmt, args);
+    va_end(args);
+
+    pthread_setname_np(pthread_self(), name);
+}

@@ -115,3 +115,27 @@ void abcdk_memcopy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t ds
     for (int h = 0; h < roi_height; h++)
         abcdk_memcopy_1d(dst, (h + dst_y) * dst_pitch + dst_x_bytes, src, (h + src_y) * src_pitch + src_x_bytes, roi_width_bytes);
 }
+
+pid_t abcdk_waitpid(pid_t pid, int options, int *exitcode, int *sigcode)
+{
+    int wstatus = 0;
+    pid_t pid_chk = -1;
+
+    assert(pid >= 0);
+
+    pid_chk = waitpid(pid, &wstatus, options);
+
+    if (pid_chk == pid)
+    {
+        if (WIFEXITED(wstatus) && exitcode != NULL)
+            *exitcode = WEXITSTATUS(wstatus);
+
+        if (WIFSIGNALED(wstatus) && sigcode != NULL)
+            *sigcode = WTERMSIG(wstatus);
+
+        if (WIFSTOPPED(wstatus) && sigcode != NULL)
+            *sigcode = WSTOPSIG(wstatus);
+    }
+
+    return pid_chk;
+}

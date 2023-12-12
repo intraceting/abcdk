@@ -330,3 +330,37 @@ void abcdk_md5_final2hex(abcdk_md5_t *ctx, char hashcode[33],int ABC)
     abcdk_md5_final(ctx, buf);
     abcdk_bin2hex(hashcode, buf, 16, ABC);
 }
+
+int abcdk_md5_from_buffer(const void *data,size_t size,char hashcode[33],int ABC)
+{
+    abcdk_md5_t *ctx = NULL;
+
+    assert(data != NULL && hashcode != NULL);
+
+    ctx = abcdk_md5_create();
+    if(!ctx)
+        return -1;
+
+    abcdk_md5_update(ctx,data,size);
+    abcdk_md5_final2hex(ctx,hashcode,ABC);
+    abcdk_md5_destroy(&ctx);
+
+    return 0;
+}
+
+int abcdk_md5_from_file(const char *file,char hashcode[33],int ABC)
+{
+    abcdk_object_t *data = NULL;
+    int chk;
+
+    assert(file != NULL && hashcode != NULL);
+
+    data = abcdk_mmap_filename(file,0,0,0,0);
+    if(!data)
+        return -1;
+
+    chk = abcdk_md5_from_buffer(data->pptrs[0],data->sizes[0],hashcode,ABC);
+
+    abcdk_object_unref(&data);
+    return chk;
+}

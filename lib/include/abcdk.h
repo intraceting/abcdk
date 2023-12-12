@@ -77,6 +77,7 @@
 #include "abcdk/shell/proc.h"
 #include "abcdk/shell/block.h"
 #include "abcdk/shell/dmi.h"
+#include "abcdk/shell/net.h"
 
 #include "abcdk/mp4/demuxer.h"
 #include "abcdk/mp4/muxer.h"
