@@ -767,8 +767,8 @@ WATCHDOG:
     if (!conf_a)
         goto END;
 
-    /*1秒间隔，太频繁无用。*/
-    sleep(1);
+    /*3秒间隔，太频繁无用。*/
+    sleep(3);
 
     abcdk_option_free(&conf_b);
     conf_b = _abcdkipconfig_load_conf(conf_file);
