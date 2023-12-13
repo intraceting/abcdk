@@ -37,6 +37,8 @@ int abcdk_net_get_oper_state(const char *ifname)
     if(chk <= 0)
         return -1;
 
+    abcdk_strtrim(buf, isspace, 2);
+
     if(abcdk_strcmp("up",buf,0) == 0)
         return 1;
     else if(abcdk_strcmp("down",buf,0) == 0)
@@ -155,7 +157,7 @@ int abcdk_net_route_add(abcdk_logger_t *logger, int ver, const char *host, int p
     pid_t pid = -1;
     int chk;
 
-    assert((ver == 4 || ver == 6) && host != NULL && prefix > 0 && gw != NULL && metric > 0 && ifname != NULL);
+    assert((ver == 4 || ver == 6) && host != NULL && prefix >= 0 && gw != NULL && metric >= 0 && ifname != NULL);
     assert(*host != '\0' &&  *gw != '\0' && *ifname != '\0');
 
     abcdk_sockaddr_make_netmask2(mask, ((ver == 6) ? AF_INET6 : AF_INET), host, prefix);

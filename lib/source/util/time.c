@@ -121,7 +121,7 @@ int _abcdk_time_format_init(void *opaque)
 
 const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc)
 {
-    static volatile int status = 0;
+    static volatile int init_status = 0;
     static pthread_key_t key = -1;
 
     struct tm tmp;
@@ -137,7 +137,7 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc
         return abcdk_time_format(fmt,&tmp,loc);
     }
 
-    chk = abcdk_once(&status,_abcdk_time_format_init,&key);
+    chk = abcdk_once(&init_status,_abcdk_time_format_init,&key);
     if(chk < 0)
         return NULL;
 

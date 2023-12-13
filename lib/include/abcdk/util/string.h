@@ -81,7 +81,7 @@ char* abcdk_strtrim(char* str,int (*isctype_cb)(int c),int where);
 char* abcdk_strtrim2(char* str,int (*isctype_cb)(int c), const char *other,int where);
 
 /** 
- * 字符串分隔。
+ * 字符串分割。
  *  
  * @note 仅逻辑分割。
  * 
@@ -93,7 +93,7 @@ char* abcdk_strtrim2(char* str,int (*isctype_cb)(int c), const char *other,int w
 const char *abcdk_strtok(const char **next, const char *delim);
 
 /**
- * 字符串分隔。
+ * 字符串分割。
  * 
  * @note 仅逻辑分割。
 
@@ -104,7 +104,7 @@ const char *abcdk_strtok(const char **next, const char *delim);
 const char *abcdk_strtok2(const char **next, const char *delim, int skip_space);
 
 /**
- * 字符串分隔并复制。
+ * 字符串分割并复制。
  * 
  * @note 仅逻辑分割。
  * 
@@ -113,6 +113,18 @@ const char *abcdk_strtok2(const char **next, const char *delim, int skip_space);
  * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
 */
 abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_space);
+
+/**
+ * 字符串分割为数组。
+ * 
+ * @note 仅逻辑分割。
+ * @note 最多支持256段。
+ * 
+ * @see abcdk_strtok2
+ * 
+ * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
+*/
+abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim);
 
 /**
  * 检测字符串中的字符类型。

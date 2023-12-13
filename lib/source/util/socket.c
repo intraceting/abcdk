@@ -568,7 +568,7 @@ void abcdk_sockaddr_make_netmask(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t 
 {
     int iplen;
 
-    assert(mask != NULL && addr != NULL && prefix >0);
+    assert(mask != NULL && addr != NULL && prefix >=0);
     assert(addr->family == AF_INET || addr->family == AF_INET6);
 
     iplen = ((addr->family == AF_INET6) ? 16 * 8 : 4 * 8);
@@ -591,7 +591,7 @@ char *abcdk_sockaddr_make_netmask2(char buf[100], sa_family_t family, const char
 {
     abcdk_sockaddr_t mask,addr;
 
-    assert(buf != NULL && (family == AF_INET||family == AF_INET6) && host != NULL && prefix >0);
+    assert(buf != NULL && (family == AF_INET||family == AF_INET6) && host != NULL && prefix >=0);
 
     abcdk_inet_pton(host, family, &addr);
     abcdk_sockaddr_make_netmask(&mask,&addr,prefix);

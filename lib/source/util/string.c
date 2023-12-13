@@ -199,6 +199,43 @@ abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_spa
     return abcdk_object_copyfrom(p, *next - p);
 }
 
+abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim)
+{
+    abcdk_object_t *buf = NULL;
+    const char *field_p[256] = {NULL};
+    size_t field_size[256] = {0};
+    int cols = 0;
+    const char *p, *next;
+
+    next = str;
+
+    for (; cols < 256;)
+    {
+        p = abcdk_strtok(&next, delim);
+        if (!p)
+            break;
+
+        field_p[cols] = p;
+        field_size[cols] = (next - p) + 1; // 加上终止符。
+
+        cols += 1;
+    }
+
+    buf = abcdk_object_alloc(field_size, cols, 0);
+    if (!buf)
+        return NULL;
+
+    for (int i = 0; i < cols; i++)
+    {
+        if (field_size[i] <= 1)
+            continue;
+
+        strncpy(buf->pstrs[i], field_p[i], field_size[i] - 1);
+        buf->sizes[i] -= 1;//减去终止符。
+    }
+
+    return buf;
+}
 
 int abcdk_strtype(const char* str,int (*isctype_cb)(int c))
 {

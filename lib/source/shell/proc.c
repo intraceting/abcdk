@@ -77,6 +77,8 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
 
     assert(lockfile);
 
+    abcdk_mkdir(lockfile, 0666);
+
     fd = abcdk_open(lockfile, 1, 0, 1);
     if (fd < 0)
         return -1;
@@ -120,10 +122,18 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
 
 int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout)
 {
+    static volatile pid_t self_pid = -1;
     static volatile int init_status = 0;
     static volatile pthread_t tid_creater = 0;
 
     assert(info != NULL);
+
+    /*如果是被克隆的，要重新初始化。*/
+    if(!abcdk_atomic_compare(&self_pid,getpid()))
+    {
+        abcdk_atomic_store(&init_status,0);
+        abcdk_atomic_store(&tid_creater,0);
+    }
     
     ABCDK_ASSERT(!abcdk_thread_leader_vote(&tid_creater) || !abcdk_thread_leader_test(&tid_creater),"必须在同一个线程中使用。");
 
@@ -200,7 +210,7 @@ int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_proc
             break;
         
         /* > 0 子进程PID，0 正在运行，< 0 子进程不存在。*/
-        cid_chk = waitpid(cid, NULL, WNOHANG);
+        cid_chk = abcdk_waitpid(cid, WNOHANG,NULL,NULL);
         if (cid_chk != 0)
         {
             cid = -1;

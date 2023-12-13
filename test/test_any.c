@@ -520,7 +520,7 @@ int abcdk_test_any(abcdk_option_t *args)
     //abcdk_option_merge(args,args);
         // 身份验证成功，进行其他操作...
     fprintf(stderr, "euid:%d,uid:%d\n", geteuid(), getuid());
-#elif 1
+#elif 0
 
     for(int i = 0;environ[i];i++)
     {
@@ -532,6 +532,20 @@ int abcdk_test_any(abcdk_option_t *args)
     pid_t p = abcdk_exec_new("./abcdk",param,NULL,0,0,NULL,NULL,NULL,NULL,NULL);
 
     waitpid(p,NULL,0);
+
+#elif 1
+
+    const char *str = abcdk_option_get(args,"--str",0,"aaaa,bbbb,,,dddd,,ccc,,,,dd,,e,e,e,e");
+    const char *delim = abcdk_option_get(args,"--delim",0,",");
+
+    abcdk_object_t *buf = abcdk_strtok2vector(str,delim);
+
+    for(int i = 0;i<buf->numbers;i++)
+    {
+        fprintf(stderr,"[%d]:(%zd)%s\n",i,buf->sizes[i],buf->pstrs[i]);
+    }
+
+    abcdk_object_unref(&buf);
 
 #endif 
 }

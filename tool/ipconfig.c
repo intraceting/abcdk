@@ -16,7 +16,6 @@ typedef struct _abcdkipconfig
     /*0：运行，1：退出。*/
     volatile int exitflag;
 
-
     const char *dhclient_cmd;
     const char *udhcpc_cmd;
 
@@ -51,8 +50,9 @@ typedef struct _abcdkipconfig_node
     /*
      * 逻辑链路状态。
      *
-     * 0：未启动。
-     * 1：已启动。
+     *  0：未启动。
+     *  1：已启动。
+     *
      */
     int oper_state;
 
@@ -81,40 +81,51 @@ void _abcdkipconfig_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--daemon < INTERVAL > \n");
     fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
     fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
-}
 
+    fprintf(stderr, "\n\t--conf < CONF [CONF ...] >\n");
+    fprintf(stderr, "\t\t配置文件名(包括路径)。\n");
+    fprintf(stderr, "\t\t注：具体的配置说明见doc/tool/ipconfig/*.sample。\n");
+
+    fprintf(stderr, "\n\t--dhclient-cmd < NAME >\n");
+    fprintf(stderr, "\t\tdhclient客户端工具名称(包括路径)。默认：dhclient\n");
+    fprintf(stderr, "\t\t注：使能方法为DHCP时有效.\n");
+
+    fprintf(stderr, "\n\t--udhcpc-cmd < NAME >\n");
+    fprintf(stderr, "\t\tudhcpc客户端工具名称(包括路径)。默认：udhcpc\n");
+    fprintf(stderr, "\t\t注：使能方法为DHCP时有效.\n");
+}
 
 void _abcdkipconfig_find_dhcp_client(abcdkipconfig_t *ctx)
 {
-    if(!ctx->dhclient_cmd)
+    if (!ctx->dhclient_cmd)
     {
-        if(access("/sbin/dhclient",X_OK)==0)
+        if (access("/sbin/dhclient", X_OK) == 0)
             ctx->dhclient_cmd = "/sbin/dhclient";
-        else if(access("/bin/dhclient",X_OK)==0)
+        else if (access("/bin/dhclient", X_OK) == 0)
             ctx->dhclient_cmd = "/bin/dhclient";
-        else if(access("/usr/sbin/dhclient",X_OK)==0)
+        else if (access("/usr/sbin/dhclient", X_OK) == 0)
             ctx->dhclient_cmd = "/usr/sbin/dhclient";
-        else if(access("/usr/bin/dhclient",X_OK)==0)
+        else if (access("/usr/bin/dhclient", X_OK) == 0)
             ctx->dhclient_cmd = "/usr/bin/dhclient";
-        else if(access("/usr/local/sbin/dhclient",X_OK)==0)
+        else if (access("/usr/local/sbin/dhclient", X_OK) == 0)
             ctx->dhclient_cmd = "/usr/local/sbin/dhclient";
-        else if(access("/usr/local/bin/dhclient",X_OK)==0)
+        else if (access("/usr/local/bin/dhclient", X_OK) == 0)
             ctx->dhclient_cmd = "/usr/local/bin/dhclient";
     }
 
-    if(!ctx->udhcpc_cmd)
+    if (!ctx->udhcpc_cmd)
     {
-        if(access("/sbin/udhcpc",X_OK)==0)
+        if (access("/sbin/udhcpc", X_OK) == 0)
             ctx->udhcpc_cmd = "/sbin/udhcpc";
-        else if(access("/bin/udhcpc",X_OK)==0)
+        else if (access("/bin/udhcpc", X_OK) == 0)
             ctx->udhcpc_cmd = "/bin/udhcpc";
-        else if(access("/usr/sbin/udhcpc",X_OK)==0)
+        else if (access("/usr/sbin/udhcpc", X_OK) == 0)
             ctx->udhcpc_cmd = "/usr/sbin/udhcpc";
-        else if(access("/usr/bin/udhcpc",X_OK)==0)
+        else if (access("/usr/bin/udhcpc", X_OK) == 0)
             ctx->udhcpc_cmd = "/usr/bin/udhcpc";
-        else if(access("/usr/local/sbin/udhcpc",X_OK)==0)
+        else if (access("/usr/local/sbin/udhcpc", X_OK) == 0)
             ctx->udhcpc_cmd = "/usr/local/sbin/udhcpc";
-        else if(access("/usr/local/bin/udhcpc",X_OK)==0)
+        else if (access("/usr/local/bin/udhcpc", X_OK) == 0)
             ctx->udhcpc_cmd = "/usr/local/bin/udhcpc";
     }
 }
@@ -153,8 +164,8 @@ abcdkipconfig_node_t *_abcdkipconfig_node_alloc()
     ctx->dhcp_pid = -1;
 
     ctx->implement_state = 0;
-    ctx->link_state = 1;
-    ctx->oper_state = 1;
+    ctx->link_state = -1;
+    ctx->oper_state = -1;
 
     memset(ctx->addr_hcode, 0xff, 32);
 
@@ -164,7 +175,6 @@ abcdkipconfig_node_t *_abcdkipconfig_node_alloc()
 
     return ctx;
 }
-
 
 abcdk_option_t *_abcdkipconfig_load_conf(const char *conf)
 {
@@ -217,68 +227,69 @@ void _abcdkipconfig_dump_option(abcdk_option_t *args, abcdk_logger_t *logger)
 
 int _abcdkipconfig_eth_hash_code_compare_cb(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque)
 {
-    if(node1->obj->sizes[0] > node2->obj->sizes[0])
+    if (node1->obj->sizes[0] > node2->obj->sizes[0])
         return 1;
-    else if(node1->obj->sizes[0] < node2->obj->sizes[0])
+    else if (node1->obj->sizes[0] < node2->obj->sizes[0])
         return -1;
 
-    return memcmp(node1->obj->pptrs[0],node2->obj->pstrs[0],node2->obj->sizes[0]);
+    return memcmp(node1->obj->pptrs[0], node2->obj->pstrs[0], node2->obj->sizes[0]);
 }
 
-void _abcdkipconfig_eth_hash_code(char buf[33],const char *ifname)
+void _abcdkipconfig_eth_hash_code(char buf[33], const char *ifname)
 {
-    abcdk_tree_t *ip_vec = NULL,*p = NULL,*p2 = NULL;;
+    abcdk_tree_t *ip_vec = NULL, *p = NULL, *p2 = NULL;
+    ;
     abcdk_ifaddrs_t ifaddr_vec[100] = {0};
     int ifaddr_count = 0;
     abcdk_md5_t *md5_ctx = NULL;
     int chk = -1;
 
-    abcdk_tree_iterator_t it = {0,NULL,NULL,_abcdkipconfig_eth_hash_code_compare_cb};
+    abcdk_tree_iterator_t it = {0, NULL, NULL, _abcdkipconfig_eth_hash_code_compare_cb};
 
     ip_vec = abcdk_tree_alloc3(1);
-    if(!ip_vec)
+    if (!ip_vec)
         goto ERR;
-        
+
     md5_ctx = abcdk_md5_create();
-    if(!md5_ctx)
+    if (!md5_ctx)
         goto ERR;
 
     ifaddr_count = abcdk_ifname_fetch(ifaddr_vec, 100, 1, 1);
 
-    for(int i = 0;i<ifaddr_count;i++)
+    for (int i = 0; i < ifaddr_count; i++)
     {
-        if(abcdk_strcmp(ifaddr_vec[i].name,ifname,1))
+        if (abcdk_strcmp(ifaddr_vec[i].name, ifname, 1))
             continue;
 
-        if(ifaddr_vec[i].addr.family == AF_INET)
-            p = abcdk_tree_alloc4(&ifaddr_vec[i].addr.addr4.sin_addr,4);
-        else if(ifaddr_vec[i].addr.family == AF_INET6)
-            p = abcdk_tree_alloc4(&ifaddr_vec[i].addr.addr6.sin6_addr,16);
-        else 
+        if (ifaddr_vec[i].addr.family == AF_INET)
+            p = abcdk_tree_alloc4(&ifaddr_vec[i].addr.addr4.sin_addr, 4);
+        else if (ifaddr_vec[i].addr.family == AF_INET6)
+            p = abcdk_tree_alloc4(&ifaddr_vec[i].addr.addr6.sin6_addr, 16);
+        else
             continue;
 
-        if(!p)
+        if (!p)
             goto END;
 
         abcdk_tree_insert2(ip_vec, p, 0);
     }
 
-    abcdk_tree_sort(ip_vec,&it,1);
-    
+    abcdk_tree_sort(ip_vec, &it, 1);
+
 END:
 
     p2 = abcdk_tree_child(ip_vec, 1);
     while (p2)
     {
-        abcdk_md5_update(md5_ctx,p2->obj->pstrs[0],p2->obj->sizes[0]);
+        abcdk_md5_update(md5_ctx, p2->obj->pstrs[0], p2->obj->sizes[0]);
 
         p2 = abcdk_tree_sibling(p2, 0);
     }
-    
-    /*加入接口名字，使得不同的接口在具体相同配置情况下哈希值也不相同。*/
-    abcdk_md5_update(md5_ctx,ifname,strlen(ifname));
 
-    abcdk_md5_final2hex(md5_ctx,buf,0);
+    /*加入接口名字，使得不同的接口在具体相同配置情况下哈希值也不相同。*/
+    abcdk_md5_update(md5_ctx, ifname, strlen(ifname));
+
+    abcdk_md5_final2hex(md5_ctx, buf, 0);
 
 ERR:
 
@@ -286,7 +297,6 @@ ERR:
     abcdk_md5_destroy(&md5_ctx);
 
     return;
-
 }
 
 abcdk_object_t *_abcdkipconfig_resolv_load()
@@ -294,12 +304,12 @@ abcdk_object_t *_abcdkipconfig_resolv_load()
     abcdk_object_t *buf = NULL;
     int chk;
 
-    buf = abcdk_object_alloc2(1024*1024);
+    buf = abcdk_object_alloc2(1024 * 1024);
 
-    if(!buf)
+    if (!buf)
         return NULL;
 
-    abcdk_load("/etc/resolv.conf",buf->pstrs[0],buf->sizes[0],0);
+    abcdk_load("/etc/resolv.conf", buf->pstrs[0], buf->sizes[0], 0);
 
     return buf;
 }
@@ -310,16 +320,16 @@ void _abcdkipconfig_resolv_hash_code(char buf[33])
     abcdk_object_t *data = NULL;
 
     md5_ctx = abcdk_md5_create();
-    if(!md5_ctx)
+    if (!md5_ctx)
         goto ERR;
 
-    data = abcdk_mmap_filename("/etc/resolv.conf",0,0,0,0);
-    if(!data)
+    data = abcdk_mmap_filename("/etc/resolv.conf", 0, 0, 0, 0);
+    if (!data)
         goto ERR;
 
-    abcdk_md5_update(md5_ctx,data->pptrs[0],data->sizes[0]);
+    abcdk_md5_update(md5_ctx, data->pptrs[0], data->sizes[0]);
 
-    abcdk_md5_final2hex(md5_ctx,buf,0);
+    abcdk_md5_final2hex(md5_ctx, buf, 0);
 
 ERR:
 
@@ -336,8 +346,8 @@ void _abcdkipconfig_check_link(abcdkipconfig_node_t *ctx, const char *ifname)
     /*记录旧状态，并读取最新状态。*/
     prev_link_state = ctx->link_state;
     prev_oper_state = ctx->oper_state;
-    ctx->link_state = abcdk_net_get_link_state(ifname);
-    ctx->oper_state = abcdk_net_get_oper_state(ifname);
+    ctx->link_state = (abcdk_net_get_link_state(ifname) <= 0 ? 0 : 1);
+    ctx->oper_state = (abcdk_net_get_oper_state(ifname) <= 0 ? 0 : 1);
 
     /*检查链路状态是否发生变化，如果发生变化则重新应用配置。*/
     if (prev_link_state != ctx->link_state || prev_oper_state != ctx->oper_state)
@@ -348,10 +358,10 @@ void _abcdkipconfig_check_link(abcdkipconfig_node_t *ctx, const char *ifname)
             ctx->implement_state = 0;
 
         /*当链路断开后，清理地址和路由表。*/
-        if(!ctx->link_state && ctx->oper_state)
+        if (!ctx->link_state && ctx->oper_state)
         {
-            abcdk_net_address_flush(ctx->father->logger,ifname);
-            abcdk_net_route_flush(ctx->father->logger,ifname);
+            abcdk_net_address_flush(ctx->father->logger, ifname);
+            abcdk_net_route_flush(ctx->father->logger, ifname);
         }
     }
 }
@@ -386,66 +396,88 @@ void _abcdkipconfig_check_resolv(abcdkipconfig_node_t *ctx)
     if (abcdk_strcmp(curt_resolv_hcode, ctx->resolv_hcode, 0) == 0)
         return;
 
-    abcdk_logger_printf(ctx->father->logger,LOG_INFO, "resolv配置被改变，恢复应用配置。");
+    abcdk_logger_printf(ctx->father->logger, LOG_INFO, "resolv配置被改变，恢复应用配置。");
 
     ctx->implement_state = 0;
 }
 
-
 int _abcdkipconfig_eth_up(abcdkipconfig_node_t *ctx, const char *ifname)
 {
-    return abcdk_net_up(ctx->father->logger,ifname);
+    return abcdk_net_up(ctx->father->logger, ifname);
 }
 
 int _abcdkipconfig_eth_flush(abcdkipconfig_node_t *ctx, const char *ifname)
 {
-   return abcdk_net_address_flush(ctx->father->logger,ifname);
+    return abcdk_net_address_flush(ctx->father->logger, ifname);
 }
 
 int _abcdkipconfig_route_flush(abcdkipconfig_node_t *ctx, const char *ifname)
 {
-    return abcdk_net_route_flush(ctx->father->logger,ifname);
+    return abcdk_net_route_flush(ctx->father->logger, ifname);
 }
 
 int _abcdkipconfig_route_add(abcdkipconfig_node_t *ctx, int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
 {
-    return abcdk_net_route_add(ctx->father->logger,ver,host,prefix,gw,metric,ifname);
+    return abcdk_net_route_add(ctx->father->logger, ver, host, prefix, gw, metric, ifname);
 }
 
-int _abcdkipconfig_eth_add(abcdkipconfig_node_t *ctx,int idx, int ver, const char *addr, const char *ifname)
+int _abcdkipconfig_eth_add(abcdkipconfig_node_t *ctx, int idx, int ver, const char *addr, const char *ifname)
 {
-    char a[100] = {0}, b[100] = {0}, c[100] = {0}, d[100] = {0};
-    char *ip = NULL,*gw = NULL;
+    abcdk_object_t *addr_conf;
+    char *ip = NULL, *gw = NULL;
     int prefix = 0, metric = 100;
     int chk;
 
+    addr_conf = abcdk_strtok2vector(addr, ",");
+    if (!addr_conf)
+        return -1;
 
-    chk = scanf(addr,"%[^,]%*[,]%[^,]%*[,]%[^,]%*[,]%[^,]",a,b,c,d);
-    if(chk != 4)
-        return 22;
+    if (addr_conf->numbers < 2)
+    {
+        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求，其中网关和跃点为可选项。");
 
-    ip = a;
-    prefix = atoi(b);
-    
-    if(chk>2)
-        gw = c;
-    if(chk>3)
-        metric = atoi(d);
-    
-    abcdk_net_address_add(ctx->father->logger,ver,ip,prefix,gw,metric,ifname);
-    
+        chk = -22;
+        goto END;
+    }
+
+    /*清除字符串两端“空白”字符。*/
+    for (int i = 0; i < addr_conf->numbers; i++)
+    {
+        abcdk_strtrim(addr_conf->pstrs[i], isspace, 2);
+    }
+
+    ip = addr_conf->pstrs[0];
+    prefix = atoi(addr_conf->pstrs[1]);
+
+    if (addr_conf->numbers > 2)
+        gw = addr_conf->pstrs[2];
+    if (addr_conf->numbers > 3)
+        metric = atoi(addr_conf->pstrs[3]);
+
+    abcdk_net_address_add(ctx->father->logger, ver, ip, prefix, gw, metric, ifname);
+
     if (gw != NULL && *gw != '\0')
     {
         /*第一个网关，设为默认路由。*/
-        if(idx == 0)
+        if (idx == 0)
         {
-            chk = _abcdkipconfig_route_add(ctx,ver,"",0,gw,0,ifname);
-            if(chk != 0)
-                return -4;
+            chk = _abcdkipconfig_route_add(ctx, ver, (ver == 6 ? "0" : "0.0.0.0"), 0, gw, 0, ifname);
+            if (chk != 0)
+            {
+                chk = -4;
+                goto END;
+            }
         }
     }
 
-    return 0;
+    // OK.
+    chk = 0;
+
+END:
+
+    abcdk_object_unref(&addr_conf);
+
+    return chk;
 }
 
 void _abcdkipconfig_eth_close_dhcp(abcdkipconfig_node_t *ctx)
@@ -459,17 +491,16 @@ void _abcdkipconfig_eth_close_dhcp(abcdkipconfig_node_t *ctx)
     }
 }
 
-
 int _abcdkipconfig_eth_start_dhclient(abcdkipconfig_node_t *ctx, const char *ifname)
 {
     pid_t pid_chk;
 
     if (ctx->dhcp_pid < 0)
     {
-        _abcdkipconfig_eth_flush(ctx,ifname);
-        _abcdkipconfig_route_flush(ctx,ifname);
+        _abcdkipconfig_eth_flush(ctx, ifname);
+        _abcdkipconfig_route_flush(ctx, ifname);
 
-        ctx->dhcp_pid = abcdk_proc_popen(ctx->father->logger,NULL,NULL,NULL,"%s -1 -q --no-pid %s", ctx->father->dhclient_cmd, ifname);
+        ctx->dhcp_pid = abcdk_proc_popen(ctx->father->logger, NULL, NULL, NULL, "%s -1 -q --no-pid %s", ctx->father->dhclient_cmd, ifname);
         if (ctx->dhcp_pid < 0)
             return -1;
     }
@@ -480,12 +511,12 @@ int _abcdkipconfig_eth_start_dhclient(abcdkipconfig_node_t *ctx, const char *ifn
     {
         ctx->dhcp_pid = -1;
 
-        if(ctx->exitcode != 0)
+        if (ctx->exitcode != 0)
             return -2;
         else
             return 0;
     }
-    
+
     /*重试。*/
     return -15;
 }
@@ -496,10 +527,10 @@ int _abcdkipconfig_eth_start_udhcpc(abcdkipconfig_node_t *ctx, const char *ifnam
 
     if (ctx->dhcp_pid < 0)
     {
-        _abcdkipconfig_eth_flush(ctx,ifname);
-        _abcdkipconfig_route_flush(ctx,ifname);
+        _abcdkipconfig_eth_flush(ctx, ifname);
+        _abcdkipconfig_route_flush(ctx, ifname);
 
-        ctx->dhcp_pid = abcdk_proc_popen(ctx->father->logger,NULL,NULL,NULL,"%s -n -q -f -i %s -p /tmp/udhcpc.%s.pid", ctx->father->udhcpc_cmd, ifname, ifname);
+        ctx->dhcp_pid = abcdk_proc_popen(ctx->father->logger, NULL, NULL, NULL, "%s -n -q -f -i %s -p /tmp/udhcpc.%s.pid", ctx->father->udhcpc_cmd, ifname, ifname);
         if (ctx->dhcp_pid < 0)
             return -3;
     }
@@ -510,16 +541,15 @@ int _abcdkipconfig_eth_start_udhcpc(abcdkipconfig_node_t *ctx, const char *ifnam
     {
         ctx->dhcp_pid = -1;
 
-        if(ctx->exitcode != 0)
+        if (ctx->exitcode != 0)
             return -4;
         else
             return 0;
     }
-    
+
     /*重试。*/
     return -15;
 }
-
 
 int _abcdkipconfig_eth_start_dhcp(abcdkipconfig_node_t *ctx, const char *ifname)
 {
@@ -535,30 +565,29 @@ int _abcdkipconfig_eth_start_dhcp(abcdkipconfig_node_t *ctx, const char *ifname)
     }
     else
     {
-        abcdk_logger_printf(ctx->father->logger,LOG_ERR, "未支持的DHCP客户端。");
+        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "未支持的DHCP客户端。");
         return -5;
     }
 
-    if(chk == 0)
-        abcdk_logger_printf(ctx->father->logger,LOG_INFO, "为'%s'申请动态地址完成。", ifname);
-    else if(chk == -15)
-        abcdk_logger_printf(ctx->father->logger,LOG_INFO, "正在为'%s'申请动态地址……", ifname);
-    else 
-        abcdk_logger_printf(ctx->father->logger,LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname ,ctx->exitcode,ctx->sigcode);
+    if (chk == 0)
+        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "为'%s'申请动态地址完成。", ifname);
+    else if (chk == -15)
+        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "正在为'%s'申请动态地址……", ifname);
+    else
+        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname, ctx->exitcode, ctx->sigcode);
 
     return chk;
 }
 
-
-int _abcdkipconfig_resolv_change(abcdkipconfig_node_t *ctx,const char *const *nss)
+int _abcdkipconfig_resolv_change(abcdkipconfig_node_t *ctx, const char *const *nss)
 {
-    int blen = 1024*1024;
+    int blen = 1024 * 1024;
     char *buf = NULL;
     int len = 0;
     int chk;
 
-    buf = (char*)abcdk_heap_alloc(blen);
-    if(!buf)
+    buf = (char *)abcdk_heap_alloc(blen);
+    if (!buf)
         return -1;
 
     if (ctx->old_resolv)
@@ -573,37 +602,36 @@ int _abcdkipconfig_resolv_change(abcdkipconfig_node_t *ctx,const char *const *ns
 
     len += snprintf(buf + len, blen - len, "\n#vptool-ipconfig-end\n");
 
-    truncate("/etc/resolv.conf",0);
-    chk = abcdk_save("/etc/resolv.conf",buf,len,0);
-    if(chk != len)
+    truncate("/etc/resolv.conf", 0);
+    chk = abcdk_save("/etc/resolv.conf", buf, len, 0);
+    if (chk != len)
     {
-        abcdk_logger_printf(ctx->father->logger,LOG_ERR, "更新'resolv'失败。");
+        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "更新'resolv'失败。");
         goto ERR;
     }
 
-    abcdk_logger_printf(ctx->father->logger,LOG_INFO, "更新'resolv'完成。");
+    abcdk_logger_printf(ctx->father->logger, LOG_INFO, "更新'resolv'完成。");
 
-    abcdk_heap_free2((void**)&buf);
+    abcdk_heap_free2((void **)&buf);
     return 0;
 
 ERR:
 
-    abcdk_heap_free2((void**)&buf);
+    abcdk_heap_free2((void **)&buf);
     return -2;
 }
 
-
 void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
 {
-    const char *enable,*ifname,*tmp;
-    int addr4_count,addr6_count,nss_count;
+    const char *enable, *ifname, *tmp;
+    int addr4_count, addr6_count, nss_count;
     char *nss[100] = {0};
     int chk;
 
     enable = abcdk_option_get(opt, "--enable", 0, "");
     ifname = abcdk_option_get(opt, "--ifname", 0, "");
 
-    if(abcdk_strcmp(enable,"static",0)==0)
+    if (abcdk_strcmp(enable, "static", 0) == 0)
     {
         _abcdkipconfig_check_link(ctx, ifname);
         _abcdkipconfig_check_address(ctx, ifname);
@@ -615,8 +643,8 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
         if (!ctx->link_state || !ctx->oper_state || ctx->implement_state)
             return;
 
-        addr4_count = abcdk_option_count(opt,"--address4");
-        addr6_count = abcdk_option_count(opt,"--address6");
+        addr4_count = abcdk_option_count(opt, "--address4");
+        addr6_count = abcdk_option_count(opt, "--address6");
 
         /*没有新配置的情况下，保持现有配置不变。*/
         if (addr4_count <= 0 && addr6_count <= 0)
@@ -624,22 +652,22 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
 
         /*关闭可能存在的DHCP客户端。*/
         _abcdkipconfig_eth_close_dhcp(ctx);
-    
-        chk = _abcdkipconfig_eth_up(ctx,ifname);
-        if(chk != 0)
-            goto ERROR;
 
-        chk = _abcdkipconfig_eth_flush(ctx,ifname);
+        chk = _abcdkipconfig_eth_up(ctx, ifname);
         if (chk != 0)
             goto ERROR;
 
-        chk = _abcdkipconfig_route_flush(ctx,ifname);
+        chk = _abcdkipconfig_eth_flush(ctx, ifname);
+        if (chk != 0)
+            goto ERROR;
+
+        chk = _abcdkipconfig_route_flush(ctx, ifname);
         if (chk != 0)
             goto ERROR;
 
         for (int i = 0; i < addr4_count; i++)
         {
-            tmp = abcdk_option_get(opt, "--address4", i,"");
+            tmp = abcdk_option_get(opt, "--address4", i, "");
             chk = _abcdkipconfig_eth_add(ctx, i, 4, tmp, ifname);
             if (chk != 0)
                 goto ERROR;
@@ -647,16 +675,16 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
 
         for (int i = 0; i < addr6_count; i++)
         {
-            tmp = abcdk_option_get(opt, "--address6",i,"");
+            tmp = abcdk_option_get(opt, "--address6", i, "");
             chk = _abcdkipconfig_eth_add(ctx, i, 6, tmp, ifname);
             if (chk != 0)
                 goto ERROR;
         }
 
         /*记录最新配置。*/
-        _abcdkipconfig_eth_hash_code(ctx->addr_hcode,ifname);
+        _abcdkipconfig_eth_hash_code(ctx->addr_hcode, ifname);
     }
-    else if(abcdk_strcmp(enable,"dhcp",0)==0)
+    else if (abcdk_strcmp(enable, "dhcp", 0) == 0)
     {
         _abcdkipconfig_check_link(ctx, ifname);
         _abcdkipconfig_check_address(ctx, ifname);
@@ -668,14 +696,14 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
         if (!ctx->link_state || !ctx->oper_state || ctx->implement_state)
             return;
 
-        chk = _abcdkipconfig_eth_start_dhcp(ctx,ifname);
-        if(chk != 0)
+        chk = _abcdkipconfig_eth_start_dhcp(ctx, ifname);
+        if (chk != 0)
             goto ERROR;
-        
+
         /*记录最新配置。*/
-        _abcdkipconfig_eth_hash_code(ctx->addr_hcode,ifname);
+        _abcdkipconfig_eth_hash_code(ctx->addr_hcode, ifname);
     }
-    else if(abcdk_strcmp(enable,"resolv",0)==0)
+    else if (abcdk_strcmp(enable, "resolv", 0) == 0)
     {
         /*旧的配置只加载一次。*/
         if (!ctx->old_resolv)
@@ -689,11 +717,11 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
         if (ctx->implement_state)
             return;
 
-        nss_count = abcdk_option_count(opt,"--nameserver");
-        nss_count = ABCDK_CLAMP(nss_count,0,ABCDK_ARRAY_SIZE(nss)-1);
+        nss_count = abcdk_option_count(opt, "--nameserver");
+        nss_count = ABCDK_CLAMP(nss_count, 0, ABCDK_ARRAY_SIZE(nss) - 1);
         for (int i = 0; i < nss_count; i++)
         {
-            nss[i] = (char*)abcdk_option_get(opt, "--nameserver",i,NULL);
+            nss[i] = (char *)abcdk_option_get(opt, "--nameserver", i, NULL);
         }
 
         chk = _abcdkipconfig_resolv_change(ctx, (const char *const *)nss);
@@ -705,7 +733,7 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
     }
     else
     {
-        abcdk_logger_printf(ctx->father->logger,LOG_INFO,"未支持的使能方案，跳过。");
+        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "未支持的使能方案，跳过。");
     }
 
     ctx->implement_state = 1;
@@ -717,19 +745,17 @@ ERROR:
     return;
 }
 
-
-
-void _abcdkipconfig_work(void *opaque, uint32_t tid)
+void _abcdkipconfig_work_real(abcdkipconfig_t *ctx, uint32_t idx)
 {
     abcdkipconfig_node_t *node_ctx = _abcdkipconfig_node_alloc();
     abcdk_option_t *conf_a = NULL, *conf_b = NULL, *conf_prev = NULL;
     int chk;
 
-    abcdk_thread_setname("ipconfig-%d", tid);
+    abcdk_thread_setname("ipconfig-%d", idx);
 
-    node_ctx->father = (abcdkipconfig_t *)opaque;
+    node_ctx->father = ctx;
 
-    const char *conf_file = abcdk_option_get(node_ctx->father->args, "--conf", tid, "");
+    const char *conf_file = abcdk_option_get(node_ctx->father->args, "--conf", idx, "");
 
 WATCHDOG:
 
@@ -760,6 +786,12 @@ WATCHDOG:
         chk = _abcdkipconfig_compare_option(conf_b, conf_prev);
         if (chk == 0)
             goto END;
+
+        /*释放旧的配置。*/
+        abcdk_option_free(&conf_prev);
+        /*复制新配置。*/
+        conf_prev = conf_b;
+        conf_b = NULL;
     }
     else
     {
@@ -792,35 +824,56 @@ END:
     _abcdkipconfig_node_free(&node_ctx);
 }
 
+void _abcdkipconfig_work(void *opaque, uint32_t tid)
+{
+    abcdkipconfig_t *ctx = (abcdkipconfig_t *)opaque;
+
+    if (tid == 0)
+    {
+        /*等待终止信号。*/
+        abcdk_proc_wait_exit_signal(ctx->logger, -1);
+
+        /*通知所有线程退出。*/
+        abcdk_atomic_store(&ctx->exitflag, 1);
+    }
+    else
+    {
+        _abcdkipconfig_work_real(ctx, tid - 1);
+    }
+}
+
 void _abcdkipconfig_process(abcdkipconfig_t *ctx)
 {
-    sigset_t sigs = {0};
     abcdk_parallel_t *parallel_ctx = NULL;
     int conf_num;
+
+    ctx->dhclient_cmd = abcdk_option_get(ctx->args, "--dhclient-cmd", 0, NULL);
+    ctx->udhcpc_cmd = abcdk_option_get(ctx->args, "--udhcpc-cmd", 0, NULL);
+    conf_num = abcdk_option_count(ctx->args, "--conf");
+
+    _abcdkipconfig_find_dhcp_client(ctx);
 
     /*打开日志。*/
     ctx->logger = abcdk_logger_open("/tmp/abcdk/log/ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
 
     abcdk_logger_printf(ctx->logger, LOG_INFO, "启动……");
 
-    _abcdkipconfig_find_dhcp_client(ctx);
-
-    conf_num = abcdk_option_count(ctx->args, "--conf");
+    if (conf_num <= 0)
+    {
+        abcdk_logger_printf(ctx->logger, LOG_ERR, "至少指定一个配置文件。");
+        goto ERR;
+    }
 
     /*创建线程池。*/
-    parallel_ctx = abcdk_parallel_alloc(conf_num);
+    parallel_ctx = abcdk_parallel_alloc(conf_num + 1);
 
     /*并发执行所有任务。*/
-    abcdk_parallel_invoke(parallel_ctx, conf_num, ctx, _abcdkipconfig_work);
-
-    /*等待终止信号。*/
-    abcdk_proc_wait_exit_signal(ctx->logger, -1);
-
-    /*通知所有线程退出。*/
-    abcdk_atomic_store(&ctx->exitflag, 1);
+    abcdk_parallel_invoke(parallel_ctx, conf_num + 1, ctx, _abcdkipconfig_work);
 
     /*销毁线程池。*/
     abcdk_parallel_free(&parallel_ctx);
+
+ERR:
 
     abcdk_logger_printf(ctx->logger, LOG_INFO, "停止。");
 
@@ -857,6 +910,7 @@ void _abcdkipconfig_daemon(abcdkipconfig_t *ctx)
 int abcdk_tool_ipconfig(abcdk_option_t *args)
 {
     abcdkipconfig_t ctx = {0};
+    int other_pid = -1, self_pid = -1;
 
     ctx.args = args;
 
@@ -866,6 +920,15 @@ int abcdk_tool_ipconfig(abcdk_option_t *args)
     }
     else
     {
+
+        /*单实例运行。*/
+        self_pid = abcdk_proc_singleton("/tmp/abcdk/pid/ipconfig.pid", &other_pid);
+        if (self_pid < 0)
+        {
+            fprintf(stderr, "已经有实例(PID=%d)正在运行。\n", other_pid);
+            return 1;
+        }
+
         if (abcdk_option_exist(ctx.args, "--daemon"))
         {
             fprintf(stderr, "进入后台守护模式。\n");
@@ -879,5 +942,5 @@ int abcdk_tool_ipconfig(abcdk_option_t *args)
         }
     }
 
-    return ctx.errcode;
+    return 0;
 }

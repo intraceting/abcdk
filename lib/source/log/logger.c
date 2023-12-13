@@ -69,6 +69,8 @@ void abcdk_logger_close(abcdk_logger_t **ctx)
     abcdk_closep(&ctx_p->fd);
     abcdk_mutex_unlock(&ctx_p->locker);
     abcdk_object_unref(&ctx_p->buf);
+
+    abcdk_heap_free(ctx_p);
 }
 
 abcdk_logger_t *abcdk_logger_open(const char *name,const char *segment_name,size_t segment_max,size_t segment_size,int copy2syslog,int copy2stderr)
@@ -324,6 +326,7 @@ final:
     /*解锁，给其它线程写入的机会。*/
     abcdk_mutex_unlock(&ctx->locker);
 }
+
 
 void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_list ap)
 {

@@ -42,7 +42,7 @@ void abcdk_signal_fill(sigset_t *sigs,int sigdel,...)
         if (sigdel == -1)
             break;
 
-        abcdk_signal_set(sigs,1, sigdel);
+        abcdk_signal_set(sigs,1, sigdel,-1);
 
         /*遍历后续的。*/
         sigdel = va_arg(vaptr, int);
