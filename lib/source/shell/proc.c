@@ -180,7 +180,7 @@ CHECK_RETRY:
         return 0;
 }
 
-int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_process_cb process_cb, void *opaque)
+int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_fork_process_cb process_cb, void *opaque)
 {
     pid_t cid = -1,cid_chk = -1;
     int chk;
@@ -191,7 +191,7 @@ int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_proc
     {
         if (cid < 0)
         {
-            cid = abcdk_exec_fork(process_cb, opaque, NULL, NULL, NULL);
+            cid = abcdk_fork(process_cb, opaque, NULL, NULL, NULL);
             if (cid < 0)
             {
                 if(logger)

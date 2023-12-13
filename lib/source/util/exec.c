@@ -6,10 +6,10 @@
  */
 #include "abcdk/util/exec.h"
 
-pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
-                      int *stdin_fd, int *stdout_fd, int *stderr_fd)
+pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
+                 int *stdin_fd, int *stdout_fd, int *stderr_fd)
 {
-    pid_t child = -1,sid = -1;
+    pid_t child = -1, sid = -1;
     int out2in_fd[2] = {-1, -1};
     int in2out_fd[2] = {-1, -1};
     int in2err_fd[2] = {-1, -1};
@@ -29,7 +29,7 @@ pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
     child = fork();
     if (child < 0)
         goto error;
-    
+
     if (child == 0)
     {
         /*创建一个新会话并脱离终端控制。*/
@@ -44,7 +44,7 @@ pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
 
         abcdk_closep(&out2in_fd[1]);
         abcdk_closep(&out2in_fd[0]);
-        
+
         if (stdout_fd)
             dup2(in2out_fd[1], STDOUT_FILENO);
         else
@@ -52,7 +52,7 @@ pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
 
         abcdk_closep(&in2out_fd[0]);
         abcdk_closep(&in2out_fd[1]);
-        
+
         if (stderr_fd)
             dup2(in2err_fd[1], STDERR_FILENO);
         else
@@ -68,8 +68,8 @@ pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
     else
     {
         /*
-        * 关闭不需要的句柄。
-        */
+         * 关闭不需要的句柄。
+         */
         abcdk_closep(&out2in_fd[0]);
         abcdk_closep(&in2out_fd[1]);
         abcdk_closep(&in2err_fd[1]);
@@ -88,8 +88,8 @@ pid_t abcdk_exec_fork(abcdk_exec_fork_process_cb process_cb, void *opaque,
             *stderr_fd = in2err_fd[0];
         else
             abcdk_closep(&in2err_fd[0]);
-            
-         return child;
+
+        return child;
     }
 
 error:
@@ -104,7 +104,7 @@ error:
     return -1;
 }
 
-typedef struct _abcdk_exec_new_param
+typedef struct _abcdk_system_param
 {
     const char *filename;
     char *const *args;
@@ -113,11 +113,11 @@ typedef struct _abcdk_exec_new_param
     gid_t gid;
     const char *rpath;
     const char *wpath;
-}abcdk_exec_new_param_t;
+} abcdk_system_param_t;
 
-int abcdk_exec_new_process_cb(void *opaque)
+int _abcdk_system_process_cb(void *opaque)
 {
-    abcdk_exec_new_param_t *param_p = (abcdk_exec_new_param_t*)opaque;
+    abcdk_system_param_t *param_p = (abcdk_system_param_t *)opaque;
     int chk;
 
     if (param_p->uid != 0)
@@ -149,18 +149,18 @@ int abcdk_exec_new_process_cb(void *opaque)
     }
 
     chk = execve(param_p->filename, param_p->args, (param_p->envs ? param_p->envs : environ));
-    if(chk != 0)
+    if (chk != 0)
         return errno;
 
     /*正常情况下，永远也不可能到这里.*/
     return 121;
 }
 
-pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
-                     uid_t uid, gid_t gid, const char *rpath, const char *wpath,
-                     int *stdin_fd, int *stdout_fd, int *stderr_fd)
+pid_t abcdk_system(const char *filename, char *const *args, char *const *envs,
+                   uid_t uid, gid_t gid, const char *rpath, const char *wpath,
+                   int *stdin_fd, int *stdout_fd, int *stderr_fd)
 {
-    abcdk_exec_new_param_t param = {0};
+    abcdk_system_param_t param = {0};
 
     assert(filename != NULL && args != NULL);
 
@@ -171,6 +171,6 @@ pid_t abcdk_exec_new(const char *filename, char *const *args, char *const *envs,
     param.gid = gid;
     param.rpath = rpath;
     param.wpath = wpath;
-    
-    return abcdk_exec_fork(abcdk_exec_new_process_cb,&param,stdin_fd,stdout_fd,stderr_fd);
+
+    return abcdk_fork(_abcdk_system_process_cb, &param, stdin_fd, stdout_fd, stderr_fd);
 }

@@ -19,5 +19,5 @@ pid_t abcdk_popen(const char *cmdline, char *const *envs, uid_t uid,
     args[2] = (char*)cmdline;
     args[3] = NULL;
 
-    return abcdk_exec_new("/bin/sh", args, envs, uid, gid, rpath, wpath, stdin_fd, stdout_fd, stderr_fd);
+    return abcdk_system("/bin/sh", args, envs, uid, gid, rpath, wpath, stdin_fd, stdout_fd, stderr_fd);
 }

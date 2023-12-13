@@ -77,7 +77,7 @@ int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_exec_fork_process_cb process_cb, void *opaque);
+int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_fork_process_cb process_cb, void *opaque);
 
 /**
  * 执行外部命令。
