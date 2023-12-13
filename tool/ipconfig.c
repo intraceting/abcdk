@@ -555,13 +555,13 @@ int _abcdkipconfig_eth_start_dhcp(abcdkipconfig_node_t *ctx, const char *ifname)
 {
     int chk;
 
-    if (ctx->father->dhclient_cmd)
-    {
-        chk = _abcdkipconfig_eth_start_dhclient(ctx, ifname);
-    }
-    else if (ctx->father->udhcpc_cmd)
+    if (ctx->father->udhcpc_cmd)
     {
         chk = _abcdkipconfig_eth_start_udhcpc(ctx, ifname);
+    }
+    else if (ctx->father->dhclient_cmd)
+    {
+        chk = _abcdkipconfig_eth_start_dhclient(ctx, ifname);
     }
     else
     {
