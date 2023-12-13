@@ -759,7 +759,7 @@ void _abcdkipconfig_work_real(abcdkipconfig_t *ctx, uint32_t idx)
 
 WATCHDOG:
 
-    /*1秒间隔，太频烦无用。*/
+    /*1秒间隔，太频繁无用。*/
     sleep(1);
 
     abcdk_option_free(&conf_a);
@@ -767,7 +767,7 @@ WATCHDOG:
     if (!conf_a)
         goto END;
 
-    /*1秒间隔，太频烦无用。*/
+    /*1秒间隔，太频繁无用。*/
     sleep(1);
 
     abcdk_option_free(&conf_b);
