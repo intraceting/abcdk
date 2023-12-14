@@ -51,6 +51,16 @@ char* abcdk_proc_basename(char* buf);
 int abcdk_proc_singleton(const char* lockfile,int* pid);
 
 /**
+ * 拦截信号。
+ * 
+ * @param news 新的信号集合。NULL(0) 默认所有信号，SIGTRAP、SIGKILL、SIGSEGV、SIGSTOP除外。
+ * @param olds 旧的信号集合。NULL(0) 忽略。
+
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_proc_signal_block(const sigset_t *news,sigset_t *olds);
+
+/**
  * 等待信号。
  * 
  * @param timeout 超时(毫秒)。

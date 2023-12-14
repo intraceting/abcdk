@@ -120,32 +120,22 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
     return -1;
 }
 
+int abcdk_proc_signal_block(const sigset_t *news, sigset_t *olds)
+{
+    sigset_t default_sigs = {0},*p = NULL;
+
+    ABCDK_ASSERT(getpid() == gettid(),"仅限主线程调用。");
+
+    /*阻塞信号。*/
+    abcdk_signal_fill(&default_sigs, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP, -1);
+
+    p = (news ? news : &default_sigs);
+
+    return abcdk_signal_block(p, olds);
+}
+
 int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout)
 {
-    static volatile pid_t self_pid = -1;
-    static volatile int init_status = 0;
-    static volatile pthread_t tid_creater = 0;
-
-    assert(info != NULL);
-
-    /*如果是被克隆的，要重新初始化。*/
-    if(!abcdk_atomic_compare(&self_pid,getpid()))
-    {
-        abcdk_atomic_store(&init_status,0);
-        abcdk_atomic_store(&tid_creater,0);
-    }
-    
-    ABCDK_ASSERT(!abcdk_thread_leader_vote(&tid_creater) || !abcdk_thread_leader_test(&tid_creater),"必须在同一个线程中使用。");
-
-    if (abcdk_atomic_compare_and_swap(&init_status, 0, 1))
-    {
-        sigset_t sigs = {0};
-        
-        /*阻塞信号。*/
-        abcdk_signal_fill(&sigs, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP, -1);
-        abcdk_signal_block(&sigs, NULL);
-    }
-
     return abcdk_signal_wait(info,NULL, timeout);
 }
 

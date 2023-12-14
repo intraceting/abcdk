@@ -107,6 +107,9 @@ int main(int argc, char **argv)
     /*随机数种子。*/
     srand(time(NULL));
 
+    /*拦截信号。*/
+    abcdk_proc_signal_block(NULL,NULL);
+
 #ifdef HEADER_SSL_H
     SSL_library_init();
     OpenSSL_add_all_algorithms();
