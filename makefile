@@ -270,6 +270,7 @@ INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
 INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
+INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/doc/)
 INSTALL_PATH_PKG = $(abspath ${INSTALL_PATH}/lib/pkgconfig/)
 
 
@@ -281,11 +282,13 @@ install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_BIN}
+	mkdir -p ${INSTALL_PATH_DOC}
 #
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script ${INSTALL_PATH_BIN}/
+	cp -rf $(CURDIR)/doc ${INSTALL_PATH_DOC}/
 	
 #
 install-devel:
@@ -311,6 +314,7 @@ uninstall-runtime:
 #
 	rm -f $(INSTALL_PATH_BIN)/abcdk
 	rm -rf $(INSTALL_PATH_BIN)/script
+	rm -rf $(INSTALL_PATH_BIN)/doc
 	
 #
 uninstall-devel:
