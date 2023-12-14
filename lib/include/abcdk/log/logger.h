@@ -12,6 +12,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/uri.h"
 #include "abcdk/util/mutex.h"
+#include "abcdk/util/trace.h"
 
 
 __BEGIN_DECLS
@@ -44,7 +45,7 @@ typedef enum _abcdk_logger_type
 } abcdk_logger_type_t;
 
 /** 检查日志类型。*/
-#define ABCDK_LOGER_TYPE_CHECK(t) ((t) >= ABCDK_LOGGER_ERROR && (t) < ABCDK_LOGGER_MAX)
+#define ABCDK_LOGGER_TYPE_CHECK(t) ((t) >= ABCDK_LOGGER_ERROR && (t) < ABCDK_LOGGER_MAX)
 
 /**
  * 关闭。
@@ -106,10 +107,11 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
  */
 void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...);
 
+
 /**
- * 格式化输出信号信息。
- */
-void abcdk_logger_dump_siginfo(abcdk_logger_t *ctx, int type, siginfo_t *info);
+ * 轨迹日志函数。
+*/
+void abcdk_logger_from_trace(void *opaque,int type, const char* fmt, va_list vp);
 
 
 __END_DECLS

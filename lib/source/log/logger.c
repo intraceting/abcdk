@@ -122,7 +122,7 @@ void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
     va_start(vaptr, type);
     for (;;)
     {
-        if (!ABCDK_LOGER_TYPE_CHECK(type))
+        if (!ABCDK_LOGGER_TYPE_CHECK(type))
             break;
 
         mask |= (1 << type);
@@ -234,7 +234,7 @@ void abcdk_logger_puts(abcdk_logger_t *ctx, int type, const char *str)
     char c;
     int chk;
 
-    assert(ctx != NULL && ABCDK_LOGER_TYPE_CHECK(type) && str != NULL);
+    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && str != NULL);
 
     /*如果不需要记录，直接跳过。*/
     if (!(abcdk_atomic_load(&ctx->mask) & (1 << type)))
@@ -332,7 +332,7 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
 {
     char buf[8000] = {0};
 
-    assert(ctx != NULL && ABCDK_LOGER_TYPE_CHECK(type) && fmt != NULL);
+    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && fmt != NULL);
 
     vsnprintf(buf, 8000, fmt, ap);
     abcdk_logger_puts(ctx, type, buf);
@@ -340,7 +340,7 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
 
 void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...)
 {
-    assert(ctx != NULL && ABCDK_LOGER_TYPE_CHECK(type) && fmt != NULL);
+    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && fmt != NULL);
 
     va_list ap;
     va_start(ap, fmt);
@@ -350,10 +350,17 @@ void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...)
 
 void abcdk_logger_dump_siginfo(abcdk_logger_t *ctx, int type, siginfo_t *info)
 {
-    assert(ctx != NULL && ABCDK_LOGER_TYPE_CHECK(type) && info != NULL);
+    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && info != NULL);
 
     if (SI_USER == info->si_code)
         abcdk_logger_printf(ctx, type, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info->si_signo, info->si_errno, info->si_code, info->si_pid, info->si_uid);
     else
         abcdk_logger_printf(ctx, type, "signo(%d),errno(%d),code(%d)\n", info->si_signo, info->si_errno, info->si_code);
+}
+
+void abcdk_logger_from_trace(void *opaque,int type, const char* fmt, va_list vp)
+{
+    abcdk_logger_t *ctx = (abcdk_logger_t *)opaque;
+
+    abcdk_logger_vprintf(ctx,type,fmt,vp);
 }

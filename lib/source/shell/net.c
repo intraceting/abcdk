@@ -48,109 +48,101 @@ int abcdk_net_get_oper_state(const char *ifname)
     return -2;
 }
 
-int abcdk_net_down(abcdk_logger_t *logger, const char *ifname)
+int abcdk_net_down(const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     pid_t pid = -1;
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_popen(logger, NULL, NULL, NULL, "ip link set %s down", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip link set %s down", ifname);
     if (pid < 0)
         return -1;
 
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        if (logger)
-            abcdk_logger_printf(logger, LOG_ERR, "停用'%s'失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
+        abcdk_trace_output( LOG_ERR, "停用'%s'失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
 
         return -2;
     }
 
-    if (logger)
-        abcdk_logger_printf(logger, LOG_INFO, "停用'%s'完成。", ifname);
+    abcdk_trace_output(LOG_INFO, "停用'%s'完成。", ifname);
 
     return 0;
 }
 
-int abcdk_net_up(abcdk_logger_t *logger, const char *ifname)
+int abcdk_net_up(const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     pid_t pid = -1;
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_popen(logger, NULL, NULL, NULL, "ip link set %s up", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip link set %s up", ifname);
     if (pid < 0)
         return -1;
 
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        if (logger)
-            abcdk_logger_printf(logger, LOG_ERR, "启用'%s'失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
+        abcdk_trace_output( LOG_ERR, "启用'%s'失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
 
         return -2;
     }
 
-    if (logger)
-        abcdk_logger_printf(logger, LOG_INFO, "启用'%s'完成。", ifname);
+    abcdk_trace_output( LOG_INFO, "启用'%s'完成。", ifname);
 
     return 0;
 }
 
-int abcdk_net_address_flush(abcdk_logger_t *logger, const char *ifname)
+int abcdk_net_address_flush(const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     pid_t pid = -1;
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_popen(logger, NULL, NULL, NULL, "ip address flush dev %s", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip address flush dev %s", ifname);
     if (pid < 0)
         return -1;
 
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        if (logger)
-            abcdk_logger_printf(logger, LOG_ERR, "清除'%s'配置失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
+        abcdk_trace_output(LOG_ERR, "清除'%s'配置失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
         return -2;
     }
 
-    if (logger)
-        abcdk_logger_printf(logger,LOG_INFO, "清除'%s'配置完成。", ifname);
+    abcdk_trace_output(LOG_INFO, "清除'%s'配置完成。", ifname);
 
     return 0;
 }
 
-int abcdk_net_route_flush(abcdk_logger_t *logger, const char *ifname)
+int abcdk_net_route_flush(const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     pid_t pid = -1;
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_popen(logger, NULL, NULL, NULL,"ip route flush dev %s", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL,"ip route flush dev %s", ifname);
     if (pid < 0)
         return -1;
 
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        if (logger)
-            abcdk_logger_printf(logger, LOG_ERR, "清除'%s'路由配置失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
+        abcdk_trace_output( LOG_ERR, "清除'%s'路由配置失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
         return -2;
     }
 
-    if (logger)
-        abcdk_logger_printf(logger, LOG_INFO, "清除'%s'路由配置完成。", ifname);
+    abcdk_trace_output( LOG_INFO, "清除'%s'路由配置完成。", ifname);
 
     return 0;
 }
 
-int abcdk_net_route_add(abcdk_logger_t *logger, int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
+int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     char mask[100] = {0};
@@ -162,27 +154,25 @@ int abcdk_net_route_add(abcdk_logger_t *logger, int ver, const char *host, int p
 
     abcdk_sockaddr_make_netmask2(mask, ((ver == 6) ? AF_INET6 : AF_INET), host, prefix);
 
-    pid = abcdk_proc_popen(logger, NULL, NULL, NULL, "ip -%d route add %s/%d via %s metric %d dev %s", ver, mask, prefix, gw, metric, ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip -%d route add %s/%d via %s metric %d dev %s", ver, mask, prefix, gw, metric, ifname);
     if (pid < 0)
         return -1;
 
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0 && exitcode != 2)
     {
-        if (logger)
-            abcdk_logger_printf(logger, LOG_ERR, "添加路由('IPV%d','%s/%d','%s','%d')到'%s'失败(exit=%d,signal=%d)。",
+        abcdk_trace_output( LOG_ERR, "添加路由('IPV%d','%s/%d','%s','%d')到'%s'失败(exit=%d,signal=%d)。",
                                 ver, mask, prefix, gw, metric, ifname, exitcode, sigcode);
         return -2;
     }
 
-    if (logger)
-        abcdk_logger_printf(logger, LOG_INFO, "添加路由('IPV%d','%s/%d','%s','%d')到'%s'完成。",
+    abcdk_trace_output( LOG_INFO, "添加路由('IPV%d','%s/%d','%s','%d')到'%s'完成。",
                             ver, mask, prefix, gw, metric, ifname, exitcode, sigcode);
 
     return 0;
 }
 
-int abcdk_net_address_add(abcdk_logger_t *logger, int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
+int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     pid_t pid = -1;
@@ -191,21 +181,19 @@ int abcdk_net_address_add(abcdk_logger_t *logger, int ver, const char *host, int
     assert((ver == 4 || ver == 6) && host != NULL && prefix > 0 && ifname != NULL);
     assert(*host != '\0' && *ifname != '\0');
 
-    pid = abcdk_proc_popen(logger, NULL, NULL, NULL, "ip -%d address add %s/%d dev %s", ver, host, prefix, ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip -%d address add %s/%d dev %s", ver, host, prefix, ifname);
     if (pid < 0)
         return -1;
 
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        if (logger)
-            abcdk_logger_printf(logger, LOG_ERR, "添加地址('IPV%d','%s/%d')到'%s'失败(exit=%d,signal=%d)。",
+        abcdk_trace_output( LOG_ERR, "添加地址('IPV%d','%s/%d')到'%s'失败(exit=%d,signal=%d)。",
                                 ver, host, prefix, ifname, exitcode, sigcode);
         return -2;
     }
 
-    if (logger)
-        abcdk_logger_printf(logger, LOG_INFO, "添加地址('IPV%d','%s/%d')到'%s'完成。",
+    abcdk_trace_output( LOG_INFO, "添加地址('IPV%d','%s/%d')到'%s'完成。",
                             ver, host, prefix, ifname, exitcode, sigcode);
 
     /*可能没有网关。*/
@@ -213,7 +201,7 @@ int abcdk_net_address_add(abcdk_logger_t *logger, int ver, const char *host, int
     {
         metric = ABCDK_CLAMP(metric,0,999);
 
-        chk = abcdk_net_route_add(logger,ver,host,prefix,gw,metric,ifname);
+        chk = abcdk_net_route_add(ver,host,prefix,gw,metric,ifname);
         if(chk != 0)
             return -3;
     }

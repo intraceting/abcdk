@@ -66,7 +66,7 @@ int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout);
  * 
  * @return 1 收到终止信号，0 超时，-1 系统错误。
 */
-int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout);
+int abcdk_proc_wait_exit_signal(time_t timeout);
 
 /**
  * 守护进程。
@@ -77,12 +77,12 @@ int abcdk_proc_wait_exit_signal(abcdk_logger_t *logger, time_t timeout);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_proc_daemon(abcdk_logger_t *logger, int interval, abcdk_fork_process_cb process_cb, void *opaque);
+int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaque);
 
 /**
  * 执行外部命令。
 */
-pid_t abcdk_proc_popen(abcdk_logger_t *logger, int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
+pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
 
 
 __END_DECLS

@@ -352,7 +352,7 @@ void _abcdkipconfig_check_link(abcdkipconfig_node_t *ctx, const char *ifname)
     /*检查链路状态是否发生变化，如果发生变化则重新应用配置。*/
     if (prev_link_state != ctx->link_state || prev_oper_state != ctx->oper_state)
     {
-        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "链路('%s')状态发生变化(link=%d,oper=%d)。", ifname, ctx->link_state, ctx->oper_state);
+        abcdk_trace_output( LOG_INFO, "链路('%s')状态发生变化(link=%d,oper=%d)。", ifname, ctx->link_state, ctx->oper_state);
 
         if (ctx->link_state && ctx->oper_state)
             ctx->implement_state = 0;
@@ -360,8 +360,8 @@ void _abcdkipconfig_check_link(abcdkipconfig_node_t *ctx, const char *ifname)
         /*当链路断开后，清理地址和路由表。*/
         if (!ctx->link_state && ctx->oper_state)
         {
-            abcdk_net_address_flush(ctx->father->logger, ifname);
-            abcdk_net_route_flush(ctx->father->logger, ifname);
+            abcdk_net_address_flush(ifname);
+            abcdk_net_route_flush(ifname);
         }
     }
 }
@@ -381,7 +381,7 @@ void _abcdkipconfig_check_address(abcdkipconfig_node_t *ctx, const char *ifname)
     if (abcdk_strcmp(curt_addr_hcode, ctx->addr_hcode, 0) == 0)
         return;
 
-    abcdk_logger_printf(ctx->father->logger, LOG_INFO, "链路('%s')配置被改变，恢复应用配置。", ifname);
+    abcdk_trace_output( LOG_INFO, "链路('%s')配置被改变，恢复应用配置。", ifname);
 
     ctx->implement_state = 0;
 }
@@ -396,29 +396,29 @@ void _abcdkipconfig_check_resolv(abcdkipconfig_node_t *ctx)
     if (abcdk_strcmp(curt_resolv_hcode, ctx->resolv_hcode, 0) == 0)
         return;
 
-    abcdk_logger_printf(ctx->father->logger, LOG_INFO, "resolv配置被改变，恢复应用配置。");
+    abcdk_trace_output( LOG_INFO, "resolv配置被改变，恢复应用配置。");
 
     ctx->implement_state = 0;
 }
 
 int _abcdkipconfig_eth_up(abcdkipconfig_node_t *ctx, const char *ifname)
 {
-    return abcdk_net_up(ctx->father->logger, ifname);
+    return abcdk_net_up( ifname);
 }
 
 int _abcdkipconfig_eth_flush(abcdkipconfig_node_t *ctx, const char *ifname)
 {
-    return abcdk_net_address_flush(ctx->father->logger, ifname);
+    return abcdk_net_address_flush( ifname);
 }
 
 int _abcdkipconfig_route_flush(abcdkipconfig_node_t *ctx, const char *ifname)
 {
-    return abcdk_net_route_flush(ctx->father->logger, ifname);
+    return abcdk_net_route_flush( ifname);
 }
 
 int _abcdkipconfig_route_add(abcdkipconfig_node_t *ctx, int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
 {
-    return abcdk_net_route_add(ctx->father->logger, ver, host, prefix, gw, metric, ifname);
+    return abcdk_net_route_add( ver, host, prefix, gw, metric, ifname);
 }
 
 int _abcdkipconfig_eth_add(abcdkipconfig_node_t *ctx, int idx, int ver, const char *addr, const char *ifname)
@@ -434,7 +434,7 @@ int _abcdkipconfig_eth_add(abcdkipconfig_node_t *ctx, int idx, int ver, const ch
 
     if (addr_conf->numbers < 2)
     {
-        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求，其中网关和跃点为可选项。");
+        abcdk_trace_output( LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求，其中网关和跃点为可选项。");
 
         chk = -22;
         goto END;
@@ -454,7 +454,7 @@ int _abcdkipconfig_eth_add(abcdkipconfig_node_t *ctx, int idx, int ver, const ch
     if (addr_conf->numbers > 3)
         metric = atoi(addr_conf->pstrs[3]);
 
-    abcdk_net_address_add(ctx->father->logger, ver, ip, prefix, gw, metric, ifname);
+    abcdk_net_address_add(ver, ip, prefix, gw, metric, ifname);
 
     if (gw != NULL && *gw != '\0')
     {
@@ -500,7 +500,7 @@ int _abcdkipconfig_eth_start_dhclient(abcdkipconfig_node_t *ctx, const char *ifn
         _abcdkipconfig_eth_flush(ctx, ifname);
         _abcdkipconfig_route_flush(ctx, ifname);
 
-        ctx->dhcp_pid = abcdk_proc_popen(ctx->father->logger, NULL, NULL, NULL, "%s -1 -q --no-pid %s", ctx->father->dhclient_cmd, ifname);
+        ctx->dhcp_pid = abcdk_proc_popen(NULL, NULL, NULL, "%s -1 -q --no-pid %s", ctx->father->dhclient_cmd, ifname);
         if (ctx->dhcp_pid < 0)
             return -1;
     }
@@ -530,7 +530,7 @@ int _abcdkipconfig_eth_start_udhcpc(abcdkipconfig_node_t *ctx, const char *ifnam
         _abcdkipconfig_eth_flush(ctx, ifname);
         _abcdkipconfig_route_flush(ctx, ifname);
 
-        ctx->dhcp_pid = abcdk_proc_popen(ctx->father->logger, NULL, NULL, NULL, "%s -n -q -f -i %s -p /tmp/udhcpc.%s.pid", ctx->father->udhcpc_cmd, ifname, ifname);
+        ctx->dhcp_pid = abcdk_proc_popen( NULL, NULL, NULL, "%s -n -q -f -i %s -p /tmp/udhcpc.%s.pid", ctx->father->udhcpc_cmd, ifname, ifname);
         if (ctx->dhcp_pid < 0)
             return -3;
     }
@@ -565,16 +565,16 @@ int _abcdkipconfig_eth_start_dhcp(abcdkipconfig_node_t *ctx, const char *ifname)
     }
     else
     {
-        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "未支持的DHCP客户端。");
+        abcdk_trace_output( LOG_ERR, "未支持的DHCP客户端。");
         return -5;
     }
 
     if (chk == 0)
-        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "为'%s'申请动态地址完成。", ifname);
+        abcdk_trace_output( LOG_INFO, "为'%s'申请动态地址完成。", ifname);
     else if (chk == -15)
-        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "正在为'%s'申请动态地址……", ifname);
+        abcdk_trace_output( LOG_INFO, "正在为'%s'申请动态地址……", ifname);
     else
-        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname, ctx->exitcode, ctx->sigcode);
+        abcdk_trace_output( LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname, ctx->exitcode, ctx->sigcode);
 
     return chk;
 }
@@ -606,11 +606,11 @@ int _abcdkipconfig_resolv_change(abcdkipconfig_node_t *ctx, const char *const *n
     chk = abcdk_save("/etc/resolv.conf", buf, len, 0);
     if (chk != len)
     {
-        abcdk_logger_printf(ctx->father->logger, LOG_ERR, "更新'resolv'失败。");
+        abcdk_trace_output( LOG_ERR, "更新'resolv'失败。");
         goto ERR;
     }
 
-    abcdk_logger_printf(ctx->father->logger, LOG_INFO, "更新'resolv'完成。");
+    abcdk_trace_output( LOG_INFO, "更新'resolv'完成。");
 
     abcdk_heap_free2((void **)&buf);
     return 0;
@@ -733,7 +733,7 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
     }
     else
     {
-        abcdk_logger_printf(ctx->father->logger, LOG_INFO, "未支持的使能方案，跳过。");
+        abcdk_trace_output( LOG_INFO, "未支持的使能方案，跳过。");
     }
 
     ctx->implement_state = 1;
@@ -808,7 +808,7 @@ WATCHDOG:
     node_ctx->implement_state = 0;
 
     _abcdkipconfig_dump_option(conf_prev, node_ctx->father->logger);
-    abcdk_logger_printf(node_ctx->father->logger, LOG_INFO, "配置文件('%s')已经更新，在应用新配置过程中网络连接可能发生抖动。", conf_file);
+    abcdk_trace_output( LOG_INFO, "配置文件('%s')已经更新，在应用新配置过程中网络连接可能发生抖动。", conf_file);
 
 END:
 
@@ -831,7 +831,7 @@ void _abcdkipconfig_work(void *opaque, uint32_t tid)
     if (tid == 0)
     {
         /*等待终止信号。*/
-        abcdk_proc_wait_exit_signal(ctx->logger, -1);
+        abcdk_proc_wait_exit_signal(-1);
 
         /*通知所有线程退出。*/
         abcdk_atomic_store(&ctx->exitflag, 1);
@@ -856,11 +856,14 @@ void _abcdkipconfig_process(abcdkipconfig_t *ctx)
     /*打开日志。*/
     ctx->logger = abcdk_logger_open("/tmp/abcdk/log/ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
 
-    abcdk_logger_printf(ctx->logger, LOG_INFO, "启动……");
+    /*注册为轨迹日志。*/
+    abcdk_trace_set_log(abcdk_logger_from_trace,ctx->logger);
+
+    abcdk_trace_output( LOG_INFO, "启动……");
 
     if (conf_num <= 0)
     {
-        abcdk_logger_printf(ctx->logger, LOG_ERR, "至少指定一个配置文件。");
+        abcdk_trace_output( LOG_ERR, "至少指定一个配置文件。");
         goto ERR;
     }
 
@@ -875,7 +878,7 @@ void _abcdkipconfig_process(abcdkipconfig_t *ctx)
 
 ERR:
 
-    abcdk_logger_printf(ctx->logger, LOG_INFO, "停止。");
+    abcdk_trace_output( LOG_INFO, "停止。");
 
     /*关闭日志。*/
     abcdk_logger_close(&ctx->logger);
@@ -901,7 +904,10 @@ void _abcdkipconfig_daemon(abcdkipconfig_t *ctx)
     /*打开日志。*/
     logger = abcdk_logger_open("/tmp/abcdk/log/ipconfig-daemon.log", "ipconfig-daemon.%d.log", 10, 10, 0, 1);
 
-    abcdk_proc_daemon(logger, interval, _abcdkipconfig_daemon_process_cb, ctx);
+    /*注册为轨迹日志。*/
+    abcdk_trace_set_log(abcdk_logger_from_trace,logger);
+
+    abcdk_proc_daemon(interval, _abcdkipconfig_daemon_process_cb, ctx);
 
     /*关闭日志。*/
     abcdk_logger_close(&logger);

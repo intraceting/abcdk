@@ -34,28 +34,28 @@ int abcdk_net_get_oper_state(const char *ifname);
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_down(abcdk_logger_t *logger, const char *ifname);
+int abcdk_net_down(const char *ifname);
 
 /**
  * 启用网卡。
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_up(abcdk_logger_t *logger, const char *ifname);
+int abcdk_net_up(const char *ifname);
 
 /**
  * 清理网卡地址配置。
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_address_flush(abcdk_logger_t *logger, const char *ifname);
+int abcdk_net_address_flush( const char *ifname);
 
 /**
  * 清理网卡路由配置。
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_route_flush(abcdk_logger_t *logger, const char *ifname);
+int abcdk_net_route_flush(const char *ifname);
 
 /**
  * 添加网卡路由配置。
@@ -68,7 +68,7 @@ int abcdk_net_route_flush(abcdk_logger_t *logger, const char *ifname);
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_route_add(abcdk_logger_t *logger, int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
+int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
 
 /**
  * 添加网卡地址配置。
@@ -77,7 +77,7 @@ int abcdk_net_route_add(abcdk_logger_t *logger, int ver, const char *host, int p
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_address_add(abcdk_logger_t *logger, int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
+int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
 
 __END_DECLS
 
