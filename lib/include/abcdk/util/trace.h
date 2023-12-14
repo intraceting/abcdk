@@ -55,6 +55,11 @@ void abcdk_trace_set_log(abcdk_trace_log_cb cb,void *opaque);
 /**
  * 轨迹输出。
 */
+void abcdk_trace_voutput(int type, const char* fmt, va_list vp);
+
+/**
+ * 轨迹输出。
+*/
 void abcdk_trace_output(int type, const char* fmt,...);
 
 /**

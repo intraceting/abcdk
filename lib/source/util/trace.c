@@ -23,16 +23,21 @@ void abcdk_trace_set_log(abcdk_trace_log_cb cb,void *opaque)
     g_trace_log_opaque = opaque;
 }
 
+void abcdk_trace_voutput(int type, const char* fmt, va_list vp)
+{
+    assert(ABCDK_TRACE_TYPE_CHECK(type) && fmt != NULL);
+
+    if(g_trace_log_func)
+        g_trace_log_func(g_trace_log_opaque,type, fmt, vp);
+}
+
 void abcdk_trace_output(int type, const char *fmt, ...)
 {
     assert(ABCDK_TRACE_TYPE_CHECK(type) && fmt != NULL);
 
     va_list vp;
     va_start(vp, fmt);
-    
-    if(g_trace_log_func)
-        g_trace_log_func(g_trace_log_opaque,type, fmt, vp);
-
+    abcdk_trace_voutput(type, fmt, vp);
     va_end(vp);
 }
 
