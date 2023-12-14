@@ -60,6 +60,7 @@
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>
+#include <sys/syscall.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/ip.h>

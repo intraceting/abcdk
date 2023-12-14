@@ -113,6 +113,11 @@ void abcdk_memcopy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t ds
 */
 pid_t abcdk_waitpid(pid_t pid,int options,int *exitcode,int *sigcode);
 
+/**
+ * 获取线程的进程PID。
+*/
+pid_t abcdk_gettid();
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_GENERAL_H

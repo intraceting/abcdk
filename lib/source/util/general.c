@@ -139,3 +139,8 @@ pid_t abcdk_waitpid(pid_t pid, int options, int *exitcode, int *sigcode)
 
     return pid_chk;
 }
+
+pid_t abcdk_gettid()
+{
+	return syscall(SYS_gettid);
+} 

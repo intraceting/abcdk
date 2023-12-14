@@ -124,7 +124,7 @@ int abcdk_proc_signal_block(const sigset_t *news, sigset_t *olds)
 {
     sigset_t default_sigs = {0},*p = NULL;
 
-    ABCDK_ASSERT(getpid() == gettid(),"仅限主线程调用。");
+    ABCDK_ASSERT(getpid() == abcdk_gettid(),"仅限主线程调用。");
 
     /*阻塞信号。*/
     abcdk_signal_fill(&default_sigs, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP, -1);
