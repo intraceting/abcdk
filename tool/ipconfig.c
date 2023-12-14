@@ -348,7 +348,7 @@ void _abcdkipconfig_start_link(abcdkipconfig_node_t *ctx, const char *ifname)
 
     if(!link_state || !oper_state)
     {
-        abcdk_trace_output(LOG_INFO,"链路未活动或被关闭，尝试重新启动。");
+        abcdk_trace_output(LOG_INFO,"链路('%s')未活动或被关闭，尝试重新启动。",ifname);
         abcdk_net_up(ifname);
     }
 }
