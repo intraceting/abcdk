@@ -288,7 +288,7 @@ install-runtime:
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script ${INSTALL_PATH_BIN}/
-	cp -rf $(CURDIR)/doc ${INSTALL_PATH_DOC}/
+	cp -rf $(CURDIR)/doc/. ${INSTALL_PATH_DOC}/
 	
 #
 install-devel:
