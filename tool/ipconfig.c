@@ -339,6 +339,20 @@ ERR:
     return;
 }
 
+void _abcdkipconfig_start_link(abcdkipconfig_node_t *ctx, const char *ifname)
+{
+    int link_state, oper_state;
+    
+    link_state = (abcdk_net_get_link_state(ifname) <= 0 ? 0 : 1);
+    oper_state = (abcdk_net_get_oper_state(ifname) <= 0 ? 0 : 1);
+
+    if(!link_state || !oper_state)
+    {
+        abcdk_trace_output(LOG_INFO,"链路未活动或被关闭，尝试重新启动。");
+        abcdk_net_up(ifname);
+    }
+}
+
 void _abcdkipconfig_check_link(abcdkipconfig_node_t *ctx, const char *ifname)
 {
     int prev_link_state, prev_oper_state;
@@ -633,6 +647,7 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
 
     if (abcdk_strcmp(enable, "static", 0) == 0)
     {
+        _abcdkipconfig_start_link(ctx, ifname);
         _abcdkipconfig_check_link(ctx, ifname);
         _abcdkipconfig_check_address(ctx, ifname);
 
@@ -686,6 +701,7 @@ void _abcdkipconfig_implement(abcdkipconfig_node_t *ctx, abcdk_option_t *opt)
     }
     else if (abcdk_strcmp(enable, "dhcp", 0) == 0)
     {
+        _abcdkipconfig_start_link(ctx, ifname);
         _abcdkipconfig_check_link(ctx, ifname);
         _abcdkipconfig_check_address(ctx, ifname);
 
