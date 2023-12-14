@@ -129,7 +129,7 @@ int abcdk_proc_signal_block(const sigset_t *news, sigset_t *olds)
     /*阻塞信号。*/
     abcdk_signal_fill(&default_sigs, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP, -1);
 
-    p = (news ? news : &default_sigs);
+    p = (sigset_t*)(news ? news : &default_sigs);
 
     return abcdk_signal_block(p, olds);
 }
