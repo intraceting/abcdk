@@ -425,17 +425,8 @@ if [ ! -d ${BUILD_PACKAGE_PATH} ];then
 }
 fi
 
-#
-if [ ! -d ${INSTALL_PREFIX} ];then
-{
-    echo "'${INSTALL_PREFIX}' not found."
-    exit 22
-}
-else
-{
-    INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
-}
-fi
+#安装路径增加解决方案名称。
+INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
 
 
 #
