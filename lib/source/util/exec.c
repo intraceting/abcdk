@@ -67,9 +67,6 @@ pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
     }
     else
     {
-        /*加入到新的进程组。*/
-        setpgid(child, child);
-
         /*
          * 关闭不需要的句柄。
          */

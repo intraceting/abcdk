@@ -22,8 +22,6 @@ typedef int (*abcdk_fork_process_cb)(void *opaque);
 
 /**
  * 创建子进程。
- * 
- * @note 子进程会加入到新的进程组。
  *
  * @param [in] process_cb 子进程入口函数。
  * @param [in] opaque 环境指针。
