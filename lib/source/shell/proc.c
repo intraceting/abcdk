@@ -120,7 +120,7 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
     return -1;
 }
 
-pid_t abcdk_proc_system(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...)
+pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...)
 {
     char *buf = NULL;
     pid_t pid = -1;
@@ -267,7 +267,7 @@ int abcdk_proc_daemon2(int interval, const char *cmdline)
     {
         if (cid < 0)
         {
-            cid = abcdk_proc_system(NULL, NULL, NULL, cmdline);
+            cid = abcdk_proc_popen(NULL, NULL, NULL, cmdline);
             if (cid < 0)
             {
                 abcdk_trace_output(LOG_ERR, "父进程无法创建子进程，结束守护服务。\n");

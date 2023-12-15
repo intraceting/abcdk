@@ -55,7 +55,7 @@ int abcdk_net_down(const char *ifname)
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_system(NULL, NULL, NULL, "ip link set %s down", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip link set %s down", ifname);
     if (pid < 0)
         return -1;
 
@@ -79,7 +79,7 @@ int abcdk_net_up(const char *ifname)
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_system(NULL, NULL, NULL, "ip link set %s up", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip link set %s up", ifname);
     if (pid < 0)
         return -1;
 
@@ -103,7 +103,7 @@ int abcdk_net_address_flush(const char *ifname)
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_system(NULL, NULL, NULL, "ip address flush dev %s", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip address flush dev %s", ifname);
     if (pid < 0)
         return -1;
 
@@ -126,7 +126,7 @@ int abcdk_net_route_flush(const char *ifname)
 
     assert(ifname != NULL && *ifname != '\0');
 
-    pid = abcdk_proc_system(NULL, NULL, NULL,"ip route flush dev %s", ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL,"ip route flush dev %s", ifname);
     if (pid < 0)
         return -1;
 
@@ -154,7 +154,7 @@ int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, i
 
     abcdk_sockaddr_make_netmask2(mask, ((ver == 6) ? AF_INET6 : AF_INET), host, prefix);
 
-    pid = abcdk_proc_system(NULL, NULL, NULL, "ip -%d route add %s/%d via %s metric %d dev %s", ver, mask, prefix, gw, metric, ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip -%d route add %s/%d via %s metric %d dev %s", ver, mask, prefix, gw, metric, ifname);
     if (pid < 0)
         return -1;
 
@@ -181,7 +181,7 @@ int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw,
     assert((ver == 4 || ver == 6) && host != NULL && prefix > 0 && ifname != NULL);
     assert(*host != '\0' && *ifname != '\0');
 
-    pid = abcdk_proc_system(NULL, NULL, NULL, "ip -%d address add %s/%d dev %s", ver, host, prefix, ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip -%d address add %s/%d dev %s", ver, host, prefix, ifname);
     if (pid < 0)
         return -1;
 

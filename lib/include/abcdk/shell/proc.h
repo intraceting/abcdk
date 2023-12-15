@@ -53,7 +53,7 @@ int abcdk_proc_singleton(const char* lockfile,int* pid);
 /**
  * 执行外部命令。
 */
-pid_t abcdk_proc_system(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
+pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
 
 /**
  * 拦截信号。
