@@ -205,7 +205,7 @@ CHECK_RETRY:
 
 int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaque)
 {
-    pid_t cid = -1,cid_chk = -1;
+    pid_t cid = -1,cid_chk = -1,cid_pgid = 0x7fffffff;
     int chk;
 
     assert(interval >0 && process_cb != NULL);
@@ -243,7 +243,11 @@ int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaq
 
     if (cid >= 0)
     {
-        kill(cid, 15);
+        /*创建属于子进程独立的进程组。如果已经创建了，则返回失败。*/
+        setpgid(cid, cid);
+
+        cid_pgid = getpgid(cid);
+        kill(-cid_pgid, 15);
         waitpid(cid, NULL, 0);
     }
 
@@ -254,7 +258,7 @@ int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaq
 
 int abcdk_proc_daemon2(int interval, const char *cmdline)
 {
-        pid_t cid = -1,cid_chk = -1;
+    pid_t cid = -1,cid_chk = -1,cid_pgid = 0x7fffffff;
     int chk;
 
     assert(interval >0 && cmdline != NULL);
@@ -292,7 +296,11 @@ int abcdk_proc_daemon2(int interval, const char *cmdline)
 
     if (cid >= 0)
     {
-        kill(cid, 15);
+        /*创建属于子进程独立的进程组。如果已经创建了，则返回失败。*/
+        setpgid(cid, cid);
+
+        cid_pgid = getpgid(cid);
+        kill(-cid_pgid, 15);
         waitpid(cid, NULL, 0);
     }
 
