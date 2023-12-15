@@ -68,18 +68,17 @@ void abcdk_getargs_text(abcdk_option_t *opt, const char *text, size_t len, uint8
 
 /**
  * 格式化打印。
- * 
+ *
  * @return >=0 成功(输出的长度)，< 0 失败。
-*/
-ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt, const char *delim, FILE *fp);
+ */
+ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt, FILE *fp, const char *delim, const char *pack);
 
 /**
  * 格式化打印。
- * 
+ *
  * @return >=0 成功(输出的长度)，< 0 失败。
-*/
-ssize_t abcdk_getargs_snprintf(abcdk_option_t *opt, const char *delim, char* buf,size_t max);
-
+ */
+ssize_t abcdk_getargs_snprintf(abcdk_option_t *opt, char *buf, size_t max, const char *delim, const char *pack);
 
 __END_DECLS
 

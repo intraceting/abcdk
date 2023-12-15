@@ -160,7 +160,7 @@ int main(int argc, char **argv)
     /*解析参数。*/
     abcdk_getargs(args, argc, argv);
 
-    abcdk_getargs_fprintf(args,"\n",stderr);
+    abcdk_getargs_fprintf(args,stderr,"\n","");
 
     errcode = _abcdk_test_dispatch(args);
 

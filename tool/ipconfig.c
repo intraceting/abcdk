@@ -197,8 +197,8 @@ int _abcdkipconfig_compare_option(abcdk_option_t *a, abcdk_option_t *b)
     if (!buf)
         return 0;
 
-    buflen[0] = abcdk_getargs_snprintf(a, "\n", buf->pptrs[0], buf->sizes[0]);
-    buflen[1] = abcdk_getargs_snprintf(b, "\n", buf->pptrs[1], buf->sizes[1]);
+    buflen[0] = abcdk_getargs_snprintf(a, buf->pptrs[0], buf->sizes[0], "\n", "");
+    buflen[1] = abcdk_getargs_snprintf(b, buf->pptrs[1], buf->sizes[1], "\n", "");
 
     if (buflen[0] > buflen[1])
         chk = 1;
@@ -219,7 +219,7 @@ void _abcdkipconfig_dump_option(abcdk_option_t *args, abcdk_logger_t *logger)
     if (!buf)
         return;
 
-    abcdk_getargs_snprintf(args, "\n", buf->pptrs[0], buf->sizes[0]);
+    abcdk_getargs_snprintf(args, buf->pptrs[0], buf->sizes[0],"\n", "");
     abcdk_logger_printf(logger, LOG_INFO, "++++++\n%s\n------\n", buf->pstrs[0]);
 
     abcdk_object_unref(&buf);
