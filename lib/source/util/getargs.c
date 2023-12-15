@@ -157,7 +157,7 @@ ssize_t abcdk_getargs_fprintf(abcdk_option_t *opt,FILE *fp, const char *delim,co
     assert(opt != NULL && fp != NULL && delim != NULL && pack != NULL);
 
     p.delim = delim;
-    p.delim = pack;
+    p.pack = pack;
     p.fp = fp;
     p.prev_key = NULL;
     p.wlen = 0;
