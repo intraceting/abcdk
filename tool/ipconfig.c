@@ -514,7 +514,7 @@ int _abcdkipconfig_eth_start_dhclient(abcdkipconfig_node_t *ctx, const char *ifn
         _abcdkipconfig_eth_flush(ctx, ifname);
         _abcdkipconfig_route_flush(ctx, ifname);
 
-        ctx->dhcp_pid = abcdk_proc_popen(NULL, NULL, NULL, "%s -1 -q --no-pid %s", ctx->father->dhclient_cmd, ifname);
+        ctx->dhcp_pid = abcdk_proc_system(NULL, NULL, NULL, "%s -1 -q --no-pid %s", ctx->father->dhclient_cmd, ifname);
         if (ctx->dhcp_pid < 0)
             return -1;
     }
@@ -544,7 +544,7 @@ int _abcdkipconfig_eth_start_udhcpc(abcdkipconfig_node_t *ctx, const char *ifnam
         _abcdkipconfig_eth_flush(ctx, ifname);
         _abcdkipconfig_route_flush(ctx, ifname);
 
-        ctx->dhcp_pid = abcdk_proc_popen( NULL, NULL, NULL, "%s -n -q -f -i %s -p /tmp/udhcpc.%s.pid", ctx->father->udhcpc_cmd, ifname, ifname);
+        ctx->dhcp_pid = abcdk_proc_system( NULL, NULL, NULL, "%s -n -q -f -i %s -p /tmp/udhcpc.%s.pid", ctx->father->udhcpc_cmd, ifname, ifname);
         if (ctx->dhcp_pid < 0)
             return -3;
     }

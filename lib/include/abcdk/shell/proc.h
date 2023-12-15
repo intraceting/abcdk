@@ -51,6 +51,11 @@ char* abcdk_proc_basename(char* buf);
 int abcdk_proc_singleton(const char* lockfile,int* pid);
 
 /**
+ * 执行外部命令。
+*/
+pid_t abcdk_proc_system(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
+
+/**
  * 拦截信号。
  * 
  * @param news 新的信号集合。NULL(0) 默认所有信号，SIGTRAP、SIGKILL、SIGSEGV、SIGSTOP除外。
@@ -78,6 +83,7 @@ int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout);
 */
 int abcdk_proc_wait_exit_signal(time_t timeout);
 
+
 /**
  * 守护进程。
  * 
@@ -90,9 +96,15 @@ int abcdk_proc_wait_exit_signal(time_t timeout);
 int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaque);
 
 /**
- * 执行外部命令。
+ * 守护进程。
+ * 
+ * @param [in] interval 重启间隔(秒)。
+ * @param [in] cmdline 命令行。
+ * 
+ * @return 0 成功，-1 失败。
 */
-pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
+int abcdk_proc_daemon2(int interval, const char *cmdline);
+
 
 
 __END_DECLS

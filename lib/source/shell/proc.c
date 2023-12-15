@@ -120,6 +120,41 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
     return -1;
 }
 
+pid_t abcdk_proc_system(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...)
+{
+    char *buf = NULL;
+    pid_t pid = -1;
+
+    buf = abcdk_heap_alloc(40*1024);
+    if(!buf)
+        goto ERR;
+
+    va_list ap;
+    va_start(ap, cmd);
+    vsnprintf(buf,40*1024,cmd,ap);
+    va_end(ap);
+
+    abcdk_trace_output(LOG_INFO,"popen: %s",buf);
+
+    pid = abcdk_popen(buf, NULL, 0, 0, NULL, NULL, stdin_fd, stdout_fd, stderr_fd);
+    if (pid < 0)
+    {
+        abcdk_trace_output(LOG_ERR, "'%s'执行失败。");
+
+        goto ERR;
+    }
+
+    abcdk_heap_free2((void**)&buf);
+
+    return pid;
+
+ERR:
+
+    abcdk_heap_free2((void**)&buf);
+
+    return -1;
+}
+
 int abcdk_proc_signal_block(const sigset_t *news, sigset_t *olds)
 {
     sigset_t default_sigs = {0},*p = NULL;
@@ -217,37 +252,51 @@ int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaq
     return 0;
 }
 
-pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...)
+int abcdk_proc_daemon2(int interval, const char *cmdline)
 {
-    char *buf = NULL;
-    pid_t pid = -1;
+        pid_t cid = -1,cid_chk = -1;
+    int chk;
 
-    buf = abcdk_heap_alloc(40*1024);
-    if(!buf)
-        goto ERR;
+    assert(interval >0 && cmdline != NULL);
 
-    va_list ap;
-    va_start(ap, cmd);
-    vsnprintf(buf,40*1024,cmd,ap);
-    va_end(ap);
-
-    abcdk_trace_output(LOG_INFO,"popen: %s",buf);
-
-    pid = abcdk_popen(buf, NULL, 0, 0, NULL, NULL, stdin_fd, stdout_fd, stderr_fd);
-    if (pid < 0)
+    while (1)
     {
-        abcdk_trace_output(LOG_ERR, "'%s'执行失败。");
+        if (cid < 0)
+        {
+            cid = abcdk_proc_system(NULL, NULL, NULL, cmdline);
+            if (cid < 0)
+            {
+                abcdk_trace_output(LOG_ERR, "父进程无法创建子进程，结束守护服务。\n");
+                return -1;
+            }
 
-        goto ERR;
+            abcdk_trace_output( LOG_INFO, "子进程(PID=%d)启动完成。\n",cid);
+        }
+
+        /*查看终止信号。*/
+        chk = abcdk_proc_wait_exit_signal(interval * 1000);
+        if (chk != 0)
+            break;
+        
+        /* > 0 子进程PID，0 正在运行，< 0 子进程不存在。*/
+        cid_chk = abcdk_waitpid(cid, WNOHANG,NULL,NULL);
+        if (cid_chk != 0)
+        {
+            cid = -1;
+
+            abcdk_trace_output( LOG_INFO, "子进程(PID=%d)已终止。\n",cid_chk);
+        }
     }
 
-    abcdk_heap_free2((void**)&buf);
+    abcdk_trace_output( LOG_INFO, "父进程即将结束守护服务，通知子进程退出。\n");
 
-    return pid;
+    if (cid >= 0)
+    {
+        kill(cid, 15);
+        waitpid(cid, NULL, 0);
+    }
 
-ERR:
+    abcdk_trace_output( LOG_INFO, "父进程结束守护服务。\n");
 
-    abcdk_heap_free2((void**)&buf);
-
-    return -1;
+    return 0;
 }
