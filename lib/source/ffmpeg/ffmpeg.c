@@ -483,9 +483,13 @@ next_delay:
         vs_p = abcdk_ffmpeg_streamptr(ctx,i);
         start_time = vs_p->start_time;
 
-        /*如果没有dts，说明还没读，要快点读。*/
+        /*超时也不行。*/
+        if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
+            return;
+
+        /*如果没有DTS，说明还没开始读。*/
         if(ctx->read_dts[i] == (int64_t)AV_NOPTS_VALUE)
-            break;
+            return;
 
         if(ctx->read_dts_first[i] == (int64_t)AV_NOPTS_VALUE)
             ctx->read_dts_first[i] = ctx->read_dts[i];
