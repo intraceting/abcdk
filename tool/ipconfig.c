@@ -65,6 +65,12 @@ typedef struct _abcdkipconfig_node
     /* resolv哈希值。*/
     char resolv_hcode[33];
 
+    /* 启动次数。*/
+    int start_link_count;
+
+    /* 下一次启动时间。*/
+    uint64_t start_link_next;
+
 } abcdkipconfig_node_t;
 
 void _abcdkipconfig_print_usage(abcdk_option_t *args)
@@ -172,6 +178,9 @@ abcdkipconfig_node_t *_abcdkipconfig_node_alloc()
     ctx->old_resolv = NULL;
 
     memset(ctx->resolv_hcode, 0xff, 32);
+
+    ctx->start_link_count = 0;
+    ctx->start_link_next = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,0);
 
     return ctx;
 }
@@ -342,7 +351,15 @@ ERR:
 void _abcdkipconfig_start_link(abcdkipconfig_node_t *ctx, const char *ifname)
 {
     int link_state, oper_state;
-    
+
+    /*每次间隔增加1秒，60次为一个周期。*/
+    if(ctx->start_link_next > abcdk_time_clock2kind_with(CLOCK_MONOTONIC,0))
+        return;
+
+    ctx->start_link_count += 1;
+    ctx->start_link_count %= 60;
+    ctx->start_link_next += (abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0) + ctx->start_link_count);
+
     link_state = (abcdk_net_get_link_state(ifname) <= 0 ? 0 : 1);
     oper_state = (abcdk_net_get_oper_state(ifname) <= 0 ? 0 : 1);
 
