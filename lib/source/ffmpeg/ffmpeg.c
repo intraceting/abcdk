@@ -267,6 +267,7 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
     if (ctx->timeout > 0)
     {
         av_dict_set_int(&ctx->dict, "timeout", ctx->timeout * 1000000, 0);
+        av_dict_set_int(&ctx->dict, "stimeout", ctx->timeout * 1000000, 0);
         av_dict_set_int(&ctx->dict, "rw_timeout", ctx->timeout * 1000000, 0);
     }
 
