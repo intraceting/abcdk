@@ -352,21 +352,28 @@ void _abcdkipconfig_start_link(abcdkipconfig_node_t *ctx, const char *ifname)
 {
     int link_state, oper_state;
 
-    /*每次间隔增加1秒，60次为一个周期。*/
-    if(ctx->start_link_next > abcdk_time_clock2kind_with(CLOCK_MONOTONIC,0))
-        return;
-
-    ctx->start_link_count += 1;
-    ctx->start_link_count %= 60;
-    ctx->start_link_next = (abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0) + ctx->start_link_count);
-
     link_state = (abcdk_net_get_link_state(ifname) <= 0 ? 0 : 1);
     oper_state = (abcdk_net_get_oper_state(ifname) <= 0 ? 0 : 1);
 
-    if(!link_state || !oper_state)
+    if (!link_state || !oper_state)
     {
-        abcdk_trace_output(LOG_INFO,"链路('%s')未活动或被关闭，尝试重新启动。",ifname);
+        /*未到时间不尝试启动。*/
+        if (ctx->start_link_next >= abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0))
+            return;
+
+        abcdk_trace_output(LOG_INFO, "链路('%s')未活动或被关闭，尝试重新启动。", ifname);
         abcdk_net_up(ifname);
+
+        /*下次启动间隔增加1秒，60次为一个周期。*/
+        ctx->start_link_count += 1;
+        ctx->start_link_count %= 60;
+        ctx->start_link_next = (abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0) + ctx->start_link_count);
+
+    }
+    else
+    {
+        ctx->start_link_count = 0;
+        ctx->start_link_next = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0);
     }
 }
 
