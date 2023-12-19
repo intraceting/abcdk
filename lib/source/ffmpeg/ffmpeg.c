@@ -264,6 +264,9 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
 
     av_init_packet(&ctx->read_pkt);
 
+    if (ctx->timeout > 0)
+        av_dict_set_int(&ctx->dict, "timeout", ctx->timeout * 1000000, 0);
+
     ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);
     if(!ctx->avctx)
         return -1;
