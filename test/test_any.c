@@ -533,7 +533,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     waitpid(p,NULL,0);
 
-#elif 1
+#elif 0
 
     const char *str = abcdk_option_get(args,"--str",0,"aaaa,bbbb,,,dddd,,ccc,,,,dd,,e,e,e,e");
     const char *delim = abcdk_option_get(args,"--delim",0,",");
@@ -546,6 +546,29 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 
     abcdk_object_unref(&buf);
+#elif 1
+
+    const char *src = abcdk_option_get(args,"--src",0,"");
+    const char *dst = abcdk_option_get(args,"--dst",0,"");
+    const char *dst2 = abcdk_option_get(args,"--dst2",0,"");
+    size_t offset = abcdk_option_get_int(args,"--offset",0,0);
+    size_t count = abcdk_option_get_int(args,"--count",0,0);
+    int chk = abcdk_curl_download_filename(dst,src,offset,count,6,6);
+    assert(chk == 0);
+
+    int fd = abcdk_open(dst2,1,0,1);
+
+    chk = abcdk_curl_download_fd(fd,src,0,100,6,6);
+    assert(chk == 0);
+
+    chk = abcdk_curl_download_fd(fd,src,100,200,6,6);
+    assert(chk == 0);
+
+    chk = abcdk_curl_download_fd(fd,src,200,0,6,6);
+    assert(chk == 0);
+
+    abcdk_closep(&fd);
+
 
 #endif 
 }

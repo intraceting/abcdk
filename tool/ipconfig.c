@@ -87,7 +87,7 @@ void _abcdkipconfig_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--pid-file < FILE >\n");
     fprintf(stderr, "\t\tPID文件名(包括路径)。默认：/tmp/abcdk/pid/ipconfig.pid\n");
 
-    fprintf(stderr, "\n\t--log-path < FILE >\n");
+    fprintf(stderr, "\n\t--log-path < PATH >\n");
     fprintf(stderr, "\t\t日志路径。默认：/tmp/abcdk/log/\n");
 
     fprintf(stderr, "\n\t--daemon < INTERVAL > \n");

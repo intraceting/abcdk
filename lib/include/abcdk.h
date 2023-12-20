@@ -128,4 +128,6 @@
 
 #include "abcdk/ssl/openssl.h"
 
+#include "abcdk/curl/curl.h"
+
 #endif //ABCDK_H
