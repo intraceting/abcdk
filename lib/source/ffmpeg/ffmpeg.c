@@ -266,9 +266,8 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
 
     if (ctx->timeout > 0)
     {
-        av_dict_set_int(&ctx->dict, "timeout", ctx->timeout * 1000000, 0);
-        av_dict_set_int(&ctx->dict, "stimeout", ctx->timeout * 1000000, 0);
-        av_dict_set_int(&ctx->dict, "rw_timeout", ctx->timeout * 1000000, 0);
+        av_dict_set_int(&ctx->dict, "stimeout", ctx->timeout * 1000000, 0);//rtsp
+        av_dict_set_int(&ctx->dict, "rw_timeout", ctx->timeout * 1000000, 0);//rtmp
     }
 
     ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);

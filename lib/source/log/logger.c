@@ -112,6 +112,16 @@ abcdk_logger_t *abcdk_logger_open(const char *name,const char *segment_name,size
     return ctx;
 }
 
+abcdk_logger_t *abcdk_logger_open2(const char *path,const char *name, const char *segment_name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr)
+{
+    char pathfile[PATH_MAX] = {0};
+
+    abcdk_dirdir(pathfile,path);
+    abcdk_dirdir(pathfile,name);
+
+    return abcdk_logger_open(pathfile,segment_name,segment_max,segment_size,copy2syslog,copy2stderr);
+}
+
 void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
 {
     uint32_t mask = 0;

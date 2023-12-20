@@ -71,6 +71,14 @@ void abcdk_logger_close(abcdk_logger_t **ctx);
 abcdk_logger_t *abcdk_logger_open(const char *name, const char *segment_name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);
 
 /**
+ * 打开。
+ * 
+ * @param [in] path 路径。
+ * 
+*/
+abcdk_logger_t *abcdk_logger_open2(const char *path,const char *name, const char *segment_name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);
+
+/**
  * 设置掩码。
  *
  * @param [in] type 类型。

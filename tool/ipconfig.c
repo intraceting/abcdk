@@ -84,6 +84,12 @@ void _abcdkipconfig_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
+    fprintf(stderr, "\n\t--pid-file < FILE >\n");
+    fprintf(stderr, "\t\tPID文件名(包括路径)。默认：/tmp/abcdk/pid/ipconfig.pid\n");
+
+    fprintf(stderr, "\n\t--log-path < FILE >\n");
+    fprintf(stderr, "\t\t日志路径。默认：/tmp/abcdk/log/\n");
+
     fprintf(stderr, "\n\t--daemon < INTERVAL > \n");
     fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
     fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
@@ -885,16 +891,18 @@ void _abcdkipconfig_work(void *opaque, uint32_t tid)
 void _abcdkipconfig_process(abcdkipconfig_t *ctx)
 {
     abcdk_parallel_t *parallel_ctx = NULL;
+    const char *log_path = NULL;
     int conf_num;
 
     ctx->dhclient_cmd = abcdk_option_get(ctx->args, "--dhclient-cmd", 0, NULL);
     ctx->udhcpc_cmd = abcdk_option_get(ctx->args, "--udhcpc-cmd", 0, NULL);
+    log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
     conf_num = abcdk_option_count(ctx->args, "--conf");
 
     _abcdkipconfig_find_dhcp_client(ctx);
 
     /*打开日志。*/
-    ctx->logger = abcdk_logger_open("/tmp/abcdk/log/ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
+    ctx->logger = abcdk_logger_open2(log_path,"ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace,ctx->logger);
@@ -936,13 +944,15 @@ int _abcdkipconfig_daemon_process_cb(void *opaque)
 void _abcdkipconfig_daemon(abcdkipconfig_t *ctx)
 {
     abcdk_logger_t *logger;
+    const char *log_path = NULL;
     int interval;
 
+    log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
     interval = abcdk_option_get_int(ctx->args, "--daemon", 0, 30);
     interval = ABCDK_CLAMP(interval, 1, 60);
 
     /*打开日志。*/
-    logger = abcdk_logger_open("/tmp/abcdk/log/ipconfig-daemon.log", "ipconfig-daemon.%d.log", 10, 10, 0, 1);
+    logger = abcdk_logger_open2(log_path,"ipconfig-daemon.log", "ipconfig-daemon.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace,logger);
@@ -956,6 +966,7 @@ void _abcdkipconfig_daemon(abcdkipconfig_t *ctx)
 int abcdk_tool_ipconfig(abcdk_option_t *args)
 {
     abcdkipconfig_t ctx = {0};
+    const char *pid_file = NULL;
     int other_pid = -1, self_pid = -1;
 
     ctx.args = args;
@@ -966,9 +977,10 @@ int abcdk_tool_ipconfig(abcdk_option_t *args)
     }
     else
     {
+        pid_file = abcdk_option_get(ctx.args,"--pid-file",0,"/tmp/abcdk/pid/ipconfig.pid");
 
         /*单实例运行。*/
-        self_pid = abcdk_proc_singleton("/tmp/abcdk/pid/ipconfig.pid", &other_pid);
+        self_pid = abcdk_proc_singleton(pid_file, &other_pid);
         if (self_pid < 0)
         {
             fprintf(stderr, "已经有实例(PID=%d)正在运行。\n", other_pid);

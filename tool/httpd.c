@@ -143,6 +143,9 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
+    fprintf(stderr, "\n\t--log-path < FILE >\n");
+    fprintf(stderr, "\t\t日志路径。默认：/tmp/abcdk/log/\n");
+
     fprintf(stderr, "\n\t--daemon < INTERVAL > \n");
     fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
     fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
@@ -1258,10 +1261,13 @@ void _abcdkhttpd_process(abcdkhttpd_t *ctx)
     abcdkhttpd_node_t *http_p = NULL;
     const char *p, *p_next, p2;
     size_t plen, p2len;
+    const char *log_path = NULL;
     int chk;
 
+    log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
+
     /*打开日志。*/
-    ctx->logger = abcdk_logger_open("/tmp/abcdk/log/httpd.log", "httpd.%d.log", 10, 10, 0, 1);
+    ctx->logger = abcdk_logger_open2(log_path,"httpd.log", "httpd.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace,ctx->logger);
@@ -1436,13 +1442,15 @@ int _abcdkhttpd_daemon_process_cb(void *opaque)
 void _abcdkhttpd_daemon(abcdkhttpd_t *ctx)
 {
     abcdk_logger_t *logger;
+    const char *log_path = NULL;
     int interval;
 
+    log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
     interval = abcdk_option_get_int(ctx->args, "--daemon", 0, 30);
     interval = ABCDK_CLAMP(interval,1,60);
 
     /*打开日志。*/
-    logger = abcdk_logger_open("/tmp/abcdk/log/httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
+    logger = abcdk_logger_open2(log_path,"httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace,logger);
