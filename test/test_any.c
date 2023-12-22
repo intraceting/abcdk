@@ -548,6 +548,8 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&buf);
 #elif 1
 
+#ifdef CURLINC_CURL_H
+
     const char *src = abcdk_option_get(args,"--src",0,"");
     const char *dst = abcdk_option_get(args,"--dst",0,"");
     const char *dst2 = abcdk_option_get(args,"--dst2",0,"");
@@ -569,6 +571,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_closep(&fd);
 
+#endif //CURLINC_CURL_H
 
 #endif 
 }
