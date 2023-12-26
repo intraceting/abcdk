@@ -278,7 +278,8 @@ INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/doc/)
-INSTALL_PATH_PKG = $(abspath ${INSTALL_PATH}/lib/pkgconfig/)
+INSTALL_PATH_PKG = $(abspath ${INSTALL_PATH}/pkgconfig/)
+INSTALL_PATH_SPT = $(abspath ${INSTALL_PATH}/script/)
 
 
 #
@@ -290,11 +291,12 @@ install-runtime:
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_BIN}
 	mkdir -p ${INSTALL_PATH_DOC}
+	mkdir -p ${INSTALL_PATH_SPT}
 #
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 #
 	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
-	cp -rf $(CURDIR)/script ${INSTALL_PATH_BIN}/
+	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_SPT}/
 	cp -rf $(CURDIR)/doc/. ${INSTALL_PATH_DOC}/
 	
 #

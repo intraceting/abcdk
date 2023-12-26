@@ -112,3 +112,31 @@ void abcdk_hevc_extradata_deserialize(const void *data, size_t size, abcdk_hevc_
         }
     }
 }
+
+int abcdk_hevc_irap(const void *data, size_t size)
+{
+    void *p_next = NULL, *p_end = NULL, *p = NULL;
+    int nal_unit_type;
+    int chk = 0;
+
+    assert(data != NULL && size > 0);
+
+    p_next = (void*)data;
+    p_end = ABCDK_PTR2VPTR(data, size - 1);
+
+    while (1)
+    {
+        if (p_next > p_end)
+            break;
+
+        p = (void*)abcdk_h2645_packet_split(&p_next, p_end);
+        if (!p)
+            break;
+
+        nal_unit_type = abcdk_bloom_read_number(p, p_next - p, 1, 6);
+        if (nal_unit_type >= 16 && nal_unit_type <= 21)
+            chk += 1;
+    }
+
+    return chk;
+}

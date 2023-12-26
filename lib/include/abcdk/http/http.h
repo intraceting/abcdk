@@ -12,6 +12,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/util/md5.h"
 #include "abcdk/util/url.h"
+#include "abcdk/util/basecode.h"
 
 __BEGIN_DECLS
 
@@ -75,6 +76,16 @@ abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap)
  * 
 */
 abcdk_object_t *abcdk_http_chunked_format(int max, const char *fmt, ...);
+
+/**
+ * 解码授权。
+ * 
+ * @note 仅支持Basic和Digest。
+ *
+ * @return 0 成功，-1 失败，-22 参数错误。
+*/
+void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth);
+
 
 __END_DECLS
 

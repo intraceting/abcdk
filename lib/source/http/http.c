@@ -662,3 +662,75 @@ abcdk_object_t *abcdk_http_chunked_format(int max, const char *fmt, ...)
 
     return obj;
 }
+
+void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth)
+{
+    char method[100] = {0};
+    const char *p, *p_next;
+    abcdk_object_t *basic_de = NULL,*basic_de2 = NULL;
+    abcdk_object_t *digest_de = NULL,*digest_de2 = NULL;
+
+    p_next = auth;
+
+    p = abcdk_strtok(&p_next, " ");
+    if(!p)
+        goto END;
+
+    //Basic,Digest,...
+    strncpy(method, p, p_next - p);
+
+    //1
+    abcdk_option_set(opt,"method",method);
+
+    if (abcdk_strcmp(method, "Basic", 0) == 0)
+    {
+        p = abcdk_strtok2(&p_next, "\r", 1);
+        if(!p)
+            goto END;
+
+        basic_de = abcdk_basecode_decode2(p,p_next-p,64);
+        if(!basic_de)
+            goto END;
+
+        basic_de2 = abcdk_strtok2vector(basic_de->pstrs[0],":");
+        if(!basic_de2)
+            goto END;
+
+        //2
+        abcdk_option_set(opt,"username",basic_de2->pstrs[0]);
+        abcdk_option_set(opt,"password",basic_de2->pstrs[1]);
+    }
+    else if (abcdk_strcmp(method, "Digest", 0) == 0)
+    {
+        p = abcdk_strtok2(&p_next, "\r", 1);
+        if(!p)
+            goto END;
+
+        digest_de = abcdk_strtok2vector(p,",");
+        if(!digest_de)
+            goto END;
+
+        for (int i = 0; i< digest_de->numbers; i++)
+        {
+            digest_de2 = abcdk_strtok2vector(digest_de->pstrs[i],"=");
+            if(!digest_de2)
+                continue;
+
+            abcdk_strtrim2(digest_de2->pstrs[0], isspace, "\"\'", 2);
+            abcdk_strtrim2(digest_de2->pstrs[1], isspace, "\"\'", 2);
+
+            //2
+            abcdk_option_set(opt,digest_de2->pstrs[0],digest_de2->pstrs[1]);
+
+            abcdk_object_unref(&digest_de2);
+        }
+    }
+
+END:
+
+    abcdk_object_unref(&basic_de);
+    abcdk_object_unref(&basic_de2);
+    abcdk_object_unref(&digest_de);
+    abcdk_object_unref(&digest_de2);
+
+}

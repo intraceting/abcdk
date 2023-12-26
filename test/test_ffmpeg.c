@@ -80,13 +80,18 @@ int abcdk_test_record(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<10000;i++)
+    for(int i = 0;i<100;i++)
     {
         
 
         int n= abcdk_ffmpeg_read(r,&pkt,-1);
         if(n<0)
             break;
+
+        int m = abcdk_h264_idr(pkt.data,pkt.size);
+        
+        fprintf(stderr,"%d,%d\n",m,pkt.flags);
+
 
         fprintf(stderr,"%.6f\n",(double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,1));
 

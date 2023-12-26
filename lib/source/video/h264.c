@@ -56,3 +56,31 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
         rbuf.pos += (extdata->pps->sizes[i] * 8);
     }
 }
+
+int abcdk_h264_idr(const void *data, size_t size)
+{
+    void *p_next = NULL, *p_end = NULL, *p = NULL;
+    int nal_unit_type;
+    int chk = 0;
+
+    assert(data != NULL && size > 0);
+
+    p_next = (void*)data;
+    p_end = ABCDK_PTR2VPTR(data, size - 1);
+
+    while (1)
+    {
+        if (p_next > p_end)
+            break;
+
+        p = (void *)abcdk_h2645_packet_split(&p_next, p_end);
+        if (!p)
+            break;
+
+        nal_unit_type = abcdk_bloom_read_number(p, p_next - p, 3, 5);
+        if (nal_unit_type == 5)
+            chk += 1;
+    }
+
+    return chk;
+}

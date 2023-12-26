@@ -216,6 +216,13 @@ ssize_t abcdk_hevc_extradata_serialize(const abcdk_hevc_extradata_t *extradata, 
 /**反序列化。*/
 void abcdk_hevc_extradata_deserialize(const void *data, size_t size, abcdk_hevc_extradata_t *extradata);
 
+/**
+ * 判断是否包括关键帧。
+ * 
+ * @return 关键帧数量。
+*/
+int abcdk_hevc_irap(const void *data, size_t size);
+
 __END_DECLS
 
 #endif // ABCDK_VIDEO_HEVC_H

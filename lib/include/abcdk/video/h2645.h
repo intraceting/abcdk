@@ -15,6 +15,8 @@ __BEGIN_DECLS
 /**
  * 查找起始码。
  * 
+ * @param [in] b 起始指针。
+ * @param [in] e 结束指针。
  * @param [in out] msize 起始码长度。
  * 
  * @return >=0 成功(当前位置到起始码开始的偏移量)，< 0 不存在。
@@ -23,8 +25,12 @@ ssize_t abcdk_h2645_find_start_code(const void *b, const void *e,int *msize);
 
 /**
  * 分包，拆包。 
- *
- */
+ * 
+ * @param [in out] next 输入起始指针，输出下一个包的指针(可能超过结束指针)。
+ * @param [in] e 结束指针。
+ * 
+ * @return !NULL(0) 数据包的指针(跳过起始码的)，NULL(0) 末尾。
+*/
 const void *abcdk_h2645_packet_split(void **next,const void *e);
 
 /** 

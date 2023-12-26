@@ -44,7 +44,7 @@ abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key, int c
 
     /*检测KEY是否包含前缀，如果不包含则添加。*/
     in_key = (char *)key;
-    if (abcdk_strncmp(prefix, key, pfx_len, 1) != 0)
+    if (pfx_len > 0 && abcdk_strncmp(prefix, key, pfx_len, 1) != 0)
     {
         in_key = abcdk_heap_alloc(strlen(key) + 3);
         if (!in_key)

@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/bit.h"
 #include "abcdk/util/object.h"
+#include "abcdk/video/h2645.h"
 
 __BEGIN_DECLS
 
@@ -104,7 +105,12 @@ ssize_t abcdk_h264_extradata_serialize(const abcdk_h264_extradata_t *extdata, vo
 /**反序列化。*/
 void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_extradata_t *extdata);
 
-
+/**
+ * 判断是否包括关键帧。
+ * 
+ * @return 关键帧数量。
+*/
+int abcdk_h264_idr(const void *data, size_t size);
 
 __END_DECLS
 
