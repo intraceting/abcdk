@@ -12,6 +12,7 @@
 __BEGIN_DECLS
 
 int abcdk_test_http(abcdk_option_t *args);
+int abcdk_test_http2(abcdk_option_t *args);
 int abcdk_test_uri(abcdk_option_t *args);
 int abcdk_test_log(abcdk_option_t *args);
 int abcdk_test_any(abcdk_option_t *args);

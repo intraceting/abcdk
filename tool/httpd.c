@@ -232,6 +232,24 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
     abcdk_option_free(&http_p->auth_opt);
 }
 
+abcdk_asynctcp_node_t *_abcdkhttpd_node_new(abcdk_asynctcp_t *ctx)
+{
+    abcdk_asynctcp_node_t *node;
+    abcdk_object_t *userdata_p;
+
+    node = abcdk_asynctcp_alloc(ctx, sizeof(abcdkhttpd_node_t));
+    if (!node)
+        return NULL;
+    
+    userdata_p = abcdk_asynctcp_userdata(node);
+
+    /*绑定扩展数据析构函数。*/
+    abcdk_object_atfree(userdata_p, _abcdkhttpd_node_destroy_cb, NULL);
+    abcdk_object_unref(&userdata_p);
+
+    return node;
+}
+
 void _abcdkhttpd_logprint(abcdk_asynctcp_node_t *node, int status, size_t size)
 {
     char new_tname[18]={0},old_tname[18] = {0};
@@ -704,7 +722,6 @@ void _abcdkhttpd_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_
 void _abcdkhttpd_create_tunnel(abcdk_asynctcp_node_t *node)
 {
     abcdkhttpd_node_t *http_p,*http_tunnel_p;
-    abcdk_object_t *userdata_p = NULL;
     abcdk_sockaddr_t addr;
     int chk;
 
@@ -763,19 +780,14 @@ void _abcdkhttpd_create_tunnel(abcdk_asynctcp_node_t *node)
 #endif // HEADER_SSL_H
 
     /*绑定到远端服务器对象。*/
-    http_p->tunnel = abcdk_asynctcp_alloc(http_p->ctx->comm, sizeof(abcdkhttpd_node_t));
+    http_p->tunnel = _abcdkhttpd_node_new(http_p->ctx->comm);
     if (!http_p->tunnel)
     {
         _abcdkhttpd_reply_nobody(node, 500, "");
         return;
     }
 
-    userdata_p = abcdk_asynctcp_userdata(http_p->tunnel);
-    http_tunnel_p = (abcdkhttpd_node_t *)userdata_p->pptrs[0];
-
-    /*绑定扩展数据析构函数。*/
-    abcdk_object_atfree(userdata_p, _abcdkhttpd_node_destroy_cb, NULL);
-    abcdk_object_unref(&userdata_p);
+    http_tunnel_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(http_p->tunnel);
 
     /*绑定上下文环境指针。*/
     http_tunnel_p->ctx = http_p->ctx;
@@ -1095,20 +1107,14 @@ void _abcdkhttpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t 
     abcdk_asynctcp_node_t *node_p;
     abcdkhttpd_node_t *http_listen_p;
     abcdkhttpd_node_t *http_p;
-    abcdk_object_t *userdata_p = NULL;
 
     http_listen_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(listen);
 
-    node_p = abcdk_asynctcp_alloc(http_listen_p->ctx->comm, sizeof(abcdkhttpd_node_t));
+    node_p = _abcdkhttpd_node_new(http_listen_p->ctx->comm);
     if (!node_p)
         return;
 
-    userdata_p = abcdk_asynctcp_userdata(node_p);
-    http_p = (abcdkhttpd_node_t *)userdata_p->pptrs[0];
-
-    /*绑定扩展数据析构函数。*/
-    abcdk_object_atfree(userdata_p, _abcdkhttpd_node_destroy_cb, NULL);
-    abcdk_object_unref(&userdata_p);
+    http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
     /*复制上下文环境指针。*/
     http_p->ctx = http_listen_p->ctx;
@@ -1117,7 +1123,7 @@ void _abcdkhttpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t 
     http_p->timefmt = "%a, %d %b %Y %H:%M:%S GMT";
     http_p->timefmt_lc = "%Y-%m-%d %H:%M:%S";
 
-   // http_p->md5 = abcdk_md5_create();
+    http_p->md5 = abcdk_md5_create();
 
     /*准备完毕，返回。*/
     *node = node_p;
@@ -1196,7 +1202,6 @@ int _abcdkhttpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 
 void _abcdkhttpd_process(abcdkhttpd_t *ctx)
 {
-    abcdk_object_t *userdata_p = NULL;
     abcdkhttpd_node_t *http_p = NULL;
     const char *p, *p_next, p2;
     size_t plen, p2len;
@@ -1312,19 +1317,14 @@ void _abcdkhttpd_process(abcdkhttpd_t *ctx)
             goto final;
         }
 
-        ctx->comm_listen[i] = abcdk_asynctcp_alloc(ctx->comm,sizeof(abcdkhttpd_node_t));
+        ctx->comm_listen[i] = _abcdkhttpd_node_new(ctx->comm);
         if (!ctx->comm_listen[i])
         {
             abcdk_trace_output( LOG_WARNING, "内存错误。\n");
             goto final;
         }
 
-        userdata_p = abcdk_asynctcp_userdata(ctx->comm_listen[i]);
-        http_p = (abcdkhttpd_node_t *)userdata_p->pptrs[0];
-
-        /*绑定扩展数据析构函数。*/
-        abcdk_object_atfree(userdata_p, _abcdkhttpd_node_destroy_cb, NULL);
-        abcdk_object_unref(&userdata_p);
+        http_p = (abcdkhttpd_node_t *)abcdk_asynctcp_get_userdata(ctx->comm_listen[i]);
 
         /*绑定上下文环境指针。*/
         http_p->ctx = ctx;
