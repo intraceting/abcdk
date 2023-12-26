@@ -59,11 +59,11 @@ static int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
     return 0;
 }
 
-static void _node_destroy_cb(abcdk_object_t *obj, void *opaque)
+static void _node_destroy_cb(void *userdata)
 {
     h2_node_t *http_p;
 
-    http_p = (h2_node_t *)obj->pptrs[0];
+    http_p = (h2_node_t *)userdata;
     if (!http_p)
         return;
 
@@ -75,17 +75,12 @@ static void _node_destroy_cb(abcdk_object_t *obj, void *opaque)
 
 static abcdk_asynctcp_node_t *_node_new(abcdk_asynctcp_t *ctx)
 {
-    abcdk_object_t *userdata_p = NULL;
     h2_node_t *http_p = NULL;
     abcdk_asynctcp_node_t *node_new;
 
-    node_new = abcdk_asynctcp_alloc(ctx, sizeof(h2_node_t));
+    node_new = abcdk_asynctcp_alloc(ctx, sizeof(h2_node_t),_node_destroy_cb);
 
-    userdata_p = abcdk_asynctcp_userdata(node_new);
-    http_p = (h2_node_t *)userdata_p->pptrs[0];
-
-    abcdk_object_atfree(userdata_p, _node_destroy_cb, NULL);
-    abcdk_object_unref(&userdata_p);
+    http_p = (h2_node_t *)abcdk_asynctcp_get_userdata(node_new);
 
     http_p->ctx = ctx;
 
@@ -111,7 +106,7 @@ static void _prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *lis
     // 创建nghttp2服务器会话
     nghttp2_session_server_new(&node_new_p->session, node_new_p->callbacks, NULL);
 
-    // nghttp2_session_set_stream_user_data(node_new_p->session, 1, bev);
+    nghttp2_session_set_user_data(node_new_p->session, node_new);
 
     *node = node_new;
 }
@@ -125,10 +120,42 @@ static void _accept_event(abcdk_asynctcp_node_t *node, int *result)
 static void _connect_event(abcdk_asynctcp_node_t *node)
 {
     h2_node_t *http_p = NULL;
+    SSL *ssl_p = NULL;
+    const uint8_t *ver_p;
+    int ver_l;
+    int chk;
 
     http_p = (h2_node_t *)abcdk_asynctcp_get_userdata(node);
 
+    /*设置默认协议。*/
     http_p->protocol = 1;
+
+    ssl_p = abcdk_asynctcp_ssl(node);
+    if (!ssl_p)
+        goto final;
+
+#ifdef HEADER_SSL_H
+    /*检查SSL验证结果。*/
+    chk = SSL_get_verify_result(ssl_p);
+    if (chk != X509_V_OK)
+    {
+        /*修改超时，使用超时检测器关闭。*/
+        abcdk_asynctcp_set_timeout(node, 1);
+        return;
+    }
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    /*获取应用层协议。*/
+    SSL_get0_alpn_selected(ssl_p, &ver_p, &ver_l);
+    if (ver_p == NULL || ver_l <= 0)
+        goto final;
+
+    /*只区别h2版本。*/
+    http_p->protocol = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2), 0) == 0) ? 2 : 1);
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif // HEADER_SSL_H
+
+final:
 
     /*已连接到远端，注册读写事件。*/
     abcdk_asynctcp_recv_watch(node);
@@ -190,11 +217,49 @@ static void _request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t si
 
 }
 
+
+#ifdef HEADER_SSL_H
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+int _test_http2_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
+                               const unsigned char *in, unsigned int inlen, void *arg)
+{
+    unsigned int srvlen;
+
+    /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
+    //static unsigned char srv[] = {"\x08http/1.1\x08http/1.0\x08http/0.9"};
+    static unsigned char srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
+
+    /*精确的长度。*/
+    srvlen = sizeof(srv) - 1;
+
+    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
+    if (SSL_select_next_proto((unsigned char **)out, outlen, in, inlen, srv, srvlen) != OPENSSL_NPN_NEGOTIATED)
+    {
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    return SSL_TLSEXT_ERR_OK;
+}
+
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif // HEADER_SSL_H
+
 int abcdk_test_http2(abcdk_option_t *args)
 {
     abcdk_asynctcp_t *ctx;
     abcdk_asynctcp_node_t *listen_node;
     abcdk_sockaddr_t listen_addr;
+
+    const char *cert_file = abcdk_option_get(args, "--cert-file", 0, NULL);
+    const char *key_file = abcdk_option_get(args, "--key-file", 0, NULL);
+    SSL_CTX *ssl_ctx = NULL;
+#ifdef HEADER_SSL_H
+    ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1,NULL,NULL,0);
+    abcdk_openssl_ssl_ctx_load_crt(ssl_ctx,cert_file,key_file,NULL);
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    SSL_CTX_set_alpn_select_cb(ssl_ctx, _test_http2_alpn_select_cb, NULL);
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif // HEADER_SSL_H
 
     ctx = abcdk_asynctcp_start(10, -1);
     listen_node = _node_new(ctx);
@@ -202,7 +267,7 @@ int abcdk_test_http2(abcdk_option_t *args)
     abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:3333", 0);
 
     abcdk_asynctcp_callback_t cb = {_prepare_cb, _event_cb, _request_cb};
-    abcdk_asynctcp_listen(listen_node, NULL, &listen_addr, &cb);
+    abcdk_asynctcp_listen(listen_node, ssl_ctx, &listen_addr, &cb);
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);

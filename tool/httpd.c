@@ -210,11 +210,11 @@ uint64_t _abcdkhttpd_clock()
 }
 
 
-void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
+void _abcdkhttpd_node_destroy_cb(void *userdata)
 {
     abcdkhttpd_node_t *http_p;
 
-    http_p = (abcdkhttpd_node_t *)obj->pptrs[0];
+    http_p = (abcdkhttpd_node_t *)userdata;
     if (!http_p)
         return;
 
@@ -235,17 +235,10 @@ void _abcdkhttpd_node_destroy_cb(abcdk_object_t *obj, void *opaque)
 abcdk_asynctcp_node_t *_abcdkhttpd_node_new(abcdk_asynctcp_t *ctx)
 {
     abcdk_asynctcp_node_t *node;
-    abcdk_object_t *userdata_p;
 
-    node = abcdk_asynctcp_alloc(ctx, sizeof(abcdkhttpd_node_t));
+    node = abcdk_asynctcp_alloc(ctx, sizeof(abcdkhttpd_node_t),_abcdkhttpd_node_destroy_cb);
     if (!node)
         return NULL;
-    
-    userdata_p = abcdk_asynctcp_userdata(node);
-
-    /*绑定扩展数据析构函数。*/
-    abcdk_object_atfree(userdata_p, _abcdkhttpd_node_destroy_cb, NULL);
-    abcdk_object_unref(&userdata_p);
 
     return node;
 }

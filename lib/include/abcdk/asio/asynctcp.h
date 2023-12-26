@@ -93,7 +93,7 @@ typedef struct _abcdk_asynctcp_callback
     /**
      * 为新连接做准备工作的通知回调函数。
      * 
-     * @note 如果未指定，则创建默认节点。
+     * @note 监听有效，必须指定。
      * 
      * @param [out] node 新的节点，返回时填写。
      */
@@ -131,12 +131,13 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_refer(abcdk_asynctcp_node_t *src);
 
 /**
  * 申请节点。
- * 
+ *
  * @param [in] userdata 用户数据长度。
+ * @param [in] free_cb 用户数据销毁函数。
  *
  * @return !NULL(0) 成功(指针)，NULL(0) 失败。
  */
-abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdata);
+abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
 /**
  * SSL环境。
@@ -145,28 +146,20 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
 */
 SSL *abcdk_asynctcp_ssl(abcdk_asynctcp_node_t *node);
 
-/**
- * 用户环境对象。
- * 
- * @note 增加引用，调用者需要主动释放。
-*/
-abcdk_object_t *abcdk_asynctcp_userdata(abcdk_asynctcp_node_t *node);
 
 /**
  * 用户环境指针。
  * 
  * @return 旧的指针(0号索引)。
 */
-void *abcdk_asynctcp_get_userdata0(abcdk_asynctcp_node_t *node);
-#define abcdk_asynctcp_get_userdata abcdk_asynctcp_get_userdata0
+void *abcdk_asynctcp_get_userdata(abcdk_asynctcp_node_t *node);
 
 /**
  * 设置用户环境指针。
  * 
  * @return 旧的指针(0号索引)。
 */
-void *abcdk_asynctcp_set_userdata0(abcdk_asynctcp_node_t *node,void *opaque);
-#define abcdk_asynctcp_set_userdata abcdk_asynctcp_set_userdata0
+void *abcdk_asynctcp_set_userdata(abcdk_asynctcp_node_t *node,void *opaque);
 
 /**
  * 设置超时。

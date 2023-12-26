@@ -78,6 +78,9 @@ struct _abcdk_asynctcp_node
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
 
+    /** 用户环境销毁函数。*/
+    void (*userdata_free_cb)(void *userdata);
+
     /** 发送队列。*/
     abcdk_tree_t *out_queue;
 
@@ -125,6 +128,9 @@ void abcdk_asynctcp_unref(abcdk_asynctcp_node_t **node)
         abcdk_socket_option_linger(node_p->fd, &l, 2);
     }
 
+    if(node_p->userdata_free_cb)
+        node_p->userdata_free_cb(node_p->userdata->pptrs[0]);
+
     abcdk_closep(&node_p->fd);
     abcdk_object_unref(&node_p->userdata);
     abcdk_tree_free(&node_p->out_queue);
@@ -146,7 +152,7 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_refer(abcdk_asynctcp_node_t *src)
     return src;
 }
 
-abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdata)
+abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdata, void (*free_cb)(void *userdata))
 {
     abcdk_asynctcp_node_t *node = NULL;
 
@@ -161,6 +167,7 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     node->ctx = ctx;
     node->fd = -1;
     node->userdata = abcdk_object_alloc3(userdata,1);
+    node->userdata_free_cb = free_cb;
     node->out_queue = abcdk_tree_alloc3(1);
     abcdk_mutex_init2(&node->out_locker,0);
     node->out_pos = 0;
@@ -182,21 +189,14 @@ SSL *abcdk_asynctcp_ssl(abcdk_asynctcp_node_t *node)
     return NULL;
 }
 
-abcdk_object_t *abcdk_asynctcp_userdata(abcdk_asynctcp_node_t *node)
-{
-    assert(node != NULL);
-
-    return abcdk_object_refer(node->userdata);
-}
-
-void *abcdk_asynctcp_get_userdata0(abcdk_asynctcp_node_t *node)
+void *abcdk_asynctcp_get_userdata(abcdk_asynctcp_node_t *node)
 {
     assert(node != NULL);
 
     return node->userdata->pptrs[0];
 }
 
-void *abcdk_asynctcp_set_userdata0(abcdk_asynctcp_node_t *node,void *opaque)
+void *abcdk_asynctcp_set_userdata(abcdk_asynctcp_node_t *node,void *opaque)
 {
     void *old;
 
@@ -348,8 +348,6 @@ void _abcdk_asynctcp_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_nod
     /*通知应用层处理事件。*/
     if (listen->callback->prepare_cb)
         listen->callback->prepare_cb(node, listen);
-    else
-        abcdk_asynctcp_alloc(listen->ctx, 0);
 }
 
 /*声明输入事件钩子函数。*/
@@ -733,6 +731,7 @@ int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx,abcdk_so
     int chk;
 
     assert(node != NULL && addr != NULL && cb != NULL);
+    ABCDK_ASSERT(cb->prepare_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     /*异步环境，首先得增加对象引用。*/
