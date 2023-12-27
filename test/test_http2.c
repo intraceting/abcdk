@@ -27,12 +27,51 @@ typedef struct _h2_node
     nghttp2_session *session;
 } h2_node_t;
 
+#define ARRLEN(x) (sizeof(x) / sizeof(x[0]))
+
+#define MAKE_NV(NAME, VALUE)                                                   \
+  {                                                                            \
+    (uint8_t *)NAME, (uint8_t *)VALUE, sizeof(NAME) - 1, sizeof(VALUE) - 1,    \
+        NGHTTP2_NV_FLAG_NONE                                                   \
+  }
+
+ssize_t on_data_source_read_callback(
+    nghttp2_session *session, int32_t stream_id, uint8_t *buf, size_t length,
+    uint32_t *data_flags, nghttp2_data_source *source, void *user_data)
+{
+    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
+
+    size_t s = ABCDK_MIN(6LLU, length);
+    strncpy((char *)buf, "ahaha\n", s);
+
+    *data_flags |= NGHTTP2_DATA_FLAG_EOF;
+
+    return s;
+}
+
 // nghttp2回调函数，用于处理HTTP/2会话事件
 static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
 {
     // 在这里处理接收到的数据
     // 这里只是简单地打印接收到的数据
     printf("Received data on stream %d: %.*s\n", stream_id, (int)len, data);
+
+    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
+
+    if (flags & NGHTTP2_FLAG_END_STREAM)
+    {
+        nghttp2_nv hdrs[] = {MAKE_NV(":status", "200"),MAKE_NV("content-type","text/plain"),MAKE_NV("content-length","6")};
+
+        nghttp2_data_provider data_prd;
+        data_prd.source.fd = -1;
+        data_prd.read_callback = on_data_source_read_callback;
+
+        int rv = nghttp2_submit_response(session, stream_id, hdrs, ABCDK_ARRAY_SIZE(hdrs) , &data_prd);
+        assert (rv == 0);
+
+        /*通知链路有数据要发送。*/
+        abcdk_asynctcp_send_watch(node);
+    }
 
     // 返回成功
     return 0;
@@ -57,6 +96,20 @@ static int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
 
     // 返回成功
     return 0;
+}
+
+// 发送数据的回调函数
+static ssize_t on_send_callback(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data) {
+    // 在这里实现具体的发送逻辑，例如使用 socket 发送数据
+    // 这里的示例代码仅为演示，实际情况需要根据你的应用程序做适当修改
+    //printf("Sending data: %.*s\n", (int)length, data);
+
+    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
+
+    abcdk_asynctcp_post_buffer(node,data,length);
+    
+    // 返回实际发送的字节数
+    return length;
 }
 
 static void _node_destroy_cb(void *userdata)
@@ -102,11 +155,20 @@ static void _prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *lis
     nghttp2_session_callbacks_set_on_data_chunk_recv_callback(node_new_p->callbacks, on_data_chunk_recv_callback);
     nghttp2_session_callbacks_set_on_header_callback(node_new_p->callbacks, on_header_callback);
     nghttp2_session_callbacks_set_on_stream_close_callback(node_new_p->callbacks, on_stream_close_callback);
+    nghttp2_session_callbacks_set_send_callback(node_new_p->callbacks, on_send_callback);
 
     // 创建nghttp2服务器会话
-    nghttp2_session_server_new(&node_new_p->session, node_new_p->callbacks, NULL);
+    nghttp2_session_server_new(&node_new_p->session, node_new_p->callbacks, node_new);
 
-    nghttp2_session_set_user_data(node_new_p->session, node_new);
+    //nghttp2_session_set_user_data(node_new_p->session, node_new);
+
+    nghttp2_settings_entry iv[1] = {
+        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 100}};
+    int rv;
+
+    /*必须要设置。*/
+    rv = nghttp2_submit_settings(node_new_p->session, NGHTTP2_FLAG_NONE, iv, ARRLEN(iv));
+    assert(rv == 0);
 
     *node = node_new;
 }
@@ -155,6 +217,8 @@ static void _connect_event(abcdk_asynctcp_node_t *node)
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
+    
+
 final:
 
     /*已连接到远端，注册读写事件。*/
@@ -164,6 +228,12 @@ final:
 
 static void _output_event(abcdk_asynctcp_node_t *node)
 {
+    h2_node_t *http_p = NULL;
+
+    http_p = (h2_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    /*把缓存数据串行化，并通过回调发送出去。*/
+    nghttp2_session_send(http_p->session);
 }
 
 static void _close_event(abcdk_asynctcp_node_t *node)
