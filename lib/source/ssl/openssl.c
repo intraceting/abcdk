@@ -592,6 +592,45 @@ final_error:
     return -1;
 }
 
+SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const char *capath, const char *crt, const char *key, const char *pwd)
+{
+    SSL_CTX *ctx = NULL;
+    int chk;
+
+    ctx = abcdk_openssl_ssl_ctx_alloc(server, cafile, capath, (capath ? 2 : 0));
+    if (!ctx)
+    {
+        if(cafile)
+            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",cafile);
+        if(capath)
+            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",capath);
+            
+        goto ERR;
+    }
+
+    chk = abcdk_openssl_ssl_ctx_load_crt(ctx, crt, key, pwd);
+    if (chk != 0)
+    {
+        if(crt)
+            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",crt);
+        if(key)
+            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",key);
+
+        goto ERR;
+    }
+
+    if (cafile || capath)
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+    return ctx;
+
+ERR:
+
+    abcdk_openssl_ssl_ctx_free(&ctx);
+
+    return NULL;
+}
+
 void abcdk_openssl_ssl_free(SSL **ssl)
 {
     SSL *ssl_p;

@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/io.h"
+#include "abcdk/util/trace.h"
 
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslconf.h>
@@ -310,6 +311,14 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
  * @return 0 成功(句柄)，-1 失败。
 */
 int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx,const char *crt,const char *key,const char *pwd);
+
+/**
+ * 创建SSL_CTX环境，并加载证书和私钥。
+ * 
+ * @note 当指定CA证书时，将检查对端证书。
+ * @note 当指定CA路径时，将检查吊销列表和对端证书。
+*/
+SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server,const char *cafile,const char *capath,const char *crt,const char *key,const char *pwd);
 
 /**
  * 释放SSL句柄。

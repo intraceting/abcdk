@@ -125,6 +125,11 @@ typedef struct _abcdkhttpd_node
     char pathfile[PATH_MAX];
     struct stat attr;
 
+    const char *tunnel_cafile;
+    const char *tunnel_capath;
+    const char *tunnel_cert;
+    const char *tunnel_key;
+
     abcdk_asynctcp_node_t *tunnel;
     SSL_CTX *tunnel_ssl_ctx;
 
@@ -753,22 +758,12 @@ void _abcdkhttpd_create_tunnel(abcdk_asynctcp_node_t *node)
     if (abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
         abcdk_strcmp(http_p->url->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
     {
-        http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc(0, http_p->ctx->ca_file, http_p->ctx->ca_path, (http_p->ctx->ca_path ? 2 : 0));
+        http_p->tunnel_ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0,http_p->tunnel_cafile,http_p->tunnel_capath,http_p->tunnel_cert,http_p->tunnel_key,NULL);
         if (!http_p->tunnel_ssl_ctx)
         {
             _abcdkhttpd_reply_nobody(node, 500, "");
             return;
         }
-
-        chk = abcdk_openssl_ssl_ctx_load_crt(http_p->tunnel_ssl_ctx, http_p->ctx->cert_file, http_p->ctx->key_file, NULL);
-        if (chk != 0)
-        {
-            _abcdkhttpd_reply_nobody(node, 500, "");
-            return;
-        }
-
-        if (http_p->ctx->ca_file || http_p->ctx->ca_path)
-            SSL_CTX_set_verify(http_p->tunnel_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
     }
 #endif // HEADER_SSL_H
 
@@ -974,6 +969,11 @@ void _abcdkhttpd_input_forward(abcdk_asynctcp_node_t *node,const void *data, siz
     {
         if(!http_p->url)
             http_p->url = abcdk_url_split(http_p->ctx->uplink);
+
+        http_p->tunnel_cafile = http_p->ctx->ca_file;
+        http_p->tunnel_capath = http_p->ctx->ca_path;
+        http_p->tunnel_cert = http_p->ctx->cert_file;
+        http_p->tunnel_key = http_p->ctx->key_file;
             
         _abcdkhttpd_create_tunnel(node);
         if(!http_p->tunnel)
@@ -1261,23 +1261,10 @@ void _abcdkhttpd_process(abcdkhttpd_t *ctx)
         }
         else
         {
-            ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_openssl_ssl_ctx_alloc(1, ctx->ca_file, ctx->ca_path, (ctx->ca_path ? 2 : 0));
+            ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL] = abcdk_openssl_ssl_ctx_alloc_load(1,ctx->ca_file, ctx->ca_path,ctx->cert_file, ctx->key_file,NULL);
             if (!ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL])
-            {
-                abcdk_trace_output( LOG_WARNING, "加载CA证书错误。\n");
                 goto final;
-            }
-
-            chk = abcdk_openssl_ssl_ctx_load_crt(ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL], ctx->cert_file, ctx->key_file, NULL);
-            if (chk != 0)
-            {
-                abcdk_trace_output( LOG_WARNING, "加载证书或私钥错误。\n");
-                goto final;
-            }
-
-            if (ctx->ca_file || ctx->ca_path)
-                SSL_CTX_set_verify(ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL], SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-
+            
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
             SSL_CTX_set_alpn_select_cb(ctx->ssl_ctx_listen[ABCDKHTTPD_LISTEN_SSL], _abcdkhttpd_alpn_select_cb, NULL);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
