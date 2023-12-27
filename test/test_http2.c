@@ -49,6 +49,18 @@ ssize_t on_data_source_read_callback(
     return s;
 }
 
+static void test_submit_response(nghttp2_session *session, int32_t stream_id)
+{
+    nghttp2_nv hdrs[] = {MAKE_NV(":status", "200"), MAKE_NV("content-type", "text/plain"), MAKE_NV("content-length", "6")};
+
+    nghttp2_data_provider data_prd;
+    data_prd.source.fd = -1;
+    data_prd.read_callback = on_data_source_read_callback;
+
+    int rv = nghttp2_submit_response(session, stream_id, hdrs, ABCDK_ARRAY_SIZE(hdrs), &data_prd);
+    assert(rv == 0);
+}
+
 // nghttp2回调函数，用于处理HTTP/2会话事件
 static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
 {
@@ -60,14 +72,7 @@ static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, 
 
     if (flags & NGHTTP2_FLAG_END_STREAM)
     {
-        nghttp2_nv hdrs[] = {MAKE_NV(":status", "200"),MAKE_NV("content-type","text/plain"),MAKE_NV("content-length","6")};
-
-        nghttp2_data_provider data_prd;
-        data_prd.source.fd = -1;
-        data_prd.read_callback = on_data_source_read_callback;
-
-        int rv = nghttp2_submit_response(session, stream_id, hdrs, ABCDK_ARRAY_SIZE(hdrs) , &data_prd);
-        assert (rv == 0);
+        test_submit_response(session,stream_id);
 
         /*通知链路有数据要发送。*/
         abcdk_asynctcp_send_watch(node);
@@ -83,6 +88,16 @@ static int on_header_callback(nghttp2_session *session, const nghttp2_frame *fra
     // 在这里处理帧头部
     // 这里只是简单地打印头部信息
     printf("Received header on stream %d: %.*s: %.*s\n", frame->hd.stream_id, (int)namelen, name, (int)valuelen, value);
+
+    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
+
+    if(frame->hd.flags &NGHTTP2_FLAG_END_HEADERS)
+    {
+        test_submit_response(session,frame->hd.stream_id);
+
+        /*通知链路有数据要发送。*/
+        abcdk_asynctcp_send_watch(node);
+    }
 
     // 返回成功
     return 0;
