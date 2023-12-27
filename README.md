@@ -11,6 +11,7 @@
 
 - asio 异步IO
 - audio 音频
+- curl CURL二次封装
 - database 数据库(unixodbc,sqlite,redis)
 - ffmpeg FFMPEG二次封装
 - http HTTP
@@ -19,7 +20,7 @@
 - log 日志
 - mp4 MP4
 - rtp RTP
-- RTSP RTSP
+- sdp SDP
 - shell 外部命令二次封装
 - ssl SSL套件(openssl)
 - util 基础工具
