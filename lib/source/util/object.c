@@ -237,3 +237,24 @@ abcdk_object_t *abcdk_object_printf(int max, const char *fmt, ...)
 
     return obj;
 }
+
+abcdk_object_t *abcdk_object_copypair(const void *key, size_t ksize, const void *val, size_t vsize)
+{
+    abcdk_object_t *obj;
+
+    assert(key != NULL && ksize > 0 && val != NULL && vsize > 0);
+
+    /*多申请一个字节。*/
+    ssize_t ssize[] = {ksize + 1, vsize + 1};
+    obj = abcdk_object_alloc(ssize, 2, 0);
+    if (!obj)
+        return NULL;
+
+    memcpy(obj->pptrs[0], key, ksize);
+    obj->sizes[0] = ksize;
+
+    memcpy(obj->pptrs[1], val, vsize);
+    obj->sizes[1] = vsize;
+
+    return obj;
+}

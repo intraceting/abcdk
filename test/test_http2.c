@@ -27,6 +27,15 @@ typedef struct _h2_node
     nghttp2_session *session;
 } h2_node_t;
 
+typedef struct _h2_req_hdr{
+    abcdk_object_t *method;
+    abcdk_object_t *path;
+    abcdk_object_t *scheme;
+    abcdk_object_t *authority;
+    abcdk_object_t *others[100];
+    size_t num_others;
+} h2_req_hdr_t;
+
 #define ARRLEN(x) (sizeof(x) / sizeof(x[0]))
 
 #define MAKE_NV(NAME, VALUE)                                                   \
@@ -339,8 +348,7 @@ int abcdk_test_http2(abcdk_option_t *args)
     const char *key_file = abcdk_option_get(args, "--key-file", 0, NULL);
     SSL_CTX *ssl_ctx = NULL;
 #ifdef HEADER_SSL_H
-    ssl_ctx = abcdk_openssl_ssl_ctx_alloc(1,NULL,NULL,0);
-    abcdk_openssl_ssl_ctx_load_crt(ssl_ctx,cert_file,key_file,NULL);
+    ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1,NULL,NULL,cert_file,key_file,NULL);
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
     SSL_CTX_set_alpn_select_cb(ssl_ctx, _test_http2_alpn_select_cb, NULL);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation

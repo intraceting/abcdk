@@ -111,6 +111,11 @@ abcdk_object_t *abcdk_object_vprintf(int max, const char *fmt, va_list ap);
 */
 abcdk_object_t *abcdk_object_printf(int max, const char *fmt, ...);
 
+/**
+ * 申请一个内存块，并复制数据。
+*/
+abcdk_object_t *abcdk_object_copypair(const void *key, size_t ksize,const void *val, size_t vsize);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_OBJECT_H
