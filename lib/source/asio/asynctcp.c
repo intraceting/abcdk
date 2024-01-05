@@ -6,7 +6,7 @@
  */
 #include "abcdk/asio/asynctcp.h"
 
-/** 异步TCP通讯环境。 */
+/** 简单的异步TCP通讯。 */
 struct _abcdk_asynctcp
 {
     /** epollex 环境。*/
@@ -23,7 +23,7 @@ struct _abcdk_asynctcp
 
 };// abcdk_asynctcp_t;
 
-/** 节点信息。*/
+/** 异步TCP节点。 */
 struct _abcdk_asynctcp_node
 {
     /** 魔法数。*/

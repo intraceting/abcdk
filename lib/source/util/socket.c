@@ -409,41 +409,61 @@ final:
 
 int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_lookup)
 {
+    sa_family_t family = AF_UNSPEC;
     char name[NAME_MAX] = {0};
     uint16_t port = 0;
     int chk;
 
     assert(dst != NULL && src != NULL);
 
-    if (src[0] == '/')
+    if (abcdk_strncmp("uinx://", src, 7, 0) == 0)
     {
         dst->family = AF_UNIX;
+        return abcdk_sockaddr_from_string(dst, src + 7, try_lookup);
+    }
+    else if (abcdk_strncmp("ipv4://", src, 7, 0) == 0)
+    {
+        dst->family = AF_INET;
+        return abcdk_sockaddr_from_string(dst, src + 7, try_lookup);
+    }
+    else if (abcdk_strncmp("ipv6://", src, 7, 0) == 0)
+    {
+        dst->family = AF_INET6;
+        return abcdk_sockaddr_from_string(dst, src + 7, try_lookup);
+    }
+    else if (src[0] == '/')
+    {
+        family = AF_UNIX;
         strncpy(dst->addr_un.sun_path, src, 108);
-        ABCDK_ERRNO_AND_GOTO1(chk = 0,final);
+        return 0;
     }
     else if (strchr(src, '['))
     {
-        dst->family = AF_INET6;
+        family = AF_INET6;
         sscanf(src, "%*[[ ]%[^] ]%*[] :,]%hu", name, &port);
     }
     else if (strchr(src, ','))
     {
-        dst->family = AF_INET6;
+        family = AF_INET6;
         sscanf(src, "%[^, ]%*[, ]%hu", name, &port);
     }
     else if (strchr(src, ':'))
     {
-        dst->family = AF_INET;
+        family = AF_INET;
         sscanf(src, "%[^: ]%*[: ]%hu", name, &port);
     }
     else
     {
         strncpy(name,src,NAME_MAX);
-
-        /*如果外部未指定，并且也未能自动识别。*/
-        if(dst->family != AF_INET && dst->family != AF_INET6)
-            return -1;
     }
+
+    /*如果未指定，则使用自动识别的。*/
+    if(dst->family == AF_UNSPEC)
+        dst->family = family;
+
+    /*如果外部未指定，并且也未能自动识别。*/
+    if (dst->family != AF_UNIX && dst->family != AF_INET && dst->family != AF_INET6)
+        return -1;
 
     /*尝试直接转换。*/
     chk = abcdk_inet_pton(name, dst->family, dst);
@@ -461,8 +481,6 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
         if (dst->family == AF_INET)
             dst->addr4.sin_port = abcdk_endian_h_to_b16(port);
     }
-
-final:
 
     return chk;
 }

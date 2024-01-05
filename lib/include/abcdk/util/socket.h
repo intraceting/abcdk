@@ -218,16 +218,20 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
 /**
  * 字符地址转SOCKET地址。
  * 
- * Unix: /File
+ * @code
+ * Unix: /File 
  * Unix: /Path/File
+ * Unix: unix:///Path/File 
  * IPv4：Address:Port 
+ * IPv4：ipv4://Address:Port 
  * IPv6：Address,Port
+ * IPv6：ipv6://Address,Port
  * IPv6：[Address]:Port
+ * IPv6：ipv6://[Address]:Port
+ * @endcode
  * 
- * @note 调用前可以指定地址家族。
- * 
- * @param [in out] dst 地址。
- * @param [in] try_lookup !0 尝式域名解析，0 禁用载名解析。
+ * @param [in out] dst 地址。可以指定地址家族。
+ * @param [in] try_lookup 尝式域名解析。!0 是，0 否。
  * 
  * @return 0 成功，-1 失败。
 */

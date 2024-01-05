@@ -637,14 +637,14 @@ int _abcdkipconfig_resolv_change(abcdkipconfig_node_t *ctx, const char *const *n
     if (ctx->old_resolv)
         len += snprintf(buf + len, blen - len, "%s\n", ctx->old_resolv->pstrs[0]);
 
-    len += snprintf(buf + len, blen - len, "\n#vptool-ipconfig-begin");
+    len += snprintf(buf + len, blen - len, "\n#tool-ipconfig-begin");
 
     for (int i = 0; nss[i]; i++)
     {
         len += snprintf(buf + len, blen - len, "\nnameserver %s", nss[i]);
     }
 
-    len += snprintf(buf + len, blen - len, "\n#vptool-ipconfig-end\n");
+    len += snprintf(buf + len, blen - len, "\n#tool-ipconfig-end\n");
 
     truncate("/etc/resolv.conf", 0);
     chk = abcdk_save("/etc/resolv.conf", buf, len, 0);
