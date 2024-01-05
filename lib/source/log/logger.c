@@ -12,7 +12,7 @@
 struct _abcdk_logger
 {
     /** 文件锁。*/
-    abcdk_mutex_t locker;
+    abcdk_mutex_t *locker;
 
     /** 文件句柄。*/
     int fd;
@@ -67,7 +67,7 @@ void abcdk_logger_close(abcdk_logger_t **ctx)
     *ctx = NULL;
 
     abcdk_closep(&ctx_p->fd);
-    abcdk_mutex_unlock(&ctx_p->locker);
+    abcdk_mutex_destroy(&ctx_p->locker);
     abcdk_object_unref(&ctx_p->buf);
 
     abcdk_heap_free(ctx_p);
@@ -92,7 +92,7 @@ abcdk_logger_t *abcdk_logger_open(const char *name,const char *segment_name,size
     ctx->buf = NULL;
     ctx->bufpos = 0;
 
-    abcdk_mutex_init2(&ctx->locker,0);
+    ctx->locker = abcdk_mutex_create();
 
     /*复制文件名。*/
     strncpy(ctx->name, name, PATH_MAX);
@@ -251,7 +251,7 @@ void abcdk_logger_puts(abcdk_logger_t *ctx, int type, const char *str)
         return;
 
     /*加锁，确保每个线程写操作不被打断。*/
-    abcdk_mutex_lock(&ctx->locker, 1);
+    abcdk_mutex_lock(ctx->locker, 1);
 
     /*没有缓存，申请一个。*/
     if(!ctx->buf)
@@ -334,7 +334,7 @@ next_char:
 final:
 
     /*解锁，给其它线程写入的机会。*/
-    abcdk_mutex_unlock(&ctx->locker);
+    abcdk_mutex_unlock(ctx->locker);
 }
 
 

@@ -6,16 +6,57 @@
 */
 #include "abcdk/util/pool.h"
 
-void abcdk_pool_destroy(abcdk_pool_t *pool)
+/**
+ * 一个简单的池子。
+*/
+struct _abcdk_pool
 {
-    assert(pool != NULL);
+    /**
+     * 池子。
+     * 
+     * @note 尽量不要直接修改。
+    */
+    abcdk_object_t *table;
 
-    abcdk_object_unref(&pool->table);
+    /**
+     * 队列长度。
+     * 
+     * @note 尽量不要直接修改。
+    */
+    size_t count;
 
-    memset(pool, 0, sizeof(*pool));
+    /**
+     * 拉取游标。
+     * 
+     * @note 尽量不要直接修改。
+    */
+    size_t pull_pos;
+
+    /**
+     * 推送游标。
+     * 
+     * @note 尽量不要直接修改。
+    */
+    size_t push_pos;
+
+} ;//abcdk_pool_t;
+
+
+void abcdk_pool_destroy(abcdk_pool_t **ctx)
+{
+    abcdk_pool_t *ctx_p = NULL;
+
+    if(!ctx||!*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    abcdk_object_unref(&ctx_p->table);
+    abcdk_heap_free(ctx_p);
 }
 
-int abcdk_pool_init(abcdk_pool_t *pool, size_t size, size_t number)
+static int _abcdk_pool_init(abcdk_pool_t *pool, size_t size, size_t number)
 {
     assert(pool != NULL && size > 0 && number > 0);
 
@@ -30,21 +71,43 @@ int abcdk_pool_init(abcdk_pool_t *pool, size_t size, size_t number)
     return 0;
 }
 
-int abcdk_pool_pull(abcdk_pool_t *pool, void *buf)
+abcdk_pool_t *abcdk_pool_create(size_t size, size_t number)
 {
-    assert(pool != NULL && buf != NULL);
+    abcdk_pool_t *ctx;
+    int chk;
+
+    ctx = (abcdk_pool_t*)abcdk_heap_alloc(sizeof(abcdk_pool_t));
+    if(!ctx)
+        return NULL;
+
+    chk = _abcdk_pool_init(ctx,size,number);
+    if(chk != 0)
+        goto ERR;
+
+    return ctx;
+
+ERR:
+
+    abcdk_pool_destroy(&ctx);
+
+    return NULL;
+}
+
+int abcdk_pool_pull(abcdk_pool_t *ctx, void *buf)
+{
+    assert(ctx != NULL && buf != NULL);
 
     /*池不能是空的。*/
-    if (pool->count > 0)
+    if (ctx->count > 0)
     {
         /*按游标位置从池子中读取数据。*/
-        memcpy(buf, pool->table->pptrs[pool->pull_pos], pool->table->sizes[pool->pull_pos]);
+        memcpy(buf, ctx->table->pptrs[ctx->pull_pos], ctx->table->sizes[ctx->pull_pos]);
 
         /*队列长度减去1。*/
-        pool->count -= 1;
+        ctx->count -= 1;
 
         /*滚动游标。*/
-        pool->pull_pos = (pool->pull_pos + 1) % pool->table->numbers;
+        ctx->pull_pos = (ctx->pull_pos + 1) % ctx->table->numbers;
 
         return 0;
     }
@@ -52,24 +115,32 @@ int abcdk_pool_pull(abcdk_pool_t *pool, void *buf)
     return -1;
 }
 
-int abcdk_pool_push(abcdk_pool_t *pool, const void *buf)
+int abcdk_pool_push(abcdk_pool_t *ctx, const void *buf)
 {
-    assert(pool != NULL && buf != NULL);
+    assert(ctx != NULL && buf != NULL);
 
     /*池不能是满的。*/
-    if (pool->count < pool->table->numbers)
+    if (ctx->count < ctx->table->numbers)
     {
         /*按游标位置向池子中写入数据。*/
-        memcpy(pool->table->pptrs[pool->push_pos], buf, pool->table->sizes[pool->push_pos]);
+        memcpy(ctx->table->pptrs[ctx->push_pos], buf, ctx->table->sizes[ctx->push_pos]);
 
         /*队列长度加1。*/
-        pool->count += 1;
+        ctx->count += 1;
 
         /*滚动游标。*/
-        pool->push_pos = (pool->push_pos + 1) % pool->table->numbers;
+        ctx->push_pos = (ctx->push_pos + 1) % ctx->table->numbers;
 
         return 0;
     }
 
     return -1;
 }
+
+size_t abcdk_pool_count(abcdk_pool_t *ctx)
+{
+    assert(ctx != NULL);
+
+    return ctx->count;
+}
+

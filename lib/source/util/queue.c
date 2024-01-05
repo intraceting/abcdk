@@ -10,7 +10,7 @@
 struct _abcdk_queue
 {
     /** 锁。*/
-    abcdk_mutex_t locker;
+    abcdk_mutex_t *locker;
 
     /** 队列。*/
     abcdk_tree_t *root;
@@ -47,7 +47,7 @@ abcdk_queue_t *abcdk_queue_alloc(abcdk_queue_msg_destroy_cb cb)
         return NULL;
 
     queue->count = 0;
-    abcdk_mutex_init2(&queue->locker, 0);
+    queue->locker = abcdk_mutex_create();
     queue->msg_destroy_cb = cb;
 
     queue->root = abcdk_tree_alloc3(1);
@@ -69,9 +69,9 @@ size_t abcdk_queue_count(abcdk_queue_t *queue)
 
     assert(queue != NULL);
 
-    abcdk_mutex_lock(&queue->locker, 1);
+    abcdk_mutex_lock(queue->locker, 1);
     count = queue->count;
-    abcdk_mutex_unlock(&queue->locker);
+    abcdk_mutex_unlock(queue->locker);
 
     return count;
 }
@@ -112,14 +112,14 @@ int abcdk_queue_push(abcdk_queue_t *queue, size_t refcount, const void *msg, int
     msg_node->obj->pptrs[0] = (uint8_t *)msg;
     ABCDK_PTR2SIZE(msg_node->obj->pptrs[1],0) = refcount;
 
-    abcdk_mutex_lock(&queue->locker, 1);
+    abcdk_mutex_lock(queue->locker, 1);
 
     abcdk_tree_insert2(queue->root, msg_node, head);
     queue->count += 1;
 
-    abcdk_mutex_signal(&queue->locker,1);
+    abcdk_mutex_signal(queue->locker,1);
 
-    abcdk_mutex_unlock(&queue->locker);
+    abcdk_mutex_unlock(queue->locker);
 
     return 0;
 }
@@ -131,7 +131,7 @@ const void *abcdk_queue_pop(abcdk_queue_t *queue, int head)
 
     assert(queue != NULL);
 
-    abcdk_mutex_lock(&queue->locker, 1);
+    abcdk_mutex_lock(queue->locker, 1);
 
     msg_node = abcdk_tree_child(queue->root, head);
     if (msg_node)
@@ -153,7 +153,7 @@ const void *abcdk_queue_pop(abcdk_queue_t *queue, int head)
         }
     }
 
-    abcdk_mutex_unlock(&queue->locker);
+    abcdk_mutex_unlock(queue->locker);
 
     if (msg_node)
     {
@@ -171,14 +171,14 @@ int abcdk_queue_wait(abcdk_queue_t *queue, time_t timeout)
 
     assert(queue != NULL && timeout > 0);
 
-    abcdk_mutex_lock(&queue->locker, 1);
+    abcdk_mutex_lock(queue->locker, 1);
 
     if (queue->count <= 0)
-        chk = abcdk_mutex_wait(&queue->locker, timeout);
+        chk = abcdk_mutex_wait(queue->locker, timeout);
     else 
         chk = 0;
 
-    abcdk_mutex_unlock(&queue->locker);
+    abcdk_mutex_unlock(queue->locker);
 
     return chk;
 }

@@ -13,16 +13,16 @@ struct _abcdk_epollex
     int efd;
 
     /** 互斥量。*/
-    abcdk_mutex_t mutex;
+    abcdk_mutex_t *mutex;
 
     /** 计数器。*/
     size_t counter;
 
     /** 节点表。*/
-    abcdk_map_t node_map;
+    abcdk_map_t *node_map;
 
     /** 事件池。*/
-    abcdk_pool_t event_pool;
+    abcdk_pool_t *event_pool;
 
     /** WAIT主线程ID。*/
     volatile pthread_t wait_leader;
@@ -129,14 +129,14 @@ abcdk_epollex_t *abcdk_epollex_alloc(abcdk_epollex_cleanup_cb cleanup_cb, void *
 
     ctx->efd = efd;
     ctx->counter = 0;
-    abcdk_pool_init(&ctx->event_pool, sizeof(abcdk_epoll_event_t), 1000);
-    abcdk_map_init(&ctx->node_map, 400);
-    abcdk_mutex_init2(&ctx->mutex, 0);
+    ctx->event_pool = abcdk_pool_create(sizeof(abcdk_epoll_event_t), 1000);
+    ctx->node_map = abcdk_map_create(400);
+    ctx->mutex = abcdk_mutex_create();
     ctx->watchdog_intvl = 1000;
     ctx->watchdog_active = _abcdk_epollex_clock();
     ctx->wait_leader = 0;
-    ctx->node_map.destructor_cb = _abcdk_epollex_destructor_cb;
-    ctx->node_map.opaque = ctx;
+    ctx->node_map->destructor_cb = _abcdk_epollex_destructor_cb;
+    ctx->node_map->opaque = ctx;
     ctx->cleanup_cb = cleanup_cb;
     ctx->opaque = opaque;
 
@@ -158,9 +158,9 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
 
     assert(ctx != NULL && fd >= 0);
 
-    abcdk_mutex_lock(&ctx->mutex,1);
+    abcdk_mutex_lock(ctx->mutex,1);
 
-    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd),0);
+    p = abcdk_map_find(ctx->node_map, &fd, sizeof(fd),0);
     if(!p)
         goto final_error;
 
@@ -170,7 +170,7 @@ int abcdk_epollex_detach(abcdk_epollex_t *ctx,int fd)
         ABCDK_ERRNO_AND_GOTO1(EBUSY, final_error);
 
     abcdk_epoll_drop(ctx->efd,fd);
-    abcdk_map_remove(&ctx->node_map, &fd, sizeof(fd));
+    abcdk_map_remove(ctx->node_map, &fd, sizeof(fd));
 
     /*计数器 -1。*/
     ctx->counter -= 1;
@@ -184,7 +184,7 @@ final_error:
 
 final:
 
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return chk;
 }
@@ -197,9 +197,9 @@ int abcdk_epollex_attach(abcdk_epollex_t *ctx,int fd,const epoll_data_t *data)
 
     assert(ctx != NULL && fd >= 0 && data != NULL);
 
-    abcdk_mutex_lock(&ctx->mutex,1);
+    abcdk_mutex_lock(ctx->mutex,1);
 
-    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd), sizeof(abcdk_epollex_node_t));
+    p = abcdk_map_find(ctx->node_map, &fd, sizeof(fd), sizeof(abcdk_epollex_node_t));
     if(!p)
         goto final_error;
 
@@ -230,7 +230,7 @@ final_error:
 
 final:
 
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return chk;
 }
@@ -252,9 +252,9 @@ size_t abcdk_epollex_count(abcdk_epollex_t *ctx)
 
     assert(ctx != NULL);
 
-    abcdk_mutex_lock(&ctx->mutex,1);
+    abcdk_mutex_lock(ctx->mutex,1);
     count = ctx->counter;
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return count;
 }
@@ -297,7 +297,7 @@ void _abcdk_epollex_disp(abcdk_epollex_t *ctx, abcdk_epollex_node_t *node, uint3
     if (disp.events)
     {
         disp.data = node->data;
-        abcdk_pool_push(&ctx->event_pool,&disp);
+        abcdk_pool_push(ctx->event_pool,&disp);
     }   
 }
 
@@ -350,9 +350,9 @@ int abcdk_epollex_timeout(abcdk_epollex_t *ctx, int fd,time_t timeout)
 
     assert(ctx != NULL && fd >= 0);
 
-    abcdk_mutex_lock(&ctx->mutex,1);
+    abcdk_mutex_lock(ctx->mutex,1);
 
-    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd),0);
+    p = abcdk_map_find(ctx->node_map, &fd, sizeof(fd),0);
     if(!p)
         goto final_error;
 
@@ -374,7 +374,7 @@ final_error:
 
 final:
 
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return chk; 
 }
@@ -390,11 +390,11 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
     assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);//不允许注册出错事件。
     assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);//完成事件中不能包含出错事件。
 
-    abcdk_mutex_lock(&ctx->mutex,1);
+    abcdk_mutex_lock(ctx->mutex,1);
 
     if (fd >= 0)
     {
-        p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd), 0);
+        p = abcdk_map_find(ctx->node_map, &fd, sizeof(fd), 0);
         if (!p)
             goto final_error;
 
@@ -408,9 +408,9 @@ int abcdk_epollex_mark(abcdk_epollex_t *ctx, int fd, uint32_t want, uint32_t don
         ctx->broadcast_want = want;
 
         /*遍历。*/
-        ctx->node_map.dump_cb = _abcdk_epollex_mark_scan_cb;
-        ctx->node_map.opaque = ctx;
-        abcdk_map_scan(&ctx->node_map);
+        ctx->node_map->dump_cb = _abcdk_epollex_mark_scan_cb;
+        ctx->node_map->opaque = ctx;
+        abcdk_map_scan(ctx->node_map);
 
         /*Clear.*/
         ctx->broadcast_want = 0;
@@ -425,7 +425,7 @@ final_error:
 
 final:
 
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return chk;   
 }
@@ -440,7 +440,7 @@ int _abcdk_epollex_watchdog_scan_cb(abcdk_object_t *alloc, void *opaque)
         goto final;
 
     /*当事件队列排队过长时，中断看门狗检查，优先处理队列中的事件。*/
-    if (ctx->event_pool.count >= 800)
+    if (abcdk_pool_count(ctx->event_pool) >= 800)
         return -1;
 
     /*如果超时，派发ERROR事件。*/
@@ -464,9 +464,9 @@ void _abcdk_epollex_watchdog(abcdk_epollex_t *ctx)
     ctx->watchdog_active = current;
 
     /*遍历。*/
-    ctx->node_map.dump_cb = _abcdk_epollex_watchdog_scan_cb;
-    ctx->node_map.opaque = ctx;
-    abcdk_map_scan(&ctx->node_map);
+    ctx->node_map->dump_cb = _abcdk_epollex_watchdog_scan_cb;
+    ctx->node_map->opaque = ctx;
+    abcdk_map_scan(ctx->node_map);
 }
 
 void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,int count)
@@ -478,7 +478,7 @@ void _abcdk_epollex_wait_disp(abcdk_epollex_t *ctx,abcdk_epoll_event_t *events,i
     for (int i = 0; i < count; i++)
     {
         e = &events[i];
-        p = abcdk_map_find(&ctx->node_map, &e->data.fd,sizeof(e->data.fd), 0);
+        p = abcdk_map_find(ctx->node_map, &e->data.fd,sizeof(e->data.fd), 0);
 
         /*有那么一瞬间，当前返回的事件并不在锁(可能被分离)的保护范围内，因此这要做些特殊处理。*/
         if (p == NULL)
@@ -514,12 +514,12 @@ int abcdk_epollex_wait(abcdk_epollex_t *ctx, abcdk_epoll_event_t *event, time_t 
             ABCDK_ASSERT(0,"仅允许固定线程调用此接口。");
     }
 
-    abcdk_mutex_lock(&ctx->mutex, 1);
+    abcdk_mutex_lock(ctx->mutex, 1);
 
 try_again:
 
     /*优先从事件队列中拉取，有数据直接跳转结束，无数据进入等待。*/
-    chk = abcdk_pool_pull(&ctx->event_pool, event);
+    chk = abcdk_pool_pull(ctx->event_pool, event);
     if (chk == 0)
         goto final;
 
@@ -532,16 +532,16 @@ try_again:
     _abcdk_epollex_watchdog(ctx);
 
     /*如果有过期节点，则不启用IO等待时。*/
-    time_span = (ctx->event_pool.count > 0) ? (0) : ABCDK_MIN(time_span, ctx->watchdog_intvl);
+    time_span = (abcdk_pool_count(ctx->event_pool) > 0) ? (0) : ABCDK_MIN(time_span, ctx->watchdog_intvl);
 
     /*解锁，使其它接口被访问。*/
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     /*IO等待。*/
     count = abcdk_epoll_wait(ctx->efd, w, ABCDK_ARRAY_SIZE(w), ABCDK_MIN(time_span, ctx->watchdog_intvl));
 
     /*加锁，禁止其它接口被访问。*/
-    abcdk_mutex_lock(&ctx->mutex, 1);
+    abcdk_mutex_lock(ctx->mutex, 1);
 
     /*处理活动事件。*/
     _abcdk_epollex_wait_disp(ctx, w, count);
@@ -555,7 +555,7 @@ final_error:
 
 final:
 
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return chk;
 }
@@ -574,9 +574,9 @@ int abcdk_epollex_unref(abcdk_epollex_t *ctx,int fd, uint32_t events)
     if (abcdk_thread_leader_test(&ctx->wait_leader) != 0)
         ABCDK_ASSERT(0,"仅允许固定线程调用此接口。");
 
-    abcdk_mutex_lock(&ctx->mutex,1);
+    abcdk_mutex_lock(ctx->mutex,1);
 
-    p = abcdk_map_find(&ctx->node_map, &fd, sizeof(fd),0);
+    p = abcdk_map_find(ctx->node_map, &fd, sizeof(fd),0);
     if(!p)
         goto final_error;
 
@@ -605,7 +605,7 @@ final_error:
 
 final:
 
-    abcdk_mutex_unlock(&ctx->mutex);
+    abcdk_mutex_unlock(ctx->mutex);
 
     return chk; 
 }

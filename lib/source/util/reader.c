@@ -31,7 +31,7 @@ struct _abcdk_reader
     abcdk_tree_t *qidle;
 
     /** 队列锁。*/
-    abcdk_mutex_t qlock;
+    abcdk_mutex_t *qlock;
 
 };// abcdk_reader_t;
 
@@ -81,7 +81,7 @@ abcdk_reader_t *abcdk_reader_create(size_t blksize)
     if (!reader->qbusy)
         goto final_error;
 
-    abcdk_mutex_init2(&reader->qlock, 0);
+    reader->qlock = abcdk_mutex_create();
 
     for (int i = 0; i < 100; i++)
     {
@@ -114,7 +114,7 @@ void abcdk_reader_stop(abcdk_reader_t *reader)
     if (!abcdk_atomic_compare_and_swap(&reader->status, 1, 2))
         return;
 
-    abcdk_mutex_signal(&reader->qlock, 1);
+    abcdk_mutex_signal(reader->qlock, 1);
     abcdk_thread_join(&reader->tid);
 }
 
@@ -165,13 +165,13 @@ void *_abcdk_reader_readfile(void *opaque)
     while (abcdk_atomic_load(&reader->status) == 1)
     {
         /*从闲队列取一个节点。*/
-        abcdk_mutex_lock(&reader->qlock, 1);
+        abcdk_mutex_lock(reader->qlock, 1);
         buf = abcdk_tree_child(reader->qidle, 1);
         if (buf)
             abcdk_tree_unlink(buf);
         else
-            abcdk_mutex_wait(&reader->qlock, -1);
-        abcdk_mutex_unlock(&reader->qlock);
+            abcdk_mutex_wait(reader->qlock, -1);
+        abcdk_mutex_unlock(reader->qlock);
 
         /*如果闲队列为空，则重新等待。*/
         if (!buf)
@@ -185,10 +185,10 @@ void *_abcdk_reader_readfile(void *opaque)
             ABCDK_PTR2SIZE(buf->obj->pptrs[1], 0) = rlen;
 
         /*添加到忙队列末尾。*/
-        abcdk_mutex_lock(&reader->qlock, 1);
+        abcdk_mutex_lock(reader->qlock, 1);
         abcdk_tree_insert2(reader->qbusy, buf, 0);
-        abcdk_mutex_signal(&reader->qlock, 0);
-        abcdk_mutex_unlock(&reader->qlock);
+        abcdk_mutex_signal(reader->qlock, 0);
+        abcdk_mutex_unlock(reader->qlock);
 
         /*未填满块大小，表示已经到文件末尾，退出。*/
         if (rlen < reader->blksize)
@@ -209,7 +209,7 @@ ssize_t abcdk_reader_read(abcdk_reader_t *reader, void *buf, size_t size)
     while (abcdk_atomic_load(&reader->status) == 1)
     {
         /*从忙队列取一个节点。*/
-        abcdk_mutex_lock(&reader->qlock, 1);
+        abcdk_mutex_lock(reader->qlock, 1);
         while (abcdk_atomic_load(&reader->status) == 1)
         {
             buf2 = abcdk_tree_child(reader->qbusy, 1);
@@ -219,11 +219,11 @@ ssize_t abcdk_reader_read(abcdk_reader_t *reader, void *buf, size_t size)
                 break;
             }
             else if (abcdk_atomic_compare(&reader->eof,0))
-                abcdk_mutex_wait(&reader->qlock, -1);
+                abcdk_mutex_wait(reader->qlock, -1);
             else 
                 break;
         };
-        abcdk_mutex_unlock(&reader->qlock);
+        abcdk_mutex_unlock(reader->qlock);
 
         /*没有数据，表示文件已经结束。*/
         if (!buf2)
@@ -241,17 +241,17 @@ ssize_t abcdk_reader_read(abcdk_reader_t *reader, void *buf, size_t size)
         if (ABCDK_PTR2SIZE(buf2->obj->pptrs[1], 0) > ABCDK_PTR2SIZE(buf2->obj->pptrs[2], 0))
         {
             /*未读完，将缓存放入忙队列(头)。*/
-            abcdk_mutex_lock(&reader->qlock, 1);
+            abcdk_mutex_lock(reader->qlock, 1);
             abcdk_tree_insert2(reader->qbusy, buf2, 1);
-            abcdk_mutex_unlock(&reader->qlock);
+            abcdk_mutex_unlock(reader->qlock);
         }
         else
         {
             /*已读完，将缓存放入闲队列(尾)。*/
-            abcdk_mutex_lock(&reader->qlock, 1);
+            abcdk_mutex_lock(reader->qlock, 1);
             abcdk_tree_insert2(reader->qidle, buf2, 0);
-            abcdk_mutex_signal(&reader->qlock, 0);
-            abcdk_mutex_unlock(&reader->qlock);
+            abcdk_mutex_signal(reader->qlock, 0);
+            abcdk_mutex_unlock(reader->qlock);
         }
 
         /*数据读够了，返回退出。*/

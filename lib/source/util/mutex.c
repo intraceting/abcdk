@@ -6,47 +6,73 @@
  */
 #include "abcdk/util/mutex.h"
 
-void abcdk_mutex_destroy(abcdk_mutex_t *ctx)
+/**
+ * 互斥量、事件。
+*/
+struct _abcdk_mutex
 {
-    assert(ctx);
+    /**
+     * 事件属性。
+    */
+    pthread_condattr_t condattr;
 
-    pthread_condattr_destroy(&ctx->condattr);
-    pthread_cond_destroy(&ctx->cond);
-    pthread_mutexattr_destroy(&ctx->mutexattr);
-    pthread_mutex_destroy(&ctx->mutex);
+    /**
+     * 事件。
+    */
+    pthread_cond_t cond;
 
-    memset(ctx,0,sizeof(*ctx));
+    /**
+     * 互斥量属性。
+    */
+    pthread_mutexattr_t mutexattr;
+
+    /**
+     * 互斥量。
+    */
+    pthread_mutex_t mutex;
+
+} ;//abcdk_mutex_t;
+
+void abcdk_mutex_destroy(abcdk_mutex_t **ctx)
+{
+    abcdk_mutex_t *ctx_p = NULL;
+
+
+    if(!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    pthread_condattr_destroy(&ctx_p->condattr);
+    pthread_cond_destroy(&ctx_p->cond);
+    pthread_mutexattr_destroy(&ctx_p->mutexattr);
+    pthread_mutex_destroy(&ctx_p->mutex);
+    abcdk_heap_free(ctx_p);
+    
 }
 
-void abcdk_mutex_init(abcdk_mutex_t *ctx)
+abcdk_mutex_t *abcdk_mutex_create()
 {
-    int chk;
-    assert(ctx);
+    abcdk_mutex_t *ctx;
 
-    chk = pthread_cond_init(&ctx->cond, &ctx->condattr);
-    assert(chk==0);
-    chk = pthread_mutex_init(&ctx->mutex, &ctx->mutexattr);
-    assert(chk==0);
-}
-
-void abcdk_mutex_init2(abcdk_mutex_t* ctx,int shared)
-{
-    int pshared;
-
-    assert(ctx);
-
-    pshared = (shared?PTHREAD_PROCESS_SHARED:PTHREAD_PROCESS_PRIVATE);
+    ctx = (abcdk_mutex_t *)abcdk_heap_alloc(sizeof(abcdk_mutex_t));
+    if(!ctx)
+        return NULL;
 
     pthread_condattr_init(&ctx->condattr);
     pthread_condattr_setclock(&ctx->condattr, CLOCK_MONOTONIC);
-    pthread_condattr_setpshared(&ctx->condattr,pshared);
+    pthread_condattr_setpshared(&ctx->condattr,PTHREAD_PROCESS_PRIVATE);
 
     pthread_mutexattr_init(&ctx->mutexattr);
-    pthread_mutexattr_setpshared(&ctx->mutexattr,pshared);
+    pthread_mutexattr_setpshared(&ctx->mutexattr,PTHREAD_PROCESS_PRIVATE);
     pthread_mutexattr_setrobust(&ctx->mutexattr,PTHREAD_MUTEX_ROBUST);
 
-    abcdk_mutex_init(ctx);
-}
+    pthread_cond_init(&ctx->cond, &ctx->condattr);
+    pthread_mutex_init(&ctx->mutex, &ctx->mutexattr);
+
+    return ctx;
+}   
 
 int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block)
 {

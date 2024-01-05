@@ -85,7 +85,7 @@ struct _abcdk_asynctcp_node
     abcdk_tree_t *out_queue;
 
     /** 发送队列锁。*/
-    abcdk_mutex_t out_locker;
+    abcdk_mutex_t *out_locker;
 
     /** 发送游标。*/
     size_t out_pos;
@@ -169,7 +169,7 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     node->userdata = abcdk_object_alloc3(userdata,1);
     node->userdata_free_cb = free_cb;
     node->out_queue = abcdk_tree_alloc3(1);
-    abcdk_mutex_init2(&node->out_locker,0);
+    node->out_locker = abcdk_mutex_create();
     node->out_pos = 0;
     node->in_buffer = NULL;
     node->from_listen = NULL;
@@ -963,9 +963,9 @@ void _abcdk_asynctcp_output_hook(abcdk_asynctcp_node_t *node)
 NEXT_MSG:
 
     /*从队列头部开始发送。*/
-    abcdk_mutex_lock(&node->out_locker,1);
+    abcdk_mutex_lock(node->out_locker,1);
     p = abcdk_tree_child(node->out_queue,1);
-    abcdk_mutex_unlock(&node->out_locker);
+    abcdk_mutex_unlock(node->out_locker);
 
     /*通知应用层，发送队列空闲。*/
     if(!p)
@@ -993,10 +993,10 @@ NEXT_MSG:
     node->out_pos = 0;
 
     /*从队列中删除已经发送完整的节点。*/
-    abcdk_mutex_lock(&node->out_locker,1);
+    abcdk_mutex_lock(node->out_locker,1);
     abcdk_tree_unlink(p);
     abcdk_tree_free(&p);
-    abcdk_mutex_unlock(&node->out_locker);
+    abcdk_mutex_unlock(node->out_locker);
 
     /*并继续发送剩余节点。*/
     goto NEXT_MSG;
@@ -1016,9 +1016,9 @@ int abcdk_asynctcp_post(abcdk_asynctcp_node_t *node, abcdk_object_t *data)
     if(!p)
         return -1;
 
-    abcdk_mutex_lock(&node->out_locker,1);
+    abcdk_mutex_lock(node->out_locker,1);
     abcdk_tree_insert2(node->out_queue,p,0);
-    abcdk_mutex_unlock(&node->out_locker);
+    abcdk_mutex_unlock(node->out_locker);
 
     if(node->status == ABCDK_ASYNCTCP_STATUS_STABLE)
         abcdk_asynctcp_send_watch(node);

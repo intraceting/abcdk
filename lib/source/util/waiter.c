@@ -18,10 +18,10 @@ struct _abcdk_waiter
     int status;
 
     /** 锁。*/
-    abcdk_mutex_t locker;
+    abcdk_mutex_t *locker;
 
     /** 表。*/
-    abcdk_map_t map;
+    abcdk_map_t *map;
     
     /** 消息销毁回调函数。*/
     abcdk_waiter_msg_destroy_cb msg_destroy_cb;
@@ -86,13 +86,13 @@ abcdk_waiter_t *abcdk_waiter_alloc(abcdk_waiter_msg_destroy_cb cb)
     if (!waiter)
         return NULL;
 
-    abcdk_mutex_init2(&waiter->locker, 0);
-    abcdk_map_init(&waiter->map, 16);
+    waiter->locker = abcdk_mutex_create();
+    waiter->map = abcdk_map_create(16);
 
     waiter->status = 1;
-    waiter->map.compare_cb = _abcdk_waiter_compare_cb;
-    waiter->map.destructor_cb = _abcdk_waiter_destroy_cb;
-    waiter->map.opaque = waiter;
+    waiter->map->compare_cb = _abcdk_waiter_compare_cb;
+    waiter->map->destructor_cb = _abcdk_waiter_destroy_cb;
+    waiter->map->opaque = waiter;
     waiter->msg_destroy_cb = cb;
 
     return waiter;
@@ -105,10 +105,10 @@ int abcdk_waiter_register(abcdk_waiter_t *waiter, uint64_t key)
 
     assert(waiter != NULL);
 
-    abcdk_mutex_lock(&waiter->locker, 1);
+    abcdk_mutex_lock(waiter->locker, 1);
 
     /*申请一个字节的VALUE用于占位。*/
-    it = abcdk_map_find(&waiter->map, &key, sizeof(key), 1);
+    it = abcdk_map_find(waiter->map, &key, sizeof(key), 1);
     if (!it)
         goto final;
 
@@ -126,9 +126,9 @@ final:
 
     /*如果有错误，则删除KEY。*/
     if (chk != 0)
-        abcdk_map_remove(&waiter->map, &key, sizeof(key));
+        abcdk_map_remove(waiter->map, &key, sizeof(key));
 
-    abcdk_mutex_unlock(&waiter->locker);
+    abcdk_mutex_unlock(waiter->locker);
 
     return chk;
 }
@@ -150,9 +150,9 @@ void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
     /*计算过期时间。*/
     time_end = _abcdk_waiter_clock() + timeout;
 
-    abcdk_mutex_lock(&waiter->locker, 1);
+    abcdk_mutex_lock(waiter->locker, 1);
 
-    it = abcdk_map_find(&waiter->map, &key, sizeof(key), 0);
+    it = abcdk_map_find(waiter->map, &key, sizeof(key), 0);
     if (!it)
         goto final;
 
@@ -168,7 +168,7 @@ void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
         if (waiter->status != 1)
             break;
 
-        abcdk_mutex_wait(&waiter->locker, time_span);
+        abcdk_mutex_wait(waiter->locker, time_span);
     }
 
     /*复制应答数据，解除绑定关系。*/
@@ -176,11 +176,11 @@ void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
     it->pptrs[ABCDK_MAP_VALUE] = NULL;
 
     /*删除KEY。*/
-    abcdk_map_remove(&waiter->map, &key, sizeof(key));
+    abcdk_map_remove(waiter->map, &key, sizeof(key));
 
 final:
 
-    abcdk_mutex_unlock(&waiter->locker);
+    abcdk_mutex_unlock(waiter->locker);
 
     return msg_p;
 }
@@ -192,9 +192,9 @@ int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, void *msg)
 
     assert(waiter != NULL && msg != NULL);
 
-    abcdk_mutex_lock(&waiter->locker, 1);
+    abcdk_mutex_lock(waiter->locker, 1);
 
-    it = abcdk_map_find(&waiter->map, &key, sizeof(key), 0);
+    it = abcdk_map_find(waiter->map, &key, sizeof(key), 0);
     if (!it)
         goto final;
 
@@ -202,13 +202,13 @@ int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, void *msg)
     it->pptrs[ABCDK_MAP_VALUE] = (uint8_t*)msg;
 
     /*通知到达。*/
-    abcdk_mutex_signal(&waiter->locker, 1);
+    abcdk_mutex_signal(waiter->locker, 1);
 
     chk = 0;
 
 final:
 
-    abcdk_mutex_unlock(&waiter->locker);
+    abcdk_mutex_unlock(waiter->locker);
 
     return chk;
 }
@@ -217,21 +217,21 @@ void abcdk_waiter_cancel(abcdk_waiter_t *waiter)
 {
     assert(waiter != NULL);
 
-    abcdk_mutex_lock(&waiter->locker, 1);
+    abcdk_mutex_lock(waiter->locker, 1);
     
     waiter->status = 2;
-    abcdk_mutex_signal(&waiter->locker, 1);
+    abcdk_mutex_signal(waiter->locker, 1);
 
-    abcdk_mutex_unlock(&waiter->locker);
+    abcdk_mutex_unlock(waiter->locker);
 }
 
 void abcdk_waiter_resume(abcdk_waiter_t *waiter)
 {
     assert(waiter != NULL);
 
-    abcdk_mutex_lock(&waiter->locker, 1);
+    abcdk_mutex_lock(waiter->locker, 1);
     
     waiter->status = 1;
 
-    abcdk_mutex_unlock(&waiter->locker);
+    abcdk_mutex_unlock(waiter->locker);
 }

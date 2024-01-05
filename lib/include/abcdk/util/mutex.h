@@ -8,53 +8,21 @@
 #define ABCDK_UTIL_MUTEX_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/heap.h"
 
 __BEGIN_DECLS
 
 /**
  * 互斥量、事件。
- * 
- * @note 如果需要支持跨进程特性，需要让结构体数据运行在共享内存中。
 */
-typedef struct _abcdk_mutex
-{
-    /**
-     * 事件属性。
-    */
-    pthread_condattr_t condattr;
-
-    /**
-     * 事件。
-    */
-    pthread_cond_t cond;
-
-    /**
-     * 互斥量属性。
-    */
-    pthread_mutexattr_t mutexattr;
-
-    /**
-     * 互斥量。
-    */
-    pthread_mutex_t mutex;
-
-} abcdk_mutex_t;
+typedef struct _abcdk_mutex abcdk_mutex_t;
 
 
 /** 销毁。*/
-void abcdk_mutex_destroy(abcdk_mutex_t *ctx);
+void abcdk_mutex_destroy(abcdk_mutex_t **ctx);
 
-/** 初始化。*/
-void abcdk_mutex_init(abcdk_mutex_t *ctx);
-
-/**
- * 初始化。
- * 
- * @note 当互斥量拥用共享属性时，在多进程间有效。
- * 
- * @param shared 0 私有，!0 共享。
-*/
-void abcdk_mutex_init2(abcdk_mutex_t *ctx, int shared);
+/** 创建。*/
+abcdk_mutex_t *abcdk_mutex_create();
 
 /**
  * 加锁。

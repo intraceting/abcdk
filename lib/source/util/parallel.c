@@ -32,7 +32,7 @@ struct _abcdk_parallel
 typedef struct _abcdk_parallel_item
 {
     /**同步器。*/
-    abcdk_mutex_t sync;
+    abcdk_mutex_t *sync;
 
     /**执行计数器。*/
     uint32_t counter;
@@ -74,7 +74,7 @@ abcdk_parallel_item_t *_abcdk_parallel_item_alloc()
     if (!item)
         return NULL;
 
-    abcdk_mutex_init2(&item->sync, 0);
+    item->sync = abcdk_mutex_create();
 
     return item;
 }
@@ -139,13 +139,13 @@ wait_next_item:
 
     item->routine_cb(item->opaque, tid);
 
-    abcdk_mutex_lock(&item->sync,1);
+    abcdk_mutex_lock(item->sync,1);
         
     /*仅需要通知一次。*/
     if(++item->counter == item->number)
-        abcdk_mutex_signal(&item->sync,1);
+        abcdk_mutex_signal(item->sync,1);
 
-    abcdk_mutex_unlock(&item->sync);
+    abcdk_mutex_unlock(item->sync);
     
     goto wait_next_item;
 
@@ -267,17 +267,17 @@ int abcdk_parallel_invoke(abcdk_parallel_t *ctx,uint32_t number, void *opaque, a
         goto final;
 
 
-    abcdk_mutex_lock(&item->sync,1);
+    abcdk_mutex_lock(item->sync,1);
 
     for(;;)
     {
         if(item->counter != item->number)
-            abcdk_mutex_wait(&item->sync,-1);
+            abcdk_mutex_wait(item->sync,-1);
         else 
             break;
     }
 
-    abcdk_mutex_unlock(&item->sync);
+    abcdk_mutex_unlock(item->sync);
 
     chk = 0;
 

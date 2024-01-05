@@ -21,17 +21,23 @@ int _abcdk_map_compare(const void *key1, size_t size1, const void *key2, size_t 
     return memcmp(key1, key2, size2);
 }
 
-void abcdk_map_destroy(abcdk_map_t *map)
+
+void abcdk_map_destroy(abcdk_map_t **map)
 {
-    assert(map);
+    abcdk_map_t *map_p = NULL;
 
-    /* 全部释放。*/
-    abcdk_tree_free(&map->table);
+    if(!map || !*map)
+        return;
 
-    memset(map, 0, sizeof(*map));
+    map_p = *map;
+    *map = NULL;
+
+    abcdk_tree_free(&map_p->table);
+    abcdk_heap_free(map_p);
 }
 
-int abcdk_map_init(abcdk_map_t *map, size_t size)
+
+static int _abcdk_map_init(abcdk_map_t *map, size_t size)
 {
     assert(map && size > 0);
 
@@ -49,21 +55,7 @@ int abcdk_map_init(abcdk_map_t *map, size_t size)
     return 0;
 }
 
-void abcdk_map_free(abcdk_map_t **map)
-{
-    abcdk_map_t *map_p = NULL;
-
-    if(!map || !*map)
-        return;
-
-    map_p = *map;
-    *map = NULL;
-
-    abcdk_map_destroy(map_p);
-    abcdk_heap_free(map_p);
-}
-
-abcdk_map_t *abcdk_map_alloc(size_t size)
+abcdk_map_t *abcdk_map_create(size_t size)
 {
     abcdk_map_t *map = NULL;
     int chk;
@@ -74,7 +66,7 @@ abcdk_map_t *abcdk_map_alloc(size_t size)
     if (!map)
         return NULL;
 
-    chk = abcdk_map_init(map, size);
+    chk = _abcdk_map_init(map, size);
     if (chk != 0)
         goto final_error;
 
@@ -82,7 +74,7 @@ abcdk_map_t *abcdk_map_alloc(size_t size)
 
 final_error:
 
-    abcdk_map_free(&map);
+    abcdk_map_destroy(&map);
     return NULL;
 }
 
