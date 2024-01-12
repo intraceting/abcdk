@@ -342,6 +342,13 @@ SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx);
 */
 int abcdk_openssl_ssl_handshake(int fd, SSL *ssl, int server, time_t timeout);
 
+/**
+ * 获取ALPN协议名称。
+ * 
+ * @return 0 成功，-1 不支持。
+*/
+int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256]);
+
 #endif //HEADER_SSL_H
 
 __END_DECLS

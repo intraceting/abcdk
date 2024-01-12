@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_VEDIO_H264_H
-#define ABCDK_VEDIO_H264_H
+#ifndef ABCDK_VIDEO_H264_H
+#define ABCDK_VIDEO_H264_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/bit.h"
@@ -114,4 +114,4 @@ int abcdk_h264_idr(const void *data, size_t size);
 
 __END_DECLS
 
-#endif // ABCDK_VEDIO_H264_H
+#endif // ABCDK_VIDEO_H264_H

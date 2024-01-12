@@ -85,8 +85,6 @@ typedef enum _abcdk_asynctcp_event
 
 /** 
  * 回调函数。
- * 
- * @note 服务端新的连接会复制成员指针。
 */
 typedef struct _abcdk_asynctcp_callback
 {

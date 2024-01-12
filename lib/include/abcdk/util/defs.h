@@ -43,6 +43,7 @@
 #include <sched.h>
 #include <syslog.h>
 #include <pwd.h>
+#include <locale.h>
 #include <sys/socket.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>

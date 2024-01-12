@@ -406,9 +406,74 @@ int abcdk_test_http(abcdk_option_t *args)
     return ctx.errcode;
 }
 
-#else 
+#else
+
+int http_service_firewall_cb(void *opaque, const char *remote)
+{
+    return 0;
+}
+
+static void http_service_request_cb(void *opaque, abcdk_object_t *stream,void *userdata)
+{
+    // abcdk_trace_output(LOG_INFO,"%s %s %s %s",
+    // abcdk_http_service_request_header_get(stream,"Method"),
+    // abcdk_http_service_request_header_get(stream,"Scheme"),
+    // abcdk_http_service_request_header_get(stream,"Host"),
+    // abcdk_http_service_request_header_get(stream,"Script"));
+
+    // size_t len = 0;
+    // const char* data = abcdk_http_service_request_body_get(stream,&len);
+    // if(data)
+    // {
+    //     abcdk_trace_output(LOG_INFO,"(%zd) %s",len,data);
+    // }
+
+    abcdk_http_service_response_header(stream,200,100,
+                    "Content-Length: %d\r\n"
+                    "Content-Type: %s\r\n",
+                    200,
+                    "text/plain");
+
+    char buf[200] = {0};
+    memset(buf,'a',100);
+    memset(buf+100,'b',100);
+
+    abcdk_http_service_response_body_buffer(stream,buf,100);
+    abcdk_http_service_response_body_buffer(stream,buf+100,100);
+    abcdk_http_service_response_body(stream,NULL);
+}
+
 int abcdk_test_http(abcdk_option_t *args)
 {
+    abcdk_http_service_config_t cfg = {0};
+
+    abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.http.log","test.http.%d.log",10,10,1,1);
+
+    abcdk_trace_set_log(abcdk_logger_from_trace,log_ctx);
+
+    cfg.ca_file = abcdk_option_get(args,"--ca-file",0,NULL);
+    cfg.ca_path = abcdk_option_get(args,"--ca-path",0,NULL);
+    cfg.cert_file = abcdk_option_get(args,"--cert-file",0,NULL);
+    cfg.key_file = abcdk_option_get(args,"--key-file",0,NULL);
+    cfg.listen = abcdk_option_get(args,"--listen",0,NULL);
+    cfg.listen_ssl = abcdk_option_get(args,"--listen-ssl",0,NULL);
+    cfg.up_max_size = abcdk_option_get_int(args,"--up-max-size",0,4*1024*1024);
+    cfg.up_tmp_path = abcdk_option_get(args,"--up-tmp-path",0,NULL);
+    cfg.max_client = abcdk_option_get_int(args,"--max-client",0,1000);
+    cfg.enable_h2 = abcdk_option_get_int(args,"--enable-h2",0,0);
+    cfg.stimeout = abcdk_option_get_int(args,"--stimeout",0,60);
+    cfg.firewall_cb = http_service_firewall_cb;
+    cfg.request_cb = http_service_request_cb;
+
+
+    abcdk_http_service_t *ctx = abcdk_http_service_create(&cfg);
+
+    abcdk_proc_wait_exit_signal(-1);
+
+    abcdk_http_service_destroy(&ctx);
+
+    abcdk_logger_close(&log_ctx);
+
     return 0;
 }
 #endif 

@@ -1061,8 +1061,6 @@ int abcdk_asynctcp_post_vformat(abcdk_asynctcp_node_t *node, int max, const char
     if(chk == 0)
         return 0;
 
-final_error:
-
     /*删除投递失败的。*/
     abcdk_object_unref(&obj);
     return chk;

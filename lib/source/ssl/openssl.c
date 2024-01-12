@@ -732,6 +732,24 @@ final_error:
     return -1;
 }
 
+int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256])
+{
+    const uint8_t *ver_p;
+    unsigned int ver_l;
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    SSL_get0_alpn_selected(ssl, (const uint8_t **)&ver_p, &ver_l);
+    if (ver_p != NULL && ver_l > 0)
+    {
+        memcpy(buf,ver_p,ABCDK_MIN(255,ver_l));
+    }
+
+    return 0;
+#else 
+    return -1;
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+}
+
 #endif //HEADER_SSL_H
 
 /******************************************************************************************************/

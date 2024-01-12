@@ -106,12 +106,13 @@ abcdk_map_t *abcdk_map_create(size_t size);
  * 
 */
 abcdk_object_t* abcdk_map_find(abcdk_map_t* map,const void* key,size_t ksize,size_t vsize);
-
+#define abcdk_map_find2(map,key,vsize) abcdk_map_find((map),(key),sizeof(*(key)),(vsize))
 
 /**
  * 删除。
 */
 void abcdk_map_remove(abcdk_map_t* map,const void* key,size_t ksize);
+#define abcdk_map_remove2(map,key) abcdk_map_remove((map),(key),sizeof(*(key)))
 
 /**
  * 扫描节点。

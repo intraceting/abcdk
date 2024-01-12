@@ -8,7 +8,9 @@
 #define ABCDK_RTP_RTP_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/queue.h"
 #include "abcdk/util/bloom.h"
+#include "abcdk/util/receiver.h"
 
 __BEGIN_DECLS
 
@@ -94,6 +96,31 @@ void abcdk_rtp_header_serialize(const abcdk_rtp_header_t *hdr, void *data, size_
 /**反序列化。*/
 void abcdk_rtp_header_deserialize(const void *data, size_t size, abcdk_rtp_header_t *hdr);
 
+/**
+ * AAC数据包还原。
+ * 
+ * @note RTP的AAC封包有8个可变长度的字段，这里仅支持两个字段。
+ * 
+ * @param [in] size_bits 数据包长度的长度(bits)。
+ * @param [in] index_bits 数据包索引的长度(bits)。
+ *
+ * @return 1 已还原，0 需要更多数据，-1 有错误发生，-2 未支持的类型。
+ */
+int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int size_bits, int index_bits);
+
+/**
+ * H264数据包还原。
+ *
+ * @return 1 已还原，0 需要更多数据，-1 有错误发生，-2 未支持的类型。
+ */
+int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q);
+
+/**
+ * H265数据包还原。
+ *
+ * @return 1 已还原，0 需要更多数据，-1 有错误发生，-2 未支持的类型。
+ */
+int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q);
 
 
 __END_DECLS
