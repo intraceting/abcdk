@@ -879,7 +879,7 @@ END:
 
     /*已连接到远端，注册读写事件。*/
     abcdk_asynctcp_recv_watch(node);
-    abcdk_asynctcp_send_watch(node);
+    //abcdk_asynctcp_send_watch(node);
 }
 
 static void _abcdk_http_service_event_output(abcdk_asynctcp_node_t *node)
