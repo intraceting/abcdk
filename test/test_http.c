@@ -439,6 +439,15 @@ static void http_service_request_cb(void *opaque, abcdk_object_t *stream)
     // if(chk != 0)
     //     return ;
 
+    for(int i = 1;i<100;i++)
+    {
+        const char *p = abcdk_http_service_request_header_getline(stream,i);
+        if(!p)
+            break;
+
+        fprintf(stderr,"{%s}\n",p);
+    }
+
     char buf[200] = {0};
     memset(buf,'a',100);
     memset(buf+100,'b',100);

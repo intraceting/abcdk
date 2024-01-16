@@ -313,7 +313,7 @@ int _abcdkhttpd_check_auth(abcdk_asynctcp_node_t *node,int proxy)
     abcdk_option_free(&http_p->auth_opt);
     abcdk_http_parse_auth(&http_p->auth_opt,http_p->auth);
 
-    auth_method = abcdk_option_get(http_p->auth_opt,"method",0,"");
+    auth_method = abcdk_option_get(http_p->auth_opt,"auth-method",0,"");
     if (abcdk_strcmp(auth_method, "Basic", 0) == 0)
     {
         if (http_p->md5)

@@ -1192,7 +1192,22 @@ ERR:
 
 const char* abcdk_http_service_request_header_getline(abcdk_object_t *stream,int line)
 {
+    abcdk_http_service_node_t *node_ctx_p;
+    abcdk_http_service_stream_t *stream_ctx_p;
+
+    assert(stream != NULL && line >= 1 && line < 100);
+
+    stream_ctx_p = (abcdk_http_service_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+    node_ctx_p = (abcdk_http_service_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+
+    /*HTTP协议有头部数据。*/
+    if (stream_ctx_p->protocol != 1)
+        goto ERR;
     
+    return abcdk_receiver_header_line(stream_ctx_p->updata, line);
+ERR:
+
+    return NULL;
 }
 
 const char *abcdk_http_service_request_body_get(abcdk_object_t *stream, size_t *len)

@@ -141,6 +141,7 @@ const char *abcdk_http_service_address_remote(abcdk_object_t *stream);
  * Scheme
  * Host
  * Script
+ * ...
  * @endcode
  * 
  * @return !NULL(0) 成功(属性值的指针)，NULL(0) 失败(不存在)。
