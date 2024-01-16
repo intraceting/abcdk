@@ -408,12 +408,19 @@ int abcdk_test_http(abcdk_option_t *args)
 
 #else
 
-int http_service_firewall_cb(void *opaque, const char *remote)
+static int http_service_auth_load_cb(void *opaque, const char *user, char pawd[160])
+{
+    strncpy(pawd,"bbbb",4);
+
+    return 0;
+}
+
+static int http_service_firewall_cb(void *opaque, const char *remote)
 {
     return 0;
 }
 
-static void http_service_request_cb(void *opaque, abcdk_object_t *stream,void *userdata)
+static void http_service_request_cb(void *opaque, abcdk_object_t *stream)
 {
     // abcdk_trace_output(LOG_INFO,"%s %s %s %s",
     // abcdk_http_service_request_header_get(stream,"Method"),
@@ -428,19 +435,34 @@ static void http_service_request_cb(void *opaque, abcdk_object_t *stream,void *u
     //     abcdk_trace_output(LOG_INFO,"(%zd) %s",len,data);
     // }
 
+    // int chk = abcdk_http_service_check_auth(stream);
+    // if(chk != 0)
+    //     return ;
+
+    char buf[200] = {0};
+    memset(buf,'a',100);
+    memset(buf+100,'b',100);
+
+#if 0
+    
     abcdk_http_service_response_header(stream,200,100,
                     "Content-Length: %d\r\n"
                     "Content-Type: %s\r\n",
                     200,
                     "text/plain");
 
-    char buf[200] = {0};
-    memset(buf,'a',100);
-    memset(buf+100,'b',100);
+
 
     abcdk_http_service_response_body_buffer(stream,buf,100);
     abcdk_http_service_response_body_buffer(stream,buf+100,100);
     abcdk_http_service_response_body(stream,NULL);
+#else 
+    //abcdk_http_service_response_buffer(stream,200,buf,200,"text/plain",NULL);
+
+    int fd = abcdk_open("/home/devel/remote/192.169.4.190-mnt/zhangpengcheng/Release/tmp/daolang.mp4",0,0,0);
+    abcdk_http_service_response_fd(stream,200,fd,NULL,NULL);
+    abcdk_closep(&fd);
+#endif 
 }
 
 int abcdk_test_http(abcdk_option_t *args)
@@ -462,8 +484,11 @@ int abcdk_test_http(abcdk_option_t *args)
     cfg.max_client = abcdk_option_get_int(args,"--max-client",0,1000);
     cfg.enable_h2 = abcdk_option_get_int(args,"--enable-h2",0,0);
     cfg.stimeout = abcdk_option_get_int(args,"--stimeout",0,60);
+    cfg.server_name = abcdk_option_get(args,"--server-name",0,"test_http");
+    cfg.server_realm = abcdk_option_get(args,"--server-realm",0,"abcdk");
     cfg.firewall_cb = http_service_firewall_cb;
     cfg.request_cb = http_service_request_cb;
+    cfg.auth_load_cb = http_service_auth_load_cb;
 
 
     abcdk_http_service_t *ctx = abcdk_http_service_create(&cfg);

@@ -81,10 +81,27 @@ abcdk_object_t *abcdk_http_chunked_format(int max, const char *fmt, ...);
  * 解码授权。
  * 
  * @note 仅支持Basic和Digest。
+*/
+void abcdk_http_parse_auth(abcdk_option_t **opt,const char *auth);
+
+/**
+ * 加载授权密码。
+ *
+ * @param [in] user 用户名。
+ * @param [out] pawd 密码(明文)。
+ *
+ * @return 0 账号存在，-1 账号不存在，-2 账号存在但密码为空。
+ */
+typedef int (*abcdk_http_auth_load_pawd_cb)(void *opaque, const char *user, char pawd[160]);
+
+/**
+ * 验证授权。
+ * 
+ * @note 需要http-method属性的支持。
  *
  * @return 0 成功，-1 失败，-22 参数错误。
 */
-void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth);
+int abcdk_http_check_auth(abcdk_option_t *opt,abcdk_http_auth_load_pawd_cb load_pawd_cb,void *opaque);
 
 
 __END_DECLS

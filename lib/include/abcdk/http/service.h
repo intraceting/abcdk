@@ -10,9 +10,13 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/util/receiver.h"
 #include "abcdk/util/stream.h"
+#include "abcdk/util/string.h"
+#include "abcdk/util/random.h"
+#include "abcdk/util/mmap.h"
+#include "abcdk/http/util.h"
 #include "abcdk/asio/asynctcp.h"
 #include "abcdk/ssl/openssl.h"
-#include "abcdk/http/util.h"
+
 
 __BEGIN_DECLS
 
@@ -30,6 +34,9 @@ typedef struct _abcdk_http_service_config
 
     /*服务器名称。*/
     const char *server_name;
+
+    /*服务器领域。*/
+    const char *server_realm;
 
     /*CA证书。*/
     const char *ca_file;
@@ -64,11 +71,15 @@ typedef struct _abcdk_http_service_config
     /*是否启用H2协议。*/
     int enable_h2;
 
-    /*上级服务器地址。*/
-    const char *up_link;
-
-    /*授权存储路径。*/
-    const char *auth_path;
+    /**
+     * 加载授权。
+     * 
+     * @param [in] user 用户名。
+     * @param [out] pawd 密码(明文)。
+     * 
+     * @return 0 账号存在，-1 账号不存在，-2 账号存在但密码为空。
+    */
+    int (*auth_load_cb)(void *opaque,const char *user,char pawd[160]);
 
     /**
      * 防火墙回调。
@@ -77,7 +88,7 @@ typedef struct _abcdk_http_service_config
      *
      * @return 0 允许，!0 阻止。
      */
-    int (*firewall_cb)(void *opaque, const char *remote);
+    int (*firewall_cb)(void *opaque,const char *remote);
 
     /**
      * 新连接通知回调。
@@ -86,20 +97,20 @@ typedef struct _abcdk_http_service_config
      * @param [out] userdata 用户环境指针。
      *
      */
-    void (*accept_cb)(void *opaque, abcdk_object_t *stream, const char *remote, void **userdata);
+    void (*accept_cb)(void *opaque,abcdk_object_t *stream);
 
     /*请求通知回调。*/
-    void (*request_cb)(void *opaque, abcdk_object_t *stream, void *userdata);
+    void (*request_cb)(void *opaque,abcdk_object_t *stream);
 
     /*输出(空闲)通知回调。*/
-    void (*output_cb)(void *opaque, abcdk_object_t *stream, void *userdata);
+    void (*output_cb)(void *opaque,abcdk_object_t *stream);
 
     /**
      * 关闭通知回调。
      * 
      * @note 在这里可以清理用户环境。 
     */
-    void (*close_cb)(void *opaque, abcdk_object_t *stream, void *userdata);
+    void (*close_cb)(void *opaque,abcdk_object_t *stream);
 
 } abcdk_http_service_config_t;
 
@@ -108,6 +119,19 @@ void abcdk_http_service_destroy(abcdk_http_service_t **ctx);
 
 /** 创建。*/
 abcdk_http_service_t *abcdk_http_service_create(const abcdk_http_service_config_t *cfg);
+
+/** 获取用户环境指针。*/
+void *abcdk_http_service_get_userdata(abcdk_object_t *stream);
+
+/** 
+ * 设置用户环境指针。
+ * 
+ * @return 旧的用户环境指针。
+*/
+void *abcdk_http_service_set_userdata(abcdk_object_t *stream,void *userdata);
+
+/** 获取远程地址。*/
+const char *abcdk_http_service_address_remote(abcdk_object_t *stream);
 
 /** 
  * 在请求头查找属性值。
@@ -178,6 +202,42 @@ int abcdk_http_service_response_body_buffer(abcdk_object_t *stream,const void *d
  * @return 0 成功，< 0 失败。
 */
 int abcdk_http_service_response_nobody(abcdk_object_t *stream, uint32_t status,const char *a_c_a_m, const char *a_c_a_o);
+
+/**
+ * 应答带实体。
+ * 
+ * @param [in] type 类型。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_http_service_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t *data, const char *type, const char *a_c_a_o);
+
+/**
+ * 应答带实体。
+ * 
+ * @param [in] type 类型。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_http_service_response_buffer(abcdk_object_t *stream, uint32_t status, const char *data, size_t size, const char *type, const char *a_c_a_o);
+
+/**
+ * 应答带实体。
+ * 
+ * @param [in] type 类型。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_http_service_response_fd(abcdk_object_t *stream, uint32_t status, int fd, const char *type, const char *a_c_a_o);
+
+/**
+ * 授权验证。
+ * 
+ * @note 仅支持Basic和Digest。
+ * 
+ * @return 0 通过，< 0 未通过。
+*/
+int abcdk_http_service_check_auth(abcdk_object_t *stream);
 
 
 __END_DECLS

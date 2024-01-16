@@ -663,12 +663,24 @@ abcdk_object_t *abcdk_http_chunked_format(int max, const char *fmt, ...)
     return obj;
 }
 
-void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth)
+void abcdk_http_parse_auth(abcdk_option_t **opt,const char *auth)
 {
     char method[100] = {0};
     const char *p, *p_next;
-    abcdk_object_t *basic_de = NULL,*basic_de2 = NULL;
-    abcdk_object_t *digest_de = NULL,*digest_de2 = NULL;
+    abcdk_object_t *basic_de = NULL, *basic_de2 = NULL;
+    abcdk_object_t *digest_de = NULL, *digest_de2 = NULL;
+    abcdk_option_t *opt_p;
+
+    assert(opt != NULL && auth != NULL);
+
+    /*可以需要创建新的。*/
+    if (*opt == NULL)
+        opt_p = *opt = abcdk_option_alloc("");
+    else
+        opt_p = *opt;
+
+    if (!opt_p)
+        return;
 
     p_next = auth;
 
@@ -680,7 +692,7 @@ void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth)
     strncpy(method, p, p_next - p);
 
     //1
-    abcdk_option_set(opt,"method",method);
+    abcdk_option_set(opt_p,"auth-method",method);
 
     if (abcdk_strcmp(method, "Basic", 0) == 0)
     {
@@ -697,8 +709,8 @@ void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth)
             goto END;
 
         //2
-        abcdk_option_set(opt,"username",basic_de2->pstrs[0]);
-        abcdk_option_set(opt,"password",basic_de2->pstrs[1]);
+        abcdk_option_set(opt_p,"username",basic_de2->pstrs[0]);
+        abcdk_option_set(opt_p,"password",basic_de2->pstrs[1]);
     }
     else if (abcdk_strcmp(method, "Digest", 0) == 0)
     {
@@ -720,7 +732,7 @@ void abcdk_http_parse_auth(abcdk_option_t *opt,const char *auth)
             abcdk_strtrim2(digest_de2->pstrs[1], isspace, "\"\'", 2);
 
             //2
-            abcdk_option_set(opt,digest_de2->pstrs[0],digest_de2->pstrs[1]);
+            abcdk_option_set(opt_p,digest_de2->pstrs[0],digest_de2->pstrs[1]);
 
             abcdk_object_unref(&digest_de2);
         }
@@ -733,4 +745,61 @@ END:
     abcdk_object_unref(&digest_de);
     abcdk_object_unref(&digest_de2);
 
+}
+
+int abcdk_http_check_auth(abcdk_option_t *opt, abcdk_http_auth_load_pawd_cb load_pawd_cb, void *opaque)
+{
+    abcdk_md5_t *md5_ctx;
+    char pawd_buf[160] = {0};
+    const char *auth_method = NULL, *http_method = NULL;
+    const char *user = NULL, *pawd = NULL;
+    const char *method = NULL, *uri = NULL, *realm = NULL, *nonce = NULL, *response = NULL;
+    char digest_rsp[33] = {0};
+    int chk;
+
+    assert(opt != NULL && load_pawd_cb != NULL);
+
+    http_method = abcdk_option_get(opt, "http-method", 0, "");
+    auth_method = abcdk_option_get(opt, "auth-method", 0, "");
+    user = abcdk_option_get(opt, "username", 0, "");
+    if (!http_method || !auth_method || !user)
+        return -22;
+
+    chk = load_pawd_cb(opaque, user, pawd_buf);
+    if (chk != 0)
+        return -22;
+
+    if (abcdk_strcmp(auth_method, "Basic", 0) == 0)
+    {
+        pawd = abcdk_option_get(opt, "password", 0, "");
+        if (!pawd)
+            return -22;
+
+        if (abcdk_strcmp(pawd, pawd_buf, 1) == 0)
+            return 0;
+    }
+    else if (abcdk_strcmp(auth_method, "Digest", 0) == 0)
+    {
+        uri = abcdk_option_get(opt, "uri", 0, "");
+        realm = abcdk_option_get(opt, "realm", 0, "");
+        nonce = abcdk_option_get(opt, "nonce", 0, "");
+        response = abcdk_option_get(opt, "response", 0, "");
+        if (!uri || !realm || !nonce || !response)
+            return -22;
+
+        md5_ctx = abcdk_md5_create();
+        if (!md5_ctx)
+            return -1;
+
+        abcdk_http_auth_digest(md5_ctx, user, pawd_buf, http_method, uri, realm, nonce);
+        abcdk_md5_final2hex(md5_ctx, digest_rsp, 0);
+
+        chk = abcdk_strcmp(digest_rsp, response, 0);
+        abcdk_md5_destroy(&md5_ctx);
+
+        if (chk == 0)
+            return 0;
+    }
+
+    return -1;
 }
