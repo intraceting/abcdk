@@ -402,7 +402,7 @@ void _abcdkipconfig_check_link(abcdkipconfig_node_t *ctx, const char *ifname)
             ctx->implement_state = 0;
 
         /*当链路断开后，清理地址和路由表。*/
-        if (!ctx->link_state && ctx->oper_state)
+        if (!ctx->link_state || !ctx->oper_state)
         {
             abcdk_net_address_flush(ifname);
             abcdk_net_route_flush(ifname);
