@@ -58,7 +58,7 @@ typedef struct _abcdk_http_service_node
     /*是否为服务端。*/
     int server;
 
-    /*协议。1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3 4：TUNNEL*/
+    /*协议。0：未选择 1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3 4：TUNNEL*/
     int protocol;
 
     /*远程地址。*/
@@ -198,7 +198,7 @@ static abcdk_asynctcp_node_t *_abcdk_http_service_node_alloc(abcdk_http_service_
 
     node_ctx->father = father;
     node_ctx->server = server;
-    node_ctx->protocol = 1;
+    node_ctx->protocol = 0;
 
     if (ssl)
     {
@@ -281,7 +281,7 @@ static void _abcdk_http_service_process(abcdk_object_t *stream)
 
 #ifdef NGHTTP2_H
 
-static void _abcdk_http_service_process_h2(abcdk_object_t *stream)
+static void _abcdk_http_service_process_2(abcdk_object_t *stream)
 {
     abcdk_http_service_node_t *node_ctx_p;
     abcdk_http_service_stream_t *stream_ctx_p;
@@ -343,7 +343,7 @@ static int _abcdk_http_service_h2_frame_recv_cb(nghttp2_session *session, const 
         return -5;
     }
 
-    _abcdk_http_service_process_h2(stream_p);
+    _abcdk_http_service_process_2(stream_p);
 
 
 
@@ -367,6 +367,17 @@ static int _abcdk_http_service_h2_data_chunk_recv_cb(nghttp2_session *session, u
         return -1;
 
     stream_ctx_p = (abcdk_http_service_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
+
+    if (!stream_ctx_p->updata)
+    {
+        if(stream_ctx_p->protocol == 1)
+            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP, node_ctx_p->father->cfg->up_max_size, node_ctx_p->father->cfg->up_tmp_path);
+        else if(stream_ctx_p->protocol == 4)
+            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 256*1024,NULL);
+    }    
+
+    if (!stream_ctx_p->updata)
+        return -2;
 
     if (stream_ctx_p->protocol == 1)
     {
@@ -422,6 +433,17 @@ static int _abcdk_http_service_h2_header_cb(nghttp2_session *session, const nght
         return -1;
 
     stream_ctx_p = (abcdk_http_service_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
+
+    if (!stream_ctx_p->updata)
+    {
+        if(stream_ctx_p->protocol == 1)
+            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP, node_ctx_p->father->cfg->up_max_size, node_ctx_p->father->cfg->up_tmp_path);
+        else if(stream_ctx_p->protocol == 4)
+            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 256*1024,NULL);
+    }    
+
+    if (!stream_ctx_p->updata)
+        return -2;
   
     if (abcdk_strcmp(":method", name, 0) == 0)
     {
@@ -478,16 +500,6 @@ static int _abcdk_http_service_h2_begin_headers_cb(nghttp2_session *session, con
 
     stream_ctx_p = (abcdk_http_service_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
 
-    if (!stream_ctx_p->updata)
-    {
-        if(stream_ctx_p->protocol == 1)
-            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP, node_ctx_p->father->cfg->up_max_size, node_ctx_p->father->cfg->up_tmp_path);
-        else if(stream_ctx_p->protocol == 4)
-            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, node_ctx_p->father->cfg->up_max_size, node_ctx_p->father->cfg->up_tmp_path);
-    }    
-
-    if (!stream_ctx_p->updata)
-        return -2;
 
     return 0;
 }
@@ -545,8 +557,7 @@ static ssize_t _abcdk_http_service_h2_response_read_cb(nghttp2_session *session,
 
 #endif // NGHTTP2_H
 
-
-static void _abcdk_http_service_process_h1(abcdk_object_t *stream)
+static void _abcdk_http_service_process_1(abcdk_object_t *stream)
 {
     abcdk_http_service_node_t *node_ctx_p;
     abcdk_http_service_stream_t *stream_ctx_p;
@@ -577,7 +588,7 @@ static void _abcdk_http_service_process_h1(abcdk_object_t *stream)
     }
     else if (stream_ctx_p->protocol == 4)
     {
-
+        ;
     }
 
     _abcdk_http_service_process(stream);
@@ -588,7 +599,27 @@ ERR:
 
 }
 
-static void _abcdk_http_service_request_h1(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_http_service_process_4(abcdk_object_t *stream)
+{
+    abcdk_http_service_node_t *node_ctx_p;
+    abcdk_http_service_stream_t *stream_ctx_p;
+
+    stream_ctx_p = (abcdk_http_service_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+    node_ctx_p = (abcdk_http_service_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+
+    if (stream_ctx_p->protocol == 1)
+    {
+        ;
+    }
+    else if (stream_ctx_p->protocol == 4)
+    {
+        ;
+    }
+
+    _abcdk_http_service_process(stream);
+}
+
+static void _abcdk_http_service_request_1(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_http_service_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
@@ -610,7 +641,7 @@ static void _abcdk_http_service_request_h1(abcdk_asynctcp_node_t *node, const vo
         if (stream_ctx_p->protocol == 1)
             stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP, node_ctx_p->father->cfg->up_max_size, node_ctx_p->father->cfg->up_tmp_path);
         else if (stream_ctx_p->protocol == 4)
-            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, node_ctx_p->father->cfg->up_max_size, node_ctx_p->father->cfg->up_tmp_path);
+            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 256*1024, NULL);
         else
             goto ERR;
     }
@@ -624,7 +655,7 @@ static void _abcdk_http_service_request_h1(abcdk_asynctcp_node_t *node, const vo
     else if (chk == 0) /*数据包不完整，继续接收。*/
         return;
 
-    _abcdk_http_service_process_h1(stream_p);
+    _abcdk_http_service_process_1(stream_p);
     
     /*一定要回收。*/
     abcdk_receiver_unref(&stream_ctx_p->updata);
@@ -637,7 +668,7 @@ ERR:
     abcdk_asynctcp_set_timeout(node, 1);
 }
 
-static void _abcdk_http_service_request_h2(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_http_service_request_2(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_http_service_node_t *node_ctx_p;
     ssize_t chk;
@@ -662,7 +693,54 @@ ERR:
     abcdk_asynctcp_set_timeout(node, 1);
 }
 
-static void _abcdk_http_service_output_h1(abcdk_asynctcp_node_t *node)
+static void _abcdk_http_service_request_4(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+{
+    abcdk_http_service_node_t *node_ctx_p;
+    abcdk_object_t *stream_p;
+    abcdk_http_service_stream_t *stream_ctx_p;
+    int stream_id = 0;
+    const char *upgrade_val;
+    int chk;
+
+    node_ctx_p = (abcdk_http_service_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, sizeof(abcdk_http_service_stream_t));
+    if (!stream_p)
+        goto ERR;
+
+    stream_ctx_p = (abcdk_http_service_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
+
+    if (!stream_ctx_p->updata)
+    {
+        if (stream_ctx_p->protocol == 4)
+            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 256*1024, NULL);
+        else
+            goto ERR;
+    }
+
+    if (!stream_ctx_p->updata)
+        goto ERR;
+
+    chk = abcdk_receiver_append(stream_ctx_p->updata, data, size, remain);
+    if (chk < 0)
+        goto ERR;
+    else if (chk == 0) /*数据包不完整，继续接收。*/
+        return;
+
+    _abcdk_http_service_process_4(stream_p);
+    
+    /*一定要回收。*/
+    abcdk_receiver_unref(&stream_ctx_p->updata);
+
+    /*No Error.*/
+    return;
+
+ERR:
+
+    abcdk_asynctcp_set_timeout(node, 1);
+}
+
+static void _abcdk_http_service_output_1(abcdk_asynctcp_node_t *node)
 {
     abcdk_http_service_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
@@ -683,7 +761,7 @@ static void _abcdk_http_service_output_h1(abcdk_asynctcp_node_t *node)
         node_ctx_p->father->cfg->output_cb(node_ctx_p->father->cfg->opaque,stream_p);
 }
 
-static void _abcdk_http_service_output_h2(abcdk_asynctcp_node_t *node)
+static void _abcdk_http_service_output_2(abcdk_asynctcp_node_t *node)
 {
     abcdk_http_service_node_t *node_ctx_p;
 
@@ -693,6 +771,27 @@ static void _abcdk_http_service_output_h2(abcdk_asynctcp_node_t *node)
     /*把缓存数据串行化，并通过回调发送出去。*/
     nghttp2_session_send(node_ctx_p->h2_handle);
 #endif //NGHTTP2_H
+}
+
+static void _abcdk_http_service_output_4(abcdk_asynctcp_node_t *node)
+{
+    abcdk_http_service_node_t *node_ctx_p;
+    abcdk_object_t *stream_p;
+    abcdk_http_service_stream_t *stream_ctx_p;
+    int stream_id = 0;
+    int chk;
+
+    node_ctx_p = (abcdk_http_service_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, 0);
+    if (!stream_p)
+        return;
+
+    stream_ctx_p = (abcdk_http_service_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
+
+    /*通知链路空闲。*/
+    if(node_ctx_p->father->cfg->output_cb)
+        node_ctx_p->father->cfg->output_cb(node_ctx_p->father->cfg->opaque,stream_p);
 }
 
 #ifdef HEADER_SSL_H
@@ -822,9 +921,6 @@ static void _abcdk_http_service_event_connect(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_http_service_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    /*默认协议。*/
-    node_ctx_p->protocol = 1;
-
     /*设置超时。*/
     if (node_ctx_p->father->cfg->stimeout > 0)
         abcdk_asynctcp_set_timeout(node, node_ctx_p->father->cfg->stimeout * 1000);
@@ -855,7 +951,7 @@ static void _abcdk_http_service_event_connect(abcdk_asynctcp_node_t *node)
     node_ctx_p->ssl_ok = 1;
 
     chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, ptl_sel_name);
-    if (chk == 0)
+    if (chk == 0 && node_ctx_p->protocol == 0)
     {
         if (abcdk_strcmp("tunnel", ptl_sel_name, 0) == 0)
             node_ctx_p->protocol = 4;
@@ -868,6 +964,10 @@ static void _abcdk_http_service_event_connect(abcdk_asynctcp_node_t *node)
 #endif // HEADER_SSL_H
 
 END:
+
+    /*如果未选择协议，则使用默认协议。*/
+    if(node_ctx_p->protocol == 0)
+        node_ctx_p->protocol = 1;
 
     abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经建立。", (node_ctx_p->server ? "客户端" : "服务端"), node_ctx_p->remote_addr);
 
@@ -884,16 +984,15 @@ static void _abcdk_http_service_event_output(abcdk_asynctcp_node_t *node)
 
     if(node_ctx_p->protocol == 1)
     {
-        _abcdk_http_service_output_h1(node);
+        _abcdk_http_service_output_1(node);
     }
     else if( node_ctx_p->protocol == 2)
     {
-        _abcdk_http_service_output_h2(node);
-
+        _abcdk_http_service_output_2(node);
     }
     else if( node_ctx_p->protocol == 4)
     {
-
+        _abcdk_http_service_output_4(node);
     }
 
 }
@@ -953,14 +1052,15 @@ static void _abcdk_http_service_request_cb(abcdk_asynctcp_node_t *node, const vo
 
     if (node_ctx_p->protocol == 1)
     {
-        _abcdk_http_service_request_h1(node, data, size, remain);
+        _abcdk_http_service_request_1(node, data, size, remain);
     }
     else if (node_ctx_p->protocol == 2)
     {
-        _abcdk_http_service_request_h2(node, data, size, remain);
+        _abcdk_http_service_request_2(node, data, size, remain);
     }
     else if (node_ctx_p->protocol == 4)
     {
+        _abcdk_http_service_request_4(node, data, size, remain);
     }
 }
 
@@ -1115,6 +1215,7 @@ ERR:
 
     return NULL;
 }
+
 
 void *abcdk_http_service_get_userdata(abcdk_object_t *stream)
 {
