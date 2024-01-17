@@ -468,8 +468,11 @@ static void http_service_request_cb(void *opaque, abcdk_object_t *stream)
 #else 
     //abcdk_http_service_response_buffer(stream,200,buf,200,"text/plain",NULL);
 
-    int fd = abcdk_open("/home/devel/remote/192.169.4.190-mnt/zhangpengcheng/Release/tmp/daolang.mp4",0,0,0);
-    abcdk_http_service_response_fd(stream,200,fd,NULL,NULL);
+    int fd = abcdk_open("./aaaaa.mp4",0,0,0);
+    if(fd>=0)
+        abcdk_http_service_response_fd(stream,200,fd,NULL,NULL);
+    else 
+        abcdk_http_service_response_nobody(stream,404,NULL,NULL);
     abcdk_closep(&fd);
 #endif 
 }

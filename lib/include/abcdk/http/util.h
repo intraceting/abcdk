@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_HTTP_HTTP_H
-#define ABCDK_HTTP_HTTP_H
+#ifndef ABCDK_HTTP_UTIL_H
+#define ABCDK_HTTP_UTIL_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/string.h"
@@ -106,4 +106,4 @@ int abcdk_http_check_auth(abcdk_option_t *opt,abcdk_http_auth_load_pawd_cb load_
 
 __END_DECLS
 
-#endif //ABCDK_HTTP_HTTP_H
+#endif //ABCDK_HTTP_UTIL_H

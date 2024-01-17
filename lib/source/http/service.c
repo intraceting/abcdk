@@ -173,7 +173,9 @@ static void _abcdk_http_service_node_destroy_cb(void *userdata)
 
     ctx = (abcdk_http_service_node_t *)userdata;
 
+#ifdef HEADER_SSL_H
     abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);
+#endif //HEADER_SSL_H
 
 #ifdef NGHTTP2_H
     if (ctx->h2_handle)
@@ -200,12 +202,15 @@ static abcdk_asynctcp_node_t *_abcdk_http_service_node_alloc(abcdk_http_service_
     node_ctx->server = server;
     node_ctx->protocol = 0;
 
+
+#ifdef HEADER_SSL_H
     if (ssl)
     {
         /*可能无证书。*/
         if (father->cfg->cert_file && father->cfg->key_file)
             node_ctx->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(server, father->cfg->ca_file, father->cfg->ca_path, father->cfg->cert_file, father->cfg->key_file, NULL);
     }
+#endif //HEADER_SSL_H
 
     return node;
 }
@@ -1075,6 +1080,10 @@ static int _abcdk_http_service_start_listen(abcdk_http_service_t *ctx, int ssl)
 
     if (ssl)
     {
+#ifndef HEADER_SSL_H
+        abcdk_trace_output(LOG_ERR, "构建时未包含SSL组件，忽略。");
+        return 0;
+#endif 
         if (!ctx->cfg->listen_ssl)
         {
             abcdk_trace_output(LOG_ERR, "SSL监听地址不存在，忽略。");
@@ -1190,6 +1199,7 @@ abcdk_http_service_t *abcdk_http_service_create(const abcdk_http_service_config_
     chk = _abcdk_http_service_start_listen(ctx, 0);
     if (chk != 0)
         goto ERR;
+
 
     chk = _abcdk_http_service_start_listen(ctx, 1);
     if (chk != 0)
