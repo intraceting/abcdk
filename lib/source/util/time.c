@@ -159,3 +159,8 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc
 
     return buf;
 }
+
+const char *abcdk_time_format_gmt(const struct tm *tm, locale_t loc)
+{
+    return abcdk_time_format("%a, %d %b %Y %H:%M:%S GMT", tm, loc);
+}

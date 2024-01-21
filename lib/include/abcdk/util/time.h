@@ -79,6 +79,22 @@ time_t abcdk_time_diff2(const char *t1, const char *t0, int utc);
 */
 const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc);
 
+/**
+ * 格式化时间(GMT)。
+ * 
+ * @param [in] tm 时间，NULL(0) 获取UTC时间。
+ * @param [in] loc 本地化设置，NULL(0) 使用全局设置。
+*/
+const char *abcdk_time_format_gmt(const struct tm *tm, locale_t loc);
+
+/**
+ * 格式化时间(GMT)。
+ * 
+ * @param [in] tm 时间，NULL(0) 获取UTC时间。
+ * @param [in] loc 本地化设置，NULL(0) 使用全局设置。
+*/
+const char *abcdk_time_format_gmt(const struct tm *tm, locale_t loc);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_TIME_H
