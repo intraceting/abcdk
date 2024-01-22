@@ -406,42 +406,57 @@ int abcdk_test_http(abcdk_option_t *args)
     return ctx.errcode;
 }
 
-#else
+#elif 1
 
-static int http_service_auth_load_cb(void *opaque, const char *user, char pawd[160])
+static int httpd_auth_load_cb(void *opaque, const char *user, char pawd[160])
 {
     strncpy(pawd,"bbbb",4);
 
     return 0;
 }
 
-static int http_service_firewall_cb(void *opaque, const char *remote)
+static void httpd_session_prepare_cb(void *opaque,abcdk_httpd_session_t **session,abcdk_httpd_session_t *listen)
 {
-    return 0;
+    *session = abcdk_httpd_session_alloc((abcdk_httpd_t*)opaque);
 }
 
-static void http_service_request_cb(void *opaque, abcdk_object_t *stream)
+static void httpd_session_accept_cb(void *opaque,abcdk_httpd_session_t *session,int *result)
+{
+    *result = 0;
+}
+
+static void httpd_session_ready_cb(void *opaque,abcdk_httpd_session_t *session,int server)
+{
+    abcdk_httpd_session_set_timeout(session,10);
+}
+
+static void httpd_ssession_close_cb(void *opaque,abcdk_httpd_session_t *session)
+{
+
+}
+
+static void httpd_request_cb(void *opaque, abcdk_object_t *stream)
 {
     // abcdk_trace_output(LOG_INFO,"%s %s %s %s",
-    // abcdk_http_service_request_header_get(stream,"Method"),
-    // abcdk_http_service_request_header_get(stream,"Scheme"),
-    // abcdk_http_service_request_header_get(stream,"Host"),
-    // abcdk_http_service_request_header_get(stream,"Script"));
+    // abcdk_httpd_request_header_get(stream,"Method"),
+    // abcdk_httpd_request_header_get(stream,"Scheme"),
+    // abcdk_httpd_request_header_get(stream,"Host"),
+    // abcdk_httpd_request_header_get(stream,"Script"));
 
     // size_t len = 0;
-    // const char* data = abcdk_http_service_request_body_get(stream,&len);
+    // const char* data = abcdk_httpd_request_body_get(stream,&len);
     // if(data)
     // {
     //     abcdk_trace_output(LOG_INFO,"(%zd) %s",len,data);
     // }
 
-    // int chk = abcdk_http_service_check_auth(stream);
+    // int chk = abcdk_httpd_check_auth(stream);
     // if(chk != 0)
     //     return ;
 
     for(int i = 1;i<100;i++)
     {
-        const char *p = abcdk_http_service_request_header_getline(stream,i);
+        const char *p = abcdk_httpd_request_header_getline(stream,i);
         if(!p)
             break;
 
@@ -452,9 +467,9 @@ static void http_service_request_cb(void *opaque, abcdk_object_t *stream)
     memset(buf,'a',100);
     memset(buf+100,'b',100);
 
-#if 0
+#if 1
     
-    abcdk_http_service_response_header(stream,200,100,
+    abcdk_httpd_response_header(stream,200,100,
                     "Content-Length: %d\r\n"
                     "Content-Type: %s\r\n",
                     200,
@@ -462,55 +477,70 @@ static void http_service_request_cb(void *opaque, abcdk_object_t *stream)
 
 
 
-    abcdk_http_service_response_body_buffer(stream,buf,100);
-    abcdk_http_service_response_body_buffer(stream,buf+100,100);
-    abcdk_http_service_response_body(stream,NULL);
+    abcdk_httpd_response_body_buffer(stream,buf,100);
+    abcdk_httpd_response_body_buffer(stream,buf+100,100);
+    abcdk_httpd_response_body(stream,NULL);
 #else 
-    //abcdk_http_service_response_buffer(stream,200,buf,200,"text/plain",NULL);
+    //abcdk_httpd_response_buffer(stream,200,buf,200,"text/plain",NULL);
 
     int fd = abcdk_open("./aaaaa.mp4",0,0,0);
     if(fd>=0)
-        abcdk_http_service_response_fd(stream,200,fd,NULL,NULL);
+        abcdk_httpd_response_fd(stream,200,fd,"video/mp4",NULL);
     else 
-        abcdk_http_service_response_nobody(stream,404,NULL,NULL);
+        abcdk_httpd_response_nobody(stream,404,NULL,NULL);
     abcdk_closep(&fd);
 #endif 
 }
 
 int abcdk_test_http(abcdk_option_t *args)
 {
-    abcdk_http_service_config_t cfg = {0};
+    abcdk_httpd_config_t cfg = {0};
 
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.http.log","test.http.%d.log",10,10,1,1);
 
     abcdk_trace_set_log(abcdk_logger_from_trace,log_ctx);
 
+    abcdk_httpd_t *ctx = abcdk_httpd_create(1000,-1);
+
+    cfg.opaque = ctx;
     cfg.ca_file = abcdk_option_get(args,"--ca-file",0,NULL);
     cfg.ca_path = abcdk_option_get(args,"--ca-path",0,NULL);
     cfg.cert_file = abcdk_option_get(args,"--cert-file",0,NULL);
     cfg.key_file = abcdk_option_get(args,"--key-file",0,NULL);
-    cfg.listen = abcdk_option_get(args,"--listen",0,NULL);
-    cfg.listen_ssl = abcdk_option_get(args,"--listen-ssl",0,NULL);
-    cfg.up_max_size = abcdk_option_get_int(args,"--up-max-size",0,4*1024*1024);
-    cfg.up_tmp_path = abcdk_option_get(args,"--up-tmp-path",0,NULL);
-    cfg.max_client = abcdk_option_get_int(args,"--max-client",0,1000);
+    cfg.req_max_size = abcdk_option_get_int(args,"--req-max-size",0,4*1024*1024);
+    cfg.req_tmp_path = abcdk_option_get(args,"--req-tmp-path",0,NULL);
     cfg.enable_h2 = abcdk_option_get_int(args,"--enable-h2",0,0);
-    cfg.stimeout = abcdk_option_get_int(args,"--stimeout",0,60);
     cfg.server_name = abcdk_option_get(args,"--server-name",0,"test_http");
     cfg.server_realm = abcdk_option_get(args,"--server-realm",0,"abcdk");
-    cfg.firewall_cb = http_service_firewall_cb;
-    cfg.request_cb = http_service_request_cb;
-    cfg.auth_load_cb = http_service_auth_load_cb;
+    cfg.session_prepare_cb = httpd_session_prepare_cb;
+    cfg.stream_request_cb = httpd_request_cb;
+    cfg.session_ready_cb = httpd_session_ready_cb;
+    cfg.auth_load_cb = httpd_auth_load_cb;
+    
+
+    const char *listen = abcdk_option_get(args,"--listen",0,"ipv4://0.0.0.0:9999");
+
+    abcdk_sockaddr_t addr = {0};
+    abcdk_sockaddr_from_string(&addr,listen,0);
 
 
-    abcdk_http_service_t *ctx = abcdk_http_service_create(&cfg);
+    abcdk_httpd_session_t *listen_ses_p = abcdk_httpd_session_alloc(ctx);
+
+    abcdk_httpd_session_listen(listen_ses_p,&addr,&cfg);
+
+    abcdk_httpd_session_unref(&listen_ses_p);
 
     abcdk_proc_wait_exit_signal(-1);
 
-    abcdk_http_service_destroy(&ctx);
+    abcdk_httpd_destroy(&ctx);
 
     abcdk_logger_close(&log_ctx);
 
+    return 0;
+}
+#else 
+int abcdk_test_http(abcdk_option_t *args)
+{
     return 0;
 }
 #endif 

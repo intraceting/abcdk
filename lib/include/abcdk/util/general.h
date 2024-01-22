@@ -118,6 +118,14 @@ pid_t abcdk_waitpid(pid_t pid,int options,int *exitcode,int *sigcode);
 */
 pid_t abcdk_gettid();
 
+/**
+ * 自增编号。
+ * 
+ * @note 从1开始。
+ * @note 全局的，多线程之间编号不保证连续性。
+*/
+uint64_t abcdk_sequence_num();
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_GENERAL_H

@@ -144,3 +144,11 @@ pid_t abcdk_gettid()
 {
 	return syscall(SYS_gettid);
 } 
+
+uint64_t abcdk_sequence_num()
+{
+    static volatile uint64_t num = 1;
+
+    return abcdk_atomic_fetch_and_add(&num,1);
+}
+

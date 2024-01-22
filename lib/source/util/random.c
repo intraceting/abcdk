@@ -10,7 +10,10 @@ int64_t abcdk_rand(uint64_t *seed)
 {
     uint64_t next;
 
-    assert(seed != NULL && *seed != 0);
+    assert(seed != NULL);
+
+    if(*seed == 0)
+        *seed = time(NULL);
 
     next = *seed;
 
@@ -23,4 +26,16 @@ int64_t abcdk_rand(uint64_t *seed)
     *seed = next;
 
     return next;
+}
+
+int64_t abcdk_rand_q()
+{
+    static uint64_t seed = 0;
+    int64_t num;
+
+    abcdk_atomic_lock();
+    num = abcdk_rand(&seed);
+    abcdk_atomic_unlock();
+
+    return num;
 }

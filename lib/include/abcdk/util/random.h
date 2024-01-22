@@ -20,6 +20,9 @@ __BEGIN_DECLS
  */
 int64_t abcdk_rand(uint64_t *seed);
 
+/** 产生一个随机数。*/
+int64_t abcdk_rand_q();
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_RANDOM_H
