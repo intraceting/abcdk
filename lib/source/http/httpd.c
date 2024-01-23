@@ -34,7 +34,7 @@ typedef struct _abcdk_httpd_node
     /*是否为服务端。*/
     int server;
 
-    /*协议。0：未选择 1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3 4：TUNNEL*/
+    /*协议。0：未选择 1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3*/
     int protocol;
 
     /*远程地址。*/
@@ -62,7 +62,7 @@ typedef struct _abcdk_httpd_node
 /*流。*/
 typedef struct _abcdk_httpd_stream
 {
-    /*流ID。0 HTTP/1.1/1.0./0.9，> 0 HTTP/2。*/
+    /*流ID。*/
     int id;
 
     /*追踪ID。*/
@@ -139,7 +139,7 @@ static void _abcdk_httpd_stream_construct_cb(abcdk_object_t *obj, void *opaque)
 
     stream_ctx_p->id = *((int *)obj->pptrs[ABCDK_MAP_KEY]);
     stream_ctx_p->tid = abcdk_sequence_num();
-    stream_ctx_p->protocol = (node_ctx_p->protocol == 4 ? 4 : 1);//隧道不一样。
+    stream_ctx_p->protocol = 1;
     stream_ctx_p->io_node = abcdk_asynctcp_refer(io_node_p);
     stream_ctx_p->h2_out = abcdk_stream_create();
     stream_ctx_p->loc_ctx = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
@@ -562,26 +562,6 @@ ERR:
 
 }
 
-static void _abcdk_httpd_process_4(abcdk_object_t *stream)
-{
-    abcdk_httpd_node_t *node_ctx_p;
-    abcdk_httpd_stream_t *stream_ctx_p;
-
-    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
-
-    if (stream_ctx_p->protocol == 1)
-    {
-        ;
-    }
-    else if (stream_ctx_p->protocol == 4)
-    {
-        ;
-    }
-
-    _abcdk_httpd_process(stream);
-}
-
 static void _abcdk_httpd_request_1(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_httpd_node_t *node_ctx_p;
@@ -656,53 +636,6 @@ ERR:
     abcdk_asynctcp_set_timeout(node, 1);
 }
 
-static void _abcdk_httpd_request_4(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
-{
-    abcdk_httpd_node_t *node_ctx_p;
-    abcdk_object_t *stream_p;
-    abcdk_httpd_stream_t *stream_ctx_p;
-    int stream_id = 0;
-    const char *upgrade_val;
-    int chk;
-
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
-
-    stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, sizeof(abcdk_httpd_stream_t));
-    if (!stream_p)
-        goto ERR;
-
-    stream_ctx_p = (abcdk_httpd_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-
-    if (!stream_ctx_p->updata)
-    {
-        if (stream_ctx_p->protocol == 4)
-            stream_ctx_p->updata = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 256*1024, NULL);
-        else
-            goto ERR;
-    }
-
-    if (!stream_ctx_p->updata)
-        goto ERR;
-
-    chk = abcdk_receiver_append(stream_ctx_p->updata, data, size, remain);
-    if (chk < 0)
-        goto ERR;
-    else if (chk == 0) /*数据包不完整，继续接收。*/
-        return;
-
-    _abcdk_httpd_process_4(stream_p);
-    
-    /*一定要回收。*/
-    abcdk_receiver_unref(&stream_ctx_p->updata);
-
-    /*No Error.*/
-    return;
-
-ERR:
-
-    abcdk_asynctcp_set_timeout(node, 1);
-}
-
 static void _abcdk_httpd_output_1(abcdk_asynctcp_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
@@ -736,27 +669,6 @@ static void _abcdk_httpd_output_2(abcdk_asynctcp_node_t *node)
 #endif //NGHTTP2_H
 }
 
-static void _abcdk_httpd_output_4(abcdk_asynctcp_node_t *node)
-{
-    abcdk_httpd_node_t *node_ctx_p;
-    abcdk_object_t *stream_p;
-    abcdk_httpd_stream_t *stream_ctx_p;
-    int stream_id = 0;
-    int chk;
-
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
-
-    stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, 0);
-    if (!stream_p)
-        return;
-
-    stream_ctx_p = (abcdk_httpd_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-
-    /*通知流空闲。*/
-    if(node_ctx_p->cfg.stream_output_cb)
-        node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque,stream_p);
-}
-
 #ifdef HEADER_SSL_H
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
 static int _abcdk_httpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
@@ -769,16 +681,10 @@ static int _abcdk_httpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsi
     alpn_flag = (size_t)arg;
 
     /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
-    static unsigned char srv1[] = {"\x08http/1.1\x06tunnel"};
-    static unsigned char srv2[] = {"\x02h2\x08http/1.1\x06tunnel"};
-    static unsigned char srv3[] = {"\x06tunnel"};
+    static unsigned char srv1[] = {"\x08http/1.1"};
+    static unsigned char srv2[] = {"\x02h2\x08http/1.1"};
 
-    if (alpn_flag == 3)
-    {
-        srv = srv3;
-        srvlen = sizeof(srv3) - 1;
-    }
-    else if (alpn_flag == 2)
+    if (alpn_flag == 2)
     {
         srv = srv2;
         srvlen = sizeof(srv2) - 1;
@@ -892,9 +798,7 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, ptl_sel_name);
     if (chk == 0 && node_ctx_p->protocol == 0)
     {
-        if (abcdk_strcmp("tunnel", ptl_sel_name, 0) == 0)
-            node_ctx_p->protocol = 4;
-        else if (abcdk_strncmp("http", ptl_sel_name, 4, 0) == 0)
+        if (abcdk_strncmp("http", ptl_sel_name, 4, 0) == 0)
             node_ctx_p->protocol = 1;
         else if (abcdk_strcmp("h2", ptl_sel_name, 0) == 0)
             node_ctx_p->protocol = 2;
@@ -934,7 +838,7 @@ END:
     }
 
     if(node_ctx_p->cfg.session_ready_cb)
-        node_ctx_p->cfg.session_ready_cb(node_ctx_p->cfg.opaque, (abcdk_httpd_session_t*)node,node_ctx_p->server);
+        node_ctx_p->cfg.session_ready_cb(node_ctx_p->cfg.opaque, (abcdk_httpd_session_t*)node);
 
     /*已连接到远端，注册读写事件。*/
     abcdk_asynctcp_recv_watch(node);
@@ -955,11 +859,6 @@ static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
     {
         _abcdk_httpd_output_2(node);
     }
-    else if( node_ctx_p->protocol == 4)
-    {
-        _abcdk_httpd_output_4(node);
-    }
-
 }
 
 static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
@@ -971,7 +870,7 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
     if(!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,NULL,http_p->remote_addr);
+        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
 
     abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经断开。", (node_ctx_p->server ? "客户端" : "服务端"), node_ctx_p->remote_addr);
 
@@ -1028,10 +927,6 @@ static void _abcdk_httpd_request_cb(abcdk_asynctcp_node_t *node, const void *dat
     else if (node_ctx_p->protocol == 2)
     {
         _abcdk_httpd_request_2(node, data, size, remain);
-    }
-    else if (node_ctx_p->protocol == 4)
-    {
-        _abcdk_httpd_request_4(node, data, size, remain);
     }
 }
 
@@ -1109,7 +1004,7 @@ void *abcdk_httpd_session_set_userdata(abcdk_httpd_session_t *session,void *user
     return old_userdata;
 }
 
-const char *abcdk_httpd_session_address_remote(abcdk_httpd_session_t *session)
+const char *abcdk_httpd_session_get_address(abcdk_httpd_session_t *session, int remote)
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
@@ -1117,10 +1012,13 @@ const char *abcdk_httpd_session_address_remote(abcdk_httpd_session_t *session)
 
     assert(session != NULL);
 
-    node_p = (abcdk_asynctcp_node_t*)session;
+    node_p = (abcdk_asynctcp_node_t *)session;
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
-    return node_ctx_p->remote_addr;
+    if (remote)
+        return node_ctx_p->remote_addr;
+    else
+        return "";
 }
 
 void abcdk_httpd_session_set_timeout(abcdk_httpd_session_t *session,time_t timeout)
@@ -1182,43 +1080,6 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     return -1;
 }
 
-int abcdk_httpd_session_connect(abcdk_httpd_session_t *session,abcdk_sockaddr_t *addr,abcdk_httpd_config_t *cfg)
-{
-    abcdk_asynctcp_node_t *node_p;
-    abcdk_httpd_node_t *node_ctx_p;
-    abcdk_httpd_stream_t *stream_ctx_p;
-    abcdk_asynctcp_callback_t cb = {0};
-    int chk;
-
-    assert(session != NULL && addr != NULL && cfg != NULL);
-    assert(cfg->stream_request_cb != NULL);
-
-    node_p = (abcdk_asynctcp_node_t*)session;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
-
-    node_ctx_p->cfg = *cfg;
-    node_ctx_p->server = 0;
-    node_ctx_p->protocol = 4;
-
-#ifdef HEADER_SSL_H
-    if(cfg->cert_file && cfg->key_file)
-        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
-
-    if (node_ctx_p->ssl_ctx)
-        _abcdk_httpd_set_alpn(node_p, 3);
-#endif //HEADER_SSL_H
-
-    cb.prepare_cb = _abcdk_httpd_prepare_cb;
-    cb.event_cb = _abcdk_httpd_event_cb;
-    cb.request_cb = _abcdk_httpd_request_cb;
-
-    chk = abcdk_asynctcp_connect(node_p,node_ctx_p->ssl_ctx,addr,&cb);
-    if(chk == 0)
-        return 0;
-
-    return -1;
-}
-
 void abcdk_httpd_destroy(abcdk_httpd_t **ctx)
 {
     abcdk_httpd_t *ctx_p;
@@ -1254,6 +1115,18 @@ ERR:
     abcdk_httpd_destroy(&ctx);
 
     return NULL;
+}
+
+abcdk_httpd_session_t *abcdk_httpd_get_session(abcdk_object_t *stream)
+{
+    abcdk_httpd_node_t *node_ctx_p;
+    abcdk_httpd_stream_t *stream_ctx_p;
+
+    assert(stream != NULL);
+
+    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+
+    return (abcdk_httpd_session_t*)stream_ctx_p->io_node;
 }
 
 void *abcdk_httpd_get_userdata(abcdk_object_t *stream)
@@ -1687,6 +1560,19 @@ int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, con
     return -1;
 }
 
+static int _abcdk_httpd_load_auth(void *opaque,const char *user,char pawd[160])
+{
+    abcdk_httpd_node_t *node_ctx_p;
+    char tmp[PATH_MAX] = {0};
+
+    node_ctx_p = (abcdk_httpd_node_t *)opaque;
+
+    abcdk_dirdir(tmp,node_ctx_p->cfg.auth_path);
+    abcdk_dirdir(tmp,user);
+
+    return abcdk_load(tmp,pawd,160,0);
+}
+
 int abcdk_httpd_check_auth(abcdk_object_t *stream)
 {
     abcdk_httpd_node_t *node_ctx_p;
@@ -1701,7 +1587,7 @@ int abcdk_httpd_check_auth(abcdk_object_t *stream)
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
 
-    if (!node_ctx_p->cfg.auth_load_cb)
+    if (!node_ctx_p->cfg.auth_path)
         return 0;
 
     auth_p = abcdk_httpd_request_header_get(stream, "Authorization");
@@ -1718,7 +1604,7 @@ int abcdk_httpd_check_auth(abcdk_object_t *stream)
     abcdk_http_parse_auth(&auth_opt,auth_p);
     abcdk_option_set(auth_opt,"http-method",stream_ctx_p->method->pstrs[0]);
 
-    chk = abcdk_http_check_auth(auth_opt,node_ctx_p->cfg.auth_load_cb,node_ctx_p->cfg.opaque);
+    chk = abcdk_http_check_auth(auth_opt,_abcdk_httpd_load_auth,node_ctx_p);
     abcdk_option_free(&auth_opt);
 
     if(chk == 0)

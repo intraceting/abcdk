@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_HTTPD_H
-#define ABCDK_HTTPD_H
+#ifndef ABCDK_HTTP_HTTPD_H
+#define ABCDK_HTTP_HTTPD_H
 
 #include "abcdk/util/trace.h"
 #include "abcdk/util/receiver.h"
@@ -60,16 +60,11 @@ typedef struct _abcdk_httpd_config
     int enable_h2;
 
     /**
-     * 加载授权回调函数。
+     * 授权存储路径。
      * 
-     * @note NULL(0) 忽略。
-     * 
-     * @param [in] user 用户名。
-     * @param [out] pawd 密码(明文)。
-     * 
-     * @return 0 账号存在，-1 账号不存在，-2 账号存在但密码为空。
+     * @note 文件名是用户名，密码是文件内容。
     */
-    int (*auth_load_cb)(void *opaque,const char *user,char pawd[160]);
+    const char *auth_path;
 
     /**
      * 会话准备通知回调函数。
@@ -91,7 +86,7 @@ typedef struct _abcdk_httpd_config
      * 
      * @note NULL(0) 忽略。
     */
-    void (*session_ready_cb)(void *opaque,abcdk_httpd_session_t *session,int server);
+    void (*session_ready_cb)(void *opaque,abcdk_httpd_session_t *session);
 
     /**
      * 会话关闭通知回调函数。
@@ -126,10 +121,10 @@ typedef struct _abcdk_httpd_config
 
 } abcdk_httpd_config_t;
 
-/** 释放。*/
+/** 释放会话。*/
 void abcdk_httpd_session_unref(abcdk_httpd_session_t **session);
 
-/** 引用。*/
+/** 引用会话。*/
 abcdk_httpd_session_t *abcdk_httpd_session_refer(abcdk_httpd_session_t *src);
 
 /** 申请会话。*/
@@ -145,8 +140,8 @@ void *abcdk_httpd_session_get_userdata(abcdk_httpd_session_t *session);
 */
 void *abcdk_httpd_session_set_userdata(abcdk_httpd_session_t *session,void *userdata);
 
-/** 获取会话的远程地址。*/
-const char *abcdk_httpd_session_address_remote(abcdk_httpd_session_t *session);
+/** 获取会话的地址。*/
+const char *abcdk_httpd_session_get_address(abcdk_httpd_session_t *session,int remote);
 
 /** 
  * 设置会话的超时时长。
@@ -162,20 +157,14 @@ void abcdk_httpd_session_set_timeout(abcdk_httpd_session_t *session,time_t timeo
 */
 int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *addr,abcdk_httpd_config_t *cfg);
 
-/** 
- * 连接。
- * 
- * @note 隧道模式。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_httpd_session_connect(abcdk_httpd_session_t *session,abcdk_sockaddr_t *addr,abcdk_httpd_config_t *cfg);
-
 /** 销毁。*/
 void abcdk_httpd_destroy(abcdk_httpd_t **ctx);
 
 /** 创建。*/
 abcdk_httpd_t *abcdk_httpd_create(int max,int cpu);
+
+/**获取会话指针。*/
+abcdk_httpd_session_t *abcdk_httpd_get_session(abcdk_object_t *stream);
 
 /** 获取用户环境指针。*/
 void *abcdk_httpd_get_userdata(abcdk_object_t *stream);
@@ -298,4 +287,4 @@ int abcdk_httpd_check_auth(abcdk_object_t *stream);
 
 __END_DECLS
 
-#endif // ABCDK_HTTPD_H
+#endif // ABCDK_HTTP_HTTPD_H

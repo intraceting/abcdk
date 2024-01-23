@@ -546,7 +546,7 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 
     abcdk_object_unref(&buf);
-#elif 1
+#elif 0
 
 #ifdef CURLINC_CURL_H
 
@@ -572,6 +572,12 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_closep(&fd);
 
 #endif //CURLINC_CURL_H
+
+#elif 1
+
+    abcdk_sockaddr_t dst = {0};
+    int chk = abcdk_sockaddr_from_string(&dst, "ocsp.sectigochina.com", 1);
+    assert(chk == 0);
 
 #endif 
 }

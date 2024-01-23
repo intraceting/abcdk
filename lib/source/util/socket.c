@@ -433,33 +433,33 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else if (src[0] == '/')
     {
-        family = AF_UNIX;
+        dst->family = AF_UNIX;
         strncpy(dst->addr_un.sun_path, src, 108);
         return 0;
     }
     else if (strchr(src, '['))
     {
-        family = AF_INET6;
+        dst->family = AF_INET6;
         sscanf(src, "%*[[ ]%[^] ]%*[] :,]%hu", name, &port);
     }
     else if (strchr(src, ','))
     {
-        family = AF_INET6;
+        dst->family = AF_INET6;
         sscanf(src, "%[^, ]%*[, ]%hu", name, &port);
     }
     else if (strchr(src, ':'))
     {
-        family = AF_INET;
+        dst->family = AF_INET;
         sscanf(src, "%[^: ]%*[: ]%hu", name, &port);
     }
     else
     {
+        /*如果未指定则使用IPV4。*/
+        if(dst->family == AF_UNSPEC)
+            dst->family = AF_INET;
+
         strncpy(name,src,NAME_MAX);
     }
-
-    /*如果未指定，则使用自动识别的。*/
-    if(dst->family == AF_UNSPEC)
-        dst->family = family;
 
     /*如果外部未指定，并且也未能自动识别。*/
     if (dst->family != AF_UNIX && dst->family != AF_INET && dst->family != AF_INET6)

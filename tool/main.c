@@ -33,7 +33,8 @@ static struct _abcdk_tool_entry
     {"httpd",abcdk_tool_httpd},
     {"mcdump",abcdk_tool_mcdump},
     {"uart",abcdk_tool_uart},
-    {"ipconfig",abcdk_tool_ipconfig}
+    {"ipconfig",abcdk_tool_ipconfig},
+    {"proxy",abcdk_tool_proxy},
 };
 
 void _abcdk_tool_print_usage()
@@ -88,6 +89,8 @@ int _abcdk_tool_dispatch(abcdk_option_t *args)
         _abcdk_tool_print_usage();
         ABCDK_ERRNO_AND_GOTO1(errcode = EINVAL, final);
     }
+
+    abcdk_thread_setname("%s", entry_p->name);
 
     errcode = entry_p->func_cb(args);
 

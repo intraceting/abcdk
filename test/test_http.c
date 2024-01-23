@@ -408,13 +408,6 @@ int abcdk_test_http(abcdk_option_t *args)
 
 #elif 1
 
-static int httpd_auth_load_cb(void *opaque, const char *user, char pawd[160])
-{
-    strncpy(pawd,"bbbb",4);
-
-    return 0;
-}
-
 static void httpd_session_prepare_cb(void *opaque,abcdk_httpd_session_t **session,abcdk_httpd_session_t *listen)
 {
     *session = abcdk_httpd_session_alloc((abcdk_httpd_t*)opaque);
@@ -425,7 +418,7 @@ static void httpd_session_accept_cb(void *opaque,abcdk_httpd_session_t *session,
     *result = 0;
 }
 
-static void httpd_session_ready_cb(void *opaque,abcdk_httpd_session_t *session,int server)
+static void httpd_session_ready_cb(void *opaque,abcdk_httpd_session_t *session)
 {
     abcdk_httpd_session_set_timeout(session,10);
 }
@@ -480,7 +473,7 @@ static void httpd_request_cb(void *opaque, abcdk_object_t *stream)
     abcdk_httpd_response_body_buffer(stream,buf,100);
     abcdk_httpd_response_body_buffer(stream,buf+100,100);
     abcdk_httpd_response_body(stream,NULL);
-#else 
+#elif 0
     //abcdk_httpd_response_buffer(stream,200,buf,200,"text/plain",NULL);
 
     int fd = abcdk_open("./aaaaa.mp4",0,0,0);
@@ -489,6 +482,11 @@ static void httpd_request_cb(void *opaque, abcdk_object_t *stream)
     else 
         abcdk_httpd_response_nobody(stream,404,NULL,NULL);
     abcdk_closep(&fd);
+
+#elif 0
+
+
+
 #endif 
 }
 
@@ -515,7 +513,7 @@ int abcdk_test_http(abcdk_option_t *args)
     cfg.session_prepare_cb = httpd_session_prepare_cb;
     cfg.stream_request_cb = httpd_request_cb;
     cfg.session_ready_cb = httpd_session_ready_cb;
-    cfg.auth_load_cb = httpd_auth_load_cb;
+    cfg.auth_path = abcdk_option_get(args,"--auth-path",0,NULL);
     
 
     const char *listen = abcdk_option_get(args,"--listen",0,"ipv4://0.0.0.0:9999");
