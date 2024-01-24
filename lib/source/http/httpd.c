@@ -228,18 +228,6 @@ static void _abcdk_httpd_process(abcdk_object_t *stream)
     /*通知应用层数据到达。*/
     node_ctx_p->cfg.stream_request_cb(node_ctx_p->cfg.opaque,stream);
 
-    /*按需转换为隧道模式。*/
-    if (stream_ctx_p->protocol == 1)
-    {
-        if (abcdk_strcmp(stream_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
-            stream_ctx_p->protocol = 4;
-        else
-        {
-            upgrade_val = abcdk_receiver_header_line_getenv(stream_ctx_p->updata, "Upgrade", ':');
-            if (upgrade_val && abcdk_strcmp(stream_ctx_p->method->pstrs[0], "websocket", 0) == 0)
-                stream_ctx_p->protocol = 4;
-        }
-    }
 }
 
 #ifdef NGHTTP2_H
@@ -1322,15 +1310,20 @@ static int _abcdk_httpd_response_header(abcdk_object_t *stream,uint32_t status,a
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
 
+
+    /*当状态码高位为1时，转换为隧道模式。*/
+    if (stream_ctx_p->protocol == 1 && (status & 0x80000000))
+        stream_ctx_p->protocol = 4;
+
     if (node_ctx_p->protocol == 1)
     {
-        chk = _abcdk_httpd_response_header_h1(stream,status,data);
+        chk = _abcdk_httpd_response_header_h1(stream, status & 0x7fffffff, data);
         if(chk != 0)
             return -1;
     }
     else if (node_ctx_p->protocol == 2)
     {
-        chk = _abcdk_httpd_response_header_h2(stream,status,data);
+        chk = _abcdk_httpd_response_header_h2(stream, status & 0x7fffffff, data);
         if(chk != 0)
             return -1;
     }

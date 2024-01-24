@@ -39,6 +39,9 @@ typedef struct _abcdk_proxy
     /*上级服务器地址。*/
     const char *up_link;
 
+    /*空闲超时(秒)。*/
+    time_t stimeout;
+
     /*IO环境。*/
     abcdk_asynctcp_t *io_ctx;
 
@@ -67,6 +70,9 @@ typedef struct _abcdk_proxy_node
 
     /*远程地址。*/
     char remote_addr[NAME_MAX];
+
+    /*SSL连接标志。*/
+    int ssl_ok;
 
     /*时间环境*/
     locale_t loc_ctx;
@@ -207,7 +213,7 @@ static abcdk_asynctcp_node_t *_abcdk_proxy_node_alloc(abcdk_proxy_t *ctx)
     return node_p;
 }
 
-static void _abcdk_proxy_request_log(abcdk_asynctcp_node_t *node, uint32_t status)
+static void _abcdk_proxy_trace_output(abcdk_asynctcp_node_t *node,int type, const char* fmt,...)
 {
     abcdk_proxy_node_t *node_ctx_p;
     char new_tname[18] = {0}, old_tname[18] = {0};
@@ -219,17 +225,10 @@ static void _abcdk_proxy_request_log(abcdk_asynctcp_node_t *node, uint32_t statu
     pthread_getname_np(pthread_self(), old_tname, 18);
     pthread_setname_np(pthread_self(), new_tname);
 
-    if(status)
-    {
-        abcdk_trace_output(LOG_INFO, "Status: %s\n",abcdk_http_status_desc(status));
-    }
-    else
-    {
-        abcdk_trace_output(LOG_INFO, "Remote: %s\n%.*s\n",
-                           node_ctx_p->remote_addr, 
-                           (int)abcdk_receiver_header_length(node_ctx_p->req_data),
-                           abcdk_receiver_data(node_ctx_p->req_data,0));
-    }
+    va_list vp;
+    va_start(vp, fmt);
+    abcdk_trace_voutput(type, fmt, vp);
+    va_end(vp);
 
     pthread_setname_np(pthread_self(), old_tname);
 }
@@ -273,20 +272,23 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     chk = SSL_get_verify_result(ssl_p);
     if (chk != X509_V_OK)
     {
-        abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
+        _abcdk_proxy_trace_output(node, LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
 
         /*修改超时，使用超时检测器关闭。*/
         abcdk_asynctcp_set_timeout(node, 1);
         return;
     }
+
+    /*标记SSL连接OK。*/
+    node_ctx_p->ssl_ok = 1;
 #endif // HEADER_SSL_H
 
 END:
 
-    abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经建立。", (node_ctx_p->flag == 2 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+    _abcdk_proxy_trace_output(node, LOG_INFO, "本机与'%s'建立%s连接。", node_ctx_p->remote_addr,(node_ctx_p->ssl_ok ? "安全" : "普通"));
 
     /*设置超时。*/
-    abcdk_asynctcp_set_timeout(node, 180 * 1000);
+    abcdk_asynctcp_set_timeout(node, node_ctx_p->father->stimeout * 1000);
 
     if (node_ctx_p->flag == 1)
     {
@@ -339,7 +341,14 @@ static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, i
         if (!node_ctx_p->remote_addr[0])
             abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
-        abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经断开。", (node_ctx_p->flag == 2 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+        /*一定要在这里关闭另一端的隧道，否则因引用计数未减少，从而造成内存泄漏。*/
+        if (node_ctx_p->tunnel)
+        {
+            abcdk_asynctcp_set_timeout(node_ctx_p->tunnel, 1);
+            abcdk_asynctcp_unref(&node_ctx_p->tunnel);
+        }
+
+        _abcdk_proxy_trace_output(node, LOG_INFO, "本机与'%s'连接已经断开。", node_ctx_p->remote_addr);
     }
 }
 
@@ -407,7 +416,7 @@ ERR:
                                node_ctx_p->father->server_realm,
                                (uint64_t)abcdk_rand_q());
 
-    _abcdk_proxy_request_log(node,(is_proxy ? 407 : 401));
+    _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(is_proxy ? 407 : 401));
 
     return -1;
 }
@@ -434,7 +443,7 @@ static void _abcdk_proxy_reply_nobody(abcdk_asynctcp_node_t *node, int status, c
                                abcdk_time_format_gmt(NULL, node_ctx_p->loc_ctx),
                                (a_c_a_m && *a_c_a_m ? a_c_a_m : "*"));
 
-    _abcdk_proxy_request_log(node,status);
+    _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(status));
 }
 
 static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
@@ -478,7 +487,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
         node_ctx_p->tunnel_cert = node_ctx_p->father->cert_file;
         node_ctx_p->tunnel_key = node_ctx_p->father->key_file;
 
-        node_ctx_p->method = abcdk_object_copyfrom("CONNECT",7);
+        node_ctx_p->method = abcdk_object_copyfrom("UPLINK",6);
 
         node_ctx_p->up_link = abcdk_url_split(node_ctx_p->father->up_link);
     }
@@ -488,7 +497,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     chk = abcdk_sockaddr_from_string(&uplink_addr, node_ctx_p->up_link->pstrs[ABCDK_URL_HOST], 1);
     if (chk != 0)
     {
-        abcdk_trace_output(LOG_WARNING, "上级地址'%s'无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
+        _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址'%s'无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
 
         _abcdk_proxy_reply_nobody(node, 404, "CONNECT");
         goto ERR;
@@ -537,7 +546,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     chk = abcdk_asynctcp_connect(node_ctx_p->tunnel, node_ctx_p->ssl_ctx, &uplink_addr, &cb);
     if (chk != 0)
     {
-        abcdk_trace_output(LOG_WARNING, "连接上级'%s'失败，网络不可达或服务未启动。", node_ctx_p->father->up_link);
+        _abcdk_proxy_trace_output(node, LOG_WARNING, "连接上级'%s'失败，网络不可达或服务未启动。", node_ctx_p->father->up_link);
 
         _abcdk_proxy_reply_nobody(node, 404, "CONNECT");
         goto ERR;
@@ -547,7 +556,11 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     if (node_ctx_p->protocol == 1)
         node_ctx_p->protocol = 2;
 
-    if(abcdk_strcmp(node_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
+    if(abcdk_strcmp(node_ctx_p->method->pstrs[0], "UPLINK", 0) == 0)
+    {
+        ;/*由上级应答。*/
+    }
+    else if(abcdk_strcmp(node_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
     {
         _abcdk_proxy_reply_nobody(node,200,"CONNECT");
     }
@@ -595,7 +608,10 @@ static void _abcdk_proxy_process_request(abcdk_asynctcp_node_t *node)
 
     if (node_ctx_p->protocol == 1)
     {
-        _abcdk_proxy_request_log(node,0);
+        _abcdk_proxy_trace_output(node, LOG_INFO, "Remote: %s\n%.*s\n",
+                                  node_ctx_p->remote_addr,
+                                  (int)abcdk_receiver_header_length(node_ctx_p->req_data),
+                                  abcdk_receiver_data(node_ctx_p->req_data, 0));
 
         chk = _abcdk_proxy_check_auth(node);
         if (chk != 0)
@@ -686,9 +702,13 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl)
     int chk;
 
     if (ssl)
-        listen = abcdk_option_get(ctx->args, "--listen-ssl", 0, "ipv4://0.0.0.0:8443");
+        listen = abcdk_option_get(ctx->args, "--listen-ssl", 0, NULL);
     else
-        listen = abcdk_option_get(ctx->args, "--listen", 0, "ipv4://0.0.0.0:8080");
+        listen = abcdk_option_get(ctx->args, "--listen", 0, NULL);
+
+    /*未启用。*/
+    if(!listen)
+        return 0;
 
     chk = abcdk_sockaddr_from_string(&listen_addr, listen, 0);
     if (chk != 0)
@@ -739,9 +759,11 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
-    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "test_http");
-    ctx->server_realm = abcdk_option_get(ctx->args, "--server-realm", 0, "abcdk");
+    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, "abcdk");
+    ctx->server_realm = abcdk_option_get(ctx->args, "--server-realm", 0, "proxy");
     ctx->auth_path = abcdk_option_get(ctx->args, "--auth-path", 0, NULL);
+    ctx->up_link = abcdk_option_get(ctx->args, "--up-link", 0, NULL);
+    ctx->stimeout = abcdk_option_get_int(ctx->args, "--stiemout", 0, 180);
     max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, 1000);
     log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
 
@@ -777,6 +799,9 @@ END:
     abcdk_asynctcp_unref(&ctx->listen_ssl_p);
 
     abcdk_trace_output(LOG_INFO, "停止。");
+
+    /*关闭日志。*/
+    abcdk_logger_close(&ctx->logger);
 }
 
 static int _abcdk_proxy_daemon_process_cb(void *opaque)

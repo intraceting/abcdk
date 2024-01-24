@@ -211,6 +211,8 @@ const char* abcdk_httpd_request_body_get(abcdk_object_t *stream,size_t *len);
 /**
  * 应答头部。
  * 
+ * @param [in] status 状态码。高位为1时，升级为隧道。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_httpd_response_vheader(abcdk_object_t *stream,uint32_t status, int max, const char *fmt, va_list ap);
