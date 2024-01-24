@@ -357,13 +357,20 @@ static int _abcdk_proxy_load_auth(void *opaque,const char *user,char pawd[160])
 {
     abcdk_proxy_node_t *node_ctx_p;
     char tmp[PATH_MAX] = {0};
+    int chk;
 
     node_ctx_p = (abcdk_proxy_node_t *)opaque;
 
     abcdk_dirdir(tmp,node_ctx_p->father->auth_path);
     abcdk_dirdir(tmp,user);
 
-    return abcdk_load(tmp,pawd,160,0);
+    chk = abcdk_load(tmp,pawd,160,0);
+    if(chk >0)
+        return 0;
+    else if(chk == 0)
+        return -2;
+    
+    return -1;
 }
 
 static int _abcdk_proxy_check_auth(abcdk_asynctcp_node_t *node)
@@ -371,7 +378,6 @@ static int _abcdk_proxy_check_auth(abcdk_asynctcp_node_t *node)
     abcdk_proxy_node_t *node_ctx_p;
     abcdk_option_t *auth_opt = NULL;
     const char *auth_p;
-    int is_proxy = 0;
     int chk;
 
     node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -379,12 +385,7 @@ static int _abcdk_proxy_check_auth(abcdk_asynctcp_node_t *node)
     if (!node_ctx_p->father->auth_path)
         return 0;
 
-    auth_p = abcdk_receiver_header_line_getenv(node_ctx_p->req_data, "Authorization",':');
-    if (!auth_p)
-    {
-        auth_p = abcdk_receiver_header_line_getenv(node_ctx_p->req_data, "Proxy-Authorization",':');
-        is_proxy = (auth_p != NULL);
-    }
+    auth_p = abcdk_receiver_header_line_getenv(node_ctx_p->req_data, "Proxy-Authorization",':');
 
     /*如果客户端没携带授权，则提示客户端提交授权。*/
     if (!auth_p)
@@ -406,17 +407,16 @@ ERR:
                                "Server: %s\r\n"
                                "Data: %s\r\n"
                                "Access-Control-Allow-Origin: *\r\n"
-                               "%s-Authenticate: Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"\r\n"
+                               "Proxy-Authenticate: Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"\r\n"
                                "Content-Length: 0\r\n"
                                "\r\n",
-                               abcdk_http_status_desc(is_proxy ? 407 : 401),
+                               abcdk_http_status_desc(407),
                                node_ctx_p->father->server_name,
                                abcdk_time_format_gmt(NULL, node_ctx_p->loc_ctx),
-                               (is_proxy ? "Proxy" : "WWW"),
                                node_ctx_p->father->server_realm,
                                (uint64_t)abcdk_rand_q());
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(is_proxy ? 407 : 401));
+    _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(407));
 
     return -1;
 }
@@ -452,7 +452,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     abcdk_proxy_node_t *node_uplink_ctx_p;
     abcdk_sockaddr_t uplink_addr = {0};
     abcdk_asynctcp_callback_t cb = {0};
-    const char *req_line;
+
     size_t body_l;
     void *body_p;
     int chk;
@@ -469,12 +469,6 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
 
     if (node_ctx_p->protocol == 1)
     {
-        req_line = abcdk_receiver_header_line(node_ctx_p->req_data, 0);
-        if (!req_line)
-            goto ERR;
-
-        abcdk_http_parse_request_header0(req_line, &node_ctx_p->method, &node_ctx_p->script, &node_ctx_p->version);
-
         if (abcdk_strcmp(node_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
             node_ctx_p->up_link = abcdk_url_create(1000,"connect://%s",node_ctx_p->script->pstrs[0]);
         else 
@@ -600,6 +594,7 @@ ERR:
 static void _abcdk_proxy_process_request(abcdk_asynctcp_node_t *node)
 {
     abcdk_proxy_node_t *node_ctx_p;
+    const char *req_line;
     size_t body_l;
     void *body_p;
     int chk;
@@ -612,6 +607,12 @@ static void _abcdk_proxy_process_request(abcdk_asynctcp_node_t *node)
                                   node_ctx_p->remote_addr,
                                   (int)abcdk_receiver_header_length(node_ctx_p->req_data),
                                   abcdk_receiver_data(node_ctx_p->req_data, 0));
+
+        req_line = abcdk_receiver_header_line(node_ctx_p->req_data, 0);
+        if (!req_line)
+            goto ERR;
+
+        abcdk_http_parse_request_header0(req_line, &node_ctx_p->method, &node_ctx_p->script, &node_ctx_p->version);
 
         chk = _abcdk_proxy_check_auth(node);
         if (chk != 0)

@@ -115,6 +115,15 @@ const char *abcdk_strtok2(const char **next, const char *delim, int skip_space);
 abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_space);
 
 /**
+ * 字符串分割为一对。
+ * 
+ * @see abcdk_strtok2
+ * 
+ * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
+*/
+abcdk_object_t *abcdk_strtok2pair(const char *str, const char *delim);
+
+/**
  * 字符串分割为数组。
  * 
  * @note 仅逻辑分割。

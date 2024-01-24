@@ -573,11 +573,19 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #endif //CURLINC_CURL_H
 
-#elif 1
+#elif 0
 
     abcdk_sockaddr_t dst = {0};
     int chk = abcdk_sockaddr_from_string(&dst, "ocsp.sectigochina.com", 1);
     assert(chk == 0);
+
+#elif 1
+
+    const char *p ="Digest username=\"aaaa\", realm=\"proxy\", nonce=\"147106898062910\", uri=\"/0584000065A09D5FC847B71286DAF47E?x-oss-process=image/resize,w_352/interlace,1/quality,Q_80\", response=\"37ebc4af75f6dcb98bd34e55f4583b02\"";
+
+    abcdk_option_t *auth_opt =NULL;
+    abcdk_http_parse_auth(&auth_opt,p);
+    abcdk_option_free(&auth_opt);
 
 #endif 
 }

@@ -718,13 +718,13 @@ void abcdk_http_parse_auth(abcdk_option_t **opt,const char *auth)
         if(!p)
             goto END;
 
-        digest_de = abcdk_strtok2vector(p,",");
+        digest_de = abcdk_strtok2vector(p,", ");
         if(!digest_de)
             goto END;
 
         for (int i = 0; i< digest_de->numbers; i++)
         {
-            digest_de2 = abcdk_strtok2vector(digest_de->pstrs[i],"=");
+            digest_de2 = abcdk_strtok2pair(digest_de->pstrs[i],"=");
             if(!digest_de2)
                 continue;
 

@@ -199,6 +199,49 @@ abcdk_object_t *abcdk_strtok3(const char **next, const char *delim, int skip_spa
     return abcdk_object_copyfrom(p, *next - p);
 }
 
+abcdk_object_t *abcdk_strtok2pair(const char *str, const char *delim)
+{
+    abcdk_object_t *buf = NULL;
+    const char *p, *next;
+    const char *field_p[2] = {NULL};
+    size_t field_size[2] = {0};
+    
+    assert(str != NULL && delim != NULL);
+
+    next = str;
+
+    p = abcdk_strtok(&next, delim);
+    if(!p)
+        return NULL;
+
+    field_p[0] = p;
+    field_size[0] = (next - p) + 1; // 加上终止符。
+
+    next += strlen(delim);
+
+    p = abcdk_strtok(&next, "PI3.1415926,Please modify this issue yourself.");
+    if(!p)
+        return NULL;
+
+    field_p[1] = p;
+    field_size[1] = (next - p) + 1; // 加上终止符。
+
+    buf = abcdk_object_alloc(field_size, 2, 0);
+    if (!buf)
+        return NULL;
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (field_size[i] <= 1)
+            continue;
+
+        strncpy(buf->pstrs[i], field_p[i], field_size[i] - 1);
+        buf->sizes[i] -= 1;//减去终止符。
+    }
+
+    return buf;
+}
+
 abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim)
 {
     abcdk_object_t *buf = NULL;
@@ -206,6 +249,8 @@ abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim)
     size_t field_size[256] = {0};
     int cols = 0;
     const char *p, *next;
+
+    assert(str != NULL && delim != NULL);
 
     next = str;
 
