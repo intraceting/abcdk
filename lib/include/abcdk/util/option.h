@@ -55,7 +55,8 @@ const char *abcdk_option_prefix(abcdk_option_t *opt);
  * @note 支持一对多键值组合，相同键值的次序由添加顺序决定。
  * @note 如果KEY不包含前缀则自动添加。
  * 
- * @param value 值的指针，允许为“空”或NULL(0)。
+ * @param key 键。不区分大小写。
+ * @param value 值，允许为“空”或NULL(0)。
  * 
  * @return 0 成功，-1 失败。
 */
