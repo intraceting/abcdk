@@ -212,6 +212,36 @@ const char* abcdk_httpd_request_header_getline(abcdk_object_t *stream,int line);
 const char* abcdk_httpd_request_body_get(abcdk_object_t *stream,size_t *len);
 
 /**
+ * 设置应答头部。
+ * 
+ * @note 值最大支持4000字符。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_httpd_response_header_vset(abcdk_object_t *stream,const char *key, const char *val, va_list ap);
+
+/**
+ * 设置应答头部。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_httpd_response_header_set(abcdk_object_t *stream,const char *key, const char *val, ...);
+
+/**
+ * 取消应答头部。
+*/
+void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
+
+/**
+ * 应答实体。
+ * 
+ * @param [in] data 数据。NULL(0) 表示应答结束。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_httpd_response(abcdk_object_t *stream,abcdk_object_t *data);
+
+/**
  * 应答头部。
  * 
  * @param [in] status 状态码。高位为1时，升级为隧道。

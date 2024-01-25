@@ -92,6 +92,12 @@ typedef struct _abcdk_httpd_stream
 
     /*H2输出流。*/
     abcdk_stream_t *h2_out;
+
+    /*应答头。*/
+    abcdk_option_t *rsp_hdr;
+
+    /*应答头是否已发送。*/
+    int rsp_hdr_sent;
     
     /*应答是否结束。*/
     int rsp_end;
@@ -1384,6 +1390,104 @@ END:
     abcdk_asynctcp_send_watch(stream_ctx_p->io_node);
 
     return 0;
+}
+
+int abcdk_httpd_response_header_vset(abcdk_object_t *stream,const char *key, const char *val, va_list ap)
+{
+    abcdk_httpd_stream_t *stream_ctx_p;
+    char buf[4000] = {0};
+    int chk;
+    
+    assert(stream != NULL && key !=NULL && val != NULL);
+
+    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+
+    if(!stream_ctx_p->rsp_hdr)
+        stream_ctx_p->rsp_hdr = abcdk_option_alloc("");
+
+    if(!stream_ctx_p->rsp_hdr)
+        return -1;
+
+    vsnprintf(buf,4000,val,ap);
+
+    /*删除旧的。*/
+    abcdk_option_remove(stream_ctx_p->rsp_hdr,key);
+
+    /*添加新的。*/
+    chk = abcdk_option_set(stream_ctx_p->rsp_hdr,key,buf);
+    if(chk != 0)
+        return -2;
+
+    return 0;
+}
+
+int abcdk_httpd_response_header_set(abcdk_object_t *stream, const char *key, const char *val, ...)
+{
+    int chk;
+    assert(stream != NULL && key != NULL && val != NULL);
+
+    va_list ap;
+    va_start(ap, val);
+    chk = abcdk_httpd_response_header_vset(stream, key, val, ap);
+    va_end(ap);
+
+    return chk;
+}
+
+void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key)
+{
+    abcdk_httpd_stream_t *stream_ctx_p;
+    
+    assert(stream != NULL && key !=NULL);
+
+    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+
+    ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,"关不能修改，应答已经开始，。");
+
+    if(!stream_ctx_p->rsp_hdr)
+        return;
+
+    abcdk_option_remove(stream_ctx_p->rsp_hdr,key);
+}
+
+
+int abcdk_httpd_response(abcdk_object_t *stream,abcdk_object_t *data)
+{
+    abcdk_httpd_node_t *node_ctx_p;
+    abcdk_httpd_stream_t *stream_ctx_p;
+    int chk;
+
+    assert(stream != NULL);
+
+    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+
+    /*检测应答头是否创建，如果未创建则创建默认的。*/
+    if(!stream_ctx_p->rsp_hdr)
+    {
+        abcdk_httpd_response_header_set(stream,"Status","%d",200);
+        abcdk_httpd_response_header_set(stream,"Server","%s",node_ctx_p->cfg.server_name);
+        abcdk_httpd_response_header_set(stream,"Date","%s",abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx));
+        abcdk_httpd_response_header_set(stream,"Access-Control-Allow-Origin","%s",node_ctx_p->cfg.a_c_a_o);
+        abcdk_httpd_response_header_set(stream,"Expires","0");
+        abcdk_httpd_response_header_set(stream,"Cache-Control","no-cache");
+    }
+
+    if(!stream_ctx_p->rsp_hdr)
+        return -1;
+
+
+    if(!stream_ctx_p->rsp_hdr_sent)
+    {
+        stream_ctx_p->rsp_hdr_sent = 1;
+        
+        /*如果无应答实体则覆盖长度字段。*/
+        if(!data)
+        {
+            abcdk_httpd_response_header_set(stream,"Content-Length","0");
+            abcdk_option_remove(stream_ctx_p->rsp_hdr,"");
+        }
+    }
 }
 
 int abcdk_httpd_response_vheader(abcdk_object_t *stream,uint32_t status,int max, const char *fmt, va_list ap)
