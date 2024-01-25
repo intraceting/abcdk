@@ -451,6 +451,12 @@ static int _abcdk_httpd_h2_begin_headers_cb(nghttp2_session *session, const nght
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
 
+    /*删除过时的。*/
+    abcdk_object_unref(&stream_ctx_p->method);
+    abcdk_object_unref(&stream_ctx_p->script);
+    abcdk_object_unref(&stream_ctx_p->version);
+    abcdk_object_unref(&stream_ctx_p->host);
+    abcdk_object_unref(&stream_ctx_p->scheme);
 
     return 0;
 }
@@ -585,6 +591,13 @@ static void _abcdk_httpd_request_1(abcdk_asynctcp_node_t *node, const void *data
         goto ERR;
     else if (chk == 0) /*数据包不完整，继续接收。*/
         return;
+
+    /*删除过时的。*/
+    abcdk_object_unref(&stream_ctx_p->method);
+    abcdk_object_unref(&stream_ctx_p->script);
+    abcdk_object_unref(&stream_ctx_p->version);
+    abcdk_object_unref(&stream_ctx_p->host);
+    abcdk_object_unref(&stream_ctx_p->scheme);
 
     _abcdk_httpd_process_1(stream_p);
     

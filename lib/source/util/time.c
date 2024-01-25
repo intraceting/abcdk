@@ -128,7 +128,8 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc
     char *buf;
     int chk;
 
-    assert(fmt != NULL);
+    if(!fmt)
+        fmt = "%Y-%m-%d %H:%M:%S";
 
     /*如果未输入时间，则使用UTC时间。*/
     if(!tm)
