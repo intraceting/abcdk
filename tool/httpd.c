@@ -48,9 +48,11 @@ typedef struct _abcdkhttpd
     /*是否自动索引目录和文件。*/
     int auto_index;
 
-
     /*跨域服务器地址。*/
     const char *a_c_a_o;
+
+    /*是否启用HTTP/2支持。*/
+    int enable_h2;
 
     abcdk_logger_t *logger;
 
@@ -155,7 +157,7 @@ static void _abcdkhttpd_reply_nobody(abcdk_object_t *stream, int status, const c
 {
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
 
-    abcdk_httpd_response_nobody(stream, status, a_c_a_m, stream_ctx_p->ctx_p->a_c_a_o);
+    abcdk_httpd_response_nobody(stream, status, a_c_a_m);
 }
 
 void _abcdkhttpd_reply_chunked(abcdk_object_t *stream, int max, const char *fmt, ...)
@@ -219,10 +221,9 @@ static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
         return;
     }
 
-    abcdk_httpd_response_header(stream, 100, 1000,
+    abcdk_httpd_response_header(stream, 200, 1000,
                                 "Server: %s\r\n"
                                 "Data: %s\r\n"
-                                "Connection: Keep-Alive\r\n"
                                 "Access-Control-Allow-Origin: %s\r\n"
                                 "Content-Type: %s; charset=utf-8\r\n"
                                 "Transfer-Encoding: chunked\r\n"
@@ -397,7 +398,6 @@ static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
         abcdk_httpd_response_header(stream, 206, 1000,
                                     "Server: %s\r\n"
                                     "Data: %s\r\n"
-                                    "Connection: Keep-Alive\r\n"
                                     "Access-Control-Allow-Origin: %s\r\n"
                                     "Content-Type: %s\r\n"
                                     "Accept-Ranges: bytes\r\n"
@@ -417,7 +417,6 @@ static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
         abcdk_httpd_response_header(stream, 200, 1000,
                                     "Server: %s\r\n"
                                     "Data: %s\r\n"
-                                    "Connection: Keep-Alive\r\n"
                                     "Access-Control-Allow-Origin: %s\r\n"
                                     "Content-Type: %s\r\n"
                                     "Content-Length: %llu\r\n"
@@ -586,6 +585,15 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     cfg.stream_output_cb = _abcdkhttpd_stream_output_cb;
     cfg.req_max_size = ctx->up_max_size;
     cfg.req_tmp_path = ctx->up_tmp_path;
+    cfg.ca_file = ctx->ca_file;
+    cfg.ca_path = ctx->ca_path;
+    cfg.cert_file = ctx->cert_file;
+    cfg.key_file = ctx->key_file;
+    cfg.server_name = ctx->server_name;
+    cfg.server_realm = "httpd";
+    cfg.enable_h2 = ctx->enable_h2;
+    cfg.auth_path = ctx->auth_path;
+    cfg.a_c_a_o = ctx->a_c_a_o;
 
     if (ssl)
         listen_p = ctx->listen_ssl_p = abcdk_httpd_session_alloc(ctx->io_ctx);

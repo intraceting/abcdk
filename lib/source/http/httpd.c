@@ -1048,6 +1048,7 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
 
     assert(session != NULL && addr != NULL && cfg != NULL);
     assert(cfg->session_prepare_cb != NULL && cfg->stream_request_cb != NULL);
+    assert(cfg->req_max_size > 1024);
 
     node_p = (abcdk_asynctcp_node_t*)session;
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
@@ -1452,7 +1453,7 @@ int abcdk_httpd_response_body_buffer(abcdk_object_t *stream, const void *data, s
     return -1;
 }
 
-int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status, const char *a_c_a_m, const char *a_c_a_o)
+int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status, const char *a_c_a_m)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
@@ -1473,7 +1474,7 @@ int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status, const c
                                        "Expires: 0\r\n",
                                        node_ctx_p->cfg.server_name,
                                        abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx),
-                                       (a_c_a_o && *a_c_a_o ? a_c_a_o : "*"),
+                                       node_ctx_p->cfg.a_c_a_o,
                                        (a_c_a_m && *a_c_a_m ? a_c_a_m : "*"));
 
     abcdk_httpd_response_body(stream, NULL);
@@ -1481,7 +1482,7 @@ int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status, const c
     return 0;
 }
 
-int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t *data, const char *type, const char *a_c_a_o)
+int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t *data, const char *type)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
@@ -1502,7 +1503,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t
                                        "Expires: 0\r\n",
                                        node_ctx_p->cfg.server_name,
                                        abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx),
-                                       (a_c_a_o && *a_c_a_o ? a_c_a_o : "*"),
+                                       node_ctx_p->cfg.a_c_a_o,
                                        data->sizes[0],
                                        type);
 
@@ -1512,7 +1513,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t
     return 0;
 }
 
-int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const char *data, size_t size, const char *type, const char *a_c_a_o)
+int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const char *data, size_t size, const char *type)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
@@ -1537,7 +1538,7 @@ int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const c
                                        "Expires: 0\r\n",
                                        node_ctx_p->cfg.server_name,
                                        abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx),
-                                       (a_c_a_o && *a_c_a_o ? a_c_a_o : "*"),
+                                       node_ctx_p->cfg.a_c_a_o,
                                        size,
                                        type);
 
@@ -1547,7 +1548,7 @@ int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const c
     return 0;
 }
 
-int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, const char *type, const char *a_c_a_o)
+int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, const char *type)
 {
     abcdk_object_t *obj;
     int chk;
@@ -1558,7 +1559,7 @@ int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, con
     if(!obj)
         return -1;
 
-    chk = abcdk_httpd_response(stream,status,obj,type,a_c_a_o);
+    chk = abcdk_httpd_response(stream,status,obj,type);
     if(chk == 0)
         return 0;
 
@@ -1567,17 +1568,24 @@ int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, con
     return -1;
 }
 
-static int _abcdk_httpd_load_auth(void *opaque,const char *user,char pawd[160])
+static int _abcdk_httpd_load_auth(void *opaque, const char *user, char pawd[160])
 {
     abcdk_httpd_node_t *node_ctx_p;
     char tmp[PATH_MAX] = {0};
+    int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)opaque;
 
-    abcdk_dirdir(tmp,node_ctx_p->cfg.auth_path);
-    abcdk_dirdir(tmp,user);
+    abcdk_dirdir(tmp, node_ctx_p->cfg.auth_path);
+    abcdk_dirdir(tmp, user);
 
-    return abcdk_load(tmp,pawd,160,0);
+    chk = abcdk_load(tmp, pawd, 160, 0);
+    if (chk > 0)
+        return 0;
+    else if (chk < 0)
+        return -1;
+
+    return -2;
 }
 
 int abcdk_httpd_check_auth(abcdk_object_t *stream)
@@ -1622,11 +1630,12 @@ ERR:
     abcdk_httpd_response_header(stream, (is_proxy ? 407 : 401), 1000,
                                        "Server: %s\r\n"
                                        "Data: %s\r\n"
-                                       "Access-Control-Allow-Origin: *\r\n"
+                                       "Access-Control-Allow-Origin: %s\r\n"
                                        "%s-Authenticate: Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"\r\n"
                                        "Content-Length: 0\r\n",
                                        node_ctx_p->cfg.server_name,
                                        abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx),
+                                       node_ctx_p->cfg.a_c_a_o,
                                        (is_proxy ? "Proxy" : "WWW"),
                                        node_ctx_p->cfg.server_realm,
                                        (uint64_t)abcdk_rand_q());

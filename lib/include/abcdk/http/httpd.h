@@ -66,6 +66,9 @@ typedef struct _abcdk_httpd_config
     */
     const char *auth_path;
 
+    /*跨域服务器地址。*/
+    const char *a_c_a_o;
+
     /**
      * 会话准备通知回调函数。
      * 
@@ -248,7 +251,7 @@ int abcdk_httpd_response_body_buffer(abcdk_object_t *stream,const void *data,siz
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status,const char *a_c_a_m, const char *a_c_a_o);
+int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status,const char *a_c_a_m);
 
 /**
  * 应答带实体。
@@ -257,7 +260,7 @@ int abcdk_httpd_response_nobody(abcdk_object_t *stream, uint32_t status,const ch
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t *data, const char *type, const char *a_c_a_o);
+int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t *data, const char *type);
 
 /**
  * 应答带实体。
@@ -266,7 +269,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, uint32_t status, abcdk_object_t
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const char *data, size_t size, const char *type, const char *a_c_a_o);
+int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const char *data, size_t size, const char *type);
 
 /**
  * 应答带实体。
@@ -275,7 +278,7 @@ int abcdk_httpd_response_buffer(abcdk_object_t *stream, uint32_t status, const c
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, const char *type, const char *a_c_a_o);
+int abcdk_httpd_response_fd(abcdk_object_t *stream, uint32_t status, int fd, const char *type);
 
 /**
  * 授权验证。
