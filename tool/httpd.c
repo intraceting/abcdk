@@ -48,8 +48,6 @@ typedef struct _abcdkhttpd
     /*是否自动索引目录和文件。*/
     int auto_index;
 
-    /*是否自动索引具有隐藏属性的目录和文件。*/
-    int auto_index_hidden_file;
 
     /*跨域服务器地址。*/
     const char *a_c_a_o;
@@ -559,6 +557,7 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     abcdk_sockaddr_t listen_addr = {0};
     abcdk_httpd_config_t cfg = {0};
     abcdk_httpd_session_t *listen_p;
+    int chk;
     
     if (ssl)
         listen = abcdk_option_get(ctx->args, "--listen-ssl", 0, NULL);
@@ -576,6 +575,7 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
         return -1;
     }
 
+    cfg.opaque = ctx;
     cfg.session_prepare_cb = _abcdkhttpd_session_prepare_cb;
     cfg.session_accept_cb = _abcdkhttpd_session_accept_cb;
     cfg.session_ready_cb = _abcdkhttpd_session_ready_cb;
@@ -584,6 +584,8 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     cfg.stream_construct_cb = _abcdkhttpd_stream_construct_cb;
     cfg.stream_request_cb = _abcdkhttpd_stream_request_cb;
     cfg.stream_output_cb = _abcdkhttpd_stream_output_cb;
+    cfg.req_max_size = ctx->up_max_size;
+    cfg.req_tmp_path = ctx->up_tmp_path;
 
     if (ssl)
         listen_p = ctx->listen_ssl_p = abcdk_httpd_session_alloc(ctx->io_ctx);
@@ -593,11 +595,14 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     if (!listen_p)
     {
         abcdk_trace_output(LOG_ERR, "内部错误。");
-        return -1;
+        return -2;
     }
 
-    chk = abcdk_httpd_session_listen(listen_p,&listen_addr,cfg);
-    if(chk != 0)
+    chk = abcdk_httpd_session_listen(listen_p,&listen_addr,&cfg);
+    if(chk == 0)
+        return 0;
+
+    return -3;
 
 }
 
@@ -617,7 +622,7 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
 
     abcdk_trace_output(LOG_INFO, "启动……");
 
-    max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, -1);
+    max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, 1000);
     ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
     ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
 #ifdef HEADER_SSL_H
@@ -640,12 +645,10 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
 
     ctx->loc_ctx = newlocale(LC_ALL_MASK, "en_US.UTF-8", NULL);
 
-    /**/
-    abcdk_mkdir(ctx->up_tmp_path, 0600);
+    /*创建可能不存在的路径。*/
+    if(ctx->up_tmp_path)
+        abcdk_mkdir(ctx->up_tmp_path, 0600);
 
-#ifdef HEADER_SSL_H
-
-#endif // HEADER_SSL_H
 
     ctx->io_ctx = abcdk_httpd_create(max_client, -1);
     if (!ctx->io_ctx)
@@ -654,12 +657,23 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
         goto final;
     }
 
+    chk = _abcdkhttpd_start_listen(ctx,0);
+    if(chk != 0)
+        goto final;
+
+    chk = _abcdkhttpd_start_listen(ctx,1);
+    if(chk != 0)
+        goto final;
+
+
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);
 
 final:
 
     abcdk_httpd_destroy(&ctx->io_ctx);
+    abcdk_httpd_session_unref(&ctx->listen_p);
+    abcdk_httpd_session_unref(&ctx->listen_ssl_p);
 
 #ifdef _MAGIC_H
     if (ctx->magic_ctx)
