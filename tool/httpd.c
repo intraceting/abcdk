@@ -253,7 +253,7 @@ static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
                               "<td>-</td>\r\n"
                               "<td align=\"right\">-</td>\r\n"
                               "</tr>\r\n",
-                              stream_ctx_p->pathfile->pptrs[0], stream_ctx_p->pathfile->pptrs[0]);
+                              stream_ctx_p->script_de->pptrs[0], stream_ctx_p->script_de->pptrs[0]);
 }
 
 static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
@@ -311,15 +311,16 @@ static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
                                   tmp2, (S_ISDIR(attr.st_mode) ? "/" : ""), tmp3,
                                   abcdk_time_format(NULL, &tm, stream_ctx_p->ctx_p->loc_ctx), strsize);
 
-        _abcdkhttpd_reply_chunked(stream, 1000,
-                                  "</table>"
-                                  "</pre>\r\n"
-                                  "<hr>\r\n"
-                                  "</body>\r\n"
-                                  "</html>\r\n");
 
         return;
     }
+
+    _abcdkhttpd_reply_chunked(stream, 1000,
+                              "</table>"
+                              "</pre>\r\n"
+                              "<hr>\r\n"
+                              "</body>\r\n"
+                              "</html>\r\n");
 
     _abcdkhttpd_reply_chunked(stream, 0, NULL);
     abcdk_httpd_response_body(stream, NULL);
@@ -438,6 +439,8 @@ static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
     /*不需要发送或发送失败时，需要主动删除。*/
     if (chk != 0)
         abcdk_object_unref(&stream_ctx_p->file_ctx);
+    else 
+        stream_ctx_p->file_ctx = NULL;
 }
 
 static void _abcdkhttpd_session_prepare_cb(void *opaque, abcdk_httpd_session_t **session, abcdk_httpd_session_t *listen)
