@@ -10,8 +10,7 @@
 #include <magic.h>
 #endif // HAVE_LIBMAGIC
 
-#define ABCDKHTTPD_LISTEN 0
-#define ABCDKHTTPD_LISTEN_SSL 1
+#if 0
 
 typedef struct _abcdkhttpd
 {
@@ -756,3 +755,10 @@ int abcdk_tool_httpd(abcdk_option_t *args)
 
     return 0;
 }
+
+#else 
+int abcdk_tool_httpd(abcdk_option_t *args)
+{
+    return 0;
+}
+#endif 

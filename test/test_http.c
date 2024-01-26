@@ -462,17 +462,17 @@ static void httpd_request_cb(void *opaque, abcdk_object_t *stream)
 
 #if 1
     
-    abcdk_httpd_response_header(stream,200,100,
-                    "Content-Length: %d\r\n"
-                    "Content-Type: %s\r\n",
-                    200,
-                    "text/plain");
+    // abcdk_httpd_response_header(stream,200,100,
+    //                 "Content-Length: %d\r\n"
+    //                 "Content-Type: %s\r\n",
+    //                 200,
+    //                 "text/plain");
 
 
 
-    abcdk_httpd_response_body_buffer(stream,buf,100);
-    abcdk_httpd_response_body_buffer(stream,buf+100,100);
-    abcdk_httpd_response_body(stream,NULL);
+    // abcdk_httpd_response_body_buffer(stream,buf,100);
+    // abcdk_httpd_response_body_buffer(stream,buf+100,100);
+    // abcdk_httpd_response_body(stream,NULL);
 #elif 0
     //abcdk_httpd_response_buffer(stream,200,buf,200,"text/plain",NULL);
 
