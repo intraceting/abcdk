@@ -476,6 +476,9 @@ static int _abcdk_httpd_h2_begin_headers_cb(nghttp2_session *session, const nght
     abcdk_object_unref(&stream_ctx_p->version);
     abcdk_object_unref(&stream_ctx_p->host);
     abcdk_object_unref(&stream_ctx_p->scheme);
+    stream_ctx_p->rsp_hdr_sent = 0;
+    stream_ctx_p->rsp_end = 0;
+    stream_ctx_p->h2_rsp_count = 0;
 
     return 0;
 }
@@ -569,6 +572,8 @@ static void _abcdk_httpd_process_1(abcdk_object_t *stream)
 
     _abcdk_httpd_process(stream);
 
+    return;
+
 ERR:
 
     abcdk_asynctcp_set_timeout(stream_ctx_p->io_node,1);
@@ -619,6 +624,9 @@ static void _abcdk_httpd_request_1(abcdk_asynctcp_node_t *node, const void *data
     abcdk_object_unref(&stream_ctx_p->scheme);
     abcdk_object_unref(&stream_ctx_p->h1_rsp_hdrs);
     abcdk_option_free(&stream_ctx_p->rsp_hdr);
+    stream_ctx_p->rsp_hdr_sent = 0;
+    stream_ctx_p->rsp_end = 0;
+    stream_ctx_p->h1_rsp_count = 0;
 
     /**/
     _abcdk_httpd_process_1(stream_p);
@@ -1273,7 +1281,7 @@ static int _abcdk_httpd_rsp_hdr_dump_cb(const char *key, const char *value, void
 
     if (node_ctx_p->protocol == 1)
     {
-        chk = snprintf(stream_ctx_p->h1_rsp_hdrs->pstrs[0] + stream_ctx_p->h1_rsp_count, stream_ctx_p->h1_rsp_hdrs->sizes[0] - stream_ctx_p->h1_rsp_count, "%s: %s", key, value);
+        chk = snprintf(stream_ctx_p->h1_rsp_hdrs->pstrs[0] + stream_ctx_p->h1_rsp_count, stream_ctx_p->h1_rsp_hdrs->sizes[0] - stream_ctx_p->h1_rsp_count, "%s: %s\r\n", key, value);
         if (chk <= 0)
             return -1;
 
@@ -1340,6 +1348,8 @@ static int _abcdk_httpd_response_header_h1(abcdk_object_t *stream)
 
     stream_ctx_p->h1_rsp_count += chk;
 
+    /*标记头部长度。*/
+    stream_ctx_p->h1_rsp_hdrs->sizes[0] = stream_ctx_p->h1_rsp_count;
     chk = abcdk_asynctcp_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs);
     if (chk != 0)
         return -2;
@@ -1440,8 +1450,8 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
     chunked_body = abcdk_option_exist(stream_ctx_p->rsp_hdr, "Transfer-Encoding");
     if (chunked_body)
     {
+        /*发送分块头部。*/
         chunked_size = (data ? data->sizes[0] : 0);
-
         chk = abcdk_asynctcp_post_format(stream_ctx_p->io_node, 18, "%zx\r\n", chunked_size);
         if (chk != 0)
             return -1;
@@ -1455,12 +1465,20 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
         stream_ctx_p->rsp_end = (!data ? 1 : 0);
     }
 
-    if(stream_ctx_p->rsp_end)
-        return 0;
+    if (!stream_ctx_p->rsp_end)
+    {
+        chk = abcdk_asynctcp_post(stream_ctx_p->io_node, data);
+        if (chk != 0)
+            return -1;
+    }
 
-    chk = abcdk_asynctcp_post(stream_ctx_p->io_node, data);
-    if (chk != 0)
-        return -1;
+    /*发送分块尾部。*/
+    if (chunked_body)
+    {
+        chk = abcdk_asynctcp_post_buffer(stream_ctx_p->io_node,"\r\n",2);
+        if (chk != 0)
+            return -1;
+    }
 
     return 0;
 }
@@ -1540,11 +1558,18 @@ int abcdk_httpd_response_header_vset(abcdk_object_t *stream,const char *key, con
             return -1;
         
         /*添加默认的应答头部。*/
-        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Server","%s",node_ctx_p->cfg.server_name);
+        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Status", "200");
+        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Server","%s",(node_ctx_p->cfg.server_name?node_ctx_p->cfg.server_name:SOLUTION_NAME));
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Date","%s",abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx));
-        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Access-Control-Allow-Origin","%s",node_ctx_p->cfg.a_c_a_o);
+        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Access-Control-Allow-Origin","%s",(node_ctx_p->cfg.a_c_a_o?node_ctx_p->cfg.a_c_a_o:"*"));
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Expires","0");
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Cache-Control","no-cache");
+        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Content-Type","application/octet-stream");
+
+        if(node_ctx_p->protocol == 1)
+        {
+            abcdk_option_fset(stream_ctx_p->rsp_hdr,"Connection","keep-alive");
+        }
 
     }
 
@@ -1603,6 +1628,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
+    uint32_t status;
 
     int chk;
 
@@ -1614,17 +1640,11 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
     if (stream_ctx_p->rsp_hdr_sent)
         goto BODY;
 
-    /*检测应答头是否创建，如果未创建则创建默认的。*/
-    if (!stream_ctx_p->rsp_hdr)
-    {
-        chk = abcdk_httpd_response_header_set(stream, "Status", "%d", 200);
-        if(chk != 0)
-            return -1;
-    }
+    ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应当答头部信息。");
     
     /*如果没设轩长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
     chk = abcdk_option_exist(stream_ctx_p->rsp_hdr,"Content-Length");
-    if(!chk && !data)
+    if(!chk && data)
     {
         chk = abcdk_httpd_response_header_set(stream, "Transfer-Encoding", "chunked");
         if(chk != 0)
@@ -1636,6 +1656,10 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
     if (chk != 0)
         return -3;
 
+    status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
+
+    _abcdk_httpd_log(stream,status);
+
 BODY:
 
     chk = _abcdk_httpd_response_body(stream, data);
@@ -1643,6 +1667,58 @@ BODY:
         return -4;
 
     return 0;
+}
+
+int abcdk_httpd_response_buffer(abcdk_object_t *stream,const void *data, size_t size)
+{
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(stream != NULL && data != NULL && size >0);
+
+    obj = abcdk_object_copyfrom(data,size);
+    if(!obj)
+        return -1;
+
+    chk = abcdk_httpd_response(stream,obj);
+    if(chk == 0)
+        return 0;
+
+    abcdk_object_unref(&obj);
+    return -2;
+}
+
+int abcdk_httpd_response_format(abcdk_object_t *stream,int max, const char *fmt, ...)
+{
+    int chk;
+
+    assert(stream != NULL && max >0 && fmt != NULL);
+    
+    va_list ap;
+    va_start(ap, fmt);
+    chk = abcdk_httpd_response_vformat(stream,max,fmt,ap);
+    va_end(ap);
+
+    return chk;
+}
+
+int abcdk_httpd_response_vformat(abcdk_object_t *stream,int max, const char *fmt, va_list ap)
+{
+    abcdk_object_t *obj;
+    int chk;
+
+    assert(stream != NULL && max >0 && fmt != NULL);
+
+    obj = abcdk_object_vprintf(max,fmt,ap);
+    if(!obj)
+        return -1;
+
+    chk = abcdk_httpd_response(stream,obj);
+    if(chk == 0)
+        return 0;
+
+    abcdk_object_unref(&obj);
+    return -2;
 }
 
 static int _abcdk_httpd_load_auth(void *opaque, const char *user, char pawd[160])

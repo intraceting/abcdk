@@ -420,7 +420,7 @@ static void httpd_session_accept_cb(void *opaque,abcdk_httpd_session_t *session,
 
 static void httpd_session_ready_cb(void *opaque,abcdk_httpd_session_t *session)
 {
-    abcdk_httpd_session_set_timeout(session,10);
+  //  abcdk_httpd_session_set_timeout(session,10);
 }
 
 static void httpd_ssession_close_cb(void *opaque,abcdk_httpd_session_t *session)
@@ -469,10 +469,11 @@ static void httpd_request_cb(void *opaque, abcdk_object_t *stream)
     //                 "text/plain");
 
 
-
-    // abcdk_httpd_response_body_buffer(stream,buf,100);
-    // abcdk_httpd_response_body_buffer(stream,buf+100,100);
-    // abcdk_httpd_response_body(stream,NULL);
+    abcdk_httpd_response_header_set(stream,"Content-Length","%d",200);
+    abcdk_httpd_response_header_set(stream,"Content-Type","text/plain");
+     abcdk_httpd_response_buffer(stream,buf,100);
+     abcdk_httpd_response_buffer(stream,buf+100,100);
+     abcdk_httpd_response(stream,NULL);
 #elif 0
     //abcdk_httpd_response_buffer(stream,200,buf,200,"text/plain",NULL);
 

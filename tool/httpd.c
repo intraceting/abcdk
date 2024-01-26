@@ -10,7 +10,7 @@
 #include <magic.h>
 #endif // HAVE_LIBMAGIC
 
-#if 0
+#if 1
 
 typedef struct _abcdkhttpd
 {
@@ -150,37 +150,18 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--auto-index\n");
     fprintf(stderr, "\t\t启用自动索引。\n");
+
+    fprintf(stderr, "\n\t--enable-h2\n");
+    fprintf(stderr, "\t\t启用HTTP2协议。\n");
 }
 
 static void _abcdkhttpd_reply_nobody(abcdk_object_t *stream, int status, const char *a_c_a_m)
 {
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
 
-    abcdk_httpd_response_nobody(stream, status, a_c_a_m);
-}
-
-void _abcdkhttpd_reply_chunked(abcdk_object_t *stream, int max, const char *fmt, ...)
-{
-    abcdk_object_t *obj = NULL;
-    int chk;
-
-    if (max <= 0 || fmt == NULL)
-    {
-        obj = abcdk_http_chunked_copyfrom(NULL, 0);
-    }
-    else
-    {
-        va_list ap;
-        va_start(ap, fmt);
-        obj = abcdk_http_chunked_vformat(max, fmt, ap);
-        va_end(ap);
-    }
-
-    chk = abcdk_httpd_response_body(stream, obj);
-    if (chk == 0)
-        return;
-
-    abcdk_object_unref(&obj);
+    abcdk_httpd_response_header_set(stream,"Status","%d",status);
+    abcdk_httpd_response_header_set(stream,"Access-Control-Allow-Methods","%s",(a_c_a_m?a_c_a_m:"*"));
+    abcdk_httpd_response(stream,NULL);
 }
 
 static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
@@ -220,20 +201,9 @@ static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
         return;
     }
 
-    abcdk_httpd_response_header(stream, 200, 1000,
-                                "Server: %s\r\n"
-                                "Data: %s\r\n"
-                                "Access-Control-Allow-Origin: %s\r\n"
-                                "Content-Type: %s; charset=utf-8\r\n"
-                                "Transfer-Encoding: chunked\r\n"
-                                "Cache-Control: no-cache\r\n"
-                                "Expires: 0\r\n",
-                                stream_ctx_p->ctx_p->server_name,
-                                abcdk_time_format_gmt(&tm, stream_ctx_p->ctx_p->loc_ctx),
-                                stream_ctx_p->ctx_p->a_c_a_o,
-                                abcdk_http_content_type_desc(".html"));
+    abcdk_httpd_response_header_set(stream, "Content-Type", "text/html; charset=utf-8");
 
-    _abcdkhttpd_reply_chunked(stream, 10000,
+    abcdk_httpd_response_format(stream, 10000,
                               "<!DOCTYPE html>\r\n"
                               "<html>\r\n"
                               "<head><title>Index of %s</title></head>\r\n"
@@ -301,7 +271,7 @@ static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
         else
             snprintf(strsize, 20, "%llu", attr.st_size);
 
-        _abcdkhttpd_reply_chunked(stream, 10000,
+        abcdk_httpd_response_format(stream, 10000,
                                   "<tr>\r\n"
                                   "<td><a href=\"%s%s\">%s</a></td>"
                                   "<td>%s</td>"
@@ -314,15 +284,14 @@ static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
         return;
     }
 
-    _abcdkhttpd_reply_chunked(stream, 1000,
+    abcdk_httpd_response_format(stream, 1000,
                               "</table>"
                               "</pre>\r\n"
                               "<hr>\r\n"
                               "</body>\r\n"
                               "</html>\r\n");
 
-    _abcdkhttpd_reply_chunked(stream, 0, NULL);
-    abcdk_httpd_response_body(stream, NULL);
+    abcdk_httpd_response(stream, NULL);
     abcdk_tree_free(&stream_ctx_p->dir_ctx);
 }
 
@@ -395,45 +364,23 @@ static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
         stream_ctx_p->file_ctx->pptrs[0] += range_s;
         stream_ctx_p->file_ctx->sizes[0] = range_e - range_s + 1;
 
-        abcdk_httpd_response_header(stream, 206, 1000,
-                                    "Server: %s\r\n"
-                                    "Data: %s\r\n"
-                                    "Access-Control-Allow-Origin: %s\r\n"
-                                    "Content-Type: %s\r\n"
-                                    "Accept-Ranges: bytes\r\n"
-                                    "Content-Range: bytes %zu-%zu/%zu\r\n"
-                                    "Content-Length: %llu\r\n"
-                                    "Cache-Control: no-cache\r\n"
-                                    "Expires: 0\r\n",
-                                    stream_ctx_p->ctx_p->server_name,
-                                    abcdk_time_format_gmt(&tm, stream_ctx_p->ctx_p->loc_ctx),
-                                    stream_ctx_p->ctx_p->a_c_a_o,
-                                    type,
-                                    range_s, range_e, file_size,
-                                    stream_ctx_p->file_ctx->sizes[0]);
+        abcdk_httpd_response_header_set(stream, "Status","%d",206);
+        abcdk_httpd_response_header_set(stream, "Content-Type","%s",type);
+        abcdk_httpd_response_header_set(stream, "Content-Range","bytes %zu-%zu/%zu",range_s, range_e, file_size);
+        abcdk_httpd_response_header_set(stream, "Content-Length","%zu",stream_ctx_p->file_ctx->sizes[0]);
     }
     else
     {
-        abcdk_httpd_response_header(stream, 200, 1000,
-                                    "Server: %s\r\n"
-                                    "Data: %s\r\n"
-                                    "Access-Control-Allow-Origin: %s\r\n"
-                                    "Content-Type: %s\r\n"
-                                    "Content-Length: %llu\r\n"
-                                    "Cache-Control: no-cache\r\n"
-                                    "Expires: 0\r\n",
-                                    stream_ctx_p->ctx_p->server_name,
-                                    abcdk_time_format_gmt(&tm, stream_ctx_p->ctx_p->loc_ctx),
-                                    stream_ctx_p->ctx_p->a_c_a_o,
-                                    type,
-                                    stream_ctx_p->file_ctx->sizes[0]);
+        abcdk_httpd_response_header_set(stream, "Status","%d",200);
+        abcdk_httpd_response_header_set(stream, "Content-Type","%s",type);
+        abcdk_httpd_response_header_set(stream, "Content-Length","%zu",stream_ctx_p->file_ctx->sizes[0]);
     }
 
     chk = -1;
     if (abcdk_strcmp(stream_ctx_p->method_p, "HEAD", 0) != 0)
-        chk = abcdk_httpd_response_body(stream, stream_ctx_p->file_ctx);
-    else
-        abcdk_httpd_response_body(stream, NULL);
+        chk = abcdk_httpd_response(stream, stream_ctx_p->file_ctx);
+    
+    abcdk_httpd_response(stream, NULL);
 
     /*不需要发送或发送失败时，需要主动删除。*/
     if (chk != 0)
@@ -646,6 +593,7 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
     ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
     ctx->auto_index = abcdk_option_exist(ctx->args, "--auto-index");
     ctx->auth_path = abcdk_option_get(ctx->args, "--auth-path", 0, NULL);
+    ctx->enable_h2 = abcdk_option_exist(ctx->args, "--enable-h2");
 
 #ifdef _MAGIC_H
     ctx->magic_ctx = magic_open(MAGIC_MIME | MAGIC_SYMLINK);
@@ -689,6 +637,9 @@ final:
     if (ctx->magic_ctx)
         magic_close(ctx->magic_ctx);
 #endif // _MAGIC_H
+
+    if(ctx->loc_ctx)
+        freelocale(ctx->loc_ctx);
 
     abcdk_trace_output(LOG_INFO, "停止。");
 

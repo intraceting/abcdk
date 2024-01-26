@@ -242,6 +242,27 @@ void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
 int abcdk_httpd_response(abcdk_object_t *stream,abcdk_object_t *data);
 
 /**
+ * 应答实体。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_httpd_response_buffer(abcdk_object_t *stream,const void *data, size_t size);
+
+/**
+ * 应答实体。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_httpd_response_format(abcdk_object_t *stream,int max, const char *fmt, ...);
+
+/**
+ * 应答实体。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_httpd_response_vformat(abcdk_object_t *stream,int max, const char *fmt, va_list ap);
+
+/**
  * 授权验证。
  * 
  * @note 仅支持Basic和Digest。
