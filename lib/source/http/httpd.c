@@ -1629,7 +1629,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
     uint32_t status;
-
+    const char *upgrade_val;
     int chk;
 
     assert(stream != NULL);
@@ -1651,12 +1651,25 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
             return -2;
     }
 
+    status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
+
+    /*按需转换为隧道模式。*/
+    if (stream_ctx_p->protocol == 1 && status == 200)
+    {
+        if (abcdk_strcmp(stream_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
+            stream_ctx_p->protocol = 4;
+        else
+        {
+            upgrade_val = abcdk_receiver_header_line_getenv(stream_ctx_p->updata, "Upgrade", ':');
+            if (upgrade_val && abcdk_strcmp(stream_ctx_p->method->pstrs[0], "websocket", 0) == 0)
+                stream_ctx_p->protocol = 4;
+        }
+    }
+
     stream_ctx_p->rsp_hdr_sent = 1;
     chk = _abcdk_httpd_response_header(stream);
     if (chk != 0)
         return -3;
-
-    status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
 
     _abcdk_httpd_log(stream,status);
 
