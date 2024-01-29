@@ -579,13 +579,29 @@ int abcdk_test_any(abcdk_option_t *args)
     int chk = abcdk_sockaddr_from_string(&dst, "ocsp.sectigochina.com", 1);
     assert(chk == 0);
 
-#elif 1
+#elif 0
 
     const char *p ="Digest username=\"aaaa\", realm=\"proxy\", nonce=\"147106898062910\", uri=\"/0584000065A09D5FC847B71286DAF47E?x-oss-process=image/resize,w_352/interlace,1/quality,Q_80\", response=\"37ebc4af75f6dcb98bd34e55f4583b02\"";
 
     abcdk_option_t *auth_opt =NULL;
     abcdk_http_parse_auth(&auth_opt,p);
     abcdk_option_free(&auth_opt);
+
+#elif 1
+
+    const char *src = "/home/devel/下载/aaaa.txt";
+    const char *dst = "/home/devel/下载/aaaa.jpg";
+
+    abcdk_object_t *buf = abcdk_mmap_filename(src,0,0,0,0);
+
+    abcdk_object_t *buf2 = abcdk_basecode_decode2(buf->pptrs[0],buf->sizes[0],64);
+
+    abcdk_save((char *)dst,buf2->pptrs[0],buf2->sizes[0],0);
+
+
+    abcdk_object_unref(&buf2);
+    abcdk_object_unref(&buf);
+    
 
 #endif 
 }
