@@ -95,7 +95,7 @@ typedef struct _abcdk_proxy_node
     /*隧道加密(上行)。*/
     abcdk_enigma_t *tunnel_encrypt;
 
-    /*隧道加密(下行)。*/
+    /*隧道解密(下行)。*/
     abcdk_enigma_t *tunnel_decrypt;
 
     /*隧道。*/
