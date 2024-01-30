@@ -11,6 +11,7 @@
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/heap.h"
 #include "abcdk/util/random.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 
@@ -34,12 +35,22 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx);
 /** 
  * 创建。
  * 
- * @param [in out] dict 字典表格。
+ * @param [in] dict 字典表格。
  * @param [in] rows 字典行数(转子的个数)。
  * @param [in] cols 字典列数(转子的通道)。
  * 
 */
 abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols);
+
+/** 
+ * 创建。
+ * 
+ * @param [in] seed 随机种子。
+ * @param [in] rows 字典行数(转子的个数)。
+ * @param [in] cols 字典列数(转子的通道)。
+ * 
+*/
+abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols);
 
 /** 
  * 获取转子指针。

@@ -92,6 +92,12 @@ typedef struct _abcdk_proxy_node
     /*隧道私钥。*/
     const char *tunnel_key;
 
+    /*隧道加密(上行)。*/
+    abcdk_enigma_t *tunnel_encrypt;
+
+    /*隧道加密(下行)。*/
+    abcdk_enigma_t *tunnel_decrypt;
+
     /*隧道。*/
     abcdk_asynctcp_node_t *tunnel;
 
@@ -109,6 +115,8 @@ typedef struct _abcdk_proxy_node
 
     /*上级地址。*/
     abcdk_object_t *up_link;
+
+    
     
 } abcdk_proxy_node_t;
 
@@ -191,6 +199,8 @@ static void _abcdk_proxy_node_destroy_cb(void *userdata)
     abcdk_object_unref(&node_ctx_p->script);
     abcdk_object_unref(&node_ctx_p->version);
     abcdk_object_unref(&node_ctx_p->up_link);
+    abcdk_enigma_free(&node_ctx_p->tunnel_decrypt);
+    abcdk_enigma_free(&node_ctx_p->tunnel_encrypt);
 }
 
 static abcdk_asynctcp_node_t *_abcdk_proxy_node_alloc(abcdk_proxy_t *ctx)

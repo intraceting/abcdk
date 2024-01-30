@@ -527,7 +527,7 @@ int abcdk_test_any(abcdk_option_t *args)
         fprintf(stderr,"%s\n",environ[i]);
     }
 
-    char *param[] ={"--listen","0.0.0.0:1111","--root-path", "/home/zpcoding/data/files-b/", "--auto-index"};
+    char *param[] ={"--listen","0.0.0.0:1111","--root-path", "/home/data/files-b/", "--auto-index"};
 
     pid_t p = abcdk_exec_new("./abcdk",param,NULL,0,0,NULL,NULL,NULL,NULL,NULL);
 

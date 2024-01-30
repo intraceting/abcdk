@@ -146,6 +146,25 @@ final_error:
     return NULL;
 }
 
+abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols)
+{
+    uint8_t *dict;
+    abcdk_enigma_t *ctx;
+
+    assert(rows > 0 && rows <= 256 && cols >= 4 && cols <= 256 && cols % 2 == 0);
+
+    dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
+    if(!dict)
+        return NULL;
+
+    abcdk_enigma_mkdict(&seed,dict,rows,cols);
+
+    ctx = abcdk_enigma_create(dict,rows,cols);
+    abcdk_heap_free(dict);
+    
+    return ctx;
+}
+
 uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, uint8_t rotor)
 {
     assert(ctx != NULL);
