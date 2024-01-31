@@ -1642,13 +1642,22 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
 
     ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应当答头部信息。");
     
-    /*如果没设轩长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
+    /*如果未设置应答长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
     chk = abcdk_option_exist(stream_ctx_p->rsp_hdr,"Content-Length");
-    if(!chk && data)
+    if(!chk)
     {
-        chk = abcdk_httpd_response_header_set(stream, "Transfer-Encoding", "chunked");
-        if(chk != 0)
-            return -2;
+        if(data)
+        {
+            chk = abcdk_httpd_response_header_set(stream, "Transfer-Encoding", "chunked");
+            if(chk != 0)
+                return -2;
+        }
+        else
+        {
+            chk = abcdk_httpd_response_header_set(stream, "Content-Length", "0");
+            if(chk != 0)
+                return -2;
+        }
     }
 
     status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
