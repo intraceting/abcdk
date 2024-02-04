@@ -1,0 +1,73 @@
+/*
+ * This file is part of ABCDK.
+ * 
+ * MIT License
+ * 
+ */
+#ifndef ABCDK_ASIO_TIPC_H
+#define ABCDK_ASIO_TIPC_H
+
+#include "abcdk/util/trace.h"
+#include "abcdk/util/receiver.h"
+#include "abcdk/util/waiter.h"
+#include "abcdk/util/bit.h"
+#include "abcdk/ssl/openssl.h"
+#include "abcdk/asio/asynctcp.h"
+
+
+
+__BEGIN_DECLS
+
+/**简单的TIPC服务。*/
+typedef struct _abcdk_tipc abcdk_tipc_t;
+
+/**配置。*/
+typedef struct _abcdk_tipc_config
+{
+    /*环境指针。*/
+    void *opaque;
+
+    /*服务ID。*/
+    const char *id;
+
+    /*CA证书。*/
+    const char *ca_file;
+
+    /*CA路径。*/
+    const char *ca_path;
+
+    /*证书。*/
+    const char *cert_file;
+
+    /*私钥。*/
+    const char *key_file;
+
+    /**
+     * 节点连接通知回调函数。
+     * 
+     * @note NULL(0) 忽略。
+    */
+    void (*accept_cb)(void *opaque,const char *address,int *result);
+
+    /*数据请求通知回调函数。*/
+    void (*request_cb)(void *opaque, const char *id, uint64_t mid, const void *data, size_t size);
+
+}abcdk_tipc_config_t;
+
+
+/*销毁。*/
+void abcdk_tipc_destroy(abcdk_tipc_t **ctx);
+
+/*创建。*/
+abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg);
+
+/** 
+ * 监听。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_tipc_listen(abcdk_tipc_t *ctx,abcdk_sockaddr_t *addr,int ssl);
+
+__END_DECLS
+
+#endif //ABCDK_ASIO_TIPC_H

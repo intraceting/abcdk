@@ -895,7 +895,6 @@ static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
 static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
-    char ptl_sel_name[256] = {0};
     int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
