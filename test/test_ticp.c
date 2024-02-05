@@ -31,7 +31,7 @@ int abcdk_test_tipc(abcdk_option_t *args)
 
     abcdk_trace_set_log(abcdk_logger_from_trace,log_ctx);
 
-    cfg.opaque = 
+    cfg.opaque = NULL;
     cfg.id = abcdk_option_get_llong(args,"--id",0,1);
     cfg.request_cb = _abcdk_test_tipc_request_cb;
 
@@ -50,15 +50,15 @@ int abcdk_test_tipc(abcdk_option_t *args)
     {
         abcdk_tipc_connect(g_ctx,connect_p,1);
 
-        for(int i = 0;i<1000000;i++)
-        {
-            abcdk_object_t *rsp_p = NULL;
-            char buf[100] = {0};
-            sprintf(buf,"%caaaaaa",7,(i%3==0?'r':'a'));
+        // for(int i = 0;i<1000000;i++)
+        // {
+        //     abcdk_object_t *rsp_p = NULL;
+        //     char buf[100] = {0};
+        //     sprintf(buf,"%caaaaaa",7,(i%3==0?'r':'a'));
 
-            abcdk_tipc_request(g_ctx,1,buf,7,(buf[0]=='c'?&rsp_p:NULL));
-            abcdk_object_unref(&rsp_p);
-        }
+        //     abcdk_tipc_request(g_ctx,1,buf,7,(buf[0]=='c'?&rsp_p:NULL));
+        //     abcdk_object_unref(&rsp_p);
+        // }
     }
 
     abcdk_proc_wait_exit_signal(-1);

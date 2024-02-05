@@ -88,6 +88,24 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx,uint64_t id,const char *data,size_t siz
 */
 int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *data,size_t size);
 
+/**
+ * 订阅。
+ * 
+ * @param [in] topic 主题。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_tipc_subscribe(abcdk_tipc_t *ctx,uint64_t topic);
+
+/**
+ * 取消订阅。
+ * 
+ * @param [in] topic 主题。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_tipc_unsubscribe(abcdk_tipc_t *ctx,uint64_t topic);
+
 __END_DECLS
 
 #endif // ABCDK_ASIO_TIPC_H

@@ -471,7 +471,7 @@ static void _abcdk_tipc_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, in
     }
 }
 
-static void _abcdk_tpic_request_process(abcdk_asynctcp_node_t *node);
+static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node);
 
 static void _abcdk_tipc_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
@@ -492,7 +492,7 @@ static void _abcdk_tipc_request_cb(abcdk_asynctcp_node_t *node, const void *data
     else if (chk == 0) /*数据包不完整，继续接收。*/
         return;
 
-    _abcdk_tpic_request_process(node);
+    _abcdk_tipc_process(node);
 
     /*一定要回收。*/
     abcdk_receiver_unref(&node_ctx_p->req_data);
@@ -635,12 +635,13 @@ static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node)
     return -2;
 }
 
-static void _abcdk_tipc_request_process_register(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_register(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
     size_t req_size;
     uint64_t myid;
+    int chk;
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
 
@@ -653,11 +654,21 @@ static void _abcdk_tipc_request_process_register(abcdk_asynctcp_node_t *node)
 
     if(myid == node_ctx_p->father->cfg.id)
     {
-        _abcdk_tipc_slave_register(node_ctx_p->father, node, NULL);
-        return;
-    }
+        chk = _abcdk_tipc_slave_register(node_ctx_p->father, node, NULL);
+        if(chk == 0)
+            return;
 
-    abcdk_trace_output(LOG_WARNING,"本地ID标识在远端服务(ID=%llu)中的记录不相同，不允许注册。",node_ctx_p->id);
+        if(chk == -1)
+            abcdk_trace_output(LOG_WARNING,"本地ID与远端ID(%llu)相同，不允许注册。",node_ctx_p->id);
+        else if(chk == -3)
+            abcdk_trace_output(LOG_WARNING,"相同的远端ID(%llu)已经注册并且在线，不允许注册。",node_ctx_p->id);
+        else 
+            abcdk_trace_output(LOG_WARNING,"系统错误。");
+    }
+    else
+    {
+        abcdk_trace_output(LOG_WARNING,"本地ID标识在远端ID(%llu)中的记录不相同，不允许注册。",node_ctx_p->id);
+    }
 
     abcdk_asynctcp_set_timeout(node,1);
 
@@ -698,7 +709,7 @@ static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, int rsp, uint64
     return -2;
 }
 
-static void _abcdk_tipc_request_process_request(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_request(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -719,7 +730,7 @@ static void _abcdk_tipc_request_process_request(abcdk_asynctcp_node_t *node)
     node_ctx_p->father->cfg.request_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->id, msg_mid, data_p, data_l);
 }
 
-static void _abcdk_tipc_request_process_response(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_response(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -744,7 +755,7 @@ static void _abcdk_tipc_request_process_response(abcdk_asynctcp_node_t *node)
         abcdk_object_unref(&rsp_p);
 }
 
-static void _abcdk_tpic_request_process(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -763,15 +774,15 @@ static void _abcdk_tpic_request_process(abcdk_asynctcp_node_t *node)
 
     if (msg_cmd == 0)
     {
-        _abcdk_tipc_request_process_register(node);
+        _abcdk_tipc_process_register(node);
     }
     else if (msg_cmd == 1)
     {
-        _abcdk_tipc_request_process_request(node);
+        _abcdk_tipc_process_request(node);
     }
     else if (msg_cmd == 2)
     {
-        _abcdk_tipc_request_process_response(node);
+        _abcdk_tipc_process_response(node);
     }
     else if (msg_cmd == 3)
     {
