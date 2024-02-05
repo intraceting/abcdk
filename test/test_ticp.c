@@ -17,7 +17,7 @@ static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid,
 {
     abcdk_trace_output(LOG_INFO,"id=%llu,mid=%llu,size=%zu \n",id,mid,size);
 
-    if(mid % 3 == 0)
+    if( ABCDK_PTR2I8(data,0) == 'r')
         abcdk_tipc_response(g_ctx,id,mid,data,size);
 }
 
@@ -53,7 +53,11 @@ int abcdk_test_tipc(abcdk_option_t *args)
         for(int i = 0;i<1000000;i++)
         {
             abcdk_object_t *rsp_p = NULL;
-            abcdk_tipc_request(ctx,1,"aaaaaaa",7,(i%3==0?&rsp_p:NULL));
+            char buf[100] = {0};
+            sprintf(buf,"%caaaaaa",7,(i%3==0?'r':'a'));
+
+            abcdk_tipc_request(g_ctx,1,buf,7,(buf[0]=='c'?&rsp_p:NULL));
+            abcdk_object_unref(&rsp_p);
         }
     }
 
