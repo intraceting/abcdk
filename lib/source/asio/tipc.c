@@ -703,7 +703,7 @@ static void _abcdk_tipc_request_process_request(abcdk_asynctcp_node_t *node)
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
     size_t req_size;
-    uint64_t mid;
+    uint64_t msg_mid;
     void *data_p;
     size_t data_l;
 
@@ -712,11 +712,11 @@ static void _abcdk_tipc_request_process_request(abcdk_asynctcp_node_t *node)
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
 
-    mid = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
+    msg_mid = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
     data_p = ABCDK_PTR2VPTR(req_data, 13);
     data_l = req_size - 13;
 
-    node_ctx_p->father->cfg.request_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->id, mid, data_p, data_l);
+    node_ctx_p->father->cfg.request_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->id, msg_mid, data_p, data_l);
 }
 
 static void _abcdk_tipc_request_process_response(abcdk_asynctcp_node_t *node)
