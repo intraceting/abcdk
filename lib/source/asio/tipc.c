@@ -663,7 +663,7 @@ static void _abcdk_tipc_request_process_register(abcdk_asynctcp_node_t *node)
 
 }
 
-static int _abcdk_tipc_post_request(abcdk_asynctcp_node_t *node, int rsp, uint64_t mid, const void *data, size_t size)
+static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, int rsp, uint64_t mid, const void *data, size_t size)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
@@ -809,7 +809,7 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t 
         }
     }
 
-    chk = _abcdk_tipc_post_request(node_p, 0, mid, data, size);
+    chk = _abcdk_tipc_post_message(node_p, 0, mid, data, size);
     if (chk != 0)
     {
         chk = -3;
@@ -826,6 +826,38 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t 
         }
 
         *rsp = rsp_p;
+    }
+
+    chk = 0;
+
+END:
+
+    abcdk_asynctcp_unref(&node_p);
+    return chk;
+}
+
+int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *data,size_t size)
+{
+    abcdk_asynctcp_node_t *node_p;
+    abcdk_tipc_node_t *node_ctx_p;
+    int chk;
+
+    assert(ctx != NULL && id > 0 && data != NULL && size > 0);
+
+    node_p = _abcdk_tipc_slave_find_pipe(ctx, id);
+    if (!node_p)
+    {
+        chk = -1;
+        goto END;
+    }
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node_p);
+
+    chk = _abcdk_tipc_post_message(node_p, 1, mid, data, size);
+    if (chk != 0)
+    {
+        chk = -3;
+        goto END;
     }
 
     chk = 0;

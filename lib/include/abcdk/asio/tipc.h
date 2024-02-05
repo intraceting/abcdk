@@ -73,13 +73,20 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr);
 int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id);
 
 /**
- * 请求和应答。
+ * 请求。
  * 
  * @param [out] rsp 应答。NULL(0) 忽略。
  * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_tipc_request(abcdk_tipc_t *ctx,uint64_t id,const char *data,size_t size,abcdk_object_t **rsp);
+
+/**
+ * 应答。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *data,size_t size);
 
 __END_DECLS
 
