@@ -205,7 +205,7 @@ static abcdk_asynctcp_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint
 
     slave_ctx_p = (abcdk_tipc_slave_t *)slave_p->pptrs[ABCDK_MAP_VALUE];
 
-    /*优选择可能被保留的链路。*/
+    /*优先选择可能被保留的链路。*/
     if(ctx->cfg.id > id)
         node_p = (slave_ctx_p->pipe2?slave_ctx_p->pipe2:slave_ctx_p->pipe1);
     else 
