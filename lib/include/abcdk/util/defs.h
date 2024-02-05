@@ -179,6 +179,7 @@
         goto M;                       \
     })
 
+
 /** 计算数组大小。*/
 #define ABCDK_ARRAY_SIZE(V) (sizeof((V)) / sizeof((V)[0]))
 
