@@ -13,6 +13,11 @@
 
 abcdk_tipc_t * g_ctx = NULL;
 
+static void _abcdk_test_tipc_shutdown_cb(void *opaque, uint64_t id)
+{
+    abcdk_trace_output(LOG_INFO,"id=%llu 离线。",id);
+}
+
 static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid, const void *data, size_t size)
 {
     abcdk_trace_output(LOG_INFO,"id=%llu,mid=%llu,size=%zu \n",id,mid,size);
@@ -34,9 +39,12 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.opaque = NULL;
     cfg.id = abcdk_option_get_llong(args,"--id",0,1);
     cfg.request_cb = _abcdk_test_tipc_request_cb;
+    cfg.shutdown_cb = _abcdk_test_tipc_shutdown_cb;
 
     listen_p = abcdk_option_get(args,"--listen",0,"ipv4://127.0.0.1:6666");
     connect_p = abcdk_option_get(args,"--connect",0,NULL);
+
+    uint64_t id2 = abcdk_option_get_llong(args,"--id2",0,2);
 
     g_ctx = abcdk_tipc_create(&cfg);
 
@@ -44,21 +52,26 @@ int abcdk_test_tipc(abcdk_option_t *args)
     abcdk_sockaddr_from_string(&addr, listen_p, 0);
     abcdk_tipc_listen(g_ctx,&addr);
 
-    sleep(3);
+    sleep(10);
 
     if(connect_p)
     {
-        abcdk_tipc_connect(g_ctx,connect_p,1);
+        abcdk_tipc_connect(g_ctx,connect_p,id2);
 
-        // for(int i = 0;i<1000000;i++)
-        // {
-        //     abcdk_object_t *rsp_p = NULL;
-        //     char buf[100] = {0};
-        //     sprintf(buf,"%caaaaaa",7,(i%3==0?'r':'a'));
+        sleep(1);
 
-        //     abcdk_tipc_request(g_ctx,1,buf,7,(buf[0]=='c'?&rsp_p:NULL));
-        //     abcdk_object_unref(&rsp_p);
-        // }
+        size_t buf_l = 1920*1080*3;
+        char *buf_p = (char*)abcdk_heap_alloc(buf_l);
+        for(int i = 0;i<1110;i++)
+        {
+            abcdk_object_t *rsp_p = NULL;
+            sprintf(buf_p,"%caaaaaa",(i%3==0?'r':'a'));
+
+            abcdk_tipc_request(g_ctx,id2,buf_p,buf_l,(buf_p[0]=='r'?&rsp_p:NULL));
+            abcdk_object_unref(&rsp_p);
+        }
+
+        abcdk_heap_free(buf_p);
     }
 
     abcdk_proc_wait_exit_signal(-1);

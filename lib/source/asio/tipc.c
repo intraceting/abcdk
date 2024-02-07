@@ -40,11 +40,8 @@ typedef struct _abcdk_tipc_node
     /*标志。0 监听，1 服务端，2 客户端。*/
     int flag;
 
-    /*服务ID。*/
+    /*远端ID。*/
     uint64_t id;
-
-    /*服务标识。*/
-    uint64_t mark;
 
     /*请求数据。*/
     abcdk_receiver_t *req_data;
@@ -56,27 +53,18 @@ typedef struct _abcdk_tipc_node
 
 typedef struct _abcdk_tipc_slave
 {
-    /*服务ID。*/
+    /*远端ID。*/
     uint64_t id;
 
-    /*地址。*/
-    char location[NAME_MAX];
-
-    /*连接方式。0：任意，1: 主动，2：被动。*/
-    int flag;
-
-    /*被动连接管道。*/
+    /*被动连接的管道。*/
     abcdk_asynctcp_node_t *pipe1;
 
-    /*被动连接服务标识(防止多个相同的ID出现在不同的地方)。*/
-    uint64_t mark1;
-
-    /*主动连接管道。*/
+    /*主动连接的管道。*/
     abcdk_asynctcp_node_t *pipe2;
 
 } abcdk_tipc_slave_t;
 
-static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t *pipe, const char *location)
+static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t *pipe)
 {
     abcdk_object_t *slave_p;
     abcdk_tipc_slave_t *slave_ctx_p;
@@ -95,70 +83,60 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t *
     if (!slave_p)
     {
         chk = -2;
-        goto ERR;
+        goto END;
     }
 
     slave_ctx_p = (abcdk_tipc_slave_t *)slave_p->pptrs[ABCDK_MAP_VALUE];
-
-    if (location)
-        strncpy(slave_ctx_p->location, location, NAME_MAX);
 
     if (node_ctx_p->flag == 1)
     {
         if (slave_ctx_p->pipe1 == NULL)
         {
             slave_ctx_p->pipe1 = abcdk_asynctcp_refer(pipe);
-            slave_ctx_p->mark1 = node_ctx_p->mark;
-        }
-        else if (slave_ctx_p->mark1 != node_ctx_p->mark)
-        {
-            chk = -3;
-            goto ERR;
         }
         else if (slave_ctx_p->pipe1 != pipe)
         {
-            abcdk_asynctcp_unref(&slave_ctx_p->pipe1);
-            slave_ctx_p->pipe1 = abcdk_asynctcp_refer(pipe);
+            chk = -3;
+            goto END;
         }
     }
     else
     {
-        if (slave_ctx_p->pipe2 != pipe)
+        if (slave_ctx_p->pipe2 == NULL)
         {
-            abcdk_asynctcp_unref(&slave_ctx_p->pipe2);
             slave_ctx_p->pipe2 = abcdk_asynctcp_refer(pipe);
+        }
+        else if (slave_ctx_p->pipe2 != pipe)
+        {
+            chk = -3;
+            goto END;
         }
     }
 
-    /* 当双向建立连成功时，保留由ID大到小的主动连接。*/
+    /* 当双向建立连接成功时，保留由ID大到小的主动连接。*/
     if (slave_ctx_p->pipe1 && slave_ctx_p->pipe2)
     {
         if (ctx->cfg.id > node_ctx_p->id)
         {
             abcdk_asynctcp_set_timeout(slave_ctx_p->pipe1, 1);
             abcdk_asynctcp_unref(&slave_ctx_p->pipe1);
-
-            slave_ctx_p->flag = 1;
         }
         else
         {
             abcdk_asynctcp_set_timeout(slave_ctx_p->pipe2, 1);
             abcdk_asynctcp_unref(&slave_ctx_p->pipe2);
-
-            slave_ctx_p->flag = 2;
         }
     }
 
-    abcdk_mutex_unlock(ctx->slave_mutex);
-    return 0;
+    chk = 0;
 
-ERR:
+END:
 
     abcdk_mutex_unlock(ctx->slave_mutex);
     return chk;
 }
 
-static void _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t *pipe)
+static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t *pipe)
 {
     abcdk_object_t *slave_p;
     abcdk_tipc_slave_t *slave_ctx_p;
@@ -171,24 +149,28 @@ static void _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asynctcp_node_
 
     slave_p = abcdk_map_find2(ctx->slave_list, &node_ctx_p->id, 0);
     if (!slave_p)
+    {
+        chk = -1;
         goto END;
+    }
 
     slave_ctx_p = (abcdk_tipc_slave_t *)slave_p->pptrs[ABCDK_MAP_VALUE];
     if (slave_ctx_p->pipe1 == pipe)
     {
         abcdk_asynctcp_unref(&slave_ctx_p->pipe1);
-        slave_ctx_p->mark1 = 0;
     }
     else if (slave_ctx_p->pipe2 == pipe)
     {
         abcdk_asynctcp_unref(&slave_ctx_p->pipe2);
     }
-    
+
+    /*还剩几个。*/
+    chk = (slave_ctx_p->pipe1 ? 1 : 0) + (slave_ctx_p->pipe2 ? 1 : 0);
 
 END:
 
     abcdk_mutex_unlock(ctx->slave_mutex);
-    return;
+    return chk;
 }
 
 static abcdk_asynctcp_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint64_t id)
@@ -214,6 +196,7 @@ static abcdk_asynctcp_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint
     /*增加引用计数。*/
     if(node_p)
         node_p = abcdk_asynctcp_refer(node_p);
+
 END:
 
     abcdk_mutex_unlock(ctx->slave_mutex);
@@ -238,7 +221,6 @@ static void _abcdk_tipc_slave_construct_cb(abcdk_object_t *obj, void *opaque)
     abcdk_tipc_slave_t *slave_ctx_p = (abcdk_tipc_slave_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     slave_ctx_p->id = id;
-    slave_ctx_p->flag = 0;
 }
 
 void abcdk_tipc_destroy(abcdk_tipc_t **ctx)
@@ -321,6 +303,7 @@ static abcdk_asynctcp_node_t *_abcdk_tipc_node_create(abcdk_tipc_t *ctx,int flag
 
     node_ctx_p->father = ctx;
     node_ctx_p->flag = flag;
+    node_ctx_p->id = 0;
     if(flag != 0)
         node_ctx_p->req_waiter = abcdk_waiter_alloc(_abcdk_tipc_node_waiter_destroy_cb);
 
@@ -363,7 +346,7 @@ static void _abcdk_tipc_event_accept(abcdk_asynctcp_node_t *node, int *result)
         abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
 }
 
-static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node);
+static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp);
 
 static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
 {
@@ -400,13 +383,12 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
 
 END:
 
-    abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经建立。", (node_ctx_p->flag == 2 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机%s远端(IP='%s')的连接已经建立。", (node_ctx_p->flag == 1 ? "<<<" : ">>>"), node_ctx_p->remote_addr);
 
     /*发送注册消息。*/
     if (node_ctx_p->flag == 2)
-        _abcdk_tipc_post_register(node);
-
-
+        _abcdk_tipc_post_register(node,0);
+    
     /*已连接到远端，注册读写事件。*/
     abcdk_asynctcp_recv_watch(node);
     abcdk_asynctcp_send_watch(node);
@@ -431,16 +413,24 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_output(LOG_INFO, "监听关闭");
+        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经断开。", (node_ctx_p->flag == 2 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机%s远端(IP='%s')的连接已经断开。",(node_ctx_p->flag == 1 ? "<<<" : ">>>"), node_ctx_p->remote_addr);
 
     /*取消所有等待的。*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);
 
-    _abcdk_tipc_slave_unregister(node_ctx_p->father, node);
+    chk = _abcdk_tipc_slave_unregister(node_ctx_p->father, node);
+    if (chk == -1)
+        return;
+    if (chk > 0)
+        return;
+
+    /*当节点的通讯链路全部断掉后，发出通知。*/
+    if(node_ctx_p->father->cfg.shutdown_cb)
+        node_ctx_p->father->cfg.shutdown_cb(node_ctx_p->father->cfg.opaque,node_ctx_p->id);
 }
 
 static void _abcdk_tipc_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
@@ -553,12 +543,12 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     int chk;
 
     assert(ctx != NULL && location != NULL && id > 0);
-    assert(ctx->cfg.id != id);
+    ABCDK_ASSERT(ctx->cfg.id != id,"远端ID不能与本机ID相同。");
 
     chk = abcdk_sockaddr_from_string(&addr, location, 1);
     if (chk != 0)
     {
-        abcdk_trace_output(LOG_ERR, "连接地址'%s'无法识别。", location);
+        abcdk_trace_output(LOG_ERR, "远端(ID=%llu,IP='%s')的地址无法识别。",id, location);
         return -4;
     }
 
@@ -569,7 +559,6 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
     node_ctx_p->id = id;
-    node_ctx_p->mark = rand()*rand();
 
 #ifdef HEADER_SSL_H
     if (ctx->cfg.cert_file && ctx->cfg.key_file)
@@ -583,8 +572,6 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     }
 #endif // HEADER_SSL_H
 
-    _abcdk_tipc_slave_register(node_ctx_p->father, node_p, location);
-
     cb.prepare_cb = _abcdk_tipc_prepare_cb;
     cb.event_cb = _abcdk_tipc_event_cb;
     cb.request_cb = _abcdk_tipc_request_cb;
@@ -597,7 +584,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     return -3; 
 }
 
-static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node)
+static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
@@ -607,13 +594,12 @@ static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node)
 
 
     /*
-     * |Length  |CMD    |Mine ID  |Mark    |Your ID |
-     * |4 Bytes |1 Byte |8 Bytes  |8 Bytes |8 Bytes |
+     * |Length  |CMD    |Mine ID  |Your ID |
+     * |4 Bytes |1 Byte |8 Bytes  |8 Bytes |
      *
      * Length：长度(不包含自身)。
-     * CMD：0 注册。
+     * CMD：0 注册，1 应答。
      * ID：我的ID。
-     * Mark：我的标识。
      * ID：你的ID。
      */
 
@@ -622,10 +608,9 @@ static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node)
         return -1;
 
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 0, 32, msg_p->sizes[0]-4);
-    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 32, 8, 0);
+    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 32, 8, (rsp?1:0));
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 40, 64, node_ctx_p->father->cfg.id);
-    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 104, 64, node_ctx_p->mark);
-    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 168, 64, node_ctx_p->id);
+    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 104, 64, node_ctx_p->id);
 
     chk = abcdk_asynctcp_post(node, msg_p);
     if(chk == 0)
@@ -635,7 +620,7 @@ static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node)
     return -2;
 }
 
-static void _abcdk_tipc_process_register(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_register_req(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -649,17 +634,19 @@ static void _abcdk_tipc_process_register(abcdk_asynctcp_node_t *node)
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
 
     node_ctx_p->id = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
-    node_ctx_p->mark = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 104, 64);
-    myid = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 168, 64);
+    myid = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 104, 64);
 
     if(myid == node_ctx_p->father->cfg.id)
     {
-        chk = _abcdk_tipc_slave_register(node_ctx_p->father, node, NULL);
+        chk = _abcdk_tipc_slave_register(node_ctx_p->father, node);
         if(chk == 0)
+        {
+            _abcdk_tipc_post_register(node,1);
             return;
+        }
 
         if(chk == -1)
-            abcdk_trace_output(LOG_WARNING,"本地ID与远端ID(%llu)相同，不允许注册。",node_ctx_p->id);
+            abcdk_trace_output(LOG_WARNING,"本机ID(%llu)与远端ID(%llu)相同，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id);
         else if(chk == -3)
             abcdk_trace_output(LOG_WARNING,"相同的远端ID(%llu)已经注册并且在线，不允许注册。",node_ctx_p->id);
         else 
@@ -667,11 +654,28 @@ static void _abcdk_tipc_process_register(abcdk_asynctcp_node_t *node)
     }
     else
     {
-        abcdk_trace_output(LOG_WARNING,"本地ID标识在远端ID(%llu)中的记录不相同，不允许注册。",node_ctx_p->id);
+        abcdk_trace_output(LOG_WARNING,"本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu)，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
     }
 
     abcdk_asynctcp_set_timeout(node,1);
+}
 
+
+static void _abcdk_tipc_process_register_rsp(abcdk_asynctcp_node_t *node)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    const void *req_data;
+    size_t req_size;
+    uint64_t myid;
+    int chk;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
+    req_size = abcdk_receiver_length(node_ctx_p->req_data);
+
+    /*有应答说明连接没问题，直接完成注册即可。*/
+    _abcdk_tipc_slave_register(node_ctx_p->father, node);
 }
 
 static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, int rsp, uint64_t mid, const void *data, size_t size)
@@ -687,7 +691,7 @@ static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, int rsp, uint64
      * |4 Bytes |1 Byte |8 Bytes |N Bytes |
      *
      * Length： 不包含自身。
-     * CMD：1 请求，2 应答。
+     * CMD：2 请求，3 应答。
      * MID：消息ID。
      * DATA: 变长数据。
      */
@@ -697,7 +701,7 @@ static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, int rsp, uint64
         return -1;
 
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 0, 32, msg_p->sizes[0] - 4);
-    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, (rsp ? 2 : 1));
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, (rsp ? 3 : 2));
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, mid);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
@@ -709,7 +713,7 @@ static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, int rsp, uint64
     return -2;
 }
 
-static void _abcdk_tipc_process_request(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_message_req(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -730,7 +734,7 @@ static void _abcdk_tipc_process_request(abcdk_asynctcp_node_t *node)
     node_ctx_p->father->cfg.request_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->id, msg_mid, data_p, data_l);
 }
 
-static void _abcdk_tipc_process_response(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_message_rsp(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -760,8 +764,8 @@ static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
     size_t req_size;
-    uint32_t msg_len;
-    uint8_t msg_cmd;
+    uint32_t len;
+    uint8_t cmd;
     int chk;
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -769,23 +773,24 @@ static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
 
-    msg_len = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 0, 32);
-    msg_cmd = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 32, 8);
+    len = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 0, 32);
+    cmd = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 32, 8);
 
-    if (msg_cmd == 0)
+    if (cmd == 0)
     {
-        _abcdk_tipc_process_register(node);
+        _abcdk_tipc_process_register_req(node);
     }
-    else if (msg_cmd == 1)
+    else if (cmd == 1)
     {
-        _abcdk_tipc_process_request(node);
+        _abcdk_tipc_process_register_rsp(node);
     }
-    else if (msg_cmd == 2)
+    else if (cmd == 2)
     {
-        _abcdk_tipc_process_response(node);
+        _abcdk_tipc_process_message_req(node);
     }
-    else if (msg_cmd == 3)
+    else if (cmd == 3)
     {
+        _abcdk_tipc_process_message_rsp(node);
     }
 }
 
@@ -829,7 +834,7 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t 
 
     if (rsp)
     {
-        rsp_p = (abcdk_object_t *)abcdk_waiter_wait(node_ctx_p->req_waiter, mid, -1);
+        rsp_p = (abcdk_object_t *)abcdk_waiter_wait(node_ctx_p->req_waiter, mid, 24*60*60*1000L);
         if (!rsp_p)
         {
             chk = -4;

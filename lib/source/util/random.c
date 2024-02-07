@@ -13,7 +13,7 @@ int64_t abcdk_rand(uint64_t *seed)
     assert(seed != NULL);
 
     if(*seed == 0)
-        *seed = time(NULL);
+        *seed = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,6);
 
     next = *seed;
 

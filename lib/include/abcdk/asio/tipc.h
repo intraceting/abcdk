@@ -11,6 +11,7 @@
 #include "abcdk/util/receiver.h"
 #include "abcdk/util/waiter.h"
 #include "abcdk/util/bit.h"
+#include "abcdk/util/random.h"
 #include "abcdk/ssl/openssl.h"
 #include "abcdk/asio/asynctcp.h"
 
@@ -47,7 +48,10 @@ typedef struct _abcdk_tipc_config
      */
     void (*accept_cb)(void *opaque, const char *address, int *result);
 
-    /*数据请求通知回调函数。*/
+    /**节点关闭通知回调函数。*/
+    void (*shutdown_cb)(void *opaque, uint64_t id);
+
+    /**数据请求通知回调函数。*/
     void (*request_cb)(void *opaque, uint64_t id, uint64_t mid, const void *data, size_t size);
 
 } abcdk_tipc_config_t;
