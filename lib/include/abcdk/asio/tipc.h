@@ -48,12 +48,14 @@ typedef struct _abcdk_tipc_config
      */
     void (*accept_cb)(void *opaque, const char *address, int *result);
 
-    /**节点关闭通知回调函数。*/
-    void (*shutdown_cb)(void *opaque, uint64_t id);
+    /**节点下线通知回调函数。*/
+    void (*offline_cb)(void *opaque, uint64_t id);
 
     /**数据请求通知回调函数。*/
     void (*request_cb)(void *opaque, uint64_t id, uint64_t mid, const void *data, size_t size);
 
+    /**订阅数据通知回调函数。*/
+    void (*subscribe_cb)(void *opaque, uint64_t id, uint64_t topic, const void *data, size_t size);
 } abcdk_tipc_config_t;
 
 /*销毁。*/
@@ -109,6 +111,15 @@ int abcdk_tipc_subscribe(abcdk_tipc_t *ctx,uint64_t topic);
  * @return 0 成功，!0 失败。
 */
 int abcdk_tipc_unsubscribe(abcdk_tipc_t *ctx,uint64_t topic);
+
+/**
+ * 发布。
+ * 
+ * @param [in] topic 主题。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_tipc_publish(abcdk_tipc_t *ctx,uint64_t topic, const char *data,size_t size);
 
 __END_DECLS
 

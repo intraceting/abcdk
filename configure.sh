@@ -121,7 +121,7 @@ DEPEND_LINKS=""
 INSTALL_PREFIX="/usr/local/"
 
 #
-DEPEND_FUNC="openmp,openssl,archive,libmagic"
+DEPEND_FUNC="openmp,openssl,archive,libmagic,nghttp2"
 DEPEND_NOFOUND=""
 DEPEND_REQUIRES=""
 

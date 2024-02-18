@@ -11,6 +11,9 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 # 加载配置项。
 include ${MAKE_CONF}
 
+# 覆盖时间。
+$(eval BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ"))
+
 #gcc临时文件目录。
 export TMPDIR=${BUILD_PATH}/
 

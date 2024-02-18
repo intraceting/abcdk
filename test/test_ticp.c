@@ -39,7 +39,7 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.opaque = NULL;
     cfg.id = abcdk_option_get_llong(args,"--id",0,1);
     cfg.request_cb = _abcdk_test_tipc_request_cb;
-    cfg.shutdown_cb = _abcdk_test_tipc_shutdown_cb;
+    cfg.offline_cb = _abcdk_test_tipc_shutdown_cb;
 
     listen_p = abcdk_option_get(args,"--listen",0,"ipv4://127.0.0.1:6666");
     connect_p = abcdk_option_get(args,"--connect",0,NULL);
