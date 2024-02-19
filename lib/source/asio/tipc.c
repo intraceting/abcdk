@@ -6,6 +6,9 @@
  */
 #include "abcdk/asio/tipc.h"
 
+#define ABCDK_TIPC_SLAVE_MAX  256
+#define ABCDK_TIPC_TOPIC_MAX  128
+
 /**简单的TIPC服务。*/
 struct _abcdk_tipc
 {
@@ -16,10 +19,16 @@ struct _abcdk_tipc
     abcdk_asynctcp_t *io_ctx;
 
     /*节点列表。*/
-    struct _abcdk_tipc_slave *slave_list[256];
+    struct _abcdk_tipc_slave *slave_list[ABCDK_TIPC_SLAVE_MAX];
 
     /*节点同步锁。*/
     abcdk_mutex_t *slave_mutex;
+
+    /*主题列表。*/
+    uint8_t topic_list[ABCDK_TIPC_TOPIC_MAX/8];
+
+    /*主题同步锁。*/
+    abcdk_mutex_t *topic_mutex;
 
     /*下一个MID。*/
     volatile uint64_t mid_next;
@@ -71,9 +80,12 @@ typedef struct _abcdk_tipc_slave
     /*主动连接的管道。*/
     abcdk_asynctcp_node_t *pipe2;
 
+    /*订阅主题列表。*/
+    uint8_t topic_list[ABCDK_TIPC_TOPIC_MAX/8];
+
 } abcdk_tipc_slave_t;
 
-static void *_abcdk_tipc_slave_free(abcdk_tipc_slave_t **ctx)
+static void _abcdk_tipc_slave_free(abcdk_tipc_slave_t **ctx)
 {
     abcdk_tipc_slave_t *ctx_p;
 
@@ -97,6 +109,10 @@ static abcdk_tipc_slave_t *_abcdk_tipc_slave_alloc(uint64_t id)
         return NULL;
 
     ctx->id = id;
+
+    /*远端默认订阅所有主题。*/
+    for(int i = 1;i < ABCDK_TIPC_TOPIC_MAX;i++)
+        abcdk_bloom_mark(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),i);
     
     return ctx;
 }
@@ -281,6 +297,99 @@ END:
     ABCDK_ASSERT(chk ==0,"不应当在这里出错的。");
 }
 
+static int _abcdk_tipc_slave_topic_alter(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic,int unset)
+{
+    abcdk_tipc_slave_t *slave_ctx_p = NULL;
+    int chk = -1;
+
+    abcdk_mutex_lock(ctx->slave_mutex, 1);
+
+    slave_ctx_p = ctx->slave_list[id];
+    if (!slave_ctx_p)
+        goto END;
+
+    if(unset)
+        chk = abcdk_bloom_unset(slave_ctx_p->topic_list,ABCDK_ARRAY_SIZE(slave_ctx_p->topic_list),topic);
+    else 
+        chk = abcdk_bloom_mark(slave_ctx_p->topic_list,ABCDK_ARRAY_SIZE(slave_ctx_p->topic_list),topic);
+
+END:
+
+    abcdk_mutex_unlock(ctx->slave_mutex);
+
+    return chk;
+}
+
+
+static abcdk_asynctcp_node_t *_abcdk_tipc_slave_topic_find_pipe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic)
+{
+    abcdk_asynctcp_node_t *node_p = NULL;
+    abcdk_tipc_slave_t *slave_ctx_p = NULL;
+    int chk = -1;
+
+    abcdk_mutex_lock(ctx->slave_mutex, 1);
+
+    slave_ctx_p = ctx->slave_list[id];
+    if (!slave_ctx_p)
+        goto END;
+
+    chk = abcdk_bloom_filter(slave_ctx_p->topic_list,ABCDK_ARRAY_SIZE(slave_ctx_p->topic_list),topic);
+    if(chk != 1)
+        goto END;
+
+    /*优先选择可能被保留的链路。*/
+    if(ctx->cfg.id > id)
+        node_p = (slave_ctx_p->pipe2?slave_ctx_p->pipe2:slave_ctx_p->pipe1);
+    else 
+        node_p = (slave_ctx_p->pipe1?slave_ctx_p->pipe1:slave_ctx_p->pipe2);
+
+    /*增加引用计数。*/
+    if(node_p)
+        node_p = abcdk_asynctcp_refer(node_p);
+
+END:
+
+    abcdk_mutex_unlock(ctx->slave_mutex);
+
+    return node_p;
+}
+
+
+static int _abcdk_tipc_topic_alter(abcdk_tipc_t *ctx,uint64_t topic,int unset)
+{
+    int chk;
+
+    abcdk_mutex_lock(ctx->topic_mutex, 1);
+
+    if(unset)
+        chk = abcdk_bloom_unset(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),topic);
+    else 
+        chk = abcdk_bloom_mark(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),topic);
+
+    abcdk_mutex_unlock(ctx->topic_mutex);
+
+    return chk;
+}
+
+/**
+ * 验证本机节点订阅主题。
+ * 
+ * @return 0 未订阅，1 已订阅。
+*/
+static int _abcdk_tipc_topic_filter(abcdk_tipc_t *ctx,uint64_t topic)
+{
+    int chk;
+
+    abcdk_mutex_lock(ctx->topic_mutex, 1);
+
+    chk = abcdk_bloom_filter(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),topic);
+
+    abcdk_mutex_unlock(ctx->topic_mutex);
+
+    return chk;
+}
+
+
 void abcdk_tipc_destroy(abcdk_tipc_t **ctx)
 {
     abcdk_tipc_t *ctx_p;
@@ -293,8 +402,9 @@ void abcdk_tipc_destroy(abcdk_tipc_t **ctx)
 
     abcdk_asynctcp_stop(&ctx_p->io_ctx);
     abcdk_mutex_destroy(&ctx_p->slave_mutex);
+    abcdk_mutex_destroy(&ctx_p->topic_mutex);
 
-    for (int i = 0; i < 256; i++)
+    for (int i = 1; i < ABCDK_TIPC_SLAVE_MAX; i++)
         _abcdk_tipc_slave_free(&ctx_p->slave_list[i]);
 
     abcdk_heap_free(ctx_p);
@@ -312,10 +422,15 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
         return NULL;
 
     ctx->cfg = *cfg;
-    ctx->io_ctx = abcdk_asynctcp_start(1000, -1);
+    ctx->io_ctx = abcdk_asynctcp_start(ABCDK_TIPC_SLAVE_MAX*2+10, -1);
     memset(ctx->slave_list,0,sizeof(abcdk_tipc_slave_t*)* ABCDK_ARRAY_SIZE(ctx->slave_list));
     ctx->slave_mutex = abcdk_mutex_create();
+    ctx->topic_mutex = abcdk_mutex_create();
     ctx->mid_next = 1;
+
+    /*本机默认不订阅任何主题。*/
+    for(int i = 1;i < ABCDK_TIPC_TOPIC_MAX;i++)
+        abcdk_bloom_unset(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),i);
 
     return ctx;
 }
@@ -601,7 +716,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     abcdk_asynctcp_callback_t cb = {0};
     int chk;
 
-    assert(ctx != NULL && location != NULL && id > 0 && id < 256);
+    assert(ctx != NULL && location != NULL && id > 0 && id < ABCDK_TIPC_SLAVE_MAX);
     ABCDK_ASSERT(ctx->cfg.id != id,"远端ID不能与本机ID相同。");
 
     chk = abcdk_sockaddr_from_string(&addr, location, 1);
@@ -819,6 +934,126 @@ static void _abcdk_tipc_process_message_rsp(abcdk_asynctcp_node_t *node)
         abcdk_object_unref(&rsp_p);
 }
 
+static int _abcdk_tipc_post_topic_alter(abcdk_asynctcp_node_t *node, uint64_t topic,int unset)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    abcdk_object_t *msg_p;
+    int chk;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    /*
+     * |Length  |CMD    |TOPIC    |UNSET  |
+     * |4 Bytes |1 Byte |8 Bytes  |1 Byte |
+     *
+     * Length： 不包含自身。
+     * CMD：4 订阅变更。
+     * TOPIC: 主题。
+     * UNSET：0 订阅，1 取消。
+     */
+
+    msg_p = abcdk_object_alloc2(4 + 1 + 8 + 1);
+    if (!msg_p)
+        return -1;
+
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 0, 32, msg_p->sizes[0] - 4);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, 4);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 104, 8, unset);
+
+    chk = abcdk_asynctcp_post(node, msg_p);
+    if (chk == 0)
+        return 0;
+
+    abcdk_object_unref(&msg_p);
+    return -2;
+}
+
+static void _abcdk_tipc_process_topic_alter(abcdk_asynctcp_node_t *node)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    const void *req_data;
+    size_t req_size;
+    uint64_t topic;
+    int unset;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
+    req_size = abcdk_receiver_length(node_ctx_p->req_data);
+
+    topic = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
+    unset = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 104, 8);
+    
+    /*更新远端主题订阅列表。*/
+    _abcdk_tipc_slave_topic_alter(node_ctx_p->father,node_ctx_p->id,topic,unset);
+  
+    abcdk_trace_output(LOG_INFO,"远端(ID=%llu)%s主题(%llu)。",node_ctx_p->id,(unset?"取订":"订阅"), topic);
+}
+
+static int _abcdk_tipc_post_publish(abcdk_asynctcp_node_t *node, uint64_t topic, const void *data, size_t size)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    abcdk_object_t *msg_p;
+    int chk;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    /*
+     * |Length  |CMD    |TOPIC   |Data    |
+     * |4 Bytes |1 Byte |8 Bytes |N Bytes |
+     *
+     * Length： 不包含自身。
+     * CMD：5 发布。
+     * TOPIC：主题。
+     * DATA: 变长数据。
+     */
+
+    msg_p = abcdk_object_alloc2(4 + 1 + 8 + size);
+    if (!msg_p)
+        return -1;
+
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 0, 32, msg_p->sizes[0] - 4);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, 5);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
+    memcpy(msg_p->pptrs[0] + 13, data, size);
+
+    chk = abcdk_asynctcp_post(node, msg_p);
+    if (chk == 0)
+        return 0;
+
+    abcdk_object_unref(&msg_p);
+    return -2;
+}
+
+static void _abcdk_tipc_process_publish(abcdk_asynctcp_node_t *node)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    const void *req_data;
+    size_t req_size;
+    uint64_t topic;
+    int chk;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
+    req_size = abcdk_receiver_length(node_ctx_p->req_data);
+
+    topic = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
+    
+    chk = _abcdk_tipc_topic_filter(node_ctx_p->father,topic);
+    if(chk == 0)
+    {
+        /*通知远端主题订阅发生变更，不需要再向当前节点发布信息，以便节省带宽。*/
+        _abcdk_tipc_post_topic_alter(node,topic,1);
+    }
+    else
+    {
+        if(node_ctx_p->father->cfg.subscribe_cb)
+            node_ctx_p->father->cfg.subscribe_cb(node_ctx_p->father->cfg.opaque,node_ctx_p->id,topic,ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
+    }
+}
+
 static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
@@ -851,6 +1086,14 @@ static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
     else if (cmd == 3)
     {
         _abcdk_tipc_process_message_rsp(node);
+    }
+    else if (cmd == 4)
+    {
+        _abcdk_tipc_process_topic_alter(node);
+    }
+    else if (cmd == 5)
+    {
+        _abcdk_tipc_process_publish(node);
     }
 }
 
@@ -942,4 +1185,48 @@ END:
 
     abcdk_asynctcp_unref(&node_p);
     return chk;
+}
+
+int abcdk_tipc_topic_alter(abcdk_tipc_t *ctx, uint64_t topic, int unset)
+{
+    abcdk_asynctcp_node_t *node_p = NULL;
+    int chk;
+
+    assert(ctx != NULL && topic > 0 && topic < ABCDK_TIPC_TOPIC_MAX);
+
+    _abcdk_tipc_topic_alter(ctx, topic, unset);
+
+    /*遍历远端，逐个通知。*/
+    for (int i = 1; i < ABCDK_TIPC_SLAVE_MAX; i++)
+    {
+        node_p = _abcdk_tipc_slave_find_pipe(ctx, i);
+        if (!node_p)
+            continue;
+
+        _abcdk_tipc_post_topic_alter(node_p, topic, unset);
+        abcdk_asynctcp_unref(&node_p);
+    }
+
+    return 0;
+}
+
+int abcdk_tipc_topic_publish(abcdk_tipc_t *ctx, uint64_t topic, const char *data, size_t size)
+{
+    abcdk_asynctcp_node_t *node_p = NULL;
+    int chk;
+
+    assert(ctx != NULL && topic > 0 && topic < ABCDK_TIPC_TOPIC_MAX && data != NULL && size > 0);
+
+    /*遍历远端，逐个发布。*/
+    for (int i = 1; i < ABCDK_TIPC_SLAVE_MAX; i++)
+    {
+        node_p = _abcdk_tipc_slave_topic_find_pipe(ctx, i, topic);
+        if (!node_p)
+            continue;
+
+        _abcdk_tipc_post_publish(node_p, topic, data, size);
+        abcdk_asynctcp_unref(&node_p);
+    }
+
+    return 0;
 }

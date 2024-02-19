@@ -95,22 +95,14 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx,uint64_t id,const char *data,size_t siz
 int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *data,size_t size);
 
 /**
- * 订阅。
+ * 主题变更。
  * 
  * @param [in] topic 主题。
+ * @param [in] unset 变更动作。0 订阅，1 取消。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tipc_subscribe(abcdk_tipc_t *ctx,uint64_t topic);
-
-/**
- * 取消订阅。
- * 
- * @param [in] topic 主题。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_tipc_unsubscribe(abcdk_tipc_t *ctx,uint64_t topic);
+int abcdk_tipc_topic_alter(abcdk_tipc_t *ctx,uint64_t topic,int unset);
 
 /**
  * 发布。
@@ -119,7 +111,7 @@ int abcdk_tipc_unsubscribe(abcdk_tipc_t *ctx,uint64_t topic);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_tipc_publish(abcdk_tipc_t *ctx,uint64_t topic, const char *data,size_t size);
+int abcdk_tipc_topic_publish(abcdk_tipc_t *ctx,uint64_t topic, const char *data,size_t size);
 
 __END_DECLS
 

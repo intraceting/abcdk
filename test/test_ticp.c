@@ -13,7 +13,7 @@
 
 abcdk_tipc_t * g_ctx = NULL;
 
-static void _abcdk_test_tipc_shutdown_cb(void *opaque, uint64_t id)
+static void _abcdk_test_tipc_offline_cb(void *opaque, uint64_t id)
 {
     abcdk_trace_output(LOG_INFO,"id=%llu 离线。",id);
 }
@@ -24,6 +24,12 @@ static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid,
 
     if( ABCDK_PTR2I8(data,0) == 'r')
         abcdk_tipc_response(g_ctx,id,mid,data,size);
+}
+
+static void _abcdk_test_tipc_subscribe_cb(void *opaque, uint64_t id, uint64_t topic, const void *data, size_t size)
+{
+    abcdk_trace_output(LOG_INFO,"id=%llu,topic=%llu,size=%zu \n",id,topic,size);
+
 }
 
 int abcdk_test_tipc(abcdk_option_t *args)
@@ -39,7 +45,8 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.opaque = NULL;
     cfg.id = abcdk_option_get_llong(args,"--id",0,1);
     cfg.request_cb = _abcdk_test_tipc_request_cb;
-    cfg.offline_cb = _abcdk_test_tipc_shutdown_cb;
+    cfg.offline_cb = _abcdk_test_tipc_offline_cb;
+    cfg.subscribe_cb = _abcdk_test_tipc_subscribe_cb;
 
     listen_p = abcdk_option_get(args,"--listen",0,"ipv4://127.0.0.1:6666");
     connect_p = abcdk_option_get(args,"--connect",0,NULL);
@@ -58,20 +65,45 @@ int abcdk_test_tipc(abcdk_option_t *args)
     {
         abcdk_tipc_connect(g_ctx,connect_p,id2);
 
-        sleep(1);
+        // sleep(1);
 
-        size_t buf_l = 1920*1080*3;
-        char *buf_p = (char*)abcdk_heap_alloc(buf_l);
-        for(int i = 0;i<1110;i++)
-        {
-            abcdk_object_t *rsp_p = NULL;
-            sprintf(buf_p,"%caaaaaa",(i%3==0?'r':'a'));
+        // size_t buf_l = 1920*1080*3;
+        // char *buf_p = (char*)abcdk_heap_alloc(buf_l);
+        // for(int i = 0;i<1110;i++)
+        // {
+        //     abcdk_object_t *rsp_p = NULL;
+        //     sprintf(buf_p,"%caaaaaa",(i%3==0?'r':'a'));
 
-            abcdk_tipc_request(g_ctx,id2,buf_p,buf_l,(buf_p[0]=='r'?&rsp_p:NULL));
-            abcdk_object_unref(&rsp_p);
-        }
+        //     abcdk_tipc_request(g_ctx,id2,buf_p,buf_l,(buf_p[0]=='r'?&rsp_p:NULL));
+        //     abcdk_object_unref(&rsp_p);
+        // }
 
-        abcdk_heap_free(buf_p);
+        // abcdk_heap_free(buf_p);
+    }
+
+    sleep(5);
+
+    abcdk_tipc_topic_alter(g_ctx,1,0);
+    abcdk_tipc_topic_alter(g_ctx,2,0);
+
+     sleep(1);
+
+    for(int i = 0;i<100;i++)
+    {
+        abcdk_tipc_topic_publish(g_ctx,1,"bbbbbb",6);
+        abcdk_tipc_topic_publish(g_ctx,2,"bbbbbbb",7);
+
+        usleep(1000*100);
+    }
+
+     sleep(35);
+
+    for(int i = 0;i<100;i++)
+    {
+        abcdk_tipc_topic_publish(g_ctx,1,"bbbbbb",6);
+        abcdk_tipc_topic_publish(g_ctx,2,"bbbbbbb",7);
+
+        usleep(1000*100);
     }
 
     abcdk_proc_wait_exit_signal(-1);
