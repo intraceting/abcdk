@@ -773,7 +773,7 @@ static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp)
      * |4 Bytes |1 Byte |8 Bytes  |8 Bytes |
      *
      * Length：长度(不包含自身)。
-     * CMD：0 注册，1 应答。
+     * CMD：1 注册，2 应答。
      * ID：我的ID。
      * ID：你的ID。
      */
@@ -783,7 +783,7 @@ static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp)
         return -1;
 
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 0, 32, msg_p->sizes[0]-4);
-    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 32, 8, (rsp?1:0));
+    abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 32, 8, (rsp?2:1));
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 40, 64, node_ctx_p->father->cfg.id);
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 104, 64, node_ctx_p->id);
 
@@ -866,17 +866,19 @@ static int _abcdk_tipc_post_message(abcdk_asynctcp_node_t *node, uint64_t rsp, u
      * |4 Bytes |1 Byte |8 Bytes |N Bytes |
      *
      * Length： 不包含自身。
-     * CMD：2 请求，3 应答。
+     * CMD：3 请求，4 应答。
      * MID：消息ID。
      * DATA: 变长数据。
      */
+
+    assert((4 + 1 + 8 + size) <= 0xffffff);
 
     msg_p = abcdk_object_alloc2(4 + 1 + 8 + size);
     if (!msg_p)
         return -1;
 
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 0, 32, msg_p->sizes[0] - 4);
-    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, (rsp ? 3 : 2));
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, (rsp ? 4 : 3));
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, mid);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
@@ -947,7 +949,7 @@ static int _abcdk_tipc_post_topic_alter(abcdk_asynctcp_node_t *node, uint64_t to
      * |4 Bytes |1 Byte |8 Bytes  |1 Byte |
      *
      * Length： 不包含自身。
-     * CMD：4 订阅变更。
+     * CMD：5 订阅变更。
      * TOPIC: 主题。
      * UNSET：0 订阅，1 取消。
      */
@@ -957,7 +959,7 @@ static int _abcdk_tipc_post_topic_alter(abcdk_asynctcp_node_t *node, uint64_t to
         return -1;
 
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 0, 32, msg_p->sizes[0] - 4);
-    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, 4);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, 5);
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 104, 8, unset);
 
@@ -1004,17 +1006,19 @@ static int _abcdk_tipc_post_publish(abcdk_asynctcp_node_t *node, uint64_t topic,
      * |4 Bytes |1 Byte |8 Bytes |N Bytes |
      *
      * Length： 不包含自身。
-     * CMD：5 发布。
+     * CMD：6 发布。
      * TOPIC：主题。
      * DATA: 变长数据。
      */
+
+    assert((4 + 1 + 8 + size) <= 0xffffff);
 
     msg_p = abcdk_object_alloc2(4 + 1 + 8 + size);
     if (!msg_p)
         return -1;
 
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 0, 32, msg_p->sizes[0] - 4);
-    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, 5);
+    abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 32, 8, 6);
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
@@ -1071,27 +1075,27 @@ static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
     len = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 0, 32);
     cmd = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 32, 8);
 
-    if (cmd == 0)
+    if (cmd == 1)
     {
         _abcdk_tipc_process_register_req(node);
     }
-    else if (cmd == 1)
+    else if (cmd == 2)
     {
         _abcdk_tipc_process_register_rsp(node);
     }
-    else if (cmd == 2)
+    else if (cmd == 3)
     {
         _abcdk_tipc_process_message_req(node);
     }
-    else if (cmd == 3)
+    else if (cmd == 4)
     {
         _abcdk_tipc_process_message_rsp(node);
     }
-    else if (cmd == 4)
+    else if (cmd == 5)
     {
         _abcdk_tipc_process_topic_alter(node);
     }
-    else if (cmd == 5)
+    else if (cmd == 6)
     {
         _abcdk_tipc_process_publish(node);
     }
