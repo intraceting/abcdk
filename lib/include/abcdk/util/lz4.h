@@ -40,6 +40,7 @@ int abcdk_lz4_dec_fast(void* plaintext, int plaintext_size, const void* cipherte
 */
 int abcdk_lz4_enc_default(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size);
 
+
 #endif //LZ4_VERSION_NUMBER
 
 __END_DECLS
