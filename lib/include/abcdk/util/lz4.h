@@ -18,27 +18,28 @@ __BEGIN_DECLS
 #ifdef LZ4_VERSION_NUMBER
 
 /**
- * 快速解压。
+ * 解压(safe)。
  * 
  * @param plaintext 明文的指针。
  * @param plaintext_size 明文的长度。
  * @param ciphertext 密文的指针。
+ * @param ciphertext_size 密文的长度。
  * 
  * @return > 0 成功(已经解压的密文长度)，<= 0 失败(密文格式错误)。
 */
-int abcdk_lz4_dec_fast(void* plaintext, int plaintext_size, const void* ciphertext);
+int abcdk_lz4_dec(void* plaintext, int plaintext_size, const void* ciphertext, int ciphertext_size);
 
 /**
- * 默认压缩。
+ * 压缩(default)。
  * 
  * @param ciphertext 密文的指针。
  * @param ciphertext_max 密文最大的长度。
  * @param plaintext 明文的指针。
  * @param plaintext_size 明文的长度。
  * 
- * @return > 0 成功(已经解压的密文长度)，<= 0 失败(密文格式错误)。
+ * @return > 0 成功(已经压缩的密文长度)，<= 0 失败(密文空间不足)。
 */
-int abcdk_lz4_enc_default(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size);
+int abcdk_lz4_enc(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size);
 
 
 #endif //LZ4_VERSION_NUMBER

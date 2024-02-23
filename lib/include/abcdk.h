@@ -68,6 +68,7 @@
 #include "abcdk/util/parallel.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/stream.h"
+#include "abcdk/util/package.h"
 
 #include "abcdk/log/logger.h"
 

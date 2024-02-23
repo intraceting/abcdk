@@ -587,7 +587,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_http_parse_auth(&auth_opt,p);
     abcdk_option_free(&auth_opt);
 
-#elif 1
+#elif 0
 
     const char *src = "/home/devel/下载/aaaa.txt";
     const char *dst = "/home/devel/下载/aaaa.jpg";
@@ -602,6 +602,63 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&buf2);
     abcdk_object_unref(&buf);
     
+#elif 1
 
+    abcdk_object_t *f = abcdk_mmap_filename("/home/devel/job/tmp/c.bmp",0,0,0,0);
+
+    abcdk_package_t *ctx = abcdk_package_create(100000000);
+
+    abcdk_package_write_number(ctx,16,333);
+    abcdk_package_write_number(ctx,8,33);
+
+    abcdk_package_write_buffer(ctx,f->pptrs[0],f->sizes[0]);
+    
+    abcdk_package_write_number(ctx,24,555);
+
+    abcdk_object_t * obj = abcdk_package_dump(ctx,1);
+
+    abcdk_package_destroy(&ctx);
+
+    ctx = abcdk_package_load(obj);
+    abcdk_object_unref(&obj);
+
+    uint64_t a = abcdk_package_read2number(ctx,16);
+    uint64_t b = abcdk_package_read2number(ctx,8);
+
+    abcdk_package_seek(ctx,f->sizes[0]*8);
+
+    uint64_t c = abcdk_package_read2number(ctx,24);
+
+
+    abcdk_package_destroy(&ctx);
+
+    abcdk_object_unref(&f);
+
+#elif 0
+    abcdk_object_t *src_data = abcdk_mmap_filename("/home/devel/job/tmp/c.bmp",0,0,0,0);
+    abcdk_object_t *src_data2 = abcdk_object_alloc2(src_data->sizes[0]);
+    
+    abcdk_object_t *dst_data = abcdk_object_alloc2(src_data->sizes[0]);
+
+    uint64_t s;
+    abcdk_clock(s, &s);
+    for (int i = 0; i < 1000; i++)
+    {
+        abcdk_trace_output(LOG_INFO, "enc-b:%06llu", abcdk_clock(s, &s));
+        int m = abcdk_lz4_enc(dst_data->pptrs[0], dst_data->sizes[0], src_data->pptrs[0], src_data->sizes[0]);
+        abcdk_trace_output(LOG_INFO, "enc-a:%06llu", abcdk_clock(s, &s));
+
+        abcdk_trace_output(LOG_INFO, "dec-b:%06llu", abcdk_clock(s, &s));
+        int n = abcdk_lz4_dec(src_data2->pptrs[0], src_data2->sizes[0], dst_data->pptrs[0],m);
+        abcdk_trace_output(LOG_INFO, "dec-a:%06llu", abcdk_clock(s, &s));
+        
+        assert(n = src_data->sizes[0]);
+
+        usleep(1000 * 100);
+    }
+
+    abcdk_object_unref(&src_data);
+    abcdk_object_unref(&src_data2);
+    abcdk_object_unref(&dst_data);
 #endif 
 }

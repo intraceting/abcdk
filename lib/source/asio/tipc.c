@@ -297,7 +297,7 @@ END:
     ABCDK_ASSERT(chk ==0,"不应当在这里出错的。");
 }
 
-static int _abcdk_tipc_slave_topic_alter(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic,int unset)
+static int _abcdk_tipc_slave_subscribe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic,int unset)
 {
     abcdk_tipc_slave_t *slave_ctx_p = NULL;
     int chk = -1;
@@ -355,7 +355,7 @@ END:
 }
 
 
-static int _abcdk_tipc_topic_alter(abcdk_tipc_t *ctx,uint64_t topic,int unset)
+static int _abcdk_tipc_subscribe(abcdk_tipc_t *ctx,uint64_t topic,int unset)
 {
     int chk;
 
@@ -376,7 +376,7 @@ static int _abcdk_tipc_topic_alter(abcdk_tipc_t *ctx,uint64_t topic,int unset)
  * 
  * @return 0 未订阅，1 已订阅。
 */
-static int _abcdk_tipc_topic_filter(abcdk_tipc_t *ctx,uint64_t topic)
+static int _abcdk_tipc_subscribe_filter(abcdk_tipc_t *ctx,uint64_t topic)
 {
     int chk;
 
@@ -936,7 +936,7 @@ static void _abcdk_tipc_process_message_rsp(abcdk_asynctcp_node_t *node)
         abcdk_object_unref(&rsp_p);
 }
 
-static int _abcdk_tipc_post_topic_alter(abcdk_asynctcp_node_t *node, uint64_t topic,int unset)
+static int _abcdk_tipc_post_subscribe(abcdk_asynctcp_node_t *node, uint64_t topic,int unset)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
@@ -949,7 +949,7 @@ static int _abcdk_tipc_post_topic_alter(abcdk_asynctcp_node_t *node, uint64_t to
      * |4 Bytes |1 Byte |8 Bytes  |1 Byte |
      *
      * Length： 不包含自身。
-     * CMD：5 订阅变更。
+     * CMD：5 订阅。
      * TOPIC: 主题。
      * UNSET：0 订阅，1 取消。
      */
@@ -971,7 +971,7 @@ static int _abcdk_tipc_post_topic_alter(abcdk_asynctcp_node_t *node, uint64_t to
     return -2;
 }
 
-static void _abcdk_tipc_process_topic_alter(abcdk_asynctcp_node_t *node)
+static void _abcdk_tipc_process_subscribe(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -988,7 +988,7 @@ static void _abcdk_tipc_process_topic_alter(abcdk_asynctcp_node_t *node)
     unset = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 104, 8);
     
     /*更新远端主题订阅列表。*/
-    _abcdk_tipc_slave_topic_alter(node_ctx_p->father,node_ctx_p->id,topic,unset);
+    _abcdk_tipc_slave_subscribe(node_ctx_p->father,node_ctx_p->id,topic,unset);
   
     abcdk_trace_output(LOG_INFO,"远端(ID=%llu)%s主题(%llu)。",node_ctx_p->id,(unset?"取订":"订阅"), topic);
 }
@@ -1045,11 +1045,11 @@ static void _abcdk_tipc_process_publish(abcdk_asynctcp_node_t *node)
 
     topic = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
     
-    chk = _abcdk_tipc_topic_filter(node_ctx_p->father,topic);
+    chk = _abcdk_tipc_subscribe_filter(node_ctx_p->father,topic);
     if(chk == 0)
     {
         /*通知远端主题订阅发生变更，不需要再向当前节点发布信息，以便节省带宽。*/
-        _abcdk_tipc_post_topic_alter(node,topic,1);
+        _abcdk_tipc_post_subscribe(node,topic,1);
     }
     else
     {
@@ -1093,7 +1093,7 @@ static void _abcdk_tipc_process(abcdk_asynctcp_node_t *node)
     }
     else if (cmd == 5)
     {
-        _abcdk_tipc_process_topic_alter(node);
+        _abcdk_tipc_process_subscribe(node);
     }
     else if (cmd == 6)
     {
@@ -1191,14 +1191,14 @@ END:
     return chk;
 }
 
-int abcdk_tipc_topic_alter(abcdk_tipc_t *ctx, uint64_t topic, int unset)
+int abcdk_tipc_subscribe(abcdk_tipc_t *ctx, uint64_t topic, int unset)
 {
     abcdk_asynctcp_node_t *node_p = NULL;
     int chk;
 
     assert(ctx != NULL && topic > 0 && topic < ABCDK_TIPC_TOPIC_MAX);
 
-    _abcdk_tipc_topic_alter(ctx, topic, unset);
+    _abcdk_tipc_subscribe(ctx, topic, unset);
 
     /*遍历远端，逐个通知。*/
     for (int i = 1; i < ABCDK_TIPC_SLAVE_MAX; i++)
@@ -1207,14 +1207,14 @@ int abcdk_tipc_topic_alter(abcdk_tipc_t *ctx, uint64_t topic, int unset)
         if (!node_p)
             continue;
 
-        _abcdk_tipc_post_topic_alter(node_p, topic, unset);
+        _abcdk_tipc_post_subscribe(node_p, topic, unset);
         abcdk_asynctcp_unref(&node_p);
     }
 
     return 0;
 }
 
-int abcdk_tipc_topic_publish(abcdk_tipc_t *ctx, uint64_t topic, const char *data, size_t size)
+int abcdk_tipc_publish(abcdk_tipc_t *ctx, uint64_t topic, const char *data, size_t size)
 {
     abcdk_asynctcp_node_t *node_p = NULL;
     int chk;

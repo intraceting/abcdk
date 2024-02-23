@@ -49,32 +49,64 @@ int abcdk_bit_eof(abcdk_bit_t *ctx);
 size_t abcdk_bit_seek(abcdk_bit_t *ctx,ssize_t offset);
 
 /** 
- * 读。
+ * 读数值。
  * 
  * @param [in] bits 长度(bit)。
 */
-uint64_t abcdk_bit_read(abcdk_bit_t *ctx, uint8_t bits);
+uint64_t abcdk_bit_read2number(abcdk_bit_t *ctx, uint8_t bits);
+#define abcdk_bit_read abcdk_bit_read2number
 
-/** 写。*/
-void abcdk_bit_write(abcdk_bit_t *ctx, uint8_t bits, uint64_t num);
+/**
+ * 读缓存。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+void abcdk_bit_read2buffer(abcdk_bit_t *ctx, uint8_t *buf,size_t size);
+
+/** 写数值。*/
+void abcdk_bit_write_number(abcdk_bit_t *ctx, uint8_t bits, uint64_t num);
+#define abcdk_bit_write abcdk_bit_write_number
 
 /** 
- * 读。
+ * 写缓存。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+void abcdk_bit_write_buffer(abcdk_bit_t *ctx, const uint8_t *buf,size_t size);
+
+/** 
+ * 读数值。
  * 
  * @note 不会改变游标位置。
  * 
  * @param [in] offset 偏移量(bit)。
 */
-uint64_t abcdk_bit_pread(abcdk_bit_t *ctx,size_t offset, uint8_t bits);
+uint64_t abcdk_bit_pread2number(abcdk_bit_t *ctx,size_t offset, uint8_t bits);
+#define abcdk_bit_pread abcdk_bit_pread2number
+
+/**
+ * 读缓存。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+void abcdk_bit_pread2buffer(abcdk_bit_t *ctx, size_t offset, uint8_t *buf,size_t size);
 
 /** 
- * 写。
+ * 写数值。
  * 
  * @note 不会改变游标位置。
  * 
  * @param [in] offset 偏移量(bit)。
 */
-void abcdk_bit_pwrite(abcdk_bit_t *ctx, size_t offset, uint8_t bits, uint64_t num);
+void abcdk_bit_pwrite_number(abcdk_bit_t *ctx, size_t offset, uint8_t bits, uint64_t num);
+#define abcdk_bit_pwrite abcdk_bit_pwrite_number
+
+/** 
+ * 写缓存。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+void abcdk_bit_pwrite_buffer(abcdk_bit_t *ctx, size_t offset, const uint8_t *buf,size_t size);
 
 __END_DECLS
 
