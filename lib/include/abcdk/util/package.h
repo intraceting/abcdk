@@ -29,7 +29,7 @@ void abcdk_package_destroy(abcdk_package_t **ctx);
 abcdk_package_t *abcdk_package_create(size_t max);
 
 /**加载。*/
-abcdk_package_t *abcdk_package_load(abcdk_object_t *src);
+abcdk_package_t *abcdk_package_load(const uint8_t *data,size_t size);
 
 /**
  * 转储。

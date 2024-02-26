@@ -94,7 +94,7 @@ VERSION_MAJOR="1"
 #副版本
 VERSION_MINOR="9"
 #发行版本
-VERSION_RELEASE="1"
+VERSION_RELEASE="2"
 
 #编译器前缀
 COMPILER_PREFIX="/usr/bin/"
@@ -121,7 +121,7 @@ DEPEND_LINKS=""
 INSTALL_PREFIX="/usr/local/"
 
 #
-DEPEND_FUNC="openmp,openssl,archive,libmagic,nghttp2"
+DEPEND_FUNC="openmp,openssl,archive,libmagic,nghttp2,lz4"
 DEPEND_NOFOUND=""
 DEPEND_REQUIRES=""
 

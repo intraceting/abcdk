@@ -619,7 +619,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_package_destroy(&ctx);
 
-    ctx = abcdk_package_load(obj);
+    ctx = abcdk_package_load(obj->pptrs[0],obj->sizes[0]);
     abcdk_object_unref(&obj);
 
     uint64_t a = abcdk_package_read2number(ctx,16);

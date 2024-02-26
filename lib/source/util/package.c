@@ -55,21 +55,21 @@ ERR:
     return NULL;
 }
 
-abcdk_package_t *abcdk_package_load(abcdk_object_t *src)
+abcdk_package_t *abcdk_package_load(const uint8_t *data,size_t size)
 {
     abcdk_package_t *ctx;
     int8_t data_f;
     ssize_t data_l;
     ssize_t chk;
 
-    assert(src != NULL);
+    assert(data != NULL && size >0);
 
     ctx = (abcdk_package_t *)abcdk_heap_alloc(sizeof(abcdk_package_t));
     if (!ctx)
         return NULL;
 
-    data_f = abcdk_bloom_read_number(src->pptrs[0], 4, 0, 1);
-    data_l = abcdk_bloom_read_number(src->pptrs[0], 4, 1, 31);
+    data_f = abcdk_bloom_read_number(data, 4, 0, 1);
+    data_l = abcdk_bloom_read_number(data, 4, 1, 31);
 
     if (data_f)
     {
@@ -80,7 +80,7 @@ abcdk_package_t *abcdk_package_load(abcdk_object_t *src)
             goto ERR;
 
         /*解压。*/
-        chk = abcdk_lz4_dec(ctx->buf->pptrs[0], ctx->buf->sizes[0], src->pptrs[0] + 4, src->sizes[0] - 4);
+        chk = abcdk_lz4_dec(ctx->buf->pptrs[0], ctx->buf->sizes[0], data + 4, size - 4);
         if (chk != data_l)
             goto ERR;
 #else
@@ -91,7 +91,7 @@ abcdk_package_t *abcdk_package_load(abcdk_object_t *src)
     else
     {
         /*去掉4字节头部，复制。*/
-        ctx->buf = abcdk_object_copyfrom(src->pptrs[0] + 4, src->sizes[0] - 4);
+        ctx->buf = abcdk_object_copyfrom(data + 4, size - 4);
         if (!ctx->buf)
             goto ERR;
     }
