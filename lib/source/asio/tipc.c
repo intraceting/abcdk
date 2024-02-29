@@ -294,7 +294,7 @@ END:
         return;
 
     chk = abcdk_tipc_connect(ctx,location,id);
-    ABCDK_ASSERT(chk ==0,"不应当在这里出错的。");
+    ABCDK_ASSERT((chk == 0 || chk == -4),"不应当在这里出错的。");
 }
 
 static int _abcdk_tipc_slave_subscribe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic,int unset)
@@ -702,10 +702,10 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 
     chk = abcdk_asynctcp_listen(node_p, node_ctx_p->ssl_ctx, addr, &cb);
     abcdk_asynctcp_unref(&node_p);
-    if (chk == 0)
-        return 0;
+    if (chk != 0)
+        return -3;
 
-    return -3;
+    return 0;
 }
 
 int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
@@ -753,10 +753,10 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
 
     chk = abcdk_asynctcp_connect(node_p, node_ctx_p->ssl_ctx, &addr, &cb);
     abcdk_asynctcp_unref(&node_p);
-    if (chk == 0)
-        return 0;
+    if (chk != 0)
+        return -3;
 
-    return -3; 
+    return 0; 
 }
 
 static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp)
