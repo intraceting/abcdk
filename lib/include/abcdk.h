@@ -69,6 +69,7 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/util/stream.h"
 #include "abcdk/util/package.h"
+#include "abcdk/util/timer.h"
 
 #include "abcdk/log/logger.h"
 

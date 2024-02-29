@@ -602,7 +602,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&buf2);
     abcdk_object_unref(&buf);
     
-#elif 1
+#elif 0
 
     abcdk_object_t *f = abcdk_mmap_filename("/home/devel/job/tmp/c.bmp",0,0,0,0);
 
@@ -660,5 +660,6 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&src_data);
     abcdk_object_unref(&src_data2);
     abcdk_object_unref(&dst_data);
+    
 #endif 
 }

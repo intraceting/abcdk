@@ -39,6 +39,7 @@ static struct _abcdk_test_entry
     {"onvif",abcdk_test_onvif},
     {"dhcp",abcdk_test_dhcp},
     {"tipc",abcdk_test_tipc},
+    {"timer",abcdk_test_timer},
 };
 
 void _abcdk_test_print_usage()
