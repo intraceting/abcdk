@@ -12,6 +12,7 @@
 #include "abcdk/util/waiter.h"
 #include "abcdk/util/bit.h"
 #include "abcdk/util/random.h"
+#include "abcdk/util/timer.h"
 #include "abcdk/ssl/openssl.h"
 #include "abcdk/asio/asynctcp.h"
 

@@ -18,6 +18,9 @@ struct _abcdk_tipc
     /*通讯IO。*/
     abcdk_asynctcp_t *io_ctx;
 
+    /*重连定时器。*/
+    abcdk_timer_t *reconnect_timer;
+
     /*节点列表。*/
     struct _abcdk_tipc_slave *slave_list[ABCDK_TIPC_SLAVE_MAX];
 
@@ -73,6 +76,9 @@ typedef struct _abcdk_tipc_slave
 
     /*标志。0 任意，1 被动，2 主动。*/
     int flag;
+
+    /*状态。1 已连接，2 已断开，3 正在重建连接。*/
+    int state;
 
     /*被动连接的管道。*/
     abcdk_asynctcp_node_t *pipe1;
@@ -141,6 +147,9 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t *
         chk = -2;
         goto END;
     }
+
+    /*标记为已连接。*/
+    slave_ctx_p->state = 1;
 
     if(slave_ctx_p->location[0] == '\0')
         strncpy(slave_ctx_p->location,node_ctx_p->location,NAME_MAX);
@@ -234,6 +243,10 @@ static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asynctcp_node_t
     /*还剩几个。*/
     chk = (slave_ctx_p->pipe1 ? 1 : 0) + (slave_ctx_p->pipe2 ? 1 : 0);
 
+    /*当所有连接都已经断开后，标记为已断开。*/
+    if(chk == 0)
+        slave_ctx_p->state = 2;
+    
 END:
 
     abcdk_mutex_unlock(ctx->slave_mutex);
@@ -268,33 +281,52 @@ END:
     return node_p;
 }
 
-static void _abcdk_tipc_slave_reconnect(abcdk_tipc_t *ctx,uint64_t id)
-{   
+static void _abcdk_tipc_slave_reconnect_cb(void *opaque)
+{
+    abcdk_tipc_t *ctx = (abcdk_tipc_t *)opaque;
     abcdk_tipc_slave_t *slave_ctx_p = NULL;
+    uint64_t id = 0;
     char location[NAME_MAX] = {0};
     int flag;
     int chk;
 
+NEXT:
+    
     abcdk_mutex_lock(ctx->slave_mutex, 1);
 
-    slave_ctx_p = ctx->slave_list[id];
-    if (!slave_ctx_p)
-        goto END;
+    for (; id < ABCDK_TIPC_SLAVE_MAX; id++)
+    {
+        slave_ctx_p = ctx->slave_list[id];
+        if (!slave_ctx_p)
+            continue;
 
-    /*copy*/
-    flag = slave_ctx_p->flag;
-    strncpy(location,slave_ctx_p->location,NAME_MAX);
+        /*未断开的不需要处理。*/
+        if (slave_ctx_p->state != 2)
+            continue;
 
-END:
+        /*标志为正在重连。*/
+        slave_ctx_p->state = 3;
+
+        /*copy*/
+        flag = slave_ctx_p->flag;
+        strncpy(location,slave_ctx_p->location,NAME_MAX);
+        break;
+    }
 
     abcdk_mutex_unlock(ctx->slave_mutex);
 
+    /*遍历完在，返回。*/
+    if( id >= ABCDK_TIPC_SLAVE_MAX )
+        return;
+
     /*如果是被动连接，则等待另外一端发起连接。*/
     if(flag == 1)
-        return;
+        goto NEXT;
 
     chk = abcdk_tipc_connect(ctx,location,id);
     ABCDK_ASSERT((chk == 0 || chk == -4),"不应当在这里出错的。");
+
+    goto NEXT;
 }
 
 static int _abcdk_tipc_slave_subscribe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic,int unset)
@@ -319,7 +351,6 @@ END:
 
     return chk;
 }
-
 
 static abcdk_asynctcp_node_t *_abcdk_tipc_slave_topic_find_pipe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic)
 {
@@ -400,6 +431,7 @@ void abcdk_tipc_destroy(abcdk_tipc_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
+    abcdk_timer_destroy(&ctx_p->reconnect_timer);
     abcdk_asynctcp_stop(&ctx_p->io_ctx);
     abcdk_mutex_destroy(&ctx_p->slave_mutex);
     abcdk_mutex_destroy(&ctx_p->topic_mutex);
@@ -431,6 +463,9 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
     /*本机默认不订阅任何主题。*/
     for(int i = 1;i < ABCDK_TIPC_TOPIC_MAX;i++)
         abcdk_bloom_unset(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),i);
+
+    /*重连定时器。*/
+    ctx->reconnect_timer = abcdk_timer_create(5000,_abcdk_tipc_slave_reconnect_cb,ctx);
 
     return ctx;
 }
@@ -603,8 +638,6 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
     if(node_ctx_p->father->cfg.offline_cb)
         node_ctx_p->father->cfg.offline_cb(node_ctx_p->father->cfg.opaque,node_ctx_p->id);
 
-    /*重连。*/
-    _abcdk_tipc_slave_reconnect(node_ctx_p->father,node_ctx_p->id);
 }
 
 static void _abcdk_tipc_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
