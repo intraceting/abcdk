@@ -83,9 +83,20 @@ uint64_t abcdk_bloom_read_number(const uint8_t *pool, size_t size, size_t offset
 
     assert(pool != NULL && size > 0 && bits > 0);
     assert(offset + bits <= size * 8);
-    
-    for (int i = 0; i < bits; i++)
-        num = (num << 1) | abcdk_bloom_read(pool, size, offset + i);
+
+    if (offset % 8 == 0 && bits % 8 == 0)
+    {
+        for (int i = 0; i < bits / 8; i++)
+        {
+            num = (num << 8) | pool[offset / 8];
+            offset += 8;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < bits; i++)
+            num = (num << 1) | abcdk_bloom_read(pool, size, offset + i);
+    }
 
     return num;
 }
@@ -95,6 +106,17 @@ void abcdk_bloom_write_number(uint8_t *pool, size_t size, size_t offset, int bit
     assert(pool != NULL && size > 0 && bits > 0);
     assert(offset + bits <= size * 8);
 
-    for (int i = 0; i < bits; i++)
-        abcdk_bloom_write(pool, size, offset + i, ((num >> (bits - 1 - i)) & 1));
+    if (offset % 8 == 0 && bits % 8 == 0)
+    {
+        for (int i = (bits / 8 - 1); i >= 0; i--)
+        {
+            pool[offset / 8] = ((num >> i * 8) & 0xff);
+            offset += 8;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < bits; i++)
+            abcdk_bloom_write(pool, size, offset + i, ((num >> (bits - 1 - i)) & 1));
+    }
 }

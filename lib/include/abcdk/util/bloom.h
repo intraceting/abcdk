@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_BLOOM_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/util/endian.h"
 
 __BEGIN_DECLS
 

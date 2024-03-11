@@ -660,6 +660,34 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&src_data);
     abcdk_object_unref(&src_data2);
     abcdk_object_unref(&dst_data);
+
+#elif 1
+
+    abcdk_package_t *src = abcdk_package_create(100);
+
+    abcdk_package_write_number(src,4,1);
+    abcdk_package_write_number(src,12,401);
+    abcdk_package_write_number(src,16,23456);
+    abcdk_package_write_number(src,13,456);
+    abcdk_package_write_number(src,3,2);
+    abcdk_package_write_number(src,64,99999999999999LL);
+    abcdk_package_write_number(src,32,999999999);
+
+    abcdk_object_t *buf = abcdk_package_dump(src,0);
+    abcdk_package_destroy(&src);
+
+    abcdk_package_t *dst = abcdk_package_load(buf->pptrs[0],buf->sizes[0]);
+
+
+    int64_t a = abcdk_package_read2number(dst,4);
+    int64_t b = abcdk_package_read2number(dst,12);
+    int64_t c = abcdk_package_read2number(dst,16);
+    int64_t d = abcdk_package_read2number(dst,13);
+    int64_t f = abcdk_package_read2number(dst,3);
+    int64_t g = abcdk_package_read2number(dst,64);
+    int64_t h = abcdk_package_read2number(dst,32);
+
+    abcdk_package_destroy(&dst);
     
 #endif 
 }
