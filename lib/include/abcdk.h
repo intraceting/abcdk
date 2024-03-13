@@ -70,6 +70,7 @@
 #include "abcdk/util/stream.h"
 #include "abcdk/util/package.h"
 #include "abcdk/util/timer.h"
+#include "abcdk/util/cpu.h"
 
 #include "abcdk/log/logger.h"
 

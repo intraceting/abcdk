@@ -661,7 +661,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&src_data2);
     abcdk_object_unref(&dst_data);
 
-#elif 1
+#elif 0
 
     abcdk_package_t *src = abcdk_package_create(100);
 
@@ -688,6 +688,16 @@ int abcdk_test_any(abcdk_option_t *args)
     int64_t h = abcdk_package_read2number(dst,32);
 
     abcdk_package_destroy(&dst);
-    
+#elif 1
+        unsigned int buf[20] = {0};
+
+        int c = abcdk_get_cpuid(buf);
+
+        for(int i=0;i<c;i++)
+        {
+            fprintf(stderr,"%08x ",buf[i]);
+        }
+
+        fprintf(stderr,"\n");
 #endif 
 }
