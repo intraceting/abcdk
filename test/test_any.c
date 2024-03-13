@@ -689,7 +689,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_package_destroy(&dst);
 #elif 1
-        unsigned int buf[20] = {0};
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                       unsigned int buf[20] = {0};
 
         int c = abcdk_get_cpuid(buf);
 
