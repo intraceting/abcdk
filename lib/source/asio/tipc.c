@@ -563,7 +563,7 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
 
     /*设置超时。*/
-    abcdk_asynctcp_set_timeout(node, 30 * 1000);
+    abcdk_asynctcp_set_timeout(node, 24 * 3600 * 1000);
 
     if (node_ctx_p->flag == 2)
         abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
