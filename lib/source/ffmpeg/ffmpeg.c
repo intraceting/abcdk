@@ -272,7 +272,20 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
 
     ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);
     if(!ctx->avctx)
-        return -1;
+    {
+        /*如果是RTSP流，则用UDP再试一次。*/
+        if((abcdk_strncmp(url,"rtsp://",7,0) == 0||abcdk_strncmp(url,"rtsps://",8,0) == 0))
+        {
+            av_dict_set(&ctx->dict, "rtsp_transport", "udp", 0);
+            ctx->avctx = abcdk_avformat_input_open(short_name,url,&cb,io,&ctx->dict);
+            if(!ctx->avctx)
+                return -1;
+        }
+        else
+        {
+            return -1;
+        }
+    }
 
     chk = abcdk_avformat_input_probe(ctx->avctx, NULL);
     if (chk < 0)

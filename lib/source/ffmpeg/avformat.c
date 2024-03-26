@@ -156,9 +156,9 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     {
         /* RTSP默认走TCP，可以减少丢包。*/
         if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
-            av_dict_set(dict, "rtsp_transport", "tcp", 0);
+            av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
 
-        av_dict_set(dict, "scan_all_pmts", "1", 0);
+        av_dict_set(dict, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
     }
 
     fmt = av_find_input_format(short_name);
