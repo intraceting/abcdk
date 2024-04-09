@@ -843,7 +843,8 @@ int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
     AVDictionary *dict = NULL;
     int chk;
 
-    av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
+    if(fmp4)
+        av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
 
     chk = abcdk_ffmpeg_write_header0(ctx,dict);
 
