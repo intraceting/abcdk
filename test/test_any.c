@@ -469,7 +469,34 @@ int abcdk_test_any(abcdk_option_t *args)
             abcdk_heap_free(dist);
         }
     }
+#elif 1
 
+    const char *src_file_p = abcdk_option_get(args,"--src-file",0,"aaaaa.mp4");
+    const char *dst_file_p = abcdk_option_get(args,"--dst-file",0,"bbbbb.bin");
+    const char *dst_file_p2 = abcdk_option_get(args,"--dst2-file",0,"bbbbb2.mp4");
+
+    abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024,3,256);
+    abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024,3,256);
+
+    abcdk_object_t *src_data = abcdk_mmap_filename(src_file_p,0,0,0,0);
+    abcdk_object_t *dst_data = abcdk_object_alloc2(src_data->sizes[0]);
+    abcdk_object_t *dst_data2 = abcdk_object_alloc2(src_data->sizes[0]);
+
+    for (int i = 0; i < 10; i++)
+    {
+        abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], src_data->sizes[0]);
+        abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], src_data->sizes[0]);
+
+        abcdk_save(dst_file_p,dst_data->pptrs[0],dst_data->sizes[0],0);
+        abcdk_save(dst_file_p2,dst_data2->pptrs[0],dst_data2->sizes[0],0);
+    }
+
+    abcdk_object_unref(&src_data);
+    abcdk_object_unref(&dst_data);
+    abcdk_object_unref(&dst_data2);
+
+    abcdk_enigma_free(&s_ctx);
+    abcdk_enigma_free(&r_ctx);
 #elif 0
 
     abcdk_receiver_t *t = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP,100000,NULL);
