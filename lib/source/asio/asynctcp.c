@@ -358,6 +358,10 @@ void _abcdk_asynctcp_output_hook(abcdk_asynctcp_node_t *node);
 
 void _abcdk_asynctcp_event_cb(abcdk_asynctcp_node_t *node,uint32_t event, int *result)
 {
+    /*初次建立连接，取消默认的发和收超时设置。*/
+
+
+
     /*绑定工作线程。*/
     abcdk_thread_leader_vote(&node->worker);
 
@@ -454,6 +458,7 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
     int sock_flag = 1;
     int ssl_chk;
     int ssl_err;
+    struct timeval tv;
     int chk;
 
     if (node->status == ABCDK_ASYNCTCP_STATUS_SYNC)
@@ -490,6 +495,11 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
             sock_len = sizeof(abcdk_sockaddr_t);
             getsockname(node->fd, &node->local.addr, &sock_len);
         }
+
+        /*去掉默认的发和收超时设置。*/
+        tv.tv_sec = tv.tv_usec = 0;
+        abcdk_sockopt_option_timeout(node->fd,SO_RCVTIMEO,&tv,2);
+        abcdk_sockopt_option_timeout(node->fd,SO_SNDTIMEO,&tv,2);
 
         /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
 
