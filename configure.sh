@@ -171,7 +171,7 @@ usage: [ OPTIONS ]
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm,
-     pam,curl
+     pam,curl,ncurses
 
     -e < name=value >
      自定义环境变量。
@@ -394,6 +394,7 @@ DependPackageCheck nghttp2 HAVE_NGHTTP2
 DependPackageCheck libdrm HAVE_LIBDRM
 DependPackageCheck pam HAVE_PAM
 DependPackageCheck curl HAVE_CURL
+DependPackageCheck ncurses HAVE_NCURSES
 
 #恢复默认。
 export DEPEND_PREFIX_PATH=""

@@ -15,6 +15,10 @@
 #include <security/pam_appl.h>
 #endif //
 
+#ifdef HAVE_NCURSES
+#include <ncurses.h>
+#endif //
+
 
 int abcdk_test_any(abcdk_option_t *args)
 {
@@ -688,7 +692,7 @@ int abcdk_test_any(abcdk_option_t *args)
     int64_t h = abcdk_package_read2number(dst,32);
 
     abcdk_package_destroy(&dst);
-#elif 1
+#elif 0
                                                                                                                                                                                                                                                                                                                                                                                                                                                                        unsigned int buf[20] = {0};
 
         int c = abcdk_get_cpuid(buf);
@@ -699,5 +703,54 @@ int abcdk_test_any(abcdk_option_t *args)
         }
 
         fprintf(stderr,"\n");
+#elif 1
+
+#ifdef __NCURSES_H
+
+    // 初始化 ncurses
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+
+    // 获取屏幕的大小
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+
+    // 创建水平分割窗口
+    // WINDOW *a = newwin(max_y / 2, max_x, 0, 0);
+    // WINDOW *b = newwin(max_y / 2, max_x, max_y / 2, 0);
+    
+    //创建垂直分割窗口
+    WINDOW *a = newwin(max_y, max_x / 2, 0, 0);
+    WINDOW *b = newwin(max_y, max_x / 2, 0, max_x / 2);
+
+    // 在每个窗口中创建菜单
+    wprintw(a, "Upper Window Menu:\n");
+    wprintw(a, "1. Option 1\n");
+    wprintw(a, "2. Option 2\n");
+    wprintw(a, "3. Option 3\n");
+    wprintw(a, "4. Exit\n");
+
+    wprintw(b, "Lower Window Menu:\n");
+    wprintw(b, "a. Suboption 1\n");
+    wprintw(b, "b. Suboption 2\n");
+    wprintw(b, "c. Back\n");
+
+    // 刷新屏幕
+    refresh();
+    wrefresh(a);
+    wrefresh(b);
+
+    // 等待用户按下任意键后退出
+    getch();
+
+    // 清理 ncurses 并退出程序
+    delwin(a);
+    delwin(b);
+    endwin();
+
+#endif //__NCURSES_H
+
 #endif 
 }
