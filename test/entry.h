@@ -27,7 +27,7 @@ int abcdk_test_onvif(abcdk_option_t *args);
 int abcdk_test_dhcp(abcdk_option_t *args);
 int abcdk_test_tipc(abcdk_option_t *args);
 int abcdk_test_timer(abcdk_option_t *args);
-
+int abcdk_test_tun(abcdk_option_t *args);
 __END_DECLS
 
 #endif //ABCDK_TEST_ENTRY_H

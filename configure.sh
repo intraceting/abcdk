@@ -77,6 +77,8 @@ CheckSTD()
 
 #修改执行权限，不然用不了脚本。
 chmod +x ${SHELLDIR}/script/core/*.sh
+chmod +x ${SHELLDIR}/script/kits/*.sh
+chmod +x ${SHELLDIR}/script/deb/*.sh
 
 #
 KIT_NAME=$(CheckPackageKitName)
