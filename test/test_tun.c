@@ -112,7 +112,7 @@ static int test1()
     int tun_fd1 = tun_open("tun0", "10.10.0.1", "255.255.255.0");
     int tun_fd2 = tun_open("tun1", "10.10.0.2", "255.255.255.0");
 
-    abcdk_net_route_add(4,"0.0.0.0",0,"10.10.0.254",0,"tun1");
+    //abcdk_net_route_add(4,"0.0.0.0",0,"10.10.0.254",0,"tun0");
 
     char buf1[MAX_BUF_SIZE];
     char buf2[MAX_BUF_SIZE];
