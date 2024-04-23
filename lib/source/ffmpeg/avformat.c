@@ -161,7 +161,7 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
         av_dict_set(dict, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
     }
 
-    fmt = av_find_input_format(short_name);
+    fmt = (AVInputFormat *)av_find_input_format(short_name);
     chk = avformat_open_input(&ctx, filename, fmt, dict);
 
     if (chk != 0)
@@ -481,16 +481,15 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     assert(vs != NULL && ctx != NULL);
 
     /*如果是编码，帧率也一并复制。*/
-    if (av_codec_is_encoder(vs->codec->codec))
+    if (av_codec_is_encoder(ctx->codec))
     {
-        vs->time_base = vs->codec->time_base = ctx->time_base;
-        vs->codec->framerate = ctx->framerate;
+        vs->time_base = ctx->time_base;
         vs->avg_frame_rate = vs->r_frame_rate = ctx->framerate;//av_make_q(ctx->time_base.den, ctx->time_base.num);
     }
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
     avcodec_parameters_from_context(vs->codecpar, ctx);
-#endif
+#else
 
     /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
     vs->codec->codec_type = ctx->codec_type;
@@ -553,7 +552,7 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
-
+#endif
 
     return 0;
 }
@@ -564,7 +563,7 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
     avcodec_parameters_to_context(ctx, vs->codecpar);
-#endif
+#else
 
     /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
     ctx->time_base = vs->codec->time_base;
@@ -628,7 +627,7 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
-
+#endif
 
     return 0;
 }
@@ -664,7 +663,7 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
         fps = abcdk_avmatch_r2d(vs->avg_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-        fps = 1.0 / abcdk_avmatch_r2d(vs->codec->time_base,xspeed);
+        fps = 1.0 / abcdk_avmatch_r2d(vs->time_base,xspeed);
 
     return fps;
 }

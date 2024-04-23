@@ -22,7 +22,7 @@ AVCodec *abcdk_avcodec_find(const char *name,int encode)
     avcodec_register_all();
 #endif
 
-    ctx = (encode ? avcodec_find_encoder_by_name(name) : avcodec_find_decoder_by_name(name));
+    ctx =(AVCodec *)(encode ? avcodec_find_encoder_by_name(name) : avcodec_find_decoder_by_name(name));
 
     return ctx;
 }
@@ -37,7 +37,7 @@ AVCodec *abcdk_avcodec_find2(enum AVCodecID id,int encode)
     avcodec_register_all();
 #endif
 
-    ctx = (encode ? avcodec_find_encoder(id) : avcodec_find_decoder(id));
+    ctx = (AVCodec *)(encode ? avcodec_find_encoder(id) : avcodec_find_decoder(id));
     
     return ctx;
 }

@@ -15,6 +15,7 @@
 int abcdk_test_record(abcdk_option_t *args)
 {
     const char *src = abcdk_option_get(args,"--src",0,"");
+    double src_xspeed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     const char *dst = abcdk_option_get(args,"--dst",0,"");
     const char *dst_fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
@@ -30,18 +31,18 @@ int abcdk_test_record(abcdk_option_t *args)
     {
         AVStream * p = abcdk_ffmpeg_streamptr(r,i);
 
-        if(p->codec->codec_id == AV_CODEC_ID_HEVC)
+        if(p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {   
             abcdk_hevc_extradata_t extradata = {0};
-            abcdk_hevc_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
+            abcdk_hevc_extradata_deserialize(p->codecpar->extradata, p->codecpar->extradata_size, &extradata);
         }
-        else if(p->codec->codec_id == AV_CODEC_ID_H264)
+        else if(p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
             abcdk_h264_extradata_t extradata = {0};
-            abcdk_h264_extradata_deserialize(p->codec->extradata, p->codec->extradata_size, &extradata);
+            abcdk_h264_extradata_deserialize(p->codecpar->extradata, p->codecpar->extradata_size, &extradata);
         }
        
-        AVCodecContext *opt = abcdk_avcodec_alloc3(p->codec->codec_id,1);
+        AVCodecContext *opt = abcdk_avcodec_alloc3(p->codecpar->codec_id,1);
 
         abcdk_avstream_parameters_to_context(opt,p);
 
@@ -82,7 +83,7 @@ int abcdk_test_record(abcdk_option_t *args)
     av_init_packet(&pkt);
     for(int i = 0;i<100;i++)
     {
-        
+        abcdk_ffmpeg_read_delay(r,src_xspeed);
 
         int n= abcdk_ffmpeg_read(r,&pkt,-1);
         if(n<0)
@@ -93,7 +94,7 @@ int abcdk_test_record(abcdk_option_t *args)
         fprintf(stderr,"%d,%d\n",m,pkt.flags);
 
 
-        fprintf(stderr,"%.6f\n",(double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,1));
+        fprintf(stderr,"%.6f\n",(double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,src_xspeed));
 
          abcdk_ffmpeg_write(w,&pkt,&rf->streams[n]->time_base);
 
@@ -129,7 +130,7 @@ int abcdk_test_codec(abcdk_option_t *args)
     {
         AVStream * p = abcdk_ffmpeg_streamptr(r,i);
 
-        AVCodecContext *opt = abcdk_avcodec_alloc3(p->codec->codec_id,1);
+        AVCodecContext *opt = abcdk_avcodec_alloc3(p->codecpar->codec_id,1);
 
         abcdk_avstream_parameters_to_context(opt,p);
 
@@ -178,22 +179,22 @@ int abcdk_test_extradata(abcdk_option_t *args)
 
     AVStream *vs_p = abcdk_ffmpeg_streamptr(r,0);
 
-    abcdk_hexdump(stderr,vs_p->codec->extradata,vs_p->codec->extradata_size,0,NULL);
+    abcdk_hexdump(stderr,vs_p->codecpar->extradata,vs_p->codecpar->extradata_size,0,NULL);
 
-    if (vs_p->codec->codec_id == AV_CODEC_ID_H264)
+    if (vs_p->codecpar->codec_id == AV_CODEC_ID_H264)
     {
         abcdk_h264_extradata_t extradata = {0};
 
-        abcdk_h264_extradata_deserialize(vs_p->codec->extradata, vs_p->codec->extradata_size, &extradata);
+        abcdk_h264_extradata_deserialize(vs_p->codecpar->extradata, vs_p->codecpar->extradata_size, &extradata);
 
         abcdk_hexdump(stderr, extradata.sps->pptrs[0], extradata.sps->sizes[0], 0, NULL);
         abcdk_hexdump(stderr, extradata.pps->pptrs[0], extradata.pps->sizes[0], 0, NULL);
     }
-    else if (vs_p->codec->codec_id == AV_CODEC_ID_HEVC)
+    else if (vs_p->codecpar->codec_id == AV_CODEC_ID_HEVC)
     {
         abcdk_hevc_extradata_t extradata = {0};
 
-        abcdk_hevc_extradata_deserialize(vs_p->codec->extradata, vs_p->codec->extradata_size, &extradata);
+        abcdk_hevc_extradata_deserialize(vs_p->codecpar->extradata, vs_p->codecpar->extradata_size, &extradata);
 
         for (int i = 0; i < extradata.nal_array_num; i++)
         {

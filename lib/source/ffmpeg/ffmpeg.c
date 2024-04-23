@@ -297,9 +297,9 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
 
     for(int i = 0;i<ctx->avctx->nb_streams;i++)
     {
-        ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
-        ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
-        ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
+        ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
+        ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
+        ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
 
         /*记录每个流的开始读取时间。*/
         ctx->read_start[i] = _abcdk_ffmpeg_clock();
@@ -784,9 +784,11 @@ int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int 
     {
         abcdk_avstream_parameters_from_context(vs, opt);
 
-        /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
-        if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
-            vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+        // /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
+        // if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
+        //     vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#endif 
     }
     else
     {
@@ -928,7 +930,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_
     if(src_time_base)
         bq = *src_time_base;
     else 
-        bq = (ctx_p ? ctx_p->time_base : vs_p->codec->time_base);
+        bq = (ctx_p ? ctx_p->time_base : vs_p->time_base);
 
     cq = vs_p->time_base;
 
