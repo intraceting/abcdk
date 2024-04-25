@@ -228,6 +228,22 @@ void abcdk_package_write_buffer(abcdk_package_t *ctx, const uint8_t *buf, size_t
     abcdk_bit_write_buffer(&ctx->io, buf, size);
 }
 
+void abcdk_package_write_string(abcdk_package_t *ctx, const char *buf, size_t size)
+{
+    size_t len, differ;
+
+    assert(ctx != 0 && buf != NULL && size > 0);
+
+    len = ABCDK_MIN((size_t)strlen(buf), size);
+    differ = size - len;
+
+    abcdk_package_write_buffer(ctx, (uint8_t *)buf, len);
+
+    /*不足部分填零。*/
+    for (size_t i = 0; i < differ; i++)
+        abcdk_package_write_number(ctx, 8, 0);
+}
+
 uint64_t abcdk_package_pread2number(abcdk_package_t *ctx, size_t offset, uint8_t bits)
 {
     assert(ctx != 0);
@@ -254,4 +270,20 @@ void abcdk_package_pwrite_buffer(abcdk_package_t *ctx, size_t offset, const uint
     assert(ctx != 0);
 
     abcdk_bit_pwrite_buffer(&ctx->io, offset, buf, size);
+}
+
+void abcdk_package_pwrite_string(abcdk_package_t *ctx, size_t offset, const char *buf, size_t size)
+{
+    size_t len, differ;
+
+    assert(ctx != 0 && buf != NULL && size > 0);
+
+    len = ABCDK_MIN((size_t)strlen(buf), size);
+    differ = size - len;
+
+    abcdk_package_pwrite_buffer(ctx, offset, (uint8_t *)buf, len);
+
+    /*不足部分填零。*/
+    for (size_t i = 0; i < differ; i++)
+        abcdk_package_pwrite_number(ctx, offset + len, 8, 0);
 }

@@ -79,6 +79,13 @@ void abcdk_package_write_number(abcdk_package_t *ctx, uint8_t bits, uint64_t num
 void abcdk_package_write_buffer(abcdk_package_t *ctx, const uint8_t *buf,size_t size);
 
 /** 
+ * 写字符串。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+void abcdk_package_write_string(abcdk_package_t *ctx, const char *buf,size_t size);
+
+/** 
  * 读数值。
  * 
  * @note 不会改变游标位置。
@@ -103,13 +110,20 @@ void abcdk_package_pread2buffer(abcdk_package_t *ctx, size_t offset, uint8_t *bu
 */
 void abcdk_package_pwrite_number(abcdk_package_t *ctx, size_t offset, uint8_t bits, uint64_t num);
 
-
 /** 
  * 写缓存。
  * 
  * @note 当游标指向字节开始位时允许使用。
 */
 void abcdk_package_pwrite_buffer(abcdk_package_t *ctx, size_t offset, const uint8_t *buf,size_t size);
+
+
+/** 
+ * 写字符串。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+void abcdk_package_pwrite_string(abcdk_package_t *ctx, size_t offset, const char *buf,size_t size);
 
 __END_DECLS
 

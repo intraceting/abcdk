@@ -128,8 +128,11 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
 {
     AVPacket tmp;
     int got = -1;
+    int chk;
 
     assert(ctx != NULL && out != NULL);
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
 
     av_init_packet(&tmp);
     tmp.data = NULL;
@@ -141,46 +144,81 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
     if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
     {
         if (avcodec_decode_video2(ctx, out, &got, (in?in:&tmp)) < 0)
-            got = -1;
+            return -1;
     }
     else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
     {
         if (avcodec_decode_audio4(ctx, out, &got, (in?in:&tmp)) < 0)
-            got = -1;
+            return -1;
     }
     else
     {
-        got = -2;
+        return -2;
     }
 
     return got;
+#else 
+
+    if(in)
+    {
+        chk = avcodec_send_packet(ctx, in);
+        if(chk < 0)
+            return -1;
+    }
+
+    chk = avcodec_receive_frame(ctx,out);
+    if(chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
+        return 0;
+    else if(chk < 0)
+        return -1;
+
+    return 1;
+
+#endif
+
 }
 
 int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
 {
     int got = -1;
+    int chk;
 
     assert(ctx != NULL && out != NULL);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     /*No output.*/
     got = 0;
 
     if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
     {
         if (avcodec_encode_video2(ctx, out, in, &got) != 0)
-            got = -1;
+            return -1;
     }
     else if (ctx->codec->type == AVMEDIA_TYPE_AUDIO)
     {
         if (avcodec_encode_audio2(ctx, out, in, &got) != 0)
-            got = -1;
+            return -1;
     }
     else
     {
-        got = -2;
+        return -2;
     }
 
     return got;
+#else 
+
+    chk = avcodec_send_frame(ctx, in);
+    if(chk < 0)
+        return -1;
+
+    chk = avcodec_receive_packet(ctx, out);
+    if(chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
+        return 0;
+    else if(chk < 0)
+        return -1;
+
+    return 1;
+#endif
 }
 
 void abcdk_avcodec_encode_video_fill_time_base(AVCodecContext *ctx, double fps)
