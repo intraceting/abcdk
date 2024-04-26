@@ -485,13 +485,17 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     {
         vs->time_base = ctx->time_base;
         vs->avg_frame_rate = vs->r_frame_rate = ctx->framerate;//av_make_q(ctx->time_base.den, ctx->time_base.num);
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+        vs->codec->framerate = ctx->framerate;
+#endif
     }
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
     avcodec_parameters_from_context(vs->codecpar, ctx);
-#else
+#endif 
 
     /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
     vs->codec->codec_type = ctx->codec_type;
     vs->codec->codec_id = ctx->codec_id;
     vs->codec->codec_tag = ctx->codec_tag;
@@ -563,9 +567,10 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
     avcodec_parameters_to_context(ctx, vs->codecpar);
-#else
+#endif
 
     /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
     ctx->time_base = vs->codec->time_base;
     ctx->framerate = vs->codec->framerate;
     ctx->codec_type = vs->codec->codec_type;

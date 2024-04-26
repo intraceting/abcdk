@@ -785,9 +785,9 @@ int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int 
         abcdk_avstream_parameters_from_context(vs, opt);
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
-        // /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
-        // if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
-        //     vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+        /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
+        if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
+            vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 #endif 
     }
     else
