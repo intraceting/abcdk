@@ -933,7 +933,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_
 
     /*
      * 如果没有源时间基值，则使用内部时间基值。
-     * 注：如果时间基值错误，编码数据在解码后无法正常播放，常见的表现是FPS异常或帧时长异常。
+     * 注：如果时间基值错误，编码数据在解码后无法正常播放，常见的现像是DTS、PTS、duration异常。
     */
     if(src_time_base)
         bq = *src_time_base;
