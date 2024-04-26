@@ -297,10 +297,15 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
 
     for(int i = 0;i<ctx->avctx->nb_streams;i++)
     {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+        ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
+        ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
+        ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
+#else 
         ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
         ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
         ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
-
+#endif
         /*记录每个流的开始读取时间。*/
         ctx->read_start[i] = _abcdk_ffmpeg_clock();
     }
@@ -926,11 +931,19 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_
     ctx_p = ctx->codec_ctx[pkt->stream_index];
     vs_p = ctx->avctx->streams[pkt->stream_index];
 
-    /*如果没有源时间基值，则使用内部时间基值。*/
+    /*
+     * 如果没有源时间基值，则使用内部时间基值。
+     * 注：如果时间基值错误，编码数据在解码后无法正常播放，常见的表现是FPS异常或帧时长异常。
+    */
     if(src_time_base)
         bq = *src_time_base;
-    else 
-        bq = (ctx_p ? ctx_p->time_base : vs_p->time_base);
+    else
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+        bq = (ctx_p ? ctx_p->time_base : vs_p->codec->time_base);
+#else
+        bq = (ctx_p ? ctx_p->time_base : av_make_q(1, abcdk_avstream_fps(ctx->avctx,vs_p,1)));
+#endif
+       
 
     cq = vs_p->time_base;
 

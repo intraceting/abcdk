@@ -481,7 +481,11 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     assert(vs != NULL && ctx != NULL);
 
     /*如果是编码，帧率也一并复制。*/
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+    if (av_codec_is_encoder(vs->codec->codec))
+#else 
     if (av_codec_is_encoder(ctx->codec))
+#endif 
     {
         vs->time_base = ctx->time_base;
         vs->avg_frame_rate = vs->r_frame_rate = ctx->framerate;//av_make_q(ctx->time_base.den, ctx->time_base.num);
@@ -669,7 +673,11 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
         fps = abcdk_avmatch_r2d(vs->avg_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+        fps = 1.0 / abcdk_avmatch_r2d(vs->codec->time_base,xspeed);
+#else 
         fps = 1.0 / abcdk_avmatch_r2d(vs->time_base,xspeed);
+#endif 
 
     return fps;
 }
