@@ -1464,6 +1464,7 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
         stream_ctx_p->rsp_end = (!data ? 1 : 0);
     }
 
+    /*如果不是结束包，发送有效的数据块。*/
     if (!stream_ctx_p->rsp_end)
     {
         chk = abcdk_asynctcp_post(stream_ctx_p->io_node, data);
@@ -1498,6 +1499,7 @@ static int _abcdk_httpd_response_body_h2(abcdk_object_t *stream, abcdk_object_t 
     /*可能是结束包。*/
     stream_ctx_p->rsp_end = (!data ? 1 : 0);
 
+    /*结束包不需要发送。*/
     if(stream_ctx_p->rsp_end)
         return 0;
 
@@ -1639,7 +1641,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
     if (stream_ctx_p->rsp_hdr_sent)
         goto BODY;
 
-    ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应当答头部信息。");
+    ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应答头部信息。");
     
     /*如果未设置应答长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
     chk = abcdk_option_exist(stream_ctx_p->rsp_hdr,"Content-Length");
