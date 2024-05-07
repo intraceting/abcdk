@@ -159,7 +159,7 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
     return got;
 #else 
 
-    if(in)
+    if(in && in->data && in->size >0)
     {
         chk = avcodec_send_packet(ctx, in);
         if(chk < 0)

@@ -123,6 +123,7 @@
 
 #include "abcdk/asio/asynctcp.h"
 #include "abcdk/asio/tipc.h"
+#include "abcdk/asio/httpd.h"
 
 #include "abcdk/json/json.h"
 
