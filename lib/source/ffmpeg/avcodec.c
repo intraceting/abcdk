@@ -159,12 +159,9 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
     return got;
 #else 
 
-    if(in && in->data && in->size >0)
-    {
-        chk = avcodec_send_packet(ctx, in);
-        if(chk < 0)
-            return -1;
-    }
+    chk = avcodec_send_packet(ctx, in);
+    if(chk < 0)
+        return -1;
 
     chk = avcodec_receive_frame(ctx,out);
     if(chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
@@ -207,13 +204,10 @@ int abcdk_avcodec_encode(AVCodecContext *ctx, AVPacket *out, const AVFrame *in)
     return got;
 #else 
 
-    if(in)
-    {
-        chk = avcodec_send_frame(ctx, in);
-        if(chk < 0)
-            return -1;
-    }
-
+    chk = avcodec_send_frame(ctx, in);
+    if(chk < 0)
+        return -1;
+    
     chk = avcodec_receive_packet(ctx, out);
     if(chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
         return 0;
