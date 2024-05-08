@@ -100,8 +100,8 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream);
  *  媒体类型。
  * --try-nvcodec < 1 | 0 >
  *  尝试NVCODEC编解码器。默认：0
- * --mp4toannexb < 1 |0 >
- *  是否启用MP4媒体格式转流格式。默认：0
+ * --bit-stream-filter < 1 |0 >
+ *  比特流过滤器。默认：0
  * @endcond
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
@@ -114,7 +114,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char
  * @param [in] timeout 超时(秒)。
  *
 */ 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url, int mp4toannexb, int timeout);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url, int bsf, int timeout);
 
 /** 
  * 创建作者对象。
