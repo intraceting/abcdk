@@ -9,9 +9,6 @@
 /**简单的RPC服务。*/
 struct _abcdk_rpc
 {
-    /*配置。*/
-    abcdk_rpc_config_t cfg;
-
     /*通讯IO。*/
     abcdk_asynctcp_t *io_ctx;
 };//abcdk_rpc_t
@@ -22,14 +19,20 @@ typedef struct _abcdk_rpc_node
     /*父级。*/
     abcdk_rpc_t *father;
 
+    /*配置。*/
+    abcdk_rpc_config_t cfg;
+
+    /*标志。0 监听，1 服务端，2 客户端。*/
+    int flag;
+
     /*SSL环境。*/
     SSL_CTX *ssl_ctx;
 
     /*远程地址。*/
     char remote_addr[NAME_MAX];
 
-    /*标志。0 监听，1 服务端，2 客户端。*/
-    int flag;
+    /*本机地址。*/
+    char local_addr[NAME_MAX];
 
     /*请求数据。*/
     abcdk_receiver_t *req_data;
@@ -43,13 +46,13 @@ typedef struct _abcdk_rpc_node
 } abcdk_rpc_node_t;
 
 
-void abcdk_rpc_session_unref(abcdk_rpc_session_t **session)
+void abcdk_rpc_unref(abcdk_rpc_session_t **session)
 {
     abcdk_asynctcp_unref((abcdk_asynctcp_node_t**)session);
 }
 
 
-abcdk_rpc_session_t *abcdk_rpc_session_refer(abcdk_rpc_session_t *src)
+abcdk_rpc_session_t *abcdk_rpc_refer(abcdk_rpc_session_t *src)
 {
     return (abcdk_rpc_session_t*)abcdk_asynctcp_refer((abcdk_asynctcp_node_t*)src);
 }
@@ -77,7 +80,7 @@ static void _abcdk_rpc_node_waiter_msg_destroy_cb(void *msg)
 
 }
 
-abcdk_rpc_session_t *abcdk_rpc_session_alloc(abcdk_rpc_t *ctx)
+abcdk_rpc_session_t *abcdk_rpc_alloc(abcdk_rpc_t *ctx)
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_rpc_node_t *node_ctx_p;
@@ -96,7 +99,7 @@ abcdk_rpc_session_t *abcdk_rpc_session_alloc(abcdk_rpc_t *ctx)
     return (abcdk_rpc_session_t*)node_p;
 }
 
-void *abcdk_rpc_session_get_userdata(abcdk_rpc_session_t *session)
+void *abcdk_rpc_get_userdata(abcdk_rpc_session_t *session)
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_rpc_node_t *node_ctx_p;
@@ -109,7 +112,7 @@ void *abcdk_rpc_session_get_userdata(abcdk_rpc_session_t *session)
     return node_ctx_p->userdata;
 }
 
-void *abcdk_rpc_session_set_userdata(abcdk_rpc_session_t *session,void *userdata)
+void *abcdk_rpc_set_userdata(abcdk_rpc_session_t *session,void *userdata)
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_rpc_node_t *node_ctx_p;
@@ -126,7 +129,7 @@ void *abcdk_rpc_session_set_userdata(abcdk_rpc_session_t *session,void *userdata
     return old_userdata;
 }
 
-const char *abcdk_rpc_session_get_address(abcdk_rpc_session_t *session, int remote)
+const char *abcdk_rpc_get_address(abcdk_rpc_session_t *session, int remote)
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_rpc_node_t *node_ctx_p;
@@ -140,10 +143,10 @@ const char *abcdk_rpc_session_get_address(abcdk_rpc_session_t *session, int remo
     if (remote)
         return node_ctx_p->remote_addr;
     else
-        return "";
+        return node_ctx_p->local_addr;
 }
 
-void abcdk_rpc_session_set_timeout(abcdk_rpc_session_t *session,time_t timeout)
+void abcdk_rpc_set_timeout(abcdk_rpc_session_t *session,time_t timeout)
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_rpc_node_t *node_ctx_p;
@@ -191,4 +194,227 @@ ERR:
     abcdk_rpc_destroy(&ctx);
 
     return NULL;
+}
+
+
+static void _abcdk_rpc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *listen)
+{
+    abcdk_asynctcp_node_t *node_p;
+    abcdk_rpc_node_t *listen_ctx_p, *node_ctx_p;
+
+    listen_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(listen);
+
+    listen_ctx_p->cfg.prepare_cb(listen_ctx_p->cfg.opaque,(abcdk_rpc_session_t **)&node_p,(abcdk_rpc_session_t *)listen);
+    if (!node_p)
+        return;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node_p);
+
+    node_ctx_p->cfg = listen_ctx_p->cfg;
+    node_ctx_p->flag = 1;
+
+
+    /*准备完毕，返回。*/
+    *node = node_p;
+}
+
+static void _abcdk_rpc_event_accept(abcdk_asynctcp_node_t *node, int *result)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+    int chk;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, node_ctx_p->remote_addr);
+
+    /*默认：允许。*/
+    *result = 0;
+
+    if(node_ctx_p->cfg.accept_cb)
+        node_ctx_p->cfg.accept_cb(node_ctx_p->cfg.opaque, (abcdk_rpc_session_t*)node, result);
+    
+    if(*result != 0)
+        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机('%s')。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+}
+
+static void _abcdk_rpc_event_connect(abcdk_asynctcp_node_t *node)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+    SSL *ssl_p;
+    char ptl_sel_name[256] = {0};
+    int chk;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    /*设置超时。*/
+    abcdk_asynctcp_set_timeout(node, 180 * 1000);
+
+    if (node_ctx_p->flag == 2)
+        abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, node_ctx_p->remote_addr);
+
+    ssl_p = abcdk_asynctcp_ssl(node);
+    if (!ssl_p)
+        goto END;
+
+#ifdef HEADER_SSL_H
+    /*检查SSL验证结果。*/
+    chk = SSL_get_verify_result(ssl_p);
+    if (chk != X509_V_OK)
+    {
+        abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
+
+        /*修改超时，使用超时检测器关闭。*/
+        abcdk_asynctcp_set_timeout(node, 1);
+        return;
+    }
+
+#endif // HEADER_SSL_H
+
+END:
+
+    abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经建立。", node_ctx_p->local_addr, (node_ctx_p->flag == 1 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+
+    if(node_ctx_p->cfg.ready_cb)
+        node_ctx_p->cfg.ready_cb(node_ctx_p->cfg.opaque, (abcdk_rpc_session_t*)node);
+
+    /*已连接到远端，注册读写事件。*/
+    abcdk_asynctcp_recv_watch(node);
+    abcdk_asynctcp_send_watch(node);
+}
+
+static void _abcdk_rpc_event_output(abcdk_asynctcp_node_t *node)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if(node_ctx_p->cfg.output_cb)
+        node_ctx_p->cfg.output_cb(node_ctx_p->cfg.opaque, (abcdk_rpc_session_t*)node);
+}
+
+static void _abcdk_rpc_event_close(abcdk_asynctcp_node_t *node)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+    int chk;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if(!node_ctx_p->remote_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,node_ctx_p->remote_addr);
+
+    if(!node_ctx_p->flag)
+        abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。", node_ctx_p->local_addr,(node_ctx_p->flag == 1 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+    else 
+        abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。", node_ctx_p->local_addr,(node_ctx_p->flag == 1 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+
+    if(node_ctx_p->cfg.close_cb)
+        node_ctx_p->cfg.close_cb(node_ctx_p->cfg.opaque,(abcdk_rpc_session_t*)node);
+}
+
+static void _abcdk_rpc_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+    int chk;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
+    {
+        _abcdk_rpc_event_accept(node,result);
+    }
+    else if (event == ABCDK_ASYNCTCP_EVENT_CONNECT)
+    {
+        _abcdk_rpc_event_connect(node);
+    }
+    else if (event == ABCDK_ASYNCTCP_EVENT_INPUT)
+    {
+    }
+    else if (event == ABCDK_ASYNCTCP_EVENT_OUTPUT)
+    {
+        _abcdk_rpc_event_output(node);
+    }
+    else if (event == ABCDK_ASYNCTCP_EVENT_CLOSE || event == ABCDK_ASYNCTCP_EVENT_INTERRUPT)
+    {
+        _abcdk_rpc_event_close(node);
+    }
+}
+
+static void _abcdk_rpc_process(abcdk_asynctcp_node_t *node)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+    const void *req_data;
+    size_t req_size;
+    uint32_t len;
+    uint8_t cmd;
+    uint64_t mid;
+    abcdk_object_t *cargo;
+    int chk;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
+    req_size = abcdk_receiver_length(node_ctx_p->req_data);
+
+    len = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 0, 32);
+    cmd = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 32, 8);
+    mid = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
+
+    if (cmd == 1) //RSP
+    {
+        cargo = abcdk_object_copyfrom(ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
+        if(!cargo)
+            return;
+
+        chk = abcdk_waiter_response(node_ctx_p->req_waiter, mid, cargo);
+        if(chk != 0)
+            abcdk_object_unref(&cargo);
+    }
+    else if (cmd == 2) //REQ
+    {
+        if(node_ctx_p->cfg.request_cb)
+            node_ctx_p->cfg.request_cb(node_ctx_p->cfg.opaque,(abcdk_rpc_session_t*)node,ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
+    }
+}
+
+static void _abcdk_rpc_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+{
+    abcdk_rpc_node_t *node_ctx_p;
+    int chk;
+
+    node_ctx_p = (abcdk_rpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    /*默认没有剩余数据。*/
+    *remain = 0;
+
+    if (!node_ctx_p->req_data)
+    {
+        node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 16*1024*1024, NULL);
+    }
+
+    if (!node_ctx_p->req_data)
+        goto ERR;
+
+    chk = abcdk_receiver_append(node_ctx_p->req_data, data, size, remain);
+    if (chk < 0)
+        goto ERR;
+    else if (chk == 0) /*数据包不完整，继续接收。*/
+        return;
+
+    _abcdk_rpc_process(node);
+
+    /*一定要回收。*/
+    abcdk_receiver_unref(&node_ctx_p->req_data);
+
+    /*No Error.*/
+    return;
+
+ERR:
+
+    abcdk_asynctcp_set_timeout(node, 1);
+}
+
+
+int abcdk_rpc_listen(abcdk_rpc_session_t *session,abcdk_sockaddr_t *addr,abcdk_rpc_config_t *cfg)
+{
+
 }

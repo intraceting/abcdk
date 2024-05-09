@@ -74,43 +74,56 @@ typedef struct _abcdk_rpc_config
     /**会话数据请求通知回调函数。*/
     void (*request_cb)(void *opaque, abcdk_rpc_session_t *session, const void *data, size_t size);
 
+    /**
+     * 会话输出(空闲)通知回调函数。
+     * 
+     * @note NULL(0) 忽略。
+    */
+    void (*output_cb)(void *opaque, abcdk_rpc_session_t *session);
+
 } abcdk_rpc_config_t;
 
-
 /** 释放会话。*/
-void abcdk_rpc_session_unref(abcdk_rpc_session_t **session);
+void abcdk_rpc_unref(abcdk_rpc_session_t **session);
 
 /** 引用会话。*/
-abcdk_rpc_session_t *abcdk_rpc_session_refer(abcdk_rpc_session_t *src);
+abcdk_rpc_session_t *abcdk_rpc_refer(abcdk_rpc_session_t *src);
 
 /** 申请会话。*/
-abcdk_rpc_session_t *abcdk_rpc_session_alloc(abcdk_rpc_t *ctx);
+abcdk_rpc_session_t *abcdk_rpc_alloc(abcdk_rpc_t *ctx);
 
 /** 获取会话的用户环境指针。*/
-void *abcdk_rpc_session_get_userdata(abcdk_rpc_session_t *session);
+void *abcdk_rpc_get_userdata(abcdk_rpc_session_t *session);
 
 /** 
  * 设置会话的用户环境指针。
  * 
  * @return 旧的用户环境指针。
 */
-void *abcdk_rpc_session_set_userdata(abcdk_rpc_session_t *session,void *userdata);
+void *abcdk_rpc_set_userdata(abcdk_rpc_session_t *session,void *userdata);
 
 /** 获取会话的地址。*/
-const char *abcdk_rpc_session_get_address(abcdk_rpc_session_t *session,int remote);
+const char *abcdk_rpc_get_address(abcdk_rpc_session_t *session,int remote);
 
 /** 
  * 设置会话的超时时长。
  * 
  * @param [in] timeout 超时时长(秒)。
 */
-void abcdk_rpc_session_set_timeout(abcdk_rpc_session_t *session,time_t timeout);
+void abcdk_rpc_set_timeout(abcdk_rpc_session_t *session,time_t timeout);
 
 /** 销毁。*/
 void abcdk_rpc_destroy(abcdk_rpc_t **ctx);
 
 /** 创建。*/
 abcdk_rpc_t *abcdk_rpc_create(int max,int cpu);
+
+/** 
+ * 监听。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_rpc_listen(abcdk_rpc_session_t *session,abcdk_sockaddr_t *addr,abcdk_rpc_config_t *cfg);
 
 __END_DECLS
 
