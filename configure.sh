@@ -193,7 +193,7 @@ do
     case $ARGKEY in
     h)
         PrintUsage
-        exit 22
+        exit 0
     ;;
     c)
         COMPILER_PREFIX="${OPTARG}"
