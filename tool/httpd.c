@@ -534,15 +534,19 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     cfg.stream_output_cb = _abcdkhttpd_stream_output_cb;
     cfg.req_max_size = ctx->up_max_size;
     cfg.req_tmp_path = ctx->up_tmp_path;
-    cfg.ca_file = ctx->ca_file;
-    cfg.ca_path = ctx->ca_path;
-    cfg.cert_file = ctx->cert_file;
-    cfg.key_file = ctx->key_file;
     cfg.server_name = ctx->server_name;
     cfg.server_realm = "httpd";
     cfg.enable_h2 = ctx->enable_h2;
     cfg.auth_path = ctx->auth_path;
     cfg.a_c_a_o = ctx->a_c_a_o;
+
+    if (ssl)
+    {
+        cfg.ca_file = ctx->ca_file;
+        cfg.ca_path = ctx->ca_path;
+        cfg.cert_file = ctx->cert_file;
+        cfg.key_file = ctx->key_file;
+    }
 
     if (ssl)
         listen_p = ctx->listen_ssl_p = abcdk_httpd_session_alloc(ctx->io_ctx);
