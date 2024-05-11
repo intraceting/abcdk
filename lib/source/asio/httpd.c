@@ -31,14 +31,17 @@ typedef struct _abcdk_httpd_node
     /*配置。*/
     abcdk_httpd_config_t cfg;
 
-    /*是否为服务端。*/
-    int server;
+    /*标志。0 监听，1 服务端，2 客户端。*/
+    int flag;
 
     /*协议。0：未选择 1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3*/
     int protocol;
 
     /*远程地址。*/
     char remote_addr[NAME_MAX];
+
+    /*本机地址。*/
+    char local_addr[NAME_MAX];
 
     /*SSL环境。*/
     SSL_CTX *ssl_ctx;
@@ -764,7 +767,7 @@ static void _abcdk_httpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
     node_ctx_p->cfg = listen_ctx_p->cfg;
-    node_ctx_p->server = 1;
+    node_ctx_p->flag = 1;
     node_ctx_p->protocol = 0;
 
 
@@ -779,7 +782,7 @@ static void _abcdk_httpd_event_accept(abcdk_asynctcp_node_t *node, int *result)
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
+    abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*默认：允许。*/
     *result = 0;
@@ -788,7 +791,7 @@ static void _abcdk_httpd_event_accept(abcdk_asynctcp_node_t *node, int *result)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_httpd_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
+        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机('%s')。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
@@ -803,8 +806,10 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     /*设置超时。*/
     abcdk_asynctcp_set_timeout(node, 180 * 1000);
 
-    if (!node_ctx_p->server)
-        abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
+    if(!node_ctx_p->remote_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
+    if(!node_ctx_p->local_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
     ssl_p = abcdk_asynctcp_ssl(node);
     if (!ssl_p)
@@ -839,7 +844,10 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
 
 END:
 
-    abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经建立。", (node_ctx_p->server ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经建立。",
+                       node_ctx_p->local_addr,
+                       (node_ctx_p->flag == 1 ? "客户端" : "服务端"),
+                       node_ctx_p->remote_addr);
 
     /*如果未选择协议，则使用默认协议。*/
     if(node_ctx_p->protocol == 0)
@@ -901,8 +909,13 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
 
     if(!node_ctx_p->remote_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
+    if(!node_ctx_p->local_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
-    abcdk_trace_output(LOG_INFO, "本机与%s('%s')的连接已经断开。", (node_ctx_p->server ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。",
+                       node_ctx_p->local_addr,
+                       (node_ctx_p->flag == 1 ? "客户端" : "服务端"),
+                       node_ctx_p->remote_addr);
 
     /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
     abcdk_map_destroy(&node_ctx_p->stream_map);
@@ -1082,7 +1095,7 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
     node_ctx_p->cfg = *cfg;
-    node_ctx_p->server = 1;
+    node_ctx_p->flag = 0;
     node_ctx_p->protocol = 0;
 
 #ifdef HEADER_SSL_H
