@@ -10,7 +10,6 @@
 #include <magic.h>
 #endif // HAVE_LIBMAGIC
 
-#if 1
 
 typedef struct _abcdkhttpd
 {
@@ -711,9 +710,3 @@ int abcdk_tool_httpd(abcdk_option_t *args)
     return 0;
 }
 
-#else 
-int abcdk_tool_httpd(abcdk_option_t *args)
-{
-    return 0;
-}
-#endif 

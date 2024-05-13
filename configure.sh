@@ -429,8 +429,15 @@ if [ ! -d ${BUILD_PACKAGE_PATH} ];then
 }
 fi
 
-#安装路径增加解决方案名称。
-INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}/"
+#去掉末尾的‘/’。
+INSTALL_PREFIX_TMP="${INSTALL_PREFIX%/}"
+#删除‘/’前面的所有字符，包括‘/’自身。
+LAST_NAME="${INSTALL_PREFIX_TMP##*/}"
+
+#如果路径最深层的目录名称不是项目名称则拼接项目名称。
+if [ ! "${LAST_NAME}" == "${SOLUTION_NAME}" ];then
+INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}"
+fi
 
 
 #
