@@ -33,7 +33,6 @@ int abcdk_tool_mcdump(abcdk_option_t *args);
 int abcdk_tool_uart(abcdk_option_t *args);
 int abcdk_tool_ipconfig(abcdk_option_t *args);
 int abcdk_tool_proxy(abcdk_option_t *args);
-int abcdk_tool_vnet(abcdk_option_t *args);
 
 __END_DECLS
 

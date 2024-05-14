@@ -41,6 +41,7 @@ static struct _abcdk_test_entry
     {"tipc",abcdk_test_tipc},
     {"timer",abcdk_test_timer},
     {"tun",abcdk_test_tun},
+    {"rpc",abcdk_test_rpc},
 };
 
 void _abcdk_test_print_usage()

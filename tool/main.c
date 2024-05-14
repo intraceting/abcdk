@@ -35,7 +35,6 @@ static struct _abcdk_tool_entry
     {"uart",abcdk_tool_uart},
     {"ipconfig",abcdk_tool_ipconfig},
     {"proxy",abcdk_tool_proxy},
-    {"vnet",abcdk_tool_vnet},
 };
 
 void _abcdk_tool_print_usage()
