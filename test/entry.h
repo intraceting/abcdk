@@ -28,7 +28,6 @@ int abcdk_test_dhcp(abcdk_option_t *args);
 int abcdk_test_tipc(abcdk_option_t *args);
 int abcdk_test_timer(abcdk_option_t *args);
 int abcdk_test_tun(abcdk_option_t *args);
-int abcdk_test_rpc(abcdk_option_t *args);
 
 
 __END_DECLS
