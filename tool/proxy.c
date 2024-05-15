@@ -21,10 +21,10 @@ typedef struct _abcdk_proxy
     /*服务器领域。*/
     const char *server_realm;
 
-    /*CA证书。*/
+    /*服务器CA证书。*/
     const char *ca_file;
 
-    /*CA证书目录。*/
+    /*服务器CA证书目录。*/
     const char *ca_path;
 
     /*服务器证书。*/
@@ -433,7 +433,7 @@ ERR:
 
 static void _abcdk_proxy_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain);
 
-static void _abcdk_proxy_reply_nobody(abcdk_asynctcp_node_t *node, int status, const char *a_c_a_m)
+static void _abcdk_proxy_reply_nobody(abcdk_asynctcp_node_t *node, int status)
 {
     abcdk_proxy_node_t *node_ctx_p;
 
@@ -445,13 +445,12 @@ static void _abcdk_proxy_reply_nobody(abcdk_asynctcp_node_t *node, int status, c
                                "Data: %s\r\n"
                                "Connection: Keep-Alive\r\n"
                                "Access-Control-Allow-Origin: *\r\n"
-                               "Access-Control-Allow-Methods: %s\r\n"
+                               "Access-Control-Allow-Methods: *\r\n"
                                "Content-Length: 0\r\n"
                                "\r\n",
                                abcdk_http_status_desc(status),
                                node_ctx_p->father->server_name,
-                               abcdk_time_format_gmt(NULL, node_ctx_p->loc_ctx),
-                               (a_c_a_m && *a_c_a_m ? a_c_a_m : "*"));
+                               abcdk_time_format_gmt(NULL, node_ctx_p->loc_ctx));
 
     _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(status));
 }
@@ -496,6 +495,15 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
         node_ctx_p->up_link = abcdk_url_split(node_ctx_p->father->up_link);
     }
 
+    /*可能发错了。*/
+    if(!node_ctx_p->up_link->pstrs[ABCDK_URL_HOST])
+    {
+        _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址不存在。");
+
+        _abcdk_proxy_reply_nobody(node, 404);
+        goto ERR;
+    }
+
     /* 解析上级地址，仅支持IPV4。*/
     uplink_addr.family = AF_INET;
     chk = abcdk_sockaddr_from_string(&uplink_addr, node_ctx_p->up_link->pstrs[ABCDK_URL_HOST], 1);
@@ -503,7 +511,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     {
         _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址'%s'无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
 
-        _abcdk_proxy_reply_nobody(node, 404, "CONNECT");
+        _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
     }
 
@@ -524,7 +532,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
 #endif // HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {
-            _abcdk_proxy_reply_nobody(node, 500, "CONNECT");
+            _abcdk_proxy_reply_nobody(node, 500);
             goto ERR;
         }
     }
@@ -532,7 +540,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     node_ctx_p->tunnel = _abcdk_proxy_node_alloc(node_ctx_p->father);
     if (!node_ctx_p->tunnel)
     {
-        _abcdk_proxy_reply_nobody(node, 500, "CONNECT");
+        _abcdk_proxy_reply_nobody(node, 500);
         goto ERR;
     }
 
@@ -552,7 +560,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     {
         _abcdk_proxy_trace_output(node, LOG_WARNING, "连接上级'%s'失败，网络不可达或服务未启动。", node_ctx_p->father->up_link);
 
-        _abcdk_proxy_reply_nobody(node, 404, "CONNECT");
+        _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
     }
 
@@ -566,7 +574,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     }
     else if(abcdk_strcmp(node_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
     {
-        _abcdk_proxy_reply_nobody(node,200,"CONNECT");
+        _abcdk_proxy_reply_nobody(node,200);
     }
     else
     {
