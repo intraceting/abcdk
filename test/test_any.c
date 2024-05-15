@@ -497,7 +497,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_enigma_free(&s_ctx);
     abcdk_enigma_free(&r_ctx);
-#elif 1
+#elif 0
 
 
     abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024,3,256);
@@ -757,7 +757,7 @@ int abcdk_test_any(abcdk_option_t *args)
         }
 
         fprintf(stderr,"\n");
-#elif 1
+#elif 0
 
 #ifdef __NCURSES_H
 
@@ -805,6 +805,14 @@ int abcdk_test_any(abcdk_option_t *args)
     endwin();
 
 #endif //__NCURSES_H
+#elif 1
 
+    for(int i = 0;i<5;i++)
+    {
+        char buf[123] = {0};
+        abcdk_rand_string(buf,122,i);
+
+        fprintf(stderr,"[_%s_]\n",buf);
+    }
 #endif 
 }
