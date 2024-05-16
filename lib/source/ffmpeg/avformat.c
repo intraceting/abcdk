@@ -143,8 +143,12 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     if (!ctx)
         return NULL;
 
-    /*如果不知道做什么用的，不要设置这个。*/
-    ctx->flags |= AVFMT_FLAG_NOBUFFER;
+    /*
+     * 1: 如果不知道下面标志如何使用，一定不要附加这个标志。
+     * 2: 如果附加此标志，会造成数据流开头的数据包丢失(N个)。
+     * 3: 如果未附加此标志，网络流会产生不确定的延时(N毫秒~N秒)。
+    */
+    //ctx->flags |= AVFMT_FLAG_NOBUFFER;
 
     if (interrupt)
         ctx->interrupt_callback = *interrupt;
@@ -253,8 +257,6 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
             return -1;
 
         avcodec_parameters_copy(filter_p->par_in, codecpar);
-        //av_opt_set_int(filter_p->priv_data, "aud", 2, 0); // 移除TYPE=9(AUD)
-
         av_bsf_init(filter_p);
 
         /*保存过滤器环境指针。*/
@@ -262,7 +264,9 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
     }
 
     av_bsf_send_packet(filter_p, pkt);
+    av_packet_unref(pkt);
     chk = av_bsf_receive_packet(filter_p, pkt);
+    assert(chk == 0);
 
     return 0;
 }

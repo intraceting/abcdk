@@ -81,7 +81,7 @@ int abcdk_test_record(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<100;i++)
+    for(int i = 0;i<1000;i++)
     {
         abcdk_ffmpeg_read_delay(r,src_xspeed);
 
@@ -89,16 +89,22 @@ int abcdk_test_record(abcdk_option_t *args)
         if(n<0)
             break;
 
-        int m = abcdk_h264_idr(pkt.data,pkt.size);
-        
-        fprintf(stderr,"%d,%d\n",m,pkt.flags);
+        int m =0;
+        if(rf->streams[n]->codecpar->codec_id == AV_CODEC_ID_H264)
+            m = abcdk_h264_idr(pkt.data,pkt.size);
+        else if(rf->streams[n]->codecpar->codec_id == AV_CODEC_ID_HEVC)
+            m = abcdk_hevc_irap(pkt.data,pkt.size);
 
+        double psec = abcdk_ffmpeg_ts2sec(r, pkt.stream_index, pkt.pts, src_xspeed);
+        double dsec = abcdk_ffmpeg_ts2sec(r, pkt.stream_index, pkt.dts, src_xspeed);
 
-        fprintf(stderr,"%.6f\n",(double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,src_xspeed));
+        double dru = (double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,src_xspeed);
 
-         abcdk_ffmpeg_write(w,&pkt,&rf->streams[n]->time_base);
+        fprintf(stderr, "flag(%d,%d),pts(%.6f),dts(%.6f),dur(%.6f)\n",m, pkt.flags, psec, dsec, dru);
 
-     //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
+        abcdk_ffmpeg_write(w, &pkt, &rf->streams[n]->time_base);
+
+        //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
 
         abcdk_file_segment(NULL,"/tmp/ccc/aaaa%llu.ts",10,1,pos);
     }
@@ -153,7 +159,7 @@ int abcdk_test_codec(abcdk_option_t *args)
     {
         abcdk_ffmpeg_read_delay(r,src_xspeed);
         
-        int n= abcdk_ffmpeg_read2(r,inframe,-1);
+        int n= abcdk_ffmpeg_read2(r,inframe,0);
         if(n<0)
             break;
 

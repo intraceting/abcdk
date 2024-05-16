@@ -297,17 +297,18 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
 
     for(int i = 0;i<ctx->avctx->nb_streams;i++)
     {
+        int idx = ctx->avctx->streams[i]->index;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
-        ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
-        ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
-        ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
+        ctx->input_mp4_h264[idx] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
+        ctx->input_mp4_h265[idx] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
+        ctx->input_mp4_mpeg4[idx] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
 #else 
-        ctx->input_mp4_h264[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
-        ctx->input_mp4_h265[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
-        ctx->input_mp4_mpeg4[i] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
+        ctx->input_mp4_h264[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
+        ctx->input_mp4_h265[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
+        ctx->input_mp4_mpeg4[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
 #endif
         /*记录每个流的开始读取时间。*/
-        ctx->read_start[i] = _abcdk_ffmpeg_clock();
+        ctx->read_start[idx] = _abcdk_ffmpeg_clock();
     }
 
     return 0;
@@ -496,6 +497,7 @@ void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed)
 {
     AVStream * vs_p = NULL;
     int64_t start_time = 0;
+    int stream_idx = 0;
     int block = 0;
 
     assert(ctx != NULL);
@@ -505,24 +507,26 @@ next_delay:
     for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
     {
         vs_p = abcdk_ffmpeg_streamptr(ctx,i);
+
         start_time = vs_p->start_time;
+        stream_idx = vs_p->index;
 
         /*超时也不行。*/
         if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
             return;
 
         /*如果没有DTS，说明还没开始读。*/
-        if(ctx->read_dts[i] == (int64_t)AV_NOPTS_VALUE)
+        if(ctx->read_dts[stream_idx] == (int64_t)AV_NOPTS_VALUE)
             return;
 
-        if(ctx->read_dts_first[i] == (int64_t)AV_NOPTS_VALUE)
-            ctx->read_dts_first[i] = ctx->read_dts[i];
+        if(ctx->read_dts_first[stream_idx] == (int64_t)AV_NOPTS_VALUE)
+            ctx->read_dts_first[stream_idx] = ctx->read_dts[stream_idx];
 
         /*流的起始值可能不为0，这里要加上，内部计算时会减掉。*/
-        double a1 = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts_first[i] + start_time , xspeed);
-        double a2 = abcdk_ffmpeg_ts2sec(ctx, i , ctx->read_dts[i] + start_time , xspeed);
+        double a1 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts_first[stream_idx] + start_time , xspeed);
+        double a2 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts[stream_idx] + start_time , xspeed);
         double a = a2-a1;
-        double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[i]) / 1000000;
+        double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream_idx]) / 1000000;
 
         //printf("a1 = %.3f a2 = %.3f a = %.3f,b = %.3f\n",a1,a2, a, b);
         
