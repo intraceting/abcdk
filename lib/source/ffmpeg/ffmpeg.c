@@ -141,6 +141,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_alloc()
     {
         ctx->read_dts_first[i] = (int64_t)AV_NOPTS_VALUE;
         ctx->read_dts[i] = (int64_t)AV_NOPTS_VALUE;
+        ctx->read_start[i] = UINT64_MAX;
     }
     
     return ctx;
@@ -307,8 +308,7 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
         ctx->input_mp4_h265[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
         ctx->input_mp4_mpeg4[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
 #endif
-        /*记录每个流的开始读取时间。*/
-        ctx->read_start[idx] = _abcdk_ffmpeg_clock();
+
     }
 
     return 0;
@@ -515,20 +515,20 @@ next_delay:
         if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
             return;
 
-        /*如果没有DTS，说明还没开始读。*/
+        /*如果是无效的DTS，直接返回。*/
         if(ctx->read_dts[stream_idx] == (int64_t)AV_NOPTS_VALUE)
             return;
 
-        if(ctx->read_dts_first[stream_idx] == (int64_t)AV_NOPTS_VALUE)
-            ctx->read_dts_first[stream_idx] = ctx->read_dts[stream_idx];
-
-        /*流的起始值可能不为0，这里要加上，内部计算时会减掉。*/
-        double a1 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts_first[stream_idx] + start_time , xspeed);
-        double a2 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts[stream_idx] + start_time , xspeed);
-        double a = a2-a1;
+        /*
+         * 1：计算当前帧与第一帧的时间差。
+         * 2：因为流的起始值可能不为零(或为负，或为正)，所以时间轴调整为从零开始，便于计算延时。
+        */
+        double a1 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts_first[stream_idx] , xspeed);
+        double a2 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts[stream_idx] , xspeed);
+        double a = (a2-a1)-(a1-a1);
         double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream_idx]) / 1000000;
 
-        //printf("a1 = %.3f a2 = %.3f a = %.3f,b = %.3f\n",a1,a2, a, b);
+        //fprintf(stderr,"stream(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f)\n",stream_idx,a1,a2, a, b);
         
         /*以最慢的为准。*/
         if(block = (a > b ? 1 : 0))
@@ -537,7 +537,7 @@ next_delay:
 
     if (block)
     {
-        usleep(1000);
+        usleep(2000);//500fps
         goto next_delay;
     }
 }
@@ -562,6 +562,14 @@ next_packet:
 
     /*记录当前DTS。*/
     ctx->read_dts[pkt->stream_index] = pkt->dts;
+
+    /*记录第一个有效的DTS，并记录开始读取时间(用于记算拉流延时)。*/
+    if(ctx->read_dts_first[pkt->stream_index] == (int64_t)AV_NOPTS_VALUE &&
+        ctx->read_dts[pkt->stream_index] != (int64_t)AV_NOPTS_VALUE)
+    {
+        ctx->read_dts_first[pkt->stream_index] = ctx->read_dts[pkt->stream_index];
+        ctx->read_start[pkt->stream_index] = _abcdk_ffmpeg_clock();
+    }
 
     /* 更新最近包时间，不然会超时。*/
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
