@@ -215,6 +215,34 @@ int abcdk_test_extradata(abcdk_option_t *args)
     abcdk_ffmpeg_destroy(&r);
 }
 
+int abcdk_test_audio(abcdk_option_t *args)
+{
+    const char *src = abcdk_option_get(args,"--src",0,"");
+
+    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open_capture(NULL,src,1,0);
+
+    AVStream *vs_p = abcdk_ffmpeg_find_stream(r,AVMEDIA_TYPE_AUDIO);
+
+    int stream_idx = vs_p->index;
+
+    AVFrame *inframe = av_frame_alloc();
+    for(int i = 0;i<1000;i++)
+    {
+        abcdk_ffmpeg_read_delay(r,1);
+        
+        int n = abcdk_ffmpeg_read2(r,inframe,stream_idx);
+        if(n<0)
+            break;
+
+         abcdk_hexdump(stderr, inframe->data[0],inframe->linesize[0], 0, NULL);
+    }
+
+    av_frame_free(&inframe);
+
+
+    abcdk_ffmpeg_destroy(&r);
+}
+
 #endif //HAVE_FFMPEG
 
 int abcdk_test_ffmpeg(abcdk_option_t *args)
@@ -229,6 +257,8 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
         abcdk_test_codec(args);
     else if(cmd == 3)
         abcdk_test_extradata(args);
+    else if(cmd == 4)
+        abcdk_test_audio(args);
 
 #endif //HAVE_FFMPEG
 

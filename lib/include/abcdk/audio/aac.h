@@ -105,6 +105,13 @@ typedef struct _abcdk_aac_adts_header
     uint8_t raw_data_blocks;
 } abcdk_aac_adts_header_t;
 
+
+/**序列化。*/
+void abcdk_aac_extradata_serialize(const abcdk_aac_adts_header_t *hdr, void *data, size_t size);
+
+/**反序列化。*/
+void abcdk_aac_extradata_deserialize(const void *data, size_t size, abcdk_aac_adts_header_t *hdr);
+
 /**序列化。*/
 void abcdk_aac_adts_header_serialize(const abcdk_aac_adts_header_t *hdr, void *data, size_t size);
 

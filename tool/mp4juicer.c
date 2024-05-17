@@ -470,8 +470,15 @@ void _abcdkm4j_dump_acc(abcdkm4j_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
     /*解析ADTS信息。*/
+#if 0
     _abcdkm4j_aac_decode_extradata(ctx,ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
                                    ctx->esds->data.esds.dec_sp_info.extradata->sizes[0]);
+
+#else
+    abcdk_aac_extradata_deserialize(ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
+                                     ctx->esds->data.esds.dec_sp_info.extradata->sizes[0],
+                                     &ctx->adts_hdr);
+#endif
 
     if(ctx->mvex_p)
     {

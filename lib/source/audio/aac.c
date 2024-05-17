@@ -6,6 +6,43 @@
  */
 #include "abcdk/audio/aac.h"
 
+
+void abcdk_aac_extradata_serialize(const abcdk_aac_adts_header_t *hdr, void *data, size_t size)
+{
+
+}
+
+
+void abcdk_aac_extradata_deserialize(const void *data, size_t size, abcdk_aac_adts_header_t *hdr)
+{
+    assert(hdr != NULL && data != NULL && (size == 2 || size == 5));
+
+    hdr->profile = abcdk_bloom_read_number(data,size,0,5);
+    if(hdr->profile == 31)
+    {
+        hdr->profile = 32 + abcdk_bloom_read_number(data,size,5,6);
+        hdr->sample_rate_index = abcdk_bloom_read_number(data,size,11,4);
+        if(hdr->sample_rate_index == 15)
+            hdr->channel_cfg = abcdk_bloom_read_number(data,size,15+24,4); //跳过24bits自定义的采样率。
+        else
+            hdr->channel_cfg = abcdk_bloom_read_number(data,size,15,4); 
+    }
+    else
+    {
+        hdr->sample_rate_index = abcdk_bloom_read_number(data,size,5,4);
+        if(hdr->sample_rate_index == 15)
+            hdr->channel_cfg = abcdk_bloom_read_number(data,size,9+24,4); //跳过24bits自定义的采样率。
+        else
+            hdr->channel_cfg = abcdk_bloom_read_number(data,size,9,4); 
+    }
+
+    /*填充其它头部字段。*/
+    hdr->syncword = 0xfff;
+    hdr->id = 0;
+    hdr->protection_absent = 1;
+    hdr->adts_buffer_fullness = 0x7ff;
+}
+
 void abcdk_aac_adts_header_serialize(const abcdk_aac_adts_header_t *hdr, void *data, size_t size)
 {
     assert(hdr != NULL && data != NULL && size >= 7);
