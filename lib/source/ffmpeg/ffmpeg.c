@@ -537,7 +537,7 @@ next_delay:
 
     if (block)
     {
-        usleep(2000);//500fps
+        usleep(1000);//1000fps
         goto next_delay;
     }
 }
