@@ -82,8 +82,12 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
         for (int i = 0; i < extdata->sps_num; i++)
         {
             extdata->sps->sizes[i] = abcdk_bit_read(&rbuf, 16);
+#if 0
             memcpy(extdata->sps->pptrs[i], ABCDK_PTR2VPTR(rbuf.data, rbuf.pos / 8), extdata->sps->sizes[i]);
             rbuf.pos += (extdata->sps->sizes[i] * 8);
+#else
+            abcdk_bit_read2buffer(&rbuf,extdata->sps->pptrs[i], extdata->sps->sizes[i]);
+#endif 
         }
 
         extdata->pps_num = abcdk_bit_read(&rbuf, 8);
@@ -91,8 +95,12 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
         for (int i = 0; i < extdata->pps_num; i++)
         {
             extdata->pps->sizes[i] = abcdk_bit_read(&rbuf, 16);
+#if 0
             memcpy(extdata->pps->pptrs[i], ABCDK_PTR2VPTR(rbuf.data, rbuf.pos / 8), extdata->pps->sizes[i]);
             rbuf.pos += (extdata->pps->sizes[i] * 8);
+#else
+            abcdk_bit_read2buffer(&rbuf,extdata->pps->pptrs[i], extdata->pps->sizes[i]);
+#endif 
         }
     }
 }

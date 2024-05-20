@@ -79,8 +79,12 @@ void abcdk_hevc_extradata_deserialize(const void *data, size_t size, abcdk_hevc_
             for (int j = 0; j < nal_p->nal_num; j++)
             {
                 nal_p->nal->sizes[j] = abcdk_bit_read(&rbuf, 16);
+#if 0 
                 memcpy(nal_p->nal->pptrs[j], ABCDK_PTR2VPTR(rbuf.data, rbuf.pos / 8), nal_p->nal->sizes[j]);
                 rbuf.pos += (nal_p->nal->sizes[j] * 8);
+#else
+                abcdk_bit_read2buffer(&rbuf,nal_p->nal->pptrs[j], nal_p->nal->sizes[j]);
+#endif 
             }
         }
     }
