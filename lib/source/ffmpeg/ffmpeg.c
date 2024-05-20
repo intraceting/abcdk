@@ -564,11 +564,19 @@ next_packet:
     ctx->read_dts[pkt->stream_index] = pkt->dts;
 
     /*记录第一个有效的DTS，并记录开始读取时间(用于记算拉流延时)。*/
-    if(ctx->read_dts_first[pkt->stream_index] == (int64_t)AV_NOPTS_VALUE &&
-        ctx->read_dts[pkt->stream_index] != (int64_t)AV_NOPTS_VALUE)
+    if(ctx->read_dts[pkt->stream_index] != (int64_t)AV_NOPTS_VALUE)
     {
-        ctx->read_dts_first[pkt->stream_index] = ctx->read_dts[pkt->stream_index];
-        ctx->read_start[pkt->stream_index] = _abcdk_ffmpeg_clock();
+        /*
+         * 满足以下两个条件时，需要更新时间轴开始时间。
+         * 1：开始时间无效时。
+         * 2：时间轴重置。
+        */
+        if(ctx->read_dts_first[pkt->stream_index] == (int64_t)AV_NOPTS_VALUE ||
+            ctx->read_dts_first[pkt->stream_index] > ctx->read_dts[pkt->stream_index]) 
+        {
+            ctx->read_dts_first[pkt->stream_index] = ctx->read_dts[pkt->stream_index];
+            ctx->read_start[pkt->stream_index] = _abcdk_ffmpeg_clock();
+        }
     }
 
     /* 更新最近包时间，不然会超时。*/
