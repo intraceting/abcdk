@@ -528,7 +528,7 @@ next_delay:
         double a = (a2-a1)-(a1-a1);
         double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream_idx]) / 1000000;
 
-        abcdk_trace_output(LOG_DEBUG,"stream(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f)\n",stream_idx,a1,a2, a, b);
+        //abcdk_trace_output(LOG_DEBUG,"stream(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f)\n",stream_idx,a1,a2, a, b);
         
         /*以最慢的为准。*/
         if(block = (a > b ? 1 : 0))
