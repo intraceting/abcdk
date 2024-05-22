@@ -493,7 +493,7 @@ int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
     return 0;
 }
 
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed)
+void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed, int stream)
 {
     AVStream * vs_p = NULL;
     int64_t start_time = 0;
@@ -507,6 +507,10 @@ next_delay:
     for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
     {
         vs_p = abcdk_ffmpeg_streamptr(ctx,i);
+
+        /*也许仅关注特定的流。*/
+        if(stream >= 0 && stream != vs_p->index)
+            continue;
 
         start_time = vs_p->start_time;
         stream_idx = vs_p->index;

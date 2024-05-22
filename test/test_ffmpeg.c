@@ -83,7 +83,7 @@ int abcdk_test_record(abcdk_option_t *args)
     av_init_packet(&pkt);
     for(int i = 0;i<1000;i++)
     {
-        abcdk_ffmpeg_read_delay(r,src_xspeed);
+        abcdk_ffmpeg_read_delay(r,src_xspeed,-1);
 
         int n= abcdk_ffmpeg_read(r,&pkt,-1);
         if(n<0)
@@ -157,7 +157,7 @@ int abcdk_test_codec(abcdk_option_t *args)
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<1000;i++)
     {
-        abcdk_ffmpeg_read_delay(r,src_xspeed);
+        abcdk_ffmpeg_read_delay(r,src_xspeed,-1);
         
         int n= abcdk_ffmpeg_read2(r,inframe,0);
         if(n<0)
@@ -228,7 +228,7 @@ int abcdk_test_audio(abcdk_option_t *args)
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<1000;i++)
     {
-        abcdk_ffmpeg_read_delay(r,1);
+        abcdk_ffmpeg_read_delay(r,1,-1);
         
         int n = abcdk_ffmpeg_read2(r,inframe,stream_idx);
         if(n<0)

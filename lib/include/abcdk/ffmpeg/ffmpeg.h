@@ -12,6 +12,7 @@
 #include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/util/option.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 
@@ -128,34 +129,36 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name, const char *url,
  * 读延时。
  * 
  * @param [in] xspeed 倍速。
+ * @param [in] stream >=0 流索引，< 0 使用最慢的流索引。
+ * 
  */
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed);
+void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed, int stream);
 
 /**
  * 读取数据包。
  * 
- * @param stream >=0 数据流索引，< 0 任意数据流。
+ * @param stream >=0 流索引，< 0 任意流索引。
  * 
- * @return >= 0 成功(数据流索引)，< 0 失败(或结束)。
+ * @return >= 0 成功(流索引)，< 0 失败(或结束)。
 */
 int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream);
 
 /**
  * 读取数据帧。
  * 
- * @param stream >=0 数据流索引，< 0 任意数据流。
+ * @param stream >=0 流索引，< 0 任意流。
  * 
- * @return >= 0 成功(数据流索引)，< 0 失败(或结束)。
+ * @return >= 0 成功(流索引)，< 0 失败(或结束)。
 */
 int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
 
 
 /**
- * 创建数据流。
+ * 创建流。
  * 
  * @param have_codec 0 使用内部编码器(不支持B帧，并忽略扩展数据)，!0 使用外部编码器。
  * 
- * @return >= 0 成功(数据流索引)，< 0 失败。
+ * @return >= 0 成功(流索引)，< 0 失败。
 */
 int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int have_codec);
 
