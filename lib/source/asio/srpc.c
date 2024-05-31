@@ -402,7 +402,7 @@ static void _abcdk_srpc_request_cb(abcdk_asynctcp_node_t *node, const void *data
 
     if (!node_ctx_p->req_data)
     {
-        node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 16*1024*1024, NULL);
+        node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_SMB, 16*1024*1024, NULL);
     }
 
     if (!node_ctx_p->req_data)
@@ -555,7 +555,7 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session, const void *req, size_t re
     if(!rsp)
         return 0;
 
-    *rsp = (abcdk_object_t *)abcdk_waiter_wait(node_ctx_p->req_waiter, mid, 365 * 24 * 60 * 60);
+    *rsp = (abcdk_object_t *)abcdk_waiter_wait(node_ctx_p->req_waiter, mid, 24 * 60 * 60* 1000L);
     if (!*rsp)
         return -3;
 
