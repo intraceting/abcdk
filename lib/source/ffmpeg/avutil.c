@@ -111,7 +111,7 @@ int abcdk_avimage_fill_pointers(uint8_t *datas[4], const int strides[4], int hei
 
     /*只是计算大小，清空无效指针。*/
     if (!buffer)
-        memset(datas, 0, sizeof(uint8_t *));
+        datas[0] = datas[1] = datas[2] = datas[3] = NULL;
 
     return size;
 }
