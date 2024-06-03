@@ -497,7 +497,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_enigma_free(&s_ctx);
     abcdk_enigma_free(&r_ctx);
-#elif 0
+#elif 1
 
 
     abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024,3,256);
@@ -805,7 +805,7 @@ int abcdk_test_any(abcdk_option_t *args)
     endwin();
 
 #endif //__NCURSES_H
-#elif 1
+#elif 0
 
     for(int i = 0;i<5;i++)
     {
@@ -813,6 +813,45 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_rand_string(buf,122,i);
 
         fprintf(stderr,"[_%s_]\n",buf);
+    }
+#elif 0
+
+    abcdk_thread_setaffinity2(pthread_self(),4);
+
+    for (int r = 3; r <= 10; r++)
+    {
+
+        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024, r, 256);
+        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024, r, 256);
+
+        for (int d = 1000; d <= 1000 * 10000; d *= 10)
+        {
+
+            abcdk_object_t *src_data = abcdk_object_alloc2(d);
+            abcdk_object_t *dst_data = abcdk_object_alloc2(d);
+            abcdk_object_t *dst_data2 = abcdk_object_alloc2(d);
+
+            abcdk_rand_string(src_data->pptrs[0], d, 0);
+
+            uint64_t s = 0;
+            abcdk_clock(s,&s);
+
+                     
+            abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
+            abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
+            assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+
+            uint64_t step = abcdk_clock(s,&s);
+            abcdk_trace_output(LOG_INFO,"r(%d),d(%d),step(%0.6f)",r,d,(double)step/1000000.);
+            
+
+            abcdk_object_unref(&src_data);
+            abcdk_object_unref(&dst_data);
+            abcdk_object_unref(&dst_data2);
+        }
+
+        abcdk_enigma_free(&s_ctx);
+        abcdk_enigma_free(&r_ctx);
     }
 #endif 
 }
