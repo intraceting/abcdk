@@ -424,7 +424,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_heap_free(send_dist);
     abcdk_heap_free(recv_dist);
 
-#elif 0
+#elif 1
 
     for (int y = 3; y <= 256; y++)
     {
@@ -497,7 +497,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_enigma_free(&s_ctx);
     abcdk_enigma_free(&r_ctx);
-#elif 1
+#elif 0
 
 
     abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024,3,256);
@@ -838,8 +838,8 @@ int abcdk_test_any(abcdk_option_t *args)
 
                      
             abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
-            abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
-            assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+             abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
+             assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
 
             uint64_t step = abcdk_clock(s,&s);
             abcdk_trace_output(LOG_INFO,"r(%d),d(%d),step(%0.6f)",r,d,(double)step/1000000.);

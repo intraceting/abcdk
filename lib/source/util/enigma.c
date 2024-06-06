@@ -96,7 +96,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols)
         {
             c = ABCDK_PTR2U8(dict, y * cols + x);
 
-            ABCDK_ASSERT(c < cols,"字典数据的值必须小于列宽度。");
+            ABCDK_ASSERT(c < cols,"字典数据的值必须小于列宽度(转子的通道)。");
 
             chk = abcdk_bloom_mark(chk_dict, 32,c);
 
@@ -131,9 +131,9 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols)
     /*初始化反射板。两个索引之间形成互查字典。*/
     for (size_t x = 0; x < cols; x++)
     {
-        ctx->rdict[x] = (~x)%cols;
+        ctx->rdict[x] = cols - x -1;
     }
-
+ 
 
     ctx->cols = cols;
     ctx->rows = rows;
