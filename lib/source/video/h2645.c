@@ -6,45 +6,40 @@
  */
 #include "abcdk/video/h2645.h"
 
-ssize_t abcdk_h2645_find_start_code(const void *b, const void *e, int *msize)
+ssize_t abcdk_h2645_find_start_code(const void *b, const void *e, int *ksize)
 {
     const void *p = NULL;
-    size_t i = 0, k = 0, k2 = 0;
+    size_t i = 0, k = 0;
 
     assert(b != NULL && e != NULL);
     assert(b <= e);
 
     p = (uint8_t *)b;
 
-    /*如果指定的长度，则使用指定的。*/
-    if (msize && *msize > 0)
-        k = *msize;
-
     while (p <= e)
     {
-        k2 = (k ? k : 4);
-        if (e - p >= 4 && k2 == 4)
+        if (e - p >= 4)
         {
-            if (memcmp(p, "\x0\x0\x0\x1", k2) == 0)
+            if (memcmp(p, "\x0\x0\x0\x1", k = 4) == 0)
                 break;
         }
 
-        k2 = (k ? k : 3);
-        if (e - p >= 3 && k2 == 3)
+        if (e - p >= 3)
         {
-            if (memcmp(p, "\x0\x0\x1", k2) == 0)
+            if (memcmp(p, "\x0\x0\x1", k = 3) == 0)
                 break;
         }
 
         p += 1;
+        k = 0;
     }
 
     /*可能未找到。*/
     if (p > e)
         return -1;
 
-    if (msize && *msize <= 0)
-        *msize = k2;
+    if (ksize && k != 0)
+        *ksize = k;
 
     return p - b;
 }
@@ -53,24 +48,24 @@ const void *abcdk_h2645_packet_split(void **next, const void *e)
 {
     void *p = NULL;
     ssize_t i1 = -1,i2 = -1;
-    int msize = 0;
+    int ksize = 0;
 
     assert(next != NULL && e != NULL);
     assert(*next != NULL && *next <= e);
 
     p = *next;
 
-    i1 = abcdk_h2645_find_start_code(p, e,&msize);
+    i1 = abcdk_h2645_find_start_code(p, e,&ksize);
     if (i1 < 0)
         return NULL;
 
-    i2 = abcdk_h2645_find_start_code(p + i1 + msize, e, &msize);
+    i2 = abcdk_h2645_find_start_code(p + i1 + ksize, e, &ksize);
     if(i2 < 0)
         *next = (void*)(e+1);
     else 
-        *next = (void*)(p + i1 + msize + i2);
+        *next = (void*)(p + i1 + ksize + i2);
 
-    return p + i1 + msize;
+    return p + i1 + ksize;
 }
 
 void abcdk_h2645_mp4toannexb(void *data, size_t size, int len_size)
