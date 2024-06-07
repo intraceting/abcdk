@@ -82,13 +82,13 @@ uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s);
 /**
  * 批量亮灯。
 */
-void abcdk_enigma_light_batch16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size);
+void abcdk_enigma_light_batch_u16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size);
 
 
 /**
  * 批量亮灯。
 */
-void abcdk_enigma_light_batch8(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size);
+void abcdk_enigma_light_batch_u8(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size);
 
 
 __END_DECLS

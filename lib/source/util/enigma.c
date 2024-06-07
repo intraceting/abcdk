@@ -256,7 +256,7 @@ uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
     return c;
 }
 
-void abcdk_enigma_light_batch16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size)
+void abcdk_enigma_light_batch_u16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size)
 {
     assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
 
@@ -264,9 +264,10 @@ void abcdk_enigma_light_batch16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t
         dst[i] = abcdk_enigma_light(ctx, src[i]);
 }
 
-void abcdk_enigma_light_batch8(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
+void abcdk_enigma_light_batch_u8(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
 {
     assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
+    assert(ctx->cols <= 256);//单个轮子超过256个通道时，不能用使用此接口。
 
     for (size_t i = 0; i < size; i++)
         dst[i] = abcdk_enigma_light(ctx, src[i]);

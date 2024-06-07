@@ -34,11 +34,18 @@ void abcdk_easyssl_destroy(abcdk_easyssl_t **ctx);
 abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *key,size_t size);
 
 /**
- * 关联句柄。
+ * 设置关联句柄。
  * 
  * @return 旧的句柄。
 */
 int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd);
+
+/**
+ * 获取关联句柄。
+ * 
+ * @return 旧的句柄。
+*/
+int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx);
 
 /**
  * 发送数据。
