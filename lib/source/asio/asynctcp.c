@@ -984,7 +984,11 @@ NEXT_MSG:
         return;
     }
 
-    /*发。*/
+    /*
+     * 发。
+     * 
+     * 警告：补发数据时参数不能改变(指针和长度)。
+    */
     slen = abcdk_asynctcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
     if (slen <= 0)
     {

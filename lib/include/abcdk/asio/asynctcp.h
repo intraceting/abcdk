@@ -206,6 +206,8 @@ int abcdk_asynctcp_recv_watch(abcdk_asynctcp_node_t *node);
 /**
  * 写。
  * 
+ * @warning 在SSL环境中，如果返回值为0(链路忙)，当链路空闲后，补发数据的参数不能改变(指针和长度)。
+ * 
  * @return > 0 已写入数据的长度，0 链路忙。
 */
 ssize_t abcdk_asynctcp_send(abcdk_asynctcp_node_t *node, void *buf, size_t size);
