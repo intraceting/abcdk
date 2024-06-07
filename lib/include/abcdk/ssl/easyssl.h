@@ -17,11 +17,21 @@ __BEGIN_DECLS
 typedef struct _abcdk_easyssl abcdk_easyssl_t;
 
 
-/**销毁。*/
+/**
+ * 销毁。
+ * 
+ * @warning 不会销毁被关联的句柄。
+*/
 void abcdk_easyssl_destroy(abcdk_easyssl_t **ctx);
 
-/**创建。*/
-abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *dict,size_t rotor);
+/**
+ * 创建。
+ * 
+ * @param [in] key 密钥。
+ * @param [in] size 密钥长度(字节)。
+ * 
+*/
+abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *key,size_t size);
 
 /**
  * 关联句柄。
@@ -29,6 +39,20 @@ abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *dict,size_t rotor);
  * @return 旧的句柄。
 */
 int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd);
+
+/**
+ * 发送数据。
+ * 
+ * @return > 0 已经发送的长度(包括缓存未发送完成的)，= 0 连接已经关闭或断开，< 0 失败(非阻塞管道有效)。
+*/
+ssize_t abcdk_easyssl_send(abcdk_easyssl_t *ctx,const void *data,size_t size);
+
+/**
+ * 接收数据。
+ * 
+ * @return > 0 已接收的长度，= 0 连接已经关闭或断开(缓存未清空前不会返回此值)，< 0 失败(非阻塞管道有效)。
+*/
+ssize_t abcdk_easyssl_recv(abcdk_easyssl_t *ctx,void *data,size_t size);
 
 
 __END_DECLS
