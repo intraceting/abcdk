@@ -150,12 +150,19 @@
 #define ABCDK_CLAMP(V, A, B) \
     ABCDK_MIN(ABCDK_MAX((A), (B)), ABCDK_MAX(ABCDK_MIN((A), (B)), (V)))
 
-/** 交换两个数值变量的值。*/
+/** 
+ * 交换两个数值变量的值。
+ * 
+ * @warning 当相同的数值用下面方法交换时数值会变成零(0)，因此忽略相同的数值交换请求。
+*/
 #define ABCDK_INTEGER_SWAP(A, B) ( \
     {                              \
-        (A) ^= (B);                \
-        (B) ^= (A);                \
-        (A) ^= (B);                \
+        if((A) != (B))             \
+        {                          \
+            (A) ^= (B);            \
+            (B) ^= (A);            \
+            (A) ^= (B);            \
+        }                          \
     })
 
 /** 设置出错码，并返回。*/

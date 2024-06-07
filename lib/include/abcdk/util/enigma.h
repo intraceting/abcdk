@@ -23,10 +23,10 @@ typedef struct _abcdk_enigma abcdk_enigma_t;
  * 
  * @param [in out] seed 随机种子。
  * @param [in out] dict 字典表格。
- * @param [in] rows 字典行数。
- * @param [in] cols 字典列数。
+ * @param [in] rows 字典行数(转子的个数)。范围：3,4,5,...,32768。
+ * @param [in] cols 字典列数(转子的通道)。范围：4,6,8,...,65536。
 */
-void abcdk_enigma_mkdict(uint64_t *seed,uint8_t *dict,size_t rows,size_t cols);
+void abcdk_enigma_mkdict(uint64_t *seed,uint16_t *dict,size_t rows,size_t cols);
 
 
 /** 销毁。*/
@@ -36,18 +36,18 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx);
  * 创建。
  * 
  * @param [in] dict 字典表格。
- * @param [in] rows 字典行数(转子的个数)。
- * @param [in] cols 字典列数(转子的通道)。
+ * @param [in] rows 字典行数(转子的个数)。范围：3,4,5,...,32768。
+ * @param [in] cols 字典列数(转子的通道)。范围：4,6,8,...,65536。
  * 
 */
-abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows,size_t cols);
+abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols);
 
 /** 
  * 创建。
  * 
  * @param [in] seed 随机种子。
- * @param [in] rows 字典行数(转子的个数)。
- * @param [in] cols 字典列数(转子的通道)。
+ * @param [in] rows 字典行数(转子的个数)。范围：3,4,5,...,32768。
+ * @param [in] cols 字典列数(转子的通道)。范围：4,6,8,...,65536。
  * 
 */
 abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols);
@@ -55,17 +55,17 @@ abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols);
 /** 
  * 获取转子指针。
  * 
- * @param [in] index  转子编号。0~255。
+ * @param [in] index  转子编号。0~65535。
 */
-uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx,uint8_t rotor);
+uint16_t abcdk_enigma_getpos(abcdk_enigma_t *ctx,uint16_t rotor);
 
 /** 
  * 设置转子指针。
  * 
- * @param [in] rotor 转子编号。0~255。
+ * @param [in] rotor 转子编号。0~65535。
  * @param [in] pos  转子指针。
 */
-uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx,uint8_t rotor, uint8_t pos);
+uint16_t abcdk_enigma_setpos(abcdk_enigma_t *ctx,uint16_t rotor, uint16_t pos);
 
 /**
  * 亮灯。
@@ -77,12 +77,18 @@ uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx,uint8_t rotor, uint8_t pos);
  * @return 目标值。
  * 
 */
-uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s);
+uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s);
 
 /**
  * 批量亮灯。
 */
-void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size);
+void abcdk_enigma_light_batch16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size);
+
+
+/**
+ * 批量亮灯。
+*/
+void abcdk_enigma_light_batch8(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size);
 
 
 __END_DECLS
