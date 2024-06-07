@@ -424,9 +424,9 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_heap_free(send_dist);
     abcdk_heap_free(recv_dist);
 
-#elif 0
+#elif 1
 
-    for (int y = 3; y <= 32768; y++)
+    for (int y = 3; y <= 10; y++)
     {
         #pragma omp parallel for num_threads(8)
         for (int x = 4; x <= 65536; x += 2)
@@ -497,7 +497,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_enigma_free(&s_ctx);
     abcdk_enigma_free(&r_ctx);
-#elif 1
+#elif 0
 
 
     abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024,3,256);
