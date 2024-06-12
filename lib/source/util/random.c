@@ -88,3 +88,84 @@ char *abcdk_rand_string(char *buf, size_t size, int type)
 
     return buf;
 }
+
+void abcdk_rand_shuffle(uint64_t *seed, size_t size, abcdk_rand_shuffle_swap_cb swap_cb, void *opaque)
+{
+    assert(seed != NULL && size > 0 && swap_cb != NULL);
+
+    /*洗牌算法(Fisher-Yates)打乱顺序。*/
+    for (size_t a = size - 1; a > 0; a--)
+    {
+        /*生成一个0到a的随机整数。*/
+        size_t b = (uint64_t)abcdk_rand(seed) % (a + 1);
+
+        /*交换a和b。*/
+        swap_cb(a, b, opaque);
+    }
+}
+
+static void _abcdk_rand_shuffle_array_swap_uint8_cb(size_t a,size_t b, void *opaque)
+{
+    uint8_t *array_p = (uint8_t*)opaque;
+
+    ABCDK_INTEGER_SWAP(array_p[a],array_p[b]);
+}
+
+static void _abcdk_rand_shuffle_array_swap_uint16_cb(size_t a,size_t b, void *opaque)
+{
+    uint16_t *array_p = (uint16_t*)opaque;
+
+    ABCDK_INTEGER_SWAP(array_p[a],array_p[b]);
+}
+
+static void _abcdk_rand_shuffle_array_swap_uint32_cb(size_t a,size_t b, void *opaque)
+{
+    uint32_t *array_p = (uint32_t*)opaque;
+
+    ABCDK_INTEGER_SWAP(array_p[a],array_p[b]);
+}
+
+static void _abcdk_rand_shuffle_array_swap_uint64_cb(size_t a,size_t b, void *opaque)
+{
+    uint64_t *array_p = (uint64_t*)opaque;
+
+    ABCDK_INTEGER_SWAP(array_p[a],array_p[b]);
+}
+
+static void _abcdk_rand_shuffle_array_swap_float_cb(size_t a,size_t b, void *opaque)
+{
+    float *array_p = (float*)opaque;
+
+    float tmp = array_p[a];
+    array_p[a] = array_p[b];
+    array_p[b] = tmp;
+}
+
+static void _abcdk_rand_shuffle_array_swap_double_cb(size_t a,size_t b, void *opaque)
+{
+    double *array_p = (double*)opaque;
+
+    double tmp = array_p[a];
+    array_p[a] = array_p[b];
+    array_p[b] = tmp;
+}
+
+void *abcdk_rand_shuffle_array(void *buf,size_t count,uint64_t *seed,int type)
+{
+    assert(buf != NULL && count > 0 && seed != NULL && type >= 1 && type <= 6);
+
+    if(type == 1)
+        abcdk_rand_shuffle(seed,count,_abcdk_rand_shuffle_array_swap_uint8_cb,buf);
+    else if(type == 2)
+        abcdk_rand_shuffle(seed,count,_abcdk_rand_shuffle_array_swap_uint16_cb,buf);
+    else if(type == 3)
+        abcdk_rand_shuffle(seed,count,_abcdk_rand_shuffle_array_swap_uint32_cb,buf);
+    else if(type == 4)
+        abcdk_rand_shuffle(seed,count,_abcdk_rand_shuffle_array_swap_uint64_cb,buf);
+    else if(type == 5)
+        abcdk_rand_shuffle(seed,count,_abcdk_rand_shuffle_array_swap_float_cb,buf);
+    else if(type == 6)
+        abcdk_rand_shuffle(seed,count,_abcdk_rand_shuffle_array_swap_double_cb,buf);
+
+    return buf;
+}

@@ -838,8 +838,8 @@ int abcdk_test_any(abcdk_option_t *args)
 
                      
             abcdk_enigma_light_batch_u8(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
-           //  abcdk_enigma_light_batch_u8(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
-           //  assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+             abcdk_enigma_light_batch_u8(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
+             assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
 
             uint64_t step = abcdk_clock(s,&s);
             fprintf(stderr,"r(%d),d(%d),step(%0.6f)\n",r,d,(double)step/1000000.);

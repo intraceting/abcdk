@@ -90,23 +90,6 @@ NEXT_NODE:
     goto NEXT_NODE;
 }
 
-int abcdk_stream_write(abcdk_stream_t *ctx,abcdk_object_t *data)
-{
-    abcdk_tree_t *new_node;
-
-    assert(ctx != NULL && data != NULL);
-
-    new_node = abcdk_tree_alloc(data);
-    if(!new_node)
-        return -1;
-
-    abcdk_mutex_lock(ctx->locker,1);
-    abcdk_tree_insert2(ctx->queue,new_node,0);
-    abcdk_mutex_unlock(ctx->locker);
-
-    return 0;
-}
-
 int abcdk_stream_write_buffer(abcdk_stream_t *ctx,const void *buf,size_t len)
 {
     abcdk_object_t *obj;
@@ -125,4 +108,21 @@ int abcdk_stream_write_buffer(abcdk_stream_t *ctx,const void *buf,size_t len)
     /*删除写入失败的。*/
     abcdk_object_unref(&obj);
     return -1;
+}
+
+int abcdk_stream_write(abcdk_stream_t *ctx,abcdk_object_t *data)
+{
+    abcdk_tree_t *new_node;
+
+    assert(ctx != NULL && data != NULL);
+
+    new_node = abcdk_tree_alloc(data);
+    if(!new_node)
+        return -1;
+
+    abcdk_mutex_lock(ctx->locker,1);
+    abcdk_tree_insert2(ctx->queue,new_node,0);
+    abcdk_mutex_unlock(ctx->locker);
+
+    return 0;
 }

@@ -35,20 +35,24 @@ void abcdk_md5_final(abcdk_md5_t *ctx,uint8_t hashcode[16]);
 /** 结束。*/
 void abcdk_md5_final2hex(abcdk_md5_t *ctx,char hashcode[33],int ABC);
 
+/**计算内存块的MD5。*/
+int abcdk_md5_once(const void *data, size_t size, uint8_t hashcode[32]);
+
 /**
- * 计算内存块的MD5。
+ * 计算内存块的MD5，并转换成字符串。
  * 
  * @return 0 成功，-1 失败。
 */
 int abcdk_md5_from_buffer(const void *data,size_t size,char hashcode[33],int ABC);
+#define abcdk_md5_from_buffer2string abcdk_md5_from_buffer
 
 /**
- * 计算文件的MD5。
+ * 计算文件的MD5，并转换成字符串。
  * 
  * @return 0 成功，-1 失败。
 */
 int abcdk_md5_from_file(const char *file,char hashcode[33],int ABC);
-
+#define abcdk_md5_from_file2string abcdk_md5_from_file
 
 __END_DECLS
 

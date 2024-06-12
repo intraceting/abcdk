@@ -23,14 +23,6 @@
  * will fill a supplied 16-byte array with the digest.
  */
 
-/*转换成内部名字。*/
-#define MD5Final _abcdk_MD5Final
-#define MD5Init _abcdk_MD5Init
-#define MD5Transform _abcdk_MD5Transform
-#define MD5Update _abcdk_MD5Update
-#if __BYTE_ORDER != 1234
-#define byteReverse _abcdk_byteReverse
-#endif 
 
 #define MD5_HASHBYTES 16
 typedef unsigned int	u_int32_t;
@@ -49,6 +41,7 @@ void byteReverse(unsigned char *buf, unsigned longs);
 /*
  * Note: this code is harmless on little-endian machines.
  */
+static 
 void byteReverse(unsigned char *buf, unsigned longs)
 {
     u_int32_t t;
@@ -61,12 +54,14 @@ void byteReverse(unsigned char *buf, unsigned longs)
 }
 #endif
 
+static 
 void MD5Transform(u_int32_t buf[4], u_int32_t const in[16]);
 
 /*
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
+static 
 void MD5Init(MD5_CTX *ctx)
 {
     ctx->buf[0] = 0x67452301;
@@ -82,6 +77,7 @@ void MD5Init(MD5_CTX *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
+static 
 void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
 {
     u_int32_t t;
@@ -130,6 +126,7 @@ void MD5Update(MD5_CTX *ctx, unsigned char const *buf, unsigned len)
  * Final wrapup - pad to 64-byte boundary with the bit pattern 
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
+static 
 void MD5Final(unsigned char digest[MD5_HASHBYTES], MD5_CTX *ctx)
 {
     unsigned count;
@@ -188,6 +185,7 @@ void MD5Final(unsigned char digest[MD5_HASHBYTES], MD5_CTX *ctx)
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
+static 
 void MD5Transform(u_int32_t buf[4], u_int32_t const in[16])
 {
     register u_int32_t a, b, c, d;
@@ -326,12 +324,12 @@ void abcdk_md5_final(abcdk_md5_t *ctx,uint8_t hashcode[16])
 
 void abcdk_md5_final2hex(abcdk_md5_t *ctx, char hashcode[33],int ABC)
 {
-    char buf[16];
+    uint8_t buf[16];
     abcdk_md5_final(ctx, buf);
     abcdk_bin2hex(hashcode, buf, 16, ABC);
 }
 
-int abcdk_md5_from_buffer(const void *data,size_t size,char hashcode[33],int ABC)
+int abcdk_md5_once(const void *data, size_t size, uint8_t hashcode[32])
 {
     abcdk_md5_t *ctx = NULL;
 
@@ -342,8 +340,24 @@ int abcdk_md5_from_buffer(const void *data,size_t size,char hashcode[33],int ABC
         return -1;
 
     abcdk_md5_update(ctx,data,size);
-    abcdk_md5_final2hex(ctx,hashcode,ABC);
+    abcdk_md5_final(ctx,hashcode);
     abcdk_md5_destroy(&ctx);
+
+    return 0;
+}
+
+int abcdk_md5_from_buffer(const void *data,size_t size,char hashcode[33],int ABC)
+{
+    uint8_t buf[16];
+    int chk;
+
+    assert(data != NULL && hashcode != NULL);
+
+    chk = abcdk_md5_once(data,size,buf);
+    if(chk != 0)
+        return -1;
+
+    abcdk_bin2hex(hashcode, buf, 16, ABC);
 
     return 0;
 }

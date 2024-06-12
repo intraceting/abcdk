@@ -51,15 +51,8 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint16_t *dict, size_t rows, size_t col
         for (size_t x = 0; x < cols; x++)
             dict[y * cols + x] = x;
 
-        /*使用洗牌算法(Fisher-Yates)打乱字典表顺序。*/
-        for (size_t i = cols - 1; i > 0; i--)
-        {
-            /*生成一个0到i的随机整数。*/
-            size_t j = (uint64_t)abcdk_rand(seed)%(i+1);
-
-            /*交换dict[ROWS+j]和dict[ROWS+i]。*/
-            ABCDK_INTEGER_SWAP(dict[y * cols + j],dict[y * cols + i]);
-        }
+        /*使用洗牌算法打乱字典表顺序。*/
+        abcdk_rand_shuffle_array(&dict[y * cols],cols,seed,2);
     }
 }
 

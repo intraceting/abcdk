@@ -71,6 +71,7 @@
 #include "abcdk/util/package.h"
 #include "abcdk/util/timer.h"
 #include "abcdk/util/cpu.h"
+#include "abcdk/util/sha256.h"
 
 #include "abcdk/log/logger.h"
 
