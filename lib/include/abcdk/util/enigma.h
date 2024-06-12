@@ -53,6 +53,16 @@ abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols
 abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols);
 
 /** 
+ * 创建。
+ * 
+ * @param [in] seed 随机种子(每个转子使用不同的种子)。
+ * @param [in] rows 字典行数(转子的个数)。范围：3,4,5,...,32768。
+ * @param [in] cols 字典列数(转子的通道)。范围：4,6,8,...,65536。
+ * 
+*/
+abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[32768],size_t rows,size_t cols);
+
+/** 
  * 获取转子指针。
  * 
  * @param [in] index  转子编号。0~65535。

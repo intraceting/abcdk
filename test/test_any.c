@@ -814,7 +814,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
         fprintf(stderr,"[_%s_]\n",buf);
     }
-#elif 1
+#elif 0
 
     char buf[100] = {0};
 
@@ -867,5 +867,18 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_enigma_free(&s_ctx);
         abcdk_enigma_free(&r_ctx);
     }
+#elif 1
+
+    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc",3,1);
+
+
+    abcdk_easyssl_set_fd(cli_ctx,1);
+    abcdk_easyssl_send(cli_ctx,"abcd",4);
+    abcdk_easyssl_send(cli_ctx,"abcd",4);
+    abcdk_easyssl_send(cli_ctx,"abcd",4);
+
+
+    abcdk_easyssl_destroy(&cli_ctx);
+
 #endif 
 }

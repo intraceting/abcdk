@@ -11,6 +11,7 @@
 #include "abcdk/util/enigma.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/stream.h"
+#include "abcdk/util/sha256.h"
 
 __BEGIN_DECLS
 
@@ -22,9 +23,9 @@ typedef struct _abcdk_easyssl abcdk_easyssl_t;
  */
 typedef enum _abcdk_easyssl_scheme
 {
-    /*ENIGMA加密机，标准的。*/
-    ABCDK_EASYSSL_SCHEME_ENIGMA_NORMAL = 1,
-#define ABCDK_EASYSSL_SCHEME_ENIGMA_NORMAL ABCDK_EASYSSL_SCHEME_ENIGMA_NORMAL
+    /*ENIGMA加密机。*/
+    ABCDK_EASYSSL_SCHEME_ENIGMA = 1,
+#define ABCDK_EASYSSL_SCHEME_ENIGMA ABCDK_EASYSSL_SCHEME_ENIGMA
 
 }abcdk_easyssl_scheme_t;
 
@@ -63,7 +64,9 @@ int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx);
 /**
  * 发送数据。
  * 
- * @return > 0 已经发送的长度(包括缓存未发送完成的)，= 0 连接已经关闭或断开，< 0 失败(非阻塞管道有效)。
+ * @warning 重发数据的参数不能改变(指针和长度)。
+ * 
+ * @return > 0 已经发送的长度，= 0 连接已经关闭或断开，< 0 失败(非阻塞管道有效)。
 */
 ssize_t abcdk_easyssl_send(abcdk_easyssl_t *ctx,const void *data,size_t size);
 

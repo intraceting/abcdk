@@ -134,6 +134,7 @@
 #include "abcdk/http/httpd.h"
 
 #include "abcdk/ssl/openssl.h"
+#include "abcdk/ssl/easyssl.h"
 
 #include "abcdk/curl/curl.h"
 

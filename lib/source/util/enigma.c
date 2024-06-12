@@ -158,6 +158,26 @@ abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols)
     return ctx;
 }
 
+abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[32768],size_t rows,size_t cols)
+{
+    uint16_t *dict;
+    abcdk_enigma_t *ctx;
+
+    assert(seed != NULL && rows > 0 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
+
+    dict = (uint16_t*)abcdk_heap_alloc(sizeof(uint16_t) * rows * cols);
+    if(!dict)
+        return NULL;
+
+    for (size_t i = 0; i < rows; i++)
+        abcdk_enigma_mkdict(&seed[i], &dict[i * cols], 1, cols);
+
+    ctx = abcdk_enigma_create(dict,rows,cols);
+    abcdk_heap_free(dict);
+    
+    return ctx;  
+}
+
 uint16_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, uint16_t rotor)
 {
     assert(ctx != NULL);
