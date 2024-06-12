@@ -816,6 +816,20 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 #elif 1
 
+    char buf[100] = {0};
+
+    abcdk_sha256_from_buffer2string("",0,buf,0);
+
+    printf("%s\n",buf);
+
+    char buf2[100] = {0};
+
+    abcdk_sha256_from_buffer2string("abc",3,buf2,0);
+
+    printf("%s\n",buf2);
+
+#elif 0
+
     abcdk_thread_setaffinity2(pthread_self(),4);
 
     for (int r = 3; r <= 10; r++)
