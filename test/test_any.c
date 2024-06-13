@@ -889,7 +889,7 @@ int abcdk_test_any(abcdk_option_t *args)
         {
             for(int j = 0;j<100000000;j++)
             {
-                int n = abcdk_easyssl_send(cli_ctx,"abcd1234",8);
+                int n = abcdk_easyssl_write(cli_ctx,"abcd1234",8);
                 if(n<0)
                     abcdk_poll(pipefd[1],0x02,-1);
                 else if( n==0)
@@ -903,7 +903,7 @@ int abcdk_test_any(abcdk_option_t *args)
             for (int j = 0; j < 10000000; j++)
             {
                 char buf[1000] = {0};
-                int n = abcdk_easyssl_recv(cli_ctx, buf, 1000);
+                int n = abcdk_easyssl_read(cli_ctx, buf, 1000);
                 if (n < 0)
                     abcdk_poll(pipefd[0], 0x01, -1);
                 else if (n == 0)

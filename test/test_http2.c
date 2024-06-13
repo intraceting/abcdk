@@ -21,6 +21,8 @@ typedef struct _h2_node
 {
     abcdk_asynctcp_t *ctx;
 
+    SSL_CTX *ssl_ctx;
+
     int protocol;
 
     nghttp2_session_callbacks *callbacks;
@@ -174,6 +176,9 @@ static void _prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *lis
     node_new = _node_new(listen_p->ctx);
     node_new_p = (h2_node_t *)abcdk_asynctcp_get_userdata(node_new);
 
+    if(listen_p->ssl_ctx)
+        abcdk_asynctcp_upgrade2openssl(node_new,listen_p->ssl_ctx);
+
     // 初始化nghttp2回调结构
     nghttp2_session_callbacks_new(&node_new_p->callbacks);
     nghttp2_session_callbacks_set_on_data_chunk_recv_callback(node_new_p->callbacks, on_data_chunk_recv_callback);
@@ -216,7 +221,7 @@ static void _connect_event(abcdk_asynctcp_node_t *node)
     /*设置默认协议。*/
     http_p->protocol = 1;
 
-    ssl_p = abcdk_asynctcp_ssl(node);
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
     if (!ssl_p)
         goto final;
 
@@ -357,10 +362,17 @@ int abcdk_test_http2(abcdk_option_t *args)
     ctx = abcdk_asynctcp_start(10, -1);
     listen_node = _node_new(ctx);
 
+    h2_node_t *http_p = NULL;
+
+    http_p = (h2_node_t *)abcdk_asynctcp_get_userdata(listen_node);
+
+    if(http_p->ssl_ctx = ssl_ctx)
+        abcdk_asynctcp_upgrade2openssl(listen_node,ssl_ctx);
+
     abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:3333", 0);
 
     abcdk_asynctcp_callback_t cb = {_prepare_cb, _event_cb, _request_cb};
-    abcdk_asynctcp_listen(listen_node, ssl_ctx, &listen_addr, &cb);
+    abcdk_asynctcp_listen(listen_node, &listen_addr, &cb);
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);

@@ -757,6 +757,7 @@ static void _abcdk_httpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_httpd_node_t *listen_ctx_p, *node_ctx_p;
+    int chk;
 
     listen_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(listen);
 
@@ -770,6 +771,13 @@ static void _abcdk_httpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
     node_ctx_p->flag = 1;
     node_ctx_p->protocol = 0;
 
+    /*升级是可选的。*/
+    if(listen_ctx_p->ssl_ctx)
+    {
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx);
+        if(chk != 0)
+            abcdk_asynctcp_unref(&node_p);
+    }
 
     /*准备完毕，返回。*/
     *node = node_p;
@@ -811,7 +819,7 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
-    ssl_p = abcdk_asynctcp_ssl(node);
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
     if (!ssl_p)
         goto END;
 
@@ -1100,16 +1108,21 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
 
 #ifdef HEADER_SSL_H
     if(cfg->cert_file && cfg->key_file)
-        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
-
-    if (node_ctx_p->ssl_ctx)
     {
+        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+        if (!node_ctx_p->ssl_ctx)
+        {
+            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
+            return -2;
+        }
+    
 #ifdef NGHTTP2_H
         if (cfg->enable_h2)
             _abcdk_httpd_set_alpn(node_p, 2);
         else
 #endif // NGHTTP2_H
             _abcdk_httpd_set_alpn(node_p, 1);
+
     }
 #endif //HEADER_SSL_H
 
@@ -1117,7 +1130,7 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     cb.event_cb = _abcdk_httpd_event_cb;
     cb.request_cb = _abcdk_httpd_request_cb;
 
-    chk = abcdk_asynctcp_listen(node_p,node_ctx_p->ssl_ctx,addr,&cb);
+    chk = abcdk_asynctcp_listen(node_p,addr,&cb);
     if(chk == 0)
         return 0;
 

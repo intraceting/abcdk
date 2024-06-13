@@ -16,6 +16,7 @@
 #include "abcdk/util/map.h"
 #include "abcdk/util/time.h"
 #include "abcdk/ssl/openssl.h"
+#include "abcdk/ssl/easyssl.h"
 
 __BEGIN_DECLS
 
@@ -23,6 +24,8 @@ __BEGIN_DECLS
 #ifndef HEADER_SSL_H
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
+#define SSL_read(f,b,s) 0
+#define SSL_write(f,b,s) 0
 #endif //HEADER_SSL_H
 
 /** 简单的异步TCP通讯。 */
@@ -138,11 +141,29 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_refer(abcdk_asynctcp_node_t *src);
 abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
 /**
- * SSL环境。
+ * 升级为openssl环境。
+ *
+ * @param [in] ssl_ctx SSL环境指针(仅复制，创建者放负责回收和释放)。
+ *
+ * @return 0 成功，!0 失败。
+ */
+int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx);
+
+/**
+ * 升级为easyssl环境。
+ *
+ * @param [in] ssl_ctx SSL环境指针(仅复制，创建者放负责回收和释放)。
+ *
+ * @return 0 成功，!0 失败。
+ */
+int abcdk_asynctcp_upgrade2easyssl(abcdk_asynctcp_node_t *node,abcdk_easyssl_t *ssl_ctx);
+
+/**
+ * openssl环境指针。
  * 
  * @note 连接建立后有效，且调用者不能释放。
 */
-SSL *abcdk_asynctcp_ssl(abcdk_asynctcp_node_t *node);
+SSL *abcdk_asynctcp_openssl_ctx(abcdk_asynctcp_node_t *node);
 
 
 /**
@@ -245,13 +266,12 @@ abcdk_asynctcp_t *abcdk_asynctcp_start(int max,int cpu);
  * 监听客户端连接。
  * 
  * @param [in] node 通讯对象指针。
- * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 监听地址指针。
  * @param [in] cb 回调函数指针。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_asynctcp_callback_t *cb);
+int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr,abcdk_asynctcp_callback_t *cb);
 
 /**
  * 连接远程服务器。
@@ -259,13 +279,12 @@ int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx, abcdk_s
  * @note 仅发出连接指令，连接是否成功以消息通知。
  * 
  * @param [in] node 通讯对象指针。
- * @param [in] ssl_ctx SSL环境指针，NULL(0) 忽略。
  * @param [in] addr 服务端地址指针。
  * @param [in] cb 回调函数指针。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx, abcdk_sockaddr_t *addr,abcdk_asynctcp_callback_t *cb);
+int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr,abcdk_asynctcp_callback_t *cb);
 
 /**
  * 投递数据。

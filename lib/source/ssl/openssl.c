@@ -546,6 +546,13 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
 
 #endif //ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
 
+    /*禁止会话复用。*/
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
+#ifdef SSL_OP_NO_TICKET
+    /*禁用会话票据*/
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
+#endif //SSL_OP_NO_TICKET
+
     return ctx;
 
 final_error:
@@ -621,6 +628,13 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
 
     if (cafile || capath)
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+    /*禁止会话复用。*/
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
+#ifdef SSL_OP_NO_TICKET
+    /*禁用会话票据*/
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
+#endif //SSL_OP_NO_TICKET
 
     return ctx;
 

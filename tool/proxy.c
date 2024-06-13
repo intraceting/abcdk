@@ -248,6 +248,7 @@ static void _abcdk_proxy_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
     abcdk_asynctcp_node_t *node_p;
     abcdk_proxy_node_t *node_ctx_p;
     abcdk_proxy_node_t *listen_ctx_p;
+    int chk;
 
     listen_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(listen);
 
@@ -258,6 +259,14 @@ static void _abcdk_proxy_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
     node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
     node_ctx_p->flag = 1;
+
+    /*升级是可选的。*/
+    if(listen_ctx_p->ssl_ctx)
+    {
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx);
+        if(chk != 0)
+            abcdk_asynctcp_unref(&node_p);
+    }
 
     *node = node_p;
 }
@@ -273,7 +282,7 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     if (node_ctx_p->flag == 2)
         abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
-    ssl_p = abcdk_asynctcp_ssl(node);
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
     if (!ssl_p)
         goto END;
 
@@ -544,6 +553,17 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
         goto ERR;
     }
 
+    /*升级是可选的。*/
+    if(node_ctx_p->ssl_ctx)
+    {
+        chk = abcdk_asynctcp_upgrade2openssl(node_ctx_p->tunnel,node_ctx_p->ssl_ctx);
+        if(chk != 0)
+        {
+            _abcdk_proxy_reply_nobody(node, 500);
+            goto ERR;
+        }
+    }
+
     node_uplink_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_ctx_p->tunnel);
 
     node_uplink_ctx_p->father = node_ctx_p->father;
@@ -555,7 +575,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     cb.event_cb = _abcdk_proxy_event_cb;
     cb.request_cb = _abcdk_proxy_request_cb;
 
-    chk = abcdk_asynctcp_connect(node_ctx_p->tunnel, node_ctx_p->ssl_ctx, &uplink_addr, &cb);
+    chk = abcdk_asynctcp_connect(node_ctx_p->tunnel, &uplink_addr, &cb);
     if (chk != 0)
     {
         _abcdk_proxy_trace_output(node, LOG_WARNING, "连接上级'%s'失败，网络不可达或服务未启动。", node_ctx_p->father->up_link);
@@ -715,8 +735,8 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl)
 {
     const char *listen;
     abcdk_sockaddr_t listen_addr = {0};
-    abcdk_asynctcp_node_t *listen_p;
-    abcdk_proxy_node_t *listen_ctx_p;
+    abcdk_asynctcp_node_t *node_p;
+    abcdk_proxy_node_t *node_ctx_p;
     abcdk_asynctcp_callback_t cb = {0};
     int chk;
 
@@ -737,20 +757,27 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl)
     }
 
     if (ssl)
-        listen_p = ctx->listen_ssl_p = _abcdk_proxy_node_alloc(ctx);
+        node_p = ctx->listen_ssl_p = _abcdk_proxy_node_alloc(ctx);
     else
-        listen_p = ctx->listen_p = _abcdk_proxy_node_alloc(ctx);
+        node_p = ctx->listen_p = _abcdk_proxy_node_alloc(ctx);
 
-    if (!listen_p)
+    if (!node_p)
         return -2;
 
-    listen_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(listen_p);
+    node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
     if (ssl)
     {
 #ifdef HEADER_SSL_H
         if (ctx->cert_file && ctx->key_file)
-            listen_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, ctx->ca_file, ctx->ca_path, ctx->cert_file, ctx->key_file, NULL);
+        {
+            node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, ctx->ca_file, ctx->ca_path, ctx->cert_file, ctx->key_file, NULL);
+            if (!node_ctx_p->ssl_ctx)
+            {
+                abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
+                return -2;
+            }
+        }
 #endif // HEADER_SSL_H
     }
 
@@ -758,7 +785,7 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl)
     cb.event_cb = _abcdk_proxy_event_cb;
     cb.request_cb = _abcdk_proxy_request_cb;
 
-    chk = abcdk_asynctcp_listen(listen_p, listen_ctx_p->ssl_ctx, &listen_addr, &cb);
+    chk = abcdk_asynctcp_listen(node_p, &listen_addr, &cb);
     if (chk != 0)
     {
         abcdk_trace_output(LOG_ERR, "监听地址'%s'失败，无权限或被占用。", listen);

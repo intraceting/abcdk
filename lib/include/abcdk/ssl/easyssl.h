@@ -69,14 +69,14 @@ int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer);
  * 
  * @return > 0 已经发送的长度，= 0 连接已经关闭或断开，< 0 失败(非阻塞管道有效)。
 */
-ssize_t abcdk_easyssl_send(abcdk_easyssl_t *ctx,const void *data,size_t size);
+ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size);
 
 /**
  * 接收数据。
  * 
  * @return > 0 已接收的长度，= 0 连接已经关闭或断开(缓存未清空前不会返回此值)，< 0 失败(非阻塞管道有效)。
 */
-ssize_t abcdk_easyssl_recv(abcdk_easyssl_t *ctx,void *data,size_t size);
+ssize_t abcdk_easyssl_read(abcdk_easyssl_t *ctx,void *data,size_t size);
 
 
 __END_DECLS

@@ -181,7 +181,7 @@ int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer)
     return old;
 }
 
-ssize_t abcdk_easyssl_send(abcdk_easyssl_t *ctx,const void *data,size_t size)
+ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size)
 {
     char salt[256+1] = {0};
     abcdk_tree_t *en_data = NULL;
@@ -247,7 +247,6 @@ NEXT_MSG:
      * 
      * 警告：补发数据时参数不能改变(指针和长度)。
     */
-    //slen = send(ctx->send_fd, ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->send_pos), p->obj->sizes[0] - ctx->send_pos,0);
     slen = write(ctx->send_fd, ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->send_pos), p->obj->sizes[0] - ctx->send_pos);
     if (slen < 0)
         return -1;
@@ -272,7 +271,7 @@ NEXT_MSG:
     goto NEXT_MSG;  
 }
 
-ssize_t abcdk_easyssl_recv(abcdk_easyssl_t *ctx,void *data,size_t size)
+ssize_t abcdk_easyssl_read(abcdk_easyssl_t *ctx,void *data,size_t size)
 {
     char salt[256+1] = {0};
     abcdk_object_t *de_data = NULL;
@@ -305,7 +304,6 @@ NEXT_LOOP:
     assert(ctx->recv_fd >= 0);
 
     /*收。*/
-    // rlen = recv(ctx->recv_fd,ctx->recv_buf->pptrs[0],ctx->recv_buf->sizes[0],0);
     rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
     if (rlen < 0)
         return (alen > 0 ? alen : -1); //优先返回已接收的数据长度。

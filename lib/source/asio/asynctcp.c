@@ -62,11 +62,11 @@ struct _abcdk_asynctcp_node
     /** 句柄。*/
     int fd;
 
-    /** SSL/COMM环境指针。*/
-#ifdef HEADER_SSL_H
-    SSL_CTX *ssl_ctx;
-    SSL *ssl;
-#endif //HEADER_SSL_H
+    /** openssl环境指针。*/
+    SSL *openssl_ctx;
+
+    /** easyssl环境指针。*/
+    abcdk_easyssl_t *easyssl_ctx;
 
     /** 工作线程。*/
     volatile pthread_t worker;
@@ -118,7 +118,7 @@ void abcdk_asynctcp_unref(abcdk_asynctcp_node_t **node)
     node_p->magic = 0xcccccccc;
 
 #ifdef HEADER_SSL_H
-    abcdk_openssl_ssl_free(&node_p->ssl);
+    abcdk_openssl_ssl_free(&node_p->openssl_ctx);
 #endif //HEADER_SSL_H
 
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
@@ -173,18 +173,43 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     node->out_pos = 0;
     node->in_buffer = NULL;
     node->from_listen = NULL;
+    node->openssl_ctx = NULL;
+    node->easyssl_ctx = NULL;
 
     return node;
 }
 
-SSL *abcdk_asynctcp_ssl(abcdk_asynctcp_node_t *node)
+int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx)
+{
+    assert(node != NULL && ssl_ctx != NULL);
+
+    ABCDK_ASSERT(node->openssl_ctx == NULL,"仅可以升级一次。");
+
+    node->openssl_ctx = abcdk_openssl_ssl_alloc(ssl_ctx);
+    if(!node->openssl_ctx)
+        return -1;
+
+    return 0;
+
+}
+
+int abcdk_asynctcp_upgrade2easyssl(abcdk_asynctcp_node_t *node,abcdk_easyssl_t *ssl_ctx)
+{
+    assert(node != NULL && ssl_ctx != NULL);
+
+    ABCDK_ASSERT(node->easyssl_ctx == NULL,"仅可以升级一次。");
+
+    node->easyssl_ctx = ssl_ctx;
+
+    return 0;
+}
+
+SSL *abcdk_asynctcp_openssl_ctx(abcdk_asynctcp_node_t *node)
 {
     assert(node != NULL);
 
-#ifdef HEADER_SSL_H
-    if(node->ssl)
-        return node->ssl;
-#endif //HEADER_SSL_H
+    if(node->openssl_ctx)
+        return node->openssl_ctx;
 
     return NULL;
 }
@@ -259,12 +284,11 @@ ssize_t abcdk_asynctcp_recv(abcdk_asynctcp_node_t *node, void *buf, size_t size)
 
     while (rsize_all < size)
     {
-#ifdef HEADER_SSL_H
-        if(node->ssl)
-            rsize = SSL_read(node->ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
+        if(node->openssl_ctx)
+            rsize = SSL_read(node->openssl_ctx,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
+        else if(node->easyssl_ctx)
+            rsize = abcdk_easyssl_read(node->easyssl_ctx,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         else 
-#endif //HEADER_SSL_H
-            //rsize = recv(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all,0);
             rsize = read(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         
         if(rsize <=0)
@@ -307,12 +331,11 @@ ssize_t abcdk_asynctcp_send(abcdk_asynctcp_node_t *node, void *buf, size_t size)
 
     while (wsize_all < size)
     {
-#ifdef HEADER_SSL_H
-        if(node->ssl)
-            wsize = SSL_write(node->ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
+        if(node->openssl_ctx)
+            wsize = SSL_write(node->openssl_ctx,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
+        else if(node->easyssl_ctx)
+            wsize = abcdk_easyssl_write(node->easyssl_ctx,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else 
-#endif //HEADER_SSL_H
-            //wsize = send(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all,0);
             wsize = write(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         
         if(wsize <=0)
@@ -402,15 +425,7 @@ void _abcdk_asynctcp_accept(abcdk_asynctcp_node_t *listen)
     /*复制监听环境的回调函数指针。*/
     node->callback = listen->callback;
 
-#ifdef HEADER_SSL_H    
-    if(listen->ssl_ctx)
-    {
-        node->ssl = abcdk_openssl_ssl_alloc(listen->ssl_ctx);
-        if(!node->ssl)
-            goto final_error;
-    }
-#endif //HEADER_SSL_H
-
+    /*每次取出一个句柄。*/
     node->fd = abcdk_accept(listen->fd, &node->remote);
     if (node->fd < 0)
         goto final_error;
@@ -468,11 +483,9 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
         chk = abcdk_poll(node->fd, 0x02, 0);
         if (chk > 0)
         {
-#ifdef HEADER_SSL_H    
-            if(node->ssl)
+            if(node->openssl_ctx)
                 node->status = ABCDK_ASYNCTCP_STATUS_SSL_SYNC;
             else 
-#endif //HEADER_SSL_H
                 node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
         }
         else
@@ -530,30 +543,30 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
 #ifdef HEADER_SSL_H      
     if (node->status == ABCDK_ASYNCTCP_STATUS_SSL_SYNC)
     {
-        if (SSL_get_fd(node->ssl) != node->fd)
+        if (SSL_get_fd(node->openssl_ctx) != node->fd)
         {
-            SSL_set_fd(node->ssl, node->fd);
+            SSL_set_fd(node->openssl_ctx, node->fd);
             
             if (node->flag == ABCDK_ASYNCTCP_FLAG_ACCPET)
-                SSL_set_accept_state(node->ssl);
+                SSL_set_accept_state(node->openssl_ctx);
             else if (node->flag == ABCDK_ASYNCTCP_FLAG_CLIENT)
-                SSL_set_connect_state(node->ssl);
+                SSL_set_connect_state(node->openssl_ctx);
             else
                 goto final_error;
 
 #ifdef SSL_OP_NO_RENEGOTIATION
-            SSL_set_options(node->ssl, SSL_OP_NO_RENEGOTIATION);
+            SSL_set_options(node->openssl_ctx, SSL_OP_NO_RENEGOTIATION);
 #endif
         }
 
-        ssl_chk = SSL_do_handshake(node->ssl);
+        ssl_chk = SSL_do_handshake(node->openssl_ctx);
         if (ssl_chk == 1)
         {   
             node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
         }
         else
         {
-            ssl_err = SSL_get_error(node->ssl, ssl_chk);
+            ssl_err = SSL_get_error(node->openssl_ctx, ssl_chk);
 
             if (ssl_err == SSL_ERROR_WANT_READ)
             {
@@ -576,6 +589,13 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
 #endif //HEADER_SSL_H
 
 final:
+
+    /*连接完成后，关联句柄到easyssl环境。*/
+    if(node->status = ABCDK_ASYNCTCP_STATUS_STABLE && node->easyssl_ctx)
+    {
+        abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,0);
+        abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,1);
+    }
 
     /*OK or AGAIN.*/
     return;
@@ -735,7 +755,7 @@ final_error:
     return NULL;
 }
 
-int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_asynctcp_callback_t *cb)
+int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_asynctcp_callback_t *cb)
 {
     abcdk_asynctcp_node_t *node_p = NULL;
     epoll_data_t ep_data;
@@ -757,18 +777,6 @@ int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx,abcdk_so
     node_p->status = ABCDK_ASYNCTCP_STATUS_STABLE;
     node_p->cb_cp = *cb;
     node_p->callback = &node_p->cb_cp;
-
-#ifdef HEADER_SSL_H
-    if(ssl_ctx)
-    {
-        node_p->ssl_ctx = ssl_ctx;
-        /*禁止会话复用。*/
-        SSL_CTX_set_session_cache_mode(node_p->ssl_ctx, SSL_SESS_CACHE_OFF);
-#ifdef SSL_OP_NO_TICKET
-        SSL_CTX_set_options(node_p->ssl_ctx, SSL_OP_NO_TICKET);
-#endif //SSL_OP_NO_TICKET
-    }
-#endif //HEADER_SSL_H
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -837,7 +845,7 @@ final_error:
     return -1;
 }
 
-int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx,abcdk_sockaddr_t *addr, abcdk_asynctcp_callback_t *cb)
+int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_asynctcp_callback_t *cb)
 {
     abcdk_asynctcp_node_t *node_p = NULL;
     epoll_data_t ep_data;
@@ -881,15 +889,6 @@ int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, SSL_CTX *ssl_ctx,abcdk_s
     node_p->fd = abcdk_socket(node_p->remote.family, 0);
     if (node_p->fd < 0)
         goto final_error;
-
-#ifdef HEADER_SSL_H
-    if(ssl_ctx)
-    {
-        node_p->ssl = abcdk_openssl_ssl_alloc(ssl_ctx);
-        if(!node_p->ssl)
-            goto final_error;
-    }
-#endif //HEADER_SSL_H
 
     chk = abcdk_fflag_add(node_p->fd,O_NONBLOCK);
     if(chk != 0 )

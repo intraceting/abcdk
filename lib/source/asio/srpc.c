@@ -204,6 +204,7 @@ static void _abcdk_srpc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_srpc_node_t *listen_ctx_p, *node_ctx_p;
+    int chk;
 
     listen_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(listen);
 
@@ -216,6 +217,13 @@ static void _abcdk_srpc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
     node_ctx_p->cfg = listen_ctx_p->cfg;
     node_ctx_p->flag = 1;
 
+    /*升级是可选的。*/
+    if(listen_ctx_p->ssl_ctx)
+    {
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx);
+        if(chk != 0)
+            abcdk_asynctcp_unref(&node_p);
+    }
 
     /*准备完毕，返回。*/
     *node = node_p;
@@ -257,7 +265,7 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
-    ssl_p = abcdk_asynctcp_ssl(node);
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
     if (!ssl_p)
         goto END;
 
@@ -445,14 +453,21 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
 
 #ifdef HEADER_SSL_H
     if(cfg->cert_file && cfg->key_file)
+    {
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+        if (!node_ctx_p->ssl_ctx)
+        {
+            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
+            return -2;
+        }
+    }
 #endif //HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_srpc_prepare_cb;
     cb.event_cb = _abcdk_srpc_event_cb;
     cb.request_cb = _abcdk_srpc_request_cb;
 
-    chk = abcdk_asynctcp_listen(node_p,node_ctx_p->ssl_ctx,addr,&cb);
+    chk = abcdk_asynctcp_listen(node_p,addr,&cb);
     if(chk == 0)
         return 0;
 
@@ -477,14 +492,25 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
 
 #ifdef HEADER_SSL_H
     if(cfg->cert_file && cfg->key_file)
+    {
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+        if (!node_ctx_p->ssl_ctx)
+        {
+            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
+            return -2;
+        }
+
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,node_ctx_p->ssl_ctx);
+        if(chk != 0)
+            return -3;
+    }
 #endif //HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_srpc_prepare_cb;
     cb.event_cb = _abcdk_srpc_event_cb;
     cb.request_cb = _abcdk_srpc_request_cb;
 
-    chk = abcdk_asynctcp_connect(node_p,node_ctx_p->ssl_ctx,addr,&cb);
+    chk = abcdk_asynctcp_connect(node_p,addr,&cb);
     if(chk == 0)
         return 0;
 
