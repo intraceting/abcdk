@@ -71,7 +71,7 @@ void abcdk_easyssl_destroy(abcdk_easyssl_t **ctx)
 int _abcdk_easyssl_init_enigma(abcdk_easyssl_t *ctx,const uint8_t *key,size_t size,uint32_t scheme)
 {
     uint8_t hashcode[32];
-    uint64_t seed[4] = {0};
+    uint64_t send_seed[4] = {0},recv_seed[4] = {0};
     int chk;
 
     /*密钥转换为定长HASHCODE。*/
@@ -82,12 +82,14 @@ int _abcdk_easyssl_init_enigma(abcdk_easyssl_t *ctx,const uint8_t *key,size_t si
     /*分解成4个64位整数。不能直接复制内存，因为存在大小端存储顺序不同的问题。*/
     for (int i = 0; i < 32; i++)
     {
-        seed[i % 4] <<= 8;
-        seed[i % 4] |= (uint64_t)hashcode[i];
+        send_seed[i % 4] <<= 8;
+        send_seed[i % 4] |= (uint64_t)hashcode[i];
+        recv_seed[i % 4] <<= 8;
+        recv_seed[i % 4] |= (uint64_t)hashcode[i];
     }
 
-    ctx->en_send_ctx = abcdk_enigma_create3(seed,4,256);
-    ctx->en_recv_ctx = abcdk_enigma_create3(seed,4,256);
+    ctx->en_send_ctx = abcdk_enigma_create3(send_seed,4,256);
+    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed,4,256);
 
     if(!ctx->en_send_ctx || !ctx->en_recv_ctx)
         return -2;
@@ -182,18 +184,18 @@ int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer)
 ssize_t abcdk_easyssl_send(abcdk_easyssl_t *ctx,const void *data,size_t size)
 {
     char salt[256+1] = {0};
-    abcdk_tree_t *en_data;
-    abcdk_tree_t *p;
-    ssize_t slen;
+    abcdk_tree_t *en_data = NULL;
+    abcdk_tree_t *p = NULL;
+    ssize_t slen = 0;
 
     assert(ctx != NULL && data != NULL && size >0);
 
-    /*发送前撒盐。*/
-    if(!ctx->send_sprinkle_salt && ctx->salt_len > 0)
+    /*发送前先撒盐。*/
+    if(ctx->salt_len > 0 && !ctx->send_sprinkle_salt)
     {
         en_data = abcdk_tree_alloc3(ctx->salt_len);
         if(!en_data)
-            return -2;
+            return 0;//内存不足时，关闭当前句柄。
 
         /*从所有可见字符中选取。*/
         abcdk_rand_string(salt,ctx->salt_len,0);
@@ -213,7 +215,7 @@ ssize_t abcdk_easyssl_send(abcdk_easyssl_t *ctx,const void *data,size_t size)
     {
         en_data = abcdk_tree_alloc3(size);
         if(!en_data)
-            return -3;
+            return 0;//内存不足时，关闭当前句柄。
 
         /*记录指针和长度，重发时会检测这两个值。*/
         ctx->send_repeated_p = data;
@@ -237,6 +239,8 @@ NEXT_MSG:
         ctx->send_repeated_l = 0;
         return size;
     }
+
+    assert(ctx->send_fd >= 0);
 
     /*
      * 发。
@@ -271,8 +275,8 @@ NEXT_MSG:
 ssize_t abcdk_easyssl_recv(abcdk_easyssl_t *ctx,void *data,size_t size)
 {
     char salt[256+1] = {0};
-    abcdk_object_t *de_data;
-    ssize_t rlen,alen;
+    abcdk_object_t *de_data = NULL;
+    ssize_t rlen = 0,alen = 0;
     int chk;
 
     assert(ctx != NULL && data != NULL && size >0);
@@ -282,7 +286,7 @@ NEXT_LOOP:
     /*如果数据存在盐则先读取盐。*/
     if (ctx->salt_len > 0 && ctx->salt_len > ctx->recv_salt_len)
     {
-        rlen = abcdk_stream_read(ctx->recv_queue, salt, ctx->salt_len - ctx->recv_salt_len);
+        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(salt,ctx->recv_salt_len), ctx->salt_len - ctx->recv_salt_len);
         if (rlen > 0)
             ctx->recv_salt_len += rlen;
     }
@@ -298,6 +302,9 @@ NEXT_LOOP:
             return alen;
     }
 
+    assert(ctx->recv_fd >= 0);
+
+    /*收。*/
     // rlen = recv(ctx->recv_fd,ctx->recv_buf->pptrs[0],ctx->recv_buf->sizes[0],0);
     rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
     if (rlen < 0)
@@ -310,7 +317,7 @@ NEXT_LOOP:
         return 0;//内存不足时，关闭当前句柄。
     
     /*解密。*/
-    abcdk_enigma_light_batch_u8(ctx->en_send_ctx,de_data->pptrs[0],ctx->recv_buf->pptrs[0],rlen);
+    abcdk_enigma_light_batch_u8(ctx->en_recv_ctx,de_data->pptrs[0],ctx->recv_buf->pptrs[0],rlen);
 
     /*追加到接收队列。*/
     chk = abcdk_stream_write(ctx->recv_queue,de_data);

@@ -869,13 +869,55 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 #elif 1
 
-    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc",3,1,16);
+    int pipefd[2] = {-1,-1};
+
+    pipe(pipefd);
+
+    abcdk_fflag_set(pipefd[0],O_NONBLOCK);
+    abcdk_fflag_set(pipefd[1],O_NONBLOCK);
+
+    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc",3,1,33);
 
 
-    abcdk_easyssl_set_fd(cli_ctx,1,0);
-    abcdk_easyssl_send(cli_ctx,"abcd",4);
-    abcdk_easyssl_send(cli_ctx,"abcd",4);
-    abcdk_easyssl_send(cli_ctx,"abcd",4);
+    abcdk_easyssl_set_fd(cli_ctx,pipefd[0],0);
+    abcdk_easyssl_set_fd(cli_ctx,pipefd[1],1);
+
+#pragma omp parallel for num_threads(2)
+    for(int i = 0;i<2;i++)
+    {
+        if(i == 0)
+        {
+            for(int j = 0;j<10000;j++)
+            {
+                int n = abcdk_easyssl_send(cli_ctx,"abcd",4);
+                if(n<0)
+                    abcdk_poll(pipefd[1],0x02,-1);
+                else if( n==0)
+                    break;
+            }
+
+            abcdk_closep(&pipefd[1]);
+        }
+        else 
+        {
+            for (int j = 0; j < 10000; j++)
+            {
+                char buf[1000] = {0};
+                int n = abcdk_easyssl_recv(cli_ctx, buf, 1000);
+                if (n < 0)
+                    abcdk_poll(pipefd[0], 0x01, -1);
+                else if (n == 0)
+                    break;
+
+                printf("%s\n",buf);
+            }
+
+            abcdk_closep(&pipefd[0]);
+        }
+
+    }
+
+    
 
 
     abcdk_easyssl_destroy(&cli_ctx);
