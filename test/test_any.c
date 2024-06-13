@@ -876,7 +876,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_fflag_set(pipefd[0],O_NONBLOCK);
     abcdk_fflag_set(pipefd[1],O_NONBLOCK);
 
-    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc",3,1,33);
+    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc123",6,1,33);
 
 
     abcdk_easyssl_set_fd(cli_ctx,pipefd[0],0);
@@ -889,7 +889,7 @@ int abcdk_test_any(abcdk_option_t *args)
         {
             for(int j = 0;j<10000;j++)
             {
-                int n = abcdk_easyssl_send(cli_ctx,"abcd",4);
+                int n = abcdk_easyssl_send(cli_ctx,"abcd1234",8);
                 if(n<0)
                     abcdk_poll(pipefd[1],0x02,-1);
                 else if( n==0)
