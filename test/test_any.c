@@ -869,10 +869,10 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 #elif 1
 
-    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc",3,1);
+    abcdk_easyssl_t *cli_ctx = abcdk_easyssl_create("abc",3,1,16);
 
 
-    abcdk_easyssl_set_fd(cli_ctx,1);
+    abcdk_easyssl_set_fd(cli_ctx,1,0);
     abcdk_easyssl_send(cli_ctx,"abcd",4);
     abcdk_easyssl_send(cli_ctx,"abcd",4);
     abcdk_easyssl_send(cli_ctx,"abcd",4);

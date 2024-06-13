@@ -42,24 +42,25 @@ void abcdk_easyssl_destroy(abcdk_easyssl_t **ctx);
  * 
  * @param [in] key 密钥。
  * @param [in] size 密钥长度(字节)。
- * @param [in] flag 标志。
+ * @param [in] scheme 方案。
+ * @param [in] salt 盐长度。<= 256 有效。
  * 
 */
-abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *key,size_t size,uint32_t scheme);
+abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *key,size_t size,uint32_t scheme,size_t salt);
 
 /**
  * 设置关联句柄。
  * 
  * @return 旧的句柄。
 */
-int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd);
+int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int writer);
 
 /**
  * 获取关联句柄。
  * 
  * @return 旧的句柄。
 */
-int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx);
+int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer);
 
 /**
  * 发送数据。

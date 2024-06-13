@@ -22,6 +22,9 @@ void abcdk_stream_destroy(abcdk_stream_t **ctx);
 /**创建。*/
 abcdk_stream_t *abcdk_stream_create();
 
+/**获取读或写的数量。*/
+size_t abcdk_stream_size_tell(abcdk_stream_t *ctx,int writer);
+
 /**
  * 读。
  * 

@@ -15,8 +15,13 @@ struct _abcdk_stream
     /** 锁。*/
     abcdk_mutex_t *locker;
 
-    /** 游标。*/
-    size_t pos;
+    /** 读片段的游标。*/
+    size_t read_segment_pos;
+
+    /** 读和写总数量。 */
+    size_t read_total_size;
+    size_t write_total_size;
+
 }; // abcdk_stream_t;
 
 void abcdk_stream_destroy(abcdk_stream_t **ctx)
@@ -44,9 +49,21 @@ abcdk_stream_t *abcdk_stream_create()
 
     ctx->queue = abcdk_tree_alloc(NULL);
     ctx->locker = abcdk_mutex_create();
-    ctx->pos = 0;
+    ctx->read_segment_pos = 0;
+    ctx->read_total_size = 0;
+    ctx->write_total_size = 0;
 
     return ctx;
+}
+
+size_t abcdk_stream_tell(abcdk_stream_t *ctx,int writer)
+{
+    assert(ctx != NULL);
+
+    if(writer)
+        return ctx->write_total_size;
+
+    return ctx->read_total_size;
 }
 
 ssize_t abcdk_stream_read(abcdk_stream_t *ctx,void *buf,size_t len)
@@ -66,19 +83,22 @@ NEXT_NODE:
     if(!p)
         return rall;
 
-    rlen = ABCDK_MIN((size_t)len-rall,(size_t)(p->obj->sizes[0] - ctx->pos));
-    memcpy(ABCDK_PTR2VPTR(buf,rall),ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->pos),rlen);
+    rlen = ABCDK_MIN((size_t)len-rall,(size_t)(p->obj->sizes[0] - ctx->read_segment_pos));
+    memcpy(ABCDK_PTR2VPTR(buf,rall),ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->read_segment_pos),rlen);
 
     /*滚动游标。*/
-    ctx->pos += rlen;
+    ctx->read_segment_pos += rlen;
     rall += rlen;
 
+    /*累加计数。*/
+    ctx->read_total_size += rlen;
+
     /*当前节点未读完整，直接返回。*/
-    if (ctx->pos < p->obj->sizes[0])
+    if (ctx->read_segment_pos < p->obj->sizes[0])
         return rall;
 
     /*游标归零。*/
-    ctx->pos = 0;
+    ctx->read_segment_pos = 0;
 
     /*从队列中删除已经读完整的节点。*/
     abcdk_mutex_lock(ctx->locker,1);
@@ -123,6 +143,9 @@ int abcdk_stream_write(abcdk_stream_t *ctx,abcdk_object_t *data)
     abcdk_mutex_lock(ctx->locker,1);
     abcdk_tree_insert2(ctx->queue,new_node,0);
     abcdk_mutex_unlock(ctx->locker);
+
+    /*累加计数。*/
+    ctx->write_total_size += new_node->obj->sizes[0];
 
     return 0;
 }
