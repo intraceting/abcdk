@@ -591,7 +591,7 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
 final:
 
     /*连接完成后，关联句柄到easyssl环境。*/
-    if(node->status = ABCDK_ASYNCTCP_STATUS_STABLE && node->easyssl_ctx)
+    if(node->status == ABCDK_ASYNCTCP_STATUS_STABLE && node->easyssl_ctx)
     {
         abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,0);
         abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,1);
