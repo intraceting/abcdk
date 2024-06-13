@@ -887,7 +887,7 @@ int abcdk_test_any(abcdk_option_t *args)
     {
         if(i == 0)
         {
-            for(int j = 0;j<10000;j++)
+            for(int j = 0;j<100000000;j++)
             {
                 int n = abcdk_easyssl_send(cli_ctx,"abcd1234",8);
                 if(n<0)
@@ -900,7 +900,7 @@ int abcdk_test_any(abcdk_option_t *args)
         }
         else 
         {
-            for (int j = 0; j < 10000; j++)
+            for (int j = 0; j < 10000000; j++)
             {
                 char buf[1000] = {0};
                 int n = abcdk_easyssl_recv(cli_ctx, buf, 1000);
