@@ -1106,10 +1106,12 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p->flag = 0;
     node_ctx_p->protocol = 0;
 
-#ifdef HEADER_SSL_H
+
     if(cfg->cert_file && cfg->key_file)
     {
+#ifdef HEADER_SSL_H
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+#endif //HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {
             abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
@@ -1117,14 +1119,11 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
         }
     
 #ifdef NGHTTP2_H
-        if (cfg->enable_h2)
-            _abcdk_httpd_set_alpn(node_p, 2);
-        else
+        _abcdk_httpd_set_alpn(node_p, cfg->enable_h2?2:1);
+#else
+        _abcdk_httpd_set_alpn(node_p, 1);
 #endif // NGHTTP2_H
-            _abcdk_httpd_set_alpn(node_p, 1);
-
     }
-#endif //HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_httpd_prepare_cb;
     cb.event_cb = _abcdk_httpd_event_cb;

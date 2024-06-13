@@ -726,10 +726,11 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
-#ifdef HEADER_SSL_H
     if (ctx->cfg.cert_file && ctx->cfg.key_file)
     {
+#ifdef HEADER_SSL_H
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, ctx->cfg.ca_file, ctx->cfg.ca_path, ctx->cfg.cert_file, ctx->cfg.key_file, NULL);
+#endif // HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {
             abcdk_asynctcp_unref(&node_p);
@@ -737,7 +738,6 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
             return -2;
         }
     }
-#endif // HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_tipc_prepare_cb;
     cb.event_cb = _abcdk_tipc_event_cb;
@@ -778,10 +778,12 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     node_ctx_p->id = id;
     strncpy(node_ctx_p->location,location,NAME_MAX);
 
-#ifdef HEADER_SSL_H
+
     if (ctx->cfg.cert_file && ctx->cfg.key_file)
     {
+#ifdef HEADER_SSL_H
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, ctx->cfg.ca_file, ctx->cfg.ca_path, ctx->cfg.cert_file, ctx->cfg.key_file, NULL);
+#endif // HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {
             abcdk_asynctcp_unref(&node_p);
@@ -796,7 +798,6 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
             return -5;
         }
     }
-#endif // HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_tipc_prepare_cb;
     cb.event_cb = _abcdk_tipc_event_cb;

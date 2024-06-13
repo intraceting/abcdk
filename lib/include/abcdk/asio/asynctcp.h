@@ -15,6 +15,7 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/map.h"
 #include "abcdk/util/time.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/ssl/openssl.h"
 #include "abcdk/ssl/easyssl.h"
 

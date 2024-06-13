@@ -451,17 +451,17 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 0;
 
-#ifdef HEADER_SSL_H
     if(cfg->cert_file && cfg->key_file)
     {
+#ifdef HEADER_SSL_H
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+#endif //HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {
             abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
             return -2;
         }
     }
-#endif //HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_srpc_prepare_cb;
     cb.event_cb = _abcdk_srpc_event_cb;
@@ -490,13 +490,15 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 2;
 
-#ifdef HEADER_SSL_H
+
     if(cfg->cert_file && cfg->key_file)
     {
+#ifdef HEADER_SSL_H
         node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+#endif //HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {
-            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
+            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
             return -2;
         }
 
@@ -504,7 +506,6 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
         if(chk != 0)
             return -3;
     }
-#endif //HEADER_SSL_H
 
     cb.prepare_cb = _abcdk_srpc_prepare_cb;
     cb.event_cb = _abcdk_srpc_event_cb;

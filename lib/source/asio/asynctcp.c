@@ -185,7 +185,11 @@ int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx)
 
     ABCDK_ASSERT(node->openssl_ctx == NULL,"仅可以升级一次。");
 
+#ifdef HEADER_SSL_H
     node->openssl_ctx = abcdk_openssl_ssl_alloc(ssl_ctx);
+#else   
+    abcdk_trace_output(LOG_WARNING, "构建时未包含SSL组件，无法创建SSL环境。");
+#endif //HEADER_SSL_H
     if(!node->openssl_ctx)
         return -1;
 

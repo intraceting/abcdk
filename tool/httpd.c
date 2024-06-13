@@ -622,10 +622,11 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
     if(chk != 0)
         goto final;
 
+#ifdef HEADER_SSL_H
     chk = _abcdkhttpd_start_listen(ctx,1);
     if(chk != 0)
         goto final;
-
+#endif //HEADER_SSL_H
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);

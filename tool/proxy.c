@@ -768,17 +768,18 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl)
 
     if (ssl)
     {
-#ifdef HEADER_SSL_H
         if (ctx->cert_file && ctx->key_file)
         {
+#ifdef HEADER_SSL_H
             node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, ctx->ca_file, ctx->ca_path, ctx->cert_file, ctx->key_file, NULL);
+#endif // HEADER_SSL_H
             if (!node_ctx_p->ssl_ctx)
             {
                 abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
                 return -2;
             }
         }
-#endif // HEADER_SSL_H
+
     }
 
     cb.prepare_cb = _abcdk_proxy_prepare_cb;
