@@ -43,8 +43,11 @@ typedef struct _abcdk_tipc_node
     /*父级。*/
     abcdk_tipc_t *father;
 
-    /*SSL环境。*/
-    SSL_CTX *ssl_ctx;
+    /*OPENSSL环境。*/
+    SSL_CTX *openssl_ctx;
+
+    /*EASYSSL环境。*/
+    abcdk_easyssl_t *easyssl_ctx;
 
     /*远程地址。*/
     char remote_addr[NAME_MAX];
@@ -480,8 +483,10 @@ static void _abcdk_tipc_node_destroy_cb(void *userdata)
     ctx = (abcdk_tipc_node_t *)userdata;
 
 #ifdef HEADER_SSL_H
-    abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);
+    abcdk_openssl_ssl_ctx_free(&ctx->openssl_ctx);
 #endif // HEADER_SSL_H
+
+    abcdk_easyssl_destroy(&ctx->easyssl_ctx);
 
     abcdk_receiver_unref(&ctx->req_data);
     abcdk_waiter_free(&ctx->req_waiter);
@@ -520,6 +525,7 @@ static void _abcdk_tipc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
 {
     abcdk_asynctcp_node_t *node_p;
     abcdk_tipc_node_t *listen_ctx_p, *node_ctx_p;
+    abcdk_tipc_config_t *cfg_p;
     int chk;
 
     listen_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(listen);
@@ -530,12 +536,21 @@ static void _abcdk_tipc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
-    /*升级是可选的。*/
-    if(listen_ctx_p->ssl_ctx)
+    cfg_p = &listen_ctx_p->father->cfg;
+
+    if(cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
     {
-        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx);
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->openssl_ctx);
         if(chk != 0)
             abcdk_asynctcp_unref(&node_p);
+    }
+    else if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_EASYSSL)
+    {
+        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
+        if(!node_ctx_p->easyssl_ctx)
+            abcdk_asynctcp_unref(&node_p);
+        else
+            abcdk_asynctcp_upgrade2easyssl(node_p,node_ctx_p->easyssl_ctx);
     }
 
     /*准备完毕，返回。*/
@@ -711,6 +726,57 @@ ERR:
     abcdk_asynctcp_set_timeout(node, 1);
 }
 
+static int _abcdk_tipc_ssl_init(abcdk_asynctcp_node_t *node,int server)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    abcdk_tipc_config_t *cfg_p;
+    int chk;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    cfg_p = &node_ctx_p->father->cfg;
+
+    if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(server, cfg_p->openssl_ca_file, cfg_p->openssl_ca_path, cfg_p->openssl_cert_file, cfg_p->openssl_key_file, NULL);
+#endif // HEADER_SSL_H
+        if (!node_ctx_p->openssl_ctx)
+        {
+            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
+            return -2;
+        }
+
+        /*仅客户端需要。*/
+        if(!server)
+        {
+            chk = abcdk_asynctcp_upgrade2openssl(node,node_ctx_p->openssl_ctx);
+            if(chk != 0)
+                return -3;
+        }
+        
+    }
+    else if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_EASYSSL)
+    {
+        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
+        if (!node_ctx_p->easyssl_ctx)
+        {
+            abcdk_trace_output(LOG_WARNING, "加载私钥失败，无法创建SSL环境。");
+            return -2;
+        }
+
+        /*仅客户端需要。*/
+        if(!server)
+        {
+            chk = abcdk_asynctcp_upgrade2easyssl(node,node_ctx_p->easyssl_ctx);
+            if (chk != 0)
+                return -3;
+        }
+    }
+
+    return 0;
+}
+
 int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 {
     abcdk_asynctcp_node_t *node_p;
@@ -726,18 +792,9 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node_p);
 
-    if (ctx->cfg.cert_file && ctx->cfg.key_file)
-    {
-#ifdef HEADER_SSL_H
-        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, ctx->cfg.ca_file, ctx->cfg.ca_path, ctx->cfg.cert_file, ctx->cfg.key_file, NULL);
-#endif // HEADER_SSL_H
-        if (!node_ctx_p->ssl_ctx)
-        {
-            abcdk_asynctcp_unref(&node_p);
-            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建OPENSSL安全环境。");
-            return -2;
-        }
-    }
+    chk = _abcdk_tipc_ssl_init(node_p,1);
+    if(chk != 0)
+        return -2;
 
     cb.prepare_cb = _abcdk_tipc_prepare_cb;
     cb.event_cb = _abcdk_tipc_event_cb;
@@ -778,26 +835,9 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     node_ctx_p->id = id;
     strncpy(node_ctx_p->location,location,NAME_MAX);
 
-
-    if (ctx->cfg.cert_file && ctx->cfg.key_file)
-    {
-#ifdef HEADER_SSL_H
-        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, ctx->cfg.ca_file, ctx->cfg.ca_path, ctx->cfg.cert_file, ctx->cfg.key_file, NULL);
-#endif // HEADER_SSL_H
-        if (!node_ctx_p->ssl_ctx)
-        {
-            abcdk_asynctcp_unref(&node_p);
-            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
-            return -2;
-        }
-
-        chk = abcdk_asynctcp_upgrade2openssl(node_p,node_ctx_p->ssl_ctx);
-        if(chk != 0)
-        {
-            abcdk_asynctcp_unref(&node_p);
-            return -5;
-        }
-    }
+    chk = _abcdk_tipc_ssl_init(node_p,0);
+    if(chk != 0)
+        return -2;
 
     cb.prepare_cb = _abcdk_tipc_prepare_cb;
     cb.event_cb = _abcdk_tipc_event_cb;

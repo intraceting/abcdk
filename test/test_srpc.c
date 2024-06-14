@@ -60,33 +60,44 @@ int abcdk_test_srpc(abcdk_option_t *args)
     abcdk_sockaddr_t addr = {0};
     abcdk_sockaddr_from_string(&addr, "ipv4://127.0.0.1:6666", 0);
 
-    abcdk_srpc_config_t cfg = {0};
+    abcdk_srpc_config_t server_cfg = {0},client_cfg = {0};
 
-    cfg.accept_cb = accept_cb;
-    cfg.close_cb = close_cb;
-    cfg.output_cb = output_cb;
-    cfg.prepare_cb = prepare_cb;
-    cfg.ready_cb = ready_cb;
-    cfg.request_cb = request_cb;
-    cfg.opaque = srpc_ctx;
-    cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
-    cfg.easyssl_key_file = abcdk_option_get(args,"--easy-key-file",0,"");
-    cfg.easyssl_salt_size = 123;
+    server_cfg.accept_cb = accept_cb;
+    server_cfg.close_cb = close_cb;
+    server_cfg.output_cb = output_cb;
+    server_cfg.prepare_cb = prepare_cb;
+    server_cfg.ready_cb = ready_cb;
+    server_cfg.request_cb = request_cb;
+    server_cfg.opaque = srpc_ctx;
+    server_cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
+    server_cfg.easyssl_key_file = abcdk_option_get(args,"--easyssl-key-file",0,"");
+    server_cfg.easyssl_salt_size = 123;
+    server_cfg.openssl_no_check_cert = abcdk_option_get_int(args,"--openssl-check-cert",0,1);
+    server_cfg.openssl_cert_file = abcdk_option_get(args,"--server-openssl-cert-file",0,NULL);
+    server_cfg.openssl_key_file = abcdk_option_get(args,"--server-openssl-key-file",0,NULL);
+    server_cfg.openssl_ca_file = abcdk_option_get(args,"--openssl-ca-file",0,NULL);
+    server_cfg.openssl_ca_path = abcdk_option_get(args,"--openssl-ca-path",0,NULL);
+
+    client_cfg = server_cfg;
+
+    client_cfg.openssl_cert_file = abcdk_option_get(args,"--client-openssl-cert-file",0,NULL);
+    client_cfg.openssl_key_file = abcdk_option_get(args,"--client-openssl-key-file",0,NULL);
+
 
     abcdk_srpc_session_t *listen_p = abcdk_srpc_alloc(srpc_ctx);
 
-    abcdk_srpc_listen(listen_p,&addr,&cfg);
+    abcdk_srpc_listen(listen_p,&addr,&server_cfg);
 
     int parallel = abcdk_option_get_int(args,"--parallel",0,1);
     int count = abcdk_option_get_int(args,"--count",0,10000);
     int rand_rsp = abcdk_option_get_int(args,"--rand-rsp",0,1);
 
-#pragma omp parallel for num_threads(parallel)
+//#pragma omp parallel for num_threads(parallel)
     for (int i = 0; i < parallel; i++)
     {
         abcdk_srpc_session_t *client_p = abcdk_srpc_alloc(srpc_ctx);
 
-        abcdk_srpc_connect(client_p,&addr,&cfg);
+        abcdk_srpc_connect(client_p,&addr,&client_cfg);
 
         abcdk_trace_output(LOG_INFO,"thread-%d: begin",i);
 

@@ -564,7 +564,6 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
         abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sock_flag, 2);
     }
 
-
 #ifdef HEADER_SSL_H      
     if (node->status == ABCDK_ASYNCTCP_STATUS_OPENSSL_SYNC)
     {
@@ -605,6 +604,10 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
                 chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
                 if (chk == 0)
                     goto final;
+            }
+            else
+            {
+                ERR_print_errors_fp(stderr);
             }
             
             /*Error .*/

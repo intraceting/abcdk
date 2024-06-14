@@ -262,11 +262,35 @@ static void _abcdk_srpc_event_accept(abcdk_asynctcp_node_t *node, int *result)
         abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机('%s')。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
-static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
+static int _abcdk_srpc_event_connect_check_cert(abcdk_asynctcp_node_t *node)
 {
     abcdk_srpc_node_t *node_ctx_p;
     SSL *ssl_p;
-    char ptl_sel_name[256] = {0};
+    int chk;
+
+    node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if (!node_ctx_p->cfg.openssl_no_check_cert)
+        return 0;
+
+#ifdef HEADER_SSL_H
+
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+    /*检测SSL环境验证结果。*/
+    chk = SSL_get_verify_result(ssl_p);
+    if (chk != X509_V_OK)
+        return -1;
+
+#endif // HEADER_SSL_H
+
+
+    return 0;
+}
+
+static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
+{
+    abcdk_srpc_node_t *node_ctx_p;
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -279,14 +303,9 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
-    ssl_p = abcdk_asynctcp_openssl_ctx(node);
-    if (!ssl_p)
-        goto END;
-
-#ifdef HEADER_SSL_H
-    /*检查SSL验证结果。*/
-    chk = SSL_get_verify_result(ssl_p);
-    if (chk != X509_V_OK)
+    /*检查证书。*/
+    chk = _abcdk_srpc_event_connect_check_cert(node);
+    if(chk != 0)
     {
         abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
 
@@ -294,8 +313,6 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_set_timeout(node, 1);
         return;
     }
-
-#endif // HEADER_SSL_H
 
 END:
 
@@ -472,9 +489,13 @@ static int _abcdk_srpc_ssl_init(abcdk_srpc_session_t *session,int server)
             return -2;
         }
 
-        chk = abcdk_asynctcp_upgrade2openssl(node_p, node_ctx_p->openssl_ctx);
-        if (chk != 0)
-            return -3;
+        /*仅客户端需要。*/
+        if(!server)
+        {
+            chk = abcdk_asynctcp_upgrade2openssl(node_p,node_ctx_p->openssl_ctx);
+            if(chk != 0)
+                return -3;
+        }
         
     }
     else if (cfg_p->ssl_scheme == ABCDK_SRPC_SSL_SCHEME_EASYSSL)
@@ -486,9 +507,13 @@ static int _abcdk_srpc_ssl_init(abcdk_srpc_session_t *session,int server)
             return -2;
         }
 
-        chk = abcdk_asynctcp_upgrade2easyssl(node_p,node_ctx_p->easyssl_ctx);
-        if (chk != 0)
+        /*仅客户端需要。*/
+        if(!server)
+        {
+            chk = abcdk_asynctcp_upgrade2easyssl(node_p,node_ctx_p->easyssl_ctx);
+            if (chk != 0)
                 return -3;
+        }
     }
 
     return 0;

@@ -517,6 +517,9 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
     if(!ctx)
         return NULL;
 
+    // SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+    // SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
+
     if (cafile || capath)
     {
         chk = SSL_CTX_load_verify_locations(ctx, cafile, capath);
@@ -546,12 +549,15 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
 
 #endif //ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
 
+
     /*禁止会话复用。*/
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
+    
 #ifdef SSL_OP_NO_TICKET
     /*禁用会话票据*/
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
 #endif //SSL_OP_NO_TICKET
+    
 
     return ctx;
 
@@ -615,6 +621,12 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
         goto ERR;
     }
 
+    if(server && !crt)
+    {
+        abcdk_trace_output(LOG_WARNING, "服务端的证书不能省略。\n");
+        goto ERR;
+    }
+
     chk = abcdk_openssl_ssl_ctx_load_crt(ctx, crt, key, pwd);
     if (chk != 0)
     {
@@ -628,14 +640,9 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
 
     if (cafile || capath)
         SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+    else
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
-    /*禁止会话复用。*/
-    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
-    
-#ifdef SSL_OP_NO_TICKET
-    /*禁用会话票据*/
-    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
-#endif //SSL_OP_NO_TICKET
 
     return ctx;
 
