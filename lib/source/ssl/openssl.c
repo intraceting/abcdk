@@ -631,6 +631,7 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
 
     /*禁止会话复用。*/
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
+    
 #ifdef SSL_OP_NO_TICKET
     /*禁用会话票据*/
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);

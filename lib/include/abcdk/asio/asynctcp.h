@@ -72,6 +72,8 @@ typedef enum _abcdk_asynctcp_event
     /**
      * 已断开。
      * 
+     * @warning 此事件不需要释放连接。
+     * 
      * @return 忽略。
     */
     ABCDK_ASYNCTCP_EVENT_CLOSE = 5,
@@ -79,6 +81,8 @@ typedef enum _abcdk_asynctcp_event
 
     /**
      * 中断(资源不足，或禁止连接)。
+     * 
+     * @warning 此事件不需要释放连接。
      * 
      * @return 忽略。
     */

@@ -147,6 +147,25 @@ ERR:
     return NULL;
 }
 
+abcdk_easyssl_t *abcdk_easyssl_create_from_file(const char *file,uint32_t scheme,size_t salt)
+{
+    abcdk_easyssl_t *ctx;
+    abcdk_object_t *key;
+
+    assert(file != NULL && salt <= 256);
+
+    key = abcdk_mmap_filename(file,0,0,0,0);
+    if(!key)
+        return NULL;
+
+    ctx = abcdk_easyssl_create(key->pptrs[0],key->sizes[0],scheme,salt);
+    abcdk_object_unref(&key);
+    if(!ctx)
+        return NULL;
+
+    return ctx;
+}
+
 int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int writer)
 {
     int old;

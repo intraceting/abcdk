@@ -28,7 +28,7 @@ static void ready_cb(void *opaque,abcdk_srpc_session_t *session)
 
 static void close_cb(void *opaque,abcdk_srpc_session_t *session)
 {
-    abcdk_srpc_unref(&session);
+    
 }
 
 static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid, const void *data, size_t size)
@@ -37,7 +37,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
     
     int a = *((int *)data);
 
-  //  abcdk_trace_output(LOG_INFO,"mid(%llu),size(%zd),a(%d)",mid,size,a);
+    abcdk_trace_output(LOG_INFO,"mid(%llu),size(%zd),a(%d)",mid,size,a);
 
     if(a)
         abcdk_srpc_response(session,mid,data,size);
@@ -69,6 +69,9 @@ int abcdk_test_srpc(abcdk_option_t *args)
     cfg.ready_cb = ready_cb;
     cfg.request_cb = request_cb;
     cfg.opaque = srpc_ctx;
+    cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
+    cfg.easyssl_key_file = abcdk_option_get(args,"--easy-key-file",0,"");
+    cfg.easyssl_salt_size = 123;
 
     abcdk_srpc_session_t *listen_p = abcdk_srpc_alloc(srpc_ctx);
 
@@ -95,9 +98,9 @@ int abcdk_test_srpc(abcdk_option_t *args)
             if(j %3 == 0 || rand_rsp)
                 *a = 1;
 
-            int b = ((uint64_t)abcdk_rand_number())%996+1;
+            int b = ((uint64_t)abcdk_rand_number())%995+5;
 
-            abcdk_rand_string(buf+4,b,0);
+            abcdk_rand_string(buf+4,b-4,0);
 
             abcdk_object_t *rsp = NULL;
 

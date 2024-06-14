@@ -12,6 +12,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/stream.h"
 #include "abcdk/util/sha256.h"
+#include "abcdk/util/mmap.h"
 
 __BEGIN_DECLS
 
@@ -47,6 +48,16 @@ void abcdk_easyssl_destroy(abcdk_easyssl_t **ctx);
  * 
 */
 abcdk_easyssl_t *abcdk_easyssl_create(const uint8_t *key,size_t size,uint32_t scheme,size_t salt);
+
+/**
+ * 创建。
+ * 
+ * @param [in] file 密钥文件。
+ * @param [in] scheme 方案。
+ * @param [in] salt 盐长度。<= 256 有效。
+ * 
+*/
+abcdk_easyssl_t *abcdk_easyssl_create_from_file(const char *file,uint32_t scheme,size_t salt);
 
 /**
  * 设置关联句柄。

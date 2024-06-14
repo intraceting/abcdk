@@ -14,6 +14,7 @@
 #include "abcdk/util/random.h"
 #include "abcdk/util/timer.h"
 #include "abcdk/ssl/openssl.h"
+#include "abcdk/ssl/easyssl.h"
 #include "abcdk/asio/asynctcp.h"
 
 __BEGIN_DECLS
@@ -30,17 +31,29 @@ typedef struct _abcdk_srpc_config
     /*环境指针。*/
     void *opaque;
 
+    /*安全方案*/
+    int ssl_scheme;
+#define ABCDK_SRPC_SSL_SCHEME_RAW       0
+#define ABCDK_SRPC_SSL_SCHEME_OPENSSL   1
+#define ABCDK_SRPC_SSL_SCHEME_EASYSSL   2
+
     /*CA证书。*/
-    const char *ca_file;
+    const char *openssl_ca_file;
 
     /*CA路径。*/
-    const char *ca_path;
+    const char *openssl_ca_path;
 
     /*证书。*/
-    const char *cert_file;
+    const char *openssl_cert_file;
 
     /*私钥。*/
-    const char *key_file;
+    const char *openssl_key_file;
+
+    /*私钥。*/
+    const char *easyssl_key_file;
+
+    /*盐长度。*/
+    int easyssl_salt_size;
 
     /**
      * 会话准备通知回调函数。
