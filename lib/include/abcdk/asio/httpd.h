@@ -39,6 +39,11 @@ typedef struct _abcdk_httpd_config
     /*服务器领域。*/
     const char *server_realm;
 
+    /*安全方案*/
+    int ssl_scheme;
+#define ABCDK_HTTPD_SSL_SCHEME_RAW       0
+#define ABCDK_HTTPD_SSL_SCHEME_OPENSSL   1
+
     /*CA证书。*/
     const char *ca_file;
 

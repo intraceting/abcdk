@@ -825,17 +825,6 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     if (!ssl_p)
         goto END;
 
-    /*检查验证结果。*/
-    chk = SSL_get_verify_result(ssl_p);
-    if (chk != X509_V_OK)
-    {
-        abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
-
-        /*修改超时，使用超时检测器关闭。*/
-        abcdk_asynctcp_set_timeout(node, 1);
-        return;
-    }
-
     /*安全链路。*/
     node_ctx_p->ssl_ok = 1;
 
@@ -911,6 +900,7 @@ static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
 static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
+    SSL *ssl_p;
     int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -919,6 +909,17 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+
+#ifdef HEADER_SSL_H
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
+    if(ssl_p)
+    {
+        /*获取验证结果。*/
+        chk = SSL_get_verify_result(ssl_p);
+        if (chk != X509_V_OK)
+            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+    }
+#endif // HEADER_SSL_H
 
     abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。",
                        node_ctx_p->local_addr,
@@ -1106,21 +1107,24 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p->flag = 0;
     node_ctx_p->protocol = 0;
 
-#ifdef HEADER_SSL_H
-    node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
-#endif //HEADER_SSL_H
-    if (!node_ctx_p->ssl_ctx)
+    if (cfg->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
+#ifdef HEADER_SSL_H
+        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+#endif // HEADER_SSL_H
+        if (!node_ctx_p->ssl_ctx)
+        {
             abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
             return -2;
-    }
-    else
-    {
+        }
+        else
+        {
 #ifdef NGHTTP2_H
-        _abcdk_httpd_set_alpn(node_p, cfg->enable_h2?2:1);
+            _abcdk_httpd_set_alpn(node_p, cfg->enable_h2 ? 2 : 1);
 #else
-        _abcdk_httpd_set_alpn(node_p, 1);
+            _abcdk_httpd_set_alpn(node_p, 1);
 #endif // NGHTTP2_H
+        }
     }
 
     cb.prepare_cb = _abcdk_httpd_prepare_cb;

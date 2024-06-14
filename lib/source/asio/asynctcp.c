@@ -620,7 +620,9 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
             }
             else
             {
-                ERR_print_errors_fp(stderr);
+                char errmsg[256] = {0};
+                ERR_error_string_n(ssl_err,errmsg,256-1);
+                abcdk_trace_output(LOG_WARNING,"%s\n",errmsg);
             }
             
             /*Error .*/

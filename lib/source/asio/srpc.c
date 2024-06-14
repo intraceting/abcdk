@@ -321,7 +321,7 @@ static void _abcdk_srpc_event_close(abcdk_asynctcp_node_t *node)
         /*获取验证结果。*/
         chk = SSL_get_verify_result(ssl_p);
         if (chk != X509_V_OK)
-            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(ssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
 
 #endif // HEADER_SSL_H
     }
