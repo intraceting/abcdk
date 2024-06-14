@@ -578,6 +578,33 @@ static void _abcdk_tipc_event_accept(abcdk_asynctcp_node_t *node, int *result)
 
 static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp);
 
+
+static int _abcdk_tipc_event_connect_check_cert(abcdk_asynctcp_node_t *node)
+{
+    abcdk_tipc_node_t *node_ctx_p;
+    SSL *ssl_p;
+    int chk;
+
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if (!node_ctx_p->father->cfg.openssl_check_cert)
+        return 0;
+
+#ifdef HEADER_SSL_H
+
+    ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+    /*检查验证结果。*/
+    chk = SSL_get_verify_result(ssl_p);
+    if (chk != X509_V_OK)
+        return -1;
+
+#endif // HEADER_SSL_H
+
+
+    return 0;
+}
+
 static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
@@ -592,15 +619,9 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
     if (node_ctx_p->flag == 2)
         abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
-    ssl_p = abcdk_asynctcp_openssl_ctx(node);
-    if (!ssl_p)
-        goto END;
-
-#ifdef HEADER_SSL_H
-
-    /*检查SSL验证结果。*/
-    chk = SSL_get_verify_result(ssl_p);
-    if (chk != X509_V_OK)
+    /*检查证书。*/
+    chk = _abcdk_tipc_event_connect_check_cert(node);
+    if(chk != 0)
     {
         abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
 
@@ -608,8 +629,6 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_set_timeout(node, 1);
         return;
     }
-
-#endif // HEADER_SSL_H
 
 END:
 

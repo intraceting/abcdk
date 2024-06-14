@@ -819,13 +819,13 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
+#ifdef HEADER_SSL_H
+
     ssl_p = abcdk_asynctcp_openssl_ctx(node);
     if (!ssl_p)
         goto END;
 
-#ifdef HEADER_SSL_H
-
-    /*检查SSL验证结果。*/
+    /*检查验证结果。*/
     chk = SSL_get_verify_result(ssl_p);
     if (chk != X509_V_OK)
     {

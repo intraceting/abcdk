@@ -627,6 +627,12 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
         goto ERR;
     }
 
+    if(!server && (cafile || capath) && !crt)
+    {
+        abcdk_trace_output(LOG_WARNING, "客户端的证书不能省略，因为CA证书或路径已经加载。\n");
+        goto ERR;
+    }
+
     chk = abcdk_openssl_ssl_ctx_load_crt(ctx, crt, key, pwd);
     if (chk != 0)
     {

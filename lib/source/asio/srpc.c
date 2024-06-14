@@ -270,7 +270,7 @@ static int _abcdk_srpc_event_connect_check_cert(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    if (!node_ctx_p->cfg.openssl_no_check_cert)
+    if (!node_ctx_p->cfg.openssl_check_cert)
         return 0;
 
 #ifdef HEADER_SSL_H
@@ -303,7 +303,7 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
-    /*检查证书。*/
+    /*检查验证结果。*/
     chk = _abcdk_srpc_event_connect_check_cert(node);
     if(chk != 0)
     {

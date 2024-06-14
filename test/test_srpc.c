@@ -72,7 +72,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
     server_cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
     server_cfg.easyssl_key_file = abcdk_option_get(args,"--easyssl-key-file",0,"");
     server_cfg.easyssl_salt_size = 123;
-    server_cfg.openssl_no_check_cert = abcdk_option_get_int(args,"--openssl-check-cert",0,1);
+    server_cfg.openssl_check_cert = abcdk_option_get_int(args,"--openssl-check-cert",0,1);
     server_cfg.openssl_cert_file = abcdk_option_get(args,"--server-openssl-cert-file",0,NULL);
     server_cfg.openssl_key_file = abcdk_option_get(args,"--server-openssl-key-file",0,NULL);
     server_cfg.openssl_ca_file = abcdk_option_get(args,"--openssl-ca-file",0,NULL);

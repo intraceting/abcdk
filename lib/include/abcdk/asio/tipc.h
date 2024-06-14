@@ -49,6 +49,9 @@ typedef struct _abcdk_tipc_config
     /*私钥。*/
     const char *openssl_key_file;
 
+    /*是否验证对端证书。0 否，!0 是。*/
+    int openssl_check_cert;
+
     /*私钥。*/
     const char *easyssl_key_file;
 
