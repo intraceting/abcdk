@@ -226,7 +226,7 @@ static void _abcdk_srpc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
 
     if(cfg_p->ssl_scheme == ABCDK_SRPC_SSL_SCHEME_OPENSSL)
     {
-        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->openssl_ctx);
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->openssl_ctx,cfg_p->openssl_check_cert);
         if(chk != 0)
             abcdk_asynctcp_unref(&node_p);
     }
@@ -262,32 +262,6 @@ static void _abcdk_srpc_event_accept(abcdk_asynctcp_node_t *node, int *result)
         abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机('%s')。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
-static int _abcdk_srpc_event_connect_check_cert(abcdk_asynctcp_node_t *node)
-{
-    abcdk_srpc_node_t *node_ctx_p;
-    SSL *ssl_p;
-    int chk;
-
-    node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
-
-    if (!node_ctx_p->cfg.openssl_check_cert)
-        return 0;
-
-#ifdef HEADER_SSL_H
-
-    ssl_p = abcdk_asynctcp_openssl_ctx(node);
-
-    /*检测SSL环境验证结果。*/
-    chk = SSL_get_verify_result(ssl_p);
-    if (chk != X509_V_OK)
-        return -1;
-
-#endif // HEADER_SSL_H
-
-
-    return 0;
-}
-
 static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
 {
     abcdk_srpc_node_t *node_ctx_p;
@@ -302,19 +276,6 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
-
-    /*检查验证结果。*/
-    chk = _abcdk_srpc_event_connect_check_cert(node);
-    if(chk != 0)
-    {
-        abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
-
-        /*修改超时，使用超时检测器关闭。*/
-        abcdk_asynctcp_set_timeout(node, 1);
-        return;
-    }
-
-END:
 
     abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经建立。",
                        node_ctx_p->local_addr,
@@ -342,6 +303,7 @@ static void _abcdk_srpc_event_output(abcdk_asynctcp_node_t *node)
 static void _abcdk_srpc_event_close(abcdk_asynctcp_node_t *node)
 {
     abcdk_srpc_node_t *node_ctx_p;
+    SSL *ssl_p;
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -350,6 +312,19 @@ static void _abcdk_srpc_event_close(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+    
+    if(node_ctx_p->cfg.ssl_scheme == ABCDK_SRPC_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+        /*获取验证结果。*/
+        chk = SSL_get_verify_result(ssl_p);
+        if (chk != X509_V_OK)
+            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(ssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+
+#endif // HEADER_SSL_H
+    }
 
     if(!node_ctx_p->flag)
         abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。", node_ctx_p->local_addr,(node_ctx_p->flag == 1 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
@@ -492,7 +467,7 @@ static int _abcdk_srpc_ssl_init(abcdk_srpc_session_t *session,int server)
         /*仅客户端需要。*/
         if(!server)
         {
-            chk = abcdk_asynctcp_upgrade2openssl(node_p,node_ctx_p->openssl_ctx);
+            chk = abcdk_asynctcp_upgrade2openssl(node_p,node_ctx_p->openssl_ctx,cfg_p->openssl_check_cert);
             if(chk != 0)
                 return -3;
         }

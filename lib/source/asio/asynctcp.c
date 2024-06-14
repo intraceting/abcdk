@@ -71,6 +71,9 @@ struct _abcdk_asynctcp_node
     /** openssl环境指针。*/
     SSL *openssl_ctx;
 
+    /** openssl环境是否检查验证结果。*/
+    int openssl_check_verify_result;
+
     /** easyssl环境指针。*/
     abcdk_easyssl_t *easyssl_ctx;
 
@@ -181,12 +184,13 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     node->from_listen = NULL;
     node->ssl_scheme = ABCDK_ASYNCTCP_SSL_SCHEME_RAW;
     node->openssl_ctx = NULL;
+    node->openssl_check_verify_result = 1;
     node->easyssl_ctx = NULL;
 
     return node;
 }
 
-int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx)
+int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx,int check_verify_result)
 {
     assert(node != NULL && ssl_ctx != NULL);
 
@@ -200,7 +204,9 @@ int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx)
     if(!node->openssl_ctx)
         return -1;
 
+    node->openssl_check_verify_result = check_verify_result;
     node->ssl_scheme = ABCDK_ASYNCTCP_SSL_SCHEME_OPENSSL;
+    
 
     return 0;
 
@@ -586,6 +592,13 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
         ssl_chk = SSL_do_handshake(node->openssl_ctx);
         if (ssl_chk == 1)
         {   
+            if(node->openssl_check_verify_result)
+            {
+                ssl_chk = SSL_get_verify_result(node->openssl_ctx);
+                if (ssl_chk != X509_V_OK)
+                    goto final_error;
+            }
+
             node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
         }
         else

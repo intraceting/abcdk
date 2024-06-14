@@ -540,7 +540,7 @@ static void _abcdk_tipc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
 
     if(cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
     {
-        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->openssl_ctx);
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->openssl_ctx,cfg_p->openssl_check_cert);
         if(chk != 0)
             abcdk_asynctcp_unref(&node_p);
     }
@@ -619,19 +619,6 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
     if (node_ctx_p->flag == 2)
         abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
-    /*检查证书。*/
-    chk = _abcdk_tipc_event_connect_check_cert(node);
-    if(chk != 0)
-    {
-        abcdk_trace_output(LOG_INFO, "验证('%s')的证书失败，证书已过期或未生效。", node_ctx_p->remote_addr);
-
-        /*修改超时，使用超时检测器关闭。*/
-        abcdk_asynctcp_set_timeout(node, 1);
-        return;
-    }
-
-END:
-
     abcdk_trace_output(LOG_INFO, "本机%s远端(IP='%s')的连接已经建立。", (node_ctx_p->flag == 1 ? "<<<" : ">>>"), node_ctx_p->remote_addr);
 
     /*发送注册消息。*/
@@ -653,6 +640,7 @@ static void _abcdk_tipc_event_output(abcdk_asynctcp_node_t *node)
 static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
+    SSL *ssl_p;
     int chk;
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -664,6 +652,19 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
     {
         abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
         return;
+    }
+
+    if(node_ctx_p->father->cfg.ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+        /*获取验证结果。*/
+        chk = SSL_get_verify_result(ssl_p);
+        if (chk != X509_V_OK)
+            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(ssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+
+#endif // HEADER_SSL_H
     }
 
     abcdk_trace_output(LOG_INFO, "本机%s远端(IP='%s')的连接已经断开。",(node_ctx_p->flag == 1 ? "<<<" : ">>>"), node_ctx_p->remote_addr);
@@ -769,7 +770,7 @@ static int _abcdk_tipc_ssl_init(abcdk_asynctcp_node_t *node,int server)
         /*仅客户端需要。*/
         if(!server)
         {
-            chk = abcdk_asynctcp_upgrade2openssl(node,node_ctx_p->openssl_ctx);
+            chk = abcdk_asynctcp_upgrade2openssl(node,node_ctx_p->openssl_ctx,cfg_p->openssl_check_cert);
             if(chk != 0)
                 return -3;
         }

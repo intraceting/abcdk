@@ -149,10 +149,11 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx, size_t userda
  * 升级为openssl环境。
  *
  * @param [in] ssl_ctx SSL环境指针(仅复制，创建者放负责回收和释放)。
+ * @param [in] check_verify_result 是否检测验证结果。0 否，!0 是。
  *
  * @return 0 成功，!0 失败。
  */
-int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx);
+int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx,int check_verify_result);
 
 /**
  * 升级为easyssl环境。

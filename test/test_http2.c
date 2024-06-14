@@ -177,7 +177,7 @@ static void _prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *lis
     node_new_p = (h2_node_t *)abcdk_asynctcp_get_userdata(node_new);
 
     if(listen_p->ssl_ctx)
-        abcdk_asynctcp_upgrade2openssl(node_new,listen_p->ssl_ctx);
+        abcdk_asynctcp_upgrade2openssl(node_new,listen_p->ssl_ctx,1);
 
     // 初始化nghttp2回调结构
     nghttp2_session_callbacks_new(&node_new_p->callbacks);
@@ -367,7 +367,7 @@ int abcdk_test_http2(abcdk_option_t *args)
     http_p = (h2_node_t *)abcdk_asynctcp_get_userdata(listen_node);
 
     if(http_p->ssl_ctx = ssl_ctx)
-        abcdk_asynctcp_upgrade2openssl(listen_node,ssl_ctx);
+        abcdk_asynctcp_upgrade2openssl(listen_node,ssl_ctx,1);
 
     abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:3333", 0);
 

@@ -263,7 +263,7 @@ static void _abcdk_proxy_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
     /*升级是可选的。*/
     if(listen_ctx_p->ssl_ctx)
     {
-        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx);
+        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx,1);
         if(chk != 0)
             abcdk_asynctcp_unref(&node_p);
     }
@@ -556,7 +556,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     /*升级是可选的。*/
     if(node_ctx_p->ssl_ctx)
     {
-        chk = abcdk_asynctcp_upgrade2openssl(node_ctx_p->tunnel,node_ctx_p->ssl_ctx);
+        chk = abcdk_asynctcp_upgrade2openssl(node_ctx_p->tunnel,node_ctx_p->ssl_ctx,1);
         if(chk != 0)
         {
             _abcdk_proxy_reply_nobody(node, 500);
