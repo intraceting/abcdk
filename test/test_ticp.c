@@ -20,7 +20,7 @@ static void _abcdk_test_tipc_offline_cb(void *opaque, uint64_t id)
 
 static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid, const void *data, size_t size)
 {
-    abcdk_trace_output(LOG_INFO,"id=%llu,mid=%llu,size=%zu \n",id,mid,size);
+    abcdk_trace_output(LOG_INFO,"id=%llu,mid=%llu,size=%zu,data=%s \n",id,mid,size,data);
 
     if( ABCDK_PTR2I8(data,0) == 'r')
         abcdk_tipc_response(g_ctx,id,mid,data,size);
@@ -47,6 +47,15 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.request_cb = _abcdk_test_tipc_request_cb;
     cfg.offline_cb = _abcdk_test_tipc_offline_cb;
     cfg.subscribe_cb = _abcdk_test_tipc_subscribe_cb;
+    cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
+
+    cfg.easyssl_key_file = abcdk_option_get(args,"--easyssl-key-file",0,NULL);
+    cfg.easyssl_salt_size = 123;
+    cfg.openssl_check_cert = abcdk_option_get_int(args,"--openssl-check-cert",0,1);
+    cfg.openssl_cert_file = abcdk_option_get(args,"--server-openssl-cert-file",0,NULL);
+    cfg.openssl_key_file = abcdk_option_get(args,"--server-openssl-key-file",0,NULL);
+    cfg.openssl_ca_file = abcdk_option_get(args,"--openssl-ca-file",0,NULL);
+    cfg.openssl_ca_path = abcdk_option_get(args,"--openssl-ca-path",0,NULL);
 
     listen_p = abcdk_option_get(args,"--listen",0,"ipv4://127.0.0.1:6666");
     connect_p = abcdk_option_get(args,"--connect",0,NULL);

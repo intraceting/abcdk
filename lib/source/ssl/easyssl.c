@@ -6,6 +6,9 @@
  */
 #include "abcdk/ssl/easyssl.h"
 
+/*分块长度。*/
+#define ABCDK_EASYSSL_CHUNK_SIZE (256*1024LLU)
+
 /** 简单的SSL通讯。 */
 struct _abcdk_easyssl
 {
@@ -102,7 +105,7 @@ int _abcdk_easyssl_init_enigma(abcdk_easyssl_t *ctx,const uint8_t *key,size_t si
     if(!ctx->recv_queue)
         return -4;
 
-    ctx->recv_buf = abcdk_object_alloc2(256*1024);
+    ctx->recv_buf = abcdk_object_alloc2(ABCDK_EASYSSL_CHUNK_SIZE);
     if(!ctx->recv_buf)
         return -5;
 
@@ -209,7 +212,7 @@ int abcdk_easyssl_do_handshake(abcdk_easyssl_t *ctx,int server)
     return 1;
 }
 
-ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size)
+ssize_t _abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size)
 {
     char salt[256+1] = {0};
     abcdk_tree_t *en_data = NULL;
@@ -297,6 +300,26 @@ NEXT_MSG:
 
     /*并继续发送剩余节点。*/
     goto NEXT_MSG;  
+}
+
+ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size)
+{
+    ssize_t slen = 0,alen = 0;
+
+    assert(ctx != NULL && data != NULL && size >0);
+
+    while(alen < size)
+    {
+        slen = _abcdk_easyssl_write(ctx,ABCDK_PTR2VPTR(data,alen),ABCDK_MIN(size-alen,(size_t)(ABCDK_EASYSSL_CHUNK_SIZE)));
+        if (slen < 0)
+            return (alen > 0 ? alen : -1); //优先返回已发送的数据长度。
+        else if (slen == 0)
+            return (alen > 0 ? alen : 0); //优先返回已发送的数据长度。
+
+        alen += slen;
+    }
+
+    return alen;
 }
 
 ssize_t abcdk_easyssl_read(abcdk_easyssl_t *ctx,void *data,size_t size)

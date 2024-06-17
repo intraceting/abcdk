@@ -887,29 +887,60 @@ int abcdk_test_any(abcdk_option_t *args)
     {
         if(i == 0)
         {
-            for(int j = 0;j<100000000;j++)
+            size_t buf_l = 1920*1080*3;
+            char *buf_p = (char*)abcdk_heap_alloc(buf_l);
+            for(int k = 0;k<1080*3;k++)
+                memset(buf_p+k*1920,ABCDK_CLAMP(k%256,65,90),1920);
+
+            for(int j = 0;j<10;j++)
             {
-                int n = abcdk_easyssl_write(cli_ctx,"abcd1234",8);
-                if(n<0)
-                    abcdk_poll(pipefd[1],0x02,-1);
-                else if( n==0)
+                size_t sn = 0;
+                while (sn < buf_l)
+                {
+                    int n = abcdk_easyssl_write(cli_ctx, buf_p + sn, buf_l - sn);
+                    if (n < 0)
+                        abcdk_poll(pipefd[1], 0x02, -1);
+                    else if (n == 0)
+                        break;
+                    else
+                        sn += n;
+                }
+
+                if(sn <=0)
                     break;
+
+                printf("sn(%zd)\n",sn);
+
             }
+
+            sleep(2);
+            
 
             abcdk_closep(&pipefd[1]);
         }
         else 
         {
-            for (int j = 0; j < 10000000; j++)
+            
+            for (int j = 0; j < 10; j++)
             {
-                char buf[1000] = {0};
-                int n = abcdk_easyssl_read(cli_ctx, buf, 1000);
-                if (n < 0)
-                    abcdk_poll(pipefd[0], 0x01, -1);
-                else if (n == 0)
-                    break;
+                for (int k = 0; k < 1080 * 3; k++)
+                {
+                    size_t rn = 0;
+                    char buf[1920 + 1] = {0};
+                    while (rn < 1920)
+                    {
 
-                printf("%s\n",buf);
+                        int n = abcdk_easyssl_read(cli_ctx, buf + rn, 1920 - rn);
+                        if (n < 0)
+                            abcdk_poll(pipefd[0], 0x01, -1);
+                        else if (n == 0)
+                            break;
+                        else
+                            rn += n;
+                    }
+
+                    printf("%s\n", buf);
+                }
             }
 
             abcdk_closep(&pipefd[0]);
