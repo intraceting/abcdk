@@ -200,6 +200,15 @@ int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer)
     return old;
 }
 
+int abcdk_easyssl_do_handshake(abcdk_easyssl_t *ctx,int server)
+{
+    assert(ctx != NULL);
+
+    ABCDK_ASSERT(ctx->send_fd >= 0 && ctx->recv_fd >= 0,"未关联句柄，无法完成握手。");
+
+    return 1;
+}
+
 ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size)
 {
     char salt[256+1] = {0};

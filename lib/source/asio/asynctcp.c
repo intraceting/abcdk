@@ -635,7 +635,19 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
     {
         abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,0);
         abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,1);
-        node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
+
+        ssl_chk = abcdk_easyssl_do_handshake(node->easyssl_ctx,node->flag == ABCDK_ASYNCTCP_FLAG_ACCPET);
+        if(ssl_chk > 0)
+            node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
+        else if(ssl_chk < 0)
+        {
+            chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT|ABCDK_EPOLL_OUTPUT, 0);
+            if (chk == 0)
+                goto final;
+        }
+
+        /*Error .*/
+        goto final_error;
     }
 
 final:

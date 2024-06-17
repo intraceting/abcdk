@@ -74,6 +74,13 @@ int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int writer);
 int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer);
 
 /**
+ * 握手。
+ * 
+ * @return > 0 成功，= 0 连接已经关闭或断开。< 0 失败(非阻塞管道有效)。
+ */
+int abcdk_easyssl_do_handshake(abcdk_easyssl_t *ctx,int server);
+
+/**
  * 发送数据。
  * 
  * @warning 重发数据的参数不能改变(指针和长度)。
