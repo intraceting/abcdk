@@ -999,7 +999,7 @@ void _abcdk_asynctcp_input_hook(abcdk_asynctcp_node_t *node)
             return;
         }
     }
-
+--有BUG，加密通道内可能有缓存数据需要读取。
     /*收。*/
     rlen = abcdk_asynctcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
