@@ -340,11 +340,11 @@ final:
 
 void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_list ap)
 {
-    char buf[8000] = {0};
+    char buf[16000] = {0};
 
     assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && fmt != NULL);
 
-    vsnprintf(buf, 8000, fmt, ap);
+    vsnprintf(buf, 16000, fmt, ap);
     abcdk_logger_puts(ctx, type, buf);
 }
 

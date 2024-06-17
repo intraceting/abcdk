@@ -52,7 +52,7 @@ typedef struct _abcdk_srpc_config
     /*是否验证对端证书。0 否，!0 是。*/
     int openssl_check_cert;
 
-    /*私钥。*/
+    /*共享密钥。*/
     const char *easyssl_key_file;
 
     /*盐长度。*/

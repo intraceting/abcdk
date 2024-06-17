@@ -265,6 +265,7 @@ static void _abcdk_srpc_event_accept(abcdk_asynctcp_node_t *node, int *result)
 static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
 {
     abcdk_srpc_node_t *node_ctx_p;
+    SSL *ssl_p;
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
@@ -276,6 +277,27 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
     if(!node_ctx_p->local_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+    
+    if(node_ctx_p->cfg.ssl_scheme == ABCDK_SRPC_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+        X509 *cert = SSL_get_peer_certificate(ssl_p);
+        if(cert)
+        {
+            abcdk_object_t *info = abcdk_openssl_dump_crt(cert);
+            if(info)
+            {
+                abcdk_trace_output(LOG_INFO,"远端(%s)证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
+                abcdk_object_unref(&info);
+            }
+
+            X509_free(cert);
+        }
+
+#endif // HEADER_SSL_H
+    }
 
     abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经建立。",
                        node_ctx_p->local_addr,

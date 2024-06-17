@@ -335,6 +335,28 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 
 #ifdef HEADER_SSL_H
 
+abcdk_object_t *abcdk_openssl_dump_crt(X509 *x509)
+{
+    BIO *mem;
+    char *data_p = NULL;
+    long data_l = 0;
+    abcdk_object_t *cert_info;
+
+    assert(x509 != NULL);
+
+    mem = BIO_new(BIO_s_mem());
+    if(!mem)
+        return NULL;
+
+    X509_print(mem, x509);
+
+    data_l = BIO_get_mem_data(mem, &data_p);
+    cert_info = abcdk_object_copyfrom(data_p,data_l);        
+    BIO_free(mem);
+
+    return cert_info;
+}
+
 RSA *abcdk_openssl_pubkey_crt(X509 *x509)
 {
     RSA *rsa = NULL;

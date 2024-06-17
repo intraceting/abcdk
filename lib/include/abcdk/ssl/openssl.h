@@ -11,6 +11,7 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/trace.h"
+#include "abcdk/util/object.h"
 
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslconf.h>
@@ -228,6 +229,11 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
 /******************************************************************************************************/
 
 #ifdef HEADER_SSL_H
+
+/** 
+ * 打印证书信息。
+ */
+abcdk_object_t *abcdk_openssl_dump_crt(X509 *x509);
 
 /**
  * 从证书中获取公钥。

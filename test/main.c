@@ -150,13 +150,13 @@ int main(int argc, char **argv)
     /*随机数种子。*/
     srand(time(NULL));
 
-#ifdef HAVE_OPENSSL
-
+#ifdef HEADER_SSL_H
     SSL_library_init();
     OpenSSL_add_all_algorithms();
+    ERR_load_BIO_strings();
+    ERR_load_crypto_strings();
     SSL_load_error_strings();
-
-#endif //HAVE_OPENSSL
+#endif //HEADER_SSL_H
 
     args = abcdk_option_alloc("--");
     if (!args)
@@ -170,6 +170,18 @@ int main(int argc, char **argv)
     errcode = _abcdk_test_dispatch(args);
 
 final:
+
+#ifdef HEADER_SSL_H
+    CONF_modules_free();
+#ifndef OPENSSL_NO_DEPRECATED
+    ERR_remove_state(0);
+#endif //OPENSSL_NO_DEPRECATED
+    //ENGINE_cleanup();
+    CONF_modules_unload(1);
+    ERR_free_strings();
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
+#endif // HEADER_SSL_H
     
     abcdk_option_free(&args);
 

@@ -116,6 +116,8 @@ int main(int argc, char **argv)
 #ifdef HEADER_SSL_H
     SSL_library_init();
     OpenSSL_add_all_algorithms();
+    ERR_load_BIO_strings();
+    ERR_load_crypto_strings();
     SSL_load_error_strings();
 #endif //HEADER_SSL_H
 
