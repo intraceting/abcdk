@@ -279,10 +279,23 @@ if [ ${CHK} -ne 0 ];then
 }
 fi
 
+#当前构建平台。
+BUILD_PLATFORM=$(uname -m)
+#当前构建平台架构。
+BUILD_ARCH=$(uname -m)
 #获取目标平台。
 TARGET_PLATFORM=$(${CC} -dumpmachine)
 #获取目标平台架构。
 TARGET_ARCH=$(echo ${TARGET_PLATFORM} |cut -d '-' -f 1)
+
+#转换构建平台架构关键字。
+if [ "${BUILD_ARCH}" == "x86_64" ];then
+    BUILD_ARCH="amd64"
+elif [ "${BUILD_ARCH}" == "aarch64" ] || [ "${BUILD_ARCH}" == "armv8l" ];then
+    BUILD_ARCH="arm64"
+elif [ "${BUILD_ARCH}" == "arm" ] || [ "${BUILD_ARCH}" == "armv7l" ];then
+    BUILD_ARCH="arm"
+fi
 
 #转换目标平台架构关键字。
 if [ "${TARGET_ARCH}" == "x86_64" ];then
@@ -353,9 +366,9 @@ DependPackageCheck()
 #设置环境变量，用于搜索依赖包。
 export DEPEND_PREFIX_PATH=${KIT_PREFIX}
 export DEPEND_TARGET_PLATFORM=${TARGET_PLATFORM}
-if [ "${TARGET_ARCH}" == "x86_64" ];then
+if [ "${TARGET_ARCH}" == "amd64" ];then
     export DEPEND_TARGET_BITWIDE="64"
-elif [ "${TARGET_ARCH}" == "aarch64" ];then
+elif [ "${TARGET_ARCH}" == "arm64" ];then
     export DEPEND_TARGET_BITWIDE="64"
 elif [ "${TARGET_ARCH}" == "arm" ];then
     export DEPEND_TARGET_BITWIDE="32"
@@ -409,7 +422,12 @@ if [ "${DEPEND_NOFOUND}" != "" ];then
     echo -e "\x1b[33m${DEPEND_NOFOUND}\x1b[31m not found. \x1b[0m"
     exit 22
 }
-fi 
+fi
+
+#添加其它参编译参数依赖。
+if [ "${BUILD_ARCH}" == "${TARGET_ARCH}" ];then
+DEPEND_FLAGS=" -march=native ${DEPEND_FLAGS}"
+fi
 
 #
 mkdir -p ${BUILD_PATH}
@@ -472,6 +490,8 @@ CSTD = ${CSTD}
 CC = ${CC}
 AR = ${AR}
 #
+BUILD_PLATFORM = ${BUILD_PLATFORM}
+BUILD_ARCH = ${BUILD_ARCH}
 TARGET_PLATFORM = ${TARGET_PLATFORM}
 TARGET_ARCH = ${TARGET_ARCH}
 #
