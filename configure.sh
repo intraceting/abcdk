@@ -425,9 +425,9 @@ if [ "${DEPEND_NOFOUND}" != "" ];then
 fi
 
 #添加其它参编译参数依赖。
-if [ "${BUILD_ARCH}" == "${TARGET_ARCH}" ];then
-DEPEND_FLAGS=" -march=native ${DEPEND_FLAGS}"
-fi
+#if [ "${BUILD_ARCH}" == "${TARGET_ARCH}" ];then
+#DEPEND_FLAGS=" -funroll-loops -finline-functions -fomit-frame-pointer  ${DEPEND_FLAGS}"
+#fi
 
 #
 mkdir -p ${BUILD_PATH}

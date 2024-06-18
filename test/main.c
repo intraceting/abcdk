@@ -138,6 +138,7 @@ int main(int argc, char **argv)
     abcdk_thread_t sig_thread = {0};
     int errcode = 0;
 
+
     abcdk_signal_fill(&sigs,SIGTRAP,SIGKILL,SIGSEGV,SIGSTOP,-1);
     abcdk_signal_block(&sigs,NULL);
 
