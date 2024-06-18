@@ -802,7 +802,7 @@ static int _abcdk_tipc_ssl_init(abcdk_asynctcp_node_t *node,int server)
         node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
         if (!node_ctx_p->easyssl_ctx)
         {
-            abcdk_trace_output(LOG_WARNING, "加载私钥失败，无法创建SSL环境。");
+            abcdk_trace_output(LOG_WARNING, "加载共享密钥失败，无法创建SSL环境。");
             return -2;
         }
 
