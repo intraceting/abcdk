@@ -613,13 +613,21 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
         _abcdk_proxy_reply_nobody(node, 500);
         goto ERR;
     }
+    
+    node_uplink_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_ctx_p->tunnel);
 
-    if (node_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_OPENSSL)
+    node_uplink_ctx_p->father = node_ctx_p->father;
+    node_uplink_ctx_p->flag = 2;
+    node_uplink_ctx_p->protocol = 2;
+    node_uplink_ctx_p->ssl_scheme = node_ctx_p->ssl_scheme;//复制安全模式。
+    node_uplink_ctx_p->tunnel = abcdk_asynctcp_refer(node);
+
+    if (node_uplink_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, node_ctx_p->openssl_ca_file, node_ctx_p->openssl_ca_path, node_ctx_p->openssl_cert_file, node_ctx_p->openssl_key_file, NULL);
+        node_uplink_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, node_ctx_p->openssl_ca_file, node_ctx_p->openssl_ca_path, node_ctx_p->openssl_cert_file, node_ctx_p->openssl_key_file, NULL);
 #endif // HEADER_SSL_H
-        if (!node_ctx_p->openssl_ctx)
+        if (!node_uplink_ctx_p->openssl_ctx)
         {
             _abcdk_proxy_reply_nobody(node, 500);
             goto ERR;
@@ -632,30 +640,22 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
             goto ERR;
         }
     }
-    else if (node_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_EASYSSL)
+    else if (node_uplink_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_EASYSSL)
     {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(node_ctx_p->easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, ABCDK_CLAMP(node_ctx_p->easyssl_salt_size, 0, 256));
-        if (!node_ctx_p->easyssl_ctx)
+        node_uplink_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(node_ctx_p->easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, ABCDK_CLAMP(node_ctx_p->easyssl_salt_size, 0, 256));
+        if (!node_uplink_ctx_p->easyssl_ctx)
         {
             _abcdk_proxy_reply_nobody(node, 500);
             goto ERR;
         }
 
-        chk = abcdk_asynctcp_upgrade2easyssl(node_ctx_p->tunnel,node_ctx_p->easyssl_ctx);
+        chk = abcdk_asynctcp_upgrade2easyssl(node_ctx_p->tunnel,node_uplink_ctx_p->easyssl_ctx);
         if(chk != 0)
         {
             _abcdk_proxy_reply_nobody(node, 500);
             goto ERR;
         }
     }
-
-    node_uplink_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_ctx_p->tunnel);
-
-    node_uplink_ctx_p->father = node_ctx_p->father;
-    node_uplink_ctx_p->flag = 2;
-    node_uplink_ctx_p->protocol = 2;
-    node_uplink_ctx_p->ssl_scheme = node_ctx_p->ssl_scheme;
-    node_uplink_ctx_p->tunnel = abcdk_asynctcp_refer(node);
 
     cb.prepare_cb = _abcdk_proxy_prepare_cb;
     cb.event_cb = _abcdk_proxy_event_cb;
