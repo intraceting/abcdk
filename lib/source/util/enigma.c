@@ -79,7 +79,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols
     uint16_t c;
     int chk;
 
-    assert(dict != NULL && rows >= 3 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
+    assert(dict != NULL && rows > 0 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
 
     /*检查字典表，每张字典表中的字符不能出现重复的。*/
     for (size_t y = 0; y < rows; y++)
@@ -207,12 +207,9 @@ uint16_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, uint16_t rotor, uint16_t pos)
     return old;
 }
 
-uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
+static uint16_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
 {
     uint16_t c;
-
-    assert(ctx != NULL);
-    assert(s < ctx->cols);
 
     c = s;
 
@@ -267,6 +264,14 @@ uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
     }
 
     return c;
+}
+
+uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
+{
+    assert(ctx != NULL);
+    assert(s < ctx->cols);
+
+    return _abcdk_enigma_light(ctx,s);
 }
 
 void abcdk_enigma_light_batch_u16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size)

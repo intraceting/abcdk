@@ -180,7 +180,7 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     node->out_queue = abcdk_tree_alloc3(1);
     node->out_locker = abcdk_mutex_create();
     node->out_pos = 0;
-    node->in_buffer = NULL;
+    node->in_buffer = abcdk_object_alloc2(256*1024);
     node->from_listen = NULL;
     node->ssl_scheme = ABCDK_ASYNCTCP_SSL_SCHEME_RAW;
     node->openssl_ctx = NULL;
@@ -989,17 +989,12 @@ void _abcdk_asynctcp_input_hook(abcdk_asynctcp_node_t *node)
         return;
     }
 
-    /*准备接收数据的缓存。*/
-    if (!node->in_buffer)
-    {
-        node->in_buffer = abcdk_object_alloc2(256*1024);
-        if (!node->in_buffer)
-        {
-            abcdk_asynctcp_set_timeout(node, 1);
-            return;
-        }
-    }
---有BUG，加密通道内可能有缓存数据需要读取。
+NEXT_RECV:
+
+    /*重置这些变量，非常重要。*/
+    rlen = pos = 0;
+    remain = 0;
+
     /*收。*/
     rlen = abcdk_asynctcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
@@ -1016,7 +1011,7 @@ NEXT_REQ:
     if (pos < rlen)
         goto NEXT_REQ;
     else
-        abcdk_asynctcp_recv_watch(node);
+        goto NEXT_RECV;//由于缓存里可能还有剩余数据，必须要清空缓存，才能重新进入监听状态。
 }
 
 void _abcdk_asynctcp_output_hook(abcdk_asynctcp_node_t *node)

@@ -867,7 +867,7 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_enigma_free(&s_ctx);
         abcdk_enigma_free(&r_ctx);
     }
-#elif 1
+#elif 0
 
     int pipefd[2] = {-1,-1};
 

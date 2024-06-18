@@ -70,6 +70,10 @@ int abcdk_test_tipc(abcdk_option_t *args)
 
     sleep(10);
 
+
+    abcdk_tipc_subscribe(g_ctx,1,0);
+    abcdk_tipc_subscribe(g_ctx,2,0);
+
     if(connect_p)
     {
         abcdk_tipc_connect(g_ctx,connect_p,id2);
@@ -78,43 +82,45 @@ int abcdk_test_tipc(abcdk_option_t *args)
 
         size_t buf_l = 1920*1080*3;
         char *buf_p = (char*)abcdk_heap_alloc(buf_l);
-        for(int i = 0;i<1110;i++)
+        for(int i = 0;i<100;i++)
         {
             abcdk_object_t *rsp_p = NULL;
-            //sprintf(buf_p,"%caaaaaa",(i%3==0?'r':'a'));
-            sprintf(buf_p,"raaaaaa");
+            sprintf(buf_p,"%caaaaaa",(i%3==0?'r':'a'));
+            //sprintf(buf_p,"raaaaaa");
 
-            abcdk_tipc_request(g_ctx,id2,buf_p,buf_l,(buf_p[0]=='r'?&rsp_p:NULL));
+            size_t buf_l2 = (abcdk_rand_number()%(buf_l-7))+7;
+
+            abcdk_tipc_request(g_ctx,id2,buf_p,buf_l2,(buf_p[0]=='r'?&rsp_p:NULL));
+
+            if(rsp_p)
+                fprintf(stderr,"%s\n",rsp_p->pstrs[0]);
+
             abcdk_object_unref(&rsp_p);
         }
 
         abcdk_heap_free(buf_p);
     }
 
-    sleep(5);
 
-    // abcdk_tipc_subscribe(g_ctx,1,0);
-    // abcdk_tipc_subscribe(g_ctx,2,0);
+     sleep(1);
 
-    //  sleep(1);
+    for(int i = 0;i<100;i++)
+    {
+        abcdk_tipc_publish(g_ctx,1,"bbbbbb",6);
+        abcdk_tipc_publish(g_ctx,2,"bbbbbbb",7);
 
-    // for(int i = 0;i<100;i++)
-    // {
-    //     abcdk_tipc_publish(g_ctx,1,"bbbbbb",6);
-    //     abcdk_tipc_publish(g_ctx,2,"bbbbbbb",7);
+        usleep(1000*100);
+    }
 
-    //     usleep(1000*100);
-    // }
+     sleep(35);
 
-    //  sleep(35);
+    for(int i = 0;i<100;i++)
+    {
+        abcdk_tipc_publish(g_ctx,1,"bbbbbb",6);
+        abcdk_tipc_publish(g_ctx,2,"bbbbbbb",7);
 
-    // for(int i = 0;i<100;i++)
-    // {
-    //     abcdk_tipc_publish(g_ctx,1,"bbbbbb",6);
-    //     abcdk_tipc_publish(g_ctx,2,"bbbbbbb",7);
-
-    //     usleep(1000*100);
-    // }
+        usleep(1000*100);
+    }
 
     abcdk_proc_wait_exit_signal(-1);
 
