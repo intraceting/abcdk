@@ -654,6 +654,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     node_uplink_ctx_p->father = node_ctx_p->father;
     node_uplink_ctx_p->flag = 2;
     node_uplink_ctx_p->protocol = 2;
+    node_uplink_ctx_p->ssl_scheme = node_ctx_p->ssl_scheme;
     node_uplink_ctx_p->tunnel = abcdk_asynctcp_refer(node);
 
     cb.prepare_cb = _abcdk_proxy_prepare_cb;
