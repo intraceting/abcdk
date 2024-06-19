@@ -56,6 +56,9 @@ typedef struct _abcdk_httpd_config
     /*私钥。*/
     const char *key_file;
 
+    /*是否验证对端证书。0 否，!0 是。*/
+    int check_cert;
+
     /*请求数量包最大长度。*/
     size_t req_max_size;
 
