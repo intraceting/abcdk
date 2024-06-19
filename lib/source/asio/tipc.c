@@ -460,6 +460,11 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
         return NULL;
 
     ctx->cfg = *cfg;
+
+    /*修复不支持的配置。*/
+    ctx->cfg.easyssl_key_file = (ctx->cfg.easyssl_key_file?ctx->cfg.easyssl_key_file:"");
+    ctx->cfg.easyssl_salt_size = ABCDK_CLAMP(ctx->cfg.easyssl_salt_size,0,256);
+
     ctx->io_ctx = abcdk_asynctcp_start(ABCDK_TIPC_SLAVE_MAX*2+10, -1);
     memset(ctx->slave_list,0,sizeof(abcdk_tipc_slave_t*)* ABCDK_ARRAY_SIZE(ctx->slave_list));
     ctx->slave_mutex = abcdk_mutex_create();
@@ -549,7 +554,7 @@ static void _abcdk_tipc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
     }
     else if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_EASYSSL)
     {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
+        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,cfg_p->easyssl_salt_size);
         if(!node_ctx_p->easyssl_ctx)
             abcdk_asynctcp_unref(&node_p);
         else
@@ -778,7 +783,7 @@ static int _abcdk_tipc_ssl_init(abcdk_asynctcp_node_t *node,int server)
     }
     else if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_EASYSSL)
     {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
+        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,cfg_p->easyssl_salt_size);
         if (!node_ctx_p->easyssl_ctx)
         {
             abcdk_trace_output(LOG_WARNING, "加载共享密钥失败，无法创建SSL环境。");

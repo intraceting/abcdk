@@ -232,7 +232,7 @@ static void _abcdk_srpc_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_
     }
     else if(cfg_p->ssl_scheme == ABCDK_SRPC_SSL_SCHEME_EASYSSL)
     {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
+        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,cfg_p->easyssl_salt_size);
         if(!node_ctx_p->easyssl_ctx)
             abcdk_asynctcp_unref(&node_p);
         else
@@ -495,7 +495,7 @@ static int _abcdk_srpc_ssl_init(abcdk_srpc_session_t *session,int server)
     }
     else if (cfg_p->ssl_scheme == ABCDK_SRPC_SSL_SCHEME_EASYSSL)
     {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,ABCDK_CLAMP(cfg_p->easyssl_salt_size,0,256));
+        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,cfg_p->easyssl_salt_size);
         if (!node_ctx_p->easyssl_ctx)
         {
             abcdk_trace_output(LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
@@ -530,6 +530,10 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 0;
 
+    /*修复不支持的配置。*/
+    node_ctx_p->cfg.easyssl_key_file = (node_ctx_p->cfg.easyssl_key_file?node_ctx_p->cfg.easyssl_key_file:"");
+    node_ctx_p->cfg.easyssl_salt_size = ABCDK_CLAMP(node_ctx_p->cfg.easyssl_salt_size,0,256);
+
     /*初始化安全模式。*/
     chk = _abcdk_srpc_ssl_init(session,1);
     if(chk != 0)
@@ -561,6 +565,10 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
 
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 2;
+
+    /*修复不支持的配置。*/
+    node_ctx_p->cfg.easyssl_key_file = (node_ctx_p->cfg.easyssl_key_file?node_ctx_p->cfg.easyssl_key_file:"");
+    node_ctx_p->cfg.easyssl_salt_size = ABCDK_CLAMP(node_ctx_p->cfg.easyssl_salt_size,0,256);
 
     /*初始化安全模式。*/
     chk = _abcdk_srpc_ssl_init(session,0);

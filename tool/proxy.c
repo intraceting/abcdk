@@ -988,8 +988,11 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     ctx->openssl_key_file = abcdk_option_get(ctx->args, "--openssl-key-file", 0, NULL);
     ctx->openssl_check_cert = abcdk_option_get_int(ctx->args, "--openssl-check-cert", 0, 1);
 
-    ctx->easyssl_key_file = abcdk_option_get(ctx->args, "--easyssl-key-file", 0, "");
+    ctx->easyssl_key_file = abcdk_option_get(ctx->args, "--easyssl-key-file", 0, NULL);
     ctx->easyssl_salt_size = abcdk_option_get_int(ctx->args, "--easyssl-salt-size", 0, 123);
+
+    /*修复不支持的配置。*/
+    ctx->easyssl_key_file = (ctx->easyssl_key_file?ctx->easyssl_key_file:"");
     ctx->easyssl_salt_size = ABCDK_CLAMP(ctx->easyssl_salt_size, 0, 256);
     
     ctx->uplink = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
