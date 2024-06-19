@@ -94,9 +94,9 @@ BUILD_PACKAGE_PATH="${SHELLDIR}/package/"
 #主版本
 VERSION_MAJOR="1"
 #副版本
-VERSION_MINOR="9"
+VERSION_MINOR="10"
 #发行版本
-VERSION_RELEASE="11"
+VERSION_RELEASE="0"
 
 #编译器前缀
 COMPILER_PREFIX="/usr/bin/"
@@ -423,11 +423,6 @@ if [ "${DEPEND_NOFOUND}" != "" ];then
     exit 22
 }
 fi
-
-#添加其它参编译参数依赖。
-#if [ "${BUILD_ARCH}" == "${TARGET_ARCH}" ];then
-#DEPEND_FLAGS=" -funroll-loops -finline-functions -fomit-frame-pointer  ${DEPEND_FLAGS}"
-#fi
 
 #
 mkdir -p ${BUILD_PATH}

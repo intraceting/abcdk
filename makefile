@@ -75,7 +75,7 @@ CC_FLAGS += -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #优化信息。
-CC_FLAGS += -fopt-info-optimized=${BUILD_PATH}/optimization_info.txt
+#CC_FLAGS += -fopt-info-optimized=${BUILD_PATH}/optimization_info.txt
 
 #
 CC_FLAGS += -I$(CURDIR)/lib/include/
