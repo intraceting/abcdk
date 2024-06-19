@@ -261,6 +261,10 @@ int abcdk_asynctcp_set_timeout(abcdk_asynctcp_node_t *node, time_t timeout)
     assert(node != NULL);
     assert(node->ctx != NULL);
 
+    /*没有确定节点属性和状态前，不能调用此接口。*/
+    if(!node->flag ||!node->status)
+        return -3;
+
     chk = abcdk_epollex_timeout(node->ctx->epollex, node->fd, timeout);
 
     return chk;
@@ -412,10 +416,6 @@ void _abcdk_asynctcp_output_hook(abcdk_asynctcp_node_t *node);
 
 void _abcdk_asynctcp_event_cb(abcdk_asynctcp_node_t *node,uint32_t event, int *result)
 {
-    /*初次建立连接，取消默认的发和收超时设置。*/
-
-
-
     /*绑定工作线程。*/
     abcdk_thread_leader_vote(&node->worker);
 
