@@ -900,7 +900,7 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         ssl_p = abcdk_asynctcp_openssl_ctx(node);
-        if (ssl_p)
+        if (ssl_p && node_ctx_p->cfg.check_cert)
         {
             /*获取验证结果。*/
             chk = SSL_get_verify_result(ssl_p);
@@ -1102,7 +1102,8 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     if (cfg->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, cfg->ca_file, cfg->ca_path, cfg->cert_file, cfg->key_file, NULL);
+        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, (cfg->check_cert ? cfg->ca_file : NULL), (cfg->check_cert ? cfg->ca_path : NULL),
+                                                               cfg->cert_file, cfg->key_file, NULL);
 #endif // HEADER_SSL_H
         if (!node_ctx_p->ssl_ctx)
         {

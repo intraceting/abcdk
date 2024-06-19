@@ -582,32 +582,6 @@ static void _abcdk_tipc_event_accept(abcdk_asynctcp_node_t *node, int *result)
 static int _abcdk_tipc_post_register(abcdk_asynctcp_node_t *node,int rsp);
 
 
-static int _abcdk_tipc_event_connect_check_cert(abcdk_asynctcp_node_t *node)
-{
-    abcdk_tipc_node_t *node_ctx_p;
-    SSL *ssl_p;
-    int chk;
-
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
-
-    if (!node_ctx_p->father->cfg.openssl_check_cert)
-        return 0;
-
-#ifdef HEADER_SSL_H
-
-    ssl_p = abcdk_asynctcp_openssl_ctx(node);
-
-    /*检查验证结果。*/
-    chk = SSL_get_verify_result(ssl_p);
-    if (chk != X509_V_OK)
-        return -1;
-
-#endif // HEADER_SSL_H
-
-
-    return 0;
-}
-
 static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
@@ -675,7 +649,7 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         ssl_p = abcdk_asynctcp_openssl_ctx(node);
-        if(ssl_p)
+        if(ssl_p && node_ctx_p->father->cfg.openssl_check_cert)
         {
             /*获取验证结果。*/
             chk = SSL_get_verify_result(ssl_p);
@@ -783,7 +757,9 @@ static int _abcdk_tipc_ssl_init(abcdk_asynctcp_node_t *node,int server)
     if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(server, cfg_p->openssl_ca_file, cfg_p->openssl_ca_path, cfg_p->openssl_cert_file, cfg_p->openssl_key_file, NULL);
+        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(server, (cfg_p->openssl_check_cert ? cfg_p->openssl_ca_file : NULL),
+                                                                   (cfg_p->openssl_check_cert ? cfg_p->openssl_ca_path : NULL),
+                                                                   cfg_p->openssl_cert_file, cfg_p->openssl_key_file, NULL);
 #endif // HEADER_SSL_H
         if (!node_ctx_p->openssl_ctx)
         {

@@ -427,7 +427,7 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         ssl_p = abcdk_asynctcp_openssl_ctx(node);
-        if(ssl_p)
+        if(ssl_p && node_ctx_p->openssl_check_cert)
         {
             /*获取验证结果。*/
             chk = SSL_get_verify_result(ssl_p);
@@ -622,8 +622,13 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     else if (node_ctx_p->protocol == 2)
     {
         node_uplink_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_RAW;
-        node_uplink_ctx_p->openssl_ca_file = node_ctx_p->father->openssl_ca_file;
-        node_uplink_ctx_p->openssl_ca_path = node_ctx_p->father->openssl_ca_path;
+        
+        if(node_ctx_p->father->openssl_check_cert)
+        {
+            node_uplink_ctx_p->openssl_ca_file = node_ctx_p->father->openssl_ca_file;
+            node_uplink_ctx_p->openssl_ca_path = node_ctx_p->father->openssl_ca_path;
+        }
+
         node_uplink_ctx_p->openssl_cert_file = node_ctx_p->father->openssl_cert_file;
         node_uplink_ctx_p->openssl_key_file = node_ctx_p->father->openssl_key_file;
         node_uplink_ctx_p->openssl_check_cert = node_ctx_p->father->openssl_check_cert;
@@ -925,7 +930,8 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
     if (ssl_scheme == ABCDK_PROXY_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, node_ctx_p->father->openssl_ca_file, node_ctx_p->father->openssl_ca_path,
+        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, (node_ctx_p->father->openssl_check_cert ? node_ctx_p->father->openssl_ca_file : NULL),
+                                                                   (node_ctx_p->father->openssl_check_cert ? node_ctx_p->father->openssl_ca_path : NULL),
                                                                    node_ctx_p->father->openssl_cert_file, node_ctx_p->father->openssl_key_file, NULL);
 #endif // HEADER_SSL_H
         if (!node_ctx_p->openssl_ctx)
