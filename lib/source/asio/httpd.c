@@ -790,7 +790,6 @@ static void _abcdk_httpd_event_accept(abcdk_asynctcp_node_t *node, int *result)
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*默认：允许。*/
     *result = 0;
@@ -799,7 +798,7 @@ static void _abcdk_httpd_event_accept(abcdk_asynctcp_node_t *node, int *result)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_httpd_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机('%s')。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_output(LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
@@ -811,13 +810,6 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    /*设置超时。*/
-    abcdk_asynctcp_set_timeout(node, 180 * 1000);
-
-    if(!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
-    if(!node_ctx_p->local_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
 #ifdef HEADER_SSL_H
 
@@ -841,10 +833,10 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
 
 END:
 
-    abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经建立。",
-                       node_ctx_p->local_addr,
-                       (node_ctx_p->flag == 1 ? "客户端" : "服务端"),
-                       node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    
+    /*设置超时。*/
+    abcdk_asynctcp_set_timeout(node, 180 * 1000);
 
     /*如果未选择协议，则使用默认协议。*/
     if(node_ctx_p->protocol == 0)
@@ -905,10 +897,11 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    if(!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
-    if(!node_ctx_p->local_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+    if (node_ctx_p->flag == 0)
+    {
+        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        return;
+    }
 
 #ifdef HEADER_SSL_H
     ssl_p = abcdk_asynctcp_openssl_ctx(node);
@@ -939,6 +932,12 @@ static void _abcdk_httpd_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, i
     int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if(!node_ctx_p->remote_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
+    if(!node_ctx_p->local_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+
 
     if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
     {

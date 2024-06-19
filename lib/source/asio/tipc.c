@@ -52,6 +52,9 @@ typedef struct _abcdk_tipc_node
     /*远程地址。*/
     char remote_addr[NAME_MAX];
 
+    /*本机地址。*/
+    char local_addr[NAME_MAX];
+
     /*标志。0 监听，1 服务端，2 客户端。*/
     int flag;
 
@@ -613,12 +616,6 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    /*设置超时。*/
-    abcdk_asynctcp_set_timeout(node, 24 * 3600 * 1000);
-
-    if (node_ctx_p->flag == 2)
-        abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
-
     if(node_ctx_p->father->cfg.ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
@@ -639,8 +636,10 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
 #endif // HEADER_SSL_H
     }
 
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
-    abcdk_trace_output(LOG_INFO, "本机%s远端(IP='%s')的连接已经建立。", (node_ctx_p->flag == 1 ? "<<<" : ">>>"), node_ctx_p->remote_addr);
+    /*设置超时。*/
+    abcdk_asynctcp_set_timeout(node, 24 * 3600 * 1000);
 
     /*发送注册消息。*/
     if (node_ctx_p->flag == 2)
@@ -666,9 +665,6 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    if (!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
-
     if (node_ctx_p->flag == 0)
     {
         abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
@@ -688,7 +684,7 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
 #endif // HEADER_SSL_H
     }
 
-    abcdk_trace_output(LOG_INFO, "本机%s远端(IP='%s')的连接已经断开。",(node_ctx_p->flag == 1 ? "<<<" : ">>>"), node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*取消所有等待的。*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);
@@ -711,6 +707,12 @@ static void _abcdk_tipc_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, in
     int chk;
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if (!node_ctx_p->remote_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
+
+    if (!node_ctx_p->local_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, NULL);
 
     if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
     {

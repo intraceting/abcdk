@@ -345,9 +345,30 @@ static void _abcdk_proxy_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
 static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
 {
     abcdk_proxy_node_t *node_ctx_p;
+    SSL *ssl_p;
     int chk;
 
     node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if(node_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+        X509 *cert = SSL_get_peer_certificate(ssl_p);
+        if(cert)
+        {
+            abcdk_object_t *info = abcdk_openssl_dump_crt(cert);
+            if(info)
+            {
+                _abcdk_proxy_trace_output(node,LOG_INFO,"远端(%s)证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
+                abcdk_object_unref(&info);
+            }
+
+            X509_free(cert);
+        }
+#endif // HEADER_SSL_H
+    }
 
     /*设置协议。*/
     if (node_ctx_p->flag == 1)
@@ -375,6 +396,55 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     abcdk_asynctcp_send_watch(node);
 }
 
+static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
+{
+    abcdk_proxy_node_t *node_ctx_p;
+
+    // /*转发送数据完成，监听隧道另外一端的数据。*/
+    // if (node_ctx_p->tunnel)
+    //     abcdk_asynctcp_recv_watch(node_ctx_p->tunnel);
+
+    // /*转发送数据完成，监听隧道应答数据。*/
+    // abcdk_asynctcp_recv_watch(node);
+}
+
+static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
+{
+    abcdk_proxy_node_t *node_ctx_p;
+    SSL *ssl_p;
+    int chk;
+
+    node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if (node_ctx_p->flag == 0)
+    {
+        _abcdk_proxy_trace_output(node,LOG_INFO, "监听关闭，忽略。");
+        return;
+    }
+
+    if(node_ctx_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+        /*获取验证结果。*/
+        chk = SSL_get_verify_result(ssl_p);
+        if (chk != X509_V_OK)
+            _abcdk_proxy_trace_output(node,LOG_INFO, "验证远端('%s')的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+
+#endif // HEADER_SSL_H
+    }
+
+    /*一定要在这里关闭另一端的隧道，否则因引用计数未减少，从而造成内存泄漏。*/
+    if (node_ctx_p->tunnel)
+    {
+        abcdk_asynctcp_set_timeout(node_ctx_p->tunnel, 1);
+        abcdk_asynctcp_unref(&node_ctx_p->tunnel);
+    }
+
+    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)连接已经断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+}
+
 static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
 {
     abcdk_proxy_node_t *node_ctx_p;
@@ -397,24 +467,11 @@ static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, i
     }
     else if (event == ABCDK_ASYNCTCP_EVENT_OUTPUT)
     {
-        // /*转发送数据完成，监听隧道另外一端的数据。*/
-        // if (node_ctx_p->tunnel)
-        //     abcdk_asynctcp_recv_watch(node_ctx_p->tunnel);
-
-        // /*转发送数据完成，监听隧道应答数据。*/
-        // abcdk_asynctcp_recv_watch(node);
-
+        _abcdk_httpd_event_output(node);
     }
     else if (event == ABCDK_ASYNCTCP_EVENT_CLOSE || event == ABCDK_ASYNCTCP_EVENT_INTERRUPT)
     {
-        /*一定要在这里关闭另一端的隧道，否则因引用计数未减少，从而造成内存泄漏。*/
-        if (node_ctx_p->tunnel)
-        {
-            abcdk_asynctcp_set_timeout(node_ctx_p->tunnel, 1);
-            abcdk_asynctcp_unref(&node_ctx_p->tunnel);
-        }
-
-        _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)连接已经断开。", node_ctx_p->local_addr,node_ctx_p->remote_addr);
+        _abcdk_httpd_event_close(node);
     }
 }
 
@@ -590,7 +647,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     chk = abcdk_sockaddr_from_string(&uplink_addr, node_ctx_p->up_link->pstrs[ABCDK_URL_HOST], 1);
     if (chk != 0)
     {
-        _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址'%s'无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
+        _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址(%s)无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
 
         _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
@@ -622,7 +679,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
         node_uplink_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_EASYSSL;
     }
 
-
+    /*根据需要建立安全环境。*/
     if (node_uplink_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H

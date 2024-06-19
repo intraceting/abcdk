@@ -7,7 +7,7 @@
 #include "abcdk/ssl/easyssl.h"
 
 /*分块长度。*/
-#define ABCDK_EASYSSL_CHUNK_SIZE (256*1024LLU)
+#define ABCDK_EASYSSL_CHUNK_SIZE (16*1024LLU)
 
 /** 简单的SSL通讯。 */
 struct _abcdk_easyssl

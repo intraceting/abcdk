@@ -250,8 +250,6 @@ static void _abcdk_srpc_event_accept(abcdk_asynctcp_node_t *node, int *result)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, node_ctx_p->remote_addr);
-
     /*默认：允许。*/
     *result = 0;
 
@@ -259,7 +257,7 @@ static void _abcdk_srpc_event_accept(abcdk_asynctcp_node_t *node, int *result)
         node_ctx_p->cfg.accept_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机('%s')。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_output(LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
@@ -270,13 +268,6 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    /*设置超时。*/
-    abcdk_asynctcp_set_timeout(node, 180 * 1000);
-
-    if(!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
-    if(!node_ctx_p->local_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
     
     if(node_ctx_p->cfg.ssl_scheme == ABCDK_SRPC_SSL_SCHEME_OPENSSL)
     {
@@ -299,10 +290,14 @@ static void _abcdk_srpc_event_connect(abcdk_asynctcp_node_t *node)
 #endif // HEADER_SSL_H
     }
 
-    abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经建立。",
+    abcdk_trace_output(LOG_INFO, "本机(%s)与%s(%s)的连接已经建立。",
                        node_ctx_p->local_addr,
                        (node_ctx_p->flag == 1 ? "客户端" : "服务端"),
                        node_ctx_p->remote_addr);
+
+    
+    /*设置超时。*/
+    abcdk_asynctcp_set_timeout(node, 180 * 1000);
 
     if(node_ctx_p->cfg.ready_cb)
         node_ctx_p->cfg.ready_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node);
@@ -330,10 +325,11 @@ static void _abcdk_srpc_event_close(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    if(!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
-    if(!node_ctx_p->local_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+    if (node_ctx_p->flag == 0)
+    {
+        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        return;
+    }
     
     if(node_ctx_p->cfg.ssl_scheme == ABCDK_SRPC_SSL_SCHEME_OPENSSL)
     {
@@ -343,15 +339,13 @@ static void _abcdk_srpc_event_close(abcdk_asynctcp_node_t *node)
         /*获取验证结果。*/
         chk = SSL_get_verify_result(ssl_p);
         if (chk != X509_V_OK)
-            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+            abcdk_trace_output(LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
 
 #endif // HEADER_SSL_H
     }
 
     if(!node_ctx_p->flag)
-        abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。", node_ctx_p->local_addr,(node_ctx_p->flag == 1 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
-    else 
-        abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。", node_ctx_p->local_addr,(node_ctx_p->flag == 1 ? "客户端" : "服务端"), node_ctx_p->remote_addr);
+        abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已经断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*如果连接关闭则一定要取消等待的事务，否则可能会造成应用层阻塞。*/
     if(node_ctx_p->flag)
@@ -367,6 +361,11 @@ static void _abcdk_srpc_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, in
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asynctcp_get_userdata(node);
+
+    if(!node_ctx_p->remote_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
+    if(!node_ctx_p->local_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
     if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
     {
