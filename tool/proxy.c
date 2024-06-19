@@ -94,6 +94,9 @@ typedef struct _abcdk_proxy_node
     /*远程地址。*/
     char remote_addr[NAME_MAX];
 
+    /*本机地址。*/
+    char local_addr[NAME_MAX];
+
     /*时间环境*/
     locale_t loc_ctx;
 
@@ -346,9 +349,6 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
 
     node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    if (node_ctx_p->flag == 2)
-        abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
-
     /*设置协议。*/
     if (node_ctx_p->flag == 1)
     {
@@ -361,14 +361,14 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     }
     else if (node_ctx_p->flag == 2)
     {   
-        /*连接上级的隧道，设置为隧道协议。*/
+        /*连接上级，设置为隧道协议。*/
         node_ctx_p->protocol = 2;
     }
 
     /*设置超时。*/
     abcdk_asynctcp_set_timeout(node, 180 * 1000);
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "本机与'%s'已建立连接(ssl-scheme=%d)。", node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
+    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)连接已建立(ssl-scheme=%d)。",node_ctx_p->local_addr,node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
 
     /*已连接到远端，注册读写事件。*/
     abcdk_asynctcp_recv_watch(node);
@@ -381,10 +381,14 @@ static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, i
 
     node_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node);
 
-    if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
-    {
+    if (!node_ctx_p->remote_addr[0])
         abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
+    if (!node_ctx_p->local_addr[0])
+        abcdk_asynctcp_get_sockaddr_str(node, node_ctx_p->local_addr, NULL);
+
+    if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
+    {
         *result = 0;
     }
     else if (event == ABCDK_ASYNCTCP_EVENT_CONNECT)
@@ -403,9 +407,6 @@ static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, i
     }
     else if (event == ABCDK_ASYNCTCP_EVENT_CLOSE || event == ABCDK_ASYNCTCP_EVENT_INTERRUPT)
     {
-        if (!node_ctx_p->remote_addr[0])
-            abcdk_asynctcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
-
         /*一定要在这里关闭另一端的隧道，否则因引用计数未减少，从而造成内存泄漏。*/
         if (node_ctx_p->tunnel)
         {
@@ -413,7 +414,7 @@ static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, i
             abcdk_asynctcp_unref(&node_ctx_p->tunnel);
         }
 
-        _abcdk_proxy_trace_output(node, LOG_INFO, "本机与'%s'连接已经断开。", node_ctx_p->remote_addr);
+        _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)连接已经断开。", node_ctx_p->local_addr,node_ctx_p->remote_addr);
     }
 }
 
@@ -531,29 +532,44 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     if (node_ctx_p->tunnel)
         return;
 
+    node_ctx_p->tunnel = _abcdk_proxy_node_alloc(node_ctx_p->father);
+    if (!node_ctx_p->tunnel)
+    {
+        _abcdk_proxy_reply_nobody(node, 500);
+        goto ERR;
+    }
+    
+    node_uplink_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_ctx_p->tunnel);
+
+    node_uplink_ctx_p->father = node_ctx_p->father;
+    node_uplink_ctx_p->flag = 2;
+    node_uplink_ctx_p->protocol = 2;
+    node_uplink_ctx_p->tunnel = abcdk_asynctcp_refer(node);//上级关联到下级。
+
     if (node_ctx_p->protocol == 1)
     {
         /*设置默认安全方案。*/
-        node_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_RAW;
+        node_uplink_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_RAW;
 
         /*不检查对端证书。因为代理服务器可能未及时更新，无法验证所有证书的有效性。*/
-        node_ctx_p->openssl_check_cert = 0;
+        node_uplink_ctx_p->openssl_check_cert = 0;
         
         if (abcdk_strcmp(node_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
             node_ctx_p->up_link = abcdk_url_create(1000,"connect://%s",node_ctx_p->script->pstrs[0]);
         else 
             node_ctx_p->up_link = abcdk_url_split(node_ctx_p->script->pstrs[0]);
+        
     }
     else if (node_ctx_p->protocol == 2)
     {
-        node_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_RAW;
-        node_ctx_p->openssl_ca_file = node_ctx_p->father->openssl_ca_file;
-        node_ctx_p->openssl_ca_path = node_ctx_p->father->openssl_ca_path;
-        node_ctx_p->openssl_cert_file = node_ctx_p->father->openssl_cert_file;
-        node_ctx_p->openssl_key_file = node_ctx_p->father->openssl_key_file;
-        node_ctx_p->openssl_check_cert = node_ctx_p->father->openssl_check_cert;
-        node_ctx_p->easyssl_key_file = node_ctx_p->father->easyssl_key_file;
-        node_ctx_p->easyssl_salt_size = node_ctx_p->father->easyssl_salt_size;
+        node_uplink_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_RAW;
+        node_uplink_ctx_p->openssl_ca_file = node_ctx_p->father->openssl_ca_file;
+        node_uplink_ctx_p->openssl_ca_path = node_ctx_p->father->openssl_ca_path;
+        node_uplink_ctx_p->openssl_cert_file = node_ctx_p->father->openssl_cert_file;
+        node_uplink_ctx_p->openssl_key_file = node_ctx_p->father->openssl_key_file;
+        node_uplink_ctx_p->openssl_check_cert = node_ctx_p->father->openssl_check_cert;
+        node_uplink_ctx_p->easyssl_key_file = node_ctx_p->father->easyssl_key_file;
+        node_uplink_ctx_p->easyssl_salt_size = node_ctx_p->father->easyssl_salt_size;
 
         node_ctx_p->method = abcdk_object_copyfrom("UPLINK",6);
 
@@ -599,33 +615,19 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
         abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
     {
-        node_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_OPENSSL;
+        node_uplink_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_OPENSSL;
     }
     else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "easys", 0) == 0)
     {
-        node_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_EASYSSL;
+        node_uplink_ctx_p->ssl_scheme = ABCDK_PROXY_SSL_SCHEME_EASYSSL;
     }
 
-
-    node_ctx_p->tunnel = _abcdk_proxy_node_alloc(node_ctx_p->father);
-    if (!node_ctx_p->tunnel)
-    {
-        _abcdk_proxy_reply_nobody(node, 500);
-        goto ERR;
-    }
-    
-    node_uplink_ctx_p = (abcdk_proxy_node_t *)abcdk_asynctcp_get_userdata(node_ctx_p->tunnel);
-
-    node_uplink_ctx_p->father = node_ctx_p->father;
-    node_uplink_ctx_p->flag = 2;
-    node_uplink_ctx_p->protocol = 2;
-    node_uplink_ctx_p->ssl_scheme = node_ctx_p->ssl_scheme;//复制安全模式。
-    node_uplink_ctx_p->tunnel = abcdk_asynctcp_refer(node);
 
     if (node_uplink_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        node_uplink_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, node_ctx_p->openssl_ca_file, node_ctx_p->openssl_ca_path, node_ctx_p->openssl_cert_file, node_ctx_p->openssl_key_file, NULL);
+        node_uplink_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0, node_uplink_ctx_p->openssl_ca_file, node_uplink_ctx_p->openssl_ca_path,
+                                                                          node_uplink_ctx_p->openssl_cert_file, node_uplink_ctx_p->openssl_key_file, NULL);
 #endif // HEADER_SSL_H
         if (!node_uplink_ctx_p->openssl_ctx)
         {
@@ -633,7 +635,7 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
             goto ERR;
         }
      
-        chk = abcdk_asynctcp_upgrade2openssl(node_ctx_p->tunnel,node_ctx_p->openssl_ctx,node_ctx_p->openssl_check_cert);
+        chk = abcdk_asynctcp_upgrade2openssl(node_ctx_p->tunnel,node_uplink_ctx_p->openssl_ctx,node_uplink_ctx_p->openssl_check_cert);
         if(chk != 0)
         {
             _abcdk_proxy_reply_nobody(node, 500);
@@ -642,7 +644,8 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     }
     else if (node_uplink_ctx_p->ssl_scheme == ABCDK_PROXY_SSL_SCHEME_EASYSSL)
     {
-        node_uplink_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(node_ctx_p->easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, ABCDK_CLAMP(node_ctx_p->easyssl_salt_size, 0, 256));
+        node_uplink_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(node_uplink_ctx_p->easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA,
+                                                                        node_uplink_ctx_p->easyssl_salt_size);
         if (!node_uplink_ctx_p->easyssl_ctx)
         {
             _abcdk_proxy_reply_nobody(node, 500);
@@ -664,13 +667,13 @@ static void _abcdk_proxy_process_forward(abcdk_asynctcp_node_t *node)
     chk = abcdk_asynctcp_connect(node_ctx_p->tunnel, &uplink_addr, &cb);
     if (chk != 0)
     {
-        _abcdk_proxy_trace_output(node, LOG_WARNING, "连接上级'%s'失败，网络不可达或服务未启动。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
+        _abcdk_proxy_trace_output(node, LOG_WARNING, "连接上级'%s'失败，网络不可达或服务未启动。", node_uplink_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
 
         _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
     }
 
-    /*转换为代理隧道。*/
+    /*连接到上级后，转换代理为隧道。*/
     if (node_ctx_p->protocol == 1)
         node_ctx_p->protocol = 2;
 
@@ -877,7 +880,7 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
     {
         /*仅用于验证密钥是否可以加载。*/
         node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(node_ctx_p->father->easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA,
-                                                                 ABCDK_CLAMP(node_ctx_p->father->easyssl_salt_size, 0, 256));
+                                                                 node_ctx_p->father->easyssl_salt_size);
         if (!node_ctx_p->easyssl_ctx)
         {
             abcdk_trace_output(LOG_WARNING, "加载共享密钥失败，无法创建SSL环境。");
@@ -922,6 +925,7 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
 
     ctx->easyssl_key_file = abcdk_option_get(ctx->args, "--easyssl-key-file", 0, NULL);
     ctx->easyssl_salt_size = abcdk_option_get_int(ctx->args, "--easyssl-salt-size", 0, 123);
+    ctx->easyssl_salt_size = ABCDK_CLAMP(ctx->easyssl_salt_size, 0, 256);
     
     ctx->uplink = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
     
