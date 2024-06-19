@@ -564,6 +564,7 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
         cfg.ca_path = ctx->ca_path;
         cfg.cert_file = ctx->cert_file;
         cfg.key_file = ctx->key_file;
+        cfg.check_cert = ctx->check_cert;
     }
 
     if (ssl)

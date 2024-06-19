@@ -1098,7 +1098,6 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 0;
     node_ctx_p->protocol = 0;
-    node_ctx_p->ssl_scheme = cfg->ssl_scheme;
 
     if (cfg->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
