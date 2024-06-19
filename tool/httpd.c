@@ -16,8 +16,11 @@ typedef struct _abcdkhttpd
     int errcode;
     abcdk_option_t *args;
 
-    /*服务器名称。*/
-    const char *server_name;
+    /*名称。*/
+    const char *name;
+
+    /*授权存储路径。*/
+    const char *auth_path;
 
     /*WEB根目录。*/
     const char *root_path;
@@ -34,8 +37,9 @@ typedef struct _abcdkhttpd
     /*服务器证书私钥。*/
     const char *key_file;
 
-    /*授权存储路径。*/
-    const char *auth_path;
+    /*是否验证对端证书。0 否，!0 是。*/
+    int check_cert;
+
 
     /*上行数量包最大长度。*/
     size_t up_max_size;
@@ -106,8 +110,8 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--max-client < NUMBER >\n");
     fprintf(stderr, "\t\t最大连接数。默认：系统限定的1/2\n");
 
-    fprintf(stderr, "\n\t--server-name < NAME >\n");
-    fprintf(stderr, "\t\t服务器名称。默认：%s\n", SOLUTION_NAME);
+    fprintf(stderr, "\n\t--name < NAME >\n");
+    fprintf(stderr, "\t\t名称。默认：%s\n", SOLUTION_NAME);
 
     fprintf(stderr, "\n\t--auth-path < PATH >\n");
     fprintf(stderr, "\t\t授权存储路径。注：文件名为账号名，文件内容为密码。\n");
@@ -124,18 +128,32 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
 #ifdef HEADER_SSL_H
     fprintf(stderr, "\n\t--listen-ssl < ADDR >\n");
     fprintf(stderr, "\t\tSSL监听地址。\n");
-
+ 
     fprintf(stderr, "\n\t--ca-file < FILE >\n");
-    fprintf(stderr, "\t\tCA证书文件。注：仅支持PEM格式，并且要求客户提供证书。\n");
+    fprintf(stderr, "\t\tCA证书文件。\n");
+
+    fprintf(stderr, "\n\t\t注：仅支持PEM格式，并且要求客户提供证书。\n");
 
     fprintf(stderr, "\n\t--ca-path < PATH >\n");
-    fprintf(stderr, "\t\tCA证书路径。注：仅支持PEM格式，并且要求客户提供证书，同时验证吊销列表。\n");
+    fprintf(stderr, "\t\tCA证书路径。\n");
+
+    fprintf(stderr, "\n\t\t注：仅支持PEM格式，并且要求客户提供证书，同时验证吊销列表。\n");
 
     fprintf(stderr, "\n\t--cert-file < FILE >\n");
-    fprintf(stderr, "\t\t服务器证书文件。注：仅支持PEM格式。\n");
+    fprintf(stderr, "\t\t证书文件。\n");
+
+    fprintf(stderr, "\n\t\t注：仅支持PEM格式。\n");
 
     fprintf(stderr, "\n\t--key-file < FILE >\n");
-    fprintf(stderr, "\t\t服务器私钥文件。注：仅支持PEM格式。\n");
+    fprintf(stderr, "\t\t私钥文件。\n");
+
+    fprintf(stderr, "\n\t\t注：仅支持PEM格式。\n");
+
+    fprintf(stderr, "\n\t--check-cert < 0|1 >\n");
+    fprintf(stderr, "\t\t是否验证对端证书。默认：0。\n");
+
+    fprintf(stderr, "\n\t\t0：否\n");
+    fprintf(stderr, "\t\t1：是\n");
 #endif // HEADER_SSL_H
 
     fprintf(stderr, "\n\t--root-path < PATH >\n");
@@ -533,8 +551,8 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     cfg.stream_output_cb = _abcdkhttpd_stream_output_cb;
     cfg.req_max_size = ctx->up_max_size;
     cfg.req_tmp_path = ctx->up_tmp_path;
-    cfg.server_name = ctx->server_name;
-    cfg.server_realm = "httpd";
+    cfg.name = ctx->name;
+    cfg.realm = "httpd";
     cfg.enable_h2 = ctx->enable_h2;
     cfg.auth_path = ctx->auth_path;
     cfg.a_c_a_o = ctx->a_c_a_o;
@@ -584,13 +602,14 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
     abcdk_trace_output(LOG_INFO, "启动……");
 
     max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, 1000);
-    ctx->server_name = abcdk_option_get(ctx->args, "--server-name", 0, SOLUTION_NAME);
+    ctx->name = abcdk_option_get(ctx->args, "--name", 0, SOLUTION_NAME);
     ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
 #ifdef HEADER_SSL_H
     ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
+    ctx->check_cert =  abcdk_option_get_int(ctx->args, "--check-cert", 0, 0);
 #endif // HEADER_SSL_H
     ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);

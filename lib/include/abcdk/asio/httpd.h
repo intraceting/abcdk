@@ -33,11 +33,11 @@ typedef struct _abcdk_httpd_config
     /*环境指针。*/
     void *opaque;
 
-    /*服务器名称。*/
-    const char *server_name;
+    /*名称。*/
+    const char *name;
 
-    /*服务器领域。*/
-    const char *server_realm;
+    /*领域。*/
+    const char *realm;
 
     /*安全方案*/
     int ssl_scheme;

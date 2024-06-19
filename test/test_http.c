@@ -509,8 +509,8 @@ int abcdk_test_http(abcdk_option_t *args)
     cfg.req_max_size = abcdk_option_get_int(args,"--req-max-size",0,4*1024*1024);
     cfg.req_tmp_path = abcdk_option_get(args,"--req-tmp-path",0,NULL);
     cfg.enable_h2 = abcdk_option_get_int(args,"--enable-h2",0,0);
-    cfg.server_name = abcdk_option_get(args,"--server-name",0,"test_http");
-    cfg.server_realm = abcdk_option_get(args,"--server-realm",0,"abcdk");
+    cfg.name = abcdk_option_get(args,"--server-name",0,"test_http");
+    cfg.realm = abcdk_option_get(args,"--server-realm",0,"abcdk");
     cfg.session_prepare_cb = httpd_session_prepare_cb;
     cfg.stream_request_cb = httpd_request_cb;
     cfg.session_ready_cb = httpd_session_ready_cb;

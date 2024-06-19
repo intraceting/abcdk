@@ -627,7 +627,7 @@ static void _abcdk_tipc_event_connect(abcdk_asynctcp_node_t *node)
             abcdk_object_t *info = abcdk_openssl_dump_crt(cert);
             if(info)
             {
-                abcdk_trace_output(LOG_INFO,"远端(%s)证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
+                abcdk_trace_output(LOG_INFO,"远端(%s)的证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
                 abcdk_object_unref(&info);
             }
 
@@ -675,16 +675,17 @@ static void _abcdk_tipc_event_close(abcdk_asynctcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         ssl_p = abcdk_asynctcp_openssl_ctx(node);
-
-        /*获取验证结果。*/
-        chk = SSL_get_verify_result(ssl_p);
-        if (chk != X509_V_OK)
-            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
-
+        if(ssl_p)
+        {
+            /*获取验证结果。*/
+            chk = SSL_get_verify_result(ssl_p);
+            if (chk != X509_V_OK)
+                abcdk_trace_output(LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+        }
 #endif // HEADER_SSL_H
     }
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*取消所有等待的。*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);

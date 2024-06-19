@@ -37,6 +37,9 @@ typedef struct _abcdk_httpd_node
     /*协议。0：未选择 1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3*/
     int protocol;
 
+    /*安全方案*/
+    int ssl_scheme;
+
     /*远程地址。*/
     char remote_addr[NAME_MAX];
 
@@ -53,9 +56,6 @@ typedef struct _abcdk_httpd_node
 
     /*流容器。*/
     abcdk_map_t *stream_map;
-
-    /*是否为SSL安全链路。*/
-    int ssl_ok;
 
     /*用户环境指针。*/
     void *userdata;
@@ -563,7 +563,7 @@ static void _abcdk_httpd_process_1(abcdk_object_t *stream)
 
         stream_ctx_p->host = abcdk_object_copyfrom(line_p,strlen(line_p));
 
-        if (node_ctx_p->ssl_ok)
+        if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
             stream_ctx_p->scheme = abcdk_object_copyfrom("https", 5);
         else
             stream_ctx_p->scheme = abcdk_object_copyfrom("http", 4);
@@ -770,8 +770,9 @@ static void _abcdk_httpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
     node_ctx_p->cfg = listen_ctx_p->cfg;
     node_ctx_p->flag = 1;
     node_ctx_p->protocol = 0;
+    node_ctx_p->ssl_scheme = listen_ctx_p->cfg.ssl_scheme;
 
-    if(listen_ctx_p->ssl_ctx)
+    if(node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
         chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx,listen_ctx_p->cfg.check_cert);
         if(chk != 0)
@@ -804,35 +805,28 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
     SSL *ssl_p;
-    char ptl_sel_name[256] = {0};
+    char ptl_name[256] = {0};
     int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
 
-
-#ifdef HEADER_SSL_H
-
-    ssl_p = abcdk_asynctcp_openssl_ctx(node);
-    if (!ssl_p)
-        goto END;
-
-    /*安全链路。*/
-    node_ctx_p->ssl_ok = 1;
-
-    chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, ptl_sel_name);
-    if (chk == 0 && node_ctx_p->protocol == 0)
+    if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
-        if (abcdk_strncmp("http", ptl_sel_name, 4, 0) == 0)
-            node_ctx_p->protocol = 1;
-        else if (abcdk_strcmp("h2", ptl_sel_name, 0) == 0)
-            node_ctx_p->protocol = 2;
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+
+        chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, ptl_name);
+        if (chk == 0 && node_ctx_p->protocol == 0)
+        {
+            if (abcdk_strncmp("http", ptl_name, 4, 0) == 0)
+                node_ctx_p->protocol = 1;
+            else if (abcdk_strcmp("h2", ptl_name, 0) == 0)
+                node_ctx_p->protocol = 2;
+        }
+#endif // HEADER_SSL_H
     }
 
-#endif // HEADER_SSL_H
-
-END:
-
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立(SSL-scheme=%d)。",node_ctx_p->local_addr,node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
     
     /*设置超时。*/
     abcdk_asynctcp_set_timeout(node, 180 * 1000);
@@ -902,21 +896,21 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
         return;
     }
 
-#ifdef HEADER_SSL_H
-    ssl_p = abcdk_asynctcp_openssl_ctx(node);
-    if(ssl_p)
+    if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
-        /*获取验证结果。*/
-        chk = SSL_get_verify_result(ssl_p);
-        if (chk != X509_V_OK)
-            abcdk_trace_output(LOG_INFO, "验证远端('%s')的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
-    }
+#ifdef HEADER_SSL_H
+        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+        if (ssl_p)
+        {
+            /*获取验证结果。*/
+            chk = SSL_get_verify_result(ssl_p);
+            if (chk != X509_V_OK)
+                abcdk_trace_output(LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr, chk);
+        }
 #endif // HEADER_SSL_H
+    }
 
-    abcdk_trace_output(LOG_INFO, "本机('%s')与%s('%s')的连接已经断开。",
-                       node_ctx_p->local_addr,
-                       (node_ctx_p->flag == 1 ? "客户端" : "服务端"),
-                       node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
     abcdk_map_destroy(&node_ctx_p->stream_map);
@@ -1104,6 +1098,7 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 0;
     node_ctx_p->protocol = 0;
+    node_ctx_p->ssl_scheme = cfg->ssl_scheme;
 
     if (cfg->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
@@ -1585,7 +1580,7 @@ int abcdk_httpd_response_header_vset(abcdk_object_t *stream,const char *key, con
         
         /*添加默认的应答头部。*/
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Status", "200");
-        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Server","%s",(node_ctx_p->cfg.server_name?node_ctx_p->cfg.server_name:SOLUTION_NAME));
+        abcdk_option_fset(stream_ctx_p->rsp_hdr,"Server","%s",node_ctx_p->cfg.name);
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Date","%s",abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx));
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Access-Control-Allow-Origin","%s",(node_ctx_p->cfg.a_c_a_o?node_ctx_p->cfg.a_c_a_o:"*"));
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Expires","0");
@@ -1831,9 +1826,9 @@ ERR:
     abcdk_httpd_response_header_set(stream,"Status","%d",(is_proxy ? 407 : 401));
 
     if(is_proxy)
-        abcdk_httpd_response_header_set(stream,"Proxy-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.server_realm,(uint64_t)abcdk_rand_q());
+        abcdk_httpd_response_header_set(stream,"Proxy-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.realm,(uint64_t)abcdk_rand_q());
     else 
-        abcdk_httpd_response_header_set(stream,"WWW-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.server_realm,(uint64_t)abcdk_rand_q());
+        abcdk_httpd_response_header_set(stream,"WWW-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.realm,(uint64_t)abcdk_rand_q());
 
  
     abcdk_httpd_response(stream,NULL);

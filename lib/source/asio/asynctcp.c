@@ -620,9 +620,7 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
             }
             else
             {
-                char errmsg[256] = {0};
-                ERR_error_string_n(ssl_err,errmsg,256-1);
-                abcdk_trace_output(LOG_WARNING,"%s\n",errmsg);
+                /*其它的全部当作出错处理。*/;
             }
             
             /*Error .*/

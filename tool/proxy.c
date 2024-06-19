@@ -361,7 +361,7 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
             abcdk_object_t *info = abcdk_openssl_dump_crt(cert);
             if(info)
             {
-                _abcdk_proxy_trace_output(node,LOG_INFO,"远端(%s)证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
+                _abcdk_proxy_trace_output(node,LOG_INFO,"远端(%s)的证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
                 abcdk_object_unref(&info);
             }
 
@@ -389,7 +389,7 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     /*设置超时。*/
     abcdk_asynctcp_set_timeout(node, 180 * 1000);
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)连接已建立(ssl-scheme=%d)。",node_ctx_p->local_addr,node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
+    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已建立(SSL-scheme=%d)。",node_ctx_p->local_addr,node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
 
     /*已连接到远端，注册读写事件。*/
     abcdk_asynctcp_recv_watch(node);
@@ -411,6 +411,7 @@ static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
 static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
 {
     abcdk_proxy_node_t *node_ctx_p;
+    const char *errmsg_p;
     SSL *ssl_p;
     int chk;
 
@@ -426,12 +427,13 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         ssl_p = abcdk_asynctcp_openssl_ctx(node);
-
-        /*获取验证结果。*/
-        chk = SSL_get_verify_result(ssl_p);
-        if (chk != X509_V_OK)
-            _abcdk_proxy_trace_output(node,LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
-
+        if(ssl_p)
+        {
+            /*获取验证结果。*/
+            chk = SSL_get_verify_result(ssl_p);
+            if (chk != X509_V_OK)
+                _abcdk_proxy_trace_output(node,LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
+        }
 #endif // HEADER_SSL_H
     }
 
@@ -442,7 +444,7 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
         abcdk_asynctcp_unref(&node_ctx_p->tunnel);
     }
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)连接已经断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 }
 
 static void _abcdk_proxy_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
