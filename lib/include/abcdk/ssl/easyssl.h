@@ -16,7 +16,7 @@
 
 __BEGIN_DECLS
 
-/** 简单的SSL通讯。 */
+/**简单的SSL通讯。 */
 typedef struct _abcdk_easyssl abcdk_easyssl_t;
 
 /**

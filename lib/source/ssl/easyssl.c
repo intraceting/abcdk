@@ -9,7 +9,7 @@
 /*分块长度。*/
 #define ABCDK_EASYSSL_CHUNK_SIZE (16*1024LLU)
 
-/** 简单的SSL通讯。 */
+/**简单的SSL通讯。 */
 struct _abcdk_easyssl
 {
     /**发送加密环境。*/
