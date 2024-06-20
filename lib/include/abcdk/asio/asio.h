@@ -272,9 +272,9 @@ abcdk_asio_t *abcdk_asio_start(int max,int cpu);
 /**
  * 启动监听。
  * 
- * @param [in] node 通讯对象指针。
- * @param [in] addr 监听地址指针。
- * @param [in] cb 回调函数指针。
+ * @param [in] node 通讯对象。
+ * @param [in] addr 监听地址。
+ * @param [in] cb 回调函数。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -285,20 +285,29 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio
  * 
  * @note 仅发出连接指令，连接是否成功以消息通知。
  * 
- * @param [in] node 通讯对象指针。
- * @param [in] addr 服务端地址指针。
- * @param [in] cb 回调函数指针。
+ * @param [in] addr 远程地址。
  * 
  * @return 0 成功，-1 失败。
 */
 int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio_callback_t *cb);
 
 /**
+ * 委托。
+ * 
+ * @warning 文件句柄将被托管，应用层不可以继续访问文件句柄。
+ * 
+ * @param [in] fd 文件句柄。
+ * 
+ * @return 0 成功，-1 失败。
+ */
+int abcdk_asio_entrust(abcdk_asio_node_t *node,int fd,abcdk_asio_callback_t *cb);
+
+/**
  * 投递数据。
  * 
- * @note 内存对象将被托管，应用层不可以继续访问内存对象。
+ * @note 投递的数据对象将被托管，应用层不可以继续访问数据对象。
  * 
- * @param [in] data 内存对象指针，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * @param [in] data 数据对象，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
 */
