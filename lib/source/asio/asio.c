@@ -4,10 +4,10 @@
  * MIT License
  * 
  */
-#include "abcdk/asio/asynctcp.h"
+#include "abcdk/asio/asio.h"
 
 /** 简单的异步TCP通讯。 */
-struct _abcdk_asynctcp
+struct _abcdk_asio
 {
     /** epollex 环境。*/
     abcdk_epollex_t *epollex;
@@ -21,14 +21,14 @@ struct _abcdk_asynctcp
     /** 退出标志。0： 运行，!0：停止。*/
     volatile int exitflag;
 
-};// abcdk_asynctcp_t;
+};// abcdk_asio_t;
 
 /** 异步TCP节点。 */
-struct _abcdk_asynctcp_node
+struct _abcdk_asio_node
 {
     /** 魔法数。*/
     uint32_t magic;
-#define ABCDK_ASYNCTCP_NODE_MAGIC 123456789
+#define ABCDK_ASIO_NODE_MAGIC 123456789
 
     /** 引用计数器。*/
     volatile int refcount;
@@ -38,20 +38,20 @@ struct _abcdk_asynctcp_node
      * 
      * @note 仅复制。
     */
-    abcdk_asynctcp_t *ctx;
+    abcdk_asio_t *ctx;
 
     /** 标识句柄来源。*/
     volatile int flag;
-#define ABCDK_ASYNCTCP_FLAG_CLIENT   1
-#define ABCDK_ASYNCTCP_FLAG_LISTEN   2
-#define ABCDK_ASYNCTCP_FLAG_ACCPET   3
+#define ABCDK_ASIO_FLAG_CLIENT   1
+#define ABCDK_ASIO_FLAG_LISTEN   2
+#define ABCDK_ASIO_FLAG_ACCPET   3
 
     /** 标识当前句柄状态。*/
     volatile int status;
-#define ABCDK_ASYNCTCP_STATUS_STABLE        1
-#define ABCDK_ASYNCTCP_STATUS_SYNC          2
-#define ABCDK_ASYNCTCP_STATUS_OPENSSL_SYNC  3
-#define ABCDK_ASYNCTCP_STATUS_EASYSSL_SYNC  4
+#define ABCDK_ASIO_STATUS_STABLE        1
+#define ABCDK_ASIO_STATUS_SYNC          2
+#define ABCDK_ASIO_STATUS_OPENSSL_SYNC  3
+#define ABCDK_ASIO_STATUS_EASYSSL_SYNC  4
 
     /** 本机地址。*/
     abcdk_sockaddr_t local;
@@ -64,9 +64,9 @@ struct _abcdk_asynctcp_node
 
     /*安全方案*/
     int ssl_scheme;
-#define ABCDK_ASYNCTCP_SSL_SCHEME_RAW       0
-#define ABCDK_ASYNCTCP_SSL_SCHEME_OPENSSL   1
-#define ABCDK_ASYNCTCP_SSL_SCHEME_EASYSSL   2
+#define ABCDK_ASIO_SSL_SCHEME_RAW       0
+#define ABCDK_ASIO_SSL_SCHEME_OPENSSL   1
+#define ABCDK_ASIO_SSL_SCHEME_EASYSSL   2
 
     /** openssl环境指针。*/
     SSL *openssl_ctx;
@@ -81,8 +81,8 @@ struct _abcdk_asynctcp_node
     volatile pthread_t worker;
 
     /** 回调函数。*/
-    abcdk_asynctcp_callback_t *callback;
-    abcdk_asynctcp_callback_t cb_cp;
+    abcdk_asio_callback_t *callback;
+    abcdk_asio_callback_t cb_cp;
 
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
@@ -103,13 +103,13 @@ struct _abcdk_asynctcp_node
     abcdk_object_t *in_buffer;
 
     /** 来自哪个监听节点。*/
-    struct _abcdk_asynctcp_node *from_listen;
+    struct _abcdk_asio_node *from_listen;
 
-};// abcdk_asynctcp_node_t;
+};// abcdk_asio_node_t;
 
-void abcdk_asynctcp_unref(abcdk_asynctcp_node_t **node)
+void abcdk_asio_unref(abcdk_asio_node_t **node)
 {
-    abcdk_asynctcp_node_t *node_p = NULL;
+    abcdk_asio_node_t *node_p = NULL;
 
     if (!node || !*node)
         return;
@@ -117,7 +117,7 @@ void abcdk_asynctcp_unref(abcdk_asynctcp_node_t **node)
     node_p = *node;
     *node = NULL;
 
-    assert(node_p->magic == ABCDK_ASYNCTCP_NODE_MAGIC);
+    assert(node_p->magic == ABCDK_ASIO_NODE_MAGIC);
 
     if (abcdk_atomic_fetch_and_add(&node_p->refcount, -1) != 1)
         return;
@@ -145,11 +145,11 @@ void abcdk_asynctcp_unref(abcdk_asynctcp_node_t **node)
     abcdk_tree_free(&node_p->out_queue);
     abcdk_mutex_destroy(&node_p->out_locker);
     abcdk_object_unref(&node_p->in_buffer);
-    abcdk_asynctcp_unref(&node_p->from_listen);
+    abcdk_asio_unref(&node_p->from_listen);
     abcdk_heap_free(node_p);
 }
 
-abcdk_asynctcp_node_t *abcdk_asynctcp_refer(abcdk_asynctcp_node_t *src)
+abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *src)
 {
     int chk;
 
@@ -161,17 +161,17 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_refer(abcdk_asynctcp_node_t *src)
     return src;
 }
 
-abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdata, void (*free_cb)(void *userdata))
+abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*free_cb)(void *userdata))
 {
-    abcdk_asynctcp_node_t *node = NULL;
+    abcdk_asio_node_t *node = NULL;
 
     assert(ctx != NULL);
 
-    node = (abcdk_asynctcp_node_t *)abcdk_heap_alloc(sizeof(abcdk_asynctcp_node_t));
+    node = (abcdk_asio_node_t *)abcdk_heap_alloc(sizeof(abcdk_asio_node_t));
     if(!node)
         return NULL;
 
-    node->magic = ABCDK_ASYNCTCP_NODE_MAGIC;
+    node->magic = ABCDK_ASIO_NODE_MAGIC;
     node->refcount = 1;
     node->ctx = ctx;
     node->fd = -1;
@@ -182,7 +182,7 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     node->out_pos = 0;
     node->in_buffer = abcdk_object_alloc2(256*1024);
     node->from_listen = NULL;
-    node->ssl_scheme = ABCDK_ASYNCTCP_SSL_SCHEME_RAW;
+    node->ssl_scheme = ABCDK_ASIO_SSL_SCHEME_RAW;
     node->openssl_ctx = NULL;
     node->openssl_check_verify_result = 1;
     node->easyssl_ctx = NULL;
@@ -190,7 +190,7 @@ abcdk_asynctcp_node_t *abcdk_asynctcp_alloc(abcdk_asynctcp_t *ctx,size_t userdat
     return node;
 }
 
-int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx,int check_verify_result)
+int abcdk_asio_upgrade2openssl(abcdk_asio_node_t *node,SSL_CTX *ssl_ctx,int check_verify_result)
 {
     assert(node != NULL && ssl_ctx != NULL);
 
@@ -205,14 +205,14 @@ int abcdk_asynctcp_upgrade2openssl(abcdk_asynctcp_node_t *node,SSL_CTX *ssl_ctx,
         return -1;
 
     node->openssl_check_verify_result = check_verify_result;
-    node->ssl_scheme = ABCDK_ASYNCTCP_SSL_SCHEME_OPENSSL;
+    node->ssl_scheme = ABCDK_ASIO_SSL_SCHEME_OPENSSL;
     
 
     return 0;
 
 }
 
-int abcdk_asynctcp_upgrade2easyssl(abcdk_asynctcp_node_t *node,abcdk_easyssl_t *ssl_ctx)
+int abcdk_asio_upgrade2easyssl(abcdk_asio_node_t *node,abcdk_easyssl_t *ssl_ctx)
 {
     assert(node != NULL && ssl_ctx != NULL);
 
@@ -220,12 +220,12 @@ int abcdk_asynctcp_upgrade2easyssl(abcdk_asynctcp_node_t *node,abcdk_easyssl_t *
 
     node->easyssl_ctx = ssl_ctx;
 
-    node->ssl_scheme = ABCDK_ASYNCTCP_SSL_SCHEME_EASYSSL;
+    node->ssl_scheme = ABCDK_ASIO_SSL_SCHEME_EASYSSL;
 
     return 0;
 }
 
-SSL *abcdk_asynctcp_openssl_ctx(abcdk_asynctcp_node_t *node)
+SSL *abcdk_asio_openssl_ctx(abcdk_asio_node_t *node)
 {
     assert(node != NULL);
 
@@ -235,14 +235,14 @@ SSL *abcdk_asynctcp_openssl_ctx(abcdk_asynctcp_node_t *node)
     return NULL;
 }
 
-void *abcdk_asynctcp_get_userdata(abcdk_asynctcp_node_t *node)
+void *abcdk_asio_get_userdata(abcdk_asio_node_t *node)
 {
     assert(node != NULL);
 
     return node->userdata->pptrs[0];
 }
 
-void *abcdk_asynctcp_set_userdata(abcdk_asynctcp_node_t *node,void *opaque)
+void *abcdk_asio_set_userdata(abcdk_asio_node_t *node,void *opaque)
 {
     void *old;
 
@@ -254,7 +254,7 @@ void *abcdk_asynctcp_set_userdata(abcdk_asynctcp_node_t *node,void *opaque)
     return old;
 }
 
-int abcdk_asynctcp_set_timeout(abcdk_asynctcp_node_t *node, time_t timeout)
+int abcdk_asio_set_timeout(abcdk_asio_node_t *node, time_t timeout)
 {
     int chk;
 
@@ -270,7 +270,7 @@ int abcdk_asynctcp_set_timeout(abcdk_asynctcp_node_t *node, time_t timeout)
     return chk;
 }
 
-int abcdk_asynctcp_get_sockaddr(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
+int abcdk_asio_get_sockaddr(abcdk_asio_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
     assert(node != NULL);
 
@@ -283,7 +283,7 @@ int abcdk_asynctcp_get_sockaddr(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *l
     return 0;
 }
 
-int abcdk_asynctcp_get_sockaddr_str(abcdk_asynctcp_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
+int abcdk_asio_get_sockaddr_str(abcdk_asio_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
 {
     assert(node != NULL);
 
@@ -296,7 +296,7 @@ int abcdk_asynctcp_get_sockaddr_str(abcdk_asynctcp_node_t *node, char local[NAME
     return 0;
 }
 
-ssize_t abcdk_asynctcp_recv(abcdk_asynctcp_node_t *node, void *buf, size_t size)
+ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
 {
     ssize_t rsize = 0,rsize_all = 0;
     int chk;
@@ -309,9 +309,9 @@ ssize_t abcdk_asynctcp_recv(abcdk_asynctcp_node_t *node, void *buf, size_t size)
 
     while (rsize_all < size)
     {
-        if(node->ssl_scheme == ABCDK_ASYNCTCP_SSL_SCHEME_OPENSSL)
+        if(node->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
             rsize = SSL_read(node->openssl_ctx,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
-        else if(node->ssl_scheme == ABCDK_ASYNCTCP_SSL_SCHEME_EASYSSL)
+        else if(node->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
             rsize = abcdk_easyssl_read(node->easyssl_ctx,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         else 
             rsize = read(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
@@ -325,7 +325,7 @@ ssize_t abcdk_asynctcp_recv(abcdk_asynctcp_node_t *node, void *buf, size_t size)
     return rsize_all;
 }
 
-int abcdk_asynctcp_recv_watch(abcdk_asynctcp_node_t *node)
+int abcdk_asio_recv_watch(abcdk_asio_node_t *node)
 {
     int done_flag = 0;
     int chk;
@@ -347,7 +347,7 @@ int abcdk_asynctcp_recv_watch(abcdk_asynctcp_node_t *node)
     return chk;
 }
 
-ssize_t abcdk_asynctcp_send(abcdk_asynctcp_node_t *node, void *buf, size_t size)
+ssize_t abcdk_asio_send(abcdk_asio_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
     int chk;
@@ -360,9 +360,9 @@ ssize_t abcdk_asynctcp_send(abcdk_asynctcp_node_t *node, void *buf, size_t size)
 
     while (wsize_all < size)
     {
-        if(node->ssl_scheme == ABCDK_ASYNCTCP_SSL_SCHEME_OPENSSL)
+        if(node->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
             wsize = SSL_write(node->openssl_ctx,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
-        else if(node->ssl_scheme == ABCDK_ASYNCTCP_SSL_SCHEME_EASYSSL)
+        else if(node->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
             wsize = abcdk_easyssl_write(node->easyssl_ctx,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else 
             wsize = write(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
@@ -376,7 +376,7 @@ ssize_t abcdk_asynctcp_send(abcdk_asynctcp_node_t *node, void *buf, size_t size)
     return wsize_all;
 }
 
-int abcdk_asynctcp_send_watch(abcdk_asynctcp_node_t *node)
+int abcdk_asio_send_watch(abcdk_asio_node_t *node)
 {
     int chk;
 
@@ -392,16 +392,16 @@ int abcdk_asynctcp_send_watch(abcdk_asynctcp_node_t *node)
     return chk;
 }
 
-void _abcdk_asynctcp_cleanup_cb(epoll_data_t *data, void *opaque)
+void _abcdk_asio_cleanup_cb(epoll_data_t *data, void *opaque)
 {
-    abcdk_asynctcp_t *ctx = (abcdk_asynctcp_t *)opaque;
-    abcdk_asynctcp_node_t *node = NULL;
+    abcdk_asio_t *ctx = (abcdk_asio_t *)opaque;
+    abcdk_asio_node_t *node = NULL;
 
-    node = (abcdk_asynctcp_node_t *)data->ptr;
-    abcdk_asynctcp_unref(&node);
+    node = (abcdk_asio_node_t *)data->ptr;
+    abcdk_asio_unref(&node);
 }
 
-void _abcdk_asynctcp_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *listen)
+void _abcdk_asio_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
 {
     /*通知应用层处理事件。*/
     if (listen->callback->prepare_cb)
@@ -409,21 +409,21 @@ void _abcdk_asynctcp_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_nod
 }
 
 /*声明输入事件钩子函数。*/
-void _abcdk_asynctcp_input_hook(abcdk_asynctcp_node_t *node);
+void _abcdk_asio_input_hook(abcdk_asio_node_t *node);
 
 /*声明输出事件钩子函数。*/
-void _abcdk_asynctcp_output_hook(abcdk_asynctcp_node_t *node);
+void _abcdk_asio_output_hook(abcdk_asio_node_t *node);
 
-void _abcdk_asynctcp_event_cb(abcdk_asynctcp_node_t *node,uint32_t event, int *result)
+void _abcdk_asio_event_cb(abcdk_asio_node_t *node,uint32_t event, int *result)
 {
     /*绑定工作线程。*/
     abcdk_thread_leader_vote(&node->worker);
 
     /*通知应用层处理事件。*/
-    if(event == ABCDK_ASYNCTCP_EVENT_INPUT)
-        _abcdk_asynctcp_input_hook(node);
-    else if(event == ABCDK_ASYNCTCP_EVENT_OUTPUT)
-        _abcdk_asynctcp_output_hook(node);
+    if(event == ABCDK_ASIO_EVENT_INPUT)
+        _abcdk_asio_input_hook(node);
+    else if(event == ABCDK_ASIO_EVENT_OUTPUT)
+        _abcdk_asio_output_hook(node);
     else 
         node->callback->event_cb(node, event, result);
 
@@ -431,23 +431,23 @@ void _abcdk_asynctcp_event_cb(abcdk_asynctcp_node_t *node,uint32_t event, int *r
     abcdk_thread_leader_quit(&node->worker);
 }
 
-void _abcdk_asynctcp_accept(abcdk_asynctcp_node_t *listen)
+void _abcdk_asio_accept(abcdk_asio_node_t *listen)
 {
-    abcdk_asynctcp_node_t *node = NULL;
+    abcdk_asio_node_t *node = NULL;
     epoll_data_t ep_data;
     int chk;
 
     /*通知初始化。*/
-    _abcdk_asynctcp_prepare_cb(&node, listen);
+    _abcdk_asio_prepare_cb(&node, listen);
     if (!node)
         return;
 
     /*配置参数。*/
-    node->flag = ABCDK_ASYNCTCP_FLAG_ACCPET;
-    node->status = ABCDK_ASYNCTCP_STATUS_SYNC;
+    node->flag = ABCDK_ASIO_FLAG_ACCPET;
+    node->status = ABCDK_ASIO_STATUS_SYNC;
 
     /*记住来源。*/
-    node->from_listen = abcdk_asynctcp_refer(listen);
+    node->from_listen = abcdk_asio_refer(listen);
 
     /*复制通讯环境指针。*/
     node->ctx = listen->ctx;
@@ -468,7 +468,7 @@ void _abcdk_asynctcp_accept(abcdk_asynctcp_node_t *listen)
         goto final_error;
 
     /*通知应用层新连接到来。*/
-    _abcdk_asynctcp_event_cb(node,ABCDK_ASYNCTCP_EVENT_ACCEPT,&chk);
+    _abcdk_asio_event_cb(node,ABCDK_ASIO_EVENT_ACCEPT,&chk);
     if(chk != 0 )
         goto final_error;
     
@@ -492,13 +492,13 @@ void _abcdk_asynctcp_accept(abcdk_asynctcp_node_t *listen)
 final_error:
 
     /*通知关闭。*/
-    _abcdk_asynctcp_event_cb(node, ABCDK_ASYNCTCP_EVENT_INTERRUPT,&chk);
-    abcdk_asynctcp_unref(&node);
+    _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_INTERRUPT,&chk);
+    abcdk_asio_unref(&node);
     
     return;
 }
 
-void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
+void _abcdk_asio_handshake(abcdk_asio_node_t *node)
 {
     socklen_t sock_len = 0;
     int sock_flag = 1;
@@ -507,17 +507,17 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
     struct timeval tv;
     int chk;
 
-    if (node->status == ABCDK_ASYNCTCP_STATUS_SYNC)
+    if (node->status == ABCDK_ASIO_STATUS_SYNC)
     {
         chk = abcdk_poll(node->fd, 0x02, 0);
         if (chk > 0)
         {
-            if(node->ssl_scheme == ABCDK_ASYNCTCP_SSL_SCHEME_OPENSSL)
-                node->status = ABCDK_ASYNCTCP_STATUS_OPENSSL_SYNC;
-            else if(node->ssl_scheme == ABCDK_ASYNCTCP_SSL_SCHEME_EASYSSL)
-                node->status = ABCDK_ASYNCTCP_STATUS_EASYSSL_SYNC;
+            if(node->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+                node->status = ABCDK_ASIO_STATUS_OPENSSL_SYNC;
+            else if(node->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
+                node->status = ABCDK_ASIO_STATUS_EASYSSL_SYNC;
             else 
-                node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
+                node->status = ABCDK_ASIO_STATUS_STABLE;
         }
         else
         {
@@ -571,15 +571,15 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
     }
 
 #ifdef HEADER_SSL_H      
-    if (node->status == ABCDK_ASYNCTCP_STATUS_OPENSSL_SYNC)
+    if (node->status == ABCDK_ASIO_STATUS_OPENSSL_SYNC)
     {
         if (SSL_get_fd(node->openssl_ctx) != node->fd)
         {
             SSL_set_fd(node->openssl_ctx, node->fd);
             
-            if (node->flag == ABCDK_ASYNCTCP_FLAG_ACCPET)
+            if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
                 SSL_set_accept_state(node->openssl_ctx);
-            else if (node->flag == ABCDK_ASYNCTCP_FLAG_CLIENT)
+            else if (node->flag == ABCDK_ASIO_FLAG_CLIENT)
                 SSL_set_connect_state(node->openssl_ctx);
             else
                 goto final_error;
@@ -599,7 +599,7 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
                     goto final_error;
             }
 
-            node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
+            node->status = ABCDK_ASIO_STATUS_STABLE;
         }
         else
         {   
@@ -629,14 +629,14 @@ void _abcdk_asynctcp_handshake(abcdk_asynctcp_node_t *node)
     }
     else
 #endif //HEADER_SSL_H
-    if (node->status == ABCDK_ASYNCTCP_STATUS_EASYSSL_SYNC)
+    if (node->status == ABCDK_ASIO_STATUS_EASYSSL_SYNC)
     {
         abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,0);
         abcdk_easyssl_set_fd(node->easyssl_ctx, node->fd,1);
 
-        ssl_chk = abcdk_easyssl_do_handshake(node->easyssl_ctx,node->flag == ABCDK_ASYNCTCP_FLAG_ACCPET);
+        ssl_chk = abcdk_easyssl_do_handshake(node->easyssl_ctx,node->flag == ABCDK_ASIO_FLAG_ACCPET);
         if(ssl_chk > 0)
-            node->status = ABCDK_ASYNCTCP_STATUS_STABLE;
+            node->status = ABCDK_ASIO_STATUS_STABLE;
         else if(ssl_chk < 0)
         {
             chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT|ABCDK_EPOLL_OUTPUT, 0);
@@ -659,10 +659,10 @@ final_error:
     abcdk_epollex_timeout(node->ctx->epollex, node->fd, 1);
 }
 
-void _abcdk_asynctcp_perform(abcdk_asynctcp_t *ctx,time_t timeout)
+void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
 {
     int ret = 0;
-    abcdk_asynctcp_node_t *node = NULL;
+    abcdk_asio_node_t *node = NULL;
     abcdk_epoll_event_t e = {0};
     int chk;
 
@@ -671,13 +671,13 @@ void _abcdk_asynctcp_perform(abcdk_asynctcp_t *ctx,time_t timeout)
     if (chk < 0)
         return;
 
-    node = (abcdk_asynctcp_node_t *)e.data.ptr;
+    node = (abcdk_asio_node_t *)e.data.ptr;
 
     //fprintf(stderr,"fd(%d)=%u\n",node->fd,e.events);
 
     if (e.events & ABCDK_EPOLL_ERROR)
     {
-        _abcdk_asynctcp_event_cb(node, ABCDK_ASYNCTCP_EVENT_CLOSE,&ret);
+        _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CLOSE,&ret);
 
         /*释放引用。*/
         abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
@@ -689,15 +689,15 @@ void _abcdk_asynctcp_perform(abcdk_asynctcp_t *ctx,time_t timeout)
 
         if (e.events & ABCDK_EPOLL_OUTPUT)
         {
-            if (node->status != ABCDK_ASYNCTCP_STATUS_STABLE)
+            if (node->status != ABCDK_ASIO_STATUS_STABLE)
             {
-                _abcdk_asynctcp_handshake(node);
-                if (node->status == ABCDK_ASYNCTCP_STATUS_STABLE)
-                    _abcdk_asynctcp_event_cb(node, ABCDK_ASYNCTCP_EVENT_CONNECT,&ret);
+                _abcdk_asio_handshake(node);
+                if (node->status == ABCDK_ASIO_STATUS_STABLE)
+                    _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CONNECT,&ret);
             }
             else
             {
-                _abcdk_asynctcp_event_cb(node, ABCDK_ASYNCTCP_EVENT_OUTPUT,&ret);
+                _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_OUTPUT,&ret);
             }
 
             /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
@@ -706,28 +706,28 @@ void _abcdk_asynctcp_perform(abcdk_asynctcp_t *ctx,time_t timeout)
 
         if (e.events & ABCDK_EPOLL_INPUT)
         {
-            if (node->flag == ABCDK_ASYNCTCP_FLAG_LISTEN)
+            if (node->flag == ABCDK_ASIO_FLAG_LISTEN)
             {
                 /*每次处理一个新连接。*/
-                _abcdk_asynctcp_accept(node);
+                _abcdk_asio_accept(node);
 
                 /*释放监听权利，并注册监听事件。*/
                 abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
             }
             else
             {
-                if (node->status != ABCDK_ASYNCTCP_STATUS_STABLE)
+                if (node->status != ABCDK_ASIO_STATUS_STABLE)
                 {
-                    _abcdk_asynctcp_handshake(node);
-                    if (node->status == ABCDK_ASYNCTCP_STATUS_STABLE)
-                        _abcdk_asynctcp_event_cb(node, ABCDK_ASYNCTCP_EVENT_CONNECT,&ret);
+                    _abcdk_asio_handshake(node);
+                    if (node->status == ABCDK_ASIO_STATUS_STABLE)
+                        _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CONNECT,&ret);
 
                     /*释放读权利。*/
                     abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
                 }
                 else
                 {
-                    _abcdk_asynctcp_event_cb(node, ABCDK_ASYNCTCP_EVENT_INPUT,&ret);
+                    _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_INPUT,&ret);
 
                     /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
                     //abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
@@ -741,20 +741,20 @@ void _abcdk_asynctcp_perform(abcdk_asynctcp_t *ctx,time_t timeout)
     }
 }
 
-void *_abcdk_asynctcp_worker(void *args)
+void *_abcdk_asio_worker(void *args)
 {
-    abcdk_asynctcp_t *ctx = (abcdk_asynctcp_t *)args;
+    abcdk_asio_t *ctx = (abcdk_asio_t *)args;
 
     /*每隔3秒检查一次，给退出检测留出时间。*/
     while (!abcdk_atomic_load(&ctx->exitflag))
-        _abcdk_asynctcp_perform(ctx, 3000);
+        _abcdk_asio_perform(ctx, 3000);
 
     return NULL;
 }
 
-void abcdk_asynctcp_stop(abcdk_asynctcp_t **ctx)
+void abcdk_asio_stop(abcdk_asio_t **ctx)
 {
-    abcdk_asynctcp_t *ctx_p = NULL;
+    abcdk_asio_t *ctx_p = NULL;
 
     if(!ctx || !*ctx)
         return;
@@ -773,17 +773,17 @@ void abcdk_asynctcp_stop(abcdk_asynctcp_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_asynctcp_t * abcdk_asynctcp_start(int max,int cpu)
+abcdk_asio_t * abcdk_asio_start(int max,int cpu)
 {
-    abcdk_asynctcp_t *ctx = NULL;
+    abcdk_asio_t *ctx = NULL;
     long opm = sysconf(_SC_OPEN_MAX);
     int chk;
 
-    ctx = abcdk_heap_alloc(sizeof(abcdk_asynctcp_t));
+    ctx = abcdk_heap_alloc(sizeof(abcdk_asio_t));
     if(!ctx)
         return NULL;
 
-    ctx->epollex = abcdk_epollex_alloc(_abcdk_asynctcp_cleanup_cb, ctx);
+    ctx->epollex = abcdk_epollex_alloc(_abcdk_asio_cleanup_cb, ctx);
 
     /*如果未指定最大连接数量，则使用文件句柄数量的一半。*/
     ctx->max = ((max > 0) ? max : abcdk_align(opm / 2, 1));
@@ -791,7 +791,7 @@ abcdk_asynctcp_t * abcdk_asynctcp_start(int max,int cpu)
 
     /*创建工作线程。*/
     ctx->worker.handle = 0;
-    ctx->worker.routine = _abcdk_asynctcp_worker;
+    ctx->worker.routine = _abcdk_asio_worker;
     ctx->worker.opaque = ctx;
     chk = abcdk_thread_create(&ctx->worker, 1);
     if (chk != 0)
@@ -803,14 +803,14 @@ abcdk_asynctcp_t * abcdk_asynctcp_start(int max,int cpu)
 
 final_error:
     
-    abcdk_asynctcp_stop(&ctx);
+    abcdk_asio_stop(&ctx);
 
     return NULL;
 }
 
-int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_asynctcp_callback_t *cb)
+int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asio_callback_t *cb)
 {
-    abcdk_asynctcp_node_t *node_p = NULL;
+    abcdk_asio_node_t *node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
@@ -820,14 +820,14 @@ int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, a
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_asynctcp_refer(node);
+    node_p = abcdk_asio_refer(node);
 
     /*检测最大连接数量限制。*/
     if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
         goto final_error;
 
-    node_p->flag = ABCDK_ASYNCTCP_FLAG_LISTEN;
-    node_p->status = ABCDK_ASYNCTCP_STATUS_STABLE;
+    node_p->flag = ABCDK_ASIO_FLAG_LISTEN;
+    node_p->status = ABCDK_ASIO_STATUS_STABLE;
     node_p->cb_cp = *cb;
     node_p->callback = &node_p->cb_cp;
 
@@ -893,14 +893,14 @@ int abcdk_asynctcp_listen(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, a
 
 final_error:
 
-    abcdk_asynctcp_unref(&node_p);
+    abcdk_asio_unref(&node_p);
 
     return -1;
 }
 
-int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_asynctcp_callback_t *cb)
+int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asio_callback_t *cb)
 {
-    abcdk_asynctcp_node_t *node_p = NULL;
+    abcdk_asio_node_t *node_p = NULL;
     epoll_data_t ep_data;
     socklen_t addr_len;
     int sock_flag = 1;
@@ -910,14 +910,14 @@ int abcdk_asynctcp_connect(abcdk_asynctcp_node_t *node, abcdk_sockaddr_t *addr, 
     ABCDK_ASSERT(cb->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     
     /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_asynctcp_refer(node);
+    node_p = abcdk_asio_refer(node);
 
     /*检测最大连接数量限制。*/
     if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
         goto final_error;
 
-    node_p->flag = ABCDK_ASYNCTCP_FLAG_CLIENT;
-    node_p->status = ABCDK_ASYNCTCP_STATUS_SYNC;
+    node_p->flag = ABCDK_ASIO_FLAG_CLIENT;
+    node_p->status = ABCDK_ASIO_STATUS_SYNC;
     node_p->cb_cp = *cb;
     node_p->callback = &node_p->cb_cp;
     
@@ -969,12 +969,12 @@ final:
 
 final_error:
 
-    abcdk_asynctcp_unref(&node_p);
+    abcdk_asio_unref(&node_p);
 
     return -1;
 }
 
-void _abcdk_asynctcp_input_hook(abcdk_asynctcp_node_t *node)
+void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 {
     int ret = 0;
     ssize_t rlen = 0,pos = 0;
@@ -983,7 +983,7 @@ void _abcdk_asynctcp_input_hook(abcdk_asynctcp_node_t *node)
     /*当未注册请求数据到达通知回调函数时，直接发事件通知。*/
     if(!node->callback->request_cb)
     {
-        node->callback->event_cb(node,ABCDK_ASYNCTCP_EVENT_INPUT,&ret);
+        node->callback->event_cb(node,ABCDK_ASIO_EVENT_INPUT,&ret);
         return;
     }
 
@@ -994,10 +994,10 @@ NEXT_RECV:
     remain = 0;
 
     /*收。*/
-    rlen = abcdk_asynctcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
+    rlen = abcdk_asio_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
     {
-        abcdk_asynctcp_recv_watch(node);
+        abcdk_asio_recv_watch(node);
         return;
     }
 
@@ -1012,7 +1012,7 @@ NEXT_REQ:
         goto NEXT_RECV;//由于缓存里可能还有剩余数据，必须要清空缓存，才能重新进入监听状态。
 }
 
-void _abcdk_asynctcp_output_hook(abcdk_asynctcp_node_t *node)
+void _abcdk_asio_output_hook(abcdk_asio_node_t *node)
 {
     int ret = 0;
     abcdk_tree_t *p;
@@ -1029,7 +1029,7 @@ NEXT_MSG:
     /*通知应用层，发送队列空闲。*/
     if(!p)
     {
-        node->callback->event_cb(node,ABCDK_ASYNCTCP_EVENT_OUTPUT,&ret);
+        node->callback->event_cb(node,ABCDK_ASIO_EVENT_OUTPUT,&ret);
         return;
     }
 
@@ -1038,10 +1038,10 @@ NEXT_MSG:
      * 
      * 警告：重发数据时参数不能改变(指针和长度)。
     */
-    slen = abcdk_asynctcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+    slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
     if (slen <= 0)
     {
-        abcdk_asynctcp_send_watch(node);
+        abcdk_asio_send_watch(node);
         return;
     }
 
@@ -1065,7 +1065,7 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-int abcdk_asynctcp_post(abcdk_asynctcp_node_t *node, abcdk_object_t *data)
+int abcdk_asio_post(abcdk_asio_node_t *node, abcdk_object_t *data)
 {
     abcdk_tree_t *p;
 
@@ -1076,7 +1076,7 @@ int abcdk_asynctcp_post(abcdk_asynctcp_node_t *node, abcdk_object_t *data)
     if(!node->flag ||!node->status)
         return -3;
 
-    if(node->flag == ABCDK_ASYNCTCP_FLAG_LISTEN)
+    if(node->flag == ABCDK_ASIO_FLAG_LISTEN)
         return -2;
 
     p = abcdk_tree_alloc(data);
@@ -1087,13 +1087,13 @@ int abcdk_asynctcp_post(abcdk_asynctcp_node_t *node, abcdk_object_t *data)
     abcdk_tree_insert2(node->out_queue,p,0);
     abcdk_mutex_unlock(node->out_locker);
 
-    if(node->status == ABCDK_ASYNCTCP_STATUS_STABLE)
-        abcdk_asynctcp_send_watch(node);
+    if(node->status == ABCDK_ASIO_STATUS_STABLE)
+        abcdk_asio_send_watch(node);
 
     return 0;
 }
 
-int abcdk_asynctcp_post_buffer(abcdk_asynctcp_node_t *node, const void *data,size_t size)
+int abcdk_asio_post_buffer(abcdk_asio_node_t *node, const void *data,size_t size)
 {
     abcdk_object_t *obj;
     int chk;
@@ -1104,7 +1104,7 @@ int abcdk_asynctcp_post_buffer(abcdk_asynctcp_node_t *node, const void *data,siz
     if(!obj)
         return -1;
 
-    chk = abcdk_asynctcp_post(node,obj);
+    chk = abcdk_asio_post(node,obj);
     if(chk == 0)
         return 0;
 
@@ -1113,7 +1113,7 @@ int abcdk_asynctcp_post_buffer(abcdk_asynctcp_node_t *node, const void *data,siz
     return chk;
 }
 
-int abcdk_asynctcp_post_vformat(abcdk_asynctcp_node_t *node, int max, const char *fmt, va_list ap)
+int abcdk_asio_post_vformat(abcdk_asio_node_t *node, int max, const char *fmt, va_list ap)
 {
     abcdk_object_t *obj;
     int chk;
@@ -1124,7 +1124,7 @@ int abcdk_asynctcp_post_vformat(abcdk_asynctcp_node_t *node, int max, const char
     if(!obj)
         return -1;
     
-    chk = abcdk_asynctcp_post(node,obj);
+    chk = abcdk_asio_post(node,obj);
     if(chk == 0)
         return 0;
 
@@ -1133,7 +1133,7 @@ int abcdk_asynctcp_post_vformat(abcdk_asynctcp_node_t *node, int max, const char
     return chk;
 }
 
-int abcdk_asynctcp_post_format(abcdk_asynctcp_node_t *node, int max, const char *fmt, ...)
+int abcdk_asio_post_format(abcdk_asio_node_t *node, int max, const char *fmt, ...)
 {
     int chk;
 
@@ -1141,7 +1141,7 @@ int abcdk_asynctcp_post_format(abcdk_asynctcp_node_t *node, int max, const char 
 
     va_list ap;
     va_start(ap, fmt);
-    chk = abcdk_asynctcp_post_vformat(node, max, fmt, ap);
+    chk = abcdk_asio_post_vformat(node, max, fmt, ap);
     va_end(ap);
 
     return chk;

@@ -18,7 +18,7 @@
 struct _abcdk_httpd
 {
     /*IO对象*/
-    abcdk_asynctcp_t *io_ctx;
+    abcdk_asio_t *io_ctx;
     
 }; // abcdk_httpd_t;
 
@@ -78,7 +78,7 @@ typedef struct _abcdk_httpd_stream
     locale_t loc_ctx;
 
     /*IO节点。*/
-    abcdk_asynctcp_node_t *io_node;
+    abcdk_asio_node_t *io_node;
 
     /*上行数据。*/
     abcdk_receiver_t *updata;
@@ -121,12 +121,12 @@ typedef struct _abcdk_httpd_stream
 
 static void _abcdk_httpd_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
-    abcdk_asynctcp_node_t *io_node_p;
+    abcdk_asio_node_t *io_node_p;
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
 
-    io_node_p = (abcdk_asynctcp_node_t *)opaque;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(io_node_p);
+    io_node_p = (abcdk_asio_node_t *)opaque;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_httpd_stream_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     /*通知流已关闭。*/
@@ -143,7 +143,7 @@ static void _abcdk_httpd_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
     abcdk_object_unref(&stream_ctx_p->host);
     abcdk_object_unref(&stream_ctx_p->scheme);
     abcdk_stream_destroy(&stream_ctx_p->h2_out);
-    abcdk_asynctcp_unref(&stream_ctx_p->io_node);
+    abcdk_asio_unref(&stream_ctx_p->io_node);
     abcdk_object_unref(&stream_ctx_p->scheme);
     abcdk_object_unref(&stream_ctx_p->h1_rsp_hdrs);
     abcdk_option_free(&stream_ctx_p->rsp_hdr);
@@ -151,18 +151,18 @@ static void _abcdk_httpd_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
 
 static void _abcdk_httpd_stream_construct_cb(abcdk_object_t *obj, void *opaque)
 {
-    abcdk_asynctcp_node_t *io_node_p;
+    abcdk_asio_node_t *io_node_p;
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
     
-    io_node_p = (abcdk_asynctcp_node_t *)opaque;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(io_node_p);
+    io_node_p = (abcdk_asio_node_t *)opaque;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_httpd_stream_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     stream_ctx_p->id = *((int *)obj->pptrs[ABCDK_MAP_KEY]);
     stream_ctx_p->tid = abcdk_sequence_num();
     stream_ctx_p->protocol = 1;
-    stream_ctx_p->io_node = abcdk_asynctcp_refer(io_node_p);
+    stream_ctx_p->io_node = abcdk_asio_refer(io_node_p);
     stream_ctx_p->h2_out = abcdk_stream_create();
     stream_ctx_p->loc_ctx = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
@@ -203,7 +203,7 @@ static void _abcdk_httpd_log(abcdk_object_t *stream, uint32_t status)
     const char *user_agent_p,*refer_p;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     /*只记录HTTP日志。*/
     if (node_ctx_p->protocol != 1 && node_ctx_p->protocol != 2)
@@ -243,7 +243,7 @@ static void _abcdk_httpd_process(abcdk_object_t *stream)
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     _abcdk_httpd_log(stream,0);
 
@@ -260,7 +260,7 @@ static void _abcdk_httpd_process_2(abcdk_object_t *stream)
     abcdk_httpd_stream_t *stream_ctx_p;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (stream_ctx_p->protocol == 1)
     {
@@ -276,8 +276,8 @@ static void _abcdk_httpd_process_2(abcdk_object_t *stream)
 
 static int _abcdk_httpd_h2_frame_recv_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     abcdk_httpd_stream_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     size_t remain = 0;
@@ -328,8 +328,8 @@ static int _abcdk_httpd_h2_frame_recv_cb(nghttp2_session *session, const nghttp2
 
 static int _abcdk_httpd_h2_data_chunk_recv_cb(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     abcdk_httpd_stream_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     size_t remain = 0;
@@ -388,8 +388,8 @@ static int _abcdk_httpd_h2_header_cb(nghttp2_session *session, const nghttp2_fra
                                             const uint8_t *value, size_t valuelen,
                                             uint8_t flags, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     abcdk_httpd_stream_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     int stream_id;
@@ -455,8 +455,8 @@ static int _abcdk_httpd_h2_header_cb(nghttp2_session *session, const nghttp2_fra
 
 static int _abcdk_httpd_h2_begin_headers_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     abcdk_httpd_stream_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     int stream_id;
@@ -488,8 +488,8 @@ static int _abcdk_httpd_h2_begin_headers_cb(nghttp2_session *session, const nght
 
 static int _abcdk_httpd_h2_stream_close_cb(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     /*移除这个节点。*/
     abcdk_map_remove2(node_ctx_p->stream_map, &stream_id);
@@ -499,11 +499,11 @@ static int _abcdk_httpd_h2_stream_close_cb(nghttp2_session *session, int32_t str
 
 static ssize_t _abcdk_httpd_h2_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     int chk;
 
-    chk = abcdk_asynctcp_post_buffer(node, data, length);
+    chk = abcdk_asio_post_buffer(node, data, length);
     if (chk != 0)
         return 0;
 
@@ -513,8 +513,8 @@ static ssize_t _abcdk_httpd_h2_send_cb(nghttp2_session *session, const uint8_t *
 static ssize_t _abcdk_httpd_h2_response_read_cb(nghttp2_session *session, int32_t stream_id, uint8_t *buf, size_t length,
                                                        uint32_t *data_flags, nghttp2_data_source *source, void *user_data)
 {
-    abcdk_asynctcp_node_t *node = (abcdk_asynctcp_node_t *)user_data;
-    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     abcdk_httpd_stream_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     ssize_t rlen;
@@ -546,7 +546,7 @@ static void _abcdk_httpd_process_1(abcdk_object_t *stream)
     const char *line_p;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (stream_ctx_p->protocol == 1)
     {
@@ -579,11 +579,11 @@ static void _abcdk_httpd_process_1(abcdk_object_t *stream)
 
 ERR:
 
-    abcdk_asynctcp_set_timeout(stream_ctx_p->io_node,1);
+    abcdk_asio_set_timeout(stream_ctx_p->io_node,1);
 
 }
 
-static void _abcdk_httpd_request_1(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_httpd_request_1(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
@@ -592,7 +592,7 @@ static void _abcdk_httpd_request_1(abcdk_asynctcp_node_t *node, const void *data
     const char *upgrade_val;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, sizeof(abcdk_httpd_stream_t));
     if (!stream_p)
@@ -642,15 +642,15 @@ static void _abcdk_httpd_request_1(abcdk_asynctcp_node_t *node, const void *data
 
 ERR:
 
-    abcdk_asynctcp_set_timeout(node, 1);
+    abcdk_asio_set_timeout(node, 1);
 }
 
-static void _abcdk_httpd_request_2(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_httpd_request_2(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_httpd_node_t *node_ctx_p;
     ssize_t chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
 #ifdef NGHTTP2_H
 
@@ -667,10 +667,10 @@ static void _abcdk_httpd_request_2(abcdk_asynctcp_node_t *node, const void *data
 
 ERR:
 
-    abcdk_asynctcp_set_timeout(node, 1);
+    abcdk_asio_set_timeout(node, 1);
 }
 
-static void _abcdk_httpd_output_1(abcdk_asynctcp_node_t *node)
+static void _abcdk_httpd_output_1(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
@@ -678,7 +678,7 @@ static void _abcdk_httpd_output_1(abcdk_asynctcp_node_t *node)
     int stream_id = 0;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, 0);
     if (!stream_p)
@@ -691,11 +691,11 @@ static void _abcdk_httpd_output_1(abcdk_asynctcp_node_t *node)
         node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque,stream_p);
 }
 
-static void _abcdk_httpd_output_2(abcdk_asynctcp_node_t *node)
+static void _abcdk_httpd_output_2(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
 #ifdef NGHTTP2_H
     /*把缓存数据串行化，并通过回调发送出去。*/
@@ -740,11 +740,11 @@ static int _abcdk_httpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsi
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
-static void _abcdk_httpd_set_alpn(abcdk_asynctcp_node_t *node, size_t alpn_flag)
+static void _abcdk_httpd_set_alpn(abcdk_asio_node_t *node, size_t alpn_flag)
 {
     abcdk_httpd_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
 #ifdef HEADER_SSL_H
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
@@ -753,19 +753,19 @@ static void _abcdk_httpd_set_alpn(abcdk_asynctcp_node_t *node, size_t alpn_flag)
 #endif // HEADER_SSL_H
 }
 
-static void _abcdk_httpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp_node_t *listen)
+static void _abcdk_httpd_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *listen_ctx_p, *node_ctx_p;
     int chk;
 
-    listen_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(listen);
+    listen_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(listen);
 
     listen_ctx_p->cfg.session_prepare_cb(listen_ctx_p->cfg.opaque,(abcdk_httpd_session_t **)&node_p,(abcdk_httpd_session_t *)listen);
     if (!node_p)
         return;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
     node_ctx_p->cfg = listen_ctx_p->cfg;
     node_ctx_p->flag = 1;
@@ -774,21 +774,21 @@ static void _abcdk_httpd_prepare_cb(abcdk_asynctcp_node_t **node, abcdk_asynctcp
 
     if(node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
-        chk = abcdk_asynctcp_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx,listen_ctx_p->cfg.check_cert);
+        chk = abcdk_asio_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx,listen_ctx_p->cfg.check_cert);
         if(chk != 0)
-            abcdk_asynctcp_unref(&node_p);
+            abcdk_asio_unref(&node_p);
     }
 
     /*准备完毕，返回。*/
     *node = node_p;
 }
 
-static void _abcdk_httpd_event_accept(abcdk_asynctcp_node_t *node, int *result)
+static void _abcdk_httpd_event_accept(abcdk_asio_node_t *node, int *result)
 {
     abcdk_httpd_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
 
     /*默认：允许。*/
@@ -801,19 +801,19 @@ static void _abcdk_httpd_event_accept(abcdk_asynctcp_node_t *node, int *result)
         abcdk_trace_output(LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
-static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
+static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
     SSL *ssl_p;
     char ptl_name[256] = {0};
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+        ssl_p = abcdk_asio_openssl_ctx(node);
 
         chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, ptl_name);
         if (chk == 0 && node_ctx_p->protocol == 0)
@@ -829,7 +829,7 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
     abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立(SSL-scheme=%d)。",node_ctx_p->local_addr,node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
     
     /*设置超时。*/
-    abcdk_asynctcp_set_timeout(node, 180 * 1000);
+    abcdk_asio_set_timeout(node, 180 * 1000);
 
     /*如果未选择协议，则使用默认协议。*/
     if(node_ctx_p->protocol == 0)
@@ -862,15 +862,15 @@ static void _abcdk_httpd_event_connect(abcdk_asynctcp_node_t *node)
         node_ctx_p->cfg.session_ready_cb(node_ctx_p->cfg.opaque, (abcdk_httpd_session_t*)node);
 
     /*已连接到远端，注册读写事件。*/
-    abcdk_asynctcp_recv_watch(node);
-    abcdk_asynctcp_send_watch(node);
+    abcdk_asio_recv_watch(node);
+    abcdk_asio_send_watch(node);
 }
 
-static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
+static void _abcdk_httpd_event_output(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     if(node_ctx_p->protocol == 1)
     {
@@ -882,13 +882,13 @@ static void _abcdk_httpd_event_output(abcdk_asynctcp_node_t *node)
     }
 }
 
-static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
+static void _abcdk_httpd_event_close(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
     SSL *ssl_p;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     if (node_ctx_p->flag == 0)
     {
@@ -899,7 +899,7 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
     if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        ssl_p = abcdk_asynctcp_openssl_ctx(node);
+        ssl_p = abcdk_asio_openssl_ctx(node);
         if (ssl_p && node_ctx_p->cfg.check_cert)
         {
             /*获取验证结果。*/
@@ -919,47 +919,47 @@ static void _abcdk_httpd_event_close(abcdk_asynctcp_node_t *node)
         node_ctx_p->cfg.session_close_cb(node_ctx_p->cfg.opaque,(abcdk_httpd_session_t*)node);
 }
 
-static void _abcdk_httpd_event_cb(abcdk_asynctcp_node_t *node, uint32_t event, int *result)
+static void _abcdk_httpd_event_cb(abcdk_asio_node_t *node, uint32_t event, int *result)
 {
     abcdk_httpd_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     if(!node_ctx_p->remote_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
+        abcdk_asio_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
     if(!node_ctx_p->local_addr[0])
-        abcdk_asynctcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+        abcdk_asio_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
 
-    if (event == ABCDK_ASYNCTCP_EVENT_ACCEPT)
+    if (event == ABCDK_ASIO_EVENT_ACCEPT)
     {
         _abcdk_httpd_event_accept(node,result);
     }
-    else if (event == ABCDK_ASYNCTCP_EVENT_CONNECT)
+    else if (event == ABCDK_ASIO_EVENT_CONNECT)
     {
         _abcdk_httpd_event_connect(node);
     }
-    else if (event == ABCDK_ASYNCTCP_EVENT_INPUT)
+    else if (event == ABCDK_ASIO_EVENT_INPUT)
     {
     }
-    else if (event == ABCDK_ASYNCTCP_EVENT_OUTPUT)
+    else if (event == ABCDK_ASIO_EVENT_OUTPUT)
     {
         _abcdk_httpd_event_output(node);
     }
-    else if (event == ABCDK_ASYNCTCP_EVENT_CLOSE || event == ABCDK_ASYNCTCP_EVENT_INTERRUPT)
+    else if (event == ABCDK_ASIO_EVENT_CLOSE || event == ABCDK_ASIO_EVENT_INTERRUPT)
     {
         _abcdk_httpd_event_close(node);
     }
 }
 
 
-static void _abcdk_httpd_request_cb(abcdk_asynctcp_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_httpd_request_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_httpd_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -976,28 +976,28 @@ static void _abcdk_httpd_request_cb(abcdk_asynctcp_node_t *node, const void *dat
 
 void abcdk_httpd_session_unref(abcdk_httpd_session_t **session)
 {
-    abcdk_asynctcp_unref((abcdk_asynctcp_node_t**)session);
+    abcdk_asio_unref((abcdk_asio_node_t**)session);
 }
 
 abcdk_httpd_session_t *abcdk_httpd_session_refer(abcdk_httpd_session_t *src)
 {
-    return (abcdk_httpd_session_t*)abcdk_asynctcp_refer((abcdk_asynctcp_node_t*)src);
+    return (abcdk_httpd_session_t*)abcdk_asio_refer((abcdk_asio_node_t*)src);
 }
 
 abcdk_httpd_session_t *abcdk_httpd_session_alloc(abcdk_httpd_t *ctx)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
     abcdk_httpd_stream_t *stream_ctx_p;
 
     assert(ctx != NULL);
 
-    node_p = abcdk_asynctcp_alloc(ctx->io_ctx, sizeof(abcdk_httpd_node_t), _abcdk_httpd_node_destroy_cb);
+    node_p = abcdk_asio_alloc(ctx->io_ctx, sizeof(abcdk_httpd_node_t), _abcdk_httpd_node_destroy_cb);
     if (!node_p)
         return NULL;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
     node_ctx_p->father = ctx;
     node_ctx_p->protocol = 0;
@@ -1020,27 +1020,27 @@ ERR:
 
 void *abcdk_httpd_session_get_userdata(abcdk_httpd_session_t *session)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
 
     assert(session != NULL);
 
-    node_p = (abcdk_asynctcp_node_t*)session;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_p = (abcdk_asio_node_t*)session;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
     return node_ctx_p->userdata;
 }
 
 void *abcdk_httpd_session_set_userdata(abcdk_httpd_session_t *session,void *userdata)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
     void *old_userdata;
 
     assert(session != NULL);
 
-    node_p = (abcdk_asynctcp_node_t*)session;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_p = (abcdk_asio_node_t*)session;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
     old_userdata = node_ctx_p->userdata;
     node_ctx_p->userdata = userdata;
@@ -1050,14 +1050,14 @@ void *abcdk_httpd_session_set_userdata(abcdk_httpd_session_t *session,void *user
 
 const char *abcdk_httpd_session_get_address(abcdk_httpd_session_t *session, int remote)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
     void *old_userdata;
 
     assert(session != NULL);
 
-    node_p = (abcdk_asynctcp_node_t *)session;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_p = (abcdk_asio_node_t *)session;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
     if (remote)
         return node_ctx_p->remote_addr;
@@ -1067,33 +1067,33 @@ const char *abcdk_httpd_session_get_address(abcdk_httpd_session_t *session, int 
 
 void abcdk_httpd_session_set_timeout(abcdk_httpd_session_t *session,time_t timeout)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
     void *old_userdata;
 
     assert(session != NULL && timeout >= 1);
 
-    node_p = (abcdk_asynctcp_node_t*)session;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_p = (abcdk_asio_node_t*)session;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
-    abcdk_asynctcp_set_timeout(node_p,timeout * 1000);
+    abcdk_asio_set_timeout(node_p,timeout * 1000);
 }
 
 
 int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *addr,abcdk_httpd_config_t *cfg)
 {
-    abcdk_asynctcp_node_t *node_p;
+    abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
-    abcdk_asynctcp_callback_t cb = {0};
+    abcdk_asio_callback_t cb = {0};
     int chk;
 
     assert(session != NULL && addr != NULL && cfg != NULL);
     assert(cfg->session_prepare_cb != NULL && cfg->stream_request_cb != NULL);
     assert(cfg->req_max_size > 1024);
 
-    node_p = (abcdk_asynctcp_node_t*)session;
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(node_p);
+    node_p = (abcdk_asio_node_t*)session;
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node_p);
 
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 0;
@@ -1124,7 +1124,7 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     cb.event_cb = _abcdk_httpd_event_cb;
     cb.request_cb = _abcdk_httpd_request_cb;
 
-    chk = abcdk_asynctcp_listen(node_p,addr,&cb);
+    chk = abcdk_asio_listen(node_p,addr,&cb);
     if(chk == 0)
         return 0;
 
@@ -1141,7 +1141,7 @@ void abcdk_httpd_destroy(abcdk_httpd_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_asynctcp_stop(&ctx_p->io_ctx);
+    abcdk_asio_stop(&ctx_p->io_ctx);
     abcdk_heap_free(ctx_p);
 }
 
@@ -1156,7 +1156,7 @@ abcdk_httpd_t *abcdk_httpd_create(int max,int cpu)
     if (!ctx)
         return NULL;
 
-    ctx->io_ctx = abcdk_asynctcp_start(max, cpu);
+    ctx->io_ctx = abcdk_asio_start(max, cpu);
     if (!ctx->io_ctx)
         goto ERR;
 
@@ -1188,7 +1188,7 @@ void *abcdk_httpd_get_userdata(abcdk_object_t *stream)
     assert(stream != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     return stream_ctx_p->userdata;
 }
@@ -1202,7 +1202,7 @@ void *abcdk_httpd_set_userdata(abcdk_object_t *stream,void *userdata)
     assert(stream != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     old_userdata = stream_ctx_p->userdata;
     stream_ctx_p->userdata = userdata;
@@ -1220,7 +1220,7 @@ const char *abcdk_httpd_request_header_get(abcdk_object_t *stream, const char *k
     assert(stream != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     /*HTTP协议有头部数据。*/
     if (stream_ctx_p->protocol != 1)
@@ -1250,7 +1250,7 @@ const char* abcdk_httpd_request_header_getline(abcdk_object_t *stream,int line)
     assert(stream != NULL && line >= 1 && line < 100);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     /*HTTP协议有头部数据。*/
     if (stream_ctx_p->protocol != 1)
@@ -1272,7 +1272,7 @@ const char *abcdk_httpd_request_body_get(abcdk_object_t *stream, size_t *len)
     assert(stream != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     body_l = abcdk_receiver_body_length(stream_ctx_p->updata);
     if (body_l <= 0)
@@ -1292,7 +1292,7 @@ static int _abcdk_httpd_rsp_hdr_dump_cb(const char *key, const char *value, void
     abcdk_httpd_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     /*状态码不在这里处理。*/
     if (abcdk_strcmp("Status", key, 0) == 0)
@@ -1334,7 +1334,7 @@ static int _abcdk_httpd_response_header_h1(abcdk_object_t *stream)
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 1)
         return -1;
@@ -1369,7 +1369,7 @@ static int _abcdk_httpd_response_header_h1(abcdk_object_t *stream)
 
     /*标记头部长度。*/
     stream_ctx_p->h1_rsp_hdrs->sizes[0] = stream_ctx_p->h1_rsp_count;
-    chk = abcdk_asynctcp_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs);
+    chk = abcdk_asio_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs);
     if (chk != 0)
         return -2;
 
@@ -1390,7 +1390,7 @@ static int _abcdk_httpd_response_header_h2(abcdk_object_t *stream)
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 2)
         return -1;
@@ -1432,7 +1432,7 @@ static int _abcdk_httpd_response_header(abcdk_object_t *stream)
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol == 1)
     {
@@ -1447,7 +1447,7 @@ static int _abcdk_httpd_response_header(abcdk_object_t *stream)
             return -1;
     }
 
-    abcdk_asynctcp_send_watch(stream_ctx_p->io_node);
+    abcdk_asio_send_watch(stream_ctx_p->io_node);
 
     return 0;
 }
@@ -1461,7 +1461,7 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 1)
         return -1;
@@ -1471,7 +1471,7 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
     {
         /*发送分块头部。*/
         chunked_size = (data ? data->sizes[0] : 0);
-        chk = abcdk_asynctcp_post_format(stream_ctx_p->io_node, 18, "%zx\r\n", chunked_size);
+        chk = abcdk_asio_post_format(stream_ctx_p->io_node, 18, "%zx\r\n", chunked_size);
         if (chk != 0)
             return -1;
 
@@ -1487,7 +1487,7 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
     /*如果不是结束包，发送有效的数据块。*/
     if (!stream_ctx_p->rsp_end)
     {
-        chk = abcdk_asynctcp_post(stream_ctx_p->io_node, data);
+        chk = abcdk_asio_post(stream_ctx_p->io_node, data);
         if (chk != 0)
             return -1;
     }
@@ -1495,7 +1495,7 @@ static int _abcdk_httpd_response_body_h1(abcdk_object_t *stream, abcdk_object_t 
     /*发送分块尾部。*/
     if (chunked_body)
     {
-        chk = abcdk_asynctcp_post_buffer(stream_ctx_p->io_node,"\r\n",2);
+        chk = abcdk_asio_post_buffer(stream_ctx_p->io_node,"\r\n",2);
         if (chk != 0)
             return -1;
     }
@@ -1511,7 +1511,7 @@ static int _abcdk_httpd_response_body_h2(abcdk_object_t *stream, abcdk_object_t 
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 2)
         return -1;
@@ -1538,7 +1538,7 @@ static int _abcdk_httpd_response_body(abcdk_object_t *stream, abcdk_object_t *da
     int chk;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol == 1)
     {
@@ -1553,7 +1553,7 @@ static int _abcdk_httpd_response_body(abcdk_object_t *stream, abcdk_object_t *da
             return -2;
     }
 
-    abcdk_asynctcp_send_watch(stream_ctx_p->io_node);
+    abcdk_asio_send_watch(stream_ctx_p->io_node);
 
     return 0;
 }
@@ -1568,7 +1568,7 @@ int abcdk_httpd_response_header_vset(abcdk_object_t *stream,const char *key, con
     assert(stream != NULL && key !=NULL && val != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,"应答数据已经发送完成,不能修改。");
 
@@ -1656,7 +1656,7 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
     assert(stream != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (stream_ctx_p->rsp_hdr_sent)
         goto BODY;
@@ -1796,7 +1796,7 @@ int abcdk_httpd_check_auth(abcdk_object_t *stream)
     assert(stream != NULL);
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asynctcp_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
     if (!node_ctx_p->cfg.auth_path)
         return 0;
