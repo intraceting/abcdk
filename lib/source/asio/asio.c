@@ -585,6 +585,7 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
                 goto final_error;
 
 #ifdef SSL_OP_NO_RENEGOTIATION
+            /*禁止重新协商。*/
             SSL_set_options(node->openssl_ctx, SSL_OP_NO_RENEGOTIATION);
 #endif
         }
