@@ -94,10 +94,15 @@ ssize_t abcdk_easyssl_read(abcdk_easyssl_t *ctx,void *data,size_t size);
 
 #ifdef HEADER_BIO_H
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+void *BIO_get_data(BIO* bio);
+void BIO_set_data(BIO* bio,void *ptr);
+#endif //OPENSSL_VERSION_NUMBER < 0x10100000L
+
 /**
- * 支缓OPENSSL。
+ * 创建兼容的BIO环境。
 */
-const BIO_METHOD *abcdk_easyssl_BIO(void);
+const BIO *abcdk_easyssl_BIO_from_file(const char *file,uint32_t scheme,size_t salt);
 
 #endif //HEADER_BIO_H
 

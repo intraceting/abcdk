@@ -91,8 +91,8 @@ int _abcdk_easyssl_init_enigma(abcdk_easyssl_t *ctx,const uint8_t *key,size_t si
         recv_seed[i % 4] |= (uint64_t)hashcode[i];
     }
 
-    ctx->en_send_ctx = abcdk_enigma_create3(send_seed,2,256);
-    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed,2,256);
+    ctx->en_send_ctx = abcdk_enigma_create3(send_seed,4,256);
+    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed,4,256);
 
     if(!ctx->en_send_ctx || !ctx->en_recv_ctx)
         return -2;
@@ -448,24 +448,52 @@ static long _abcdk_easyssl_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
     return chk;
 }
 
-const BIO_METHOD *abcdk_easyssl_BIO(void)
+static int _abcdk_easyssl_BIO_destroy(BIO *bio)
+{
+    abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
+
+    abcdk_easyssl_destroy(&easyssl_p);
+}
+
+int _abcdk_easyssl_BIO_METHOD_init(void *opaque)
+{
+    BIO_METHOD *ctx = (BIO_METHOD *)opaque;
+
+    ctx->type = BIO_TYPE_SOURCE_SINK;
+    ctx->name = SOLUTION_NAME;
+    ctx->bread = _abcdk_easyssl_BIO_read;
+    ctx->bwrite = _abcdk_easyssl_BIO_write;
+    ctx->ctrl = _abcdk_easyssl_BIO_ctrl;
+    ctx->destroy = _abcdk_easyssl_BIO_destroy;
+
+    return 0;
+}
+
+static const BIO_METHOD *_abcdk_easyssl_BIO_METHOD(void)
 {
     static volatile int init_status = 0;
-    static BIO_METHOD *ctx = NULL;
+    static BIO_METHOD method = {0};
 
-    if(!abcdk_atomic_compare_and_swap(&init_status,0, 1))
-        return ctx;
+    abcdk_once(&init_status,_abcdk_easyssl_BIO_METHOD_init,&method);
     
-    ctx = BIO_meth_new(BIO_TYPE_SOURCE_SINK, SOLUTION_NAME);
-    if(!ctx)
-        return NULL;
+    return &method;
+}
 
-    BIO_meth_set_write(ctx, _abcdk_easyssl_BIO_write);
-    BIO_meth_set_read(ctx, _abcdk_easyssl_BIO_read);
-    BIO_meth_set_ctrl(ctx, _abcdk_easyssl_BIO_ctrl);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+void *BIO_get_data(BIO* bio)
+{
+    return bio->ptr;
+}
 
-    
-    return ctx;
+void BIO_set_data(BIO* bio,void *ptr)
+{
+    bio->ptr = ptr;
+}
+#endif //OPENSSL_VERSION_NUMBER < 0x10100000L
+
+const BIO *abcdk_easyssl_BIO_from_file(const char *file,uint32_t scheme,size_t salt)
+{
+
 }
 
 #endif //HEADER_BIO_H
