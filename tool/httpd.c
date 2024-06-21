@@ -559,12 +559,12 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
 
     if (ssl)
     {
-        cfg.ssl_scheme = ABCDK_HTTPD_SSL_SCHEME_OPENSSL;
-        cfg.ca_file = ctx->ca_file;
-        cfg.ca_path = ctx->ca_path;
-        cfg.cert_file = ctx->cert_file;
-        cfg.key_file = ctx->key_file;
-        cfg.check_cert = ctx->check_cert;
+        cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_OPENSSL;
+        cfg.openssl_ca_file = ctx->ca_file;
+        cfg.openssl_ca_path = ctx->ca_path;
+        cfg.openssl_cert_file = ctx->cert_file;
+        cfg.openssl_key_file = ctx->key_file;
+        cfg.openssl_check_cert = ctx->check_cert;
     }
 
     if (ssl)

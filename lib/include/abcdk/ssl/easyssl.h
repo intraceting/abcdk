@@ -13,6 +13,7 @@
 #include "abcdk/util/stream.h"
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/mmap.h"
+#include "abcdk/ssl/openssl.h"
 
 __BEGIN_DECLS
 
@@ -62,23 +63,18 @@ abcdk_easyssl_t *abcdk_easyssl_create_from_file(const char *file,uint32_t scheme
 /**
  * 设置关联句柄。
  * 
- * @return 旧的句柄。
+ * @param [in] flag 标志。0 读写，1 读，2 写。
+ * 
+ * @return 0 成功，< 0  失败。
 */
-int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int writer);
+int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int flag);
 
 /**
  * 获取关联句柄。
  * 
- * @return 旧的句柄。
+ * @return >=0 成功(旧的句柄)，< 0  失败(未设置或读写句柄不一致)。
 */
-int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer);
-
-/**
- * 握手。
- * 
- * @return > 0 成功，= 0 连接已经关闭或断开。< 0 失败(非阻塞管道有效)。
- */
-int abcdk_easyssl_do_handshake(abcdk_easyssl_t *ctx,int server);
+int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int flag);
 
 /**
  * 发送数据。
@@ -96,6 +92,14 @@ ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size);
 */
 ssize_t abcdk_easyssl_read(abcdk_easyssl_t *ctx,void *data,size_t size);
 
+#ifdef HEADER_BIO_H
+
+/**
+ * 支缓OPENSSL。
+*/
+const BIO_METHOD *abcdk_easyssl_BIO(void);
+
+#endif //HEADER_BIO_H
 
 __END_DECLS
 

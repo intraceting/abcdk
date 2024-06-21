@@ -43,12 +43,6 @@ typedef struct _abcdk_tipc_node
     /*父级。*/
     abcdk_tipc_t *father;
 
-    /*OPENSSL环境。*/
-    SSL_CTX *openssl_ctx;
-
-    /*EASYSSL环境。*/
-    abcdk_easyssl_t *easyssl_ctx;
-
     /*远程地址。*/
     char remote_addr[NAME_MAX];
 
@@ -140,6 +134,10 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe
     /*远程的ID不能与自己的ID相同。*/
     if (ctx->cfg.id == node_ctx_p->id)
         return -1;
+    
+    /*可能还未初始化。*/
+    if(node_ctx_p->id <= 0 || node_ctx_p->id >=ABCDK_TIPC_SLAVE_MAX)
+        chk = -2;
 
     abcdk_mutex_lock(ctx->slave_mutex, 1);
 
@@ -212,6 +210,9 @@ END:
     return chk;
 }
 
+/*
+ * 如果节点存在返回可用的管道数量，否则返回一个负值。
+*/
 static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe)
 {
     abcdk_object_t *slave_p;
@@ -220,6 +221,10 @@ static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asio_node_t *pi
     int chk;
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(pipe);
+
+    /*可能还未初始化。*/
+    if(node_ctx_p->id <= 0 || node_ctx_p->id >=ABCDK_TIPC_SLAVE_MAX)
+        return -2;
 
     abcdk_mutex_lock(ctx->slave_mutex, 1);
 
@@ -291,7 +296,7 @@ static void _abcdk_tipc_slave_reconnect_cb(void *opaque)
 {
     abcdk_tipc_t *ctx = (abcdk_tipc_t *)opaque;
     abcdk_tipc_slave_t *slave_ctx_p = NULL;
-    uint64_t id = 0;
+    uint64_t id = 1;
     char location[NAME_MAX] = {0};
     int flag;
     int chk;
@@ -461,10 +466,6 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
 
     ctx->cfg = *cfg;
 
-    /*修复不支持的配置。*/
-    ctx->cfg.easyssl_key_file = (ctx->cfg.easyssl_key_file?ctx->cfg.easyssl_key_file:"");
-    ctx->cfg.easyssl_salt_size = ABCDK_CLAMP(ctx->cfg.easyssl_salt_size,0,256);
-
     ctx->io_ctx = abcdk_asio_start(ABCDK_TIPC_SLAVE_MAX*2+10, -1);
     memset(ctx->slave_list,0,sizeof(abcdk_tipc_slave_t*)* ABCDK_ARRAY_SIZE(ctx->slave_list));
     ctx->slave_mutex = abcdk_mutex_create();
@@ -489,12 +490,6 @@ static void _abcdk_tipc_node_destroy_cb(void *userdata)
         return;
 
     ctx = (abcdk_tipc_node_t *)userdata;
-
-#ifdef HEADER_SSL_H
-    abcdk_openssl_ssl_ctx_free(&ctx->openssl_ctx);
-#endif // HEADER_SSL_H
-
-    abcdk_easyssl_destroy(&ctx->easyssl_ctx);
 
     abcdk_receiver_unref(&ctx->req_data);
     abcdk_waiter_free(&ctx->req_waiter);
@@ -533,7 +528,6 @@ static void _abcdk_tipc_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *
 {
     abcdk_asio_node_t *node_p;
     abcdk_tipc_node_t *listen_ctx_p, *node_ctx_p;
-    abcdk_tipc_config_t *cfg_p;
     int chk;
 
     listen_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(listen);
@@ -543,23 +537,6 @@ static void _abcdk_tipc_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *
         return;
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
-
-    cfg_p = &listen_ctx_p->father->cfg;
-
-    if(cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
-    {
-        chk = abcdk_asio_upgrade2openssl(node_p,listen_ctx_p->openssl_ctx,cfg_p->openssl_check_cert);
-        if(chk != 0)
-            abcdk_asio_unref(&node_p);
-    }
-    else if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_EASYSSL)
-    {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,cfg_p->easyssl_salt_size);
-        if(!node_ctx_p->easyssl_ctx)
-            abcdk_asio_unref(&node_p);
-        else
-            abcdk_asio_upgrade2easyssl(node_p,node_ctx_p->easyssl_ctx);
-    }
 
     /*准备完毕，返回。*/
     *node = node_p;
@@ -581,7 +558,7 @@ static void _abcdk_tipc_event_accept(abcdk_asio_node_t *node, int *result)
         node_ctx_p->father->cfg.accept_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->remote_addr, result);
 
     if (*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
+        abcdk_asio_trace_output(node,LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
 }
 
 static int _abcdk_tipc_post_register(abcdk_asio_node_t *node,int rsp);
@@ -595,27 +572,7 @@ static void _abcdk_tipc_event_connect(abcdk_asio_node_t *node)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
 
-    if(node_ctx_p->father->cfg.ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
-    {
-#ifdef HEADER_SSL_H
-        ssl_p = abcdk_asio_openssl_ctx(node);
-
-        X509 *cert = SSL_get_peer_certificate(ssl_p);
-        if(cert)
-        {
-            abcdk_object_t *info = abcdk_openssl_dump_crt(cert);
-            if(info)
-            {
-                abcdk_trace_output(LOG_INFO,"远端(%s)的证书信息：\n%s",node_ctx_p->remote_addr,info->pstrs[0]);
-                abcdk_object_unref(&info);
-            }
-
-            X509_free(cert);
-        }
-#endif // HEADER_SSL_H
-    }
-
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*设置超时。*/
     abcdk_asio_set_timeout(node, 24 * 3600 * 1000);
@@ -646,31 +603,18 @@ static void _abcdk_tipc_event_close(abcdk_asio_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        abcdk_asio_trace_output(node,LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    if(node_ctx_p->father->cfg.ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
-    {
-#ifdef HEADER_SSL_H
-        ssl_p = abcdk_asio_openssl_ctx(node);
-        if(ssl_p && node_ctx_p->father->cfg.openssl_check_cert)
-        {
-            /*获取验证结果。*/
-            chk = SSL_get_verify_result(ssl_p);
-            if (chk != X509_V_OK)
-                abcdk_trace_output(LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr,chk);
-        }
-#endif // HEADER_SSL_H
-    }
+    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
-
-    /*取消所有等待的。*/
+    /*取消此链路上的所有等待的。*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);
 
+    /*反注册并返回可用的管道数量。*/
     chk = _abcdk_tipc_slave_unregister(node_ctx_p->father, node);
-    if (chk == -1)
+    if (chk < 0)
         return;
     if (chk > 0)
         return;
@@ -749,64 +693,12 @@ ERR:
     abcdk_asio_set_timeout(node, 1);
 }
 
-static int _abcdk_tipc_ssl_init(abcdk_asio_node_t *node,int server)
-{
-    abcdk_tipc_node_t *node_ctx_p;
-    abcdk_tipc_config_t *cfg_p;
-    int chk;
-
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
-
-    cfg_p = &node_ctx_p->father->cfg;
-
-    if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_OPENSSL)
-    {
-#ifdef HEADER_SSL_H
-        node_ctx_p->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(server, (cfg_p->openssl_check_cert ? cfg_p->openssl_ca_file : NULL),
-                                                                   (cfg_p->openssl_check_cert ? cfg_p->openssl_ca_path : NULL),
-                                                                   cfg_p->openssl_cert_file, cfg_p->openssl_key_file, NULL);
-#endif // HEADER_SSL_H
-        if (!node_ctx_p->openssl_ctx)
-        {
-            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
-            return -2;
-        }
-
-        /*仅客户端需要。*/
-        if(!server)
-        {
-            chk = abcdk_asio_upgrade2openssl(node,node_ctx_p->openssl_ctx,cfg_p->openssl_check_cert);
-            if(chk != 0)
-                return -3;
-        }
-        
-    }
-    else if (cfg_p->ssl_scheme == ABCDK_TIPC_SSL_SCHEME_EASYSSL)
-    {
-        node_ctx_p->easyssl_ctx = abcdk_easyssl_create_from_file(cfg_p->easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,cfg_p->easyssl_salt_size);
-        if (!node_ctx_p->easyssl_ctx)
-        {
-            abcdk_trace_output(LOG_WARNING, "加载共享密钥失败，无法创建SSL环境。");
-            return -2;
-        }
-
-        /*仅客户端需要。*/
-        if(!server)
-        {
-            chk = abcdk_asio_upgrade2easyssl(node,node_ctx_p->easyssl_ctx);
-            if (chk != 0)
-                return -3;
-        }
-    }
-
-    return 0;
-}
 
 int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 {
     abcdk_asio_node_t *node_p;
     abcdk_tipc_node_t *node_ctx_p;
-    abcdk_asio_callback_t cb = {0};
+    abcdk_asio_config_t asio_cfg = {0};
     int chk;
 
     assert(ctx != NULL && addr != NULL);
@@ -817,15 +709,20 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
 
-    chk = _abcdk_tipc_ssl_init(node_p,1);
-    if(chk != 0)
-        return -2;
+    asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
+    asio_cfg.openssl_ca_file = ctx->cfg.openssl_ca_file;
+    asio_cfg.openssl_ca_path = ctx->cfg.openssl_ca_path;
+    asio_cfg.openssl_cert_file = ctx->cfg.openssl_cert_file;
+    asio_cfg.openssl_key_file = ctx->cfg.openssl_key_file;
+    asio_cfg.openssl_check_cert = ctx->cfg.openssl_check_cert;
+    asio_cfg.easyssl_key_file = ctx->cfg.easyssl_key_file;
+    asio_cfg.easyssl_salt_size = ctx->cfg.easyssl_salt_size;
 
-    cb.prepare_cb = _abcdk_tipc_prepare_cb;
-    cb.event_cb = _abcdk_tipc_event_cb;
-    cb.request_cb = _abcdk_tipc_request_cb;
+    asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
+    asio_cfg.event_cb = _abcdk_tipc_event_cb;
+    asio_cfg.request_cb = _abcdk_tipc_request_cb;
 
-    chk = abcdk_asio_listen(node_p, addr, &cb);
+    chk = abcdk_asio_listen(node_p, addr, &asio_cfg);
     abcdk_asio_unref(&node_p);
     if (chk != 0)
         return -3;
@@ -838,7 +735,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     abcdk_asio_node_t *node_p;
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_sockaddr_t addr = {0};
-    abcdk_asio_callback_t cb = {0};
+    abcdk_asio_config_t asio_cfg = {0};
     int chk;
 
     assert(ctx != NULL && location != NULL && id > 0 && id < ABCDK_TIPC_SLAVE_MAX);
@@ -860,15 +757,20 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     node_ctx_p->id = id;
     strncpy(node_ctx_p->location,location,NAME_MAX);
 
-    chk = _abcdk_tipc_ssl_init(node_p,0);
-    if(chk != 0)
-        return -2;
+    asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
+    asio_cfg.openssl_ca_file = ctx->cfg.openssl_ca_file;
+    asio_cfg.openssl_ca_path = ctx->cfg.openssl_ca_path;
+    asio_cfg.openssl_cert_file = ctx->cfg.openssl_cert_file;
+    asio_cfg.openssl_key_file = ctx->cfg.openssl_key_file;
+    asio_cfg.openssl_check_cert = ctx->cfg.openssl_check_cert;
+    asio_cfg.easyssl_key_file = ctx->cfg.easyssl_key_file;
+    asio_cfg.easyssl_salt_size = ctx->cfg.easyssl_salt_size;
 
-    cb.prepare_cb = _abcdk_tipc_prepare_cb;
-    cb.event_cb = _abcdk_tipc_event_cb;
-    cb.request_cb = _abcdk_tipc_request_cb;
+    asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
+    asio_cfg.event_cb = _abcdk_tipc_event_cb;
+    asio_cfg.request_cb = _abcdk_tipc_request_cb;
 
-    chk = abcdk_asio_connect(node_p, &addr, &cb);
+    chk = abcdk_asio_connect(node_p, &addr, &asio_cfg);
     abcdk_asio_unref(&node_p);
     if (chk != 0)
         return -3;
@@ -942,7 +844,7 @@ static void _abcdk_tipc_process_register_req(abcdk_asio_node_t *node)
         else if(chk == -3)
             abcdk_trace_output(LOG_WARNING,"相同的远端ID(%llu)已经注册并且在线，不允许注册。",node_ctx_p->id);
         else 
-            abcdk_trace_output(LOG_WARNING,"系统错误。");
+            abcdk_trace_output(LOG_WARNING,"其它错误。");
     }
     else
     {

@@ -11,11 +11,14 @@
 #include <locale.h>
 #include "entry.h"
 
+
+
 #ifdef HAVE_NGHTTP2
 #include <nghttp2/nghttp2.h>
 #endif // HAVE_NGHTTP2
 
-#ifdef NGHTTP2_H
+//#ifdef NGHTTP2_H
+#if 0
 
 typedef struct _h2_node
 {

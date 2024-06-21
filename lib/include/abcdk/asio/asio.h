@@ -25,6 +25,7 @@ __BEGIN_DECLS
 #ifndef HEADER_SSL_H
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
+typedef struct bio_st BIO;
 #define SSL_read(f,b,s) 0
 #define SSL_write(f,b,s) 0
 #endif //HEADER_SSL_H
@@ -92,10 +93,47 @@ typedef enum _abcdk_asio_event
 }abcdk_asio_event_t;
 
 /** 
- * 回调函数。
+ * 配置。
 */
-typedef struct _abcdk_asio_callback
+typedef struct _abcdk_asio_config
 {
+    /**安全方案*/
+    int ssl_scheme;
+#define ABCDK_ASIO_SSL_SCHEME_RAW               0
+#define ABCDK_ASIO_SSL_SCHEME_OPENSSL           1
+#define ABCDK_ASIO_SSL_SCHEME_EASYSSL           2
+#define ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL   3
+
+    /**CA证书。*/
+    const char *openssl_ca_file;
+
+    /**CA路径。*/
+    const char *openssl_ca_path;
+
+    /**证书。*/
+    const char *openssl_cert_file;
+
+    /**私钥。*/
+    const char *openssl_key_file;
+
+    /**是否验证对端证书。0 否，!0 是。*/
+    int openssl_check_cert;
+    
+    /** 
+     * 下层协议。
+     * 
+     * 例1："\x08http/1.1"
+     * 例2："\x02h2\x08http/1.1"
+     *
+    */
+    const uint8_t *openssl_next_proto;
+
+    /**共享密钥。*/
+    const char *easyssl_key_file;
+
+    /**盐的长度。*/
+    int easyssl_salt_size;
+
     /**
      * 为新连接做准备工作的通知回调函数。
      * 
@@ -121,7 +159,7 @@ typedef struct _abcdk_asio_callback
      */
     void (*request_cb)(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain);
 
-} abcdk_asio_callback_t;
+} abcdk_asio_config_t;
 
 /**
  * 释放。
@@ -146,31 +184,31 @@ abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *src);
 abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
 /**
- * 升级为openssl环境。
- *
- * @param [in] ssl_ctx SSL环境指针(仅复制，创建者放负责回收和释放)。
- * @param [in] check_verify_result 是否检测验证结果。0 否，!0 是。
- *
- * @return 0 成功，!0 失败。
- */
-int abcdk_asio_upgrade2openssl(abcdk_asio_node_t *node,SSL_CTX *ssl_ctx,int check_verify_result);
-
-/**
- * 升级为easyssl环境。
- *
- * @param [in] ssl_ctx SSL环境指针(仅复制，创建者放负责回收和释放)。
- *
- * @return 0 成功，!0 失败。
- */
-int abcdk_asio_upgrade2easyssl(abcdk_asio_node_t *node,abcdk_easyssl_t *ssl_ctx);
-
-
-/**
- * openssl环境指针。
- * 
- * @note 连接建立后有效，且调用者不能释放。
+ * 轨迹输出。
 */
-SSL *abcdk_asio_openssl_ctx(abcdk_asio_node_t *node);
+void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,...);
+
+/**
+ * 获取节点索引。
+ * 
+ * @note 进程内唯一。
+ * 
+ */
+uint64_t abcdk_asio_get_index(abcdk_asio_node_t *node);
+
+/**
+ * 获取节点OPENSSL环境指针。
+ * 
+ * @warning 应用层不能释放环境指针。
+*/
+SSL_CTX *abcdk_asio_get_openssl_ctx(abcdk_asio_node_t *node);
+
+/**
+ * 获取节点OPENSSL链路指针。
+ * 
+ * @warning 应用层不能释放链路指针。
+*/
+SSL *abcdk_asio_get_openssl_ssl(abcdk_asio_node_t *node);
 
 
 /**
@@ -274,11 +312,11 @@ abcdk_asio_t *abcdk_asio_start(int max,int cpu);
  * 
  * @param [in] node 通讯对象。
  * @param [in] addr 监听地址。
- * @param [in] cb 回调函数。
+ * @param [in] cfg 配置。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio_callback_t *cb);
+int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio_config_t *cfg);
 
 /**
  * 连接远程。
@@ -289,7 +327,7 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio_callback_t *cb);
+int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio_config_t *cfg);
 
 /**
  * 委托。
@@ -300,7 +338,7 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asi
  * 
  * @return 0 成功，-1 失败。
  */
-int abcdk_asio_entrust(abcdk_asio_node_t *node,int fd,abcdk_asio_callback_t *cb);
+int abcdk_asio_entrust(abcdk_asio_node_t *node,int fd,abcdk_asio_config_t *cfg);
 
 /**
  * 投递数据。

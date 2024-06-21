@@ -46,9 +46,6 @@ typedef struct _abcdk_httpd_node
     /*本机地址。*/
     char local_addr[NAME_MAX];
 
-    /*SSL环境。*/
-    SSL_CTX *ssl_ctx;
-
 #ifdef NGHTTP2_H
     nghttp2_session_callbacks *h2_cbs;
     nghttp2_session *h2_handle;
@@ -67,9 +64,6 @@ typedef struct _abcdk_httpd_stream
 {
     /*流ID。*/
     int id;
-
-    /*追踪ID。*/
-    uint64_t tid;
 
     /*协议。1：HTTP 4：TUNNEL*/
     int protocol;
@@ -160,7 +154,6 @@ static void _abcdk_httpd_stream_construct_cb(abcdk_object_t *obj, void *opaque)
     stream_ctx_p = (abcdk_httpd_stream_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     stream_ctx_p->id = *((int *)obj->pptrs[ABCDK_MAP_KEY]);
-    stream_ctx_p->tid = abcdk_sequence_num();
     stream_ctx_p->protocol = 1;
     stream_ctx_p->io_node = abcdk_asio_refer(io_node_p);
     stream_ctx_p->h2_out = abcdk_stream_create();
@@ -181,10 +174,6 @@ static void _abcdk_httpd_node_destroy_cb(void *userdata)
     ctx = (abcdk_httpd_node_t *)userdata;
 
     abcdk_map_destroy(&ctx->stream_map);
-
-#ifdef HEADER_SSL_H
-    abcdk_openssl_ssl_ctx_free(&ctx->ssl_ctx);
-#endif //HEADER_SSL_H
 
 #ifdef NGHTTP2_H
     if (ctx->h2_handle)
@@ -209,29 +198,23 @@ static void _abcdk_httpd_log(abcdk_object_t *stream, uint32_t status)
     if (node_ctx_p->protocol != 1 && node_ctx_p->protocol != 2)
         return;
 
-    snprintf(new_tname, 16, "%x", stream_ctx_p->tid);
-
-    pthread_getname_np(pthread_self(), old_tname, 18);
-    pthread_setname_np(pthread_self(), new_tname);
-
     if (status)
     {
-        abcdk_trace_output(LOG_INFO, "'%s'\n",abcdk_http_status_desc(status));
+        abcdk_asio_trace_output(stream_ctx_p->io_node, LOG_INFO, "'%s'\n",abcdk_http_status_desc(status));
     }
     else
     {
         user_agent_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"User-Agent",':');
         refer_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"Referer",':');
 
-        abcdk_trace_output(LOG_INFO, "'%s' '%s' '%s' '%s' '%s'\n",
-                           node_ctx_p->remote_addr, 
-                           stream_ctx_p->method->pstrs[0], 
-                           stream_ctx_p->script->pstrs[0],
-                           (refer_p?refer_p:"-"), 
-                           (user_agent_p?user_agent_p:"-"));
+        abcdk_asio_trace_output(stream_ctx_p->io_node, LOG_INFO, "'%s' '%s' '%s' '%s' '%s'\n",
+                                node_ctx_p->remote_addr,
+                                stream_ctx_p->method->pstrs[0],
+                                stream_ctx_p->script->pstrs[0],
+                                (refer_p ? refer_p : "-"),
+                                (user_agent_p ? user_agent_p : "-"));
     }
 
-    pthread_setname_np(pthread_self(), old_tname);
 }
 
 
@@ -334,6 +317,12 @@ static int _abcdk_httpd_h2_data_chunk_recv_cb(nghttp2_session *session, uint8_t 
     abcdk_object_t *stream_p;
     size_t remain = 0;
     int chk;
+
+    /*更新流量控制窗口。*/
+    nghttp2_session_consume(session, stream_id, len);
+
+    /*如果没有设置自动更新窗口，需要手动提交 WINDOW_UPDATE 帧。*/
+    nghttp2_submit_window_update(session, NGHTTP2_FLAG_NONE, stream_id, len);
 
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, 0);
     if (!stream_p)
@@ -531,6 +520,7 @@ static ssize_t _abcdk_httpd_h2_response_read_cb(nghttp2_session *session, int32_
 
     rlen = abcdk_stream_read(stream_ctx_p->h2_out,buf,length);
 
+    /*当缓存中无数据，并且应用层已经应答结束后，标记已结束。*/
     if(rlen <= 0 && stream_ctx_p->rsp_end)
         *data_flags |= NGHTTP2_DATA_FLAG_EOF;
 
@@ -563,7 +553,7 @@ static void _abcdk_httpd_process_1(abcdk_object_t *stream)
 
         stream_ctx_p->host = abcdk_object_copyfrom(line_p,strlen(line_p));
 
-        if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
+        if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
             stream_ctx_p->scheme = abcdk_object_copyfrom("https", 5);
         else
             stream_ctx_p->scheme = abcdk_object_copyfrom("http", 4);
@@ -691,66 +681,28 @@ static void _abcdk_httpd_output_1(abcdk_asio_node_t *node)
         node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque,stream_p);
 }
 
+
 static void _abcdk_httpd_output_2(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
+    int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
 #ifdef NGHTTP2_H
+
     /*把缓存数据串行化，并通过回调发送出去。*/
-    nghttp2_session_send(node_ctx_p->h2_handle);
+    chk = nghttp2_session_send(node_ctx_p->h2_handle);
+    if(chk < 0)
+        return;
+
+    /*只要不出错，就继监听。*/ 
+    abcdk_asio_send_watch(node);
+
+    /*Fix me: 上面的写法有问题。当发生流量控制事件，并且网络空闲时，此函数会被频繁的调用，造成CPU使用率异常升高。*/
+    
+
 #endif //NGHTTP2_H
-}
-
-#ifdef HEADER_SSL_H
-#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-static int _abcdk_httpd_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
-                                              const unsigned char *in, unsigned int inlen, void *arg)
-{
-    unsigned char *srv;
-    unsigned int srvlen;
-    size_t alpn_flag;
-
-    alpn_flag = (size_t)arg;
-
-    /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
-    static unsigned char srv1[] = {"\x08http/1.1"};
-    static unsigned char srv2[] = {"\x02h2\x08http/1.1"};
-
-    if (alpn_flag == 2)
-    {
-        srv = srv2;
-        srvlen = sizeof(srv2) - 1;
-    }
-    else
-    {
-        srv = srv1;
-        srvlen = sizeof(srv1) - 1;
-    }
-
-    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
-    if (SSL_select_next_proto((unsigned char **)out, outlen, in, inlen, srv, srvlen) != OPENSSL_NPN_NEGOTIATED)
-    {
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    return SSL_TLSEXT_ERR_OK;
-}
-#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
-#endif // HEADER_SSL_H
-
-static void _abcdk_httpd_set_alpn(abcdk_asio_node_t *node, size_t alpn_flag)
-{
-    abcdk_httpd_node_t *node_ctx_p;
-
-    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
-
-#ifdef HEADER_SSL_H
-#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-    SSL_CTX_set_alpn_select_cb(node_ctx_p->ssl_ctx, _abcdk_httpd_alpn_select_cb, (void *)alpn_flag);
-#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
-#endif // HEADER_SSL_H
 }
 
 static void _abcdk_httpd_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
@@ -772,13 +724,6 @@ static void _abcdk_httpd_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t 
     node_ctx_p->protocol = 0;
     node_ctx_p->ssl_scheme = listen_ctx_p->cfg.ssl_scheme;
 
-    if(node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
-    {
-        chk = abcdk_asio_upgrade2openssl(node_p,listen_ctx_p->ssl_ctx,listen_ctx_p->cfg.check_cert);
-        if(chk != 0)
-            abcdk_asio_unref(&node_p);
-    }
-
     /*准备完毕，返回。*/
     *node = node_p;
 }
@@ -798,35 +743,35 @@ static void _abcdk_httpd_event_accept(abcdk_asio_node_t *node, int *result)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_httpd_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_asio_trace_output(node,LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
     SSL *ssl_p;
-    char ptl_name[256] = {0};
+    char proto[256] = {0};
     int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
-    if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
+    if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
     {
 #ifdef HEADER_SSL_H
-        ssl_p = abcdk_asio_openssl_ctx(node);
+        ssl_p = abcdk_asio_get_openssl_ssl(node);
 
-        chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, ptl_name);
+        chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, proto);
         if (chk == 0 && node_ctx_p->protocol == 0)
         {
-            if (abcdk_strncmp("http", ptl_name, 4, 0) == 0)
+            if (abcdk_strncmp("http", proto, 4, 0) == 0)
                 node_ctx_p->protocol = 1;
-            else if (abcdk_strcmp("h2", ptl_name, 0) == 0)
+            else if (abcdk_strcmp("h2", proto, 0) == 0)
                 node_ctx_p->protocol = 2;
         }
 #endif // HEADER_SSL_H
     }
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立(SSL-scheme=%d)。",node_ctx_p->local_addr,node_ctx_p->remote_addr,node_ctx_p->ssl_scheme);
+    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
     
     /*设置超时。*/
     abcdk_asio_set_timeout(node, 180 * 1000);
@@ -851,10 +796,11 @@ static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
         nghttp2_settings_entry iv[] = {
             {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 100},
             {NGHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, 100},
-            {NGHTTP2_SETTINGS_MAX_FRAME_SIZE, 65535}};
+            {NGHTTP2_SETTINGS_MAX_FRAME_SIZE, 65535},
+            {NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, 16 * 1024 * 1024}};
 
         /*必须要设置。*/
-        nghttp2_submit_settings(node_ctx_p->h2_handle, NGHTTP2_FLAG_NONE, iv, 3);
+        nghttp2_submit_settings(node_ctx_p->h2_handle, NGHTTP2_FLAG_NONE, iv, 4);
 #endif // NGHTTP2_H
     }
 
@@ -885,32 +831,17 @@ static void _abcdk_httpd_event_output(abcdk_asio_node_t *node)
 static void _abcdk_httpd_event_close(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
-    SSL *ssl_p;
     int chk;
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        abcdk_asio_trace_output(node,LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    if (node_ctx_p->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
-    {
-#ifdef HEADER_SSL_H
-        ssl_p = abcdk_asio_openssl_ctx(node);
-        if (ssl_p && node_ctx_p->cfg.check_cert)
-        {
-            /*获取验证结果。*/
-            chk = SSL_get_verify_result(ssl_p);
-            if (chk != X509_V_OK)
-                abcdk_trace_output(LOG_INFO, "验证远端(%s)的证书失败(openssl_errno=%d)。", node_ctx_p->remote_addr, chk);
-        }
-#endif // HEADER_SSL_H
-    }
-
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
     abcdk_map_destroy(&node_ctx_p->stream_map);
@@ -1085,7 +1016,7 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     abcdk_asio_node_t *node_p;
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
-    abcdk_asio_callback_t cb = {0};
+    abcdk_asio_config_t asio_cfg = {0};
     int chk;
 
     assert(session != NULL && addr != NULL && cfg != NULL);
@@ -1099,32 +1030,30 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p->flag = 0;
     node_ctx_p->protocol = 0;
 
-    if (cfg->ssl_scheme == ABCDK_HTTPD_SSL_SCHEME_OPENSSL)
+    asio_cfg.ssl_scheme = cfg->ssl_scheme;
+    asio_cfg.openssl_ca_file = cfg->openssl_ca_file;
+    asio_cfg.openssl_ca_path = cfg->openssl_ca_path;
+    asio_cfg.openssl_cert_file = cfg->openssl_cert_file;
+    asio_cfg.openssl_key_file = cfg->openssl_key_file;
+    asio_cfg.openssl_check_cert = cfg->openssl_check_cert;
+
+    if (cfg->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
     {
-#ifdef HEADER_SSL_H
-        node_ctx_p->ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(1, (cfg->check_cert ? cfg->ca_file : NULL), (cfg->check_cert ? cfg->ca_path : NULL),
-                                                               cfg->cert_file, cfg->key_file, NULL);
-#endif // HEADER_SSL_H
-        if (!node_ctx_p->ssl_ctx)
-        {
-            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL安全环境。");
-            return -2;
-        }
-        else
-        {
+        /*set default HTTP1.1*/
+        asio_cfg.openssl_next_proto = "\x08http/1.1";
+
 #ifdef NGHTTP2_H
-            _abcdk_httpd_set_alpn(node_p, cfg->enable_h2 ? 2 : 1);
-#else
-            _abcdk_httpd_set_alpn(node_p, 1);
+        if (cfg->enable_h2)
+            asio_cfg.openssl_next_proto = "\x02h2\x08http/1.1";
 #endif // NGHTTP2_H
-        }
+
     }
 
-    cb.prepare_cb = _abcdk_httpd_prepare_cb;
-    cb.event_cb = _abcdk_httpd_event_cb;
-    cb.request_cb = _abcdk_httpd_request_cb;
+    asio_cfg.prepare_cb = _abcdk_httpd_prepare_cb;
+    asio_cfg.event_cb = _abcdk_httpd_event_cb;
+    asio_cfg.request_cb = _abcdk_httpd_request_cb;
 
-    chk = abcdk_asio_listen(node_p,addr,&cb);
+    chk = abcdk_asio_listen(node_p,addr,&asio_cfg);
     if(chk == 0)
         return 0;
 

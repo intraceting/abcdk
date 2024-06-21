@@ -92,7 +92,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
     int count = abcdk_option_get_int(args,"--count",0,10000);
     int rand_rsp = abcdk_option_get_int(args,"--rand-rsp",0,1);
 
-//#pragma omp parallel for num_threads(parallel)
+#pragma omp parallel for num_threads(parallel)
     for (int i = 0; i < parallel; i++)
     {
         abcdk_srpc_session_t *client_p = abcdk_srpc_alloc(srpc_ctx);

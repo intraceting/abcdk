@@ -43,10 +43,10 @@ struct _abcdk_easyssl
     /*盐长度。*/
     size_t salt_len;
 
-    /**发送句柄。*/
+    /** 发送句柄。*/
     int send_fd;
 
-    /**接收句柄。*/
+    /** 接收句柄。*/
     int recv_fd;
     
 };//abcdk_easyssl_t;
@@ -91,8 +91,8 @@ int _abcdk_easyssl_init_enigma(abcdk_easyssl_t *ctx,const uint8_t *key,size_t si
         recv_seed[i % 4] |= (uint64_t)hashcode[i];
     }
 
-    ctx->en_send_ctx = abcdk_enigma_create3(send_seed,4,256);
-    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed,4,256);
+    ctx->en_send_ctx = abcdk_enigma_create3(send_seed,2,256);
+    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed,2,256);
 
     if(!ctx->en_send_ctx || !ctx->en_recv_ctx)
         return -2;
@@ -169,47 +169,53 @@ abcdk_easyssl_t *abcdk_easyssl_create_from_file(const char *file,uint32_t scheme
     return ctx;
 }
 
-int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int writer)
+int abcdk_easyssl_set_fd(abcdk_easyssl_t *ctx,int fd,int flag)
 {
-    int old;
-
     assert(ctx != NULL && fd >= 0);
 
-    if(writer)
+    if(flag == 0)
     {
-        old = ctx->send_fd;
-        ctx->send_fd = fd;
+        ctx->send_fd = ctx->recv_fd = fd;
+    }
+    else if(flag == 1)
+    {
+        ctx->recv_fd = fd;
+    }
+    else if(flag == 2)
+    {
+        ctx->recv_fd = fd;
     }
     else
     {
-        old = ctx->recv_fd;
-        ctx->recv_fd = fd;
+        return -1;
     }
 
-    return old;
+    return 0;
 }
 
-int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int writer)
+int abcdk_easyssl_get_fd(abcdk_easyssl_t *ctx,int flag)
 {
     int old;
 
     assert(ctx != NULL);
 
-    if(writer)
-        old = ctx->send_fd;
-    else 
-        old = ctx->recv_fd;
+    if(flag == 0)
+    {
+        if(ctx->recv_fd == ctx->send_fd)
+            return ctx->send_fd;
+        else 
+            return -1;
+    }
+    else if(flag == 1)
+    {
+        return ctx->recv_fd;
+    }
+    else if(flag == 2)
+    {
+        return ctx->send_fd;
+    }
 
-    return old;
-}
-
-int abcdk_easyssl_do_handshake(abcdk_easyssl_t *ctx,int server)
-{
-    assert(ctx != NULL);
-
-    ABCDK_ASSERT(ctx->send_fd >= 0 && ctx->recv_fd >= 0,"未关联句柄，无法完成握手。");
-
-    return 1;
+    return -1;
 }
 
 ssize_t _abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size)
@@ -375,3 +381,91 @@ NEXT_LOOP:
 
     goto NEXT_LOOP;
 }
+
+
+
+#ifdef HEADER_BIO_H
+
+static int _abcdk_easyssl_BIO_read(BIO *bio, char *buf, int len)
+{
+    abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
+    int rlen = 0;
+
+    assert(easyssl_p != NULL && buf != NULL && len > 0);
+
+    rlen = abcdk_easyssl_read(easyssl_p,buf,len);
+
+    return rlen;
+}
+
+static int _abcdk_easyssl_BIO_write(BIO *bio, const char *buf, int len) 
+{
+   abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
+   int slen = 0;
+
+    assert(easyssl_p != NULL && buf != NULL && len > 0);
+
+    slen = abcdk_easyssl_write(easyssl_p,buf,len);
+
+    return slen;
+}
+
+static long _abcdk_easyssl_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr) 
+{
+    abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
+    long chk = 1;
+
+    assert(easyssl_p != NULL);
+
+    switch (cmd) {
+        case BIO_CTRL_FLUSH:
+            chk = 1;
+            break;
+        case BIO_C_SET_FD:
+            {
+                int fd = ABCDK_PTR2I32(ptr,0);
+                if(fd >= 0)
+                {
+                    abcdk_easyssl_set_fd(easyssl_p,fd,0);
+                    chk = 1;
+                }
+                else
+                {
+                    chk = 0;
+                }
+            }
+            break;
+        case BIO_C_GET_FD:
+            {
+                ABCDK_PTR2I32(ptr,0) = abcdk_easyssl_get_fd(easyssl_p,0);
+                chk = 1;
+            }
+            break;
+        default:
+            chk = 0;
+            break;
+    }
+    return chk;
+}
+
+const BIO_METHOD *abcdk_easyssl_BIO(void)
+{
+    static volatile int init_status = 0;
+    static BIO_METHOD *ctx = NULL;
+
+    if(!abcdk_atomic_compare_and_swap(&init_status,0, 1))
+        return ctx;
+    
+    ctx = BIO_meth_new(BIO_TYPE_SOURCE_SINK, SOLUTION_NAME);
+    if(!ctx)
+        return NULL;
+
+    BIO_meth_set_write(ctx, _abcdk_easyssl_BIO_write);
+    BIO_meth_set_read(ctx, _abcdk_easyssl_BIO_read);
+    BIO_meth_set_ctrl(ctx, _abcdk_easyssl_BIO_ctrl);
+
+    
+    return ctx;
+}
+
+#endif //HEADER_BIO_H

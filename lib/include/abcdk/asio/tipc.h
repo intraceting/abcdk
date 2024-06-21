@@ -33,9 +33,6 @@ typedef struct _abcdk_tipc_config
 
     /*安全方案*/
     int ssl_scheme;
-#define ABCDK_TIPC_SSL_SCHEME_RAW       0
-#define ABCDK_TIPC_SSL_SCHEME_OPENSSL   1
-#define ABCDK_TIPC_SSL_SCHEME_EASYSSL   2
 
     /*CA证书。*/
     const char *openssl_ca_file;

@@ -502,10 +502,10 @@ int abcdk_test_http(abcdk_option_t *args)
     abcdk_httpd_t *ctx = abcdk_httpd_create(1000,-1);
 
     cfg.opaque = ctx;
-    cfg.ca_file = abcdk_option_get(args,"--ca-file",0,NULL);
-    cfg.ca_path = abcdk_option_get(args,"--ca-path",0,NULL);
-    cfg.cert_file = abcdk_option_get(args,"--cert-file",0,NULL);
-    cfg.key_file = abcdk_option_get(args,"--key-file",0,NULL);
+    cfg.openssl_ca_file = abcdk_option_get(args,"--ca-file",0,NULL);
+    cfg.openssl_ca_path = abcdk_option_get(args,"--ca-path",0,NULL);
+    cfg.openssl_cert_file = abcdk_option_get(args,"--cert-file",0,NULL);
+    cfg.openssl_key_file = abcdk_option_get(args,"--key-file",0,NULL);
     cfg.req_max_size = abcdk_option_get_int(args,"--req-max-size",0,4*1024*1024);
     cfg.req_tmp_path = abcdk_option_get(args,"--req-tmp-path",0,NULL);
     cfg.enable_h2 = abcdk_option_get_int(args,"--enable-h2",0,0);
