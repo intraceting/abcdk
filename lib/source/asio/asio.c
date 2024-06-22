@@ -59,7 +59,6 @@ struct _abcdk_asio_node
 #define ABCDK_ASIO_STATUS_STABLE        1
 #define ABCDK_ASIO_STATUS_SYNC          2
 #define ABCDK_ASIO_STATUS_OPENSSL_SYNC  3
-#define ABCDK_ASIO_STATUS_EASYSSL_SYNC  4
 
     /** 本机地址。*/
     abcdk_sockaddr_t local;
@@ -553,13 +552,116 @@ static void _abcdk_asio_openssl_dump_errmsg(abcdk_asio_node_t *node, unsigned lo
 
 #endif //HEADER_SSL_H
 
-void _abcdk_asio_handshake(abcdk_asio_node_t *node)
+static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
 {
     socklen_t sock_len = 0;
     int sock_flag = 1;
+    struct timeval tv;
+
+    /*获取远程地址。*/
+    if (!node->remote.family)
+    {
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getpeername(node->fd, &node->remote.addr, &sock_len);
+    }
+
+    /*获取本机地址。*/
+    if (!node->local.family)
+    {
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getsockname(node->fd, &node->local.addr, &sock_len);
+    }
+
+    /*去掉默认的发和收超时设置。*/
+    tv.tv_sec = tv.tv_usec = 0;
+    abcdk_sockopt_option_timeout(node->fd, SO_RCVTIMEO, &tv, 2);
+    abcdk_sockopt_option_timeout(node->fd, SO_SNDTIMEO, &tv, 2);
+
+    /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
+
+    /*开启keepalive属性*/
+    sock_flag = 1;
+    abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_KEEPALIVE, &sock_flag, 2);
+
+    /*连接在60秒内没有任何数据往来，则进行探测。*/
+    sock_flag = 60;
+    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPIDLE, &sock_flag, 2);
+
+    /*探测时发包的时间间隔为5秒。*/
+    sock_flag = 5;
+    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPINTVL, &sock_flag, 2);
+
+    /*探测尝试的次数.如果第一次探测包就收到响应，则后两次的不再发。*/
+    sock_flag = 3;
+    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPCNT, &sock_flag, 2);
+
+    /*关闭延迟发送。*/
+    sock_flag = 1;
+    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
+}
+
+static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
+{
+    if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
+    {
+        return 0;
+    }
+    else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+    {
+#ifdef HEADER_SSL_H 
+        if(!node->openssl_ssl)
+            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_ASIO_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
+        else 
+            return 0;
+
+        if(!node->openssl_ssl)
+        {
+            abcdk_asio_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
+            return -1;
+        }
+
+        SSL_set_fd(node->openssl_ssl, node->fd);
+
+        if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
+            SSL_set_accept_state(node->openssl_ssl);
+        else if (node->flag == ABCDK_ASIO_FLAG_CLIENT)
+            SSL_set_connect_state(node->openssl_ssl);
+        else
+            return -22;
+
+#ifdef SSL_OP_NO_RENEGOTIATION
+        /*禁止重新协商。*/
+        SSL_set_options(node->openssl_ssl, SSL_OP_NO_RENEGOTIATION);
+#endif //SSL_OP_NO_RENEGOTIATION
+#endif //HEADER_SSL_H
+    }
+    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
+    {
+        if(!node->easyssl_ssl)
+            node->easyssl_ssl = abcdk_easyssl_create_from_file(node->cfg.easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.easyssl_salt_size);
+        else
+            return 0;
+            
+        if (!node->easyssl_ssl)
+        {
+            abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
+            return -1;
+        }
+
+        abcdk_easyssl_set_fd(node->easyssl_ssl, node->fd,0);
+    }
+    else
+    {
+        return -22;
+    }
+    
+    return 0;
+}
+
+void _abcdk_asio_handshake(abcdk_asio_node_t *node)
+{
     int ssl_chk;
     int ssl_err;
-    struct timeval tv;
     int chk;
 
     if (node->status == ABCDK_ASIO_STATUS_SYNC)
@@ -567,10 +669,15 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
         chk = abcdk_poll(node->fd, 0x02, 0);
         if (chk > 0)
         {
+            /*初始化SSL方案。*/
+            chk = _abcdk_asio_handshake_ssl_init(node);
+            if(chk != 0)
+                goto final_error;
+
             if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
                 node->status = ABCDK_ASIO_STATUS_OPENSSL_SYNC;
             else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
-                node->status = ABCDK_ASIO_STATUS_EASYSSL_SYNC;
+                node->status = ABCDK_ASIO_STATUS_STABLE;
             else 
                 node->status = ABCDK_ASIO_STATUS_STABLE;
         }
@@ -583,77 +690,13 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
                 goto final;
         }
 
-        /*获取远程地址。*/
-        if (!node->remote.family)
-        {
-            sock_len = sizeof(abcdk_sockaddr_t);
-            getpeername(node->fd, &node->remote.addr, &sock_len);
-        }
-
-        /*获取本机地址。*/
-        if (!node->local.family)
-        {
-            sock_len = sizeof(abcdk_sockaddr_t);
-            getsockname(node->fd, &node->local.addr, &sock_len);
-        }
-
-        /*去掉默认的发和收超时设置。*/
-        tv.tv_sec = tv.tv_usec = 0;
-        abcdk_sockopt_option_timeout(node->fd,SO_RCVTIMEO,&tv,2);
-        abcdk_sockopt_option_timeout(node->fd,SO_SNDTIMEO,&tv,2);
-
-        /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
-
-        /*开启keepalive属性*/
-        sock_flag = 1;
-        abcdk_sockopt_option_int(node->fd,SOL_SOCKET, SO_KEEPALIVE,&sock_flag,2);
-
-        /*连接在60秒内没有任何数据往来，则进行探测。*/
-        sock_flag = 60;
-        abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPIDLE,&sock_flag,2);
-
-        /*探测时发包的时间间隔为5秒。*/
-        sock_flag = 5;
-        abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPINTVL,&sock_flag,2);
-
-        /*探测尝试的次数.如果第一次探测包就收到响应，则后两次的不再发。*/
-        sock_flag = 3;
-        abcdk_sockopt_option_int(node->fd,IPPROTO_TCP, TCP_KEEPCNT,&sock_flag,2);
-
-        /*关闭延迟发送。*/
-        sock_flag = 1;
-        abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY,&sock_flag, 2);
+        /*获取连接信息并设置默认值。*/
+        _abcdk_asio_handshake_sync_after(node);
     }
-
-#ifdef HEADER_SSL_H      
+     
     if (node->status == ABCDK_ASIO_STATUS_OPENSSL_SYNC)
     {
-        if(!node->openssl_ssl)
-            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->from_listen->openssl_ctx);//客户端也走这里。要改一下。
-
-        if(!node->openssl_ssl)
-        {
-            abcdk_asio_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
-            goto final_error;
-        }
-
-        if (SSL_get_fd(node->openssl_ssl) != node->fd)
-        {
-            SSL_set_fd(node->openssl_ssl, node->fd);
-            
-            if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
-                SSL_set_accept_state(node->openssl_ssl);
-            else if (node->flag == ABCDK_ASIO_FLAG_CLIENT)
-                SSL_set_connect_state(node->openssl_ssl);
-            else
-                goto final_error;
-
-#ifdef SSL_OP_NO_RENEGOTIATION
-            /*禁止重新协商。*/
-            SSL_set_options(node->openssl_ssl, SSL_OP_NO_RENEGOTIATION);
-#endif
-        }
-
+#ifdef HEADER_SSL_H 
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
         if (ssl_chk == 1)
         {   
@@ -689,22 +732,7 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
             /*Error .*/
             goto final_error;
         }
-    }
-    else
 #endif //HEADER_SSL_H
-    if (node->status == ABCDK_ASIO_STATUS_EASYSSL_SYNC)
-    {
-        if(!node->easyssl_ssl)
-            node->easyssl_ssl = abcdk_easyssl_create_from_file(node->cfg.easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.easyssl_salt_size);
-
-        if(!node->easyssl_ssl)
-        {
-            abcdk_asio_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
-            goto final_error;
-        }
-
-        abcdk_easyssl_set_fd(node->easyssl_ssl, node->fd,0);
-        node->status = ABCDK_ASIO_STATUS_STABLE;
     }
 
 final:
