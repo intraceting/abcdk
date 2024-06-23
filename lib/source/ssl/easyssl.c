@@ -391,9 +391,15 @@ static int _abcdk_easyssl_BIO_read(BIO *bio, char *buf, int len)
     abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
     int rlen = 0;
 
-    assert(easyssl_p != NULL && buf != NULL && len > 0);
+    if(!(easyssl_p != NULL && buf != NULL && len > 0))
+    {
+        ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_READ, BIO_R_NULL_PARAMETER, __FUNCTION__, __LINE__);
+        return -1;
+    }
 
     rlen = abcdk_easyssl_read(easyssl_p,buf,len);
+    if(rlen < 0)
+        BIO_set_retry_read(bio); /*设置重试标志，非常重要。*/
 
     return rlen;
 }
@@ -403,9 +409,15 @@ static int _abcdk_easyssl_BIO_write(BIO *bio, const char *buf, int len)
     abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
     int slen = 0;
 
-    assert(easyssl_p != NULL && buf != NULL && len > 0);
+    if(!(easyssl_p != NULL && buf != NULL && len > 0))
+    {
+        ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_WRITE, BIO_R_NULL_PARAMETER, __FUNCTION__, __LINE__);
+        return -1;
+    }
 
     slen = abcdk_easyssl_write(easyssl_p, buf, len);
+    if(slen < 0)
+        BIO_set_retry_write(bio); /*设置重试标志，非常重要。*/
 
     return slen;
 }
@@ -440,12 +452,20 @@ static long _abcdk_easyssl_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
             break;
         default:
             {
-                /*其它一律返回成功。*/
                 chk = 1;
             }
             break;
     }
     return chk;
+}
+
+static int _abcdk_easyssl_BIO_create(BIO *bio) 
+{
+    bio->init = 1;
+    bio->num = 0;
+    bio->ptr = NULL;
+    bio->flags = 0;
+    return 1;
 }
 
 static int _abcdk_easyssl_BIO_destroy(BIO *bio)
@@ -464,6 +484,7 @@ int _abcdk_easyssl_BIO_METHOD_init(void *opaque)
     ctx->bread = _abcdk_easyssl_BIO_read;
     ctx->bwrite = _abcdk_easyssl_BIO_write;
     ctx->ctrl = _abcdk_easyssl_BIO_ctrl;
+    ctx->create = _abcdk_easyssl_BIO_create;
     ctx->destroy = _abcdk_easyssl_BIO_destroy;
 
     return 0;
