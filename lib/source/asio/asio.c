@@ -58,7 +58,7 @@ struct _abcdk_asio_node
     volatile int status;
 #define ABCDK_ASIO_STATUS_STABLE        1
 #define ABCDK_ASIO_STATUS_SYNC          2
-#define ABCDK_ASIO_STATUS_OPENSSL_SYNC  3
+#define ABCDK_ASIO_STATUS_SYNC_OPENSSL  3
 
     /** 本机地址。*/
     abcdk_sockaddr_t local;
@@ -128,10 +128,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
 
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->openssl_ssl);
-
-    /*由ssl释放，这里清除野指针即可。*/
-    node_p->openssl_bio = NULL;
-
+    abcdk_easyssl2BIO_destroy(&node_p->openssl_bio);
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif //HEADER_SSL_H
 
@@ -314,7 +311,7 @@ ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
 
     while (rsize_all < size)
     {
-        if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+        if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL)
             rsize = SSL_read(node->openssl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
             rsize = abcdk_easyssl_read(node->easyssl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
@@ -365,7 +362,7 @@ ssize_t abcdk_asio_send(abcdk_asio_node_t *node, void *buf, size_t size)
 
     while (wsize_all < size)
     {
-        if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+        if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL)
             wsize = SSL_write(node->openssl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
             wsize = abcdk_easyssl_write(node->easyssl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
@@ -456,7 +453,8 @@ void _abcdk_asio_accept(abcdk_asio_node_t *listen)
 
     /*复制通讯环境指针。*/
     node->ctx = listen->ctx;
-    /*复制监听环境配置。*/
+
+    /*复制监听环境的配置。*/
     node->cfg = listen->cfg;
 
     /*每次取出一个句柄。*/
@@ -608,11 +606,11 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
     }
     else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
     {
-#ifdef HEADER_SSL_H 
+#ifdef HEADER_SSL_H
         if(!node->openssl_ssl)
             node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_ASIO_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
         else 
-            return 0;
+            return -16;
 
         if(!node->openssl_ssl)
         {
@@ -629,10 +627,6 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
         else
             return -22;
 
-#ifdef SSL_OP_NO_RENEGOTIATION
-        /*禁止重新协商。*/
-        SSL_set_options(node->openssl_ssl, SSL_OP_NO_RENEGOTIATION);
-#endif //SSL_OP_NO_RENEGOTIATION
 #endif //HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
@@ -640,7 +634,7 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
         if(!node->easyssl_ssl)
             node->easyssl_ssl = abcdk_easyssl_create_from_file(node->cfg.easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.easyssl_salt_size);
         else
-            return 0;
+            return -16;
             
         if (!node->easyssl_ssl)
         {
@@ -649,6 +643,45 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
         }
 
         abcdk_easyssl_set_fd(node->easyssl_ssl, node->fd,0);
+    }
+    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL)
+    {
+#ifdef HEADER_SSL_H
+        if (!node->openssl_bio)
+            node->openssl_bio = abcdk_easyssl2BIO_create_from_file(node->cfg.easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, node->cfg.easyssl_salt_size);
+        else
+            return -16;
+
+        if (!node->openssl_bio)
+        {
+            abcdk_asio_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            return -1;
+        }
+
+        if(!node->openssl_ssl)
+            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_ASIO_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
+        else 
+            return -16;
+
+        if(!node->openssl_ssl)
+        {
+            abcdk_asio_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
+            return -1;
+        }
+
+        BIO_set_fd(node->openssl_bio,node->fd,0);
+        SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
+
+        /*托管理给SSL，这里要清理野指针。*/
+        node->openssl_bio = NULL;
+
+        if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
+            SSL_set_accept_state(node->openssl_ssl);
+        else if (node->flag == ABCDK_ASIO_FLAG_CLIENT)
+            SSL_set_connect_state(node->openssl_ssl);
+        else
+            return -22;
+#endif //HEADER_SSL_H
     }
     else
     {
@@ -674,8 +707,8 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
             if(chk != 0)
                 goto final_error;
 
-            if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
-                node->status = ABCDK_ASIO_STATUS_OPENSSL_SYNC;
+            if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL)
+                node->status = ABCDK_ASIO_STATUS_SYNC_OPENSSL;
             else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
                 node->status = ABCDK_ASIO_STATUS_STABLE;
             else 
@@ -694,7 +727,7 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
         _abcdk_asio_handshake_sync_after(node);
     }
      
-    if (node->status == ABCDK_ASIO_STATUS_OPENSSL_SYNC)
+    if (node->status == ABCDK_ASIO_STATUS_SYNC_OPENSSL)
     {
 #ifdef HEADER_SSL_H 
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
@@ -953,28 +986,6 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
 
         /*设置下层协议。*/
         _abcdk_asio_openssl_set_alpn(node);
-
-        /*仅非监听模式需要创建实现链路。*/
-        if(!listen_flag)
-        {
-            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->openssl_ctx);
-            if(!node->openssl_ssl)
-                return -3;
-
-            // if (!node->easyssl_ssl)
-            //     node->easyssl_ssl = abcdk_easyssl_create_from_file(node->cfg.easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, node->cfg.easyssl_salt_size);
-
-            // if (node->easyssl_ssl)
-            // {
-            //     node->openssl_bio = BIO_new(abcdk_easyssl_BIO());
-            //     if (node->openssl_bio)
-            //     {
-            //         BIO_set_data(node->openssl_bio, node->easyssl_ssl);
-            //         SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
-            //     }
-            // }
-        }
-        
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
     {
@@ -985,10 +996,34 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
             return -2;
         }
 
-        /*监听模式仅用于验证。*/
-        if(listen_flag)
-           abcdk_easyssl_destroy(&node->easyssl_ssl);
-        
+        /*仅用于验证。*/
+        abcdk_easyssl_destroy(&node->easyssl_ssl);
+    }
+    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL)
+    {
+        node->openssl_bio = abcdk_easyssl2BIO_create_from_file(node->cfg.easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.easyssl_salt_size);
+        if (!node->openssl_bio)
+        {
+            abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
+            return -2;
+        }
+
+        /*仅用于验证。*/
+        abcdk_easyssl2BIO_destroy(&node->openssl_bio);
+
+#ifdef HEADER_SSL_H
+        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag,(node->cfg.openssl_check_cert ? node->cfg.openssl_ca_file : NULL),
+                                                                   (node->cfg.openssl_check_cert ? node->cfg.openssl_ca_path : NULL),
+                                                                   node->cfg.openssl_cert_file, node->cfg.openssl_key_file, NULL);
+#endif // HEADER_SSL_H
+        if (!node->openssl_ctx)
+        {
+            abcdk_asio_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
+            return -2;
+        }
+
+        /*设置下层协议。*/
+        _abcdk_asio_openssl_set_alpn(node);
     }
 
     return 0;

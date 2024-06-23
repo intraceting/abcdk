@@ -398,14 +398,14 @@ static int _abcdk_easyssl_BIO_read(BIO *bio, char *buf, int len)
     return rlen;
 }
 
-static int _abcdk_easyssl_BIO_write(BIO *bio, const char *buf, int len) 
+static int _abcdk_easyssl_BIO_write(BIO *bio, const char *buf, int len)
 {
-   abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
-   int slen = 0;
+    abcdk_easyssl_t *easyssl_p = (abcdk_easyssl_t *)BIO_get_data(bio);
+    int slen = 0;
 
     assert(easyssl_p != NULL && buf != NULL && len > 0);
 
-    slen = abcdk_easyssl_write(easyssl_p,buf,len);
+    slen = abcdk_easyssl_write(easyssl_p, buf, len);
 
     return slen;
 }
@@ -418,9 +418,6 @@ static long _abcdk_easyssl_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
     assert(easyssl_p != NULL);
 
     switch (cmd) {
-        case BIO_CTRL_FLUSH:
-            chk = 1;
-            break;
         case BIO_C_SET_FD:
             {
                 int fd = ABCDK_PTR2I32(ptr,0);
@@ -442,7 +439,10 @@ static long _abcdk_easyssl_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
             }
             break;
         default:
-            chk = 0;
+            {
+                /*其它的一律返回成功。*/
+                chk = 1;
+            }
             break;
     }
     return chk;
@@ -469,7 +469,7 @@ int _abcdk_easyssl_BIO_METHOD_init(void *opaque)
     return 0;
 }
 
-static const BIO_METHOD *_abcdk_easyssl_BIO_METHOD(void)
+static BIO_METHOD *_abcdk_easyssl_BIO_METHOD(void)
 {
     static volatile int init_status = 0;
     static BIO_METHOD method = {0};
@@ -491,9 +491,43 @@ void BIO_set_data(BIO* bio,void *ptr)
 }
 #endif //OPENSSL_VERSION_NUMBER < 0x10100000L
 
-const BIO *abcdk_easyssl_BIO_from_file(const char *file,uint32_t scheme,size_t salt)
+void abcdk_easyssl2BIO_destroy(BIO **ctx)
 {
+    BIO *ctx_p;
 
+    if(!ctx || !*ctx)
+        return;
+    
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    BIO_free(ctx_p);
+}
+
+BIO *abcdk_easyssl2BIO_create_from_file(const char *file,uint32_t scheme,size_t salt)
+{
+    abcdk_easyssl_t *easy;
+    BIO *bio;
+
+    assert(file != NULL && salt <= 256);
+
+    easy = abcdk_easyssl_create_from_file(file,scheme,salt);
+    bio = BIO_new(_abcdk_easyssl_BIO_METHOD());
+
+    if(!easy || !bio)
+        goto ERR;
+
+    /*关联到一起。*/
+    BIO_set_data(bio,easy);
+
+    return bio;
+
+ERR:
+
+    BIO_free(bio);
+    abcdk_easyssl_destroy(&easy);
+
+    return NULL;
 }
 
 #endif //HEADER_BIO_H

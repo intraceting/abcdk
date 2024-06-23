@@ -35,6 +35,26 @@ typedef struct _abcdk_asio abcdk_asio_t;
 /**异步IO节点。 */
 typedef struct _abcdk_asio_node abcdk_asio_node_t;
 
+/**安全方案。*/
+typedef enum _abcdk_asio_ssl_scheme
+{
+    /**原始。*/
+    ABCDK_ASIO_SSL_SCHEME_RAW = 0,
+#define ABCDK_ASIO_SSL_SCHEME_RAW   ABCDK_ASIO_SSL_SCHEME_RAW
+
+    /**OPENSSL。*/
+    ABCDK_ASIO_SSL_SCHEME_OPENSSL = 1,
+#define ABCDK_ASIO_SSL_SCHEME_OPENSSL   ABCDK_ASIO_SSL_SCHEME_OPENSSL
+
+    /**EASYSSL。*/
+    ABCDK_ASIO_SSL_SCHEME_EASYSSL = 2,
+#define ABCDK_ASIO_SSL_SCHEME_EASYSSL   ABCDK_ASIO_SSL_SCHEME_EASYSSL
+
+    /*EASYSSL2OPENSSL。*/
+    ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL = 3
+#define ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL   ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL
+}abcdk_asio_ssl_scheme_t;
+
 /**通知事件。*/
 typedef enum _abcdk_asio_event
 {
@@ -99,10 +119,6 @@ typedef struct _abcdk_asio_config
 {
     /**安全方案*/
     int ssl_scheme;
-#define ABCDK_ASIO_SSL_SCHEME_RAW               0
-#define ABCDK_ASIO_SSL_SCHEME_OPENSSL           1
-#define ABCDK_ASIO_SSL_SCHEME_EASYSSL           2
-#define ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL   3
 
     /**CA证书。*/
     const char *openssl_ca_file;

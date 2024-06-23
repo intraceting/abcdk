@@ -100,9 +100,15 @@ void BIO_set_data(BIO* bio,void *ptr);
 #endif //OPENSSL_VERSION_NUMBER < 0x10100000L
 
 /**
+ * 销毁。
+ * 
+ */
+void abcdk_easyssl2BIO_destroy(BIO **ctx);
+
+/**
  * 创建兼容的BIO环境。
 */
-const BIO *abcdk_easyssl_BIO_from_file(const char *file,uint32_t scheme,size_t salt);
+BIO *abcdk_easyssl2BIO_create_from_file(const char *file,uint32_t scheme,size_t salt);
 
 #endif //HEADER_BIO_H
 

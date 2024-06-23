@@ -721,9 +721,19 @@ final:
 
 SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx)
 {
+    SSL *ssl;
     assert(ctx != NULL);
 
-    return SSL_new(ctx);
+    ssl = SSL_new(ctx);
+    if(!ssl)
+        return NULL;
+    
+#ifdef SSL_OP_NO_RENEGOTIATION
+    /*禁止重新协商。*/
+    SSL_set_options(ssl, SSL_OP_NO_RENEGOTIATION);
+#endif //SSL_OP_NO_RENEGOTIATION
+
+    return ssl;
 }
 
 int abcdk_openssl_ssl_handshake(int fd, SSL *ssl, int server, time_t timeout)
