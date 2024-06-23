@@ -223,18 +223,31 @@ uint64_t abcdk_asio_get_index(abcdk_asio_node_t *node)
     return node->index;
 }
 
-SSL_CTX *abcdk_asio_get_openssl_ctx(abcdk_asio_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->openssl_ctx;
-}
-
-SSL *abcdk_asio_get_openssl_ssl(abcdk_asio_node_t *node)
+SSL *abcdk_asio_openssl_get_handle(abcdk_asio_node_t *node)
 {
     assert(node != NULL);
 
     return node->openssl_ssl;
+}
+
+char *abcdk_asio_openssl_get_alpn_selected(abcdk_asio_node_t *node, char proto[255+1])
+{
+    int chk;
+
+    assert(node != NULL && proto != NULL);
+
+    if(!node->openssl_ssl)
+        return NULL;
+
+#ifdef HEADER_SSL_H
+
+    chk = abcdk_openssl_ssl_get_alpn_selected(node->openssl_ssl, proto);
+    if(chk != 0)
+        return proto;
+
+#endif // HEADER_SSL_H
+
+    return NULL;
 }
 
 void *abcdk_asio_get_userdata(abcdk_asio_node_t *node)
@@ -961,14 +974,15 @@ static void _abcdk_asio_openssl_set_alpn(abcdk_asio_node_t *node)
 
 #ifdef HEADER_SSL_H
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-    if(node->cfg.openssl_next_proto)
-        SSL_CTX_set_alpn_select_cb(abcdk_asio_get_openssl_ctx(node), _abcdk_asio_openssl_alpn_select_cb, (void *)node);
+    SSL_CTX_set_alpn_select_cb(node->openssl_ctx, _abcdk_asio_openssl_alpn_select_cb, (void *)node);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 }
 
 static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
 {
+    int ssl_chk;
+    int ssl_err;
     int chk;
 
     if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
@@ -983,9 +997,22 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
             abcdk_asio_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
             return -2;
         }
+            
+        /*设置密码套件。*/
+        if(node->cfg.openssl_cipher_list)
+        {
+            ssl_chk = SSL_CTX_set_cipher_list(node->openssl_ctx,node->cfg.openssl_cipher_list);
+            if(ssl_chk != 1)
+            {
+                ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
+                _abcdk_asio_openssl_dump_errmsg(node,ssl_err);
+                return -3;
+            }
+        } 
 
         /*设置下层协议。*/
-        _abcdk_asio_openssl_set_alpn(node);
+        if(node->cfg.openssl_next_proto)
+            _abcdk_asio_openssl_set_alpn(node);
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
     {

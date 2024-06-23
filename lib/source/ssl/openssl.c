@@ -539,8 +539,16 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
     if(!ctx)
         return NULL;
 
-    // SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
-    // SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
+#if OPENSSL_VERSION_NUMBER >= 0x1010100F
+#ifdef TLS1_2_VERSION
+    SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+#endif //TLS1_2_VERSION
+
+#ifdef TLS_MAX_VERSION
+    SSL_CTX_set_max_proto_version(ctx, TLS_MAX_VERSION);
+#endif //TLS_MAX_VERSION
+#endif //OPENSSL_VERSION_NUMBER >= 0x1010100F
+
 
     if (cafile || capath)
     {
@@ -579,7 +587,7 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
     /*禁用会话票据*/
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
 #endif //SSL_OP_NO_TICKET
-    
+
 
     return ctx;
 

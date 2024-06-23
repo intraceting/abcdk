@@ -749,7 +749,6 @@ static void _abcdk_httpd_event_accept(abcdk_asio_node_t *node, int *result)
 static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
 {
     abcdk_httpd_node_t *node_ctx_p;
-    SSL *ssl_p;
     char proto[256] = {0};
     int chk;
 
@@ -757,18 +756,14 @@ static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
 
     if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
     {
-#ifdef HEADER_SSL_H
-        ssl_p = abcdk_asio_get_openssl_ssl(node);
-
-        chk = abcdk_openssl_ssl_get_alpn_selected(ssl_p, proto);
-        if (chk == 0 && node_ctx_p->protocol == 0)
+        abcdk_asio_openssl_get_alpn_selected(node, proto);
+        if (node_ctx_p->protocol == 0)
         {
             if (abcdk_strncmp("http", proto, 4, 0) == 0)
                 node_ctx_p->protocol = 1;
             else if (abcdk_strcmp("h2", proto, 0) == 0)
                 node_ctx_p->protocol = 2;
         }
-#endif // HEADER_SSL_H
     }
 
     abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
@@ -1044,7 +1039,10 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
 
 #ifdef NGHTTP2_H
         if (cfg->enable_h2)
+        {
             asio_cfg.openssl_next_proto = "\x02h2\x08http/1.1";
+            asio_cfg.openssl_cipher_list = "AES128-GCM-SHA256:CHACHA20-POLY1305-SHA256";
+        }
 #endif // NGHTTP2_H
 
     }

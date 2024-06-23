@@ -144,6 +144,9 @@ typedef struct _abcdk_asio_config
     */
     const uint8_t *openssl_next_proto;
 
+    /**密码套件。*/
+    const char *openssl_cipher_list;
+
     /**共享密钥。*/
     const char *easyssl_key_file;
 
@@ -190,7 +193,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node);
 abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *src);
 
 /**
- * 申请节点。
+ * 申请。
  *
  * @param [in] userdata 用户数据长度。
  * @param [in] free_cb 用户数据销毁函数。
@@ -205,7 +208,7 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx, size_t userdata, void (*f
 void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,...);
 
 /**
- * 获取节点索引。
+ * 获取索引。
  * 
  * @note 进程内唯一。
  * 
@@ -213,19 +216,16 @@ void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,.
 uint64_t abcdk_asio_get_index(abcdk_asio_node_t *node);
 
 /**
- * 获取节点OPENSSL环境指针。
+ * 获取OPENSSL链路句柄。
  * 
- * @warning 应用层不能释放环境指针。
+ * @warning 应用层不能释放链路句柄。
 */
-SSL_CTX *abcdk_asio_get_openssl_ctx(abcdk_asio_node_t *node);
+SSL *abcdk_asio_openssl_get_handle(abcdk_asio_node_t *node);
 
 /**
- * 获取节点OPENSSL链路指针。
- * 
- * @warning 应用层不能释放链路指针。
-*/
-SSL *abcdk_asio_get_openssl_ssl(abcdk_asio_node_t *node);
-
+ * 获取OPENSSL应用层协议名称。
+ */
+char *abcdk_asio_openssl_get_alpn_selected(abcdk_asio_node_t *node, char proto[255+1]);
 
 /**
  * 用户环境指针。
