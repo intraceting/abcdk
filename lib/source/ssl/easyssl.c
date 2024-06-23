@@ -440,7 +440,7 @@ static long _abcdk_easyssl_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
             break;
         default:
             {
-                /*其它的一律返回成功。*/
+                /*其它一律返回成功。*/
                 chk = 1;
             }
             break;
