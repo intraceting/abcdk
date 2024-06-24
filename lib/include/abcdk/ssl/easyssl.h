@@ -13,7 +13,6 @@
 #include "abcdk/util/stream.h"
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/mmap.h"
-#include "abcdk/ssl/openssl.h"
 
 __BEGIN_DECLS
 
@@ -92,25 +91,6 @@ ssize_t abcdk_easyssl_write(abcdk_easyssl_t *ctx,const void *data,size_t size);
 */
 ssize_t abcdk_easyssl_read(abcdk_easyssl_t *ctx,void *data,size_t size);
 
-#ifdef HEADER_BIO_H
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-void *BIO_get_data(BIO* bio);
-void BIO_set_data(BIO* bio,void *ptr);
-#endif //OPENSSL_VERSION_NUMBER < 0x10100000L
-
-/**
- * 销毁。
- * 
- */
-void abcdk_easyssl2BIO_destroy(BIO **ctx);
-
-/**
- * 创建兼容的BIO环境。
-*/
-BIO *abcdk_easyssl2BIO_create_from_file(const char *file,uint32_t scheme,size_t salt);
-
-#endif //HEADER_BIO_H
 
 __END_DECLS
 

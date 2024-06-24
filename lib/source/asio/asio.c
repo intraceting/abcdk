@@ -128,7 +128,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
 
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->openssl_ssl);
-    abcdk_easyssl2BIO_destroy(&node_p->openssl_bio);
+    abcdk_BIO_destroy(&node_p->openssl_bio);
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif //HEADER_SSL_H
 
@@ -661,7 +661,7 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_easyssl2BIO_create_from_file(node->cfg.easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, node->cfg.easyssl_salt_size);
+            node->openssl_bio = abcdk_BIO_s_easyssl(node->cfg.easyssl_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, node->cfg.easyssl_salt_size);
         else
             return -16;
 
@@ -682,7 +682,7 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
             return -1;
         }
 
-        BIO_set_fd(node->openssl_bio,node->fd,0);
+        abcdk_BIO_set_fd(node->openssl_bio,node->fd);
         SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
 
         /*托管理给SSL，这里要清理野指针。*/
@@ -1028,7 +1028,7 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL)
     {
-        node->openssl_bio = abcdk_easyssl2BIO_create_from_file(node->cfg.easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.easyssl_salt_size);
+        node->openssl_bio = abcdk_BIO_s_easyssl(node->cfg.easyssl_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.easyssl_salt_size);
         if (!node->openssl_bio)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
@@ -1036,7 +1036,7 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
         }
 
         /*仅用于验证。*/
-        abcdk_easyssl2BIO_destroy(&node->openssl_bio);
+        abcdk_BIO_destroy(&node->openssl_bio);
 
 #ifdef HEADER_SSL_H
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag,(node->cfg.openssl_check_cert ? node->cfg.openssl_ca_file : NULL),
