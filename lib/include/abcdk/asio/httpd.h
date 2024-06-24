@@ -43,19 +43,19 @@ typedef struct _abcdk_httpd_config
     int ssl_scheme;
 
     /*CA证书。*/
-    const char *openssl_ca_file;
+    const char *pki_ca_file;
 
     /*CA路径。*/
-    const char *openssl_ca_path;
+    const char *pki_ca_path;
 
     /*证书。*/
-    const char *openssl_cert_file;
+    const char *pki_cert_file;
 
     /*私钥。*/
-    const char *openssl_key_file;
+    const char *pki_key_file;
 
     /*是否验证对端证书。0 否，!0 是。*/
-    int openssl_check_cert;
+    int pki_check_cert;
 
     /*请求数量包最大长度。*/
     size_t req_max_size;

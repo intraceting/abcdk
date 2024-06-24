@@ -35,25 +35,25 @@ typedef struct _abcdk_srpc_config
     int ssl_scheme;
     
     /*CA证书。*/
-    const char *openssl_ca_file;
+    const char *pki_ca_file;
 
     /*CA路径。*/
-    const char *openssl_ca_path;
+    const char *pki_ca_path;
 
     /*证书。*/
-    const char *openssl_cert_file;
+    const char *pki_cert_file;
 
     /*私钥。*/
-    const char *openssl_key_file;
+    const char *pki_key_file;
 
     /*是否验证对端证书。0 否，!0 是。*/
-    int openssl_check_cert;
+    int pki_check_cert;
 
     /*共享密钥。*/
-    const char *easyssl_key_file;
+    const char *enigma_key_file;
 
     /*盐长度。*/
-    int easyssl_salt_size;
+    int enigma_salt_size;
 
     /**
      * 会话准备通知回调函数。

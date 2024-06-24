@@ -42,17 +42,17 @@ typedef enum _abcdk_asio_ssl_scheme
     ABCDK_ASIO_SSL_SCHEME_RAW = 0,
 #define ABCDK_ASIO_SSL_SCHEME_RAW   ABCDK_ASIO_SSL_SCHEME_RAW
 
-    /**OPENSSL。*/
-    ABCDK_ASIO_SSL_SCHEME_OPENSSL = 1,
-#define ABCDK_ASIO_SSL_SCHEME_OPENSSL   ABCDK_ASIO_SSL_SCHEME_OPENSSL
+    /**PKI.*/
+    ABCDK_ASIO_SSL_SCHEME_PKI = 1,
+#define ABCDK_ASIO_SSL_SCHEME_PKI   ABCDK_ASIO_SSL_SCHEME_PKI
 
-    /**EASYSSL。*/
-    ABCDK_ASIO_SSL_SCHEME_EASYSSL = 2,
-#define ABCDK_ASIO_SSL_SCHEME_EASYSSL   ABCDK_ASIO_SSL_SCHEME_EASYSSL
+    /**ENIGMA.*/
+    ABCDK_ASIO_SSL_SCHEME_ENIGMA = 2,
+#define ABCDK_ASIO_SSL_SCHEME_ENIGMA   ABCDK_ASIO_SSL_SCHEME_ENIGMA
 
-    /*EASYSSL2OPENSSL。*/
-    ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL = 3
-#define ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL   ABCDK_ASIO_SSL_SCHEME_EASYSSL2OPENSSL
+    /*PKI is based on ENIGMA.*/
+    ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA = 3
+#define ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA   ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA
 }abcdk_asio_ssl_scheme_t;
 
 /**通知事件。*/
@@ -121,19 +121,19 @@ typedef struct _abcdk_asio_config
     int ssl_scheme;
 
     /**CA证书。*/
-    const char *openssl_ca_file;
+    const char *pki_ca_file;
 
     /**CA路径。*/
-    const char *openssl_ca_path;
+    const char *pki_ca_path;
 
     /**证书。*/
-    const char *openssl_cert_file;
+    const char *pki_cert_file;
 
     /**私钥。*/
-    const char *openssl_key_file;
+    const char *pki_key_file;
 
     /**是否验证对端证书。0 否，!0 是。*/
-    int openssl_check_cert;
+    int pki_check_cert;
     
     /** 
      * 下层协议。
@@ -142,16 +142,16 @@ typedef struct _abcdk_asio_config
      * 例2："\x02h2\x08http/1.1"
      *
     */
-    const uint8_t *openssl_next_proto;
+    const uint8_t *pki_next_proto;
 
     /**密码套件。*/
-    const char *openssl_cipher_list;
+    const char *pki_cipher_list;
 
     /**共享密钥。*/
-    const char *easyssl_key_file;
+    const char *enigma_key_file;
 
     /**盐的长度。*/
-    int easyssl_salt_size;
+    int enigma_salt_size;
 
     /**
      * 为新连接做准备工作的通知回调函数。

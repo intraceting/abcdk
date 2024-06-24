@@ -27,32 +27,35 @@ typedef struct _abcdk_proxy
     /*监听地址。*/
     const char *listen_raw;
 
-    /*OPENSSL监听地址。*/
-    const char *listen_openssl;
+    /*PKI监听地址。*/
+    const char *listen_pki;
 
-    /*EASYSSL监听地址。*/
-    const char *listen_easyssl;
+    /*ENIGMA监听地址。*/
+    const char *listen_enigma;
+
+    /*PKIonENIGMA监听地址。*/
+    const char *listen_pki_enigma;
 
     /*CA证书。*/
-    const char *openssl_ca_file;
+    const char *pki_ca_file;
 
     /*CA路径。*/
-    const char *openssl_ca_path;
+    const char *pki_ca_path;
 
     /*证书。*/
-    const char *openssl_cert_file;
+    const char *pki_cert_file;
 
     /*私钥。*/
-    const char *openssl_key_file;
+    const char *pki_key_file;
 
     /*是否验证对端证书。0 否，!0 是。*/
-    int openssl_check_cert;
+    int pki_check_cert;
 
     /*共享密钥。*/
-    const char *easyssl_key_file;
+    const char *enigma_key_file;
 
     /*盐的长度。*/
-    int easyssl_salt_size;
+    int enigma_salt_size;
 
     /*上级地址。*/
     const char *uplink;
@@ -60,14 +63,17 @@ typedef struct _abcdk_proxy
     /*IO环境。*/
     abcdk_asio_t *io_ctx;
 
-    /*服务器监听对象。*/
+    /*原始监听对象。*/
     abcdk_asio_node_t *listen_raw_p;
 
-    /*服务器OPENSSL监听对象。*/
-    abcdk_asio_node_t *listen_openssl_p;
+    /*PKI监听对象。*/
+    abcdk_asio_node_t *listen_pki_p;
 
-    /*服务器EASYSSL监听对象。*/
-    abcdk_asio_node_t *listen_easyssl_p;
+    /*ENIGMA监听对象。*/
+    abcdk_asio_node_t *listen_enigma_p;
+
+    /*PKIonENIGMA监听对象。*/
+    abcdk_asio_node_t *listen_pki_enigma_p;
 
 
 } abcdk_proxy_t;
@@ -149,53 +155,62 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--listen-raw < ADDR >\n");
     fprintf(stderr, "\t\t监听地址。\n");
 
-    fprintf(stderr, "\n\t\t例：ipv4://IP:PORT\n");
-    fprintf(stderr, "\t\t例：ipv6://[IP]:PORT\n");
-    fprintf(stderr, "\t\t例：ipv6://IP,PORT\n");
 #ifdef HEADER_SSL_H
-    fprintf(stderr, "\n\t--listen-openssl < ADDR >\n");
-    fprintf(stderr, "\t\tOPENSSL监听地址。\n");
+    fprintf(stderr, "\n\t--listen-pki < ADDR >\n");
+    fprintf(stderr, "\t\tPKI监听地址。\n");
+#endif // HEADER_SSL_H
 
-    fprintf(stderr, "\n\t--openssl-ca-file < FILE >\n");
+    fprintf(stderr, "\n\t--listen-enigma < ADDR >\n");
+    fprintf(stderr, "\t\tENIGMA监听地址。\n");
+
+#ifdef HEADER_SSL_H
+    fprintf(stderr, "\n\t--listen-pki-enigma < ADDR >\n");
+    fprintf(stderr, "\t\tPKIonENIGMA监听地址。\n");
+#endif // HEADER_SSL_H
+
+    fprintf(stderr, "\n\t\t例：ipv4://IP:PORT\n");
+
+#ifdef HEADER_SSL_H
+    fprintf(stderr, "\n\t--pki-ca-file < FILE >\n");
     fprintf(stderr, "\t\tCA证书文件。\n");
 
     fprintf(stderr, "\n\t\t注：仅支持PEM格式，并且要求客户提供证书。\n");
 
-    fprintf(stderr, "\n\t--openssl-ca-path < PATH >\n");
+    fprintf(stderr, "\n\t--pki-ca-path < PATH >\n");
     fprintf(stderr, "\t\tCA证书路径。\n");
 
     fprintf(stderr, "\n\t\t注：仅支持PEM格式，并且要求客户提供证书，同时验证吊销列表。\n");
 
-    fprintf(stderr, "\n\t--openssl-cert-file < FILE >\n");
+    fprintf(stderr, "\n\t--pki-cert-file < FILE >\n");
     fprintf(stderr, "\t\t证书文件。\n");
 
     fprintf(stderr, "\n\t\t注：仅支持PEM格式。\n");
 
-    fprintf(stderr, "\n\t--openssl-key-file < FILE >\n");
+    fprintf(stderr, "\n\t--pki-key-file < FILE >\n");
     fprintf(stderr, "\t\t私钥文件。\n");
 
     fprintf(stderr, "\n\t\t注：仅支持PEM格式。\n");
 
-    fprintf(stderr, "\n\t--openssl-check-cert < 0|1 >\n");
+    fprintf(stderr, "\n\t--pki-check-cert < 0|1 >\n");
     fprintf(stderr, "\t\t是否验证对端证书。默认：1。\n");
 
     fprintf(stderr, "\n\t\t0：否\n");
     fprintf(stderr, "\t\t1：是\n");
-
 #endif // HEADER_SSL_H
 
-    fprintf(stderr, "\n\t--easyssl-key-file < FILE >\n");
+    fprintf(stderr, "\n\t--enigma-key-file < FILE >\n");
     fprintf(stderr, "\t\t共享密钥文件。\n");
 
-    fprintf(stderr, "\n\t--easyssl-salt-size < SIZE >\n");
+    fprintf(stderr, "\n\t--enigma-salt-size < SIZE >\n");
     fprintf(stderr, "\t\t监的长度。默认：123。\n");
 
     fprintf(stderr, "\n\t--tunnel-uplink < URL >\n");
     fprintf(stderr, "\t\t隧道上行地址。\n");
 
     fprintf(stderr, "\n\t\t例：http://DOMAIN[:PORT]\n");
-    fprintf(stderr, "\t\t例：https://DOMAIN[:PORT]\n");
-    fprintf(stderr, "\t\t例：easys://DOMAIN[:PORT]\n");
+    fprintf(stderr, "\t\t例：https://DOMAIN[:PORT],默认端口443.\n");
+    fprintf(stderr, "\t\t例：enigma://DOMAIN[:PORT],默认端口4891.\n");
+    fprintf(stderr, "\t\t例：pki-enigma://DOMAIN[:PORT],默认端口4892.\n");
 }
 
 static void _abcdk_proxy_node_destroy_cb(void *userdata)
@@ -518,7 +533,7 @@ static void _abcdk_proxy_process_forward(abcdk_asio_node_t *node)
         asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_RAW;
 
         /*不检查对端证书。因为代理服务器可能未及时更新，无法验证所有证书的有效性。*/
-        asio_cfg.openssl_check_cert = 0;
+        asio_cfg.pki_check_cert = 0;
         
         if (abcdk_strcmp(node_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
             node_ctx_p->up_link = abcdk_url_create(1000,"connect://%s",node_ctx_p->script->pstrs[0]);
@@ -530,13 +545,13 @@ static void _abcdk_proxy_process_forward(abcdk_asio_node_t *node)
     {
         asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_RAW;
         
-        asio_cfg.openssl_ca_file = node_ctx_p->father->openssl_ca_file;
-        asio_cfg.openssl_ca_path = node_ctx_p->father->openssl_ca_path;
-        asio_cfg.openssl_cert_file = node_ctx_p->father->openssl_cert_file;
-        asio_cfg.openssl_key_file = node_ctx_p->father->openssl_key_file;
-        asio_cfg.openssl_check_cert = node_ctx_p->father->openssl_check_cert;
-        asio_cfg.easyssl_key_file = node_ctx_p->father->easyssl_key_file;
-        asio_cfg.easyssl_salt_size = node_ctx_p->father->easyssl_salt_size;
+        asio_cfg.pki_ca_file = node_ctx_p->father->pki_ca_file;
+        asio_cfg.pki_ca_path = node_ctx_p->father->pki_ca_path;
+        asio_cfg.pki_cert_file = node_ctx_p->father->pki_cert_file;
+        asio_cfg.pki_key_file = node_ctx_p->father->pki_key_file;
+        asio_cfg.pki_check_cert = node_ctx_p->father->pki_check_cert;
+        asio_cfg.enigma_key_file = node_ctx_p->father->enigma_key_file;
+        asio_cfg.enigma_salt_size = node_ctx_p->father->enigma_salt_size;
 
         node_ctx_p->method = abcdk_object_copyfrom("UPLINK",6);
 
@@ -572,9 +587,13 @@ static void _abcdk_proxy_process_forward(abcdk_asio_node_t *node)
         {
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(443);
         }
-        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "easys", 0) == 0)
+        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "enigma", 0) == 0)
         {
-            uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(12345);
+            uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4891);
+        }
+        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki-enigma", 0) == 0)
+        {
+            uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4892);
         }
     }
 
@@ -582,11 +601,15 @@ static void _abcdk_proxy_process_forward(abcdk_asio_node_t *node)
     if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
         abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_OPENSSL;
+        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_PKI;
     }
-    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "easys", 0) == 0)
+    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "enigma", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_EASYSSL;
+        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_ENIGMA;
+    }
+    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki-enigma", 0) == 0)
+    {
+        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA;
     }
 
     asio_cfg.prepare_cb = _abcdk_proxy_prepare_cb;
@@ -761,10 +784,12 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
 
     if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
         listen_p = ctx->listen_raw;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
-        listen_p = ctx->listen_openssl;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
-        listen_p = ctx->listen_easyssl;
+    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+        listen_p = ctx->listen_pki;
+    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+        listen_p = ctx->listen_enigma;
+    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+        listen_p = ctx->listen_pki_enigma;
 
     /*未启用。*/
     if(!listen_p)
@@ -779,10 +804,12 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
 
     if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
         node_p = ctx->listen_raw_p = _abcdk_proxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
-        node_p = ctx->listen_openssl_p = _abcdk_proxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_EASYSSL)
-        node_p = ctx->listen_easyssl_p = _abcdk_proxy_node_alloc(ctx);
+    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+        node_p = ctx->listen_pki_p = _abcdk_proxy_node_alloc(ctx);
+    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+        node_p = ctx->listen_enigma_p = _abcdk_proxy_node_alloc(ctx);
+    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+        node_p = ctx->listen_pki_enigma_p = _abcdk_proxy_node_alloc(ctx);
 
     if (!node_p)
         return -2;
@@ -790,13 +817,13 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
     node_ctx_p = (abcdk_proxy_node_t *)abcdk_asio_get_userdata(node_p);
 
     asio_cfg.ssl_scheme = ssl_scheme;
-    asio_cfg.openssl_ca_file = ctx->openssl_ca_file;
-    asio_cfg.openssl_ca_path = ctx->openssl_ca_path;
-    asio_cfg.openssl_cert_file = ctx->openssl_cert_file;
-    asio_cfg.openssl_key_file = ctx->openssl_key_file;
-    asio_cfg.openssl_check_cert = ctx->openssl_check_cert;
-    asio_cfg.easyssl_key_file = ctx->easyssl_key_file;
-    asio_cfg.easyssl_salt_size = ctx->easyssl_salt_size;
+    asio_cfg.pki_ca_file = ctx->pki_ca_file;
+    asio_cfg.pki_ca_path = ctx->pki_ca_path;
+    asio_cfg.pki_cert_file = ctx->pki_cert_file;
+    asio_cfg.pki_key_file = ctx->pki_key_file;
+    asio_cfg.pki_check_cert = ctx->pki_check_cert;
+    asio_cfg.enigma_key_file = ctx->enigma_key_file;
+    asio_cfg.enigma_salt_size = ctx->enigma_salt_size;
 
     asio_cfg.prepare_cb = _abcdk_proxy_prepare_cb;
     asio_cfg.event_cb = _abcdk_proxy_event_cb;
@@ -822,21 +849,22 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     ctx->auth_path = abcdk_option_get(ctx->args, "--auth-path", 0, NULL);
 
     ctx->listen_raw = abcdk_option_get(ctx->args, "--listen-raw", 0, NULL);
-    ctx->listen_openssl = abcdk_option_get(ctx->args, "--listen-openssl", 0, NULL);
-    ctx->listen_easyssl = abcdk_option_get(ctx->args, "--listen-easyssl", 0, NULL);
+    ctx->listen_pki = abcdk_option_get(ctx->args, "--listen-pki", 0, NULL);
+    ctx->listen_enigma = abcdk_option_get(ctx->args, "--listen-enigma", 0, NULL);
+    ctx->listen_pki_enigma = abcdk_option_get(ctx->args, "--listen-pki-enigma", 0, NULL);
 
-    ctx->openssl_ca_file = abcdk_option_get(ctx->args, "--openssl-ca-file", 0, NULL);
-    ctx->openssl_ca_path = abcdk_option_get(ctx->args, "--openssl-ca-path", 0, NULL);
-    ctx->openssl_cert_file = abcdk_option_get(ctx->args, "--openssl-cert-file", 0, NULL);
-    ctx->openssl_key_file = abcdk_option_get(ctx->args, "--openssl-key-file", 0, NULL);
-    ctx->openssl_check_cert = abcdk_option_get_int(ctx->args, "--openssl-check-cert", 0, 1);
+    ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
+    ctx->pki_ca_path = abcdk_option_get(ctx->args, "--pki-ca-path", 0, NULL);
+    ctx->pki_cert_file = abcdk_option_get(ctx->args, "--pki-cert-file", 0, NULL);
+    ctx->pki_key_file = abcdk_option_get(ctx->args, "--pki-key-file", 0, NULL);
+    ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
 
-    ctx->easyssl_key_file = abcdk_option_get(ctx->args, "--easyssl-key-file", 0, NULL);
-    ctx->easyssl_salt_size = abcdk_option_get_int(ctx->args, "--easyssl-salt-size", 0, 123);
+    ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
+    ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
 
     /*修复不支持的配置。*/
-    ctx->easyssl_key_file = (ctx->easyssl_key_file?ctx->easyssl_key_file:"");
-    ctx->easyssl_salt_size = ABCDK_CLAMP(ctx->easyssl_salt_size, 0, 256);
+    ctx->enigma_key_file = (ctx->enigma_key_file?ctx->enigma_key_file:"");
+    ctx->enigma_salt_size = ABCDK_CLAMP(ctx->enigma_salt_size, 0, 256);
     
     ctx->uplink = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
     
@@ -858,13 +886,15 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     if (chk != 0)
         goto END;
 
-#ifdef HEADER_SSL_H
-    chk = _abcdk_proxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_OPENSSL);
+    chk = _abcdk_proxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI);
     if (chk != 0)
         goto END;
-#endif // HEADER_SSL_H
 
-    chk = _abcdk_proxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_EASYSSL);
+    chk = _abcdk_proxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_ENIGMA);
+    if (chk != 0)
+        goto END;
+
+    chk = _abcdk_proxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
     if (chk != 0)
         goto END;
 
@@ -875,8 +905,9 @@ END:
 
     abcdk_asio_stop(&ctx->io_ctx);
     abcdk_asio_unref(&ctx->listen_raw_p);
-    abcdk_asio_unref(&ctx->listen_openssl_p);
-    abcdk_asio_unref(&ctx->listen_easyssl_p);
+    abcdk_asio_unref(&ctx->listen_pki_p);
+    abcdk_asio_unref(&ctx->listen_enigma_p);
+    abcdk_asio_unref(&ctx->listen_pki_enigma_p);
 
     abcdk_trace_output(LOG_INFO, "停止。");
 

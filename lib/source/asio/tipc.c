@@ -710,13 +710,13 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
 
     asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
-    asio_cfg.openssl_ca_file = ctx->cfg.openssl_ca_file;
-    asio_cfg.openssl_ca_path = ctx->cfg.openssl_ca_path;
-    asio_cfg.openssl_cert_file = ctx->cfg.openssl_cert_file;
-    asio_cfg.openssl_key_file = ctx->cfg.openssl_key_file;
-    asio_cfg.openssl_check_cert = ctx->cfg.openssl_check_cert;
-    asio_cfg.easyssl_key_file = ctx->cfg.easyssl_key_file;
-    asio_cfg.easyssl_salt_size = ctx->cfg.easyssl_salt_size;
+    asio_cfg.pki_ca_file = ctx->cfg.pki_ca_file;
+    asio_cfg.pki_ca_path = ctx->cfg.pki_ca_path;
+    asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
+    asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
+    asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
+    asio_cfg.enigma_key_file = ctx->cfg.enigma_key_file;
+    asio_cfg.enigma_salt_size = ctx->cfg.enigma_salt_size;
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
@@ -758,13 +758,13 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     strncpy(node_ctx_p->location,location,NAME_MAX);
 
     asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
-    asio_cfg.openssl_ca_file = ctx->cfg.openssl_ca_file;
-    asio_cfg.openssl_ca_path = ctx->cfg.openssl_ca_path;
-    asio_cfg.openssl_cert_file = ctx->cfg.openssl_cert_file;
-    asio_cfg.openssl_key_file = ctx->cfg.openssl_key_file;
-    asio_cfg.openssl_check_cert = ctx->cfg.openssl_check_cert;
-    asio_cfg.easyssl_key_file = ctx->cfg.easyssl_key_file;
-    asio_cfg.easyssl_salt_size = ctx->cfg.easyssl_salt_size;
+    asio_cfg.pki_ca_file = ctx->cfg.pki_ca_file;
+    asio_cfg.pki_ca_path = ctx->cfg.pki_ca_path;
+    asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
+    asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
+    asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
+    asio_cfg.enigma_key_file = ctx->cfg.enigma_key_file;
+    asio_cfg.enigma_salt_size = ctx->cfg.enigma_salt_size;
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;

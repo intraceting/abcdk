@@ -553,7 +553,7 @@ static void _abcdk_httpd_process_1(abcdk_object_t *stream)
 
         stream_ctx_p->host = abcdk_object_copyfrom(line_p,strlen(line_p));
 
-        if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+        if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
             stream_ctx_p->scheme = abcdk_object_copyfrom("https", 5);
         else
             stream_ctx_p->scheme = abcdk_object_copyfrom("http", 4);
@@ -754,7 +754,7 @@ static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
 
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
 
-    if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+    if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
     {
         abcdk_asio_openssl_get_alpn_selected(node, proto);
         if (node_ctx_p->protocol == 0)
@@ -1026,22 +1026,22 @@ int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *
     node_ctx_p->protocol = 0;
 
     asio_cfg.ssl_scheme = cfg->ssl_scheme;
-    asio_cfg.openssl_ca_file = cfg->openssl_ca_file;
-    asio_cfg.openssl_ca_path = cfg->openssl_ca_path;
-    asio_cfg.openssl_cert_file = cfg->openssl_cert_file;
-    asio_cfg.openssl_key_file = cfg->openssl_key_file;
-    asio_cfg.openssl_check_cert = cfg->openssl_check_cert;
+    asio_cfg.pki_ca_file = cfg->pki_ca_file;
+    asio_cfg.pki_ca_path = cfg->pki_ca_path;
+    asio_cfg.pki_cert_file = cfg->pki_cert_file;
+    asio_cfg.pki_key_file = cfg->pki_key_file;
+    asio_cfg.pki_check_cert = cfg->pki_check_cert;
 
-    if (cfg->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_OPENSSL)
+    if (cfg->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
     {
         /*set default HTTP1.1*/
-        asio_cfg.openssl_next_proto = "\x08http/1.1";
+        asio_cfg.pki_next_proto = "\x08http/1.1";
 
 #ifdef NGHTTP2_H
         if (cfg->enable_h2)
         {
-            asio_cfg.openssl_next_proto = "\x02h2\x08http/1.1";
-            asio_cfg.openssl_cipher_list = "AES128-GCM-SHA256:CHACHA20-POLY1305-SHA256";
+            asio_cfg.pki_next_proto = "\x02h2\x08http/1.1";
+            asio_cfg.pki_cipher_list = "AES128-GCM-SHA256:CHACHA20-POLY1305-SHA256";
         }
 #endif // NGHTTP2_H
 

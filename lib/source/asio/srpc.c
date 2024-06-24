@@ -413,13 +413,13 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
     node_ctx_p->flag = 0;
 
     asio_cfg.ssl_scheme = cfg->ssl_scheme;
-    asio_cfg.openssl_ca_file = cfg->openssl_ca_file;
-    asio_cfg.openssl_ca_path = cfg->openssl_ca_path;
-    asio_cfg.openssl_cert_file = cfg->openssl_cert_file;
-    asio_cfg.openssl_key_file = cfg->openssl_key_file;
-    asio_cfg.openssl_check_cert = cfg->openssl_check_cert;
-    asio_cfg.easyssl_key_file = cfg->easyssl_key_file;
-    asio_cfg.easyssl_salt_size = cfg->easyssl_salt_size;
+    asio_cfg.pki_ca_file = cfg->pki_ca_file;
+    asio_cfg.pki_ca_path = cfg->pki_ca_path;
+    asio_cfg.pki_cert_file = cfg->pki_cert_file;
+    asio_cfg.pki_key_file = cfg->pki_key_file;
+    asio_cfg.pki_check_cert = cfg->pki_check_cert;
+    asio_cfg.enigma_key_file = cfg->enigma_key_file;
+    asio_cfg.enigma_salt_size = cfg->enigma_salt_size;
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
@@ -449,13 +449,13 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     node_ctx_p->flag = 2;
 
     asio_cfg.ssl_scheme = cfg->ssl_scheme;
-    asio_cfg.openssl_ca_file = cfg->openssl_ca_file;
-    asio_cfg.openssl_ca_path = cfg->openssl_ca_path;
-    asio_cfg.openssl_cert_file = cfg->openssl_cert_file;
-    asio_cfg.openssl_key_file = cfg->openssl_key_file;
-    asio_cfg.openssl_check_cert = cfg->openssl_check_cert;
-    asio_cfg.easyssl_key_file = cfg->easyssl_key_file;
-    asio_cfg.easyssl_salt_size = cfg->easyssl_salt_size;
+    asio_cfg.pki_ca_file = cfg->pki_ca_file;
+    asio_cfg.pki_ca_path = cfg->pki_ca_path;
+    asio_cfg.pki_cert_file = cfg->pki_cert_file;
+    asio_cfg.pki_key_file = cfg->pki_key_file;
+    asio_cfg.pki_check_cert = cfg->pki_check_cert;
+    asio_cfg.enigma_key_file = cfg->enigma_key_file;
+    asio_cfg.enigma_salt_size = cfg->enigma_salt_size;
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
