@@ -29,6 +29,7 @@ int abcdk_test_tipc(abcdk_option_t *args);
 int abcdk_test_timer(abcdk_option_t *args);
 int abcdk_test_tun(abcdk_option_t *args);
 int abcdk_test_srpc(abcdk_option_t *args);
+int abcdk_test_fmp4(abcdk_option_t *args);
 
 
 __END_DECLS
