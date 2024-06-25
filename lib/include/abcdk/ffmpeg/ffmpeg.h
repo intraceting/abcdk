@@ -92,6 +92,9 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream);
 /**
  * 创建FFMPEG对象。
  * 
+ * @warning 自定义IO将被托管，应用程不再继续访问。
+ * 
+ * @param [in] io 自定义IO。
  * @param [in] opt 选项。
  * 
  * @code
