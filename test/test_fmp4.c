@@ -74,7 +74,7 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
 
     abcdk_httpd_set_userdata(stream,p);
     
-    p->reader = abcdk_ffmpeg_open_capture(NULL,"/home/devel/job/video/JangZhuGonDi_AnQuanMao_FanGuangYi_01.mp4",1,10);
+    p->reader = abcdk_ffmpeg_open_capture(NULL,"/home/zpcoding/data/files-b/job/tmp/aaaa.mp4",1,10);
 
     p->send_buf = abcdk_stream_create();
 
@@ -129,12 +129,14 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
     node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
 
     abcdk_httpd_response_header_set(stream, "Status","%d",200);
-    abcdk_httpd_response_header_set(stream, "Content-Type","%s","video/mpeg4");
+    abcdk_httpd_response_header_set(stream, "Content-Type","%s","video/mp4");
+//    abcdk_httpd_response_header_set(stream, "Content-Length","1234567890");
 
     abcdk_object_t *buf = abcdk_object_alloc2(128*1024);
     int rlen = abcdk_stream_read(p->send_buf,buf->pptrs[0],buf->sizes[0]);
     if(rlen >0)
     {
+        buf->sizes[0] = rlen;
         abcdk_httpd_response(stream,buf);
     }
     else
@@ -158,7 +160,10 @@ TRY:
     int rlen = abcdk_stream_read(p->send_buf,buf->pptrs[0],buf->sizes[0]);
     if(rlen >0)
     {
+        buf->sizes[0] = rlen;
         abcdk_httpd_response(stream,buf);
+
+        fprintf(stderr,"rlen(%lld)\n",rlen);
     }
     else 
     {
@@ -207,7 +212,7 @@ int abcdk_test_fmp4(abcdk_option_t *args)
     abcdk_httpd_t *io_ctx;
     abcdk_httpd_session_t *listen_p;
 
-    abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:5555", 0);
+    abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:1111", 0);
 
     io_ctx = abcdk_httpd_create(123, -1);
 

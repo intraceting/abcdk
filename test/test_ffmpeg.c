@@ -60,15 +60,16 @@ int abcdk_test_record(abcdk_option_t *args)
 
     AVDictionary *dict = NULL;
 
-    av_dict_set(&dict, "hls_segment_filename", "/tmp/ccc/aaaa%d.ts", 0);
-    av_dict_set(&dict, "hls_time", "2", 0);
-    av_dict_set(&dict, "hls_list_size","5", 0);
-    av_dict_set(&dict, "start_number", "1", 0);
+   /// av_dict_set(&dict, "hls_segment_filename", "/tmp/ccc/aaaa%d.ts", 0);
+   // av_dict_set(&dict, "hls_time", "2", 0);
+  //  av_dict_set(&dict, "hls_list_size","5", 0);
+  //  av_dict_set(&dict, "start_number", "1", 0);
   //  av_dict_set(&dict, "hls_delete_threshold","100",0);
   //  av_dict_set(&dict, "hls_flags","+delete_segments+append_list+omit_endlist+temp_file",0);
 
-      av_dict_set(&dict, "hls_flags","append_list+omit_endlist+temp_file",0);
+   //   av_dict_set(&dict, "hls_flags","append_list+omit_endlist+temp_file",0);
     
+    av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
         
     abcdk_ffmpeg_write_header0(w,dict);
 
@@ -106,7 +107,7 @@ int abcdk_test_record(abcdk_option_t *args)
 
         //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
 
-        abcdk_file_segment(NULL,"/tmp/ccc/aaaa%llu.ts",10,1,pos);
+      //  abcdk_file_segment(NULL,"/tmp/ccc/aaaa%llu.ts",10,1,pos);
     }
 
     av_packet_unref(&pkt);
