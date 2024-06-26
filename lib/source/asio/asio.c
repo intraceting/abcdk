@@ -639,7 +639,9 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
             SSL_set_connect_state(node->openssl_ssl);
         else
             return -22;
-
+#else 
+        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        return -22;
 #endif //HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
@@ -694,6 +696,9 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
             SSL_set_connect_state(node->openssl_ssl);
         else
             return -22;
+#else 
+        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        return -22;
 #endif //HEADER_SSL_H
     }
     else
@@ -991,7 +996,7 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag,(node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                                    (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
                                                                    node->cfg.pki_cert_file, node->cfg.pki_key_file, NULL);
-#endif // HEADER_SSL_H
+
         if (!node->openssl_ctx)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
@@ -1013,6 +1018,10 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
         /*设置下层协议。*/
         if(node->cfg.pki_next_proto)
             _abcdk_asio_openssl_set_alpn(node);
+#else 
+        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        return -22;
+#endif // HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
     {
@@ -1028,6 +1037,7 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
     {
+#ifdef HEADER_SSL_H
         node->openssl_bio = abcdk_BIO_s_easyssl(node->cfg.enigma_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.enigma_salt_size);
         if (!node->openssl_bio)
         {
@@ -1038,19 +1048,35 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
         /*仅用于验证。*/
         abcdk_BIO_destroy(&node->openssl_bio);
 
-#ifdef HEADER_SSL_H
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag,(node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                                    (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
                                                                    node->cfg.pki_cert_file, node->cfg.pki_key_file, NULL);
-#endif // HEADER_SSL_H
+
         if (!node->openssl_ctx)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
             return -2;
         }
+                    
+        /*设置密码套件。*/
+        if(node->cfg.pki_cipher_list)
+        {
+            ssl_chk = SSL_CTX_set_cipher_list(node->openssl_ctx,node->cfg.pki_cipher_list);
+            if(ssl_chk != 1)
+            {
+                ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
+                _abcdk_asio_openssl_dump_errmsg(node,ssl_err);
+                return -3;
+            }
+        } 
 
         /*设置下层协议。*/
         _abcdk_asio_openssl_set_alpn(node);
+
+#else 
+        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        return -22;
+#endif // HEADER_SSL_H
     }
 
     return 0;

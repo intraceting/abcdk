@@ -230,7 +230,7 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream)
     return abcdk_avstream_height(ctx->avctx,ctx->avctx->streams[stream]);
 }
 
-int _abcdk_ffmpeg_interrupt_cb(void *args)
+static int _abcdk_ffmpeg_interrupt_cb(void *args)
 {
     abcdk_ffmpeg_t *ctx = (abcdk_ffmpeg_t *)args;
     uint64_t cur_time = _abcdk_ffmpeg_clock();
@@ -245,7 +245,7 @@ int _abcdk_ffmpeg_interrupt_cb(void *args)
     return 0;
 }
 
-int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, const char *url,AVIOContext *io, abcdk_option_t *opt)
+static int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, const char *url,AVIOContext *io, abcdk_option_t *opt)
 {
     int is_mp4_file = 0;
     int chk;
@@ -314,7 +314,7 @@ int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx, const char *short_name, cons
     return 0;
 }
 
-int _abcdk_ffmpeg_init_writer(abcdk_ffmpeg_t *ctx,const char *short_name, const char *url,AVIOContext *io, abcdk_option_t *opt)
+static int _abcdk_ffmpeg_init_writer(abcdk_ffmpeg_t *ctx,const char *short_name, const char *url,AVIOContext *io, abcdk_option_t *opt)
 {
     const char *mime_type_p = NULL;
 
@@ -343,7 +343,7 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char
     abcdk_ffmpeg_t *ctx = NULL;
     int chk;
 
-    assert(url != NULL);
+    assert(url != NULL || io != NULL);
 
     ctx= abcdk_ffmpeg_alloc();
     if(!ctx)
@@ -450,7 +450,7 @@ final_error:
     return -1;
 }
 
-int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
+static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
 {
     AVStream *vs_p = NULL;
     AVCodecContext *codec_ctx_p = NULL;

@@ -242,6 +242,8 @@ void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
 /**
  * 应答实体。
  * 
+ * @note 数据对象写入成功后将被托管，用户不可以再进行读和写操作。
+ * 
  * @param [in] data 数据。NULL(0) 表示应答结束。
  * 
  * @return 0 成功，< 0 失败。

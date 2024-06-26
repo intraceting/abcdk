@@ -21,11 +21,12 @@ void abcdk_avio_free(AVIOContext **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
-    avio_closep(&ctx_p);
-#else
     if (ctx_p->buffer)
         av_free(ctx_p->buffer);
+
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
+    avio_context_free(&ctx_p);
+#else
     av_free(ctx_p);
 #endif
 }
@@ -43,7 +44,7 @@ AVIOContext *abcdk_avio_alloc(int buf_blocks, int write_flag, void *opaque)
     if (!buf)
         goto final_error;
 
-    ctx = avio_alloc_context((uint8_t *)buf, buf_size, write_flag, NULL, NULL, NULL, NULL);
+    ctx = avio_alloc_context((uint8_t *)buf, buf_size, write_flag, opaque, NULL, NULL, NULL);
     if (!ctx)
         goto final_error;
 
@@ -131,17 +132,32 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     AVInputFormat *fmt = NULL;
     AVFormatContext *ctx = NULL;
     int chk = -1;
+
+    assert((filename != NULL && io == NULL) || (filename == NULL && io != NULL));
+    assert(filename != NULL || (short_name != NULL && io != NULL));
+    
+
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     av_register_all();
 #endif
     avformat_network_init();
     avdevice_register_all();
 
-    assert(filename != NULL);
-
     ctx = avformat_alloc_context();
     if (!ctx)
         return NULL;
+
+    if (dict)
+    {
+        av_dict_set(dict, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+
+        /* RTSP默认走TCP，可以减少丢包。*/
+        if(filename)
+        {
+            if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
+            av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
+        }
+    }
 
     /*
      * 1: 如果不知道下面标志如何使用，一定不要附加这个标志。
@@ -154,15 +170,9 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
         ctx->interrupt_callback = *interrupt;
 
     if (io)
-        ctx->pb = io;
-
-    if (dict)
     {
-        /* RTSP默认走TCP，可以减少丢包。*/
-        if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
-            av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
-
-        av_dict_set(dict, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+        ctx->pb = io;
+        ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
     }
 
     fmt = (AVInputFormat *)av_find_input_format(short_name);
@@ -341,23 +351,43 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     AVFormatContext *ctx = NULL;
     int chk = -1;
 
+    assert((filename != NULL && io == NULL) || (filename == NULL && io != NULL));
+    assert(filename != NULL || (short_name != NULL && io != NULL));
+
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     av_register_all();
 #endif
     avformat_network_init();
     avdevice_register_all();
 
-    assert(filename != NULL);
-
     ctx = avformat_alloc_context();
     if (!ctx)
         return NULL;
 
-    if (interrupt)
-        ctx->interrupt_callback = *interrupt;
+    if (filename)
+    {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
+        strncpy(ctx->filename, filename, sizeof(ctx->filename));
+#else
+        ctx->url = av_strdup(filename);
+#endif
 
-    if (io)
-        ctx->pb = io;
+        if (abcdk_strncmp(filename, "rtsp://", 7, 0) == 0)
+            ctx->oformat = av_guess_format("rtsp", NULL, NULL);
+        else if (abcdk_strncmp(filename, "rtsps://", 8, 0) == 0)
+            ctx->oformat = av_guess_format("rtsp", NULL, NULL);
+        else if (abcdk_strncmp(filename, "rtmp://", 7, 0) == 0)
+            ctx->oformat = av_guess_format("flv", NULL, NULL);
+        else if (abcdk_strncmp(filename, "rtmps://", 8, 0) == 0)
+            ctx->oformat = av_guess_format("flv", NULL, NULL);
+    }
+
+    if (!ctx->oformat)
+        ctx->oformat = av_guess_format(short_name, filename, mime_type);
+
+    if (!ctx->oformat)
+        goto final_error;
+    
 #if 0
     av_dict_set(&ctx->metadata, "service", SOLUTION_NAME, 0);
     av_dict_set(&ctx->metadata, "service_name", SOLUTION_NAME, 0);
@@ -365,26 +395,15 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     av_dict_set(&ctx->metadata, "artist", SOLUTION_NAME, 0);
 #endif
 
-    if (abcdk_strncmp(filename, "rtsp://", 7, 0) == 0)
-        ctx->oformat = av_guess_format("rtsp", NULL, NULL);
-    else if (abcdk_strncmp(filename, "rtsps://", 8, 0) == 0)
-        ctx->oformat = av_guess_format("rtsp", NULL, NULL);
-    else if (abcdk_strncmp(filename, "rtmp://", 7, 0) == 0)
-        ctx->oformat = av_guess_format("flv", NULL, NULL);
-    else if (abcdk_strncmp(filename, "rtmps://", 8, 0) == 0)
-        ctx->oformat = av_guess_format("flv", NULL, NULL);
+    if (interrupt)
+        ctx->interrupt_callback = *interrupt;
 
-    if (!ctx->oformat)
-        ctx->oformat = av_guess_format(short_name, filename, mime_type);
+    if (io)
+    {
+        ctx->pb = io;
+        ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+    }
 
-    if (!ctx->oformat)
-        goto final_error;
-
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
-    strncpy(ctx->filename, filename, sizeof(ctx->filename));
-#else
-    ctx->url = av_strdup(filename);
-#endif
     return ctx;
 
 final_error:
@@ -431,13 +450,14 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
     if (chk != 0)
         return -1;
 
-    if (dict)
-    {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
-        url_p = ctx->filename;
+    url_p = ctx->filename;
 #else   
-        url_p = ctx->url;
+    url_p = ctx->url;
 #endif
+
+    if (dict && url_p)
+    {
         if (abcdk_strncmp(url_p, "rtsp://", 7, 0) == 0 || abcdk_strncmp(url_p, "rtsps://", 8, 0) == 0)
             av_dict_set(dict, "rtsp_transport", "tcp", 0);
     }
