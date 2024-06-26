@@ -74,7 +74,7 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
 
     abcdk_httpd_set_userdata(stream,p);
     
-    p->reader = abcdk_ffmpeg_open_capture(NULL,"/home/devel/job/video/BuXingJie_Ren_01.mp4",1,10);
+    p->reader = abcdk_ffmpeg_open_capture(NULL,"/home/devel/job/video/JangZhuGonDi_AnQuanMao_FanGuangYi_01.mp4",1,10);
 
     p->send_buf = abcdk_stream_create();
 
@@ -152,11 +152,7 @@ static void stream_output_cb(void *opaque, abcdk_object_t *stream)
 TRY:
    
 
-    if(eof)
-    {
-        abcdk_httpd_response(stream,NULL);
-        return ;
-    }
+   
 
     buf = abcdk_object_alloc2(128*1024);
     int rlen = abcdk_stream_read(p->send_buf,buf->pptrs[0],buf->sizes[0]);
@@ -166,7 +162,14 @@ TRY:
     }
     else 
     {
+
         abcdk_object_unref(&buf);
+
+        if(eof)
+        {
+            abcdk_httpd_response(stream,NULL);
+            return ;
+        }
 
         AVFormatContext *rf = abcdk_ffmpeg_ctxptr(p->reader);
 
@@ -178,9 +181,18 @@ TRY:
 
         int n= abcdk_ffmpeg_read(p->reader,&pkt,-1);
         if(n<0)
+        {
+            abcdk_ffmpeg_write_trailer(p->writer);
             eof = 1;
+        }
         else 
+        {
+            fprintf(stderr,"pts(%lld),dts(%lld)\n",pkt.pts,pkt.dts);
+
             abcdk_ffmpeg_write(p->writer, &pkt, &rf->streams[n]->time_base);
+        }
+
+        
 
         av_packet_unref(&pkt);
 
