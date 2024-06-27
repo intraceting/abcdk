@@ -204,8 +204,8 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--enigma-salt-size < SIZE >\n");
     fprintf(stderr, "\t\t监的长度。默认：123。\n");
 
-    fprintf(stderr, "\n\t--tunnel-uplink < URL >\n");
-    fprintf(stderr, "\t\t隧道上行地址。\n");
+    fprintf(stderr, "\n\t--uplink < URL >\n");
+    fprintf(stderr, "\t\t上行地址。\n");
 
     fprintf(stderr, "\n\t\t例：http://DOMAIN[:PORT]\n");
     fprintf(stderr, "\t\t例：https://DOMAIN[:PORT],默认端口443.\n");
