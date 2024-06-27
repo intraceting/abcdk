@@ -375,13 +375,14 @@ int abcdk_BIO_set_fd(BIO *bio, int fd);
  */
 int abcdk_BIO_get_fd(BIO *bio);
 
+/**销毁。*/
+void abcdk_BIO_destroy(BIO **bio);
+
 /**
  * 创建兼容EASYSSL的BIO环境。
 */
 BIO *abcdk_BIO_s_easyssl(const char *file,uint32_t scheme,size_t salt);
 
-/**销毁。*/
-void abcdk_BIO_destroy(BIO **bio);
 
 #endif //HEADER_BIO_H
 

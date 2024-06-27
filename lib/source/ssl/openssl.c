@@ -954,9 +954,33 @@ static int _abcdk_BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy_cb)(BIO *
     return chk;
 }
 
-static int _abcdk_BIO_read(BIO *bio, char *buf, int len)
+static void *_abcdk_BIO_get_data(BIO *bio)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)BIO_get_data(bio);
+    assert(bio != NULL);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    return bio->ptr;
+#else
+    return BIO_get_data(bio);
+#endif // #if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+}
+
+static void _abcdk_BIO_set_data(BIO *bio, void *ptr)
+{
+    assert(bio != NULL);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    bio->ptr = ptr;
+#else
+    BIO_set_data(bio, ptr);
+#endif // #if OPENSSL_VERSION_NUMBER < 0x10100000L
+}
+
+
+static int _abcdk_BIO_read_cb(BIO *bio, char *buf, int len)
+{
+    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
     int rlen = 0;
 
     if(!(bio_p != NULL && bio_p->magic == ABCDK_BIO_MAGIC))
@@ -978,9 +1002,9 @@ static int _abcdk_BIO_read(BIO *bio, char *buf, int len)
     return rlen;
 }
 
-static int _abcdk_BIO_write(BIO *bio, const char *buf, int len)
+static int _abcdk_BIO_write_cb(BIO *bio, const char *buf, int len)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)BIO_get_data(bio);
+    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
     int slen = 0;
 
     if(!(bio_p != NULL && bio_p->magic == ABCDK_BIO_MAGIC))
@@ -1003,9 +1027,9 @@ static int _abcdk_BIO_write(BIO *bio, const char *buf, int len)
     return slen;
 }
 
-static long _abcdk_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
+static long _abcdk_BIO_ctrl_cb(BIO *bio, int cmd, long num, void *ptr)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)BIO_get_data(bio);
+    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
     int chk = 0;
 
     if(!(bio_p != NULL && bio_p->magic == ABCDK_BIO_MAGIC))
@@ -1045,7 +1069,7 @@ static long _abcdk_BIO_ctrl(BIO *bio, int cmd, long num, void *ptr)
     return chk;
 }
 
-static int _abcdk_BIO_create(BIO *bio)
+static int _abcdk_BIO_create_cb(BIO *bio)
 {
     int chk = 0;
 
@@ -1066,9 +1090,9 @@ static int _abcdk_BIO_create(BIO *bio)
     return chk;
 }
 
-static int _abcdk_BIO_destroy(BIO *bio)
+static int _abcdk_BIO_destroy_cb(BIO *bio)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)BIO_get_data(bio);
+    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
 
     if(!bio_p)
         return 1;
@@ -1083,29 +1107,6 @@ static int _abcdk_BIO_destroy(BIO *bio)
     return 1;
 }
 
-
-void *_abcdk_BIO_get_data(BIO *bio)
-{
-    assert(bio != NULL);
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    return bio->ptr;
-#else
-    return BIO_get_data(bio);
-#endif // #if OPENSSL_VERSION_NUMBER < 0x10100000L
-
-}
-
-void _abcdk_BIO_set_data(BIO *bio, void *ptr)
-{
-    assert(bio != NULL);
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    bio->ptr = ptr;
-#else
-    BIO_set_data(bio, ptr);
-#endif // #if OPENSSL_VERSION_NUMBER < 0x10100000L
-}
 
 int abcdk_BIO_set_fd(BIO *bio, int fd)
 {
@@ -1131,6 +1132,20 @@ int abcdk_BIO_get_fd(BIO *bio)
     return abcdk_easyssl_get_fd(bio_p->easyssl,0);
 }
 
+void abcdk_BIO_destroy(BIO **bio)
+{
+    BIO *bio_p;
+
+    if(!bio ||!*bio)
+        return;
+
+    bio_p = *bio;
+    *bio = NULL;
+
+    BIO_free(bio_p);
+}
+
+
 BIO *abcdk_BIO_s_easyssl(const char *file, uint32_t scheme, size_t salt)
 {
     abcdk_BIO_t *bio;
@@ -1149,11 +1164,11 @@ BIO *abcdk_BIO_s_easyssl(const char *file, uint32_t scheme, size_t salt)
     if (!bio->easyssl || !bio->method)
         goto ERR;
     
-    _abcdk_BIO_meth_set_write(bio->method,_abcdk_BIO_write);
-    _abcdk_BIO_meth_set_read(bio->method,_abcdk_BIO_read);
-    _abcdk_BIO_meth_set_ctrl(bio->method,_abcdk_BIO_ctrl);
-    _abcdk_BIO_meth_set_create(bio->method,_abcdk_BIO_create);
-    _abcdk_BIO_meth_set_destroy(bio->method,_abcdk_BIO_destroy);
+    _abcdk_BIO_meth_set_write(bio->method,_abcdk_BIO_write_cb);
+    _abcdk_BIO_meth_set_read(bio->method,_abcdk_BIO_read_cb);
+    _abcdk_BIO_meth_set_ctrl(bio->method,_abcdk_BIO_ctrl_cb);
+    _abcdk_BIO_meth_set_create(bio->method,_abcdk_BIO_create_cb);
+    _abcdk_BIO_meth_set_destroy(bio->method,_abcdk_BIO_destroy_cb);
 
     openssl_bio = BIO_new(bio->method);
     if (!openssl_bio)
@@ -1180,19 +1195,6 @@ ERR:
     }
 
     return NULL;
-}
-
-void abcdk_BIO_destroy(BIO **bio)
-{
-    BIO *bio_p;
-
-    if(!bio ||!*bio)
-        return;
-
-    bio_p = *bio;
-    *bio = NULL;
-
-    BIO_free(bio_p);
 }
 
 
