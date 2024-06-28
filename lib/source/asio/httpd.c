@@ -1572,7 +1572,7 @@ void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key)
     abcdk_option_remove(stream_ctx_p->rsp_hdr,key);
 }
 
-int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
+int abcdk_httpd_response_header_end(abcdk_object_t *stream)
 {
     abcdk_httpd_node_t *node_ctx_p;
     abcdk_httpd_stream_t *stream_ctx_p;
@@ -1585,27 +1585,16 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
     stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
 
-    if (stream_ctx_p->rsp_hdr_sent)
-        goto BODY;
-
-    ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应答头部信息。");
+    ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,"应答的头部已经结束。");
+    ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应答的头部信息。");
     
     /*如果未设置应答长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
     chk = abcdk_option_exist(stream_ctx_p->rsp_hdr,"Content-Length");
     if(!chk)
     {
-        if(data)
-        {
-            chk = abcdk_httpd_response_header_set(stream, "Transfer-Encoding", "chunked");
-            if(chk != 0)
-                return -2;
-        }
-        else
-        {
-            chk = abcdk_httpd_response_header_set(stream, "Content-Length", "0");
-            if(chk != 0)
-                return -2;
-        }
+        chk = abcdk_httpd_response_header_set(stream, "Transfer-Encoding", "chunked");
+        if(chk != 0)
+            return -2;
     }
 
     status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
@@ -1630,7 +1619,29 @@ int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
 
     _abcdk_httpd_log(stream,status);
 
-BODY:
+    return 0;
+}
+
+int abcdk_httpd_response(abcdk_object_t *stream, abcdk_object_t *data)
+{
+    abcdk_httpd_node_t *node_ctx_p;
+    abcdk_httpd_stream_t *stream_ctx_p;
+    uint32_t status;
+    const char *upgrade_val;
+    int chk;
+
+    assert(stream != NULL);
+
+    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+
+    /*如果头部未结束，先结束头部应答。*/
+    if(!stream_ctx_p->rsp_hdr_sent)
+    {
+        chk = abcdk_httpd_response_header_end(stream);
+        if(chk != 0)
+            return chk;
+    }
 
     chk = _abcdk_httpd_response_body(stream, data);
     if (chk != 0)

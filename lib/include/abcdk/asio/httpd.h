@@ -240,6 +240,15 @@ int abcdk_httpd_response_header_set(abcdk_object_t *stream,const char *key, cons
 void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
 
 /**
+ * 头部应答结束。
+ * 
+ * @note 应答实体前也会自动执行。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_httpd_response_header_end(abcdk_object_t *stream);
+
+/**
  * 应答实体。
  * 
  * @note 数据对象写入成功后将被托管，用户不可以再进行读和写操作。
