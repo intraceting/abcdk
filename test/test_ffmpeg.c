@@ -88,7 +88,7 @@ int abcdk_test_record(abcdk_option_t *args)
     {
         abcdk_ffmpeg_read_delay(r,-1);
 
-        int n= abcdk_ffmpeg_read(r,&pkt,-1);
+        int n= abcdk_ffmpeg_read_packet(r,&pkt,-1);
         if(n<0)
             break;
 
@@ -105,9 +105,9 @@ int abcdk_test_record(abcdk_option_t *args)
 
         fprintf(stderr, "flag(%d,%d),pts(%.6f),dts(%.6f),dur(%.6f)\n",m, pkt.flags, psec, dsec, dru);
 
-        abcdk_ffmpeg_write(w, &pkt, &rf->streams[n]->time_base);
+        abcdk_ffmpeg_write_packet(w, &pkt, &rf->streams[n]->time_base);
 
-        //   abcdk_ffmpeg_write2(w,pkt.data,pkt.size,0,n);
+        //   abcdk_ffmpeg_write_packet(w,pkt.data,pkt.size,0,n);
 
       //  abcdk_file_segment(NULL,"/tmp/ccc/aaaa%llu.ts",10,1,pos);
     }
@@ -164,11 +164,11 @@ int abcdk_test_codec(abcdk_option_t *args)
     {
         abcdk_ffmpeg_read_delay(r,-1);
         
-        int n= abcdk_ffmpeg_read2(r,inframe,0);
+        int n= abcdk_ffmpeg_read_frame(r,inframe,0);
         if(n<0)
             break;
 
-         abcdk_ffmpeg_write3(w,inframe,n);
+         abcdk_ffmpeg_write_frame(w,inframe,n);
     }
 
     av_frame_free(&inframe);
@@ -241,7 +241,7 @@ int abcdk_test_audio(abcdk_option_t *args)
     {
         abcdk_ffmpeg_read_delay(r,-1);
         
-        int n = abcdk_ffmpeg_read2(r,inframe,stream_idx);
+        int n = abcdk_ffmpeg_read_frame(r,inframe,stream_idx);
         if(n<0)
             break;
 

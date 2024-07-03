@@ -179,7 +179,7 @@ TRY:
 
         abcdk_ffmpeg_read_delay(p->reader,-1);
 
-        int n= abcdk_ffmpeg_read(p->reader,&pkt,-1);
+        int n= abcdk_ffmpeg_read_packet(p->reader,&pkt,-1);
         if(n<0)
         {
             abcdk_ffmpeg_write_trailer(p->writer);
@@ -189,7 +189,7 @@ TRY:
         {
             fprintf(stderr,"pts(%lld),dts(%lld)\n",pkt.pts,pkt.dts);
 
-            abcdk_ffmpeg_write(p->writer, &pkt, &rf->streams[n]->time_base);
+            abcdk_ffmpeg_write_packet(p->writer, &pkt, &rf->streams[n]->time_base);
         }
 
         

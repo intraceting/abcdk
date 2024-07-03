@@ -46,17 +46,20 @@ typedef struct _abcdk_ffmpeg
     /** 输入是否为mp4(mpeg4)。*/
     int input_mp4_mpeg4[ABCDK_FFMPEG_MAX_STREAMS];
 
-    /** 读数据包计数器。*/
-    uint64_t read_pkt_count[ABCDK_FFMPEG_MAX_STREAMS];
-
     /** 读开始时间(系统时间，微秒)*/
     uint64_t read_start[ABCDK_FFMPEG_MAX_STREAMS];
 
     /** 读第一帧DTS。*/
     int64_t read_dts_first[ABCDK_FFMPEG_MAX_STREAMS];
 
-    /** 当前DTS。*/
+    /** 读当前DTS。*/
     int64_t read_dts[ABCDK_FFMPEG_MAX_STREAMS];
+
+    /** 读最近KEY帧的时间(系统时间，微秒)。 */
+    uint64_t read_key_ns[ABCDK_FFMPEG_MAX_STREAMS];
+
+    /** 读最近帧分组的时间(系统时间，微秒)。 */
+    uint64_t read_gop_ns[ABCDK_FFMPEG_MAX_STREAMS];
 
     /** 流容器。*/
     AVFormatContext *avctx;
@@ -144,6 +147,8 @@ static abcdk_ffmpeg_t *_abcdk_ffmpeg_alloc()
         ctx->read_dts_first[i] = (int64_t)AV_NOPTS_VALUE;
         ctx->read_dts[i] = (int64_t)AV_NOPTS_VALUE;
         ctx->read_start[i] = UINT64_MAX;
+        ctx->read_key_ns[i] = UINT64_MAX;
+        ctx->read_gop_ns[i] = UINT64_MAX;
     }
 
     av_init_packet(&ctx->read_pkt);
@@ -351,8 +356,8 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg)
     /*修复不支持的参数。*/
     ABCDK_CLAMP(ctx->cfg.io.buffer_size,(int)8,(int)1024);
     ABCDK_CLAMP(ctx->cfg.timeout,(int)-1,(int)180);
-    ABCDK_CLAMP(ctx->cfg.play_speed,(float)0.01,(float)100.0);
-    ABCDK_CLAMP(ctx->cfg.play_delay_max,(float)0.0,(float)59.999);
+    ABCDK_CLAMP(ctx->cfg.read_speed,(float)0.01,(float)100.0);
+    ABCDK_CLAMP(ctx->cfg.read_delay_max,(float)0.001,(float)59.999);
 
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
 
@@ -471,6 +476,48 @@ static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
     return 0;
 }
 
+/** 
+ * 延时检查。
+ * 
+ * @return 0 未满足，!0 已满足。
+*/
+static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int flag)
+{
+    double a1, a2, a, b;
+
+    /*如果是无效的DTS，直接返回1。*/
+    if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
+        return 1;
+
+    /*
+     * 1：计算当前帧与第一帧的时间差。
+     * 2：因为流的起始值可能不为零(或为负，或为正)，所以时间轴调整为从零开始，便于计算延时。
+     */
+
+    if (flag == 1)
+    {
+        /*降速时无效。*/
+        if(ctx->cfg.read_speed < 1.0)
+            return 0;
+
+        a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
+        a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max / ctx->cfg.read_speed;
+        a = (a2 - a1) - (a1 - a1);
+        b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000. / ctx->cfg.read_speed;
+    }
+    else
+    {
+        a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
+        a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]);
+        a = (a2 - a1) - (a1 - a1);
+        b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000.;
+    }
+
+    // abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f)\n",stream,flag,a1,a2, a, b);
+
+    return (a > b)?0:1;
+}
+
 void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int stream)
 {
     AVStream * vs_p = NULL;
@@ -493,27 +540,15 @@ next_delay:
         start_time = vs_p->start_time;
         stream_idx = vs_p->index;
 
-        /*超时也不行。*/
+        /*如果已经超时，则直接返回。*/
         if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
             return;
-
-        /*如果是无效的DTS，直接返回。*/
-        if(ctx->read_dts[stream_idx] == (int64_t)AV_NOPTS_VALUE)
-            return;
-
-        /*
-         * 1：计算当前帧与第一帧的时间差。
-         * 2：因为流的起始值可能不为零(或为负，或为正)，所以时间轴调整为从零开始，便于计算延时。
-        */
-        double a1 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts_first[stream_idx]);
-        double a2 = abcdk_ffmpeg_ts2sec(ctx, stream_idx , ctx->read_dts[stream_idx]);
-        double a = (a2-a1)-(a1-a1);
-        double b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream_idx]) / 1000000;
-
-        //abcdk_trace_output(LOG_DEBUG,"stream(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f)\n",stream_idx,a1,a2, a, b);
         
-        /*以最慢的为准。*/
-        if(block = (a > b ? 1 : 0))
+        /*检测延时是否已经满足。*/
+        block = !_abcdk_ffmpeg_read_delay_check(ctx, stream_idx,0);
+        
+        /*以最慢流的为基准。*/
+        if(block)
             break;
     }
 
@@ -524,11 +559,9 @@ next_delay:
     }
 }
 
-int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream)
+int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream)
 {
-    uint8_t *extdata_p = NULL;
-    int extsize = 0;
-    int oldsize = 0;
+    int block = 0;
     int chk;
 
     assert(ctx != NULL && pkt != NULL);
@@ -539,15 +572,19 @@ next_packet:
     if (chk < 0)
         return -1;
 
-    /*读数据包 +1。*/
-    ctx->read_pkt_count[pkt->stream_index] += 1;
+    /*更新最近包时间，不然会超时。*/
+    ctx->last_packet_time = _abcdk_ffmpeg_clock();
 
-    /*记录当前DTS。*/
-    ctx->read_dts[pkt->stream_index] = pkt->dts;
+    /*记录KEY帧和帧分组时间。*/
+    if (pkt->flags & AV_PKT_FLAG_KEY)
+        ctx->read_key_ns[pkt->stream_index] = ctx->read_gop_ns[pkt->stream_index] = _abcdk_ffmpeg_clock();
 
-    /*记录第一个有效的DTS，并记录开始读取时间(用于记算拉流延时)。*/
-    if(ctx->read_dts[pkt->stream_index] != (int64_t)AV_NOPTS_VALUE)
+    /*记录有效的DTS，并记录开始读取时间(用于记算拉流延时)。*/
+    if(pkt->dts != (int64_t)AV_NOPTS_VALUE)
     {
+        /*记录当前DTS。*/
+        ctx->read_dts[pkt->stream_index] = pkt->dts;
+
         /*
          * 满足以下两个条件时，需要更新时间轴开始时间。
          * 1：开始时间无效时。
@@ -561,9 +598,6 @@ next_packet:
         }
     }
 
-    /* 更新最近包时间，不然会超时。*/
-    ctx->last_packet_time = _abcdk_ffmpeg_clock();
-
     /* 如果指定了流索引，这里筛一下。*/
     if (stream >= 0)
     {
@@ -571,10 +605,21 @@ next_packet:
             goto next_packet;
     }
 
+    /*检测延时是否超过阈值。*/
+    block = _abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1);
 
+    /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
+    if (!(pkt->flags & AV_PKT_FLAG_KEY) && (block ||  ctx->read_key_ns[pkt->stream_index] != ctx->read_gop_ns[pkt->stream_index]))
+    {
+        ctx->read_gop_ns[pkt->stream_index] = 0;
+        av_packet_unref(pkt);
+
+        goto next_packet;
+    }
+
+    /*过滤器或其它处理。*/
     if (ctx->input_mp4_h264[pkt->stream_index] || ctx->input_mp4_h265[pkt->stream_index])
     {
-        /*只有mp4格式的h264、h265才需要执行下面的过滤器。*/
         if(ctx->cfg.bit_stream_filter)
         {
             chk = abcdk_avformat_input_filter(ctx->avctx, pkt, &ctx->vs_filter[pkt->stream_index]);
@@ -590,7 +635,7 @@ next_packet:
     return pkt->stream_index;
 }
 
-int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
+int abcdk_ffmpeg_read_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 {
     AVCodecContext *codec_ctx_p;
     int chk = -1;
@@ -606,15 +651,18 @@ next_packet:
 
     if (!ctx->read_eof)
     {
-        chk = abcdk_ffmpeg_read(ctx, &ctx->read_pkt, stream);
+        chk = abcdk_ffmpeg_read_packet(ctx, &ctx->read_pkt, stream);
         if (chk < 0)
+        {
             ctx->read_eof = 1;
+            goto next_packet;
+        }
 
         chk = _abcdk_ffmpeg_capture_codec_init(ctx, ctx->read_pkt.stream_index);
         if (chk < 0)
             return -1;
     }
-
+    
     codec_ctx_p = ctx->codec_ctx[ctx->read_pkt.stream_index];
     if (!codec_ctx_p)
         return -1;
@@ -847,6 +895,7 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
 {
     AVCodecContext *ctx_p = NULL;
     AVPacket pkt = {0};
+    int idx;
     int chk;
 
     assert(ctx != NULL);
@@ -860,7 +909,9 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
     /* 写入所有延时编码数据包。*/
     for (int i = 0; i < ctx->avctx->nb_streams; i++)
     {
-        ctx_p = ctx->codec_ctx[i];
+        idx = ctx->avctx->streams[i]->index;
+        ctx_p = ctx->codec_ctx[idx];
+
         
         /*跳过使用外部编码器的流。*/
         if(!ctx_p)
@@ -877,9 +928,9 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
             if (chk <= 0)
                 break;
 
-            pkt.stream_index = ctx->avctx->streams[i]->index;
+            pkt.stream_index = idx;
 
-            chk = abcdk_ffmpeg_write(ctx, &pkt, NULL);
+            chk = abcdk_ffmpeg_write_packet(ctx, &pkt, NULL);
             if (chk < 0)
                 goto final;
         }
@@ -897,7 +948,7 @@ final:
     return 0;
 }
 
-int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_base)
+int abcdk_ffmpeg_write_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_base)
 {
     AVRational bq,cq;
     AVCodecContext *ctx_p = NULL;
@@ -948,7 +999,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_
     return 0;
 }
 
-int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream)
+int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream)
 {
     AVPacket pkt = {0};
     AVStream *vs_p = NULL;
@@ -968,15 +1019,14 @@ int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe,
     pkt.dts = ++ctx->ts_nums[pkt.stream_index][1];
     pkt.pts = ++ctx->ts_nums[pkt.stream_index][0];
 
-    chk = abcdk_ffmpeg_write(ctx, &pkt, NULL);
+    chk = abcdk_ffmpeg_write_packet(ctx, &pkt, NULL);
     if (chk < 0)
         return -1;
 
     return 0;
 }
 
-
-int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
+int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 {
     AVCodecContext *ctx_p = NULL;
     AVStream *vs_p = NULL;
@@ -1020,7 +1070,7 @@ int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
         goto final;
 
     pkt.stream_index = stream;
-    chk = abcdk_ffmpeg_write(ctx, &pkt,0);
+    chk = abcdk_ffmpeg_write_packet(ctx, &pkt,0);
 
 final:
 

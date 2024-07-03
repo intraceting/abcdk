@@ -81,11 +81,11 @@ typedef struct _abcdk_ffmpeg_config
      */
     int bit_stream_filter;
 
-    /** 播放速度(倍数)。*/
-    float play_speed;
+    /** 读的速度(倍数)。*/
+    float read_speed;
 
-    /** 播放最大延迟(秒.毫秒)。*/
-    float play_delay_max;
+    /** 读的最大延迟(秒.毫秒)。*/
+    float read_delay_max;
 
 }abcdk_ffmpeg_config_t;
 
@@ -171,26 +171,23 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg);
  * @param [in] stream >=0 流索引，< 0 使用最慢的流索引。
  * 
  */
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int stream);
+void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx);
 
 /**
  * 读取数据包。
  * 
- * @param stream >=0 流索引，< 0 任意流索引。
- * 
  * @return >= 0 成功(流索引)，< 0 失败(或结束)。
 */
-int abcdk_ffmpeg_read(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream);
+int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt);
 
 /**
- * 读取数据帧。
+ * 读取数据帧(已解码)。
  * 
- * @param stream >=0 流索引，< 0 任意流。
+ * @param stream 流索引。 >=0 有效，< 0 无效。
  * 
  * @return >= 0 成功(流索引)，< 0 失败(或结束)。
 */
-int abcdk_ffmpeg_read2(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
-
+int abcdk_ffmpeg_read_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
 
 /**
  * 创建流。
@@ -233,7 +230,7 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx);
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_base);
+int abcdk_ffmpeg_write_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_base);
 
 /**
  * 写入数据包(已编码)。
@@ -242,7 +239,7 @@ int abcdk_ffmpeg_write(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream);
+int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream);
 
 /**
  * 写入数据帧(未编码)。
@@ -251,7 +248,7 @@ int abcdk_ffmpeg_write2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe,
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffmpeg_write3(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
+int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream);
 
 
 #endif //AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
