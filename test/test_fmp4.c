@@ -19,6 +19,9 @@ typedef struct _node
 
     abcdk_ffmpeg_t *reader;
     abcdk_ffmpeg_t *writer;
+
+    abcdk_ffmpeg_config_t rcfg;
+    abcdk_ffmpeg_config_t wcfg;
     
 }node_t;
 
@@ -73,70 +76,27 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
     node_t *p = abcdk_heap_alloc(sizeof(node_t));
 
     abcdk_httpd_set_userdata(stream,p);
-    
-    // p->reader = abcdk_ffmpeg_open_capture(NULL,"/home/zpcoding/data/files-b/job/tmp/aaaa.mp4",1,10);
-
-    // p->send_buf = abcdk_stream_create();
-
-    // AVIOContext *io_p = abcdk_avio_alloc(8,1,p->send_buf);
-
-    // io_p->write_packet = _ffmpeg_write_packet_cb;
-
-    // p->writer = abcdk_ffmpeg_open(1,"mp4",NULL,io_p,NULL);
-
-    // AVFormatContext *rf = abcdk_ffmpeg_ctxptr(p->reader);
-    // AVFormatContext *wf = abcdk_ffmpeg_ctxptr(p->writer);
-
-    // for(int i = 0;i<abcdk_ffmpeg_streams(p->reader);i++)
-    // {
-    //     AVStream * vs_p = abcdk_ffmpeg_streamptr(p->reader,i);
-
-    //     AVCodecContext *opt = abcdk_avcodec_alloc3(vs_p->codecpar->codec_id,1);
-    //     abcdk_avstream_parameters_to_context(opt,vs_p);
-
-    //     opt->codec_tag = 0;
-    //     //int fps = abcdk_avstream_fps(rf,p);
-    //     //abcdk_avcodec_encode_video_fill_time_base(opt, 5);
-
-    //     int n = abcdk_ffmpeg_add_stream(p->writer,opt,1);
-
-    //     wf->streams[n]->avg_frame_rate = vs_p->avg_frame_rate;
-    //     wf->streams[n]->r_frame_rate = vs_p->r_frame_rate;
-
-    //     abcdk_avcodec_free(&opt);
-    // }
-
-    // abcdk_ffmpeg_write_header(p->writer,1);
-
-    // abcdk_avformat_dump(wf,1);
-
-
-    // AVFormatContext *rf = abcdk_ffmpeg_ctxptr(p->reader);
-
-    // AVPacket pkt;
-    // av_init_packet(&pkt);
-
-    // abcdk_ffmpeg_read_delay(p->reader, 1, -1);
-
-    // int n = abcdk_ffmpeg_read(p->reader, &pkt, -1);
-    // abcdk_ffmpeg_write(p->writer, &pkt, &rf->streams[n]->time_base);
-
-    // av_packet_unref(&pkt);
 }
 
 static void stream_request_cb(void *opaque, abcdk_object_t *stream)
 {
     node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
+
+    p->rcfg.file_name = "rtsp://192.168.100.96/live/bbbb";
+    p->rcfg.bit_stream_filter = 1;
+    p->rcfg.timeout = 10;
+    p->rcfg.play_speed = 1.0;
     
-    p->reader = abcdk_ffmpeg_open_capture(NULL,"/home/zpcoding/data/files-b/job/tmp/aaaa.mp4",1,10);
+    p->reader = abcdk_ffmpeg_open(&p->rcfg);
 
     p->send_buf = abcdk_stream_create();
 
-    AVIOContext *io_p = abcdk_avio_alloc(8,1,p->send_buf);
+    p->wcfg.writer = 1;
+    p->wcfg.io.opaque = p->send_buf;
+    p->wcfg.io.write_cb = _ffmpeg_write_packet_cb;
+    p->wcfg.short_name = "mp4";
 
-    io_p->write_packet = _ffmpeg_write_packet_cb;
-
-    p->writer = abcdk_ffmpeg_open(1,"mp4",NULL,io_p,NULL);
+    p->writer = abcdk_ffmpeg_open(&p->wcfg);
 
     AVFormatContext *rf = abcdk_ffmpeg_ctxptr(p->reader);
     AVFormatContext *wf = abcdk_ffmpeg_ctxptr(p->writer);
@@ -217,7 +177,7 @@ TRY:
         av_init_packet(&pkt);
 
 
-        abcdk_ffmpeg_read_delay(p->reader,1,-1);
+        abcdk_ffmpeg_read_delay(p->reader,-1);
 
         int n= abcdk_ffmpeg_read(p->reader,&pkt,-1);
         if(n<0)

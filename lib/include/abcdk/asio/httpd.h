@@ -163,6 +163,8 @@ void abcdk_httpd_session_set_timeout(abcdk_httpd_session_t *session,time_t timeo
 /** 
  * 监听。
  * 
+ * @note 在会话关闭前，配置信息必须保持有效且不能更改。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *addr,abcdk_httpd_config_t *cfg);
@@ -242,7 +244,7 @@ void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
 /**
  * 头部应答结束。
  * 
- * @note 应答实体前也会自动执行。
+ * @note 直接应答实体也会自动执行。
  * 
  * @return 0 成功，< 0 失败。
 */

@@ -326,6 +326,8 @@ abcdk_asio_t *abcdk_asio_start(int max,int cpu);
 /**
  * 启动监听。
  * 
+ * @note 在对象关闭前，配置信息必须保持有效且不能更改。
+ * 
  * @param [in] node 通讯对象。
  * @param [in] addr 监听地址。
  * @param [in] cfg 配置。
@@ -337,6 +339,7 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio
 /**
  * 连接远程。
  * 
+ * @note 在对象关闭前，配置信息必须保持有效且不能更改。
  * @note 仅发出连接指令，连接是否成功以消息通知。
  * 
  * @param [in] addr 远程地址。

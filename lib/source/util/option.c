@@ -212,11 +212,11 @@ const char* abcdk_option_get(abcdk_option_t *opt, const char *key,size_t index,c
 
     it_key = _abcdk_option_find_key(opt,key,0);
     if(!it_key)
-        ABCDK_ERRNO_AND_RETURN1(EAGAIN,defval);
+        return defval;
 
     it_val = _abcdk_option_find_value(it_key,index);
     if(!it_val)
-        ABCDK_ERRNO_AND_RETURN1(EAGAIN,defval);
+        return defval;
 
     return it_val->obj->pptrs[ABCDK_OPTION_VALUE];
 }

@@ -72,10 +72,15 @@ typedef struct _abcdk_tipc_config
     void (*subscribe_cb)(void *opaque, uint64_t id, uint64_t topic, const void *data, size_t size);
 } abcdk_tipc_config_t;
 
-/*销毁。*/
+/** 销毁。*/
 void abcdk_tipc_destroy(abcdk_tipc_t **ctx);
 
-/*创建。*/
+/*
+ * 创建。
+ * 
+ * @note 在环境销毁前，配置信息必须保持有效且不能更改。
+ * 
+*/
 abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg);
 
 /**

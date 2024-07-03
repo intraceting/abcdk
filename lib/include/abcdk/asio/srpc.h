@@ -134,6 +134,8 @@ abcdk_srpc_t *abcdk_srpc_create(int max,int cpu);
 /** 
  * 监听。
  * 
+ * @note 在会话关闭前，配置信息必须保持有效且不能更改。
+ * 
  * @return 0 成功，!0 失败。
 */
 int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk_srpc_config_t *cfg);

@@ -74,7 +74,7 @@ int abcdk_option_fset(abcdk_option_t *opt, const char *key, const char *valfmt, 
 /**
  * 获取一个选项的值。
  * 
- * @param defval 默认值，允许为NULL(0)。
+ * @param [in] defval 默认值，允许为NULL(0)。
  * 
  * @return !NULL(0) 成功(值的指针)， NULL(0) 失败(键不存在)。
 */

@@ -21,6 +21,73 @@ __BEGIN_DECLS
 /** FFMPEG对象。*/
 typedef struct _abcdk_ffmpeg abcdk_ffmpeg_t;
 
+/** FFMPEG对象配置。*/
+typedef struct _abcdk_ffmpeg_config
+{
+    /** 角色。0 读者，!0 作者。*/
+    int writer;
+
+    /** 
+     * 自定义IO。
+     * 
+     * @note 当读写回调函数存在时有效。
+    */
+    struct
+    {   
+        /** 
+         * 缓存大小。
+         * 
+         * @note 4KB的倍数。
+        */
+        int buffer_size;
+
+        /** 应用环境指针。*/
+        void *opaque;
+
+        /** 读回调。 */
+        int (*read_cb)(void *opaque, uint8_t *buf, int size);
+
+        /** 写回调。 */
+        int (*write_cb)(void *opaque, uint8_t *buf, int size);
+    } io;
+
+    /** 超时(秒)。*/
+    int timeout;
+
+    /** 
+     * 文件名或资源名的简写名称。
+     * 
+     * @note 允许为NULL(0)。
+    */
+    const char *short_name;
+
+    /** 文件名或资源名的完整名称。*/
+    const char *file_name;
+
+    /** 
+     * MIME类型。
+     * 
+     * @note 作者有效，允许为NULL(0)。
+    */
+    const char *mime_type;
+
+    /** 尝试NVCODEC编/解码器。0 否，!0 是。*/
+    int try_nvcodec;
+
+    /** 
+     * 比特流过滤器。0 不启用，!0 启用。
+     * 
+     * @note MP4封装格式，H264或HEVC编码有效。
+     */
+    int bit_stream_filter;
+
+    /** 播放速度(倍数)。*/
+    float play_speed;
+
+    /** 播放最大延迟(秒.毫秒)。*/
+    float play_delay_max;
+
+}abcdk_ffmpeg_config_t;
 
 /**
  * 销毁对象。
@@ -52,28 +119,28 @@ AVStream *abcdk_ffmpeg_streamptr(abcdk_ffmpeg_t *ctx,int stream);
  *
  * @return 秒.毫秒。
  */
-double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream,double xspeed);
+double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream);
 
 /**
  * 获取FPS。
  *
  * @return 秒.毫秒。
  */
-double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream,double xspeed);
+double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream);
 
 /**
  * DTS或PTS转自然时间。
  *
  * @return 秒.毫秒。
  */
-double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts,double xspeed);
+double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts);
 
 /**
  * DTS或PTS转序号。
  *
  * @return 整型。
  */
-int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts,double xspeed);
+int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts);
 
 /**
  * 获取指定流图像的宽。
@@ -92,50 +159,19 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream);
 /**
  * 创建FFMPEG对象。
  * 
- * @warning 自定义IO将被托管，应用程不再继续访问。
- * 
- * @param [in] io 自定义IO。
- * @param [in] opt 选项。
- * 
- * @code
- * --timeout < seconds >
- *  超时(秒)。
- * --mime-type < type >
- *  媒体类型。
- * --try-nvcodec < 1 | 0 >
- *  尝试NVCODEC编解码器。默认：0
- * --bit-stream-filter < 1 |0 >
- *  比特流过滤器。默认：0
- * @endcond
- * 
+ * @note 在对象关闭前，配置信息必须保持有效且不能更改。
+ *  
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_ffmpeg_t *abcdk_ffmpeg_open(int writer, const char *short_name, const char *url, AVIOContext *io, abcdk_option_t *opt);
-
-/**
- * 创建读者对象。
- * 
- * @param [in] timeout 超时(秒)。
- *
-*/ 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_capture(const char *short_name, const char *url, int bsf, int timeout);
-
-/** 
- * 创建作者对象。
- * 
- * @param [in] timeout 超时(秒)。注：仅对初步建立连接有效。
- * 
-*/
-abcdk_ffmpeg_t *abcdk_ffmpeg_open_writer(const char*short_name, const char *url, const char *mime_type, int timeout);
+abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg);
 
 /**
  * 读延时。
  * 
- * @param [in] xspeed 倍速。
  * @param [in] stream >=0 流索引，< 0 使用最慢的流索引。
  * 
  */
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, double xspeed, int stream);
+void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int stream);
 
 /**
  * 读取数据包。
