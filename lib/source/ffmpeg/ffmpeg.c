@@ -685,17 +685,7 @@ next_packet:
     
     codec_ctx_p = ctx->codec_ctx[ctx->read_idx];
     if (!codec_ctx_p)
-    {
-        if (stream >= 0)
-            return -1;
-        else if (ctx->read_idx >= (ABCDK_FFMPEG_MAX_STREAMS - 1))
-            return -1;
-        else
-        {
-            ctx->read_idx += 1;
-            goto next_packet;
-        }
-    }
+        return -1;
 
     chk = abcdk_avcodec_decode(codec_ctx_p, frame, &ctx->read_pkt);
     if (chk < 0)
@@ -704,8 +694,18 @@ next_packet:
     {
         if(!ctx->read_eof)
             goto next_packet;
-        else 
-            return -1;
+        else
+        {
+            if (stream >= 0)
+                return -1;
+            else if (ctx->read_idx >= (ABCDK_FFMPEG_MAX_STREAMS - 1))
+                return -1;
+            else
+            {
+                ctx->read_idx += 1;
+                goto next_packet;
+            }
+        }
     }
 
     return ctx->read_pkt.stream_index;
