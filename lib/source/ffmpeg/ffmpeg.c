@@ -76,6 +76,9 @@ typedef struct _abcdk_ffmpeg
     /** 是否已经结束。*/
     int read_eof;
 
+    /** 读流索引。 */
+    int read_idx;
+
     /**
      * TS编号。
      * 
@@ -512,7 +515,7 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
         block = (a > b?0:1);
 
-        abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+    //    abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
     else
     {
@@ -660,21 +663,39 @@ next_packet:
 
     if (!ctx->read_eof)
     {
-        chk = abcdk_ffmpeg_read_packet(ctx, &ctx->read_pkt, stream);
-        if (chk < 0)
+        ctx->read_idx = abcdk_ffmpeg_read_packet(ctx, &ctx->read_pkt, stream);
+        if (ctx->read_idx < 0)
         {
+            /*标记读到末尾或断开。*/
             ctx->read_eof = 1;
+
+            /*如果未指定流，则从0号索引开始遍历延时解码帧。*/
+            if(stream >= 0)
+                ctx->read_idx = stream;
+            else 
+                ctx->read_idx = 0;
+
             goto next_packet;
         }
-
-        chk = _abcdk_ffmpeg_capture_codec_init(ctx, ctx->read_pkt.stream_index);
+        
+        chk = _abcdk_ffmpeg_capture_codec_init(ctx, ctx->read_idx);
         if (chk < 0)
             return -1;
     }
     
-    codec_ctx_p = ctx->codec_ctx[ctx->read_pkt.stream_index];
+    codec_ctx_p = ctx->codec_ctx[ctx->read_idx];
     if (!codec_ctx_p)
-        return -1;
+    {
+        if (stream >= 0)
+            return -1;
+        else if (ctx->read_idx >= (ABCDK_FFMPEG_MAX_STREAMS - 1))
+            return -1;
+        else
+        {
+            ctx->read_idx += 1;
+            goto next_packet;
+        }
+    }
 
     chk = abcdk_avcodec_decode(codec_ctx_p, frame, &ctx->read_pkt);
     if (chk < 0)
