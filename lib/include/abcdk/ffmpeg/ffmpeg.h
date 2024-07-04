@@ -81,10 +81,10 @@ typedef struct _abcdk_ffmpeg_config
      */
     int bit_stream_filter;
 
-    /** 读的速度(倍数)。*/
+    /** 读的速度(倍数)。0.01~100.0 */
     float read_speed;
 
-    /** 读的最大延迟(秒.毫秒)。*/
+    /** 读的最大延迟(秒.毫秒)。0.020~86400.0*/
     float read_delay_max;
 
 }abcdk_ffmpeg_config_t;
@@ -168,9 +168,8 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg);
 /**
  * 读延时。
  * 
- * @param [in] stream >=0 流索引，< 0 使用最慢的流索引。
- * 
- */
+ * @note 以最慢的为基准。
+*/
 void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx);
 
 /**
@@ -178,7 +177,7 @@ void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx);
  * 
  * @return >= 0 成功(流索引)，< 0 失败(或结束)。
 */
-int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt);
+int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream);
 
 /**
  * 读取数据帧(已解码)。

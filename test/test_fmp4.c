@@ -85,8 +85,8 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
     p->rcfg.file_name = "rtsp://192.168.100.96/live/bbbb";
     p->rcfg.bit_stream_filter = 1;
     p->rcfg.timeout = 10;
-    p->rcfg.play_speed = 1.0;
-    
+    p->rcfg.read_speed = 1.0;
+    p->rcfg.read_delay_max = 1.0;    
     p->reader = abcdk_ffmpeg_open(&p->rcfg);
 
     p->send_buf = abcdk_stream_create();
@@ -177,7 +177,7 @@ TRY:
         av_init_packet(&pkt);
 
 
-        abcdk_ffmpeg_read_delay(p->reader,-1);
+        abcdk_ffmpeg_read_delay(p->reader);
 
         int n= abcdk_ffmpeg_read_packet(p->reader,&pkt,-1);
         if(n<0)

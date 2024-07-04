@@ -17,7 +17,8 @@ int abcdk_test_record(abcdk_option_t *args)
     abcdk_ffmpeg_config_t rcfg = {0},wcfg = {1};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
-    rcfg.play_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.bit_stream_filter = 1;
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
 
@@ -86,7 +87,7 @@ int abcdk_test_record(abcdk_option_t *args)
     av_init_packet(&pkt);
     for(int i = 0;i<1000;i++)
     {
-        abcdk_ffmpeg_read_delay(r,-1);
+        abcdk_ffmpeg_read_delay(r);
 
         int n= abcdk_ffmpeg_read_packet(r,&pkt,-1);
         if(n<0)
@@ -101,7 +102,7 @@ int abcdk_test_record(abcdk_option_t *args)
         double psec = abcdk_ffmpeg_ts2sec(r, pkt.stream_index, pkt.pts);
         double dsec = abcdk_ffmpeg_ts2sec(r, pkt.stream_index, pkt.dts);
 
-        double dru = (double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,rcfg.play_speed);
+        double dru = (double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,rcfg.read_speed);
 
         fprintf(stderr, "flag(%d,%d),pts(%.6f),dts(%.6f),dur(%.6f)\n",m, pkt.flags, psec, dsec, dru);
 
@@ -125,7 +126,9 @@ int abcdk_test_codec(abcdk_option_t *args)
     abcdk_ffmpeg_config_t rcfg = {0},wcfg = {1};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
-    rcfg.play_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.read_delay_max = .0;
+    rcfg.bit_stream_filter = 1;
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
 
@@ -162,13 +165,15 @@ int abcdk_test_codec(abcdk_option_t *args)
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<1000;i++)
     {
-        abcdk_ffmpeg_read_delay(r,-1);
+        abcdk_ffmpeg_read_delay(r);
         
         int n= abcdk_ffmpeg_read_frame(r,inframe,0);
         if(n<0)
             break;
 
          abcdk_ffmpeg_write_frame(w,inframe,n);
+
+         usleep(rand() %40 * 1000);
     }
 
     av_frame_free(&inframe);
@@ -184,7 +189,8 @@ int abcdk_test_extradata(abcdk_option_t *args)
     abcdk_ffmpeg_config_t rcfg = {0},wcfg = {1};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
-    rcfg.play_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.bit_stream_filter = 1;
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
 
@@ -228,7 +234,8 @@ int abcdk_test_audio(abcdk_option_t *args)
     abcdk_ffmpeg_config_t rcfg = {0};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
-    rcfg.play_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.bit_stream_filter = 1;
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&rcfg);
 
@@ -239,7 +246,7 @@ int abcdk_test_audio(abcdk_option_t *args)
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<1000;i++)
     {
-        abcdk_ffmpeg_read_delay(r,-1);
+        abcdk_ffmpeg_read_delay(r);
         
         int n = abcdk_ffmpeg_read_frame(r,inframe,stream_idx);
         if(n<0)

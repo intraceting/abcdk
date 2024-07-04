@@ -197,7 +197,7 @@ double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream)
     assert(stream < ctx->avctx->nb_streams);
 
     if(ctx->avctx->iformat)
-        return abcdk_avstream_duration(ctx->avctx,ctx->avctx->streams[stream],ctx->cfg.play_speed);
+        return abcdk_avstream_duration(ctx->avctx,ctx->avctx->streams[stream],ctx->cfg.read_speed);
     
     return abcdk_avstream_duration(ctx->avctx,ctx->avctx->streams[stream],1.0);
 }
@@ -208,7 +208,7 @@ double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream)
     assert(stream < ctx->avctx->nb_streams);
 
     if(ctx->avctx->iformat)
-        return abcdk_avstream_fps(ctx->avctx,ctx->avctx->streams[stream],ctx->cfg.play_speed);
+        return abcdk_avstream_fps(ctx->avctx,ctx->avctx->streams[stream],ctx->cfg.read_speed);
 
     return abcdk_avstream_fps(ctx->avctx,ctx->avctx->streams[stream],1.0);
 }
@@ -219,7 +219,7 @@ double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts)
     assert(stream < ctx->avctx->nb_streams);
 
     if(ctx->avctx->iformat)
-        return abcdk_avstream_ts2sec(ctx->avctx,ctx->avctx->streams[stream],ts,ctx->cfg.play_speed);
+        return abcdk_avstream_ts2sec(ctx->avctx,ctx->avctx->streams[stream],ts,ctx->cfg.read_speed);
 
     return abcdk_avstream_ts2sec(ctx->avctx,ctx->avctx->streams[stream],ts,1.0);
 }
@@ -230,7 +230,7 @@ int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts)
     assert(stream < ctx->avctx->nb_streams);
 
     if(ctx->avctx->iformat)
-        return abcdk_avstream_ts2num(ctx->avctx,ctx->avctx->streams[stream],ts,ctx->cfg.play_speed);
+        return abcdk_avstream_ts2num(ctx->avctx,ctx->avctx->streams[stream],ts,ctx->cfg.read_speed);
 
     return abcdk_avstream_ts2num(ctx->avctx,ctx->avctx->streams[stream],ts,1.0);
 }
@@ -354,10 +354,10 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg)
     ctx->cfg = *cfg;
 
     /*修复不支持的参数。*/
-    ABCDK_CLAMP(ctx->cfg.io.buffer_size,(int)8,(int)1024);
-    ABCDK_CLAMP(ctx->cfg.timeout,(int)-1,(int)180);
-    ABCDK_CLAMP(ctx->cfg.read_speed,(float)0.01,(float)100.0);
-    ABCDK_CLAMP(ctx->cfg.read_delay_max,(float)0.001,(float)59.999);
+    ctx->cfg.io.buffer_size = ABCDK_CLAMP(ctx->cfg.io.buffer_size,(int)8,(int)1024);
+    ctx->cfg.timeout = ABCDK_CLAMP(ctx->cfg.timeout,(int)-1,(int)180);
+    ctx->cfg.read_speed = ABCDK_CLAMP(ctx->cfg.read_speed,(float)0.01,(float)100.0);
+    ctx->cfg.read_delay_max = ABCDK_CLAMP(ctx->cfg.read_delay_max,(float)0.020,(float)86400.0);
 
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
 
@@ -484,6 +484,7 @@ static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
 static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int flag)
 {
     double a1, a2, a, b;
+    int block;
 
     /*如果是无效的DTS，直接返回1。*/
     if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
@@ -500,10 +501,18 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
         if(ctx->cfg.read_speed < 1.0)
             return 0;
 
+        /*可能已经不在同一个GOP中。*/
+        if(ctx->read_key_ns[stream] != ctx->read_gop_ns[stream])
+            return 1;
+
         a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
         a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max / ctx->cfg.read_speed;
         a = (a2 - a1) - (a1 - a1);
         b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000. / ctx->cfg.read_speed;
+
+        block = (a > b?0:1);
+
+        abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
     else
     {
@@ -511,14 +520,18 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
         a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]);
         a = (a2 - a1) - (a1 - a1);
         b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000.;
+
+        block = (a > b?0:1);
+
+        //   abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
 
-    // abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f)\n",stream,flag,a1,a2, a, b);
+ 
 
-    return (a > b)?0:1;
+    return block;
 }
 
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int stream)
+void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx)
 {
     AVStream * vs_p = NULL;
     int64_t start_time = 0;
@@ -532,10 +545,6 @@ next_delay:
     for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
     {
         vs_p = abcdk_ffmpeg_streamptr(ctx,i);
-
-        /*也许仅关注特定的流。*/
-        if(stream >= 0 && stream != vs_p->index)
-            continue;
 
         start_time = vs_p->start_time;
         stream_idx = vs_p->index;
@@ -609,11 +618,11 @@ next_packet:
     block = _abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1);
 
     /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
-    if (!(pkt->flags & AV_PKT_FLAG_KEY) && (block ||  ctx->read_key_ns[pkt->stream_index] != ctx->read_gop_ns[pkt->stream_index]))
+    if (!(pkt->flags & AV_PKT_FLAG_KEY) && block)
     {
-        ctx->read_gop_ns[pkt->stream_index] = 0;
-        av_packet_unref(pkt);
+        abcdk_trace_output(LOG_WARNING,"超过设定的延时阈值，丢弃此数据包(index=%d,dts=%lld,pts=%lld)。",pkt->stream_index,pkt->dts,pkt->pts);
 
+        ctx->read_gop_ns[pkt->stream_index] = 0;
         goto next_packet;
     }
 
