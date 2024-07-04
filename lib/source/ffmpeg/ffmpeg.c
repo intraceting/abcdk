@@ -489,10 +489,6 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
     double a1, a2, a, b;
     int block;
 
-    /*如果是无效的DTS，直接返回1。*/
-    if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
-        return 1;
-
     /*
      * 1：计算当前帧与第一帧的时间差。
      * 2：因为流的起始值可能不为零(或为负，或为正)，所以时间轴调整为从零开始，便于计算延时。
@@ -500,25 +496,25 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
     if (flag == 1)
     {
-        /*降速时无效。*/
-        if(ctx->cfg.read_speed < 1.0)
+        /*如果是无效的DTS，直接返回0。*/
+        if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
             return 0;
-
-        /*可能已经不在同一个GOP中。*/
-        if(ctx->read_key_ns[stream] != ctx->read_gop_ns[stream])
-            return 1;
 
         a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
         a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max / ctx->cfg.read_speed;
         a = (a2 - a1) - (a1 - a1);
-        b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000. / ctx->cfg.read_speed;
+        b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000.;
 
         block = (a > b?0:1);
 
-    //    abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+        // abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
     else
     {
+        /*如果是无效的DTS，直接返回1。*/
+        if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
+            return 1;
+
         a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
         a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]);
         a = (a2 - a1) - (a1 - a1);
@@ -528,8 +524,6 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
         //   abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
-
- 
 
     return block;
 }
@@ -620,10 +614,15 @@ next_packet:
     /*检测延时是否超过阈值。*/
     block = _abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1);
 
+    /*也可能已经不在同一个GOP中。*/
+    if(ctx->read_key_ns[pkt->stream_index] != ctx->read_gop_ns[pkt->stream_index])
+        block = 1;
+
     /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
     if (!(pkt->flags & AV_PKT_FLAG_KEY) && block)
     {
-        abcdk_trace_output(LOG_WARNING,"超过设定的延时阈值，丢弃此数据包(index=%d,dts=%lld,pts=%lld)。",pkt->stream_index,pkt->dts,pkt->pts);
+        abcdk_trace_output(LOG_WARNING, "超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+                           pkt->stream_index, abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));
 
         ctx->read_gop_ns[pkt->stream_index] = 0;
         goto next_packet;
@@ -650,6 +649,7 @@ next_packet:
 int abcdk_ffmpeg_read_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 {
     AVCodecContext *codec_ctx_p;
+    AVPacket *pkt_p;
     int chk = -1;
 
     assert(ctx != NULL && frame != NULL);
@@ -687,10 +687,11 @@ next_packet:
     if (!codec_ctx_p)
         return -1;
 
-    chk = abcdk_avcodec_decode(codec_ctx_p, frame, &ctx->read_pkt);
+    pkt_p = (ctx->read_eof ? NULL : &ctx->read_pkt);
+    chk = abcdk_avcodec_decode(codec_ctx_p, frame, pkt_p);
     if (chk < 0)
         return -1;
-    if (chk == 0)
+    else if (chk == 0)
     {
         if(!ctx->read_eof)
             goto next_packet;
@@ -1073,7 +1074,7 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
     /*使用外部编器，不支持。*/
     if (!ctx_p)
         return -2;
-
+#if 0
     frame_cp = av_frame_alloc();
     if(!frame_cp)
         return -1;
@@ -1081,6 +1082,8 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
     frame_cp->width = frame->width;
     frame_cp->height = frame->height;
     frame_cp->format = frame->format;
+    frame_cp->nb_samples = frame->nb_samples;
+    frame_cp->sample_aspect_ratio = frame->sample_aspect_ratio;
 
     for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
     {
@@ -1093,6 +1096,20 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
 
     frame_cp->pts = ++ctx->ts_nums[stream][0];
     frame_cp->quality = frame->quality;
+#else 
+    frame_cp = av_frame_clone(frame);
+    if(!frame_cp)
+        return -1;
+
+    /*下面设置会使编码器重新计算播放时间。*/
+    frame_cp->pts = ++ctx->ts_nums[stream][0];
+    frame_cp->pkt_dts = (int64_t)AV_NOPTS_VALUE;
+    frame_cp->pkt_pts = (int64_t)AV_NOPTS_VALUE;
+
+    /*下面设置会使编码器自行决定帧类型。*/
+    frame_cp->key_frame = 0;
+    frame_cp->pict_type = AV_PICTURE_TYPE_NONE;
+#endif 
 
     av_init_packet(&pkt);
     chk = abcdk_avcodec_encode(ctx_p, &pkt, frame_cp);

@@ -18,6 +18,7 @@ int abcdk_test_record(abcdk_option_t *args)
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    rcfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,1);
     rcfg.bit_stream_filter = 1;
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
@@ -127,7 +128,7 @@ int abcdk_test_codec(abcdk_option_t *args)
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
-    rcfg.read_delay_max = .0;
+    rcfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,1);
     rcfg.bit_stream_filter = 1;
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
@@ -148,9 +149,11 @@ int abcdk_test_codec(abcdk_option_t *args)
 
         abcdk_avstream_parameters_to_context(opt,p);
 
-        opt->codec_tag = 0;
-        opt->gop_size = 12;
         int fps = abcdk_ffmpeg_fps(r,i);
+
+        opt->codec_tag = 0;
+        opt->gop_size = fps;
+        
         abcdk_avcodec_encode_video_fill_time_base(opt, fps);
 
         abcdk_ffmpeg_add_stream(w,opt,0);
@@ -163,11 +166,11 @@ int abcdk_test_codec(abcdk_option_t *args)
     abcdk_avformat_dump(wf,1);
 
     AVFrame *inframe = av_frame_alloc();
-    for(int i = 0;i<10000000;i++)
+    for(int i = 0;i<1000;i++)
     {
         abcdk_ffmpeg_read_delay(r);
         
-        int n= abcdk_ffmpeg_read_frame(r,inframe,0);
+        int n= abcdk_ffmpeg_read_frame(r,inframe,-1);
         if(n<0)
             break;
 

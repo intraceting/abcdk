@@ -703,7 +703,7 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
         fps = 1.0 / abcdk_avmatch_r2d(vs->time_base,xspeed);
 #endif 
 
-    return fps;
+    return ABCDK_CLAMP(fps,(double)1.0,(double)999999999.0);
 }
 
 double abcdk_avstream_ts2sec(AVFormatContext *ctx, AVStream *vs, int64_t ts, double xspeed)
