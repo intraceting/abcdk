@@ -243,7 +243,7 @@ int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int ke
 /**
  * 写入数据帧(未编码)。
  * 
- * @note 仅支持图像。
+ * @note 仅支持图像和音频。
  * 
  * @return >= 0 成功，< 0 失败。
 */
