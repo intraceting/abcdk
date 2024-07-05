@@ -49,6 +49,7 @@ typedef struct _abcdk_httpd_node
 #ifdef NGHTTP2_H
     nghttp2_session_callbacks *h2_cbs;
     nghttp2_session *h2_handle;
+    int h2_send_busy;
 #endif // NGHTTP2_H
 
     /*流容器。*/
@@ -492,9 +493,15 @@ static ssize_t _abcdk_httpd_h2_send_cb(nghttp2_session *session, const uint8_t *
     abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     int chk;
 
+    /*等待线路空闲时再发送。*/
+    if(node_ctx_p->h2_send_busy)
+         return NGHTTP2_ERR_WOULDBLOCK; 
+
+    /*假设线路即将忙碌。*/
+    node_ctx_p->h2_send_busy = 1; 
     chk = abcdk_asio_post_buffer(node, data, length);
     if (chk != 0)
-        return 0;
+        return NGHTTP2_ERR_EOF;
 
     return length;
 }
@@ -691,16 +698,15 @@ static void _abcdk_httpd_output_2(abcdk_asio_node_t *node)
 
 #ifdef NGHTTP2_H
 
+    /*线路已经空闲。*/
+    node_ctx_p->h2_send_busy = 0; 
+
     /*把缓存数据串行化，并通过回调发送出去。*/
     chk = nghttp2_session_send(node_ctx_p->h2_handle);
-    if(chk < 0)
-        return;
-
-    /*只要不出错，就继监听。*/ 
-    abcdk_asio_send_watch(node);
-
-    /*Fix me: 上面的写法有问题。当发生流量控制事件并且网络空闲时，此函数会被频繁的调用，造成CPU使用率异常升高。*/
-    
+    if (chk == NGHTTP2_ERR_WOULDBLOCK)
+        abcdk_asio_send_watch(node);
+    else if( chk < 0)
+        abcdk_asio_set_timeout(node, 1);
 
 #endif //NGHTTP2_H
 }
