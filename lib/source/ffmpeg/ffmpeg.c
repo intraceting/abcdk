@@ -1057,29 +1057,7 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
     /*使用外部编器，不支持。*/
     if (!ctx_p)
         return -2;
-#if 0
-    frame_cp = av_frame_alloc();
-    if(!frame_cp)
-        return -1;
 
-    frame_cp->width = frame->width;
-    frame_cp->height = frame->height;
-    frame_cp->format = frame->format;
-    frame_cp->nb_samples = frame->nb_samples;
-    frame_cp->sample_aspect_ratio = frame->sample_aspect_ratio;
-
-    for (int i = 0; i < AV_NUM_DATA_POINTERS; i++)
-    {
-        if (frame->data[i] == NULL || frame->linesize[i] <= 0)
-            break;
-
-        frame_cp->data[i] = frame->data[i];
-        frame_cp->linesize[i] = frame->linesize[i];
-    }
-
-    frame_cp->pts = ++ctx->ts_nums[stream][0];
-    frame_cp->quality = frame->quality;
-#else 
     frame_cp = av_frame_clone(frame);
     if(!frame_cp)
         return -1;
@@ -1101,7 +1079,6 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
     /*下面设置会使编码器自行决定帧类型。*/
     frame_cp->key_frame = 0;
     frame_cp->pict_type = AV_PICTURE_TYPE_NONE;
-#endif 
 
     av_init_packet(&pkt);
     chk = abcdk_avcodec_encode(ctx_p, &pkt, frame_cp);
