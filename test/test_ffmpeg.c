@@ -51,8 +51,8 @@ int abcdk_test_record(abcdk_option_t *args)
         abcdk_avstream_parameters_to_context(opt,p);
 
         opt->codec_tag = 0;
-        //int fps = abcdk_avstream_fps(rf,p);
-        //abcdk_avcodec_encode_video_fill_time_base(opt, 5);
+        // int fps = abcdk_ffmpeg_fps(r,p->index);
+        // abcdk_avcodec_encode_video_fill_time_base(opt, fps);
 
         int n = abcdk_ffmpeg_add_stream(w,opt,1);
 
