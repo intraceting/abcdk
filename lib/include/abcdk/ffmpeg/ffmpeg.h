@@ -87,6 +87,13 @@ typedef struct _abcdk_ffmpeg_config
     /** 读的最大延迟(秒.毫秒)。0.020~86400.0*/
     float read_delay_max;
 
+    /** 
+     * 写刷新。0 不启用，!0 启用。
+     * 
+     * @note 影响效率，但推流会减少延时。
+    */
+    int write_flush;
+
 }abcdk_ffmpeg_config_t;
 
 /**

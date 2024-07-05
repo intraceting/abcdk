@@ -22,43 +22,16 @@ typedef struct _node
 
     abcdk_ffmpeg_config_t rcfg;
     abcdk_ffmpeg_config_t wcfg;
+
+    uint64_t read_key_ns;
+    uint64_t read_gop_ns;
+
+    volatile uint64_t output_ns;
     
 }node_t;
 
-static void session_prepare_cb(void *opaque, abcdk_httpd_session_t **session, abcdk_httpd_session_t *listen)
-{
-    abcdk_httpd_session_t *p;
-
-    p = abcdk_httpd_session_alloc((abcdk_httpd_t*)opaque);
-
-
-    *session = p;
-}
-
-static void session_accept_cb(void *opaque, abcdk_httpd_session_t *session, int *result)
-{
-    *result = 0;
-}
-
-static void session_ready_cb(void *opaque, abcdk_httpd_session_t *session)
-{
-
-}
-
-static void session_close_cb(void *opaque, abcdk_httpd_session_t *session)
-{
-
-}
-
-static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
-{
-    node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
-
-    abcdk_stream_destroy(&p->send_buf);
-    abcdk_ffmpeg_destroy(&p->reader);
-    abcdk_ffmpeg_destroy(&p->writer);
-    
-}
+static node_t *g_node_ctx = NULL;
+static abcdk_object_t *g_stream = NULL;
 
 
 int _ffmpeg_write_packet_cb(void *opaque, uint8_t *buf, int buf_size)
@@ -70,17 +43,9 @@ int _ffmpeg_write_packet_cb(void *opaque, uint8_t *buf, int buf_size)
     return buf_size;
 }
 
-
-static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
+static void * _do_rtsp2fmpt(void *userdata)
 {
-    node_t *p = abcdk_heap_alloc(sizeof(node_t));
-
-    abcdk_httpd_set_userdata(stream,p);
-}
-
-static void stream_request_cb(void *opaque, abcdk_object_t *stream)
-{
-    node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
+    node_t *p = g_node_ctx = abcdk_heap_alloc(sizeof(node_t));
 
     p->rcfg.file_name = "rtsp://192.168.100.96/live/bbbb";
     p->rcfg.bit_stream_filter = 1;
@@ -124,23 +89,110 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
 
     abcdk_avformat_dump(wf,1);
 
+     int eof = 0;
+     abcdk_object_t *buf;
+
+     while (!eof)
+     {
+
+         buf = abcdk_object_alloc2(128 * 1024);
+         int rlen = abcdk_stream_read(p->send_buf, buf->pptrs[0], buf->sizes[0]);
+         if (rlen > 0)
+         {
+             buf->sizes[0] = rlen;
+             abcdk_httpd_response(g_stream, buf);
+         }
+         else
+         {
+             abcdk_object_unref(&buf);
+
+             if (eof)
+             {
+                 abcdk_httpd_response(g_stream, NULL);
+                 continue;
+             }
+
+             AVFormatContext *rf = abcdk_ffmpeg_ctxptr(p->reader);
+
+             AVPacket pkt;
+             av_init_packet(&pkt);
+
+             abcdk_ffmpeg_read_delay(p->reader);
+
+             int n = abcdk_ffmpeg_read_packet(p->reader, &pkt, -1);
+             if (n < 0)
+             {
+                 abcdk_ffmpeg_write_trailer(p->writer);
+                 eof = 1;
+             }
+             else
+             {
+                 fprintf(stderr, "pts(%lld),dts(%lld)\n", pkt.pts, pkt.dts);
+
+                 //if(g_node_ctx->read_key_ns != g_node_ctx->read_gop_ns || )
+
+
+                 abcdk_ffmpeg_write_packet(p->writer, &pkt, &rf->streams[n]->time_base);
+             }
+
+             av_packet_unref(&pkt);
+         }
+     }
+
+    abcdk_stream_destroy(&p->send_buf);
+    abcdk_ffmpeg_destroy(&p->reader);
+    abcdk_ffmpeg_destroy(&p->writer);
+}
+
+
+
+static void session_prepare_cb(void *opaque, abcdk_httpd_session_t **session, abcdk_httpd_session_t *listen)
+{
+    abcdk_httpd_session_t *p;
+
+    p = abcdk_httpd_session_alloc((abcdk_httpd_t*)opaque);
+
+
+    *session = p;
+}
+
+static void session_accept_cb(void *opaque, abcdk_httpd_session_t *session, int *result)
+{
+    *result = 0;
+}
+
+static void session_ready_cb(void *opaque, abcdk_httpd_session_t *session)
+{
+
+}
+
+static void session_close_cb(void *opaque, abcdk_httpd_session_t *session)
+{
+
+}
+
+static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
+{
+    node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
+
+    
+}
+
+
+
+static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
+{
+
+}
+
+static void stream_request_cb(void *opaque, abcdk_object_t *stream)
+{
     abcdk_httpd_response_header_set(stream, "Status","%d",200);
     abcdk_httpd_response_header_set(stream, "Content-Type","%s","video/mp4");
 //    abcdk_httpd_response_header_set(stream, "Content-Length","1234567890");
 
     abcdk_httpd_response_header_end(stream);
 
-    // abcdk_object_t *buf = abcdk_object_alloc2(128*1024);
-    // int rlen = abcdk_stream_read(p->send_buf,buf->pptrs[0],buf->sizes[0]);
-    // if(rlen >0)
-    // {
-    //     buf->sizes[0] = rlen;
-    //     abcdk_httpd_response(stream,buf);
-    // }
-    // else
-    // {
-    //     abcdk_httpd_response(stream,NULL);
-    // }
 }
 
 static void stream_output_cb(void *opaque, abcdk_object_t *stream)
@@ -165,36 +217,7 @@ TRY:
 
         abcdk_object_unref(&buf);
 
-        if(eof)
-        {
-            abcdk_httpd_response(stream,NULL);
-            return ;
-        }
-
-        AVFormatContext *rf = abcdk_ffmpeg_ctxptr(p->reader);
-
-        AVPacket pkt;
-        av_init_packet(&pkt);
-
-
-        abcdk_ffmpeg_read_delay(p->reader);
-
-        int n= abcdk_ffmpeg_read_packet(p->reader,&pkt,-1);
-        if(n<0)
-        {
-            abcdk_ffmpeg_write_trailer(p->writer);
-            eof = 1;
-        }
-        else 
-        {
-            fprintf(stderr,"pts(%lld),dts(%lld)\n",pkt.pts,pkt.dts);
-
-            abcdk_ffmpeg_write_packet(p->writer, &pkt, &rf->streams[n]->time_base);
-        }
-
         
-
-        av_packet_unref(&pkt);
 
         goto TRY;
     }

@@ -131,6 +131,7 @@ typedef struct _abcdk_httpd_config
 
 } abcdk_httpd_config_t;
 
+
 /** 释放会话。*/
 void abcdk_httpd_session_unref(abcdk_httpd_session_t **session);
 
@@ -174,6 +175,7 @@ void abcdk_httpd_destroy(abcdk_httpd_t **ctx);
 
 /** 创建。*/
 abcdk_httpd_t *abcdk_httpd_create(int max,int cpu);
+
 
 /**获取会话指针。*/
 abcdk_httpd_session_t *abcdk_httpd_get_session(abcdk_object_t *stream);

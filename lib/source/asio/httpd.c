@@ -699,7 +699,7 @@ static void _abcdk_httpd_output_2(abcdk_asio_node_t *node)
     /*只要不出错，就继监听。*/ 
     abcdk_asio_send_watch(node);
 
-    /*Fix me: 上面的写法有问题。当发生流量控制事件，并且网络空闲时，此函数会被频繁的调用，造成CPU使用率异常升高。*/
+    /*Fix me: 上面的写法有问题。当发生流量控制事件并且网络空闲时，此函数会被频繁的调用，造成CPU使用率异常升高。*/
     
 
 #endif //NGHTTP2_H

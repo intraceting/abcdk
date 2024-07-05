@@ -402,6 +402,7 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
     {
         ctx->pb = io;
         ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+        ctx->flags |= AVFMT_FLAG_FLUSH_PACKETS;
     }
 
     return ctx;
@@ -469,28 +470,16 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
     return 0;
 }
 
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt)
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt,int flush)
 {
+    int chk;
     assert(ctx != NULL && pkt != NULL);
 
-    return av_interleaved_write_frame(ctx, pkt);
-}
-
-int abcdk_avformat_output_write2(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt)
-{
-    assert(ctx != NULL && bq != NULL && cq != NULL && pkt != NULL);
-    assert(ctx->nb_streams > pkt->stream_index);
-
-    if (pkt->pts != (int64_t)AV_NOPTS_VALUE)
-        pkt->pts = av_rescale_q(pkt->pts, *bq, *cq);
-
-    if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
-        pkt->dts = av_rescale_q(pkt->dts, *bq, *cq);
-
-    if (pkt->duration)
-        pkt->duration = av_rescale_q(pkt->duration, *bq, *cq);
-
-    return abcdk_avformat_output_write(ctx, pkt);
+    chk = av_interleaved_write_frame(ctx, pkt);
+    if(chk == 0 && flush)
+       avio_flush(ctx->pb);
+    
+    return chk;
 }
 
 int abcdk_avformat_output_trailer(AVFormatContext *ctx)

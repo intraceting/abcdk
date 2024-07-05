@@ -685,31 +685,53 @@ next_packet:
     
     codec_ctx_p = ctx->codec_ctx[ctx->read_idx];
     if (!codec_ctx_p)
-        return -1;
+    {
+        /*
+         * 以下两种情况直接返回失败。
+         *
+         * 1：流尚未结束。
+         * 2：指定流索引。
+         */
+        if (!ctx->read_eof || stream >= 0)
+            return -1;
+        
+        /*不能超过最大流索引。*/
+        if(ctx->read_idx >= ABCDK_FFMPEG_MAX_STREAMS-1)
+            return -1;
+        else 
+        {
+            ctx->read_idx += 1;//next stream;
+            goto next_packet;
+        }
+    }
 
     pkt_p = (ctx->read_eof ? NULL : &ctx->read_pkt);
     chk = abcdk_avcodec_decode(codec_ctx_p, frame, pkt_p);
     if (chk < 0)
         return -1;
-    else if (chk == 0)
+    else
     {
-        if(!ctx->read_eof)
-            goto next_packet;
-        else
+        /*
+         * 以下两种情况直接返回失败。
+         *
+         * 1：流尚未结束。
+         * 2：指定流索引。
+         */
+        if (!ctx->read_eof || stream >= 0)
+            return -1;
+
+        /*不能超过最大流索引。*/
+        if(ctx->read_idx >= ABCDK_FFMPEG_MAX_STREAMS-1)
+            return -1;
+        else 
         {
-            if (stream >= 0)
-                return -1;
-            else if (ctx->read_idx >= (ABCDK_FFMPEG_MAX_STREAMS - 1))
-                return -1;
-            else
-            {
-                ctx->read_idx += 1;
-                goto next_packet;
-            }
+            ctx->read_idx += 1;//next stream;
+            goto next_packet;
         }
     }
 
-    return ctx->read_pkt.stream_index;
+    return ctx->read_idx;
+
 }
 
 int _abcdk_ffmpeg_writer_open_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *codec,const AVCodecContext *opt)
@@ -896,7 +918,7 @@ int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
     int chk;
 
     if(fmp4)
-        av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
+        av_dict_set(&dict, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
 
     chk = abcdk_ffmpeg_write_header0(ctx,dict);
 
@@ -1005,7 +1027,7 @@ int abcdk_ffmpeg_write_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *sr
 
     pkt->pos = -1;
 
-    chk = abcdk_avformat_output_write(ctx->avctx, pkt);
+    chk = abcdk_avformat_output_write(ctx->avctx, pkt,ctx->cfg.write_flush);
 
     if (chk < 0)
         return -1;
@@ -1017,6 +1039,11 @@ int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int ke
 {
     AVPacket pkt = {0};
     AVStream *vs_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+    AVCodecContext *codec_p;
+#else 
+    AVCodecParameters *codec_p;
+#endif 
     int chk;
 
     assert(ctx != NULL && data != NULL && size > 0 && stream >= 0);
@@ -1024,14 +1051,28 @@ int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int ke
 
     vs_p = ctx->avctx->streams[stream];
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+    codec_p = vs_p->codec;
+#else 
+    codec_p = vs_p->codecpar;
+#endif
+
     av_init_packet(&pkt);
 
     pkt.data = (uint8_t *)data;
     pkt.size = size;
     pkt.stream_index = stream;
     pkt.flags = (keyframe?AV_PKT_FLAG_KEY:0);
-    pkt.dts = ++ctx->ts_nums[pkt.stream_index][1];
-    pkt.pts = ++ctx->ts_nums[pkt.stream_index][0];
+
+    if(codec_p->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        pkt.dts = ++ctx->ts_nums[pkt.stream_index][1];
+        pkt.pts = ctx->ts_nums[pkt.stream_index][0]++;
+    }
+    else if(codec_p->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+        ABCDK_ASSERT(0,"fix me.");
+    }
 
     chk = abcdk_ffmpeg_write_packet(ctx, &pkt, NULL);
     if (chk < 0)

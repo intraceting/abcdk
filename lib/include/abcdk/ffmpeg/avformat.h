@@ -148,24 +148,13 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict);
 /**
  * 向流(输出)写入数据包。
  *
- * @param pkt 包，NULL(0) 写入结束包。
+ * @param [in] flush 是否立即刷新。0 否，!0 是。
  *
  * @return 0 成功，!0 失败。
  *
  */
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt);
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt,int flush);
 
-/**
- * 向流(输出)写入数据包。
- *
- * @param bq 编码时间基值。
- * @param cq 数据流时间基值。
- * @param pkt 包，NULL(0) 写入结束包。
- *
- * @return 0 成功，!0 失败。
- *
- */
-int abcdk_avformat_output_write2(AVFormatContext *ctx, AVRational *bq, AVRational *cq, AVPacket *pkt);
 
 /**
  * 向流(输出)写入结束信息。
