@@ -505,7 +505,7 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
         a = (a2 - a1) - (a1 - a1);
         b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000.;
 
-        block = (a > b?0:1);
+        block = (a >= b?0:1);
 
         // abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
@@ -754,26 +754,9 @@ int _abcdk_ffmpeg_writer_open_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *co
         ctx_p->height = opt->height;
         ctx_p->gop_size = opt->gop_size;
         ctx_p->pix_fmt = opt->pix_fmt;
-
-        /*像素格式必须在支持列表中。*/
-        if (ctx_p->codec->pix_fmts)
-        {
-            int i = 0;
-            for (; ctx_p->codec->pix_fmts[i] != AV_PIX_FMT_NONE; i++)
-            {
-                if (opt->pix_fmt == ctx_p->codec->pix_fmts[i])
-                    break;
-            }
-
-            if(ctx_p->codec->pix_fmts[i] != AV_PIX_FMT_NONE)
-                ctx_p->pix_fmt = ctx_p->codec->pix_fmts[i];
-            else 
-                ctx_p->pix_fmt = ctx_p->codec->pix_fmts[0];
-        }
-
-        /*如果未指定像素格式，则使用默认格式。*/
+ 
         if (ctx_p->pix_fmt == AV_PIX_FMT_NONE)
-            ctx_p->pix_fmt = AV_PIX_FMT_YUV420P;
+            ctx_p->pix_fmt = (ctx_p->codec->pix_fmts ? ctx_p->codec->pix_fmts[0]:AV_PIX_FMT_YUV420P);
 
         /*No b frame.*/
         ctx_p->max_b_frames = 0;
@@ -783,7 +766,7 @@ int _abcdk_ffmpeg_writer_open_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *co
     {
         assert(opt->time_base.den > 0 && opt->time_base.num > 0);
         assert(opt->sample_rate > 0);
-        assert(opt->channels > 0);
+        assert(opt->channel_layout > 0);
         assert(opt->bit_rate > 0);
         assert(opt->frame_size > 0);
 
@@ -798,11 +781,11 @@ int _abcdk_ffmpeg_writer_open_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *co
         ctx_p->bit_rate = opt->bit_rate;
         ctx_p->frame_size = opt->frame_size;
 
-     //   if (ctx_p->channel_layout == -1L)
-     //       ctx_p->channel_layout = av_get_default_channel_layout(opt->channels);
+        if (ctx_p->channels != av_get_channel_layout_nb_channels(opt->channel_layout))
+            ctx_p->channels = av_get_channel_layout_nb_channels(opt->channel_layout);
 
         if (ctx_p->sample_fmt == AV_SAMPLE_FMT_NONE)
-            ctx_p->sample_fmt = AV_SAMPLE_FMT_FLTP;
+            ctx_p->sample_fmt = (ctx_p->codec->sample_fmts ? ctx_p->codec->sample_fmts[0]:AV_SAMPLE_FMT_FLTP);
 
         if (ctx_p->codec_id == AV_CODEC_ID_AAC)
             av_dict_set(&dict_p, "strict", "-2", 0);
@@ -1102,7 +1085,16 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
         return -1;
 
     /*下面设置会使编码器重新计算播放时间。*/
-    frame_cp->pts = ++ctx->ts_nums[stream][0];
+    if(ctx_p->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        frame_cp->pts = ++ctx->ts_nums[stream][0];
+    }
+    else if(ctx_p->codec_type == AVMEDIA_TYPE_AUDIO) 
+    {
+        frame_cp->pts = ctx->ts_nums[stream][0];
+        ctx->ts_nums[stream][0] += frame_cp->nb_samples;
+    }
+        
     frame_cp->pkt_dts = (int64_t)AV_NOPTS_VALUE;
     frame_cp->pkt_pts = (int64_t)AV_NOPTS_VALUE;
 
@@ -1117,7 +1109,7 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
         goto final;
 
     pkt.stream_index = stream;
-    chk = abcdk_ffmpeg_write_packet(ctx, &pkt,0);
+    chk = abcdk_ffmpeg_write_packet(ctx, &pkt,NULL);
 
 final:
 

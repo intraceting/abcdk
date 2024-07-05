@@ -166,7 +166,7 @@ int abcdk_test_codec(abcdk_option_t *args)
     abcdk_avformat_dump(wf,1);
 
     AVFrame *inframe = av_frame_alloc();
-    for(int i = 0;i<1000;i++)
+    for(int i = 0;i<10000;i++)
     {
         abcdk_ffmpeg_read_delay(r);
         

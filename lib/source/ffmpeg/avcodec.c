@@ -106,17 +106,6 @@ int abcdk_avcodec_open(AVCodecContext *ctx, AVDictionary **dict)
             else if (ctx->codec_id == AV_CODEC_ID_H264)
                 av_dict_set(dict, "x264opts", "bframes=0", 0);
         }
-
-        if (ctx->codec->type == AVMEDIA_TYPE_VIDEO)
-        {
-            if (ctx->pix_fmt == AV_PIX_FMT_NONE)
-                ctx->pix_fmt = (ctx->codec->pix_fmts ? ctx->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P);
-        }
-        else if(ctx->codec->type == AVMEDIA_TYPE_AUDIO)
-        {
-            if (ctx->sample_fmt == AV_SAMPLE_FMT_NONE)
-                ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
-        }
     }
 
     chk = avcodec_open2(ctx, NULL, dict);
