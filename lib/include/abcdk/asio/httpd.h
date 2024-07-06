@@ -190,6 +190,8 @@ void *abcdk_httpd_get_userdata(abcdk_object_t *stream);
 */
 void *abcdk_httpd_set_userdata(abcdk_object_t *stream,void *userdata);
 
+/** 通知应答数据数据已经准备好了。*/
+void abcdk_httpd_response_ready(abcdk_object_t *stream);
 
 /** 
  * 在请求头查找属性值。

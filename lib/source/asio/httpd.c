@@ -738,9 +738,13 @@ static void _abcdk_httpd_output_2(abcdk_asio_node_t *node)
         /*把缓存数据串行化，并通过回调发送出去。*/
         chk = nghttp2_session_send(node_ctx_p->h2_handle);
         if (chk < 0)
+        {
             abcdk_asio_set_timeout(node, 1);
+            return;
+        }
     }
 
+    /*继续监听，尽可能快的发送数据到客户端。*/
     abcdk_asio_send_watch(node);
 
 #endif //NGHTTP2_H
@@ -1179,6 +1183,31 @@ void *abcdk_httpd_set_userdata(abcdk_object_t *stream,void *userdata)
 
 }
 
+void abcdk_httpd_response_ready(abcdk_object_t *stream)
+{
+    abcdk_httpd_node_t *node_ctx_p;
+    abcdk_httpd_stream_t *stream_ctx_p;
+    void *old_userdata;
+
+    assert(stream != NULL);
+
+    stream_ctx_p = (abcdk_httpd_stream_t *)stream->pptrs[ABCDK_MAP_VALUE];
+    node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+
+    if (node_ctx_p->protocol == 1)
+    {
+        /*nothing to do.*/
+    }
+    else if (node_ctx_p->protocol == 2)
+    {
+#ifdef NGHTTP2_H
+        /*恢复发送。非常重要。*/
+        nghttp2_session_resume_data(node_ctx_p->h2_handle,stream_ctx_p->id);
+#endif //NGHTTP2_H
+    }
+
+    abcdk_asio_send_watch(stream_ctx_p->io_node);
+}
 
 const char *abcdk_httpd_request_header_get(abcdk_object_t *stream, const char *key)
 {
@@ -1389,6 +1418,11 @@ static int _abcdk_httpd_response_header_h2(abcdk_object_t *stream)
     chk = nghttp2_submit_response(node_ctx_p->h2_handle, stream_ctx_p->id, stream_ctx_p->h2_rsp_hdrs, stream_ctx_p->h2_rsp_count, &data_prd);
     if(chk != 0)
         return -4;
+
+#ifdef NGHTTP2_H
+    /*恢复发送。非常重要。*/
+    nghttp2_session_resume_data(node_ctx_p->h2_handle,stream_ctx_p->id);
+#endif //NGHTTP2_H
 
     return 0;
 #else  //NGHTTP2_H
