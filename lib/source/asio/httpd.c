@@ -45,15 +45,21 @@ typedef struct _abcdk_httpd_node
 
     /*本机地址。*/
     char local_addr[NAME_MAX];
-
+    
 #ifdef NGHTTP2_H
+    /*H2的回调和句柄。*/
     nghttp2_session_callbacks *h2_cbs;
     nghttp2_session *h2_handle;
-    int h2_send_busy;
 #endif // NGHTTP2_H
+
+    /*H2发送状态。*/
+    int h2_send_busy;
+    int64_t h2_send_want;
+    int64_t h2_send_active;
 
     /*流容器。*/
     abcdk_map_t *stream_map;
+
 
     /*用户环境指针。*/
     void *userdata;
@@ -113,6 +119,11 @@ typedef struct _abcdk_httpd_stream
     void *userdata;
 
 }abcdk_httpd_stream_t;
+
+static int64_t _abcdk_httpd_clock(uint8_t precision)
+{
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, precision);
+}
 
 static void _abcdk_httpd_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
@@ -493,9 +504,16 @@ static ssize_t _abcdk_httpd_h2_send_cb(nghttp2_session *session, const uint8_t *
     abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
     int chk;
 
+    /*记录活动时间。*/
+    node_ctx_p->h2_send_active = _abcdk_httpd_clock(0);
+
     /*等待线路空闲时再发送。*/
     if(node_ctx_p->h2_send_busy)
-         return NGHTTP2_ERR_WOULDBLOCK; 
+    {
+        /*不忙了。*/
+        node_ctx_p->h2_send_busy = 0;
+        return NGHTTP2_ERR_WOULDBLOCK; 
+    }
 
     /*假设线路即将忙碌。*/
     node_ctx_p->h2_send_busy = 1; 
@@ -507,7 +525,7 @@ static ssize_t _abcdk_httpd_h2_send_cb(nghttp2_session *session, const uint8_t *
 }
 
 static ssize_t _abcdk_httpd_h2_response_read_cb(nghttp2_session *session, int32_t stream_id, uint8_t *buf, size_t length,
-                                                       uint32_t *data_flags, nghttp2_data_source *source, void *user_data)
+                                                uint32_t *data_flags, nghttp2_data_source *source, void *user_data)
 {
     abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
     abcdk_httpd_node_t *node_ctx_p = (abcdk_httpd_node_t *)abcdk_asio_get_userdata(node);
@@ -520,18 +538,27 @@ static ssize_t _abcdk_httpd_h2_response_read_cb(nghttp2_session *session, int32_
         return -1;
 
     stream_ctx_p = (abcdk_httpd_stream_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
+    
+    for (int i = 0; i < 2; i++)
+    {
+        rlen = abcdk_stream_read(stream_ctx_p->h2_out, buf, length);
+        if (rlen > 0)
+            return rlen;
 
-    /*通知流空闲。*/
-    if(node_ctx_p->cfg.stream_output_cb)
-        node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque,stream_p);
+        /*如果应用层已经应答结束后，标记已结束。*/
+        if (stream_ctx_p->rsp_end)
+        {
+            *data_flags |= NGHTTP2_DATA_FLAG_EOF;
+            return 0;
+        }
 
-    rlen = abcdk_stream_read(stream_ctx_p->h2_out,buf,length);
+        /*通知流空闲。*/
+        if (node_ctx_p->cfg.stream_output_cb)
+            node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque, stream_p);
+    }
 
-    /*当缓存中无数据，并且应用层已经应答结束后，标记已结束。*/
-    if(rlen <= 0 && stream_ctx_p->rsp_end)
-        *data_flags |= NGHTTP2_DATA_FLAG_EOF;
-
-    return rlen;
+    /*如果缓存区没有待发送数据，并且应用层也没有数据准备好，才会走到这里。*/
+    return NGHTTP2_ERR_DEFERRED;
 }
 
 #endif // NGHTTP2_H
@@ -698,15 +725,23 @@ static void _abcdk_httpd_output_2(abcdk_asio_node_t *node)
 
 #ifdef NGHTTP2_H
 
-    /*线路已经空闲。*/
-    node_ctx_p->h2_send_busy = 0; 
+    /*记录活动时间。*/
+    node_ctx_p->h2_send_want = _abcdk_httpd_clock(0);
 
-    /*把缓存数据串行化，并通过回调发送出去。*/
-    chk = nghttp2_session_send(node_ctx_p->h2_handle);
-    if (chk == NGHTTP2_ERR_WOULDBLOCK)
-        abcdk_asio_send_watch(node);
-    else if( chk < 0)
-        abcdk_asio_set_timeout(node, 1);
+    /*如果线路长时间不活动，表示没数据要发送。*/
+    if(node_ctx_p->h2_send_active != 0 && node_ctx_p->h2_send_want - node_ctx_p->h2_send_active > 5)
+        return;
+
+    /*控制流量。*/
+    if (nghttp2_session_want_write(node_ctx_p->h2_handle))
+    {
+        /*把缓存数据串行化，并通过回调发送出去。*/
+        chk = nghttp2_session_send(node_ctx_p->h2_handle);
+        if (chk < 0)
+            abcdk_asio_set_timeout(node, 1);
+    }
+
+    abcdk_asio_send_watch(node);
 
 #endif //NGHTTP2_H
 }
@@ -1331,6 +1366,9 @@ static int _abcdk_httpd_response_header_h2(abcdk_object_t *stream)
     status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
     if(status == 0)
         return -3;
+    
+    /*记录活动时间。*/
+    node_ctx_p->h2_send_active = _abcdk_httpd_clock(0);
 
     /*构造状态行。*/
     stream_ctx_p->h2_rsp_hdrs[stream_ctx_p->h2_rsp_count].name = (uint8_t*)":status";
@@ -1455,10 +1493,18 @@ static int _abcdk_httpd_response_body_h2(abcdk_object_t *stream, abcdk_object_t 
     /*结束包不需要发送。*/
     if(stream_ctx_p->rsp_end)
         return 0;
+    
+    /*记录活动时间。*/
+    node_ctx_p->h2_send_active = _abcdk_httpd_clock(0);
 
     chk = abcdk_stream_write(stream_ctx_p->h2_out, data);
     if (chk != 0)
         return -2;
+
+#ifdef NGHTTP2_H
+    /*恢复发送。非常重要。*/
+    nghttp2_session_resume_data(node_ctx_p->h2_handle,stream_ctx_p->id);
+#endif //NGHTTP2_H
 
     return 0;
 }
