@@ -99,6 +99,7 @@
 #include "abcdk/ffmpeg/swscale.h"
 #include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/ffmpeg/avformat.h"
+#include "abcdk/ffmpeg/ffserver.h"
 
 #include "abcdk/database/redis.h"
 #include "abcdk/database/sqlite.h"
