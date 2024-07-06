@@ -117,7 +117,7 @@ static void * _do_rtsp2fmpt(void *userdata)
              AVPacket pkt;
              av_init_packet(&pkt);
 
-             abcdk_ffmpeg_read_delay(p->reader);
+             abcdk_ffmpeg_read_delay(p->reader,0);
 
              int n = abcdk_ffmpeg_read_packet(p->reader, &pkt, -1);
              if (n < 0)

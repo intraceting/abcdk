@@ -176,8 +176,12 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg);
  * 读延时。
  * 
  * @note 以最慢的为基准。
+ * 
+ * @param [in] async 异步。0 否，!0 是。 
+ * 
+ * @return 0 未到时间，!0 已到时间。
 */
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx);
+int abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int async);
 
 /**
  * 读取数据包。

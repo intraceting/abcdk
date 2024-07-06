@@ -528,7 +528,7 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
     return block;
 }
 
-void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx)
+int abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int async)
 {
     AVStream * vs_p = NULL;
     int64_t start_time = 0;
@@ -539,16 +539,16 @@ void abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx)
 
 next_delay:
 
+    /*如果已经超时，则直接返回1。*/
+    if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
+        return 1;
+
     for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
     {
         vs_p = abcdk_ffmpeg_streamptr(ctx,i);
 
         start_time = vs_p->start_time;
         stream_idx = vs_p->index;
-
-        /*如果已经超时，则直接返回。*/
-        if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
-            return;
         
         /*检测延时是否已经满足。*/
         block = !_abcdk_ffmpeg_read_delay_check(ctx, stream_idx,0);
@@ -558,11 +558,13 @@ next_delay:
             break;
     }
 
-    if (block)
+    if (block && !async)
     {
-        usleep(1000);//1000fps
+        usleep(2000);//500fps
         goto next_delay;
     }
+
+    return (block?0:1);
 }
 
 int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream)

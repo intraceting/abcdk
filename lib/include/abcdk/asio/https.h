@@ -190,8 +190,6 @@ void *abcdk_https_get_userdata(abcdk_object_t *stream);
 */
 void *abcdk_https_set_userdata(abcdk_object_t *stream,void *userdata);
 
-/** 通知应答数据数据已经准备好了。*/
-void abcdk_https_response_ready(abcdk_object_t *stream);
 
 /** 
  * 在请求头查找属性值。
@@ -223,6 +221,9 @@ const char* abcdk_https_request_header_getline(abcdk_object_t *stream,int line);
  * @return !NULL(0) 成功(请求体的指针)，NULL(0) 失败(不存在)。
 */
 const char* abcdk_https_request_body_get(abcdk_object_t *stream,size_t *len);
+
+/** 通知应答数据数据已经准备好了。*/
+void abcdk_https_response_ready(abcdk_object_t *stream);
 
 /**
  * 设置应答头部。
