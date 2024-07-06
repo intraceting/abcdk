@@ -100,7 +100,7 @@ static void * _do_rtsp2fmpt(void *userdata)
          if (rlen > 0)
          {
              buf->sizes[0] = rlen;
-             abcdk_httpd_response(g_stream, buf);
+             abcdk_https_response(g_stream, buf);
          }
          else
          {
@@ -108,7 +108,7 @@ static void * _do_rtsp2fmpt(void *userdata)
 
              if (eof)
              {
-                 abcdk_httpd_response(g_stream, NULL);
+                 abcdk_https_response(g_stream, NULL);
                  continue;
              }
 
@@ -146,34 +146,34 @@ static void * _do_rtsp2fmpt(void *userdata)
 
 
 
-static void session_prepare_cb(void *opaque, abcdk_httpd_session_t **session, abcdk_httpd_session_t *listen)
+static void session_prepare_cb(void *opaque, abcdk_https_session_t **session, abcdk_https_session_t *listen)
 {
-    abcdk_httpd_session_t *p;
+    abcdk_https_session_t *p;
 
-    p = abcdk_httpd_session_alloc((abcdk_httpd_t*)opaque);
+    p = abcdk_https_session_alloc((abcdk_https_t*)opaque);
 
 
     *session = p;
 }
 
-static void session_accept_cb(void *opaque, abcdk_httpd_session_t *session, int *result)
+static void session_accept_cb(void *opaque, abcdk_https_session_t *session, int *result)
 {
     *result = 0;
 }
 
-static void session_ready_cb(void *opaque, abcdk_httpd_session_t *session)
+static void session_ready_cb(void *opaque, abcdk_https_session_t *session)
 {
 
 }
 
-static void session_close_cb(void *opaque, abcdk_httpd_session_t *session)
+static void session_close_cb(void *opaque, abcdk_https_session_t *session)
 {
 
 }
 
 static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
 {
-    node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
+    node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
     
 }
@@ -187,17 +187,17 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
 
 static void stream_request_cb(void *opaque, abcdk_object_t *stream)
 {
-    abcdk_httpd_response_header_set(stream, "Status","%d",200);
-    abcdk_httpd_response_header_set(stream, "Content-Type","%s","video/mp4");
-//    abcdk_httpd_response_header_set(stream, "Content-Length","1234567890");
+    abcdk_https_response_header_set(stream, "Status","%d",200);
+    abcdk_https_response_header_set(stream, "Content-Type","%s","video/mp4");
+//    abcdk_https_response_header_set(stream, "Content-Length","1234567890");
 
-    abcdk_httpd_response_header_end(stream);
+    abcdk_https_response_header_end(stream);
 
 }
 
 static void stream_output_cb(void *opaque, abcdk_object_t *stream)
 {
-     node_t *p = (node_t*)abcdk_httpd_get_userdata(stream);
+     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
      int eof = 0;
      abcdk_object_t *buf ;
 
@@ -208,7 +208,7 @@ TRY:
     if(rlen >0)
     {
         buf->sizes[0] = rlen;
-        abcdk_httpd_response(stream,buf);
+        abcdk_https_response(stream,buf);
 
         fprintf(stderr,"rlen(%lld)\n",rlen);
     }
@@ -226,13 +226,13 @@ TRY:
 int abcdk_test_fmp4(abcdk_option_t *args)
 {
     abcdk_sockaddr_t listen_addr = {0};
-    abcdk_httpd_config_t cfg = {0};
-    abcdk_httpd_t *io_ctx;
-    abcdk_httpd_session_t *listen_p;
+    abcdk_https_config_t cfg = {0};
+    abcdk_https_t *io_ctx;
+    abcdk_https_session_t *listen_p;
 
     abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:1111", 0);
 
-    io_ctx = abcdk_httpd_create(123, -1);
+    io_ctx = abcdk_https_create(123, -1);
 
     cfg.opaque = io_ctx;
     cfg.session_prepare_cb = session_prepare_cb;
@@ -250,17 +250,17 @@ int abcdk_test_fmp4(abcdk_option_t *args)
     cfg.auth_path = NULL;
     cfg.a_c_a_o = "*";
 
-    listen_p = abcdk_httpd_session_alloc(io_ctx);
+    listen_p = abcdk_https_session_alloc(io_ctx);
 
-    abcdk_httpd_session_listen(listen_p,&listen_addr,&cfg);
+    abcdk_https_session_listen(listen_p,&listen_addr,&cfg);
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);
 
 final:
 
-    abcdk_httpd_destroy(&io_ctx);
-    abcdk_httpd_session_unref(&listen_p);
+    abcdk_https_destroy(&io_ctx);
+    abcdk_https_session_unref(&listen_p);
 }
 
 #else

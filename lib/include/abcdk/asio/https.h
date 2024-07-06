@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_ASIO_HTTPD_H
-#define ABCDK_ASIO_HTTPD_H
+#ifndef ABCDK_ASIO_HTTPS_H
+#define ABCDK_ASIO_HTTPS_H
 
 #include "abcdk/util/trace.h"
 #include "abcdk/util/receiver.h"
@@ -22,13 +22,13 @@
 __BEGIN_DECLS
 
 /**简单的HTTP服务。*/
-typedef struct _abcdk_httpd abcdk_httpd_t;
+typedef struct _abcdk_https abcdk_https_t;
 
 /**HTTP会话。*/
-typedef struct _abcdk_httpd_session abcdk_httpd_session_t;
+typedef struct _abcdk_https_session abcdk_https_session_t;
 
 /**配置。*/
-typedef struct _abcdk_httpd_config
+typedef struct _abcdk_https_config
 {
     /*环境指针。*/
     void *opaque;
@@ -82,28 +82,28 @@ typedef struct _abcdk_httpd_config
      * @param [out] session 新会话。
      * @param [in] listen 监听会话;
      */
-    void (*session_prepare_cb)(void *opaque,abcdk_httpd_session_t **session,abcdk_httpd_session_t *listen);
+    void (*session_prepare_cb)(void *opaque,abcdk_https_session_t **session,abcdk_https_session_t *listen);
 
     /**
      * 会话验证通知回调函数。
      * 
      * @note NULL(0) 忽略。
     */
-    void (*session_accept_cb)(void *opaque,abcdk_httpd_session_t *session,int *result);
+    void (*session_accept_cb)(void *opaque,abcdk_https_session_t *session,int *result);
 
     /**
      * 会话就绪通知回调函数。
      * 
      * @note NULL(0) 忽略。
     */
-    void (*session_ready_cb)(void *opaque,abcdk_httpd_session_t *session);
+    void (*session_ready_cb)(void *opaque,abcdk_https_session_t *session);
 
     /**
      * 会话关闭通知回调函数。
      * 
      * @note NULL(0) 忽略。
     */
-    void (*session_close_cb)(void *opaque,abcdk_httpd_session_t *session);
+    void (*session_close_cb)(void *opaque,abcdk_https_session_t *session);
 
     /**
      * 析构通知回调函数。
@@ -129,37 +129,37 @@ typedef struct _abcdk_httpd_config
     */
     void (*stream_output_cb)(void *opaque,abcdk_object_t *stream);
 
-} abcdk_httpd_config_t;
+} abcdk_https_config_t;
 
 
 /** 释放会话。*/
-void abcdk_httpd_session_unref(abcdk_httpd_session_t **session);
+void abcdk_https_session_unref(abcdk_https_session_t **session);
 
 /** 引用会话。*/
-abcdk_httpd_session_t *abcdk_httpd_session_refer(abcdk_httpd_session_t *src);
+abcdk_https_session_t *abcdk_https_session_refer(abcdk_https_session_t *src);
 
 /** 申请会话。*/
-abcdk_httpd_session_t *abcdk_httpd_session_alloc(abcdk_httpd_t *ctx);
+abcdk_https_session_t *abcdk_https_session_alloc(abcdk_https_t *ctx);
 
 /** 获取会话的用户环境指针。*/
-void *abcdk_httpd_session_get_userdata(abcdk_httpd_session_t *session);
+void *abcdk_https_session_get_userdata(abcdk_https_session_t *session);
 
 /** 
  * 设置会话的用户环境指针。
  * 
  * @return 旧的用户环境指针。
 */
-void *abcdk_httpd_session_set_userdata(abcdk_httpd_session_t *session,void *userdata);
+void *abcdk_https_session_set_userdata(abcdk_https_session_t *session,void *userdata);
 
 /** 获取会话的地址。*/
-const char *abcdk_httpd_session_get_address(abcdk_httpd_session_t *session,int remote);
+const char *abcdk_https_session_get_address(abcdk_https_session_t *session,int remote);
 
 /** 
  * 设置会话的超时时长。
  * 
  * @param [in] timeout 超时时长(秒)。
 */
-void abcdk_httpd_session_set_timeout(abcdk_httpd_session_t *session,time_t timeout);
+void abcdk_https_session_set_timeout(abcdk_https_session_t *session,time_t timeout);
 
 /** 
  * 监听。
@@ -168,30 +168,30 @@ void abcdk_httpd_session_set_timeout(abcdk_httpd_session_t *session,time_t timeo
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_httpd_session_listen(abcdk_httpd_session_t *session,abcdk_sockaddr_t *addr,abcdk_httpd_config_t *cfg);
+int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *addr,abcdk_https_config_t *cfg);
 
 /** 销毁。*/
-void abcdk_httpd_destroy(abcdk_httpd_t **ctx);
+void abcdk_https_destroy(abcdk_https_t **ctx);
 
 /** 创建。*/
-abcdk_httpd_t *abcdk_httpd_create(int max,int cpu);
+abcdk_https_t *abcdk_https_create(int max,int cpu);
 
 
 /**获取会话指针。*/
-abcdk_httpd_session_t *abcdk_httpd_get_session(abcdk_object_t *stream);
+abcdk_https_session_t *abcdk_https_get_session(abcdk_object_t *stream);
 
 /** 获取用户环境指针。*/
-void *abcdk_httpd_get_userdata(abcdk_object_t *stream);
+void *abcdk_https_get_userdata(abcdk_object_t *stream);
 
 /** 
  * 设置用户环境指针。
  * 
  * @return 旧的用户环境指针。
 */
-void *abcdk_httpd_set_userdata(abcdk_object_t *stream,void *userdata);
+void *abcdk_https_set_userdata(abcdk_object_t *stream,void *userdata);
 
 /** 通知应答数据数据已经准备好了。*/
-void abcdk_httpd_response_ready(abcdk_object_t *stream);
+void abcdk_https_response_ready(abcdk_object_t *stream);
 
 /** 
  * 在请求头查找属性值。
@@ -206,14 +206,14 @@ void abcdk_httpd_response_ready(abcdk_object_t *stream);
  * 
  * @return !NULL(0) 成功(属性值的指针)，NULL(0) 失败(不存在)。
 */
-const char* abcdk_httpd_request_header_get(abcdk_object_t *stream,const char *key);
+const char* abcdk_https_request_header_get(abcdk_object_t *stream,const char *key);
 
 /**
  * 在请求头查找属性值。
  * 
  * @return !NULL(0) 成功(属性值的指针)，NULL(0) 失败(不存在)。
 */
-const char* abcdk_httpd_request_header_getline(abcdk_object_t *stream,int line);
+const char* abcdk_https_request_header_getline(abcdk_object_t *stream,int line);
 
 /** 
  * 获取请求体和长度。
@@ -222,7 +222,7 @@ const char* abcdk_httpd_request_header_getline(abcdk_object_t *stream,int line);
  * 
  * @return !NULL(0) 成功(请求体的指针)，NULL(0) 失败(不存在)。
 */
-const char* abcdk_httpd_request_body_get(abcdk_object_t *stream,size_t *len);
+const char* abcdk_https_request_body_get(abcdk_object_t *stream,size_t *len);
 
 /**
  * 设置应答头部。
@@ -231,19 +231,19 @@ const char* abcdk_httpd_request_body_get(abcdk_object_t *stream,size_t *len);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_httpd_response_header_vset(abcdk_object_t *stream,const char *key, const char *val, va_list ap);
+int abcdk_https_response_header_vset(abcdk_object_t *stream,const char *key, const char *val, va_list ap);
 
 /**
  * 设置应答头部。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_httpd_response_header_set(abcdk_object_t *stream,const char *key, const char *val, ...);
+int abcdk_https_response_header_set(abcdk_object_t *stream,const char *key, const char *val, ...);
 
 /**
  * 取消应答头部。
 */
-void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
+void abcdk_https_response_header_unset(abcdk_object_t *stream,const char *key);
 
 /**
  * 头部应答结束。
@@ -252,7 +252,7 @@ void abcdk_httpd_response_header_unset(abcdk_object_t *stream,const char *key);
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_header_end(abcdk_object_t *stream);
+int abcdk_https_response_header_end(abcdk_object_t *stream);
 
 /**
  * 应答实体。
@@ -263,28 +263,28 @@ int abcdk_httpd_response_header_end(abcdk_object_t *stream);
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response(abcdk_object_t *stream,abcdk_object_t *data);
+int abcdk_https_response(abcdk_object_t *stream,abcdk_object_t *data);
 
 /**
  * 应答实体。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_buffer(abcdk_object_t *stream,const void *data, size_t size);
+int abcdk_https_response_buffer(abcdk_object_t *stream,const void *data, size_t size);
 
 /**
  * 应答实体。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_format(abcdk_object_t *stream,int max, const char *fmt, ...);
+int abcdk_https_response_format(abcdk_object_t *stream,int max, const char *fmt, ...);
 
 /**
  * 应答实体。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_httpd_response_vformat(abcdk_object_t *stream,int max, const char *fmt, va_list ap);
+int abcdk_https_response_vformat(abcdk_object_t *stream,int max, const char *fmt, va_list ap);
 
 /**
  * 授权验证。
@@ -293,9 +293,9 @@ int abcdk_httpd_response_vformat(abcdk_object_t *stream,int max, const char *fmt
  * 
  * @return 0 通过，< 0 未通过。
 */
-int abcdk_httpd_check_auth(abcdk_object_t *stream);
+int abcdk_https_check_auth(abcdk_object_t *stream);
 
 
 __END_DECLS
 
-#endif // ABCDK_ASIO_HTTPD_H
+#endif // ABCDK_ASIO_HTTPS_H

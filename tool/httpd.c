@@ -65,9 +65,9 @@ typedef struct _abcdkhttpd
     /*时间环境*/
     locale_t loc_ctx;
 
-    abcdk_httpd_t *io_ctx;
-    abcdk_httpd_session_t *listen_p;
-    abcdk_httpd_session_t *listen_ssl_p;
+    abcdk_https_t *io_ctx;
+    abcdk_https_session_t *listen_p;
+    abcdk_https_session_t *listen_ssl_p;
 
 } abcdkhttpd_t;
 
@@ -174,16 +174,16 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
 
 static void _abcdkhttpd_reply_nobody(abcdk_object_t *stream, int status, const char *a_c_a_m)
 {
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
 
-    abcdk_httpd_response_header_set(stream,"Status","%d",status);
-    abcdk_httpd_response_header_set(stream,"Access-Control-Allow-Methods","%s",(a_c_a_m?a_c_a_m:"*"));
-    abcdk_httpd_response(stream,NULL);
+    abcdk_https_response_header_set(stream,"Status","%d",status);
+    abcdk_https_response_header_set(stream,"Access-Control-Allow-Methods","%s",(a_c_a_m?a_c_a_m:"*"));
+    abcdk_https_response(stream,NULL);
 }
 
 static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
 {
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     abcdk_tree_t *dir = NULL;
     char tmp[PATH_MAX], tmp2[PATH_MAX], tmp3[NAME_MAX];
     size_t path_len = PATH_MAX;
@@ -218,9 +218,9 @@ static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
         return;
     }
 
-    abcdk_httpd_response_header_set(stream, "Content-Type", "text/html; charset=utf-8");
+    abcdk_https_response_header_set(stream, "Content-Type", "text/html; charset=utf-8");
 
-    abcdk_httpd_response_format(stream, 10000,
+    abcdk_https_response_format(stream, 10000,
                               "<!DOCTYPE html>\r\n"
                               "<html>\r\n"
                               "<head><title>Index of %s</title></head>\r\n"
@@ -244,7 +244,7 @@ static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
 
 static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
 {
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     char tmp[PATH_MAX], tmp2[PATH_MAX], tmp3[NAME_MAX];
     size_t path_len = PATH_MAX;
     char strsize[20] = {0};
@@ -288,7 +288,7 @@ static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
         else
             snprintf(strsize, 20, "%llu", attr.st_size);
 
-        abcdk_httpd_response_format(stream, 10000,
+        abcdk_https_response_format(stream, 10000,
                                   "<tr>\r\n"
                                   "<td><a href=\"%s%s\">%s</a></td>"
                                   "<td>%s</td>"
@@ -301,20 +301,20 @@ static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
         return;
     }
 
-    abcdk_httpd_response_format(stream, 1000,
+    abcdk_https_response_format(stream, 1000,
                               "</table>"
                               "</pre>\r\n"
                               "<hr>\r\n"
                               "</body>\r\n"
                               "</html>\r\n");
 
-    abcdk_httpd_response(stream, NULL);
+    abcdk_https_response(stream, NULL);
     abcdk_tree_free(&stream_ctx_p->dir_ctx);
 }
 
 static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
 {
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     const char *type = NULL;
     size_t range_s = 0, range_e = -1, file_size = 0;
     struct tm tm;
@@ -381,23 +381,23 @@ static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
         stream_ctx_p->file_ctx->pptrs[0] += range_s;
         stream_ctx_p->file_ctx->sizes[0] = range_e - range_s + 1;
 
-        abcdk_httpd_response_header_set(stream, "Status","%d",206);
-        abcdk_httpd_response_header_set(stream, "Content-Type","%s",type);
-        abcdk_httpd_response_header_set(stream, "Content-Range","bytes %zu-%zu/%zu",range_s, range_e, file_size);
-        abcdk_httpd_response_header_set(stream, "Content-Length","%zu",stream_ctx_p->file_ctx->sizes[0]);
+        abcdk_https_response_header_set(stream, "Status","%d",206);
+        abcdk_https_response_header_set(stream, "Content-Type","%s",type);
+        abcdk_https_response_header_set(stream, "Content-Range","bytes %zu-%zu/%zu",range_s, range_e, file_size);
+        abcdk_https_response_header_set(stream, "Content-Length","%zu",stream_ctx_p->file_ctx->sizes[0]);
     }
     else
     {
-        abcdk_httpd_response_header_set(stream, "Status","%d",200);
-        abcdk_httpd_response_header_set(stream, "Content-Type","%s",type);
-        abcdk_httpd_response_header_set(stream, "Content-Length","%zu",stream_ctx_p->file_ctx->sizes[0]);
+        abcdk_https_response_header_set(stream, "Status","%d",200);
+        abcdk_https_response_header_set(stream, "Content-Type","%s",type);
+        abcdk_https_response_header_set(stream, "Content-Length","%zu",stream_ctx_p->file_ctx->sizes[0]);
     }
 
     chk = -1;
     if (abcdk_strcmp(stream_ctx_p->method_p, "HEAD", 0) != 0)
-        chk = abcdk_httpd_response(stream, stream_ctx_p->file_ctx);
+        chk = abcdk_https_response(stream, stream_ctx_p->file_ctx);
     
-    abcdk_httpd_response(stream, NULL);
+    abcdk_https_response(stream, NULL);
 
     /*不需要发送或发送失败时，需要主动删除。*/
     if (chk != 0)
@@ -406,29 +406,29 @@ static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
         stream_ctx_p->file_ctx = NULL;
 }
 
-static void _abcdkhttpd_session_prepare_cb(void *opaque, abcdk_httpd_session_t **session, abcdk_httpd_session_t *listen)
+static void _abcdkhttpd_session_prepare_cb(void *opaque, abcdk_https_session_t **session, abcdk_https_session_t *listen)
 {
-    *session = abcdk_httpd_session_alloc(((abcdkhttpd_t *)opaque)->io_ctx);
+    *session = abcdk_https_session_alloc(((abcdkhttpd_t *)opaque)->io_ctx);
 }
 
-static void _abcdkhttpd_session_accept_cb(void *opaque, abcdk_httpd_session_t *session, int *result)
+static void _abcdkhttpd_session_accept_cb(void *opaque, abcdk_https_session_t *session, int *result)
 {
     *result = 0;
 }
 
-static void _abcdkhttpd_session_ready_cb(void *opaque, abcdk_httpd_session_t *session)
+static void _abcdkhttpd_session_ready_cb(void *opaque, abcdk_https_session_t *session)
 {
-    abcdk_httpd_session_set_timeout(session, 30);
+    abcdk_https_session_set_timeout(session, 30);
 }
 
-static void _abcdkhttpd_session_close_cb(void *opaque, abcdk_httpd_session_t *session)
+static void _abcdkhttpd_session_close_cb(void *opaque, abcdk_https_session_t *session)
 {
 }
 
 static void _abcdkhttpd_stream_destructor_cb(void *opaque, abcdk_object_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
 
     abcdk_tree_free(&stream_ctx_p->dir_ctx);
     abcdk_object_unref(&stream_ctx_p->file_ctx);
@@ -437,7 +437,7 @@ static void _abcdkhttpd_stream_destructor_cb(void *opaque, abcdk_object_t *strea
     abcdk_object_unref(&stream_ctx_p->script_de);
 
     abcdk_heap_free(stream_ctx_p);
-    abcdk_httpd_set_userdata(stream, NULL);
+    abcdk_https_set_userdata(stream, NULL);
 }
 
 static void _abcdkhttpd_stream_construct_cb(void *opaque, abcdk_object_t *stream)
@@ -446,13 +446,13 @@ static void _abcdkhttpd_stream_construct_cb(void *opaque, abcdk_object_t *stream
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_heap_alloc(sizeof(abcdkhttpd_stream_t));
 
     stream_ctx_p->ctx_p = ctx_p;
-    abcdk_httpd_set_userdata(stream, stream_ctx_p);
+    abcdk_https_set_userdata(stream, stream_ctx_p);
 }
 
 static void _abcdkhttpd_stream_request_cb(void *opaque, abcdk_object_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     int chk;
 
     /*删除过时的。*/
@@ -462,15 +462,15 @@ static void _abcdkhttpd_stream_request_cb(void *opaque, abcdk_object_t *stream)
     abcdk_object_unref(&stream_ctx_p->range_de);
     abcdk_object_unref(&stream_ctx_p->script_de);
 
-    chk = abcdk_httpd_check_auth(stream);
+    chk = abcdk_https_check_auth(stream);
     if (chk != 0)
         return;
 
-    stream_ctx_p->method_p = abcdk_httpd_request_header_get(stream, "Method");
-    stream_ctx_p->scheme_p = abcdk_httpd_request_header_get(stream, "Scheme");
-    stream_ctx_p->host_p = abcdk_httpd_request_header_get(stream, "Host");
-    stream_ctx_p->script_p = abcdk_httpd_request_header_get(stream, "Script");
-    stream_ctx_p->range_p = abcdk_httpd_request_header_get(stream, "Range");
+    stream_ctx_p->method_p = abcdk_https_request_header_get(stream, "Method");
+    stream_ctx_p->scheme_p = abcdk_https_request_header_get(stream, "Scheme");
+    stream_ctx_p->host_p = abcdk_https_request_header_get(stream, "Host");
+    stream_ctx_p->script_p = abcdk_https_request_header_get(stream, "Script");
+    stream_ctx_p->range_p = abcdk_https_request_header_get(stream, "Range");
 
     /*解码路径。*/
     stream_ctx_p->script_de = abcdk_url_decode2(stream_ctx_p->script_p, strlen(stream_ctx_p->script_p), 1);
@@ -507,7 +507,7 @@ static void _abcdkhttpd_stream_request_cb(void *opaque, abcdk_object_t *stream)
 static void _abcdkhttpd_stream_output_cb(void *opaque, abcdk_object_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
-    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_httpd_get_userdata(stream);
+    abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     int chk;
 
     if (S_ISDIR(stream_ctx_p->attr.st_mode))
@@ -520,8 +520,8 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
 {
     const char *listen;
     abcdk_sockaddr_t listen_addr = {0};
-    abcdk_httpd_config_t cfg = {0};
-    abcdk_httpd_session_t *listen_p;
+    abcdk_https_config_t cfg = {0};
+    abcdk_https_session_t *listen_p;
     int chk;
     
     if (ssl)
@@ -568,9 +568,9 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
     }
 
     if (ssl)
-        listen_p = ctx->listen_ssl_p = abcdk_httpd_session_alloc(ctx->io_ctx);
+        listen_p = ctx->listen_ssl_p = abcdk_https_session_alloc(ctx->io_ctx);
     else 
-        listen_p = ctx->listen_p = abcdk_httpd_session_alloc(ctx->io_ctx);
+        listen_p = ctx->listen_p = abcdk_https_session_alloc(ctx->io_ctx);
 
     if (!listen_p)
     {
@@ -578,7 +578,7 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
         return -2;
     }
 
-    chk = abcdk_httpd_session_listen(listen_p,&listen_addr,&cfg);
+    chk = abcdk_https_session_listen(listen_p,&listen_addr,&cfg);
     if(chk == 0)
         return 0;
 
@@ -632,7 +632,7 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
         abcdk_mkdir(ctx->up_tmp_path, 0600);
 
 
-    ctx->io_ctx = abcdk_httpd_create(max_client, -1);
+    ctx->io_ctx = abcdk_https_create(max_client, -1);
     if (!ctx->io_ctx)
     {
         abcdk_trace_output(LOG_WARNING, "内存错误。\n");
@@ -654,9 +654,9 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
 
 final:
 
-    abcdk_httpd_destroy(&ctx->io_ctx);
-    abcdk_httpd_session_unref(&ctx->listen_p);
-    abcdk_httpd_session_unref(&ctx->listen_ssl_p);
+    abcdk_https_destroy(&ctx->io_ctx);
+    abcdk_https_session_unref(&ctx->listen_p);
+    abcdk_https_session_unref(&ctx->listen_ssl_p);
 
 #ifdef _MAGIC_H
     if (ctx->magic_ctx)

@@ -124,14 +124,13 @@
 
 #include "abcdk/asio/asio.h"
 #include "abcdk/asio/tipc.h"
-#include "abcdk/asio/httpd.h"
+#include "abcdk/asio/https.h"
 #include "abcdk/asio/srpc.h"
 
 
 #include "abcdk/json/json.h"
 
 #include "abcdk/http/util.h"
-#include "abcdk/http/httpd.h"
 
 #include "abcdk/ssl/openssl.h"
 #include "abcdk/ssl/easyssl.h"
