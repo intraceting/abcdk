@@ -10,10 +10,6 @@
 /**流媒体对象。*/
 typedef struct _abcdk_ffserver_item
 {
-    void *father;
-
-    int id;
-
     abcdk_ffmpeg_config_t ff_cfg;
     abcdk_ffmpeg_t *ff_ctx;
 
@@ -24,6 +20,8 @@ typedef struct _abcdk_ffserver_item
     int64_t read_gop_ns[16];
 
     uint64_t segment_pos[2];
+
+    abcdk_stream_t *send_buf;
 }abcdk_ffserver_item_t;
 
 /*简单的流媒体服务。*/
@@ -438,9 +436,11 @@ ERR:
 int _abcdk_ffserver_live_write_packet_cb(void *opaque, uint8_t *buf, int buf_size)
 {
     abcdk_ffserver_item_t *item_p = (abcdk_ffserver_item_t*)opaque;
-    abcdk_ffserver_t *ctx_p = (abcdk_ffserver_t*)item_p->father;
+    int chk;
     
-    ctx_p->cfg.live_cb(ctx_p->cfg.live_opaque,item_p->id,buf,buf_size);
+    chk = abcdk_stream_write_buffer(item_p->send_buf,buf,buf_size);
+    if(chk != 0)
+        return -1;
 
     return buf_size;
 }
@@ -452,9 +452,6 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t
     int *idx_p = NULL;
     int chk;
 
-    if(!ctx->cfg.live_cb)
-        return -1;
-    
     if (item_ctx->reopen)
     {
         item_ctx->reopen = 0;
@@ -462,6 +459,7 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t
             abcdk_ffmpeg_write_trailer(item_ctx->ff_ctx);
 
         abcdk_ffmpeg_destroy(&item_ctx->ff_ctx);
+        abcdk_stream_destroy(&item_ctx->send_buf);
     }
 
     /*正在关闭时，直接返回。*/
@@ -471,6 +469,10 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t
     /*打开一次即可。*/
     if (item_ctx->ff_ctx)
         return 0;
+
+    item_ctx->send_buf = abcdk_stream_create();
+    if(!item_ctx->send_buf)
+        return -5;
 
     item_ctx->ff_cfg.writer = 1;
     item_ctx->ff_cfg.io.opaque = item_ctx;
@@ -575,7 +577,6 @@ static void _abcdk_ffserver_live(abcdk_ffserver_t *ctx, AVPacket *pkt)
     abcdk_ffserver_item_t *item_p = NULL;
     int id = 0;
     int open_chk;
-    int chk;
 
 NEXT_ITEM:
 
@@ -588,8 +589,6 @@ NEXT_ITEM:
     abcdk_mutex_unlock(ctx->live_mutex);
 
     item_p = (abcdk_ffserver_item_t *)ctx->live_list->pptrs[id-1];
-    item_p->father = ctx;
-    item_p->id = id;
     item_p->reopen = !open_chk;//如果应用层主动关闭直播，这里通知关闭。
 
     _abcdk_ffserver_live_write(ctx,item_p,open_chk?pkt:NULL);
@@ -599,15 +598,9 @@ NEXT_ITEM:
 
 static void _abcdk_ffserver_write(abcdk_ffserver_t *ctx, AVPacket *pkt)
 {
-    for (int i = 0; i < 3; i++)
-    {
-        if(i == 0)
-            _abcdk_ffserver_recored(ctx, pkt);
-        else if(i == 1)
-            _abcdk_ffserver_push(ctx, pkt);
-        else if(i == 2)
-            _abcdk_ffserver_live(ctx, pkt);
-    }
+    _abcdk_ffserver_recored(ctx, pkt);
+    _abcdk_ffserver_push(ctx, pkt);
+    _abcdk_ffserver_live(ctx, pkt);
 }
 
 void *_abcdk_ffserver_worker_routine(void *opaque)
@@ -691,4 +684,60 @@ END:
     abcdk_ffmpeg_destroy(&ctx->src.ff_ctx);
 
     return NULL;
+}
+
+void abcdk_ffserver_live_free(abcdk_ffserver_t *ctx,int id)
+{
+    assert(ctx != NULL && id > 0);
+
+    if (id > ctx->cfg.live_count_max)
+        return;
+
+    abcdk_mutex_lock(ctx->live_mutex,1);
+    abcdk_bloom_unset(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
+    abcdk_mutex_unlock(ctx->live_mutex);
+    
+}
+
+int abcdk_ffserver_live_alloc(abcdk_ffserver_t *ctx)
+{
+    int id = 0;
+    int open_chk;
+
+    assert(ctx != NULL);
+
+NEXT_ITEM:
+
+    id += 1;
+    if (id > ctx->cfg.live_count_max)
+        return;
+
+    abcdk_mutex_lock(ctx->live_mutex,1);
+    open_chk = abcdk_bloom_mark(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
+    abcdk_mutex_unlock(ctx->live_mutex);
+
+    if(open_chk != 0)
+        goto NEXT_ITEM;
+
+    return id;
+}
+
+ssize_t abcdk_ffserver_live_fetch(abcdk_ffserver_t *ctx,int id ,void *buf,size_t size)
+{
+    int open_chk;
+    ssize_t rlen;
+
+    assert(ctx != NULL && id > 0 && buf != NULL && size > 0);
+
+    if (id > ctx->cfg.live_count_max)
+        return -1;
+
+    abcdk_mutex_lock(ctx->live_mutex,1);
+    open_chk = abcdk_bloom_filter(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
+    abcdk_mutex_unlock(ctx->live_mutex);
+
+    if(!open_chk)
+        return -2;
+
+    rlen = 
 }

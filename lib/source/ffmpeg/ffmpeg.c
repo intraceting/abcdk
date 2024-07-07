@@ -569,7 +569,13 @@ next_delay:
 
 int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream)
 {
-    int block = 0;
+    AVStream * vs_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar = NULL;
+#endif
+    int obsolete = 0;
     int chk;
 
     assert(ctx != NULL && pkt != NULL);
@@ -580,11 +586,19 @@ next_packet:
     if (chk < 0)
         return -1;
 
+    vs_p = ctx->avctx->streams[stream];
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    codecpar = vs_p->codec;
+#else
+    codecpar = vs_p->codecpar;
+#endif
+
     /*更新最近包时间，不然会超时。*/
     ctx->last_packet_time = _abcdk_ffmpeg_clock();
 
     /*记录KEY帧和帧分组时间。*/
-    if (pkt->flags & AV_PKT_FLAG_KEY)
+    if ((pkt->flags & AV_PKT_FLAG_KEY) || (codecpar->codec_type != AVMEDIA_TYPE_VIDEO))
         ctx->read_key_ns[pkt->stream_index] = ctx->read_gop_ns[pkt->stream_index] = _abcdk_ffmpeg_clock();
 
     /*记录有效的DTS，并记录开始读取时间(用于记算拉流延时)。*/
@@ -614,14 +628,18 @@ next_packet:
     }
 
     /*检测延时是否超过阈值。*/
-    block = _abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1);
+    obsolete = _abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1);
 
     /*也可能已经不在同一个GOP中。*/
     if(ctx->read_key_ns[pkt->stream_index] != ctx->read_gop_ns[pkt->stream_index])
-        block = 1;
+        obsolete = 1;
+
+    /*视频流并且是关键帧则不能丢。*/
+    if ((codecpar->codec_type == AVMEDIA_TYPE_VIDEO) && (pkt->flags & AV_PKT_FLAG_KEY))
+        obsolete = 0;
 
     /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
-    if (!(pkt->flags & AV_PKT_FLAG_KEY) && block)
+    if (obsolete)
     {
         abcdk_trace_output(LOG_WARNING, "超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
                            pkt->stream_index, abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));

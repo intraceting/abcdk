@@ -11,6 +11,7 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/atomic.h"
 #include "abcdk/util/bloom.h"
+#include "abcdk/util/stream.h"
 #include "abcdk/shell/file.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
@@ -60,18 +61,6 @@ typedef struct _abcdk_ffserver_config
     /**推流格式。*/
     const char *push_fmt;
 
-    /**
-     * 直播回调。
-     * 
-     * @warning 不能阻塞。
-     * 
-     * @param size 数据包长度。<= 0 表示直播已经关闭。
-    */
-    void (*live_cb)(void *opaque ,int id, const void *data, size_t size);
-
-    /**直播环境指针。*/
-    void *live_opaque;
-
     /**直播最大延时(秒.毫秒)。0.300~4.999。*/
     float live_delay_max;
 
@@ -93,11 +82,30 @@ void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx);
  */
 abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg);
 
-/*停止。*/
+/**停止。*/
 void abcdk_ffserver_stop(abcdk_ffserver_t *ctx);
 
-/*启动。*/
+/**启动。*/
 int abcdk_ffserver_start(abcdk_ffserver_t *ctx);
+
+/**
+ * 直播释放。
+*/
+void abcdk_ffserver_live_free(abcdk_ffserver_t *ctx,int id);
+
+/**
+ * 直播申请。
+ * 
+ * @return >= 0 成功(ID)，< 0 失败。
+*/
+int abcdk_ffserver_live_alloc(abcdk_ffserver_t *ctx);
+
+/**
+ * 直播拉流。 
+ * 
+ * @return >= 0 成功(长度)，< 0 失败。
+ */
+ssize_t abcdk_ffserver_live_fetch(abcdk_ffserver_t *ctx,int id ,void *buf,size_t size);
 
 __END_DECLS
 
