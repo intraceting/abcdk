@@ -107,8 +107,11 @@ abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg)
 
     /*修复不支持的参数。*/
     ctx->cfg.src_timeout = ABCDK_CLAMP(ctx->cfg.src_timeout,(int)-1,(int)5);
+    ctx->cfg.src_retry = ABCDK_CLAMP(ctx->cfg.src_retry,(int)1,(int)30);
     ctx->cfg.src_speed = ABCDK_CLAMP(ctx->cfg.src_speed,(float)0.01,(float)100.0);
     ctx->cfg.src_delay_max = ABCDK_CLAMP(ctx->cfg.src_delay_max,(float)0.300,(float)4.999);
+    ctx->cfg.record_count = ABCDK_CLAMP(ctx->cfg.record_count,(int)1,(int)65536);
+    ctx->cfg.record_duration = ABCDK_CLAMP(ctx->cfg.record_duration,(int)1,(int)3600);
     ctx->cfg.live_delay_max = ABCDK_CLAMP(ctx->cfg.live_delay_max,(float)0.300,(float)4.999);
     ctx->cfg.live_count_max = ABCDK_CLAMP(ctx->cfg.live_count_max,(int)1,(int)99999);
 
@@ -144,6 +147,9 @@ int abcdk_ffserver_start(abcdk_ffserver_t *ctx)
     if(!abcdk_atomic_compare_and_swap(&ctx->work_exit,0,1))
         return 0;
 
+    ctx->worker.routine = _abcdk_ffserver_worker_routine;
+    ctx->worker.opaque = ctx;
+
     chk = abcdk_thread_create(&ctx->worker,1);
     if(chk != 0)
         goto ERR;
@@ -165,6 +171,12 @@ static int _abcdk_ffserver_record_open(abcdk_ffserver_t *ctx)
 
     if(!ctx->cfg.record_prefix || !*ctx->cfg.record_prefix)
         return -1;
+
+    if(!ctx->record_path_file[0])
+    {
+        snprintf(ctx->record_path_file,PATH_MAX,"%s_record.tmp",ctx->cfg.record_prefix);
+        snprintf(ctx->record_segment_file,PATH_MAX,"%s_%%llu.mp4",ctx->cfg.record_prefix);
+    }
     
     if (ctx->record.reopen)
     {
@@ -173,29 +185,32 @@ static int _abcdk_ffserver_record_open(abcdk_ffserver_t *ctx)
             abcdk_ffmpeg_write_trailer(ctx->record.ff_ctx);
 
         abcdk_ffmpeg_destroy(&ctx->record.ff_ctx);
+
+        /*删除过多的分段录像文件。*/
+        abcdk_file_segment(ctx->record_path_file,ctx->record_segment_file,ctx->cfg.record_count,1,ctx->record.segment_pos);
     }
-
-    snprintf(ctx->record_path_file,PATH_MAX,"%s_record.tmp",ctx->cfg.record_prefix);
-    snprintf(ctx->record_segment_file,PATH_MAX,"%s_%%llu.mp4",ctx->cfg.record_prefix);
-
-    /*删除过多的分段录像文件。*/
-    abcdk_file_segment(ctx->record_path_file,ctx->record_segment_file,ctx->cfg.record_count,1,ctx->record.segment_pos);
 
     /*打开一次即可。*/
     if (ctx->record.ff_ctx)
         return 0;
 
+    ctx->record.ff_cfg.writer = 1;
     ctx->record.ff_cfg.file_name = ctx->record_path_file;
     ctx->record.ff_cfg.short_name = "mp4";
     ctx->record.ff_cfg.write_flush = 1;
 
+    abcdk_trace_output(LOG_INFO, "打开录像文件(%s)...", ctx->record_path_file);
+
     ctx->record.ff_ctx = abcdk_ffmpeg_open(&ctx->record.ff_cfg);
     if (!ctx->record.ff_ctx)
-        return -2;
-
-    for (int i = 0; i < abcdk_ffmpeg_streams(ctx->record.ff_ctx); i++)
     {
-        src_vs_p = abcdk_ffmpeg_streamptr(ctx->record.ff_ctx, i);
+        abcdk_trace_output(LOG_WARNING, "打开录像文件(%s)失败，稍后重试。", ctx->record_path_file);
+        return -2;
+    }
+
+    for (int i = 0; i < abcdk_ffmpeg_streams(ctx->src.ff_ctx); i++)
+    {
+        src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, i);
 
         /*可能编码器可能未安装，这里初始索引为-1。*/
         idx_p = &ctx->record.s2d_idx[src_vs_p->index];
@@ -222,7 +237,7 @@ static int _abcdk_ffserver_record_open(abcdk_ffserver_t *ctx)
         abcdk_avcodec_free(&opt);
     }
 
-    chk = abcdk_ffmpeg_write_header(ctx->record.ff_ctx, 0);
+    chk = abcdk_ffmpeg_write_header(ctx->record.ff_ctx, 1);
     if (chk != 0)
         goto ERR;
 
@@ -261,7 +276,7 @@ SEGMENT_NEW:
         return;
 
     /*如果达到分段要求，并且当前帧还是关键帧，则开始新的分段。*/
-    if(_abcdk_ffserver_clock(0) - ctx->record_segment_start > ctx->cfg.record_duration && pkt->flags&AV_PKT_FLAG_KEY)
+    if((_abcdk_ffserver_clock(0) - ctx->record_segment_start > ctx->cfg.record_duration) && pkt->flags&AV_PKT_FLAG_KEY)
     {
         ctx->record.reopen = 1;
         goto SEGMENT_NEW;
@@ -280,7 +295,7 @@ SEGMENT_NEW:
     pkt_cp.flags = pkt->flags;
     pkt_cp.stream_index = *idx_p;
 
-    chk = abcdk_ffmpeg_write_packet(ctx->push.ff_ctx, &pkt_cp, &src_vs_p->time_base);
+    chk = abcdk_ffmpeg_write_packet(ctx->record.ff_ctx, &pkt_cp, &src_vs_p->time_base);
     if (chk != 0)
         goto ERR;
 
@@ -320,9 +335,14 @@ static int _abcdk_ffserver_push_open(abcdk_ffserver_t *ctx)
     ctx->push.ff_cfg.short_name = ctx->cfg.push_fmt;
     ctx->push.ff_cfg.write_flush = 1;
 
+    abcdk_trace_output(LOG_INFO, "连接推流地址(%s)...", ctx->cfg.push_url);
+
     ctx->push.ff_ctx = abcdk_ffmpeg_open(&ctx->push.ff_cfg);
     if (!ctx->push.ff_ctx)
+    {
+        abcdk_trace_output(LOG_WARNING, "连接推流地址(%s)失败，稍后重试。", ctx->cfg.push_url);
         return -2;
+    }
 
     for (int i = 0; i < abcdk_ffmpeg_streams(ctx->push.ff_ctx); i++)
     {
@@ -353,7 +373,7 @@ static int _abcdk_ffserver_push_open(abcdk_ffserver_t *ctx)
         abcdk_avcodec_free(&opt);
     }
 
-    chk = abcdk_ffmpeg_write_header(ctx->push.ff_ctx, 0);
+    chk = abcdk_ffmpeg_write_header(ctx->push.ff_ctx, 1);
     if (chk != 0)
         goto ERR;
 
@@ -449,6 +469,7 @@ void *_abcdk_ffserver_worker_routine(void *opaque)
     ctx->src.ff_cfg.bit_stream_filter = 1;
     ctx->src.ff_cfg.read_speed = ctx->cfg.src_speed;
     ctx->src.ff_cfg.read_delay_max = ctx->cfg.src_delay_max;
+    ctx->src.ff_cfg.timeout = ctx->cfg.src_timeout;
 
 RETRY:
 
@@ -464,9 +485,11 @@ RETRY:
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
     {
-        abcdk_trace_output(LOG_INFO, "'%s'连接已断开或已到达文件末尾，%llu秒后重新连接。", ctx->cfg.src_url, ctx->cfg.src_retry);
+        abcdk_trace_output(LOG_WARNING, "源地址(%s)已关闭或到末尾，%d秒后重连。", ctx->cfg.src_url, ctx->cfg.src_retry);
         usleep(ctx->cfg.src_retry * 1000000);
     }
+
+    abcdk_trace_output(LOG_INFO, "连接源地址(%s)...", ctx->cfg.src_url);
 
     ctx->src.ff_ctx = abcdk_ffmpeg_open(&ctx->src.ff_cfg);
     if (!ctx->src.ff_ctx)

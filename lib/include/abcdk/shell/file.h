@@ -48,8 +48,8 @@ int abcdk_file_wholockme(const char *file,int pids[],int max);
  * 
  * @param [in] src 源文件名(包括路径)，NULL(0) 忽略。
  * @param [in] dst 目标文件名(包括路径)。注：文件名仅支持一个数值格式控制符。
- * @param [in] winsize 冗余窗口。
- * @param [in] start 起始编号。
+ * @param [in] winsize 冗余窗口。1~65535。
+ * @param [in] start 起始编号。1~...
  * @param [in out] pos 游标。pos[0] > pos[1] 查找历史编号，接续生产。
  * 
  * @return 0 成功，-1 删除历史文件失败(无权限)，-2 分段重命名失败(无权限或不存在)。

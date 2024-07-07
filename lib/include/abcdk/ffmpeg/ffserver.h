@@ -24,28 +24,36 @@ typedef struct _abcdk_ffserver_config
     /**源格式。*/
     const char *src_fmt;
 
-    /**源超时(秒)。*/
+    /**源超时(秒)。-1~5。*/
     int src_timeout;
 
-    /** 源的速度(倍数)。0.01~100.0 */
+    /**源速度(倍数)。0.01~100.0 */
     float src_speed;
 
-    /** 源的最大延迟(秒.毫秒)。0.300~4.999*/
+    /**源最大延迟(秒.毫秒)。0.300~4.999*/
     float src_delay_max;
 
-    /**源重试间隔(秒)。*/
+    /**源重试间隔(秒)。1~30。*/
     int src_retry;
 
-    /**录像保存前缀。*/
+    /**
+     * 录像前缀。
+     * 
+     * @note NULL(0) 禁用。
+    */
     const char *record_prefix;
 
-    /**录像分段时长。*/
-    uint64_t record_duration;
+    /**录像分段时长。1~3600。*/
+    int record_duration;
 
-    /**录像分段数量。*/
-    uint16_t record_count;
+    /**录像分段数量。1~65535。*/
+    int record_count;
 
-    /**推流地址。*/
+    /**
+     * 推流地址。
+     * 
+     * @note NULL(0) 禁用。
+    */
     const char *push_url;
 
     /**推流格式。*/
@@ -62,9 +70,9 @@ typedef struct _abcdk_ffserver_config
     void *live_opaque;
 
     /**直播最大延时(秒.毫秒)。0.300~4.999。*/
-    int live_delay_max;
+    float live_delay_max;
 
-    /**直播最大数量。*/
+    /**直播最大连数量。1~99999。*/
     int live_count_max;
 
 }abcdk_ffserver_config_t;

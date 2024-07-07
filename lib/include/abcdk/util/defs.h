@@ -132,7 +132,7 @@
  * @note 不同类的数值，无法返回正确的结果。
 */
 #define ABCDK_MAX(A, B) \
-    ((A) >= (B) ? (A) : (B))
+    ((A) > (B) ? (A) : (B))
 
 /** 
  * 数值比较，返回最小值。
@@ -140,15 +140,15 @@
  * @note 不同类的数值，无法返回正确的结果。
 */
 #define ABCDK_MIN(A, B) \
-    ((A) <= (B) ? (A) : (B))
+    ((A) < (B) ? (A) : (B))
 
 /** 
  * 规划数值到区间内(包括两端极值)。
  * 
- * @note 不同类的数值，无法返回正确的结果。
+ * @warning 不同类型的数值，无法返回正确的结果。
 */
 #define ABCDK_CLAMP(V, A, B) \
-    ABCDK_MIN(ABCDK_MAX((A), (B)), ABCDK_MAX(ABCDK_MIN((A), (B)), (V)))
+    ((V) < (A)?(A):((V) > (B)?(B):(V)))
 
 /** 
  * 交换两个数值变量的值。

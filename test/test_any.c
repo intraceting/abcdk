@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 1
+#elif 0
 
     abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -952,6 +952,27 @@ int abcdk_test_any(abcdk_option_t *args)
 
 
     abcdk_easyssl_destroy(&cli_ctx);
+
+#elif 1
+
+    abcdk_ffserver_config_t cfg ={0};
+
+    cfg.src_url = "/home/zpcoding/data/files-b/job/tmp/aaaa.mp4";
+  //  cfg.push_url = "rtsp://192.168.100.96/live/cccc";
+    cfg.push_fmt = "rtsp";
+    cfg.record_prefix = "/home/zpcoding/data/files-b/job/tmp/cccc";
+    cfg.record_count = 10;
+    cfg.record_duration = 5;
+
+    abcdk_ffserver_t *ctx = abcdk_ffserver_create(&cfg);
+
+    abcdk_ffserver_start(ctx);
+
+    while(getchar() != 'q');
+
+    abcdk_ffserver_stop(ctx);
+
+    abcdk_ffserver_destroy(&ctx);
 
 #endif 
 }
