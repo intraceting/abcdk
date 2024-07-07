@@ -957,10 +957,13 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ffserver_config_t cfg ={0};
 
-    cfg.src_url = "/home/zpcoding/data/files-b/job/tmp/aaaa.mp4";
-  //  cfg.push_url = "rtsp://192.168.100.96/live/cccc";
-    cfg.push_fmt = "rtsp";
-    cfg.record_prefix = "/home/zpcoding/data/files-b/job/tmp/cccc";
+   // cfg.src_url = "/home/devel/job/download/4K PARADISE Summer Mix 2024 🍓 Best Of Tropical Deep House Music Chill Out Mix By Summer Vibes Sound.mp4";
+    cfg.src_url = "rtsp://192.168.100.96/live/bbbb";
+    cfg.src_speed = 1.0;
+    cfg.src_delay_max = 1.0;
+    cfg.push_url = "rtmp://127.0.0.1/live/cccc";
+    cfg.push_fmt = "rtmp";
+    cfg.record_prefix = "/home/devel/job/tmp/cccc/cccc_";
     cfg.record_count = 10;
     cfg.record_duration = 5;
 

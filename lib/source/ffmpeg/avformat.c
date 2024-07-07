@@ -155,7 +155,9 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
         if(filename)
         {
             if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
-            av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
+            {
+                av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
+            }
         }
     }
 
@@ -457,10 +459,16 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
     url_p = ctx->url;
 #endif
 
-    if (dict && url_p)
+    if (dict)
     {
-        if (abcdk_strncmp(url_p, "rtsp://", 7, 0) == 0 || abcdk_strncmp(url_p, "rtsps://", 8, 0) == 0)
-            av_dict_set(dict, "rtsp_transport", "tcp", 0);
+        if(url_p)
+        {
+            if (abcdk_strncmp(url_p, "rtsp://", 7, 0) == 0 || abcdk_strncmp(url_p, "rtsps://", 8, 0) == 0)
+            {
+                av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
+                av_dict_set(dict, "max_interleave_delta", "0", AV_DICT_DONT_OVERWRITE);
+            }
+        }
     }
 
     chk = avformat_write_header(ctx, dict);
@@ -476,10 +484,13 @@ int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt,int flush)
     assert(ctx != NULL && pkt != NULL);
 
     chk = av_interleaved_write_frame(ctx, pkt);
-    if(chk == 0 && flush)
+    if(chk != 0)
+        return -1;
+
+    if(flush && ctx->pb)
        avio_flush(ctx->pb);
-    
-    return chk;
+
+    return 0;
 }
 
 int abcdk_avformat_output_trailer(AVFormatContext *ctx)

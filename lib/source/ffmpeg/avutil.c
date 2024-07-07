@@ -158,6 +158,29 @@ void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src)
                         src->width,src->height,src->format);
 }
 
+
+static void _abcdk_avlog_callback(void* opaque, int level, const char* fmt, va_list v)
+{
+    int sys_level;
+    if((AV_LOG_QUIET == level) || (AV_LOG_PANIC == level)  || (AV_LOG_FATAL == level) || (AV_LOG_ERROR == level))
+        sys_level = LOG_ERR;
+    else if(AV_LOG_WARNING == level)
+        sys_level = LOG_WARNING;
+    else if(AV_LOG_INFO == level)
+        sys_level = LOG_INFO;
+    else if(AV_LOG_VERBOSE == level)
+        sys_level = LOG_DEBUG;
+    else
+        return ;
+    
+    abcdk_trace_voutput(sys_level,fmt,v);
+}
+
+void abcdk_avlog_redirect2trace()
+{
+    av_log_set_callback(_abcdk_avlog_callback);
+}
+
 #pragma GCC diagnostic pop
 
 #endif //AVUTIL_AVUTIL_H

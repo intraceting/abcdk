@@ -8,6 +8,7 @@
 #define ABCDK_FFMPEG_AVUTIL_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 
@@ -109,6 +110,9 @@ void abcdk_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t
  * 帧复制。
  */
 void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src);
+
+/**重定向到轨迹日志。*/
+void abcdk_avlog_redirect2trace();
 
 #endif // AVUTIL_AVUTIL_H
 

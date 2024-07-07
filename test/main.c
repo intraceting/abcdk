@@ -178,6 +178,8 @@ int main(int argc, char **argv)
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace, logger);
 
+    abcdk_avlog_redirect2trace();
+
     errcode = _abcdk_test_dispatch(args);
 
     /*关闭日志。*/
