@@ -440,31 +440,28 @@ int _abcdk_ffserver_live_write_packet_cb(void *opaque, uint8_t *buf, int buf_siz
     abcdk_ffserver_item_t *item_p = (abcdk_ffserver_item_t*)opaque;
     abcdk_ffserver_t *ctx_p = (abcdk_ffserver_t*)item_p->father;
     
-    ctx_p->cfg.live_cb(ctx_p->cfg.live_cb,item_p->id,buf,buf_size);
+    ctx_p->cfg.live_cb(ctx_p->cfg.live_opaque,item_p->id,buf,buf_size);
 
     return buf_size;
 }
 
-static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,int id,int closing)
+static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *item_ctx,int closing)
 {
-    abcdk_ffserver_item_t *item_p;
     AVCodecContext *opt = NULL;
     AVStream *av_p = NULL, *src_vs_p = NULL;
     int *idx_p = NULL;
     int chk;
 
-    item_p = (abcdk_ffserver_item_t*)ctx->live_list->pptrs[id-1];
-
     if(!ctx->cfg.live_cb)
         return -1;
     
-    if (item_p->reopen)
+    if (item_ctx->reopen)
     {
-        item_p->reopen = 0;
-        if (item_p->ff_ctx)
-            abcdk_ffmpeg_write_trailer(item_p->ff_ctx);
+        item_ctx->reopen = 0;
+        if (item_ctx->ff_ctx)
+            abcdk_ffmpeg_write_trailer(item_ctx->ff_ctx);
 
-        abcdk_ffmpeg_destroy(&item_p->ff_ctx);
+        abcdk_ffmpeg_destroy(&item_ctx->ff_ctx);
     }
 
     /*正在关闭时，直接返回。*/
@@ -472,21 +469,21 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,int id,int closing)
         return -4;
 
     /*打开一次即可。*/
-    if (item_p->ff_ctx)
+    if (item_ctx->ff_ctx)
         return 0;
 
-    item_p->ff_cfg.writer = 1;
-    item_p->ff_cfg.io.opaque = item_p;
-    item_p->ff_cfg.io.write_cb = _abcdk_ffserver_live_write_packet_cb;
-    item_p->ff_cfg.short_name = "mp4";
-    item_p->ff_cfg.write_flush = 1;
+    item_ctx->ff_cfg.writer = 1;
+    item_ctx->ff_cfg.io.opaque = item_ctx;
+    item_ctx->ff_cfg.io.write_cb = _abcdk_ffserver_live_write_packet_cb;
+    item_ctx->ff_cfg.short_name = "mp4";
+    item_ctx->ff_cfg.write_flush = 1;
 
     abcdk_trace_output(LOG_INFO, "创建直播环境...");
 
-    item_p->ff_ctx = abcdk_ffmpeg_open(&item_p->ff_cfg);
-    if (!item_p->ff_ctx)
+    item_ctx->ff_ctx = abcdk_ffmpeg_open(&item_ctx->ff_cfg);
+    if (!item_ctx->ff_ctx)
     {
-        abcdk_trace_output(LOG_WARNING, "创建直播环境，稍后重试。");
+        abcdk_trace_output(LOG_WARNING, "创建直播环境失败，稍后重试。");
         return -2;
     }
 
@@ -495,7 +492,7 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,int id,int closing)
         src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, i);
 
         /*编码器可能未安装，这里初始索引为-1。*/
-        idx_p = &item_p->s2d_idx[src_vs_p->index];
+        idx_p = &item_ctx->s2d_idx[src_vs_p->index];
         *idx_p = -1;
 
         opt = abcdk_avcodec_alloc3(src_vs_p->codecpar->codec_id, 1);
@@ -506,11 +503,11 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,int id,int closing)
         abcdk_avstream_parameters_to_context(opt, src_vs_p);
 
         opt->codec_tag = 0;
-        *idx_p = abcdk_ffmpeg_add_stream(item_p->ff_ctx, opt, 1);
+        *idx_p = abcdk_ffmpeg_add_stream(item_ctx->ff_ctx, opt, 1);
         if (*idx_p < 0)
             goto ERR;
 
-        av_p = abcdk_ffmpeg_streamptr(item_p->ff_ctx, *idx_p);
+        av_p = abcdk_ffmpeg_streamptr(item_ctx->ff_ctx, *idx_p);
 
         /*复制帧率。*/
         av_p->avg_frame_rate = src_vs_p->avg_frame_rate;
@@ -519,7 +516,7 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,int id,int closing)
         abcdk_avcodec_free(&opt);
     }
 
-    chk = abcdk_ffmpeg_write_header(item_p->ff_ctx, 1);
+    chk = abcdk_ffmpeg_write_header(item_ctx->ff_ctx, 1);
     if (chk != 0)
         goto ERR;
 
@@ -531,9 +528,73 @@ ERR:
     return -3;
 }
 
-static void _abcdk_ffserver_live(abcdk_ffserver_t *ctx,AVPacket *pkt)
+static void _abcdk_ffserver_live_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *item_ctx,AVPacket *pkt)
 {
-    
+    AVStream *av_p = NULL, *src_vs_p = NULL;
+    AVPacket pkt_cp = {0};
+    int *idx_p = NULL;
+    int chk;
+
+    chk = _abcdk_ffserver_live_init(ctx,item_ctx,pkt == NULL);
+    if (chk != 0)
+        return;
+
+    idx_p = &item_ctx->s2d_idx[pkt->stream_index];
+
+    /*不支持的跳过。*/
+    if (*idx_p < 0)
+        return;
+
+    src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, pkt->stream_index);
+
+    av_init_packet(&pkt_cp);
+
+    /*不能直接使用原始对象，写入前对象的一些参数会被修改。*/
+    pkt_cp.data = pkt->data;
+    pkt_cp.size = pkt->size;
+    pkt_cp.dts = pkt->dts;
+    pkt_cp.pts = pkt->pts;
+    pkt_cp.duration = pkt->duration;
+    pkt_cp.flags = pkt->flags;
+    pkt_cp.stream_index = *idx_p;
+
+    chk = abcdk_ffmpeg_write_packet(item_ctx->ff_ctx, &pkt_cp, &src_vs_p->time_base);
+    if (chk != 0)
+        goto ERR;
+
+    return;
+
+ERR:
+
+    item_ctx->reopen = 1;
+    return;
+}
+
+static void _abcdk_ffserver_live(abcdk_ffserver_t *ctx, AVPacket *pkt)
+{
+    abcdk_ffserver_item_t *item_p = NULL;
+    int id = 0;
+    int open_chk;
+    int chk;
+
+NEXT_ITEM:
+
+    id += 1;
+    if (id > ctx->cfg.live_count_max)
+        return;
+
+    abcdk_mutex_lock(ctx->live_mutex,1);
+    open_chk = abcdk_bloom_filter(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
+    abcdk_mutex_unlock(ctx->live_mutex);
+
+    item_p = (abcdk_ffserver_item_t *)ctx->live_list->pptrs[id-1];
+    item_p->father = ctx;
+    item_p->id = id;
+    item_p->reopen = !open_chk;//如果应用层主动关闭直播，这里通知关闭。
+
+    _abcdk_ffserver_live_write(ctx,item_p,open_chk?pkt:NULL);
+
+    goto NEXT_ITEM;
 }
 
 static void _abcdk_ffserver_write(abcdk_ffserver_t *ctx, AVPacket *pkt)

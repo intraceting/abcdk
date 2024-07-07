@@ -10,6 +10,7 @@
 #include "abcdk/util/thread.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/atomic.h"
+#include "abcdk/util/bloom.h"
 #include "abcdk/shell/file.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
@@ -63,8 +64,10 @@ typedef struct _abcdk_ffserver_config
      * 直播回调。
      * 
      * @warning 不能阻塞。
+     * 
+     * @param size 数据包长度。<= 0 表示直播已经关闭。
     */
-    void (*live_cb)(void *opaque ,uint64_t id, const void *data, size_t size);
+    void (*live_cb)(void *opaque ,int id, const void *data, size_t size);
 
     /**直播环境指针。*/
     void *live_opaque;
