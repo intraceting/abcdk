@@ -43,7 +43,7 @@ static void session_close_cb(void *opaque, abcdk_https_session_t *session)
 
 static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
 {
-    node_t *p = (node_t*)abcdk_https_get_userdata(stream);
+  //  node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
     
 }
@@ -67,7 +67,7 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
 
 static void stream_output_cb(void *opaque, abcdk_object_t *stream)
 {
-     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
+   //  node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
 }
 

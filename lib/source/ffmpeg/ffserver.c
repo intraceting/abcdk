@@ -10,39 +10,39 @@
 /**流媒体对象。*/
 typedef struct _abcdk_ffserver_item
 {
+    /*配置。*/
+    abcdk_ffserver_config_t cfg;
+
+    uint64_t session;
+    int closing;
+    int64_t open_count;
+    
     abcdk_ffmpeg_config_t ff_cfg;
     abcdk_ffmpeg_t *ff_ctx;
 
-    int reopen;
     int s2d_idx[16];
-
     int64_t read_key_ns[16];
     int64_t read_gop_ns[16];
+    int video_have;
 
-    abcdk_stream_t *send_buf;
+    char record_path_file[PATH_MAX];
+    char record_segment_file[PATH_MAX];
+    uint64_t record_segment_start;
+    uint64_t record_segment_pos[2];
+    
+
+    abcdk_stream_t *live_buf;
 
 }abcdk_ffserver_item_t;
 
 /*简单的流媒体服务。*/
 struct _abcdk_ffserver
 {
-    /*配置。*/
-    abcdk_ffserver_config_t cfg;
-    
-    abcdk_ffserver_item_t src;
+    abcdk_tree_t *src_item;
+    uint64_t src_session;
 
-    abcdk_ffserver_item_t record;
-    char record_path_file[PATH_MAX];
-    char record_segment_file[PATH_MAX];
-    uint64_t record_segment_start;
-    uint64_t record_segment_pos[2];
-
-    abcdk_ffserver_item_t push;
-
-    abcdk_object_t *live_items;
-    abcdk_object_t *live_ids;
-    abcdk_object_t *live_bufs;
-    abcdk_mutex_t *live_mutex;
+    abcdk_tree_t *dst_items;
+    abcdk_mutex_t *dst_mutex;
 
     abcdk_thread_t worker;
     volatile int work_exit;
@@ -53,93 +53,79 @@ static int64_t _abcdk_ffserver_clock(uint8_t precision)
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, precision);
 }
 
-void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx)
+static void _abcdk_ffserver_item_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
-    abcdk_ffserver_t *ctx_p;
+    abcdk_ffserver_item_t *ctx_p;
 
-    if(!ctx ||!*ctx)
-        return;
+    ctx_p = (abcdk_ffserver_item_t *)obj->pptrs[0];
 
-    ctx_p = *ctx;
-    *ctx = NULL;
-
-    /*先停下来。*/
-    abcdk_ffserver_stop(ctx_p);
-
-    abcdk_object_unref(&ctx_p->live_items);
-    abcdk_object_unref(&ctx_p->live_ids);
-    abcdk_mutex_destroy(&ctx_p->live_mutex);
-
-    abcdk_heap_free(ctx_p);
-
+    abcdk_ffmpeg_destroy(&ctx_p->ff_ctx);
+    abcdk_stream_destroy(&ctx_p->live_buf);
 }
 
-static void _abcdk_ffserver_live_bufs_destructor_cb(abcdk_object_t *obj, void *opaque)
+static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
 {
-    for (int i = 0; i < obj->numbers; i++)
-        abcdk_stream_unref((abcdk_stream_t **)&obj->pptrs[i]);
-}
-
-static int _abcdk_ffserver_init(abcdk_ffserver_t *ctx)
-{
-    ctx->live_items = abcdk_object_alloc3(sizeof(abcdk_ffserver_item_t),ctx->cfg.live_count_max);
-    if(!ctx->live_items)
-        return -1;
-
-    ctx->live_ids = abcdk_object_alloc2(abcdk_align(ctx->cfg.live_count_max,2));
-    if(!ctx->live_ids)
-        return -2;
-
-    ctx->live_bufs = abcdk_object_alloc3(0,ctx->cfg.live_count_max);
-    if(!ctx->live_bufs)
-        return -2;
-
-    /*注册专用的释放函数。*/
-    abcdk_object_atfree(ctx->live_bufs,_abcdk_ffserver_live_bufs_destructor_cb,ctx);
-
-    ctx->live_mutex = abcdk_mutex_create();
-    if(!ctx->live_mutex)
-        return -2;
-
-    return 0;
-}
-
-abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg)
-{
-    abcdk_ffserver_t *ctx;
-    int chk;
-
-    assert(cfg != NULL);
-
-    ctx = (abcdk_ffserver_t*)abcdk_heap_alloc(sizeof(abcdk_ffserver_t));
+    abcdk_tree_t *ctx;
+    abcdk_ffserver_item_t *item_ctx_p;
+    
+    ctx = abcdk_tree_alloc3(sizeof(abcdk_ffserver_item_t));
     if(!ctx)
         return NULL;
 
-    ctx->cfg = *cfg;
+    /*注册析构函数。*/
+    abcdk_object_atfree(ctx->obj,_abcdk_ffserver_item_destructor_cb,NULL);
 
-    /*修复不支持的参数。*/
-    ctx->cfg.src_timeout = ABCDK_CLAMP(ctx->cfg.src_timeout,(int)-1,(int)5);
-    ctx->cfg.src_retry = ABCDK_CLAMP(ctx->cfg.src_retry,(int)1,(int)30);
-    ctx->cfg.src_speed = ABCDK_CLAMP(ctx->cfg.src_speed,(float)0.01,(float)100.0);
-    ctx->cfg.src_delay_max = ABCDK_CLAMP(ctx->cfg.src_delay_max,(float)0.300,(float)4.999);
-    ctx->cfg.record_count = ABCDK_CLAMP(ctx->cfg.record_count,(int)1,(int)65536);
-    ctx->cfg.record_duration = ABCDK_CLAMP(ctx->cfg.record_duration,(int)1,(int)3600);
-    ctx->cfg.live_delay_max = ABCDK_CLAMP(ctx->cfg.live_delay_max,(float)0.300,(float)4.999);
-    ctx->cfg.live_count_max = ABCDK_CLAMP(ctx->cfg.live_count_max,(int)1,(int)99999);
+    item_ctx_p = (abcdk_ffserver_item_t *)ctx->obj->pptrs[0];
 
-    chk = _abcdk_ffserver_init(ctx);
-    if(chk != 0)
+    item_ctx_p->cfg = *cfg;
+
+    if (item_ctx_p->cfg.flag == 0)
+    {
+        /*修复不支持的参数。*/
+        item_ctx_p->cfg.u.src.timeout = ABCDK_CLAMP(item_ctx_p->cfg.u.src.timeout, (int)-1, (int)5);
+        item_ctx_p->cfg.u.src.retry = ABCDK_CLAMP(item_ctx_p->cfg.u.src.retry, (int)1, (int)30);
+        item_ctx_p->cfg.u.src.speed = ABCDK_CLAMP(item_ctx_p->cfg.u.src.speed, (float)0.01, (float)100.0);
+        item_ctx_p->cfg.u.src.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.src.delay_max, (float)0.300, (float)4.999);
+    }
+    else if(item_ctx_p->cfg.flag == 1)
+    {
+        /*修复不支持的参数。*/
+        item_ctx_p->cfg.u.record.count = ABCDK_CLAMP(item_ctx_p->cfg.u.record.count,(int)1,(int)65536);
+        item_ctx_p->cfg.u.record.duration = ABCDK_CLAMP(item_ctx_p->cfg.u.record.duration,(int)1,(int)3600);
+
+        item_ctx_p->record_segment_pos[0] = UINT64_MAX;
+
+        snprintf(item_ctx_p->record_path_file, PATH_MAX, "%s.mp4.tmp", item_ctx_p->cfg.u.record.prefix);
+        snprintf(item_ctx_p->record_segment_file, PATH_MAX, "%s%%llu.mp4", item_ctx_p->cfg.u.record.prefix);
+    }
+    else if(item_ctx_p->cfg.flag == 2)
+    {
+        /*nothing to do.*/        
+    }
+    else if( item_ctx_p->cfg.flag == 3)
+    {
+        /*修复不支持的参数。*/
+        item_ctx_p->cfg.u.live.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.live.delay_max,(float)0.300,(float)4.999);
+
+        /*引用对象。*/
+        item_ctx_p->live_buf = abcdk_stream_refer(item_ctx_p->cfg.u.live.buf);
+        if(!item_ctx_p->live_buf)
+            goto ERR;
+    }
+    else 
+    {
         goto ERR;
+    }
 
     return ctx;
 
 ERR:
 
-    abcdk_ffserver_destroy(&ctx);
+    abcdk_tree_free(&ctx);
     return NULL;
 }
 
-void abcdk_ffserver_stop(abcdk_ffserver_t *ctx)
+static void _abcdk_ffserver_stop(abcdk_ffserver_t *ctx)
 {
     assert(ctx != NULL);
 
@@ -152,7 +138,7 @@ void abcdk_ffserver_stop(abcdk_ffserver_t *ctx)
 
 static void *_abcdk_ffserver_worker_routine(void *opaque);
 
-int abcdk_ffserver_start(abcdk_ffserver_t *ctx)
+static int _abcdk_ffserver_start(abcdk_ffserver_t *ctx)
 {
     int chk;
 
@@ -174,276 +160,61 @@ ERR:
     return -1;
 }
 
-static int _abcdk_ffserver_record_init(abcdk_ffserver_t *ctx,int closing)
+void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx)
 {
-    AVCodecContext *opt = NULL;
-    AVStream *av_p = NULL, *src_vs_p = NULL;
-    int *idx_p = NULL;
-    int chk;
+    abcdk_ffserver_t *ctx_p;
 
-    if(!ctx->cfg.record_prefix || !*ctx->cfg.record_prefix)
-        return -1;
+    if(!ctx ||!*ctx)
+        return;
 
-    if(!ctx->record_path_file[0])
-    {
-        snprintf(ctx->record_path_file,PATH_MAX,"%srecord.tmp",ctx->cfg.record_prefix);
-        snprintf(ctx->record_segment_file,PATH_MAX,"%s%%llu.mp4",ctx->cfg.record_prefix);
-    }
-    
-    if (ctx->record.reopen || closing)
-    {
-        ctx->record.reopen = 0;
-        if (ctx->record.ff_ctx)
-            abcdk_ffmpeg_write_trailer(ctx->record.ff_ctx);
+    ctx_p = *ctx;
+    *ctx = NULL;
 
-        abcdk_ffmpeg_destroy(&ctx->record.ff_ctx);
+    /*先停下来。*/
+    _abcdk_ffserver_stop(ctx_p);
 
-        /*删除过多的分段录像文件。*/
-        abcdk_file_segment(ctx->record_path_file,ctx->record_segment_file,ctx->cfg.record_count,1,ctx->record_segment_pos);
-    }
+    abcdk_tree_free(&ctx_p->src_item);
+    abcdk_tree_free(&ctx_p->dst_items);
+    abcdk_mutex_destroy(&ctx_p->dst_mutex);
 
-    /*正在关闭时，直接返回。*/
-    if(closing)
-        return -1;
+    abcdk_heap_free(ctx_p);
 
-    /*打开一次即可。*/
-    if (ctx->record.ff_ctx)
-        return 0;
-
-    ctx->record.ff_cfg.writer = 1;
-    ctx->record.ff_cfg.file_name = ctx->record_path_file;
-    ctx->record.ff_cfg.short_name = "mp4";
-    ctx->record.ff_cfg.write_flush = 1;
-
-    abcdk_trace_output(LOG_INFO, "打开录像文件(%s)...", ctx->record_path_file);
-
-    ctx->record.ff_ctx = abcdk_ffmpeg_open(&ctx->record.ff_cfg);
-    if (!ctx->record.ff_ctx)
-    {
-        abcdk_trace_output(LOG_WARNING, "打开录像文件(%s)失败，稍后重试。", ctx->record_path_file);
-        return -2;
-    }
-
-    for (int i = 0; i < abcdk_ffmpeg_streams(ctx->src.ff_ctx); i++)
-    {
-        src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, i);
-
-        /*编码器可能未安装，这里初始索引为-1。*/
-        idx_p = &ctx->record.s2d_idx[src_vs_p->index];
-        *idx_p = -1;
-
-        opt = abcdk_avcodec_alloc3(src_vs_p->codecpar->codec_id, 1);
-        if (!opt)
-            continue;
-
-        /*复制源的编码参数。*/
-        abcdk_avstream_parameters_to_context(opt, src_vs_p);
-
-        opt->codec_tag = 0;
-        *idx_p = abcdk_ffmpeg_add_stream(ctx->record.ff_ctx, opt, 1);
-        if (*idx_p < 0)
-            goto ERR;
-
-        av_p = abcdk_ffmpeg_streamptr(ctx->record.ff_ctx, *idx_p);
-
-        /*复制帧率。*/
-        av_p->avg_frame_rate = src_vs_p->avg_frame_rate;
-        av_p->r_frame_rate = src_vs_p->r_frame_rate;
-
-        abcdk_avcodec_free(&opt);
-    }
-
-    chk = abcdk_ffmpeg_write_header(ctx->record.ff_ctx, 1);
-    if (chk != 0)
-        goto ERR;
-
-    /*记录开始时间。*/
-    ctx->record_segment_start = _abcdk_ffserver_clock(0);
-
-    return 0;
-
-ERR:
-
-    ctx->record.reopen = 1;
-    return -3;
 }
 
-static void _abcdk_ffserver_recored(abcdk_ffserver_t *ctx,AVPacket *pkt)
+abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg)
 {
-    AVStream *av_p = NULL, *src_vs_p = NULL;
-    AVPacket pkt_cp = {0};
-    int *idx_p = NULL;
+    abcdk_ffserver_t *ctx;
     int chk;
 
-SEGMENT_NEW:
+    assert(cfg != NULL);
+    assert(cfg->flag == 0 && cfg->u.src.url != NULL && *cfg->u.src.url != '\0');
 
-    chk = _abcdk_ffserver_record_init(ctx,pkt == NULL);
-    if (chk != 0)
-        return;
-    
-    if(!pkt)
-        return;
+    ctx = (abcdk_ffserver_t*)abcdk_heap_alloc(sizeof(abcdk_ffserver_t));
+    if(!ctx)
+        return NULL;
 
-    idx_p = &ctx->record.s2d_idx[pkt->stream_index];
-
-    /*不支持的跳过。*/
-    if (*idx_p < 0)
-        return;
-
-    /*如果达到分段要求，并且当前帧还是关键帧，则开始新的分段。*/
-    if ((_abcdk_ffserver_clock(0) - ctx->record_segment_start > ctx->cfg.record_duration) && pkt->flags & AV_PKT_FLAG_KEY)
-    {
-        ctx->record.reopen = 1;
-        goto SEGMENT_NEW;
-    }
-
-    src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, pkt->stream_index);
-
-    av_init_packet(&pkt_cp);
-
-    /*不能直接使用原始对象，写入前对象的一些参数会被修改。*/
-    pkt_cp.data = pkt->data;
-    pkt_cp.size = pkt->size;
-    pkt_cp.dts = pkt->dts;
-    pkt_cp.pts = pkt->pts;
-    pkt_cp.duration = pkt->duration;
-    pkt_cp.flags = pkt->flags;
-    pkt_cp.stream_index = *idx_p;
-
-    chk = abcdk_ffmpeg_write_packet(ctx->record.ff_ctx, &pkt_cp, &src_vs_p->time_base);
-    if (chk != 0)
+    ctx->src_item = _abcdk_ffserver_item_alloc(cfg);
+    if(!ctx->src_item)
         goto ERR;
 
-    return;
+    ctx->dst_items = abcdk_tree_alloc3(1);
+    if(!ctx->dst_items)
+        goto ERR;
+
+    ctx->dst_mutex = abcdk_mutex_create();
+    if(!ctx->dst_mutex)
+        goto ERR;
+
+    chk = _abcdk_ffserver_start(ctx);
+    if(chk != 0)
+        goto ERR;
+
+    return ctx;
 
 ERR:
 
-    ctx->record.reopen = 1;
-    return;
-}
-
-static int _abcdk_ffserver_push_init(abcdk_ffserver_t *ctx,int closing)
-{
-    AVCodecContext *opt = NULL;
-    AVStream *av_p = NULL, *src_vs_p = NULL;
-    int *idx_p = NULL;
-    int chk;
-
-    if(!ctx->cfg.push_url || !*ctx->cfg.push_url)
-        return -1;
-    
-    if (ctx->push.reopen || closing)
-    {
-        ctx->push.reopen = 0;
-        if (ctx->push.ff_ctx)
-            abcdk_ffmpeg_write_trailer(ctx->push.ff_ctx);
-
-        abcdk_ffmpeg_destroy(&ctx->push.ff_ctx);
-    }
-
-    /*正在关闭时，直接返回。*/
-    if(closing)
-        return -4;
-
-    /*打开一次即可。*/
-    if (ctx->push.ff_ctx)
-        return 0;
-
-    ctx->push.ff_cfg.writer = 1;
-    ctx->push.ff_cfg.file_name = ctx->cfg.push_url;
-    ctx->push.ff_cfg.short_name = ctx->cfg.push_fmt;
-    ctx->push.ff_cfg.write_flush = 1;
-
-    abcdk_trace_output(LOG_INFO, "连接推流地址(%s)...", ctx->cfg.push_url);
-
-    ctx->push.ff_ctx = abcdk_ffmpeg_open(&ctx->push.ff_cfg);
-    if (!ctx->push.ff_ctx)
-    {
-        abcdk_trace_output(LOG_WARNING, "连接推流地址(%s)失败，稍后重试。", ctx->cfg.push_url);
-        return -2;
-    }
-
-    for (int i = 0; i < abcdk_ffmpeg_streams(ctx->src.ff_ctx); i++)
-    {
-        src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, i);
-
-        /*编码器可能未安装，这里初始索引为-1。*/
-        idx_p = &ctx->push.s2d_idx[src_vs_p->index];
-        *idx_p = -1;
-
-        opt = abcdk_avcodec_alloc3(src_vs_p->codecpar->codec_id, 1);
-        if (!opt)
-            continue;
-
-        /*复制源的编码参数。*/
-        abcdk_avstream_parameters_to_context(opt, src_vs_p);
-
-        opt->codec_tag = 0;
-        *idx_p = abcdk_ffmpeg_add_stream(ctx->push.ff_ctx, opt, 1);
-        if (*idx_p < 0)
-            goto ERR;
-
-        av_p = abcdk_ffmpeg_streamptr(ctx->push.ff_ctx, *idx_p);
-
-        /*复制帧率。*/
-        av_p->avg_frame_rate = src_vs_p->avg_frame_rate;
-        av_p->r_frame_rate = src_vs_p->r_frame_rate;
-
-        abcdk_avcodec_free(&opt);
-    }
-
-    chk = abcdk_ffmpeg_write_header(ctx->push.ff_ctx, 1);
-    if (chk != 0)
-        goto ERR;
-
-    return 0;
-
-ERR:
-
-    ctx->record.reopen = 1;
-    return -3;
-}
-
-static void _abcdk_ffserver_push(abcdk_ffserver_t *ctx, AVPacket *pkt)
-{
-    AVStream *av_p = NULL, *src_vs_p = NULL;
-    AVPacket pkt_cp = {0};
-    int *idx_p = NULL;
-    int chk;
-
-    chk = _abcdk_ffserver_push_init(ctx, pkt == NULL);
-    if (chk != 0)
-        return;
-
-    idx_p = &ctx->push.s2d_idx[pkt->stream_index];
-
-    /*不支持的跳过。*/
-    if (*idx_p < 0)
-        return;
-
-    src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, pkt->stream_index);
-
-    av_init_packet(&pkt_cp);
-
-    /*不能直接使用原始对象，写入前对象的一些参数会被修改。*/
-    pkt_cp.data = pkt->data;
-    pkt_cp.size = pkt->size;
-    pkt_cp.dts = pkt->dts;
-    pkt_cp.pts = pkt->pts;
-    pkt_cp.duration = pkt->duration;
-    pkt_cp.flags = pkt->flags;
-    pkt_cp.stream_index = *idx_p;
-
-    chk = abcdk_ffmpeg_write_packet(ctx->push.ff_ctx, &pkt_cp, &src_vs_p->time_base);
-    if (chk != 0)
-        goto ERR;
-
-    return;
-
-ERR:
-
-    ctx->push.reopen = 1;
-    return;
+    abcdk_ffserver_destroy(&ctx);
+    return NULL;
 }
 
 
@@ -452,63 +223,94 @@ int _abcdk_ffserver_live_write_packet_cb(void *opaque, uint8_t *buf, int buf_siz
     abcdk_ffserver_item_t *item_p = (abcdk_ffserver_item_t*)opaque;
     int chk;
     
-    chk = abcdk_stream_write_buffer(item_p->send_buf,buf,buf_size);
+    chk = abcdk_stream_write_buffer(item_p->live_buf,buf,buf_size);
     if(chk != 0)
         return -1;
 
     return buf_size;
 }
 
-static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *item_ctx,int closing)
+static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *dst_item)
 {
+    const char *tip_p;
+    abcdk_ffserver_item_t *src_item_p;
     AVCodecContext *opt = NULL;
-    AVStream *av_p = NULL, *src_vs_p = NULL;
+    AVStream *vs_p = NULL, *src_vs_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar = NULL;
+#endif
     int *idx_p = NULL;
     int chk;
 
-    if (item_ctx->reopen || closing)
-    {
-        item_ctx->reopen = 0;
-        if (item_ctx->ff_ctx)
-            abcdk_ffmpeg_write_trailer(item_ctx->ff_ctx);
+    src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
 
-        abcdk_ffmpeg_destroy(&item_ctx->ff_ctx);
-        abcdk_stream_destroy(&item_ctx->send_buf);
+    if (dst_item->session != ctx->src_session || dst_item->closing)
+    {
+        dst_item->session = ctx->src_session;
+        if (dst_item->ff_ctx)
+            abcdk_ffmpeg_write_trailer(dst_item->ff_ctx);
+
+        abcdk_ffmpeg_destroy(&dst_item->ff_ctx);
+
+        if(dst_item->cfg.flag == 1)
+        {
+            /*录像分段，同时删除较早的录像文件。*/
+            abcdk_file_segment(dst_item->record_path_file,dst_item->record_segment_file,dst_item->cfg.u.record.count,1,dst_item->record_segment_pos);
+        }
+        else if (dst_item->cfg.flag == 3)
+        {
+            /*直播只能自动重新打开，需要应用层主动创建新行务。*/
+            if(dst_item->open_count > 0)
+                dst_item->closing = 1;
+        }
     }
 
     /*正在关闭时，直接返回。*/
-    if(closing)
+    if(dst_item->closing)
         return -4;
 
     /*打开一次即可。*/
-    if (item_ctx->ff_ctx)
+    if (dst_item->ff_ctx)
         return 0;
 
-    item_ctx->send_buf = abcdk_stream_create();
-    if(!item_ctx->send_buf)
-        return -5;
+    dst_item->ff_cfg.writer = 1;
+    dst_item->ff_cfg.write_flush = 1;
 
-    item_ctx->ff_cfg.writer = 1;
-    item_ctx->ff_cfg.io.opaque = item_ctx;
-    item_ctx->ff_cfg.io.write_cb = _abcdk_ffserver_live_write_packet_cb;
-    item_ctx->ff_cfg.short_name = "mp4";
-    item_ctx->ff_cfg.write_flush = 1;
-
-    abcdk_trace_output(LOG_INFO, "创建直播环境...");
-
-    item_ctx->ff_ctx = abcdk_ffmpeg_open(&item_ctx->ff_cfg);
-    if (!item_ctx->ff_ctx)
+    if(dst_item->cfg.flag == 1)
     {
-        abcdk_trace_output(LOG_WARNING, "创建直播环境失败，稍后重试。");
+        dst_item->ff_cfg.file_name = dst_item->record_path_file;
+        dst_item->ff_cfg.short_name = "mp4";
+    }
+    else if(dst_item->cfg.flag == 2)
+    {
+        dst_item->ff_cfg.file_name = dst_item->cfg.u.push.url;
+        dst_item->ff_cfg.short_name = dst_item->cfg.u.push.fmt;
+    }
+    else if(dst_item->cfg.flag == 3)
+    {
+        dst_item->ff_cfg.io.opaque = dst_item;
+        dst_item->ff_cfg.io.write_cb = _abcdk_ffserver_live_write_packet_cb;
+    }
+
+    tip_p = (dst_item->cfg.flag == 3?"FMP4 Live Streaming":dst_item->ff_cfg.file_name);
+
+    abcdk_trace_output(LOG_INFO, "创建输出环境(%s)...", tip_p);
+
+    dst_item->ff_ctx = abcdk_ffmpeg_open(&dst_item->ff_cfg);
+    if (!dst_item->ff_ctx)
+    {
+        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",tip_p);
         return -2;
     }
 
-    for (int i = 0; i < abcdk_ffmpeg_streams(ctx->src.ff_ctx); i++)
+    for (int i = 0; i < abcdk_ffmpeg_streams(src_item_p->ff_ctx); i++)
     {
-        src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, i);
+        src_vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, i);
 
         /*编码器可能未安装，这里初始索引为-1。*/
-        idx_p = &item_ctx->s2d_idx[src_vs_p->index];
+        idx_p = &dst_item->s2d_idx[src_vs_p->index];
         *idx_p = -1;
 
         opt = abcdk_avcodec_alloc3(src_vs_p->codecpar->codec_id, 1);
@@ -519,49 +321,111 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t
         abcdk_avstream_parameters_to_context(opt, src_vs_p);
 
         opt->codec_tag = 0;
-        *idx_p = abcdk_ffmpeg_add_stream(item_ctx->ff_ctx, opt, 1);
+        *idx_p = abcdk_ffmpeg_add_stream(dst_item->ff_ctx, opt, 1);
         if (*idx_p < 0)
             goto ERR;
 
-        av_p = abcdk_ffmpeg_streamptr(item_ctx->ff_ctx, *idx_p);
+        vs_p = abcdk_ffmpeg_streamptr(dst_item->ff_ctx, *idx_p);
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+        codecpar = vs_p->codec;
+#else
+        codecpar = vs_p->codecpar;
+#endif
 
         /*复制帧率。*/
-        av_p->avg_frame_rate = src_vs_p->avg_frame_rate;
-        av_p->r_frame_rate = src_vs_p->r_frame_rate;
+        vs_p->avg_frame_rate = src_vs_p->avg_frame_rate;
+        vs_p->r_frame_rate = src_vs_p->r_frame_rate;
+
+        /*也许没有视频流。*/
+        if(codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+            dst_item->video_have += 1;
 
         abcdk_avcodec_free(&opt);
     }
 
-    chk = abcdk_ffmpeg_write_header(item_ctx->ff_ctx, 1);
+    chk = abcdk_ffmpeg_write_header(dst_item->ff_ctx, 1);
     if (chk != 0)
         goto ERR;
+
+    dst_item->open_count += 1;
+
+    if(dst_item->cfg.flag == 1)
+    {
+        /*记录开始时间。*/
+        dst_item->record_segment_start = _abcdk_ffserver_clock(0);
+    }
 
     return 0;
 
 ERR:
 
-    ctx->record.reopen = 1;
+    dst_item->session = 0;
     return -3;
 }
 
-static void _abcdk_ffserver_live_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *item_ctx,AVPacket *pkt)
+static void _abcdk_ffserver_dst_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *dst_item,AVPacket *pkt)
 {
-    AVStream *av_p = NULL, *src_vs_p = NULL;
+    const char *tip_p;
+    abcdk_ffserver_item_t *src_item_p;
+    AVStream *vs_p = NULL, *src_vs_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar = NULL;
+#endif
     AVPacket pkt_cp = {0};
     int *idx_p = NULL;
+    int segment_new;
     int chk;
 
-    chk = _abcdk_ffserver_live_init(ctx,item_ctx,pkt == NULL);
+    src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
+
+    if(pkt == NULL)
+        dst_item->closing = 1;
+
+RECORD_SEGMENT_NEW:
+
+    chk = _abcdk_ffserver_dst_init(ctx,dst_item);
     if (chk != 0)
         return;
 
-    idx_p = &item_ctx->s2d_idx[pkt->stream_index];
+    idx_p = &dst_item->s2d_idx[pkt->stream_index];
 
     /*不支持的跳过。*/
     if (*idx_p < 0)
         return;
 
-    src_vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, pkt->stream_index);
+    vs_p = abcdk_ffmpeg_streamptr(dst_item->ff_ctx, *idx_p);
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    codecpar = vs_p->codec;
+#else
+    codecpar = vs_p->codecpar;
+#endif
+
+    if (dst_item->cfg.flag == 1)
+    {
+        /*按时间分段。*/
+        segment_new = (_abcdk_ffserver_clock(0) - dst_item->record_segment_start > dst_item->cfg.u.record.duration);
+        
+        /*如果存在视频流，还需要走下面的流程。*/
+        if(segment_new && dst_item->video_have)
+        {
+            /*带视频流的媒体，必须从关键帧开始分段。*/
+            if(codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+                segment_new = (pkt->flags & AV_PKT_FLAG_KEY);
+        }
+
+        /*如果满足分段条件则开始新的分段。*/
+        if (segment_new)
+        {
+            dst_item->session = 0;
+            goto RECORD_SEGMENT_NEW;
+        }
+    }
+
+    src_vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, pkt->stream_index);
 
     av_init_packet(&pkt_cp);
 
@@ -574,7 +438,7 @@ static void _abcdk_ffserver_live_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item
     pkt_cp.flags = pkt->flags;
     pkt_cp.stream_index = *idx_p;
 
-    chk = abcdk_ffmpeg_write_packet(item_ctx->ff_ctx, &pkt_cp, &src_vs_p->time_base);
+    chk = abcdk_ffmpeg_write_packet(dst_item->ff_ctx, &pkt_cp, &src_vs_p->time_base);
     if (chk != 0)
         goto ERR;
 
@@ -582,50 +446,52 @@ static void _abcdk_ffserver_live_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item
 
 ERR:
 
-    item_ctx->reopen = 1;
+    dst_item->session = 0;
     return;
-}
-
-static void _abcdk_ffserver_live(abcdk_ffserver_t *ctx, AVPacket *pkt)
-{
-    abcdk_ffserver_item_t *item_p = NULL;
-    abcdk_stream_t *buf_p = NULL;
-    int id = 0;
-    int open_chk;
-
-NEXT_ITEM:
-
-    id += 1;
-    if (id > ctx->cfg.live_count_max)
-        return;
-
-    abcdk_mutex_lock(ctx->live_mutex,1);
-
-    open_chk = abcdk_bloom_filter(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
-
-    /*引用发送缓存。*/
-    buf_p = ctx->live_bufs->pptrs[id-1];
-    buf_p = (buf_p?abcdk_stream_refer(ctx->live_bufs->pptrs[id-1]):NULL);
-
-    abcdk_mutex_unlock(ctx->live_mutex);
-
-    item_p = (abcdk_ffserver_item_t *)ctx->live_items->pptrs[id-1];
-    item_p
-
-    _abcdk_ffserver_live_write(ctx,item_p,open_chk?pkt:NULL);
-
-    goto NEXT_ITEM;
 }
 
 static void _abcdk_ffserver_write(abcdk_ffserver_t *ctx, AVPacket *pkt)
 {
-    _abcdk_ffserver_recored(ctx, pkt);
-    _abcdk_ffserver_push(ctx, pkt);
-    _abcdk_ffserver_live(ctx, pkt);
+    abcdk_tree_t *task_p = NULL;
+    abcdk_object_t *dst_p = NULL; 
+    abcdk_ffserver_item_t *dst_item_p = NULL; 
+
+NEXT_ITEM:
+
+    dst_p = NULL; 
+    dst_item_p = NULL; 
+
+    abcdk_mutex_lock(ctx->dst_mutex,1);
+
+    if(!task_p)
+        task_p = abcdk_tree_child(ctx->dst_items,1);
+    else 
+        task_p = abcdk_tree_sibling(task_p,0);
+
+    /*增加引用。非常重要，因为任务随时可能被删除。*/
+    if(task_p)
+        dst_p = abcdk_object_refer(task_p->obj);
+
+    abcdk_mutex_unlock(ctx->dst_mutex);
+
+    /*如果已经到末尾则退出。*/
+    if(!dst_p)
+        return;
+
+    dst_item_p = (abcdk_ffserver_item_t *)dst_p->pptrs[0];
+
+    _abcdk_ffserver_dst_write(ctx,dst_item_p,pkt);
+
+    /* 减少引用。非常重要，不然无法真的删除任务。*/
+    abcdk_object_unref(&dst_p);
+ 
+    goto NEXT_ITEM;
 }
 
 void *_abcdk_ffserver_worker_routine(void *opaque)
 {
+    const char *tip_p;
+    abcdk_ffserver_item_t *src_item_p;    
     abcdk_ffserver_t *ctx = NULL;
     AVStream *vs_p = NULL;
     AVPacket pkt = {0};
@@ -633,62 +499,60 @@ void *_abcdk_ffserver_worker_routine(void *opaque)
     int chk;
 
     ctx = (abcdk_ffserver_t *)opaque;
+    src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
 
-    /*告知录像接续进行。*/
-    ctx->record_segment_pos[0] = UINT64_MAX;
+    src_item_p->ff_cfg.file_name = src_item_p->cfg.u.src.url;
+    src_item_p->ff_cfg.short_name = src_item_p->cfg.u.src.fmt;
+    src_item_p->ff_cfg.bit_stream_filter = 1;
+    src_item_p->ff_cfg.read_speed = src_item_p->cfg.u.src.speed;
+    src_item_p->ff_cfg.read_delay_max = src_item_p->cfg.u.src.delay_max;
+    src_item_p->ff_cfg.timeout = src_item_p->cfg.u.src.timeout;
 
-    ctx->src.ff_cfg.file_name = ctx->cfg.src_url;
-    ctx->src.ff_cfg.short_name = ctx->cfg.src_fmt;
-    ctx->src.ff_cfg.bit_stream_filter = 1;
-    ctx->src.ff_cfg.read_speed = ctx->cfg.src_speed;
-    ctx->src.ff_cfg.read_delay_max = ctx->cfg.src_delay_max;
-    ctx->src.ff_cfg.timeout = ctx->cfg.src_timeout;
-
+    av_init_packet(&pkt);
+    
 RETRY:
 
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
         goto END;
 
-    abcdk_ffmpeg_destroy(&ctx->src.ff_ctx);
+    abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
 
-    /*通知断开重连。*/
-    ctx->record.reopen = 1;
-    ctx->push.reopen = 1;
+    /*新会话，通知目标输出断开重连。*/
+    ctx->src_session = _abcdk_ffserver_clock(6);
 
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
     {
-        abcdk_trace_output(LOG_WARNING, "源地址(%s)已关闭或到末尾，%d秒后重连。", ctx->cfg.src_url, ctx->cfg.src_retry);
-        usleep(ctx->cfg.src_retry * 1000000);
+        abcdk_trace_output(LOG_WARNING, "源地址(%s)已关闭或到末尾，%d秒后重连。", src_item_p->cfg.u.src.url, src_item_p->cfg.u.src.retry);
+        usleep(src_item_p->cfg.u.src.retry * 1000000);
     }
 
-    abcdk_trace_output(LOG_INFO, "连接源地址(%s)...", ctx->cfg.src_url);
+    abcdk_trace_output(LOG_INFO, "打开源地址(%s)...", src_item_p->cfg.u.src.url);
 
-    ctx->src.ff_ctx = abcdk_ffmpeg_open(&ctx->src.ff_cfg);
-    if (!ctx->src.ff_ctx)
+    src_item_p->ff_ctx = abcdk_ffmpeg_open(&src_item_p->ff_cfg);
+    if (!src_item_p->ff_ctx)
         goto RETRY;
+    
 
 LOOP:
 
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
         goto END;
 
-    abcdk_ffmpeg_read_delay(ctx->src.ff_ctx, 0);
+    abcdk_ffmpeg_read_delay(src_item_p->ff_ctx, 0);
 
-    av_init_packet(&pkt);
-    chk = abcdk_ffmpeg_read_packet(ctx->src.ff_ctx, &pkt, -1);
+    chk = abcdk_ffmpeg_read_packet(src_item_p->ff_ctx, &pkt, -1);
     if (chk < 0)
         goto RETRY;
 
-    vs_p = abcdk_ffmpeg_streamptr(ctx->src.ff_ctx, pkt.stream_index);
+    vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, pkt.stream_index);
 
     /*修复错误的时长。*/
     if(pkt.duration == 0)
         pkt.duration = av_rescale_q(1, vs_p->time_base, AV_TIME_BASE_Q);
 
-//    abcdk_trace_output(LOG_DEBUG,"pts=%lld,dts=%lld",pkt.pts,pkt.dts);
-
     _abcdk_ffserver_write(ctx, &pkt);
+    av_packet_unref(&pkt);
 
     goto LOOP;
 
@@ -698,63 +562,48 @@ END:
     _abcdk_ffserver_write(ctx, NULL);
 
     av_packet_unref(&pkt);
-    abcdk_ffmpeg_destroy(&ctx->src.ff_ctx);
+    abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
 
     return NULL;
 }
 
-void abcdk_ffserver_live_free(abcdk_ffserver_t *ctx,int id)
+void abcdk_ffserver_task_del(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t **task)
 {
-    assert(ctx != NULL && id > 0);
-
-    if (id > ctx->cfg.live_count_max)
-        return;
-
-    abcdk_mutex_lock(ctx->live_mutex,1);
-    abcdk_bloom_unset(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
-    abcdk_mutex_unlock(ctx->live_mutex);
-    
-}
-
-int abcdk_ffserver_live_alloc(abcdk_ffserver_t *ctx)
-{
-    int id = 0;
-    int open_chk;
+    abcdk_tree_t *task_p;
 
     assert(ctx != NULL);
 
-NEXT_ITEM:
-
-    id += 1;
-    if (id > ctx->cfg.live_count_max)
+    if(!task || !*task)
         return;
 
-    abcdk_mutex_lock(ctx->live_mutex,1);
-    open_chk = abcdk_bloom_mark(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
-    abcdk_mutex_unlock(ctx->live_mutex);
+    task_p = (abcdk_tree_t *)*task;
+    *task = NULL;
 
-    if(open_chk != 0)
-        goto NEXT_ITEM;
+    abcdk_mutex_lock(ctx->dst_mutex,1);
+    abcdk_tree_unlink(task_p);
+    abcdk_tree_free(&task_p);
+    abcdk_mutex_unlock(ctx->dst_mutex);
 
-    return id;
 }
 
-ssize_t abcdk_ffserver_live_fetch(abcdk_ffserver_t *ctx,int id ,void *buf,size_t size)
+abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffserver_config_t *cfg)
 {
-    int open_chk;
-    ssize_t rlen;
+    abcdk_tree_t *task;
+    abcdk_ffserver_item_t *dst_item;
 
-    assert(ctx != NULL && id > 0 && buf != NULL && size > 0);
+    assert(ctx != NULL && cfg != NULL);
+    assert((cfg->flag == 1 && cfg->u.record.prefix != NULL && *cfg->u.record.prefix != '\0') ||
+           (cfg->flag == 2 && cfg->u.push.url != NULL && *cfg->u.push.url != '\0') ||
+           (cfg->flag == 3 && cfg->u.live.buf));
 
-    if (id > ctx->cfg.live_count_max)
-        return -1;
+    task = _abcdk_ffserver_item_alloc(cfg);
+    if(!task)
+        return NULL;
 
-    abcdk_mutex_lock(ctx->live_mutex,1);
-    open_chk = abcdk_bloom_filter(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
-    abcdk_mutex_unlock(ctx->live_mutex);
+    abcdk_mutex_lock(ctx->dst_mutex,1);
+    abcdk_tree_insert2(ctx->dst_items,task,0);
+    abcdk_mutex_unlock(ctx->dst_mutex);
 
-    if(!open_chk)
-        return -2;
-
-    rlen = 
+    return (abcdk_ffserver_task_t *)task;
 }
+

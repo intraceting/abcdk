@@ -112,17 +112,15 @@ void abcdk_avformat_free(AVFormatContext **ctx)
      * 1：自定义环境。
      * 2：输出对象。
      */
-    if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO || (ctx_p->oformat && !(ctx_p->oformat->flags & AVFMT_NOFILE)))
-        pb = ctx_p->pb;
+    if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO)
+        abcdk_avio_free(&ctx_p->pb);
+    else if(ctx_p->oformat && !(ctx_p->oformat->flags & AVFMT_NOFILE))
+        avio_closep(&ctx_p->pb);
 
     if (ctx_p->iformat)
         avformat_close_input(&ctx_p);
     else
         avformat_free_context(ctx_p);
-
-    /*释放自定义IO环境。*/
-    if (pb)
-        abcdk_avio_free(&pb);
 }
 
 AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *filename,

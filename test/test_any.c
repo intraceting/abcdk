@@ -955,25 +955,30 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-    abcdk_ffserver_config_t cfg ={0};
+    abcdk_ffserver_config_t src_cfg ={0};
+    abcdk_ffserver_config_t push_cfg ={0};
+    abcdk_ffserver_config_t record_cfg ={0};
 
-   // cfg.src_url = "/home/devel/job/download/4K PARADISE Summer Mix 2024 🍓 Best Of Tropical Deep House Music Chill Out Mix By Summer Vibes Sound.mp4";
-    cfg.src_url = "rtsp://192.168.100.96/live/bbbb";
-    cfg.src_speed = 1.0;
-    cfg.src_delay_max = 1.0;
-    cfg.push_url = "rtmp://127.0.0.1/live/cccc";
-    cfg.push_fmt = "rtmp";
-    cfg.record_prefix = "/home/devel/job/tmp/cccc/cccc_";
-    cfg.record_count = 10;
-    cfg.record_duration = 5;
+   // src_cfg.u.src.url = "/home/devel/job/download/4K PARADISE Summer Mix 2024 🍓 Best Of Tropical Deep House Music Chill Out Mix By Summer Vibes Sound.mp4";
+    src_cfg.u.src.url = "rtsp://192.168.100.96/live/bbbb";
+    src_cfg.u.src.speed = 1.0;
+    src_cfg.u.src.delay_max = 1.0;
 
-    abcdk_ffserver_t *ctx = abcdk_ffserver_create(&cfg);
+    push_cfg.flag = 2;
+    push_cfg.u.push.url = "rtmp://127.0.0.1/live/cccc";
+    push_cfg.u.push.fmt = "rtmp";
 
-    abcdk_ffserver_start(ctx);
+    record_cfg.flag = 1;
+    record_cfg.u.record.prefix = "/home/devel/job/tmp/cccc/cccc_";
+    record_cfg.u.record.count = 10;
+    record_cfg.u.record.duration = 5;
+
+    abcdk_ffserver_t *ctx = abcdk_ffserver_create(&src_cfg);
+
+    abcdk_ffserver_task_add(ctx,&push_cfg);
+    abcdk_ffserver_task_add(ctx,&record_cfg);
 
     while(getchar() != 'q');
-
-    abcdk_ffserver_stop(ctx);
 
     abcdk_ffserver_destroy(&ctx);
 

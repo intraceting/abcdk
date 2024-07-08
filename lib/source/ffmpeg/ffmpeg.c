@@ -586,7 +586,7 @@ next_packet:
     if (chk < 0)
         return -1;
 
-    vs_p = ctx->avctx->streams[stream];
+    vs_p = ctx->avctx->streams[pkt->stream_index];
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
     codecpar = vs_p->codec;

@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
 #ifndef ABCDK_FFMPEG_FFSERVER_H
 #define ABCDK_FFMPEG_FFSERVER_H
@@ -17,96 +17,106 @@
 
 __BEGIN_DECLS
 
+/**简单的流媒体服务。*/
+typedef struct _abcdk_ffserver abcdk_ffserver_t;
+
+/**任务对象。*/
+typedef struct _abcdk_ffserver_task abcdk_ffserver_task_t;
+
 /**配置。 */
 typedef struct _abcdk_ffserver_config
 {
-    /**源地址。*/
-    const char *src_url;
+    /*
+     * 标志。
+     * 0：源，1：录像，2：推流，3：直播。
+     */
+    int flag;
 
-    /**源格式。*/
-    const char *src_fmt;
+    union
+    {
 
-    /**源超时(秒)。-1~5。*/
-    int src_timeout;
+        struct
+        {
 
-    /**源速度(倍数)。0.01~100.0 */
-    float src_speed;
+            /**地址。*/
+            const char *url;
 
-    /**源最大延迟(秒.毫秒)。0.300~4.999*/
-    float src_delay_max;
+            /**格式。*/
+            const char *fmt;
 
-    /**源重试间隔(秒)。1~30。*/
-    int src_retry;
+            /**超时(秒)。-1~5。*/
+            int timeout;
 
-    /**
-     * 录像前缀。
-     * 
-     * @note NULL(0) 禁用。
-    */
-    const char *record_prefix;
+            /**速度(倍数)。0.01~100.0 */
+            float speed;
 
-    /**录像分段时长。1~3600。*/
-    int record_duration;
+            /**最大延迟(秒.毫秒)。0.300~4.999*/
+            float delay_max;
 
-    /**录像分段数量。1~65535。*/
-    int record_count;
+            /**源重试间隔(秒)。1~30。*/
+            int retry;
+        } src;
 
-    /**
-     * 推流地址。
-     * 
-     * @note NULL(0) 禁用。
-    */
-    const char *push_url;
+        struct
+        {
 
-    /**推流格式。*/
-    const char *push_fmt;
+            /**前缀。*/
+            const char *prefix;
 
-    /**直播最大延时(秒.毫秒)。0.300~4.999。*/
-    float live_delay_max;
+            /**分段时长。1~3600。*/
+            int duration;
 
-    /**直播最大连数量。1~99999。*/
-    int live_count_max;
+            /**分段数量。1~65535。*/
+            int count;
+        } record;
 
-}abcdk_ffserver_config_t;
+        struct
+        {
 
-/*简单的流媒体服务。*/
-typedef struct _abcdk_ffserver abcdk_ffserver_t;
+            /**地址。*/
+            const char *url;
+
+            /**格式。*/
+            const char *fmt;
+        } push;
+
+        struct
+        {
+            /*流缓存。*/
+            abcdk_stream_t *buf;
+
+            /**最大延时(秒.毫秒)。0.300~4.999。*/
+            float delay_max;
+
+        } live;
+
+    } u;
+} abcdk_ffserver_config_t;
+
 
 /**销毁。*/
 void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx);
 
 /**
  * 创建。
- * 
+ *
  * @note 在服务关闭前，配置信息必须保持有效且不能更改。
  */
 abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg);
 
-/**停止。*/
-void abcdk_ffserver_stop(abcdk_ffserver_t *ctx);
-
-/**启动。*/
-int abcdk_ffserver_start(abcdk_ffserver_t *ctx);
-
 /**
- * 直播释放。
-*/
-void abcdk_ffserver_live_free(abcdk_ffserver_t *ctx,int id);
-
-/**
- * 直播申请。
- * 
- * @return >= 0 成功(ID)，< 0 失败。
-*/
-int abcdk_ffserver_live_alloc(abcdk_ffserver_t *ctx);
-
-/**
- * 直播拉流。 
- * 
- * @return >= 0 成功(长度)，< 0 失败。
+ * 删除任务。
  */
-ssize_t abcdk_ffserver_live_fetch(abcdk_ffserver_t *ctx,int id ,void *buf,size_t size);
+void abcdk_ffserver_task_del(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t **task);
+
+/**
+ * 添加任务。
+ *
+ * @return >= 0 成功(ID)，< 0 失败。
+ */
+abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffserver_config_t *cfg);
+
 
 __END_DECLS
 
-#endif //ABCDK_FFMPEG_FFSERVER_H
+#endif // ABCDK_FFMPEG_FFSERVER_H
