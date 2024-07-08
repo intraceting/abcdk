@@ -70,7 +70,7 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
     p->live_buf = abcdk_stream_create();
     p->live_cfg.flag = 3;
     p->live_cfg.u.live.buf = p->live_buf;
-    p->live_cfg.u.live.delay_max;
+    p->live_cfg.u.live.delay_max = 1.0;
 
     p->task_ctx = abcdk_ffserver_task_add(g_ffserver_ctx,&p->live_cfg);
 }
@@ -102,6 +102,8 @@ static void stream_output_cb(void *opaque, abcdk_object_t *stream)
         abcdk_object_unref(&buf);
         abcdk_https_response_ready(stream);
     }
+
+    abcdk_ffserver_task_heartbeat(g_ffserver_ctx,p->task_ctx);
 }
 
 int abcdk_test_fmp4(abcdk_option_t *args)

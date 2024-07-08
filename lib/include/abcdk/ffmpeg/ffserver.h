@@ -105,6 +105,12 @@ void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx);
 abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg);
 
 /**
+ * 心跳。
+*/
+void abcdk_ffserver_task_heartbeat(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t *task);
+
+
+/**
  * 删除任务。
  */
 void abcdk_ffserver_task_del(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t **task);

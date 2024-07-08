@@ -16,6 +16,7 @@ typedef struct _abcdk_ffserver_item
     uint64_t session;
     int closing;
     int64_t open_count;
+    volatile int64_t user_active;
     
     abcdk_ffmpeg_config_t ff_cfg;
     abcdk_ffmpeg_t *ff_ctx;
@@ -125,8 +126,12 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
     {
         goto ERR;
     }
-
     
+    item_ctx_p->ff_ctx = NULL;
+    item_ctx_p->session = 0;
+    item_ctx_p->video_have = 0;
+    item_ctx_p->open_count = 0;
+    abcdk_atomic_store(&item_ctx_p->user_active,_abcdk_ffserver_clock(6));
 
     return ctx;
 
@@ -387,7 +392,8 @@ static void _abcdk_ffserver_dst_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item_
 #endif
     AVPacket pkt_cp = {0};
     int *idx_p = NULL;
-    int segment_new;
+    int segment_new = 0;
+    int obsolete = 0;
     int chk;
 
     src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
@@ -433,6 +439,36 @@ RECORD_SEGMENT_NEW:
         {
             dst_item->session = 0;
             goto RECORD_SEGMENT_NEW;
+        }
+    }
+    else if(dst_item->cfg.flag == 3)
+    {
+        /*记录KEY帧和帧分组时间。*/
+        if ((pkt->flags & AV_PKT_FLAG_KEY) || (codecpar->codec_type != AVMEDIA_TYPE_VIDEO))
+            dst_item->read_key_ns[*idx_p] = dst_item->read_gop_ns[*idx_p] = _abcdk_ffserver_clock(6);
+
+        /*应用层长时间不活动时丢掉一些帧。*/
+        if((double)(_abcdk_ffserver_clock(6) - abcdk_atomic_load(&dst_item->user_active))/1000000.> dst_item->cfg.u.live.delay_max)
+            obsolete = 1;
+
+        /*也可能已经不在同一个GOP中。*/
+        if(dst_item->read_key_ns[*idx_p] != dst_item->read_gop_ns[*idx_p])
+            obsolete = 1;
+
+        /*视频流并且是关键帧则不能丢。*/
+        if ((codecpar->codec_type == AVMEDIA_TYPE_VIDEO) && (pkt->flags & AV_PKT_FLAG_KEY))
+            obsolete = 0;
+
+        /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
+        if (obsolete)
+        {
+            abcdk_trace_output(LOG_WARNING, "直播超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+                               pkt->stream_index, 
+                               abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
+                               abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
+
+            dst_item->read_gop_ns[*idx_p] = 0;
+            return;
         }
     }
 
@@ -581,6 +617,27 @@ END:
     abcdk_trace_output(LOG_INFO, "输入源(%s)已关闭。", src_item_p->tip);
 
     return NULL;
+}
+
+void abcdk_ffserver_task_heartbeat(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t *task)
+{
+    abcdk_tree_t *task_p = NULL;
+    abcdk_object_t *dst_p = NULL; 
+    abcdk_ffserver_item_t *dst_item_p = NULL; 
+
+    assert(ctx != NULL && task != NULL);
+
+    task_p = (abcdk_tree_t *)task;
+
+    abcdk_mutex_lock(ctx->dst_mutex,1);
+    dst_p = abcdk_object_refer(task_p->obj);
+    abcdk_mutex_unlock(ctx->dst_mutex);
+
+    dst_item_p = (abcdk_ffserver_item_t*)dst_p->pptrs[0];
+
+    abcdk_atomic_store(&dst_item_p->user_active,_abcdk_ffserver_clock(6));
+
+    abcdk_object_unref(&dst_p);
 }
 
 void abcdk_ffserver_task_del(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t **task)
