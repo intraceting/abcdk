@@ -62,6 +62,8 @@ static void _abcdk_ffserver_item_destructor_cb(abcdk_object_t *obj, void *opaque
 
     abcdk_ffmpeg_destroy(&ctx_p->ff_ctx);
     abcdk_stream_destroy(&ctx_p->live_buf);
+
+    abcdk_trace_output(LOG_INFO, "删除任务(%s)。", ctx_p->tip);
 }
 
 static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
@@ -258,11 +260,11 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
     {
         dst_item->session = ctx->src_session;
         if (dst_item->ff_ctx)
+        {
             abcdk_ffmpeg_write_trailer(dst_item->ff_ctx);
-
-        abcdk_ffmpeg_destroy(&dst_item->ff_ctx);
-
-        abcdk_trace_output(LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
+            abcdk_ffmpeg_destroy(&dst_item->ff_ctx);
+            abcdk_trace_output(LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
+        }
 
         if(dst_item->cfg.flag == 1)
         {

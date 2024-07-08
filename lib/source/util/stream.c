@@ -176,12 +176,13 @@ int abcdk_stream_write(abcdk_stream_t *ctx,abcdk_object_t *data)
     if(!new_node)
         return -1;
 
+    /*在这里累加计数不用进入锁。非常重要，因为节点加入队列后，有可能被其它线程消费掉。*/
+    ctx->write_total_size += new_node->obj->sizes[0];
+
     abcdk_mutex_lock(ctx->locker,1);
     abcdk_tree_insert2(ctx->queue,new_node,0);
     abcdk_mutex_unlock(ctx->locker);
 
-    /*累加计数。*/
-    ctx->write_total_size += new_node->obj->sizes[0];
 
     return 0;
 }
