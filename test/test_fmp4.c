@@ -13,7 +13,14 @@
 
 #ifdef HAVE_FFMPEG
 
-static abcdk_ffserver_t *ffserver_ctx = NULL;
+typedef struct _node
+{
+    abcdk_ffserver_config_t live_cfg;
+    abcdk_ffserver_task_t *task_ctx;
+    abcdk_stream_t *live_buf;
+}node_t;
+
+static abcdk_ffserver_t *g_ffserver_ctx = NULL;
 
 
 static void session_prepare_cb(void *opaque, abcdk_https_session_t **session, abcdk_https_session_t *listen)
@@ -43,16 +50,29 @@ static void session_close_cb(void *opaque, abcdk_https_session_t *session)
 
 static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
 {
-  //  node_t *p = (node_t*)abcdk_https_get_userdata(stream);
+    node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
-    
+    abcdk_stream_destroy(&p->live_buf);
+
+    abcdk_ffserver_task_del(g_ffserver_ctx,&p->task_ctx);
+
+    abcdk_heap_free(p);
 }
 
 
 
 static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
 {
+    node_t * p = abcdk_heap_alloc(sizeof(node_t));
 
+    abcdk_https_set_userdata(stream,p);
+
+    p->live_buf = abcdk_stream_create();
+    p->live_cfg.flag = 3;
+    p->live_cfg.u.live.buf = p->live_buf;
+    p->live_cfg.u.live.delay_max;
+
+    p->task_ctx = abcdk_ffserver_task_add(g_ffserver_ctx,&p->live_cfg);
 }
 
 static void stream_request_cb(void *opaque, abcdk_object_t *stream)
@@ -67,8 +87,21 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
 
 static void stream_output_cb(void *opaque, abcdk_object_t *stream)
 {
-   //  node_t *p = (node_t*)abcdk_https_get_userdata(stream);
+    node_t *p = (node_t *)abcdk_https_get_userdata(stream);
 
+    abcdk_object_t *buf = abcdk_object_alloc2(1000000);
+
+    int rlen = abcdk_stream_read(p->live_buf, buf->pptrs[0], buf->sizes[0]);
+    if (rlen > 0)
+    {
+        buf->sizes[0] = rlen;
+        abcdk_https_response(stream, buf);
+    }
+    else
+    {
+        abcdk_object_unref(&buf);
+        abcdk_https_response_ready(stream);
+    }
 }
 
 int abcdk_test_fmp4(abcdk_option_t *args)
@@ -102,10 +135,21 @@ int abcdk_test_fmp4(abcdk_option_t *args)
 
     abcdk_https_session_listen(listen_p,&listen_addr,&cfg);
 
+    abcdk_ffserver_config_t src_cfg ={0};
+
+   // src_cfg.u.src.url = "/home/devel/job/download/4K PARADISE Summer Mix 2024 🍓 Best Of Tropical Deep House Music Chill Out Mix By Summer Vibes Sound.mp4";
+    src_cfg.u.src.url = "rtsp://192.168.100.96/live/bbbb";
+    src_cfg.u.src.speed = 1.0;
+    src_cfg.u.src.delay_max = 1.0;
+
+    g_ffserver_ctx = abcdk_ffserver_create(&src_cfg);
+
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);
 
 final:
+
+    abcdk_ffserver_destroy(&g_ffserver_ctx);
 
     abcdk_https_destroy(&io_ctx);
     abcdk_https_session_unref(&listen_p);

@@ -29,9 +29,10 @@ typedef struct _abcdk_ffserver_item
     char record_segment_file[PATH_MAX];
     uint64_t record_segment_start;
     uint64_t record_segment_pos[2];
-    
 
     abcdk_stream_t *live_buf;
+
+    char tip[PATH_MAX];
 
 }abcdk_ffserver_item_t;
 
@@ -86,6 +87,8 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
         item_ctx_p->cfg.u.src.retry = ABCDK_CLAMP(item_ctx_p->cfg.u.src.retry, (int)1, (int)30);
         item_ctx_p->cfg.u.src.speed = ABCDK_CLAMP(item_ctx_p->cfg.u.src.speed, (float)0.01, (float)100.0);
         item_ctx_p->cfg.u.src.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.src.delay_max, (float)0.300, (float)4.999);
+
+        snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.src.url);
     }
     else if(item_ctx_p->cfg.flag == 1)
     {
@@ -97,15 +100,19 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
 
         snprintf(item_ctx_p->record_path_file, PATH_MAX, "%s.mp4.tmp", item_ctx_p->cfg.u.record.prefix);
         snprintf(item_ctx_p->record_segment_file, PATH_MAX, "%s%%llu.mp4", item_ctx_p->cfg.u.record.prefix);
+
+        snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->record_path_file);
     }
     else if(item_ctx_p->cfg.flag == 2)
     {
-        /*nothing to do.*/        
+        snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.push.url);
     }
     else if( item_ctx_p->cfg.flag == 3)
     {
         /*修复不支持的参数。*/
         item_ctx_p->cfg.u.live.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.live.delay_max,(float)0.300,(float)4.999);
+
+        snprintf(item_ctx_p->tip,PATH_MAX,"%s","FMP4 Live Streaming");
 
         /*引用对象。*/
         item_ctx_p->live_buf = abcdk_stream_refer(item_ctx_p->cfg.u.live.buf);
@@ -116,6 +123,8 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
     {
         goto ERR;
     }
+
+    
 
     return ctx;
 
@@ -232,7 +241,6 @@ int _abcdk_ffserver_live_write_packet_cb(void *opaque, uint8_t *buf, int buf_siz
 
 static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t *dst_item)
 {
-    const char *tip_p;
     abcdk_ffserver_item_t *src_item_p;
     AVCodecContext *opt = NULL;
     AVStream *vs_p = NULL, *src_vs_p = NULL;
@@ -253,6 +261,8 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
             abcdk_ffmpeg_write_trailer(dst_item->ff_ctx);
 
         abcdk_ffmpeg_destroy(&dst_item->ff_ctx);
+
+        abcdk_trace_output(LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
 
         if(dst_item->cfg.flag == 1)
         {
@@ -292,16 +302,15 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
     {
         dst_item->ff_cfg.io.opaque = dst_item;
         dst_item->ff_cfg.io.write_cb = _abcdk_ffserver_live_write_packet_cb;
+        dst_item->ff_cfg.short_name = "mp4";
     }
 
-    tip_p = (dst_item->cfg.flag == 3?"FMP4 Live Streaming":dst_item->ff_cfg.file_name);
-
-    abcdk_trace_output(LOG_INFO, "创建输出环境(%s)...", tip_p);
+    abcdk_trace_output(LOG_INFO, "创建输出环境(%s)...", dst_item->tip);
 
     dst_item->ff_ctx = abcdk_ffmpeg_open(&dst_item->ff_cfg);
     if (!dst_item->ff_ctx)
     {
-        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",tip_p);
+        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
         return -2;
     }
 
@@ -510,6 +519,9 @@ void *_abcdk_ffserver_worker_routine(void *opaque)
 
     av_init_packet(&pkt);
     
+    memset(src_item_p->tip,0,PATH_MAX);
+    snprintf(src_item_p->tip,PATH_MAX,"%s",src_item_p->ff_cfg.file_name);
+    
 RETRY:
 
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
@@ -523,11 +535,11 @@ RETRY:
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
     {
-        abcdk_trace_output(LOG_WARNING, "源地址(%s)已关闭或到末尾，%d秒后重连。", src_item_p->cfg.u.src.url, src_item_p->cfg.u.src.retry);
+        abcdk_trace_output(LOG_WARNING, "输入源(%s)已关闭或到末尾，%d秒后重连。", src_item_p->tip, src_item_p->cfg.u.src.retry);
         usleep(src_item_p->cfg.u.src.retry * 1000000);
     }
 
-    abcdk_trace_output(LOG_INFO, "打开源地址(%s)...", src_item_p->cfg.u.src.url);
+    abcdk_trace_output(LOG_INFO, "打开输入源(%s)...", src_item_p->tip);
 
     src_item_p->ff_ctx = abcdk_ffmpeg_open(&src_item_p->ff_cfg);
     if (!src_item_p->ff_ctx)
@@ -563,6 +575,8 @@ END:
 
     av_packet_unref(&pkt);
     abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
+
+    abcdk_trace_output(LOG_INFO, "输入源(%s)已关闭。", src_item_p->tip);
 
     return NULL;
 }
