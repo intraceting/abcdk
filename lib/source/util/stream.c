@@ -9,6 +9,13 @@
 /**简单的数据流。*/
 struct _abcdk_stream
 {
+    /** 魔法数。*/
+    uint32_t magic;
+#define ABCDK_STREAM_MAGIC 123456789
+
+    /** 引用计数器。*/
+    volatile int refcount;
+
     /** 队列。*/
     abcdk_tree_t *queue;
 
@@ -26,17 +33,43 @@ struct _abcdk_stream
 
 void abcdk_stream_destroy(abcdk_stream_t **ctx)
 {
-    abcdk_stream_t *ctx_p;
+   abcdk_stream_unref(ctx);
+}
 
-    if(!ctx || !*ctx)
+void abcdk_stream_unref(abcdk_stream_t **ctx)
+{
+    abcdk_stream_t *ctx_p = NULL;
+
+    if (!ctx || !*ctx)
         return;
 
     ctx_p = *ctx;
     *ctx = NULL;
 
+    assert(ctx_p->magic == ABCDK_STREAM_MAGIC);
+
+    if (abcdk_atomic_fetch_and_add(&ctx_p->refcount, -1) != 1)
+        return;
+
+    assert(ctx_p->refcount == 0);
+
+    ctx_p->magic = 0xcccccccc;
+
     abcdk_tree_free(&ctx_p->queue);
     abcdk_mutex_destroy(&ctx_p->locker);
     abcdk_heap_free(ctx_p);
+}
+
+abcdk_stream_t *abcdk_stream_refer(abcdk_stream_t *src)
+{
+    int chk;
+
+    assert(src != NULL);
+
+    chk = abcdk_atomic_fetch_and_add(&src->refcount, 1);
+    assert(chk > 0);
+
+    return src;
 }
 
 abcdk_stream_t *abcdk_stream_create()
@@ -46,6 +79,9 @@ abcdk_stream_t *abcdk_stream_create()
     ctx = (abcdk_stream_t*)abcdk_heap_alloc(sizeof(abcdk_stream_t));
     if(!ctx)
         return NULL;
+
+    ctx->magic = ABCDK_STREAM_MAGIC;
+    ctx->refcount = 1;
 
     ctx->queue = abcdk_tree_alloc(NULL);
     ctx->locker = abcdk_mutex_create();

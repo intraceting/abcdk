@@ -16,8 +16,25 @@ __BEGIN_DECLS
 /**简单的数据流。*/
 typedef struct _abcdk_stream abcdk_stream_t;
 
-/**销毁。*/
+/**
+ * 销毁。
+ * 
+ * @note 与abcdk_stream_unref()作用相同。
+*/
+ABCDK_DEPRECATED
 void abcdk_stream_destroy(abcdk_stream_t **ctx);
+
+/**
+ * 减少引用计数。
+ * 
+ * @note 当引用计数为0时，对像将被删除。
+*/
+void abcdk_stream_unref(abcdk_stream_t **ctx);
+
+/**
+ * 增加引用计数。
+*/
+abcdk_stream_t *abcdk_stream_refer(abcdk_stream_t *src);
 
 /**创建。*/
 abcdk_stream_t *abcdk_stream_create();

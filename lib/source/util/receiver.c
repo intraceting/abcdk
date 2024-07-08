@@ -9,6 +9,10 @@
 /** 接收器对象。*/
 struct _abcdk_receiver
 {
+    /** 魔法数。*/
+    uint32_t magic;
+#define ABCDK_RECEIVER_MAGIC 123456789
+
     /** 引用计数器。*/
     volatile int refcount;
     
@@ -62,10 +66,14 @@ void abcdk_receiver_unref(abcdk_receiver_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
+    assert(ctx_p->magic == ABCDK_RECEIVER_MAGIC);
+
     if (abcdk_atomic_fetch_and_add(&ctx_p->refcount, -1) != 1)
         return;
 
     assert(ctx_p->refcount == 0);
+
+    ctx_p->magic = 0xcccccccc;
 
     /*创建时，如果绑定外部内部对象，则内部对象没有创建内存。*/
     if(ctx_p->tmp_obj)
@@ -103,6 +111,7 @@ abcdk_receiver_t *abcdk_receiver_alloc(int protocol, size_t max, const char *tem
     if (!ctx)
         return NULL;
 
+    ctx->magic = ABCDK_RECEIVER_MAGIC;
     ctx->refcount = 1;
 
     ctx->protocol = protocol;

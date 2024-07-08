@@ -19,9 +19,8 @@ typedef struct _abcdk_ffserver_item
     int64_t read_key_ns[16];
     int64_t read_gop_ns[16];
 
-    uint64_t segment_pos[2];
-
     abcdk_stream_t *send_buf;
+
 }abcdk_ffserver_item_t;
 
 /*简单的流媒体服务。*/
@@ -36,11 +35,13 @@ struct _abcdk_ffserver
     char record_path_file[PATH_MAX];
     char record_segment_file[PATH_MAX];
     uint64_t record_segment_start;
+    uint64_t record_segment_pos[2];
 
     abcdk_ffserver_item_t push;
 
-    abcdk_object_t *live_list;
+    abcdk_object_t *live_items;
     abcdk_object_t *live_ids;
+    abcdk_object_t *live_bufs;
     abcdk_mutex_t *live_mutex;
 
     abcdk_thread_t worker;
@@ -65,7 +66,7 @@ void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx)
     /*先停下来。*/
     abcdk_ffserver_stop(ctx_p);
 
-    abcdk_object_unref(&ctx_p->live_list);
+    abcdk_object_unref(&ctx_p->live_items);
     abcdk_object_unref(&ctx_p->live_ids);
     abcdk_mutex_destroy(&ctx_p->live_mutex);
 
@@ -73,15 +74,28 @@ void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx)
 
 }
 
+static void _abcdk_ffserver_live_bufs_destructor_cb(abcdk_object_t *obj, void *opaque)
+{
+    for (int i = 0; i < obj->numbers; i++)
+        abcdk_stream_unref((abcdk_stream_t **)&obj->pptrs[i]);
+}
+
 static int _abcdk_ffserver_init(abcdk_ffserver_t *ctx)
 {
-    ctx->live_list = abcdk_object_alloc3(sizeof(abcdk_ffserver_item_t),ctx->cfg.live_count_max);
-    if(!ctx->live_list)
+    ctx->live_items = abcdk_object_alloc3(sizeof(abcdk_ffserver_item_t),ctx->cfg.live_count_max);
+    if(!ctx->live_items)
         return -1;
 
     ctx->live_ids = abcdk_object_alloc2(abcdk_align(ctx->cfg.live_count_max,2));
     if(!ctx->live_ids)
         return -2;
+
+    ctx->live_bufs = abcdk_object_alloc3(0,ctx->cfg.live_count_max);
+    if(!ctx->live_bufs)
+        return -2;
+
+    /*注册专用的释放函数。*/
+    abcdk_object_atfree(ctx->live_bufs,_abcdk_ffserver_live_bufs_destructor_cb,ctx);
 
     ctx->live_mutex = abcdk_mutex_create();
     if(!ctx->live_mutex)
@@ -176,7 +190,7 @@ static int _abcdk_ffserver_record_init(abcdk_ffserver_t *ctx,int closing)
         snprintf(ctx->record_segment_file,PATH_MAX,"%s%%llu.mp4",ctx->cfg.record_prefix);
     }
     
-    if (ctx->record.reopen)
+    if (ctx->record.reopen || closing)
     {
         ctx->record.reopen = 0;
         if (ctx->record.ff_ctx)
@@ -185,7 +199,7 @@ static int _abcdk_ffserver_record_init(abcdk_ffserver_t *ctx,int closing)
         abcdk_ffmpeg_destroy(&ctx->record.ff_ctx);
 
         /*删除过多的分段录像文件。*/
-        abcdk_file_segment(ctx->record_path_file,ctx->record_segment_file,ctx->cfg.record_count,1,ctx->record.segment_pos);
+        abcdk_file_segment(ctx->record_path_file,ctx->record_segment_file,ctx->cfg.record_count,1,ctx->record_segment_pos);
     }
 
     /*正在关闭时，直接返回。*/
@@ -318,7 +332,7 @@ static int _abcdk_ffserver_push_init(abcdk_ffserver_t *ctx,int closing)
     if(!ctx->cfg.push_url || !*ctx->cfg.push_url)
         return -1;
     
-    if (ctx->push.reopen)
+    if (ctx->push.reopen || closing)
     {
         ctx->push.reopen = 0;
         if (ctx->push.ff_ctx)
@@ -452,7 +466,7 @@ static int _abcdk_ffserver_live_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t
     int *idx_p = NULL;
     int chk;
 
-    if (item_ctx->reopen)
+    if (item_ctx->reopen || closing)
     {
         item_ctx->reopen = 0;
         if (item_ctx->ff_ctx)
@@ -575,6 +589,7 @@ ERR:
 static void _abcdk_ffserver_live(abcdk_ffserver_t *ctx, AVPacket *pkt)
 {
     abcdk_ffserver_item_t *item_p = NULL;
+    abcdk_stream_t *buf_p = NULL;
     int id = 0;
     int open_chk;
 
@@ -585,11 +600,17 @@ NEXT_ITEM:
         return;
 
     abcdk_mutex_lock(ctx->live_mutex,1);
+
     open_chk = abcdk_bloom_filter(ctx->live_ids->pptrs[0], ctx->live_ids->sizes[0], id);
+
+    /*引用发送缓存。*/
+    buf_p = ctx->live_bufs->pptrs[id-1];
+    buf_p = (buf_p?abcdk_stream_refer(ctx->live_bufs->pptrs[id-1]):NULL);
+
     abcdk_mutex_unlock(ctx->live_mutex);
 
-    item_p = (abcdk_ffserver_item_t *)ctx->live_list->pptrs[id-1];
-    item_p->reopen = !open_chk;//如果应用层主动关闭直播，这里通知关闭。
+    item_p = (abcdk_ffserver_item_t *)ctx->live_items->pptrs[id-1];
+    item_p
 
     _abcdk_ffserver_live_write(ctx,item_p,open_chk?pkt:NULL);
 
@@ -614,7 +635,7 @@ void *_abcdk_ffserver_worker_routine(void *opaque)
     ctx = (abcdk_ffserver_t *)opaque;
 
     /*告知录像接续进行。*/
-    ctx->record.segment_pos[0] = UINT64_MAX;
+    ctx->record_segment_pos[0] = UINT64_MAX;
 
     ctx->src.ff_cfg.file_name = ctx->cfg.src_url;
     ctx->src.ff_cfg.short_name = ctx->cfg.src_fmt;
@@ -672,10 +693,6 @@ LOOP:
     goto LOOP;
 
 END:
-
-    /*通知断开重连。*/
-    ctx->record.reopen = 1;
-    ctx->push.reopen = 1;
 
     /*通知关闭连接或文件。*/
     _abcdk_ffserver_write(ctx, NULL);
