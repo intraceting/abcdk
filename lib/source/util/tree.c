@@ -195,7 +195,7 @@ void abcdk_tree_free(abcdk_tree_t **root)
     abcdk_tree_t *child = NULL;
 
     if(!root || !*root)
-        ABCDK_ERRNO_AND_RETURN0(EINVAL);
+        return;
 
     /* 复制一下 */
     root_p = *root;
@@ -222,6 +222,9 @@ void abcdk_tree_free(abcdk_tree_t **root)
             {
                 abcdk_tree_unlink(node);
 
+                if(node->destructor_cb)
+                    node->destructor_cb(node->obj,node->opaque);
+
                 abcdk_object_unref(&node->obj);
                 abcdk_heap_free2((void**)&node);
             }
@@ -233,9 +236,18 @@ void abcdk_tree_free(abcdk_tree_t **root)
         }
     }
 
-    abcdk_object_unref(&(*root)->obj);
-    abcdk_heap_free2((void**)root);
+    /* 再次复制一下，并清理最野指针。 */
+    root_p = *root;
+    *root = NULL;
 
+    if (root_p)
+    {
+        if (root_p->destructor_cb)
+            root_p->destructor_cb(root_p->obj, root_p->opaque);
+
+        abcdk_object_unref(&root_p->obj);
+        abcdk_heap_free(root_p);
+    }
 }
 
 abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *obj)

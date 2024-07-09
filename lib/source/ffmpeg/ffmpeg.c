@@ -591,6 +591,7 @@ next_packet:
     /*Reset.*/
     obsolete = 0;
 
+    /*等待下一帧时间到达。*/
     _abcdk_ffmpeg_read_delay(ctx);
 
     chk = abcdk_avformat_input_read(ctx->avctx, pkt, AVMEDIA_TYPE_NB);
@@ -649,8 +650,10 @@ next_packet:
     /*按需丢弃延时过多的帧，以便减少延时。*/
     if (obsolete)
     {
-        abcdk_trace_output(LOG_WARNING, "拉流超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
-                           pkt->stream_index, abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));
+        abcdk_trace_output(LOG_WARNING, "拉流延时超过设定阈值(delay_max=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+                           ctx->cfg.read_delay_max,pkt->stream_index, 
+                           abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), 
+                           abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));
 
         goto next_packet;
     }

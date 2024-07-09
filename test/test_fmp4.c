@@ -53,10 +53,14 @@ static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
     abcdk_stream_destroy(&p->live_buf);
-
-    abcdk_ffserver_task_del(g_ffserver_ctx,&p->task_ctx);
-
     abcdk_heap_free(p);
+}
+
+static void _live_delete_cb(void *opaque)
+{
+    abcdk_object_t *stream_p = opaque;
+
+    abcdk_object_unref(&stream_p);
 }
 
 static void _live_ready_cb(void *opaque)
@@ -72,19 +76,29 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
     node_t * p = abcdk_heap_alloc(sizeof(node_t));
 
     abcdk_https_set_userdata(stream,p);
+}
+
+static void stream_close_cb(void *opaque,abcdk_object_t *stream)
+{
+    node_t *p = (node_t*)abcdk_https_get_userdata(stream);
+
+    abcdk_ffserver_task_del(g_ffserver_ctx,&p->task_ctx);
+}
+
+static void stream_request_cb(void *opaque, abcdk_object_t *stream)
+{
+    node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
     p->live_buf = abcdk_stream_create();
     p->live_cfg.flag = 3;
     p->live_cfg.u.live.buf = p->live_buf;
     p->live_cfg.u.live.delay_max = 3.0;
     p->live_cfg.u.live.ready_cb = _live_ready_cb;
-    p->live_cfg.u.live.opaque = stream;
+    p->live_cfg.u.live.delete_cb = _live_delete_cb;
+    p->live_cfg.u.live.opaque = abcdk_object_refer(stream);
 
     p->task_ctx = abcdk_ffserver_task_add(g_ffserver_ctx,&p->live_cfg);
-}
 
-static void stream_request_cb(void *opaque, abcdk_object_t *stream)
-{
     abcdk_https_response_header_set(stream, "Status","%d",200);
     abcdk_https_response_header_set(stream, "Content-Type","%s","video/mp4");
 //    abcdk_https_response_header_set(stream, "Content-Length","1234567890");
@@ -131,6 +145,7 @@ int abcdk_test_fmp4(abcdk_option_t *args)
     cfg.session_close_cb = session_close_cb;
     cfg.stream_destructor_cb = stream_destructor_cb;
     cfg.stream_construct_cb = stream_construct_cb;
+    cfg.stream_close_cb = stream_close_cb;
     cfg.stream_request_cb = stream_request_cb;
     cfg.stream_output_cb = stream_output_cb;
     cfg.req_max_size = 123456789;

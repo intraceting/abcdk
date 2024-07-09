@@ -30,40 +30,40 @@ typedef struct _abcdk_https_session abcdk_https_session_t;
 /**配置。*/
 typedef struct _abcdk_https_config
 {
-    /*环境指针。*/
+    /**环境指针。*/
     void *opaque;
 
-    /*名称。*/
+    /**名称。*/
     const char *name;
 
-    /*领域。*/
+    /**领域。*/
     const char *realm;
 
-    /*安全方案*/
+    /**安全方案*/
     int ssl_scheme;
 
-    /*CA证书。*/
+    /**CA证书。*/
     const char *pki_ca_file;
 
-    /*CA路径。*/
+    /**CA路径。*/
     const char *pki_ca_path;
 
-    /*证书。*/
+    /**证书。*/
     const char *pki_cert_file;
 
-    /*私钥。*/
+    /**私钥。*/
     const char *pki_key_file;
 
-    /*是否验证对端证书。0 否，!0 是。*/
+    /**是否验证对端证书。0 否，!0 是。*/
     int pki_check_cert;
 
-    /*请求数量包最大长度。*/
+    /**请求数量包最大长度。*/
     size_t req_max_size;
 
-    /*请求数量包临时缓存目录。*/
+    /**请求数量包临时缓存目录。*/
     const char *req_tmp_path;
 
-    /*是否启用H2协议。*/
+    /**是否启用H2协议。*/
     int enable_h2;
 
     /**
@@ -77,7 +77,7 @@ typedef struct _abcdk_https_config
     const char *a_c_a_o;
 
     /**
-     * 会话准备通知回调函数。
+     * 会话准备回调函数。
      * 
      * @param [out] session 新会话。
      * @param [in] listen 监听会话;
@@ -85,45 +85,53 @@ typedef struct _abcdk_https_config
     void (*session_prepare_cb)(void *opaque,abcdk_https_session_t **session,abcdk_https_session_t *listen);
 
     /**
-     * 会话验证通知回调函数。
+     * 会话验证回调函数。
      * 
      * @note NULL(0) 忽略。
     */
     void (*session_accept_cb)(void *opaque,abcdk_https_session_t *session,int *result);
 
     /**
-     * 会话就绪通知回调函数。
+     * 会话就绪回调函数。
      * 
      * @note NULL(0) 忽略。
     */
     void (*session_ready_cb)(void *opaque,abcdk_https_session_t *session);
 
+
     /**
-     * 会话关闭通知回调函数。
+     * 会话关闭回调函数。
      * 
      * @note NULL(0) 忽略。
     */
     void (*session_close_cb)(void *opaque,abcdk_https_session_t *session);
 
     /**
-     * 析构通知回调函数。
+     * 流析构回调函数。
      * 
      * @note NULL(0) 忽略。
      */
     void (*stream_destructor_cb)(void *opaque,abcdk_object_t *stream);
 
     /**
-     * 构造通知回调函数。
+     * 流构造回调函数。
      * 
      * @note NULL(0) 忽略。
     */
     void (*stream_construct_cb)(void *opaque,abcdk_object_t *stream);
 
-    /*请求通知回调函数。*/
+    /**
+     * 流关闭回调函数。
+     * 
+     * @note NULL(0) 忽略。
+    */
+    void (*stream_close_cb)(void *opaque,abcdk_object_t *stream);
+    
+    /** 流请求通知回调函数。*/
     void (*stream_request_cb)(void *opaque,abcdk_object_t *stream);
 
     /**
-     * 输出(空闲)通知回调函数。
+     * 流输出(空闲)回调函数。
      * 
      * @note NULL(0) 忽略。
     */

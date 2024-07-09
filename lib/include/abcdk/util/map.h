@@ -40,17 +40,22 @@ typedef struct _abcdk_map
     int (*compare_cb)(const void *key1, size_t size1, const void *key2,size_t size2,void *opaque);
 
     /** 
-     * 构造函数。
+     * 构造回调函数。
     */
     void (*construct_cb)(abcdk_object_t *obj, void *opaque);
 
     /**
-     * 析构函数。
+     * 析构回调函数。
     */
     void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
+    
+    /**
+     * 移除回调函数。
+    */
+    void (*remove_cb)(abcdk_object_t *obj, void *opaque);
 
     /**
-     * 回显函数。
+     * 回显回调函数。
      * 
      * @return 1 继续，-1 终止。
     */

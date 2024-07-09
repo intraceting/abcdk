@@ -31,6 +31,10 @@ typedef struct _abcdk_ffserver_config
      * 0：源，1：录像，2：推流，3：直播。
     */
     int flag;
+#define ABCDK_FFSERVER_CFG_FLAG_SOURCE 0
+#define ABCDK_FFSERVER_CFG_FLAG_RECORD 1
+#define ABCDK_FFSERVER_CFG_FLAG_PUSH 2
+#define ABCDK_FFSERVER_CFG_FLAG_LIVE 3
 
     /**提示。*/
     const char *tip;
@@ -98,6 +102,14 @@ typedef struct _abcdk_ffserver_config
              * @warning 不能被阻塞。
             */
             void (*ready_cb)(void *opaque);
+
+            /**
+             * 任务移除通知。
+             * 
+             * @note NULL(0) 忽略。
+             * @warning 不能被阻塞。
+            */
+            void (*delete_cb)(void *opaque);
 
             /**环境指针。*/
             void *opaque;

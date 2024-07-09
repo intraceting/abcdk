@@ -135,7 +135,7 @@ static void _abcdk_https_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
     node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_https_stream_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
-    /*通知流已关闭。*/
+    /*通知流执行析构。*/
     if(node_ctx_p->cfg.stream_destructor_cb)
         node_ctx_p->cfg.stream_destructor_cb(node_ctx_p->cfg.opaque,obj);
 
@@ -171,9 +171,24 @@ static void _abcdk_https_stream_construct_cb(abcdk_object_t *obj, void *opaque)
     stream_ctx_p->h2_out = abcdk_stream_create();
     stream_ctx_p->loc_ctx = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
-    /*通知流已创建。*/
+    /*通知流执行构造。*/
     if(node_ctx_p->cfg.stream_construct_cb)
         node_ctx_p->cfg.stream_construct_cb(node_ctx_p->cfg.opaque,obj);
+}
+
+static void _abcdk_https_stream_remove_cb(abcdk_object_t *obj, void *opaque)
+{
+    abcdk_asio_node_t *io_node_p;
+    abcdk_https_node_t *node_ctx_p;
+    abcdk_https_stream_t *stream_ctx_p;
+
+    io_node_p = (abcdk_asio_node_t *)opaque;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(io_node_p);
+    stream_ctx_p = (abcdk_https_stream_t *)obj->pptrs[ABCDK_MAP_VALUE];
+
+    /*通知流已关闭。*/
+    if(node_ctx_p->cfg.stream_close_cb)
+        node_ctx_p->cfg.stream_close_cb(node_ctx_p->cfg.opaque,obj);
 }
 
 static void _abcdk_https_node_destroy_cb(void *userdata)
@@ -978,6 +993,7 @@ abcdk_https_session_t *abcdk_https_session_alloc(abcdk_https_t *ctx)
 
     node_ctx_p->stream_map->construct_cb = _abcdk_https_stream_construct_cb;
     node_ctx_p->stream_map->destructor_cb = _abcdk_https_stream_destructor_cb;
+    node_ctx_p->stream_map->remove_cb = _abcdk_https_stream_remove_cb;
     node_ctx_p->stream_map->opaque = node_p;
 
     return (abcdk_https_session_t*)node_p;

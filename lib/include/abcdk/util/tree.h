@@ -41,6 +41,18 @@ typedef struct _abcdk_tree
     */
     abcdk_object_t *obj;
 
+    /**
+     * 析构回调函数。
+     *
+     * @param [in] opaque 用户环境指针。
+     */
+    void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
+
+    /**
+     * 用户环境指针。
+    */
+    void *opaque;
+
 }abcdk_tree_t;
 
 /**
@@ -79,6 +91,13 @@ typedef struct _abcdk_tree_iterator
     int (*compare_cb)(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque);
 
 } abcdk_tree_iterator_t;
+
+/**
+ * 释放回调函数。
+ * 
+ * @param [in] opaque 用户环境指针。
+ */
+typedef void (*abcdk_tree_free_cb)(abcdk_object_t *obj, void *opaque);
 
 /**
  * 获取自己的父节指针。
@@ -140,7 +159,7 @@ void abcdk_tree_swap(abcdk_tree_t *src,abcdk_tree_t *dst);
  * 
  * @note 包括自己，自己的孩子，以孩子的孩子都会被删除。
  * 
- * @param root 节点指针的指针。当接口返回时，被赋值NULL(0)。
+ * @param root 节点指针的指针。
 */
 void abcdk_tree_free(abcdk_tree_t **root);
 
