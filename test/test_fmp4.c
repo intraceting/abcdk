@@ -59,7 +59,13 @@ static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
     abcdk_heap_free(p);
 }
 
+static void _live_ready_cb(void *opaque)
+{
+    abcdk_object_t *stream_p = opaque;
+    node_t *p = (node_t *)abcdk_https_get_userdata(stream_p);
 
+    abcdk_https_response_ready(stream_p);
+}
 
 static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
 {
@@ -71,6 +77,8 @@ static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
     p->live_cfg.flag = 3;
     p->live_cfg.u.live.buf = p->live_buf;
     p->live_cfg.u.live.delay_max = 3.0;
+    p->live_cfg.u.live.ready_cb = _live_ready_cb;
+    p->live_cfg.u.live.opaque = stream;
 
     p->task_ctx = abcdk_ffserver_task_add(g_ffserver_ctx,&p->live_cfg);
 }
@@ -100,7 +108,6 @@ static void stream_output_cb(void *opaque, abcdk_object_t *stream)
     else
     {
         abcdk_object_unref(&buf);
-        abcdk_https_response_ready(stream);
     }
 
     abcdk_ffserver_task_heartbeat(g_ffserver_ctx,p->task_ctx);

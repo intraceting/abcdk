@@ -26,11 +26,14 @@ typedef struct _abcdk_ffserver_task abcdk_ffserver_task_t;
 /**配置。 */
 typedef struct _abcdk_ffserver_config
 {
-    /*
+    /**
      * 标志。
      * 0：源，1：录像，2：推流，3：直播。
-     */
+    */
     int flag;
+
+    /**提示。*/
+    const char *tip;
 
     union
     {
@@ -82,11 +85,22 @@ typedef struct _abcdk_ffserver_config
 
         struct
         {
-            /*流缓存。*/
+            /**流缓存。*/
             abcdk_stream_t *buf;
 
             /**最大延时(秒.毫秒)。0.300~4.999。*/
             float delay_max;
+
+            /** 
+             * 缓存更新通知。
+             * 
+             * @note NULL(0) 忽略。
+             * @warning 不能被阻塞。
+            */
+            void (*ready_cb)(void *opaque);
+
+            /**环境指针。*/
+            void *opaque;
 
         } live;
 

@@ -557,3 +557,14 @@ int abcdk_srpc_response(abcdk_srpc_session_t *session, uint64_t mid,const void *
 
     return 0;
 }
+
+void abcdk_srpc_output_ready(abcdk_srpc_session_t *session)
+{
+    abcdk_asio_node_t *node_p;
+
+    assert(session != NULL);
+
+    node_p = (abcdk_asio_node_t*)session;
+
+    abcdk_asio_send_watch(node_p);
+}

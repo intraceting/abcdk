@@ -507,7 +507,7 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
         block = (a >= b?0:1);
 
-        // abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+        abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
     else
     {
@@ -631,23 +631,20 @@ next_packet:
     }
 
     /*检测延时是否超过阈值。*/
-    obsolete = _abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1);
+    if(_abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1))
+        ctx->read_gop_ns[pkt->stream_index] = 0;
 
     /*也可能已经不在同一个GOP中。*/
     if(ctx->read_key_ns[pkt->stream_index] != ctx->read_gop_ns[pkt->stream_index])
         obsolete = 1;
 
-    /*视频流并且是关键帧则不能丢。*/
-    if ((codecpar->codec_type == AVMEDIA_TYPE_VIDEO) && (pkt->flags & AV_PKT_FLAG_KEY))
-        obsolete = 0;
-
-    /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
+    /*按需丢弃延时过多的帧，以便减少延时。*/
     if (obsolete)
     {
         abcdk_trace_output(LOG_WARNING, "拉流超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
                            pkt->stream_index, abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));
 
-        ctx->read_gop_ns[pkt->stream_index] = 0;
+        //ctx->read_gop_ns[pkt->stream_index] = 0;
         goto next_packet;
     }
 

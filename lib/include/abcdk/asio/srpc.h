@@ -163,6 +163,10 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session,const void *req,size_t req_
 */
 int abcdk_srpc_response(abcdk_srpc_session_t *session, uint64_t mid,const void *data,size_t size);
 
+
+/** 通知数据数据已经准备好了。*/
+void abcdk_srpc_output_ready(abcdk_srpc_session_t *session);
+
 __END_DECLS
 
 #endif //ABCDK_ASIO_SRPC_H

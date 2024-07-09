@@ -91,7 +91,10 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
         item_ctx_p->cfg.u.src.speed = ABCDK_CLAMP(item_ctx_p->cfg.u.src.speed, (float)0.01, (float)100.0);
         item_ctx_p->cfg.u.src.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.src.delay_max, (float)0.300, (float)4.999);
 
-        snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.src.url);
+        if(item_ctx_p->cfg.tip && !*item_ctx_p->cfg.tip)
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.tip);
+        else 
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.src.url);
     }
     else if(item_ctx_p->cfg.flag == 1)
     {
@@ -104,18 +107,27 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
         snprintf(item_ctx_p->record_path_file, PATH_MAX, "%s.mp4.tmp", item_ctx_p->cfg.u.record.prefix);
         snprintf(item_ctx_p->record_segment_file, PATH_MAX, "%s%%llu.mp4", item_ctx_p->cfg.u.record.prefix);
 
-        snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->record_path_file);
+        if(item_ctx_p->cfg.tip && !*item_ctx_p->cfg.tip)
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.tip);
+        else 
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->record_path_file);
     }
     else if(item_ctx_p->cfg.flag == 2)
     {
-        snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.push.url);
+        if(item_ctx_p->cfg.tip && !*item_ctx_p->cfg.tip)
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.tip);
+        else 
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.push.url);
     }
     else if( item_ctx_p->cfg.flag == 3)
     {
         /*修复不支持的参数。*/
         item_ctx_p->cfg.u.live.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.live.delay_max,(float)0.300,(float)4.999);
 
-        snprintf(item_ctx_p->tip,PATH_MAX,"%s","FMP4 Live Streaming");
+        if(item_ctx_p->cfg.tip && !*item_ctx_p->cfg.tip)
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.tip);
+        else 
+            snprintf(item_ctx_p->tip,PATH_MAX,"%s","FMP4 Live Streaming");
 
         /*引用对象。*/
         item_ctx_p->live_buf = abcdk_stream_refer(item_ctx_p->cfg.u.live.buf);
@@ -242,6 +254,9 @@ int _abcdk_ffserver_live_write_packet_cb(void *opaque, uint8_t *buf, int buf_siz
     chk = abcdk_stream_write_buffer(item_p->live_buf,buf,buf_size);
     if(chk != 0)
         return -1;
+
+    if(item_p->cfg.u.live.ready_cb)
+        item_p->cfg.u.live.ready_cb(item_p->cfg.u.live.opaque);
 
     return buf_size;
 }
@@ -449,21 +464,17 @@ RECORD_SEGMENT_NEW:
 
         /*应用层长时间不活动时丢掉一些帧。*/
         if((double)(_abcdk_ffserver_clock(6) - abcdk_atomic_load(&dst_item->user_active))/1000000.> dst_item->cfg.u.live.delay_max)
-            obsolete = 1;
+            dst_item->read_gop_ns[*idx_p] = 0;
 
         /*也可能已经不在同一个GOP中。*/
         if(dst_item->read_key_ns[*idx_p] != dst_item->read_gop_ns[*idx_p])
             obsolete = 1;
 
-        /*视频流并且是关键帧则不能丢。*/
-        if ((codecpar->codec_type == AVMEDIA_TYPE_VIDEO) && (pkt->flags & AV_PKT_FLAG_KEY))
-            obsolete = 0;
-
-        /*超过设定的延时阈值或不是关键帧则丢弃，以便减少延时。*/
+        /*按需丢弃延时过多的帧，以便减少延时。*/
         if (obsolete)
         {
-            abcdk_trace_output(LOG_WARNING, "直播超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
-                               pkt->stream_index, 
+            abcdk_trace_output(LOG_WARNING, "直播(%s)超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+                               dst_item->tip, pkt->stream_index, 
                                abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
                                abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
 
