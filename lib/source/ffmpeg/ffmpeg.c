@@ -496,6 +496,9 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
     if (flag == 1)
     {
+        if(ctx->cfg.read_flush)
+            return 0;
+
         /*如果是无效的DTS，直接返回0。*/
         if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
             return 0;
@@ -507,10 +510,13 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
         block = (a >= b?0:1);
 
-        abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+        //abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
     else
     {
+        if(ctx->cfg.read_flush)
+            return 1;
+
         /*如果是无效的DTS，直接返回1。*/
         if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
             return 1;
@@ -528,7 +534,7 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
     return block;
 }
 
-int abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int async)
+static void _abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx)
 {
     AVStream * vs_p = NULL;
     int64_t start_time = 0;
@@ -539,9 +545,9 @@ int abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int async)
 
 next_delay:
 
-    /*如果已经超时，则直接返回1。*/
+    /*如果已经超时，则直接返回。*/
     if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
-        return 1;
+        return;
 
     for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
     {
@@ -558,13 +564,13 @@ next_delay:
             break;
     }
 
-    if (block && !async)
+    if (block)
     {
         usleep(2000);//500fps
         goto next_delay;
     }
 
-    return (block?0:1);
+    return ;
 }
 
 int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream)
@@ -584,6 +590,8 @@ next_packet:
 
     /*Reset.*/
     obsolete = 0;
+
+    _abcdk_ffmpeg_read_delay(ctx);
 
     chk = abcdk_avformat_input_read(ctx->avctx, pkt, AVMEDIA_TYPE_NB);
     if (chk < 0)

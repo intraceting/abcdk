@@ -81,6 +81,13 @@ typedef struct _abcdk_ffmpeg_config
      */
     int bit_stream_filter;
 
+    /** 
+     * 读刷新。0 不启用，!0 启用。
+     * 
+     * @note 影响播放，需应用层自行控制播放速度。
+    */
+    float read_flush;
+
     /** 读的速度(倍数)。0.01~100.0 */
     float read_speed;
 
@@ -171,17 +178,6 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream);
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
 abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg);
-
-/**
- * 读延时。
- * 
- * @note 以最慢的为基准。
- * 
- * @param [in] async 异步。0 否，!0 是。 
- * 
- * @return 0 未到时间，!0 已到时间。
-*/
-int abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx, int async);
 
 /**
  * 读取数据包。

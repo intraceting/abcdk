@@ -600,8 +600,6 @@ LOOP:
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
         goto END;
 
-    abcdk_ffmpeg_read_delay(src_item_p->ff_ctx, 0);
-
     chk = abcdk_ffmpeg_read_packet(src_item_p->ff_ctx, &pkt, -1);
     if (chk < 0)
         goto RETRY;
