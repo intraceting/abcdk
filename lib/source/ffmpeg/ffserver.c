@@ -466,7 +466,7 @@ RECORD_SEGMENT_NEW:
         if((double)(_abcdk_ffserver_clock(6) - abcdk_atomic_load(&dst_item->user_active))/1000000.> dst_item->cfg.u.live.delay_max)
             dst_item->read_gop_ns[*idx_p] = 0;
 
-        /*也可能已经不在同一个GOP中。*/
+        /*可能已经不在同一个GOP中。*/
         if(dst_item->read_key_ns[*idx_p] != dst_item->read_gop_ns[*idx_p])
             obsolete = 1;
 
@@ -478,7 +478,6 @@ RECORD_SEGMENT_NEW:
                                abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
                                abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
 
-            dst_item->read_gop_ns[*idx_p] = 0;
             return;
         }
     }

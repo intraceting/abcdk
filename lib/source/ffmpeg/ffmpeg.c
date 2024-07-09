@@ -566,7 +566,7 @@ next_delay:
 
     if (block)
     {
-        usleep(2000);//500fps
+        usleep(5000);//200fps
         goto next_delay;
     }
 
@@ -642,7 +642,7 @@ next_packet:
     if(_abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1))
         ctx->read_gop_ns[pkt->stream_index] = 0;
 
-    /*也可能已经不在同一个GOP中。*/
+    /*可能已经不在同一个GOP中。*/
     if(ctx->read_key_ns[pkt->stream_index] != ctx->read_gop_ns[pkt->stream_index])
         obsolete = 1;
 
@@ -652,7 +652,6 @@ next_packet:
         abcdk_trace_output(LOG_WARNING, "拉流超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
                            pkt->stream_index, abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));
 
-        //ctx->read_gop_ns[pkt->stream_index] = 0;
         goto next_packet;
     }
 
