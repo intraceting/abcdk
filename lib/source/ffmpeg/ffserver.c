@@ -466,6 +466,10 @@ RECORD_SEGMENT_NEW:
     }
     else if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
     {
+        /*通知缓存数据准备好了。*/
+        if(dst_item->cfg.u.live.ready_cb)
+            dst_item->cfg.u.live.ready_cb(dst_item->cfg.u.live.opaque);
+
         /*记录KEY帧和帧分组时间。*/
         if ((pkt->flags & AV_PKT_FLAG_KEY) || (codecpar->codec_type != AVMEDIA_TYPE_VIDEO))
             dst_item->read_key_ns[*idx_p] = dst_item->read_gop_ns[*idx_p] = _abcdk_ffserver_clock(6);
