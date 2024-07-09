@@ -56,20 +56,6 @@ static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
     abcdk_heap_free(p);
 }
 
-static void _live_delete_cb(void *opaque)
-{
-    abcdk_object_t *stream_p = opaque;
-
-    abcdk_object_unref(&stream_p);
-}
-
-static void _live_ready_cb(void *opaque)
-{
-    abcdk_object_t *stream_p = opaque;
-    node_t *p = (node_t *)abcdk_https_get_userdata(stream_p);
-
-    abcdk_https_response_ready(stream_p);
-}
 
 static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
 {
@@ -83,6 +69,21 @@ static void stream_close_cb(void *opaque,abcdk_object_t *stream)
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
     abcdk_ffserver_task_del(g_ffserver_ctx,&p->task_ctx);
+}
+
+static void _live_delete_cb(void *opaque)
+{
+    abcdk_object_t *stream_p = opaque;
+
+    abcdk_object_unref(&stream_p);
+}
+
+static void _live_ready_cb(void *opaque)
+{
+    abcdk_object_t *stream_p = opaque;
+    node_t *p = (node_t *)abcdk_https_get_userdata(stream_p);
+
+    abcdk_https_response_ready(stream_p);
 }
 
 static void stream_request_cb(void *opaque, abcdk_object_t *stream)
