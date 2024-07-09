@@ -510,7 +510,8 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
 
         block = (a >= b?0:1);
 
-        //abcdk_trace_output(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+        if(block)
+            abcdk_trace_output(LOG_WARNING,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
     else
     {

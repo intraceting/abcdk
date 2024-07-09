@@ -165,7 +165,7 @@ int abcdk_test_fmp4(abcdk_option_t *args)
    // src_cfg.u.src.url = "/home/devel/job/download/4K PARADISE Summer Mix 2024 🍓 Best Of Tropical Deep House Music Chill Out Mix By Summer Vibes Sound.mp4";
     src_cfg.u.src.url = "rtsp://192.168.100.96/live/bbbb";
     src_cfg.u.src.speed = 1.0;
-    src_cfg.u.src.delay_max = 1.0;
+    src_cfg.u.src.delay_max = 2.0;
 
     g_ffserver_ctx = abcdk_ffserver_create(&src_cfg);
 
