@@ -428,7 +428,7 @@ static void httpd_ssession_close_cb(void *opaque,abcdk_https_session_t *session)
 
 }
 
-static void httpd_request_cb(void *opaque, abcdk_object_t *stream)
+static void httpd_request_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     // abcdk_trace_output(LOG_INFO,"%s %s %s %s",
     // abcdk_https_request_header_get(stream,"Method"),

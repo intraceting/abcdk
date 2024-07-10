@@ -48,7 +48,7 @@ static void session_close_cb(void *opaque, abcdk_https_session_t *session)
 
 }
 
-static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
+static void stream_destructor_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
@@ -57,14 +57,14 @@ static void stream_destructor_cb(void *opaque, abcdk_object_t *stream)
 }
 
 
-static void stream_construct_cb(void *opaque, abcdk_object_t *stream)
+static void stream_construct_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t * p = abcdk_heap_alloc(sizeof(node_t));
 
     abcdk_https_set_userdata(stream,p);
 }
 
-static void stream_close_cb(void *opaque,abcdk_object_t *stream)
+static void stream_close_cb(void *opaque,abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
@@ -73,20 +73,19 @@ static void stream_close_cb(void *opaque,abcdk_object_t *stream)
 
 static void _live_delete_cb(void *opaque)
 {
-    abcdk_object_t *stream_p = opaque;
+    abcdk_https_stream_t *stream_p =(abcdk_https_stream_t *)opaque;
 
-    abcdk_object_unref(&stream_p);
+    abcdk_https_unref(&stream_p);
 }
 
 static void _live_ready_cb(void *opaque)
 {
-    abcdk_object_t *stream_p = opaque;
-    node_t *p = (node_t *)abcdk_https_get_userdata(stream_p);
+    abcdk_https_stream_t *stream_p = (abcdk_https_stream_t*)opaque;
 
     abcdk_https_response_ready(stream_p);
 }
 
-static void stream_request_cb(void *opaque, abcdk_object_t *stream)
+static void stream_request_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
@@ -96,7 +95,7 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
     p->live_cfg.u.live.delay_max = 3.0;
     p->live_cfg.u.live.ready_cb = _live_ready_cb;
     p->live_cfg.u.live.delete_cb = _live_delete_cb;
-    p->live_cfg.u.live.opaque = abcdk_object_refer(stream);
+    p->live_cfg.u.live.opaque = abcdk_https_refer(stream);
 
     p->task_ctx = abcdk_ffserver_task_add(g_ffserver_ctx,&p->live_cfg);
 
@@ -108,7 +107,7 @@ static void stream_request_cb(void *opaque, abcdk_object_t *stream)
 
 }
 
-static void stream_output_cb(void *opaque, abcdk_object_t *stream)
+static void stream_output_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t *)abcdk_https_get_userdata(stream);
 

@@ -27,6 +27,9 @@ typedef struct _abcdk_https abcdk_https_t;
 /**HTTP会话。*/
 typedef struct _abcdk_https_session abcdk_https_session_t;
 
+/**HTTP流。*/
+typedef struct _abcdk_https_stream abcdk_https_stream_t;
+
 /**配置。*/
 typedef struct _abcdk_https_config
 {
@@ -111,31 +114,31 @@ typedef struct _abcdk_https_config
      * 
      * @note NULL(0) 忽略。
      */
-    void (*stream_destructor_cb)(void *opaque,abcdk_object_t *stream);
+    void (*stream_destructor_cb)(void *opaque,abcdk_https_stream_t *stream);
 
     /**
      * 流构造回调函数。
      * 
      * @note NULL(0) 忽略。
     */
-    void (*stream_construct_cb)(void *opaque,abcdk_object_t *stream);
+    void (*stream_construct_cb)(void *opaque,abcdk_https_stream_t *stream);
 
     /**
      * 流关闭回调函数。
      * 
      * @note NULL(0) 忽略。
     */
-    void (*stream_close_cb)(void *opaque,abcdk_object_t *stream);
+    void (*stream_close_cb)(void *opaque,abcdk_https_stream_t *stream);
     
     /** 流请求通知回调函数。*/
-    void (*stream_request_cb)(void *opaque,abcdk_object_t *stream);
+    void (*stream_request_cb)(void *opaque,abcdk_https_stream_t *stream);
 
     /**
      * 流输出(空闲)回调函数。
      * 
      * @note NULL(0) 忽略。
     */
-    void (*stream_output_cb)(void *opaque,abcdk_object_t *stream);
+    void (*stream_output_cb)(void *opaque,abcdk_https_stream_t *stream);
 
 } abcdk_https_config_t;
 
@@ -184,19 +187,24 @@ void abcdk_https_destroy(abcdk_https_t **ctx);
 /** 创建。*/
 abcdk_https_t *abcdk_https_create(int max,int cpu);
 
+/** 释放流。*/
+void abcdk_https_unref(abcdk_https_stream_t **stream);
+
+/** 引用流。*/
+abcdk_https_stream_t *abcdk_https_refer(abcdk_https_stream_t *src);
 
 /**获取会话指针。*/
-abcdk_https_session_t *abcdk_https_get_session(abcdk_object_t *stream);
+abcdk_https_session_t *abcdk_https_get_session(abcdk_https_stream_t *stream);
 
 /** 获取用户环境指针。*/
-void *abcdk_https_get_userdata(abcdk_object_t *stream);
+void *abcdk_https_get_userdata(abcdk_https_stream_t *stream);
 
 /** 
  * 设置用户环境指针。
  * 
  * @return 旧的用户环境指针。
 */
-void *abcdk_https_set_userdata(abcdk_object_t *stream,void *userdata);
+void *abcdk_https_set_userdata(abcdk_https_stream_t *stream,void *userdata);
 
 
 /** 
@@ -212,14 +220,14 @@ void *abcdk_https_set_userdata(abcdk_object_t *stream,void *userdata);
  * 
  * @return !NULL(0) 成功(属性值的指针)，NULL(0) 失败(不存在)。
 */
-const char* abcdk_https_request_header_get(abcdk_object_t *stream,const char *key);
+const char* abcdk_https_request_header_get(abcdk_https_stream_t *stream,const char *key);
 
 /**
  * 在请求头查找属性值。
  * 
  * @return !NULL(0) 成功(属性值的指针)，NULL(0) 失败(不存在)。
 */
-const char* abcdk_https_request_header_getline(abcdk_object_t *stream,int line);
+const char* abcdk_https_request_header_getline(abcdk_https_stream_t *stream,int line);
 
 /** 
  * 获取请求体和长度。
@@ -228,10 +236,10 @@ const char* abcdk_https_request_header_getline(abcdk_object_t *stream,int line);
  * 
  * @return !NULL(0) 成功(请求体的指针)，NULL(0) 失败(不存在)。
 */
-const char* abcdk_https_request_body_get(abcdk_object_t *stream,size_t *len);
+const char* abcdk_https_request_body_get(abcdk_https_stream_t *stream,size_t *len);
 
 /** 通知应答数据数据已经准备好了。*/
-void abcdk_https_response_ready(abcdk_object_t *stream);
+void abcdk_https_response_ready(abcdk_https_stream_t *stream);
 
 /**
  * 设置应答头部。
@@ -240,19 +248,19 @@ void abcdk_https_response_ready(abcdk_object_t *stream);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_https_response_header_vset(abcdk_object_t *stream,const char *key, const char *val, va_list ap);
+int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *key, const char *val, va_list ap);
 
 /**
  * 设置应答头部。
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_https_response_header_set(abcdk_object_t *stream,const char *key, const char *val, ...);
+int abcdk_https_response_header_set(abcdk_https_stream_t *stream,const char *key, const char *val, ...);
 
 /**
  * 取消应答头部。
 */
-void abcdk_https_response_header_unset(abcdk_object_t *stream,const char *key);
+void abcdk_https_response_header_unset(abcdk_https_stream_t *stream,const char *key);
 
 /**
  * 头部应答结束。
@@ -261,7 +269,7 @@ void abcdk_https_response_header_unset(abcdk_object_t *stream,const char *key);
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_https_response_header_end(abcdk_object_t *stream);
+int abcdk_https_response_header_end(abcdk_https_stream_t *stream);
 
 /**
  * 应答实体。
@@ -272,28 +280,28 @@ int abcdk_https_response_header_end(abcdk_object_t *stream);
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_https_response(abcdk_object_t *stream,abcdk_object_t *data);
+int abcdk_https_response(abcdk_https_stream_t *stream,abcdk_object_t *data);
 
 /**
  * 应答实体。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_https_response_buffer(abcdk_object_t *stream,const void *data, size_t size);
+int abcdk_https_response_buffer(abcdk_https_stream_t *stream,const void *data, size_t size);
 
 /**
  * 应答实体。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_https_response_format(abcdk_object_t *stream,int max, const char *fmt, ...);
+int abcdk_https_response_format(abcdk_https_stream_t *stream,int max, const char *fmt, ...);
 
 /**
  * 应答实体。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_https_response_vformat(abcdk_object_t *stream,int max, const char *fmt, va_list ap);
+int abcdk_https_response_vformat(abcdk_https_stream_t *stream,int max, const char *fmt, va_list ap);
 
 /**
  * 授权验证。
@@ -302,7 +310,7 @@ int abcdk_https_response_vformat(abcdk_object_t *stream,int max, const char *fmt
  * 
  * @return 0 通过，< 0 未通过。
 */
-int abcdk_https_check_auth(abcdk_object_t *stream);
+int abcdk_https_check_auth(abcdk_https_stream_t *stream);
 
 
 __END_DECLS

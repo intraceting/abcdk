@@ -172,7 +172,7 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t启用HTTP2协议。\n");
 }
 
-static void _abcdkhttpd_reply_nobody(abcdk_object_t *stream, int status, const char *a_c_a_m)
+static void _abcdkhttpd_reply_nobody(abcdk_https_stream_t *stream, int status, const char *a_c_a_m)
 {
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
 
@@ -181,7 +181,7 @@ static void _abcdkhttpd_reply_nobody(abcdk_object_t *stream, int status, const c
     abcdk_https_response(stream,NULL);
 }
 
-static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
+static void _abcdkhttpd_reply_dirent(abcdk_https_stream_t *stream)
 {
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     abcdk_tree_t *dir = NULL;
@@ -242,7 +242,7 @@ static void _abcdkhttpd_reply_dirent(abcdk_object_t *stream)
                               stream_ctx_p->script_de->pptrs[0], stream_ctx_p->script_de->pptrs[0]);
 }
 
-static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
+static void _abcdkhttpd_reply_dirent_more(abcdk_https_stream_t *stream)
 {
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     char tmp[PATH_MAX], tmp2[PATH_MAX], tmp3[NAME_MAX];
@@ -312,7 +312,7 @@ static void _abcdkhttpd_reply_dirent_more(abcdk_object_t *stream)
     abcdk_tree_free(&stream_ctx_p->dir_ctx);
 }
 
-static void _abcdkhttpd_reply_file(abcdk_object_t *stream)
+static void _abcdkhttpd_reply_file(abcdk_https_stream_t *stream)
 {
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
     const char *type = NULL;
@@ -425,7 +425,7 @@ static void _abcdkhttpd_session_close_cb(void *opaque, abcdk_https_session_t *se
 {
 }
 
-static void _abcdkhttpd_stream_destructor_cb(void *opaque, abcdk_object_t *stream)
+static void _abcdkhttpd_stream_destructor_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
@@ -440,7 +440,7 @@ static void _abcdkhttpd_stream_destructor_cb(void *opaque, abcdk_object_t *strea
     abcdk_https_set_userdata(stream, NULL);
 }
 
-static void _abcdkhttpd_stream_construct_cb(void *opaque, abcdk_object_t *stream)
+static void _abcdkhttpd_stream_construct_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_heap_alloc(sizeof(abcdkhttpd_stream_t));
@@ -449,7 +449,7 @@ static void _abcdkhttpd_stream_construct_cb(void *opaque, abcdk_object_t *stream
     abcdk_https_set_userdata(stream, stream_ctx_p);
 }
 
-static void _abcdkhttpd_stream_request_cb(void *opaque, abcdk_object_t *stream)
+static void _abcdkhttpd_stream_request_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
@@ -504,7 +504,7 @@ static void _abcdkhttpd_stream_request_cb(void *opaque, abcdk_object_t *stream)
 
 }
 
-static void _abcdkhttpd_stream_output_cb(void *opaque, abcdk_object_t *stream)
+static void _abcdkhttpd_stream_output_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     abcdkhttpd_t *ctx_p = (abcdkhttpd_t *)opaque;
     abcdkhttpd_stream_t *stream_ctx_p = (abcdkhttpd_stream_t *)abcdk_https_get_userdata(stream);
