@@ -176,7 +176,7 @@ int abcdk_test_codec(abcdk_option_t *args)
 
          abcdk_ffmpeg_write_frame(w,inframe,n);
 
-        // usleep(rand() %40 * 1000);
+         usleep(rand() %40 * 1000);
     }
 
     av_frame_free(&inframe);
