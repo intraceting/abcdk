@@ -21,6 +21,8 @@ typedef struct _abcdk_ffserver_item
     abcdk_ffmpeg_config_t ff_cfg;
     abcdk_ffmpeg_t *ff_ctx;
 
+    uint8_t src_md5[16];
+
     int s2d_idx[16];
     int64_t read_key_ns[16];
     int64_t read_gop_ns[16];
@@ -62,9 +64,16 @@ static void _abcdk_ffserver_item_destructor_cb(abcdk_object_t *obj, void *opaque
     ctx_p = (abcdk_ffserver_item_t *)obj->pptrs[0];
 
     abcdk_ffmpeg_destroy(&ctx_p->ff_ctx);
-    abcdk_stream_destroy(&ctx_p->live_buf);
+    
+    if(ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
+    {
+        if(ctx_p->cfg.u.live.delete_cb)
+            ctx_p->cfg.u.live.delete_cb(ctx_p->cfg.u.live.opaque);
 
-    abcdk_trace_output(LOG_INFO, "删除任务(%s)。", ctx_p->tip);
+        abcdk_stream_destroy(&ctx_p->live_buf);
+    }
+
+    abcdk_trace_output(LOG_INFO, "移除任务(%s)。", ctx_p->tip);
 }
 
 static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
@@ -83,10 +92,10 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
 
     item_ctx_p->cfg = *cfg;
 
-    if (item_ctx_p->cfg.flag == 0)
+    if (item_ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_SOURCE)
     {
         /*修复不支持的参数。*/
-        item_ctx_p->cfg.u.src.timeout = ABCDK_CLAMP(item_ctx_p->cfg.u.src.timeout, (int)-1, (int)5);
+        item_ctx_p->cfg.u.src.timeout = ABCDK_CLAMP(item_ctx_p->cfg.u.src.timeout, (int)0, (int)5);
         item_ctx_p->cfg.u.src.retry = ABCDK_CLAMP(item_ctx_p->cfg.u.src.retry, (int)1, (int)30);
         item_ctx_p->cfg.u.src.speed = ABCDK_CLAMP(item_ctx_p->cfg.u.src.speed, (float)0.01, (float)100.0);
         item_ctx_p->cfg.u.src.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.src.delay_max, (float)0.300, (float)4.999);
@@ -96,7 +105,7 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
         else 
             snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.src.url);
     }
-    else if(item_ctx_p->cfg.flag == 1)
+    else if(item_ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
     {
         /*修复不支持的参数。*/
         item_ctx_p->cfg.u.record.count = ABCDK_CLAMP(item_ctx_p->cfg.u.record.count,(int)1,(int)65536);
@@ -112,14 +121,14 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
         else 
             snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->record_path_file);
     }
-    else if(item_ctx_p->cfg.flag == 2)
+    else if(item_ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_PUSH)
     {
         if(item_ctx_p->cfg.tip && !*item_ctx_p->cfg.tip)
             snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.tip);
         else 
             snprintf(item_ctx_p->tip,PATH_MAX,"%s",item_ctx_p->cfg.u.push.url);
     }
-    else if( item_ctx_p->cfg.flag == 3)
+    else if( item_ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
     {
         /*修复不支持的参数。*/
         item_ctx_p->cfg.u.live.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.live.delay_max,(float)0.300,(float)4.999);
@@ -215,7 +224,7 @@ abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg)
     int chk;
 
     assert(cfg != NULL);
-    assert(cfg->flag == 0 && cfg->u.src.url != NULL && *cfg->u.src.url != '\0');
+    assert(cfg->flag == ABCDK_FFSERVER_CFG_FLAG_SOURCE && cfg->u.src.url != NULL && *cfg->u.src.url != '\0');
 
     ctx = (abcdk_ffserver_t*)abcdk_heap_alloc(sizeof(abcdk_ffserver_t));
     if(!ctx)
@@ -286,12 +295,12 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
             abcdk_trace_output(LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
         }
 
-        if(dst_item->cfg.flag == 1)
+        if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
         {
             /*录像分段，同时删除较早的录像文件。*/
             abcdk_file_segment(dst_item->record_path_file,dst_item->record_segment_file,dst_item->cfg.u.record.count,1,dst_item->record_segment_pos);
         }
-        else if (dst_item->cfg.flag == 3)
+        else if (dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
         {
             /*直播只能自动重新打开，需要应用层主动创建新行务。*/
             if(dst_item->open_count > 0)
@@ -310,17 +319,17 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
     dst_item->ff_cfg.writer = 1;
     dst_item->ff_cfg.write_flush = 1;
 
-    if(dst_item->cfg.flag == 1)
+    if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
     {
         dst_item->ff_cfg.file_name = dst_item->record_path_file;
         dst_item->ff_cfg.short_name = "mp4";
     }
-    else if(dst_item->cfg.flag == 2)
+    else if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_PUSH)
     {
         dst_item->ff_cfg.file_name = dst_item->cfg.u.push.url;
         dst_item->ff_cfg.short_name = dst_item->cfg.u.push.fmt;
     }
-    else if(dst_item->cfg.flag == 3)
+    else if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
     {
         dst_item->ff_cfg.io.opaque = dst_item;
         dst_item->ff_cfg.io.write_cb = _abcdk_ffserver_live_write_packet_cb;
@@ -377,11 +386,15 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
 
     chk = abcdk_ffmpeg_write_header(dst_item->ff_ctx, 1);
     if (chk != 0)
+    {
+        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
         goto ERR;
+    }
 
+    /*+1*/
     dst_item->open_count += 1;
 
-    if(dst_item->cfg.flag == 1)
+    if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
     {
         /*记录开始时间。*/
         dst_item->record_segment_start = _abcdk_ffserver_clock(0);
@@ -408,6 +421,7 @@ static void _abcdk_ffserver_dst_write(abcdk_ffserver_t *ctx,abcdk_ffserver_item_
     AVPacket pkt_cp = {0};
     int *idx_p = NULL;
     int segment_new = 0;
+    double delay_ns = 0.;
     int obsolete = 0;
     int chk;
 
@@ -436,7 +450,7 @@ RECORD_SEGMENT_NEW:
     codecpar = vs_p->codecpar;
 #endif
 
-    if (dst_item->cfg.flag == 1)
+    if (dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
     {
         /*按时间分段。*/
         segment_new = (_abcdk_ffserver_clock(0) - dst_item->record_segment_start > dst_item->cfg.u.record.duration);
@@ -456,29 +470,33 @@ RECORD_SEGMENT_NEW:
             goto RECORD_SEGMENT_NEW;
         }
     }
-    else if(dst_item->cfg.flag == 3)
+    else if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
     {
+        /*通知缓存数据准备好了。*/
+        if(dst_item->cfg.u.live.ready_cb)
+            dst_item->cfg.u.live.ready_cb(dst_item->cfg.u.live.opaque);
+
         /*记录KEY帧和帧分组时间。*/
         if ((pkt->flags & AV_PKT_FLAG_KEY) || (codecpar->codec_type != AVMEDIA_TYPE_VIDEO))
             dst_item->read_key_ns[*idx_p] = dst_item->read_gop_ns[*idx_p] = _abcdk_ffserver_clock(6);
 
         /*应用层长时间不活动时丢掉一些帧。*/
-        if((double)(_abcdk_ffserver_clock(6) - abcdk_atomic_load(&dst_item->user_active))/1000000.> dst_item->cfg.u.live.delay_max)
+        delay_ns = (double)(_abcdk_ffserver_clock(6) - abcdk_atomic_load(&dst_item->user_active))/1000000.;
+        if(delay_ns > dst_item->cfg.u.live.delay_max)
             dst_item->read_gop_ns[*idx_p] = 0;
 
-        /*也可能已经不在同一个GOP中。*/
+        /*可能已经不在同一个GOP中。*/
         if(dst_item->read_key_ns[*idx_p] != dst_item->read_gop_ns[*idx_p])
             obsolete = 1;
 
         /*按需丢弃延时过多的帧，以便减少延时。*/
         if (obsolete)
         {
-            abcdk_trace_output(LOG_WARNING, "直播(%s)超过设定的延时阈值，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
-                               dst_item->tip, pkt->stream_index, 
+            abcdk_trace_output(LOG_WARNING, "直播(%s)延时超过设定阈值(delay_max=%.3f,delay_ns=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+                               dst_item->tip,dst_item->cfg.u.live.delay_max,delay_ns, pkt->stream_index, 
                                abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
                                abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
 
-            dst_item->read_gop_ns[*idx_p] = 0;
             return;
         }
     }
@@ -546,6 +564,77 @@ NEXT_ITEM:
     goto NEXT_ITEM;
 }
 
+int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
+{
+    abcdk_ffserver_item_t *src_item_p;
+    AVCodecContext *opt = NULL;
+    AVStream *vs_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar = NULL;
+#endif
+    abcdk_md5_t *md5_ctx;
+    uint8_t md5_hc[16];
+    int chk;
+
+    md5_ctx = abcdk_md5_create();
+    if(!md5_ctx)
+        return -1;
+
+    src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
+
+    abcdk_md5_update(md5_ctx,"ffserver",8);
+
+    /*可能源还未打开。*/
+    if(!src_item_p->ff_ctx)
+        goto END;
+
+    for (int i = 0; i < abcdk_ffmpeg_streams(src_item_p->ff_ctx); i++)
+    {
+        vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, i);
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+        codecpar = vs_p->codec;
+#else
+        codecpar = vs_p->codecpar;
+#endif
+        abcdk_md5_update(md5_ctx,codecpar->codec_name,strlen(codecpar->codec_name));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_id,sizeof(int));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_type,sizeof(int));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_tag,sizeof(unsigned int));
+
+        int fps = abcdk_ffmpeg_fps(src_item_p->ff_ctx,vs_p->index);
+        abcdk_md5_update(md5_ctx,&fps,sizeof(int));
+
+        if(codecpar->codec_type == AVMEDIA_TYPE_VIDEO || codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
+        {
+            int width = abcdk_ffmpeg_width(src_item_p->ff_ctx,vs_p->index);
+            int height = abcdk_ffmpeg_height(src_item_p->ff_ctx,vs_p->index);
+            abcdk_md5_update(md5_ctx,&width,sizeof(int));
+            abcdk_md5_update(md5_ctx,&height,sizeof(height));
+        }
+        else if(codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+        {
+            abcdk_md5_update(md5_ctx,&codecpar->channel_layout,sizeof(codecpar->channel_layout));
+            abcdk_md5_update(md5_ctx,&codecpar->channels,sizeof(codecpar->channels));
+        }
+
+        if(codecpar->extradata != NULL  && codecpar->extradata_size >0)
+            abcdk_md5_update(md5_ctx,&codecpar->extradata,codecpar->extradata_size);
+    }
+
+END:
+
+    abcdk_md5_final(md5_ctx,md5_hc);
+
+    chk = (memcmp(src_item_p->src_md5,md5_hc,16) != 0);
+    memcpy(src_item_p->src_md5,md5_hc,16);
+
+    abcdk_md5_destroy(&md5_ctx);
+
+    return chk;
+}
+
 void *_abcdk_ffserver_worker_routine(void *opaque)
 {
     const char *tip_p;
@@ -578,9 +667,6 @@ RETRY:
 
     abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
 
-    /*新会话，通知目标输出断开重连。*/
-    ctx->src_session = _abcdk_ffserver_clock(6);
-
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
     {
@@ -594,13 +680,15 @@ RETRY:
     if (!src_item_p->ff_ctx)
         goto RETRY;
     
+    /*如果源有变化则更新会话ID，通知输出断开重连。*/
+    chk = _abcdk_ffserver_src_change_check(ctx);
+    if(chk != 0)
+        ctx->src_session = _abcdk_ffserver_clock(6);
 
 LOOP:
 
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
         goto END;
-
-    abcdk_ffmpeg_read_delay(src_item_p->ff_ctx, 0);
 
     chk = abcdk_ffmpeg_read_packet(src_item_p->ff_ctx, &pkt, -1);
     if (chk < 0)
@@ -676,9 +764,9 @@ abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffser
     abcdk_ffserver_item_t *dst_item;
 
     assert(ctx != NULL && cfg != NULL);
-    assert((cfg->flag == 1 && cfg->u.record.prefix != NULL && *cfg->u.record.prefix != '\0') ||
-           (cfg->flag == 2 && cfg->u.push.url != NULL && *cfg->u.push.url != '\0') ||
-           (cfg->flag == 3 && cfg->u.live.buf));
+    assert((cfg->flag == ABCDK_FFSERVER_CFG_FLAG_RECORD && cfg->u.record.prefix != NULL && *cfg->u.record.prefix != '\0') ||
+           (cfg->flag == ABCDK_FFSERVER_CFG_FLAG_PUSH && cfg->u.push.url != NULL && *cfg->u.push.url != '\0') ||
+           (cfg->flag == ABCDK_FFSERVER_CFG_FLAG_LIVE && cfg->u.live.buf));
 
     task = _abcdk_ffserver_item_alloc(cfg);
     if(!task)
