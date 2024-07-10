@@ -21,7 +21,7 @@ typedef struct _abcdk_ffserver_item
     abcdk_ffmpeg_config_t ff_cfg;
     abcdk_ffmpeg_t *ff_ctx;
 
-    uint8_t src_md5[16];
+    char src_md5[33];
 
     int s2d_idx[16];
     int64_t read_key_ns[16];
@@ -575,7 +575,7 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
     AVCodecParameters *codecpar = NULL;
 #endif
     abcdk_md5_t *md5_ctx;
-    uint8_t md5_hc[16];
+    char md5_hc[33];
     int chk;
 
     md5_ctx = abcdk_md5_create();
@@ -598,20 +598,26 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
 #else
         codecpar = vs_p->codecpar;
 #endif
-        abcdk_md5_update(md5_ctx,codecpar->codec_name,strlen(codecpar->codec_name));
-        abcdk_md5_update(md5_ctx,&codecpar->codec_id,sizeof(int));
-        abcdk_md5_update(md5_ctx,&codecpar->codec_type,sizeof(int));
-        abcdk_md5_update(md5_ctx,&codecpar->codec_tag,sizeof(unsigned int));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_id,sizeof(codecpar->codec_id));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_type,sizeof(codecpar->codec_type));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_tag,sizeof(codecpar->codec_tag));
 
-        int fps = abcdk_ffmpeg_fps(src_item_p->ff_ctx,vs_p->index);
-        abcdk_md5_update(md5_ctx,&fps,sizeof(int));
+        abcdk_trace_output(LOG_DEBUG, "codec_id=%08x,codec_type=%08x,codec_tag=%08x",
+                           codecpar->codec_id, codecpar->codec_type, codecpar->codec_tag);
+
+        // int fps = abcdk_ffmpeg_fps(src_item_p->ff_ctx,vs_p->index);
+        // abcdk_md5_update(md5_ctx,&fps,sizeof(int));
+
+        // abcdk_trace_output(LOG_DEBUG, "fps=%d",fps);
 
         if(codecpar->codec_type == AVMEDIA_TYPE_VIDEO || codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
         {
             int width = abcdk_ffmpeg_width(src_item_p->ff_ctx,vs_p->index);
             int height = abcdk_ffmpeg_height(src_item_p->ff_ctx,vs_p->index);
             abcdk_md5_update(md5_ctx,&width,sizeof(int));
-            abcdk_md5_update(md5_ctx,&height,sizeof(height));
+            abcdk_md5_update(md5_ctx,&height,sizeof(int));
+
+            abcdk_trace_output(LOG_DEBUG, "width=%d,height=%d",width,height);
         }
         else if(codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
         {
@@ -619,16 +625,16 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
             abcdk_md5_update(md5_ctx,&codecpar->channels,sizeof(codecpar->channels));
         }
 
-        if(codecpar->extradata != NULL  && codecpar->extradata_size >0)
-            abcdk_md5_update(md5_ctx,&codecpar->extradata,codecpar->extradata_size);
+        if (codecpar->extradata != NULL && codecpar->extradata_size > 0)
+            abcdk_md5_update(md5_ctx, codecpar->extradata, codecpar->extradata_size);
     }
 
 END:
 
-    abcdk_md5_final(md5_ctx,md5_hc);
+    abcdk_md5_final2hex(md5_ctx,md5_hc,0);
 
-    chk = (memcmp(src_item_p->src_md5,md5_hc,16) != 0);
-    memcpy(src_item_p->src_md5,md5_hc,16);
+    chk = (strncmp(src_item_p->src_md5,md5_hc,32) != 0);
+    memcpy(src_item_p->src_md5,md5_hc,32);
 
     abcdk_md5_destroy(&md5_ctx);
 
@@ -680,10 +686,15 @@ RETRY:
     if (!src_item_p->ff_ctx)
         goto RETRY;
     
-    /*如果源有变化则更新会话ID，通知输出断开重连。*/
+#if 0
+    /* 注：因为ffmpeg接口层还没有实现拼接功能，暂时不能支持按需要更新会话ID的功能。*/
     chk = _abcdk_ffserver_src_change_check(ctx);
     if(chk != 0)
         ctx->src_session = _abcdk_ffserver_clock(6);
+#else 
+    /*更新会话ID。*/
+    ctx->src_session = _abcdk_ffserver_clock(6);
+#endif 
 
 LOOP:
 
