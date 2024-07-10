@@ -965,7 +965,7 @@ int abcdk_test_any(abcdk_option_t *args)
     src_cfg.u.src.delay_max = 1.0;
 
     push_cfg.flag = 2;
-    push_cfg.u.push.url = "rtmp://127.0.0.1/live/cccc";
+    push_cfg.u.push.url = "rtmp://192.168.100.96/live/cccc";
     push_cfg.u.push.fmt = "rtmp";
 
     record_cfg.flag = 1;

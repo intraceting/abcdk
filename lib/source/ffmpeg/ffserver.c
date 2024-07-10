@@ -21,6 +21,8 @@ typedef struct _abcdk_ffserver_item
     abcdk_ffmpeg_config_t ff_cfg;
     abcdk_ffmpeg_t *ff_ctx;
 
+    uint8_t src_md5[16];
+
     int s2d_idx[16];
     int64_t read_key_ns[16];
     int64_t read_gop_ns[16];
@@ -93,7 +95,7 @@ static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
     if (item_ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_SOURCE)
     {
         /*修复不支持的参数。*/
-        item_ctx_p->cfg.u.src.timeout = ABCDK_CLAMP(item_ctx_p->cfg.u.src.timeout, (int)-1, (int)5);
+        item_ctx_p->cfg.u.src.timeout = ABCDK_CLAMP(item_ctx_p->cfg.u.src.timeout, (int)0, (int)5);
         item_ctx_p->cfg.u.src.retry = ABCDK_CLAMP(item_ctx_p->cfg.u.src.retry, (int)1, (int)30);
         item_ctx_p->cfg.u.src.speed = ABCDK_CLAMP(item_ctx_p->cfg.u.src.speed, (float)0.01, (float)100.0);
         item_ctx_p->cfg.u.src.delay_max = ABCDK_CLAMP(item_ctx_p->cfg.u.src.delay_max, (float)0.300, (float)4.999);
@@ -384,8 +386,12 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
 
     chk = abcdk_ffmpeg_write_header(dst_item->ff_ctx, 1);
     if (chk != 0)
+    {
+        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
         goto ERR;
+    }
 
+    /*+1*/
     dst_item->open_count += 1;
 
     if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
@@ -558,6 +564,77 @@ NEXT_ITEM:
     goto NEXT_ITEM;
 }
 
+int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
+{
+    abcdk_ffserver_item_t *src_item_p;
+    AVCodecContext *opt = NULL;
+    AVStream *vs_p = NULL;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    AVCodecContext *codecpar = NULL;
+#else
+    AVCodecParameters *codecpar = NULL;
+#endif
+    abcdk_md5_t *md5_ctx;
+    uint8_t md5_hc[16];
+    int chk;
+
+    md5_ctx = abcdk_md5_create();
+    if(!md5_ctx)
+        return -1;
+
+    src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
+
+    abcdk_md5_update(md5_ctx,"ffserver",8);
+
+    /*可能源还未打开。*/
+    if(!src_item_p->ff_ctx)
+        goto END;
+
+    for (int i = 0; i < abcdk_ffmpeg_streams(src_item_p->ff_ctx); i++)
+    {
+        vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, i);
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+        codecpar = vs_p->codec;
+#else
+        codecpar = vs_p->codecpar;
+#endif
+        abcdk_md5_update(md5_ctx,codecpar->codec_name,strlen(codecpar->codec_name));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_id,sizeof(int));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_type,sizeof(int));
+        abcdk_md5_update(md5_ctx,&codecpar->codec_tag,sizeof(unsigned int));
+
+        int fps = abcdk_ffmpeg_fps(src_item_p->ff_ctx,vs_p->index);
+        abcdk_md5_update(md5_ctx,&fps,sizeof(int));
+
+        if(codecpar->codec_type == AVMEDIA_TYPE_VIDEO || codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
+        {
+            int width = abcdk_ffmpeg_width(src_item_p->ff_ctx,vs_p->index);
+            int height = abcdk_ffmpeg_height(src_item_p->ff_ctx,vs_p->index);
+            abcdk_md5_update(md5_ctx,&width,sizeof(int));
+            abcdk_md5_update(md5_ctx,&height,sizeof(height));
+        }
+        else if(codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+        {
+            abcdk_md5_update(md5_ctx,&codecpar->channel_layout,sizeof(codecpar->channel_layout));
+            abcdk_md5_update(md5_ctx,&codecpar->channels,sizeof(codecpar->channels));
+        }
+
+        if(codecpar->extradata != NULL  && codecpar->extradata_size >0)
+            abcdk_md5_update(md5_ctx,&codecpar->extradata,codecpar->extradata_size);
+    }
+
+END:
+
+    abcdk_md5_final(md5_ctx,md5_hc);
+
+    chk = (memcmp(src_item_p->src_md5,md5_hc,16) != 0);
+    memcpy(src_item_p->src_md5,md5_hc,16);
+
+    abcdk_md5_destroy(&md5_ctx);
+
+    return chk;
+}
+
 void *_abcdk_ffserver_worker_routine(void *opaque)
 {
     const char *tip_p;
@@ -590,9 +667,6 @@ RETRY:
 
     abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
 
-    /*新会话，通知目标输出断开重连。*/
-    ctx->src_session = _abcdk_ffserver_clock(6);
-
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
     {
@@ -606,6 +680,10 @@ RETRY:
     if (!src_item_p->ff_ctx)
         goto RETRY;
     
+    /*如果源有变化则更新会话ID，通知输出断开重连。*/
+    chk = _abcdk_ffserver_src_change_check(ctx);
+    if(chk != 0)
+        ctx->src_session = _abcdk_ffserver_clock(6);
 
 LOOP:
 

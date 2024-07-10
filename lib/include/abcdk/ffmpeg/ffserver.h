@@ -12,6 +12,7 @@
 #include "abcdk/util/atomic.h"
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/stream.h"
+#include "abcdk/util/md5.h"
 #include "abcdk/shell/file.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
