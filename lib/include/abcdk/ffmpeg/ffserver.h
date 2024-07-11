@@ -136,6 +136,13 @@ abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg);
 */
 void abcdk_ffserver_task_heartbeat(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t *task);
 
+/**
+ * 获取索引。
+ * 
+ * @note 进程内唯一。
+ * 
+ */
+uint64_t abcdk_ffserver_get_index(abcdk_ffserver_t *ctx,abcdk_ffserver_task_t *task);
 
 /**
  * 删除任务。
