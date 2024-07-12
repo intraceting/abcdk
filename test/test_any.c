@@ -953,7 +953,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_easyssl_destroy(&cli_ctx);
 
-#elif 1
+#elif 0
 
     abcdk_ffserver_config_t src_cfg ={0};
     abcdk_ffserver_config_t push_cfg ={0};
@@ -982,5 +982,23 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ffserver_destroy(&ctx);
 
+#elif 1
+
+        abcdk_sockaddr_t dst = {0};
+        char buf[100] = {0};
+        int chk = abcdk_sockaddr_from_string(&dst,abcdk_option_get(args,"--ipaddr",0,""),1);
+        assert(chk == 0);
+
+        abcdk_sockaddr_to_string(buf,&dst);
+        if(dst.family == AF_INET)
+            abcdk_trace_output(LOG_DEBUG,"%s:%d\n",buf,abcdk_endian_b_to_h16(dst.addr4.sin_port));
+        if(dst.family == AF_INET6)
+            abcdk_trace_output(LOG_DEBUG,"[%s]:%d\n",buf,abcdk_endian_b_to_h16(dst.addr6.sin6_port));
+
+
+        
+
+
+        
 #endif 
 }

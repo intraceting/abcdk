@@ -29,7 +29,7 @@ int abcdk_gethostbyname(const char *name, sa_family_t family, abcdk_sockaddr_t *
     int chk;
     int count = 0;
 
-    assert(name != NULL && (family == AF_INET || family == AF_INET6) && addrs != NULL && max > 0);
+    assert(name != NULL && (family == AF_UNSPEC || family == AF_INET || family == AF_INET6) && addrs != NULL && max > 0);
 
     hint.ai_flags = AI_ADDRCONFIG | AI_CANONNAME;
     hint.ai_family = family;
@@ -63,13 +63,13 @@ int abcdk_inet_pton(const char *name, sa_family_t family, abcdk_sockaddr_t *addr
 
     assert(name != NULL && (family == AF_INET || family == AF_INET6) && addr != NULL);
 
-    /*bind family*/
-    addr->family = family;
-
-    if (addr->family == AF_INET)
+    if (family == AF_INET)
         chk = (inet_pton(family, name, &addr->addr4.sin_addr) == 1 ? 0 : -1);
-    if (addr->family == AF_INET6)
+    if (family == AF_INET6)
         chk = (inet_pton(family, name, &addr->addr6.sin6_addr) == 1 ? 0 : -1);
+
+    if(chk == 0)
+        addr->family = family;
 
     return chk;
 }
@@ -433,56 +433,83 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else if (src[0] == '/')
     {
-        dst->family = AF_UNIX;
+        if(dst->family != AF_UNIX)
+            dst->family = AF_UNIX;
+
         strncpy(dst->addr_un.sun_path, src, 108);
         return 0;
     }
     else if (strchr(src, '['))
     {
-        dst->family = AF_INET6;
+        if(dst->family != AF_INET6)
+            dst->family = AF_INET6;
+
         sscanf(src, "%*[[ ]%[^] ]%*[] :,]%hu", name, &port);
     }
     else if (strchr(src, ','))
     {
-        dst->family = AF_INET6;
+         if(dst->family != AF_INET6)
+            dst->family = AF_INET6;
+
         sscanf(src, "%[^, ]%*[, ]%hu", name, &port);
     }
     else if (strchr(src, ':'))
     {
-        dst->family = AF_INET;
+        if(dst->family != AF_INET && dst->family != AF_INET6)
+            dst->family = AF_UNSPEC;
+
         sscanf(src, "%[^: ]%*[: ]%hu", name, &port);
     }
     else
     {
-        /*如果未指定则使用IPV4。*/
-        if(dst->family == AF_UNSPEC)
-            dst->family = AF_INET;
-
+        if(dst->family != AF_INET && dst->family != AF_INET6)
+            dst->family = AF_UNSPEC;
+            
         strncpy(name,src,NAME_MAX);
     }
 
-    /*如果外部未指定，并且也未能自动识别。*/
-    if (dst->family != AF_UNIX && dst->family != AF_INET && dst->family != AF_INET6)
-        return -1;
-
-    /*尝试直接转换。*/
-    chk = abcdk_inet_pton(name, dst->family, dst);
-    if (chk != 0 && try_lookup)
+    if(dst->family == AF_UNSPEC)
     {
-        /*可能是域名。*/
-        chk = (abcdk_gethostbyname(name, dst->family, dst, 1, NULL) == 1 ? 0 : -1);
+        /*Try to IPV4.*/
+        chk = abcdk_inet_pton(name, AF_INET, dst);
+        if(chk == 0)
+            goto TRY_PORT;
+
+        /*Try to IPV6.*/
+        chk = abcdk_inet_pton(name, AF_INET6, dst);
+        if(chk == 0)
+            goto TRY_PORT;
     }
+    else 
+    {
+        chk = abcdk_inet_pton(name, dst->family, dst);
+        if(chk == 0)
+            goto TRY_PORT;
+    }
+
+    /*走到这里表示地址转换失败，尝试域名解析。*/
+    if(try_lookup)
+    {
+        chk = (abcdk_gethostbyname(name, dst->family, dst, 1, NULL) == 1 ? 0 : -1);
+        if(chk == 0)
+            goto TRY_PORT;
+    }
+
+    /*地址换转和域名解析都失败。*/
+    return -1;
+
+TRY_PORT:
 
     /*地址转换成功后，再转换端口号。*/
-    if (chk == 0)
-    {
-        if (dst->family == AF_INET6)
-            dst->addr6.sin6_port = abcdk_endian_h_to_b16(port);
-        if (dst->family == AF_INET)
-            dst->addr4.sin_port = abcdk_endian_h_to_b16(port);
-    }
 
-    return chk;
+    if (dst->family == AF_INET6)
+        dst->addr6.sin6_port = abcdk_endian_h_to_b16(port);
+    else if (dst->family == AF_INET)
+        dst->addr4.sin_port = abcdk_endian_h_to_b16(port);
+    else 
+        return -22;
+
+    return 0;
 }
 
 char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
