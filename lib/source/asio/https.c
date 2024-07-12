@@ -569,7 +569,7 @@ static ssize_t _abcdk_https_h2_response_read_cb(nghttp2_session *session, int32_
 
         /*通知流空闲。*/
         if (node_ctx_p->cfg.stream_output_cb)
-            node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque, stream_p);
+            node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque, (abcdk_https_stream_t *)stream_p);
     }
 
     /*如果缓存区没有待发送数据，并且应用层也没有数据准备好，才会走到这里。*/
