@@ -15,7 +15,16 @@ typedef struct _abcdkvnet
     /*日志。*/
     abcdk_logger_t *logger;
 
+    
+
 }abcdkvnet_t;
+
+typedef struct _abcdkvnet_node
+{
+    abcdk_sockaddr_t addr4;
+    abcdk_sockaddr_t addr6;
+
+}abcdkvnet_node_t;
 
 
 static void _abcdkvnet_print_usage(abcdk_option_t *args)

@@ -6,8 +6,8 @@
  */
 #include "abcdk/asio/tipc.h"
 
-#define ABCDK_TIPC_SLAVE_MAX  256
-#define ABCDK_TIPC_TOPIC_MAX  128
+#define ABCDK_TIPC_SLAVE_MAX  9999
+#define ABCDK_TIPC_TOPIC_MAX  9999
 
 /**简单的TIPC服务。*/
 struct _abcdk_tipc
