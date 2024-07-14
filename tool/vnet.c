@@ -15,14 +15,14 @@ typedef struct _abcdkvnet
     /*日志。*/
     abcdk_logger_t *logger;
 
-    
+    /*路由表。*/
+    abcdk_map_t *routes;
 
 }abcdkvnet_t;
 
 typedef struct _abcdkvnet_node
 {
-    abcdk_sockaddr_t addr4;
-    abcdk_sockaddr_t addr6;
+    abcdk_sockaddr_t addr;
 
 }abcdkvnet_node_t;
 
