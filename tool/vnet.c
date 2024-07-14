@@ -23,6 +23,7 @@ typedef struct _abcdkvnet_node
 {
     abcdk_sockaddr_t addr4;
     abcdk_sockaddr_t addr6;
+    
 
 }abcdkvnet_node_t;
 
