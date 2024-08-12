@@ -160,16 +160,29 @@ int abcdk_test_fmp4(abcdk_option_t *args)
     abcdk_https_session_listen(listen_p,&listen_addr,&cfg);
 
     abcdk_ffserver_config_t src_cfg ={0};
+    abcdk_ffserver_config_t record_cfg ={0};
+    abcdk_ffserver_config_t push_cfg ={0};
 
-   // src_cfg.u.src.url = "/home/devel/job/download/4K PARADISE Summer Mix 2024 🍓 Best Of Tropical Deep House Music Chill Out Mix By Summer Vibes Sound.mp4";
-    //src_cfg.u.src.url = "rtsp://192.168.100.96/live/bbbb";
-    //src_cfg.u.src.url = "rtsp://admin:123456abc@192.167.0.211";
     src_cfg.u.src.url = abcdk_option_get(args,"--src",0,"");
     src_cfg.u.src.speed = 1.0;
     src_cfg.u.src.delay_max = 3.0;
     src_cfg.u.src.timeout = 5.0;
 
+
+
     g_ffserver_ctx = abcdk_ffserver_create(&src_cfg);
+
+    record_cfg.flag = 1;
+    record_cfg.u.record.prefix = "/tmp/cccc/cccc_";
+    record_cfg.u.record.count = 10;
+    record_cfg.u.record.duration = 5;
+
+    push_cfg.flag = 2;
+    push_cfg.u.push.url = "rtmp://192.168.100.96/live/cccc";
+    push_cfg.u.push.fmt = "rtmp";
+
+    abcdk_ffserver_task_add(g_ffserver_ctx,&record_cfg);
+    abcdk_ffserver_task_add(g_ffserver_ctx,&push_cfg);
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);
