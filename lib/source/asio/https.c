@@ -940,7 +940,7 @@ static void _abcdk_https_event_cb(abcdk_asio_node_t *node, uint32_t event, int *
 }
 
 
-static void _abcdk_https_request_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_https_input_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_https_node_t *node_ctx_p;
     int chk;
@@ -1110,7 +1110,7 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
 
     asio_cfg.prepare_cb = _abcdk_https_prepare_cb;
     asio_cfg.event_cb = _abcdk_https_event_cb;
-    asio_cfg.request_cb = _abcdk_https_request_cb;
+    asio_cfg.input_cb = _abcdk_https_input_cb;
 
     chk = abcdk_asio_listen(node_p,addr,&asio_cfg);
     if(chk == 0)

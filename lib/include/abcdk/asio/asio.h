@@ -170,13 +170,13 @@ typedef struct _abcdk_asio_config
     void (*event_cb)(abcdk_asio_node_t *node, uint32_t event, int *result);
 
     /**
-     * 请求数据到达通知回调函数。
+     * 输入数据到达通知回调函数。
      *
      * @note 如果未指定，则通知ABCDK_ASIO_EVENT_INPUT事件，否则将被拦截。
      *
      * @param [out] remain 剩余的数据长度，返回时填写。
      */
-    void (*request_cb)(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain);
+    void (*input_cb)(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain);
 
 } abcdk_asio_config_t;
 

@@ -104,7 +104,6 @@ struct _abcdk_asio_node
     /** 来自哪个监听节点。*/
     abcdk_asio_node_t *from_listen;
 
-
 };// abcdk_asio_node_t;
 
 void abcdk_asio_unref(abcdk_asio_node_t **node)
@@ -1324,8 +1323,8 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
     ssize_t rlen = 0,pos = 0;
     size_t remain = 0;
 
-    /*当未注册请求数据到达通知回调函数时，直接发事件通知。*/
-    if(!node->cfg.request_cb)
+    /*当未注册输入数据到达通知回调函数时，直接发事件通知。*/
+    if(!node->cfg.input_cb)
     {
         node->cfg.event_cb(node,ABCDK_ASIO_EVENT_INPUT,&ret);
         return;
@@ -1347,7 +1346,7 @@ NEXT_RECV:
 
 NEXT_REQ:
 
-    node->cfg.request_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
+    node->cfg.input_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
     pos += (rlen - pos) - remain;
 
     if (pos < rlen)

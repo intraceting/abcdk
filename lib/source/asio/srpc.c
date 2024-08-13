@@ -359,7 +359,7 @@ static void _abcdk_srpc_process(abcdk_asio_node_t *node)
     }
 }
 
-static void _abcdk_srpc_request_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_srpc_input_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_srpc_node_t *node_ctx_p;
     int chk;
@@ -423,7 +423,7 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
-    asio_cfg.request_cb = _abcdk_srpc_request_cb;
+    asio_cfg.input_cb = _abcdk_srpc_input_cb;
 
     chk = abcdk_asio_listen(node_p,addr,&asio_cfg);
     if(chk != 0)
@@ -459,7 +459,7 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
-    asio_cfg.request_cb = _abcdk_srpc_request_cb;
+    asio_cfg.input_cb = _abcdk_srpc_input_cb;
 
     chk = abcdk_asio_connect(node_p,addr,&asio_cfg);
     if(chk != 0)
