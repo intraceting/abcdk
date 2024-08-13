@@ -48,7 +48,7 @@ int abcdk_net_up(const char *ifname);
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_address_flush( const char *ifname);
+int abcdk_net_address_flush(const char *ifname);
 
 /**
  * 清理网卡路由配置。

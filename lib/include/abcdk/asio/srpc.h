@@ -150,7 +150,7 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
 /**
  * 请求。
  * 
- * @note 当 @ref rsp == NULL 时，表示不需要应答。
+ * @note 当 rsp == NULL 时，表示不需要应答。
  * 
  * @return 0 成功，-1 失败(内存不足)，-2 失败(内存不足或链路中断)，-3 失败(链路中断)。
 */

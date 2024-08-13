@@ -982,23 +982,99 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ffserver_destroy(&ctx);
 
+#elif 0
+
+    abcdk_sockaddr_t dst = {0};
+    char buf[100] = {0};
+    int chk = abcdk_sockaddr_from_string(&dst, abcdk_option_get(args, "--ipaddr", 0, ""), 1);
+    assert(chk == 0);
+
+    abcdk_sockaddr_to_string(buf, &dst);
+    if (dst.family == AF_INET)
+        abcdk_trace_output(LOG_DEBUG, "%s:%d\n", buf, abcdk_endian_b_to_h16(dst.addr4.sin_port));
+    if (dst.family == AF_INET6)
+        abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(dst.addr6.sin6_port));
+
+#elif 0
+
+    
+    uint32_t ip_start = 10;
+    ip_start <<= 8;
+    ip_start += 0;
+    ip_start <<= 8;
+    ip_start += 0;
+    ip_start <<= 8;
+    ip_start += 0;
+    
+
+    int ip_prefix = 23;
+    uint32_t ip_count = 0;
+    for(int i = 0;i<32-ip_prefix;i++)
+    {
+        ip_count <<=1;
+        ip_count +=1;
+    }
+
+    for (int i = 0; i < ip_count; i++)
+    {
+
+        abcdk_sockaddr_t dst = {AF_INET};
+        dst.addr4.sin_addr.s_addr = abcdk_endian_h_to_b32(ip_start + i);
+
+        char buf[100] = {0};
+        abcdk_sockaddr_to_string(buf, &dst);
+        if (dst.family == AF_INET)
+            abcdk_trace_output(LOG_DEBUG, "%s:%d\n", buf, abcdk_endian_b_to_h16(dst.addr4.sin_port));
+        if (dst.family == AF_INET6)
+            abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(dst.addr6.sin6_port));
+    }
+
 #elif 1
 
-        abcdk_sockaddr_t dst = {0};
+    abcdk_sockaddr_t start = {0},end = {0};
+
+    int chk = abcdk_sockaddr_from_string(&start, abcdk_option_get(args, "--start", 0, ""), 0);
+    assert(chk == 0);
+    chk = abcdk_sockaddr_from_string(&end, abcdk_option_get(args, "--end", 0, ""), 0);
+    assert(chk == 0);
+
+    abcdk_ipool_t *ctx = abcdk_ipool_create(&start,&end);
+
+    int c = abcdk_ipool_count(ctx);
+    int i = 0;
+    for(;i<c;i++)
+    {
+        abcdk_sockaddr_t addr = {0};
+        chk = abcdk_ipool_allocate(ctx,&addr);
+        if(chk != 0)
+            break;
+        
         char buf[100] = {0};
-        int chk = abcdk_sockaddr_from_string(&dst,abcdk_option_get(args,"--ipaddr",0,""),1);
-        assert(chk == 0);
+        abcdk_sockaddr_to_string(buf, &addr);
+        if (addr.family == AF_INET)
+            abcdk_trace_output(LOG_DEBUG, "%s:%d\n", buf, abcdk_endian_b_to_h16(addr.addr4.sin_port));
+        if (addr.family == AF_INET6)
+            abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(addr.addr6.sin6_port));
 
-        abcdk_sockaddr_to_string(buf,&dst);
-        if(dst.family == AF_INET)
-            abcdk_trace_output(LOG_DEBUG,"%s:%d\n",buf,abcdk_endian_b_to_h16(dst.addr4.sin_port));
-        if(dst.family == AF_INET6)
-            abcdk_trace_output(LOG_DEBUG,"[%s]:%d\n",buf,abcdk_endian_b_to_h16(dst.addr6.sin6_port));
-
-
+        abcdk_ipool_reclaim(ctx,&addr);
         
+    }
 
+    
+    int j = 0;
+    for(;j<c;j++)
+    {
+        abcdk_sockaddr_t addr = {0};
+        chk = abcdk_ipool_allocate(ctx,&addr);
+        if(chk != 0)
+            break;
 
-        
+        abcdk_ipool_reclaim(ctx,&addr);
+    }
+
+    assert(i == j);
+
+    abcdk_ipool_destroy(&ctx);
+
 #endif 
 }

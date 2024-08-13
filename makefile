@@ -104,6 +104,7 @@ LIB_SRC_FILES += $(wildcard lib/source/ssl/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/video/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/image/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/curl/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/dhcp/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #
@@ -245,6 +246,12 @@ $(OBJ_PATH)/lib/source/video/%.o: lib/source/video/%.c
 #
 $(OBJ_PATH)/lib/source/curl/%.o: lib/source/curl/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/curl/
+	rm -f $@
+	$(CC)  $(CC_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/dhcp/%.o: lib/source/dhcp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/dhcp/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 

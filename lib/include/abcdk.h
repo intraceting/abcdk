@@ -138,6 +138,8 @@
 
 #include "abcdk/curl/curl.h"
 
+#include "abcdk/dhcp/ipool.h"
+
 
 
 
