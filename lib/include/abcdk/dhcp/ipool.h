@@ -21,6 +21,7 @@ void abcdk_ipool_destroy(abcdk_ipool_t **ctx);
 /**创建。 */
 abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *start,abcdk_sockaddr_t *end);
 
+
 /**数量。 */
 uint64_t abcdk_ipool_count(abcdk_ipool_t *ctx);
 
