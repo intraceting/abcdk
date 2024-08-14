@@ -207,10 +207,10 @@ static void _abcdkproxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--uplink < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");
 
-    fprintf(stderr, "\n\t\t例：http://DOMAIN[:PORT]\n");
-    fprintf(stderr, "\t\t例：https://DOMAIN[:PORT],默认端口443.\n");
-    fprintf(stderr, "\t\t例：enigma://DOMAIN[:PORT],默认端口4891.\n");
-    fprintf(stderr, "\t\t例：pki-enigma://DOMAIN[:PORT],默认端口4892.\n");
+    fprintf(stderr, "\n\t\t例：raw://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\t例：pki://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\t例：enigma://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\t例：pki-enigma://DOMAIN:PORT\n");
 }
 
 static void _abcdkproxy_node_destroy_cb(void *userdata)
@@ -578,12 +578,14 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
         goto ERR;
     }
 
+#if 0
     /*如果未指定端口，则按协议指定默认端口。*/
     if (!uplink_addr.addr4.sin_port)
     {
         uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(80);
         if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
-            abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
+            abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0||
+            abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki", 0) == 0)
         {
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(443);
         }
@@ -596,10 +598,12 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4892);
         }
     }
+#endif 
 
     /*配置安全方案。*/
     if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
-        abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0)
+        abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0 ||
+        abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki", 0) == 0)
     {
         asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_PKI;
     }

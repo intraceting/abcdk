@@ -19,7 +19,10 @@ typedef struct _abcdk_ipool abcdk_ipool_t;
 void abcdk_ipool_destroy(abcdk_ipool_t **ctx);
 
 /**创建。 */
-abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *start,abcdk_sockaddr_t *end);
+abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end);
+
+/**创建。 */
+abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end);
 
 
 /**数量。 */

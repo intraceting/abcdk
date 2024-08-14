@@ -13,13 +13,13 @@ struct _abcdk_ipool
     abcdk_object_t *pool;
 
     /**启始。 */
-    abcdk_sockaddr_t start;
+    abcdk_sockaddr_t begin;
 
     /**结束。*/
     abcdk_sockaddr_t end;
     
     /*游标。*/
-    uint64_t start_pos;
+    uint64_t begin_pos;
     uint64_t end_pos;
     uint64_t pos;
 
@@ -64,7 +64,7 @@ static uint64_t _abcdk_ipool_get_addr_pos(abcdk_sockaddr_t *addr)
 
 static void _abcdk_ipool_set_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,uint64_t pos)
 {
-    addr->family = ctx->start.family;
+    addr->family = ctx->begin.family;
 
     if(addr->family == AF_INET)
     {
@@ -72,7 +72,7 @@ static void _abcdk_ipool_set_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,
     }
     else if(addr->family == AF_INET6)
     {
-        memcpy(addr->addr6.sin6_addr.__in6_u.__u6_addr8,ctx->start.addr6.sin6_addr.__in6_u.__u6_addr8,12);
+        memcpy(addr->addr6.sin6_addr.__in6_u.__u6_addr8,ctx->begin.addr6.sin6_addr.__in6_u.__u6_addr8,12);
         addr->addr6.sin6_addr.__in6_u.__u6_addr8[12] = (pos >> 24) & 0xff;
         addr->addr6.sin6_addr.__in6_u.__u6_addr8[13] = (pos >> 16) & 0xff;
         addr->addr6.sin6_addr.__in6_u.__u6_addr8[14] = (pos >> 8) & 0xff;
@@ -84,18 +84,18 @@ static  int _abcdk_ipool_init(abcdk_ipool_t *ctx)
 {
     uint64_t c = 0;
 
-    if(ctx->start.family == AF_INET6)
+    if(ctx->begin.family == AF_INET6)
     {
-        if(memcmp(ctx->start.addr6.sin6_addr.__in6_u.__u6_addr8,ctx->end.addr6.sin6_addr.__in6_u.__u6_addr8,12) != 0)
+        if(memcmp(ctx->begin.addr6.sin6_addr.__in6_u.__u6_addr8,ctx->end.addr6.sin6_addr.__in6_u.__u6_addr8,12) != 0)
             return -4;
     }
 
-    ctx->start_pos = _abcdk_ipool_get_addr_pos(&ctx->start);
+    ctx->begin_pos = _abcdk_ipool_get_addr_pos(&ctx->begin);
     ctx->end_pos = _abcdk_ipool_get_addr_pos(&ctx->end);
-    if (ctx->end_pos < ctx->start_pos)
+    if (ctx->end_pos < ctx->begin_pos)
         return -1;
 
-    c = ctx->end_pos - ctx->start_pos + 1; // 区间差+1才是数量。
+    c = ctx->end_pos - ctx->begin_pos + 1; // 区间差+1才是数量。
 
     /*内存有限，限制一下。*/
     if (c <= 0 || c > 0xFFFFFFFFULL)
@@ -105,26 +105,26 @@ static  int _abcdk_ipool_init(abcdk_ipool_t *ctx)
     if(!ctx->pool)
         return -3;
 
-    ctx->pos = ctx->start_pos;
+    ctx->pos = ctx->begin_pos;
 
     return 0;
 }
 
-abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *start,abcdk_sockaddr_t *end)
+abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end)
 {
     abcdk_ipool_t *ctx;
     int chk;
 
-    assert(start != NULL && end != NULL);
-    assert(start->family ==  AF_INET || start->family ==  AF_INET6);
+    assert(begin != NULL && end != NULL);
+    assert(begin->family ==  AF_INET || begin->family ==  AF_INET6);
     assert(end->family ==  AF_INET || end->family ==  AF_INET6);
-    assert(start->family == end->family);
+    assert(begin->family == end->family);
 
     ctx = abcdk_heap_alloc(sizeof(abcdk_ipool_t));
     if(!ctx)
         return NULL;
    
-    ctx->start = *start;
+    ctx->begin = *begin;
     ctx->end = *end;
 
     chk = _abcdk_ipool_init(ctx);
@@ -139,11 +139,29 @@ ERR:
     return NULL;
 }
 
+abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end)
+{
+    abcdk_sockaddr_t b,e;
+    int chk;
+
+    assert(begin != NULL && end != NULL);
+
+    chk = abcdk_sockaddr_from_string(&b,begin,0);
+    if(chk != 0)
+        return -22;
+
+    chk = abcdk_sockaddr_from_string(&e,end,0);
+    if(chk != 0)
+        return -22;
+
+    return abcdk_ipool_create(&b,&e);
+}
+
 uint64_t abcdk_ipool_count(abcdk_ipool_t *ctx)
 {
     assert(ctx != NULL);
 
-    return ctx->end_pos - ctx->start_pos + 1;
+    return ctx->end_pos - ctx->begin_pos + 1;
 }
 
 int abcdk_ipool_allocate(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
@@ -158,13 +176,13 @@ int abcdk_ipool_allocate(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
     /*限制在一个轮回中查找。*/
     for (uint64_t i = 0; i < c; i++)
     {
-        chk = abcdk_bloom_filter(ctx->pool->pptrs[0], ctx->pool->sizes[0], ctx->pos - ctx->start_pos);
+        chk = abcdk_bloom_filter(ctx->pool->pptrs[0], ctx->pool->sizes[0], ctx->pos - ctx->begin_pos);
 
         /*copy.*/
         pos = ctx->pos;
 
         if(ctx->pos == ctx->end_pos)
-            ctx->pos = ctx->start_pos;
+            ctx->pos = ctx->begin_pos;
         else
             ctx->pos += 1;
 
@@ -172,7 +190,7 @@ int abcdk_ipool_allocate(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
             continue;
 
         /*标记占用。*/
-        abcdk_bloom_mark(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->start_pos);
+        abcdk_bloom_mark(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->begin_pos);
 
         /*填充地址。*/
         _abcdk_ipool_set_addr_pos(ctx,addr, pos);
@@ -191,7 +209,7 @@ int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
 
     if(addr->family == AF_INET6)
     {
-        if(memcmp(ctx->start.addr6.sin6_addr.__in6_u.__u6_addr8,addr->addr6.sin6_addr.__in6_u.__u6_addr8,12) != 0)
+        if(memcmp(ctx->begin.addr6.sin6_addr.__in6_u.__u6_addr8,addr->addr6.sin6_addr.__in6_u.__u6_addr8,12) != 0)
             return -4;
     }
 
@@ -202,11 +220,11 @@ int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
         return -2;
 
     /*不能超过池范围。*/
-    if(pos < ctx->start_pos || pos > ctx->end_pos)
+    if(pos < ctx->begin_pos || pos > ctx->end_pos)
         return -1;
 
     /*标记空闲。*/
-    abcdk_bloom_unset(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->start_pos);
+    abcdk_bloom_unset(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->begin_pos);
 
     return 0;
 }

@@ -76,7 +76,7 @@ typedef struct _abcdk_https_config
     */
     const char *auth_path;
 
-    /*跨域服务器地址。*/
+    /**跨域服务器地址。*/
     const char *a_c_a_o;
 
     /**
@@ -130,7 +130,7 @@ typedef struct _abcdk_https_config
     */
     void (*stream_close_cb)(void *opaque,abcdk_https_stream_t *stream);
     
-    /** 流请求通知回调函数。*/
+    /**流请求通知回调函数。*/
     void (*stream_request_cb)(void *opaque,abcdk_https_stream_t *stream);
 
     /**
