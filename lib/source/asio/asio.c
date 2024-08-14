@@ -1261,62 +1261,6 @@ final_error:
     return -1;
 }
 
-int abcdk_asio_entrust(abcdk_asio_node_t *node, int fd, abcdk_asio_config_t *cfg)
-{
-    abcdk_asio_node_t *node_p = NULL;
-    epoll_data_t ep_data;
-    socklen_t addr_len;
-    int sock_flag = 1;
-    int chk;
-
-    assert(node != NULL && fd >= 0 && cfg != NULL);
-    ABCDK_ASSERT(cfg->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
-    
-    /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_asio_refer(node);
-
-    /*检测最大连接数量限制。*/
-    if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
-        goto final_error;
-
-    node_p->flag = ABCDK_ASIO_FLAG_CLIENT;
-    node_p->status = ABCDK_ASIO_STATUS_SYNC;
-    node_p->cfg = *cfg;
-
-    /*修复不支持的配置。*/
-    node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
-    node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
-
-    /*绑定文件句柄。*/
-    node_p->fd = fd;
-     
-    chk = abcdk_fflag_add(node_p->fd,O_NONBLOCK);
-    if(chk != 0)
-        goto final_error;
-
-    chk = _abcdk_asio_ssl_init(node,0);
-    if(chk != 0)
-        goto final_error;
-
-    /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
-    ep_data.ptr = node_p;
-    chk = abcdk_epollex_attach(node_p->ctx->epollex, node_p->fd, &ep_data);
-    if (chk != 0)
-        goto final_error;
-
-    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 180 * 1000);
-    abcdk_epollex_mark(node_p->ctx->epollex, node_p->fd, ABCDK_EPOLL_OUTPUT, 0);
-
-    return 0;
-
-final_error:
-
-    abcdk_asio_unref(&node_p);
-
-    return -1;
-}
-
-
 void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 {
     int ret = 0;

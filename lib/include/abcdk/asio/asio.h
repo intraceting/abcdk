@@ -349,17 +349,6 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio
 int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr,abcdk_asio_config_t *cfg);
 
 /**
- * 委托。
- * 
- * @warning 文件句柄将被托管，应用层不可以继续访问文件句柄。
- * 
- * @param [in] fd 文件句柄。
- * 
- * @return 0 成功，-1 失败。
- */
-int abcdk_asio_entrust(abcdk_asio_node_t *node,int fd,abcdk_asio_config_t *cfg);
-
-/**
  * 投递数据。
  * 
  * @note 投递的数据对象将被托管，应用层不可以继续访问数据对象。
