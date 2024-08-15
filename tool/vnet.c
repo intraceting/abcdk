@@ -16,6 +16,10 @@ enum _abcdkvnet_constant
     /** 客户端。*/
     ABCDKVNET_ROLE_CLIENT = 2,
 #define ABCDKVNET_ROLE_CLIENT ABCDKVNET_ROLE_CLIENT
+
+    /**请求IP地址.*/
+    ABCDKVNET_CMD_ASK_IP = 1,
+#define ABCDKVNET_CMD_ASK_IP ABCDKVNET_CMD_ASK_IP
 };
 
 /*节点。*/
@@ -66,8 +70,11 @@ typedef struct _abcdkvnet
 
     /*上行地址。*/
     abcdk_object_t *uplink_addr;
-    
 
+    /*虚拟地址。*/
+    abcdk_object_t *virtual_addr4;
+    abcdk_object_t *virtual_addr6;
+    
     int max_client;
     
     /*角色。*/
@@ -391,6 +398,26 @@ static int _abcdkproxy_client_connect_uplink(abcdkvnet_t *ctx)
     return 0;
 }
 
+static int _abcdkproxy_client_start_dhcp(abcdkvnet_t *ctx)
+{
+    abcdk_object_t *rsp = NULL;
+    char sbuf[100] = {0};
+    abcdk_bit_t sbit = {0,sbuf,100},rbit = {0};
+    int chk;
+    
+    abcdk_bit_write_number(&sbit,16,ABCDKVNET_CMD_ASK_IP);
+
+    chk = abcdk_srpc_request(ctx->uplink_p,sbuf,2,&rsp);
+    if(chk != 0)
+        return -1;
+
+    rbit.data = rsp->pptrs[0];
+    rbit.size = rsp->sizes[0];
+
+    abcdk_bit_seek(&rbit,16);
+
+}
+
 static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
 {
     const char *uplink_p = NULL;
@@ -462,7 +489,7 @@ static void _abcdkvnet_daemon(abcdkvnet_t *ctx)
     interval = ABCDK_CLAMP(interval, 1, 60);
 
     /*打开日志。*/
-    logger = abcdk_logger_open2(log_path, "proxy-daemon.log", "proxy-daemon.%d.log", 10, 10, 0, 1);
+    logger = abcdk_logger_open2(log_path, "vnet-daemon.log", "vnet-daemon.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace, logger);

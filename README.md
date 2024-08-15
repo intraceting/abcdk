@@ -13,6 +13,7 @@
 - audio 音频
 - curl CURL二次封装
 - database 数据库(unixodbc,sqlite,redis)
+- dhcp DHCP
 - ffmpeg FFMPEG二次封装
 - http HTTP
 - image 图像(freeimage)
@@ -24,7 +25,7 @@
 - shell 外部命令二次封装
 - ssl SSL套件(openssl)
 - util 基础工具
-- vidoe 视频
+- video 视频
 
 ## 拉取子项目
 
