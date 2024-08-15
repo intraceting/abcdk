@@ -1031,21 +1031,20 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-    abcdk_sockaddr_t start = {0},end = {0};
 
-    int chk = abcdk_sockaddr_from_string(&start, abcdk_option_get(args, "--start", 0, ""), 0);
+    abcdk_ipool_t *ctx = abcdk_ipool_create2(abcdk_option_get(args, "--start", 0, ""),abcdk_option_get(args, "--end", 0, ""));
+
+    int chk = abcdk_ipool_set_dhcp_range2(ctx,abcdk_option_get(args, "--dhcp-start", 0, ""),abcdk_option_get(args, "--dhcp-end", 0, ""));
+
+    chk = abcdk_ipool_static_request2(ctx,abcdk_option_get(args, "--static", 0, ""));
     assert(chk == 0);
-    chk = abcdk_sockaddr_from_string(&end, abcdk_option_get(args, "--end", 0, ""), 0);
-    assert(chk == 0);
 
-    abcdk_ipool_t *ctx = abcdk_ipool_create(&start,&end);
-
-    int c = abcdk_ipool_count(ctx);
+    int c = abcdk_ipool_count(ctx,2);
     int i = 0;
     for(;i<c;i++)
     {
         abcdk_sockaddr_t addr = {0};
-        chk = abcdk_ipool_allocate(ctx,&addr);
+        chk = abcdk_ipool_dhcp_request(ctx,&addr);
         if(chk != 0)
             break;
         
@@ -1065,7 +1064,7 @@ int abcdk_test_any(abcdk_option_t *args)
     for(;j<c;j++)
     {
         abcdk_sockaddr_t addr = {0};
-        chk = abcdk_ipool_allocate(ctx,&addr);
+        chk = abcdk_ipool_dhcp_request(ctx,&addr);
         if(chk != 0)
             break;
 
