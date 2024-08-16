@@ -281,7 +281,7 @@ static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     for (int i = 0; i < ctx->virtual_route_list->numbers; i++)
     {
         node_p = (abcdkvnet_node_t *)ctx->virtual_route_list->pptrs[i];
-        if(!node_p->pipe)
+        if(!node_p->pipe || node_p->pipe == session)
             break;
 
         node_p = NULL;
@@ -289,19 +289,32 @@ static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t 
 
     if(node_p)
     {
+        /*绑定链路，一次即可。*/
+        if(!node_p->pipe)
+            node_p->pipe = abcdk_srpc_refer(session);
+        else 
+        {
+            /*回收IP地址。*/
+            if(chk4 == 0)
+                abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,addr4);
+            if(chk6 == 0)
+                abcdk_ipool_reclaim(ctx->virtual_ipv6_pool,addr6);
+        }
+        
         /*绑定IP地址。*/
-        node_p->pipe = abcdk_srpc_refer(session);
         node_p->addr4 = *addr4;
         node_p->addr6 = *addr6;
         chk = 0;
     }
     else
     {
-        /*无空闲位置，回收IP地址。*/
+        /*已经被占用或无空闲位置，回收IP地址。*/
         if(chk4 == 0)
             abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,addr4);
         if(chk6 == 0)
             abcdk_ipool_reclaim(ctx->virtual_ipv6_pool,addr6);
+        
+        chk = -1;
     }
 
     abcdk_mutex_unlock(ctx->virtual_route_mutex);
@@ -369,12 +382,18 @@ static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_
 
     chk = _abcdkvnet_server_ip_allocate(ctx,session,type,&addr4,&addr6);
     if(chk != 0)
+    {
         abcdk_bit_write_number(&rspbit,32,11);
+        abcdk_bit_write_number(&rspbit,4,0);
+        abcdk_bit_write_number(&rspbit,8,0);
+        abcdk_bit_write_number(&rspbit,8,0);
+    }
     else 
+    {
         abcdk_bit_write_number(&rspbit,32,0);
-
-    abcdk_bit_write_buffer(&rspbit,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
-    abcdk_bit_write_buffer(&rspbit,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+        abcdk_bit_write_buffer(&rspbit,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
+        abcdk_bit_write_buffer(&rspbit,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+    }
 
     *rsp = rsp_p;
 
