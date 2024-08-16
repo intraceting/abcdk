@@ -198,6 +198,8 @@ void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,.
 {
     char new_tname[18] = {0}, old_tname[18] = {0};
 
+    assert(node != NULL);
+
     snprintf(new_tname, 16, "%x", node->index);
 
 #ifdef __USE_GNU

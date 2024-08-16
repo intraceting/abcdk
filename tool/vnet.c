@@ -18,8 +18,8 @@ enum _abcdkvnet_constant
 #define ABCDKVNET_ROLE_CLIENT ABCDKVNET_ROLE_CLIENT
 
     /**请求IP地址.*/
-    ABCDKVNET_CMD_ASK_IP = 1,
-#define ABCDKVNET_CMD_ASK_IP ABCDKVNET_CMD_ASK_IP
+    ABCDKVNET_CMD_REQUEST_IP = 1,
+#define ABCDKVNET_CMD_REQUEST_IP ABCDKVNET_CMD_REQUEST_IP
 };
 
 /*节点。*/
@@ -43,46 +43,55 @@ typedef struct _abcdkvnet
     int errcode;
     abcdk_option_t *args;
 
+    /*退出标志。*/
+    volatile int exit_flag;
+
     /*日志。*/
     abcdk_logger_t *logger;
+
    
-    /*IP池。*/
-    abcdk_ipool_t *ipv4_pool;
-    abcdk_ipool_t *ipv6_pool;
+    /*虚拟IP池。*/
+    abcdk_ipool_t *virtual_ipv4_pool;
+    abcdk_ipool_t *virtual_ipv6_pool;
 
-    /*路由表。*/
-    abcdkvnet_node_t *route_list;
-    abcdk_mutex_t *route_mutex;
-
-    /*RPC.*/
-    abcdk_srpc_t *srpc_ctx;
-
-    /*原始监听对象。*/
-    abcdk_srpc_session_t *listen_raw_p;
-
-    /*PKI监听对象。*/
-    abcdk_srpc_session_t *listen_pki_p;
-
-    /*ENIGMA监听对象。*/
-    abcdk_srpc_session_t *listen_enigma_p;
-
-    /*PKIonENIGMA监听对象。*/
-    abcdk_srpc_session_t *listen_pki_enigma_p;
-
-    /*上行对象。*/
-    abcdk_srpc_session_t *uplink_p;
-
-    /*上行地址。*/
-    abcdk_object_t *uplink_addr;
-
+    /*虚拟路由表。*/
+    abcdk_object_t *virtual_route_list;
+    abcdk_mutex_t *virtual_route_mutex;
+    
     /*虚拟地址。*/
     abcdk_sockaddr_t virtual_addr4;
     abcdk_sockaddr_t virtual_addr6;
-    
-    int max_client;
+
+    /*RPC.*/
+    abcdk_srpc_t *rpc_ctx;
+
+    /*原始监听对象。*/
+    abcdk_srpc_session_t *rpc_listen_raw_session;
+
+    /*PKI监听对象。*/
+    abcdk_srpc_session_t *rpc_listen_pki_session;
+
+    /*ENIGMA监听对象。*/
+    abcdk_srpc_session_t *rpc_listen_enigma_session;
+
+    /*PKIonENIGMA监听对象。*/
+    abcdk_srpc_session_t *rpc_listen_pki_enigma_session;
+
+    /*上行对象。*/
+    abcdk_srpc_session_t *rpc_uplink_session;
+
+    /*上行地址。*/
+    abcdk_sockaddr_t rpc_uplink_addr;
     
     /*角色。*/
     int role;
+
+    /*虚拟地址类型。1 静态，2 动态。*/
+    int virtual_addr_type;
+
+    /*静态虚拟地址。*/
+    const char *virtual_static_addr4;
+    const char *virtual_static_addr6;
 
     /*监听地址。*/
     const char *listen_raw;
@@ -117,8 +126,11 @@ typedef struct _abcdkvnet
     /*盐的长度。*/
     int enigma_salt_size;
 
-    /*上级地址。*/
-    const char *uplink;
+    /*上行安全方案。*/
+    int uplink_ssl_scheme;
+
+    /*上行地址。*/
+    const char *uplink_addr;
 
 
 }abcdkvnet_t;
@@ -150,16 +162,28 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t客户端：%d\n",ABCDKVNET_ROLE_CLIENT);
 
     fprintf(stderr, "\n\t--ipv4-pool-begin < ADDR >\n");
-    fprintf(stderr, "\t\tIPv4起始地址。默认：ipv4://10.0.0.1\n");
+    fprintf(stderr, "\t\tIPV4地址池开始。默认：ipv4://10.0.0.1\n");
 
     fprintf(stderr, "\n\t--ipv4-pool-end < ADDR >\n");
-    fprintf(stderr, "\t\tIPv4结束地址。默认：ipv4://10.0.0.255\n");
+    fprintf(stderr, "\t\tIPV4地址池结束。默认：ipv4://10.0.0.255\n");
     
+    fprintf(stderr, "\n\t--ipv4-pool-dhcp-begin < ADDR >\n");
+    fprintf(stderr, "\t\tIPV4地址池DHCP范围开始。默认：ipv4://10.0.0.10\n");
+
+    fprintf(stderr, "\n\t--ipv4-pool-dhcp-end < ADDR >\n");
+    fprintf(stderr, "\t\tIPV4地址池DHCP范围结束。默认：ipv4://10.0.0.255\n");
+
     fprintf(stderr, "\n\t--ipv6-pool-begin < ADDR >\n");
-    fprintf(stderr, "\t\tIPv6起始地址。默认：ipv6://[fc00::1]\n");
+    fprintf(stderr, "\t\tIPV6地址池开始。默认：ipv6://[fc00::1]\n");
 
     fprintf(stderr, "\n\t--ipv6-pool-end < ADDR >\n");
-    fprintf(stderr, "\t\tIPv6结束地址。默认：ipv6://[fc00::ff]\n");
+    fprintf(stderr, "\t\tIPV6地址池结束。默认：ipv6://[fc00::ff]\n");
+
+    fprintf(stderr, "\n\t--ipv6-pool-dhcp-begin < ADDR >\n");
+    fprintf(stderr, "\t\tIPV6地址池DHCP范围开始。默认：ipv6://[fc00::a]\n");
+
+    fprintf(stderr, "\n\t--ipv6-pool-dhcp-end < ADDR >\n");
+    fprintf(stderr, "\t\tIPV6地址池DHCP范围结束。默认：ipv6://[fc00::ff]\n");
 
     fprintf(stderr, "\n\t\t例：ipv4://IP\n");
     fprintf(stderr, "\t\t例：ipv6://[IP]\n");
@@ -225,28 +249,42 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t例：pki-enigma://DOMAIN:PORT\n");
 }
 
-static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t *session, abcdk_sockaddr_t *addr4, abcdk_sockaddr_t *addr6)
+static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t *session,int type, abcdk_sockaddr_t *addr4, abcdk_sockaddr_t *addr6)
 {
     abcdkvnet_node_t *node_p = NULL;
-    int chk4,chk6;
+    int chk4 = -1,chk6 = -1;
     int chk = -1;
+
+    if(!session)
+        return -1;
     
     /*分配IP地址。*/
-    chk4 = abcdk_ipool_dhcp_request(ctx->ipv4_pool,addr4);
-    chk6 = abcdk_ipool_dhcp_request(ctx->ipv6_pool,addr6);
+    if(type == 1)
+    {
+        if(addr4->family == AF_INET)
+            chk4 = abcdk_ipool_static_request(ctx->virtual_ipv4_pool,addr4);
+        if(addr6->family == AF_INET6)
+            chk6 = abcdk_ipool_static_request(ctx->virtual_ipv6_pool,addr6);
+    }
+    else if(type == 2)
+    {
+        chk4 = abcdk_ipool_dhcp_request(ctx->virtual_ipv4_pool,addr4);
+        chk6 = abcdk_ipool_dhcp_request(ctx->virtual_ipv6_pool,addr6);
+    }
+
     if(chk4 != 0 && chk6 != 0)
         return -11;
     
-    abcdk_mutex_lock(ctx->route_mutex, 1);
+    abcdk_mutex_lock(ctx->virtual_route_mutex, 1);
 
     /*查找空闲的位置。*/
-    for (int i = 0; i < ctx->max_client; i++)
+    for (int i = 0; i < ctx->virtual_route_list->numbers; i++)
     {
-        if(ctx->route_list[i].pipe)
-            continue;
+        node_p = (abcdkvnet_node_t *)ctx->virtual_route_list->pptrs[i];
+        if(!node_p->pipe)
+            break;
 
-        node_p = &ctx->route_list[i];
-        break;
+        node_p = NULL;
     }
 
     if(node_p)
@@ -261,12 +299,12 @@ static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     {
         /*无空闲位置，回收IP地址。*/
         if(chk4 == 0)
-            abcdk_ipool_reclaim(ctx->ipv4_pool,addr4);
+            abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,addr4);
         if(chk6 == 0)
-            abcdk_ipool_reclaim(ctx->ipv6_pool,addr6);
+            abcdk_ipool_reclaim(ctx->virtual_ipv6_pool,addr6);
     }
 
-    abcdk_mutex_unlock(ctx->route_mutex);
+    abcdk_mutex_unlock(ctx->virtual_route_mutex);
 
     return chk;
 }
@@ -275,15 +313,18 @@ static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t 
 {
     abcdkvnet_node_t *node_p = NULL;
 
-    abcdk_mutex_lock(ctx->route_mutex, 1);
+    if(!session)
+        return;
 
-    for (int i = 0; i < ctx->max_client; i++)
+    abcdk_mutex_lock(ctx->virtual_route_mutex, 1);
+
+    for (int i = 0; i < ctx->virtual_route_list->numbers; i++)
     {
-        if(ctx->route_list[i].pipe != session)
-            continue;
+        node_p = (abcdkvnet_node_t *)ctx->virtual_route_list->pptrs[i];
+        if(node_p->pipe == session)
+            break;
 
-        node_p = &ctx->route_list[i];
-        break;
+        node_p = NULL;
     }
     
     if(node_p)
@@ -291,56 +332,68 @@ static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t 
         abcdk_srpc_unref(&node_p->pipe);
 
         if(node_p->addr4.family == AF_INET)
-            abcdk_ipool_reclaim(ctx->ipv4_pool,&node_p->addr4);
+            abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,&node_p->addr4);
         if(node_p->addr6.family == AF_INET)
-            abcdk_ipool_reclaim(ctx->ipv4_pool,&node_p->addr6);
+            abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,&node_p->addr6);
 
         memset(node_p,0,sizeof(abcdkvnet_node_t));
     }
 
-    abcdk_mutex_unlock(ctx->route_mutex);
+    abcdk_mutex_unlock(ctx->virtual_route_mutex);
 }
 
-static int _abcdkvnet_server_cmd_1(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_object_t **rsp)
+static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
     abcdk_object_t *rsp_p = NULL;
-    abcdk_bit_t sbit = {0};
+    abcdk_bit_t rspbit = {0};
+    int type;
     abcdk_sockaddr_t addr4 = {0},addr6 = {0};
     int chk;
 
-    rsp_p = abcdk_object_alloc2(100);
+    type = abcdk_bit_read2number(req,8);
+
+    addr4.family = AF_INET;
+    abcdk_bit_read2buffer(req,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
+
+    addr6.family = AF_INET6;
+    abcdk_bit_read2buffer(req,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+
+    rsp_p = abcdk_object_alloc2(26);
     if(!rsp_p)
         return -1;
 
-    sbit.data = rsp_p->pptrs[0];
-    sbit.size = rsp_p->sizes[0];
+    rspbit.data = rsp_p->pptrs[0];
+    rspbit.size = rsp_p->sizes[0];
 
-    abcdk_bit_write_number(&sbit,16,ABCDKVNET_CMD_ASK_IP);
+    abcdk_bit_write_number(&rspbit,16,ABCDKVNET_CMD_REQUEST_IP);
 
+    chk = _abcdkvnet_server_ip_allocate(ctx,session,type,&addr4,&addr6);
     if(chk != 0)
-        abcdk_bit_write_number(&sbit,16,11);
+        abcdk_bit_write_number(&rspbit,32,11);
     else 
-        abcdk_bit_write_number(&sbit,16,0);
+        abcdk_bit_write_number(&rspbit,32,0);
 
-    abcdk_bit_write_buffer(&sbit,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
-    abcdk_bit_write_buffer(&sbit,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+    abcdk_bit_write_buffer(&rspbit,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
+    abcdk_bit_write_buffer(&rspbit,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+
+    *rsp = rsp_p;
 
     return 0;
 }
 
 static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *session, const void *data, size_t size,abcdk_object_t **rsp)
 {
-    abcdk_bit_t rbit = {0};
+    abcdk_bit_t req = {0};
     uint16_t cmd;
     int chk;
 
-    rbit.data = (void*)data;
-    rbit.size = size;
+    req.data = (void*)data;
+    req.size = size;
 
-    cmd = abcdk_bit_read2number(&rbit,16);
+    cmd = abcdk_bit_read2number(&req,16);
 
-    if(cmd == ABCDKVNET_CMD_ASK_IP)
-        chk = _abcdkvnet_server_cmd_1(ctx,session,rsp);
+    if(cmd == ABCDKVNET_CMD_REQUEST_IP)
+        chk = _abcdkvnet_server_cmd_request_ip(ctx,session,&req,rsp);
 
     return chk;
 }
@@ -364,7 +417,7 @@ static void _abcdkvnet_srpc_prepare_cb(void *opaque,abcdk_srpc_session_t **sessi
     abcdkvnet_t *ctx = (abcdkvnet_t *)opaque;
     abcdk_srpc_session_t *session_p = NULL;
 
-    session_p = abcdk_srpc_alloc(ctx->srpc_ctx);
+    session_p = abcdk_srpc_alloc(ctx->rpc_ctx);
     if(!session_p)
         return;
 
@@ -403,7 +456,7 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     const char *listen_p = NULL;
     abcdk_sockaddr_t listen_addr = {0};
     abcdk_srpc_session_t *session_p = NULL;
-    abcdk_srpc_config_t srpc_cfg = {0};
+    abcdk_srpc_config_t rpc_cfg = {0};
     int chk;
 
     if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
@@ -427,32 +480,32 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     }
 
     if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
-        session_p = ctx->listen_raw_p = abcdk_srpc_alloc(ctx->srpc_ctx);
+        session_p = ctx->rpc_listen_raw_session = abcdk_srpc_alloc(ctx->rpc_ctx);
     else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
-        session_p = ctx->listen_pki_p = abcdk_srpc_alloc(ctx->srpc_ctx);
+        session_p = ctx->rpc_listen_pki_session = abcdk_srpc_alloc(ctx->rpc_ctx);
     else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
-        session_p = ctx->listen_enigma_p = abcdk_srpc_alloc(ctx->srpc_ctx);
+        session_p = ctx->rpc_listen_enigma_session = abcdk_srpc_alloc(ctx->rpc_ctx);
     else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
-        session_p = ctx->listen_pki_enigma_p = abcdk_srpc_alloc(ctx->srpc_ctx);
+        session_p = ctx->rpc_listen_pki_enigma_session = abcdk_srpc_alloc(ctx->rpc_ctx);
 
     if (!session_p)
         return -2;
 
-    srpc_cfg.opaque = ctx;
-    srpc_cfg.ssl_scheme = ssl_scheme;
-    srpc_cfg.pki_ca_file = ctx->pki_ca_file;
-    srpc_cfg.pki_ca_path = ctx->pki_ca_path;
-    srpc_cfg.pki_cert_file = ctx->pki_cert_file;
-    srpc_cfg.pki_key_file = ctx->pki_key_file;
-    srpc_cfg.pki_check_cert = ctx->pki_check_cert;
-    srpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    srpc_cfg.enigma_salt_size = ctx->enigma_salt_size;
+    rpc_cfg.opaque = ctx;
+    rpc_cfg.ssl_scheme = ssl_scheme;
+    rpc_cfg.pki_ca_file = ctx->pki_ca_file;
+    rpc_cfg.pki_ca_path = ctx->pki_ca_path;
+    rpc_cfg.pki_cert_file = ctx->pki_cert_file;
+    rpc_cfg.pki_key_file = ctx->pki_key_file;
+    rpc_cfg.pki_check_cert = ctx->pki_check_cert;
+    rpc_cfg.enigma_key_file = ctx->enigma_key_file;
+    rpc_cfg.enigma_salt_size = ctx->enigma_salt_size;
 
-    srpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
-    srpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
-    srpc_cfg.close_cb = _abcdkvnet_srpc_close_cb;
+    rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
+    rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
+    rpc_cfg.close_cb = _abcdkvnet_srpc_close_cb;
 
-    chk = abcdk_srpc_listen(session_p, &listen_addr, &srpc_cfg);
+    chk = abcdk_srpc_listen(session_p, &listen_addr, &rpc_cfg);
     if (chk != 0)
     {
         abcdk_trace_output(LOG_ERR, "监听地址'%s'失败，无权限或被占用。", listen_p);
@@ -462,14 +515,39 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     return 0;
 }
 
+static void _abcdkvnet_server_dowork(abcdkvnet_t *ctx)
+{
+
+LOOP:
+
+    /*检查是否需要退出。*/
+    if(abcdk_atomic_compare(&ctx->exit_flag,1))
+        return;
+
+    sleep(1);
+
+    goto LOOP;
+}
+
 static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
 {
+    const char *virtual_addr4_p = NULL;
+    const char *virtual_addr6_p = NULL;
+    int max_client;
     int chk;
+
+    ctx->virtual_addr_type = abcdk_option_get_int(ctx->args, "--virtual-addr-type", 0, 2);
+    ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, NULL);
+    ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
 
     const char *ipv4_pool_begin_p = abcdk_option_get(ctx->args,"--ipv4-pool-begin",0,"ipv4://10.0.0.1");
     const char *ipv4_pool_end_p = abcdk_option_get(ctx->args,"--ipv4-pool-end",0,"ipv4://10.0.0.255");
     const char *ipv6_pool_begin_p = abcdk_option_get(ctx->args,"--ipv6-pool-begin",0,"ipv6://[fc00::1]");
     const char *ipv6_pool_end_p = abcdk_option_get(ctx->args,"--ipv6-pool-end",0,"ipv6://[fc00::ff]");
+    const char *ipv4_pool_dhcp_begin_p = abcdk_option_get(ctx->args,"--ipv4-pool-dhcp-begin",0,"ipv4://10.0.0.10");
+    const char *ipv4_pool_dhcp_end_p = abcdk_option_get(ctx->args,"--ipv4-pool-dhcp-end",0,"ipv4://10.0.0.255");
+    const char *ipv6_pool_dhcp_begin_p = abcdk_option_get(ctx->args,"--ipv6-pool-dhcp-begin",0,"ipv6://[fc00::A]");
+    const char *ipv6_pool_dhcp_end_p = abcdk_option_get(ctx->args,"--ipv6-pool-dhcp-end",0,"ipv6://[fc00::ff]");
 
     ctx->listen_raw = abcdk_option_get(ctx->args, "--listen-raw", 0, NULL);
     ctx->listen_pki = abcdk_option_get(ctx->args, "--listen-pki", 0, NULL);
@@ -484,24 +562,52 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
 
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
     ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
-
-    /*修复不支持的配置。*/
-    ctx->enigma_key_file = (ctx->enigma_key_file?ctx->enigma_key_file:"");
-    ctx->enigma_salt_size = ABCDK_CLAMP(ctx->enigma_salt_size, 0, 256);
     
-    ctx->uplink = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
+    ctx->virtual_ipv4_pool = abcdk_ipool_create2(ipv4_pool_begin_p,ipv4_pool_end_p);
+    if(!ctx->virtual_ipv4_pool)
+        abcdk_trace_output(LOG_WARNING,"IPV4地址池(%s,%s)无效或超出范围。",ipv4_pool_begin_p,ipv4_pool_end_p);
 
-    ctx->ipv4_pool = abcdk_ipool_create2(ipv4_pool_begin_p,ipv4_pool_end_p);
-    ctx->ipv6_pool = abcdk_ipool_create2(ipv6_pool_begin_p,ipv6_pool_end_p);
-    if(!ctx->ipv4_pool || !ctx->ipv6_pool)
+    ctx->virtual_ipv6_pool = abcdk_ipool_create2(ipv6_pool_begin_p,ipv6_pool_end_p);
+    if(!ctx->virtual_ipv6_pool)
+        abcdk_trace_output(LOG_WARNING,"IPV6地址池(%s,%s)无效或超出范围。",ipv6_pool_begin_p,ipv6_pool_end_p);
+
+    if(!ctx->virtual_ipv4_pool && !ctx->virtual_ipv6_pool)
+        goto END;
+    
+    if(ipv4_pool_dhcp_begin_p && ipv4_pool_dhcp_end_p)
+    {
+        chk = abcdk_ipool_set_dhcp_range2(ctx->virtual_ipv4_pool,ipv4_pool_dhcp_begin_p,ipv4_pool_dhcp_end_p);
+        if(chk != 0)
+        {
+            abcdk_trace_output(LOG_WARNING,"IPV4地址池(%s,%s)设置DHCP范围(%s,%s)错误。",ipv4_pool_begin_p,ipv4_pool_end_p,ipv4_pool_dhcp_begin_p,ipv4_pool_dhcp_end_p);
+            goto END;
+        }
+    }
+    
+    if(ipv6_pool_dhcp_begin_p && ipv6_pool_dhcp_end_p)
+    {
+        chk = abcdk_ipool_set_dhcp_range2(ctx->virtual_ipv6_pool,ipv6_pool_dhcp_begin_p,ipv6_pool_dhcp_end_p);
+        if(chk != 0)
+        {
+            abcdk_trace_output(LOG_WARNING,"IPV6地址池(%s,%s)设置DHCP范围(%s,%s)错误。",ipv6_pool_begin_p,ipv6_pool_end_p,ipv6_pool_dhcp_begin_p,ipv6_pool_dhcp_end_p);
+            goto END;
+        }
+    }
+
+    max_client = ABCDK_MAX(abcdk_ipool_count(ctx->virtual_ipv4_pool,0),abcdk_ipool_count(ctx->virtual_ipv6_pool,0));
+    if(max_client <= 0)
         goto END;
 
-    ctx->max_client = ABCDK_MAX(abcdk_ipool_count(ctx->ipv4_pool,0),abcdk_ipool_count(ctx->ipv6_pool,0));
-    if(!ctx->max_client)
+    ctx->virtual_route_list = abcdk_object_alloc3(sizeof(abcdkvnet_node_t),max_client);
+    if(!ctx->virtual_route_list)
         goto END;
 
-    ctx->srpc_ctx = abcdk_srpc_create(1000, -1);
-    if (!ctx->srpc_ctx)
+    ctx->virtual_route_mutex = abcdk_mutex_create();
+    if(!ctx->virtual_route_list)
+        goto END;
+
+    ctx->rpc_ctx = abcdk_srpc_create(max_client+4, -1);
+    if (!ctx->rpc_ctx)
         goto END;
 
     chk = _abcdkproxy_server_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_RAW);
@@ -519,101 +625,255 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     chk = _abcdkproxy_server_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
     if (chk != 0)
         goto END;
-    
-    /*等待终止信号。*/
-    abcdk_proc_wait_exit_signal(-1);
+ 
+    _abcdkvnet_server_dowork(ctx);
 
 END:
 
-    abcdk_srpc_destroy(&ctx->srpc_ctx);
-    abcdk_srpc_unref(&ctx->listen_raw_p);
-    abcdk_srpc_unref(&ctx->listen_pki_p);
-    abcdk_srpc_unref(&ctx->listen_enigma_p);
-    abcdk_srpc_unref(&ctx->listen_pki_enigma_p);
-    abcdk_ipool_destroy(&ctx->ipv4_pool);
-    abcdk_ipool_destroy(&ctx->ipv6_pool);
+    abcdk_srpc_destroy(&ctx->rpc_ctx);
+    abcdk_srpc_unref(&ctx->rpc_listen_raw_session);
+    abcdk_srpc_unref(&ctx->rpc_listen_pki_session);
+    abcdk_srpc_unref(&ctx->rpc_listen_enigma_session);
+    abcdk_srpc_unref(&ctx->rpc_listen_pki_enigma_session);
+    abcdk_ipool_destroy(&ctx->virtual_ipv4_pool);
+    abcdk_ipool_destroy(&ctx->virtual_ipv6_pool);
+    abcdk_object_unref(&ctx->virtual_route_list);
+    abcdk_mutex_destroy(&ctx->virtual_route_mutex);
 }
 
 static int _abcdkproxy_client_connect_uplink(abcdkvnet_t *ctx)
 {
+    int ssl_scheme;
     abcdk_sockaddr_t uplink_addr = {0};
-    abcdk_srpc_config_t srpc_cfg = {0};
+    abcdk_srpc_config_t rpc_cfg = {0};
     int chk;
 
-    ctx->uplink_p = abcdk_srpc_alloc(ctx->srpc_ctx);
-    if(!ctx->uplink_p)
+    chk = abcdk_sockaddr_from_string(&uplink_addr, ctx->uplink_addr, 1);
+    if (chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "上行地址'%s'无法识别。", ctx->uplink_addr);
+        return -1;
+    }
+
+    ctx->rpc_uplink_session = abcdk_srpc_alloc(ctx->rpc_ctx);
+    if(!ctx->rpc_uplink_session)
         return -1;
 
-    chk = abcdk_srpc_connect(ctx->uplink_p,&uplink_addr,&srpc_cfg);
+    rpc_cfg.opaque = ctx;
+    rpc_cfg.ssl_scheme = ctx->uplink_ssl_scheme;
+    rpc_cfg.pki_ca_file = ctx->pki_ca_file;
+    rpc_cfg.pki_ca_path = ctx->pki_ca_path;
+    rpc_cfg.pki_cert_file = ctx->pki_cert_file;
+    rpc_cfg.pki_key_file = ctx->pki_key_file;
+    rpc_cfg.pki_check_cert = ctx->pki_check_cert;
+    rpc_cfg.enigma_key_file = ctx->enigma_key_file;
+    rpc_cfg.enigma_salt_size = ctx->enigma_salt_size;
+
+    rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
+    rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
+    rpc_cfg.close_cb = _abcdkvnet_srpc_close_cb;
+
+    chk = abcdk_srpc_connect(ctx->rpc_uplink_session,&uplink_addr,&rpc_cfg);
     if(chk != 0)
+    {
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "连接上级(%s)失败。", ctx->uplink_addr);
         return -2;
+    }
 
     return 0;
 }
 
-static int _abcdkproxy_client_start_dhcp(abcdkvnet_t *ctx)
+static int _abcdkproxy_client_request_ip(abcdkvnet_t *ctx)
 {
-    abcdk_object_t *rsp = NULL;
     char sbuf[100] = {0};
     abcdk_bit_t sbit = {0,sbuf,100},rbit = {0};
-    uint16_t err;
+    abcdk_object_t *rsp = NULL;
+    char ipv4[100] = {0},ipv6[100] = {0};
+    int err;
     int chk;
     
-    abcdk_bit_write_number(&sbit,16,ABCDKVNET_CMD_ASK_IP);
+    abcdk_bit_write_number(&sbit,16,ABCDKVNET_CMD_REQUEST_IP);
 
-    chk = abcdk_srpc_request(ctx->uplink_p,sbuf,2,&rsp);
+    if(ctx->virtual_addr_type == 1)
+    {
+        abcdk_bit_write_number(&sbit,8,1);
+        abcdk_bit_write_buffer(&sbit,(uint8_t*)&ctx->virtual_addr4.addr4.sin_addr.s_addr,4);
+        abcdk_bit_write_buffer(&sbit,(uint8_t*)&ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+    }
+    else if(ctx->virtual_addr_type == 2)
+    {
+        abcdk_bit_write_number(&sbit,8,2);
+        abcdk_bit_write_number(&sbit,32,0);
+        abcdk_bit_write_number(&sbit,64,0);
+        abcdk_bit_write_number(&sbit,64,0);
+    }
+    else
+    {
+        return -22;
+    }
+
+    chk = abcdk_srpc_request(ctx->rpc_uplink_session,sbuf,23,&rsp);
     if(chk != 0)
+    {
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "向上级(%s)请求IP失败，网络不通或目标不可达。", ctx->uplink_addr);
         return -1;
+    }
 
     rbit.data = rsp->pptrs[0];
     rbit.size = rsp->sizes[0];
 
     abcdk_bit_seek(&rbit,16);
-    err = abcdk_bit_read2number(&rbit,16);
-    if(err != 0)
-        return -2;
+    err = abcdk_bit_read2number(&rbit,32);
+    if (err == 0)
+    {
+        ctx->virtual_addr4.family = AF_INET;
+        abcdk_bit_read2buffer(&rbit, (uint8_t *)&ctx->virtual_addr4.addr4.sin_addr.s_addr, 4);
 
-    abcdk_bit_read2buffer(&rbit,(uint8_t*)&ctx->virtual_addr4.addr4.sin_addr.s_addr,4);
-    abcdk_bit_read2buffer(&rbit,ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+        ctx->virtual_addr6.family = AF_INET6;
+        abcdk_bit_read2buffer(&rbit, ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8, 16);
 
-    return 0;
+        abcdk_sockaddr_to_string(ipv4, &ctx->virtual_addr4);
+        abcdk_sockaddr_to_string(ipv6, &ctx->virtual_addr6);
+
+        if (ctx->virtual_addr_type == 2)
+            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向上级(%s)请求IP成功，分配的虚拟地址是IPV4(%s)和IPV6(%s)", ctx->uplink_addr, ipv4, ipv6);
+        else if (ctx->virtual_addr_type == 1)
+            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向上级(%s)请求IP成功，注册的虚拟地址是IPV4(%s)和IPV6(%s)", ctx->uplink_addr, ipv4, ipv6);
+
+        chk = 0;
+    }
+    else 
+    {
+        if (ctx->virtual_addr_type == 2)
+            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向上级(%s)请求IP失败，请重试。", ctx->uplink_addr);
+        else if (ctx->virtual_addr_type == 1)
+            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向上级(%s)请求IP失败，虚拟IPV4地址(%s)或IPV6地址(%s)已经被占用。",
+                                    ctx->uplink_addr, ctx->virtual_static_addr4, ctx->virtual_static_addr6);
+
+        chk = -1;
+    }
+
+    abcdk_object_unref(&rsp);
+
+    return chk;
 }
+
+static void _abcdkvnet_client_dowork(abcdkvnet_t *ctx)
+{
+    int chk;
+
+LOOP:
+
+    chk = _abcdkproxy_client_connect_uplink(ctx);
+    if(chk != 0)
+        goto ERR;
+
+    chk = _abcdkproxy_client_request_ip(ctx);
+    if(chk != 0)
+        goto ERR;
+
+ERR:
+
+    if(ctx->rpc_uplink_session)
+        abcdk_srpc_set_timeout(ctx->rpc_uplink_session,1);
+        
+    abcdk_srpc_unref(&ctx->rpc_uplink_session);
+
+    /*检查是否需要退出。*/
+    if(abcdk_atomic_compare(&ctx->exit_flag,1))
+        return;
+
+    sleep(1);
+    goto LOOP;
+}
+
 
 static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
 {
-    const char *uplink_p = NULL;
+    int chk4,chk6;
     int chk;
+
+    ctx->virtual_addr_type = abcdk_option_get_int(ctx->args, "--virtual-addr-type", 0, 2);
+    ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, NULL);
+    ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
+
+    ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
+    ctx->pki_ca_path = abcdk_option_get(ctx->args, "--pki-ca-path", 0, NULL);
+    ctx->pki_cert_file = abcdk_option_get(ctx->args, "--pki-cert-file", 0, NULL);
+    ctx->pki_key_file = abcdk_option_get(ctx->args, "--pki-key-file", 0, NULL);
+    ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
+
+    ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
+    ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
      
-    uplink_p = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
+    ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_ENIGMA);
+    ctx->uplink_addr = abcdk_option_get(ctx->args, "--uplink-addr", 0, "");
 
-    ctx->uplink_addr = abcdk_url_split(uplink_p);
-    if(!ctx->uplink_addr)
-        goto END;
+    if(ctx->virtual_addr_type == 1)
+    {
+        if (ctx->virtual_static_addr4)
+        {
+            chk4 = abcdk_sockaddr_from_string(&ctx->virtual_addr4, ctx->virtual_static_addr4, 0);
+            if (chk4 != 0)
+            {
+                abcdk_trace_output(LOG_WARNING, "静态IPV4地址(%s)解析错误。", ctx->virtual_static_addr4);
+                goto END;
+            }
+        }
+
+        if (ctx->virtual_static_addr6)
+        {
+            chk6 = abcdk_sockaddr_from_string(&ctx->virtual_addr6, ctx->virtual_static_addr6, 0);
+            if (chk6 != 0)
+            {
+                abcdk_trace_output(LOG_WARNING, "静态IPV4地址(%s)解析错误。", ctx->virtual_static_addr6);
+                goto END;
+            }
+        }
+    }
     
-    ctx->srpc_ctx = abcdk_srpc_create(10,-1);
-    if(!ctx->srpc_ctx)
+    ctx->rpc_ctx = abcdk_srpc_create(10,-1);
+    if(!ctx->rpc_ctx)
         goto END;
 
+    _abcdkvnet_client_dowork(ctx);
 
 END:
 
 
-    abcdk_srpc_destroy(&ctx->srpc_ctx);
-    abcdk_object_unref(&ctx->uplink_addr);
-    
+    abcdk_srpc_destroy(&ctx->rpc_ctx);
+}
+
+static void *_abcdkvnet_signal_process(void *opaque)
+{
+    abcdkvnet_t *ctx = (abcdkvnet_t *)opaque;
+   
+    /*等待终止信号。*/
+    abcdk_proc_wait_exit_signal(-1);
+
+    abcdk_atomic_store(&ctx->exit_flag,1);
 }
 
 static void _abcdkvnet_process(abcdkvnet_t *ctx)
 {
-    const char *log_path;
+    const char *log_path = NULL;
+    abcdk_thread_t signal_thread = {0};
+
+    log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
 
     /*打开日志。*/
-    ctx->logger = abcdk_logger_open2(log_path, "proxy.log", "proxy.%d.log", 10, 10, 0, 1);
+    ctx->logger = abcdk_logger_open2(log_path, "vnet.log", "vnet.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace, ctx->logger);
 
     abcdk_trace_output(LOG_INFO, "启动……");
+
+    signal_thread.opaque = ctx;
+    signal_thread.routine = _abcdkvnet_signal_process;
+
+    /*创建信号线程。*/
+    abcdk_thread_create(&signal_thread,1);
 
     ctx->role = abcdk_option_get_int(ctx->args,"--role",0,ABCDKVNET_ROLE_CLIENT);
 
@@ -622,7 +882,8 @@ static void _abcdkvnet_process(abcdkvnet_t *ctx)
     else if(ctx->role == ABCDKVNET_ROLE_SERVER)
         _abcdkvnet_process_server(ctx);
 
- 
+    /*等待信号线程退出。*/
+    abcdk_thread_join(&signal_thread);
 
     abcdk_trace_output(LOG_INFO, "停止。");
 

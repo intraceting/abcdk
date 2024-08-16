@@ -253,6 +253,7 @@ static abcdk_asio_node_t *_abcdkproxy_node_alloc(abcdkproxy_t *ctx)
     return node_p;
 }
 
+#if 0
 static void _abcdkproxy_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,...)
 {
     abcdkproxy_node_t *node_ctx_p;
@@ -277,6 +278,9 @@ static void _abcdkproxy_trace_output(abcdk_asio_node_t *node,int type, const cha
 #endif //__USE_GNU
 
 }
+#else 
+#define _abcdkproxy_trace_output abcdk_asio_trace_output
+#endif 
 
 static void _abcdkproxy_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
 {

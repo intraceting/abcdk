@@ -202,9 +202,7 @@ abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *src);
  */
 abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
-/**
- * 轨迹输出。
-*/
+/** 轨迹输出。*/
 void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,...);
 
 /**

@@ -91,8 +91,44 @@ abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx)
 
     node_ctx_p->father = ctx;
     node_ctx_p->req_waiter = abcdk_waiter_alloc(_abcdk_srpc_node_waiter_msg_destroy_cb);
+    node_ctx_p->mid_next = 1;
 
     return (abcdk_srpc_session_t*)node_p;
+}
+
+void abcdk_srpc_trace_output(abcdk_srpc_session_t *node,int type, const char* fmt,...)
+{
+    abcdk_asio_node_t *node_p;
+    char new_tname[18] = {0}, old_tname[18] = {0};
+
+    node_p = (abcdk_asio_node_t *)node;
+
+    snprintf(new_tname, 16, "%x", abcdk_asio_get_index(node_p));
+
+#ifdef __USE_GNU
+    pthread_getname_np(pthread_self(), old_tname, 18);
+    pthread_setname_np(pthread_self(), new_tname);
+#endif //__USE_GNU
+
+    va_list vp;
+    va_start(vp, fmt);
+    abcdk_trace_voutput(type, fmt, vp);
+    va_end(vp);
+
+#ifdef __USE_GNU
+    pthread_setname_np(pthread_self(), old_tname);
+#endif //__USE_GNU
+}
+
+uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node)
+{
+    abcdk_asio_node_t *node_p;
+
+    assert(node != NULL);
+
+    node_p = (abcdk_asio_node_t *)node;
+
+    return abcdk_asio_get_index(node_p);
 }
 
 void *abcdk_srpc_get_userdata(abcdk_srpc_session_t *session)

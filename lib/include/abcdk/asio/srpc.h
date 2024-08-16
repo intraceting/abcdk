@@ -105,6 +105,17 @@ abcdk_srpc_session_t *abcdk_srpc_refer(abcdk_srpc_session_t *src);
 /** 申请会话。*/
 abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx);
 
+/** 轨迹输出。*/
+void abcdk_srpc_trace_output(abcdk_srpc_session_t *node,int type, const char* fmt,...);
+
+/**
+ * 获取索引。
+ * 
+ * @note 进程内唯一。
+ * 
+ */
+uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node);
+
 /** 获取会话的用户环境指针。*/
 void *abcdk_srpc_get_userdata(abcdk_srpc_session_t *session);
 
