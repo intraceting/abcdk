@@ -2,22 +2,23 @@
 
 请求：
 
-|CMD     |TYPE   |IPV4    |IPV6     |
-|:-------|:------|:-------|:--------|
-|2 bytes |1 type |4 bytes |16 bytes |
+|CMD     |IPV4TYPE |IPV4ADDR |IPV6TYPE |IPADDR   |
+|:-------|:--------|:--------|:--------|:--------|
+|2 bytes |1 type   |4 bytes  |1 type   |16 bytes |
 
 * CMD：命令。1
-* TYPE：类型。1 静态，2 动态。
-* IPV4：IPv4地址。全0为无效值。
-* IPV6：IPv6地址。全0为无效值。
+* IPV4TYPE：IPV4类型。0 静态，1 动态。
+* IPV4ADDR：IPV4地址。
+* IPV6TYPE：IPV6类型。0 静态，1 动态。
+* IPV6ADDR：IPV6地址。
 
 应答：
 
-|CMD     |ERRNO   |IPV4    |IPV6     |
-|:-------|:-------|:-------|:--------|
-|2 bytes |4 bytes |4 bytes |16 bytes |
+|CMD     |ERRNO   |IPV4ADDR |IPV6ADDR |
+|:-------|:-------|:--------|:--------|
+|2 bytes |4 bytes |4 bytes  |16 bytes |
 
 * CMD：命令。1
-* ERRNO：出错码。0 无，1 拒绝访问，11 重试，17。
-* IPV4：IPv4地址。全0为无效值。
-* IPV6：IPv6地址。全0为无效值。
+* ERRNO：出错码。0 无，1 拒绝访问，11 需要重试。
+* IPV4ADDR：IPV4地址。
+* IPV4ADDR：IPV4地址。

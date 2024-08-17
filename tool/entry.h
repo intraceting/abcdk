@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <locale.h>
+#include <linux/if_tun.h>
 #include "abcdk.h"
 
 __BEGIN_DECLS

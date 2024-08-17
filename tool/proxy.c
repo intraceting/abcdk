@@ -207,10 +207,10 @@ static void _abcdkproxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--uplink < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");
 
-    fprintf(stderr, "\n\t\t例：raw://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\t例：pki://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\t例：enigma://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\t例：pki-enigma://DOMAIN:PORT\n");
+    fprintf(stderr, "\n\t\traw://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tpki://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tenigma://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tpki-enigma://DOMAIN:PORT\n");
 }
 
 static void _abcdkproxy_node_destroy_cb(void *userdata)

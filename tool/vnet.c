@@ -6,6 +6,7 @@
  */
 #include "entry.h"
 
+
 /** 常量。*/
 enum _abcdkvnet_constant
 {
@@ -16,6 +17,14 @@ enum _abcdkvnet_constant
     /** 客户端。*/
     ABCDKVNET_ROLE_CLIENT = 2,
 #define ABCDKVNET_ROLE_CLIENT ABCDKVNET_ROLE_CLIENT
+
+    /*虚拟IP地址类型(静态)。*/
+    ABCDKVNET_IPADDR_TYPE_STATIC = 1,
+#define ABCDKVNET_IP_TYPE_STATIC ABCDKVNET_IP_TYPE_STATIC
+
+    /*虚拟IP地址类型(动态)。*/
+    ABCDKVNET_IPADDR_TYPE_DHCP = 2,
+#define ABCDKVNET_IP_TYPE_DHCP ABCDKVNET_IP_TYPE_DHCP
 
     /**请求IP地址.*/
     ABCDKVNET_CMD_REQUEST_IP = 1,
@@ -82,12 +91,21 @@ typedef struct _abcdkvnet
 
     /*上行地址。*/
     abcdk_sockaddr_t rpc_uplink_addr;
+
+    /*TUN设备名称。*/
+    char tun_name[NAME_MAX];
+
+    /*TUN设备句柄。*/
+    int tun_fd;
     
     /*角色。*/
     int role;
 
-    /*虚拟地址类型。1 静态，2 动态。*/
-    int virtual_addr_type;
+    /*虚拟IPV4地址类型。*/
+    int virtual_addr4_type;
+
+    /*虚拟IPV4地址类型。*/
+    int virtual_addr6_type;
 
     /*静态虚拟地址。*/
     const char *virtual_static_addr4;
@@ -155,11 +173,26 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
     fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
 
+    fprintf(stderr, "\n\t--virtual-addr4-type < TYPE >\n");
+    fprintf(stderr, "\t\t虚拟IPV4地址类型。默认：%d\n", ABCDKVNET_IPADDR_TYPE_DHCP);
+
+    fprintf(stderr, "\n\t--virtual-addr6-type < TYPE >\n");
+    fprintf(stderr, "\t\t虚拟IPV6地址类型。默认：%d\n", ABCDKVNET_IPADDR_TYPE_DHCP);
+
+    fprintf(stderr, "\n\t\t%d：静态\n",ABCDKVNET_IPADDR_TYPE_STATIC);
+    fprintf(stderr, "\t\t%d：动态\n",ABCDKVNET_IPADDR_TYPE_DHCP);
+
+    fprintf(stderr, "\n\t--virtual-static-addr4 < ADDR >\n");
+    fprintf(stderr, "\t\t虚拟IPV4地址(静态)。\n");
+
+    fprintf(stderr, "\n\t--virtual-static-addr6 < ADDR >\n");
+    fprintf(stderr, "\t\t虚拟IPV6地址(静态)。\n");
+
     fprintf(stderr, "\n\t--role < TYPE >\n");
     fprintf(stderr, "\t\t角色。默认：%d\n",ABCDKVNET_ROLE_CLIENT);
 
-    fprintf(stderr, "\n\t\t服务端：%d\n",ABCDKVNET_ROLE_SERVER);
-    fprintf(stderr, "\t\t客户端：%d\n",ABCDKVNET_ROLE_CLIENT);
+    fprintf(stderr, "\n\t\t%d：服务端\n",ABCDKVNET_ROLE_SERVER);
+    fprintf(stderr, "\t\t%d：客户端\n",ABCDKVNET_ROLE_CLIENT);
 
     fprintf(stderr, "\n\t--ipv4-pool-begin < ADDR >\n");
     fprintf(stderr, "\t\tIPV4地址池开始。默认：ipv4://10.0.0.1\n");
@@ -240,48 +273,143 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--enigma-salt-size < SIZE >\n");
     fprintf(stderr, "\t\t监的长度。默认：123。\n");
 
-    fprintf(stderr, "\n\t--uplink < URL >\n");
+    fprintf(stderr, "\n\t--uplink-ssl-scheme < SCHEME >\n");
+    fprintf(stderr, "\t\t上行安全方案。默认：%d\n",ABCDK_ASIO_SSL_SCHEME_RAW);
+
+    fprintf(stderr, "\n\t\t%d：RAW\n",ABCDK_ASIO_SSL_SCHEME_RAW);
+    fprintf(stderr, "\t\t%d：PKI\n",ABCDK_ASIO_SSL_SCHEME_PKI);
+    fprintf(stderr, "\t\t%d：ENIGMA\n",ABCDK_ASIO_SSL_SCHEME_ENIGMA);
+    fprintf(stderr, "\t\t%d：PKIonENIGMA\n",ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
+
+    fprintf(stderr, "\n\t--uplink-addr < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");
 
-    fprintf(stderr, "\n\t\t例：raw://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\t例：pki://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\t例：enigma://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\t例：pki-enigma://DOMAIN:PORT\n");
+    fprintf(stderr, "\n\t\tipv4://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tipv6://[DOMAIN]:PORT\n");
 }
 
-static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t *session,int type, abcdk_sockaddr_t *addr4, abcdk_sockaddr_t *addr6)
+static int _abcdkvnet_open_tun(const char *name)
+{
+    struct ifreq ifr;
+    int fd;
+    int chk;
+
+#define AVBCDKVNET_TUN_DEV "/dev/net/tun"
+
+    fd = open(AVBCDKVNET_TUN_DEV, O_RDWR);
+    if (fd < 0)
+    {
+        abcdk_trace_output(LOG_ERR, "打开'%s'失败，权限不足。", AVBCDKVNET_TUN_DEV);
+        return -1;
+    }
+
+    memset(&ifr, 0, sizeof(ifr));
+
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    strncpy(ifr.ifr_name, name, IFNAMSIZ);
+
+    chk = ioctl(fd, TUNSETIFF, (void *)&ifr);
+    if (chk >= 0)
+        return fd;
+
+    abcdk_trace_output(LOG_ERR, "创建TUN(%s)失败，权限不足或已存在。", name);
+    close(fd);
+
+    return -1;
+}
+
+static int _abcdkvnet_ifconfig(abcdkvnet_t *ctx)
+{
+    char ipv4str[100] = {0},ipv6str[100] = {0};
+    int chk;
+
+    abcdk_sockaddr_to_string(ipv4str, &ctx->virtual_addr4);
+    abcdk_sockaddr_to_string(ipv6str, &ctx->virtual_addr6);
+
+    chk = abcdk_net_address_add(AF_INET,ipv4str,32,NULL,0,ctx->tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加IPV4地址(%s)失败，权限不足或系统错。", ctx->tun_name,ipv4str);
+        return -1;
+    }
+
+    /*服务端仅需要配置IP地址。*/
+    if(ctx->role == ABCDKVNET_ROLE_SERVER)
+        return 0;
+
+    chk = abcdk_net_address_add(AF_INET6,ipv6str,128,NULL,0,ctx->tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加IPV6地址(%s)失败，权限不足或系统错。", ctx->tun_name,ipv6str);
+        return -1;
+    }
+
+    chk = abcdk_net_route_add(AF_INET, "0.0.0.0", 0, ipv4str, 0, ctx->tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加IPV6地址(%s)失败，权限不足或系统错。", ctx->tun_name,ipv6str);
+        return -1;
+    }
+
+    abcdk_net_route_add(AF_INET6, "0", 0, ipv6str, 0, ctx->tun_name);
+
+    return 0;
+}
+
+static int _abcdkvnet_ipool_allocate(abcdkvnet_t *ctx, int type, abcdk_sockaddr_t *addr)
+{
+    int chk = -1;
+    /*分配IP地址。*/
+    if (type == ABCDKVNET_IPADDR_TYPE_STATIC)
+    {
+        if (addr->family == AF_INET)
+            chk = abcdk_ipool_static_request(ctx->virtual_ipv4_pool, addr);
+        else if (addr->family == AF_INET6)
+            chk = abcdk_ipool_static_request(ctx->virtual_ipv6_pool, addr);
+    }
+    else if (type == ABCDKVNET_IPADDR_TYPE_DHCP)
+    {
+        if (addr->family == AF_INET)
+            chk = abcdk_ipool_dhcp_request(ctx->virtual_ipv4_pool, addr);
+        else if (addr->family == AF_INET6)
+            chk = abcdk_ipool_dhcp_request(ctx->virtual_ipv6_pool, addr);
+    }
+
+    return chk;
+}
+
+static void _abcdkvnet_ipool_reclaim(abcdkvnet_t *ctx, abcdk_sockaddr_t *addr)
+{
+    if (addr->family == AF_INET)
+        abcdk_ipool_reclaim(ctx->virtual_ipv4_pool, addr);
+    else if (addr->family == AF_INET6)
+        abcdk_ipool_reclaim(ctx->virtual_ipv6_pool, addr);
+}
+
+static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t *session,int type4, abcdk_sockaddr_t *addr4,int type6, abcdk_sockaddr_t *addr6)
 {
     abcdkvnet_node_t *node_p = NULL;
-    int chk4 = -1,chk6 = -1;
     int chk = -1;
 
     if(!session)
         return -1;
     
-    /*分配IP地址。*/
-    if(type == 1)
-    {
-        if(addr4->family == AF_INET)
-            chk4 = abcdk_ipool_static_request(ctx->virtual_ipv4_pool,addr4);
-        if(addr6->family == AF_INET6)
-            chk6 = abcdk_ipool_static_request(ctx->virtual_ipv6_pool,addr6);
-    }
-    else if(type == 2)
-    {
-        chk4 = abcdk_ipool_dhcp_request(ctx->virtual_ipv4_pool,addr4);
-        chk6 = abcdk_ipool_dhcp_request(ctx->virtual_ipv6_pool,addr6);
-    }
+    /*分配IPV4地址。*/
+    chk = _abcdkvnet_ipool_allocate(ctx,type4,addr4);
+    if(chk != 0)
+        return -11;
 
-    if(chk4 != 0 && chk6 != 0)
+    /*分配IPV6地址。*/
+    chk = _abcdkvnet_ipool_allocate(ctx,type6,addr6);
+    if(chk != 0)
         return -11;
     
     abcdk_mutex_lock(ctx->virtual_route_mutex, 1);
 
-    /*查找空闲的位置。*/
     for (int i = 0; i < ctx->virtual_route_list->numbers; i++)
     {
         node_p = (abcdkvnet_node_t *)ctx->virtual_route_list->pptrs[i];
-        if(!node_p->pipe || node_p->pipe == session)
+        if (!node_p->pipe)
             break;
 
         node_p = NULL;
@@ -289,30 +417,24 @@ static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t 
 
     if(node_p)
     {
-        /*绑定链路，一次即可。*/
-        if(!node_p->pipe)
-            node_p->pipe = abcdk_srpc_refer(session);
-        else 
-        {
-            /*回收IP地址。*/
-            if(chk4 == 0)
-                abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,addr4);
-            if(chk6 == 0)
-                abcdk_ipool_reclaim(ctx->virtual_ipv6_pool,addr6);
-        }
-        
+        /*引用链路。*/
+        node_p->pipe = abcdk_srpc_refer(session);
+
         /*绑定IP地址。*/
         node_p->addr4 = *addr4;
         node_p->addr6 = *addr6;
+
         chk = 0;
     }
     else
     {
-        /*已经被占用或无空闲位置，回收IP地址。*/
-        if(chk4 == 0)
-            abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,addr4);
-        if(chk6 == 0)
-            abcdk_ipool_reclaim(ctx->virtual_ipv6_pool,addr6);
+        /*无空闲位置时，回收动态分配的IP地址。*/
+
+        if (type4 == ABCDKVNET_IPADDR_TYPE_DHCP)
+            _abcdkvnet_ipool_reclaim(ctx,addr4);
+
+        if (type6 == ABCDKVNET_IPADDR_TYPE_DHCP)
+            _abcdkvnet_ipool_reclaim(ctx,addr6);
         
         chk = -1;
     }
@@ -343,11 +465,8 @@ static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     if(node_p)
     {
         abcdk_srpc_unref(&node_p->pipe);
-
-        if(node_p->addr4.family == AF_INET)
-            abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,&node_p->addr4);
-        if(node_p->addr6.family == AF_INET)
-            abcdk_ipool_reclaim(ctx->virtual_ipv4_pool,&node_p->addr6);
+        _abcdkvnet_ipool_reclaim(ctx,&node_p->addr4);
+        _abcdkvnet_ipool_reclaim(ctx,&node_p->addr6);
 
         memset(node_p,0,sizeof(abcdkvnet_node_t));
     }
@@ -359,19 +478,23 @@ static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_
 {
     abcdk_object_t *rsp_p = NULL;
     abcdk_bit_t rspbit = {0};
-    int type;
-    abcdk_sockaddr_t addr4 = {0},addr6 = {0};
+    int type4,type6;
+    abcdk_sockaddr_t addr4 = {AF_INET},addr6 = {AF_INET6};
     int chk;
 
-    type = abcdk_bit_read2number(req,8);
-
-    addr4.family = AF_INET;
+    type4 = abcdk_bit_read2number(req,8);
     abcdk_bit_read2buffer(req,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
 
-    addr6.family = AF_INET6;
+    type6 = abcdk_bit_read2number(req,8);
     abcdk_bit_read2buffer(req,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
+    
+    /*为了防止客户端重复申请从而造成的IP地址丢失，因此要先回收之前注册的地址。*/
+    _abcdkvnet_server_ip_reclaim(ctx,session);
+    
+    /*申请IP地址。*/
+    chk = _abcdkvnet_server_ip_allocate(ctx,session,type4,&addr4,type6,&addr6);
 
-    rsp_p = abcdk_object_alloc2(26);
+    rsp_p = abcdk_object_alloc2(100);
     if(!rsp_p)
         return -1;
 
@@ -379,14 +502,13 @@ static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_
     rspbit.size = rsp_p->sizes[0];
 
     abcdk_bit_write_number(&rspbit,16,ABCDKVNET_CMD_REQUEST_IP);
-
-    chk = _abcdkvnet_server_ip_allocate(ctx,session,type,&addr4,&addr6);
+    
     if(chk != 0)
     {
         abcdk_bit_write_number(&rspbit,32,11);
-        abcdk_bit_write_number(&rspbit,4,0);
-        abcdk_bit_write_number(&rspbit,8,0);
-        abcdk_bit_write_number(&rspbit,8,0);
+        abcdk_bit_write_number(&rspbit,32,0);
+        abcdk_bit_write_number(&rspbit,64,0);
+        abcdk_bit_write_number(&rspbit,64,0);
     }
     else 
     {
@@ -395,9 +517,17 @@ static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_
         abcdk_bit_write_buffer(&rspbit,addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
     }
 
+    /*有效长度*/
+    rsp_p->sizes[0] = rspbit.pos /8;
+
     *rsp = rsp_p;
 
     return 0;
+}
+
+static int _abcdkvnet_server_offline_client(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
+{
+    _abcdkvnet_server_ip_reclaim(ctx,session);
 }
 
 static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *session, const void *data, size_t size,abcdk_object_t **rsp)
@@ -468,6 +598,8 @@ static void _abcdkvnet_srpc_close_cb(void *opaque,abcdk_srpc_session_t *session)
 {
     abcdkvnet_t *ctx = (abcdkvnet_t *)opaque;
 
+    if(ctx->role == ABCDKVNET_ROLE_SERVER)
+        _abcdkvnet_server_offline_client(ctx,session);
 }
 
 static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
@@ -555,7 +687,8 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     int max_client;
     int chk;
 
-    ctx->virtual_addr_type = abcdk_option_get_int(ctx->args, "--virtual-addr-type", 0, 2);
+    ctx->virtual_addr4_type = abcdk_option_get_int(ctx->args, "--virtual-addr4-type", 0, ABCDKVNET_IPADDR_TYPE_DHCP);
+    ctx->virtual_addr6_type = abcdk_option_get_int(ctx->args, "--virtual-addr6-type", 0, ABCDKVNET_IPADDR_TYPE_DHCP);
     ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, NULL);
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
 
@@ -582,15 +715,35 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
     ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
     
+    if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
+    {
+        chk = abcdk_sockaddr_from_string(&ctx->virtual_addr4, ctx->virtual_static_addr4, 0);
+        if (chk != 0)
+        {
+            abcdk_trace_output(LOG_WARNING, "虚拟IPV4静态的地址(%s)解析错误。", ctx->virtual_static_addr4);
+            goto END;
+        }
+    }
+
+    if (ctx->virtual_addr6_type == ABCDKVNET_IPADDR_TYPE_STATIC)
+    {
+        chk = abcdk_sockaddr_from_string(&ctx->virtual_addr6, ctx->virtual_static_addr6, 0);
+        if (chk != 0)
+        {
+            abcdk_trace_output(LOG_WARNING, "虚拟IPV6静态的地址(%s)解析错误。", ctx->virtual_static_addr6);
+            goto END;
+        }
+    }
+
     ctx->virtual_ipv4_pool = abcdk_ipool_create2(ipv4_pool_begin_p,ipv4_pool_end_p);
     if(!ctx->virtual_ipv4_pool)
-        abcdk_trace_output(LOG_WARNING,"IPV4地址池(%s,%s)无效或超出范围。",ipv4_pool_begin_p,ipv4_pool_end_p);
+        abcdk_trace_output(LOG_WARNING,"虚拟IPV4地址池(%s,%s)无效。",ipv4_pool_begin_p,ipv4_pool_end_p);
 
     ctx->virtual_ipv6_pool = abcdk_ipool_create2(ipv6_pool_begin_p,ipv6_pool_end_p);
     if(!ctx->virtual_ipv6_pool)
-        abcdk_trace_output(LOG_WARNING,"IPV6地址池(%s,%s)无效或超出范围。",ipv6_pool_begin_p,ipv6_pool_end_p);
+        abcdk_trace_output(LOG_WARNING,"虚拟IPV6地址池(%s,%s)无效。",ipv6_pool_begin_p,ipv6_pool_end_p);
 
-    if(!ctx->virtual_ipv4_pool && !ctx->virtual_ipv6_pool)
+    if(!ctx->virtual_ipv4_pool || !ctx->virtual_ipv6_pool)
         goto END;
     
     if(ipv4_pool_dhcp_begin_p && ipv4_pool_dhcp_end_p)
@@ -598,7 +751,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
         chk = abcdk_ipool_set_dhcp_range2(ctx->virtual_ipv4_pool,ipv4_pool_dhcp_begin_p,ipv4_pool_dhcp_end_p);
         if(chk != 0)
         {
-            abcdk_trace_output(LOG_WARNING,"IPV4地址池(%s,%s)设置DHCP范围(%s,%s)错误。",ipv4_pool_begin_p,ipv4_pool_end_p,ipv4_pool_dhcp_begin_p,ipv4_pool_dhcp_end_p);
+            abcdk_trace_output(LOG_WARNING,"虚拟IPV4地址池(%s,%s)设置动态范围(%s,%s)错误。",ipv4_pool_begin_p,ipv4_pool_end_p,ipv4_pool_dhcp_begin_p,ipv4_pool_dhcp_end_p);
             goto END;
         }
     }
@@ -608,9 +761,27 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
         chk = abcdk_ipool_set_dhcp_range2(ctx->virtual_ipv6_pool,ipv6_pool_dhcp_begin_p,ipv6_pool_dhcp_end_p);
         if(chk != 0)
         {
-            abcdk_trace_output(LOG_WARNING,"IPV6地址池(%s,%s)设置DHCP范围(%s,%s)错误。",ipv6_pool_begin_p,ipv6_pool_end_p,ipv6_pool_dhcp_begin_p,ipv6_pool_dhcp_end_p);
+            abcdk_trace_output(LOG_WARNING,"虚拟IPV6地址池(%s,%s)设置动态范围(%s,%s)错误。",ipv6_pool_begin_p,ipv6_pool_end_p,ipv6_pool_dhcp_begin_p,ipv6_pool_dhcp_end_p);
             goto END;
         }
+    }
+
+    /*请求IPV4地址。*/
+    ctx->virtual_addr4.family = AF_INET;
+    chk = _abcdkvnet_ipool_allocate(ctx, ctx->virtual_addr4_type, &ctx->virtual_addr4);
+    if (chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "请求虚拟IPV4地址失败，超出IPV4地址池(%s,%s)有效范围。",ipv4_pool_begin_p,ipv4_pool_end_p);
+        goto END;
+    }
+
+    /*请求IPV6地址。*/
+    ctx->virtual_addr6.family = AF_INET6;
+    chk = _abcdkvnet_ipool_allocate(ctx, ctx->virtual_addr6_type, &ctx->virtual_addr6);
+    if (chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "请求虚拟IPV6地址失败，超出IPV4地址池(%s,%s)有效范围。",ipv6_pool_begin_p,ipv6_pool_end_p);
+        goto END;
     }
 
     max_client = ABCDK_MAX(abcdk_ipool_count(ctx->virtual_ipv4_pool,0),abcdk_ipool_count(ctx->virtual_ipv6_pool,0));
@@ -704,70 +875,50 @@ static int _abcdkproxy_client_connect_uplink(abcdkvnet_t *ctx)
 
 static int _abcdkproxy_client_request_ip(abcdkvnet_t *ctx)
 {
-    char sbuf[100] = {0};
-    abcdk_bit_t sbit = {0,sbuf,100},rbit = {0};
+    char reqbuf[100] = {0};
+    abcdk_bit_t reqbit = {0,reqbuf,100},rspbit = {0};
     abcdk_object_t *rsp = NULL;
-    char ipv4[100] = {0},ipv6[100] = {0};
+    char ipv4str[100] = {0},ipv6str[100] = {0};
     int err;
     int chk;
     
-    abcdk_bit_write_number(&sbit,16,ABCDKVNET_CMD_REQUEST_IP);
-
-    if(ctx->virtual_addr_type == 1)
-    {
-        abcdk_bit_write_number(&sbit,8,1);
-        abcdk_bit_write_buffer(&sbit,(uint8_t*)&ctx->virtual_addr4.addr4.sin_addr.s_addr,4);
-        abcdk_bit_write_buffer(&sbit,(uint8_t*)&ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8,16);
-    }
-    else if(ctx->virtual_addr_type == 2)
-    {
-        abcdk_bit_write_number(&sbit,8,2);
-        abcdk_bit_write_number(&sbit,32,0);
-        abcdk_bit_write_number(&sbit,64,0);
-        abcdk_bit_write_number(&sbit,64,0);
-    }
-    else
-    {
-        return -22;
-    }
-
-    chk = abcdk_srpc_request(ctx->rpc_uplink_session,sbuf,23,&rsp);
+    abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_REQUEST_IP);
+    abcdk_bit_write_number(&reqbit, 8, ctx->virtual_addr4_type);
+    abcdk_bit_write_buffer(&reqbit, (uint8_t *)&ctx->virtual_addr4.addr4.sin_addr.s_addr, 4);
+    abcdk_bit_write_number(&reqbit, 8, ctx->virtual_addr6_type);
+    abcdk_bit_write_buffer(&reqbit, ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8, 16);
+         
+    chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,&rsp);
     if(chk != 0)
     {
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "向上级(%s)请求IP失败，网络不通或目标不可达。", ctx->uplink_addr);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "向上级(%s)请求IP地址失败，网络不通或目标不可达。", ctx->uplink_addr);
         return -1;
     }
 
-    rbit.data = rsp->pptrs[0];
-    rbit.size = rsp->sizes[0];
+    rspbit.data = rsp->pptrs[0];
+    rspbit.size = rsp->sizes[0];
 
-    abcdk_bit_seek(&rbit,16);
-    err = abcdk_bit_read2number(&rbit,32);
+    abcdk_bit_seek(&rspbit,16);
+    err = abcdk_bit_read2number(&rspbit,32);
     if (err == 0)
     {
         ctx->virtual_addr4.family = AF_INET;
-        abcdk_bit_read2buffer(&rbit, (uint8_t *)&ctx->virtual_addr4.addr4.sin_addr.s_addr, 4);
+        abcdk_bit_read2buffer(&rspbit, (uint8_t *)&ctx->virtual_addr4.addr4.sin_addr.s_addr, 4);
 
         ctx->virtual_addr6.family = AF_INET6;
-        abcdk_bit_read2buffer(&rbit, ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8, 16);
+        abcdk_bit_read2buffer(&rspbit, ctx->virtual_addr6.addr6.sin6_addr.__in6_u.__u6_addr8, 16);
 
-        abcdk_sockaddr_to_string(ipv4, &ctx->virtual_addr4);
-        abcdk_sockaddr_to_string(ipv6, &ctx->virtual_addr6);
+        abcdk_sockaddr_to_string(ipv4str, &ctx->virtual_addr4);
+        abcdk_sockaddr_to_string(ipv6str, &ctx->virtual_addr6);
 
-        if (ctx->virtual_addr_type == 2)
-            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向上级(%s)请求IP成功，分配的虚拟地址是IPV4(%s)和IPV6(%s)", ctx->uplink_addr, ipv4, ipv6);
-        else if (ctx->virtual_addr_type == 1)
-            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向上级(%s)请求IP成功，注册的虚拟地址是IPV4(%s)和IPV6(%s)", ctx->uplink_addr, ipv4, ipv6);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向上级(%s)请求IP成功，注册的虚拟地址是IPV4(%s)和IPV6(%s)",
+                                ctx->uplink_addr, ipv4str, ipv6str);
 
         chk = 0;
     }
     else 
     {
-        if (ctx->virtual_addr_type == 2)
-            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向上级(%s)请求IP失败，请重试。", ctx->uplink_addr);
-        else if (ctx->virtual_addr_type == 1)
-            abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向上级(%s)请求IP失败，虚拟IPV4地址(%s)或IPV6地址(%s)已经被占用。",
-                                    ctx->uplink_addr, ctx->virtual_static_addr4, ctx->virtual_static_addr6);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向上级(%s)请求IP地址失败(ERRNO=%d)。",ctx->uplink_addr, err);
 
         chk = -1;
     }
@@ -783,26 +934,30 @@ static void _abcdkvnet_client_dowork(abcdkvnet_t *ctx)
 
 LOOP:
 
+    /*检查是否需要退出。*/
+    if(abcdk_atomic_compare(&ctx->exit_flag,1))
+        return;
+
     chk = _abcdkproxy_client_connect_uplink(ctx);
     if(chk != 0)
         goto ERR;
 
     chk = _abcdkproxy_client_request_ip(ctx);
     if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR,"向上级(%s)请求IP址地失败，准备重试。",ctx->uplink_addr);
         goto ERR;
+    }
 
 ERR:
 
+    /*快速关闭。*/
     if(ctx->rpc_uplink_session)
         abcdk_srpc_set_timeout(ctx->rpc_uplink_session,1);
         
     abcdk_srpc_unref(&ctx->rpc_uplink_session);
 
-    /*检查是否需要退出。*/
-    if(abcdk_atomic_compare(&ctx->exit_flag,1))
-        return;
-
-    sleep(1);
+    sleep(3);
     goto LOOP;
 }
 
@@ -812,9 +967,10 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     int chk4,chk6;
     int chk;
 
-    ctx->virtual_addr_type = abcdk_option_get_int(ctx->args, "--virtual-addr-type", 0, 2);
-    ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, NULL);
-    ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
+    ctx->virtual_addr4_type = abcdk_option_get_int(ctx->args, "--virtual-addr4-type", 0, ABCDKVNET_IPADDR_TYPE_DHCP);
+    ctx->virtual_addr6_type = abcdk_option_get_int(ctx->args, "--virtual-addr6-type", 0, ABCDKVNET_IPADDR_TYPE_DHCP);
+    ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, "");
+    ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, "");
 
     ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
     ctx->pki_ca_path = abcdk_option_get(ctx->args, "--pki-ca-path", 0, NULL);
@@ -825,32 +981,29 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
     ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
      
-    ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_ENIGMA);
+    ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
     ctx->uplink_addr = abcdk_option_get(ctx->args, "--uplink-addr", 0, "");
 
-    if(ctx->virtual_addr_type == 1)
+    if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
     {
-        if (ctx->virtual_static_addr4)
+        chk4 = abcdk_sockaddr_from_string(&ctx->virtual_addr4, ctx->virtual_static_addr4, 0);
+        if (chk4 != 0)
         {
-            chk4 = abcdk_sockaddr_from_string(&ctx->virtual_addr4, ctx->virtual_static_addr4, 0);
-            if (chk4 != 0)
-            {
-                abcdk_trace_output(LOG_WARNING, "静态IPV4地址(%s)解析错误。", ctx->virtual_static_addr4);
-                goto END;
-            }
-        }
-
-        if (ctx->virtual_static_addr6)
-        {
-            chk6 = abcdk_sockaddr_from_string(&ctx->virtual_addr6, ctx->virtual_static_addr6, 0);
-            if (chk6 != 0)
-            {
-                abcdk_trace_output(LOG_WARNING, "静态IPV4地址(%s)解析错误。", ctx->virtual_static_addr6);
-                goto END;
-            }
+            abcdk_trace_output(LOG_WARNING, "静态IPV4地址(%s)解析错误。", ctx->virtual_static_addr4);
+            goto END;
         }
     }
-    
+
+    if (ctx->virtual_addr6_type == ABCDKVNET_IPADDR_TYPE_STATIC)
+    {
+        chk6 = abcdk_sockaddr_from_string(&ctx->virtual_addr6, ctx->virtual_static_addr6, 0);
+        if (chk6 != 0)
+        {
+            abcdk_trace_output(LOG_WARNING, "静态IPV6地址(%s)解析错误。", ctx->virtual_static_addr6);
+            goto END;
+        }
+    }
+
     ctx->rpc_ctx = abcdk_srpc_create(10,-1);
     if(!ctx->rpc_ctx)
         goto END;
