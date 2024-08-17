@@ -87,7 +87,7 @@ static void _abcdk_ipool_set_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,
     }
 }
 
-static  int _abcdk_ipool_init(abcdk_ipool_t *ctx)
+static int _abcdk_ipool_init(abcdk_ipool_t *ctx)
 {
     uint64_t c = 0;
 

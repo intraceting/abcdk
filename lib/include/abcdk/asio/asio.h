@@ -228,14 +228,14 @@ char *abcdk_asio_openssl_get_alpn_selected(abcdk_asio_node_t *node, char proto[2
 /**
  * 用户环境指针。
  * 
- * @return 旧的指针(0号索引)。
+ * @return 旧的指针。
 */
 void *abcdk_asio_get_userdata(abcdk_asio_node_t *node);
 
 /**
  * 设置用户环境指针。
  * 
- * @return 旧的指针(0号索引)。
+ * @return 旧的指针。
 */
 void *abcdk_asio_set_userdata(abcdk_asio_node_t *node,void *opaque);
 
