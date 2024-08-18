@@ -13,3 +13,7 @@ fi
 
 #启动调试器。
 pkexec --user root ${GDB_PREFIX}/gdb "$@"
+
+
+#把当前脚本的路径作为"miDebuggerPath"字段的值。
+#例："miDebuggerPath": "${workspaceFolder}/script/core/sudo-gdb.sh",

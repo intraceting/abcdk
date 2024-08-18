@@ -374,36 +374,57 @@ static int _abcdkvnet_ifconfig(abcdkvnet_t *ctx)
 
     abcdk_sockaddr_to_string(local4str, &ctx->virtual_local_addr4);
     abcdk_sockaddr_to_string(local6str, &ctx->virtual_local_addr6);
-
-    chk = abcdk_net_address_add(AF_INET,local4str,32,NULL,0,ctx->virtual_tun_name);
-    if(chk != 0)
-    {
-        abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加地址(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,local4str);
-        return -1;
-    }
-
-    chk = abcdk_net_address_add(AF_INET6,local6str,128,NULL,0,ctx->virtual_tun_name);
-    if(chk != 0)
-    {
-        abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加地址(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,local6str);
-        return -1;
-    }
-
-    /*服务端仅需要配置IP地址，不需要配置默认路由。*/
-    if(ctx->role == ABCDKVNET_ROLE_SERVER)
-        return 0;
-    
     abcdk_sockaddr_to_string(uplink4str, &ctx->virtual_uplink_addr4);
     abcdk_sockaddr_to_string(uplink6str, &ctx->virtual_uplink_addr6);
 
-    chk = abcdk_net_route_add(AF_INET, "0.0.0.0", 0, uplink4str, 0, ctx->virtual_tun_name);
+    chk = abcdk_net_address_add(4,local4str,16,NULL,0,ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向TUN(%s)添加地址(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,local4str);
+        return -1;
+    }
+
+    chk = abcdk_net_address_add(6,local6str,112,NULL,0,ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向TUN(%s)添加地址(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,local6str);
+        return -1;
+    }
+
+    chk = abcdk_net_up(ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "TUN(%s)启动失败，权限不足或系统错误。", ctx->virtual_tun_name);
+        return -1;
+    }
+
+    chk = abcdk_net_route_add(4, local4str, 16, uplink4str, 0, ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向路由表示添加IPV4(%s)、GW(%s)、TUN(%s)失败，权限不足或系统错误。",local4str, uplink4str,ctx->virtual_tun_name);
+        return -1;
+    }
+
+    chk = abcdk_net_route_add(6, local6str, 112, uplink6str, 0, ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "向路由表示添加IPV6(%s)、GW(%s)、TUN(%s)失败，权限不足或系统错误。",local6str, uplink6str,ctx->virtual_tun_name);
+        return -1;
+    }
+
+    /*服务端不需要配置默认路由。*/
+    if(ctx->role == ABCDKVNET_ROLE_SERVER)
+        return 0;
+    
+
+    chk = abcdk_net_route_add(4, "0.0.0.0", 0, uplink4str, 0, ctx->virtual_tun_name);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加默认的路由(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,uplink4str);
         return -1;
     }
 
-    abcdk_net_route_add(AF_INET6, "0", 0, uplink6str, 0, ctx->virtual_tun_name);
+    abcdk_net_route_add(6, "::0", 0, uplink6str, 0, ctx->virtual_tun_name);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加默认的路由(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,uplink6str);
@@ -810,12 +831,12 @@ LOOP:
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
 
-    // chk = _abcdkvnet_ifconfig(ctx);
-    // if(chk != 0)
-    // {
-    //     abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
-    //     goto ERR;
-    // }
+    chk = _abcdkvnet_ifconfig(ctx);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
+        goto ERR;
+    }
 
 ERR:
 
@@ -1104,12 +1125,12 @@ LOOP:
         goto ERR;
     }
 
-    // chk = _abcdkvnet_ifconfig(ctx);
-    // if(chk != 0)
-    // {
-    //     abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
-    //     goto ERR;
-    // }
+    chk = _abcdkvnet_ifconfig(ctx);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
+        goto ERR;
+    }
 
 ERR:
 
