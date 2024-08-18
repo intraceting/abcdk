@@ -327,7 +327,7 @@ static void _abcdkvnet_node_free(abcdk_srpc_session_t **session)
     abcdk_srpc_session_t *session_p;
     abcdkvnet_node_t *node_ctx_p;
 
-    if(!session && !*session)
+    if(!session || !*session)
         return;
 
     session_p = *session;
@@ -355,6 +355,8 @@ static abcdk_srpc_session_t *_abcdkvnet_node_alloc(abcdkvnet_t *ctx,int flag)
     node_ctx_p->flag = flag;
 
     abcdk_srpc_set_userdata(session_p,node_ctx_p);
+
+    return session_p;
 
 ERR:
 
@@ -798,12 +800,12 @@ LOOP:
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
 
-    chk = _abcdkvnet_ifconfig(ctx);
-    if(chk != 0)
-    {
-        abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
-        goto ERR;
-    }
+    // chk = _abcdkvnet_ifconfig(ctx);
+    // if(chk != 0)
+    // {
+    //     abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
+    //     goto ERR;
+    // }
 
 ERR:
 
@@ -1090,12 +1092,12 @@ LOOP:
         goto ERR;
     }
 
-    chk = _abcdkvnet_ifconfig(ctx);
-    if(chk != 0)
-    {
-        abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
-        goto ERR;
-    }
+    // chk = _abcdkvnet_ifconfig(ctx);
+    // if(chk != 0)
+    // {
+    //     abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
+    //     goto ERR;
+    // }
 
 ERR:
 
