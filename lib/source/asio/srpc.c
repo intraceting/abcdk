@@ -73,6 +73,7 @@ static void _abcdk_srpc_node_destroy_cb(void *userdata)
     if(node_p->userdata_free_cb)
         node_p->userdata_free_cb(node_p->userdata->pptrs[0]);
 
+    abcdk_object_unref(&node_p->userdata);
     abcdk_receiver_unref(&node_p->req_data);
     abcdk_waiter_free(&node_p->req_waiter);
 

@@ -13,7 +13,7 @@
 
 static void  prepare_cb(void *opaque,abcdk_srpc_session_t **session,abcdk_srpc_session_t *listen)
 {
-    *session = abcdk_srpc_alloc((abcdk_srpc_t *)opaque);
+    *session = abcdk_srpc_alloc((abcdk_srpc_t *)opaque,0,0);
 }
 
 static void accept_cb(void *opaque,abcdk_srpc_session_t *session,int *result)
@@ -84,7 +84,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
     client_cfg.pki_key_file = abcdk_option_get(args,"--client-openssl-key-file",0,NULL);
 
 
-    abcdk_srpc_session_t *listen_p = abcdk_srpc_alloc(srpc_ctx);
+    abcdk_srpc_session_t *listen_p = abcdk_srpc_alloc(srpc_ctx,0,0);
 
     abcdk_srpc_listen(listen_p,&addr,&server_cfg);
 
@@ -95,7 +95,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 #pragma omp parallel for num_threads(parallel)
     for (int i = 0; i < parallel; i++)
     {
-        abcdk_srpc_session_t *client_p = abcdk_srpc_alloc(srpc_ctx);
+        abcdk_srpc_session_t *client_p = abcdk_srpc_alloc(srpc_ctx,0,0);
 
         abcdk_srpc_connect(client_p,&addr,&client_cfg);
 

@@ -10,7 +10,11 @@
 /** 常量。*/
 enum _abcdkvnet_constant
 {
-    /** 服务端端。*/
+    /** 监听者。*/
+    ABCDKVNET_ROLE_LISTENER = 0,
+#define ABCDKVNET_ROLE_LISTENER ABCDKVNET_ROLE_LISTENER
+
+    /** 服务端。*/
     ABCDKVNET_ROLE_SERVER = 1,
 #define ABCDKVNET_ROLE_SERVER ABCDKVNET_ROLE_SERVER
 
@@ -324,19 +328,7 @@ static int _abcdkvnet_open_tun(const char *name)
 
 static void _abcdkvnet_node_free(abcdk_srpc_session_t **session)
 {
-    abcdk_srpc_session_t *session_p;
-    abcdkvnet_node_t *node_ctx_p;
-
-    if(!session || !*session)
-        return;
-
-    session_p = *session;
-    *session = NULL;
-
-    node_ctx_p = (abcdkvnet_node_t *) abcdk_srpc_get_userdata(session_p);
-   
-    abcdk_heap_free2((void**)&node_ctx_p);
-    abcdk_srpc_unref(&session_p);
+    abcdk_srpc_unref(session);
 }
 
 static abcdk_srpc_session_t *_abcdkvnet_node_alloc(abcdkvnet_t *ctx,int flag)
@@ -344,17 +336,13 @@ static abcdk_srpc_session_t *_abcdkvnet_node_alloc(abcdkvnet_t *ctx,int flag)
     abcdk_srpc_session_t *session_p;
     abcdkvnet_node_t *node_ctx_p;
 
-    session_p = abcdk_srpc_alloc(ctx->rpc_ctx);
+    session_p = abcdk_srpc_alloc(ctx->rpc_ctx,sizeof(abcdkvnet_node_t),NULL);
     if(!session_p)
         return NULL;
 
-    node_ctx_p = (abcdkvnet_node_t *) abcdk_heap_alloc(sizeof(abcdkvnet_node_t));
-    if(!node_ctx_p)
-        goto ERR;
+    node_ctx_p = (abcdkvnet_node_t *) abcdk_srpc_get_userdata(session_p);
 
     node_ctx_p->flag = flag;
-
-    abcdk_srpc_set_userdata(session_p,node_ctx_p);
 
     return session_p;
 
@@ -463,22 +451,28 @@ static int _abcdkvnet_iplan_register(abcdkvnet_t *ctx,abcdk_srpc_session_t *sess
 
     abcdk_mutex_lock(ctx->virtual_route_locker,1);
 
-    /*注册到路由表中。*/
-    session_p = abcdk_srpc_refer(session);
-    chk = abcdk_iplan_insert(ctx->virtual_route_list,addr4,session_p);
-    if(chk != 0)
+    if (addr4->family == AF_INET)
     {
-        abcdk_srpc_unref(&session_p);
-        goto END;
+        /*注册到路由表中。*/
+        session_p = abcdk_srpc_refer(session);
+        chk = abcdk_iplan_insert(ctx->virtual_route_list, addr4, session_p);
+        if (chk != 0)
+        {
+            abcdk_srpc_unref(&session_p);
+            goto END;
+        }
     }
 
-    /*注册到路由表中。*/
-    session_p = abcdk_srpc_refer(session);
-    chk = abcdk_iplan_insert(ctx->virtual_route_list,addr6,session_p);
-    if(chk != 0)
+    if (addr6->family == AF_INET6)
     {
-        abcdk_srpc_unref(&session_p);
-        goto END;
+        /*注册到路由表中。*/
+        session_p = abcdk_srpc_refer(session);
+        chk = abcdk_iplan_insert(ctx->virtual_route_list, addr6, session_p);
+        if (chk != 0)
+        {
+            abcdk_srpc_unref(&session_p);
+            goto END;
+        }
     }
 
     /*OK.*/
@@ -533,6 +527,7 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
 static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t *session,int type4, abcdk_sockaddr_t *addr4,int type6, abcdk_sockaddr_t *addr6)
 {
     abcdkvnet_node_t *node_ctx_p = NULL;
+    char addr4str[100] = {0},addr6str[100] = {0};
     int chk = -1;
 
     if(!session)
@@ -561,17 +556,26 @@ static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     if(chk != 0)
         return -1;
 
+    abcdk_sockaddr_to_string(addr4str, addr4);
+    abcdk_sockaddr_to_string(addr6str, addr6);
+
+    abcdk_srpc_trace_output(session,LOG_INFO,"分配给客户端的虚拟址地是IPV4(%s)和IPV6(%s)",addr4str,addr6str);
+
     return 0;
 }
 
 static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t *session)
 {
     abcdkvnet_node_t *node_ctx_p = NULL;
+    char addr4str[100] = {0},addr6str[100] = {0};
 
     if(!session)
         return;
 
     node_ctx_p = (abcdkvnet_node_t *) abcdk_srpc_get_userdata(session);
+
+    if(node_ctx_p->virtual_addr4.family != AF_INET && node_ctx_p->virtual_addr6.family != AF_INET6)
+        return;
 
     /*从路由表中删除。*/
     _abcdkvnet_iplan_unregister(ctx,&node_ctx_p->virtual_addr4,&node_ctx_p->virtual_addr6);
@@ -580,6 +584,12 @@ static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     _abcdkvnet_ipool_reclaim(ctx,&node_ctx_p->virtual_addr4);
     _abcdkvnet_ipool_reclaim(ctx,&node_ctx_p->virtual_addr6);
 
+    if(node_ctx_p->virtual_addr4.family == AF_INET)
+        abcdk_sockaddr_to_string(addr4str, &node_ctx_p->virtual_addr4);
+    if(node_ctx_p->virtual_addr6.family == AF_INET6)
+        abcdk_sockaddr_to_string(addr6str, &node_ctx_p->virtual_addr6);
+
+    abcdk_srpc_trace_output(session,LOG_INFO,"从客户端回收的虚拟址地是IPV4(%s)和IPV6(%s)",addr4str,addr6str);
 }
 
 static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
@@ -680,7 +690,7 @@ static void _abcdkvnet_srpc_prepare_cb(void *opaque,abcdk_srpc_session_t **sessi
     abcdkvnet_t *ctx = (abcdkvnet_t *)opaque;
     abcdk_srpc_session_t *session_p = NULL;
 
-    session_p = _abcdkvnet_node_alloc(ctx,1);
+    session_p = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_SERVER);
     if(!session_p)
         return;
 
@@ -696,9 +706,9 @@ static void _abcdkvnet_srpc_request_cb(void *opaque, abcdk_srpc_session_t *sessi
 
     node_ctx_p = (abcdkvnet_node_t *) abcdk_srpc_get_userdata(session);
 
-    if(ctx->role == ABCDKVNET_ROLE_SERVER)
+    if(node_ctx_p->flag == ABCDKVNET_ROLE_SERVER)
         _abcdkvnet_server_cmd_process(ctx,session,data,size,&rsp);
-    else if(ctx->role == ABCDKVNET_ROLE_CLIENT)
+    else if(node_ctx_p->flag == ABCDKVNET_ROLE_CLIENT)
         _abcdkvnet_client_cmd_process(ctx,session,data,size,&rsp);
     else 
         abcdk_srpc_set_timeout(session,1);
@@ -718,12 +728,12 @@ static void _abcdkvnet_srpc_close_cb(void *opaque,abcdk_srpc_session_t *session)
 
     node_ctx_p = (abcdkvnet_node_t *) abcdk_srpc_get_userdata(session);
 
-    if(ctx->role == ABCDKVNET_ROLE_SERVER)
+    if(node_ctx_p->flag == ABCDKVNET_ROLE_LISTENER)
+        return;
+
+    if(node_ctx_p->flag == ABCDKVNET_ROLE_SERVER)
         _abcdkvnet_server_offline_client(ctx,session);
 
-    /*删除用户环境数据。*/
-    abcdk_heap_free2((void**)&node_ctx_p);
-    abcdk_srpc_set_userdata(session,NULL);
 }
 
 static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
@@ -755,13 +765,13 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     }
 
     if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
-        session_p = ctx->rpc_listen_raw_session = _abcdkvnet_node_alloc(ctx,0);
+        session_p = ctx->rpc_listen_raw_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
     else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
-        session_p = ctx->rpc_listen_pki_session = _abcdkvnet_node_alloc(ctx,0);
+        session_p = ctx->rpc_listen_pki_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
     else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
-        session_p = ctx->rpc_listen_enigma_session = _abcdkvnet_node_alloc(ctx,0);
+        session_p = ctx->rpc_listen_enigma_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
     else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
-        session_p = ctx->rpc_listen_pki_enigma_session = _abcdkvnet_node_alloc(ctx,0);
+        session_p = ctx->rpc_listen_pki_enigma_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
 
     if (!session_p)
         return -2;
@@ -981,7 +991,7 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
         return -1;
     }
 
-    ctx->rpc_uplink_session = _abcdkvnet_node_alloc(ctx,2);
+    ctx->rpc_uplink_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_CLIENT);
     if(!ctx->rpc_uplink_session)
         return -1;
 
@@ -1053,6 +1063,8 @@ static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
 
         abcdk_sockaddr_to_string(local4str, &ctx->virtual_local_addr4);
         abcdk_sockaddr_to_string(local6str, &ctx->virtual_local_addr6);
+        abcdk_sockaddr_to_string(uplink4str, &ctx->virtual_uplink_addr4);
+        abcdk_sockaddr_to_string(uplink6str, &ctx->virtual_uplink_addr6);
 
         abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向服务器(%s)请求IP成功，本地的虚拟地址是IPV4(%s)和IPV6(%s)，服务器的虚拟地址是IPV4(%s)和IPV6(%s)。",
                                 ctx->uplink_addr, local4str, local6str,uplink4str,uplink6str);
