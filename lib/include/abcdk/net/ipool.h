@@ -4,15 +4,18 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_DHCP_IPOOL_H
-#define ABCDK_DHCP_IPOOL_H
+#ifndef ABCDK_NET_IPOOL_H
+#define ABCDK_NET_IPOOL_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/socket.h"
 
-/** IP池。 */
+__BEGIN_DECLS
+
+
+/**IP池。 */
 typedef struct _abcdk_ipool abcdk_ipool_t;
 
 /**销毁。 */
@@ -65,4 +68,7 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
 */
 int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
 
-#endif //ABCDK_DHCP_IPOOL_H
+__END_DECLS
+
+
+#endif //ABCDK_NET_IPOOL_H

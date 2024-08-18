@@ -61,8 +61,7 @@ typedef struct _abcdkvnet
     abcdk_ipool_t *virtual_ipv6_pool;
 
     /*虚拟路由表。*/
-    abcdk_object_t *virtual_route_list;
-    abcdk_mutex_t *virtual_route_mutex;
+    abcdk_iplan_t *virtual_route_list;
     
     /*虚拟地址。*/
     abcdk_sockaddr_t virtual_addr4;
@@ -442,30 +441,12 @@ static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     chk = _abcdkvnet_ipool_allocate(ctx,type6,addr6);
     if(chk != 0)
         return -11;
-    
-    if(1)
-    {
-        /*绑定IP地址。*/
-        node_ctx_p->virtual_addr4 = *addr4;
-        node_ctx_p->virtual_addr6 = *addr6;
 
-        chk = 0;
-    }
-    else
-    {
-        // /*无空闲位置时，回收动态分配的IP地址。*/
+    /*绑定IP地址。*/
+    node_ctx_p->virtual_addr4 = *addr4;
+    node_ctx_p->virtual_addr6 = *addr6;
 
-        // if (type4 == ABCDKVNET_IPADDR_TYPE_DHCP)
-        //     _abcdkvnet_ipool_reclaim(ctx,addr4);
-
-        // if (type6 == ABCDKVNET_IPADDR_TYPE_DHCP)
-        //     _abcdkvnet_ipool_reclaim(ctx,addr6);
-        
-        // chk = -1;
-    }
-
-
-    return chk;
+    return 0;
 }
 
 static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t *session)
@@ -805,11 +786,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     if(max_client <= 0)
         goto END;
 
-    ctx->virtual_route_list = abcdk_object_alloc3(sizeof(abcdkvnet_node_t),max_client);
-    if(!ctx->virtual_route_list)
-        goto END;
-
-    ctx->virtual_route_mutex = abcdk_mutex_create();
+    ctx->virtual_route_list = abcdk_iplan_create();
     if(!ctx->virtual_route_list)
         goto END;
 
@@ -844,8 +821,7 @@ END:
     _abcdkvnet_node_free(&ctx->rpc_listen_pki_enigma_session);
     abcdk_ipool_destroy(&ctx->virtual_ipv4_pool);
     abcdk_ipool_destroy(&ctx->virtual_ipv6_pool);
-    abcdk_object_unref(&ctx->virtual_route_list);
-    abcdk_mutex_destroy(&ctx->virtual_route_mutex);
+    abcdk_iplan_destroy(&ctx->virtual_route_list);
 }
 
 static int _abcdkproxy_client_connect_uplink(abcdkvnet_t *ctx)
