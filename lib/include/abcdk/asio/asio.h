@@ -226,18 +226,11 @@ SSL *abcdk_asio_openssl_get_handle(abcdk_asio_node_t *node);
 char *abcdk_asio_openssl_get_alpn_selected(abcdk_asio_node_t *node, char proto[255+1]);
 
 /**
- * 用户环境指针。
+ * 获取用户环境指针。
  * 
- * @return 旧的指针。
+ * @return !NULL(0) 成功(有效)，NULL(0) 失败(无效)。
 */
 void *abcdk_asio_get_userdata(abcdk_asio_node_t *node);
-
-/**
- * 设置用户环境指针。
- * 
- * @return 旧的指针。
-*/
-void *abcdk_asio_set_userdata(abcdk_asio_node_t *node,void *opaque);
 
 /**
  * 设置超时。

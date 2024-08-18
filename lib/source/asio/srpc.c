@@ -40,8 +40,11 @@ typedef struct _abcdk_srpc_node
     /*消息编号*/
     uint64_t mid_next;
 
-    /*用户环境指针。*/
-    void *userdata;
+    /** 用户环境指针。*/
+    abcdk_object_t *userdata;
+
+    /** 用户环境销毁函数。*/
+    void (*userdata_free_cb)(void *userdata);
 
 } abcdk_srpc_node_t;
 
@@ -59,15 +62,19 @@ abcdk_srpc_session_t *abcdk_srpc_refer(abcdk_srpc_session_t *src)
 
 static void _abcdk_srpc_node_destroy_cb(void *userdata)
 {
-    abcdk_srpc_node_t *ctx;
+    abcdk_srpc_node_t *node_p;
 
     if (!userdata)
         return;
 
-    ctx = (abcdk_srpc_node_t *)userdata;
+    node_p = (abcdk_srpc_node_t *)userdata;
 
-    abcdk_receiver_unref(&ctx->req_data);
-    abcdk_waiter_free(&ctx->req_waiter);
+    /*通知应用层回收内存。*/
+    if(node_p->userdata_free_cb)
+        node_p->userdata_free_cb(node_p->userdata->pptrs[0]);
+
+    abcdk_receiver_unref(&node_p->req_data);
+    abcdk_waiter_free(&node_p->req_waiter);
 
 }
 
@@ -76,7 +83,7 @@ static void _abcdk_srpc_node_waiter_msg_destroy_cb(void *msg)
     abcdk_object_unref((abcdk_object_t**)&msg);
 }
 
-abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx)
+abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void (*free_cb)(void *userdata))
 {
     abcdk_asio_node_t *node_p;
     abcdk_srpc_node_t *node_ctx_p;
@@ -90,6 +97,8 @@ abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx)
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asio_get_userdata(node_p);
 
     node_ctx_p->father = ctx;
+    node_ctx_p->userdata = abcdk_object_alloc3(userdata,1);
+    node_ctx_p->userdata_free_cb = free_cb;
     node_ctx_p->req_waiter = abcdk_waiter_alloc(_abcdk_srpc_node_waiter_msg_destroy_cb);
     node_ctx_p->mid_next = 1;
 
@@ -141,24 +150,7 @@ void *abcdk_srpc_get_userdata(abcdk_srpc_session_t *session)
     node_p = (abcdk_asio_node_t*)session;
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_asio_get_userdata(node_p);
 
-    return node_ctx_p->userdata;
-}
-
-void *abcdk_srpc_set_userdata(abcdk_srpc_session_t *session,void *userdata)
-{
-    abcdk_asio_node_t *node_p;
-    abcdk_srpc_node_t *node_ctx_p;
-    void *old_userdata;
-
-    assert(session != NULL);
-
-    node_p = (abcdk_asio_node_t*)session;
-    node_ctx_p = (abcdk_srpc_node_t *)abcdk_asio_get_userdata(node_p);
-
-    old_userdata = node_ctx_p->userdata;
-    node_ctx_p->userdata = userdata;
-    
-    return old_userdata;
+    return node_ctx_p->userdata->pptrs[0];
 }
 
 const char *abcdk_srpc_get_address(abcdk_srpc_session_t *session, int remote)

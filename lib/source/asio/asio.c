@@ -258,18 +258,6 @@ void *abcdk_asio_get_userdata(abcdk_asio_node_t *node)
     return node->userdata->pptrs[0];
 }
 
-void *abcdk_asio_set_userdata(abcdk_asio_node_t *node,void *opaque)
-{
-    void *old;
-
-    assert(node != NULL);
-
-    old = node->userdata->pptrs[0];
-    node->userdata->pptrs[0] = (uint8_t*)opaque;
-
-    return old;
-}
-
 int abcdk_asio_set_timeout(abcdk_asio_node_t *node, time_t timeout)
 {
     int chk;

@@ -103,7 +103,7 @@ void abcdk_srpc_unref(abcdk_srpc_session_t **session);
 abcdk_srpc_session_t *abcdk_srpc_refer(abcdk_srpc_session_t *src);
 
 /** 申请会话。*/
-abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx);
+abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
 /** 轨迹输出。*/
 void abcdk_srpc_trace_output(abcdk_srpc_session_t *node,int type, const char* fmt,...);
@@ -116,15 +116,13 @@ void abcdk_srpc_trace_output(abcdk_srpc_session_t *node,int type, const char* fm
  */
 uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node);
 
-/** 获取会话的用户环境指针。*/
+/** 
+ * 获用户环境指针。
+ * 
+ * @return !NULL(0) 成功(有效)，NULL(0) 失败(无效)。
+*/
 void *abcdk_srpc_get_userdata(abcdk_srpc_session_t *session);
 
-/** 
- * 设置会话的用户环境指针。
- * 
- * @return 旧的用户环境指针。
-*/
-void *abcdk_srpc_set_userdata(abcdk_srpc_session_t *session,void *userdata);
 
 /** 获取会话的地址。*/
 const char *abcdk_srpc_get_address(abcdk_srpc_session_t *session,int remote);
