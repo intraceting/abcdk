@@ -66,9 +66,6 @@ typedef struct _abcdkvnet
 
     /*日志。*/
     abcdk_logger_t *logger;
-
-    /*虚拟地址掩码。*/
-
    
     /*虚拟地址池。*/
     abcdk_ipool_t *virtual_ipv4_pool;
@@ -102,6 +99,9 @@ typedef struct _abcdkvnet
 
     /*PKIonENIGMA监听对象。*/
     abcdk_srpc_session_t *rpc_listen_pki_enigma_session;
+
+    /*上行对象状态。*/
+    volatile int rpc_uplink_session_ok;
 
     /*上行对象。*/
     abcdk_srpc_session_t *rpc_uplink_session;
@@ -1244,6 +1244,8 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     if(!ctx->rpc_uplink_session)
         return -1;
 
+    abcdk_atomic_store(&ctx->rpc_uplink_session_ok,1);
+
     rpc_cfg.opaque = ctx;
     rpc_cfg.ssl_scheme = ctx->uplink_ssl_scheme;
     rpc_cfg.pki_ca_file = ctx->pki_ca_file;
@@ -1264,6 +1266,8 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
         abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "连接服务器(%s)失败，网络不通或目标不可达。", ctx->uplink_addr);
         return -2;
     }
+
+    
 
     return 0;
 }
@@ -1355,6 +1359,10 @@ LOOP:
 
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
+        goto END;
+
+    /*检查上行状态是否正常。*/
+    if(!abcdk_atomic_compare(&ctx->rpc_uplink_session_ok,1))
         goto END;
 
     reqbit.pos = 0;
