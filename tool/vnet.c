@@ -854,14 +854,16 @@ LOOP:
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
-
+#if 0 
     chk = _abcdkvnet_ifconfig(ctx);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
         goto ERR;
     }
-
+#else 
+    sleep(1000);
+#endif 
 ERR:
 
     abcdk_closep(&ctx->virtual_tun_fd);
