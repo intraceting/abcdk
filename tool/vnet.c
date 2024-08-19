@@ -349,16 +349,25 @@ static int _abcdkvnet_tun_open(const char *name)
 
 static int _abcdkvnet_tun_poll(int fd,int event, time_t timeout)
 {
+    if(fd < 0)
+        return -1;
+
     return abcdk_poll(fd,event,timeout);
 }
 
 static ssize_t _abcdkvnet_tun_read(int fd,void *buf,size_t size)
 {
+    if(fd < 0)
+        return 0;
+
     return read(fd, buf, size);
 }
 
 static ssize_t _abcdkvnet_tun_write(int fd,const void *buf,size_t size)
 {
+    if(fd < 0)
+        return 0;
+
     return write(fd, buf, size);
 }
 
@@ -985,7 +994,7 @@ LOOP:
         else  
         {
             abcdk_bit_write_number(&reqbit,16,chk);
-            abcdk_bit_seek(&reqbit,chk);//数据已经填充完毕，这里仅移动游标即可。
+            abcdk_bit_seek(&reqbit,chk*8);//数据已经填充完毕，这里仅移动游标即可。
         }
     }
 
@@ -1030,7 +1039,7 @@ LOOP:
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
-#if 0 
+#if 1
     chk = _abcdkvnet_ifconfig(ctx);
     if(chk != 0)
     {
@@ -1376,7 +1385,7 @@ LOOP:
         else  
         {
             abcdk_bit_write_number(&reqbit,16,chk);
-            abcdk_bit_seek(&reqbit,chk);//数据已经填充完毕，这里仅移动游标即可。
+            abcdk_bit_seek(&reqbit,chk*8);//数据已经填充完毕，这里仅移动游标即可。
         }
     }
 
@@ -1525,6 +1534,8 @@ static void _abcdkvnet_process(abcdkvnet_t *ctx)
 
     /*创建信号线程。*/
     abcdk_thread_create(&signal_thread,1);
+
+    ctx->virtual_tun_fd = -1;
 
     ctx->role = abcdk_option_get_int(ctx->args,"--role",0,ABCDKVNET_ROLE_CLIENT);
 
