@@ -23,6 +23,24 @@ static int _abcdk_iplan_key_len(abcdk_sockaddr_t *addr)
     return 0;
 }
 
+static uint64_t _abcdk_iplan_hash_cb(const void* key,size_t size,void *opaque)
+{
+    uint64_t hs = UINT64_MAX;
+
+    abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key;
+
+    if (a->family == AF_INET)
+    {
+         hs = abcdk_hash_bkdr64(&a->addr4.sin_addr.s_addr,4);
+    }
+    else if (a->family == AF_INET6)
+    {
+        hs = abcdk_hash_bkdr64(&a->addr6.sin6_addr.__in6_u.__u6_addr8,16);
+    }
+
+    return hs;
+}
+
 static int _abcdk_iplan_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
     abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key1;
@@ -71,6 +89,7 @@ abcdk_iplan_t *abcdk_iplan_create()
     if(!ctx->table_ctx)
         goto ERR;
 
+    ctx->table_ctx->hash_cb = _abcdk_iplan_hash_cb;
     ctx->table_ctx->compare_cb = _abcdk_iplan_compare_cb;
     ctx->table_ctx->opaque = ctx;
 
