@@ -584,7 +584,7 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
 
     abcdk_mutex_lock(ctx->virtual_route_locker,1);
 
-    session_p = (abcdk_srpc_session_t *)abcdk_iplan_remove(ctx->virtual_route_list,addr);
+    session_p = (abcdk_srpc_session_t *)abcdk_iplan_lookup(ctx->virtual_route_list,addr);
     if(session_p)
         session_p = abcdk_srpc_refer(session_p);
 
@@ -727,6 +727,29 @@ static int _abcdkvnet_server_cmd_logon(abcdkvnet_t *ctx,abcdk_srpc_session_t *se
     return 0;
 }
 
+static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
+{
+    uint16_t data_l;
+    void *data_p;
+    ssize_t wlen;
+
+    data_l = abcdk_bit_read2number(req,16);
+    if(data_l <= 0)
+        return 0;
+
+    /*检查数据包长度是否超过最大传输单元。*/
+    if(data_l > ABCDKVNET_TUN_MTU)
+        return -1;    
+    
+    data_p = ABCDK_PTR2VPTR(req->data,4);
+
+    wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
+    if(wlen != data_l)
+        return -1;
+
+    return 0;
+}
+
 static int _abcdkvnet_server_offline_client(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
 {
     _abcdkvnet_server_ip_reclaim(ctx,session);
@@ -744,21 +767,49 @@ static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     cmd = abcdk_bit_read2number(&req,16);
 
     if(cmd == ABCDKVNET_CMD_LOGON)
-        chk = _abcdkvnet_server_cmd_LOGON(ctx,session,&req,rsp);
+        chk = _abcdkvnet_server_cmd_logon(ctx,session,&req,rsp);
+    else if(cmd == ABCDKVNET_CMD_POSTING)
+        chk = _abcdkvnet_server_cmd_posting(ctx,session,&req,rsp);
 
     return chk;
 }
 
+static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
+{
+    uint16_t data_l;
+    void *data_p;
+    ssize_t wlen;
+
+    data_l = abcdk_bit_read2number(req,16);
+    if(data_l <= 0)
+        return 0;
+
+    /*检查数据包长度是否超过最大传输单元。*/
+    if(data_l > ABCDKVNET_TUN_MTU)
+        return -1;    
+    
+    data_p = ABCDK_PTR2VPTR(req->data,4);
+
+    wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
+    if(wlen != data_l)
+        return -1;
+
+    return 0;
+}
+
 static int _abcdkvnet_client_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *session, const void *data, size_t size,abcdk_object_t **rsp)
 {
-    abcdk_bit_t rbit = {0};
+    abcdk_bit_t req = {0};
     uint16_t cmd;
     int chk;
 
-    rbit.data = (void*)data;
-    rbit.size = size;
+    req.data = (void*)data;
+    req.size = size;
 
-    cmd = abcdk_bit_read2number(&rbit,16);
+    cmd = abcdk_bit_read2number(&req,16);
+
+    if(cmd == ABCDKVNET_CMD_POSTING)
+        chk = _abcdkvnet_client_cmd_posting(ctx,session,&req,rsp);
 
     return chk;
 }
@@ -785,18 +836,23 @@ static void _abcdkvnet_srpc_request_cb(void *opaque, abcdk_srpc_session_t *sessi
     node_ctx_p = (abcdkvnet_node_t *) abcdk_srpc_get_userdata(session);
 
     if(node_ctx_p->flag == ABCDKVNET_ROLE_SERVER)
-        _abcdkvnet_server_cmd_process(ctx,session,data,size,&rsp);
+        chk = _abcdkvnet_server_cmd_process(ctx,session,data,size,&rsp);
     else if(node_ctx_p->flag == ABCDKVNET_ROLE_CLIENT)
-        _abcdkvnet_client_cmd_process(ctx,session,data,size,&rsp);
+        chk = _abcdkvnet_client_cmd_process(ctx,session,data,size,&rsp);
     else 
+        chk = -1;   
+
+    if(chk != 0)
+    {
         abcdk_srpc_set_timeout(session,1);
-
-    if(!rsp)
         return;
+    }
 
-    abcdk_srpc_response(session,mid,rsp->pptrs[0],rsp->sizes[0]);
-    abcdk_object_unref(&rsp);
-
+    if(rsp)
+    {
+        abcdk_srpc_response(session,mid,rsp->pptrs[0],rsp->sizes[0]);
+        abcdk_object_unref(&rsp);
+    }
 }
 
 static void _abcdkvnet_srpc_close_cb(void *opaque,abcdk_srpc_session_t *session)
@@ -883,6 +939,10 @@ static void _abcdkvnet_server_tun_transfer(abcdkvnet_t *ctx)
     abcdk_object_t *reqbuf;
     abcdk_bit_t reqbit = {0};
     uint8_t ipver;
+    abcdk_sockaddr_t dst;
+    struct iphdr *ipv4hdr_p;
+    struct ip6_hdr *ipv6hdr_p;
+    abcdk_srpc_session_t *rpc_dst_p;
     int chk;
 
     reqbuf = abcdk_object_alloc2(ABCDKVNET_TUN_MTU+4);
@@ -931,7 +991,28 @@ LOOP:
 
     ipver = ABCDK_PTR2U8(reqbit.data,4) >> 4;
 
-    chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,NULL);
+    if(ipver == 4)
+    {
+        ipv4hdr_p = (struct iphdr *)ABCDK_PTR2VPTR(reqbit.data,4);
+
+        dst.family = AF_INET;
+        dst.addr4.sin_addr.s_addr = ipv4hdr_p->daddr;
+    }
+    else if(ipver == 4)
+    {
+        ipv6hdr_p = (struct ip6_hdr *)ABCDK_PTR2VPTR(reqbit.data,4);
+
+        dst.family = AF_INET;
+        dst.addr6.sin6_addr = ipv6hdr_p->ip6_dst;
+    }
+
+    rpc_dst_p = _abcdkvnet_iplan_lookup(ctx,&dst);
+    if(!rpc_dst_p)
+        goto LOOP;
+
+    chk = abcdk_srpc_request(rpc_dst_p,reqbit.data,reqbit.pos/8,NULL);
+    abcdk_srpc_unref(&rpc_dst_p);
+
     if(chk == 0)
         goto LOOP;
 

@@ -13,6 +13,8 @@
 #include <string.h>
 #include <locale.h>
 #include <linux/if_tun.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include "abcdk.h"
 
 __BEGIN_DECLS
