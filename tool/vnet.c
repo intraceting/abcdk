@@ -585,7 +585,7 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
 {
     abcdk_srpc_session_t *session_p;
 
-    if(addr->family != AF_INET || addr->family != AF_INET6)
+    if(addr->family != AF_INET && addr->family != AF_INET6)
         return NULL;
 
     abcdk_mutex_lock(ctx->virtual_route_locker,1);
@@ -822,7 +822,7 @@ static int _abcdkvnet_client_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
 static int _abcdkvnet_client_offline_server(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
 {
-
+    return 0;
 }
 
 static void _abcdkvnet_srpc_prepare_cb(void *opaque,abcdk_srpc_session_t **session,abcdk_srpc_session_t *listen)
