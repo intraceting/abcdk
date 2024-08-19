@@ -1383,7 +1383,7 @@ LOOP:
         chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ABCDKVNET_TUN_MTU);
         if(chk == 0)
             goto END;
-        else if(chk <0)
+        else if(chk < 0)
         {
             if(errno == EAGAIN)
                 goto LOOP;
