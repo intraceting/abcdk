@@ -34,9 +34,13 @@ enum _abcdkvnet_constant
     ABCDKVNET_TUN_MTU = 1500,
 #define ABCDKVNET_TUN_MTU ABCDKVNET_TUN_MTU
 
-    /**请求IP地址.*/
-    ABCDKVNET_CMD_REQUEST_IP = 1,
-#define ABCDKVNET_CMD_REQUEST_IP ABCDKVNET_CMD_REQUEST_IP
+    /**登录注册。*/
+    ABCDKVNET_CMD_LOGON = 1,
+#define ABCDKVNET_CMD_LOGON ABCDKVNET_CMD_LOGON
+
+    /**投递消息。*/
+    ABCDKVNET_CMD_POSTING = 2,
+#define ABCDKVNET_CMD_POSTING ABCDKVNET_CMD_POSTING
 };
 
 /*节点。*/
@@ -659,7 +663,7 @@ static void _abcdkvnet_server_ip_reclaim(abcdkvnet_t *ctx, abcdk_srpc_session_t 
     abcdk_srpc_trace_output(session,LOG_INFO,"从客户端回收的虚拟址地是IPV4(%s)和IPV6(%s)",addr4str,addr6str);
 }
 
-static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
+static int _abcdkvnet_server_cmd_logon(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
     abcdk_object_t *rsp_p = NULL;
     abcdk_bit_t rspbit = {0};
@@ -689,7 +693,7 @@ static int _abcdkvnet_server_cmd_request_ip(abcdkvnet_t *ctx,abcdk_srpc_session_
     rspbit.data = rsp_p->pptrs[0];
     rspbit.size = rsp_p->sizes[0];
 
-    abcdk_bit_write_number(&rspbit,16,ABCDKVNET_CMD_REQUEST_IP);
+    abcdk_bit_write_number(&rspbit,16,ABCDKVNET_CMD_LOGON);
     
     if(chk != 0)
     {
@@ -739,8 +743,8 @@ static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
     cmd = abcdk_bit_read2number(&req,16);
 
-    if(cmd == ABCDKVNET_CMD_REQUEST_IP)
-        chk = _abcdkvnet_server_cmd_request_ip(ctx,session,&req,rsp);
+    if(cmd == ABCDKVNET_CMD_LOGON)
+        chk = _abcdkvnet_server_cmd_LOGON(ctx,session,&req,rsp);
 
     return chk;
 }
@@ -874,6 +878,68 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     return 0;
 }
 
+static void _abcdkvnet_server_tun_transfer(abcdkvnet_t *ctx)
+{
+    abcdk_object_t *reqbuf;
+    abcdk_bit_t reqbit = {0};
+    uint8_t ipver;
+    int chk;
+
+    reqbuf = abcdk_object_alloc2(ABCDKVNET_TUN_MTU+4);
+    if(!reqbuf)
+        return;
+
+    reqbit.data = reqbuf->pptrs[0];
+    reqbit.size = reqbuf->sizes[0];
+
+LOOP:
+
+    /*检查是否需要退出。*/
+    if(abcdk_atomic_compare(&ctx->exit_flag,1))
+        goto END;
+
+    reqbit.pos = 0;
+    abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_POSTING);
+
+    chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
+    if(chk < 0)
+    {
+        goto END;
+    } 
+    else if(chk == 0)
+    {
+        goto LOOP;
+    }
+    else 
+    {
+        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ABCDKVNET_TUN_MTU);
+        if(chk == 0)
+            goto END;
+        else if(chk <0)
+        {
+            if(errno == EAGAIN)
+                goto LOOP;
+            else 
+                goto END;
+        }
+        else  
+        {
+            abcdk_bit_write_number(&reqbit,16,chk);
+            abcdk_bit_seek(&reqbit,chk);//数据已经填充完毕，这里仅移动游标即可。
+        }
+    }
+
+    ipver = ABCDK_PTR2U8(reqbit.data,4) >> 4;
+
+    chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,NULL);
+    if(chk == 0)
+        goto LOOP;
+
+END:
+
+    abcdk_object_unref(&reqbuf);
+}
+
 static void _abcdkvnet_server_dowork(abcdkvnet_t *ctx)
 {
     int chk;
@@ -893,6 +959,9 @@ LOOP:
 #else 
     sleep(1000);
 #endif 
+
+    _abcdkvnet_server_tun_transfer(ctx);
+
 ERR:
 
     abcdk_closep(&ctx->virtual_tun_fd);
@@ -1109,7 +1178,7 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     return 0;
 }
 
-static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
+static int _abcdkvnet_client_logon(abcdkvnet_t *ctx)
 {
     char reqbuf[100] = {0};
     abcdk_bit_t reqbit = {0,reqbuf,100},rspbit = {0};
@@ -1119,7 +1188,7 @@ static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
     int err;
     int chk;
     
-    abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_REQUEST_IP);
+    abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_LOGON);
     abcdk_bit_write_number(&reqbit, 8, ctx->virtual_addr4_type);
     abcdk_bit_write_number(&reqbit, 8, ctx->virtual_mask_prefix4);
     abcdk_bit_write_buffer(&reqbit, (uint8_t *)&ctx->virtual_local_addr4.addr4.sin_addr.s_addr, 4);
@@ -1130,7 +1199,7 @@ static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
     chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,&rsp);
     if(chk != 0)
     {
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "向服务器(%s)请求IP地址失败，网络不通或目标不可达。", ctx->uplink_addr);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "向服务器(%s)登录注册失败，网络不通或目标不可达。", ctx->uplink_addr);
         return -1;
     }
 
@@ -1162,14 +1231,14 @@ static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
         abcdk_sockaddr_to_string(gw4str, &ctx->virtual_gateway_addr4);
         abcdk_sockaddr_to_string(gw6str, &ctx->virtual_gateway_addr6);
 
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向服务器(%s)请求IP成功，本地的虚拟地址是IPV4(%s)和IPV6(%s)，网关的虚拟地址是IPV4(%s)和IPV6(%s)。",
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向服务器(%s)登录注册完成，分配的虚拟地址是IPV4(%s)和IPV6(%s)，网关的虚拟地址是IPV4(%s)和IPV6(%s)。",
                                 ctx->uplink_addr, local4str, local6str,gw4str,gw6str);
 
         chk = 0;
     }
     else 
     {
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向服务器(%s)请求IP地址失败(ERRNO=%d)。",ctx->uplink_addr, err);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向服务器(%s)登录注册失败(ERRNO=%d)。",ctx->uplink_addr, err);
 
         chk = -1;
     }
@@ -1179,21 +1248,64 @@ static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
     return chk;
 }
 
-static void _abcdkvnet_client_transfer(abcdkvnet_t *ctx)
+static void _abcdkvnet_client_tun_transfer(abcdkvnet_t *ctx)
 {
-    char reqbuf[ABCDKVNET_]
+    abcdk_object_t *reqbuf;
+    abcdk_bit_t reqbit = {0};
     int chk;
+
+    reqbuf = abcdk_object_alloc2(ABCDKVNET_TUN_MTU+4);
+    if(!reqbuf)
+        return;
+
+    reqbit.data = reqbuf->pptrs[0];
+    reqbit.size = reqbuf->sizes[0];
 
 LOOP:
 
-    chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,5*1000);
+    /*检查是否需要退出。*/
+    if(abcdk_atomic_compare(&ctx->exit_flag,1))
+        goto END;
+
+    reqbit.pos = 0;
+    abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_POSTING);
+
+    chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
     if(chk < 0)
-        return;
-
-    if(chk == 0)
     {
-
+        goto END;
     }
+    else if(chk == 0)
+    {
+        /*没有数据时仅发送保活消息。*/
+        abcdk_bit_write_number(&reqbit,16,0);
+    }
+    else 
+    {
+        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ABCDKVNET_TUN_MTU);
+        if(chk == 0)
+            goto END;
+        else if(chk <0)
+        {
+            if(errno == EAGAIN)
+                goto LOOP;
+            else 
+                goto END;
+        }
+        else  
+        {
+            abcdk_bit_write_number(&reqbit,16,chk);
+            abcdk_bit_seek(&reqbit,chk);//数据已经填充完毕，这里仅移动游标即可。
+        }
+    }
+
+    chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,NULL);
+    if(chk == 0)
+        goto LOOP;
+
+END:
+
+    abcdk_object_unref(&reqbuf);
 }
 
 static void _abcdkvnet_client_dowork(abcdkvnet_t *ctx)
@@ -1210,10 +1322,10 @@ LOOP:
     if(chk != 0)
         goto ERR;
 
-    chk = _abcdkvnet_client_request_ip(ctx);
+    chk = _abcdkvnet_client_logon(ctx);
     if(chk != 0)
     {
-        abcdk_trace_output(LOG_ERR,"请求虚拟地址失败。");
+        abcdk_trace_output(LOG_ERR,"登录注册失败。");
         goto ERR;
     }
 
@@ -1223,6 +1335,8 @@ LOOP:
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
         goto ERR;
     }
+
+    _abcdkvnet_client_tun_transfer(ctx);
 
 ERR:
 
