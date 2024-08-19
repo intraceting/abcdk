@@ -998,11 +998,11 @@ LOOP:
         dst.family = AF_INET;
         dst.addr4.sin_addr.s_addr = ipv4hdr_p->daddr;
     }
-    else if(ipver == 4)
+    else if(ipver == 6)
     {
         ipv6hdr_p = (struct ip6_hdr *)ABCDK_PTR2VPTR(reqbit.data,4);
 
-        dst.family = AF_INET;
+        dst.family = AF_INET6;
         dst.addr6.sin6_addr = ipv6hdr_p->ip6_dst;
     }
 
