@@ -13,6 +13,7 @@
 #include "abcdk/util/socket.h"
 #include "abcdk/util/map.h"
 #include "abcdk/util/mutex.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 

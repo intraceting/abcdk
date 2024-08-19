@@ -759,11 +759,6 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     return 0;
 }
 
-static int _abcdkvnet_server_offline_client(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
-{
-    _abcdkvnet_server_ip_reclaim(ctx,session);
-}
-
 static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *session, const void *data, size_t size,abcdk_object_t **rsp)
 {
     abcdk_bit_t req = {0};
@@ -781,6 +776,11 @@ static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
         chk = _abcdkvnet_server_cmd_posting(ctx,session,&req,rsp);
 
     return chk;
+}
+
+static int _abcdkvnet_server_offline_client(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
+{
+    _abcdkvnet_server_ip_reclaim(ctx,session);
 }
 
 static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
@@ -821,6 +821,11 @@ static int _abcdkvnet_client_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
         chk = _abcdkvnet_client_cmd_posting(ctx,session,&req,rsp);
 
     return chk;
+}
+
+static int _abcdkvnet_client_offline_server(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
+{
+    abcdk_atomic_store(&ctx->rpc_uplink_session_ok,0);
 }
 
 static void _abcdkvnet_srpc_prepare_cb(void *opaque,abcdk_srpc_session_t **session,abcdk_srpc_session_t *listen)
@@ -876,6 +881,8 @@ static void _abcdkvnet_srpc_close_cb(void *opaque,abcdk_srpc_session_t *session)
 
     if(node_ctx_p->flag == ABCDKVNET_ROLE_SERVER)
         _abcdkvnet_server_offline_client(ctx,session);
+    else if(node_ctx_p->flag == ABCDKVNET_ROLE_CLIENT)
+        _abcdkvnet_client_offline_server(ctx,session);
 
 }
 

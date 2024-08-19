@@ -152,7 +152,7 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     /*copy.*/
     data_p = val_p->pptrs[ABCDK_MAP_VALUE];
 
-    abcdk_sockaddr_to_string(addrstr, addr);
+    // abcdk_sockaddr_to_string(addrstr, addr);
     abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)成功。",addrstr);
 
     return data_p;
