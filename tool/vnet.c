@@ -729,7 +729,7 @@ static int _abcdkvnet_server_cmd_logon(abcdkvnet_t *ctx,abcdk_srpc_session_t *se
 
 static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
-    uint16_t data_l;
+    int16_t data_l;
     void *data_p;
     ssize_t wlen;
 
@@ -776,7 +776,7 @@ static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
 static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
-    uint16_t data_l;
+    int16_t data_l;
     void *data_p;
     ssize_t wlen;
 
@@ -1030,7 +1030,7 @@ LOOP:
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
-#if 1 
+#if 0 
     chk = _abcdkvnet_ifconfig(ctx);
     if(chk != 0)
     {
