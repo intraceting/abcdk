@@ -35,7 +35,7 @@ static uint64_t _abcdk_iplan_hash_cb(const void* key,size_t size,void *opaque)
     }
     else if (a->family == AF_INET6)
     {
-        hs = abcdk_hash_bkdr64(&a->addr6.sin6_addr.__in6_u.__u6_addr8,16);
+        hs = abcdk_hash_bkdr64(a->addr6.sin6_addr.__in6_u.__u6_addr8,16);
     }
 
     return hs;
