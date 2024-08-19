@@ -142,6 +142,9 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     assert(ctx != NULL && addr != NULL);
     assert(addr->family == AF_INET || addr->family == AF_INET6);
 
+    abcdk_sockaddr_to_string(addrstr, addr);
+    abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)。",addrstr);
+
     val_p = abcdk_map_find(ctx->table_ctx,addr,_abcdk_iplan_key_len(addr),0);
     if(!val_p)
         return NULL;
