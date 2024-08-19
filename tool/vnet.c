@@ -313,8 +313,7 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\tipv6://[DOMAIN]:PORT\n");
 }
 
-
-static int _abcdkvnet_open_tun(const char *name)
+static int _abcdkvnet_tun_open(const char *name)
 {
     struct ifreq ifr;
     int fd;
@@ -342,6 +341,21 @@ static int _abcdkvnet_open_tun(const char *name)
     close(fd);
 
     return -1;
+}
+
+static int _abcdkvnet_tun_poll(int fd,int event, time_t timeout)
+{
+    return abcdk_poll(fd,event,timeout);
+}
+
+static ssize_t _abcdkvnet_tun_read(int fd,void *buf,size_t size)
+{
+    return read(fd, buf, size);
+}
+
+static ssize_t _abcdkvnet_tun_write(int fd,const void *buf,size_t size)
+{
+    return write(fd, buf, size);
 }
 
 static void _abcdkvnet_node_free(abcdk_srpc_session_t **session)
@@ -382,13 +396,16 @@ static int _abcdkvnet_ifconfig(abcdkvnet_t *ctx)
         memset(ctx->virtual_tun_name,0,NAME_MAX);
         snprintf(ctx->virtual_tun_name,NAME_MAX,"%s%d",ctx->virtual_tun_prefix,tun_idx);
 
-        ctx->virtual_tun_fd = _abcdkvnet_open_tun(ctx->virtual_tun_name);
+        ctx->virtual_tun_fd = _abcdkvnet_tun_open(ctx->virtual_tun_name);
         if(ctx->virtual_tun_fd >= 0)
             break;
     }
 
     if(ctx->virtual_tun_fd < 0)
         return -1;
+
+    /*添加异步标志。*/
+    chk = abcdk_fflag_set(ctx->virtual_tun_fd,O_NONBLOCK);
 
     abcdk_sockaddr_to_string(local4str, &ctx->virtual_local_addr4);
     abcdk_sockaddr_to_string(local6str, &ctx->virtual_local_addr6);
@@ -1160,6 +1177,23 @@ static int _abcdkvnet_client_request_ip(abcdkvnet_t *ctx)
     abcdk_object_unref(&rsp);
 
     return chk;
+}
+
+static void _abcdkvnet_client_transfer(abcdkvnet_t *ctx)
+{
+    char reqbuf[ABCDKVNET_]
+    int chk;
+
+LOOP:
+
+    chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,5*1000);
+    if(chk < 0)
+        return;
+
+    if(chk == 0)
+    {
+
+    }
 }
 
 static void _abcdkvnet_client_dowork(abcdkvnet_t *ctx)
