@@ -804,6 +804,9 @@ void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
 
     if (e.events & ABCDK_EPOLL_ERROR)
     {
+        /*关闭前清除状态。*/
+        node->status = 0;
+
         _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CLOSE,&ret);
 
         /*释放引用。*/

@@ -100,9 +100,6 @@ typedef struct _abcdkvnet
     /*PKIonENIGMA监听对象。*/
     abcdk_srpc_session_t *rpc_listen_pki_enigma_session;
 
-    /*上行对象状态。*/
-    volatile int rpc_uplink_session_ok;
-
     /*上行对象。*/
     abcdk_srpc_session_t *rpc_uplink_session;
 
@@ -825,7 +822,7 @@ static int _abcdkvnet_client_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
 static int _abcdkvnet_client_offline_server(abcdkvnet_t *ctx,abcdk_srpc_session_t *session)
 {
-    abcdk_atomic_store(&ctx->rpc_uplink_session_ok,0);
+
 }
 
 static void _abcdkvnet_srpc_prepare_cb(void *opaque,abcdk_srpc_session_t **session,abcdk_srpc_session_t *listen)
@@ -1251,8 +1248,6 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     if(!ctx->rpc_uplink_session)
         return -1;
 
-    abcdk_atomic_store(&ctx->rpc_uplink_session_ok,1);
-
     rpc_cfg.opaque = ctx;
     rpc_cfg.ssl_scheme = ctx->uplink_ssl_scheme;
     rpc_cfg.pki_ca_file = ctx->pki_ca_file;
@@ -1366,10 +1361,6 @@ LOOP:
 
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
-        goto END;
-
-    /*检查上行状态是否正常。*/
-    if(!abcdk_atomic_compare(&ctx->rpc_uplink_session_ok,1))
         goto END;
 
     reqbit.pos = 0;
