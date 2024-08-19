@@ -240,6 +240,30 @@ uint64_t abcdk_ipool_count(abcdk_ipool_t *ctx,int flag)
     return 0;
 }
 
+uint8_t abcdk_ipool_prefix(abcdk_ipool_t *ctx)
+{
+    uint8_t suffix = 0;
+    uint64_t c;
+
+    assert(ctx != NULL);
+
+    c = abcdk_ipool_count(ctx,0);
+
+    /*计算后缀长度。*/
+    while(c >0)
+    {
+        suffix += 1;
+        c /= 2;
+    }
+
+    if(ctx->addr_b.family == AF_INET)
+        return 32-suffix;
+    else if(ctx->addr_b.family == AF_INET6)
+        return 128-suffix;
+    
+    return 0;
+}
+
 int abcdk_ipool_static_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
 {
     uint64_t pos;

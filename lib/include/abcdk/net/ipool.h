@@ -40,6 +40,9 @@ int abcdk_ipool_set_dhcp_range2(abcdk_ipool_t *ctx,const char *begin,const char 
 */
 uint64_t abcdk_ipool_count(abcdk_ipool_t *ctx,int flag);
 
+/**获取前缀长度(掩码)。*/
+uint8_t abcdk_ipool_prefix(abcdk_ipool_t *ctx);
+
 /**
  * 静态地址请求。
  * 
