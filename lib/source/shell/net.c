@@ -208,3 +208,28 @@ int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw,
 
     return 0;
 }
+
+int abcdk_net_set_mtu(int16_t mtu, const char *ifname)
+{
+    int exitcode = 0, sigcode = 0;
+    pid_t pid = -1;
+    int chk;
+
+    assert(mtu >= 1400 && ifname != NULL);
+    assert(*ifname != '\0');
+
+    pid = abcdk_proc_popen(NULL, NULL, NULL,"ip link set %s mtu %hd", ifname,mtu);
+    if (pid < 0)
+        return -1;
+
+    abcdk_waitpid(pid, 0, &exitcode, &sigcode);
+    if (exitcode != 0)
+    {
+        abcdk_trace_output( LOG_ERR, "更新'%s'最大传输单元失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
+        return -2;
+    }
+
+    abcdk_trace_output( LOG_INFO, "更新'%s'最大传输单元完成。", ifname);
+
+    return 0;
+}

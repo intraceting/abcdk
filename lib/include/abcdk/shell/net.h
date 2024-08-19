@@ -79,6 +79,13 @@ int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, i
 */
 int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
 
+/**
+ * 设置网卡最大传输单元。
+ * 
+ * @return 0 成功，-1 系统错误，-2 权限不足。
+*/
+int abcdk_net_set_mtu(int16_t mtu,const char *ifname);
+
 __END_DECLS
 
 #endif //ABCDK_SHELL_NET_H

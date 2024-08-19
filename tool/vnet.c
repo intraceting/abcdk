@@ -10,25 +10,29 @@
 /** 常量。*/
 enum _abcdkvnet_constant
 {
-    /** 监听者。*/
+    /**监听者。*/
     ABCDKVNET_ROLE_LISTENER = 0,
 #define ABCDKVNET_ROLE_LISTENER ABCDKVNET_ROLE_LISTENER
 
-    /** 服务端。*/
+    /**服务端。*/
     ABCDKVNET_ROLE_SERVER = 1,
 #define ABCDKVNET_ROLE_SERVER ABCDKVNET_ROLE_SERVER
 
-    /** 客户端。*/
+    /**客户端。*/
     ABCDKVNET_ROLE_CLIENT = 2,
 #define ABCDKVNET_ROLE_CLIENT ABCDKVNET_ROLE_CLIENT
 
-    /*虚拟IP地址类型(静态)。*/
+    /**虚拟IP地址类型(静态)。*/
     ABCDKVNET_IPADDR_TYPE_STATIC = 1,
-#define ABCDKVNET_IP_TYPE_STATIC ABCDKVNET_IP_TYPE_STATIC
+#define ABCDKVNET_IPADDR_TYPE_STATIC ABCDKVNET_IPADDR_TYPE_STATIC
 
-    /*虚拟IP地址类型(动态)。*/
+    /**虚拟IP地址类型(动态)。*/
     ABCDKVNET_IPADDR_TYPE_DHCP = 2,
-#define ABCDKVNET_IP_TYPE_DHCP ABCDKVNET_IP_TYPE_DHCP
+#define ABCDKVNET_IPADDR_TYPE_DHCP ABCDKVNET_IPADDR_TYPE_DHCP
+
+    /**TUN最大传输单元。*/
+    ABCDKVNET_TUN_MTU = 1500,
+#define ABCDKVNET_TUN_MTU ABCDKVNET_TUN_MTU
 
     /**请求IP地址.*/
     ABCDKVNET_CMD_REQUEST_IP = 1,
@@ -404,6 +408,14 @@ static int _abcdkvnet_ifconfig(abcdkvnet_t *ctx)
         abcdk_trace_output(LOG_ERR, "向TUN(%s)添加地址(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,local6str);
         return -1;
     }
+
+    chk = abcdk_net_set_mtu(ABCDKVNET_TUN_MTU,ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "更新TUN(%s)最大传输单元(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,ABCDKVNET_TUN_MTU);
+        return -1;
+    }
+
 
     chk = abcdk_net_up(ctx->virtual_tun_name);
     if(chk != 0)
@@ -854,7 +866,7 @@ LOOP:
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
-#if 0 
+#if 1 
     chk = _abcdkvnet_ifconfig(ctx);
     if(chk != 0)
     {
