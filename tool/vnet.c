@@ -775,11 +775,11 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
     data_l = abcdk_bit_read2number(req,16);
     if(data_l <= 0)
-        return 0;
+        return 0; //仅用于更新活动时间。
 
     /*检查数据包长度是否超过最大传输单元。*/
     if(data_l > ABCDKVNET_TUN_MTU)
-        return -1;    
+        return -1;
     
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
@@ -788,6 +788,7 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     if(rpc_subnet_p)
     {
         abcdk_srpc_request(rpc_subnet_p, req->data, 4 + data_l, NULL);
+        abcdk_srpc_unref(&rpc_subnet_p);
     }
     else
     {
@@ -837,7 +838,7 @@ static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
     data_l = abcdk_bit_read2number(req,16);
     if(data_l <= 0)
-        return 0;
+        return 0; //仅用于更新活动时间。
 
     /*检查数据包长度是否超过最大传输单元。*/
     if(data_l > ABCDKVNET_TUN_MTU)
@@ -846,7 +847,7 @@ static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
     wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
-    if(wlen != data_l)
+    if(wlen == 0)
         return -1;
 
     return 0;
