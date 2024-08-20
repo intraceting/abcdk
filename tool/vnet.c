@@ -394,28 +394,40 @@ ERR:
     return NULL;
 }
 
-static int _abcdkvnet_ifconfig(abcdkvnet_t *ctx)
+static void _abcdkvnet_ifconfig_flush(abcdkvnet_t *ctx)
+{
+    if(ctx->virtual_tun_fd < 0)
+        return ;
+
+    abcdk_net_address_flush(ctx->virtual_tun_name);
+    abcdk_net_route_flush( ctx->virtual_tun_name);
+}
+
+static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
 {
     char local4str[100] = {0},local6str[100] = {0};
     char gw4str[100] = {0},gw6str[100] = {0};
     int tun_idx;
     int chk;
 
-    for (tun_idx = 0; tun_idx < 100; tun_idx++)
+    if (ctx->virtual_tun_fd < 0)
     {
-        memset(ctx->virtual_tun_name,0,NAME_MAX);
-        snprintf(ctx->virtual_tun_name,NAME_MAX,"%s%d",ctx->virtual_tun_prefix,tun_idx);
+        for (tun_idx = 0; tun_idx < 100; tun_idx++)
+        {
+            memset(ctx->virtual_tun_name, 0, NAME_MAX);
+            snprintf(ctx->virtual_tun_name, NAME_MAX, "%s%d", ctx->virtual_tun_prefix, tun_idx);
 
-        ctx->virtual_tun_fd = _abcdkvnet_tun_open(ctx->virtual_tun_name);
-        if(ctx->virtual_tun_fd >= 0)
-            break;
+            ctx->virtual_tun_fd = _abcdkvnet_tun_open(ctx->virtual_tun_name);
+            if (ctx->virtual_tun_fd >= 0)
+                break;
+        }
+        
+        if(ctx->virtual_tun_fd < 0)
+            return -1;
+
+        /*添加异步标志。*/
+        chk = abcdk_fflag_set(ctx->virtual_tun_fd,O_NONBLOCK);
     }
-
-    if(ctx->virtual_tun_fd < 0)
-        return -1;
-
-    /*添加异步标志。*/
-    chk = abcdk_fflag_set(ctx->virtual_tun_fd,O_NONBLOCK);
 
     abcdk_sockaddr_to_string(local4str, &ctx->virtual_local_addr4);
     abcdk_sockaddr_to_string(local6str, &ctx->virtual_local_addr6);
@@ -1076,7 +1088,9 @@ LOOP:
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
 
-    chk = _abcdkvnet_ifconfig(ctx);
+    _abcdkvnet_ifconfig_flush(ctx);
+
+    chk = _abcdkvnet_ifconfig_setup(ctx);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
@@ -1443,6 +1457,8 @@ LOOP:
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
 
+    _abcdkvnet_ifconfig_flush(ctx);
+
     chk = _abcdkvnet_client_connect_uplink(ctx);
     if(chk != 0)
         goto ERR;
@@ -1454,7 +1470,7 @@ LOOP:
         goto ERR;
     }
 
-    chk = _abcdkvnet_ifconfig(ctx);
+    chk = _abcdkvnet_ifconfig_setup(ctx);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
