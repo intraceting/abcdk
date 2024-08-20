@@ -6,6 +6,8 @@
  */
 #include "abcdk/ffmpeg/ffserver.h"
 
+#if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
+
 
 /**流媒体对象。*/
 typedef struct _abcdk_ffserver_item
@@ -838,4 +840,7 @@ abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffser
 
     return (abcdk_ffserver_task_t *)task;
 }
+
+
+#endif //AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 

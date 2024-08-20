@@ -178,7 +178,9 @@ int main(int argc, char **argv)
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace, logger);
 
+#ifdef HAVE_FFMPEG
     abcdk_avlog_redirect2trace();
+#endif //HAVE_FFMPEG
 
     errcode = _abcdk_test_dispatch(args);
 
