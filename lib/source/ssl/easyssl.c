@@ -373,7 +373,10 @@ NEXT_LOOP:
     /*追加到接收队列。*/
     chk = abcdk_stream_write(ctx->recv_queue, de_data);
     if (chk != 0)
+    {
+        abcdk_object_unref(&de_data);
         return 0; // 内存不足时，关闭当前句柄。
+    }
 
     goto NEXT_LOOP;
 }
