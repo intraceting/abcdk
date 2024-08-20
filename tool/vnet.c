@@ -705,6 +705,9 @@ static int _abcdkvnet_server_cmd_logon(abcdkvnet_t *ctx,abcdk_srpc_session_t *se
     abcdk_sockaddr_t addr4 = {AF_INET},addr6 = {AF_INET6};
     int chk,chk2;
 
+    if (req->size < 26)
+        return -1;
+
     type4 = abcdk_bit_read2number(req,8);
     mask4 = abcdk_bit_read2number(req,8);
     abcdk_bit_read2buffer(req,(uint8_t*)&addr4.addr4.sin_addr.s_addr,4);
@@ -767,6 +770,9 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     void *data_p;
     ssize_t wlen;
 
+    if (req->size < 4)
+        return -1;
+
     data_l = abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0;
@@ -801,6 +807,9 @@ static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
     req.data = (void*)data;
     req.size = size;
+    
+    if (req.size < 2)
+        return -1;
 
     cmd = abcdk_bit_read2number(&req,16);
 
@@ -823,6 +832,9 @@ static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     void *data_p;
     ssize_t wlen;
 
+    if (req->size < 4)
+        return -1;
+
     data_l = abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0;
@@ -844,10 +856,13 @@ static int _abcdkvnet_client_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 {
     abcdk_bit_t req = {0};
     uint16_t cmd;
-    int chk;
+    int chk = -1;
 
     req.data = (void*)data;
     req.size = size;
+
+    if (req.size < 2)
+        return -1;
 
     cmd = abcdk_bit_read2number(&req,16);
 
@@ -1059,16 +1074,13 @@ LOOP:
     /*检查是否需要退出。*/
     if(abcdk_atomic_compare(&ctx->exit_flag,1))
         return;
-#if 1
+
     chk = _abcdkvnet_ifconfig(ctx);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
         goto ERR;
     }
-#else 
-    sleep(1000);
-#endif 
 
     _abcdkvnet_server_tun_transfer(ctx);
 
@@ -1619,6 +1631,12 @@ int abcdk_tool_vnet(abcdk_option_t *args)
     }
     else
     {
+        if(getuid() != 0)
+        {
+            fprintf(stderr, "此服务需要root权限支持。\n");
+            return 1;
+        }
+
         if (abcdk_option_exist(ctx.args, "--daemon"))
         {
             fprintf(stderr, "进入后台守护模式。\n");
