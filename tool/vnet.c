@@ -1070,8 +1070,8 @@ LOOP:
     chk = abcdk_srpc_request(rpc_dst_p,reqbit.data,reqbit.pos/8,NULL);
     abcdk_srpc_unref(&rpc_dst_p);
 
-    if(chk == 0)
-        goto LOOP;
+    /*不需要关心转发状态，因为链路保活由客户端负责。*/
+    goto LOOP;
 
 END:
 
@@ -1094,14 +1094,13 @@ LOOP:
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
+        abcdk_closep(&ctx->virtual_tun_fd);
         goto ERR;
     }
 
     _abcdkvnet_server_tun_transfer(ctx);
 
 ERR:
-
-    abcdk_closep(&ctx->virtual_tun_fd);
 
     sleep(1);
     goto LOOP;
@@ -1474,6 +1473,7 @@ LOOP:
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"配置虚拟地址失败。");
+        abcdk_closep(&ctx->virtual_tun_fd);
         goto ERR;
     }
 
@@ -1486,7 +1486,6 @@ ERR:
         abcdk_srpc_set_timeout(ctx->rpc_uplink_session,1);
         
     _abcdkvnet_node_free(&ctx->rpc_uplink_session);
-    abcdk_closep(&ctx->virtual_tun_fd);
 
     sleep(3);
     goto LOOP;
@@ -1594,6 +1593,8 @@ static void _abcdkvnet_process(abcdkvnet_t *ctx)
         _abcdkvnet_process_client(ctx);
     else if(ctx->role == ABCDKVNET_ROLE_SERVER)
         _abcdkvnet_process_server(ctx);
+
+    abcdk_closep(&ctx->virtual_tun_fd);
 
     /*等待信号线程退出。*/
     abcdk_thread_join(&signal_thread);
