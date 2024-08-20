@@ -599,6 +599,33 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
     return session_p;
 }
 
+static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup_iphdr_dst(abcdkvnet_t *ctx, const void *data)
+{
+    uint8_t ipver;
+    abcdk_sockaddr_t dst;
+    struct iphdr *ipv4hdr_p;
+    struct ip6_hdr *ipv6hdr_p;
+
+    ipver = ABCDK_PTR2U8(data,0) >> 4;
+
+    if(ipver == 4)
+    {
+        ipv4hdr_p = (struct iphdr *)ABCDK_PTR2VPTR(data,0);
+
+        dst.family = AF_INET;
+        dst.addr4.sin_addr.s_addr = ipv4hdr_p->daddr;
+    }
+    else if(ipver == 6)
+    {
+        ipv6hdr_p = (struct ip6_hdr *)ABCDK_PTR2VPTR(data,0);
+
+        dst.family = AF_INET6;
+        dst.addr6.sin6_addr = ipv6hdr_p->ip6_dst;
+    }
+
+    return _abcdkvnet_iplan_lookup(ctx,&dst);
+}
+
 static int _abcdkvnet_server_ip_allocate(abcdkvnet_t *ctx, abcdk_srpc_session_t *session,
                                          int type4, uint8_t *mask4, abcdk_sockaddr_t *addr4,
                                          int type6, uint8_t *mask6, abcdk_sockaddr_t *addr6)
@@ -735,6 +762,7 @@ static int _abcdkvnet_server_cmd_logon(abcdkvnet_t *ctx,abcdk_srpc_session_t *se
 
 static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
+    abcdk_srpc_session_t *rpc_subnet_p;
     int16_t data_l;
     void *data_p;
     ssize_t wlen;
@@ -749,9 +777,18 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
-    wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
-    if(wlen != data_l)
-        return -1;
+    /*优先在子网中查找。*/
+    rpc_subnet_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,data_p);
+    if(rpc_subnet_p)
+    {
+        abcdk_srpc_request(rpc_subnet_p, req->data, 4 + data_l, NULL);
+    }
+    else
+    {
+        wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
+        if(wlen == 0)
+            return -1;
+    }
 
     return 0;
 }
@@ -951,10 +988,6 @@ static void _abcdkvnet_server_tun_transfer(abcdkvnet_t *ctx)
 {
     abcdk_object_t *reqbuf;
     abcdk_bit_t reqbit = {0};
-    uint8_t ipver;
-    abcdk_sockaddr_t dst;
-    struct iphdr *ipv4hdr_p;
-    struct ip6_hdr *ipv6hdr_p;
     abcdk_srpc_session_t *rpc_dst_p;
     int chk;
 
@@ -1002,24 +1035,7 @@ LOOP:
         }
     }
 
-    ipver = ABCDK_PTR2U8(reqbit.data,4) >> 4;
-
-    if(ipver == 4)
-    {
-        ipv4hdr_p = (struct iphdr *)ABCDK_PTR2VPTR(reqbit.data,4);
-
-        dst.family = AF_INET;
-        dst.addr4.sin_addr.s_addr = ipv4hdr_p->daddr;
-    }
-    else if(ipver == 6)
-    {
-        ipv6hdr_p = (struct ip6_hdr *)ABCDK_PTR2VPTR(reqbit.data,4);
-
-        dst.family = AF_INET6;
-        dst.addr6.sin6_addr = ipv6hdr_p->ip6_dst;
-    }
-
-    rpc_dst_p = _abcdkvnet_iplan_lookup(ctx,&dst);
+    rpc_dst_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,ABCDK_PTR2VPTR(reqbit.data,4));
     if(!rpc_dst_p)
         goto LOOP;
 
