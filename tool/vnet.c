@@ -1035,6 +1035,8 @@ LOOP:
         goto END;
 
     reqbit.pos = 0;
+    memset(reqbit.data,0,4);//至少把长度值覆盖掉。
+
     abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_POSTING);
 
     chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
@@ -1408,6 +1410,8 @@ LOOP:
         goto END;
 
     reqbit.pos = 0;
+    memset(reqbit.data,0,4);//至少把长度值覆盖掉。
+
     abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_POSTING);
 
     chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
