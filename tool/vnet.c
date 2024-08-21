@@ -464,7 +464,7 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
     }
 
     /*服务端不需要配置默认路由。*/
-  //  if(ctx->role == ABCDKVNET_ROLE_SERVER)
+   // if(ctx->role == ABCDKVNET_ROLE_SERVER)
         return 0;
 
     chk = abcdk_net_route_add(4, "0.0.0.0", 0, gw4str, 0, ctx->virtual_tun_name);
