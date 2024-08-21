@@ -782,16 +782,24 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     void *data_p;
     ssize_t wlen;
 
+    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
+
     if (req->size < 4)
         return -1;
+
+    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
 
     data_l = abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0; //仅用于更新活动时间。
 
+    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
+
     /*检查数据包长度是否超过最大传输单元。*/
     if(data_l > ABCDKVNET_TUN_MTU)
         return -1;
+
+    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
     
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
@@ -808,6 +816,8 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
         if(wlen == 0)
             return -1;
     }
+
+    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
 
     return 0;
 }
@@ -830,6 +840,8 @@ static int _abcdkvnet_server_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
         chk = _abcdkvnet_server_cmd_logon(ctx,session,&req,rsp);
     else if(cmd == ABCDKVNET_CMD_POSTING)
         chk = _abcdkvnet_server_cmd_posting(ctx,session,&req,rsp);
+    else 
+        chk = -1;
 
     return chk;
 }
