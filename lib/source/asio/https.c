@@ -633,6 +633,9 @@ static void _abcdk_https_request_1(abcdk_asio_node_t *node, const void *data, si
 
     node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
 
+    /*默认没有剩余数据。*/
+    *remain = 0;
+
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, sizeof(abcdk_https_stream_internal_t));
     if (!stream_p)
         goto ERR;
@@ -654,7 +657,10 @@ static void _abcdk_https_request_1(abcdk_asio_node_t *node, const void *data, si
 
     chk = abcdk_receiver_append(stream_ctx_p->updata, data, size, remain);
     if (chk < 0)
+    {
+        *remain = 0;
         goto ERR;
+    }
     else if (chk == 0) /*数据包不完整，继续接收。*/
         return;
 
@@ -691,6 +697,9 @@ static void _abcdk_https_request_2(abcdk_asio_node_t *node, const void *data, si
 
     node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
 
+    /*默认没有剩余数据。*/
+    *remain = 0;
+    
 #ifdef NGHTTP2_H
 
     chk = nghttp2_session_mem_recv(node_ctx_p->h2_handle, data, size);
