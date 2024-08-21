@@ -883,6 +883,8 @@ static int _abcdkvnet_client_cmd_process(abcdkvnet_t *ctx,abcdk_srpc_session_t *
 
     if(cmd == ABCDKVNET_CMD_POSTING)
         chk = _abcdkvnet_client_cmd_posting(ctx,session,&req,rsp);
+    else 
+        chk = -1;
 
     return chk;
 }
