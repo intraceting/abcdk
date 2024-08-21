@@ -1468,12 +1468,15 @@ LOOP:
     if(chk != 0)
         goto ERR;
 
+// for(int i = 0;i<1000;i++)
+// {
     chk = _abcdkvnet_client_logon(ctx);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"登录注册失败。");
         goto ERR;
     }
+// }
 
     chk = _abcdkvnet_ifconfig_setup(ctx);
     if(chk != 0)
