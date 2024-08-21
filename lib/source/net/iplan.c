@@ -103,7 +103,7 @@ ERR:
 
 void *abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
 {
-    char addrstr[100] = {0};
+    //char addrstr[100] = {0};
     abcdk_object_t *val_p;
     void *data_p;
 
@@ -119,15 +119,15 @@ void *abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
 
     abcdk_map_remove(ctx->table_ctx,addr,_abcdk_iplan_key_len(addr));
 
-    abcdk_sockaddr_to_string(addrstr, addr);
-    abcdk_trace_output(LOG_DEBUG,"从路由表中删除地址(%s)",addrstr);
+    //abcdk_sockaddr_to_string(addrstr, addr);
+    //abcdk_trace_output(LOG_DEBUG,"从路由表中删除地址(%s)",addrstr);
 
     return data_p;
 }
 
 int abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,void *data)
 {
-    char addrstr[100] = {0};
+    //char addrstr[100] = {0};
     abcdk_object_t *val_p;
     int chk = -1;
 
@@ -146,23 +146,23 @@ int abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,void *data)
     val_p->pptrs[ABCDK_MAP_VALUE] = data;
     val_p->sizes[ABCDK_MAP_VALUE] = 0;//set 0.
 
-    abcdk_sockaddr_to_string(addrstr, addr);
-    abcdk_trace_output(LOG_DEBUG,"向路由表中添加地址(%s)",addrstr);
+    //abcdk_sockaddr_to_string(addrstr, addr);
+    //abcdk_trace_output(LOG_DEBUG,"向路由表中添加地址(%s)",addrstr);
 
     return 0;
 }
 
 void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
 {
-    char addrstr[100] = {0};
+    //char addrstr[100] = {0};
     abcdk_object_t *val_p;
     void *data_p;
 
     assert(ctx != NULL && addr != NULL);
     assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    abcdk_sockaddr_to_string(addrstr, addr);
-    abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)。",addrstr);
+    //abcdk_sockaddr_to_string(addrstr, addr);
+    //abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)。",addrstr);
 
     val_p = abcdk_map_find(ctx->table_ctx,addr,_abcdk_iplan_key_len(addr),0);
     if(!val_p)
@@ -171,8 +171,8 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     /*copy.*/
     data_p = val_p->pptrs[ABCDK_MAP_VALUE];
 
-    abcdk_sockaddr_to_string(addrstr, addr);
-    abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)成功。",addrstr);
+    //abcdk_sockaddr_to_string(addrstr, addr);
+    //abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)成功。",addrstr);
 
     return data_p;
 }

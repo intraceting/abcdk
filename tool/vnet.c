@@ -463,8 +463,9 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
         return -1;
     }
 
+#if 0
     /*服务端不需要配置默认路由。*/
-   // if(ctx->role == ABCDKVNET_ROLE_SERVER)
+    if(ctx->role == ABCDKVNET_ROLE_SERVER)
         return 0;
 
     chk = abcdk_net_route_add(4, "0.0.0.0", 0, gw4str, 0, ctx->virtual_tun_name);
@@ -480,7 +481,7 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
         abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加默认的路由(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,gw6str);
         return -1;
     }
-
+#endif
     return 0;
 }
 
