@@ -668,6 +668,9 @@ static void _abcdk_tipc_input_cb(abcdk_asio_node_t *node, const void *data, size
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
 
+    /*默认没有剩余数据。*/
+    *remain = 0;
+
     if (!node_ctx_p->req_data)
         node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_SMB, 16 * 1024 * 1024, NULL);
 
@@ -676,7 +679,10 @@ static void _abcdk_tipc_input_cb(abcdk_asio_node_t *node, const void *data, size
 
     chk = abcdk_receiver_append(node_ctx_p->req_data, data, size, remain);
     if (chk < 0)
+    {
+        *remain = 0;
         goto ERR;
+    }
     else if (chk == 0) /*数据包不完整，继续接收。*/
         return;
 
