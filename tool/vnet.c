@@ -782,24 +782,16 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     void *data_p;
     ssize_t wlen;
 
-    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
-
     if (req->size < 4)
         return -1;
-
-    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
 
     data_l = abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0; //仅用于更新活动时间。
 
-    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
-
     /*检查数据包长度是否超过最大传输单元。*/
     if(data_l > ABCDKVNET_TUN_MTU)
         return -1;
-
-    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
     
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
@@ -816,8 +808,6 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
         if(wlen == 0)
             return -1;
     }
-
-    abcdk_srpc_trace_output(session,LOG_INFO,"%s(%d)",__FILE__,__LINE__);
 
     return 0;
 }
@@ -1082,7 +1072,7 @@ LOOP:
     chk = abcdk_srpc_request(rpc_dst_p,reqbit.data,reqbit.pos/8,NULL);
     abcdk_srpc_unref(&rpc_dst_p);
 
-    /*不需要关心转发状态，因为链路保活由客户端负责。*/
+    /*因为链路保活由客户端负责，所以不需要关心转发状态。*/
     goto LOOP;
 
 END:
@@ -1499,7 +1489,7 @@ ERR:
         
     _abcdkvnet_node_free(&ctx->rpc_uplink_session);
 
-    sleep(3);
+    sleep(1);
     goto LOOP;
 }
 
