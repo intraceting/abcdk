@@ -464,7 +464,7 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
     }
 
     /*服务端不需要配置默认路由。*/
-    if(ctx->role == ABCDKVNET_ROLE_SERVER)
+  //  if(ctx->role == ABCDKVNET_ROLE_SERVER)
         return 0;
 
     chk = abcdk_net_route_add(4, "0.0.0.0", 0, gw4str, 0, ctx->virtual_tun_name);
@@ -1470,15 +1470,12 @@ LOOP:
     if(chk != 0)
         goto ERR;
 
-// for(int i = 0;i<1000;i++)
-// {
     chk = _abcdkvnet_client_logon(ctx);
     if(chk != 0)
     {
         abcdk_trace_output(LOG_ERR,"登录注册失败。");
         goto ERR;
     }
-// }
 
     chk = _abcdkvnet_ifconfig_setup(ctx);
     if(chk != 0)
