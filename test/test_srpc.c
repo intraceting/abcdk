@@ -98,13 +98,15 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
         abcdk_srpc_connect(session_p, &addr, &cfg);
 
+        sleep(2);
+
         for (int j = 0; j < count; j++)
         {
             char buf[1000] = {0};
 
             int *a = (int *)buf;
-            *a = 1;
-            if (j % 3 == 0 && rand_rsp)
+            // *a = 1;
+            // if (j % 3 == 0 && rand_rsp)
                 *a = 0;
 
             int b = ((uint64_t)abcdk_rand_number()) % 995 + 5;
@@ -122,6 +124,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             abcdk_object_unref(&rsp);
         }
+
+        sleep(2);
     }
 
     abcdk_srpc_unref(&session_p);
