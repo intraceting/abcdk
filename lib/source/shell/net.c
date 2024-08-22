@@ -209,7 +209,7 @@ int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw,
     return 0;
 }
 
-int abcdk_net_set_mtu(int16_t mtu, const char *ifname)
+int abcdk_net_set_mtu(uint16_t mtu, const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
     pid_t pid = -1;
@@ -218,7 +218,7 @@ int abcdk_net_set_mtu(int16_t mtu, const char *ifname)
     assert(mtu >= 1400 && ifname != NULL);
     assert(*ifname != '\0');
 
-    pid = abcdk_proc_popen(NULL, NULL, NULL,"ip link set %s mtu %hd", ifname,mtu);
+    pid = abcdk_proc_popen(NULL, NULL, NULL,"ip link set %s mtu %hu", ifname,mtu);
     if (pid < 0)
         return -1;
 

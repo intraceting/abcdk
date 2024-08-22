@@ -84,7 +84,7 @@ int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw,
  * 
  * @return 0 成功，-1 系统错误，-2 权限不足。
 */
-int abcdk_net_set_mtu(int16_t mtu,const char *ifname);
+int abcdk_net_set_mtu(uint16_t mtu,const char *ifname);
 
 __END_DECLS
 

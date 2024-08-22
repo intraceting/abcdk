@@ -128,7 +128,7 @@ typedef struct _abcdkvnet
     const char *virtual_tun_prefix;
 
     /*虚拟TUN设备最大传输单元。*/
-    int virtual_tun_mtu;
+    uint16_t virtual_tun_mtu;
 
     /*设置默认的全局虚拟路由(客户端有效)。0 否，!0 是。*/
     int virtual_default_route;
@@ -844,14 +844,14 @@ static int _abcdkvnet_server_cmd_logon(abcdkvnet_t *ctx,abcdk_srpc_session_t *se
 static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
     abcdk_srpc_session_t *rpc_subnet_p;
-    int16_t data_l;
+    uint16_t data_l;
     void *data_p;
     ssize_t wlen;
 
     if (req->size < 4)
         return -1;
 
-    data_l = (int16_t)abcdk_bit_read2number(req,16);
+    data_l = (uint16_t)abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0; //仅用于更新活动时间。
 
@@ -911,14 +911,14 @@ static int _abcdkvnet_server_offline_client(abcdkvnet_t *ctx,abcdk_srpc_session_
 
 static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *session,abcdk_bit_t *req,abcdk_object_t **rsp)
 {
-    int16_t data_l;
+    uint16_t data_l;
     void *data_p;
     ssize_t wlen;
 
     if (req->size < 4)
         return -1;
 
-    data_l = (int16_t)abcdk_bit_read2number(req,16);
+    data_l = (uint16_t)abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0; //仅用于更新活动时间。
 
