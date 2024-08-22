@@ -526,7 +526,7 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
     if(ctx->role == ABCDKVNET_ROLE_SERVER)
         return 0;
 
-    /*当客户端启用有效网关时才能够配置全局路由，否则会造成数据包“路由回环”错误(在TUN设备中)。*/
+    /*客户端可能不需要设置全局虚拟地址路由。*/
     if(!ctx->virtual_default_route)
         return 0;
 
@@ -1620,6 +1620,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     }
     else 
     {
+        /*当客户端启用有效网关时才能够配置全局路由，否则会造成数据包“路由回环”错误(在TUN设备中)。*/
         chk = _abcdkvnet_uplink_route_add(ctx);
         if(chk != 0)
             return;
