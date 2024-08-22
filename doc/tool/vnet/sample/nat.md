@@ -22,5 +22,3 @@ sudo iptables -t nat -vnL POSTROUTING --line-numbers
 ```bash
 sudo iptables -vL FORWARD --line-numbers
 ```
-
-ip route add %s via $(ip route show 0/0 | sed -e 's/.* via \([^ ]*\).*/\1/')
