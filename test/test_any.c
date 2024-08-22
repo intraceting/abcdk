@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 0
+#elif 1
 
     abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -1029,7 +1029,7 @@ int abcdk_test_any(abcdk_option_t *args)
             abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(dst.addr6.sin6_port));
     }
 
-#elif 1
+#elif 0
 
 
     abcdk_ipool_t *ctx = abcdk_ipool_create2(abcdk_option_get(args, "--start", 0, ""),abcdk_option_get(args, "--end", 0, ""));

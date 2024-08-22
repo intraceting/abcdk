@@ -140,11 +140,11 @@ int main(int argc, char **argv)
     int errcode = 0;
 
 
-    abcdk_signal_fill(&sigs,SIGTRAP,SIGKILL,SIGSEGV,SIGSTOP,-1);
-    abcdk_signal_block(&sigs,NULL);
+    // abcdk_signal_fill(&sigs,SIGTRAP,SIGKILL,SIGSEGV,SIGSTOP,-1);
+    // abcdk_signal_block(&sigs,NULL);
 
-    sig_thread.routine = _abcdk_test_signal_cb;
-    abcdk_thread_create(&sig_thread,0);
+    // sig_thread.routine = _abcdk_test_signal_cb;
+    // abcdk_thread_create(&sig_thread,0);
     
     /*中文；UTF-8。*/
     setlocale(LC_ALL, "zh_CN.UTF-8");
@@ -203,5 +203,5 @@ final_end:
     
     abcdk_option_free(&args);
 
-    return errcode;
+    exit(errcode);
 }
