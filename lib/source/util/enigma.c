@@ -101,8 +101,8 @@ abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols
     if (!ctx)
         return NULL;
 
-    //ctx->rotors = abcdk_heap_alloc(sizeof(abcdk_enigma_rotor_t) * rows);
-    ctx->rotors = abcdk_heap_alloc_align(4096,sizeof(abcdk_enigma_rotor_t) * rows);
+    ctx->rotors = abcdk_heap_alloc(sizeof(abcdk_enigma_rotor_t) * rows);
+    //ctx->rotors = abcdk_heap_alloc_align(4096,sizeof(abcdk_enigma_rotor_t) * rows);
     if (!ctx->rotors)
         goto final_error;
 
