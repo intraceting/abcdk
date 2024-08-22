@@ -13,6 +13,11 @@
 __BEGIN_DECLS
 
 /**
+ * 内存申请(对齐)。
+ */
+void* abcdk_heap_alloc_align(size_t alignment,size_t size);
+
+/**
  * 内存申请。
  */
 void* abcdk_heap_alloc(size_t size);
