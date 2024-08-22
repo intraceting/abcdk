@@ -30,10 +30,6 @@ enum _abcdkvnet_constant
     ABCDKVNET_IPADDR_TYPE_DHCP = 2,
 #define ABCDKVNET_IPADDR_TYPE_DHCP ABCDKVNET_IPADDR_TYPE_DHCP
 
-    /**TUN最大传输单元。*/
-    ABCDKVNET_TUN_MTU = 1500,
-#define ABCDKVNET_TUN_MTU ABCDKVNET_TUN_MTU
-
     /**登录注册。*/
     ABCDKVNET_CMD_LOGON = 1,
 #define ABCDKVNET_CMD_LOGON ABCDKVNET_CMD_LOGON
@@ -114,6 +110,7 @@ typedef struct _abcdkvnet
 
     /*虚拟TUN设备句柄。*/
     int virtual_tun_fd;
+
     
     /*虚拟IPV4地址类型。*/
     int virtual_addr4_type;
@@ -129,6 +126,9 @@ typedef struct _abcdkvnet
 
     /*虚拟TUN设备前缀。*/
     const char *virtual_tun_prefix;
+
+    /*虚拟TUN设备最大传输单元。*/
+    int virtual_tun_mtu;
 
     /*设置默认的全局虚拟路由(客户端有效)。0 否，!0 是。*/
     int virtual_default_route;
@@ -223,6 +223,9 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--virtual-tun-prefix < NAME >\n");
     fprintf(stderr, "\t\t虚拟TUN设备前缀。默认: vnet\n");
 
+    fprintf(stderr, "\n\t--virtual-tun-mtu < SIZE >\n");
+    fprintf(stderr, "\t\t虚拟TUN设备最大传输单元(1500~65535)。默认: 1500\n");
+
     fprintf(stderr, "\n\t--virtual-default-route < BOOL >\n");
     fprintf(stderr, "\t\t虚拟全局路由配置状态。默认: 0\n");
 
@@ -312,7 +315,7 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t共享密钥文件。\n");
 
     fprintf(stderr, "\n\t--enigma-salt-size < SIZE >\n");
-    fprintf(stderr, "\t\t监的长度。默认：123。\n");
+    fprintf(stderr, "\t\t监的长度(0~255)。默认：123。\n");
 
     fprintf(stderr, "\n\t--uplink-ssl-scheme < SCHEME >\n");
     fprintf(stderr, "\t\t上行安全方案。默认：%d\n",ABCDK_ASIO_SSL_SCHEME_RAW);
@@ -507,10 +510,10 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
         return -1;
     }
 
-    chk = abcdk_net_set_mtu(ABCDKVNET_TUN_MTU,ctx->virtual_tun_name);
+    chk = abcdk_net_set_mtu(ctx->virtual_tun_mtu,ctx->virtual_tun_name);
     if(chk != 0)
     {
-        abcdk_trace_output(LOG_ERR, "更新TUN(%s)最大传输单元(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,ABCDKVNET_TUN_MTU);
+        abcdk_trace_output(LOG_ERR, "更新TUN(%s)最大传输单元(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,ctx->virtual_tun_mtu);
         return -1;
     }
 
@@ -848,13 +851,15 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     if (req->size < 4)
         return -1;
 
-    data_l = abcdk_bit_read2number(req,16);
+    data_l = (int16_t)abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0; //仅用于更新活动时间。
 
+#if 0
     /*检查数据包长度是否超过最大传输单元。*/
-    if(data_l > ABCDKVNET_TUN_MTU)
+    if(data_l > ctx->virtual_tun_mtu)
         return -1;
+#endif 
     
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
@@ -913,14 +918,16 @@ static int _abcdkvnet_client_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     if (req->size < 4)
         return -1;
 
-    data_l = abcdk_bit_read2number(req,16);
+    data_l = (int16_t)abcdk_bit_read2number(req,16);
     if(data_l <= 0)
         return 0; //仅用于更新活动时间。
 
+#if 0
     /*检查数据包长度是否超过最大传输单元。*/
-    if(data_l > ABCDKVNET_TUN_MTU)
-        return -1;    
-    
+    if(data_l > ctx->virtual_tun_mtu)
+        return -1;
+#endif
+
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
     wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
@@ -1086,7 +1093,7 @@ static void _abcdkvnet_server_tun_transfer(abcdkvnet_t *ctx)
     abcdk_srpc_session_t *rpc_dst_p;
     int chk;
 
-    reqbuf = abcdk_object_alloc2(ABCDKVNET_TUN_MTU+4);
+    reqbuf = abcdk_object_alloc2(ctx->virtual_tun_mtu+4);
     if(!reqbuf)
         return;
 
@@ -1115,7 +1122,7 @@ LOOP:
     }
     else 
     {
-        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ABCDKVNET_TUN_MTU);
+        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ctx->virtual_tun_mtu);
         if(chk == 0)
             goto END;
         else if(chk < 0)
@@ -1189,6 +1196,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, NULL);
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
+    ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 1500);
 
     const char *ipv4_pool_begin_p = abcdk_option_get(ctx->args,"--ipv4-pool-begin",0,"ipv4://10.0.0.1");
     const char *ipv4_pool_end_p = abcdk_option_get(ctx->args,"--ipv4-pool-end",0,"ipv4://10.0.0.255");
@@ -1212,6 +1220,8 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
 
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
     ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
+
+    ABCDK_CLAMP(ctx->virtual_tun_mtu,1500,65535);
     
     if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
     {
@@ -1451,7 +1461,7 @@ static void _abcdkvnet_client_tun_transfer(abcdkvnet_t *ctx)
     abcdk_bit_t reqbit = {0};
     int chk;
 
-    reqbuf = abcdk_object_alloc2(ABCDKVNET_TUN_MTU+4);
+    reqbuf = abcdk_object_alloc2(ctx->virtual_tun_mtu+4);
     if(!reqbuf)
         return;
 
@@ -1481,7 +1491,7 @@ LOOP:
     }
     else 
     {
-        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ABCDKVNET_TUN_MTU);
+        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ctx->virtual_tun_mtu);
         if(chk == 0)
             goto END;
         else if(chk < 0)
@@ -1565,6 +1575,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, "");
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, "");
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
+    ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 1500);
     ctx->virtual_default_route = abcdk_option_get_int(ctx->args, "--virtual-default-route", 0, 0);
 
     ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
@@ -1579,6 +1590,8 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
     ctx->uplink_addr = abcdk_option_get(ctx->args, "--uplink-addr", 0, "");
     ctx->uplink_gateway = abcdk_option_get(ctx->args, "--uplink-gateway", 0, "");
+
+    ABCDK_CLAMP(ctx->virtual_tun_mtu,1500,65535);
 
     if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
     {
