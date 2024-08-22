@@ -56,6 +56,25 @@ int abcdk_proc_singleton(const char* lockfile,int* pid);
 pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
 
 /**
+ * 执行外部命令。
+*/
+pid_t abcdk_proc_vpopen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, va_list ap);
+
+/**
+ * 执行外部命令。
+ * 
+ * @return 0 成功(执行完成)，-1 失败(未找到或权限不足)。
+*/
+int abcdk_proc_shell(int *exitcode , int *sigcode,const char *cmd,...);
+
+/**
+ * 执行外部命令。
+ * 
+ * @return 0 成功(执行完成)，-1 失败(未找到或权限不足)。
+*/
+int abcdk_proc_vshell(int *exitcode , int *sigcode,const char *cmd,va_list ap);
+
+/**
  * 拦截信号。
  * 
  * @param news 新的信号集合。NULL(0) 默认所有信号，SIGTRAP、SIGKILL、SIGSEGV、SIGSTOP除外。

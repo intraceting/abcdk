@@ -122,17 +122,32 @@ int abcdk_proc_singleton(const char *lockfile,int* pid)
 
 pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...)
 {
+    pid_t pid = -1;
+
+    assert(cmd != NULL);
+
+    va_list ap;
+    va_start(ap, cmd);
+
+    pid = abcdk_proc_vpopen(stdin_fd,stdout_fd,stderr_fd,cmd,ap);
+
+    va_end(ap);
+ 
+    return pid;
+}
+
+pid_t abcdk_proc_vpopen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, va_list ap)
+{
     char *buf = NULL;
     pid_t pid = -1;
+
+    assert(cmd != NULL);
 
     buf = abcdk_heap_alloc(40*1024);
     if(!buf)
         goto ERR;
 
-    va_list ap;
-    va_start(ap, cmd);
     vsnprintf(buf,40*1024,cmd,ap);
-    va_end(ap);
 
     abcdk_trace_output(LOG_INFO,"popen: %s",buf);
 
@@ -145,15 +160,44 @@ pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char
     }
 
     abcdk_heap_free2((void**)&buf);
-
     return pid;
 
 ERR:
 
     abcdk_heap_free2((void**)&buf);
-
-    return -1;
+    return -1; 
 }
+
+int abcdk_proc_shell(int *exitcode , int *sigcode,const char *cmd,...)
+{
+    int chk;
+
+    assert(cmd != NULL);
+
+    va_list ap;
+    va_start(ap, cmd);
+
+    chk = abcdk_proc_vshell(exitcode,sigcode,cmd,ap);
+
+    va_end(ap);
+ 
+    return chk;
+}
+
+int abcdk_proc_vshell(int *exitcode , int *sigcode,const char *cmd,va_list ap)
+{
+    pid_t pid = -1;
+
+    assert(cmd != NULL);
+
+    pid = abcdk_proc_vpopen(NULL,NULL,NULL,cmd,ap);
+    if(pid < 0)
+        return -1;
+
+    abcdk_waitpid(pid, 0, exitcode, sigcode);
+    return 0;
+}
+
 
 int abcdk_proc_signal_block(const sigset_t *news, sigset_t *olds)
 {

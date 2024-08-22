@@ -106,6 +106,9 @@ typedef struct _abcdkvnet
     /*上行地址。*/
     abcdk_sockaddr_t rpc_uplink_addr;
 
+    /*上行网关。*/
+    abcdk_sockaddr_t rpc_uplink_gateway;
+
     /*虚拟TUN设备名称。*/
     char virtual_tun_name[NAME_MAX];
 
@@ -126,6 +129,9 @@ typedef struct _abcdkvnet
 
     /*虚拟TUN设备前缀。*/
     const char *virtual_tun_prefix;
+
+    /*设置默认的全局虚拟路由(客户端有效)。0 否，!0 是。*/
+    int virtual_default_route;
 
     /*角色。*/
     int role;
@@ -166,8 +172,11 @@ typedef struct _abcdkvnet
     /*上行安全方案。*/
     int uplink_ssl_scheme;
 
-    /*上行地址(服务端真实IP地址)。*/
+    /*上行地址(服务端真实地址)。*/
     const char *uplink_addr;
+
+    /*上行网关(网关真实地址)。*/
+    const char *uplink_gateway;
 
 
 }abcdkvnet_t;
@@ -213,6 +222,12 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--virtual-tun-prefix < NAME >\n");
     fprintf(stderr, "\t\t虚拟TUN设备前缀。默认: vnet\n");
+
+    fprintf(stderr, "\n\t--virtual-default-route < BOOL >\n");
+    fprintf(stderr, "\t\t虚拟全局路由配置状态。默认: 0\n");
+
+    fprintf(stderr, "\n\t\t0：禁用\n");
+    fprintf(stderr, "\t\t1：启用\n");
 
     fprintf(stderr, "\n\t--role < TYPE >\n");
     fprintf(stderr, "\t\t角色。默认：%d\n",ABCDKVNET_ROLE_CLIENT);
@@ -307,11 +322,17 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t%d：ENIGMA\n",ABCDK_ASIO_SSL_SCHEME_ENIGMA);
     fprintf(stderr, "\t\t%d：PKIonENIGMA\n",ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
 
-    fprintf(stderr, "\n\t--uplink-addr < URL >\n");
+    fprintf(stderr, "\n\t--uplink-addr < ADDR >\n");
     fprintf(stderr, "\t\t上行地址。\n");
 
-    fprintf(stderr, "\n\t\tipv4://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\tipv6://[DOMAIN]:PORT\n");
+    fprintf(stderr, "\n\t\tipv4://IP:PORT\n");
+    fprintf(stderr, "\t\tipv6://[IP]:PORT\n");
+
+    fprintf(stderr, "\n\t--uplink-gateway < ADDR >\n");
+    fprintf(stderr, "\t\t上行网关。\n");
+
+    fprintf(stderr, "\n\t\tipv4://IP\n");
+    fprintf(stderr, "\t\tipv6://[IP]\n");
 }
 
 static int _abcdkvnet_tun_open(const char *name)
@@ -394,6 +415,44 @@ ERR:
     return NULL;
 }
 
+static void _abcdkvnet_uplink_route_del(abcdkvnet_t *ctx)
+{
+    char upaddr[100] = {0},upgw[100] = {0};
+
+    if(ctx->rpc_uplink_addr.family != ctx->rpc_uplink_gateway.family)
+        return;
+    
+    abcdk_sockaddr_to_string(upaddr,&ctx->rpc_uplink_addr);
+    abcdk_sockaddr_to_string(upgw, &ctx->rpc_uplink_gateway);
+
+    abcdk_proc_shell(NULL, NULL,"ip route del %s via %s",upaddr,upgw);
+}
+
+static int _abcdkvnet_uplink_route_add(abcdkvnet_t *ctx)
+{
+    char upaddr[100] = {0},upgw[100] = {0};
+    int exitcode = 0;
+    int chk;
+
+    if(ctx->rpc_uplink_addr.family != ctx->rpc_uplink_gateway.family)
+    {
+        abcdk_trace_output(LOG_ERR, "上行地址(%s)和网关(%s)必须使用相同的协议。", upaddr,upgw);
+        return -1;
+    }
+
+    abcdk_sockaddr_to_string(upaddr,&ctx->rpc_uplink_addr);
+    abcdk_sockaddr_to_string(upgw, &ctx->rpc_uplink_gateway);
+
+    chk = abcdk_proc_shell(&exitcode, NULL,"ip route add %s via %s",upaddr,upgw);
+    if(chk != 0 || (exitcode != 0 && exitcode != 2))
+    {
+        abcdk_trace_output(LOG_ERR, "上行地址(%s)的网关(%s)配置路由失败，权限不足或系统错误。", upaddr,upgw);
+        return -1;
+    }
+        
+    return 0;
+}
+
 static void _abcdkvnet_ifconfig_flush(abcdkvnet_t *ctx)
 {
     if(ctx->virtual_tun_fd < 0)
@@ -463,9 +522,12 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
         return -1;
     }
 
-#if 0
     /*服务端不需要配置默认路由。*/
     if(ctx->role == ABCDKVNET_ROLE_SERVER)
+        return 0;
+
+    /*当客户端启用有效网关时才能够配置全局路由，否则会造成数据包“路由回环”错误(在TUN设备中)。*/
+    if(!ctx->virtual_default_route)
         return 0;
 
     chk = abcdk_net_route_add(4, "0.0.0.0", 0, gw4str, 0, ctx->virtual_tun_name);
@@ -481,7 +543,7 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
         abcdk_trace_output(LOG_ERR, "向TUN设备(%s)添加默认的路由(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,gw6str);
         return -1;
     }
-#endif
+
     return 0;
 }
 
@@ -1282,16 +1344,8 @@ END:
 static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
 {
     int ssl_scheme;
-    abcdk_sockaddr_t uplink_addr = {0};
     abcdk_srpc_config_t rpc_cfg = {0};
     int chk;
-
-    chk = abcdk_sockaddr_from_string(&uplink_addr, ctx->uplink_addr, 1);
-    if (chk != 0)
-    {
-        abcdk_trace_output(LOG_ERR, "服务器地址(%s)无法识别。", ctx->uplink_addr);
-        return -1;
-    }
 
     ctx->rpc_uplink_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_CLIENT);
     if(!ctx->rpc_uplink_session)
@@ -1311,14 +1365,12 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
     rpc_cfg.close_cb = _abcdkvnet_srpc_close_cb;
 
-    chk = abcdk_srpc_connect(ctx->rpc_uplink_session,&uplink_addr,&rpc_cfg);
+    chk = abcdk_srpc_connect(ctx->rpc_uplink_session,&ctx->rpc_uplink_addr,&rpc_cfg);
     if(chk != 0)
     {
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "连接服务器(%s)失败，网络不通或目标不可达。", ctx->uplink_addr);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "连接上行地址(%s)失败，网络不通或目标不可达。", ctx->uplink_addr);
         return -2;
     }
-
-    
 
     return 0;
 }
@@ -1344,7 +1396,7 @@ static int _abcdkvnet_client_logon(abcdkvnet_t *ctx)
     chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,&rsp);
     if(chk != 0)
     {
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "向服务器(%s)登录注册失败，网络不通或目标不可达。", ctx->uplink_addr);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session,LOG_ERR, "登录注册失败，上行地址(%s)网络不通或目标不可达。", ctx->uplink_addr);
         return -1;
     }
 
@@ -1376,14 +1428,14 @@ static int _abcdkvnet_client_logon(abcdkvnet_t *ctx)
         abcdk_sockaddr_to_string(gw4str, &ctx->virtual_gateway_addr4);
         abcdk_sockaddr_to_string(gw6str, &ctx->virtual_gateway_addr6);
 
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "向服务器(%s)登录注册完成，分配的虚拟地址是IPV4(%s)和IPV6(%s)，网关的虚拟地址是IPV4(%s)和IPV6(%s)。",
-                                ctx->uplink_addr, local4str, local6str,gw4str,gw6str);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_INFO, "登录注册完成，分配的虚拟地址是IPV4(%s)和IPV6(%s)，网关的虚拟地址是IPV4(%s)和IPV6(%s)。",
+                                local4str, local6str,gw4str,gw6str);
 
         chk = 0;
     }
     else 
     {
-        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "向服务器(%s)登录注册失败(ERRNO=%d)。",ctx->uplink_addr, err);
+        abcdk_srpc_trace_output(ctx->rpc_uplink_session, LOG_ERR, "登录注册失败，服务不可用或资源不足(ERRNO=%d)。",err);
 
         chk = -1;
     }
@@ -1458,7 +1510,7 @@ END:
 static void _abcdkvnet_client_dowork(abcdkvnet_t *ctx)
 {
     int chk;
-
+    
 LOOP:
 
     /*检查是否需要退出。*/
@@ -1513,6 +1565,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, "");
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, "");
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
+    ctx->virtual_default_route = abcdk_option_get_int(ctx->args, "--virtual-default-route", 0, 0);
 
     ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
     ctx->pki_ca_path = abcdk_option_get(ctx->args, "--pki-ca-path", 0, NULL);
@@ -1525,13 +1578,14 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
      
     ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
     ctx->uplink_addr = abcdk_option_get(ctx->args, "--uplink-addr", 0, "");
+    ctx->uplink_gateway = abcdk_option_get(ctx->args, "--uplink-gateway", 0, "");
 
     if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
     {
         chk4 = abcdk_sockaddr_from_string(&ctx->virtual_local_addr4, ctx->virtual_static_addr4, 0);
         if (chk4 != 0)
         {
-            abcdk_trace_output(LOG_WARNING, "静态地址(%s)解析错误。", ctx->virtual_static_addr4);
+            abcdk_trace_output(LOG_WARNING, "静态虚拟地址(%s)解析错误。", ctx->virtual_static_addr4);
             goto END;
         }
 
@@ -1544,11 +1598,31 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
         chk6 = abcdk_sockaddr_from_string(&ctx->virtual_local_addr6, ctx->virtual_static_addr6, 0);
         if (chk6 != 0)
         {
-            abcdk_trace_output(LOG_WARNING, "静态地址(%s)解析错误。", ctx->virtual_static_addr6);
+            abcdk_trace_output(LOG_WARNING, "静态虚拟地址(%s)解析错误。", ctx->virtual_static_addr6);
             goto END;
         }
 
         ctx->virtual_mask_prefix6 = ctx->virtual_static_prefix6;
+    }
+
+    chk = abcdk_sockaddr_from_string(&ctx->rpc_uplink_addr, ctx->uplink_addr, 0);
+    if (chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "上行地址(%s)无法识别。", ctx->uplink_addr);
+        goto END;
+    }
+
+    chk = abcdk_sockaddr_from_string(&ctx->rpc_uplink_gateway, ctx->uplink_gateway, 0);
+    if (chk != 0)
+    {
+        abcdk_trace_output(LOG_WARNING, "上行网关(%s)无法识别，虚拟地址全局路由配置将被忽略。", ctx->uplink_gateway);
+        ctx->virtual_default_route = 0;
+    }
+    else 
+    {
+        chk = _abcdkvnet_uplink_route_add(ctx);
+        if(chk != 0)
+            return;
     }
 
     ctx->rpc_ctx = abcdk_srpc_create(10,-1);
@@ -1559,7 +1633,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
 
 END:
 
-
+    _abcdkvnet_uplink_route_del(ctx);
     abcdk_srpc_destroy(&ctx->rpc_ctx);
 }
 
