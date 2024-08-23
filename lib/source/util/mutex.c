@@ -67,6 +67,7 @@ abcdk_mutex_t *abcdk_mutex_create()
     pthread_mutexattr_init(&ctx->mutexattr);
     pthread_mutexattr_setpshared(&ctx->mutexattr,PTHREAD_PROCESS_PRIVATE);
     pthread_mutexattr_setrobust(&ctx->mutexattr,PTHREAD_MUTEX_ROBUST);
+    pthread_mutexattr_settype(&ctx->mutexattr, PTHREAD_MUTEX_FAST_NP);
 
     pthread_cond_init(&ctx->cond, &ctx->condattr);
     pthread_mutex_init(&ctx->mutex, &ctx->mutexattr);
