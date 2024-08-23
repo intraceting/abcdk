@@ -71,7 +71,7 @@ typedef struct _abcdkvnet
 
     /*虚拟路由表。*/
     abcdk_iplan_t *virtual_route_list;
-    abcdk_mutex_t *virtual_route_locker;
+    abcdk_spinlock_t *virtual_route_locker;
 
     /*虚拟地址。*/
     uint8_t virtual_mask_prefix4;
@@ -602,7 +602,7 @@ static int _abcdkvnet_iplan_register(abcdkvnet_t *ctx,abcdk_srpc_session_t *sess
     abcdk_srpc_session_t *session_p;
     int chk;
 
-    abcdk_mutex_lock(ctx->virtual_route_locker,1);
+    abcdk_spinlock_lock(ctx->virtual_route_locker,1);
 
     if (addr4->family == AF_INET)
     {
@@ -633,7 +633,7 @@ static int _abcdkvnet_iplan_register(abcdkvnet_t *ctx,abcdk_srpc_session_t *sess
 
 END:
 
-    abcdk_mutex_unlock(ctx->virtual_route_locker);
+    abcdk_spinlock_unlock(ctx->virtual_route_locker);
     return chk;
     
 }
@@ -642,7 +642,7 @@ static void _abcdkvnet_iplan_unregister(abcdkvnet_t *ctx, abcdk_sockaddr_t *addr
 {
     abcdk_srpc_session_t *session_p;
 
-    abcdk_mutex_lock(ctx->virtual_route_locker,1);
+    abcdk_spinlock_lock(ctx->virtual_route_locker,1);
 
     if(addr4->family == AF_INET)
     {
@@ -656,7 +656,7 @@ static void _abcdkvnet_iplan_unregister(abcdkvnet_t *ctx, abcdk_sockaddr_t *addr
         abcdk_srpc_unref(&session_p);
     }
 
-    abcdk_mutex_unlock(ctx->virtual_route_locker);
+    abcdk_spinlock_unlock(ctx->virtual_route_locker);
 }
 
 static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_sockaddr_t *addr)
@@ -669,13 +669,13 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
    // uint64_t dot = 0;
    // abcdk_clock(dot,&dot);
 
-    abcdk_mutex_lock(ctx->virtual_route_locker,1);
+    abcdk_spinlock_lock(ctx->virtual_route_locker,1);
 
     session_p = (abcdk_srpc_session_t *)abcdk_iplan_lookup(ctx->virtual_route_list,addr);
     if(session_p)
         session_p = abcdk_srpc_refer(session_p);
 
-    abcdk_mutex_unlock(ctx->virtual_route_locker);
+    abcdk_spinlock_unlock(ctx->virtual_route_locker);
 
    // abcdk_trace_output(LOG_INFO,"%s:%.6f",__FUNCTION__,(double)abcdk_clock(dot,&dot)/1000000.);
 
@@ -1313,7 +1313,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     if(!ctx->virtual_route_list)
         goto END;
 
-    ctx->virtual_route_locker = abcdk_mutex_create();
+    ctx->virtual_route_locker = abcdk_spinlock_create();
     if(!ctx->virtual_route_locker)
         goto END;
 
@@ -1353,7 +1353,7 @@ END:
     abcdk_ipool_destroy(&ctx->virtual_ipv4_pool);
     abcdk_ipool_destroy(&ctx->virtual_ipv6_pool);
     abcdk_iplan_destroy(&ctx->virtual_route_list);
-    abcdk_mutex_destroy(&ctx->virtual_route_locker);
+    abcdk_spinlock_destroy(&ctx->virtual_route_locker);
 }
 
 static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
