@@ -666,6 +666,9 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
     if(addr->family != AF_INET && addr->family != AF_INET6)
         return NULL;
 
+    uint64_t dot = 0;
+    abcdk_clock(0,&dot);
+
     abcdk_mutex_lock(ctx->virtual_route_locker,1);
 
     session_p = (abcdk_srpc_session_t *)abcdk_iplan_lookup(ctx->virtual_route_list,addr);
@@ -673,6 +676,8 @@ static abcdk_srpc_session_t *_abcdkvnet_iplan_lookup(abcdkvnet_t *ctx, abcdk_soc
         session_p = abcdk_srpc_refer(session_p);
 
     abcdk_mutex_unlock(ctx->virtual_route_locker);
+
+    abcdk_trace_output(LOG_INFO,"%s:%.6f",__FUNCTION__,(double)dot/1000000.);
 
     return session_p;
 }
