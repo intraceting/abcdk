@@ -193,10 +193,12 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
         return;
 
     ctx_p = *ctx;
-    *ctx = NULL;
 
     abcdk_asio_stop(&ctx_p->io_ctx);
     abcdk_heap_free(ctx_p);
+
+    /*一定要等ASIO对象停下来才能清空指针，否则会因为线程调度问题造成引用空指针。*/
+    *ctx = NULL;
 }
 
 abcdk_srpc_t *abcdk_srpc_create(int max,int cpu)

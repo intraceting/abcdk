@@ -892,13 +892,16 @@ void abcdk_asio_stop(abcdk_asio_t **ctx)
 
     /*复制。*/
     ctx_p = *ctx;
-    *ctx = NULL;
+
 
     /*退出。*/
     abcdk_atomic_store(&ctx_p->exitflag, 1);
 
     /*回收线程资源。*/
     abcdk_thread_join(&ctx_p->worker);
+
+    /*一定要等线程停下来才能清空指针，否则会因为线程调度问题造成引用空指针。*/
+    *ctx = NULL;
 
     abcdk_epollex_free(&ctx_p->epollex);
     abcdk_heap_free(ctx_p);
