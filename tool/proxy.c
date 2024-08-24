@@ -327,7 +327,7 @@ static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
     }
 
     /*设置超时。*/
-    abcdk_asio_set_timeout(node, 180 * 1000);
+    abcdk_asio_set_timeout(node,  5 * 60 * 1000);
 
     _abcdkproxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
