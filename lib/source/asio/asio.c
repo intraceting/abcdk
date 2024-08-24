@@ -1269,7 +1269,7 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 
     /*收。*/
     rlen = abcdk_asio_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
-    if (rlen <= 0)
+    if (rlen > 0)
     {
         /*缓存中可能存大多个请求，因此处理所有请求才能退出循环。*/
         while (pos < rlen)
