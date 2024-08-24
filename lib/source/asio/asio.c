@@ -184,7 +184,8 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*fr
     node->out_queue = abcdk_tree_alloc3(1);
     node->out_locker = abcdk_mutex_create();
     node->out_pos = 0;
-    node->in_buffer = abcdk_object_alloc2(256*1024);
+    //node->in_buffer = abcdk_object_alloc2(256*1024);
+    node->in_buffer = abcdk_object_alloc2(65536);
     node->from_listen = NULL;
     node->openssl_ctx = NULL;
     node->openssl_ssl = NULL;
