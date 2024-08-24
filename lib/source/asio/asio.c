@@ -1314,31 +1314,31 @@ NEXT_MSG:
      * 
      * 警告：重发数据时参数不能改变(指针和长度)。
     */
-    slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
-    if (slen <= 0)
+    while(node->out_pos < p->obj->sizes[0])
     {
-        abcdk_asio_send_watch(node);
-        return;
+        slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+        if( slen > 0)
+            node->out_pos += slen;
+        else 
+            break;
+            
     }
 
-    /*滚动发送游标。*/
-    node->out_pos += slen;
+    /*如果当前节点发送完成，则从队列中删除已经发送完整的节点。*/
+    if(node->out_pos >= p->obj->sizes[0])
+    {
+        /*游标归零。*/
+        node->out_pos = 0;
+        
+        /*删除节点。*/
+        abcdk_mutex_lock(node->out_locker,1);
+        abcdk_tree_unlink(p);
+        abcdk_tree_free(&p);
+        abcdk_mutex_unlock(node->out_locker);
+    }
 
-    /*当前节点未发送完整，则继续发送。*/
-    if (node->out_pos < p->obj->sizes[0])
-        goto NEXT_MSG;
-
-    /*发送游标归零。*/
-    node->out_pos = 0;
-
-    /*从队列中删除已经发送完整的节点。*/
-    abcdk_mutex_lock(node->out_locker,1);
-    abcdk_tree_unlink(p);
-    abcdk_tree_free(&p);
-    abcdk_mutex_unlock(node->out_locker);
-
-    /*并继续发送剩余节点。*/
-    goto NEXT_MSG;
+    abcdk_asio_send_watch(node);
+    return;
 }
 
 int abcdk_asio_post(abcdk_asio_node_t *node, abcdk_object_t *data)
