@@ -1267,29 +1267,17 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
         return;
     }
 
-NEXT_RECV:
-
-    /*重置这些变量，非常重要。*/
-    rlen = pos = 0;
-    remain = 0;
-
     /*收。*/
     rlen = abcdk_asio_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
     {
-        abcdk_asio_recv_watch(node);
-        return;
+        /*缓存中可能存大多个请求，因此处理所有请求才能退出循环。*/
+        while (pos < rlen)
+        {
+            node->cfg.input_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
+            pos += (rlen - pos) - remain;
+        }
     }
-
-NEXT_REQ:
-
-    node->cfg.input_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
-    pos += (rlen - pos) - remain;
-
-    if (pos < rlen)
-        goto NEXT_REQ;
-//    else
-       //goto NEXT_RECV;//由于缓存里可能还有剩余数据，必须要清空缓存，才能重新进入监听状态。
     
     abcdk_asio_recv_watch(node);
     return;
