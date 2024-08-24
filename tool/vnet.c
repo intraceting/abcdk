@@ -384,6 +384,7 @@ static ssize_t _abcdkvnet_tun_read(int fd,void *buf,size_t size)
     return read(fd, buf, size);
 }
 
+
 static ssize_t _abcdkvnet_tun_write(int fd,const void *buf,size_t size)
 {
     if(fd < 0)
@@ -1116,33 +1117,29 @@ LOOP:
 
     abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_POSTING);
 
-    chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
-    if(chk < 0)
-    {
+    chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ctx->virtual_tun_mtu);
+    if(chk == 0)
         goto END;
-    } 
-    else if(chk == 0)
+    else if(chk < 0)
     {
-        goto LOOP;
-    }
-    else 
-    {
-        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ctx->virtual_tun_mtu);
-        if(chk == 0)
+        if(errno != EAGAIN)
             goto END;
-        else if(chk < 0)
-        {
-            if(errno == EAGAIN)
-                goto LOOP;
-            else 
-                goto END;
-        }
-        else  
-        {
-            abcdk_bit_write_number(&reqbit,16,chk);
-            abcdk_bit_seek(&reqbit,chk*8);//数据已经填充完毕，这里仅移动游标即可。
-        }
+
+        chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
+        if(chk < 0)
+            goto END;
+        else if(chk >= 0)
+            goto LOOP;
     }
+
+    assert(chk > 0);
+    
+    /*
+     * 1：链路保活由客户端负责，因此不需要发送发送保活消息。
+     * 2：数据已经填充完毕，这里仅移动游标即可。
+    */
+    abcdk_bit_write_number(&reqbit, 16, chk);
+    abcdk_bit_seek(&reqbit, chk * 8);    
 
     rpc_dst_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,ABCDK_PTR2VPTR(reqbit.data,4));
     if(!rpc_dst_p)
@@ -1484,34 +1481,29 @@ LOOP:
 
     abcdk_bit_write_number(&reqbit,16,ABCDKVNET_CMD_POSTING);
 
-    chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
-    if(chk < 0)
-    {
+    chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ctx->virtual_tun_mtu);
+    if(chk == 0)
         goto END;
-    }
-    else if(chk == 0)
+    else if(chk < 0)
     {
-        /*没有数据时仅发送保活消息。*/
-        abcdk_bit_write_number(&reqbit,16,0);
-    }
-    else 
-    {
-        chk = _abcdkvnet_tun_read(ctx->virtual_tun_fd,ABCDK_PTR2VPTR(reqbit.data,4),ctx->virtual_tun_mtu);
-        if(chk == 0)
+        if(errno != EAGAIN)
             goto END;
-        else if(chk < 0)
-        {
-            if(errno == EAGAIN)
-                goto LOOP;
-            else 
-                goto END;
-        }
-        else  
-        {
-            abcdk_bit_write_number(&reqbit,16,chk);
-            abcdk_bit_seek(&reqbit,chk*8);//数据已经填充完毕，这里仅移动游标即可。
-        }
+
+        chk = _abcdkvnet_tun_poll(ctx->virtual_tun_fd,0x01,3*1000);
+        if(chk < 0)
+            goto END;
+        else if(chk > 0)
+            goto LOOP;
     }
+
+    assert(chk >= 0);
+    
+    /*
+     * 1：没有数据时仅发送保活消息。
+     * 2：数据已经填充完毕，这里仅移动游标即可。
+    */
+    abcdk_bit_write_number(&reqbit, 16, chk);
+    abcdk_bit_seek(&reqbit, chk * 8);         
 
     chk = abcdk_srpc_request(ctx->rpc_uplink_session,reqbit.data,reqbit.pos/8,NULL);
     if(chk == 0)
