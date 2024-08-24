@@ -1288,8 +1288,12 @@ NEXT_REQ:
 
     if (pos < rlen)
         goto NEXT_REQ;
-    else
-        goto NEXT_RECV;//由于缓存里可能还有剩余数据，必须要清空缓存，才能重新进入监听状态。
+//    else
+       //goto NEXT_RECV;//由于缓存里可能还有剩余数据，必须要清空缓存，才能重新进入监听状态。
+    
+    abcdk_asio_recv_watch(node);
+    return;
+    
 }
 
 void _abcdk_asio_output_hook(abcdk_asio_node_t *node)
