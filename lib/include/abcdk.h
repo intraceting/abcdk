@@ -73,6 +73,7 @@
 #include "abcdk/util/cpu.h"
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/spinlock.h"
+#include "abcdk/util/rwlock.h"
 
 #include "abcdk/log/logger.h"
 
