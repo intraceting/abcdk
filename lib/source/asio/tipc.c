@@ -726,6 +726,7 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
+    asio_cfg.input_bufs = 1600;
     asio_cfg.input_cb = _abcdk_tipc_input_cb;
 
     chk = abcdk_asio_listen(node_p, addr, &asio_cfg);
@@ -774,6 +775,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
+    asio_cfg.input_bufs = 1600;
     asio_cfg.input_cb = _abcdk_tipc_input_cb;
 
     chk = abcdk_asio_connect(node_p, &addr, &asio_cfg);
