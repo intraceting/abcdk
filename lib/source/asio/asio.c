@@ -557,6 +557,7 @@ static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
     socklen_t sock_len = 0;
     int sock_flag = 1;
     struct timeval tv;
+    int chk;
 
     /*获取远程地址。*/
     if (!node->remote.family)
@@ -574,38 +575,38 @@ static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
 
     /*去掉默认的发和收超时设置。*/
     tv.tv_sec = tv.tv_usec = 0;
-    abcdk_sockopt_option_timeout(node->fd, SO_RCVTIMEO, &tv, 2);
-    abcdk_sockopt_option_timeout(node->fd, SO_SNDTIMEO, &tv, 2);
+    chk = abcdk_sockopt_option_timeout(node->fd, SO_RCVTIMEO, &tv, 2);
+    chk = abcdk_sockopt_option_timeout(node->fd, SO_SNDTIMEO, &tv, 2);
+
+    /*设置发送缓存区。*/
+    sock_flag = 128*1024;
+    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
+
+    /*设置接收缓存区。*/
+    sock_flag = 128*1024;
+    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
 
     /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
 
     /*开启keepalive属性*/
     sock_flag = 1;
-    abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_KEEPALIVE, &sock_flag, 2);
-
-    /*设置发送缓存区。*/
-    sock_flag = 128*1024;
-    abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
-
-    /*设置接收缓存区。*/
-    sock_flag = 128*1024;
-    abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_KEEPALIVE, &sock_flag, 2);
 
     /*连接在60秒内没有任何数据往来，则进行探测。*/
     sock_flag = 60;
-    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPIDLE, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPIDLE, &sock_flag, 2);
 
     /*探测时发包的时间间隔为5秒。*/
     sock_flag = 5;
-    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPINTVL, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPINTVL, &sock_flag, 2);
 
     /*探测尝试的次数.如果第一次探测包就收到响应，则后两次的不再发。*/
     sock_flag = 3;
-    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPCNT, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPCNT, &sock_flag, 2);
 
     /*关闭延迟发送。*/
     sock_flag = 1;
-    abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
+    chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
 }
 
 static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
