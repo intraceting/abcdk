@@ -173,7 +173,7 @@ typedef struct _abcdk_asio_config
     /**
      * 输入缓存大小。
      * 
-     * @note 有效范围：1~16777216，默认：1400
+     * @note 有效范围：1500~16777216
     */
     size_t input_bufsize;
 
