@@ -171,6 +171,13 @@ typedef struct _abcdk_asio_config
     void (*event_cb)(abcdk_asio_node_t *node, uint32_t event, int *result);
 
     /**
+     * 输入缓存区大小。
+     * 
+     * @note 有效范围：1~262144，默认：1600
+     */
+    int input_bufs;
+
+    /**
      * 输入数据到达通知回调函数。
      *
      * @note 如果未指定，则通知ABCDK_ASIO_EVENT_INPUT事件，否则将被拦截。
