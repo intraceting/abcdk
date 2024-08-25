@@ -608,7 +608,7 @@ static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
 
-    abcdk_socket_option_tcp_quickack(node->fd,0);
+    //abcdk_socket_option_tcp_quickack(node->fd,0);
 }
 
 static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
