@@ -184,7 +184,7 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*fr
     node->out_queue = abcdk_tree_alloc3(1);
     node->out_locker = abcdk_spinlock_create();
     node->out_pos = 0;
-    node->in_buffer = abcdk_object_alloc2(256*1024);
+    node->in_buffer = NULL;
     node->from_listen = NULL;
     node->openssl_ctx = NULL;
     node->openssl_ssl = NULL;
@@ -607,8 +607,6 @@ static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
     /*关闭延迟发送。*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
-
-    //abcdk_socket_option_tcp_quickack(node->fd,0);
 }
 
 static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
@@ -1113,6 +1111,7 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
     node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
+    node_p->cfg.input_bufsize = ABCDK_CLAMP(node_p->cfg.input_bufsize,1,16777216);
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -1210,6 +1209,7 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
     node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
+    node_p->cfg.input_bufsize = ABCDK_CLAMP(node_p->cfg.input_bufsize,1,16777216);
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
@@ -1279,6 +1279,16 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
     {
         node->cfg.event_cb(node,ABCDK_ASIO_EVENT_INPUT,&ret);
         return;
+    }
+
+    if(!node->in_buffer)
+    {
+        node->in_buffer = abcdk_object_alloc2(node->cfg.input_bufsize);
+        if(!node->in_buffer)
+        {
+            abcdk_asio_set_timeout(node,1);
+            return;
+        }
     }
 
     /*收。*/
