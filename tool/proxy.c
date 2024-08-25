@@ -582,7 +582,7 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
         goto ERR;
     }
 
-#if 0
+
     /*如果未指定端口，则按协议指定默认端口。*/
     if (!uplink_addr.addr4.sin_port)
     {
@@ -602,7 +602,6 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4892);
         }
     }
-#endif 
 
     /*配置安全方案。*/
     if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "https", 0) == 0 ||
