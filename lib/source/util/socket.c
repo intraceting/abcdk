@@ -294,9 +294,9 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
     return chk;
 }
 
-int abcdk_socket_option_tcp_quickack(int fd)
+int abcdk_socket_option_tcp_quickack(int fd,int enable)
 {
-    int flag = 1;
+    int flag = (enable?1:0);
 
     assert(fd >= 0);
 

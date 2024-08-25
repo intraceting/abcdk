@@ -183,11 +183,11 @@ int abcdk_socket_option_linger(int fd, struct linger *lg, int direction);
 int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char *ifaddr,int enable);
 
 /**
- * TCP快速确认。
+ * TCP快速确认开关。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_socket_option_tcp_quickack(int fd);
+int abcdk_socket_option_tcp_quickack(int fd,int enable);
 
 /**
  * 创建一个SOCKET句柄。
