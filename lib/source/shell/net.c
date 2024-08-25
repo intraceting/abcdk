@@ -233,3 +233,28 @@ int abcdk_net_set_mtu(uint16_t mtu, const char *ifname)
 
     return 0;
 }
+
+int abcdk_net_set_txqueuelen(uint16_t len,const char *ifname)
+{
+    int exitcode = 0, sigcode = 0;
+    pid_t pid = -1;
+    int chk;
+
+    assert(len >= 500 && ifname != NULL);
+    assert(*ifname != '\0');
+
+    pid = abcdk_proc_popen(NULL, NULL, NULL,"ip link set %s txqueuelen %hu", ifname,len);
+    if (pid < 0)
+        return -1;
+
+    abcdk_waitpid(pid, 0, &exitcode, &sigcode);
+    if (exitcode != 0)
+    {
+        abcdk_trace_output( LOG_ERR, "更新TUN(%s)队列长度失败(exit=%d,signal=%d)。", ifname, exitcode, sigcode);
+        return -2;
+    }
+
+    abcdk_trace_output( LOG_INFO, "更新TUN(%s)队列长度完成。", ifname);
+
+    return 0; 
+}

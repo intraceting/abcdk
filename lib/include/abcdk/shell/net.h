@@ -86,6 +86,13 @@ int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw,
 */
 int abcdk_net_set_mtu(uint16_t mtu,const char *ifname);
 
+/**
+ * 设置网卡队列长度。
+ * 
+ * @return 0 成功，-1 系统错误，-2 权限不足。
+*/
+int abcdk_net_set_txqueuelen(uint16_t len,const char *ifname);
+
 __END_DECLS
 
 #endif //ABCDK_SHELL_NET_H

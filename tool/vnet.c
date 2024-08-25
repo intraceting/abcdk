@@ -130,6 +130,9 @@ typedef struct _abcdkvnet
     /*虚拟TUN设备最大传输单元。*/
     uint16_t virtual_tun_mtu;
 
+    /*虚拟TUN设备队列长度。*/
+    uint16_t virtual_tun_txqlen;
+
     /*设置默认的全局虚拟路由(客户端有效)。0 否，!0 是。*/
     int virtual_default_route;
 
@@ -225,6 +228,9 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--virtual-tun-mtu < SIZE >\n");
     fprintf(stderr, "\t\t虚拟TUN设备最大传输单元(1400~65535)。默认: 1400\n");
+
+    fprintf(stderr, "\n\t--virtual-tun-txqlen < SIZE >\n");
+    fprintf(stderr, "\t\t虚拟TUN设备队列长度(500~10000)。默认: 1000\n");
 
     fprintf(stderr, "\n\t--virtual-default-route < BOOL >\n");
     fprintf(stderr, "\t\t虚拟全局路由配置状态。默认: 0\n");
@@ -514,10 +520,16 @@ static int _abcdkvnet_ifconfig_setup(abcdkvnet_t *ctx)
     chk = abcdk_net_set_mtu(ctx->virtual_tun_mtu,ctx->virtual_tun_name);
     if(chk != 0)
     {
-        abcdk_trace_output(LOG_ERR, "更新TUN(%s)最大传输单元(%s)失败，权限不足或系统错误。", ctx->virtual_tun_name,ctx->virtual_tun_mtu);
+        abcdk_trace_output(LOG_ERR, "更新TUN(%s)最大传输单元(%hd)失败，权限不足或系统错误。", ctx->virtual_tun_name,ctx->virtual_tun_mtu);
         return -1;
     }
 
+    chk = abcdk_net_set_txqueuelen(ctx->virtual_tun_txqlen,ctx->virtual_tun_name);
+    if(chk != 0)
+    {
+        abcdk_trace_output(LOG_ERR, "更新TUN(%s)队列长度(%hd)失败，权限不足或系统错误。", ctx->virtual_tun_name,ctx->virtual_tun_txqlen);
+        return -1;
+    }
 
     chk = abcdk_net_up(ctx->virtual_tun_name);
     if(chk != 0)
@@ -870,13 +882,13 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
     /*优先在子网中查找。*/
-    // rpc_subnet_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,data_p);
-    // if(rpc_subnet_p)
-    // {
-    //     abcdk_srpc_request(rpc_subnet_p, req->data, 4 + data_l, NULL);
-    //     abcdk_srpc_unref(&rpc_subnet_p);
-    // }
-    // else
+    rpc_subnet_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,data_p);
+    if(rpc_subnet_p)
+    {
+        abcdk_srpc_request(rpc_subnet_p, req->data, 4 + data_l, NULL);
+        abcdk_srpc_unref(&rpc_subnet_p);
+    }
+    else
     {
         wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
         if(wlen == 0)
@@ -1199,6 +1211,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
     ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 1400);
+    ctx->virtual_tun_txqlen = abcdk_option_get_int(ctx->args, "--virtual-tun-txqlen", 0, 1000);
 
     const char *ipv4_pool_begin_p = abcdk_option_get(ctx->args,"--ipv4-pool-begin",0,"ipv4://10.0.0.1");
     const char *ipv4_pool_end_p = abcdk_option_get(ctx->args,"--ipv4-pool-end",0,"ipv4://10.0.0.255");
@@ -1224,6 +1237,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
 
     ABCDK_CLAMP(ctx->virtual_tun_mtu,1400,65535);
+    ABCDK_CLAMP(ctx->virtual_tun_txqlen,500,10000);
     
     if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
     {
@@ -1573,6 +1587,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, "");
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
     ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 1400);
+    ctx->virtual_tun_txqlen = abcdk_option_get_int(ctx->args, "--virtual-tun-txqlen", 0, 1000);
     ctx->virtual_default_route = abcdk_option_get_int(ctx->args, "--virtual-default-route", 0, 0);
 
     ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
@@ -1589,6 +1604,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->uplink_gateway = abcdk_option_get(ctx->args, "--uplink-gateway", 0, "");
 
     ABCDK_CLAMP(ctx->virtual_tun_mtu,1400,65535);
+    ABCDK_CLAMP(ctx->virtual_tun_mtu,500,10000);
 
     if (ctx->virtual_addr4_type == ABCDKVNET_IPADDR_TYPE_STATIC)
     {
