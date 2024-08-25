@@ -870,13 +870,13 @@ static int _abcdkvnet_server_cmd_posting(abcdkvnet_t *ctx,abcdk_srpc_session_t *
     data_p = ABCDK_PTR2VPTR(req->data,4);
 
     /*优先在子网中查找。*/
-    rpc_subnet_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,data_p);
-    if(rpc_subnet_p)
-    {
-        abcdk_srpc_request(rpc_subnet_p, req->data, 4 + data_l, NULL);
-        abcdk_srpc_unref(&rpc_subnet_p);
-    }
-    else
+    // rpc_subnet_p = _abcdkvnet_iplan_lookup_iphdr_dst(ctx,data_p);
+    // if(rpc_subnet_p)
+    // {
+    //     abcdk_srpc_request(rpc_subnet_p, req->data, 4 + data_l, NULL);
+    //     abcdk_srpc_unref(&rpc_subnet_p);
+    // }
+    // else
     {
         wlen = _abcdkvnet_tun_write(ctx->virtual_tun_fd,data_p,data_l);
         if(wlen == 0)
