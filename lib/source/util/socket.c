@@ -294,6 +294,15 @@ int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char
     return chk;
 }
 
+int abcdk_socket_option_tcp_quickack(int fd)
+{
+    int flag = 1;
+
+    assert(fd >= 0);
+
+    return abcdk_sockopt_option_int(fd, IPPROTO_TCP, TCP_QUICKACK, &flag, 2);
+}
+
 int abcdk_socket(sa_family_t family, int flag)
 {
     int type = SOCK_CLOEXEC;

@@ -183,6 +183,13 @@ int abcdk_socket_option_linger(int fd, struct linger *lg, int direction);
 int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char *ifaddr,int enable);
 
 /**
+ * TCP快速确认。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_socket_option_tcp_quickack(int fd);
+
+/**
  * 创建一个SOCKET句柄。
  * 
  * @param flag 标志。0 创建数据流(TCP)句柄，!0 创建数据报(UDP)句柄。

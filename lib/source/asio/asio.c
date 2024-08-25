@@ -320,8 +320,10 @@ ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
         else 
             rsize = read(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         
-        if(rsize <=0)
+        if(rsize <= 0)
             break;
+
+        abcdk_socket_option_tcp_quickack(node->fd);
         
         rsize_all += rsize;
     }
