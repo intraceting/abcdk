@@ -322,9 +322,7 @@ ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
         
         if(rsize <= 0)
             break;
-
-      //  abcdk_socket_option_tcp_quickack(node->fd);
-        
+       
         rsize_all += rsize;
     }
 
