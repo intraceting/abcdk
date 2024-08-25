@@ -622,6 +622,7 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
 
     asio_cfg.prepare_cb = _abcdkproxy_prepare_cb;
     asio_cfg.event_cb = _abcdkproxy_event_cb;
+    asio_cfg.input_bufs = 256*1024;
     asio_cfg.input_cb = _abcdkproxy_input_cb;
 
     chk = abcdk_asio_connect(node_ctx_p->tunnel, &uplink_addr, &asio_cfg);
@@ -747,7 +748,7 @@ static void _abcdkproxy_input_cb(abcdk_asio_node_t *node, const void *data, size
         if (node_ctx_p->protocol == 1)
             node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_HTTP, 256 * 1024, NULL);
         else if (node_ctx_p->protocol == 2)
-            node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 1600, NULL);
+            node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_STREAM, 256 * 1024, NULL);
         else
             goto ERR;
     }
@@ -835,6 +836,7 @@ static int _abcdkproxy_start_listen(abcdkproxy_t *ctx, int ssl_scheme)
 
     asio_cfg.prepare_cb = _abcdkproxy_prepare_cb;
     asio_cfg.event_cb = _abcdkproxy_event_cb;
+    asio_cfg.input_bufs = 256*1024;
     asio_cfg.input_cb = _abcdkproxy_input_cb;
 
     chk = abcdk_asio_listen(node_p, &listen_addr, &asio_cfg);
