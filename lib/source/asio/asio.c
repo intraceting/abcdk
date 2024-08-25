@@ -1113,7 +1113,7 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
     node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
 
     if(node_p->cfg.input_bufs <= 0)
-        node_p->cfg.input_bufs = 1600;
+        node_p->cfg.input_bufs = 262144;
     else 
         node_p->cfg.input_bufs = ABCDK_CLAMP(node_p->cfg.input_bufs,1,262144);
 
@@ -1215,7 +1215,7 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
     node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
 
     if(node_p->cfg.input_bufs <= 0)
-        node_p->cfg.input_bufs = 1600;
+        node_p->cfg.input_bufs = 262144;
     else 
         node_p->cfg.input_bufs = ABCDK_CLAMP(node_p->cfg.input_bufs,1,262144);
     
