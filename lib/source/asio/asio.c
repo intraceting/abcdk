@@ -583,6 +583,14 @@ static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
     sock_flag = 1;
     abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_KEEPALIVE, &sock_flag, 2);
 
+    /*设置发送缓存区。*/
+    sock_flag = 65536;
+    abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
+
+    /*设置接收缓存区。*/
+    sock_flag = 65536;
+    abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
+
     /*连接在60秒内没有任何数据往来，则进行探测。*/
     sock_flag = 60;
     abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPIDLE, &sock_flag, 2);
