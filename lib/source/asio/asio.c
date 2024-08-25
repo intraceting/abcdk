@@ -93,7 +93,7 @@ struct _abcdk_asio_node
     abcdk_tree_t *out_queue;
 
     /** 发送队列锁。*/
-    abcdk_mutex_t *out_locker;
+    abcdk_spinlock_t *out_locker;
 
     /** 发送游标。*/
     size_t out_pos;
@@ -146,7 +146,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
     abcdk_closep(&node_p->fd);
     abcdk_object_unref(&node_p->userdata);
     abcdk_tree_free(&node_p->out_queue);
-    abcdk_mutex_destroy(&node_p->out_locker);
+    abcdk_spinlock_destroy(&node_p->out_locker);
     abcdk_object_unref(&node_p->in_buffer);
     abcdk_asio_unref(&node_p->from_listen);
     abcdk_heap_free(node_p);
@@ -182,7 +182,7 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*fr
     node->userdata = abcdk_object_alloc3(userdata,1);
     node->userdata_free_cb = free_cb;
     node->out_queue = abcdk_tree_alloc3(1);
-    node->out_locker = abcdk_mutex_create();
+    node->out_locker = abcdk_spinlock_create();
     node->out_pos = 0;
     node->in_buffer = abcdk_object_alloc2(256*1024);
     node->from_listen = NULL;
@@ -1297,9 +1297,9 @@ void _abcdk_asio_output_hook(abcdk_asio_node_t *node)
 NEXT_MSG:
 
     /*从队列头部开始发送。*/
-    abcdk_mutex_lock(node->out_locker,1);
+    abcdk_spinlock_lock(node->out_locker,1);
     p = abcdk_tree_child(node->out_queue,1);
-    abcdk_mutex_unlock(node->out_locker);
+    abcdk_spinlock_unlock(node->out_locker);
 
     /*通知应用层，发送队列空闲。*/
     if(!p)
@@ -1329,11 +1329,12 @@ NEXT_MSG:
         /*游标归零。*/
         node->out_pos = 0;
         
-        /*删除节点。*/
-        abcdk_mutex_lock(node->out_locker,1);
+        /*移除节点。*/
+        abcdk_spinlock_lock(node->out_locker,1);
         abcdk_tree_unlink(p);
+        abcdk_spinlock_unlock(node->out_locker);
+        /*删除节点。*/
         abcdk_tree_free(&p);
-        abcdk_mutex_unlock(node->out_locker);
     }
 
     abcdk_asio_send_watch(node);
@@ -1358,9 +1359,9 @@ int abcdk_asio_post(abcdk_asio_node_t *node, abcdk_object_t *data)
     if(!p)
         return -1;
 
-    abcdk_mutex_lock(node->out_locker,1);
+    abcdk_spinlock_lock(node->out_locker,1);
     abcdk_tree_insert2(node->out_queue,p,0);
-    abcdk_mutex_unlock(node->out_locker);
+    abcdk_spinlock_unlock(node->out_locker);
 
     if(node->status == ABCDK_ASIO_STATUS_STABLE)
         abcdk_asio_send_watch(node);
