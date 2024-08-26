@@ -53,7 +53,7 @@ __BEGIN_DECLS
  * 设置密钥
  * 
  * @param pwd 密钥的指针。
- * @param len 密钥的长度(字节），1～32之间，自动对齐到16、24、32三类长度，不足部分用padding补齐。
+ * @param len 密钥的长度(字节)，1～32之间，自动对齐到16、24、32三类长度，不足部分用padding补齐。
  * @param padding 填充字符。
  * @param encrypt !0 加密密钥，0 解密密钥。
  * 
