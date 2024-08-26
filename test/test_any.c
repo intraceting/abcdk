@@ -835,8 +835,8 @@ int abcdk_test_any(abcdk_option_t *args)
     for (int r = 3; r <= 10; r++)
     {
 
-        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024, r);
-        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024, r);
+        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024, r,256);
+        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024, r,256);
 
         for (int d = 1000; d <= 1000 * 10000; d *= 10)
         {

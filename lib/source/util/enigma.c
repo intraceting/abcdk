@@ -38,9 +38,8 @@ struct _abcdk_enigma
 
 }; // abcdk_enigma_t;
 
-void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows)
+void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols)
 {
-    size_t cols = 256;
     uint8_t c;
     int chk;
 
@@ -72,16 +71,15 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows)
+abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols)
 {
     abcdk_enigma_t *ctx = NULL;
     abcdk_enigma_rotor_t *rotor = NULL;
     uint8_t chk_dict[256/8];
-    size_t cols = 256;
     uint8_t c;
     int chk;
 
-    assert(dict != NULL && rows > 0);
+    assert(dict != NULL && rows > 0 && cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     /*检查字典表，每张字典表中的字符不能出现重复的。*/
     for (size_t y = 0; y < rows; y++)
@@ -91,9 +89,11 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows)
         {
             c = dict[y * cols + x];
 
+            ABCDK_ASSERT(c < cols,"转子中通道的值超出范围。");
+
             chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
 
-            ABCDK_ASSERT(chk == 0,"在同一个转子中的值不能出现重复。");
+            ABCDK_ASSERT(chk == 0,"在同一个转子中通道的值不能出现重复。");
         }
     }
 
@@ -128,7 +128,6 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows)
         ctx->rdict[x] = cols - x -1;
     }
  
-
     ctx->cols = cols;
     ctx->rows = rows;
 
@@ -140,42 +139,40 @@ final_error:
     return NULL;
 }
 
-abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows)
+abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows, size_t cols)
 {
-    size_t cols = 256;
     uint8_t *dict;
     abcdk_enigma_t *ctx;
 
-    assert(rows > 0);
+    assert(rows > 0 && cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
     if(!dict)
         return NULL;
 
-    abcdk_enigma_mkdict(&seed,dict,rows);
+    abcdk_enigma_mkdict(&seed,dict,rows,cols);
 
-    ctx = abcdk_enigma_create(dict,rows);
+    ctx = abcdk_enigma_create(dict,rows,cols);
     abcdk_heap_free(dict);
     
     return ctx;
 }
 
-abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows)
+abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows,size_t cols)
 {
-    size_t cols = 256;
     uint8_t *dict;
     abcdk_enigma_t *ctx;
 
-    assert(seed != NULL && rows > 0);
+    assert(seed != NULL && rows > 0 && cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
     if(!dict)
         return NULL;
 
     for (size_t i = 0; i < rows; i++)
-        abcdk_enigma_mkdict(&seed[i], &dict[i * cols], 1);
+        abcdk_enigma_mkdict(&seed[i], &dict[i * cols], 1,cols);
 
-    ctx = abcdk_enigma_create(dict,rows);
+    ctx = abcdk_enigma_create(dict,rows,cols);
     abcdk_heap_free(dict);
     
     return ctx;  
@@ -184,11 +181,9 @@ abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows)
 uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, size_t row)
 {
     assert(ctx != NULL);
+    assert(ctx->rows > row);
 
-    if (ctx->rows > row)
-        return ctx->rotors[row].pos;
-
-    return 0;
+    return ctx->rotors[row].pos;
 }
 
 uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, size_t row, uint8_t pos)
@@ -196,16 +191,10 @@ uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, size_t row, uint8_t pos)
     uint8_t old;
 
     assert(ctx != NULL);
+    assert(ctx->rows > row && pos < ctx->cols);
 
-    if (ctx->rows > row)
-    {
-        old = ctx->rotors[row].pos;
-        ctx->rotors[row].pos = pos % ctx->cols;
-    }
-    else
-    {
-        old = 0;
-    }
+    old = ctx->rotors[row].pos;
+    ctx->rotors[row].pos = pos;
 
     return old;
 }
@@ -268,11 +257,12 @@ static uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     return c;
 }
 
-uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
+uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
 {
     assert(ctx != NULL);
+    assert(c < ctx->cols);
 
-    return _abcdk_enigma_light(ctx,s);
+    return _abcdk_enigma_light(ctx,c);
 }
 
 void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)

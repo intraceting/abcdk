@@ -23,10 +23,11 @@ typedef struct _abcdk_enigma abcdk_enigma_t;
  * 制作字典。
  * 
  * @param [in out] seed 随机种子。
- * @param [in out] dict 字典表格。可用空间必须为256的整数倍。
+ * @param [in out] dict 字典表格。
  * @param [in] rows 转子数量。大于等于3有效。
+ * @param [in] cols 通道数量。小于等256的偶数有效。
 */
-void abcdk_enigma_mkdict(uint64_t *seed,uint8_t *dict,size_t rows);
+void abcdk_enigma_mkdict(uint64_t *seed,uint8_t *dict,size_t rows, size_t cols);
 
 
 /** 销毁。*/
@@ -37,27 +38,27 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx);
  * 
  * @param [in] dict 字典表格。
  * @param [in] rows 转子数量。
- * 
+ * @param [in] cols 通道数量。
 */
-abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows);
+abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols);
 
 /** 
  * 创建。
  * 
  * @param [in] seed 随机种子。
  * @param [in] rows 转子数量。
- * 
+ * @param [in] cols 通道数量。
 */
-abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows);
+abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows, size_t cols);
 
 /** 
  * 创建。
  * 
  * @param [in] seed 随机种子(每个转子使用不同的种子)。
  * @param [in] rows 转子数量。
- * 
+ * @param [in] cols 通道数量。
 */
-abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows);
+abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows, size_t cols);
 
 /** 
  * 获取转子指针。
@@ -70,7 +71,7 @@ uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx,size_t row);
  * 设置转子指针。
  * 
  * @param [in] row 转子编号。
- * @param [in] pos  转子指针。
+ * @param [in] pos 转子指针。
 */
 uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx,size_t row, uint8_t pos);
 
