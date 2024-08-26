@@ -6,18 +6,18 @@
  */
 #include "abcdk/util/enigma.h"
 
-#define ABCDK_ENIGMA_ROW_MAX 32768
-#define ABCDK_ENIGMA_COL_MAX 65536
 
 /** Enigma转子。 */
 typedef struct _abcdk_enigma_rotor
 {
     /** 正向字典。*/
-    uint16_t fdict[ABCDK_ENIGMA_COL_MAX];
+    uint8_t fdict[256];
+
     /** 逆向字典。*/
-    uint16_t bdict[ABCDK_ENIGMA_COL_MAX];
+    uint8_t bdict[256];
+
     /** 步进指针。*/
-    uint16_t pos;
+    uint8_t pos;
 
 } abcdk_enigma_rotor_t;
 
@@ -28,22 +28,23 @@ struct _abcdk_enigma
     abcdk_enigma_rotor_t *rotors;
 
     /** 反射板字典。*/
-    uint16_t rdict[ABCDK_ENIGMA_COL_MAX];
+    uint8_t rdict[256];
 
-    /** 字典行数。*/
+    /** 转子数量。*/
     size_t rows;
 
-    /** 字典列数。*/
+    /** 通道数量。*/
     size_t cols;
 
 }; // abcdk_enigma_t;
 
-void abcdk_enigma_mkdict(uint64_t *seed, uint16_t *dict, size_t rows, size_t cols)
+void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows)
 {
-    uint16_t c;
+    size_t cols = 256;
+    uint8_t c;
     int chk;
 
-    assert(seed != NULL && dict != NULL && rows > 0 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
+    assert(seed != NULL && dict != NULL && rows > 0);
 
     for (size_t y = 0; y < rows; y++)
     {
@@ -52,7 +53,7 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint16_t *dict, size_t rows, size_t col
             dict[y * cols + x] = x;
 
         /*使用洗牌算法打乱字典表顺序。*/
-        abcdk_rand_shuffle_array(&dict[y * cols],cols,seed,2);
+        abcdk_rand_shuffle_array(&dict[y * cols],cols,seed,1);
     }
 }
 
@@ -71,15 +72,16 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols)
+abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows)
 {
     abcdk_enigma_t *ctx = NULL;
     abcdk_enigma_rotor_t *rotor = NULL;
-    uint8_t chk_dict[ABCDK_ENIGMA_COL_MAX/8];
-    uint16_t c;
+    uint8_t chk_dict[256/8];
+    size_t cols = 256;
+    uint8_t c;
     int chk;
 
-    assert(dict != NULL && rows > 0 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
+    assert(dict != NULL && rows > 0);
 
     /*检查字典表，每张字典表中的字符不能出现重复的。*/
     for (size_t y = 0; y < rows; y++)
@@ -89,11 +91,9 @@ abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols
         {
             c = dict[y * cols + x];
 
-            ABCDK_ASSERT(c < cols,"字典数据的值必须小于列宽度(转子的通道)。");
-
             chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
 
-            ABCDK_ASSERT(chk == 0,"在同一行字典数据的值不能出现重复。");
+            ABCDK_ASSERT(chk == 0,"在同一个转子中的值不能出现重复。");
         }
     }
 
@@ -102,7 +102,6 @@ abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols
         return NULL;
 
     ctx->rotors = abcdk_heap_alloc(sizeof(abcdk_enigma_rotor_t) * rows);
-    //ctx->rotors = abcdk_heap_alloc_align(4096,sizeof(abcdk_enigma_rotor_t) * rows);
     if (!ctx->rotors)
         goto final_error;
 
@@ -117,6 +116,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint16_t *dict,size_t rows,size_t cols
 
             /*正向字典。*/
             ctx->rotors[y].fdict[x] = c;
+
             /*逆向字典（正向字典的索引）。*/
             ctx->rotors[y].bdict[c] = x;
         }
@@ -140,65 +140,67 @@ final_error:
     return NULL;
 }
 
-abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows,size_t cols)
+abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows)
 {
-    uint16_t *dict;
+    size_t cols = 256;
+    uint8_t *dict;
     abcdk_enigma_t *ctx;
 
-    assert(rows > 0 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
+    assert(rows > 0);
 
-    dict = (uint16_t*)abcdk_heap_alloc(sizeof(uint16_t) * rows * cols);
+    dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
     if(!dict)
         return NULL;
 
-    abcdk_enigma_mkdict(&seed,dict,rows,cols);
+    abcdk_enigma_mkdict(&seed,dict,rows);
 
-    ctx = abcdk_enigma_create(dict,rows,cols);
+    ctx = abcdk_enigma_create(dict,rows);
     abcdk_heap_free(dict);
     
     return ctx;
 }
 
-abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[32768],size_t rows,size_t cols)
+abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows)
 {
-    uint16_t *dict;
+    size_t cols = 256;
+    uint8_t *dict;
     abcdk_enigma_t *ctx;
 
-    assert(seed != NULL && rows > 0 && rows <= ABCDK_ENIGMA_ROW_MAX && cols >= 4 && cols <= ABCDK_ENIGMA_COL_MAX && cols % 2 == 0);
+    assert(seed != NULL && rows > 0);
 
-    dict = (uint16_t*)abcdk_heap_alloc(sizeof(uint16_t) * rows * cols);
+    dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
     if(!dict)
         return NULL;
 
     for (size_t i = 0; i < rows; i++)
-        abcdk_enigma_mkdict(&seed[i], &dict[i * cols], 1, cols);
+        abcdk_enigma_mkdict(&seed[i], &dict[i * cols], 1);
 
-    ctx = abcdk_enigma_create(dict,rows,cols);
+    ctx = abcdk_enigma_create(dict,rows);
     abcdk_heap_free(dict);
     
     return ctx;  
 }
 
-uint16_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, uint16_t rotor)
+uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, size_t row)
 {
     assert(ctx != NULL);
 
-    if (ctx->rows > rotor)
-        return ctx->rotors[rotor].pos;
+    if (ctx->rows > row)
+        return ctx->rotors[row].pos;
 
     return 0;
 }
 
-uint16_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, uint16_t rotor, uint16_t pos)
+uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, size_t row, uint8_t pos)
 {
-    uint16_t old;
+    uint8_t old;
 
     assert(ctx != NULL);
 
-    if (ctx->rows > rotor)
+    if (ctx->rows > row)
     {
-        old = ctx->rotors[rotor].pos;
-        ctx->rotors[rotor].pos = pos % ctx->cols;
+        old = ctx->rotors[row].pos;
+        ctx->rotors[row].pos = pos % ctx->cols;
     }
     else
     {
@@ -208,12 +210,8 @@ uint16_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, uint16_t rotor, uint16_t pos)
     return old;
 }
 
-static uint16_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
+static uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
 {
-    uint16_t c;
-
-    c = s;
-
     /*
      * 第一个转子转动一位。
      *
@@ -267,29 +265,18 @@ static uint16_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
     return c;
 }
 
-uint16_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint16_t s)
+uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t s)
 {
     assert(ctx != NULL);
-    assert(s < ctx->cols);
 
     return _abcdk_enigma_light(ctx,s);
 }
 
-void abcdk_enigma_light_batch_u16(abcdk_enigma_t *ctx,uint16_t *dst,const uint16_t *src,size_t size)
+void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
 {
     assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
 
     for (size_t i = 0; i < size; i++)
         dst[i] = abcdk_enigma_light(ctx, src[i]);
-}
-
-void abcdk_enigma_light_batch_u8(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
-{
-    assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
-    assert(ctx->cols <= 256);//单个轮子超过256个通道时，不能用使用此接口。
-
-    for (size_t i = 0; i < size; i++)
-        dst[i] = abcdk_enigma_light(ctx, src[i]);
-    
 }
 

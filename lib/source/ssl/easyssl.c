@@ -90,8 +90,8 @@ int _abcdk_easyssl_init_enigma(abcdk_easyssl_t *ctx, const uint8_t *key, size_t 
         recv_seed[i % 4] |= (uint64_t)hashcode[i];
     }
 
-    ctx->en_send_ctx = abcdk_enigma_create3(send_seed, 4, 256);
-    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed, 4, 256);
+    ctx->en_send_ctx = abcdk_enigma_create3(send_seed, 4);
+    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed, 4);
 
     if (!ctx->en_send_ctx || !ctx->en_recv_ctx)
         return -2;
@@ -234,7 +234,7 @@ ssize_t _abcdk_easyssl_write(abcdk_easyssl_t *ctx, const void *data, size_t size
         abcdk_rand_string(salt, ctx->salt_len, 0);
 
         /*加密。*/
-        abcdk_enigma_light_batch_u8(ctx->en_send_ctx, en_data->obj->pptrs[0], salt, ctx->salt_len);
+        abcdk_enigma_light_batch(ctx->en_send_ctx, en_data->obj->pptrs[0], salt, ctx->salt_len);
 
         /*追加到发送队列末尾。*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
@@ -255,7 +255,7 @@ ssize_t _abcdk_easyssl_write(abcdk_easyssl_t *ctx, const void *data, size_t size
         ctx->send_repeated_l = size;
 
         /*加密。*/
-        abcdk_enigma_light_batch_u8(ctx->en_send_ctx, en_data->obj->pptrs[0], data, size);
+        abcdk_enigma_light_batch(ctx->en_send_ctx, en_data->obj->pptrs[0], data, size);
 
         /*追加到发送队列末尾。*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
@@ -368,7 +368,7 @@ NEXT_LOOP:
         return 0; // 内存不足时，关闭当前句柄。
 
     /*解密。*/
-    abcdk_enigma_light_batch_u8(ctx->en_recv_ctx, de_data->pptrs[0], ctx->recv_buf->pptrs[0], rlen);
+    abcdk_enigma_light_batch(ctx->en_recv_ctx, de_data->pptrs[0], ctx->recv_buf->pptrs[0], rlen);
 
     /*追加到接收队列。*/
     chk = abcdk_stream_write(ctx->recv_queue, de_data);

@@ -208,7 +208,7 @@
 
 /** 断言提示。 */
 #define ABCDK_ASSERT(expr, tips) \
-    ((expr) ? (void)(0) : ({fprintf(stderr,"%s(%d): %s: %s\n",__FILE__, __LINE__,__FUNCTION__,#tips);fflush(stderr);abort(); }))
+    ((expr) ? (void)(0) : ({fprintf(stderr,"%s(%d): %s\n",__FUNCTION__, __LINE__,#tips);fflush(stderr);abort(); }))
 
 /** 高版本。*/
 #define ABCDK_VERSION_AT_LEAST(max, min, x, y) ((max) > (x) || (max) == (x) && (min) >= (y))

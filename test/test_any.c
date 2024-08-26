@@ -828,15 +828,15 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 0
+#elif 1
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
     for (int r = 3; r <= 10; r++)
     {
 
-        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024, r, 256);
-        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024, r, 256);
+        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024, r);
+        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024, r);
 
         for (int d = 1000; d <= 1000 * 10000; d *= 10)
         {
@@ -851,9 +851,9 @@ int abcdk_test_any(abcdk_option_t *args)
             abcdk_clock(s,&s);
 
                      
-            abcdk_enigma_light_batch_u8(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
-             abcdk_enigma_light_batch_u8(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
-          //   assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+            abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
+             abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
+             assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
 
             uint64_t step = abcdk_clock(s,&s);
             fprintf(stderr,"r(%d),d(%d),step(%0.6f)\n",r,d,(double)step/1000000.);
@@ -1075,7 +1075,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
