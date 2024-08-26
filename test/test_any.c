@@ -1096,6 +1096,30 @@ int abcdk_test_any(abcdk_option_t *args)
     assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],100)==0);
     assert(memcmp(buf,buf5->pptrs[0],100)==0);
 
+    abcdk_object_unref(&buf2);
+    abcdk_object_unref(&buf3);
+    abcdk_object_unref(&buf4);
+    abcdk_object_unref(&buf5);
+
+    abcdk_object_t *src = abcdk_object_alloc2(100000);
+
+    for(int i = 1;i<100000;i++)
+    {
+        RAND_bytes(src->pptrs[0],i);
+
+        abcdk_object_t *buf6 = abcdk_cipher_update(enc_ctx,src->pptrs[0],i);
+
+        abcdk_object_t *buf7 = abcdk_cipher_update(dec_ctx,buf6->pptrs[0],buf6->sizes[0]);
+
+        assert(buf7->sizes[0] == i);
+        assert(memcmp(src->pptrs[0],buf7->pptrs[0],i)==0);
+
+        abcdk_object_unref(&buf6);
+        abcdk_object_unref(&buf7);
+    }
+
+    abcdk_object_unref(&src);
+
     abcdk_cipher_destroy(&enc_ctx);
     abcdk_cipher_destroy(&dec_ctx);
 

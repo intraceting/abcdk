@@ -125,7 +125,7 @@ static abcdk_object_t *_abcdk_cipher_aes_256_cbc_update(abcdk_cipher_t *ctx,cons
         _abcdk_cipher_rand_generate(src->pptrs[0],salt_len);
         abcdk_bloom_write_number(src->pptrs[0]+salt_len,4,0,32,in_len);
         memcpy(src->pptrs[0]+salt_len+4,in,in_len);
-        _abcdk_cipher_rand_generate(src->pptrs[0],src_align_len-(salt_len+4+in_len));
+        _abcdk_cipher_rand_generate(src->pptrs[0]+salt_len+4+in_len,src_align_len-(salt_len+4+in_len));
 
         chk = abcdk_openssl_evp_cipher_update(ctx->evp_ctx,dst->pptrs[0],src->pptrs[0],src->sizes[0]);
         if(chk <= 0)
