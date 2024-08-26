@@ -23,7 +23,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/x509_vfy.h>
-#include <openssl/ssl.h>
+#include <openssl/rand.h>
 
 #if !defined(OPENSSL_NO_SHA) && (!defined(OPENSSL_NO_SHA0) || !defined(OPENSSL_NO_SHA1))
 #include <openssl/sha.h>
@@ -41,9 +41,23 @@
 #include <openssl/hmac.h>
 #endif //OPENSSL_NO_HMAC
 
+
 #endif //HAVE_OPENSSL
 
 __BEGIN_DECLS
+
+#ifdef OPENSSL_VERSION_NUMBER
+
+/******************************************************************************************************/
+
+/**
+ * EVP接口算法执行。
+ * 
+ * @warning 仅行算法，数据对齐由调用者负责。
+ * 
+ * @return > 0 成功(明文或密文的长度)，<= 0 失败。
+ */
+int abcdk_openssl_evp_cipher_update(EVP_CIPHER_CTX *ctx,uint8_t *out,const uint8_t *in,int in_len);
 
 /******************************************************************************************************/
 
@@ -387,6 +401,8 @@ BIO *abcdk_BIO_s_easyssl(const char *file,uint32_t scheme,size_t salt);
 #endif //HEADER_BIO_H
 
 /************************************************************************************************************************/
+
+#endif //OPENSSL_VERSION_NUMBER
 
 __END_DECLS
 

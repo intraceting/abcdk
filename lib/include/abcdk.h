@@ -138,6 +138,7 @@
 
 #include "abcdk/ssl/openssl.h"
 #include "abcdk/ssl/easyssl.h"
+#include "abcdk/ssl/cipher.h"
 
 #include "abcdk/curl/curl.h"
 

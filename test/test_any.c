@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 1
+#elif 0
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -1074,6 +1074,32 @@ int abcdk_test_any(abcdk_option_t *args)
     assert(i == j);
 
     abcdk_ipool_destroy(&ctx);
+
+#elif 1
+
+#ifdef HAVE_OPENSSL
+
+    abcdk_cipher_t *enc_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_CBC,"aaaa",4,"bbbb",4,1);
+    abcdk_cipher_t *dec_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_CBC,"aaaa",4,"bbbb",4,0);
+
+    char buf[100];
+    memset(buf,'a',100);
+
+    abcdk_object_t *buf2 = abcdk_cipher_update(enc_ctx,buf,100);
+    abcdk_object_t *buf3 = abcdk_cipher_update(enc_ctx,buf,100);
+
+    abcdk_object_t *buf4 = abcdk_cipher_update(dec_ctx,buf2->pptrs[0],buf2->sizes[0]);
+    abcdk_object_t *buf5 = abcdk_cipher_update(dec_ctx,buf3->pptrs[0],buf3->sizes[0]);
+
+    assert(buf4->sizes[0] == 100);
+    assert(buf5->sizes[0] == 100);
+    assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],100)==0);
+    assert(memcmp(buf,buf5->pptrs[0],100)==0);
+
+    abcdk_cipher_destroy(&enc_ctx);
+    abcdk_cipher_destroy(&dec_ctx);
+
+#endif //HAVE_OPENSSL
 
 #endif 
 }
