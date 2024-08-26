@@ -222,7 +222,8 @@ static uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     */
     for (size_t y = 0; y < ctx->rows; y++)
     {
-        ctx->rotors[y].pos = (ctx->rotors[y].pos + 1) % ctx->cols;
+        //ctx->rotors[y].pos = (ctx->rotors[y].pos + 1) % ctx->cols;
+        ctx->rotors[y].pos = (ctx->rotors[y].pos + 1) & (ctx->cols-1);
 
         /*当POS变成0时，表示产生进位。*/
         if (ctx->rotors[y].pos)
@@ -241,7 +242,8 @@ static uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     */
     for (size_t y = 0; y < ctx->rows; y++)
     {
-        c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) % ctx->cols];
+        //c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) % ctx->cols];
+        c = ctx->rotors[y].fdict[(c + ctx->rotors[y].pos) & (ctx->cols-1)];
     }
 
     /* 通过反射板。*/
@@ -259,7 +261,8 @@ static uint8_t _abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     */
     for (size_t y = 0; y < ctx->rows; y++)
     {
-        c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] + (ctx->cols - ctx->rotors[ctx->rows - 1 - y].pos)) % ctx->cols;
+        //c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] + (ctx->cols - ctx->rotors[ctx->rows - 1 - y].pos)) % ctx->cols;
+        c = (ctx->rotors[ctx->rows - 1 - y].bdict[c] + (ctx->cols - ctx->rotors[ctx->rows - 1 - y].pos)) & (ctx->cols-1);
     }
 
     return c;
