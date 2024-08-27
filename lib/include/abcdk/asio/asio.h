@@ -17,8 +17,8 @@
 #include "abcdk/util/time.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/spinlock.h"
-#include "abcdk/ssl/openssl.h"
-#include "abcdk/ssl/easyssl.h"
+#include "abcdk/openssl/bio.h"
+#include "abcdk/enigma/ssl.h"
 
 __BEGIN_DECLS
 
@@ -150,9 +150,6 @@ typedef struct _abcdk_asio_config
 
     /**共享密钥。*/
     const char *enigma_key_file;
-
-    /**盐的长度。*/
-    int enigma_salt_size;
 
     /**
      * 为新连接做准备工作的通知回调函数。

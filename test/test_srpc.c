@@ -74,7 +74,6 @@ int abcdk_test_srpc(abcdk_option_t *args)
     cfg.pki_check_cert = abcdk_option_get_int(args, "--pki-check-cert", 0, 1);
 
     cfg.enigma_key_file = abcdk_option_get(args, "--enigma-key-file", 0, NULL);
-    cfg.enigma_salt_size = abcdk_option_get_int(args, "--enigma-salt-size", 0, 123);
 
     cfg.ssl_scheme = abcdk_option_get_int(args, "--ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
 

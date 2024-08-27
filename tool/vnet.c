@@ -320,9 +320,6 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--enigma-key-file < FILE >\n");
     fprintf(stderr, "\t\t共享密钥文件。\n");
 
-    fprintf(stderr, "\n\t--enigma-salt-size < SIZE >\n");
-    fprintf(stderr, "\t\t监的长度(0~255)。默认：123。\n");
-
     fprintf(stderr, "\n\t--uplink-ssl-scheme < SCHEME >\n");
     fprintf(stderr, "\t\t上行安全方案。默认：%d\n",ABCDK_ASIO_SSL_SCHEME_RAW);
 
@@ -1088,7 +1085,6 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     rpc_cfg.pki_key_file = ctx->pki_key_file;
     rpc_cfg.pki_check_cert = ctx->pki_check_cert;
     rpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    rpc_cfg.enigma_salt_size = ctx->enigma_salt_size;
 
     rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
     rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
@@ -1232,9 +1228,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     ctx->pki_cert_file = abcdk_option_get(ctx->args, "--pki-cert-file", 0, NULL);
     ctx->pki_key_file = abcdk_option_get(ctx->args, "--pki-key-file", 0, NULL);
     ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
-
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
-    ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
 
     ABCDK_CLAMP(ctx->virtual_tun_mtu,1400,65535);
     ABCDK_CLAMP(ctx->virtual_tun_txqlen,500,10000);
@@ -1385,7 +1379,6 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     rpc_cfg.pki_key_file = ctx->pki_key_file;
     rpc_cfg.pki_check_cert = ctx->pki_check_cert;
     rpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    rpc_cfg.enigma_salt_size = ctx->enigma_salt_size;
 
     rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
     rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
@@ -1597,7 +1590,6 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
 
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
-    ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
      
     ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
     ctx->uplink_addr = abcdk_option_get(ctx->args, "--uplink-addr", 0, "");

@@ -4,7 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/ssl/cipher.h"
+#include "abcdk/openssl/cipher.h"
 
 #ifdef OPENSSL_VERSION_NUMBER
 

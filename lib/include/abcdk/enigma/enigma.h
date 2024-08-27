@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_ENIGMA_H
-#define ABCDK_UTIL_ENIGMA_H
+#ifndef ABCDK_ENIGMA_ENIGMA_H
+#define ABCDK_ENIGMA_ENIGMA_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/bloom.h"
@@ -91,4 +91,4 @@ void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *sr
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_ENIGMA_H
+#endif //ABCDK_ENIGMA_ENIGMA_H

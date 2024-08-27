@@ -4,15 +4,14 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_SSL_OPENSSL_H
-#define ABCDK_SSL_OPENSSL_H
+#ifndef ABCDK_OPENSSL_OPENSSL_H
+#define ABCDK_OPENSSL_OPENSSL_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/object.h"
-#include "abcdk/ssl/easyssl.h"
 
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslconf.h>
@@ -375,35 +374,8 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256]);
 
 /************************************************************************************************************************/
 
-#ifdef HEADER_BIO_H
-
-/**
- * 设置关联句柄。
- * 
- * @return 0 成功，< 0 失败。
- */
-int abcdk_BIO_set_fd(BIO *bio, int fd);
-
-/**
- * 获取关联句柄。
- */
-int abcdk_BIO_get_fd(BIO *bio);
-
-/**销毁。*/
-void abcdk_BIO_destroy(BIO **bio);
-
-/**
- * 创建兼容EASYSSL的BIO环境。
-*/
-BIO *abcdk_BIO_s_easyssl(const char *file,uint32_t scheme,size_t salt);
-
-
-#endif //HEADER_BIO_H
-
-/************************************************************************************************************************/
-
 #endif //OPENSSL_VERSION_NUMBER
 
 __END_DECLS
 
-#endif //ABCDK_SSL_OPENSSL_H
+#endif //ABCDK_OPENSSL_OPENSSL_H

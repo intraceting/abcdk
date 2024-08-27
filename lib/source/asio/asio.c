@@ -69,15 +69,15 @@ struct _abcdk_asio_node
     /** 句柄。*/
     int fd;
 
-    /** openssl环境指针。*/
+    /** OpenSSL环境指针。*/
     SSL_CTX *openssl_ctx;
 
-    /** openssl环境指针。*/
+    /** OpenSSL环境指针。*/
     SSL *openssl_ssl;
     BIO *openssl_bio;
 
-    /** easyssl环境指针。*/
-    abcdk_easyssl_t *easyssl_ssl;
+    /** EnigmaSSL环境指针。*/
+    abcdk_enigma_ssl_t *enigmassl_ssl;
 
     /** 工作线程。*/
     volatile pthread_t worker;
@@ -131,7 +131,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif //HEADER_SSL_H
 
-    abcdk_easyssl_destroy(&node_p->easyssl_ssl);
+    abcdk_enigma_ssl_destroy(&node_p->enigmassl_ssl);
 
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
     if (node_p->fd >= 0)
@@ -189,7 +189,7 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*fr
     node->openssl_ctx = NULL;
     node->openssl_ssl = NULL;
     node->openssl_bio = NULL;
-    node->easyssl_ssl = NULL;
+    node->enigmassl_ssl = NULL;
 
     return node;
 }
@@ -316,7 +316,7 @@ ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
         if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
             rsize = SSL_read(node->openssl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
-            rsize = abcdk_easyssl_read(node->easyssl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
+            rsize = abcdk_enigma_ssl_read(node->enigmassl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         else 
             rsize = read(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         
@@ -367,7 +367,7 @@ ssize_t abcdk_asio_send(abcdk_asio_node_t *node, void *buf, size_t size)
         if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
             wsize = SSL_write(node->openssl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
-            wsize = abcdk_easyssl_write(node->easyssl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
+            wsize = abcdk_enigma_ssl_write(node->enigmassl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else 
             wsize = write(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         
@@ -644,24 +644,24 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
     {
-        if(!node->easyssl_ssl)
-            node->easyssl_ssl = abcdk_easyssl_create_from_file(node->cfg.enigma_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.enigma_salt_size);
+        if(!node->enigmassl_ssl)
+            node->enigmassl_ssl = abcdk_enigma_ssl_create_from_file(node->cfg.enigma_key_file);
         else
             return -16;
             
-        if (!node->easyssl_ssl)
+        if (!node->enigmassl_ssl)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
             return -1;
         }
 
-        abcdk_easyssl_set_fd(node->easyssl_ssl, node->fd,0);
+        abcdk_enigma_ssl_set_fd(node->enigmassl_ssl, node->fd,0);
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_BIO_s_easyssl(node->cfg.enigma_key_file, ABCDK_EASYSSL_SCHEME_ENIGMA, node->cfg.enigma_salt_size);
+            node->openssl_bio = abcdk_BIO_s_EnigmaSSL(node->cfg.enigma_key_file);
         else
             return -16;
 
@@ -1029,20 +1029,20 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
     {
-        node->easyssl_ssl = abcdk_easyssl_create_from_file(node->cfg.enigma_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.enigma_salt_size);
-        if (!node->easyssl_ssl)
+        node->enigmassl_ssl = abcdk_enigma_ssl_create_from_file(node->cfg.enigma_key_file);
+        if (!node->enigmassl_ssl)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
             return -2;
         }
 
         /*仅用于验证。*/
-        abcdk_easyssl_destroy(&node->easyssl_ssl);
+        abcdk_enigma_ssl_destroy(&node->enigmassl_ssl);
     }
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_bio = abcdk_BIO_s_easyssl(node->cfg.enigma_key_file,ABCDK_EASYSSL_SCHEME_ENIGMA,node->cfg.enigma_salt_size);
+        node->openssl_bio = abcdk_BIO_s_EnigmaSSL(node->cfg.enigma_key_file);
         if (!node->openssl_bio)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
@@ -1110,7 +1110,6 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
 
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
-    node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
 
     if(node_p->cfg.input_bufs <= 0)
         node_p->cfg.input_bufs = 262144;
@@ -1212,7 +1211,6 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
 
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
-    node_p->cfg.enigma_salt_size = ABCDK_CLAMP(node_p->cfg.enigma_salt_size,0,256);
 
     if(node_p->cfg.input_bufs <= 0)
         node_p->cfg.input_bufs = 262144;

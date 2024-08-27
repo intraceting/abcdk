@@ -4,7 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/util/enigma.h"
+#include "abcdk/enigma/enigma.h"
 
 
 /** Enigma转子。 */

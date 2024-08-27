@@ -62,7 +62,6 @@
 #include "abcdk/util/md5.h"
 #include "abcdk/util/mutex.h"
 #include "abcdk/util/receiver.h"
-#include "abcdk/util/enigma.h"
 #include "abcdk/util/random.h"
 #include "abcdk/util/tar.h"
 #include "abcdk/util/parallel.h"
@@ -136,17 +135,16 @@
 
 #include "abcdk/http/util.h"
 
-#include "abcdk/ssl/openssl.h"
-#include "abcdk/ssl/easyssl.h"
-#include "abcdk/ssl/cipher.h"
+#include "abcdk/openssl/openssl.h"
+#include "abcdk/openssl/bio.h"
+#include "abcdk/openssl/cipher.h"
 
 #include "abcdk/curl/curl.h"
-
 
 #include "abcdk/net/ipool.h"
 #include "abcdk/net/iplan.h"
 
-
-
+#include "abcdk/enigma/enigma.h"
+#include "abcdk/enigma/ssl.h"
 
 #endif //ABCDK_H

@@ -50,7 +50,6 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
 
     cfg.enigma_key_file = abcdk_option_get(args,"--easyssl-key-file",0,NULL);
-    cfg.enigma_salt_size = 123;
     cfg.pki_check_cert = abcdk_option_get_int(args,"--openssl-check-cert",0,1);
     cfg.pki_cert_file = abcdk_option_get(args,"--server-openssl-cert-file",0,NULL);
     cfg.pki_key_file = abcdk_option_get(args,"--server-openssl-key-file",0,NULL);

@@ -4,12 +4,12 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_SSL_CIPHER_H
-#define ABCDK_SSL_CIPHER_H
+#ifndef ABCDK_OPENSSL_CIPHER_H
+#define ABCDK_OPENSSL_CIPHER_H
 
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/sha256.h"
-#include "abcdk/ssl/openssl.h"
+#include "abcdk/openssl/openssl.h"
 
 
 __BEGIN_DECLS
@@ -43,4 +43,4 @@ abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx,const uint8_t *in,int in
 
 __END_DECLS
 
-#endif //ABCDK_SSL_CIPHER_H
+#endif //ABCDK_OPENSSL_CIPHER_H

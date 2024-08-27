@@ -201,9 +201,6 @@ static void _abcdkproxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--enigma-key-file < FILE >\n");
     fprintf(stderr, "\t\t共享密钥文件。\n");
 
-    fprintf(stderr, "\n\t--enigma-salt-size < SIZE >\n");
-    fprintf(stderr, "\t\t监的长度。默认：123。\n");
-
     fprintf(stderr, "\n\t--uplink < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");
 
@@ -555,7 +552,6 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
         asio_cfg.pki_key_file = node_ctx_p->father->pki_key_file;
         asio_cfg.pki_check_cert = node_ctx_p->father->pki_check_cert;
         asio_cfg.enigma_key_file = node_ctx_p->father->enigma_key_file;
-        asio_cfg.enigma_salt_size = node_ctx_p->father->enigma_salt_size;
 
         node_ctx_p->method = abcdk_object_copyfrom("UPLINK",6);
 
@@ -830,7 +826,6 @@ static int _abcdkproxy_start_listen(abcdkproxy_t *ctx, int ssl_scheme)
     asio_cfg.pki_key_file = ctx->pki_key_file;
     asio_cfg.pki_check_cert = ctx->pki_check_cert;
     asio_cfg.enigma_key_file = ctx->enigma_key_file;
-    asio_cfg.enigma_salt_size = ctx->enigma_salt_size;
 
     asio_cfg.prepare_cb = _abcdkproxy_prepare_cb;
     asio_cfg.event_cb = _abcdkproxy_event_cb;
@@ -867,7 +862,6 @@ static void _abcdkproxy_process(abcdkproxy_t *ctx)
     ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
 
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
-    ctx->enigma_salt_size = abcdk_option_get_int(ctx->args, "--enigma-salt-size", 0, 123);
 
     /*修复不支持的配置。*/
     ctx->enigma_key_file = (ctx->enigma_key_file?ctx->enigma_key_file:"");

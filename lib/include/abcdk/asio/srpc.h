@@ -13,8 +13,6 @@
 #include "abcdk/util/bit.h"
 #include "abcdk/util/random.h"
 #include "abcdk/util/timer.h"
-#include "abcdk/ssl/openssl.h"
-#include "abcdk/ssl/easyssl.h"
 #include "abcdk/asio/asio.h"
 
 __BEGIN_DECLS
@@ -51,9 +49,6 @@ typedef struct _abcdk_srpc_config
 
     /*共享密钥。*/
     const char *enigma_key_file;
-
-    /*盐长度。*/
-    int enigma_salt_size;
 
     /**
      * 会话准备通知回调函数。
