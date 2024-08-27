@@ -254,7 +254,6 @@ static uint8_t _abcdk_enigma_light_v1(abcdk_enigma_t *ctx, uint8_t c)
     return c;
 }
 
-
 static uint8_t _abcdk_enigma_light_v2(abcdk_enigma_t *ctx, uint8_t c)
 {
     /*
