@@ -33,6 +33,13 @@ endif
 ifeq (${OPTIMIZE_LEVEL},3)
 CC_OPLV = -O3
 endif
+ifeq (${OPTIMIZE_LEVEL},s)
+CC_OPLV = -Os
+endif
+ifeq (${OPTIMIZE_LEVEL},fast)
+CC_OPLV = -Ofast
+endif
+
 
 #
 ifeq (${BUILD_OPTIMIZE},yes)
