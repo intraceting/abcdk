@@ -426,6 +426,9 @@ static void _abcdkvnet_uplink_route_del(abcdkvnet_t *ctx)
 {
     char upaddr[100] = {0},upgw[100] = {0};
 
+    if(!ctx->rpc_uplink_addr.family || !ctx->rpc_uplink_gateway.family)
+        return;
+
     if(ctx->rpc_uplink_addr.family != ctx->rpc_uplink_gateway.family)
         return;
     
@@ -441,9 +444,15 @@ static int _abcdkvnet_uplink_route_add(abcdkvnet_t *ctx)
     int exitcode = 0;
     int chk;
 
+    if(!ctx->rpc_uplink_addr.family || !ctx->rpc_uplink_gateway.family)
+    {
+        abcdk_trace_output(LOG_ERR, "上行地址(%s)或网关(%s)未指定，不支持此操作。", ctx->uplink_addr,ctx->uplink_gateway);
+        return -22;
+    }
+
     if(ctx->rpc_uplink_addr.family != ctx->rpc_uplink_gateway.family)
     {
-        abcdk_trace_output(LOG_ERR, "上行地址(%s)和网关(%s)必须使用相同的协议。", upaddr,upgw);
+        abcdk_trace_output(LOG_ERR, "上行地址(%s)和网关(%s)必须使用相同的协议。", ctx->uplink_addr,ctx->uplink_gateway);
         return -1;
     }
 
