@@ -47,7 +47,7 @@ void *abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
 int abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,void *data);
 
 /**
- * 插入。
+ * 查询。
  * 
  * @param [in] addrs IP地址。
  * 

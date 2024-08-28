@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 1
+#elif 0
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -1122,6 +1122,37 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_cipher_destroy(&enc_ctx);
     abcdk_cipher_destroy(&dec_ctx);
+
+#endif //HAVE_OPENSSL
+
+#elif 1
+    
+#ifdef HAVE_OPENSSL
+
+    const char *ca_file = abcdk_option_get(args, "--ca-file", 0, NULL);
+    const char *ca_path = abcdk_option_get(args, "--ca-path", 0, NULL);
+    const char *cert_file = abcdk_option_get(args, "--cert-file", 0, NULL);
+
+    X509_STORE *store = X509_STORE_new();
+
+
+    int chk = X509_STORE_load_locations(store,ca_file,ca_path);
+    assert(chk == 1);
+
+    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+
+    X509 *client_cert = abcdk_openssl_load_crt(cert_file,NULL);
+    assert(client_cert != NULL);
+
+    X509_STORE_CTX *store_ctx = abcdk_openssl_verify_crt_prepare(store, client_cert);
+    assert(store_ctx != NULL);
+
+    
+    chk = X509_verify_cert(store_ctx);
+
+    X509_free(client_cert);
+    X509_STORE_CTX_free(store_ctx);
+    X509_STORE_free(store);
 
 #endif //HAVE_OPENSSL
 
