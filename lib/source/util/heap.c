@@ -11,7 +11,7 @@ void* abcdk_heap_alloc_align(size_t alignment,size_t size)
     void *ptr = NULL;
     int chk;
 
-    chk = posix_memalign(&ptr,alignment,size);
+    chk = posix_memalign(&ptr,alignment,abcdk_align(size,2));
     if(chk != 0)
         return NULL;
 
