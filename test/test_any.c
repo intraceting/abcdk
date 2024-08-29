@@ -1138,16 +1138,20 @@ int abcdk_test_any(abcdk_option_t *args)
     int chk = X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
     assert(chk == 1);
 
-    X509 *leaf_cert = abcdk_openssl_load_crt(cert_file,NULL);
+    X509 *leaf_cert = abcdk_openssl_cert_load(cert_file,NULL);
     assert(leaf_cert != NULL);
 
-    X509_STORE_CTX *store_ctx = abcdk_openssl_verify_cert_prepare(store, leaf_cert,NULL);
+    STACK_OF(X509) *cert_chain = abcdk_openssl_cert_chain_load(leaf_cert,ca_path,"*.crt");
+    assert(cert_chain != NULL);
+
+    X509_STORE_CTX *store_ctx = abcdk_openssl_verify_cert_prepare(store, leaf_cert,cert_chain);
     assert(store_ctx != NULL);
     
     chk = X509_verify_cert(store_ctx);
     assert(chk == 1);
 
     X509_free(leaf_cert);
+    sk_X509_pop_free(cert_chain, X509_free);
     X509_STORE_CTX_free(store_ctx);
     X509_STORE_free(store);
 

@@ -12,6 +12,7 @@
 #include "abcdk/util/io.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/object.h"
+#include "abcdk/util/dirent.h"
 
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslconf.h>
@@ -253,8 +254,6 @@ abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509);
 
 /**
  * 从证书中获取公钥。
- * 
- * @return !NULL(0) 成功, NULL(0) 失败。
 */
 RSA *abcdk_openssl_cert_pubkey(X509 *x509);
 #define abcdk_openssl_cert_pubkey abcdk_openssl_pubkey_crt
@@ -264,19 +263,31 @@ RSA *abcdk_openssl_cert_pubkey(X509 *x509);
  * 
  * @param crt 证书文件。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
- * 
- * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
 */
 X509 *abcdk_openssl_cert_load(const char *cert, const char *pwd);
 #define abcdk_openssl_cert_load abcdk_openssl_load_crt
+
+/**
+ * 加载父证书。
+ * 
+ * @param leaf_cert 叶证书。仅支持PEM格式。
+ * @param ca_path 证书目录。
+ * @param pattern 证书文件名称通配符，NULL(0) 忽略。
+*/
+X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const char *pattern);
+
+/**
+ * 加载证书链。
+ * 
+ * @param ca_path 证书目录。
+ */
+STACK_OF(X509) *abcdk_openssl_cert_chain_load(X509 *leaf_cert, const char *ca_path,const char *pattern);
 
 /**
  * 加载证书吊销列表。
  * 
  * @param crl 证书吊销列表。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
- * 
- * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
 */
 X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd);
 #define abcdk_openssl_cert_crl_load abcdk_openssl_load_crl
@@ -284,8 +295,8 @@ X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd);
 /**
  * 加载证书池。
  * 
- * @param ca_file 根证书，NULL(0) 忽略。
- * @param ca_path 证书目录，NULL(0) 忽略。
+ * @param ca_file CA证书文件(内部可能包含多个证书)，NULL(0) 忽略。
+ * @param ca_path CA证书目录，NULL(0) 忽略。
  */
 X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *ca_path);
 
@@ -294,8 +305,6 @@ X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *c
  * 
  * @param leaf_cert 叶证书，NULL(0) 忽略。
  * @param cert_chain 证书链，NULL(0) 忽略。
- * 
- * @return !NULL(0) 成功(句柄)，NULL(0) 失败。
 */
 X509_STORE_CTX *abcdk_openssl_cert_verify_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain);
 
@@ -318,7 +327,6 @@ void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx);
  * @param capath CA证书目录的指针，NULL(0) 忽略。仅支持PEM格式。
  * @param crl_check 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
  * 
- * @return !NULL(0) 成功(句柄)，NULL(0) 失败。
 */
 SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath,int crl_check);
 
@@ -329,7 +337,7 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
  * @param key 私钥文件的指针，NULL(0) 忽略。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
  * 
- * @return 0 成功(句柄)，-1 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx,const char *crt,const char *key,const char *pwd);
 
@@ -342,14 +350,12 @@ int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx,const char *crt,const char *key,
 SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server,const char *cafile,const char *capath,const char *crt,const char *key,const char *pwd);
 
 /**
- * 释放SSL句柄。
+ * 释放SSL环境。
 */
 void abcdk_openssl_ssl_free(SSL **ssl);
 
 /**
- * 创建SSL句柄。
- * 
- * @return !NULL(0) 成功(句柄)，NULL(0) 失败。
+ * 创建SSL环境。
 */
 SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx);
 
@@ -359,7 +365,7 @@ SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx);
  * @param fd 文件或SOCKET句柄。
  * @param timeout 超时(毫秒)。
  * 
- * @return 0 成功(句柄)，-1 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_openssl_ssl_handshake(int fd, SSL *ssl, int server, time_t timeout);
 

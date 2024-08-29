@@ -416,10 +416,99 @@ X509 *abcdk_openssl_cert_load(const char *crt, const char *pwd)
         return NULL;
     
     ctx = PEM_read_X509(fp, NULL, NULL, (void*)pwd);
-        
     fclose(fp);
 
     return ctx;
+}
+
+X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const char *pattern)
+{
+    X509_NAME *issuer_name,*subject_name;
+    X509 *father_cert = NULL;
+    abcdk_tree_t *dir = NULL;
+    char cert_file[PATH_MAX];
+    int chk;
+
+    assert(leaf_cert != NULL && ca_path != NULL);
+
+    chk = abcdk_dirent_open(&dir,ca_path);
+    if(chk != 0)
+        return NULL;
+
+    while(1)
+    {
+        memset(cert_file,0,PATH_MAX);
+        chk = abcdk_dirent_read(dir,pattern,cert_file,1);
+        if(chk != 0)
+            break;
+
+        father_cert = abcdk_openssl_cert_load(cert_file,NULL);
+        if(!father_cert)
+            continue;
+
+        issuer_name = X509_get_issuer_name(leaf_cert);
+        subject_name = X509_get_subject_name(father_cert);
+
+        /*
+         * 1：自签名证书的颁发者是自己，排除。
+         * 2：如果当前证书的主题名和叶证书的颁发者不同，排除。
+         */
+        if (X509_cmp(leaf_cert, father_cert) == 0 || X509_NAME_cmp(issuer_name, subject_name) != 0)
+        {
+            X509_free(father_cert);
+            father_cert = NULL;
+            continue;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    abcdk_tree_free(&dir);
+
+    return father_cert;
+}
+
+STACK_OF(X509) *abcdk_openssl_cert_chain_load(X509 *leaf_cert, const char *ca_path,const char *pattern)
+{
+    STACK_OF(X509) *cert_chain;
+    X509 *curt_cert,*father_cert;
+
+    assert(leaf_cert != NULL && ca_path != NULL);
+
+    cert_chain = sk_X509_new_null();
+    if(!cert_chain)
+        return NULL;
+
+    /*从叶证书开始遍历。*/
+    curt_cert = leaf_cert;
+ 
+    while (1)
+    {
+        father_cert = abcdk_openssl_cert_father_find(curt_cert, ca_path, pattern);
+        if (father_cert)
+        {
+            sk_X509_push(cert_chain, father_cert);
+            curt_cert = father_cert;
+            father_cert = NULL;
+        }
+        else
+        {
+            curt_cert = NULL;
+            break;
+        }
+
+    }
+
+    return cert_chain;
+
+ERR:
+
+    if(cert_chain)
+        sk_X509_pop_free(cert_chain, X509_free);
+
+    return NULL;
 }
 
 X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd)
@@ -467,7 +556,7 @@ X509_STORE_CTX *abcdk_openssl_verify_cert_prepare(X509_STORE *store,X509 *leaf_c
     X509_STORE_CTX *store_ctx = NULL;
     int chk;
 
-    assert(store != NULL && (leaf_cert != NULL || cert_chain != NULL));
+    assert(store != NULL && (leaf_cert != NULL && cert_chain != NULL)  || leaf_cert != NULL);
 
     store_ctx = X509_STORE_CTX_new();
     if (!store_ctx)
