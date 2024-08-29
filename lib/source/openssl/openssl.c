@@ -289,7 +289,7 @@ int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int
     return chk;
 }
 
-#endif //EADER_RSA_H
+#endif //HEADER_RSA_H
 
 /******************************************************************************************************/
 

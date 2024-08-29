@@ -1075,26 +1075,24 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
-#elif 0
+#elif 1
 
 #ifdef HAVE_OPENSSL
 
-    abcdk_cipher_t *enc_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_CBC,"aaaa",4,"bbbb",4,1);
-    abcdk_cipher_t *dec_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_CBC,"aaaa",4,"bbbb",4,0);
+    abcdk_cipher_t *cipher_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_ECB,"aaaa",4);
 
-    char buf[100];
-    memset(buf,'a',100);
+    int bufsize = 2000;
+    char buf[bufsize];
+    memset(buf,'a',bufsize);
 
-    abcdk_object_t *buf2 = abcdk_cipher_update(enc_ctx,buf,100);
-    abcdk_object_t *buf3 = abcdk_cipher_update(enc_ctx,buf,100);
+    abcdk_object_t *buf2 = abcdk_cipher_update(cipher_ctx,buf,bufsize,1);
+    abcdk_object_t *buf3 = abcdk_cipher_update(cipher_ctx,buf,bufsize,1);
 
-    abcdk_object_t *buf4 = abcdk_cipher_update(dec_ctx,buf2->pptrs[0],buf2->sizes[0]);
-    abcdk_object_t *buf5 = abcdk_cipher_update(dec_ctx,buf3->pptrs[0],buf3->sizes[0]);
+    abcdk_object_t *buf4 = abcdk_cipher_update(cipher_ctx,buf2->pptrs[0],buf2->sizes[0],0);
+    abcdk_object_t *buf5 = abcdk_cipher_update(cipher_ctx,buf3->pptrs[0],buf3->sizes[0],0);
 
-    assert(buf4->sizes[0] == 100);
-    assert(buf5->sizes[0] == 100);
-    assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],100)==0);
-    assert(memcmp(buf,buf5->pptrs[0],100)==0);
+    assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],bufsize)==0);
+    assert(memcmp(buf,buf5->pptrs[0],bufsize)==0);
 
     abcdk_object_unref(&buf2);
     abcdk_object_unref(&buf3);
@@ -1107,11 +1105,10 @@ int abcdk_test_any(abcdk_option_t *args)
     {
         RAND_bytes(src->pptrs[0],i);
 
-        abcdk_object_t *buf6 = abcdk_cipher_update(enc_ctx,src->pptrs[0],i);
+        abcdk_object_t *buf6 = abcdk_cipher_update(cipher_ctx,src->pptrs[0],i,1);
 
-        abcdk_object_t *buf7 = abcdk_cipher_update(dec_ctx,buf6->pptrs[0],buf6->sizes[0]);
+        abcdk_object_t *buf7 = abcdk_cipher_update(cipher_ctx,buf6->pptrs[0],buf6->sizes[0],0);
 
-        assert(buf7->sizes[0] == i);
         assert(memcmp(src->pptrs[0],buf7->pptrs[0],i)==0);
 
         abcdk_object_unref(&buf6);
@@ -1120,13 +1117,48 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_object_unref(&src);
 
-    abcdk_cipher_destroy(&enc_ctx);
-    abcdk_cipher_destroy(&dec_ctx);
+    abcdk_cipher_destroy(&cipher_ctx);
 
 #endif //HAVE_OPENSSL
 
-#elif 1
-    
+#elif 0
+
+
+#ifdef HAVE_OPENSSL
+
+    const char *prikey_file = abcdk_option_get(args, "--private-key-file", 0, "");
+    const char *pubkey_file = abcdk_option_get(args, "--public-key-file", 0, "");
+
+    abcdk_cipher_t *pri_cipher = abcdk_cipher_create_from_file(ABCDK_CIPHER_SCHEME_RSA_PRIVATE,prikey_file);
+    abcdk_cipher_t *pub_cipher = abcdk_cipher_create_from_file(ABCDK_CIPHER_SCHEME_RSA_PUBLIC,pubkey_file);
+
+    int bufsize = 2000;
+    char buf[bufsize];
+    memset(buf,'a',bufsize);
+
+
+    abcdk_object_t *buf2 = abcdk_cipher_update(pri_cipher,buf,bufsize,1);
+    abcdk_object_t *buf3 = abcdk_cipher_update(pri_cipher,buf,bufsize,1);
+
+    abcdk_object_t *buf4 = abcdk_cipher_update(pub_cipher,buf2->pptrs[0],buf2->sizes[0],0);
+    abcdk_object_t *buf5 = abcdk_cipher_update(pub_cipher,buf3->pptrs[0],buf3->sizes[0],0);
+
+    assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],bufsize)==0);
+    assert(memcmp(buf,buf5->pptrs[0],bufsize)==0);
+
+    abcdk_object_unref(&buf2);
+    abcdk_object_unref(&buf3);
+    abcdk_object_unref(&buf4);
+    abcdk_object_unref(&buf5);
+
+    abcdk_cipher_destroy(&pri_cipher);
+    abcdk_cipher_destroy(&pub_cipher);
+
+#endif //HAVE_OPENSSL
+
+
+#elif 0
+
 #ifdef HAVE_OPENSSL
 
     const char *ca_file = abcdk_option_get(args, "--ca-file", 0, NULL);
