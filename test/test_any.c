@@ -1105,7 +1105,7 @@ int abcdk_test_any(abcdk_option_t *args)
     uint64_t dot = 0;
     abcdk_clock(dot,&dot);
 
-    for(int i = 1;i<10000;i++)
+    for(int i = 1;i<100000;i++)
     {
         RAND_bytes(src->pptrs[0],i);
 
