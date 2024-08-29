@@ -514,7 +514,7 @@ static int _abcdk_asio_openssl_verify_result(abcdk_asio_node_t *node)
     X509 *cert = SSL_get_peer_certificate(node->openssl_ssl);
     if (cert)
     {
-        abcdk_object_t *info = abcdk_openssl_dump_crt(cert);
+        abcdk_object_t *info = abcdk_openssl_cert_dump(cert);
         if (info)
         {
             abcdk_asio_trace_output(node, LOG_INFO, "远端(%s)的证书信息：\n%s", remote_addr, info->pstrs[0]);

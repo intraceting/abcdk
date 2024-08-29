@@ -1144,11 +1144,22 @@ int abcdk_test_any(abcdk_option_t *args)
     STACK_OF(X509) *cert_chain = abcdk_openssl_cert_chain_load(leaf_cert,ca_path,"*.crt");
     assert(cert_chain != NULL);
 
+    abcdk_object_t *cert_chain_pem = abcdk_openssl_cert_to_pem(leaf_cert,cert_chain);
+    assert(cert_chain_pem);
+    fprintf(stderr,"%s\n",cert_chain_pem->pstrs[0]);
+    abcdk_object_unref(&cert_chain_pem);
+
     X509_STORE_CTX *store_ctx = abcdk_openssl_verify_cert_prepare(store, leaf_cert,cert_chain);
     assert(store_ctx != NULL);
     
     chk = X509_verify_cert(store_ctx);
-    assert(chk == 1);
+    if(chk != 1)
+    {
+        abcdk_object_t *err_info = abcdk_openssl_cert_verify_error_dump(store_ctx);
+        assert(err_info);
+        fprintf(stderr,err_info->pstrs[0]);
+        abcdk_object_unref(&err_info);
+    }
 
     X509_free(leaf_cert);
     sk_X509_pop_free(cert_chain, X509_free);

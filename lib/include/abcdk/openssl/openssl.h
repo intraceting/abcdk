@@ -246,31 +246,48 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
 
 #ifdef HEADER_X509_H
 
-/** 
- * 打印证书信息。
- */
+/** 打印证书信息。*/
 abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509);
-#define abcdk_openssl_cert_dump abcdk_openssl_dump_crt
+
+/** 打印证书检验错误信息。 */
+abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx);
+
+/** 从证书中获取公钥。*/
+RSA *abcdk_openssl_cert_pubkey(X509 *x509);
 
 /**
- * 从证书中获取公钥。
+ * 导出证书到内存。
+ * 
+ * @note 仅支持PEM格式。
 */
-RSA *abcdk_openssl_cert_pubkey(X509 *x509);
-#define abcdk_openssl_cert_pubkey abcdk_openssl_pubkey_crt
+abcdk_object_t *abcdk_openssl_cert_pem(X509 *leaf_cert,STACK_OF(X509) *cert_chain);
+
+/**
+ * 加载证书吊销列表。
+ * 
+ * @note 仅支持PEM格式。
+ * 
+ * @param crl 证书吊销列表。
+ * @param pwd 密码，NULL(0) 忽略。
+*/
+X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd);
 
 /**
  * 加载证书。
  * 
- * @param crt 证书文件。仅支持PEM格式。
- * @param pwd 密码的指针，NULL(0) 忽略。
+ * @note 仅支持PEM格式。
+ * 
+ * @param cert 证书文件。
+ * @param pwd 密码，NULL(0) 忽略。
 */
 X509 *abcdk_openssl_cert_load(const char *cert, const char *pwd);
-#define abcdk_openssl_cert_load abcdk_openssl_load_crt
 
 /**
  * 加载父证书。
  * 
- * @param leaf_cert 叶证书。仅支持PEM格式。
+ * @note 仅支持PEM格式。
+ * 
+ * @param leaf_cert 叶证书。
  * @param ca_path 证书目录。
  * @param pattern 证书文件名称通配符，NULL(0) 忽略。
 */
@@ -279,18 +296,21 @@ X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const c
 /**
  * 加载证书链。
  * 
+ * @note 仅支持PEM格式。
+ * 
  * @param ca_path 证书目录。
  */
 STACK_OF(X509) *abcdk_openssl_cert_chain_load(X509 *leaf_cert, const char *ca_path,const char *pattern);
 
 /**
- * 加载证书吊销列表。
+ * 加载证书链(内存)。
  * 
- * @param crl 证书吊销列表。仅支持PEM格式。
- * @param pwd 密码的指针，NULL(0) 忽略。
+ * @note 仅支持PEM格式。
+ * 
+ * @param len 长度。-1 自动计算。
+ * 
 */
-X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd);
-#define abcdk_openssl_cert_crl_load abcdk_openssl_load_crl
+STACK_OF(X509) *abcdk_openssl_cert_chain_load_mem(const char *buf,int len);
 
 /**
  * 加载证书池。
@@ -307,6 +327,7 @@ X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *c
  * @param cert_chain 证书链，NULL(0) 忽略。
 */
 X509_STORE_CTX *abcdk_openssl_cert_verify_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain);
+
 
 #endif //HEADER_X509_H
 

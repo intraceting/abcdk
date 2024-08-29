@@ -385,6 +385,32 @@ abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509)
 #endif  //# ifndef OPENSSL_NO_BIO
 }
 
+abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx)
+{
+    int err_num,err_depth;
+    X509 *err_cert = NULL;
+    abcdk_object_t *err_cert_info = NULL;
+    abcdk_object_t *err_info = NULL;
+
+    assert(store_ctx != NULL);
+
+    err_info = abcdk_object_alloc2(1024*1024);
+    if(!err_info)
+        return NULL;
+
+    err_num = X509_STORE_CTX_get_error(store_ctx);
+    err_depth = X509_STORE_CTX_get_error_depth(store_ctx);
+
+    err_cert = X509_STORE_CTX_get_current_cert(store_ctx);
+    if(err_cert)
+        err_cert_info = abcdk_openssl_cert_dump(err_cert);
+
+    err_info = abcdk_object_printf(1024 * 1024, "Error depth: %d\nError code: %d\nError message: %s\nError certificate: {\n%s\n}\n",
+                                   err_depth, err_num, X509_verify_cert_error_string(err_num), (err_cert_info ? err_cert_info->pstrs[0] : ""));
+
+    return err_info;
+}
+
 RSA *abcdk_openssl_cert_pubkey(X509 *x509)
 {
     RSA *rsa = NULL;
@@ -402,6 +428,66 @@ RSA *abcdk_openssl_cert_pubkey(X509 *x509)
     EVP_PKEY_free(pkey);
 
     return rsa;
+}
+
+abcdk_object_t *abcdk_openssl_cert_to_pem(X509 *leaf_cert,STACK_OF(X509) *cert_chain)
+{
+# ifndef OPENSSL_NO_BIO
+    BIO *bio;
+    BUF_MEM *bmem_p;
+    X509 *cert_p; 
+    abcdk_object_t *pem_info;
+
+    assert(leaf_cert!= NULL || cert_chain != NULL);
+
+    bio = BIO_new(BIO_s_mem());
+    if (bio == NULL)
+        return NULL;
+
+    if (PEM_write_bio_X509(bio, leaf_cert) != 1)
+        goto ERR;
+
+    for (int i = 0; i < sk_X509_num(cert_chain); i++) 
+    {
+        cert_p = sk_X509_value(cert_chain, i);
+        if (PEM_write_bio_X509(bio, cert_p) != 1) 
+            goto ERR;
+    }
+
+    BIO_get_mem_ptr(bio, &bmem_p);
+    BIO_set_close(bio, BIO_NOCLOSE); // 保留内存 BIO 的数据
+    BIO_free(bio);
+
+    pem_info = abcdk_object_copyfrom(bmem_p->data, bmem_p->length);
+    BUF_MEM_free(bmem_p);
+
+    return pem_info;
+
+ERR:
+
+    BIO_free(bio);
+    return NULL;
+#else //# ifndef OPENSSL_NO_BIO
+    return NULL;
+#endif  //# ifndef OPENSSL_NO_BIO
+}
+
+X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd)
+{
+    X509_CRL *ctx = NULL;
+    FILE *fp = NULL;
+
+    assert(crl != NULL);
+
+    fp = fopen(crl, "r");
+    if(!fp)
+        return NULL;
+    
+    ctx = PEM_read_X509_CRL(fp, NULL, NULL, (void*)pwd);
+        
+    fclose(fp);
+
+    return ctx;
 }
 
 X509 *abcdk_openssl_cert_load(const char *crt, const char *pwd)
@@ -511,22 +597,45 @@ ERR:
     return NULL;
 }
 
-X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd)
+STACK_OF(X509) *abcdk_openssl_cert_chain_load_mem(const char *buf,int len)
 {
-    X509_CRL *ctx = NULL;
+    STACK_OF(X509) *cert_chain;
+    X509 *cert_p = NULL;
     FILE *fp = NULL;
 
-    assert(crl != NULL);
+    assert(buf != NULL);
 
-    fp = fopen(crl, "r");
-    if(!fp)
+    /*可能需要自动计算。*/
+    if(len <= 0)
+        len = strlen(buf);
+
+    if(len <= 0)
         return NULL;
     
-    ctx = PEM_read_X509_CRL(fp, NULL, NULL, (void*)pwd);
-        
+    cert_chain = sk_X509_new_null();
+     if(!cert_chain)
+        return NULL;
+
+    fp = fmemopen((void*)buf,len, "r");
+    if (!fp) 
+        goto ERR;
+
+    /*循环读取所以证书。*/
+    while (cert_p = PEM_read_X509(fp, NULL, NULL, NULL)) 
+        sk_X509_push(cert_chain, cert_p);
+    
     fclose(fp);
 
-    return ctx;
+    return cert_chain;
+
+ERR:
+
+    if(fp)
+        fclose(fp);
+    if(cert_chain)
+        sk_X509_pop_free(cert_chain, X509_free);
+    
+    return NULL;
 }
 
 X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *ca_path)
@@ -576,6 +685,7 @@ ERR:
 
     return NULL;
 }
+
 
 #endif //HEADER_X509_H
 
