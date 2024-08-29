@@ -172,14 +172,16 @@ static int _abcdk_cipher_rsa_ecb_update(abcdk_cipher_t *ctx, uint8_t *out, int o
             return -2;
 
         if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PRIVATE)
-            chk = RSA_private_decrypt(in_len, in, out, ctx->rsa_ctx, RSA_PKCS1_PADDING);
+            chk = RSA_private_decrypt(in_len, in, ctx->tmpbuf, ctx->rsa_ctx, RSA_PKCS1_PADDING);
         else if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PUBLIC)
-            chk = RSA_public_decrypt(in_len, in, out, ctx->rsa_ctx, RSA_PKCS1_PADDING);
+            chk = RSA_public_decrypt(in_len, in, ctx->tmpbuf, ctx->rsa_ctx, RSA_PKCS1_PADDING);
         else
             chk = -1;
 
         if (chk <= 0)
             return -3;
+
+        memcpy(out,ctx->tmpbuf,ctx->plaintext_bsize);
 
         return ctx->plaintext_bsize;
     }
