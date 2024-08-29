@@ -242,68 +242,68 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
 
 /******************************************************************************************************/
 
-#ifdef HEADER_SSL_H
 
+#ifdef HEADER_X509_H
 
 /** 
  * 打印证书信息。
  */
-abcdk_object_t *abcdk_openssl_dump_crt(X509 *x509);
+abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509);
+#define abcdk_openssl_cert_dump abcdk_openssl_dump_crt
 
 /**
  * 从证书中获取公钥。
  * 
- * @return !NULL(0) 成功(公钥指针), NULL(0) 失败。
+ * @return !NULL(0) 成功, NULL(0) 失败。
 */
-RSA *abcdk_openssl_pubkey_crt(X509 *x509);
+RSA *abcdk_openssl_cert_pubkey(X509 *x509);
+#define abcdk_openssl_cert_pubkey abcdk_openssl_pubkey_crt
 
 /**
  * 加载证书。
  * 
- * @param crt 证书文件的指针。仅支持PEM格式。
+ * @param crt 证书文件。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
  * 
  * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
 */
-X509 *abcdk_openssl_load_crt(const char *cert, const char *pwd);
+X509 *abcdk_openssl_cert_load(const char *cert, const char *pwd);
+#define abcdk_openssl_cert_load abcdk_openssl_load_crt
 
 /**
  * 加载证书吊销列表。
  * 
- * @param crl 证书吊销列表的指针。仅支持PEM格式。
+ * @param crl 证书吊销列表。仅支持PEM格式。
  * @param pwd 密码的指针，NULL(0) 忽略。
  * 
  * @return !NULL(0) 成功(证书指针), NULL(0) 失败。
 */
-X509_CRL *abcdk_openssl_load_crl(const char *crl, const char *pwd);
+X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd);
+#define abcdk_openssl_cert_crl_load abcdk_openssl_load_crl
 
 /**
- * 加载证书到证书存储池。
+ * 加载证书池。
  * 
- * @param ... 证书文件的指针，NULL(0) 结束。仅支持PEM格式。
- * 
- * @return 已经加载的索引最大值(从1开始)。索引号大于此值的尚未加载。
-*/
-int abcdk_openssl_load_crt2store(X509_STORE *store,...);
+ * @param ca_file 根证书，NULL(0) 忽略。
+ * @param ca_path 证书目录，NULL(0) 忽略。
+ */
+X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *ca_path);
 
 /**
- * 加载证书吊销列表到证书存储池。
+ * 准备证书检验环境。
  * 
- * @param ... 证书吊销列表的指针，NULL(0) 结束。仅支持PEM格式。
+ * @param leaf_cert 叶证书，NULL(0) 忽略。
+ * @param cert_chain 证书链，NULL(0) 忽略。
  * 
- * @return 已经加载的索引最大值(从1开始)。索引号大于此值的尚未加载。
+ * @return !NULL(0) 成功(句柄)，NULL(0) 失败。
 */
-int abcdk_openssl_load_crl2store(X509_STORE *store,...);
+X509_STORE_CTX *abcdk_openssl_cert_verify_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain);
 
-/**
- * 准备证书验证环境。
- * 
- * @param store 父级证书的容器。
- * @param crt 子级证书。
- * 
- * @return 0 成功(句柄)，-1 失败。
-*/
-X509_STORE_CTX *abcdk_openssl_verify_crt_prepare(X509_STORE *store, X509 *crt);
+#endif //HEADER_X509_H
+
+/******************************************************************************************************/
+
+#ifdef HEADER_SSL_H
 
 /**
  * 释放SSL_CTX句柄。

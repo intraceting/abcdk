@@ -357,12 +357,11 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 
 /******************************************************************************************************/
 
-/******************************************************************************************************/
+#ifdef HEADER_X509_H
 
-#ifdef HEADER_SSL_H
-
-abcdk_object_t *abcdk_openssl_dump_crt(X509 *x509)
+abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509)
 {
+# ifndef OPENSSL_NO_BIO
     BIO *mem;
     char *data_p = NULL;
     long data_l = 0;
@@ -381,9 +380,12 @@ abcdk_object_t *abcdk_openssl_dump_crt(X509 *x509)
     BIO_free(mem);
 
     return cert_info;
+#else //# ifndef OPENSSL_NO_BIO
+    return NULL;
+#endif  //# ifndef OPENSSL_NO_BIO
 }
 
-RSA *abcdk_openssl_pubkey_crt(X509 *x509)
+RSA *abcdk_openssl_cert_pubkey(X509 *x509)
 {
     RSA *rsa = NULL;
     EVP_PKEY *pkey = NULL;
@@ -402,7 +404,7 @@ RSA *abcdk_openssl_pubkey_crt(X509 *x509)
     return rsa;
 }
 
-X509 *abcdk_openssl_load_crt(const char *crt, const char *pwd)
+X509 *abcdk_openssl_cert_load(const char *crt, const char *pwd)
 {
     X509 *ctx = NULL;
     FILE *fp = NULL;
@@ -420,7 +422,7 @@ X509 *abcdk_openssl_load_crt(const char *crt, const char *pwd)
     return ctx;
 }
 
-X509_CRL *abcdk_openssl_load_crl(const char *crl, const char *pwd)
+X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd)
 {
     X509_CRL *ctx = NULL;
     FILE *fp = NULL;
@@ -438,105 +440,59 @@ X509_CRL *abcdk_openssl_load_crl(const char *crl, const char *pwd)
     return ctx;
 }
 
-int abcdk_openssl_load_crt2store(X509_STORE *store,...)
+X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *ca_path)
 {
-    X509 *crt = NULL;
-    const char *file_p = NULL;
-    int count = 0;
-
-    assert (store != NULL);
-
-    va_list vaptr;
-    va_start(vaptr, store);
-
-    for (;; count++)
-    {
-        file_p = va_arg(vaptr, const char *);
-        if (!file_p)
-            break;
-
-        crt = abcdk_openssl_load_crt(file_p, NULL);
-        if (!crt)
-            break;
-
-        if (X509_STORE_add_cert(store, crt) != 1)
-            break;
-
-        X509_free(crt);
-        crt = NULL;
-    }
-
-    va_end(vaptr);
-
-    /*很重要，因为在循环中有未释放的可能。*/
-    if(crt)
-        X509_free(crt);
-
-    return count;
-}
-
-int abcdk_openssl_load_crl2store(X509_STORE *store,...)
-{
-    X509_CRL *crl = NULL;
-    const char *file_p = NULL;
-    int count = 0;
-
-    assert (store != NULL);
-
-    va_list vaptr;
-    va_start(vaptr, store);
-
-    for (;; count++)
-    {
-        file_p = va_arg(vaptr, const char *);
-        if (!file_p)
-            break;
-
-        crl = abcdk_openssl_load_crl(file_p, NULL);
-        if (!crl)
-            break;
-
-        if (X509_STORE_add_crl(store, crl) != 1)
-            break;
-
-        X509_CRL_free(crl);
-        crl = NULL;
-    }
-
-    va_end(vaptr);
-
-    /*很重要，因为在循环中有未释放的可能。*/
-    if(crl)
-        X509_CRL_free(crl);
-
-    return count;
-}
-
-X509_STORE_CTX *abcdk_openssl_verify_crt_prepare(X509_STORE *store, X509 *crt)
-{
-    X509_STORE_CTX *ctx = NULL;
+    X509_STORE *store;
     int chk;
 
-    assert(store != NULL && crt != NULL);
-
-    ctx = X509_STORE_CTX_new();
-    if (!ctx)
+    store = X509_STORE_new();
+    if(!store)
         return NULL;
 
-    chk = X509_STORE_CTX_init(ctx, store, crt, NULL);
+    if(!ca_file && !ca_path)
+        return store;
+
+    chk = X509_STORE_load_locations(store,ca_file,ca_path);
+    if(chk == 1)
+        return store;
+
+ERR:
+
+    X509_STORE_free(store);
+    return NULL;
+}
+
+X509_STORE_CTX *abcdk_openssl_verify_cert_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain)
+{
+    X509_STORE_CTX *store_ctx = NULL;
+    int chk;
+
+    assert(store != NULL && (leaf_cert != NULL || cert_chain != NULL));
+
+    store_ctx = X509_STORE_CTX_new();
+    if (!store_ctx)
+        return NULL;
+
+    chk = X509_STORE_CTX_init(store_ctx, store, leaf_cert, cert_chain);
     if (chk == 1)
-        return ctx;
+        return store_ctx;
 
-final:
+ERR:
 
-    if(ctx)
+    if(store_ctx)
     {
-        X509_STORE_CTX_cleanup(ctx);
-        X509_STORE_CTX_free(ctx);
+        X509_STORE_CTX_cleanup(store_ctx);
+        X509_STORE_CTX_free(store_ctx);
     }
 
     return NULL;
 }
+
+#endif //HEADER_X509_H
+
+/******************************************************************************************************/
+
+#ifdef HEADER_SSL_H
 
 void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx)
 {

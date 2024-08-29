@@ -1133,24 +1133,21 @@ int abcdk_test_any(abcdk_option_t *args)
     const char *ca_path = abcdk_option_get(args, "--ca-path", 0, NULL);
     const char *cert_file = abcdk_option_get(args, "--cert-file", 0, NULL);
 
-    X509_STORE *store = X509_STORE_new();
+    X509_STORE *store = abcdk_openssl_cert_load_locations(ca_file,ca_path);
 
-
-    int chk = X509_STORE_load_locations(store,ca_file,ca_path);
+    int chk = X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
     assert(chk == 1);
 
-    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    X509 *leaf_cert = abcdk_openssl_load_crt(cert_file,NULL);
+    assert(leaf_cert != NULL);
 
-    X509 *client_cert = abcdk_openssl_load_crt(cert_file,NULL);
-    assert(client_cert != NULL);
-
-    X509_STORE_CTX *store_ctx = abcdk_openssl_verify_crt_prepare(store, client_cert);
+    X509_STORE_CTX *store_ctx = abcdk_openssl_verify_cert_prepare(store, leaf_cert,NULL);
     assert(store_ctx != NULL);
-
     
     chk = X509_verify_cert(store_ctx);
+    assert(chk == 1);
 
-    X509_free(client_cert);
+    X509_free(leaf_cert);
     X509_STORE_CTX_free(store_ctx);
     X509_STORE_free(store);
 
