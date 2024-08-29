@@ -1079,17 +1079,18 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #ifdef HAVE_OPENSSL
 
-    abcdk_cipher_t *cipher_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_ECB,"aaaa",4);
+    abcdk_cipher_t *enc_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_ECB,"aaaa",4);
+    abcdk_cipher_t *dec_ctx = abcdk_cipher_create(ABCDK_CIPHER_SCHEME_AES_256_ECB,"aaaa",4);
 
     int bufsize = 2000;
     char buf[bufsize];
     memset(buf,'a',bufsize);
 
-    abcdk_object_t *buf2 = abcdk_cipher_update(cipher_ctx,buf,bufsize,1);
-    abcdk_object_t *buf3 = abcdk_cipher_update(cipher_ctx,buf,bufsize,1);
+    abcdk_object_t *buf2 = abcdk_cipher_update(enc_ctx,buf,bufsize,1);
+    abcdk_object_t *buf3 = abcdk_cipher_update(enc_ctx,buf,bufsize,1);
 
-    abcdk_object_t *buf4 = abcdk_cipher_update(cipher_ctx,buf2->pptrs[0],buf2->sizes[0],0);
-    abcdk_object_t *buf5 = abcdk_cipher_update(cipher_ctx,buf3->pptrs[0],buf3->sizes[0],0);
+    abcdk_object_t *buf4 = abcdk_cipher_update(dec_ctx,buf2->pptrs[0],buf2->sizes[0],0);
+    abcdk_object_t *buf5 = abcdk_cipher_update(dec_ctx,buf3->pptrs[0],buf3->sizes[0],0);
 
     assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],bufsize)==0);
     assert(memcmp(buf,buf5->pptrs[0],bufsize)==0);
@@ -1101,13 +1102,16 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_object_t *src = abcdk_object_alloc2(100000);
 
-    for(int i = 1;i<100000;i++)
+    uint64_t dot = 0;
+    abcdk_clock(dot,&dot);
+
+    for(int i = 1;i<10000;i++)
     {
         RAND_bytes(src->pptrs[0],i);
 
-        abcdk_object_t *buf6 = abcdk_cipher_update(cipher_ctx,src->pptrs[0],i,1);
+        abcdk_object_t *buf6 = abcdk_cipher_update(enc_ctx,src->pptrs[0],i,1);
 
-        abcdk_object_t *buf7 = abcdk_cipher_update(cipher_ctx,buf6->pptrs[0],buf6->sizes[0],0);
+        abcdk_object_t *buf7 = abcdk_cipher_update(dec_ctx,buf6->pptrs[0],buf6->sizes[0],0);
 
         assert(memcmp(src->pptrs[0],buf7->pptrs[0],i)==0);
 
@@ -1115,9 +1119,13 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_object_unref(&buf7);
     }
 
+    uint64_t step = abcdk_clock(dot,&dot);
+    fprintf(stderr,"cast:%.6f\n",(double)step/1000000.);
+
     abcdk_object_unref(&src);
 
-    abcdk_cipher_destroy(&cipher_ctx);
+    abcdk_cipher_destroy(&enc_ctx);
+    abcdk_cipher_destroy(&dec_ctx);
 
 #endif //HAVE_OPENSSL
 
