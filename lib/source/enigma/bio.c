@@ -341,7 +341,7 @@ BIO *abcdk_enigma_BIO_s_SSL(const char *file)
 
     bio->magic = ABCDK_ENIGMA_BIO_MAGIC;
     bio->enigma_ssl = abcdk_enigma_ssl_create_from_file(file);
-    bio->method = _abcdk_enigma_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"EnigmaSSL");
+    bio->method = _abcdk_enigma_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"EnigmaSSL BIO");
 
     if (!bio->enigma_ssl || !bio->method)
         goto ERR;
