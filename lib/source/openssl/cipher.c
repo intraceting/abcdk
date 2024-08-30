@@ -196,8 +196,6 @@ abcdk_object_t *_abcdk_cipher_rsa_update(abcdk_cipher_t *ctx, const uint8_t *in,
     int blocks;
     int chk;
 
-    assert(ctx != NULL && in != NULL && in_len > 0);
-
     if (enc)
     {
         blocks = abcdk_align(in_len, ctx->plaintext_bsize) / ctx->plaintext_bsize;
@@ -350,8 +348,6 @@ abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_
         /*在密文的末尾添加IV和TAG。*/
         memcpy(out->pptrs[0] + in_len, ctx->evp_iv, 16);
         memcpy(out->pptrs[0] + in_len + 16, ctx->evp_tag, 16);
-
-        return out;
     }
     else
     {
@@ -373,14 +369,183 @@ abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_
         chk = _abcdk_cipher_aes256gcm_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len - 32, 0);
         if (chk != in_len - 32)
             goto ERR;
-
-        return out;
     }
+
+    return out;
 
 ERR:
 
     abcdk_object_unref(&out);
     return NULL;
+}
+
+static int _abcdk_cipher_aes256cbc_init(abcdk_cipher_t *ctx, const uint8_t *key, size_t key_len)
+{
+    int chk;
+
+    ctx->evp_key = abcdk_object_alloc2(32);
+    if (!ctx->evp_key)
+        return -1;
+
+    abcdk_sha256_once(key, key_len, ctx->evp_key->pptrs[0]);
+
+    ctx->evp_ctx = EVP_CIPHER_CTX_new();
+    if (!ctx->evp_ctx)
+        return -2;
+
+    ctx->plaintext_bsize = 16 * 64;
+    ctx->ciphertext_bsize = 16 * 64;
+
+    return 0;
+}
+
+static int _abcdk_cipher_aes256cbc_config(abcdk_cipher_t *ctx, int enc)
+{
+    int chk;
+
+    EVP_CIPHER_CTX_cleanup(ctx->evp_ctx);
+
+    chk = EVP_CipherInit_ex(ctx->evp_ctx, EVP_aes_256_cbc(), NULL, NULL, NULL, enc);
+    if (chk != 1)
+        return -1;
+
+    chk = EVP_CipherInit_ex(ctx->evp_ctx, NULL, NULL, ctx->evp_key->pptrs[0], ctx->evp_iv, enc);
+    if (chk != 1)
+        return -3;
+
+    EVP_CIPHER_CTX_set_padding(ctx->evp_ctx, 0);
+
+    return 0;
+}
+
+static int _abcdk_cipher_aes256cbc_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
+{
+    int align_bsize;
+    int blocks;
+    int alen = 0, tlen = 0;
+    int chk;
+
+    align_bsize = abcdk_align(in_len, 16);
+
+    if (enc)
+    {
+        if (out_max < align_bsize)
+            return -1;
+
+        blocks = in_len / 16;
+
+        if (blocks > 0)
+        {
+            chk = EVP_CipherUpdate(ctx->evp_ctx, out, &tlen, in, blocks*16);
+            if (chk != 1)
+                return -2;
+
+            alen += tlen;
+        }
+
+        if (in_len % 16 != 0)
+        {
+            memcpy(ctx->tmpbuf, in + blocks * 16, in_len % 16);
+            _abcdk_cipher_rand_generate(ctx->tmpbuf + (in_len % 16), 16 - (in_len % 16));
+
+            chk = EVP_CipherUpdate(ctx->evp_ctx, out + blocks * 16, &tlen, ctx->tmpbuf, 16);
+            if (chk != 1)
+                return -2;
+
+            alen += tlen;
+        }
+    }
+    else
+    {
+        if (in_len != align_bsize)
+            return -1;
+
+        if (out_max < align_bsize)
+            return -2;
+
+        chk = EVP_CipherUpdate(ctx->evp_ctx, out, &tlen, in, in_len);
+        if (chk != 1)
+            return -3;
+
+        alen += tlen;
+    }
+
+    chk = EVP_CipherFinal(ctx->evp_ctx, out + alen, &tlen);
+    if (chk != 1)
+        return -4;
+
+    alen += tlen;
+
+    return alen;
+}
+
+abcdk_object_t *_abcdk_cipher_aes256cbc_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+{
+    abcdk_object_t *out;
+    int align_bsize;
+    int blocks;
+    int chk;
+
+    /*
+     * |DATA    |IV       |
+     * |N bytes |16 bytes |
+     */
+
+    if (enc)
+    {
+        align_bsize = abcdk_align(in_len, 16);
+
+        /*生成随机IV。由于它将以明文方式进行传递，因此每次加密前必须重新生成。*/
+        _abcdk_cipher_rand_generate(ctx->evp_iv, 16);
+
+        chk = _abcdk_cipher_aes256cbc_config(ctx, 1);
+        if (chk != 0)
+            return NULL;
+
+        out = abcdk_object_alloc2(align_bsize + 16);
+        if (!out)
+            return NULL;
+
+        chk = _abcdk_cipher_aes256cbc_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len, 1);
+        if (chk != align_bsize)
+            goto ERR;
+
+        /*在密文的末尾添加IV。*/
+        memcpy(out->pptrs[0] + align_bsize, ctx->evp_iv, 16);
+    }
+    else
+    {
+        if (in_len <= 16)
+            return NULL;
+
+        align_bsize = abcdk_align(in_len - 16, 16);
+
+        /*密文必须是块对齐的。*/
+        if ((align_bsize % 16) != 0)
+            return NULL;
+
+        /*提取密文末尾的IV。*/
+        memcpy(ctx->evp_iv, in + align_bsize, 16);
+
+        chk = _abcdk_cipher_aes256cbc_config(ctx, 0);
+        if (chk != 0)
+            return NULL;
+
+        out = abcdk_object_alloc2(align_bsize);
+        if (!out)
+            return NULL;
+
+        chk = _abcdk_cipher_aes256cbc_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, align_bsize, 0);
+        if (chk != align_bsize)
+            goto ERR;
+    }
+
+    return out;
+
+ERR:
+
+    abcdk_object_unref(&out);
+    return out;
 }
 
 static int _abcdk_cipher_init(abcdk_cipher_t *ctx, int scheme, const uint8_t *key, size_t key_len)
@@ -396,6 +561,11 @@ static int _abcdk_cipher_init(abcdk_cipher_t *ctx, int scheme, const uint8_t *ke
     {
         ctx->scheme = scheme;
         chk = _abcdk_cipher_aes256gcm_init(ctx, key, key_len);
+    }
+    else if (scheme == ABCDK_CIPHER_SCHEME_AES_256_CBC)
+    {
+        ctx->scheme = scheme;
+        chk = _abcdk_cipher_aes256cbc_init(ctx, key, key_len);
     }
     else
     {
@@ -451,6 +621,8 @@ abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx, const uint8_t *in, int 
         out = _abcdk_cipher_rsa_update(ctx, in, in_len, enc);
     else if (ctx->scheme == ABCDK_CIPHER_SCHEME_AES_256_GCM)
         out = _abcdk_cipher_aes256gcm_update(ctx, in, in_len, enc);
+    else if (ctx->scheme == ABCDK_CIPHER_SCHEME_AES_256_CBC)
+        out = _abcdk_cipher_aes256cbc_update(ctx, in, in_len, enc);
     else
         out = NULL;
 

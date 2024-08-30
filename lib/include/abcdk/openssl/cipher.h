@@ -35,6 +35,9 @@ typedef enum _abcdk_cipher_scheme
     ABCDK_CIPHER_SCHEME_AES_256_GCM = 3,
 #define ABCDK_CIPHER_SCHEME_AES_256_GCM ABCDK_CIPHER_SCHEME_AES_256_GCM
 
+    /*AES-256-CBC。*/
+    ABCDK_CIPHER_SCHEME_AES_256_CBC = 4,
+#define ABCDK_CIPHER_SCHEME_AES_256_CBC ABCDK_CIPHER_SCHEME_AES_256_CBC
 } abcdk_cipher_scheme_t;
 
 /**销毁。*/
@@ -46,7 +49,12 @@ abcdk_cipher_t *abcdk_cipher_create(int scheme, const uint8_t *key, size_t key_l
 /**创建。*/
 abcdk_cipher_t *abcdk_cipher_create_from_file(int scheme, const char *key_file);
 
-/**执行。*/
+/**
+ * 执行。
+ * 
+ * @note 加密，输出的数据长度是“密文”的长度。
+ * @note 解密，输出的数据长度是“缓存”的长度。
+*/
 abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 
 #endif // OPENSSL_VERSION_NUMBER
