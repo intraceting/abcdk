@@ -17,8 +17,7 @@
 #include "abcdk/util/time.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/spinlock.h"
-#include "abcdk/openssl/bio.h"
-#include "abcdk/enigma/ssl.h"
+#include "abcdk/enigma/bio.h"
 
 __BEGIN_DECLS
 

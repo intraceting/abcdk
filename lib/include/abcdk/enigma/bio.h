@@ -4,16 +4,16 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_OPENSSL_BIO_H
-#define ABCDK_OPENSSL_BIO_H
+#ifndef ABCDK_ENIGMA_BIO_H
+#define ABCDK_ENIGMA_BIO_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/object.h"
-#include "abcdk/openssl/openssl.h"
 #include "abcdk/enigma/ssl.h"
+#include "abcdk/openssl/openssl.h"
 
 __BEGIN_DECLS
 
@@ -24,24 +24,24 @@ __BEGIN_DECLS
  * 
  * @return 0 成功，< 0 失败。
  */
-int abcdk_BIO_set_fd(BIO *bio, int fd);
+int abcdk_enigma_BIO_set_fd(BIO *bio, int fd);
 
 /**
  * 获取关联句柄。
  */
-int abcdk_BIO_get_fd(BIO *bio);
+int abcdk_enigma_BIO_get_fd(BIO *bio);
 
 /**销毁。*/
-void abcdk_BIO_destroy(BIO **bio);
+void abcdk_enigma_BIO_destroy(BIO **bio);
 
 /**
- * 创建兼容EnigmaSSL的BIO环境。
+ * 创建兼容Enigma的SSL的BIO环境。
 */
-BIO *abcdk_BIO_s_EnigmaSSL(const char *file);
+BIO *abcdk_enigma_BIO_s_SSL(const char *file);
 
 
 #endif //HEADER_BIO_H
 
 __END_DECLS
 
-#endif //ABCDK_OPENSSL_BIO_H
+#endif //ABCDK_ENIGMA_BIO_H

@@ -136,7 +136,6 @@
 #include "abcdk/http/util.h"
 
 #include "abcdk/openssl/openssl.h"
-#include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipher.h"
 
 #include "abcdk/curl/curl.h"
@@ -146,5 +145,6 @@
 
 #include "abcdk/enigma/enigma.h"
 #include "abcdk/enigma/ssl.h"
+#include "abcdk/enigma/bio.h"
 
 #endif //ABCDK_H

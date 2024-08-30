@@ -1132,7 +1132,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #endif //HAVE_OPENSSL
 
-#elif 1
+#elif 0
 
 
 #ifdef HAVE_OPENSSL
@@ -1234,6 +1234,34 @@ int abcdk_test_any(abcdk_option_t *args)
     X509_STORE_free(store);
 
 #endif //HAVE_OPENSSL
+
+#elif 1
+
+    abcdk_object_t *tmp = abcdk_object_alloc2(100000);
+
+    uint64_t dot = 0;
+    abcdk_clock(dot, &dot);
+
+    for (int i = 1; i < 10000; i++)
+    {
+        //RAND_bytes(tmp->pptrs[0], 65000);
+        abcdk_rand_string(tmp->pptrs[0], 65000,4);
+
+        abcdk_package_t *src = abcdk_package_create(65535);
+
+        abcdk_package_write_buffer(src, tmp->pptrs[0], 65000);
+
+        abcdk_object_t *data = abcdk_package_dump(src,1);
+
+        abcdk_object_unref(&data);
+
+        abcdk_package_destroy(&src);
+    }
+
+    uint64_t step = abcdk_clock(dot, &dot);
+    fprintf(stderr, "cast:%.6f\n", (double)step / 1000000.);
+
+    abcdk_object_unref(&tmp);
 
 #endif 
 }

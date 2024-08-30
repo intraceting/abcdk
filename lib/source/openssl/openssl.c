@@ -6,8 +6,6 @@
  */
 #include "abcdk/openssl/openssl.h"
 
-#ifdef OPENSSL_VERSION_NUMBER
-
 /******************************************************************************************************/
 
 #ifdef HEADER_AES_H
@@ -86,183 +84,109 @@ size_t abcdk_openssl_aes_set_iv(uint8_t *iv, const void *salt, size_t len, uint8
 
 #ifdef HEADER_RSA_H
 
-int abcdk_openssl_rsa_padding_size(int padding)
+int abcdk_openssl_rsa_is_private_key(RSA *rsa) 
 {
-    int size = -1;
+#ifdef HEADER_BIO_H
 
-    switch (padding)
-    {
-    case RSA_PKCS1_PADDING:
-        size = RSA_PKCS1_PADDING_SIZE; //=11
-        break;
-    case RSA_PKCS1_OAEP_PADDING:
-        size = 42;
-        break;
-    case RSA_NO_PADDING:
-    default:
-        size = 0;
-        break;
-    }
+    const BIGNUM *d_p = NULL;
 
-    return size;
+    assert(rsa != NULL);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    RSA_get0_key(rsa, NULL, NULL, &d_p);
+#else //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    d_p = rsa->d;
+#endif //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+
+    /*仅私钥中存在这个组件，公钥中没有。*/
+    return (d_p != NULL);
+
+#else //HEADER_BIO_H
+
+    return 0;
+
+#endif //HEADER_BIO_H
 }
 
 RSA *abcdk_openssl_rsa_create(int bits, unsigned long e)
 {
+#ifdef HEADER_BIO_H
+
     RSA *key = NULL;
     BIGNUM *bne = NULL;
     int chk;
     
     bne = BN_new();
     if(!bne)
-        ABCDK_ERRNO_AND_GOTO1(ENOMEM,final);
+        return NULL;
 
     chk = BN_set_word(bne,e);
     if(chk <= 0)
-        ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
+        goto ERR;
 
     key = RSA_new();
     if(!key)
-        ABCDK_ERRNO_AND_GOTO1(ENOMEM,final);
+        goto ERR;
 
     chk = RSA_generate_key_ex(key, bits, bne, NULL);
     if (chk <= 0)
-    {
-        RSA_free(key);
-        key = NULL;
-    }
+        goto ERR;
 
-final:
+    BN_clear_free(bne);
+    return key;
+
+ERR:
         
+    if(key)
+        RSA_free(key);
     if(bne)
         BN_clear_free(bne);
 
-    return key;
+#endif //HEADER_BIO_H
+
+    return NULL;
 }
 
-RSA *abcdk_openssl_rsa_from_fp(FILE *fp, int type, const char *pwd)
+
+abcdk_object_t *abcdk_openssl_rsa_export(RSA *key)
 {
-    RSA *key = NULL;
+#ifdef HEADER_BIO_H
 
-    assert(fp != NULL);
-
-    if (type)
-        key = PEM_read_RSAPrivateKey(fp, NULL, NULL, (void *)pwd);
-    else
-        key = PEM_read_RSAPublicKey(fp, NULL, NULL, (void *)pwd);
-
-    return key;
-}
-
-RSA *abcdk_openssl_rsa_from_file(const char *file, int type, const char *pwd)
-{
-    FILE *fp;
-    RSA *key = NULL;
-
-    assert(file != NULL);
-
-    fp = fopen(file, "r");
-    if (!fp)
-        ABCDK_ERRNO_AND_RETURN1(errno, NULL);
-
-    key = abcdk_openssl_rsa_from_fp(fp, type, pwd);
-
-    /*不要忘记关闭。*/
-    fclose(fp);
-
-    return key;
-}
-
-int abcdk_openssl_rsa_to_fp(FILE *fp, RSA *key, int type, const char *pwd)
-{
+    abcdk_object_t *out;
+    BIO *pem_bio = NULL;
+    char *key_p = NULL;
+    long key_l = 0;
     int chk;
+    
+    pem_bio = BIO_new(BIO_s_mem());
+    if(!pem_bio)
+        return NULL;
 
-    assert(fp != NULL && key != NULL);
+    if(abcdk_openssl_rsa_is_private_key(key))
+        chk = PEM_write_bio_RSAPrivateKey(pem_bio, key, NULL, NULL, 0, NULL, NULL);
+    else 
+        chk = PEM_write_bio_RSA_PUBKEY(pem_bio, key);
 
-    if (type)
-        chk = PEM_write_RSAPrivateKey(fp, key, NULL, NULL, 0, NULL, NULL);
-    else
-        chk = PEM_write_RSAPublicKey(fp, key);
+    if(chk != 1)
+        goto ERR;
 
-    return chk;
-}
+    key_l = BIO_get_mem_data(pem_bio, &key_p);
+    if(key_l <=0 || key_p == NULL)
+        goto ERR;
 
-int abcdk_openssl_rsa_to_file(const char *file, RSA *key, int type, const char *pwd)
-{
-    FILE *fp;
-    int chk;
+    out = abcdk_object_copyfrom(key_p,key_l);
+    BIO_free_all(pem_bio);
 
-    assert(file != NULL && key != NULL);
+    return out;
 
-    fp = fopen(file, "w");
-    if (!fp)
-        ABCDK_ERRNO_AND_RETURN1(errno, -1);
+ERR:
 
-    chk = abcdk_openssl_rsa_to_fp(fp, key, type, pwd);
+    if(pem_bio)
+        BIO_free_all(pem_bio);
 
-    /*不要忘记关闭。*/
-    fclose(fp);
+#endif //HEADER_BIO_H
 
-    return chk;
-}
-
-int abcdk_openssl_rsa_size(RSA *key)
-{
-    assert(key != NULL);
-
-    return RSA_size(key);
-}
-
-int abcdk_openssl_rsa_encrypt(void *dst, const void *src, int len, RSA *key, int type, int padding)
-{
-    int chk;
-    int ksize;
-    int psize;
-
-    assert(dst != NULL && src != NULL && len > 0 && key != NULL);
-
-    /*
-     * --------------------
-     * | Buffer[KEY_SIZE] |
-     * --------------------
-     * | 数据       | 盐   |
-     * --------------------
-    */
-    ksize = abcdk_openssl_rsa_size(key);
-    psize = abcdk_openssl_rsa_padding_size(padding);
-    assert((ksize - psize) == len);
-
-    if (type)
-        chk = RSA_private_encrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
-    else
-        chk = RSA_public_encrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
-
-    return chk;
-}
-
-int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int type, int padding)
-{
-    int chk;
-    int ksize;
-
-    assert(dst != NULL && src != NULL && len > 0 && key != NULL);
-
-    /*
-     * --------------------
-     * | Buffer[KEY_SIZE] |
-     * --------------------
-     * | 数据              |
-     * --------------------
-    */
-    ksize = abcdk_openssl_rsa_size(key);
-    assert(ksize == len);
-
-    if (type)
-        chk = RSA_private_decrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
-    else
-        chk = RSA_public_decrypt(len, (uint8_t *)src, (uint8_t *)dst, key, padding);
-
-    return chk;
+    return NULL;
 }
 
 #endif //HEADER_RSA_H
@@ -978,5 +902,3 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256])
 #endif //HEADER_SSL_H
 
 /******************************************************************************************************/
-
-#endif //OPENSSL_VERSION_NUMBER

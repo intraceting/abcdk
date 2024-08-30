@@ -4,22 +4,22 @@
  * MIT License
  * 
  */
-#include "abcdk/openssl/bio.h"
+#include "abcdk/enigma/bio.h"
 
 #ifdef HEADER_BIO_H
 
-typedef struct _abcdk_BIO
+typedef struct _abcdk_enigma_BIO
 {
     /*魔法数，检测环境是否被篡改。*/
     uint32_t magic;
-#define ABCDK_BIO_MAGIC 0x33333333
+#define ABCDK_ENIGMA_BIO_MAGIC 0x33333333
 
     abcdk_enigma_ssl_t *enigma_ssl;
     BIO_METHOD *method;
-} abcdk_BIO_t;
+} abcdk_enigma_BIO_t;
 
 
-static BIO_METHOD *_abcdk_BIO_meth_new(int type, const char *name)
+static BIO_METHOD *_abcdk_enigma_BIO_meth_new(int type, const char *name)
 {
     BIO_METHOD *biom;
 
@@ -41,7 +41,7 @@ static BIO_METHOD *_abcdk_BIO_meth_new(int type, const char *name)
     return biom;
 }
 
-static void _abcdk_BIO_meth_free(BIO_METHOD *biom)
+static void _abcdk_enigma_BIO_meth_free(BIO_METHOD *biom)
 {
     if (!biom)
         return;
@@ -52,7 +52,7 @@ static void _abcdk_BIO_meth_free(BIO_METHOD *biom)
 #endif // #if OPENSSL_VERSION_NUMBER < 0x10100000L
 }
 
-static int _abcdk_BIO_meth_set_write(BIO_METHOD *biom,int (*write_cb)(BIO *, const char *, int))
+static int _abcdk_enigma_BIO_meth_set_write(BIO_METHOD *biom,int (*write_cb)(BIO *, const char *, int))
 {
     int chk;
     assert(biom != NULL && write_cb != NULL);
@@ -69,7 +69,7 @@ static int _abcdk_BIO_meth_set_write(BIO_METHOD *biom,int (*write_cb)(BIO *, con
     return chk;
 }
 
-static int _abcdk_BIO_meth_set_read(BIO_METHOD *biom,int (*read_cb)(BIO *, char *, int))
+static int _abcdk_enigma_BIO_meth_set_read(BIO_METHOD *biom,int (*read_cb)(BIO *, char *, int))
 {
     int chk;
     assert(biom != NULL && read_cb != NULL);
@@ -86,7 +86,7 @@ static int _abcdk_BIO_meth_set_read(BIO_METHOD *biom,int (*read_cb)(BIO *, char 
     return chk;
 }
 
-static int _abcdk_BIO_meth_set_ctrl(BIO_METHOD *biom, long (*ctrl_cb)(BIO *, int, long, void *))
+static int _abcdk_enigma_BIO_meth_set_ctrl(BIO_METHOD *biom, long (*ctrl_cb)(BIO *, int, long, void *))
 {
     int chk;
     assert(biom != NULL && ctrl_cb != NULL);
@@ -103,7 +103,7 @@ static int _abcdk_BIO_meth_set_ctrl(BIO_METHOD *biom, long (*ctrl_cb)(BIO *, int
     return chk;
 }
 
-static int _abcdk_BIO_meth_set_create(BIO_METHOD *biom, int (*create_cb)(BIO *))
+static int _abcdk_enigma_BIO_meth_set_create(BIO_METHOD *biom, int (*create_cb)(BIO *))
 {
     int chk;
     assert(biom != NULL && create_cb != NULL);
@@ -120,7 +120,7 @@ static int _abcdk_BIO_meth_set_create(BIO_METHOD *biom, int (*create_cb)(BIO *))
     return chk;
 }
 
-static int _abcdk_BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy_cb)(BIO *))
+static int _abcdk_enigma_BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy_cb)(BIO *))
 {
     int chk;
     assert(biom != NULL && destroy_cb != NULL);
@@ -137,7 +137,7 @@ static int _abcdk_BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy_cb)(BIO *
     return chk;
 }
 
-static void *_abcdk_BIO_get_data(BIO *bio)
+static void *_abcdk_enigma_BIO_get_data(BIO *bio)
 {
     assert(bio != NULL);
 
@@ -149,7 +149,7 @@ static void *_abcdk_BIO_get_data(BIO *bio)
 
 }
 
-static void _abcdk_BIO_set_data(BIO *bio, void *ptr)
+static void _abcdk_enigma_BIO_set_data(BIO *bio, void *ptr)
 {
     assert(bio != NULL);
 
@@ -161,12 +161,12 @@ static void _abcdk_BIO_set_data(BIO *bio, void *ptr)
 }
 
 
-static int _abcdk_BIO_read_cb(BIO *bio, char *buf, int len)
+static int _abcdk_enigma_BIO_read_cb(BIO *bio, char *buf, int len)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
+    abcdk_enigma_BIO_t *bio_p = (abcdk_enigma_BIO_t *)_abcdk_enigma_BIO_get_data(bio);
     int rlen = 0;
 
-    if(!(bio_p != NULL && bio_p->magic == ABCDK_BIO_MAGIC))
+    if(!(bio_p != NULL && bio_p->magic == ABCDK_ENIGMA_BIO_MAGIC))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_READ, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -185,12 +185,12 @@ static int _abcdk_BIO_read_cb(BIO *bio, char *buf, int len)
     return rlen;
 }
 
-static int _abcdk_BIO_write_cb(BIO *bio, const char *buf, int len)
+static int _abcdk_enigma_BIO_write_cb(BIO *bio, const char *buf, int len)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
+    abcdk_enigma_BIO_t *bio_p = (abcdk_enigma_BIO_t *)_abcdk_enigma_BIO_get_data(bio);
     int slen = 0;
 
-    if(!(bio_p != NULL && bio_p->magic == ABCDK_BIO_MAGIC))
+    if(!(bio_p != NULL && bio_p->magic == ABCDK_ENIGMA_BIO_MAGIC))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_WRITE, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -210,12 +210,12 @@ static int _abcdk_BIO_write_cb(BIO *bio, const char *buf, int len)
     return slen;
 }
 
-static long _abcdk_BIO_ctrl_cb(BIO *bio, int cmd, long num, void *ptr)
+static long _abcdk_enigma_BIO_ctrl_cb(BIO *bio, int cmd, long num, void *ptr)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
+    abcdk_enigma_BIO_t *bio_p = (abcdk_enigma_BIO_t *)_abcdk_enigma_BIO_get_data(bio);
     int chk = 0;
 
-    if(!(bio_p != NULL && bio_p->magic == ABCDK_BIO_MAGIC))
+    if(!(bio_p != NULL && bio_p->magic == ABCDK_ENIGMA_BIO_MAGIC))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_CTRL, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -252,7 +252,7 @@ static long _abcdk_BIO_ctrl_cb(BIO *bio, int cmd, long num, void *ptr)
     return chk;
 }
 
-static int _abcdk_BIO_create_cb(BIO *bio)
+static int _abcdk_enigma_BIO_create_cb(BIO *bio)
 {
     int chk = 0;
 
@@ -273,30 +273,30 @@ static int _abcdk_BIO_create_cb(BIO *bio)
     return chk;
 }
 
-static int _abcdk_BIO_destroy_cb(BIO *bio)
+static int _abcdk_enigma_BIO_destroy_cb(BIO *bio)
 {
-    abcdk_BIO_t *bio_p = (abcdk_BIO_t *)_abcdk_BIO_get_data(bio);
+    abcdk_enigma_BIO_t *bio_p = (abcdk_enigma_BIO_t *)_abcdk_enigma_BIO_get_data(bio);
 
     if(!bio_p)
         return 1;
 
-    if(bio_p->magic != ABCDK_BIO_MAGIC)
+    if(bio_p->magic != ABCDK_ENIGMA_BIO_MAGIC)
         return 0;
 
     abcdk_enigma_ssl_destroy(&bio_p->enigma_ssl);
-    _abcdk_BIO_meth_free(bio_p->method);
+    _abcdk_enigma_BIO_meth_free(bio_p->method);
     abcdk_heap_free(bio_p);
 
     return 1;
 }
 
 
-int abcdk_BIO_set_fd(BIO *bio, int fd)
+int abcdk_enigma_BIO_set_fd(BIO *bio, int fd)
 {
-    abcdk_BIO_t *bio_p;
+    abcdk_enigma_BIO_t *bio_p;
 
-    bio_p = _abcdk_BIO_get_data(bio);
-    if(!bio_p || bio_p->magic != ABCDK_BIO_MAGIC)
+    bio_p = _abcdk_enigma_BIO_get_data(bio);
+    if(!bio_p || bio_p->magic != ABCDK_ENIGMA_BIO_MAGIC)
         return -1;
 
     abcdk_enigma_ssl_set_fd(bio_p->enigma_ssl,fd,0);
@@ -304,18 +304,18 @@ int abcdk_BIO_set_fd(BIO *bio, int fd)
     return 0;
 }
 
-int abcdk_BIO_get_fd(BIO *bio)
+int abcdk_enigma_BIO_get_fd(BIO *bio)
 {
-    abcdk_BIO_t *bio_p;
+    abcdk_enigma_BIO_t *bio_p;
 
-    bio_p = _abcdk_BIO_get_data(bio);
-    if(!bio_p || bio_p->magic != ABCDK_BIO_MAGIC)
+    bio_p = _abcdk_enigma_BIO_get_data(bio);
+    if(!bio_p || bio_p->magic != ABCDK_ENIGMA_BIO_MAGIC)
         return -1;
 
     return abcdk_enigma_ssl_get_fd(bio_p->enigma_ssl,0);
 }
 
-void abcdk_BIO_destroy(BIO **bio)
+void abcdk_enigma_BIO_destroy(BIO **bio)
 {
     BIO *bio_p;
 
@@ -328,37 +328,36 @@ void abcdk_BIO_destroy(BIO **bio)
     BIO_free(bio_p);
 }
 
-
-BIO *abcdk_BIO_s_EnigmaSSL(const char *file)
+BIO *abcdk_enigma_BIO_s_SSL(const char *file)
 {
-    abcdk_BIO_t *bio;
+    abcdk_enigma_BIO_t *bio;
     BIO *openssl_bio;
 
     assert(file != NULL);
     
-    bio = (abcdk_BIO_t*)abcdk_heap_alloc(sizeof(abcdk_BIO_t));
+    bio = (abcdk_enigma_BIO_t*)abcdk_heap_alloc(sizeof(abcdk_enigma_BIO_t));
     if (!bio)
         goto ERR;
 
-    bio->magic = ABCDK_BIO_MAGIC;
+    bio->magic = ABCDK_ENIGMA_BIO_MAGIC;
     bio->enigma_ssl = abcdk_enigma_ssl_create_from_file(file);
-    bio->method = _abcdk_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"EnigmaSSL");
+    bio->method = _abcdk_enigma_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"EnigmaSSL");
 
     if (!bio->enigma_ssl || !bio->method)
         goto ERR;
     
-    _abcdk_BIO_meth_set_write(bio->method,_abcdk_BIO_write_cb);
-    _abcdk_BIO_meth_set_read(bio->method,_abcdk_BIO_read_cb);
-    _abcdk_BIO_meth_set_ctrl(bio->method,_abcdk_BIO_ctrl_cb);
-    _abcdk_BIO_meth_set_create(bio->method,_abcdk_BIO_create_cb);
-    _abcdk_BIO_meth_set_destroy(bio->method,_abcdk_BIO_destroy_cb);
+    _abcdk_enigma_BIO_meth_set_write(bio->method,_abcdk_enigma_BIO_write_cb);
+    _abcdk_enigma_BIO_meth_set_read(bio->method,_abcdk_enigma_BIO_read_cb);
+    _abcdk_enigma_BIO_meth_set_ctrl(bio->method,_abcdk_enigma_BIO_ctrl_cb);
+    _abcdk_enigma_BIO_meth_set_create(bio->method,_abcdk_enigma_BIO_create_cb);
+    _abcdk_enigma_BIO_meth_set_destroy(bio->method,_abcdk_enigma_BIO_destroy_cb);
 
     openssl_bio = BIO_new(bio->method);
     if (!openssl_bio)
         goto ERR;
 
     /*关联到一起。*/
-    _abcdk_BIO_set_data(openssl_bio, bio);
+    _abcdk_enigma_BIO_set_data(openssl_bio, bio);
 
     /*关联成功后，清理野指针。*/
     bio = NULL;
@@ -373,12 +372,11 @@ ERR:
     if(bio)
     {
         abcdk_enigma_ssl_destroy(&bio->enigma_ssl);
-        _abcdk_BIO_meth_free(bio->method);
+        _abcdk_enigma_BIO_meth_free(bio->method);
         abcdk_heap_free(bio);
     }
 
     return NULL;
 }
-
 
 #endif // HEADER_BIO_H

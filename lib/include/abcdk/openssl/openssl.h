@@ -42,138 +42,30 @@
 #include <openssl/hmac.h>
 #endif //OPENSSL_NO_HMAC
 
-
 #endif //HAVE_OPENSSL
 
 __BEGIN_DECLS
 
-#ifdef OPENSSL_VERSION_NUMBER
-
-/******************************************************************************************************/
-
-#ifdef HEADER_AES_H
-
-/**
- * 设置密钥
- * 
- * @param pwd 密钥的指针。
- * @param len 密钥的长度(字节)，1～32之间，自动对齐到16、24、32三类长度，不足部分用padding补齐。
- * @param padding 填充字符。
- * @param encrypt !0 加密密钥，0 解密密钥。
- * 
- * @return > 0 成功(密钥长度(bits))，<= 0 失败。
- * 
-*/
-size_t abcdk_openssl_aes_set_key(AES_KEY *key, const void *pwd, size_t len, uint8_t padding, int encrypt);
-
-/**
- * 设置向量
- * 
- * @param salt “盐”的指针。
- * @param len “盐”的长度(字节），1～32之间，自动对齐到16、24、32三类长度，不足部分用padding补齐。
- * @param padding 填充字符。
- * 
- * @return > 0 成功(向量长度(字节))，<= 0 失败。
- * 
-*/
-size_t abcdk_openssl_aes_set_iv(uint8_t *iv, const void *salt, size_t len, uint8_t padding);
-
-
-#endif //HEADER_AES_H
-
-/******************************************************************************************************/
-
-
 #ifdef HEADER_RSA_H
 
-/**
- * 计算补充数据(盐)长度(字节)。
- * 
- * @param padding 见RSA_*_PADDING。
- * 
- * @return >=0 成功(长度)，< 0 失败。
-*/
-int abcdk_openssl_rsa_padding_size(int padding);
+/**检查密钥是否为私钥。 */
+int abcdk_openssl_rsa_is_private_key(RSA *rsa);
 
 /**
  * 创建RSA密钥对象。
  * 
  * @param bits KEY的长度(bits)
  * @param e 指数，见RSA_3/RSA_F4
- * 
- * @return !NULL(0) 成功(对象的指针)，NULL(0) 失败。
 */
 RSA *abcdk_openssl_rsa_create(int bits, unsigned long e);
 
 /**
- * 从文件导入密钥，并创建密钥对象。
+ * 导出密钥。
  * 
- * @param type !0 私钥，0 公钥。
- * @param pwd 密钥密码的指针，NULL(0)忽略。
- * 
- * @return !NULL(0) 成功(对象的指针)，NULL(0) 失败。
+ * @param prikey 是否为私钥。0 否，!0 是。
 */
-RSA *abcdk_openssl_rsa_from_fp(FILE *fp,int type,const char *pwd);
+abcdk_object_t *abcdk_openssl_rsa_export(RSA *key);
 
-/**
- * 从文件导入密钥，并创建密钥对象。
- * 
- * @return !NULL(0) 成功(对象的指针)，NULL(0) 失败。
-*/
-RSA *abcdk_openssl_rsa_from_file(const char *file,int type,const char *pwd);
-
-/**
- * 向文件导出密钥。
- * 
- * @param pwd 密钥密码的指针，NULL(0)忽略。私钥有效。
- * 
- * @return > 0 成功，<= 0 失败。
-*/
-int abcdk_openssl_rsa_to_fp(FILE *fp, RSA *key, int type, const char *pwd);
-
-/**
- * 向文件导出密钥。
- * 
- * @return > 0 成功，<= 0 失败。
-*/
-int abcdk_openssl_rsa_to_file(const char *file, RSA *key, int type, const char *pwd);
-
-/**
- * 获取KEY长度(字节)。
- * 
- * @return > 0 成功，<= 0 失败。
-*/
-int abcdk_openssl_rsa_size(RSA *key);
-
-/**
- * 加密。
- * 
- * @param dst 密文的指针。
- * @param src 明文的指针。
- * @param len 长度，不包含补齐数据(盐)的长度。
- * @param key  
- * @param type !0 私钥，0 公钥。
- * @param padding 补齐方式，见RSA_*_PADDING。
- * 
- * @return > 0 成功，<= 0 失败。
- * 
- */
-int abcdk_openssl_rsa_encrypt(void *dst, const void *src, int len, RSA *key, int type, int padding);
-
-/**
- * 解密。
- * 
- * @param dst 明文的指针。
- * @param src 密文的指针。
- * @param len 长度，必须等于KEY的长度。
- * @param key  
- * @param type !0 私钥，0 公钥。
- * @param padding 补齐方式，见RSA_*_PADDING。
- * 
- * @return > 0 成功，<= 0 失败。
- * 
- */
-int abcdk_openssl_rsa_decrypt(void *dst, const void *src, int len, RSA *key, int type, int padding);
 
 
 #endif //EADER_RSA_H
@@ -390,8 +282,6 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256]);
 #endif //HEADER_SSL_H
 
 /************************************************************************************************************************/
-
-#endif //OPENSSL_VERSION_NUMBER
 
 __END_DECLS
 

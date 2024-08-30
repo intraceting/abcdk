@@ -74,7 +74,9 @@ struct _abcdk_asio_node
 
     /** OpenSSL环境指针。*/
     SSL *openssl_ssl;
-    BIO *openssl_bio;
+
+    /** EnigmaSSL BIO环境指针。*/
+    BIO *enigmassl_bio;
 
     /** EnigmaSSL环境指针。*/
     abcdk_enigma_ssl_t *enigmassl_ssl;
@@ -127,7 +129,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
 
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->openssl_ssl);
-    abcdk_BIO_destroy(&node_p->openssl_bio);
+    abcdk_enigma_BIO_destroy(&node_p->enigmassl_bio);
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif //HEADER_SSL_H
 
@@ -188,7 +190,7 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*fr
     node->from_listen = NULL;
     node->openssl_ctx = NULL;
     node->openssl_ssl = NULL;
-    node->openssl_bio = NULL;
+    node->enigmassl_bio = NULL;
     node->enigmassl_ssl = NULL;
 
     return node;
@@ -660,12 +662,12 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
     {
 #ifdef HEADER_SSL_H
-        if (!node->openssl_bio)
-            node->openssl_bio = abcdk_BIO_s_EnigmaSSL(node->cfg.enigma_key_file);
+        if (!node->enigmassl_bio)
+            node->enigmassl_bio = abcdk_enigma_BIO_s_SSL(node->cfg.enigma_key_file);
         else
             return -16;
 
-        if (!node->openssl_bio)
+        if (!node->enigmassl_bio)
         {
             abcdk_asio_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -1;
@@ -682,11 +684,11 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
             return -1;
         }
 
-        abcdk_BIO_set_fd(node->openssl_bio,node->fd);
-        SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
+        abcdk_enigma_BIO_set_fd(node->enigmassl_bio,node->fd);
+        SSL_set_bio(node->openssl_ssl, node->enigmassl_bio, node->enigmassl_bio);
 
         /*托管理给SSL，这里要清理野指针。*/
-        node->openssl_bio = NULL;
+        node->enigmassl_bio = NULL;
 
         if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
             SSL_set_accept_state(node->openssl_ssl);
@@ -1042,15 +1044,15 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
     else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_bio = abcdk_BIO_s_EnigmaSSL(node->cfg.enigma_key_file);
-        if (!node->openssl_bio)
+        node->enigmassl_bio = abcdk_enigma_BIO_s_SSL(node->cfg.enigma_key_file);
+        if (!node->enigmassl_bio)
         {
             abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
             return -2;
         }
 
         /*仅用于验证。*/
-        abcdk_BIO_destroy(&node->openssl_bio);
+        abcdk_enigma_BIO_destroy(&node->enigmassl_bio);
 
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag,(node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                                    (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
