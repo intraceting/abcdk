@@ -10,30 +10,6 @@
 
 /******************************************************************************************************/
 
-int abcdk_openssl_evp_cipher_update(EVP_CIPHER_CTX *ctx,uint8_t *out,const uint8_t *in,int in_len)
-{
-    int alen = 0,tlen = 0;
-    int chk;
-
-    assert(ctx != NULL && out != NULL && in != NULL && in_len >0);
-
-    chk = EVP_CipherUpdate(ctx, out, &tlen, in, in_len);
-    if( chk != 1)
-        return -1;
-
-    alen += tlen;
-
-    chk = EVP_CipherFinal(ctx, out + alen, &tlen);
-    if( chk != 1)
-        return -1;
-
-    alen += tlen;
-
-    return alen;
-}
-
-/******************************************************************************************************/
-
 #ifdef HEADER_AES_H
 
 size_t abcdk_openssl_aes_set_key(AES_KEY *key, const void *pwd, size_t len, uint8_t padding, int encrypt)
