@@ -1,6 +1,6 @@
 # TUN到ETH的nat配置方案。
 
-## 利用防火墙nat功能将vnet0(网卡)的流量转发到网卡eth0(网卡)。
+## 利用防火墙nat功能将vnet0(网卡)的流量转发到eth0(网卡)。
 
 ### 设置nat，添加一条POSTROUTING规则，将来自10.0.0.0/24网段的流量转发到eth0中。
 ```bash
@@ -21,4 +21,14 @@ sudo iptables -t nat -vnL POSTROUTING --line-numbers
 ### 查看filter组FORWARD规则。
 ```bash
 sudo iptables -vL FORWARD --line-numbers
+```
+
+### 操作系统启用IPV4转发。
+```bash
+sudo sysctl -w net.ipv4.ip_forward=1
+```
+
+## 利用防火墙nat功能将任意源的流量转发到vnet0(网卡)。
+```bash
+sudo iptables -t nat -A POSTROUTING -o vnet0 -j MASQUERADE
 ```
