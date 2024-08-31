@@ -11,10 +11,12 @@
 #include <locale.h>
 #include "entry.h"
 
-void abcdk_test_parallel_routine(void *opaque, uint32_t tid)
+void abcdk_test_worker_routine(void *opaque,int event,void *item)
 {
     int *id = (int *)opaque;
     int a = 123, b = 345, c = 456;
+
+    fprintf(stderr,"event-begin: %d\n",event);
 
     for (int h = 0; h < 2160; h++)
     {
@@ -36,26 +38,22 @@ void abcdk_test_parallel_routine(void *opaque, uint32_t tid)
             
         }
     }
+
+    fprintf(stderr,"event-end: %d\n",event);
 }
 
-int abcdk_test_parallel(abcdk_option_t *args)
+int abcdk_test_worker(abcdk_option_t *args)
 {
-
     int threads = abcdk_option_get_int(args,"--threads",0,4);
-    abcdk_parallel_t *ctx = abcdk_parallel_alloc(threads);
 
-    for (int i = 0; i < 100; i++)
+    abcdk_worker_config_t cfg = {threads,NULL,abcdk_test_worker_routine};
+    abcdk_worker_t *ctx = abcdk_worker_start(&cfg);
+
+    for(int i = 0;i<10;i++)
     {
-        uint64_t s = 0;
-
-        abcdk_clock(s, &s);
-
-        abcdk_parallel_invoke(ctx, i+1, NULL, abcdk_test_parallel_routine);
-
-        u_int64_t s2 = abcdk_clock(s, &s);
-        printf("%d = %llu\n", threads, s2);
+        abcdk_worker_dispatch(ctx,i,NULL);
     }
 
-    abcdk_parallel_free(&ctx);
+    abcdk_worker_stop(&ctx);
 
 }

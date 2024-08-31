@@ -64,7 +64,6 @@
 #include "abcdk/util/receiver.h"
 #include "abcdk/util/random.h"
 #include "abcdk/util/tar.h"
-#include "abcdk/util/parallel.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/stream.h"
 #include "abcdk/util/package.h"
@@ -73,6 +72,7 @@
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/spinlock.h"
 #include "abcdk/util/rwlock.h"
+#include "abcdk/util/worker.h"
 
 #include "abcdk/log/logger.h"
 

@@ -870,27 +870,17 @@ END:
     _abcdkipconfig_node_free(&node_ctx);
 }
 
-void _abcdkipconfig_work(void *opaque, uint32_t tid)
+void _abcdkipconfig_work(void *opaque,int event,void *item)
 {
     abcdkipconfig_t *ctx = (abcdkipconfig_t *)opaque;
 
-    if (tid == 0)
-    {
-        /*等待终止信号。*/
-        abcdk_proc_wait_exit_signal(-1);
-
-        /*通知所有线程退出。*/
-        abcdk_atomic_store(&ctx->exitflag, 1);
-    }
-    else
-    {
-        _abcdkipconfig_work_real(ctx, tid - 1);
-    }
+    _abcdkipconfig_work_real(ctx, event);
 }
 
 void _abcdkipconfig_process(abcdkipconfig_t *ctx)
 {
-    abcdk_parallel_t *parallel_ctx = NULL;
+    abcdk_worker_config_t worker_cfg = {0,ctx,_abcdkipconfig_work};
+    abcdk_worker_t *worker_ctx = NULL;
     const char *log_path = NULL;
     int conf_num;
 
@@ -915,14 +905,22 @@ void _abcdkipconfig_process(abcdkipconfig_t *ctx)
         goto ERR;
     }
 
-    /*创建线程池。*/
-    parallel_ctx = abcdk_parallel_alloc(conf_num + 1);
+    /*创建足够数量的工人。*/
+    worker_cfg.numbers = conf_num;
+    worker_ctx = abcdk_worker_start(&worker_cfg);
 
-    /*并发执行所有任务。*/
-    abcdk_parallel_invoke(parallel_ctx, conf_num + 1, ctx, _abcdkipconfig_work);
+    /*每个配置文件将由一个工人处理。*/
+    for (int i = 0; i < conf_num; i++)
+        abcdk_worker_dispatch(worker_ctx, i, NULL);
 
-    /*销毁线程池。*/
-    abcdk_parallel_free(&parallel_ctx);
+    /*等待终止信号。*/
+    abcdk_proc_wait_exit_signal(-1);
+
+    /*通知所有线程退出。*/
+    abcdk_atomic_store(&ctx->exitflag, 1);
+
+    /*销毁工人。*/
+    abcdk_worker_stop(&worker_ctx);
 
 ERR:
 

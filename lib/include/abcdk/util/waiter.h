@@ -14,12 +14,10 @@
 
 __BEGIN_DECLS
 
-/** 服务员。*/
+/**服务员。*/
 typedef struct _abcdk_waiter abcdk_waiter_t;
 
-/** 
- * 消息销毁回调函数。
-*/
+/** 消息销毁回调函数。*/
 typedef void (*abcdk_waiter_msg_destroy_cb)(void *msg);
 
 /**

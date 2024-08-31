@@ -13,67 +13,78 @@ struct _abcdk_queue
     abcdk_mutex_t *locker;
 
     /** 队列。*/
-    abcdk_tree_t *root;
-
-    /** 长度。*/
-    size_t count;
+    abcdk_tree_t *qlist;
 
     /** 消息销毁回调函数。*/
     abcdk_queue_msg_destroy_cb msg_destroy_cb;
 
 };// abcdk_queue_t;
 
-void abcdk_queue_free(abcdk_queue_t **queue)
+void abcdk_queue_free(abcdk_queue_t **ctx)
 {
-    abcdk_queue_t *queue_p;
+    abcdk_queue_t *ctx_p;
 
-    if (!queue || !*queue)
+    if (!ctx || !*ctx)
         return;
 
-    queue_p = *queue;
-    *queue = NULL;
+    ctx_p = *ctx;
+    *ctx = NULL;
 
-    abcdk_tree_free(&queue_p->root);
-    abcdk_mutex_destroy(&queue_p->locker);
-    abcdk_heap_free(queue_p);
+    abcdk_tree_free(&ctx_p->qlist);
+    abcdk_mutex_destroy(&ctx_p->locker);
+    abcdk_heap_free(ctx_p);
 }
 
 abcdk_queue_t *abcdk_queue_alloc(abcdk_queue_msg_destroy_cb cb)
 {
-    abcdk_queue_t *queue;
+    abcdk_queue_t *ctx;
 
-    queue = abcdk_heap_alloc(sizeof(abcdk_queue_t));
-    if (!queue)
+    ctx = abcdk_heap_alloc(sizeof(abcdk_queue_t));
+    if (!ctx)
         return NULL;
 
-    queue->count = 0;
-    queue->locker = abcdk_mutex_create();
-    queue->msg_destroy_cb = cb;
+    ctx->locker = abcdk_mutex_create();
+    ctx->msg_destroy_cb = cb;
 
-    queue->root = abcdk_tree_alloc3(1);
-    if (!queue->root)
+    ctx->qlist = abcdk_tree_alloc3(1);
+    if (!ctx->qlist)
         goto final_error;
 
-    return queue;
+    return ctx;
 
 final_error:
 
-    abcdk_queue_free(&queue);
+    abcdk_queue_free(&ctx);
 
     return NULL;
 }
 
-size_t abcdk_queue_count(abcdk_queue_t *queue)
+void abcdk_queue_unlock(abcdk_queue_t *ctx)
 {
-    size_t count;
+    assert(ctx != NULL);
 
-    assert(queue != NULL);
+    abcdk_mutex_unlock(ctx->locker);
+}
 
-    abcdk_mutex_lock(queue->locker, 1);
-    count = queue->count;
-    abcdk_mutex_unlock(queue->locker);
+void abcdk_queue_lock(abcdk_queue_t *ctx)
+{
+    assert(ctx != NULL);
 
-    return count;
+    abcdk_mutex_lock(ctx->locker, 1);
+}
+
+void abcdk_queue_signal(abcdk_queue_t *ctx,int broadcast)
+{
+    assert(ctx != NULL);
+
+    abcdk_mutex_signal(ctx->locker,broadcast);
+}
+
+int abcdk_queue_wait(abcdk_queue_t *ctx, time_t timeout)
+{
+    assert(ctx != NULL);
+
+    return abcdk_mutex_wait(ctx->locker, timeout);
 }
 
 void _abcdk_queue_destroy_cb(abcdk_object_t *alloc, void *opaque)
@@ -90,95 +101,51 @@ void _abcdk_queue_destroy_cb(abcdk_object_t *alloc, void *opaque)
     if(!msg_p)
         return;
 
-    ABCDK_ASSERT(queue_p->msg_destroy_cb,"未注册销毁函数，MSG对象无法销毁。");
+    ABCDK_ASSERT(queue_p->msg_destroy_cb,"未注册销毁函数，消息对象无法销毁。");
     queue_p->msg_destroy_cb(msg_p);
 }
 
-int abcdk_queue_push(abcdk_queue_t *queue, size_t refcount, const void *msg, int head)
+int abcdk_queue_push(abcdk_queue_t *ctx, void *msg)
 {
     abcdk_tree_t *msg_node;
 
-    assert(queue != NULL && refcount > 0 && msg != NULL);
+    assert(ctx != NULL && msg != NULL);
 
-    size_t sizes[] = {0,sizeof(size_t)};
-    msg_node = abcdk_tree_alloc2(sizes,2,0);
+    msg_node = abcdk_tree_alloc3(1);
     if (!msg_node)
         return -1;
 
     /*注册消息对象释放函数。*/
-    abcdk_object_atfree(msg_node->obj, _abcdk_queue_destroy_cb, queue);
+    abcdk_object_atfree(msg_node->obj, _abcdk_queue_destroy_cb, ctx);
 
-    /*绑定到节点。*/
+    /*绑定到节点，添加到队列末尾。*/
     msg_node->obj->pptrs[0] = (uint8_t *)msg;
-    ABCDK_PTR2SIZE(msg_node->obj->pptrs[1],0) = refcount;
-
-    abcdk_mutex_lock(queue->locker, 1);
-
-    abcdk_tree_insert2(queue->root, msg_node, head);
-    queue->count += 1;
-
-    abcdk_mutex_signal(queue->locker,1);
-
-    abcdk_mutex_unlock(queue->locker);
+    abcdk_tree_insert2(ctx->qlist, msg_node, 0);
 
     return 0;
 }
 
-const void *abcdk_queue_pop(abcdk_queue_t *queue, int head)
+void *abcdk_queue_pop(abcdk_queue_t *ctx)
 {
     abcdk_tree_t *msg_node = NULL;
-    const void *msg_p = NULL;
-
-    assert(queue != NULL);
-
-    abcdk_mutex_lock(queue->locker, 1);
-
-    msg_node = abcdk_tree_child(queue->root, head);
-    if (msg_node)
-    {
-        /*复制消息对象指针*/
-        msg_p = (void *)msg_node->obj->pptrs[0];
-
-        /*最后一个引用者取走数据后，则能删除节点。*/
-        if (ABCDK_PTR2SIZE(msg_node->obj->pptrs[1], 0) == 1)
-        {
-            abcdk_tree_unlink(msg_node);
-            queue->count -= 1;
-        }
-        else
-        {
-            /*引用计数减1。*/
-            ABCDK_PTR2SIZE(msg_node->obj->pptrs[1], 0) -= 1;
-            msg_node = NULL; // 未达到删除条件。
-        }
-    }
-
-    abcdk_mutex_unlock(queue->locker);
-
-    if (msg_node)
-    {
-        /*解除绑定关系。*/
-        msg_node->obj->pptrs[0] = NULL;
-        abcdk_tree_free(&msg_node);
-    }
-
-    return msg_p;
-}
-
-int abcdk_queue_wait(abcdk_queue_t *queue, time_t timeout)
-{
+    void *msg_p = NULL;
     int chk;
 
-    assert(queue != NULL && timeout > 0);
+    assert(ctx != NULL);
 
-    abcdk_mutex_lock(queue->locker, 1);
+    msg_node = abcdk_tree_child(ctx->qlist, 1);
+    if (!msg_node)
+        return NULL;
 
-    if (queue->count <= 0)
-        chk = abcdk_mutex_wait(queue->locker, timeout);
-    else 
-        chk = 0;
+    /*断开节点。*/
+    abcdk_tree_unlink(msg_node);
 
-    abcdk_mutex_unlock(queue->locker);
+    /*复制消息对象指针，解除绑定关系。*/
+    msg_p = (void *)msg_node->obj->pptrs[0];
+    msg_node->obj->pptrs[0] = NULL;
 
-    return chk;
+    /*删除节点。*/
+    abcdk_tree_free(&msg_node);
+
+    return msg_p;
 }

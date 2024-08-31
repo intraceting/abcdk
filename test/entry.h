@@ -21,7 +21,6 @@ int abcdk_test_com(abcdk_option_t *args);
 int abcdk_test_path(abcdk_option_t *args);
 int abcdk_test_ffmpeg(abcdk_option_t *args);
 int abcdk_test_drm(abcdk_option_t *args);
-int abcdk_test_parallel(abcdk_option_t *args);
 int abcdk_test_ping(abcdk_option_t *args);
 int abcdk_test_onvif(abcdk_option_t *args);
 int abcdk_test_dhcp(abcdk_option_t *args);
@@ -30,7 +29,7 @@ int abcdk_test_timer(abcdk_option_t *args);
 int abcdk_test_tun(abcdk_option_t *args);
 int abcdk_test_srpc(abcdk_option_t *args);
 int abcdk_test_fmp4(abcdk_option_t *args);
-
+int abcdk_test_worker(abcdk_option_t *args);
 
 __END_DECLS
 

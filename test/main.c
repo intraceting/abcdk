@@ -34,7 +34,7 @@ static struct _abcdk_test_entry
     {"path",abcdk_test_path},
     {"ffmpeg",abcdk_test_ffmpeg},
     {"drm",abcdk_test_drm},
-    {"parallel",abcdk_test_parallel},
+    {"worker",abcdk_test_worker},
     {"ping",abcdk_test_ping},
     {"onvif",abcdk_test_onvif},
     {"dhcp",abcdk_test_dhcp},
