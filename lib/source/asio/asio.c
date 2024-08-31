@@ -1113,10 +1113,10 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
 
-    if(node_p->cfg.input_bufs <= 0)
-        node_p->cfg.input_bufs = 262144;
+    if(node_p->cfg.input_mtu <= 0)
+        node_p->cfg.input_mtu = 262144;
     else 
-        node_p->cfg.input_bufs = ABCDK_CLAMP(node_p->cfg.input_bufs,1,262144);
+        node_p->cfg.input_mtu = ABCDK_CLAMP(node_p->cfg.input_mtu,1,262144);
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -1214,10 +1214,10 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
 
-    if(node_p->cfg.input_bufs <= 0)
-        node_p->cfg.input_bufs = 262144;
+    if(node_p->cfg.input_mtu <= 0)
+        node_p->cfg.input_mtu = 262144;
     else 
-        node_p->cfg.input_bufs = ABCDK_CLAMP(node_p->cfg.input_bufs,1,262144);
+        node_p->cfg.input_mtu = ABCDK_CLAMP(node_p->cfg.input_mtu,1,262144);
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
@@ -1291,7 +1291,7 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 
     if(!node->in_buffer)
     {
-        node->in_buffer = abcdk_object_alloc2(node->cfg.input_bufs);
+        node->in_buffer = abcdk_object_alloc2(node->cfg.input_mtu);
         if(!node->in_buffer)
         {
             abcdk_asio_set_timeout(node,1);

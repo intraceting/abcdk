@@ -454,7 +454,8 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
-    asio_cfg.input_bufs = 1600;
+
+    asio_cfg.input_mtu = cfg->input_mtu;
     asio_cfg.input_cb = _abcdk_srpc_input_cb;
 
     chk = abcdk_asio_listen(node_p,addr,&asio_cfg);
@@ -490,7 +491,7 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
-    asio_cfg.input_bufs = 1600;
+    asio_cfg.input_mtu = cfg->input_mtu;
     asio_cfg.input_cb = _abcdk_srpc_input_cb;
 
     chk = abcdk_asio_connect(node_p,addr,&asio_cfg);

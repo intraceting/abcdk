@@ -51,6 +51,13 @@ typedef struct _abcdk_tipc_config
     const char *enigma_key_file;
 
     /**
+     * 输入最大传输单元。
+     * 
+     * @note 有效范围：1~262144，默认：262144
+     */
+    int input_mtu;
+
+    /**
      * 节点连接通知回调函数。
      *
      * @note NULL(0) 忽略。

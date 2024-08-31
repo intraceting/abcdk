@@ -167,11 +167,11 @@ typedef struct _abcdk_asio_config
     void (*event_cb)(abcdk_asio_node_t *node, uint32_t event, int *result);
 
     /**
-     * 输入缓存区大小。
+     * 输入最大传输单元。
      * 
      * @note 有效范围：1~262144，默认：262144
      */
-    int input_bufs;
+    int input_mtu;
 
     /**
      * 输入数据到达通知回调函数。
