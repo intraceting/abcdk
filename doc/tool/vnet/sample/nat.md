@@ -23,7 +23,7 @@ sudo iptables -t nat -vnL POSTROUTING --line-numbers
 sudo iptables -vL FORWARD --line-numbers
 ```
 
-### 操作系统启用IPV4转发。
+### 操作系统启用IPV4流量转发。
 ```bash
 sudo sysctl -w net.ipv4.ip_forward=1
 ```
