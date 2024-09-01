@@ -141,8 +141,7 @@ void *abcdk_context_get_userdata(abcdk_context_t *ctx)
 
 void abcdk_context_set_fd(abcdk_context_t *ctx,int fd, int flag)
 {
-    assert(ctx != NULL && fd >= 0 &&
-           (flag == ABCDK_CONTEXT_FD_RW || flag == ABCDK_CONTEXT_FD_RD || flag == ABCDK_CONTEXT_FD_WR));
+    assert(ctx != NULL && fd >= 0);
 
     if (flag == ABCDK_CONTEXT_FD_RW)
         ctx->rfd = ctx->wfd = fd;
@@ -150,14 +149,13 @@ void abcdk_context_set_fd(abcdk_context_t *ctx,int fd, int flag)
         ctx->rfd = fd;
     else if (flag == ABCDK_CONTEXT_FD_WR)
         ctx->wfd = fd;
+    else
+        assert(flag == ABCDK_CONTEXT_FD_RW || flag == ABCDK_CONTEXT_FD_RD || flag == ABCDK_CONTEXT_FD_WR);
 }
 
 int abcdk_context_get_fd(abcdk_context_t *ctx,int flag)
 {
-    int old;
-
-    assert(ctx != NULL &&
-           (flag == ABCDK_CONTEXT_FD_RW || flag == ABCDK_CONTEXT_FD_RD || flag == ABCDK_CONTEXT_FD_WR));
+    assert(ctx != NULL);
 
     if (flag == ABCDK_CONTEXT_FD_RW)
     {
@@ -174,6 +172,8 @@ int abcdk_context_get_fd(abcdk_context_t *ctx,int flag)
     {
         return ctx->wfd;
     }
+    else
+        assert(flag == ABCDK_CONTEXT_FD_RW || flag == ABCDK_CONTEXT_FD_RD || flag == ABCDK_CONTEXT_FD_WR);
 
     return -1;
 }
