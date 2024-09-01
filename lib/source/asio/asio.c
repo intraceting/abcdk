@@ -1278,14 +1278,14 @@ final_error:
 
 void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 {
-    int ret = 0;
     ssize_t rlen = 0,pos = 0;
     size_t remain = 0;
+    int chk = 0;
 
     /*当未注册输入数据到达通知回调函数时，直接发事件通知。*/
     if(!node->cfg.input_cb)
     {
-        node->cfg.event_cb(node,ABCDK_ASIO_EVENT_INPUT,&ret);
+        node->cfg.event_cb(node,ABCDK_ASIO_EVENT_INPUT,&chk);
         return;
     }
 
@@ -1318,9 +1318,9 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 
 void _abcdk_asio_output_hook(abcdk_asio_node_t *node)
 {
-    int ret = 0;
     abcdk_tree_t *p;
-    ssize_t slen;
+    ssize_t slen = 0;
+    size_t mtu_pos = 0,mtu_per = 0;
     int chk;
 
 NEXT_MSG:
@@ -1333,7 +1333,7 @@ NEXT_MSG:
     /*通知应用层，发送队列空闲。*/
     if(!p)
     {
-        node->cfg.event_cb(node,ABCDK_ASIO_EVENT_OUTPUT,&ret);
+        node->cfg.event_cb(node,ABCDK_ASIO_EVENT_OUTPUT,&chk);
         return;
     }
 
@@ -1344,12 +1344,18 @@ NEXT_MSG:
     */
     while(node->out_pos < p->obj->sizes[0])
     {
-        slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
-        if( slen > 0)
-            node->out_pos += slen;
-        else 
+        mtu_per = ABCDK_MIN((size_t)(p->obj->sizes[0] - node->out_pos), (size_t)(node->cfg.input_mtu - mtu_pos));
+        //slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+        slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), mtu_per);
+        if( slen <= 0)
             break;
-            
+
+        node->out_pos += slen;
+        mtu_pos += slen;
+        
+        /*最大传输单元。*/
+        if(mtu_pos >= node->cfg.input_mtu)
+            break;
     }
 
     /*如果当前节点发送完成，则从队列中删除已经发送完整的节点。*/

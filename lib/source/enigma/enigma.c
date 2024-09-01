@@ -102,7 +102,6 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
         return NULL;
 
     ctx->rotors = abcdk_heap_alloc(sizeof(abcdk_enigma_rotor_t) * rows);
-    //ctx->rotors = abcdk_heap_alloc_align(8192,sizeof(abcdk_enigma_rotor_t) * rows);
     if (!ctx->rotors)
         goto final_error;
 
@@ -326,9 +325,16 @@ uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
 
 void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
 {
+    const uint8_t *src_p;
+    uint8_t *dst_p;
     assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
 
     for (size_t i = 0; i < size; i++)
-        dst[i] = abcdk_enigma_light(ctx, src[i]);
+    {
+        src_p = &src[i];
+        dst_p = &dst[i];
+
+        *dst_p = abcdk_enigma_light(ctx, *src_p);
+    }
 }
 
