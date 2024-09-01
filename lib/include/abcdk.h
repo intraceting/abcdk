@@ -125,12 +125,6 @@
 #include "abcdk/video/h264.h"
 #include "abcdk/video/hevc.h"
 
-#include "abcdk/asio/asio.h"
-#include "abcdk/asio/tipc.h"
-#include "abcdk/asio/https.h"
-#include "abcdk/asio/srpc.h"
-
-
 #include "abcdk/json/json.h"
 
 #include "abcdk/http/util.h"
@@ -140,6 +134,10 @@
 
 #include "abcdk/curl/curl.h"
 
+#include "abcdk/net/stcp.h"
+#include "abcdk/net/tipc.h"
+#include "abcdk/net/https.h"
+#include "abcdk/net/srpc.h"
 #include "abcdk/net/ipool.h"
 #include "abcdk/net/iplan.h"
 

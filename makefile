@@ -100,7 +100,6 @@ LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/log/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/rtp/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/asio/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/audio/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/database/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/http/*.c)
@@ -188,12 +187,6 @@ $(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
 #
 $(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/ffmpeg/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/asio/%.o: lib/source/asio/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/asio/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 

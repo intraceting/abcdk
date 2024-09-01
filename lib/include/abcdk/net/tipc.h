@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_ASIO_TIPC_H
-#define ABCDK_ASIO_TIPC_H
+#ifndef ABCDK_NET_TIPC_H
+#define ABCDK_NET_TIPC_H
 
 #include "abcdk/util/trace.h"
 #include "abcdk/util/receiver.h"
@@ -13,7 +13,7 @@
 #include "abcdk/util/bit.h"
 #include "abcdk/util/random.h"
 #include "abcdk/util/timer.h"
-#include "abcdk/asio/asio.h"
+#include "abcdk/net/stcp.h"
 
 __BEGIN_DECLS
 
@@ -136,4 +136,4 @@ int abcdk_tipc_publish(abcdk_tipc_t *ctx,uint64_t topic, const char *data,size_t
 
 __END_DECLS
 
-#endif // ABCDK_ASIO_TIPC_H
+#endif // ABCDK_NET_TIPC_H

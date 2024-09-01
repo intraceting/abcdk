@@ -22,7 +22,7 @@
 
 typedef struct _h2_node
 {
-    abcdk_asio_t *ctx;
+    abcdk_stcp_t *ctx;
 
     SSL_CTX *ssl_ctx;
 
@@ -53,7 +53,7 @@ ssize_t on_data_source_read_callback(
     nghttp2_session *session, int32_t stream_id, uint8_t *buf, size_t length,
     uint32_t *data_flags, nghttp2_data_source *source, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
 
     size_t s = ABCDK_MIN(6LLU, length);
     strncpy((char *)buf, "ahaha\n", s);
@@ -82,14 +82,14 @@ static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, 
     // 这里只是简单地打印接收到的数据
     printf("Received data on stream %d: %.*s\n", stream_id, (int)len, data);
 
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
 
     if (flags & NGHTTP2_FLAG_END_STREAM)
     {
         test_submit_response(session,stream_id);
 
         /*通知链路有数据要发送。*/
-        abcdk_asio_send_watch(node);
+        abcdk_stcp_send_watch(node);
     }
 
     // 返回成功
@@ -103,14 +103,14 @@ static int on_header_callback(nghttp2_session *session, const nghttp2_frame *fra
     // 这里只是简单地打印头部信息
     printf("Received header on stream %d: %.*s: %.*s\n", frame->hd.stream_id, (int)namelen, name, (int)valuelen, value);
 
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
 
     if(frame->hd.flags &NGHTTP2_FLAG_END_HEADERS)
     {
         test_submit_response(session,frame->hd.stream_id);
 
         /*通知链路有数据要发送。*/
-        abcdk_asio_send_watch(node);
+        abcdk_stcp_send_watch(node);
     }
 
     // 返回成功
@@ -133,9 +133,9 @@ static ssize_t on_send_callback(nghttp2_session *session, const uint8_t *data, s
     // 这里的示例代码仅为演示，实际情况需要根据你的应用程序做适当修改
     //printf("Sending data: %.*s\n", (int)length, data);
 
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
 
-    abcdk_asio_post_buffer(node,data,length);
+    abcdk_stcp_post_buffer(node,data,length);
     
     // 返回实际发送的字节数
     return length;
@@ -155,32 +155,32 @@ static void _node_destroy_cb(void *userdata)
         nghttp2_session_callbacks_del(http_p->callbacks);
 }
 
-static abcdk_asio_node_t *_node_new(abcdk_asio_t *ctx)
+static abcdk_stcp_node_t *_node_new(abcdk_stcp_t *ctx)
 {
     h2_node_t *http_p = NULL;
-    abcdk_asio_node_t *node_new;
+    abcdk_stcp_node_t *node_new;
 
-    node_new = abcdk_asio_alloc(ctx, sizeof(h2_node_t),_node_destroy_cb);
+    node_new = abcdk_stcp_alloc(ctx, sizeof(h2_node_t),_node_destroy_cb);
 
-    http_p = (h2_node_t *)abcdk_asio_get_userdata(node_new);
+    http_p = (h2_node_t *)abcdk_stcp_get_userdata(node_new);
 
     http_p->ctx = ctx;
 
     return node_new;
 }
 
-static void _prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
+static void _prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
     h2_node_t *listen_p = NULL, *node_new_p = NULL;
-    abcdk_asio_node_t *node_new;
+    abcdk_stcp_node_t *node_new;
 
-    listen_p = (h2_node_t *)abcdk_asio_get_userdata(listen);
+    listen_p = (h2_node_t *)abcdk_stcp_get_userdata(listen);
 
     node_new = _node_new(listen_p->ctx);
-    node_new_p = (h2_node_t *)abcdk_asio_get_userdata(node_new);
+    node_new_p = (h2_node_t *)abcdk_stcp_get_userdata(node_new);
 
     if(listen_p->ssl_ctx)
-        abcdk_asio_upgrade2openssl(node_new,listen_p->ssl_ctx,1);
+        abcdk_stcp_upgrade2openssl(node_new,listen_p->ssl_ctx,1);
 
     // 初始化nghttp2回调结构
     nghttp2_session_callbacks_new(&node_new_p->callbacks);
@@ -205,13 +205,13 @@ static void _prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
     *node = node_new;
 }
 
-static void _accept_event(abcdk_asio_node_t *node, int *result)
+static void _accept_event(abcdk_stcp_node_t *node, int *result)
 {
     /*接受新的连接。*/
     *result = 0;
 }
 
-static void _connect_event(abcdk_asio_node_t *node)
+static void _connect_event(abcdk_stcp_node_t *node)
 {
     h2_node_t *http_p = NULL;
     SSL *ssl_p = NULL;
@@ -219,12 +219,12 @@ static void _connect_event(abcdk_asio_node_t *node)
     int ver_l;
     int chk;
 
-    http_p = (h2_node_t *)abcdk_asio_get_userdata(node);
+    http_p = (h2_node_t *)abcdk_stcp_get_userdata(node);
 
     /*设置默认协议。*/
     http_p->protocol = 1;
 
-    ssl_p = abcdk_asio_openssl_ctx(node);
+    ssl_p = abcdk_stcp_openssl_ctx(node);
     if (!ssl_p)
         goto final;
 
@@ -234,7 +234,7 @@ static void _connect_event(abcdk_asio_node_t *node)
     if (chk != X509_V_OK)
     {
         /*修改超时，使用超时检测器关闭。*/
-        abcdk_asio_set_timeout(node, 1);
+        abcdk_stcp_set_timeout(node, 1);
         return;
     }
 
@@ -254,52 +254,52 @@ static void _connect_event(abcdk_asio_node_t *node)
 final:
 
     /*已连接到远端，注册读写事件。*/
-    abcdk_asio_recv_watch(node);
-    abcdk_asio_send_watch(node);
+    abcdk_stcp_recv_watch(node);
+    abcdk_stcp_send_watch(node);
 }
 
-static void _output_event(abcdk_asio_node_t *node)
+static void _output_event(abcdk_stcp_node_t *node)
 {
     h2_node_t *http_p = NULL;
 
-    http_p = (h2_node_t *)abcdk_asio_get_userdata(node);
+    http_p = (h2_node_t *)abcdk_stcp_get_userdata(node);
 
     /*把缓存数据串行化，并通过回调发送出去。*/
     nghttp2_session_send(http_p->session);
 }
 
-static void _close_event(abcdk_asio_node_t *node)
+static void _close_event(abcdk_stcp_node_t *node)
 {
 }
 
-static void _event_cb(abcdk_asio_node_t *node, uint32_t event, int *result)
+static void _event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
 {
     switch (event)
     {
-    case ABCDK_ASIO_EVENT_ACCEPT:
+    case ABCDK_STCP_EVENT_ACCEPT:
         _accept_event(node, result);
         break;
-    case ABCDK_ASIO_EVENT_CONNECT:
+    case ABCDK_STCP_EVENT_CONNECT:
         _connect_event(node);
         break;
-    case ABCDK_ASIO_EVENT_INPUT:
+    case ABCDK_STCP_EVENT_INPUT:
         break;
-    case ABCDK_ASIO_EVENT_OUTPUT:
+    case ABCDK_STCP_EVENT_OUTPUT:
         _output_event(node);
         break;
-    case ABCDK_ASIO_EVENT_CLOSE:
-    case ABCDK_ASIO_EVENT_INTERRUPT:
+    case ABCDK_STCP_EVENT_CLOSE:
+    case ABCDK_STCP_EVENT_INTERRUPT:
     default:
         _close_event(node);
         break;
     }
 }
 
-static void _request_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _request_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     h2_node_t *http_p = NULL;
 
-    http_p = (h2_node_t *)abcdk_asio_get_userdata(node);
+    http_p = (h2_node_t *)abcdk_stcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -307,7 +307,7 @@ static void _request_cb(abcdk_asio_node_t *node, const void *data, size_t size, 
     if (http_p->protocol == 1)
     {
         http_p->protocol = 2;
-        abcdk_asio_post_format(node,10000,
+        abcdk_stcp_post_format(node,10000,
                                    "HTTP/1.1 101 Switching Protocols\r\n"
                                    "Connection: Upgrade\r\n"
                                    "Upgrade: h2c\r\n\r\n");
@@ -348,8 +348,8 @@ int _test_http2_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 
 int abcdk_test_http2(abcdk_option_t *args)
 {
-    abcdk_asio_t *ctx;
-    abcdk_asio_node_t *listen_node;
+    abcdk_stcp_t *ctx;
+    abcdk_stcp_node_t *listen_node;
     abcdk_sockaddr_t listen_addr;
 
     const char *cert_file = abcdk_option_get(args, "--cert-file", 0, NULL);
@@ -362,20 +362,20 @@ int abcdk_test_http2(abcdk_option_t *args)
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
-    ctx = abcdk_asio_start(10, -1);
+    ctx = abcdk_stcp_start(10, -1);
     listen_node = _node_new(ctx);
 
     h2_node_t *http_p = NULL;
 
-    http_p = (h2_node_t *)abcdk_asio_get_userdata(listen_node);
+    http_p = (h2_node_t *)abcdk_stcp_get_userdata(listen_node);
 
     if(http_p->ssl_ctx = ssl_ctx)
-        abcdk_asio_upgrade2openssl(listen_node,ssl_ctx,1);
+        abcdk_stcp_upgrade2openssl(listen_node,ssl_ctx,1);
 
     abcdk_sockaddr_from_string(&listen_addr, "0.0.0.0:3333", 0);
 
-    abcdk_asio_callback_t cb = {_prepare_cb, _event_cb, _request_cb};
-    abcdk_asio_listen(listen_node, &listen_addr, &cb);
+    abcdk_stcp_callback_t cb = {_prepare_cb, _event_cb, _request_cb};
+    abcdk_stcp_listen(listen_node, &listen_addr, &cb);
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);

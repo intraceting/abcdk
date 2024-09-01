@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_ASIO_HTTPS_H
-#define ABCDK_ASIO_HTTPS_H
+#ifndef ABCDK_NET_HTTPS_H
+#define ABCDK_NET_HTTPS_H
 
 #include "abcdk/util/trace.h"
 #include "abcdk/util/receiver.h"
@@ -14,7 +14,7 @@
 #include "abcdk/util/random.h"
 #include "abcdk/util/mmap.h"
 #include "abcdk/http/util.h"
-#include "abcdk/asio/asio.h"
+#include "abcdk/net/stcp.h"
 
 
 
@@ -314,4 +314,4 @@ int abcdk_https_check_auth(abcdk_https_stream_t *stream);
 
 __END_DECLS
 
-#endif // ABCDK_ASIO_HTTPS_H
+#endif // ABCDK_NET_HTTPS_H

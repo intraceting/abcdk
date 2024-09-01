@@ -4,7 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/asio/tipc.h"
+#include "abcdk/net/tipc.h"
 
 #define ABCDK_TIPC_SLAVE_MAX  9999
 #define ABCDK_TIPC_TOPIC_MAX  9999
@@ -16,7 +16,7 @@ struct _abcdk_tipc
     abcdk_tipc_config_t cfg;
 
     /*通讯IO。*/
-    abcdk_asio_t *io_ctx;
+    abcdk_stcp_t *io_ctx;
 
     /*重连定时器。*/
     abcdk_timer_t *reconnect_timer;
@@ -81,10 +81,10 @@ typedef struct _abcdk_tipc_slave
     int state;
 
     /*被动连接的管道。*/
-    abcdk_asio_node_t *pipe1;
+    abcdk_stcp_node_t *pipe1;
 
     /*主动连接的管道。*/
-    abcdk_asio_node_t *pipe2;
+    abcdk_stcp_node_t *pipe2;
 
     /*订阅主题列表。*/
     uint8_t topic_list[ABCDK_TIPC_TOPIC_MAX/8];
@@ -101,8 +101,8 @@ static void _abcdk_tipc_slave_free(abcdk_tipc_slave_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_asio_unref(&ctx_p->pipe1);
-    abcdk_asio_unref(&ctx_p->pipe2);
+    abcdk_stcp_unref(&ctx_p->pipe1);
+    abcdk_stcp_unref(&ctx_p->pipe2);
     abcdk_heap_free(ctx_p);
 }
 
@@ -123,13 +123,13 @@ static abcdk_tipc_slave_t *_abcdk_tipc_slave_alloc(uint64_t id)
     return ctx;
 }
 
-static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe)
+static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe)
 {
     abcdk_tipc_slave_t *slave_ctx_p;
     abcdk_tipc_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(pipe);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(pipe);
 
     /*远程的ID不能与自己的ID相同。*/
     if (ctx->cfg.id == node_ctx_p->id)
@@ -162,7 +162,7 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe
     {
         if (slave_ctx_p->pipe1 == NULL)
         {
-            slave_ctx_p->pipe1 = abcdk_asio_refer(pipe);
+            slave_ctx_p->pipe1 = abcdk_stcp_refer(pipe);
         }
         else if (slave_ctx_p->pipe1 != pipe)
         {
@@ -174,7 +174,7 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe
     {
         if (slave_ctx_p->pipe2 == NULL)
         {
-            slave_ctx_p->pipe2 = abcdk_asio_refer(pipe);
+            slave_ctx_p->pipe2 = abcdk_stcp_refer(pipe);
         }
         else if (slave_ctx_p->pipe2 != pipe)
         {
@@ -188,15 +188,15 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe
     {
         if (ctx->cfg.id > node_ctx_p->id)
         {
-            abcdk_asio_set_timeout(slave_ctx_p->pipe1, 1);
-            abcdk_asio_unref(&slave_ctx_p->pipe1);
+            abcdk_stcp_set_timeout(slave_ctx_p->pipe1, 1);
+            abcdk_stcp_unref(&slave_ctx_p->pipe1);
 
             slave_ctx_p->flag = 2;
         }
         else
         {
-            abcdk_asio_set_timeout(slave_ctx_p->pipe2, 1);
-            abcdk_asio_unref(&slave_ctx_p->pipe2);
+            abcdk_stcp_set_timeout(slave_ctx_p->pipe2, 1);
+            abcdk_stcp_unref(&slave_ctx_p->pipe2);
 
             slave_ctx_p->flag = 1;
         }
@@ -213,14 +213,14 @@ END:
 /*
  * 如果节点存在返回可用的管道数量，否则返回一个负值。
 */
-static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asio_node_t *pipe)
+static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe)
 {
     abcdk_object_t *slave_p;
     abcdk_tipc_slave_t *slave_ctx_p;
     abcdk_tipc_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(pipe);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(pipe);
 
     /*可能还未初始化。*/
     if(node_ctx_p->id <= 0 || node_ctx_p->id >=ABCDK_TIPC_SLAVE_MAX)
@@ -244,11 +244,11 @@ static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_asio_node_t *pi
 
     if (slave_ctx_p->pipe1 == pipe)
     {
-        abcdk_asio_unref(&slave_ctx_p->pipe1);
+        abcdk_stcp_unref(&slave_ctx_p->pipe1);
     }
     else if (slave_ctx_p->pipe2 == pipe)
     {
-        abcdk_asio_unref(&slave_ctx_p->pipe2);
+        abcdk_stcp_unref(&slave_ctx_p->pipe2);
     }
 
     /*还剩几个。*/
@@ -264,9 +264,9 @@ END:
     return chk;
 }
 
-static abcdk_asio_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint64_t id)
+static abcdk_stcp_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint64_t id)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     abcdk_tipc_slave_t *slave_ctx_p = NULL;
 
     abcdk_mutex_lock(ctx->slave_mutex, 1);
@@ -283,7 +283,7 @@ static abcdk_asio_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint64_t
 
     /*增加引用计数。*/
     if(node_p)
-        node_p = abcdk_asio_refer(node_p);
+        node_p = abcdk_stcp_refer(node_p);
 
 END:
 
@@ -363,9 +363,9 @@ END:
     return chk;
 }
 
-static abcdk_asio_node_t *_abcdk_tipc_slave_topic_find_pipe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic)
+static abcdk_stcp_node_t *_abcdk_tipc_slave_topic_find_pipe(abcdk_tipc_t *ctx,uint64_t id,uint64_t topic)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     abcdk_tipc_slave_t *slave_ctx_p = NULL;
     int chk = -1;
 
@@ -387,7 +387,7 @@ static abcdk_asio_node_t *_abcdk_tipc_slave_topic_find_pipe(abcdk_tipc_t *ctx,ui
 
     /*增加引用计数。*/
     if(node_p)
-        node_p = abcdk_asio_refer(node_p);
+        node_p = abcdk_stcp_refer(node_p);
 
 END:
 
@@ -443,7 +443,7 @@ void abcdk_tipc_destroy(abcdk_tipc_t **ctx)
     *ctx = NULL;
 
     abcdk_timer_destroy(&ctx_p->reconnect_timer);
-    abcdk_asio_stop(&ctx_p->io_ctx);
+    abcdk_stcp_stop(&ctx_p->io_ctx);
     abcdk_mutex_destroy(&ctx_p->slave_mutex);
     abcdk_mutex_destroy(&ctx_p->topic_mutex);
 
@@ -466,7 +466,7 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
 
     ctx->cfg = *cfg;
 
-    ctx->io_ctx = abcdk_asio_start(ABCDK_TIPC_SLAVE_MAX*2+10, -1);
+    ctx->io_ctx = abcdk_stcp_start(ABCDK_TIPC_SLAVE_MAX*2+10, -1);
     memset(ctx->slave_list,0,sizeof(abcdk_tipc_slave_t*)* ABCDK_ARRAY_SIZE(ctx->slave_list));
     ctx->slave_mutex = abcdk_mutex_create();
     ctx->topic_mutex = abcdk_mutex_create();
@@ -504,16 +504,16 @@ static void _abcdk_tipc_node_waiter_destroy_cb(void *msg)
     abcdk_object_unref(&obj_p);
 }
 
-static abcdk_asio_node_t *_abcdk_tipc_node_create(abcdk_tipc_t *ctx,int flag)
+static abcdk_stcp_node_t *_abcdk_tipc_node_create(abcdk_tipc_t *ctx,int flag)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_tipc_node_t *node_ctx_p;
 
-    node_p = abcdk_asio_alloc(ctx->io_ctx, sizeof(abcdk_tipc_node_t), _abcdk_tipc_node_destroy_cb);
+    node_p = abcdk_stcp_alloc(ctx->io_ctx, sizeof(abcdk_tipc_node_t), _abcdk_tipc_node_destroy_cb);
     if (!node_p)
         return NULL;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->father = ctx;
     node_ctx_p->flag = flag;
@@ -524,32 +524,32 @@ static abcdk_asio_node_t *_abcdk_tipc_node_create(abcdk_tipc_t *ctx,int flag)
     return node_p;
 }
 
-static void _abcdk_tipc_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
+static void _abcdk_tipc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_tipc_node_t *listen_ctx_p, *node_ctx_p;
     int chk;
 
-    listen_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(listen);
+    listen_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(listen);
 
     node_p = _abcdk_tipc_node_create(listen_ctx_p->father,1);
     if (!node_p)
         return;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
     /*准备完毕，返回。*/
     *node = node_p;
 }
 
-static void _abcdk_tipc_event_accept(abcdk_asio_node_t *node, int *result)
+static void _abcdk_tipc_event_accept(abcdk_stcp_node_t *node, int *result)
 {
     abcdk_tipc_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_asio_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
+    abcdk_stcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
     /*默认：允许。*/
     *result = 0;
@@ -558,56 +558,56 @@ static void _abcdk_tipc_event_accept(abcdk_asio_node_t *node, int *result)
         node_ctx_p->father->cfg.accept_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->remote_addr, result);
 
     if (*result != 0)
-        abcdk_asio_trace_output(node,LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
+        abcdk_stcp_trace_output(node,LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
 }
 
-static int _abcdk_tipc_post_register(abcdk_asio_node_t *node,int rsp);
+static int _abcdk_tipc_post_register(abcdk_stcp_node_t *node,int rsp);
 
 
-static void _abcdk_tipc_event_connect(abcdk_asio_node_t *node)
+static void _abcdk_tipc_event_connect(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     SSL *ssl_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*设置超时。*/
-    abcdk_asio_set_timeout(node, 24 * 3600 * 1000);
+    abcdk_stcp_set_timeout(node, 24 * 3600 * 1000);
 
     /*发送注册消息。*/
     if (node_ctx_p->flag == 2)
         _abcdk_tipc_post_register(node,0);
     
     /*已连接到远端，注册读写事件。*/
-    abcdk_asio_recv_watch(node);
-    abcdk_asio_send_watch(node);
+    abcdk_stcp_recv_watch(node);
+    abcdk_stcp_send_watch(node);
 }
 
-static void _abcdk_tipc_event_output(abcdk_asio_node_t *node)
+static void _abcdk_tipc_event_output(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 }
 
-static void _abcdk_tipc_event_close(abcdk_asio_node_t *node)
+static void _abcdk_tipc_event_close(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     SSL *ssl_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_asio_trace_output(node,LOG_INFO, "监听关闭，忽略。");
+        abcdk_stcp_trace_output(node,LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*取消此链路上的所有等待的。*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);
@@ -625,48 +625,48 @@ static void _abcdk_tipc_event_close(abcdk_asio_node_t *node)
 
 }
 
-static void _abcdk_tipc_event_cb(abcdk_asio_node_t *node, uint32_t event, int *result)
+static void _abcdk_tipc_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
 {
     abcdk_tipc_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     if (!node_ctx_p->remote_addr[0])
-        abcdk_asio_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
+        abcdk_stcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
     if (!node_ctx_p->local_addr[0])
-        abcdk_asio_get_sockaddr_str(node, node_ctx_p->local_addr, NULL);
+        abcdk_stcp_get_sockaddr_str(node, node_ctx_p->local_addr, NULL);
 
-    if (event == ABCDK_ASIO_EVENT_ACCEPT)
+    if (event == ABCDK_STCP_EVENT_ACCEPT)
     {
         _abcdk_tipc_event_accept(node, result);
     }
-    else if (event == ABCDK_ASIO_EVENT_CONNECT)
+    else if (event == ABCDK_STCP_EVENT_CONNECT)
     {
         _abcdk_tipc_event_connect(node);
     }
-    else if (event == ABCDK_ASIO_EVENT_INPUT)
+    else if (event == ABCDK_STCP_EVENT_INPUT)
     {
     }
-    else if (event == ABCDK_ASIO_EVENT_OUTPUT)
+    else if (event == ABCDK_STCP_EVENT_OUTPUT)
     {
         _abcdk_tipc_event_output(node);
     }
-    else if (event == ABCDK_ASIO_EVENT_CLOSE || event == ABCDK_ASIO_EVENT_INTERRUPT)
+    else if (event == ABCDK_STCP_EVENT_CLOSE || event == ABCDK_STCP_EVENT_INTERRUPT)
     {
         _abcdk_tipc_event_close(node);
     }
 }
 
-static void _abcdk_tipc_process(abcdk_asio_node_t *node);
+static void _abcdk_tipc_process(abcdk_stcp_node_t *node);
 
-static void _abcdk_tipc_input_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_tipc_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_tipc_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -696,15 +696,15 @@ static void _abcdk_tipc_input_cb(abcdk_asio_node_t *node, const void *data, size
 
 ERR:
 
-    abcdk_asio_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, 1);
 }
 
 
 int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_tipc_node_t *node_ctx_p;
-    abcdk_asio_config_t asio_cfg = {0};
+    abcdk_stcp_config_t asio_cfg = {0};
     int chk;
 
     assert(ctx != NULL && addr != NULL);
@@ -713,7 +713,7 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     if (!node_p)
         return -1;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
     asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
     asio_cfg.pki_ca_file = ctx->cfg.pki_ca_file;
@@ -728,8 +728,8 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
     asio_cfg.input_cb = _abcdk_tipc_input_cb;
 
-    chk = abcdk_asio_listen(node_p, addr, &asio_cfg);
-    abcdk_asio_unref(&node_p);
+    chk = abcdk_stcp_listen(node_p, addr, &asio_cfg);
+    abcdk_stcp_unref(&node_p);
     if (chk != 0)
         return -3;
 
@@ -738,10 +738,10 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
 
 int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_sockaddr_t addr = {0};
-    abcdk_asio_config_t asio_cfg = {0};
+    abcdk_stcp_config_t asio_cfg = {0};
     int chk;
 
     assert(ctx != NULL && location != NULL && id > 0 && id < ABCDK_TIPC_SLAVE_MAX);
@@ -758,7 +758,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     if (!node_p)
         return -1;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->id = id;
     strncpy(node_ctx_p->location,location,NAME_MAX);
@@ -776,21 +776,21 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
     asio_cfg.input_cb = _abcdk_tipc_input_cb;
 
-    chk = abcdk_asio_connect(node_p, &addr, &asio_cfg);
-    abcdk_asio_unref(&node_p);
+    chk = abcdk_stcp_connect(node_p, &addr, &asio_cfg);
+    abcdk_stcp_unref(&node_p);
     if (chk != 0)
         return -3;
 
     return 0; 
 }
 
-static int _abcdk_tipc_post_register(abcdk_asio_node_t *node,int rsp)
+static int _abcdk_tipc_post_register(abcdk_stcp_node_t *node,int rsp)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
 
     /*
@@ -812,7 +812,7 @@ static int _abcdk_tipc_post_register(abcdk_asio_node_t *node,int rsp)
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 40, 64, node_ctx_p->father->cfg.id);
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 104, 64, node_ctx_p->id);
 
-    chk = abcdk_asio_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p);
     if(chk == 0)
         return 0;
 
@@ -820,7 +820,7 @@ static int _abcdk_tipc_post_register(abcdk_asio_node_t *node,int rsp)
     return -2;
 }
 
-static void _abcdk_tipc_process_register_req(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process_register_req(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -828,7 +828,7 @@ static void _abcdk_tipc_process_register_req(abcdk_asio_node_t *node)
     uint64_t myid;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -857,11 +857,11 @@ static void _abcdk_tipc_process_register_req(abcdk_asio_node_t *node)
         abcdk_trace_output(LOG_WARNING,"本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu)，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
     }
 
-    abcdk_asio_set_timeout(node,1);
+    abcdk_stcp_set_timeout(node,1);
 }
 
 
-static void _abcdk_tipc_process_register_rsp(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process_register_rsp(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -869,7 +869,7 @@ static void _abcdk_tipc_process_register_rsp(abcdk_asio_node_t *node)
     uint64_t myid;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -878,13 +878,13 @@ static void _abcdk_tipc_process_register_rsp(abcdk_asio_node_t *node)
     _abcdk_tipc_slave_register(node_ctx_p->father, node);
 }
 
-static int _abcdk_tipc_post_message(abcdk_asio_node_t *node, uint64_t rsp, uint64_t mid, const void *data, size_t size)
+static int _abcdk_tipc_post_message(abcdk_stcp_node_t *node, uint64_t rsp, uint64_t mid, const void *data, size_t size)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     /*
      * |Length  |CMD    |MID     |Data    |
@@ -907,7 +907,7 @@ static int _abcdk_tipc_post_message(abcdk_asio_node_t *node, uint64_t rsp, uint6
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, mid);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
-    chk = abcdk_asio_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p);
     if (chk == 0)
         return 0;
 
@@ -915,7 +915,7 @@ static int _abcdk_tipc_post_message(abcdk_asio_node_t *node, uint64_t rsp, uint6
     return -2;
 }
 
-static void _abcdk_tipc_process_message_req(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process_message_req(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -924,7 +924,7 @@ static void _abcdk_tipc_process_message_req(abcdk_asio_node_t *node)
     void *data_p;
     size_t data_l;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -936,7 +936,7 @@ static void _abcdk_tipc_process_message_req(abcdk_asio_node_t *node)
     node_ctx_p->father->cfg.request_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->id, msg_mid, data_p, data_l);
 }
 
-static void _abcdk_tipc_process_message_rsp(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process_message_rsp(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -945,7 +945,7 @@ static void _abcdk_tipc_process_message_rsp(abcdk_asio_node_t *node)
     abcdk_object_t *rsp_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -961,13 +961,13 @@ static void _abcdk_tipc_process_message_rsp(abcdk_asio_node_t *node)
         abcdk_object_unref(&rsp_p);
 }
 
-static int _abcdk_tipc_post_subscribe(abcdk_asio_node_t *node, uint64_t topic,int unset)
+static int _abcdk_tipc_post_subscribe(abcdk_stcp_node_t *node, uint64_t topic,int unset)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     /*
      * |Length  |CMD    |TOPIC    |UNSET  |
@@ -988,7 +988,7 @@ static int _abcdk_tipc_post_subscribe(abcdk_asio_node_t *node, uint64_t topic,in
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 104, 8, unset);
 
-    chk = abcdk_asio_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p);
     if (chk == 0)
         return 0;
 
@@ -996,7 +996,7 @@ static int _abcdk_tipc_post_subscribe(abcdk_asio_node_t *node, uint64_t topic,in
     return -2;
 }
 
-static void _abcdk_tipc_process_subscribe(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process_subscribe(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -1004,7 +1004,7 @@ static void _abcdk_tipc_process_subscribe(abcdk_asio_node_t *node)
     uint64_t topic;
     int unset;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -1018,13 +1018,13 @@ static void _abcdk_tipc_process_subscribe(abcdk_asio_node_t *node)
     abcdk_trace_output(LOG_INFO,"远端(ID=%llu)%s主题(%llu)。",node_ctx_p->id,(unset?"取订":"订阅"), topic);
 }
 
-static int _abcdk_tipc_post_publish(abcdk_asio_node_t *node, uint64_t topic, const void *data, size_t size)
+static int _abcdk_tipc_post_publish(abcdk_stcp_node_t *node, uint64_t topic, const void *data, size_t size)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     /*
      * |Length  |CMD    |TOPIC   |Data    |
@@ -1047,7 +1047,7 @@ static int _abcdk_tipc_post_publish(abcdk_asio_node_t *node, uint64_t topic, con
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
-    chk = abcdk_asio_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p);
     if (chk == 0)
         return 0;
 
@@ -1055,7 +1055,7 @@ static int _abcdk_tipc_post_publish(abcdk_asio_node_t *node, uint64_t topic, con
     return -2;
 }
 
-static void _abcdk_tipc_process_publish(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process_publish(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -1063,7 +1063,7 @@ static void _abcdk_tipc_process_publish(abcdk_asio_node_t *node)
     uint64_t topic;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -1083,7 +1083,7 @@ static void _abcdk_tipc_process_publish(abcdk_asio_node_t *node)
     }
 }
 
-static void _abcdk_tipc_process(abcdk_asio_node_t *node)
+static void _abcdk_tipc_process(abcdk_stcp_node_t *node)
 {
     abcdk_tipc_node_t *node_ctx_p;
     const void *req_data;
@@ -1092,7 +1092,7 @@ static void _abcdk_tipc_process(abcdk_asio_node_t *node)
     uint8_t cmd;
     int chk;
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
@@ -1128,7 +1128,7 @@ static void _abcdk_tipc_process(abcdk_asio_node_t *node)
 
 int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t size, abcdk_object_t **rsp)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     abcdk_tipc_node_t *node_ctx_p = NULL;
     abcdk_object_t *rsp_p = NULL;
     uint64_t mid;
@@ -1143,7 +1143,7 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t 
         goto END;
     }
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
     mid = abcdk_atomic_fetch_and_add(&ctx->mid_next, 1);
 
@@ -1180,13 +1180,13 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t 
 
 END:
 
-    abcdk_asio_unref(&node_p);
+    abcdk_stcp_unref(&node_p);
     return chk;
 }
 
 int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *data,size_t size)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     abcdk_tipc_node_t *node_ctx_p = NULL;
     int chk;
 
@@ -1199,7 +1199,7 @@ int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *
         goto END;
     }
 
-    node_ctx_p = (abcdk_tipc_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
     chk = _abcdk_tipc_post_message(node_p, 1, mid, data, size);
     if (chk != 0)
@@ -1212,13 +1212,13 @@ int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *
 
 END:
 
-    abcdk_asio_unref(&node_p);
+    abcdk_stcp_unref(&node_p);
     return chk;
 }
 
 int abcdk_tipc_subscribe(abcdk_tipc_t *ctx, uint64_t topic, int unset)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     int chk;
 
     assert(ctx != NULL && topic > 0 && topic < ABCDK_TIPC_TOPIC_MAX);
@@ -1233,7 +1233,7 @@ int abcdk_tipc_subscribe(abcdk_tipc_t *ctx, uint64_t topic, int unset)
             continue;
 
         _abcdk_tipc_post_subscribe(node_p, topic, unset);
-        abcdk_asio_unref(&node_p);
+        abcdk_stcp_unref(&node_p);
     }
 
     return 0;
@@ -1241,7 +1241,7 @@ int abcdk_tipc_subscribe(abcdk_tipc_t *ctx, uint64_t topic, int unset)
 
 int abcdk_tipc_publish(abcdk_tipc_t *ctx, uint64_t topic, const char *data, size_t size)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     int chk;
 
     assert(ctx != NULL && topic > 0 && topic < ABCDK_TIPC_TOPIC_MAX && data != NULL && size > 0);
@@ -1254,7 +1254,7 @@ int abcdk_tipc_publish(abcdk_tipc_t *ctx, uint64_t topic, const char *data, size
             continue;
 
         _abcdk_tipc_post_publish(node_p, topic, data, size);
-        abcdk_asio_unref(&node_p);
+        abcdk_stcp_unref(&node_p);
     }
 
     return 0;

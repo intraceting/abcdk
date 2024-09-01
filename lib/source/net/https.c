@@ -4,7 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/asio/https.h"
+#include "abcdk/net/https.h"
 
 #ifdef HAVE_NGHTTP2
 #include <nghttp2/nghttp2.h>
@@ -18,7 +18,7 @@
 struct _abcdk_https
 {
     /*IO对象*/
-    abcdk_asio_t *io_ctx;
+    abcdk_stcp_t *io_ctx;
     
 }; // abcdk_https_t;
 
@@ -79,7 +79,7 @@ typedef struct _abcdk_https_stream_internal
     locale_t loc_ctx;
 
     /*IO节点。*/
-    abcdk_asio_node_t *io_node;
+    abcdk_stcp_node_t *io_node;
 
     /*上行数据。*/
     abcdk_receiver_t *updata;
@@ -127,12 +127,12 @@ static int64_t _abcdk_https_clock(uint8_t precision)
 
 static void _abcdk_https_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
-    abcdk_asio_node_t *io_node_p;
+    abcdk_stcp_node_t *io_node_p;
     abcdk_https_node_t *node_ctx_p;
     abcdk_https_stream_internal_t *stream_ctx_p;
 
-    io_node_p = (abcdk_asio_node_t *)opaque;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(io_node_p);
+    io_node_p = (abcdk_stcp_node_t *)opaque;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_https_stream_internal_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     /*通知流执行析构。*/
@@ -149,7 +149,7 @@ static void _abcdk_https_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
     abcdk_object_unref(&stream_ctx_p->host);
     abcdk_object_unref(&stream_ctx_p->scheme);
     abcdk_stream_destroy(&stream_ctx_p->h2_out);
-    abcdk_asio_unref(&stream_ctx_p->io_node);
+    abcdk_stcp_unref(&stream_ctx_p->io_node);
     abcdk_object_unref(&stream_ctx_p->scheme);
     abcdk_object_unref(&stream_ctx_p->h1_rsp_hdrs);
     abcdk_option_free(&stream_ctx_p->rsp_hdr);
@@ -157,17 +157,17 @@ static void _abcdk_https_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
 
 static void _abcdk_https_stream_construct_cb(abcdk_object_t *obj, void *opaque)
 {
-    abcdk_asio_node_t *io_node_p;
+    abcdk_stcp_node_t *io_node_p;
     abcdk_https_node_t *node_ctx_p;
     abcdk_https_stream_internal_t *stream_ctx_p;
     
-    io_node_p = (abcdk_asio_node_t *)opaque;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(io_node_p);
+    io_node_p = (abcdk_stcp_node_t *)opaque;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_https_stream_internal_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     stream_ctx_p->id = *((int *)obj->pptrs[ABCDK_MAP_KEY]);
     stream_ctx_p->protocol = 1;
-    stream_ctx_p->io_node = abcdk_asio_refer(io_node_p);
+    stream_ctx_p->io_node = abcdk_stcp_refer(io_node_p);
     stream_ctx_p->h2_out = abcdk_stream_create();
     stream_ctx_p->loc_ctx = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
@@ -178,12 +178,12 @@ static void _abcdk_https_stream_construct_cb(abcdk_object_t *obj, void *opaque)
 
 static void _abcdk_https_stream_remove_cb(abcdk_object_t *stream, void *opaque)
 {
-    abcdk_asio_node_t *io_node_p;
+    abcdk_stcp_node_t *io_node_p;
     abcdk_https_node_t *node_ctx_p;
     abcdk_https_stream_internal_t *stream_ctx_p;
 
-    io_node_p = (abcdk_asio_node_t *)opaque;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(io_node_p);
+    io_node_p = (abcdk_stcp_node_t *)opaque;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
 
     /*通知流已关闭。*/
@@ -219,7 +219,7 @@ static void _abcdk_https_log(abcdk_object_t *stream, uint32_t status)
     const char *user_agent_p,*refer_p;
 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     /*只记录HTTP日志。*/
     if (node_ctx_p->protocol != 1 && node_ctx_p->protocol != 2)
@@ -227,14 +227,14 @@ static void _abcdk_https_log(abcdk_object_t *stream, uint32_t status)
 
     if (status)
     {
-        abcdk_asio_trace_output(stream_ctx_p->io_node, LOG_INFO, "'%s'\n",abcdk_http_status_desc(status));
+        abcdk_stcp_trace_output(stream_ctx_p->io_node, LOG_INFO, "'%s'\n",abcdk_http_status_desc(status));
     }
     else
     {
         user_agent_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"User-Agent",':');
         refer_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"Referer",':');
 
-        abcdk_asio_trace_output(stream_ctx_p->io_node, LOG_INFO, "'%s' '%s' '%s' '%s' '%s'\n",
+        abcdk_stcp_trace_output(stream_ctx_p->io_node, LOG_INFO, "'%s' '%s' '%s' '%s' '%s'\n",
                                 node_ctx_p->remote_addr,
                                 stream_ctx_p->method->pstrs[0],
                                 stream_ctx_p->script->pstrs[0],
@@ -253,7 +253,7 @@ static void _abcdk_https_process(abcdk_object_t *stream)
     int chk;
 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     _abcdk_https_log(stream,0);
 
@@ -270,7 +270,7 @@ static void _abcdk_https_process_2(abcdk_object_t *stream)
     abcdk_https_stream_internal_t *stream_ctx_p;
 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (stream_ctx_p->protocol == 1)
     {
@@ -286,8 +286,8 @@ static void _abcdk_https_process_2(abcdk_object_t *stream)
 
 static int _abcdk_https_h2_frame_recv_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     abcdk_https_stream_internal_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     size_t remain = 0;
@@ -338,8 +338,8 @@ static int _abcdk_https_h2_frame_recv_cb(nghttp2_session *session, const nghttp2
 
 static int _abcdk_https_h2_data_chunk_recv_cb(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     abcdk_https_stream_internal_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     size_t remain = 0;
@@ -404,8 +404,8 @@ static int _abcdk_https_h2_header_cb(nghttp2_session *session, const nghttp2_fra
                                             const uint8_t *value, size_t valuelen,
                                             uint8_t flags, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     abcdk_https_stream_internal_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     int stream_id;
@@ -471,8 +471,8 @@ static int _abcdk_https_h2_header_cb(nghttp2_session *session, const nghttp2_fra
 
 static int _abcdk_https_h2_begin_headers_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     abcdk_https_stream_internal_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     int stream_id;
@@ -504,8 +504,8 @@ static int _abcdk_https_h2_begin_headers_cb(nghttp2_session *session, const nght
 
 static int _abcdk_https_h2_stream_close_cb(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     /*移除这个节点。*/
     abcdk_map_remove2(node_ctx_p->stream_map, &stream_id);
@@ -515,8 +515,8 @@ static int _abcdk_https_h2_stream_close_cb(nghttp2_session *session, int32_t str
 
 static ssize_t _abcdk_https_h2_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     int chk;
 
     /*记录活动时间。*/
@@ -532,7 +532,7 @@ static ssize_t _abcdk_https_h2_send_cb(nghttp2_session *session, const uint8_t *
 
     /*假设线路即将忙碌。*/
     node_ctx_p->h2_send_busy = 1; 
-    chk = abcdk_asio_post_buffer(node, data, length);
+    chk = abcdk_stcp_post_buffer(node, data, length);
     if (chk != 0)
         return NGHTTP2_ERR_EOF;
 
@@ -542,8 +542,8 @@ static ssize_t _abcdk_https_h2_send_cb(nghttp2_session *session, const uint8_t *
 static ssize_t _abcdk_https_h2_response_read_cb(nghttp2_session *session, int32_t stream_id, uint8_t *buf, size_t length,
                                                 uint32_t *data_flags, nghttp2_data_source *source, void *user_data)
 {
-    abcdk_asio_node_t *node = (abcdk_asio_node_t *)user_data;
-    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
+    abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     abcdk_https_stream_internal_t *stream_ctx_p;
     abcdk_object_t *stream_p;
     ssize_t rlen;
@@ -585,7 +585,7 @@ static void _abcdk_https_process_1(abcdk_object_t *stream)
     const char *line_p;
 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (stream_ctx_p->protocol == 1)
     {
@@ -602,7 +602,7 @@ static void _abcdk_https_process_1(abcdk_object_t *stream)
 
         stream_ctx_p->host = abcdk_object_copyfrom(line_p,strlen(line_p));
 
-        if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+        if (node_ctx_p->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
             stream_ctx_p->scheme = abcdk_object_copyfrom("https", 5);
         else
             stream_ctx_p->scheme = abcdk_object_copyfrom("http", 4);
@@ -618,11 +618,11 @@ static void _abcdk_https_process_1(abcdk_object_t *stream)
 
 ERR:
 
-    abcdk_asio_set_timeout(stream_ctx_p->io_node,1);
+    abcdk_stcp_set_timeout(stream_ctx_p->io_node,1);
 
 }
 
-static void _abcdk_https_request_1(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_https_request_1(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_https_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
@@ -631,7 +631,7 @@ static void _abcdk_https_request_1(abcdk_asio_node_t *node, const void *data, si
     const char *upgrade_val;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -687,15 +687,15 @@ static void _abcdk_https_request_1(abcdk_asio_node_t *node, const void *data, si
 
 ERR:
 
-    abcdk_asio_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, 1);
 }
 
-static void _abcdk_https_request_2(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_https_request_2(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_https_node_t *node_ctx_p;
     ssize_t chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -715,10 +715,10 @@ static void _abcdk_https_request_2(abcdk_asio_node_t *node, const void *data, si
 
 ERR:
 
-    abcdk_asio_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, 1);
 }
 
-static void _abcdk_https_output_1(abcdk_asio_node_t *node)
+static void _abcdk_https_output_1(abcdk_stcp_node_t *node)
 {
     abcdk_https_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
@@ -726,7 +726,7 @@ static void _abcdk_https_output_1(abcdk_asio_node_t *node)
     int stream_id = 0;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, 0);
     if (!stream_p)
@@ -740,12 +740,12 @@ static void _abcdk_https_output_1(abcdk_asio_node_t *node)
 }
 
 
-static void _abcdk_https_output_2(abcdk_asio_node_t *node)
+static void _abcdk_https_output_2(abcdk_stcp_node_t *node)
 {
     abcdk_https_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
 #ifdef NGHTTP2_H
 
@@ -763,30 +763,30 @@ static void _abcdk_https_output_2(abcdk_asio_node_t *node)
         chk = nghttp2_session_send(node_ctx_p->h2_handle);
         if (chk < 0)
         {
-            abcdk_asio_set_timeout(node, 1);
+            abcdk_stcp_set_timeout(node, 1);
             return;
         }
     }
 
     /*继续监听，尽可能快的发送数据到客户端。*/
-    abcdk_asio_send_watch(node);
+    abcdk_stcp_send_watch(node);
 
 #endif //NGHTTP2_H
 }
 
-static void _abcdk_https_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
+static void _abcdk_https_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *listen_ctx_p, *node_ctx_p;
     int chk;
 
-    listen_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(listen);
+    listen_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(listen);
 
     listen_ctx_p->cfg.session_prepare_cb(listen_ctx_p->cfg.opaque,(abcdk_https_session_t **)&node_p,(abcdk_https_session_t *)listen);
     if (!node_p)
         return;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->cfg = listen_ctx_p->cfg;
     node_ctx_p->flag = 1;
@@ -797,12 +797,12 @@ static void _abcdk_https_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t 
     *node = node_p;
 }
 
-static void _abcdk_https_event_accept(abcdk_asio_node_t *node, int *result)
+static void _abcdk_https_event_accept(abcdk_stcp_node_t *node, int *result)
 {
     abcdk_https_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
 
     /*默认：允许。*/
@@ -812,20 +812,20 @@ static void _abcdk_https_event_accept(abcdk_asio_node_t *node, int *result)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_https_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_asio_trace_output(node,LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_stcp_trace_output(node,LOG_INFO, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
-static void _abcdk_https_event_connect(abcdk_asio_node_t *node)
+static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
 {
     abcdk_https_node_t *node_ctx_p;
     char proto[256] = {0};
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
-    if (node_ctx_p->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    if (node_ctx_p->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
-        abcdk_asio_openssl_get_alpn_selected(node, proto);
+        abcdk_stcp_openssl_get_alpn_selected(node, proto);
         if (node_ctx_p->protocol == 0)
         {
             if (abcdk_strncmp("http", proto, 4, 0) == 0)
@@ -835,10 +835,10 @@ static void _abcdk_https_event_connect(abcdk_asio_node_t *node)
         }
     }
 
-    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
     
     /*设置超时。*/
-    abcdk_asio_set_timeout(node, 180 * 1000);
+    abcdk_stcp_set_timeout(node, 180 * 1000);
 
     /*如果未选择协议，则使用默认协议。*/
     if(node_ctx_p->protocol == 0)
@@ -872,15 +872,15 @@ static void _abcdk_https_event_connect(abcdk_asio_node_t *node)
         node_ctx_p->cfg.session_ready_cb(node_ctx_p->cfg.opaque, (abcdk_https_session_t*)node);
 
     /*已连接到远端，注册读写事件。*/
-    abcdk_asio_recv_watch(node);
-    abcdk_asio_send_watch(node);
+    abcdk_stcp_recv_watch(node);
+    abcdk_stcp_send_watch(node);
 }
 
-static void _abcdk_https_event_output(abcdk_asio_node_t *node)
+static void _abcdk_https_event_output(abcdk_stcp_node_t *node)
 {
     abcdk_https_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     if(node_ctx_p->protocol == 1)
     {
@@ -892,20 +892,20 @@ static void _abcdk_https_event_output(abcdk_asio_node_t *node)
     }
 }
 
-static void _abcdk_https_event_close(abcdk_asio_node_t *node)
+static void _abcdk_https_event_close(abcdk_stcp_node_t *node)
 {
     abcdk_https_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_asio_trace_output(node,LOG_INFO, "监听关闭，忽略。");
+        abcdk_stcp_trace_output(node,LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    abcdk_asio_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
     abcdk_map_destroy(&node_ctx_p->stream_map);
@@ -914,47 +914,47 @@ static void _abcdk_https_event_close(abcdk_asio_node_t *node)
         node_ctx_p->cfg.session_close_cb(node_ctx_p->cfg.opaque,(abcdk_https_session_t*)node);
 }
 
-static void _abcdk_https_event_cb(abcdk_asio_node_t *node, uint32_t event, int *result)
+static void _abcdk_https_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
 {
     abcdk_https_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     if(!node_ctx_p->remote_addr[0])
-        abcdk_asio_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
+        abcdk_stcp_get_sockaddr_str(node,NULL,node_ctx_p->remote_addr);
     if(!node_ctx_p->local_addr[0])
-        abcdk_asio_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
+        abcdk_stcp_get_sockaddr_str(node,node_ctx_p->local_addr,NULL);
 
 
-    if (event == ABCDK_ASIO_EVENT_ACCEPT)
+    if (event == ABCDK_STCP_EVENT_ACCEPT)
     {
         _abcdk_https_event_accept(node,result);
     }
-    else if (event == ABCDK_ASIO_EVENT_CONNECT)
+    else if (event == ABCDK_STCP_EVENT_CONNECT)
     {
         _abcdk_https_event_connect(node);
     }
-    else if (event == ABCDK_ASIO_EVENT_INPUT)
+    else if (event == ABCDK_STCP_EVENT_INPUT)
     {
     }
-    else if (event == ABCDK_ASIO_EVENT_OUTPUT)
+    else if (event == ABCDK_STCP_EVENT_OUTPUT)
     {
         _abcdk_https_event_output(node);
     }
-    else if (event == ABCDK_ASIO_EVENT_CLOSE || event == ABCDK_ASIO_EVENT_INTERRUPT)
+    else if (event == ABCDK_STCP_EVENT_CLOSE || event == ABCDK_STCP_EVENT_INTERRUPT)
     {
         _abcdk_https_event_close(node);
     }
 }
 
 
-static void _abcdk_https_input_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdk_https_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdk_https_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -971,28 +971,28 @@ static void _abcdk_https_input_cb(abcdk_asio_node_t *node, const void *data, siz
 
 void abcdk_https_session_unref(abcdk_https_session_t **session)
 {
-    abcdk_asio_unref((abcdk_asio_node_t**)session);
+    abcdk_stcp_unref((abcdk_stcp_node_t**)session);
 }
 
 abcdk_https_session_t *abcdk_https_session_refer(abcdk_https_session_t *src)
 {
-    return (abcdk_https_session_t*)abcdk_asio_refer((abcdk_asio_node_t*)src);
+    return (abcdk_https_session_t*)abcdk_stcp_refer((abcdk_stcp_node_t*)src);
 }
 
 abcdk_https_session_t *abcdk_https_session_alloc(abcdk_https_t *ctx)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *node_ctx_p;
     abcdk_object_t *stream_p;
     abcdk_https_stream_internal_t *stream_ctx_p;
 
     assert(ctx != NULL);
 
-    node_p = abcdk_asio_alloc(ctx->io_ctx, sizeof(abcdk_https_node_t), _abcdk_https_node_destroy_cb);
+    node_p = abcdk_stcp_alloc(ctx->io_ctx, sizeof(abcdk_https_node_t), _abcdk_https_node_destroy_cb);
     if (!node_p)
         return NULL;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->father = ctx;
     node_ctx_p->protocol = 0;
@@ -1016,27 +1016,27 @@ ERR:
 
 void *abcdk_https_session_get_userdata(abcdk_https_session_t *session)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *node_ctx_p;
 
     assert(session != NULL);
 
-    node_p = (abcdk_asio_node_t*)session;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_p = (abcdk_stcp_node_t*)session;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
     return node_ctx_p->userdata;
 }
 
 void *abcdk_https_session_set_userdata(abcdk_https_session_t *session,void *userdata)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *node_ctx_p;
     void *old_userdata;
 
     assert(session != NULL);
 
-    node_p = (abcdk_asio_node_t*)session;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_p = (abcdk_stcp_node_t*)session;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
     old_userdata = node_ctx_p->userdata;
     node_ctx_p->userdata = userdata;
@@ -1046,14 +1046,14 @@ void *abcdk_https_session_set_userdata(abcdk_https_session_t *session,void *user
 
 const char *abcdk_https_session_get_address(abcdk_https_session_t *session, int remote)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *node_ctx_p;
     void *old_userdata;
 
     assert(session != NULL);
 
-    node_p = (abcdk_asio_node_t *)session;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_p = (abcdk_stcp_node_t *)session;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
     if (remote)
         return node_ctx_p->remote_addr;
@@ -1063,33 +1063,33 @@ const char *abcdk_https_session_get_address(abcdk_https_session_t *session, int 
 
 void abcdk_https_session_set_timeout(abcdk_https_session_t *session,time_t timeout)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *node_ctx_p;
     void *old_userdata;
 
     assert(session != NULL && timeout >= 1);
 
-    node_p = (abcdk_asio_node_t*)session;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_p = (abcdk_stcp_node_t*)session;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
-    abcdk_asio_set_timeout(node_p,timeout * 1000);
+    abcdk_stcp_set_timeout(node_p,timeout * 1000);
 }
 
 
 int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *addr,abcdk_https_config_t *cfg)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdk_https_node_t *node_ctx_p;
     abcdk_https_stream_internal_t *stream_ctx_p;
-    abcdk_asio_config_t asio_cfg = {0};
+    abcdk_stcp_config_t asio_cfg = {0};
     int chk;
 
     assert(session != NULL && addr != NULL && cfg != NULL);
     assert(cfg->session_prepare_cb != NULL && cfg->stream_request_cb != NULL);
     assert(cfg->req_max_size > 1024);
 
-    node_p = (abcdk_asio_node_t*)session;
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(node_p);
+    node_p = (abcdk_stcp_node_t*)session;
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->cfg = *cfg;
     node_ctx_p->flag = 0;
@@ -1102,7 +1102,7 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     asio_cfg.pki_key_file = cfg->pki_key_file;
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
 
-    if (cfg->ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    if (cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
         /*set default HTTP1.1*/
         asio_cfg.pki_next_proto = "\x08http/1.1";
@@ -1121,7 +1121,7 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     asio_cfg.event_cb = _abcdk_https_event_cb;
     asio_cfg.input_cb = _abcdk_https_input_cb;
 
-    chk = abcdk_asio_listen(node_p,addr,&asio_cfg);
+    chk = abcdk_stcp_listen(node_p,addr,&asio_cfg);
     if(chk == 0)
         return 0;
 
@@ -1138,7 +1138,7 @@ void abcdk_https_destroy(abcdk_https_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_asio_stop(&ctx_p->io_ctx);
+    abcdk_stcp_stop(&ctx_p->io_ctx);
     abcdk_heap_free(ctx_p);
 }
 
@@ -1153,7 +1153,7 @@ abcdk_https_t *abcdk_https_create(int max,int cpu)
     if (!ctx)
         return NULL;
 
-    ctx->io_ctx = abcdk_asio_start(max, cpu);
+    ctx->io_ctx = abcdk_stcp_start(max, cpu);
     if (!ctx->io_ctx)
         goto ERR;
 
@@ -1215,7 +1215,7 @@ void *abcdk_https_get_userdata(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     return stream_ctx_p->userdata;
 }
@@ -1231,7 +1231,7 @@ void *abcdk_https_set_userdata(abcdk_https_stream_t *stream,void *userdata)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     old_userdata = stream_ctx_p->userdata;
     stream_ctx_p->userdata = userdata;
@@ -1251,7 +1251,7 @@ const char *abcdk_https_request_header_get(abcdk_https_stream_t *stream, const c
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     /*HTTP协议有头部数据。*/
     if (stream_ctx_p->protocol != 1)
@@ -1283,7 +1283,7 @@ const char* abcdk_https_request_header_getline(abcdk_https_stream_t *stream,int 
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     /*HTTP协议有头部数据。*/
     if (stream_ctx_p->protocol != 1)
@@ -1307,7 +1307,7 @@ const char *abcdk_https_request_body_get(abcdk_https_stream_t *stream, size_t *l
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     body_l = abcdk_receiver_body_length(stream_ctx_p->updata);
     if (body_l <= 0)
@@ -1327,7 +1327,7 @@ static int _abcdk_https_rsp_hdr_dump_cb(const char *key, const char *value, void
     abcdk_https_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     /*状态码不在这里处理。*/
     if (abcdk_strcmp("Status", key, 0) == 0)
@@ -1371,7 +1371,7 @@ static int _abcdk_https_response_header_h1(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 1)
         return -1;
@@ -1406,7 +1406,7 @@ static int _abcdk_https_response_header_h1(abcdk_https_stream_t *stream)
 
     /*标记头部长度。*/
     stream_ctx_p->h1_rsp_hdrs->sizes[0] = stream_ctx_p->h1_rsp_count;
-    chk = abcdk_asio_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs);
+    chk = abcdk_stcp_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs);
     if (chk != 0)
         return -2;
 
@@ -1429,7 +1429,7 @@ static int _abcdk_https_response_header_h2(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 2)
         return -1;
@@ -1481,7 +1481,7 @@ static int _abcdk_https_response_header(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol == 1)
     {
@@ -1496,7 +1496,7 @@ static int _abcdk_https_response_header(abcdk_https_stream_t *stream)
             return -1;
     }
 
-    abcdk_asio_send_watch(stream_ctx_p->io_node);
+    abcdk_stcp_send_watch(stream_ctx_p->io_node);
 
     return 0;
 }
@@ -1512,7 +1512,7 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 1)
         return -1;
@@ -1522,7 +1522,7 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
     {
         /*发送分块头部。*/
         chunked_size = (data ? data->sizes[0] : 0);
-        chk = abcdk_asio_post_format(stream_ctx_p->io_node, 18, "%zx\r\n", chunked_size);
+        chk = abcdk_stcp_post_format(stream_ctx_p->io_node, 18, "%zx\r\n", chunked_size);
         if (chk != 0)
             return -1;
 
@@ -1538,7 +1538,7 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
     /*如果不是结束包，发送有效的数据块。*/
     if (!stream_ctx_p->rsp_end)
     {
-        chk = abcdk_asio_post(stream_ctx_p->io_node, data);
+        chk = abcdk_stcp_post(stream_ctx_p->io_node, data);
         if (chk != 0)
             return -1;
     }
@@ -1546,7 +1546,7 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
     /*发送分块尾部。*/
     if (chunked_body)
     {
-        chk = abcdk_asio_post_buffer(stream_ctx_p->io_node,"\r\n",2);
+        chk = abcdk_stcp_post_buffer(stream_ctx_p->io_node,"\r\n",2);
         if (chk != 0)
             return -1;
     }
@@ -1564,7 +1564,7 @@ static int _abcdk_https_response_body_h2(abcdk_https_stream_t *stream, abcdk_obj
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol != 2)
         return -1;
@@ -1601,7 +1601,7 @@ static int _abcdk_https_response_body(abcdk_https_stream_t *stream, abcdk_object
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol == 1)
     {
@@ -1616,7 +1616,7 @@ static int _abcdk_https_response_body(abcdk_https_stream_t *stream, abcdk_object
             return -2;
     }
 
-    abcdk_asio_send_watch(stream_ctx_p->io_node);
+    abcdk_stcp_send_watch(stream_ctx_p->io_node);
 
     return 0;
 }
@@ -1632,7 +1632,7 @@ void abcdk_https_response_ready(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (node_ctx_p->protocol == 1)
     {
@@ -1646,7 +1646,7 @@ void abcdk_https_response_ready(abcdk_https_stream_t *stream)
 #endif //NGHTTP2_H
     }
 
-    abcdk_asio_send_watch(stream_ctx_p->io_node);
+    abcdk_stcp_send_watch(stream_ctx_p->io_node);
 }
 
 int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *key, const char *val, va_list ap)
@@ -1661,7 +1661,7 @@ int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *ke
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,"应答数据已经发送完成,不能修改。");
 
@@ -1753,7 +1753,7 @@ int abcdk_https_response_header_end(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,"应答的头部已经结束。");
     ABCDK_ASSERT(stream_ctx_p->rsp_hdr,"还未设置应答的头部信息。");
@@ -1805,7 +1805,7 @@ int abcdk_https_response(abcdk_https_stream_t *stream, abcdk_object_t *data)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     /*如果头部未结束，先结束头部应答。*/
     if(!stream_ctx_p->rsp_hdr_sent)
@@ -1908,7 +1908,7 @@ int abcdk_https_check_auth(abcdk_https_stream_t *stream)
 
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
-    node_ctx_p = (abcdk_https_node_t *)abcdk_asio_get_userdata(stream_ctx_p->io_node);
+    node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
     if (!node_ctx_p->cfg.auth_path)
         return 0;

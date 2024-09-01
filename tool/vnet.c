@@ -321,12 +321,12 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t共享密钥文件。\n");
 
     fprintf(stderr, "\n\t--uplink-ssl-scheme < SCHEME >\n");
-    fprintf(stderr, "\t\t上行安全方案。默认：%d\n",ABCDK_ASIO_SSL_SCHEME_RAW);
+    fprintf(stderr, "\t\t上行安全方案。默认：%d\n",ABCDK_STCP_SSL_SCHEME_RAW);
 
-    fprintf(stderr, "\n\t\t%d：RAW\n",ABCDK_ASIO_SSL_SCHEME_RAW);
-    fprintf(stderr, "\t\t%d：PKI\n",ABCDK_ASIO_SSL_SCHEME_PKI);
-    fprintf(stderr, "\t\t%d：ENIGMA\n",ABCDK_ASIO_SSL_SCHEME_ENIGMA);
-    fprintf(stderr, "\t\t%d：PKIonENIGMA\n",ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
+    fprintf(stderr, "\n\t\t%d：RAW\n",ABCDK_STCP_SSL_SCHEME_RAW);
+    fprintf(stderr, "\t\t%d：PKI\n",ABCDK_STCP_SSL_SCHEME_PKI);
+    fprintf(stderr, "\t\t%d：ENIGMA\n",ABCDK_STCP_SSL_SCHEME_ENIGMA);
+    fprintf(stderr, "\t\t%d：PKIonENIGMA\n",ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA);
 
     fprintf(stderr, "\n\t--uplink-addr < ADDR >\n");
     fprintf(stderr, "\t\t上行地址。\n");
@@ -1054,13 +1054,13 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     abcdk_srpc_config_t rpc_cfg = {0};
     int chk;
 
-    if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
+    if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW)
         listen_p = ctx->listen_raw;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
         listen_p = ctx->listen_pki;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
         listen_p = ctx->listen_enigma;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
         listen_p = ctx->listen_pki_enigma;
 
     /*未启用。*/
@@ -1074,13 +1074,13 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
         return -1;
     }
 
-    if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
+    if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW)
         session_p = ctx->rpc_listen_raw_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
         session_p = ctx->rpc_listen_pki_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
         session_p = ctx->rpc_listen_enigma_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
         session_p = ctx->rpc_listen_pki_enigma_session = _abcdkvnet_node_alloc(ctx,ABCDKVNET_ROLE_LISTENER);
 
     if (!session_p)
@@ -1340,19 +1340,19 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     if (!ctx->rpc_ctx)
         goto END;
 
-    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_RAW);
+    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_RAW);
     if (chk != 0)
         goto END;
 
-    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI);
+    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_PKI);
     if (chk != 0)
         goto END;
 
-    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_ENIGMA);
+    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_ENIGMA);
     if (chk != 0)
         goto END;
 
-    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
+    chk = _abcdkproxy_server_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA);
     if (chk != 0)
         goto END;
  
@@ -1602,7 +1602,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
 
     ctx->enigma_key_file = abcdk_option_get(ctx->args, "--enigma-key-file", 0, NULL);
      
-    ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
+    ctx->uplink_ssl_scheme = abcdk_option_get_int(ctx->args, "--uplink-ssl-scheme", 0, ABCDK_STCP_SSL_SCHEME_RAW);
     ctx->uplink_addr = abcdk_option_get(ctx->args, "--uplink-addr", 0, "");
     ctx->uplink_gateway = abcdk_option_get(ctx->args, "--uplink-gateway", 0, "");
 

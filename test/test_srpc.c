@@ -75,7 +75,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
     cfg.enigma_key_file = abcdk_option_get(args, "--enigma-key-file", 0, NULL);
 
-    cfg.ssl_scheme = abcdk_option_get_int(args, "--ssl-scheme", 0, ABCDK_ASIO_SSL_SCHEME_RAW);
+    cfg.ssl_scheme = abcdk_option_get_int(args, "--ssl-scheme", 0, ABCDK_STCP_SSL_SCHEME_RAW);
 
     addr_p = abcdk_option_get(args, "--addr", 0, "ipv4://127.0.0.1:1111");
     abcdk_sockaddr_from_string(&addr, addr_p, 0);

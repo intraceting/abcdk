@@ -4,10 +4,10 @@
  * MIT License
  * 
  */
-#include "abcdk/asio/asio.h"
+#include "abcdk/net/stcp.h"
 
 /** 简单的异步TCP通讯。 */
-struct _abcdk_asio
+struct _abcdk_stcp
 {
     /** epollex 环境。*/
     abcdk_epollex_t *epollex;
@@ -21,14 +21,14 @@ struct _abcdk_asio
     /** 退出标志。0： 运行，!0：停止。*/
     volatile int exitflag;
 
-};// abcdk_asio_t;
+};// abcdk_stcp_t;
 
 /** 异步TCP节点。 */
-struct _abcdk_asio_node
+struct _abcdk_stcp_node
 {
     /** 魔法数。*/
     uint32_t magic;
-#define ABCDK_ASIO_NODE_MAGIC 123456789
+#define ABCDK_STCP_NODE_MAGIC 123456789
 
     /** 引用计数器。*/
     volatile int refcount;
@@ -38,10 +38,10 @@ struct _abcdk_asio_node
      * 
      * @note 仅复制。
     */
-    abcdk_asio_t *ctx;
+    abcdk_stcp_t *ctx;
 
     /** 配置。*/
-    abcdk_asio_config_t cfg;
+    abcdk_stcp_config_t cfg;
 
     /**
      * 索引。
@@ -50,15 +50,15 @@ struct _abcdk_asio_node
 
     /** 标识句柄来源。*/
     volatile int flag;
-#define ABCDK_ASIO_FLAG_CLIENT   1
-#define ABCDK_ASIO_FLAG_LISTEN   2
-#define ABCDK_ASIO_FLAG_ACCPET   3
+#define ABCDK_STCP_FLAG_CLIENT   1
+#define ABCDK_STCP_FLAG_LISTEN   2
+#define ABCDK_STCP_FLAG_ACCPET   3
 
     /** 标识当前句柄状态。*/
     volatile int status;
-#define ABCDK_ASIO_STATUS_STABLE        1
-#define ABCDK_ASIO_STATUS_SYNC          2
-#define ABCDK_ASIO_STATUS_SYNC_OPENSSL  3
+#define ABCDK_STCP_STATUS_STABLE        1
+#define ABCDK_STCP_STATUS_SYNC          2
+#define ABCDK_STCP_STATUS_SYNC_OPENSSL  3
 
     /** 本机地址。*/
     abcdk_sockaddr_t local;
@@ -104,13 +104,13 @@ struct _abcdk_asio_node
     abcdk_object_t *in_buffer;
 
     /** 来自哪个监听节点。*/
-    abcdk_asio_node_t *from_listen;
+    abcdk_stcp_node_t *from_listen;
 
-};// abcdk_asio_node_t;
+};// abcdk_stcp_node_t;
 
-void abcdk_asio_unref(abcdk_asio_node_t **node)
+void abcdk_stcp_unref(abcdk_stcp_node_t **node)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
 
     if (!node || !*node)
         return;
@@ -118,7 +118,7 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
     node_p = *node;
     *node = NULL;
 
-    assert(node_p->magic == ABCDK_ASIO_NODE_MAGIC);
+    assert(node_p->magic == ABCDK_STCP_NODE_MAGIC);
 
     if (abcdk_atomic_fetch_and_add(&node_p->refcount, -1) != 1)
         return;
@@ -150,11 +150,11 @@ void abcdk_asio_unref(abcdk_asio_node_t **node)
     abcdk_tree_free(&node_p->out_queue);
     abcdk_spinlock_destroy(&node_p->out_locker);
     abcdk_object_unref(&node_p->in_buffer);
-    abcdk_asio_unref(&node_p->from_listen);
+    abcdk_stcp_unref(&node_p->from_listen);
     abcdk_heap_free(node_p);
 }
 
-abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *src)
+abcdk_stcp_node_t *abcdk_stcp_refer(abcdk_stcp_node_t *src)
 {
     int chk;
 
@@ -166,17 +166,17 @@ abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *src)
     return src;
 }
 
-abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*free_cb)(void *userdata))
+abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*free_cb)(void *userdata))
 {
-    abcdk_asio_node_t *node = NULL;
+    abcdk_stcp_node_t *node = NULL;
 
     assert(ctx != NULL);
 
-    node = (abcdk_asio_node_t *)abcdk_heap_alloc(sizeof(abcdk_asio_node_t));
+    node = (abcdk_stcp_node_t *)abcdk_heap_alloc(sizeof(abcdk_stcp_node_t));
     if(!node)
         return NULL;
 
-    node->magic = ABCDK_ASIO_NODE_MAGIC;
+    node->magic = ABCDK_STCP_NODE_MAGIC;
     node->refcount = 1;
     node->ctx = ctx;
     node->index = abcdk_sequence_num();
@@ -196,7 +196,7 @@ abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*fr
     return node;
 }
 
-void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,...)
+void abcdk_stcp_trace_output(abcdk_stcp_node_t *node,int type, const char* fmt,...)
 {
     char new_tname[18] = {0}, old_tname[18] = {0};
 
@@ -219,21 +219,21 @@ void abcdk_asio_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,.
 #endif //__USE_GNU
 }
 
-uint64_t abcdk_asio_get_index(abcdk_asio_node_t *node)
+uint64_t abcdk_stcp_get_index(abcdk_stcp_node_t *node)
 {
     assert(node != NULL);
 
     return node->index;
 }
 
-SSL *abcdk_asio_openssl_get_handle(abcdk_asio_node_t *node)
+SSL *abcdk_stcp_openssl_get_handle(abcdk_stcp_node_t *node)
 {
     assert(node != NULL);
 
     return node->openssl_ssl;
 }
 
-char *abcdk_asio_openssl_get_alpn_selected(abcdk_asio_node_t *node, char proto[255+1])
+char *abcdk_stcp_openssl_get_alpn_selected(abcdk_stcp_node_t *node, char proto[255+1])
 {
     int chk;
 
@@ -253,14 +253,14 @@ char *abcdk_asio_openssl_get_alpn_selected(abcdk_asio_node_t *node, char proto[2
     return NULL;
 }
 
-void *abcdk_asio_get_userdata(abcdk_asio_node_t *node)
+void *abcdk_stcp_get_userdata(abcdk_stcp_node_t *node)
 {
     assert(node != NULL);
 
     return node->userdata->pptrs[0];
 }
 
-int abcdk_asio_set_timeout(abcdk_asio_node_t *node, time_t timeout)
+int abcdk_stcp_set_timeout(abcdk_stcp_node_t *node, time_t timeout)
 {
     int chk;
 
@@ -276,7 +276,7 @@ int abcdk_asio_set_timeout(abcdk_asio_node_t *node, time_t timeout)
     return chk;
 }
 
-int abcdk_asio_get_sockaddr(abcdk_asio_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
+int abcdk_stcp_get_sockaddr(abcdk_stcp_node_t *node, abcdk_sockaddr_t *local,abcdk_sockaddr_t *remote)
 {
     assert(node != NULL);
 
@@ -289,7 +289,7 @@ int abcdk_asio_get_sockaddr(abcdk_asio_node_t *node, abcdk_sockaddr_t *local,abc
     return 0;
 }
 
-int abcdk_asio_get_sockaddr_str(abcdk_asio_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
+int abcdk_stcp_get_sockaddr_str(abcdk_stcp_node_t *node, char local[NAME_MAX],char remote[NAME_MAX])
 {
     assert(node != NULL);
 
@@ -302,7 +302,7 @@ int abcdk_asio_get_sockaddr_str(abcdk_asio_node_t *node, char local[NAME_MAX],ch
     return 0;
 }
 
-ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
+ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 {
     ssize_t rsize = 0,rsize_all = 0;
     int chk;
@@ -315,9 +315,9 @@ ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
 
     while (rsize_all < size)
     {
-        if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+        if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
             rsize = SSL_read(node->openssl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
-        else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+        else if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
             rsize = abcdk_enigma_ssl_read(node->enigmassl_ssl,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
         else 
             rsize = read(node->fd,ABCDK_PTR2PTR(void,buf,rsize_all),size-rsize_all);
@@ -331,7 +331,7 @@ ssize_t abcdk_asio_recv(abcdk_asio_node_t *node, void *buf, size_t size)
     return rsize_all;
 }
 
-int abcdk_asio_recv_watch(abcdk_asio_node_t *node)
+int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
 {
     int done_flag = 0;
     int chk;
@@ -353,7 +353,7 @@ int abcdk_asio_recv_watch(abcdk_asio_node_t *node)
     return chk;
 }
 
-ssize_t abcdk_asio_send(abcdk_asio_node_t *node, void *buf, size_t size)
+ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
     int chk;
@@ -366,9 +366,9 @@ ssize_t abcdk_asio_send(abcdk_asio_node_t *node, void *buf, size_t size)
 
     while (wsize_all < size)
     {
-        if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+        if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
             wsize = SSL_write(node->openssl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
-        else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+        else if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
             wsize = abcdk_enigma_ssl_write(node->enigmassl_ssl,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
         else 
             wsize = write(node->fd,ABCDK_PTR2PTR(void,buf,wsize_all),size-wsize_all);
@@ -382,7 +382,7 @@ ssize_t abcdk_asio_send(abcdk_asio_node_t *node, void *buf, size_t size)
     return wsize_all;
 }
 
-int abcdk_asio_send_watch(abcdk_asio_node_t *node)
+int abcdk_stcp_send_watch(abcdk_stcp_node_t *node)
 {
     int chk;
 
@@ -398,16 +398,16 @@ int abcdk_asio_send_watch(abcdk_asio_node_t *node)
     return chk;
 }
 
-void _abcdk_asio_cleanup_cb(epoll_data_t *data, void *opaque)
+void _abcdk_stcp_cleanup_cb(epoll_data_t *data, void *opaque)
 {
-    abcdk_asio_t *ctx = (abcdk_asio_t *)opaque;
-    abcdk_asio_node_t *node = NULL;
+    abcdk_stcp_t *ctx = (abcdk_stcp_t *)opaque;
+    abcdk_stcp_node_t *node = NULL;
 
-    node = (abcdk_asio_node_t *)data->ptr;
-    abcdk_asio_unref(&node);
+    node = (abcdk_stcp_node_t *)data->ptr;
+    abcdk_stcp_unref(&node);
 }
 
-void _abcdk_asio_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
+void _abcdk_stcp_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
     /*通知应用层处理事件。*/
     if (listen->cfg.prepare_cb)
@@ -415,21 +415,21 @@ void _abcdk_asio_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
 }
 
 /*声明输入事件钩子函数。*/
-void _abcdk_asio_input_hook(abcdk_asio_node_t *node);
+void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node);
 
 /*声明输出事件钩子函数。*/
-void _abcdk_asio_output_hook(abcdk_asio_node_t *node);
+void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
 
-void _abcdk_asio_event_cb(abcdk_asio_node_t *node,uint32_t event, int *result)
+void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node,uint32_t event, int *result)
 {
     /*绑定工作线程。*/
     abcdk_thread_leader_vote(&node->worker);
 
     /*通知应用层处理事件。*/
-    if(event == ABCDK_ASIO_EVENT_INPUT)
-        _abcdk_asio_input_hook(node);
-    else if(event == ABCDK_ASIO_EVENT_OUTPUT)
-        _abcdk_asio_output_hook(node);
+    if(event == ABCDK_STCP_EVENT_INPUT)
+        _abcdk_stcp_input_hook(node);
+    else if(event == ABCDK_STCP_EVENT_OUTPUT)
+        _abcdk_stcp_output_hook(node);
     else 
         node->cfg.event_cb(node, event, result);
 
@@ -437,23 +437,23 @@ void _abcdk_asio_event_cb(abcdk_asio_node_t *node,uint32_t event, int *result)
     abcdk_thread_leader_quit(&node->worker);
 }
 
-void _abcdk_asio_accept(abcdk_asio_node_t *listen)
+void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
 {
-    abcdk_asio_node_t *node = NULL;
+    abcdk_stcp_node_t *node = NULL;
     epoll_data_t ep_data;
     int chk;
 
     /*通知初始化。*/
-    _abcdk_asio_prepare_cb(&node, listen);
+    _abcdk_stcp_prepare_cb(&node, listen);
     if (!node)
         return;
 
     /*配置参数。*/
-    node->flag = ABCDK_ASIO_FLAG_ACCPET;
-    node->status = ABCDK_ASIO_STATUS_SYNC;
+    node->flag = ABCDK_STCP_FLAG_ACCPET;
+    node->status = ABCDK_STCP_STATUS_SYNC;
 
     /*记住来源。*/
-    node->from_listen = abcdk_asio_refer(listen);
+    node->from_listen = abcdk_stcp_refer(listen);
 
     /*复制通讯环境指针。*/
     node->ctx = listen->ctx;
@@ -475,7 +475,7 @@ void _abcdk_asio_accept(abcdk_asio_node_t *listen)
         goto final_error;
 
     /*通知应用层新连接到来。*/
-    _abcdk_asio_event_cb(node,ABCDK_ASIO_EVENT_ACCEPT,&chk);
+    _abcdk_stcp_event_cb(node,ABCDK_STCP_EVENT_ACCEPT,&chk);
     if(chk != 0 )
         goto final_error;
     
@@ -499,19 +499,19 @@ void _abcdk_asio_accept(abcdk_asio_node_t *listen)
 final_error:
 
     /*通知关闭。*/
-    _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_INTERRUPT,&chk);
-    abcdk_asio_unref(&node);
+    _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INTERRUPT,&chk);
+    abcdk_stcp_unref(&node);
     
     return;
 }
 
 #ifdef HEADER_SSL_H   
-static int _abcdk_asio_openssl_verify_result(abcdk_asio_node_t *node)
+static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
 {
     char remote_addr[NAME_MAX] = {0};
     int chk;
 
-    abcdk_asio_get_sockaddr_str(node, NULL, remote_addr);
+    abcdk_stcp_get_sockaddr_str(node, NULL, remote_addr);
 
     X509 *cert = SSL_get_peer_certificate(node->openssl_ssl);
     if (cert)
@@ -519,7 +519,7 @@ static int _abcdk_asio_openssl_verify_result(abcdk_asio_node_t *node)
         abcdk_object_t *info = abcdk_openssl_cert_dump(cert);
         if (info)
         {
-            abcdk_asio_trace_output(node, LOG_INFO, "远端(%s)的证书信息：\n%s", remote_addr, info->pstrs[0]);
+            abcdk_stcp_trace_output(node, LOG_INFO, "远端(%s)的证书信息：\n%s", remote_addr, info->pstrs[0]);
             abcdk_object_unref(&info);
         }
 
@@ -531,7 +531,7 @@ static int _abcdk_asio_openssl_verify_result(abcdk_asio_node_t *node)
         chk = SSL_get_verify_result(node->openssl_ssl);
         if (chk != X509_V_OK)
         {
-            abcdk_asio_trace_output(node, LOG_INFO, "远端(%s)的证书验证有错误发生(ssl-errno=%d)。", remote_addr, chk);
+            abcdk_stcp_trace_output(node, LOG_INFO, "远端(%s)的证书验证有错误发生(ssl-errno=%d)。", remote_addr, chk);
             return -1;
         }
     }
@@ -539,7 +539,7 @@ static int _abcdk_asio_openssl_verify_result(abcdk_asio_node_t *node)
     return 0;
 }
 
-static void _abcdk_asio_openssl_dump_errmsg(abcdk_asio_node_t *node, unsigned long e)
+static void _abcdk_stcp_openssl_dump_errmsg(abcdk_stcp_node_t *node, unsigned long e)
 {
     char remote_addr[NAME_MAX] = {0};
     char local_addr[NAME_MAX] = {0};
@@ -547,14 +547,14 @@ static void _abcdk_asio_openssl_dump_errmsg(abcdk_asio_node_t *node, unsigned lo
 
     ERR_error_string_n(e,errmsg,NAME_MAX-1);
 
-    abcdk_asio_get_sockaddr_str(node, local_addr, remote_addr);
+    abcdk_stcp_get_sockaddr_str(node, local_addr, remote_addr);
 
-    abcdk_asio_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接有错误发生(%s)。", local_addr, remote_addr,errmsg);
+    abcdk_stcp_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接有错误发生(%s)。", local_addr, remote_addr,errmsg);
 }
 
 #endif //HEADER_SSL_H
 
-static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
+static void _abcdk_stcp_handshake_sync_after(abcdk_stcp_node_t *node)
 {
     socklen_t sock_len = 0;
     int sock_flag = 1;
@@ -611,40 +611,40 @@ static void _abcdk_asio_handshake_sync_after(abcdk_asio_node_t *node)
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
 }
 
-static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
+static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 {
-    if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
+    if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW)
     {
         return 0;
     }
-    else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    else if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
 #ifdef HEADER_SSL_H
         if(!node->openssl_ssl)
-            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_ASIO_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
+            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_STCP_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
         else 
             return -16;
 
         if(!node->openssl_ssl)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
             return -1;
         }
 
         SSL_set_fd(node->openssl_ssl, node->fd);
 
-        if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
+        if (node->flag == ABCDK_STCP_FLAG_ACCPET)
             SSL_set_accept_state(node->openssl_ssl);
-        else if (node->flag == ABCDK_ASIO_FLAG_CLIENT)
+        else if (node->flag == ABCDK_STCP_FLAG_CLIENT)
             SSL_set_connect_state(node->openssl_ssl);
         else
             return -22;
 #else 
-        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
         return -22;
 #endif //HEADER_SSL_H
     }
-    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
     {
         if(!node->enigmassl_ssl)
             node->enigmassl_ssl = abcdk_enigma_ssl_create_from_file(node->cfg.enigma_key_file);
@@ -653,13 +653,13 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
             
         if (!node->enigmassl_ssl)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
             return -1;
         }
 
         abcdk_enigma_ssl_set_fd(node->enigmassl_ssl, node->fd,0);
     }
-    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
     {
 #ifdef HEADER_SSL_H
         if (!node->enigmassl_bio)
@@ -669,18 +669,18 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
 
         if (!node->enigmassl_bio)
         {
-            abcdk_asio_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -1;
         }
 
         if(!node->openssl_ssl)
-            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_ASIO_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
+            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag == ABCDK_STCP_FLAG_ACCPET?node->from_listen->openssl_ctx:node->openssl_ctx);
         else 
             return -16;
 
         if(!node->openssl_ssl)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node,LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。",node->cfg.ssl_scheme);
             return -1;
         }
 
@@ -690,14 +690,14 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
         /*托管理给SSL，这里要清理野指针。*/
         node->enigmassl_bio = NULL;
 
-        if (node->flag == ABCDK_ASIO_FLAG_ACCPET)
+        if (node->flag == ABCDK_STCP_FLAG_ACCPET)
             SSL_set_accept_state(node->openssl_ssl);
-        else if (node->flag == ABCDK_ASIO_FLAG_CLIENT)
+        else if (node->flag == ABCDK_STCP_FLAG_CLIENT)
             SSL_set_connect_state(node->openssl_ssl);
         else
             return -22;
 #else 
-        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
         return -22;
 #endif //HEADER_SSL_H
     }
@@ -709,28 +709,28 @@ static int _abcdk_asio_handshake_ssl_init(abcdk_asio_node_t *node)
     return 0;
 }
 
-void _abcdk_asio_handshake(abcdk_asio_node_t *node)
+void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
 {
     int ssl_chk;
     int ssl_err;
     int chk;
 
-    if (node->status == ABCDK_ASIO_STATUS_SYNC)
+    if (node->status == ABCDK_STCP_STATUS_SYNC)
     {
         chk = abcdk_poll(node->fd, 0x02, 0);
         if (chk > 0)
         {
             /*初始化SSL方案。*/
-            chk = _abcdk_asio_handshake_ssl_init(node);
+            chk = _abcdk_stcp_handshake_ssl_init(node);
             if(chk != 0)
                 goto final_error;
 
-            if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
-                node->status = ABCDK_ASIO_STATUS_SYNC_OPENSSL;
-            else if(node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
-                node->status = ABCDK_ASIO_STATUS_STABLE;
+            if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+                node->status = ABCDK_STCP_STATUS_SYNC_OPENSSL;
+            else if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
+                node->status = ABCDK_STCP_STATUS_STABLE;
             else 
-                node->status = ABCDK_ASIO_STATUS_STABLE;
+                node->status = ABCDK_STCP_STATUS_STABLE;
         }
         else
         {
@@ -742,20 +742,20 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
         }
 
         /*获取连接信息并设置默认值。*/
-        _abcdk_asio_handshake_sync_after(node);
+        _abcdk_stcp_handshake_sync_after(node);
     }
      
-    if (node->status == ABCDK_ASIO_STATUS_SYNC_OPENSSL)
+    if (node->status == ABCDK_STCP_STATUS_SYNC_OPENSSL)
     {
 #ifdef HEADER_SSL_H 
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
         if (ssl_chk == 1)
         {   
-            chk = _abcdk_asio_openssl_verify_result(node);
+            chk = _abcdk_stcp_openssl_verify_result(node);
             if(chk != 0)
                 goto final_error;
 
-            node->status = ABCDK_ASIO_STATUS_STABLE;
+            node->status = ABCDK_STCP_STATUS_STABLE;
         }
         else
         {   
@@ -777,7 +777,7 @@ void _abcdk_asio_handshake(abcdk_asio_node_t *node)
             else
             {
                 /*其它的全部当作出错处理。*/
-                _abcdk_asio_openssl_dump_errmsg(node,ssl_err);
+                _abcdk_stcp_openssl_dump_errmsg(node,ssl_err);
             }
             
             /*Error .*/
@@ -797,10 +797,10 @@ final_error:
     abcdk_epollex_timeout(node->ctx->epollex, node->fd, 1);
 }
 
-void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
+void _abcdk_stcp_perform(abcdk_stcp_t *ctx,time_t timeout)
 {
     int ret = 0;
-    abcdk_asio_node_t *node = NULL;
+    abcdk_stcp_node_t *node = NULL;
     abcdk_epoll_event_t e = {0};
     int chk;
 
@@ -809,7 +809,7 @@ void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
     if (chk < 0)
         return;
 
-    node = (abcdk_asio_node_t *)e.data.ptr;
+    node = (abcdk_stcp_node_t *)e.data.ptr;
 
     //fprintf(stderr,"fd(%d)=%u\n",node->fd,e.events);
 
@@ -818,7 +818,7 @@ void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
         /*关闭前清除状态。*/
         node->status = 0;
 
-        _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CLOSE,&ret);
+        _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CLOSE,&ret);
 
         /*释放引用。*/
         abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
@@ -830,15 +830,15 @@ void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
 
         if (e.events & ABCDK_EPOLL_OUTPUT)
         {
-            if (node->status != ABCDK_ASIO_STATUS_STABLE)
+            if (node->status != ABCDK_STCP_STATUS_STABLE)
             {
-                _abcdk_asio_handshake(node);
-                if (node->status == ABCDK_ASIO_STATUS_STABLE)
-                    _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CONNECT,&ret);
+                _abcdk_stcp_handshake(node);
+                if (node->status == ABCDK_STCP_STATUS_STABLE)
+                    _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT,&ret);
             }
             else
             {
-                _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_OUTPUT,&ret);
+                _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_OUTPUT,&ret);
             }
 
             /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
@@ -847,28 +847,28 @@ void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
 
         if (e.events & ABCDK_EPOLL_INPUT)
         {
-            if (node->flag == ABCDK_ASIO_FLAG_LISTEN)
+            if (node->flag == ABCDK_STCP_FLAG_LISTEN)
             {
                 /*每次处理一个新连接。*/
-                _abcdk_asio_accept(node);
+                _abcdk_stcp_accept(node);
 
                 /*释放监听权利，并注册监听事件。*/
                 abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
             }
             else
             {
-                if (node->status != ABCDK_ASIO_STATUS_STABLE)
+                if (node->status != ABCDK_STCP_STATUS_STABLE)
                 {
-                    _abcdk_asio_handshake(node);
-                    if (node->status == ABCDK_ASIO_STATUS_STABLE)
-                        _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_CONNECT,&ret);
+                    _abcdk_stcp_handshake(node);
+                    if (node->status == ABCDK_STCP_STATUS_STABLE)
+                        _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT,&ret);
 
                     /*释放读权利。*/
                     abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
                 }
                 else
                 {
-                    _abcdk_asio_event_cb(node, ABCDK_ASIO_EVENT_INPUT,&ret);
+                    _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT,&ret);
 
                     /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
                     //abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
@@ -882,20 +882,20 @@ void _abcdk_asio_perform(abcdk_asio_t *ctx,time_t timeout)
     }
 }
 
-void *_abcdk_asio_worker(void *args)
+void *_abcdk_stcp_worker(void *args)
 {
-    abcdk_asio_t *ctx = (abcdk_asio_t *)args;
+    abcdk_stcp_t *ctx = (abcdk_stcp_t *)args;
 
     /*每隔3秒检查一次，给退出检测留出时间。*/
     while (!abcdk_atomic_load(&ctx->exitflag))
-        _abcdk_asio_perform(ctx, 3000);
+        _abcdk_stcp_perform(ctx, 3000);
 
     return NULL;
 }
 
-void abcdk_asio_stop(abcdk_asio_t **ctx)
+void abcdk_stcp_stop(abcdk_stcp_t **ctx)
 {
-    abcdk_asio_t *ctx_p = NULL;
+    abcdk_stcp_t *ctx_p = NULL;
 
     if(!ctx || !*ctx)
         return;
@@ -917,17 +917,17 @@ void abcdk_asio_stop(abcdk_asio_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_asio_t * abcdk_asio_start(int max,int cpu)
+abcdk_stcp_t * abcdk_stcp_start(int max,int cpu)
 {
-    abcdk_asio_t *ctx = NULL;
+    abcdk_stcp_t *ctx = NULL;
     long opm = sysconf(_SC_OPEN_MAX);
     int chk;
 
-    ctx = abcdk_heap_alloc(sizeof(abcdk_asio_t));
+    ctx = abcdk_heap_alloc(sizeof(abcdk_stcp_t));
     if(!ctx)
         return NULL;
 
-    ctx->epollex = abcdk_epollex_alloc(_abcdk_asio_cleanup_cb, ctx);
+    ctx->epollex = abcdk_epollex_alloc(_abcdk_stcp_cleanup_cb, ctx);
 
     /*如果未指定最大连接数量，则使用文件句柄数量的一半。*/
     ctx->max = ((max > 0) ? max : abcdk_align(opm / 2, 1));
@@ -935,7 +935,7 @@ abcdk_asio_t * abcdk_asio_start(int max,int cpu)
 
     /*创建工作线程。*/
     ctx->worker.handle = 0;
-    ctx->worker.routine = _abcdk_asio_worker;
+    ctx->worker.routine = _abcdk_stcp_worker;
     ctx->worker.opaque = ctx;
     chk = abcdk_thread_create(&ctx->worker, 1);
     if (chk != 0)
@@ -947,21 +947,21 @@ abcdk_asio_t * abcdk_asio_start(int max,int cpu)
 
 final_error:
     
-    abcdk_asio_stop(&ctx);
+    abcdk_stcp_stop(&ctx);
 
     return NULL;
 }
 
 #ifdef HEADER_SSL_H
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-static int _abcdk_asio_openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
+static int _abcdk_stcp_openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
                                               const unsigned char *in, unsigned int inlen, void *arg)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     const unsigned char *srv;
     unsigned int srvlen;
 
-    node_p = (abcdk_asio_node_t *)arg;
+    node_p = (abcdk_stcp_node_t *)arg;
 
     if (!node_p->cfg.pki_next_proto)
         return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -980,23 +980,23 @@ static int _abcdk_asio_openssl_alpn_select_cb(SSL *ssl, const unsigned char **ou
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 
-static void _abcdk_asio_openssl_set_alpn(abcdk_asio_node_t *node)
+static void _abcdk_stcp_openssl_set_alpn(abcdk_stcp_node_t *node)
 {
 
 #ifdef HEADER_SSL_H
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-    SSL_CTX_set_alpn_select_cb(node->openssl_ctx, _abcdk_asio_openssl_alpn_select_cb, (void *)node);
+    SSL_CTX_set_alpn_select_cb(node->openssl_ctx, _abcdk_stcp_openssl_alpn_select_cb, (void *)node);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
 }
 
-static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
+static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node,int listen_flag)
 {
     int ssl_chk;
     int ssl_err;
     int chk;
 
-    if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
 #ifdef HEADER_SSL_H
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag,(node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
@@ -1005,7 +1005,7 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
 
         if (!node->openssl_ctx)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
             return -2;
         }
             
@@ -1016,38 +1016,38 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
             if(ssl_chk != 1)
             {
                 ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
-                _abcdk_asio_openssl_dump_errmsg(node,ssl_err);
+                _abcdk_stcp_openssl_dump_errmsg(node,ssl_err);
                 return -3;
             }
         } 
 
         /*设置下层协议。*/
         if(node->cfg.pki_next_proto)
-            _abcdk_asio_openssl_set_alpn(node);
+            _abcdk_stcp_openssl_set_alpn(node);
 #else 
-        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
         return -22;
 #endif // HEADER_SSL_H
     }
-    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
     {
         node->enigmassl_ssl = abcdk_enigma_ssl_create_from_file(node->cfg.enigma_key_file);
         if (!node->enigmassl_ssl)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
             return -2;
         }
 
         /*仅用于验证。*/
         abcdk_enigma_ssl_destroy(&node->enigmassl_ssl);
     }
-    else if (node->cfg.ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
     {
 #ifdef HEADER_SSL_H
         node->enigmassl_bio = abcdk_enigma_BIO_s_SSL(node->cfg.enigma_key_file);
         if (!node->enigmassl_bio)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node,LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
             return -2;
         }
 
@@ -1060,7 +1060,7 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
 
         if (!node->openssl_ctx)
         {
-            abcdk_asio_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node,LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
             return -2;
         }
                     
@@ -1071,16 +1071,16 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
             if(ssl_chk != 1)
             {
                 ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
-                _abcdk_asio_openssl_dump_errmsg(node,ssl_err);
+                _abcdk_stcp_openssl_dump_errmsg(node,ssl_err);
                 return -3;
             }
         } 
 
         /*设置下层协议。*/
-        _abcdk_asio_openssl_set_alpn(node);
+        _abcdk_stcp_openssl_set_alpn(node);
 
 #else 
-        abcdk_asio_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node,LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
         return -22;
 #endif // HEADER_SSL_H
     }
@@ -1088,9 +1088,9 @@ static int _abcdk_asio_ssl_init(abcdk_asio_node_t *node,int listen_flag)
     return 0;
 }
 
-int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asio_config_t *cfg)
+int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stcp_config_t *cfg)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
@@ -1100,14 +1100,14 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
     ABCDK_ASSERT(cfg->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
 
     /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_asio_refer(node);
+    node_p = abcdk_stcp_refer(node);
 
     /*检测最大连接数量限制。*/
     if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
         goto final_error;
 
-    node_p->flag = ABCDK_ASIO_FLAG_LISTEN;
-    node_p->status = ABCDK_ASIO_STATUS_STABLE;
+    node_p->flag = ABCDK_STCP_FLAG_LISTEN;
+    node_p->status = ABCDK_STCP_STATUS_STABLE;
     node_p->cfg = *cfg;
 
     /*修复不支持的配置。*/
@@ -1166,7 +1166,7 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
     if(chk != 0)
         goto final_error;
 
-    chk = _abcdk_asio_ssl_init(node,1);
+    chk = _abcdk_stcp_ssl_init(node,1);
     if(chk != 0)
         goto final_error;
 
@@ -1184,14 +1184,14 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
 
 final_error:
 
-    abcdk_asio_unref(&node_p);
+    abcdk_stcp_unref(&node_p);
 
     return -1;
 }
 
-int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asio_config_t *cfg)
+int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stcp_config_t *cfg)
 {
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     epoll_data_t ep_data;
     socklen_t addr_len;
     int sock_flag = 1;
@@ -1201,14 +1201,14 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
     ABCDK_ASSERT(cfg->event_cb != NULL,"未绑定通知回调函数，通讯对象无法正常工作。");
     
     /*异步环境，首先得增加对象引用。*/
-    node_p = abcdk_asio_refer(node);
+    node_p = abcdk_stcp_refer(node);
 
     /*检测最大连接数量限制。*/
     if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
         goto final_error;
 
-    node_p->flag = ABCDK_ASIO_FLAG_CLIENT;
-    node_p->status = ABCDK_ASIO_STATUS_SYNC;
+    node_p->flag = ABCDK_STCP_FLAG_CLIENT;
+    node_p->status = ABCDK_STCP_STATUS_SYNC;
     node_p->cfg = *cfg;
 
     /*修复不支持的配置。*/
@@ -1252,7 +1252,7 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
     if (errno != EAGAIN && errno != EINPROGRESS)
         goto final_error;
 
-    chk = _abcdk_asio_ssl_init(node,0);
+    chk = _abcdk_stcp_ssl_init(node,0);
     if(chk != 0)
         goto final_error;
 
@@ -1271,12 +1271,12 @@ final:
 
 final_error:
 
-    abcdk_asio_unref(&node_p);
+    abcdk_stcp_unref(&node_p);
 
     return -1;
 }
 
-void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
+void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
 {
     ssize_t rlen = 0,pos = 0;
     size_t remain = 0;
@@ -1285,7 +1285,7 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
     /*当未注册输入数据到达通知回调函数时，直接发事件通知。*/
     if(!node->cfg.input_cb)
     {
-        node->cfg.event_cb(node,ABCDK_ASIO_EVENT_INPUT,&chk);
+        node->cfg.event_cb(node,ABCDK_STCP_EVENT_INPUT,&chk);
         return;
     }
 
@@ -1294,13 +1294,13 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
         node->in_buffer = abcdk_object_alloc2(node->cfg.io_hook_mtu);
         if(!node->in_buffer)
         {
-            abcdk_asio_set_timeout(node,1);
+            abcdk_stcp_set_timeout(node,1);
             return;
         }
     }
 
     /*收。*/
-    rlen = abcdk_asio_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
+    rlen = abcdk_stcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen > 0)
     {
         /*缓存中可能存在多个请求，因此处理所有请求才能退出循环。*/
@@ -1311,12 +1311,12 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
         }
     }
     
-    abcdk_asio_recv_watch(node);
+    abcdk_stcp_recv_watch(node);
     return;
     
 }
 
-void _abcdk_asio_output_hook(abcdk_asio_node_t *node)
+void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
     abcdk_tree_t *p;
     ssize_t slen = 0;
@@ -1333,7 +1333,7 @@ NEXT_MSG:
     /*通知应用层，发送队列空闲。*/
     if(!p)
     {
-        node->cfg.event_cb(node,ABCDK_ASIO_EVENT_OUTPUT,&chk);
+        node->cfg.event_cb(node,ABCDK_STCP_EVENT_OUTPUT,&chk);
         return;
     }
 
@@ -1346,7 +1346,7 @@ NEXT_MSG:
     {
         /*每次发送，限制在最大传输单元内。*/
         mtu_per = ABCDK_MIN((p->obj->sizes[0] - node->out_pos),(node->cfg.io_hook_mtu - mtu_pos));
-        slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), mtu_per);
+        slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), mtu_per);
         if( slen <= 0)
             break;
 
@@ -1372,11 +1372,11 @@ NEXT_MSG:
         abcdk_tree_free(&p);
     }
 
-    abcdk_asio_send_watch(node);
+    abcdk_stcp_send_watch(node);
     return;
 }
 
-int abcdk_asio_post(abcdk_asio_node_t *node, abcdk_object_t *data)
+int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data)
 {
     abcdk_tree_t *p;
 
@@ -1387,7 +1387,7 @@ int abcdk_asio_post(abcdk_asio_node_t *node, abcdk_object_t *data)
     if(!node->flag ||!node->status)
         return -3;
 
-    if(node->flag == ABCDK_ASIO_FLAG_LISTEN)
+    if(node->flag == ABCDK_STCP_FLAG_LISTEN)
         return -2;
 
     p = abcdk_tree_alloc(data);
@@ -1398,13 +1398,13 @@ int abcdk_asio_post(abcdk_asio_node_t *node, abcdk_object_t *data)
     abcdk_tree_insert2(node->out_queue,p,0);
     abcdk_spinlock_unlock(node->out_locker);
 
-    if(node->status == ABCDK_ASIO_STATUS_STABLE)
-        abcdk_asio_send_watch(node);
+    if(node->status == ABCDK_STCP_STATUS_STABLE)
+        abcdk_stcp_send_watch(node);
 
     return 0;
 }
 
-int abcdk_asio_post_buffer(abcdk_asio_node_t *node, const void *data,size_t size)
+int abcdk_stcp_post_buffer(abcdk_stcp_node_t *node, const void *data,size_t size)
 {
     abcdk_object_t *obj;
     int chk;
@@ -1415,7 +1415,7 @@ int abcdk_asio_post_buffer(abcdk_asio_node_t *node, const void *data,size_t size
     if(!obj)
         return -1;
 
-    chk = abcdk_asio_post(node,obj);
+    chk = abcdk_stcp_post(node,obj);
     if(chk == 0)
         return 0;
 
@@ -1424,7 +1424,7 @@ int abcdk_asio_post_buffer(abcdk_asio_node_t *node, const void *data,size_t size
     return chk;
 }
 
-int abcdk_asio_post_vformat(abcdk_asio_node_t *node, int max, const char *fmt, va_list ap)
+int abcdk_stcp_post_vformat(abcdk_stcp_node_t *node, int max, const char *fmt, va_list ap)
 {
     abcdk_object_t *obj;
     int chk;
@@ -1435,7 +1435,7 @@ int abcdk_asio_post_vformat(abcdk_asio_node_t *node, int max, const char *fmt, v
     if(!obj)
         return -1;
     
-    chk = abcdk_asio_post(node,obj);
+    chk = abcdk_stcp_post(node,obj);
     if(chk == 0)
         return 0;
 
@@ -1444,7 +1444,7 @@ int abcdk_asio_post_vformat(abcdk_asio_node_t *node, int max, const char *fmt, v
     return chk;
 }
 
-int abcdk_asio_post_format(abcdk_asio_node_t *node, int max, const char *fmt, ...)
+int abcdk_stcp_post_format(abcdk_stcp_node_t *node, int max, const char *fmt, ...)
 {
     int chk;
 
@@ -1452,7 +1452,7 @@ int abcdk_asio_post_format(abcdk_asio_node_t *node, int max, const char *fmt, ..
 
     va_list ap;
     va_start(ap, fmt);
-    chk = abcdk_asio_post_vformat(node, max, fmt, ap);
+    chk = abcdk_stcp_post_vformat(node, max, fmt, ap);
     va_end(ap);
 
     return chk;

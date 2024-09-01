@@ -559,7 +559,7 @@ static int _abcdkhttpd_start_listen(abcdkhttpd_t *ctx,int ssl)
 
     if (ssl)
     {
-        cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_PKI;
+        cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI;
         cfg.pki_ca_file = ctx->ca_file;
         cfg.pki_ca_path = ctx->ca_path;
         cfg.pki_cert_file = ctx->cert_file;

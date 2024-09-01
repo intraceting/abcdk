@@ -61,19 +61,19 @@ typedef struct _abcdkproxy
     const char *uplink;
 
     /*IO环境。*/
-    abcdk_asio_t *io_ctx;
+    abcdk_stcp_t *io_ctx;
 
     /*原始监听对象。*/
-    abcdk_asio_node_t *listen_raw_p;
+    abcdk_stcp_node_t *listen_raw_p;
 
     /*PKI监听对象。*/
-    abcdk_asio_node_t *listen_pki_p;
+    abcdk_stcp_node_t *listen_pki_p;
 
     /*ENIGMA监听对象。*/
-    abcdk_asio_node_t *listen_enigma_p;
+    abcdk_stcp_node_t *listen_enigma_p;
 
     /*PKIonENIGMA监听对象。*/
-    abcdk_asio_node_t *listen_pki_enigma_p;
+    abcdk_stcp_node_t *listen_pki_enigma_p;
 
 
 } abcdkproxy_t;
@@ -103,7 +103,7 @@ typedef struct _abcdkproxy_node
     locale_t loc_ctx;
 
     /*隧道。*/
-    abcdk_asio_node_t *tunnel;
+    abcdk_stcp_node_t *tunnel;
 
     /*请求数据。*/
     abcdk_receiver_t *req_data;
@@ -221,7 +221,7 @@ static void _abcdkproxy_node_destroy_cb(void *userdata)
     if(node_ctx_p->loc_ctx)
         freelocale(node_ctx_p->loc_ctx);
 
-    abcdk_asio_unref(&node_ctx_p->tunnel);
+    abcdk_stcp_unref(&node_ctx_p->tunnel);
 
     abcdk_receiver_unref(&node_ctx_p->req_data);
     abcdk_object_unref(&node_ctx_p->method);
@@ -230,16 +230,16 @@ static void _abcdkproxy_node_destroy_cb(void *userdata)
     abcdk_object_unref(&node_ctx_p->up_link);
 }
 
-static abcdk_asio_node_t *_abcdkproxy_node_alloc(abcdkproxy_t *ctx)
+static abcdk_stcp_node_t *_abcdkproxy_node_alloc(abcdkproxy_t *ctx)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdkproxy_node_t *node_ctx_p;
 
-    node_p = abcdk_asio_alloc(ctx->io_ctx, sizeof(abcdkproxy_node_t), _abcdkproxy_node_destroy_cb);
+    node_p = abcdk_stcp_alloc(ctx->io_ctx, sizeof(abcdkproxy_node_t), _abcdkproxy_node_destroy_cb);
     if(!node_p)
         return NULL;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->father = ctx;
     node_ctx_p->tid = abcdk_sequence_num();
@@ -251,14 +251,14 @@ static abcdk_asio_node_t *_abcdkproxy_node_alloc(abcdkproxy_t *ctx)
 }
 
 #if 0
-static void _abcdkproxy_trace_output(abcdk_asio_node_t *node,int type, const char* fmt,...)
+static void _abcdkproxy_trace_output(abcdk_stcp_node_t *node,int type, const char* fmt,...)
 {
     abcdkproxy_node_t *node_ctx_p;
     char new_tname[18] = {0}, old_tname[18] = {0};
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
-    snprintf(new_tname, 16, "%x", abcdk_asio_get_index(node));
+    snprintf(new_tname, 16, "%x", abcdk_stcp_get_index(node));
 
 #ifdef __USE_GNU
     pthread_getname_np(pthread_self(), old_tname, 18);
@@ -276,36 +276,36 @@ static void _abcdkproxy_trace_output(abcdk_asio_node_t *node,int type, const cha
 
 }
 #else 
-#define _abcdkproxy_trace_output abcdk_asio_trace_output
+#define _abcdkproxy_trace_output abcdk_stcp_trace_output
 #endif 
 
-static void _abcdkproxy_prepare_cb(abcdk_asio_node_t **node, abcdk_asio_node_t *listen)
+static void _abcdkproxy_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
-    abcdk_asio_node_t *node_p;
+    abcdk_stcp_node_t *node_p;
     abcdkproxy_node_t *node_ctx_p;
     abcdkproxy_node_t *listen_ctx_p;
     int chk;
 
-    listen_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(listen);
+    listen_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(listen);
 
     node_p = _abcdkproxy_node_alloc(listen_ctx_p->father);
     if (!node_p)
         return;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node_p);
 
     node_ctx_p->flag = 1;
 
     *node = node_p;
 }
 
-static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
+static void _abcdk_httpd_event_connect(abcdk_stcp_node_t *node)
 {
     abcdkproxy_node_t *node_ctx_p;
     SSL *ssl_p;
     int chk;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     /*设置协议。*/
     if (node_ctx_p->flag == 1)
@@ -324,35 +324,35 @@ static void _abcdk_httpd_event_connect(abcdk_asio_node_t *node)
     }
 
     /*设置超时。*/
-    abcdk_asio_set_timeout(node,  5 * 60 * 1000);
+    abcdk_stcp_set_timeout(node,  5 * 60 * 1000);
 
     _abcdkproxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*已连接到远端，注册读写事件。*/
-    abcdk_asio_recv_watch(node);
-    abcdk_asio_send_watch(node);
+    abcdk_stcp_recv_watch(node);
+    abcdk_stcp_send_watch(node);
 }
 
-static void _abcdk_httpd_event_output(abcdk_asio_node_t *node)
+static void _abcdk_httpd_event_output(abcdk_stcp_node_t *node)
 {
     abcdkproxy_node_t *node_ctx_p;
 
     // /*转发送数据完成，监听隧道另外一端的数据。*/
     // if (node_ctx_p->tunnel)
-    //     abcdk_asio_recv_watch(node_ctx_p->tunnel);
+    //     abcdk_stcp_recv_watch(node_ctx_p->tunnel);
 
     // /*转发送数据完成，监听隧道应答数据。*/
-    // abcdk_asio_recv_watch(node);
+    // abcdk_stcp_recv_watch(node);
 }
 
-static void _abcdk_httpd_event_close(abcdk_asio_node_t *node)
+static void _abcdk_httpd_event_close(abcdk_stcp_node_t *node)
 {
     abcdkproxy_node_t *node_ctx_p;
     const char *errmsg_p;
     SSL *ssl_p;
     int chk;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     if (node_ctx_p->flag == 0)
     {
@@ -363,38 +363,38 @@ static void _abcdk_httpd_event_close(abcdk_asio_node_t *node)
     /*一定要在这里关闭另一端的隧道，否则因引用计数未减少，从而造成内存泄漏。*/
     if (node_ctx_p->tunnel)
     {
-        abcdk_asio_set_timeout(node_ctx_p->tunnel, 1);
-        abcdk_asio_unref(&node_ctx_p->tunnel);
+        abcdk_stcp_set_timeout(node_ctx_p->tunnel, 1);
+        abcdk_stcp_unref(&node_ctx_p->tunnel);
     }
 
     _abcdkproxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 }
 
-static void _abcdkproxy_event_cb(abcdk_asio_node_t *node, uint32_t event, int *result)
+static void _abcdkproxy_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
 {
     abcdkproxy_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     if (!node_ctx_p->remote_addr[0])
-        abcdk_asio_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
+        abcdk_stcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
     if (!node_ctx_p->local_addr[0])
-        abcdk_asio_get_sockaddr_str(node, node_ctx_p->local_addr, NULL);
+        abcdk_stcp_get_sockaddr_str(node, node_ctx_p->local_addr, NULL);
 
-    if (event == ABCDK_ASIO_EVENT_ACCEPT)
+    if (event == ABCDK_STCP_EVENT_ACCEPT)
     {
         *result = 0;
     }
-    else if (event == ABCDK_ASIO_EVENT_CONNECT)
+    else if (event == ABCDK_STCP_EVENT_CONNECT)
     {
         _abcdk_httpd_event_connect(node);
     }
-    else if (event == ABCDK_ASIO_EVENT_OUTPUT)
+    else if (event == ABCDK_STCP_EVENT_OUTPUT)
     {
         _abcdk_httpd_event_output(node);
     }
-    else if (event == ABCDK_ASIO_EVENT_CLOSE || event == ABCDK_ASIO_EVENT_INTERRUPT)
+    else if (event == ABCDK_STCP_EVENT_CLOSE || event == ABCDK_STCP_EVENT_INTERRUPT)
     {
         _abcdk_httpd_event_close(node);
     }
@@ -421,14 +421,14 @@ static int _abcdkproxy_load_auth(void *opaque,const char *user,char pawd[160])
     return -1;
 }
 
-static int _abcdkproxy_check_auth(abcdk_asio_node_t *node)
+static int _abcdkproxy_check_auth(abcdk_stcp_node_t *node)
 {
     abcdkproxy_node_t *node_ctx_p;
     abcdk_option_t *auth_opt = NULL;
     const char *auth_p;
     int chk;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     if (!node_ctx_p->father->auth_path)
         return 0;
@@ -450,7 +450,7 @@ static int _abcdkproxy_check_auth(abcdk_asio_node_t *node)
 
 ERR:
 
-    abcdk_asio_post_format(node, 1000,
+    abcdk_stcp_post_format(node, 1000,
                                "HTTP/1.1 %s\r\n"
                                "Server: %s\r\n"
                                "Data: %s\r\n"
@@ -469,15 +469,15 @@ ERR:
     return -1;
 }
 
-static void _abcdkproxy_input_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain);
+static void _abcdkproxy_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain);
 
-static void _abcdkproxy_reply_nobody(abcdk_asio_node_t *node, int status)
+static void _abcdkproxy_reply_nobody(abcdk_stcp_node_t *node, int status)
 {
     abcdkproxy_node_t *node_ctx_p;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_asio_post_format(node, 1000,
+    abcdk_stcp_post_format(node, 1000,
                                "HTTP/1.1 %s\r\n"
                                "Server: %s\r\n"
                                "Data: %s\r\n"
@@ -493,18 +493,18 @@ static void _abcdkproxy_reply_nobody(abcdk_asio_node_t *node, int status)
     _abcdkproxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(status));
 }
 
-static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
+static void _abcdkproxy_process_forward(abcdk_stcp_node_t *node)
 {
     abcdkproxy_node_t *node_ctx_p;
     abcdkproxy_node_t *node_uplink_ctx_p;
     abcdk_sockaddr_t uplink_addr = {0};
-    abcdk_asio_config_t asio_cfg = {0};
+    abcdk_stcp_config_t asio_cfg = {0};
 
     size_t body_l;
     void *body_p;
     int chk;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     /*仅支持向上级创建隧道。*/
     if(node_ctx_p->flag != 1)
@@ -521,17 +521,17 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
         goto ERR;
     }
     
-    node_uplink_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node_ctx_p->tunnel);
+    node_uplink_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node_ctx_p->tunnel);
 
     node_uplink_ctx_p->father = node_ctx_p->father;
     node_uplink_ctx_p->flag = 2;
     node_uplink_ctx_p->protocol = 2;
-    node_uplink_ctx_p->tunnel = abcdk_asio_refer(node);//上级关联到下级。
+    node_uplink_ctx_p->tunnel = abcdk_stcp_refer(node);//上级关联到下级。
 
     if (node_ctx_p->protocol == 1)
     {
         /*设置默认安全方案。*/
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_RAW;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_RAW;
 
         /*不检查对端证书。因为代理服务器可能未及时更新，无法验证所有证书的有效性。*/
         asio_cfg.pki_check_cert = 0;
@@ -544,7 +544,7 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
     }
     else if (node_ctx_p->protocol == 2)
     {
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_RAW;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_RAW;
         
         asio_cfg.pki_ca_file = node_ctx_p->father->pki_ca_file;
         asio_cfg.pki_ca_path = node_ctx_p->father->pki_ca_path;
@@ -604,22 +604,22 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
         abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "wss", 0) == 0 ||
         abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_PKI;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI;
     }
     else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "enigma", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_ENIGMA;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_ENIGMA;
     }
     else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki-enigma", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA;
     }
 
     asio_cfg.prepare_cb = _abcdkproxy_prepare_cb;
     asio_cfg.event_cb = _abcdkproxy_event_cb;
     asio_cfg.input_cb = _abcdkproxy_input_cb;
 
-    chk = abcdk_asio_connect(node_ctx_p->tunnel, &uplink_addr, &asio_cfg);
+    chk = abcdk_stcp_connect(node_ctx_p->tunnel, &uplink_addr, &asio_cfg);
     if (chk != 0)
     {
         _abcdkproxy_trace_output(node, LOG_WARNING, "连接上级(%s)失败，网络不可达或服务未启动。", node_uplink_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
@@ -643,7 +643,7 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
     else
     {
         /*转发请求头。*/
-        abcdk_asio_post_format(node_ctx_p->tunnel, 256*1024, "%s %s %s\r\n", 
+        abcdk_stcp_post_format(node_ctx_p->tunnel, 256*1024, "%s %s %s\r\n", 
                                     node_ctx_p->method->pstrs[0], node_ctx_p->up_link->pstrs[ABCDK_URL_SCRIPT], node_ctx_p->version->pstrs[0]);
 
         /*最多支持100行的头部转发。*/
@@ -653,17 +653,17 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
             if (!p)
                 break;
 
-            abcdk_asio_post_format(node_ctx_p->tunnel, 256*1024, "%s\r\n", p);
+            abcdk_stcp_post_format(node_ctx_p->tunnel, 256*1024, "%s\r\n", p);
         }
 
-        abcdk_asio_post_buffer(node_ctx_p->tunnel, "\r\n", 2);
+        abcdk_stcp_post_buffer(node_ctx_p->tunnel, "\r\n", 2);
 
         /*转发请求实体。*/
         body_l = abcdk_receiver_body_length(node_ctx_p->req_data);
         if (body_l > 0)
         {
             body_p = (void*)abcdk_receiver_body(node_ctx_p->req_data, 0);
-            abcdk_asio_post_buffer(node_ctx_p->tunnel, body_p, body_l);
+            abcdk_stcp_post_buffer(node_ctx_p->tunnel, body_p, body_l);
         }
     }
 
@@ -671,10 +671,10 @@ static void _abcdkproxy_process_forward(abcdk_asio_node_t *node)
 
 ERR:
 
-    abcdk_asio_set_timeout(node,1);
+    abcdk_stcp_set_timeout(node,1);
 }
 
-static void _abcdkproxy_process_request(abcdk_asio_node_t *node)
+static void _abcdkproxy_process_request(abcdk_stcp_node_t *node)
 {
     abcdkproxy_node_t *node_ctx_p;
     const char *req_line;
@@ -682,7 +682,7 @@ static void _abcdkproxy_process_request(abcdk_asio_node_t *node)
     void *body_p;
     int chk;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     if (node_ctx_p->protocol == 1)
     {
@@ -714,25 +714,25 @@ static void _abcdkproxy_process_request(abcdk_asio_node_t *node)
 
         /*转发到另外一端。*/
         if(node_ctx_p->tunnel)
-            abcdk_asio_post_buffer(node_ctx_p->tunnel, body_p, body_l);
+            abcdk_stcp_post_buffer(node_ctx_p->tunnel, body_p, body_l);
     }
 
     /*继续监听客户端数据。*/
-    //abcdk_asio_recv_watch(node);
+    //abcdk_stcp_recv_watch(node);
 
     return;
 
 ERR:
 
-    abcdk_asio_set_timeout(node,1);
+    abcdk_stcp_set_timeout(node,1);
 }
 
-static void _abcdkproxy_input_cb(abcdk_asio_node_t *node, const void *data, size_t size, size_t *remain)
+static void _abcdkproxy_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
 {
     abcdkproxy_node_t *node_ctx_p;
     int chk;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node);
 
     /*默认没有剩余数据。*/
     *remain = 0;
@@ -773,25 +773,25 @@ static void _abcdkproxy_input_cb(abcdk_asio_node_t *node, const void *data, size
 
 ERR:
 
-    abcdk_asio_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, 1);
 }
 
 static int _abcdkproxy_start_listen(abcdkproxy_t *ctx, int ssl_scheme)
 {
     const char *listen_p = NULL;
     abcdk_sockaddr_t listen_addr = {0};
-    abcdk_asio_node_t *node_p = NULL;
+    abcdk_stcp_node_t *node_p = NULL;
     abcdkproxy_node_t *node_ctx_p = NULL;
-    abcdk_asio_config_t asio_cfg = {0};
+    abcdk_stcp_config_t asio_cfg = {0};
     int chk;
 
-    if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
+    if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW)
         listen_p = ctx->listen_raw;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
         listen_p = ctx->listen_pki;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
         listen_p = ctx->listen_enigma;
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
         listen_p = ctx->listen_pki_enigma;
 
     /*未启用。*/
@@ -805,19 +805,19 @@ static int _abcdkproxy_start_listen(abcdkproxy_t *ctx, int ssl_scheme)
         return -1;
     }
 
-    if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_RAW)
+    if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW)
         node_p = ctx->listen_raw_p = _abcdkproxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
         node_p = ctx->listen_pki_p = _abcdkproxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
         node_p = ctx->listen_enigma_p = _abcdkproxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
         node_p = ctx->listen_pki_enigma_p = _abcdkproxy_node_alloc(ctx);
 
     if (!node_p)
         return -2;
 
-    node_ctx_p = (abcdkproxy_node_t *)abcdk_asio_get_userdata(node_p);
+    node_ctx_p = (abcdkproxy_node_t *)abcdk_stcp_get_userdata(node_p);
 
     asio_cfg.ssl_scheme = ssl_scheme;
     asio_cfg.pki_ca_file = ctx->pki_ca_file;
@@ -831,7 +831,7 @@ static int _abcdkproxy_start_listen(abcdkproxy_t *ctx, int ssl_scheme)
     asio_cfg.event_cb = _abcdkproxy_event_cb;
     asio_cfg.input_cb = _abcdkproxy_input_cb;
 
-    chk = abcdk_asio_listen(node_p, &listen_addr, &asio_cfg);
+    chk = abcdk_stcp_listen(node_p, &listen_addr, &asio_cfg);
     if (chk != 0)
     {
         abcdk_trace_output(LOG_ERR, "监听地址'%s'失败，无权限或被占用。", listen_p);
@@ -879,23 +879,23 @@ static void _abcdkproxy_process(abcdkproxy_t *ctx)
 
     abcdk_trace_output(LOG_INFO, "启动……");
 
-    ctx->io_ctx = abcdk_asio_start(1000, -1);
+    ctx->io_ctx = abcdk_stcp_start(1000, -1);
     if (!ctx->io_ctx)
         goto END;
 
-    chk = _abcdkproxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_RAW);
+    chk = _abcdkproxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_RAW);
     if (chk != 0)
         goto END;
 
-    chk = _abcdkproxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI);
+    chk = _abcdkproxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_PKI);
     if (chk != 0)
         goto END;
 
-    chk = _abcdkproxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_ENIGMA);
+    chk = _abcdkproxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_ENIGMA);
     if (chk != 0)
         goto END;
 
-    chk = _abcdkproxy_start_listen(ctx, ABCDK_ASIO_SSL_SCHEME_PKI_ON_ENIGMA);
+    chk = _abcdkproxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA);
     if (chk != 0)
         goto END;
 
@@ -904,11 +904,11 @@ static void _abcdkproxy_process(abcdkproxy_t *ctx)
 
 END:
 
-    abcdk_asio_stop(&ctx->io_ctx);
-    abcdk_asio_unref(&ctx->listen_raw_p);
-    abcdk_asio_unref(&ctx->listen_pki_p);
-    abcdk_asio_unref(&ctx->listen_enigma_p);
-    abcdk_asio_unref(&ctx->listen_pki_enigma_p);
+    abcdk_stcp_stop(&ctx->io_ctx);
+    abcdk_stcp_unref(&ctx->listen_raw_p);
+    abcdk_stcp_unref(&ctx->listen_pki_p);
+    abcdk_stcp_unref(&ctx->listen_enigma_p);
+    abcdk_stcp_unref(&ctx->listen_pki_enigma_p);
 
     abcdk_trace_output(LOG_INFO, "停止。");
 

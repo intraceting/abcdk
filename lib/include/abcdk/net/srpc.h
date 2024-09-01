@@ -4,8 +4,8 @@
  * MIT License
  *
  */
-#ifndef ABCDK_ASIO_SRPC_H
-#define ABCDK_ASIO_SRPC_H
+#ifndef ABCDK_NET_SRPC_H
+#define ABCDK_NET_SRPC_H
 
 #include "abcdk/util/trace.h"
 #include "abcdk/util/receiver.h"
@@ -13,14 +13,14 @@
 #include "abcdk/util/bit.h"
 #include "abcdk/util/random.h"
 #include "abcdk/util/timer.h"
-#include "abcdk/asio/asio.h"
+#include "abcdk/net/stcp.h"
 
 __BEGIN_DECLS
 
 /**简单的RPC服务。*/
 typedef struct _abcdk_srpc abcdk_srpc_t;
 
-/**RPC会话对象。*/
+/**RPC会话。*/
 typedef struct _abcdk_srpc_session abcdk_srpc_session_t;
 
 /**配置。*/
@@ -180,4 +180,4 @@ void abcdk_srpc_output_ready(abcdk_srpc_session_t *session);
 
 __END_DECLS
 
-#endif //ABCDK_ASIO_SRPC_H
+#endif //ABCDK_NET_SRPC_H
