@@ -227,7 +227,7 @@ static void _abcdkvnet_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t虚拟TUN设备前缀。默认: vnet\n");
 
     fprintf(stderr, "\n\t--virtual-tun-mtu < SIZE >\n");
-    fprintf(stderr, "\t\t虚拟TUN设备最大传输单元(1400~65535)。默认: 65535\n");
+    fprintf(stderr, "\t\t虚拟TUN设备最大传输单元(1400~65535)。默认: 1400\n");
 
     fprintf(stderr, "\n\t--virtual-tun-txqlen < SIZE >\n");
     fprintf(stderr, "\t\t虚拟TUN设备队列长度(500~10000)。默认: 1000\n");
@@ -1094,7 +1094,7 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     rpc_cfg.pki_key_file = ctx->pki_key_file;
     rpc_cfg.pki_check_cert = ctx->pki_check_cert;
     rpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,8192);
+    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,4245);
 
     rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
     rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
@@ -1216,7 +1216,7 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
     ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, NULL);
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, NULL);
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
-    ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 65535);
+    ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 1400);
     ctx->virtual_tun_txqlen = abcdk_option_get_int(ctx->args, "--virtual-tun-txqlen", 0, 1000);
 
     const char *ipv4_pool_begin_p = abcdk_option_get(ctx->args,"--ipv4-pool-begin",0,"ipv4://10.0.0.1");
@@ -1389,7 +1389,7 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     rpc_cfg.pki_key_file = ctx->pki_key_file;
     rpc_cfg.pki_check_cert = ctx->pki_check_cert;
     rpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,8192);
+    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,4245);
 
     rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
     rpc_cfg.request_cb = _abcdkvnet_srpc_request_cb;
@@ -1590,7 +1590,7 @@ static void _abcdkvnet_process_client(abcdkvnet_t *ctx)
     ctx->virtual_static_addr4 = abcdk_option_get(ctx->args, "--virtual-static-addr4", 0, "");
     ctx->virtual_static_addr6 = abcdk_option_get(ctx->args, "--virtual-static-addr6", 0, "");
     ctx->virtual_tun_prefix = abcdk_option_get(ctx->args, "--virtual-tun-prefix", 0, "vnet");
-    ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 65535);
+    ctx->virtual_tun_mtu = abcdk_option_get_int(ctx->args, "--virtual-tun-mtu", 0, 1400);
     ctx->virtual_tun_txqlen = abcdk_option_get_int(ctx->args, "--virtual-tun-txqlen", 0, 1000);
     ctx->virtual_default_route = abcdk_option_get_int(ctx->args, "--virtual-default-route", 0, 0);
 
