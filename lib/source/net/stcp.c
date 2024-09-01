@@ -939,13 +939,13 @@ abcdk_stcp_t * abcdk_stcp_start(int max,int cpu)
     ctx->worker.opaque = ctx;
     chk = abcdk_thread_create(&ctx->worker, 1);
     if (chk != 0)
-        goto final_error;
+        goto ERR;
 
     abcdk_thread_setaffinity(ctx->worker.handle,&cpu);
 
     return ctx;
 
-final_error:
+ERR:
     
     abcdk_stcp_stop(&ctx);
 

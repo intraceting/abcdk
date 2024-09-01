@@ -233,8 +233,6 @@ char *abcdk_stcp_openssl_get_alpn_selected(abcdk_stcp_node_t *node, char proto[2
 
 /**
  * 获取用户环境指针。
- * 
- * @return !NULL(0) 成功(有效)，NULL(0) 失败(无效)。
 */
 void *abcdk_stcp_get_userdata(abcdk_stcp_node_t *node);
 

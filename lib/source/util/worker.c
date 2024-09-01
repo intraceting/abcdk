@@ -28,7 +28,7 @@ struct _abcdk_worker
 typedef struct _abcdk_worker_item
 {
     /*事件。*/
-    int event;
+    uint64_t event;
 
     /*数据。*/
     void *data;
@@ -186,7 +186,7 @@ ERR:
     return NULL;
 }
 
-int abcdk_worker_dispatch(abcdk_worker_t *ctx,int event,void *item)
+int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
 {
     abcdk_worker_item_t *item_p;
     int chk;

@@ -26,7 +26,7 @@ typedef struct _abcdk_worker_config
     void *opaque;
 
     /**处理回调函数。*/
-    void (*process_cb)(void *opaque,int event,void *item);
+    void (*process_cb)(void *opaque,uint64_t event,void *item);
 
 } abcdk_worker_config_t;
 
@@ -45,7 +45,7 @@ abcdk_worker_t *abcdk_worker_start(abcdk_worker_config_t *cfg);
  *
  * @return 0 成功，-1 失败。
 */
-int abcdk_worker_dispatch(abcdk_worker_t *ctx,int event,void *item);
+int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item);
 
 __END_DECLS
 

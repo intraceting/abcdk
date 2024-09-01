@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-void abcdk_test_worker_routine(void *opaque,int event,void *item)
+void abcdk_test_worker_routine(void *opaque,uint64_t event,void *item)
 {
     int *id = (int *)opaque;
     int a = 123, b = 345, c = 456;
