@@ -6,14 +6,14 @@
  */
 #include "abcdk/asio/srpc.h"
 
-/**简单的SRPC服务。*/
+/**简单的RPC服务。*/
 struct _abcdk_srpc
 {
     /*通讯IO。*/
     abcdk_asio_t *io_ctx;
 };//abcdk_srpc_t
 
-
+/**RPC会话对象(内部)。*/
 typedef struct _abcdk_srpc_node
 {
     /*父级。*/

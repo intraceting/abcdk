@@ -17,10 +17,10 @@
 
 __BEGIN_DECLS
 
-/**简单的SRPC服务。*/
+/**简单的RPC服务。*/
 typedef struct _abcdk_srpc abcdk_srpc_t;
 
-/**SRPC会话。*/
+/**RPC会话对象。*/
 typedef struct _abcdk_srpc_session abcdk_srpc_session_t;
 
 /**配置。*/
