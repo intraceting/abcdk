@@ -151,6 +151,13 @@ typedef struct _abcdk_asio_config
     const char *enigma_key_file;
 
     /**
+     * IO-HOOK最大传输单元。
+     * 
+     * @note 有效范围：1~262144，默认：262144
+     */
+    int io_hook_mtu;
+
+    /**
      * 为新连接做准备工作的通知回调函数。
      * 
      * @note 监听有效，必须指定。
@@ -166,12 +173,6 @@ typedef struct _abcdk_asio_config
      */
     void (*event_cb)(abcdk_asio_node_t *node, uint32_t event, int *result);
 
-    /**
-     * 输入最大传输单元。
-     * 
-     * @note 有效范围：1~262144，默认：262144
-     */
-    int input_mtu;
 
     /**
      * 输入数据到达通知回调函数。

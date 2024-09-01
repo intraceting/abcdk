@@ -1113,10 +1113,10 @@ int abcdk_asio_listen(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_asi
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
 
-    if(node_p->cfg.input_mtu <= 0)
-        node_p->cfg.input_mtu = 262144;
+    if(node_p->cfg.io_hook_mtu <= 0)
+        node_p->cfg.io_hook_mtu = 262144;
     else 
-        node_p->cfg.input_mtu = ABCDK_CLAMP(node_p->cfg.input_mtu,1,262144);
+        node_p->cfg.io_hook_mtu = ABCDK_CLAMP(node_p->cfg.io_hook_mtu,1,262144);
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -1214,10 +1214,10 @@ int abcdk_asio_connect(abcdk_asio_node_t *node, abcdk_sockaddr_t *addr, abcdk_as
     /*修复不支持的配置。*/
     node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
 
-    if(node_p->cfg.input_mtu <= 0)
-        node_p->cfg.input_mtu = 262144;
+    if(node_p->cfg.io_hook_mtu <= 0)
+        node_p->cfg.io_hook_mtu = 262144;
     else 
-        node_p->cfg.input_mtu = ABCDK_CLAMP(node_p->cfg.input_mtu,1,262144);
+        node_p->cfg.io_hook_mtu = ABCDK_CLAMP(node_p->cfg.io_hook_mtu,1,262144);
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
@@ -1291,7 +1291,7 @@ void _abcdk_asio_input_hook(abcdk_asio_node_t *node)
 
     if(!node->in_buffer)
     {
-        node->in_buffer = abcdk_object_alloc2(node->cfg.input_mtu);
+        node->in_buffer = abcdk_object_alloc2(node->cfg.io_hook_mtu);
         if(!node->in_buffer)
         {
             abcdk_asio_set_timeout(node,1);
@@ -1344,8 +1344,8 @@ NEXT_MSG:
     */
     while(node->out_pos < p->obj->sizes[0])
     {
-        mtu_per = ABCDK_MIN((size_t)(p->obj->sizes[0] - node->out_pos), (size_t)(node->cfg.input_mtu - mtu_pos));
-        //slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+        /*每次发送，限制在最大传输单元内。*/
+        mtu_per = ABCDK_MIN((size_t)(p->obj->sizes[0] - node->out_pos), (size_t)(node->cfg.io_hook_mtu - mtu_pos));
         slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), mtu_per);
         if( slen <= 0)
             break;
@@ -1353,8 +1353,8 @@ NEXT_MSG:
         node->out_pos += slen;
         mtu_pos += slen;
         
-        /*最大传输单元。*/
-        if(mtu_pos >= node->cfg.input_mtu)
+        /*大于或等于最大传输单元时，让出时间分片。*/
+        if(mtu_pos >= node->cfg.io_hook_mtu)
             break;
     }
 
