@@ -55,7 +55,7 @@ typedef struct _abcdk_srpc_config
      * 
      * @note 有效范围：1~262144，默认：262144
      */
-    int io_mtu;
+    size_t io_mtu;
 
     /**
      * 会话准备通知回调函数。

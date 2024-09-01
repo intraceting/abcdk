@@ -155,7 +155,7 @@ typedef struct _abcdk_asio_config
      * 
      * @note 有效范围：1~262144，默认：262144
      */
-    int io_hook_mtu;
+    size_t io_hook_mtu;
 
     /**
      * 为新连接做准备工作的通知回调函数。

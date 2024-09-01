@@ -1345,7 +1345,7 @@ NEXT_MSG:
     while(node->out_pos < p->obj->sizes[0])
     {
         /*每次发送，限制在最大传输单元内。*/
-        mtu_per = ABCDK_MIN((size_t)(p->obj->sizes[0] - node->out_pos), (size_t)(node->cfg.io_hook_mtu - mtu_pos));
+        mtu_per = ABCDK_MIN((p->obj->sizes[0] - node->out_pos),(node->cfg.io_hook_mtu - mtu_pos));
         slen = abcdk_asio_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), mtu_per);
         if( slen <= 0)
             break;
