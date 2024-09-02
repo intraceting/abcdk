@@ -591,7 +591,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
             match_num += 1;
     }
 
-    abcdk_heap_free2((void**)&addrs);
+    abcdk_heap_freep((void**)&addrs);
 
     if (where == 1)
         return ((match_num > 0) ? 1 : 0);

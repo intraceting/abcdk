@@ -66,7 +66,7 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_heap_free2((void **)&ctx_p->rotors);
+    abcdk_heap_freep((void **)&ctx_p->rotors);
 
     abcdk_heap_free(ctx_p);
 }

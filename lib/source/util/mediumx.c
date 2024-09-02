@@ -310,7 +310,7 @@ int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int volta
 
 final:
 
-    abcdk_heap_free2((void **)&buf2);
+    abcdk_heap_freep((void **)&buf2);
 
     return chk;
 }

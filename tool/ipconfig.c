@@ -656,12 +656,12 @@ int _abcdkipconfig_resolv_change(abcdkipconfig_node_t *ctx, const char *const *n
 
     abcdk_trace_output( LOG_INFO, "更新'resolv'完成。");
 
-    abcdk_heap_free2((void **)&buf);
+    abcdk_heap_freep((void **)&buf);
     return 0;
 
 ERR:
 
-    abcdk_heap_free2((void **)&buf);
+    abcdk_heap_freep((void **)&buf);
     return -2;
 }
 

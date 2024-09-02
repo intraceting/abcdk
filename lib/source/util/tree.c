@@ -227,7 +227,7 @@ void abcdk_tree_free(abcdk_tree_t **root)
                     node->destructor_cb(node->obj,node->opaque);
 
                 abcdk_object_unref(&node->obj);
-                abcdk_heap_free2((void**)&node);
+                abcdk_heap_freep((void**)&node);
             }
         }
         else
@@ -368,7 +368,7 @@ final:
 
     it->dump_cb(SIZE_MAX, NULL, it->opaque);
 
-    abcdk_heap_free2((void**)&stack);
+    abcdk_heap_freep((void**)&stack);
 }
 
 void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_iterator_t *it,int order)
@@ -518,7 +518,7 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const
 
 final:
 
-    abcdk_heap_free2((void**)&stack);
+    abcdk_heap_freep((void**)&stack);
 
     return wsize;
 }

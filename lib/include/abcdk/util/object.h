@@ -96,24 +96,16 @@ abcdk_object_t *abcdk_object_refer(abcdk_object_t *src);
 */
 void abcdk_object_unref(abcdk_object_t **dst);
 
-/**
- * 申请一个内存块，并复制数据。
-*/
+/** 申请一个内存块，并复制数据。*/
 abcdk_object_t *abcdk_object_copyfrom(const void *data, size_t size);
 
-/**
- * 申请一个内存块，并格式化数据。
-*/
+/** 申请一个内存块，并格式化数据。*/
 abcdk_object_t *abcdk_object_vprintf(int max, const char *fmt, va_list ap);
 
-/**
- * 申请一个内存块，并格式化数据。
-*/
+/** 申请一个内存块，并格式化数据。*/
 abcdk_object_t *abcdk_object_printf(int max, const char *fmt, ...);
 
-/**
- * 申请一个内存块，并复制数据。
-*/
+/** 申请一个内存块，并复制数据。*/
 abcdk_object_t *abcdk_object_copypair(const void *key, size_t ksize,const void *val, size_t vsize);
 
 __END_DECLS

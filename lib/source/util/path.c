@@ -67,7 +67,7 @@ void abcdk_mkdir(const char *path, mode_t mode)
     }
 
     if (tmp)
-        abcdk_heap_free2((void**)&tmp);
+        abcdk_heap_freep((void**)&tmp);
 }
 
 char *abcdk_dirname(char *dst, const char *src)
@@ -85,7 +85,7 @@ char *abcdk_dirname(char *dst, const char *src)
     if (find)
         memcpy(dst, find, strlen(find) + 1);
 
-    abcdk_heap_free2((void**)&path);
+    abcdk_heap_freep((void**)&path);
 
     return dst;
 }
@@ -105,7 +105,7 @@ char *abcdk_basename(char *dst, const char *src)
     if (find)
         memcpy(dst, find, strlen(find) + 1);
 
-    abcdk_heap_free2((void**)&path);
+    abcdk_heap_freep((void**)&path);
 
     return dst;
 }

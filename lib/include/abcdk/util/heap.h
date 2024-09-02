@@ -39,7 +39,7 @@ void abcdk_heap_free(void *data);
  * 
  * @param data 指针的指针。返回时赋值NULL(0)。
  */
-void abcdk_heap_free2(void **data);
+void abcdk_heap_freep(void **data);
 
 /**
  * 内存克隆。

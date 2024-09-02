@@ -38,7 +38,7 @@ void abcdk_heap_free(void *data)
         free(data);
 }
 
-void abcdk_heap_free2(void **data)
+void abcdk_heap_freep(void **data)
 {
     void *data_p;
 

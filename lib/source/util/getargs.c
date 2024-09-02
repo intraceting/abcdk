@@ -69,7 +69,7 @@ void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,co
         else
         {
             if (it_key != prefix)
-                abcdk_heap_free2((void **)&it_key);
+                abcdk_heap_freep((void **)&it_key);
 
             it_key = abcdk_heap_clone(line, rlen);
             if (!it_key)
@@ -83,7 +83,7 @@ void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,co
     if (line)
         free(line);
     if (it_key != prefix)
-        abcdk_heap_free2((void **)&it_key);
+        abcdk_heap_freep((void **)&it_key);
 }
 
 void abcdk_getargs_file(abcdk_option_t *opt, const char *file, uint8_t delim, char note, const char *argv0)

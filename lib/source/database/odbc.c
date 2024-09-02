@@ -47,7 +47,7 @@ void _abcdk_odbc_free_attr_destroy(abcdk_object_t *alloc, void *opaque)
     /*只有这个单独申请的。*/
     void *p = alloc->pptrs[6];
 
-    abcdk_heap_free2(&p);
+    abcdk_heap_freep(&p);
 }
 
 void _abcdk_odbc_free_attr(abcdk_odbc_t *ctx)

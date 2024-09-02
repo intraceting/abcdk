@@ -1145,7 +1145,7 @@ final:
         ctx->arch_fd = NULL;
     }
 
-    abcdk_heap_free2(&ctx->buf);
+    abcdk_heap_freep(&ctx->buf);
     abcdk_reader_destroy(&ctx->reader);
     for (int i = 0; i < 256; i++)
         abcdk_closep(&ctx->fd[i]);

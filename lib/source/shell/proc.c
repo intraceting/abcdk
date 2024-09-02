@@ -39,7 +39,7 @@ char *abcdk_proc_dirname(char *buf, const char *append)
         buf = NULL;
     }
 
-    abcdk_heap_free2((void **)&tmp);
+    abcdk_heap_freep((void **)&tmp);
 
     return buf;
 }
@@ -64,7 +64,7 @@ char *abcdk_proc_basename(char *buf)
         buf = NULL;
     }
 
-    abcdk_heap_free2((void **)&tmp);
+    abcdk_heap_freep((void **)&tmp);
 
     return buf;
 }
@@ -159,12 +159,12 @@ pid_t abcdk_proc_vpopen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const cha
         goto ERR;
     }
 
-    abcdk_heap_free2((void**)&buf);
+    abcdk_heap_freep((void**)&buf);
     return pid;
 
 ERR:
 
-    abcdk_heap_free2((void**)&buf);
+    abcdk_heap_freep((void**)&buf);
     return -1; 
 }
 

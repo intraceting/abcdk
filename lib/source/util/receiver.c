@@ -79,7 +79,7 @@ void abcdk_receiver_unref(abcdk_receiver_t **ctx)
     if(ctx_p->tmp_obj)
         abcdk_object_unref(&ctx_p->tmp_obj);
     else
-        abcdk_heap_free2(&ctx_p->buf);
+        abcdk_heap_freep(&ctx_p->buf);
 
     if(access(ctx_p->tmp_file,F_OK)==0)
         remove(ctx_p->tmp_file);
