@@ -12,11 +12,9 @@
 
 __BEGIN_DECLS
 
-/**
- * 树节点。
- * 
- * 比较原始的树节点结构。
-*/
+
+
+/** 简单的树节点。*/
 typedef struct _abcdk_tree
 {
     /** 父。*/
@@ -34,6 +32,14 @@ typedef struct _abcdk_tree
     /** 小弟。*/
     struct _abcdk_tree *next;
 
+    /** 析构回调函数。 */
+    void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
+
+    /**
+     * 用户环境指针。
+    */
+    void *opaque;
+    
     /**
      * 数据对象。
      * 
@@ -41,25 +47,10 @@ typedef struct _abcdk_tree
     */
     abcdk_object_t *obj;
 
-    /**
-     * 析构回调函数。
-     *
-     * @param [in] opaque 用户环境指针。
-     */
-    void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
-
-    /**
-     * 用户环境指针。
-    */
-    void *opaque;
-
 }abcdk_tree_t;
 
-/**
- * 树节点迭代器。
- * 
- * @warning 成员变量的顺序不能被改变，并且只能向高地址空间增加新成员变量。
-*/
+
+/**树节点迭代器。*/
 typedef struct _abcdk_tree_iterator
 {
     /** 
@@ -92,12 +83,6 @@ typedef struct _abcdk_tree_iterator
 
 } abcdk_tree_iterator_t;
 
-/**
- * 释放回调函数。
- * 
- * @param [in] opaque 用户环境指针。
- */
-typedef void (*abcdk_tree_free_cb)(abcdk_object_t *obj, void *opaque);
 
 /**
  * 获取自己的父节指针。
@@ -166,10 +151,10 @@ void abcdk_tree_free(abcdk_tree_t **root);
 /**
  * 创建节点。
  * 
- * @param alloc 内存块指针，可以为NULL(0)。注：仅复制指针，不会改变对象的引用计数。
+ * @param data 内存块指针，可以为NULL(0)。注：仅复制指针，不会改变对象的引用计数。
  * 
 */
-abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *alloc);
+abcdk_tree_t *abcdk_tree_alloc(abcdk_object_t *obj);
 
 /**
  * 创建节点，同时申请数据内存块。

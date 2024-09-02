@@ -162,6 +162,14 @@ int abcdk_sockopt_option_int(int fd, int level, int name, int *flag, int directi
 */
 int abcdk_sockopt_option_timeout(int fd, int name, struct timeval *tv, int direction);
 
+/**
+ * 设置SOCKET选项(timeout)。
+ * 
+ * @param tv 时长(微秒)。> 0 有效，<= 0 关闭。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_sockopt_option_timeout_set(int fd, int name, time_t tv);
 
 /**
  * 获取或设置SOCKET选项(linger)。

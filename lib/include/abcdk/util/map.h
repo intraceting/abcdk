@@ -48,9 +48,9 @@ typedef struct _abcdk_map
      * 析构回调函数。
     */
     void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
-    
+
     /**
-     * 移除回调函数。
+     * 删除回调函数。
     */
     void (*remove_cb)(abcdk_object_t *obj, void *opaque);
 

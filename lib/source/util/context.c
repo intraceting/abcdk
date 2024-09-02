@@ -187,7 +187,7 @@ void abcdk_context_unlock(abcdk_context_t *ctx)
     else if(ctx->sync_type == ABCDK_CONTEXT_SYNC_SPINLOCK)
         abcdk_spinlock_unlock(ctx->sync.spin_ctx);
     else if(ctx->sync_type == ABCDK_CONTEXT_SYNC_RWLOCK)
-        abcdk_rwlock_unlock(ctx->sync.spin_ctx);
+        abcdk_rwlock_unlock(ctx->sync.rw_ctx);
     else
         ABCDK_ASSERT(0,"不支持或未创建。");
 }
@@ -201,7 +201,7 @@ void abcdk_context_lock(abcdk_context_t *ctx)
     else if(ctx->sync_type == ABCDK_CONTEXT_SYNC_SPINLOCK)
         abcdk_spinlock_lock(ctx->sync.spin_ctx,1);
     else if(ctx->sync_type == ABCDK_CONTEXT_SYNC_RWLOCK)
-        abcdk_rwlock_wrlock(ctx->sync.spin_ctx,1);
+        abcdk_rwlock_wrlock(ctx->sync.rw_ctx,1);
     else 
         ABCDK_ASSERT(0,"不支持或未创建。");
 }
@@ -211,7 +211,7 @@ void abcdk_context_rdlock(abcdk_context_t *ctx)
     assert(ctx != NULL);
 
     if(ctx->sync_type == ABCDK_CONTEXT_SYNC_RWLOCK)
-        abcdk_rwlock_rdlock(ctx->sync.spin_ctx,1);
+        abcdk_rwlock_rdlock(ctx->sync.rw_ctx,1);
     else 
         ABCDK_ASSERT(0,"不支持或未创建。");
 }
@@ -221,7 +221,7 @@ void abcdk_context_wrlock(abcdk_context_t *ctx)
     assert(ctx != NULL);
 
     if(ctx->sync_type == ABCDK_CONTEXT_SYNC_RWLOCK)
-        abcdk_rwlock_wrlock(ctx->sync.spin_ctx,1);
+        abcdk_rwlock_wrlock(ctx->sync.rw_ctx,1);
     else 
         ABCDK_ASSERT(0,"不支持或未创建。");
 }

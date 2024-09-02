@@ -248,6 +248,21 @@ int abcdk_sockopt_option_timeout(int fd,int name, struct timeval *tv,int directi
     return abcdk_socket_option(fd,SOL_SOCKET,name,tv,&len,direction);
 }
 
+int abcdk_sockopt_option_timeout_set(int fd, int name, time_t tv)
+{
+    struct timeval tmp = {0, 0};
+
+    assert(fd >= 0 && name > 0);
+
+    if (tv > 0)
+    {
+        tmp.tv_sec = tv / 1000000;
+        tmp.tv_usec = tv % 1000000;
+    }
+
+    return abcdk_sockopt_option_timeout(fd, name, &tmp, 2);
+}
+
 int abcdk_socket_option_linger(int fd,struct linger *lg,int direction)
 {
     socklen_t len = sizeof(struct linger);

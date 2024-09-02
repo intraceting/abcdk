@@ -870,7 +870,7 @@ END:
     _abcdkipconfig_node_free(&node_ctx);
 }
 
-void _abcdkipconfig_work(void *opaque,int event,void *item)
+void _abcdkipconfig_work(void *opaque,uint64_t event,void *item)
 {
     abcdkipconfig_t *ctx = (abcdkipconfig_t *)opaque;
 

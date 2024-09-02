@@ -138,16 +138,13 @@ abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, s
         node->obj->sizes[ABCDK_MAP_KEY] = ksize;
         node->obj->sizes[ABCDK_MAP_VALUE] = vsize;
 
-        /* 注册析构回调函数。*/
-        if (map->destructor_cb)
-            abcdk_object_atfree(node->obj, map->destructor_cb, map->opaque);
+        /* 注册删除回调函数。*/
+        node->destructor_cb = map->remove_cb;
+        node->opaque = map->opaque;
 
-        /* 注册移除回调函数。*/
-        if(map->remove_cb)
-        {
-            node->destructor_cb = map->remove_cb;
-            node->opaque = map->opaque;
-        }
+        /* 注册释构回调函数。*/
+        if(map->destructor_cb)
+            abcdk_object_atfree(node->obj,map->destructor_cb,map->opaque);
 
         /*复制KEY。*/
         memcpy(node->obj->pptrs[ABCDK_MAP_KEY], key, ksize);
@@ -170,7 +167,7 @@ abcdk_object_t *abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, 
     if (node)
         return node->obj;
 
-    ABCDK_ERRNO_AND_RETURN1(EAGAIN, NULL);
+    return NULL;
 }
 
 void abcdk_map_remove(abcdk_map_t *map, const void *key, size_t ksize)

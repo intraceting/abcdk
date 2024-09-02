@@ -45,7 +45,7 @@ void abcdk_queue_signal(abcdk_queue_t *ctx,int broadcast);
 /**
  * 等待。
  * 
- * @param [in] timeout – 超时(毫秒)。< 0 直到有事件或出错。
+ * @param [in] timeout – 时长(毫秒)。< 0 直到有事件或出错。
  * 
  * @return 0 成功(有事件)，!0 失败(超时或出错)。
  */
