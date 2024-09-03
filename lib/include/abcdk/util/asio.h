@@ -23,56 +23,68 @@ __BEGIN_DECLS
 /**异步IO对象。*/
 typedef struct _abcdk_asio  abcdk_asio_t;
 
-/**异步IO节点。*/
-typedef struct _abcdk_asio_node abcdk_asio_node_t;
+/**销毁。*/
+void abcdk_asio_destroy(abcdk_asio_t **ctx);
 
-/**释放。 */
-void abcdk_asio_unref(abcdk_asio_node_t **node_ctx);
+/**
+ * 创建。
+ * 
+ * @param [in] max 最大数量。
+*/
+abcdk_asio_t *abcdk_asio_create(int max);
 
-/**引用。*/
-abcdk_asio_node_t *abcdk_asio_refer(abcdk_asio_node_t *node_ctx);
+/** 
+ * 删除。
+ * 
+ * @return 0 成功。< 0 失败(不存在)。
+*/
+int abcdk_asio_del(abcdk_asio_t *ctx,int64_t pfd);
 
-/**申请。 */
-abcdk_asio_node_t *abcdk_asio_alloc(abcdk_asio_t *ctx,size_t userdata, void (*free_cb)(void *userdata));
+/**
+ * 添加。
+ *
+ * @return > 0 成功(伪句柄)，<= 0 失败。
+ */
+int64_t abcdk_asio_add(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata);
 
 /**
  * 设置超时。
  * 
  * @note 看门狗精度为300毫秒。
  * 
- * @param [in] timeout 时长(毫秒)。> 0 启用， <= 0 禁用。
+ * @param [in] pfd 伪句柄。
+ * @param [in] timeout 时长(毫秒)。> 0 启用，<= 0 禁用。
+ * 
+ * @return 0 成功。< 0 失败(不存在)。
 */
-void abcdk_asio_set_timeout(abcdk_asio_node_t *node_ctx, time_t timeout);
-
-/**设置句柄。*/
-void abcdk_asio_set_fd(abcdk_asio_node_t *node_ctx, int fd);
+int abcdk_asio_timeout(abcdk_asio_t *ctx,int64_t pfd, time_t timeout);
 
 /**
  * 注册事件。
  * 
- * @param [in] fd 句柄。
+ * @param [in] pfd 伪句柄。
  * @param [in] want 希望的事件。
  * @param [in] done 完成的事件。
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_asio_mark(abcdk_asio_node_t *node_ctx,uint32_t want,uint32_t done);
+int abcdk_asio_mark(abcdk_asio_t *ctx,int64_t pfd,uint32_t want,uint32_t done);
 
-/**销毁。*/
-void abcdk_asio_destroy(abcdk_asio_t **ctx);
-
-/**创建。*/
-abcdk_asio_t *abcdk_asio_create();
+/**
+ * 释放。
+ * 
+ * @param [in] pfd 伪句柄。
+ * 
+ * @return 0 成功，< 0 失败(不存在)。
+*/
+int abcdk_asio_unref(abcdk_asio_t *ctx,int64_t pfd, uint32_t events);
 
 /**
  * 等待事件。
  * 
- * @return > 0 事件数量。= 0 超时，< 0 失败。
+ * @return > 0 有事件，= 0 无事件，< 0 出错。
 */
-int abcdk_asio_wait(abcdk_asio_t *ctx,abcdk_epoll_event_t events[20],time_t timeout);
-
-
-
+int abcdk_asio_wait(abcdk_asio_t *ctx,abcdk_epoll_event_t *event);
 
 
 __END_DECLS
