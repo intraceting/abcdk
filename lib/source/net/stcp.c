@@ -864,8 +864,6 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         /*释放事件计数。*/
         abcdk_asio_unref(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT);
 
-        /*释放引用(调度时引用)。*/
-        abcdk_stcp_unref(&node);
     }
     else if (event == ABCDK_EPOLL_INPUT)
     {
@@ -900,9 +898,10 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         /*释放事件计数。*/
         abcdk_asio_unref(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT);
 
-        /*释放引用(调度时引用)。*/
-        abcdk_stcp_unref(&node);
     }
+
+    /*释放引用(调度时引用)。*/
+    abcdk_stcp_unref(&node);
 }
 
 static void _abcdk_stcp_worker(void *opaque,uint64_t event,void *item)
