@@ -300,23 +300,16 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size);
 */
 int abcdk_stcp_send_watch(abcdk_stcp_node_t *node);
 
-/**
- * 停止通讯引擎。
- * 
- * @note 非线程安全。
- * 
- * @param [in out] ctx 环境指针。
-*/
+/** 停止。*/
 void abcdk_stcp_stop(abcdk_stcp_t **ctx);
 
 /**
- * 启动通讯引擎。
+ * 启动。
  * 
- * @param [in] max 最大连接数量。
+ * @param [in] worker 工人(线程)数量。
  * 
- * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_stcp_t *abcdk_stcp_start(int max);
+abcdk_stcp_t *abcdk_stcp_start(int worker);
 
 /**
  * 启动监听。

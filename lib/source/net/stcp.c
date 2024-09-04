@@ -19,7 +19,7 @@ struct _abcdk_stcp
     abcdk_worker_t *worker_ctx;
 
     /** 最大连接数量。*/
-    int max;
+    int io_max;
 
     /** 退出标志。0： 运行，!0：停止。*/
     volatile int exitflag;
@@ -87,9 +87,11 @@ struct _abcdk_stcp_node
     /** EnigmaSSL环境指针。*/
     abcdk_enigma_ssl_t *enigmassl_ssl;
 
-    /** 工作线程。*/
-    volatile pthread_t worker;
+    /** 读线程。*/
+    volatile pthread_t recv_leader;
 
+    /** 写线程。*/
+    volatile pthread_t send_leader;
 
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
@@ -316,8 +318,8 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     assert(node != NULL && buf != NULL && size >0);
 
-    /*仅消息循环线程拥有读权利。*/
-    chk = abcdk_thread_leader_test(&node->worker);
+    /*仅工作线程拥有读权利。*/
+    chk = abcdk_thread_leader_test(&node->recv_leader);
     ABCDK_ASSERT(chk == 0,"当前线程没有读权利。");
 
     while (rsize_all < size)
@@ -357,8 +359,13 @@ int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
 ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
+    int chk;
 
     assert(node != NULL && buf != NULL && size > 0);
+
+    /*仅工作线程拥有写权利。*/
+    chk = abcdk_thread_leader_test(&node->send_leader);
+    ABCDK_ASSERT(chk == 0,"当前线程没有读权利。");
 
     while (wsize_all < size)
     {
@@ -418,8 +425,7 @@ void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
 
 void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node,uint32_t event, int *result)
 {
-    /*绑定工作线程。*/
-    abcdk_thread_leader_vote(&node->worker);
+
 
     /*通知应用层处理事件。*/
     if(event == ABCDK_STCP_EVENT_INPUT)
@@ -429,8 +435,6 @@ void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node,uint32_t event, int *result)
     else 
         node->cfg.event_cb(node, event, result);
 
-    /*解绑工作线程。*/
-    abcdk_thread_leader_quit(&node->worker);
 }
 
 void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
@@ -467,7 +471,7 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
      *
      * 如果不把已经建立的连接从监听队列除，那么新的连接可能无法连接。
     */
-    if(abcdk_asio_count(node->ctx->asio_ctx) >= node->ctx->max)
+    if(abcdk_asio_count(node->ctx->asio_ctx) >= node->ctx->io_max)
         goto ERR;
 
     /*通知应用层新连接到来。*/
@@ -844,7 +848,13 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         }
         else
         {
+            /*绑定工作线程。*/
+            abcdk_thread_leader_vote(&node->send_leader);
+
             _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_OUTPUT, &chk);
+
+            /*解绑工作线程。*/
+            abcdk_thread_leader_quit(&node->send_leader);
         }
 
         /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
@@ -874,7 +884,13 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
             }
             else
             {
+                /*绑定工作线程。*/
+                abcdk_thread_leader_vote(&node->recv_leader);
+
                 _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
+
+                /*解绑工作线程。*/
+                abcdk_thread_leader_quit(&node->recv_leader);
             }
 
             /*无论连接状态如何，读权利必须内部释放，不能开放给应用层。*/
@@ -923,29 +939,30 @@ void abcdk_stcp_stop(abcdk_stcp_t **ctx)
     *ctx = NULL;
 }
 
-abcdk_stcp_t * abcdk_stcp_start(int max)
+abcdk_stcp_t * abcdk_stcp_start(int worker)
 {
     abcdk_stcp_t *ctx = NULL;
     int chk;
 
-    assert(max > 0);
+    assert(worker > 0);
 
     ctx = abcdk_heap_alloc(sizeof(abcdk_stcp_t));
     if(!ctx)
         return NULL;
 
-    ctx->asio_ctx = abcdk_asio_create(max);
+    ctx->io_max = 99999;
+    ctx->asio_ctx = abcdk_asio_create(ctx->io_max);
     if(!ctx->asio_ctx)
         goto ERR;
 
-    ctx->worker_cfg.numbers = 2;
+    ctx->worker_cfg.numbers = 1 + worker;
     ctx->worker_cfg.opaque = ctx;
     ctx->worker_cfg.process_cb = _abcdk_stcp_worker;
     ctx->worker_ctx = abcdk_worker_start(&ctx->worker_cfg);
     if(!ctx->worker_ctx)
         goto ERR;
 
-    ctx->max = max;
+    
 
     /*先天任务。*/
     abcdk_worker_dispatch(ctx->worker_ctx,0,(void*)-1);
@@ -1110,7 +1127,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     node_p = abcdk_stcp_refer(node);
 
     /*检测最大连接数量限制。*/
-    if(abcdk_asio_count(node_p->ctx->asio_ctx) >= node_p->ctx->max)
+    if(abcdk_asio_count(node_p->ctx->asio_ctx) >= node_p->ctx->io_max)
         goto final_error;
 
     node_p->flag = ABCDK_STCP_FLAG_LISTEN;
@@ -1211,7 +1228,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     node_p = abcdk_stcp_refer(node);
 
     /*检测最大连接数量限制。*/
-    if(abcdk_asio_count(node_p->ctx->asio_ctx) >= node_p->ctx->max)
+    if(abcdk_asio_count(node_p->ctx->asio_ctx) >= node_p->ctx->io_max)
         goto final_error;
 
     node_p->flag = ABCDK_STCP_FLAG_CLIENT;
