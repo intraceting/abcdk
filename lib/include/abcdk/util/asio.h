@@ -33,27 +33,35 @@ void abcdk_asio_destroy(abcdk_asio_t **ctx);
 */
 abcdk_asio_t *abcdk_asio_create(int max);
 
+/**获取数量。 */
+size_t abcdk_asio_count(abcdk_asio_t *ctx);
+
 /** 
- * 删除。
+ * 解绑句柄。
+ * 
+ * @warning 添加的句柄(真实)由创建者负责关闭。
  * 
  * @return 0 成功。< 0 失败(不存在)。
 */
-int abcdk_asio_del(abcdk_asio_t *ctx,int64_t pfd);
+int abcdk_asio_detch(abcdk_asio_t *ctx,int64_t pfd);
 
 /**
- * 添加。
+ * 绑定句柄。
+ * 
+ * @param [in] fd 句柄(真实)。
+ * @param [in] userdata 用户数据。
  *
  * @return > 0 成功(伪句柄)，<= 0 失败。
  */
-int64_t abcdk_asio_add(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata);
+int64_t abcdk_asio_attach(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata);
 
 /**
  * 设置超时。
  * 
- * @note 看门狗精度为300毫秒。
+ * @note 看门狗精度为1000毫秒。
  * 
  * @param [in] pfd 伪句柄。
- * @param [in] timeout 时长(毫秒)。> 0 启用，<= 0 禁用。
+ * @param [in] timeout 时长(毫秒)。默认：180000。
  * 
  * @return 0 成功。< 0 失败(不存在)。
 */
@@ -82,10 +90,18 @@ int abcdk_asio_unref(abcdk_asio_t *ctx,int64_t pfd, uint32_t events);
 /**
  * 等待事件。
  * 
+ * @note 仅允许固定线程调用此接口。
+ * 
  * @return > 0 有事件，= 0 无事件，< 0 出错。
 */
 int abcdk_asio_wait(abcdk_asio_t *ctx,abcdk_epoll_event_t *event);
 
+/**
+ * 取消等待。
+ * 
+ * @note 所有关联的句柄都将收到错误事件。
+*/
+void abcdk_asio_abort(abcdk_asio_t *ctx);
 
 __END_DECLS
 

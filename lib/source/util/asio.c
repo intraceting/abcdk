@@ -9,6 +9,9 @@
 /**异步IO对象。*/
 typedef struct _abcdk_asio
 {
+    /*初始化状态。*/
+    int init_ok;
+
     /**epoll句柄。*/
     int epoll_fd;
 
@@ -24,11 +27,17 @@ typedef struct _abcdk_asio
     /**句柄索引池。*/
     abcdk_pool_t *index_pool;
 
-    /** 看门狗活动时间(毫秒)。*/
+    /**看门狗活动时间(毫秒)。*/
     time_t watchdog_active;
 
-    /** 看门狗活动间隔(毫秒)。*/
+    /**看门狗活动间隔(毫秒)。*/
     time_t watchdog_intvl;
+
+    /**等待线程ID。*/
+    volatile pthread_t wait_leader;
+
+    /**等待放弃标志。*/
+    volatile int wait_abort;
     
 }abcdk_asio_t;
 
@@ -83,6 +92,11 @@ static int64_t _abcdk_asio_idx2pfd(int idx)
 static int _abcdk_asio_pfd2idx(int64_t pfd)
 {
     return  (int)(0x00000000FFFFFFFFLL & pfd);
+}
+
+static int _abcdk_asio_pfd_assert(int64_t pfd)
+{
+    return ((pfd & 0x7FFFFFFF00000000LL) == 0x7FFFFFFF00000000LL ? 1 : 0);
 }
 
 static int _abcdk_asio_pull_idle_idx(abcdk_asio_t *ctx)
@@ -258,16 +272,18 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
         if (!node_ctx)
             continue;
 
-        /*负值或零，不启用超时检查。*/
-        if (node_ctx->timeout <= 0)
-            continue;
-
         /*当事件队列排队过长时，中断看门狗检查，优先处理队列中的事件。*/
         if (abcdk_pool_count(ctx->event_pool) >= 800)
             break;
 
-        /*如果超时，派发ERROR事件。*/
-        if ((ctx->watchdog_active - node_ctx->active) >= node_ctx->timeout)
+        /*
+         * 下列条件之一符合时派发出错事件。
+         *
+         * 1：等待取消。
+         * 2：超时的时长小于或等于零。
+         * 3：长时间不活动(超时)。
+        */
+        if (ctx->wait_abort || node_ctx->timeout <= 0 || (current - node_ctx->active) >= node_ctx->timeout)
             _abcdk_asio_disp(ctx, node_ctx, ABCDK_EPOLL_ERROR);
     }
 
@@ -297,6 +313,11 @@ void abcdk_asio_destroy(abcdk_asio_t **ctx)
 
     ctx_p = *ctx;
     *ctx = NULL;
+
+    if(ctx_p->init_ok)
+    {
+        ABCDK_ASSERT(ctx_p->node_list->numbers == abcdk_pool_count(ctx_p->index_pool) ,"所有关联句柄分离后才允许销毁。");
+    }
 
     abcdk_object_unref(&ctx_p->node_list);
     abcdk_mutex_destroy(&ctx_p->node_sync);
@@ -336,9 +357,10 @@ abcdk_asio_t *abcdk_asio_create(int max)
     if(!ctx->index_pool)
         goto ERR;
 
-    /*初始化看门狗。*/
     ctx->watchdog_active = _abcdk_asio_clock();
     ctx->watchdog_intvl = 1000;
+    ctx->wait_leader = 0;
+    ctx->wait_abort = 0;
 
     /*初始化索引。*/
     for (int i = 0; i < max; i++)
@@ -352,11 +374,26 @@ ERR:
     return NULL;
 }
 
-int abcdk_asio_del(abcdk_asio_t *ctx,int64_t pfd)
+size_t abcdk_asio_count(abcdk_asio_t *ctx)
+{
+    size_t count = 0;
+
+    assert(ctx != NULL);
+
+    _abcdk_asio_lock(ctx);
+
+    count = ctx->node_list->numbers - abcdk_pool_count(ctx->index_pool);
+
+    _abcdk_asio_unlock(ctx,0);
+
+    return count;
+}
+
+int abcdk_asio_detch(abcdk_asio_t *ctx,int64_t pfd)
 {
     abcdk_asio_node_t *node_ctx;
 
-    assert(ctx != NULL && pfd > 0);
+    assert(ctx != NULL && _abcdk_asio_pfd_assert(pfd));
 
     _abcdk_asio_lock(ctx);
 
@@ -378,7 +415,7 @@ int abcdk_asio_del(abcdk_asio_t *ctx,int64_t pfd)
     return _abcdk_asio_unlock(ctx,0);
 }
 
-int64_t abcdk_asio_add(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
+int64_t abcdk_asio_attach(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
 {
     abcdk_asio_node_t *node_ctx;
     int64_t pfd;
@@ -386,6 +423,10 @@ int64_t abcdk_asio_add(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
     assert(ctx != NULL && fd >= 0 && userdata != NULL);
 
     _abcdk_asio_lock(ctx);
+
+    /*等待取消后，不能再关联新句柄。*/
+    if (ctx->wait_abort)
+        return _abcdk_asio_unlock(ctx, -1);
 
     node_ctx = _abcdk_asio_node_alloc(ctx);
     if(!node_ctx)
@@ -398,7 +439,7 @@ int64_t abcdk_asio_add(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
     node_ctx->event_disp = 0;
     node_ctx->event_mark = 0;
     node_ctx->active = _abcdk_asio_clock();
-    node_ctx->timeout = -1;
+    node_ctx->timeout = 180000;
     node_ctx->mark_first = 1;
 
     /*copy.*/
@@ -409,11 +450,11 @@ int64_t abcdk_asio_add(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
     return pfd;
 }
 
-int abcdk_asio_set_timeout(abcdk_asio_t *ctx,int64_t pfd, time_t timeout)
+int abcdk_asio_timeout(abcdk_asio_t *ctx,int64_t pfd, time_t timeout)
 {
     abcdk_asio_node_t *node_ctx;
 
-    assert(ctx != NULL && pfd > 0);
+    assert(ctx != NULL && _abcdk_asio_pfd_assert(pfd));
 
     _abcdk_asio_lock(ctx);
 
@@ -434,7 +475,7 @@ int abcdk_asio_mark(abcdk_asio_t *ctx,int64_t pfd,uint32_t want,uint32_t done)
 {
     abcdk_asio_node_t *node_ctx;
 
-    assert(ctx != NULL && pfd > 0);
+    assert(ctx != NULL && _abcdk_asio_pfd_assert(pfd));
     assert((want & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);//不允许注册出错事件。
     assert((done & ~(ABCDK_EPOLL_INPUT | ABCDK_EPOLL_OUTPUT)) == 0);//完成事件中不能包含出错事件。
 
@@ -453,7 +494,7 @@ int abcdk_asio_unref(abcdk_asio_t *ctx,int64_t pfd, uint32_t events)
 {
     abcdk_asio_node_t *node_ctx;
 
-    assert(ctx != NULL && pfd > 0);
+    assert(ctx != NULL && _abcdk_asio_pfd_assert(pfd));
 
     _abcdk_asio_lock(ctx);
 
@@ -481,11 +522,19 @@ int abcdk_asio_unref(abcdk_asio_t *ctx,int64_t pfd, uint32_t events)
 int abcdk_asio_wait(abcdk_asio_t *ctx,abcdk_epoll_event_t *event)
 {
     abcdk_asio_node_t *node_ctx;
-    abcdk_epoll_event_t es_tmp[20] = {0};
+    abcdk_epoll_event_t es_tmp[1000 - 800] = {0}; // 只能是这么多。
     time_t iowait_ms;
     int chk;
 
     assert(ctx != NULL && event != NULL);
+
+    /*绑定到固定线程。*/
+    if (abcdk_thread_leader_test(&ctx->wait_leader) != 0)
+    {   
+        /*仅允许固定线程调用此接口。*/
+        if (abcdk_thread_leader_vote(&ctx->wait_leader) != 0)
+            return 0;
+    }
 
 LOOP_NEXT:
 
@@ -500,6 +549,10 @@ LOOP_NEXT:
     /*通过看门狗检测长期不活动的节点。*/
     chk = _abcdk_asio_watchdog(ctx);
 
+    /*没有待处理事件，并且通知等待取消。*/
+    if (chk <= 0 && ctx->wait_abort)
+        return _abcdk_asio_unlock(ctx, 0);
+
     /*根据看门狗的结果，决定IO事件等待时长。*/
     iowait_ms = (chk > 0 ? 0 : 1000);
 
@@ -507,7 +560,7 @@ LOOP_NEXT:
     _abcdk_asio_unlock(ctx,0);
 
     /*IO事件等待。*/
-    chk = abcdk_epoll_wait(ctx->epoll_fd, es_tmp,20,iowait_ms);
+    chk = abcdk_epoll_wait(ctx->epoll_fd, es_tmp,ABCDK_ARRAY_SIZE(es_tmp),iowait_ms);
     if(chk < 0)
         return -1;
     else if(chk == 0)
@@ -531,4 +584,18 @@ LOOP_NEXT:
     _abcdk_asio_unlock(ctx,0);
 
     goto LOOP_NEXT;
+}
+
+void abcdk_asio_abort(abcdk_asio_t *ctx)
+{
+    abcdk_asio_node_t *node_ctx;
+
+    assert(ctx != NULL);
+
+     _abcdk_asio_lock(ctx);
+        
+    /*通知取消等待。*/
+    ctx->wait_abort = 1;
+
+     _abcdk_asio_unlock(ctx,0);
 }

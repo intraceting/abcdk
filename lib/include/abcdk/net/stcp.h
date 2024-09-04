@@ -10,13 +10,14 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/getargs.h"
 #include "abcdk/util/socket.h"
-#include "abcdk/util/epollex.h"
+#include "abcdk/util/asio.h"
 #include "abcdk/util/thread.h"
 #include "abcdk/util/tree.h"
 #include "abcdk/util/map.h"
 #include "abcdk/util/time.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/spinlock.h"
+#include "abcdk/util/worker.h"
 #include "abcdk/enigma/bio.h"
 
 __BEGIN_DECLS
@@ -311,12 +312,11 @@ void abcdk_stcp_stop(abcdk_stcp_t **ctx);
 /**
  * 启动通讯引擎。
  * 
- * @param [in] max 最大连接数量。<= 0 使用文件句柄数量的一半作为最大连接数量。
- * @param [in] cpu 绑定的CPU编号。从0开始，-1 不绑定。
+ * @param [in] max 最大连接数量。
  * 
  * @return !NULL(0) 成功(环境指针)，NULL(0) 失败。
 */
-abcdk_stcp_t *abcdk_stcp_start(int max,int cpu);
+abcdk_stcp_t *abcdk_stcp_start(int max);
 
 /**
  * 启动监听。

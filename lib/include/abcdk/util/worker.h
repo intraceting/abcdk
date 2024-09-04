@@ -13,13 +13,13 @@
 
 __BEGIN_DECLS
 
-/**简单的工人。*/
+/**简单的线程池。*/
 typedef struct _abcdk_worker abcdk_worker_t;
 
-/**工人的配置。*/
+/**线程池的配置。*/
 typedef struct _abcdk_worker_config
 {
-    /*工人数量。<= 0 使用CPU核心数。*/
+    /*线程数量。<= 0 使用CPU核心数。*/
     int numbers;
 
     /**环境指针。*/

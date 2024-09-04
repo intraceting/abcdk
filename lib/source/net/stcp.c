@@ -9,11 +9,14 @@
 /** 简单的异步TCP通讯。 */
 struct _abcdk_stcp
 {
-    /** epollex 环境。*/
-    abcdk_epollex_t *epollex;
+    /** ASIO环境。*/
+    abcdk_asio_t *asio_ctx;
 
-    /** 工作线程。*/
-    abcdk_thread_t worker;
+    /** 线程池配置。*/
+    abcdk_worker_config_t worker_cfg;
+
+    /** 线程池环境。*/
+    abcdk_worker_t *worker_ctx;
 
     /** 最大连接数量。*/
     int max;
@@ -65,6 +68,9 @@ struct _abcdk_stcp_node
 
     /** 远端地址。*/
     abcdk_sockaddr_t remote;
+
+    /** 伪句柄。*/
+    int64_t pfd;
 
     /** 句柄。*/
     int fd;
@@ -180,6 +186,7 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*fr
     node->refcount = 1;
     node->ctx = ctx;
     node->index = abcdk_sequence_num();
+    node->pfd = -1;
     node->fd = -1;
     node->userdata = abcdk_object_alloc3(userdata,1);
     node->userdata_free_cb = free_cb;
@@ -271,7 +278,7 @@ int abcdk_stcp_set_timeout(abcdk_stcp_node_t *node, time_t timeout)
     if(!node->flag ||!node->status)
         return -3;
 
-    chk = abcdk_epollex_timeout(node->ctx->epollex, node->fd, timeout);
+    chk = abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, timeout);
 
     return chk;
 }
@@ -348,7 +355,7 @@ int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
     if (chk == 0)
         done_flag = ABCDK_EPOLL_INPUT;
 
-    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, done_flag);
+    chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT, done_flag);
 
     return chk;
 }
@@ -393,7 +400,7 @@ int abcdk_stcp_send_watch(abcdk_stcp_node_t *node)
     if(!node->flag ||!node->status)
         return -3;
 
-    chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+    chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
     return chk;
 }
@@ -464,39 +471,38 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     /*每次取出一个句柄。*/
     node->fd = abcdk_accept(listen->fd, &node->remote);
     if (node->fd < 0)
-        goto final_error;
+        goto ERR;
     
     /*
      * 检测最大连接数量限制。
      *
      * 如果不把已经建立的连接从监听队列除，那么新的连接可能无法连接。
     */
-    if(abcdk_epollex_count(node->ctx->epollex) >= node->ctx->max)
-        goto final_error;
+    if(abcdk_asio_count(node->ctx->asio_ctx) >= node->ctx->max)
+        goto ERR;
 
     /*通知应用层新连接到来。*/
     _abcdk_stcp_event_cb(node,ABCDK_STCP_EVENT_ACCEPT,&chk);
     if(chk != 0 )
-        goto final_error;
+        goto ERR;
     
     chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
     if(chk != 0 )
-        goto final_error;
+        goto ERR;
 
     ep_data.ptr = node;
-    chk = abcdk_epollex_attach(node->ctx->epollex, node->fd, &ep_data);
-    if(chk != 0)
-        goto final_error;
+    node->pfd = abcdk_asio_attach(node->ctx->asio_ctx, node->fd, &ep_data);
+    if(node->pfd <= 0)
+        goto ERR;
 
-    abcdk_epollex_timeout(node->ctx->epollex, node->fd, 180*1000);
+    abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, 180*1000);
     
     /*注册输出事件用于探测连接状态。*/
-    abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
-    
+    abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
     return;
 
-final_error:
+ERR:
 
     /*通知关闭。*/
     _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INTERRUPT,&chk);
@@ -734,7 +740,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
         }
         else
         {
-            chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+            chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
             if (chk != 0)
                 goto final_error;
             else 
@@ -764,13 +770,13 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
 
             if (ssl_err == SSL_ERROR_WANT_READ)
             {
-                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, 0);
+                chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT, 0);
                 if (chk == 0)
                     goto final;
             }
             else if (ssl_err == SSL_ERROR_WANT_WRITE)
             {
-                chk = abcdk_epollex_mark(node->ctx->epollex, node->fd, ABCDK_EPOLL_OUTPUT, 0);
+                chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
                 if (chk == 0)
                     goto final;
             }
@@ -794,103 +800,119 @@ final:
 final_error:
 
     /*修改超时，使用超时检测器关闭。*/
-    abcdk_epollex_timeout(node->ctx->epollex, node->fd, 1);
+    abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, 1);
 }
 
-void _abcdk_stcp_perform(abcdk_stcp_t *ctx,time_t timeout)
+static void _abcdk_stcp_perform(abcdk_stcp_t *ctx)
 {
-    int ret = 0;
-    abcdk_stcp_node_t *node = NULL;
-    abcdk_epoll_event_t e = {0};
+    abcdk_stcp_node_t *node;
+    abcdk_epoll_event_t e;
     int chk;
 
-    memset(&e, 0, sizeof(abcdk_epoll_event_t));
-    chk = abcdk_epollex_wait(ctx->epollex, &e, timeout);
-    if (chk < 0)
-        return;
-
-    node = (abcdk_stcp_node_t *)e.data.ptr;
-
-    //fprintf(stderr,"fd(%d)=%u\n",node->fd,e.events);
-
-    if (e.events & ABCDK_EPOLL_ERROR)
+    while (1)
     {
-        /*关闭前清除状态。*/
-        node->status = 0;
+        memset(&e, 0, sizeof(abcdk_epoll_event_t));
 
-        _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CLOSE,&ret);
+        chk = abcdk_asio_wait(ctx->asio_ctx, &e);
+        if (chk <= 0)
+            break;
 
-        /*释放引用。*/
-        abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
-        /*解除绑定关系。*/
-        abcdk_epollex_detach(ctx->epollex, node->fd);
-    }
-    else
-    {
+        node = (abcdk_stcp_node_t *)e.data.ptr;
 
+        if (e.events & ABCDK_EPOLL_ERROR)
+            abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_ERROR, abcdk_stcp_refer(node));
+        if (e.events & ABCDK_EPOLL_INPUT)
+            abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_INPUT, abcdk_stcp_refer(node));
         if (e.events & ABCDK_EPOLL_OUTPUT)
+            abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_OUTPUT, abcdk_stcp_refer(node));
+    }
+}
+
+static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_node_t *node)
+{
+    int chk;
+
+    if (event == ABCDK_EPOLL_ERROR)
+    {
+        _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CLOSE, &chk);
+
+        /*释放事件计数。*/
+        abcdk_asio_unref(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_ERROR);
+
+        /*解除绑定关系。*/
+        abcdk_asio_detch(ctx->asio_ctx, node->pfd);
+
+        /*释放引用(关联时的引用)。*/
+        abcdk_stcp_unref(&node);
+    }
+    else if (event == ABCDK_EPOLL_OUTPUT)
+    {
+        if (node->status != ABCDK_STCP_STATUS_STABLE)
+        {
+            _abcdk_stcp_handshake(node);
+            if (node->status == ABCDK_STCP_STATUS_STABLE)
+                _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT, &chk);
+        }
+        else
+        {
+            _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_OUTPUT, &chk);
+        }
+
+        /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
+        abcdk_asio_mark(ctx->asio_ctx, node->pfd, 0, ABCDK_EPOLL_OUTPUT);
+
+        /*释放事件计数。*/
+        abcdk_asio_unref(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT);
+
+        /*释放引用(调度时引用)。*/
+        abcdk_stcp_unref(&node);
+    }
+    else if (event == ABCDK_EPOLL_INPUT)
+    {
+        if (node->flag == ABCDK_STCP_FLAG_LISTEN)
+        {
+            /*每次处理一个新连接。*/
+            _abcdk_stcp_accept(node);
+
+            /*释放监听权利，并注册监听事件。*/
+            abcdk_asio_mark(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
+        }
+        else
         {
             if (node->status != ABCDK_STCP_STATUS_STABLE)
             {
                 _abcdk_stcp_handshake(node);
                 if (node->status == ABCDK_STCP_STATUS_STABLE)
-                    _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT,&ret);
+                    _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT, &chk);
+
+                /*释放读权利。*/
+                abcdk_asio_mark(ctx->asio_ctx, node->fd, 0, ABCDK_EPOLL_INPUT);
             }
             else
             {
-                _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_OUTPUT,&ret);
-            }
+                _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
 
-            /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
-            abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_OUTPUT);
-        }
-
-        if (e.events & ABCDK_EPOLL_INPUT)
-        {
-            if (node->flag == ABCDK_STCP_FLAG_LISTEN)
-            {
-                /*每次处理一个新连接。*/
-                _abcdk_stcp_accept(node);
-
-                /*释放监听权利，并注册监听事件。*/
-                abcdk_epollex_mark(ctx->epollex, node->fd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
-            }
-            else
-            {
-                if (node->status != ABCDK_STCP_STATUS_STABLE)
-                {
-                    _abcdk_stcp_handshake(node);
-                    if (node->status == ABCDK_STCP_STATUS_STABLE)
-                        _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT,&ret);
-
-                    /*释放读权利。*/
-                    abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
-                }
-                else
-                {
-                    _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT,&ret);
-
-                    /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
-                    //abcdk_epollex_mark(ctx->epollex, node->fd, 0, ABCDK_EPOLL_INPUT);
-                }
+                /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
+                // abcdk_asio_mark(ctx->asio_ctx, node->fd, 0, ABCDK_EPOLL_INPUT);
             }
         }
 
-        /*释放引用计数。*/
-        chk = abcdk_epollex_unref(ctx->epollex, node->fd, e.events);
-        assert(chk == 0);
+        /*释放事件计数。*/
+        abcdk_asio_unref(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT);
+
+        /*释放引用(调度时引用)。*/
+        abcdk_stcp_unref(&node);
     }
 }
 
-void *_abcdk_stcp_worker(void *args)
+static void _abcdk_stcp_worker(void *opaque,uint64_t event,void *item)
 {
-    abcdk_stcp_t *ctx = (abcdk_stcp_t *)args;
+    abcdk_stcp_t *ctx = (abcdk_stcp_t *)opaque;
 
-    /*每隔3秒检查一次，给退出检测留出时间。*/
-    while (!abcdk_atomic_load(&ctx->exitflag))
-        _abcdk_stcp_perform(ctx, 3000);
-
-    return NULL;
+    if(event)
+        _abcdk_stcp_dispatch(ctx,event,(abcdk_stcp_node_t *)item);
+    else 
+        _abcdk_stcp_perform(ctx);
 }
 
 void abcdk_stcp_stop(abcdk_stcp_t **ctx)
@@ -903,45 +925,45 @@ void abcdk_stcp_stop(abcdk_stcp_t **ctx)
     /*复制。*/
     ctx_p = *ctx;
 
+    /*通知取消等待事件(所有关联句柄将被标记错误)。*/
+    if(ctx_p->asio_ctx)
+        abcdk_asio_abort(ctx_p->asio_ctx);
 
-    /*退出。*/
-    abcdk_atomic_store(&ctx_p->exitflag, 1);
+    abcdk_worker_stop(&ctx_p->worker_ctx);
+    abcdk_asio_destroy(&ctx_p->asio_ctx);
 
-    /*回收线程资源。*/
-    abcdk_thread_join(&ctx_p->worker);
-
+    abcdk_heap_free(ctx_p);
+    
     /*一定要等线程停下来才能清空指针，否则会因为线程调度问题造成引用空指针。*/
     *ctx = NULL;
-
-    abcdk_epollex_free(&ctx_p->epollex);
-    abcdk_heap_free(ctx_p);
 }
 
-abcdk_stcp_t * abcdk_stcp_start(int max,int cpu)
+abcdk_stcp_t * abcdk_stcp_start(int max)
 {
     abcdk_stcp_t *ctx = NULL;
-    long opm = sysconf(_SC_OPEN_MAX);
     int chk;
+
+    assert(max > 0);
 
     ctx = abcdk_heap_alloc(sizeof(abcdk_stcp_t));
     if(!ctx)
         return NULL;
 
-    ctx->epollex = abcdk_epollex_alloc(_abcdk_stcp_cleanup_cb, ctx);
-
-    /*如果未指定最大连接数量，则使用文件句柄数量的一半。*/
-    ctx->max = ((max > 0) ? max : abcdk_align(opm / 2, 1));
-    ctx->exitflag = 0;
-
-    /*创建工作线程。*/
-    ctx->worker.handle = 0;
-    ctx->worker.routine = _abcdk_stcp_worker;
-    ctx->worker.opaque = ctx;
-    chk = abcdk_thread_create(&ctx->worker, 1);
-    if (chk != 0)
+    ctx->asio_ctx = abcdk_asio_create(max);
+    if(!ctx->asio_ctx)
         goto ERR;
 
-    abcdk_thread_setaffinity(ctx->worker.handle,&cpu);
+    ctx->worker_cfg.numbers = 2;
+    ctx->worker_cfg.opaque = ctx;
+    ctx->worker_cfg.process_cb = _abcdk_stcp_worker;
+    ctx->worker_ctx = abcdk_worker_start(&ctx->worker_cfg);
+    if(!ctx->worker_ctx)
+        goto ERR;
+
+    ctx->max = max;
+
+    /*先天任务。*/
+    abcdk_worker_dispatch(ctx->worker_ctx,0,(void*)-1);
 
     return ctx;
 
@@ -1103,7 +1125,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     node_p = abcdk_stcp_refer(node);
 
     /*检测最大连接数量限制。*/
-    if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
+    if(abcdk_asio_count(node_p->ctx->asio_ctx) >= node_p->ctx->max)
         goto final_error;
 
     node_p->flag = ABCDK_STCP_FLAG_LISTEN;
@@ -1172,13 +1194,13 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
 
     /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
     ep_data.ptr = node_p;
-    chk = abcdk_epollex_attach(node_p->ctx->epollex,node_p->fd, &ep_data);
-    if (chk != 0)
+    node_p->pfd = abcdk_asio_attach(node_p->ctx->asio_ctx,node_p->fd, &ep_data);
+    if (node_p->pfd <= 0)
         goto final_error;
     
     /*关闭超时。*/
-    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 0);
-    abcdk_epollex_mark(node_p->ctx->epollex, node_p->fd, ABCDK_EPOLL_INPUT, 0);
+    abcdk_asio_timeout(node_p->ctx->asio_ctx, node_p->pfd, 0);
+    abcdk_asio_mark(node_p->ctx->asio_ctx, node_p->pfd, ABCDK_EPOLL_INPUT, 0);
 
     return 0;
 
@@ -1204,7 +1226,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     node_p = abcdk_stcp_refer(node);
 
     /*检测最大连接数量限制。*/
-    if(abcdk_epollex_count(node_p->ctx->epollex) >= node_p->ctx->max)
+    if(abcdk_asio_count(node_p->ctx->asio_ctx) >= node_p->ctx->max)
         goto final_error;
 
     node_p->flag = ABCDK_STCP_FLAG_CLIENT;
@@ -1260,12 +1282,12 @@ final:
 
     /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
     ep_data.ptr = node_p;
-    chk = abcdk_epollex_attach(node_p->ctx->epollex, node_p->fd, &ep_data);
-    if (chk != 0)
+    node_p->pfd = abcdk_asio_attach(node_p->ctx->asio_ctx, node_p->fd, &ep_data);
+    if (node_p->pfd <= 0)
         goto final_error;
 
-    abcdk_epollex_timeout(node_p->ctx->epollex, node_p->fd, 180 * 1000);
-    abcdk_epollex_mark(node_p->ctx->epollex, node_p->fd, ABCDK_EPOLL_OUTPUT, 0);
+    abcdk_asio_timeout(node_p->ctx->asio_ctx, node_p->pfd, 180 * 1000);
+    abcdk_asio_mark(node_p->ctx->asio_ctx, node_p->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
     return 0;
 

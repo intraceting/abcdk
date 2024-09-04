@@ -6,7 +6,7 @@
  */
 #include "abcdk/util/worker.h"
 
-/**简单的工人。*/
+/**简单的线程池。*/
 struct _abcdk_worker
 {
     /**配置。*/
