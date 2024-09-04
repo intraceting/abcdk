@@ -340,7 +340,6 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 
 int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
 {
-    int done_flag = 0;
     int chk;
 
     assert(node != NULL);
@@ -350,12 +349,7 @@ int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
     if(!node->flag ||!node->status)
         return -3;
 
-    /*仅允许拥有读权利的线程释放读权利，其它线程只能注册读事件。*/
-    chk = abcdk_thread_leader_test(&node->worker);
-    if (chk == 0)
-        done_flag = ABCDK_EPOLL_INPUT;
-
-    chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT, done_flag);
+    chk = abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT, 0);
 
     return chk;
 }
@@ -363,13 +357,8 @@ int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
 ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 {
     ssize_t wsize = 0,wsize_all = 0;
-    int chk;
 
     assert(node != NULL && buf != NULL && size > 0);
-
-    /*仅消息循环线程拥有写权利。*/
-    chk = abcdk_thread_leader_test(&node->worker);
-    ABCDK_ASSERT(chk == 0,"当前线程没有写权利。");
 
     while (wsize_all < size)
     {
@@ -882,17 +871,14 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
                 _abcdk_stcp_handshake(node);
                 if (node->status == ABCDK_STCP_STATUS_STABLE)
                     _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CONNECT, &chk);
-
-                /*释放读权利。*/
-                abcdk_asio_mark(ctx->asio_ctx, node->fd, 0, ABCDK_EPOLL_INPUT);
             }
             else
             {
                 _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
-
-                /*在数据的传输过程中，读权利的释放由应用层决定，因此下面这句一定不要打开。*/
-                // abcdk_asio_mark(ctx->asio_ctx, node->fd, 0, ABCDK_EPOLL_INPUT);
             }
+
+            /*无论连接状态如何，读权利必须内部释放，不能开放给应用层。*/
+            abcdk_asio_mark(ctx->asio_ctx, node->pfd, 0, ABCDK_EPOLL_INPUT);
         }
 
         /*释放事件计数。*/
