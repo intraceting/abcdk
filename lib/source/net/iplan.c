@@ -11,6 +11,9 @@ struct _abcdk_iplan
 {
     /*路由表。*/
     abcdk_map_t *table_ctx;
+
+    /**同步锁。*/
+    abcdk_rwlock_t *locker_ctx;
 };//abcdk_iplan_t;
 
 static int _abcdk_iplan_key_len(abcdk_sockaddr_t *addr)
@@ -73,6 +76,7 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
+    abcdk_rwlock_destroy(&ctx_p->locker_ctx);
     abcdk_map_destroy(&ctx_p->table_ctx);
     abcdk_heap_free(ctx_p);
 }
@@ -92,6 +96,10 @@ abcdk_iplan_t *abcdk_iplan_create()
     ctx->table_ctx->hash_cb = _abcdk_iplan_hash_cb;
     ctx->table_ctx->compare_cb = _abcdk_iplan_compare_cb;
     ctx->table_ctx->opaque = ctx;
+
+    ctx->locker_ctx = abcdk_rwlock_create();
+    if(!ctx->locker_ctx)
+        goto ERR;
 
     return ctx;
 
@@ -175,4 +183,29 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     //abcdk_trace_output(LOG_DEBUG,"在路由表中查找地址(%s)成功。",addrstr);
 
     return data_p;
+}
+
+void abcdk_iplan_rdlock(abcdk_iplan_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_rwlock_rdlock(ctx->locker_ctx,1);
+}
+
+
+void abcdk_iplan_wrlock(abcdk_iplan_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_rwlock_wrlock(ctx->locker_ctx,1);
+}
+
+
+int abcdk_iplan_unlock(abcdk_iplan_t *ctx,int exitcode)
+{
+    assert(ctx != NULL);
+
+    abcdk_rwlock_unlock(ctx->locker_ctx);
+
+    return exitcode;
 }

@@ -11,6 +11,7 @@
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/socket.h"
+#include "abcdk/util/spinlock.h"
 
 __BEGIN_DECLS
 
@@ -70,6 +71,12 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
  * @return 0 成功，< 0 失败(超出池范围)。
 */
 int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
+
+/**加锁。 */
+void abcdk_ipool_lock(abcdk_ipool_t *ctx);
+
+/**解锁。 */
+int abcdk_ipool_unlock(abcdk_ipool_t *ctx,int exitcode);
 
 __END_DECLS
 

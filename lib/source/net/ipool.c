@@ -10,7 +10,11 @@
 struct _abcdk_ipool
 {
     /**地址池。*/
-    abcdk_object_t *pool;
+    abcdk_object_t *pool_ctx;
+
+    /**同步锁。*/
+    abcdk_spinlock_t *locker_ctx;
+
 
     /**地址的起止。 */
     abcdk_sockaddr_t addr_b;
@@ -44,7 +48,8 @@ void abcdk_ipool_destroy(abcdk_ipool_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_object_unref(&ctx_p->pool);
+    abcdk_spinlock_destroy(&ctx_p->locker_ctx);
+    abcdk_object_unref(&ctx_p->pool_ctx);
     abcdk_heap_free(ctx_p);
 }
 
@@ -91,6 +96,10 @@ static int _abcdk_ipool_init(abcdk_ipool_t *ctx)
 {
     uint64_t c = 0;
 
+    ctx->locker_ctx = abcdk_spinlock_create();
+    if(!ctx->locker_ctx)
+        return -1;
+
     if(ctx->addr_b.family == AF_INET6)
     {
         /*检测前缀是否相同。*/
@@ -109,8 +118,8 @@ static int _abcdk_ipool_init(abcdk_ipool_t *ctx)
     if (c <= 0 || c > 0xFFFFFFFFULL)
         return -2;
 
-    ctx->pool = abcdk_object_alloc2(abcdk_align(c,8)/8);
-    if(!ctx->pool)
+    ctx->pool_ctx = abcdk_object_alloc2(abcdk_align(c,8)/8);
+    if(!ctx->pool_ctx)
         return -3;
 
     /*默认关闭。*/
@@ -291,7 +300,7 @@ int abcdk_ipool_static_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
         return -1;
 
     /*标记占用。*/
-    chk = abcdk_bloom_mark(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->pool_b);
+    chk = abcdk_bloom_mark(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
     if(chk == 1)
         return -1;//已经被占用。
 
@@ -328,7 +337,7 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
     /*限制在一个轮回中查找。*/
     for (uint64_t i = 0; i < c; i++)
     {
-        chk = abcdk_bloom_filter(ctx->pool->pptrs[0], ctx->pool->sizes[0], ctx->dhcp_pos - ctx->pool_b);
+        chk = abcdk_bloom_filter(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], ctx->dhcp_pos - ctx->pool_b);
 
         /*copy.*/
         pos = ctx->dhcp_pos;
@@ -342,7 +351,7 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
             continue;
 
         /*标记占用。*/
-        abcdk_bloom_mark(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->pool_b);
+        abcdk_bloom_mark(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
 
         /*填充地址。*/
         _abcdk_ipool_set_addr_pos(ctx,addr, pos);
@@ -378,7 +387,23 @@ int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
         return -1;
 
     /*标记空闲。*/
-    abcdk_bloom_unset(ctx->pool->pptrs[0], ctx->pool->sizes[0], pos - ctx->pool_b);
+    abcdk_bloom_unset(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
 
     return 0;
+}
+
+void abcdk_ipool_lock(abcdk_ipool_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_spinlock_lock(ctx->locker_ctx,1);
+}
+
+int abcdk_ipool_unlock(abcdk_ipool_t *ctx,int exitcode)
+{
+    assert(ctx != NULL);
+
+    abcdk_spinlock_unlock(ctx->locker_ctx);
+
+    return exitcode;
 }

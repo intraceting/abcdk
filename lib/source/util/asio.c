@@ -291,13 +291,12 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
     /*更新看门狗活动时间。*/
     ctx->watchdog_active = current;
 
-    /*每次仅查找一轮。*/
-    for (int i = 0;;)
+    for (int i = 0; i < ctx->node_list->numbers; i++)
     {
-        /*滚动游标。*/
-        ctx->watchdog_pos = (ctx->watchdog_pos + 1) % ctx->node_list->numbers;
+        /*游标环行运动。*/
+        ctx->watchdog_pos %= ctx->node_list->numbers;
 
-        node_ctx = _abcdk_asio_idx2node(ctx, ctx->watchdog_pos);
+        node_ctx = _abcdk_asio_idx2node(ctx, ctx->watchdog_pos++);
         if (!node_ctx)
             continue;
 
@@ -314,9 +313,6 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
         if (ctx->wait_abort || (node_ctx->timeout != 0 && (current - node_ctx->active) >= node_ctx->timeout))
             _abcdk_asio_disp(ctx, node_ctx, ABCDK_EPOLL_ERROR);
 
-        /*在有限的范围内查找即可以。*/
-        if(++i >= _abcdk_asio_count(ctx))
-            break;
     }
 
 END:

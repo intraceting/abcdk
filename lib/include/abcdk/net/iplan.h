@@ -12,7 +12,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/socket.h"
 #include "abcdk/util/map.h"
-#include "abcdk/util/mutex.h"
+#include "abcdk/util/rwlock.h"
 #include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
@@ -54,6 +54,16 @@ int abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,void *data);
  * @return 数据指针。
 */
 void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
+
+/**读锁。 */
+void abcdk_iplan_rdlock(abcdk_iplan_t *ctx);
+
+/**写锁。 */
+void abcdk_iplan_wrlock(abcdk_iplan_t *ctx);
+
+/**解锁。 */
+int abcdk_iplan_unlock(abcdk_iplan_t *ctx,int exitcode);
+
 
 __END_DECLS
 
