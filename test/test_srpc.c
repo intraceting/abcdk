@@ -105,8 +105,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             int *a = (int *)buf;
              *a = 1;
-            // if (j % 3 == 0 && rand_rsp)
-            if(j>0)
+            if (j % 3 == 0 && rand_rsp)
+           // if(j>0)
                 *a = 0;
 
             int b = ((uint64_t)abcdk_rand_number()) % 70 + 5;
@@ -125,7 +125,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
             abcdk_object_unref(&rsp);
         }
 
-        sleep(2);
+        sleep(20);
     }
 
     abcdk_srpc_unref(&session_p);

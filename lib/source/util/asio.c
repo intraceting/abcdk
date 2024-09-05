@@ -259,8 +259,13 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
     abcdk_asio_node_t *node_ctx;
     time_t current = _abcdk_asio_clock();
 
-    /*看门狗活动间隔时间不能太密集。*/
-    if ((current - ctx->watchdog_active) < ctx->watchdog_intvl)
+    /*
+     * 看门狗活动间隔时间不能太密集，符合下条件时放弃执行。
+     *
+     * 1：正在工作(未取消)。
+     * 2：未超过间隔时长。
+     */
+    if (!ctx->wait_abort && (current - ctx->watchdog_active) < ctx->watchdog_intvl)
         goto END;
 
     /*更新看门狗活动时间。*/
@@ -273,11 +278,11 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
             continue;
 
         /*当事件队列排队过长时，中断看门狗检查，优先处理队列中的事件。*/
-        if (abcdk_pool_count(ctx->event_pool) >= 800)
+        if (abcdk_pool_count(ctx->event_pool) >= 80)
             break;
 
         /*
-         * 下列条件之一符合时派发出错事件。
+         * 符合下列条件之一，派发出错事件。
          *
          * 1：等待取消。
          * 2：超时的时长有效并且长时间不活动(超时)。
@@ -348,7 +353,7 @@ abcdk_asio_t *abcdk_asio_create(int max)
     if(!ctx->node_sync)
         goto ERR;
 
-    ctx->event_pool = abcdk_pool_create(sizeof(abcdk_epoll_event_t), 1000);
+    ctx->event_pool = abcdk_pool_create(sizeof(abcdk_epoll_event_t), 100);
     if(!ctx->event_pool)
         goto ERR;
 

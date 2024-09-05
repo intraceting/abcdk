@@ -69,6 +69,8 @@ int abcdk_epoll_wait(int efd,abcdk_epoll_event_t* events,int max,time_t timeout)
     assert(efd >= 0 && events != NULL && max > 0);
 
     chk = epoll_wait(efd, events, max, (timeout >= INT32_MAX ? -1 : timeout));
+    if(chk == -1 && errno == EINTR)
+        return 0;
 
     /*转换事件。 */
     for (int i = 0; i < chk; i++)

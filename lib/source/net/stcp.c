@@ -75,6 +75,9 @@ struct _abcdk_stcp_node
     /** 句柄。*/
     int fd;
 
+    /** IO同步锁。*/
+    abcdk_spinlock_t *io_locker;
+
     /** OpenSSL环境指针。*/
     SSL_CTX *openssl_ctx;
 
@@ -154,6 +157,7 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
         node_p->userdata_free_cb(node_p->userdata->pptrs[0]);
 
     abcdk_closep(&node_p->fd);
+    abcdk_spinlock_destroy(&node_p->io_locker);
     abcdk_object_unref(&node_p->userdata);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_spinlock_destroy(&node_p->out_locker);
@@ -190,6 +194,7 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*fr
     node->index = abcdk_sequence_num();
     node->pfd = -1;
     node->fd = -1;
+    node->io_locker = abcdk_spinlock_create();
     node->userdata = abcdk_object_alloc3(userdata,1);
     node->userdata_free_cb = free_cb;
     node->out_queue = abcdk_tree_alloc3(1);
@@ -311,6 +316,18 @@ int abcdk_stcp_get_sockaddr_str(abcdk_stcp_node_t *node, char local[NAME_MAX],ch
     return 0;
 }
 
+static void _abcdk_stcp_io_lock(abcdk_stcp_node_t *node)
+{
+    if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+        abcdk_spinlock_lock(node->io_locker,1);
+}
+
+static void _abcdk_stcp_io_unlock(abcdk_stcp_node_t *node)
+{
+    if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+        abcdk_spinlock_unlock(node->io_locker);
+}
+
 ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 {
     ssize_t rsize = 0,rsize_all = 0;
@@ -321,6 +338,8 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
     /*仅工作线程拥有读权利。*/
     chk = abcdk_thread_leader_test(&node->recv_leader);
     ABCDK_ASSERT(chk == 0,"当前线程没有读权利。");
+
+    _abcdk_stcp_io_lock(node);
 
     while (rsize_all < size)
     {
@@ -336,6 +355,8 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
        
         rsize_all += rsize;
     }
+
+    _abcdk_stcp_io_unlock(node);
 
     return rsize_all;
 }
@@ -367,6 +388,8 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
     chk = abcdk_thread_leader_test(&node->send_leader);
     ABCDK_ASSERT(chk == 0,"当前线程没有读权利。");
 
+    _abcdk_stcp_io_lock(node);
+
     while (wsize_all < size)
     {
         if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
@@ -381,6 +404,8 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
         
         wsize_all += wsize;
     }
+
+    _abcdk_stcp_io_unlock(node);
 
     return wsize_all;
 }
@@ -802,37 +827,12 @@ final_error:
     abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, -1);
 }
 
-static void _abcdk_stcp_perform(abcdk_stcp_t *ctx)
-{
-    abcdk_stcp_node_t *node;
-    abcdk_epoll_event_t e;
-    int chk;
-
-    while (1)
-    {
-        memset(&e, 0, sizeof(abcdk_epoll_event_t));
-
-        chk = abcdk_asio_wait(ctx->asio_ctx, &e);
-        if (chk <= 0)
-            break;
-
-        node = (abcdk_stcp_node_t *)e.data.ptr;
-
-        if (e.events & ABCDK_EPOLL_ERROR)
-            abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_ERROR, abcdk_stcp_refer(node));
-        if (e.events & ABCDK_EPOLL_INPUT)
-            abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_INPUT, abcdk_stcp_refer(node));
-        if (e.events & ABCDK_EPOLL_OUTPUT)
-            abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_OUTPUT, abcdk_stcp_refer(node));
-    }
-}
-
 static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_node_t *node)
 {
     abcdk_stcp_node_t *node_p;
     int chk;
 
-    if (event == ABCDK_EPOLL_ERROR)
+    if (event & ABCDK_EPOLL_ERROR)
     {
         _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CLOSE, &chk);
 
@@ -848,7 +848,8 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         /*释放引用(关联时的引用)。*/
         abcdk_stcp_unref(&node_p);
     }
-    else if (event == ABCDK_EPOLL_OUTPUT)
+    
+    if (event & ABCDK_EPOLL_OUTPUT)
     {
         if (node->status != ABCDK_STCP_STATUS_STABLE)
         {
@@ -868,7 +869,8 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         abcdk_asio_unref(ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT);
 
     }
-    else if (event == ABCDK_EPOLL_INPUT)
+    
+    if (event & ABCDK_EPOLL_INPUT)
     {
         if (node->flag == ABCDK_STCP_FLAG_LISTEN)
         {
@@ -902,6 +904,38 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
 
     /*释放引用(调度时引用)。*/
     abcdk_stcp_unref(&node);
+}
+
+static void _abcdk_stcp_perform(abcdk_stcp_t *ctx)
+{
+    abcdk_stcp_node_t *node;
+    abcdk_epoll_event_t e;
+    int chk;
+
+    while (1)
+    {
+        memset(&e, 0, sizeof(abcdk_epoll_event_t));
+
+        chk = abcdk_asio_wait(ctx->asio_ctx, &e);
+        if (chk <= 0)
+            break;
+
+        node = (abcdk_stcp_node_t *)e.data.ptr;
+
+        if (node->flag == ABCDK_STCP_FLAG_LISTEN || node->status != ABCDK_STCP_STATUS_STABLE)
+        {
+            abcdk_worker_dispatch(ctx->worker_ctx, e.events, abcdk_stcp_refer(node));
+        }
+        else
+        {
+            if (e.events & ABCDK_EPOLL_ERROR)
+                abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_ERROR, abcdk_stcp_refer(node));
+            if (e.events & ABCDK_EPOLL_INPUT)
+                abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_INPUT, abcdk_stcp_refer(node));
+            if (e.events & ABCDK_EPOLL_OUTPUT)
+                abcdk_worker_dispatch(ctx->worker_ctx, ABCDK_EPOLL_OUTPUT, abcdk_stcp_refer(node));
+        }
+    }
 }
 
 static void _abcdk_stcp_worker(void *opaque,uint64_t event,void *item)
