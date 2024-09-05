@@ -1377,7 +1377,7 @@ void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
     
 }
 
-#if 1
+#if 0
 void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
     abcdk_tree_t *p;
