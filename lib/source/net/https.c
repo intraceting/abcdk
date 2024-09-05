@@ -838,7 +838,7 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
     abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
     
     /*设置超时。*/
-    abcdk_stcp_set_timeout(node, 180 * 1000);
+    abcdk_stcp_set_timeout(node, 180);
 
     /*如果未选择协议，则使用默认协议。*/
     if(node_ctx_p->protocol == 0)
@@ -1072,7 +1072,7 @@ void abcdk_https_session_set_timeout(abcdk_https_session_t *session,time_t timeo
     node_p = (abcdk_stcp_node_t*)session;
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node_p);
 
-    abcdk_stcp_set_timeout(node_p,timeout * 1000);
+    abcdk_stcp_set_timeout(node_p,timeout);
 }
 
 

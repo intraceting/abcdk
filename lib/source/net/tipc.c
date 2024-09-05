@@ -575,7 +575,7 @@ static void _abcdk_tipc_event_connect(abcdk_stcp_node_t *node)
     abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*设置超时。*/
-    abcdk_stcp_set_timeout(node, 24 * 3600 * 1000);
+    abcdk_stcp_set_timeout(node, 24 * 3600);
 
     /*发送注册消息。*/
     if (node_ctx_p->flag == 2)

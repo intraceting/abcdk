@@ -177,12 +177,12 @@ void abcdk_srpc_set_timeout(abcdk_srpc_session_t *session,time_t timeout)
     abcdk_srpc_node_t *node_ctx_p;
     void *old_userdata;
 
-    assert(session != NULL && timeout >= 1);
+    assert(session != NULL);
 
     node_p = (abcdk_stcp_node_t*)session;
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node_p);
 
-    abcdk_stcp_set_timeout(node_p,timeout * 1000);
+    abcdk_stcp_set_timeout(node_p,timeout);
 }
 
 void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
@@ -274,7 +274,7 @@ static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
 
     
     /*设置超时。*/
-    abcdk_stcp_set_timeout(node, 180 * 1000);
+    abcdk_stcp_set_timeout(node, 180);
 
     if(node_ctx_p->cfg.ready_cb)
         node_ctx_p->cfg.ready_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node);

@@ -1035,7 +1035,7 @@ static void _abcdkvnet_srpc_request_cb(void *opaque, abcdk_srpc_session_t *sessi
 
     if(chk != 0)
     {
-        abcdk_srpc_set_timeout(session,1);
+        abcdk_srpc_set_timeout(session,-1);
         return;
     }
 
@@ -1583,7 +1583,7 @@ ERR:
 
     /*快速关闭。*/
     if(ctx->rpc_uplink_session)
-        abcdk_srpc_set_timeout(ctx->rpc_uplink_session,1);
+        abcdk_srpc_set_timeout(ctx->rpc_uplink_session,-1);
         
     _abcdkvnet_node_free(&ctx->rpc_uplink_session);
 
@@ -1722,6 +1722,10 @@ static void _abcdkvnet_process(abcdkvnet_t *ctx)
         _abcdkvnet_process_server(ctx);
 
     abcdk_closep(&ctx->virtual_tun_fd);
+
+    /*非信号退出，给自己发退出信号。*/
+    if(abcdk_atomic_compare(&ctx->exit_flag,0))
+        kill(getpid(),15);
 
     /*等待信号线程退出。*/
     abcdk_thread_join(&signal_thread);

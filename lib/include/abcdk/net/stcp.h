@@ -240,9 +240,7 @@ void *abcdk_stcp_get_userdata(abcdk_stcp_node_t *node);
 /**
  * 设置超时。
  * 
- * @note 1、看门狗精度为1000毫秒；2、超时生效时间受引擎的工作周期影响。
- * 
- * @param timeout 超时(毫秒)。
+ * @param timeout 时长(秒)。= 0 无效。默认：180。
  * 
  * @return 0 成功，!0 失败。
 */

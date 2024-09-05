@@ -47,8 +47,8 @@ typedef struct _abcdk_asio
 /**异步IO节点。*/
 typedef struct _abcdk_asio_node
 {
-    /**索引。*/
-    int idx;
+    /**魔法数(idx+1)。*/
+    int magic;
 
     /**伪句柄。*/
     int64_t pfd;
@@ -151,11 +151,11 @@ static abcdk_asio_node_t *_abcdk_asio_node_alloc(abcdk_asio_t *ctx)
 
     node_ctx = (abcdk_asio_node_t *)ctx->node_list->pptrs[idx];
 
-    assert(node_ctx->pfd == 0);
+    assert(node_ctx->magic == 0);
 
     pfd = _abcdk_asio_idx2pfd(idx);
 
-    node_ctx->idx = idx;
+    node_ctx->magic = idx + 1;
     node_ctx->pfd = pfd;
 
     return node_ctx;
@@ -170,7 +170,7 @@ static abcdk_asio_node_t *_abcdk_asio_idx2node(abcdk_asio_t *ctx,int idx)
 
     node_ctx = (abcdk_asio_node_t *)ctx->node_list->pptrs[idx];
 
-    if(node_ctx->idx != idx)
+    if(node_ctx->magic != idx + 1)
         return NULL;  
 
     return node_ctx;
@@ -436,9 +436,9 @@ int abcdk_asio_detch(abcdk_asio_t *ctx,int64_t pfd)
 
     abcdk_epoll_drop(ctx->epoll_fd,node_ctx->fd);
 
-    _abcdk_asio_push_idle_idx(ctx,node_ctx->idx);
+    _abcdk_asio_push_idle_idx(ctx,node_ctx->magic-1);
 
-    node_ctx->idx = -1;
+    node_ctx->magic = 0;
     node_ctx->pfd = 0;
     node_ctx->fd = -1;
 
@@ -492,7 +492,7 @@ int abcdk_asio_timeout(abcdk_asio_t *ctx,int64_t pfd, time_t timeout)
     if(!node_ctx)
         return _abcdk_asio_unlock(ctx,-22);
 
-    node_ctx->timeout = timeout;
+    node_ctx->timeout = timeout * 1000;
 
     /* 如果发生错误，分派出错事件。*/
     if (!node_ctx->stable)
@@ -579,8 +579,8 @@ LOOP_NEXT:
     /*通过看门狗检测长期不活动的节点。*/
     chk = _abcdk_asio_watchdog(ctx);
 
-    /*没有待处理事件，并且通知等待取消。*/
-    if (chk <= 0 && ctx->wait_abort)
+    /*没有待处理事件，并且已经通知等待取消。*/
+    if (chk <= 0 && ctx->wait_abort && _abcdk_asio_count(ctx) <= 0)
         return _abcdk_asio_unlock(ctx, 0);
 
     /*根据看门狗的结果，决定IO事件等待时长。*/

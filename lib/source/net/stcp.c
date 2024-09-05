@@ -519,7 +519,7 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     if(node->pfd <= 0)
         goto ERR;
 
-    abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, 180*1000);
+    abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, 180);
     
     /*注册输出事件用于探测连接状态。*/
     abcdk_asio_mark(node->ctx->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
@@ -960,10 +960,16 @@ void abcdk_stcp_stop(abcdk_stcp_t **ctx)
 
     /*复制。*/
     ctx_p = *ctx;
-
-    /*通知取消等待事件(所有关联句柄将被标记错误)。*/
+    
     if(ctx_p->asio_ctx)
+    {
+        /*通知取消等待。*/
         abcdk_asio_abort(ctx_p->asio_ctx);
+
+        /*等待所有关联句柄回收完毕。*/
+        while (abcdk_asio_count(ctx_p->asio_ctx) > 0)
+            sched_yield();
+    }
 
     abcdk_worker_stop(&ctx_p->worker_ctx);
     abcdk_asio_destroy(&ctx_p->asio_ctx);
