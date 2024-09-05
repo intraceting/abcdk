@@ -1371,6 +1371,7 @@ void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
     
 }
 
+#if 0
 void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
     abcdk_tree_t *p;
@@ -1430,6 +1431,60 @@ NEXT_MSG:
     abcdk_stcp_send_watch(node);
     return;
 }
+#else 
+void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
+{
+    abcdk_tree_t *p;
+    ssize_t slen = 0;
+    size_t mtu_pos = 0,mtu_per = 0;
+    int chk;
+
+NEXT_MSG:
+
+    /*从队列头部开始发送。*/
+    abcdk_spinlock_lock(node->out_locker,1);
+    p = abcdk_tree_child(node->out_queue,1);
+    abcdk_spinlock_unlock(node->out_locker);
+
+    /*通知应用层，发送队列空闲。*/
+    if(!p)
+    {
+        node->cfg.event_cb(node,ABCDK_STCP_EVENT_OUTPUT,&chk);
+        return;
+    }
+
+    /*
+     * 发。
+     * 
+     * 警告：重发数据时参数不能改变(指针和长度)。
+    */
+    slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+    if(slen <= 0)
+    {
+        abcdk_stcp_send_watch(node);
+        return;
+    }
+
+    node->out_pos += slen;
+
+    /*如果当前节点发送完成，则从队列中删除已经发送完整的节点。*/
+    if(node->out_pos >= p->obj->sizes[0])
+    {
+        /*游标归零。*/
+        node->out_pos = 0;
+        
+        /*移除节点。*/
+        abcdk_spinlock_lock(node->out_locker,1);
+        abcdk_tree_unlink(p);
+        abcdk_spinlock_unlock(node->out_locker);
+        /*删除节点。*/
+        abcdk_tree_free(&p);
+    }
+
+    goto NEXT_MSG;
+}
+
+#endif
 
 int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data)
 {
