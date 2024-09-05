@@ -19,7 +19,9 @@ void abcdk_openssl_cleanup()
 
     OBJ_cleanup();
     RAND_cleanup();
+#ifndef OPENSSL_NO_ENGINE
     ENGINE_cleanup();
+#endif //OPENSSL_NO_ENGINE
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
 
