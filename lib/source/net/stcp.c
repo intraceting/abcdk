@@ -834,6 +834,9 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
 
     if (event & ABCDK_EPOLL_ERROR)
     {
+        /*清除状态。*/
+        node->status = 0;
+
         _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CLOSE, &chk);
 
         /*释放事件计数。*/

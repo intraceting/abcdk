@@ -101,6 +101,8 @@ NEXT:
 
 int _abcdk_worker_start(abcdk_worker_t *ctx)
 {
+    static int cpu_idx = 0;
+    int cpu_num = sysconf(_SC_NPROCESSORS_ONLN);
     int chk;
 
     for (int i = 0; i < ctx->cfg.numbers; i++)
@@ -111,6 +113,9 @@ int _abcdk_worker_start(abcdk_worker_t *ctx)
         chk = abcdk_thread_create(&ctx->threads_ctx[i], 1);
         if (chk != 0)
             return -1;
+
+        abcdk_thread_setaffinity2(ctx->threads_ctx[i].handle, cpu_idx);
+        cpu_idx = (cpu_idx + 1) % cpu_num;
     }
 
     return 0;
