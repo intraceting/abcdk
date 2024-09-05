@@ -280,10 +280,9 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
          * 下列条件之一符合时派发出错事件。
          *
          * 1：等待取消。
-         * 2：超时的时长小于或等于零。
-         * 3：长时间不活动(超时)。
+         * 2：超时的时长有效并且长时间不活动(超时)。
         */
-        if (ctx->wait_abort || node_ctx->timeout <= 0 || (current - node_ctx->active) >= node_ctx->timeout)
+        if (ctx->wait_abort || (node_ctx->timeout != 0 && (current - node_ctx->active) >= node_ctx->timeout))
             _abcdk_asio_disp(ctx, node_ctx, ABCDK_EPOLL_ERROR);
     }
 
@@ -366,6 +365,8 @@ abcdk_asio_t *abcdk_asio_create(int max)
     for (int i = 0; i < max; i++)
         abcdk_pool_push(ctx->index_pool, &i);
 
+    ctx->init_ok = 1;
+
     return ctx;
 
 ERR:
@@ -404,13 +405,13 @@ int abcdk_asio_detch(abcdk_asio_t *ctx,int64_t pfd)
     if (node_ctx->refcount > 0)
         return _abcdk_asio_unlock(ctx,-16);
 
-    node_ctx->idx = -1;
-    node_ctx->pfd = 0;
-    node_ctx->fd = -1;
-
     abcdk_epoll_drop(ctx->epoll_fd,node_ctx->fd);
 
     _abcdk_asio_push_idle_idx(ctx,node_ctx->idx);
+
+    node_ctx->idx = -1;
+    node_ctx->pfd = 0;
+    node_ctx->fd = -1;
 
     return _abcdk_asio_unlock(ctx,0);
 }

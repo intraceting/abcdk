@@ -618,7 +618,7 @@ static void _abcdk_https_process_1(abcdk_object_t *stream)
 
 ERR:
 
-    abcdk_stcp_set_timeout(stream_ctx_p->io_node,1);
+    abcdk_stcp_set_timeout(stream_ctx_p->io_node,-1);
 
 }
 
@@ -687,7 +687,7 @@ static void _abcdk_https_request_1(abcdk_stcp_node_t *node, const void *data, si
 
 ERR:
 
-    abcdk_stcp_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, -1);
 }
 
 static void _abcdk_https_request_2(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
@@ -715,7 +715,7 @@ static void _abcdk_https_request_2(abcdk_stcp_node_t *node, const void *data, si
 
 ERR:
 
-    abcdk_stcp_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, -1);
 }
 
 static void _abcdk_https_output_1(abcdk_stcp_node_t *node)
@@ -763,7 +763,7 @@ static void _abcdk_https_output_2(abcdk_stcp_node_t *node)
         chk = nghttp2_session_send(node_ctx_p->h2_handle);
         if (chk < 0)
         {
-            abcdk_stcp_set_timeout(node, 1);
+            abcdk_stcp_set_timeout(node, -1);
             return;
         }
     }

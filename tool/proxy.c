@@ -363,7 +363,7 @@ static void _abcdk_httpd_event_close(abcdk_stcp_node_t *node)
     /*一定要在这里关闭另一端的隧道，否则因引用计数未减少，从而造成内存泄漏。*/
     if (node_ctx_p->tunnel)
     {
-        abcdk_stcp_set_timeout(node_ctx_p->tunnel, 1);
+        abcdk_stcp_set_timeout(node_ctx_p->tunnel, -1);
         abcdk_stcp_unref(&node_ctx_p->tunnel);
     }
 
@@ -671,7 +671,7 @@ static void _abcdkproxy_process_forward(abcdk_stcp_node_t *node)
 
 ERR:
 
-    abcdk_stcp_set_timeout(node,1);
+    abcdk_stcp_set_timeout(node,-1);
 }
 
 static void _abcdkproxy_process_request(abcdk_stcp_node_t *node)
@@ -724,7 +724,7 @@ static void _abcdkproxy_process_request(abcdk_stcp_node_t *node)
 
 ERR:
 
-    abcdk_stcp_set_timeout(node,1);
+    abcdk_stcp_set_timeout(node,-1);
 }
 
 static void _abcdkproxy_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
@@ -773,7 +773,7 @@ static void _abcdkproxy_input_cb(abcdk_stcp_node_t *node, const void *data, size
 
 ERR:
 
-    abcdk_stcp_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, -1);
 }
 
 static int _abcdkproxy_start_listen(abcdkproxy_t *ctx, int ssl_scheme)

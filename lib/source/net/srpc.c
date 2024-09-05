@@ -423,7 +423,7 @@ static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size
 
 ERR:
 
-    abcdk_stcp_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, -1);
 }
 
 int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk_srpc_config_t *cfg)

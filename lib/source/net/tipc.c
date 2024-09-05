@@ -188,14 +188,14 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe
     {
         if (ctx->cfg.id > node_ctx_p->id)
         {
-            abcdk_stcp_set_timeout(slave_ctx_p->pipe1, 1);
+            abcdk_stcp_set_timeout(slave_ctx_p->pipe1, -1);
             abcdk_stcp_unref(&slave_ctx_p->pipe1);
 
             slave_ctx_p->flag = 2;
         }
         else
         {
-            abcdk_stcp_set_timeout(slave_ctx_p->pipe2, 1);
+            abcdk_stcp_set_timeout(slave_ctx_p->pipe2, -1);
             abcdk_stcp_unref(&slave_ctx_p->pipe2);
 
             slave_ctx_p->flag = 1;
@@ -696,7 +696,7 @@ static void _abcdk_tipc_input_cb(abcdk_stcp_node_t *node, const void *data, size
 
 ERR:
 
-    abcdk_stcp_set_timeout(node, 1);
+    abcdk_stcp_set_timeout(node, -1);
 }
 
 
@@ -857,7 +857,7 @@ static void _abcdk_tipc_process_register_req(abcdk_stcp_node_t *node)
         abcdk_trace_output(LOG_WARNING,"本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu)，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
     }
 
-    abcdk_stcp_set_timeout(node,1);
+    abcdk_stcp_set_timeout(node,-1);
 }
 
 

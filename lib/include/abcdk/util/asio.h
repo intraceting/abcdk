@@ -61,7 +61,7 @@ int64_t abcdk_asio_attach(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata);
  * @note 看门狗精度为1000毫秒。
  * 
  * @param [in] pfd 伪句柄。
- * @param [in] timeout 时长(毫秒)。默认：180000。
+ * @param [in] timeout 时长(毫秒)。= 0 无效。默认：180000。
  * 
  * @return 0 成功。< 0 失败(不存在)。
 */

@@ -8,6 +8,40 @@
 
 /******************************************************************************************************/
 
+void abcdk_openssl_cleanup()
+{
+#ifdef HEADER_E_OS2_H
+#ifndef OPENSSL_NO_DEPRECATED
+    ERR_remove_state(0);
+#endif //OPENSSL_NO_DEPRECATED
+
+    ERR_free_strings();
+
+    OBJ_cleanup();
+    RAND_cleanup();
+    ENGINE_cleanup();
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
+
+    CONF_modules_free();
+    CONF_modules_unload(1);
+#endif // HEADER_E_OS2_H
+}
+
+
+void abcdk_openssl_init()
+{
+#ifdef HEADER_E_OS2_H
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    ERR_load_BIO_strings();
+    ERR_load_crypto_strings();
+    SSL_load_error_strings();
+#endif //HEADER_E_OS2_H
+}
+
+/******************************************************************************************************/
+
 #ifdef HEADER_AES_H
 
 size_t abcdk_openssl_aes_set_key(AES_KEY *key, const void *pwd, size_t len, uint8_t padding, int encrypt)

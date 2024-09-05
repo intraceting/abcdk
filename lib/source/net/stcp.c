@@ -799,7 +799,7 @@ final:
 final_error:
 
     /*修改超时，使用超时检测器关闭。*/
-    abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, 1);
+    abcdk_asio_timeout(node->ctx->asio_ctx, node->pfd, -1);
 }
 
 static void _abcdk_stcp_perform(abcdk_stcp_t *ctx)
@@ -829,6 +829,7 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx)
 
 static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_node_t *node)
 {
+    abcdk_stcp_node_t *node_p;
     int chk;
 
     if (event == ABCDK_EPOLL_ERROR)
@@ -841,8 +842,11 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         /*解除绑定关系。*/
         abcdk_asio_detch(ctx->asio_ctx, node->pfd);
 
+        /*释放引用后，指针会被清空，因此这里需要复制一下。*/
+        node_p = node;
+
         /*释放引用(关联时的引用)。*/
-        abcdk_stcp_unref(&node);
+        abcdk_stcp_unref(&node_p);
     }
     else if (event == ABCDK_EPOLL_OUTPUT)
     {
@@ -1308,7 +1312,7 @@ void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
         node->in_buffer = abcdk_object_alloc2(node->cfg.io_hook_mtu);
         if(!node->in_buffer)
         {
-            abcdk_stcp_set_timeout(node,1);
+            abcdk_stcp_set_timeout(node,-1);
             return;
         }
     }

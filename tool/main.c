@@ -114,13 +114,7 @@ int main(int argc, char **argv)
     /*拦截信号。*/
     abcdk_proc_signal_block(NULL,NULL);
 
-#ifdef HEADER_SSL_H
-    SSL_library_init();
-    OpenSSL_add_all_algorithms();
-    ERR_load_BIO_strings();
-    ERR_load_crypto_strings();
-    SSL_load_error_strings();
-#endif //HEADER_SSL_H
+    abcdk_openssl_init();
 
     args = abcdk_option_alloc("--");
     if (!args)
@@ -133,17 +127,7 @@ int main(int argc, char **argv)
 
 final:
 
-#ifdef HEADER_SSL_H
-    CONF_modules_free();
-#ifndef OPENSSL_NO_DEPRECATED
-    ERR_remove_state(0);
-#endif //OPENSSL_NO_DEPRECATED
-    //ENGINE_cleanup();
-    CONF_modules_unload(1);
-    ERR_free_strings();
-    EVP_cleanup();
-    CRYPTO_cleanup_all_ex_data();
-#endif // HEADER_SSL_H
+    abcdk_openssl_cleanup();
 
     abcdk_option_free(&args);
 

@@ -234,7 +234,7 @@ static void _connect_event(abcdk_stcp_node_t *node)
     if (chk != X509_V_OK)
     {
         /*修改超时，使用超时检测器关闭。*/
-        abcdk_stcp_set_timeout(node, 1);
+        abcdk_stcp_set_timeout(node, -1);
         return;
     }
 
