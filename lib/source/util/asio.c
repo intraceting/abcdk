@@ -33,6 +33,9 @@ typedef struct _abcdk_asio
     /**看门狗活动间隔(毫秒)。*/
     time_t watchdog_intvl;
 
+    /**看门狗活动游标。*/
+    int watchdog_pos;
+
     /**等待线程ID。*/
     volatile pthread_t wait_leader;
 
@@ -97,6 +100,18 @@ static int _abcdk_asio_pfd2idx(int64_t pfd)
 static int _abcdk_asio_pfd_assert(int64_t pfd)
 {
     return ((pfd & 0xFFFFFFFF00000000LL) == 0x7FFFFFFF00000000LL ? 1 : 0);
+}
+
+static int _abcdk_asio_index_pool_init(abcdk_asio_t *ctx)
+{
+    /*把节点列表的下标当作索引添加到池中。*/
+    for (int i = 0; i < ctx->node_list->numbers; i++)
+    {
+        if (abcdk_pool_push(ctx->index_pool, &i) != 0)
+            return -1;
+    }
+
+    return 0;
 }
 
 static int _abcdk_asio_pull_idle_idx(abcdk_asio_t *ctx)
@@ -179,6 +194,11 @@ static abcdk_asio_node_t *_abcdk_asio_pfd2node(abcdk_asio_t *ctx,int64_t pfd)
         return NULL;   
 
     return node_ctx;
+}
+
+size_t _abcdk_asio_count(abcdk_asio_t *ctx)
+{
+    return ctx->node_list->numbers - abcdk_pool_count(ctx->index_pool);
 }
 
 static void _abcdk_asio_disp(abcdk_asio_t *ctx, abcdk_asio_node_t *node_ctx, uint32_t event)
@@ -271,14 +291,18 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
     /*更新看门狗活动时间。*/
     ctx->watchdog_active = current;
 
-    for (int i = 0; i < ctx->node_list->numbers; i++)
+    /*每次仅查找一轮。*/
+    for (int i = 0;;)
     {
-        node_ctx = _abcdk_asio_idx2node(ctx, i);
+        /*滚动游标。*/
+        ctx->watchdog_pos = (ctx->watchdog_pos + 1) % ctx->node_list->numbers;
+
+        node_ctx = _abcdk_asio_idx2node(ctx, ctx->watchdog_pos);
         if (!node_ctx)
             continue;
 
         /*当事件队列排队过长时，中断看门狗检查，优先处理队列中的事件。*/
-        if (abcdk_pool_count(ctx->event_pool) >= 80)
+        if (abcdk_pool_count(ctx->event_pool) >= 800)
             break;
 
         /*
@@ -289,6 +313,10 @@ static int _abcdk_asio_watchdog(abcdk_asio_t *ctx)
         */
         if (ctx->wait_abort || (node_ctx->timeout != 0 && (current - node_ctx->active) >= node_ctx->timeout))
             _abcdk_asio_disp(ctx, node_ctx, ABCDK_EPOLL_ERROR);
+
+        /*在有限的范围内查找即可以。*/
+        if(++i >= _abcdk_asio_count(ctx))
+            break;
     }
 
 END:
@@ -320,7 +348,7 @@ void abcdk_asio_destroy(abcdk_asio_t **ctx)
 
     if(ctx_p->init_ok)
     {
-        ABCDK_ASSERT(ctx_p->node_list->numbers == abcdk_pool_count(ctx_p->index_pool) ,"所有关联句柄分离后才允许销毁。");
+        ABCDK_ASSERT(_abcdk_asio_count(ctx_p) == 0 ,"所有关联句柄分离后才允许销毁。");
     }
 
     abcdk_object_unref(&ctx_p->node_list);
@@ -353,7 +381,7 @@ abcdk_asio_t *abcdk_asio_create(int max)
     if(!ctx->node_sync)
         goto ERR;
 
-    ctx->event_pool = abcdk_pool_create(sizeof(abcdk_epoll_event_t), 100);
+    ctx->event_pool = abcdk_pool_create(sizeof(abcdk_epoll_event_t), 1000);
     if(!ctx->event_pool)
         goto ERR;
 
@@ -363,12 +391,12 @@ abcdk_asio_t *abcdk_asio_create(int max)
 
     ctx->watchdog_active = _abcdk_asio_clock();
     ctx->watchdog_intvl = 1000;
+    ctx->watchdog_pos = 0;
     ctx->wait_leader = 0;
     ctx->wait_abort = 0;
 
-    /*初始化索引。*/
-    for (int i = 0; i < max; i++)
-        abcdk_pool_push(ctx->index_pool, &i);
+    if (_abcdk_asio_index_pool_init(ctx) != 0)
+        goto ERR;
 
     ctx->init_ok = 1;
 
@@ -388,7 +416,7 @@ size_t abcdk_asio_count(abcdk_asio_t *ctx)
 
     _abcdk_asio_lock(ctx);
 
-    count = ctx->node_list->numbers - abcdk_pool_count(ctx->index_pool);
+    count = _abcdk_asio_count(ctx);
 
     _abcdk_asio_unlock(ctx,0);
 
@@ -560,7 +588,7 @@ LOOP_NEXT:
         return _abcdk_asio_unlock(ctx, 0);
 
     /*根据看门狗的结果，决定IO事件等待时长。*/
-    iowait_ms = (chk > 0 ? 0 : 1000);
+    iowait_ms = (chk > 0 ? 0 : ctx->watchdog_intvl);
 
     /*解锁，使其它接口被访问。*/
     _abcdk_asio_unlock(ctx,0);
