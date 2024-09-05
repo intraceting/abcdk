@@ -1360,11 +1360,11 @@ static void _abcdkvnet_process_server(abcdkvnet_t *ctx)
 
 END:
 
-    abcdk_srpc_destroy(&ctx->rpc_ctx);
     _abcdkvnet_node_free(&ctx->rpc_listen_raw_session);
     _abcdkvnet_node_free(&ctx->rpc_listen_pki_session);
     _abcdkvnet_node_free(&ctx->rpc_listen_enigma_session);
     _abcdkvnet_node_free(&ctx->rpc_listen_pki_enigma_session);
+    abcdk_srpc_destroy(&ctx->rpc_ctx);
     abcdk_ipool_destroy(&ctx->virtual_ipv4_pool);
     abcdk_ipool_destroy(&ctx->virtual_ipv6_pool);
     abcdk_iplan_destroy(&ctx->virtual_route_list);

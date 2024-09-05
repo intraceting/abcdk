@@ -904,12 +904,12 @@ static void _abcdkproxy_process(abcdkproxy_t *ctx)
 
 END:
 
-    abcdk_stcp_stop(&ctx->io_ctx);
     abcdk_stcp_unref(&ctx->listen_raw_p);
     abcdk_stcp_unref(&ctx->listen_pki_p);
     abcdk_stcp_unref(&ctx->listen_enigma_p);
     abcdk_stcp_unref(&ctx->listen_pki_enigma_p);
-
+    abcdk_stcp_stop(&ctx->io_ctx);
+    
     abcdk_trace_output(LOG_INFO, "停止。");
 
     /*关闭日志。*/
