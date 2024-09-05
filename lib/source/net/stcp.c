@@ -425,16 +425,22 @@ void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
 
 void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node,uint32_t event, int *result)
 {
-
-
-    /*通知应用层处理事件。*/
     if(event == ABCDK_STCP_EVENT_INPUT)
+    {
+        abcdk_thread_leader_vote(&node->recv_leader);
         _abcdk_stcp_input_hook(node);
+        abcdk_thread_leader_quit(&node->recv_leader);
+    }
     else if(event == ABCDK_STCP_EVENT_OUTPUT)
+    {
+        abcdk_thread_leader_vote(&node->send_leader);
         _abcdk_stcp_output_hook(node);
+        abcdk_thread_leader_quit(&node->send_leader);
+    }   
     else 
+    {
         node->cfg.event_cb(node, event, result);
-
+    }
 }
 
 void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
@@ -848,13 +854,7 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
         }
         else
         {
-            /*绑定工作线程。*/
-            abcdk_thread_leader_vote(&node->send_leader);
-
             _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_OUTPUT, &chk);
-
-            /*解绑工作线程。*/
-            abcdk_thread_leader_quit(&node->send_leader);
         }
 
         /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
@@ -884,13 +884,7 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
             }
             else
             {
-                /*绑定工作线程。*/
-                abcdk_thread_leader_vote(&node->recv_leader);
-
                 _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
-
-                /*解绑工作线程。*/
-                abcdk_thread_leader_quit(&node->recv_leader);
             }
 
             /*无论连接状态如何，读权利必须内部释放，不能开放给应用层。*/
@@ -944,8 +938,6 @@ abcdk_stcp_t * abcdk_stcp_start(int worker)
     abcdk_stcp_t *ctx = NULL;
     int chk;
 
-    assert(worker > 0);
-
     ctx = abcdk_heap_alloc(sizeof(abcdk_stcp_t));
     if(!ctx)
         return NULL;
@@ -955,14 +947,12 @@ abcdk_stcp_t * abcdk_stcp_start(int worker)
     if(!ctx->asio_ctx)
         goto ERR;
 
-    ctx->worker_cfg.numbers = 1 + worker;
+    ctx->worker_cfg.numbers = ABCDK_CLAMP(worker,2,worker);
     ctx->worker_cfg.opaque = ctx;
     ctx->worker_cfg.process_cb = _abcdk_stcp_worker;
     ctx->worker_ctx = abcdk_worker_start(&ctx->worker_cfg);
     if(!ctx->worker_ctx)
         goto ERR;
-
-    
 
     /*先天任务。*/
     abcdk_worker_dispatch(ctx->worker_ctx,0,(void*)-1);

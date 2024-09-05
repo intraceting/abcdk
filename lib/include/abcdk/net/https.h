@@ -184,7 +184,7 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
 void abcdk_https_destroy(abcdk_https_t **ctx);
 
 /** 创建。*/
-abcdk_https_t *abcdk_https_create(int max,int cpu);
+abcdk_https_t *abcdk_https_create();
 
 /** 释放流。*/
 void abcdk_https_unref(abcdk_https_stream_t **stream);

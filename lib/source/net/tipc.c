@@ -466,7 +466,7 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
 
     ctx->cfg = *cfg;
 
-    ctx->io_ctx = abcdk_stcp_start(ABCDK_TIPC_SLAVE_MAX*2+10, -1);
+    ctx->io_ctx = abcdk_stcp_start(sysconf(_SC_NPROCESSORS_ONLN));
     memset(ctx->slave_list,0,sizeof(abcdk_tipc_slave_t*)* ABCDK_ARRAY_SIZE(ctx->slave_list));
     ctx->slave_mutex = abcdk_mutex_create();
     ctx->topic_mutex = abcdk_mutex_create();

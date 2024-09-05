@@ -107,9 +107,6 @@ void _abcdkhttpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
     fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
 
-    fprintf(stderr, "\n\t--max-client < NUMBER >\n");
-    fprintf(stderr, "\t\t最大连接数。默认：系统限定的1/2\n");
-
     fprintf(stderr, "\n\t--name < NAME >\n");
     fprintf(stderr, "\t\t名称。默认：%s\n", SOLUTION_NAME);
 
@@ -602,7 +599,6 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
 
     abcdk_trace_output(LOG_INFO, "启动……");
 
-    max_client = abcdk_option_get_int(ctx->args, "--max-client", 0, 1000);
     ctx->name = abcdk_option_get(ctx->args, "--name", 0, SOLUTION_NAME);
     ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
 #ifdef HEADER_SSL_H
@@ -631,8 +627,7 @@ static void _abcdkhttpd_process(abcdkhttpd_t *ctx)
     if(ctx->up_tmp_path)
         abcdk_mkdir(ctx->up_tmp_path, 0600);
 
-
-    ctx->io_ctx = abcdk_https_create(max_client, -1);
+    ctx->io_ctx = abcdk_https_create();
     if (!ctx->io_ctx)
     {
         abcdk_trace_output(LOG_WARNING, "内存错误。\n");

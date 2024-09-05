@@ -1142,18 +1142,16 @@ void abcdk_https_destroy(abcdk_https_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_https_t *abcdk_https_create(int max,int cpu)
+abcdk_https_t *abcdk_https_create()
 {
     abcdk_https_t *ctx;
     int chk;
-
-    assert(max > 0);
 
     ctx = (abcdk_https_t *)abcdk_heap_alloc(sizeof(abcdk_https_t));
     if (!ctx)
         return NULL;
 
-    ctx->io_ctx = abcdk_stcp_start(max, cpu);
+    ctx->io_ctx = abcdk_stcp_start(sysconf(_SC_NPROCESSORS_ONLN));
     if (!ctx->io_ctx)
         goto ERR;
 

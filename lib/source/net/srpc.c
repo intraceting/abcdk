@@ -201,17 +201,15 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
     *ctx = NULL;
 }
 
-abcdk_srpc_t *abcdk_srpc_create(int max,int cpu)
+abcdk_srpc_t *abcdk_srpc_create()
 {
     abcdk_srpc_t *ctx;
-
-    assert(max > 0);
 
     ctx = abcdk_heap_alloc(sizeof(abcdk_srpc_t));
     if(!ctx)
         return NULL;
 
-    ctx->io_ctx = abcdk_stcp_start(max, cpu);
+    ctx->io_ctx = abcdk_stcp_start(sysconf(_SC_NPROCESSORS_ONLN));
     if (!ctx->io_ctx)
         goto ERR;
 

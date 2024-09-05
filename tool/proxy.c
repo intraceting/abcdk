@@ -879,7 +879,7 @@ static void _abcdkproxy_process(abcdkproxy_t *ctx)
 
     abcdk_trace_output(LOG_INFO, "启动……");
 
-    ctx->io_ctx = abcdk_stcp_start(1000, -1);
+    ctx->io_ctx = abcdk_stcp_start(sysconf(_SC_NPROCESSORS_ONLN));
     if (!ctx->io_ctx)
         goto END;
 

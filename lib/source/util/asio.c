@@ -96,7 +96,7 @@ static int _abcdk_asio_pfd2idx(int64_t pfd)
 
 static int _abcdk_asio_pfd_assert(int64_t pfd)
 {
-    return ((pfd & 0x7FFFFFFF00000000LL) == 0x7FFFFFFF00000000LL ? 1 : 0);
+    return ((pfd & 0xFFFFFFFF00000000LL) == 0x7FFFFFFF00000000LL ? 1 : 0);
 }
 
 static int _abcdk_asio_pull_idle_idx(abcdk_asio_t *ctx)
