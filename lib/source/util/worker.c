@@ -101,6 +101,7 @@ NEXT:
 
 int _abcdk_worker_start(abcdk_worker_t *ctx)
 {
+    static int cpu_idx = 0;
     int chk;
 
     for (int i = 0; i < ctx->cfg.numbers; i++)
@@ -111,6 +112,10 @@ int _abcdk_worker_start(abcdk_worker_t *ctx)
         chk = abcdk_thread_create(&ctx->threads_ctx[i], 1);
         if (chk != 0)
             return -1;
+
+        /*尽可能让线程分布在不同的核心上。*/
+        cpu_idx %= sysconf(_SC_NPROCESSORS_ONLN);
+        abcdk_thread_setaffinity2(ctx->threads_ctx[i].handle,cpu_idx++);
     }
 
     return 0;
