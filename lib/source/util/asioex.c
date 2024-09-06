@@ -100,7 +100,7 @@ abcdk_asio_t *abcdk_asioex_dispatch(abcdk_asioex_t *ctx,int idx)
         {
             if (!ctx_ctx_p)
                 ctx_ctx_p = ctx->group_ctx[i];
-            else if (abcdk_asio_count(ctx_ctx_p) < abcdk_asio_count(ctx->group_ctx[i]))
+            else if (abcdk_asio_count(ctx_ctx_p) > abcdk_asio_count(ctx->group_ctx[i]))
                 ctx_ctx_p = ctx->group_ctx[i];
         }
     }
