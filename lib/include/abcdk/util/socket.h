@@ -181,6 +181,13 @@ int abcdk_sockopt_option_timeout_set(int fd, int name, time_t tv);
 int abcdk_socket_option_linger(int fd, struct linger *lg, int direction);
 
 /**
+ * 设置SOCKET选项(linger)。
+ *  * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_socket_option_linger_set(int fd, int l_onoff, int l_linger);
+
+/**
  * 启用或禁用SOCKET组播选项(multicast)。
  * 
  * @param ifaddr 地址的指针，为NULL(0)使用默认值。IPv4 点分十进制字符串地址；IPv6 网络接口名称。

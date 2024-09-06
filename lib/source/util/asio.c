@@ -7,7 +7,7 @@
 #include "abcdk/util/asio.h"
 
 /**异步IO对象。*/
-typedef struct _abcdk_asio
+struct _abcdk_asio
 {
     /*初始化状态。*/
     int init_ok;
@@ -42,7 +42,7 @@ typedef struct _abcdk_asio
     /**等待放弃标志。*/
     volatile int wait_abort;
     
-}abcdk_asio_t;
+};//abcdk_asio_t;
 
 /**异步IO节点。*/
 typedef struct _abcdk_asio_node

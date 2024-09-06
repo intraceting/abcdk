@@ -75,6 +75,7 @@
 #include "abcdk/util/worker.h"
 #include "abcdk/util/context.h"
 #include "abcdk/util/asio.h"
+#include "abcdk/util/asioex.h"
 
 #include "abcdk/log/logger.h"
 

@@ -272,6 +272,18 @@ int abcdk_socket_option_linger(int fd,struct linger *lg,int direction)
     return abcdk_socket_option(fd,SOL_SOCKET,SO_LINGER,lg,&len,direction);  
 }
 
+int abcdk_socket_option_linger_set(int fd, int l_onoff, int l_linger)
+{
+    struct linger l;
+
+    assert(fd >= 0);
+
+    l.l_onoff = l_onoff;
+    l.l_linger = l_linger;
+
+    return abcdk_socket_option_linger(fd,&l,2);
+}
+
 int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char *ifaddr,int enable)
 {
     socklen_t len = sizeof(struct ip_mreq);
