@@ -1111,7 +1111,7 @@ static int _abcdkproxy_server_start_listen(abcdkvnet_t *ctx, int ssl_scheme)
     rpc_cfg.pki_key_file = ctx->pki_key_file;
     rpc_cfg.pki_check_cert = ctx->pki_check_cert;
     rpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,4245);
+    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,40000);
     //rpc_cfg.io_mtu = 256*1024;
 
     rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
@@ -1402,7 +1402,7 @@ static int _abcdkvnet_client_connect_uplink(abcdkvnet_t *ctx)
     rpc_cfg.pki_key_file = ctx->pki_key_file;
     rpc_cfg.pki_check_cert = ctx->pki_check_cert;
     rpc_cfg.enigma_key_file = ctx->enigma_key_file;
-    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,4245);
+    rpc_cfg.io_mtu = ABCDK_MIN(ctx->virtual_tun_mtu+15,40000);
     //rpc_cfg.io_mtu = 256*1024;
 
     rpc_cfg.prepare_cb = _abcdkvnet_srpc_prepare_cb;
