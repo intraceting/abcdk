@@ -894,7 +894,7 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx,int idx)
 
         node = (abcdk_stcp_node_t *)e.data.ptr;
 
-        abcdk_worker_dispatch(ctx->worker_ctx, e.events, node);
+        _abcdk_stcp_dispatch(ctx, e.events, node);
     }
 }
 
