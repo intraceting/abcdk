@@ -469,7 +469,7 @@ int64_t abcdk_asio_attach(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
     node_ctx->event_disp = 0;
     node_ctx->event_mark = 0;
     node_ctx->active = _abcdk_asio_clock();
-    node_ctx->timeout = 180000;
+    node_ctx->timeout = 180*1000;
     node_ctx->mark_first = 1;
 
     /*copy.*/

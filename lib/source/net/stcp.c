@@ -1269,7 +1269,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (node_p->pfd <= 0)
         goto ERR;
 
-    abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 180 * 1000);
+    abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 180);
     abcdk_asio_mark(node_p->asio_ctx, node_p->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
     return 0;
