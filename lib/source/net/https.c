@@ -1404,7 +1404,7 @@ static int _abcdk_https_response_header_h1(abcdk_https_stream_t *stream)
 
     /*标记头部长度。*/
     stream_ctx_p->h1_rsp_hdrs->sizes[0] = stream_ctx_p->h1_rsp_count;
-    chk = abcdk_stcp_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs);
+    chk = abcdk_stcp_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs,1);
     if (chk != 0)
         return -2;
 
@@ -1536,7 +1536,7 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
     /*如果不是结束包，发送有效的数据块。*/
     if (!stream_ctx_p->rsp_end)
     {
-        chk = abcdk_stcp_post(stream_ctx_p->io_node, data);
+        chk = abcdk_stcp_post(stream_ctx_p->io_node, data,1);
         if (chk != 0)
             return -1;
     }

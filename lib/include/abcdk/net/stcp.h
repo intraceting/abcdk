@@ -18,6 +18,7 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/util/spinlock.h"
 #include "abcdk/util/worker.h"
+#include "abcdk/util/wred.h"
 #include "abcdk/enigma/bio.h"
 
 __BEGIN_DECLS
@@ -158,6 +159,34 @@ typedef struct _abcdk_stcp_config
      * @note 有效范围：1~262144，默认：262144
      */
     size_t io_hook_mtu;
+
+    /**
+     * 输出队列丢包最小阈值。 
+     * 
+     * @note 有效范围：200~600，默认：200
+    */
+    int out_hook_min_th;
+
+    /**
+     * 输出队列丢包最大阈值。 
+     * 
+     * @note 有效范围：400~800，默认：400
+    */
+    int out_hook_max_th;
+
+    /**
+     * 输出队列丢包权重因子。
+     * 
+     * @note 有效范围：1~99，默认：2 
+    */
+    int out_hook_weight;
+
+    /**
+     * 输出队列丢包概率因子。 
+     * 
+     * @note 有效范围：1~99，默认：2 
+    */
+    int out_hook_prob;
 
     /**
      * 为新连接做准备工作的通知回调函数。
@@ -338,15 +367,19 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr,abcdk_stc
  * 投递数据。
  * 
  * @note 投递的数据对象将被托管，应用层不可以继续访问数据对象。
+ * @warning 当网络不理想时，通讯可能会有延时，非关键数据可能会被丢弃。
  * 
  * @param [in] data 数据对象，索引0号元素有效。注：仅做指针复制，不会改变对象的引用计数。
+ * @param [in] key 关键数据。 !0 是，0 否。
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
 */
-int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data);
+int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key);
 
 /**
  * 投递数据。
+ * 
+ * @note 仅支持关键数据。
  * 
  * @return 0 成功，-1 失败，-2 失败(监听对象不支持投递数据)。
  */
@@ -354,6 +387,8 @@ int abcdk_stcp_post_buffer(abcdk_stcp_node_t *node, const void *data,size_t size
 
 /** 
  * 投递数据。
+ * 
+ * @note 仅支持关键数据。
  * 
  * @param [in] max 格式化数据最大长度。 
  * 

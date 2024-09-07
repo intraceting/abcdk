@@ -99,6 +99,12 @@ struct _abcdk_stcp_node
     /**用户环境销毁函数。*/
     void (*userdata_free_cb)(void *userdata);
 
+    /**发送算法。 */
+    abcdk_wred_t *out_wred;
+
+    /**发送队列长度。 */
+    int out_len;
+
     /**发送队列。*/
     abcdk_tree_t *out_queue;
 
@@ -153,6 +159,7 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
 
     abcdk_closep(&node_p->fd);
     abcdk_object_unref(&node_p->userdata);
+    abcdk_wred_destroy(&node_p->out_wred);
     abcdk_tree_free(&node_p->out_queue);
     abcdk_spinlock_destroy(&node_p->out_locker);
     abcdk_object_unref(&node_p->in_buffer);
@@ -190,6 +197,7 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*fr
     node->fd = -1;
     node->userdata = abcdk_object_alloc3(userdata,1);
     node->userdata_free_cb = free_cb;
+    node->out_wred = NULL;
     node->out_queue = abcdk_tree_alloc3(1);
     node->out_locker = abcdk_spinlock_create();
     node->out_pos = 0;
@@ -477,6 +485,11 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     
     chk = abcdk_fflag_add(node->fd,O_NONBLOCK);
     if(chk != 0 )
+        goto ERR;
+
+    node->out_wred = abcdk_wred_create(node->cfg.out_hook_min_th, node->cfg.out_hook_max_th,
+                                       node->cfg.out_hook_weight, node->cfg.out_hook_prob);
+    if (!node->out_wred)
         goto ERR;
 
     node->asio_ctx = abcdk_asioex_dispatch(node->ctx->asioex_ctx,-1);
@@ -1098,6 +1111,41 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node,int listen_flag)
     return 0;
 }
 
+static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
+{
+    /*修复不支持的配置。*/
+    node->cfg.enigma_key_file = (node->cfg.enigma_key_file?node->cfg.enigma_key_file:"");
+
+    if(node->cfg.io_hook_mtu <= 0)
+        node->cfg.io_hook_mtu = 262144;
+    else 
+        node->cfg.io_hook_mtu = ABCDK_CLAMP(node->cfg.io_hook_mtu,1,262144);
+
+    if(node->cfg.out_hook_min_th <= 0)
+        node->cfg.out_hook_min_th = 200;
+    else 
+        node->cfg.out_hook_min_th = ABCDK_CLAMP(node->cfg.out_hook_min_th,200,600);
+
+    if(node->cfg.out_hook_max_th <= 0)
+        node->cfg.out_hook_max_th = 400;
+    else 
+        node->cfg.out_hook_max_th = ABCDK_CLAMP(node->cfg.out_hook_max_th,400,800);
+
+    if(node->cfg.out_hook_weight <= 0)
+        node->cfg.out_hook_weight = 2;
+    else 
+        node->cfg.out_hook_weight = ABCDK_CLAMP(node->cfg.out_hook_weight,1,99);
+    
+    if(node->cfg.out_hook_prob <= 0)
+        node->cfg.out_hook_prob = 2;
+    else 
+        node->cfg.out_hook_prob = ABCDK_CLAMP(node->cfg.out_hook_prob,1,99);
+
+    /*最小阈值和最大阈值必须符合区间要求。*/
+    if (node->cfg.out_hook_min_th > node->cfg.out_hook_max_th)
+        ABCDK_INTEGER_SWAP(node->cfg.out_hook_min_th, node->cfg.out_hook_max_th);
+}
+
 int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stcp_config_t *cfg)
 {
     abcdk_stcp_node_t *node_p = NULL;
@@ -1117,12 +1165,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     node_p->cfg = *cfg;
 
     /*修复不支持的配置。*/
-    node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
-
-    if(node_p->cfg.io_hook_mtu <= 0)
-        node_p->cfg.io_hook_mtu = 262144;
-    else 
-        node_p->cfg.io_hook_mtu = ABCDK_CLAMP(node_p->cfg.io_hook_mtu,1,262144);
+    _abcdk_stcp_fix_cfg(node_p);
 
     /*UNIX需要特殊复制一下。*/
     if(addr->family == AF_UNIX)
@@ -1218,12 +1261,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     node_p->cfg = *cfg;
 
     /*修复不支持的配置。*/
-    node_p->cfg.enigma_key_file = (node_p->cfg.enigma_key_file?node_p->cfg.enigma_key_file:"");
-
-    if(node_p->cfg.io_hook_mtu <= 0)
-        node_p->cfg.io_hook_mtu = 262144;
-    else 
-        node_p->cfg.io_hook_mtu = ABCDK_CLAMP(node_p->cfg.io_hook_mtu,1,262144);
+    _abcdk_stcp_fix_cfg(node_p);
     
     addr_len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
@@ -1257,6 +1295,11 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
 
     chk = _abcdk_stcp_ssl_init(node_p,0);
     if(chk != 0)
+        goto ERR;
+
+    node_p->out_wred = abcdk_wred_create(node_p->cfg.out_hook_min_th, node_p->cfg.out_hook_max_th,
+                                         node_p->cfg.out_hook_weight, node_p->cfg.out_hook_prob);
+    if(!node_p->out_wred)
         goto ERR;
 
     node_p->asio_ctx = abcdk_asioex_dispatch(node_p->ctx->asioex_ctx,-1);
@@ -1371,8 +1414,12 @@ NEXT_MSG:
         
         /*移除节点。*/
         abcdk_spinlock_lock(node->out_locker,1);
+
         abcdk_tree_unlink(p);
+        node->out_len -= 1;
+
         abcdk_spinlock_unlock(node->out_locker);
+
         /*删除节点。*/
         abcdk_tree_free(&p);
     }
@@ -1381,9 +1428,10 @@ NEXT_MSG:
     return;
 }
 
-int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data)
+int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
 {
     abcdk_tree_t *p;
+    int chk;
 
     assert(node != NULL && data != NULL);
     assert(data->pptrs[0] != NULL && data->sizes[0] > 0);
@@ -1400,7 +1448,19 @@ int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data)
         return -1;
 
     abcdk_spinlock_lock(node->out_locker,1);
-    abcdk_tree_insert2(node->out_queue,p,0);
+
+    /*非关键数据根据WRED算法决定是否添加到队列中。*/
+    chk = key ? 0 : abcdk_wred_update(node->out_wred, node->out_len + 1);
+    if (chk == 0)
+    {
+        abcdk_tree_insert2(node->out_queue, p, 0);
+        node->out_len += 1;
+    }
+    else
+    {
+        abcdk_tree_free(&p);
+    }
+
     abcdk_spinlock_unlock(node->out_locker);
 
     if(node->status == ABCDK_STCP_STATUS_STABLE)
@@ -1420,7 +1480,7 @@ int abcdk_stcp_post_buffer(abcdk_stcp_node_t *node, const void *data,size_t size
     if(!obj)
         return -1;
 
-    chk = abcdk_stcp_post(node,obj);
+    chk = abcdk_stcp_post(node,obj,1);
     if(chk == 0)
         return 0;
 
@@ -1440,7 +1500,7 @@ int abcdk_stcp_post_vformat(abcdk_stcp_node_t *node, int max, const char *fmt, v
     if(!obj)
         return -1;
     
-    chk = abcdk_stcp_post(node,obj);
+    chk = abcdk_stcp_post(node,obj,1);
     if(chk == 0)
         return 0;
 

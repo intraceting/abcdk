@@ -812,7 +812,7 @@ static int _abcdk_tipc_post_register(abcdk_stcp_node_t *node,int rsp)
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 40, 64, node_ctx_p->father->cfg.id);
     abcdk_bloom_write_number(msg_p->pptrs[0],msg_p->sizes[0], 104, 64, node_ctx_p->id);
 
-    chk = abcdk_stcp_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p,1);
     if(chk == 0)
         return 0;
 
@@ -878,7 +878,7 @@ static void _abcdk_tipc_process_register_rsp(abcdk_stcp_node_t *node)
     _abcdk_tipc_slave_register(node_ctx_p->father, node);
 }
 
-static int _abcdk_tipc_post_message(abcdk_stcp_node_t *node, uint64_t rsp, uint64_t mid, const void *data, size_t size)
+static int _abcdk_tipc_post_message(abcdk_stcp_node_t *node, uint64_t rsp, uint64_t mid, const void *data, size_t size,int key)
 {
     abcdk_tipc_node_t *node_ctx_p;
     abcdk_object_t *msg_p;
@@ -907,7 +907,7 @@ static int _abcdk_tipc_post_message(abcdk_stcp_node_t *node, uint64_t rsp, uint6
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, mid);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
-    chk = abcdk_stcp_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p,key);
     if (chk == 0)
         return 0;
 
@@ -988,7 +988,7 @@ static int _abcdk_tipc_post_subscribe(abcdk_stcp_node_t *node, uint64_t topic,in
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 104, 8, unset);
 
-    chk = abcdk_stcp_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p,1);
     if (chk == 0)
         return 0;
 
@@ -1047,7 +1047,7 @@ static int _abcdk_tipc_post_publish(abcdk_stcp_node_t *node, uint64_t topic, con
     abcdk_bloom_write_number(msg_p->pptrs[0], msg_p->sizes[0], 40, 64, topic);
     memcpy(msg_p->pptrs[0] + 13, data, size);
 
-    chk = abcdk_stcp_post(node, msg_p);
+    chk = abcdk_stcp_post(node, msg_p,0);
     if (chk == 0)
         return 0;
 
@@ -1157,7 +1157,7 @@ int abcdk_tipc_request(abcdk_tipc_t *ctx, uint64_t id, const char *data, size_t 
         }
     }
 
-    chk = _abcdk_tipc_post_message(node_p, 0, mid, data, size);
+    chk = _abcdk_tipc_post_message(node_p, 0, mid, data, size,rsp?1:0);
     if (chk != 0)
     {
         chk = -3;
@@ -1201,7 +1201,7 @@ int abcdk_tipc_response(abcdk_tipc_t *ctx,uint64_t id,uint64_t mid, const char *
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
-    chk = _abcdk_tipc_post_message(node_p, 1, mid, data, size);
+    chk = _abcdk_tipc_post_message(node_p, 1, mid, data, size,1);
     if (chk != 0)
     {
         chk = -3;

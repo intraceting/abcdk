@@ -498,7 +498,7 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     return 0;
 }
 
-static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid, const void *data, size_t size)
+static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid, const void *data, size_t size,int key)
 {
     abcdk_srpc_node_t *node_ctx_p;
     abcdk_object_t *msg;
@@ -524,7 +524,7 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
     abcdk_bloom_write_number(msg->pptrs[0], msg->sizes[0], 40, 64, mid);
     memcpy(msg->pptrs[0] + 13, data, size);
 
-    chk = abcdk_stcp_post(node,msg);
+    chk = abcdk_stcp_post(node,msg,key);
     if(chk == 0)
         return 0;
 
@@ -554,7 +554,7 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session, const void *req, size_t re
             return -1;
     }
 
-    chk = _abcdk_srpc_post(node_p,2,mid,req,req_size);
+    chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,rsp?1:0);
     if (chk != 0)
         return -2;
 
@@ -581,7 +581,7 @@ int abcdk_srpc_response(abcdk_srpc_session_t *session, uint64_t mid,const void *
     node_p = (abcdk_stcp_node_t*)session;
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node_p);
 
-    chk = _abcdk_srpc_post(node_p,1,mid,data,size);
+    chk = _abcdk_srpc_post(node_p,1,mid,data,size,1);
     if(chk != 0)
         return -1;
 

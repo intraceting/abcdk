@@ -1235,7 +1235,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #endif //HAVE_OPENSSL
 
-#elif 1
+#elif 0
 
     abcdk_object_t *tmp = abcdk_object_alloc2(100000);
 
@@ -1262,6 +1262,29 @@ int abcdk_test_any(abcdk_option_t *args)
     fprintf(stderr, "cast:%.6f\n", (double)step / 1000000.);
 
     abcdk_object_unref(&tmp);
+#elif 1
+
+    // srand(time(0)); // 初始化随机数种子
+
+     abcdk_wred_t *ctx = abcdk_wred_create(200,400,2,2);
+
+    int drop_count = 0;    
+
+    for (int i = 0; i < 10000; i++)
+    {
+        int qlen = rand() % 500+10;
+        int drop = abcdk_wred_update(ctx, qlen);
+
+        drop_count += (drop?1:0);
+
+        printf("idx(%d),qlen(%d): %s\n",i+1, qlen, drop ? "丢弃" : "保留");
+    }
+
+    printf("丢包数量：%d\n",drop_count);
+
+    abcdk_wred_destroy(&ctx);
+    
 
 #endif 
+
 }

@@ -76,6 +76,7 @@
 #include "abcdk/util/context.h"
 #include "abcdk/util/asio.h"
 #include "abcdk/util/asioex.h"
+#include "abcdk/util/wred.h"
 
 #include "abcdk/log/logger.h"
 
