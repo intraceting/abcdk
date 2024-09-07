@@ -1122,12 +1122,12 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
         node->cfg.io_hook_mtu = ABCDK_CLAMP(node->cfg.io_hook_mtu,1,262144);
 
     if(node->cfg.out_hook_min_th <= 0)
-        node->cfg.out_hook_min_th = 200;
+        node->cfg.out_hook_min_th = 400;
     else 
         node->cfg.out_hook_min_th = ABCDK_CLAMP(node->cfg.out_hook_min_th,200,600);
 
     if(node->cfg.out_hook_max_th <= 0)
-        node->cfg.out_hook_max_th = 400;
+        node->cfg.out_hook_max_th = 600;
     else 
         node->cfg.out_hook_max_th = ABCDK_CLAMP(node->cfg.out_hook_max_th,400,800);
 

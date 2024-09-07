@@ -163,14 +163,14 @@ typedef struct _abcdk_stcp_config
     /**
      * 输出队列丢包最小阈值。 
      * 
-     * @note 有效范围：200~600，默认：200
+     * @note 有效范围：200~600，默认：400
     */
     int out_hook_min_th;
 
     /**
      * 输出队列丢包最大阈值。 
      * 
-     * @note 有效范围：400~800，默认：400
+     * @note 有效范围：400~800，默认：600
     */
     int out_hook_max_th;
 
