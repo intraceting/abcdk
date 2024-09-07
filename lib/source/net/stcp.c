@@ -1458,7 +1458,7 @@ int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
     }
     else
     {
-        abcdk_stcp_trace_output(node, LOG_DEBUG, "输出缓慢，队列积压过长(len=%d)，丢弃当充数据包(size=%zd)。\n",node->out_len, p->obj->sizes[0]);
+        abcdk_stcp_trace_output(node, LOG_DEBUG, "输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n",node->out_len, p->obj->sizes[0]);
 
         abcdk_tree_free(&p);
     }
