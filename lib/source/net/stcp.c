@@ -1137,7 +1137,7 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
         node->cfg.out_hook_weight = ABCDK_CLAMP(node->cfg.out_hook_weight,1,99);
     
     if(node->cfg.out_hook_prob <= 0)
-        node->cfg.out_hook_prob = 20;
+        node->cfg.out_hook_prob = 2;
     else 
         node->cfg.out_hook_prob = ABCDK_CLAMP(node->cfg.out_hook_prob,1,99);
 
