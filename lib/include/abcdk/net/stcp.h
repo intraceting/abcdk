@@ -184,7 +184,7 @@ typedef struct _abcdk_stcp_config
     /**
      * 输出队列丢包概率因子。 
      * 
-     * @note 有效范围：1~99，默认：2 
+     * @note 有效范围：1~99，默认：20 
     */
     int out_hook_prob;
 
