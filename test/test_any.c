@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 1
+#elif 0
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -1106,27 +1106,31 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_object_unref(&buf4);
     abcdk_object_unref(&buf5);
 
-    abcdk_object_t *src = abcdk_object_alloc2(100000);
+    abcdk_object_t *src = abcdk_object_alloc2(10000000);
 
+        
     uint64_t dot = 0;
     abcdk_clock(dot,&dot);
 
-    for(int i = 1;i<100000;i++)
+    for (int i = 1000; i <= 10000000; i *= 10)
     {
-        RAND_bytes(src->pptrs[0],i);
 
-        abcdk_object_t *buf6 = abcdk_cipher_update(enc_ctx,src->pptrs[0],i,1);
+        RAND_bytes(src->pptrs[0], i);
 
-        abcdk_object_t *buf7 = abcdk_cipher_update(dec_ctx,buf6->pptrs[0],buf6->sizes[0],0);
+        abcdk_clock(dot,&dot);
 
-        assert(memcmp(src->pptrs[0],buf7->pptrs[0],i)==0);
+        abcdk_object_t *buf6 = abcdk_cipher_update(enc_ctx, src->pptrs[0], i, 1);
+
+        abcdk_object_t *buf7 = abcdk_cipher_update(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
+
+        assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
 
         abcdk_object_unref(&buf6);
         abcdk_object_unref(&buf7);
-    }
 
-    uint64_t step = abcdk_clock(dot,&dot);
-    fprintf(stderr,"cast:%.6f\n",(double)step/1000000.);
+        uint64_t step = abcdk_clock(dot, &dot);
+        fprintf(stderr, "%d,cast:%.6f\n", i, (double)step / 1000000.);
+    }
 
     abcdk_object_unref(&src);
 
