@@ -832,7 +832,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
-    for (int r = 3; r <= 10; r++)
+    for (int r = 4; r <= 11; r++)
     {
         int seed = rand();
         abcdk_enigma_t *s_ctx = abcdk_enigma_create2(seed, r,256);

@@ -210,7 +210,7 @@ uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, size_t row, uint8_t pos)
     return old;
 }
 
-static uint8_t _abcdk_enigma_light_v1(abcdk_enigma_t *ctx, uint8_t c)
+static inline uint8_t _abcdk_enigma_light_v1(abcdk_enigma_t *ctx, uint8_t c)
 {
     /*
      * 第一个转子转动一位。
@@ -265,7 +265,7 @@ static uint8_t _abcdk_enigma_light_v1(abcdk_enigma_t *ctx, uint8_t c)
     return c;
 }
 
-static uint8_t _abcdk_enigma_light_v2(abcdk_enigma_t *ctx, uint8_t c)
+static inline uint8_t _abcdk_enigma_light_v2(abcdk_enigma_t *ctx, uint8_t c)
 {
     /*
      * 第一个转子转动一位。
@@ -279,7 +279,7 @@ static uint8_t _abcdk_enigma_light_v2(abcdk_enigma_t *ctx, uint8_t c)
     {
         abcdk_enigma_rotor_t *r = &ctx->rotors[y];
 
-        r->pos = (r->pos + 1) & (ctx->cols -1);//‘与’运算等于偶数作除数时的取余操作。
+        r->pos = (r->pos + 1) % ctx->cols;
 
         /*当POS变成0时，表示产生进位。*/
         if (r->pos)
@@ -300,7 +300,7 @@ static uint8_t _abcdk_enigma_light_v2(abcdk_enigma_t *ctx, uint8_t c)
     {
         abcdk_enigma_rotor_t *r = &ctx->rotors[y];
 
-        c = r->fdict[(c + r->pos) & (ctx->cols -1)];//‘与’运算等于偶数作除数时的取余操作。
+        c = r->fdict[(c + r->pos) % ctx->cols];
     }
 
     /* 通过反射板。*/
@@ -320,10 +320,76 @@ static uint8_t _abcdk_enigma_light_v2(abcdk_enigma_t *ctx, uint8_t c)
     {
         abcdk_enigma_rotor_t *r = &ctx->rotors[ctx->rows - 1 - y];
 
-        c = (r->bdict[c] + (ctx->cols - r->pos)) & (ctx->cols -1);//‘与’运算等于偶数作除数时的取余操作。
+        c = (r->bdict[c] + (ctx->cols - r->pos)) % ctx->cols;
     }
 
     return c;
+}
+
+static inline uint8_t _abcdk_enigma_light_v3(abcdk_enigma_t *ctx, uint8_t c)
+{
+    /*
+     * 第一个转子转动一位。
+     *
+     * 1：如果第一个转子产生进位，那么POS变成0，第二个转子转动一位。
+     * 2：如果第二个转子产生进位，那么POS变成0，第三个转子转动一位。
+     * 3：……
+     * 
+    */
+    for (size_t y = 0; y < ctx->rows; y++)
+    {
+        abcdk_enigma_rotor_t *r = &ctx->rotors[y];
+
+        r->pos = (r->pos + 1) & (ctx->cols-1);//2的N次方才能用这种方法。
+
+        /*当POS变成0时，表示产生进位。*/
+        if (r->pos)
+            break;
+    }
+
+    /*
+     * 正向通过转子。
+     *
+     * 1：转子转动的实质是rotor转动到POS的位置，那么实际上就是:
+     * c = rotor->fdict[c + POS] 
+     * 
+     * 2：因为rotor只有COLS个元素，为了让转子形成环形转动效果，所以应该写成如下形式:
+     * c = rotor->fdict[(c + POS)%COLS]
+     * 
+    */
+    for (size_t y = 0; y < ctx->rows; y++)
+    {
+        abcdk_enigma_rotor_t *r = &ctx->rotors[y];
+
+        c = r->fdict[(c + r->pos) & (ctx->cols-1)];//2的N次方才能用这种方法。
+    }
+
+    /* 通过反射板。*/
+    c = ctx->rdict[c];
+
+    /*
+     * 逆向通过转子。
+     * 
+     * 1：转子转动的实质是rotor表在POS位置，那么实际上就是：
+     * c = rotor->bdict[c] + (COLS- POS)
+     * 
+     * 2：因为rotor只有COLS个元素，为了让转子形成环形转动效果，所以应该写成如下形式:
+     * c = (rotor->bdict[c] + (COLS- POS)) % COLS
+     * 
+    */
+    for (size_t y = 0; y < ctx->rows; y++)
+    {
+        abcdk_enigma_rotor_t *r = &ctx->rotors[ctx->rows - 1 - y];
+
+        c = (r->bdict[c] + (ctx->cols - r->pos)) & (ctx->cols-1);//2的N次方才能用这种方法。
+    }
+
+    return c;
+}
+
+static inline int _abcek_enigma_check2(size_t n)
+{
+    return (n > 0) && ((n & (n - 1)) == 0);//当n与n-1互为反码时，此数值为2的N次方。
 }
 
 uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
@@ -331,7 +397,11 @@ uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     assert(ctx != NULL);
     assert(c < ctx->cols);
 
-    return _abcdk_enigma_light_v1(ctx,c);
+    /*当通道数量为2的N次方时，可以启用加速代码。*/
+    if(_abcek_enigma_check2(ctx->cols))
+        return _abcdk_enigma_light_v3(ctx,c);
+    
+    return _abcdk_enigma_light_v2(ctx,c);
 }
 
 void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)
