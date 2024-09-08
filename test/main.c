@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     setlocale(LC_ALL, "zh_CN.UTF-8");
 
     /*随机数种子。*/
-  //  srand(time(NULL));
+    srand(time(NULL));
 
     abcdk_openssl_init();
 

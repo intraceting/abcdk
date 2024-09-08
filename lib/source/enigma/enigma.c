@@ -79,7 +79,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
     uint8_t c;
     int chk;
 
-    assert(dict != NULL && rows > 0 && cols >= 2 && cols <= 256 && cols % 2 == 0);
+    assert(dict != NULL && rows > 1 && cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     /*检查字典表，每张字典表中的字符不能出现重复的。*/
     for (size_t y = 0; y < rows; y++)
@@ -106,7 +106,7 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
         goto final_error;
 
     /*根据字典表，初始化转子配置。*/
-    for (size_t y = 0; y < rows; y++)
+    for (size_t y = 0; y < rows - 1; y++)
     {
         ctx->rotors[y].pos = 0;
 
@@ -122,14 +122,25 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
         }
     }
 
-    /*初始化反射板。两个索引之间形成互查字典。*/
-    for (size_t x = 0; x < cols; x++)
+    /*初始化反射板，形成对称映射。*/
+    for (size_t x = 0; x < cols; x += 2)
     {
-        ctx->rdict[x] = cols - x -1;
+        uint8_t a = dict[(rows - 1) * cols + x];
+        uint8_t b = dict[(rows - 1) * cols + x + 1];
+
+        /*a和b互相映射。*/
+        ctx->rdict[a] = b;
+        ctx->rdict[b] = a;
     }
- 
+
+    /*验证反射板。*/
+    for (int x = 0; x < cols; x++) 
+    {
+        assert(ctx->rdict[ctx->rdict[x]] == x);
+    } 
+
     ctx->cols = cols;
-    ctx->rows = rows;
+    ctx->rows = rows-1;//最后一个轮子是反射板。
 
     return ctx;
 
@@ -320,7 +331,7 @@ uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     assert(ctx != NULL);
     assert(c < ctx->cols);
 
-    return _abcdk_enigma_light_v2(ctx,c);
+    return _abcdk_enigma_light_v1(ctx,c);
 }
 
 void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *src,size_t size)

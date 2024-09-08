@@ -426,19 +426,19 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 0
 
-    for (int y = 3; y <= 10; y++)
+    for (int y = 2; y <= 100; y++)
     {
-        #pragma omp parallel for num_threads(8)
-        for (int x = 4; x <= 65536; x += 2)
+   //     #pragma omp parallel for num_threads(8)
+        for (int x = 4; x <= 256; x += 2)
         {
             printf("row=%d,col=%d\n",y,x);
 
             size_t rows = y;
             size_t cols = x;
 
-            uint16_t *dist = abcdk_heap_alloc(sizeof(uint16_t) * rows * cols);
+            uint8_t *dist = abcdk_heap_alloc(sizeof(uint8_t) * rows * cols);
 
-            uint64_t seed = x;
+            uint64_t seed = rand();
 
             abcdk_enigma_mkdict(&seed, dist, rows, cols);
 
@@ -448,18 +448,18 @@ int abcdk_test_any(abcdk_option_t *args)
             for (int i = 0; i < 10; i++)
             {
                 int n = rand() % 500 + 1;
-                uint16_t src[600] = {0};
-                uint16_t dst[600] = {0};
-                uint16_t dst2[600] = {0};
+                uint8_t src[600] = {0};
+                uint8_t dst[600] = {0};
+                uint8_t dst2[600] = {0};
 
                 for (int j = 0; j < n; j++)
                     src[j] = rand() % cols;
 
-                abcdk_enigma_light_batch16(send_ctx, dst, src, n);
+                abcdk_enigma_light_batch(send_ctx, dst, src, n);
                 //     printf("---------------------------\n");
-                abcdk_enigma_light_batch16(recv_ctx, dst2, dst, n);
+                abcdk_enigma_light_batch(recv_ctx, dst2, dst, n);
 
-                int chk = memcmp(src, dst2, n*sizeof(uint16_t));
+                int chk = memcmp(src, dst2, n);
                 assert(chk == 0);
             }
 
@@ -828,15 +828,15 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 0
+#elif 1
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
     for (int r = 3; r <= 10; r++)
     {
-
-        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(2024, r,256);
-        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(2024, r,256);
+        int seed = rand();
+        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(seed, r,256);
+        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(seed, r,256);
 
         for (int d = 1000; d <= 1000 * 10000; d *= 10)
         {
@@ -844,8 +844,11 @@ int abcdk_test_any(abcdk_option_t *args)
             abcdk_object_t *src_data = abcdk_object_alloc2(d);
             abcdk_object_t *dst_data = abcdk_object_alloc2(d);
             abcdk_object_t *dst_data2 = abcdk_object_alloc2(d);
-
+#ifndef HAVE_OPENSSL
             abcdk_rand_string(src_data->pptrs[0], d, 0);
+#else 
+            RAND_bytes(src_data->pptrs[0], d);
+#endif 
 
             uint64_t s = 0;
             abcdk_clock(s,&s);
@@ -853,7 +856,7 @@ int abcdk_test_any(abcdk_option_t *args)
                      
             abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
              abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
-            // assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+             assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
 
             uint64_t step = abcdk_clock(s,&s);
             fprintf(stderr,"r(%d),d(%d),step(%0.6f)\n",r,d,(double)step/1000000.);
@@ -1262,7 +1265,7 @@ int abcdk_test_any(abcdk_option_t *args)
     fprintf(stderr, "cast:%.6f\n", (double)step / 1000000.);
 
     abcdk_object_unref(&tmp);
-#elif 1
+#elif 0
 
     // srand(time(0)); // 初始化随机数种子
 
