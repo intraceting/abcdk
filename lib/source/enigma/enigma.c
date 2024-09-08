@@ -412,10 +412,14 @@ void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *sr
 
     for (size_t i = 0; i < size; i++)
     {
+#if 0
         src_p = &src[i];
         dst_p = &dst[i];
 
         *dst_p = abcdk_enigma_light(ctx, *src_p);
+#else 
+        dst[i] = abcdk_enigma_light(ctx, src[i]);
+#endif 
     }
 }
 

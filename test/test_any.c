@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 0
+#elif 1
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
