@@ -5,27 +5,16 @@
 
 ## 简介
 
-为支持在GNU/Linux平台中使用C/C++语言开发项目而创建，支持文件、网络、数据库、设备、图像等。
+为支持在GNU/Linux平台中使用C/C++语言开发项目而创建。
 
 ## 主要模块
 
-- audio 音频
-- curl CURL二次封装
-- database 数据库(unixodbc,sqlite,redis)
-- dhcp DHCP
-- ffmpeg FFMPEG二次封装
-- http HTTP
-- image 图像(freeimage)
-- json JSON(json-c)
-- log 日志
-- mp4 MP4
-- net 网络通讯
-- rtp RTP
-- sdp SDP
-- shell 外部命令二次封装
-- openssl SSL套件(openssl)
-- util 基础工具
-- video 视频
+- auto 自动编译
+- doc 文档说明显
+- lib 基础组件
+- script 一些脚本
+- test 测试组件
+- tool 工具组件
 
 ## 拉取子项目
 

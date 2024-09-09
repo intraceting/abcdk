@@ -555,7 +555,7 @@ AutoReqProv: yes
 The C language and C-interface style secondary development kit, 
 only supports gnu/linux compatible platforms.
 .
-This package contains the development files (tools,libraries)
+This package contains the runtime files (tools,libraries)
 %files
 ${INSTALL_PREFIX}
 
@@ -642,7 +642,7 @@ Pre-Depends: \${shlibs:Depends}
 Description: The C language and C-interface style secondary development kit,
  only supports gnu/linux compatible platforms.
  .
- This package contains the development files (tools, libraries)
+ This package contains the runtime files (tools, libraries)
 EOF
 checkReturnCode
 
