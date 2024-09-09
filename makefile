@@ -81,9 +81,6 @@ CC_FLAGS += -DVERSION_RELEASE=${VERSION_RELEASE}
 CC_FLAGS += -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 
 CC_FLAGS += ${DEPEND_FLAGS}
 
-#优化信息。
-#CC_FLAGS += -fopt-info-optimized=${BUILD_PATH}/optimization_info.txt
-
 #
 CC_FLAGS += -I$(CURDIR)/lib/include/
 
@@ -115,19 +112,15 @@ LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #
-TOOL_SRC_FILES = $(wildcard tool/*.c)
-TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
-
-#
 TEST_SRC_FILES = $(wildcard test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test
+.PHONY: lib test
 
 #
-all: lib tool test
+all: lib test
 
 #
 lib: lib-src
@@ -137,14 +130,6 @@ lib: lib-src
 
 #
 lib-src: $(LIB_OBJ_FILES)
-
-#
-tool: tool-src lib
-	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk ${TOOL_OBJ_FILES} -l:libabcdk.a $(LINK_FLAGS)
-
-#
-tool-src: ${TOOL_OBJ_FILES} 
 	
 #
 test: test-src lib
@@ -262,11 +247,6 @@ $(OBJ_PATH)/lib/source/enigma/%.o: lib/source/enigma/%.c
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
-#
-$(OBJ_PATH)/tool/%.o: tool/%.c
-	mkdir -p $(OBJ_PATH)/tool/
-	rm -f $@
-	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
@@ -275,7 +255,7 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-lib clean-tool clean-test
+clean: clean-lib clean-test
 
 #
 clean-lib:
@@ -283,10 +263,6 @@ clean-lib:
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 
-#
-clean-tool:
-	rm -rf ${OBJ_PATH}/tool
-	rm -f $(BUILD_PATH)/abcdk
 #
 clean-test:
 	rm -rf ${OBJ_PATH}/test
@@ -315,7 +291,6 @@ install-runtime:
 #
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 #
-	cp -f $(BUILD_PATH)/abcdk ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_SPT}/
 	cp -rf $(CURDIR)/doc/. ${INSTALL_PATH_DOC}/
 	
@@ -341,7 +316,6 @@ uninstall-runtime:
 #
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 #
-	rm -f $(INSTALL_PATH_BIN)/abcdk
 	rm -rf $(INSTALL_PATH_BIN)/script
 	rm -rf $(INSTALL_PATH_BIN)/doc
 	
