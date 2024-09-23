@@ -316,8 +316,8 @@ uninstall-runtime:
 #
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 #
-	rm -rf $(INSTALL_PATH_BIN)/script
-	rm -rf $(INSTALL_PATH_BIN)/doc
+	rm -rf $(INSTALL_PATH_SPT)/*
+	rm -rf $(INSTALL_PATH_DOC)/*
 	
 #
 uninstall-devel:
