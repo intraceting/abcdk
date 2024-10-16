@@ -412,6 +412,8 @@ void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *sr
 
     for (size_t i = 0; i < size; i++)
     {
+        // __builtin_prefetch(&src[i+200],0,1);
+        // __builtin_prefetch(&dst[i+200],1,1);
 #if 0
         src_p = &src[i];
         dst_p = &dst[i];
