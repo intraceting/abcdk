@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 1
+#elif 0
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -1269,7 +1269,7 @@ int abcdk_test_any(abcdk_option_t *args)
     fprintf(stderr, "cast:%.6f\n", (double)step / 1000000.);
 
     abcdk_object_unref(&tmp);
-#elif 0
+#elif 1
 
     // srand(time(0)); // 初始化随机数种子
 
