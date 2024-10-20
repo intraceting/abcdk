@@ -68,6 +68,16 @@ typedef struct _abcdk_ifaddrs
     abcdk_sockaddr_t broa;
 } abcdk_ifaddrs_t;
 
+/** Socket多播地址。*/
+typedef union _abcdk_mreq
+{
+    /** IPv4地址。*/
+    struct ip_mreq st_mreq4;
+
+    /** IPv6地址。*/
+    struct ipv6_mreq st_mreq6;
+} abcdk_mreq_t;
+
 /**
  * SOCKADDR复制。
  */
