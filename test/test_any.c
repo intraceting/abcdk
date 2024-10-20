@@ -1199,7 +1199,7 @@ int abcdk_test_any(abcdk_option_t *args)
 #endif //HAVE_OPENSSL
 
 
-#elif 0
+#elif 1
 
 #ifdef HAVE_OPENSSL
 
@@ -1269,7 +1269,7 @@ int abcdk_test_any(abcdk_option_t *args)
     fprintf(stderr, "cast:%.6f\n", (double)step / 1000000.);
 
     abcdk_object_unref(&tmp);
-#elif 1
+#elif 0
 
     // srand(time(0)); // 初始化随机数种子
 

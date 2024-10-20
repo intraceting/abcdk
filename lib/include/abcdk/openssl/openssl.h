@@ -71,8 +71,6 @@ RSA *abcdk_openssl_rsa_create(int bits, unsigned long e);
 
 /**
  * 导出密钥。
- * 
- * @param prikey 是否为私钥。0 否，!0 是。
 */
 abcdk_object_t *abcdk_openssl_rsa_export(RSA *key);
 
@@ -152,7 +150,7 @@ RSA *abcdk_openssl_cert_pubkey(X509 *x509);
  * 
  * @note 仅支持PEM格式。
 */
-abcdk_object_t *abcdk_openssl_cert_pem(X509 *leaf_cert,STACK_OF(X509) *cert_chain);
+abcdk_object_t *abcdk_openssl_cert_to_pem(X509 *leaf_cert,STACK_OF(X509) *cert_chain);
 
 /**
  * 加载证书吊销列表。
