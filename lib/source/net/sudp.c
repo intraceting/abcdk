@@ -338,7 +338,7 @@ int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_object_t *data)
     int chk;
 
     assert(ctx != NULL && data != NULL);
-    assert(data->pptrs[0] != NULL && data->sizes[0] > 0 && data->sizes[0] <= 61440);
+    assert(data->pptrs[0] != NULL && data->sizes[0] > 0 && data->sizes[0] <= 64512);
     assert(data->pptrs[1] != NULL && data->sizes[1] > 0 && data->sizes[1] <= 64);
 
     p = abcdk_tree_alloc(data);
@@ -374,7 +374,7 @@ int abcdk_sudp_post_buffer(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const voi
     abcdk_object_t *src_p = NULL;
     int chk;
 
-    assert(ctx != NULL && remote != NULL && data != NULL && size >0 && size <= 61440);
+    assert(ctx != NULL && remote != NULL && data != NULL && size >0 && size <= 64512);
 
     size_t sizes[] = {size,64};
     src_p = abcdk_object_alloc(sizes,2,0);
