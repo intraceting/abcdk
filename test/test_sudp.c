@@ -48,9 +48,10 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     abcdk_object_t *data = abcdk_object_alloc2(61440);
 
-    for(int i = 0;i<100;i++)
+    for(int i = 0;i<100000;i++)
     {
-        int len = ABCDK_CLAMP(rand(),1,61440-2);
+        int k=rand();
+        int len = ABCDK_CLAMP(k,1,61440-2);
         abcdk_rand_string(data->pptrs[0]+2,len,0);
 
         abcdk_bloom_write_number(data->pptrs[0],2,0,16,len);
