@@ -188,9 +188,9 @@ abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
             goto ERR;
     }
 
-    // chk = abcdk_fflag_add(ctx->fd,O_NONBLOCK);
-    // if(chk != 0)
-    //     goto ERR;
+    chk = abcdk_fflag_add(ctx->fd,O_NONBLOCK);
+    if(chk != 0)
+        goto ERR;
 
     ctx->out_wred = abcdk_wred_create(ctx->cfg.out_min_th, ctx->cfg.out_max_th,
                                       ctx->cfg.out_weight, ctx->cfg.out_prob);

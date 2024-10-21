@@ -24,13 +24,14 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 
     assert(len <= size-2);
 
- //   abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
+    abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
      
 }
 
 int abcdk_test_sudp(abcdk_option_t *args)
 {
+    const char *aes_key_file = abcdk_option_get(args, "--aes-key-file", 0, "");
     const char *listen_p = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
     const char *dst_p = abcdk_option_get(args, "--dst", 0, "127.0.0.1:1111");
 
@@ -39,7 +40,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     abcdk_sudp_config_t cfg = {0};
     
-    cfg.aes_key_file = "";
+    cfg.aes_key_file = aes_key_file;
     abcdk_sockaddr_from_string(&cfg.listen,listen_p,0);
 
     cfg.input_cb = input_cb;
