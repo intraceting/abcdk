@@ -70,7 +70,11 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
         abcdk_bloom_write_number(data->pptrs[0],3,0,16,len);
         abcdk_bloom_write_number(data->pptrs[0],3,16,8,1);
-        abcdk_rand_string(data->pptrs[0]+3,len,1);
+#ifdef OPENSSL_VERSION_NUMBER
+        RAND_bytes(data->pptrs[0]+3,len);
+#else 
+        abcdk_rand_string(data->pptrs[0]+3,len,0);
+#endif //#ifdef OPENSSL_VERSION_NUMBER
 
         data->sizes[0] = len+3;
 
