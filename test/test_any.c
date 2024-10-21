@@ -992,11 +992,8 @@ int abcdk_test_any(abcdk_option_t *args)
     int chk = abcdk_sockaddr_from_string(&dst, abcdk_option_get(args, "--ipaddr", 0, ""), 1);
     assert(chk == 0);
 
-    abcdk_sockaddr_to_string(buf, &dst);
-    if (dst.family == AF_INET)
-        abcdk_trace_output(LOG_DEBUG, "%s:%d\n", buf, abcdk_endian_b_to_h16(dst.addr4.sin_port));
-    if (dst.family == AF_INET6)
-        abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(dst.addr6.sin6_port));
+    abcdk_sockaddr_to_string(buf, &dst,0);
+    abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
 
 #elif 0
 
@@ -1025,11 +1022,8 @@ int abcdk_test_any(abcdk_option_t *args)
         dst.addr4.sin_addr.s_addr = abcdk_endian_h_to_b32(ip_start + i);
 
         char buf[100] = {0};
-        abcdk_sockaddr_to_string(buf, &dst);
-        if (dst.family == AF_INET)
-            abcdk_trace_output(LOG_DEBUG, "%s:%d\n", buf, abcdk_endian_b_to_h16(dst.addr4.sin_port));
-        if (dst.family == AF_INET6)
-            abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(dst.addr6.sin6_port));
+        abcdk_sockaddr_to_string(buf, &dst,0);
+        abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
     }
 
 #elif 0
@@ -1053,10 +1047,7 @@ int abcdk_test_any(abcdk_option_t *args)
         
         char buf[100] = {0};
         abcdk_sockaddr_to_string(buf, &addr);
-        if (addr.family == AF_INET)
-            abcdk_trace_output(LOG_DEBUG, "%s:%d\n", buf, abcdk_endian_b_to_h16(addr.addr4.sin_port));
-        if (addr.family == AF_INET6)
-            abcdk_trace_output(LOG_DEBUG, "[%s]:%d\n", buf, abcdk_endian_b_to_h16(addr.addr6.sin6_port));
+        abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
 
         abcdk_ipool_reclaim(ctx,&addr);
         
@@ -1199,7 +1190,7 @@ int abcdk_test_any(abcdk_option_t *args)
 #endif //HAVE_OPENSSL
 
 
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
@@ -1223,7 +1214,7 @@ int abcdk_test_any(abcdk_option_t *args)
     fprintf(stderr,"%s\n",cert_chain_pem->pstrs[0]);
     abcdk_object_unref(&cert_chain_pem);
 
-    X509_STORE_CTX *store_ctx = abcdk_openssl_verify_cert_prepare(store, leaf_cert,cert_chain);
+    X509_STORE_CTX *store_ctx = abcdk_openssl_cert_verify_prepare(store, leaf_cert,cert_chain);
     assert(store_ctx != NULL);
     
     chk = X509_verify_cert(store_ctx);

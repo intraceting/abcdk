@@ -192,7 +192,7 @@ int abcdk_socket_option_linger(int fd, struct linger *lg, int direction);
 
 /**
  * 设置SOCKET选项(linger)。
- *  * 
+ *  
  * @return 0 成功，-1 失败。
 */
 int abcdk_socket_option_linger_set(int fd, int l_onoff, int l_linger);
@@ -217,11 +217,9 @@ int abcdk_socket_option_tcp_quickack(int fd,int enable);
 /**
  * 创建一个SOCKET句柄。
  * 
- * @param flag 标志。0 创建数据流(TCP)句柄，!0 创建数据报(UDP)句柄。
- * 
  * @return >= 0 成功(SOCKET句柄)，-1 失败。
 */
-int abcdk_socket(sa_family_t family, int flag);
+int abcdk_socket(sa_family_t family, int udp);
 
 /**
  * 绑定地址到SOCKET句柄。
@@ -281,7 +279,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lo
  * 
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
-char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src);
+char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src,int ex_port);
 
 /**
  * 判断SOCKET地址位置。

@@ -520,7 +520,7 @@ ERR:
     return NULL;
 }
 
-X509_STORE_CTX *abcdk_openssl_verify_cert_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain)
+X509_STORE_CTX *abcdk_openssl_cert_verify_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain)
 {
     X509_STORE_CTX *store_ctx = NULL;
     int chk;

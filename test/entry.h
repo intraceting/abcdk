@@ -30,6 +30,7 @@ int abcdk_test_tun(abcdk_option_t *args);
 int abcdk_test_srpc(abcdk_option_t *args);
 int abcdk_test_fmp4(abcdk_option_t *args);
 int abcdk_test_worker(abcdk_option_t *args);
+int abcdk_test_sudp(abcdk_option_t *args);
 
 __END_DECLS
 

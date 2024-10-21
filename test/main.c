@@ -43,6 +43,7 @@ static struct _abcdk_test_entry
     {"tun",abcdk_test_tun},
     {"srpc",abcdk_test_srpc},
     {"fmp4",abcdk_test_fmp4},
+    {"sudp",abcdk_test_sudp},
 };
 
 void _abcdk_test_print_usage()

@@ -330,11 +330,11 @@ int abcdk_socket_option_tcp_quickack(int fd,int enable)
     return abcdk_sockopt_option_int(fd, IPPROTO_TCP, TCP_QUICKACK, &flag, 2);
 }
 
-int abcdk_socket(sa_family_t family, int flag)
+int abcdk_socket(sa_family_t family, int udp)
 {
     int type = SOCK_CLOEXEC;
 
-    type |= (flag ? SOCK_DGRAM : SOCK_STREAM);
+    type |= (udp ? SOCK_DGRAM : SOCK_STREAM);
 
     return socket(family, type, 0);
 }
@@ -548,7 +548,7 @@ TRY_PORT:
     return 0;
 }
 
-char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
+char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src,int ex_port)
 {
     char buf[INET6_ADDRSTRLEN] = {0};
 
@@ -561,8 +561,29 @@ char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src)
     }
     else
     {
-        if (abcdk_inet_ntop(src, dst, INET6_ADDRSTRLEN) == NULL)
-            return NULL;
+        if(ex_port)
+        {
+            if (abcdk_inet_ntop(src, dst, INET6_ADDRSTRLEN) == NULL)
+                return NULL;
+        }
+        else if(src->family == AF_INET)
+        {
+            if (abcdk_inet_ntop(src, dst, INET6_ADDRSTRLEN) == NULL)
+                return NULL;
+
+            sprintf(dst+strlen(dst),":%d",abcdk_endian_b_to_h16(src->addr4.sin_port));
+        }
+        else if(src->family == AF_INET6)
+        {
+            strcat(dst,"[");
+
+            if (abcdk_inet_ntop(src+1, dst, INET6_ADDRSTRLEN) == NULL)
+                return NULL;
+            
+            strcat(dst,"]");
+
+            sprintf(dst+strlen(dst),":%d",abcdk_endian_b_to_h16(src->addr6.sin6_port));
+        }
     }
 
     return dst;

@@ -309,10 +309,10 @@ int abcdk_stcp_get_sockaddr_str(abcdk_stcp_node_t *node, char local[NAME_MAX],ch
     assert(node != NULL);
 
     if(local && node->local.family)
-        abcdk_sockaddr_to_string(local,&node->local);
+        abcdk_sockaddr_to_string(local,&node->local,1);
 
     if(remote && node->remote.family)
-        abcdk_sockaddr_to_string(remote,&node->remote);
+        abcdk_sockaddr_to_string(remote,&node->remote,1);
 
     return 0;
 }
@@ -1414,10 +1414,8 @@ NEXT_MSG:
         
         /*移除节点。*/
         abcdk_spinlock_lock(node->out_locker,1);
-
         abcdk_tree_unlink(p);
         node->out_len -= 1;
-
         abcdk_spinlock_unlock(node->out_locker);
 
         /*删除节点。*/
