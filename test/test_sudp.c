@@ -26,7 +26,15 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 
     abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
-     
+    abcdk_object_t *rsp_p = abcdk_object_alloc2(len+3);
+
+    abcdk_bloom_write_number(rsp_p->pptrs[0],3,0,16,len);
+    abcdk_bloom_write_number(rsp_p->pptrs[0],3,16,8,0);
+    memcpy(rsp_p->pptrs[0]+3,data,len);
+
+    abcdk_sudp_post_buffer(g_ctx,remote,rsp_p->pptrs[0],rsp_p->sizes[0]);
+
+    abcdk_object_unref(&rsp_p);
 }
 
 int abcdk_test_sudp(abcdk_option_t *args)
@@ -52,11 +60,14 @@ int abcdk_test_sudp(abcdk_option_t *args)
     for(int i = 0;i<100000;i++)
     {
         int k=rand()%64512;
-        int len = ABCDK_CLAMP(k,1,64512-2);
-        abcdk_rand_string(data->pptrs[0]+2,len,0);
+        int len = ABCDK_CLAMP(k,1,64512-3);
+        
 
-        abcdk_bloom_write_number(data->pptrs[0],2,0,16,len);
-        data->sizes[0] = len+2;
+        abcdk_bloom_write_number(data->pptrs[0],3,0,16,len);
+        abcdk_bloom_write_number(data->pptrs[0],3,16,8,1);
+        abcdk_rand_string(data->pptrs[0]+3,len,1);
+
+        data->sizes[0] = len+3;
 
         if(remote.family)
             abcdk_sudp_post_buffer(g_ctx,&remote,data->pptrs[0],data->sizes[0]);
