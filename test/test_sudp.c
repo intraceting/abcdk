@@ -17,20 +17,25 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 {
     char addrbuf[100] = {0};
     int len;
+    int flag;
 
     abcdk_sockaddr_to_string(addrbuf,remote,0);
 
     len = (uint16_t)abcdk_bloom_read_number((uint8_t*)data,size,0,16);
+    flag =(uint8_t)abcdk_bloom_read_number((uint8_t*)data,size,16,8);
 
     assert(len <= size-2);
 
     abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
+    if(!flag)
+        return;
+
     abcdk_object_t *rsp_p = abcdk_object_alloc2(len+3);
 
     abcdk_bloom_write_number(rsp_p->pptrs[0],3,0,16,len);
     abcdk_bloom_write_number(rsp_p->pptrs[0],3,16,8,0);
-    memcpy(rsp_p->pptrs[0]+3,data,len);
+    memcpy(rsp_p->pptrs[0]+3,ABCDK_PTR2VPTR(data,3),len);
 
     abcdk_sudp_post_buffer(g_ctx,remote,rsp_p->pptrs[0],rsp_p->sizes[0]);
 
