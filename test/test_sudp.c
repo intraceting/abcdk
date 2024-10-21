@@ -24,7 +24,7 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 
     assert(len <= size-2);
 
-    abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
+ //   abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
      
 }
@@ -50,7 +50,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     for(int i = 0;i<100000;i++)
     {
-        int k=rand();
+        int k=rand();//%61440;
         int len = ABCDK_CLAMP(k,1,61440-2);
         abcdk_rand_string(data->pptrs[0]+2,len,0);
 
@@ -60,7 +60,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
         if(remote.family)
             abcdk_sudp_post_buffer(g_ctx,&remote,data->pptrs[0],data->sizes[0]);
 
-        usleep(1*1000);
+        //usleep(500);
     }
 
     while(getchar() != 'q');
