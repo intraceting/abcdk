@@ -147,6 +147,14 @@ abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
     if(ctx->fd < 0)
         goto ERR;
 
+    /*设置发送缓存区。*/
+    sock_flag = 512*1024;
+    chk = abcdk_sockopt_option_int(ctx->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
+
+    /*设置接收缓存区。*/
+    sock_flag = 512*1024;
+    chk = abcdk_sockopt_option_int(ctx->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
+
     /*端口复用，用于快速重启恢复。*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(ctx->fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag, 2);

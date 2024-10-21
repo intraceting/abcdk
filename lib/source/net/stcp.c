@@ -592,13 +592,13 @@ static void _abcdk_stcp_handshake_sync_after(abcdk_stcp_node_t *node)
     chk = abcdk_sockopt_option_timeout(node->fd, SO_RCVTIMEO, &tv, 2);
     chk = abcdk_sockopt_option_timeout(node->fd, SO_SNDTIMEO, &tv, 2);
 
-    /*设置发送缓存区。*/
-    sock_flag = 128*1024;
-    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
+    // /*设置发送缓存区。*/
+    // sock_flag = 512*1024;
+    // chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
 
-    /*设置接收缓存区。*/
-    sock_flag = 128*1024;
-    chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
+    // /*设置接收缓存区。*/
+    // sock_flag = 512*1024;
+    // chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
 
     /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
 

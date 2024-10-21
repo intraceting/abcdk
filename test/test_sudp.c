@@ -50,7 +50,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     for(int i = 0;i<100000;i++)
     {
-        int k=rand()%1500;
+        int k=rand()%64512;
         int len = ABCDK_CLAMP(k,1,64512-2);
         abcdk_rand_string(data->pptrs[0]+2,len,0);
 
