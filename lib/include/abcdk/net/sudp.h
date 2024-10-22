@@ -18,6 +18,7 @@
 #include "abcdk/util/spinlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/wred.h"
+#include "abcdk/util/crc.h"
 #include "abcdk/openssl/cipher.h"
 
 __BEGIN_DECLS

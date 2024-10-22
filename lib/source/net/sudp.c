@@ -137,9 +137,12 @@ abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
         ctx->cipher_in = abcdk_cipher_create_from_file(ABCDK_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
         ctx->cipher_out = abcdk_cipher_create_from_file(ABCDK_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
         if(!ctx->cipher_in || !ctx->cipher_out)
+        {
+            abcdk_trace_output(LOG_WARNING, "加载密钥文件(%s)失败，无权限或不存在。",ctx->cfg.aes_key_file);
             goto ERR;
+        }
 #else //OPENSSL_VERSION_NUMBER
-        abcdk_trace_output(LOG_WARNING, "当前环境未包含加密套件，忽略密钥参数。");
+        abcdk_trace_output(LOG_WARNING, "当前环境未包含加密套件，忽略密钥文件。");
 #endif //OPENSSL_VERSION_NUMBER
     }
 
@@ -223,6 +226,8 @@ static void _abcdk_sudp_process_input(abcdk_sudp_t *ctx)
     abcdk_object_t *dec_p = NULL;
     abcdk_sockaddr_t remote;
     socklen_t addr_len = 64;
+    int data_len;
+    uint32_t old_crc32,new_crc32;
     ssize_t rlen = 0;
     int chk;
 
@@ -262,8 +267,20 @@ NEXT_MSG:
         dec_p = abcdk_object_refer(enc_p);
     }
 
+    data_len = (uint16_t)abcdk_bloom_read_number(dec_p->pptrs[0], dec_p->sizes[0],0,16);
+    old_crc32 = (uint32_t)abcdk_bloom_read_number(dec_p->pptrs[0], dec_p->sizes[0],16,32);
+    new_crc32 = abcdk_crc32(dec_p->pptrs[0]+6, dec_p->sizes[0]-6);
+
+    if (old_crc32 != new_crc32 || data_len != dec_p->sizes[0] - 6)
+    {
+        abcdk_trace_output(LOG_WARNING, "数据长度(%hu,%hu)或CRC32(%u,%u)校验错误，丢弃此数据包。\n",
+                           data_len, dec_p->sizes[0] - 6, old_crc32, new_crc32);
+
+        goto NEXT_MSG;
+    }
+
     if(ctx->cfg.input_cb)
-        ctx->cfg.input_cb(ctx->cfg.opaque,&remote,dec_p->pptrs[0], dec_p->sizes[0]);
+        ctx->cfg.input_cb(ctx->cfg.opaque,&remote,dec_p->pptrs[0]+6, dec_p->sizes[0]-6);
 
     goto NEXT_MSG;
 }
@@ -271,12 +288,14 @@ NEXT_MSG:
 static void _abcdk_sudp_process_output(abcdk_sudp_t *ctx)
 {
     abcdk_tree_t *p = NULL;
+    abcdk_object_t *dec_p = NULL;
     abcdk_object_t *enc_p = NULL;
     ssize_t slen = 0;
     int chk;
 
 NEXT_MSG:
 
+    abcdk_object_unref(&dec_p);
     abcdk_object_unref(&enc_p);
 
     if(!abcdk_atomic_compare(&ctx->exitflag,0))
@@ -296,17 +315,37 @@ NEXT_MSG:
     if(!p)
         goto NEXT_MSG;
 
+    dec_p = abcdk_object_alloc2(65536);
+    if(!dec_p)
+        goto NEXT_MSG;
+
+    /*
+     * |Length  |CRC32   |Data    |
+     * |2 Bytes |4 Bytes |N Bytes |
+     *
+     * Length： 不包含自身。
+     * CRC32：较验码。
+     * DATA: 变长数据。
+     */
+
+    abcdk_bloom_write_number(dec_p->pptrs[0],dec_p->sizes[0],0,16,p->obj->sizes[0]);
+    abcdk_bloom_write_number(dec_p->pptrs[0],dec_p->sizes[0],16,32,abcdk_crc32(p->obj->pptrs[0],p->obj->sizes[0]));
+    memcpy(dec_p->pptrs[0]+6,p->obj->pptrs[0],p->obj->sizes[0]);
+
+    /*set length of the message.*/
+    dec_p->sizes[0] = 2 + 4 + p->obj->sizes[0];
+
 #ifdef OPENSSL_VERSION_NUMBER
     if(ctx->cipher_out)
     {
-        enc_p = abcdk_cipher_update(ctx->cipher_out,p->obj->pptrs[0],p->obj->sizes[0],1);
+        enc_p = abcdk_cipher_update(ctx->cipher_out,dec_p->pptrs[0],dec_p->sizes[0],1);
         if(!enc_p)
             goto NEXT_MSG;
     }
     else 
 #endif //OPENSSL_VERSION_NUMBER
     {
-        enc_p = abcdk_object_refer(p->obj);
+        enc_p = abcdk_object_refer(dec_p);
     }
 
     slen = sendto(ctx->fd,(void*)enc_p->pptrs[0],enc_p->sizes[0],0,(struct sockaddr*)p->obj->pptrs[1],p->obj->sizes[1]);
@@ -357,7 +396,7 @@ int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_object_t *data)
     
     abcdk_mutex_lock(ctx->out_locker,1);
 
-    /*非关键数据根据WRED算法决定是否添加到队列中。*/
+    /*根据WRED算法决定是否添加到队列中。*/
     chk = abcdk_wred_update(ctx->out_wred, ctx->out_len + 1);
     if (chk == 0)
     {
@@ -367,7 +406,7 @@ int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_object_t *data)
     }
     else
     {
-        abcdk_trace_output(LOG_DEBUG, "输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n",ctx->out_len, p->obj->sizes[0]);
+        abcdk_trace_output(LOG_WARNING, "输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n",ctx->out_len, p->obj->sizes[0]);
 
         abcdk_tree_free(&p);
     }
