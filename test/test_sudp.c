@@ -64,7 +64,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     for(int i = 0;i<100000;i++)
     {
-        int k=rand()%64512;
+        int k=rand()%1400;
         int len = ABCDK_CLAMP(k,1,64512-3);
         
 
@@ -81,7 +81,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
         if(remote.family)
             abcdk_sudp_post_buffer(g_ctx,&remote,data->pptrs[0],data->sizes[0]);
 
-       // usleep(20*1000);
+        usleep(200);
     }
 
     while(getchar() != 'q');

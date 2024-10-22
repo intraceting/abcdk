@@ -145,6 +145,7 @@ abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx);
 /** 从证书中获取公钥。*/
 RSA *abcdk_openssl_cert_pubkey(X509 *x509);
 
+
 /**
  * 导出证书到内存。
  * 

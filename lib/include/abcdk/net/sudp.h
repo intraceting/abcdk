@@ -16,6 +16,7 @@
 #include "abcdk/util/time.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/spinlock.h"
+#include "abcdk/util/rwlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/wred.h"
 #include "abcdk/util/crc.h"

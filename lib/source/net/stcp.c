@@ -58,7 +58,7 @@ struct _abcdk_stcp_node
     volatile int status;
 #define ABCDK_STCP_STATUS_STABLE        1
 #define ABCDK_STCP_STATUS_SYNC          2
-#define ABCDK_STCP_STATUS_SYNC_OPENSSL  3
+#define ABCDK_STCP_STATUS_SYNC_PKI      3
 
     /**本机地址。*/
     abcdk_sockaddr_t local;
@@ -738,7 +738,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
                 goto ERR;
 
             if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
-                node->status = ABCDK_STCP_STATUS_SYNC_OPENSSL;
+                node->status = ABCDK_STCP_STATUS_SYNC_PKI;
             else if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
                 node->status = ABCDK_STCP_STATUS_STABLE;
             else 
@@ -757,7 +757,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
         _abcdk_stcp_handshake_sync_after(node);
     }
      
-    if (node->status == ABCDK_STCP_STATUS_SYNC_OPENSSL)
+    if (node->status == ABCDK_STCP_STATUS_SYNC_PKI)
     {
 #ifdef HEADER_SSL_H 
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
