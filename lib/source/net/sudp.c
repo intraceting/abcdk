@@ -224,6 +224,7 @@ static void _abcdk_sudp_process_input(abcdk_sudp_t *ctx)
 {
     abcdk_object_t *enc_p = NULL;
     abcdk_object_t *dec_p = NULL;
+    char addrbuf[100] = {0};
     abcdk_sockaddr_t remote;
     socklen_t addr_len = 64;
     int data_len;
@@ -232,9 +233,10 @@ static void _abcdk_sudp_process_input(abcdk_sudp_t *ctx)
     int chk;
 
 NEXT_MSG:
-
+    
     abcdk_object_unref(&enc_p);
     abcdk_object_unref(&dec_p);
+    memset(addrbuf,0,100);
 
     if(!abcdk_atomic_compare(&ctx->exitflag,0))
         return;
@@ -254,12 +256,18 @@ NEXT_MSG:
     /*fix length.*/
     enc_p->sizes[0] = rlen;
 
+    abcdk_sockaddr_to_string(addrbuf,&remote,0);
+
 #ifdef OPENSSL_VERSION_NUMBER
     if(ctx->cipher_in)    
     {
         dec_p = abcdk_cipher_update(ctx->cipher_in,enc_p->pptrs[0],enc_p->sizes[0],0);
         if(!dec_p)
+        {
+            abcdk_trace_output(LOG_WARNING, "来自(%s)的数据解密失败，丢弃此数据包。\n",addrbuf);
+
             goto NEXT_MSG;
+        }
     }
     else
 #endif //OPENSSL_VERSION_NUMBER
@@ -273,8 +281,8 @@ NEXT_MSG:
 
     if (old_crc32 != new_crc32 || data_len != dec_p->sizes[0] - 6)
     {
-        abcdk_trace_output(LOG_WARNING, "数据长度(%hu,%hu)或CRC32(%08X,%08X)校验错误，丢弃此数据包。\n",
-                           data_len, dec_p->sizes[0] - 6, old_crc32, new_crc32);
+        abcdk_trace_output(LOG_WARNING, "来自(%s)的数据长度(%hu,%hu)或CRC32(%08X,%08X)校验错误，丢弃此数据包。\n",
+                           addrbuf, data_len, dec_p->sizes[0] - 6, old_crc32, new_crc32);
 
         goto NEXT_MSG;
     }
