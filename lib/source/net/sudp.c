@@ -273,7 +273,7 @@ NEXT_MSG:
 
     if (old_crc32 != new_crc32 || data_len != dec_p->sizes[0] - 6)
     {
-        abcdk_trace_output(LOG_WARNING, "数据长度(%hu,%hu)或CRC32(%u,%u)校验错误，丢弃此数据包。\n",
+        abcdk_trace_output(LOG_WARNING, "数据长度(%hu,%hu)或CRC32(%08X,%08X)校验错误，丢弃此数据包。\n",
                            data_len, dec_p->sizes[0] - 6, old_crc32, new_crc32);
 
         goto NEXT_MSG;

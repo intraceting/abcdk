@@ -24,7 +24,7 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
     len = (uint16_t)abcdk_bloom_read_number((uint8_t*)data,size,0,16);
     flag =(uint8_t)abcdk_bloom_read_number((uint8_t*)data,size,16,8);
 
-    assert(len <= size-2);
+    assert(len +3 == size);
 
     abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
