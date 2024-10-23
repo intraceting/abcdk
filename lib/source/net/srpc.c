@@ -427,6 +427,7 @@ static void _abcdk_srpc_request_item_free(abcdk_srpc_request_item_t **item)
 
     abcdk_stcp_unref(&item_p->node);
     abcdk_receiver_unref(&item_p->req_data);
+    abcdk_heap_free(item_p);
 }
 
 static abcdk_srpc_request_item_t *_abcdk_srpc_request_item_alloc()
@@ -459,7 +460,11 @@ static void _abcdk_srpc_input_dispatch(abcdk_stcp_node_t *node)
     item->node = abcdk_stcp_refer(node);
     item->req_data = abcdk_receiver_refer(node_ctx_p->req_data);
 
-    abcdk_worker_dispatch(node_ctx_p->father->req_list,1,item);
+    chk = abcdk_worker_dispatch(node_ctx_p->father->req_list,1,item);
+    if(chk == 0)
+        return;
+
+    _abcdk_srpc_request_item_free(&item);
 }
 
 static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
