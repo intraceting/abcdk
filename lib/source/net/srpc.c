@@ -14,6 +14,7 @@ struct _abcdk_srpc
 
     /*请求队列。*/
     abcdk_worker_t *req_list;
+
 };//abcdk_srpc_t
 
 /**RPC会话(内部)。*/
@@ -205,6 +206,8 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
 
     if(!ctx ||!*ctx)
         return;
+
+
 
     ctx_p = *ctx;
 
@@ -623,8 +626,7 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session, const void *req, size_t re
             return -1;
     }
 
-    //chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,rsp?1:0);
-    chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,1);
+    chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,rsp?1:0);
     if (chk != 0)
         return -2;
 

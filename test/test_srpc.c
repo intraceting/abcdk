@@ -115,21 +115,22 @@ int abcdk_test_srpc(abcdk_option_t *args)
 #pragma omp parallel for num_threads(4)
         for (int j = 0; j < count; j++)
         {
-            char buf[9001] = {0};
+            char buf[65000] = {0};
 
             int *a = (int *)buf;
-            // *a = 1;
+             *a = 1;
             if (j % 3 == 0 && rand_rsp)
            // if(j>0)
                 *a = 0;
 
-            int b = ((uint64_t)abcdk_rand_number()) % 8500 + 5;
+            int b = ((uint64_t)abcdk_rand_number()) % 64000 + 5;
 
             //abcdk_rand_string(buf + 4, b - 4, 0);
 
             abcdk_object_t *rsp = NULL;
 
-            int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
+            //int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
+            int chk = abcdk_srpc_request(session_p, buf, b,NULL);
             assert (chk == 0);
 
             if (rsp)

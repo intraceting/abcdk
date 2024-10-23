@@ -9,6 +9,13 @@
 /**简单的异步TCP通讯。 */
 struct _abcdk_stcp
 {
+    /**魔法数。*/
+    uint32_t magic;
+#define ABCDK_STCP_MAGIC 123456789
+
+    /**引用计数器。*/
+    volatile int refcount;
+
     /**ASIOEX环境。*/
     abcdk_asioex_t *asioex_ctx;
 
@@ -17,9 +24,6 @@ struct _abcdk_stcp
 
     /**线程池环境。*/
     abcdk_worker_t *worker_ctx;
-
-    /**退出标志。0： 运行，!0：停止。*/
-    volatile int exitflag;
 
 };// abcdk_stcp_t;
 
@@ -122,6 +126,83 @@ struct _abcdk_stcp_node
 
 };// abcdk_stcp_node_t;
 
+static void _abcdk_stcp_ctx_unref(abcdk_stcp_t **ctx)
+{
+    abcdk_stcp_t *ctx_p = NULL;
+
+    if (!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    assert(ctx_p->magic == ABCDK_STCP_MAGIC);
+
+    if (abcdk_atomic_fetch_and_add(&ctx_p->refcount, -1) != 1)
+        return;
+
+    assert(ctx_p->refcount == 0);
+    ctx_p->magic = 0xcccccccc;
+
+    /*如果创建成功，先通知取消等待，否则工作线程无法终止。*/
+    if(ctx_p->asioex_ctx)
+        abcdk_asioex_abort(ctx_p->asioex_ctx);
+
+    abcdk_worker_stop(&ctx_p->worker_ctx);
+    abcdk_asioex_destroy(&ctx_p->asioex_ctx);
+    abcdk_heap_free(ctx_p);
+}
+
+static abcdk_stcp_t *_abcdk_stcp_ctx_refer(abcdk_stcp_t *src)
+{
+    int chk;
+
+    assert(src != NULL);
+
+    chk = abcdk_atomic_fetch_and_add(&src->refcount, 1);
+    assert(chk > 0);
+
+    return src;
+}
+
+static void _abcdk_stcp_worker(void *opaque,uint64_t event,void *item);
+
+static abcdk_stcp_t *_abcdk_stcp_ctx_alloc(int worker)
+{
+    abcdk_stcp_t *ctx = NULL;
+
+    ctx = (abcdk_stcp_t *)abcdk_heap_alloc(sizeof(abcdk_stcp_t));
+    if(!ctx)
+        return NULL;
+
+    ctx->magic = ABCDK_STCP_MAGIC;
+    ctx->refcount = 1;
+    
+    worker = ABCDK_CLAMP(worker,1,worker);
+
+    ctx->asioex_ctx = abcdk_asioex_create(worker,99999);
+    if(!ctx->asioex_ctx)
+        goto ERR;
+
+    ctx->worker_cfg.numbers = worker;
+    ctx->worker_cfg.opaque = ctx;
+    ctx->worker_cfg.process_cb = _abcdk_stcp_worker;
+    ctx->worker_ctx = abcdk_worker_start(&ctx->worker_cfg);
+    if(!ctx->worker_ctx)
+        goto ERR;
+
+    /*每个ASIO分配一个线程处理。*/
+    for (int i = 0; i < worker; i++)
+        abcdk_worker_dispatch(ctx->worker_ctx, i, (void *)-1);
+
+    return ctx;
+
+ERR:
+    
+    _abcdk_stcp_ctx_unref(&ctx);
+
+    return NULL;
+}
 
 void abcdk_stcp_unref(abcdk_stcp_node_t **node)
 {
@@ -139,7 +220,6 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
         return;
 
     assert(node_p->refcount == 0);
-
     node_p->magic = 0xcccccccc;
 
     if(node_p->userdata_free_cb)
@@ -156,7 +236,7 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
     if (node_p->fd >= 0)
         abcdk_socket_option_linger_set(node_p->fd, 1, 0);
-
+    
     abcdk_closep(&node_p->fd);
     abcdk_object_unref(&node_p->userdata);
     abcdk_wred_destroy(&node_p->out_wred);
@@ -164,6 +244,7 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
     abcdk_spinlock_destroy(&node_p->out_locker);
     abcdk_object_unref(&node_p->in_buffer);
     abcdk_stcp_unref(&node_p->from_listen);
+    _abcdk_stcp_ctx_unref(&node_p->ctx);
     abcdk_heap_free(node_p);
 }
 
@@ -191,7 +272,7 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*fr
 
     node->magic = ABCDK_STCP_NODE_MAGIC;
     node->refcount = 1;
-    node->ctx = ctx;
+    node->ctx =  _abcdk_stcp_ctx_refer(ctx);
     node->index = abcdk_sequence_num();
     node->pfd = -1;
     node->fd = -1;
@@ -921,59 +1002,12 @@ static void _abcdk_stcp_worker(void *opaque,uint64_t event,void *item)
 
 void abcdk_stcp_stop(abcdk_stcp_t **ctx)
 {
-    abcdk_stcp_t *ctx_p = NULL;
-
-    if(!ctx || !*ctx)
-        return;
-
-    /*复制。*/
-    ctx_p = *ctx;
-    
-    /*如果创建成功，先通知取消等待，否则工作线程无法终止。*/
-    if(ctx_p->asioex_ctx)
-        abcdk_asioex_abort(ctx_p->asioex_ctx);
-
-    abcdk_worker_stop(&ctx_p->worker_ctx);
-    abcdk_asioex_destroy(&ctx_p->asioex_ctx);
-    abcdk_heap_free(ctx_p);
-    
-    /*一定要等线程停下来才能清空指针，否则会因为线程调度问题造成引用空指针。*/
-    *ctx = NULL;
+    _abcdk_stcp_ctx_unref(ctx);
 }
 
 abcdk_stcp_t * abcdk_stcp_start(int worker)
 {
-    abcdk_stcp_t *ctx = NULL;
-    int chk;
-
-    ctx = abcdk_heap_alloc(sizeof(abcdk_stcp_t));
-    if(!ctx)
-        return NULL;
-
-    worker = ABCDK_CLAMP(worker,1,worker);
-
-    ctx->asioex_ctx = abcdk_asioex_create(worker,99999);
-    if(!ctx->asioex_ctx)
-        goto ERR;
-
-    ctx->worker_cfg.numbers = worker;
-    ctx->worker_cfg.opaque = ctx;
-    ctx->worker_cfg.process_cb = _abcdk_stcp_worker;
-    ctx->worker_ctx = abcdk_worker_start(&ctx->worker_cfg);
-    if(!ctx->worker_ctx)
-        goto ERR;
-
-    /*每个ASIO分配一个线程处理。*/
-    for (int i = 0; i < worker; i++)
-        abcdk_worker_dispatch(ctx->worker_ctx, i, (void *)-1);
-
-    return ctx;
-
-ERR:
-    
-    abcdk_stcp_stop(&ctx);
-
-    return NULL;
+    return _abcdk_stcp_ctx_alloc(worker);
 }
 
 #ifdef HEADER_SSL_H
