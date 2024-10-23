@@ -101,7 +101,8 @@ NEXT:
 
 int _abcdk_worker_start(abcdk_worker_t *ctx)
 {
-    static int cpu_idx = 0;
+    static volatile int cpu_idx = 0;
+    int cpu_set;
     int chk;
 
     for (int i = 0; i < ctx->cfg.numbers; i++)
@@ -114,8 +115,8 @@ int _abcdk_worker_start(abcdk_worker_t *ctx)
             return -1;
 
         /*尽可能让线程分布在不同的核心上。*/
-        cpu_idx %= sysconf(_SC_NPROCESSORS_ONLN);
-        abcdk_thread_setaffinity2(ctx->threads_ctx[i].handle,cpu_idx++);
+        cpu_set = abcdk_atomic_add_and_fetch(&cpu_idx, 1) % sysconf(_SC_NPROCESSORS_ONLN);
+        abcdk_thread_setaffinity2(ctx->threads_ctx[i].handle,cpu_set);
     }
 
     return 0;
@@ -211,7 +212,7 @@ int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
     if (chk != 0)
         _abcdk_worker_item_free(&item_p);
 
-    abcdk_queue_signal(ctx->queue_ctx,1);
+    abcdk_queue_signal(ctx->queue_ctx,0);
 
     abcdk_queue_unlock(ctx->queue_ctx);
 

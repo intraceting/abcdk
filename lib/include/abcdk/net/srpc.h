@@ -132,8 +132,12 @@ void abcdk_srpc_set_timeout(abcdk_srpc_session_t *session,time_t timeout);
 /** 销毁。*/
 void abcdk_srpc_destroy(abcdk_srpc_t **ctx);
 
-/** 创建。*/
-abcdk_srpc_t *abcdk_srpc_create();
+/**
+ *  创建。
+ * 
+ * @param [in] worker 工人(线程)数量。
+*/
+abcdk_srpc_t *abcdk_srpc_create(int worker);
 
 /** 
  * 监听。
