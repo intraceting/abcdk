@@ -43,7 +43,10 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
   //  abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
 
     if (a)
+    {
+        *((int *)data) = 0;
         abcdk_srpc_response(session, mid, data, size);
+    }
 }
 
 static void output_cb(void *opaque, abcdk_srpc_session_t *session)
@@ -106,20 +109,23 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
         sleep(2);
 
+        uint64_t s = 0;
+        abcdk_clock(s,&s);
+
 #pragma omp parallel for num_threads(4)
         for (int j = 0; j < count; j++)
         {
-            char buf[1000] = {0};
+            char buf[9001] = {0};
 
             int *a = (int *)buf;
-             *a = 1;
+         //    *a = 1;
             if (j % 3 == 0 && rand_rsp)
            // if(j>0)
                 *a = 0;
 
-            int b = ((uint64_t)abcdk_rand_number()) % 900 + 5;
+            int b = ((uint64_t)abcdk_rand_number()) % 8500 + 5;
 
-            abcdk_rand_string(buf + 4, b - 4, 0);
+            //abcdk_rand_string(buf + 4, b - 4, 0);
 
             abcdk_object_t *rsp = NULL;
 
@@ -131,6 +137,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             abcdk_object_unref(&rsp);
         }
+
+        abcdk_trace_output(LOG_INFO,"cast:%0.6f\n",(double)abcdk_clock(s,&s)/1000000.);
 
         sleep(20);
     }

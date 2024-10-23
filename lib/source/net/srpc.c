@@ -623,7 +623,8 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session, const void *req, size_t re
             return -1;
     }
 
-    chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,rsp?1:0);
+    //chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,rsp?1:0);
+    chk = _abcdk_srpc_post(node_p,2,mid,req,req_size,1);
     if (chk != 0)
         return -2;
 
