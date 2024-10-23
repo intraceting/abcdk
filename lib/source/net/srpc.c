@@ -207,8 +207,6 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
     if(!ctx ||!*ctx)
         return;
 
-
-
     ctx_p = *ctx;
 
     abcdk_worker_stop(&ctx_p->req_list);
@@ -230,11 +228,11 @@ abcdk_srpc_t *abcdk_srpc_create()
     if(!ctx)
         return NULL;
 
-    ctx->io_ctx = abcdk_stcp_start(1);
+    ctx->io_ctx = abcdk_stcp_start(sysconf(_SC_NPROCESSORS_ONLN));
     if (!ctx->io_ctx)
         goto ERR;
 
-    req_list_cfg.numbers = sysconf(_SC_NPROCESSORS_ONLN);
+    req_list_cfg.numbers = 1;
     req_list_cfg.opaque = ctx;
     req_list_cfg.process_cb = _abcdk_srpc_input_transfer_cb;
 

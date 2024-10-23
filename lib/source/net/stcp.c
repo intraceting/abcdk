@@ -272,7 +272,7 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*fr
 
     node->magic = ABCDK_STCP_NODE_MAGIC;
     node->refcount = 1;
-    node->ctx =  _abcdk_stcp_ctx_refer(ctx);
+    node->ctx = _abcdk_stcp_ctx_refer(ctx);
     node->index = abcdk_sequence_num();
     node->pfd = -1;
     node->fd = -1;
@@ -1501,9 +1501,9 @@ NEXT_MSG:
 
 static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
-#if 0
+#if 1
     _abcdk_stcp_output_hook_v1(node);
-#elif 1
+#elif 0
     _abcdk_stcp_output_hook_v2(node);
 #endif
 }
