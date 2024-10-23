@@ -505,10 +505,10 @@ void _abcdk_stcp_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 }
 
 /*声明输入事件钩子函数。*/
-void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node);
+static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node);
 
 /*声明输出事件钩子函数。*/
-void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
+static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
 
 void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node,uint32_t event, int *result)
 {
@@ -1354,7 +1354,7 @@ ERR:
     return -1;
 }
 
-void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
+static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
 {
     ssize_t rlen = 0,pos = 0;
     size_t remain = 0;
@@ -1394,7 +1394,7 @@ void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
     
 }
 
-void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
+static void _abcdk_stcp_output_hook_v1(abcdk_stcp_node_t *node)
 {
     abcdk_tree_t *p;
     ssize_t slen = 0;
@@ -1441,6 +1441,71 @@ NEXT_MSG:
 
     abcdk_stcp_send_watch(node);
     return;
+}
+
+static void _abcdk_stcp_output_hook_v2(abcdk_stcp_node_t *node)
+{
+    abcdk_tree_t *p;
+    ssize_t slen = 0;
+    int chk;
+
+NEXT_MSG:
+
+    /*从队列头部开始发送。*/
+    abcdk_spinlock_lock(node->out_locker,1);
+    p = abcdk_tree_child(node->out_queue,1);
+    abcdk_spinlock_unlock(node->out_locker);
+
+    /*通知应用层，发送队列空闲。*/
+    if(!p)
+    {
+        node->cfg.event_cb(node,ABCDK_STCP_EVENT_OUTPUT,&chk);
+        return;
+    }
+
+    while (node->out_pos < p->obj->sizes[0])
+    {
+        /*
+         * 发。
+         *
+         * 注：重发数据时参数不能改变(指针和长度)。
+         */
+        slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+        if (slen <= 0)
+        {
+            abcdk_stcp_send_watch(node);
+            return;
+        }
+
+        node->out_pos += slen;
+    }
+
+    /*如果当前节点发送完成，则从队列中删除已经发送完整的节点。*/
+    if(node->out_pos >= p->obj->sizes[0])
+    {
+        /*游标归零。*/
+        node->out_pos = 0;
+        
+        /*移除节点。*/
+        abcdk_spinlock_lock(node->out_locker,1);
+        abcdk_tree_unlink(p);
+        node->out_len -= 1;
+        abcdk_spinlock_unlock(node->out_locker);
+
+        /*删除节点。*/
+        abcdk_tree_free(&p);
+    }
+
+    goto NEXT_MSG;
+}
+
+static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
+{
+#if 0
+    _abcdk_stcp_output_hook_v1(node);
+#elif 1
+    _abcdk_stcp_output_hook_v2(node);
+#endif
 }
 
 int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
