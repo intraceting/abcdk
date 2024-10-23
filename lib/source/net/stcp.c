@@ -1369,7 +1369,7 @@ void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
 
     if(!node->in_buffer)
     {
-        node->in_buffer = abcdk_object_alloc2(128*1024);
+        node->in_buffer = abcdk_object_alloc2(64*1024);
         if(!node->in_buffer)
         {
             abcdk_stcp_set_timeout(node,-1);
@@ -1419,15 +1419,10 @@ NEXT_MSG:
      * 
      * 注：重发数据时参数不能改变(指针和长度)。
     */
-    while(node->out_pos < p->obj->sizes[0])
-    {
-        slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
-        if( slen <= 0)
-            break;
-
+    slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
+    if(slen > 0)
         node->out_pos += slen;
-    }
-
+    
     /*如果当前节点发送完成，则从队列中删除已经发送完整的节点。*/
     if(node->out_pos >= p->obj->sizes[0])
     {
