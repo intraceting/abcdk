@@ -44,6 +44,11 @@ static void output_cb(void *opaque, abcdk_srpc_session_t *session)
 {
 }
 
+static void free_cb(void *userdata)
+{
+
+}
+
 int abcdk_test_srpc(abcdk_option_t *args)
 {
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/", "test.srpc.log", "test.srpc.%d.log", 10, 10, 1, 1);
@@ -80,7 +85,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
     addr_p = abcdk_option_get(args, "--addr", 0, "ipv4://127.0.0.1:1111");
     abcdk_sockaddr_from_string(&addr, addr_p, 0);
 
-    abcdk_srpc_session_t *session_p = abcdk_srpc_alloc(srpc_ctx, 0, 0);
+    abcdk_srpc_session_t *session_p = abcdk_srpc_alloc(srpc_ctx, 0, free_cb);
 
     if (role == 1)
     {
