@@ -40,7 +40,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
 
     int a = *((int *)data);
 
-    abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
+  //  abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
 
     if (a)
         abcdk_srpc_response(session, mid, data, size);
@@ -106,6 +106,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
         sleep(2);
 
+#pragma omp parallel for num_threads(4)
         for (int j = 0; j < count; j++)
         {
             char buf[1000] = {0};
@@ -116,15 +117,14 @@ int abcdk_test_srpc(abcdk_option_t *args)
            // if(j>0)
                 *a = 0;
 
-            int b = ((uint64_t)abcdk_rand_number()) % 70 + 5;
+            int b = ((uint64_t)abcdk_rand_number()) % 900 + 5;
 
             abcdk_rand_string(buf + 4, b - 4, 0);
 
             abcdk_object_t *rsp = NULL;
 
             int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
-            if (chk)
-                break;
+            assert (chk == 0);
 
             if (rsp)
                 assert(memcmp(rsp->pptrs[0], buf, b) == 0);
