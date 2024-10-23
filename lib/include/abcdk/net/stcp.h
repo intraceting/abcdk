@@ -154,13 +154,6 @@ typedef struct _abcdk_stcp_config
     const char *enigma_key_file;
 
     /**
-     * IO-HOOK最大传输单元。
-     * 
-     * @note 有效范围：1~262144，默认：262144
-     */
-    size_t io_hook_mtu;
-
-    /**
      * 输出队列丢包最小阈值。 
      * 
      * @note 有效范围：200~600，默认：200

@@ -183,7 +183,7 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx,size_t userdata, void (*fr
 {
     abcdk_stcp_node_t *node = NULL;
 
-    assert(ctx != NULL);
+    assert(ctx != NULL && free_cb != NULL);
 
     node = (abcdk_stcp_node_t *)abcdk_heap_alloc(sizeof(abcdk_stcp_node_t));
     if(!node)
@@ -918,6 +918,7 @@ static void _abcdk_stcp_worker(void *opaque,uint64_t event,void *item)
     _abcdk_stcp_perform(ctx,event);
 }
 
+
 void abcdk_stcp_stop(abcdk_stcp_t **ctx)
 {
     abcdk_stcp_t *ctx_p = NULL;
@@ -1115,11 +1116,6 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
 {
     /*修复不支持的配置。*/
     node->cfg.enigma_key_file = (node->cfg.enigma_key_file?node->cfg.enigma_key_file:"");
-
-    if(node->cfg.io_hook_mtu <= 0)
-        node->cfg.io_hook_mtu = 262144;
-    else 
-        node->cfg.io_hook_mtu = ABCDK_CLAMP(node->cfg.io_hook_mtu,1,262144);
 
     if(node->cfg.out_hook_min_th <= 0)
         node->cfg.out_hook_min_th = 200;
@@ -1339,7 +1335,7 @@ void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
 
     if(!node->in_buffer)
     {
-        node->in_buffer = abcdk_object_alloc2(node->cfg.io_hook_mtu);
+        node->in_buffer = abcdk_object_alloc2(128*1024);
         if(!node->in_buffer)
         {
             abcdk_stcp_set_timeout(node,-1);
@@ -1368,7 +1364,6 @@ void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
     abcdk_tree_t *p;
     ssize_t slen = 0;
-    size_t mtu_pos = 0,mtu_per = 0;
     int chk;
 
 NEXT_MSG:
@@ -1388,22 +1383,15 @@ NEXT_MSG:
     /*
      * 发。
      * 
-     * 警告：重发数据时参数不能改变(指针和长度)。
+     * 注：重发数据时参数不能改变(指针和长度)。
     */
     while(node->out_pos < p->obj->sizes[0])
     {
-        /*每次发送，限制在最大传输单元内。*/
-        mtu_per = ABCDK_MIN((p->obj->sizes[0] - node->out_pos),(node->cfg.io_hook_mtu - mtu_pos));
-        slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), mtu_per);
+        slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
         if( slen <= 0)
             break;
 
         node->out_pos += slen;
-        mtu_pos += slen;
-        
-        /*大于或等于最大传输单元时，让出时间分片。*/
-        if(mtu_pos >= node->cfg.io_hook_mtu)
-            break;
     }
 
     /*如果当前节点发送完成，则从队列中删除已经发送完整的节点。*/

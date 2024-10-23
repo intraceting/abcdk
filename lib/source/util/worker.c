@@ -211,7 +211,7 @@ int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
     if (chk != 0)
         _abcdk_worker_item_free(&item_p);
 
-    abcdk_queue_signal(ctx->queue_ctx,0);
+    abcdk_queue_signal(ctx->queue_ctx,1);
 
     abcdk_queue_unlock(ctx->queue_ctx);
 
