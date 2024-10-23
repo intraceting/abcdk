@@ -44,7 +44,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
 
     if (a)
     {
-        *((int *)data) = 0;
+    //    *((int *)data) = 0;
         abcdk_srpc_response(session, mid, data, size);
     }
 }
@@ -118,7 +118,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
             char buf[9001] = {0};
 
             int *a = (int *)buf;
-         //    *a = 1;
+            // *a = 1;
             if (j % 3 == 0 && rand_rsp)
            // if(j>0)
                 *a = 0;
