@@ -11,9 +11,15 @@
 #include <locale.h>
 #include "entry.h"
 
+
+static void free_cb(void *userdata)
+{
+
+}
+
 static void prepare_cb(void *opaque, abcdk_srpc_session_t **session, abcdk_srpc_session_t *listen)
 {
-    *session = abcdk_srpc_alloc((abcdk_srpc_t *)opaque, 0, 0);
+    *session = abcdk_srpc_alloc((abcdk_srpc_t *)opaque, 0, free_cb);
 }
 
 static void accept_cb(void *opaque, abcdk_srpc_session_t *session, int *result)
@@ -44,10 +50,6 @@ static void output_cb(void *opaque, abcdk_srpc_session_t *session)
 {
 }
 
-static void free_cb(void *userdata)
-{
-
-}
 
 int abcdk_test_srpc(abcdk_option_t *args)
 {
