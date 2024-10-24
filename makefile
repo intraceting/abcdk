@@ -129,7 +129,7 @@ lib-src: $(LIB_OBJ_FILES)
 #
 test: test-src lib
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/test ${TEST_OBJ_FILES} -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.so $(LINK_FLAGS)
 
 #
 test-src: ${TEST_OBJ_FILES} 
@@ -250,18 +250,18 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-clean: clean-abcdk clean-test
+clean: clean-lib clean-test
 
 #
-clean-abcdk:
-	rm -rf ${OBJ_PATH}/abcdk
+clean-lib:
+	rm -rf ${OBJ_PATH}/lib
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
 clean-test:
 	rm -rf ${OBJ_PATH}/test
-	rm -f $(BUILD_PATH)/test
+	rm -f $(BUILD_PATH)/abcdk-test
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
