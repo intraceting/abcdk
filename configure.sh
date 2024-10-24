@@ -84,10 +84,6 @@ chmod +x ${SHELLDIR}/script/deb/*.sh
 KIT_NAME=$(CheckPackageKitName)
 
 #
-SOLUTION_NAME="abcdk"
-
-#
-BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_PATH="${SHELLDIR}/build/"
 BUILD_PACKAGE_PATH="${SHELLDIR}/package/"
 
@@ -96,7 +92,7 @@ VERSION_MAJOR="1"
 #副版本
 VERSION_MINOR="11"
 #发行版本
-VERSION_RELEASE="1"
+VERSION_RELEASE="2"
 
 #编译器前缀
 COMPILER_PREFIX="/usr/bin/"
@@ -448,8 +444,8 @@ INSTALL_PREFIX_TMP="${INSTALL_PREFIX%/}"
 LAST_NAME="${INSTALL_PREFIX_TMP##*/}"
 
 #如果路径最深层的目录名称不是项目名称则拼接项目名称。
-if [ ! "${LAST_NAME}" == "${SOLUTION_NAME}" ];then
-INSTALL_PREFIX="${INSTALL_PREFIX}/${SOLUTION_NAME}"
+if [ ! "${LAST_NAME}" == "abcdk" ];then
+INSTALL_PREFIX="${INSTALL_PREFIX}/abcdk"
 fi
 
 
@@ -472,9 +468,6 @@ cat >${MAKE_CONF} <<EOF
 #
 KIT_NAME = ${KIT_NAME}
 #
-SOLUTION_NAME = ${SOLUTION_NAME}
-#
-BUILD_TIME = ${BUILD_TIME}
 BUILD_PATH = ${BUILD_PATH}
 BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 #
@@ -516,9 +509,9 @@ prefix=${INSTALL_PREFIX}
 libdir=\${prefix}/lib
 includedir=\${prefix}/include
 
-Name: ${SOLUTION_NAME}
+Name: ABCDK
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Description: The ${SOLUTION_NAME} Libraries
+Description: The ABCDK Libraries
 Requires:
 Libs: -L\${libdir} -labcdk
 Cflags: -I\${includedir}
@@ -544,7 +537,7 @@ checkReturnCode
 cat >${RPM_RT_SPEC} <<EOF
 Summary: A Better C language Development Kit (a.k.a ABCDK).
 Vendor: https://github.com/intraceting/abcdk
-Name: ${SOLUTION_NAME}
+Name: abcdk
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
 Group: Applications/System
@@ -555,19 +548,20 @@ AutoReqProv: yes
 The C language and C-interface style secondary development kit, 
 only supports gnu/linux compatible platforms.
 .
-This package contains the runtime files (tools,libraries)
+This package contains the runtime files(dynamic libraries).
+
 %files
 ${INSTALL_PREFIX}
 
 %post
 #!/bin/sh
-echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/${SOLUTION_NAME}.sh
-echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/${SOLUTION_NAME}.sh
+echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
+echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
 exit 0
 
 %postun
 #!/bin/sh
-rm -f /etc/profile.d/${SOLUTION_NAME}.sh
+rm -f /etc/profile.d/abcdk.sh
 exit 0
 EOF
 checkReturnCode
@@ -576,31 +570,31 @@ checkReturnCode
 cat >${RPM_DEV_SPEC} <<EOF
 Summary: A Better C language Development Kit (a.k.a ABCDK).
 Vendor: https://github.com/intraceting/abcdk
-Name: ${SOLUTION_NAME}-devel
+Name: abcdk-devel
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
 Group: Applications/System
 License: MIT
-Requires: ${SOLUTION_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
+Requires: abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 AutoReqProv: yes
 
 %description
 The C language and C-interface style secondary development kit, 
 only supports gnu/linux compatible platforms.
 .
-This package contains the development files (headers, static libraries)
+This package contains the development files(headers, static libraries).
 
 %files
 ${INSTALL_PREFIX}
 
 %post
 #!/bin/sh
-echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/${SOLUTION_NAME}-devel.sh
+echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
 exit 0
 
 %postun
 #!/bin/sh
-rm -f /etc/profile.d/${SOLUTION_NAME}-devel.sh
+rm -f /etc/profile.d/abcdk-devel.sh
 exit 0
 EOF
 checkReturnCode
@@ -631,8 +625,8 @@ checkReturnCode
 
 #
 cat >${DEB_RT_CTL}/control <<EOF
-Source: ${SOLUTION_NAME}
-Package: ${SOLUTION_NAME}
+Source: abcdk
+Package: abcdk
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
@@ -649,8 +643,8 @@ checkReturnCode
 #
 cat >${DEB_RT_CTL}/postinst <<EOF
 #!/bin/sh
-echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/${SOLUTION_NAME}.sh
-echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/${SOLUTION_NAME}.sh
+echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
+echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
 exit 0
 EOF
 checkReturnCode
@@ -658,21 +652,21 @@ checkReturnCode
 #
 cat >${DEB_RT_CTL}/postrm <<EOF
 #!/bin/sh
-rm -f /etc/profile.d/${SOLUTION_NAME}.sh
+rm -f /etc/profile.d/abcdk.sh
 exit 0
 EOF
 checkReturnCode
 
 #
 cat >${DEB_DEV_CTL}/control <<EOF
-Source: ${SOLUTION_NAME}
-Package: ${SOLUTION_NAME}-devel
+Source: abcdk
+Package: abcdk-devel
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
 Architecture: ${TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
-Pre-Depends: ${SOLUTION_NAME} (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
+Pre-Depends: abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
 Description: The C language and C-interface style secondary development kit, 
  only supports gnu/linux compatible platforms.
  .
@@ -683,7 +677,7 @@ checkReturnCode
 #
 cat >${DEB_DEV_CTL}/postinst <<EOF
 #!/bin/sh
-echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/${SOLUTION_NAME}-devel.sh
+echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
 exit 0
 EOF
 checkReturnCode
@@ -691,7 +685,7 @@ checkReturnCode
 #
 cat >${DEB_DEV_CTL}/postrm <<EOF
 #!/bin/sh
-rm -f /etc/profile.d/${SOLUTION_NAME}-devel.sh
+rm -f /etc/profile.d/abcdk-devel.sh
 exit 0
 EOF
 checkReturnCode

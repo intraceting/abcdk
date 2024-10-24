@@ -389,10 +389,10 @@ AVFormatContext *abcdk_avformat_output_open(const char *short_name, const char *
         goto final_error;
     
 #if 0
-    av_dict_set(&ctx->metadata, "service", SOLUTION_NAME, 0);
-    av_dict_set(&ctx->metadata, "service_name", SOLUTION_NAME, 0);
-    av_dict_set(&ctx->metadata, "service_provider", SOLUTION_NAME, 0);
-    av_dict_set(&ctx->metadata, "artist", SOLUTION_NAME, 0);
+    av_dict_set(&ctx->metadata, "service", ABCDK, 0);
+    av_dict_set(&ctx->metadata, "service_name", ABCDK, 0);
+    av_dict_set(&ctx->metadata, "service_provider", ABCDK, 0);
+    av_dict_set(&ctx->metadata, "artist", ABCDK, 0);
 #endif
 
     if (interrupt)

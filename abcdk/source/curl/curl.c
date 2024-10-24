@@ -41,7 +41,7 @@ int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,tim
     if (!curl_ctx)
         goto END;
 
-    header_list = curl_slist_append(header_list, "User-Agent: " SOLUTION_NAME " (Linux;) libcurl/" LIBCURL_VERSION);
+    header_list = curl_slist_append(header_list, "User-Agent: ABCDK (Linux;) libcurl/" LIBCURL_VERSION);
     curl_easy_setopt(curl_ctx, CURLOPT_HTTPHEADER, header_list);
     
 
