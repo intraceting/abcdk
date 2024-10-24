@@ -511,7 +511,7 @@ includedir=\${prefix}/include
 
 Name: ABCDK
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Description: The ABCDK Libraries
+Description: ABCDK library
 Requires:
 Libs: -L\${libdir} -labcdk
 Cflags: -I\${includedir}
