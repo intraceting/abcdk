@@ -86,25 +86,25 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-LIB_SRC_FILES += $(wildcard abcdk/source/util/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/shell/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/mp4/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/log/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/rtp/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/ffmpeg/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/audio/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/database/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/http/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/json/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/sdp/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/rtsp/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/openssl/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/video/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/image/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/curl/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/net/*.c)
-LIB_SRC_FILES += $(wildcard abcdk/source/enigma/*.c)
-LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
+ABCDK_SRC_FILES += $(wildcard abcdk/source/util/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/shell/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/mp4/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/log/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/rtp/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/ffmpeg/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/audio/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/database/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/http/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/json/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/sdp/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/rtsp/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/openssl/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/video/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/image/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/curl/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/net/*.c)
+ABCDK_SRC_FILES += $(wildcard abcdk/source/enigma/*.c)
+ABCDK_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${ABCDK_SRC_FILES}))
 
 #
 TEST_SRC_FILES = $(wildcard test/*.c)
@@ -120,11 +120,11 @@ all: abcdk test
 #
 abcdk: abcdk-src
 	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(LIB_OBJ_FILES) $(LINK_FLAGS)
-	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(ABCDK_OBJ_FILES) $(LINK_FLAGS)
+	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(ABCDK_OBJ_FILES)
 
 #
-abcdk-src: $(LIB_OBJ_FILES)
+abcdk-src: $(ABCDK_OBJ_FILES)
 	
 #
 test: test-src abcdk
