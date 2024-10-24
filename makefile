@@ -77,7 +77,7 @@ CC_FLAGS += -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #
-CC_FLAGS += -I$(CURDIR)/abcdk/include/
+CC_FLAGS += -I$(CURDIR)/lib/include/
 
 #
 LINK_FLAGS += -L${BUILD_PATH}
@@ -86,25 +86,25 @@ LINK_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #
-ABCDK_SRC_FILES += $(wildcard abcdk/source/util/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/shell/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/mp4/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/log/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/rtp/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/ffmpeg/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/audio/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/database/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/http/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/json/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/sdp/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/rtsp/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/openssl/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/video/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/image/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/curl/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/net/*.c)
-ABCDK_SRC_FILES += $(wildcard abcdk/source/enigma/*.c)
-ABCDK_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${ABCDK_SRC_FILES}))
+LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/shell/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/log/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/rtp/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/audio/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/database/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/http/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/sdp/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/video/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/image/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/curl/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
+LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #
 TEST_SRC_FILES = $(wildcard test/*.c)
@@ -112,22 +112,22 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: abcdk test
+.PHONY: lib test
 
 #
-all: abcdk test
+all: lib test
 
 #
-abcdk: abcdk-src
+lib: lib-src
 	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(ABCDK_OBJ_FILES) $(LINK_FLAGS)
-	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(ABCDK_OBJ_FILES)
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(LIB_OBJ_FILES) $(LINK_FLAGS)
+	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #
-abcdk-src: $(ABCDK_OBJ_FILES)
+lib-src: $(LIB_OBJ_FILES)
 	
 #
-test: test-src abcdk
+test: test-src lib
 	mkdir -p $(BUILD_PATH)
 	$(CC) -o $(BUILD_PATH)/test ${TEST_OBJ_FILES} -l:libabcdk.so $(LINK_FLAGS)
 
@@ -135,110 +135,110 @@ test: test-src abcdk
 test-src: ${TEST_OBJ_FILES} 
 
 #
-$(OBJ_PATH)/abcdk/source/util/%.o: abcdk/source/util/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/util/
+$(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/util/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/log/%.o: abcdk/source/log/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/log/
+$(OBJ_PATH)/lib/source/log/%.o: lib/source/log/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/log/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/shell/%.o: abcdk/source/shell/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/shell/
+$(OBJ_PATH)/lib/source/shell/%.o: lib/source/shell/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/shell/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/mp4/%.o: abcdk/source/mp4/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/mp4/
+$(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/mp4/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/rtp/%.o: abcdk/source/rtp/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/rtp/
+$(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/rtp/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/ffmpeg/%.o: abcdk/source/ffmpeg/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/ffmpeg/
+$(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/ffmpeg/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/audio/%.o: abcdk/source/audio/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/audio/
+$(OBJ_PATH)/lib/source/audio/%.o: lib/source/audio/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/audio/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/database/%.o: abcdk/source/database/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/database/
+$(OBJ_PATH)/lib/source/database/%.o: lib/source/database/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/database/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/image/%.o: abcdk/source/image/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/image/
+$(OBJ_PATH)/lib/source/image/%.o: lib/source/image/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/image/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/json/%.o: abcdk/source/json/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/json/
+$(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/json/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/http/%.o: abcdk/source/http/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/http/
+$(OBJ_PATH)/lib/source/http/%.o: lib/source/http/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/http/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/sdp/%.o: abcdk/source/sdp/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/sdp/
+$(OBJ_PATH)/lib/source/sdp/%.o: lib/source/sdp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/sdp/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/rtsp/%.o: abcdk/source/rtsp/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/rtsp/
+$(OBJ_PATH)/lib/source/rtsp/%.o: lib/source/rtsp/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/rtsp/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/openssl/%.o: abcdk/source/openssl/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/openssl/
+$(OBJ_PATH)/lib/source/openssl/%.o: lib/source/openssl/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/openssl/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/video/%.o: abcdk/source/video/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/video/
+$(OBJ_PATH)/lib/source/video/%.o: lib/source/video/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/video/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/curl/%.o: abcdk/source/curl/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/curl/
+$(OBJ_PATH)/lib/source/curl/%.o: lib/source/curl/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/curl/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/net/%.o: abcdk/source/net/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/net/
+$(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/net/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/abcdk/source/enigma/%.o: abcdk/source/enigma/%.c
-	mkdir -p $(OBJ_PATH)/abcdk/source/enigma/
+$(OBJ_PATH)/lib/source/enigma/%.o: lib/source/enigma/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/enigma/
 	rm -f $@
 	$(CC)  $(CC_FLAGS) -c $< -o $@
 
@@ -298,8 +298,8 @@ install-devel:
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
-	cp  -rf $(CURDIR)/abcdk/include/abcdk ${INSTALL_PATH_INC}/
-	cp  -f $(CURDIR)/abcdk/include/abcdk.h ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/lib/include/abcdk ${INSTALL_PATH_INC}/
+	cp  -f $(CURDIR)/lib/include/abcdk.h ${INSTALL_PATH_INC}/
 #
 	cp  -f ${PKG_PC} ${INSTALL_PATH_PKG}/abcdk.pc
 
