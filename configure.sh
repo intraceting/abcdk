@@ -535,20 +535,20 @@ checkReturnCode
 
 #
 cat >${RPM_RT_SPEC} <<EOF
-Summary: A Better C language Development Kit (a.k.a ABCDK).
-Vendor: https://github.com/intraceting/abcdk
 Name: abcdk
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
+Summary: A Better C language Development Kit (a.k.a ABCDK).
+URL: https://github.com/intraceting/abcdk
 Group: Applications/System
 License: MIT
 AutoReqProv: yes
 
 %description
-The C language and C-interface style secondary development kit, 
-only supports gnu/linux compatible platforms.
+This is a component written in C language.
 .
-This package contains the runtime files(dynamic libraries).
+This package contains the development files(documents,scripts,libraries).
+
 
 %files
 ${INSTALL_PREFIX}
@@ -568,19 +568,18 @@ checkReturnCode
 
 #
 cat >${RPM_DEV_SPEC} <<EOF
-Summary: A Better C language Development Kit (a.k.a ABCDK).
-Vendor: https://github.com/intraceting/abcdk
 Name: abcdk-devel
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
+Summary: A Better C language Development Kit (a.k.a ABCDK).
+URL: https://github.com/intraceting/abcdk
 Group: Applications/System
 License: MIT
 Requires: abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 AutoReqProv: yes
 
 %description
-The C language and C-interface style secondary development kit, 
-only supports gnu/linux compatible platforms.
+This is a component written in C language.
 .
 This package contains the development files(headers, static libraries).
 
@@ -633,10 +632,9 @@ Priority: optional
 Architecture: ${TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: \${shlibs:Depends}
-Description: The C language and C-interface style secondary development kit,
- only supports gnu/linux compatible platforms.
+Description: This is a component written in C language.
  .
- This package contains the runtime files (tools, libraries)
+ This package contains the runtime files(documents,scripts,libraries).
 EOF
 checkReturnCode
 
@@ -667,10 +665,9 @@ Priority: optional
 Architecture: ${TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
-Description: The C language and C-interface style secondary development kit, 
- only supports gnu/linux compatible platforms.
+Description: This is a component written in C language.
  .
- This package contains the development files (headers, static libraries)
+ This package contains the development files(headers, static libraries).
 EOF
 checkReturnCode
 
