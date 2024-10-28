@@ -15,54 +15,6 @@ include ${MAKE_CONF}
 export TMPDIR=${BUILD_PATH}/
 
 #
-ifeq (${BUILD_TYPE},debug)
-CC_FLAGS += -g
-LINK_FLAGS += -g
-else 
-LINK_FLAGS += -s
-endif
-
-#
-CC_OPLV = -O2
-ifeq (${OPTIMIZE_LEVEL},1)
-CC_OPLV = -O1
-endif
-ifeq (${OPTIMIZE_LEVEL},3)
-CC_OPLV = -O3
-endif
-ifeq (${OPTIMIZE_LEVEL},s)
-CC_OPLV = -Os
-endif
-ifeq (${OPTIMIZE_LEVEL},fast)
-CC_OPLV = -Ofast
-endif
-
-
-#
-ifeq (${BUILD_OPTIMIZE},yes)
-CC_FLAGS += ${CC_OPLV}
-endif
-
-#
-ifdef SYSROOT_PREFIX
-CC_FLAGS += --sysroot="${SYSROOT_PREFIX}"
-LINK_FLAGS += --sysroot="${SYSROOT_PREFIX}"
-endif 
-
-#
-LINK_FLAGS += -Wl,--as-needed
-LINK_FLAGS += -Wl,-rpath="./" -Wl,-rpath="${INSTALL_PREFIX}/lib/"
-LINK_FLAGS += ${DEPEND_LINKS}
-
-#
-ifeq (${SYSROOT_RELEASE},linux-gnu)
-LINK_FLAGS += -ldl -pthread -lc -lm -lrt
-endif
-ifeq (${SYSROOT_RELEASE},android)
-LINK_FLAGS += -ldl -pthread -lc -lm
-endif
-
-#
 CC_FLAGS += -std=${CSTD}
 CC_FLAGS += -fPIC 
 CC_FLAGS += -Wno-unused-result
@@ -81,6 +33,56 @@ CC_FLAGS += -DABCDK_VERSION_MAJOR=${VERSION_MAJOR}
 CC_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR} 
 CC_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}
 CC_FLAGS += -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 
+
+#
+LINK_FLAGS += -Wl,--as-needed
+
+#
+ifeq (${BUILD_TYPE},debug)
+CC_FLAGS += -g
+LINK_FLAGS += -g
+else 
+LINK_FLAGS += -s
+endif
+
+#
+ifeq (${BUILD_OPTIMIZE},yes)
+ifeq (${OPTIMIZE_LEVEL},1)
+CC_FLAGS += -O1
+endif
+ifeq (${OPTIMIZE_LEVEL},2)
+CC_FLAGS += -O2
+endif
+ifeq (${OPTIMIZE_LEVEL},3)
+CC_FLAGS += -O3
+endif
+ifeq (${OPTIMIZE_LEVEL},s)
+CC_FLAGS += -Os
+endif
+ifeq (${OPTIMIZE_LEVEL},fast)
+CC_FLAGS += -Ofast
+endif
+endif
+
+#
+ifdef SYSROOT_PREFIX
+CC_FLAGS += --sysroot="${SYSROOT_PREFIX}"
+LINK_FLAGS += --sysroot="${SYSROOT_PREFIX}"
+endif 
+
+#
+LINK_FLAGS += -Wl,-rpath="./"
+LINK_FLAGS += ${DEPEND_LINKS}
+
+#
+ifeq (${SYSROOT_RELEASE},linux-gnu)
+LINK_FLAGS += -ldl -pthread -lc -lm -lrt
+endif
+ifeq (${SYSROOT_RELEASE},android)
+LINK_FLAGS += -ldl -pthread -lc -lm
+endif
+
+#
 CC_FLAGS += ${DEPEND_FLAGS}
 
 #

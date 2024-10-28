@@ -411,17 +411,6 @@ void abcdk_enigma_light_batch(abcdk_enigma_t *ctx,uint8_t *dst,const uint8_t *sr
     assert(ctx != NULL && dst != NULL && src != NULL && size > 0);
 
     for (size_t i = 0; i < size; i++)
-    {
-        // __builtin_prefetch(&src[i+200],0,1);
-        // __builtin_prefetch(&dst[i+200],1,1);
-#if 0
-        src_p = &src[i];
-        dst_p = &dst[i];
-
-        *dst_p = abcdk_enigma_light(ctx, *src_p);
-#else 
         dst[i] = abcdk_enigma_light(ctx, src[i]);
-#endif 
-    }
 }
 
