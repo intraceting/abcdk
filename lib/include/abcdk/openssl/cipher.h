@@ -57,6 +57,7 @@ abcdk_cipher_t *abcdk_cipher_create_from_file(int scheme, const char *key_file);
 */
 abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 
+
 #endif // OPENSSL_VERSION_NUMBER
 
 __END_DECLS

@@ -841,7 +841,7 @@ int abcdk_test_any(abcdk_option_t *args)
         for (int d = 1000; d <= 10*1000 * 1000; d *= 10)
         {
 
-#if 0
+#if 1
             uint64_t s = 0;
             abcdk_clock(s,&s);
 
@@ -871,8 +871,8 @@ int abcdk_test_any(abcdk_option_t *args)
 
                      
             abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
-         //   abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
-        //    assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+            abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
+            assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
 
             uint64_t step = abcdk_clock(s,&s);
             fprintf(stderr,"r(%d),d(%d),step(%0.9f)\n",r,d,(double)step/1000000000.);
@@ -1298,7 +1298,23 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("丢包数量：%d\n",drop_count);
 
     abcdk_wred_destroy(&ctx);
-    
+
+#elif 0
+
+            uint64_t s = 0;
+            abcdk_clock(s,&s);
+
+            uint8_t buf[256];
+            int c;
+
+            for(int i = 0;i<10*1000*1000;i+=3)
+            {
+                c = buf[i%256];
+            }
+            
+            uint64_t step = abcdk_clock(s,&s);
+            fprintf(stderr,"cast: %0.9f\n",(double)step/1000000000.);
+            
 
 #endif 
     return 0;

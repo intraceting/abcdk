@@ -17,7 +17,7 @@ typedef struct _abcdk_enigma_rotor
     uint8_t bdict[256];
 
     /** 步进指针。*/
-    uint8_t pos;
+    size_t pos;
 
 } abcdk_enigma_rotor_t;
 
