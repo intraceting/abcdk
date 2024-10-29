@@ -12,7 +12,7 @@ typedef struct _abcdk_enigma_BIO
 {
     /*魔法数，检测环境是否被篡改。*/
     uint32_t magic;
-#define ABCDK_ENIGMA_BIO_MAGIC 0x33333333
+#define ABCDK_ENIGMA_BIO_MAGIC 123456789
 
     abcdk_enigma_ssl_t *enigma_ssl;
     BIO_METHOD *method;

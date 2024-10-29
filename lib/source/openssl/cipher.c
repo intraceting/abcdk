@@ -629,4 +629,68 @@ abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx, const uint8_t *in, int 
     return out;
 }
 
+abcdk_object_t *abcdk_cipher_update_pack(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+{
+    abcdk_object_t *src_p = NULL;
+    abcdk_object_t *dst_p = NULL;
+    uint32_t old_len = 0;
+    uint32_t old_crc32 = 0,new_crc32 = ~0;
+
+    assert(ctx != NULL && in != NULL && in_len > 0);
+    assert(!enc || (enc && in_len < 16 * 1024 * 1024));
+
+    /*
+     * |Length  |CRC32   |Data    |
+     * |4 Bytes |4 Bytes |N Bytes |
+     *
+     * Length：明文长度。
+     * CRC32：校验码。
+     * DATA: 变长数据。
+     */
+
+    if(enc)
+    {
+        src_p = abcdk_object_alloc2(4 + 4 + in_len);
+        if (!src_p)
+            goto ERR;
+
+        abcdk_bloom_write_number(src_p->pptrs[0], src_p->sizes[0], 0, 32, in_len);
+        abcdk_bloom_write_number(src_p->pptrs[0], src_p->sizes[0], 32, 32, abcdk_crc32(in, in_len));
+        memcpy(src_p->pptrs[0] + 8, in, in_len);
+
+        dst_p = abcdk_cipher_update(ctx,src_p->pptrs[0],src_p->sizes[0],1);
+        if(!dst_p)
+            goto ERR;
+    }
+    else
+    {
+        dst_p = abcdk_cipher_update(ctx,in,in_len,0);
+        if(!dst_p)
+            goto ERR;
+
+        if (dst_p->sizes[0] < 8)
+            goto ERR;
+
+        old_len = (uint32_t)abcdk_bloom_read_number(dst_p->pptrs[0], dst_p->sizes[0], 0, 32);
+        old_crc32 = (uint32_t)abcdk_bloom_read_number(dst_p->pptrs[0], dst_p->sizes[0], 32, 32);
+        new_crc32 = abcdk_crc32(dst_p->pptrs[0] + 8, dst_p->sizes[0] - 8);
+
+        if (old_crc32 != new_crc32 || old_len != dst_p->sizes[0] - 8)
+            goto ERR;
+
+        /*跳过头部。*/
+        dst_p->pptrs[0] += 8;
+        dst_p->sizes[0] -= 8;
+    }
+
+    abcdk_object_unref(&src_p);
+    return dst_p;
+
+ERR:
+
+    abcdk_object_unref(&src_p);
+    abcdk_object_unref(&dst_p);
+    return NULL;
+}
+
 #endif // OPENSSL_VERSION_NUMBER

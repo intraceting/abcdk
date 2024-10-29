@@ -9,6 +9,7 @@
 
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/sha256.h"
+#include "abcdk/util/crc.h"
 #include "abcdk/openssl/openssl.h"
 
 __BEGIN_DECLS
@@ -57,6 +58,14 @@ abcdk_cipher_t *abcdk_cipher_create_from_file(int scheme, const char *key_file);
 */
 abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 
+/**
+ * 执行。
+ * 
+ * @note 加密时，明文长度不能超过16777216(16MB)字节。
+ * 
+ * @return !NULL(0) 成功，NULL(0) 失败(内存不足或解密错误)。
+*/
+abcdk_object_t *abcdk_cipher_update_pack(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 
 #endif // OPENSSL_VERSION_NUMBER
 

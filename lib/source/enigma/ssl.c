@@ -6,9 +6,6 @@
  */
 #include "abcdk/enigma/ssl.h"
 
-/*分块长度。*/
-#define ABCDK_ENIGMA_SSL_CHUNK_SIZE (16 * 1024LLU)
-
 /**基于enigma的SSL通讯。 */
 struct _abcdk_enigma_ssl
 {
@@ -101,7 +98,7 @@ int _abcdk_enigma_ssl_init(abcdk_enigma_ssl_t *ctx, const uint8_t *key, size_t s
     if (!ctx->recv_queue)
         return -4;
 
-    ctx->recv_buf = abcdk_object_alloc2(ABCDK_ENIGMA_SSL_CHUNK_SIZE);
+    ctx->recv_buf = abcdk_object_alloc2(64*1024);
     if (!ctx->recv_buf)
         return -5;
 
@@ -311,7 +308,8 @@ ssize_t abcdk_enigma_ssl_write(abcdk_enigma_ssl_t *ctx, const void *data, size_t
 
     while (alen < size)
     {
-        slen = _abcdk_enigma_ssl_write(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(ABCDK_ENIGMA_SSL_CHUNK_SIZE)));
+        /*分块发送。*/
+        slen = _abcdk_enigma_ssl_write(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(64*1024)));
         if (slen < 0)
             return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
         else if (slen == 0)

@@ -828,7 +828,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 1
+#elif 0
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
@@ -841,7 +841,7 @@ int abcdk_test_any(abcdk_option_t *args)
         for (int d = 1000; d <= 10*1000 * 1000; d *= 10)
         {
 
-#if 1
+#if 0
             uint64_t s = 0;
             abcdk_clock(s,&s);
 
@@ -1086,7 +1086,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
-#elif 0
+#elif 1
 
 #ifdef HAVE_OPENSSL
 
@@ -1127,17 +1127,26 @@ int abcdk_test_any(abcdk_option_t *args)
 
         abcdk_clock(dot,&dot);
 
+#if 0
         abcdk_object_t *buf6 = abcdk_cipher_update(enc_ctx, src->pptrs[0], i, 1);
 
         abcdk_object_t *buf7 = abcdk_cipher_update(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
 
         assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
+#else 
+        abcdk_object_t *buf6 = abcdk_cipher_update_pack(enc_ctx, src->pptrs[0], i, 1);
+
+        abcdk_object_t *buf7 = abcdk_cipher_update_pack(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
+
+        assert(buf7->sizes[0] == i);
+        assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
+#endif 
 
         abcdk_object_unref(&buf6);
         abcdk_object_unref(&buf7);
 
         uint64_t step = abcdk_clock(dot, &dot);
-        fprintf(stderr, "%d,cast:%.6f\n", i, (double)step / 1000000.);
+        fprintf(stderr, "%d,cast:%.9f\n", i, (double)step / 1000000000.);
     }
 
     abcdk_object_unref(&src);
