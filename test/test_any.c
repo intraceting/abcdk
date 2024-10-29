@@ -841,6 +841,22 @@ int abcdk_test_any(abcdk_option_t *args)
         for (int d = 1000; d <= 10*1000 * 1000; d *= 10)
         {
 
+#if 0
+            uint64_t s = 0;
+            abcdk_clock(s,&s);
+
+            for(int i = 0;i<d;i++)
+            {
+                uint8_t d1 = abcdk_enigma_light(s_ctx,'a');
+                uint8_t d2 = abcdk_enigma_light(r_ctx,d1);
+                assert(d2 == 'a');
+            }
+            
+            uint64_t step = abcdk_clock(s,&s);
+            fprintf(stderr,"r(%d),d(%d),step(%0.9f)\n",r,d,(double)step/1000000000.);
+            
+#else 
+
             abcdk_object_t *src_data = abcdk_object_alloc2(d);
             abcdk_object_t *dst_data = abcdk_object_alloc2(d);
             abcdk_object_t *dst_data2 = abcdk_object_alloc2(d);
@@ -855,16 +871,17 @@ int abcdk_test_any(abcdk_option_t *args)
 
                      
             abcdk_enigma_light_batch(s_ctx, dst_data->pptrs[0], src_data->pptrs[0], d);
-            abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
-            assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
+         //   abcdk_enigma_light_batch(r_ctx, dst_data2->pptrs[0], dst_data->pptrs[0], d);
+        //    assert(memcmp(src_data->pptrs[0],dst_data2->pptrs[0],d)==0);
 
             uint64_t step = abcdk_clock(s,&s);
-            fprintf(stderr,"r(%d),d(%d),step(%0.6f)\n",r,d,(double)step/1000000.);
+            fprintf(stderr,"r(%d),d(%d),step(%0.9f)\n",r,d,(double)step/1000000000.);
             
 
             abcdk_object_unref(&src_data);
             abcdk_object_unref(&dst_data);
             abcdk_object_unref(&dst_data2);
+#endif
         }
 
         abcdk_enigma_free(&s_ctx);

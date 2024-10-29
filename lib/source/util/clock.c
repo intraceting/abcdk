@@ -9,7 +9,7 @@
 
 uint64_t abcdk_clock(uint64_t start,uint64_t *dot)
 {
-    uint64_t current = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
+    uint64_t current = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 9);
 
     if(dot)
         *dot = current;
