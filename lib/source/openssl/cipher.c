@@ -645,7 +645,7 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
      *
      * Length：明文长度。
      * CRC32：校验码。
-     * DATA: 变长数据。
+     * Data: 明文数据。
      */
 
     if(enc)

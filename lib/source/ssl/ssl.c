@@ -40,10 +40,13 @@ struct _abcdk_ssl
     /**接收缓存。*/
     abcdk_object_t *recv_buf;
 
-    /**盐发送状态。0 未发送，!0 已发送。 */
-    int send_sprinkle_salt;
+    /**盐的长度。*/
+    size_t salt_len;
 
-    /**已接收的盐长度。*/
+    /**已发送的盐的长度。*/
+    size_t send_salt_len;
+
+    /**已接收的盐的长度。*/
     size_t recv_salt_len;
 
     /** 发送句柄。*/
@@ -77,26 +80,13 @@ void abcdk_ssl_destroy(abcdk_ssl_t **ctx)
 
 static int _abcdk_ssl_enigma_init(abcdk_ssl_t *ctx, const uint8_t *key, size_t size)
 {
-    uint8_t hashcode[32];
-    uint64_t send_seed[4] = {0}, recv_seed[4] = {0};
     int chk;
 
-    /*密钥转换为定长HASHCODE。*/
-    chk = abcdk_sha256_once(key, size, hashcode);
-    if (chk != 0)
-        return -1;
+    /*生成盐的长度。*/
+    ctx->salt_len = abcdk_hash_bkdr(key, size) % 256 + 1;
 
-    /*分解成4个64位整数。不能直接复制内存，因为存在大小端存储顺序不同的问题。*/
-    for (int i = 0; i < 32; i++)
-    {
-        send_seed[i % 4] <<= 8;
-        send_seed[i % 4] |= (uint64_t)hashcode[i];
-        recv_seed[i % 4] <<= 8;
-        recv_seed[i % 4] |= (uint64_t)hashcode[i];
-    }
-
-    ctx->enigma_send_ctx = abcdk_enigma_create3(send_seed, 4,256);
-    ctx->enigma_recv_ctx = abcdk_enigma_create3(recv_seed, 4,256);
+    ctx->enigma_send_ctx = abcdk_enigma_create_random_sha256(key, size, 4,256);
+    ctx->enigma_recv_ctx = abcdk_enigma_create_random_sha256(key, size, 4,256);
 
     if (!ctx->enigma_send_ctx || !ctx->enigma_recv_ctx)
         return -2;
@@ -118,7 +108,7 @@ static int _abcdk_ssl_enigma_init(abcdk_ssl_t *ctx, const uint8_t *key, size_t s
     ctx->send_pos = 0;
     ctx->send_repeated_p = NULL;
     ctx->send_repeated_l = 0;
-    ctx->send_sprinkle_salt = 0;
+    ctx->send_salt_len = 0;
     ctx->recv_salt_len = 0;
 
     return 0;
@@ -126,6 +116,11 @@ static int _abcdk_ssl_enigma_init(abcdk_ssl_t *ctx, const uint8_t *key, size_t s
 
 static int _abcdk_ssl_aes_init(abcdk_ssl_t *ctx, const uint8_t *key, size_t size)
 {
+    int chk;
+
+    /*生成盐的长度。*/
+    ctx->salt_len = abcdk_hash_bkdr(key, size) % 256 + 1;
+
     if (ctx->scheme == ABCDK_SSL_SCHEME_AES_256_GCM)
     {
         ctx->aes_send_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,key,size);
@@ -140,7 +135,7 @@ static int _abcdk_ssl_aes_init(abcdk_ssl_t *ctx, const uint8_t *key, size_t size
     if (!ctx->aes_send_ctx || !ctx->aes_recv_ctx)
         return -2;
 
-        ctx->send_queue = abcdk_tree_alloc3(1);
+    ctx->send_queue = abcdk_tree_alloc3(1);
     if (!ctx->send_queue)
         return -3;
 
@@ -157,7 +152,7 @@ static int _abcdk_ssl_aes_init(abcdk_ssl_t *ctx, const uint8_t *key, size_t size
     ctx->send_pos = 0;
     ctx->send_repeated_p = NULL;
     ctx->send_repeated_l = 0;
-    ctx->send_sprinkle_salt = 0;
+    ctx->send_salt_len = 0;
     ctx->recv_salt_len = 0;
 
     return 0;
@@ -276,28 +271,28 @@ static ssize_t _abcdk_ssl_enigma_write_fragment(abcdk_ssl_t *ctx, const void *da
     ssize_t slen = 0;
 
     /*发送前先撒盐。*/
-    if (!ctx->send_sprinkle_salt)
+    if (ctx->send_salt_len != ctx->salt_len)
     {
-        en_data = abcdk_tree_alloc3(256);
+        en_data = abcdk_tree_alloc3(ctx->salt_len);
         if (!en_data)
             return 0; // 内存不足时，关闭当前句柄。
 
         /*使用单字节的所有字符生成盐。*/
-        for(int i = 0;i<256;i++)
+        for(int i = 0;i<ctx->salt_len;i++)
             salt[i] = i;
 
         /*使用洗牌算法把盐搅拌一下。*/
         salt_seed = abcdk_rand_q();
-        abcdk_rand_shuffle_array(salt,256,&salt_seed,1);
+        abcdk_rand_shuffle_array(salt,ctx->salt_len,&salt_seed,1);
 
         /*加密。*/
-        abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], salt, 256);
+        abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], salt, ctx->salt_len);
 
         /*追加到发送队列末尾。*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
 
         /*撒盐一次即可。*/
-        ctx->send_sprinkle_salt = 1;
+        ctx->send_salt_len = ctx->salt_len;
     }
 
     /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
@@ -327,7 +322,7 @@ NEXT_MSG:
     {
         ctx->send_repeated_p = NULL;
         ctx->send_repeated_l = 0;
-        return size;
+        return size;//在这里返回发送数据的实际长度。
     }
 
     assert(ctx->send_fd >= 0);
@@ -386,15 +381,15 @@ static ssize_t _abcdk_ssl_enigma_read(abcdk_ssl_t *ctx, void *data, size_t size)
 NEXT_LOOP:
 
     /*如果数据存在盐则先读取盐。*/
-    if (ctx->recv_salt_len < 256)
+    if (ctx->recv_salt_len < ctx->salt_len)
     {
-        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(salt, ctx->recv_salt_len), 256 - ctx->recv_salt_len);
+        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(salt, ctx->recv_salt_len), ctx->salt_len - ctx->recv_salt_len);
         if (rlen > 0)
             ctx->recv_salt_len += rlen;
     }
 
     /*盐读取完成后，才是真实数据。*/
-    if (256 == ctx->recv_salt_len)
+    if (ctx->salt_len == ctx->recv_salt_len)
     {
         rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(data, alen), size - alen);
         if (rlen > 0)
@@ -431,9 +426,142 @@ NEXT_LOOP:
     goto NEXT_LOOP;
 }
 
+static abcdk_tree_t *_abcdk_ssl_aes_send_update_pack(abcdk_ssl_t *ctx, const void *in, int in_len)
+{
+    abcdk_tree_t *dst_p = NULL;
+    abcdk_object_t *src_p = NULL;
+
+    /*
+     * |Length  |Data    |
+     * |4 Bytes |N Bytes |
+     *
+     * Length：密文长度。
+     * DATA: 密文数据。
+     */
+
+    src_p = abcdk_openssl_cipher_update_pack(ctx->aes_send_ctx, (uint8_t*)in, in_len, 1);
+    if (!src_p)
+        goto ERR;
+
+    dst_p = abcdk_tree_alloc3(4 + src_p->sizes[0]);
+    if (!dst_p)
+        goto ERR;
+
+    abcdk_bloom_write_number(dst_p->obj->pptrs[0], dst_p->obj->sizes[0], 0, 32, in_len);
+    memcpy(dst_p->obj->pptrs[0] + 4, src_p->pptrs[0], src_p->sizes[0]);
+
+    abcdk_object_unref(&src_p);
+    return dst_p;
+
+ERR:
+
+    abcdk_tree_free(&dst_p);
+    abcdk_object_unref(&src_p);
+    return NULL;
+}
+
+static ssize_t _abcdk_ssl_aes_write_fragment(abcdk_ssl_t *ctx, const void *data, size_t size)
+{
+    uint64_t salt_seed = 0;
+    char salt[256 + 1] = {0};
+    abcdk_tree_t *en_data = NULL;
+    abcdk_tree_t *p = NULL;
+    ssize_t slen = 0;
+
+    /*发送前先撒盐。*/
+    if (ctx->send_salt_len != ctx->salt_len)
+    {
+        en_data = abcdk_tree_alloc3(ctx->salt_len);
+        if (!en_data)
+            return 0; // 内存不足时，关闭当前句柄。
+
+        /*使用单字节的所有字符生成盐。*/
+        for(int i = 0;i<ctx->salt_len;i++)
+            salt[i] = i;
+
+        /*使用洗牌算法把盐搅拌一下。*/
+        salt_seed = abcdk_rand_q();
+        abcdk_rand_shuffle_array(salt,ctx->salt_len,&salt_seed,1);
+
+        /*追加到发送队列末尾。*/
+        abcdk_tree_insert2(ctx->send_queue, en_data, 0);
+
+        /*撒盐一次即可。*/
+        ctx->send_salt_len = ctx->salt_len;
+    }
+
+    /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
+    if (ctx->send_repeated_p != data || ctx->send_repeated_l != size)
+    {
+        /*记录指针和长度，重发时会检测这两个值。*/
+        ctx->send_repeated_p = data;
+        ctx->send_repeated_l = size;
+
+        /*加密。*/
+        en_data = _abcdk_ssl_aes_send_update_pack(ctx,data, size);
+        if (!en_data)
+            return 0; // 内存不足时，关闭当前句柄。
+ 
+        /*追加到发送队列末尾。*/
+        abcdk_tree_insert2(ctx->send_queue, en_data, 0);
+    }
+
+NEXT_MSG:
+
+    p = abcdk_tree_child(ctx->send_queue, 1);
+
+    /*通知应用层，发送队列空闲。*/
+    if (!p)
+    {
+        ctx->send_repeated_p = NULL;
+        ctx->send_repeated_l = 0;
+        return size;//在这里返回发送数据的实际长度。
+    }
+
+    assert(ctx->send_fd >= 0);
+
+    /*发。*/
+    slen = write(ctx->send_fd, ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->send_pos), p->obj->sizes[0] - ctx->send_pos);
+    if (slen < 0)
+        return -1;
+    else if (slen == 0)
+        return 0;
+
+    /*滚动发送游标。*/
+    ctx->send_pos += slen;
+
+    /*当前节点未发送完整，则继续发送。*/
+    if (ctx->send_pos < p->obj->sizes[0])
+        goto NEXT_MSG;
+
+    /*发送游标归零。*/
+    ctx->send_pos = 0;
+
+    /*从队列中删除已经发送完整的节点。*/
+    abcdk_tree_unlink(p);
+    abcdk_tree_free(&p);
+
+    /*并继续发送剩余节点。*/
+    goto NEXT_MSG;
+}
+
 static ssize_t _abcdk_ssl_aes_write(abcdk_ssl_t *ctx, const void *data, size_t size)
 {
+    ssize_t slen = 0, alen = 0;
 
+    while (alen < size)
+    {
+        /*分块发送。*/
+        slen = _abcdk_ssl_enigma_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(64*1024)));
+        if (slen < 0)
+            return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
+        else if (slen == 0)
+            return (alen > 0 ? alen : 0); // 优先返回已发送的数据长度。
+
+        alen += slen;
+    }
+
+    return alen;
 }
 
 static ssize_t _abcdk_ssl_aes_read(abcdk_ssl_t *ctx, void *data, size_t size)

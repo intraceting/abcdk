@@ -12,6 +12,7 @@
 #include "abcdk/util/stream.h"
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/mmap.h"
+#include "abcdk/util/hash.h"
 #include "abcdk/enigma/enigma.h"
 #include "abcdk/openssl/cipher.h"
 

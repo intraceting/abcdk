@@ -13,6 +13,7 @@
 #include "abcdk/util/random.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/clock.h"
+#include "abcdk/util/sha256.h"
 
 __BEGIN_DECLS
 
@@ -43,22 +44,28 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx);
 abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols);
 
 /** 
- * 创建。
+ * 创建(随机字典)。
  * 
  * @param [in] seed 随机种子。
- * @param [in] rows 转子数量。
- * @param [in] cols 通道数量。
 */
-abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows, size_t cols);
+abcdk_enigma_t *abcdk_enigma_create_random(uint64_t seed,size_t rows, size_t cols);
 
 /** 
- * 创建。
+ * 创建(随机字典)。
  * 
  * @param [in] seed 随机种子(每个转子使用不同的种子)。
- * @param [in] rows 转子数量。
- * @param [in] cols 通道数量。
 */
-abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows, size_t cols);
+abcdk_enigma_t *abcdk_enigma_create_random_ex(uint64_t seed[],size_t rows, size_t cols);
+
+/** 
+ * 创建(随机字典)。
+ * 
+ * @note 支持4,8,16,32四种轮子数量的组合。
+ * 
+ * @param [in] key 密钥。
+ * @param [in] klen 长度。
+*/
+abcdk_enigma_t *abcdk_enigma_create_random_sha256(const void *key,size_t klen,size_t rows,size_t cols);
 
 /** 
  * 获取转子指针。

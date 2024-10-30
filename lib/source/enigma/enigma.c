@@ -79,7 +79,9 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
     uint8_t c;
     int chk;
 
-    assert(dict != NULL && rows > 1 && cols >= 2 && cols <= 256 && cols % 2 == 0);
+    assert(dict != NULL);
+    assert(rows >= 2 && rows <= 100);
+    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     /*检查字典表，每张字典表中的字符不能出现重复的。*/
     for (size_t y = 0; y < rows; y++)
@@ -150,12 +152,13 @@ ERR:
     return NULL;
 }
 
-abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows, size_t cols)
+abcdk_enigma_t *abcdk_enigma_create_random(uint64_t seed,size_t rows, size_t cols)
 {
     uint8_t *dict;
     abcdk_enigma_t *ctx;
 
-    assert(rows > 0 && cols >= 2 && cols <= 256 && cols % 2 == 0);
+    assert(rows >= 2 && rows <= 100);
+    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
     if(!dict)
@@ -169,12 +172,14 @@ abcdk_enigma_t *abcdk_enigma_create2(uint64_t seed,size_t rows, size_t cols)
     return ctx;
 }
 
-abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows,size_t cols)
+abcdk_enigma_t *abcdk_enigma_create_random_ex(uint64_t seed[],size_t rows,size_t cols)
 {
     uint8_t *dict;
     abcdk_enigma_t *ctx;
 
-    assert(seed != NULL && rows > 0 && cols >= 2 && cols <= 256 && cols % 2 == 0);
+    assert(seed != NULL);
+    assert(rows >= 2 && rows <= 100);
+    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
 
     dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
     if(!dict)
@@ -187,6 +192,31 @@ abcdk_enigma_t *abcdk_enigma_create3(uint64_t seed[],size_t rows,size_t cols)
     abcdk_heap_free(dict);
     
     return ctx;  
+}
+
+abcdk_enigma_t *abcdk_enigma_create_random_sha256(const void *key,size_t klen,size_t rows,size_t cols)
+{
+    uint8_t hashcode[32] = {0};
+    uint64_t seed[32] = {0};
+    int chk;
+
+    assert(key != NULL);
+    assert(rows == 4 || rows == 8 || rows == 16 || rows == 32);
+    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
+
+    /*密钥转换为定长HASHCODE。*/
+    chk = abcdk_sha256_once(key, klen, hashcode);
+    if (chk != 0)
+        return NULL;
+
+     /*分解成N个64位整数。不能直接复制内存，因为存在大小端存储顺序不同的问题。*/
+    for (int i = 0; i < 32; i++)
+    {
+        seed[i % rows] <<= 8;
+        seed[i % rows] |= (uint64_t)hashcode[i];
+    }
+
+    return abcdk_enigma_create_random_ex(seed, rows,cols);
 }
 
 uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, size_t row)

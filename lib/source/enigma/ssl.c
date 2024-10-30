@@ -84,8 +84,8 @@ int _abcdk_enigma_ssl_init(abcdk_enigma_ssl_t *ctx, const uint8_t *key, size_t s
         recv_seed[i % 4] |= (uint64_t)hashcode[i];
     }
 
-    ctx->en_send_ctx = abcdk_enigma_create3(send_seed, 4,256);
-    ctx->en_recv_ctx = abcdk_enigma_create3(recv_seed, 4,256);
+    ctx->en_send_ctx = abcdk_enigma_create_random_ex(send_seed, 4,256);
+    ctx->en_recv_ctx = abcdk_enigma_create_random_ex(recv_seed, 4,256);
 
     if (!ctx->en_send_ctx || !ctx->en_recv_ctx)
         return -2;
