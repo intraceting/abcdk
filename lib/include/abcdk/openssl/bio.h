@@ -7,7 +7,7 @@
 #ifndef ABCDK_OPENSSL_BIO_H
 #define ABCDK_OPENSSL_BIO_H
 
-#include "abcdk/ssl/ssl.h"
+#include "abcdk/ssl/maskssl.h"
 #include "abcdk/openssl/openssl.h"
 
 __BEGIN_DECLS
@@ -30,14 +30,14 @@ int abcdk_openssl_BIO_get_fd(BIO *bio);
 void abcdk_openssl_BIO_destroy(BIO **bio);
 
 /**
- * 创建兼容ABCDKSSL的BIO环境。
+ * 创建兼容MaskSSL的BIO环境。
 */
-BIO *abcdk_openssl_BIO_s_ABCDKSSL(int scheme, const uint8_t *key,size_t size);
+BIO *abcdk_openssl_BIO_s_MaskSSL(int scheme, const uint8_t *key,size_t size);
 
 /**
- * 创建兼容ABCDKSSL的BIO环境。
+ * 创建兼容MaskSSL的BIO环境。
 */
-BIO *abcdk_openssl_BIO_s_ABCDKSSL_form_file(int scheme,const char *file);
+BIO *abcdk_openssl_BIO_s_MaskSSL_form_file(int scheme,const char *file);
 
 
 #endif //HEADER_BIO_H

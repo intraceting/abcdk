@@ -721,7 +721,8 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
     asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
     asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
-    asio_cfg.enigma_key_file = ctx->cfg.enigma_key_file;
+    asio_cfg.sk_key_file = ctx->cfg.sk_key_file;
+    asio_cfg.sk_key_cipher = ctx->cfg.sk_key_cipher;
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
@@ -768,7 +769,8 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
     asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
     asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
-    asio_cfg.enigma_key_file = ctx->cfg.enigma_key_file;
+    asio_cfg.sk_key_file = ctx->cfg.sk_key_file;
+    asio_cfg.sk_key_cipher = ctx->cfg.sk_key_cipher;
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;

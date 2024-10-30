@@ -19,7 +19,7 @@
 #include "abcdk/util/spinlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/wred.h"
-#include "abcdk/enigma/bio.h"
+#include "abcdk/openssl/bio.h"
 
 __BEGIN_DECLS
 
@@ -49,13 +49,13 @@ typedef enum _abcdk_stcp_ssl_scheme
     ABCDK_STCP_SSL_SCHEME_PKI = 1,
 #define ABCDK_STCP_SSL_SCHEME_PKI   ABCDK_STCP_SSL_SCHEME_PKI
 
-    /**ENIGMA.*/
-    ABCDK_STCP_SSL_SCHEME_ENIGMA = 2,
-#define ABCDK_STCP_SSL_SCHEME_ENIGMA   ABCDK_STCP_SSL_SCHEME_ENIGMA
+    /**Shared key.*/
+    ABCDK_STCP_SSL_SCHEME_SK = 2,
+#define ABCDK_STCP_SSL_SCHEME_SK   ABCDK_STCP_SSL_SCHEME_SK
 
-    /*PKI is based on ENIGMA.*/
-    ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA = 3
-#define ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA   ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA
+    /*PKI is based on SK.*/
+    ABCDK_STCP_SSL_SCHEME_PKI_ON_SK = 3
+#define ABCDK_STCP_SSL_SCHEME_PKI_ON_SK   ABCDK_STCP_SSL_SCHEME_PKI_ON_SK
 }abcdk_stcp_ssl_scheme_t;
 
 /**通知事件。*/
@@ -147,11 +147,14 @@ typedef struct _abcdk_stcp_config
     */
     const uint8_t *pki_next_proto;
 
-    /**密码套件。*/
+    /**算法列表。*/
     const char *pki_cipher_list;
 
     /**共享密钥。*/
-    const char *enigma_key_file;
+    const char *sk_key_file;
+    
+    /**密钥算法。*/
+    int sk_key_cipher;
 
     /**
      * 输出队列丢包最小阈值。 

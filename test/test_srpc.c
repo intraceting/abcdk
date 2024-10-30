@@ -83,7 +83,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
     cfg.pki_key_file = abcdk_option_get(args, "--pki-key-file", 0, NULL);
     cfg.pki_check_cert = abcdk_option_get_int(args, "--pki-check-cert", 0, 1);
 
-    cfg.enigma_key_file = abcdk_option_get(args, "--enigma-key-file", 0, NULL);
+    cfg.sk_key_file = abcdk_option_get(args, "--sk-key-file", 0, NULL);
+    cfg.sk_key_cipher = abcdk_option_get(args, "--sk-key-cipher", 0, 1);
 
     cfg.ssl_scheme = abcdk_option_get_int(args, "--ssl-scheme", 0, ABCDK_STCP_SSL_SCHEME_RAW);
 

@@ -49,12 +49,13 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.subscribe_cb = _abcdk_test_tipc_subscribe_cb;
     cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
 
-    cfg.enigma_key_file = abcdk_option_get(args,"--easyssl-key-file",0,NULL);
-    cfg.pki_check_cert = abcdk_option_get_int(args,"--openssl-check-cert",0,1);
-    cfg.pki_cert_file = abcdk_option_get(args,"--server-openssl-cert-file",0,NULL);
-    cfg.pki_key_file = abcdk_option_get(args,"--server-openssl-key-file",0,NULL);
-    cfg.pki_ca_file = abcdk_option_get(args,"--openssl-ca-file",0,NULL);
-    cfg.pki_ca_path = abcdk_option_get(args,"--openssl-ca-path",0,NULL);
+    cfg.sk_key_file = abcdk_option_get(args,"--sk-key-file",0,NULL);
+    cfg.sk_key_cipher = abcdk_option_get_int(args,"--sk-key-cipher",0,1);
+    cfg.pki_check_cert = abcdk_option_get_int(args,"--pki-check-cert",0,1);
+    cfg.pki_cert_file = abcdk_option_get(args,"--pki-cert-file",0,NULL);
+    cfg.pki_key_file = abcdk_option_get(args,"--pki-key-file",0,NULL);
+    cfg.pki_ca_file = abcdk_option_get(args,"--pki-ca-file",0,NULL);
+    cfg.pki_ca_path = abcdk_option_get(args,"--pki-ca-path",0,NULL);
 
     listen_p = abcdk_option_get(args,"--listen",0,"ipv4://127.0.0.1:6666");
     connect_p = abcdk_option_get(args,"--connect",0,NULL);

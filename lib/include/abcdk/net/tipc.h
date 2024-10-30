@@ -48,7 +48,10 @@ typedef struct _abcdk_tipc_config
     int pki_check_cert;
 
     /*共享密钥。*/
-    const char *enigma_key_file;
+    const char *sk_key_file;
+
+    /**密钥算法。*/
+    int sk_key_cipher;
 
     /**
      * 节点连接通知回调函数。

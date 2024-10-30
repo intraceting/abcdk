@@ -85,11 +85,11 @@ struct _abcdk_stcp_node
     /**OpenSSL环境指针。*/
     SSL *openssl_ssl;
 
-    /**EnigmaSSL BIO环境指针。*/
-    BIO *enigmassl_bio;
+    /**BIO环境指针。*/
+    BIO *openssl_bio;
 
-    /**EnigmaSSL环境指针。*/
-    abcdk_enigma_ssl_t *enigmassl_ssl;
+    /**MaskSSL环境指针。*/
+    abcdk_maskssl_t *maskssl_ssl;
 
     /**读线程。*/
     volatile pthread_t recv_leader;
@@ -227,11 +227,11 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
 
 #ifdef HEADER_SSL_H
     abcdk_openssl_ssl_free(&node_p->openssl_ssl);
-    abcdk_enigma_BIO_destroy(&node_p->enigmassl_bio);
+    abcdk_openssl_BIO_destroy(&node_p->openssl_bio);
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif // HEADER_SSL_H
 
-    abcdk_enigma_ssl_destroy(&node_p->enigmassl_ssl);
+    abcdk_maskssl_destroy(&node_p->maskssl_ssl);
 
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
     if (node_p->fd >= 0)
@@ -286,8 +286,8 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*f
     node->from_listen = NULL;
     node->openssl_ctx = NULL;
     node->openssl_ssl = NULL;
-    node->enigmassl_bio = NULL;
-    node->enigmassl_ssl = NULL;
+    node->openssl_bio = NULL;
+    node->maskssl_ssl = NULL;
 
     return node;
 }
@@ -411,10 +411,10 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     while (rsize_all < size)
     {
-        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
             rsize = SSL_read(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
-        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
-            rsize = abcdk_enigma_ssl_read(node->enigmassl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
+        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+            rsize = abcdk_maskssl_read(node->maskssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
         else
             rsize = read(node->fd, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
 
@@ -456,10 +456,10 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     while (wsize_all < size)
     {
-        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
             wsize = SSL_write(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
-        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
-            wsize = abcdk_enigma_ssl_write(node->enigmassl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
+        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+            wsize = abcdk_maskssl_write(node->maskssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
         else
             wsize = write(node->fd, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
 
@@ -720,7 +720,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 
         if (!node->openssl_ssl)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "内存或资源不足，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node, LOG_WARNING, "内存或资源不足，无法创建OpenSSL环境(scheme=%d)。", node->cfg.ssl_scheme);
             return -1;
         }
 
@@ -733,36 +733,36 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
         else
             return -22;
 #else
-        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境。");
         return -22;
 #endif // HEADER_SSL_H
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
     {
-        if (!node->enigmassl_ssl)
-            node->enigmassl_ssl = abcdk_enigma_ssl_create_from_file(node->cfg.enigma_key_file);
+        if (!node->maskssl_ssl)
+            node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
         else
             return -16;
 
-        if (!node->enigmassl_ssl)
+        if (!node->maskssl_ssl)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建MaskSSL环境(scheme=%d)。", node->cfg.ssl_scheme);
             return -1;
         }
 
-        abcdk_enigma_ssl_set_fd(node->enigmassl_ssl, node->fd, 0);
+        abcdk_maskssl_set_fd(node->maskssl_ssl, node->fd, 0);
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
     {
 #ifdef HEADER_SSL_H
-        if (!node->enigmassl_bio)
-            node->enigmassl_bio = abcdk_enigma_BIO_s_SSL(node->cfg.enigma_key_file);
+        if (!node->openssl_bio)
+            node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
         else
             return -16;
 
-        if (!node->enigmassl_bio)
+        if (!node->openssl_bio)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(scheme=%d)。", node->cfg.ssl_scheme);
             return -1;
         }
 
@@ -777,11 +777,11 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             return -1;
         }
 
-        abcdk_enigma_BIO_set_fd(node->enigmassl_bio, node->fd);
-        SSL_set_bio(node->openssl_ssl, node->enigmassl_bio, node->enigmassl_bio);
+        abcdk_enigma_BIO_set_fd(node->openssl_bio, node->fd);
+        SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
 
         /*托管理给SSL，这里要清理野指针。*/
-        node->enigmassl_bio = NULL;
+        node->openssl_bio = NULL;
 
         if (node->flag == ABCDK_STCP_FLAG_ACCPET)
             SSL_set_accept_state(node->openssl_ssl);
@@ -790,7 +790,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
         else
             return -22;
 #else
-        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
         return -22;
 #endif // HEADER_SSL_H
     }
@@ -818,9 +818,9 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
             if (chk != 0)
                 goto ERR;
 
-            if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+            if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
                 node->status = ABCDK_STCP_STATUS_SYNC_PKI;
-            else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
+            else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
                 node->status = ABCDK_STCP_STATUS_STABLE;
             else
                 node->status = ABCDK_STCP_STATUS_STABLE;
@@ -1060,7 +1060,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
 
         if (!node->openssl_ctx)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
@@ -1080,34 +1080,34 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
         if (node->cfg.pki_next_proto)
             _abcdk_stcp_openssl_set_alpn(node);
 #else
-        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
         return -22;
 #endif // HEADER_SSL_H
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
     {
-        node->enigmassl_ssl = abcdk_enigma_ssl_create_from_file(node->cfg.enigma_key_file);
-        if (!node->enigmassl_ssl)
+        node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
+        if (!node->maskssl_ssl)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建MaskSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
         /*仅用于验证。*/
-        abcdk_enigma_ssl_destroy(&node->enigmassl_ssl);
+        abcdk_maskssl_destroy(&node->maskssl_ssl);
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_ENIGMA)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
     {
 #ifdef HEADER_SSL_H
-        node->enigmassl_bio = abcdk_enigma_BIO_s_SSL(node->cfg.enigma_key_file);
-        if (!node->enigmassl_bio)
+        node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
+        if (!node->openssl_bio)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
         /*仅用于验证。*/
-        abcdk_enigma_BIO_destroy(&node->enigmassl_bio);
+        abcdk_enigma_BIO_destroy(&node->openssl_bio);
 
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag, (node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                              (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
@@ -1115,7 +1115,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
 
         if (!node->openssl_ctx)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境。");
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载证书或私钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
@@ -1135,7 +1135,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
         _abcdk_stcp_openssl_set_alpn(node);
 
 #else
-        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建SSL环境。");
+        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
         return -22;
 #endif // HEADER_SSL_H
     }
@@ -1145,8 +1145,12 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
 
 static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
 {
-    /*修复不支持的配置。*/
-    node->cfg.enigma_key_file = (node->cfg.enigma_key_file ? node->cfg.enigma_key_file : "");
+    /*修复不支持的配置和默认值。*/
+
+    node->cfg.sk_key_file = (node->cfg.sk_key_file ? node->cfg.sk_key_file : "");
+
+    if(node->cfg.sk_key_cipher == 0)
+        node->cfg.sk_key_cipher = ABCDK_MASKSSL_SCHEME_ENIGMA;
 
     if (node->cfg.out_hook_min_th <= 0)
         node->cfg.out_hook_min_th = 200;
