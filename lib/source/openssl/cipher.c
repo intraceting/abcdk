@@ -637,13 +637,13 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
     uint32_t old_crc32 = 0,new_crc32 = ~0;
 
     assert(ctx != NULL && in != NULL && in_len > 0);
-    assert(!enc || (enc && in_len < 16 * 1024 * 1024));
+    assert(!enc || (enc && in_len <= 16777215));
 
     /*
      * |Length  |CRC32   |Data    |
      * |4 Bytes |4 Bytes |N Bytes |
      *
-     * Length：明文长度。
+     * Length：明文长度。注：不包含自身。
      * CRC32：校验码。
      * Data: 明文数据。
      */

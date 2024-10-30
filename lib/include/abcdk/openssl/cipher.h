@@ -59,7 +59,7 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 /**
  * 执行。
  * 
- * @note 加密时，明文长度不能超过16777216(16MB)字节。
+ * @note 加密时，明文长度不能超过16777215(16MB-1)字节。
  * 
  * @return !NULL(0) 成功，NULL(0) 失败(内存不足或解密错误)。
 */

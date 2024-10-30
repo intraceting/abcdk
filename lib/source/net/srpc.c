@@ -483,6 +483,7 @@ static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size
     if (!node_ctx_p->req_data)
         goto ERR;
 
+    /*解包。*/
     chk = abcdk_receiver_append(node_ctx_p->req_data, data, size, remain);
     if (chk < 0)
     {
@@ -587,7 +588,7 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
      * |Length  |CMD    |MID     |Data    |
      * |4 Bytes |1 Byte |8 Bytes |N Bytes |
      *
-     * Length： 不包含自身。
+     * Length：消息长度。注：不包含自身。
      * CMD：1 应答，2 请求。
      * MID：消息ID。
      */
@@ -617,7 +618,7 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session, const void *req, size_t re
     uint64_t mid;
     int chk;
 
-    assert(session != NULL && req != NULL && req_size > 0);
+    assert(session != NULL && req != NULL && req_size > 0 && req_size <= 16777215);
 
     node_p = (abcdk_stcp_node_t*)session;
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node_p);

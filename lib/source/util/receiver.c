@@ -376,6 +376,9 @@ int _abcdk_receiver_check_weight_smb(abcdk_receiver_t *ctx, size_t *diff)
      *
      * |Length(Data)    |Data    |
      * |4 Byte          |N Bytes |
+     * 
+     * 
+     * Length：数据长度。注：不包含自身。
     */
 
     /*不能超过最大长度。*/
@@ -405,6 +408,46 @@ int _abcdk_receiver_check_weight_smb(abcdk_receiver_t *ctx, size_t *diff)
     return 1;
 }
 
+int _abcdk_receiver_check_weight_smb_half(abcdk_receiver_t *ctx, size_t *diff)
+{
+    uint32_t len;
+    
+    /*
+     * SMB-Half包格式。
+     *
+     * |Length(Data)    |Data    |
+     * |2 Byte          |N Bytes |
+     * 
+     * 
+     * Length：数据长度。注：不包含自身。
+    */
+
+    /*不能超过最大长度。*/
+    if (ctx->buf_max < ctx->offset)
+        return -1;
+        
+    if (ctx->offset < 2)
+    {
+        *diff = 2 - ctx->offset;
+        return 0;
+    }
+
+    len = abcdk_bloom_read_number((uint8_t*)ctx->buf,2,0,16);
+
+    if (len <= 0 || len > 0x0000FFFF)
+        return -1;
+
+    if (ctx->buf_max < len + 2)
+        return -1;
+
+    if (ctx->offset < len + 2)
+    {
+        *diff = ABCDK_MIN(ctx->buf_max, len + 2 - ctx->offset);
+        return 0;
+    }
+
+    return 1;
+}
 
 int _abcdk_receiver_check_weight(abcdk_receiver_t *ctx, size_t *diff)
 {
@@ -420,6 +463,8 @@ int _abcdk_receiver_check_weight(abcdk_receiver_t *ctx, size_t *diff)
         chk = _abcdk_receiver_check_weight_rtcp(ctx, diff);
     else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB)
         chk = _abcdk_receiver_check_weight_smb(ctx, diff);
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB_HALF)
+        chk = _abcdk_receiver_check_weight_smb_half(ctx, diff);
     else
         chk = -1;
 
