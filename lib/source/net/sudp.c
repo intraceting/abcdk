@@ -38,8 +38,8 @@ struct _abcdk_sudp
 
 #ifdef OPENSSL_VERSION_NUMBER
     /**加密/解密。*/
-    abcdk_cipher_t *cipher_out;
-    abcdk_cipher_t *cipher_in;
+    abcdk_openssl_cipher_t *cipher_out;
+    abcdk_openssl_cipher_t *cipher_in;
 #endif //OPENSSL_VERSION_NUMBER
 } ;//abcdk_sudp_t;
 
@@ -63,8 +63,8 @@ void abcdk_sudp_stop(abcdk_sudp_t **ctx)
     abcdk_tree_free(&ctx_p->out_queue);
     abcdk_mutex_destroy(&ctx_p->out_locker);
 #ifdef OPENSSL_VERSION_NUMBER
-    abcdk_cipher_destroy(&ctx_p->cipher_in);
-    abcdk_cipher_destroy(&ctx_p->cipher_out);
+    abcdk_openssl_cipher_destroy(&ctx_p->cipher_in);
+    abcdk_openssl_cipher_destroy(&ctx_p->cipher_out);
 #endif //OPENSSL_VERSION_NUMBER
     abcdk_closep(&ctx_p->fd);
 }
@@ -134,8 +134,8 @@ abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
     if(ctx->cfg.aes_key_file && *ctx->cfg.aes_key_file)
     {
 #ifdef OPENSSL_VERSION_NUMBER
-        ctx->cipher_in = abcdk_cipher_create_from_file(ABCDK_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
-        ctx->cipher_out = abcdk_cipher_create_from_file(ABCDK_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
+        ctx->cipher_in = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
+        ctx->cipher_out = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
         if(!ctx->cipher_in || !ctx->cipher_out)
         {
             abcdk_trace_output(LOG_WARNING, "加载密钥文件(%s)失败，无权限或不存在。",ctx->cfg.aes_key_file);
@@ -261,7 +261,7 @@ NEXT_MSG:
 #ifdef OPENSSL_VERSION_NUMBER
     if(ctx->cipher_in)    
     {
-        dec_p = abcdk_cipher_update_pack(ctx->cipher_in,enc_p->pptrs[0],enc_p->sizes[0],0);
+        dec_p = abcdk_openssl_cipher_update_pack(ctx->cipher_in,enc_p->pptrs[0],enc_p->sizes[0],0);
         if(!dec_p)
         {
             abcdk_trace_output(LOG_WARNING, "来自(%s)的数据解密失败，丢弃此数据包。\n",addrbuf);
@@ -312,7 +312,7 @@ NEXT_MSG:
 #ifdef OPENSSL_VERSION_NUMBER
     if(ctx->cipher_out)
     {
-        enc_p = abcdk_cipher_update_pack(ctx->cipher_out,p->obj->pptrs[0],p->obj->sizes[0],1);
+        enc_p = abcdk_openssl_cipher_update_pack(ctx->cipher_out,p->obj->pptrs[0],p->obj->sizes[0],1);
         if(!enc_p)
             goto NEXT_MSG;
     }

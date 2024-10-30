@@ -150,4 +150,6 @@
 #include "abcdk/enigma/ssl.h"
 #include "abcdk/enigma/bio.h"
 
+#include "abcdk/ssl/ssl.h"
+
 #endif //ABCDK_H

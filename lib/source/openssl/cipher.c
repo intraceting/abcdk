@@ -9,7 +9,7 @@
 #ifdef OPENSSL_VERSION_NUMBER
 
 /**简单的加密接口。 */
-struct _abcdk_cipher
+struct _abcdk_openssl_cipher
 {
     /*方案。*/
     int scheme;
@@ -42,9 +42,9 @@ struct _abcdk_cipher
     /*密文块长度。*/
     int ciphertext_bsize;
 
-}; // abcdk_cipher_t;
+}; // abcdk_openssl_cipher_t;
 
-void _abcdk_cipher_rand_generate(uint8_t *buf, int len)
+void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
 {
     if (len <= 0)
         return;
@@ -58,9 +58,9 @@ void _abcdk_cipher_rand_generate(uint8_t *buf, int len)
 #endif
 }
 
-void abcdk_cipher_destroy(abcdk_cipher_t **ctx)
+void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
 {
-    abcdk_cipher_t *ctx_p;
+    abcdk_openssl_cipher_t *ctx_p;
 
     if (!ctx || !*ctx)
         ;
@@ -87,7 +87,7 @@ void abcdk_cipher_destroy(abcdk_cipher_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-static int _abcdk_cipher_rsa_init(abcdk_cipher_t *ctx, const uint8_t *key, size_t key_len)
+static int _abcdk_openssl_cipher_rsa_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
 {
     FILE *fp = NULL;
     int chk;
@@ -98,11 +98,11 @@ static int _abcdk_cipher_rsa_init(abcdk_cipher_t *ctx, const uint8_t *key, size_
     if (!fp)
         return -1;
 
-    if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PRIVATE)
+    if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE)
     {
         ctx->rsa_ctx = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL);
     }
-    else if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PUBLIC)
+    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
     {
         ctx->rsa_ctx = PEM_read_RSAPublicKey(fp, NULL, NULL, NULL);
     }
@@ -128,7 +128,7 @@ ERR:
     return -1;
 }
 
-static int _abcdk_cipher_rsa_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
+static int _abcdk_openssl_cipher_rsa_update_fragment(abcdk_openssl_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
 {
     int chk;
 
@@ -148,11 +148,11 @@ static int _abcdk_cipher_rsa_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, 
             return -2;
 
         memcpy(ctx->tmpbuf, in, in_len);
-        _abcdk_cipher_rand_generate(ctx->tmpbuf + in_len, ctx->plaintext_bsize - in_len);
+        _abcdk_openssl_cipher_rand_generate(ctx->tmpbuf + in_len, ctx->plaintext_bsize - in_len);
 
-        if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PRIVATE)
+        if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE)
             chk = RSA_private_encrypt(ctx->plaintext_bsize, ctx->tmpbuf, out, ctx->rsa_ctx, RSA_PKCS1_PADDING);
-        else if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PUBLIC)
+        else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
             chk = RSA_public_encrypt(ctx->plaintext_bsize, ctx->tmpbuf, out, ctx->rsa_ctx, RSA_PKCS1_PADDING);
         else
             chk = -1;
@@ -170,9 +170,9 @@ static int _abcdk_cipher_rsa_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, 
         if (out_max < ctx->plaintext_bsize)
             return -2;
 
-        if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PRIVATE)
+        if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE)
             chk = RSA_private_decrypt(in_len, in, ctx->tmpbuf, ctx->rsa_ctx, RSA_PKCS1_PADDING);
-        else if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PUBLIC)
+        else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
             chk = RSA_public_decrypt(in_len, in, ctx->tmpbuf, ctx->rsa_ctx, RSA_PKCS1_PADDING);
         else
             chk = -1;
@@ -190,7 +190,7 @@ static int _abcdk_cipher_rsa_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, 
     return -1;
 }
 
-abcdk_object_t *_abcdk_cipher_rsa_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+abcdk_object_t *_abcdk_openssl_cipher_rsa_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
     abcdk_object_t *out;
     int blocks;
@@ -208,13 +208,13 @@ abcdk_object_t *_abcdk_cipher_rsa_update(abcdk_cipher_t *ctx, const uint8_t *in,
         {
             if (i < (blocks - 1) || (in_len % ctx->plaintext_bsize) == 0)
             {
-                _abcdk_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize,
+                _abcdk_openssl_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize,
                                                   in + i * ctx->plaintext_bsize, ctx->plaintext_bsize, 1);
             }
             else
             {
                 /*明文没有块对齐时，最后一块需要单独计算。*/
-                _abcdk_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize,
+                _abcdk_openssl_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize,
                                                   in + i * ctx->plaintext_bsize, in_len % ctx->plaintext_bsize, 1);
             }
         }
@@ -233,7 +233,7 @@ abcdk_object_t *_abcdk_cipher_rsa_update(abcdk_cipher_t *ctx, const uint8_t *in,
 
         for (int i = 0; i < blocks; i++)
         {
-            _abcdk_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->plaintext_bsize, ctx->plaintext_bsize,
+            _abcdk_openssl_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->plaintext_bsize, ctx->plaintext_bsize,
                                               in + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize, 0);
         }
     }
@@ -241,7 +241,7 @@ abcdk_object_t *_abcdk_cipher_rsa_update(abcdk_cipher_t *ctx, const uint8_t *in,
     return out;
 }
 
-static int _abcdk_cipher_aes256gcm_init(abcdk_cipher_t *ctx, const uint8_t *key, size_t key_len)
+static int _abcdk_openssl_cipher_aes256gcm_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
 {
     int chk;
 
@@ -258,7 +258,7 @@ static int _abcdk_cipher_aes256gcm_init(abcdk_cipher_t *ctx, const uint8_t *key,
     return 0;
 }
 
-static int _abcdk_cipher_aes256gcm_config(abcdk_cipher_t *ctx, int enc)
+static int _abcdk_openssl_cipher_aes256gcm_config(abcdk_openssl_cipher_t *ctx, int enc)
 {
     int chk;
 
@@ -279,7 +279,7 @@ static int _abcdk_cipher_aes256gcm_config(abcdk_cipher_t *ctx, int enc)
     return 0;
 }
 
-static int _abcdk_cipher_aes256gcm_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
+static int _abcdk_openssl_cipher_aes256gcm_update_fragment(abcdk_openssl_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
 {
     int alen = 0, tlen = 0;
     int chk;
@@ -318,7 +318,7 @@ static int _abcdk_cipher_aes256gcm_update_fragment(abcdk_cipher_t *ctx, uint8_t 
     return alen;
 }
 
-abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+abcdk_object_t *_abcdk_openssl_cipher_aes256gcm_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
     abcdk_object_t *out;
     int chk;
@@ -331,9 +331,9 @@ abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_
     if (enc)
     {
         /*生成随机IV。由于它将以明文方式进行传递，因此每次加密前必须重新生成。*/
-        _abcdk_cipher_rand_generate(ctx->evp_iv, 16);
+        _abcdk_openssl_cipher_rand_generate(ctx->evp_iv, 16);
 
-        chk = _abcdk_cipher_aes256gcm_config(ctx, 1);
+        chk = _abcdk_openssl_cipher_aes256gcm_config(ctx, 1);
         if (chk != 0)
             return NULL;
 
@@ -341,7 +341,7 @@ abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_
         if (!out)
             return NULL;
 
-        chk = _abcdk_cipher_aes256gcm_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len, 1);
+        chk = _abcdk_openssl_cipher_aes256gcm_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len, 1);
         if (chk != in_len)
             goto ERR;
 
@@ -358,7 +358,7 @@ abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_
         memcpy(ctx->evp_iv, in + in_len - 32, 16);
         memcpy(ctx->evp_tag, in + in_len - 16, 16);
 
-        chk = _abcdk_cipher_aes256gcm_config(ctx, 0);
+        chk = _abcdk_openssl_cipher_aes256gcm_config(ctx, 0);
         if (chk != 0)
             return NULL;
 
@@ -366,7 +366,7 @@ abcdk_object_t *_abcdk_cipher_aes256gcm_update(abcdk_cipher_t *ctx, const uint8_
         if (!out)
             return NULL;
 
-        chk = _abcdk_cipher_aes256gcm_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len - 32, 0);
+        chk = _abcdk_openssl_cipher_aes256gcm_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len - 32, 0);
         if (chk != in_len - 32)
             goto ERR;
     }
@@ -379,7 +379,7 @@ ERR:
     return NULL;
 }
 
-static int _abcdk_cipher_aes256cbc_init(abcdk_cipher_t *ctx, const uint8_t *key, size_t key_len)
+static int _abcdk_openssl_cipher_aes256cbc_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
 {
     int chk;
 
@@ -399,7 +399,7 @@ static int _abcdk_cipher_aes256cbc_init(abcdk_cipher_t *ctx, const uint8_t *key,
     return 0;
 }
 
-static int _abcdk_cipher_aes256cbc_config(abcdk_cipher_t *ctx, int enc)
+static int _abcdk_openssl_cipher_aes256cbc_config(abcdk_openssl_cipher_t *ctx, int enc)
 {
     int chk;
 
@@ -418,7 +418,7 @@ static int _abcdk_cipher_aes256cbc_config(abcdk_cipher_t *ctx, int enc)
     return 0;
 }
 
-static int _abcdk_cipher_aes256cbc_update_fragment(abcdk_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
+static int _abcdk_openssl_cipher_aes256cbc_update_fragment(abcdk_openssl_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
 {
     int align_bsize;
     int blocks;
@@ -446,7 +446,7 @@ static int _abcdk_cipher_aes256cbc_update_fragment(abcdk_cipher_t *ctx, uint8_t 
         if (in_len % 16 != 0)
         {
             memcpy(ctx->tmpbuf, in + blocks * 16, in_len % 16);
-            _abcdk_cipher_rand_generate(ctx->tmpbuf + (in_len % 16), 16 - (in_len % 16));
+            _abcdk_openssl_cipher_rand_generate(ctx->tmpbuf + (in_len % 16), 16 - (in_len % 16));
 
             chk = EVP_CipherUpdate(ctx->evp_ctx, out + blocks * 16, &tlen, ctx->tmpbuf, 16);
             if (chk != 1)
@@ -479,7 +479,7 @@ static int _abcdk_cipher_aes256cbc_update_fragment(abcdk_cipher_t *ctx, uint8_t 
     return alen;
 }
 
-abcdk_object_t *_abcdk_cipher_aes256cbc_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+abcdk_object_t *_abcdk_openssl_cipher_aes256cbc_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
     abcdk_object_t *out;
     int align_bsize;
@@ -496,9 +496,9 @@ abcdk_object_t *_abcdk_cipher_aes256cbc_update(abcdk_cipher_t *ctx, const uint8_
         align_bsize = abcdk_align(in_len, 16);
 
         /*生成随机IV。由于它将以明文方式进行传递，因此每次加密前必须重新生成。*/
-        _abcdk_cipher_rand_generate(ctx->evp_iv, 16);
+        _abcdk_openssl_cipher_rand_generate(ctx->evp_iv, 16);
 
-        chk = _abcdk_cipher_aes256cbc_config(ctx, 1);
+        chk = _abcdk_openssl_cipher_aes256cbc_config(ctx, 1);
         if (chk != 0)
             return NULL;
 
@@ -506,7 +506,7 @@ abcdk_object_t *_abcdk_cipher_aes256cbc_update(abcdk_cipher_t *ctx, const uint8_
         if (!out)
             return NULL;
 
-        chk = _abcdk_cipher_aes256cbc_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len, 1);
+        chk = _abcdk_openssl_cipher_aes256cbc_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, in_len, 1);
         if (chk != align_bsize)
             goto ERR;
 
@@ -527,7 +527,7 @@ abcdk_object_t *_abcdk_cipher_aes256cbc_update(abcdk_cipher_t *ctx, const uint8_
         /*提取密文末尾的IV。*/
         memcpy(ctx->evp_iv, in + align_bsize, 16);
 
-        chk = _abcdk_cipher_aes256cbc_config(ctx, 0);
+        chk = _abcdk_openssl_cipher_aes256cbc_config(ctx, 0);
         if (chk != 0)
             return NULL;
 
@@ -535,7 +535,7 @@ abcdk_object_t *_abcdk_cipher_aes256cbc_update(abcdk_cipher_t *ctx, const uint8_
         if (!out)
             return NULL;
 
-        chk = _abcdk_cipher_aes256cbc_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, align_bsize, 0);
+        chk = _abcdk_openssl_cipher_aes256cbc_update_fragment(ctx, out->pptrs[0], out->sizes[0], in, align_bsize, 0);
         if (chk != align_bsize)
             goto ERR;
     }
@@ -548,24 +548,24 @@ ERR:
     return out;
 }
 
-static int _abcdk_cipher_init(abcdk_cipher_t *ctx, int scheme, const uint8_t *key, size_t key_len)
+static int _abcdk_openssl_cipher_init(abcdk_openssl_cipher_t *ctx, int scheme, const uint8_t *key, size_t key_len)
 {
     int chk;
 
-    if (scheme == ABCDK_CIPHER_SCHEME_RSA_PRIVATE || scheme == ABCDK_CIPHER_SCHEME_RSA_PUBLIC)
+    if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE || scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
     {
         ctx->scheme = scheme;
-        chk = _abcdk_cipher_rsa_init(ctx, key, key_len);
+        chk = _abcdk_openssl_cipher_rsa_init(ctx, key, key_len);
     }
-    else if (scheme == ABCDK_CIPHER_SCHEME_AES_256_GCM)
+    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM)
     {
         ctx->scheme = scheme;
-        chk = _abcdk_cipher_aes256gcm_init(ctx, key, key_len);
+        chk = _abcdk_openssl_cipher_aes256gcm_init(ctx, key, key_len);
     }
-    else if (scheme == ABCDK_CIPHER_SCHEME_AES_256_CBC)
+    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC)
     {
         ctx->scheme = scheme;
-        chk = _abcdk_cipher_aes256cbc_init(ctx, key, key_len);
+        chk = _abcdk_openssl_cipher_aes256cbc_init(ctx, key, key_len);
     }
     else
     {
@@ -575,29 +575,29 @@ static int _abcdk_cipher_init(abcdk_cipher_t *ctx, int scheme, const uint8_t *ke
     return chk;
 }
 
-abcdk_cipher_t *abcdk_cipher_create(int scheme, const uint8_t *key, size_t key_len)
+abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *key, size_t key_len)
 {
-    abcdk_cipher_t *ctx;
+    abcdk_openssl_cipher_t *ctx;
     int chk;
 
     assert(key != NULL && key_len > 0);
 
-    ctx = (abcdk_cipher_t *)abcdk_heap_alloc(sizeof(abcdk_cipher_t));
+    ctx = (abcdk_openssl_cipher_t *)abcdk_heap_alloc(sizeof(abcdk_openssl_cipher_t));
     if (!ctx)
         return NULL;
 
-    chk = _abcdk_cipher_init(ctx, scheme, key, key_len);
+    chk = _abcdk_openssl_cipher_init(ctx, scheme, key, key_len);
     if (chk == 0)
         return ctx;
 
-    abcdk_cipher_destroy(&ctx);
+    abcdk_openssl_cipher_destroy(&ctx);
     return NULL;
 }
 
-abcdk_cipher_t *abcdk_cipher_create_from_file(int scheme, const char *key_file)
+abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const char *key_file)
 {
     abcdk_object_t *key;
-    abcdk_cipher_t *ctx;
+    abcdk_openssl_cipher_t *ctx;
 
     assert(key_file != NULL);
 
@@ -605,31 +605,31 @@ abcdk_cipher_t *abcdk_cipher_create_from_file(int scheme, const char *key_file)
     if (!key)
         return NULL;
 
-    ctx = abcdk_cipher_create(scheme, key->pptrs[0], key->sizes[0]);
+    ctx = abcdk_openssl_cipher_create(scheme, key->pptrs[0], key->sizes[0]);
     abcdk_object_unref(&key);
 
     return ctx;
 }
 
-abcdk_object_t *abcdk_cipher_update(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
     abcdk_object_t *out;
 
     assert(ctx != NULL && in != NULL && in_len > 0);
 
-    if (ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PRIVATE || ctx->scheme == ABCDK_CIPHER_SCHEME_RSA_PUBLIC)
-        out = _abcdk_cipher_rsa_update(ctx, in, in_len, enc);
-    else if (ctx->scheme == ABCDK_CIPHER_SCHEME_AES_256_GCM)
-        out = _abcdk_cipher_aes256gcm_update(ctx, in, in_len, enc);
-    else if (ctx->scheme == ABCDK_CIPHER_SCHEME_AES_256_CBC)
-        out = _abcdk_cipher_aes256cbc_update(ctx, in, in_len, enc);
+    if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE || ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
+        out = _abcdk_openssl_cipher_rsa_update(ctx, in, in_len, enc);
+    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM)
+        out = _abcdk_openssl_cipher_aes256gcm_update(ctx, in, in_len, enc);
+    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC)
+        out = _abcdk_openssl_cipher_aes256cbc_update(ctx, in, in_len, enc);
     else
         out = NULL;
 
     return out;
 }
 
-abcdk_object_t *abcdk_cipher_update_pack(abcdk_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
+abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
     abcdk_object_t *src_p = NULL;
     abcdk_object_t *dst_p = NULL;
@@ -658,13 +658,13 @@ abcdk_object_t *abcdk_cipher_update_pack(abcdk_cipher_t *ctx, const uint8_t *in,
         abcdk_bloom_write_number(src_p->pptrs[0], src_p->sizes[0], 32, 32, abcdk_crc32(in, in_len));
         memcpy(src_p->pptrs[0] + 8, in, in_len);
 
-        dst_p = abcdk_cipher_update(ctx,src_p->pptrs[0],src_p->sizes[0],1);
+        dst_p = abcdk_openssl_cipher_update(ctx,src_p->pptrs[0],src_p->sizes[0],1);
         if(!dst_p)
             goto ERR;
     }
     else
     {
-        dst_p = abcdk_cipher_update(ctx,in,in_len,0);
+        dst_p = abcdk_openssl_cipher_update(ctx,in,in_len,0);
         if(!dst_p)
             goto ERR;
 
