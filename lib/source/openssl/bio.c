@@ -334,7 +334,7 @@ void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
     BIO_free(bio_ctx_p);
 }
 
-BIO *abcdk_openssl_BIO_s_SSL(int scheme, const uint8_t *key,size_t size)
+BIO *abcdk_openssl_BIO_s_MaskSSL(int scheme, const uint8_t *key,size_t size)
 {
     abcdk_openssl_BIO_t *bio_p;
     BIO *openssl_bio_p;
@@ -385,7 +385,7 @@ ERR:
     return NULL;
 }
 
-BIO *abcdk_openssl_BIO_s_ABCDKSSL_form_file(int scheme,const char *file)
+BIO *abcdk_openssl_BIO_s_MaskSSL_form_file(int scheme,const char *file)
 {
     BIO *bio_ctx;
     abcdk_object_t *key;
@@ -396,7 +396,7 @@ BIO *abcdk_openssl_BIO_s_ABCDKSSL_form_file(int scheme,const char *file)
     if (!key)
         return NULL;
 
-    bio_ctx = abcdk_openssl_BIO_s_SSL(scheme,key->pptrs[0], key->sizes[0]);
+    bio_ctx = abcdk_openssl_BIO_s_MaskSSL(scheme,key->pptrs[0], key->sizes[0]);
     abcdk_object_unref(&key);
     if (!bio_ctx)
         return NULL;

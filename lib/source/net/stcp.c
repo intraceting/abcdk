@@ -777,7 +777,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             return -1;
         }
 
-        abcdk_enigma_BIO_set_fd(node->openssl_bio, node->fd);
+        abcdk_openssl_BIO_set_fd(node->openssl_bio, node->fd);
         SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
 
         /*托管理给SSL，这里要清理野指针。*/
@@ -1107,7 +1107,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
         }
 
         /*仅用于验证。*/
-        abcdk_enigma_BIO_destroy(&node->openssl_bio);
+        abcdk_openssl_BIO_destroy(&node->openssl_bio);
 
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag, (node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                              (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
