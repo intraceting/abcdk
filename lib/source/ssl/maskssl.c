@@ -405,9 +405,9 @@ NEXT_LOOP:
     {
         rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(data, alen), size - alen);
         if (rlen > 0)
-            alen += rlen;
+            //alen += rlen;
 
-        if (alen >= size)
+        //if (alen >= size)
             return alen;
     }
 

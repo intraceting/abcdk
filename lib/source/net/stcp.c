@@ -1355,7 +1355,7 @@ ERR:
     return -1;
 }
 
-static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
+static void _abcdk_stcp_input_hook_v1(abcdk_stcp_node_t *node)
 {
     ssize_t rlen = 0, pos = 0;
     size_t remain = 0;
@@ -1401,6 +1401,54 @@ NEXT_MSG:
 
     /*继续读取缓存内可能存在数据，直到为空。*/
     goto NEXT_MSG;
+}
+
+static void _abcdk_stcp_input_hook_v2(abcdk_stcp_node_t *node)
+{
+    ssize_t rlen = 0, pos = 0;
+    size_t remain = 0;
+    int chk = 0;
+
+    /*当未注册输入数据到达通知回调函数时，直接发事件通知。*/
+    if (!node->cfg.input_cb)
+    {
+        node->cfg.event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
+        return;
+    }
+
+    if (!node->in_buffer)
+    {
+        node->in_buffer = abcdk_object_alloc2(64 * 1024);
+        if (!node->in_buffer)
+        {
+            abcdk_stcp_set_timeout(node, -1);
+            return;
+        }
+    }
+
+    /*收。*/
+    rlen = abcdk_stcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
+    if (rlen > 0)
+    {
+        /*缓存中可能存在多个请求，因此处理所有请求才能退出循环。*/
+        while (pos < rlen)
+        {
+            node->cfg.input_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
+            pos += (rlen - pos) - remain;
+        }
+    }
+
+    abcdk_stcp_recv_watch(node);
+    return;
+}
+
+static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
+{
+#if 0
+    _abcdk_stcp_input_hook_v1(node);
+#else 
+    _abcdk_stcp_input_hook_v2(node);
+#endif 
 }
 
 static void _abcdk_stcp_output_hook_v1(abcdk_stcp_node_t *node)
