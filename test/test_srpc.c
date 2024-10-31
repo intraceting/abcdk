@@ -40,7 +40,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
 
     int a = *((int *)data);
 
-    abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
+  //  abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
 
     if (a)
     {
@@ -113,7 +113,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
         uint64_t s = 0;
         abcdk_clock(s,&s);
 
-//#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(2)
         for (int j = 0; j < count; j++)
         {
             char buf[65000] = {0};
