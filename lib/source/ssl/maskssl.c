@@ -461,7 +461,7 @@ static abcdk_tree_t *_abcdk_maskssl_aes_send_update_pack(abcdk_maskssl_t *ctx, c
     if (!dst_p)
         goto ERR;
 
-    abcdk_bloom_write_number(dst_p->obj->pptrs[0], dst_p->obj->sizes[0], 0, 32, in_len);
+    abcdk_bloom_write_number(dst_p->obj->pptrs[0], dst_p->obj->sizes[0], 0, 32, src_p->sizes[0]);
     memcpy(dst_p->obj->pptrs[0] + 4, src_p->pptrs[0], src_p->sizes[0]);
 
     abcdk_object_unref(&src_p);
