@@ -9,6 +9,9 @@
 /**简单的RPC服务。*/
 struct _abcdk_srpc
 {
+    /*退出标志。*/
+    volatile int exit_flag;
+
     /*通讯IO。*/
     abcdk_stcp_t *io_ctx;
 
@@ -209,6 +212,9 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
 
     ctx_p = *ctx;
 
+    /*通知退出。*/
+    abcdk_atomic_store(&ctx_p->exit_flag,1);
+
     abcdk_worker_stop(&ctx_p->req_list);
     abcdk_stcp_stop(&ctx_p->io_ctx);
     abcdk_heap_free(ctx_p);
@@ -229,6 +235,9 @@ abcdk_srpc_t *abcdk_srpc_create(int worker)
         return NULL;
 
     worker = ABCDK_CLAMP(worker,1,worker);
+
+    /*标记“运行”。*/
+    ctx->exit_flag = 0;
 
     ctx->io_ctx = abcdk_stcp_start(worker);
     if (!ctx->io_ctx)
@@ -452,6 +461,10 @@ static void _abcdk_srpc_input_dispatch(abcdk_stcp_node_t *node)
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
+
+    /*如果正在停止，则直接返回。*/
+    if(abcdk_atomic_compare(&node_ctx_p->father->exit_flag,1))
+        return;
 
     item = _abcdk_srpc_request_item_alloc();
     if(!item)
