@@ -120,12 +120,11 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             int *a = (int *)buf;
              *a = 1;
-         //   if (j % 3 == 0 && rand_rsp)
-           // if(j>0)
-           //     *a = 0;
+            if (j % 3 == 0 && rand_rsp)
+                *a = 0;
 
             int b = ((uint64_t)abcdk_rand_number()) % 64000 + 5;
-            
+
 #if HAVE_OPENSSL
             RAND_bytes(buf + 4, b - 4);
 #else 
@@ -134,8 +133,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             abcdk_object_t *rsp = NULL;
 
-           // int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
-            int chk = abcdk_srpc_request(session_p, buf, b,NULL);
+            int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
+          //  int chk = abcdk_srpc_request(session_p, buf, b,NULL);
             assert (chk == 0);
 
             if (rsp)
