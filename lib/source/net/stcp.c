@@ -1380,6 +1380,10 @@ static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
 
 NEXT_MSG:
 
+    /*清零.*/
+    rlen = pos = 0;
+    remain = 0;
+
     /*收。*/
     rlen = abcdk_stcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
