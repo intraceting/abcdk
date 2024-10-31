@@ -1556,7 +1556,7 @@ NEXT_MSG:
 
 static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
-#if 0
+#if 1
     _abcdk_stcp_output_hook_v1(node);
 #else 
     _abcdk_stcp_output_hook_v2(node);
