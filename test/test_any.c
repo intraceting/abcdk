@@ -1090,11 +1090,11 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #ifdef HAVE_OPENSSL
 
-   abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,"aaaa",4);
-   abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,"aaaa",4);
+   //abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,"aaaa",4);
+   //abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,"aaaa",4);
 
-    //   abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,"aaaa",4);
-    // abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,"aaaa",4);
+      abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,"aaaa",4);
+    abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,"aaaa",4);
 
     int bufsize = 2000;
     char buf[bufsize];

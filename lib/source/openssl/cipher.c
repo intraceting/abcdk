@@ -672,15 +672,19 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
             goto ERR;
 
         old_len = (uint32_t)abcdk_bloom_read_number(dst_p->pptrs[0], dst_p->sizes[0], 0, 32);
-        old_crc32 = (uint32_t)abcdk_bloom_read_number(dst_p->pptrs[0], dst_p->sizes[0], 32, 32);
-        new_crc32 = abcdk_crc32(dst_p->pptrs[0] + 8, dst_p->sizes[0] - 8);
-
-        if (old_crc32 != new_crc32 || old_len != dst_p->sizes[0] - 8)
+        
+        if (old_len > dst_p->sizes[0] - 8)
             goto ERR;
 
-        /*跳过头部。*/
+        old_crc32 = (uint32_t)abcdk_bloom_read_number(dst_p->pptrs[0], dst_p->sizes[0], 32, 32);
+        new_crc32 = abcdk_crc32(dst_p->pptrs[0] + 8, old_len);
+
+        if (old_crc32 != new_crc32)
+            goto ERR;
+
+        /*跳过头部，指向数据区。*/
         dst_p->pptrs[0] += 8;
-        dst_p->sizes[0] -= 8;
+        dst_p->sizes[0] = old_len;
     }
 
     abcdk_object_unref(&src_p);
