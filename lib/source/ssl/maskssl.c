@@ -445,9 +445,11 @@ static abcdk_tree_t *_abcdk_maskssl_aes_send_update_pack(abcdk_maskssl_t *ctx, c
     abcdk_tree_t *dst_p = NULL;
     abcdk_object_t *src_p = NULL;
 
+    assert(in_len <= 0x0000FFFF);
+
     /*
      * |Length  |Data    |
-     * |4 Bytes |N Bytes |
+     * |2 Bytes |N Bytes |
      *
      * Length：密文长度。注：不包含自身。
      * DATA: 密文数据。
@@ -457,12 +459,12 @@ static abcdk_tree_t *_abcdk_maskssl_aes_send_update_pack(abcdk_maskssl_t *ctx, c
     if (!src_p)
         goto ERR;
 
-    dst_p = abcdk_tree_alloc3(4 + src_p->sizes[0]);
+    dst_p = abcdk_tree_alloc3(2 + src_p->sizes[0]);
     if (!dst_p)
         goto ERR;
 
-    abcdk_bloom_write_number(dst_p->obj->pptrs[0], dst_p->obj->sizes[0], 0, 32, src_p->sizes[0]);
-    memcpy(dst_p->obj->pptrs[0] + 4, src_p->pptrs[0], src_p->sizes[0]);
+    abcdk_bloom_write_number(dst_p->obj->pptrs[0], dst_p->obj->sizes[0], 0, 16, src_p->sizes[0]);
+    memcpy(dst_p->obj->pptrs[0] + 2, src_p->pptrs[0], src_p->sizes[0]);
 
     abcdk_object_unref(&src_p);
     return dst_p;
@@ -602,9 +604,6 @@ static ssize_t _abcdk_maskssl_aes_read(abcdk_maskssl_t *ctx, void *data, size_t 
 
 NEXT_LOOP:
 
-    /*清零。*/
-    unpack_remain = unpack_pos = 0;
-
     /*如果数据存在盐则先读取盐。*/
     if (ctx->recv_salt_len < ctx->salt_len)
     {
@@ -628,6 +627,9 @@ NEXT_LOOP:
 
 MORE_DATA:
 
+    /*清零。*/
+    unpack_remain = unpack_pos = 0;
+    
     /*收。*/
     rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
     if (rlen < 0)
