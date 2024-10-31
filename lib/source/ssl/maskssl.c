@@ -602,6 +602,9 @@ static ssize_t _abcdk_maskssl_aes_read(abcdk_maskssl_t *ctx, void *data, size_t 
 
 NEXT_LOOP:
 
+    /*清零。*/
+    unpack_remain = unpack_pos = 0;
+
     /*如果数据存在盐则先读取盐。*/
     if (ctx->recv_salt_len < ctx->salt_len)
     {
