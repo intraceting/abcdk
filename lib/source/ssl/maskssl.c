@@ -387,12 +387,12 @@ static ssize_t _abcdk_maskssl_enigma_read(abcdk_maskssl_t *ctx, void *data, size
 {
     char salt[256 + 1] = {0};
     abcdk_object_t *de_data = NULL;
-    ssize_t rlen = 0, alen = 0;
+    ssize_t rlen = 0;
     int chk;
 
 NEXT_LOOP:
 
-    /*如果数据存在盐则先读取盐。*/
+    /*先读取盐。*/
     if (ctx->recv_salt_len < ctx->salt_len)
     {
         rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(salt, ctx->recv_salt_len), ctx->salt_len - ctx->recv_salt_len);
@@ -403,13 +403,9 @@ NEXT_LOOP:
     /*盐读取完成后，才是真实数据。*/
     if (ctx->salt_len == ctx->recv_salt_len)
     {
-        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(data, alen), size - alen);
+        rlen = abcdk_stream_read(ctx->recv_queue, data, size);
         if (rlen > 0)
             return rlen;
-            //alen += rlen;
-
-        if (alen >= size)
-            return alen;
     }
 
     assert(ctx->recv_fd >= 0);
@@ -417,9 +413,9 @@ NEXT_LOOP:
     /*收。*/
     rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
     if (rlen < 0)
-        return (alen > 0 ? alen : -1); // 优先返回已接收的数据长度。
+        return -1;
     else if (rlen == 0)
-        return (alen > 0 ? alen : 0); // 优先返回已接收的数据长度。
+        return 0;
 
     de_data = abcdk_object_alloc2(rlen);
     if (!de_data)
@@ -599,7 +595,7 @@ static ssize_t _abcdk_maskssl_aes_read(abcdk_maskssl_t *ctx, void *data, size_t 
 {
     char salt[256 + 1] = {0};
     abcdk_object_t *de_data = NULL;
-    ssize_t rlen = 0, alen = 0;
+    ssize_t rlen = 0;
     size_t unpack_remain = 0,unpack_pos = 0;
     int chk;
 
@@ -616,12 +612,9 @@ NEXT_LOOP:
     /*盐读取完成后，才是真实数据。*/
     if (ctx->salt_len == ctx->recv_salt_len)
     {
-        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(data, alen), size - alen);
+        rlen = abcdk_stream_read(ctx->recv_queue, data, size);
         if (rlen > 0)
-            alen += rlen;
-
-        if (alen >= size)
-            return alen;
+            return rlen;
     }
 
     assert(ctx->recv_fd >= 0);
@@ -634,9 +627,9 @@ MORE_DATA:
     /*收。*/
     rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
     if (rlen < 0)
-        return (alen > 0 ? alen : -1); // 优先返回已接收的数据长度。
+        return -1; 
     else if (rlen == 0)
-        return (alen > 0 ? alen : 0); // 优先返回已接收的数据长度。
+        return 0;
 
 UNPACK_NEXT:
 
