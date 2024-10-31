@@ -1355,7 +1355,7 @@ ERR:
     return -1;
 }
 
-static void _abcdk_stcp_input_hook_v1(abcdk_stcp_node_t *node)
+static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
 {
     ssize_t rlen = 0, pos = 0;
     size_t remain = 0;
@@ -1403,55 +1403,7 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-static void _abcdk_stcp_input_hook_v2(abcdk_stcp_node_t *node)
-{
-    ssize_t rlen = 0, pos = 0;
-    size_t remain = 0;
-    int chk = 0;
-
-    /*当未注册输入数据到达通知回调函数时，直接发事件通知。*/
-    if (!node->cfg.input_cb)
-    {
-        node->cfg.event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
-        return;
-    }
-
-    if (!node->in_buffer)
-    {
-        node->in_buffer = abcdk_object_alloc2(64 * 1024);
-        if (!node->in_buffer)
-        {
-            abcdk_stcp_set_timeout(node, -1);
-            return;
-        }
-    }
-
-    /*收。*/
-    rlen = abcdk_stcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
-    if (rlen > 0)
-    {
-        /*缓存中可能存在多个请求，因此处理所有请求才能退出循环。*/
-        while (pos < rlen)
-        {
-            node->cfg.input_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
-            pos += (rlen - pos) - remain;
-        }
-    }
-
-    abcdk_stcp_recv_watch(node);
-    return;
-}
-
-static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
-{
-#if 1
-    _abcdk_stcp_input_hook_v1(node);
-#else 
-    _abcdk_stcp_input_hook_v2(node);
-#endif 
-}
-
-static void _abcdk_stcp_output_hook_v1(abcdk_stcp_node_t *node)
+static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 {
     abcdk_tree_t *p;
     ssize_t slen = 0;
@@ -1505,63 +1457,6 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-static void _abcdk_stcp_output_hook_v2(abcdk_stcp_node_t *node)
-{
-    abcdk_tree_t *p;
-    ssize_t slen = 0;
-    int chk;
-
-NEXT_MSG:
-
-    /*从队列头部开始发送。*/
-    abcdk_spinlock_lock(node->out_locker, 1);
-    p = abcdk_tree_child(node->out_queue, 1);
-    abcdk_spinlock_unlock(node->out_locker);
-
-    /*通知应用层，发送队列空闲。*/
-    if (!p)
-    {
-        node->cfg.event_cb(node, ABCDK_STCP_EVENT_OUTPUT, &chk);
-        return;
-    }
-
-    /*
-     * 发。
-     * 
-     * 注1：能发多少发多少。
-     * 注2：重发时，数据的参数不能改变(指针和长度)。
-     */
-    slen = abcdk_stcp_send(node, ABCDK_PTR2VPTR(p->obj->pptrs[0], node->out_pos), p->obj->sizes[0] - node->out_pos);
-    if (slen > 0)
-        node->out_pos += slen;
-
-    if (node->out_pos >= p->obj->sizes[0])
-    { 
-        /*代码走到这里，表示当前节点的数据已经全部发出，因此游标归零。*/
-        node->out_pos = 0;
-
-        /*移除节点。*/
-        abcdk_spinlock_lock(node->out_locker, 1);
-        abcdk_tree_unlink(p);
-        node->out_len -= 1;
-        abcdk_spinlock_unlock(node->out_locker);
-
-        /*删除节点。*/
-        abcdk_tree_free(&p);
-    }
-
-    abcdk_stcp_send_watch(node);
-    return;
-}
-
-static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
-{
-#if 1
-    _abcdk_stcp_output_hook_v1(node);
-#else 
-    _abcdk_stcp_output_hook_v2(node);
-#endif 
-}
 
 int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
 {
