@@ -40,7 +40,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
 
     int a = *((int *)data);
 
-   // abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
+    abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
 
     if (a)
     {
