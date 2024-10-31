@@ -60,7 +60,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
     abcdk_trace_set_log(abcdk_logger_from_trace, log_ctx);
 
-    abcdk_srpc_t *srpc_ctx = abcdk_srpc_create(2);
+    abcdk_srpc_t *srpc_ctx = abcdk_srpc_create(4);
 
     int role = abcdk_option_get_int(args, "--role", 0, 1);
 
