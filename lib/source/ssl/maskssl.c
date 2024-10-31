@@ -567,7 +567,7 @@ static ssize_t _abcdk_maskssl_aes_write(abcdk_maskssl_t *ctx, const void *data, 
     while (alen < size)
     {
         /*分块发送。*/
-        slen = _abcdk_maskssl_enigma_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535-100)));
+        slen = _abcdk_maskssl_aes_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535-100)));
         if (slen < 0)
             return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
         else if (slen == 0)
