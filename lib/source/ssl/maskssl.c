@@ -637,14 +637,14 @@ MORE_DATA:
     else if (rlen == 0)
         return (alen > 0 ? alen : 0); // 优先返回已接收的数据长度。
 
+UNPACK_NEXT:
+
     if(!ctx->recv_pack)
     {
         ctx->recv_pack = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_SMB_HALF,65535,NULL);
         if(!ctx->recv_pack)
             return 0; // 内存不足时，关闭当前句柄。
     }
-
-UNPACK_NEXT:
 
     /*解包。*/
     chk = abcdk_receiver_append(ctx->recv_pack, ctx->recv_buf->pptrs[0] + unpack_pos, rlen - unpack_pos, &unpack_remain);
