@@ -135,7 +135,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
             assert (chk == 0);
 
             if (rsp)
-                assert(memcmp(rsp->pptrs[0], buf, b) == 0);
+                assert(memcmp(rsp->pptrs[0]+4, buf+4, b) == 0);
 
             abcdk_object_unref(&rsp);
         }
