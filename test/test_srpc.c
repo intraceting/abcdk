@@ -133,8 +133,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             abcdk_object_t *rsp = NULL;
 
-            int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
-          //  int chk = abcdk_srpc_request(session_p, buf, b,NULL);
+          //  int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
+            int chk = abcdk_srpc_request(session_p, buf, b,NULL);
             assert (chk == 0);
 
             if (rsp)
