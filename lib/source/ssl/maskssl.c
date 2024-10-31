@@ -485,10 +485,6 @@ static ssize_t _abcdk_maskssl_aes_write_fragment(abcdk_maskssl_t *ctx, const voi
     /*发送前先撒盐。*/
     if (ctx->send_salt_len != ctx->salt_len)
     {
-        en_data = abcdk_tree_alloc3(ctx->salt_len);
-        if (!en_data)
-            return 0; // 内存不足时，关闭当前句柄。
-
         /*使用单字节的所有字符生成盐。*/
         for(int i = 0;i<ctx->salt_len;i++)
             salt[i] = i;
@@ -496,6 +492,11 @@ static ssize_t _abcdk_maskssl_aes_write_fragment(abcdk_maskssl_t *ctx, const voi
         /*使用洗牌算法把盐搅拌一下。*/
         salt_seed = abcdk_rand_q();
         abcdk_rand_shuffle_array(salt,ctx->salt_len,&salt_seed,1);
+
+        /*加密。*/
+        en_data = _abcdk_maskssl_aes_send_update_pack(ctx,salt,ctx->salt_len);
+        if (!en_data)
+            return 0; // 内存不足时，关闭当前句柄。
 
         /*追加到发送队列末尾。*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
