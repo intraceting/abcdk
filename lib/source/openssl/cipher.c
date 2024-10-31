@@ -643,7 +643,7 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
      * |Length  |CRC32   |Data    |
      * |4 Bytes |4 Bytes |N Bytes |
      *
-     * Length：明文长度。注：不包含自身。
+     * Length：明文长度。
      * CRC32：校验码。
      * Data: 明文数据。
      */
@@ -672,7 +672,7 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
             goto ERR;
 
         old_len = (uint32_t)abcdk_bloom_read_number(dst_p->pptrs[0], dst_p->sizes[0], 0, 32);
-        
+
         if (old_len > dst_p->sizes[0] - 8)
             goto ERR;
 
