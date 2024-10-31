@@ -204,17 +204,17 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--ske-key-cipher < TYPE >\n");
     fprintf(stderr, "\t\t共享密钥算法。默认：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
 
-    fprintf(stderr, "\n\t\tEnigma：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
-    fprintf(stderr, "\t\tAES-256-GCM：%d\n",ABCDK_MASKSSL_SCHEME_AES_256_GCM);
-    fprintf(stderr, "\t\tAES-256-CBC：%d\n",ABCDK_MASKSSL_SCHEME_AES_256_CBC);
+    fprintf(stderr, "\n\t\t%d：Enigma\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
+    fprintf(stderr, "\t\t%d：AES-256-GCM\n",ABCDK_MASKSSL_SCHEME_AES_256_GCM);
+    fprintf(stderr, "\t\t%d：AES-256-CBC\n",ABCDK_MASKSSL_SCHEME_AES_256_CBC);
 
     fprintf(stderr, "\n\t--uplink < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");
 
     fprintf(stderr, "\n\t\traw://DOMAIN:PORT\n");
     fprintf(stderr, "\t\tpki://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\tenigma://DOMAIN:PORT\n");
-    fprintf(stderr, "\t\tpki-enigma://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tske://DOMAIN:PORT\n");
+    fprintf(stderr, "\t\tpkis://DOMAIN:PORT\n");
 }
 
 static void _abcdk_proxy_node_destroy_cb(void *userdata)
