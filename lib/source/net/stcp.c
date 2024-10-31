@@ -411,9 +411,9 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     while (rsize_all < size)
     {
-        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             rsize = SSL_read(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
-        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
             rsize = abcdk_maskssl_read(node->maskssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
         else
             rsize = read(node->fd, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
@@ -456,9 +456,9 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     while (wsize_all < size)
     {
-        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             wsize = SSL_write(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
-        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+        else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
             wsize = abcdk_maskssl_write(node->maskssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
         else
             wsize = write(node->fd, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
@@ -737,10 +737,10 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
         return -22;
 #endif // HEADER_SSL_H
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
     {
         if (!node->maskssl_ssl)
-            node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
+            node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
         else
             return -16;
 
@@ -752,11 +752,11 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 
         abcdk_maskssl_set_fd(node->maskssl_ssl, node->fd, 0);
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
+            node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
         else
             return -16;
 
@@ -818,9 +818,9 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
             if (chk != 0)
                 goto ERR;
 
-            if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
+            if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
                 node->status = ABCDK_STCP_STATUS_SYNC_PKI;
-            else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+            else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
                 node->status = ABCDK_STCP_STATUS_STABLE;
             else
                 node->status = ABCDK_STCP_STATUS_STABLE;
@@ -1084,9 +1084,9 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
         return -22;
 #endif // HEADER_SSL_H
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
     {
-        node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
+        node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
         if (!node->maskssl_ssl)
         {
             abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建MaskSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
@@ -1096,10 +1096,10 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
         /*仅用于验证。*/
         abcdk_maskssl_destroy(&node->maskssl_ssl);
     }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.sk_key_cipher, node->cfg.sk_key_file);
+        node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
         if (!node->openssl_bio)
         {
             abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
@@ -1147,10 +1147,10 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
 {
     /*修复不支持的配置和默认值。*/
 
-    node->cfg.sk_key_file = (node->cfg.sk_key_file ? node->cfg.sk_key_file : "");
+    node->cfg.ske_key_file = (node->cfg.ske_key_file ? node->cfg.ske_key_file : "");
 
-    if(node->cfg.sk_key_cipher == 0)
-        node->cfg.sk_key_cipher = ABCDK_MASKSSL_SCHEME_ENIGMA;
+    if(node->cfg.ske_key_cipher == 0)
+        node->cfg.ske_key_cipher = ABCDK_MASKSSL_SCHEME_ENIGMA;
 
     if (node->cfg.out_hook_min_th <= 0)
         node->cfg.out_hook_min_th = 200;

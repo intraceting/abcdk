@@ -41,21 +41,21 @@ typedef struct _abcdk_stcp_node abcdk_stcp_node_t;
 /**安全方案。*/
 typedef enum _abcdk_stcp_ssl_scheme
 {
-    /**原始。*/
+    /**RAW.*/
     ABCDK_STCP_SSL_SCHEME_RAW = 0,
 #define ABCDK_STCP_SSL_SCHEME_RAW   ABCDK_STCP_SSL_SCHEME_RAW
 
-    /**PKI.*/
+    /**PKI(Public Key Infrastructure).*/
     ABCDK_STCP_SSL_SCHEME_PKI = 1,
 #define ABCDK_STCP_SSL_SCHEME_PKI   ABCDK_STCP_SSL_SCHEME_PKI
 
-    /**Shared key.*/
-    ABCDK_STCP_SSL_SCHEME_SK = 2,
-#define ABCDK_STCP_SSL_SCHEME_SK   ABCDK_STCP_SSL_SCHEME_SK
+    /**SKE(Shared key encryption).*/
+    ABCDK_STCP_SSL_SCHEME_SKE = 2,
+#define ABCDK_STCP_SSL_SCHEME_SKE   ABCDK_STCP_SSL_SCHEME_SKE
 
-    /*PKI is based on SK.*/
-    ABCDK_STCP_SSL_SCHEME_PKI_ON_SK = 3
-#define ABCDK_STCP_SSL_SCHEME_PKI_ON_SK   ABCDK_STCP_SSL_SCHEME_PKI_ON_SK
+    /**PKI is based on SKE.*/
+    ABCDK_STCP_SSL_SCHEME_PKIS = 3
+#define ABCDK_STCP_SSL_SCHEME_PKIS   ABCDK_STCP_SSL_SCHEME_PKIS
 }abcdk_stcp_ssl_scheme_t;
 
 /**通知事件。*/
@@ -151,10 +151,10 @@ typedef struct _abcdk_stcp_config
     const char *pki_cipher_list;
 
     /**共享密钥。*/
-    const char *sk_key_file;
+    const char *ske_key_file;
     
     /**密钥算法。*/
-    int sk_key_cipher;
+    int ske_key_cipher;
 
     /**
      * 输出队列丢包最小阈值。 

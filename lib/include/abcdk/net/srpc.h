@@ -48,10 +48,10 @@ typedef struct _abcdk_srpc_config
     int pki_check_cert;
 
     /*共享密钥。*/
-    const char *sk_key_file;
+    const char *ske_key_file;
 
     /**密钥算法。*/
-    int sk_key_cipher;
+    int ske_key_cipher;
     
     /**
      * 会话准备通知回调函数。

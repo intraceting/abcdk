@@ -30,11 +30,11 @@ typedef struct _abcdk_proxy
     /*PKI监听地址。*/
     const char *listen_pki;
 
-    /*ENIGMA监听地址。*/
-    const char *listen_enigma;
+    /*SKE监听地址。*/
+    const char *listen_ske;
 
-    /*PKIonENIGMA监听地址。*/
-    const char *listen_pki_enigma;
+    /*PKIS监听地址。*/
+    const char *listen_pkis;
 
     /*CA证书。*/
     const char *pki_ca_file;
@@ -52,10 +52,10 @@ typedef struct _abcdk_proxy
     int pki_check_cert;
 
     /*共享密钥。*/
-    const char *sk_key_file;
+    const char *ske_key_file;
 
     /**密钥算法。*/
-    int sk_key_cipher;
+    int ske_key_cipher;
 
     /*上级地址。*/
     const char *uplink;
@@ -69,11 +69,11 @@ typedef struct _abcdk_proxy
     /*PKI监听对象。*/
     abcdk_stcp_node_t *listen_pki_p;
 
-    /*ENIGMA监听对象。*/
-    abcdk_stcp_node_t *listen_enigma_p;
+    /*SKE监听对象。*/
+    abcdk_stcp_node_t *listen_ske_p;
 
-    /*PKIonENIGMA监听对象。*/
-    abcdk_stcp_node_t *listen_pki_enigma_p;
+    /*PKIS监听对象。*/
+    abcdk_stcp_node_t *listen_pkis_p;
 
 
 } abcdk_proxy_t;
@@ -160,12 +160,12 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\tPKI监听地址。\n");
 #endif // HEADER_SSL_H
 
-    fprintf(stderr, "\n\t--listen-enigma < ADDR >\n");
-    fprintf(stderr, "\t\tENIGMA监听地址。\n");
+    fprintf(stderr, "\n\t--listen-ske < ADDR >\n");
+    fprintf(stderr, "\t\tSKE监听地址。\n");
 
 #ifdef HEADER_SSL_H
-    fprintf(stderr, "\n\t--listen-pki-enigma < ADDR >\n");
-    fprintf(stderr, "\t\tPKIonENIGMA监听地址。\n");
+    fprintf(stderr, "\n\t--listen-pkis < ADDR >\n");
+    fprintf(stderr, "\t\tPKIS监听地址。\n");
 #endif // HEADER_SSL_H
 
     fprintf(stderr, "\n\t\t例：ipv4://IP:PORT\n");
@@ -198,10 +198,10 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t1：是\n");
 #endif // HEADER_SSL_H
 
-    fprintf(stderr, "\n\t--sk-key-file < FILE >\n");
+    fprintf(stderr, "\n\t--ske-key-file < FILE >\n");
     fprintf(stderr, "\t\t共享密钥文件。\n");
 
-    fprintf(stderr, "\n\t--sk-key-cipher < TYPE >\n");
+    fprintf(stderr, "\n\t--ske-key-cipher < TYPE >\n");
     fprintf(stderr, "\t\t共享密钥算法。默认：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
 
     fprintf(stderr, "\n\t\tEnigma：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
@@ -558,8 +558,8 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
         asio_cfg.pki_cert_file = node_ctx_p->father->pki_cert_file;
         asio_cfg.pki_key_file = node_ctx_p->father->pki_key_file;
         asio_cfg.pki_check_cert = node_ctx_p->father->pki_check_cert;
-        asio_cfg.sk_key_file = node_ctx_p->father->sk_key_file;
-        asio_cfg.sk_key_cipher = node_ctx_p->father->sk_key_cipher;
+        asio_cfg.ske_key_file = node_ctx_p->father->ske_key_file;
+        asio_cfg.ske_key_cipher = node_ctx_p->father->ske_key_cipher;
 
         node_ctx_p->method = abcdk_object_copyfrom("UPLINK",6);
 
@@ -601,11 +601,11 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
         {
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4890);
         }
-        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "sk", 0) == 0)
+        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "ske", 0) == 0)
         {
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4891);
         }
-        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki-sk", 0) == 0)
+        else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pkis", 0) == 0)
         {
             uplink_addr.addr4.sin_port = abcdk_endian_h_to_b16(4892);
         }
@@ -618,13 +618,13 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
     {
         asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI;
     }
-    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "sk", 0) == 0)
+    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "ske", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_SK;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_SKE;
     }
-    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pki-sk", 0) == 0)
+    else if (abcdk_strcmp(node_ctx_p->up_link->pstrs[ABCDK_URL_SCHEME], "pkis", 0) == 0)
     {
-        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI_ON_SK;
+        asio_cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKIS;
     }
 
     asio_cfg.prepare_cb = _abcdk_proxy_prepare_cb;
@@ -801,10 +801,10 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
         listen_p = ctx->listen_raw;
     else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
         listen_p = ctx->listen_pki;
-    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
-        listen_p = ctx->listen_enigma;
-    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
-        listen_p = ctx->listen_pki_enigma;
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
+        listen_p = ctx->listen_ske;
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
+        listen_p = ctx->listen_pkis;
 
     /*未启用。*/
     if(!listen_p)
@@ -821,10 +821,10 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
         node_p = ctx->listen_raw_p = _abcdk_proxy_node_alloc(ctx);
     else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
         node_p = ctx->listen_pki_p = _abcdk_proxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_SK)
-        node_p = ctx->listen_enigma_p = _abcdk_proxy_node_alloc(ctx);
-    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI_ON_SK)
-        node_p = ctx->listen_pki_enigma_p = _abcdk_proxy_node_alloc(ctx);
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
+        node_p = ctx->listen_ske_p = _abcdk_proxy_node_alloc(ctx);
+    else if (ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
+        node_p = ctx->listen_pkis_p = _abcdk_proxy_node_alloc(ctx);
 
     if (!node_p)
         return -2;
@@ -837,8 +837,8 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
     asio_cfg.pki_cert_file = ctx->pki_cert_file;
     asio_cfg.pki_key_file = ctx->pki_key_file;
     asio_cfg.pki_check_cert = ctx->pki_check_cert;
-    asio_cfg.sk_key_file = ctx->sk_key_file;
-    asio_cfg.sk_key_cipher = ctx->sk_key_cipher;
+    asio_cfg.ske_key_file = ctx->ske_key_file;
+    asio_cfg.ske_key_cipher = ctx->ske_key_cipher;
 
     asio_cfg.prepare_cb = _abcdk_proxy_prepare_cb;
     asio_cfg.event_cb = _abcdk_proxy_event_cb;
@@ -865,8 +865,8 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
 
     ctx->listen_raw = abcdk_option_get(ctx->args, "--listen-raw", 0, NULL);
     ctx->listen_pki = abcdk_option_get(ctx->args, "--listen-pki", 0, NULL);
-    ctx->listen_enigma = abcdk_option_get(ctx->args, "--listen-enigma", 0, NULL);
-    ctx->listen_pki_enigma = abcdk_option_get(ctx->args, "--listen-pki-enigma", 0, NULL);
+    ctx->listen_ske = abcdk_option_get(ctx->args, "--listen-ske", 0, NULL);
+    ctx->listen_pkis = abcdk_option_get(ctx->args, "--listen-pkis", 0, NULL);
 
     ctx->pki_ca_file = abcdk_option_get(ctx->args, "--pki-ca-file", 0, NULL);
     ctx->pki_ca_path = abcdk_option_get(ctx->args, "--pki-ca-path", 0, NULL);
@@ -874,8 +874,8 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     ctx->pki_key_file = abcdk_option_get(ctx->args, "--pki-key-file", 0, NULL);
     ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
 
-    ctx->sk_key_file = abcdk_option_get(ctx->args, "--sk-key-file", 0, "");
-    ctx->sk_key_cipher = abcdk_option_get_int(ctx->args, "--sk-key-cipher", 0, 1);
+    ctx->ske_key_file = abcdk_option_get(ctx->args, "--ske-key-file", 0, "");
+    ctx->ske_key_cipher = abcdk_option_get_int(ctx->args, "--ske-key-cipher", 0, 1);
     
     ctx->uplink = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
     
@@ -901,11 +901,11 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     if (chk != 0)
         goto END;
 
-    chk = _abcdk_proxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_SK);
+    chk = _abcdk_proxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_SKE);
     if (chk != 0)
         goto END;
 
-    chk = _abcdk_proxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_PKI_ON_SK);
+    chk = _abcdk_proxy_start_listen(ctx, ABCDK_STCP_SSL_SCHEME_PKIS);
     if (chk != 0)
         goto END;
 
@@ -916,8 +916,8 @@ END:
 
     abcdk_stcp_unref(&ctx->listen_raw_p);
     abcdk_stcp_unref(&ctx->listen_pki_p);
-    abcdk_stcp_unref(&ctx->listen_enigma_p);
-    abcdk_stcp_unref(&ctx->listen_pki_enigma_p);
+    abcdk_stcp_unref(&ctx->listen_ske_p);
+    abcdk_stcp_unref(&ctx->listen_pkis_p);
     abcdk_stcp_stop(&ctx->io_ctx);
     
     abcdk_trace_output(LOG_INFO, "停止。");
