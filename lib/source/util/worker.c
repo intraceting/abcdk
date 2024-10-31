@@ -12,8 +12,8 @@ struct _abcdk_worker
     /**配置。*/
     abcdk_worker_config_t cfg;
 
-    /**退出标志。0：运行，1：停止。*/
-    int exit_flag;
+    /**状态。0：运行，1：停止，2：忙碌。*/
+    volatile int status;
 
     /**线程数组。*/
     abcdk_thread_t *threads_ctx;
@@ -21,6 +21,8 @@ struct _abcdk_worker
     /**项目队列。*/
     abcdk_queue_t *queue_ctx;
 
+    /**队列标志。0：运行，1：停止。*/
+    int queue_flag;
 
 }; // abcdk_worker_t;
 
@@ -81,7 +83,7 @@ NEXT:
             break;
 
         /*检查退出标志。*/
-        if(ctx->exit_flag != 0)
+        if(ctx->queue_flag != 0)
             break;
         else 
             abcdk_queue_wait(ctx->queue_ctx,-1);
@@ -134,9 +136,13 @@ void abcdk_worker_stop(abcdk_worker_t **ctx)
 
     ctx_p = *ctx;
 
+    /*等待其它接口完成操作。*/
+    while(!abcdk_atomic_compare_and_swap(&ctx_p->status,0,1))
+        usleep(100*1000);
+
     /*通知退出。*/
     abcdk_queue_lock(ctx_p->queue_ctx);
-    ctx_p->exit_flag = 1;
+    ctx_p->queue_flag = 1;
     abcdk_queue_signal(ctx_p->queue_ctx,1);
     abcdk_queue_unlock(ctx_p->queue_ctx);
 
@@ -183,6 +189,8 @@ abcdk_worker_t *abcdk_worker_start(abcdk_worker_config_t *cfg)
     if(!ctx->queue_ctx)
         goto ERR;
 
+    ctx->queue_flag = 0;
+
     chk = _abcdk_worker_start(ctx);
     if(chk != 0)
         goto ERR;
@@ -195,12 +203,10 @@ ERR:
     return NULL;
 }
 
-int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
+static int _abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
 {
     abcdk_worker_item_t *item_p;
     int chk;
-
-    assert(ctx != NULL);
 
     item_p = _abcdk_worker_item_alloc();
     if (!item_p)
@@ -218,6 +224,25 @@ int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
     abcdk_queue_signal(ctx->queue_ctx,0);
 
     abcdk_queue_unlock(ctx->queue_ctx);
+
+    return (chk == 0?0: -1);
+}
+
+int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
+{
+    abcdk_worker_item_t *item_p;
+    int chk;
+
+    assert(ctx != NULL);
+
+    /*标记忙碌状态。注：非运行状态，禁止调用。*/
+    if(!abcdk_atomic_compare_and_swap(&ctx->status,0,2))
+        return -1;
+
+    chk = _abcdk_worker_dispatch(ctx,event,item);
+
+    /*恢复运行状态。*/
+    assert(abcdk_atomic_compare_and_swap(&ctx->status,2,0));
 
     return (chk == 0?0: -1);
 }
