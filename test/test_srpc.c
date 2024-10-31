@@ -125,8 +125,12 @@ int abcdk_test_srpc(abcdk_option_t *args)
            //     *a = 0;
 
             int b = ((uint64_t)abcdk_rand_number()) % 64000 + 5;
-
+            
+#if HAVE_OPENSSL
+            RAND_bytes(buf + 4, b - 4);
+#else 
             abcdk_rand_string(buf + 4, b - 4, 0);
+#endif 
 
             abcdk_object_t *rsp = NULL;
 
