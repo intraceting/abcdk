@@ -1267,6 +1267,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
 
 ERR:
 
+    node_p->status = 0;
     abcdk_stcp_unref(&node_p);
 
     return -1;
@@ -1349,6 +1350,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
 
 ERR:
 
+    node_p->status = 0;
     abcdk_stcp_unref(&node_p);
 
     return -1;
