@@ -68,7 +68,7 @@ char *abcdk_rand_bytes(char *buf, size_t size, int type)
     static char dict_digit[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
     assert(buf != NULL && size > 0);
-    assert(type >= 0 && type <= 4);
+    assert(type >= 0 && type <= 5);
 
     for (int i = 0; i < size; i++)
     {
