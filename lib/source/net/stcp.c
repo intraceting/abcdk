@@ -550,9 +550,6 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     /*记住来源。*/
     node->from_listen = abcdk_stcp_refer(listen);
 
-    /*复制通讯环境指针。*/
-    node->ctx = listen->ctx;
-
     /*复制监听环境的配置。*/
     node->cfg = listen->cfg;
 
