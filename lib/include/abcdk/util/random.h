@@ -25,11 +25,11 @@ int64_t abcdk_rand_q();
 #define abcdk_rand_number abcdk_rand_q
 
 /**
- * 产生随机字符串。
+ * 产生随机字符。
  * 
- * @param [in] type 类型。0 所有可见字符，1 所有字母和数字，2 所在大写字母，3 所有小字字母，4 所有数字。
+ * @param [in] type 类型。0 所有可见字符，1 所有字母和数字，2 所在大写字母，3 所有小字字母，4 所有数字，5 所有字符。
 */
-char *abcdk_rand_string(char *buf,size_t size,int type);
+char *abcdk_rand_bytes(char *buf,size_t size,int type);
 
 /** 
  * 洗牌算法元素交换回调函数。
@@ -56,6 +56,7 @@ void abcdk_rand_shuffle(uint64_t *seed,size_t size,abcdk_rand_shuffle_swap_cb sw
  * 
 */
 void *abcdk_rand_shuffle_array(void *buf,size_t count,uint64_t *seed,int type);
+
 
 __END_DECLS
 

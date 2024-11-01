@@ -40,7 +40,7 @@ int64_t abcdk_rand_q()
     return num;
 }
 
-char *abcdk_rand_string(char *buf, size_t size, int type)
+char *abcdk_rand_bytes(char *buf, size_t size, int type)
 {
     static char dict_printable[] = {
         ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
@@ -76,14 +76,16 @@ char *abcdk_rand_string(char *buf, size_t size, int type)
 
         if (0 == type)
             buf[i] = dict_printable[rand_num % sizeof(dict_printable)];
-        else if( 1 == type)
+        else if (1 == type)
             buf[i] = dict_alnum[rand_num % sizeof(dict_alnum)];
-        else if( 2 == type)
+        else if (2 == type)
             buf[i] = dict_uppercase[rand_num % sizeof(dict_uppercase)];
-        else if( 3 == type)
+        else if (3 == type)
             buf[i] = dict_lowercase[rand_num % sizeof(dict_lowercase)];
-        else if( 4 == type)
+        else if (4 == type)
             buf[i] = dict_digit[rand_num % sizeof(dict_digit)];
+        else if (5 == type)
+            buf[i] = (int8_t)(rand_num % 256);
     }
 
     return buf;

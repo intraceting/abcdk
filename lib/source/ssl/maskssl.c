@@ -46,10 +46,10 @@ struct _abcdk_maskssl
     abcdk_receiver_t *recv_pack;
 
     /**盐的长度。*/
-    size_t salt_len;
+    int salt_len;
 
-    /**已发送的盐的长度。*/
-    size_t send_salt_len;
+    /**是否已经撒盐。*/
+    int sprinkle_salt_ok;
 
     /**已接收的盐的长度。*/
     size_t recv_salt_len;
@@ -90,9 +90,6 @@ static int _abcdk_maskssl_enigma_init(abcdk_maskssl_t *ctx, const uint8_t *key, 
 {
     int chk;
 
-    /*生成盐的长度。*/
-    ctx->salt_len = abcdk_hash_bkdr(key, size) % 256 + 1;
-
     ctx->enigma_send_ctx = abcdk_enigma_create_random_sha256(key, size, 4,256);
     ctx->enigma_recv_ctx = abcdk_enigma_create_random_sha256(key, size, 4,256);
 
@@ -111,12 +108,15 @@ static int _abcdk_maskssl_enigma_init(abcdk_maskssl_t *ctx, const uint8_t *key, 
     if (!ctx->recv_buf)
         return -5;
 
+    /*盐的长度。因为加密算法为流式加密，没有传输特征，所以目前仅支持定长的盐。*/
+    ctx->salt_len = 256;
+
     ctx->send_fd = -1;
     ctx->recv_fd = -1;
     ctx->send_pos = 0;
     ctx->send_repeated_p = NULL;
     ctx->send_repeated_l = 0;
-    ctx->send_salt_len = 0;
+    ctx->sprinkle_salt_ok = 0;
     ctx->recv_salt_len = 0;
 
     return 0;
@@ -126,9 +126,6 @@ static int _abcdk_maskssl_enigma_init(abcdk_maskssl_t *ctx, const uint8_t *key, 
 static int _abcdk_maskssl_aes_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t size)
 {
     int chk;
-
-    /*生成盐的长度。*/
-    ctx->salt_len = abcdk_hash_bkdr(key, size) % 256 + 1;
 
     if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_GCM)
     {
@@ -156,12 +153,15 @@ static int _abcdk_maskssl_aes_init(abcdk_maskssl_t *ctx, const uint8_t *key, siz
     if (!ctx->recv_buf)
         return -5;
 
+    /*盐的长度。随机设定，用传输征进行接收和识别。*/
+    ctx->salt_len = abcdk_rand_number() % 256 + 1;
+
     ctx->send_fd = -1;
     ctx->recv_fd = -1;
     ctx->send_pos = 0;
     ctx->send_repeated_p = NULL;
     ctx->send_repeated_l = 0;
-    ctx->send_salt_len = 0;
+    ctx->sprinkle_salt_ok = 0;
     ctx->recv_salt_len = 0;
 
     return 0;
@@ -276,26 +276,20 @@ int abcdk_maskssl_get_fd(abcdk_maskssl_t *ctx, int flag)
 
 static ssize_t _abcdk_maskssl_enigma_write_fragment(abcdk_maskssl_t *ctx, const void *data, size_t size)
 {
-    uint64_t salt_seed = 0;
     char salt[256 + 1] = {0};
     abcdk_tree_t *en_data = NULL;
     abcdk_tree_t *p = NULL;
     ssize_t slen = 0;
 
-    /*发送前先撒盐。*/
-    if (ctx->send_salt_len != ctx->salt_len)
+    /*在真实数据之前，先进行撒盐处理。*/
+    if (!ctx->sprinkle_salt_ok)
     {
+        /*生成盐。*/
+        abcdk_rand_bytes(salt,ctx->salt_len,5);
+
         en_data = abcdk_tree_alloc3(ctx->salt_len);
         if (!en_data)
             return 0; // 内存不足时，关闭当前句柄。
-
-        /*使用单字节的所有字符生成盐。*/
-        for(int i = 0;i<ctx->salt_len;i++)
-            salt[i] = i;
-
-        /*使用洗牌算法把盐搅拌一下。*/
-        salt_seed = abcdk_rand_q();
-        abcdk_rand_shuffle_array(salt,ctx->salt_len,&salt_seed,1);
 
         /*加密。*/
         abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], salt, ctx->salt_len);
@@ -304,7 +298,7 @@ static ssize_t _abcdk_maskssl_enigma_write_fragment(abcdk_maskssl_t *ctx, const 
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
 
         /*撒盐一次即可。*/
-        ctx->send_salt_len = ctx->salt_len;
+        ctx->sprinkle_salt_ok = 1;
     }
 
     /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
@@ -475,22 +469,18 @@ ERR:
 
 static ssize_t _abcdk_maskssl_aes_write_fragment(abcdk_maskssl_t *ctx, const void *data, size_t size)
 {
+    int salt_len = 0;
     uint64_t salt_seed = 0;
     char salt[256 + 1] = {0};
     abcdk_tree_t *en_data = NULL;
     abcdk_tree_t *p = NULL;
     ssize_t slen = 0;
 
-    /*发送前先撒盐。*/
-    if (ctx->send_salt_len != ctx->salt_len)
+    /*在真实数据之前，先进行撒盐处理。*/
+    if (!ctx->sprinkle_salt_ok)
     {
-        /*使用单字节的所有字符生成盐。*/
-        for(int i = 0;i<ctx->salt_len;i++)
-            salt[i] = i;
-
-        /*使用洗牌算法把盐搅拌一下。*/
-        salt_seed = abcdk_rand_q();
-        abcdk_rand_shuffle_array(salt,ctx->salt_len,&salt_seed,1);
+        /*生成盐。*/
+        abcdk_rand_bytes(salt,ctx->salt_len,5);
 
         /*加密。*/
         en_data = _abcdk_maskssl_aes_send_update_pack(ctx,salt,ctx->salt_len);
@@ -501,7 +491,7 @@ static ssize_t _abcdk_maskssl_aes_write_fragment(abcdk_maskssl_t *ctx, const voi
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
 
         /*撒盐一次即可。*/
-        ctx->send_salt_len = ctx->salt_len;
+        ctx->sprinkle_salt_ok = 1;
     }
 
     /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
@@ -601,22 +591,10 @@ static ssize_t _abcdk_maskssl_aes_read(abcdk_maskssl_t *ctx, void *data, size_t 
 
 NEXT_LOOP:
 
-    /*如果数据存在盐则先读取盐。*/
-    if (ctx->recv_salt_len < ctx->salt_len)
-    {
-        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(salt, ctx->recv_salt_len), ctx->salt_len - ctx->recv_salt_len);
-        if (rlen > 0)
-            ctx->recv_salt_len += rlen;
-    }
-
-    /*盐读取完成后，才是真实数据。*/
-    if (ctx->salt_len == ctx->recv_salt_len)
-    {
-        rlen = abcdk_stream_read(ctx->recv_queue, data, size);
-        if (rlen > 0)
-            return rlen;
-    }
-
+    rlen = abcdk_stream_read(ctx->recv_queue, data, size);
+    if (rlen > 0)
+        return rlen;
+    
     assert(ctx->recv_fd >= 0);
 
 MORE_DATA:
@@ -658,12 +636,21 @@ UNPACK_NEXT:
     /*一定要回收。*/
     abcdk_receiver_unref(&ctx->recv_pack);
 
-    /*追加到接收队列。*/
-    chk = abcdk_stream_write(ctx->recv_queue, de_data);
-    if (chk != 0)
+    /*优先读取盐。*/
+    if(ctx->recv_salt_len <= 0)
     {
+        ctx->recv_salt_len = de_data->sizes[0];
         abcdk_object_unref(&de_data);
-        return 0; // 内存不足时，关闭当前句柄。
+    }
+    else 
+    {
+        /*追加到接收队列。*/
+        chk = abcdk_stream_write(ctx->recv_queue, de_data);
+        if (chk != 0)
+        {
+            abcdk_object_unref(&de_data);
+            return 0; // 内存不足时，关闭当前句柄。
+        }
     }
 
     if (unpack_remain > 0)
