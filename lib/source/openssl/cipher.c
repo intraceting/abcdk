@@ -50,7 +50,7 @@ void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
         return;
 
 #if 0
-    abcdk_rand_string(buf,len,0);
+    abcdk_rand_bytes(buf,len,0);
 #elif 1
     RAND_bytes(buf, len);
 #else

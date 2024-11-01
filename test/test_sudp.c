@@ -73,7 +73,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 #ifdef OPENSSL_VERSION_NUMBER
         RAND_bytes(data->pptrs[0]+3,len);
 #else 
-        abcdk_rand_string(data->pptrs[0]+3,len,0);
+        abcdk_rand_bytes(data->pptrs[0]+3,len,0);
 #endif //#ifdef OPENSSL_VERSION_NUMBER
 
         data->sizes[0] = len+3;

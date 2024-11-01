@@ -810,7 +810,7 @@ int abcdk_test_any(abcdk_option_t *args)
     for(int i = 0;i<5;i++)
     {
         char buf[123] = {0};
-        abcdk_rand_string(buf,122,i);
+        abcdk_rand_bytes(buf,122,i);
 
         fprintf(stderr,"[_%s_]\n",buf);
     }
@@ -861,7 +861,7 @@ int abcdk_test_any(abcdk_option_t *args)
             abcdk_object_t *dst_data = abcdk_object_alloc2(d);
             abcdk_object_t *dst_data2 = abcdk_object_alloc2(d);
 #ifndef HAVE_OPENSSL
-            abcdk_rand_string(src_data->pptrs[0], d, 0);
+            abcdk_rand_bytes(src_data->pptrs[0], d, 0);
 #else 
             RAND_bytes(src_data->pptrs[0], d);
 #endif 
@@ -1269,7 +1269,7 @@ int abcdk_test_any(abcdk_option_t *args)
     for (int i = 1; i < 10000; i++)
     {
         //RAND_bytes(tmp->pptrs[0], 65000);
-        abcdk_rand_string(tmp->pptrs[0], 65000,4);
+        abcdk_rand_bytes(tmp->pptrs[0], 65000,4);
 
         abcdk_package_t *src = abcdk_package_create(65535);
 
