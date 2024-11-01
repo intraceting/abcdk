@@ -211,16 +211,11 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
         return;
 
     ctx_p = *ctx;
-
-    /*通知退出。*/
-    abcdk_atomic_store(&ctx_p->exit_flag,1);
-
-    abcdk_worker_stop(&ctx_p->req_list);
-    abcdk_stcp_stop(&ctx_p->io_ctx);
-    abcdk_heap_free(ctx_p);
-
-    /*一定要等STCP对象停下来才能清空指针，否则会因为线程调度问题造成引用空指针。*/
     *ctx = NULL;
+
+    abcdk_stcp_stop(&ctx_p->io_ctx);
+    abcdk_worker_stop(&ctx_p->req_list);
+    abcdk_heap_free(ctx_p);
 }
 
 static void _abcdk_srpc_input_transfer_cb(void *opaque,uint64_t event,void *item);
@@ -235,9 +230,6 @@ abcdk_srpc_t *abcdk_srpc_create(int worker)
         return NULL;
 
     worker = ABCDK_CLAMP(worker,1,worker);
-
-    /*标记“运行”。*/
-    ctx->exit_flag = 0;
 
     ctx->io_ctx = abcdk_stcp_start(worker);
     if (!ctx->io_ctx)

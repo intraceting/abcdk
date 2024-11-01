@@ -138,17 +138,19 @@ static void _abcdk_stcp_ctx_unref(abcdk_stcp_t **ctx)
 
     assert(ctx_p->magic == ABCDK_STCP_MAGIC);
 
+    /*如果创建成功，先通知取消等待，否则工作线程无法终止。*/
+    if (ctx_p->asioex_ctx)
+        abcdk_asioex_abort(ctx_p->asioex_ctx);
+
+    /*线程池必须在对象释放前停止。*/
+    abcdk_worker_stop(&ctx_p->worker_ctx);
+
     if (abcdk_atomic_fetch_and_add(&ctx_p->refcount, -1) != 1)
         return;
 
     assert(ctx_p->refcount == 0);
     ctx_p->magic = 0xcccccccc;
-
-    /*如果创建成功，先通知取消等待，否则工作线程无法终止。*/
-    if (ctx_p->asioex_ctx)
-        abcdk_asioex_abort(ctx_p->asioex_ctx);
-
-    abcdk_worker_stop(&ctx_p->worker_ctx);
+    
     abcdk_asioex_destroy(&ctx_p->asioex_ctx);
     abcdk_heap_free(ctx_p);
 }

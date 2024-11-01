@@ -135,6 +135,7 @@ void abcdk_worker_stop(abcdk_worker_t **ctx)
         return;
 
     ctx_p = *ctx;
+    *ctx = NULL;
 
     /*等待其它接口完成操作。*/
     while(!abcdk_atomic_compare_and_swap(&ctx_p->status,0,1))
@@ -159,9 +160,6 @@ void abcdk_worker_stop(abcdk_worker_t **ctx)
     abcdk_queue_free(&ctx_p->queue_ctx);
 
     abcdk_heap_free(ctx_p);
-
-    /*一定要等WORKER对象停下来才能清空指针，否则会因为线程调度问题造成引用空指针。*/
-    *ctx = NULL;
 }
 
 abcdk_worker_t *abcdk_worker_start(abcdk_worker_config_t *cfg)
