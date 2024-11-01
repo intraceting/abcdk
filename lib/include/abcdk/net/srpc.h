@@ -142,6 +142,9 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx);
 */
 abcdk_srpc_t *abcdk_srpc_create(int worker);
 
+/** 停止。*/
+void abcdk_srpc_stop(abcdk_srpc_t *ctx);
+
 /** 
  * 监听。
  * 

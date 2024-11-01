@@ -889,7 +889,7 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
 
     abcdk_trace_output(LOG_INFO, "启动……");
 
-    ctx->io_ctx = abcdk_stcp_start(sysconf(_SC_NPROCESSORS_ONLN));
+    ctx->io_ctx = abcdk_stcp_create(sysconf(_SC_NPROCESSORS_ONLN));
     if (!ctx->io_ctx)
         goto END;
 
@@ -918,7 +918,8 @@ END:
     abcdk_stcp_unref(&ctx->listen_pki_p);
     abcdk_stcp_unref(&ctx->listen_ske_p);
     abcdk_stcp_unref(&ctx->listen_pkis_p);
-    abcdk_stcp_stop(&ctx->io_ctx);
+    abcdk_stcp_stop(ctx->io_ctx);
+    abcdk_stcp_destroy(&ctx->io_ctx);
     
     abcdk_trace_output(LOG_INFO, "停止。");
 

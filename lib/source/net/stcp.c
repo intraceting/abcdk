@@ -138,19 +138,14 @@ static void _abcdk_stcp_ctx_unref(abcdk_stcp_t **ctx)
 
     assert(ctx_p->magic == ABCDK_STCP_MAGIC);
 
-    /*如果创建成功，先通知取消等待，否则工作线程无法终止。*/
-    if (ctx_p->asioex_ctx)
-        abcdk_asioex_abort(ctx_p->asioex_ctx);
-
-    /*线程池必须在对象释放前停止。*/
-    abcdk_worker_stop(&ctx_p->worker_ctx);
-
     if (abcdk_atomic_fetch_and_add(&ctx_p->refcount, -1) != 1)
         return;
 
     assert(ctx_p->refcount == 0);
     ctx_p->magic = 0xcccccccc;
-    
+
+    ABCDK_ASSERT(ctx_p->worker_ctx == NULL, "销毁前必须先停止。");
+
     abcdk_asioex_destroy(&ctx_p->asioex_ctx);
     abcdk_heap_free(ctx_p);
 }
@@ -996,14 +991,26 @@ static void _abcdk_stcp_worker(void *opaque, uint64_t event, void *item)
     _abcdk_stcp_perform(ctx, event);
 }
 
-void abcdk_stcp_stop(abcdk_stcp_t **ctx)
+void abcdk_stcp_destroy(abcdk_stcp_t **ctx)
 {
     _abcdk_stcp_ctx_unref(ctx);
 }
 
-abcdk_stcp_t *abcdk_stcp_start(int worker)
+abcdk_stcp_t *abcdk_stcp_create(int worker)
 {
     return _abcdk_stcp_ctx_alloc(worker);
+}
+
+void abcdk_stcp_stop(abcdk_stcp_t *ctx)
+{
+    assert(ctx != NULL);
+    
+    /*通知ASIO取消等待。*/
+    if (ctx->asioex_ctx)
+        abcdk_asioex_abort(ctx->asioex_ctx);
+
+    /*线程池销毁。*/
+    abcdk_worker_stop(&ctx->worker_ctx);
 }
 
 #ifdef HEADER_SSL_H

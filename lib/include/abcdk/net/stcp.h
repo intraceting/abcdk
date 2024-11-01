@@ -323,16 +323,18 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size);
 */
 int abcdk_stcp_send_watch(abcdk_stcp_node_t *node);
 
-/** 停止。*/
-void abcdk_stcp_stop(abcdk_stcp_t **ctx);
+/** 销毁。*/
+void abcdk_stcp_destroy(abcdk_stcp_t **ctx);
 
 /**
- * 启动。
+ * 创建。
  * 
  * @param [in] worker 工人(线程)数量。
- * 
 */
-abcdk_stcp_t *abcdk_stcp_start(int worker);
+abcdk_stcp_t *abcdk_stcp_create(int worker);
+
+/** 停止。*/
+void abcdk_stcp_stop(abcdk_stcp_t *ctx);
 
 /**
  * 启动监听。

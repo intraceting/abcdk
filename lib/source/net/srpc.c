@@ -213,8 +213,9 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_stcp_stop(&ctx_p->io_ctx);
-    abcdk_worker_stop(&ctx_p->req_list);
+    ABCDK_ASSERT(ctx_p->req_list == NULL, "销毁前必须先停止。");
+
+    abcdk_stcp_destroy(&ctx_p->io_ctx);
     abcdk_heap_free(ctx_p);
 }
 
@@ -231,7 +232,7 @@ abcdk_srpc_t *abcdk_srpc_create(int worker)
 
     worker = ABCDK_CLAMP(worker,1,worker);
 
-    ctx->io_ctx = abcdk_stcp_start(worker);
+    ctx->io_ctx = abcdk_stcp_create(worker);
     if (!ctx->io_ctx)
         goto ERR;
 
@@ -247,6 +248,14 @@ ERR:
     abcdk_srpc_destroy(&ctx);
 
     return NULL;
+}
+
+void abcdk_srpc_stop(abcdk_srpc_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_stcp_stop(ctx->io_ctx);
+    abcdk_worker_stop(&ctx->req_list);
 }
 
 static void _abcdk_srpc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
