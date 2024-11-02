@@ -415,7 +415,7 @@ ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
     while (alen < size)
     {
         /*分块发送。*/
-        slen = _abcdk_maskssl_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(64*1024)));
+        slen = _abcdk_maskssl_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535)));
         if (slen < 0)
             return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
         else if (slen == 0)
@@ -520,10 +520,10 @@ NEXT_LOOP:
     {
         /*计算待提取的向量长度并提取。*/
         size_t diff = ABCDK_MIN(ctx->iv_len - ctx->recv_iv_len, rlen);
-        memcpy(ctx->recv_iv, ctx->recv_buf->pptrs[0], diff);
+        memcpy(ctx->recv_iv + ctx->recv_iv_len, ctx->recv_buf->pptrs[0], diff);
         ctx->recv_iv_len += diff;
 
-        /*当向量完整后，进行初始化。*/
+        /*当向量读取完整后，进行初始化。*/
         if (ctx->recv_iv_len == ctx->iv_len)
         {
             chk = _abcdk_maskssl_read_init(ctx);
