@@ -131,6 +131,8 @@ static int _abcdk_maskssl_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t 
         chk = EVP_CipherInit_ex(ctx->aes_recv_ctx, EVP_aes_256_ctr(), NULL, NULL, NULL, 0);
 
         ctx->iv_len = 16;
+#else 
+        return -1;
 #endif //OPENSSL_VERSION_NUMBER
     }
     else 
