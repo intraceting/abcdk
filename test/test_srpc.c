@@ -113,7 +113,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
         uint64_t s = 0;
         abcdk_clock(s,&s);
 
-#pragma omp parallel for num_threads(4)
+//#pragma omp parallel for num_threads(4)
         for (int j = 0; j < count; j++)
         {
             char buf[65000] = {0};
@@ -149,6 +149,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
     }
 
     abcdk_srpc_unref(&session_p);
+    abcdk_srpc_stop(srpc_ctx);
     abcdk_srpc_destroy(&srpc_ctx);
     abcdk_logger_close(&log_ctx);
     
