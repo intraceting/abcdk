@@ -40,7 +40,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
 
     int a = *((int *)data);
 
-  //  abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
+    abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
 
     if (a)
     {
@@ -104,7 +104,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
     {
 
         int count = abcdk_option_get_int(args, "--count", 0, 10000);
-        int rand_rsp = abcdk_option_get_int(args, "--rand-rsp", 0, 1);
+        int rand_rsp = abcdk_option_get_int(args, "--rand-rsp", 0, 0);
 
         abcdk_srpc_connect(session_p, &addr, &cfg);
 
@@ -120,8 +120,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             int *a = (int *)buf;
              *a = 1;
-            if (j % 3 == 0 && rand_rsp)
-                *a = 0;
+             if (j % 3 == 0 && rand_rsp)
+                 *a = 0;
 
             int b = ((uint64_t)abcdk_rand_number()) % 64000 + 5;
 
@@ -133,8 +133,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
             abcdk_object_t *rsp = NULL;
 
-          //  int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
-            int chk = abcdk_srpc_request(session_p, buf, b,NULL);
+            int chk = abcdk_srpc_request(session_p, buf, b, *a ? (&rsp) : NULL);
+            //int chk = abcdk_srpc_request(session_p, buf, b,NULL);
             assert (chk == 0);
 
             if (rsp)
