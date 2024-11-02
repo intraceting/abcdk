@@ -266,7 +266,7 @@ static int _abcdk_maskssl_write_init(abcdk_maskssl_t *ctx)
 
         /*加密正式数据前先撒盐，使得在加密重复的明文时，密文尽可能的产生变化。*/
         for (int i = 0; i < ctx->iv_len; i++)
-            abcdk_enigma_light(ctx->aes_send_ctx, ctx->send_iv[i]);
+            abcdk_enigma_light(ctx->enigma_send_ctx, ctx->send_iv[i]);
     }
     else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
     {
