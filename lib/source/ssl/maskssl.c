@@ -118,7 +118,7 @@ static int _abcdk_maskssl_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t 
         ctx->iv_len = 256;
 
     }
-    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
     {
 #ifdef OPENSSL_VERSION_NUMBER
         ctx->aes_send_ctx = EVP_CIPHER_CTX_new();
