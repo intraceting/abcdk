@@ -12,18 +12,24 @@ struct _abcdk_maskssl
     /**方案。*/
     int scheme;
 
-    /**Enigma发送加密环境。*/
-    abcdk_enigma_t *enigma_send_ctx;
+    /*密钥。*/
+    uint8_t key[32];
 
-    /**Enigma接收加密环境。*/
+    /*向量。*/
+    uint8_t send_iv[256];
+    uint8_t recv_iv[256];
+
+    /**向量的长度。*/
+    size_t iv_len;
+
+    /**Enigma环境。*/
+    abcdk_enigma_t *enigma_send_ctx;
     abcdk_enigma_t *enigma_recv_ctx;
 
 #ifdef OPENSSL_VERSION_NUMBER
-    /**AES发送加密环境。*/
-    abcdk_openssl_cipher_t *aes_send_ctx;
-
-    /**AES接收加密环境。*/
-    abcdk_openssl_cipher_t *aes_recv_ctx;
+    /**AES环境。*/
+    EVP_CIPHER_CTX *aes_send_ctx;
+    EVP_CIPHER_CTX *aes_recv_ctx;
 #endif //OPENSSL_VERSION_NUMBER
 
     /**发送队列。*/
@@ -45,14 +51,11 @@ struct _abcdk_maskssl
     /**接收数据包。*/
     abcdk_receiver_t *recv_pack;
 
-    /**盐的长度。*/
-    int salt_len;
+    /**向量是否已经发送。*/
+    int send_iv_ok;
 
-    /**是否已经撒盐。*/
-    int sprinkle_salt_ok;
-
-    /**已接收的盐的长度。*/
-    size_t recv_salt_len;
+    /**已接收的向量的长度。*/
+    size_t recv_iv_len;
 
     /** 发送句柄。*/
     int send_fd;
@@ -72,12 +75,23 @@ void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_enigma_free(&ctx_p->enigma_recv_ctx);
-    abcdk_enigma_free(&ctx_p->enigma_send_ctx);
+    abcdk_enigma_destroy(&ctx_p->enigma_recv_ctx);
+    abcdk_enigma_destroy(&ctx_p->enigma_send_ctx);
+
 #ifdef OPENSSL_VERSION_NUMBER
-    abcdk_openssl_cipher_destroy(&ctx_p->aes_recv_ctx);
-    abcdk_openssl_cipher_destroy(&ctx_p->aes_send_ctx);
+    if(ctx_p->aes_recv_ctx)
+    {
+        EVP_CIPHER_CTX_cleanup(ctx_p->aes_recv_ctx);
+        EVP_CIPHER_CTX_free(ctx_p->aes_recv_ctx);
+    }
+
+    if(ctx_p->aes_send_ctx)
+    {
+        EVP_CIPHER_CTX_cleanup(ctx_p->aes_send_ctx);
+        EVP_CIPHER_CTX_free(ctx_p->aes_send_ctx);
+    }
 #endif //OPENSSL_VERSION_NUMBER
+
     abcdk_tree_free(&ctx_p->send_queue);
     abcdk_stream_destroy(&ctx_p->recv_queue);
     abcdk_object_unref(&ctx_p->recv_buf);
@@ -86,60 +100,43 @@ void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-static int _abcdk_maskssl_enigma_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t size)
+static int _abcdk_maskssl_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t size)
 {
     int chk;
 
-    ctx->enigma_send_ctx = abcdk_enigma_create_random_sha256(key, size, 4,256);
-    ctx->enigma_recv_ctx = abcdk_enigma_create_random_sha256(key, size, 4,256);
+    /*生成密钥。*/
+    abcdk_sha256_once(key,size,ctx->key);
 
-    if (!ctx->enigma_send_ctx || !ctx->enigma_recv_ctx)
-        return -2;
+    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    {
+        ctx->enigma_send_ctx = abcdk_enigma_create(3,256);
+        ctx->enigma_recv_ctx = abcdk_enigma_create(3,256);
 
-    ctx->send_queue = abcdk_tree_alloc3(1);
-    if (!ctx->send_queue)
-        return -3;
+        if (!ctx->enigma_send_ctx || !ctx->enigma_recv_ctx)
+            return -2;
+        
+        ctx->iv_len = 256;
 
-    ctx->recv_queue = abcdk_stream_create();
-    if (!ctx->recv_queue)
-        return -4;
-
-    ctx->recv_buf = abcdk_object_alloc2(64*1024);
-    if (!ctx->recv_buf)
-        return -5;
-
-    /*盐的长度。因为加密算法为流式加密，没有传输特征，所以目前仅支持定长的盐。*/
-    ctx->salt_len = 256;
-
-    ctx->send_fd = -1;
-    ctx->recv_fd = -1;
-    ctx->send_pos = 0;
-    ctx->send_repeated_p = NULL;
-    ctx->send_repeated_l = 0;
-    ctx->sprinkle_salt_ok = 0;
-    ctx->recv_salt_len = 0;
-
-    return 0;
-}
-
+    }
+    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    {
 #ifdef OPENSSL_VERSION_NUMBER
-static int _abcdk_maskssl_aes_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t size)
-{
-    int chk;
+        ctx->aes_send_ctx = EVP_CIPHER_CTX_new();
+        ctx->aes_recv_ctx = EVP_CIPHER_CTX_new();
 
-    if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_GCM)
-    {
-        ctx->aes_send_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,key,size);
-        ctx->aes_recv_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,key,size);
-    }
-    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_CBC)
-    {
-        ctx->aes_send_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,key,size);
-        ctx->aes_recv_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,key,size);
-    }
+        if (!ctx->aes_send_ctx || !ctx->aes_recv_ctx)
+            return -2;
 
-    if (!ctx->aes_send_ctx || !ctx->aes_recv_ctx)
-        return -2;
+        chk = EVP_CipherInit_ex(ctx->aes_send_ctx, EVP_aes_256_ctr(), NULL, NULL, NULL, 1);
+        chk = EVP_CipherInit_ex(ctx->aes_recv_ctx, EVP_aes_256_ctr(), NULL, NULL, NULL, 0);
+
+        ctx->iv_len = 16;
+#endif //OPENSSL_VERSION_NUMBER
+    }
+    else 
+    {
+        return -22;
+    }
 
     ctx->send_queue = abcdk_tree_alloc3(1);
     if (!ctx->send_queue)
@@ -153,20 +150,17 @@ static int _abcdk_maskssl_aes_init(abcdk_maskssl_t *ctx, const uint8_t *key, siz
     if (!ctx->recv_buf)
         return -5;
 
-    /*盐的长度。随机设定，用传输征进行接收和识别。*/
-    ctx->salt_len = abcdk_rand_number() % 256 + 1;
-
     ctx->send_fd = -1;
     ctx->recv_fd = -1;
     ctx->send_pos = 0;
     ctx->send_repeated_p = NULL;
     ctx->send_repeated_l = 0;
-    ctx->sprinkle_salt_ok = 0;
-    ctx->recv_salt_len = 0;
+    ctx->send_iv_ok = 0;
+    ctx->recv_iv_len = 0;
 
     return 0;
 }
-#endif //OPENSSL_VERSION_NUMBER
+
 
 abcdk_maskssl_t *abcdk_maskssl_create(int scheme, const uint8_t *key, size_t size)
 {
@@ -179,25 +173,11 @@ abcdk_maskssl_t *abcdk_maskssl_create(int scheme, const uint8_t *key, size_t siz
     if (!ctx)
         return NULL;
 
-    ctx->scheme = -1;
-
-    if (scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
-    {
-        ctx->scheme = scheme;
-        chk = _abcdk_maskssl_enigma_init(ctx, key, size);
-        if (chk != 0)
-            goto ERR;
-    }
-    else if (scheme == ABCDK_MASKSSL_SCHEME_AES_256_GCM || scheme == ABCDK_MASKSSL_SCHEME_AES_256_CBC)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-        ctx->scheme = scheme;
-        chk = _abcdk_maskssl_aes_init(ctx, key, size);
-        if (chk != 0)
-#endif //OPENSSL_VERSION_NUMBER
-            goto ERR;
-    }
-
+    ctx->scheme = scheme;
+    chk = _abcdk_maskssl_init(ctx, key, size);
+    if (chk != 0)
+        goto ERR;
+    
     return ctx;
 
 ERR:
@@ -274,31 +254,99 @@ int abcdk_maskssl_get_fd(abcdk_maskssl_t *ctx, int flag)
     return -1;
 }
 
-static ssize_t _abcdk_maskssl_enigma_write_fragment(abcdk_maskssl_t *ctx, const void *data, size_t size)
+static int _abcdk_maskssl_write_init(abcdk_maskssl_t *ctx)
+{
+    int chk;
+
+    if (ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    {
+        chk = abcdk_enigma_init_ex(ctx->enigma_send_ctx,ctx->key,32);
+        if(chk != 0)
+            return -1;
+
+        /*加密正式数据前先撒盐，使得在加密重复的明文时，密文尽可能的产生变化。*/
+        for (int i = 0; i < ctx->iv_len; i++)
+            abcdk_enigma_light(ctx->aes_send_ctx, ctx->send_iv[i]);
+    }
+    else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
+    {
+#ifdef OPENSSL_VERSION_NUMBER
+
+        if (EVP_CipherInit_ex(ctx->aes_send_ctx, NULL, NULL, ctx->key, ctx->send_iv, 1) != 1)
+            return -1;
+
+#endif // OPENSSL_VERSION_NUMBER
+    }
+    else
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+static abcdk_tree_t *_abcdk_maskssl_write_update(abcdk_maskssl_t *ctx, const void *in, int in_len)
+{
+    abcdk_tree_t *en_data = NULL;
+    int en_outlen;
+
+    en_data = abcdk_tree_alloc3(in_len);
+    if (!en_data)
+        return NULL; 
+
+    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    {
+        abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], in, in_len);
+    }
+    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
+    {
+#ifdef OPENSSL_VERSION_NUMBER
+
+        EVP_CipherUpdate(ctx->aes_send_ctx, en_data->obj->pptrs[0], &en_outlen, in, in_len);
+        assert(en_outlen == in_len);
+
+#endif //OPENSSL_VERSION_NUMBER
+    }
+    else
+    {
+        abcdk_tree_free(&en_data);
+    }
+
+    return en_data;
+}
+
+static ssize_t _abcdk_maskssl_write_fragment(abcdk_maskssl_t *ctx, const void *data, size_t size)
 {
     char salt[256 + 1] = {0};
     abcdk_tree_t *en_data = NULL;
     abcdk_tree_t *p = NULL;
     ssize_t slen = 0;
+    int chk;
 
-    /*在真实数据之前，先进行撒盐处理。*/
-    if (!ctx->sprinkle_salt_ok)
+    /*先发送向量。*/
+    if (!ctx->send_iv_ok)
     {
-        /*生成盐。*/
-        abcdk_rand_bytes(salt,ctx->salt_len,5);
+        /*生成向量。*/
+#ifdef OPENSSL_VERSION_NUMBER
+        RAND_bytes(ctx->send_iv,ctx->iv_len);
+#else 
+        abcdk_rand_bytes(ctx->send_iv,ctx->iv_len,5);
+#endif //OPENSSL_VERSION_NUMBER
 
-        en_data = abcdk_tree_alloc3(ctx->salt_len);
-        if (!en_data)
+        /*初始化加密算法环境。*/
+        chk = _abcdk_maskssl_write_init(ctx);
+        if (chk != 0)
             return 0; // 内存不足时，关闭当前句柄。
 
-        /*加密。*/
-        abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], salt, ctx->salt_len);
+        en_data = abcdk_tree_alloc4(ctx->send_iv,ctx->iv_len);
+        if (!en_data)
+            return 0; // 内存不足时，关闭当前句柄。
 
         /*追加到发送队列末尾。*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
 
-        /*撒盐一次即可。*/
-        ctx->sprinkle_salt_ok = 1;
+        /*发送一次即可。*/
+        ctx->send_iv_ok = 1;
     }
 
     /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
@@ -309,11 +357,11 @@ static ssize_t _abcdk_maskssl_enigma_write_fragment(abcdk_maskssl_t *ctx, const 
         ctx->send_repeated_l = size;
 
         en_data = abcdk_tree_alloc3(size);
-        if (!en_data)
-            return 0; // 内存不足时，关闭当前句柄。
 
         /*加密。*/
-        abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], data, size);
+        en_data = _abcdk_maskssl_write_update(ctx, data, size);
+        if (!en_data)
+            return 0; // 内存不足时，关闭当前句柄。
 
         /*追加到发送队列末尾。*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
@@ -358,14 +406,16 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-static ssize_t _abcdk_maskssl_enigma_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
+ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
 {
     ssize_t slen = 0, alen = 0;
+
+    assert(ctx != NULL && data != NULL && size > 0);
 
     while (alen < size)
     {
         /*分块发送。*/
-        slen = _abcdk_maskssl_enigma_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535)));
+        slen = _abcdk_maskssl_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(64*1024)));
         if (slen < 0)
             return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
         else if (slen == 0)
@@ -377,25 +427,79 @@ static ssize_t _abcdk_maskssl_enigma_write(abcdk_maskssl_t *ctx, const void *dat
     return alen;
 }
 
-static ssize_t _abcdk_maskssl_enigma_read(abcdk_maskssl_t *ctx, void *data, size_t size)
+static int _abcdk_maskssl_read_init(abcdk_maskssl_t *ctx)
 {
-    char salt[256 + 1] = {0};
+    int chk;
+
+    if (ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    {
+        chk = abcdk_enigma_init_ex(ctx->enigma_recv_ctx,ctx->key,32);
+        if(chk != 0)
+            return -1;
+
+        /*解密正式数据前先撒盐。*/
+        for (int i = 0; i < ctx->iv_len; i++)
+            abcdk_enigma_light(ctx->enigma_recv_ctx, ctx->recv_iv[i]);
+    }
+    else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
+    {
+#ifdef OPENSSL_VERSION_NUMBER
+
+        if (EVP_CipherInit_ex(ctx->aes_recv_ctx, NULL, NULL, ctx->key, ctx->recv_iv, 0) != 1)
+            return -1;
+
+#endif // OPENSSL_VERSION_NUMBER
+    }
+    else
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+static abcdk_object_t *_abcdk_maskssl_read_update(abcdk_maskssl_t *ctx, const void *in, int in_len)
+{
+    abcdk_object_t *de_data = NULL;
+    int de_outlen;
+
+    de_data = abcdk_object_alloc2(in_len);
+    if (!de_data)
+        return NULL; 
+
+    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    {
+        abcdk_enigma_light_batch(ctx->enigma_recv_ctx, de_data->pptrs[0], in, in_len);
+    }
+    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
+    {
+#ifdef OPENSSL_VERSION_NUMBER
+
+        EVP_CipherUpdate(ctx->aes_recv_ctx, de_data->pptrs[0], &de_outlen, in, in_len);
+        assert(de_outlen == in_len);
+
+#endif //OPENSSL_VERSION_NUMBER
+    }
+    else
+    {
+        abcdk_object_unref(&de_data);
+    }
+
+    return de_data;
+}
+
+
+ssize_t abcdk_maskssl_read(abcdk_maskssl_t *ctx, void *data, size_t size)
+{
     abcdk_object_t *de_data = NULL;
     ssize_t rlen = 0;
     int chk;
 
+    assert(ctx != NULL && data != NULL && size > 0);
+
 NEXT_LOOP:
 
-    /*先读取盐。*/
-    if (ctx->recv_salt_len < ctx->salt_len)
-    {
-        rlen = abcdk_stream_read(ctx->recv_queue, ABCDK_PTR2VPTR(salt, ctx->recv_salt_len), ctx->salt_len - ctx->recv_salt_len);
-        if (rlen > 0)
-            ctx->recv_salt_len += rlen;
-    }
-
-    /*盐读取完成后，才是真实数据。*/
-    if (ctx->salt_len == ctx->recv_salt_len)
+    if (ctx->iv_len == ctx->recv_iv_len)
     {
         rlen = abcdk_stream_read(ctx->recv_queue, data, size);
         if (rlen > 0)
@@ -411,12 +515,38 @@ NEXT_LOOP:
     else if (rlen == 0)
         return 0;
 
-    de_data = abcdk_object_alloc2(rlen);
-    if (!de_data)
-        return 0; // 内存不足时，关闭当前句柄。
+    /*先读取向量。*/
+    if (ctx->recv_iv_len < ctx->iv_len)
+    {
+        /*计算待提取的向量长度并提取。*/
+        size_t diff = ABCDK_MIN(ctx->iv_len - ctx->recv_iv_len, rlen);
+        memcpy(ctx->recv_iv, ctx->recv_buf->pptrs[0], diff);
+        ctx->recv_iv_len += diff;
 
-    /*解密。*/
-    abcdk_enigma_light_batch(ctx->enigma_recv_ctx, de_data->pptrs[0], ctx->recv_buf->pptrs[0], rlen);
+        /*当向量完整后，进行初始化。*/
+        if (ctx->recv_iv_len == ctx->iv_len)
+        {
+            chk = _abcdk_maskssl_read_init(ctx);
+            if (chk != 0)
+                return 0;
+        }
+
+        /*如果缓存没有剩余数据，则直接返回。*/
+        if (rlen - diff <= 0)
+            return -1;
+
+        /*处理剩余数据，解密。*/
+        de_data = _abcdk_maskssl_read_update(ctx,ctx->recv_buf->pptrs[0] + diff, rlen - diff);
+        if (!de_data)
+            return 0; // 内存不足时，关闭当前句柄。
+    }
+    else
+    {
+        /*解密。*/
+        de_data = _abcdk_maskssl_read_update(ctx,ctx->recv_buf->pptrs[0], rlen);
+        if (!de_data)
+            return 0; // 内存不足时，关闭当前句柄。
+    }
 
     /*追加到接收队列。*/
     chk = abcdk_stream_write(ctx->recv_queue, de_data);
@@ -427,276 +557,4 @@ NEXT_LOOP:
     }
 
     goto NEXT_LOOP;
-}
-
-#ifdef OPENSSL_VERSION_NUMBER
-
-static abcdk_tree_t *_abcdk_maskssl_aes_send_update_pack(abcdk_maskssl_t *ctx, const void *in, int in_len)
-{
-    abcdk_tree_t *dst_p = NULL;
-    abcdk_object_t *src_p = NULL;
-
-    assert(in_len <= 0x0000FFFF);
-
-    /*
-     * |Length  |Data    |
-     * |2 Bytes |N Bytes |
-     *
-     * Length：密文长度。注：不包含自身。
-     * DATA: 密文数据。
-     */
-
-    src_p = abcdk_openssl_cipher_update_pack(ctx->aes_send_ctx, (uint8_t*)in, in_len, 1);
-    if (!src_p)
-        goto ERR;
-
-    dst_p = abcdk_tree_alloc3(2 + src_p->sizes[0]);
-    if (!dst_p)
-        goto ERR;
-
-    abcdk_bloom_write_number(dst_p->obj->pptrs[0], dst_p->obj->sizes[0], 0, 16, src_p->sizes[0]);
-    memcpy(dst_p->obj->pptrs[0] + 2, src_p->pptrs[0], src_p->sizes[0]);
-
-    abcdk_object_unref(&src_p);
-    return dst_p;
-
-ERR:
-
-    abcdk_tree_free(&dst_p);
-    abcdk_object_unref(&src_p);
-    return NULL;
-}
-
-static ssize_t _abcdk_maskssl_aes_write_fragment(abcdk_maskssl_t *ctx, const void *data, size_t size)
-{
-    int salt_len = 0;
-    uint64_t salt_seed = 0;
-    char salt[256 + 1] = {0};
-    abcdk_tree_t *en_data = NULL;
-    abcdk_tree_t *p = NULL;
-    ssize_t slen = 0;
-
-    /*在真实数据之前，先进行撒盐处理。*/
-    if (!ctx->sprinkle_salt_ok)
-    {
-        /*生成盐。*/
-        abcdk_rand_bytes(salt,ctx->salt_len,5);
-
-        /*加密。*/
-        en_data = _abcdk_maskssl_aes_send_update_pack(ctx,salt,ctx->salt_len);
-        if (!en_data)
-            return 0; // 内存不足时，关闭当前句柄。
-
-        /*追加到发送队列末尾。*/
-        abcdk_tree_insert2(ctx->send_queue, en_data, 0);
-
-        /*撒盐一次即可。*/
-        ctx->sprinkle_salt_ok = 1;
-    }
-
-    /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
-    if (ctx->send_repeated_p != data || ctx->send_repeated_l != size)
-    {
-        /*记录指针和长度，重发时会检测这两个值。*/
-        ctx->send_repeated_p = data;
-        ctx->send_repeated_l = size;
-
-        /*加密。*/
-        en_data = _abcdk_maskssl_aes_send_update_pack(ctx,data, size);
-        if (!en_data)
-            return 0; // 内存不足时，关闭当前句柄。
- 
-        /*追加到发送队列末尾。*/
-        abcdk_tree_insert2(ctx->send_queue, en_data, 0);
-    }
-
-NEXT_MSG:
-
-    p = abcdk_tree_child(ctx->send_queue, 1);
-
-    /*通知应用层，发送队列空闲。*/
-    if (!p)
-    {
-        ctx->send_repeated_p = NULL;
-        ctx->send_repeated_l = 0;
-        return size;//在这里返回发送数据的实际长度。
-    }
-
-    assert(ctx->send_fd >= 0);
-
-    /*发。*/
-    slen = write(ctx->send_fd, ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->send_pos), p->obj->sizes[0] - ctx->send_pos);
-    if (slen < 0)
-        return -1;
-    else if (slen == 0)
-        return 0;
-
-    /*滚动发送游标。*/
-    ctx->send_pos += slen;
-
-    /*当前节点未发送完整，则继续发送。*/
-    if (ctx->send_pos < p->obj->sizes[0])
-        goto NEXT_MSG;
-
-    /*发送游标归零。*/
-    ctx->send_pos = 0;
-
-    /*从队列中删除已经发送完整的节点。*/
-    abcdk_tree_unlink(p);
-    abcdk_tree_free(&p);
-
-    /*并继续发送剩余节点。*/
-    goto NEXT_MSG;
-}
-
-static ssize_t _abcdk_maskssl_aes_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
-{
-    ssize_t slen = 0, alen = 0;
-
-    while (alen < size)
-    {
-        /*分块发送。*/
-        slen = _abcdk_maskssl_aes_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535-100)));
-        if (slen < 0)
-            return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
-        else if (slen == 0)
-            return (alen > 0 ? alen : 0); // 优先返回已发送的数据长度。
-
-        alen += slen;
-    }
-
-    return alen;
-}
-
-static abcdk_object_t *_abcdk_maskssl_aes_recv_update_pack(abcdk_maskssl_t *ctx)
-{
-    abcdk_object_t *dst_p;
-    const void *data_p;
-    size_t data_l;
-
-    data_p = abcdk_receiver_data(ctx->recv_pack,0);
-    data_l = abcdk_receiver_length(ctx->recv_pack);
-
-    dst_p = abcdk_openssl_cipher_update_pack(ctx->aes_recv_ctx,ABCDK_PTR2VPTR(data_p,2),data_l - 2,0);
-    return dst_p;    
-}
-
-static ssize_t _abcdk_maskssl_aes_read(abcdk_maskssl_t *ctx, void *data, size_t size)
-{
-    char salt[256 + 1] = {0};
-    abcdk_object_t *de_data = NULL;
-    ssize_t rlen = 0;
-    size_t unpack_remain = 0,unpack_pos = 0;
-    int chk;
-
-NEXT_LOOP:
-
-    rlen = abcdk_stream_read(ctx->recv_queue, data, size);
-    if (rlen > 0)
-        return rlen;
-    
-    assert(ctx->recv_fd >= 0);
-
-MORE_DATA:
-
-    /*清零。*/
-    unpack_remain = unpack_pos = 0;
-    
-    /*收。*/
-    rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
-    if (rlen < 0)
-        return -1; 
-    else if (rlen == 0)
-        return 0;
-
-UNPACK_NEXT:
-
-    if(!ctx->recv_pack)
-    {
-        ctx->recv_pack = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_SMB_HALF,65535,NULL);
-        if(!ctx->recv_pack)
-            return 0; // 内存不足时，关闭当前句柄。
-    }
-
-    /*解包。*/
-    chk = abcdk_receiver_append(ctx->recv_pack, ctx->recv_buf->pptrs[0] + unpack_pos, rlen - unpack_pos, &unpack_remain);
-    if(chk < 0)
-        return 0; //有错误发生，关闭当前句柄。
-    else if(chk == 0)
-        goto MORE_DATA;//数据包不完整，继续接收。
-
-    /*滚动游标。*/
-    unpack_pos += (rlen - unpack_pos) - unpack_remain;
-
-    /*解密。*/
-    de_data = _abcdk_maskssl_aes_recv_update_pack(ctx);
-    if (!de_data)
-        return 0; // 内存不足时，关闭当前句柄。
-
-    /*一定要回收。*/
-    abcdk_receiver_unref(&ctx->recv_pack);
-
-    /*优先读取盐。*/
-    if(ctx->recv_salt_len <= 0)
-    {
-        ctx->recv_salt_len = de_data->sizes[0];
-        abcdk_object_unref(&de_data);
-    }
-    else 
-    {
-        /*追加到接收队列。*/
-        chk = abcdk_stream_write(ctx->recv_queue, de_data);
-        if (chk != 0)
-        {
-            abcdk_object_unref(&de_data);
-            return 0; // 内存不足时，关闭当前句柄。
-        }
-    }
-
-    if (unpack_remain > 0)
-        goto UNPACK_NEXT; // 继续从缓存中解析数据包。
-    else
-        goto NEXT_LOOP;
-}
-
-#endif //OPENSSL_VERSION_NUMBER
-
-ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx,const void *data,size_t size)
-{
-    ssize_t chk = 0;
-
-    assert(ctx != NULL && data != NULL && size > 0);
-
-    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
-    {
-        return _abcdk_maskssl_enigma_write(ctx,data,size);
-    }
-    else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_GCM || ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_CBC)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-        return _abcdk_maskssl_aes_write(ctx,data,size);
-#endif //OPENSSL_VERSION_NUMBER
-    }
-
-    return 0;
-}
-
-ssize_t abcdk_maskssl_read(abcdk_maskssl_t *ctx,void *data,size_t size)
-{
-    ssize_t chk = 0;
-
-    assert(ctx != NULL && data != NULL && size > 0);
-    
-    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
-    {
-        return _abcdk_maskssl_enigma_read(ctx,data,size);
-    }
-    else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_GCM || ctx->scheme == ABCDK_MASKSSL_SCHEME_AES_256_CBC)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-        return _abcdk_maskssl_aes_read(ctx,data,size);
-#endif //OPENSSL_VERSION_NUMBER
-    }
-
-    return 0;
 }

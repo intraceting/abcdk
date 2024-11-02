@@ -204,9 +204,8 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--ske-key-cipher < TYPE >\n");
     fprintf(stderr, "\t\t共享密钥算法。默认：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
 
-    fprintf(stderr, "\n\t\t%d：Enigma\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
-    fprintf(stderr, "\t\t%d：AES-256-GCM\n",ABCDK_MASKSSL_SCHEME_AES_256_GCM);
-    fprintf(stderr, "\t\t%d：AES-256-CBC\n",ABCDK_MASKSSL_SCHEME_AES_256_CBC);
+    fprintf(stderr, "\n\t\tEnigma：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
+    fprintf(stderr, "\t\tAES256CTR：%d\n",ABCDK_MASKSSL_SCHEME_AES256CTR);
 
     fprintf(stderr, "\n\t--uplink < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");

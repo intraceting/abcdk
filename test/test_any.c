@@ -426,24 +426,18 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 0
 
-    for (int y = 2; y <= 100; y++)
+    for (int y = 2; y <= 128; y++)
     {
    //     #pragma omp parallel for num_threads(8)
         for (int x = 4; x <= 256; x += 2)
         {
             printf("row=%d,col=%d\n",y,x);
 
-            size_t rows = y;
-            size_t cols = x;
+            abcdk_enigma_t *send_ctx = abcdk_enigma_create(y, x);
+            abcdk_enigma_t *recv_ctx = abcdk_enigma_create(y, x);
 
-            uint8_t *dist = abcdk_heap_alloc(sizeof(uint8_t) * rows * cols);
-
-            uint64_t seed = rand();
-
-            abcdk_enigma_mkdict(&seed, dist, rows, cols);
-
-            abcdk_enigma_t *send_ctx = abcdk_enigma_create(dist, rows, cols);
-            abcdk_enigma_t *recv_ctx = abcdk_enigma_create(dist, rows, cols);
+            abcdk_enigma_init_ex(send_ctx,"abcd",4);
+            abcdk_enigma_init_ex(recv_ctx,"abcd",4);
 
             for (int i = 0; i < 10; i++)
             {
@@ -453,7 +447,7 @@ int abcdk_test_any(abcdk_option_t *args)
                 uint8_t dst2[600] = {0};
 
                 for (int j = 0; j < n; j++)
-                    src[j] = rand() % cols;
+                    src[j] = rand() % x;
 
                 abcdk_enigma_light_batch(send_ctx, dst, src, n);
                 //     printf("---------------------------\n");
@@ -463,10 +457,8 @@ int abcdk_test_any(abcdk_option_t *args)
                 assert(chk == 0);
             }
 
-            abcdk_enigma_free(&send_ctx);
-            abcdk_enigma_free(&recv_ctx);
-
-            abcdk_heap_free(dist);
+            abcdk_enigma_destroy(&send_ctx);
+            abcdk_enigma_destroy(&recv_ctx);
         }
     }
 #elif 0
@@ -828,15 +820,17 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",buf2);
 
-#elif 0
+#elif 1
 
     //abcdk_thread_setaffinity2(pthread_self(),4);
 
-    for (int r = 4; r <= 11; r++)
+    for (int r = 3; r <= 10; r++)
     {
-        int seed = rand();
-        abcdk_enigma_t *s_ctx = abcdk_enigma_create2(seed, r,256);
-        abcdk_enigma_t *r_ctx = abcdk_enigma_create2(seed, r,256);
+        abcdk_enigma_t *s_ctx = abcdk_enigma_create(r,256);
+        abcdk_enigma_t *r_ctx = abcdk_enigma_create(r,256);
+
+        abcdk_enigma_init_ex(s_ctx,"aaa",3);
+        abcdk_enigma_init_ex(r_ctx,"aaa",3);
 
         for (int d = 1000; d <= 10*1000 * 1000; d *= 10)
         {
@@ -884,8 +878,8 @@ int abcdk_test_any(abcdk_option_t *args)
 #endif
         }
 
-        abcdk_enigma_free(&s_ctx);
-        abcdk_enigma_free(&r_ctx);
+        abcdk_enigma_destroy(&s_ctx);
+        abcdk_enigma_destroy(&r_ctx);
     }
 #elif 0
 
@@ -1086,7 +1080,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
@@ -1323,7 +1317,63 @@ int abcdk_test_any(abcdk_option_t *args)
             
             uint64_t step = abcdk_clock(s,&s);
             fprintf(stderr,"cast: %0.9f\n",(double)step/1000000000.);
-            
+
+#elif 0
+
+#ifdef HAVE_OPENSSL
+
+    EVP_CIPHER_CTX *enc_evp_ctx = EVP_CIPHER_CTX_new();
+    EVP_CIPHER_CTX *dec_evp_ctx = EVP_CIPHER_CTX_new();
+
+    char key[32] = {0},iv[16] = {0};
+
+    RAND_bytes(key,32);
+    RAND_bytes(iv,16);
+
+    EVP_CipherInit_ex(enc_evp_ctx, EVP_aes_256_ctr(), NULL, NULL, NULL, 1);
+    EVP_CipherInit_ex(dec_evp_ctx, EVP_aes_256_ctr(), NULL, NULL, NULL, 0);
+
+    assert(EVP_CIPHER_CTX_key_length(enc_evp_ctx) == 32);
+    assert(EVP_CIPHER_CTX_iv_length(enc_evp_ctx) == 16);
+
+    assert(EVP_CipherInit_ex(enc_evp_ctx, NULL, NULL, key, iv, 1)==1);
+    assert(EVP_CipherInit_ex(dec_evp_ctx, NULL, NULL, key, iv, 0)==1);
+
+    uint8_t enc_inbuf[1000];
+    uint8_t enc_outbuf[1000];
+    uint8_t dec_outbuf[1000];
+
+    memset(enc_inbuf,'a',1000);
+
+#if 0
+    int enc_outlen;
+    assert(EVP_CipherUpdate(enc_evp_ctx, enc_outbuf, &enc_outlen, enc_inbuf, 1000)==1);
+#else 
+    for(int i = 0;i<1000;i++)
+    {   
+        int enc_outlen;
+        assert(EVP_CipherUpdate(enc_evp_ctx, enc_outbuf+1, &enc_outlen, enc_inbuf+1, 1)==1);
+    }
+#endif 
+
+#if 1 
+    int dec_outlen;
+    assert(EVP_CipherUpdate(dec_evp_ctx, dec_outbuf, &dec_outlen, enc_outbuf, 1000)==1);
+#else 
+    for(int i = 0;i<1000;i++)
+    {
+        int dec_outlen;
+        assert(EVP_CipherUpdate(dec_evp_ctx, dec_outbuf+i, &dec_outlen, enc_outbuf+i, 1)==1);
+    }
+#endif 
+
+    memcmp(enc_inbuf,dec_outbuf,1000);
+
+    EVP_CIPHER_CTX_free(enc_evp_ctx);
+    EVP_CIPHER_CTX_free(dec_evp_ctx);
+
+#endif //HAVE_OPENSSL
+
 
 #endif 
     return 0;

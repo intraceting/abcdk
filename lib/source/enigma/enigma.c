@@ -56,7 +56,7 @@ void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols
     }
 }
 
-void abcdk_enigma_free(abcdk_enigma_t **ctx)
+void abcdk_enigma_destroy(abcdk_enigma_t **ctx)
 {
     abcdk_enigma_t *ctx_p = NULL;
 
@@ -71,50 +71,91 @@ void abcdk_enigma_free(abcdk_enigma_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols)
+abcdk_enigma_t *abcdk_enigma_create(int rows, int cols)
 {
     abcdk_enigma_t *ctx = NULL;
-    abcdk_enigma_rotor_t *rotor = NULL;
-    uint8_t chk_dict[256/8];
-    uint8_t c;
-    int chk;
 
-    assert(dict != NULL);
-    assert(rows >= 2 && rows <= 100);
+    assert(rows >= 2 && rows <= 128);
     assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
-
-    /*检查字典表，每张字典表中的字符不能出现重复的。*/
-    for (size_t y = 0; y < rows; y++)
-    {
-        memset(chk_dict, 0, sizeof(chk_dict));
-        for (size_t x = 0; x < cols; x++)
-        {
-            c = dict[y * cols + x];
-
-            ABCDK_ASSERT(c < cols,"转子中通道的值超出范围。");
-
-            chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
-
-            ABCDK_ASSERT(chk == 0,"在同一个转子中通道的值不能出现重复。");
-        }
-    }
 
     ctx = abcdk_heap_alloc(sizeof(abcdk_enigma_t));
     if (!ctx)
         return NULL;
-
+    
     ctx->rotors = abcdk_heap_alloc(sizeof(abcdk_enigma_rotor_t) * rows);
     if (!ctx->rotors)
         goto ERR;
 
+    ctx->rows = rows;
+    ctx->cols = cols;
+
+    return ctx;
+
+ERR:
+
+    abcdk_enigma_destroy(&ctx);
+
+    return NULL;
+}
+
+static int _abcdk_enigma_init_check(abcdk_enigma_t *ctx,uint8_t rotors[],uint8_t rboard[])
+{
+    uint8_t chk_dict[256/8];
+    uint8_t c;
+    int chk;
+    
+    /*检查转子，每个转子内字符的值不能出现重复。*/
+
+    for (size_t y = 0; y < ctx->rows; y++)
+    {
+        memset(chk_dict, 0, sizeof(chk_dict));
+        for (size_t x = 0; x < ctx->cols; x++)
+        {
+            c = rotors[y * ctx->cols + x];
+
+            ABCDK_ASSERT(c < ctx->cols,"转子中内字符的值超出通道范围。");
+
+            chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
+
+            ABCDK_ASSERT(chk == 0,"每个转子内字符的值不能出现重复。");
+        }
+    }
+
+    /*检查反射板，反射板内字符的值不能出现重复。*/
+
+    memset(chk_dict, 0, sizeof(chk_dict));
+    for (size_t x = 0; x < ctx->cols; x++)
+    {
+        c = rboard[x];
+
+        ABCDK_ASSERT(c < ctx->cols,"反射板字符的值超出范围。");
+
+        chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
+
+        ABCDK_ASSERT(chk == 0,"在反射板内字符的值不能出现重复。");
+    }
+
+    return 0;
+}
+
+int abcdk_enigma_init(abcdk_enigma_t *ctx,uint8_t rotors[],uint8_t rboard[])
+{
+    int chk;
+
+    assert(ctx != NULL && rotors != NULL && rboard != NULL);
+
+    chk = _abcdk_enigma_init_check(ctx,rotors,rboard);
+    if(chk != 0)
+        return -1;
+
     /*根据字典表，初始化转子配置。*/
-    for (size_t y = 0; y < rows - 1; y++)
+    for (size_t y = 0; y < ctx->rows; y++)
     {
         ctx->rotors[y].pos = 0;
 
-        for (size_t x = 0; x < cols; x++)
+        for (size_t x = 0; x < ctx->cols; x++)
         {
-            c = dict[y * cols + x];
+            uint8_t c = rotors[y * ctx->cols + x];
 
             /*正向字典。*/
             ctx->rotors[y].fdict[x] = c;
@@ -125,10 +166,10 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
     }
 
     /*初始化反射板，形成对称映射。*/
-    for (size_t x = 0; x < cols; x += 2)
+    for (size_t x = 0; x < ctx->cols; x += 2)
     {
-        uint8_t a = dict[(rows - 1) * cols + x];
-        uint8_t b = dict[(rows - 1) * cols + x + 1];
+        uint8_t a = rboard[x];
+        uint8_t b = rboard[x + 1];
 
         /*a和b互相映射。*/
         ctx->rdict[a] = b;
@@ -136,108 +177,66 @@ abcdk_enigma_t *abcdk_enigma_create(const uint8_t *dict,size_t rows, size_t cols
     }
 
     /*验证反射板。*/
-    for (int x = 0; x < cols; x++) 
+    for (int x = 0; x < ctx->cols; x++) 
     {
         assert(ctx->rdict[ctx->rdict[x]] == x);
     } 
 
-    ctx->cols = cols;
-    ctx->rows = rows-1;//最后一个轮子是反射板。
-
-    return ctx;
-
-ERR:
-
-    abcdk_enigma_free(&ctx);
-    return NULL;
+    return 0;
 }
 
-abcdk_enigma_t *abcdk_enigma_create_random(uint64_t seed,size_t rows, size_t cols)
+int abcdk_enigma_init_ex(abcdk_enigma_t *ctx,const void *key,size_t klen)
 {
-    uint8_t *dict;
-    abcdk_enigma_t *ctx;
-
-    assert(rows >= 2 && rows <= 100);
-    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
-
-    dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
-    if(!dict)
-        return NULL;
-
-    abcdk_enigma_mkdict(&seed,dict,rows,cols);
-
-    ctx = abcdk_enigma_create(dict,rows,cols);
-    abcdk_heap_free(dict);
-    
-    return ctx;
-}
-
-abcdk_enigma_t *abcdk_enigma_create_random_ex(uint64_t seed[],size_t rows,size_t cols)
-{
-    uint8_t *dict;
-    abcdk_enigma_t *ctx;
-
-    assert(seed != NULL);
-    assert(rows >= 2 && rows <= 100);
-    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
-
-    dict = (uint8_t*)abcdk_heap_alloc(rows * cols);
-    if(!dict)
-        return NULL;
-
-    for (size_t i = 0; i < rows; i++)
-        abcdk_enigma_mkdict(&seed[i], &dict[i * cols], 1,cols);
-
-    ctx = abcdk_enigma_create(dict,rows,cols);
-    abcdk_heap_free(dict);
-    
-    return ctx;  
-}
-
-abcdk_enigma_t *abcdk_enigma_create_random_sha256(const void *key,size_t klen,size_t rows,size_t cols)
-{
-    uint8_t hashcode[32] = {0};
-    uint64_t seed[32] = {0};
+    uint64_t seed[4] = {0};
+    uint8_t khc[32] = {0};
+    uint8_t *dist_p = NULL;
     int chk;
 
-    assert(key != NULL);
-    assert(rows == 4 || rows == 8 || rows == 16 || rows == 32);
-    assert(cols >= 2 && cols <= 256 && cols % 2 == 0);
+    assert(ctx != NULL && key != NULL);
 
-    /*密钥转换为定长HASHCODE。*/
-    chk = abcdk_sha256_once(key, klen, hashcode);
+    /*变长密钥转换为定长。*/
+    chk = abcdk_sha256_once(key, klen, khc);
     if (chk != 0)
-        return NULL;
+        return -1;
 
-     /*分解成N个64位整数。不能直接复制内存，因为存在大小端存储顺序不同的问题。*/
+    /*
+     * 分解为4组64位的整数做为随机种子。
+     * 
+     * 注：不能直接复制内存，因为存在大小端存储顺序不同的问题。
+     */
     for (int i = 0; i < 32; i++)
     {
-        seed[i % rows] <<= 8;
-        seed[i % rows] |= (uint64_t)hashcode[i];
+        seed[i % 4] <<= 8;
+        seed[i % 4] |= (uint64_t)khc[i];
     }
 
-    return abcdk_enigma_create_random_ex(seed, rows,cols);
-}
+    /*申请轮子和反射板字典空间。*/
+    dist_p = abcdk_heap_alloc((ctx->rows + 1) * ctx->cols);
+    if (!dist_p)
+        return -1;
 
-uint8_t abcdk_enigma_getpos(abcdk_enigma_t *ctx, size_t row)
-{
-    assert(ctx != NULL);
-    assert(ctx->rows > row);
+    /*生成字典表。*/
+    for (size_t y = 0; y < ctx->rows + 1; y++)
+    {
+        /*确保行内字符的值不超出通道范围，同时不重复。*/
+        for (size_t x = 0; x < ctx->cols; x++)
+            dist_p[y * ctx->cols + x] = x;
+    }
 
-    return ctx->rotors[row].pos;
-}
+    /*打乱字典表。*/
+    for (int i = 0; i < 4; i++)
+    {
+        for (size_t y = 0; y < ctx->rows + 1; y++)
+        {
+            /*使用洗牌算法打乱字典表。*/
+            abcdk_rand_shuffle_array(&dist_p[y * ctx->cols], ctx->cols, &seed[i], 1);
+        }
+    }
 
-uint8_t abcdk_enigma_setpos(abcdk_enigma_t *ctx, size_t row, uint8_t pos)
-{
-    uint8_t old;
+    chk = abcdk_enigma_init(ctx, dist_p, dist_p + ctx->rows * ctx->cols);
+    abcdk_heap_free(dist_p);
 
-    assert(ctx != NULL);
-    assert(ctx->rows > row && pos < ctx->cols);
-
-    old = ctx->rotors[row].pos;
-    ctx->rotors[row].pos = pos;
-
-    return old;
+    return chk;
 }
 
 static inline uint8_t _abcdk_enigma_light_v1(abcdk_enigma_t *ctx, uint8_t c)
@@ -357,7 +356,7 @@ static inline uint8_t _abcdk_enigma_light_v3(abcdk_enigma_t *ctx, uint8_t c)
     return c;
 }
 
-static inline int _abcek_enigma_check_2N(size_t n)
+static inline int _abcek_enigma_light_check_2N(size_t n)
 {
     return (n > 0) && ((n & (n - 1)) == 0);//当n与n-1互为反码时，此数值为2的N次方。
 }
@@ -368,7 +367,7 @@ uint8_t abcdk_enigma_light(abcdk_enigma_t *ctx, uint8_t c)
     assert(c < ctx->cols);
 
     /*当通道数量为2的N次方时，可以启用加速代码。*/
-    if(_abcek_enigma_check_2N(ctx->cols))
+    if(_abcek_enigma_light_check_2N(ctx->cols))
         return _abcdk_enigma_light_v3(ctx,c);
     
     return _abcdk_enigma_light_v2(ctx,c);
