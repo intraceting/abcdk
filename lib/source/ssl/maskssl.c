@@ -358,8 +358,6 @@ static ssize_t _abcdk_maskssl_write_fragment(abcdk_maskssl_t *ctx, const void *d
         ctx->send_repeated_p = data;
         ctx->send_repeated_l = size;
 
-        en_data = abcdk_tree_alloc3(size);
-
         /*加密。*/
         en_data = _abcdk_maskssl_write_update(ctx, data, size);
         if (!en_data)
