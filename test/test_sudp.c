@@ -26,7 +26,7 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 
     assert(len +3 == size);
 
-    abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
+  //  abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
     if(!flag)
         return;
@@ -66,13 +66,13 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     for(int i = 0;i<100000;i++)
     {
-        int k=rand()%1400;
+        int k=rand()%64512;
         int len = ABCDK_CLAMP(k,1,64512-3);
         
 
         abcdk_bloom_write_number(data->pptrs[0],3,0,16,len);
         abcdk_bloom_write_number(data->pptrs[0],3,16,8,1);
-        
+
 #ifdef OPENSSL_VERSION_NUMBER
         RAND_bytes(data->pptrs[0]+3,len);
 #else 
