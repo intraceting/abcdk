@@ -45,7 +45,7 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 int abcdk_test_sudp(abcdk_option_t *args)
 {
     const char *ske_key_file = abcdk_option_get(args, "--ske-key-file", 0, "");
-    int ske_key_cipher = abcdk_option_get_int(args, "--ske-key-cipher", 0, "");
+    int ske_key_cipher = abcdk_option_get_int(args, "--ske-key-cipher", 0, 0);
     const char *listen_p = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
     const char *dst_p = abcdk_option_get(args, "--dst", 0, "127.0.0.1:1111");
 

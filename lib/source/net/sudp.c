@@ -70,7 +70,7 @@ static void _abcdk_sudp_process_cb(void *opaque,uint64_t event,void *item);
 static void _abcdk_sudp_fix_cfg(abcdk_sudp_t *ctx)
 {
     /*修复不支持的配置。*/
-    ctx->cfg.aes_key_file = (ctx->cfg.aes_key_file?ctx->cfg.aes_key_file:"");
+    ctx->cfg.ske_key_file = (ctx->cfg.ske_key_file?ctx->cfg.ske_key_file:"");
 
     if(ctx->cfg.out_min_th <= 0)
         ctx->cfg.out_min_th = 200;
@@ -127,14 +127,14 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     if(!ctx->out_locker)
         goto ERR;
 
-    if(ctx->cfg.aes_key_file && *ctx->cfg.aes_key_file)
+    if(ctx->cfg.ske_key_file && *ctx->cfg.ske_key_file)
     {
 #ifdef OPENSSL_VERSION_NUMBER
-        ctx->cipher_in = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
-        ctx->cipher_out = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.aes_key_file);
+        ctx->cipher_in = abcdk_openssl_cipher_create_from_file(ctx->cfg.ske_key_cipher,ctx->cfg.ske_key_file);
+        ctx->cipher_out = abcdk_openssl_cipher_create_from_file(ctx->cfg.ske_key_cipher,ctx->cfg.ske_key_file);
         if(!ctx->cipher_in || !ctx->cipher_out)
         {
-            abcdk_trace_output(LOG_WARNING, "加载密钥文件(%s)失败，无权限或不存在。",ctx->cfg.aes_key_file);
+            abcdk_trace_output(LOG_WARNING, "加载密钥文件(%s)失败，无权限或不存在。",ctx->cfg.ske_key_file);
             goto ERR;
         }
 #else //OPENSSL_VERSION_NUMBER
