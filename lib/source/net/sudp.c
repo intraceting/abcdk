@@ -186,6 +186,10 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
                 goto ERR;
         }
     }
+    else if(ctx->cfg.mreq_enable)
+    {
+        abcdk_trace_output(LOG_WARNING,"未绑定端口，忽略组播配置。");
+    }
 
     chk = abcdk_fflag_add(ctx->fd,O_NONBLOCK);
     if(chk != 0)
