@@ -281,7 +281,7 @@ void _abcdk_mtx_printf_elements(abcdk_mtx_t *ctx)
 
     abcdk_scsi_list(ctx->devlist);
 
-    abcdk_tree_iterator_t it = {0, _abcdk_mtx_printf_elements_cb, ctx};
+    abcdk_tree_iterator_t it = {0, ctx, _abcdk_mtx_printf_elements_cb};
     abcdk_tree_scan(ctx->root, &it);
 
     abcdk_tree_free(&ctx->devlist);
@@ -308,7 +308,7 @@ int _abcdk_mtx_find_changer_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
 void _abcdk_mtx_find_changer(abcdk_mtx_t *ctx)
 {
-    abcdk_tree_iterator_t it = {0, _abcdk_mtx_find_changer_cb, ctx};
+    abcdk_tree_iterator_t it = {0, ctx, _abcdk_mtx_find_changer_cb};
     abcdk_tree_scan(ctx->root, &it);
 }
 

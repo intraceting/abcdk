@@ -183,7 +183,7 @@ abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root, abcdk_mp4_tag_t *type,size_t in
     ctx.index2 = 0;
     ctx.ret = NULL;
 
-    abcdk_tree_iterator_t it = {0, _abcdk_mp4_find_cb, &ctx};
+    abcdk_tree_iterator_t it = {0, &ctx, _abcdk_mp4_find_cb};
     abcdk_tree_scan(root, &it);
 
     return ctx.ret;
@@ -238,7 +238,7 @@ void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root)
 
     ctx.fd = fd;
 
-    abcdk_tree_iterator_t it = {0, _abcdk_mp4_dump_cb, &ctx};
+    abcdk_tree_iterator_t it = {0, &ctx, _abcdk_mp4_dump_cb};
     abcdk_tree_scan(root, &it);
 }
 

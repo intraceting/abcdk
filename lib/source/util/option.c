@@ -319,7 +319,7 @@ void abcdk_option_scan(abcdk_option_t *opt, abcdk_option_iterator_t *it)
     assert(opt != NULL && it != NULL);
     assert(it->dump_cb != NULL);
 
-    abcdk_tree_iterator_t tit = {0,_abcdk_option_scan_cb, (void*)it};
+    abcdk_tree_iterator_t tit = {0, (void*)it,_abcdk_option_scan_cb};
 
     abcdk_tree_scan(opt->table, &tit);
 }

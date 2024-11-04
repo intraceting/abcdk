@@ -375,7 +375,7 @@ void _abcdk_mt_read_mam(abcdk_mt_t *ctx)
 {
     abcdk_object_t *attr_p = NULL;
     abcdk_tree_t *root = NULL, *node = NULL;
-    abcdk_tree_iterator_t it = {0, _abcdk_mt_printf_mam_cb, ctx};
+    abcdk_tree_iterator_t it = {0, ctx, _abcdk_mt_printf_mam_cb};
     int part;
     int chk;
 

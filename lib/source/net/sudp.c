@@ -223,12 +223,11 @@ ERR:
 void abcdk_sudp_stop(abcdk_sudp_t *ctx)
 {
     assert(ctx != NULL);
-
     
     /*通知线程退出。*/
     abcdk_atomic_store(&ctx->worker_flag,1);
 
-    /*优先等待线程结束。*/
+    /*等待线程结束。*/
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 

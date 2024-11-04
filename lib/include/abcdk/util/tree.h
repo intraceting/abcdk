@@ -12,33 +12,23 @@
 
 __BEGIN_DECLS
 
-
-
 /** 简单的树节点。*/
 typedef struct _abcdk_tree
 {
-    /** 父。*/
+    /**父亲。*/
     struct _abcdk_tree *father;
 
-    /** 大娃。*/
+    /**大娃。*/
     struct _abcdk_tree *first;
 
-    /** 么娃。*/
+    /**么娃。*/
     struct _abcdk_tree *least;
 
-    /** 兄长。*/
+    /**兄长。*/
     struct _abcdk_tree *prev;
 
-    /** 小弟。*/
+    /**小弟。*/
     struct _abcdk_tree *next;
-
-    /** 析构回调函数。 */
-    void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
-
-    /**
-     * 用户环境指针。
-    */
-    void *opaque;
     
     /**
      * 数据对象。
@@ -46,6 +36,12 @@ typedef struct _abcdk_tree
      * @note 当节点被删除时，自动调用abcdk_object_unref()释放。
     */
     abcdk_object_t *obj;
+
+    /**环境指针。*/
+    void *opaque;
+
+    /**析构回调函数。 */
+    void (*destructor_cb)(abcdk_object_t *obj, void *opaque);
 
 }abcdk_tree_t;
 
@@ -61,6 +57,11 @@ typedef struct _abcdk_tree_iterator
     size_t depth_max;
 
     /**
+     * 环境指针。
+    */
+    void *opaque;
+
+    /**
      * 回显函数。
      * 
      * @note depth == SIZE_MAX 表示没有更多节点。
@@ -68,11 +69,6 @@ typedef struct _abcdk_tree_iterator
      * @return -1 终止，0 忽略孩子，1 继续。
     */
     int (*dump_cb)(size_t depth, abcdk_tree_t *node, void *opaque);
-
-    /**
-     * 环境指针。
-    */
-    void *opaque;
 
     /**
      * 比较函数。
@@ -184,7 +180,6 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it);
  * @note 选择法排序，非递归。
  * 
  * @param [in] order 顺序规则。!0 升序，0 降序。
- * 
 */
 void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_iterator_t *it,int order);
 
@@ -192,7 +187,6 @@ void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_iterator_t *it,int order);
  * 去掉重复的。
  * 
  * @note 行程压缩，非递归。
- * 
 */
 void abcdk_tree_distinct(abcdk_tree_t *father,abcdk_tree_iterator_t *it);
 

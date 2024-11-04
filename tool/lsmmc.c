@@ -146,7 +146,7 @@ int _abcdk_lsmmc_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaq
 
 void _abcdk_lsmmc_printf_elements(abcdk_lsmmc_t *ctx)
 {
-    abcdk_tree_iterator_t it = {0, _abcdk_lsmmc_printf_elements_cb, ctx};
+    abcdk_tree_iterator_t it = {0, ctx, _abcdk_lsmmc_printf_elements_cb};
     abcdk_tree_scan(ctx->list, &it);
 }
 

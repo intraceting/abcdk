@@ -109,7 +109,7 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
         p2 = abcdk_tree_sibling(p2, 0);
     }
 
-    abcdk_tree_iterator_t it = {0,_abcdk_dmi_get_machine_hashcode_dump_cb,NULL,_abcdk_dmi_get_machine_hashcode_compare_cb};
+    abcdk_tree_iterator_t it = {0,NULL,_abcdk_dmi_get_machine_hashcode_dump_cb,_abcdk_dmi_get_machine_hashcode_compare_cb};
 
   //  abcdk_tree_scan(sn_vec,&it);
     abcdk_tree_sort(sn_vec,&it,1);

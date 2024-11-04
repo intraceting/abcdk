@@ -187,7 +187,7 @@ typedef struct _abcdk_stcp_config
     /**
      * 为新连接做准备工作的通知回调函数。
      * 
-     * @note 监听有效，必须指定。
+     * @note 仅监听有效，必须为有效地址。
      * 
      * @param [out] node 新的节点，返回时填写。
      */
@@ -199,7 +199,6 @@ typedef struct _abcdk_stcp_config
      * @note 除ABCDK_STCP_EVENT_ACCEPT事件外，其余事件均忽略返回值。
      */
     void (*event_cb)(abcdk_stcp_node_t *node, uint32_t event, int *result);
-
 
     /**
      * 输入数据到达通知回调函数。

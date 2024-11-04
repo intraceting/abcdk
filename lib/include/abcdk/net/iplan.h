@@ -59,6 +59,15 @@ int abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,void *data);
 */
 void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
 
+/**
+ * 遍历。
+ * 
+ * @param [in out] it 迭代器。NULL(0) 表示从头部开始遍历。
+ * 
+ * @return !NULL(0) 数据指针。NULL(0) 结束。
+ */
+void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it);
+
 /**读锁。 */
 void abcdk_iplan_rdlock(abcdk_iplan_t *ctx);
 

@@ -184,7 +184,7 @@ int _abcdk_sdp_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 
 void abcdk_sdp_dump(FILE *fp, abcdk_tree_t *sdp)
 {
-    abcdk_tree_iterator_t it = {0, _abcdk_sdp_dump_cb, fp};
+    abcdk_tree_iterator_t it = {0, fp, _abcdk_sdp_dump_cb};
 
     abcdk_tree_scan(sdp, &it);
 }
