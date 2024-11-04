@@ -105,7 +105,7 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     int chk;
 
     assert(cfg != NULL);
-    assert(cfg->listen.family == AF_INET ||cfg->listen.family == AF_INET6);
+    assert(cfg->listen_addr.family == AF_INET ||cfg->listen_addr.family == AF_INET6);
     assert(cfg->input_cb != NULL);
 
     ctx = (abcdk_sudp_t*)abcdk_heap_alloc(sizeof(abcdk_sudp_t));
@@ -142,7 +142,7 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
 #endif //OPENSSL_VERSION_NUMBER
     }
 
-    ctx->fd = abcdk_socket(ctx->cfg.listen.family,1);
+    ctx->fd = abcdk_socket(ctx->cfg.listen_addr.family,1);
     if(ctx->fd < 0)
         goto ERR;
 
@@ -159,7 +159,7 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     if (chk != 0)
         goto ERR;
 
-    if(ctx->cfg.listen.family == AF_INET6)
+    if(ctx->cfg.listen_addr.family == AF_INET6)
     {
         /*IPv6仅支持IPv6。*/
         sock_flag = 1;
@@ -168,16 +168,23 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
             goto ERR;
     }
 
-    if(ctx->cfg.listen.family == AF_INET)
-        have_port = (ctx->cfg.listen.addr4.sin_port != 0);
-    else if(ctx->cfg.listen.family == AF_INET6)
-        have_port = (ctx->cfg.listen.addr6.sin6_port != 0);
+    if(ctx->cfg.listen_addr.family == AF_INET)
+        have_port = (ctx->cfg.listen_addr.addr4.sin_port != 0);
+    else if(ctx->cfg.listen_addr.family == AF_INET6)
+        have_port = (ctx->cfg.listen_addr.addr6.sin6_port != 0);
 
     if (have_port)
     {
-        chk = abcdk_bind(ctx->fd, &ctx->cfg.listen);
+        chk = abcdk_bind(ctx->fd, &ctx->cfg.listen_addr);
         if (chk != 0)
             goto ERR;
+
+        if(ctx->cfg.mreq_enable)
+        {
+            chk = abcdk_socket_option_multicast(ctx->fd,ctx->cfg.listen_addr.family,&ctx->cfg.mreq_addr,1);
+            if (chk != 0)
+                goto ERR;
+        }
     }
 
     chk = abcdk_fflag_add(ctx->fd,O_NONBLOCK);

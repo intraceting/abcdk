@@ -47,6 +47,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
     const char *ske_key_file = abcdk_option_get(args, "--ske-key-file", 0, "");
     int ske_key_cipher = abcdk_option_get_int(args, "--ske-key-cipher", 0, 0);
     const char *listen_p = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
+    const char *listen_mreq_p = abcdk_option_get(args, "--listen-mreq", 0, NULL);
     const char *dst_p = abcdk_option_get(args, "--dst", 0, "127.0.0.1:1111");
 
     abcdk_sockaddr_t remote = {0};
@@ -56,7 +57,10 @@ int abcdk_test_sudp(abcdk_option_t *args)
     
     cfg.ske_key_file = ske_key_file;
     cfg.ske_key_cipher = ske_key_cipher;
-    abcdk_sockaddr_from_string(&cfg.listen,listen_p,0);
+    abcdk_sockaddr_from_string(&cfg.listen_addr,listen_p,0);
+
+    if(listen_mreq_p)
+        cfg.mreq_enable = !abcdk_mreqaddr_from_string(&cfg.mreq_addr,listen_mreq_p,"0.0.0.0");
 
     cfg.input_cb = input_cb;
 

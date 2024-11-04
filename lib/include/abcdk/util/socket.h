@@ -69,14 +69,14 @@ typedef struct _abcdk_ifaddrs
 } abcdk_ifaddrs_t;
 
 /** Socket多播地址。*/
-typedef union _abcdk_mreq
+typedef union _abcdk_mreqaddr
 {
     /** IPv4地址。*/
-    struct ip_mreq st_mreq4;
+    struct ip_mreq addr4;
 
     /** IPv6地址。*/
-    struct ipv6_mreq st_mreq6;
-} abcdk_mreq_t;
+    struct ipv6_mreq addr6;
+} abcdk_mreqaddr_t;
 
 /**
  * SOCKADDR复制。
@@ -200,12 +200,14 @@ int abcdk_socket_option_linger_set(int fd, int l_onoff, int l_linger);
 /**
  * 启用或禁用SOCKET组播选项(multicast)。
  * 
- * @param ifaddr 地址的指针，为NULL(0)使用默认值。IPv4 点分十进制字符串地址；IPv6 网络接口名称。
+ * @param family IP家族。
+ * @param mreq 组播地址。
  * @param enable 开关。!0 启用，0 禁用。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char *ifaddr,int enable);
+int abcdk_socket_option_multicast(int fd,sa_family_t family, abcdk_mreqaddr_t *mreq,int enable);
+
 
 /**
  * TCP快速确认开关。
@@ -247,6 +249,7 @@ int abcdk_accept(int fd, abcdk_sockaddr_t *addr);
 */
 int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
 
+
 /**
  * 字符地址转SOCKET地址。
  * 
@@ -269,6 +272,7 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
 */
 int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lookup);
 
+
 /**
  * SOCKET地址转字符地址。
  * 
@@ -280,6 +284,18 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst,const char *src, int try_lo
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
 char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src,int ex_port);
+
+/**
+ * 字符地址转SOCKET组播地址。
+ * 
+ * @note 接口地址或名称不能带有协议家族前缀。
+ * 
+ * @param multiaddr 组播地址。
+ * @param ifaddr 接口地址或名称。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_mreqaddr_from_string(abcdk_mreqaddr_t *dst, const char *multiaddr, const char *ifaddr);
 
 /**
  * 判断SOCKET地址位置。

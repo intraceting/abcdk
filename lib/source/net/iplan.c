@@ -9,6 +9,9 @@
 /**IP路径。 */
 struct _abcdk_iplan
 {
+    /*排除端口。!0 是，0 否。*/
+    int ex_port;
+
     /*路由表。*/
     abcdk_map_t *table_ctx;
 
@@ -28,6 +31,7 @@ static int _abcdk_iplan_key_len(abcdk_sockaddr_t *addr)
 
 static uint64_t _abcdk_iplan_hash_cb(const void* key,size_t size,void *opaque)
 {
+    abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
     uint64_t hs = UINT64_MAX;
 
     abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key;
@@ -46,6 +50,7 @@ static uint64_t _abcdk_iplan_hash_cb(const void* key,size_t size,void *opaque)
 
 static int _abcdk_iplan_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
+    abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
     abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key1;
     abcdk_sockaddr_t *b = (abcdk_sockaddr_t *)key2;
 
@@ -56,10 +61,16 @@ static int _abcdk_iplan_compare_cb(const void *key1, size_t size1, const void *k
     {
         if (a->addr4.sin_addr.s_addr != b->addr4.sin_addr.s_addr)
             return -1;
+
+        if(!ctx->ex_port && a->addr4.sin_port != b->addr4.sin_port)
+            return -1;
     }
     else if (a->family == AF_INET6)
     {
         if (memcmp(a->addr6.sin6_addr.s6_addr, b->addr6.sin6_addr.s6_addr, 16) != 0)
+            return -1;
+
+        if(!ctx->ex_port && a->addr6.sin6_port != b->addr6.sin6_port)
             return -1;
     }
 
@@ -81,13 +92,15 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_iplan_t *abcdk_iplan_create()
+abcdk_iplan_t *abcdk_iplan_create(int ex_port)
 {
     abcdk_iplan_t *ctx;
 
     ctx = (abcdk_iplan_t*)abcdk_heap_alloc(sizeof(abcdk_iplan_t));
     if(!ctx)
         return NULL;
+
+    ctx->ex_port = ex_port;
 
     ctx->table_ctx = abcdk_map_create(10);
     if(!ctx->table_ctx)

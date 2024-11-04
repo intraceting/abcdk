@@ -39,10 +39,13 @@ typedef struct _abcdk_sudp_config
     int ske_key_cipher;
 
     /**监听地址。*/
-    abcdk_sockaddr_t listen;
+    abcdk_sockaddr_t listen_addr;
 
-    /**多播地址。*/
-    abcdk_mreq_t mreq;
+    /**启用组播。!0 启用，0 禁用。*/
+    int mreq_enable;
+
+    /**组播地址。*/
+    abcdk_mreqaddr_t mreq_addr;
 
     /**
      * 输出队列丢包最小阈值。 

@@ -284,39 +284,25 @@ int abcdk_socket_option_linger_set(int fd, int l_onoff, int l_linger)
     return abcdk_socket_option_linger(fd,&l,2);
 }
 
-int abcdk_socket_option_multicast(int fd,abcdk_sockaddr_t *multiaddr, const char *ifaddr,int enable)
+int abcdk_socket_option_multicast(int fd,sa_family_t family, abcdk_mreqaddr_t *addr,int enable)
 {
     socklen_t len = sizeof(struct ip_mreq);
     socklen_t len6 = sizeof(struct ipv6_mreq);
-    struct ip_mreq st_mreq;
-    struct ipv6_mreq st_mreq6;
     int name;
-    int chk = -1;
+    int chk;
 
-    assert(fd >= 0 && multiaddr != NULL);
-    assert(multiaddr->family == AF_INET || multiaddr->family == AF_INET6);
+    assert(fd >= 0 && (family == AF_INET || family == AF_INET6) && addr != NULL);
 
-    memset(&st_mreq,0,sizeof(st_mreq));
-    memset(&st_mreq6,0,sizeof(st_mreq6));
-
-    if(multiaddr->family == AF_INET)
-    {
-        st_mreq.imr_multiaddr = multiaddr->addr4.sin_addr;
-        st_mreq.imr_interface.s_addr = (ifaddr ? inet_addr(ifaddr) : INADDR_ANY);
-
+    if(family == AF_INET)
         name = (enable ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP);
-
-        chk = abcdk_socket_option(fd,IPPROTO_IP,name,&st_mreq,&len,2);  
-    }
-    else if(multiaddr->family == AF_INET6)
-    {
-        st_mreq6.ipv6mr_multiaddr = multiaddr->addr6.sin6_addr;
-        st_mreq6.ipv6mr_interface = (ifaddr ? if_nametoindex(ifaddr) : 0);
-
+    else if(family == AF_INET6)
         name = (enable ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP);
+    else 
+        return -22;
 
-        chk = abcdk_socket_option(fd,IPPROTO_IP,name,&st_mreq6,&len,2); 
-    }
+    chk = abcdk_socket_option(fd,IPPROTO_IP,name,addr,&len,2);
+    if(chk != 0)
+        return -1;
 
     return chk;
 }
@@ -587,6 +573,37 @@ char *abcdk_sockaddr_to_string(char dst[NAME_MAX],const abcdk_sockaddr_t *src,in
     }
 
     return dst;
+}
+
+int abcdk_mreqaddr_from_string(abcdk_mreqaddr_t *dst, const char *multiaddr, const char *ifaddr)
+{
+    socklen_t len = sizeof(struct ip_mreq);
+    socklen_t len6 = sizeof(struct ipv6_mreq);
+    abcdk_sockaddr_t addr = {0};
+    int chk = -1;
+
+    assert(dst != NULL && multiaddr != NULL && ifaddr != NULL);
+    
+    chk = abcdk_sockaddr_from_string(&addr,multiaddr,0);
+    if(chk != 0)
+        return -1;
+    
+    if(addr.family == AF_INET)
+    {
+        dst->addr4.imr_multiaddr = addr.addr4.sin_addr;
+        dst->addr4.imr_interface.s_addr = (ifaddr ? inet_addr(ifaddr) : INADDR_ANY);
+    }
+    else if(addr.family == AF_INET6)
+    {
+        dst->addr6.ipv6mr_multiaddr = addr.addr6.sin6_addr;
+        dst->addr6.ipv6mr_interface = (ifaddr ? if_nametoindex(ifaddr) : 0);
+    }
+    else 
+    {
+        return -1;
+    }
+
+    return 0;
 }
 
 int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)

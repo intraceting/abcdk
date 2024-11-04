@@ -24,8 +24,12 @@ typedef struct _abcdk_iplan abcdk_iplan_t;
 /**销毁。 */
 void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
 
-/**创建。 */
-abcdk_iplan_t *abcdk_iplan_create();
+/**
+ * 创建。 
+ * 
+ * @param [in] ex_port 排除端口。!0 是，0 否。
+*/
+abcdk_iplan_t *abcdk_iplan_create(int ex_port);
 
 /**
  * 删除。
