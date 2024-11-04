@@ -277,7 +277,7 @@ NEXT_MSG:
     }
 
     if(ctx->cfg.input_cb)
-        ctx->cfg.input_cb(ctx->cfg.opaque,&remote,dec_p->pptrs[0]+6, dec_p->sizes[0]-6);
+        ctx->cfg.input_cb(ctx->cfg.opaque,&remote,dec_p->pptrs[0], dec_p->sizes[0]);
 
     goto NEXT_MSG;
 }

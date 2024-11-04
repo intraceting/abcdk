@@ -36,5 +36,5 @@ BUILD_PATH=${SHELLDIR}/../build/auto.build/
 WORK_SPACE=${SHELLDIR}/../
 
 #
-make -C ${WORK_SPACE} MAKE_CONF=${BUILD_PATH}/makefile.conf $*
+make -s -C ${WORK_SPACE} MAKE_CONF=${BUILD_PATH}/makefile.conf $*
 exit_if_error $? "make failed." 1
