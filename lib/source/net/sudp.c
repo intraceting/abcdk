@@ -18,8 +18,8 @@ struct _abcdk_sudp
     /**线程池环境。*/
     abcdk_worker_t *worker_ctx;
 
-    /**退出标志。0： 运行，!0：停止。*/
-    volatile int exitflag;
+    /**线程池标志。0： 运行，!0：停止。*/
+    volatile int worker_flag;
 
     /**句柄。*/
     int fd;
@@ -43,7 +43,7 @@ struct _abcdk_sudp
 #endif //OPENSSL_VERSION_NUMBER
 } ;//abcdk_sudp_t;
 
-void abcdk_sudp_stop(abcdk_sudp_t **ctx)
+void abcdk_sudp_destroy(abcdk_sudp_t **ctx)
 {
     abcdk_sudp_t *ctx_p;
 
@@ -53,11 +53,7 @@ void abcdk_sudp_stop(abcdk_sudp_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    /*通知线程退出。*/
-    abcdk_atomic_store(&ctx_p->exitflag,1);
-
-    /*优先等待线程结束。*/
-    abcdk_worker_stop(&ctx_p->worker_ctx);
+    ABCDK_ASSERT(ctx_p->worker_ctx == NULL, "销毁前必须先停止。");
 
     abcdk_wred_destroy(&ctx_p->out_wred);
     abcdk_tree_free(&ctx_p->out_queue);
@@ -101,7 +97,7 @@ static void _abcdk_sudp_fix_cfg(abcdk_sudp_t *ctx)
         ABCDK_INTEGER_SWAP(ctx->cfg.out_min_th, ctx->cfg.out_max_th);
 }
 
-abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
+abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
 {
     abcdk_sudp_t *ctx;
     int sock_flag;
@@ -150,13 +146,6 @@ abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
     if(ctx->fd < 0)
         goto ERR;
 
-    // /*设置发送缓存区。*/
-    // sock_flag = 512*1024;
-    // chk = abcdk_sockopt_option_int(ctx->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
-
-    // /*设置接收缓存区。*/
-    // sock_flag = 512*1024;
-    // chk = abcdk_sockopt_option_int(ctx->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
 
     /*端口复用，用于快速重启恢复。*/
     sock_flag = 1;
@@ -215,9 +204,21 @@ abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg)
 
 ERR:
 
-    abcdk_sudp_stop(&ctx);
+    abcdk_sudp_destroy(&ctx);
 
     return NULL;
+}
+
+void abcdk_sudp_stop(abcdk_sudp_t *ctx)
+{
+    assert(ctx != NULL);
+
+    
+    /*通知线程退出。*/
+    abcdk_atomic_store(&ctx->worker_flag,1);
+
+    /*优先等待线程结束。*/
+    abcdk_worker_stop(&ctx->worker_ctx);
 }
 
 static void _abcdk_sudp_process_input(abcdk_sudp_t *ctx)
@@ -238,7 +239,7 @@ NEXT_MSG:
     abcdk_object_unref(&dec_p);
     memset(addrbuf,0,100);
 
-    if(!abcdk_atomic_compare(&ctx->exitflag,0))
+    if(!abcdk_atomic_compare(&ctx->worker_flag,0))
         return;
 
     chk = abcdk_poll(ctx->fd,0x01,1000);
@@ -292,7 +293,7 @@ NEXT_MSG:
 
     abcdk_object_unref(&enc_p);
 
-    if(!abcdk_atomic_compare(&ctx->exitflag,0))
+    if(!abcdk_atomic_compare(&ctx->worker_flag,0))
         return;
 
     chk = abcdk_poll(ctx->fd,0x02,1000);

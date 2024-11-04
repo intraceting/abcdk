@@ -33,7 +33,10 @@ typedef struct _abcdk_sudp abcdk_sudp_t;
 typedef struct _abcdk_sudp_config
 {
     /**共享密钥。*/
-    const char *aes_key_file;
+    const char *ske_key_file;
+    
+    /**密钥算法。*/
+    int ske_key_cipher;
 
     /**监听地址。*/
     abcdk_sockaddr_t listen;
@@ -81,16 +84,18 @@ typedef struct _abcdk_sudp_config
 
 } abcdk_sudp_config_t;
 
-/** 停止。*/
-void abcdk_sudp_stop(abcdk_sudp_t **ctx);
+/**销毁*/
+void abcdk_sudp_destroy(abcdk_sudp_t **ctx);
 
 /**
- * 启动。
+ * 创建。
  * 
  * @param [in] cfg 配置。
- * 
 */
-abcdk_sudp_t *abcdk_sudp_start(abcdk_sudp_config_t *cfg);
+abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg);
+
+/**停止。*/
+void abcdk_sudp_stop(abcdk_sudp_t *ctx);
 
 /**
  * 投递数据。
