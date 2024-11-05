@@ -1082,9 +1082,26 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-    abcdk_ipool_t *pool_ctx = abcdk_ipool_create2("192.168.123.1","192.168.123.254");
+    abcdk_sockaddr_t b,e,n;
 
-    int chk = abcdk_ipool_set_dhcp_range2(pool_ctx,"192.168.123.1","192.168.123.254");
+#if 0
+    abcdk_sockaddr_from_string(&n,"192.168.123.1",0);
+    abcdk_sockaddr_make_range(&b,&e,&n,24);
+#else 
+    abcdk_sockaddr_from_string(&n,"[fc00::1]",0);
+    abcdk_sockaddr_make_range(&b,&e,&n,120);
+#endif 
+
+    char bstr[100] = {0},estr[100] = {0};
+
+    abcdk_sockaddr_to_string(bstr,&b,1);
+    abcdk_sockaddr_to_string(estr,&e,1);
+
+    fprintf(stderr,"%s,%s\n",bstr,estr);
+
+    abcdk_ipool_t *pool_ctx = abcdk_ipool_create2(bstr,estr);
+
+    int chk = abcdk_ipool_set_dhcp_range2(pool_ctx,bstr,estr);
 
     abcdk_iplan_t *plan_ctx = abcdk_iplan_create(0);
 

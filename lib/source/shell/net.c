@@ -145,16 +145,16 @@ int abcdk_net_route_flush(const char *ifname)
 int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname)
 {
     int exitcode = 0, sigcode = 0;
-    char mask[100] = {0};
+    char net[100] = {0};
     pid_t pid = -1;
     int chk;
 
     assert((ver == 4 || ver == 6) && host != NULL && prefix >= 0 && gw != NULL && metric >= 0 && ifname != NULL);
     assert(*host != '\0' &&  *gw != '\0' && *ifname != '\0');
 
-    abcdk_sockaddr_make_netmask2(mask, ((ver == 6) ? AF_INET6 : AF_INET), host, prefix);
+    abcdk_sockaddr_make_segment2(net, ((ver == 6) ? AF_INET6 : AF_INET), host, prefix);
 
-    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip -%d route add %s/%d via %s metric %d dev %s", ver, mask, prefix, gw, metric, ifname);
+    pid = abcdk_proc_popen(NULL, NULL, NULL, "ip -%d route add %s/%d via %s metric %d dev %s", ver, net, prefix, gw, metric, ifname);
     if (pid < 0)
         return -1;
 
@@ -162,12 +162,12 @@ int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, i
     if (exitcode != 0 && exitcode != 2)
     {
         abcdk_trace_output( LOG_ERR, "添加路由('IPV%d','%s/%d','%s','%d')到'%s'失败(exit=%d,signal=%d)。",
-                                ver, mask, prefix, gw, metric, ifname, exitcode, sigcode);
+                                ver, net, prefix, gw, metric, ifname, exitcode, sigcode);
         return -2;
     }
 
     abcdk_trace_output( LOG_INFO, "添加路由('IPV%d','%s/%d','%s','%d')到'%s'完成。",
-                            ver, mask, prefix, gw, metric, ifname, exitcode, sigcode);
+                            ver, net, prefix, gw, metric, ifname, exitcode, sigcode);
 
     return 0;
 }

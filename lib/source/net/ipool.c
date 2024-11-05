@@ -64,7 +64,7 @@ static uint64_t _abcdk_ipool_get_addr_pos(abcdk_sockaddr_t *addr)
     else if(addr->family == AF_INET6)
     {
         pos = 0;
-        for(int i = 12;i<16;i++)
+        for (int i = 12; i < 16; i++)
         {
             pos <<= 8;
             pos += addr->addr6.sin6_addr.s6_addr[i];
@@ -173,6 +173,18 @@ abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end)
         return NULL;
 
     return abcdk_ipool_create(&b,&e);
+}
+
+abcdk_ipool_t *abcdk_ipool_create3(const char *net,int prefix)
+{
+    abcdk_sockaddr_t n,b,e;
+    int chk;
+
+    assert(net != NULL && prefix >= 0);
+
+    chk = abcdk_sockaddr_from_string(&n,net,0);
+    if(chk != 0)
+        return NULL;
 }
 
 int abcdk_ipool_set_dhcp_range(abcdk_ipool_t *ctx,abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end)

@@ -683,7 +683,7 @@ int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t
     return chk;
 }
 
-void abcdk_sockaddr_make_netmask(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t *addr, int prefix)
+void abcdk_sockaddr_make_segment(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t *addr, int prefix)
 {
     int iplen;
 
@@ -694,9 +694,10 @@ void abcdk_sockaddr_make_netmask(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t 
 
     assert(iplen >= prefix);
 
-    /*copy*/
+    /*复制协议和地址。*/
     *mask = *addr;
 
+    /*后缀的部分填零。*/
     for (int i = prefix; i < iplen; i++)
     {
         if (mask->family == AF_INET6)
@@ -706,16 +707,68 @@ void abcdk_sockaddr_make_netmask(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t 
     }
 }
 
-char *abcdk_sockaddr_make_netmask2(char buf[100], sa_family_t family, const char *host, int prefix)
+char *abcdk_sockaddr_make_segment2(char buf[100], sa_family_t family, const char *host, int prefix)
 {
     abcdk_sockaddr_t mask,addr;
 
     assert(buf != NULL && (family == AF_INET||family == AF_INET6) && host != NULL && prefix >=0);
 
-    abcdk_inet_pton(host, family, &addr);
-    abcdk_sockaddr_make_netmask(&mask,&addr,prefix);
+    addr.family = family;
+    abcdk_sockaddr_from_string(&addr,host,0);
+
+    abcdk_sockaddr_make_segment(&mask,&addr,prefix);
 
     return abcdk_inet_ntop(&mask, buf, 100);
+}
+
+void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const abcdk_sockaddr_t *net, int prefix)
+{
+    uint32_t ipv4_mask,ipv4_net;
+
+    assert(net != NULL && prefix >= 0);
+    assert(net->family == AF_INET || net->family == AF_INET6);
+
+    if(net->family == AF_INET)
+    {
+        ipv4_mask = 0xffffffff << (32 - prefix);
+        ipv4_net =  abcdk_endian_b_to_h32(net->addr4.sin_addr.s_addr);
+
+        if (b)
+        {
+            b->family = AF_INET;
+            b->addr4.sin_addr = net->addr4.sin_addr;
+            b->addr4.sin_addr.s_addr = abcdk_endian_h_to_b32(ipv4_net & ipv4_mask);
+        }
+
+        if (e)
+        {
+            e->family = AF_INET;
+            e->addr4.sin_addr = net->addr4.sin_addr;
+            e->addr4.sin_addr.s_addr = abcdk_endian_h_to_b32((ipv4_net & ipv4_mask) | (~ipv4_mask));
+        }
+    }
+    else if(net->family == AF_INET6)
+    {
+        if (b)
+        {
+            b->family = AF_INET6;
+            b->addr6.sin6_addr = net->addr6.sin6_addr;
+            
+            /*set 0 to suffix.*/
+            for (int i = prefix; i < 128; i++)
+                abcdk_bloom_write(b->addr6.sin6_addr.s6_addr, 16, i, 0);
+        }
+
+        if (e)
+        {
+            e->family = AF_INET6;
+            e->addr6.sin6_addr = net->addr6.sin6_addr;
+            
+            /*set 1 to suffix.*/
+            for (int i = prefix; i < 128; i++)
+                abcdk_bloom_write(e->addr6.sin6_addr.s6_addr, 16, i, 1);
+        }
+    }
 }
 
 
