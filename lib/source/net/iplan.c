@@ -107,7 +107,7 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_iplan_t *abcdk_iplan_create(int ex_port)
+abcdk_iplan_t *abcdk_iplan_create(int have_port)
 {
     abcdk_iplan_t *ctx;
 
@@ -116,7 +116,7 @@ abcdk_iplan_t *abcdk_iplan_create(int ex_port)
         return NULL;
 
     /*设置匹配标志。*/
-    ctx->compare_flag = (ex_port ? 0 : 1);
+    ctx->compare_flag = (have_port ? 1 : 0);
 
     ctx->table_ctx = abcdk_map_create(100);
     if(!ctx->table_ctx)
@@ -228,7 +228,7 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     return data_p;
 }
 
-void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it)
+void *abcdk_iplan_next(abcdk_iplan_t *ctx,abcdk_iplan_iterator_t **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
     abcdk_iplan_node_t *node_p;
@@ -243,11 +243,13 @@ NEXT:
 
     if(it_p)
     {
+        /*查找下一个节点。*/
         it_next_p = abcdk_tree_sibling(it_p,0);
 
+        /*检查当前节点。*/
         node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
 
-        /*可能节点已经被删除。*/
+        /*可能当前节点已经被删除。*/
         if (node_p->flag == 2)
         {
             abcdk_tree_unlink(it_p);
@@ -256,15 +258,17 @@ NEXT:
     }
     else 
     {
+        /*从头开始遍历。*/
         it_next_p = abcdk_tree_child(ctx->list_ctx,1);
     }
 
     if(!it_next_p)
         return NULL;
 
+    /*当前节点指向新节点。*/
     it_p = it_next_p;
 
-    /*如果节点已经被删除，则遍历下一个。*/
+    /*如果当前节点已经被删除，则遍历下一个。*/
     node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
     if(node_p->flag == 2)
         goto NEXT;
@@ -273,7 +277,7 @@ NEXT:
     userdata_p = node_p->userdata;
 
     /*更新迭代器。*/
-    *it = (void*)it_p;
+    *it = (abcdk_iplan_iterator_t*)it_p;
 
     return userdata_p;
 }

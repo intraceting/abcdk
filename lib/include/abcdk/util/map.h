@@ -28,6 +28,11 @@ typedef struct _abcdk_map
     abcdk_tree_t *table;
 
     /**
+     * 环境指针。
+    */
+    void *opaque;
+    
+    /**
      * KEY哈希函数。
     */
     uint64_t (*hash_cb)(const void* key,size_t size,void *opaque);
@@ -61,10 +66,6 @@ typedef struct _abcdk_map
     */
     int (*dump_cb)(abcdk_object_t *obj, void *opaque);
 
-    /**
-     * 环境指针。
-    */
-    void *opaque;
     
 }abcdk_map_t;
 
@@ -107,7 +108,7 @@ abcdk_map_t *abcdk_map_create(size_t size);
  * @param ksize Key长度。
  * @param vsize Value长度。 0 仅查找，> 0 不存在则创建。
  * 
- * @return !NULL(0) 成功(复制的指针，不需要主动释放)，NULL(0) 不存在或创建失败。
+ * @return !NULL(0) 节点指针(复制的指针，不需要主动释放)，NULL(0) 不存在或创建失败。
  * 
 */
 abcdk_object_t* abcdk_map_find(abcdk_map_t* map,const void* key,size_t ksize,size_t vsize);
@@ -122,9 +123,10 @@ void abcdk_map_remove(abcdk_map_t* map,const void* key,size_t ksize);
 /**
  * 扫描节点。
  * 
- * @note 深度优先遍历节点。
+ * @note 深度优先。
 */
 void abcdk_map_scan(abcdk_map_t *map);
+
 
 __END_DECLS
 

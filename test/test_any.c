@@ -1080,6 +1080,43 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
+#elif 1
+
+    abcdk_ipool_t *pool_ctx = abcdk_ipool_create2("192.168.123.1","192.168.123.254");
+
+    int chk = abcdk_ipool_set_dhcp_range2(pool_ctx,"192.168.123.1","192.168.123.254");
+
+    abcdk_iplan_t *plan_ctx = abcdk_iplan_create(0);
+
+    int c = abcdk_ipool_count(pool_ctx,2);
+    for(int i = 0;i<c;i++)
+    {
+        abcdk_sockaddr_t addr = {0};
+        chk = abcdk_ipool_dhcp_request(pool_ctx,&addr);
+        if(chk != 0)
+            break;
+
+        abcdk_iplan_insert(plan_ctx,&addr,(void*)(long)(i+1));
+ 
+        abcdk_ipool_reclaim(pool_ctx,&addr);
+    }
+
+    abcdk_iplan_iterator_t *plan_it = NULL;
+    void *addr_p = NULL;
+
+    abcdk_sockaddr_t addr = {0};
+
+    abcdk_sockaddr_from_string(&addr,"192.168.123.123",0);
+
+    abcdk_iplan_remove(plan_ctx,&addr);
+
+    while(addr_p = abcdk_iplan_next(plan_ctx,&plan_it))
+    {
+        fprintf(stderr,"%p\n",addr_p);
+    }
+
+    abcdk_iplan_destroy(&plan_ctx);
+    abcdk_ipool_destroy(&pool_ctx);
 #elif 0
 
 #ifdef HAVE_OPENSSL

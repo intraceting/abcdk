@@ -16,7 +16,7 @@
 __BEGIN_DECLS
 
 
-/**IP池。 */
+/**简音的IP池。 */
 typedef struct _abcdk_ipool abcdk_ipool_t;
 
 /**销毁。 */

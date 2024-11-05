@@ -18,8 +18,11 @@
 __BEGIN_DECLS
 
 
-/**IP路径。 */
+/**简单的IP路径。 */
 typedef struct _abcdk_iplan abcdk_iplan_t;
+
+/**IP路径迭代器。 */
+typedef struct _abcdk_iplan_iterator abcdk_iplan_iterator_t;
 
 /**销毁。 */
 void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
@@ -27,9 +30,9 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
 /**
  * 创建。 
  * 
- * @param [in] ex_port 排除端口。!0 是，0 否。
+ * @param [in] have_port 包括端口。!0 是，0 否。
 */
-abcdk_iplan_t *abcdk_iplan_create(int ex_port);
+abcdk_iplan_t *abcdk_iplan_create(int have_port);
 
 /**
  * 删除。
@@ -66,7 +69,7 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
  * 
  * @return !NULL(0) 数据指针。NULL(0) 结束。
  */
-void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it);
+void *abcdk_iplan_next(abcdk_iplan_t *ctx,abcdk_iplan_iterator_t **it);
 
 /**读锁。 */
 void abcdk_iplan_rdlock(abcdk_iplan_t *ctx);
