@@ -316,19 +316,22 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where);
 int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t *addr2,int care_port);
 
 /**
- * 生成地址网段。
+ * 生成网段地址。
 */
-void abcdk_sockaddr_make_segment(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t *addr, int prefix);
+void abcdk_sockaddr_make_segment(abcdk_sockaddr_t *net, const abcdk_sockaddr_t *host, int prefix);
 
 /**
- * 生成地址网段。
+ * 生成网段地址。
 */
 char *abcdk_sockaddr_make_segment2(char buf[100], sa_family_t family, const char *host, int prefix);
 
 /**
  * 生成地址范围。
+ * 
+ * @param [out] b 起始地址。等于网段地址。
+ * @param [out] e 结束地址。等于广播地址。
 */
-void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const abcdk_sockaddr_t *net, int prefix);
+void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const abcdk_sockaddr_t *host, int prefix);
 
 
 __END_DECLS

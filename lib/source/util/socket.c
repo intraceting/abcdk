@@ -433,6 +433,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
 {
     sa_family_t family = AF_UNSPEC;
     char name[NAME_MAX] = {0};
+    char *p;
     uint16_t port = 0;
     int chk;
 
@@ -475,12 +476,19 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
 
         sscanf(src, "%[^, ]%*[, ]%hu", name, &port);
     }
-    else if (strchr(src, ':'))
+    else if (p = strchr(src, ':'))
     {
+        /*如果字符串内含有两个或以上的“:”，则按IPV6处理。"*/
+        if (p = strchr(p + 1, ':'))
+            dst->family = AF_INET6;
+
         if(dst->family != AF_INET && dst->family != AF_INET6)
             dst->family = AF_UNSPEC;
 
-        sscanf(src, "%[^: ]%*[: ]%hu", name, &port);
+        if (dst->family == AF_INET6)
+            strncpy(name, src, NAME_MAX);
+        else
+            sscanf(src, "%[^: ]%*[: ]%hu", name, &port);
     }
     else
     {
@@ -683,76 +691,58 @@ int abcdk_sockaddr_compare(const abcdk_sockaddr_t *addr1, const abcdk_sockaddr_t
     return chk;
 }
 
-void abcdk_sockaddr_make_segment(abcdk_sockaddr_t *mask, const abcdk_sockaddr_t *addr, int prefix)
+void abcdk_sockaddr_make_segment(abcdk_sockaddr_t *net, const abcdk_sockaddr_t *host, int prefix)
 {
-    int iplen;
+    assert(net != NULL && host != NULL && prefix >=0);
+    assert(host->family == AF_INET || host->family == AF_INET6);
 
-    assert(mask != NULL && addr != NULL && prefix >=0);
-    assert(addr->family == AF_INET || addr->family == AF_INET6);
-
-    iplen = ((addr->family == AF_INET6) ? 16 * 8 : 4 * 8);
-
-    assert(iplen >= prefix);
-
-    /*复制协议和地址。*/
-    *mask = *addr;
-
-    /*后缀的部分填零。*/
-    for (int i = prefix; i < iplen; i++)
-    {
-        if (mask->family == AF_INET6)
-            abcdk_bloom_write((uint8_t *)&mask->addr6.sin6_addr, 16, i, 0);
-        else
-            abcdk_bloom_write((uint8_t *)&mask->addr4.sin_addr, 4, i, 0);
-    }
+    abcdk_sockaddr_make_range(net,NULL,host,prefix);
 }
 
 char *abcdk_sockaddr_make_segment2(char buf[100], sa_family_t family, const char *host, int prefix)
 {
-    abcdk_sockaddr_t mask,addr;
+    abcdk_sockaddr_t net,hostaddr;
 
     assert(buf != NULL && (family == AF_INET||family == AF_INET6) && host != NULL && prefix >=0);
 
-    addr.family = family;
-    abcdk_sockaddr_from_string(&addr,host,0);
+    abcdk_inet_pton(host, family, &hostaddr);
+    abcdk_sockaddr_make_segment(&net,&hostaddr,prefix);
 
-    abcdk_sockaddr_make_segment(&mask,&addr,prefix);
-
-    return abcdk_inet_ntop(&mask, buf, 100);
+    return abcdk_inet_ntop(&net, buf, 100);
 }
 
-void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const abcdk_sockaddr_t *net, int prefix)
+void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const abcdk_sockaddr_t *host, int prefix)
 {
     uint32_t ipv4_mask,ipv4_net;
 
-    assert(net != NULL && prefix >= 0);
-    assert(net->family == AF_INET || net->family == AF_INET6);
+    assert(host != NULL && prefix >= 0);
+    assert(host->family == AF_INET || host->family == AF_INET6);
 
-    if(net->family == AF_INET)
+    if(host->family == AF_INET)
     {
         ipv4_mask = 0xffffffff << (32 - prefix);
-        ipv4_net =  abcdk_endian_b_to_h32(net->addr4.sin_addr.s_addr);
+        ipv4_net =  abcdk_endian_b_to_h32(host->addr4.sin_addr.s_addr);
 
         if (b)
         {
             b->family = AF_INET;
-            b->addr4.sin_addr = net->addr4.sin_addr;
+            b->addr4.sin_addr = host->addr4.sin_addr;
             b->addr4.sin_addr.s_addr = abcdk_endian_h_to_b32(ipv4_net & ipv4_mask);
         }
 
         if (e)
         {
             e->family = AF_INET;
-            e->addr4.sin_addr = net->addr4.sin_addr;
+            e->addr4.sin_addr = host->addr4.sin_addr;
             e->addr4.sin_addr.s_addr = abcdk_endian_h_to_b32((ipv4_net & ipv4_mask) | (~ipv4_mask));
         }
     }
-    else if(net->family == AF_INET6)
+    else if(host->family == AF_INET6)
     {
         if (b)
         {
             b->family = AF_INET6;
-            b->addr6.sin6_addr = net->addr6.sin6_addr;
+            b->addr6.sin6_addr = host->addr6.sin6_addr;
             
             /*set 0 to suffix.*/
             for (int i = prefix; i < 128; i++)
@@ -762,7 +752,7 @@ void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const ab
         if (e)
         {
             e->family = AF_INET6;
-            e->addr6.sin6_addr = net->addr6.sin6_addr;
+            e->addr6.sin6_addr = host->addr6.sin6_addr;
             
             /*set 1 to suffix.*/
             for (int i = prefix; i < 128; i++)

@@ -228,7 +228,7 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     return data_p;
 }
 
-void *abcdk_iplan_next(abcdk_iplan_t *ctx,abcdk_iplan_iterator_t **it)
+void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
     abcdk_iplan_node_t *node_p;
@@ -277,7 +277,7 @@ NEXT:
     userdata_p = node_p->userdata;
 
     /*更新迭代器。*/
-    *it = (abcdk_iplan_iterator_t*)it_p;
+    *it = (void*)it_p;
 
     return userdata_p;
 }

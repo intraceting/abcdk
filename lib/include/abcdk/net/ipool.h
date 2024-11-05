@@ -11,7 +11,7 @@
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/socket.h"
-#include "abcdk/util/spinlock.h"
+#include "abcdk/util/rwlock.h"
 
 __BEGIN_DECLS
 
@@ -58,7 +58,7 @@ int abcdk_ipool_static_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
 int abcdk_ipool_static_request2(abcdk_ipool_t *ctx,const char *addr);
 
 /**
- * DHCP地址请求。
+ * 动态地址请求。
  * 
  * @param [out] addr 地址。
  * 
@@ -73,8 +73,18 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
 */
 int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
 
-/**加锁。 */
-void abcdk_ipool_lock(abcdk_ipool_t *ctx);
+/** 
+ * 验证地址。
+ * 
+ * @return 0 成功，< 0 失败(超出池范围)。
+*/
+int abcdk_ipool_verify(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
+
+/**读锁。 */
+void abcdk_ipool_rdlock(abcdk_ipool_t *ctx);
+
+/**写锁。 */
+void abcdk_ipool_wrlock(abcdk_ipool_t *ctx);
 
 /**解锁。 */
 int abcdk_ipool_unlock(abcdk_ipool_t *ctx,int exitcode);

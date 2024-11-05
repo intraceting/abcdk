@@ -1037,7 +1037,7 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
     }
 
-#elif 0
+#elif 1
 
 
     abcdk_ipool_t *ctx = abcdk_ipool_create2(abcdk_option_get(args, "--start", 0, ""),abcdk_option_get(args, "--end", 0, ""));
@@ -1057,7 +1057,7 @@ int abcdk_test_any(abcdk_option_t *args)
             break;
         
         char buf[100] = {0};
-        abcdk_sockaddr_to_string(buf, &addr);
+        abcdk_sockaddr_to_string(buf, &addr,1);
         abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
 
         abcdk_ipool_reclaim(ctx,&addr);
@@ -1122,8 +1122,11 @@ int abcdk_test_any(abcdk_option_t *args)
     void *addr_p = NULL;
 
     abcdk_sockaddr_t addr = {0};
-
+#if 0
     abcdk_sockaddr_from_string(&addr,"192.168.123.123",0);
+#else 
+    abcdk_sockaddr_from_string(&addr,"fc00::7b",0);
+#endif 
 
     abcdk_iplan_remove(plan_ctx,&addr);
 

@@ -21,9 +21,6 @@ __BEGIN_DECLS
 /**简单的IP路径。 */
 typedef struct _abcdk_iplan abcdk_iplan_t;
 
-/**IP路径迭代器。 */
-typedef struct _abcdk_iplan_iterator abcdk_iplan_iterator_t;
-
 /**销毁。 */
 void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
 
@@ -69,7 +66,7 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
  * 
  * @return !NULL(0) 数据指针。NULL(0) 结束。
  */
-void *abcdk_iplan_next(abcdk_iplan_t *ctx,abcdk_iplan_iterator_t **it);
+void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it);
 
 /**读锁。 */
 void abcdk_iplan_rdlock(abcdk_iplan_t *ctx);
