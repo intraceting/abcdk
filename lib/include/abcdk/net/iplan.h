@@ -21,43 +21,39 @@ __BEGIN_DECLS
 /**简单的IP路径。 */
 typedef struct _abcdk_iplan abcdk_iplan_t;
 
+/**配置。*/
+typedef struct _abcdk_iplan_config
+{
+    /**包括端口。!0 是，0 否。*/
+    int have_port;
+
+    /**环境指针。*/
+    void *opaque;
+
+    /**删除回调函数。*/
+    void (*remove_cb)(abcdk_sockaddr_t *addr,void *userdata, void *opaque);
+    
+}abcdk_iplan_config_t;
+
 /**销毁。 */
 void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
 
-/**
- * 创建。 
- * 
- * @param [in] have_port 包括端口。!0 是，0 否。
-*/
-abcdk_iplan_t *abcdk_iplan_create(int have_port);
+/**创建。 */
+abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg);
 
-/**
- * 删除。
- * 
- * @param [in] addrs IP地址。
- * 
- * @return 数据指针。
-*/
-void *abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
-
-/**
- * 插入。
- * 
- * @param [in] addrs IP地址。
- * @param [in] data 数据指针。
- * 
- * @return 0 成功，!0 失败。
-*/
-int abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,void *data);
+/**删除。*/
+void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
 
 /**
  * 查询。
  * 
- * @param [in] addrs IP地址。
+ * @note 如果不存在，则自动创建。
  * 
- * @return 数据指针。
+ * @param [in] userdata 用户环境大小。= 0 仅查询。
+ * 
+ * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
 */
-void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
+void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata);
 
 /**
  * 遍历。
