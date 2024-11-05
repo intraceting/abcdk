@@ -193,16 +193,30 @@ abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end)
     return abcdk_ipool_create(&b,&e);
 }
 
-abcdk_ipool_t *abcdk_ipool_create3(const char *net,int prefix)
+abcdk_ipool_t *abcdk_ipool_create3(abcdk_sockaddr_t *host,int prefix)
+{
+    abcdk_sockaddr_t b,e;
+
+    assert(host != NULL && prefix >= 0);
+    assert(host->family == AF_INET || host->family == AF_INET6);
+
+    abcdk_sockaddr_make_range(&b,&e,host,prefix);
+
+    return abcdk_ipool_create(&b,&e);
+}
+
+abcdk_ipool_t *abcdk_ipool_create4(const char *host,int prefix)
 {
     abcdk_sockaddr_t n,b,e;
     int chk;
 
-    assert(net != NULL && prefix >= 0);
+    assert(host != NULL && prefix >= 0);
 
-    chk = abcdk_sockaddr_from_string(&n,net,0);
+    chk = abcdk_sockaddr_from_string(&n,host,0);
     if(chk != 0)
         return NULL;
+
+    return abcdk_ipool_create3(&n,prefix);
 }
 
 int abcdk_ipool_set_dhcp_range(abcdk_ipool_t *ctx,abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end)

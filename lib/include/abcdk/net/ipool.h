@@ -28,6 +28,11 @@ abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end)
 /**创建。 */
 abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end);
 
+/**创建。 */
+abcdk_ipool_t *abcdk_ipool_create3(abcdk_sockaddr_t *host,int prefix);
+
+/**创建。 */
+abcdk_ipool_t *abcdk_ipool_create4(const char *host,int prefix);
 
 /**设置DHCP范围。 */
 int abcdk_ipool_set_dhcp_range(abcdk_ipool_t *ctx,abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end);
