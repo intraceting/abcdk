@@ -15,8 +15,8 @@ struct _abcdk_iplan
     /**路由表(用于查找)。*/
     abcdk_map_t *table_ctx;
 
-    /**路由表副本(用于遍历)。*/
-    abcdk_tree_t *list_ctx;
+    /**监视表(用于遍历)。*/
+    abcdk_tree_t *watch_ctx;
 
     /**同步锁。*/
     abcdk_rwlock_t *locker_ctx;
@@ -25,11 +25,11 @@ struct _abcdk_iplan
 /**IP路径节点。 */
 typedef struct _abcdk_iplan_node
 {
-    /**标志。0 未注册，1 已注册，2 已删除。*/
-    int flag;
+    /**监视标志。0 未注册，1 已注册，2 已删除。*/
+    int watch_flag;
 
     /**用户环境。*/
-    abcdk_object_t *userdata;
+    abcdk_context_t *userdata;
 
 }abcdk_iplan_node_t;
 
@@ -97,11 +97,13 @@ static void _abcdk_iplan_destructor_cb(abcdk_object_t *obj, void *opaque)
     abcdk_sockaddr_t *addr_p = (abcdk_sockaddr_t *)obj->pptrs[ABCDK_MAP_KEY];
     abcdk_iplan_node_t *node_p = (abcdk_iplan_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
-    if(node_p->flag == 0)
+    if(!node_p->userdata)
         return;
 
     if(ctx->cfg.remove_cb)
-        ctx->cfg.remove_cb(addr_p,node_p->userdata->pptrs[0],ctx->cfg.opaque);
+        ctx->cfg.remove_cb(addr_p,node_p->userdata,ctx->cfg.opaque);
+
+    abcdk_context_unref(&node_p->userdata);
 }
 
 void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
@@ -116,7 +118,7 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
 
     abcdk_rwlock_destroy(&ctx_p->locker_ctx);
     abcdk_map_destroy(&ctx_p->table_ctx);
-    abcdk_tree_free(&ctx_p->list_ctx);
+    abcdk_tree_free(&ctx_p->watch_ctx);
     abcdk_heap_free(ctx_p);
 }
 
@@ -141,8 +143,8 @@ abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg)
     ctx->table_ctx->destructor_cb = _abcdk_iplan_destructor_cb;
     ctx->table_ctx->opaque = ctx;
 
-    ctx->list_ctx = abcdk_tree_alloc3(1);
-    if(!ctx->list_ctx)
+    ctx->watch_ctx = abcdk_tree_alloc3(1);
+    if(!ctx->watch_ctx)
         goto ERR;
 
     ctx->locker_ctx = abcdk_rwlock_create();
@@ -173,14 +175,14 @@ void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*标记已删除。*/
-    node_p->flag = 2;
+    node_p->watch_flag = 2;
 
     abcdk_map_remove(ctx->table_ctx,addr,_abcdk_iplan_key_len(addr));
 
     return;
 }
 
-void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata)
+abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata)
 {
     abcdk_object_t *val_p;
     abcdk_tree_t *val2_p;
@@ -197,22 +199,31 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userda
 
     node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
-    if(node_p->flag == 1)
-        goto END;
-    
-    node_p->userdata = abcdk_object_alloc2(userdata);
-    if(!node_p)
+    /*如果用户环境未创建，则自动创建。*/
+    if (!node_p->userdata && userdata > 0)
+        node_p->userdata = abcdk_context_alloc(userdata, NULL);
+
+    /*必须有效。*/
+    if(!node_p->userdata)
         goto ERR;
+
+    /*如果未启用监视，则跳过。*/
+    if(!ctx->cfg.enable_watch)
+        goto END;
+
+    /*如果已经被监视，则跳过。*/
+    if(node_p->watch_flag == 1)
+        goto END;
 
     /*引用节点，并创建节点副本。*/
     val2_p = abcdk_tree_alloc(abcdk_object_refer(val_p));
     if(val2_p)
     {   
         /*插入到链表中。*/
-        abcdk_tree_insert2(ctx->list_ctx,val2_p,0);
+        abcdk_tree_insert2(ctx->watch_ctx,val2_p,0);
 
         /*标记已注册。*/
-        node_p->flag = 1;
+        node_p->watch_flag = 1;
     }
     else 
     {
@@ -224,7 +235,7 @@ void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userda
 END:    
     
     /*复制用户环境指针。*/
-    userdata_p = node_p->userdata->pptrs[0];
+    userdata_p = node_p->userdata;
 
     return userdata_p;
 
@@ -235,11 +246,11 @@ ERR:
     return NULL;
 }
 
-void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it)
+abcdk_context_t *abcdk_iplan_watch(abcdk_iplan_t *ctx,void **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
     abcdk_iplan_node_t *node_p;
-    void *userdata_p;
+    abcdk_context_t *userdata_p;
 
     assert(ctx != NULL && it != NULL);
 
@@ -257,7 +268,7 @@ NEXT:
         node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
 
         /*可能当前节点已经被删除。*/
-        if (node_p->flag == 2)
+        if (node_p->watch_flag == 2)
         {
             abcdk_tree_unlink(it_p);
             abcdk_tree_free(&it_p);
@@ -266,7 +277,7 @@ NEXT:
     else 
     {
         /*从头开始遍历。*/
-        it_next_p = abcdk_tree_child(ctx->list_ctx,1);
+        it_next_p = abcdk_tree_child(ctx->watch_ctx,1);
     }
 
     if(!it_next_p)
@@ -277,11 +288,11 @@ NEXT:
 
     /*如果当前节点已经被删除，则遍历下一个。*/
     node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
-    if(node_p->flag == 2)
+    if(node_p->watch_flag == 2)
         goto NEXT;
 
     /*复制用户指针。*/
-    userdata_p = node_p->userdata->pptrs[0];
+    userdata_p = node_p->userdata;
 
     /*更新迭代器。*/
     *it = (void*)it_p;

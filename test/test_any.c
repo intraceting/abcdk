@@ -1037,7 +1037,7 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
     }
 
-#elif 1
+#elif 0
 
 
     abcdk_ipool_t *ctx = abcdk_ipool_create2(abcdk_option_get(args, "--start", 0, ""),abcdk_option_get(args, "--end", 0, ""));
@@ -1103,7 +1103,10 @@ int abcdk_test_any(abcdk_option_t *args)
 
     int chk = abcdk_ipool_set_dhcp_range2(pool_ctx,bstr,estr);
 
-    abcdk_iplan_t *plan_ctx = abcdk_iplan_create(0);
+    abcdk_iplan_config_t cfg = {0};
+    cfg.enable_watch = 0;
+    abcdk_iplan_t *plan_ctx = abcdk_iplan_create(&cfg);
+    abcdk_context_t *addr_p = NULL;
 
     int c = abcdk_ipool_count(pool_ctx,2);
     for(int i = 0;i<c;i++)
@@ -1113,13 +1116,16 @@ int abcdk_test_any(abcdk_option_t *args)
         if(chk != 0)
             break;
 
-        abcdk_iplan_insert(plan_ctx,&addr,(void*)(long)(i+1));
+        addr_p = abcdk_iplan_lookup(plan_ctx,&addr,4);
+
+        int *num_p = (int*)abcdk_context_get_userdata(addr_p);
+        *num_p = i+1;
  
         abcdk_ipool_reclaim(pool_ctx,&addr);
     }
 
-    abcdk_iplan_iterator_t *plan_it = NULL;
-    void *addr_p = NULL;
+    void *plan_it = NULL;
+    
 
     abcdk_sockaddr_t addr = {0};
 #if 0
@@ -1130,9 +1136,11 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_iplan_remove(plan_ctx,&addr);
 
-    while(addr_p = abcdk_iplan_next(plan_ctx,&plan_it))
+    while(addr_p = abcdk_iplan_watch(plan_ctx,&plan_it))
     {
-        fprintf(stderr,"%p\n",addr_p);
+        int *num_p = (int*)abcdk_context_get_userdata(addr_p);
+
+        fprintf(stderr,"%p\n",*num_p);
     }
 
     abcdk_iplan_destroy(&plan_ctx);

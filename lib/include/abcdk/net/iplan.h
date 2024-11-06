@@ -14,6 +14,7 @@
 #include "abcdk/util/map.h"
 #include "abcdk/util/rwlock.h"
 #include "abcdk/util/trace.h"
+#include "abcdk/util/context.h"
 
 __BEGIN_DECLS
 
@@ -27,11 +28,14 @@ typedef struct _abcdk_iplan_config
     /**包括端口。!0 是，0 否。*/
     int have_port;
 
+    /**启用监视。!0 是，0 否。*/
+    int enable_watch;
+
     /**环境指针。*/
     void *opaque;
 
     /**删除回调函数。*/
-    void (*remove_cb)(abcdk_sockaddr_t *addr,void *userdata, void *opaque);
+    void (*remove_cb)(abcdk_sockaddr_t *addr,abcdk_context_t *userdata, void *opaque);
     
 }abcdk_iplan_config_t;
 
@@ -48,21 +52,24 @@ void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
  * 查询。
  * 
  * @note 如果不存在，则自动创建。
+ * @note 返回的用户环境指针仅为指针复制，没有增加引用计数。
  * 
  * @param [in] userdata 用户环境大小。= 0 仅查询。
  * 
  * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
 */
-void *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata);
+abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata);
 
 /**
- * 遍历。
+ * 监视(遍历)。
+ * 
+ * @note 返回的用户环境指针仅为指针复制，没有增加引用计数。
  * 
  * @param [in out] it 迭代器。NULL(0) 表示从头部开始遍历。
  * 
  * @return !NULL(0) 数据指针。NULL(0) 结束。
  */
-void *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it);
+abcdk_context_t *abcdk_iplan_watch(abcdk_iplan_t *ctx,void **it);
 
 /**读锁。 */
 void abcdk_iplan_rdlock(abcdk_iplan_t *ctx);
