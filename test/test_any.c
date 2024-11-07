@@ -1439,7 +1439,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #endif //HAVE_OPENSSL
 
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
