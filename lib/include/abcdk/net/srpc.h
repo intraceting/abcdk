@@ -49,9 +49,6 @@ typedef struct _abcdk_srpc_config
 
     /*共享密钥。*/
     const char *ske_key_file;
-
-    /**密钥算法。*/
-    int ske_key_cipher;
     
     /**
      * 会话准备通知回调函数。

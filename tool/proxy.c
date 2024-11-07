@@ -54,9 +54,6 @@ typedef struct _abcdk_proxy
     /*共享密钥。*/
     const char *ske_key_file;
 
-    /**密钥算法。*/
-    int ske_key_cipher;
-
     /*上级地址。*/
     const char *uplink;
 
@@ -200,12 +197,6 @@ static void _abcdk_proxy_print_usage(abcdk_option_t *args)
 
     fprintf(stderr, "\n\t--ske-key-file < FILE >\n");
     fprintf(stderr, "\t\t共享密钥文件。\n");
-
-    fprintf(stderr, "\n\t--ske-key-cipher < TYPE >\n");
-    fprintf(stderr, "\t\t共享密钥算法。默认：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
-
-    fprintf(stderr, "\n\t\tEnigma：%d\n",ABCDK_MASKSSL_SCHEME_ENIGMA);
-    fprintf(stderr, "\t\tAES256CTR：%d\n",ABCDK_MASKSSL_SCHEME_AES256CTR);
 
     fprintf(stderr, "\n\t--uplink < URL >\n");
     fprintf(stderr, "\t\t上行地址。\n");
@@ -558,7 +549,6 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
         asio_cfg.pki_key_file = node_ctx_p->father->pki_key_file;
         asio_cfg.pki_check_cert = node_ctx_p->father->pki_check_cert;
         asio_cfg.ske_key_file = node_ctx_p->father->ske_key_file;
-        asio_cfg.ske_key_cipher = node_ctx_p->father->ske_key_cipher;
 
         node_ctx_p->method = abcdk_object_copyfrom("UPLINK",6);
 
@@ -837,7 +827,6 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
     asio_cfg.pki_key_file = ctx->pki_key_file;
     asio_cfg.pki_check_cert = ctx->pki_check_cert;
     asio_cfg.ske_key_file = ctx->ske_key_file;
-    asio_cfg.ske_key_cipher = ctx->ske_key_cipher;
 
     asio_cfg.prepare_cb = _abcdk_proxy_prepare_cb;
     asio_cfg.event_cb = _abcdk_proxy_event_cb;
@@ -872,9 +861,7 @@ static void _abcdk_proxy_process(abcdk_proxy_t *ctx)
     ctx->pki_cert_file = abcdk_option_get(ctx->args, "--pki-cert-file", 0, NULL);
     ctx->pki_key_file = abcdk_option_get(ctx->args, "--pki-key-file", 0, NULL);
     ctx->pki_check_cert = abcdk_option_get_int(ctx->args, "--pki-check-cert", 0, 1);
-
     ctx->ske_key_file = abcdk_option_get(ctx->args, "--ske-key-file", 0, "");
-    ctx->ske_key_cipher = abcdk_option_get_int(ctx->args, "--ske-key-cipher", 0, 1);
     
     ctx->uplink = abcdk_option_get(ctx->args, "--uplink", 0, NULL);
     

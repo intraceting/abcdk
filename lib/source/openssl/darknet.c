@@ -4,10 +4,12 @@
  * MIT License
  *
  */
-#include "abcdk/ssl/maskssl.h"
+#include "abcdk/openssl/darknet.h"
 
-/** 简单的安全套接字。*/
-struct _abcdk_maskssl
+#ifdef OPENSSL_VERSION_NUMBER
+
+/**简单的安全套接字。*/
+struct _abcdk_openssl_darknet
 {
     /**方案。*/
     int scheme;
@@ -22,15 +24,11 @@ struct _abcdk_maskssl
     /**向量的长度。*/
     size_t iv_len;
 
-    /**Enigma环境。*/
-    abcdk_enigma_t *enigma_send_ctx;
-    abcdk_enigma_t *enigma_recv_ctx;
 
-#ifdef OPENSSL_VERSION_NUMBER
     /**AES环境。*/
     EVP_CIPHER_CTX *aes_send_ctx;
     EVP_CIPHER_CTX *aes_recv_ctx;
-#endif //OPENSSL_VERSION_NUMBER
+
 
     /**发送队列。*/
     abcdk_tree_t *send_queue;
@@ -63,11 +61,11 @@ struct _abcdk_maskssl
     /** 接收句柄。*/
     int recv_fd;
 
-}; // abcdk_maskssl_t;
+}; // abcdk_openssl_darknet_t;
 
-void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx)
+void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
 {
-    abcdk_maskssl_t *ctx_p;
+    abcdk_openssl_darknet_t *ctx_p;
 
     if (!ctx || !*ctx)
         return;
@@ -75,10 +73,6 @@ void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_enigma_destroy(&ctx_p->enigma_recv_ctx);
-    abcdk_enigma_destroy(&ctx_p->enigma_send_ctx);
-
-#ifdef OPENSSL_VERSION_NUMBER
     if(ctx_p->aes_recv_ctx)
     {
         EVP_CIPHER_CTX_cleanup(ctx_p->aes_recv_ctx);
@@ -90,7 +84,7 @@ void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx)
         EVP_CIPHER_CTX_cleanup(ctx_p->aes_send_ctx);
         EVP_CIPHER_CTX_free(ctx_p->aes_send_ctx);
     }
-#endif //OPENSSL_VERSION_NUMBER
+
 
     abcdk_tree_free(&ctx_p->send_queue);
     abcdk_stream_destroy(&ctx_p->recv_queue);
@@ -100,27 +94,15 @@ void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-static int _abcdk_maskssl_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t size)
+static int _abcdk_openssl_darknet_init(abcdk_openssl_darknet_t *ctx, const uint8_t *key, size_t size)
 {
     int chk;
 
     /*生成密钥。*/
     abcdk_sha256_once(key,size,ctx->key);
 
-    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    if(ctx->scheme == ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR)
     {
-        ctx->enigma_send_ctx = abcdk_enigma_create(3,256);
-        ctx->enigma_recv_ctx = abcdk_enigma_create(3,256);
-
-        if (!ctx->enigma_send_ctx || !ctx->enigma_recv_ctx)
-            return -2;
-        
-        ctx->iv_len = 256;
-
-    }
-    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
         ctx->aes_send_ctx = EVP_CIPHER_CTX_new();
         ctx->aes_recv_ctx = EVP_CIPHER_CTX_new();
 
@@ -131,9 +113,6 @@ static int _abcdk_maskssl_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t 
         chk = EVP_CipherInit_ex(ctx->aes_recv_ctx, EVP_aes_256_ctr(), NULL, NULL, NULL, 0);
 
         ctx->iv_len = 16;
-#else 
-        return -1;
-#endif //OPENSSL_VERSION_NUMBER
     }
     else 
     {
@@ -164,19 +143,19 @@ static int _abcdk_maskssl_init(abcdk_maskssl_t *ctx, const uint8_t *key, size_t 
 }
 
 
-abcdk_maskssl_t *abcdk_maskssl_create(int scheme, const uint8_t *key, size_t size)
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(int scheme, const uint8_t *key, size_t size)
 {
-    abcdk_maskssl_t *ctx;
+    abcdk_openssl_darknet_t *ctx;
     int chk;
 
     assert(key != NULL && size > 0);
 
-    ctx = (abcdk_maskssl_t *)abcdk_heap_alloc(sizeof(abcdk_maskssl_t));
+    ctx = (abcdk_openssl_darknet_t *)abcdk_heap_alloc(sizeof(abcdk_openssl_darknet_t));
     if (!ctx)
         return NULL;
 
     ctx->scheme = scheme;
-    chk = _abcdk_maskssl_init(ctx, key, size);
+    chk = _abcdk_openssl_darknet_init(ctx, key, size);
     if (chk != 0)
         goto ERR;
     
@@ -184,13 +163,13 @@ abcdk_maskssl_t *abcdk_maskssl_create(int scheme, const uint8_t *key, size_t siz
 
 ERR:
 
-    abcdk_maskssl_destroy(&ctx);
+    abcdk_openssl_darknet_destroy(&ctx);
     return NULL;
 }
 
-abcdk_maskssl_t *abcdk_maskssl_create_from_file(int scheme, const char *file)
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(int scheme, const char *file)
 {
-    abcdk_maskssl_t *ctx;
+    abcdk_openssl_darknet_t *ctx;
     abcdk_object_t *key;
 
     assert(file != NULL);
@@ -199,7 +178,7 @@ abcdk_maskssl_t *abcdk_maskssl_create_from_file(int scheme, const char *file)
     if (!key)
         return NULL;
 
-    ctx = abcdk_maskssl_create(scheme,key->pptrs[0], key->sizes[0]);
+    ctx = abcdk_openssl_darknet_create(scheme,key->pptrs[0], key->sizes[0]);
     abcdk_object_unref(&key);
     if (!ctx)
         return NULL;
@@ -207,7 +186,7 @@ abcdk_maskssl_t *abcdk_maskssl_create_from_file(int scheme, const char *file)
     return ctx;
 }
 
-int abcdk_maskssl_set_fd(abcdk_maskssl_t *ctx, int fd, int flag)
+int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx, int fd, int flag)
 {
     assert(ctx != NULL && fd >= 0);
 
@@ -231,7 +210,7 @@ int abcdk_maskssl_set_fd(abcdk_maskssl_t *ctx, int fd, int flag)
     return 0;
 }
 
-int abcdk_maskssl_get_fd(abcdk_maskssl_t *ctx, int flag)
+int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx, int flag)
 {
     int old;
 
@@ -256,28 +235,14 @@ int abcdk_maskssl_get_fd(abcdk_maskssl_t *ctx, int flag)
     return -1;
 }
 
-static int _abcdk_maskssl_write_init(abcdk_maskssl_t *ctx)
+static int _abcdk_openssl_darknet_write_init(abcdk_openssl_darknet_t *ctx)
 {
     int chk;
 
-    if (ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    if (ctx->scheme == ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR)
     {
-        chk = abcdk_enigma_init_ex(ctx->enigma_send_ctx,ctx->key,32);
-        if(chk != 0)
-            return -1;
-
-        /*加密正式数据前先撒盐，使得在加密重复的明文时，密文尽可能的产生变化。*/
-        for (int i = 0; i < ctx->iv_len; i++)
-            abcdk_enigma_light(ctx->enigma_send_ctx, ctx->send_iv[i]);
-    }
-    else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-
         if (EVP_CipherInit_ex(ctx->aes_send_ctx, NULL, NULL, ctx->key, ctx->send_iv, 1) != 1)
             return -1;
-
-#endif // OPENSSL_VERSION_NUMBER
     }
     else
     {
@@ -287,7 +252,7 @@ static int _abcdk_maskssl_write_init(abcdk_maskssl_t *ctx)
     return 0;
 }
 
-static abcdk_tree_t *_abcdk_maskssl_write_update(abcdk_maskssl_t *ctx, const void *in, int in_len)
+static abcdk_tree_t *_abcdk_openssl_darknet_write_update(abcdk_openssl_darknet_t *ctx, const void *in, int in_len)
 {
     abcdk_tree_t *en_data = NULL;
     int en_outlen;
@@ -296,18 +261,10 @@ static abcdk_tree_t *_abcdk_maskssl_write_update(abcdk_maskssl_t *ctx, const voi
     if (!en_data)
         return NULL; 
 
-    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    if(ctx->scheme == ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR)
     {
-        abcdk_enigma_light_batch(ctx->enigma_send_ctx, en_data->obj->pptrs[0], in, in_len);
-    }
-    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-
         EVP_CipherUpdate(ctx->aes_send_ctx, en_data->obj->pptrs[0], &en_outlen, in, in_len);
         assert(en_outlen == in_len);
-
-#endif //OPENSSL_VERSION_NUMBER
     }
     else
     {
@@ -317,7 +274,7 @@ static abcdk_tree_t *_abcdk_maskssl_write_update(abcdk_maskssl_t *ctx, const voi
     return en_data;
 }
 
-static ssize_t _abcdk_maskssl_write_fragment(abcdk_maskssl_t *ctx, const void *data, size_t size)
+static ssize_t _abcdk_openssl_darknet_write_fragment(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
 {
     char salt[256 + 1] = {0};
     abcdk_tree_t *en_data = NULL;
@@ -336,7 +293,7 @@ static ssize_t _abcdk_maskssl_write_fragment(abcdk_maskssl_t *ctx, const void *d
 #endif //OPENSSL_VERSION_NUMBER
 
         /*初始化加密算法环境。*/
-        chk = _abcdk_maskssl_write_init(ctx);
+        chk = _abcdk_openssl_darknet_write_init(ctx);
         if (chk != 0)
             return 0; // 内存不足时，关闭当前句柄。
 
@@ -359,7 +316,7 @@ static ssize_t _abcdk_maskssl_write_fragment(abcdk_maskssl_t *ctx, const void *d
         ctx->send_repeated_l = size;
 
         /*加密。*/
-        en_data = _abcdk_maskssl_write_update(ctx, data, size);
+        en_data = _abcdk_openssl_darknet_write_update(ctx, data, size);
         if (!en_data)
             return 0; // 内存不足时，关闭当前句柄。
 
@@ -406,7 +363,7 @@ NEXT_MSG:
     goto NEXT_MSG;
 }
 
-ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
+ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
 {
     ssize_t slen = 0, alen = 0;
 
@@ -415,7 +372,7 @@ ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
     while (alen < size)
     {
         /*分块发送。*/
-        slen = _abcdk_maskssl_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535)));
+        slen = _abcdk_openssl_darknet_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535)));
         if (slen < 0)
             return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
         else if (slen == 0)
@@ -427,28 +384,14 @@ ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx, const void *data, size_t size)
     return alen;
 }
 
-static int _abcdk_maskssl_read_init(abcdk_maskssl_t *ctx)
+static int _abcdk_openssl_darknet_read_init(abcdk_openssl_darknet_t *ctx)
 {
     int chk;
 
-    if (ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    if (ctx->scheme == ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR)
     {
-        chk = abcdk_enigma_init_ex(ctx->enigma_recv_ctx,ctx->key,32);
-        if(chk != 0)
-            return -1;
-
-        /*解密正式数据前先撒盐。*/
-        for (int i = 0; i < ctx->iv_len; i++)
-            abcdk_enigma_light(ctx->enigma_recv_ctx, ctx->recv_iv[i]);
-    }
-    else if (ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-
         if (EVP_CipherInit_ex(ctx->aes_recv_ctx, NULL, NULL, ctx->key, ctx->recv_iv, 0) != 1)
             return -1;
-
-#endif // OPENSSL_VERSION_NUMBER
     }
     else
     {
@@ -458,7 +401,7 @@ static int _abcdk_maskssl_read_init(abcdk_maskssl_t *ctx)
     return 0;
 }
 
-static abcdk_object_t *_abcdk_maskssl_read_update(abcdk_maskssl_t *ctx, const void *in, int in_len)
+static abcdk_object_t *_abcdk_openssl_darknet_read_update(abcdk_openssl_darknet_t *ctx, const void *in, int in_len)
 {
     abcdk_object_t *de_data = NULL;
     int de_outlen;
@@ -467,18 +410,10 @@ static abcdk_object_t *_abcdk_maskssl_read_update(abcdk_maskssl_t *ctx, const vo
     if (!de_data)
         return NULL; 
 
-    if(ctx->scheme == ABCDK_MASKSSL_SCHEME_ENIGMA)
+    if(ctx->scheme == ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR)
     {
-        abcdk_enigma_light_batch(ctx->enigma_recv_ctx, de_data->pptrs[0], in, in_len);
-    }
-    else if(ctx->scheme == ABCDK_MASKSSL_SCHEME_AES256CTR)
-    {
-#ifdef OPENSSL_VERSION_NUMBER
-
         EVP_CipherUpdate(ctx->aes_recv_ctx, de_data->pptrs[0], &de_outlen, in, in_len);
         assert(de_outlen == in_len);
-
-#endif //OPENSSL_VERSION_NUMBER
     }
     else
     {
@@ -489,7 +424,7 @@ static abcdk_object_t *_abcdk_maskssl_read_update(abcdk_maskssl_t *ctx, const vo
 }
 
 
-ssize_t abcdk_maskssl_read(abcdk_maskssl_t *ctx, void *data, size_t size)
+ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx, void *data, size_t size)
 {
     abcdk_object_t *de_data = NULL;
     ssize_t rlen = 0;
@@ -526,7 +461,7 @@ NEXT_LOOP:
         /*当向量读取完整后，进行初始化。*/
         if (ctx->recv_iv_len == ctx->iv_len)
         {
-            chk = _abcdk_maskssl_read_init(ctx);
+            chk = _abcdk_openssl_darknet_read_init(ctx);
             if (chk != 0)
                 return 0;
         }
@@ -536,14 +471,14 @@ NEXT_LOOP:
             return -1;
 
         /*处理剩余数据，解密。*/
-        de_data = _abcdk_maskssl_read_update(ctx,ctx->recv_buf->pptrs[0] + diff, rlen - diff);
+        de_data = _abcdk_openssl_darknet_read_update(ctx,ctx->recv_buf->pptrs[0] + diff, rlen - diff);
         if (!de_data)
             return 0; // 内存不足时，关闭当前句柄。
     }
     else
     {
         /*解密。*/
-        de_data = _abcdk_maskssl_read_update(ctx,ctx->recv_buf->pptrs[0], rlen);
+        de_data = _abcdk_openssl_darknet_read_update(ctx,ctx->recv_buf->pptrs[0], rlen);
         if (!de_data)
             return 0; // 内存不足时，关闭当前句柄。
     }
@@ -558,3 +493,5 @@ NEXT_LOOP:
 
     goto NEXT_LOOP;
 }
+
+#endif //OPENSSL_VERSION_NUMBER

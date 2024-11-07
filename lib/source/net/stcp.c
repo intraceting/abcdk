@@ -88,9 +88,6 @@ struct _abcdk_stcp_node
     /**BIO环境指针。*/
     BIO *openssl_bio;
 
-    /**MaskSSL环境指针。*/
-    abcdk_maskssl_t *maskssl_ssl;
-
     /**读线程。*/
     volatile pthread_t recv_leader;
 
@@ -228,8 +225,6 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif // HEADER_SSL_H
 
-    abcdk_maskssl_destroy(&node_p->maskssl_ssl);
-
     /*直接关闭，快速回收资源，不会处于time_wait状态。*/
     if (node_p->fd >= 0)
         abcdk_socket_option_linger_set(node_p->fd, 1, 0);
@@ -284,7 +279,6 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*f
     node->openssl_ctx = NULL;
     node->openssl_ssl = NULL;
     node->openssl_bio = NULL;
-    node->maskssl_ssl = NULL;
 
     return node;
 }
@@ -411,7 +405,7 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
         if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             rsize = SSL_read(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
         else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
-            rsize = abcdk_maskssl_read(node->maskssl_ssl, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
+            rsize = BIO_read(node->openssl_bio, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
         else
             rsize = read(node->fd, ABCDK_PTR2PTR(void, buf, rsize_all), size - rsize_all);
 
@@ -456,7 +450,7 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
         if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             wsize = SSL_write(node->openssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
         else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
-            wsize = abcdk_maskssl_write(node->maskssl_ssl, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
+            wsize = BIO_write(node->openssl_bio, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
         else
             wsize = write(node->fd, ABCDK_PTR2PTR(void, buf, wsize_all), size - wsize_all);
 
@@ -733,24 +727,29 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
     {
-        if (!node->maskssl_ssl)
-            node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
+#ifdef HEADER_SSL_H
+        if (!node->openssl_bio)
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
         else
             return -16;
 
-        if (!node->maskssl_ssl)
+        if (!node->openssl_bio)
         {
             abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建MaskSSL环境(scheme=%d)。", node->cfg.ssl_scheme);
             return -1;
         }
 
-        abcdk_maskssl_set_fd(node->maskssl_ssl, node->fd, 0);
+        BIO_set_fd(node->openssl_bio, node->fd, 0);
+#else
+        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+        return -22;
+#endif // HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
         else
             return -16;
 
@@ -771,7 +770,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             return -1;
         }
 
-        abcdk_openssl_BIO_set_fd(node->openssl_bio, node->fd);
+        BIO_set_fd(node->openssl_bio, node->fd,0);
         SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
 
         /*托管理给SSL，这里要清理野指针。*/
@@ -1092,20 +1091,26 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
     {
-        node->maskssl_ssl = abcdk_maskssl_create_from_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
-        if (!node->maskssl_ssl)
+#ifdef HEADER_SSL_H
+        node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
+        if (!node->openssl_bio)
         {
-            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建MaskSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
         /*仅用于验证。*/
-        abcdk_maskssl_destroy(&node->maskssl_ssl);
+        abcdk_openssl_BIO_destroy(&node->openssl_bio);
+
+#else
+        abcdk_stcp_trace_output(node, LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+        return -22;
+#endif // HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_bio = abcdk_openssl_BIO_s_MaskSSL_form_file(node->cfg.ske_key_cipher, node->cfg.ske_key_file);
+        node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
         if (!node->openssl_bio)
         {
             abcdk_stcp_trace_output(node, LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
@@ -1154,9 +1159,6 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
     /*修复不支持的配置和默认值。*/
 
     node->cfg.ske_key_file = (node->cfg.ske_key_file ? node->cfg.ske_key_file : "");
-
-    if(node->cfg.ske_key_cipher == 0)
-        node->cfg.ske_key_cipher = ABCDK_MASKSSL_SCHEME_ENIGMA;
 
     if (node->cfg.out_hook_min_th <= 0)
         node->cfg.out_hook_min_th = 200;

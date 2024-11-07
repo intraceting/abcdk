@@ -135,6 +135,8 @@
 
 #include "abcdk/openssl/openssl.h"
 #include "abcdk/openssl/cipher.h"
+#include "abcdk/openssl/darknet.h"
+#include "abcdk/openssl/bio.h"
 
 #include "abcdk/curl/curl.h"
 
@@ -148,6 +150,5 @@
 
 #include "abcdk/enigma/enigma.h"
 
-#include "abcdk/ssl/maskssl.h"
 
 #endif //ABCDK_H

@@ -50,7 +50,6 @@ int abcdk_test_tipc(abcdk_option_t *args)
     cfg.ssl_scheme = abcdk_option_get_int(args,"--ssh-scheme",0,0);
 
     cfg.ske_key_file = abcdk_option_get(args,"--ske-key-file",0,NULL);
-    cfg.ske_key_cipher = abcdk_option_get_int(args,"--ske-key-cipher",0,1);
     cfg.pki_check_cert = abcdk_option_get_int(args,"--pki-check-cert",0,1);
     cfg.pki_cert_file = abcdk_option_get(args,"--pki-cert-file",0,NULL);
     cfg.pki_key_file = abcdk_option_get(args,"--pki-key-file",0,NULL);

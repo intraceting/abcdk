@@ -34,9 +34,6 @@ typedef struct _abcdk_sudp_config
 {
     /**共享密钥。*/
     const char *ske_key_file;
-    
-    /**密钥算法。*/
-    int ske_key_cipher;
 
     /**监听地址。*/
     abcdk_sockaddr_t listen_addr;

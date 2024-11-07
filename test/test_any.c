@@ -1080,7 +1080,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
-#elif 1
+#elif 0
 
     abcdk_sockaddr_t b,e,n;
 
@@ -1439,6 +1439,22 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #endif //HAVE_OPENSSL
 
+#elif 1
+
+#ifdef HAVE_OPENSSL
+
+    BIO *bio_p = abcdk_openssl_BIO_s_Darknet(1,"abc",3);
+
+    BIO_set_fd(bio_p,1,0);
+
+    char buf[100];
+
+    BIO_read(bio_p,buf,100);
+    BIO_write(bio_p,buf,100);
+
+    BIO_free(bio_p);
+
+#endif //HAVE_OPENSSL
 
 #endif 
     return 0;

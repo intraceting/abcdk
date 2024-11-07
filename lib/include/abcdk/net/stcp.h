@@ -30,6 +30,8 @@ typedef struct ssl_ctx_st SSL_CTX;
 typedef struct bio_st BIO;
 #define SSL_read(f,b,s) 0
 #define SSL_write(f,b,s) 0
+#define BIO_read(f,b,s) 0
+#define BIO_write(f,b,s) 0
 #endif //HEADER_SSL_H
 
 /**简单的TCP环境。 */
@@ -152,9 +154,6 @@ typedef struct _abcdk_stcp_config
 
     /**共享密钥。*/
     const char *ske_key_file;
-    
-    /**密钥算法。*/
-    int ske_key_cipher;
 
     /**
      * 输出队列丢包最小阈值。 

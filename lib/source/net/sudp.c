@@ -130,8 +130,8 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     if(ctx->cfg.ske_key_file && *ctx->cfg.ske_key_file)
     {
 #ifdef OPENSSL_VERSION_NUMBER
-        ctx->cipher_in = abcdk_openssl_cipher_create_from_file(ctx->cfg.ske_key_cipher,ctx->cfg.ske_key_file);
-        ctx->cipher_out = abcdk_openssl_cipher_create_from_file(ctx->cfg.ske_key_cipher,ctx->cfg.ske_key_file);
+        ctx->cipher_in = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.ske_key_file);
+        ctx->cipher_out = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,ctx->cfg.ske_key_file);
         if(!ctx->cipher_in || !ctx->cipher_out)
         {
             abcdk_trace_output(LOG_WARNING, "加载密钥文件(%s)失败，无权限或不存在。",ctx->cfg.ske_key_file);

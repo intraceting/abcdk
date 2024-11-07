@@ -113,7 +113,6 @@ LIB_SRC_FILES += $(wildcard lib/source/image/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/curl/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/ssl/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #

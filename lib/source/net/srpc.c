@@ -536,7 +536,6 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
     asio_cfg.pki_key_file = cfg->pki_key_file;
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
     asio_cfg.ske_key_file = cfg->ske_key_file;
-    asio_cfg.ske_key_cipher = cfg->ske_key_cipher;
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
@@ -572,7 +571,6 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     asio_cfg.pki_key_file = cfg->pki_key_file;
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
     asio_cfg.ske_key_file = cfg->ske_key_file;
-    asio_cfg.ske_key_cipher = cfg->ske_key_cipher;
 
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;

@@ -10,12 +10,16 @@
 
 typedef struct _abcdk_openssl_BIO
 {
-    /*魔法数，检测环境是否被篡改。*/
-    uint32_t magic;
-#define ABCDK_OPENSSL_BIO_MAGIC 123456789
-
-    abcdk_maskssl_t *ssl_ctx;
+    /**/
     BIO_METHOD *method_ctx;
+
+    /*类型*/
+    uint8_t type;
+#define ABCDK_OPENSSL_BIO_DARKNET 1
+
+    /*Darknet环境。*/
+    abcdk_openssl_darknet_t *dkt_ctx;
+
 } abcdk_openssl_BIO_t;
 
 
@@ -172,7 +176,7 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
     abcdk_openssl_BIO_t *bio_p = (abcdk_openssl_BIO_t *)_abcdk_openssl_BIO_get_data(bio_ctx);
     int rlen = 0;
 
-    if(!(bio_p != NULL && bio_p->magic == ABCDK_OPENSSL_BIO_MAGIC))
+    if(!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_READ, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -184,7 +188,7 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
         return -1;
     }
 
-    rlen = abcdk_maskssl_read(bio_p->ssl_ctx, buf, len);
+    rlen = abcdk_openssl_darknet_read(bio_p->dkt_ctx, buf, len);
     if (rlen < 0)
         BIO_set_retry_read(bio_ctx); /*设置重试标志，非常重要。*/
 
@@ -196,7 +200,7 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
     abcdk_openssl_BIO_t *bio_p = (abcdk_openssl_BIO_t *)_abcdk_openssl_BIO_get_data(bio_ctx);
     int slen = 0;
 
-    if(!(bio_p != NULL && bio_p->magic == ABCDK_OPENSSL_BIO_MAGIC))
+    if(!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_WRITE, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -209,7 +213,7 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
     }
 
 
-    slen = abcdk_maskssl_write(bio_p->ssl_ctx, buf, len);
+    slen = abcdk_openssl_darknet_write(bio_p->dkt_ctx, buf, len);
     if (slen < 0)
         BIO_set_retry_write(bio_ctx); /*设置重试标志，非常重要。*/
 
@@ -221,7 +225,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
     abcdk_openssl_BIO_t *bio_p = (abcdk_openssl_BIO_t *)_abcdk_openssl_BIO_get_data(bio_ctx);
     int chk = 0;
 
-    if(!(bio_p != NULL && bio_p->magic == ABCDK_OPENSSL_BIO_MAGIC))
+    if(!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_CTRL, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -234,7 +238,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
         int fd = ABCDK_PTR2I32(ptr, 0);
         if (fd >= 0)
         {
-            abcdk_maskssl_set_fd(bio_p->ssl_ctx, fd, 0);
+            abcdk_openssl_darknet_set_fd(bio_p->dkt_ctx, fd, 0);
             chk = 1;
         }
         else
@@ -245,7 +249,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
     break;
     case BIO_C_GET_FD:
     {
-        ABCDK_PTR2I32(ptr, 0) = abcdk_maskssl_get_fd(bio_p->ssl_ctx, 0);
+        ABCDK_PTR2I32(ptr, 0) = abcdk_openssl_darknet_get_fd(bio_p->dkt_ctx, 0);
         chk = 1;
     }
     break;
@@ -286,10 +290,10 @@ static int _abcdk_openssl_BIO_destroy_cb(BIO *bio_ctx)
     if(!bio_p)
         return 1;
 
-    if(bio_p->magic != ABCDK_OPENSSL_BIO_MAGIC)
+    if(bio_p->type != ABCDK_OPENSSL_BIO_DARKNET)
         return 0;
 
-    abcdk_maskssl_destroy(&bio_p->ssl_ctx);
+    abcdk_openssl_darknet_destroy(&bio_p->dkt_ctx);
     _abcdk_openssl_BIO_meth_free(bio_p->method_ctx);
     abcdk_heap_free(bio_p);
 
@@ -302,10 +306,10 @@ int abcdk_openssl_BIO_set_fd(BIO *bio_ctx, int fd)
     abcdk_openssl_BIO_t *bio_p;
 
     bio_p = _abcdk_openssl_BIO_get_data(bio_ctx);
-    if(!bio_p || bio_p->magic != ABCDK_OPENSSL_BIO_MAGIC)
+    if(!bio_p || bio_p->type != ABCDK_OPENSSL_BIO_DARKNET)
         return -1;
 
-    abcdk_maskssl_set_fd(bio_p->ssl_ctx,fd,0);
+    abcdk_openssl_darknet_set_fd(bio_p->dkt_ctx,fd,0);
 
     return 0;
 }
@@ -315,10 +319,10 @@ int abcdk_openssl_BIO_get_fd(BIO *bio_ctx)
     abcdk_openssl_BIO_t *bio_p;
 
     bio_p = _abcdk_openssl_BIO_get_data(bio_ctx);
-    if(!bio_p || bio_p->magic != ABCDK_OPENSSL_BIO_MAGIC)
+    if(!bio_p || bio_p->type != ABCDK_OPENSSL_BIO_DARKNET)
         return -1;
 
-    return abcdk_maskssl_get_fd(bio_p->ssl_ctx,0);
+    return abcdk_openssl_darknet_get_fd(bio_p->dkt_ctx,0);
 }
 
 void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
@@ -334,7 +338,7 @@ void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
     BIO_free(bio_ctx_p);
 }
 
-BIO *abcdk_openssl_BIO_s_MaskSSL(int scheme, const uint8_t *key,size_t size)
+BIO *abcdk_openssl_BIO_s_Darknet(int scheme, const uint8_t *key,size_t size)
 {
     abcdk_openssl_BIO_t *bio_p;
     BIO *openssl_bio_p;
@@ -345,11 +349,11 @@ BIO *abcdk_openssl_BIO_s_MaskSSL(int scheme, const uint8_t *key,size_t size)
     if (!bio_p)
         goto ERR;
 
-    bio_p->magic = ABCDK_OPENSSL_BIO_MAGIC;
-    bio_p->ssl_ctx = abcdk_maskssl_create(scheme,key,size);
-    bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"MaskSSL BIO");
+    bio_p->type = ABCDK_OPENSSL_BIO_DARKNET;
+    bio_p->dkt_ctx = abcdk_openssl_darknet_create(scheme,key,size);
+    bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"Darknet BIO");
 
-    if (!bio_p->ssl_ctx || !bio_p->method_ctx)
+    if (!bio_p->dkt_ctx || !bio_p->method_ctx)
         goto ERR;
     
     _abcdk_openssl_BIO_meth_set_write(bio_p->method_ctx,_abcdk_openssl_BIO_write_cb);
@@ -377,7 +381,7 @@ ERR:
 
     if(bio_p)
     {
-        abcdk_maskssl_destroy(&bio_p->ssl_ctx);
+        abcdk_openssl_darknet_destroy(&bio_p->dkt_ctx);
         _abcdk_openssl_BIO_meth_free(bio_p->method_ctx);
         abcdk_heap_free(bio_p);
     }
@@ -385,7 +389,7 @@ ERR:
     return NULL;
 }
 
-BIO *abcdk_openssl_BIO_s_MaskSSL_form_file(int scheme,const char *file)
+BIO *abcdk_openssl_BIO_s_Darknet_form_file(int scheme,const char *file)
 {
     BIO *bio_ctx;
     abcdk_object_t *key;
@@ -396,7 +400,7 @@ BIO *abcdk_openssl_BIO_s_MaskSSL_form_file(int scheme,const char *file)
     if (!key)
         return NULL;
 
-    bio_ctx = abcdk_openssl_BIO_s_MaskSSL(scheme,key->pptrs[0], key->sizes[0]);
+    bio_ctx = abcdk_openssl_BIO_s_Darknet(scheme,key->pptrs[0], key->sizes[0]);
     abcdk_object_unref(&key);
     if (!bio_ctx)
         return NULL;

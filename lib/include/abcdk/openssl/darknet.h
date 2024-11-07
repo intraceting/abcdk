@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_MASKSSL_H
-#define ABCDK_MASKSSL_H
+#ifndef ABCDK_OPENSSL_DARKNET_H
+#define ABCDK_OPENSSL_DARKNET_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
@@ -14,39 +14,36 @@
 #include "abcdk/util/mmap.h"
 #include "abcdk/util/hash.h"
 #include "abcdk/util/receiver.h"
-#include "abcdk/enigma/enigma.h"
 #include "abcdk/openssl/cipher.h"
 
 __BEGIN_DECLS
 
-/** 简单的安全套接字。*/
-typedef struct _abcdk_maskssl abcdk_maskssl_t;
+#ifdef OPENSSL_VERSION_NUMBER
+
+/**简单的安全套接字。*/
+typedef struct _abcdk_openssl_darknet abcdk_openssl_darknet_t;
 
 /**方案。*/
-typedef enum _abcdk_maskssl_scheme
+typedef enum _abcdk_openssl_darknet_scheme
 {
-    /*ENIGMA。*/
-    ABCDK_MASKSSL_SCHEME_ENIGMA = 1,
-#define ABCDK_MASKSSL_SCHEME_ENIGMA ABCDK_MASKSSL_SCHEME_ENIGMA
-
     /*AES256CTR。*/
-    ABCDK_MASKSSL_SCHEME_AES256CTR = 2,
-#define ABCDK_MASKSSL_SCHEME_AES256CTR ABCDK_MASKSSL_SCHEME_AES256CTR
+    ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR = 1
+#define ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR
 
-} abcdk_maskssl_scheme_t;
+} abcdk_openssl_darknet_scheme_t;
 
 /**
  * 销毁。
  * 
  * @warning 不会销毁被关联的句柄。
 */
-void abcdk_maskssl_destroy(abcdk_maskssl_t **ctx);
+void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx);
 
 /** 创建。*/
-abcdk_maskssl_t *abcdk_maskssl_create(int scheme, const uint8_t *key,size_t size);
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(int scheme, const uint8_t *key,size_t size);
 
 /** 创建。*/
-abcdk_maskssl_t *abcdk_maskssl_create_from_file(int scheme, const char *file);
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(int scheme, const char *file);
 
 /**
  * 设置关联句柄。
@@ -55,14 +52,14 @@ abcdk_maskssl_t *abcdk_maskssl_create_from_file(int scheme, const char *file);
  * 
  * @return 0 成功，< 0  失败。
 */
-int abcdk_maskssl_set_fd(abcdk_maskssl_t *ctx,int fd,int flag);
+int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx,int fd,int flag);
 
 /**
  * 获取关联句柄。
  * 
  * @return >=0 成功(旧的句柄)，< 0  失败(未设置或读写句柄不一致)。
 */
-int abcdk_maskssl_get_fd(abcdk_maskssl_t *ctx,int flag);
+int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx,int flag);
 
 /**
  * 发送数据。
@@ -71,16 +68,18 @@ int abcdk_maskssl_get_fd(abcdk_maskssl_t *ctx,int flag);
  * 
  * @return > 0 已经发送的长度，= 0 连接已经关闭或断开，< 0 失败(非阻塞管道有效)。
 */
-ssize_t abcdk_maskssl_write(abcdk_maskssl_t *ctx,const void *data,size_t size);
+ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx,const void *data,size_t size);
 
 /**
  * 接收数据。
  * 
  * @return > 0 已接收的长度，= 0 连接已经关闭或断开(缓存未清空前不会返回此值)，< 0 失败(非阻塞管道有效)。
 */
-ssize_t abcdk_maskssl_read(abcdk_maskssl_t *ctx,void *data,size_t size);
+ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx,void *data,size_t size);
+
+#endif //OPENSSL_VERSION_NUMBER
 
 __END_DECLS
 
 
-#endif //ABCDK_MASKSSL_H
+#endif //ABCDK_OPENSSL_DARKNET_H
