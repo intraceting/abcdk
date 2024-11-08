@@ -11,6 +11,7 @@
 #include "abcdk/util/heap.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/io.h"
+#include "abcdk/util/rwlock.h"
 
 __BEGIN_DECLS
 
@@ -29,6 +30,14 @@ abcdk_context_t *abcdk_context_alloc(size_t userdata, void (*free_cb)(void *user
 /** 获取用户环境指针。*/
 void *abcdk_context_get_userdata(abcdk_context_t *ctx);
 
+/**读锁。 */
+void abcdk_context_rdlock(abcdk_context_t *ctx);
+
+/**写锁。 */
+void abcdk_context_wrlock(abcdk_context_t *ctx);
+
+/**解锁。 */
+int abcdk_context_unlock(abcdk_context_t *ctx,int exitcode);
 
 __END_DECLS
 

@@ -16,6 +16,9 @@ struct _abcdk_context
     /** 引用计数器。*/
     volatile int refcount;
 
+     /**同步锁。*/
+    abcdk_rwlock_t *locker_ctx;
+
     /** 用户环境指针。*/
     abcdk_object_t *userdata;
 
@@ -46,6 +49,7 @@ void abcdk_context_unref(abcdk_context_t **ctx)
     if(ctx_p->userdata_free_cb)
         ctx_p->userdata_free_cb(ctx_p->userdata->pptrs[0]);
 
+    abcdk_rwlock_destroy(&ctx_p->locker_ctx);
     abcdk_object_unref(&ctx_p->userdata);
     abcdk_heap_free(ctx_p);
 }
@@ -73,6 +77,10 @@ abcdk_context_t *abcdk_context_alloc(size_t userdata, void (*free_cb)(void *user
     ctx->magic = ABCDK_CONTEXT_MAGIC;
     ctx->refcount = 1;
 
+    ctx->locker_ctx = abcdk_rwlock_create();
+    if(!ctx->locker_ctx)
+        goto ERR;
+
     ctx->userdata = abcdk_object_alloc2(userdata);
     if(!ctx->userdata)
         goto ERR;
@@ -92,4 +100,29 @@ void *abcdk_context_get_userdata(abcdk_context_t *ctx)
     assert(ctx != NULL);
 
     return ctx->userdata->pptrs[0];
+}
+
+void abcdk_context_rdlock(abcdk_context_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_rwlock_rdlock(ctx->locker_ctx,1);
+}
+
+
+void abcdk_context_wrlock(abcdk_context_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_rwlock_wrlock(ctx->locker_ctx,1);
+}
+
+
+int abcdk_context_unlock(abcdk_context_t *ctx,int exitcode)
+{
+    assert(ctx != NULL);
+
+    abcdk_rwlock_unlock(ctx->locker_ctx);
+
+    return exitcode;
 }
