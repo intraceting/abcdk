@@ -1145,6 +1145,76 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_iplan_destroy(&plan_ctx);
     abcdk_ipool_destroy(&pool_ctx);
+
+#elif 1
+    
+    abcdk_iplan_config_t cfg = {0};
+    cfg.enable_watch = 0;
+    abcdk_iplan_t *plan_ctx = abcdk_iplan_create(&cfg);
+
+    abcdk_context_t *ud_p;
+    int *num_p;
+
+    fprintf(stderr,"\n---------------------------------------------------------------\n");
+
+    ud_p = abcdk_iplan_insert(plan_ctx,"aaaa",4);
+
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    *num_p = 1;
+    
+    ud_p = abcdk_iplan_insert(plan_ctx,"bbbb",4);
+
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    *num_p = 2;
+
+    fprintf(stderr,"\n---------------------------------------------------------------\n");
+
+    abcdk_sockaddr_t a,b,c;
+
+    abcdk_sockaddr_from_string(&a,"192.168.123.1",0);
+    abcdk_sockaddr_from_string(&b,"192.168.123.2",0);
+    abcdk_sockaddr_from_string(&c,"192.168.123.3",0);
+  
+    fprintf(stderr,"\n---------------------------------------------------------------\n");
+
+    abcdk_iplan_route_bind(plan_ctx,&a,"aaaa");
+    abcdk_iplan_route_bind(plan_ctx,&b,"bbbb");
+    abcdk_iplan_route_bind(plan_ctx,&c,"aaaa");
+  
+    ud_p = abcdk_iplan_route_lookup(plan_ctx,&a);
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    fprintf(stderr,"a=%d\n",*num_p);
+
+    ud_p = abcdk_iplan_route_lookup(plan_ctx,&b);
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    fprintf(stderr,"b=%d\n",*num_p);
+
+    ud_p = abcdk_iplan_route_lookup(plan_ctx,&c);
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    fprintf(stderr,"c=%d\n",*num_p);
+
+    fprintf(stderr,"\n---------------------------------------------------------------\n");
+
+    abcdk_iplan_route_bind(plan_ctx,&a,"bbbb");
+    abcdk_iplan_route_bind(plan_ctx,&b,"aaaa");
+    abcdk_iplan_route_bind(plan_ctx,&c,"bbbb");
+
+    ud_p = abcdk_iplan_route_lookup(plan_ctx,&a);
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    fprintf(stderr,"a=%d\n",*num_p);
+
+    ud_p = abcdk_iplan_route_lookup(plan_ctx,&b);
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    fprintf(stderr,"b=%d\n",*num_p);
+
+    ud_p = abcdk_iplan_route_lookup(plan_ctx,&c);
+    num_p = (int*)abcdk_context_get_userdata(ud_p);
+    fprintf(stderr,"c=%d\n",*num_p);
+
+    fprintf(stderr,"\n---------------------------------------------------------------\n");
+
+    abcdk_iplan_destroy(&plan_ctx);
+    
 #elif 0
 
 #ifdef HAVE_OPENSSL

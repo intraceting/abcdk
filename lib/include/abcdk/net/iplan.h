@@ -35,7 +35,7 @@ typedef struct _abcdk_iplan_config
     void *opaque;
 
     /**删除回调函数。*/
-    void (*remove_cb)(abcdk_sockaddr_t *addr,abcdk_context_t *userdata, void *opaque);
+    void (*remove_cb)(const char *id,abcdk_context_t *userdata, void *opaque);
     
 }abcdk_iplan_config_t;
 
@@ -45,11 +45,11 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
 /**创建。 */
 abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg);
 
-/**删除。*/
-void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
+/**删除路径。*/
+void abcdk_iplan_remove(abcdk_iplan_t *ctx,const char *id);
 
 /**
- * 查询。
+ * 添加路径。
  * 
  * @note 如果不存在，则自动创建。
  * @note 返回的用户环境指针仅为指针复制，没有增加引用计数。
@@ -57,8 +57,24 @@ void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
  * @param [in] userdata 用户环境大小。= 0 仅查询。
  * 
  * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
+ * 
 */
-abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata);
+abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,const char *id,size_t userdata);
+
+/**在路由表中关联路径。*/
+abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,const char *id);
+
+/**从路由表中删除地址。*/
+void abcdk_iplan_route_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
+
+/**
+ * 从路由表中查询地址。
+ * 
+ * @note 返回的用户环境指针仅为指针复制，没有增加引用计数。
+ * 
+ * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
+*/
+abcdk_context_t *abcdk_iplan_route_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);
 
 /**
  * 监视(遍历)。
@@ -69,7 +85,7 @@ abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,si
  * 
  * @return !NULL(0) 数据指针。NULL(0) 结束。
  */
-abcdk_context_t *abcdk_iplan_watch(abcdk_iplan_t *ctx,void **it);
+abcdk_context_t *abcdk_iplan_watch_next(abcdk_iplan_t *ctx,void **it);
 
 /**读锁。 */
 void abcdk_iplan_rdlock(abcdk_iplan_t *ctx);
