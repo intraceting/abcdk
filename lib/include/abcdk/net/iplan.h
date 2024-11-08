@@ -35,7 +35,7 @@ typedef struct _abcdk_iplan_config
     void *opaque;
 
     /**删除回调函数。*/
-    void (*remove_cb)(const char *id,abcdk_context_t *userdata, void *opaque);
+    void (*remove_cb)(uint64_t id,abcdk_context_t *userdata, void *opaque);
     
 }abcdk_iplan_config_t;
 
@@ -46,7 +46,7 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx);
 abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg);
 
 /**删除路径。*/
-void abcdk_iplan_remove(abcdk_iplan_t *ctx,const char *id);
+void abcdk_iplan_remove(abcdk_iplan_t *ctx,uint64_t id);
 
 /**
  * 添加路径。
@@ -59,10 +59,10 @@ void abcdk_iplan_remove(abcdk_iplan_t *ctx,const char *id);
  * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
  * 
 */
-abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,const char *id,size_t userdata);
+abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,uint64_t id,size_t userdata);
 
 /**在路由表中关联路径。*/
-abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,const char *id);
+abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,uint64_t id);
 
 /**从路由表中删除地址。*/
 void abcdk_iplan_route_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr);

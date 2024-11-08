@@ -60,14 +60,14 @@ static int _abcdk_iplan_sockaddr_len(abcdk_sockaddr_t *addr)
 static void _abcdk_iplan_store_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
     abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
-    char *id_p = (char *)obj->pptrs[ABCDK_MAP_KEY];
+    uint64_t *id_p = (uint64_t *)obj->pptrs[ABCDK_MAP_KEY];
     abcdk_iplan_store_node_t *node_p = (abcdk_iplan_store_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     if(!node_p->userdata)
         return;
 
     if(ctx->cfg.remove_cb)
-        ctx->cfg.remove_cb(id_p,node_p->userdata,ctx->cfg.opaque);
+        ctx->cfg.remove_cb(*id_p,node_p->userdata,ctx->cfg.opaque);
 
     abcdk_context_unref(&node_p->userdata);
 }
@@ -192,16 +192,15 @@ ERR:
     return NULL;
 }
 
-void abcdk_iplan_remove(abcdk_iplan_t *ctx,const char *id)
+void abcdk_iplan_remove(abcdk_iplan_t *ctx,uint64_t id)
 {
     abcdk_object_t *val_p;
     abcdk_iplan_store_node_t *node_p;
     void *data_p;
 
-    assert(ctx != NULL && id != NULL);
-    assert(*id != '\0');
+    assert(ctx != NULL && id > 0);
 
-    val_p = abcdk_map_find(ctx->store_ctx,id,strlen(id),0);
+    val_p = abcdk_map_find2(ctx->store_ctx,&id,0);
     if(!val_p)
         return;
 
@@ -210,12 +209,12 @@ void abcdk_iplan_remove(abcdk_iplan_t *ctx,const char *id)
     /*标记已删除。*/
     node_p->store_flag = 1;
 
-    abcdk_map_remove(ctx->store_ctx,id,strlen(id));
+    abcdk_map_remove2(ctx->store_ctx,&id);
 
     return;
 }
 
-abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,const char *id,size_t userdata)
+abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,uint64_t id,size_t userdata)
 {
     abcdk_object_t *val_p;
     abcdk_tree_t *val2_p;
@@ -223,10 +222,9 @@ abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,const char *id,size_t use
     void *userdata_p;
     int chk = -1;
 
-    assert(ctx != NULL && id != NULL && userdata > 0);
-    assert(*id != '\0');
+    assert(ctx != NULL && id > 0 && userdata > 0);
 
-    val_p = abcdk_map_find(ctx->store_ctx, id,strlen(id), sizeof(abcdk_iplan_store_node_t));
+    val_p = abcdk_map_find2(ctx->store_ctx, &id, sizeof(abcdk_iplan_store_node_t));
     if (!val_p)
         return NULL;
 
@@ -274,12 +272,12 @@ END:
 
 ERR:
 
-    abcdk_map_remove(ctx->store_ctx,id,strlen(id));
+    abcdk_map_remove2(ctx->store_ctx,&id);
 
     return NULL;
 }
 
-abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,const char *id)
+abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,uint64_t id)
 {
     abcdk_object_t *store_p;
     abcdk_object_t *route_p;
@@ -287,10 +285,9 @@ abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *add
     abcdk_iplan_route_node_t *route_node_p;
     abcdk_context_t *userdata_p;
 
-    assert(ctx != NULL && addr != NULL && id != NULL);
-    assert(*id != '\0');
+    assert(ctx != NULL && addr != NULL && id > 0);
 
-    store_p = abcdk_map_find(ctx->store_ctx, id, strlen(id), 0);
+    store_p = abcdk_map_find2(ctx->store_ctx, &id, 0);
     if (!store_p)
         return NULL;
 

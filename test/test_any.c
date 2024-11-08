@@ -1157,12 +1157,12 @@ int abcdk_test_any(abcdk_option_t *args)
 
     fprintf(stderr,"\n---------------------------------------------------------------\n");
 
-    ud_p = abcdk_iplan_insert(plan_ctx,"aaaa",4);
+    ud_p = abcdk_iplan_insert(plan_ctx,1,4);
 
     num_p = (int*)abcdk_context_get_userdata(ud_p);
     *num_p = 1;
     
-    ud_p = abcdk_iplan_insert(plan_ctx,"bbbb",4);
+    ud_p = abcdk_iplan_insert(plan_ctx,2,4);
 
     num_p = (int*)abcdk_context_get_userdata(ud_p);
     *num_p = 2;
@@ -1177,9 +1177,9 @@ int abcdk_test_any(abcdk_option_t *args)
   
     fprintf(stderr,"\n---------------------------------------------------------------\n");
 
-    abcdk_iplan_route_bind(plan_ctx,&a,"aaaa");
-    abcdk_iplan_route_bind(plan_ctx,&b,"bbbb");
-    abcdk_iplan_route_bind(plan_ctx,&c,"aaaa");
+    abcdk_iplan_route_bind(plan_ctx,&a,1);
+    abcdk_iplan_route_bind(plan_ctx,&b,2);
+    abcdk_iplan_route_bind(plan_ctx,&c,1);
   
     ud_p = abcdk_iplan_route_lookup(plan_ctx,&a);
     num_p = (int*)abcdk_context_get_userdata(ud_p);
@@ -1195,9 +1195,9 @@ int abcdk_test_any(abcdk_option_t *args)
 
     fprintf(stderr,"\n---------------------------------------------------------------\n");
 
-    abcdk_iplan_route_bind(plan_ctx,&a,"bbbb");
-    abcdk_iplan_route_bind(plan_ctx,&b,"aaaa");
-    abcdk_iplan_route_bind(plan_ctx,&c,"bbbb");
+    abcdk_iplan_route_bind(plan_ctx,&a,2);
+    abcdk_iplan_route_bind(plan_ctx,&b,1);
+    abcdk_iplan_route_bind(plan_ctx,&c,2);
 
     ud_p = abcdk_iplan_route_lookup(plan_ctx,&a);
     num_p = (int*)abcdk_context_get_userdata(ud_p);
