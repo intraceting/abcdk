@@ -336,11 +336,16 @@ abcdk_context_t *abcdk_iplan_route_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *a
 
     assert(ctx != NULL && addr != NULL);
 
-    route_p = abcdk_map_find(ctx->route_ctx, addr,_abcdk_iplan_sockaddr_len(addr), sizeof(abcdk_iplan_route_node_t));
+    route_p = abcdk_map_find(ctx->route_ctx, addr,_abcdk_iplan_sockaddr_len(addr), 0);
     if(!route_p)
         return NULL;
 
     route_node_p = (abcdk_iplan_route_node_t *)route_p->pptrs[ABCDK_MAP_VALUE];
+
+    /*可能尚未关联。*/
+    if(!route_node_p->store_obj)
+        return NULL;
+
     store_node_p = (abcdk_iplan_store_node_t *)route_node_p->store_obj->pptrs[ABCDK_MAP_VALUE];
 
     /*可能已经被删除。*/
