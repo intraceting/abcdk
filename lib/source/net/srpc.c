@@ -12,9 +12,6 @@ struct _abcdk_srpc
     /*通讯IO。*/
     abcdk_stcp_t *io_ctx;
 
-    /*请求队列。*/
-    abcdk_worker_t *req_list;
-
 };//abcdk_srpc_t
 
 /**RPC会话(内部)。*/
@@ -51,17 +48,6 @@ typedef struct _abcdk_srpc_node
     void (*userdata_free_cb)(void *userdata);
 
 } abcdk_srpc_node_t;
-
-/**RPC请求项目。*/
-typedef struct _abcdk_srpc_request_item
-{
-    /*STCP节点。*/
-    abcdk_stcp_node_t *node;
-
-    /*请求数据。*/
-    abcdk_receiver_t *req_data;
-    
-}abcdk_srpc_request_item_t;
 
 
 void abcdk_srpc_unref(abcdk_srpc_session_t **session)
@@ -210,8 +196,6 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    ABCDK_ASSERT(ctx_p->req_list == NULL, "销毁前必须先停止。");
-
     abcdk_stcp_destroy(&ctx_p->io_ctx);
     abcdk_heap_free(ctx_p);
 }
@@ -220,7 +204,6 @@ static void _abcdk_srpc_input_transfer_cb(void *opaque,uint64_t event,void *item
 
 abcdk_srpc_t *abcdk_srpc_create(int worker)
 {
-    abcdk_worker_config_t req_list_cfg;
     abcdk_srpc_t *ctx;
 
     ctx = abcdk_heap_alloc(sizeof(abcdk_srpc_t));
@@ -232,12 +215,6 @@ abcdk_srpc_t *abcdk_srpc_create(int worker)
     ctx->io_ctx = abcdk_stcp_create(worker);
     if (!ctx->io_ctx)
         goto ERR;
-
-    req_list_cfg.numbers = worker;
-    req_list_cfg.opaque = ctx;
-    req_list_cfg.process_cb = _abcdk_srpc_input_transfer_cb;
-
-    ctx->req_list = abcdk_worker_start(&req_list_cfg);
 
     return ctx;
 ERR:
@@ -252,7 +229,6 @@ void abcdk_srpc_stop(abcdk_srpc_t *ctx)
     assert(ctx != NULL);
 
     abcdk_stcp_stop(ctx->io_ctx);
-    abcdk_worker_stop(&ctx->req_list);
 }
 
 static void _abcdk_srpc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
@@ -385,7 +361,7 @@ static void _abcdk_srpc_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *r
     }
 }
 
-static void _abcdk_srpc_request_process(abcdk_srpc_request_item_t *item)
+static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
 {
     abcdk_srpc_node_t *node_ctx_p;
     const void *req_data;
@@ -396,10 +372,10 @@ static void _abcdk_srpc_request_process(abcdk_srpc_request_item_t *item)
     abcdk_object_t *cargo;
     int chk;
 
-    node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(item->node);
+    node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    req_data = abcdk_receiver_data(item->req_data, 0);
-    req_size = abcdk_receiver_length(item->req_data);
+    req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
+    req_size = abcdk_receiver_length(node_ctx_p->req_data);
 
     len = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 0, 32);
     cmd = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 32, 8);
@@ -418,60 +394,8 @@ static void _abcdk_srpc_request_process(abcdk_srpc_request_item_t *item)
     else if (cmd == 2) //REQ
     {
         if(node_ctx_p->cfg.request_cb)
-            node_ctx_p->cfg.request_cb(node_ctx_p->cfg.opaque,(abcdk_srpc_session_t*)item->node,mid,ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
+            node_ctx_p->cfg.request_cb(node_ctx_p->cfg.opaque,(abcdk_srpc_session_t*)node,mid,ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
     }
-}
-
-static void _abcdk_srpc_request_item_free(abcdk_srpc_request_item_t **item)
-{
-    abcdk_srpc_request_item_t *item_p;
-
-    if(!item ||!*item)
-        return;
-
-    item_p = *item;
-    *item = NULL;
-
-    abcdk_stcp_unref(&item_p->node);
-    abcdk_receiver_unref(&item_p->req_data);
-    abcdk_heap_free(item_p);
-}
-
-static abcdk_srpc_request_item_t *_abcdk_srpc_request_item_alloc()
-{
-    return (abcdk_srpc_request_item_t *)abcdk_heap_alloc(sizeof(abcdk_srpc_request_item_t));
-}
-
-void _abcdk_srpc_input_transfer_cb(void *opaque,uint64_t event,void *item)
-{
-    abcdk_srpc_t *ctx = (abcdk_srpc_t*)opaque;
-    abcdk_srpc_request_item_t *item_p = (abcdk_srpc_request_item_t *)item;
-
-    _abcdk_srpc_request_process(item_p);
-
-    _abcdk_srpc_request_item_free(&item_p);
-}
-
-static void _abcdk_srpc_input_dispatch(abcdk_stcp_node_t *node)
-{
-    abcdk_srpc_node_t *node_ctx_p;
-    abcdk_srpc_request_item_t *item;
-    int chk;
-
-    node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
-
-    item = _abcdk_srpc_request_item_alloc();
-    if(!item)
-        return;
-
-    item->node = abcdk_stcp_refer(node);
-    item->req_data = abcdk_receiver_refer(node_ctx_p->req_data);
-
-    chk = abcdk_worker_dispatch(node_ctx_p->father->req_list,1,item);
-    if(chk == 0)
-        return;
-
-    _abcdk_srpc_request_item_free(&item);
 }
 
 static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
@@ -500,7 +424,7 @@ static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size
     else if (chk == 0) /*数据包不完整，继续接收。*/
         return;
 
-    _abcdk_srpc_input_dispatch(node);
+    _abcdk_srpc_input_translate(node);
 
     /*一定要回收。*/
     abcdk_receiver_unref(&node_ctx_p->req_data);

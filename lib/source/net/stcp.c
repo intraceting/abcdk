@@ -1490,7 +1490,7 @@ int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
     abcdk_spinlock_lock(node->out_locker, 1);
 
     /*非关键数据根据WRED算法决定是否添加到队列中。*/
-    chk = key ? 0 : abcdk_wred_update(node->out_wred, node->out_len + 1);
+    chk = (key ? 0 : abcdk_wred_update(node->out_wred, node->out_len + 1));
     if (chk == 0)
     {
         abcdk_tree_insert2(node->out_queue, p, 0);

@@ -6,14 +6,17 @@
  */
 #include "abcdk/util/queue.h"
 
-/** 队列。*/
+/** 简单的队列。*/
 struct _abcdk_queue
 {
-    /** 锁。*/
+    /**同步锁。*/
     abcdk_mutex_t *locker;
 
-    /** 队列。*/
+    /**队列。*/
     abcdk_tree_t *qlist;
+
+    /**计数器。*/
+    uint64_t count;
 
     /** 消息销毁回调函数。*/
     abcdk_queue_msg_destroy_cb msg_destroy_cb;
@@ -57,6 +60,13 @@ final_error:
     abcdk_queue_free(&ctx);
 
     return NULL;
+}
+
+uint64_t abcdk_queue_length(abcdk_queue_t *ctx)
+{
+    assert(ctx != NULL);
+
+    return ctx->count;
 }
 
 void abcdk_queue_unlock(abcdk_queue_t *ctx)
@@ -122,6 +132,9 @@ int abcdk_queue_push(abcdk_queue_t *ctx, void *msg)
     msg_node->obj->pptrs[0] = (uint8_t *)msg;
     abcdk_tree_insert2(ctx->qlist, msg_node, 0);
 
+    /*+1.*/
+    ctx->count += 1;
+
     return 0;
 }
 
@@ -146,6 +159,9 @@ void *abcdk_queue_pop(abcdk_queue_t *ctx)
 
     /*删除节点。*/
     abcdk_tree_free(&msg_node);
+
+    /*-1.*/
+    ctx->count -= 1;
 
     return msg_p;
 }

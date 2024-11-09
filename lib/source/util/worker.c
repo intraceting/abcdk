@@ -12,6 +12,9 @@ struct _abcdk_worker
     /**配置。*/
     abcdk_worker_config_t cfg;
 
+    /**丢弃算法。 */
+    abcdk_wred_t *wred_ctx;
+
     /**线程数组。*/
     abcdk_thread_t *threads_ctx;
 
@@ -149,10 +152,41 @@ void abcdk_worker_stop(abcdk_worker_t **ctx)
         abcdk_heap_free(ctx_p->threads_ctx);
     }
 
-    /*删除队列。*/
     abcdk_queue_free(&ctx_p->queue_ctx);
-
+    abcdk_wred_destroy(&ctx_p->wred_ctx);
     abcdk_heap_free(ctx_p);
+}
+
+static void _abcdk_worker_fix_cfg(abcdk_worker_t *ctx)
+{
+    /*修复不支持的配置和默认值。*/
+
+    if (ctx->cfg.numbers <= 0)
+        ctx->cfg.numbers = sysconf(_SC_NPROCESSORS_ONLN);
+
+    if (ctx->cfg.wred_min_th <= 0)
+        ctx->cfg.wred_min_th = 800;
+    else
+        ctx->cfg.wred_min_th = ABCDK_CLAMP(ctx->cfg.wred_min_th, 200, 6000);
+
+    if (ctx->cfg.wred_max_th <= 0)
+        ctx->cfg.wred_max_th = 1000;
+    else
+        ctx->cfg.wred_max_th = ABCDK_CLAMP(ctx->cfg.wred_max_th, 400, 8000);
+
+    if (ctx->cfg.wred_weight <= 0)
+        ctx->cfg.wred_weight = 2;
+    else
+        ctx->cfg.wred_weight = ABCDK_CLAMP(ctx->cfg.wred_weight, 1, 99);
+
+    if (ctx->cfg.wred_prob <= 0)
+        ctx->cfg.wred_prob = 2;
+    else
+        ctx->cfg.wred_prob = ABCDK_CLAMP(ctx->cfg.wred_prob, 1, 99);
+
+    /*最小阈值和最大阈值必须符合区间要求。*/
+    if (ctx->cfg.wred_min_th > ctx->cfg.wred_max_th)
+        ABCDK_INTEGER_SWAP(ctx->cfg.wred_min_th, ctx->cfg.wred_max_th);
 }
 
 abcdk_worker_t *abcdk_worker_start(abcdk_worker_config_t *cfg)
@@ -169,8 +203,9 @@ abcdk_worker_t *abcdk_worker_start(abcdk_worker_config_t *cfg)
 
     ctx->cfg = *cfg;
 
-    if(ctx->cfg.numbers <= 0)
-        ctx->cfg.numbers = sysconf(_SC_NPROCESSORS_ONLN);
+    ctx->wred_ctx = abcdk_wred_create(ctx->cfg.wred_max_th,ctx->cfg.wred_min_th,ctx->cfg.wred_weight,ctx->cfg.wred_prob);
+    if(!ctx->wred_ctx)
+        goto ERR;
 
     ctx->threads_ctx = abcdk_heap_alloc(sizeof(abcdk_thread_t) * ctx->cfg.numbers);
     if(!ctx->threads_ctx)
@@ -196,7 +231,13 @@ ERR:
 
 int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
 {
+    return abcdk_worker_dispatch_ex(ctx,event,item,1);
+}
+
+int abcdk_worker_dispatch_ex(abcdk_worker_t *ctx,uint64_t event,void *item,int key)
+{
     abcdk_worker_item_t *item_p;
+    int qlen; 
     int chk;
 
     item_p = _abcdk_worker_item_alloc();
@@ -208,11 +249,26 @@ int abcdk_worker_dispatch(abcdk_worker_t *ctx,uint64_t event,void *item)
 
     abcdk_queue_lock(ctx->queue_ctx);
 
-    chk = abcdk_queue_push(ctx->queue_ctx, item_p);
-    if (chk != 0)
-        _abcdk_worker_item_free(&item_p);
+    /*获取队长列度。*/
+    qlen = abcdk_queue_length(ctx->queue_ctx);
 
-    abcdk_queue_signal(ctx->queue_ctx,0);
+    /*非关键数据根据WRED算法决定是否添加到队列中。*/
+    chk = (key ? 0 : abcdk_wred_update(ctx->wred_ctx, qlen + 1));
+    if (chk == 0)
+    {
+        chk = abcdk_queue_push(ctx->queue_ctx, item_p);
+        if (chk != 0)
+            _abcdk_worker_item_free(&item_p);
+
+        abcdk_queue_signal(ctx->queue_ctx,0);
+    }
+    else
+    {
+        abcdk_trace_output(LOG_WARNING, "处理速度缓慢，队列积压过长(len=%d)，丢弃当前数据包(event=%llu,item=%p)。\n", qlen, event, item);
+
+        _abcdk_worker_item_free(&item_p);
+        chk = 0;
+    }
 
     abcdk_queue_unlock(ctx->queue_ctx);
 

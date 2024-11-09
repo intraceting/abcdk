@@ -33,6 +33,9 @@ void abcdk_queue_free(abcdk_queue_t **ctx);
 */
 abcdk_queue_t *abcdk_queue_alloc(abcdk_queue_msg_destroy_cb cb);
 
+/**长度。*/
+uint64_t abcdk_queue_length(abcdk_queue_t *ctx);
+
 /**解锁。 */
 void abcdk_queue_unlock(abcdk_queue_t *ctx);
 
