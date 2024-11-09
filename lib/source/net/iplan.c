@@ -12,11 +12,8 @@ struct _abcdk_iplan
     /**配置。*/
     abcdk_iplan_config_t cfg;
 
-    /**存储表(用于管理)。*/
+    /**存储表(用于查找)。*/
     abcdk_map_t *store_ctx;
-
-    /**路由表(用于查找)。*/
-    abcdk_map_t *route_ctx;
 
     /**监视表(用于遍历)。*/
     abcdk_tree_t *watch_ctx;
@@ -25,8 +22,8 @@ struct _abcdk_iplan
     abcdk_rwlock_t *locker_ctx;
 };//abcdk_iplan_t;
 
-/**存储节点。 */
-typedef struct _abcdk_iplan_store_node
+/**节点。 */
+typedef struct _abcdk_iplan_node
 {
     /*存储标志。0 使用中，1 已删除。*/
     int store_flag;
@@ -37,15 +34,8 @@ typedef struct _abcdk_iplan_store_node
     /**用户环境。*/
     abcdk_context_t *userdata;
 
-}abcdk_iplan_store_node_t;
+}abcdk_iplan_node_t;
 
-/**路由节点。 */
-typedef struct _abcdk_iplan_route_node
-{
-    /**存储对象。*/
-    abcdk_object_t *store_obj;
-
-}abcdk_iplan_route_node_t;
 
 static int _abcdk_iplan_sockaddr_len(abcdk_sockaddr_t *addr)
 {
@@ -57,22 +47,22 @@ static int _abcdk_iplan_sockaddr_len(abcdk_sockaddr_t *addr)
     return 0;
 }
 
-static void _abcdk_iplan_store_destructor_cb(abcdk_object_t *obj, void *opaque)
+static void _abcdk_iplan_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
     abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
-    uint64_t *id_p = (uint64_t *)obj->pptrs[ABCDK_MAP_KEY];
-    abcdk_iplan_store_node_t *node_p = (abcdk_iplan_store_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
+    abcdk_sockaddr_t *addr_p = (abcdk_sockaddr_t *)obj->pptrs[ABCDK_MAP_KEY];
+    abcdk_iplan_node_t *node_p = (abcdk_iplan_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     if(!node_p->userdata)
         return;
 
     if(ctx->cfg.remove_cb)
-        ctx->cfg.remove_cb(*id_p,node_p->userdata,ctx->cfg.opaque);
+        ctx->cfg.remove_cb(addr_p,node_p->userdata,ctx->cfg.opaque);
 
     abcdk_context_unref(&node_p->userdata);
 }
 
-static uint64_t _abcdk_iplan_route_hash_cb(const void* key,size_t size,void *opaque)
+static uint64_t _abcdk_iplan_hash_cb(const void* key,size_t size,void *opaque)
 {
     abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
     uint64_t hs = UINT64_MAX;
@@ -91,7 +81,7 @@ static uint64_t _abcdk_iplan_route_hash_cb(const void* key,size_t size,void *opa
     return hs;
 }
 
-static int _abcdk_iplan_route_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
+static int _abcdk_iplan_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
     abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
     abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key1;
@@ -120,15 +110,6 @@ static int _abcdk_iplan_route_compare_cb(const void *key1, size_t size1, const v
     return 0;
 }
 
-static void _abcdk_iplan_route_destructor_cb(abcdk_object_t *obj, void *opaque)
-{
-    abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
-    abcdk_sockaddr_t *addr_p = (abcdk_sockaddr_t *)obj->pptrs[ABCDK_MAP_KEY];
-    abcdk_iplan_route_node_t *route_node_p = (abcdk_iplan_route_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
-
-    abcdk_object_unref(&route_node_p->store_obj);
-}
-
 void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
 {
     abcdk_iplan_t *ctx_p;
@@ -141,7 +122,6 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
 
     abcdk_rwlock_destroy(&ctx_p->locker_ctx);
     abcdk_map_destroy(&ctx_p->store_ctx);
-    abcdk_map_destroy(&ctx_p->route_ctx);
     abcdk_tree_free(&ctx_p->watch_ctx);
     abcdk_heap_free(ctx_p);
 }
@@ -162,19 +142,10 @@ abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg)
     if(!ctx->store_ctx)
         goto ERR;
 
-    ctx->store_ctx->hash_cb = _abcdk_iplan_route_hash_cb;
-    ctx->store_ctx->compare_cb = _abcdk_iplan_route_compare_cb;
-    ctx->store_ctx->destructor_cb = _abcdk_iplan_store_destructor_cb;
+    ctx->store_ctx->hash_cb = _abcdk_iplan_hash_cb;
+    ctx->store_ctx->compare_cb = _abcdk_iplan_compare_cb;
+    ctx->store_ctx->destructor_cb = _abcdk_iplan_destructor_cb;
     ctx->store_ctx->opaque = ctx;
-
-    ctx->route_ctx = abcdk_map_create(100);
-    if(!ctx->route_ctx)
-        goto ERR;
-
-    ctx->route_ctx->hash_cb = _abcdk_iplan_route_hash_cb;
-    ctx->route_ctx->compare_cb = _abcdk_iplan_route_compare_cb;
-    ctx->route_ctx->destructor_cb = _abcdk_iplan_route_destructor_cb;
-    ctx->route_ctx->opaque = ctx;
 
     ctx->watch_ctx = abcdk_tree_alloc3(1);
     if(!ctx->watch_ctx)
@@ -192,43 +163,53 @@ ERR:
     return NULL;
 }
 
-void abcdk_iplan_remove(abcdk_iplan_t *ctx,uint64_t id)
+void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
 {
     abcdk_object_t *val_p;
-    abcdk_iplan_store_node_t *node_p;
+    abcdk_iplan_node_t *node_p;
     void *data_p;
 
-    assert(ctx != NULL && id > 0);
+    assert(ctx != NULL && addr != NULL);
+    assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    val_p = abcdk_map_find2(ctx->store_ctx,&id,0);
+    val_p = abcdk_map_find(ctx->store_ctx,addr,_abcdk_iplan_sockaddr_len(addr),0);
     if(!val_p)
         return;
 
-    node_p = (abcdk_iplan_store_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*标记已删除。*/
     node_p->store_flag = 1;
 
-    abcdk_map_remove2(ctx->store_ctx,&id);
+    abcdk_map_remove(ctx->store_ctx,addr,_abcdk_iplan_sockaddr_len(addr));
 
     return;
 }
 
-abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,uint64_t id,size_t userdata)
+abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata)
 {
     abcdk_object_t *val_p;
     abcdk_tree_t *val2_p;
-    abcdk_iplan_store_node_t *node_p;
+    abcdk_iplan_node_t *node_p;
     void *userdata_p;
     int chk = -1;
 
-    assert(ctx != NULL && id > 0 && userdata > 0);
+    assert(ctx != NULL && addr != NULL && userdata > 0);
+    assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    val_p = abcdk_map_find2(ctx->store_ctx, &id, sizeof(abcdk_iplan_store_node_t));
+    /*优先执行回调函数。*/
+    if(ctx->cfg.insert_cb)
+    {
+        ctx->cfg.insert_cb(addr,&chk,ctx->cfg.opaque);
+        if(chk != 0)
+            return NULL;
+    }
+
+    val_p = abcdk_map_find(ctx->store_ctx, addr,_abcdk_iplan_sockaddr_len(addr),sizeof(abcdk_iplan_node_t));
     if (!val_p)
         return NULL;
 
-    node_p = (abcdk_iplan_store_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*如果用户环境未创建，则自动创建。*/
     if (!node_p->userdata && userdata > 0)
@@ -272,92 +253,38 @@ END:
 
 ERR:
 
-    abcdk_map_remove2(ctx->store_ctx,&id);
+    abcdk_map_remove(ctx->store_ctx,addr,_abcdk_iplan_sockaddr_len(addr));
 
     return NULL;
 }
 
-abcdk_context_t *abcdk_iplan_route_bind(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,uint64_t id)
+abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
 {
-    abcdk_object_t *store_p;
-    abcdk_object_t *route_p;
-    abcdk_iplan_store_node_t *store_node_p;
-    abcdk_iplan_route_node_t *route_node_p;
-    abcdk_context_t *userdata_p;
-
-    assert(ctx != NULL && addr != NULL && id > 0);
-
-    store_p = abcdk_map_find2(ctx->store_ctx, &id, 0);
-    if (!store_p)
-        return NULL;
-
-    store_node_p = (abcdk_iplan_store_node_t *)store_p->pptrs[ABCDK_MAP_VALUE];
-
-    /*可能已经被删除。*/
-    if (store_node_p->store_flag == 1)
-        return NULL;
-
-    route_p = abcdk_map_find(ctx->route_ctx, addr,_abcdk_iplan_sockaddr_len(addr), sizeof(abcdk_iplan_route_node_t));
-    if(!route_p)
-        return NULL;
-
-    route_node_p = (abcdk_iplan_route_node_t *)route_p->pptrs[ABCDK_MAP_VALUE];
-
-    /*如果新旧绑定关系不同。*/
-    if (route_node_p->store_obj != store_p)
-    {
-        /*解除旧的关系。*/
-        abcdk_object_unref(&route_node_p->store_obj);
-        /*绑定新的关系。*/
-        route_node_p->store_obj = abcdk_object_refer(store_p);
-    }
-
-    userdata_p = store_node_p->userdata;
-
-    return userdata_p;
-}
-
-void abcdk_iplan_route_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
-{
-    assert(ctx != NULL && addr != NULL);
-
-    abcdk_map_remove(ctx->route_ctx,addr,_abcdk_iplan_sockaddr_len(addr));
-}
-
-abcdk_context_t *abcdk_iplan_route_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
-{
-    abcdk_object_t *route_p;
-    abcdk_iplan_store_node_t *store_node_p;
-    abcdk_iplan_route_node_t *route_node_p;
+    abcdk_object_t *val_p;
+    abcdk_iplan_node_t *node_p;
     abcdk_context_t *userdata_p;
 
     assert(ctx != NULL && addr != NULL);
 
-    route_p = abcdk_map_find(ctx->route_ctx, addr,_abcdk_iplan_sockaddr_len(addr), 0);
-    if(!route_p)
+    val_p = abcdk_map_find(ctx->store_ctx, addr,_abcdk_iplan_sockaddr_len(addr), 0);
+    if(!val_p)
         return NULL;
 
-    route_node_p = (abcdk_iplan_route_node_t *)route_p->pptrs[ABCDK_MAP_VALUE];
-
-    /*可能尚未关联。*/
-    if(!route_node_p->store_obj)
-        return NULL;
-
-    store_node_p = (abcdk_iplan_store_node_t *)route_node_p->store_obj->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*可能已经被删除。*/
-    if(store_node_p->store_flag == 1)
+    if(node_p->store_flag == 1)
         return NULL;
 
-    userdata_p = store_node_p->userdata;
+    userdata_p = node_p->userdata;
 
     return userdata_p;
 }
 
-abcdk_context_t *abcdk_iplan_watch_next(abcdk_iplan_t *ctx,void **it)
+abcdk_context_t *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
-    abcdk_iplan_store_node_t *store_node_p;
+    abcdk_iplan_node_t *node_p;
     abcdk_context_t *userdata_p;
 
     assert(ctx != NULL && it != NULL);
@@ -373,10 +300,10 @@ NEXT:
         it_next_p = abcdk_tree_sibling(it_p,0);
 
         /*检查当前节点。*/
-        store_node_p = (abcdk_iplan_store_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
+        node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
 
         /*可能当前节点已经被删除。*/
-        if (store_node_p->store_flag == 1)
+        if (node_p->store_flag == 1)
         {
             abcdk_tree_unlink(it_p);
             abcdk_tree_free(&it_p);
@@ -395,12 +322,12 @@ NEXT:
     it_p = it_next_p;
 
     /*如果当前节点已经被删除，则遍历下一个。*/
-    store_node_p = (abcdk_iplan_store_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
-    if(store_node_p->store_flag == 1)
+    node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
+    if(node_p->store_flag == 1)
         goto NEXT;
 
     /*复制用户指针。*/
-    userdata_p = store_node_p->userdata;
+    userdata_p = node_p->userdata;
 
     /*更新迭代器。*/
     *it = (void*)it_p;
