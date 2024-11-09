@@ -354,7 +354,7 @@ abcdk_context_t *abcdk_iplan_route_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *a
     return userdata_p;
 }
 
-abcdk_context_t *abcdk_iplan_watch(abcdk_iplan_t *ctx,void **it)
+abcdk_context_t *abcdk_iplan_watch_next(abcdk_iplan_t *ctx,void **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
     abcdk_iplan_store_node_t *store_node_p;

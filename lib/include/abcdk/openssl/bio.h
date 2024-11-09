@@ -17,12 +17,12 @@ __BEGIN_DECLS
 void abcdk_openssl_BIO_destroy(BIO **bio);
 
 /**
- * 创建兼容Marknet的BIO环境。
+ * 创建兼容Darknet的BIO环境。
 */
 BIO *abcdk_openssl_BIO_s_Darknet(int scheme, const uint8_t *key,size_t size);
 
 /**
- * 创建兼容Marknet的BIO环境。
+ * 创建兼容Darknet的BIO环境。
 */
 BIO *abcdk_openssl_BIO_s_Darknet_form_file(int scheme,const char *file);
 
