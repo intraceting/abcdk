@@ -33,9 +33,6 @@ typedef struct _abcdk_iplan_config
 
     /**环境指针。*/
     void *opaque;
-    
-    /**插入回调函数。*/
-    void (*insert_cb)(abcdk_sockaddr_t *addr,int *result, void *opaque);
 
     /**删除回调函数。*/
     void (*remove_cb)(abcdk_sockaddr_t *addr,abcdk_context_t *userdata, void *opaque);

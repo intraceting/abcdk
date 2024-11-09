@@ -197,14 +197,6 @@ abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,si
     assert(ctx != NULL && addr != NULL && userdata > 0);
     assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    /*优先执行回调函数。*/
-    if(ctx->cfg.insert_cb)
-    {
-        ctx->cfg.insert_cb(addr,&chk,ctx->cfg.opaque);
-        if(chk != 0)
-            return NULL;
-    }
-
     val_p = abcdk_map_find(ctx->store_ctx, addr,_abcdk_iplan_sockaddr_len(addr),sizeof(abcdk_iplan_node_t));
     if (!val_p)
         return NULL;
