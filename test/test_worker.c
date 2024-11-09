@@ -46,7 +46,7 @@ int abcdk_test_worker(abcdk_option_t *args)
 {
     int threads = abcdk_option_get_int(args,"--threads",0,4);
 
-    abcdk_worker_config_t cfg = {threads,NULL,abcdk_test_worker_routine};
+    abcdk_worker_config_t cfg = {threads,0,0,0,0,NULL,abcdk_test_worker_routine};
     abcdk_worker_t *ctx = abcdk_worker_start(&cfg);
 
     for(int i = 0;i<10;i++)

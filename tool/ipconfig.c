@@ -879,7 +879,7 @@ void _abcdk_ipcfg_work(void *opaque,uint64_t event,void *item)
 
 void _abcdk_ipcfg_process(abcdk_ipcfg_t *ctx)
 {
-    abcdk_worker_config_t worker_cfg = {0,ctx,_abcdk_ipcfg_work};
+    abcdk_worker_config_t worker_cfg = {0,0,0,0,0,ctx,_abcdk_ipcfg_work};
     abcdk_worker_t *worker_ctx = NULL;
     const char *log_path = NULL;
     int conf_num;
