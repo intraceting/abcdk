@@ -267,7 +267,7 @@ int abcdk_worker_dispatch_ex(abcdk_worker_t *ctx,uint64_t event,void *item,int k
         abcdk_trace_output(LOG_WARNING, "作业处理速度缓慢，队列积压过长(len=%d)，丢弃当前作业(event=%llu,item=%p)。\n", qlen, event, item);
 
         _abcdk_worker_item_free(&item_p);
-        chk = 0;
+        chk = -1;
     }
 
     abcdk_queue_unlock(ctx->queue_ctx);

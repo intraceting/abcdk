@@ -761,4 +761,36 @@ void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const ab
     }
 }
 
+int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockaddr_t *net)
+{
+    abcdk_sockaddr_t chk = {0};
 
+    assert(dst != NULL && net != NULL);
+    assert(net->family == AF_INET || net->family == AF_INET6);
+    assert(dst->family == AF_INET || dst->family == AF_INET6);
+
+    if(dst->family != net->family)
+        return -1;
+
+    if(dst->family == AF_INET)
+    {
+        /*目标地址和子网地址进行“与”运算。*/
+        chk.addr4.sin_addr.s_addr = (dst->addr4.sin_addr.s_addr & net->addr4.sin_addr.s_addr);
+
+        /*运算相等时，表示属于同一个子网。*/
+        if(chk.addr4.sin_addr.s_addr == net->addr4.sin_addr.s_addr)
+            return 0;
+    }
+    else if(dst->family == AF_INET6)
+    {
+        /*目标地址和子网地址进行“与”运算。*/
+        for (int i = 0; i < 16; i++)
+            chk.addr6.sin6_addr.s6_addr[i] = (dst->addr6.sin6_addr.s6_addr[i] & net->addr6.sin6_addr.s6_addr[i]);
+
+        /*运算相等时，表示属于同一个子网。*/
+        if (memcmp(chk.addr6.sin6_addr.s6_addr, net->addr6.sin6_addr.s6_addr, 16) == 0)
+            return 0;
+    }
+
+    return -1;
+}

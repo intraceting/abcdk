@@ -333,6 +333,12 @@ char *abcdk_sockaddr_make_segment2(char buf[100], sa_family_t family, const char
 */
 void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const abcdk_sockaddr_t *host, int prefix);
 
+/** 
+ * 子网地址检查。
+ * 
+ * @return 0 是，!0 否。
+*/
+int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockaddr_t *net);
 
 __END_DECLS
 

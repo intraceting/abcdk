@@ -10,6 +10,7 @@
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/crc.h"
+#include "abcdk/util/spinlock.h"
 #include "abcdk/openssl/openssl.h"
 
 __BEGIN_DECLS
@@ -64,6 +65,12 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
  * @return !NULL(0) 成功，NULL(0) 失败(内存不足或解密错误)。
 */
 abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
+
+/**加锁。 */
+void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx);
+
+/**解锁。 */
+int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode);
 
 #endif // OPENSSL_VERSION_NUMBER
 

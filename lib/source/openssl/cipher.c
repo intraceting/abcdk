@@ -41,7 +41,9 @@ struct _abcdk_openssl_cipher
 
     /*密文块长度。*/
     int ciphertext_bsize;
-
+    
+    /**同步锁。*/
+    abcdk_spinlock_t *locker_ctx;
 }; // abcdk_openssl_cipher_t;
 
 void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
@@ -78,11 +80,11 @@ void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
     abcdk_object_unref(&ctx_p->evp_key);
 
 #ifdef HEADER_RSA_H
-
     if (ctx_p->rsa_ctx)
         RSA_free(ctx_p->rsa_ctx);
-
 #endif // HEADER_RSA_H
+
+    abcdk_spinlock_destroy(&ctx_p->locker_ctx);
 
     abcdk_heap_free(ctx_p);
 }
@@ -585,10 +587,19 @@ abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *k
     ctx = (abcdk_openssl_cipher_t *)abcdk_heap_alloc(sizeof(abcdk_openssl_cipher_t));
     if (!ctx)
         return NULL;
+    
+    ctx->locker_ctx = abcdk_spinlock_create();
+    if(!ctx->locker_ctx)
+        goto ERR;
 
     chk = _abcdk_openssl_cipher_init(ctx, scheme, key, key_len);
-    if (chk == 0)
-        return ctx;
+    if (chk != 0)
+        goto ERR;
+
+    /*OK.*/
+    return ctx;
+
+ERR:
 
     abcdk_openssl_cipher_destroy(&ctx);
     return NULL;
@@ -696,5 +707,22 @@ ERR:
     abcdk_object_unref(&dst_p);
     return NULL;
 }
+
+void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
+{
+    assert(ctx != NULL);
+
+    abcdk_spinlock_lock(ctx->locker_ctx,1);
+}
+
+int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode)
+{
+    assert(ctx != NULL);
+
+    abcdk_spinlock_unlock(ctx->locker_ctx);
+
+    return exitcode;
+}
+
 
 #endif // OPENSSL_VERSION_NUMBER
