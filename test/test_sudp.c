@@ -68,7 +68,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     abcdk_object_t *data = abcdk_object_alloc2(64512);
 
-#pragma omp parallel for num_threads(2)
+
     for(int i = 0;i<100000;i++)
     {
         int k=rand()%64512;
