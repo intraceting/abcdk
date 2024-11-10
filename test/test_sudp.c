@@ -44,7 +44,7 @@ static void input_cb(void *opaque,abcdk_sockaddr_t *remote, const void *data, si
 
 int abcdk_test_sudp(abcdk_option_t *args)
 {
-    const char *ske_key_file = abcdk_option_get(args, "--ske-key-file", 0, "");
+    const char *key_p = abcdk_option_get(args, "--key", 0, NULL);
     const char *listen_p = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
     const char *listen_mreq_p = abcdk_option_get(args, "--listen-mreq", 0, NULL);
     const char *dst_p = abcdk_option_get(args, "--dst", 0, "127.0.0.1:1111");
@@ -63,8 +63,12 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     g_ctx = abcdk_sudp_create(&cfg);
 
+    if(key_p)
+        abcdk_sudp_cipher_reset(g_ctx,key_p,strlen(key_p));
+
     abcdk_object_t *data = abcdk_object_alloc2(64512);
 
+#pragma omp parallel for num_threads(2)
     for(int i = 0;i<100000;i++)
     {
         int k=rand()%64512;
@@ -74,10 +78,10 @@ int abcdk_test_sudp(abcdk_option_t *args)
         abcdk_bloom_write_number(data->pptrs[0],3,0,16,len);
         abcdk_bloom_write_number(data->pptrs[0],3,16,8,1);
 
-#ifdef OPENSSL_VERSION_NUMBER
+#ifndef OPENSSL_VERSION_NUMBER
         RAND_bytes(data->pptrs[0]+3,len);
 #else 
-        abcdk_rand_bytes(data->pptrs[0]+3,len,0);
+        abcdk_rand_bytes(data->pptrs[0]+3,len,2);
 #endif //#ifdef OPENSSL_VERSION_NUMBER
 
         data->sizes[0] = len+3;
