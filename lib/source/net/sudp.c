@@ -224,7 +224,7 @@ void abcdk_sudp_stop(abcdk_sudp_t *ctx)
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 
-int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,uint8_t *key,size_t klen)
+int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen)
 {
     int chk = -1;
 

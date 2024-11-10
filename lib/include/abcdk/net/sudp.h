@@ -99,7 +99,7 @@ void abcdk_sudp_stop(abcdk_sudp_t *ctx);
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,uint8_t *key,size_t klen);
+int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen);
 
 /**
  * 投递数据。
