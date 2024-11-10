@@ -203,6 +203,8 @@ abcdk_worker_t *abcdk_worker_start(abcdk_worker_config_t *cfg)
 
     ctx->cfg = *cfg;
 
+    _abcdk_worker_fix_cfg(ctx);
+
     ctx->wred_ctx = abcdk_wred_create(ctx->cfg.wred_max_th,ctx->cfg.wred_min_th,ctx->cfg.wred_weight,ctx->cfg.wred_prob);
     if(!ctx->wred_ctx)
         goto ERR;
