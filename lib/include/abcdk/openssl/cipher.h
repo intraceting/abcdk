@@ -31,13 +31,13 @@ typedef enum _abcdk_openssl_cipher_scheme
     ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC = 2,
 #define ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC
 
-    /*AES-256-GCM。*/
-    ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM = 3,
-#define ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM
+    /*AES256GCM。*/
+    ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM = 3,
+#define ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM
 
-    /*AES-256-CBC。*/
-    ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC = 4,
-#define ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC
+    /*AES256CBC。*/
+    ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC = 4,
+#define ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC
 } abcdk_openssl_cipher_scheme_t;
 
 /**销毁。*/
@@ -66,11 +66,6 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 */
 abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 
-/**加锁。 */
-void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx);
-
-/**解锁。 */
-int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode);
 
 #endif // OPENSSL_VERSION_NUMBER
 

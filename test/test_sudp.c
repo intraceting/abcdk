@@ -54,7 +54,6 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     abcdk_sudp_config_t cfg = {0};
     
-    cfg.ske_key_file = ske_key_file;
     abcdk_sockaddr_from_string(&cfg.listen_addr,listen_p,0);
 
     if(listen_mreq_p)

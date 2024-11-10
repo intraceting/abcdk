@@ -32,9 +32,6 @@ typedef struct _abcdk_sudp abcdk_sudp_t;
 */
 typedef struct _abcdk_sudp_config
 {
-    /**共享密钥。*/
-    const char *ske_key_file;
-
     /**监听地址。*/
     abcdk_sockaddr_t listen_addr;
 
@@ -96,6 +93,13 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg);
 
 /**停止。*/
 void abcdk_sudp_stop(abcdk_sudp_t *ctx);
+
+/**
+ * 密钥重置。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,uint8_t *key,size_t klen);
 
 /**
  * 投递数据。

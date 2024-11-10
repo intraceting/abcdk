@@ -41,9 +41,7 @@ struct _abcdk_openssl_cipher
 
     /*密文块长度。*/
     int ciphertext_bsize;
-    
-    /**同步锁。*/
-    abcdk_spinlock_t *locker_ctx;
+
 }; // abcdk_openssl_cipher_t;
 
 void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
@@ -83,8 +81,6 @@ void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
     if (ctx_p->rsa_ctx)
         RSA_free(ctx_p->rsa_ctx);
 #endif // HEADER_RSA_H
-
-    abcdk_spinlock_destroy(&ctx_p->locker_ctx);
 
     abcdk_heap_free(ctx_p);
 }
@@ -559,12 +555,12 @@ static int _abcdk_openssl_cipher_init(abcdk_openssl_cipher_t *ctx, int scheme, c
         ctx->scheme = scheme;
         chk = _abcdk_openssl_cipher_rsa_init(ctx, key, key_len);
     }
-    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM)
+    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM)
     {
         ctx->scheme = scheme;
         chk = _abcdk_openssl_cipher_aes256gcm_init(ctx, key, key_len);
     }
-    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC)
+    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC)
     {
         ctx->scheme = scheme;
         chk = _abcdk_openssl_cipher_aes256cbc_init(ctx, key, key_len);
@@ -587,10 +583,6 @@ abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *k
     ctx = (abcdk_openssl_cipher_t *)abcdk_heap_alloc(sizeof(abcdk_openssl_cipher_t));
     if (!ctx)
         return NULL;
-    
-    ctx->locker_ctx = abcdk_spinlock_create();
-    if(!ctx->locker_ctx)
-        goto ERR;
 
     chk = _abcdk_openssl_cipher_init(ctx, scheme, key, key_len);
     if (chk != 0)
@@ -630,9 +622,9 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 
     if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE || ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
         out = _abcdk_openssl_cipher_rsa_update(ctx, in, in_len, enc);
-    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM)
+    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM)
         out = _abcdk_openssl_cipher_aes256gcm_update(ctx, in, in_len, enc);
-    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC)
+    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC)
         out = _abcdk_openssl_cipher_aes256cbc_update(ctx, in, in_len, enc);
     else
         out = NULL;
@@ -706,22 +698,6 @@ ERR:
     abcdk_object_unref(&src_p);
     abcdk_object_unref(&dst_p);
     return NULL;
-}
-
-void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
-{
-    assert(ctx != NULL);
-
-    abcdk_spinlock_lock(ctx->locker_ctx,1);
-}
-
-int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode)
-{
-    assert(ctx != NULL);
-
-    abcdk_spinlock_unlock(ctx->locker_ctx);
-
-    return exitcode;
 }
 
 
