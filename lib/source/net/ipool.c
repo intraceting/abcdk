@@ -125,7 +125,7 @@ abcdk_ipool_t *abcdk_ipool_create()
 
     ctx->locker_ctx = abcdk_rwlock_create();
     if (!ctx->locker_ctx)
-        return -1;
+        goto ERR;
 
     return ctx;
 
