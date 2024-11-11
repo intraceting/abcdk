@@ -23,22 +23,23 @@ typedef struct _abcdk_ipool abcdk_ipool_t;
 void abcdk_ipool_destroy(abcdk_ipool_t **ctx);
 
 /**创建。 */
-abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end);
+abcdk_ipool_t *abcdk_ipool_create();
 
-/**创建。 */
-abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end);
+/**
+ * 重置。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_ipool_reset(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, abcdk_sockaddr_t *end,
+                      abcdk_sockaddr_t *dhcp_begin, abcdk_sockaddr_t *dhcp_end);
 
-/**创建。 */
-abcdk_ipool_t *abcdk_ipool_create3(abcdk_sockaddr_t *host,int prefix);
-
-/**创建。 */
-abcdk_ipool_t *abcdk_ipool_create4(const char *host,int prefix);
-
-/**设置DHCP范围。 */
-int abcdk_ipool_set_dhcp_range(abcdk_ipool_t *ctx,abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end);
-
-/**设置DHCP范围。 */
-int abcdk_ipool_set_dhcp_range2(abcdk_ipool_t *ctx,const char *begin,const char *end);
+/**
+ * 重置。
+ * 
+ * @return 0 成功，!0 失败。
+*/
+int abcdk_ipool_reset2(abcdk_ipool_t *ctx, const char *begin, const char *end,
+                       const char *dhcp_begin, const char *dhcp_end);
 
 /**
  * 数量。 
@@ -53,13 +54,15 @@ uint8_t abcdk_ipool_prefix(abcdk_ipool_t *ctx);
 /**
  * 静态地址请求。
  * 
- * @param [in] addr 地址。
- * 
  * @return 0 成功，< 0 失败(已经被占用)。
 */
 int abcdk_ipool_static_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr);
 
-/** 静态地址请求。*/
+/**
+ * 静态地址请求。
+ * 
+ * @return 0 成功，< 0 失败(已经被占用)。
+*/
 int abcdk_ipool_static_request2(abcdk_ipool_t *ctx,const char *addr);
 
 /**

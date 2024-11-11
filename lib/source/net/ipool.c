@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * MIT License
- * 
+ *
  */
 #include "abcdk/net/ipool.h"
 
@@ -25,7 +25,7 @@ struct _abcdk_ipool
 
     /**HDCP状态. 0 停用，!0 启用。 */
     int dhcp_enable;
-    
+
     /**DHCP的范围。*/
     uint64_t dhcp_b;
     uint64_t dhcp_e;
@@ -33,32 +33,17 @@ struct _abcdk_ipool
     /**DHCP游标。*/
     uint64_t dhcp_pos;
 
-};//abcdk_ipool_t
-
-void abcdk_ipool_destroy(abcdk_ipool_t **ctx)
-{
-    abcdk_ipool_t *ctx_p;
-
-    if(!ctx || !*ctx)
-        return;
-
-    ctx_p = *ctx;
-    *ctx = NULL;
-
-    abcdk_rwlock_destroy(&ctx_p->locker_ctx);
-    abcdk_object_unref(&ctx_p->pool_ctx);
-    abcdk_heap_free(ctx_p);
-}
+}; // abcdk_ipool_t
 
 static uint64_t _abcdk_ipool_get_addr_pos_32b(abcdk_sockaddr_t *addr)
 {
     uint64_t pos = UINT64_MAX;
 
-    if(addr->family == AF_INET)
+    if (addr->family == AF_INET)
     {
         pos = abcdk_endian_b_to_h32(addr->addr4.sin_addr.s_addr);
     }
-    else if(addr->family == AF_INET6)
+    else if (addr->family == AF_INET6)
     {
         pos = 0;
         for (int i = 12; i < 16; i++)
@@ -71,19 +56,19 @@ static uint64_t _abcdk_ipool_get_addr_pos_32b(abcdk_sockaddr_t *addr)
     return pos;
 }
 
-static int _abcdk_ipool_get_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,uint64_t *pos)
+static int _abcdk_ipool_get_addr_pos(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr, uint64_t *pos)
 {
     assert(pos != NULL);
 
     *pos = UINT64_MAX;
 
-    if(addr->family != ctx->addr_b.family)
+    if (addr->family != ctx->addr_b.family)
         return -1;
 
-    if(addr->family == AF_INET6)
+    if (addr->family == AF_INET6)
     {
         /*检测前缀是否相同。*/
-        if(memcmp(ctx->addr_b.addr6.sin6_addr.s6_addr,addr->addr6.sin6_addr.s6_addr,12) != 0)
+        if (memcmp(ctx->addr_b.addr6.sin6_addr.s6_addr, addr->addr6.sin6_addr.s6_addr, 12) != 0)
             return -22;
     }
 
@@ -96,17 +81,17 @@ static int _abcdk_ipool_get_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,u
     return 0;
 }
 
-static void _abcdk_ipool_set_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,uint64_t pos)
+static void _abcdk_ipool_set_addr_pos(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr, uint64_t pos)
 {
     addr->family = ctx->addr_b.family;
 
-    if(addr->family == AF_INET)
+    if (addr->family == AF_INET)
     {
         addr->addr4.sin_addr.s_addr = abcdk_endian_h_to_b32(pos);
     }
-    else if(addr->family == AF_INET6)
+    else if (addr->family == AF_INET6)
     {
-        memcpy(addr->addr6.sin6_addr.s6_addr,ctx->addr_b.addr6.sin6_addr.s6_addr,12);
+        memcpy(addr->addr6.sin6_addr.s6_addr, ctx->addr_b.addr6.sin6_addr.s6_addr, 12);
         addr->addr6.sin6_addr.s6_addr[12] = (pos >> 24) & 0xff;
         addr->addr6.sin6_addr.s6_addr[13] = (pos >> 16) & 0xff;
         addr->addr6.sin6_addr.s6_addr[14] = (pos >> 8) & 0xff;
@@ -114,58 +99,33 @@ static void _abcdk_ipool_set_addr_pos(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr,
     }
 }
 
-static int _abcdk_ipool_init(abcdk_ipool_t *ctx)
+void abcdk_ipool_destroy(abcdk_ipool_t **ctx)
 {
-    uint64_t c = 0;
+    abcdk_ipool_t *ctx_p;
 
-    ctx->locker_ctx = abcdk_rwlock_create();
-    if(!ctx->locker_ctx)
-        return -1;
+    if (!ctx || !*ctx)
+        return;
 
-    if(ctx->addr_b.family == AF_INET6)
-    {
-        /*IPV6检测前缀是否相同。*/
-        if(memcmp(ctx->addr_b.addr6.sin6_addr.s6_addr,ctx->addr_e.addr6.sin6_addr.s6_addr,12) != 0)
-            return -4;
-    }
+    ctx_p = *ctx;
+    *ctx = NULL;
 
-    ctx->pool_b = _abcdk_ipool_get_addr_pos_32b(&ctx->addr_b);
-    ctx->pool_e = _abcdk_ipool_get_addr_pos_32b(&ctx->addr_e);
-    if (ctx->pool_e < ctx->pool_b)
-        return -1;
-
-    c = ctx->pool_e - ctx->pool_b + 1; // 区间差+1才是数量。
-
-    ctx->pool_ctx = abcdk_object_alloc2(abcdk_align(c,8)/8);
-    if(!ctx->pool_ctx)
-        return -3;
-
-    /*默认关闭。*/
-    ctx->dhcp_enable = 0;
-
-    return 0;
+    abcdk_rwlock_destroy(&ctx_p->locker_ctx);
+    abcdk_object_unref(&ctx_p->pool_ctx);
+    abcdk_heap_free(ctx_p);
 }
 
-abcdk_ipool_t *abcdk_ipool_create(abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end)
+abcdk_ipool_t *abcdk_ipool_create()
 {
     abcdk_ipool_t *ctx;
     int chk;
 
-    assert(begin != NULL && end != NULL);
-    assert(begin->family ==  AF_INET || begin->family ==  AF_INET6);
-    assert(end->family ==  AF_INET || end->family ==  AF_INET6);
-    assert(begin->family == end->family);
-
     ctx = abcdk_heap_alloc(sizeof(abcdk_ipool_t));
-    if(!ctx)
+    if (!ctx)
         return NULL;
-   
-    ctx->addr_b = *begin;
-    ctx->addr_e = *end;
 
-    chk = _abcdk_ipool_init(ctx);
-    if(chk != 0)
-        goto ERR;
+    ctx->locker_ctx = abcdk_rwlock_create();
+    if (!ctx->locker_ctx)
+        return -1;
 
     return ctx;
 
@@ -175,80 +135,68 @@ ERR:
     return NULL;
 }
 
-abcdk_ipool_t *abcdk_ipool_create2(const char *begin,const char *end)
+static int _abcdk_ipool_reset_base(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, abcdk_sockaddr_t *end)
 {
-    abcdk_sockaddr_t b,e;
-    int chk;
+    uint64_t b, e;
+    uint64_t c = 0;
+    abcdk_object_t *pool_ctx_p;
 
-    assert(begin != NULL && end != NULL);
+    if (begin->family == AF_INET6)
+    {
+        /*IPV6检测前缀是否相同。*/
+        if (memcmp(begin->addr6.sin6_addr.s6_addr, end->addr6.sin6_addr.s6_addr, 12) != 0)
+            return -4;
+    }
 
-    chk = abcdk_sockaddr_from_string(&b,begin,0);
-    if(chk != 0)
-        return NULL;
+    b = _abcdk_ipool_get_addr_pos_32b(begin);
+    e = _abcdk_ipool_get_addr_pos_32b(end);
+    if (e < b)
+        return -1;
 
-    chk = abcdk_sockaddr_from_string(&e,end,0);
-    if(chk != 0)
-        return NULL;
+    c = e - b + 1; // 区间差+1才是数量。
 
-    return abcdk_ipool_create(&b,&e);
+    pool_ctx_p = abcdk_object_alloc2(abcdk_align(c, 8) / 8);
+    if (!pool_ctx_p)
+        return -3;
+
+    abcdk_object_unref(&ctx->pool_ctx);
+    ctx->pool_ctx = pool_ctx_p;
+
+    ctx->addr_b = *begin;
+    ctx->addr_e = *end;
+    ctx->pool_b = b;
+    ctx->pool_e = e;
+
+    /*默认关闭。*/
+    ctx->dhcp_enable = 0;
+
+    return 0;
 }
 
-abcdk_ipool_t *abcdk_ipool_create3(abcdk_sockaddr_t *host,int prefix)
+static int _abcdk_ipool_reset_dhcp(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, abcdk_sockaddr_t *end)
 {
-    abcdk_sockaddr_t b,e;
-
-    assert(host != NULL && prefix >= 0);
-    assert(host->family == AF_INET || host->family == AF_INET6);
-
-    abcdk_sockaddr_make_range(&b,&e,host,prefix);
-
-    return abcdk_ipool_create(&b,&e);
-}
-
-abcdk_ipool_t *abcdk_ipool_create4(const char *host,int prefix)
-{
-    abcdk_sockaddr_t n,b,e;
+    uint64_t b, e;
     int chk;
 
-    assert(host != NULL && prefix >= 0);
-
-    chk = abcdk_sockaddr_from_string(&n,host,0);
-    if(chk != 0)
-        return NULL;
-
-    return abcdk_ipool_create3(&n,prefix);
-}
-
-int abcdk_ipool_set_dhcp_range(abcdk_ipool_t *ctx,abcdk_sockaddr_t *begin,abcdk_sockaddr_t *end)
-{
-    uint64_t b,e;
-    int chk;
-
-    assert(ctx != NULL && begin != NULL && end != NULL);
-    assert(begin->family ==  AF_INET || begin->family ==  AF_INET6);
-    assert(end->family ==  AF_INET || end->family ==  AF_INET6);
-    assert(begin->family == end->family);
-    assert(ctx->addr_b.family == begin->family);
-
-    if(ctx->addr_b.family == AF_INET6)
+    if (begin->family == AF_INET6)
     {
         /*检测前缀是否相同。*/
-        if(memcmp(begin->addr6.sin6_addr.s6_addr,end->addr6.sin6_addr.s6_addr,12) != 0)
+        if (memcmp(begin->addr6.sin6_addr.s6_addr, end->addr6.sin6_addr.s6_addr, 12) != 0)
             return -22;
     }
 
-    chk = _abcdk_ipool_get_addr_pos(ctx,begin,&b);
-    if(chk != 0)
+    chk = _abcdk_ipool_get_addr_pos(ctx, begin, &b);
+    if (chk != 0)
         return -22;
 
-    chk = _abcdk_ipool_get_addr_pos(ctx,end,&e);
-    if(chk != 0)
+    chk = _abcdk_ipool_get_addr_pos(ctx, end, &e);
+    if (chk != 0)
         return -22;
 
     if (e < b)
         return -22;
 
-    if(b < ctx->pool_b || e > ctx->pool_e)
+    if (b < ctx->pool_b || e > ctx->pool_e)
         return -1;
 
     ctx->dhcp_b = b;
@@ -259,38 +207,91 @@ int abcdk_ipool_set_dhcp_range(abcdk_ipool_t *ctx,abcdk_sockaddr_t *begin,abcdk_
     return 0;
 }
 
-int abcdk_ipool_set_dhcp_range2(abcdk_ipool_t *ctx,const char *begin,const char *end)
+int abcdk_ipool_reset(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, abcdk_sockaddr_t *end,
+                      abcdk_sockaddr_t *dhcp_begin, abcdk_sockaddr_t *dhcp_end)
 {
-    abcdk_sockaddr_t b,e;
+    int chk;
+
+    assert(ctx != NULL && begin != NULL && end != NULL);
+    assert(begin->family == AF_INET || begin->family == AF_INET6);
+    assert(end->family == AF_INET || end->family == AF_INET6);
+    assert(begin->family == end->family);
+
+    chk = _abcdk_ipool_reset_base(ctx, begin, end);
+    if (chk != 0)
+        return -1;
+
+    if (!dhcp_begin || !dhcp_end)
+        return 0;
+
+    assert(dhcp_begin->family == AF_INET || dhcp_begin->family == AF_INET6);
+    assert(dhcp_end->family == AF_INET || dhcp_end->family == AF_INET6);
+    assert(dhcp_begin->family == dhcp_end->family);
+    assert(ctx->addr_b.family == dhcp_begin->family);
+
+    chk = _abcdk_ipool_reset_dhcp(ctx, dhcp_begin, dhcp_end);
+    if (chk != 0)
+        return -2;
+
+    return 0;
+}
+
+int abcdk_ipool_reset2(abcdk_ipool_t *ctx, const char *begin, const char *end,
+                       const char *dhcp_begin, const char *dhcp_end)
+{
+    abcdk_sockaddr_t begin_addr = {0}, end_addr = {0};
+    abcdk_sockaddr_t dhcp_begin_addr = {0}, dhcp_end_addr = {0};
     int chk;
 
     assert(ctx != NULL && begin != NULL && end != NULL);
 
-    chk = abcdk_sockaddr_from_string(&b,begin,0);
-    if(chk != 0)
+    chk = abcdk_sockaddr_from_string(&begin_addr, begin, 0);
+    if (chk != 0)
         return -1;
 
-    chk = abcdk_sockaddr_from_string(&e,end,0);
-    if(chk != 0)
+    chk = abcdk_sockaddr_from_string(&end_addr, end, 0);
+    if (chk != 0)
         return -1;
 
-    return abcdk_ipool_set_dhcp_range(ctx,&b,&e);  
+    if (dhcp_begin)
+    {
+        chk = abcdk_sockaddr_from_string(&dhcp_begin_addr, dhcp_begin, 0);
+        if (chk != 0)
+            return -1;
+    }
+
+    if (dhcp_end)
+    {
+        chk = abcdk_sockaddr_from_string(&dhcp_end_addr, dhcp_end, 0);
+        if (chk != 0)
+            return -1;
+    }
+
+    if (dhcp_begin && dhcp_end)
+        chk = abcdk_ipool_reset(ctx, &begin_addr, &end_addr, &dhcp_begin_addr, &dhcp_end_addr);
+    else
+        chk = abcdk_ipool_reset(ctx, &begin_addr, &end_addr, NULL, NULL);
+
+    return chk;
 }
 
-uint64_t abcdk_ipool_count(abcdk_ipool_t *ctx,int flag)
+uint64_t abcdk_ipool_count(abcdk_ipool_t *ctx, int flag)
 {
-    uint64_t pool_c,dhcp_c;
+    uint64_t pool_c, dhcp_c;
 
     assert(ctx != NULL);
+
+    if (ctx->pool_e <= 0 && ctx->pool_b <= 0)
+        return 0;
 
     pool_c = ctx->pool_e - ctx->pool_b + 1;
     dhcp_c = (ctx->dhcp_enable ? (ctx->dhcp_e - ctx->dhcp_b + 1) : 0);
 
-    if(flag == 0)
+    if (flag == 0)
         return pool_c;
-    else if(flag == 1)
+    else if (flag == 1)
         return pool_c - dhcp_c;
-    else if(flag == 2)
+    else if (flag == 2)
         return dhcp_c;
 
     return 0;
@@ -303,7 +304,7 @@ uint8_t abcdk_ipool_prefix(abcdk_ipool_t *ctx)
 
     assert(ctx != NULL);
 
-    c = abcdk_ipool_count(ctx,0);
+    c = abcdk_ipool_count(ctx, 0);
 
     /*计算后缀长度。*/
     while (c > 0)
@@ -312,60 +313,60 @@ uint8_t abcdk_ipool_prefix(abcdk_ipool_t *ctx)
         c /= 2;
     }
 
-    if(ctx->addr_b.family == AF_INET)
-        return 32-suffix;
-    else if(ctx->addr_b.family == AF_INET6)
-        return 128-suffix;
-    
+    if (ctx->addr_b.family == AF_INET)
+        return 32 - suffix;
+    else if (ctx->addr_b.family == AF_INET6)
+        return 128 - suffix;
+
     return 0;
 }
 
-int abcdk_ipool_static_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
+int abcdk_ipool_static_request(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
 {
     uint64_t pos;
     int chk;
 
     assert(ctx != NULL && addr != NULL);
-    assert(addr->family ==  AF_INET || addr->family ==  AF_INET6);
+    assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    chk = _abcdk_ipool_get_addr_pos(ctx,addr,&pos);
-    if(chk != 0)
+    chk = _abcdk_ipool_get_addr_pos(ctx, addr, &pos);
+    if (chk != 0)
         return -22;
 
     /*标记占用。*/
     chk = abcdk_bloom_mark(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
-    if(chk == 1)
-        return -1;//已经被占用。
+    if (chk == 1)
+        return -1; // 已经被占用。
 
     return 0;
 }
 
-int abcdk_ipool_static_request2(abcdk_ipool_t *ctx,const char *addr)
+int abcdk_ipool_static_request2(abcdk_ipool_t *ctx, const char *addr)
 {
     abcdk_sockaddr_t s;
     int chk;
 
     assert(ctx != NULL && addr != NULL);
 
-    chk = abcdk_sockaddr_from_string(&s,addr,0);
-    if(chk != 0)
+    chk = abcdk_sockaddr_from_string(&s, addr, 0);
+    if (chk != 0)
         return -1;
 
-    return abcdk_ipool_static_request(ctx,&s);
+    return abcdk_ipool_static_request(ctx, &s);
 }
 
-int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
+int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
 {
-    uint64_t c,pos;
+    uint64_t c, pos;
     int chk;
 
     assert(ctx != NULL && addr != NULL);
-    
+
     /*可能未启用。*/
-    if(!ctx->dhcp_enable)
+    if (!ctx->dhcp_enable)
         return -1;
 
-    c = abcdk_ipool_count(ctx,2);
+    c = abcdk_ipool_count(ctx, 2);
 
     /*限制在一个轮回中查找。*/
     for (uint64_t i = 0; i < c; i++)
@@ -375,7 +376,7 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
         /*copy.*/
         pos = ctx->dhcp_pos;
 
-        if(ctx->dhcp_pos == ctx->dhcp_e)
+        if (ctx->dhcp_pos == ctx->dhcp_e)
             ctx->dhcp_pos = ctx->dhcp_b;
         else
             ctx->dhcp_pos += 1;
@@ -387,23 +388,23 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
         abcdk_bloom_mark(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
 
         /*填充地址。*/
-        _abcdk_ipool_set_addr_pos(ctx,addr, pos);
+        _abcdk_ipool_set_addr_pos(ctx, addr, pos);
         return 0;
     }
 
     return -11;
 }
 
-int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
+int abcdk_ipool_reclaim(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
 {
-    uint64_t pos; 
+    uint64_t pos;
     int chk;
 
     assert(ctx != NULL && addr != NULL);
-    assert(addr->family ==  AF_INET || addr->family ==  AF_INET6);
+    assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    chk = _abcdk_ipool_get_addr_pos(ctx,addr,&pos);
-    if(chk != 0)
+    chk = _abcdk_ipool_get_addr_pos(ctx, addr, &pos);
+    if (chk != 0)
         return -22;
 
     /*标记空闲。*/
@@ -412,16 +413,16 @@ int abcdk_ipool_reclaim(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
     return 0;
 }
 
-int abcdk_ipool_verify(abcdk_ipool_t *ctx,abcdk_sockaddr_t *addr)
+int abcdk_ipool_verify(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
 {
     uint64_t pos;
     int chk;
 
     assert(ctx != NULL && addr != NULL);
-    assert(addr->family ==  AF_INET || addr->family ==  AF_INET6);
+    assert(addr->family == AF_INET || addr->family == AF_INET6);
 
-    chk = _abcdk_ipool_get_addr_pos(ctx,addr,&pos);
-    if(chk != 0)
+    chk = _abcdk_ipool_get_addr_pos(ctx, addr, &pos);
+    if (chk != 0)
         return -22;
 
     return 0;
@@ -431,17 +432,17 @@ void abcdk_ipool_rdlock(abcdk_ipool_t *ctx)
 {
     assert(ctx != NULL);
 
-    abcdk_rwlock_rdlock(ctx->locker_ctx,1);
+    abcdk_rwlock_rdlock(ctx->locker_ctx, 1);
 }
 
 void abcdk_ipool_wrlock(abcdk_ipool_t *ctx)
 {
     assert(ctx != NULL);
 
-    abcdk_rwlock_wrlock(ctx->locker_ctx,1);
+    abcdk_rwlock_wrlock(ctx->locker_ctx, 1);
 }
 
-int abcdk_ipool_unlock(abcdk_ipool_t *ctx,int exitcode)
+int abcdk_ipool_unlock(abcdk_ipool_t *ctx, int exitcode)
 {
     assert(ctx != NULL);
 
@@ -449,4 +450,3 @@ int abcdk_ipool_unlock(abcdk_ipool_t *ctx,int exitcode)
 
     return exitcode;
 }
-

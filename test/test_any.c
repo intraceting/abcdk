@@ -1099,9 +1099,13 @@ int abcdk_test_any(abcdk_option_t *args)
 
     fprintf(stderr,"%s,%s\n",bstr,estr);
 
-    abcdk_ipool_t *pool_ctx = abcdk_ipool_create2(bstr,estr);
+    abcdk_ipool_t *pool_ctx = abcdk_ipool_create();
 
-    int chk = abcdk_ipool_set_dhcp_range2(pool_ctx,bstr,estr);
+    int chk = abcdk_ipool_reset2(pool_ctx,"192.168.123.1","192.168.123.111","192.168.123.1","192.168.123.110");
+    assert(chk == 0);
+
+    chk = abcdk_ipool_reset2(pool_ctx,bstr,estr,bstr,estr);
+    assert(chk == 0);
 
     abcdk_iplan_config_t cfg = {0};
     cfg.enable_watch = 1;
