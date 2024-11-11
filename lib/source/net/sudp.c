@@ -139,7 +139,6 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     if(ctx->fd < 0)
         goto ERR;
 
-
     /*端口复用，用于快速重启恢复。*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(ctx->fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag, 2);
@@ -224,7 +223,7 @@ void abcdk_sudp_stop(abcdk_sudp_t *ctx)
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 
-int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen)
+int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen,int flag)
 {
     int chk = -1;
 
@@ -233,24 +232,33 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen)
     abcdk_rwlock_wrlock(ctx->cipher_locker,1);
 
 #ifdef OPENSSL_VERSION_NUMBER
-    /*关闭旧的。*/
-    abcdk_openssl_cipher_destroy(&ctx->cipher_in);
-    abcdk_openssl_cipher_destroy(&ctx->cipher_out);
 
-    /*创建新的。*/
-    ctx->cipher_in = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
-    ctx->cipher_out = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+    if(flag & 0x01)
+    {
+        /*关闭旧的。*/
+        abcdk_openssl_cipher_destroy(&ctx->cipher_in);
+        
+        /*创建新的。*/
+        ctx->cipher_in = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+    }
+
+    if(flag & 0x02)
+    {
+        /*关闭旧的。*/
+        abcdk_openssl_cipher_destroy(&ctx->cipher_out);
+        
+        /*创建新的。*/
+        ctx->cipher_out = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+    }
 
     /*必须都成功。*/
     chk = ((ctx->cipher_in && ctx->cipher_out) ? 0 : -1);
+
 #else //OPENSSL_VERSION_NUMBER
     abcdk_trace_output(LOG_WARNING, "当前环境未包含加密套件，忽略密钥文件。");
 #endif //OPENSSL_VERSION_NUMBER
 
     abcdk_rwlock_unlock(ctx->cipher_locker);
-
-    /*设置密钥状态。*/
-    abcdk_atomic_store(&ctx->cipher_ok, (chk == 0 ? 1 : 0));
 
     return chk;
 }
@@ -314,8 +322,8 @@ NEXT_MSG:
     enc_p->sizes[0] = rlen;
 
     abcdk_sockaddr_to_string(addrbuf,&remote,0);
-
-    if(abcdk_atomic_compare(&ctx->cipher_ok,1))
+    
+    if(ctx->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_SKE)
     {
         dec_p = _abcdk_sudp_cipher_update_pack(ctx,enc_p->pptrs[0],enc_p->sizes[0],0);
         if(!dec_p)
@@ -325,7 +333,7 @@ NEXT_MSG:
             goto NEXT_MSG;
         }
     }
-    else
+    else 
     {
         dec_p = abcdk_object_refer(enc_p);
     }
@@ -364,13 +372,13 @@ NEXT_MSG:
     if(!p)
         goto NEXT_MSG;
 
-    if(abcdk_atomic_compare(&ctx->cipher_ok,1))
+    if(ctx->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_SKE)
     {
         enc_p = _abcdk_sudp_cipher_update_pack(ctx,p->obj->pptrs[0],p->obj->sizes[0],1);
         if(!enc_p)
             goto NEXT_MSG;
     }
-    else 
+    else
     {
         enc_p = abcdk_object_refer(p->obj);
     }

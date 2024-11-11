@@ -27,11 +27,27 @@ __BEGIN_DECLS
 /**简单的UDP环境。 */
 typedef struct _abcdk_sudp abcdk_sudp_t;
 
+/**安全方案。*/
+typedef enum _abcdk_sudp_ssl_scheme
+{
+    /**RAW.*/
+    ABCDK_SUDP_SSL_SCHEME_RAW = 0,
+#define ABCDK_SUDP_SSL_SCHEME_RAW   ABCDK_SUDP_SSL_SCHEME_RAW
+
+    /**SKE(Shared key encryption).*/
+    ABCDK_SUDP_SSL_SCHEME_SKE = 1,
+#define ABCDK_SUDP_SSL_SCHEME_SKE   ABCDK_SUDP_SSL_SCHEME_SKE
+
+}abcdk_sudp_ssl_scheme_t;
+
 /** 
  * 配置。
 */
 typedef struct _abcdk_sudp_config
 {
+    /**安全方案*/
+    int ssl_scheme;
+
     /**监听地址。*/
     abcdk_sockaddr_t listen_addr;
 
@@ -97,9 +113,11 @@ void abcdk_sudp_stop(abcdk_sudp_t *ctx);
 /**
  * 密钥重置。
  * 
+ * @param [in] 标志。0x01 接收，0x02 发送。可用“|”运算符同时重置。
+ * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen);
+int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen,int flag);
 
 /**
  * 投递数据。
