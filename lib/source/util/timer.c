@@ -97,8 +97,7 @@ void abcdk_timer_destroy(abcdk_timer_t **ctx)
     abcdk_timer_t *ctx_p;
 
     if (!ctx || !*ctx)
-        ;
-    return;
+        return;
 
     ctx_p = *ctx;
     *ctx = NULL;

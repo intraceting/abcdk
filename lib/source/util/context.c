@@ -70,7 +70,7 @@ abcdk_context_t *abcdk_context_alloc(size_t userdata, void (*free_cb)(void *user
 {
     abcdk_context_t *ctx;
 
-    ctx = abcdk_heap_alloc(sizeof(abcdk_context_t));
+    ctx = (abcdk_context_t *)abcdk_heap_alloc(sizeof(abcdk_context_t));
     if (!ctx)
         return NULL;
 
