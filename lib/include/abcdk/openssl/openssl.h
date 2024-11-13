@@ -121,6 +121,12 @@ typedef enum _abcdk_openssl_hmac_type
 #define ABCDK_OPENSSL_HMAC_WHIRLPOOL ABCDK_OPENSSL_HMAC_WHIRLPOOL
 }abcdk_openssl_hmac_type_t;
 
+/**释放。*/
+void abcdk_openssl_hmac_free(HMAC_CTX **ctx);
+
+/**申请。*/
+HMAC_CTX *abcdk_openssl_hmac_alloc();
+
 /**
  * 初始化环境。
  * 

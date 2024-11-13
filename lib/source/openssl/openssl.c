@@ -155,6 +155,45 @@ ERR:
 
 #ifdef HEADER_HMAC_H
 
+void abcdk_openssl_hmac_free(HMAC_CTX **ctx)
+{
+    HMAC_CTX *ctx_p;
+
+    if(!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    HMAC_CTX_cleanup(ctx_p);//不可以省略。
+    abcdk_heap_free(ctx_p);
+#else //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    HMAC_CTX_free(ctx_p);
+#endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+}
+
+/**申请。*/
+HMAC_CTX *abcdk_openssl_hmac_alloc()
+{
+    HMAC_CTX *ctx;
+
+#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    ctx = (HMAC_CTX*)abcdk_heap_alloc(sizeof(HMAC_CTX));
+#else //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    ctx = HMAC_CTX_new();
+#endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+
+    if(!ctx)
+        return NULL;
+    
+#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    HMAC_CTX_init(ctx);//不可以省略。
+#endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+    
+    return ctx;
+}
+
 int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 {
     int chk = -1;
@@ -165,7 +204,7 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
     /*不可以省略。*/
 #if OPENSSL_VERSION_NUMBER <= 0x100020bfL
     HMAC_CTX_init(hmac);
-#endif 
+#endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
 
     if (0)
         assert(0);
