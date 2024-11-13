@@ -63,8 +63,7 @@ void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
     abcdk_openssl_cipher_t *ctx_p;
 
     if (!ctx || !*ctx)
-        ;
-    return;
+        return;
 
     ctx_p = *ctx;
     *ctx = NULL;
