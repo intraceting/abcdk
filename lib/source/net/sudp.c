@@ -70,6 +70,8 @@ void abcdk_sudp_destroy(abcdk_sudp_t **ctx)
     abcdk_openssl_cipher_destroy(&ctx_p->cipher_out);
 #endif //OPENSSL_VERSION_NUMBER
     abcdk_closep(&ctx_p->fd);
+    
+    abcdk_heap_free(ctx_p);
 }
 
 static void _abcdk_sudp_process_cb(void *opaque,uint64_t event,void *item);
