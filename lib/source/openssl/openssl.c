@@ -201,11 +201,6 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
     assert(hmac != NULL && key != NULL && len > 0);
     assert(type >= ABCDK_OPENSSL_HMAC_MD2 && type <= ABCDK_OPENSSL_HMAC_WHIRLPOOL);
 
-    /*不可以省略。*/
-#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
-    HMAC_CTX_init(hmac);
-#endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
-
     if (0)
         assert(0);
 #ifndef OPENSSL_NO_MD2
