@@ -1002,7 +1002,8 @@ abcdk_stcp_t *abcdk_stcp_create(int worker)
 
 void abcdk_stcp_stop(abcdk_stcp_t *ctx)
 {
-    assert(ctx != NULL);
+    if(!ctx)
+        return;
     
     /*通知ASIO取消等待。*/
     if (ctx->asioex_ctx)

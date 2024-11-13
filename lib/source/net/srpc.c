@@ -226,7 +226,8 @@ ERR:
 
 void abcdk_srpc_stop(abcdk_srpc_t *ctx)
 {
-    assert(ctx != NULL);
+    if(!ctx)
+        return;
 
     abcdk_stcp_stop(ctx->io_ctx);
 }

@@ -214,7 +214,8 @@ ERR:
 
 void abcdk_sudp_stop(abcdk_sudp_t *ctx)
 {
-    assert(ctx != NULL);
+    if(!ctx)
+        return;
     
     /*通知线程退出。*/
     abcdk_atomic_store(&ctx->worker_flag,1);
