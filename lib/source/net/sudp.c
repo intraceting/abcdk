@@ -419,7 +419,7 @@ void _abcdk_sudp_process_cb(void *opaque,uint64_t event,void *item)
 
 int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_object_t *data)
 {
-    abcdk_tree_t *p;
+    abcdk_tree_t *p = NULL;
     int chk;
 
     assert(ctx != NULL && data != NULL);
