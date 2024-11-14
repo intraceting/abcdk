@@ -1080,7 +1080,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_ipool_destroy(&ctx);
 
-#elif 1
+#elif 0
 
     abcdk_sockaddr_t b,e,n;
 
@@ -1150,46 +1150,48 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_iplan_destroy(&plan_ctx);
     abcdk_ipool_destroy(&pool_ctx);
 
-#elif 0
+#elif 1
 
 #ifdef HAVE_OPENSSL
 
-   //abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,"aaaa",4);
-   //abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_GCM,"aaaa",4);
-
-      abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,"aaaa",4);
-    abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES_256_CBC,"aaaa",4);
-
-    int bufsize = 2000;
-    char buf[bufsize];
-    memset(buf,'a',bufsize);
-
-    abcdk_object_t *buf2 = abcdk_openssl_cipher_update(enc_ctx,buf,bufsize,1);
-    abcdk_object_t *buf3 = abcdk_openssl_cipher_update(enc_ctx,buf,bufsize,1);
-
-    abcdk_object_t *buf4 = abcdk_openssl_cipher_update(dec_ctx,buf2->pptrs[0],buf2->sizes[0],0);
-    abcdk_object_t *buf5 = abcdk_openssl_cipher_update(dec_ctx,buf3->pptrs[0],buf3->sizes[0],0);
-
-    assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],bufsize)==0);
-    assert(memcmp(buf,buf5->pptrs[0],bufsize)==0);
-
-    abcdk_object_unref(&buf2);
-    abcdk_object_unref(&buf3);
-    abcdk_object_unref(&buf4);
-    abcdk_object_unref(&buf5);
-
-    abcdk_object_t *src = abcdk_object_alloc2(10000000);
-
-        
-    uint64_t dot = 0;
-    abcdk_clock(dot,&dot);
-
-    for (int i = 1000; i <= 10000000; i *= 10)
+#pragma omp parallel for num_threads(4)
+    for (int j = 0; j < 10; j++)
     {
+        abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM, "aaaa", 4);
+        abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM, "aaaa", 4);
 
-        RAND_bytes(src->pptrs[0], i);
+        //    abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC,"aaaa",4);
+        //   abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC,"aaaa",4);
 
-        abcdk_clock(dot,&dot);
+        int bufsize = 2000;
+        char buf[bufsize];
+        memset(buf, 'a', bufsize);
+
+        abcdk_object_t *buf2 = abcdk_openssl_cipher_update(enc_ctx, buf, bufsize, 1);
+        abcdk_object_t *buf3 = abcdk_openssl_cipher_update(enc_ctx, buf, bufsize, 1);
+
+        abcdk_object_t *buf4 = abcdk_openssl_cipher_update(dec_ctx, buf2->pptrs[0], buf2->sizes[0], 0);
+        abcdk_object_t *buf5 = abcdk_openssl_cipher_update(dec_ctx, buf3->pptrs[0], buf3->sizes[0], 0);
+
+        assert(memcmp(buf4->pptrs[0], buf5->pptrs[0], bufsize) == 0);
+        assert(memcmp(buf, buf5->pptrs[0], bufsize) == 0);
+
+        abcdk_object_unref(&buf2);
+        abcdk_object_unref(&buf3);
+        abcdk_object_unref(&buf4);
+        abcdk_object_unref(&buf5);
+
+        abcdk_object_t *src = abcdk_object_alloc2(10000000);
+
+        uint64_t dot = 0;
+        abcdk_clock(dot, &dot);
+
+        for (int i = 1000; i <= 10000000; i *= 10)
+        {
+
+            RAND_bytes(src->pptrs[0], i);
+
+            abcdk_clock(dot, &dot);
 
 #if 0
         abcdk_object_t *buf6 = abcdk_openssl_cipher_update(enc_ctx, src->pptrs[0], i, 1);
@@ -1197,28 +1199,28 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_object_t *buf7 = abcdk_openssl_cipher_update(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
 
         assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
-#else 
-        abcdk_object_t *buf6 = abcdk_openssl_cipher_update_pack(enc_ctx, src->pptrs[0], i, 1);
+#else
+            abcdk_object_t *buf6 = abcdk_openssl_cipher_update_pack(enc_ctx, src->pptrs[0], i, 1);
 
-        abcdk_object_t *buf7 = abcdk_openssl_cipher_update_pack(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
+            abcdk_object_t *buf7 = abcdk_openssl_cipher_update_pack(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
 
-        assert(buf7->sizes[0] == i);
-        assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
-#endif 
+            assert(buf7->sizes[0] == i);
+            assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
+#endif
 
-        abcdk_object_unref(&buf6);
-        abcdk_object_unref(&buf7);
+            abcdk_object_unref(&buf6);
+            abcdk_object_unref(&buf7);
 
-        uint64_t step = abcdk_clock(dot, &dot);
-        fprintf(stderr, "%d,cast:%.9f\n", i, (double)step / 1000000000.);
+            uint64_t step = abcdk_clock(dot, &dot);
+            fprintf(stderr, "%d,cast:%.9f\n", i, (double)step / 1000000000.);
+        }
+
+        abcdk_object_unref(&src);
+
+        abcdk_openssl_cipher_destroy(&enc_ctx);
+        abcdk_openssl_cipher_destroy(&dec_ctx);
     }
-
-    abcdk_object_unref(&src);
-
-    abcdk_openssl_cipher_destroy(&enc_ctx);
-    abcdk_openssl_cipher_destroy(&dec_ctx);
-
-#endif //HAVE_OPENSSL
+#endif // HAVE_OPENSSL
 
 #elif 0
 
