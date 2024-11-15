@@ -27,18 +27,6 @@ struct _abcdk_sudp
     /**句柄。*/
     int fd;
 
-    /**发送算法。 */
-    abcdk_wred_t *out_wred;
-
-    /**发送队列长度。 */
-    int out_len;
-
-    /**发送队列。*/
-    abcdk_tree_t *out_queue;
-
-    /**发送队列锁。*/
-    abcdk_mutex_t *out_locker;
-
     /**密钥状态。0 禁用, !0 启用。*/
     volatile int cipher_ok;
 
@@ -64,72 +52,26 @@ void abcdk_sudp_destroy(abcdk_sudp_t **ctx)
 
     ABCDK_ASSERT(ctx_p->worker_ctx == NULL, "销毁前必须先停止。");
 
-    abcdk_wred_destroy(&ctx_p->out_wred);
-    abcdk_tree_free(&ctx_p->out_queue);
-    abcdk_mutex_destroy(&ctx_p->out_locker);
-    abcdk_rwlock_destroy(&ctx_p->cipher_locker);
 #ifdef OPENSSL_VERSION_NUMBER
     abcdk_openssl_cipherex_destroy(&ctx_p->cipherex_in);
     abcdk_openssl_cipherex_destroy(&ctx_p->cipherex_out);
 #endif //OPENSSL_VERSION_NUMBER
+
+    abcdk_rwlock_destroy(&ctx_p->cipher_locker);
     abcdk_closep(&ctx_p->fd);
     
     abcdk_heap_free(ctx_p);
 }
 
-static void _abcdk_sudp_process_cb(void *opaque,uint64_t event,void *item);
+static void _abcdk_sudp_process_input_cb(void *opaque,uint64_t event,void *item);
 
 static void _abcdk_sudp_fix_cfg(abcdk_sudp_t *ctx)
 {
-    if(ctx->cfg.out_min_th <= 0)
-        ctx->cfg.out_min_th = 200;
-    else 
-        ctx->cfg.out_min_th = ABCDK_CLAMP(ctx->cfg.out_min_th,200,600);
+    /*修复不支持的配置和默认值。*/
+    if (ctx->cfg.input_worker <= 0)
+        ctx->cfg.input_worker = abcdk_align(sysconf(_SC_NPROCESSORS_ONLN) / 2, 2);
 
-    if(ctx->cfg.out_max_th <= 0)
-        ctx->cfg.out_max_th = 400;
-    else 
-        ctx->cfg.out_max_th = ABCDK_CLAMP(ctx->cfg.out_max_th,400,800);
-
-    if(ctx->cfg.out_weight <= 0)
-        ctx->cfg.out_weight = 2;
-    else 
-        ctx->cfg.out_weight = ABCDK_CLAMP(ctx->cfg.out_weight,1,99);
-    
-    if(ctx->cfg.out_prob <= 0)
-        ctx->cfg.out_prob = 2;
-    else 
-        ctx->cfg.out_prob = ABCDK_CLAMP(ctx->cfg.out_prob,1,99);
-
-    /*最小阈值和最大阈值必须符合区间要求。*/
-    if (ctx->cfg.out_min_th > ctx->cfg.out_max_th)
-        ABCDK_INTEGER_SWAP(ctx->cfg.out_min_th, ctx->cfg.out_max_th);
-
-    if(ctx->cfg.in_min_th <= 0)
-        ctx->cfg.in_min_th = 800;
-    else 
-        ctx->cfg.in_min_th = ABCDK_CLAMP(ctx->cfg.in_min_th,200,6000);
-
-    if(ctx->cfg.in_max_th <= 0)
-        ctx->cfg.in_max_th = 1000;
-    else 
-        ctx->cfg.in_max_th = ABCDK_CLAMP(ctx->cfg.in_max_th,400,8000);
-
-    if(ctx->cfg.in_weight <= 0)
-        ctx->cfg.in_weight = 2;
-    else 
-        ctx->cfg.in_weight = ABCDK_CLAMP(ctx->cfg.in_weight,1,99);
-    
-    if(ctx->cfg.in_prob <= 0)
-        ctx->cfg.in_prob = 2;
-    else 
-        ctx->cfg.in_prob = ABCDK_CLAMP(ctx->cfg.in_prob,1,99);
-
-    /*最小阈值和最大阈值必须符合区间要求。*/
-    if (ctx->cfg.in_min_th > ctx->cfg.in_max_th)
-        ABCDK_INTEGER_SWAP(ctx->cfg.in_min_th, ctx->cfg.in_max_th);
 }
-
 abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
 {
     abcdk_sudp_t *ctx;
@@ -151,19 +93,6 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
 
     ctx->index = abcdk_sequence_num();
     ctx->fd = -1;
-    ctx->out_len = 0;
-
-    ctx->out_queue = abcdk_tree_alloc3(1);
-    if(!ctx->out_queue)
-        goto ERR;
-
-    ctx->out_locker = abcdk_mutex_create();
-    if(!ctx->out_locker)
-        goto ERR;
-
-    ctx->cipher_locker = abcdk_rwlock_create();
-    if(!ctx->out_locker)
-        goto ERR;
 
     ctx->fd = abcdk_socket(ctx->cfg.listen_addr.family,1);
     if(ctx->fd < 0)
@@ -217,25 +146,17 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     if(chk != 0)
         goto ERR;
 
-    ctx->out_wred = abcdk_wred_create(ctx->cfg.out_min_th, ctx->cfg.out_max_th,
-                                      ctx->cfg.out_weight, ctx->cfg.out_prob);
-    if (!ctx->out_wred)
-        goto ERR;
 
-    ctx->worker_cfg.numbers = 6;
-    ctx->worker_cfg.wred_min_th = ctx->cfg.in_min_th;
-    ctx->worker_cfg.wred_max_th = ctx->cfg.in_max_th;
-    ctx->worker_cfg.wred_weight = ctx->cfg.in_weight;
-    ctx->worker_cfg.wred_prob = ctx->cfg.in_prob;
+    ctx->worker_cfg.numbers = ctx->cfg.input_worker; 
     ctx->worker_cfg.opaque = ctx;
-    ctx->worker_cfg.process_cb = _abcdk_sudp_process_cb;
+    ctx->worker_cfg.process_cb = _abcdk_sudp_process_input_cb;
 
     ctx->worker_ctx = abcdk_worker_start(&ctx->worker_cfg);
     if(!ctx->worker_ctx)
         goto ERR;
 
-    abcdk_worker_dispatch(ctx->worker_ctx, 1, (void *)-1);
-    abcdk_worker_dispatch(ctx->worker_ctx, 2, (void *)-1);
+    for(int i = 0;i<ctx->worker_cfg.numbers;i++)
+        abcdk_worker_dispatch(ctx->worker_ctx, 0x01, (void *)0);
 
     return ctx;
 
@@ -321,7 +242,9 @@ static abcdk_object_t *_abcdk_sudp_cipher_update_pack(abcdk_sudp_t *ctx,void *in
 static void _abcdk_sudp_process_input(abcdk_sudp_t *ctx)
 {
     abcdk_object_t *enc_p = NULL;
-    size_t sizes[2] = {65536,64};
+    abcdk_object_t *dec_p = NULL;
+    abcdk_sockaddr_t remote_addr = {0};
+    char addr_str[100] = {0};
     socklen_t addr_len = 64;
     ssize_t rlen = 0;
     int chk;
@@ -329,6 +252,7 @@ static void _abcdk_sudp_process_input(abcdk_sudp_t *ctx)
 NEXT_MSG:
     
     abcdk_object_unref(&enc_p);
+    abcdk_object_unref(&dec_p);
 
     if(!abcdk_atomic_compare(&ctx->worker_flag,0))
         return;
@@ -337,122 +261,51 @@ NEXT_MSG:
     if(chk <= 0)
         goto NEXT_MSG;
 
-    enc_p = abcdk_object_alloc(sizes,2,0);
+    enc_p = abcdk_object_alloc2(65536);
     if(!enc_p)
         goto NEXT_MSG;
 
-    rlen = recvfrom(ctx->fd,enc_p->pptrs[0],enc_p->sizes[0],0,(struct sockaddr*)enc_p->pptrs[1],&addr_len);
+    rlen = recvfrom(ctx->fd,enc_p->pptrs[0],enc_p->sizes[0],0,(struct sockaddr*)&remote_addr,&addr_len);
     if(rlen <= 0)
         goto NEXT_MSG;
 
     /*fix length.*/
     enc_p->sizes[0] = rlen;
 
-    /*派发给其它线程。*/
-    chk = abcdk_worker_dispatch_ex(ctx->worker_ctx,3,abcdk_object_refer(enc_p),0);
-    if(chk != 0)
-        abcdk_object_unref(&enc_p);//派发出错，释放。
-
-    goto NEXT_MSG;
-}
-
-static void _abcdk_sudp_process_input_cb(abcdk_sudp_t *ctx,abcdk_object_t *data)
-{
-    char addrbuf[100] = {0};
-    abcdk_sockaddr_t remote = {0};
-    abcdk_object_t *dec_p = NULL;
-
-    remote = *((abcdk_sockaddr_t *)data->pptrs[1]);
-
-    abcdk_sockaddr_to_string(addrbuf,&remote,0);
-
     if(ctx->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_SKE)
     {
-        dec_p = _abcdk_sudp_cipher_update_pack(ctx,data->pptrs[0],data->sizes[0],0);
-        abcdk_object_unref(&data);//free
+        dec_p = _abcdk_sudp_cipher_update_pack(ctx,enc_p->pptrs[0],enc_p->sizes[0],0);
         if(!dec_p)
         {
-            abcdk_trace_output(LOG_WARNING, "来自(%s)的数据解密失败，丢弃此数据包。\n",addrbuf);
+            abcdk_sockaddr_to_string(addr_str,&remote_addr,0);
+            abcdk_trace_output(LOG_WARNING, "来自(%s)的数据解密失败，丢弃此数据包。\n",addr_str);
             return;
         }
     }
     else
     {
-        dec_p = data;//copy.
+        dec_p = abcdk_object_refer(enc_p);
     }
 
     if(ctx->cfg.input_cb)
-        ctx->cfg.input_cb(ctx->cfg.opaque,&remote,dec_p->pptrs[0], dec_p->sizes[0]);
-
-    abcdk_object_unref(&dec_p);
-}
-
-static void _abcdk_sudp_process_output(abcdk_sudp_t *ctx)
-{
-    abcdk_tree_t *p = NULL;
-    ssize_t slen = 0;
-    int chk;
-
-NEXT_MSG:
-
-    if(!abcdk_atomic_compare(&ctx->worker_flag,0))
-        return;
-
-    chk = abcdk_poll(ctx->fd,0x02,1000);
-    if(chk <= 0)
-        goto NEXT_MSG;
-
-    /*从队列头部开始发送。*/
-    abcdk_mutex_lock(ctx->out_locker, 1);
-    p = abcdk_tree_child(ctx->out_queue, 1);
-    if (!p)
-        abcdk_mutex_wait(ctx->out_locker, 1000);
-    abcdk_mutex_unlock(ctx->out_locker);
-
-    if(!p)
-        goto NEXT_MSG;
-
-    slen = sendto(ctx->fd,(void*)p->obj->pptrs[0],p->obj->sizes[0],0,(struct sockaddr*)p->obj->pptrs[1],p->obj->sizes[1]);
-    if(slen <= 0 && errno != EINVAL)
-        goto NEXT_MSG;
-
-    /*从队列中移除节点。*/
-    abcdk_mutex_lock(ctx->out_locker, 1);
-    abcdk_tree_unlink(p);
-    ctx->out_len -= 1;
-    abcdk_mutex_unlock(ctx->out_locker);
-
-    /*删除节点。*/
-    abcdk_tree_free(&p);
+        ctx->cfg.input_cb(ctx->cfg.opaque,&remote_addr,dec_p->pptrs[0], dec_p->sizes[0]);
 
     goto NEXT_MSG;
 }
 
-static void _abcdk_sudp_perform(abcdk_sudp_t *ctx, uint64_t event,void *item)
-{
-    /*设置线程名字，日志记录会用到。*/
-    abcdk_thread_setname(0, "%15x", ctx->index);
-
-    if (event == 1)
-        _abcdk_sudp_process_output(ctx);
-    else if (event == 2)
-        _abcdk_sudp_process_input(ctx);
-    else if (event == 3)
-        _abcdk_sudp_process_input_cb(ctx,(abcdk_object_t*)item);
-}
-
-void _abcdk_sudp_process_cb(void *opaque,uint64_t event,void *item)
+void _abcdk_sudp_process_input_cb(void *opaque,uint64_t event,void *item)
 {
     abcdk_sudp_t *ctx = (abcdk_sudp_t *)opaque;
 
-    _abcdk_sudp_perform(ctx,event,item);
+    /*设置线程名字，日志记录会用到。*/
+    abcdk_thread_setname(0, "%15x", ctx->index);
+
+    _abcdk_sudp_process_input(ctx);
 }
 
 int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const void *data,size_t size)
 {
-    abcdk_tree_t *p = NULL;
     abcdk_object_t *enc_p = NULL;
-    size_t sizes[2] = {0,64};
     int chk;
 
     assert(ctx != NULL && remote != NULL && data != NULL && size >0 && size <= 64512);
@@ -462,59 +315,20 @@ int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const void *data
         enc_p = _abcdk_sudp_cipher_update_pack(ctx,(void*)data,size,1);
         if(!enc_p)
             return -1;
-
-        sizes[0] = enc_p->sizes[0];
-        p = abcdk_tree_alloc2(sizes,2,0);
-        if(!p)
-        {
-            abcdk_object_unref(&enc_p);//free
-            return -1;
-        }
-
-        /*复制密文。*/
-        memcpy(p->obj->pptrs[0],enc_p->pptrs[0],enc_p->sizes[0]);
-        abcdk_object_unref(&enc_p);//free
+        
+        chk = sendto(ctx->fd,(void*)enc_p->pptrs[0],enc_p->sizes[0],0,(struct sockaddr*)&remote,64);
+        abcdk_object_unref(&enc_p);
     }
     else
     {
-        sizes[0] = size;
-        p = abcdk_tree_alloc2(sizes,2,0);
-        if(!p)
-            return -1;
-
-        /*复制明文。*/
-        memcpy(p->obj->pptrs[0],data,size);
-       
+       chk = sendto(ctx->fd,data,size,0,(struct sockaddr*)&remote,64);
     }
 
-    /*复制地址。*/
-    memcpy(p->obj->pptrs[1],remote,64);
-
-#if 1
-    sendto(ctx->fd,(void*)p->obj->pptrs[0],p->obj->sizes[0],0,(struct sockaddr*)p->obj->pptrs[1],p->obj->sizes[1]);
-    abcdk_tree_free(&p);
-    return 0;
-#endif 
-    
-    abcdk_mutex_lock(ctx->out_locker,1);//lock
-
-    /*根据WRED算法决定是否添加到队列中。*/
-    chk = abcdk_wred_update(ctx->out_wred, ctx->out_len + 1);
-    if (chk == 0)
+    if(chk <= 0)
     {
-        /*添加到队列末尾。*/
-        abcdk_tree_insert2(ctx->out_queue, p, 0);
-        ctx->out_len += 1;
-        abcdk_mutex_signal(ctx->out_locker,0);
+        abcdk_trace_output(LOG_WARNING, "输出缓慢，当前数据包未能发送。\n");
+        return  -1;
     }
-    else
-    {
-        abcdk_trace_output(LOG_WARNING, "输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n",ctx->out_len, p->obj->sizes[0]);
-
-        abcdk_tree_free(&p);
-    }
-    
-    abcdk_mutex_unlock(ctx->out_locker);//unlock
 
     return 0;
 }

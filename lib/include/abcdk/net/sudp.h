@@ -57,61 +57,11 @@ typedef struct _abcdk_sudp_config
     /**组播地址。*/
     abcdk_mreqaddr_t mreq_addr;
 
-    /**
-     * 输出队列丢包最小阈值。 
-     * 
-     * @note 有效范围：200~600，默认：200
-    */
-    int out_min_th;
+    /**输入工人数量。*/
+    int input_worker;
 
-    /**
-     * 输出队列丢包最大阈值。 
-     * 
-     * @note 有效范围：400~800，默认：400
-    */
-    int out_max_th;
-
-    /**
-     * 输出队列丢包权重因子。
-     * 
-     * @note 有效范围：1~99，默认：2 
-    */
-    int out_weight;
-
-    /**
-     * 输出队列丢包概率因子。 
-     * 
-     * @note 有效范围：1~99，默认：2 
-    */
-    int out_prob;
-
-    /**
-     * 输入队列丢包最小阈值。 
-     * 
-     * @note 有效范围：200~6000，默认：800
-    */
-    int in_min_th;
-
-    /**
-     * 输入队列丢包最大阈值。 
-     * 
-     * @note 有效范围：400~8000，默认：1000
-    */
-    int in_max_th;
-
-    /**
-     * 输入队列丢包权重因子。
-     * 
-     * @note 有效范围：1~99，默认：2 
-    */
-    int in_weight;
-
-    /**
-     * 输入队列丢包概率因子。 
-     * 
-     * @note 有效范围：1~99，默认：2 
-    */
-    int in_prob;
+    /** 环境指针。*/
+    void *opaque;
 
     /**
      * 输入数据到达通知回调函数。
@@ -120,8 +70,6 @@ typedef struct _abcdk_sudp_config
      */
     void (*input_cb)(void *opaque,abcdk_sockaddr_t *remote, const void *data, size_t size);
 
-    /** 环境指针。*/
-    void *opaque;
 
 } abcdk_sudp_config_t;
 
