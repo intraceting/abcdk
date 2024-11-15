@@ -489,6 +489,12 @@ int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const void *data
 
     /*复制地址。*/
     memcpy(p->obj->pptrs[1],remote,64);
+
+#if 1
+    sendto(ctx->fd,(void*)p->obj->pptrs[0],p->obj->sizes[0],0,(struct sockaddr*)p->obj->pptrs[1],p->obj->sizes[1]);
+    abcdk_tree_free(&p);
+    return 0;
+#endif 
     
     abcdk_mutex_lock(ctx->out_locker,1);//lock
 

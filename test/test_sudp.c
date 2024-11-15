@@ -66,7 +66,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
     if (key_p)
         abcdk_sudp_cipher_reset(g_ctx, (uint8_t *)key_p, strlen(key_p), 0x01 | 0x02);
 
-//#pragma omp parallel for num_threads(2)
+#pragma omp parallel for num_threads(2)
     for (int j = 0; j < 4; j++)
     {
 
@@ -82,9 +82,9 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
 #if 1
 #ifdef OPENSSL_VERSION_NUMBER
-            RAND_bytes(data->pptrs[0] + 3, len);
+         //   RAND_bytes(data->pptrs[0] + 3, len);
 #else
-            abcdk_rand_bytes(data->pptrs[0] + 3, len, 2);
+         //   abcdk_rand_bytes(data->pptrs[0] + 3, len, 2);
 #endif // #ifdef OPENSSL_VERSION_NUMBER
 #endif
 
