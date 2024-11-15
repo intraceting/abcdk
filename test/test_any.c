@@ -1150,12 +1150,12 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_iplan_destroy(&plan_ctx);
     abcdk_ipool_destroy(&pool_ctx);
 
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
-#pragma omp parallel for num_threads(4)
-    for (int j = 0; j < 10; j++)
+#pragma omp parallel for num_threads(1)
+    for (int j = 0; j < 1000; j++)
     {
         abcdk_openssl_cipher_t *enc_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM, "aaaa", 4);
         abcdk_openssl_cipher_t *dec_ctx = abcdk_openssl_cipher_create(ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM, "aaaa", 4);
@@ -1221,6 +1221,44 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_openssl_cipher_destroy(&dec_ctx);
     }
 #endif // HAVE_OPENSSL
+
+#elif 1
+
+
+#ifdef HAVE_OPENSSL
+
+    abcdk_openssl_cipherex_t *enc_ctx = abcdk_openssl_cipherex_create(2,ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM, "aaaa", 4);
+    abcdk_openssl_cipherex_t *dec_ctx = abcdk_openssl_cipherex_create(2,ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM, "aaaa", 4);
+
+    abcdk_object_t *src = abcdk_object_alloc2(10000000);
+
+    RAND_bytes(src->pptrs[0], src->sizes[0]);
+
+    for (int i = 1000; i <= 10000000; i *= 10)
+    {
+        uint64_t dot = 0;
+        abcdk_clock(dot, &dot);
+
+#pragma omp parallel for num_threads(2)
+        for (int j = 0; j < 1000000; j++)
+        {
+            abcdk_object_t *buf6 = abcdk_openssl_cipherex_update_pack(enc_ctx, src->pptrs[0], i, 1);
+
+            abcdk_object_t *buf7 = abcdk_openssl_cipherex_update_pack(dec_ctx, buf6->pptrs[0], buf6->sizes[0], 0);
+
+            assert(buf7->sizes[0] == i);
+            assert(memcmp(src->pptrs[0], buf7->pptrs[0], i) == 0);
+
+            abcdk_object_unref(&buf6);
+            abcdk_object_unref(&buf7);
+        }
+
+        uint64_t step = abcdk_clock(dot, &dot);
+        fprintf(stderr, "%d,cast:%.9f\n", i, (double)step / 1000000000.);
+    }
+
+
+#endif // HAVE_OPENSSL 
 
 #elif 0
 

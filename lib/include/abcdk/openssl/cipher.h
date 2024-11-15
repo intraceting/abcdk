@@ -66,6 +66,11 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 */
 abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 
+/**加锁。 */
+void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx);
+
+/**解锁。 */
+int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode);
 
 #endif // OPENSSL_VERSION_NUMBER
 

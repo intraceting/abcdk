@@ -137,6 +137,7 @@
 #include "abcdk/openssl/cipher.h"
 #include "abcdk/openssl/darknet.h"
 #include "abcdk/openssl/bio.h"
+#include "abcdk/openssl/cipherex.h"
 
 #include "abcdk/curl/curl.h"
 

@@ -8,11 +8,6 @@
 #define ABCDK_UTIL_DEFS_H
 
 /**/
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif //_GNU_SOURCE
-
-/**/
 #include <endian.h>
 #include <stddef.h>
 #include <stdint.h>

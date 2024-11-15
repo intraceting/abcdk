@@ -58,8 +58,6 @@ int abcdk_thread_join(abcdk_thread_t* ctx);
 */
 int abcdk_thread_create_group(int count,abcdk_thread_t ctxs[],int joinable);
 
-#if !defined(__ANDROID__)
-
 /** 
  * 设置线程亲源CPU。
  * 
@@ -73,8 +71,6 @@ int abcdk_thread_setaffinity(pthread_t tid,int cpus[]);
  * 设置线程亲源CPU。
  */
 int abcdk_thread_setaffinity2(pthread_t tid,int cpu);
-
-#endif //__ANDROID__
 
 /**
  * 选举主线程。
@@ -103,10 +99,11 @@ int abcdk_thread_leader_test(const volatile pthread_t *tid);
  */
 int abcdk_thread_leader_quit(volatile pthread_t *tid);
 
-/**
- * 设置线程名字。
- */ 
-void abcdk_thread_setname(const char *fmt, ...);
+/** 设置线程名字。*/ 
+void abcdk_thread_setname(pthread_t ptd, const char *fmt, ...);
+
+/** 获取线程名字。*/ 
+char *abcdk_thread_getname(pthread_t ptd,char name[16]);
 
 __END_DECLS
 

@@ -797,7 +797,7 @@ void _abcdk_ipcfg_work_real(abcdk_ipcfg_t *ctx, uint32_t idx)
     abcdk_option_t *conf_a = NULL, *conf_b = NULL, *conf_prev = NULL;
     int chk;
 
-    abcdk_thread_setname("ipconfig-%d", idx);
+    abcdk_thread_setname(0,"ipconfig-%d", idx);
 
     node_ctx->father = ctx;
 

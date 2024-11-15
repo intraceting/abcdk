@@ -100,9 +100,6 @@ abcdk_srpc_session_t *abcdk_srpc_refer(abcdk_srpc_session_t *src);
 /** 申请会话。*/
 abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
-/** 轨迹输出。*/
-void abcdk_srpc_trace_output(abcdk_srpc_session_t *node,int type, const char* fmt,...);
-
 /**
  * 获取索引。
  * 

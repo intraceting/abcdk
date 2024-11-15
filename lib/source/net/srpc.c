@@ -107,30 +107,6 @@ abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void 
     return (abcdk_srpc_session_t*)node_p;
 }
 
-void abcdk_srpc_trace_output(abcdk_srpc_session_t *node,int type, const char* fmt,...)
-{
-    abcdk_stcp_node_t *node_p;
-    char new_tname[18] = {0}, old_tname[18] = {0};
-
-    node_p = (abcdk_stcp_node_t *)node;
-
-    snprintf(new_tname, 16, "%x", abcdk_stcp_get_index(node_p));
-
-#ifdef __USE_GNU
-    pthread_getname_np(pthread_self(), old_tname, 18);
-    pthread_setname_np(pthread_self(), new_tname);
-#endif //__USE_GNU
-
-    va_list vp;
-    va_start(vp, fmt);
-    abcdk_trace_voutput(type, fmt, vp);
-    va_end(vp);
-
-#ifdef __USE_GNU
-    pthread_setname_np(pthread_self(), old_tname);
-#endif //__USE_GNU
-}
-
 uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node)
 {
     abcdk_stcp_node_t *node_p;
@@ -270,7 +246,7 @@ static void _abcdk_srpc_event_accept(abcdk_stcp_node_t *node, int *result)
         node_ctx_p->cfg.accept_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_stcp_trace_output(node,LOG_INFO, "禁止远端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_output(LOG_INFO, "禁止远端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
@@ -281,7 +257,7 @@ static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     
     /*设置超时。*/
@@ -315,11 +291,11 @@ static void _abcdk_srpc_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_stcp_trace_output(node,LOG_INFO, "监听关闭，忽略。");
+        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
         return;
     }
     
-    abcdk_stcp_trace_output(node,LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*如果连接关闭则一定要取消等待的事务，否则可能会造成应用层阻塞。*/
     if(node_ctx_p->flag)

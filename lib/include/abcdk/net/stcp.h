@@ -232,15 +232,12 @@ abcdk_stcp_node_t *abcdk_stcp_refer(abcdk_stcp_node_t *src);
  */
 abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
-/** 轨迹输出。*/
-void abcdk_stcp_trace_output(abcdk_stcp_node_t *node,int type, const char* fmt,...);
-
 /**
  * 获取索引。
  * 
  * @note 进程内唯一。
  * 
- */
+*/
 uint64_t abcdk_stcp_get_index(abcdk_stcp_node_t *node);
 
 /**

@@ -247,35 +247,6 @@ static abcdk_stcp_node_t *_abcdk_proxy_node_alloc(abcdk_proxy_t *ctx)
     return node_p;
 }
 
-#if 0
-static void _abcdk_proxy_trace_output(abcdk_stcp_node_t *node,int type, const char* fmt,...)
-{
-    abcdk_proxy_node_t *node_ctx_p;
-    char new_tname[18] = {0}, old_tname[18] = {0};
-
-    node_ctx_p = (abcdk_proxy_node_t *)abcdk_stcp_get_userdata(node);
-
-    snprintf(new_tname, 16, "%x", abcdk_stcp_get_index(node));
-
-#ifdef __USE_GNU
-    pthread_getname_np(pthread_self(), old_tname, 18);
-    pthread_setname_np(pthread_self(), new_tname);
-#endif //__USE_GNU
-
-    va_list vp;
-    va_start(vp, fmt);
-    abcdk_trace_voutput(type, fmt, vp);
-    va_end(vp);
-
-#ifdef __USE_GNU
-    pthread_setname_np(pthread_self(), old_tname);
-#endif //__USE_GNU
-
-}
-#else 
-#define _abcdk_proxy_trace_output abcdk_stcp_trace_output
-#endif 
-
 static void _abcdk_proxy_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
     abcdk_stcp_node_t *node_p;
@@ -323,7 +294,7 @@ static void _abcdk_httpd_event_connect(abcdk_stcp_node_t *node)
     /*设置超时。*/
     abcdk_stcp_set_timeout(node,  5 * 60);
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_output( LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*已连接到远端，注册读写事件。*/
     abcdk_stcp_recv_watch(node);
@@ -353,7 +324,7 @@ static void _abcdk_httpd_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        _abcdk_proxy_trace_output(node,LOG_INFO, "监听关闭，忽略。");
+        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
@@ -364,7 +335,7 @@ static void _abcdk_httpd_event_close(abcdk_stcp_node_t *node)
         abcdk_stcp_unref(&node_ctx_p->tunnel);
     }
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_output( LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 }
 
 static void _abcdk_proxy_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
@@ -461,7 +432,7 @@ ERR:
                                node_ctx_p->father->realm,
                                (uint64_t)abcdk_rand_q());
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(407));
+    abcdk_trace_output( LOG_INFO, "Status: %s\n", abcdk_http_status_desc(407));
 
     return -1;
 }
@@ -487,7 +458,7 @@ static void _abcdk_proxy_reply_nobody(abcdk_stcp_node_t *node, int status)
                                node_ctx_p->father->name,
                                abcdk_time_format_gmt(NULL, node_ctx_p->loc_ctx));
 
-    _abcdk_proxy_trace_output(node, LOG_INFO, "Status: %s\n", abcdk_http_status_desc(status));
+    abcdk_trace_output( LOG_INFO, "Status: %s\n", abcdk_http_status_desc(status));
 }
 
 static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
@@ -558,7 +529,7 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
     /*可能发错了。*/
     if(!node_ctx_p->up_link->pstrs[ABCDK_URL_HOST])
     {
-        _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址不存在。");
+        abcdk_trace_output( LOG_WARNING, "上级地址不存在。");
 
         _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
@@ -569,7 +540,7 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
     chk = abcdk_sockaddr_from_string(&uplink_addr, node_ctx_p->up_link->pstrs[ABCDK_URL_HOST], 1);
     if (chk != 0)
     {
-        _abcdk_proxy_trace_output(node, LOG_WARNING, "上级地址(%s)无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
+        abcdk_trace_output( LOG_WARNING, "上级地址(%s)无法识别。", node_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
 
         _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
@@ -623,7 +594,7 @@ static void _abcdk_proxy_process_forward(abcdk_stcp_node_t *node)
     chk = abcdk_stcp_connect(node_ctx_p->tunnel, &uplink_addr, &asio_cfg);
     if (chk != 0)
     {
-        _abcdk_proxy_trace_output(node, LOG_WARNING, "连接上级(%s)失败，网络不可达或服务未启动。", node_uplink_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
+        abcdk_trace_output( LOG_WARNING, "连接上级(%s)失败，网络不可达或服务未启动。", node_uplink_ctx_p->up_link->pstrs[ABCDK_URL_HOST]);
 
         _abcdk_proxy_reply_nobody(node, 404);
         goto ERR;
@@ -687,7 +658,7 @@ static void _abcdk_proxy_process_request(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->protocol == 1)
     {
-        _abcdk_proxy_trace_output(node, LOG_INFO, "Remote: %s\n%.*s\n",
+        abcdk_trace_output( LOG_INFO, "Remote: %s\n%.*s\n",
                                   node_ctx_p->remote_addr,
                                   (int)abcdk_receiver_header_length(node_ctx_p->req_data),
                                   abcdk_receiver_data(node_ctx_p->req_data, 0));

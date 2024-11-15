@@ -61,28 +61,6 @@ static int64_t _abcdk_ffserver_clock(uint8_t precision)
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, precision);
 }
 
-void abcdk_ffserver_trace_output(abcdk_ffserver_item_t *task,int type, const char* fmt,...)
-{
-    char new_tname[18] = {0}, old_tname[18] = {0};
-
-    snprintf(new_tname, 16, "%x", task->index);
-
-#ifdef __USE_GNU
-    pthread_getname_np(pthread_self(), old_tname, 18);
-    pthread_setname_np(pthread_self(), new_tname);
-#endif //__USE_GNU
-
-    va_list vp;
-    va_start(vp, fmt);
-    abcdk_trace_voutput(type, fmt, vp);
-    va_end(vp);
-
-#ifdef __USE_GNU
-    pthread_setname_np(pthread_self(), old_tname);
-#endif //__USE_GNU
-}
-
-
 static void _abcdk_ffserver_item_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
     abcdk_ffserver_item_t *ctx_p;
@@ -99,7 +77,7 @@ static void _abcdk_ffserver_item_destructor_cb(abcdk_object_t *obj, void *opaque
         abcdk_stream_destroy(&ctx_p->live_buf);
     }
 
-    abcdk_ffserver_trace_output(ctx_p,LOG_INFO, "移除任务(%s)。", ctx_p->tip);
+    abcdk_trace_output(LOG_INFO, "移除任务(%s)。", ctx_p->tip);
 }
 
 static abcdk_tree_t *_abcdk_ffserver_item_alloc(abcdk_ffserver_config_t *cfg)
@@ -319,7 +297,7 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
         {
             abcdk_ffmpeg_write_trailer(dst_item->ff_ctx);
             abcdk_ffmpeg_destroy(&dst_item->ff_ctx);
-            abcdk_ffserver_trace_output(dst_item,LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
+            abcdk_trace_output(LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
         }
 
         if(dst_item->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_RECORD)
@@ -363,12 +341,12 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
         dst_item->ff_cfg.short_name = "mp4";
     }
 
-    abcdk_ffserver_trace_output(dst_item,LOG_INFO, "创建输出环境(%s)...", dst_item->tip);
+    abcdk_trace_output(LOG_INFO, "创建输出环境(%s)...", dst_item->tip);
 
     dst_item->ff_ctx = abcdk_ffmpeg_open(&dst_item->ff_cfg);
     if (!dst_item->ff_ctx)
     {
-        abcdk_ffserver_trace_output(dst_item,LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
+        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
         return -2;
     }
 
@@ -414,7 +392,7 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
     chk = abcdk_ffmpeg_write_header(dst_item->ff_ctx, 1);
     if (chk != 0)
     {
-        abcdk_ffserver_trace_output(dst_item,LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
+        abcdk_trace_output(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
         goto ERR;
     }
 
@@ -519,7 +497,7 @@ RECORD_SEGMENT_NEW:
         /*按需丢弃延时过多的帧，以便减少延时。*/
         if (obsolete)
         {
-            abcdk_ffserver_trace_output(dst_item,LOG_WARNING, "直播(%s)延时超过设定阈值(delay_max=%.3f,delay_ns=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+            abcdk_trace_output(LOG_WARNING, "直播(%s)延时超过设定阈值(delay_max=%.3f,delay_ns=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
                                         dst_item->tip,dst_item->cfg.u.live.delay_max,delay_ns, pkt->stream_index, 
                                         abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
                                         abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
@@ -629,7 +607,7 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
         abcdk_md5_update(md5_ctx,&codecpar->codec_type,sizeof(codecpar->codec_type));
         abcdk_md5_update(md5_ctx,&codecpar->codec_tag,sizeof(codecpar->codec_tag));
 
-        abcdk_ffserver_trace_output(src_item_p,LOG_DEBUG, "codec_id=%08x,codec_type=%08x,codec_tag=%08x",
+        abcdk_trace_output(LOG_DEBUG, "codec_id=%08x,codec_type=%08x,codec_tag=%08x",
                                     codecpar->codec_id, codecpar->codec_type, codecpar->codec_tag);
 
         // int fps = abcdk_ffmpeg_fps(src_item_p->ff_ctx,vs_p->index);
@@ -644,7 +622,7 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
             abcdk_md5_update(md5_ctx,&width,sizeof(int));
             abcdk_md5_update(md5_ctx,&height,sizeof(int));
 
-            abcdk_ffserver_trace_output(src_item_p,LOG_DEBUG, "width=%d,height=%d",width,height);
+            abcdk_trace_output(LOG_DEBUG, "width=%d,height=%d",width,height);
         }
         else if(codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
         {
@@ -681,6 +659,9 @@ void *_abcdk_ffserver_worker_routine(void *opaque)
     ctx = (abcdk_ffserver_t *)opaque;
     src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
 
+    /*设置线程名字，日志记录会用到。*/
+    abcdk_thread_setname(0, "%15x", src_item_p->index);
+
     src_item_p->ff_cfg.file_name = src_item_p->cfg.u.src.url;
     src_item_p->ff_cfg.short_name = src_item_p->cfg.u.src.fmt;
     src_item_p->ff_cfg.bit_stream_filter = 1;
@@ -703,11 +684,11 @@ RETRY:
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
     {
-        abcdk_ffserver_trace_output(src_item_p,LOG_WARNING, "输入源(%s)已关闭或到末尾，%d秒后重连。", src_item_p->tip, src_item_p->cfg.u.src.retry);
+        abcdk_trace_output(LOG_WARNING, "输入源(%s)已关闭或到末尾，%d秒后重连。", src_item_p->tip, src_item_p->cfg.u.src.retry);
         usleep(src_item_p->cfg.u.src.retry * 1000000);
     }
 
-    abcdk_ffserver_trace_output(src_item_p,LOG_INFO, "打开输入源(%s)...", src_item_p->tip);
+    abcdk_trace_output(LOG_INFO, "打开输入源(%s)...", src_item_p->tip);
 
     src_item_p->ff_ctx = abcdk_ffmpeg_open(&src_item_p->ff_cfg);
     if (!src_item_p->ff_ctx)
@@ -751,7 +732,7 @@ END:
     av_packet_unref(&pkt);
     abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
 
-    abcdk_ffserver_trace_output(src_item_p,LOG_INFO, "输入源(%s)已关闭。", src_item_p->tip);
+    abcdk_trace_output(LOG_INFO, "输入源(%s)已关闭。", src_item_p->tip);
 
     return NULL;
 }

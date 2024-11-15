@@ -71,10 +71,10 @@ int abcdk_thread_create_group(int count, abcdk_thread_t *ctxs, int joinable)
     return num;
 }
 
-#if !defined(__ANDROID__)
-
 int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
 {
+#ifdef _GNU_SOURCE
+
     long nps = 1;
     cpu_set_t mark;
     int chk;
@@ -102,8 +102,11 @@ int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
     }
 
     chk = pthread_setaffinity_np(tid, sizeof(mark), &mark);
-
     return chk;
+
+#else  //_GNU_SOURCE
+    return 0;
+#endif //_GNU_SOURCE
 }
 
 int abcdk_thread_setaffinity2(pthread_t tid,int cpu)
@@ -115,8 +118,6 @@ int abcdk_thread_setaffinity2(pthread_t tid,int cpu)
 
     return abcdk_thread_setaffinity(tid,cpus);
 }
-
-#endif //__ANDROID__
 
 int abcdk_thread_leader_vote(volatile pthread_t *tid)
 {
@@ -148,14 +149,27 @@ int abcdk_thread_leader_quit(volatile pthread_t *tid)
     return -1;
 }
 
-void abcdk_thread_setname(const char *fmt, ...)
+void abcdk_thread_setname(pthread_t ptd,const char *fmt, ...)
 {
-    char name[18] = {0};
+    char name[16] = {0};
 
     va_list args;
     va_start(args, fmt);
-    vsnprintf(name, 17, fmt, args);
+    vsnprintf(name, 16, fmt, args);
     va_end(args);
 
-    pthread_setname_np(pthread_self(), name);
+#ifdef _GNU_SOURCE
+    pthread_setname_np(ptd?ptd:pthread_self(), name);
+#endif //_GNU_SOURCE
+}
+
+char *abcdk_thread_getname(pthread_t ptd,char name[16])
+{
+#ifdef _GNU_SOURCE
+    pthread_getname_np(ptd?ptd:pthread_self(), name,16);
+#else 
+    memset(name,'?',15);
+#endif //_GNU_SOURCE
+
+    return name;
 }

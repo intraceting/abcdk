@@ -20,7 +20,7 @@
 #include "abcdk/util/worker.h"
 #include "abcdk/util/wred.h"
 #include "abcdk/util/crc.h"
-#include "abcdk/openssl/cipher.h"
+#include "abcdk/openssl/cipherex.h"
 
 __BEGIN_DECLS
 
@@ -86,6 +86,34 @@ typedef struct _abcdk_sudp_config
     int out_prob;
 
     /**
+     * 输入队列丢包最小阈值。 
+     * 
+     * @note 有效范围：200~6000，默认：800
+    */
+    int in_min_th;
+
+    /**
+     * 输入队列丢包最大阈值。 
+     * 
+     * @note 有效范围：400~8000，默认：1000
+    */
+    int in_max_th;
+
+    /**
+     * 输入队列丢包权重因子。
+     * 
+     * @note 有效范围：1~99，默认：2 
+    */
+    int in_weight;
+
+    /**
+     * 输入队列丢包概率因子。 
+     * 
+     * @note 有效范围：1~99，默认：2 
+    */
+    int in_prob;
+
+    /**
      * 输入数据到达通知回调函数。
      * 
      * @param remote 远程地址。
@@ -122,20 +150,9 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_t *ctx,const uint8_t *key,size_t klen,int
 /**
  * 投递数据。
  * 
- * @note 投递的数据对象将被托管，应用层不可以继续访问数据对象。
- * 
- * @param [in] data 数据和地址。data->pptrs[0] 数据，data->pptrs[1] 地址。注：仅做指针复制，不会改变对象的引用计数。
- * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_object_t *data);
-
-/**
- * 投递数据。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_sudp_post_buffer(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const void *data,size_t size);
+int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const void *data,size_t size);
 
 __END_DECLS
 

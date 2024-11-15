@@ -76,6 +76,7 @@ LINK_FLAGS += ${DEPEND_LINKS}
 
 #
 ifeq (${SYSROOT_RELEASE},linux-gnu)
+CC_FLAGS += -D_GNU_SOURCE
 LINK_FLAGS += -ldl -pthread -lc -lm -lrt
 endif
 ifeq (${SYSROOT_RELEASE},android)
