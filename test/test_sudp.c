@@ -60,6 +60,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
         cfg.mreq_enable = !abcdk_mreqaddr_from_string(&cfg.mreq_addr, listen_mreq_p, "0.0.0.0");
 
     cfg.input_cb = input_cb;
+    cfg.ssl_scheme = ABCDK_SUDP_SSL_SCHEME_SKE;
 
     g_ctx = abcdk_sudp_create(&cfg);
 
