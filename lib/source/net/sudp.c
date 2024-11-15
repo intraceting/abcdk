@@ -146,6 +146,9 @@ abcdk_sudp_t *abcdk_sudp_create(abcdk_sudp_config_t *cfg)
     if(chk != 0)
         goto ERR;
 
+    ctx->cipher_locker = abcdk_rwlock_create();
+    if(!ctx->cipher_locker)
+        goto ERR;
 
     ctx->worker_cfg.numbers = ctx->cfg.input_worker; 
     ctx->worker_cfg.opaque = ctx;
