@@ -67,7 +67,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
     if (key_p)
         abcdk_sudp_cipher_reset(g_ctx, (uint8_t *)key_p, strlen(key_p), 0x01 | 0x02);
 
-//#pragma omp parallel for num_threads(2)
+#pragma omp parallel for num_threads(2)
     for (int j = 0; j < 4; j++)
     {
 

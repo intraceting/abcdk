@@ -282,7 +282,7 @@ NEXT_MSG:
         {
             abcdk_sockaddr_to_string(addr_str,&remote_addr,0);
             abcdk_trace_output(LOG_WARNING, "来自(%s)的数据解密失败，丢弃此数据包。\n",addr_str);
-            return;
+            goto NEXT_MSG;
         }
     }
     else
