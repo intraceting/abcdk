@@ -660,7 +660,7 @@ void *_abcdk_ffserver_worker_routine(void *opaque)
     src_item_p = (abcdk_ffserver_item_t *)ctx->src_item->obj->pptrs[0];
 
     /*设置线程名字，日志记录会用到。*/
-    abcdk_thread_setname(0, "%15x", src_item_p->index);
+    abcdk_thread_setname(0, "%x", src_item_p->index);
 
     src_item_p->ff_cfg.file_name = src_item_p->cfg.u.src.url;
     src_item_p->ff_cfg.short_name = src_item_p->cfg.u.src.fmt;

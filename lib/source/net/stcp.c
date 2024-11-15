@@ -955,7 +955,7 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
         node = (abcdk_stcp_node_t *)e.data.ptr;
 
         /*设置线程名字，日志记录会用到。*/
-        abcdk_thread_setname(0, "%15x", node->index);
+        abcdk_thread_setname(0, "%x", node->index);
 
         _abcdk_stcp_dispatch(ctx, e.events, node);
     }

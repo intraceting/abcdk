@@ -301,7 +301,7 @@ void _abcdk_sudp_process_input_cb(void *opaque,uint64_t event,void *item)
     abcdk_sudp_t *ctx = (abcdk_sudp_t *)opaque;
 
     /*设置线程名字，日志记录会用到。*/
-    abcdk_thread_setname(0, "%15x", ctx->index);
+    abcdk_thread_setname(0, "%x", ctx->index);
 
     _abcdk_sudp_process_input(ctx);
 }
@@ -319,12 +319,12 @@ int abcdk_sudp_post(abcdk_sudp_t *ctx,abcdk_sockaddr_t *remote, const void *data
         if(!enc_p)
             return -1;
         
-        chk = sendto(ctx->fd,(void*)enc_p->pptrs[0],enc_p->sizes[0],0,(struct sockaddr*)&remote,64);
+        chk = sendto(ctx->fd,(void*)enc_p->pptrs[0],enc_p->sizes[0],0,(struct sockaddr*)remote,64);
         abcdk_object_unref(&enc_p);
     }
     else
     {
-       chk = sendto(ctx->fd,data,size,0,(struct sockaddr*)&remote,64);
+       chk = sendto(ctx->fd,data,size,0,(struct sockaddr*)remote,64);
     }
 
     if(chk <= 0)
