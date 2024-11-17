@@ -41,6 +41,9 @@ void abcdk_openssl_cipherex_destroy(abcdk_openssl_cipherex_t **ctx)
 
         abcdk_openssl_cipher_destroy((abcdk_openssl_cipher_t **)&ctx_p->cipher_gp->pptrs[i]);
     }
+
+    abcdk_object_unref(&ctx_p->cipher_gp);
+    abcdk_heap_free(ctx_p);
 }
 
 abcdk_openssl_cipherex_t *abcdk_openssl_cipherex_create(int worker, int scheme, const uint8_t *key, size_t klen)

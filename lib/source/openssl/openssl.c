@@ -25,6 +25,7 @@ void abcdk_openssl_cleanup()
 
     CONF_modules_free();
     CONF_modules_unload(1);
+    SSL_COMP_free_compression_methods();
 #endif // HEADER_E_OS2_H
 }
 

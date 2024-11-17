@@ -176,9 +176,10 @@ void abcdk_sudp_unref(abcdk_sudp_node_t **node)
     abcdk_openssl_cipherex_destroy(&node_p->cipherex_out);
 #endif //OPENSSL_VERSION_NUMBER
 
-    abcdk_rwlock_destroy(&node_p->cipher_locker);
     abcdk_closep(&node_p->fd);
+    abcdk_rwlock_destroy(&node_p->cipher_locker);
     abcdk_object_unref(&node_p->userdata);
+    abcdk_object_unref(&node_p->in_buffer);
     _abcdk_sudp_ctx_unref(&node_p->ctx);
     abcdk_heap_free(node_p);
 }
