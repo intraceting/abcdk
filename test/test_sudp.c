@@ -57,6 +57,8 @@ int abcdk_test_sudp(abcdk_option_t *args)
     const char *listen_p[2] = {0};
     const char *dst_p[2] = {0};
 
+    int worker = abcdk_option_get_int(args,"--worker",0,1);
+
     const char *key_p = abcdk_option_get(args, "--key", 0, NULL);
 
     listen_p[0] = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
@@ -84,9 +86,9 @@ int abcdk_test_sudp(abcdk_option_t *args)
     cfg[1].bind_ifname = "enp2s0f1";
    // cfg[1].ssl_scheme = ABCDK_SUDP_SSL_SCHEME_SKE;
 
-    abcdk_sudp_t *ctx = abcdk_sudp_create(2);
+    abcdk_sudp_t *ctx = abcdk_sudp_create(worker);
 
-//#pragma omp parallel for num_threads(2)
+#pragma omp parallel for num_threads(2)
     for (int j = 0; j < 2; j++)
     {
         abcdk_sudp_node_t *node = abcdk_sudp_alloc(ctx, sizeof(int), free_cb);
@@ -102,17 +104,18 @@ int abcdk_test_sudp(abcdk_option_t *args)
         if (key_p)
             abcdk_sudp_cipher_reset(node, (uint8_t *)key_p, strlen(key_p), 0x01 | 0x02);
 
-// #pragma omp parallel for num_threads(2)
-        for (int i = 0; i < 100; i++)
+ //#pragma omp parallel for num_threads(2)
+        for (int i = 0; i < 1000000; i++)
         {
             abcdk_object_t *data = abcdk_object_alloc2(64512);
-            int k = rand() % 64512;
+            //int k = rand() % 64512;
+            int k = 1400;
             int len = ABCDK_CLAMP(k, 1, 64512 - 3);
 
             abcdk_bloom_write_number(data->pptrs[0], 3, 0, 16, len);
             abcdk_bloom_write_number(data->pptrs[0], 3, 16, 8, 1);
 
-#if 1
+#if 0
 #ifdef OPENSSL_VERSION_NUMBER
             RAND_bytes(data->pptrs[0] + 3, len);
 #else
@@ -127,7 +130,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
             abcdk_object_unref(&data);
 
-            usleep(100);
+           // usleep(1);
         }
 
         abcdk_sudp_unref(&node);
