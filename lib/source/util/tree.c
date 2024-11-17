@@ -436,7 +436,10 @@ void abcdk_tree_distinct(abcdk_tree_t *father,abcdk_tree_iterator_t *it)
         if (chk != 0)
             t2 = t3;
         else 
+        {
             abcdk_tree_unlink(t3);
+            abcdk_tree_free(&t3);
+        }
     }
 }
 

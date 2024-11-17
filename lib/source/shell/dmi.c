@@ -17,7 +17,7 @@ int _abcdk_dmi_get_machine_hashcode_dump_cb(size_t depth, abcdk_tree_t *node, vo
     else 
         abcdk_tree_fprintf(stderr,depth,node,"%s\n",node->obj->pstrs[0]);
 
-    return 0;
+    return 1;
 }
 
 int _abcdk_dmi_get_machine_hashcode_compare_cb(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque)
@@ -112,9 +112,12 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
     abcdk_tree_iterator_t it = {0,NULL,_abcdk_dmi_get_machine_hashcode_dump_cb,_abcdk_dmi_get_machine_hashcode_compare_cb};
 
   //  abcdk_tree_scan(sn_vec,&it);
+   // goto final_error;
     abcdk_tree_sort(sn_vec,&it,1);
+  //  goto final_error;
     abcdk_tree_distinct(sn_vec,&it);
-  //  abcdk_tree_scan(sn_vec,&it);
+   // goto final_error;
+   // abcdk_tree_scan(sn_vec,&it);
 
     /*添加自定义干扰项。*/
     if (ABCDK_DMI_MACHINE_HC_STUFF & flag)
@@ -129,7 +132,7 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
     }
 
     abcdk_tree_sort(sn_vec,&it,1);
-  //  abcdk_tree_scan(sn_vec,&it);
+   // abcdk_tree_scan(sn_vec,&it);
 
     p2 = abcdk_tree_child(sn_vec, 1);
     while (p2)

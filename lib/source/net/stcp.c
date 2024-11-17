@@ -46,13 +46,13 @@ struct _abcdk_stcp_node
     /** 索引。*/
     uint64_t index;
 
-    /**标识句柄来源。*/
+    /**句柄来源。*/
     volatile int flag;
 #define ABCDK_STCP_FLAG_CLIENT 1
 #define ABCDK_STCP_FLAG_LISTEN 2
 #define ABCDK_STCP_FLAG_ACCPET 3
 
-    /**标识当前句柄状态。*/
+    /**句柄状态。*/
     volatile int status;
 #define ABCDK_STCP_STATUS_STABLE 1
 #define ABCDK_STCP_STATUS_SYNC 2
@@ -1174,9 +1174,11 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_stcp_refer(node);
 
+    node_p->cfg = *cfg;
+    
     node_p->flag = ABCDK_STCP_FLAG_LISTEN;
     node_p->status = ABCDK_STCP_STATUS_STABLE;
-    node_p->cfg = *cfg;
+
 
     /*修复不支持的配置。*/
     _abcdk_stcp_fix_cfg(node_p);
@@ -1285,9 +1287,10 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_stcp_refer(node);
 
+    node_p->cfg = *cfg;
+
     node_p->flag = ABCDK_STCP_FLAG_CLIENT;
     node_p->status = ABCDK_STCP_STATUS_SYNC;
-    node_p->cfg = *cfg;
 
     /*修复不支持的配置。*/
     _abcdk_stcp_fix_cfg(node_p);

@@ -43,8 +43,12 @@ struct _abcdk_sudp_node
     /**配置。*/
     abcdk_sudp_config_t cfg;
 
-    /** 索引。*/
+    /**索引。*/
     uint64_t index;
+
+    /**状态。*/
+    volatile int status;
+#define ABCDK_SUDP_STATUS_STABLE 1
 
     /**ASIO环境。*/
     abcdk_asio_t *asio_ctx;
@@ -210,6 +214,7 @@ abcdk_sudp_node_t *abcdk_sudp_alloc(abcdk_sudp_t *ctx, size_t userdata, void (*f
     node->refcount = 1;
     node->ctx = _abcdk_sudp_ctx_refer(ctx);
     node->index = abcdk_sequence_num();
+    node->status = 0;
     node->pfd = -1;
     node->fd = -1;
     node->cipher_locker = abcdk_rwlock_create();
@@ -329,6 +334,9 @@ static void _abcdk_sudp_dispatch(abcdk_sudp_t *ctx, uint32_t event, abcdk_sudp_n
 
     if (event & ABCDK_EPOLL_ERROR)
     {
+        /*清除状态。*/
+        node->status == 0;
+
         _abcdk_stcp_close_cb(node);
 
         /*释放事件计数。*/
@@ -439,8 +447,7 @@ int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 
     node_p->cfg = *cfg;
 
-    node_p->index = abcdk_sequence_num();
-    node_p->fd = -1;
+    node_p->status = ABCDK_SUDP_STATUS_STABLE;
 
     node_p->fd = abcdk_socket(node_p->cfg.local_addr.family,1);
     if(node->fd < 0)
@@ -526,6 +533,7 @@ int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 
 ERR:
 
+    node->status = 0;
     abcdk_sudp_unref(&node_p);
 
     return -1;
@@ -620,6 +628,9 @@ int abcdk_sudp_post(abcdk_sudp_node_t *node,abcdk_sockaddr_t *remote, const void
     int chk;
 
     assert(node != NULL && remote != NULL && data != NULL && size >0 && size <= 64512);
+
+    if(node->status == 0)
+        return -1;
 
     chk = _abcdk_sudp_output_hook(node,remote,data,size);
     if(chk != 0)

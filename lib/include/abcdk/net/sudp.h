@@ -150,7 +150,7 @@ abcdk_sudp_t *abcdk_sudp_create(int worker);
 void abcdk_sudp_stop(abcdk_sudp_t *ctx);
 
 /**
- * 连接远程。
+ * 绑定。
  * 
  * @note 在对象关闭前，配置信息必须保持有效且不能更改。
  * 
