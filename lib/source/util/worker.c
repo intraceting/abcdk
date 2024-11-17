@@ -119,9 +119,8 @@ int _abcdk_worker_start(abcdk_worker_t *ctx)
         /*尽可能让线程分布在不同的核心上。*/
         cpu_set = abcdk_atomic_add_and_fetch(&cpu_idx, 1) % sysconf(_SC_NPROCESSORS_ONLN);
         
-#if !defined(__ANDROID__)
         abcdk_thread_setaffinity2(ctx->threads_ctx[i].handle,cpu_set);
-#endif //__ANDROID__
+
     }
 
     return 0;

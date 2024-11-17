@@ -208,13 +208,21 @@ int abcdk_socket_option_linger_set(int fd, int l_onoff, int l_linger);
 */
 int abcdk_socket_option_multicast(int fd,sa_family_t family, abcdk_mreqaddr_t *mreq,int enable);
 
-
 /**
  * TCP快速确认开关。
  * 
  * @return 0 成功，-1 失败。
 */
 int abcdk_socket_option_tcp_quickack(int fd,int enable);
+
+/**
+ * 绑定到设备。
+ * 
+ * @note 需要root权限。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_socket_option_bindtodevice(int fd, const char *ifname);
 
 /**
  * 创建一个SOCKET句柄。

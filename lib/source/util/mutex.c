@@ -68,7 +68,9 @@ abcdk_mutex_t *abcdk_mutex_create()
 #if !defined(__ANDROID__)
     pthread_mutexattr_setpshared(&ctx->mutexattr,PTHREAD_PROCESS_PRIVATE);
     pthread_mutexattr_setrobust(&ctx->mutexattr,PTHREAD_MUTEX_ROBUST);
+#ifdef __USE_GNU
     pthread_mutexattr_settype(&ctx->mutexattr, PTHREAD_MUTEX_FAST_NP);
+#endif //__USE_GNU
 #endif //__ANDROID__
 
     pthread_cond_init(&ctx->cond, &ctx->condattr);

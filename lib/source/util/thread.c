@@ -73,7 +73,7 @@ int abcdk_thread_create_group(int count, abcdk_thread_t *ctxs, int joinable)
 
 int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
 {
-#ifdef _GNU_SOURCE
+#ifdef __USE_GNU
 
     long nps = 1;
     cpu_set_t mark;
@@ -104,9 +104,9 @@ int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
     chk = pthread_setaffinity_np(tid, sizeof(mark), &mark);
     return chk;
 
-#else  //_GNU_SOURCE
+#else  //__USE_GNU
     return 0;
-#endif //_GNU_SOURCE
+#endif //__USE_GNU
 }
 
 int abcdk_thread_setaffinity2(pthread_t tid,int cpu)
@@ -158,18 +158,18 @@ void abcdk_thread_setname(pthread_t ptd,const char *fmt, ...)
     vsnprintf(name, 16, fmt, args);
     va_end(args);
 
-#ifdef _GNU_SOURCE
+#ifdef __USE_GNU
     pthread_setname_np(ptd?ptd:pthread_self(), name);
-#endif //_GNU_SOURCE
+#endif //__USE_GNU
 }
 
 char *abcdk_thread_getname(pthread_t ptd,char name[16])
 {
-#ifdef _GNU_SOURCE
+#ifdef __USE_GNU
     pthread_getname_np(ptd?ptd:pthread_self(), name,16);
 #else 
     memset(name,'?',15);
-#endif //_GNU_SOURCE
+#endif //__USE_GNU
 
     return name;
 }

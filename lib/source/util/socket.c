@@ -316,6 +316,19 @@ int abcdk_socket_option_tcp_quickack(int fd,int enable)
     return abcdk_sockopt_option_int(fd, IPPROTO_TCP, TCP_QUICKACK, &flag, 2);
 }
 
+int abcdk_socket_option_bindtodevice(int fd, const char *ifname)
+{
+    struct ifreq req = {0};
+    int len = sizeof(req);
+
+    assert(fd >= 0 && ifname != NULL);
+    assert(*ifname != '\0');
+
+    strncpy(req.ifr_name,ifname,IFNAMSIZ);
+
+    return abcdk_socket_option(fd,SOL_SOCKET,SO_BINDTODEVICE,&req,&len,2);
+}
+
 int abcdk_socket(sa_family_t family, int udp)
 {
     int type = SOCK_CLOEXEC;

@@ -266,11 +266,11 @@ void abcdk_logger_puts(abcdk_logger_t *ctx, int type, const char *str)
     abcdk_time_sec2tm(&tm, ts / 1000000UL, 0);
 
     /*获进程或线程名称。*/
-#ifndef _GNU_SOURCE
+#ifndef __USE_GNU
     abcdk_proc_basename(name);
-#else //_GNU_SOURCE
+#else //__USE_GNU
     abcdk_thread_getname(pthread_self(),name);
-#endif //_GNU_SOURCE
+#endif //__USE_GNU
 
     /*格式化行的头部：时间、PID、进程名字*/
     hdrlen = snprintf(ctx->buf->pstrs[0], ctx->buf->sizes[0], "%04d%02d%02d%02d%02d%02d.%06llu p%d %s: ",

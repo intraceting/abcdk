@@ -154,6 +154,14 @@ typedef struct _abcdk_stcp_config
 
     /**共享密钥。*/
     const char *ske_key_file;
+    
+    /**
+     * 绑定网卡。
+     * 
+     * @note 仅root权限有效。
+     * @note 慎用，可能无法接收数据。
+    */
+    const char *bind_ifname;
 
     /**
      * 输出队列丢包最小阈值。 
@@ -260,7 +268,7 @@ void *abcdk_stcp_get_userdata(abcdk_stcp_node_t *node);
 /**
  * 设置超时。
  * 
- * @param timeout 时长(秒)。= 0 无效。默认：180。
+ * @param timeout 时长(秒)。= 0 禁用。默认：180。
  * 
  * @return 0 成功，!0 失败。
 */

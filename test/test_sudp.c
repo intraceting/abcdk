@@ -11,9 +11,14 @@
 #include <locale.h>
 #include "entry.h"
 
-static abcdk_sudp_t *g_ctx = NULL;
+static void close_cb(abcdk_sudp_node_t *node)
+{
+    int *id_p = (int *)abcdk_sudp_get_userdata(node);
 
-static void input_cb(void *opaque, abcdk_sockaddr_t *remote, const void *data, size_t size)
+    fprintf(stderr, "close(%d)\n", *id_p);
+}
+
+static void input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const void *data, size_t size)
 {
     char addrbuf[100] = {0};
     int len;
@@ -37,44 +42,70 @@ static void input_cb(void *opaque, abcdk_sockaddr_t *remote, const void *data, s
     abcdk_bloom_write_number(rsp_p->pptrs[0], 3, 16, 8, 0);
     memcpy(rsp_p->pptrs[0] + 3, ABCDK_PTR2VPTR(data, 3), len);
 
-    abcdk_sudp_post(g_ctx, remote, rsp_p->pptrs[0], rsp_p->sizes[0]);
+    abcdk_sudp_post(node, remote, rsp_p->pptrs[0], rsp_p->sizes[0]);
 
     abcdk_object_unref(&rsp_p);
 }
 
+static void free_cb(void *userdata)
+{
+
+}
+
 int abcdk_test_sudp(abcdk_option_t *args)
 {
+    const char *listen_p[2] = {0};
+    const char *dst_p[2] = {0};
+
     const char *key_p = abcdk_option_get(args, "--key", 0, NULL);
-    const char *listen_p = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
-    const char *listen_mreq_p = abcdk_option_get(args, "--listen-mreq", 0, NULL);
-    const char *dst_p = abcdk_option_get(args, "--dst", 0, "127.0.0.1:1111");
 
-    abcdk_sockaddr_t remote = {0};
-    abcdk_sockaddr_from_string(&remote, dst_p, 1);
+    listen_p[0] = abcdk_option_get(args, "--listen", 0, "0.0.0.0:1111");
+    listen_p[1] = abcdk_option_get(args, "--listen", 1, "0.0.0.0:2222");
+    dst_p[0] = abcdk_option_get(args, "--dst", 0, "");
+    dst_p[1] = abcdk_option_get(args, "--dst", 1, "");
 
-    abcdk_sudp_config_t cfg = {0};
+    abcdk_sockaddr_t dst[2] = {0};
 
-    abcdk_sockaddr_from_string(&cfg.listen_addr, listen_p, 0);
+    abcdk_sockaddr_from_string(&dst[0], dst_p[0], 1);
+    abcdk_sockaddr_from_string(&dst[1], dst_p[1], 1);
 
-    if (listen_mreq_p)
-        cfg.mreq_enable = !abcdk_mreqaddr_from_string(&cfg.mreq_addr, listen_mreq_p, "0.0.0.0");
+    abcdk_sudp_config_t cfg[2] = {0};
 
-    cfg.input_cb = input_cb;
-    cfg.ssl_scheme = ABCDK_SUDP_SSL_SCHEME_SKE;
+    abcdk_sockaddr_from_string(&cfg[0].local_addr, listen_p[0], 0);
+    abcdk_sockaddr_from_string(&cfg[1].local_addr, listen_p[1], 0);
 
-    g_ctx = abcdk_sudp_create(&cfg);
+    cfg[0].close_cb = close_cb;
+    cfg[0].input_cb = input_cb;
+    cfg[0].bind_ifname = "enp2s0f0";
+   // cfg[0].ssl_scheme = ABCDK_SUDP_SSL_SCHEME_SKE;
+    
+    cfg[1].close_cb = close_cb;
+    cfg[1].input_cb = input_cb;
+    cfg[1].bind_ifname = "enp2s0f1";
+   // cfg[1].ssl_scheme = ABCDK_SUDP_SSL_SCHEME_SKE;
 
-    if (key_p)
-        abcdk_sudp_cipher_reset(g_ctx, (uint8_t *)key_p, strlen(key_p), 0x01 | 0x02);
+    abcdk_sudp_t *ctx = abcdk_sudp_create(2);
 
-#pragma omp parallel for num_threads(2)
-    for (int j = 0; j < 4; j++)
+//#pragma omp parallel for num_threads(2)
+    for (int j = 0; j < 2; j++)
     {
+        abcdk_sudp_node_t *node = abcdk_sudp_alloc(ctx, sizeof(int), free_cb);
 
-        abcdk_object_t *data = abcdk_object_alloc2(64512);
+        int *id_p = (int *)abcdk_sudp_get_userdata(node);
+        *id_p = j + 1;
 
-        for (int i = 0; i < 100000; i++)
+        int chk = abcdk_sudp_bind(node,&cfg[j]);
+        assert(chk == 0);
+
+     //   abcdk_sudp_set_timeout(node,10);
+
+        if (key_p)
+            abcdk_sudp_cipher_reset(node, (uint8_t *)key_p, strlen(key_p), 0x01 | 0x02);
+
+// #pragma omp parallel for num_threads(2)
+        for (int i = 0; i < 100; i++)
         {
+            abcdk_object_t *data = abcdk_object_alloc2(64512);
             int k = rand() % 64512;
             int len = ABCDK_CLAMP(k, 1, 64512 - 3);
 
@@ -83,28 +114,32 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
 #if 1
 #ifdef OPENSSL_VERSION_NUMBER
-         //   RAND_bytes(data->pptrs[0] + 3, len);
+            RAND_bytes(data->pptrs[0] + 3, len);
 #else
-         //   abcdk_rand_bytes(data->pptrs[0] + 3, len, 2);
+            abcdk_rand_bytes(data->pptrs[0] + 3, len, 2);
 #endif // #ifdef OPENSSL_VERSION_NUMBER
 #endif
 
             data->sizes[0] = len + 3;
 
-            if (remote.family)
-                abcdk_sudp_post(g_ctx, &remote, data->pptrs[0], data->sizes[0]);
+            if (dst[j].family)
+                abcdk_sudp_post(node, &dst[j], data->pptrs[0], data->sizes[0]);
+
+            abcdk_object_unref(&data);
 
             usleep(100);
         }
 
-        abcdk_object_unref(&data);
+        abcdk_sudp_unref(&node);
     }
+
+    fprintf(stderr,"Press the q key to exit.\n");
 
     while (getchar() != 'q')
         ;
 
-    abcdk_sudp_stop(g_ctx);
-    abcdk_sudp_destroy(&g_ctx);
+    abcdk_sudp_stop(ctx);
+    abcdk_sudp_destroy(&ctx);
 
     return 0;
 }

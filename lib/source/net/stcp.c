@@ -27,7 +27,7 @@ struct _abcdk_stcp
 
 }; // abcdk_stcp_t;
 
-/** 异步TCP节点。 */
+/**TCP节点。 */
 struct _abcdk_stcp_node
 {
     /**魔法数。*/
@@ -37,11 +37,7 @@ struct _abcdk_stcp_node
     /**引用计数器。*/
     volatile int refcount;
 
-    /**
-     * 通讯环境指针。
-     *
-     * @note 仅复制。
-     */
+    /**通讯环境指针。*/
     abcdk_stcp_t *ctx;
 
     /**配置。*/
@@ -476,7 +472,7 @@ static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node);
 /*声明输出事件钩子函数。*/
 static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
 
-void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
+static void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
 {
     if (event == ABCDK_STCP_EVENT_INPUT)
     {
@@ -1233,6 +1229,20 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     if (chk != 0)
         goto ERR;
 
+    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
+    {
+        if (getuid() == 0)
+        {
+            chk = abcdk_socket_option_bindtodevice(node_p->fd, node_p->cfg.bind_ifname);
+            if (chk != 0)
+                goto ERR;
+        }
+        else
+        {
+            abcdk_trace_output(LOG_WARNING, "具有root权限才能绑定设备，忽略绑定设备配置。");
+        }
+    }
+
     chk = _abcdk_stcp_ssl_init(node_p, 1);
     if (chk != 0)
         goto ERR;
@@ -1307,6 +1317,20 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     chk = abcdk_fflag_add(node_p->fd, O_NONBLOCK);
     if (chk != 0)
         goto ERR;
+
+    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
+    {
+        if (getuid() == 0)
+        {
+            chk = abcdk_socket_option_bindtodevice(node_p->fd, node_p->cfg.bind_ifname);
+            if (chk != 0)
+                goto ERR;
+        }
+        else
+        {
+            abcdk_trace_output(LOG_WARNING, "具有root权限才能绑定设备，忽略绑定设备配置。");
+        }
+    }
 
     chk = connect(node_p->fd, &node_p->remote.addr, addr_len);
     if (chk != 0 && errno != EAGAIN && errno != EINPROGRESS)
