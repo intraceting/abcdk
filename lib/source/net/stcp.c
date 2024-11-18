@@ -1231,19 +1231,6 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     if (chk != 0)
         goto ERR;
 
-    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
-    {
-        if (getuid() == 0)
-        {
-            chk = abcdk_socket_option_bindtodevice(node_p->fd, node_p->cfg.bind_ifname);
-            if (chk != 0)
-                goto ERR;
-        }
-        else
-        {
-            abcdk_trace_output(LOG_WARNING, "具有root权限才能绑定设备，忽略绑定设备配置。");
-        }
-    }
 
     chk = _abcdk_stcp_ssl_init(node_p, 1);
     if (chk != 0)
@@ -1321,19 +1308,6 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (chk != 0)
         goto ERR;
 
-    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
-    {
-        if (getuid() == 0)
-        {
-            chk = abcdk_socket_option_bindtodevice(node_p->fd, node_p->cfg.bind_ifname);
-            if (chk != 0)
-                goto ERR;
-        }
-        else
-        {
-            abcdk_trace_output(LOG_WARNING, "具有root权限才能绑定设备，忽略绑定设备配置。");
-        }
-    }
 
     chk = connect(node_p->fd, &node_p->remote.addr, addr_len);
     if (chk != 0 && errno != EAGAIN && errno != EINPROGRESS)

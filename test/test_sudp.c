@@ -78,12 +78,10 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     cfg[0].close_cb = close_cb;
     cfg[0].input_cb = input_cb;
-    cfg[0].bind_ifname = "enp2s0f0";
     cfg[0].ssl_scheme = key_p?ABCDK_SUDP_SSL_SCHEME_SKE:ABCDK_SUDP_SSL_SCHEME_RAW;
     
     cfg[1].close_cb = close_cb;
     cfg[1].input_cb = input_cb;
-    cfg[1].bind_ifname = "enp2s0f1";
     cfg[1].ssl_scheme = key_p?ABCDK_SUDP_SSL_SCHEME_SKE:ABCDK_SUDP_SSL_SCHEME_RAW;
 
     abcdk_sudp_t *ctx = abcdk_sudp_create(worker);

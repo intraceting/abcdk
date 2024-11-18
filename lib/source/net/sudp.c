@@ -497,20 +497,6 @@ int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
         abcdk_trace_output(LOG_WARNING,"未绑定端口，忽略组播配置。");
     }
 
-    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
-    {
-        if (getuid() == 0)
-        {
-            chk = abcdk_socket_option_bindtodevice(node_p->fd, node_p->cfg.bind_ifname);
-            if (chk != 0)
-                goto ERR;
-        }
-        else
-        {
-            abcdk_trace_output(LOG_WARNING, "具有root权限才能绑定设备，忽略绑定设备配置。");
-        }
-    }
-
     chk = abcdk_fflag_add(node_p->fd,O_NONBLOCK);
     if(chk != 0)
         goto ERR;

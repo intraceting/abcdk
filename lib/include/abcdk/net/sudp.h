@@ -49,14 +49,6 @@ typedef struct _abcdk_sudp_config
     /**安全方案*/
     int ssl_scheme;
 
-    /**
-     * 绑定网卡。
-     * 
-     * @note 仅root权限有效。
-     * @note 慎用，可能无法接收数据。
-    */
-    const char *bind_ifname;
-
     /**本机地址。*/
     abcdk_sockaddr_t local_addr;
 
