@@ -323,6 +323,7 @@ if [ "${KIT_NAME}" == "rpm" ];then
     CheckHavePackage rpmbuild 1
     if [ $? -ne 0 ];then
         echo "'$(CheckHavePackage rpmbuild 4)' not found."
+        exit 22
     fi
 }
 elif [ "${KIT_NAME}" == "deb" ];then
@@ -331,6 +332,7 @@ elif [ "${KIT_NAME}" == "deb" ];then
     CheckHavePackage dpkg 1
     if [ $? -ne 0 ];then
         echo "'$(CheckHavePackage dpkg 4)' not found."
+        exit 22
     fi
 }
 fi
@@ -339,6 +341,7 @@ fi
 CheckHavePackage pkgconfig 1
 if [ $? -ne 0 ];then
     echo "'$(CheckHavePackage pkgconfig 4)' not found."
+    exit 22
 fi
 
 #
