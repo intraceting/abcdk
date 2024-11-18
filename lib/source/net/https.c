@@ -1102,6 +1102,8 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     asio_cfg.pki_key_file = cfg->pki_key_file;
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
 
+    asio_cfg.bind_ifname = cfg->bind_ifname;
+
     if (cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
         /*set default HTTP1.1*/

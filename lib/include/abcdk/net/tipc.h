@@ -49,6 +49,14 @@ typedef struct _abcdk_tipc_config
 
     /*共享密钥。*/
     const char *ske_key_file;
+    
+    /**
+     * 绑定网卡。
+     * 
+     * @note 仅root权限有效。
+     * @note 慎用，可能无法接收数据。
+    */
+    const char *bind_ifname;
 
     /**
      * 节点连接通知回调函数。

@@ -58,6 +58,14 @@ typedef struct _abcdk_https_config
 
     /**是否验证对端证书。0 否，!0 是。*/
     int pki_check_cert;
+        
+    /**
+     * 绑定网卡。
+     * 
+     * @note 仅root权限有效。
+     * @note 慎用，可能无法接收数据。
+    */
+    const char *bind_ifname;
 
     /**请求数量包最大长度。*/
     size_t req_max_size;
