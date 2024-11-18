@@ -336,6 +336,12 @@ elif [ "${KIT_NAME}" == "deb" ];then
 fi
 
 #
+CheckHavePackage pkgconfig 1
+if [ $? -ne 0 ];then
+    echo "'$(CheckHavePackage pkgconfig 4)' not found."
+fi
+
+#
 DependPackageCheck()
 # 1 key
 # 2 def
