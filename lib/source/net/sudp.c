@@ -616,7 +616,7 @@ static int _abcdk_sudp_output_hook(abcdk_sudp_node_t *node,abcdk_sockaddr_t *rem
 
     if(chk <= 0)
     {
-        abcdk_trace_output(LOG_WARNING, "输出缓慢，当前数据包未能发送。\n");
+        abcdk_trace_output(LOG_DEBUG, "输出缓慢，当前数据包未能发送。\n");
         return  -1;
     }
 
