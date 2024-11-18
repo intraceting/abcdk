@@ -149,7 +149,7 @@ pid_t abcdk_proc_vpopen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const cha
 
     vsnprintf(buf,40*1024,cmd,ap);
 
-    abcdk_trace_output(LOG_INFO,"popen: %s",buf);
+    abcdk_trace_output(LOG_DEBUG,"popen: %s",buf);
 
     pid = abcdk_popen(buf, NULL, 0, 0, NULL, NULL, stdin_fd, stdout_fd, stderr_fd);
     if (pid < 0)
