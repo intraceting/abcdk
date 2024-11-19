@@ -155,6 +155,16 @@ typedef struct _abcdk_stcp_config
     /**共享密钥。*/
     const char *ske_key_file;
 
+    /**绑定地址。*/
+    abcdk_sockaddr_t bind_addr;
+
+    /**
+     * 绑定设备。
+     * 
+     * @note 需要root权限支持，否则忽略。
+    */
+    const char *bind_ifname;
+
     /**
      * 输出队列丢包最小阈值。 
      * 
@@ -336,13 +346,9 @@ void abcdk_stcp_stop(abcdk_stcp_t *ctx);
  * 
  * @note 在对象关闭前，配置信息必须保持有效且不能更改。
  * 
- * @param [in] node 通讯对象。
- * @param [in] addr 监听地址。
- * @param [in] cfg 配置。
- * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr,abcdk_stcp_config_t *cfg);
+int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg);
 
 /**
  * 连接远程。

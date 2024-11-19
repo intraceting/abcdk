@@ -49,8 +49,7 @@ typedef struct _abcdk_tipc_config
 
     /*共享密钥。*/
     const char *ske_key_file;
-
-
+    
     /**
      * 节点连接通知回调函数。
      *

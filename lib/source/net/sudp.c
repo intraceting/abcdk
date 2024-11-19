@@ -429,17 +429,15 @@ void abcdk_sudp_stop(abcdk_sudp_t *ctx)
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 
-
-int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
+int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 {
     abcdk_sudp_node_t *node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag;
-    int have_port;
     int chk;
 
     assert(node != NULL && cfg != NULL);
-    assert(cfg->local_addr.family == AF_INET ||cfg->local_addr.family == AF_INET6);
+    assert(cfg->bind_addr.family == AF_INET ||cfg->bind_addr.family == AF_INET6);
     ABCDK_ASSERT(cfg->input_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
 
     /*异步环境，首先得增加对象引用。*/
@@ -449,7 +447,7 @@ int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 
     node_p->status = ABCDK_SUDP_STATUS_STABLE;
 
-    node_p->fd = abcdk_socket(node_p->cfg.local_addr.family,1);
+    node_p->fd = abcdk_socket(node_p->cfg.bind_addr.family,1);
     if(node->fd < 0)
         goto ERR;
 
@@ -465,7 +463,7 @@ int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
     if (chk != 0)
         goto ERR;
 
-    if(node_p->cfg.local_addr.family == AF_INET6)
+    if(node_p->cfg.bind_addr.family == AF_INET6)
     {
         /*IPv6仅支持IPv6。*/
         sock_flag = 1;
@@ -474,32 +472,34 @@ int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
             goto ERR;
     }
 
-    if(node_p->cfg.local_addr.family == AF_INET)
-        have_port = (node_p->cfg.local_addr.addr4.sin_port != 0);
-    else if(node_p->cfg.local_addr.family == AF_INET6)
-        have_port = (node_p->cfg.local_addr.addr6.sin6_port != 0);
+    chk = abcdk_bind(node_p->fd, &node_p->cfg.bind_addr);
+    if (chk != 0)
+        goto ERR;
 
-    if (have_port)
+    if (node_p->cfg.mreq_enable)
     {
-        chk = abcdk_bind(node_p->fd, &node_p->cfg.local_addr);
+        chk = abcdk_socket_option_multicast(node_p->fd, node_p->cfg.bind_addr.family, &node_p->cfg.mreq_addr, 1);
         if (chk != 0)
             goto ERR;
-
-        if(node_p->cfg.mreq_enable)
-        {
-            chk = abcdk_socket_option_multicast(node_p->fd,node_p->cfg.local_addr.family,&node_p->cfg.mreq_addr,1);
-            if (chk != 0)
-                goto ERR;
-        }
-    }
-    else if(node_p->cfg.mreq_enable)
-    {
-        abcdk_trace_output(LOG_WARNING,"未绑定端口，忽略组播配置。");
     }
 
     chk = abcdk_fflag_add(node_p->fd,O_NONBLOCK);
     if(chk != 0)
         goto ERR;
+
+    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
+    {
+        if(getuid() == 0)
+        {
+            chk = abcdk_socket_option_bindtodevice(node_p->fd,node_p->cfg.bind_ifname);
+            if(chk != 0)
+                goto ERR;
+        }
+        else
+        {
+            abcdk_trace_output(LOG_WARNING,"绑定设备需要root权限支持，忽略配置。");
+        }
+    }
 
     node_p->asio_ctx = abcdk_asioex_dispatch(node_p->ctx->asioex_ctx, -1);
     if (!node_p->asio_ctx)

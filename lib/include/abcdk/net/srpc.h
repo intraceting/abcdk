@@ -50,6 +50,16 @@ typedef struct _abcdk_srpc_config
     /*共享密钥。*/
     const char *ske_key_file;
     
+    /**绑定地址。*/
+    abcdk_sockaddr_t bind_addr;
+
+    /**
+     * 绑定设备。
+     * 
+     * @note 需要root权限支持，否则忽略。
+    */
+    const char *bind_ifname;
+
     /**
      * 会话准备通知回调函数。
      * 
@@ -146,7 +156,7 @@ void abcdk_srpc_stop(abcdk_srpc_t *ctx);
  * 
  * @return 0 成功，!0 失败。
 */
-int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk_srpc_config_t *cfg);
+int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_srpc_config_t *cfg);
 
 /** 
  * 连接。

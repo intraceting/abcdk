@@ -49,8 +49,15 @@ typedef struct _abcdk_sudp_config
     /**安全方案*/
     int ssl_scheme;
 
-    /**本机地址。*/
-    abcdk_sockaddr_t local_addr;
+    /**绑定地址。*/
+    abcdk_sockaddr_t bind_addr;
+
+    /**
+     * 绑定设备。
+     * 
+     * @note 需要root权限支持，否则忽略。
+    */
+    const char *bind_ifname;
 
     /**启用组播。!0 是，0 否。*/
     int mreq_enable;
@@ -142,14 +149,13 @@ abcdk_sudp_t *abcdk_sudp_create(int worker);
 void abcdk_sudp_stop(abcdk_sudp_t *ctx);
 
 /**
- * 绑定。
+ * 登记。
  * 
  * @note 在对象关闭前，配置信息必须保持有效且不能更改。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_sudp_bind(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg);
-
+int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg);
 
 /**
  * 投递数据。

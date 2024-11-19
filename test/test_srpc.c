@@ -94,7 +94,8 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
     if (role == 1)
     {
-        abcdk_srpc_listen(session_p, &addr, &cfg);
+        cfg.bind_addr = addr;
+        abcdk_srpc_listen(session_p, &cfg);
 
         /*等待终止信号。*/
         abcdk_proc_wait_exit_signal(-1);

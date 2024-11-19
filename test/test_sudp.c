@@ -73,8 +73,8 @@ int abcdk_test_sudp(abcdk_option_t *args)
 
     abcdk_sudp_config_t cfg[2] = {0};
 
-    abcdk_sockaddr_from_string(&cfg[0].local_addr, listen_p[0], 0);
-    abcdk_sockaddr_from_string(&cfg[1].local_addr, listen_p[1], 0);
+    abcdk_sockaddr_from_string(&cfg[0].bind_addr, listen_p[0], 0);
+    abcdk_sockaddr_from_string(&cfg[1].bind_addr, listen_p[1], 0);
 
     cfg[0].close_cb = close_cb;
     cfg[0].input_cb = input_cb;
@@ -94,7 +94,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
         int *id_p = (int *)abcdk_sudp_get_userdata(node);
         *id_p = j + 1;
 
-        int chk = abcdk_sudp_bind(node,&cfg[j]);
+        int chk = abcdk_sudp_enroll(node,&cfg[j]);
         assert(chk == 0);
 
      //   abcdk_sudp_set_timeout(node,10);

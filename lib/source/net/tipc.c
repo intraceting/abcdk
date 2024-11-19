@@ -724,11 +724,13 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
     asio_cfg.ske_key_file = ctx->cfg.ske_key_file;
 
+    asio_cfg.bind_addr = *addr;
+
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;
     asio_cfg.input_cb = _abcdk_tipc_input_cb;
 
-    chk = abcdk_stcp_listen(node_p, addr, &asio_cfg);
+    chk = abcdk_stcp_listen(node_p, &asio_cfg);
     abcdk_stcp_unref(&node_p);
     if (chk != 0)
         return -3;

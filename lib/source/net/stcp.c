@@ -1160,14 +1160,14 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
         ABCDK_INTEGER_SWAP(node->cfg.out_hook_min_th, node->cfg.out_hook_max_th);
 }
 
-int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stcp_config_t *cfg)
+int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
 {
     abcdk_stcp_node_t *node_p = NULL;
     epoll_data_t ep_data;
     int sock_flag = 1;
     int chk;
 
-    assert(node != NULL && addr != NULL && cfg != NULL);
+    assert(node != NULL && cfg != NULL);
     ABCDK_ASSERT(cfg->prepare_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
     ABCDK_ASSERT(cfg->event_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
 
@@ -1183,15 +1183,14 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     /*修复不支持的配置。*/
     _abcdk_stcp_fix_cfg(node_p);
 
-    /*UNIX需要特殊复制一下。*/
-    if (addr->family == AF_UNIX)
+    if (node_p->cfg.bind_addr.family == AF_UNIX)
     {
         node_p->local.family = AF_UNIX;
-        strcpy(node_p->local.addr_un.sun_path, addr->addr_un.sun_path);
+        strcpy(node_p->local.addr_un.sun_path, node_p->cfg.bind_addr.addr_un.sun_path);
     }
     else
     {
-        node_p->local = *addr;
+        node_p->local = node_p->cfg.bind_addr;
     }
 
     node_p->fd = abcdk_socket(node_p->local.family, 0);
@@ -1210,7 +1209,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     if (chk != 0)
         goto ERR;
 
-    if (addr->family == AF_INET6)
+    if (node_p->local.family == AF_INET6)
     {
         /*IPv6仅支持IPv6。*/
         sock_flag = 1;
@@ -1231,6 +1230,19 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_stc
     if (chk != 0)
         goto ERR;
 
+    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
+    {
+        if(getuid() == 0)
+        {
+            chk = abcdk_socket_option_bindtodevice(node_p->fd,node_p->cfg.bind_ifname);
+            if(chk != 0)
+                goto ERR;
+        }
+        else
+        {
+            abcdk_trace_output(LOG_WARNING,"绑定设备需要root权限支持，忽略配置。");
+        }
+    }
 
     chk = _abcdk_stcp_ssl_init(node_p, 1);
     if (chk != 0)
@@ -1308,6 +1320,33 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (chk != 0)
         goto ERR;
 
+    if(!node_p->cfg.bind_addr.family) 
+    {
+        if (node_p->cfg.bind_addr.family == node_p->remote.family)
+        {
+            chk = abcdk_bind(node_p->fd, &node_p->cfg.bind_addr);
+            if (chk != 0)
+                goto ERR;
+        }
+        else
+        {
+            abcdk_trace_output(LOG_WARNING, "绑定地址的协议和远程地址协议不同，忽略配置。");
+        }
+    }
+
+    if(node_p->cfg.bind_ifname && *node_p->cfg.bind_ifname)
+    {
+        if(getuid() == 0)
+        {
+            chk = abcdk_socket_option_bindtodevice(node_p->fd,node_p->cfg.bind_ifname);
+            if(chk != 0)
+                goto ERR;
+        }
+        else
+        {
+            abcdk_trace_output(LOG_WARNING,"绑定设备需要root权限支持，忽略配置。");
+        }
+    }
 
     chk = connect(node_p->fd, &node_p->remote.addr, addr_len);
     if (chk != 0 && errno != EAGAIN && errno != EINPROGRESS)

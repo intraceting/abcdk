@@ -1121,7 +1121,9 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     asio_cfg.event_cb = _abcdk_https_event_cb;
     asio_cfg.input_cb = _abcdk_https_input_cb;
 
-    chk = abcdk_stcp_listen(node_p,addr,&asio_cfg);
+    asio_cfg.bind_addr = *addr;
+
+    chk = abcdk_stcp_listen(node_p,&asio_cfg);
     if(chk == 0)
         return 0;
 

@@ -799,11 +799,13 @@ static int _abcdk_proxy_start_listen(abcdk_proxy_t *ctx, int ssl_scheme)
     asio_cfg.pki_check_cert = ctx->pki_check_cert;
     asio_cfg.ske_key_file = ctx->ske_key_file;
 
+    asio_cfg.bind_addr = listen_addr;
+
     asio_cfg.prepare_cb = _abcdk_proxy_prepare_cb;
     asio_cfg.event_cb = _abcdk_proxy_event_cb;
     asio_cfg.input_cb = _abcdk_proxy_input_cb;
 
-    chk = abcdk_stcp_listen(node_p, &listen_addr, &asio_cfg);
+    chk = abcdk_stcp_listen(node_p, &asio_cfg);
     if (chk != 0)
     {
         abcdk_trace_output(LOG_ERR, "监听地址'%s'失败，无权限或被占用。", listen_p);

@@ -414,14 +414,14 @@ ERR:
     abcdk_stcp_set_timeout(node, -1);
 }
 
-int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk_srpc_config_t *cfg)
+int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_srpc_config_t *cfg)
 {
     abcdk_stcp_node_t *node_p;
     abcdk_srpc_node_t *node_ctx_p;
     abcdk_stcp_config_t asio_cfg = {0};
     int chk;
 
-    assert(session != NULL && addr != NULL && cfg != NULL);
+    assert(session != NULL && cfg != NULL);
     assert(cfg->prepare_cb != NULL && cfg->request_cb != NULL);
 
     node_p = (abcdk_stcp_node_t*)session;
@@ -438,11 +438,14 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcdk
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
     asio_cfg.ske_key_file = cfg->ske_key_file;
 
+    asio_cfg.bind_addr = cfg->bind_addr;
+    asio_cfg.bind_ifname = cfg->bind_ifname;
+
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
     asio_cfg.input_cb = _abcdk_srpc_input_cb;
 
-    chk = abcdk_stcp_listen(node_p,addr,&asio_cfg);
+    chk = abcdk_stcp_listen(node_p,&asio_cfg);
     if(chk != 0)
         return -1;
 
@@ -473,6 +476,9 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
     asio_cfg.ske_key_file = cfg->ske_key_file;
 
+    asio_cfg.bind_addr = cfg->bind_addr;
+    asio_cfg.bind_ifname = cfg->bind_ifname;
+    
     asio_cfg.prepare_cb = _abcdk_srpc_prepare_cb;
     asio_cfg.event_cb = _abcdk_srpc_event_cb;
     asio_cfg.input_cb = _abcdk_srpc_input_cb;
