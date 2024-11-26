@@ -1524,6 +1524,11 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("\n%s\n",buf);
 
+    int a,b;
+    scanf("%d %d",&a,&b);
+
+    printf("\n%d,%d\n",a,b);
+
 #endif 
     return 0;
 }
