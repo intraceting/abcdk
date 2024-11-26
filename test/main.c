@@ -44,6 +44,7 @@ static struct _abcdk_test_entry
     {"srpc",abcdk_test_srpc},
     {"fmp4",abcdk_test_fmp4},
     {"sudp",abcdk_test_sudp},
+    {"pem",abcdk_test_pem},
 };
 
 void _abcdk_test_print_usage()

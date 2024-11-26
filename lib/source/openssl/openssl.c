@@ -720,9 +720,9 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
     if (!ctx)
     {
         if(cafile)
-            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",cafile);
+            abcdk_trace_output(LOG_WARNING, "加载CA证书('%s')错误。\n",cafile);
         if(capath)
-            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",capath);
+            abcdk_trace_output(LOG_WARNING, "加载CA路径('%s')错误。\n",capath);
             
         goto ERR;
     }
@@ -743,9 +743,9 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const 
     if (chk != 0)
     {
         if(crt)
-            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",crt);
+            abcdk_trace_output(LOG_WARNING, "加载证书(%s)错误。\n",crt);
         if(key)
-            abcdk_trace_output(LOG_WARNING, "加载'%s'错误。\n",key);
+            abcdk_trace_output(LOG_WARNING, "加载密钥(%s)错误。\n",key);
 
         goto ERR;
     }

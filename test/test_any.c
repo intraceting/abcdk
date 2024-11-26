@@ -1222,7 +1222,7 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 #endif // HAVE_OPENSSL
 
-#elif 1
+#elif 0
 
 
 #ifdef HAVE_OPENSSL
@@ -1500,6 +1500,29 @@ int abcdk_test_any(abcdk_option_t *args)
     BIO_free(bio_p);
 
 #endif //HAVE_OPENSSL
+
+#elif 0
+
+    const char *cert_file_p = abcdk_option_get(args, "--cert-file", 0, NULL);
+    const char *key_file_p = abcdk_option_get(args, "--key-file", 0, NULL);
+    const char *key_passwd_p = abcdk_option_get(args, "--key-passwd", 0, NULL);
+
+    SSL_CTX * ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(0,NULL,NULL,cert_file_p,key_file_p,key_passwd_p);
+    assert(ssl_ctx != NULL);
+
+    abcdk_openssl_ssl_ctx_free(&ssl_ctx);
+#elif 1
+
+    abcdk_object_t *p = abcdk_getpass("haha",NULL);
+
+    printf("\n%s,%zd\n",p->pstrs[0],p->sizes[0]);
+
+    abcdk_object_unref(&p);
+
+    char buf[100] = {0};
+    scanf("%s",buf);
+
+    printf("\n%s\n",buf);
 
 #endif 
     return 0;
