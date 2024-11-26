@@ -11,7 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
-
+#ifdef HAVE_OPENSSL
 static int _test_pem_password_cb(char *buf, int size, int rwflag, void *userdata)
 {
    int c = scanf("%s",buf);
@@ -21,9 +21,11 @@ static int _test_pem_password_cb(char *buf, int size, int rwflag, void *userdata
    return strlen(buf);
 }
 
+#endif //#ifdef HAVE_OPENSSL
 
 int abcdk_test_pem(abcdk_option_t *args)
 {
+#ifdef HAVE_OPENSSL
     const char *key_file_p = abcdk_option_get(args, "--key-file", 0, NULL);
 
     FILE *fp = fopen(key_file_p,"r");
@@ -35,6 +37,6 @@ int abcdk_test_pem(abcdk_option_t *args)
     EVP_PKEY_free(key);
 
     fclose(fp);
-
+#endif //#ifdef HAVE_OPENSSL
     return 0;
 }
