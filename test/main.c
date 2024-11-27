@@ -45,6 +45,7 @@ static struct _abcdk_test_entry
     {"fmp4",abcdk_test_fmp4},
     {"sudp",abcdk_test_sudp},
     {"pem",abcdk_test_pem},
+    {"usb",abcdk_test_usb},
 };
 
 void _abcdk_test_print_usage()
