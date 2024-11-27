@@ -52,8 +52,8 @@ DAYS=365
 CRL_DAYS=30
 CRL_DP="https://localhost/${NAME}/crl.pem"
 OR_NAME="MYCERT"
-OU_NAME="$(hostname)"
-DNS_NAMES="localhost,localhost4,localhost6,*.${OU_NAME},${OU_NAME}"
+OU_NAME=""
+DNS_NAMES="localhost,localhost4,localhost6"
 IP_ADDRS="127.0.0.1,::1"
 SY_NAME=""
 SF_HOME="$HOME/mycerts/myRootCA/"
@@ -94,10 +94,10 @@ usage: [ OPTIONS ]
      IP地址列表，以英文“,”为分界符。默认：${IP_ADDRS}
 
     -L --leaf-home < PATH >
-      叶证书工作路径。默认：${LF_HOME}
+     叶证书路径。默认：${LF_HOME}
 
     -H, --home < PATH >
-     工作路径。默认：${SF_HOME}
+     证书路径。默认：${SF_HOME}
 
     -c, --cmd < NUMBER >
      操作码。默认：${CMD}
@@ -192,7 +192,7 @@ CNF_NAME="openssl.conf"
 CNF_FILE="conf.d/${CNF_NAME}"
 #私钥文件路径和文件名。
 KEY_NAME="key.pem"
-KEY_FILE="private/${KEY_NAME}"
+KEY_FILE="${KEY_NAME}"
 #请求文件路径和文件名。
 CSR_NAME="csr.pem"
 CSR_FILE="conf.d/cache/${CSR_NAME}"
@@ -228,12 +228,9 @@ if [ ! -d ${WK_PATH} ];then
 fi
 
 #在工作路径中创建需要的子路径。
-mkdir -p ${WK_PATH}/{conf.d,private}
-exitIFerror $? "'${WK_PATH}' must be an existing directory." 22
-
-#在工作路径中创建需要的子路径。
 mkdir -p ${WK_PATH}/conf.d/cache
 exitIFerror $? "'${WK_PATH}' must be an existing directory." 22
+
 
 #在工作路径中创建需要的子路径。
 mkdir -p ${WK_PATH}/${SON_CERT_BACK_PATH}
@@ -403,6 +400,11 @@ if [ ${CMD} -eq 1 ];then
         exitIFerror 1 "证书已经创建。" 1
     fi
 
+    #
+    if [ "${OU_NAME}" == "" ];then
+        exitIFerror 1 "必须指定常用(主机、域)名称。" 1
+    fi
+
     #生成配置文件。
     WK_PATH=${SF_HOME}
     make_base_conf
@@ -440,6 +442,11 @@ elif [ ${CMD} -eq 2 ] || [ ${CMD} -eq 8 ] ;then
     if [ -f ${LF_HOME}/${CRT_FILE} ];then
         exitIFerror 1 "${LF_HOME}叶证书已经创建。" 1
     fi
+    
+    #
+    if [ "${OU_NAME}" == "" ];then
+        exitIFerror 1 "必须指定常用(主机、域)名称。" 1
+    fi
 
     #生成配置文件。
     WK_PATH=${LF_HOME}
@@ -464,7 +471,7 @@ elif [ ${CMD} -eq 2 ] || [ ${CMD} -eq 8 ] ;then
     echo "签发子证书......"
     echo "根据提示输入父级CA密码(如果存在的话)。"
     #如果配置文件中未配父级证书和私钥，则需要用参数指定。如下：
-    #-keyfile ${SF_HOME}/private/${KEY_NAME} -cert ${SF_HOME}/${CRT_NAME}
+    #-keyfile ${SF_HOME}/${KEY_NAME} -cert ${SF_HOME}/${CRT_NAME}
     if [ ${CMD} -eq 8 ];then
         openssl ca -config ${SF_HOME}/${CNF_FILE} -extensions v3_ca_sub -in ${LF_HOME}/${CSR_FILE} -out ${LF_HOME}/${CRT_FILE}  -days ${DAYS}  -batch >> /dev/null 2>&1
     else
