@@ -1099,6 +1099,7 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     asio_cfg.pki_ca_file = cfg->pki_ca_file;
     asio_cfg.pki_ca_path = cfg->pki_ca_path;
     asio_cfg.pki_cert_file = cfg->pki_cert_file;
+    asio_cfg.pki_key_passwd = cfg->pki_key_passwd;
     asio_cfg.pki_key_file = cfg->pki_key_file;
     asio_cfg.pki_check_cert = cfg->pki_check_cert;
 

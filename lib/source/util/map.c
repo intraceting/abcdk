@@ -6,12 +6,12 @@
 */
 #include "abcdk/util/map.h"
 
-uint64_t _abcdk_map_hash(const void *data, size_t size, void *opaque)
+static uint64_t _abcdk_map_hash(const void *data, size_t size, void *opaque)
 {
     return abcdk_hash_bkdr64(data, size);
 }
 
-int _abcdk_map_compare(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
+static int _abcdk_map_compare(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
     if (size1 > size2)
         return 1;
@@ -78,7 +78,7 @@ final_error:
     return NULL;
 }
 
-abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)
+static abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t ksize, size_t vsize)
 {
     abcdk_tree_t *it = NULL;
     abcdk_tree_t *node = NULL;
@@ -186,7 +186,7 @@ void abcdk_map_remove(abcdk_map_t *map, const void *key, size_t ksize)
     }
 }
 
-int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+static int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     abcdk_map_t *map = (abcdk_map_t *)opaque;
 

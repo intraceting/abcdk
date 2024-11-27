@@ -318,7 +318,7 @@ RSA *abcdk_openssl_cert_pubkey(X509 *x509)
         return NULL;
 #ifndef OPENSSL_NO_RSA
     rsa = EVP_PKEY_get1_RSA(pkey);
-#endif
+#endif //OPENSSL_NO_RSA
 
     EVP_PKEY_free(pkey);
 
@@ -367,7 +367,7 @@ ERR:
 #endif  //# ifndef OPENSSL_NO_BIO
 }
 
-X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd)
+X509_CRL *abcdk_openssl_crl_load(const char *crl)
 {
     X509_CRL *ctx = NULL;
     FILE *fp = NULL;
@@ -378,14 +378,14 @@ X509_CRL *abcdk_openssl_cert_crl_load(const char *crl, const char *pwd)
     if(!fp)
         return NULL;
     
-    ctx = PEM_read_X509_CRL(fp, NULL, NULL, (void*)pwd);
+    ctx = PEM_read_X509_CRL(fp, NULL, NULL, NULL);
         
     fclose(fp);
 
     return ctx;
 }
 
-X509 *abcdk_openssl_cert_load(const char *crt, const char *pwd)
+X509 *abcdk_openssl_cert_load(const char *crt)
 {
     X509 *ctx = NULL;
     FILE *fp = NULL;
@@ -396,10 +396,67 @@ X509 *abcdk_openssl_cert_load(const char *crt, const char *pwd)
     if(!fp)
         return NULL;
     
-    ctx = PEM_read_X509(fp, NULL, NULL, (void*)pwd);
+    ctx = PEM_read_X509(fp, NULL, NULL, NULL);
     fclose(fp);
 
     return ctx;
+}
+
+typedef struct _abcdk_openssl_key_load_ctx
+{
+    const char *key;
+    abcdk_object_t *passwd;
+}abcdk_openssl_key_load_ctx_t;
+
+static int _abcdk_openssl_key_load_passwd_cb(char *buf, int size, int rwflag, void *userdata)
+{
+    abcdk_openssl_key_load_ctx_t *ctx = (abcdk_openssl_key_load_ctx_t*)userdata;
+    int chk;
+
+    abcdk_object_unref(&ctx->passwd);//free.
+    ctx->passwd = abcdk_getpass(NULL,"Enter passphrase for %s",ctx->key);
+
+    chk = ABCDK_MIN((int)ctx->passwd->sizes[0],size);
+    memcpy(buf,ctx->passwd->pptrs[0],chk);
+
+    return chk;
+}
+
+EVP_PKEY *abcdk_openssl_key_load(const char *key,abcdk_object_t **passwd)
+{
+    EVP_PKEY *pkey = NULL;
+    FILE *fp = NULL;
+    abcdk_openssl_key_load_ctx_t ctx = {0};
+
+    assert(key != NULL);
+
+    ctx.key = key;
+    ctx.passwd = NULL;
+    
+    for(int i = 0;i<3;i++)
+    {
+        fp = fopen(key, "r");
+        if (!fp)
+            goto ERR;
+
+        pkey = PEM_read_PrivateKey(fp, NULL, _abcdk_openssl_key_load_passwd_cb, &ctx);
+        fclose(fp);
+
+        /*成功，则跳出。*/
+        if(pkey)
+            break;
+    }
+
+    if (passwd && ctx.passwd)
+        *passwd = abcdk_object_refer(ctx.passwd);
+
+    abcdk_object_unref(&ctx.passwd);//free.
+    return pkey;
+
+ERR:
+
+    abcdk_object_unref(&ctx.passwd);//free.
+    return NULL;
 }
 
 X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const char *pattern)
@@ -423,7 +480,7 @@ X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const c
         if(chk != 0)
             break;
 
-        father_cert = abcdk_openssl_cert_load(cert_file,NULL);
+        father_cert = abcdk_openssl_cert_load(cert_file);
         if(!father_cert)
             continue;
 

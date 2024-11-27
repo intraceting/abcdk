@@ -1036,7 +1036,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
 #ifdef HEADER_SSL_H
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag, (node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                              (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
-                                                             node->cfg.pki_cert_file, node->cfg.pki_key_file, NULL);
+                                                             node->cfg.pki_cert_file, node->cfg.pki_key_file, node->cfg.pki_key_passwd);
 
         if (!node->openssl_ctx)
         {
@@ -1097,7 +1097,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
 
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag, (node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
                                                              (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
-                                                             node->cfg.pki_cert_file, node->cfg.pki_key_file, NULL);
+                                                             node->cfg.pki_cert_file, node->cfg.pki_key_file, node->cfg.pki_key_passwd);
 
         if (!node->openssl_ctx)
         {

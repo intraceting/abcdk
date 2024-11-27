@@ -721,6 +721,7 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     asio_cfg.pki_ca_path = ctx->cfg.pki_ca_path;
     asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
     asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
+    asio_cfg.pki_key_passwd = ctx->cfg.pki_key_passwd;
     asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
     asio_cfg.ske_key_file = ctx->cfg.ske_key_file;
 
@@ -770,6 +771,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     asio_cfg.pki_ca_path = ctx->cfg.pki_ca_path;
     asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
     asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
+    asio_cfg.pki_key_passwd = ctx->cfg.pki_key_passwd;
     asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
     asio_cfg.ske_key_file = ctx->cfg.ske_key_file;
 

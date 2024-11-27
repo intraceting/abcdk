@@ -31,7 +31,7 @@ typedef enum _abcdk_option_field
 
 } abcdk_option_field_t;
 
-abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key, int create)
+static abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key, int create)
 {
     abcdk_tree_t *it = NULL;
     const char *prefix;
@@ -81,7 +81,7 @@ abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key, int c
     return it;
 }
 
-abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
+static abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
 {
     abcdk_tree_t *it = NULL;
     size_t chk = 0;
@@ -98,7 +98,7 @@ abcdk_tree_t *_abcdk_option_find_value(abcdk_tree_t *key,size_t index)
     return it;
 }
 
-size_t _abcdk_option_count_value(abcdk_tree_t *key)
+static size_t _abcdk_option_count_value(abcdk_tree_t *key)
 {
     abcdk_tree_t *it = NULL;
     size_t chk = 0;
@@ -293,7 +293,7 @@ int abcdk_option_remove(abcdk_option_t *opt, const char *key)
     return 0;
 }
 
-int _abcdk_option_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+static int _abcdk_option_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     abcdk_option_iterator_t *it = (abcdk_option_iterator_t *)opaque;
     abcdk_tree_t *father;
@@ -324,7 +324,7 @@ void abcdk_option_scan(abcdk_option_t *opt, abcdk_option_iterator_t *it)
     abcdk_tree_scan(opt->table, &tit);
 }
 
-int _abcdk_option_merge_merge_cb(const char *key,const char *value, void *opaque)
+static int _abcdk_option_merge_cb(const char *key,const char *value, void *opaque)
 {
     abcdk_option_t *dst = (abcdk_option_t *)opaque;
     int chk;
@@ -344,7 +344,7 @@ void abcdk_option_merge(abcdk_option_t *dst,abcdk_option_t *src)
     assert(dst != src);
 
     it.opaque = dst;
-    it.dump_cb = _abcdk_option_merge_merge_cb;
+    it.dump_cb = _abcdk_option_merge_cb;
 
     abcdk_option_scan(src,&it);
 }

@@ -14,7 +14,7 @@
 __BEGIN_DECLS
 
 /**获取密码。*/
-abcdk_object_t *abcdk_getpass(const char *prompt,FILE *istream);
+abcdk_object_t *abcdk_getpass(FILE *istream,const char *prompt,...);
 
 __END_DECLS
 

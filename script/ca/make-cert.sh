@@ -69,7 +69,7 @@ usage: [ OPTIONS ]
     -h, --help 
      打印帮助信息。
 
-    -p, --pawd < Yes | No >
+    -p, --pawd < yes | no >
      创建私钥密码。默认：${PAWD}
 
     -d, --days < NUMBER >
@@ -261,7 +261,7 @@ fi
 if [ ! -f ${WK_PATH}/${KEY_FILE} ];then
 {
 	echo "创建私钥文件......"
-    if [ "${PAWD}" == "Yes" ];then
+    if [ "${PAWD}" == "yes" ];then
 	    openssl genrsa -des3 -out ${WK_PATH}/${KEY_FILE} -f4 4096 >> /dev/null 2>&1
     else 
         openssl genrsa -out ${WK_PATH}/${KEY_FILE} -f4  4096 >> /dev/null 2>&1

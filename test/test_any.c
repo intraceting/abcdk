@@ -1513,7 +1513,8 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_openssl_ssl_ctx_free(&ssl_ctx);
 #elif 1
 
-    abcdk_object_t *p = abcdk_getpass("haha",NULL);
+    abcdk_object_t *p = abcdk_getpass(NULL,"haha");
+    //abcdk_object_t *p = abcdk_getpass(NULL,NULL);
 
     printf("\n%s,%zd\n",p->pstrs[0],p->sizes[0]);
 

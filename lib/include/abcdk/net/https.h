@@ -55,6 +55,9 @@ typedef struct _abcdk_https_config
 
     /**私钥。*/
     const char *pki_key_file;
+    
+    /**密钥。*/
+    const char *pki_key_passwd;
 
     /**是否验证对端证书。0 否，!0 是。*/
     int pki_check_cert;
