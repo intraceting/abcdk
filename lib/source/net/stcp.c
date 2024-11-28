@@ -571,7 +571,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         abcdk_object_t *info = abcdk_openssl_cert_dump(cert);
         if (info)
         {
-            abcdk_trace_output(LOG_INFO, "远端(%s)的证书信息：\n%s", remote_addr, info->pstrs[0]);
+            abcdk_trace_output(LOG_DEBUG, "远端(%s)的证书信息：\n%s", remote_addr, info->pstrs[0]);
             abcdk_object_unref(&info);
         }
 
