@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_NET_IPOOL_H
-#define ABCDK_NET_IPOOL_H
+#ifndef ABCDK_UTIL_IPOOL_H
+#define ABCDK_UTIL_IPOOL_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/bloom.h"
@@ -100,4 +100,4 @@ int abcdk_ipool_unlock(abcdk_ipool_t *ctx,int exitcode);
 __END_DECLS
 
 
-#endif //ABCDK_NET_IPOOL_H
+#endif //ABCDK_UTIL_IPOOL_H

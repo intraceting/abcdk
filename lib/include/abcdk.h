@@ -78,6 +78,8 @@
 #include "abcdk/util/asioex.h"
 #include "abcdk/util/wred.h"
 #include "abcdk/util/getpass.h"
+#include "abcdk/util/ipool.h"
+#include "abcdk/util/logon.h"
 
 #include "abcdk/log/logger.h"
 
@@ -147,8 +149,6 @@
 #include "abcdk/net/tipc.h"
 #include "abcdk/net/https.h"
 #include "abcdk/net/srpc.h"
-#include "abcdk/net/ipool.h"
-#include "abcdk/net/iplan.h"
 
 #include "abcdk/enigma/enigma.h"
 

@@ -4,7 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/net/ipool.h"
+#include "abcdk/util/ipool.h"
 
 /** IP池。 */
 struct _abcdk_ipool

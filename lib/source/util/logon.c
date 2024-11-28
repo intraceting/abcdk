@@ -4,13 +4,13 @@
  * MIT License
  * 
  */
-#include "abcdk/net/iplan.h"
+#include "abcdk/util/logon.h"
 
-/**IP路径。 */
-struct _abcdk_iplan
+/**简单的登录容器。 */
+struct _abcdk_logon
 {
     /**配置。*/
-    abcdk_iplan_config_t cfg;
+    abcdk_logon_config_t cfg;
 
     /**存储表(用于查找)。*/
     abcdk_map_t *store_ctx;
@@ -20,10 +20,10 @@ struct _abcdk_iplan
 
     /**同步锁。*/
     abcdk_rwlock_t *locker_ctx;
-};//abcdk_iplan_t;
+};//abcdk_logon_t;
 
 /**节点。 */
-typedef struct _abcdk_iplan_node
+typedef struct _abcdk_logon_node
 {
     /*存储标志。0 使用中，1 已删除。*/
     int store_flag;
@@ -34,85 +34,64 @@ typedef struct _abcdk_iplan_node
     /**用户环境。*/
     abcdk_context_t *userdata;
 
-}abcdk_iplan_node_t;
+}abcdk_logon_node_t;
 
-
-static int _abcdk_iplan_sockaddr_len(abcdk_sockaddr_t *addr)
+static void _abcdk_logon_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
-    if(addr->family== AF_INET)
-        return sizeof(struct sockaddr_in);
-    else if(addr->family== AF_INET6)
-        return sizeof(struct sockaddr_in6);
-
-    return 0;
-}
-
-static void _abcdk_iplan_destructor_cb(abcdk_object_t *obj, void *opaque)
-{
-    abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
-    abcdk_sockaddr_t *addr_p = (abcdk_sockaddr_t *)obj->pptrs[ABCDK_MAP_KEY];
-    abcdk_iplan_node_t *node_p = (abcdk_iplan_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
+    abcdk_logon_t *ctx = (abcdk_logon_t *)opaque;
+    const void *key_p = (void *)obj->pptrs[ABCDK_MAP_KEY];
+    abcdk_logon_node_t *node_p = (abcdk_logon_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     if(!node_p->userdata)
         return;
 
-    if(ctx->cfg.remove_cb)
-        ctx->cfg.remove_cb(addr_p,node_p->userdata,ctx->cfg.opaque);
+    if(ctx->cfg.key_compare_cb)
+        ctx->cfg.key_compare_cb(key_p,node_p->userdata,ctx->cfg.opaque);
 
     abcdk_context_unref(&node_p->userdata);
 }
 
-static uint64_t _abcdk_iplan_hash_cb(const void* key,size_t size,void *opaque)
+static uint64_t _abcdk_logon_hash_cb(const void* key,size_t size,void *opaque)
 {
-    abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
+    abcdk_logon_t *ctx = (abcdk_logon_t *)opaque;
     uint64_t hs = UINT64_MAX;
 
-    abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key;
-
-    if (a->family == AF_INET)
-    {
-        hs = abcdk_hash_bkdr64(&a->addr4.sin_addr.s_addr,4);
-    }
-    else if (a->family == AF_INET6)
-    {
-        hs = abcdk_hash_bkdr64(a->addr6.sin6_addr.s6_addr,16);
-    }
+    if(ctx->cfg.key_hash_cb)
+        hs = ctx->cfg.key_hash_cb(key,ctx->cfg.opaque);
+    else 
+        hs = abcdk_hash_bkdr64(key,size);
 
     return hs;
 }
 
-static int _abcdk_iplan_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
+static int _abcdk_logon_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
-    abcdk_iplan_t *ctx = (abcdk_iplan_t *)opaque;
-    abcdk_sockaddr_t *a = (abcdk_sockaddr_t *)key1;
-    abcdk_sockaddr_t *b = (abcdk_sockaddr_t *)key2;
+    abcdk_logon_t *ctx = (abcdk_logon_t *)opaque;
+    int chk;
 
-    if (a->family != b->family)
-        return -1;
+    if (ctx->cfg.key_compare_cb)
+        chk = ctx->cfg.key_compare_cb(key1, key2, ctx->cfg.opaque);
+    else if (key1 > key2)
+        chk = 1;
+    else if (key1 < key2)
+        chk = -1;
+    else
+        chk = memcmp(key1, key2, size1);
 
-    if (a->family == AF_INET)
-    {
-        if (a->addr4.sin_addr.s_addr != b->addr4.sin_addr.s_addr)
-            return -1;
-
-        if(ctx->cfg.have_port && a->addr4.sin_port != b->addr4.sin_port)
-            return -1;
-    }
-    else if (a->family == AF_INET6)
-    {
-        if (memcmp(a->addr6.sin6_addr.s6_addr, b->addr6.sin6_addr.s6_addr, 16) != 0)
-            return -1;
-
-        if(ctx->cfg.have_port && a->addr6.sin6_port != b->addr6.sin6_port)
-            return -1;
-    }
-
-    return 0;
+    return chk;
 }
 
-void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
+static size_t _abcdk_long_ksize(const void *key, abcdk_logon_t *ctx)
 {
-    abcdk_iplan_t *ctx_p;
+    if(ctx->cfg.key_size_cb)
+        return ctx->cfg.key_size_cb(key,ctx->cfg.opaque);
+    else 
+        return strlen(key);
+}
+
+void abcdk_logon_destroy(abcdk_logon_t **ctx)
+{
+    abcdk_logon_t *ctx_p;
 
     if(!ctx || !*ctx)
         return;
@@ -126,13 +105,13 @@ void abcdk_iplan_destroy(abcdk_iplan_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg)
+abcdk_logon_t *abcdk_logon_create(abcdk_logon_config_t *cfg)
 {
-    abcdk_iplan_t *ctx;
+    abcdk_logon_t *ctx;
 
     assert(cfg != NULL);
 
-    ctx = (abcdk_iplan_t*)abcdk_heap_alloc(sizeof(abcdk_iplan_t));
+    ctx = (abcdk_logon_t*)abcdk_heap_alloc(sizeof(abcdk_logon_t));
     if(!ctx)
         return NULL;
 
@@ -142,9 +121,9 @@ abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg)
     if(!ctx->store_ctx)
         goto ERR;
 
-    ctx->store_ctx->hash_cb = _abcdk_iplan_hash_cb;
-    ctx->store_ctx->compare_cb = _abcdk_iplan_compare_cb;
-    ctx->store_ctx->destructor_cb = _abcdk_iplan_destructor_cb;
+    ctx->store_ctx->hash_cb = _abcdk_logon_hash_cb;
+    ctx->store_ctx->compare_cb = _abcdk_logon_compare_cb;
+    ctx->store_ctx->destructor_cb = _abcdk_logon_destructor_cb;
     ctx->store_ctx->opaque = ctx;
 
     ctx->watch_ctx = abcdk_tree_alloc3(1);
@@ -159,49 +138,53 @@ abcdk_iplan_t *abcdk_iplan_create(abcdk_iplan_config_t *cfg)
 
 ERR:
 
-    abcdk_iplan_destroy(&ctx);
+    abcdk_logon_destroy(&ctx);
     return NULL;
 }
 
-void abcdk_iplan_remove(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
+void abcdk_logon_remove(abcdk_logon_t *ctx,const void *key)
 {
+    size_t ksize;
     abcdk_object_t *val_p;
-    abcdk_iplan_node_t *node_p;
+    abcdk_logon_node_t *node_p;
     void *data_p;
 
-    assert(ctx != NULL && addr != NULL);
-    assert(addr->family == AF_INET || addr->family == AF_INET6);
+    assert(ctx != NULL && key != NULL);
 
-    val_p = abcdk_map_find(ctx->store_ctx,addr,_abcdk_iplan_sockaddr_len(addr),0);
+    ksize = _abcdk_long_ksize(key,ctx);
+
+    val_p = abcdk_map_find(ctx->store_ctx,key,ksize,0);
     if(!val_p)
         return;
 
-    node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_logon_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*标记已删除。*/
     node_p->store_flag = 1;
 
-    abcdk_map_remove(ctx->store_ctx,addr,_abcdk_iplan_sockaddr_len(addr));
+    abcdk_map_remove(ctx->store_ctx,key,ksize);
 
     return;
 }
 
-abcdk_context_t *abcdk_iplan_insert(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr,size_t userdata)
+abcdk_context_t *abcdk_logon_insert(abcdk_logon_t *ctx,const void *key,size_t userdata)
 {
+    size_t ksize;
     abcdk_object_t *val_p;
     abcdk_tree_t *val2_p;
-    abcdk_iplan_node_t *node_p;
+    abcdk_logon_node_t *node_p;
     void *userdata_p;
     int chk = -1;
 
-    assert(ctx != NULL && addr != NULL && userdata > 0);
-    assert(addr->family == AF_INET || addr->family == AF_INET6);
+    assert(ctx != NULL && key != NULL && userdata > 0);
 
-    val_p = abcdk_map_find(ctx->store_ctx, addr,_abcdk_iplan_sockaddr_len(addr),sizeof(abcdk_iplan_node_t));
+    ksize = _abcdk_long_ksize(key,ctx);
+
+    val_p = abcdk_map_find(ctx->store_ctx, key, ksize, sizeof(abcdk_logon_node_t));
     if (!val_p)
         return NULL;
 
-    node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_logon_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*如果用户环境未创建，则自动创建。*/
     if (!node_p->userdata && userdata > 0)
@@ -245,24 +228,27 @@ END:
 
 ERR:
 
-    abcdk_map_remove(ctx->store_ctx,addr,_abcdk_iplan_sockaddr_len(addr));
+    abcdk_map_remove(ctx->store_ctx,key,ksize);
 
     return NULL;
 }
 
-abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
+abcdk_context_t *abcdk_logon_lookup(abcdk_logon_t *ctx,const void *key)
 {
+    size_t ksize;
     abcdk_object_t *val_p;
-    abcdk_iplan_node_t *node_p;
+    abcdk_logon_node_t *node_p;
     abcdk_context_t *userdata_p;
 
-    assert(ctx != NULL && addr != NULL);
+    assert(ctx != NULL && key != NULL);
 
-    val_p = abcdk_map_find(ctx->store_ctx, addr,_abcdk_iplan_sockaddr_len(addr), 0);
+    ksize = _abcdk_long_ksize(key,ctx);
+
+    val_p = abcdk_map_find(ctx->store_ctx, key,ksize, 0);
     if(!val_p)
         return NULL;
 
-    node_p = (abcdk_iplan_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_logon_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*可能已经被删除。*/
     if(node_p->store_flag == 1)
@@ -273,10 +259,10 @@ abcdk_context_t *abcdk_iplan_lookup(abcdk_iplan_t *ctx,abcdk_sockaddr_t *addr)
     return userdata_p;
 }
 
-abcdk_context_t *abcdk_iplan_next(abcdk_iplan_t *ctx,void **it)
+abcdk_context_t *abcdk_logon_next(abcdk_logon_t *ctx,void **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
-    abcdk_iplan_node_t *node_p;
+    abcdk_logon_node_t *node_p;
     abcdk_context_t *userdata_p;
 
     assert(ctx != NULL && it != NULL);
@@ -292,7 +278,7 @@ NEXT:
         it_next_p = abcdk_tree_sibling(it_p,0);
 
         /*检查当前节点。*/
-        node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
+        node_p = (abcdk_logon_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
 
         /*可能当前节点已经被删除。*/
         if (node_p->store_flag == 1)
@@ -314,7 +300,7 @@ NEXT:
     it_p = it_next_p;
 
     /*如果当前节点已经被删除，则遍历下一个。*/
-    node_p = (abcdk_iplan_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_logon_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
     if(node_p->store_flag == 1)
         goto NEXT;
 
@@ -327,7 +313,7 @@ NEXT:
     return userdata_p;
 }
 
-void abcdk_iplan_rdlock(abcdk_iplan_t *ctx)
+void abcdk_logon_rdlock(abcdk_logon_t *ctx)
 {
     assert(ctx != NULL);
 
@@ -335,7 +321,7 @@ void abcdk_iplan_rdlock(abcdk_iplan_t *ctx)
 }
 
 
-void abcdk_iplan_wrlock(abcdk_iplan_t *ctx)
+void abcdk_logon_wrlock(abcdk_logon_t *ctx)
 {
     assert(ctx != NULL);
 
@@ -343,7 +329,7 @@ void abcdk_iplan_wrlock(abcdk_iplan_t *ctx)
 }
 
 
-int abcdk_iplan_unlock(abcdk_iplan_t *ctx,int exitcode)
+int abcdk_logon_unlock(abcdk_logon_t *ctx,int exitcode)
 {
     assert(ctx != NULL);
 
