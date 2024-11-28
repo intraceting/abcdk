@@ -81,7 +81,7 @@ static int _abcdk_registry_compare_cb(const void *key1, size_t size1, const void
     return chk;
 }
 
-static size_t _abcdk_long_ksize(const void *key, abcdk_registry_t *ctx)
+static size_t _abcdk_registry_ksize(const void *key, abcdk_registry_t *ctx)
 {
     if(ctx->cfg.key_size_cb)
         return ctx->cfg.key_size_cb(key,ctx->cfg.opaque);
@@ -151,7 +151,7 @@ void abcdk_registry_remove(abcdk_registry_t *ctx,const void *key)
 
     assert(ctx != NULL && key != NULL);
 
-    ksize = _abcdk_long_ksize(key,ctx);
+    ksize = _abcdk_registry_ksize(key,ctx);
 
     val_p = abcdk_map_find(ctx->store_ctx,key,ksize,0);
     if(!val_p)
@@ -178,7 +178,7 @@ abcdk_context_t *abcdk_registry_insert(abcdk_registry_t *ctx,const void *key,siz
 
     assert(ctx != NULL && key != NULL && userdata > 0);
 
-    ksize = _abcdk_long_ksize(key,ctx);
+    ksize = _abcdk_registry_ksize(key,ctx);
 
     val_p = abcdk_map_find(ctx->store_ctx, key, ksize, sizeof(abcdk_registry_node_t));
     if (!val_p)
@@ -242,7 +242,7 @@ abcdk_context_t *abcdk_registry_lookup(abcdk_registry_t *ctx,const void *key)
 
     assert(ctx != NULL && key != NULL);
 
-    ksize = _abcdk_long_ksize(key,ctx);
+    ksize = _abcdk_registry_ksize(key,ctx);
 
     val_p = abcdk_map_find(ctx->store_ctx, key,ksize, 0);
     if(!val_p)
