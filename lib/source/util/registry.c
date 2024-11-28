@@ -45,8 +45,8 @@ static void _abcdk_registry_destructor_cb(abcdk_object_t *obj, void *opaque)
     if(!node_p->userdata)
         return;
 
-    if(ctx->cfg.key_compare_cb)
-        ctx->cfg.key_compare_cb(key_p,node_p->userdata,ctx->cfg.opaque);
+    if(ctx->cfg.key_remove_cb)
+        ctx->cfg.key_remove_cb(key_p,node_p->userdata,ctx->cfg.opaque);
 
     abcdk_context_unref(&node_p->userdata);
 }
