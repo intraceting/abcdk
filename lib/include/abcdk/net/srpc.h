@@ -121,6 +121,18 @@ abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void 
  */
 uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node);
 
+/**
+ * 获取SSL链路句柄。
+ * 
+ * @warning 应用层不能释放链路句柄。
+*/
+SSL *abcdk_srpc_ssl_get_handle(abcdk_srpc_session_t *node);
+
+/**
+ * 获取SSL应用层协议名称。
+ */
+char *abcdk_srpc_ssl_get_alpn_selected(abcdk_srpc_session_t *node, char proto[255+1]);
+
 /** 
  * 获用户环境指针。
  * 

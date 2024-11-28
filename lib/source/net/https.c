@@ -825,7 +825,7 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
-        abcdk_stcp_openssl_get_alpn_selected(node, proto);
+        abcdk_stcp_ssl_get_alpn_selected(node, proto);
         if (node_ctx_p->protocol == 0)
         {
             if (abcdk_strncmp("http", proto, 4, 0) == 0)

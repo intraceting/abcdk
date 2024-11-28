@@ -284,14 +284,14 @@ uint64_t abcdk_stcp_get_index(abcdk_stcp_node_t *node)
     return node->index;
 }
 
-SSL *abcdk_stcp_openssl_get_handle(abcdk_stcp_node_t *node)
+SSL *abcdk_stcp_ssl_get_handle(abcdk_stcp_node_t *node)
 {
     assert(node != NULL);
 
     return node->openssl_ssl;
 }
 
-char *abcdk_stcp_openssl_get_alpn_selected(abcdk_stcp_node_t *node, char proto[255 + 1])
+char *abcdk_stcp_ssl_get_alpn_selected(abcdk_stcp_node_t *node, char proto[255 + 1])
 {
     int chk;
 

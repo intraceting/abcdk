@@ -118,6 +118,28 @@ uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node)
     return abcdk_stcp_get_index(node_p);
 }
 
+SSL *abcdk_srpc_ssl_get_handle(abcdk_srpc_session_t *node)
+{
+    abcdk_stcp_node_t *node_p;
+
+    assert(node != NULL);
+
+    node_p = (abcdk_stcp_node_t *)node;
+
+    return abcdk_stcp_ssl_get_handle(node_p);
+}
+
+char *abcdk_srpc_ssl_get_alpn_selected(abcdk_srpc_session_t *node, char proto[255+1])
+{
+    abcdk_stcp_node_t *node_p;
+
+    assert(node != NULL && proto != NULL);
+
+    node_p = (abcdk_stcp_node_t *)node;
+
+    return abcdk_stcp_ssl_get_alpn_selected(node_p,proto);
+}
+
 void *abcdk_srpc_get_userdata(abcdk_srpc_session_t *session)
 {
     abcdk_stcp_node_t *node_p;

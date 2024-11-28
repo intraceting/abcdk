@@ -254,16 +254,16 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*f
 uint64_t abcdk_stcp_get_index(abcdk_stcp_node_t *node);
 
 /**
- * 获取OPENSSL链路句柄。
+ * 获取SSL链路句柄。
  * 
  * @warning 应用层不能释放链路句柄。
 */
-SSL *abcdk_stcp_openssl_get_handle(abcdk_stcp_node_t *node);
+SSL *abcdk_stcp_ssl_get_handle(abcdk_stcp_node_t *node);
 
 /**
- * 获取OPENSSL应用层协议名称。
+ * 获取SSL应用层协议名称。
  */
-char *abcdk_stcp_openssl_get_alpn_selected(abcdk_stcp_node_t *node, char proto[255+1]);
+char *abcdk_stcp_ssl_get_alpn_selected(abcdk_stcp_node_t *node, char proto[255+1]);
 
 /**
  * 获取用户环境指针。
