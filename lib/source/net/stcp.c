@@ -1320,7 +1320,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (chk != 0)
         goto ERR;
 
-    if(!node_p->cfg.bind_addr.family) 
+    if(node_p->cfg.bind_addr.family) 
     {
         if (node_p->cfg.bind_addr.family == node_p->remote.family)
         {
@@ -1330,7 +1330,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
         }
         else
         {
-            abcdk_trace_output(LOG_WARNING, "绑定地址的协议和远程地址协议不同，忽略配置。");
+            abcdk_trace_output(LOG_WARNING, "绑定地址的协议和远程地的址协议不同，忽略配置。");
         }
     }
 
