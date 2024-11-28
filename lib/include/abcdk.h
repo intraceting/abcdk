@@ -79,7 +79,7 @@
 #include "abcdk/util/wred.h"
 #include "abcdk/util/getpass.h"
 #include "abcdk/util/ipool.h"
-#include "abcdk/util/logon.h"
+#include "abcdk/util/registry.h"
 
 #include "abcdk/log/logger.h"
 

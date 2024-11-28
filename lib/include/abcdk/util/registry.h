@@ -4,8 +4,8 @@
  * MIT License
  * 
  */
-#ifndef ABCDK_UTIL_LOGON_H
-#define ABCDK_UTIL_LOGON_H
+#ifndef ABCDK_UTIL_REGISTRY_H
+#define ABCDK_UTIL_REGISTRY_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/map.h"
@@ -14,11 +14,11 @@
 
 __BEGIN_DECLS
 
-/**简单的登录容器。 */
-typedef struct _abcdk_logon abcdk_logon_t;
+/**简单的注册表。 */
+typedef struct _abcdk_registry abcdk_registry_t;
 
 /**配置。*/
-typedef struct _abcdk_logon_config
+typedef struct _abcdk_registry_config
 {
     /**启用监视。!0 是，0 否。*/
     int enable_watch;
@@ -52,16 +52,16 @@ typedef struct _abcdk_logon_config
     /**KEY删除回调函数。*/
     void (*key_remove_cb)(const void *key, abcdk_context_t *userdata, void *opaque);
 
-}abcdk_logon_config_t;
+}abcdk_registry_config_t;
 
 /**销毁。 */
-void abcdk_logon_destroy(abcdk_logon_t **ctx);
+void abcdk_registry_destroy(abcdk_registry_t **ctx);
 
 /**创建。 */
-abcdk_logon_t *abcdk_logon_create(abcdk_logon_config_t *cfg);
+abcdk_registry_t *abcdk_registry_create(abcdk_registry_config_t *cfg);
 
 /**删除。*/
-void abcdk_logon_remove(abcdk_logon_t *ctx,const void *key);
+void abcdk_registry_remove(abcdk_registry_t *ctx,const void *key);
 
 /**
  * 添加。
@@ -74,7 +74,7 @@ void abcdk_logon_remove(abcdk_logon_t *ctx,const void *key);
  * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
  * 
 */
-abcdk_context_t *abcdk_logon_insert(abcdk_logon_t *ctx,const void *key,size_t userdata);
+abcdk_context_t *abcdk_registry_insert(abcdk_registry_t *ctx,const void *key,size_t userdata);
 
 /**
  * 查询。
@@ -83,7 +83,7 @@ abcdk_context_t *abcdk_logon_insert(abcdk_logon_t *ctx,const void *key,size_t us
  * 
  * @return !NULL(0) 成功(用户环境指针)，NULL(0) 失败。
 */
-abcdk_context_t *abcdk_logon_lookup(abcdk_logon_t *ctx,const void *key);
+abcdk_context_t *abcdk_registry_lookup(abcdk_registry_t *ctx,const void *key);
 
 /**
  * 监视(遍历)。
@@ -94,18 +94,18 @@ abcdk_context_t *abcdk_logon_lookup(abcdk_logon_t *ctx,const void *key);
  * 
  * @return !NULL(0) 数据指针。NULL(0) 结束。
  */
-abcdk_context_t *abcdk_logon_next(abcdk_logon_t *ctx,void **it);
+abcdk_context_t *abcdk_registry_next(abcdk_registry_t *ctx,void **it);
 
 /**读锁。 */
-void abcdk_logon_rdlock(abcdk_logon_t *ctx);
+void abcdk_registry_rdlock(abcdk_registry_t *ctx);
 
 /**写锁。 */
-void abcdk_logon_wrlock(abcdk_logon_t *ctx);
+void abcdk_registry_wrlock(abcdk_registry_t *ctx);
 
 /**解锁。 */
-int abcdk_logon_unlock(abcdk_logon_t *ctx,int exitcode);
+int abcdk_registry_unlock(abcdk_registry_t *ctx,int exitcode);
 
 
 __END_DECLS
 
-#endif //ABCDK_UTIL_LOGON_H
+#endif //ABCDK_UTIL_REGISTRY_H

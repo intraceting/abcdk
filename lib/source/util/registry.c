@@ -4,13 +4,13 @@
  * MIT License
  * 
  */
-#include "abcdk/util/logon.h"
+#include "abcdk/util/registry.h"
 
-/**简单的登录容器。 */
-struct _abcdk_logon
+/**简单的注册表。 */
+struct _abcdk_registry
 {
     /**配置。*/
-    abcdk_logon_config_t cfg;
+    abcdk_registry_config_t cfg;
 
     /**存储表(用于查找)。*/
     abcdk_map_t *store_ctx;
@@ -20,10 +20,10 @@ struct _abcdk_logon
 
     /**同步锁。*/
     abcdk_rwlock_t *locker_ctx;
-};//abcdk_logon_t;
+};//abcdk_registry_t;
 
 /**节点。 */
-typedef struct _abcdk_logon_node
+typedef struct _abcdk_registry_node
 {
     /*存储标志。0 使用中，1 已删除。*/
     int store_flag;
@@ -34,13 +34,13 @@ typedef struct _abcdk_logon_node
     /**用户环境。*/
     abcdk_context_t *userdata;
 
-}abcdk_logon_node_t;
+}abcdk_registry_node_t;
 
-static void _abcdk_logon_destructor_cb(abcdk_object_t *obj, void *opaque)
+static void _abcdk_registry_destructor_cb(abcdk_object_t *obj, void *opaque)
 {
-    abcdk_logon_t *ctx = (abcdk_logon_t *)opaque;
+    abcdk_registry_t *ctx = (abcdk_registry_t *)opaque;
     const void *key_p = (void *)obj->pptrs[ABCDK_MAP_KEY];
-    abcdk_logon_node_t *node_p = (abcdk_logon_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
+    abcdk_registry_node_t *node_p = (abcdk_registry_node_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
     if(!node_p->userdata)
         return;
@@ -51,9 +51,9 @@ static void _abcdk_logon_destructor_cb(abcdk_object_t *obj, void *opaque)
     abcdk_context_unref(&node_p->userdata);
 }
 
-static uint64_t _abcdk_logon_hash_cb(const void* key,size_t size,void *opaque)
+static uint64_t _abcdk_registry_hash_cb(const void* key,size_t size,void *opaque)
 {
-    abcdk_logon_t *ctx = (abcdk_logon_t *)opaque;
+    abcdk_registry_t *ctx = (abcdk_registry_t *)opaque;
     uint64_t hs = UINT64_MAX;
 
     if(ctx->cfg.key_hash_cb)
@@ -64,9 +64,9 @@ static uint64_t _abcdk_logon_hash_cb(const void* key,size_t size,void *opaque)
     return hs;
 }
 
-static int _abcdk_logon_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
+static int _abcdk_registry_compare_cb(const void *key1, size_t size1, const void *key2, size_t size2, void *opaque)
 {
-    abcdk_logon_t *ctx = (abcdk_logon_t *)opaque;
+    abcdk_registry_t *ctx = (abcdk_registry_t *)opaque;
     int chk;
 
     if (ctx->cfg.key_compare_cb)
@@ -81,7 +81,7 @@ static int _abcdk_logon_compare_cb(const void *key1, size_t size1, const void *k
     return chk;
 }
 
-static size_t _abcdk_long_ksize(const void *key, abcdk_logon_t *ctx)
+static size_t _abcdk_long_ksize(const void *key, abcdk_registry_t *ctx)
 {
     if(ctx->cfg.key_size_cb)
         return ctx->cfg.key_size_cb(key,ctx->cfg.opaque);
@@ -89,9 +89,9 @@ static size_t _abcdk_long_ksize(const void *key, abcdk_logon_t *ctx)
         return strlen(key);
 }
 
-void abcdk_logon_destroy(abcdk_logon_t **ctx)
+void abcdk_registry_destroy(abcdk_registry_t **ctx)
 {
-    abcdk_logon_t *ctx_p;
+    abcdk_registry_t *ctx_p;
 
     if(!ctx || !*ctx)
         return;
@@ -105,13 +105,13 @@ void abcdk_logon_destroy(abcdk_logon_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_logon_t *abcdk_logon_create(abcdk_logon_config_t *cfg)
+abcdk_registry_t *abcdk_registry_create(abcdk_registry_config_t *cfg)
 {
-    abcdk_logon_t *ctx;
+    abcdk_registry_t *ctx;
 
     assert(cfg != NULL);
 
-    ctx = (abcdk_logon_t*)abcdk_heap_alloc(sizeof(abcdk_logon_t));
+    ctx = (abcdk_registry_t*)abcdk_heap_alloc(sizeof(abcdk_registry_t));
     if(!ctx)
         return NULL;
 
@@ -121,9 +121,9 @@ abcdk_logon_t *abcdk_logon_create(abcdk_logon_config_t *cfg)
     if(!ctx->store_ctx)
         goto ERR;
 
-    ctx->store_ctx->hash_cb = _abcdk_logon_hash_cb;
-    ctx->store_ctx->compare_cb = _abcdk_logon_compare_cb;
-    ctx->store_ctx->destructor_cb = _abcdk_logon_destructor_cb;
+    ctx->store_ctx->hash_cb = _abcdk_registry_hash_cb;
+    ctx->store_ctx->compare_cb = _abcdk_registry_compare_cb;
+    ctx->store_ctx->destructor_cb = _abcdk_registry_destructor_cb;
     ctx->store_ctx->opaque = ctx;
 
     ctx->watch_ctx = abcdk_tree_alloc3(1);
@@ -138,15 +138,15 @@ abcdk_logon_t *abcdk_logon_create(abcdk_logon_config_t *cfg)
 
 ERR:
 
-    abcdk_logon_destroy(&ctx);
+    abcdk_registry_destroy(&ctx);
     return NULL;
 }
 
-void abcdk_logon_remove(abcdk_logon_t *ctx,const void *key)
+void abcdk_registry_remove(abcdk_registry_t *ctx,const void *key)
 {
     size_t ksize;
     abcdk_object_t *val_p;
-    abcdk_logon_node_t *node_p;
+    abcdk_registry_node_t *node_p;
     void *data_p;
 
     assert(ctx != NULL && key != NULL);
@@ -157,7 +157,7 @@ void abcdk_logon_remove(abcdk_logon_t *ctx,const void *key)
     if(!val_p)
         return;
 
-    node_p = (abcdk_logon_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_registry_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*标记已删除。*/
     node_p->store_flag = 1;
@@ -167,12 +167,12 @@ void abcdk_logon_remove(abcdk_logon_t *ctx,const void *key)
     return;
 }
 
-abcdk_context_t *abcdk_logon_insert(abcdk_logon_t *ctx,const void *key,size_t userdata)
+abcdk_context_t *abcdk_registry_insert(abcdk_registry_t *ctx,const void *key,size_t userdata)
 {
     size_t ksize;
     abcdk_object_t *val_p;
     abcdk_tree_t *val2_p;
-    abcdk_logon_node_t *node_p;
+    abcdk_registry_node_t *node_p;
     void *userdata_p;
     int chk = -1;
 
@@ -180,11 +180,11 @@ abcdk_context_t *abcdk_logon_insert(abcdk_logon_t *ctx,const void *key,size_t us
 
     ksize = _abcdk_long_ksize(key,ctx);
 
-    val_p = abcdk_map_find(ctx->store_ctx, key, ksize, sizeof(abcdk_logon_node_t));
+    val_p = abcdk_map_find(ctx->store_ctx, key, ksize, sizeof(abcdk_registry_node_t));
     if (!val_p)
         return NULL;
 
-    node_p = (abcdk_logon_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_registry_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*如果用户环境未创建，则自动创建。*/
     if (!node_p->userdata && userdata > 0)
@@ -233,11 +233,11 @@ ERR:
     return NULL;
 }
 
-abcdk_context_t *abcdk_logon_lookup(abcdk_logon_t *ctx,const void *key)
+abcdk_context_t *abcdk_registry_lookup(abcdk_registry_t *ctx,const void *key)
 {
     size_t ksize;
     abcdk_object_t *val_p;
-    abcdk_logon_node_t *node_p;
+    abcdk_registry_node_t *node_p;
     abcdk_context_t *userdata_p;
 
     assert(ctx != NULL && key != NULL);
@@ -248,7 +248,7 @@ abcdk_context_t *abcdk_logon_lookup(abcdk_logon_t *ctx,const void *key)
     if(!val_p)
         return NULL;
 
-    node_p = (abcdk_logon_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_registry_node_t *)val_p->pptrs[ABCDK_MAP_VALUE];
 
     /*可能已经被删除。*/
     if(node_p->store_flag == 1)
@@ -259,10 +259,10 @@ abcdk_context_t *abcdk_logon_lookup(abcdk_logon_t *ctx,const void *key)
     return userdata_p;
 }
 
-abcdk_context_t *abcdk_logon_next(abcdk_logon_t *ctx,void **it)
+abcdk_context_t *abcdk_registry_next(abcdk_registry_t *ctx,void **it)
 {
     abcdk_tree_t *it_p,*it_next_p;
-    abcdk_logon_node_t *node_p;
+    abcdk_registry_node_t *node_p;
     abcdk_context_t *userdata_p;
 
     assert(ctx != NULL && it != NULL);
@@ -278,7 +278,7 @@ NEXT:
         it_next_p = abcdk_tree_sibling(it_p,0);
 
         /*检查当前节点。*/
-        node_p = (abcdk_logon_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
+        node_p = (abcdk_registry_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
 
         /*可能当前节点已经被删除。*/
         if (node_p->store_flag == 1)
@@ -300,7 +300,7 @@ NEXT:
     it_p = it_next_p;
 
     /*如果当前节点已经被删除，则遍历下一个。*/
-    node_p = (abcdk_logon_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
+    node_p = (abcdk_registry_node_t *)it_p->obj->pptrs[ABCDK_MAP_VALUE];
     if(node_p->store_flag == 1)
         goto NEXT;
 
@@ -313,7 +313,7 @@ NEXT:
     return userdata_p;
 }
 
-void abcdk_logon_rdlock(abcdk_logon_t *ctx)
+void abcdk_registry_rdlock(abcdk_registry_t *ctx)
 {
     assert(ctx != NULL);
 
@@ -321,7 +321,7 @@ void abcdk_logon_rdlock(abcdk_logon_t *ctx)
 }
 
 
-void abcdk_logon_wrlock(abcdk_logon_t *ctx)
+void abcdk_registry_wrlock(abcdk_registry_t *ctx)
 {
     assert(ctx != NULL);
 
@@ -329,7 +329,7 @@ void abcdk_logon_wrlock(abcdk_logon_t *ctx)
 }
 
 
-int abcdk_logon_unlock(abcdk_logon_t *ctx,int exitcode)
+int abcdk_registry_unlock(abcdk_registry_t *ctx,int exitcode)
 {
     assert(ctx != NULL);
 
