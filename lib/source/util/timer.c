@@ -45,6 +45,8 @@ static void *_abcdk_timer_worker(void *opaque)
     /*设置线程名字，日志记录会用到。*/
     abcdk_thread_setname(0, "%x", ctx->index);
 
+    abcdk_trace_output(LOG_INFO, "定时器启动……");
+
     while (1)
     {
         if (!abcdk_atomic_compare(&ctx->flag, 1))
@@ -67,6 +69,8 @@ static void *_abcdk_timer_worker(void *opaque)
         before = _abcdk_time_clock();
         ctx->routine_cb(ctx->opaque);
     }
+
+    abcdk_trace_output(LOG_INFO, "定时器停止。");
 
     return NULL;
 }
