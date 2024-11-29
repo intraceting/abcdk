@@ -647,13 +647,15 @@ ERR:
 
 void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx)
 {
+    SSL_CTX *ctx_p = NULL;
+
     if (!ctx || !*ctx)
         return;
 
-    SSL_CTX_free(*ctx);
-
-    /*Set to NULL(0).*/
+    ctx_p = *ctx;
     *ctx = NULL;
+
+    SSL_CTX_free(ctx_p);
 }
 
 SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath,int crl_check)
@@ -726,7 +728,7 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
 
 final_error:
 
-    SSL_CTX_free(ctx);
+    abcdk_openssl_ssl_ctx_free(&ctx);
 
     return NULL;
 }
