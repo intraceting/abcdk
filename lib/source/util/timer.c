@@ -9,6 +9,9 @@
 /**简单的定时器。*/
 struct _abcdk_timer
 {
+    /*索引。*/
+    uint64_t index;
+
     /*间隔(毫秒)。*/
     uint64_t interval;
 
@@ -39,7 +42,8 @@ static void *_abcdk_timer_worker(void *opaque)
     uint64_t before = _abcdk_time_clock();
     uint64_t current, differ;
 
-    abcdk_trace_output(LOG_INFO,"定时器启动……");
+    /*设置线程名字，日志记录会用到。*/
+    abcdk_thread_setname(0, "%x", ctx->index);
 
     while (1)
     {
@@ -119,12 +123,12 @@ abcdk_timer_t *abcdk_timer_create(uint64_t interval, abcdk_timer_routine_cb rout
     if (!ctx)
         return NULL;
 
+    ctx->index = abcdk_sequence_num();
     ctx->interval = interval;
     ctx->routine_cb = routine_cb;
     ctx->opaque = opaque;
     ctx->thread = (abcdk_thread_t *)abcdk_heap_alloc(sizeof(abcdk_thread_t));
     ctx->mutex = abcdk_mutex_create();
-    ctx->flag = 1;
 
     _abcdk_timer_start(ctx);
 
