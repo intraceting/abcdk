@@ -583,7 +583,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         chk = SSL_get_verify_result(node->openssl_ssl);
         if (chk != X509_V_OK)
         {
-            abcdk_trace_output(LOG_INFO, "远端(%s)的证书验证有错误发生(ssl-errno=%d)。", remote_addr, chk);
+            abcdk_trace_output(LOG_WARNING, "远端(%s)的证书验证有错误发生(ssl-errno=%d)。", remote_addr, chk);
             return -1;
         }
     }
