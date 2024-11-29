@@ -68,8 +68,6 @@ static void *_abcdk_timer_worker(void *opaque)
         ctx->routine_cb(ctx->opaque);
     }
 
-    abcdk_trace_output(LOG_INFO,"定时器停止。");
-
     return NULL;
 }
 
