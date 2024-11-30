@@ -27,10 +27,10 @@ struct _abcdk_asio
     /**句柄索引池。*/
     abcdk_pool_t *index_pool;
 
-    /**看门狗活动时间(毫秒)。*/
+    /**看门狗活动时间(秒)。*/
     time_t watchdog_active;
 
-    /**看门狗活动间隔(毫秒)。*/
+    /**看门狗活动间隔(秒)。*/
     time_t watchdog_intvl;
 
     /**看门狗活动游标。*/
