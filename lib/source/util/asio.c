@@ -27,10 +27,10 @@ struct _abcdk_asio
     /**句柄索引池。*/
     abcdk_pool_t *index_pool;
 
-    /**看门狗活动时间(秒)。*/
+    /**看门狗活动时间(毫秒)。*/
     time_t watchdog_active;
 
-    /**看门狗活动间隔(秒)。*/
+    /**看门狗活动间隔(毫秒)。*/
     time_t watchdog_intvl;
 
     /**看门狗活动游标。*/
@@ -71,10 +71,10 @@ typedef struct _abcdk_asio_node
     /** 分派事件。*/
     uint32_t event_disp;
 
-    /** 活动时间(秒)。*/
+    /** 活动时间(毫秒)。*/
     time_t active;
 
-    /** 超时(秒)。*/
+    /** 超时(毫秒)。*/
     time_t timeout;
 
     /** 是否第一次注册。!0 是，0 否。*/
@@ -84,7 +84,7 @@ typedef struct _abcdk_asio_node
 
 static time_t _abcdk_asio_clock()
 {
-    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,0);
+    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
 }
 
 static int64_t _abcdk_asio_idx2pfd(int idx)
@@ -386,7 +386,7 @@ abcdk_asio_t *abcdk_asio_create(int max)
         goto ERR;
 
     ctx->watchdog_active = _abcdk_asio_clock();
-    ctx->watchdog_intvl = 1000;
+    ctx->watchdog_intvl = 1*1000;
     ctx->watchdog_pos = 0;
     ctx->wait_leader = 0;
     ctx->wait_abort = 0;
@@ -469,7 +469,7 @@ int64_t abcdk_asio_attach(abcdk_asio_t *ctx, int fd, epoll_data_t *userdata)
     node_ctx->event_disp = 0;
     node_ctx->event_mark = 0;
     node_ctx->active = _abcdk_asio_clock();
-    node_ctx->timeout = 0;
+    node_ctx->timeout = 0*1000;
     node_ctx->mark_first = 1;
 
     /*copy.*/
@@ -492,7 +492,7 @@ int abcdk_asio_timeout(abcdk_asio_t *ctx,int64_t pfd, time_t timeout)
     if(!node_ctx)
         return _abcdk_asio_unlock(ctx,-22);
 
-    node_ctx->timeout = timeout;
+    node_ctx->timeout = timeout * 1000;
 
     /* 如果发生错误，分派出错事件。*/
     if (!node_ctx->stable)
