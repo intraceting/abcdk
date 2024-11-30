@@ -1184,15 +1184,8 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
     /*修复不支持的配置。*/
     _abcdk_stcp_fix_cfg(node_p);
 
-    if (node_p->cfg.bind_addr.family == AF_UNIX)
-    {
-        node_p->local.family = AF_UNIX;
-        strcpy(node_p->local.addr_un.sun_path, node_p->cfg.bind_addr.addr_un.sun_path);
-    }
-    else
-    {
-        node_p->local = node_p->cfg.bind_addr;
-    }
+    /*复制绑定地址到节点上。*/
+    abcdk_sockaddr_copy(&node_p->cfg.bind_addr,&node_p->local);
 
     node_p->fd = abcdk_socket(node_p->local.family, 0);
     if (node_p->fd < 0)
@@ -1292,16 +1285,9 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
 
     /*修复不支持的配置。*/
     _abcdk_stcp_fix_cfg(node_p);
-    
-    if (addr->family == AF_UNIX)
-    {
-        node_p->remote.family = AF_UNIX;
-        strcpy(node_p->remote.addr_un.sun_path, addr->addr_un.sun_path);
-    }
-    else
-    {
-        node_p->remote = *addr;
-    }
+
+    /*复制远程地址到节点上。*/
+    abcdk_sockaddr_copy(addr,&node_p->remote);
 
     node_p->fd = abcdk_socket(node_p->remote.family, 0);
     if (node_p->fd < 0)
