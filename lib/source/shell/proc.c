@@ -254,10 +254,14 @@ int abcdk_proc_daemon(int count, int interval, abcdk_fork_process_cb process_cb,
 
     assert(count > 0 && interval > 0 && process_cb != NULL);
 
-    for (int i = 0; i < count; i++)
+    while(1)
     {
         if (cid < 0)
         {
+            /*有限的启动次数。*/
+            if (count-- <= 0)
+                break;
+
             cid = abcdk_fork(process_cb, opaque, NULL, NULL, NULL);
             if (cid < 0)
             {
@@ -307,10 +311,14 @@ int abcdk_proc_daemon2(int count, int interval, const char *cmdline)
 
     assert(count > 0 && interval > 0 && cmdline != NULL);
 
-    for (int i = 0; i < count; i++)
+    while (1)
     {
         if (cid < 0)
         {
+            /*有限的启动次数。*/
+            if (count-- <= 0)
+                return -1;
+
             cid = abcdk_proc_popen(NULL, NULL, NULL, cmdline);
             if (cid < 0)
             {
