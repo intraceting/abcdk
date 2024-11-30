@@ -23,23 +23,30 @@ __BEGIN_DECLS
 /** Socket地址 */
 typedef union _abcdk_sockaddr
 {
-    /** 预留空间。*/
+    /**预留空间。*/
     uint8_t padding[255];
 
-    /** 协议。*/
+    /**家族。*/
     sa_family_t family;
 
-    /** 通用的地址。*/
+    /**通用。*/
     struct sockaddr addr;
 
-    /** UNIX地址。*/
+    /**UNIX。*/
     struct sockaddr_un addr_un;
 
-    /** IPv4地址。*/
+    /**IPv4。*/
     struct sockaddr_in addr4;
 
-    /** IPv6地址。*/
+    /** IPv6。*/
     struct sockaddr_in6 addr6;
+
+    /**UUID。*/
+    struct _abcdk_sockuuid
+    {
+        sa_family_t suu_family;
+        char suu_data[128];
+    } addr_uuid;
 
 } abcdk_sockaddr_t;
 
@@ -248,14 +255,13 @@ int abcdk_bind(int fd, const abcdk_sockaddr_t *addr);
 int abcdk_accept(int fd, abcdk_sockaddr_t *addr);
 
 /**
- * 使用已经打开的SOCKET句柄创建到远程地址的连接。
+ * 连接远程地址。
  * 
- * @param timeout 超时(毫秒)。>= 0 连接成功或时间过期，< 0 直到连接成功或出错。
+ * @note 如果是异步SOCKET句柄，此操作仅发出连接通知，连接状态需要其它方式确定。
  * 
- * @return 0 成功，-1 失败(或超时)。
- * 
+ * @return 0 成功，!0 失败。
 */
-int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout);
+int abcdk_connect(int fd, abcdk_sockaddr_t *addr);
 
 
 /**

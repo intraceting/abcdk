@@ -273,7 +273,7 @@ void *abcdk_stcp_get_userdata(abcdk_stcp_node_t *node);
 /**
  * 设置超时。
  * 
- * @param timeout 时长(秒)。= 0 禁用。默认：180。
+ * @param timeout 时长(秒)。!0 有效， 0 禁用。默认：0。
  * 
  * @return 0 成功，!0 失败。
 */

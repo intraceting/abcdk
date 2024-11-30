@@ -541,7 +541,8 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     if (node->pfd <= 0)
         goto ERR;
 
-    abcdk_asio_timeout(node->asio_ctx, node->pfd, 180);
+    /*关闭超时。*/
+    abcdk_asio_timeout(node->asio_ctx, node->pfd, 0);
 
     /*注册输出事件用于探测连接状态。*/
     abcdk_asio_mark(node->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
@@ -1276,8 +1277,6 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
 {
     abcdk_stcp_node_t *node_p = NULL;
     epoll_data_t ep_data;
-    socklen_t addr_len;
-    int sock_flag = 1;
     int chk;
 
     assert(node != NULL && addr != NULL && cfg != NULL);
@@ -1293,22 +1292,14 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
 
     /*修复不支持的配置。*/
     _abcdk_stcp_fix_cfg(node_p);
-
-    addr_len = sizeof(abcdk_sockaddr_t);
+    
     if (addr->family == AF_UNIX)
     {
-        addr_len = SUN_LEN(&addr->addr_un);
         node_p->remote.family = AF_UNIX;
         strcpy(node_p->remote.addr_un.sun_path, addr->addr_un.sun_path);
     }
-    else if (addr->family == AF_INET)
+    else
     {
-        addr_len = sizeof(struct sockaddr_in);
-        node_p->remote = *addr;
-    }
-    else if (addr->family == AF_INET6)
-    {
-        addr_len = sizeof(struct sockaddr_in6);
         node_p->remote = *addr;
     }
 
@@ -1348,8 +1339,8 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
         }
     }
 
-    chk = connect(node_p->fd, &node_p->remote.addr, addr_len);
-    if (chk != 0 && errno != EAGAIN && errno != EINPROGRESS)
+    chk = abcdk_connect(node_p->fd, &node_p->remote);
+    if (chk != 0)
         goto ERR;
 
     chk = _abcdk_stcp_ssl_init(node_p, 0);
@@ -1371,7 +1362,8 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (node_p->pfd <= 0)
         goto ERR;
 
-    abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 180);
+    /*关闭超时。*/
+    abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 0);
     abcdk_asio_mark(node_p->asio_ctx, node_p->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
     return 0;

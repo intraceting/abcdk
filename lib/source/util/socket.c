@@ -382,7 +382,7 @@ int abcdk_accept(int fd, abcdk_sockaddr_t *addr)
     return sub_fd;
 }
 
-int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout)
+int abcdk_connect(int fd, abcdk_sockaddr_t *addr)
 {
     socklen_t len;
     int flags = 0;
@@ -390,18 +390,6 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout)
     int chk;
 
     assert(fd >= 0 && addr != NULL);
-
-    flags = abcdk_fflag_get(fd);
-    if (flags == -1)
-        return -1;
-
-    /* 添加非阻塞标志，用于异步连接。*/
-    chk = 0;
-    if (!(flags & O_NONBLOCK))
-        chk = abcdk_fflag_add(fd, O_NONBLOCK);
-
-    if (chk != 0)
-        return -1;
 
     len = sizeof(abcdk_sockaddr_t);
     if(addr->family == AF_UNIX)
@@ -418,28 +406,10 @@ int abcdk_connect(int fd, abcdk_sockaddr_t *addr, time_t timeout)
     }
 
     chk = connect(fd, &addr->addr, len);
-    if(chk == 0)
-        goto final;
+    if (chk != 0 && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINPROGRESS)
+        return -1;
 
-    if (errno != EINPROGRESS && errno != EWOULDBLOCK && errno != EAGAIN)
-        goto final;
-
-    /* 等待写事件(允许)。 */
-    chk = (abcdk_poll(fd, 0x02, timeout) > 0 ? 0 : -1);
-    if(chk != 0)
-        goto final;
-
-    /* 获取SOCKET句柄的出错码。 */
-    chk = abcdk_sockopt_option_int(fd, SOL_SOCKET, SO_ERROR, &eno, 1);
-    chk = (eno == 0 ? 0 : -1);
-
-final:
-    
-    /* 恢复原有的标志，忽略可能的出错信息。*/
-    if (!(flags & O_NONBLOCK))
-        abcdk_fflag_del(fd, O_NONBLOCK);
-
-    return chk;
+    return 0;
 }
 
 int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_lookup)

@@ -25,7 +25,6 @@
 #include "abcdk/util/charset.h"
 #include "abcdk/util/reader.h"
 #include "abcdk/util/pool.h"
-#include "abcdk/util/epollex.h"
 #include "abcdk/util/math.h"
 #include "abcdk/util/exec.h"
 #include "abcdk/util/endian.h"
