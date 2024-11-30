@@ -911,7 +911,7 @@ static void _abcdk_proxy_daemon(abcdk_proxy_t *ctx)
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace, logger);
 
-    abcdk_proc_daemon(interval, _abcdk_proxy_daemon_process_cb, ctx);
+    abcdk_proc_daemon(INT32_MAX,interval, _abcdk_proxy_daemon_process_cb, ctx);
 
     /*关闭日志。*/
     abcdk_logger_close(&logger);

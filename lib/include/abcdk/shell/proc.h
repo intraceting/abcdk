@@ -102,27 +102,28 @@ int abcdk_proc_signal_wait(siginfo_t *info, time_t timeout);
 */
 int abcdk_proc_wait_exit_signal(time_t timeout);
 
-
 /**
  * 守护进程。
  * 
+ * @param [in] count 启动次数。
  * @param [in] interval 重启间隔(秒)。
  * @param [in] process_cb 子进程入口函数。
  * @param [in] opaque 子进程环境指针。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaque);
+int abcdk_proc_daemon(int count, int interval, abcdk_fork_process_cb process_cb, void *opaque);
 
 /**
  * 守护进程。
  * 
+ * @param [in] count 启动次数。
  * @param [in] interval 重启间隔(秒)。
  * @param [in] cmdline 命令行。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_proc_daemon2(int interval, const char *cmdline);
+int abcdk_proc_daemon2(int count, int interval, const char *cmdline);
 
 
 

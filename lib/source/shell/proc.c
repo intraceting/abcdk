@@ -247,14 +247,14 @@ CHECK_RETRY:
         return 0;
 }
 
-int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaque)
+int abcdk_proc_daemon(int count, int interval, abcdk_fork_process_cb process_cb, void *opaque)
 {
     pid_t cid = -1,cid_chk = -1,cid_pgid = 0x7fffffff;
     int chk;
 
-    assert(interval >0 && process_cb != NULL);
+    assert(count > 0 && interval > 0 && process_cb != NULL);
 
-    while (1)
+    for (int i = 0; i < count; i++)
     {
         if (cid < 0)
         {
@@ -300,14 +300,14 @@ int abcdk_proc_daemon(int interval, abcdk_fork_process_cb process_cb, void *opaq
     return 0;
 }
 
-int abcdk_proc_daemon2(int interval, const char *cmdline)
+int abcdk_proc_daemon2(int count, int interval, const char *cmdline)
 {
     pid_t cid = -1,cid_chk = -1,cid_pgid = 0x7fffffff;
     int chk;
 
-    assert(interval >0 && cmdline != NULL);
+    assert(count > 0 && interval > 0 && cmdline != NULL);
 
-    while (1)
+    for (int i = 0; i < count; i++)
     {
         if (cid < 0)
         {
