@@ -6,19 +6,12 @@
  */
 #include "abcdk/util/socket.h"
 
-void abcdk_sockaddr_copy(const abcdk_sockaddr_t *src,abcdk_sockaddr_t *dst)
+void abcdk_sockaddr_copy(const abcdk_sockaddr_t *src, abcdk_sockaddr_t *dst)
 {
     assert(src != NULL && dst != NULL);
 
-    if(src->family == AF_UNIX)
-    {
-        dst->family = src->family;
-        strcpy(dst->addr_un.sun_path,src->addr_un.sun_path);
-    }
-    else
-    {
-        *dst = *src;
-    }
+    /*全部复制。*/
+    memcpy(dst->padding, src->padding, 255);
 }
 
 int abcdk_gethostbyname(const char *name, sa_family_t family, abcdk_sockaddr_t *addrs, int max, char canonname[1000])
