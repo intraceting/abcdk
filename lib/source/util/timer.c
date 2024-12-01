@@ -12,9 +12,6 @@ struct _abcdk_timer
     /*索引。*/
     uint64_t index;
 
-    /*间隔(毫秒)。*/
-    uint64_t interval;
-
     /*回调函数。*/
     abcdk_timer_routine_cb routine_cb;
 
@@ -31,16 +28,10 @@ struct _abcdk_timer
     volatile int flag;
 }; // abcdk_timer_t
 
-static uint64_t _abcdk_time_clock()
-{
-    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
-}
-
 static void *_abcdk_timer_worker(void *opaque)
 {
     abcdk_timer_t *ctx = (abcdk_timer_t *)opaque;
-    uint64_t before = _abcdk_time_clock();
-    uint64_t current, differ;
+    uint64_t interval = 0;
 
     /*设置线程名字，日志记录会用到。*/
     abcdk_thread_setname(0, "%x", ctx->index);
@@ -52,22 +43,18 @@ static void *_abcdk_timer_worker(void *opaque)
         if (!abcdk_atomic_compare(&ctx->flag, 1))
             break;
 
-        current = _abcdk_time_clock();
-        differ = current - before;
-
-        if (differ < ctx->interval)
+        if (interval > 0)
         {
             /*等待通知或超时。*/
             abcdk_mutex_lock(ctx->mutex, 1);
-            abcdk_mutex_wait(ctx->mutex, ctx->interval - differ);
+            abcdk_mutex_wait(ctx->mutex, interval);
             abcdk_mutex_unlock(ctx->mutex);
         }
 
         if (!abcdk_atomic_compare(&ctx->flag, 1))
             break;
 
-        before = _abcdk_time_clock();
-        ctx->routine_cb(ctx->opaque);
+        interval = ctx->routine_cb(ctx->opaque);
     }
 
     abcdk_trace_output(LOG_INFO, "定时器停止。");
@@ -115,18 +102,17 @@ void abcdk_timer_destroy(abcdk_timer_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_timer_t *abcdk_timer_create(uint64_t interval, abcdk_timer_routine_cb routine_cb, void *opaque)
+abcdk_timer_t *abcdk_timer_create(abcdk_timer_routine_cb routine_cb, void *opaque)
 {
     abcdk_timer_t *ctx;
 
-    assert(interval > 0 && routine_cb != NULL);
+    assert(routine_cb != NULL);
 
     ctx = (abcdk_timer_t *)abcdk_heap_alloc(sizeof(abcdk_timer_t));
     if (!ctx)
         return NULL;
 
     ctx->index = abcdk_sequence_num();
-    ctx->interval = interval;
     ctx->routine_cb = routine_cb;
     ctx->opaque = opaque;
     ctx->thread = (abcdk_thread_t *)abcdk_heap_alloc(sizeof(abcdk_thread_t));

@@ -18,11 +18,10 @@ __BEGIN_DECLS
  * 
  * @param [in out] seed 随机种子。
  */
-int64_t abcdk_rand(uint64_t *seed);
+uint64_t abcdk_rand(uint64_t *seed, uint64_t min, uint64_t max);
 
 /** 产生一个随机数。*/
-int64_t abcdk_rand_q();
-#define abcdk_rand_number abcdk_rand_q
+uint64_t abcdk_rand_number(uint64_t min, uint64_t max);
 
 /**
  * 产生随机字符。

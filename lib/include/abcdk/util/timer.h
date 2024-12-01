@@ -21,18 +21,18 @@ __BEGIN_DECLS
 /**简单的定时器。*/
 typedef struct _abcdk_timer abcdk_timer_t;
 
-/**定时器执行回调函数。*/
-typedef void (*abcdk_timer_routine_cb)(void *opaque);
+/**
+ * 定时器执行回调函数。
+ * 
+ * @return 间隔(毫秒)。
+*/
+typedef uint64_t (*abcdk_timer_routine_cb)(void *opaque);
 
 /**销毁。*/
 void abcdk_timer_destroy(abcdk_timer_t **ctx);
 
-/**
- * 创建。
- * 
- * @param [in] interval 间隔(毫秒)。
-*/
-abcdk_timer_t *abcdk_timer_create(uint64_t interval, abcdk_timer_routine_cb routine_cb, void *opaque);
+/**创建。*/
+abcdk_timer_t *abcdk_timer_create(abcdk_timer_routine_cb routine_cb, void *opaque);
 
 __END_DECLS
 

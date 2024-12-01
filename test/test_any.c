@@ -1511,7 +1511,7 @@ int abcdk_test_any(abcdk_option_t *args)
     assert(ssl_ctx != NULL);
 
     abcdk_openssl_ssl_ctx_free(&ssl_ctx);
-#elif 1
+#elif 0
 
     abcdk_object_t *p = abcdk_getpass(NULL,"haha");
     //abcdk_object_t *p = abcdk_getpass(NULL,NULL);
@@ -1530,6 +1530,12 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("\n%d,%d\n",a,b);
 
+#elif 0
+    for(int i = 0;i<1000;i++)
+    {
+        int a = abcdk_rand_number(50,500);
+        printf("a=%d\n",a);
+    }
 #endif 
     return 0;
 }

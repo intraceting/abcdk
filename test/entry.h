@@ -33,6 +33,7 @@ int abcdk_test_worker(abcdk_option_t *args);
 int abcdk_test_sudp(abcdk_option_t *args);
 int abcdk_test_pem(abcdk_option_t *args);
 int abcdk_test_usb(abcdk_option_t *args);
+int abcdk_test_rand(abcdk_option_t *args);
 
 __END_DECLS
 

@@ -123,7 +123,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
              if (j % 3 == 0 && rand_rsp)
                  *a = 0;
 
-            int b = ((uint64_t)abcdk_rand_number()) % 64000 + 5;
+             int b = abcdk_rand_number(5, 64000);
 
 #if HAVE_OPENSSL
             RAND_bytes(buf + 4, b - 4);

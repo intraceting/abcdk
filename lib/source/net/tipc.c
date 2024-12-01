@@ -292,7 +292,7 @@ END:
     return node_p;
 }
 
-static void _abcdk_tipc_slave_reconnect_cb(void *opaque)
+static uint64_t _abcdk_tipc_slave_reconnect_cb(void *opaque)
 {
     abcdk_tipc_t *ctx = (abcdk_tipc_t *)opaque;
     abcdk_tipc_slave_t *slave_ctx_p = NULL;
@@ -328,7 +328,7 @@ NEXT:
 
     /*遍历完在，返回。*/
     if( id >= ABCDK_TIPC_SLAVE_MAX )
-        return;
+        return 5000;
 
     /*如果是被动连接，则等待另外一端发起连接。*/
     if(flag == 1)
@@ -478,7 +478,7 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
         abcdk_bloom_unset(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),i);
 
     /*重连定时器。*/
-    ctx->reconnect_timer = abcdk_timer_create(5000,_abcdk_tipc_slave_reconnect_cb,ctx);
+    ctx->reconnect_timer = abcdk_timer_create(_abcdk_tipc_slave_reconnect_cb,ctx);
 
     return ctx;
 }

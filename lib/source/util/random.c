@@ -6,11 +6,11 @@
  */
 #include "abcdk/util/random.h"
 
-int64_t abcdk_rand(uint64_t *seed)
+uint64_t abcdk_rand(uint64_t *seed, uint64_t min, uint64_t max)
 {
     uint64_t next;
 
-    assert(seed != NULL);
+    assert(seed != NULL && min < max);
 
     if(*seed == 0)
         *seed = abcdk_time_clock2kind_with(CLOCK_MONOTONIC,6);
@@ -22,19 +22,22 @@ int64_t abcdk_rand(uint64_t *seed)
     next = next * 1103515245UL + 12345UL;
     next = next / 65536;
 
-    /*copy.*/
+    /*复制为种子.*/
     *seed = next;
+
+    /*限制到区间内。*/
+    next = next % (max - min + 1) + min;
 
     return next;
 }
 
-int64_t abcdk_rand_q()
+uint64_t abcdk_rand_number(uint64_t min, uint64_t max)
 {
     static uint64_t seed = 0;
     int64_t num;
 
     abcdk_atomic_lock();
-    num = abcdk_rand(&seed);
+    num = abcdk_rand(&seed,min,max);
     abcdk_atomic_unlock();
 
     return num;
@@ -72,7 +75,7 @@ char *abcdk_rand_bytes(char *buf, size_t size, int type)
 
     for (int i = 0; i < size; i++)
     {
-        uint64_t rand_num = abcdk_rand_number();
+        uint64_t rand_num = abcdk_rand_number(0,UINT64_MAX);
 
         if (0 == type)
             buf[i] = dict_printable[rand_num % sizeof(dict_printable)];
@@ -99,7 +102,7 @@ void abcdk_rand_shuffle(uint64_t *seed, size_t size, abcdk_rand_shuffle_swap_cb 
     for (size_t a = size - 1; a > 0; a--)
     {
         /*生成一个0到a的随机整数。*/
-        size_t b = (uint64_t)abcdk_rand(seed) % (a + 1);
+        size_t b = abcdk_rand(seed,0,a);
 
         /*交换a和b。*/
         swap_cb(a, b, opaque);
