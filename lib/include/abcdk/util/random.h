@@ -9,7 +9,7 @@
 
 #include "abcdk/util/defs.h"
 #include "abcdk/util/atomic.h"
-#include "abcdk/util/time.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 
@@ -18,17 +18,14 @@ __BEGIN_DECLS
  * 
  * @param [in out] seed 随机种子。
  */
-uint64_t abcdk_rand(uint64_t *seed, uint64_t min, uint64_t max);
-
-/** 产生一个随机数。*/
-uint64_t abcdk_rand_number(uint64_t min, uint64_t max);
+uint64_t abcdk_rand(uint64_t min, uint64_t max);
 
 /**
  * 产生随机字符。
  * 
  * @param [in] type 类型。0 所有可见字符，1 所有字母和数字，2 所在大写字母，3 所有小字字母，4 所有数字，5 所有字符。
 */
-char *abcdk_rand_bytes(char *buf,size_t size,int type);
+uint8_t *abcdk_rand_bytes(uint8_t *buf,size_t size,int type);
 
 /** 
  * 洗牌算法元素交换回调函数。
@@ -43,7 +40,7 @@ typedef void (*abcdk_rand_shuffle_swap_cb)(size_t a,size_t b, void *opaque);
  * @param [in out] seed 随机种子。
  * @param [in] size 元素数量。
 */
-void abcdk_rand_shuffle(uint64_t *seed,size_t size,abcdk_rand_shuffle_swap_cb swap_cb,void *opaque);
+void abcdk_rand_shuffle(size_t size,abcdk_rand_shuffle_swap_cb swap_cb,void *opaque);
 
 /**
  * 数组洗牌。
@@ -54,7 +51,7 @@ void abcdk_rand_shuffle(uint64_t *seed,size_t size,abcdk_rand_shuffle_swap_cb sw
  * @param [in] type 元素类型。1 uint8(int8)，2 uint16(int16)，3 uint32(int32)，4 uint64(int64)，5 float，6 double。
  * 
 */
-void *abcdk_rand_shuffle_array(void *buf,size_t count,uint64_t *seed,int type);
+void *abcdk_rand_shuffle_array(void *buf,size_t count,int type);
 
 
 __END_DECLS

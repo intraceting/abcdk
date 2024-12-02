@@ -68,6 +68,7 @@
 #include "abcdk/util/package.h"
 #include "abcdk/util/timer.h"
 #include "abcdk/util/cpu.h"
+#include "abcdk/util/enigma.h"
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/spinlock.h"
 #include "abcdk/util/rwlock.h"
@@ -149,7 +150,6 @@
 #include "abcdk/net/https.h"
 #include "abcdk/net/srpc.h"
 
-#include "abcdk/enigma/enigma.h"
 
 
 #endif //ABCDK_H

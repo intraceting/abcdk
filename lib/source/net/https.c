@@ -1940,9 +1940,9 @@ ERR:
     abcdk_https_response_header_set(stream,"Status","%d",(is_proxy ? 407 : 401));
 
     if(is_proxy)
-        abcdk_https_response_header_set(stream,"Proxy-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.realm,abcdk_rand_number(0,UINT64_MAX));
+        abcdk_https_response_header_set(stream,"Proxy-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.realm,abcdk_rand(0,UINT64_MAX));
     else 
-        abcdk_https_response_header_set(stream,"WWW-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.realm,abcdk_rand_number(0,UINT64_MAX));
+        abcdk_https_response_header_set(stream,"WWW-Authenticate","Digest realm=\"%s\", charset=utf-8, nonce=\"%llu\"",node_ctx_p->cfg.realm,abcdk_rand(0,UINT64_MAX));
 
  
     abcdk_https_response(stream,NULL);

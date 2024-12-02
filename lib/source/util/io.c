@@ -202,11 +202,11 @@ ssize_t abcdk_load(const char *file, void *buf, size_t size, size_t offset)
 
     off = lseek(fd, offset, SEEK_SET);
     if (off != offset)
-        return -1;
+        goto END;
 
     rlen = abcdk_read(fd, buf, size);
 
-final:
+END:
 
     abcdk_closep(&fd);
     

@@ -14,7 +14,7 @@ __BEGIN_DECLS
 /**
  * 获取CPUID。
  * 
- * @return >0 有效长度。<=0 不支持的CPU。
+ * @return > 0 有效长度。<= 0 不支持的CPU。
 */
 int abcdk_get_cpuid(unsigned int buf[48]);
 

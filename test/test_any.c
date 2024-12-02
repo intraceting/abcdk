@@ -1530,12 +1530,19 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("\n%d,%d\n",a,b);
 
-#elif 0
-    for(int i = 0;i<1000;i++)
+#elif 1
+
+    uint64_t s = 0;
+    abcdk_clock(s,&s);
+
+#pragma omp parallel for num_threads(4)
+    for(int i = 0;i<10000000;i++)
     {
-        int a = abcdk_rand_number(50,500);
-        printf("a=%d\n",a);
+        int a = abcdk_rand(50,500);
+        //printf("a=%d\n",a);
     }
+
+    printf("s=%llu\n",abcdk_clock(s,&s));
 #endif 
     return 0;
 }

@@ -4,8 +4,7 @@
  * MIT License
  *
  */
-#include "abcdk/enigma/enigma.h"
-
+#include "abcdk/util/enigma.h"
 
 /** Enigma转子。 */
 typedef struct _abcdk_enigma_rotor
@@ -37,24 +36,6 @@ struct _abcdk_enigma
     size_t cols;
 
 }; // abcdk_enigma_t;
-
-void abcdk_enigma_mkdict(uint64_t *seed, uint8_t *dict, size_t rows, size_t cols)
-{
-    uint8_t c;
-    int chk;
-
-    assert(seed != NULL && dict != NULL && rows > 0);
-
-    for (size_t y = 0; y < rows; y++)
-    {
-        /*生成连续不重复数字做为字典表。*/
-        for (size_t x = 0; x < cols; x++)
-            dict[y * cols + x] = x;
-
-        /*使用洗牌算法打乱字典表顺序。*/
-        abcdk_rand_shuffle_array(&dict[y * cols],cols,seed,1);
-    }
-}
 
 void abcdk_enigma_destroy(abcdk_enigma_t **ctx)
 {
@@ -183,60 +164,6 @@ int abcdk_enigma_init(abcdk_enigma_t *ctx,uint8_t rotors[],uint8_t rboard[])
     } 
 
     return 0;
-}
-
-int abcdk_enigma_init_ex(abcdk_enigma_t *ctx,const void *key,size_t klen)
-{
-    uint64_t seed[4] = {0};
-    uint8_t khc[32] = {0};
-    uint8_t *dist_p = NULL;
-    int chk;
-
-    assert(ctx != NULL && key != NULL);
-
-    /*变长密钥转换为定长。*/
-    chk = abcdk_sha256_once(key, klen, khc);
-    if (chk != 0)
-        return -1;
-
-    /*
-     * 分解为4组64位的整数做为随机种子。
-     * 
-     * 注：不能直接复制内存，因为存在大小端存储顺序不同的问题。
-     */
-    for (int i = 0; i < 32; i++)
-    {
-        seed[i % 4] <<= 8;
-        seed[i % 4] |= (uint64_t)khc[i];
-    }
-
-    /*申请轮子和反射板字典空间。*/
-    dist_p = abcdk_heap_alloc((ctx->rows + 1) * ctx->cols);
-    if (!dist_p)
-        return -1;
-
-    /*生成字典表。*/
-    for (size_t y = 0; y < ctx->rows + 1; y++)
-    {
-        /*确保行内字符的值不超出通道范围，同时不重复。*/
-        for (size_t x = 0; x < ctx->cols; x++)
-            dist_p[y * ctx->cols + x] = x;
-    }
-
-    /*打乱字典表。*/
-    for (int i = 0; i < 4; i++)
-    {
-        for (size_t y = 0; y < ctx->rows + 1; y++)
-        {
-            /*使用洗牌算法打乱字典表。*/
-            abcdk_rand_shuffle_array(&dist_p[y * ctx->cols], ctx->cols, &seed[i], 1);
-        }
-    }
-
-    chk = abcdk_enigma_init(ctx, dist_p, dist_p + ctx->rows * ctx->cols);
-    abcdk_heap_free(dist_p);
-
-    return chk;
 }
 
 static inline uint8_t _abcdk_enigma_light_v1(abcdk_enigma_t *ctx, uint8_t c)

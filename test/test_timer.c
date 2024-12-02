@@ -13,8 +13,9 @@
 
 static uint64_t _routine_cb(void *opaque)
 {
-    printf("ms=%.06f,len=%llu\n",(double)abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6)/1000000.,abcdk_rand_number(50,1234));
-    return abcdk_rand_number(500,2000);
+    printf("ms=%.06f,len=%llu\n",(double)abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6)/1000000.,abcdk_rand(50,1234));
+    //return abcdk_rand(1000,3000);
+    return abcdk_rand(1,3);
 }
 
 

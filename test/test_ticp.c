@@ -87,7 +87,7 @@ int abcdk_test_tipc(abcdk_option_t *args)
             sprintf(buf_p,"%caaaaaa",(i%3==0?'r':'a'));
             //sprintf(buf_p,"raaaaaa");
 
-            size_t buf_l2 = abcdk_rand_number(7, buf_l);
+            size_t buf_l2 = abcdk_rand(2, buf_l);
 
             abcdk_tipc_request(g_ctx,id2,buf_p,buf_l2,(buf_p[0]=='r'?&rsp_p:NULL));
 

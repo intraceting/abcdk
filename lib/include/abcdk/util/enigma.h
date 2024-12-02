@@ -44,13 +44,6 @@ abcdk_enigma_t *abcdk_enigma_create(int rows, int cols);
 */
 int abcdk_enigma_init(abcdk_enigma_t *ctx,uint8_t rotors[], uint8_t rboard[]);
 
-/** 
- * 初始化。
- * 
- * @return 0 成功，< 0 失败。
-*/
-int abcdk_enigma_init_ex(abcdk_enigma_t *ctx,const void *key,size_t klen);
-
 /**
  * 亮灯。
  * 

@@ -430,7 +430,7 @@ ERR:
                                node_ctx_p->father->name,
                                abcdk_time_format_gmt(NULL, node_ctx_p->loc_ctx),
                                node_ctx_p->father->realm,
-                               abcdk_rand_number(0,UINT64_MAX));
+                               abcdk_rand(0,UINT64_MAX));
 
     abcdk_trace_output( LOG_INFO, "Status: %s\n", abcdk_http_status_desc(407));
 
