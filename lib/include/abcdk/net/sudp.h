@@ -18,7 +18,9 @@
 #include "abcdk/util/rwlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/asioex.h"
+#include "abcdk/util/nonce.h"
 #include "abcdk/openssl/cipherex.h"
+
 
 __BEGIN_DECLS
 

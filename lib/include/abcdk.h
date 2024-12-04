@@ -80,6 +80,7 @@
 #include "abcdk/util/getpass.h"
 #include "abcdk/util/ipool.h"
 #include "abcdk/util/registry.h"
+#include "abcdk/util/nonce.h"
 
 #include "abcdk/log/logger.h"
 

@@ -1530,7 +1530,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("\n%d,%d\n",a,b);
 
-#elif 1
+#elif 0
 
     uint64_t s = 0;
     abcdk_clock(s,&s);
@@ -1543,6 +1543,51 @@ int abcdk_test_any(abcdk_option_t *args)
     }
 
     printf("s=%llu\n",abcdk_clock(s,&s));
+#elif 0
+
+    uint64_t a = abcdk_time_clock2kind_with(CLOCK_REALTIME,9);
+
+    printf("10=%llu\n",-1ULL);
+    printf("10=%llu\n",a);
+    printf("16=%llx\n",a);
+
+#elif 1
+
+    abcdk_nonce_t *ctx = abcdk_nonce_create();
+
+    uint8_t prefix[32] = {0};
+
+    abcdk_rand_bytes(prefix,32,1);
+
+    uint64_t time_base = abcdk_time_clock2kind_with(CLOCK_REALTIME,3);
+
+    abcdk_nonce_reset(ctx,prefix,time_base,5*1000);
+
+    for (int i = 0; i < 100; i++)
+    {
+        uint8_t key[48];
+
+        abcdk_nonce_generate(ctx,key);
+
+        uint64_t s = abcdk_rand(1000,6000);
+
+        usleep(s*1000);
+
+        int chk = abcdk_nonce_check(ctx,key);
+
+        uint64_t tick = abcdk_bloom_read_number(key, 48, 32 * 8, 64);
+        uint64_t index = abcdk_bloom_read_number(key, 48, 40 * 8, 64);
+        printf("tick(%llu),index(%llu),chk(%d)\n",tick,index,chk);
+
+        chk = abcdk_nonce_check(ctx,key);
+        assert(chk != 0);
+    }
+
+    getchar();
+
+    abcdk_nonce_stop(ctx);
+    abcdk_nonce_destroy(&ctx);
+
 #endif 
     return 0;
 }

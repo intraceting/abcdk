@@ -55,6 +55,7 @@ uint64_t abcdk_rand(uint64_t min, uint64_t max)
     uint64_t num;
     int chk;
 
+    assert(min < UINT64_MAX && max < UINT64_MAX);
     assert(min < max);
 
     chk = _abcdk_rand_read( &num, sizeof(num));
@@ -99,7 +100,7 @@ uint8_t *abcdk_rand_bytes(uint8_t *buf, size_t size, int type)
 
     for (int i = 0; i < size; i++)
     {
-        uint64_t rand_num = abcdk_rand(0,UINT64_MAX);
+        uint64_t rand_num = abcdk_rand(0,UINT64_MAX-1);
 
         if (0 == type)
             buf[i] = dict_printable[rand_num % sizeof(dict_printable)];

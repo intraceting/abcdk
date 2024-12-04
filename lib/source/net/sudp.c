@@ -25,6 +25,9 @@ struct _abcdk_sudp
     /**线程池环境。*/
     abcdk_worker_t *worker_ctx;
 
+    /**NONCE环境。*/
+    //abcdk_nonce_t *nonce_ctx;
+
 } ;//abcdk_sudp_t;
 
 /**UDP节点。 */
