@@ -18,7 +18,6 @@
 #include "abcdk/util/rwlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/asioex.h"
-#include "abcdk/util/nonce.h"
 #include "abcdk/openssl/cipherex.h"
 
 
@@ -136,6 +135,7 @@ int abcdk_sudp_set_timeout(abcdk_sudp_node_t *node, time_t timeout);
  * @return 0 成功，-1 失败。
 */
 int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node,const uint8_t *key,size_t klen,int flag);
+
 
 /**销毁*/
 void abcdk_sudp_destroy(abcdk_sudp_t **ctx);

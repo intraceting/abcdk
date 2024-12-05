@@ -71,9 +71,9 @@ static int _abcdk_registry_compare_cb(const void *key1, size_t size1, const void
 
     if (ctx->cfg.key_compare_cb)
         chk = ctx->cfg.key_compare_cb(key1, key2, ctx->cfg.opaque);
-    else if (key1 > key2)
+    else if (size1 > size2)
         chk = 1;
-    else if (key1 < key2)
+    else if (size1 < size2)
         chk = -1;
     else
         chk = memcmp(key1, key2, size1);
@@ -117,7 +117,7 @@ abcdk_registry_t *abcdk_registry_create(abcdk_registry_config_t *cfg)
 
     ctx->cfg = *cfg;
 
-    ctx->store_ctx = abcdk_map_create(100);
+    ctx->store_ctx = abcdk_map_create(100000);
     if(!ctx->store_ctx)
         goto ERR;
 
