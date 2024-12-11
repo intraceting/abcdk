@@ -17,41 +17,37 @@ typedef struct _abcdk_httpd
     abcdk_option_t *args;
 
     /*名称。*/
-    const char *name;
+    const char *name_p;
 
     /*授权存储路径。*/
-    const char *auth_path;
+    const char *auth_path_p;
 
     /*WEB根目录。*/
-    const char *root_path;
+    const char *root_path_p;
 
     /*CA证书。*/
-    const char *ca_file;
+    const char *ca_file_p;
 
     /*CA证书目录。*/
-    const char *ca_path;
+    const char *ca_path_p;
 
     /*服务器证书。*/
-    const char *cert_file;
+    const char *cert_file_p;
 
     /*服务器证书私钥。*/
-    const char *key_file;
-
-    /*是否验证对端证书。0 否，!0 是。*/
-    int check_cert;
-
+    const char *key_file_p;
 
     /*上行数量包最大长度。*/
     size_t up_max_size;
 
     /*上行数量包临时缓存目录。*/
-    const char *up_tmp_path;
+    const char *up_tmp_path_p;
 
     /*是否自动索引目录和文件。*/
     int auto_index;
 
     /*跨域服务器地址。*/
-    const char *a_c_a_o;
+    const char *acao_p;
 
     /*是否启用HTTP/2支持。*/
     int enable_h2;
@@ -65,9 +61,15 @@ typedef struct _abcdk_httpd
     /*时间环境*/
     locale_t loc_ctx;
 
+    /**证书。*/
+    X509 *pki_cert_ctx;
+
+    /**私钥。*/
+    EVP_PKEY *pki_key_ctx;
+
     abcdk_https_t *io_ctx;
-    abcdk_https_session_t *listen_p;
-    abcdk_https_session_t *listen_ssl_p;
+    abcdk_https_session_t *listen_session;
+    abcdk_https_session_t *listen_ssl_session;
 
 } abcdk_httpd_t;
 
@@ -169,12 +171,12 @@ void _abcdk_httpd_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t启用HTTP2协议。\n");
 }
 
-static void _abcdk_httpd_reply_nobody(abcdk_https_stream_t *stream, int status, const char *a_c_a_m)
+static void _abcdk_httpd_reply_nobody(abcdk_https_stream_t *stream, int status, const char *acam)
 {
     abcdk_httpd_stream_t *stream_ctx_p = (abcdk_httpd_stream_t *)abcdk_https_get_userdata(stream);
 
     abcdk_https_response_header_set(stream,"Status","%d",status);
-    abcdk_https_response_header_set(stream,"Access-Control-Allow-Methods","%s",(a_c_a_m?a_c_a_m:"*"));
+    abcdk_https_response_header_set(stream,"Access-Control-Allow-Methods","%s",(acam?acam:"*"));
     abcdk_https_response(stream,NULL);
 }
 
@@ -476,7 +478,7 @@ static void _abcdk_httpd_stream_request_cb(void *opaque, abcdk_https_stream_t *s
     abcdk_url_abspath(stream_ctx_p->script_de->pstrs[0], 0);
     stream_ctx_p->script_de->sizes[0] = strlen(stream_ctx_p->script_de->pstrs[0]);
 
-    stream_ctx_p->pathfile = abcdk_object_printf(PATH_MAX, "%s/%s", ctx_p->root_path, stream_ctx_p->script_de->pstrs[0]);
+    stream_ctx_p->pathfile = abcdk_object_printf(PATH_MAX, "%s/%s", ctx_p->root_path_p, stream_ctx_p->script_de->pstrs[0]);
 
     chk = stat(stream_ctx_p->pathfile->pstrs[0], &stream_ctx_p->attr);
     if (chk != 0)
@@ -547,27 +549,47 @@ static int _abcdk_httpd_start_listen(abcdk_httpd_t *ctx,int ssl)
     cfg.stream_request_cb = _abcdk_httpd_stream_request_cb;
     cfg.stream_output_cb = _abcdk_httpd_stream_output_cb;
     cfg.req_max_size = ctx->up_max_size;
-    cfg.req_tmp_path = ctx->up_tmp_path;
-    cfg.name = ctx->name;
+    cfg.req_tmp_path = ctx->up_tmp_path_p;
+    cfg.name = ctx->name_p;
     cfg.realm = "httpd";
     cfg.enable_h2 = ctx->enable_h2;
-    cfg.auth_path = ctx->auth_path;
-    cfg.a_c_a_o = ctx->a_c_a_o;
+    cfg.auth_path = ctx->auth_path_p;
+    cfg.a_c_a_o = ctx->acao_p;
 
     if (ssl)
     {
+        if(ctx->cert_file_p)
+        {
+            ctx->pki_cert_ctx = abcdk_openssl_cert_load(ctx->cert_file_p);
+            if(!ctx->pki_cert_ctx)
+            {
+                abcdk_trace_output(LOG_ERR, "加载证书(%s)失败。",ctx->cert_file_p);
+                return -2;
+            }
+        }
+
+        if(ctx->key_file_p)
+        {
+            ctx->pki_key_ctx = abcdk_openssl_evp_pkey_load(ctx->cert_file_p,0,NULL);
+            if(!ctx->pki_key_ctx)
+            {
+                abcdk_trace_output(LOG_ERR, "加载密钥(%s)失败。",ctx->key_file_p);
+                return -2;
+            }
+        }
+
         cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI;
-        cfg.pki_ca_file = ctx->ca_file;
-        cfg.pki_ca_path = ctx->ca_path;
-        cfg.pki_cert_file = ctx->cert_file;
-        cfg.pki_key_file = ctx->key_file;
-        cfg.pki_check_cert = ctx->check_cert;
+        cfg.pki_ca_file = ctx->ca_file_p;
+        cfg.pki_ca_path = ctx->ca_path_p;
+        cfg.pki_chk_crl = ((ctx->ca_file_p||ctx->ca_path_p)?2:0);
+        cfg.pki_use_cert = ctx->pki_cert_ctx;
+        cfg.pki_use_key = ctx->pki_key_ctx;
     }
 
     if (ssl)
-        listen_p = ctx->listen_ssl_p = abcdk_https_session_alloc(ctx->io_ctx);
+        listen_p = ctx->listen_ssl_session = abcdk_https_session_alloc(ctx->io_ctx);
     else 
-        listen_p = ctx->listen_p = abcdk_https_session_alloc(ctx->io_ctx);
+        listen_p = ctx->listen_session = abcdk_https_session_alloc(ctx->io_ctx);
 
     if (!listen_p)
     {
@@ -599,20 +621,19 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
 
     abcdk_trace_output(LOG_INFO, "启动……");
 
-    ctx->name = abcdk_option_get(ctx->args, "--name", 0, "ABCDK");
-    ctx->a_c_a_o = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
+    ctx->name_p = abcdk_option_get(ctx->args, "--name", 0, "ABCDK");
+    ctx->acao_p = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
 #ifdef HEADER_SSL_H
-    ctx->ca_file = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
-    ctx->ca_path = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
-    ctx->cert_file = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
-    ctx->key_file = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
-    ctx->check_cert =  abcdk_option_get_int(ctx->args, "--check-cert", 0, 0);
+    ctx->ca_file_p = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
+    ctx->ca_path_p = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
+    ctx->cert_file_p = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
+    ctx->key_file_p = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
 #endif // HEADER_SSL_H
-    ctx->root_path = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
+    ctx->root_path_p = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
-    ctx->up_tmp_path = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
+    ctx->up_tmp_path_p = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
     ctx->auto_index = abcdk_option_exist(ctx->args, "--auto-index");
-    ctx->auth_path = abcdk_option_get(ctx->args, "--auth-path", 0, NULL);
+    ctx->auth_path_p = abcdk_option_get(ctx->args, "--auth-path", 0, NULL);
     ctx->enable_h2 = abcdk_option_exist(ctx->args, "--enable-h2");
 
 #ifdef _MAGIC_H
@@ -624,8 +645,8 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     ctx->loc_ctx = newlocale(LC_ALL_MASK, "en_US.UTF-8", NULL);
 
     /*创建可能不存在的路径。*/
-    if(ctx->up_tmp_path)
-        abcdk_mkdir(ctx->up_tmp_path, 0600);
+    if(ctx->up_tmp_path_p)
+        abcdk_mkdir(ctx->up_tmp_path_p, 0600);
 
     ctx->io_ctx = abcdk_https_create();
     if (!ctx->io_ctx)
@@ -650,8 +671,8 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
 final:
 
     abcdk_https_destroy(&ctx->io_ctx);
-    abcdk_https_session_unref(&ctx->listen_p);
-    abcdk_https_session_unref(&ctx->listen_ssl_p);
+    abcdk_https_session_unref(&ctx->listen_session);
+    abcdk_https_session_unref(&ctx->listen_ssl_session);
 
 #ifdef _MAGIC_H
     if (ctx->magic_ctx)
@@ -660,6 +681,9 @@ final:
 
     if(ctx->loc_ctx)
         freelocale(ctx->loc_ctx);
+
+    abcdk_openssl_x509_free(&ctx->pki_cert_ctx);
+    abcdk_openssl_evp_pkey_free(&ctx->pki_key_ctx);
 
     abcdk_trace_output(LOG_INFO, "停止。");
 

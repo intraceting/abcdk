@@ -21,12 +21,6 @@ struct _abcdk_nonce
     /**看门狗。*/
     abcdk_timer_t *dog_ctx;
 
-    /**开始时间(毫秒,MONOTONIC)。*/
-    uint64_t begin_time;
-
-    /**时间基值(毫秒)。*/
-    uint64_t time_base;
-
     /**时间误差(毫秒)。*/
     uint64_t time_diff;
 
@@ -97,20 +91,16 @@ ERR:
 
 static uint64_t _abcdk_nonce_clock()
 {
-    return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
+    return abcdk_time_clock2kind_with(CLOCK_REALTIME, 3);
 }
 
-int abcdk_nonce_reset(abcdk_nonce_t *ctx,uint64_t time_base,uint64_t time_diff)
+int abcdk_nonce_reset(abcdk_nonce_t *ctx, uint64_t time_diff)
 {
-    assert(ctx != NULL && time_base != 0 && time_diff != 0);
+    assert(ctx != NULL && time_diff != 0);
 
     abcdk_rwlock_wrlock(ctx->locker_ctx,1);
 
-    /*重置时间。*/
-    ctx->begin_time = _abcdk_nonce_clock();
-
-    /*复制时间。*/
-    ctx->time_base = time_base;
+    /*复制时间误差。*/
     ctx->time_diff = time_diff;
 
     abcdk_rwlock_unlock(ctx->locker_ctx);
@@ -131,7 +121,7 @@ int abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32])
     */
 
     abcdk_rand_bytes(key, 16, 5);
-    abcdk_bloom_write_number(key, 48, 16 * 8, 64, ctx->time_base + (_abcdk_nonce_clock() - ctx->begin_time));
+    abcdk_bloom_write_number(key, 48, 16 * 8, 64, _abcdk_nonce_clock());
     abcdk_bloom_write_number(key, 48, 24 * 8, 64, abcdk_sequence_num());
 
     abcdk_rwlock_unlock(ctx->locker_ctx);
@@ -245,16 +235,16 @@ static void _abcdk_nonce_dog_process_node(abcdk_nonce_t *ctx,abcdk_nonce_node_t 
     uint64_t now_tick, old_tick, diff_tick;
     int chk;
 
+    /*获取现在的时间点。*/
+    now_tick = _abcdk_nonce_clock();
+
     /*读取旧的时间点。*/
     old_tick = abcdk_bloom_read_number(node->key, 32, 16 * 8, 64);
 
-    abcdk_rwlock_wrlock(ctx->locker_ctx, 1);
-
-    /*计算现在的时间点。*/
-    now_tick = ctx->time_base + (_abcdk_nonce_clock() - ctx->begin_time);
-
     /*计算时差。*/
     diff_tick = ((now_tick > old_tick) ? (now_tick - old_tick) : (old_tick - now_tick));
+
+    abcdk_rwlock_wrlock(ctx->locker_ctx, 1);
 
     /*比较时差。*/
     chk = (diff_tick > ctx->time_diff ? -1 : 0);
@@ -295,17 +285,17 @@ int abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
     int chk = -1;
 
     assert(ctx != NULL && key != NULL);
-    
+
+    /*获取现在的时间点。*/
+    now_tick = _abcdk_nonce_clock();
+
     /*读取旧的时间点。*/
     old_tick = abcdk_bloom_read_number(key, 32, 16 * 8, 64);
 
-    abcdk_rwlock_wrlock(ctx->locker_ctx, 1);
-
-    /*计算现在的时间点。*/
-    now_tick = ctx->time_base + (_abcdk_nonce_clock() - ctx->begin_time);
-
     /*计算时差。*/
     diff_tick = ((now_tick > old_tick) ? (now_tick - old_tick) : (old_tick - now_tick));
+
+    abcdk_rwlock_wrlock(ctx->locker_ctx, 1);
 
     /*比较时差。*/
     chk = (diff_tick > ctx->time_diff ? -1 : 0);

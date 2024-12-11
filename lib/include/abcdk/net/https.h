@@ -50,17 +50,18 @@ typedef struct _abcdk_https_config
     /**CA路径。*/
     const char *pki_ca_path;
 
+    /**
+     * 检查吊销列表。
+     * 
+     * 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
+    */
+    int pki_chk_crl;
+
     /**证书。*/
-    const char *pki_cert_file;
+    X509 *pki_use_cert;
 
     /**私钥。*/
-    const char *pki_key_file;
-    
-    /**密钥。*/
-    const char *pki_key_passwd;
-
-    /**是否验证对端证书。0 否，!0 是。*/
-    int pki_check_cert;
+    EVP_PKEY *pki_use_key;
 
     /**请求数量包最大长度。*/
     size_t req_max_size;

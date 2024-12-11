@@ -579,7 +579,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         X509_free(cert);
     }
 
-    if (node->cfg.pki_check_cert)
+    if (node->cfg.pki_ca_file || node->cfg.pki_ca_path)
     {
         chk = SSL_get_verify_result(node->openssl_ssl);
         if (chk != X509_V_OK)
@@ -701,7 +701,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         else
             return -16;
 
@@ -721,7 +721,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         else
             return -16;
 
@@ -988,45 +988,7 @@ void abcdk_stcp_stop(abcdk_stcp_t *ctx)
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 
-#ifdef HEADER_SSL_H
-#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-static int _abcdk_stcp_openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
-                                              const unsigned char *in, unsigned int inlen, void *arg)
-{
-    abcdk_stcp_node_t *node_p;
-    const unsigned char *srv;
-    unsigned int srvlen;
-
-    node_p = (abcdk_stcp_node_t *)arg;
-
-    if (!node_p->cfg.pki_next_proto)
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-
-    srv = node_p->cfg.pki_next_proto;
-    srvlen = strlen(node_p->cfg.pki_next_proto);
-
-    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
-    if (SSL_select_next_proto((unsigned char **)out, outlen, in, inlen, srv, srvlen) != OPENSSL_NPN_NEGOTIATED)
-    {
-        return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-
-    return SSL_TLSEXT_ERR_OK;
-}
-#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
-#endif // HEADER_SSL_H
-
-static void _abcdk_stcp_openssl_set_alpn(abcdk_stcp_node_t *node)
-{
-
-#ifdef HEADER_SSL_H
-#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-    SSL_CTX_set_alpn_select_cb(node->openssl_ctx, _abcdk_stcp_openssl_alpn_select_cb, (void *)node);
-#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
-#endif // HEADER_SSL_H
-}
-
-static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
+static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 {
     int ssl_chk;
     int ssl_err;
@@ -1035,31 +997,27 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
     if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag, (node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
-                                                             (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
-                                                             node->cfg.pki_cert_file, node->cfg.pki_key_file, node->cfg.pki_key_passwd);
+        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc(node->flag == ABCDK_STCP_FLAG_LISTEN, node->cfg.pki_ca_file, node->cfg.pki_ca_path,
+                                                        node->cfg.pki_chk_crl, node->cfg.pki_use_cert, node->cfg.pki_use_key);
 
         if (!node->openssl_ctx)
         {
-            abcdk_trace_output( LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
-        /*设置密码套件。*/
-        if (node->cfg.pki_cipher_list)
+        /*设置下层协议和密码套件。*/
+        if (node->cfg.pki_next_proto)
         {
-            ssl_chk = SSL_CTX_set_cipher_list(node->openssl_ctx, node->cfg.pki_cipher_list);
-            if (ssl_chk != 1)
+            chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx,node->cfg.pki_next_proto,node->cfg.pki_cipher_list);
+            if(chk != 0)
             {
-                ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
-                _abcdk_stcp_openssl_dump_errmsg(node, ssl_err);
+                abcdk_trace_output(LOG_WARNING, "设置下层协议(%s)和密码套件(%s)失败(ssl-scheme=%d)。",
+                                   node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list, node->cfg.ssl_scheme);
                 return -3;
             }
         }
 
-        /*设置下层协议。*/
-        if (node->cfg.pki_next_proto)
-            _abcdk_stcp_openssl_set_alpn(node);
 #else
         abcdk_trace_output( LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
         return -22;
@@ -1068,10 +1026,10 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
+        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         if (!node->openssl_bio)
         {
-            abcdk_trace_output( LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_trace_output(LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
             return -2;
         }
 
@@ -1086,7 +1044,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
 #ifdef HEADER_SSL_H
-        node->openssl_bio = abcdk_openssl_BIO_s_Darknet_form_file(ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR, node->cfg.ske_key_file);
+        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         if (!node->openssl_bio)
         {
             abcdk_trace_output( LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
@@ -1096,9 +1054,8 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
         /*仅用于验证。*/
         abcdk_openssl_BIO_destroy(&node->openssl_bio);
 
-        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(listen_flag, (node->cfg.pki_check_cert ? node->cfg.pki_ca_file : NULL),
-                                                             (node->cfg.pki_check_cert ? node->cfg.pki_ca_path : NULL),
-                                                             node->cfg.pki_cert_file, node->cfg.pki_key_file, node->cfg.pki_key_passwd);
+        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc(node->flag == ABCDK_STCP_FLAG_LISTEN, node->cfg.pki_ca_file, node->cfg.pki_ca_path,
+                                                        node->cfg.pki_chk_crl, node->cfg.pki_use_cert, node->cfg.pki_use_key);
 
         if (!node->openssl_ctx)
         {
@@ -1106,20 +1063,17 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
             return -2;
         }
 
-        /*设置密码套件。*/
-        if (node->cfg.pki_cipher_list)
+        /*设置下层协议和密码套件。*/
+        if (node->cfg.pki_next_proto)
         {
-            ssl_chk = SSL_CTX_set_cipher_list(node->openssl_ctx, node->cfg.pki_cipher_list);
-            if (ssl_chk != 1)
+            chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx,node->cfg.pki_next_proto,node->cfg.pki_cipher_list);
+            if(chk != 0)
             {
-                ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
-                _abcdk_stcp_openssl_dump_errmsg(node, ssl_err);
+                abcdk_trace_output(LOG_WARNING, "设置下层协议(%s)和密码套件(%s)失败(ssl-scheme=%d)。",
+                                   node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list, node->cfg.ssl_scheme);
                 return -3;
             }
         }
-
-        /*设置下层协议。*/
-        _abcdk_stcp_openssl_set_alpn(node);
 
 #else
         abcdk_trace_output( LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
@@ -1133,8 +1087,6 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node, int listen_flag)
 static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
 {
     /*修复不支持的配置和默认值。*/
-
-    node->cfg.ske_key_file = (node->cfg.ske_key_file ? node->cfg.ske_key_file : "");
 
     if (node->cfg.out_hook_min_th <= 0)
         node->cfg.out_hook_min_th = 200;
@@ -1238,7 +1190,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
         }
     }
 
-    chk = _abcdk_stcp_ssl_init(node_p, 1);
+    chk = _abcdk_stcp_ssl_init(node_p);
     if (chk != 0)
         goto ERR;
 
@@ -1329,7 +1281,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (chk != 0)
         goto ERR;
 
-    chk = _abcdk_stcp_ssl_init(node_p, 0);
+    chk = _abcdk_stcp_ssl_init(node_p);
     if (chk != 0)
         goto ERR;
 

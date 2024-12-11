@@ -26,21 +26,8 @@ struct _abcdk_openssl_cipher
     /*EVP环境。*/
     EVP_CIPHER_CTX *evp_ctx;
 
-#ifdef HEADER_RSA_H
-
-    /*RSA环境。*/
-    RSA *rsa_ctx;
-
-#endif // HEADER_RSA_H
-
     /*临时缓存。*/
     uint8_t tmpbuf[8192];
-
-    /*明文块长度。*/
-    int plaintext_bsize;
-
-    /*密文块长度。*/
-    int ciphertext_bsize;
 
     /*同步锁。*/
     abcdk_spinlock_t *locker_ctx;
@@ -71,175 +58,10 @@ void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    if (ctx_p->evp_ctx)
-    {
-        EVP_CIPHER_CTX_free(ctx_p->evp_ctx);
-        ctx_p->evp_ctx = NULL;
-    }
-
+    abcdk_openssl_evp_cipher_ctx_free(&ctx_p->evp_ctx);
     abcdk_object_unref(&ctx_p->evp_key);
-
-#ifdef HEADER_RSA_H
-    if (ctx_p->rsa_ctx)
-        RSA_free(ctx_p->rsa_ctx);
-#endif // HEADER_RSA_H
-
     abcdk_spinlock_destroy(&ctx_p->locker_ctx);
     abcdk_heap_free(ctx_p);
-}
-
-static int _abcdk_openssl_cipher_rsa_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
-{
-    FILE *fp = NULL;
-    int chk;
-
-#ifdef HEADER_RSA_H
-
-    fp = fmemopen((void *)key, key_len, "r");
-    if (!fp)
-        return -1;
-
-    if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE)
-    {
-        ctx->rsa_ctx = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL);
-    }
-    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
-    {
-        ctx->rsa_ctx = PEM_read_RSAPublicKey(fp, NULL, NULL, NULL);
-    }
-
-    fclose(fp);
-    fp = NULL;
-
-    if (!ctx->rsa_ctx)
-        goto ERR;
-
-    ctx->plaintext_bsize = RSA_size(ctx->rsa_ctx) - RSA_PKCS1_PADDING_SIZE;
-    ctx->ciphertext_bsize = RSA_size(ctx->rsa_ctx);
-
-    return 0;
-
-ERR:
-
-    if (fp)
-        fclose(fp);
-
-#endif // HEADER_RSA_H
-
-    return -1;
-}
-
-static int _abcdk_openssl_cipher_rsa_update_fragment(abcdk_openssl_cipher_t *ctx, uint8_t *out, int out_max, const uint8_t *in, int in_len, int enc)
-{
-    int chk;
-
-    /*
-     * |DATA    |PADDING  |
-     * |N bytes |11 bytes |
-     */
-
-#ifdef HEADER_RSA_H
-
-    if (enc)
-    {
-        if (in_len > ctx->plaintext_bsize)
-            return -1;
-
-        if (out_max < ctx->ciphertext_bsize)
-            return -2;
-
-        memcpy(ctx->tmpbuf, in, in_len);
-        _abcdk_openssl_cipher_rand_generate(ctx->tmpbuf + in_len, ctx->plaintext_bsize - in_len);
-
-        if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE)
-            chk = RSA_private_encrypt(ctx->plaintext_bsize, ctx->tmpbuf, out, ctx->rsa_ctx, RSA_PKCS1_PADDING);
-        else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
-            chk = RSA_public_encrypt(ctx->plaintext_bsize, ctx->tmpbuf, out, ctx->rsa_ctx, RSA_PKCS1_PADDING);
-        else
-            chk = -1;
-
-        if (chk <= 0)
-            return -3;
-
-        return ctx->ciphertext_bsize;
-    }
-    else
-    {
-        if (in_len != ctx->ciphertext_bsize)
-            return -1;
-
-        if (out_max < ctx->plaintext_bsize)
-            return -2;
-
-        if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE)
-            chk = RSA_private_decrypt(in_len, in, ctx->tmpbuf, ctx->rsa_ctx, RSA_PKCS1_PADDING);
-        else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
-            chk = RSA_public_decrypt(in_len, in, ctx->tmpbuf, ctx->rsa_ctx, RSA_PKCS1_PADDING);
-        else
-            chk = -1;
-
-        if (chk <= 0)
-            return -3;
-
-        memcpy(out, ctx->tmpbuf, ctx->plaintext_bsize);
-
-        return ctx->plaintext_bsize;
-    }
-
-#endif // #ifdef HEADER_RSA_H
-
-    return -1;
-}
-
-abcdk_object_t *_abcdk_openssl_cipher_rsa_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
-{
-    abcdk_object_t *out;
-    int blocks;
-    int chk;
-
-    if (enc)
-    {
-        blocks = abcdk_align(in_len, ctx->plaintext_bsize) / ctx->plaintext_bsize;
-
-        out = abcdk_object_alloc2(blocks * ctx->ciphertext_bsize);
-        if (!out)
-            return NULL;
-
-        for (int i = 0; i < blocks; i++)
-        {
-            if (i < (blocks - 1) || (in_len % ctx->plaintext_bsize) == 0)
-            {
-                _abcdk_openssl_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize,
-                                                  in + i * ctx->plaintext_bsize, ctx->plaintext_bsize, 1);
-            }
-            else
-            {
-                /*明文没有块对齐时，最后一块需要单独计算。*/
-                _abcdk_openssl_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize,
-                                                  in + i * ctx->plaintext_bsize, in_len % ctx->plaintext_bsize, 1);
-            }
-        }
-    }
-    else
-    {
-        /*密文必须是块对齐的。*/
-        if ((in_len % ctx->ciphertext_bsize) != 0)
-            return NULL;
-
-        blocks = in_len / ctx->ciphertext_bsize;
-
-        out = abcdk_object_alloc2(blocks * ctx->plaintext_bsize);
-        if (!out)
-            return NULL;
-
-        for (int i = 0; i < blocks; i++)
-        {
-            _abcdk_openssl_cipher_rsa_update_fragment(ctx, out->pptrs[0] + i * ctx->plaintext_bsize, ctx->plaintext_bsize,
-                                              in + i * ctx->ciphertext_bsize, ctx->ciphertext_bsize, 0);
-        }
-    }
-
-    return out;
 }
 
 static int _abcdk_openssl_cipher_aes256gcm_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
@@ -393,9 +215,6 @@ static int _abcdk_openssl_cipher_aes256cbc_init(abcdk_openssl_cipher_t *ctx, con
     ctx->evp_ctx = EVP_CIPHER_CTX_new();
     if (!ctx->evp_ctx)
         return -2;
-
-    ctx->plaintext_bsize = 16 * 64;
-    ctx->ciphertext_bsize = 16 * 64;
 
     return 0;
 }
@@ -553,12 +372,7 @@ static int _abcdk_openssl_cipher_init(abcdk_openssl_cipher_t *ctx, int scheme, c
 {
     int chk;
 
-    if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE || scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
-    {
-        ctx->scheme = scheme;
-        chk = _abcdk_openssl_cipher_rsa_init(ctx, key, key_len);
-    }
-    else if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM)
+    if (scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM)
     {
         ctx->scheme = scheme;
         chk = _abcdk_openssl_cipher_aes256gcm_init(ctx, key, key_len);
@@ -627,9 +441,7 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 
     assert(ctx != NULL && in != NULL && in_len > 0);
 
-    if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE || ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC)
-        out = _abcdk_openssl_cipher_rsa_update(ctx, in, in_len, enc);
-    else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM)
+    if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM)
         out = _abcdk_openssl_cipher_aes256gcm_update(ctx, in, in_len, enc);
     else if (ctx->scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC)
         out = _abcdk_openssl_cipher_aes256cbc_update(ctx, in, in_len, enc);

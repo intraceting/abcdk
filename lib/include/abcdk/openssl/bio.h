@@ -19,12 +19,12 @@ void abcdk_openssl_BIO_destroy(BIO **bio);
 /**
  * 创建兼容Darknet的BIO环境。
 */
-BIO *abcdk_openssl_BIO_s_Darknet(int scheme, const uint8_t *key,size_t size);
+BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey);
 
 /**
  * 创建兼容Darknet的BIO环境。
 */
-BIO *abcdk_openssl_BIO_s_Darknet_form_file(int scheme,const char *file);
+BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey);
 
 
 #endif //HEADER_BIO_H

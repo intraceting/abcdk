@@ -51,10 +51,6 @@ abcdk_openssl_cipherex_t *abcdk_openssl_cipherex_create(int worker, int scheme, 
     abcdk_openssl_cipherex_t *ctx;
 
     assert(worker >0 && scheme > 0 && key != NULL &&  klen > 0);
-    assert(scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE ||
-           scheme == ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC ||
-           scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM ||
-           scheme == ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC);
 
     ctx = (abcdk_openssl_cipherex_t*)abcdk_heap_alloc(sizeof(abcdk_openssl_cipherex_t));
     if(!ctx)

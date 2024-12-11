@@ -338,19 +338,19 @@ void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
     BIO_free(bio_ctx_p);
 }
 
-BIO *abcdk_openssl_BIO_s_Darknet(int scheme, const uint8_t *key,size_t size)
+BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey)
 {
     abcdk_openssl_BIO_t *bio_p;
     BIO *openssl_bio_p;
 
-    assert(scheme != 0 && key != NULL);
+    assert(rsa_ctx != NULL);
     
     bio_p = (abcdk_openssl_BIO_t*)abcdk_heap_alloc(sizeof(abcdk_openssl_BIO_t));
     if (!bio_p)
         goto ERR;
 
     bio_p->type = ABCDK_OPENSSL_BIO_DARKNET;
-    bio_p->dkt_ctx = abcdk_openssl_darknet_create(scheme,key,size);
+    bio_p->dkt_ctx = abcdk_openssl_darknet_create(rsa_ctx,use_pubkey);
     bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"Darknet BIO");
 
     if (!bio_p->dkt_ctx || !bio_p->method_ctx)
@@ -389,19 +389,20 @@ ERR:
     return NULL;
 }
 
-BIO *abcdk_openssl_BIO_s_Darknet_form_file(int scheme,const char *file)
+BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey)
 {
     BIO *bio_ctx;
-    abcdk_object_t *key;
+    RSA *rsa_ctx;
 
-    assert(scheme != 0 && file != NULL);
-
-    key = abcdk_mmap_filename(file, 0, 0, 0, 0);
-    if (!key)
+    assert(rsa_file != NULL);
+    
+    rsa_ctx = abcdk_openssl_rsa_load(rsa_file, pubkey, NULL);
+    if(!rsa_ctx)
         return NULL;
 
-    bio_ctx = abcdk_openssl_BIO_s_Darknet(scheme,key->pptrs[0], key->sizes[0]);
-    abcdk_object_unref(&key);
+    bio_ctx = abcdk_openssl_BIO_s_Darknet(rsa_ctx, pubkey);
+    abcdk_openssl_rsa_free(&rsa_ctx);
+
     if (!bio_ctx)
         return NULL;
 

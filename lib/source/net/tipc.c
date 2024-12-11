@@ -460,6 +460,7 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
 
     assert(cfg != NULL);
     assert(cfg->id != 0 && cfg->request_cb != NULL);
+    assert(cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW || cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI);
 
     ctx = (abcdk_tipc_t *)abcdk_heap_alloc(sizeof(abcdk_tipc_t));
     if (!ctx)
@@ -719,11 +720,9 @@ int abcdk_tipc_listen(abcdk_tipc_t *ctx, abcdk_sockaddr_t *addr)
     asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
     asio_cfg.pki_ca_file = ctx->cfg.pki_ca_file;
     asio_cfg.pki_ca_path = ctx->cfg.pki_ca_path;
-    asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
-    asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
-    asio_cfg.pki_key_passwd = ctx->cfg.pki_key_passwd;
-    asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
-    asio_cfg.ske_key_file = ctx->cfg.ske_key_file;
+    asio_cfg.pki_chk_crl = ctx->cfg.pki_chk_crl;
+    asio_cfg.pki_use_cert = ctx->cfg.pki_use_cert;
+    asio_cfg.pki_use_key = ctx->cfg.pki_use_key;
 
     asio_cfg.bind_addr = *addr;
 
@@ -769,11 +768,9 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     asio_cfg.ssl_scheme = ctx->cfg.ssl_scheme;
     asio_cfg.pki_ca_file = ctx->cfg.pki_ca_file;
     asio_cfg.pki_ca_path = ctx->cfg.pki_ca_path;
-    asio_cfg.pki_cert_file = ctx->cfg.pki_cert_file;
-    asio_cfg.pki_key_file = ctx->cfg.pki_key_file;
-    asio_cfg.pki_key_passwd = ctx->cfg.pki_key_passwd;
-    asio_cfg.pki_check_cert = ctx->cfg.pki_check_cert;
-    asio_cfg.ske_key_file = ctx->cfg.ske_key_file;
+    asio_cfg.pki_chk_crl = ctx->cfg.pki_chk_crl;
+    asio_cfg.pki_use_cert = ctx->cfg.pki_use_cert;
+    asio_cfg.pki_use_key = ctx->cfg.pki_use_key;
 
     asio_cfg.prepare_cb = _abcdk_tipc_prepare_cb;
     asio_cfg.event_cb = _abcdk_tipc_event_cb;

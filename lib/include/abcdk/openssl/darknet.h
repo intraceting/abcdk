@@ -23,15 +23,6 @@ __BEGIN_DECLS
 /**简单的安全套接字。*/
 typedef struct _abcdk_openssl_darknet abcdk_openssl_darknet_t;
 
-/**方案。*/
-typedef enum _abcdk_openssl_darknet_scheme
-{
-    /*AES256CTR。*/
-    ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR = 1
-#define ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR ABCDK_OPENSSL_DARKNET_SCHEME_AES256CTR
-
-} abcdk_openssl_darknet_scheme_t;
-
 /**
  * 销毁。
  * 
@@ -39,11 +30,18 @@ typedef enum _abcdk_openssl_darknet_scheme
 */
 void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx);
 
-/** 创建。*/
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(int scheme, const uint8_t *key,size_t size);
+/**
+ * 创建。
+ * 
+ * @note 内部会复制RSA环境，不会影响外部的使用。
+ * 
+ * @param [in] use_pubkey 使用公钥。!0 是，0 否。
+ * 
+*/
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey);
 
-/** 创建。*/
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(int scheme, const char *file);
+/**创建。*/
+abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file, int pubkey);
 
 /**
  * 设置关联句柄。

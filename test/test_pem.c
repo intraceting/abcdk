@@ -32,20 +32,23 @@ int abcdk_test_pem(abcdk_option_t *args)
     const char *crt_file_p = abcdk_option_get(args, "--crt-file", 0, NULL);
     const char *key_file_p = abcdk_option_get(args, "--key-file", 0, NULL);
 
+    X509 *crt = abcdk_openssl_cert_load(crt_file_p);
+
     abcdk_object_t *passwd = NULL;
-    EVP_PKEY *key = abcdk_openssl_key_load(key_file_p,&passwd);
+    EVP_PKEY *key = abcdk_openssl_evp_pkey_load(key_file_p,0,&passwd);
     assert(key != NULL);
 
 
     fprintf(stderr,"passwd: %s\n",passwd?passwd->pstrs[0]:"no passwd");
 
-    SSL_CTX *ssl_ctx = abcdk_openssl_ssl_ctx_alloc_load(iserver,ca_file_p,ca_path_p,crt_file_p,key_file_p,passwd?passwd->pstrs[0]:NULL);
+    SSL_CTX *ssl_ctx = abcdk_openssl_ssl_ctx_alloc(iserver,ca_file_p,ca_path_p,2,crt,key);
     assert(ssl_ctx != NULL);
 
     abcdk_openssl_ssl_ctx_free(&ssl_ctx);
 
     abcdk_object_unref(&passwd);
-    EVP_PKEY_free(key);
+    abcdk_openssl_x509_free(&crt);
+    abcdk_openssl_evp_pkey_free(&key);
 
 #endif //#ifdef HAVE_OPENSSL
     return 0;

@@ -57,25 +57,77 @@ void abcdk_openssl_init();
 
 /******************************************************************************************************/
 
+#ifdef OPENSSL_VERSION_NUMBER
+
+/**释放。 */
+void abcdk_openssl_bn_free(BIGNUM **bn);
+
+/**释放。 */
+void abcdk_openssl_evp_pkey_free(EVP_PKEY **pkey);
+
+/**释放。 */
+void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher);
+
+/**
+ * 加载密钥。
+ * 
+ * @note 仅支持PEM格式。
+ * 
+ * @param [in] key 密钥文件。
+ * @param [in] pubkey 是否为公钥。!0 是，0 否。
+ * @param [out] passwd 密钥密码，NULL(0) 忽略。
+ * 
+*/
+EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *key,int pubkey, abcdk_object_t **passwd);
+
+#endif //OPENSSL_VERSION_NUMBER
+
+/******************************************************************************************************/
+
 #ifdef HEADER_RSA_H
 
-/**检查密钥是否为私钥。 */
-int abcdk_openssl_rsa_is_private_key(RSA *rsa);
+/**释放。 */
+void abcdk_openssl_rsa_free(RSA **rsa);
+
+/**
+ * 检查密钥是否为私钥。
+ * 
+ * @return !0 是，0 否。
+*/
+int abcdk_openssl_rsa_is_prikey(RSA *rsa);
 
 /**
  * 创建RSA密钥对象。
  * 
- * @param bits KEY的长度(bits)
- * @param e 指数，见RSA_3/RSA_F4
+ * @param bits 密钥的长度(比特)。
+ * @param e 指数。见RSA_3/RSA_F4。
 */
 RSA *abcdk_openssl_rsa_create(int bits, unsigned long e);
 
 /**
+ * 加载密钥。
+ * 
+ * @note 仅支持PEM格式。
+ * 
+ * @param [in] key 密钥文件。
+ * @param [in] pubkey 是否为公钥。!0 是，0 否。
+ * @param [out] passwd 密钥密码，NULL(0) 忽略。
+ * 
+*/
+RSA *abcdk_openssl_rsa_load(const char *key,int pubkey, abcdk_object_t **passwd);
+
+/**
  * 导出密钥。
 */
-abcdk_object_t *abcdk_openssl_rsa_export(RSA *key);
+abcdk_object_t *abcdk_openssl_rsa_export(RSA *rsa);
 
-
+/**
+ * 加密解密。
+ * 
+ * @note 加密，输出的数据长度是“密文”的长度。
+ * @note 解密，输出的数据长度是“缓存”的长度。
+*/
+abcdk_object_t *abcdk_openssl_rsa_update(RSA *rsa, const uint8_t *in, int in_len, int enc);
 
 #endif //EADER_RSA_H
 
@@ -143,14 +195,17 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
 
 #ifdef HEADER_X509_H
 
+/**释放。 */
+void abcdk_openssl_x509_free(X509 **x509);
+
 /** 打印证书信息。*/
 abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509);
 
 /** 打印证书检验错误信息。 */
 abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx);
 
-/** 从证书中获取公钥。*/
-RSA *abcdk_openssl_cert_pubkey(X509 *x509);
+/** 从证书中获取RSA公钥。*/
+RSA *abcdk_openssl_cert_get_rsa_pubkey(X509 *x509);
 
 /**
  * 导出证书到内存。
@@ -177,16 +232,7 @@ X509_CRL *abcdk_openssl_crl_load(const char *crl);
 */
 X509 *abcdk_openssl_cert_load(const char *cert);
 
-/**
- * 加载私钥。
- * 
- * @note 仅支持PEM格式。
- * 
- * @param [in] key 私钥文件。
- * @param [out] passwd 私钥密码，NULL(0) 忽略。
- * 
-*/
-EVP_PKEY *abcdk_openssl_key_load(const char *key,abcdk_object_t **passwd);
+
 
 /**
  * 加载父证书。
@@ -249,32 +295,24 @@ void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx);
 /**
  * 创建SSL_CTX句柄。
  * 
- * @param server !0 服务端环境，0 客户端环境。
- * @param cafile CA证书文件的指针，NULL(0) 忽略。仅支持PEM格式。
- * @param capath CA证书目录的指针，NULL(0) 忽略。仅支持PEM格式。
- * @param crl_check 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
+ * @note 仅支持PEM格式。
+ * 
+ * @param server !0 服务端，0 客户端。
+ * @param cafile CA证书文件，NULL(0) 忽略。
+ * @param capath CA证书目录，NULL(0) 忽略。
+ * @param chk_crl 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
+ * @param use_crt 证书。NULL(0) 忽略。
+ * @param use_key 私钥。NULL(0) 忽略。
  * 
 */
-SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath,int crl_check);
+SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server, const char *cafile, const char *capath, int chk_crl, X509 *use_crt, EVP_PKEY *use_key);
 
 /**
- * SSL_CTX加载证书、私钥。
+ * 设置应用层协议和算法。
  * 
- * @param crt 证书文件的指针。仅支持PEM格式。
- * @param key 私钥文件的指针，NULL(0) 忽略。仅支持PEM格式。
- * @param pwd 密码的指针，NULL(0) 忽略。
- * 
- * @return 0 成功，-1 失败。
+ *  @return 0 成功，-1 失败。
 */
-int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx,const char *crt,const char *key,const char *pwd);
-
-/**
- * 创建SSL_CTX环境，并加载证书和私钥。
- * 
- * @note 当指定CA证书时，将检查对端证书。
- * @note 当指定CA路径时，将检查吊销列表和对端证书。
-*/
-SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server,const char *cafile,const char *capath,const char *crt,const char *key,const char *pwd);
+int abcdk_openssl_ssl_ctx_set_alpn(SSL_CTX *ctx,const uint8_t *next_proto,const char *cipher_list);
 
 /**
  * 释放SSL环境。

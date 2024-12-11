@@ -1262,66 +1262,6 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 0
 
-
-#ifdef HAVE_OPENSSL
-
-    const char *prikey_file = abcdk_option_get(args, "--private-key-file", 0, "");
-    const char *pubkey_file = abcdk_option_get(args, "--public-key-file", 0, "");
-
-    abcdk_openssl_cipher_t *pri_cipher = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PRIVATE,prikey_file);
-    abcdk_openssl_cipher_t *pub_cipher = abcdk_openssl_cipher_create_from_file(ABCDK_OPENSSL_CIPHER_SCHEME_RSA_PUBLIC,pubkey_file);
-
-    int bufsize = 2000;
-    char buf[bufsize];
-    memset(buf,'a',bufsize);
-
-
-    abcdk_object_t *buf2 = abcdk_openssl_cipher_update(pri_cipher,buf,bufsize,1);
-    abcdk_object_t *buf3 = abcdk_openssl_cipher_update(pri_cipher,buf,bufsize,1);
-
-    abcdk_object_t *buf4 = abcdk_openssl_cipher_update(pub_cipher,buf2->pptrs[0],buf2->sizes[0],0);
-    abcdk_object_t *buf5 = abcdk_openssl_cipher_update(pub_cipher,buf3->pptrs[0],buf3->sizes[0],0);
-
-    assert(memcmp(buf4->pptrs[0],buf5->pptrs[0],bufsize)==0);
-    assert(memcmp(buf,buf5->pptrs[0],bufsize)==0);
-
-    abcdk_object_unref(&buf2);
-    abcdk_object_unref(&buf3);
-    abcdk_object_unref(&buf4);
-    abcdk_object_unref(&buf5);
-
-    abcdk_object_t *src = abcdk_object_alloc2(100000);
-
-    uint64_t dot = 0;
-    abcdk_clock(dot,&dot);
-
-    for(int i = 1;i<10000;i++)
-    {
-        RAND_bytes(src->pptrs[0],i);
-
-        abcdk_object_t *buf6 = abcdk_openssl_cipher_update(i%2?pri_cipher:pub_cipher,src->pptrs[0],i,1);
-
-        abcdk_object_t *buf7 = abcdk_openssl_cipher_update(i%2?pub_cipher:pri_cipher,buf6->pptrs[0],buf6->sizes[0],0);
-
-        assert(memcmp(src->pptrs[0],buf7->pptrs[0],i)==0);
-
-        abcdk_object_unref(&buf6);
-        abcdk_object_unref(&buf7);
-    }
-
-    uint64_t step = abcdk_clock(dot,&dot);
-    fprintf(stderr,"cast:%.6f\n",(double)step/1000000.);
-
-    abcdk_object_unref(&src);
-
-    abcdk_openssl_cipher_destroy(&pri_cipher);
-    abcdk_openssl_cipher_destroy(&pub_cipher);
-
-#endif //HAVE_OPENSSL
-
-
-#elif 0
-
 #ifdef HAVE_OPENSSL
 
     const char *ca_file = abcdk_option_get(args, "--ca-file", 0, NULL);
@@ -1488,7 +1428,9 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #ifdef HAVE_OPENSSL
 
-    BIO *bio_p = abcdk_openssl_BIO_s_Darknet(1,"abc",3);
+    RSA *rsa_ctx = abcdk_openssl_rsa_create(2048, RSA_F4);
+
+    BIO *bio_p = abcdk_openssl_BIO_s_Darknet(rsa_ctx,0);
 
     BIO_set_fd(bio_p,1,0);
 
@@ -1498,9 +1440,42 @@ int abcdk_test_any(abcdk_option_t *args)
     BIO_write(bio_p,buf,100);
 
     BIO_free(bio_p);
+    abcdk_openssl_rsa_free(&rsa_ctx);
 
 #endif //HAVE_OPENSSL
+#elif 1
 
+#ifdef HAVE_OPENSSL
+
+    RSA *rsa_ctx = abcdk_openssl_rsa_create(2048, RSA_F4);
+
+    int use_pubkey = rand()%2;
+
+    abcdk_openssl_darknet_t *a_p = abcdk_openssl_darknet_create(rsa_ctx,use_pubkey);
+    abcdk_openssl_darknet_t *b_p = abcdk_openssl_darknet_create(rsa_ctx,!use_pubkey);
+
+    int pipefd[2] = {-1,-1};
+
+    pipe2(pipefd,O_NONBLOCK|O_CLOEXEC);
+
+    abcdk_openssl_darknet_set_fd(a_p,pipefd[0],1);
+    abcdk_openssl_darknet_set_fd(b_p,pipefd[1],2);
+
+    char send_buf[100];
+    char recv_buf[100];
+
+    RAND_bytes(send_buf,100);
+
+    abcdk_openssl_darknet_write(b_p,send_buf,100);
+    abcdk_openssl_darknet_read(a_p,recv_buf,100);
+
+    assert(memcmp(send_buf,recv_buf,100) ==0);
+    
+    abcdk_openssl_darknet_destroy(&a_p);
+    abcdk_openssl_darknet_destroy(&b_p);
+    abcdk_openssl_rsa_free(&rsa_ctx);
+
+#endif //HAVE_OPENSSL
 #elif 0
 
     const char *cert_file_p = abcdk_option_get(args, "--cert-file", 0, NULL);
@@ -1551,13 +1526,11 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("10=%llu\n",a);
     printf("16=%llx\n",a);
 
-#elif 1
+#elif 0
 
     abcdk_nonce_t *ctx = abcdk_nonce_create();
 
-    uint64_t time_base = abcdk_time_clock2kind_with(CLOCK_REALTIME,3);
-
-    abcdk_nonce_reset(ctx,time_base,60*1000);
+    abcdk_nonce_reset(ctx,10);
 
     for (int i = 0; i < 1000000000; i++)
     {
@@ -1566,9 +1539,9 @@ int abcdk_test_any(abcdk_option_t *args)
         abcdk_nonce_generate(ctx,key);
 
         //uint64_t s = abcdk_rand(1000,6000);
-      //  uint64_t s = abcdk_rand(1,6);
+        uint64_t s = abcdk_rand(1,11);
 
-     //   usleep(s*10);
+        usleep(s*1000);
 
         int chk = abcdk_nonce_check(ctx,key);
 
@@ -1583,6 +1556,72 @@ int abcdk_test_any(abcdk_option_t *args)
     getchar();
 
     abcdk_nonce_destroy(&ctx);
+
+#elif 0
+
+#ifdef HAVE_OPENSSL
+
+    const char *key_file_p = abcdk_option_get(args, "--key-file", 0, NULL);
+    int key_private = abcdk_option_get_int(args, "--key-private", 0, 0);
+
+    EVP_PKEY *pkey = abcdk_openssl_pkey_load(key_file_p, !key_private, NULL);
+
+    RSA *rsa = EVP_PKEY_get1_RSA(pkey);
+
+    RSA *rsa2 = (key_private ? RSAPrivateKey_dup(rsa) : RSAPublicKey_dup(rsa));
+  //  RSA *rsa2 = RSAPrivateKey_dup(rsa);
+
+    
+
+    abcdk_openssl_rsa_free(&rsa2);
+    abcdk_openssl_rsa_free(&rsa);
+
+    abcdk_openssl_evp_pkey_free(&pkey);
+
+#endif //HAVE_OPENSSL
+#elif 0
+
+#ifdef HAVE_OPENSSL
+
+    // const char *prikey_file_p = abcdk_option_get(args, "--prikey-file", 0, NULL);
+    // const char *pubkey_file_p = abcdk_option_get(args, "--pubkey-file", 0, NULL);
+
+    // EVP_PKEY *prikey = abcdk_openssl_pkey_load(prikey_file_p, 1, NULL);
+    // EVP_PKEY *pubkey = abcdk_openssl_pkey_load(pubkey_file_p, 0, NULL);
+
+    // RSA *prirsa = EVP_PKEY_get1_RSA(prikey);
+    // RSA *pubrsa = EVP_PKEY_get1_RSA(pubkey);
+
+     RSA *prirsa = abcdk_openssl_rsa_create(512,RSA_F4);
+     RSA *pubrsa = RSAPublicKey_dup(prirsa);
+
+   
+
+//#pragma omp parallel for num_threads(4)
+    for (int i = 1; i < 100000; i++)
+    {
+        char *src = abcdk_heap_alloc(i);
+        RAND_bytes(src, i);
+
+        abcdk_object_t *dst = abcdk_openssl_rsa_update(prirsa, src, i, 1);
+        abcdk_object_t *dst2 = abcdk_openssl_rsa_update(pubrsa, dst->pptrs[0], dst->sizes[0], 0);
+
+    //    assert(dst2->sizes[0] == i);
+        assert(memcmp(dst2->pptrs[0], src,i)==0);
+
+        abcdk_object_unref(&dst);
+        abcdk_object_unref(&dst2);
+        abcdk_heap_free(src);
+    }
+
+
+
+    abcdk_openssl_rsa_free(&prirsa);
+    abcdk_openssl_rsa_free(&pubrsa);
+
+    // abcdk_openssl_evp_pkey_free(&prikey);
+    // abcdk_openssl_evp_pkey_free(&pubkey);
+#endif //HAVE_OPENSSL
 
 #endif 
     return 0;

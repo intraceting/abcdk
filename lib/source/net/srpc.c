@@ -129,17 +129,6 @@ SSL *abcdk_srpc_ssl_get_handle(abcdk_srpc_session_t *node)
     return abcdk_stcp_ssl_get_handle(node_p);
 }
 
-char *abcdk_srpc_ssl_get_alpn_selected(abcdk_srpc_session_t *node, char proto[255+1])
-{
-    abcdk_stcp_node_t *node_p;
-
-    assert(node != NULL && proto != NULL);
-
-    node_p = (abcdk_stcp_node_t *)node;
-
-    return abcdk_stcp_ssl_get_alpn_selected(node_p,proto);
-}
-
 void *abcdk_srpc_get_userdata(abcdk_srpc_session_t *session)
 {
     abcdk_stcp_node_t *node_p;
@@ -455,11 +444,10 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_srpc_config_t *cfg)
     asio_cfg.ssl_scheme = cfg->ssl_scheme;
     asio_cfg.pki_ca_file = cfg->pki_ca_file;
     asio_cfg.pki_ca_path = cfg->pki_ca_path;
-    asio_cfg.pki_cert_file = cfg->pki_cert_file;
-    asio_cfg.pki_key_file = cfg->pki_key_file;
-    asio_cfg.pki_key_passwd = cfg->pki_key_passwd;
-    asio_cfg.pki_check_cert = cfg->pki_check_cert;
-    asio_cfg.ske_key_file = cfg->ske_key_file;
+    asio_cfg.pki_chk_crl = cfg->pki_chk_crl;
+    asio_cfg.pki_use_cert = cfg->pki_use_cert;
+    asio_cfg.pki_use_key = cfg->pki_use_key;
+    asio_cfg.ske_use_key = cfg->ske_use_key;
 
     asio_cfg.bind_addr = cfg->bind_addr;
     asio_cfg.bind_ifname = cfg->bind_ifname;
@@ -494,11 +482,10 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     asio_cfg.ssl_scheme = cfg->ssl_scheme;
     asio_cfg.pki_ca_file = cfg->pki_ca_file;
     asio_cfg.pki_ca_path = cfg->pki_ca_path;
-    asio_cfg.pki_cert_file = cfg->pki_cert_file;
-    asio_cfg.pki_key_file = cfg->pki_key_file;
-    asio_cfg.pki_key_passwd = cfg->pki_key_passwd;
-    asio_cfg.pki_check_cert = cfg->pki_check_cert;
-    asio_cfg.ske_key_file = cfg->ske_key_file;
+    asio_cfg.pki_chk_crl = cfg->pki_chk_crl;
+    asio_cfg.pki_use_cert = cfg->pki_use_cert;
+    asio_cfg.pki_use_key = cfg->pki_use_key;
+    asio_cfg.ske_use_key = cfg->ske_use_key;
 
     asio_cfg.bind_addr = cfg->bind_addr;
     asio_cfg.bind_ifname = cfg->bind_ifname;

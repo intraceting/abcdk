@@ -1085,6 +1085,7 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     int chk;
 
     assert(session != NULL && addr != NULL && cfg != NULL);
+    assert(cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_RAW || cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI);
     assert(cfg->session_prepare_cb != NULL && cfg->stream_request_cb != NULL);
     assert(cfg->req_max_size > 1024);
 
@@ -1098,14 +1099,13 @@ int abcdk_https_session_listen(abcdk_https_session_t *session,abcdk_sockaddr_t *
     asio_cfg.ssl_scheme = cfg->ssl_scheme;
     asio_cfg.pki_ca_file = cfg->pki_ca_file;
     asio_cfg.pki_ca_path = cfg->pki_ca_path;
-    asio_cfg.pki_cert_file = cfg->pki_cert_file;
-    asio_cfg.pki_key_passwd = cfg->pki_key_passwd;
-    asio_cfg.pki_key_file = cfg->pki_key_file;
-    asio_cfg.pki_check_cert = cfg->pki_check_cert;
+    asio_cfg.pki_chk_crl = cfg->pki_chk_crl;
+    asio_cfg.pki_use_cert = cfg->pki_use_cert;
+    asio_cfg.pki_use_key = cfg->pki_use_key;
 
     if (cfg->ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
-        /*set default HTTP1.1*/
+        /*Default HTTP/1.1*/
         asio_cfg.pki_next_proto = "\x08http/1.1";
 
 #ifdef NGHTTP2_H

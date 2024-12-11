@@ -38,20 +38,18 @@ typedef struct _abcdk_tipc_config
     /*CA路径。*/
     const char *pki_ca_path;
 
-    /*证书。*/
-    const char *pki_cert_file;
+    /**
+     * 检查吊销列表。
+     * 
+     * 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
+    */
+    int pki_chk_crl;
 
-    /*私钥。*/
-    const char *pki_key_file;
-    
-    /**密钥。*/
-    const char *pki_key_passwd;
+    /**证书。*/
+    X509 *pki_use_cert;
 
-    /*是否验证对端证书。0 否，!0 是。*/
-    int pki_check_cert;
-
-    /*共享密钥。*/
-    const char *ske_key_file;
+    /**私钥。*/
+    EVP_PKEY *pki_use_key;
     
     /**
      * 节点连接通知回调函数。

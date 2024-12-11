@@ -10,7 +10,7 @@
 
 void abcdk_openssl_cleanup()
 {
-#ifdef HEADER_E_OS2_H
+#ifdef OPENSSL_VERSION_NUMBER
 #ifndef OPENSSL_NO_DEPRECATED
     ERR_remove_state(0);
 #endif //OPENSSL_NO_DEPRECATED
@@ -26,47 +26,146 @@ void abcdk_openssl_cleanup()
     CONF_modules_free();
     CONF_modules_unload(1);
     SSL_COMP_free_compression_methods();
-#endif // HEADER_E_OS2_H
+#endif // OPENSSL_VERSION_NUMBER
 }
 
 
 void abcdk_openssl_init()
 {
-#ifdef HEADER_E_OS2_H
+#ifdef OPENSSL_VERSION_NUMBER
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     ERR_load_BIO_strings();
     ERR_load_crypto_strings();
     SSL_load_error_strings();
-#endif //HEADER_E_OS2_H
+#endif //OPENSSL_VERSION_NUMBER
 }
+
+/******************************************************************************************************/
+
+#ifdef OPENSSL_VERSION_NUMBER
+
+typedef struct _abcdk_openssl_pem_password_ctx
+{
+    const char *key;
+    abcdk_object_t *passwd;
+}abcdk_openssl_pem_password_ctx_t;
+
+static int _abcdk_openssl_pem_password_cb(char *buf, int size, int rwflag, void *userdata)
+{
+    abcdk_openssl_pem_password_ctx_t *ctx = (abcdk_openssl_pem_password_ctx_t*)userdata;
+    int chk;
+
+    abcdk_object_unref(&ctx->passwd);//free.
+    ctx->passwd = abcdk_getpass(NULL,"Enter passphrase for %s",ctx->key);
+
+    chk = ABCDK_MIN((int)ctx->passwd->sizes[0],size);
+    memcpy(buf,ctx->passwd->pptrs[0],chk);
+
+    return chk;
+}
+
+void abcdk_openssl_bn_free(BIGNUM **bn)
+{
+    BIGNUM *bn_p;
+
+    if(!bn || !*bn)
+        return;
+
+    bn_p = *bn;
+    *bn = NULL;
+
+    BN_clear_free(bn_p);
+}
+
+void abcdk_openssl_evp_pkey_free(EVP_PKEY **pkey)
+{
+    EVP_PKEY *pkey_p;
+
+    if(!pkey || !*pkey)
+        return;
+
+    pkey_p = *pkey;
+    *pkey = NULL;
+
+    EVP_PKEY_free(pkey_p);
+}
+
+void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher)
+{
+    EVP_CIPHER_CTX *cipher_p;
+
+    if(!cipher || !*cipher)
+        return;
+
+    cipher_p = *cipher;
+    *cipher = NULL;
+
+    EVP_CIPHER_CTX_cleanup(cipher_p);
+    EVP_CIPHER_CTX_free(cipher_p);
+}
+
+EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *key, int pubkey, abcdk_object_t **passwd)
+{
+    EVP_PKEY *pkey = NULL;
+    FILE *fp = NULL;
+    abcdk_openssl_pem_password_ctx_t ctx = {0};
+
+    assert(key != NULL);
+
+    ctx.key = key;
+    ctx.passwd = NULL;
+
+    fp = fopen(key, "r");
+    if (fp)
+    {
+        if (!pubkey)
+            pkey = PEM_read_PrivateKey(fp, NULL, _abcdk_openssl_pem_password_cb, &ctx);
+        else
+            pkey = PEM_read_PUBKEY(fp, NULL, _abcdk_openssl_pem_password_cb, &ctx);
+
+        fclose(fp);
+    }
+    
+    if (passwd && ctx.passwd)
+        *passwd = abcdk_object_refer(ctx.passwd);
+
+    abcdk_object_unref(&ctx.passwd); // free.
+    return pkey;
+}
+
+#endif //OPENSSL_VERSION_NUMBER
 
 /******************************************************************************************************/
 
 #ifdef HEADER_RSA_H
 
-int abcdk_openssl_rsa_is_private_key(RSA *rsa) 
+void abcdk_openssl_rsa_free(RSA **rsa)
 {
-#ifdef HEADER_BIO_H
+    RSA *rsa_p;
 
-    const BIGNUM *d_p = NULL;
+    if(!rsa || !*rsa)
+        return;
+
+    rsa_p = *rsa;
+    *rsa = NULL;
+
+    RSA_free(rsa_p);
+}
+
+int abcdk_openssl_rsa_is_prikey(RSA *rsa) 
+{
+    RSA *rsa_p;
+    int chk;
 
     assert(rsa != NULL);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    RSA_get0_key(rsa, NULL, NULL, &d_p);
-#else //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    d_p = rsa->d;
-#endif //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    rsa_p = RSAPrivateKey_dup(rsa);
+    chk = (rsa_p != NULL);
 
-    /*仅私钥中存在这个组件，公钥中没有。*/
-    return (d_p != NULL);
+    abcdk_openssl_rsa_free(&rsa_p);
 
-#else //HEADER_BIO_H
-
-    return 0;
-
-#endif //HEADER_BIO_H
+    return chk;
 }
 
 RSA *abcdk_openssl_rsa_create(int bits, unsigned long e)
@@ -93,23 +192,40 @@ RSA *abcdk_openssl_rsa_create(int bits, unsigned long e)
     if (chk <= 0)
         goto ERR;
 
-    BN_clear_free(bne);
+    abcdk_openssl_bn_free(&bne);
     return key;
 
 ERR:
         
-    if(key)
-        RSA_free(key);
-    if(bne)
-        BN_clear_free(bne);
+    abcdk_openssl_rsa_free(&key);
+    abcdk_openssl_bn_free(&bne);
 
 #endif //HEADER_BIO_H
 
     return NULL;
 }
 
+RSA *abcdk_openssl_rsa_load(const char *key, int pubkey, abcdk_object_t **passwd)
+{
+    EVP_PKEY *pkey;
+    RSA *rsa_ctx;
 
-abcdk_object_t *abcdk_openssl_rsa_export(RSA *key)
+    assert(key != NULL);
+
+    pkey = abcdk_openssl_evp_pkey_load(key, pubkey, NULL);
+    if (!pkey)
+        return NULL;
+
+    rsa_ctx = EVP_PKEY_get1_RSA(pkey);
+    abcdk_openssl_evp_pkey_free(&pkey);
+
+    if(!rsa_ctx)
+        return NULL;
+
+    return rsa_ctx;
+}
+
+abcdk_object_t *abcdk_openssl_rsa_export(RSA *rsa)
 {
 #ifdef HEADER_BIO_H
 
@@ -118,15 +234,17 @@ abcdk_object_t *abcdk_openssl_rsa_export(RSA *key)
     char *key_p = NULL;
     long key_l = 0;
     int chk;
+
+    assert(rsa != NULL);
     
     pem_bio = BIO_new(BIO_s_mem());
     if(!pem_bio)
         return NULL;
 
-    if(abcdk_openssl_rsa_is_private_key(key))
-        chk = PEM_write_bio_RSAPrivateKey(pem_bio, key, NULL, NULL, 0, NULL, NULL);
+    if(abcdk_openssl_rsa_is_prikey(rsa))
+        chk = PEM_write_bio_RSAPrivateKey(pem_bio, rsa, NULL, NULL, 0, NULL, NULL);
     else 
-        chk = PEM_write_bio_RSA_PUBKEY(pem_bio, key);
+        chk = PEM_write_bio_RSA_PUBKEY(pem_bio, rsa);
 
     if(chk != 1)
         goto ERR;
@@ -148,6 +266,116 @@ ERR:
 #endif //HEADER_BIO_H
 
     return NULL;
+}
+
+static int _abcdk_openssl_rsa_update_fragment(uint8_t *out, int out_max, const uint8_t *in, int in_len,
+                                              int enc, RSA *rsa, int pubkey, int pt_bsize, int ct_bsize, int padding)
+{
+    uint8_t tmpbuf[1024];
+    int chk;
+
+    /*
+     * |DATA    |PADDING  |
+     * |N bytes |11 bytes |
+     */
+
+    if (enc)
+    {
+        assert(in_len <= pt_bsize);
+        assert(out_max >= ct_bsize);
+
+        memcpy(tmpbuf, in, in_len);
+        RAND_bytes(tmpbuf + in_len, pt_bsize - in_len);
+
+        if (!pubkey)
+            chk = RSA_private_encrypt(pt_bsize, tmpbuf, out, rsa, padding);
+        else 
+            chk = RSA_public_encrypt(pt_bsize, tmpbuf, out, rsa, padding);
+
+        if (chk <= 0)
+            return -3;
+
+        return ct_bsize;
+    }
+    else
+    {
+        assert(in_len == ct_bsize);
+        assert(out_max >= pt_bsize);
+
+        if (!pubkey)
+            chk = RSA_private_decrypt(in_len, in, tmpbuf, rsa, padding);
+        else 
+            chk = RSA_public_decrypt(in_len, in, tmpbuf, rsa, padding);
+
+        if (chk <= 0)
+            return -3;
+
+        memcpy(out, tmpbuf, pt_bsize);
+
+        return pt_bsize;
+    }
+
+    return -1;
+}
+
+abcdk_object_t *abcdk_openssl_rsa_update(RSA *rsa, const uint8_t *in, int in_len, int enc)
+{
+    abcdk_object_t *out;
+    int pubkey,blocks,pt_bsize, ct_bsize;
+    int chk;
+
+    assert(rsa != NULL && in != NULL && in_len > 0);
+
+    /*判断KEY类型。*/
+    pubkey = !abcdk_openssl_rsa_is_prikey(rsa);
+
+    /*计算明文和密文的块长度。*/
+    pt_bsize = RSA_size(rsa) - RSA_PKCS1_PADDING_SIZE;
+    ct_bsize = RSA_size(rsa);
+
+    if (enc)
+    {
+        blocks = abcdk_align(in_len, pt_bsize) / pt_bsize;
+
+        out = abcdk_object_alloc2(blocks * ct_bsize);
+        if (!out)
+            return NULL;
+
+        for (int i = 0; i < blocks; i++)
+        {
+            if (i < (blocks - 1) || (in_len % pt_bsize) == 0)
+            {
+                _abcdk_openssl_rsa_update_fragment(out->pptrs[0] + i * ct_bsize, ct_bsize, in + i * pt_bsize, pt_bsize,
+                                                   1, rsa, pubkey, pt_bsize, ct_bsize, RSA_PKCS1_PADDING);
+            }
+            else
+            {
+                /*明文没有块对齐时，最后一块需要单独计算。*/
+                _abcdk_openssl_rsa_update_fragment(out->pptrs[0] + i * ct_bsize, ct_bsize, in + i * pt_bsize, in_len % pt_bsize,
+                                                   1, rsa, pubkey, pt_bsize, ct_bsize, RSA_PKCS1_PADDING);
+            }
+        }
+    }
+    else
+    {
+        /*密文必须是块对齐的。*/
+        if ((in_len % ct_bsize) != 0)
+            return NULL;
+
+        blocks = in_len / ct_bsize;
+
+        out = abcdk_object_alloc2(blocks * pt_bsize);
+        if (!out)
+            return NULL;
+
+        for (int i = 0; i < blocks; i++)
+        {
+            _abcdk_openssl_rsa_update_fragment(out->pptrs[0] + i * pt_bsize, pt_bsize, in + i * ct_bsize, ct_bsize,
+                                               0, rsa, pubkey, pt_bsize, ct_bsize, RSA_PKCS1_PADDING);
+        }
+    }
+
+    return out;
 }
 
 #endif //HEADER_RSA_H
@@ -254,6 +482,19 @@ int abcdk_openssl_hmac_init(HMAC_CTX *hmac, const void *key, int len, int type)
 
 #ifdef HEADER_X509_H
 
+void abcdk_openssl_x509_free(X509 **x509)
+{
+    X509 *x509_p;
+
+    if(!x509 || !*x509)
+        return;
+
+    x509_p = *x509;
+    *x509 = NULL;
+
+    X509_free(x509_p);
+}
+
 abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509)
 {
 # ifndef OPENSSL_NO_BIO
@@ -306,7 +547,7 @@ abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx)
     return err_info;
 }
 
-RSA *abcdk_openssl_cert_pubkey(X509 *x509)
+RSA *abcdk_openssl_cert_get_rsa_pubkey(X509 *x509)
 {
     RSA *rsa = NULL;
     EVP_PKEY *pkey = NULL;
@@ -316,11 +557,12 @@ RSA *abcdk_openssl_cert_pubkey(X509 *x509)
     pkey = X509_get_pubkey(x509);
     if(!pkey)
         return NULL;
+
 #ifndef OPENSSL_NO_RSA
     rsa = EVP_PKEY_get1_RSA(pkey);
 #endif //OPENSSL_NO_RSA
 
-    EVP_PKEY_free(pkey);
+    abcdk_openssl_evp_pkey_free(&pkey);
 
     return rsa;
 }
@@ -402,62 +644,6 @@ X509 *abcdk_openssl_cert_load(const char *crt)
     return ctx;
 }
 
-typedef struct _abcdk_openssl_key_load_ctx
-{
-    const char *key;
-    abcdk_object_t *passwd;
-}abcdk_openssl_key_load_ctx_t;
-
-static int _abcdk_openssl_key_load_passwd_cb(char *buf, int size, int rwflag, void *userdata)
-{
-    abcdk_openssl_key_load_ctx_t *ctx = (abcdk_openssl_key_load_ctx_t*)userdata;
-    int chk;
-
-    abcdk_object_unref(&ctx->passwd);//free.
-    ctx->passwd = abcdk_getpass(NULL,"Enter passphrase for %s",ctx->key);
-
-    chk = ABCDK_MIN((int)ctx->passwd->sizes[0],size);
-    memcpy(buf,ctx->passwd->pptrs[0],chk);
-
-    return chk;
-}
-
-EVP_PKEY *abcdk_openssl_key_load(const char *key,abcdk_object_t **passwd)
-{
-    EVP_PKEY *pkey = NULL;
-    FILE *fp = NULL;
-    abcdk_openssl_key_load_ctx_t ctx = {0};
-
-    assert(key != NULL);
-
-    ctx.key = key;
-    ctx.passwd = NULL;
-    
-    for(int i = 0;i<3;i++)
-    {
-        fp = fopen(key, "r");
-        if (!fp)
-            goto ERR;
-
-        pkey = PEM_read_PrivateKey(fp, NULL, _abcdk_openssl_key_load_passwd_cb, &ctx);
-        fclose(fp);
-
-        /*成功，则跳出。*/
-        if(pkey)
-            break;
-    }
-
-    if (passwd && ctx.passwd)
-        *passwd = abcdk_object_refer(ctx.passwd);
-
-    abcdk_object_unref(&ctx.passwd);//free.
-    return pkey;
-
-ERR:
-
-    abcdk_object_unref(&ctx.passwd);//free.
-    return NULL;
-}
 
 X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const char *pattern)
 {
@@ -658,7 +844,7 @@ void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx)
     SSL_CTX_free(ctx_p);
 }
 
-SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath,int crl_check)
+SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath, int chk_crl,X509 *use_crt, EVP_PKEY *use_key)
 {
     const SSL_METHOD *method = NULL;
     SSL_CTX *ctx = NULL;
@@ -684,36 +870,47 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
 #endif //TLS_MAX_VERSION
 #endif //OPENSSL_VERSION_NUMBER >= 0x1010100F
 
-
     if (cafile || capath)
     {
         chk = SSL_CTX_load_verify_locations(ctx, cafile, capath);
         if (chk != 1)
-            goto final_error;
+        {
+            if (cafile)
+                abcdk_trace_output(LOG_WARNING, "加载CA证书('%s')错误。\n", cafile);
+            if (capath)
+                abcdk_trace_output(LOG_WARNING, "加载CA路径('%s')错误。\n", capath);
+
+            goto ERR;
+        }
+
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+    }
+    else
+    {
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
     }
 
 #if ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
 
     X509_VERIFY_PARAM *param = SSL_CTX_get0_param(ctx);
-    if(!param && crl_check)
-        goto final_error;
+    if(!param && chk_crl)
+        goto ERR;
 
     chk = X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_ANY);
     if(chk != 1)
-        goto final_error;
+        goto ERR;
 
-    if(crl_check == 2)
+    if(chk_crl == 2)
         chk = X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-    else if(crl_check == 1)
+    else if(chk_crl == 1)
         chk = X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
     else 
         chk = 1;
 
     if(chk != 1)
-        goto final_error;
+        goto ERR;
 
 #endif //ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
-
 
     /*禁止会话复用。*/
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
@@ -723,105 +920,81 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
     SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
 #endif //SSL_OP_NO_TICKET
 
-
-    return ctx;
-
-final_error:
-
-    abcdk_openssl_ssl_ctx_free(&ctx);
-
-    return NULL;
-}
-
-int abcdk_openssl_ssl_ctx_load_crt(SSL_CTX *ctx, const char *crt, const char *key, const char *pwd)
-{
-    int chk;
-
-    assert(ctx != NULL);
-
-    if (crt)
+    if (use_crt)
     {
-        chk = SSL_CTX_use_certificate_file(ctx, crt, SSL_FILETYPE_PEM);
+        chk = SSL_CTX_use_certificate(ctx, use_crt);
         if (chk != 1)
-            ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
+            goto ERR;
     }
 
-    if (key && pwd)
-        SSL_CTX_set_default_passwd_cb_userdata(ctx, (void *)pwd);
-
-    if (key)
+    if (use_key)
     {
-        chk = SSL_CTX_use_PrivateKey_file(ctx, key, SSL_FILETYPE_PEM);
+        chk = SSL_CTX_use_PrivateKey(ctx, use_key);
         if (chk != 1)
-            ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
+            goto ERR;
     }
 
-    if (crt && key)
+    if (use_crt && use_key)
     {
         chk = SSL_CTX_check_private_key(ctx);
         if (chk != 1)
-            ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
+            goto ERR;
     }
-
-    return 0;
-
-final_error:
-
-    return -1;
-}
-
-SSL_CTX *abcdk_openssl_ssl_ctx_alloc_load(int server, const char *cafile, const char *capath, const char *crt, const char *key, const char *pwd)
-{
-    SSL_CTX *ctx = NULL;
-    int chk;
-
-    ctx = abcdk_openssl_ssl_ctx_alloc(server, cafile, capath, (capath ? 2 : 0));
-    if (!ctx)
-    {
-        if(cafile)
-            abcdk_trace_output(LOG_WARNING, "加载CA证书('%s')错误。\n",cafile);
-        if(capath)
-            abcdk_trace_output(LOG_WARNING, "加载CA路径('%s')错误。\n",capath);
-            
-        goto ERR;
-    }
-
-    if(server && !crt)
-    {
-        abcdk_trace_output(LOG_WARNING, "服务端的证书不能省略。\n");
-        goto ERR;
-    }
-
-    if(!server && (cafile || capath) && !crt)
-    {
-        abcdk_trace_output(LOG_WARNING, "客户端的证书不能省略，因为CA证书或路径已经加载。\n");
-        goto ERR;
-    }
-
-    chk = abcdk_openssl_ssl_ctx_load_crt(ctx, crt, key, pwd);
-    if (chk != 0)
-    {
-        if(crt)
-            abcdk_trace_output(LOG_WARNING, "加载证书(%s)错误。\n",crt);
-        if(key)
-            abcdk_trace_output(LOG_WARNING, "加载密钥(%s)错误。\n",key);
-
-        goto ERR;
-    }
-
-    if (cafile || capath)
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-    else
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-
 
     return ctx;
 
 ERR:
 
     abcdk_openssl_ssl_ctx_free(&ctx);
-
     return NULL;
+}
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+static int _abcdk_openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
+                                         const unsigned char *in, unsigned int inlen, void *arg)
+{
+    const uint8_t *proto_p;
+    const unsigned char *srv;
+    unsigned int srvlen;
+
+    proto_p = (const uint8_t *)arg;
+
+    if (!proto_p)
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+
+    srv = proto_p;
+    srvlen = strlen(proto_p);
+
+    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
+#ifndef OPENSSL_NO_TLSEXT
+    if (SSL_select_next_proto((unsigned char **)out, outlen, in, inlen, srv, srvlen) != OPENSSL_NPN_NEGOTIATED)
+#endif //OPENSSL_NO_TLSEXT
+    {
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    return SSL_TLSEXT_ERR_OK;
+}
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+
+int abcdk_openssl_ssl_ctx_set_alpn(SSL_CTX *ctx,const uint8_t *next_proto,const char *cipher_list)
+{
+    int chk;
+
+    assert(ctx != NULL && next_proto != NULL);
+
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    SSL_CTX_set_alpn_select_cb(ctx, _abcdk_openssl_alpn_select_cb, (void *)next_proto);
+#endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+
+    if(cipher_list)
+    {
+        chk = SSL_CTX_set_cipher_list(ctx, cipher_list);
+        if(chk != 1)
+            return -1;
+    }
+
+    return 0;
 }
 
 void abcdk_openssl_ssl_free(SSL **ssl)
@@ -890,7 +1063,7 @@ int abcdk_openssl_ssl_handshake(int fd, SSL *ssl, int server, time_t timeout)
     {
         chk = SSL_set_fd(ssl, fd);
         if (chk != 1)
-            ABCDK_ERRNO_AND_GOTO1(EINVAL, final_error);
+            return -1;
 
         if (server)
             SSL_set_accept_state(ssl);
@@ -902,37 +1075,31 @@ try_again:
 
     chk = SSL_do_handshake(ssl);
     if (chk == 1)
-        goto final;
+        return 0;
 
     err = SSL_get_error(ssl, chk);
     if (err == SSL_ERROR_WANT_WRITE)
     {
         chk = abcdk_poll(fd, 0x02, timeout);
         if (chk <= 0)
-            ABCDK_ERRNO_AND_GOTO1(ETIMEDOUT, final_error);
+            return -2;
 
-        ABCDK_ERRNO_AND_GOTO1(0, try_again);
+        goto try_again;
     }
     else if (err == SSL_ERROR_WANT_READ)
     {
         chk = abcdk_poll(fd, 0x01, timeout);
         if (chk <= 0)
-            ABCDK_ERRNO_AND_GOTO1(ETIMEDOUT, final_error);
+            return -2;
 
-        ABCDK_ERRNO_AND_GOTO1(0, try_again);
+        goto try_again;
     }
     else
     {
-        ABCDK_ERRNO_AND_GOTO1(ENOSYS, final_error);
+       return -3;
     }
 
-final:
-
     return 0;
-
-final_error:
-
-    return -1;
 }
 
 int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256])

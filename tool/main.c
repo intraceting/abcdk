@@ -33,8 +33,7 @@ static struct _abcdk_tool_entry
     {"httpd",abcdk_tool_httpd},
     {"mcdump",abcdk_tool_mcdump},
     {"uart",abcdk_tool_uart},
-    {"ipconfig",abcdk_tool_ipconfig},
-    {"proxy",abcdk_tool_proxy},
+    {"ipconfig",abcdk_tool_ipconfig}
 };
 
 void _abcdk_tool_print_usage()

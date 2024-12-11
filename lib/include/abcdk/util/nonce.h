@@ -26,13 +26,12 @@ abcdk_nonce_t *abcdk_nonce_create();
 
 /**
  * 重置。
- * 
- * @param [in] time_base 时间基值(毫秒)。
- * @param [in] diff_time 时间误差(毫秒)。
+
+ * @param [in] time_diff 时间误差(毫秒)。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_nonce_reset(abcdk_nonce_t *ctx,uint64_t time_base,uint64_t time_diff);
+int abcdk_nonce_reset(abcdk_nonce_t *ctx,uint64_t time_diff);
 
 /**
  * 生成。

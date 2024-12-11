@@ -24,15 +24,18 @@
 __BEGIN_DECLS
 
 /**/
-#ifndef HEADER_SSL_H
+#ifndef OPENSSL_VERSION_NUMBER
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 typedef struct bio_st BIO;
+typedef struct evp_pkey_st EVP_PKEY;
+typedef struct x509_st X509;
+typedef struct rsa_st RSA;
 #define SSL_read(f,b,s) 0
 #define SSL_write(f,b,s) 0
 #define BIO_read(f,b,s) 0
 #define BIO_write(f,b,s) 0
-#endif //HEADER_SSL_H
+#endif //OPENSSL_VERSION_NUMBER
 
 /**简单的TCP环境。 */
 typedef struct _abcdk_stcp abcdk_stcp_t;
@@ -131,18 +134,19 @@ typedef struct _abcdk_stcp_config
     /**CA路径。*/
     const char *pki_ca_path;
 
+    /**
+     * 检查吊销列表。
+     * 
+     * 0 不检查吊销列表，1 仅检查叶证书的吊销列表，2 检查整个证书链路的吊销列表。
+    */
+    int pki_chk_crl;
+
     /**证书。*/
-    const char *pki_cert_file;
+    X509 *pki_use_cert;
 
     /**私钥。*/
-    const char *pki_key_file;
-    
-    /**密钥。*/
-    const char *pki_key_passwd;
+    EVP_PKEY *pki_use_key;
 
-    /**是否验证对端证书。0 否，!0 是。*/
-    int pki_check_cert;
-    
     /** 
      * 下层协议。
      * 
@@ -156,7 +160,7 @@ typedef struct _abcdk_stcp_config
     const char *pki_cipher_list;
 
     /**共享密钥。*/
-    const char *ske_key_file;
+    RSA *ske_use_key;
 
     /**绑定地址。*/
     abcdk_sockaddr_t bind_addr;

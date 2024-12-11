@@ -79,11 +79,23 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
     cfg.pki_ca_file = abcdk_option_get(args, "--pki-ca-file", 0, NULL);
     cfg.pki_ca_path = abcdk_option_get(args, "--pki-ca-path", 0, NULL);
-    cfg.pki_cert_file = abcdk_option_get(args, "--pki-cert-file", 0, NULL);
-    cfg.pki_key_file = abcdk_option_get(args, "--pki-key-file", 0, NULL);
-    cfg.pki_check_cert = abcdk_option_get_int(args, "--pki-check-cert", 0, 1);
 
-    cfg.ske_key_file = abcdk_option_get(args, "--ske-key-file", 0, NULL);
+    const char *pki_cert_file = abcdk_option_get(args, "--pki-cert-file", 0, NULL);
+    const char *pki_key_file = abcdk_option_get(args, "--pki-key-file", 0, NULL);
+    const char *ske_key_file = abcdk_option_get(args, "--ske-key-file", 0, NULL);
+
+#ifdef HAVE_OPENSSL
+
+    if(pki_cert_file)
+        cfg.pki_use_cert = abcdk_openssl_cert_load(pki_cert_file);
+
+    if(pki_key_file)
+        cfg.pki_use_key = abcdk_openssl_evp_pkey_load(pki_key_file,0,NULL);
+
+    if(ske_key_file)
+        cfg.ske_use_key = abcdk_openssl_rsa_load(ske_key_file,!role,NULL);
+
+#endif //HAVE_OPENSSL
 
     cfg.ssl_scheme = abcdk_option_get_int(args, "--ssl-scheme", 0, ABCDK_STCP_SSL_SCHEME_RAW);
 
@@ -151,6 +163,13 @@ int abcdk_test_srpc(abcdk_option_t *args)
     abcdk_srpc_unref(&session_p);
     abcdk_srpc_stop(srpc_ctx);
     abcdk_srpc_destroy(&srpc_ctx);
+    
+#ifdef HAVE_OPENSSL
+    abcdk_openssl_rsa_free(&cfg.ske_use_key);
+    abcdk_openssl_x509_free(&cfg.pki_use_cert);
+    abcdk_openssl_evp_pkey_free(&cfg.pki_use_key);
+#endif //HAVE_OPENSSL
+
     abcdk_logger_close(&log_ctx);
     
     return 0;
