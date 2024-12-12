@@ -558,26 +558,6 @@ static int _abcdk_httpd_start_listen(abcdk_httpd_t *ctx,int ssl)
 
     if (ssl)
     {
-        if(ctx->cert_file_p)
-        {
-            ctx->pki_cert_ctx = abcdk_openssl_cert_load(ctx->cert_file_p);
-            if(!ctx->pki_cert_ctx)
-            {
-                abcdk_trace_output(LOG_ERR, "加载证书(%s)失败。",ctx->cert_file_p);
-                return -2;
-            }
-        }
-
-        if(ctx->key_file_p)
-        {
-            ctx->pki_key_ctx = abcdk_openssl_evp_pkey_load(ctx->cert_file_p,0,NULL);
-            if(!ctx->pki_key_ctx)
-            {
-                abcdk_trace_output(LOG_ERR, "加载密钥(%s)失败。",ctx->key_file_p);
-                return -2;
-            }
-        }
-
         cfg.ssl_scheme = ABCDK_STCP_SSL_SCHEME_PKI;
         cfg.pki_ca_file = ctx->ca_file_p;
         cfg.pki_ca_path = ctx->ca_path_p;
@@ -623,12 +603,12 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
 
     ctx->name_p = abcdk_option_get(ctx->args, "--name", 0, "ABCDK");
     ctx->acao_p = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
-#ifdef HEADER_SSL_H
+#ifdef OPENSSL_VERSION_NUMBER
     ctx->ca_file_p = abcdk_option_get(ctx->args, "--ca-file", 0, NULL);
     ctx->ca_path_p = abcdk_option_get(ctx->args, "--ca-path", 0, NULL);
     ctx->cert_file_p = abcdk_option_get(ctx->args, "--cert-file", 0, NULL);
     ctx->key_file_p = abcdk_option_get(ctx->args, "--key-file", 0, NULL);
-#endif // HEADER_SSL_H
+#endif // OPENSSL_VERSION_NUMBER
     ctx->root_path_p = abcdk_option_get(ctx->args, "--root-path", 0, "/var/abcdk/");
     ctx->up_max_size = abcdk_option_get_llong(ctx->args, "--up-max-size", 0, 4 * 1024 * 1024);
     ctx->up_tmp_path_p = abcdk_option_get(ctx->args, "--up-tmp-path", 0, NULL);
@@ -644,6 +624,29 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
 
     ctx->loc_ctx = newlocale(LC_ALL_MASK, "en_US.UTF-8", NULL);
 
+#ifdef OPENSSL_VERSION_NUMBER
+    if (ctx->cert_file_p)
+    {
+        ctx->pki_cert_ctx = abcdk_openssl_cert_load(ctx->cert_file_p);
+        if (!ctx->pki_cert_ctx)
+        {
+            abcdk_trace_output(LOG_ERR, "加载证书(%s)失败。", ctx->cert_file_p);
+            goto ERR;
+        }
+    }
+
+    if (ctx->key_file_p)
+    {
+        ctx->pki_key_ctx = abcdk_openssl_evp_pkey_load(ctx->cert_file_p, 0, NULL);
+        if (!ctx->pki_key_ctx)
+        {
+            abcdk_trace_output(LOG_ERR, "加载密钥(%s)失败。", ctx->key_file_p);
+            goto ERR;
+        }
+    }
+
+#endif //OPENSSL_VERSION_NUMBER
+
     /*创建可能不存在的路径。*/
     if(ctx->up_tmp_path_p)
         abcdk_mkdir(ctx->up_tmp_path_p, 0600);
@@ -652,23 +655,23 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     if (!ctx->io_ctx)
     {
         abcdk_trace_output(LOG_WARNING, "内存错误。\n");
-        goto final;
+        goto ERR;
     }
 
     chk = _abcdk_httpd_start_listen(ctx,0);
     if(chk != 0)
-        goto final;
+        goto ERR;
 
-#ifdef HEADER_SSL_H
+#ifdef OPENSSL_VERSION_NUMBER
     chk = _abcdk_httpd_start_listen(ctx,1);
     if(chk != 0)
-        goto final;
-#endif //HEADER_SSL_H
+        goto ERR;
+#endif //OPENSSL_VERSION_NUMBER
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);
 
-final:
+ERR:
 
     abcdk_https_destroy(&ctx->io_ctx);
     abcdk_https_session_unref(&ctx->listen_session);
@@ -682,8 +685,10 @@ final:
     if(ctx->loc_ctx)
         freelocale(ctx->loc_ctx);
 
+#ifdef OPENSSL_VERSION_NUMBER
     abcdk_openssl_x509_free(&ctx->pki_cert_ctx);
     abcdk_openssl_evp_pkey_free(&ctx->pki_key_ctx);
+#endif //OPENSSL_VERSION_NUMBER
 
     abcdk_trace_output(LOG_INFO, "停止。");
 

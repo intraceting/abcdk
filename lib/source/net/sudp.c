@@ -268,14 +268,23 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node,const uint8_t *key,size_t kl
     {
         /*关闭旧的，并创建新的。*/
         abcdk_openssl_cipherex_destroy(&node->cipherex_in);
-        node->cipherex_in = abcdk_openssl_cipherex_create(4,ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+
+        if(node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_AES256GCM)
+            node->cipherex_in = abcdk_openssl_cipherex_create(4,ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+        else if(node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_AES256CBC)
+            node->cipherex_in = abcdk_openssl_cipherex_create(4,ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC,key,klen);
+        
     }
 
     if(flag & 0x02)
     {
         /*关闭旧的，并创建新的。*/
         abcdk_openssl_cipherex_destroy(&node->cipherex_out);
-        node->cipherex_out = abcdk_openssl_cipherex_create(4,ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+
+        if(node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_AES256GCM)
+            node->cipherex_out = abcdk_openssl_cipherex_create(4,ABCDK_OPENSSL_CIPHER_SCHEME_AES256GCM,key,klen);
+        else if(node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_AES256CBC)
+            node->cipherex_out = abcdk_openssl_cipherex_create(4,ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC,key,klen);
     }
 
     /*必须都成功。*/
@@ -556,7 +565,7 @@ NEXT_MSG:
         return;
     }
 
-    if(node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_SKE)
+    if(node->cfg.ssl_scheme != ABCDK_SUDP_SSL_SCHEME_RAW)
     {
         dec_p = _abcdk_sudp_cipher_update_pack(node,node->in_buffer->pptrs[0],rlen,0);
         if(!dec_p)
@@ -586,7 +595,7 @@ static int _abcdk_sudp_output_hook(abcdk_sudp_node_t *node,abcdk_sockaddr_t *rem
     abcdk_object_t *enc_p = NULL;
     int chk;
 
-    if(node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_SKE)
+    if(node->cfg.ssl_scheme != ABCDK_SUDP_SSL_SCHEME_RAW)
     {
         enc_p = _abcdk_sudp_cipher_update_pack(node,(void*)data,size,1);
         if(!enc_p)

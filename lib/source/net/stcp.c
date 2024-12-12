@@ -990,19 +990,20 @@ void abcdk_stcp_stop(abcdk_stcp_t *ctx)
 
 static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 {
+#ifdef HEADER_SSL_H
+
     int ssl_chk;
     int ssl_err;
     int chk;
 
     if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
     {
-#ifdef HEADER_SSL_H
         node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc(node->flag == ABCDK_STCP_FLAG_LISTEN, node->cfg.pki_ca_file, node->cfg.pki_ca_path,
                                                         node->cfg.pki_chk_crl, node->cfg.pki_use_cert, node->cfg.pki_use_key);
 
         if (!node->openssl_ctx)
         {
-            abcdk_trace_output(LOG_WARNING, "加载证书或私钥失败，无法创建SSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
             return -2;
         }
 
@@ -1012,42 +1013,29 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
             chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx,node->cfg.pki_next_proto,node->cfg.pki_cipher_list);
             if(chk != 0)
             {
-                abcdk_trace_output(LOG_WARNING, "设置下层协议(%s)和密码套件(%s)失败(ssl-scheme=%d)。",
-                                   node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list, node->cfg.ssl_scheme);
+                abcdk_trace_output(LOG_WARNING, "设置SSL(%d)环境下层协议和密码套件失败。",node->cfg.ssl_scheme);
                 return -3;
             }
         }
-
-#else
-        abcdk_trace_output( LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
-        return -22;
-#endif // HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_SKE)
     {
-#ifdef HEADER_SSL_H
         node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         if (!node->openssl_bio)
         {
-            abcdk_trace_output(LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
             return -2;
         }
 
         /*仅用于验证。*/
         abcdk_openssl_BIO_destroy(&node->openssl_bio);
-
-#else
-        abcdk_trace_output( LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
-        return -22;
-#endif // HEADER_SSL_H
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
-#ifdef HEADER_SSL_H
         node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         if (!node->openssl_bio)
         {
-            abcdk_trace_output( LOG_WARNING, "加载共享钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
             return -2;
         }
 
@@ -1059,7 +1047,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 
         if (!node->openssl_ctx)
         {
-            abcdk_trace_output( LOG_WARNING, "加载证书或私钥失败，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
             return -2;
         }
 
@@ -1069,17 +1057,21 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
             chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx,node->cfg.pki_next_proto,node->cfg.pki_cipher_list);
             if(chk != 0)
             {
-                abcdk_trace_output(LOG_WARNING, "设置下层协议(%s)和密码套件(%s)失败(ssl-scheme=%d)。",
-                                   node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list, node->cfg.ssl_scheme);
+                abcdk_trace_output(LOG_WARNING, "设置SSL(%d)环境下层协议和密码套件失败。",node->cfg.ssl_scheme);
                 return -3;
             }
         }
+    }
 
 #else
-        abcdk_trace_output( LOG_WARNING, "构建时未包含相关组件，无法创建OpenSSL环境(ssl-scheme=%d)。", node->cfg.ssl_scheme);
+
+    if (node->cfg.ssl_scheme != ABCDK_STCP_SSL_SCHEME_RAW)
+    {
+        abcdk_trace_output(LOG_WARNING,  "无法创建SSL环境，构建时未包含相关组件。");
         return -22;
-#endif // HEADER_SSL_H
     }
+
+#endif // HEADER_SSL_H
 
     return 0;
 }

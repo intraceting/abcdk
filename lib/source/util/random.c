@@ -33,6 +33,7 @@ static void _abcdk_rand_globe_fd_open(void)
         /*注册退出前关闭函数。*/
         atexit(_abcdk_rand_globe_fd_close_cb);
     }
+    
     abcdk_atomic_unlock();
 }
 

@@ -8,9 +8,58 @@
 
 /******************************************************************************************************/
 
+#ifdef OPENSSL_VERSION_NUMBER
+#if OPENSSL_VERSION_NUMBER < 0x10000000L
+
+static pthread_mutex_t *_abcdk_openssl_crypto_locker_array = NULL;
+
+/*锁回调函数。*/
+static void _abcdk_openssl_crypto_locking_cb(int mode, int type, const char *file, int line)
+{
+    if (mode & CRYPTO_LOCK)
+        pthread_mutex_lock(&(_abcdk_openssl_crypto_locker_array[type]));
+    else
+        pthread_mutex_unlock(&(_abcdk_openssl_crypto_locker_array[type]));
+}
+
+/*线程ID回调函数。*/ 
+static unsigned long _abcdk_openssl_crypto_id_cb(void)
+{
+    return (unsigned long)pthread_self();
+}
+
+void _abcdk_openssl_crypto_setup()
+{
+    /*动态分配锁内存。*/
+    _abcdk_openssl_crypto_locker_array = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+
+    /*初始化锁。*/
+    for (int i = 0; i < CRYPTO_num_locks(); i++)
+        pthread_mutex_init(&_abcdk_openssl_crypto_locker_array[i], NULL);
+
+    /*设置锁和线程ID回调函数。*/
+    CRYPTO_set_locking_callback(_abcdk_openssl_crypto_locking_cb);
+    CRYPTO_set_id_callback(_abcdk_openssl_crypto_id_cb);
+}
+
+void _abcdk_openssl_crypto_cleanup()
+{
+    CRYPTO_set_locking_callback(NULL);
+
+    for (int i = 0; i < CRYPTO_num_locks(); i++)
+        pthread_mutex_destroy(&_abcdk_openssl_crypto_locker_array[i]);
+
+    /*释放内存。*/
+    OPENSSL_free(_abcdk_openssl_crypto_locker_array);
+}
+
+#endif //#if OPENSSL_VERSION_NUMBER < 0x10000000L
+#endif //OPENSSL_VERSION_NUMBER
+
 void abcdk_openssl_cleanup()
 {
 #ifdef OPENSSL_VERSION_NUMBER
+
 #ifndef OPENSSL_NO_DEPRECATED
     ERR_remove_state(0);
 #endif //OPENSSL_NO_DEPRECATED
@@ -26,18 +75,28 @@ void abcdk_openssl_cleanup()
     CONF_modules_free();
     CONF_modules_unload(1);
     SSL_COMP_free_compression_methods();
+
+#if OPENSSL_VERSION_NUMBER < 0x10000000L
+    _abcdk_openssl_crypto_cleanup();
+#endif //#if OPENSSL_VERSION_NUMBER < 0x10000000L
+
 #endif // OPENSSL_VERSION_NUMBER
 }
-
 
 void abcdk_openssl_init()
 {
 #ifdef OPENSSL_VERSION_NUMBER
+
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     ERR_load_BIO_strings();
     ERR_load_crypto_strings();
     SSL_load_error_strings();
+
+#if OPENSSL_VERSION_NUMBER < 0x10000000L
+    _abcdk_openssl_crypto_setup();
+#endif //#if OPENSSL_VERSION_NUMBER < 0x10000000L
+
 #endif //OPENSSL_VERSION_NUMBER
 }
 
