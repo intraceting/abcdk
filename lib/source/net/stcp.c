@@ -692,6 +692,8 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             SSL_set_connect_state(node->openssl_ssl);
         else
             return -22;
+
+        return 0;
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
     {
@@ -707,6 +709,8 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
         }
 
         BIO_set_fd(node->openssl_bio, node->fd, 0);
+
+        return 0;
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
@@ -744,14 +748,14 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             SSL_set_connect_state(node->openssl_ssl);
         else
             return -22;
-    }
-#else
-    else
-    {
-        abcdk_trace_output(LOG_WARNING,  "无法创建SSL环境，构建时未包含相关组件。");
-        return -22;
+
+        return 0;
     }
 #endif // HEADER_SSL_H
+    else
+    {
+        abcdk_trace_output(LOG_WARNING,  "尚未支持的SSL配置，或构建时未包含SSL组件。");
+    }
 
     return -22;
 }
@@ -1009,6 +1013,8 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
                 return -3;
             }
         }
+
+        return 0;
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
     {
@@ -1021,6 +1027,8 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 
         /*仅用于验证。*/
         abcdk_openssl_BIO_destroy(&node->openssl_bio);
+
+        return 0;
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
@@ -1053,14 +1061,14 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
                 return -3;
             }
         }
-    }
-#else
-    else
-    {
-        abcdk_trace_output(LOG_WARNING,  "无法创建SSL环境，构建时未包含相关组件。");
-        return -22;
+
+        return 0;
     }
 #endif // HEADER_SSL_H
+    else
+    {
+        abcdk_trace_output(LOG_WARNING,  "尚未支持的SSL配置，或构建时未包含SSL组件。");
+    }
 
     return -22;
 }
