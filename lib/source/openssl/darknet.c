@@ -465,12 +465,12 @@ NEXT_LOOP:
                 return 0;
         }
 
-        /*如果缓存没有剩余数据，则直接返回。*/
+        /*如果缓存没有剩余数据，则继续接收。*/
         if (rlen - diff <= 0)
-            return -1;
+            goto NEXT_LOOP;
 
-        /*处理剩余数据，解密。*/
-        de_data = _abcdk_openssl_darknet_read_update(ctx,ctx->recv_buf->pptrs[0] + diff, rlen - diff);
+        /*解密。*/
+        de_data = _abcdk_openssl_darknet_read_update(ctx, ctx->recv_buf->pptrs[0] + diff, rlen - diff);
         if (!de_data)
             return 0; // 内存不足时，关闭当前句柄。
     }
