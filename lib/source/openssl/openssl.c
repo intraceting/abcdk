@@ -941,12 +941,6 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
 
             goto ERR;
         }
-
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-    }
-    else
-    {
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
     }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
@@ -999,6 +993,11 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
         if (chk != 1)
             goto ERR;
     }
+
+    if (cafile || capath)
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+    else 
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
     return ctx;
 
