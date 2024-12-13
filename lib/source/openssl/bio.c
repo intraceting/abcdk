@@ -179,18 +179,23 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
     if(!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_READ, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
-        return -1;
+        return 0;
     }
 
     if (!(buf != NULL && len > 0))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_READ, BIO_R_NULL_PARAMETER, __FUNCTION__, __LINE__);
-        return -1;
+        return 0;
     }
+
+    BIO_clear_retry_flags(bio_ctx); 
 
     rlen = abcdk_openssl_darknet_read(bio_p->dkt_ctx, buf, len);
     if (rlen < 0)
+    {
         BIO_set_retry_read(bio_ctx); /*设置重试标志，非常重要。*/
+        return -1;
+    }
 
     return rlen;
 }
@@ -203,19 +208,23 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
     if(!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_WRITE, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
-        return -1;
+        return 0;
     }
 
     if (!(buf != NULL && len > 0))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_WRITE, BIO_R_NULL_PARAMETER, __FUNCTION__, __LINE__);
-        return -1;
+        return 0;
     }
 
+    BIO_clear_retry_flags(bio_ctx); 
 
     slen = abcdk_openssl_darknet_write(bio_p->dkt_ctx, buf, len);
     if (slen < 0)
+    {
         BIO_set_retry_write(bio_ctx); /*设置重试标志，非常重要。*/
+        return -1;
+    }
 
     return slen;
 }
