@@ -291,13 +291,15 @@ static abcdk_tree_t *_abcdk_openssl_darknet_write_update(abcdk_openssl_darknet_t
     return en_data;
 }
 
-static ssize_t _abcdk_openssl_darknet_write_fragment(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
+ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
 {
     char salt[256 + 1] = {0};
     abcdk_tree_t *en_data = NULL;
     abcdk_tree_t *p = NULL;
     ssize_t slen = 0;
     int chk;
+
+    assert(ctx != NULL && data != NULL && size > 0);
 
     /*先发送头部。*/
     if (!ctx->send_hdr_ok)
@@ -372,27 +374,6 @@ NEXT_MSG:
 
     /*并继续发送剩余节点。*/
     goto NEXT_MSG;
-}
-
-ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
-{
-    ssize_t slen = 0, alen = 0;
-
-    assert(ctx != NULL && data != NULL && size > 0);
-
-    while (alen < size)
-    {
-        /*分块发送。*/
-        slen = _abcdk_openssl_darknet_write_fragment(ctx, ABCDK_PTR2VPTR(data, alen), ABCDK_MIN(size - alen, (size_t)(65535)));
-        if (slen < 0)
-            return (alen > 0 ? alen : -1); // 优先返回已发送的数据长度。
-        else if (slen == 0)
-            return (alen > 0 ? alen : 0); // 优先返回已发送的数据长度。
-
-        alen += slen;
-    }
-
-    return alen;
 }
 
 static int _abcdk_openssl_darknet_read_init(abcdk_openssl_darknet_t *ctx)
