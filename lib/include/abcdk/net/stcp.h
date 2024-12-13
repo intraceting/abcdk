@@ -54,11 +54,11 @@ typedef enum _abcdk_stcp_ssl_scheme
     ABCDK_STCP_SSL_SCHEME_PKI = 1,
 #define ABCDK_STCP_SSL_SCHEME_PKI   ABCDK_STCP_SSL_SCHEME_PKI
 
-    /**SKE(Shared key encryption).*/
-    ABCDK_STCP_SSL_SCHEME_SKE = 2,
-#define ABCDK_STCP_SSL_SCHEME_SKE   ABCDK_STCP_SSL_SCHEME_SKE
+    /**RSA(Rivest-Shamir-Adleman).*/
+    ABCDK_STCP_SSL_SCHEME_RSA = 2,
+#define ABCDK_STCP_SSL_SCHEME_RSA   ABCDK_STCP_SSL_SCHEME_RSA
 
-    /**PKI is based on SKE.*/
+    /**PKI is based on RSA.*/
     ABCDK_STCP_SSL_SCHEME_PKIS = 3
 #define ABCDK_STCP_SSL_SCHEME_PKIS   ABCDK_STCP_SSL_SCHEME_PKIS
 }abcdk_stcp_ssl_scheme_t;
