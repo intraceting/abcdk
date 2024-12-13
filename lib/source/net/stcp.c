@@ -671,83 +671,58 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
         return 0;
     }
 #ifdef HEADER_SSL_H
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI ||
+             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA ||
+             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
-        if (!node->openssl_ssl)
-            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag != ABCDK_STCP_FLAG_CLIENT ? node->from_listen->openssl_ctx : node->openssl_ctx);
-        else
-            return -16;
-
-        if (!node->openssl_ssl)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
         {
-            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -1;
+            if (!node->openssl_bio)
+                node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key, node->flag == ABCDK_STCP_FLAG_CLIENT);
+            else
+                return -16;
+
+            if (!node->openssl_bio)
+            {
+                abcdk_trace_output(LOG_WARNING, "创建RSA(%d)环境失败。", node->cfg.ssl_scheme);
+                return -1;
+            }
+
+            BIO_set_fd(node->openssl_bio, node->fd, 0);
         }
 
-        SSL_set_fd(node->openssl_ssl, node->fd);
-
-        if (node->flag == ABCDK_STCP_FLAG_ACCPET)
-            SSL_set_accept_state(node->openssl_ssl);
-        else if (node->flag == ABCDK_STCP_FLAG_CLIENT)
-            SSL_set_connect_state(node->openssl_ssl);
-        else
-            return -22;
-
-        return 0;
-    }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
-    {
-        if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
-        else
-            return -16;
-
-        if (!node->openssl_bio)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
         {
-            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -1;
+            if (!node->openssl_ssl)
+                node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag != ABCDK_STCP_FLAG_CLIENT ? node->from_listen->openssl_ctx : node->openssl_ctx);
+            else
+                return -16;
+
+            if (!node->openssl_ssl)
+            {
+                abcdk_trace_output(LOG_WARNING, "创建PKI(%d)环境失败。", node->cfg.ssl_scheme);
+                return -1;
+            }
+        
+            if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
+            {
+                SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
+
+                /*托管理给SSL，这里要清理野指针。*/
+                node->openssl_bio = NULL;
+            }
+            else
+            {
+                SSL_set_fd(node->openssl_ssl, node->fd);
+            }
+
+            if (node->flag == ABCDK_STCP_FLAG_ACCPET)
+                SSL_set_accept_state(node->openssl_ssl);
+            else if (node->flag == ABCDK_STCP_FLAG_CLIENT)
+                SSL_set_connect_state(node->openssl_ssl);
+            else
+                return -22;
         }
-
-        BIO_set_fd(node->openssl_bio, node->fd, 0);
-
-        return 0;
-    }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
-    {
-        if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
-        else
-            return -16;
-
-        if (!node->openssl_bio)
-        {
-            abcdk_trace_output( LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -1;
-        }
-
-        if (!node->openssl_ssl)
-            node->openssl_ssl = abcdk_openssl_ssl_alloc(node->flag != ABCDK_STCP_FLAG_CLIENT ? node->from_listen->openssl_ctx : node->openssl_ctx);
-        else
-            return -16;
-
-        if (!node->openssl_ssl)
-        {
-            abcdk_trace_output( LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -1;
-        }
-
-        BIO_set_fd(node->openssl_bio, node->fd,0);
-        SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
-
-        /*托管理给SSL，这里要清理野指针。*/
-        node->openssl_bio = NULL;
-
-        if (node->flag == ABCDK_STCP_FLAG_ACCPET)
-            SSL_set_accept_state(node->openssl_ssl);
-        else if (node->flag == ABCDK_STCP_FLAG_CLIENT)
-            SSL_set_connect_state(node->openssl_ssl);
-        else
-            return -22;
 
         return 0;
     }
@@ -992,73 +967,43 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
         return 0;
     }
 #ifdef HEADER_SSL_H
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI)
+    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI ||
+             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA ||
+             node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
-        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc(node->flag != ABCDK_STCP_FLAG_CLIENT, node->cfg.pki_ca_file, node->cfg.pki_ca_path,
-                                                        node->cfg.pki_chk_crl, node->cfg.pki_use_cert, node->cfg.pki_use_key);
-
-        if (!node->openssl_ctx)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
         {
-            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -2;
-        }
-
-        /*设置下层协议和密码套件。*/
-        if (node->cfg.pki_next_proto)
-        {
-            chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx,node->cfg.pki_next_proto,node->cfg.pki_cipher_list);
-            if(chk != 0)
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key, node->flag == ABCDK_STCP_FLAG_CLIENT);
+            if (!node->openssl_bio)
             {
-                abcdk_trace_output(LOG_WARNING, "设置SSL(%d)环境下层协议和密码套件失败。",node->cfg.ssl_scheme);
-                return -3;
+                abcdk_trace_output(LOG_WARNING, "创建RSA(%d)环境失败。", node->cfg.ssl_scheme);
+                return -2;
             }
+
+            /*仅用于验证。*/
+            abcdk_openssl_BIO_destroy(&node->openssl_bio);
         }
 
-        return 0;
-    }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
-    {
-        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
-        if (!node->openssl_bio)
+        if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
         {
-            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -2;
-        }
+            node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc(node->flag != ABCDK_STCP_FLAG_CLIENT, node->cfg.pki_ca_file, node->cfg.pki_ca_path,
+                                                            node->cfg.pki_chk_crl, node->cfg.pki_use_cert, node->cfg.pki_use_key);
 
-        /*仅用于验证。*/
-        abcdk_openssl_BIO_destroy(&node->openssl_bio);
-
-        return 0;
-    }
-    else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
-    {
-        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
-        if (!node->openssl_bio)
-        {
-            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -2;
-        }
-
-        /*仅用于验证。*/
-        abcdk_openssl_BIO_destroy(&node->openssl_bio);
-
-        node->openssl_ctx = abcdk_openssl_ssl_ctx_alloc(node->flag != ABCDK_STCP_FLAG_CLIENT, node->cfg.pki_ca_file, node->cfg.pki_ca_path,
-                                                        node->cfg.pki_chk_crl, node->cfg.pki_use_cert, node->cfg.pki_use_key);
-
-        if (!node->openssl_ctx)
-        {
-            abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
-            return -2;
-        }
-
-        /*设置下层协议和密码套件。*/
-        if (node->cfg.pki_next_proto)
-        {
-            chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx,node->cfg.pki_next_proto,node->cfg.pki_cipher_list);
-            if(chk != 0)
+            if (!node->openssl_ctx)
             {
-                abcdk_trace_output(LOG_WARNING, "设置SSL(%d)环境下层协议和密码套件失败。",node->cfg.ssl_scheme);
-                return -3;
+                abcdk_trace_output(LOG_WARNING, "创建PKI(%d)环境失败。", node->cfg.ssl_scheme);
+                return -2;
+            }
+
+            /*设置下层协议和密码套件。*/
+            if (node->cfg.pki_next_proto)
+            {
+                chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list);
+                if (chk != 0)
+                {
+                    abcdk_trace_output(LOG_WARNING, "设置PKI(%d)环境下层协议和密码套件失败。", node->cfg.ssl_scheme);
+                    return -3;
+                }
             }
         }
 
