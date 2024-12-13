@@ -188,7 +188,7 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
         return 0;
     }
 
-//    BIO_clear_retry_flags(bio_ctx); 
+    BIO_clear_retry_flags(bio_ctx); 
 
     rlen = abcdk_openssl_darknet_read(bio_p->dkt_ctx, buf, len);
     if (rlen < 0)
@@ -217,7 +217,7 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
         return 0;
     }
 
-//    BIO_clear_retry_flags(bio_ctx); 
+    BIO_clear_retry_flags(bio_ctx); 
 
     slen = abcdk_openssl_darknet_write(bio_p->dkt_ctx, buf, len);
     if (slen < 0)
