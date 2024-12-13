@@ -949,7 +949,7 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
         SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
     }
 
-#if ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
 
     X509_VERIFY_PARAM *param = SSL_CTX_get0_param(ctx);
     if(!param && chk_crl)
@@ -969,7 +969,7 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
     if(chk != 1)
         goto ERR;
 
-#endif //ABCDK_VERSION_AT_LEAST((OPENSSL_VERSION_NUMBER >> 20), ((OPENSSL_VERSION_NUMBER >> 12) & 0xFF), 0x100, 0x02)
+#endif //OPENSSL_VERSION_NUMBER >= 0x10002000L
 
     /*禁止会话复用。*/
     SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);

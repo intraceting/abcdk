@@ -234,7 +234,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
     abcdk_openssl_BIO_t *bio_p = (abcdk_openssl_BIO_t *)_abcdk_openssl_BIO_get_data(bio_ctx);
     int chk = 0;
 
-    if(!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
+    if (!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_CTRL, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return -1;
@@ -268,6 +268,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
     }
     break;
     }
+
     return chk;
 }
 
