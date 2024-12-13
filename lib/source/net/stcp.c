@@ -689,7 +689,6 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             }
 
             BIO_set_fd(node->openssl_bio, node->fd, 0);
-            BIO_set_nbio(node->openssl_bio,1);
         }
 
         if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKI || node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
