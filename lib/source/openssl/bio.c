@@ -237,7 +237,7 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
     if (!(bio_p != NULL && bio_p->type == ABCDK_OPENSSL_BIO_DARKNET))
     {
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_CTRL, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
-        return -1;
+        return 0;
     }
 
     switch (cmd)
@@ -310,31 +310,6 @@ static int _abcdk_openssl_BIO_destroy_cb(BIO *bio_ctx)
     return 1;
 }
 
-
-int abcdk_openssl_BIO_set_fd(BIO *bio_ctx, int fd)
-{
-    abcdk_openssl_BIO_t *bio_p;
-
-    bio_p = _abcdk_openssl_BIO_get_data(bio_ctx);
-    if(!bio_p || bio_p->type != ABCDK_OPENSSL_BIO_DARKNET)
-        return -1;
-
-    abcdk_openssl_darknet_set_fd(bio_p->dkt_ctx,fd,0);
-
-    return 0;
-}
-
-int abcdk_openssl_BIO_get_fd(BIO *bio_ctx)
-{
-    abcdk_openssl_BIO_t *bio_p;
-
-    bio_p = _abcdk_openssl_BIO_get_data(bio_ctx);
-    if(!bio_p || bio_p->type != ABCDK_OPENSSL_BIO_DARKNET)
-        return -1;
-
-    return abcdk_openssl_darknet_get_fd(bio_p->dkt_ctx,0);
-}
-
 void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
 {
     BIO *bio_ctx_p;
@@ -361,7 +336,7 @@ BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey)
 
     bio_p->type = ABCDK_OPENSSL_BIO_DARKNET;
     bio_p->dkt_ctx = abcdk_openssl_darknet_create(rsa_ctx,use_pubkey);
-    bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_SOURCE_SINK,"Darknet BIO");
+    bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_FD,"Darknet BIO");
 
     if (!bio_p->dkt_ctx || !bio_p->method_ctx)
         goto ERR;
