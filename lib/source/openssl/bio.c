@@ -194,6 +194,9 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
     if (rlen < 0)
     {
         BIO_set_retry_read(bio_ctx); /*设置重试标志，非常重要。*/
+
+        assert(BIO_should_read(bio_ctx) && BIO_should_retry(bio_ctx));
+
         return -1;
     }
 
@@ -223,6 +226,9 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
     if (slen < 0)
     {
         BIO_set_retry_write(bio_ctx); /*设置重试标志，非常重要。*/
+
+        assert(BIO_should_write(bio_ctx) && BIO_should_retry(bio_ctx));
+
         return -1;
     }
 
