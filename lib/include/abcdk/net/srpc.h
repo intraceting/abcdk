@@ -51,8 +51,8 @@ typedef struct _abcdk_srpc_config
     /**私钥。*/
     EVP_PKEY *pki_use_key;
 
-    /**共享密钥。*/
-    RSA *ske_use_key;
+    /**RSA密钥。*/
+    RSA *rsa_use_key;
     
     /**绑定地址。*/
     abcdk_sockaddr_t bind_addr;

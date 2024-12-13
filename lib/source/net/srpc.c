@@ -447,7 +447,7 @@ int abcdk_srpc_listen(abcdk_srpc_session_t *session,abcdk_srpc_config_t *cfg)
     asio_cfg.pki_chk_crl = cfg->pki_chk_crl;
     asio_cfg.pki_use_cert = cfg->pki_use_cert;
     asio_cfg.pki_use_key = cfg->pki_use_key;
-    asio_cfg.ske_use_key = cfg->ske_use_key;
+    asio_cfg.rsa_use_key = cfg->rsa_use_key;
 
     asio_cfg.bind_addr = cfg->bind_addr;
     asio_cfg.bind_ifname = cfg->bind_ifname;
@@ -485,7 +485,7 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
     asio_cfg.pki_chk_crl = cfg->pki_chk_crl;
     asio_cfg.pki_use_cert = cfg->pki_use_cert;
     asio_cfg.pki_use_key = cfg->pki_use_key;
-    asio_cfg.ske_use_key = cfg->ske_use_key;
+    asio_cfg.rsa_use_key = cfg->rsa_use_key;
 
     asio_cfg.bind_addr = cfg->bind_addr;
     asio_cfg.bind_ifname = cfg->bind_ifname;

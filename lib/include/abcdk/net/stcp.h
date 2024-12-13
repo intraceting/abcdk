@@ -159,8 +159,8 @@ typedef struct _abcdk_stcp_config
     /**算法列表。*/
     const char *pki_cipher_list;
 
-    /**共享密钥。*/
-    RSA *ske_use_key;
+    /**RSA密钥。*/
+    RSA *rsa_use_key;
 
     /**绑定地址。*/
     abcdk_sockaddr_t bind_addr;

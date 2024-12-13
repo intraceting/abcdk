@@ -701,7 +701,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         else
             return -16;
 
@@ -721,7 +721,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
         if (!node->openssl_bio)
-            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
+            node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         else
             return -16;
 
@@ -1020,7 +1020,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_RSA)
     {
-        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
+        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         if (!node->openssl_bio)
         {
             abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
@@ -1032,7 +1032,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
     }
     else if (node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
     {
-        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.ske_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
+        node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key,node->flag == ABCDK_STCP_FLAG_CLIENT);
         if (!node->openssl_bio)
         {
             abcdk_trace_output(LOG_WARNING, "创建SSL(%d)环境失败。",node->cfg.ssl_scheme);
