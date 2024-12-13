@@ -785,8 +785,22 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
         }
         else
         {
-            /*必须通过返回值获取出错码。*/
-            ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
+            if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
+            {
+                BIO *bio_ctx = SSL_get_rbio(node->openssl_ssl);
+
+                if(BIO_should_read(bio_ctx) && BIO_should_retry(bio_ctx))
+                    ssl_err = SSL_ERROR_WANT_READ;
+                else if(BIO_should_write(bio_ctx) && BIO_should_retry(bio_ctx))
+                    ssl_err = SSL_ERROR_WANT_WRITE;
+                else 
+                    ssl_err = SSL_ERROR_SSL;
+            }
+            else
+            {
+                /*必须通过返回值获取出错码。*/
+                ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
+            }
 
             if (ssl_err == SSL_ERROR_WANT_READ)
             {
