@@ -336,7 +336,7 @@ BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey)
 
     bio_p->type = ABCDK_OPENSSL_BIO_DARKNET;
     bio_p->dkt_ctx = abcdk_openssl_darknet_create(rsa_ctx,use_pubkey);
-    bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_FD,"Darknet BIO");
+    bio_p->method_ctx = _abcdk_openssl_BIO_meth_new(BIO_TYPE_CONNECT,"Darknet BIO");
 
     if (!bio_p->dkt_ctx || !bio_p->method_ctx)
         goto ERR;
