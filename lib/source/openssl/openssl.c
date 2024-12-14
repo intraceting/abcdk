@@ -214,6 +214,7 @@ void abcdk_openssl_rsa_free(RSA **rsa)
 
 int abcdk_openssl_rsa_is_prikey(RSA *rsa) 
 {
+#if 0
     RSA *rsa_p;
     int chk;
 
@@ -225,6 +226,22 @@ int abcdk_openssl_rsa_is_prikey(RSA *rsa)
     abcdk_openssl_rsa_free(&rsa_p);
 
     return chk;
+#else //上面的代码，当传入的是公钥时，会有内存泄漏问题。
+
+    const BIGNUM *d_p = NULL;
+
+    assert(rsa != NULL);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    RSA_get0_key(rsa, NULL, NULL, &d_p);
+#else //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    d_p = rsa->d;
+#endif //#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+
+    /*仅私钥中存在这个组件，公钥中没有。*/
+    return (d_p != NULL);
+
+#endif //
 }
 
 RSA *abcdk_openssl_rsa_create(int bits, unsigned long e)
