@@ -188,7 +188,7 @@ static int _abcdk_openssl_BIO_read_cb(BIO *bio_ctx, char *buf, int len)
         return -1;
     }
 
-    ERR_clear_error(); 
+    ERR_clear_error(); /*清除历史错误记录，非常重要。*/
     BIO_clear_retry_flags(bio_ctx); 
 
     rlen = abcdk_openssl_darknet_read(bio_p->dkt_ctx, buf, len);
@@ -218,7 +218,7 @@ static int _abcdk_openssl_BIO_write_cb(BIO *bio_ctx, const char *buf, int len)
         return -1;
     }
 
-    ERR_clear_error(); 
+    ERR_clear_error(); /*清除历史错误记录，非常重要。*/
     BIO_clear_retry_flags(bio_ctx);
     
     slen = abcdk_openssl_darknet_write(bio_p->dkt_ctx, buf, len);
@@ -241,6 +241,8 @@ static long _abcdk_openssl_BIO_ctrl_cb(BIO *bio_ctx, int cmd, long num, void *pt
         ERR_put_error(ERR_LIB_BIO, BIO_F_BIO_CTRL, BIO_R_BROKEN_PIPE, __FUNCTION__, __LINE__);
         return 0;
     }
+
+    ERR_clear_error(); /*清除历史错误记录，非常重要。*/
 
     switch (cmd)
     {
