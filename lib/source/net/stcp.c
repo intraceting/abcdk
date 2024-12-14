@@ -775,7 +775,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
 
-        /*清除历史错误记录。*/
+        /*清除历史错误记录，否则SSL_get_error()可能会返回意料之外的值。*/
         ERR_clear_error();
 
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
