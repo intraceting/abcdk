@@ -774,6 +774,10 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
     if (node->status == ABCDK_STCP_STATUS_SYNC_SSL)
     {
 #ifdef HEADER_SSL_H
+
+        /*清除历史错误记录。*/
+        ERR_clear_error();
+
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
         if (ssl_chk == 1)
         {
@@ -786,6 +790,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
         else
         {
 
+#if 0
             if(node->cfg.ssl_scheme == ABCDK_STCP_SSL_SCHEME_PKIS)
             {
                 /*BIO和SSL绑定后导致SSL_get_error无法获取正确的返回值，暂时用下面的代码替换一下。*/
@@ -801,6 +806,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
                     ssl_err = SSL_ERROR_SSL;
             }
             else
+#endif
             {
                 /*必须通过返回值获取出错码。*/
                 ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
