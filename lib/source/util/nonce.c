@@ -117,7 +117,7 @@ int abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32])
     /**
      * |RANDOM   |TIME-MS |SEQ-NUM |
      * |---------|--------|--------|
-     * |12 bytes |8 bytes |8 bytes |
+     * |16 bytes |8 bytes |8 bytes |
     */
 
     abcdk_rand_bytes(key, 16, 5);
