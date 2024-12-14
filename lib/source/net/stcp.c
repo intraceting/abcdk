@@ -930,6 +930,7 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
     }
 
 #ifdef OPENSSL_VERSION_NUMBER
+    /*清理当前线程的状态队列。*/
     ERR_remove_thread_state(NULL);
 #endif //OPENSSL_VERSION_NUMBER
 }
