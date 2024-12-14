@@ -19,6 +19,7 @@
 #include "abcdk/util/spinlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/wred.h"
+#include "abcdk/util/nonce.h"
 #include "abcdk/openssl/bio.h"
 
 __BEGIN_DECLS
@@ -159,7 +160,11 @@ typedef struct _abcdk_stcp_config
     /**算法列表。*/
     const char *pki_cipher_list;
 
-    /**RSA密钥。*/
+    /**
+     * RSA密钥。
+     * 
+     * @note 服务端不支持公钥。
+    */
     RSA *rsa_use_key;
 
     /**绑定地址。*/
