@@ -928,6 +928,10 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
 
         _abcdk_stcp_dispatch(ctx, e.events, node);
     }
+
+#ifdef OPENSSL_VERSION_NUMBER
+    ERR_remove_thread_state(NULL);
+#endif //OPENSSL_VERSION_NUMBER
 }
 
 static void _abcdk_stcp_worker(void *opaque, uint64_t event, void *item)

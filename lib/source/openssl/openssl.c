@@ -60,10 +60,7 @@ void abcdk_openssl_cleanup()
 {
 #ifdef OPENSSL_VERSION_NUMBER
 
-#ifndef OPENSSL_NO_DEPRECATED
-    ERR_remove_state(0);
-#endif //OPENSSL_NO_DEPRECATED
-
+    ERR_remove_thread_state(NULL);
     ERR_free_strings();
 
     OBJ_cleanup();
