@@ -20,8 +20,21 @@ __BEGIN_DECLS
 /**简单的RPC服务。*/
 typedef struct _abcdk_srpc abcdk_srpc_t;
 
-/**RPC会话。*/
+/**会话。*/
 typedef struct _abcdk_srpc_session abcdk_srpc_session_t;
+
+/**常量。*/
+typedef enum _abcdk_srpc_constant
+{
+    /**应答.*/
+    ABCDK_SRPC_CMD_RSP = 1,
+#define ABCDK_SRPC_CMD_RSP   ABCDK_SRPC_CMD_RSP
+
+    /**请求.*/
+    ABCDK_SRPC_CMD_REQ = 2,
+#define ABCDK_SRPC_CMD_REQ   ABCDK_SRPC_CMD_REQ
+
+}abcdk_srpc_cmd_t;
 
 /**配置。*/
 typedef struct _abcdk_srpc_config
@@ -159,6 +172,15 @@ abcdk_srpc_t *abcdk_srpc_create(int worker);
 
 /** 停止。*/
 void abcdk_srpc_stop(abcdk_srpc_t *ctx);
+
+/**
+ * 重置。
+ *
+ * @param [in] time_diff 时间误差(秒)。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_srpc_nonce_reset(abcdk_srpc_t *ctx,uint64_t time_diff);
 
 /** 
  * 监听。

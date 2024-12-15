@@ -26,7 +26,7 @@ abcdk_nonce_t *abcdk_nonce_create();
 
 /**
  * 重置。
-
+ *
  * @param [in] time_diff 时间误差(毫秒)。
  * 
  * @return 0 成功，-1 失败。
@@ -43,7 +43,7 @@ int abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32]);
 /**
  * 检查。
  * 
- * @return 0 成功，-1 失败(重复或无效)。
+ * @return 0 有效，-1 过期，-2 重复。
 */
 int abcdk_nonce_check(abcdk_nonce_t *ctx,const uint8_t key[32]);
 

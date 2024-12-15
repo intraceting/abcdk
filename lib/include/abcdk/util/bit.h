@@ -10,6 +10,7 @@
 #include "abcdk/util/defs.h"
 #include "abcdk/util/heap.h"
 #include "abcdk/util/bloom.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 
@@ -64,6 +65,13 @@ uint64_t abcdk_bit_read2number(abcdk_bit_t *ctx, uint8_t bits);
  * @note 当游标指向字节开始位时允许使用。
 */
 void abcdk_bit_read2buffer(abcdk_bit_t *ctx, uint8_t *buf,size_t size);
+
+/**
+ * 读缓存。
+ * 
+ * @note 当游标指向字节开始位时允许使用。
+*/
+abcdk_object_t *abcdk_bit_read2object(abcdk_bit_t *ctx, size_t size);
 
 /** 
  * 写数值。

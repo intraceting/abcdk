@@ -1443,7 +1443,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_openssl_rsa_free(&rsa_ctx);
 
 #endif //HAVE_OPENSSL
-#elif 1
+#elif 0
 
 #ifdef HAVE_OPENSSL
 
@@ -1526,7 +1526,7 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("10=%llu\n",a);
     printf("16=%llx\n",a);
 
-#elif 0
+#elif 1
 
     abcdk_nonce_t *ctx = abcdk_nonce_create();
 

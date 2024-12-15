@@ -44,8 +44,8 @@ typedef struct _abcdk_stcp abcdk_stcp_t;
 /**TCP节点。 */
 typedef struct _abcdk_stcp_node abcdk_stcp_node_t;
 
-/**安全方案。*/
-typedef enum _abcdk_stcp_ssl_scheme
+/**常量。*/
+typedef enum _abcdk_stcp_constant
 {
     /**RAW.*/
     ABCDK_STCP_SSL_SCHEME_RAW = 0,
@@ -60,13 +60,9 @@ typedef enum _abcdk_stcp_ssl_scheme
 #define ABCDK_STCP_SSL_SCHEME_RSA   ABCDK_STCP_SSL_SCHEME_RSA
 
     /**PKI is based on RSA.*/
-    ABCDK_STCP_SSL_SCHEME_PKIS = 3
+    ABCDK_STCP_SSL_SCHEME_PKIS = 3,
 #define ABCDK_STCP_SSL_SCHEME_PKIS   ABCDK_STCP_SSL_SCHEME_PKIS
-}abcdk_stcp_ssl_scheme_t;
 
-/**通知事件。*/
-typedef enum _abcdk_stcp_event
-{
     /**
      * 新连接。
      * 
@@ -116,10 +112,10 @@ typedef enum _abcdk_stcp_event
      * 
      * @return 忽略。
     */
-    ABCDK_STCP_EVENT_INTERRUPT = 6
+    ABCDK_STCP_EVENT_INTERRUPT = 6,
 #define ABCDK_STCP_EVENT_INTERRUPT ABCDK_STCP_EVENT_INTERRUPT
 
-}abcdk_stcp_event_t;
+}abcdk_stcp_constant_t;
 
 /** 
  * 配置。

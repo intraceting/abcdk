@@ -9,8 +9,11 @@
 /**简单的RPC服务。*/
 struct _abcdk_srpc
 {
-    /*通讯IO。*/
+    /*IO环境。*/
     abcdk_stcp_t *io_ctx;
+
+    /*NONCE环境。*/
+    abcdk_nonce_t *nonce_ctx;
 
 };//abcdk_srpc_t
 
@@ -184,6 +187,7 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
     *ctx = NULL;
 
     abcdk_stcp_destroy(&ctx_p->io_ctx);
+    abcdk_nonce_destroy(&ctx_p->nonce_ctx);
     abcdk_heap_free(ctx_p);
 }
 
@@ -203,6 +207,12 @@ abcdk_srpc_t *abcdk_srpc_create(int worker)
     if (!ctx->io_ctx)
         goto ERR;
 
+    ctx->nonce_ctx = abcdk_nonce_create();
+    if (!ctx->nonce_ctx)
+        goto ERR;
+
+    abcdk_nonce_reset(ctx->nonce_ctx, 5 * 1000);
+
     return ctx;
 ERR:
 
@@ -217,6 +227,19 @@ void abcdk_srpc_stop(abcdk_srpc_t *ctx)
         return;
 
     abcdk_stcp_stop(ctx->io_ctx);
+}
+
+int abcdk_srpc_nonce_reset(abcdk_srpc_t *ctx,uint64_t time_diff)
+{
+    int chk;
+
+    assert(ctx != NULL && time_diff != 0);
+
+    chk = abcdk_nonce_reset(ctx->nonce_ctx,time_diff * 1000);
+    if(chk != 0)
+        return -1;
+
+    return 0;
 }
 
 static void _abcdk_srpc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
@@ -352,37 +375,55 @@ static void _abcdk_srpc_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *r
 static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
 {
     abcdk_srpc_node_t *node_ctx_p;
-    const void *req_data;
-    size_t req_size;
+    char remote_addr[NAME_MAX] = {0};
+    abcdk_bit_t reqbit = {0};
     uint32_t len;
     uint8_t cmd;
     uint64_t mid;
+    uint8_t nonce[32];
     abcdk_object_t *cargo;
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
-    req_size = abcdk_receiver_length(node_ctx_p->req_data);
+    reqbit.data = (void*)abcdk_receiver_data(node_ctx_p->req_data, 0);
+    reqbit.size = abcdk_receiver_length(node_ctx_p->req_data);
 
-    len = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 0, 32);
-    cmd = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 32, 8);
-    mid = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
+    /*
+     * |Length  |CMD    |MID     |NONCE    |Data    |
+     * |--------|-------|--------|---------|--------|
+     * |4 Bytes |1 Byte |8 Bytes |32 bytes |N Bytes |
+    */
 
-    if (cmd == 1) //RSP
+    len = abcdk_bit_read2number(&reqbit, 32);
+    cmd = abcdk_bit_read2number(&reqbit, 8);
+    mid = abcdk_bit_read2number(&reqbit, 64);
+    abcdk_bit_read2buffer(&reqbit, nonce, 32);
+
+    chk = abcdk_nonce_check(node_ctx_p->father->nonce_ctx, nonce);
+    if (chk != 0)
     {
-        cargo = abcdk_object_copyfrom(ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
-        if(!cargo)
-            return;
+        abcdk_stcp_get_sockaddr_str(node,NULL,remote_addr);
+        abcdk_trace_output(LOG_WARNING, "NONCE无效(%d)，丢弃来自(%s)的数据包。\n",chk,remote_addr);
+        return;
+    }
+    
+    cargo = abcdk_bit_read2object(&reqbit, len - 41);
+    if (!cargo)
+        return;
 
+    if (cmd == ABCDK_SRPC_CMD_RSP)
+    {
         chk = abcdk_waiter_response(node_ctx_p->req_waiter, mid, cargo);
         if(chk != 0)
             abcdk_object_unref(&cargo);
     }
-    else if (cmd == 2) //REQ
+    else if (cmd == ABCDK_SRPC_CMD_REQ)
     {
         if(node_ctx_p->cfg.request_cb)
-            node_ctx_p->cfg.request_cb(node_ctx_p->cfg.opaque,(abcdk_srpc_session_t*)node,mid,ABCDK_PTR2VPTR(req_data, 13), req_size - 13);
+            node_ctx_p->cfg.request_cb(node_ctx_p->cfg.opaque,(abcdk_srpc_session_t*)node,mid,cargo->pptrs[0],cargo->sizes[0]);
+
+        abcdk_object_unref(&cargo);
     }
 }
 
@@ -504,35 +545,40 @@ int abcdk_srpc_connect(abcdk_srpc_session_t *session,abcdk_sockaddr_t *addr,abcd
 static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid, const void *data, size_t size,int key)
 {
     abcdk_srpc_node_t *node_ctx_p;
-    abcdk_object_t *msg;
+    abcdk_bit_t reqbit = {0};
+    abcdk_object_t *reqmsg = NULL;
+    uint8_t nonce[32] = {0};
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*
-     * |Length  |CMD    |MID     |Data    |
-     * |4 Bytes |1 Byte |8 Bytes |N Bytes |
-     *
-     * Length：消息长度。注：不包含自身。
-     * CMD：1 应答，2 请求。
-     * MID：消息ID。
-     */
-
-    msg = abcdk_object_alloc2(4 + 1 + 8 + size);
-    if (!msg)
+    reqmsg = abcdk_object_alloc2(4 + 1 + 8 + 32 + size);
+    if (!reqmsg)
         return -1;
 
-    abcdk_bloom_write_number(msg->pptrs[0], msg->sizes[0], 0, 32, msg->sizes[0] - 4);
-    abcdk_bloom_write_number(msg->pptrs[0], msg->sizes[0], 32, 8, cmd);
-    abcdk_bloom_write_number(msg->pptrs[0], msg->sizes[0], 40, 64, mid);
-    memcpy(msg->pptrs[0] + 13, data, size);
+    reqbit.data = reqmsg->pptrs[0];
+    reqbit.size = reqmsg->sizes[0];
 
-    chk = abcdk_stcp_post(node,msg,key);
+    abcdk_nonce_generate(node_ctx_p->father->nonce_ctx,nonce);
+
+    /*
+     * |Length  |CMD    |MID     |NONCE    |Data    |
+     * |--------|-------|--------|---------|--------|
+     * |4 Bytes |1 Byte |8 Bytes |32 bytes |N Bytes |
+    */
+
+    abcdk_bit_write_number(&reqbit, 32, 1 + 8 + 32 + size);
+    abcdk_bit_write_number(&reqbit, 8, cmd);
+    abcdk_bit_write_number(&reqbit, 64, mid);
+    abcdk_bit_write_buffer(&reqbit, nonce, 32);
+    abcdk_bit_write_buffer(&reqbit, data, size);
+
+    chk = abcdk_stcp_post(node,reqmsg,key);
     if(chk == 0)
         return 0;
 
     /*如果发送失败则删除消息，避免发生内存泄漏。*/
-    abcdk_object_unref(&msg);
+    abcdk_object_unref(&reqmsg);
     return -2;
 }
 

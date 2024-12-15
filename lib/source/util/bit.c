@@ -54,6 +54,21 @@ void abcdk_bit_read2buffer(abcdk_bit_t *ctx, uint8_t *buf, size_t size)
     ctx->pos += (size * 8);
 }
 
+abcdk_object_t *abcdk_bit_read2object(abcdk_bit_t *ctx, size_t size)
+{
+    abcdk_object_t *buf;
+
+    assert(ctx != NULL && size > 0);
+
+    buf = abcdk_object_alloc2(size);
+    if(!buf)
+        return NULL;
+
+    abcdk_bit_read2buffer(ctx,buf->pptrs[0],buf->sizes[0]);
+
+    return buf;
+}
+
 void abcdk_bit_write_number(abcdk_bit_t *ctx, uint8_t bits, uint64_t num)
 {
     assert(ctx != NULL && bits > 0);

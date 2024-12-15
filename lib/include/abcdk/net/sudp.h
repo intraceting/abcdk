@@ -29,8 +29,8 @@ typedef struct _abcdk_sudp abcdk_sudp_t;
 /**UDP节点。 */
 typedef struct _abcdk_sudp_node abcdk_sudp_node_t;
 
-/**安全方案。*/
-typedef enum _abcdk_sudp_ssl_scheme
+/**常量。*/
+typedef enum _abcdk_sudp_constant
 {
     /**RAW.*/
     ABCDK_SUDP_SSL_SCHEME_RAW = 0,
@@ -43,7 +43,7 @@ typedef enum _abcdk_sudp_ssl_scheme
     /**AES-256-CBC.*/
     ABCDK_SUDP_SSL_SCHEME_AES256CBC = 2
 #define ABCDK_SUDP_SSL_SCHEME_AES256CBC   ABCDK_SUDP_SSL_SCHEME_AES256CBC
-}abcdk_sudp_ssl_scheme_t;
+}abcdk_sudp_constant_t;
 
 /** 
  * 配置。
