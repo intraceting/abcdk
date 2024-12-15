@@ -60,7 +60,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 
     abcdk_trace_set_log(abcdk_logger_from_trace, log_ctx);
 
-    abcdk_srpc_t *srpc_ctx = abcdk_srpc_create(4);
+    abcdk_srpc_t *srpc_ctx = abcdk_srpc_create(4,5);
 
     int role = abcdk_option_get_int(args, "--role", 0, 1);
 
@@ -125,7 +125,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
         uint64_t s = 0;
         abcdk_clock(s,&s);
 
-#pragma omp parallel for num_threads(2)
+//#pragma omp parallel for num_threads(2)
         for (int j = 0; j < count; j++)
         {
             char buf[65000] = {0};
@@ -135,13 +135,20 @@ int abcdk_test_srpc(abcdk_option_t *args)
              if (j % 3 == 0 && rand_rsp)
                  *a = 0;
 
-             int b = abcdk_rand(5, 64000);
+         //   abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
-#if HAVE_OPENSSL
-            RAND_bytes(buf + 4, b - 4);
+            int b = abcdk_rand(5, 64000);
+          //  int b = 1000;
+
+        //    abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+
+#ifdef HAVE_OPENSSL
+        RAND_bytes(buf + 4, b - 4);
 #else 
-            abcdk_rand_bytes(buf + 4, b - 4, 0);
+        abcdk_rand_bytes(buf + 4, b - 4, 5);
 #endif 
+
+         //   abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
             abcdk_object_t *rsp = NULL;
 
@@ -149,10 +156,16 @@ int abcdk_test_srpc(abcdk_option_t *args)
             int chk = abcdk_srpc_request(session_p, buf, b,NULL);
             assert (chk == 0);
 
+     //       abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+
             if (rsp)
                 assert(memcmp(rsp->pptrs[0]+4, buf+4, b-4) == 0);
 
+       //     abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+
             abcdk_object_unref(&rsp);
+
+            usleep(20);
         }
 
         abcdk_trace_output(LOG_INFO,"cast:%0.6f\n",(double)abcdk_clock(s,&s)/1000000.);

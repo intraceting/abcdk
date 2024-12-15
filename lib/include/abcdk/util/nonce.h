@@ -21,24 +21,21 @@ typedef struct _abcdk_nonce abcdk_nonce_t;
 /**销毁*/
 void abcdk_nonce_destroy(abcdk_nonce_t **ctx);
 
-/**创建。*/
-abcdk_nonce_t *abcdk_nonce_create();
-
 /**
- * 重置。
- *
- * @param [in] time_diff 时间误差(毫秒)。
+ * 创建。
  * 
- * @return 0 成功，-1 失败。
+ * @note 时间误差值越大占用的内存空间越多。
+ * 
+ * @param [in] diff 时间(毫秒)误差。
 */
-int abcdk_nonce_reset(abcdk_nonce_t *ctx,uint64_t time_diff);
+abcdk_nonce_t *abcdk_nonce_create(uint64_t diff);
 
 /**
  * 生成。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32]);
+int abcdk_nonce_generate(abcdk_nonce_t *ctx,const uint8_t prefix[16],uint8_t key[32]);
 
 /**
  * 检查。

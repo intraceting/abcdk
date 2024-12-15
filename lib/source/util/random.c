@@ -71,6 +71,8 @@ uint64_t abcdk_rand(uint64_t min, uint64_t max)
 
 uint8_t *abcdk_rand_bytes(uint8_t *buf, size_t size, int type)
 {
+    int chk;
+
     static char dict_printable[] = {
         ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
@@ -99,22 +101,23 @@ uint8_t *abcdk_rand_bytes(uint8_t *buf, size_t size, int type)
     assert(buf != NULL && size > 0);
     assert(type >= 0 && type <= 5);
 
+    chk = _abcdk_rand_read(buf, size);
+    //assert(chk == size);
+
     for (int i = 0; i < size; i++)
     {
-        uint64_t rand_num = abcdk_rand(0,UINT64_MAX-1);
-
         if (0 == type)
-            buf[i] = dict_printable[rand_num % sizeof(dict_printable)];
+            buf[i] = dict_printable[buf[i] % sizeof(dict_printable)];
         else if (1 == type)
-            buf[i] = dict_alnum[rand_num % sizeof(dict_alnum)];
+            buf[i] = dict_alnum[buf[i] % sizeof(dict_alnum)];
         else if (2 == type)
-            buf[i] = dict_uppercase[rand_num % sizeof(dict_uppercase)];
+            buf[i] = dict_uppercase[buf[i] % sizeof(dict_uppercase)];
         else if (3 == type)
-            buf[i] = dict_lowercase[rand_num % sizeof(dict_lowercase)];
+            buf[i] = dict_lowercase[buf[i] % sizeof(dict_lowercase)];
         else if (4 == type)
-            buf[i] = dict_digit[rand_num % sizeof(dict_digit)];
+            buf[i] = dict_digit[buf[i] % sizeof(dict_digit)];
         else if (5 == type)
-            buf[i] = (uint8_t)(rand_num % 256);
+            break;
     }
 
     return buf;

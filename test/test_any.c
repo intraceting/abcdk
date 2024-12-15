@@ -1528,20 +1528,26 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-    abcdk_nonce_t *ctx = abcdk_nonce_create();
+    abcdk_nonce_t *ctx = abcdk_nonce_create(10);
 
-    abcdk_nonce_reset(ctx,10);
 
     for (int i = 0; i < 1000000000; i++)
     {
         uint8_t key[48];
+        uint8_t prefix[16];
 
-        abcdk_nonce_generate(ctx,key);
+#ifdef HAVE_OPENSSL
+        RAND_bytes(prefix,16);
+#else 
+        abcdk_rand_bytes(prefix,16, 5);
+#endif 
+
+        abcdk_nonce_generate(ctx,prefix,key);
 
         //uint64_t s = abcdk_rand(1000,6000);
-        uint64_t s = abcdk_rand(1,11);
+     //   uint64_t s = abcdk_rand(1,11);
 
-        usleep(s*1000);
+     //   usleep(s*1000);
 
         int chk = abcdk_nonce_check(ctx,key);
 

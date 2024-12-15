@@ -18,6 +18,8 @@
 #include "abcdk/util/rwlock.h"
 #include "abcdk/util/worker.h"
 #include "abcdk/util/asioex.h"
+#include "abcdk/util/nonce.h"
+#include "abcdk/util/bit.h"
 #include "abcdk/openssl/cipherex.h"
 
 
@@ -139,19 +141,22 @@ int abcdk_sudp_set_timeout(abcdk_sudp_node_t *node, time_t timeout);
 */
 int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node,const uint8_t *key,size_t klen,int flag);
 
-
 /**销毁*/
 void abcdk_sudp_destroy(abcdk_sudp_t **ctx);
 
 /**
  * 创建。
  * 
+ * @note NONCE时间误差值越大占用的内存空间越多。
+ * 
  * @param [in] worker 工人(线程)数量。
+ * @param [in] diff NONCE时间(秒)误差。
 */
-abcdk_sudp_t *abcdk_sudp_create(int worker);
+abcdk_sudp_t *abcdk_sudp_create(int worker, int diff);
 
 /**停止。*/
 void abcdk_sudp_stop(abcdk_sudp_t *ctx);
+
 
 /**
  * 登记。
@@ -164,6 +169,8 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg);
 
 /**
  * 投递数据。
+ * 
+ * @param [in] size 长度。1~64000有效。
  * 
  * @return 0 成功，-1 失败。
 */

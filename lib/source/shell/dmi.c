@@ -6,7 +6,7 @@
  */
 #include "abcdk/shell/dmi.h"
 
-int _abcdk_dmi_get_machine_hashcode_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+int _abcdk_dmi_hash_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     /*已经结束。*/
     if(depth == SIZE_MAX)
@@ -20,12 +20,12 @@ int _abcdk_dmi_get_machine_hashcode_dump_cb(size_t depth, abcdk_tree_t *node, vo
     return 1;
 }
 
-int _abcdk_dmi_get_machine_hashcode_compare_cb(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque)
+int _abcdk_dmi_hash_compare_cb(const abcdk_tree_t *node1, const abcdk_tree_t *node2, void *opaque)
 {
     return abcdk_strcmp(node1->obj->pstrs[0],node2->obj->pstrs[0],1);
 }
 
-const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, const char *stuff)
+const uint8_t *abcdk_dmi_hash(uint8_t uuid[16], uint32_t flag, const char *stuff)
 {
     abcdk_tree_t *sn_vec = NULL,*mmc_vec = NULL,*scsi_vec = NULL, *p = NULL,*p2 = NULL;
     abcdk_ifaddrs_t ifaddr_vec[100] = {0};
@@ -51,13 +51,13 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
     if(!md5_ctx)
         goto final_error;
 
-    if (ABCDK_DMI_MACHINE_HC_DEVICE_MAC & flag)
+    if (ABCDK_DMI_HASH_USE_DEVICE_MAC & flag)
         ifaddr_count = abcdk_ifname_fetch(ifaddr_vec, 100, 1, 1);
 
-    if (ABCDK_DMI_MACHINE_HC_DEVICE_MMC & flag)
+    if (ABCDK_DMI_HASH_USE_DEVICE_MMC & flag)
         abcdk_mmc_list(mmc_vec);
         
-    if (ABCDK_DMI_MACHINE_HC_DEVICE_SCSI & flag)
+    if (ABCDK_DMI_HASH_USE_DEVICE_SCSI & flag)
         abcdk_scsi_list(scsi_vec);
 
     for(int i = 0;i<ifaddr_count;i++)
@@ -109,7 +109,7 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
         p2 = abcdk_tree_sibling(p2, 0);
     }
 
-    abcdk_tree_iterator_t it = {0,NULL,_abcdk_dmi_get_machine_hashcode_dump_cb,_abcdk_dmi_get_machine_hashcode_compare_cb};
+    abcdk_tree_iterator_t it = {0,NULL,_abcdk_dmi_hash_dump_cb,_abcdk_dmi_hash_compare_cb};
 
   //  abcdk_tree_scan(sn_vec,&it);
    // goto final_error;
@@ -120,7 +120,7 @@ const uint8_t *abcdk_dmi_get_machine_hashcode(uint8_t uuid[16], uint32_t flag, c
    // abcdk_tree_scan(sn_vec,&it);
 
     /*添加自定义干扰项。*/
-    if (ABCDK_DMI_MACHINE_HC_STUFF & flag)
+    if (ABCDK_DMI_HASH_USE_STUFF & flag)
     {
         assert(stuff != NULL && *stuff != '\0');
 

@@ -84,7 +84,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
     cfg[1].input_cb = input_cb;
     cfg[1].ssl_scheme = key_p?ABCDK_SUDP_SSL_SCHEME_AES256GCM:ABCDK_SUDP_SSL_SCHEME_RAW;
 
-    abcdk_sudp_t *ctx = abcdk_sudp_create(worker);
+    abcdk_sudp_t *ctx = abcdk_sudp_create(worker,5);
 
 #pragma omp parallel for num_threads(2)
     for (int j = 0; j < 2; j++)

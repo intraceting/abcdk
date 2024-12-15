@@ -58,7 +58,7 @@ void abcdk_nonce_destroy(abcdk_nonce_t **ctx)
 static uint64_t _abcdk_nonce_node_key_size_cb(const void *key, void *opaque);
 static uint64_t _abcdk_nonce_dog_routine_cb(void *opaque);
 
-abcdk_nonce_t *abcdk_nonce_create()
+abcdk_nonce_t *abcdk_nonce_create(uint64_t diff)
 {
     abcdk_nonce_t *ctx;
 
@@ -81,6 +81,9 @@ abcdk_nonce_t *abcdk_nonce_create()
     if (!ctx->dog_ctx)
         goto ERR;
 
+    /*复制时间误差。*/
+    ctx->time_diff = diff;
+
     return ctx;
 
 ERR:
@@ -92,20 +95,6 @@ ERR:
 static uint64_t _abcdk_nonce_clock()
 {
     return abcdk_time_clock2kind_with(CLOCK_REALTIME, 3);
-}
-
-int abcdk_nonce_reset(abcdk_nonce_t *ctx, uint64_t time_diff)
-{
-    assert(ctx != NULL && time_diff != 0);
-
-    abcdk_rwlock_wrlock(ctx->locker_ctx,1);
-
-    /*复制时间误差。*/
-    ctx->time_diff = time_diff;
-
-    abcdk_rwlock_unlock(ctx->locker_ctx);
-
-    return 0;
 }
 
 static int _abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
@@ -134,7 +123,7 @@ static int _abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
     return chk;
 }
 
-static int _abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32])
+static int _abcdk_nonce_generate(abcdk_nonce_t *ctx,const uint8_t prefix[16],uint8_t key[32])
 {
     /**
      * |RANDOM   |TIME-MS |SEQ-NUM |
@@ -142,20 +131,20 @@ static int _abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32])
      * |16 bytes |8 bytes |8 bytes |
     */
 
-    abcdk_rand_bytes(key, 16, 5);
+    memcpy(key, prefix,16);
     abcdk_bloom_write_number(key, 48, 16 * 8, 64, _abcdk_nonce_clock());
     abcdk_bloom_write_number(key, 48, 24 * 8, 64, abcdk_sequence_num());
 
     return 0;
 }
 
-int abcdk_nonce_generate(abcdk_nonce_t *ctx,uint8_t key[32])
+int abcdk_nonce_generate(abcdk_nonce_t *ctx,const uint8_t prefix[16],uint8_t key[32])
 {
     int chk;
 
     assert(ctx != NULL && key != NULL);
 
-    chk = _abcdk_nonce_generate(ctx,key);
+    chk = _abcdk_nonce_generate(ctx,prefix,key);
     if(chk != 0)
         return -1;
 

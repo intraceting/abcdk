@@ -193,7 +193,7 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx)
 
 static void _abcdk_srpc_input_transfer_cb(void *opaque,uint64_t event,void *item);
 
-abcdk_srpc_t *abcdk_srpc_create(int worker)
+abcdk_srpc_t *abcdk_srpc_create(int worker, int diff)
 {
     abcdk_srpc_t *ctx;
 
@@ -202,16 +202,15 @@ abcdk_srpc_t *abcdk_srpc_create(int worker)
         return NULL;
 
     worker = ABCDK_CLAMP(worker,1,worker);
+    diff = ABCDK_CLAMP(diff,1,diff);
 
     ctx->io_ctx = abcdk_stcp_create(worker);
     if (!ctx->io_ctx)
         goto ERR;
 
-    ctx->nonce_ctx = abcdk_nonce_create();
+    ctx->nonce_ctx = abcdk_nonce_create(diff * 1000);
     if (!ctx->nonce_ctx)
         goto ERR;
-
-    abcdk_nonce_reset(ctx->nonce_ctx, 5 * 1000);
 
     return ctx;
 ERR:
@@ -227,19 +226,6 @@ void abcdk_srpc_stop(abcdk_srpc_t *ctx)
         return;
 
     abcdk_stcp_stop(ctx->io_ctx);
-}
-
-int abcdk_srpc_nonce_reset(abcdk_srpc_t *ctx,uint64_t time_diff)
-{
-    int chk;
-
-    assert(ctx != NULL && time_diff != 0);
-
-    chk = abcdk_nonce_reset(ctx->nonce_ctx,time_diff * 1000);
-    if(chk != 0)
-        return -1;
-
-    return 0;
 }
 
 static void _abcdk_srpc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
@@ -425,6 +411,10 @@ static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
 
         abcdk_object_unref(&cargo);
     }
+    else
+    {
+        abcdk_object_unref(&cargo);
+    }
 }
 
 static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size_t size, size_t *remain)
@@ -546,20 +536,26 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
 {
     abcdk_srpc_node_t *node_ctx_p;
     abcdk_bit_t reqbit = {0};
-    abcdk_object_t *reqmsg = NULL;
-    uint8_t nonce[32] = {0};
+    abcdk_object_t *reqbuf = NULL;
+    uint8_t nonce[32] = {0}, prefix[16] = {0};
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    reqmsg = abcdk_object_alloc2(4 + 1 + 8 + 32 + size);
-    if (!reqmsg)
+    reqbuf = abcdk_object_alloc2(4 + 1 + 8 + 32 + size);
+    if (!reqbuf)
         return -1;
 
-    reqbit.data = reqmsg->pptrs[0];
-    reqbit.size = reqmsg->sizes[0];
+    reqbit.data = reqbuf->pptrs[0];
+    reqbit.size = reqbuf->sizes[0];
 
-    abcdk_nonce_generate(node_ctx_p->father->nonce_ctx,nonce);
+#ifdef HAVE_OPENSSL
+    RAND_bytes(prefix, 16);
+#else
+    abcdk_rand_bytes(prefix, 16, 5);
+#endif
+
+    abcdk_nonce_generate(node_ctx_p->father->nonce_ctx,prefix,nonce);
 
     /*
      * |Length  |CMD    |MID     |NONCE    |Data    |
@@ -573,12 +569,12 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
     abcdk_bit_write_buffer(&reqbit, nonce, 32);
     abcdk_bit_write_buffer(&reqbit, data, size);
 
-    chk = abcdk_stcp_post(node,reqmsg,key);
+    chk = abcdk_stcp_post(node,reqbuf,key);
     if(chk == 0)
         return 0;
 
     /*如果发送失败则删除消息，避免发生内存泄漏。*/
-    abcdk_object_unref(&reqmsg);
+    abcdk_object_unref(&reqbuf);
     return -2;
 }
 
