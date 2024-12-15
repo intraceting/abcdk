@@ -541,12 +541,16 @@ static void _abcdk_sudp_input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remo
     char remote_str[100] = {0};
     int chk;
 
+
     /*
      * |NONCE    |Data    |
      * |---------|--------|
      * |32 bytes |N Bytes |
      */
 
+    if (size < 32)
+        return;
+        
     chk = abcdk_nonce_check(node->ctx->nonce_ctx, ABCDK_PTR2U8PTR(data, 0));
     if (chk != 0)
     {

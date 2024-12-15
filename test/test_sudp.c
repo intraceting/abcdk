@@ -105,10 +105,10 @@ int abcdk_test_sudp(abcdk_option_t *args)
  //#pragma omp parallel for num_threads(2)
         for (int i = 0; i < 10; i++)
         {
-            abcdk_object_t *data = abcdk_object_alloc2(64512);
-            //int k = rand() % 64512;
+            abcdk_object_t *data = abcdk_object_alloc2(64000);
+            //int k = rand() % 64000;
             int k = 1400;
-            int len = ABCDK_CLAMP(k, 1, 64512 - 3);
+            int len = ABCDK_CLAMP(k, 1, 64000 - 3);
 
             abcdk_bloom_write_number(data->pptrs[0], 3, 0, 16, len);
             abcdk_bloom_write_number(data->pptrs[0], 3, 16, 8, 1);

@@ -381,6 +381,9 @@ static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
      * |4 Bytes |1 Byte |8 Bytes |32 bytes |N Bytes |
     */
 
+    if (reqbit.size < (4 + 1 + 8 + 32))
+        return;
+
     len = abcdk_bit_read2number(&reqbit, 32);
     cmd = abcdk_bit_read2number(&reqbit, 8);
     mid = abcdk_bit_read2number(&reqbit, 64);
@@ -393,8 +396,11 @@ static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
         abcdk_trace_output(LOG_WARNING, "NONCE无效(%d)，丢弃来自(%s)的数据包。\n",chk,remote_addr);
         return;
     }
-    
-    cargo = abcdk_bit_read2object(&reqbit, len - 41);
+
+    if (len < (1 + 8 + 32))
+        return;
+
+    cargo = abcdk_bit_read2object(&reqbit, len - (1 + 8 + 32));
     if (!cargo)
         return;
 
