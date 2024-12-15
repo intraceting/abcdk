@@ -1531,6 +1531,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_nonce_t *ctx = abcdk_nonce_create(10);
 
 
+#pragma omp parallel for num_threads(4)
     for (int i = 0; i < 1000000000; i++)
     {
         uint8_t key[48];

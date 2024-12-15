@@ -9,9 +9,6 @@
 /**简单的NONCE环境。 */
 struct _abcdk_nonce
 {
-    /**同步锁。*/
-    abcdk_rwlock_t *locker_ctx;
-
     /**列表配置。*/
     abcdk_registry_config_t list_cfg;
 
@@ -50,7 +47,6 @@ void abcdk_nonce_destroy(abcdk_nonce_t **ctx)
     *ctx = NULL;
 
     abcdk_timer_destroy(&ctx_p->dog_ctx);
-    abcdk_rwlock_destroy(&ctx_p->locker_ctx);
     abcdk_registry_destroy(&ctx_p->list_ctx);
     abcdk_heap_free(ctx_p);
 }
@@ -71,10 +67,6 @@ abcdk_nonce_t *abcdk_nonce_create(uint64_t diff)
     ctx->list_cfg.opaque = ctx;
     ctx->list_ctx = abcdk_registry_create(&ctx->list_cfg);
     if(!ctx->list_ctx)
-        goto ERR;
-
-    ctx->locker_ctx = abcdk_rwlock_create();
-    if(!ctx->locker_ctx)
         goto ERR;
 
     ctx->dog_ctx = abcdk_timer_create(_abcdk_nonce_dog_routine_cb,ctx);
@@ -257,9 +249,7 @@ static void _abcdk_nonce_dog_process_node(abcdk_nonce_t *ctx, abcdk_nonce_node_t
     uint64_t now_tick, old_tick, diff_tick;
     int chk;
 
-    abcdk_rwlock_rdlock(ctx->locker_ctx, 1);
     chk = _abcdk_nonce_check(ctx, node->key);
-    abcdk_rwlock_unlock(ctx->locker_ctx);
 
     /*超过时差范围，删除。*/
     if (chk != 0)
@@ -296,9 +286,7 @@ int abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
 
     assert(ctx != NULL && key != NULL);
 
-    abcdk_rwlock_rdlock(ctx->locker_ctx, 1);
     chk = _abcdk_nonce_check(ctx, key);
-    abcdk_rwlock_unlock(ctx->locker_ctx);
 
     /*超过误差范围，直接返回。*/
     if (chk != 0)
