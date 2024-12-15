@@ -103,7 +103,7 @@ int abcdk_test_sudp(abcdk_option_t *args)
             abcdk_sudp_cipher_reset(node, (uint8_t *)key_p, strlen(key_p), 0x01 | 0x02);
 
  //#pragma omp parallel for num_threads(2)
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 100000000; i++)
         {
             abcdk_object_t *data = abcdk_object_alloc2(64000);
             //int k = rand() % 64000;
