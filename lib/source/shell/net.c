@@ -215,7 +215,7 @@ int abcdk_net_set_mtu(uint16_t mtu, const char *ifname)
     pid_t pid = -1;
     int chk;
 
-    assert(mtu >= 1400 && ifname != NULL);
+    assert(mtu >= 1280 && ifname != NULL);
     assert(*ifname != '\0');
 
     pid = abcdk_proc_popen(NULL, NULL, NULL,"ip link set %s mtu %hu", ifname,mtu);
