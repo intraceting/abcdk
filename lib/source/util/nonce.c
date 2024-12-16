@@ -18,6 +18,12 @@ struct _abcdk_nonce
     /**看门狗。*/
     abcdk_timer_t *dog_ctx;
 
+    /**看门狗最近活动记录。*/
+    volatile uint64_t dog_latest;
+
+    /**检查的最近活动记录。*/
+    volatile uint64_t chk_latest;
+
     /**时间误差(毫秒)。*/
     uint64_t time_diff;
 
@@ -89,7 +95,7 @@ static uint64_t _abcdk_nonce_clock()
     return abcdk_time_clock2kind_with(CLOCK_REALTIME, 3);
 }
 
-static int _abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
+static int _abcdk_nonce_diff_time(abcdk_nonce_t *ctx, const uint8_t key[32])
 {
     uint64_t now_tick, old_tick, diff_tick;
     int chk;
@@ -135,6 +141,10 @@ int abcdk_nonce_generate(abcdk_nonce_t *ctx,const uint8_t prefix[16],uint8_t key
     int chk;
 
     assert(ctx != NULL && key != NULL);
+
+    /*可能未启用。*/
+    if (ctx->time_diff == 0)
+        return 0;
 
     chk = _abcdk_nonce_generate(ctx,prefix,key);
     if(chk != 0)
@@ -249,7 +259,7 @@ static void _abcdk_nonce_dog_process_node(abcdk_nonce_t *ctx, abcdk_nonce_node_t
     uint64_t now_tick, old_tick, diff_tick;
     int chk;
 
-    chk = _abcdk_nonce_check(ctx, node->key);
+    chk = _abcdk_nonce_diff_time(ctx, node->key);
 
     /*超过时差范围，删除。*/
     if (chk != 0)
@@ -258,23 +268,32 @@ static void _abcdk_nonce_dog_process_node(abcdk_nonce_t *ctx, abcdk_nonce_node_t
 
 static uint64_t _abcdk_nonce_dog_routine_cb(void *opaque)
 {
-    abcdk_nonce_t *ctx = (abcdk_nonce_t*)opaque;
+    abcdk_nonce_t *ctx = (abcdk_nonce_t *)opaque;
     abcdk_nonce_node_t node = {0};
     void *it_p = NULL;
+    int interval;
     int chk;
 
-    while(1)
+    abcdk_atomic_store(&ctx->dog_latest, ctx->chk_latest);
+
+    while (1)
     {
-        chk = _abcdk_nonce_dog_next_node(ctx,&node,&it_p);
-        if(chk == 0)
+        chk = _abcdk_nonce_dog_next_node(ctx, &node, &it_p);
+        if (chk == 0)
             break;
 
-        _abcdk_nonce_dog_process_node(ctx,&node);
+        _abcdk_nonce_dog_process_node(ctx, &node);
 
-        memset(&node,0,sizeof(node));//clear.
+        memset(&node, 0, sizeof(node)); // clear.
     }
 
-    return 1000;
+    interval = (abcdk_atomic_compare(&ctx->dog_latest, ctx->chk_latest) ? 1000 : 0);
+
+    /*仅在更新频率较低时，回收内存。*/
+    if (interval != 0)
+        abcdk_heap_trim(0);
+
+    return interval;
 }
 
 int abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
@@ -286,7 +305,14 @@ int abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
 
     assert(ctx != NULL && key != NULL);
 
-    chk = _abcdk_nonce_check(ctx, key);
+    /*可能未启用。*/
+    if (ctx->time_diff == 0)
+        return 0;
+
+    /*更新活动记录。*/
+    abcdk_atomic_add_and_fetch(&ctx->chk_latest,1);
+
+    chk = _abcdk_nonce_diff_time(ctx, key);
 
     /*超过误差范围，直接返回。*/
     if (chk != 0)

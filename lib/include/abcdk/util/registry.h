@@ -45,7 +45,7 @@ typedef struct _abcdk_registry_config
      * 
      * @note 默认按ASCII值比较。
      *
-     * @return 0(key1 == key2)，!0(key1 != key2)。
+     * @return 0 (key1 == key2)，!0 (key1 != key2)。
      */
     int (*key_compare_cb)(const void *key1,  const void *key2, void *opaque);
 

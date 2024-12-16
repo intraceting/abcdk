@@ -19,14 +19,17 @@ struct _abcdk_sudp
     /**ASIOEX环境。*/
     abcdk_asioex_t *asioex_ctx;
 
-    /*NONCE环境。*/
-    abcdk_nonce_t *nonce_ctx;
-
     /**线程池配置。*/
     abcdk_worker_config_t worker_cfg;
 
     /**线程池环境。*/
     abcdk_worker_t *worker_ctx;
+    
+    /*NONCE环境。*/
+    abcdk_nonce_t *nonce_ctx;
+
+    /*NONCE前缀。*/
+    uint8_t nonce_prefix[16];
 
 }; // abcdk_sudp_t;
 
@@ -141,6 +144,12 @@ static abcdk_sudp_t *_abcdk_sudp_ctx_alloc(int worker, int diff)
     ctx->nonce_ctx = abcdk_nonce_create(diff * 1000);
     if (!ctx->nonce_ctx)
         goto ERR;
+    
+#ifdef OPENSSL_VERSION_NUMBER
+    RAND_bytes(ctx->nonce_prefix, 16);
+#else //OPENSSL_VERSION_NUMBER
+    abcdk_rand_bytes(ctx->nonce_prefix, 16, 5);
+#endif //OPENSSL_VERSION_NUMBER
 
     ctx->worker_cfg.numbers = worker;
     ctx->worker_cfg.opaque = ctx;
@@ -232,6 +241,7 @@ abcdk_sudp_node_t *abcdk_sudp_alloc(abcdk_sudp_t *ctx, size_t userdata, void (*f
 #endif // OPENSSL_VERSION_NUMBER
     node->userdata = abcdk_object_alloc3(userdata, 1);
     node->userdata_free_cb = free_cb;
+
 
     return node;
 }
@@ -652,7 +662,7 @@ int abcdk_sudp_post(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const voi
 {
     abcdk_bit_t reqbit = {0};
     abcdk_object_t *reqbuf = NULL;
-    uint8_t nonce[32] = {0}, prefix[16] = {0};
+    uint8_t nonce[32] = {0};
     int chk;
 
     assert(node != NULL && remote != NULL && data != NULL && size > 0 && size <= 64000);
@@ -667,13 +677,7 @@ int abcdk_sudp_post(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const voi
     reqbit.data = reqbuf->pptrs[0];
     reqbit.size = reqbuf->sizes[0];
 
-#ifdef HAVE_OPENSSL
-    RAND_bytes(prefix, 16);
-#else
-    abcdk_rand_bytes(prefix, 16, 5);
-#endif
-
-    abcdk_nonce_generate(node->ctx->nonce_ctx, prefix, nonce);
+    abcdk_nonce_generate(node->ctx->nonce_ctx, node->ctx->nonce_prefix, nonce);
 
     /*
      * |NONCE    |Data    |

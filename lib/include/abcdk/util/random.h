@@ -14,7 +14,9 @@
 __BEGIN_DECLS
 
 /**
- * 产生一个随机数。
+ * 获取一个随机数。
+ * 
+ * @warning 非常慢，能不用则不用。
  * 
  * @param [in out] seed 随机种子。
  */

@@ -15,6 +15,8 @@ struct _abcdk_srpc
     /*NONCE环境。*/
     abcdk_nonce_t *nonce_ctx;
 
+    /*NONCE前缀。*/
+    uint8_t nonce_prefix[16];
 };//abcdk_srpc_t
 
 /**RPC会话(内部)。*/
@@ -211,6 +213,12 @@ abcdk_srpc_t *abcdk_srpc_create(int worker, int diff)
     ctx->nonce_ctx = abcdk_nonce_create(diff * 1000);
     if (!ctx->nonce_ctx)
         goto ERR;
+    
+#ifdef OPENSSL_VERSION_NUMBER
+    RAND_bytes(ctx->nonce_prefix, 16);
+#else //OPENSSL_VERSION_NUMBER
+    abcdk_rand_bytes(ctx->nonce_prefix, 16, 5);
+#endif //OPENSSL_VERSION_NUMBER
 
     return ctx;
 ERR:
@@ -543,7 +551,7 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
     abcdk_srpc_node_t *node_ctx_p;
     abcdk_bit_t reqbit = {0};
     abcdk_object_t *reqbuf = NULL;
-    uint8_t nonce[32] = {0}, prefix[16] = {0};
+    uint8_t nonce[32] = {0};
     int chk;
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
@@ -555,13 +563,7 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
     reqbit.data = reqbuf->pptrs[0];
     reqbit.size = reqbuf->sizes[0];
 
-#ifdef HAVE_OPENSSL
-    RAND_bytes(prefix, 16);
-#else
-    abcdk_rand_bytes(prefix, 16, 5);
-#endif
-
-    abcdk_nonce_generate(node_ctx_p->father->nonce_ctx,prefix,nonce);
+    abcdk_nonce_generate(node_ctx_p->father->nonce_ctx,node_ctx_p->father->nonce_prefix,nonce);
 
     /*
      * |Length  |CMD    |MID     |NONCE    |Data    |

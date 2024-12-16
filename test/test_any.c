@@ -1528,41 +1528,55 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-    abcdk_nonce_t *ctx = abcdk_nonce_create(10);
+
+    abcdk_nonce_t *ctx = abcdk_nonce_create(0*5*1000);
+
+    uint64_t s = 0;
+    abcdk_clock(s, &s);
 
 
-#pragma omp parallel for num_threads(4)
-    for (int i = 0; i < 1000000000; i++)
+    uint8_t prefix[16];
+#ifdef HAVE_OPENSSL
+    RAND_bytes(prefix, 16);
+#else
+    abcdk_rand_bytes(prefix, 16, 5);
+#endif
+
+//#pragma omp parallel for num_threads(4)
+    for (int i = 0; i < 5000000; i++)
     {
         uint8_t key[48];
-        uint8_t prefix[16];
 
-#ifdef HAVE_OPENSSL
-        RAND_bytes(prefix,16);
-#else 
-        abcdk_rand_bytes(prefix,16, 5);
-#endif 
 
         abcdk_nonce_generate(ctx,prefix,key);
 
         //uint64_t s = abcdk_rand(1000,6000);
      //   uint64_t s = abcdk_rand(1,11);
+      //  uint64_t s = 1;
 
-     //   usleep(s*1000);
+
+      //  usleep(s);
 
         int chk = abcdk_nonce_check(ctx,key);
 
         uint64_t tick = abcdk_bloom_read_number(key, 32, 16 * 8, 64);
         uint64_t index = abcdk_bloom_read_number(key, 32, 24 * 8, 64);
-        printf("tick(%llu),index(%llu),chk(%d)\n",tick,index,chk);
+      //  printf("tick(%llu),index(%llu),chk(%d)\n",tick,index,chk);
 
-        chk = abcdk_nonce_check(ctx,key);
-        assert(chk != 0);
+     //   chk = abcdk_nonce_check(ctx,key);
+     //   assert(chk != 0);
     }
+
+    abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+
 
     getchar();
 
     abcdk_nonce_destroy(&ctx);
+
+    getchar();
+
+    
 
 #elif 0
 

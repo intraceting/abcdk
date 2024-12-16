@@ -6,6 +6,15 @@
  */
 #include "abcdk/util/heap.h"
 
+void abcdk_heap_trim (size_t pad)
+{
+
+#ifdef __USE_GNU
+    malloc_trim(pad);
+#endif //__USE_GNU
+
+}
+
 void* abcdk_heap_alloc_align(size_t alignment,size_t size)
 {
     void *ptr = NULL;

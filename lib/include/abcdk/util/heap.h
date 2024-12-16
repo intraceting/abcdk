@@ -9,8 +9,14 @@
 
 #include "abcdk/util/defs.h"
 #include "abcdk/util/atomic.h"
+#include "abcdk/util/time.h"
 
 __BEGIN_DECLS
+
+/**
+ * 内存回收。
+ */
+void abcdk_heap_trim (size_t pad);
 
 /**
  * 内存申请(对齐)。
