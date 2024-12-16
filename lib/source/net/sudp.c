@@ -135,7 +135,7 @@ static abcdk_sudp_t *_abcdk_sudp_ctx_alloc(int worker, int diff)
     ctx->refcount = 1;
 
     worker = ABCDK_CLAMP(worker, 1, worker);
-    diff = ABCDK_CLAMP(diff, 1, diff);
+    diff = ABCDK_CLAMP(diff, 0, diff);
 
     ctx->asioex_ctx = abcdk_asioex_create(worker, 99999);
     if (!ctx->asioex_ctx)

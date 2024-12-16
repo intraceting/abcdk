@@ -169,7 +169,7 @@ void abcdk_srpc_destroy(abcdk_srpc_t **ctx);
  * @note NONCE时间误差值越大占用的内存空间越多。
  * 
  * @param [in] worker 工人(线程)数量。
- * @param [in] diff NONCE时间(秒)误差。
+ * @param [in] diff NONCE时间(秒)误差。0 禁用。
 */
 abcdk_srpc_t *abcdk_srpc_create(int worker, int diff);
 

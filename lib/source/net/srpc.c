@@ -204,7 +204,7 @@ abcdk_srpc_t *abcdk_srpc_create(int worker, int diff)
         return NULL;
 
     worker = ABCDK_CLAMP(worker,1,worker);
-    diff = ABCDK_CLAMP(diff,1,diff);
+    diff = ABCDK_CLAMP(diff,0,diff);
 
     ctx->io_ctx = abcdk_stcp_create(worker);
     if (!ctx->io_ctx)

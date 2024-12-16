@@ -150,7 +150,7 @@ void abcdk_sudp_destroy(abcdk_sudp_t **ctx);
  * @note NONCE时间误差值越大占用的内存空间越多。
  * 
  * @param [in] worker 工人(线程)数量。
- * @param [in] diff NONCE时间(秒)误差。
+ * @param [in] diff NONCE时间(秒)误差。0 禁用。
 */
 abcdk_sudp_t *abcdk_sudp_create(int worker, int diff);
 
