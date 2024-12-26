@@ -47,6 +47,7 @@ static struct _abcdk_test_entry
     {"pem",abcdk_test_pem},
     {"usb",abcdk_test_usb},
     {"rand",abcdk_test_rand},
+    {"runonce",abcdk_test_runonce},
 };
 
 void _abcdk_test_print_usage()

@@ -51,6 +51,13 @@ char* abcdk_proc_basename(char* buf);
 int abcdk_proc_singleton(const char* lockfile,int* pid);
 
 /**
+ * 向单例进程发送信号。
+ * 
+ * @return 0 成功，-1 失败(不存在或已退出)。
+*/
+int abcdk_proc_singleton_kill(const char* lockfile,int signum);
+
+/**
  * 执行外部命令。
 */
 pid_t abcdk_proc_popen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const char *cmd, ...);
