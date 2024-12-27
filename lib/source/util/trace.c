@@ -12,8 +12,8 @@ static void _abcdk_trace_log_syslog(void *opaque,int type, const char *fmt, va_l
 }
 
 /*全局的*/
-void *g_trace_log_opaque = NULL;
-abcdk_trace_log_cb g_trace_log_func = _abcdk_trace_log_syslog;
+static void *g_trace_log_opaque = NULL;
+static abcdk_trace_log_cb g_trace_log_func = _abcdk_trace_log_syslog;
 
 void abcdk_trace_set_log(abcdk_trace_log_cb cb,void *opaque)
 {

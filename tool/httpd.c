@@ -710,6 +710,7 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
     abcdk_logger_t *logger;
     const char *log_path = NULL;
     int interval;
+    int chk;
 
     log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
     interval = abcdk_option_get_int(ctx->args, "--daemon", 0, 30);
@@ -721,7 +722,14 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
     /*注册为轨迹日志。*/
     abcdk_trace_set_log(abcdk_logger_from_trace, logger);
 
-    abcdk_proc_daemon(NULL,interval, _abcdk_httpd_daemon_process_cb, ctx);
+    while(1)
+    {
+        chk = abcdk_proc_subprocess(_abcdk_httpd_daemon_process_cb, ctx,NULL,NULL);
+        if(chk == 0)
+            break;
+
+        sleep(interval);
+    }
 
     /*关闭日志。*/
     abcdk_logger_close(&logger);

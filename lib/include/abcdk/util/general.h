@@ -105,11 +105,11 @@ void abcdk_memcopy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t ds
 /**
  * 等待进程结束。
  * 
- * @param options 选项。@see waitpid.
+ * @param [in] options 选项。@see waitpid.
  * @param [out] exitcode 状态码。
  * @param [out] sigcode 信号。
  * 
- * @return @see waitpid.
+ * @return > 0 子进程PID，0 正在运行，< 0 子进程不存在。
 */
 pid_t abcdk_waitpid(pid_t pid,int options,int *exitcode,int *sigcode);
 
