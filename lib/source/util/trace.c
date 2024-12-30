@@ -106,7 +106,10 @@ void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)
 
     vsnprintf(buf, 16000, fmt, ap);
 
-    abcdk_trace_output(type, buf,g_trace_printf_cb_func,g_trace_printf_cb_opaque);
+    if (g_trace_printf_cb_func)
+        g_trace_printf_cb_func(g_trace_printf_cb_opaque, type, buf);
+    else
+        abcdk_trace_output(type, buf, NULL, NULL);
 }
 
 void abcdk_trace_printf(int type, const char *fmt, ...)
