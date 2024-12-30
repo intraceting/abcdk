@@ -560,7 +560,7 @@ static void _abcdk_tipc_event_accept(abcdk_stcp_node_t *node, int *result)
         node_ctx_p->father->cfg.accept_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->remote_addr, result);
 
     if (*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
+        abcdk_trace_printf(LOG_INFO, "禁止客户端('%s')连接到本机。", node_ctx_p->remote_addr);
 }
 
 static int _abcdk_tipc_post_register(abcdk_stcp_node_t *node,int rsp);
@@ -574,7 +574,7 @@ static void _abcdk_tipc_event_connect(abcdk_stcp_node_t *node)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*设置超时。*/
     abcdk_stcp_set_timeout(node, 24 * 3600);
@@ -605,11 +605,11 @@ static void _abcdk_tipc_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        abcdk_trace_printf(LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*取消此链路上的所有等待的。*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);
@@ -752,7 +752,7 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     chk = abcdk_sockaddr_from_string(&addr, location, 1);
     if (chk != 0)
     {
-        abcdk_trace_output(LOG_ERR, "远端(ID=%llu,IP='%s')的地址无法识别。",id, location);
+        abcdk_trace_printf(LOG_ERR, "远端(ID=%llu,IP='%s')的地址无法识别。",id, location);
         return -4;
     }
 
@@ -846,15 +846,15 @@ static void _abcdk_tipc_process_register_req(abcdk_stcp_node_t *node)
         }
 
         if(chk == -1)
-            abcdk_trace_output(LOG_WARNING,"本机ID(%llu)与远端ID(%llu)相同，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id);
+            abcdk_trace_printf(LOG_WARNING,"本机ID(%llu)与远端ID(%llu)相同，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id);
         else if(chk == -3)
-            abcdk_trace_output(LOG_WARNING,"相同的远端ID(%llu)已经注册并且在线，不允许注册。",node_ctx_p->id);
+            abcdk_trace_printf(LOG_WARNING,"相同的远端ID(%llu)已经注册并且在线，不允许注册。",node_ctx_p->id);
         else 
-            abcdk_trace_output(LOG_WARNING,"其它错误。");
+            abcdk_trace_printf(LOG_WARNING,"其它错误。");
     }
     else
     {
-        abcdk_trace_output(LOG_WARNING,"本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu)，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
+        abcdk_trace_printf(LOG_WARNING,"本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu)，不允许注册。",node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
     }
 
     abcdk_stcp_set_timeout(node,-1);
@@ -1015,7 +1015,7 @@ static void _abcdk_tipc_process_subscribe(abcdk_stcp_node_t *node)
     /*更新远端主题订阅列表。*/
     _abcdk_tipc_slave_subscribe(node_ctx_p->father,node_ctx_p->id,topic,unset);
   
-    abcdk_trace_output(LOG_INFO,"远端(ID=%llu)%s主题(%llu)。",node_ctx_p->id,(unset?"取订":"订阅"), topic);
+    abcdk_trace_printf(LOG_INFO,"远端(ID=%llu)%s主题(%llu)。",node_ctx_p->id,(unset?"取订":"订阅"), topic);
 }
 
 static int _abcdk_tipc_post_publish(abcdk_stcp_node_t *node, uint64_t topic, const void *data, size_t size)

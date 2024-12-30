@@ -367,7 +367,7 @@ void _abcdk_ipcfg_start_link(abcdk_ipcfg_node_t *ctx, const char *ifname)
         if (ctx->start_link_next >= abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0))
             return;
 
-        abcdk_trace_output(LOG_INFO, "链路('%s')未活动或被关闭，尝试重新启动。", ifname);
+        abcdk_trace_printf(LOG_INFO, "链路('%s')未活动或被关闭，尝试重新启动。", ifname);
         abcdk_net_up(ifname);
 
         /*下次启动间隔增加1秒，60次为一个周期。*/
@@ -396,7 +396,7 @@ void _abcdk_ipcfg_check_link(abcdk_ipcfg_node_t *ctx, const char *ifname)
     /*检查链路状态是否发生变化，如果发生变化则重新应用配置。*/
     if (prev_link_state != ctx->link_state || prev_oper_state != ctx->oper_state)
     {
-        abcdk_trace_output( LOG_INFO, "链路('%s')状态发生变化(link=%d,oper=%d)。", ifname, ctx->link_state, ctx->oper_state);
+        abcdk_trace_printf( LOG_INFO, "链路('%s')状态发生变化(link=%d,oper=%d)。", ifname, ctx->link_state, ctx->oper_state);
 
         if (ctx->link_state && ctx->oper_state)
             ctx->implement_state = 0;
@@ -425,7 +425,7 @@ void _abcdk_ipcfg_check_address(abcdk_ipcfg_node_t *ctx, const char *ifname)
     if (abcdk_strcmp(curt_addr_hcode, ctx->addr_hcode, 0) == 0)
         return;
 
-    abcdk_trace_output( LOG_INFO, "链路('%s')配置被改变，恢复应用配置。", ifname);
+    abcdk_trace_printf( LOG_INFO, "链路('%s')配置被改变，恢复应用配置。", ifname);
 
     ctx->implement_state = 0;
 }
@@ -440,7 +440,7 @@ void _abcdk_ipcfg_check_resolv(abcdk_ipcfg_node_t *ctx)
     if (abcdk_strcmp(curt_resolv_hcode, ctx->resolv_hcode, 0) == 0)
         return;
 
-    abcdk_trace_output( LOG_INFO, "resolv配置被改变，恢复应用配置。");
+    abcdk_trace_printf( LOG_INFO, "resolv配置被改变，恢复应用配置。");
 
     ctx->implement_state = 0;
 }
@@ -478,7 +478,7 @@ int _abcdk_ipcfg_eth_add(abcdk_ipcfg_node_t *ctx, int idx, int ver, const char *
 
     if (addr_conf->numbers < 2)
     {
-        abcdk_trace_output( LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求，其中网关和跃点为可选项。");
+        abcdk_trace_printf( LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求，其中网关和跃点为可选项。");
 
         chk = -22;
         goto END;
@@ -609,16 +609,16 @@ int _abcdk_ipcfg_eth_start_dhcp(abcdk_ipcfg_node_t *ctx, const char *ifname)
     }
     else
     {
-        abcdk_trace_output( LOG_ERR, "未支持的DHCP客户端。");
+        abcdk_trace_printf( LOG_ERR, "未支持的DHCP客户端。");
         return -5;
     }
 
     if (chk == 0)
-        abcdk_trace_output( LOG_INFO, "为'%s'申请动态地址完成。", ifname);
+        abcdk_trace_printf( LOG_INFO, "为'%s'申请动态地址完成。", ifname);
     else if (chk == -15)
-        abcdk_trace_output( LOG_INFO, "正在为'%s'申请动态地址……", ifname);
+        abcdk_trace_printf( LOG_INFO, "正在为'%s'申请动态地址……", ifname);
     else
-        abcdk_trace_output( LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname, ctx->exitcode, ctx->sigcode);
+        abcdk_trace_printf( LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname, ctx->exitcode, ctx->sigcode);
 
     return chk;
 }
@@ -650,11 +650,11 @@ int _abcdk_ipcfg_resolv_change(abcdk_ipcfg_node_t *ctx, const char *const *nss)
     chk = abcdk_save("/etc/resolv.conf", buf, len, 0);
     if (chk != len)
     {
-        abcdk_trace_output( LOG_ERR, "更新'resolv'失败。");
+        abcdk_trace_printf( LOG_ERR, "更新'resolv'失败。");
         goto ERR;
     }
 
-    abcdk_trace_output( LOG_INFO, "更新'resolv'完成。");
+    abcdk_trace_printf( LOG_INFO, "更新'resolv'完成。");
 
     abcdk_heap_freep((void **)&buf);
     return 0;
@@ -779,7 +779,7 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
     }
     else
     {
-        abcdk_trace_output( LOG_INFO, "未支持的使能方案，跳过。");
+        abcdk_trace_printf( LOG_INFO, "未支持的使能方案，跳过。");
     }
 
     ctx->implement_state = 1;
@@ -854,7 +854,7 @@ WATCHDOG:
     node_ctx->implement_state = 0;
 
     _abcdk_ipcfg_dump_option(conf_prev, node_ctx->father->logger);
-    abcdk_trace_output( LOG_INFO, "配置文件('%s')已经更新，在应用新配置过程中网络连接可能发生抖动。", conf_file);
+    abcdk_trace_printf( LOG_INFO, "配置文件('%s')已经更新，在应用新配置过程中网络连接可能发生抖动。", conf_file);
 
 END:
 
@@ -895,13 +895,13 @@ void _abcdk_ipcfg_process(abcdk_ipcfg_t *ctx)
     ctx->logger = abcdk_logger_open2(log_path,"ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
-    abcdk_trace_set_log(abcdk_logger_from_trace,ctx->logger);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace,ctx->logger);
 
-    abcdk_trace_output( LOG_INFO, "启动……");
+    abcdk_trace_printf( LOG_INFO, "启动……");
 
     if (conf_num <= 0)
     {
-        abcdk_trace_output( LOG_ERR, "至少指定一个配置文件。");
+        abcdk_trace_printf( LOG_ERR, "至少指定一个配置文件。");
         goto ERR;
     }
 
@@ -924,7 +924,7 @@ void _abcdk_ipcfg_process(abcdk_ipcfg_t *ctx)
 
 ERR:
 
-    abcdk_trace_output( LOG_INFO, "停止。");
+    abcdk_trace_printf( LOG_INFO, "停止。");
 
     /*关闭日志。*/
     abcdk_logger_close(&ctx->logger);
@@ -954,7 +954,7 @@ void _abcdk_ipcfg_daemon(abcdk_ipcfg_t *ctx)
     logger = abcdk_logger_open2(log_path,"ipconfig-daemon.log", "ipconfig-daemon.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
-    abcdk_trace_set_log(abcdk_logger_from_trace,logger);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace,logger);
 
     while (1)
     {

@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_TRACE_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/thread.h"
 
 __BEGIN_DECLS
 
@@ -39,33 +40,27 @@ typedef enum _abcdk_trace_type
 /** 检查轨迹类型。*/
 #define ABCDK_TRACE_TYPE_CHECK(t) ((t) >= ABCDK_TRACE_ERROR && (t) < ABCDK_TRACE_MAX)
 
+/** 输出回调函数。*/
+typedef void (*abcdk_trace_output_cb)(void *opaque,int type, const char *str);
+
+/**字符串输出。*/
+void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, void *opaque);
 
 /**
- * 轨迹日志函数。
-*/
-typedef void (*abcdk_trace_log_cb)(void *opaque,int type, const char* fmt, va_list vp);
-
-/**
- * 设置自定义日志函数。
+ * 设置格式化输出回调函数。
  * 
  * @note 如果未设置则使用默认的。
 */
-void abcdk_trace_set_log(abcdk_trace_log_cb cb,void *opaque);
+void abcdk_trace_printf_set_callback(abcdk_trace_output_cb cb,void *opaque);
 
-/**
- * 轨迹输出。
-*/
-void abcdk_trace_voutput(int type, const char* fmt, va_list vp);
+/**格式化输出。*/
+void abcdk_trace_vprintf(int type, const char* fmt, va_list ap);
 
-/**
- * 轨迹输出。
-*/
-void abcdk_trace_output(int type, const char* fmt,...);
+/**格式化输出。*/
+void abcdk_trace_printf(int type, const char* fmt,...);
 
-/**
- * 格式化输出信号信息。
- */
-void abcdk_trace_output_siginfo(int type, siginfo_t *info);
+/**信号格式化输出。*/
+void abcdk_trace_printf_siginfo(int type, siginfo_t *info);
 
 __END_DECLS
 

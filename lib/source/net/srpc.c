@@ -274,7 +274,7 @@ static void _abcdk_srpc_event_accept(abcdk_stcp_node_t *node, int *result)
         node_ctx_p->cfg.accept_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_output(LOG_INFO, "禁止远端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_printf(LOG_INFO, "禁止远端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
@@ -285,7 +285,7 @@ static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     
     /*设置超时。*/
@@ -319,11 +319,11 @@ static void _abcdk_srpc_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        abcdk_trace_printf(LOG_INFO, "监听关闭，忽略。");
         return;
     }
     
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。", node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
     /*如果连接关闭则一定要取消等待的事务，否则可能会造成应用层阻塞。*/
     if(node_ctx_p->flag)
@@ -401,7 +401,7 @@ static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
     if (chk != 0)
     {
         abcdk_stcp_get_sockaddr_str(node,NULL,remote_addr);
-        abcdk_trace_output(LOG_WARNING, "NONCE无效(%d)，丢弃来自(%s)的数据包。\n",chk,remote_addr);
+        abcdk_trace_printf(LOG_WARNING, "NONCE无效(%d)，丢弃来自(%s)的数据包。\n",chk,remote_addr);
         return;
     }
 

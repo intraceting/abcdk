@@ -227,14 +227,14 @@ static void _abcdk_https_log(abcdk_object_t *stream, uint32_t status)
 
     if (status)
     {
-        abcdk_trace_output(LOG_INFO, "'%s'\n",abcdk_http_status_desc(status));
+        abcdk_trace_printf(LOG_INFO, "'%s'\n",abcdk_http_status_desc(status));
     }
     else
     {
         user_agent_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"User-Agent",':');
         refer_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"Referer",':');
 
-        abcdk_trace_output(LOG_INFO, "'%s' '%s' '%s' '%s' '%s'\n",
+        abcdk_trace_printf(LOG_INFO, "'%s' '%s' '%s' '%s' '%s'\n",
                                 node_ctx_p->remote_addr,
                                 stream_ctx_p->method->pstrs[0],
                                 stream_ctx_p->script->pstrs[0],
@@ -456,7 +456,7 @@ static int _abcdk_https_h2_header_cb(nghttp2_session *session, const nghttp2_fra
     }
     else
     {
-      //  abcdk_trace_output(LOG_INFO, "%s: {%s}{%d}{%d}\r\n", name, value,(frame->hd.flags),(flags));
+      //  abcdk_trace_printf(LOG_INFO, "%s: {%s}{%d}{%d}\r\n", name, value,(frame->hd.flags),(flags));
 
         abcdk_receiver_append(stream_ctx_p->updata, name, namelen, &remain);
         abcdk_receiver_append(stream_ctx_p->updata, ": ", 2, &remain);
@@ -812,7 +812,7 @@ static void _abcdk_https_event_accept(abcdk_stcp_node_t *node, int *result)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_https_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_output(LOG_WARNING, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_printf(LOG_WARNING, "禁止客户端(%s)连接到本机(%s)。", node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
@@ -835,7 +835,7 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
         }
     }
 
-    abcdk_trace_output(LOG_WARNING, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_WARNING, "本机(%s)与远端(%s)的连接已建立。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
     
     /*设置超时。*/
     abcdk_stcp_set_timeout(node, 180);
@@ -901,11 +901,11 @@ static void _abcdk_https_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_output(LOG_INFO, "监听关闭，忽略。");
+        abcdk_trace_printf(LOG_INFO, "监听关闭，忽略。");
         return;
     }
 
-    abcdk_trace_output(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, "本机(%s)与远端(%s)的连接已断开。",node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
     abcdk_map_destroy(&node_ctx_p->stream_map);

@@ -535,7 +535,7 @@ static int _abcdk_httpd_start_listen(abcdk_httpd_t *ctx,int ssl)
     chk = abcdk_sockaddr_from_string(&listen_addr, listen, 0);
     if (chk != 0)
     {
-        abcdk_trace_output(LOG_ERR, "监听地址'%s'无法识别。", listen);
+        abcdk_trace_printf(LOG_ERR, "监听地址'%s'无法识别。", listen);
         return -1;
     }
 
@@ -573,7 +573,7 @@ static int _abcdk_httpd_start_listen(abcdk_httpd_t *ctx,int ssl)
 
     if (!listen_p)
     {
-        abcdk_trace_output(LOG_ERR, "内部错误。");
+        abcdk_trace_printf(LOG_ERR, "内部错误。");
         return -2;
     }
 
@@ -597,9 +597,9 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     ctx->logger = abcdk_logger_open2(log_path, "httpd.log", "httpd.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
-    abcdk_trace_set_log(abcdk_logger_from_trace, ctx->logger);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace, ctx->logger);
 
-    abcdk_trace_output(LOG_INFO, "启动……");
+    abcdk_trace_printf(LOG_INFO, "启动……");
 
     ctx->name_p = abcdk_option_get(ctx->args, "--name", 0, "ABCDK");
     ctx->acao_p = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
@@ -630,7 +630,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
         ctx->pki_cert_ctx = abcdk_openssl_cert_load(ctx->cert_file_p);
         if (!ctx->pki_cert_ctx)
         {
-            abcdk_trace_output(LOG_ERR, "加载证书(%s)失败。", ctx->cert_file_p);
+            abcdk_trace_printf(LOG_ERR, "加载证书(%s)失败。", ctx->cert_file_p);
             goto ERR;
         }
     }
@@ -640,7 +640,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
         ctx->pki_key_ctx = abcdk_openssl_evp_pkey_load(ctx->cert_file_p, 0, NULL);
         if (!ctx->pki_key_ctx)
         {
-            abcdk_trace_output(LOG_ERR, "加载密钥(%s)失败。", ctx->key_file_p);
+            abcdk_trace_printf(LOG_ERR, "加载密钥(%s)失败。", ctx->key_file_p);
             goto ERR;
         }
     }
@@ -654,7 +654,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     ctx->io_ctx = abcdk_https_create();
     if (!ctx->io_ctx)
     {
-        abcdk_trace_output(LOG_WARNING, "内存错误。\n");
+        abcdk_trace_printf(LOG_WARNING, "内存错误。\n");
         goto ERR;
     }
 
@@ -690,7 +690,7 @@ ERR:
     abcdk_openssl_evp_pkey_free(&ctx->pki_key_ctx);
 #endif //OPENSSL_VERSION_NUMBER
 
-    abcdk_trace_output(LOG_INFO, "停止。");
+    abcdk_trace_printf(LOG_INFO, "停止。");
 
     /*关闭日志。*/
     abcdk_logger_close(&ctx->logger);
@@ -720,7 +720,7 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
     logger = abcdk_logger_open2(log_path, "httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
-    abcdk_trace_set_log(abcdk_logger_from_trace, logger);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace, logger);
 
     while(1)
     {

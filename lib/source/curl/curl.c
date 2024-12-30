@@ -84,7 +84,7 @@ END:
         curl_easy_cleanup(curl_ctx);
     abcdk_object_unref(&url_en);
 
-    abcdk_trace_output(LOG_DEBUG,"++++++++\nsrc: '%s'\nrsp: %ld\nchk: '%s'\n--------\n", url, rspcode, curl_easy_strerror(chk));
+    abcdk_trace_printf(LOG_DEBUG,"++++++++\nsrc: '%s'\nrsp: %ld\nchk: '%s'\n--------\n", url, rspcode, curl_easy_strerror(chk));
 
     if (chk == CURLE_OK && (rspcode == 200||rspcode == 206))
         return 0;

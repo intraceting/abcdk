@@ -430,7 +430,7 @@ static void httpd_ssession_close_cb(void *opaque,abcdk_https_session_t *session)
 
 static void httpd_request_cb(void *opaque, abcdk_https_stream_t *stream)
 {
-    // abcdk_trace_output(LOG_INFO,"%s %s %s %s",
+    // abcdk_trace_printf(LOG_INFO,"%s %s %s %s",
     // abcdk_https_request_header_get(stream,"Method"),
     // abcdk_https_request_header_get(stream,"Scheme"),
     // abcdk_https_request_header_get(stream,"Host"),
@@ -440,7 +440,7 @@ static void httpd_request_cb(void *opaque, abcdk_https_stream_t *stream)
     // const char* data = abcdk_https_request_body_get(stream,&len);
     // if(data)
     // {
-    //     abcdk_trace_output(LOG_INFO,"(%zd) %s",len,data);
+    //     abcdk_trace_printf(LOG_INFO,"(%zd) %s",len,data);
     // }
 
     // int chk = abcdk_https_check_auth(stream);
@@ -497,7 +497,7 @@ int abcdk_test_http(abcdk_option_t *args)
 
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.http.log","test.http.%d.log",10,10,1,1);
 
-    abcdk_trace_set_log(abcdk_logger_from_trace,log_ctx);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace,log_ctx);
 
     abcdk_https_t *ctx = abcdk_https_create();
 

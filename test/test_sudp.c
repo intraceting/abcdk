@@ -31,7 +31,7 @@ static void input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const vo
 
     assert(len + 3 == size);
 
-    //  abcdk_trace_output(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
+    //  abcdk_trace_printf(LOG_DEBUG,"remote(%s),len=%d\n",addrbuf,len);
 
     if (!flag)
         return;

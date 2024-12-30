@@ -15,12 +15,12 @@ abcdk_tipc_t * g_ctx = NULL;
 
 static void _abcdk_test_tipc_offline_cb(void *opaque, uint64_t id)
 {
-    abcdk_trace_output(LOG_INFO,"id=%llu 离线。",id);
+    abcdk_trace_printf(LOG_INFO,"id=%llu 离线。",id);
 }
 
 static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid, const void *data, size_t size)
 {
-    abcdk_trace_output(LOG_INFO,"id=%llu,mid=%llu,size=%zu,data=%s \n",id,mid,size,data);
+    abcdk_trace_printf(LOG_INFO,"id=%llu,mid=%llu,size=%zu,data=%s \n",id,mid,size,data);
 
     if( ABCDK_PTR2I8(data,0) == 'r')
         abcdk_tipc_response(g_ctx,id,mid,data,size);
@@ -28,7 +28,7 @@ static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid,
 
 static void _abcdk_test_tipc_subscribe_cb(void *opaque, uint64_t id, uint64_t topic, const void *data, size_t size)
 {
-    abcdk_trace_output(LOG_INFO,"id=%llu,topic=%llu,size=%zu \n",id,topic,size);
+    abcdk_trace_printf(LOG_INFO,"id=%llu,topic=%llu,size=%zu \n",id,topic,size);
 
 }
 
@@ -40,7 +40,7 @@ int abcdk_test_tipc(abcdk_option_t *args)
 
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.tipc.log","test.tipc.%d.log",10,10,1,1);
 
-    abcdk_trace_set_log(abcdk_logger_from_trace,log_ctx);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace,log_ctx);
 
     cfg.opaque = NULL;
     cfg.id = abcdk_option_get_llong(args,"--id",0,1);

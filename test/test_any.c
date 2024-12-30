@@ -694,13 +694,13 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_clock(s, &s);
     for (int i = 0; i < 1000; i++)
     {
-        abcdk_trace_output(LOG_INFO, "enc-b:%06llu", abcdk_clock(s, &s));
+        abcdk_trace_printf(LOG_INFO, "enc-b:%06llu", abcdk_clock(s, &s));
         int m = abcdk_lz4_enc(dst_data->pptrs[0], dst_data->sizes[0], src_data->pptrs[0], src_data->sizes[0]);
-        abcdk_trace_output(LOG_INFO, "enc-a:%06llu", abcdk_clock(s, &s));
+        abcdk_trace_printf(LOG_INFO, "enc-a:%06llu", abcdk_clock(s, &s));
 
-        abcdk_trace_output(LOG_INFO, "dec-b:%06llu", abcdk_clock(s, &s));
+        abcdk_trace_printf(LOG_INFO, "dec-b:%06llu", abcdk_clock(s, &s));
         int n = abcdk_lz4_dec(src_data2->pptrs[0], src_data2->sizes[0], dst_data->pptrs[0],m);
-        abcdk_trace_output(LOG_INFO, "dec-a:%06llu", abcdk_clock(s, &s));
+        abcdk_trace_printf(LOG_INFO, "dec-a:%06llu", abcdk_clock(s, &s));
         
         assert(n = src_data->sizes[0]);
 
@@ -1004,7 +1004,7 @@ int abcdk_test_any(abcdk_option_t *args)
     assert(chk == 0);
 
     abcdk_sockaddr_to_string(buf, &dst,0);
-    abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
+    abcdk_trace_printf(LOG_DEBUG, "%s\n", buf);
 
 #elif 0
 
@@ -1034,7 +1034,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
         char buf[100] = {0};
         abcdk_sockaddr_to_string(buf, &dst,0);
-        abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
+        abcdk_trace_printf(LOG_DEBUG, "%s\n", buf);
     }
 
 #elif 0
@@ -1058,7 +1058,7 @@ int abcdk_test_any(abcdk_option_t *args)
         
         char buf[100] = {0};
         abcdk_sockaddr_to_string(buf, &addr,1);
-        abcdk_trace_output(LOG_DEBUG, "%s\n", buf);
+        abcdk_trace_printf(LOG_DEBUG, "%s\n", buf);
 
         abcdk_ipool_reclaim(ctx,&addr);
         
@@ -1567,7 +1567,7 @@ int abcdk_test_any(abcdk_option_t *args)
      //   assert(chk != 0);
     }
 
-    abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+    abcdk_trace_printf(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
 
     getchar();

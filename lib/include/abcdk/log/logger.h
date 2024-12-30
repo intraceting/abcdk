@@ -93,7 +93,7 @@ void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...);
  * @param [in] str 字符串。
  *
  */
-void abcdk_logger_puts(abcdk_logger_t *ctx, int type, const char *str);
+void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str);
 
 /**
  * 格式化输出。
@@ -119,7 +119,7 @@ void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...);
 /**
  * 轨迹日志函数。
 */
-void abcdk_logger_from_trace(void *opaque,int type, const char* fmt, va_list vp);
+void abcdk_logger_from_trace(void *opaque,int type, const char* str);
 
 
 __END_DECLS

@@ -84,7 +84,7 @@ abcdk_package_t *abcdk_package_load(const uint8_t *data,size_t size)
         if (chk != data_l)
             goto ERR;
 #else
-        abcdk_trace_output(LOG_WARNING, "因为原文被压缩过，所以需要解压缩工具才能加载，但是当前环境并未包含解压缩工具。");
+        abcdk_trace_printf(LOG_WARNING, "因为原文被压缩过，所以需要解压缩工具才能加载，但是当前环境并未包含解压缩工具。");
         goto ERR;
 #endif // LZ4_VERSION_NUMBER
     }
@@ -152,7 +152,7 @@ abcdk_object_t *abcdk_package_dump(abcdk_package_t *ctx, int compress)
         if (data_l2 <= 0)
         {
             if (abcdk_atomic_compare_and_swap(&warning_tip, 0, 1))
-                abcdk_trace_output(LOG_WARNING, "由于原文的压缩率低于0％，因此直接打包原文，而且后续再发生相同的情况不在再提示。");
+                abcdk_trace_printf(LOG_WARNING, "由于原文的压缩率低于0％，因此直接打包原文，而且后续再发生相同的情况不在再提示。");
 
             /*不压缩。*/
             data_f = 0;
@@ -168,7 +168,7 @@ abcdk_object_t *abcdk_package_dump(abcdk_package_t *ctx, int compress)
     else
 #else
     if (abcdk_atomic_compare_and_swap(&warning_tip, 0, 1))
-        abcdk_trace_output(LOG_WARNING, "当前环境未包含解压缩工具，忽略压缩参数。");
+        abcdk_trace_printf(LOG_WARNING, "当前环境未包含解压缩工具，忽略压缩参数。");
 #endif // LZ4_VERSION_NUMBER
     {
         obj = abcdk_object_alloc2(4 + data_l);

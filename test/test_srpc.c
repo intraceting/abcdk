@@ -40,7 +40,7 @@ static void request_cb(void *opaque, abcdk_srpc_session_t *session, uint64_t mid
 
     int a = *((int *)data);
 
- //   abcdk_trace_output(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
+ //   abcdk_trace_printf(LOG_INFO, "mid(%llu),size(%zd),a(%d)", mid, size, a);
 
     if (a)
     {
@@ -58,7 +58,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 {
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/", "test.srpc.log", "test.srpc.%d.log", 10, 10, 1, 1);
 
-    abcdk_trace_set_log(abcdk_logger_from_trace, log_ctx);
+    abcdk_trace_printf_set_callback(abcdk_logger_from_trace, log_ctx);
 
     abcdk_srpc_t *srpc_ctx = abcdk_srpc_create(4,5);
 
@@ -135,12 +135,12 @@ int abcdk_test_srpc(abcdk_option_t *args)
              if (j % 3 == 0 && rand_rsp)
                  *a = 0;
 
-         //   abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+         //   abcdk_trace_printf(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
             int b = abcdk_rand(5, 64000);
           //  int b = 1000;
 
-        //    abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+        //    abcdk_trace_printf(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
 #ifdef HAVE_OPENSSL
         RAND_bytes(buf + 4, b - 4);
@@ -148,7 +148,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
         abcdk_rand_bytes(buf + 4, b - 4, 5);
 #endif 
 
-         //   abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+         //   abcdk_trace_printf(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
             abcdk_object_t *rsp = NULL;
 
@@ -156,19 +156,19 @@ int abcdk_test_srpc(abcdk_option_t *args)
             int chk = abcdk_srpc_request(session_p, buf, b,NULL);
             assert (chk == 0);
 
-     //       abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+     //       abcdk_trace_printf(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
             if (rsp)
                 assert(memcmp(rsp->pptrs[0]+4, buf+4, b-4) == 0);
 
-       //     abcdk_trace_output(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
+       //     abcdk_trace_printf(LOG_INFO, "%d,step(%.09f)",__LINE__, (double)abcdk_clock(s,&s)/1000000000.);
 
             abcdk_object_unref(&rsp);
 
             usleep(20);
         }
 
-        abcdk_trace_output(LOG_INFO,"cast:%0.6f\n",(double)abcdk_clock(s,&s)/1000000.);
+        abcdk_trace_printf(LOG_INFO,"cast:%0.6f\n",(double)abcdk_clock(s,&s)/1000000.);
 
         sleep(20);
     }

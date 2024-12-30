@@ -173,7 +173,7 @@ static void _abcdk_avlog_callback(void* opaque, int level, const char* fmt, va_l
     else
         return ;
     
-    abcdk_trace_voutput(sys_level,fmt,v);
+    abcdk_trace_vprintf(sys_level,fmt,v);
 }
 
 void abcdk_avlog_redirect2trace()
