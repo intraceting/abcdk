@@ -97,7 +97,7 @@ int abcdk_proc_singleton_lock(int pid_fd, int* pid)
     }
 
     /*进程PID以十进制文本格式写入文件，例：2021*/
-    snprintf(buf, 15, "%d", getpid());
+    snprintf(buf, 15, "%-d", getpid());
 
     /*清空，写入文件。*/
     ftruncate(pid_fd, 0);
