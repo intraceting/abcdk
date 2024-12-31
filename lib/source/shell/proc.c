@@ -69,68 +69,58 @@ char *abcdk_proc_basename(char *buf)
     return buf;
 }
 
-int abcdk_proc_singleton(const char *lockfile,int* pid)
+int abcdk_proc_singleton_lock(int pid_fd, int* pid)
 {
-    int fd = -1;
-    char strpid[16] = {0};
+    char buf[16] = {0};
     int chk;
 
-    assert(lockfile);
-
-    abcdk_mkdir(lockfile, 0666);
-
-    fd = abcdk_open(lockfile, 1, 0, 1);
-    if (fd < 0)
-        return -1;
+    assert(pid_fd >= 0);
 
     /* 通过尝试加独占锁来确定是否程序已经运行。*/
-    if (flock(fd, LOCK_EX | LOCK_NB) == 0)
+    if (flock(pid_fd, LOCK_EX | LOCK_NB) == 0)
     {
-        /* PID可视化，便于阅读。*/
-        snprintf(strpid,15,"%d",getpid());
+        /*进程PID以十进制文本格式写入文件，例：2021*/
+        snprintf(buf, 15, "%d", getpid());
 
-        /* 清空。*/
-        chk = ftruncate(fd, 0);
+        /*清空。*/
+        chk = ftruncate(pid_fd, 0);
 
         /*写入文件。*/
-        abcdk_write(fd,strpid,strlen(strpid));
-        fsync(fd);
+        abcdk_write(pid_fd, buf, strlen(buf));
+        fsync(pid_fd);
 
         /*进程ID就是自己。*/
         if(pid)
            *pid = getpid();
 
         /* 走到这里返回锁定文件的句柄。*/
-        return fd;
+        return 0;
     }
 
     /* 程序已经运行，进程ID需要从锁定文件中读取。 */
-    if(pid)
+    if (pid)
     {
-        abcdk_read(fd,strpid,15);
+        abcdk_read(pid_fd, buf, 15);
 
-        if(abcdk_strtype(strpid,isdigit))
-            *pid = atoi(strpid);
+        if (abcdk_strtype(buf, isdigit))
+            *pid = atoi(buf);
         else
             *pid = -1;
     }
 
-    /* 独占失败，关闭句柄，返回-1。*/
-    abcdk_closep(&fd);
+    /* 独占失败。*/
     return -1;
 }
 
-int abcdk_proc_singleton_kill(const char *lockfile, int signum)
+int abcdk_proc_singleton_kill(int pid_fd , int signum)
 {
-    int pid = -1, lockfd = -1;
+    int pid = -1;
+    int chk;
 
     /*尝试加锁，如果加锁成功表示程序未启动或已退出。*/
-    lockfd = abcdk_proc_singleton(lockfile, &pid);
-    if (lockfd >= 0)
-    {
-        abcdk_closep(&lockfd);
+    chk = abcdk_proc_singleton_lock(pid_fd, &pid);
+    if (chk != 0)
         return -1;
-    }
 
     if (pid < 0)
         return -1;

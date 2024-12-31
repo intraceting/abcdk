@@ -35,8 +35,10 @@ int abcdk_test_runonce(abcdk_option_t *args)
     {
         abcdk_closep(&lock_fd);
 
-        lock_fd = abcdk_proc_singleton("/tmp/test.runonce.pid", NULL);
-        assert(lock_fd >= 0);
+        lock_fd = abcdk_open("/tmp/test.runonce.pid",1,0,1);
+
+        chk = abcdk_proc_singleton_lock(lock_fd, NULL);
+        assert(chk == 0);
 
         chk = flock(lock_fd, LOCK_EX | LOCK_NB);
         assert(chk == 0);

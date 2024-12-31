@@ -38,24 +38,23 @@ char* abcdk_proc_dirname(char* buf,const char* append);
 char* abcdk_proc_basename(char* buf);
 
 /**
- * 单实例模式运行。
- * 
- * 文件句柄在退出前不要关闭，否则会使文件解除锁定状态。
- * 
- * 进程ID以十进制文本格式写入文件，例：2021 。
- * 
- * @param pid 正在运行的进程ID，当接口返回时填写。NULL(0) 忽略。
- * 
- * @return >= 0 成功(文件句柄，当前进程是唯一进程)，-1 失败(已有实例正在运行)。
-*/
-int abcdk_proc_singleton(const char* lockfile,int* pid);
+ * 单实例进程锁定。
+ *
+ * @note PID文件句柄在退出前不要关闭，否则会使文件解除锁定状态。
+ *
+ * @param [in] pid_fd PID文件句柄。
+ * @param [out] pid 正在运行的进程ID。NULL(0) 忽略。
+ *
+ * @return 0 成功(当前进程是唯一进程)，-1 失败(已有实例正在运行)。
+ */
+int abcdk_proc_singleton_lock(int pid_fd, int *pid);
 
 /**
  * 向单例进程发送信号。
  * 
  * @return 0 成功，-1 失败(不存在或已退出)。
 */
-int abcdk_proc_singleton_kill(const char* lockfile,int signum);
+int abcdk_proc_singleton_kill(int pid_fd ,int signum);
 
 /**
  * 执行外部命令。

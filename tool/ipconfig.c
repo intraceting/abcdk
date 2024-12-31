@@ -84,9 +84,6 @@ void _abcdk_ipcfg_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\n\t--help\n");
     fprintf(stderr, "\t\t显示帮助信息。\n");
 
-    fprintf(stderr, "\n\t--pid-file < FILE >\n");
-    fprintf(stderr, "\t\tPID文件名(包括路径)。默认：/tmp/abcdk/pid/ipconfig.pid\n");
-
     fprintf(stderr, "\n\t--log-path < PATH >\n");
     fprintf(stderr, "\t\t日志路径。默认：/tmp/abcdk/log/\n");
 
@@ -972,8 +969,7 @@ void _abcdk_ipcfg_daemon(abcdk_ipcfg_t *ctx)
 int abcdk_tool_ipconfig(abcdk_option_t *args)
 {
     abcdk_ipcfg_t ctx = {0};
-    const char *pid_file = NULL;
-    int other_pid = -1, self_pid = -1;
+    int chk;
 
     ctx.args = args;
 
@@ -983,16 +979,6 @@ int abcdk_tool_ipconfig(abcdk_option_t *args)
     }
     else
     {
-        pid_file = abcdk_option_get(ctx.args,"--pid-file",0,"/tmp/abcdk/pid/ipconfig.pid");
-
-        /*单实例运行。*/
-        self_pid = abcdk_proc_singleton(pid_file, &other_pid);
-        if (self_pid < 0)
-        {
-            fprintf(stderr, "已经有实例(PID=%d)正在运行。\n", other_pid);
-            return 1;
-        }
-
         if (abcdk_option_exist(ctx.args, "--daemon"))
         {
             fprintf(stderr, "进入后台守护模式。\n");
