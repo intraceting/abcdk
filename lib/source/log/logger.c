@@ -14,6 +14,9 @@ struct _abcdk_logger
     /** 文件锁。*/
     abcdk_mutex_t *locker;
 
+    /**PID。 */
+    pid_t pid;
+
     /** 文件句柄。*/
     int fd;
 
@@ -77,6 +80,7 @@ abcdk_logger_t *abcdk_logger_open(const char *name,const char *segment_name,size
     if(!ctx)
         return NULL;
     
+    ctx->pid = -1;
     ctx->fd = -1;
     ctx->segment_size = segment_size * 1024 * 1024;
     ctx->segment_max = segment_max;
@@ -187,9 +191,11 @@ static void _abcdk_logger_dump2file(abcdk_logger_t *ctx,const char *str)
 
 open_log_file:
 
-    if (ctx->fd < 0)
+    if (ctx->fd < 0 || ctx->pid != getpid())
     {
         abcdk_mkdir(ctx->name, 0666);
+
+        ctx->pid = getpid();
         ctx->fd = abcdk_open(ctx->name, 1, 0, 1);
     }
 
@@ -211,11 +217,17 @@ open_log_file:
     }
     else
     {
+        /*加锁。*/
+        flock(ctx->fd,LOCK_EX);
+
         /*在末尾追加。*/
         lseek(ctx->fd, 0, SEEK_END);
 
         /*写，内部会保正写完。如果写不完，就是出错或没空间了。*/
         abcdk_write(ctx->fd, str, strlen(str));
+
+        /*解锁。*/
+        flock(ctx->fd,LOCK_UN);
 
 #if 0
         /*落盘，非常慢。*/
