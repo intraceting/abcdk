@@ -29,15 +29,13 @@ static int _runonce_process_cb(void *opaque)
 
 int abcdk_test_runonce(abcdk_option_t *args)
 {
-    int chk;
+    int chk,pid;
+
+    lock_fd = abcdk_open("/tmp/test.runonce.pid",1,0,1);
 
     while (1)
     {
-        abcdk_closep(&lock_fd);
-
-        lock_fd = abcdk_open("/tmp/test.runonce.pid",1,0,1);
-
-        chk = abcdk_proc_singleton_lock(lock_fd, NULL);
+        chk = abcdk_proc_singleton_lock(lock_fd, &pid);
         assert(chk == 0);
 
         chk = flock(lock_fd, LOCK_EX | LOCK_NB);

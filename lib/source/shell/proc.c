@@ -77,39 +77,39 @@ int abcdk_proc_singleton_lock(int pid_fd, int* pid)
     assert(pid_fd >= 0);
 
     /* 通过尝试加独占锁来确定是否程序已经运行。*/
-    if (flock(pid_fd, LOCK_EX | LOCK_NB) == 0)
+    chk = flock(pid_fd, LOCK_EX | LOCK_NB);
+    if (chk != 0)
     {
-        /*进程PID以十进制文本格式写入文件，例：2021*/
-        snprintf(buf, 15, "%d", getpid());
+        if (pid)
+        {
+            /*从PID文件中读取锁定进程的PID。 */
+            lseek(pid_fd, 0, SEEK_SET);
+            abcdk_read(pid_fd, buf, 15);
 
-        /*清空。*/
-        chk = ftruncate(pid_fd, 0);
+            if (abcdk_strtype(buf, isdigit))
+                *pid = atoi(buf);
+            else
+                *pid = -1;
+        }
 
-        /*写入文件。*/
-        abcdk_write(pid_fd, buf, strlen(buf));
-        fsync(pid_fd);
-
-        /*进程ID就是自己。*/
-        if(pid)
-           *pid = getpid();
-
-        /* 走到这里返回锁定文件的句柄。*/
-        return 0;
+        /* 锁定失败，已经被其它进程锁定。*/
+        return -1;
     }
 
-    /* 程序已经运行，进程ID需要从锁定文件中读取。 */
+    /*进程PID以十进制文本格式写入文件，例：2021*/
+    snprintf(buf, 15, "%d", getpid());
+
+    /*清空，写入文件。*/
+    ftruncate(pid_fd, 0);
+    abcdk_write(pid_fd, buf, strlen(buf));
+    fsync(pid_fd);
+
+    /*进程ID就是自己。*/
     if (pid)
-    {
-        abcdk_read(pid_fd, buf, 15);
+        *pid = getpid();
 
-        if (abcdk_strtype(buf, isdigit))
-            *pid = atoi(buf);
-        else
-            *pid = -1;
-    }
-
-    /* 独占失败。*/
-    return -1;
+    /*锁定成功。*/
+    return 0;
 }
 
 int abcdk_proc_singleton_kill(int pid_fd , int signum)
