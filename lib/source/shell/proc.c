@@ -114,13 +114,27 @@ int abcdk_proc_singleton_lock(int pid_fd, int* pid)
 
 int abcdk_proc_singleton_kill(int pid_fd , int signum)
 {
+    char buf[16] = {0};
     int pid = -1;
     int chk;
 
-    /*尝试加锁，如果加锁成功表示程序未启动或已退出。*/
-    chk = abcdk_proc_singleton_lock(pid_fd, &pid);
-    if (chk != 0)
+    /*通过尝试加独占锁来确定是否程序已经运行。*/
+    chk = flock(pid_fd, LOCK_EX | LOCK_NB);
+    if (chk == 0)
+    {
+        /*锁定成功，表示进程已经结束，因此在返回前必须先解锁。*/
+        flock(pid_fd, LOCK_UN);
         return -1;
+    }
+
+    /*从PID文件中读取锁定进程的PID。 */
+    lseek(pid_fd, 0, SEEK_SET);
+    abcdk_read(pid_fd, buf, 15);
+
+    if (abcdk_strtype(buf, isdigit))
+        pid = atoi(buf);
+    else
+        pid = -1;
 
     if (pid < 0)
         return -1;
