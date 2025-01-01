@@ -196,6 +196,8 @@ open_log_file:
         abcdk_mkdir(ctx->name, 0666);
 
         ctx->pid = getpid();
+
+        abcdk_closep(&ctx->fd);
         ctx->fd = abcdk_open(ctx->name, 1, 0, 1);
     }
 
