@@ -429,6 +429,7 @@ DependPackageCheck pam HAVE_PAM
 DependPackageCheck curl HAVE_CURL
 DependPackageCheck ncurses HAVE_NCURSES
 DependPackageCheck fltk HAVE_FLTK
+DependPackageCheck gtk HAVE_GTK
 
 #恢复默认。
 export FIND_KIT_TARGET_PREFIX=""
