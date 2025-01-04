@@ -174,7 +174,7 @@ usage: [ OPTIONS ]
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm,
-     pam,curl,ncurses
+     pam,curl,ncurses,fltk
 
     -e < name=value >
      自定义环境变量。
@@ -428,6 +428,7 @@ DependPackageCheck libdrm HAVE_LIBDRM
 DependPackageCheck pam HAVE_PAM
 DependPackageCheck curl HAVE_CURL
 DependPackageCheck ncurses HAVE_NCURSES
+DependPackageCheck fltk HAVE_FLTK
 
 #恢复默认。
 export FIND_KIT_TARGET_PREFIX=""

@@ -48,6 +48,8 @@ static struct _abcdk_test_entry
     {"usb",abcdk_test_usb},
     {"rand",abcdk_test_rand},
     {"runonce",abcdk_test_runonce},
+    {"ncurses",abcdk_test_ncurses},
+    {"fltk",abcdk_test_fltk},
 };
 
 void _abcdk_test_print_usage()
