@@ -36,7 +36,7 @@ int abcdk_test_usb(abcdk_option_t *args);
 int abcdk_test_rand(abcdk_option_t *args);
 int abcdk_test_runonce(abcdk_option_t *args);
 int abcdk_test_ncurses(abcdk_option_t *args);
-int abcdk_test_fltk(abcdk_option_t *args);
+int abcdk_test_gtk(abcdk_option_t *args);
 
 __END_DECLS
 
