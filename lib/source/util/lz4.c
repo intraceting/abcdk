@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  * 
- * Copyright (c) intraceting<intraceting@outlook.com>
+ * Copyright (c) 2021-Present intraceting<intraceting@outlook.com>
  * 
 */
 #include "abcdk/util/lz4.h"

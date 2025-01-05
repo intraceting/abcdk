@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  *
- * Copyright (c) intraceting<intraceting@outlook.com>
+ * Copyright (c) 2021-Present intraceting<intraceting@outlook.com>
  *
  */
 #include "abcdk/util/sha256.h"
@@ -10,8 +10,8 @@
 //
 //  SHA-256 implementation, Mark 2
 //
-//  Copyright (c) 2010,2014 Literatecode, http://www.literatecode.com
-//  Copyright (c) 2022 Ilia Levin (ilia@levin.sg)
+//  Copyright (c) 2021-Present 2010,2014 Literatecode, http://www.literatecode.com
+//  Copyright (c) 2021-Present 2022 Ilia Levin (ilia@levin.sg)
 //
 //  Permission to use, copy, modify, and distribute this software for any
 //  purpose with or without fee is hereby granted, provided that the above
