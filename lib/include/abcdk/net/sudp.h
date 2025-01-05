@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  * 
- * MIT License
+ * Copyright (c) intraceting<intraceting@outlook.com>
  * 
  */
 #ifndef ABCDK_NET_SUDP_H
