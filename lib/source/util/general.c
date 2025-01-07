@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  * 
- * Copyright (c) 2021-Present intraceting<intraceting@outlook.com>
+ * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
 #include "abcdk/util/general.h"
