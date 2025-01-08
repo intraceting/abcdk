@@ -89,14 +89,8 @@ VERSION_MINOR="0"
 #发行版本
 VERSION_RELEASE="1"
 
-
-#工具包前缀
-KIT_PREFIX=""
-
-#SYSROOT发行版。
-SYSROOT_RELEASE="linux-gnu"
-#SYSROOT前缀
-SYSROOT_PREFIX=""
+#LSB发行版。
+LSB_RELEASE="linux-gnu"
 
 #
 CC=/usr/bin/gcc
@@ -108,9 +102,7 @@ BUILD_TYPE="release"
 #
 BUILD_OPTIMIZE="No"
 OPTIMIZE_LEVEL="3"
-#
-DEPEND_FLAGS=""
-DEPEND_LINKS=""
+
 
 #
 INSTALL_PREFIX="/usr/local/"
@@ -119,6 +111,9 @@ INSTALL_PREFIX="/usr/local/"
 DEPEND_PREFIX=""
 DEPEND_FUNC="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
 DEPEND_NOFOUND=""
+#
+DEPEND_FLAGS=""
+DEPEND_LINKS=""
 
 #
 PrintUsage()
@@ -129,17 +124,12 @@ usage: [ OPTIONS ]
     -h 
      打印帮助信息。
 
-    -k < prefix >
-     工具包前缀。
 
     -S < release >
-     SYSROOT发行版。默认：${SYSROOT_RELEASE}
+     LSB发行版。默认：${LSB_RELEASE}
 
      支持以下关键字：
      linux-gnu,android
-
-    -s < prefix >
-     SYSROOT前缀。
 
     -O
      编译优化。
@@ -176,6 +166,7 @@ usage: [ OPTIONS ]
      
      CC=${CC}
      AR=${AR}
+     CSTD=${CSTD}
      SHORTCUT_HOME=${SHORTCUT_HOME}
      DEPEND_PREFIX=${DEPEND_PREFIX}
 
@@ -189,24 +180,15 @@ EOF
 }
 
 #
-while getopts "hC:k:S:s:Oo:gf:l:V:v:r:i:d:e:b:B:" ARGKEY 
+while getopts "hS:Oo:gf:l:i:d:e:b:B:" ARGKEY 
 do
     case $ARGKEY in
     h)
         PrintUsage
         exit 0
     ;;
-    C)
-        CSTD="${OPTARG}"
-    ;;
-    k)
-        KIT_PREFIX="${OPTARG}"
-    ;;
     S)
         SYSROOT_RELEASE="${OPTARG}"
-    ;;
-    s)
-        SYSROOT_PREFIX="${OPTARG}"
     ;;
     O)
         BUILD_OPTIMIZE="yes"
@@ -222,15 +204,6 @@ do
     ;;
     l)
         DEPEND_LINKS="$OPTARG"
-    ;;
-    V)
-        VERSION_MAJOR="${OPTARG}"
-    ;;
-    v)
-        VERSION_MINOR="${OPTARG}"
-    ;;
-    r)
-        VERSION_RELEASE="${OPTARG}"
     ;;
     i)
         INSTALL_PREFIX="${OPTARG}"
@@ -502,8 +475,7 @@ KIT_NAME = ${KIT_NAME}
 BUILD_PATH = ${BUILD_PATH}
 BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 #
-SYSROOT_RELEASE = ${SYSROOT_RELEASE}
-SYSROOT_PREFIX = ${SYSROOT_PREFIX}
+LSB_RELEASE = ${LSB_RELEASE}
 #
 CSTD = ${CSTD}
 #

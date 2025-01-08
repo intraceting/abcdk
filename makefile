@@ -65,21 +65,15 @@ endif
 endif
 
 #
-ifdef SYSROOT_PREFIX
-CC_FLAGS += --sysroot="${SYSROOT_PREFIX}"
-LINK_FLAGS += --sysroot="${SYSROOT_PREFIX}"
-endif 
-
-#
 LINK_FLAGS += -Wl,-rpath="./"
 LINK_FLAGS += ${DEPEND_LINKS}
 
 #
-ifeq (${SYSROOT_RELEASE},linux-gnu)
+ifeq (${LSB_RELEASE},linux-gnu)
 CC_FLAGS += -D_GNU_SOURCE
 LINK_FLAGS += -ldl -pthread -lc -lm -lrt
 endif
-ifeq (${SYSROOT_RELEASE},android)
+ifeq (${LSB_RELEASE},android)
 LINK_FLAGS += -ldl -pthread -lc -lm
 endif
 
