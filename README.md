@@ -14,9 +14,8 @@ ABCDK(一个较好的C开发工具包)
 ## 主要模块
 
 - auto 自动编译
-- doc 文档说明显
+- doc 文档说明
 - lib 基础组件
-- script 一些脚本
 - test 测试组件
 - tool 工具组件
 
