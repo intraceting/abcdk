@@ -650,7 +650,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/script/deb/
+DEB_TOOL_ROOT = ${SHORTCUT_HOME}/deb/
 EOF
 checkReturnCode
 
