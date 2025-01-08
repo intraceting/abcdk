@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHELLDIR}/script/core/check-os-id.sh "$1"
+    ${SHORTCUT_HOME}/core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHELLDIR}/script/core/get-os-ver.sh
+    ${SHORTCUT_HOME}/core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHELLDIR}/script/core/get-kit-name.sh
+	${SHORTCUT_HOME}/core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHELLDIR}/script/core/check-package.sh "$1"
+    ${SHORTCUT_HOME}/core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHELLDIR}/script/core/check-which.sh "$1"
+	${SHORTCUT_HOME}/core/check-which.sh "$1"
 }
 
 #
@@ -55,7 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    ${SHELLDIR}/script/kits/$1.sh "$2"
+    ${SHORTCUT_HOME}/pkg/$1.sh "$2"
 }
 
 #
@@ -63,8 +63,7 @@ CheckKeyword()
 # $1 keywords
 # $2 word
 {
-	NUM=$(echo "$1" |grep -wi "$2" | wc -l)
-    echo ${NUM}
+    ${SHORTCUT_HOME}/core/check-keyword.sh "$1" "$2"
 }
 
 #
@@ -72,27 +71,23 @@ CheckSTD()
 # $1 COMPILER
 # $2 STD
 {
-    ${SHELLDIR}/script/core/check-c-std.sh "$1" "$2"
+    ${SHORTCUT_HOME}/core/check-c-std.sh "$1" "$2"
 }
 
-#修改执行权限，不然用不了脚本。
-chmod +x ${SHELLDIR}/script/core/*.sh
-chmod +x ${SHELLDIR}/script/kits/*.sh
-chmod +x ${SHELLDIR}/script/deb/*.sh
 
-#
-KIT_NAME=$(CheckPackageKitName)
+#SHORTCUT工作目录。
+SHORTCUT_HOME=../shortcut/
 
 #
 BUILD_PATH="${SHELLDIR}/build/"
 BUILD_PACKAGE_PATH="${SHELLDIR}/package/"
 
 #主版本
-VERSION_MAJOR="1"
+VERSION_MAJOR="2"
 #副版本
-VERSION_MINOR="11"
+VERSION_MINOR="0"
 #发行版本
-VERSION_RELEASE="9"
+VERSION_RELEASE="1"
 
 
 #工具包前缀
@@ -121,9 +116,9 @@ DEPEND_LINKS=""
 INSTALL_PREFIX="/usr/local/"
 
 #
+DEPEND_PREFIX=""
 DEPEND_FUNC="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
 DEPEND_NOFOUND=""
-DEPEND_REQUIRES=""
 
 #
 PrintUsage()
@@ -181,6 +176,8 @@ usage: [ OPTIONS ]
      
      CC=${CC}
      AR=${AR}
+     SHORTCUT_HOME=${SHORTCUT_HOME}
+     DEPEND_PREFIX=${DEPEND_PREFIX}
 
     -b < path >
      构建目录。默认：${BUILD_PATH}
@@ -263,7 +260,15 @@ echo "${CC}"
 echo "${AR}"
 
 #
-if [ ! -f ${CC} ];then
+if [ ! -f "${SHORTCUT_HOME}/core/get-os-ver.sh" ];then
+{
+    echo "The 'SHORTCUT' working path does not exist or is invalid."
+    exit 22
+}
+fi
+
+#
+if [ ! -f "${CC}" ];then
 {
     echo "'${CC}' not found."
     exit 22
@@ -271,7 +276,7 @@ if [ ! -f ${CC} ];then
 fi
 
 #
-if [ ! -f ${AR} ];then
+if [ ! -f "${AR}" ];then
 {
     echo "'${AR}' not found."
     exit 22
@@ -279,9 +284,8 @@ if [ ! -f ${AR} ];then
 fi
 
 #
-CheckSTD ${CC} ${CSTD}
-CHK=$?
-if [ ${CHK} -ne 0 ];then
+CheckSTD "${CC}" "${CSTD}"
+if [ $? -ne 0 ];then
 {
     echo "The '${CSTD}' standard is not supported."
     exit 22
@@ -315,6 +319,9 @@ elif [ "${TARGET_ARCH}" == "arm" ];then
     TARGET_ARCH="arm"
 fi
 
+
+#获组件包名称。
+KIT_NAME=$(CheckPackageKitName)
 
 #
 if [ "${KIT_NAME}" == "rpm" ];then
@@ -382,14 +389,14 @@ DependPackageCheck()
 }
 
 #设置环境变量，用于搜索依赖包。
-export FIND_KIT_TARGET_PREFIX=${KIT_PREFIX}
-export FIND_KIT_TARGET_PLATFORM=${TARGET_PLATFORM}
+export SHORTCUT_PKG_PREFIX=${DEPEND_PREFIX}
+export SHORTCUT_PKG_PLATFORM=${TARGET_PLATFORM}
 if [ "${TARGET_ARCH}" == "amd64" ];then
-    export FIND_KIT_TARGET_BITWIDE="64"
+    export SHORTCUT_PKG_BITWIDE="64"
 elif [ "${TARGET_ARCH}" == "arm64" ];then
-    export FIND_KIT_TARGET_BITWIDE="64"
+    export SHORTCUT_PKG_BITWIDE="64"
 elif [ "${TARGET_ARCH}" == "arm" ];then
-    export FIND_KIT_TARGET_BITWIDE="32"
+    export SHORTCUT_PKG_BITWIDE="32"
 fi
 
 #
@@ -432,9 +439,9 @@ DependPackageCheck fltk HAVE_FLTK
 DependPackageCheck gtk HAVE_GTK
 
 #恢复默认。
-export FIND_KIT_TARGET_PREFIX=""
-export FIND_KIT_TARGET_PLATFORM=""
-export FIND_KIT_TARGET_BITWIDE=""
+export SHORTCUT_PKG_PREFIX=""
+export SHORTCUT_PKG_PLATFORM=""
+export SHORTCUT_PKG_BITWIDE=""
 
 #
 if [ "${DEPEND_NOFOUND}" != "" ];then
