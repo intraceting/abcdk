@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHORTCUT_HOME}/core/check-os-id.sh "$1"
+    ${SHELLDIR}/3rdparty/shortcut/core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHORTCUT_HOME}/core/get-os-ver.sh
+    ${SHELLDIR}/3rdparty/shortcut/core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHORTCUT_HOME}/core/get-kit-name.sh
+	${SHELLDIR}/3rdparty/shortcut/core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHORTCUT_HOME}/core/check-package.sh "$1"
+    ${SHELLDIR}/3rdparty/shortcut/core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHORTCUT_HOME}/core/check-which.sh "$1"
+	${SHELLDIR}/3rdparty/shortcut/core/check-which.sh "$1"
 }
 
 #
@@ -55,7 +55,7 @@ CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
 {
-    ${SHORTCUT_HOME}/pkg/$1.sh "$2"
+    ${SHELLDIR}/3rdparty/$1.sh "$2"
 }
 
 #
@@ -63,7 +63,7 @@ CheckKeyword()
 # $1 keywords
 # $2 word
 {
-    ${SHORTCUT_HOME}/core/check-keyword.sh "$1" "$2"
+    ${SHELLDIR}/3rdparty/shortcut/core/check-keyword.sh "$1" "$2"
 }
 
 #
@@ -71,7 +71,7 @@ CheckSTD()
 # $1 COMPILER
 # $2 STD
 {
-    ${SHORTCUT_HOME}/core/check-c-std.sh "$1" "$2"
+    ${SHELLDIR}/3rdparty/shortcut/core/check-c-std.sh "$1" "$2"
 }
 
 
@@ -167,7 +167,6 @@ usage: [ OPTIONS ]
      CC=${CC}
      AR=${AR}
      CSTD=${CSTD}
-     SHORTCUT_HOME=${SHORTCUT_HOME}
      DEPEND_PREFIX=${DEPEND_PREFIX}
 
     -b < path >
@@ -231,14 +230,6 @@ done
 #
 echo "${CC}"
 echo "${AR}"
-
-#
-if [ ! -f "${SHORTCUT_HOME}/core/get-os-ver.sh" ];then
-{
-    echo "The 'SHORTCUT' working path does not exist or is invalid."
-    exit 22
-}
-fi
 
 #
 if [ ! -f "${CC}" ];then
@@ -622,7 +613,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHORTCUT_HOME}/deb/
+DEB_TOOL_ROOT = ${SHELLDIR}/3rdparty/shortcut/deb/
 EOF
 checkReturnCode
 

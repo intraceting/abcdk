@@ -9,7 +9,7 @@ ABCDK(一个较好的C语言开发的工具包)
 
 ## 简介
 
-为支持在Linux平台中辅助工作创建，以C语言作为主要编程语言的软件开发工具包，提供本机编译和交叉编译两种能力。 
+为支持在Linux平台中辅助工作创建，以C语言作为主要编程语言的软件开发工具包。 
 
 ## 主要模块
 
@@ -33,16 +33,19 @@ $ make help
 ```
 ## 编译和安装
 
+
+## 本地编译和打包
+
 ```bash
 $ ./configure.sh [ ... ]
 $ make
-$ sudo make install
+$ make package
 ```
 
-## 编译和打包
+## 交叉编译和打包
 
 ```bash
-$ ./configure.sh [ ... ]
+$ ./configure.sh -e CC=/target_platform/bin/gcc -e AR=/target_platform/bin/ar [ ... ]
 $ make
 $ make package
 ```
