@@ -17,7 +17,7 @@ int abcdk_test_log(abcdk_option_t *args)
     abcdk_logger_t *ctx = abcdk_logger_open("/tmp/abcdk/log/test","/tmp/abcdk/log/test.%d.log",10,1, 0, 0);
 
     #pragma omp parallel // for num_threads(1)
-    for (int l = ABCDK_LOGGER_ERROR; l <= ABCDK_LOGGER_DEBUG; l++)
+    for (int l = ABCDK_LOGGER_TYPE_ERROR; l <= ABCDK_LOGGER_TYPE_DEBUG; l++)
     {
         for (int i = 0; i < 1000000; i++)
         {

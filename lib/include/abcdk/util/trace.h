@@ -13,33 +13,6 @@
 __BEGIN_DECLS
 
 
-/** 轨迹类型。*/
-typedef enum _abcdk_trace_type
-{
-    /** 错误。*/
-    ABCDK_TRACE_ERROR = LOG_ERR,
-#define ABCDK_TRACE_ERROR ABCDK_TRACE_ERROR
-
-    /** 警告。*/
-    ABCDK_TRACE_WARN = LOG_WARNING,
-#define ABCDK_TRACE_WARN ABCDK_TRACE_WARN
-
-    /** 重要。*/
-    ABCDK_TRACE_INFO = LOG_INFO,
-#define ABCDK_TRACE_INFO ABCDK_TRACE_INFO
-
-    /** 调式。*/
-    ABCDK_TRACE_DEBUG = LOG_DEBUG,
-#define ABCDK_TRACE_DEBUG ABCDK_TRACE_DEBUG
-
-    /** 最大值。*/
-    ABCDK_TRACE_MAX = 32
-#define ABCDK_TRACE_MAX ABCDK_TRACE_MAX
-} abcdk_trace_type_t;
-
-/** 检查轨迹类型。*/
-#define ABCDK_TRACE_TYPE_CHECK(t) ((t) >= ABCDK_TRACE_ERROR && (t) < ABCDK_TRACE_MAX)
-
 /** 输出回调函数。*/
 typedef void (*abcdk_trace_output_cb)(void *opaque,int type, const char *str);
 

@@ -13,8 +13,22 @@
 #include <gtk/gtk.h>
 
 // 按钮点击回调函数
-static void on_button_clicked(GtkWidget *widget, gpointer data) {
+static void on_button_clicked(GtkWidget *widget, gpointer data) 
+{
     g_print("按钮被点击了！\n");
+
+    int stderr_fd = -1;
+
+    char cmdline[1000] = {0};
+
+
+    snprintf(cmdline, sizeof(cmdline),"pkexec --user root env DISPLAY=%s XAUTHORITY=%s /home/devel/job/private/coding/github/abcdk/build/abcdk-test gtk",
+             getenv("DISPLAY"), getenv("XAUTHORITY"));
+
+    pid_t child_pid = abcdk_proc_popen(NULL,NULL,&stderr_fd,cmdline);
+    assert(child_pid >= 0);
+
+    abcdk_waitpid(child_pid,0,NULL,NULL);
 }
 
 int abcdk_test_gtk(abcdk_option_t *args)

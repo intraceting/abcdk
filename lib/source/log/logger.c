@@ -117,6 +117,9 @@ abcdk_logger_t *abcdk_logger_open2(const char *path,const char *name, const char
     return abcdk_logger_open(pathfile,segment_name,segment_max,segment_size,copy2syslog,copy2stderr);
 }
 
+/** 检查日志类型。*/
+#define ABCDK_LOGGER_TYPE_CHECK(t) ((t) >= ABCDK_LOGGER_TYPE_ERROR && (t) < ABCDK_LOGGER_TYPE_MAX)
+
 void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
 {
     uint32_t mask = 0;
@@ -242,6 +245,10 @@ static void _abcdk_logger_dump(void *opaque,int type, const char* str)
 {
     abcdk_logger_t *ctx = (abcdk_logger_t *)opaque;
 
+    /*如果不需要记录，直接跳过。*/
+    if (!(abcdk_atomic_load(&ctx->mask) & (1 << type)))
+        return;
+
     /*记录到文件。*/
     _abcdk_logger_dump2file(ctx, str);
 
@@ -256,11 +263,7 @@ static void _abcdk_logger_dump(void *opaque,int type, const char* str)
 
 void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str)
 {
-    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && str != NULL);
-
-    /*如果不需要记录，直接跳过。*/
-    if (!(abcdk_atomic_load(&ctx->mask) & (1 << type)))
-        return;
+    assert(ctx != NULL && str != NULL);
 
     /*加锁，确保每个线程写操作不被打断。*/
     abcdk_mutex_lock(ctx->locker, 1);
@@ -274,18 +277,18 @@ void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str)
 
 void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_list ap)
 {
-    char buf[16000] = {0};
+    char buf[8000] = {0};
 
-    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && fmt != NULL);
+    assert(ctx != NULL && fmt != NULL);
 
-    vsnprintf(buf, 16000, fmt, ap);
+    vsnprintf(buf, 8000, fmt, ap);
 
     abcdk_logger_output(ctx,type,buf);
 }
 
 void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...)
 {
-    assert(ctx != NULL && ABCDK_LOGGER_TYPE_CHECK(type) && fmt != NULL);
+    assert(ctx != NULL && fmt != NULL);
 
     va_list ap;
     va_start(ap, fmt);

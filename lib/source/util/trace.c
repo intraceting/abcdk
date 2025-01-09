@@ -18,7 +18,7 @@ void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, voi
     char c;
     int chk;
 
-    assert(ABCDK_TRACE_TYPE_CHECK(type) && str != NULL);
+    assert(str != NULL);
 
     /*获取自然时间。*/
     ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
@@ -100,11 +100,11 @@ void abcdk_trace_printf_set_callback(abcdk_trace_output_cb cb,void *opaque)
 
 void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)
 {
-    char buf[16000] = {0};
+    char buf[8000] = {0};
 
-    assert(ABCDK_TRACE_TYPE_CHECK(type) && fmt != NULL);
+    assert(fmt != NULL);
 
-    vsnprintf(buf, 16000, fmt, ap);
+    vsnprintf(buf, 8000, fmt, ap);
 
     if (g_trace_printf_cb_func)
         g_trace_printf_cb_func(g_trace_printf_cb_opaque, type, buf);
@@ -114,7 +114,7 @@ void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)
 
 void abcdk_trace_printf(int type, const char *fmt, ...)
 {
-    assert(ABCDK_TRACE_TYPE_CHECK(type) && fmt != NULL);
+    assert(fmt != NULL);
 
     va_list vp;
     va_start(vp, fmt);
@@ -124,7 +124,7 @@ void abcdk_trace_printf(int type, const char *fmt, ...)
 
 void abcdk_trace_printf_siginfo(int type, siginfo_t *info)
 {
-    assert(ABCDK_TRACE_TYPE_CHECK(type) && info != NULL);
+    assert(info != NULL);
 
     if (SI_USER == info->si_code)
         abcdk_trace_printf(type, "signo(%d),errno(%d),code(%d),pid(%d),uid(%d)\n", info->si_signo, info->si_errno, info->si_code, info->si_pid, info->si_uid);
