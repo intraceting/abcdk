@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHELLDIR}/3rdparty/shortcut/core/check-os-id.sh "$1"
+    ${SHELLDIR}/script/core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHELLDIR}/3rdparty/shortcut/core/get-os-ver.sh
+    ${SHELLDIR}/script/core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHELLDIR}/3rdparty/shortcut/core/get-kit-name.sh
+	${SHELLDIR}/script/core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHELLDIR}/3rdparty/shortcut/core/check-package.sh "$1"
+    ${SHELLDIR}/script/core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHELLDIR}/3rdparty/shortcut/core/check-which.sh "$1"
+	${SHELLDIR}/script/core/check-which.sh "$1"
 }
 
 #
@@ -63,7 +63,7 @@ CheckKeyword()
 # $1 keywords
 # $2 word
 {
-    ${SHELLDIR}/3rdparty/shortcut/core/check-keyword.sh "$1" "$2"
+    ${SHELLDIR}/script/core/check-keyword.sh "$1" "$2"
 }
 
 #
@@ -71,12 +71,18 @@ CheckSTD()
 # $1 COMPILER
 # $2 STD
 {
-    ${SHELLDIR}/3rdparty/shortcut/core/check-c-std.sh "$1" "$2"
+    ${SHELLDIR}/script/core/check-c-std.sh "$1" "$2"
 }
 
+#
+CheckCompiler()
+# $1 CC
+# $2 AR
+# $3 OUTPUT 
+{
+    ${SHELLDIR}/script/core/compiler-select.sh "-e" "TARGET_COMPILER_BIN=$1" "-o" "$2"
+}
 
-#SHORTCUT工作目录。
-SHORTCUT_HOME=../shortcut/
 
 #
 BUILD_PATH="${SHELLDIR}/build/"
@@ -93,9 +99,8 @@ VERSION_RELEASE="1"
 LSB_RELEASE="linux-gnu"
 
 #
-CC=/usr/bin/gcc
-AR=/usr/bin/ar
-CSTD=c99
+COMPILER_CC=/usr/bin/gcc
+COMPILER_STD=c99
 
 #
 BUILD_TYPE="release"
@@ -108,9 +113,9 @@ OPTIMIZE_LEVEL="3"
 INSTALL_PREFIX="/usr/local/"
 
 #
-DEPEND_PREFIX=""
-DEPEND_FUNC="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
-DEPEND_NOFOUND=""
+THIRDPARTY_PREFIX=""
+THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
+THIRDPARTY_NOFOUND=""
 #
 DEPEND_FLAGS=""
 DEPEND_LINKS=""
@@ -150,7 +155,7 @@ usage: [ OPTIONS ]
      安装路径。默认：${INSTALL_PREFIX}
 
     -d < key,key,... > 
-     依赖项目，以英文“,”为分割符。默认：${DEPEND_FUNC}
+     依赖项目，以英文“,”为分割符。默认：${THIRDPARTY_PACKAGES}
      
      支持以下关键字：
      openmp,unixodbc,sqlite,openssl,ffmpeg,
@@ -164,10 +169,8 @@ usage: [ OPTIONS ]
     -e < name=value >
      自定义环境变量。
      
-     CC=${CC}
-     AR=${AR}
-     CSTD=${CSTD}
-     DEPEND_PREFIX=${DEPEND_PREFIX}
+     COMPILER_CC=${COMPILER_CC}
+     THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
 
     -b < path >
      构建目录。默认：${BUILD_PATH}
@@ -208,7 +211,7 @@ do
         INSTALL_PREFIX="${OPTARG}"
     ;;
     d)
-        DEPEND_FUNC="${OPTARG}"
+        THIRDPARTY_PACKAGES="${OPTARG}"
     ;;
     e)
         # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
@@ -227,62 +230,27 @@ do
     esac
 done
 
-#
-echo "${CC}"
-echo "${AR}"
-
-#
-if [ ! -f "${CC}" ];then
-{
-    echo "'${CC}' not found."
-    exit 22
-}
-fi
-
-#
-if [ ! -f "${AR}" ];then
-{
-    echo "'${AR}' not found."
-    exit 22
-}
-fi
-
-#
-CheckSTD "${CC}" "${CSTD}"
+#检查编译器。
+CheckCompiler "${COMPILER_CC}" "${BUILD_PATH}/compiler.conf"
 if [ $? -ne 0 ];then
 {
-    echo "The '${CSTD}' standard is not supported."
+    echo "'${COMPILER_CC} not found."
     exit 22
 }
 fi
 
-#当前构建平台。
-BUILD_PLATFORM=$(uname -m)
-#当前构建平台架构。
-BUILD_ARCH=$(uname -m)
-#获取目标平台。
-TARGET_PLATFORM=$(${CC} -dumpmachine)
-#获取目标平台架构。
-TARGET_ARCH=$(echo ${TARGET_PLATFORM} |cut -d '-' -f 1)
+#加载编译器环境。
+source ${BUILD_PATH}/compiler.conf
 
-#转换构建平台架构关键字。
-if [ "${BUILD_ARCH}" == "x86_64" ];then
-    BUILD_ARCH="amd64"
-elif [ "${BUILD_ARCH}" == "aarch64" ] || [ "${BUILD_ARCH}" == "armv8l" ];then
-    BUILD_ARCH="arm64"
-elif [ "${BUILD_ARCH}" == "arm" ] || [ "${BUILD_ARCH}" == "armv7l" ] || "${BUILD_ARCH}" == "armv7a" ];then
-    BUILD_ARCH="arm"
+
+#
+CheckSTD "${_TARGET_COMPILER_BIN}" "${COMPILER_STD}"
+if [ $? -ne 0 ];then
+{
+    echo "The '${COMPILER_STD}' standard is not supported."
+    exit 22
+}
 fi
-
-#转换目标平台架构关键字。
-if [ "${TARGET_ARCH}" == "x86_64" ];then
-    TARGET_ARCH="amd64"
-elif [ "${TARGET_ARCH}" == "aarch64" ];then
-    TARGET_ARCH="arm64"
-elif [ "${TARGET_ARCH}" == "arm" ];then
-    TARGET_ARCH="arm"
-fi
-
 
 #获组件包名称。
 KIT_NAME=$(CheckPackageKitName)
@@ -323,7 +291,7 @@ DependPackageCheck()
     PACKAGE_KEY=$1
     PACKAGE_DEF=$2
     #
-    if [ $(CheckKeyword ${DEPEND_FUNC} ${PACKAGE_KEY}) -eq 1 ];then
+    if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} ${PACKAGE_KEY}) -eq 1 ];then
     {
         CheckHavePackage ${PACKAGE_KEY} 3
         CHK=$?
@@ -335,7 +303,7 @@ DependPackageCheck()
         }
         else
         {
-            DEPEND_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${DEPEND_NOFOUND}"
+            THIRDPARTY_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${THIRDPARTY_NOFOUND}"
         }
         fi
 
@@ -353,14 +321,14 @@ DependPackageCheck()
 }
 
 #设置环境变量，用于搜索依赖包。
-export SHORTCUT_PKG_PREFIX=${DEPEND_PREFIX}
-export SHORTCUT_PKG_PLATFORM=${TARGET_PLATFORM}
+export ABCDK_THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
+export ABCDK_THIRDPARTY_MACHINE=${_TARGET_MACHINE}
 if [ "${TARGET_ARCH}" == "amd64" ];then
-    export SHORTCUT_PKG_BITWIDE="64"
+    export ABCDK_THIRDPARTY_BITWIDE="64"
 elif [ "${TARGET_ARCH}" == "arm64" ];then
-    export SHORTCUT_PKG_BITWIDE="64"
+    export ABCDK_THIRDPARTY_BITWIDE="64"
 elif [ "${TARGET_ARCH}" == "arm" ];then
-    export SHORTCUT_PKG_BITWIDE="32"
+    export ABCDK_THIRDPARTY_BITWIDE="32"
 fi
 
 #
@@ -401,16 +369,18 @@ DependPackageCheck curl HAVE_CURL
 DependPackageCheck ncurses HAVE_NCURSES
 DependPackageCheck fltk HAVE_FLTK
 DependPackageCheck gtk HAVE_GTK
+DependPackageCheck x264 HAVE_H264
+DependPackageCheck x265 HAVE_H265
 
 #恢复默认。
-export SHORTCUT_PKG_PREFIX=""
-export SHORTCUT_PKG_PLATFORM=""
-export SHORTCUT_PKG_BITWIDE=""
+export ABCDK_THIRDPARTY_PREFIX=""
+export ABCDK_THIRDPARTY_MACHINE=""
+export ABCDK_THIRDPARTY_BITWIDE=""
 
 #
-if [ "${DEPEND_NOFOUND}" != "" ];then
+if [ "${THIRDPARTY_NOFOUND}" != "" ];then
 {
-    echo -e "\x1b[33m${DEPEND_NOFOUND}\x1b[31m not found. \x1b[0m"
+    echo -e "\x1b[33m${THIRDPARTY_NOFOUND}\x1b[31m not found. \x1b[0m"
     exit 22
 }
 fi
@@ -468,15 +438,15 @@ BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 #
 LSB_RELEASE = ${LSB_RELEASE}
 #
-CSTD = ${CSTD}
+STD = ${COMPILER_STD}
 #
-CC = ${CC}
-AR = ${AR}
+CC = ${_TARGET_COMPILER_BIN}
+AR = ${_TARGET_COMPILER_AR}
 #
-BUILD_PLATFORM = ${BUILD_PLATFORM}
-BUILD_ARCH = ${BUILD_ARCH}
-TARGET_PLATFORM = ${TARGET_PLATFORM}
-TARGET_ARCH = ${TARGET_ARCH}
+NATIVE_PLATFORM = ${_NATIVE_PLATFORM}
+NATIVE_ARCH = ${_NATIVE_ARCH}
+TARGET_PLATFORM = ${_TARGET_PLATFORM}
+TARGET_ARCH = ${_TARGET_ARCH}
 #
 VERSION_MAJOR = ${VERSION_MAJOR}
 VERSION_MINOR = ${VERSION_MINOR}
@@ -613,7 +583,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/3rdparty/shortcut/deb/
+DEB_TOOL_ROOT = ${SHELLDIR}/script/core/
 EOF
 checkReturnCode
 
@@ -624,7 +594,7 @@ Package: abcdk
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
-Architecture: ${TARGET_ARCH}
+Architecture: ${_TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: \${shlibs:Depends}
 Description: This is a component written in C language.
@@ -657,7 +627,7 @@ Package: abcdk-devel
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
-Architecture: ${TARGET_ARCH}
+Architecture: ${_TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
 Description: This is a component written in C language.

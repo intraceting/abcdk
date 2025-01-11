@@ -22,54 +22,54 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHELLDIR}/shortcut/core/check-os-id.sh "$1"
+    ${SHELLDIR}/../script/core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHELLDIR}/shortcut/core/get-os-ver.sh
+    ${SHELLDIR}/../script/core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHELLDIR}/shortcut/core/get-kit-name.sh
+	${SHELLDIR}/../script/core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHELLDIR}/shortcut/core/check-package.sh "$1"
+    ${SHELLDIR}/../script/core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHELLDIR}/shortcut/core/check-which.sh "$1"
+	${SHELLDIR}/../script/core/check-which.sh "$1"
 }
 
 #
 FindIncPath()
 # $1 HDNAME
 {
-	${SHELLDIR}/shortcut/core/find-inc-path.sh "$1"
+	${SHELLDIR}/../script/core/find-inc-path.sh "$1"
 }
 
 #
 FindLibPath()
 # $1 SONAME
 {
-	${SHELLDIR}/shortcut/core/find-lib-path.sh "$1"
+	${SHELLDIR}/../script/core/find-lib-path.sh "$1"
 }
 
 #
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/shortcut/core/pkg-config.sh $*
+	${SHELLDIR}/../script/core/pkg-config.sh $*
 }
 
 #
@@ -86,13 +86,13 @@ FLAG="$1"
 if [ "deb" == "${KIT_NAME}" ];then 
 { 
     if [ ${FLAG} -eq 1 ];then
-        exit $(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev")
+        exit $(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev libpostproc-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
+        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
+        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
     elif [ ${FLAG} -eq 4 ];then
-        echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev"
+        echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev libpostproc-dev"
     else
         exit 22
     fi
@@ -102,9 +102,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "ffmpeg-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
+        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample 2>/dev/null
+        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
     elif [ ${FLAG} -eq 4 ];then
         echo "ffmpeg-devel"
     else

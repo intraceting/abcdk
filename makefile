@@ -15,7 +15,7 @@ include ${MAKE_CONF}
 export TMPDIR=${BUILD_PATH}/
 
 #
-CC_FLAGS += -std=${CSTD}
+CC_FLAGS += -std=${STD}
 CC_FLAGS += -fPIC 
 CC_FLAGS += -Wno-unused-result
 CC_FLAGS += -Wno-unused-variable 
@@ -418,6 +418,7 @@ package-runtime-deb:
 	cp -rf ${DEB_RT_CTL} ${TMP_ROOT_PATH}/DEBIAN
 #	创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
 	ln -s -f ${TMP_ROOT_PATH}/DEBIAN ${TMP_ROOT_PATH}/debian
+#   更新debian/control文件Pre-Depends字段。	
 	${DEB_TOOL_ROOT}/dpkg-shlibdeps2control.sh "${TMP_ROOT_PATH}"
 #	删除软链接，因为dpkg-deb会把这个当成普通文件复制。下同。
 	unlink ${TMP_ROOT_PATH}/debian

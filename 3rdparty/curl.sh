@@ -23,54 +23,54 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHELLDIR}/shortcut/core/check-os-id.sh "$1"
+    ${SHELLDIR}/../script/core/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHELLDIR}/shortcut/core/get-os-ver.sh
+    ${SHELLDIR}/../script/core/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHELLDIR}/shortcut/core/get-kit-name.sh
+	${SHELLDIR}/../script/core/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHELLDIR}/shortcut/core/check-package.sh "$1"
+    ${SHELLDIR}/../script/core/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHELLDIR}/shortcut/core/check-which.sh "$1"
+	${SHELLDIR}/../script/core/check-which.sh "$1"
 }
 
 #
 FindIncPath()
 # $1 HDNAME
 {
-	${SHELLDIR}/shortcut/core/find-inc-path.sh "$1"
+	${SHELLDIR}/../script/core/find-inc-path.sh "$1"
 }
 
 #
 FindLibPath()
 # $1 SONAME
 {
-	${SHELLDIR}/shortcut/core/find-lib-path.sh "$1"
+	${SHELLDIR}/../script/core/find-lib-path.sh "$1"
 }
 
 #
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/shortcut/core/pkg-config.sh $*
+	${SHELLDIR}/../script/core/pkg-config.sh $*
 }
 
 
