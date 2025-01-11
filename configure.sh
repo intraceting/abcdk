@@ -80,7 +80,7 @@ CheckCompiler()
 # $2 AR
 # $3 OUTPUT 
 {
-    ${SHELLDIR}/script/core/compiler-select.sh "-e" "TARGET_COMPILER_BIN=$1" "-o" "$2"
+    ${SHELLDIR}/script/core/compiler-select.sh "-e" "TARGET_COMPILER_PREFIX=$1" "-e" "TARGET_COMPILER_NAME=$2" "-o" "$3"
 }
 
 
@@ -99,7 +99,8 @@ VERSION_RELEASE="1"
 LSB_RELEASE="linux-gnu"
 
 #
-COMPILER_CC=/usr/bin/gcc
+COMPILER_PREFIX=/usr/bin/
+COMPILER_NAME=gcc
 COMPILER_STD=c99
 
 #
@@ -169,7 +170,8 @@ usage: [ OPTIONS ]
     -e < name=value >
      自定义环境变量。
      
-     COMPILER_CC=${COMPILER_CC}
+     COMPILER_PREFIX=${COMPILER_PREFIX}
+     COMPILER_NAME=${COMPILER_NAME}
      THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
 
     -b < path >
@@ -231,10 +233,10 @@ do
 done
 
 #检查编译器。
-CheckCompiler "${COMPILER_CC}" "${BUILD_PATH}/compiler.conf"
+CheckCompiler "${COMPILER_PREFIX}" "${COMPILER_NAME}" "${BUILD_PATH}/compiler.conf"
 if [ $? -ne 0 ];then
 {
-    echo "'${COMPILER_CC} not found."
+    echo "'${COMPILER_PREFIX}${COMPILER_NAME}' not found."
     exit 22
 }
 fi

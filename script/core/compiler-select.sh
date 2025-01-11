@@ -39,7 +39,9 @@ target_compiler_agent()
 }
 
 #
-NATIVE_COMPILER_BIN="$(which gcc)"
+NATIVE_COMPILER_PREFIX=/usr/bin/
+NATIVE_COMPILER_NAME=gcc
+NATIVE_COMPILER_BIN=
 NATIVE_COMPILER_SYSROOT=
 NATIVE_COMPILER_AR=
 NATIVE_COMPILER_LD=
@@ -47,7 +49,9 @@ NATIVE_COMPILER_RANLIB=
 NATIVE_COMPILER_READELF=
 
 #
-TARGET_COMPILER_BIN="$(which gcc)"
+TARGET_COMPILER_PREFIX=/usr/bin/
+TARGET_COMPILER_NAME=gcc
+TARGET_COMPILER_BIN=
 TARGET_COMPILER_SYSROOT=
 TARGET_COMPILER_AR=
 TARGET_COMPILER_LD=
@@ -72,6 +76,8 @@ usage: [ OPTIONS ]
     -e < name=value >
      自定义环境变量。
      
+     NATIVE_COMPILER_PREFIX=${NATIVE_COMPILER_PREFIX}
+     NATIVE_COMPILER_NAME=${NATIVE_COMPILER_NAME}
      NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}
      NATIVE_COMPILER_SYSROOT=${NATIVE_COMPILER_SYSROOT}
      NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}
@@ -79,6 +85,8 @@ usage: [ OPTIONS ]
      NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB}
      NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}
      
+     TARGET_COMPILER_PREFIX=${TARGET_COMPILER_PREFIX}
+     TARGET_COMPILER_NAME=${TARGET_COMPILER_NAME}
      TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}
      TARGET_COMPILER_SYSROOT=${TARGET_COMPILER_SYSROOT}
      TARGET_COMPILER_AR=${TARGET_COMPILER_AR}
@@ -126,6 +134,10 @@ done
 #################################################################################
 
 #修复默认值。
+if [ "${NATIVE_COMPILER_BIN}" == "" ];then
+NATIVE_COMPILER_BIN=${NATIVE_COMPILER_PREFIX}${NATIVE_COMPILER_NAME}
+fi
+#修复默认值。
 if [ "${NATIVE_COMPILER_SYSROOT}" == "" ];then
 NATIVE_COMPILER_SYSROOT=$(native_compiler_agent "--print-sysroot")
 fi
@@ -152,34 +164,36 @@ fi
 
 #检查参数。
 if [ ! -f "${NATIVE_COMPILER_BIN}" ];then
-echo "NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}无效或不存在."
+echo "'NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${NATIVE_COMPILER_AR}" ];then
-echo "NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR} 无效或不存在."
+echo "'NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${NATIVE_COMPILER_LD}" ];then
-echo "NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD} 无效或不存在."
+echo "'NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${NATIVE_COMPILER_RANLIB}" ];then
-echo "NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB} 无效或不存在."
+echo "'NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${NATIVE_COMPILER_READELF}" ];then
-echo "NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF} 无效或不存在."
+echo "'NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}' invalid or non-existent."
 exit 22
 fi
 
-
 #################################################################################
 
-
+#修复默认值。
+if [ "${TARGET_COMPILER_BIN}" == "" ];then
+TARGET_COMPILER_BIN=${TARGET_COMPILER_PREFIX}${TARGET_COMPILER_NAME}
+fi
 #修复默认值。
 if [ "${TARGET_COMPILER_SYSROOT}" == "" ];then
 TARGET_COMPILER_SYSROOT=$(target_compiler_agent "--print-sysroot")
@@ -207,29 +221,32 @@ fi
 
 #检查参数。
 if [ ! -f "${TARGET_COMPILER_BIN}" ];then
-echo "TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN} 无效或不存在."
+echo "'TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${TARGET_COMPILER_AR}" ];then
-echo "TARGET_COMPILER_AR=${TARGET_COMPILER_AR} 无效或不存在."
+echo "'TARGET_COMPILER_AR=${TARGET_COMPILER_AR}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${TARGET_COMPILER_LD}" ];then
-echo "TARGET_COMPILER_LD=${TARGET_COMPILER_LD} 无效或不存在."
+echo "'TARGET_COMPILER_LD=${TARGET_COMPILER_LD}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${TARGET_COMPILER_RANLIB}" ];then
-echo "TARGET_COMPILER_RANLIB=${TARGET_COMPILER_RANLIB} 无效或不存在."
+echo "'TARGET_COMPILER_RANLIB=${TARGET_COMPILER_RANLIB}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
 if [ ! -f "${TARGET_COMPILER_READELF}" ];then
-echo "TARGET_COMPILER_READELF=${TARGET_COMPILER_READELF} 无效或不存在."
+echo "'TARGET_COMPILER_READELF=${TARGET_COMPILER_READELF}' invalid or non-existent."
 exit 22
 fi
+
+#
+
 
 #################################################################################
 
@@ -288,13 +305,13 @@ fi
 
 #
 if [ "${NATIVE_GLIBC_MAX_VER}" == "" ];then
-echo "无法获取本机平台的glibc版本."
+echo "Unable to obtain the glibc version of the native platform."
 exit 1
 fi
 
 #
 if [ "${TARGET_GLIBC_MAX_VER}" == "" ];then
-echo "无法获取目标平台的glibc版本."
+echo "Unable to obtain the glibc version for the target platform."
 exit 1
 fi
 
@@ -304,12 +321,14 @@ fi
 
 #检查参数。
 if [ ! -d "$(dirname "${OUTPUT_FILE}")" ];then
-echo "OUTPUT_FILE=${OUTPUT_FILE} 无效或不存在."
+echo "'OUTPUT_FILE=${OUTPUT_FILE}' invalid or non-existent."
 exit 22
 fi
 
 cat >${OUTPUT_FILE} <<EOF
 #
+${VAR_PREFIX}_NATIVE_COMPILER_PREFIX=${NATIVE_COMPILER_PREFIX}
+${VAR_PREFIX}_NATIVE_COMPILER_NAME=${NATIVE_COMPILER_NAME}
 ${VAR_PREFIX}_NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}
 ${VAR_PREFIX}_NATIVE_COMPILER_SYSROOT=${NATIVE_COMPILER_SYSROOT}
 ${VAR_PREFIX}_NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}
@@ -317,6 +336,8 @@ ${VAR_PREFIX}_NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD}
 ${VAR_PREFIX}_NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB}
 ${VAR_PREFIX}_NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}
 #
+${VAR_PREFIX}_TARGET_COMPILER_PREFIX=${TARGET_COMPILER_PREFIX}
+${VAR_PREFIX}_TARGET_COMPILER_NAME=${TARGET_COMPILER_NAME}
 ${VAR_PREFIX}_TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}
 ${VAR_PREFIX}_TARGET_COMPILER_SYSROOT=${TARGET_COMPILER_SYSROOT}
 ${VAR_PREFIX}_TARGET_COMPILER_AR=${TARGET_COMPILER_AR}
