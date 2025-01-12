@@ -316,14 +316,20 @@ exit 1
 fi
 
 
-
 #################################################################################
 
+#
+OUTPUT_PATH="$(dirname "${OUTPUT_FILE}")"
+#
+mkdir -p "${OUTPUT_PATH}"
+
 #检查参数。
-if [ ! -d "$(dirname "${OUTPUT_FILE}")" ];then
+if [ ! -d "${OUTPUT_PATH}" ];then
 echo "'OUTPUT_FILE=${OUTPUT_FILE}' invalid or non-existent."
 exit 22
 fi
+
+#################################################################################
 
 cat >${OUTPUT_FILE} <<EOF
 #

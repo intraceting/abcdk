@@ -83,208 +83,6 @@ CheckCompiler()
     ${SHELLDIR}/script/core/compiler-select.sh "-e" "TARGET_COMPILER_PREFIX=$1" "-e" "TARGET_COMPILER_NAME=$2" "-o" "$3"
 }
 
-
-#
-BUILD_PATH="${SHELLDIR}/build/"
-BUILD_PACKAGE_PATH="${SHELLDIR}/package/"
-
-#主版本
-VERSION_MAJOR="2"
-#副版本
-VERSION_MINOR="0"
-#发行版本
-VERSION_RELEASE="1"
-
-#LSB发行版。
-LSB_RELEASE="linux-gnu"
-
-#
-COMPILER_PREFIX=/usr/bin/
-COMPILER_NAME=gcc
-COMPILER_STD=c99
-
-#
-BUILD_TYPE="release"
-#
-BUILD_OPTIMIZE="No"
-OPTIMIZE_LEVEL="3"
-
-
-#
-INSTALL_PREFIX="/usr/local/"
-
-#
-THIRDPARTY_PREFIX=""
-THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
-THIRDPARTY_NOFOUND=""
-#
-DEPEND_FLAGS=""
-DEPEND_LINKS=""
-
-#
-PrintUsage()
-{
-cat << EOF
-usage: [ OPTIONS ]
-
-    -h 
-     打印帮助信息。
-
-
-    -S < release >
-     LSB发行版。默认：${LSB_RELEASE}
-
-     支持以下关键字：
-     linux-gnu,android
-
-    -O
-     编译优化。
-
-    -o
-     优化级别，默认：${OPTIMIZE_LEVEL}。
-
-    -g  
-     生成调试符号。
-
-    -f 
-     附加的编译参数。
-
-    -l 
-     附加的链接参数。
-
-    -i < path > 
-     安装路径。默认：${INSTALL_PREFIX}
-
-    -d < key,key,... > 
-     依赖项目，以英文“,”为分割符。默认：${THIRDPARTY_PACKAGES}
-     
-     支持以下关键字：
-     openmp,unixodbc,sqlite,openssl,ffmpeg,
-     freeimage,fuse,libnm,lz4,zlib,
-     archive,modbus,libusb,mqtt,redis,json-c,
-     bluez,blkid,libcap,fastcgi,systemd,
-     libudev,dmtx,qrencode,zbar,magickwand,
-     kafka,uuid,libmagic,nghttp2,libdrm,
-     pam,curl,ncurses,fltk
-
-    -e < name=value >
-     自定义环境变量。
-     
-     COMPILER_PREFIX=${COMPILER_PREFIX}
-     COMPILER_NAME=${COMPILER_NAME}
-     THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
-
-    -b < path >
-     构建目录。默认：${BUILD_PATH}
-
-    -B < path >
-     发行目录。默认：${BUILD_PACKAGE_PATH}
-
-EOF
-}
-
-#
-while getopts "hS:Oo:gf:l:i:d:e:b:B:" ARGKEY 
-do
-    case $ARGKEY in
-    h)
-        PrintUsage
-        exit 0
-    ;;
-    S)
-        SYSROOT_RELEASE="${OPTARG}"
-    ;;
-    O)
-        BUILD_OPTIMIZE="yes"
-    ;;
-    o)
-        OPTIMIZE_LEVEL="$OPTARG"
-    ;;
-    g)
-        BUILD_TYPE="debug"
-    ;;
-    f)
-        DEPEND_FLAGS="$OPTARG"
-    ;;
-    l)
-        DEPEND_LINKS="$OPTARG"
-    ;;
-    i)
-        INSTALL_PREFIX="${OPTARG}"
-    ;;
-    d)
-        THIRDPARTY_PACKAGES="${OPTARG}"
-    ;;
-    e)
-        # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
-        if [[ "$OPTARG" =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.*$ ]]; then
-            eval ${OPTARG}
-        else 
-            echo "'-e ${OPTARG}' will be ignored, the parameter of '- e' only supports the format of 'key=value' or 'key=' ."
-        fi 
-    ;;
-    b)
-        BUILD_PATH="${OPTARG}"
-    ;;
-    B)
-        BUILD_PACKAGE_PATH="${OPTARG}"
-    ;;
-    esac
-done
-
-#检查编译器。
-CheckCompiler "${COMPILER_PREFIX}" "${COMPILER_NAME}" "${BUILD_PATH}/compiler.conf"
-if [ $? -ne 0 ];then
-{
-    echo "'${COMPILER_PREFIX}${COMPILER_NAME}' not found."
-    exit 22
-}
-fi
-
-#加载编译器环境。
-source ${BUILD_PATH}/compiler.conf
-
-
-#
-CheckSTD "${_TARGET_COMPILER_BIN}" "${COMPILER_STD}"
-if [ $? -ne 0 ];then
-{
-    echo "The '${COMPILER_STD}' standard is not supported."
-    exit 22
-}
-fi
-
-#获组件包名称。
-KIT_NAME=$(CheckPackageKitName)
-
-#
-if [ "${KIT_NAME}" == "rpm" ];then
-{
-    #
-    CheckHavePackage rpmbuild 1
-    if [ $? -ne 0 ];then
-        echo "'$(CheckHavePackage rpmbuild 4)' not found."
-        exit 22
-    fi
-}
-elif [ "${KIT_NAME}" == "deb" ];then
-{
-    #
-    CheckHavePackage dpkg 1
-    if [ $? -ne 0 ];then
-        echo "'$(CheckHavePackage dpkg 4)' not found."
-        exit 22
-    fi
-}
-fi
-
-#
-CheckHavePackage pkgconfig 1
-if [ $? -ne 0 ];then
-    echo "'$(CheckHavePackage pkgconfig 4)' not found."
-    exit 22
-fi
-
 #
 DependPackageCheck()
 # 1 key
@@ -321,6 +119,235 @@ DependPackageCheck()
 #    echo ${DEPEND_FLAGS} 
 #    echo ${DEPEND_LINKS}
 }
+
+#LSB发行版。
+LSB_RELEASE="linux-gnu"
+
+#
+COMPILER_PREFIX=/usr/bin/
+COMPILER_NAME=gcc
+COMPILER_STD=c99
+
+#
+BUILD_TYPE="release"
+#
+OPTIMIZE_LEVEL=""
+
+#
+BUILD_PATH="${SHELLDIR}/build/"
+BUILD_PACKAGE_PATH="${SHELLDIR}/package/"
+#
+INSTALL_PREFIX="/usr/local/"
+
+#
+KIT_NAME=""
+
+#
+THIRDPARTY_PREFIX=""
+THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
+THIRDPARTY_NOFOUND=""
+#
+DEPEND_FLAGS=""
+DEPEND_LINKS=""
+
+
+#主版本
+VERSION_MAJOR="2"
+#副版本
+VERSION_MINOR="0"
+#发行版本
+VERSION_RELEASE="1"
+
+#
+PrintUsage()
+{
+cat << EOF
+usage: [ OPTIONS ]
+
+    -h 
+     打印帮助信息。
+
+
+    -S < release >
+     LSB发行版。默认：${LSB_RELEASE}
+
+     支持以下关键字：
+     linux-gnu,android
+
+    -o
+     优化级别，默认：${OPTIMIZE_LEVEL}。
+
+    -g  
+     生成调试符号。
+
+    -f 
+     附加的编译参数。
+
+    -l 
+     附加的链接参数。
+
+    -d < key,key,... > 
+     依赖项目，以英文“,”为分割符。默认：${THIRDPARTY_PACKAGES}
+     
+     支持以下关键字：
+     openmp,unixodbc,sqlite,openssl,ffmpeg,
+     freeimage,fuse,libnm,lz4,zlib,
+     archive,modbus,libusb,mqtt,redis,json-c,
+     bluez,blkid,libcap,fastcgi,systemd,
+     libudev,dmtx,qrencode,zbar,magickwand,
+     kafka,uuid,libmagic,nghttp2,libdrm,
+     pam,curl,ncurses,fltk
+
+    -e < name=value >
+     自定义环境变量。
+     
+     COMPILER_PREFIX=${COMPILER_PREFIX}
+     COMPILER_NAME=${COMPILER_NAME}
+     THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
+
+    -i < path > 
+     安装路径。默认：${INSTALL_PREFIX}
+
+    -b < path >
+     构建目录。默认：${BUILD_PATH}
+
+    -B < path >
+     发行目录。默认：${BUILD_PACKAGE_PATH}
+
+EOF
+}
+
+#
+while getopts "hS:o:gf:l:d:e:i:b:B:" ARGKEY 
+do
+    case $ARGKEY in
+    h)
+        PrintUsage
+        exit 0
+    ;;
+    S)
+        LSB_RELEASE="${OPTARG}"
+    ;;
+    O)
+        BUILD_OPTIMIZE="yes"
+    ;;
+    o)
+        OPTIMIZE_LEVEL="$OPTARG"
+    ;;
+    g)
+        BUILD_TYPE="debug"
+    ;;
+    f)
+        DEPEND_FLAGS="$OPTARG"
+    ;;
+    l)
+        DEPEND_LINKS="$OPTARG"
+
+    ;;
+    d)
+        THIRDPARTY_PACKAGES="${OPTARG}"
+    ;;
+    e)
+        # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
+        if [[ "$OPTARG" =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.*$ ]]; then
+            eval ${OPTARG}
+        else 
+            echo "'-e ${OPTARG}' will be ignored, the parameter of '- e' only supports the format of 'key=value' or 'key=' ."
+        fi 
+    ;;
+    i)
+        INSTALL_PREFIX="${OPTARG}"
+    ;;
+    b)
+        BUILD_PATH="${OPTARG}"
+    ;;
+    B)
+        BUILD_PACKAGE_PATH="${OPTARG}"
+    ;;
+    esac
+done
+
+
+#
+mkdir -p ${BUILD_PATH}
+if [ ! -d ${BUILD_PATH} ];then
+{
+    echo "'${BUILD_PATH}' not found."
+    exit 22
+}
+fi
+
+#
+mkdir -p ${BUILD_PACKAGE_PATH}
+if [ ! -d ${BUILD_PACKAGE_PATH} ];then
+{
+    echo "'${BUILD_PACKAGE_PATH}' not found."
+    exit 22
+}
+fi
+
+#去掉末尾的‘/’。
+INSTALL_PREFIX_TMP="${INSTALL_PREFIX%/}"
+#删除‘/’前面的所有字符，包括‘/’自身。
+LAST_NAME="${INSTALL_PREFIX_TMP##*/}"
+
+#如果路径最深层的目录名称不是项目名称则拼接项目名称。
+if [ ! "${LAST_NAME}" == "abcdk" ];then
+INSTALL_PREFIX="${INSTALL_PREFIX}/abcdk"
+fi
+
+#获组件包名称。
+KIT_NAME=$(CheckPackageKitName)
+
+#
+if [ "${KIT_NAME}" == "rpm" ];then
+{
+    #
+    CheckHavePackage rpmbuild 1
+    if [ $? -ne 0 ];then
+        echo "'$(CheckHavePackage rpmbuild 4)' not found."
+        exit 22
+    fi
+}
+elif [ "${KIT_NAME}" == "deb" ];then
+{
+    #
+    CheckHavePackage dpkg 1
+    if [ $? -ne 0 ];then
+        echo "'$(CheckHavePackage dpkg 4)' not found."
+        exit 22
+    fi
+}
+fi
+
+#
+CheckHavePackage pkgconfig 1
+if [ $? -ne 0 ];then
+    echo "'$(CheckHavePackage pkgconfig 4)' not found."
+    exit 22
+fi
+
+#检查编译器。
+CheckCompiler "${COMPILER_PREFIX}" "${COMPILER_NAME}" "${BUILD_PATH}/compiler.conf"
+if [ $? -ne 0 ];then
+{
+    echo "'${COMPILER_PREFIX}${COMPILER_NAME}' not found."
+    exit 22
+}
+fi
+
+#加载编译器环境。
+source ${BUILD_PATH}/compiler.conf
+
+#
+CheckSTD "${_TARGET_COMPILER_BIN}" "${COMPILER_STD}"
+if [ $? -ne 0 ];then
+{
+    echo "The '${COMPILER_STD}' standard is not supported."
+    exit 22
+}
+fi
+
 
 #设置环境变量，用于搜索依赖包。
 export ABCDK_THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
@@ -387,34 +414,6 @@ if [ "${THIRDPARTY_NOFOUND}" != "" ];then
 }
 fi
 
-#
-mkdir -p ${BUILD_PATH}
-if [ ! -d ${BUILD_PATH} ];then
-{
-    echo "'${BUILD_PATH}' not found."
-    exit 22
-}
-fi
-
-#
-mkdir -p ${BUILD_PACKAGE_PATH}
-if [ ! -d ${BUILD_PACKAGE_PATH} ];then
-{
-    echo "'${BUILD_PACKAGE_PATH}' not found."
-    exit 22
-}
-fi
-
-#去掉末尾的‘/’。
-INSTALL_PREFIX_TMP="${INSTALL_PREFIX%/}"
-#删除‘/’前面的所有字符，包括‘/’自身。
-LAST_NAME="${INSTALL_PREFIX_TMP##*/}"
-
-#如果路径最深层的目录名称不是项目名称则拼接项目名称。
-if [ ! "${LAST_NAME}" == "abcdk" ];then
-INSTALL_PREFIX="${INSTALL_PREFIX}/abcdk"
-fi
-
 
 #
 MAKE_CONF=${BUILD_PATH}/makefile.conf
@@ -460,7 +459,6 @@ DEPEND_LINKS = ${DEPEND_LINKS}
 #
 BUILD_TYPE = ${BUILD_TYPE}
 #
-BUILD_OPTIMIZE = ${BUILD_OPTIMIZE}
 OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 #
 INSTALL_PREFIX = ${INSTALL_PREFIX}
