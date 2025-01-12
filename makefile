@@ -46,7 +46,6 @@ LINK_FLAGS += -s
 endif
 
 #
-ifeq (${BUILD_OPTIMIZE},yes)
 ifeq (${OPTIMIZE_LEVEL},1)
 CC_FLAGS += -O1
 endif
@@ -62,7 +61,7 @@ endif
 ifeq (${OPTIMIZE_LEVEL},fast)
 CC_FLAGS += -Ofast
 endif
-endif
+
 
 #
 LINK_FLAGS += -Wl,-rpath="./"
