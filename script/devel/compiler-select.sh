@@ -260,20 +260,38 @@ TARGET_PLATFORM=$(echo ${TARGET_MACHINE} | cut -d - -f 1)
 
 #转换构建平台架构关键字。
 if [ "${NATIVE_PLATFORM}" == "x86_64" ];then
+{
     NATIVE_ARCH="amd64"
+    NATIVE_BITWIDE="64"
+}
 elif [ "${NATIVE_PLATFORM}" == "aarch64" ] || [ "${NATIVE_PLATFORM}" == "armv8l" ];then
+{
     NATIVE_ARCH="arm64"
+    NATIVE_BITWIDE="64"
+}
 elif [ "${NATIVE_PLATFORM}" == "arm" ] || [ "${NATIVE_PLATFORM}" == "armv7l" ] || "${NATIVE_PLATFORM}" == "armv7a" ];then
+{
     NATIVE_ARCH="arm"
+    NATIVE_BITWIDE="32"
+}
 fi
 
 #转换构建平台架构关键字。
 if [ "${TARGET_PLATFORM}" == "x86_64" ];then
+{
     TARGET_ARCH="amd64"
+    TARGET_BITWIDE="64"
+}
 elif [ "${TARGET_PLATFORM}" == "aarch64" ] || [ "${TARGET_PLATFORM}" == "armv8l" ];then
+{
     TARGET_ARCH="arm64"
+    TARGET_BITWIDE="64"
+}
 elif [ "${TARGET_PLATFORM}" == "arm" ] || [ "${TARGET_PLATFORM}" == "armv7l" ] || "${TARGET_PLATFORM}" == "armv7a" ];then
+{
     TARGET_ARCH="arm"
+    TARGET_BITWIDE="32"
+}
 fi
 
 #################################################################################
@@ -318,16 +336,18 @@ fi
 
 #################################################################################
 
-#
-OUTPUT_PATH="$(dirname "${OUTPUT_FILE}")"
-#
-mkdir -p "${OUTPUT_PATH}"
-
 #检查参数。
-if [ ! -d "${OUTPUT_PATH}" ];then
+if [ "${OUTPUT_FILE}" == "" ];then
 echo "'OUTPUT_FILE=${OUTPUT_FILE}' invalid or non-existent."
 exit 22
 fi
+
+#提取路径。
+OUTPUT_PATH="$(dirname "${OUTPUT_FILE}")"
+
+#创建不存在的路径。
+mkdir -p "${OUTPUT_PATH}"
+
 
 #################################################################################
 
@@ -359,6 +379,9 @@ ${VAR_PREFIX}_TARGET_PLATFORM=${TARGET_PLATFORM}
 #
 ${VAR_PREFIX}_NATIVE_ARCH=${NATIVE_ARCH}
 ${VAR_PREFIX}_TARGET_ARCH=${TARGET_ARCH}
+#
+${VAR_PREFIX}_NATIVE_BITWIDE=${NATIVE_BITWIDE}
+${VAR_PREFIX}_TARGET_BITWIDE=${TARGET_BITWIDE}
 #
 ${VAR_PREFIX}_NATIVE_COMPILER_VERSION=${NATIVE_COMPILER_VERSION}
 ${VAR_PREFIX}_TARGET_COMPILER_VERSION=${TARGET_COMPILER_VERSION}

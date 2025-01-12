@@ -21,33 +21,33 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHELLDIR}/script/core/check-os-id.sh "$1"
+    ${SHELLDIR}/script/devel/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHELLDIR}/script/core/get-os-ver.sh
+    ${SHELLDIR}/script/devel/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHELLDIR}/script/core/get-kit-name.sh
+	${SHELLDIR}/script/devel/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHELLDIR}/script/core/check-package.sh "$1"
+    ${SHELLDIR}/script/devel/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHELLDIR}/script/core/check-which.sh "$1"
+	${SHELLDIR}/script/devel/check-which.sh "$1"
 }
 
 #
@@ -63,7 +63,7 @@ CheckKeyword()
 # $1 keywords
 # $2 word
 {
-    ${SHELLDIR}/script/core/check-keyword.sh "$1" "$2"
+    ${SHELLDIR}/script/devel/check-keyword.sh "$1" "$2"
 }
 
 #
@@ -71,7 +71,7 @@ CheckSTD()
 # $1 COMPILER
 # $2 STD
 {
-    ${SHELLDIR}/script/core/check-c-std.sh "$1" "$2"
+    ${SHELLDIR}/script/devel/check-c-std.sh "$1" "$2"
 }
 
 #
@@ -80,7 +80,7 @@ CheckCompiler()
 # $2 AR
 # $3 OUTPUT 
 {
-    ${SHELLDIR}/script/core/compiler-select.sh "-e" "TARGET_COMPILER_PREFIX=$1" "-e" "TARGET_COMPILER_NAME=$2" "-o" "$3"
+    ${SHELLDIR}/script/devel/compiler-select.sh "-e" "TARGET_COMPILER_PREFIX=$1" "-e" "TARGET_COMPILER_NAME=$2" "-o" "$3"
 }
 
 #
@@ -350,14 +350,19 @@ fi
 
 
 #设置环境变量，用于搜索依赖包。
-export ABCDK_THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
-export ABCDK_THIRDPARTY_MACHINE=${_TARGET_MACHINE}
-if [ "${TARGET_ARCH}" == "amd64" ];then
-    export ABCDK_THIRDPARTY_BITWIDE="64"
-elif [ "${TARGET_ARCH}" == "arm64" ];then
-    export ABCDK_THIRDPARTY_BITWIDE="64"
-elif [ "${TARGET_ARCH}" == "arm" ];then
-    export ABCDK_THIRDPARTY_BITWIDE="32"
+export _THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
+export _THIRDPARTY_MACHINE=${_TARGET_MACHINE}
+export _THIRDPARTY_BITWIDE=${_TARGET_BITWIDE}
+
+if [ "${_NATIVE_MACHINE}" != "${_TARGET_MACHINE}" ];then
+{
+    export _THIRDPARTY_PKG_CONFIG_PREFIX=${THIRDPARTY_PREFIX}
+    export _THIRDPARTY_PKG_CONFIG_LIBDIR=${THIRDPARTY_PREFIX}/lib64/pkgconfig:${THIRDPARTY_PREFIX}/lib/pkgconfig:${THIRDPARTY_PREFIX}/share/pkgconfig
+}
+else 
+{
+    export _THIRDPARTY_PKG_CONFIG_PATH=${THIRDPARTY_PREFIX}/lib64/pkgconfig:${THIRDPARTY_PREFIX}/lib/pkgconfig:${THIRDPARTY_PREFIX}/share/pkgconfig
+}
 fi
 
 #
@@ -402,9 +407,12 @@ DependPackageCheck x264 HAVE_H264
 DependPackageCheck x265 HAVE_H265
 
 #恢复默认。
-export ABCDK_THIRDPARTY_PREFIX=""
-export ABCDK_THIRDPARTY_MACHINE=""
-export ABCDK_THIRDPARTY_BITWIDE=""
+export _THIRDPARTY_PREFIX=""
+export _THIRDPARTY_MACHINE=""
+export _THIRDPARTY_BITWIDE=""
+export _THIRDPARTY_PKG_CONFIG_PREFIX=""
+export _THIRDPARTY_PKG_CONFIG_LIBDIR=""
+export _THIRDPARTY_PKG_CONFIG_PATH=""
 
 #
 if [ "${THIRDPARTY_NOFOUND}" != "" ];then
@@ -583,7 +591,7 @@ PKG_PC = ${PKG_PC}
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
 #
-DEB_TOOL_ROOT = ${SHELLDIR}/script/core/
+DEB_TOOL_ROOT = ${SHELLDIR}/script/devel/
 EOF
 checkReturnCode
 

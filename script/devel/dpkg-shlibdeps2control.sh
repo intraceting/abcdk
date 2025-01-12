@@ -30,6 +30,7 @@ done
 
 #
 DEPENDS=$(cd ${ROOT_PATH};dpkg-shlibdeps -e ${EXE_FILES} -O 2>/dev/null)
+
 #替换shlibs:Depends=为空。
 #例：${字符串变量/待查找的字符串/替换字符串(允许无)}
 DEPENDS=$(echo ${DEPENDS/shlibs:Depends=/})
@@ -47,7 +48,6 @@ done < ${ROOT_PATH}/debian/control
 IFS=$IFS
 
 #
-mv ${ROOT_PATH}/debian/control ${ROOT_PATH}/debian/control.back
-mv ${TMPFILE} ${ROOT_PATH}/debian/control
+mv -f ${TMPFILE} ${ROOT_PATH}/debian/control
 
 exit 0
