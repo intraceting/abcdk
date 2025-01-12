@@ -80,7 +80,7 @@ CheckCompiler()
 # $2 AR
 # $3 OUTPUT 
 {
-    ${SHELLDIR}/script/devel/compiler-select.sh "-e" "TARGET_COMPILER_PREFIX=$1" "-e" "TARGET_COMPILER_NAME=$2" "-o" "$3"
+    ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_C=$1$2" "-o" "$3"
 }
 
 #
@@ -98,8 +98,8 @@ DependPackageCheck()
 
         if [ ${CHK} -eq 0 ];then
         {
-            DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
-            DEPEND_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LINKS}"
+            COMPILER_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${COMPILER_FLAGS}"
+            COMPILER_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${COMPILER_LINKS}"
         }
         else
         {
@@ -116,17 +116,23 @@ DependPackageCheck()
     }
     fi
 
-#    echo ${DEPEND_FLAGS} 
-#    echo ${DEPEND_LINKS}
+#    echo ${COMPILER_FLAGS} 
+#    echo ${COMPILER_LINKS}
 }
 
-#LSB发行版。
+#
 LSB_RELEASE="linux-gnu"
+
+#
+COMPILER_STD=c99
 
 #
 COMPILER_PREFIX=/usr/bin/
 COMPILER_NAME=gcc
-COMPILER_STD=c99
+
+#
+COMPILER_FLAGS=""
+COMPILER_LINKS=""
 
 #
 BUILD_TYPE="release"
@@ -143,13 +149,11 @@ INSTALL_PREFIX="/usr/local/"
 KIT_NAME=""
 
 #
-THIRDPARTY_PREFIX=""
 THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
+THIRDPARTY_PREFIX=""
+THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
 #
-DEPEND_FLAGS=""
-DEPEND_LINKS=""
-
 
 #主版本
 VERSION_MAJOR="2"
@@ -162,34 +166,52 @@ VERSION_RELEASE="1"
 PrintUsage()
 {
 cat << EOF
-usage: [ OPTIONS ]
+usage: [ OPTIONS [ VARIABLE ... ] ]
+
+OPTIONS:
 
     -h 
      打印帮助信息。
 
+    -d < KEY=VALUE | KEY= >
+     定义变量及变量赋值。
 
-    -S < release >
-     LSB发行版。默认：${LSB_RELEASE}
+VARIABLE: 
 
-     支持以下关键字：
+     LSB_RELEASE=${LSB_RELEASE}
+
+     LSB_RELEASE(发行版名称)支持以下关键字:
      linux-gnu,android
-
-    -o
-     优化级别，默认：${OPTIMIZE_LEVEL}。
-
-    -g  
-     生成调试符号。
-
-    -f 
-     附加的编译参数。
-
-    -l 
-     附加的链接参数。
-
-    -d < key,key,... > 
-     依赖项目，以英文“,”为分割符。默认：${THIRDPARTY_PACKAGES}
      
-     支持以下关键字：
+     OPTIMIZE_LEVEL=${OPTIMIZE_LEVEL}
+
+     OPTIMIZE_LEVEL(优化级别)支持以下关键字：
+     1,2,3,s,fast
+
+     BUILD_TYPE=${BUILD_TYPE}
+    
+     BUILD_TYPE(构建类型)支持以下关键字：
+     debug,release
+     
+     COMPILER_PREFIX=${COMPILER_PREFIX}
+
+     COMPILER_PREFIX(编译器路径前缀)与编译器名字组成完整路径.
+
+     COMPILER_NAME=${COMPILER_NAME}
+
+     COMPILER_NAME(编译器名字)与编译器前缀组成完整路径.
+
+     COMPILER_FLAGS=${COMPILER_FLAGS}
+
+     COMPILER_FLAGS(编译器的编译参数)用于编译器的源码编译. 
+
+     COMPILER_LINKS=${COMPILER_LINKS}
+
+     COMPILER_LINKS(编译器的链接参数)用于编译器的目标链接. 
+
+     THIRDPARTY_PACKAGES=${THIRDPARTY_PACKAGES}
+
+     THIRDPARTY_PACKAGES(依赖组件列表)支持以下关键字:
      openmp,unixodbc,sqlite,openssl,ffmpeg,
      freeimage,fuse,libnm,lz4,zlib,
      archive,modbus,libusb,mqtt,redis,json-c,
@@ -198,22 +220,26 @@ usage: [ OPTIONS ]
      kafka,uuid,libmagic,nghttp2,libdrm,
      pam,curl,ncurses,fltk
 
-    -e < name=value >
-     自定义环境变量。
-     
-     COMPILER_PREFIX=${COMPILER_PREFIX}
-     COMPILER_NAME=${COMPILER_NAME}
      THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
 
-    -i < path > 
-     安装路径。默认：${INSTALL_PREFIX}
+     THIRDPARTY_PREFIX(依赖组件路径前缀)用于查找依赖组件完整路径.
 
-    -b < path >
-     构建目录。默认：${BUILD_PATH}
+     THIRDPARTY_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
-    -B < path >
-     发行目录。默认：${BUILD_PACKAGE_PATH}
+     THIRDPARTY_FIND_MODE(依赖组件搜索模式)支持以下关键字:
+     only,both,(default)
 
+     INSTALL_PREFIX=${INSTALL_PREFIX}
+
+     INSTALL_PREFIX(安装路经前缀).
+
+     BUILD_PATH=${BUILD_PATH}
+
+     BUILD_PATH(过程文件存放的路径)用于存放构建过程文件.
+
+     BUILD_PACKAGE_PATH=${BUILD_PACKAGE_PATH}
+
+     BUILD_PACKAGE_PATH(发行包存放的路径)用于存放发行包.
 EOF
 }
 
@@ -225,44 +251,13 @@ do
         PrintUsage
         exit 0
     ;;
-    S)
-        LSB_RELEASE="${OPTARG}"
-    ;;
-    O)
-        BUILD_OPTIMIZE="yes"
-    ;;
-    o)
-        OPTIMIZE_LEVEL="$OPTARG"
-    ;;
-    g)
-        BUILD_TYPE="debug"
-    ;;
-    f)
-        DEPEND_FLAGS="$OPTARG"
-    ;;
-    l)
-        DEPEND_LINKS="$OPTARG"
-
-    ;;
     d)
-        THIRDPARTY_PACKAGES="${OPTARG}"
-    ;;
-    e)
         # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
-        if [[ "$OPTARG" =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.*$ ]]; then
+        if [[ ${OPTARG} =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
             eval ${OPTARG}
         else 
-            echo "'-e ${OPTARG}' will be ignored, the parameter of '- e' only supports the format of 'key=value' or 'key=' ."
+            echo "'-e ${OPTARG}' will be ignored, the parameter of '- d' only supports the format of 'key=value' or 'key=' ."
         fi 
-    ;;
-    i)
-        INSTALL_PREFIX="${OPTARG}"
-    ;;
-    b)
-        BUILD_PATH="${OPTARG}"
-    ;;
-    B)
-        BUILD_PACKAGE_PATH="${OPTARG}"
     ;;
     esac
 done
@@ -340,7 +335,7 @@ fi
 source ${BUILD_PATH}/compiler.conf
 
 #
-CheckSTD "${_TARGET_COMPILER_BIN}" "${COMPILER_STD}"
+CheckSTD "${_TARGET_COMPILER_C}" "${COMPILER_STD}"
 if [ $? -ne 0 ];then
 {
     echo "The '${COMPILER_STD}' standard is not supported."
@@ -348,22 +343,11 @@ if [ $? -ne 0 ];then
 }
 fi
 
-
 #设置环境变量，用于搜索依赖包。
-export _THIRDPARTY_PREFIX=${THIRDPARTY_PREFIX}
-export _THIRDPARTY_MACHINE=${_TARGET_MACHINE}
-export _THIRDPARTY_BITWIDE=${_TARGET_BITWIDE}
-
-if [ "${_NATIVE_MACHINE}" != "${_TARGET_MACHINE}" ];then
-{
-    export _THIRDPARTY_PKG_CONFIG_PREFIX=${THIRDPARTY_PREFIX}
-    export _THIRDPARTY_PKG_CONFIG_LIBDIR=${THIRDPARTY_PREFIX}/lib64/pkgconfig:${THIRDPARTY_PREFIX}/lib/pkgconfig:${THIRDPARTY_PREFIX}/share/pkgconfig
-}
-else 
-{
-    export _THIRDPARTY_PKG_CONFIG_PATH=${THIRDPARTY_PREFIX}/lib64/pkgconfig:${THIRDPARTY_PREFIX}/lib/pkgconfig:${THIRDPARTY_PREFIX}/share/pkgconfig
-}
-fi
+export _PKG_TARGET_MACHINE=${_TARGET_MACHINE}
+export _PKG_TARGET_WORDBIT=${_TARGET_BITWIDE}
+export _THIRDPARTY_PKG_PREFIX=${THIRDPARTY_PREFIX}
+export _THIRDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
 #
 DependPackageCheck openmp HAVE_OPENMP
@@ -407,12 +391,10 @@ DependPackageCheck x264 HAVE_H264
 DependPackageCheck x265 HAVE_H265
 
 #恢复默认。
-export _THIRDPARTY_PREFIX=""
-export _THIRDPARTY_MACHINE=""
-export _THIRDPARTY_BITWIDE=""
-export _THIRDPARTY_PKG_CONFIG_PREFIX=""
-export _THIRDPARTY_PKG_CONFIG_LIBDIR=""
-export _THIRDPARTY_PKG_CONFIG_PATH=""
+export _PKG_TARGET_MACHINE=
+export _PKG_TARGET_WORDBIT=
+export _THIRDPARTY_PKG_PREFIX=
+export _THIRDPARTY_PKG_FIND_MODE=
 
 #
 if [ "${THIRDPARTY_NOFOUND}" != "" ];then
@@ -449,8 +431,16 @@ LSB_RELEASE = ${LSB_RELEASE}
 #
 STD = ${COMPILER_STD}
 #
-CC = ${_TARGET_COMPILER_BIN}
+CC = ${_TARGET_COMPILER_C}
 AR = ${_TARGET_COMPILER_AR}
+#
+DEPEND_FLAGS = ${COMPILER_FLAGS}
+DEPEND_LINKS = ${COMPILER_LINKS}
+#
+BUILD_TYPE = ${BUILD_TYPE}
+#
+OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
+
 #
 NATIVE_PLATFORM = ${_NATIVE_PLATFORM}
 NATIVE_ARCH = ${_NATIVE_ARCH}
@@ -461,13 +451,7 @@ VERSION_MAJOR = ${VERSION_MAJOR}
 VERSION_MINOR = ${VERSION_MINOR}
 VERSION_RELEASE = ${VERSION_RELEASE}
 VERSION_STR = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-#
-DEPEND_FLAGS = ${DEPEND_FLAGS}
-DEPEND_LINKS = ${DEPEND_LINKS}
-#
-BUILD_TYPE = ${BUILD_TYPE}
-#
-OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
+
 #
 INSTALL_PREFIX = ${INSTALL_PREFIX}
 #

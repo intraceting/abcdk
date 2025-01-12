@@ -21,8 +21,12 @@ checkReturnCode()
 #
 native_compiler_agent()
 {
-    if [ -f "${NATIVE_COMPILER_BIN}" ];then
-        ${NATIVE_COMPILER_BIN} "$@" 2>>/dev/null
+    if [ -f "${NATIVE_COMPILER_C}" ];then
+        ${NATIVE_COMPILER_C} "$@" 2>>/dev/null
+    elif [ -f "${NATIVE_COMPILER_CXX}" ];then
+        ${NATIVE_COMPILER_CXX} "$@" 2>>/dev/null
+    elif [ -f "${NATIVE_COMPILER_FC}" ];then
+        ${NATIVE_COMPILER_FC} "$@" 2>>/dev/null
     else 
         return 127
     fi
@@ -31,8 +35,12 @@ native_compiler_agent()
 #
 target_compiler_agent()
 {
-    if [ -f "${TARGET_COMPILER_BIN}" ];then
-        ${TARGET_COMPILER_BIN} "$@" 2>>/dev/null
+    if [ -f "${TARGET_COMPILER_C}" ];then
+        ${TARGET_COMPILER_C} "$@" 2>>/dev/null
+    elif [ -f "${TARGET_COMPILER_CXX}" ];then
+        ${TARGET_COMPILER_CXX} "$@" 2>>/dev/null
+    elif [ -f "${TARGET_COMPILER_FC}" ];then
+        ${TARGET_COMPILER_FC} "$@" 2>>/dev/null
     else 
         return 127
     fi
@@ -40,8 +48,9 @@ target_compiler_agent()
 
 #
 NATIVE_COMPILER_PREFIX=/usr/bin/
-NATIVE_COMPILER_NAME=gcc
-NATIVE_COMPILER_BIN=
+NATIVE_COMPILER_C=
+NATIVE_COMPILER_CXX=
+NATIVE_COMPILER_FC=
 NATIVE_COMPILER_SYSROOT=
 NATIVE_COMPILER_AR=
 NATIVE_COMPILER_LD=
@@ -50,8 +59,9 @@ NATIVE_COMPILER_READELF=
 
 #
 TARGET_COMPILER_PREFIX=/usr/bin/
-TARGET_COMPILER_NAME=gcc
-TARGET_COMPILER_BIN=
+TARGET_COMPILER_C=
+TARGET_COMPILER_CXX=
+TARGET_COMPILER_FC=
 TARGET_COMPILER_SYSROOT=
 TARGET_COMPILER_AR=
 TARGET_COMPILER_LD=
@@ -73,12 +83,13 @@ usage: [ OPTIONS ]
     -h
     打印此文档。
 
-    -e < name=value >
+    -d < name=value >
      自定义环境变量。
      
      NATIVE_COMPILER_PREFIX=${NATIVE_COMPILER_PREFIX}
-     NATIVE_COMPILER_NAME=${NATIVE_COMPILER_NAME}
-     NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}
+     NATIVE_COMPILER_C=${NATIVE_COMPILER_C}
+     NATIVE_COMPILER_CXX=${NATIVE_COMPILER_CXX}
+     NATIVE_COMPILER_FC=${NATIVE_COMPILER_FC}
      NATIVE_COMPILER_SYSROOT=${NATIVE_COMPILER_SYSROOT}
      NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}
      NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD}
@@ -86,8 +97,9 @@ usage: [ OPTIONS ]
      NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}
      
      TARGET_COMPILER_PREFIX=${TARGET_COMPILER_PREFIX}
-     TARGET_COMPILER_NAME=${TARGET_COMPILER_NAME}
-     TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}
+     TARGET_COMPILER_C=${TARGET_COMPILER_C}
+     TARGET_COMPILER_CXX=${TARGET_COMPILER_CXX}
+     TARGET_COMPILER_FC=${TARGET_COMPILER_FC}
      TARGET_COMPILER_SYSROOT=${TARGET_COMPILER_SYSROOT}
      TARGET_COMPILER_AR=${TARGET_COMPILER_AR}
      TARGET_COMPILER_LD=${TARGET_COMPILER_LD}
@@ -103,7 +115,7 @@ EOF
 }
 
 #
-while getopts "he:p:o:" ARGKEY 
+while getopts "hd:p:o:" ARGKEY 
 do
     case $ARGKEY in
     \?)
@@ -114,9 +126,9 @@ do
         PrintUsage
         exit 0
     ;;
-    e)
+    d)
         # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
-        if [[ "$OPTARG" =~ ^[a-zA-Z_][a-zA-Z0-9_]*=.*$ ]]; then
+        if [[ ${OPTARG} =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
             eval ${OPTARG}
         else 
             echo "'-e ${OPTARG}' will be ignored, the parameter of '- e' only supports the format of 'key=value' or 'key=' ."
@@ -134,8 +146,16 @@ done
 #################################################################################
 
 #修复默认值。
-if [ "${NATIVE_COMPILER_BIN}" == "" ];then
-NATIVE_COMPILER_BIN=${NATIVE_COMPILER_PREFIX}${NATIVE_COMPILER_NAME}
+if [ "${NATIVE_COMPILER_C}" == "" ];then
+NATIVE_COMPILER_C=${NATIVE_COMPILER_PREFIX}gcc
+fi
+#修复默认值。
+if [ "${NATIVE_COMPILER_CXX}" == "" ];then
+NATIVE_COMPILER_CXX=${NATIVE_COMPILER_PREFIX}g++
+fi
+#修复默认值。
+if [ "${NATIVE_COMPILER_FC}" == "" ];then
+NATIVE_COMPILER_FC=${NATIVE_COMPILER_PREFIX}gfortran
 fi
 #修复默认值。
 if [ "${NATIVE_COMPILER_SYSROOT}" == "" ];then
@@ -163,36 +183,35 @@ NATIVE_COMPILER_READELF=$(which "${NATIVE_COMPILER_READELF}")
 fi
 
 #检查参数。
-if [ ! -f "${NATIVE_COMPILER_BIN}" ];then
-echo "'NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}' invalid or non-existent."
+if [ ! -f "${NATIVE_COMPILER_C}" ];then
+echo "'NATIVE_COMPILER_C=${NATIVE_COMPILER_C}' invalid or non-existent."
 exit 22
 fi
+
 #检查参数。
-if [ ! -f "${NATIVE_COMPILER_AR}" ];then
-echo "'NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}' invalid or non-existent."
+if [ ! -f "${NATIVE_COMPILER_CXX}" ];then
+echo "'NATIVE_COMPILER_CXX=${NATIVE_COMPILER_CXX}' invalid or non-existent."
 exit 22
 fi
+
 #检查参数。
-if [ ! -f "${NATIVE_COMPILER_LD}" ];then
-echo "'NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD}' invalid or non-existent."
-exit 22
-fi
-#检查参数。
-if [ ! -f "${NATIVE_COMPILER_RANLIB}" ];then
-echo "'NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB}' invalid or non-existent."
-exit 22
-fi
-#检查参数。
-if [ ! -f "${NATIVE_COMPILER_READELF}" ];then
-echo "'NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}' invalid or non-existent."
-exit 22
+if [ ! -f "${NATIVE_COMPILER_FC}" ];then
+echo "'NATIVE_COMPILER_FC=${NATIVE_COMPILER_FC}' invalid or non-existent, ignore."
 fi
 
 #################################################################################
 
 #修复默认值。
-if [ "${TARGET_COMPILER_BIN}" == "" ];then
-TARGET_COMPILER_BIN=${TARGET_COMPILER_PREFIX}${TARGET_COMPILER_NAME}
+if [ "${TARGET_COMPILER_C}" == "" ];then
+TARGET_COMPILER_C=${TARGET_COMPILER_PREFIX}gcc
+fi
+#修复默认值。
+if [ "${TARGET_COMPILER_CXX}" == "" ];then
+TARGET_COMPILER_CXX=${TARGET_COMPILER_PREFIX}g++
+fi
+#修复默认值。
+if [ "${TARGET_COMPILER_FC}" == "" ];then
+TARGET_COMPILER_FC=${TARGET_COMPILER_PREFIX}gfortran
 fi
 #修复默认值。
 if [ "${TARGET_COMPILER_SYSROOT}" == "" ];then
@@ -220,32 +239,20 @@ TARGET_COMPILER_READELF=$(which "${TARGET_COMPILER_READELF}")
 fi
 
 #检查参数。
-if [ ! -f "${TARGET_COMPILER_BIN}" ];then
-echo "'TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}' invalid or non-existent."
+if [ ! -f "${TARGET_COMPILER_C}" ];then
+echo "'TARGET_COMPILER_C=${TARGET_COMPILER_C}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
-if [ ! -f "${TARGET_COMPILER_AR}" ];then
-echo "'TARGET_COMPILER_AR=${TARGET_COMPILER_AR}' invalid or non-existent."
+if [ ! -f "${TARGET_COMPILER_CXX}" ];then
+echo "'TARGET_COMPILER_CXX=${TARGET_COMPILER_CXX}' invalid or non-existent."
 exit 22
 fi
 #检查参数。
-if [ ! -f "${TARGET_COMPILER_LD}" ];then
-echo "'TARGET_COMPILER_LD=${TARGET_COMPILER_LD}' invalid or non-existent."
+if [ ! -f "${TARGET_COMPILER_FC}" ];then
+echo "'TARGET_COMPILER_FC=${TARGET_COMPILER_FC}' invalid or non-existent, ignore."
 exit 22
 fi
-#检查参数。
-if [ ! -f "${TARGET_COMPILER_RANLIB}" ];then
-echo "'TARGET_COMPILER_RANLIB=${TARGET_COMPILER_RANLIB}' invalid or non-existent."
-exit 22
-fi
-#检查参数。
-if [ ! -f "${TARGET_COMPILER_READELF}" ];then
-echo "'TARGET_COMPILER_READELF=${TARGET_COMPILER_READELF}' invalid or non-existent."
-exit 22
-fi
-
-#
 
 
 #################################################################################
@@ -354,8 +361,9 @@ mkdir -p "${OUTPUT_PATH}"
 cat >${OUTPUT_FILE} <<EOF
 #
 ${VAR_PREFIX}_NATIVE_COMPILER_PREFIX=${NATIVE_COMPILER_PREFIX}
-${VAR_PREFIX}_NATIVE_COMPILER_NAME=${NATIVE_COMPILER_NAME}
-${VAR_PREFIX}_NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}
+${VAR_PREFIX}_NATIVE_COMPILER_C=${NATIVE_COMPILER_C}
+${VAR_PREFIX}_NATIVE_COMPILER_CXX=${NATIVE_COMPILER_CXX}
+${VAR_PREFIX}_NATIVE_COMPILER_FC=${NATIVE_COMPILER_FC}
 ${VAR_PREFIX}_NATIVE_COMPILER_SYSROOT=${NATIVE_COMPILER_SYSROOT}
 ${VAR_PREFIX}_NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}
 ${VAR_PREFIX}_NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD}
@@ -363,8 +371,9 @@ ${VAR_PREFIX}_NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB}
 ${VAR_PREFIX}_NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}
 #
 ${VAR_PREFIX}_TARGET_COMPILER_PREFIX=${TARGET_COMPILER_PREFIX}
-${VAR_PREFIX}_TARGET_COMPILER_NAME=${TARGET_COMPILER_NAME}
-${VAR_PREFIX}_TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}
+${VAR_PREFIX}_TARGET_COMPILER_C=${TARGET_COMPILER_C}
+${VAR_PREFIX}_TARGET_COMPILER_CXX=${TARGET_COMPILER_CXX}
+${VAR_PREFIX}_TARGET_COMPILER_FC=${TARGET_COMPILER_FC}
 ${VAR_PREFIX}_TARGET_COMPILER_SYSROOT=${TARGET_COMPILER_SYSROOT}
 ${VAR_PREFIX}_TARGET_COMPILER_AR=${TARGET_COMPILER_AR}
 ${VAR_PREFIX}_TARGET_COMPILER_LD=${TARGET_COMPILER_LD}

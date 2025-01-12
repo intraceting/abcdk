@@ -18,17 +18,49 @@ fi
 HDNAME="$1"
 
 #
-if [ "${_THIRDPARTY_PREFIX}" == "" ];then
-_THIRDPARTY_PREFIX="/usr/"
+PKG_PREFIX=${_THIRDPARTY_PKG_PREFIX}
+PKG_FIND_MODE=${_THIRDPARTY_PKG_FIND_MODE}
+
+#修复默认值。
+if [ "${PKG_PREFIX}" == "" ];then
+PKG_FIND_MODE="default"
 fi
 
 #
-if [ -f ${_THIRDPARTY_PREFIX}/include/${HDNAME} ];then
-    echo "${_THIRDPARTY_PREFIX}/include/"
-elif [ -f ${_THIRDPARTY_PREFIX}/${HDNAME} ];then
-    echo "${_THIRDPARTY_PREFIX}/"
-else 
-    exit 1
+if [ "${PKG_FIND_MODE}" == "only" ];then
+{
+    if [ -f ${PKG_PREFIX}/include/${HDNAME} ];then
+        echo "${PKG_PREFIX}/include/"
+    elif [ -f ${PKG_PREFIX}/${HDNAME} ];then
+        echo "${PKG_PREFIX}/"
+    else 
+        exit 1
+    fi  
+}
+elif [ "${PKG_FIND_MODE}" == "both" ];then
+{
+    if [ -f ${PKG_PREFIX}/include/${HDNAME} ];then
+        echo "${PKG_PREFIX}/include/"
+    elif [ -f ${PKG_PREFIX}/${HDNAME} ];then
+        echo "${PKG_PREFIX}/"
+    elif [ -f /usr/include/${HDNAME} ];then
+        echo "/usr/include/"
+    elif [ -f /usr/${HDNAME} ];then
+        echo "/usr/"
+    else 
+        exit 1
+    fi  
+}
+else
+{
+    if [ -f /usr/include/${HDNAME} ];then
+        echo "/usr/include/"
+    elif [ -f /usr/${HDNAME} ];then
+        echo "/usr/"
+    else 
+        exit 1
+    fi
+}
 fi
 
 #
