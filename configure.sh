@@ -511,14 +511,16 @@ cat >${RPM_RT_SPEC} <<EOF
 Name: abcdk
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
-Summary: A Better C language Development Kit (a.k.a ABCDK).
+Summary: A Better C language Development Kit.
 URL: https://github.com/intraceting/abcdk
 Group: Applications/System
 License: MIT
 AutoReqProv: yes
 
 %description
-This is a component written in C language.
+ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
+providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
+files, directories, multimedia, etc.
 .
 This package contains the development files(documents,scripts,libraries).
 
@@ -544,7 +546,7 @@ cat >${RPM_DEV_SPEC} <<EOF
 Name: abcdk-devel
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
-Summary: A Better C language Development Kit (a.k.a ABCDK).
+Summary: A Better C language Development Kit.
 URL: https://github.com/intraceting/abcdk
 Group: Applications/System
 License: MIT
@@ -552,7 +554,9 @@ Requires: abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 AutoReqProv: yes
 
 %description
-This is a component written in C language.
+ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
+providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
+files, directories, multimedia, etc.
 .
 This package contains the development files(headers, static libraries).
 
@@ -605,7 +609,9 @@ Priority: optional
 Architecture: ${_TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: \${shlibs:Depends}
-Description: This is a component written in C language.
+Description: ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
+ providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
+ files, directories, multimedia, etc.
  .
  This package contains the runtime files(documents,scripts,libraries).
 EOF
@@ -638,7 +644,9 @@ Priority: optional
 Architecture: ${_TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
-Description: This is a component written in C language.
+Description: ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
+ providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
+ files, directories, multimedia, etc.
  .
  This package contains the development files(headers, static libraries).
 EOF

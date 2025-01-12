@@ -1,7 +1,7 @@
 
 # 名称
 
-ABCDK(一个较好的C语言开发的工具包)
+ABCDK(A Better C language Development Kit)
 
 ## 版权
 
@@ -9,7 +9,7 @@ ABCDK(一个较好的C语言开发的工具包)
 
 ## 简介
 
-为支持在Linux平台中辅助工作创建，以C语言作为主要编程语言的软件开发工具包。 
+ABCDK为了支持在Linux/Unix系统中快速开发软件项目而创建的解决方案，提供关于网络、数据库、链表、多叉树、硬盘、磁带、文件、目录、多媒体等开发接口。
 
 ## 主要模块
 
@@ -45,7 +45,7 @@ $ make package
 ## 交叉编译和打包
 
 ```bash
-$ ./configure.sh -e CC=/target_platform/bin/gcc -e AR=/target_platform/bin/ar [ ... ]
+$ ./configure.sh -e COMPILER_PREFIX=/target_platform/bin/ -e COMPILER_NAME=gcc [ ... ]
 $ make
 $ make package
 ```
