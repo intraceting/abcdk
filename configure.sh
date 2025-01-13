@@ -410,9 +410,6 @@ fi
 MAKE_CONF=${BUILD_PATH}/makefile.conf
 
 #
-PKG_PC=${BUILD_PATH}/pkg_conf.pc
-
-#
 RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
 RPM_DEV_SPEC=${BUILD_PATH}/rpm_devel.spec
 
@@ -462,29 +459,11 @@ EOF
 checkReturnCode
 
 #
-cat >${PKG_PC} <<EOF
-prefix=${INSTALL_PREFIX}
-libdir=\${prefix}/lib
-includedir=\${prefix}/include
-
-Name: ABCDK
-Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Description: ABCDK library
-Requires:
-Libs: -L\${libdir} -labcdk
-Cflags: -I\${includedir}
-EOF
-checkReturnCode
-
-
-#
 if [ "${KIT_NAME}" == "rpm" ];then
 {
 
 #
 cat >>${MAKE_CONF} <<EOF
-#
-PKG_PC = ${PKG_PC}
 #
 RPM_RT_SPEC = ${RPM_RT_SPEC}
 RPM_DEV_SPEC = ${RPM_DEV_SPEC}
@@ -574,8 +553,6 @@ rm -rf ${DEB_DEV_CTL}/*
 
 #
 cat >>${MAKE_CONF} <<EOF
-#
-PKG_PC = ${PKG_PC}
 #
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}

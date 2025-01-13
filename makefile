@@ -296,12 +296,11 @@ clean-test:
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
-INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
+INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/inc/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/doc/)
-INSTALL_PATH_PKG = $(abspath ${INSTALL_PATH}/lib/pkgconfig/)
-INSTALL_PATH_SPT = $(abspath ${INSTALL_PATH}/bin/script/)
+INSTALL_PATH_SPT = $(abspath ${INSTALL_PATH}/spt/)
 
 
 #
@@ -326,14 +325,11 @@ install-devel:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_INC}
-	mkdir -p ${INSTALL_PATH_PKG}
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
 #
 	cp  -rf $(CURDIR)/lib/include/abcdk ${INSTALL_PATH_INC}/
 	cp  -f $(CURDIR)/lib/include/abcdk.h ${INSTALL_PATH_INC}/
-#
-	cp  -f ${PKG_PC} ${INSTALL_PATH_PKG}/abcdk.pc
 
 #
 uninstall: uninstall-runtime uninstall-devel
@@ -354,8 +350,6 @@ uninstall-devel:
 #
 	rm -rf ${INSTALL_PATH_INC}/abcdk
 	rm -f ${INSTALL_PATH_INC}/abcdk.h
-#
-	rm -f  ${INSTALL_PATH_PKG}/abcdk.pc
 
 #占位预定义，实际会随机生成。
 TMP_ROOT_PATH = /tmp/abcdk-build-installer.tmp
