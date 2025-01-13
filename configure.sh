@@ -218,16 +218,9 @@ do
     d)
         # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
         if [[ ${OPTARG} =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
-        {
-           # KEY="${OPTARG%%=*}"
-           # VAL="${OPTARG#*=}"
-           # declare "${KEY}"="${VAL}"
-           declare "${OPTARG%%=*}"="${OPTARG#*=}"
-        }
+            declare "${OPTARG%%=*}"="${OPTARG#*=}"
         else 
-        {
             echo "'-d ${OPTARG}' will be ignored, the parameter of '- d' only supports the format of 'key=value' or 'key=' ."
-        }
         fi 
     ;;
     esac
