@@ -516,13 +516,22 @@ ${INSTALL_PREFIX}
 
 %post
 #!/bin/sh
+#
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
+#
+echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.sh
+ldconfig
+#
 exit 0
 
 %postun
 #!/bin/sh
+#
 rm -f /etc/profile.d/abcdk.sh
+#
+rm -f /etc/ld.so.conf.d/abcdk.sh
+#
 exit 0
 EOF
 checkReturnCode
@@ -551,12 +560,16 @@ ${INSTALL_PREFIX}
 
 %post
 #!/bin/sh
-echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
+#
+echo "nothing to do."
+#
 exit 0
 
 %postun
 #!/bin/sh
-rm -f /etc/profile.d/abcdk-devel.sh
+#
+echo "nothing to do."
+#
 exit 0
 EOF
 checkReturnCode
@@ -606,8 +619,13 @@ checkReturnCode
 #
 cat >${DEB_RT_CTL}/postinst <<EOF
 #!/bin/sh
+#
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
+#
+echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.sh
+ldconfig
+#
 exit 0
 EOF
 checkReturnCode
@@ -615,7 +633,11 @@ checkReturnCode
 #
 cat >${DEB_RT_CTL}/postrm <<EOF
 #!/bin/sh
+#
 rm -f /etc/profile.d/abcdk.sh
+#
+rm -f /etc/ld.so.conf.d/abcdk.sh
+#
 exit 0
 EOF
 checkReturnCode
@@ -641,7 +663,9 @@ checkReturnCode
 #
 cat >${DEB_DEV_CTL}/postinst <<EOF
 #!/bin/sh
-echo "export PKG_CONFIG_PATH=\\\$PKG_CONFIG_PATH:${INSTALL_PREFIX}/pkgconfig" >/etc/profile.d/abcdk-devel.sh
+#
+echo "nothing to do."
+#
 exit 0
 EOF
 checkReturnCode
@@ -649,7 +673,9 @@ checkReturnCode
 #
 cat >${DEB_DEV_CTL}/postrm <<EOF
 #!/bin/sh
-rm -f /etc/profile.d/abcdk-devel.sh
+#
+echo "nothing to do."
+#
 exit 0
 EOF
 checkReturnCode
