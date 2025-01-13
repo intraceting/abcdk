@@ -18,6 +18,7 @@ PKG_FIND_MODE=${_THIRDPARTY_PKG_FIND_MODE}
 if [ "${PKG_PREFIX}" == "" ];then
 PKG_FIND_MODE="default"
 fi
+
 #
 if [ "${PKG_TARGET_MACHINE}" == "" ];then
 PKG_TARGET_MACHINE="$(uname -m)-linux-gnu"
@@ -35,18 +36,17 @@ if [ "${PKG_TARGET_WORDBIT}" == "" ];then
 fi
 
 #
+PKG_CFG_PATH=${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/pkgconfig:${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/pkgconfig:${PKG_PREFIX}/share/pkgconfig
+
+#
 if [ "${PKG_FIND_MODE}" == "only" ];then
 {
-    #
-    export PKG_CONFIG_LIBDIR=${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/pkgconfig:${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/pkgconfig:${PKG_PREFIX}/share/pkgconfig
-    #
+    export PKG_CONFIG_LIBDIR=${PKG_CFG_PATH}
     pkg-config --define-variable=prefix=${PKG_PREFIX} $@
 }
 elif [ "${PKG_FIND_MODE}" == "both" ];then
 {
-    #
-    export PKG_CONFIG_PATH=${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/pkgconfig:${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/pkgconfig:${PKG_PREFIX}/share/pkgconfig
-    #
+    export PKG_CONFIG_PATH=${PKG_CFG_PATH}
     pkg-config $@
 }
 else

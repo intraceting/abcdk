@@ -127,11 +127,16 @@ do
         exit 0
     ;;
     d)
+        # 转换字符串为变量名和变量值。
+        # KEY="${STR%%=*}"
+        # VAL="${STR#*=}"
+        # declare "${KEY}"="${VAL}"
+
         # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
         if [[ ${OPTARG} =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
-            eval ${OPTARG}
+            declare "${OPTARG%%=*}"="${OPTARG#*=}"
         else 
-            echo "'-e ${OPTARG}' will be ignored, the parameter of '- e' only supports the format of 'key=value' or 'key=' ."
+            echo "'-d ${OPTARG}' will be ignored, the parameter of '- e' only supports the format of 'key=value' or 'key=' ."
         fi 
     ;;
     p)

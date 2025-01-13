@@ -83,42 +83,6 @@ CheckCompiler()
     ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_C=$1$2" "-o" "$3"
 }
 
-#
-DependPackageCheck()
-# 1 key
-# 2 def
-{
-    PACKAGE_KEY=$1
-    PACKAGE_DEF=$2
-    #
-    if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} ${PACKAGE_KEY}) -eq 1 ];then
-    {
-        CheckHavePackage ${PACKAGE_KEY} 3
-        CHK=$?
-
-        if [ ${CHK} -eq 0 ];then
-        {
-            COMPILER_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${COMPILER_FLAGS}"
-            COMPILER_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${COMPILER_LINKS}"
-        }
-        else
-        {
-            THIRDPARTY_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${THIRDPARTY_NOFOUND}"
-        }
-        fi
-
-        echo -n "Check ${PACKAGE_KEY}"
-        if [ ${CHK} -eq 0 ];then
-            echo -e "\x1b[32m Ok \x1b[0m"
-        else 
-            echo -e "\x1b[31m Failed \x1b[0m"
-        fi
-    }
-    fi
-
-#    echo ${COMPILER_FLAGS} 
-#    echo ${COMPILER_LINKS}
-}
 
 #
 LSB_RELEASE="linux-gnu"
@@ -254,9 +218,16 @@ do
     d)
         # 使用正则表达式检查参数是否为 "key=value" 或 "key=" 的格式.
         if [[ ${OPTARG} =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
-            eval ${OPTARG}
+        {
+           # KEY="${OPTARG%%=*}"
+           # VAL="${OPTARG#*=}"
+           # declare "${KEY}"="${VAL}"
+           declare "${OPTARG%%=*}"="${OPTARG#*=}"
+        }
         else 
-            echo "'-e ${OPTARG}' will be ignored, the parameter of '- d' only supports the format of 'key=value' or 'key=' ."
+        {
+            echo "'-d ${OPTARG}' will be ignored, the parameter of '- d' only supports the format of 'key=value' or 'key=' ."
+        }
         fi 
     ;;
     esac
@@ -348,6 +319,43 @@ export _PKG_TARGET_MACHINE=${_TARGET_MACHINE}
 export _PKG_TARGET_WORDBIT=${_TARGET_BITWIDE}
 export _THIRDPARTY_PKG_PREFIX=${THIRDPARTY_PREFIX}
 export _THIRDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
+
+#
+DependPackageCheck()
+# 1 key
+# 2 def
+{
+    PACKAGE_KEY=$1
+    PACKAGE_DEF=$2
+    #
+    if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} ${PACKAGE_KEY}) -eq 1 ];then
+    {
+        CheckHavePackage ${PACKAGE_KEY} 3
+        CHK=$?
+
+        if [ ${CHK} -eq 0 ];then
+        {
+            COMPILER_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${COMPILER_FLAGS}"
+            COMPILER_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${COMPILER_LINKS}"
+        }
+        else
+        {
+            THIRDPARTY_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${THIRDPARTY_NOFOUND}"
+        }
+        fi
+
+        echo -n "Check ${PACKAGE_KEY}"
+        if [ ${CHK} -eq 0 ];then
+            echo -e "\x1b[32m Ok \x1b[0m"
+        else 
+            echo -e "\x1b[31m Failed \x1b[0m"
+        fi
+    }
+    fi
+
+#    echo ${COMPILER_FLAGS} 
+#    echo ${COMPILER_LINKS}
+}
 
 #
 DependPackageCheck openmp HAVE_OPENMP
