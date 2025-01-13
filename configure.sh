@@ -226,12 +226,16 @@ do
     esac
 done
 
+#转换为绝对路径。
+INSTALL_PREFIX=$(realpath ${INSTALL_PREFIX})
+BUILD_PATH=$(realpath ${BUILD_PATH})
+BUILD_PACKAGE_PATH=$(realpath ${BUILD_PACKAGE_PATH})
 
 #
 mkdir -p ${BUILD_PATH}
 if [ ! -d ${BUILD_PATH} ];then
 {
-    echo "'${BUILD_PATH}' not found."
+    echo "'BUILD_PATH=${BUILD_PATH}' invalid or unsupported."
     exit 22
 }
 fi
@@ -240,19 +244,17 @@ fi
 mkdir -p ${BUILD_PACKAGE_PATH}
 if [ ! -d ${BUILD_PACKAGE_PATH} ];then
 {
-    echo "'${BUILD_PACKAGE_PATH}' not found."
+    echo "'BUILD_PACKAGE_PATH=${BUILD_PACKAGE_PATH}' invalid or unsupported."
     exit 22
 }
 fi
 
-#去掉末尾的‘/’。
-INSTALL_PREFIX_TMP="${INSTALL_PREFIX%/}"
-#删除‘/’前面的所有字符，包括‘/’自身。
-LAST_NAME="${INSTALL_PREFIX_TMP##*/}"
-
-#如果路径最深层的目录名称不是项目名称则拼接项目名称。
-if [ ! "${LAST_NAME}" == "abcdk" ];then
-INSTALL_PREFIX="${INSTALL_PREFIX}/abcdk"
+#安装路径必须有效，并且不支持安装到根(/)路径。
+if [ "${INSTALL_PREFIX}" == "" ] || [ "${INSTALL_PREFIX}" == "/" ];then
+{
+    echo "'INSTALL_PREFIX=${INSTALL_PREFIX}' invalid or unsupported."
+    exit 22
+}
 fi
 
 #获组件包名称。
@@ -410,6 +412,9 @@ fi
 MAKE_CONF=${BUILD_PATH}/makefile.conf
 
 #
+PKG_PC=${BUILD_PATH}/pkg_conf.pc
+
+#
 RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
 RPM_DEV_SPEC=${BUILD_PATH}/rpm_devel.spec
 
@@ -459,11 +464,28 @@ EOF
 checkReturnCode
 
 #
+cat >${PKG_PC} <<EOF
+prefix=${INSTALL_PREFIX}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: ABCDK
+Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
+Description: ABCDK library
+Requires:
+Libs: -L\${libdir} -labcdk
+Cflags: -I\${includedir}
+EOF
+checkReturnCode
+
+#
 if [ "${KIT_NAME}" == "rpm" ];then
 {
 
 #
 cat >>${MAKE_CONF} <<EOF
+#
+PKG_PC = ${PKG_PC}
 #
 RPM_RT_SPEC = ${RPM_RT_SPEC}
 RPM_DEV_SPEC = ${RPM_DEV_SPEC}
@@ -553,6 +575,8 @@ rm -rf ${DEB_DEV_CTL}/*
 
 #
 cat >>${MAKE_CONF} <<EOF
+#
+PKG_PC = ${PKG_PC}
 #
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}

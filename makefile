@@ -296,12 +296,10 @@ clean-test:
 
 #
 INSTALL_PATH=${ROOT_PATH}/${INSTALL_PREFIX}
-INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/inc/)
+INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
 INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
-INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/doc/)
-INSTALL_PATH_SPT = $(abspath ${INSTALL_PATH}/spt/)
-
+INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/share/)
 
 #
 install: install-runtime install-devel
@@ -310,26 +308,34 @@ install: install-runtime install-devel
 install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
-	mkdir -p ${INSTALL_PATH_BIN}
-	mkdir -p ${INSTALL_PATH_DOC}
-	mkdir -p ${INSTALL_PATH_SPT}
+	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
+	mkdir -p ${INSTALL_PATH_DOC}/abcdk/
 #
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
-	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_SPT}/
-#
-	cp -rf $(CURDIR)/doc/. ${INSTALL_PATH_DOC}/
-	
+	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
+	cp -rf $(CURDIR)/doc/. ${INSTALL_PATH_DOC}/abcdk/
+#	
+	chmod 0444 ${INSTALL_PATH_LIB}/libabcdk.so
+	chmod 0555 ${INSTALL_PATH_BIN}/abcdk-tool
+	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name "*.sh" -exec chmod 0555 {} \;
+	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0444 {} \;
+
 #
 install-devel:
 #
-	mkdir -p ${INSTALL_PATH_LIB}
+	mkdir -p ${INSTALL_PATH_LIB}/pkgconfig/
 	mkdir -p ${INSTALL_PATH_INC}
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
-#
 	cp  -rf $(CURDIR)/lib/include/abcdk ${INSTALL_PATH_INC}/
 	cp  -f $(CURDIR)/lib/include/abcdk.h ${INSTALL_PATH_INC}/
+	cp  -f ${PKG_PC} ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
+#
+	chmod 0444 ${INSTALL_PATH_LIB}/libabcdk.a
+	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0444 {} \;
+	chmod 0444 ${INSTALL_PATH_INC}/abcdk.h
+	chmod 0444 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 
 #
 uninstall: uninstall-runtime uninstall-devel
@@ -339,17 +345,16 @@ uninstall-runtime:
 #
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
-	rm -rf ${INSTALL_PATH_SPT}/*
-#
-	rm -rf $(INSTALL_PATH_DOC)/*
+	rm -rf ${INSTALL_PATH_BIN}/abcdk-script
+	rm -rf $(INSTALL_PATH_DOC)/abcdk
 	
 #
 uninstall-devel:
 #
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
-#
 	rm -rf ${INSTALL_PATH_INC}/abcdk
 	rm -f ${INSTALL_PATH_INC}/abcdk.h
+	rm -f ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 
 #占位预定义，实际会随机生成。
 TMP_ROOT_PATH = /tmp/abcdk-build-installer.tmp
@@ -373,7 +378,7 @@ package-runtime-tar:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	mkdir -p ${PACKAGE_PATH}
-	tar -czv -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "abcdk"
+	tar -cz -f "${PACKAGE_PATH}/${RUNTIME_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/" "."
 	make -C $(CURDIR) uninstall-runtime ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 	
@@ -382,7 +387,7 @@ package-devel-tar:
 	$(eval TMP_ROOT_PATH := $(shell mktemp -p ${BUILD_PATH} -d))
 	make -C $(CURDIR) install-devel ROOT_PATH=${TMP_ROOT_PATH}
 	mkdir -p ${PACKAGE_PATH}
-	tar -czv -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/../" "abcdk"
+	tar -cz -f "${PACKAGE_PATH}/${DEVEL_PACKAGE_NAME}.tar.gz" -C "${TMP_ROOT_PATH}/${INSTALL_PREFIX}/" "."
 	make -C $(CURDIR) uninstall-devel ROOT_PATH=${TMP_ROOT_PATH}
 	rm -rf ${TMP_ROOT_PATH}
 
