@@ -69,7 +69,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,14 +90,14 @@ if [ "deb" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit "libopenblas-dev")
     elif [ ${FLAG} -eq 2 ];then
     {
-        PackageConfig  --cflags openblas 2>/dev/null
+        PackageConfig  --cflags openblas 
         if [ $? -ne 0 ];then
             PackageConfig  --cflags lapack-openblas blas-openblas
         fi
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        PackageConfig  --libs openblas 2>/dev/null
+        PackageConfig  --libs openblas 
         if [ $? -ne 0 ];then
             PackageConfig  --libs lapack-openblas blas-openblas
         fi
@@ -114,7 +114,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit "openblas-devel")
     elif [ ${FLAG} -eq 2 ];then
     {
-        PackageConfig  --cflags openblas 2>/dev/null
+        PackageConfig  --cflags openblas 
         if [ $? -ne 0 ];then
         {
             CFLAG="-I$(FindIncPath openblas/openblas_config.h)/openblas/"
@@ -126,7 +126,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        PackageConfig  --libs openblas 2>/dev/null
+        PackageConfig  --libs openblas 
         if [ $? -ne 0 ];then
         {
             LDFLAG="-L$(FindLibPath libopenblas.so)"

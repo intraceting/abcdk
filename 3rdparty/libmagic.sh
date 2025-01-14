@@ -69,7 +69,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 

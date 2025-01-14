@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libdmtx-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libdmtx 2>/dev/null
+        PackageConfig  --cflags libdmtx 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libdmtx 2>/dev/null
+        PackageConfig  --libs libdmtx 
     elif [ ${FLAG} -eq 4 ];then
         echo "libdmtx-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libdmtx-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libdmtx 2>/dev/null
+        PackageConfig  --cflags libdmtx 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libdmtx 2>/dev/null
+        PackageConfig  --libs libdmtx 
     elif [ ${FLAG} -eq 4 ];then
         echo "libdmtx-devel"
     else

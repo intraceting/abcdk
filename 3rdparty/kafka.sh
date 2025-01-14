@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "librdkafka-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags rdkafka 2>/dev/null
+        PackageConfig  --cflags rdkafka 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs rdkafka 2>/dev/null
+        PackageConfig  --libs rdkafka 
     elif [ ${FLAG} -eq 4 ];then
         echo "librdkafka-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "librdkafka-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags rdkafka 2>/dev/null
+        PackageConfig  --cflags rdkafka 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs rdkafka 2>/dev/null
+        PackageConfig  --libs rdkafka 
     elif [ ${FLAG} -eq 4 ];then
         echo "librdkafka-devel"
     else

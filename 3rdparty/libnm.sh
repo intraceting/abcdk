@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libnm-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libnm 2>/dev/null
+        PackageConfig  --cflags libnm 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libnm 2>/dev/null
+        PackageConfig  --libs libnm 
     elif [ ${FLAG} -eq 4 ];then
         echo "libnm-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "NetworkManager-libnm-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libnm 2>/dev/null
+        PackageConfig  --cflags libnm 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libnm 2>/dev/null
+        PackageConfig  --libs libnm 
     elif [ ${FLAG} -eq 4 ];then
         echo "NetworkManager-libnm-devel"
     else

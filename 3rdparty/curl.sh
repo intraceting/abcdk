@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -129,9 +129,9 @@ if [ "deb" == "${KIT_NAME}" ];then
         exit 1
     }
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libcurl 2>/dev/null
+        PackageConfig  --cflags libcurl 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libcurl 2>/dev/null
+        PackageConfig  --libs libcurl 
     elif [ ${FLAG} -eq 4 ];then
         echo "libfuse-dev"
     else
@@ -143,9 +143,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libcurl-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libcurl 2>/dev/null
+        PackageConfig  --cflags libcurl 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libcurl 2>/dev/null
+        PackageConfig  --libs libcurl 
     elif [ ${FLAG} -eq 4 ];then
         echo "libcurl-devel"
     else

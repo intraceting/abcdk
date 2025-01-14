@@ -42,15 +42,15 @@ PKG_CFG_PATH=${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/pkgconfig:${PKG_F
 if [ "${PKG_FIND_MODE}" == "only" ];then
 {
     export PKG_CONFIG_LIBDIR=${PKG_CFG_PATH}
-    pkg-config --define-variable=prefix=${PKG_FIND_ROOT} $@
+    pkg-config --define-variable=prefix=${PKG_FIND_ROOT} $@ 2>>/dev/null
 }
 elif [ "${PKG_FIND_MODE}" == "both" ];then
 {
     export PKG_CONFIG_PATH=${PKG_CFG_PATH}
-    pkg-config $@
+    pkg-config $@ 2>>/dev/null
 }
 else
 {
-    pkg-config $@
+    pkg-config $@ 2>>/dev/null
 }
 fi

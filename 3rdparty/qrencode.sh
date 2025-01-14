@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libqrencode-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libqrencode 2>/dev/null
+        PackageConfig  --cflags libqrencode 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libqrencode 2>/dev/null
+        PackageConfig  --libs libqrencode 
     elif [ ${FLAG} -eq 4 ];then
         echo "libqrencode-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "qrencode-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libqrencode 2>/dev/null
+        PackageConfig  --cflags libqrencode 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libqrencode 2>/dev/null
+        PackageConfig  --libs libqrencode 
     elif [ ${FLAG} -eq 4 ];then
         echo "qrencode-devel"
     else

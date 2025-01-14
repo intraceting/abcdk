@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libmagickwand-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags MagickWand 2>/dev/null
+        PackageConfig  --cflags MagickWand 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs MagickWand 2>/dev/null
+        PackageConfig  --libs MagickWand 
     elif [ ${FLAG} -eq 4 ];then
         echo "libmagickwand-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "ImageMagick-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags MagickWand 2>/dev/null
+        PackageConfig  --cflags MagickWand 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs MagickWand 2>/dev/null
+        PackageConfig  --libs MagickWand 
     elif [ ${FLAG} -eq 4 ];then
         echo "ImageMagick-devel"
     else

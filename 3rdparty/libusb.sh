@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libusb-1.0-0-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libusb-1.0 2>/dev/null
+        PackageConfig  --cflags libusb-1.0 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libusb-1.0 2>/dev/null
+        PackageConfig  --libs libusb-1.0 
     elif [ ${FLAG} -eq 4 ];then
         echo "libusb-1.0-0-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libusbx-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libusb-1.0 2>/dev/null
+        PackageConfig  --cflags libusb-1.0 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libusb-1.0 2>/dev/null
+        PackageConfig  --libs libusb-1.0 
     elif [ ${FLAG} -eq 4 ];then
         echo "libusbx-devel"
     else

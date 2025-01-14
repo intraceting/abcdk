@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libsqlite3-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags sqlite3 2>/dev/null
+        PackageConfig  --cflags sqlite3 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs sqlite3 2>/dev/null
+        PackageConfig  --libs sqlite3 
     elif [ ${FLAG} -eq 4 ];then
         echo "libsqlite3-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "sqlite-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags sqlite3 2>/dev/null
+        PackageConfig  --cflags sqlite3 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs sqlite3 2>/dev/null
+        PackageConfig  --libs sqlite3 
     elif [ ${FLAG} -eq 4 ];then
         echo "sqlite-devel"
     else

@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libgtk-3-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags gdk-3.0 gtk+-3.0 2>/dev/null
+        PackageConfig  --cflags gdk-3.0 gtk+-3.0 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs gdk-3.0 gtk+-3.0 2>/dev/null
+        PackageConfig  --libs gdk-3.0 gtk+-3.0 
     elif [ ${FLAG} -eq 4 ];then
         echo "libgtk-3-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "gtk3-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags gdk-3.0 gtk+-3.0 2>/dev/null
+        PackageConfig  --cflags gdk-3.0 gtk+-3.0 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs gdk-3.0 gtk+-3.0 2>/dev/null
+        PackageConfig  --libs gdk-3.0 gtk+-3.0 
     elif [ ${FLAG} -eq 4 ];then
         echo "gtk3-devel"
     else

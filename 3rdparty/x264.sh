@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libx264-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags x264 2>/dev/null
+        PackageConfig  --cflags x264 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs x264 2>/dev/null
+        PackageConfig  --libs x264 
     elif [ ${FLAG} -eq 4 ];then
         echo "libx264-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libx264-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags x264 2>/dev/null
+        PackageConfig  --cflags x264 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs x264 2>/dev/null
+        PackageConfig  --libs x264 
     elif [ ${FLAG} -eq 4 ];then
         echo "libx264-devel"
     else

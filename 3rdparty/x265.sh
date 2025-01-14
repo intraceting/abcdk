@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libx265-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags x265 2>/dev/null
+        PackageConfig  --cflags x265 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs x265 2>/dev/null
+        PackageConfig  --libs x265 
     elif [ ${FLAG} -eq 4 ];then
         echo "libx265-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libx265-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags x265 2>/dev/null
+        PackageConfig  --cflags x265 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs x265 2>/dev/null
+        PackageConfig  --libs x265 
     elif [ ${FLAG} -eq 4 ];then
         echo "libx265-devel"
     else

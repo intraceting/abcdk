@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "liblz4-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags liblz4 2>/dev/null
+        PackageConfig  --cflags liblz4 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs liblz4 2>/dev/null
+        PackageConfig  --libs liblz4 
     elif [ ${FLAG} -eq 4 ];then
         echo "liblz4-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "lz4-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags liblz4 2>/dev/null
+        PackageConfig  --cflags liblz4 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs liblz4 2>/dev/null
+        PackageConfig  --libs liblz4 
     elif [ ${FLAG} -eq 4 ];then
         echo "lz4-devel"
     else

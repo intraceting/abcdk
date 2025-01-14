@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libjson-c-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags json-c 2>/dev/null
+        PackageConfig  --cflags json-c 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs json-c 2>/dev/null
+        PackageConfig  --libs json-c 
     elif [ ${FLAG} -eq 4 ];then
         echo "libjson-c-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "json-c-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags json-c 2>/dev/null
+        PackageConfig  --cflags json-c 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs json-c 2>/dev/null
+        PackageConfig  --libs json-c 
     elif [ ${FLAG} -eq 4 ];then
         echo "json-c-devel"
     else

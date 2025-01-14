@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libdrm-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
+        PackageConfig  --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
+        PackageConfig  --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 
     elif [ ${FLAG} -eq 4 ];then
         echo "libdrm-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libdrm-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
+        PackageConfig  --cflags libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 2>/dev/null
+        PackageConfig  --libs libdrm libdrm_intel libdrm_nouveau libdrm_amdgpu libdrm_radeon 
     elif [ ${FLAG} -eq 4 ];then
         echo "libdrm-devel"
     else

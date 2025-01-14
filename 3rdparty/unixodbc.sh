@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -91,7 +91,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit "unixodbc-dev")
     elif [ "${FLAG}" == "2" ];then
     {
-        PackageConfig  --cflags odbc 2>/dev/null
+        PackageConfig  --cflags odbc 
         if [ $? -ne 0 ];then
         {
             CFLAG="-I$(FindIncPath sql.h)"
@@ -103,7 +103,7 @@ if [ "deb" == "${KIT_NAME}" ];then
     }
     elif [ "${FLAG}" == "3" ];then
      {
-        PackageConfig  --libs odbc 2>/dev/null
+        PackageConfig  --libs odbc 
         if [ $? -ne 0 ];then
         {
             LDFLAG="-L$(FindLibPath libodbc.so)"
@@ -125,7 +125,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit "unixODBC-devel")
     elif [ "${FLAG}" == "2" ];then
     {
-        PackageConfig  --cflags odbc 2>/dev/null
+        PackageConfig  --cflags odbc 
         if [ $? -ne 0 ];then
         {
             CFLAG="-I$(FindIncPath sql.h)"
@@ -137,7 +137,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     }
     elif [ "${FLAG}" == "3" ];then
     {
-        PackageConfig  --libs odbc 2>/dev/null
+        PackageConfig  --libs odbc 
         if [ $? -ne 0 ];then
         {
             LDFLAG="-L$(FindLibPath libodbc.so)"

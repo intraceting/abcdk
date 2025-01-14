@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -91,7 +91,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         exit $(CheckHavePackageFromKit "libmosquitto-dev")
     elif [ ${FLAG} -eq 2 ];then
     {
-        PackageConfig  --cflags libmosquitto 2>/dev/null
+        PackageConfig  --cflags libmosquitto 
         if [ $? -ne 0 ];then
         {
             CFLAG="-I$(FindIncPath mosquitto.h)"
@@ -103,7 +103,7 @@ if [ "deb" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        PackageConfig  --libs libmosquitto 2>/dev/null
+        PackageConfig  --libs libmosquitto 
         if [ $? -ne 0 ];then
         {
             LDFLAG="-L$(FindLibPath libmosquitto.so)"
@@ -124,9 +124,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "mosquitto-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags libmosquitto 2>/dev/null
+        PackageConfig  --cflags libmosquitto 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs libmosquitto 2>/dev/null
+        PackageConfig  --libs libmosquitto 
     elif [ ${FLAG} -eq 4 ];then
         echo "mosquitto-devel"
     else

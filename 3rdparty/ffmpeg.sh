@@ -69,7 +69,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 #
@@ -88,9 +88,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev libpostproc-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
+        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
+        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 
     elif [ ${FLAG} -eq 4 ];then
         echo "libswscale-dev libavutil-dev libavcodec-dev libavformat-dev libavdevice-dev libavfilter-dev libswresample-dev libpostproc-dev"
     else
@@ -102,9 +102,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "ffmpeg-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
+        PackageConfig --cflags libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 2>/dev/null
+        PackageConfig --libs libswscale libavutil libavcodec libavformat libavdevice libavfilter libswresample libpostproc 
     elif [ ${FLAG} -eq 4 ];then
         echo "ffmpeg-devel"
     else

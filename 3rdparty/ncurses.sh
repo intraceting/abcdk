@@ -70,7 +70,7 @@ FindLibPath()
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../script/devel/pkg-config.sh $*
+	${SHELLDIR}/../script/devel/pkg-config.sh $@
 }
 
 
@@ -90,9 +90,9 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "libncurses-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags ncurses 2>/dev/null
+        PackageConfig  --cflags ncurses 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs ncurses 2>/dev/null
+        PackageConfig  --libs ncurses 
     elif [ ${FLAG} -eq 4 ];then
         echo "libncurses-dev"
     else
@@ -104,9 +104,9 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "ncurses-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags ncurses 2>/dev/null
+        PackageConfig  --cflags ncurses 
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs ncurses 2>/dev/null
+        PackageConfig  --libs ncurses 
     elif [ ${FLAG} -eq 4 ];then
         echo "ncurses-devel"
     else
