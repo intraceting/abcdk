@@ -512,7 +512,10 @@ This package contains the development files(documents,scripts,libraries).
 
 
 %files
-${INSTALL_PREFIX}
+${INSTALL_PREFIX}/lib/libabcdk.so
+${INSTALL_PREFIX}/bin/abcdk-tool
+${INSTALL_PREFIX}/bin/abcdk-script
+${INSTALL_PREFIX}/share/abcdk
 
 %post
 #!/bin/sh
@@ -556,7 +559,10 @@ files, directories, multimedia, etc.
 This package contains the development files(headers, static libraries).
 
 %files
-${INSTALL_PREFIX}
+${INSTALL_PREFIX}/lib/libabcdk.a
+${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
+${INSTALL_PREFIX}/include/abcdk
+${INSTALL_PREFIX}/include/abcdk.h
 
 %post
 #!/bin/sh
