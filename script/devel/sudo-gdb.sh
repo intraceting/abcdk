@@ -8,7 +8,7 @@
 SHELLDIR=$(cd `dirname $0`; pwd)
 
 #在VSCODE环境中，把当前脚本的路径作为"miDebuggerPath"字段的值。
-#例："miDebuggerPath": "${workspaceFolder}/script/core/sudo-gdb.sh",
+#例："miDebuggerPath": "${workspaceFolder}/script/devel/sudo-gdb.sh",
 
 #如果未指定调试器的前缀，则使用本机默认的。
 if [ "${_THIRDPARTY_PREFIX}" == "" ];then

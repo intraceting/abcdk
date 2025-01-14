@@ -18,28 +18,28 @@ fi
 SONAME="$1"
 
 #
-PKG_TARGET_MACHINE=${_PKG_TARGET_MACHINE}
-PKG_TARGET_WORDBIT=${_PKG_TARGET_WORDBIT}
-PKG_PREFIX=${_THIRDPARTY_PKG_PREFIX}
-PKG_FIND_MODE=${_THIRDPARTY_PKG_FIND_MODE}
+PKG_MACHINE=${_3RDPARTY_PKG_MACHINE}
+PKG_WORDBIT=${_3RDPARTY_PKG_WORDBIT}
+PKG_FIND_ROOT=${_3RDPARTY_PKG_FIND_ROOT}
+PKG_FIND_MODE=${_3RDPARTY_PKG_FIND_MODE}
 
 #修复默认值。
-if [ "${PKG_PREFIX}" == "" ];then
+if [ "${PKG_FIND_ROOT}" == "" ];then
 PKG_FIND_MODE="default"
 fi
 
 #
-if [ "${PKG_TARGET_MACHINE}" == "" ];then
-PKG_TARGET_MACHINE="$(uname -m)-linux-gnu"
+if [ "${PKG_MACHINE}" == "" ];then
+PKG_MACHINE="$(uname -m)-linux-gnu"
 fi 
 
 #
-if [ "${PKG_TARGET_WORDBIT}" == "" ];then
+if [ "${PKG_WORDBIT}" == "" ];then
 {
     if [ "$(getconf WORD_BIT)" == "32" ] && [ "$(getconf LONG_BIT)" == "64" ];then
-        PKG_TARGET_WORDBIT="64"
+        PKG_WORDBIT="64"
     else 
-        PKG_TARGET_WORDBIT="32"
+        PKG_WORDBIT="32"
     fi 
 }
 fi
@@ -47,35 +47,35 @@ fi
 #
 if [ "${PKG_FIND_MODE}" == "only" ];then
 {
-    if [ -f ${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/"
-    elif [ -f ${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/"
-    elif [ -f ${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/"
-    elif [ -f ${PKG_PREFIX}/lib/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib/"
+    if [ -f "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/"
+    elif [ -f "${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/"
+    elif [ -f "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/"
+    elif [ -f "${PKG_FIND_ROOT}/lib/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib/"
     else 
         exit 1
     fi
 }
 elif [ "${PKG_FIND_MODE}" == "both" ];then
 {
-    if [ -f ${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/"
-    elif [ -f ${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/"
-    elif [ -f ${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/"
-    elif [ -f ${PKG_PREFIX}/lib/${SONAME} ];then
-        echo "${PKG_PREFIX}/lib/"
-    elif [ -f /usr/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "/usr/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/"
-    elif [ -f /usr/lib/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "/usr/lib/${PKG_TARGET_MACHINE}/"
-    elif [ -f /usr/lib${PKG_TARGET_WORDBIT}/${SONAME} ];then
-        echo "/usr/lib${PKG_TARGET_WORDBIT}/"
-    elif [ -f /usr/lib/${SONAME} ];then
+    if [ -f "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/"
+    elif [ -f "${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/"
+    elif [ -f "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/"
+    elif [ -f "${PKG_FIND_ROOT}/lib/${SONAME}" ];then
+        echo "${PKG_FIND_ROOT}/lib/"
+    elif [ -f "/usr/lib${PKG_WORDBIT}/${PKG_MACHINE}/${SONAME}" ];then
+        echo "/usr/lib${PKG_WORDBIT}/${PKG_MACHINE}/"
+    elif [ -f "/usr/lib/${PKG_MACHINE}/${SONAME}" ];then
+        echo "/usr/lib/${PKG_MACHINE}/"
+    elif [ -f "/usr/lib${PKG_WORDBIT}/${SONAME}" ];then
+        echo "/usr/lib${PKG_WORDBIT}/"
+    elif [ -f "/usr/lib/${SONAME}" ];then
         echo "/usr/lib/"
     else
         exit 1
@@ -83,13 +83,13 @@ elif [ "${PKG_FIND_MODE}" == "both" ];then
 }
 else
 {
-    if [ -f /usr/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "/usr/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/"
-    elif [ -f /usr/lib/${PKG_TARGET_MACHINE}/${SONAME} ];then
-        echo "/usr/lib/${PKG_TARGET_MACHINE}/"
-    elif [ -f /usr/lib${PKG_TARGET_WORDBIT}/${SONAME} ];then
-        echo "/usr/lib${PKG_TARGET_WORDBIT}/"
-    elif [ -f /usr/lib/${SONAME} ];then
+    if [ -f "/usr/lib${PKG_WORDBIT}/${PKG_MACHINE}/${SONAME}" ];then
+        echo "/usr/lib${PKG_WORDBIT}/${PKG_MACHINE}/"
+    elif [ -f "/usr/lib/${PKG_MACHINE}/${SONAME}" ];then
+        echo "/usr/lib/${PKG_MACHINE}/"
+    elif [ -f "/usr/lib${PKG_WORDBIT}/${SONAME}" ];then
+        echo "/usr/lib${PKG_WORDBIT}/"
+    elif [ -f "/usr/lib/${SONAME}" ];then
         echo "/usr/lib/"
     else
         exit 1

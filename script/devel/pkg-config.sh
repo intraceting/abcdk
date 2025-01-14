@@ -9,40 +9,40 @@
 SHELLDIR=$(cd `dirname $0`; pwd)
 
 #
-PKG_TARGET_MACHINE=${_PKG_TARGET_MACHINE}
-PKG_TARGET_WORDBIT=${_PKG_TARGET_WORDBIT}
-PKG_PREFIX=${_THIRDPARTY_PKG_PREFIX}
-PKG_FIND_MODE=${_THIRDPARTY_PKG_FIND_MODE}
+PKG_MACHINE=${_3RDPARTY_PKG_MACHINE}
+PKG_WORDBIT=${_3RDPARTY_PKG_WORDBIT}
+PKG_FIND_ROOT=${_3RDPARTY_PKG_FIND_ROOT}
+PKG_FIND_MODE=${_3RDPARTY_PKG_FIND_MODE}
 
 #修复默认值。
-if [ "${PKG_PREFIX}" == "" ];then
+if [ "${PKG_FIND_ROOT}" == "" ];then
 PKG_FIND_MODE="default"
 fi
 
 #
-if [ "${PKG_TARGET_MACHINE}" == "" ];then
-PKG_TARGET_MACHINE="$(uname -m)-linux-gnu"
+if [ "${PKG_MACHINE}" == "" ];then
+PKG_MACHINE="$(uname -m)-linux-gnu"
 fi 
 
 #
-if [ "${PKG_TARGET_WORDBIT}" == "" ];then
+if [ "${PKG_WORDBIT}" == "" ];then
 {
     if [ "$(getconf WORD_BIT)" == "32" ] && [ "$(getconf LONG_BIT)" == "64" ];then
-        PKG_TARGET_WORDBIT="64"
+        PKG_WORDBIT="64"
     else 
-        PKG_TARGET_WORDBIT="32"
+        PKG_WORDBIT="32"
     fi 
 }
 fi
 
 #
-PKG_CFG_PATH=${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/pkgconfig:${PKG_PREFIX}/lib${PKG_TARGET_WORDBIT}/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/${PKG_TARGET_MACHINE}/pkgconfig:${PKG_PREFIX}/lib/pkgconfig:${PKG_PREFIX}/share/pkgconfig
+PKG_CFG_PATH=${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/pkgconfig:${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/pkgconfig:${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/pkgconfig:${PKG_FIND_ROOT}/lib/pkgconfig:${PKG_FIND_ROOT}/share/pkgconfig
 
 #
 if [ "${PKG_FIND_MODE}" == "only" ];then
 {
     export PKG_CONFIG_LIBDIR=${PKG_CFG_PATH}
-    pkg-config --define-variable=prefix=${PKG_PREFIX} $@
+    pkg-config --define-variable=prefix=${PKG_FIND_ROOT} $@
 }
 elif [ "${PKG_FIND_MODE}" == "both" ];then
 {

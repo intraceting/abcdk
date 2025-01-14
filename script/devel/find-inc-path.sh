@@ -18,34 +18,34 @@ fi
 HDNAME="$1"
 
 #
-PKG_PREFIX=${_THIRDPARTY_PKG_PREFIX}
+PKG_FIND_ROOT=${_THIRDPARTY_PKG_FIND_ROOT}
 PKG_FIND_MODE=${_THIRDPARTY_PKG_FIND_MODE}
 
 #修复默认值。
-if [ "${PKG_PREFIX}" == "" ];then
+if [ "${PKG_FIND_ROOT}" == "" ];then
 PKG_FIND_MODE="default"
 fi
 
 #
 if [ "${PKG_FIND_MODE}" == "only" ];then
 {
-    if [ -f ${PKG_PREFIX}/include/${HDNAME} ];then
-        echo "${PKG_PREFIX}/include/"
-    elif [ -f ${PKG_PREFIX}/${HDNAME} ];then
-        echo "${PKG_PREFIX}/"
+    if [ -f "${PKG_FIND_ROOT}/include/${HDNAME}" ];then
+        echo "${PKG_FIND_ROOT}/include/"
+    elif [ -f "${PKG_FIND_ROOT}/${HDNAME}" ];then
+        echo "${PKG_FIND_ROOT}/"
     else 
         exit 1
     fi  
 }
 elif [ "${PKG_FIND_MODE}" == "both" ];then
 {
-    if [ -f ${PKG_PREFIX}/include/${HDNAME} ];then
-        echo "${PKG_PREFIX}/include/"
-    elif [ -f ${PKG_PREFIX}/${HDNAME} ];then
-        echo "${PKG_PREFIX}/"
-    elif [ -f /usr/include/${HDNAME} ];then
+    if [ -f "${PKG_FIND_ROOT}/include/${HDNAME}" ];then
+        echo "${PKG_FIND_ROOT}/include/"
+    elif [ -f "${PKG_FIND_ROOT}/${HDNAME}" ];then
+        echo "${PKG_FIND_ROOT}/"
+    elif [ -f "/usr/include/${HDNAME}" ];then
         echo "/usr/include/"
-    elif [ -f /usr/${HDNAME} ];then
+    elif [ -f "/usr/${HDNAME}" ];then
         echo "/usr/"
     else 
         exit 1
@@ -53,9 +53,9 @@ elif [ "${PKG_FIND_MODE}" == "both" ];then
 }
 else
 {
-    if [ -f /usr/include/${HDNAME} ];then
+    if [ -f "/usr/include/${HDNAME}" ];then
         echo "/usr/include/"
-    elif [ -f /usr/${HDNAME} ];then
+    elif [ -f "/usr/${HDNAME}" ];then
         echo "/usr/"
     else 
         exit 1
