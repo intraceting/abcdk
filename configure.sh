@@ -567,14 +567,14 @@ ${INSTALL_PREFIX}/include/abcdk.h
 %post
 #!/bin/sh
 #
-echo "nothing to do."
+#echo "nothing to do."
 #
 exit 0
 
 %postun
 #!/bin/sh
 #
-echo "nothing to do."
+#echo "nothing to do."
 #
 exit 0
 EOF
@@ -670,7 +670,7 @@ checkReturnCode
 cat >${DEB_DEV_CTL}/postinst <<EOF
 #!/bin/sh
 #
-echo "nothing to do."
+#echo "nothing to do."
 #
 exit 0
 EOF
@@ -680,7 +680,7 @@ checkReturnCode
 cat >${DEB_DEV_CTL}/postrm <<EOF
 #!/bin/sh
 #
-echo "nothing to do."
+#echo "nothing to do."
 #
 exit 0
 EOF
