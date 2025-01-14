@@ -196,12 +196,15 @@ open_log_file:
 
     if (ctx->fd < 0 || ctx->pid != getpid())
     {
-        abcdk_mkdir(ctx->name, 0666);
+        abcdk_mkdir(ctx->name, 0644);
 
         ctx->pid = getpid();
 
         abcdk_closep(&ctx->fd);
         ctx->fd = abcdk_open(ctx->name, 1, 0, 1);
+
+        if (ctx->fd >= 0)
+            fchmod(ctx->fd, 0644);
     }
 
     if (ctx->fd < 0)
