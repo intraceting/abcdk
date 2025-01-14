@@ -136,7 +136,7 @@ lib-src: $(LIB_OBJ_FILES)
 #
 tool: tool-src lib
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.so $(LINK_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LINK_FLAGS)
 
 #
 tool-src: ${TOOL_OBJ_FILES} 
