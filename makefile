@@ -41,7 +41,8 @@ LINK_FLAGS += -Wl,--as-needed
 ifeq (${BUILD_TYPE},debug)
 CC_FLAGS += -g
 LINK_FLAGS += -g
-else 
+endif
+ifeq (${BUILD_TYPE},release)
 LINK_FLAGS += -s
 endif
 
