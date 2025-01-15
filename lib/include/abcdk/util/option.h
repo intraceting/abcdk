@@ -134,9 +134,6 @@ void abcdk_option_scan(abcdk_option_t *opt,abcdk_option_iterator_t *it);
 /** 合并。*/
 void abcdk_option_merge(abcdk_option_t *dst,abcdk_option_t *src);
 
-/** 合并。*/
-void abcdk_option_trace(abcdk_option_t *opt,int trace_type);
-
 
 __END_DECLS
 
