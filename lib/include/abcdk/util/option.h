@@ -11,6 +11,7 @@
 #include "abcdk/util/tree.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 
@@ -65,7 +66,7 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value);
 /**
  * 配置一个选项。
  * 
- * @note VALUE最大支持4000字节。
+ * @note VALUE最大支持8000字节。
  * 
  * @return 0 成功，-1 失败。
 */
@@ -130,10 +131,11 @@ int abcdk_option_remove(abcdk_option_t *opt, const char *key);
 */
 void abcdk_option_scan(abcdk_option_t *opt,abcdk_option_iterator_t *it);
 
-/**
- * 合并。
-*/
+/** 合并。*/
 void abcdk_option_merge(abcdk_option_t *dst,abcdk_option_t *src);
+
+/** 合并。*/
+void abcdk_option_trace(abcdk_option_t *opt,int trace_type);
 
 
 __END_DECLS

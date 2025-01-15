@@ -192,11 +192,11 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value)
 
 int abcdk_option_fset(abcdk_option_t *opt, const char *key, const char *valfmt, ...)
 {
-    char value[4000] = {0};
+    char value[8000] = {0};
     va_list ap;
 
     va_start(ap, valfmt);
-    vsnprintf(value,4000,valfmt,ap);
+    vsnprintf(value,8000,valfmt,ap);
     va_end(ap);
 
     return abcdk_option_set(opt,key,value);

@@ -12,8 +12,9 @@
 
 __BEGIN_DECLS
 
+/**简单痕迹输出接口。*/
 
-/** 输出回调函数。*/
+/**输出回调函数。*/
 typedef void (*abcdk_trace_output_cb)(void *opaque,int type, const char *str);
 
 /**字符串输出。*/
