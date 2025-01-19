@@ -315,7 +315,7 @@ install-runtime:
 	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
-	cp -rf $(CURDIR)/doc/. ${INSTALL_PATH_DOC}/abcdk/
+	cp -rf $(CURDIR)/share/. ${INSTALL_PATH_DOC}/abcdk/
 #	
 	chmod 0444 ${INSTALL_PATH_LIB}/libabcdk.so
 	chmod 0555 ${INSTALL_PATH_BIN}/abcdk-tool
