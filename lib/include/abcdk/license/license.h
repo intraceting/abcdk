@@ -8,6 +8,7 @@
 #define ABCDK_LICENCE_LICENCE_H
 
 #include "abcdk/util/bit.h"
+#include "abcdk/util/basecode.h"
 #include "abcdk/openssl/cipher.h"
 
 __BEGIN_DECLS
