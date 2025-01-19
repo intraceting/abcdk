@@ -53,7 +53,7 @@ final:
     return chk;
 }
 
-int abcdk_thread_create_group(int count, abcdk_thread_t *ctxs, int joinable)
+int abcdk_thread_create_group(int count, abcdk_thread_t ctxs[], int joinable)
 {
     int chk, num = 0;
 
