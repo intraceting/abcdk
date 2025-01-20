@@ -34,6 +34,9 @@ int abcdk_thread_join(abcdk_thread_t *ctx)
 
     assert(ctx);
 
+    if(!ctx->handle)
+        return -1;
+
     pthread_attr_init(&attr);
     chk = pthread_getattr_np(ctx->handle,&attr);
     if (chk != 0)
