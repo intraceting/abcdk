@@ -196,7 +196,7 @@ open_log_file:
 
     if (ctx->fd < 0 || ctx->pid != getpid())
     {
-        abcdk_mkdir(ctx->name, 0655);
+        abcdk_mkdir(ctx->name, 0755);
 
         ctx->pid = getpid();
 
