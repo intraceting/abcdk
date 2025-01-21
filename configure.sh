@@ -524,8 +524,10 @@ ${INSTALL_PREFIX}/share/abcdk
 #
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
+chmod 0755 /etc/profile.d/abcdk.sh
 #
 echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.sh
+chmod 0755 /etc/ld.so.conf.d/abcdk.sh
 ldconfig
 #
 exit 0
@@ -630,8 +632,10 @@ cat >${DEB_RT_CTL}/postinst <<EOF
 #
 echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
+chmod 0755 /etc/profile.d/abcdk.sh
 #
 echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.sh
+chmod 0755 /etc/ld.so.conf.d/abcdk.sh
 ldconfig
 #
 exit 0
