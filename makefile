@@ -324,7 +324,7 @@ install-runtime:
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
 	cp -rf $(CURDIR)/share/abcdk ${INSTALL_PATH_DOC}/
 #	
-	chmod 0444 ${INSTALL_PATH_LIB}/libabcdk.so
+	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so
 	chmod 0555 ${INSTALL_PATH_BIN}/abcdk-tool
 	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name "*.sh" -exec chmod 0555 {} \;
 	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0444 {} \;
@@ -340,7 +340,7 @@ install-devel:
 	cp  -f $(CURDIR)/lib/include/abcdk.h ${INSTALL_PATH_INC}/
 	cp  -f ${PKG_PC} ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 #
-	chmod 0444 ${INSTALL_PATH_LIB}/libabcdk.a
+	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.a
 	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0444 {} \;
 	chmod 0444 ${INSTALL_PATH_INC}/abcdk.h
 	chmod 0444 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
