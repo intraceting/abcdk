@@ -526,7 +526,7 @@ echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
 echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/profile.d/abcdk.sh
 chmod 0755 /etc/profile.d/abcdk.sh
 #
-mkdir -p ${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}/
+mkdir -p ${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}
 ln -s ${INSTALL_PREFIX}/lib/libabcdk.so ${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}/libabcdk.so
 #
 echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
