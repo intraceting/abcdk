@@ -530,6 +530,7 @@ mkdir ${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}/
 ln -s ${INSTALL_PREFIX}/lib/libabcdk.so ${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}/libabcdk.so
 #
 echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
+echo "${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}" >> /etc/ld.so.conf.d/abcdk.conf
 ldconfig
 #
 exit 0
