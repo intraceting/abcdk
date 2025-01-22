@@ -527,7 +527,6 @@ echo "export LD_LIBRARY_PATH=\\\$LD_LIBRARY_PATH:${INSTALL_PREFIX}/lib" >> /etc/
 chmod 0755 /etc/profile.d/abcdk.sh
 #
 echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
-echo "${INSTALL_PREFIX}/lib${_TARGET_BITWIDE}" >> /etc/ld.so.conf.d/abcdk.conf
 ldconfig
 #
 exit 0
