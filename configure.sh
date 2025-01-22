@@ -80,7 +80,7 @@ CheckCompiler()
 # $2 AR
 # $3 OUTPUT 
 {
-    ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_C=$1$2" "-o" "$3"
+    ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_NAME=$2" "-o" "$3"
 }
 
 
@@ -301,7 +301,7 @@ fi
 source ${BUILD_PATH}/compiler.conf
 
 #
-CheckSTD "${_TARGET_COMPILER_C}" "${COMPILER_STD}"
+CheckSTD "${_TARGET_COMPILER_BIN}" "${COMPILER_STD}"
 if [ $? -ne 0 ];then
 {
     echo "The '${COMPILER_STD}' standard is not supported."
@@ -434,7 +434,7 @@ LSB_RELEASE = ${LSB_RELEASE}
 #
 STD = ${COMPILER_STD}
 #
-CC = ${_TARGET_COMPILER_C}
+CC = ${_TARGET_COMPILER_BIN}
 AR = ${_TARGET_COMPILER_AR}
 #
 DEPEND_FLAGS = ${COMPILER_FLAGS}
