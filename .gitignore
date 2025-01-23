@@ -55,4 +55,4 @@ dkms.conf
 .vscode/
 #
 build/
-package/
+release/
