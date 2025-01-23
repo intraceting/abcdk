@@ -326,7 +326,6 @@ install-runtime:
 #	
 	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
-	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_MAIN} libabcdk.so ;
 	chmod 0555 ${INSTALL_PATH_BIN}/abcdk-tool
 	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name "*.sh" -exec chmod 0555 {} \;
 	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0444 {} \;
@@ -343,6 +342,7 @@ install-devel:
 	cp  -f ${PKG_PC} ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 #
 	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.a
+	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_MAIN} libabcdk.so ;
 	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0444 {} \;
 	chmod 0444 ${INSTALL_PATH_INC}/abcdk.h
 	chmod 0444 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
@@ -353,7 +353,6 @@ uninstall: uninstall-runtime uninstall-devel
 #
 uninstall-runtime:
 #
-	unlink ${INSTALL_PATH_LIB}/libabcdk.so
 	unlink ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
@@ -363,6 +362,7 @@ uninstall-runtime:
 #
 uninstall-devel:
 #
+	unlink ${INSTALL_PATH_LIB}/libabcdk.so
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 	rm -rf ${INSTALL_PATH_INC}/abcdk
 	rm -f ${INSTALL_PATH_INC}/abcdk.h

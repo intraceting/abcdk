@@ -517,7 +517,6 @@ This package contains the development files(documents,scripts,libraries).
 
 
 %files
-${INSTALL_PREFIX}/lib/libabcdk.so
 ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
 ${INSTALL_PREFIX}/bin/abcdk-tool
@@ -568,6 +567,7 @@ files, directories, multimedia, etc.
 This package contains the development files(headers, static libraries).
 
 %files
+${INSTALL_PREFIX}/lib/libabcdk.so
 ${INSTALL_PREFIX}/lib/libabcdk.a
 ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
 ${INSTALL_PREFIX}/include/abcdk
