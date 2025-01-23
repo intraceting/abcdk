@@ -129,7 +129,7 @@ all: lib tool test
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so $(LIB_OBJ_FILES) $(LINK_FLAGS)
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} $(LIB_OBJ_FILES) $(LINK_FLAGS) -Wl,-soname,libabcdk.so.${VERSION_STR_MAIN}
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #
@@ -319,12 +319,14 @@ install-runtime:
 	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
 	mkdir -p ${INSTALL_PATH_DOC}/
 #
-	cp -f $(BUILD_PATH)/libabcdk.so ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
 	cp -rf $(CURDIR)/share/abcdk ${INSTALL_PATH_DOC}/
 #	
-	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so
+	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
+	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
+	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_MAIN} libabcdk.so ;
 	chmod 0555 ${INSTALL_PATH_BIN}/abcdk-tool
 	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name "*.sh" -exec chmod 0555 {} \;
 	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0444 {} \;
@@ -351,7 +353,9 @@ uninstall: uninstall-runtime uninstall-devel
 #
 uninstall-runtime:
 #
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
+	unlink ${INSTALL_PATH_LIB}/libabcdk.so
+	unlink ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_MAIN}
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
 	rm -rf ${INSTALL_PATH_BIN}/abcdk-script
 	rm -rf $(INSTALL_PATH_DOC)/abcdk
@@ -367,11 +371,11 @@ uninstall-devel:
 #占位预定义，实际会随机生成。
 TMP_ROOT_PATH = /tmp/abcdk-build-installer.tmp
 #
-PACKAGE_PATH = ${BUILD_PACKAGE_PATH}/${VERSION_MAJOR}.${VERSION_MINOR}/
+PACKAGE_PATH = ${BUILD_PACKAGE_PATH}/${VERSION_STR_MAIN}/
 #
-RUNTIME_PACKAGE_NAME=abcdk-${VERSION_STR}-${TARGET_PLATFORM}
+RUNTIME_PACKAGE_NAME=abcdk-${VERSION_STR_FULL}-${TARGET_PLATFORM}
 #
-DEVEL_PACKAGE_NAME=abcdk-devel-${VERSION_STR}-${TARGET_PLATFORM}
+DEVEL_PACKAGE_NAME=abcdk-devel-${VERSION_STR_FULL}-${TARGET_PLATFORM}
 
 
 #
