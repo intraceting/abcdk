@@ -80,7 +80,7 @@ CheckCompiler()
 # $2 AR
 # $3 OUTPUT 
 {
-    ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_NAME=$2" "-o" "$3"
+    ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_NAME=$2" "-o" "$3" "-p" ""
 }
 
 
