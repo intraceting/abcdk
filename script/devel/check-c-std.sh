@@ -21,5 +21,5 @@ COMPILER=$1
 STD=$2
 
 #
-${COMPILER} -std=${STD} -x c -fsyntax-only ${SHELLDIR}/test-c-std/sample.c >/dev/null 2>&1
+${COMPILER} -std=${STD} -x c -Werror -fsyntax-only ${SHELLDIR}/test-c-std/sample.c >/dev/null 2>&1
 exit $?
