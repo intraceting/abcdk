@@ -89,7 +89,7 @@ VERSION_MAJOR="2"
 #副版本
 VERSION_MINOR="0"
 #发行版本
-VERSION_RELEASE="1"
+VERSION_RELEASE="2"
 #
 VERSION_STR_MAIN="${VERSION_MAJOR}.${VERSION_MINOR}"
 VERSION_STR_FULL="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}"
@@ -186,7 +186,7 @@ VARIABLE:
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm,
-     pam,curl,ncurses,fltk
+     pam,curl,ncurses,fltk,x264,x265,ffnvcodec
 
      THIRDPARTY_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 
@@ -396,6 +396,7 @@ DependPackageCheck fltk HAVE_FLTK
 DependPackageCheck gtk HAVE_GTK
 DependPackageCheck x264 HAVE_H264
 DependPackageCheck x265 HAVE_H265
+DependPackageCheck ffnvcodec HAVE_FFNVCODEC
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=
