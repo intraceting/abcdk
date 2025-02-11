@@ -15,7 +15,6 @@ include ${MAKE_CONF}
 export TMPDIR=${BUILD_PATH}/
 
 #
-C_FLAGS += -std=${STD}
 C_FLAGS += -fPIC 
 C_FLAGS += -Wno-unused-result
 C_FLAGS += -Wno-unused-variable 
@@ -35,56 +34,82 @@ C_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}
 C_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
 #
-L_FLAGS += -Wl,--as-needed
+CXX_FLAGS += -fPIC 
+CXX_FLAGS += -Wno-unused-result
+CXX_FLAGS += -Wno-unused-variable 
+#CXX_FLAGS += -Wno-pointer-sign 
+CXX_FLAGS += -Wno-unused-but-set-variable 
+CXX_FLAGS += -Wno-unused-label
+CXX_FLAGS += -Wno-strict-aliasing
+CXX_FLAGS += -Wno-unused-function
+CXX_FLAGS += -Wno-sizeof-pointer-memaccess
+CXX_FLAGS += -Wno-deprecated-declarations
+CXX_FLAGS += -Wint-to-pointer-cast
+CXX_FLAGS += -Wno-attributes
+CXX_FLAGS += -Wno-format
+CXX_FLAGS += -DABCDK_VERSION_MAJOR=${VERSION_MAJOR} 
+CXX_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR} 
+CXX_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}
+CXX_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+
+#
+LD_FLAGS += -Wl,--as-needed
 
 #
 ifeq (${BUILD_TYPE},debug)
 C_FLAGS += -g
-L_FLAGS += -g
+CXX_FLAGS += -g
+LD_FLAGS += -g
 endif
 ifeq (${BUILD_TYPE},release)
-L_FLAGS += -s
+LD_FLAGS += -s
 endif
 
 #
 ifeq (${OPTIMIZE_LEVEL},1)
 C_FLAGS += -O1
+CXX_FLAGS += -O1
 endif
 ifeq (${OPTIMIZE_LEVEL},2)
 C_FLAGS += -O2
+CXX_FLAGS += -O2
 endif
 ifeq (${OPTIMIZE_LEVEL},3)
 C_FLAGS += -O3
+CXX_FLAGS += -O3
 endif
 ifeq (${OPTIMIZE_LEVEL},s)
 C_FLAGS += -Os
+CXX_FLAGS += -Os
 endif
 ifeq (${OPTIMIZE_LEVEL},fast)
 C_FLAGS += -Ofast
+CXX_FLAGS += -Ofast
 endif
-
-
-#
-L_FLAGS += -Wl,-rpath="./"
-L_FLAGS += ${DEPEND_LINKS}
 
 #
 ifeq (${LSB_RELEASE},linux-gnu)
 C_FLAGS += -D_GNU_SOURCE
-L_FLAGS += -ldl -pthread -lc -lm -lrt
+CXX_FLAGS += -D_GNU_SOURCE
+LD_FLAGS += -ldl -pthread -lc -lm -lrt
 endif
 ifeq (${LSB_RELEASE},android)
-L_FLAGS += -ldl -pthread -lc -lm
+LD_FLAGS += -ldl -pthread -lc -lm
 endif
 
 #
 C_FLAGS += ${DEPEND_FLAGS}
+CXX_FLAGS += ${DEPEND_FLAGS}
 
 #
 C_FLAGS += -I$(CURDIR)/lib/include/
+CXX_FLAGS += -I$(CURDIR)/lib/include/
 
 #
-L_FLAGS += -L${BUILD_PATH}
+LD_FLAGS += ${DEPEND_LINKS}
+
+#
+LD_FLAGS += -L${BUILD_PATH}
 
 #
 OBJ_PATH = ${BUILD_PATH}/tmp
@@ -129,7 +154,7 @@ all: lib tool test
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} $(LIB_OBJ_FILES) $(L_FLAGS) -Wl,-soname,libabcdk.so.${VERSION_STR_MAIN}
+	$(CC) -shared -o $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} $(LIB_OBJ_FILES) $(LD_FLAGS) -Wl,-soname,libabcdk.so.${VERSION_STR_MAIN}
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #
@@ -138,7 +163,7 @@ lib-src: $(LIB_OBJ_FILES)
 #
 tool: tool-src lib
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(L_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
 
 #
 tool-src: ${TOOL_OBJ_FILES} 
@@ -146,7 +171,7 @@ tool-src: ${TOOL_OBJ_FILES}
 #
 test: test-src lib
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.a $(L_FLAGS)
+	$(CC) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
 
 #
 test-src: ${TEST_OBJ_FILES} 
@@ -155,133 +180,133 @@ test-src: ${TEST_OBJ_FILES}
 $(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/util/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/log/%.o: lib/source/log/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/log/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/shell/%.o: lib/source/shell/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/shell/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/mp4/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/rtp/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/ffmpeg/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/audio/%.o: lib/source/audio/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/audio/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/database/%.o: lib/source/database/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/database/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/image/%.o: lib/source/image/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/image/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/json/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/http/%.o: lib/source/http/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/http/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/sdp/%.o: lib/source/sdp/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/sdp/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/rtsp/%.o: lib/source/rtsp/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/rtsp/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/openssl/%.o: lib/source/openssl/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/openssl/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/video/%.o: lib/source/video/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/video/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/curl/%.o: lib/source/curl/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/curl/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/net/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/enigma/%.o: lib/source/enigma/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/enigma/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/ssl/%.o: lib/source/ssl/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/ssl/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/license/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 clean: clean-lib clean-tool clean-test

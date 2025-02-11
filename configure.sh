@@ -68,10 +68,11 @@ CheckKeyword()
 
 #
 CheckSTD()
-# $1 COMPILER
-# $2 STD
+# $1 LANG
+# $2 COMPILER
+# $3 STD
 {
-    ${SHELLDIR}/script/devel/check-c-std.sh "$1" "$2"
+    ${SHELLDIR}/script/devel/check-$1-std.sh "$2" "$3"
 }
 
 #
@@ -83,31 +84,65 @@ CheckCompiler()
     ${SHELLDIR}/script/devel/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_NAME=$2" "-o" "$3" "-p" ""
 }
 
+#
+DependPackageCheck()
+# 1 key
+# 2 def
+{
+    PACKAGE_KEY=$1
+    PACKAGE_DEF=$2
+    #
+    if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} ${PACKAGE_KEY}) -eq 1 ];then
+    {
+        CheckHavePackage ${PACKAGE_KEY} 3
+        CHK=$?
+
+        if [ ${CHK} -eq 0 ];then
+        {
+            DEPEND_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${DEPEND_FLAGS}"
+            DEPEND_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${DEPEND_LINKS}"
+        }
+        else
+        {
+            THIRDPARTY_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${THIRDPARTY_NOFOUND}"
+        }
+        fi
+
+        echo -n "Check ${PACKAGE_KEY}"
+        if [ ${CHK} -eq 0 ];then
+            echo -e "\x1b[32m Ok \x1b[0m"
+        else 
+            echo -e "\x1b[31m Failed \x1b[0m"
+        fi
+    }
+    fi
+
+#    echo ${DEPEND_FLAGS} 
+#    echo ${DEPEND_LINKS}
+}
+
 
 #主版本
-VERSION_MAJOR="2"
+VERSION_MAJOR="3"
 #副版本
 VERSION_MINOR="0"
 #发行版本
-VERSION_RELEASE="2"
+VERSION_RELEASE="1"
 #
 VERSION_STR_MAIN="${VERSION_MAJOR}.${VERSION_MINOR}"
 VERSION_STR_FULL="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}"
 
-
 #
 LSB_RELEASE="linux-gnu"
-
-#
-COMPILER_STD=c99
 
 #
 COMPILER_PREFIX=/usr/bin/
 COMPILER_NAME=gcc
 
 #
-COMPILER_FLAGS=""
-COMPILER_LINKS=""
+COMPILER_C_FLAGS=""
+COMPILER_CXX_FLAGS=""
+COMPILER_LD_FLAGS=""
 
 #
 BUILD_TYPE="release"
@@ -169,13 +204,17 @@ VARIABLE:
 
      COMPILER_NAME(编译器名字)与编译器前缀组成完整路径.
 
-     COMPILER_FLAGS=${COMPILER_FLAGS}
+     COMPILER_C_FLAGS=${COMPILER_C_FLAGS}
 
-     COMPILER_FLAGS(编译器的编译参数)用于编译器的源码编译. 
+     COMPILER_C_FLAGS(C编译器的编译参数)用于编译器的源码编译. 
 
-     COMPILER_LINKS=${COMPILER_LINKS}
+     COMPILER_CXX_FLAGS=${COMPILER_CXX_FLAGS}
 
-     COMPILER_LINKS(编译器的链接参数)用于编译器的目标链接. 
+     COMPILER_CXX_FLAGS(CXX编译器的编译参数)用于编译器的源码编译. 
+
+     COMPILER_LD_FLAGS=${COMPILER_LD_FLAGS}
+
+     COMPILER_LD_FLAGS(编译器的链接参数)用于编译器的目标链接. 
 
      THIRDPARTY_PACKAGES=${THIRDPARTY_PACKAGES}
 
@@ -305,10 +344,19 @@ fi
 source ${BUILD_PATH}/compiler.conf
 
 #
-CheckSTD "${_TARGET_COMPILER_BIN}" "${COMPILER_STD}"
+CheckSTD c "${_TARGET_COMPILER_BIN}" "c99"
 if [ $? -ne 0 ];then
 {
-    echo "The '${COMPILER_STD}' standard is not supported."
+    echo "Minimum support 'c99'."
+    exit 22
+}
+fi
+
+#
+CheckSTD cxx "${_TARGET_COMPILER_BIN}" "c++11"
+if [ $? -ne 0 ];then
+{
+    echo "Minimum support 'c++11'."
     exit 22
 }
 fi
@@ -318,43 +366,6 @@ export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
 export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
-
-#
-DependPackageCheck()
-# 1 key
-# 2 def
-{
-    PACKAGE_KEY=$1
-    PACKAGE_DEF=$2
-    #
-    if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} ${PACKAGE_KEY}) -eq 1 ];then
-    {
-        CheckHavePackage ${PACKAGE_KEY} 3
-        CHK=$?
-
-        if [ ${CHK} -eq 0 ];then
-        {
-            COMPILER_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${COMPILER_FLAGS}"
-            COMPILER_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${COMPILER_LINKS}"
-        }
-        else
-        {
-            THIRDPARTY_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${THIRDPARTY_NOFOUND}"
-        }
-        fi
-
-        echo -n "Check ${PACKAGE_KEY}"
-        if [ ${CHK} -eq 0 ];then
-            echo -e "\x1b[32m Ok \x1b[0m"
-        else 
-            echo -e "\x1b[31m Failed \x1b[0m"
-        fi
-    }
-    fi
-
-#    echo ${COMPILER_FLAGS} 
-#    echo ${COMPILER_LINKS}
-}
 
 #
 DependPackageCheck openmp HAVE_OPENMP
@@ -437,18 +448,19 @@ BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 #
 LSB_RELEASE = ${LSB_RELEASE}
 #
-STD = ${COMPILER_STD}
-#
 CC = ${_TARGET_COMPILER_BIN}
 AR = ${_TARGET_COMPILER_AR}
 #
-DEPEND_FLAGS = ${COMPILER_FLAGS}
-DEPEND_LINKS = ${COMPILER_LINKS}
+C_FLAGS = ${COMPILER_C_FLAGS}
+CXX_FLAGS = ${COMPILER_CXX_FLAGS}
+LD_FLAGS = ${COMPILER_LD_FLAGS}
+#
+DEPEND_FLAGS = ${DEPEND_FLAGS}
+DEPEND_LINKS = ${DEPEND_LINKS} 
 #
 BUILD_TYPE = ${BUILD_TYPE}
 #
 OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
-
 #
 NATIVE_PLATFORM = ${_NATIVE_PLATFORM}
 NATIVE_ARCH = ${_NATIVE_ARCH}
@@ -462,9 +474,6 @@ VERSION_MINOR = ${VERSION_MINOR}
 VERSION_RELEASE = ${VERSION_RELEASE}
 VERSION_STR_MAIN = ${VERSION_STR_MAIN}
 VERSION_STR_FULL = ${VERSION_STR_FULL}
-
-
-
 #
 INSTALL_PREFIX = ${INSTALL_PREFIX}
 #
