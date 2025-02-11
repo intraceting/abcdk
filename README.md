@@ -45,7 +45,7 @@ $ make package
 ## 交叉编译和打包
 
 ```bash
-$ ./configure.sh -e COMPILER_PREFIX=/target_platform/bin/ -e COMPILER_NAME=gcc [ ... ]
+$ ./configure.sh -d COMPILER_PREFIX=/target_platform/bin/ -d COMPILER_NAME=gcc [ ... ]
 $ make
 $ make package
 ```
