@@ -163,7 +163,10 @@ THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
 THIRDPARTY_FIND_ROOT=""
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
+
 #
+CUDA_FIND_ROOT="/usr/local/cuda/"
+TRNSORRT_FIND_ROOT="/usr/local/TensorRT/"
 
 #
 PrintUsage()
@@ -225,7 +228,8 @@ VARIABLE:
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm,
-     pam,curl,ncurses,fltk,x264,x265,ffnvcodec
+     pam,curl,ncurses,fltk,x264,x265,ffnvcodec,
+     cuda,tensorrt,opencv
 
      THIRDPARTY_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 
@@ -235,6 +239,14 @@ VARIABLE:
 
      THIRDPARTY_FIND_MODE(依赖组件搜索模式)支持以下关键字:
      only,both,(default)
+
+     CUDA_FIND_ROOT=${CUDA_FIND_ROOT}
+
+     CUDA_FIND_ROOT(CUDA组件搜索根路径)用于查找依赖组件完整路径.
+
+     TRNSORRT_FIND_ROOT=${TRNSORRT_FIND_ROOT}
+
+     TRNSORRT_FIND_ROOT(TensorRT组件搜索根路径)用于查找依赖组件完整路径.
 
      INSTALL_PREFIX=${INSTALL_PREFIX}
 
@@ -347,7 +359,7 @@ source ${BUILD_PATH}/compiler.conf
 CheckSTD c "${_TARGET_COMPILER_BIN}" "c99"
 if [ $? -ne 0 ];then
 {
-    echo "Minimum support 'c99'."
+    echo "The compiler supports at least the c99 standard."
     exit 22
 }
 fi
@@ -356,7 +368,7 @@ fi
 CheckSTD cxx "${_TARGET_COMPILER_BIN}" "c++11"
 if [ $? -ne 0 ];then
 {
-    echo "Minimum support 'c++11'."
+    echo "The compiler supports at least the c++11 standard."
     exit 22
 }
 fi
@@ -408,6 +420,37 @@ DependPackageCheck gtk HAVE_GTK
 DependPackageCheck x264 HAVE_H264
 DependPackageCheck x265 HAVE_H265
 DependPackageCheck ffnvcodec HAVE_FFNVCODEC
+DependPackageCheck opencv HAVE_OPENCV
+
+#恢复默认。
+export _3RDPARTY_PKG_MACHINE=
+export _3RDPARTY_PKG_WORDBIT=
+export _3RDPARTY_PKG_FIND_ROOT=
+export _3RDPARTY_PKG_FIND_MODE=
+
+
+#设置环境变量，用于搜索依赖包。
+export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_FIND_ROOT=${CUDA_FIND_ROOT}
+export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
+
+DependPackageCheck cuda HAVE_CUDA
+
+#恢复默认。
+export _3RDPARTY_PKG_MACHINE=
+export _3RDPARTY_PKG_WORDBIT=
+export _3RDPARTY_PKG_FIND_ROOT=
+export _3RDPARTY_PKG_FIND_MODE=
+
+
+#设置环境变量，用于搜索依赖包。
+export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_FIND_ROOT=${TRNSORRT_FIND_ROOT}
+export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
+
+DependPackageCheck tensorrt HAVE_TENSORRT
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=
