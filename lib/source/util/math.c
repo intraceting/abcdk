@@ -18,3 +18,26 @@ uint64_t abcdk_math_lcm(uint64_t a, uint64_t b)
 
     return 0;
 }
+
+double abcdk_math_sigmoid(double x)
+{
+    return ((double)(1.0 / (1.0 + exp(-x))));
+}
+
+void abcdk_math_normalize_l2(float *data, int len)
+{
+    float norm2 = 0.f;
+
+    assert(data != NULL && len > 0);
+
+    for (int i = 0; i < len; i++)
+    {
+        norm2 += data[i] * data[i];
+    }
+
+    float norm = sqrt(norm2);
+    for (int i = 0; i < len; i++)
+    {
+        data[i] = data[i] / norm;
+    }
+}

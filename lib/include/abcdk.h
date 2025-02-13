@@ -153,4 +153,8 @@
 
 #include "abcdk/license/license.h"
 
+#include "abcdk/cuda/cuda.h"
+#include "abcdk/cuda/memory.h"
+#include "abcdk/cuda/imageproc.h"
+
 #endif //ABCDK_H

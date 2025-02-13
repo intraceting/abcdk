@@ -52,6 +52,13 @@ CheckHavePackageFromWhich()
 }
 
 #
+FindBinPath()
+# $1 HDNAME
+{
+	${SHELLDIR}/../script/devel/find-bin-path.sh "$1"
+}
+
+#
 FindIncPath()
 # $1 HDNAME
 {
@@ -104,6 +111,13 @@ if [ "deb" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "cuda-dev"
+    elif [ ${FLAG} -eq 5 ];then
+    {
+        BIN="$(FindBinPath nvcc)"
+        checkReturnCode
+
+        echo "${BIN}/nvcc"
+    }
     else
         exit 22
     fi
@@ -128,6 +142,13 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "cuda-devel"
+    elif [ ${FLAG} -eq 5 ];then
+    {
+        BIN="$(FindBinPath nvcc)"
+        checkReturnCode
+
+        echo "${BIN}/nvcc"
+    }
     else
         exit 22
     fi

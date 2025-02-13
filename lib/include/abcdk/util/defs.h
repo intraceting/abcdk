@@ -221,10 +221,13 @@
 #define ABCDK_GCC_VERSION_AT_MOST(x, y) 0
 #endif
 
+/** 过时定义。*/
 #if ABCDK_GCC_VERSION_AT_LEAST(3, 1)
 #define ABCDK_DEPRECATED __attribute__((deprecated))
 #else
 #define ABCDK_DEPRECATED
 #endif
+
+
 
 #endif //ABCDK_UTIL_DEFS_H

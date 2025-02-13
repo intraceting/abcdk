@@ -166,6 +166,9 @@ THIRDPARTY_NOFOUND=""
 
 #
 CUDA_FIND_ROOT="/usr/local/cuda/"
+CUDA_COMPILER_BIN=
+
+#
 TRNSORRT_FIND_ROOT="/usr/local/TensorRT/"
 
 #
@@ -435,7 +438,17 @@ export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${CUDA_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
-DependPackageCheck cuda HAVE_CUDA
+if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} cuda) -eq 1 ];then
+{
+    #查找NVCC。
+    CUDA_COMPILER_BIN=$(CheckHavePackage cuda 5)
+
+    #如果NVCC存在，再查找依赖组件。
+    if [ -f ${CUDA_COMPILER_BIN} ];then
+        DependPackageCheck cuda HAVE_CUDA
+    fi
+}
+fi
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=
@@ -493,6 +506,8 @@ LSB_RELEASE = ${LSB_RELEASE}
 #
 CC = ${_TARGET_COMPILER_BIN}
 AR = ${_TARGET_COMPILER_AR}
+#
+NVCC= ${CUDA_COMPILER_BIN}
 #
 C_FLAGS = ${COMPILER_C_FLAGS}
 CXX_FLAGS = ${COMPILER_CXX_FLAGS}

@@ -106,6 +106,12 @@ C_FLAGS += -I$(CURDIR)/lib/include/
 CXX_FLAGS += -I$(CURDIR)/lib/include/
 
 #
+NVCC_FLAGS += -ccbin ${CC}
+NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
+NVCC_FLAGS += -lineinfo
+NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
+
+#
 LD_FLAGS += ${DEPEND_LINKS}
 
 #
@@ -135,6 +141,9 @@ LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/license/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
+#
+LIB_SRC_CU_FILES += $(wildcard lib/source/cuda/*.cu)
+LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.o,${LIB_SRC_CU_FILES}))
 
 #
 TOOL_SRC_FILES = $(wildcard tool/*.c)
@@ -297,16 +306,22 @@ $(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
+$(OBJ_PATH)/lib/source/cuda/%.o: lib/source/cuda/%.cu
+	mkdir -p $(OBJ_PATH)/lib/source/cuda/
+	rm -f $@
+	$(NVCC) -std=c++11 -Xcompiler -std=c++11 $(NVCC_FLAGS) -c $< -o $@
+
+#
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+	$(CC) $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+	$(CC) $(C_FLAGS) -c $< -o $@
 
 #
 clean: clean-lib clean-tool clean-test
