@@ -107,6 +107,19 @@ namespace abcdk
             return a * scale + b * (1 - scale);
         }
 
+        template <typename T>
+        ABCDK_CUDA_DEVICE T pixel_clamp(T src)
+        {
+            if (sizeof(T) == sizeof(uint8_t))
+                return clamp<int64_t>(src, 0, 0xff);
+            else if (sizeof(T) == sizeof(uint16_t))
+                return clamp<int64_t>(src, 0, 0xffff);
+            else if (sizeof(T) == sizeof(uint32_t))
+                return clamp<int64_t>(src, 0, 0xffffffff);
+            else
+                return src;
+        }
+
     } // namespace cuda
 } // namespace abcdk
 

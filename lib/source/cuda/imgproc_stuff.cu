@@ -11,7 +11,7 @@
 #ifdef HAVE_CUDA
 
 template <typename T>
-ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_stuff_kernel_2d2d(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
+ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
 {
     size_t tid = abcdk::cuda::grid_get_tid(2, 2);
 
@@ -42,7 +42,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst,
     /*2D-2D*/
     abcdk::cuda::grid_make_2d2d(dim, width * height, 64);
 
-    _abcdk_cuda_imgproc_stuff_kernel_2d2d<T><<<dim[0], dim[1]>>>(3, true, dst, width, pitch, height, gpu_scalar);
+    _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(3, true, dst, width, pitch, height, gpu_scalar);
     abcdk_cuda_free((void **)&gpu_scalar);
 
     return -1;

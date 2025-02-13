@@ -11,10 +11,10 @@
 #ifdef HAVE_CUDA
 
 template <typename T>
-ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_compose_kernel_2d2d(int channels, bool packed,
-                                                               T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                                               T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                                               T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam)
+ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool packed,
+                                                        T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+                                                        T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
+                                                        T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam)
 {
     size_t tid = abcdk::cuda::grid_get_tid(2, 2);
 
@@ -92,9 +92,9 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
     /*2D-2D*/
     abcdk::cuda::grid_make_2d2d(dim, compose_w * compose_h, 64);
 
-    _abcdk_cuda_imgproc_compose_kernel_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
-                                                                   compose, compose_w, compose_ws, compose_h,
-                                                                   gpu_scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
+    _abcdk_cuda_imgproc_compose_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
+                                                            compose, compose_w, compose_ws, compose_h,
+                                                            gpu_scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 
     abcdk_cuda_free((void **)&gpu_scalar);
 
@@ -122,7 +122,7 @@ int abcdk_cuda_imgproc_compose_8u_c3r(uint8_t *panorama, size_t panorama_w, size
     assert(compose != NULL && compose_w > 0 && compose_ws > 0 && compose_h > 0);
     assert(scalar != NULL && overlap_x > 0 && overlap_y > 0 && overlap_w > 0);
 
-    return _abcdk_cuda_imgproc_compose(3,true,panorama, panorama_w, panorama_ws, panorama_h,
+    return _abcdk_cuda_imgproc_compose(3, true, panorama, panorama_w, panorama_ws, panorama_h,
                                        compose, compose_w, compose_ws, compose_h,
                                        scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
@@ -140,4 +140,4 @@ int abcdk_cuda_imgproc_compose_8u_c4r(uint8_t *panorama, size_t panorama_w, size
                                        scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
 
-#endif //HAVE_CUDA
+#endif // HAVE_CUDA
