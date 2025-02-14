@@ -31,7 +31,7 @@ int abcdk_cuda_memcpy(void *dst,const void *src,size_t size,int dst_in_host,int 
  * 
  * @return 0 成功，< 0  失败。
 */
-int abcdk_cuda_memcpy_2D(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y,
+int abcdk_cuda_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y,
                          const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y,
                          size_t roi_width_bytes, size_t roi_height, int dst_in_host, int src_in_host);
 

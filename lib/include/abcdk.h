@@ -120,7 +120,9 @@
 #include "abcdk/database/odbcpool.h"
 */
 
+
 #include "abcdk/image/bmp.h"
+
 /*
  *1: 与odbc存在宏定义冲突，因此不能同时包含。
  *2: 调用者需要在合适位置引用下面的文件。
@@ -155,6 +157,7 @@
 
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"
+#include "abcdk/cuda/device.h"
 #include "abcdk/cuda/imgproc.h"
 
 #endif //ABCDK_H

@@ -48,7 +48,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst,
     return -1;
 }
 
-int abcdk_cuda_imgproc_stuff_8u_c1r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[0])
+int abcdk_cuda_imgproc_stuff_8u_c1r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1])
 {
     assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
 

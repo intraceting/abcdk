@@ -309,19 +309,19 @@ $(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
 $(OBJ_PATH)/lib/source/cuda/%.o: lib/source/cuda/%.cu
 	mkdir -p $(OBJ_PATH)/lib/source/cuda/
 	rm -f $@
-	$(NVCC) -std=c++11 -Xcompiler -std=c++11 $(NVCC_FLAGS) -c $< -o $@
+	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
 
 #
 $(OBJ_PATH)/tool/%.o: tool/%.c
 	mkdir -p $(OBJ_PATH)/tool/
 	rm -f $@
-	$(CC) $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
-	$(CC) $(C_FLAGS) -c $< -o $@
+	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
 clean: clean-lib clean-tool clean-test

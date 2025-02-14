@@ -78,7 +78,7 @@ int abcdk_cuda_imgproc_compose_8u_c4r(uint8_t *panorama, size_t panorama_w, size
 /**
  * 调整亮度。
  * 
- * @note dst[] = src[] * alpha[] + bate[]
+ * @note dst[z] = src[z] * alpha[z] + bate[z]
  *
  * @return 0 成功，< 0  失败。
  */
@@ -101,6 +101,70 @@ int abcdk_cuda_imgproc_brightness_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *s
 int abcdk_cuda_imgproc_brightness_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate);
 
+/**
+ * 暗通道除雾。
+ *
+ * @note 建议：a=220,m=0.35,w=0.9
+ *
+ * @param [in] dack_a 暗通道像素值。
+ * @param [in] dack_m 模数。
+ * @param [in] dack_w 权重。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_imgproc_defog_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+                                    size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w);
+
+/**
+ * 暗通道除雾。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_imgproc_defog_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+                                    size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w);
+
+/**
+ * 画矩形框。
+ *
+ * @param [in] corner 左上(x1,y1)，右下(x2,y2)。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_imgproc_drawrect_8u_c1r(uint8_t *dst, size_t w, size_t ws, size_t h,
+                                       uint8_t color[1], int weight, int corner[4]);
+
+/**
+ * 画矩形框。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_imgproc_drawrect_8u_c3r(uint8_t *dst, size_t w, size_t ws, size_t h,
+                                       uint8_t color[3], int weight, int corner[4]);
+
+/**
+ * 画矩形框。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_imgproc_drawrect_8u_c4r(uint8_t *dst, size_t w, size_t ws, size_t h,
+                                       uint8_t color[4], int weight, int corner[4]);
+
+/**
+ * 像素值转换。
+ *
+ * @note dst[z] = (((DT)*src[z] / scale[z]) - mean[z]) / std[z];
+ * 
+ * @param [in] dst_packed 目标图的像素排列方式。0 平面，!0 交叉。
+ * @param [in] src_packed 源图的像素排列方式。0 平面，!0 交叉。
+ * @param [in] scale 系数。
+ * @param [in] mean 均值。
+ * @param [in] std 方差。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_imgproc_convert_8u_to_32f_3r(int dst_packed, float *dst, size_t dst_ws,
+                                            int src_packed, uint8_t *src, size_t src_ws,
+                                            size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 __END_DECLS
 
 #endif //HAVE_CUDA
