@@ -13,7 +13,7 @@ void abcdk_cuda_free(void **data)
 {
     void *data_p;
 
-    if(!data || !*data)
+    if (!data || !*data)
         return;
 
     data_p = *data;
@@ -22,7 +22,6 @@ void abcdk_cuda_free(void **data)
     cudaFree(data_p);
 }
 
-
 void *abcdk_cuda_alloc(size_t size)
 {
     void *data;
@@ -30,11 +29,24 @@ void *abcdk_cuda_alloc(size_t size)
 
     assert(size > 0);
 
-    chk = cudaMalloc(&data,size);
-    if(chk != cudaSuccess)
+    chk = cudaMalloc(&data, size);
+    if (chk != cudaSuccess)
         return NULL;
 
-    abcdk_cuda_memset(data,0,size);
+    return data;
+}
+
+void *abcdk_cuda_alloc_z(size_t size)
+{
+    void *data;
+    
+    assert(size > 0);
+
+    data = abcdk_cuda_alloc(size);
+    if(!data)
+        return NULL;
+
+    abcdk_cuda_memset(data, 0, size);
 
     return data;
 }
@@ -57,12 +69,12 @@ void *abcdk_cuda_memset(void *dst, int val, size_t size)
     /*2D-2D*/
     abcdk::cuda::grid_make_2d2d(dim, size, 64);
 
-    _abcdk_cuda_memset_2d2d<uint8_t><<<dim[0], dim[1]>>>((uint8_t*)dst, (uint8_t)val, size);
+    _abcdk_cuda_memset_2d2d<uint8_t><<<dim[0], dim[1]>>>((uint8_t *)dst, (uint8_t)val, size);
 
     return dst;
 }
 
-int abcdk_cuda_memcpy(void *dst, const void *src, size_t size, int dst_in_host, int src_in_host)
+int abcdk_cuda_memcpy(void *dst, int dst_in_host, const void *src, int src_in_host, size_t size)
 {
     cudaMemcpyKind kind = cudaMemcpyDefault;
     cudaError_t chk;
@@ -86,9 +98,9 @@ int abcdk_cuda_memcpy(void *dst, const void *src, size_t size, int dst_in_host, 
     return 0;
 }
 
-int abcdk_cuda_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y,
-                         const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y,
-                         size_t roi_width_bytes, size_t roi_height, int dst_in_host, int src_in_host)
+int abcdk_cuda_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y, int dst_in_host,
+                         const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y, int src_in_host,
+                         size_t roi_width_bytes, size_t roi_height)
 {
     CUDA_MEMCPY2D copy_args = {0};
     CUresult chk;
@@ -101,17 +113,17 @@ int abcdk_cuda_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t
     copy_args.dstHost = (dst_in_host ? dst : NULL);
     copy_args.dstDevice = (CUdeviceptr)(dst_in_host ? NULL : dst);
     copy_args.dstPitch = dst_pitch;
-    
+
     copy_args.srcXInBytes = src_x_bytes;
     copy_args.srcY = src_y;
     copy_args.srcMemoryType = (src_in_host ? CU_MEMORYTYPE_HOST : CU_MEMORYTYPE_DEVICE);
     copy_args.srcHost = (src_in_host ? src : NULL);
     copy_args.srcDevice = (CUdeviceptr)(src_in_host ? NULL : src);
     copy_args.srcPitch = src_pitch;
-    
+
     copy_args.WidthInBytes = roi_width_bytes;
     copy_args.Height = roi_height;
-    
+
     chk = cuMemcpy2D(&copy_args);
 
     if (chk != CUDA_SUCCESS)
@@ -120,7 +132,7 @@ int abcdk_cuda_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t
     return 0;
 }
 
-void *abcdk_cuda_copyfrom(const void *src,size_t size,int src_in_host)
+void *abcdk_cuda_copyfrom(const void *src, size_t size, int src_in_host)
 {
     void *dst;
     int chk;
@@ -128,11 +140,11 @@ void *abcdk_cuda_copyfrom(const void *src,size_t size,int src_in_host)
     assert(src != NULL && size > 0);
 
     dst = abcdk_cuda_alloc(size);
-    if(!dst)
+    if (!dst)
         return NULL;
 
-    chk = abcdk_cuda_memcpy(dst,src,size,0,src_in_host);
-    if(chk == 0)
+    chk = abcdk_cuda_memcpy(dst, 0, src, src_in_host, size);
+    if (chk == 0)
         return dst;
 
     abcdk_cuda_free(&dst);

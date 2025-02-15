@@ -19,7 +19,7 @@ static void _abcdk_cuda_avframe_cvt_free_tmp(AVFrame *dst, const AVFrame *src, A
         av_frame_free(&tmp_src);
 }
 
-static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src, int dst_in_host, int src_in_host)
+static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, int dst_in_host, const AVFrame *src, int src_in_host)
 {
     struct SwsContext *ctx = NULL;
     AVFrame *tmp_dst = NULL, *tmp_src = NULL;
@@ -29,8 +29,8 @@ static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src, 
     if (!ctx)
         return -1;
 
-    tmp_dst = (!dst_in_host ? abcdk_cuda_avframe_clone(dst, 1, 0) : dst);
-    tmp_src = (!src_in_host ? abcdk_cuda_avframe_clone(src, 1, 0) : (AVFrame *)src);
+    tmp_dst = (!dst_in_host ? abcdk_cuda_avframe_clone(1, dst, 0) : dst);
+    tmp_src = (!src_in_host ? abcdk_cuda_avframe_clone(1, src, 0) : (AVFrame *)src);
 
     if (!tmp_dst || !tmp_src)
     {
@@ -39,11 +39,11 @@ static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src, 
         return -1;
     }
 
-    chk = abcdk_sws_scale(ctx, src, dst);
+    chk = abcdk_sws_scale(ctx, tmp_src, tmp_dst);
 
     /*按需复制。*/
     if (chk > 0 && dst != tmp_dst)
-        abcdk_cuda_avframe_copy(dst, tmp_dst, 0, 1);
+        abcdk_cuda_avframe_copy(dst, 0, tmp_dst, 1);
 
     _abcdk_cuda_avframe_cvt_free_tmp(dst, src, tmp_dst, tmp_src);
     abcdk_sws_free(&ctx);
@@ -54,13 +54,13 @@ static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src, 
     return 0;
 }
 
-static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src, int dst_in_host, int src_in_host)
+static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, int dst_in_host, const AVFrame *src, int src_in_host)
 {
     AVFrame *tmp_dst = NULL, *tmp_src = NULL;
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
 
-    tmp_dst = (dst_in_host ? abcdk_cuda_avframe_clone(dst, 0, 1) : dst);
-    tmp_src = (src_in_host ? abcdk_cuda_avframe_clone(src, 0, 1) : (AVFrame *)src);
+    tmp_dst = (dst_in_host ? abcdk_cuda_avframe_clone(0, dst, 1) : dst);
+    tmp_src = (src_in_host ? abcdk_cuda_avframe_clone(0, src, 1) : (AVFrame *)src);
 
     if (!tmp_dst || !tmp_src)
     {
@@ -156,7 +156,7 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src, in
 
     /*按需复制。*/
     if (npp_chk == NPP_SUCCESS && dst != tmp_dst)
-        abcdk_cuda_avframe_copy(dst, tmp_dst, 1, 0);
+        abcdk_cuda_avframe_copy(dst, 1, tmp_dst, 0);
 
     _abcdk_cuda_avframe_cvt_free_tmp(dst, src, tmp_dst, tmp_src);
 
@@ -166,7 +166,7 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src, in
     return 0;
 }
 
-int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src, int dst_in_host, int src_in_host)
+int abcdk_cuda_avframe_convert(AVFrame *dst, int dst_in_host, const AVFrame *src, int src_in_host)
 {
     int chk;
 
@@ -175,16 +175,16 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src, int dst_in_host
 
     if (dst->format == src->format)
     {
-        chk = abcdk_cuda_avframe_copy(dst, src, dst_in_host, src_in_host);
+        chk = abcdk_cuda_avframe_copy(dst, dst_in_host, src, src_in_host);
         if (chk != 0)
             return -1;
     }
     else if (dst->format == (int)AV_PIX_FMT_GRAY8)
     {
         if (src->format == (int)AV_PIX_FMT_RGB24)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, dst_in_host, src, src_in_host);
         else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, dst_in_host, src, src_in_host);
 
         if (chk != 0)
             return -1;
@@ -201,9 +201,9 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src, int dst_in_host
             src->format == (int)AV_PIX_FMT_YUV422P ||
             src->format == (int)AV_PIX_FMT_YUV444P ||
             src->format == (int)AV_PIX_FMT_YUVJ444P)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, dst_in_host, src, src_in_host);
         else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, dst_in_host, src, src_in_host);
 
         if (chk != 0)
             return -1;
@@ -216,9 +216,9 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src, int dst_in_host
             src->format == (int)AV_PIX_FMT_YUVJ420P ||
             src->format == (int)AV_PIX_FMT_YUV420P ||
             src->format == (int)AV_PIX_FMT_NV12)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, dst_in_host, src, src_in_host);
         else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, dst_in_host, src, src_in_host);
 
         if (chk != 0)
             return -1;
@@ -228,16 +228,16 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src, int dst_in_host
     {
         if (src->format == (int)AV_PIX_FMT_RGB24 ||
             src->format == (int)AV_PIX_FMT_NV12)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, dst_in_host, src, src_in_host);
         else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src, dst_in_host, src_in_host);
+            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, dst_in_host, src, src_in_host);
 
         if (chk != 0)
             return -1;
     }
     else
     {
-        chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src, dst_in_host, src_in_host);
+        chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, dst_in_host, src, src_in_host);
 
         if (chk != 0)
             return -1;

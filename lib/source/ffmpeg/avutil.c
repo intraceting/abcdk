@@ -183,7 +183,7 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
     if (buf_size <= 0)
         return NULL;
 
-    buf_ptr = av_malloc(buf_size);
+    buf_ptr = av_mallocz(buf_size);
     if (!buf_ptr)
         return NULL;
 
