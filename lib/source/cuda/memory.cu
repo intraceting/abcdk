@@ -7,7 +7,7 @@
 #include "abcdk/cuda/memory.h"
 #include "grid.cu.hxx"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 void abcdk_cuda_free(void **data)
 {
@@ -34,7 +34,32 @@ void *abcdk_cuda_alloc(size_t size)
     if(chk != cudaSuccess)
         return NULL;
 
+    abcdk_cuda_memset(data,0,size);
+
     return data;
+}
+
+template <typename T>
+ABCDK_CUDA_GLOBAL void _abcdk_cuda_memset_2d2d(T *data, T value, size_t size)
+{
+    size_t tid = abcdk::cuda::grid_get_tid(2, 2);
+
+    if (tid >= size)
+        return;
+
+    data[tid] = value;
+}
+
+void *abcdk_cuda_memset(void *dst, int val, size_t size)
+{
+    uint3 dim[2];
+
+    /*2D-2D*/
+    abcdk::cuda::grid_make_2d2d(dim, size, 64);
+
+    _abcdk_cuda_memset_2d2d<uint8_t><<<dim[0], dim[1]>>>((uint8_t*)dst, (uint8_t)val, size);
+
+    return dst;
 }
 
 int abcdk_cuda_memcpy(void *dst, const void *src, size_t size, int dst_in_host, int src_in_host)
@@ -114,4 +139,4 @@ void *abcdk_cuda_copyfrom(const void *src,size_t size,int src_in_host)
     return NULL;
 }
 
-#endif //HAVE_CUDA
+#endif //__cuda_cuda_h__

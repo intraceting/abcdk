@@ -108,8 +108,13 @@ void abcdk_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t
 
 /**
  * 帧复制。
+ * 
+ * @note 仅图像数据。
  */
 void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src);
+
+/**创建帧图。 */
+AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int align);
 
 /**重定向到轨迹日志。*/
 void abcdk_avlog_redirect2trace();

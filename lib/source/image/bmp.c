@@ -212,7 +212,7 @@ int abcdk_bmp_load2(const char *file, uint8_t *buf, size_t size, uint32_t align,
 
     assert(file != NULL);
 
-    fd = abcdk_open(file, 0, 0, 1);
+    fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
         return -1;
 

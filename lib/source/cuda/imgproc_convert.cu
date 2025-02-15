@@ -8,7 +8,7 @@
 #include "grid.cu.hxx"
 #include "util.cu.hxx"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 template <class ST, class DT>
 ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_convert_2d2d(int channels,
@@ -81,4 +81,4 @@ int abcdk_cuda_imgproc_convert_8u_to_32f_3r(int dst_packed, float *dst, size_t d
     return _abcdk_cuda_imgproc_convert<uint8_t, float>(3, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
-#endif // HAVE_CUDA
+#endif // __cuda_cuda_h__

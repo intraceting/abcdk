@@ -8,7 +8,7 @@
 #include "grid.cu.hxx"
 #include "util.cu.hxx"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 template <typename T>
 ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_drawrect_2d2d(int channels, bool packed,
@@ -113,4 +113,4 @@ int abcdk_cuda_imgproc_drawrect_8u_c4r(uint8_t *dst, size_t w, size_t ws, size_t
     return _abcdk_cuda_imgproc_drawrect<uint8_t>(4, true, dst, w, ws, h, color, weight, corner);
 }
 
-#endif // HAVE_CUDA
+#endif // __cuda_cuda_h__

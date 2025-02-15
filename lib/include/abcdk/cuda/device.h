@@ -9,7 +9,7 @@
 
 #include "abcdk/cuda/cuda.h"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 __BEGIN_DECLS
 
@@ -38,6 +38,6 @@ int abcdk_cuda_get_device_name(char name[256], int device);
 
 __END_DECLS
 
-#endif //HAVE_CUDA
+#endif //__cuda_cuda_h__
 
 #endif //ABCDK_CUDA_DEVICE_H

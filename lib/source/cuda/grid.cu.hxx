@@ -9,7 +9,7 @@
 
 #include "abcdk/cuda/cuda.h"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 namespace abcdk
 {
@@ -140,7 +140,7 @@ namespace abcdk
 } // namespace abcdk
 
 
-#endif //HAVE_CUDA
+#endif //__cuda_cuda_h__
 
 
 #endif //ABCDK_CUDA_GRID_HXX

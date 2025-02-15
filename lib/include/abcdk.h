@@ -159,5 +159,6 @@
 #include "abcdk/cuda/memory.h"
 #include "abcdk/cuda/device.h"
 #include "abcdk/cuda/imgproc.h"
+#include "abcdk/cuda/avutil.h"
 
 #endif //ABCDK_H

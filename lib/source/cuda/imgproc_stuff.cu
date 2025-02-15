@@ -8,7 +8,7 @@
 #include "grid.cu.hxx"
 #include "util.cu.hxx"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 template <typename T>
 ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
@@ -69,4 +69,4 @@ int abcdk_cuda_imgproc_stuff_8u_c4r(uint8_t *dst, size_t width, size_t pitch, si
     return _abcdk_cuda_imgproc_stuff<uint8_t>(4, true, dst, width, pitch, height, scalar);
 }
 
-#endif // HAVE_CUDA
+#endif // __cuda_cuda_h__

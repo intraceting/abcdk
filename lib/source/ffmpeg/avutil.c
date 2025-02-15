@@ -158,6 +158,63 @@ void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src)
                         src->width,src->height,src->format);
 }
 
+static void _abcdk_avbuffer_free(void *opaque, uint8_t *data) 
+{
+    if(data)
+        av_free(data);
+}
+
+AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int align)
+{
+    AVBufferRef *av_buffer = NULL;
+    AVFrame *av_frame = NULL;
+    int strides[4] = {0};
+    int buf_size;
+    void *buf_ptr = NULL;
+    int chk_size;
+
+    assert(width > 0 && height > 0);
+    assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
+    
+    if (abcdk_avimage_fill_strides(strides, width, height, pixfmt, align) <= 0)
+        return NULL;
+
+    buf_size = abcdk_avimage_size(strides, height, pixfmt);
+    if (buf_size <= 0)
+        return NULL;
+
+    buf_ptr = av_malloc(buf_size);
+    if (!buf_ptr)
+        return NULL;
+
+    av_buffer = av_buffer_create((uint8_t*)buf_ptr, buf_size, _abcdk_avbuffer_free, NULL, 0);
+    if(!av_buffer)
+    {
+        av_free(buf_ptr);
+        return NULL;
+    }
+
+    av_frame = av_frame_alloc();
+    if(!av_frame)
+    {
+        av_buffer_unref(&av_buffer);
+        return NULL;
+    }
+
+    chk_size = abcdk_avimage_fill_pointers(av_frame->data, strides, height, pixfmt, av_buffer->data);
+    assert(buf_size == chk_size);
+
+    av_frame->width = width;
+    av_frame->height = height;
+    av_frame->format = (int)pixfmt;
+    av_frame->buf[0] = av_buffer;//bind to array.
+
+    /*copy strides to linesize.*/
+    for (int i = 0; i < 4; i++)
+        av_frame->linesize[i] = strides[i];
+
+    return av_frame;
+}
 
 static void _abcdk_avlog_callback(void* opaque, int level, const char* fmt, va_list v)
 {

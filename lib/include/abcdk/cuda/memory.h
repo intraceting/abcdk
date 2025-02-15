@@ -9,15 +9,22 @@
 
 #include "abcdk/cuda/cuda.h"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 __BEGIN_DECLS
 
 /** 内存释放。*/
 void abcdk_cuda_free(void **data);
 
-/** 内存申请。*/
+/** 
+ * 内存申请。
+ * 
+ * @note 如果申请成功，则全部赋值为零。
+*/
 void *abcdk_cuda_alloc(size_t size);
+
+/** 内存赋值。*/
+void *abcdk_cuda_memset(void *dst,int val,size_t size);
 
 /** 
  * 内存复制(1D)。
@@ -41,6 +48,6 @@ void *abcdk_cuda_copyfrom(const void *src,size_t size,int src_in_host);
 
 __END_DECLS
 
-#endif //HAVE_CUDA
+#endif //__cuda_cuda_h__
 
 #endif //ABCDK_CUDA_MEMORY_H

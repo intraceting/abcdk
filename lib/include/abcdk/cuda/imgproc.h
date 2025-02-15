@@ -10,7 +10,7 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 __BEGIN_DECLS
 
@@ -167,6 +167,6 @@ int abcdk_cuda_imgproc_convert_8u_to_32f_3r(int dst_packed, float *dst, size_t d
                                             size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 __END_DECLS
 
-#endif //HAVE_CUDA
+#endif //__cuda_cuda_h__
 
 #endif //ABCDK_CUDA_IMGPROC_H

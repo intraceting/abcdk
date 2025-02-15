@@ -7,7 +7,7 @@
 #include "abcdk/cuda/device.h"
 #include "grid.cu.hxx"
 
-#ifdef HAVE_CUDA
+#ifdef __cuda_cuda_h__
 
 int abcdk_cuda_get_device()
 {
@@ -50,4 +50,4 @@ int abcdk_cuda_get_device_name(char name[256], int device)
     return 0;
 }
 
-#endif //HAVE_CUDA
+#endif //__cuda_cuda_h__
