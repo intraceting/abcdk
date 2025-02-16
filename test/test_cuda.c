@@ -69,18 +69,17 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     AVFrame *f = abcdk_cuda_avframe_alloc(800, 600, AV_PIX_FMT_RGB24, 678);
 
-    NppiPoint quad[4] = {
+    NppiPoint dst_quad[4] = {
         {30, 30},   // 变换后的左上角
         {220, 50},  // 变换后的右上角
         {210, 220},  // 变换后的右下角
         {50, 230},  // 变换后的左下角
     };
 
-    NppiRect src_roi = {10, 10, 100, 100};
-    NppiRect quad_roi = {30, 30, 300, 300};
-    //NppiRect quad_roi = {0,0,800,600};
+    NppiRect src_roi = {100,100,200,200};
 
-    abcdk_cuda_avframe_warpperspective(f, NULL, e, NULL , quad, &quad_roi, 0 , NPPI_INTER_CUBIC);
+   // abcdk_cuda_avframe_warp(f, NULL, dst_quad , e, &src_roi , NULL,2 , NPPI_INTER_CUBIC);
+   abcdk_cuda_avframe_warp(f, NULL, dst_quad , e, NULL , NULL ,1, NPPI_INTER_CUBIC);
 
     abcdk_cuda_avframe_save("/tmp/test.cuda.f.bmp", f);
 

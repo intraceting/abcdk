@@ -84,18 +84,17 @@ int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi,
                               int keep_aspect_ratio, NppiInterpolationMode inter_mode);
 
 /**
- * 帧图透视变换。
+ * 帧图变换。
  *
- * @param [in] quad 角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
- *
- * @param [in] back 变换方向。0 矩形向多边型变换。!0 多边型向矩形变换。
+ * @param [in] dst_quad 目标角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
+ * @param [in] src_quad 源图角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
+ * @param [in] warp_mode 变换模式。1 透视，2 仿射。
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_avframe_warpperspective(AVFrame *dst, const NppiRect *dst_roi,
-                                       const AVFrame *src, const NppiRect *src_roi,
-                                       const NppiPoint quad[4], const NppiRect *quad_roi,
-                                       int back, NppiInterpolationMode inter_mode);
+int abcdk_cuda_avframe_warp(AVFrame *dst, const NppiRect *dst_roi, const NppiPoint dst_quad[4],
+                            const AVFrame *src, const NppiRect *src_roi, const NppiPoint src_quad[4],
+                            int warp_mode, NppiInterpolationMode inter_mode);
 
 /**
  * 帧图重映射。
