@@ -6,9 +6,20 @@
  */
 #include "abcdk/cuda/avutil.h"
 #include "grid.cu.hxx"
+#include "util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
+
+CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src)
+{
+    assert(src != NULL);
+
+    if (src->hw_frames_ctx && ABCDK_PTR2I64(src->hw_frames_ctx->data,0) == 0x123456789)
+        return CU_MEMORYTYPE_DEVICE;
+
+    return CU_MEMORYTYPE_UNIFIED;
+}
 
 static void _abcdk_cuda_avbuffer_free(void *opaque, uint8_t *data)
 {
@@ -52,13 +63,24 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
         return NULL;
     }
 
+    av_frame->buf[0] = av_buffer; // bind to array.
+
+    av_frame->hw_frames_ctx = av_buffer_allocz(sizeof(int64_t));
+    if(!av_frame->hw_frames_ctx)
+    {
+        av_frame_free(&av_frame);
+        return NULL;
+    }
+
+    /*标志已经占用。*/
+    ABCDK_PTR2I64(av_frame->hw_frames_ctx->data,0) = 0x123456789;
+
     chk_size = abcdk_avimage_fill_pointers(av_frame->data, strides, height, pixfmt, av_buffer->data);
     assert(buf_size == chk_size);
 
     av_frame->width = width;
     av_frame->height = height;
     av_frame->format = (int)pixfmt;
-    av_frame->buf[0] = av_buffer; // bind to array.
 
     /*copy strides to linesize.*/
     for (int i = 0; i < 4; i++)
@@ -98,8 +120,9 @@ int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_i
     return 0;
 }
 
-int abcdk_cuda_avframe_copy(AVFrame *dst, int dst_in_host, const AVFrame *src, int src_in_host)
+int abcdk_cuda_avframe_copy(AVFrame *dst, const AVFrame *src)
 {
+    int dst_in_host, src_in_host;
     int chk;
 
     assert(dst != NULL && src != NULL);
@@ -107,6 +130,9 @@ int abcdk_cuda_avframe_copy(AVFrame *dst, int dst_in_host, const AVFrame *src, i
     assert(dst->width == src->width);
     assert(dst->height == src->height);
     assert(dst->format == src->format);
+
+    dst_in_host = (abcdk_cuda_avframe_memory_type(dst) != CU_MEMORYTYPE_DEVICE);
+    src_in_host = (abcdk_cuda_avframe_memory_type(src) != CU_MEMORYTYPE_DEVICE);
 
     chk = abcdk_cuda_avimage_copy(dst->data, dst->linesize, dst_in_host,
                                   (const uint8_t **)src->data, src->linesize, src_in_host,
@@ -117,7 +143,7 @@ int abcdk_cuda_avframe_copy(AVFrame *dst, int dst_in_host, const AVFrame *src, i
     return 0;
 }
 
-AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src, int src_in_host)
+AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src)
 {
     AVFrame *dst;
     int chk;
@@ -125,13 +151,13 @@ AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src, int src_i
     assert(src != NULL);
 
     if (dst_in_host)
-        dst = abcdk_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 16);
+        dst = abcdk_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 4);
     else
-        dst = abcdk_cuda_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 16);
+        dst = abcdk_cuda_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 4);
     if (!dst)
         return NULL;
 
-    chk = abcdk_cuda_avframe_copy(dst, dst_in_host, src, src_in_host);
+    chk = abcdk_cuda_avframe_copy(dst, src);
     if (chk != 0)
     {
         av_frame_free(&dst);

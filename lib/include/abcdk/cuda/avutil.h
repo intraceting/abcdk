@@ -12,11 +12,15 @@
 #include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/ffmpeg/swscale.h"
 #include "abcdk/util/geometry.h"
+#include "abcdk/image/bmp.h"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
 
 __BEGIN_DECLS
+
+/** 获取帧图的内存类型。*/
+CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src);
 
 /**创建帧图。 */
 AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
@@ -37,7 +41,7 @@ int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_i
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_avframe_copy(AVFrame *dst, int dst_in_host, const AVFrame *src, int src_in_host);
+int abcdk_cuda_avframe_copy(AVFrame *dst, const AVFrame *src);
 
 /**
  * 帧图克隆。
@@ -45,7 +49,16 @@ int abcdk_cuda_avframe_copy(AVFrame *dst, int dst_in_host, const AVFrame *src, i
  * @note 仅图像数据。
  *
  */
-AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src, int src_in_host);
+AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src);
+
+/**
+ * 帧图保存到文件。
+ * 
+ * @note 仅支持BMP格式，所有非RBG24、BGR24、RBG32、BGR32格式自动换转RGB24格式。
+ * 
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_cuda_avframe_save(const char *dst, const AVFrame *src);
 
 /**
  * 帧图格式转换。
@@ -54,7 +67,7 @@ AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src, int src_i
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_avframe_convert(AVFrame *dst, int dst_in_host, const AVFrame *src, int src_in_host);
+int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src);
 
 /**
  * 帧图缩放。
@@ -66,8 +79,8 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, int dst_in_host, const AVFrame *src
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi, int dst_in_host,
-                              const AVFrame *src, const NppiRect *src_roi, int src_in_host,
+int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi,
+                              const AVFrame *src, const NppiRect *src_roi,
                               int keep_aspect_ratio, NppiInterpolationMode inter_mode);
 
 /**
@@ -79,11 +92,21 @@ int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi, int dst_in_
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_avframe_warp_perspective(AVFrame *dst, const NppiRect *dst_roi, int dst_in_host,
-                                        const AVFrame *src, const NppiRect *src_roi, int src_in_host,
-                                        const NppiPoint quad[4], const NppiRect *quad_roi,
-                                        int back, NppiInterpolationMode inter_mode);
+int abcdk_cuda_avframe_warpperspective(AVFrame *dst, const NppiRect *dst_roi,
+                                       const AVFrame *src, const NppiRect *src_roi,
+                                       const NppiPoint quad[4], const NppiRect *quad_roi,
+                                       int back, NppiInterpolationMode inter_mode);
 
+/**
+ * 帧图重映射。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
+                             const AVFrame *src, const NppiRect *src_roi,
+                             const AVFrame *xmap, const AVFrame *ymap,
+                             NppiInterpolationMode inter_mode);
+                             
 __END_DECLS
 
 #endif // AVUTIL_AVUTIL_H

@@ -9,25 +9,17 @@
 
 #ifdef __cuda_cuda_h__
 
-static void _abcdk_cuda_avframe_resize_free_tmp(AVFrame *dst, const AVFrame *src, AVFrame *tmp_dst, AVFrame *tmp_src)
-{
-    if (tmp_dst != dst)
-        av_frame_free(&tmp_dst);
-
-    if (tmp_src != src)
-        av_frame_free(&tmp_src);
-}
-
-int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi, int dst_in_host,
-                              const AVFrame *src, const NppiRect *src_roi, int src_in_host,
+int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi,
+                              const AVFrame *src, const NppiRect *src_roi,
                               int keep_aspect_ratio, NppiInterpolationMode inter_mode)
 {
-
-    AVFrame *tmp_dst = NULL, *tmp_src = NULL;
     NppiSize tmp_src_size = {0};
     NppiRect tmp_dst_roi = {0}, tmp_src_roi = {0};
     abcdk_resize_t tmp_param = {0};
+    AVFrame *tmp_dst = NULL, *tmp_src = NULL;
+    int dst_in_host, src_in_host;
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
+    int chk;
 
     assert(dst != NULL && src != NULL);
     assert(dst->format ==  src->format);
@@ -35,54 +27,68 @@ int abcdk_cuda_avframe_resize(AVFrame *dst, const NppiRect *dst_roi, int dst_in_
            src->format == (int)AV_PIX_FMT_RGB24 || src->format == (int)AV_PIX_FMT_BGR24 ||
            src->format == (int)AV_PIX_FMT_RGB32 || src->format == (int)AV_PIX_FMT_BGR32);
 
-    tmp_dst = (dst_in_host ? abcdk_cuda_avframe_clone(0, dst, 1) : dst);
-    tmp_src = (src_in_host ? abcdk_cuda_avframe_clone(0, src, 1) : (AVFrame *)src);
+    dst_in_host = (abcdk_cuda_avframe_memory_type(dst) != CU_MEMORYTYPE_DEVICE);
+    src_in_host = (abcdk_cuda_avframe_memory_type(src) != CU_MEMORYTYPE_DEVICE);
 
-    if (!tmp_dst || !tmp_src)
+    if (src_in_host)
     {
-        _abcdk_cuda_avframe_resize_free_tmp(dst, src, tmp_dst, tmp_src);
-        return -1;
+        tmp_src = abcdk_cuda_avframe_clone(0, src);
+        if (!tmp_src)
+            return -1;
+
+        chk = abcdk_cuda_avframe_resize(dst, dst_roi, tmp_src, src_roi, keep_aspect_ratio, inter_mode);
+        av_frame_free(&tmp_src);
+
+        return chk;
+    }
+
+    if (dst_in_host)
+    {
+        tmp_dst = abcdk_cuda_avframe_clone(0, dst);
+        if (!tmp_dst)
+            return -1;
+
+        chk = abcdk_cuda_avframe_resize(tmp_dst, dst_roi, src, src_roi, keep_aspect_ratio, inter_mode);
+        if (chk == 0)
+            abcdk_cuda_avframe_copy(dst, tmp_dst);
+        av_frame_free(&tmp_dst);
+
+        return chk;
     }
 
     tmp_dst_roi.x = (dst_roi ? dst_roi->x : 0);
     tmp_dst_roi.y = (dst_roi ? dst_roi->y : 0);
-    tmp_dst_roi.width = (dst_roi ? dst_roi->width : tmp_dst->width);
-    tmp_dst_roi.height = (dst_roi ? dst_roi->height : tmp_dst->height);
+    tmp_dst_roi.width = (dst_roi ? dst_roi->width : dst->width);
+    tmp_dst_roi.height = (dst_roi ? dst_roi->height : dst->height);
 
-    tmp_src_size.width = tmp_src->width;
-    tmp_src_size.height = tmp_src->height;
+    tmp_src_size.width = src->width;
+    tmp_src_size.height = src->height;
 
     tmp_src_roi.x = (src_roi ? src_roi->x : 0);
     tmp_src_roi.y = (src_roi ? src_roi->y : 0);
-    tmp_src_roi.width = (src_roi ? src_roi->width : tmp_src->width);
-    tmp_src_roi.height = (src_roi ? src_roi->height : tmp_src->height);
+    tmp_src_roi.width = (src_roi ? src_roi->width : src->width);
+    tmp_src_roi.height = (src_roi ? src_roi->height : src->height);
 
     abcdk_resize_ratio_2d(&tmp_param,tmp_src_roi.width,tmp_src_roi.height,tmp_dst_roi.width,tmp_dst_roi.height,keep_aspect_ratio);
 
     if (src->format == (int)AV_PIX_FMT_GRAY8)
     {
-        npp_chk = nppiResizeSqrPixel_8u_C1R(tmp_src->data[0], tmp_src_size, tmp_src->linesize[0], tmp_src_roi,
-                                            tmp_dst->data[0], tmp_dst->linesize[0], tmp_dst_roi,
+        npp_chk = nppiResizeSqrPixel_8u_C1R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                                            dst->data[0], dst->linesize[0], tmp_dst_roi,
                                             tmp_param.x_factor, tmp_param.y_factor, tmp_param.x_shift, tmp_param.y_shift, (int)inter_mode);
     }
     else if (src->format == (int)AV_PIX_FMT_RGB24 || src->format == (int)AV_PIX_FMT_BGR24)
     {
-        npp_chk = nppiResizeSqrPixel_8u_C3R(tmp_src->data[0], tmp_src_size, tmp_src->linesize[0], tmp_src_roi,
-                                            tmp_dst->data[0], tmp_dst->linesize[0], tmp_dst_roi,
+        npp_chk = nppiResizeSqrPixel_8u_C3R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                                            dst->data[0], dst->linesize[0], tmp_dst_roi,
                                             tmp_param.x_factor, tmp_param.y_factor, tmp_param.x_shift, tmp_param.y_shift, (int)inter_mode);
     }
     else if (src->format == (int)AV_PIX_FMT_RGB32 || src->format == (int)AV_PIX_FMT_BGR32)
     {
-        npp_chk = nppiResizeSqrPixel_8u_C4R(tmp_src->data[0], tmp_src_size, tmp_src->linesize[0], tmp_src_roi,
-                                            tmp_dst->data[0], tmp_dst->linesize[0], tmp_dst_roi,
+        npp_chk = nppiResizeSqrPixel_8u_C4R(src->data[0], tmp_src_size, src->linesize[0], tmp_src_roi,
+                                            dst->data[0], dst->linesize[0], tmp_dst_roi,
                                             tmp_param.x_factor, tmp_param.y_factor, tmp_param.x_shift, tmp_param.y_shift, (int)inter_mode);
     }
-
-    /*按需复制。*/
-    if (npp_chk == NPP_SUCCESS && dst != tmp_dst)
-        abcdk_cuda_avframe_copy(dst, 1, tmp_dst, 0);
-
-    _abcdk_cuda_avframe_resize_free_tmp(dst, src, tmp_dst, tmp_src);
 
     if (npp_chk != NPP_SUCCESS)
         return -1;

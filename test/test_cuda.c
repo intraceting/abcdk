@@ -14,8 +14,7 @@
 // environ
 
 #ifdef HAVE_CUDA
-
-#ifdef AVUTIL_AVUTIL_H
+#ifdef HAVE_FFMPEG
 
 int abcdk_test_cuda(abcdk_option_t *args)
 {
@@ -48,27 +47,27 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     abcdk_cuda_imgproc_drawrect_8u_c3r(a->data[0],a->width,a->linesize[0],a->height,color,3,corner);
 
-    chk = abcdk_cuda_avframe_copy(b,1,a,0);
+    chk = abcdk_cuda_avframe_copy(b,a);
     assert(chk == 0);
 
    // abcdk_bmp_save_file("/tmp/test.cuda.a.bmp",a->data[0],a->linesize[0],a->width,a->height,24);
-    abcdk_bmp_save_file("/tmp/test.cuda.b.bmp",b->data[0],b->linesize[0],b->width,-b->height,24);
+    abcdk_cuda_avframe_save("/tmp/test.cuda.b.bmp",b);
 
     AVFrame *c = abcdk_cuda_avframe_alloc(200,200,AV_PIX_FMT_YUV420P,567);
 
-    abcdk_cuda_avframe_convert(c,0,a,0);
+    abcdk_cuda_avframe_convert(c,a);
 
-    AVFrame *d = abcdk_avframe_alloc(200,200,AV_PIX_FMT_RGB24,678);
+    AVFrame *d = abcdk_cuda_avframe_alloc(200,200,AV_PIX_FMT_RGB24,678);
 
-    abcdk_cuda_avframe_convert(d,1,c,0);
+    abcdk_cuda_avframe_convert(d,c);
 
-    AVFrame *e = abcdk_avframe_alloc(800,600,AV_PIX_FMT_RGB24,678);
+    AVFrame *e = abcdk_cuda_avframe_alloc(800,600,AV_PIX_FMT_RGB24,678);
 
-    abcdk_cuda_avframe_resize(e,NULL,1,d,NULL,1,1,NPPI_INTER_CUBIC);
+    abcdk_cuda_avframe_resize(e,NULL,d,NULL,1,NPPI_INTER_CUBIC);
 
-    abcdk_bmp_save_file("/tmp/test.cuda.e.bmp",e->data[0],e->linesize[0],e->width,-e->height,24);
+    abcdk_cuda_avframe_save("/tmp/test.cuda.e.bmp",e);
 
-    AVFrame *f = abcdk_avframe_alloc(800, 600, AV_PIX_FMT_RGB24, 678);
+    AVFrame *f = abcdk_cuda_avframe_alloc(800, 600, AV_PIX_FMT_RGB24, 678);
 
     NppiPoint quad[4] = {
         {30, 30},   // 变换后的左上角
@@ -81,9 +80,9 @@ int abcdk_test_cuda(abcdk_option_t *args)
     NppiRect quad_roi = {30, 30, 300, 300};
     //NppiRect quad_roi = {0,0,800,600};
 
-    abcdk_cuda_avframe_warp_perspective(f, NULL, 1, e, NULL , 1, quad, &quad_roi, 0 , NPPI_INTER_CUBIC);
+    abcdk_cuda_avframe_warpperspective(f, NULL, e, NULL , quad, &quad_roi, 0 , NPPI_INTER_CUBIC);
 
-    abcdk_bmp_save_file("/tmp/test.cuda.f.bmp", f->data[0], f->linesize[0], f->width, -f->height, 24);
+    abcdk_cuda_avframe_save("/tmp/test.cuda.f.bmp", f);
 
     av_frame_free(&a);
     av_frame_free(&b);
@@ -95,8 +94,7 @@ int abcdk_test_cuda(abcdk_option_t *args)
     return 0;
 }
 
-#endif //AVUTIL_AVUTIL_H
-
+#endif //HAVE_FFMPEG
 #else //HAVE_CUDA
 
 int abcdk_test_cuda(abcdk_option_t *args)
