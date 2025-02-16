@@ -76,6 +76,7 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
         return chk;
     }
 
+    /*最后检查这个参数，因为输出项需要复制。*/
     if (dst_in_host)
     {
         tmp_dst = abcdk_cuda_avframe_clone(0, dst);

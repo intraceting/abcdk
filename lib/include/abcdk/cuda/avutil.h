@@ -107,12 +107,6 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
                              const AVFrame *xmap, const AVFrame *ymap,
                              NppiInterpolationMode inter_mode);
 
-/**
- * 帧图图像融合(从左到右)。
- */
-int abcdk_cuda_avframe_compose(AVFrame *panorama, AVFrame *compose, uint8_t scalar[3],
-                               int overlap_x, int overlap_y, int overlap_w, int optimize_seam);
-
 __END_DECLS
 
 #endif // AVUTIL_AVUTIL_H

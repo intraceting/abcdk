@@ -141,9 +141,12 @@ LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/license/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
-#
+
+#CUDA是可选项，可能未启用。
+ifneq ($(strip $(NVCC)),)
 LIB_SRC_CU_FILES += $(wildcard lib/source/cuda/*.cu)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.o,${LIB_SRC_CU_FILES}))
+endif
 
 #
 TOOL_SRC_FILES = $(wildcard tool/*.c)

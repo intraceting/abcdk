@@ -161,5 +161,6 @@
 #include "abcdk/cuda/imgproc.h"
 #include "abcdk/cuda/avutil.h"
 #include "abcdk/cuda/tensor.h"
+#include "abcdk/cuda/jpeg.h"
 
 #endif //ABCDK_H

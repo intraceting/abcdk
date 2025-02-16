@@ -18,14 +18,19 @@ int abcdk_cuda_avframe_save(const char *dst, const AVFrame *src)
 
     assert(dst != NULL && src != NULL);
 
-    if (src->format != (int)AV_PIX_FMT_RGB32 && src->format != (int)AV_PIX_FMT_BGR32 &&
-        src->format != (int)AV_PIX_FMT_RGB24 && src->format != (int)AV_PIX_FMT_BGR24)
+    /*BMP格式使用BGR24或BGR32。*/
+    
+    if (src->format != (int)AV_PIX_FMT_BGR32 && src->format != (int)AV_PIX_FMT_BGR24)
     {
-        tmp_src = abcdk_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB24, 4); // BMP格式要求行以4字节对齐。
+        tmp_src = abcdk_avframe_alloc(src->width, src->height, AV_PIX_FMT_BGR24, 4); // BMP格式要求行以4字节对齐。
         if (!tmp_src)
             return -1;
 
-        chk = abcdk_cuda_avframe_save(dst, tmp_src);
+        chk = abcdk_cuda_avframe_convert(tmp_src,src);//转换格式。
+
+        if(chk == 0)
+            chk = abcdk_cuda_avframe_save(dst, tmp_src);
+
         av_frame_free(&tmp_src);
 
         return chk;
