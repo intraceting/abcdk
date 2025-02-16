@@ -16,13 +16,13 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
 {
     NppiSize tmp_dst_size = {0}, tmp_src_size = {0};
     NppiRect tmp_src_roi = {0};
-    AVFrame *tmp_dst = NULL, *tmp_src = NULL;
-    int dst_in_host, src_in_host;
+    AVFrame *tmp_dst = NULL, *tmp_src = NULL, *tmp_xmap = NULL, *tmp_ymap = NULL;
+    int dst_in_host, src_in_host, xmap_in_host, ymap_in_host;
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
     int chk;
 
     assert(dst != NULL && src != NULL && xmap != NULL && ymap != NULL);
-    
+
     assert(dst->format == src->format);
     assert(xmap->format == ymap->format);
 
@@ -32,33 +32,59 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
     assert(dst->format == (int)AV_PIX_FMT_GRAY8 ||
            dst->format == (int)AV_PIX_FMT_RGB24 || dst->format == (int)AV_PIX_FMT_BGR24 ||
            dst->format == (int)AV_PIX_FMT_RGB32 || dst->format == (int)AV_PIX_FMT_BGR32);
-           
+
     assert(xmap->format == (int)AV_PIX_FMT_GRAYF32 && ymap->format == (int)AV_PIX_FMT_GRAYF32);
 
     dst_in_host = (abcdk_cuda_avframe_memory_type(dst) != CU_MEMORYTYPE_DEVICE);
     src_in_host = (abcdk_cuda_avframe_memory_type(src) != CU_MEMORYTYPE_DEVICE);
+    xmap_in_host = (abcdk_cuda_avframe_memory_type(xmap) != CU_MEMORYTYPE_DEVICE);
+    ymap_in_host = (abcdk_cuda_avframe_memory_type(ymap) != CU_MEMORYTYPE_DEVICE);
 
-    if(src_in_host)
+    if (xmap_in_host)
     {
-        tmp_src = abcdk_cuda_avframe_clone(0, src);
-        if(!tmp_src)
+        tmp_xmap = abcdk_cuda_avframe_clone(0, xmap);
+        if (!tmp_xmap)
             return -1;
 
-        chk = abcdk_cuda_avframe_remap(dst,dst_roi,tmp_src,src_roi,xmap,ymap,inter_mode);
+        chk = abcdk_cuda_avframe_remap(dst, dst_roi, src, src_roi, tmp_xmap, ymap, inter_mode);
+        av_frame_free(&tmp_xmap);
+
+        return chk;
+    }
+
+    if (ymap_in_host)
+    {
+        tmp_ymap = abcdk_cuda_avframe_clone(0, ymap);
+        if (!tmp_ymap)
+            return -1;
+
+        chk = abcdk_cuda_avframe_remap(dst, dst_roi, src, src_roi, xmap, tmp_ymap, inter_mode);
+        av_frame_free(&tmp_ymap);
+
+        return chk;
+    }
+
+    if (src_in_host)
+    {
+        tmp_src = abcdk_cuda_avframe_clone(0, src);
+        if (!tmp_src)
+            return -1;
+
+        chk = abcdk_cuda_avframe_remap(dst, dst_roi, tmp_src, src_roi, xmap, ymap, inter_mode);
         av_frame_free(&tmp_src);
 
         return chk;
     }
 
-    if(dst_in_host)
+    if (dst_in_host)
     {
         tmp_dst = abcdk_cuda_avframe_clone(0, dst);
-        if(!tmp_dst)
+        if (!tmp_dst)
             return -1;
 
-        chk = abcdk_cuda_avframe_remap(tmp_dst,dst_roi,src,src_roi,xmap,ymap,inter_mode);
-        if(chk == 0)
-            abcdk_cuda_avframe_copy(dst,tmp_dst);
+        chk = abcdk_cuda_avframe_remap(tmp_dst, dst_roi, src, src_roi, xmap, ymap, inter_mode);
+        if (chk == 0)
+            abcdk_cuda_avframe_copy(dst, tmp_dst);
         av_frame_free(&tmp_dst);
 
         return chk;

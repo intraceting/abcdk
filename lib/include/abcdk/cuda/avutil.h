@@ -7,19 +7,20 @@
 #ifndef ABCDK_CUDA_AVUTIL_H
 #define ABCDK_CUDA_AVUTIL_H
 
-#include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/memory.h"
 #include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/ffmpeg/swscale.h"
 #include "abcdk/util/geometry.h"
 #include "abcdk/image/bmp.h"
+#include "abcdk/cuda/cuda.h"
+#include "abcdk/cuda/memory.h"
+#include "abcdk/cuda/imgproc.h"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
 
 __BEGIN_DECLS
 
-/** 获取帧图的内存类型。*/
+/**获取帧图的内存类型。*/
 CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src);
 
 /**创建帧图。 */
@@ -105,7 +106,13 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
                              const AVFrame *src, const NppiRect *src_roi,
                              const AVFrame *xmap, const AVFrame *ymap,
                              NppiInterpolationMode inter_mode);
-                             
+
+/**
+ * 帧图图像融合(从左到右)。
+ */
+int abcdk_cuda_avframe_compose(AVFrame *panorama, AVFrame *compose, uint8_t scalar[3],
+                               int overlap_x, int overlap_y, int overlap_w, int optimize_seam);
+
 __END_DECLS
 
 #endif // AVUTIL_AVUTIL_H
