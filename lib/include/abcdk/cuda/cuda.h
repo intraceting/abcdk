@@ -17,7 +17,6 @@
 #include <device_launch_parameters.h>
 #include <cublas_v2.h>
 #include <npp.h>
-#include <cudnn.h>
 
 #ifdef __x86_64__
 #include <nvjpeg.h>

@@ -122,8 +122,8 @@ namespace abcdk
 
                     if (cuda_major_ver == 11)
                     {
-                        if (cuda_minor_ver >= 0 && cuda_minor_ver <= 5)
-                            abcdk_trace_printf(LOG_WARNING, "CUDA11.0~CUDA11.5运行库中的nvJPEG解码器存在内存泄漏问题，谨慎使用。");
+                        if (cuda_minor_ver >= 0 && cuda_minor_ver <= 6)
+                            abcdk_trace_printf(LOG_WARNING, "CUDA11.0~CUDA11.6运行库中的nvJPEG解码器存在内存泄漏问题，谨慎使用。");
                     }
                 }
 

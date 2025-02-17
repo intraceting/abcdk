@@ -169,6 +169,9 @@ CUDA_FIND_ROOT="/usr/local/cuda/"
 CUDA_COMPILER_BIN=
 
 #
+CUDNN_FIND_ROOT="/usr/local/cudnn/"
+
+#
 TRNSORRT_FIND_ROOT="/usr/local/TensorRT/"
 
 #
@@ -232,7 +235,7 @@ VARIABLE:
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm,
      pam,curl,ncurses,fltk,x264,x265,ffnvcodec,
-     cuda,tensorrt,opencv
+     cuda,cudnn,tensorrt,opencv
 
      THIRDPARTY_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 
@@ -246,6 +249,10 @@ VARIABLE:
      CUDA_FIND_ROOT=${CUDA_FIND_ROOT}
 
      CUDA_FIND_ROOT(CUDA组件搜索根路径)用于查找依赖组件完整路径.
+
+     CUDNN_FIND_ROOT=${CUDNN_FIND_ROOT}
+
+     CUDNN_FIND_ROOT(CUDNN组件搜索根路径)用于查找依赖组件完整路径.
 
      TRNSORRT_FIND_ROOT=${TRNSORRT_FIND_ROOT}
 
@@ -455,6 +462,29 @@ export _3RDPARTY_PKG_MACHINE=
 export _3RDPARTY_PKG_WORDBIT=
 export _3RDPARTY_PKG_FIND_ROOT=
 export _3RDPARTY_PKG_FIND_MODE=
+
+
+#设置环境变量，用于搜索依赖包。
+export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_FIND_ROOT=${CUDNN_FIND_ROOT}
+export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
+
+DependPackageCheck cudnn HAVE_CUDNN
+
+#恢复默认。
+export _3RDPARTY_PKG_MACHINE=
+export _3RDPARTY_PKG_WORDBIT=
+export _3RDPARTY_PKG_FIND_ROOT=
+export _3RDPARTY_PKG_FIND_MODE=
+
+#
+if [ "${THIRDPARTY_NOFOUND}" != "" ];then
+{
+    echo -e "\x1b[33m${THIRDPARTY_NOFOUND}\x1b[31m not found. \x1b[0m"
+    exit 22
+}
+fi
 
 
 #设置环境变量，用于搜索依赖包。
