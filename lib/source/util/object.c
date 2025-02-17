@@ -258,3 +258,33 @@ abcdk_object_t *abcdk_object_copypair(const void *key, size_t ksize, const void 
 
     return obj;
 }
+
+abcdk_object_t *abcdk_object_copyfrom_file(const void *file)
+{
+    int fd = -1;
+    struct stat attr = {0};
+    abcdk_object_t *obj = NULL;
+    ssize_t rlen;
+
+    assert(file != NULL);
+
+    fd = abcdk_open(file,0,0,0);
+    if(fd < 0)
+        return NULL;
+
+    fstat(fd,&attr);
+
+    if(attr.st_size > 0)
+    {
+        obj = abcdk_object_alloc2(attr.st_size);
+        if(obj)
+        {
+            rlen = abcdk_read(fd,obj->pptrs[0],obj->sizes[0]);
+            if(rlen != obj->sizes[0])
+                abcdk_object_unref(&obj);
+        }
+    }
+
+    abcdk_closep(&fd);
+    return obj;
+}

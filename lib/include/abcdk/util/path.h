@@ -51,13 +51,7 @@ char *abcdk_basename(char *dst, const char *src);
  */
 char *abcdk_abspath(char *buf, size_t decrease);
 
-/**
- * 修理路径。
- * 
- * @param [in] target 目标路径。
- * @param [in] opaque 环境路径。
-*/
-abcdk_object_t *abcdk_fixpath(const char *target,const char *opaque);
+
 
 __END_DECLS
 

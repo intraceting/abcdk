@@ -5,9 +5,10 @@
  *
  */
 #include "abcdk/cuda/jpeg.h"
-#include "jpeg_decode.cu.hxx"
-#include "jpeg_encode_x86_64.cu.hxx"
-#include "jpeg_encode_aarch64.cu.hxx"
+#include "jpeg_decoder_x86_64.cu.hxx"
+#include "jpeg_decoder_aarch64.cu.hxx"
+#include "jpeg_encoder_x86_64.cu.hxx"
+#include "jpeg_encoder_aarch64.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
@@ -19,7 +20,10 @@ typedef struct _abcdk_cuda_jpeg
     int encode;
 
     /**编码器。*/
-    abcdk::cuda::jpeg::encoder *encodec_ctx;
+    abcdk::cuda::jpeg::encoder *encoder_ctx;
+
+    /**解码器。*/
+    abcdk::cuda::jpeg::decoder *decoder_ctx;
 
 } abcdk_cuda_jpeg_t;
 
@@ -36,13 +40,18 @@ void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx)
     if (ctx_p->encode)
     {
 #ifdef __x86_64__
-        abcdk::cuda::jpeg::encoder_x86_64::destory(&ctx_p->encodec_ctx);
+        abcdk::cuda::jpeg::encoder_x86_64::destory(&ctx_p->encoder_ctx);
 #elif defined(__aarch64__)
-        abcdk::cuda::jpeg::encoder_aarch64::destory(&ctx_p->encodec_ctx);
+        abcdk::cuda::jpeg::encoder_aarch64::destory(&ctx_p->encoder_ctx);
 #endif //__x86_64__ || __aarch64__
     }
     else
     {
+#ifdef __x86_64__
+        abcdk::cuda::jpeg::decoder_x86_64::destory(&ctx_p->decoder_ctx);
+#elif defined(__aarch64__)
+        abcdk::cuda::jpeg::decoder_aarch64::destory(&ctx_p->decoder_ctx);
+#endif //__x86_64__ || __aarch64__
     }
 
     abcdk_heap_free(ctx_p);
@@ -60,20 +69,32 @@ abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
     if (ctx->encode = encode)
     {
 #ifdef __x86_64__
-        ctx->encodec_ctx = abcdk::cuda::jpeg::encoder_x86_64::create();
+        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_x86_64::create();
 #elif defined(__aarch64__)
-        ctx->encodec_ctx = abcdk::cuda::jpeg::encoder_aarch64::create();
+        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_aarch64::create();
 #endif //__x86_64__ || __aarch64__
 
-        if (!ctx->encodec_ctx)
+        if (!ctx->encoder_ctx)
             goto ERR;
 
-        chk = ctx->encodec_ctx->open(cfg);
+        chk = ctx->encoder_ctx->open(cfg);
         if (chk != 0)
             goto ERR;
     }
     else
     {
+#ifdef __x86_64__
+        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_x86_64::create();
+#elif defined(__aarch64__)
+        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_aarch64::create();
+#endif //__x86_64__ || __aarch64__
+
+        if (!ctx->decoder_ctx)
+            goto ERR;
+
+        chk = ctx->decoder_ctx->open(cfg);
+        if (chk != 0)
+            goto ERR;
     }
 
     return ctx;
@@ -108,7 +129,22 @@ abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const AVFrame *sr
         return dst;
     }
 
-    return ctx->encodec_ctx->update(src);
+    return ctx->encoder_ctx->update(src);
+}
+
+int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const AVFrame *src)
+{
+    int chk;
+
+    assert(ctx != NULL && dst != NULL && src != NULL);
+
+    ABCDK_ASSERT(ctx->encode, "解码器不能用于编码。");
+
+    chk = ctx->encoder_ctx->update(dst,src);
+    if(chk != 0)
+        return -1;
+
+    return 0;
 }
 
 AVFrame *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size)
@@ -117,8 +153,18 @@ AVFrame *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src
 
     ABCDK_ASSERT(!ctx->encode, "编码器不能用于解码。");
 
-    return NULL;
+    return ctx->decoder_ctx->update(src,src_size);
 }
+
+AVFrame *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx,const void *src)
+{
+    assert(ctx != NULL && src != NULL);
+
+    ABCDK_ASSERT(!ctx->encode, "编码器不能用于解码。");
+
+    return ctx->decoder_ctx->update(src);
+}
+
 
 #endif // AVUTIL_AVUTIL_H
 #endif //__cuda_cuda_h__

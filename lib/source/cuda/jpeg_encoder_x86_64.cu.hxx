@@ -4,17 +4,18 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_JPEG_ENCODE_X86_64_HXX
-#define ABCDK_CUDA_JPEG_ENCODE_X86_64_HXX
+#ifndef ABCDK_CUDA_JPEG_ENCODER_X86_64_HXX
+#define ABCDK_CUDA_JPEG_ENCODER_X86_64_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
 #include "util.cu.hxx"
-#include "jpeg_encode.cu.hxx"
+#include "jpeg_encoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
+#ifdef __x86_64__
 
 namespace abcdk
 {
@@ -183,12 +184,37 @@ namespace abcdk
 
                     return NULL;
                 }
+
+                virtual int update(const char *dst, const AVFrame *src)
+                {
+                    abcdk_object_t *dst_data;
+                    ssize_t save_chk;
+
+                    assert(dst != NULL && src != NULL);
+
+                    dst_data = update(src);
+                    if (!dst_data)
+                        return -1;
+
+                    truncate(dst, 0);
+
+                    save_chk = abcdk_save(dst, dst_data->pptrs[0], dst_data->sizes[0], 0);
+                    if (save_chk != dst_data->sizes[0])
+                    {
+                        abcdk_object_unref(&dst_data);
+                        return -1;
+                    }
+
+                    abcdk_object_unref(&dst_data);
+                    return 0;
+                }
             };
         } // namespace jpeg
     } // namespace cuda
 } // namespace abcdk
 
+#endif //__x86_64__
 #endif //AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_JPEG_ENCODE_X86_64_HXX
+#endif // ABCDK_CUDA_JPEG_ENCODER_X86_64_HXX

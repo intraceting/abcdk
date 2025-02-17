@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/heap.h"
+#include "abcdk/util/io.h"
 
 __BEGIN_DECLS
 
@@ -107,6 +108,9 @@ abcdk_object_t *abcdk_object_printf(int max, const char *fmt, ...);
 
 /** 申请一个内存块，并复制数据。*/
 abcdk_object_t *abcdk_object_copypair(const void *key, size_t ksize,const void *val, size_t vsize);
+
+/** 申请一个内存块，并复制文件数据。*/
+abcdk_object_t *abcdk_object_copyfrom_file(const void *file);
 
 __END_DECLS
 
