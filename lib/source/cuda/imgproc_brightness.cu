@@ -5,8 +5,8 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "grid.cu.hxx"
-#include "util.cu.hxx"
+#include "kernel_1.cu.hxx"
+#include "kernel_2.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -16,7 +16,7 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_brightness_2d2d(int channels, bool pa
                                                            size_t w, size_t h, float *alpha, float *bate)
 {
 
-    size_t tid = abcdk::cuda::grid_get_tid(2, 2);
+    size_t tid = abcdk::cuda::kernel::grid_get_tid(2, 2);
 
     size_t y = tid / w;
     size_t x = tid % w;
@@ -26,10 +26,10 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_brightness_2d2d(int channels, bool pa
 
     for (size_t z = 0; z < channels; z++)
     {
-        size_t src_offset = abcdk::cuda::off<T>(packed, w, src_ws, h, channels, 0, x, y, z);
-        size_t dst_offset = abcdk::cuda::off<T>(packed, w, dst_ws, h, channels, 0, x, y, z);
+        size_t src_offset = abcdk::cuda::kernel::off<T>(packed, w, src_ws, h, channels, 0, x, y, z);
+        size_t dst_offset = abcdk::cuda::kernel::off<T>(packed, w, dst_ws, h, channels, 0, x, y, z);
 
-        dst[dst_offset] = (T)abcdk::cuda::pixel_clamp<float>(src[src_offset] * alpha[z] + bate[z]);
+        dst[dst_offset] = (T)abcdk::cuda::kernel::pixel_clamp<float>(src[src_offset] * alpha[z] + bate[z]);
     }
 }
 
@@ -52,7 +52,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid_make_2d2d(dim, w * h, 64);
+    abcdk::cuda::kernel::grid_make_2d2d(dim, w * h, 64);
 
     _abcdk_cuda_imgproc_brightness_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_ws, src, src_ws, w, h, (float *)gpu_alpha, (float *)gpu_bate);
 

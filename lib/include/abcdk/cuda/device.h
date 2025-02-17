@@ -45,6 +45,12 @@ int abcdk_cuda_get_device_name(char name[256], int device);
 */
 int abcdk_cuda_get_runtime_version(int *minor);
 
+/**销毁。 */
+void abcdk_cuda_destroy_ctx(CUcontext *ctx);
+
+/**创建。*/
+CUcontext abcdk_cuda_create_ctx(int device, int flag);
+
 __END_DECLS
 
 #endif //__cuda_cuda_h__

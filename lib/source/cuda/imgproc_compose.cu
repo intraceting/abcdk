@@ -5,8 +5,8 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "grid.cu.hxx"
-#include "util.cu.hxx"
+#include "kernel_1.cu.hxx"
+#include "kernel_2.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -16,7 +16,7 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool packe
                                                         T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                                         T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam)
 {
-    size_t tid = abcdk::cuda::grid_get_tid(2, 2);
+    size_t tid = abcdk::cuda::kernel::grid_get_tid(2, 2);
 
     size_t y = tid / compose_w;
     size_t x = tid % compose_w;
@@ -34,8 +34,8 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool packe
 
     for (size_t i = 0; i < channels; i++)
     {
-        panorama_offset[i] = abcdk::cuda::off<T>(packed, panorama_w, panorama_ws, panorama_h, channels, 0, x + overlap_x, y + overlap_y, i);
-        compose_offset[i] = abcdk::cuda::off<T>(packed, compose_w, compose_ws, compose_h, channels, 0, x, y, i);
+        panorama_offset[i] = abcdk::cuda::kernel::off<T>(packed, panorama_w, panorama_ws, panorama_h, channels, 0, x + overlap_x, y + overlap_y, i);
+        compose_offset[i] = abcdk::cuda::kernel::off<T>(packed, compose_w, compose_ws, compose_h, channels, 0, x, y, i);
 
         /*计算融合图象素是否为填充色。*/
         panorama_scalars += (panorama[panorama_offset[i]] == scalar[i] ? 1 : 0);
@@ -72,7 +72,7 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool packe
 
     for (size_t i = 0; i < channels; i++)
     {
-        panorama[panorama_offset[i]] = abcdk::cuda::blend<T>(panorama[panorama_offset[i]], compose[compose_offset[i]], scale);
+        panorama[panorama_offset[i]] = abcdk::cuda::kernel::blend<T>(panorama[panorama_offset[i]], compose[compose_offset[i]], scale);
     }
 }
 
@@ -90,7 +90,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
         return -1;
 
     /*2D-2D*/
-    abcdk::cuda::grid_make_2d2d(dim, compose_w * compose_h, 64);
+    abcdk::cuda::kernel::grid_make_2d2d(dim, compose_w * compose_h, 64);
 
     _abcdk_cuda_imgproc_compose_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
                                                             compose, compose_w, compose_ws, compose_h,

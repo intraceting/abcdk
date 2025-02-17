@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/avutil.h"
-#include "grid.cu.hxx"
+
 
 #ifdef __cuda_cuda_h__
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)

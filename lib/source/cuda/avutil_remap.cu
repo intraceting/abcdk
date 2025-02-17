@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/avutil.h"
-#include "grid.cu.hxx"
+
 
 #ifdef __cuda_cuda_h__
 

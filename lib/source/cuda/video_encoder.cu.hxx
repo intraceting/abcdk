@@ -4,9 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_JPEG_DECODER_HXX
-#define ABCDK_CUDA_JPEG_DECODER_HXX
-
+#ifndef ABCDK_CUDA_VIDEO_ENCODER_HXX
+#define ABCDK_CUDA_VIDEO_ENCODER_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
@@ -14,22 +13,23 @@
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
+#ifdef AVCODEC_AVCODEC_H
+#ifdef FFNV_CUDA_DYNLINK_LOADER_H
 
 namespace abcdk
 {
     namespace cuda
     {
-        namespace jpeg
+        namespace video
         {
-            class decoder
+            class encoder
             {
             protected:
-                decoder()
+                encoder()
                 {
-
                 }
 
-                virtual ~decoder()
+                virtual ~encoder()
                 {
                     close();
                 }
@@ -37,20 +37,21 @@ namespace abcdk
             public:
                 virtual void close()
                 {
-                    
                 }
 
-                virtual int open(abcdk_option_t *cfg) = 0;
+                virtual int open(enum AVCodecID codecid, void *ext_data, int ext_size) = 0;
 
-                virtual AVFrame * update(const void *src, int src_size) = 0;
+                virtual int send(AVFrame *src) = 0;
 
-                virtual AVFrame * update(const void *src) = 0;
+                virtual AVPacket *recv() = 0;
             };
-        } // namespace jpeg
+        } // namespace video
     } // namespace cuda
 } // namespace abcdk
 
-#endif //AVUTIL_AVUTIL_H
+#endif // FFNV_CUDA_DYNLINK_LOADER_H
+#endif // AVCODEC_AVCODEC_H
+#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_JPEG_DECODER_HXX
+#endif // ABCDK_CUDA_VIDEO_ENCODER_HXX

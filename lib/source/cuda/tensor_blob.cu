@@ -5,8 +5,8 @@
  *
  */
 #include "abcdk/cuda/tensor.h"
-#include "grid.cu.hxx"
-#include "util.cu.hxx"
+#include "kernel_1.cu.hxx"
+#include "kernel_2.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -16,7 +16,7 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_tensor_blob_2d2d(int channels, bool revert,
                                                     bool src_packed, ST *src, size_t src_ws,
                                                     size_t w, size_t h, float *scale, float *mean, float *std)
 {
-    size_t tid = abcdk::cuda::grid_get_tid(2, 2);
+    size_t tid = abcdk::cuda::kernel::grid_get_tid(2, 2);
 
     size_t y = tid / w;
     size_t x = tid % w;
@@ -26,11 +26,11 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_tensor_blob_2d2d(int channels, bool revert,
 
     for (size_t z = 0; z < channels; z++)
     {
-        size_t src_of = abcdk::cuda::off<ST>(src_packed, w, src_ws, h, channels, 0, x, y, z);
-        size_t dst_of = abcdk::cuda::off<DT>(dst_packed, w, dst_ws, h, channels, 0, x, y, z);
+        size_t src_of = abcdk::cuda::kernel::off<ST>(src_packed, w, src_ws, h, channels, 0, x, y, z);
+        size_t dst_of = abcdk::cuda::kernel::off<DT>(dst_packed, w, dst_ws, h, channels, 0, x, y, z);
 
-        ST *src_p = abcdk::cuda::ptr<ST>(src, src_of);
-        DT *dst_p = abcdk::cuda::ptr<DT>(dst, dst_of);
+        ST *src_p = abcdk::cuda::kernel::ptr<ST>(src, src_of);
+        DT *dst_p = abcdk::cuda::kernel::ptr<DT>(dst, dst_of);
 
         if (revert)
             *dst_p = (((DT)*src_p * std[z]) + mean[z]) * scale[z];
@@ -61,7 +61,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_tensor_blob(int channels, bool revert,
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid_make_2d2d(dim, w * h, 64);
+    abcdk::cuda::kernel::grid_make_2d2d(dim, w * h, 64);
 
     _abcdk_cuda_tensor_blob_2d2d<ST, DT><<<dim[0], dim[1]>>>(channels, revert,
                                                              dst_packed, dst, dst_ws,

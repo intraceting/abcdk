@@ -84,7 +84,7 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f);
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 1000; i++)
     {
         AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
 

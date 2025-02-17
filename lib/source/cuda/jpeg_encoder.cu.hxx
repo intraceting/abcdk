@@ -9,6 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
+#include "abcdk/cuda/avutil.h"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H

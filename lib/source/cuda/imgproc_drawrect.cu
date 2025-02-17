@@ -5,8 +5,8 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "grid.cu.hxx"
-#include "util.cu.hxx"
+#include "kernel_1.cu.hxx"
+#include "kernel_2.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -15,7 +15,7 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_drawrect_2d2d(int channels, bool pack
                                                          T *dst, size_t w, size_t ws, size_t h,
                                                          T *color, int weight, int *corner)
 {
-    size_t tid = abcdk::cuda::grid_get_tid(2, 2);
+    size_t tid = abcdk::cuda::kernel::grid_get_tid(2, 2);
 
     size_t y = tid / w;
     size_t x = tid % w;
@@ -53,7 +53,7 @@ ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_drawrect_2d2d(int channels, bool pack
     /*填充颜色。*/
     for (size_t z = 0; z < channels; z++)
     {
-        size_t off = abcdk::cuda::off<T>(packed, w, ws, h, channels, 0, x, y, z);
+        size_t off = abcdk::cuda::kernel::off<T>(packed, w, ws, h, channels, 0, x, y, z);
         dst[off] = color[z];
     }
 }
@@ -77,7 +77,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_drawrect(int channels, bool packed,
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid_make_2d2d(dim, w * h, 64);
+    abcdk::cuda::kernel::grid_make_2d2d(dim, w * h, 64);
 
     _abcdk_cuda_imgproc_drawrect_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, w, ws, h, (T *)gpu_color, weight, (int *)gpu_conrer);
 

@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/device.h"
-#include "grid.cu.hxx"
+
 
 #ifdef __cuda_cuda_h__
 
@@ -66,6 +66,36 @@ int abcdk_cuda_get_runtime_version(int *minor)
         *minor = (num_ver % 1000) / 10;
 
     return major;
+}
+
+void abcdk_cuda_destroy_ctx(CUcontext *ctx)
+{
+    CUcontext ctx_p;
+
+    if(!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    cuCtxDestroy(ctx_p);
+}
+
+CUcontext abcdk_cuda_create_ctx(int device, int flag)
+{
+    CUcontext ctx;
+    CUdevice cuda_dev;
+    CUresult chk;
+
+    chk = cuDeviceGet(&cuda_dev, device);
+    if (chk != CUDA_SUCCESS)
+        return NULL;
+
+    chk = cuCtxCreate(&ctx, flag, cuda_dev);
+    if (chk != CUDA_SUCCESS)
+        return NULL;
+
+    return ctx;
 }
 
 #endif //__cuda_cuda_h__

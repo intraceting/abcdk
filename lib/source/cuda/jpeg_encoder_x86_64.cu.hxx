@@ -10,7 +10,6 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
-#include "util.cu.hxx"
 #include "jpeg_encoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
