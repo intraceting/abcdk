@@ -120,7 +120,6 @@ namespace abcdk
                     nvjpegEncoderParamsCreate(m_ctx, &m_params, m_stream);
                     nvjpegEncoderParamsSetQuality(m_params, quality, m_stream);
                     nvjpegEncoderParamsSetSamplingFactors(m_params, NVJPEG_CSS_420, m_stream);
-                    cudaStreamSynchronize(m_stream);
 
                     return 0;
                 }
@@ -165,8 +164,7 @@ namespace abcdk
                     if(jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         return NULL;
 
-                    cudaStreamSynchronize(m_stream);
-            
+           
                     dst = abcdk_object_alloc2(dst_size);
                     if(!dst)
                         return NULL;
@@ -174,8 +172,6 @@ namespace abcdk
                     jpeg_chk = nvjpegEncodeRetrieveBitstream(m_ctx, m_state,dst->pptrs[0], &dst_size, m_stream);
                     if(jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         goto ERR;
-
-                    cudaStreamSynchronize(m_stream);
 
                     return dst;
 

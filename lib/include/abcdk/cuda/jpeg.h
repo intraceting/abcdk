@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/util/object.h"
 #include "abcdk/cuda/cuda.h"
+#include "abcdk/cuda/device.h"
 #include "abcdk/cuda/avutil.h"
 
 #ifdef __cuda_cuda_h__
@@ -23,7 +24,11 @@ typedef struct _abcdk_cuda_jpeg abcdk_cuda_jpeg_t;
 /**释放。*/
 void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx);
 
-/**创建。*/
+/**
+ * 创建。
+ * 
+ * @warning CUDA解码器内有内存泄漏情况，谨慎选择已明确修复的版本，否则会有隐患。
+*/
 abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg);
 
 /**编码。 */

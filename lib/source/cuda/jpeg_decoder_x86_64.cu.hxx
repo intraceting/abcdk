@@ -48,6 +48,50 @@ namespace abcdk
                     delete (decoder_x86_64 *)ctx_p;
                 }
 
+                static int dev_malloc(void **pptr, size_t size)
+                {
+                    cudaError_t cuda_chk;
+
+                    cuda_chk = cudaMalloc(pptr, size);
+                    if (cuda_chk != cudaSuccess)
+                        return -1;
+
+                    return 0;
+                }
+
+                static int dev_free(void *ptr)
+                {
+                    cudaError_t cuda_chk;
+
+                    cuda_chk = cudaFree(ptr);
+                    if (cuda_chk != cudaSuccess)
+                        return -1;
+
+                    return 0;
+                }
+
+                static int pinned_malloc(void **pptr, size_t size, unsigned int flags)
+                {
+                    cudaError_t cuda_chk;
+
+                    cuda_chk = cudaHostAlloc(pptr, size, flags);
+                    if (cuda_chk != cudaSuccess)
+                        return -1;
+
+                    return 0;
+                }
+
+                static int pinned_free(void *ptr)
+                {
+                    cudaError_t cuda_chk;
+
+                    cuda_chk = cudaFreeHost(ptr);
+                    if (cuda_chk != cudaSuccess)
+                        return -1;
+
+                    return 0;
+                }
+
             private:
                 abcdk_option_t *m_cfg;
 
@@ -69,25 +113,47 @@ namespace abcdk
                     close();
                 }
 
+            private:
+                void check_memory_leak_version()
+                {
+                    int cuda_major_ver = -1, cuda_minor_ver = -1;
+
+                    cuda_major_ver = abcdk_cuda_get_runtime_version(&cuda_minor_ver);
+
+                    if (cuda_major_ver == 11)
+                    {
+                        if (cuda_minor_ver >= 0 && cuda_minor_ver <= 5)
+                            abcdk_trace_printf(LOG_WARNING, "CUDA11.0~CUDA11.5运行库中的nvJPEG解码器存在内存泄漏问题，谨慎使用。");
+                    }
+                }
+
             public:
                 virtual void close()
                 {
-                    if (m_state)
-                        nvjpegJpegStateDestroy(m_state);
-                    m_state = NULL;
-                    if (m_ctx)
-                        nvjpegDestroy(m_ctx);
-                    m_ctx = NULL;
-                    //  if(m_stream)
-                    //      cudaStreamDestroy(m_stream);
-                    //  m_stream = NULL;
+                   if (m_state)
+                       nvjpegJpegStateDestroy(m_state);
+                   m_state = NULL;
+                   if (m_ctx)
+                       nvjpegDestroy(m_ctx);
+                   m_ctx = NULL;
+                    if(m_stream)
+                        cudaStreamDestroy(m_stream);
+                    m_stream = NULL;
+
+                    abcdk_option_free(&m_cfg);
                 }
+
 
                 virtual int open(abcdk_option_t *cfg)
                 {
+                    cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
-
+                    nvjpegDevAllocator_t dev_allocator = {0};
+                    nvjpegPinnedAllocator_t pinned_allocator = {0};
+                    
                     assert(m_cfg == NULL);
+                    
+                    check_memory_leak_version();
 
                     m_cfg = abcdk_option_alloc("--");
                     if (!m_cfg)
@@ -95,8 +161,17 @@ namespace abcdk
 
                     if (cfg)
                         abcdk_option_merge(m_cfg, cfg);
+                    
+                    cuda_chk = cudaStreamCreateWithFlags(&m_stream, cudaStreamDefault);
+                    if (cuda_chk != cudaSuccess)
+                        return -1;
 
-                    jpeg_chk = nvjpegCreateEx(NVJPEG_BACKEND_DEFAULT, NULL, NULL, NVJPEG_FLAGS_DEFAULT, &m_ctx);
+                    dev_allocator.dev_malloc = dev_malloc;
+                    dev_allocator.dev_free = dev_free;
+                    pinned_allocator.pinned_malloc = pinned_malloc;
+                    pinned_allocator.pinned_free = pinned_free;
+
+                    jpeg_chk = nvjpegCreateEx(NVJPEG_BACKEND_HYBRID, &dev_allocator, &pinned_allocator, NVJPEG_FLAGS_DEFAULT, &m_ctx);
                     if (jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         return -1;
 
@@ -121,26 +196,25 @@ namespace abcdk
                     jpeg_chk = nvjpegGetImageInfo(m_ctx, (uint8_t *)src, src_size, &components, &subsampling, width, height);
                     if (jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         return NULL;
-
-                    /*只用第一层的宽和高。*/
-                    if (width[0] <= 0 || height[0] <= 0)
-                        return NULL;
                     
                     /*全部转成RGB和GRAY。*/
                     if (components == 3)
-                        dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_RGB24, 4);
+                        dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_RGB24, 4);//只使用第一层的宽和高。
                     else if (components == 1)
                         dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_GRAY8, 1);
                     else
                         return NULL;
 
-                    dst_data.channel[0] = dst->data[0];
-                    dst_data.pitch[0] = dst->linesize[0];
+                    for (int i = 0; i < 4; i++)
+                    {
+                        dst_data.channel[i] = dst->data[i];
+                        dst_data.pitch[i] = dst->linesize[i];
+                    }
 
                     if (components == 3)
-                        jpeg_chk = nvjpegDecode(m_ctx, m_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_RGBI, &dst_data, NULL);
+                        jpeg_chk = nvjpegDecode(m_ctx, m_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_RGBI, &dst_data, m_stream);
                     else if (components == 1)
-                        jpeg_chk = nvjpegDecode(m_ctx, m_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_Y, &dst_data, NULL);
+                        jpeg_chk = nvjpegDecode(m_ctx, m_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_Y, &dst_data, m_stream);
                     else
                         goto ERR;
 

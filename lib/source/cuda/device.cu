@@ -50,4 +50,22 @@ int abcdk_cuda_get_device_name(char name[256], int device)
     return 0;
 }
 
+int abcdk_cuda_get_runtime_version(int *minor)
+{
+    int num_ver = 0;
+    int major = -1;
+    cudaError_t chk;
+
+    chk = cudaRuntimeGetVersion(&num_ver);
+    if (chk != cudaSuccess)
+        return -1;
+    
+    major = num_ver / 1000;
+
+    if (minor)
+        *minor = (num_ver % 1000) / 10;
+
+    return major;
+}
+
 #endif //__cuda_cuda_h__

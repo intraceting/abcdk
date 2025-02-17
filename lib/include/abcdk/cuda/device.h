@@ -36,6 +36,15 @@ int abcdk_cuda_set_device(int device);
 */
 int abcdk_cuda_get_device_name(char name[256], int device);
 
+/**
+ * 获取运行时库的版本号。
+ * 
+ * @param [out] minor 次版本。NULL(0) 忽略。
+ * 
+ * @return >=0 主版本，< 0  失败。
+*/
+int abcdk_cuda_get_runtime_version(int *minor);
+
 __END_DECLS
 
 #endif //__cuda_cuda_h__

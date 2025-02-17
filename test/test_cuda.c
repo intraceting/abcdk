@@ -84,9 +84,14 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f);
 
-    AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
+    for (int i = 0; i < 100; i++)
+    {
+        AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
 
-    abcdk_cuda_jpeg_save("/tmp/test.cuda.g.jpg", g);
+        abcdk_cuda_jpeg_save("/tmp/test.cuda.g.jpg", g);
+
+        av_frame_free(&g);
+    }
 
     av_frame_free(&a);
     av_frame_free(&b);
@@ -94,7 +99,7 @@ int abcdk_test_cuda(abcdk_option_t *args)
     av_frame_free(&d);
     av_frame_free(&e);
     av_frame_free(&f);
-    av_frame_free(&g);
+    
 
     return 0;
 }
