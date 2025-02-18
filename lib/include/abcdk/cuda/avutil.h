@@ -21,12 +21,6 @@
 
 __BEGIN_DECLS
 
-/**获取帧图的内存类型。*/
-CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src);
-
-/**创建帧图。 */
-AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
-
 /**
  * 图像复制。
  *
@@ -35,6 +29,13 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
 int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_in_host,
                             const uint8_t *src_datas[4], const int src_strides[4], int src_in_host,
                             int width, int height, enum AVPixelFormat pixfmt);
+
+/**获取帧图的内存类型。*/
+CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src);
+
+/**创建帧图。 */
+AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
+
 
 /**
  * 帧图复制。

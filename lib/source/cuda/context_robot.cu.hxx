@@ -18,6 +18,7 @@ namespace abcdk
     {
         namespace context
         {
+            /*环境机器人，自动执行入栈和出栈。*/
             class robot
             {
             private:

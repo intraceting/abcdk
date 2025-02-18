@@ -74,6 +74,16 @@ namespace abcdk
 #endif //__aarch64__
                 return -1;
             }
+
+            static bool operator==(const GUID &guid1, const GUID &guid2)
+            {
+                return !memcmp(&guid1, &guid2, sizeof(GUID));
+            }
+
+            static bool operator!=(const GUID &guid1, const GUID &guid2)
+            {
+                return !(guid1 == guid2);
+            }
         } // namespace video
     } // namespace cuda
 } // namespace abcdk

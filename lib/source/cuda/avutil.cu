@@ -10,6 +10,37 @@
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
 
+int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_in_host,
+                            const uint8_t *src_datas[4], const int src_strides[4], int src_in_host,
+                            int width, int height, enum AVPixelFormat pixfmt)
+{
+    int real_stride[4] = {0};
+    int real_height[4] = {0};
+    int chk;
+
+    assert(dst_datas != NULL && dst_strides != NULL);
+    assert(src_datas != NULL && src_strides != NULL);
+    assert(width > 0 && height > 0);
+    assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
+
+    abcdk_avimage_fill_strides(real_stride, width, height, pixfmt, 1);
+    abcdk_avimage_fill_heights(real_height, height, pixfmt);
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (!src_datas[i])
+            break;
+
+        chk = abcdk_cuda_memcpy_2d(dst_datas[i], dst_strides[i], 0, 0, dst_in_host,
+                                   src_datas[i], src_strides[i], 0, 0, src_in_host,
+                                   real_stride[i], real_height[i]);
+        if (chk != 0)
+            return -1;
+    }
+
+    return 0;
+}
+
 CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src)
 {
     assert(src != NULL);
@@ -88,36 +119,6 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
     return av_frame;
 }
 
-int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_in_host,
-                            const uint8_t *src_datas[4], const int src_strides[4], int src_in_host,
-                            int width, int height, enum AVPixelFormat pixfmt)
-{
-    int real_stride[4] = {0};
-    int real_height[4] = {0};
-    int chk;
-
-    assert(dst_datas != NULL && dst_strides != NULL);
-    assert(src_datas != NULL && src_strides != NULL);
-    assert(width > 0 && height > 0);
-    assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
-
-    abcdk_avimage_fill_strides(real_stride, width, height, pixfmt, 1);
-    abcdk_avimage_fill_heights(real_height, height, pixfmt);
-
-    for (int i = 0; i < 4; i++)
-    {
-        if (!src_datas[i])
-            break;
-
-        chk = abcdk_cuda_memcpy_2d(dst_datas[i], dst_strides[i], 0, 0, dst_in_host,
-                                   src_datas[i], src_strides[i], 0, 0, src_in_host,
-                                   real_stride[i], real_height[i]);
-        if (chk != 0)
-            return -1;
-    }
-
-    return 0;
-}
 
 int abcdk_cuda_avframe_copy(AVFrame *dst, const AVFrame *src)
 {
