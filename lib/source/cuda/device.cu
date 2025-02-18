@@ -68,7 +68,7 @@ int abcdk_cuda_get_runtime_version(int *minor)
     return major;
 }
 
-void abcdk_cuda_destroy_ctx(CUcontext *ctx)
+void abcdk_cuda_ctx_destroy(CUcontext *ctx)
 {
     CUcontext ctx_p;
 
@@ -81,7 +81,7 @@ void abcdk_cuda_destroy_ctx(CUcontext *ctx)
     cuCtxDestroy(ctx_p);
 }
 
-CUcontext abcdk_cuda_create_ctx(int device, int flag)
+CUcontext abcdk_cuda_ctx_create(int device, int flag)
 {
     CUcontext ctx;
     CUdevice cuda_dev;

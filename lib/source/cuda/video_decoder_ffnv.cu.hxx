@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "context_robot.cu.hxx"
 #include "video_decoder.cu.hxx"
 #include "video_util.cu.hxx"
 
@@ -99,6 +100,12 @@ namespace abcdk
                     return ((decoder_ffnv *)pUserData)->PictureDisplayProc(pDispInfo);
                 }
 
+                static void frame_queue_destroy_cb(void *msg)
+                {
+                    av_frame_free((AVFrame**)&msg);
+                }
+
+
             private:
                 CuvidFunctions *m_funcs;
 
@@ -113,6 +120,9 @@ namespace abcdk
                 CUVIDEOFORMAT m_videoformat;
                 int m_nPicNumInDecodeOrder[32];
                 int m_nDecodePicCnt;
+                
+                abcdk_option_t *m_cfg;
+                abcdk_queue_t *m_frame_queue;
 
             public:
                 decoder_ffnv()
@@ -129,6 +139,9 @@ namespace abcdk
                     memset(&m_nPicNumInDecodeOrder[0], 0, sizeof(int) * 32);
 
                     m_nDecodePicCnt = 0;
+                    
+                    m_cfg = NULL;
+                    m_frame_queue = NULL;
                 }
 
                 virtual ~decoder_ffnv()
@@ -218,13 +231,16 @@ namespace abcdk
                     enum AVPixelFormat pixfmt;
                     uint8_t *src_data[4] = {0};
                     int src_linesize[4] = {0};
-                    AVFrame *avframe_src;
-                    CUresult chk;
+                    AVFrame *frame_src;
+                    CUresult cuda_chk;
+                    int chk;
 
                     if (!m_decoder)
                         return 0;
-            
-                    cuCtxPushCurrent(m_gpu_ctx);
+                    
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
+
+                  //  cuCtxPushCurrent(m_gpu_ctx);
                                 
                     params.progressive_frame = pDispInfo->progressive_frame;
                     params.second_field = pDispInfo->repeat_first_field + 1;
@@ -232,15 +248,13 @@ namespace abcdk
                     params.unpaired_field = pDispInfo->repeat_first_field < 0;
                     params.output_stream = 0;
             
-                    int64_t pts = pDispInfo->timestamp;
-            
-                    chk = m_funcs->cuvidMapVideoFrame(m_decoder, pDispInfo->picture_index, &dpSrcFrame, &dpSrcPitch, &params);
-                    if (chk == CUDA_SUCCESS)
+                    cuda_chk = m_funcs->cuvidMapVideoFrame(m_decoder, pDispInfo->picture_index, &dpSrcFrame, &dpSrcPitch, &params);
+                    if (cuda_chk == CUDA_SUCCESS)
                     {
                         CUVIDGETDECODESTATUS DecodeStatus;
                         memset(&DecodeStatus,0,sizeof(DecodeStatus));
-                        chk = m_funcs->cuvidGetDecodeStatus(m_decoder, pDispInfo->picture_index, &DecodeStatus);
-                        if (chk == CUDA_SUCCESS && (DecodeStatus.decodeStatus == cuvidDecodeStatus_Error || DecodeStatus.decodeStatus == cuvidDecodeStatus_Error_Concealed))
+                        cuda_chk = m_funcs->cuvidGetDecodeStatus(m_decoder, pDispInfo->picture_index, &DecodeStatus);
+                        if (cuda_chk == CUDA_SUCCESS && (DecodeStatus.decodeStatus == cuvidDecodeStatus_Error || DecodeStatus.decodeStatus == cuvidDecodeStatus_Error_Concealed))
                         {
                             abcdk_trace_printf(LOG_WARNING, "Decode Error occurred for picture %d", m_nPicNumInDecodeOrder[pDispInfo->picture_index]);
                         }
@@ -255,21 +269,30 @@ namespace abcdk
 
                     abcdk_avimage_fill_pointers(src_data, src_linesize, height, pixfmt, (void **)dpSrcFrame);
 
-                    avframe_src = abcdk_cuda_avframe_alloc(width,height,pixfmt,4);
-                    if(avframe_src)
+                    frame_src = abcdk_cuda_avframe_alloc(width,height,pixfmt,4);
+                    if(frame_src)
                     {
-                        abcdk_cuda_avimage_copy(avframe_src->data,avframe_src->linesize,0,src_data,src_linesize,0,width,height,pixfmt);
+                        abcdk_cuda_avimage_copy(frame_src->data,frame_src->linesize,0,(const uint8_t **)src_data,src_linesize,0,width,height,pixfmt);
+
+                        frame_src->pts = pDispInfo->timestamp;//bind PTS
+
+                        abcdk_queue_lock(m_frame_queue);
+                        chk = abcdk_queue_push(m_frame_queue,frame_src);
+                        abcdk_queue_unlock(m_frame_queue);
+
+                        /*加入队列失败，直接删除。*/
+                        if(chk != 0)
+                            av_frame_free(&frame_src);
                     }
                     else
                     {
                         abcdk_trace_printf(LOG_WARNING, "内存不足。");
-                        return 1;
                     }
                     
                     chk = m_funcs->cuvidUnmapVideoFrame(m_decoder, dpSrcFrame);
                     assert(chk == CUDA_SUCCESS);
             
-                    cuCtxPopCurrent(NULL);
+                  //  cuCtxPopCurrent(NULL);
                     
                     return 1;
                 }
@@ -295,25 +318,126 @@ namespace abcdk
                         m_funcs->cuvidCtxLockDestroy(m_ctx_lock);
                     m_ctx_lock = NULL;
 
+                    /*在这里删除。*/
+                    abcdk_queue_free(&m_frame_queue);
+
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
+                    
+                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
 
-                    abcdk_cuda_destroy_ctx(&m_gpu_ctx);
+                    abcdk_option_free(&m_cfg);
+                    
                 }
 
                 virtual int open(abcdk_option_t *cfg)
                 {
-                    return -1;
+                    int device;
+                    CUresult cuda_chk;
+
+                    assert(m_cfg == NULL);
+
+                    m_frame_queue = abcdk_queue_alloc(frame_queue_destroy_cb);
+                    if(!m_frame_queue)
+                        return -1;
+
+                    m_cfg = abcdk_option_alloc("--");
+                    if(!m_cfg)
+                        return -1;
+
+                    if(cfg)
+                        abcdk_option_merge(m_cfg,cfg);
+
+                    device = abcdk_option_get_int(m_cfg,"--device",0,0);
+
+                    m_gpu_ctx = abcdk_cuda_ctx_create(device,0);
+                    if(!m_gpu_ctx)
+                        return -1;
+                    
+                    cuda_chk = m_funcs->cuvidCtxLockCreate(&m_ctx_lock, m_gpu_ctx);
+                    if (cuda_chk != CUDA_SUCCESS)
+                        return -1;
+
+                    return 0;
                 }
 
                 virtual int sync(AVCodecContext *opt)
                 {
-                    return -1;
+                    CUVIDPARSERPARAMS params;
+                    CUresult cuda_chk;
+
+                    assert(opt != NULL);
+
+                    memset(&params,0,sizeof(params));
+                    params.CodecType = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
+                    params.ulMaxNumDecodeSurfaces = 25;
+                    params.ulMaxDisplayDelay = 4;
+                    params.pUserData = this;
+                    params.pfnSequenceCallback = HandleVideoSequenceProc;
+                    params.pfnDecodePicture = HandlePictureDecodeProc;
+                    params.pfnDisplayPicture = HandlePictureDisplayProc;
+                    params.pExtVideoInfo = NULL;
+
+                    if (opt->extradata != NULL && opt->extradata_size > 0)
+                    {
+                        /*空间有限。*/
+                        if(sizeof(m_vidfmt_ext.raw_seqhdr_data) < opt->extradata_size)
+                            return -1;
+            
+                        memset(&m_vidfmt_ext, 0, sizeof(m_vidfmt_ext));
+            
+                        m_vidfmt_ext.format.seqhdr_data_length = opt->extradata_size;
+                        memcpy(m_vidfmt_ext.raw_seqhdr_data, opt->extradata, opt->extradata_size);
+            
+                        params.pExtVideoInfo = &m_vidfmt_ext;
+                    }
+                    
+                    cuCtxPushCurrent(m_gpu_ctx);
+                    cuda_chk = m_funcs->cuvidCreateVideoParser(&m_parser, &params);
+                    cuCtxPopCurrent(NULL);
+
+                    if(cuda_chk != CUDA_SUCCESS)
+                        return -1;
+
+                    
+
+                    return 0;
                 }
 
                 virtual int update(AVFrame **dst, const AVPacket *src)
                 {
-                    return -1;
+                    CUVIDSOURCEDATAPACKET packet = {0};
+                    CUresult cuda_chk;
+
+                    if (src)
+                    {
+                        packet.payload = (uint8_t *)src->data;
+                        packet.payload_size = src->size;
+                        packet.timestamp = (CUvideotimestamp)src->pts;
+                        packet.flags |= CUVID_PKT_TIMESTAMP;
+
+                        if (src->size == 0)
+                            packet.flags |= CUVID_PKT_ENDOFSTREAM;
+
+                        cuCtxPushCurrent(m_gpu_ctx);
+                        cuda_chk = m_funcs->cuvidParseVideoData(m_parser, &packet);
+                        cuCtxPopCurrent(NULL);
+
+                        if (cuda_chk != CUDA_SUCCESS)
+                            return -1;
+                    }
+
+                    if (dst)
+                    {
+                        abcdk_queue_lock(m_frame_queue);
+                        *dst = (AVFrame *)abcdk_queue_pop(m_frame_queue);
+                        abcdk_queue_unlock(m_frame_queue);
+
+                        if (*dst)
+                            return 1;
+                    }
+
+                    return 0;
                 }
             };
         } // namespace video

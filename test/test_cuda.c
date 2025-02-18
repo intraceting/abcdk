@@ -16,7 +16,7 @@
 #ifdef HAVE_CUDA
 #ifdef HAVE_FFMPEG
 
-int abcdk_test_cuda(abcdk_option_t *args)
+int abcdk_test_cuda_1(abcdk_option_t *args)
 {
     int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
 
@@ -99,7 +99,81 @@ int abcdk_test_cuda(abcdk_option_t *args)
     av_frame_free(&d);
     av_frame_free(&e);
     av_frame_free(&f);
-    
+
+    return 0;
+}
+
+int abcdk_test_cuda_2(abcdk_option_t *args)
+{
+    abcdk_ffmpeg_config_t ff_r_cfg = {0},ff_w_cfg = {0};
+
+    ff_r_cfg.file_name = abcdk_option_get(args,"--src",0,"");
+    ff_r_cfg.read_flush = abcdk_option_get_double(args,"--src-flush",0,0);
+    ff_r_cfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
+    ff_r_cfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,10);
+    ff_r_cfg.bit_stream_filter = 1;
+    ff_w_cfg.file_name = abcdk_option_get(args,"--dst",0,"");
+    ff_w_cfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
+
+    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&ff_r_cfg);
+    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open(&ff_w_cfg);
+
+    AVStream *r_video_steam = abcdk_ffmpeg_find_stream(r,AVMEDIA_TYPE_VIDEO);
+
+    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0,NULL);
+
+    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id,0);
+    abcdk_avstream_parameters_to_context(dec_opt,r_video_steam);
+    abcdk_cuda_video_sync(dec_ctx,dec_opt);
+    abcdk_avcodec_free(&dec_opt);
+
+    AVPacket r_pkt;
+    av_init_packet(&r_pkt);
+
+    for (int i = 0; i < 10000; i++)
+    {
+        int chk = abcdk_ffmpeg_read_packet(r, &r_pkt, r_video_steam->index);
+        if (chk < 0)
+            break;
+
+        AVFrame *r_fae = NULL;
+        chk = abcdk_cuda_video_decode(dec_ctx, &r_fae, &r_pkt);
+        if (chk < 0)
+        {
+            break;
+        }
+        else if (chk > 0)
+        {
+            // char filename[PATH_MAX] = {0};
+            // sprintf(filename, "/tmp/ccc/%06d.jpg", r_fae->pts);
+
+            // abcdk_mkdir(filename, 0755);
+
+            // abcdk_cuda_jpeg_save(filename, r_fae);
+        }
+
+        av_frame_free(&r_fae);
+    }
+
+    av_packet_unref(&r_pkt);
+
+    abcdk_cuda_video_destroy(&dec_ctx);
+    abcdk_ffmpeg_destroy(&r);
+    abcdk_ffmpeg_destroy(&w);
+
+    return 0;
+}
+
+int abcdk_test_cuda(abcdk_option_t *args)
+{
+    int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
+
+    cuInit(0);
+
+    if (cmd == 1)
+        return abcdk_test_cuda_1(args);
+    else if (cmd == 2)
+        return abcdk_test_cuda_2(args);
 
     return 0;
 }

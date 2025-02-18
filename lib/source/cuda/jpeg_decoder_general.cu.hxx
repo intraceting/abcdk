@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "context_robot.cu.hxx"
 #include "jpeg_decoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -94,6 +95,7 @@ namespace abcdk
             private:
                 abcdk_option_t *m_cfg;
 
+                CUcontext m_gpu_ctx;
                 cudaStream_t m_stream;
                 nvjpegHandle_t m_ctx;
                 nvjpegJpegState_t m_state;
@@ -102,6 +104,7 @@ namespace abcdk
                 decoder_general()
                 {
                     m_cfg = NULL;
+                    m_gpu_ctx = NULL;
                     m_stream = NULL;
                     m_ctx = NULL;
                     m_state = NULL;
@@ -129,22 +132,30 @@ namespace abcdk
             public:
                 virtual void close()
                 {
-                   if (m_state)
-                       nvjpegJpegStateDestroy(m_state);
-                   m_state = NULL;
-                   if (m_ctx)
-                       nvjpegDestroy(m_ctx);
-                   m_ctx = NULL;
-                    if(m_stream)
+                    if (m_gpu_ctx)
+                        cuCtxPushCurrent(m_gpu_ctx);
+
+                    if (m_state)
+                        nvjpegJpegStateDestroy(m_state);
+                    m_state = NULL;
+                    if (m_ctx)
+                        nvjpegDestroy(m_ctx);
+                    m_ctx = NULL;
+                    if (m_stream)
                         cudaStreamDestroy(m_stream);
                     m_stream = NULL;
+
+                    if (m_gpu_ctx)
+                        cuCtxPopCurrent(NULL);
+
+                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
 
                     abcdk_option_free(&m_cfg);
                 }
 
-
                 virtual int open(abcdk_option_t *cfg)
                 {
+                    int device;
                     cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
                     nvjpegDevAllocator_t dev_allocator = {0};
@@ -160,7 +171,15 @@ namespace abcdk
 
                     if (cfg)
                         abcdk_option_merge(m_cfg, cfg);
-                    
+
+                    device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
+
+                    m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
+                    if (!m_gpu_ctx)
+                        return -1;
+
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
+
                     cuda_chk = cudaStreamCreateWithFlags(&m_stream, cudaStreamDefault);
                     if (cuda_chk != cudaSuccess)
                         return -1;
@@ -191,6 +210,8 @@ namespace abcdk
                     nvjpegStatus_t jpeg_chk;
 
                     assert(src != NULL && src_size > 0);
+
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
 
                     jpeg_chk = nvjpegGetImageInfo(m_ctx, (uint8_t *)src, src_size, &components, &subsampling, width, height);
                     if (jpeg_chk != NVJPEG_STATUS_SUCCESS)

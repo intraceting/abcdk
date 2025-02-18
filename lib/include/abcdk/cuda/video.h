@@ -7,6 +7,7 @@
 #ifndef ABCDK_CUDA_VIDEO_H
 #define ABCDK_CUDA_VIDEO_H
 
+#include "abcdk/util/queue.h"
 #include "abcdk/util/option.h"
 #include "abcdk/util/object.h"
 #include "abcdk/cuda/cuda.h"
@@ -34,7 +35,11 @@ int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx,AVCodecContext *opt);
 /**编码。 */
 int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFrame *src);
 
-/**解码。 */
+/**
+ * 解码。
+ * 
+ * @return 1 有输出，0 无输出，< 0 出错了。
+*/
 int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,AVFrame **dst, const AVPacket *src);
 
 __END_DECLS

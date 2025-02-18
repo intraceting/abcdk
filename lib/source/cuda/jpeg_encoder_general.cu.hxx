@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "context_robot.cu.hxx"
 #include "jpeg_encoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -50,6 +51,8 @@ namespace abcdk
             private:
                 abcdk_option_t *m_cfg;
 
+                CUcontext m_gpu_ctx;
+
                 cudaStream_t m_stream;
                 nvjpegHandle_t m_ctx;
                 nvjpegEncoderState_t m_state;
@@ -59,6 +62,7 @@ namespace abcdk
                 encoder_general()
                 {
                     m_cfg = NULL;
+                    m_gpu_ctx = NULL;
                     m_stream = NULL;
                     m_ctx = NULL;
                     m_state = NULL;
@@ -73,6 +77,9 @@ namespace abcdk
             public:
                 virtual void close()
                 {
+                    if (m_gpu_ctx)
+                        cuCtxPushCurrent(m_gpu_ctx);
+
                     if (m_params)
                         nvjpegEncoderParamsDestroy(m_params);
                     m_params = NULL;
@@ -86,11 +93,17 @@ namespace abcdk
                         cudaStreamDestroy(m_stream);
                     m_stream = NULL;
 
+                    if (m_gpu_ctx)
+                        cuCtxPopCurrent(NULL);
+
+                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
+
                     abcdk_option_free(&m_cfg);
                 }
 
                 virtual int open(abcdk_option_t *cfg)
                 {
+                    int device;
                     int quality;
                     cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
@@ -103,6 +116,14 @@ namespace abcdk
 
                     if (cfg)
                         abcdk_option_merge(m_cfg, cfg);
+
+                    device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
+
+                    m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
+                    if (!m_gpu_ctx)
+                        return -1;
+
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
 
                     cuda_chk = cudaStreamCreateWithFlags(&m_stream, cudaStreamDefault);
                     if (cuda_chk != cudaSuccess)
@@ -132,9 +153,11 @@ namespace abcdk
                     nvjpegStatus_t jpeg_chk;
                     int chk;
 
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
+
                     if (src->format != (int)AV_PIX_FMT_RGB24 && src->format != (int)AV_PIX_FMT_BGR24)
                     {
-                        tmp_src = abcdk_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB24, 4);
+                        tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB24, 4);
                         if (!tmp_src)
                             return NULL;
 

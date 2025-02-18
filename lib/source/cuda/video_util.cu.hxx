@@ -27,7 +27,7 @@ namespace abcdk
     {
         namespace video
         {
-            int avcodecid_to_nvcodecid(enum AVCodecID id)
+            int codecid_ffmpeg_to_nvcodec(enum AVCodecID id)
             {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
                 switch (id)
