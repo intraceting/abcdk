@@ -78,7 +78,7 @@ namespace abcdk
                             MaxDpbSize = (MaxDpbPicBuf * 4) / 3;
                         else
                             MaxDpbSize = MaxDpbPicBuf;
-                        return (std::min)(MaxDpbSize, 16) + 4;
+                        return ABCDK_MIN(MaxDpbSize, 16) + 4;
                     }
 
                     return 8;
@@ -211,6 +211,67 @@ namespace abcdk
 
                 int PictureDisplayProc(CUVIDPARSERDISPINFO *pDispInfo)
                 {
+                    CUVIDPROCPARAMS params = {0};
+                    CUdeviceptr dpSrcFrame = 0;
+                    unsigned int dpSrcPitch = 0;
+                    int width,height;
+                    enum AVPixelFormat pixfmt;
+                    uint8_t *src_data[4] = {0};
+                    int src_linesize[4] = {0};
+                    AVFrame *avframe_src;
+                    CUresult chk;
+
+                    if (!m_decoder)
+                        return 0;
+            
+                    cuCtxPushCurrent(m_gpu_ctx);
+                                
+                    params.progressive_frame = pDispInfo->progressive_frame;
+                    params.second_field = pDispInfo->repeat_first_field + 1;
+                    params.top_field_first = pDispInfo->top_field_first;
+                    params.unpaired_field = pDispInfo->repeat_first_field < 0;
+                    params.output_stream = 0;
+            
+                    int64_t pts = pDispInfo->timestamp;
+            
+                    chk = m_funcs->cuvidMapVideoFrame(m_decoder, pDispInfo->picture_index, &dpSrcFrame, &dpSrcPitch, &params);
+                    if (chk == CUDA_SUCCESS)
+                    {
+                        CUVIDGETDECODESTATUS DecodeStatus;
+                        memset(&DecodeStatus,0,sizeof(DecodeStatus));
+                        chk = m_funcs->cuvidGetDecodeStatus(m_decoder, pDispInfo->picture_index, &DecodeStatus);
+                        if (chk == CUDA_SUCCESS && (DecodeStatus.decodeStatus == cuvidDecodeStatus_Error || DecodeStatus.decodeStatus == cuvidDecodeStatus_Error_Concealed))
+                        {
+                            abcdk_trace_printf(LOG_WARNING, "Decode Error occurred for picture %d", m_nPicNumInDecodeOrder[pDispInfo->picture_index]);
+                        }
+                    }
+
+                    width = m_videoformat.display_area.right - m_videoformat.display_area.left;
+                    height = m_videoformat.display_area.bottom - m_videoformat.display_area.top;
+                    pixfmt = (m_videoformat.bit_depth_luma_minus8 ? AV_PIX_FMT_NV16 : AV_PIX_FMT_NV12);
+
+                    src_linesize[0] = dpSrcPitch;
+                    src_linesize[1] = dpSrcPitch;
+
+                    abcdk_avimage_fill_pointers(src_data, src_linesize, height, pixfmt, (void **)dpSrcFrame);
+
+                    avframe_src = abcdk_cuda_avframe_alloc(width,height,pixfmt,4);
+                    if(avframe_src)
+                    {
+                        abcdk_cuda_avimage_copy(avframe_src->data,avframe_src->linesize,0,src_data,src_linesize,0,width,height,pixfmt);
+                    }
+                    else
+                    {
+                        abcdk_trace_printf(LOG_WARNING, "内存不足。");
+                        return 1;
+                    }
+                    
+                    chk = m_funcs->cuvidUnmapVideoFrame(m_decoder, dpSrcFrame);
+                    assert(chk == CUDA_SUCCESS);
+            
+                    cuCtxPopCurrent(NULL);
+                    
+                    return 1;
                 }
 
             public:
