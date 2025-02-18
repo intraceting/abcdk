@@ -22,6 +22,20 @@ __BEGIN_DECLS
 /**VIDEO编/解码器。*/
 typedef struct _abcdk_cuda_video abcdk_cuda_video_t;
 
+/**释放。*/
+void abcdk_cuda_video_destroy(abcdk_cuda_video_t **ctx);
+
+/**创建。*/
+abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg);
+
+/**同步。*/
+int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx,AVCodecContext *opt);
+
+/**编码。 */
+int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFrame *src);
+
+/**解码。 */
+int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,AVFrame **dst, const AVPacket *src);
 
 __END_DECLS
 

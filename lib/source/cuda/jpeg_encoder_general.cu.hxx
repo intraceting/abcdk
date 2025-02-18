@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_JPEG_ENCODER_X86_64_HXX
-#define ABCDK_CUDA_JPEG_ENCODER_X86_64_HXX
+#ifndef ABCDK_CUDA_JPEG_ENCODER_GENERAL_HXX
+#define ABCDK_CUDA_JPEG_ENCODER_GENERAL_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
@@ -22,12 +22,12 @@ namespace abcdk
     {
         namespace jpeg
         {
-            class encoder_x86_64 : public encoder
+            class encoder_general : public encoder
             {
             public:
                 static encoder *create()
                 {
-                    encoder *ctx = new encoder_x86_64();
+                    encoder *ctx = new encoder_general();
                     if (!ctx)
                         return NULL;
 
@@ -44,7 +44,7 @@ namespace abcdk
                     ctx_p = *ctx;
                     *ctx = NULL;
 
-                    delete (encoder_x86_64 *)ctx_p;
+                    delete (encoder_general *)ctx_p;
                 }
 
             private:
@@ -56,7 +56,7 @@ namespace abcdk
                 nvjpegEncoderParams_t m_params;
 
             public:
-                encoder_x86_64()
+                encoder_general()
                 {
                     m_cfg = NULL;
                     m_stream = NULL;
@@ -65,7 +65,7 @@ namespace abcdk
                     m_params = NULL;
                 }
 
-                virtual ~encoder_x86_64()
+                virtual ~encoder_general()
                 {
                     close();
                 }
@@ -212,4 +212,4 @@ namespace abcdk
 #endif //AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_JPEG_ENCODER_X86_64_HXX
+#endif // ABCDK_CUDA_JPEG_ENCODER_GENERAL_HXX

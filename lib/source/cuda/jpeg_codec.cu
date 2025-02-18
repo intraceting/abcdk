@@ -5,9 +5,9 @@
  *
  */
 #include "abcdk/cuda/jpeg.h"
-#include "jpeg_decoder_x86_64.cu.hxx"
+#include "jpeg_decoder_general.cu.hxx"
 #include "jpeg_decoder_aarch64.cu.hxx"
-#include "jpeg_encoder_x86_64.cu.hxx"
+#include "jpeg_encoder_general.cu.hxx"
 #include "jpeg_encoder_aarch64.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -40,7 +40,7 @@ void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx)
     if (ctx_p->encode)
     {
 #ifdef __x86_64__
-        abcdk::cuda::jpeg::encoder_x86_64::destory(&ctx_p->encoder_ctx);
+        abcdk::cuda::jpeg::encoder_general::destory(&ctx_p->encoder_ctx);
 #elif defined(__aarch64__)
         abcdk::cuda::jpeg::encoder_aarch64::destory(&ctx_p->encoder_ctx);
 #endif //__x86_64__ || __aarch64__
@@ -48,7 +48,7 @@ void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx)
     else
     {
 #ifdef __x86_64__
-        abcdk::cuda::jpeg::decoder_x86_64::destory(&ctx_p->decoder_ctx);
+        abcdk::cuda::jpeg::decoder_general::destory(&ctx_p->decoder_ctx);
 #elif defined(__aarch64__)
         abcdk::cuda::jpeg::decoder_aarch64::destory(&ctx_p->decoder_ctx);
 #endif //__x86_64__ || __aarch64__
@@ -69,7 +69,7 @@ abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
     if (ctx->encode = encode)
     {
 #ifdef __x86_64__
-        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_x86_64::create();
+        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_general::create();
 #elif defined(__aarch64__)
         ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_aarch64::create();
 #endif //__x86_64__ || __aarch64__
@@ -84,7 +84,7 @@ abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
     else
     {
 #ifdef __x86_64__
-        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_x86_64::create();
+        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_general::create();
 #elif defined(__aarch64__)
         ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_aarch64::create();
 #endif //__x86_64__ || __aarch64__

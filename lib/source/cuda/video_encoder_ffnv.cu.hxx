@@ -4,30 +4,32 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_JPEG_ENCODER_AARCH64_HXX
-#define ABCDK_CUDA_JPEG_ENCODER_AARCH64_HXX
+#ifndef ABCDK_CUDA_VIDEO_ENCODER_FFNV_HXX
+#define ABCDK_CUDA_VIDEO_ENCODER_FFNV_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
-#include "jpeg_encoder.cu.hxx"
+#include "video_encoder.cu.hxx"
+#include "video_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
-#ifdef __aarch64__
+#ifdef AVCODEC_AVCODEC_H
+#ifdef FFNV_CUDA_DYNLINK_LOADER_H
 
 namespace abcdk
 {
     namespace cuda
     {
-        namespace jpeg
+        namespace video
         {
-            class encoder_aarch64 : public encoder
+            class encoder_ffnv : public encoder
             {
             public:
                 static encoder *create()
                 {
-                    encoder *ctx = new encoder_aarch64();
+                    encoder *ctx = new encoder_ffnv();
                     if (!ctx)
                         return NULL;
 
@@ -44,15 +46,15 @@ namespace abcdk
                     ctx_p = *ctx;
                     *ctx = NULL;
 
-                    delete (encoder_aarch64 *)ctx_p;
+                    delete (encoder_ffnv *)ctx_p;
                 }
 
             public:
-                encoder_aarch64()
+                encoder_ffnv()
                 {
                 }
 
-                virtual ~encoder_aarch64()
+                virtual ~encoder_ffnv()
                 {
                     close();
                 }
@@ -67,22 +69,23 @@ namespace abcdk
                     return -1;
                 }
 
-                virtual abcdk_object_t *update(const AVFrame *src)
+                virtual int sync(AVCodecContext *opt)
                 {
-                    return NULL;
+                    return -1;
                 }
 
-                virtual int update(const char *dst , const AVFrame *src)
+                virtual int update(AVPacket **dst, const AVFrame *src)
                 {
                     return -1;
                 }
             };
-        } // namespace jpeg
+        } // namespace video
     } // namespace cuda
 } // namespace abcdk
 
-#endif //__aarch64__
+#endif // FFNV_CUDA_DYNLINK_LOADER_H
+#endif // AVCODEC_AVCODEC_H
 #endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_JPEG_ENCODER_AARCH64_HXX
+#endif // ABCDK_CUDA_VIDEO_ENCODER_FFNV_HXX

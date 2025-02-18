@@ -20,12 +20,6 @@
 
 #ifdef __x86_64__
 #include <nvjpeg.h>
-
-#ifdef HAVE_FFNVCODEC
-#include "ffnvcodec/dynlink_loader.h"
-#include "ffnvcodec/dynlink_nvcuvid.h"
-#endif //HAVE_FFNVCODEC
-
 #endif //__x86_64__
 
 #endif //HAVE_CUDA

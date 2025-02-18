@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_JPEG_DECODER_X86_64_HXX
-#define ABCDK_CUDA_JPEG_DECODER_X86_64_HXX
+#ifndef ABCDK_CUDA_JPEG_DECODER_GENERAL_HXX
+#define ABCDK_CUDA_JPEG_DECODER_GENERAL_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
@@ -22,12 +22,12 @@ namespace abcdk
     {
         namespace jpeg
         {
-            class decoder_x86_64 : public decoder
+            class decoder_general : public decoder
             {
             public:
                 static decoder *create()
                 {
-                    decoder *ctx = new decoder_x86_64();
+                    decoder *ctx = new decoder_general();
                     if (!ctx)
                         return NULL;
 
@@ -44,7 +44,7 @@ namespace abcdk
                     ctx_p = *ctx;
                     *ctx = NULL;
 
-                    delete (decoder_x86_64 *)ctx_p;
+                    delete (decoder_general *)ctx_p;
                 }
 
                 static int dev_malloc(void **pptr, size_t size)
@@ -99,7 +99,7 @@ namespace abcdk
                 nvjpegJpegState_t m_state;
 
             public:
-                decoder_x86_64()
+                decoder_general()
                 {
                     m_cfg = NULL;
                     m_stream = NULL;
@@ -107,7 +107,7 @@ namespace abcdk
                     m_state = NULL;
                 }
 
-                virtual ~decoder_x86_64()
+                virtual ~decoder_general()
                 {
                     close();
                 }
@@ -253,4 +253,4 @@ namespace abcdk
 #endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_JPEG_DECODER_X86_64_HXX
+#endif // ABCDK_CUDA_JPEG_DECODER_GENERAL_HXX

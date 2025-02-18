@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "video_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
@@ -39,11 +40,11 @@ namespace abcdk
                 {
                 }
 
-                virtual int open(enum AVCodecID codecid, void *ext_data, int ext_size) = 0;
+                virtual int open(abcdk_option_t *cfg) = 0;
 
-                virtual int send(AVFrame *src) = 0;
+                virtual int sync(AVCodecContext *opt) = 0;
 
-                virtual AVPacket *recv() = 0;
+                virtual int update(AVPacket **dst, const AVFrame *src) = 0;
             };
         } // namespace video
     } // namespace cuda
