@@ -11,11 +11,8 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
 #include "abcdk/cuda/device.h"
-#include "context_robot.cu.hxx"
 #include "video_encoder.cu.hxx"
 #include "video_util.cu.hxx"
-
-#include <vector>
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
@@ -361,6 +358,38 @@ namespace abcdk
                     }
                 }
 
+                int encode(const AVFrame *img, std::vector<std::vector<uint8_t>> &out)
+                {
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
+
+                    if (img)
+                    {
+                        int i = m_iToSend % m_nEncoderBuffer;
+
+                        abcdk_cuda_avframe_copy(m_vInputFrames[i], img);
+
+                        NV_ENC_MAP_INPUT_RESOURCE mapInputResource = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+                        mapInputResource.registeredResource = m_vRegisteredResources[i];
+
+                        NVENCSTATUS nvenc_chk = m_nvenc.nvEncMapInputResource(m_encoder, &mapInputResource);
+                        if (NV_ENC_SUCCESS != nvenc_chk)
+                            return -1;
+
+                        m_vMappedInputBuffers[i] = mapInputResource.mappedResource;
+
+                        DoEncode(m_vMappedInputBuffers[i], out);
+                    }
+                    else
+                    {
+                        EndEncode(out);
+                    }
+
+                    if (out.size() <= 0)
+                        return 0;
+
+                    return 1;
+                }
+
             public:
                 virtual void close()
                 {
@@ -441,7 +470,7 @@ namespace abcdk
                     if (!m_funcs)
                         return -1;
 
-                    fps = 1.0 / abcdk_avmatch_r2d(opt->time_base, 1);
+                    fps = abcdk_avmatch_r2d(opt->framerate, 1);
                     width = opt->width;
                     height = opt->height;
                     nvcodec_id = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
@@ -513,23 +542,24 @@ namespace abcdk
                         m_vInputFrames.size() == m_nEncoderBuffer)
                     {
                         GetSequenceParams(ext_data);
-
-                        if (ext_data.size() > 0)
-                        {
-                            if (opt->extradata)
-                            {
-                                av_free(opt->extradata);
-                                opt->extradata = NULL;
-                                opt->extradata_size = 0;
-                            }
-
-                            opt->extradata = (uint8_t *)av_memdup(ext_data.data(), ext_data.size());
-                            opt->extradata_size = ext_data.size();
-                        }
                     }
                     else
                     {
                         return -1;
+                    }
+
+                    /*输出扩展数据帧。*/
+                    if (ext_data.size() > 0)
+                    {
+                        if (opt->extradata)
+                        {
+                            av_free(opt->extradata);
+                            opt->extradata = NULL;
+                            opt->extradata_size = 0;
+                        }
+
+                        opt->extradata = (uint8_t *)av_memdup(ext_data.data(), ext_data.size());
+                        opt->extradata_size = ext_data.size();
                     }
 
                     return 0;
@@ -542,13 +572,13 @@ namespace abcdk
                     int dst_off = 0;
                     int chk;
 
+                    assert(dst != NULL);
+
                     if (!m_funcs)
                         return -1;
 
                     if (!m_encoder)
                         return -1;
-
-                    assert(dst != NULL);
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
@@ -556,7 +586,7 @@ namespace abcdk
                     {
                         if (src->format != (int)AV_PIX_FMT_RGB32)
                         {
-                            tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB32, 4);
+                            tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB32, 1);
                             if (!tmp_src)
                                 return -1;
 
@@ -570,24 +600,15 @@ namespace abcdk
                             return chk;
                         }
 
-                        int i = m_iToSend % m_nEncoderBuffer;
-
-                        abcdk_cuda_avframe_copy(m_vInputFrames[i], src);
-
-                        NV_ENC_MAP_INPUT_RESOURCE mapInputResource = {NV_ENC_MAP_INPUT_RESOURCE_VER};
-                        mapInputResource.registeredResource = m_vRegisteredResources[i];
-
-                        NVENCSTATUS nvenc_chk = m_nvenc.nvEncMapInputResource(m_encoder, &mapInputResource);
-                        if (NV_ENC_SUCCESS != nvenc_chk)
+                        chk = encode(src, out);
+                        if (chk < 0)
                             return -1;
-
-                        m_vMappedInputBuffers[i] = mapInputResource.mappedResource;
-
-                        DoEncode(m_vMappedInputBuffers[i], out);
                     }
                     else
                     {
-                        EndEncode(out);
+                        chk = encode(NULL, out);
+                        if (chk < 0)
+                            return -1;
                     }
 
                     if (out.size() <= 0)
@@ -600,6 +621,11 @@ namespace abcdk
                     for (int j = 0; j < out.size(); j++)
                     {
                         chk = av_grow_packet(*dst, out[j].size());
+                        if (chk != 0)
+                        {
+                            av_packet_free(dst);
+                            return -1;
+                        }
 
                         memcpy(ABCDK_PTR2VPTR((*dst)->data, dst_off), out[j].data(), out[j].size());
                         dst_off += out[j].size();

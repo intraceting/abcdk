@@ -9,6 +9,7 @@
 
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "context_robot.cu.hxx"
 
 #ifdef __x86_64__
 #ifdef HAVE_FFNVCODEC
@@ -16,6 +17,14 @@
 #include "ffnvcodec/dynlink_nvcuvid.h"
 #endif //HAVE_FFNVCODEC
 #endif //__x86_64__
+
+#ifdef __aarch64__
+#include "jetson/nvmpi.h"
+#include "jetson/NvJpegDecoder.h"
+#include "jetson/NvJpegEncoder.h"
+#endif //__aarch64__
+
+#include <vector>
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H

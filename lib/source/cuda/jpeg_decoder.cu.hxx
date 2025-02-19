@@ -7,10 +7,10 @@
 #ifndef ABCDK_CUDA_JPEG_DECODER_HXX
 #define ABCDK_CUDA_JPEG_DECODER_HXX
 
-
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "jpeg_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H

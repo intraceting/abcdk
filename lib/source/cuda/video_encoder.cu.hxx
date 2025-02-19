@@ -15,7 +15,6 @@
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
 #ifdef AVCODEC_AVCODEC_H
-#ifdef FFNV_CUDA_DYNLINK_LOADER_H
 
 namespace abcdk
 {
@@ -50,7 +49,7 @@ namespace abcdk
     } // namespace cuda
 } // namespace abcdk
 
-#endif // FFNV_CUDA_DYNLINK_LOADER_H
+
 #endif // AVCODEC_AVCODEC_H
 #endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__

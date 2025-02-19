@@ -220,7 +220,7 @@ namespace abcdk
                     
                     /*全部转成RGB和GRAY。*/
                     if (components == 3)
-                        dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_RGB24, 4);//只使用第一层的宽和高。
+                        dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_RGB24, 1);//只使用第一层的宽和高。
                     else if (components == 1)
                         dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_GRAY8, 1);
                     else

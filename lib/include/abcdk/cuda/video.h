@@ -33,7 +33,7 @@ abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg);
  * 同步。
  * 
  * @note 解码：codec_id、extradata、extradata_size输入。
- * @note 编码：time_base、width、height、codec_id输入，extradata、extradata_size输出。
+ * @note 编码：framerate、width、height、codec_id输入，extradata、extradata_size输出。
 */
 int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx,AVCodecContext *opt);
 

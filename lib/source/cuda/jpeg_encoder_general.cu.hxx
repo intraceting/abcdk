@@ -119,6 +119,9 @@ namespace abcdk
                         abcdk_option_merge(m_cfg, cfg);
 
                     device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
+                    quality = abcdk_option_get_int(m_cfg, "--quality", 0, 99);
+
+                    quality = ABCDK_CLAMP(quality, 1, 99);
 
                     m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
                     if (!m_gpu_ctx)
@@ -133,9 +136,6 @@ namespace abcdk
                     jpeg_chk = nvjpegCreateSimple(&m_ctx);
                     if (jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         return -1;
-
-                    quality = abcdk_option_get_int(m_cfg, "--quality", 0, 99);
-                    quality = ABCDK_CLAMP(quality, 1, 99);
 
                     nvjpegEncoderStateCreate(m_ctx, &m_state, m_stream);
                     nvjpegEncoderParamsCreate(m_ctx, &m_params, m_stream);
@@ -154,11 +154,13 @@ namespace abcdk
                     nvjpegStatus_t jpeg_chk;
                     int chk;
 
+                    assert(src != NULL);
+
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
                     if (src->format != (int)AV_PIX_FMT_RGB24 && src->format != (int)AV_PIX_FMT_BGR24)
                     {
-                        tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB24, 4);
+                        tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB24, 1);
                         if (!tmp_src)
                             return NULL;
 

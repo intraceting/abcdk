@@ -12,7 +12,6 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
 #include "abcdk/cuda/device.h"
-#include "context_robot.cu.hxx"
 #include "video_decoder.cu.hxx"
 #include "video_util.cu.hxx"
 
@@ -287,7 +286,7 @@ namespace abcdk
 
                     abcdk_avimage_fill_pointers(src_data, src_linesize, height, pixfmt, (void **)src_frame);
 
-                    frame_src = abcdk_cuda_avframe_alloc(width, height, pixfmt, 4);
+                    frame_src = abcdk_cuda_avframe_alloc(width, height, pixfmt, 1);
                     if (frame_src)
                     {
                         abcdk_cuda_avimage_copy(frame_src->data, frame_src->linesize, 0, (const uint8_t **)src_data, src_linesize, 0, width, height, pixfmt);

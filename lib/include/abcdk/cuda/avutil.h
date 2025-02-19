@@ -7,6 +7,7 @@
 #ifndef ABCDK_CUDA_AVUTIL_H
 #define ABCDK_CUDA_AVUTIL_H
 
+#include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/ffmpeg/swscale.h"

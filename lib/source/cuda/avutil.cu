@@ -151,9 +151,9 @@ AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src)
     assert(src != NULL);
 
     if (dst_in_host)
-        dst = abcdk_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 4);
+        dst = abcdk_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 1);
     else
-        dst = abcdk_cuda_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 4);
+        dst = abcdk_cuda_avframe_alloc(src->width, src->height, (enum AVPixelFormat)src->format, 1);
     if (!dst)
         return NULL;
 

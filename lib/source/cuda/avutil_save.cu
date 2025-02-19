@@ -18,11 +18,14 @@ int abcdk_cuda_avframe_save(const char *dst, const AVFrame *src)
 
     assert(dst != NULL && src != NULL);
 
-    /*BMP格式使用BGR24或BGR32。*/
+    /*
+     * BMP格式使用BGR24或BGR32。
+     * 这里统一转成BRG32。
+    */
     
-    if (src->format != (int)AV_PIX_FMT_BGR32 && src->format != (int)AV_PIX_FMT_BGR24)
+    if (src->format != (int)AV_PIX_FMT_BGR32)
     {
-        tmp_src = abcdk_avframe_alloc(src->width, src->height, AV_PIX_FMT_BGR24, 4); // BMP格式要求行以4字节对齐。
+        tmp_src = abcdk_avframe_alloc(src->width, src->height, AV_PIX_FMT_BGR32, 4); // BMP格式要求行以4字节对齐。
         if (!tmp_src)
             return -1;
 
