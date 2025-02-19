@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # This file is part of ABCDK.
 #  
@@ -237,7 +237,7 @@ elif [ "${NATIVE_PLATFORM}" == "aarch64" ] || [ "${NATIVE_PLATFORM}" == "armv8l"
     NATIVE_ARCH="arm64"
     NATIVE_BITWIDE="64"
 }
-elif [ "${NATIVE_PLATFORM}" == "arm" ] || [ "${NATIVE_PLATFORM}" == "armv7l" ] || "${NATIVE_PLATFORM}" == "armv7a" ];then
+elif [ "${NATIVE_PLATFORM}" == "arm" ] || [ "${NATIVE_PLATFORM}" == "armv7l" ] || [ "${NATIVE_PLATFORM}" == "armv7a" ];then
 {
     NATIVE_ARCH="arm"
     NATIVE_BITWIDE="32"
@@ -255,7 +255,7 @@ elif [ "${TARGET_PLATFORM}" == "aarch64" ] || [ "${TARGET_PLATFORM}" == "armv8l"
     TARGET_ARCH="arm64"
     TARGET_BITWIDE="64"
 }
-elif [ "${TARGET_PLATFORM}" == "arm" ] || [ "${TARGET_PLATFORM}" == "armv7l" ] || "${TARGET_PLATFORM}" == "armv7a" ];then
+elif [ "${TARGET_PLATFORM}" == "arm" ] || [ "${TARGET_PLATFORM}" == "armv7l" ] || [ "${TARGET_PLATFORM}" == "armv7a" ];then
 {
     TARGET_ARCH="arm"
     TARGET_BITWIDE="32"
@@ -284,6 +284,8 @@ else
     if [ -f ${TARGET_COMPILER_SYSROOT}/lib64/libc.so.6 ];then
         TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib64/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
     elif [ -f ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 ];then
+        TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
+    elif [ -f ${TARGET_COMPILER_SYSROOT}/${TARGET_PLATFORM}-linux-gun/lib/libc.so.6 ];then
         TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
     fi
 }
