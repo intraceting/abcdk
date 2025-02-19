@@ -129,22 +129,25 @@ int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFram
     int src_in_host;
     int chk;
 
-    assert(ctx != NULL && dst != NULL && src != NULL);
+    assert(ctx != NULL && dst != NULL);
 
     ABCDK_ASSERT(ctx->encode, "解码器不能用于编码。");
 
-    src_in_host = (abcdk_cuda_avframe_memory_type(src) != CU_MEMORYTYPE_DEVICE);
-
-    if(src_in_host)
+    if (src)
     {
-        tmp_src = abcdk_cuda_avframe_clone(0, src);
-        if(!tmp_src)
-            return -1;
+        src_in_host = (abcdk_cuda_avframe_memory_type(src) != CU_MEMORYTYPE_DEVICE);
 
-        chk = abcdk_cuda_video_encode(ctx,dst,tmp_src);
-        av_frame_free(&tmp_src);
+        if (src_in_host)
+        {
+            tmp_src = abcdk_cuda_avframe_clone(0, src);
+            if (!tmp_src)
+                return -1;
 
-        return chk;
+            chk = abcdk_cuda_video_encode(ctx, dst, tmp_src);
+            av_frame_free(&tmp_src);
+
+            return chk;
+        }
     }
 
     return ctx->encoder_ctx->update(dst,src);
@@ -152,7 +155,7 @@ int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFram
 
 int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,AVFrame **dst, const AVPacket *src)
 {
-    assert(ctx != NULL && dst != NULL && src != NULL);
+    assert(ctx != NULL && dst != NULL);
 
     ABCDK_ASSERT(!ctx->encode, "编码器不能用于解码。");
 

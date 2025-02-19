@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/device.h"
 #include "context_robot.cu.hxx"
 #include "jpeg_encoder.cu.hxx"
 

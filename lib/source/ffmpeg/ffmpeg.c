@@ -1101,8 +1101,10 @@ int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int ke
 
     if(codec_p->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        pkt.dts = ++ctx->ts_nums[pkt.stream_index][1];
-        pkt.pts = ctx->ts_nums[pkt.stream_index][0]++;
+        /*DTS值不能大于PTS。*/
+
+        pkt.dts = ctx->ts_nums[pkt.stream_index][1]++;
+        pkt.pts = ++ctx->ts_nums[pkt.stream_index][0];
     }
     else if(codec_p->codec_type == AVMEDIA_TYPE_AUDIO)
     {

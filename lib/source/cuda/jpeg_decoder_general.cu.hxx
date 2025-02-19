@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/device.h"
 #include "context_robot.cu.hxx"
 #include "jpeg_decoder.cu.hxx"
 
@@ -189,7 +190,7 @@ namespace abcdk
                     pinned_allocator.pinned_malloc = pinned_malloc;
                     pinned_allocator.pinned_free = pinned_free;
 
-                    jpeg_chk = nvjpegCreateEx(NVJPEG_BACKEND_HYBRID, &dev_allocator, &pinned_allocator, NVJPEG_FLAGS_DEFAULT, &m_ctx);
+                    jpeg_chk = nvjpegCreateEx(NVJPEG_BACKEND_DEFAULT, &dev_allocator, &pinned_allocator, NVJPEG_FLAGS_DEFAULT, &m_ctx);
                     if (jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         return -1;
 

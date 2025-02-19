@@ -7,9 +7,11 @@
 #ifndef ABCDK_CUDA_VIDEO_DECODER_FFNV_HXX
 #define ABCDK_CUDA_VIDEO_DECODER_FFNV_HXX
 
+#include "abcdk/util/queue.h"
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/device.h"
 #include "context_robot.cu.hxx"
 #include "video_decoder.cu.hxx"
 #include "video_util.cu.hxx"
@@ -50,7 +52,7 @@ namespace abcdk
                     delete (decoder_ffnv *)ctx_p;
                 }
 
-                static unsigned long GetNumDecodeSurfaces(cudaVideoCodec eCodec, unsigned int nWidth, unsigned int nHeight)
+                static unsigned long get_decode_surfaces(cudaVideoCodec eCodec, unsigned int nWidth, unsigned int nHeight)
                 {
                     if (eCodec == cudaVideoCodec_VP9)
                     {
@@ -85,19 +87,19 @@ namespace abcdk
                     return 8;
                 }
 
-                static int CUDAAPI HandleVideoSequenceProc(void *pUserData, CUVIDEOFORMAT *pVideoFormat)
+                static int CUDAAPI video_sequence_cb(void *userdata, CUVIDEOFORMAT *format)
                 {
-                    return ((decoder_ffnv *)pUserData)->VideoSequenceProc(pVideoFormat);
+                    return ((decoder_ffnv *)userdata)->video_sequence(format);
                 }
 
-                static int CUDAAPI HandlePictureDecodeProc(void *pUserData, CUVIDPICPARAMS *pPicParams)
+                static int CUDAAPI picture_decode_cb(void *userdata, CUVIDPICPARAMS *params)
                 {
-                    return ((decoder_ffnv *)pUserData)->PictureDecodeProc(pPicParams);
+                    return ((decoder_ffnv *)userdata)->picture_decode(params);
                 }
 
-                static int CUDAAPI HandlePictureDisplayProc(void *pUserData, CUVIDPARSERDISPINFO *pDispInfo)
+                static int CUDAAPI picture_display_cb(void *userdata, CUVIDPARSERDISPINFO *info)
                 {
-                    return ((decoder_ffnv *)pUserData)->PictureDisplayProc(pDispInfo);
+                    return ((decoder_ffnv *)userdata)->picture_display(info);
                 }
 
                 static void frame_queue_destroy_cb(void *msg)
@@ -111,14 +113,14 @@ namespace abcdk
                 CUcontext m_gpu_ctx;
                 CUvideoctxlock m_ctx_lock;
 
-                CUVIDEOFORMATEX m_vidfmt_ext;
+                CUVIDEOFORMATEX m_ext_data;
 
                 CUvideoparser m_parser;
                 CUvideodecoder m_decoder;
 
                 CUVIDEOFORMAT m_videoformat;
-                int m_nPicNumInDecodeOrder[32];
-                int m_nDecodePicCnt;
+                int m_pic_in_decode_order[32];
+                int m_decode_pic_count;
 
                 abcdk_option_t *m_cfg;
                 abcdk_queue_t *m_frame_queue;
@@ -135,9 +137,9 @@ namespace abcdk
                     m_decoder = NULL;
 
                     memset(&m_videoformat, 0, sizeof(CUVIDEOFORMAT));
-                    memset(&m_nPicNumInDecodeOrder[0], 0, sizeof(int) * 32);
 
-                    m_nDecodePicCnt = 0;
+                    memset(&m_pic_in_decode_order[0], 0, sizeof(int) * 32);
+                    m_decode_pic_count = 0;
 
                     m_cfg = NULL;
                     m_frame_queue = NULL;
@@ -151,81 +153,99 @@ namespace abcdk
                 }
 
             protected:
-                int VideoSequenceProc(CUVIDEOFORMAT *pVideoFormat)
+                int video_sequence(CUVIDEOFORMAT *format)
                 {
+                    CUVIDDECODECAPS decode_caps;
+                    CUVIDDECODECREATEINFO decode_info;
+                    int decode_surface;
                     CUresult chk;
 
-                    /*Copy*/
-                    m_videoformat = *pVideoFormat;
+                    memset(&decode_caps, 0, sizeof(decode_caps));
+                    memset(&decode_info, 0, sizeof(decode_info));
 
-                    CUVIDDECODECAPS decodecaps;
-                    memset(&decodecaps, 0, sizeof(decodecaps));
-                    decodecaps.eCodecType = m_videoformat.codec;
-                    decodecaps.eChromaFormat = m_videoformat.chroma_format;
-                    decodecaps.nBitDepthMinus8 = m_videoformat.bit_depth_luma_minus8;
+                    /*Copy*/
+                    m_videoformat = *format;
+
+                    decode_caps.eCodecType = m_videoformat.codec;
+                    decode_caps.eChromaFormat = m_videoformat.chroma_format;
+                    decode_caps.nBitDepthMinus8 = m_videoformat.bit_depth_luma_minus8;
 
                     cuCtxPushCurrent(m_gpu_ctx);
-                    chk = m_funcs->cuvidGetDecoderCaps(&decodecaps);
+                    chk = m_funcs->cuvidGetDecoderCaps(&decode_caps);
                     cuCtxPopCurrent(NULL);
 
                     /*也许不支持*/
-                    if ((chk != CUDA_SUCCESS) || !decodecaps.bIsSupported)
+                    if ((chk != CUDA_SUCCESS) || !decode_caps.bIsSupported)
                         return 0;
 
-                    int nDecodeSurface = GetNumDecodeSurfaces(m_videoformat.codec, m_videoformat.coded_width, m_videoformat.coded_height);
+                    decode_surface = get_decode_surfaces(m_videoformat.codec, m_videoformat.coded_width, m_videoformat.coded_height);
+                    
+                    decode_info.CodecType = m_videoformat.codec;
+                    decode_info.ChromaFormat = m_videoformat.chroma_format;
 
-                    CUVIDDECODECREATEINFO vdecodecinfo = {0};
-                    vdecodecinfo.CodecType = m_videoformat.codec;
-                    vdecodecinfo.ChromaFormat = m_videoformat.chroma_format;
-                    vdecodecinfo.OutputFormat = (m_videoformat.bit_depth_luma_minus8 ? cudaVideoSurfaceFormat_P016 : cudaVideoSurfaceFormat_NV12);
-                    vdecodecinfo.bitDepthMinus8 = m_videoformat.bit_depth_luma_minus8;
-                    vdecodecinfo.DeinterlaceMode = cudaVideoDeinterlaceMode_Weave;
-                    vdecodecinfo.ulNumOutputSurfaces = nDecodeSurface; // 2;
-                    vdecodecinfo.ulCreationFlags = cudaVideoCreate_PreferCUVID;
-                    vdecodecinfo.ulNumDecodeSurfaces = nDecodeSurface;
-                    vdecodecinfo.vidLock = m_ctx_lock;
-                    vdecodecinfo.ulWidth = m_videoformat.coded_width;
-                    vdecodecinfo.ulHeight = m_videoformat.coded_height;
-                    vdecodecinfo.ulMaxWidth = m_videoformat.coded_width;
-                    vdecodecinfo.ulMaxHeight = m_videoformat.coded_height;
-                    vdecodecinfo.display_area.top = m_videoformat.display_area.top;
-                    vdecodecinfo.display_area.bottom = m_videoformat.display_area.bottom;
-                    vdecodecinfo.display_area.left = m_videoformat.display_area.left;
-                    vdecodecinfo.display_area.right = m_videoformat.display_area.right;
-                    vdecodecinfo.ulTargetWidth = abcdk_align(m_videoformat.display_area.right - m_videoformat.display_area.left, 2);
-                    vdecodecinfo.ulTargetHeight = abcdk_align(m_videoformat.display_area.bottom - m_videoformat.display_area.top, 2);
-                    vdecodecinfo.target_rect.top = 0;
-                    vdecodecinfo.target_rect.bottom = vdecodecinfo.ulTargetHeight;
-                    vdecodecinfo.target_rect.left = 0;
-                    vdecodecinfo.target_rect.right = vdecodecinfo.ulTargetWidth;
+                    decode_info.bitDepthMinus8 = decode_caps.nBitDepthMinus8;
+
+                    if (decode_caps.eChromaFormat == cudaVideoChromaFormat_420 || decode_caps.eChromaFormat == cudaVideoChromaFormat_Monochrome)
+                        decode_info.OutputFormat = decode_info.bitDepthMinus8 ? cudaVideoSurfaceFormat_P016 : cudaVideoSurfaceFormat_NV12;
+                    else if (decode_caps.eChromaFormat == cudaVideoChromaFormat_444)
+                        decode_info.OutputFormat = decode_info.bitDepthMinus8 ? cudaVideoSurfaceFormat_YUV444_16Bit : cudaVideoSurfaceFormat_YUV444;
+                    
+                  
+                    decode_info.DeinterlaceMode = cudaVideoDeinterlaceMode_Weave;
+                    decode_info.ulNumOutputSurfaces = 2; //decode_surface;
+                    decode_info.ulCreationFlags = cudaVideoCreate_PreferCUVID;
+                    decode_info.ulNumDecodeSurfaces = decode_surface;
+                    decode_info.vidLock = m_ctx_lock;
+                    decode_info.ulWidth = m_videoformat.coded_width;
+                    decode_info.ulHeight = m_videoformat.coded_height;
+                    decode_info.ulMaxWidth = m_videoformat.coded_width;
+                    decode_info.ulMaxHeight = m_videoformat.coded_height;
+                    decode_info.display_area.top = m_videoformat.display_area.top;
+                    decode_info.display_area.bottom = m_videoformat.display_area.bottom;
+                    decode_info.display_area.left = m_videoformat.display_area.left;
+                    decode_info.display_area.right = m_videoformat.display_area.right;
+                    decode_info.ulTargetWidth = abcdk_align(m_videoformat.display_area.right - m_videoformat.display_area.left, 2);
+                    decode_info.ulTargetHeight = abcdk_align(m_videoformat.display_area.bottom - m_videoformat.display_area.top, 2);
+                    decode_info.target_rect.top = 0;
+                    decode_info.target_rect.bottom = decode_info.ulTargetHeight;
+                    decode_info.target_rect.left = 0;
+                    decode_info.target_rect.right = decode_info.ulTargetWidth;
 
                     cuCtxPushCurrent(m_gpu_ctx);
-                    chk = m_funcs->cuvidCreateDecoder(&m_decoder, &vdecodecinfo);
+                    chk = m_funcs->cuvidCreateDecoder(&m_decoder, &decode_info);
                     cuCtxPopCurrent(NULL);
 
-                    assert(chk == CUDA_SUCCESS);
+                    if(chk != CUDA_SUCCESS)
+                        return 0;
 
-                    return nDecodeSurface;
+                    return decode_surface;
                 }
 
-                int PictureDecodeProc(CUVIDPICPARAMS *pPicParams)
+                int picture_decode(CUVIDPICPARAMS *params)
                 {
+                    CUresult chk;
+
                     if (!m_decoder)
                         return 0;
 
-                    m_nPicNumInDecodeOrder[pPicParams->CurrPicIdx] = m_nDecodePicCnt++;
+                    m_pic_in_decode_order[params->CurrPicIdx] = m_decode_pic_count++;
 
-                    CUresult chk = m_funcs->cuvidDecodePicture(m_decoder, pPicParams);
-                    assert(chk == CUDA_SUCCESS);
+                    cuCtxPushCurrent(m_gpu_ctx);
+                    chk = m_funcs->cuvidDecodePicture(m_decoder, params);
+                    cuCtxPopCurrent(NULL);
+
+                    if(chk != CUDA_SUCCESS)
+                        return 0;
 
                     return 1;
                 }
 
-                int PictureDisplayProc(CUVIDPARSERDISPINFO *pDispInfo)
+                int picture_display(CUVIDPARSERDISPINFO *info)
                 {
-                    CUVIDPROCPARAMS params = {0};
-                    CUdeviceptr dpSrcFrame = 0;
-                    unsigned int dpSrcPitch = 0;
+                    CUVIDPROCPARAMS params;
+                    CUVIDGETDECODESTATUS status;
+                    CUdeviceptr src_frame = 0;
+                    unsigned int src_pitch = 0;
                     int width, height;
                     enum AVPixelFormat pixfmt;
                     uint8_t *src_data[4] = {0};
@@ -237,43 +257,42 @@ namespace abcdk
                     if (!m_decoder)
                         return 0;
 
+                    memset(&params,0,sizeof(params));
+                    memset(&status,0,sizeof(status));
+
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
-                    //  cuCtxPushCurrent(m_gpu_ctx);
-
-                    params.progressive_frame = pDispInfo->progressive_frame;
-                    params.second_field = pDispInfo->repeat_first_field + 1;
-                    params.top_field_first = pDispInfo->top_field_first;
-                    params.unpaired_field = pDispInfo->repeat_first_field < 0;
+                    params.progressive_frame = info->progressive_frame;
+                    params.second_field = info->repeat_first_field + 1;
+                    params.top_field_first = info->top_field_first;
+                    params.unpaired_field = info->repeat_first_field < 0;
                     params.output_stream = 0;
 
-                    cuda_chk = m_funcs->cuvidMapVideoFrame(m_decoder, pDispInfo->picture_index, &dpSrcFrame, &dpSrcPitch, &params);
+                    cuda_chk = m_funcs->cuvidMapVideoFrame(m_decoder, info->picture_index, &src_frame, &src_pitch, &params);
                     if (cuda_chk == CUDA_SUCCESS)
                     {
-                        CUVIDGETDECODESTATUS DecodeStatus;
-                        memset(&DecodeStatus, 0, sizeof(DecodeStatus));
-                        cuda_chk = m_funcs->cuvidGetDecodeStatus(m_decoder, pDispInfo->picture_index, &DecodeStatus);
-                        if (cuda_chk == CUDA_SUCCESS && (DecodeStatus.decodeStatus == cuvidDecodeStatus_Error || DecodeStatus.decodeStatus == cuvidDecodeStatus_Error_Concealed))
+                        cuda_chk = m_funcs->cuvidGetDecodeStatus(m_decoder, info->picture_index, &status);
+                        if (cuda_chk == CUDA_SUCCESS && (status.decodeStatus == cuvidDecodeStatus_Error || status.decodeStatus == cuvidDecodeStatus_Error_Concealed))
                         {
-                            abcdk_trace_printf(LOG_WARNING, "Decode Error occurred for picture %d", m_nPicNumInDecodeOrder[pDispInfo->picture_index]);
+                            abcdk_trace_printf(LOG_WARNING, "Decode Error occurred for picture %d", m_pic_in_decode_order[info->picture_index]);
                         }
                     }
 
                     width = m_videoformat.display_area.right - m_videoformat.display_area.left;
                     height = m_videoformat.display_area.bottom - m_videoformat.display_area.top;
-                    pixfmt = (m_videoformat.bit_depth_luma_minus8 ? AV_PIX_FMT_NV16 : AV_PIX_FMT_NV12);
+                    pixfmt = AV_PIX_FMT_NV12;
 
-                    src_linesize[0] = dpSrcPitch;
-                    src_linesize[1] = dpSrcPitch;
+                    src_linesize[0] = src_pitch;
+                    src_linesize[1] = src_pitch;
 
-                    abcdk_avimage_fill_pointers(src_data, src_linesize, height, pixfmt, (void **)dpSrcFrame);
+                    abcdk_avimage_fill_pointers(src_data, src_linesize, height, pixfmt, (void **)src_frame);
 
                     frame_src = abcdk_cuda_avframe_alloc(width, height, pixfmt, 4);
                     if (frame_src)
                     {
                         abcdk_cuda_avimage_copy(frame_src->data, frame_src->linesize, 0, (const uint8_t **)src_data, src_linesize, 0, width, height, pixfmt);
 
-                        frame_src->pts = pDispInfo->timestamp; // bind PTS
+                        frame_src->pts = info->timestamp; // bind PTS
 
                         abcdk_queue_lock(m_frame_queue);
                         chk = abcdk_queue_push(m_frame_queue, frame_src);
@@ -288,10 +307,8 @@ namespace abcdk
                         abcdk_trace_printf(LOG_WARNING, "内存不足。");
                     }
 
-                    chk = m_funcs->cuvidUnmapVideoFrame(m_decoder, dpSrcFrame);
+                    chk = m_funcs->cuvidUnmapVideoFrame(m_decoder, src_frame);
                     assert(chk == CUDA_SUCCESS);
-
-                    //  cuCtxPopCurrent(NULL);
 
                     return 1;
                 }
@@ -331,12 +348,12 @@ namespace abcdk
                 virtual int open(abcdk_option_t *cfg)
                 {
                     int device;
-                    CUresult cuda_chk;
+                    CUresult chk;
+
+                    assert(m_cfg == NULL);
 
                     if (!m_funcs)
                         return -1;
-
-                    assert(m_cfg == NULL);
 
                     m_frame_queue = abcdk_queue_alloc(frame_queue_destroy_cb);
                     if (!m_frame_queue)
@@ -355,8 +372,8 @@ namespace abcdk
                     if (!m_gpu_ctx)
                         return -1;
 
-                    cuda_chk = m_funcs->cuvidCtxLockCreate(&m_ctx_lock, m_gpu_ctx);
-                    if (cuda_chk != CUDA_SUCCESS)
+                    chk = m_funcs->cuvidCtxLockCreate(&m_ctx_lock, m_gpu_ctx);
+                    if (chk != CUDA_SUCCESS)
                         return -1;
 
                     return 0;
@@ -365,42 +382,43 @@ namespace abcdk
                 virtual int sync(AVCodecContext *opt)
                 {
                     CUVIDPARSERPARAMS params;
-                    CUresult cuda_chk;
+                    CUresult chk;
+
+                    assert(opt != NULL);
 
                     if (!m_funcs)
                         return -1;
 
-                    assert(opt != NULL);
-
                     memset(&params, 0, sizeof(params));
+                    
                     params.CodecType = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
                     params.ulMaxNumDecodeSurfaces = 25;
                     params.ulMaxDisplayDelay = 4;
                     params.pUserData = this;
-                    params.pfnSequenceCallback = HandleVideoSequenceProc;
-                    params.pfnDecodePicture = HandlePictureDecodeProc;
-                    params.pfnDisplayPicture = HandlePictureDisplayProc;
+                    params.pfnSequenceCallback = video_sequence_cb;
+                    params.pfnDecodePicture = picture_decode_cb;
+                    params.pfnDisplayPicture = picture_display_cb;
                     params.pExtVideoInfo = NULL;
 
                     if (opt->extradata != NULL && opt->extradata_size > 0)
                     {
                         /*空间有限。*/
-                        if (sizeof(m_vidfmt_ext.raw_seqhdr_data) < opt->extradata_size)
+                        if (sizeof(m_ext_data.raw_seqhdr_data) < opt->extradata_size)
                             return -1;
 
-                        memset(&m_vidfmt_ext, 0, sizeof(m_vidfmt_ext));
+                        memset(&m_ext_data, 0, sizeof(m_ext_data));
 
-                        m_vidfmt_ext.format.seqhdr_data_length = opt->extradata_size;
-                        memcpy(m_vidfmt_ext.raw_seqhdr_data, opt->extradata, opt->extradata_size);
+                        m_ext_data.format.seqhdr_data_length = opt->extradata_size;
+                        memcpy(m_ext_data.raw_seqhdr_data, opt->extradata, opt->extradata_size);
 
-                        params.pExtVideoInfo = &m_vidfmt_ext;
+                        params.pExtVideoInfo = &m_ext_data;
                     }
 
                     cuCtxPushCurrent(m_gpu_ctx);
-                    cuda_chk = m_funcs->cuvidCreateVideoParser(&m_parser, &params);
+                    chk = m_funcs->cuvidCreateVideoParser(&m_parser, &params);
                     cuCtxPopCurrent(NULL);
 
-                    if (cuda_chk != CUDA_SUCCESS)
+                    if (chk != CUDA_SUCCESS)
                         return -1;
 
                     return 0;

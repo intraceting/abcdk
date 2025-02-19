@@ -10,7 +10,7 @@
 #ifdef __cuda_cuda_h__
 #if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)
 
-static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src)
+static int _abcdk_cuda_avframe_convert_ffmpeg(AVFrame *dst, const AVFrame *src)
 {
     struct SwsContext *ctx = NULL;
     AVFrame *tmp_dst = NULL, *tmp_src = NULL;
@@ -26,7 +26,7 @@ static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src)
         if(!tmp_src)
             return -1;
 
-        chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst,tmp_src);
+        chk = _abcdk_cuda_avframe_convert_ffmpeg(dst,tmp_src);
         av_frame_free(&tmp_src);
 
         return chk;
@@ -39,7 +39,7 @@ static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src)
         if(!tmp_dst)
             return -1;
 
-        chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(tmp_dst,src);
+        chk = _abcdk_cuda_avframe_convert_ffmpeg(tmp_dst,src);
         if(chk == 0)
             abcdk_cuda_avframe_copy(dst,tmp_dst);
         av_frame_free(&tmp_dst);
@@ -60,7 +60,7 @@ static int _abcdk_cuda_avframe_cvt_use_ffmpeg(AVFrame *dst, const AVFrame *src)
     return 0;
 }
 
-static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src)
+static int _abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src)
 {
     AVFrame *tmp_dst = NULL, *tmp_src = NULL;
     int dst_in_host, src_in_host;
@@ -76,7 +76,7 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src)
         if(!tmp_src)
             return -1;
 
-        chk = _abcdk_cuda_avframe_cvt_use_nppi(dst,tmp_src);
+        chk = _abcdk_cuda_avframe_convert(dst,tmp_src);
         av_frame_free(&tmp_src);
 
         return chk;
@@ -89,7 +89,7 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src)
         if(!tmp_dst)
             return -1;
 
-        chk = _abcdk_cuda_avframe_cvt_use_nppi(tmp_dst,src);
+        chk = _abcdk_cuda_avframe_convert(tmp_dst,src);
         if(chk == 0)
             abcdk_cuda_avframe_copy(dst,tmp_dst);
         av_frame_free(&tmp_dst);
@@ -142,6 +142,10 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src)
         {
             npp_chk = nppiYCbCr444ToRGB_JPEG_8u_P3C3R(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
         }
+        else
+        {
+            return _abcdk_cuda_avframe_convert_ffmpeg(dst,src);
+        }
     }
     else if (dst->format == (int)AV_PIX_FMT_BGR24)
     {
@@ -169,6 +173,19 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src)
         {
             npp_chk = nppiNV12ToBGR_8u_P2C3R(src->data, src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
         }
+        else
+        {
+            tmp_dst = abcdk_cuda_avframe_alloc(dst->width,dst->height,AV_PIX_FMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_avframe_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_avframe_convert(dst, tmp_dst);
+
+            av_frame_free(&tmp_dst);
+            return chk;
+        }
     }
     else if (dst->format == (int)AV_PIX_FMT_YUVJ420P ||
              dst->format == (int)AV_PIX_FMT_YUV420P)
@@ -180,6 +197,71 @@ static int _abcdk_cuda_avframe_cvt_use_nppi(AVFrame *dst, const AVFrame *src)
         else if (src->format == (int)AV_PIX_FMT_NV12)
         {
             npp_chk = nppiNV12ToYUV420_8u_P2P3R(src->data, src->linesize[0], dst->data, dst->linesize, src_roi);
+        }
+        else
+        {
+            tmp_dst = abcdk_cuda_avframe_alloc(dst->width,dst->height,AV_PIX_FMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_avframe_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_avframe_convert(dst, tmp_dst);
+
+            av_frame_free(&tmp_dst);
+            return chk;
+        }
+    }
+    else if (dst->format == (int)AV_PIX_FMT_RGB32)
+    {
+        if (src->format == (int)AV_PIX_FMT_RGB24)
+        {
+            int dst_order[4] = {0, 1, 2, 3};
+            npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,0);
+        }
+        else if (src->format == (int)AV_PIX_FMT_BGR24)
+        {
+            int dst_order[4] = {2, 1, 0, 3};
+            npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,0);
+        }
+        else
+        {
+            tmp_dst = abcdk_cuda_avframe_alloc(dst->width,dst->height,AV_PIX_FMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_avframe_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_avframe_convert(dst, tmp_dst);
+
+            av_frame_free(&tmp_dst);
+            return chk;
+        }
+    }
+    else if (dst->format == (int)AV_PIX_FMT_BGR32)
+    {
+        if (src->format == (int)AV_PIX_FMT_BGR24)
+        {
+            int dst_order[4] = {0, 1, 2, 3};
+            npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,0);
+        }
+        else if (src->format == (int)AV_PIX_FMT_RGB24)
+        {
+            int dst_order[4] = {2, 1, 0, 3};
+            npp_chk = nppiSwapChannels_8u_C3C4R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi, dst_order,0);
+        }
+        else
+        {
+            tmp_dst = abcdk_cuda_avframe_alloc(dst->width,dst->height,AV_PIX_FMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_avframe_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_avframe_convert(dst, tmp_dst);
+
+            av_frame_free(&tmp_dst);
+            return chk;
         }
     }
 
@@ -202,66 +284,9 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src)
         if (chk != 0)
             return -1;
     }
-    else if (dst->format == (int)AV_PIX_FMT_GRAY8)
-    {
-        if (src->format == (int)AV_PIX_FMT_RGB24)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src);
-        else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src);
-
-        if (chk != 0)
-            return -1;
-    }
-    else if (dst->format == (int)AV_PIX_FMT_RGB24)
-    {
-        if (src->format == (int)AV_PIX_FMT_BGR24 ||
-            src->format == (int)AV_PIX_FMT_RGB32 ||
-            src->format == (int)AV_PIX_FMT_BGR32 ||
-            src->format == (int)AV_PIX_FMT_YUVJ420P ||
-            src->format == (int)AV_PIX_FMT_YUV420P ||
-            src->format == (int)AV_PIX_FMT_NV12 ||
-            src->format == (int)AV_PIX_FMT_YUVJ422P ||
-            src->format == (int)AV_PIX_FMT_YUV422P ||
-            src->format == (int)AV_PIX_FMT_YUV444P ||
-            src->format == (int)AV_PIX_FMT_YUVJ444P)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src);
-        else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src);
-
-        if (chk != 0)
-            return -1;
-    }
-    else if (dst->format == (int)AV_PIX_FMT_BGR24)
-    {
-        if (src->format == (int)AV_PIX_FMT_RGB24 ||
-            src->format == (int)AV_PIX_FMT_BGR32 ||
-            src->format == (int)AV_PIX_FMT_RGB32 ||
-            src->format == (int)AV_PIX_FMT_YUVJ420P ||
-            src->format == (int)AV_PIX_FMT_YUV420P ||
-            src->format == (int)AV_PIX_FMT_NV12)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src);
-        else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src);
-
-        if (chk != 0)
-            return -1;
-    }
-    else if (dst->format == (int)AV_PIX_FMT_YUVJ420P ||
-             dst->format == (int)AV_PIX_FMT_YUV420P)
-    {
-        if (src->format == (int)AV_PIX_FMT_RGB24 ||
-            src->format == (int)AV_PIX_FMT_NV12)
-            chk = _abcdk_cuda_avframe_cvt_use_nppi(dst, src);
-        else
-            chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src);
-
-        if (chk != 0)
-            return -1;
-    }
     else
     {
-        chk = _abcdk_cuda_avframe_cvt_use_ffmpeg(dst, src);
-
+        chk = _abcdk_cuda_avframe_convert(dst, src);
         if (chk != 0)
             return -1;
     }

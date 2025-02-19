@@ -29,14 +29,27 @@ void abcdk_cuda_video_destroy(abcdk_cuda_video_t **ctx);
 /**创建。*/
 abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg);
 
-/**同步。*/
+/**
+ * 同步。
+ * 
+ * @note 解码：codec_id、extradata、extradata_size输入。
+ * @note 编码：time_base、width、height、codec_id输入，extradata、extradata_size输出。
+*/
 int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx,AVCodecContext *opt);
 
-/**编码。 */
+/**
+ * 编码。
+ * 
+ * @param [in] src 图像帧。NULL(0) 仅获取编码帧。
+ * 
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
 int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFrame *src);
 
 /**
  * 解码。
+ * 
+ * @param [in] src 数据帧。NULL(0) 仅获取解码图。src->size == 0 是结束帧。
  * 
  * @return 1 有输出，0 无输出，< 0 出错了。
 */

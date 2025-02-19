@@ -10,6 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/device.h"
 #include "context_robot.cu.hxx"
 #include "video_encoder.cu.hxx"
 #include "video_util.cu.hxx"
@@ -91,8 +92,8 @@ namespace abcdk
 
                     memset(&m_params, 0, sizeof(m_params));
                     memset(&m_config, 0, sizeof(m_config));
+
                     m_nExtraOutputDelay = 0;
-                    m_bufmt = NV_ENC_BUFFER_FORMAT_UNDEFINED;
                     m_nEncoderBuffer = 0;
 
                     m_cfg = NULL;
@@ -273,7 +274,7 @@ namespace abcdk
                         registerResource.width = m_vInputFrames[i]->width;
                         registerResource.height = m_vInputFrames[i]->height;
                         registerResource.pitch = m_vInputFrames[i]->linesize[0];
-                        registerResource.bufferFormat = m_bufmt;
+                        registerResource.bufferFormat = NV_ENC_BUFFER_FORMAT_ABGR;
                         NVENCSTATUS chk = m_nvenc.nvEncRegisterResource(m_encoder, &registerResource);
                         if (chk == NV_ENC_SUCCESS)
                             m_vRegisteredResources.push_back(registerResource.registeredResource);
@@ -293,7 +294,7 @@ namespace abcdk
                     picParams.version = NV_ENC_PIC_PARAMS_VER;
                     picParams.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
                     picParams.inputBuffer = inputBuffer;
-                    picParams.bufferFmt = m_bufmt;
+                    picParams.bufferFmt = NV_ENC_BUFFER_FORMAT_ABGR;
                     picParams.inputWidth = m_params.encodeWidth;
                     picParams.inputHeight = m_params.encodeHeight;
                     picParams.outputBitstream = m_vBitstreamOutputBuffer[i];
@@ -378,7 +379,6 @@ namespace abcdk
                     memset(&m_params, 0, sizeof(m_params));
                     memset(&m_config, 0, sizeof(m_config));
                     m_nExtraOutputDelay = 0;
-                    m_bufmt = NV_ENC_BUFFER_FORMAT_UNDEFINED;
                     m_nEncoderBuffer = 0;
                     m_nOutputDelay = 0;
                     m_iToSend = 0;
@@ -406,10 +406,10 @@ namespace abcdk
                 {
                     int device;
 
+                    assert(m_cfg == NULL);
+
                     if (!m_funcs)
                         return -1;
-
-                    assert(m_cfg == NULL);
 
                     m_cfg = abcdk_option_alloc("--");
                     if (!m_cfg)
@@ -436,15 +436,21 @@ namespace abcdk
                     std::vector<uint8_t> ext_data;
                     NVENCSTATUS chk;
 
+                    assert(opt != NULL);
+
                     if (!m_funcs)
                         return -1;
-
-                    assert(opt != NULL);
 
                     fps = 1.0 / abcdk_avmatch_r2d(opt->time_base, 1);
                     width = opt->width;
                     height = opt->height;
                     nvcodec_id = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
+
+                    if (fps > 1000 || fps <= 0)
+                        return -1;
+
+                    if (width <= 0 || height <= 0)
+                        return -1;
 
                     if (cudaVideoCodec_HEVC != nvcodec_id && cudaVideoCodec_H264 != nvcodec_id)
                         return -1;
@@ -490,7 +496,6 @@ namespace abcdk
                     if (NV_ENC_SUCCESS != chk)
                         return -1;
 
-                    m_bufmt = NV_ENC_BUFFER_FORMAT_ABGR;
                     m_nExtraOutputDelay = 1;
                     m_nEncoderBuffer = m_config.frameIntervalP + m_config.rcParams.lookaheadDepth + m_nExtraOutputDelay;
                     m_nOutputDelay = m_nEncoderBuffer - 1;
@@ -600,7 +605,7 @@ namespace abcdk
                         dst_off += out[j].size();
                     }
 
-                    return 0;
+                    return 1;
                 }
             };
         } // namespace video
