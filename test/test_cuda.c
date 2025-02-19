@@ -190,7 +190,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
     abcdk_cuda_video_sync(dec_ctx,dec_opt);
     abcdk_avcodec_free(&dec_opt);
 
-    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264,1);
+    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_HEVC,1);
 
     abcdk_avcodec_encode_video_fill_time_base(enc_opt, 25);
 
