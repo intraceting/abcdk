@@ -105,6 +105,19 @@ static int _abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src)
         {
             npp_chk = nppiRGBToGray_8u_C3C1R(src->data[0], src->linesize[0], dst->data[0], dst->linesize[0], src_roi);
         }
+        else
+        {
+            tmp_dst = abcdk_cuda_avframe_alloc(dst->width,dst->height,AV_PIX_FMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_avframe_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_avframe_convert(dst, tmp_dst);
+
+            av_frame_free(&tmp_dst);
+            return chk;
+        }
     }
     else if (dst->format == (int)AV_PIX_FMT_RGB24)
     {
