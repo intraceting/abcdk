@@ -9,6 +9,8 @@
 
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
+#include "context_robot.cu.hxx"
+#include "impl/log_streambuf.hxx"
 
 #ifdef __aarch64__
 #include "jetson/nvmpi.h"

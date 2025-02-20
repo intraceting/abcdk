@@ -10,6 +10,7 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
 #include "context_robot.cu.hxx"
+#include "impl/log_streambuf.hxx"
 
 #ifdef __x86_64__
 #ifdef HAVE_FFNVCODEC
@@ -83,7 +84,7 @@ namespace abcdk
 #endif //__aarch64__
                 return -1;
             }
-
+#ifdef FFNV_CUDA_DYNLINK_LOADER_H
             static bool operator==(const GUID &guid1, const GUID &guid2)
             {
                 return !memcmp(&guid1, &guid2, sizeof(GUID));
@@ -93,6 +94,7 @@ namespace abcdk
             {
                 return !(guid1 == guid2);
             }
+#endif //FFNV_CUDA_DYNLINK_LOADER_H
         } // namespace video
     } // namespace cuda
 } // namespace abcdk

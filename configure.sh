@@ -160,19 +160,19 @@ KIT_NAME=""
 
 #
 THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
-THIRDPARTY_FIND_ROOT=""
+THIRDPARTY_FIND_ROOT="/usr/"
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
 
 #
-CUDA_FIND_ROOT="/usr/local/cuda/"
-CUDA_COMPILER_BIN=
+CUDA_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/local/cuda/"
+CUDA_COMPILER_BIN="${THIRDPARTY_FIND_ROOT}/local/cuda/bin/nvcc"
 
 #
-CUDNN_FIND_ROOT="/usr/local/cudnn/"
+CUDNN_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/local/cudnn/"
 
 #
-TRNSORRT_FIND_ROOT="/usr/local/TensorRT/"
+TRNSORRT_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/local/TensorRT/"
 
 #
 PrintUsage()
@@ -448,7 +448,9 @@ export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} cuda) -eq 1 ];then
 {
     #查找NVCC。
-    CUDA_COMPILER_BIN=$(CheckHavePackage cuda 5)
+    if [ "${CUDA_COMPILER_BIN}" == "" ];then
+        CUDA_COMPILER_BIN=$(CheckHavePackage cuda 5)
+    fi
 
     #如果NVCC存在，再查找依赖组件。
     if [ -f ${CUDA_COMPILER_BIN} ];then
@@ -463,6 +465,13 @@ export _3RDPARTY_PKG_WORDBIT=
 export _3RDPARTY_PKG_FIND_ROOT=
 export _3RDPARTY_PKG_FIND_MODE=
 
+#
+if [ "${THIRDPARTY_NOFOUND}" != "" ];then
+{
+    echo -e "\x1b[33m${THIRDPARTY_NOFOUND}\x1b[31m not found. \x1b[0m"
+    exit 22
+}
+fi
 
 #设置环境变量，用于搜索依赖包。
 export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
@@ -470,7 +479,10 @@ export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${CUDNN_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
-DependPackageCheck cudnn HAVE_CUDNN
+#如果NVCC存在，再查找依赖组件。
+if [ -f ${CUDA_COMPILER_BIN} ];then
+    DependPackageCheck cudnn HAVE_CUDNN
+fi
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=
@@ -493,7 +505,10 @@ export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${TRNSORRT_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
-DependPackageCheck tensorrt HAVE_TENSORRT
+#如果NVCC存在，再查找依赖组件。
+if [ -f ${CUDA_COMPILER_BIN} ];then
+    DependPackageCheck tensorrt HAVE_TENSORRT
+fi
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=

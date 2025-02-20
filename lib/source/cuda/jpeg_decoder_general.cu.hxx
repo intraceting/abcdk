@@ -11,7 +11,6 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
 #include "abcdk/cuda/device.h"
-#include "context_robot.cu.hxx"
 #include "jpeg_decoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__

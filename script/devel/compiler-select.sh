@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # This file is part of ABCDK.
 #  
@@ -287,6 +287,8 @@ else
         TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
     elif [ -f ${TARGET_COMPILER_SYSROOT}/${TARGET_PLATFORM}-linux-gun/lib/libc.so.6 ];then
         TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
+    else
+        TARGET_GLIBC_MAX_VER="0.0"
     fi
 }
 fi
