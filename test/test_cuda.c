@@ -84,12 +84,17 @@ int abcdk_test_cuda_1(abcdk_option_t *args)
 
     abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f);
 
-    for (int i = 0; i < 1000; i++)
+    
+    for (int i = 0; i < 1; i++)
     {
         AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
+        
+        //abcdk_cuda_imgproc_drawrect_8u_c3r(g->data[0], g->width, g->linesize[0], g->height, color, 3, corner);
+        abcdk_cuda_imgproc_drawrect_8u_c3r(f->data[0], f->width, f->linesize[0], f->height, color, 3, corner);
 
-        abcdk_cuda_jpeg_save("/tmp/test.cuda.g.jpg", g);
-
+        abcdk_cuda_avframe_save("/tmp/test.cuda.g.bmp", f);
+        abcdk_cuda_jpeg_save("/tmp/test.cuda.g.jpg", f);
+        
         av_frame_free(&g);
     }
 

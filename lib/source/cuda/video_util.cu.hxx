@@ -10,7 +10,6 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/avutil.h"
 #include "context_robot.cu.hxx"
-#include "impl/log_streambuf.hxx"
 
 #ifdef __x86_64__
 #ifdef HAVE_FFNVCODEC

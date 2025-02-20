@@ -5,32 +5,21 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "kernel_1.cu.hxx"
-#include "kernel_2.cu.hxx"
+#include "../impl/imageproc.hxx"
+#include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
 template <typename T>
-ABCDK_CUDA_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
+ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
 {
-    size_t tid = abcdk::cuda::kernel::grid_get_tid(2, 2);
+    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    size_t y = tid / width;
-    size_t x = tid % width;
-
-    if (x >= width || y >= height)
-        return;
-
-    for (size_t i = 0; i < channels; i++)
-    {
-        size_t offset = abcdk::cuda::kernel::off<T>(packed, width, pitch, height, channels, 0, x, y, i);
-
-        dst[offset] = (scalar ? scalar[i] : (T)0);
-    }
+    abcdk::imageproc::stuff_kernel<T>(channels,packed,dst,width,pitch,height,scalar,tid);
 }
 
 template <typename T>
-ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
+ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
 {
     T *gpu_scalar;
     uint3 dim[2];
@@ -40,7 +29,7 @@ ABCDK_CUDA_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst,
         return -1;
 
     /*2D-2D*/
-    abcdk::cuda::kernel::grid_make_2d2d(dim, width * height, 64);
+    abcdk::cuda::grid::make_dim_dim(dim, width * height, 64);
 
     _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(3, true, dst, width, pitch, height, gpu_scalar);
     abcdk_cuda_free((void **)&gpu_scalar);

@@ -5,8 +5,8 @@
  *
  */
 #include "abcdk/cuda/memory.h"
-#include "kernel_1.cu.hxx"
-#include "kernel_2.cu.hxx"
+#include "../impl/invoke.hxx"
+#include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -53,9 +53,9 @@ void *abcdk_cuda_alloc_z(size_t size)
 }
 
 template <typename T>
-ABCDK_CUDA_GLOBAL void _abcdk_cuda_memset_2d2d(T *data, T value, size_t size)
+ABCDK_INVOKE_GLOBAL void _abcdk_cuda_memset_2d2d(T *data, T value, size_t size)
 {
-    size_t tid = abcdk::cuda::kernel::grid_get_tid(2, 2);
+    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
     if (tid >= size)
         return;
@@ -68,7 +68,7 @@ void *abcdk_cuda_memset(void *dst, int val, size_t size)
     uint3 dim[2];
 
     /*2D-2D*/
-    abcdk::cuda::kernel::grid_make_2d2d(dim, size, 64);
+    abcdk::cuda::grid::make_dim_dim(dim, size, 64);
 
     _abcdk_cuda_memset_2d2d<uint8_t><<<dim[0], dim[1]>>>((uint8_t *)dst, (uint8_t)val, size);
 

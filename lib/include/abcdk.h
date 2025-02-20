@@ -160,7 +160,7 @@
 #include "abcdk/cuda/device.h"
 #include "abcdk/cuda/imgproc.h"
 #include "abcdk/cuda/avutil.h"
-#include "abcdk/cuda/tensor.h"
+#include "abcdk/cuda/tensorproc.h"
 #include "abcdk/cuda/jpeg.h"
 #include "abcdk/cuda/video.h"
 
