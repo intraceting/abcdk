@@ -57,10 +57,12 @@ void abcdk_cuda_video_destroy(abcdk_cuda_video_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg)
+abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
 {
     abcdk_cuda_video_t *ctx;
     int chk;
+
+    assert(cuda_ctx != NULL);
 
     ctx = (abcdk_cuda_video_t *)abcdk_heap_alloc(sizeof(abcdk_cuda_video_t));
     if (!ctx)
@@ -69,9 +71,9 @@ abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg)
     if (ctx->encode = encode)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx->encoder_ctx = abcdk::cuda::video::encoder_ffnv::create();
+        ctx->encoder_ctx = abcdk::cuda::video::encoder_ffnv::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->encoder_ctx = abcdk::cuda::video::encoder_aarch64::create();
+        ctx->encoder_ctx = abcdk::cuda::video::encoder_aarch64::create(cuda_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!ctx->encoder_ctx)
@@ -84,9 +86,9 @@ abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg)
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx->decoder_ctx = abcdk::cuda::video::decoder_ffnv::create();
+        ctx->decoder_ctx = abcdk::cuda::video::decoder_ffnv::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->decoder_ctx = abcdk::cuda::video::decoder_aarch64::create();
+        ctx->decoder_ctx = abcdk::cuda::video::decoder_aarch64::create(cuda_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!ctx->decoder_ctx)

@@ -27,8 +27,8 @@ namespace abcdk
             public:
                 robot(CUcontext ctx)
                 {
-                    m_old_ctx = NULL;
-                    cuCtxPopCurrent(&m_old_ctx);
+                    // m_old_ctx = NULL;
+                    // cuCtxPopCurrent(&m_old_ctx);
 
                     assert(ctx != NULL);
                     cuCtxPushCurrent(ctx);
@@ -38,8 +38,8 @@ namespace abcdk
                 {
                     cuCtxPopCurrent(NULL);
 
-                    if (m_old_ctx)
-                        cuCtxPushCurrent(m_old_ctx);
+                    // if (m_old_ctx)
+                    //     cuCtxPushCurrent(m_old_ctx);
                 }
             };
         } // namespace context

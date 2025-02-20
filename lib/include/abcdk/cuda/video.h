@@ -26,8 +26,12 @@ typedef struct _abcdk_cuda_video abcdk_cuda_video_t;
 /**释放。*/
 void abcdk_cuda_video_destroy(abcdk_cuda_video_t **ctx);
 
-/**创建。*/
-abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg);
+/**
+ * 创建。
+ * 
+ * @param [in] cuda_ctx CUDA环境。仅作指针复制，对象关闭时不会释放。
+*/
+abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx);
 
 /**
  * 同步。

@@ -57,10 +57,12 @@ void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
+abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
 {
     abcdk_cuda_jpeg_t *ctx;
     int chk;
+
+    assert(cuda_ctx != NULL);
 
     ctx = (abcdk_cuda_jpeg_t *)abcdk_heap_alloc(sizeof(abcdk_cuda_jpeg_t));
     if (!ctx)
@@ -69,9 +71,9 @@ abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
     if (ctx->encode = encode)
     {
 #ifdef __x86_64__
-        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_general::create();
+        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_general::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_aarch64::create();
+        ctx->encoder_ctx = abcdk::cuda::jpeg::encoder_aarch64::create(cuda_ctx);
 #endif //__x86_64__ || __aarch64__
 
         if (!ctx->encoder_ctx)
@@ -84,9 +86,9 @@ abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
     else
     {
 #ifdef __x86_64__
-        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_general::create();
+        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_general::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_aarch64::create();
+        ctx->decoder_ctx = abcdk::cuda::jpeg::decoder_aarch64::create(cuda_ctx);
 #endif //__x86_64__ || __aarch64__
 
         if (!ctx->decoder_ctx)
@@ -98,6 +100,7 @@ abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg)
     }
 
     return ctx;
+    
 ERR:
 
     abcdk_cuda_jpeg_destroy(&ctx);

@@ -119,7 +119,6 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
     return av_frame;
 }
 
-
 int abcdk_cuda_avframe_copy(AVFrame *dst, const AVFrame *src)
 {
     int dst_in_host, src_in_host;

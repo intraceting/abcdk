@@ -26,9 +26,9 @@ namespace abcdk
             class encoder_general : public encoder
             {
             public:
-                static encoder *create()
+                static encoder *create(CUcontext cuda_ctx)
                 {
-                    encoder *ctx = new encoder_general();
+                    encoder *ctx = new encoder_general(cuda_ctx);
                     if (!ctx)
                         return NULL;
 
@@ -59,10 +59,10 @@ namespace abcdk
                 nvjpegEncoderParams_t m_params;
 
             public:
-                encoder_general()
+                encoder_general(CUcontext cuda_ctx)
                 {
                     m_cfg = NULL;
-                    m_gpu_ctx = NULL;
+                    m_gpu_ctx = cuda_ctx;
                     m_stream = NULL;
                     m_ctx = NULL;
                     m_state = NULL;
@@ -95,8 +95,6 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
 
                     abcdk_option_free(&m_cfg);
                 }

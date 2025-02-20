@@ -26,10 +26,10 @@ void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx);
 
 /**
  * 创建。
- * 
- * @warning CUDA解码器内有内存泄漏情况，谨慎选择已明确修复的版本，否则会有隐患。
-*/
-abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg);
+ *
+ * @param [in] cuda_ctx CUDA环境。仅作指针复制，对象关闭时不会释放。
+ */
+abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx);
 
 /**编码。 */
 abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx,const AVFrame *src);
@@ -48,10 +48,10 @@ AVFrame *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx,const void *src,int src_s
 AVFrame *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx,const void *src);
 
 /**保存。*/
-int abcdk_cuda_jpeg_save(const char *dst, const AVFrame *src);
+int abcdk_cuda_jpeg_save(const char *dst, const AVFrame *src, CUcontext cuda_ctx);
 
 /**加载。*/
-AVFrame *abcdk_cuda_jpeg_load(const char *src);
+AVFrame *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx);
 
 __END_DECLS
 

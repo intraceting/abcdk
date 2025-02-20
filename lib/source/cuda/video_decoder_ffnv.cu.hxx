@@ -29,9 +29,9 @@ namespace abcdk
             class decoder_ffnv : public decoder
             {
             public:
-                static decoder *create()
+                static decoder *create(CUcontext cuda_ctx)
                 {
-                    decoder *ctx = new decoder_ffnv();
+                    decoder *ctx = new decoder_ffnv(cuda_ctx);
                     if (!ctx)
                         return NULL;
 
@@ -125,12 +125,12 @@ namespace abcdk
                 abcdk_queue_t *m_frame_queue;
 
             public:
-                decoder_ffnv()
+                decoder_ffnv(CUcontext cuda_ctx)
                 {
                     m_funcs = NULL;
                     cuvid_load_functions(&m_funcs, NULL);
 
-                    m_gpu_ctx = NULL;
+                    m_gpu_ctx = cuda_ctx;
                     m_ctx_lock = NULL;
                     m_parser = NULL;
                     m_decoder = NULL;

@@ -10,14 +10,14 @@
 #ifdef AVUTIL_AVUTIL_H
 
 
-AVFrame *abcdk_cuda_jpeg_load(const char *src)
+AVFrame *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx)
 {
     AVFrame *dst;
     abcdk_cuda_jpeg_t *ctx;
 
-    assert(src != NULL);
+    assert(src != NULL && cuda_ctx != NULL);
 
-    ctx = abcdk_cuda_jpeg_create(0,NULL);
+    ctx = abcdk_cuda_jpeg_create(0,NULL,cuda_ctx);
     if(!ctx)
         return NULL;
 

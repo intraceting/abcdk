@@ -28,9 +28,9 @@ namespace abcdk
             class encoder_aarch64 : public encoder
             {
             public:
-                static encoder *create()
+                static encoder *create(CUcontext cuda_ctx)
                 {
-                    encoder *ctx = new encoder_aarch64();
+                    encoder *ctx = new encoder_aarch64(cuda_ctx);
                     if (!ctx)
                         return NULL;
 
@@ -57,9 +57,9 @@ namespace abcdk
                 abcdk_option_t *m_cfg;
 
             public:
-                encoder_aarch64()
+                encoder_aarch64(CUcontext cuda_ctx)
                 {
-                    m_gpu_ctx = NULL;
+                    m_gpu_ctx = cuda_ctx;
                     m_encoder = NULL;
 
                     m_cfg = NULL;
@@ -191,14 +191,13 @@ namespace abcdk
                 {
                     if (m_gpu_ctx)
                         cuCtxPushCurrent(m_gpu_ctx);
+
                     if (m_encoder)
                         nvmpi_encoder_close(m_encoder);
                     m_encoder = NULL;
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
 
                     abcdk_option_free(&m_cfg);
                 }

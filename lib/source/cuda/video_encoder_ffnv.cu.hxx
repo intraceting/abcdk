@@ -28,9 +28,9 @@ namespace abcdk
             class encoder_ffnv : public encoder
             {
             public:
-                static encoder *create()
+                static encoder *create(CUcontext cuda_ctx)
                 {
-                    encoder *ctx = new encoder_ffnv();
+                    encoder *ctx = new encoder_ffnv(cuda_ctx);
                     if (!ctx)
                         return NULL;
 
@@ -77,12 +77,12 @@ namespace abcdk
                 abcdk_option_t *m_cfg;
 
             public:
-                encoder_ffnv()
+                encoder_ffnv(CUcontext cuda_ctx)
                 {
                     m_funcs = NULL;
                     nvenc_load_functions(&m_funcs, NULL);
 
-                    m_gpu_ctx = NULL;
+                    m_gpu_ctx = cuda_ctx;
 
                     m_nvenc = {NV_ENCODE_API_FUNCTION_LIST_VER};
                     m_encoder = NULL;
@@ -425,8 +425,6 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
 
                     abcdk_option_free(&m_cfg);
                 }

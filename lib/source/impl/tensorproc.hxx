@@ -36,9 +36,9 @@ namespace abcdk
                 DT *dst_p = abcdk::general::ptr<DT>(dst, dst_of);
 
                 if (revert)
-                    *dst_p = (((DT)*src_p * std[z]) + mean[z]) * scale[z];
+                    *dst_p = (((DT)(*src_p) * std[z]) + mean[z]) * scale[z];
                 else
-                    *dst_p = (((DT)*src_p / scale[z]) - mean[z]) / std[z];
+                    *dst_p = (((DT)(*src_p) / scale[z]) - mean[z]) / std[z];
             }
         }
     } // namespace tensorproc

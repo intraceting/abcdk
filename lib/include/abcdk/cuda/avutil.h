@@ -37,7 +37,6 @@ CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src);
 /**创建帧图。 */
 AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
 
-
 /**
  * 帧图复制。
  *

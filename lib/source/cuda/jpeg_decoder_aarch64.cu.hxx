@@ -25,9 +25,9 @@ namespace abcdk
             class decoder_aarch64:public decoder
             {
             public:
-                static decoder *create()
+                static decoder *create(CUcontext cuda_ctx)
                 {
-                    decoder *ctx = new decoder_aarch64();
+                    decoder *ctx = new decoder_aarch64(cuda_ctx);
                     if (!ctx)
                         return NULL;
 
@@ -52,10 +52,10 @@ namespace abcdk
                 CUcontext m_gpu_ctx;
                 NvJPEGDecoder *m_ctx;
             public:
-                decoder_aarch64()
+                decoder_aarch64(CUcontext cuda_ctx)
                 {
                     m_cfg = NULL;
-                    m_gpu_ctx = NULL;
+                    m_gpu_ctx = cuda_ctx;
                     m_ctx = NULL;
                 }
 
@@ -76,8 +76,6 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
 
                     abcdk_option_free(&m_cfg);
                 }

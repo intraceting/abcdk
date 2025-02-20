@@ -27,26 +27,42 @@ __BEGIN_DECLS
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_8u_to_32f_3r(int dst_packed, float *dst, size_t dst_ws,
-                                            int src_packed, uint8_t *src, size_t src_ws,
-                                            size_t w, size_t h, float scale[3], float mean[3], float std[3]);
+int abcdk_cuda_tensorproc_blob_8u_to_32f_c1r(int dst_packed, float *dst, size_t dst_ws,
+                                             int src_packed, uint8_t *src, size_t src_ws,
+                                             size_t w, size_t h, float scale[1], float mean[1], float std[1]);
+
+/**
+ * 张量值转换。
+ *
+ * @note dst[z] = ((src[z] / scale[z]) - mean[z]) / std[z];
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_blob_8u_to_32f_c3r(int dst_packed, float *dst, size_t dst_ws,
+                                             int src_packed, uint8_t *src, size_t src_ws,
+                                             size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 
 /**
  * 张量值转换。
  *
  * @note dst[z] = ((src[z] * std[z]) + mean[z]) * scale[z];
  *
- * @param [in] dst_packed 目标图的像素排列方式。0 平面，!0 交叉。
- * @param [in] src_packed 源图的像素排列方式。0 平面，!0 交叉。
- * @param [in] scale 系数。
- * @param [in] mean 均值。
- * @param [in] std 方差。
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_blob_32f_to_8u_c1r(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                             int src_packed, float *src, size_t src_ws,
+                                             size_t w, size_t h, float scale[1], float mean[1], float std[1]);
+
+/**
+ * 张量值转换。
+ *
+ * @note dst[z] = ((src[z] * std[z]) + mean[z]) * scale[z];
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_32f_to_8u_3r(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                            int src_packed, float *src, size_t src_ws,
-                                            size_t w, size_t h, float scale[3], float mean[3], float std[3]);
+int abcdk_cuda_tensorproc_blob_32f_to_8u_c3r(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                             int src_packed, float *src, size_t src_ws,
+                                             size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 
 __END_DECLS
 

@@ -16,18 +16,9 @@
 #ifdef HAVE_CUDA
 #ifdef HAVE_FFMPEG
 
-int abcdk_test_cuda_1(abcdk_option_t *args)
+int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 {
-    int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
-
-    int chk = abcdk_cuda_set_device(gpu);
-    assert(chk == 0);
-
-    char name[256] = {0};
-    chk = abcdk_cuda_get_device_name(name, gpu);
-    assert(chk == 0);
-
-    fprintf(stderr, "%s\n", name);
+    int chk;
 
     // AVFrame *a = abcdk_cuda_avframe_alloc(100,1000,AV_PIX_FMT_YUV420P,1);
     // AVFrame *b = abcdk_avframe_alloc(100,1000,AV_PIX_FMT_YUV420P,1);
@@ -82,21 +73,10 @@ int abcdk_test_cuda_1(abcdk_option_t *args)
 
     abcdk_cuda_avframe_save("/tmp/test.cuda.f.bmp", f);
 
-    abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f);
+    abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f, cuda_ctx);
+    // abcdk_cuda_jpeg_save("/tmp/test.cuda.f2.jpg", f);
 
-    
-    for (int i = 0; i < 1; i++)
-    {
-        AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
-        
-        //abcdk_cuda_imgproc_drawrect_8u_c3r(g->data[0], g->width, g->linesize[0], g->height, color, 3, corner);
-        abcdk_cuda_imgproc_drawrect_8u_c3r(f->data[0], f->width, f->linesize[0], f->height, color, 3, corner);
-
-        abcdk_cuda_avframe_save("/tmp/test.cuda.g.bmp", f);
-        abcdk_cuda_jpeg_save("/tmp/test.cuda.g.jpg", f);
-        
-        av_frame_free(&g);
-    }
+    // abcdk_cuda_avframe_save("/tmp/test.cuda.f2.bmp", f);
 
     av_frame_free(&a);
     av_frame_free(&b);
@@ -105,34 +85,46 @@ int abcdk_test_cuda_1(abcdk_option_t *args)
     av_frame_free(&e);
     av_frame_free(&f);
 
+    for (int i = 0; i < 10; i++)
+    {
+        AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
+
+        abcdk_cuda_imgproc_drawrect_8u_c3r(g->data[0], g->width, g->linesize[0], g->height, color, 3, corner);
+
+        abcdk_cuda_avframe_save("/tmp/test.cuda.g2.bmp", g);
+        abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g, cuda_ctx);
+
+        av_frame_free(&g);
+    }
+
     return 0;
 }
 
-int abcdk_test_cuda_2(abcdk_option_t *args)
+int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
 {
     abcdk_ffmpeg_config_t ff_r_cfg = {0};
 
-    ff_r_cfg.file_name = abcdk_option_get(args,"--src",0,"");
-    ff_r_cfg.read_flush = abcdk_option_get_double(args,"--src-flush",0,0);
-    ff_r_cfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
-    ff_r_cfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,10);
+    ff_r_cfg.file_name = abcdk_option_get(args, "--src", 0, "");
+    ff_r_cfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
+    ff_r_cfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
+    ff_r_cfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 10);
     ff_r_cfg.bit_stream_filter = 1;
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&ff_r_cfg);
 
-    AVStream *r_video_steam = abcdk_ffmpeg_find_stream(r,AVMEDIA_TYPE_VIDEO);
+    AVStream *r_video_steam = abcdk_ffmpeg_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0,NULL);
+    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0, NULL, cuda_ctx);
 
-    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id,0);
-    abcdk_avstream_parameters_to_context(dec_opt,r_video_steam);
-    abcdk_cuda_video_sync(dec_ctx,dec_opt);
+    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id, 0);
+    abcdk_avstream_parameters_to_context(dec_opt, r_video_steam);
+    abcdk_cuda_video_sync(dec_ctx, dec_opt);
     abcdk_avcodec_free(&dec_opt);
 
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
 
-    abcdk_cuda_jpeg_t *jpeg_w = abcdk_cuda_jpeg_create(1,NULL);
+    abcdk_cuda_jpeg_t *jpeg_w = abcdk_cuda_jpeg_create(1, NULL, cuda_ctx);
 
     for (int i = 0; i < 10000; i++)
     {
@@ -153,7 +145,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
 
             abcdk_mkdir(filename, 0755);
 
-            abcdk_cuda_jpeg_encode_to_file(jpeg_w,filename, r_fae);
+            abcdk_cuda_jpeg_encode_to_file(jpeg_w, filename, r_fae);
         }
 
         av_frame_free(&r_fae);
@@ -169,33 +161,32 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
     return 0;
 }
 
-
-int abcdk_test_cuda_3(abcdk_option_t *args)
+int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
 {
-    abcdk_ffmpeg_config_t ff_r_cfg = {0},ff_w_cfg = {1};
+    abcdk_ffmpeg_config_t ff_r_cfg = {0}, ff_w_cfg = {1};
 
-    ff_r_cfg.file_name = abcdk_option_get(args,"--src",0,"");
-    ff_r_cfg.read_flush = abcdk_option_get_double(args,"--src-flush",0,0);
-    ff_r_cfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
-    ff_r_cfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,10);
+    ff_r_cfg.file_name = abcdk_option_get(args, "--src", 0, "");
+    ff_r_cfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
+    ff_r_cfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
+    ff_r_cfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 10);
     ff_r_cfg.bit_stream_filter = 1;
-    ff_w_cfg.file_name = abcdk_option_get(args,"--dst",0,"");
-    ff_w_cfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
+    ff_w_cfg.file_name = abcdk_option_get(args, "--dst", 0, "");
+    ff_w_cfg.short_name = abcdk_option_get(args, "--dst-fmt", 0, "");
 
     abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&ff_r_cfg);
     abcdk_ffmpeg_t *w = abcdk_ffmpeg_open(&ff_w_cfg);
 
-    AVStream *r_video_steam = abcdk_ffmpeg_find_stream(r,AVMEDIA_TYPE_VIDEO);
+    AVStream *r_video_steam = abcdk_ffmpeg_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0,NULL);
-    abcdk_cuda_video_t *enc_ctx = abcdk_cuda_video_create(1,NULL);
+    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0, NULL, cuda_ctx);
+    abcdk_cuda_video_t *enc_ctx = abcdk_cuda_video_create(1, NULL, cuda_ctx);
 
-    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id,0);
-    abcdk_avstream_parameters_to_context(dec_opt,r_video_steam);
-    abcdk_cuda_video_sync(dec_ctx,dec_opt);
+    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id, 0);
+    abcdk_avstream_parameters_to_context(dec_opt, r_video_steam);
+    abcdk_cuda_video_sync(dec_ctx, dec_opt);
     abcdk_avcodec_free(&dec_opt);
 
-    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264,1);
+    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_HEVC, 0);
 
     abcdk_avcodec_encode_video_fill_time_base(enc_opt, 25);
 
@@ -207,15 +198,15 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
     enc_opt->bit_rate_tolerance = 15000 * 1000;
     enc_opt->bit_rate = 15000 * 1000;
 
-    abcdk_cuda_video_sync(enc_ctx,enc_opt);
+    abcdk_cuda_video_sync(enc_ctx, enc_opt);
 
     int w_stream_idx = abcdk_ffmpeg_add_stream(w, enc_opt, 1);
 
     abcdk_avcodec_free(&dec_opt);
 
-    abcdk_ffmpeg_write_header(w,0);
+    abcdk_ffmpeg_write_header(w, 0);
 
-    AVPacket r_pkt,*w_pkt=NULL;
+    AVPacket r_pkt, *w_pkt = NULL;
     av_init_packet(&r_pkt);
 
     for (int i = 0; i < 10000; i++)
@@ -245,36 +236,35 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
     }
 
     av_packet_unref(&r_pkt);
-    
 
-    for(int i = 0;i<1000;i++)
+    for (int i = 0; i < 1000; i++)
     {
         AVFrame *r_fae = NULL;
         AVPacket *w_pkt = NULL;
 
-        if(i == 0)
+        if (i == 0)
         {
             /*通知解码器是结束包。*/
             int chk = abcdk_cuda_video_decode(dec_ctx, &r_fae, &r_pkt);
             if (chk < 0)
                 break;
-            else if(chk > 0)
+            else if (chk > 0)
             {
-                chk = abcdk_cuda_video_encode(enc_ctx,&w_pkt,r_fae);
-                if(chk <=0)
+                chk = abcdk_cuda_video_encode(enc_ctx, &w_pkt, r_fae);
+                if (chk <= 0)
                     break;
 
-                abcdk_ffmpeg_write_packet2(w,w_pkt->data,w_pkt->size,w_pkt->flags,w_stream_idx);
+                abcdk_ffmpeg_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
                 av_packet_free(&w_pkt);
             }
         }
         else
         {
-            int chk = abcdk_cuda_video_encode(enc_ctx,&w_pkt,NULL);
-            if(chk <=0)
+            int chk = abcdk_cuda_video_encode(enc_ctx, &w_pkt, NULL);
+            if (chk <= 0)
                 break;
 
-            abcdk_ffmpeg_write_packet2(w,w_pkt->data,w_pkt->size,w_pkt->flags,w_stream_idx);
+            abcdk_ffmpeg_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
             av_packet_free(&w_pkt);
         }
     }
@@ -289,18 +279,71 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
     return 0;
 }
 
+int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
+{
+    int w = 16,h = 16;
+
+    cuCtxPushCurrent(cuda_ctx);
+
+    AVFrame *a = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_RGB24, 4);
+    AVFrame *b = abcdk_cuda_avframe_alloc(w*3, h , AV_PIX_FMT_GRAYF32, 4);
+    AVFrame *c = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_RGB24, 4);
+
+    float scale[3] = {255,255,255};
+    float mean[3] = {127.5,127.5,127.5};
+    float std[3] = {128.0,128.0,128.0};
+
+    abcdk_cuda_tensorproc_blob_8u_to_32f_c3r(0,(float*)b->data[0],b->linesize[0],1,a->data[0],a->linesize[0],w,h,scale,mean,std);
+
+    abcdk_cuda_tensorproc_blob_32f_to_8u_c3r(1,c->data[0],c->linesize[0],0,(float*)b->data[0],b->linesize[0],w,h,scale,mean,std);
+
+    
+    AVFrame *a2 = abcdk_cuda_avframe_clone(1,a);
+    AVFrame *b2 = abcdk_cuda_avframe_clone(1,b);
+    AVFrame *c2 = abcdk_cuda_avframe_clone(1,c);
+
+    int chk = memcmp(a2->data[0],c2->data[0],w*3*h);
+    assert(chk == 0);
+
+    av_frame_free(&a);
+    av_frame_free(&b);
+    av_frame_free(&c);
+    av_frame_free(&a2);
+    av_frame_free(&b2);
+    av_frame_free(&c2);
+
+    cuCtxPopCurrent(NULL);
+}
+
 int abcdk_test_cuda(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
 
     cuInit(0);
 
+    int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
+
+    int chk = abcdk_cuda_set_device(gpu);
+    assert(chk == 0);
+
+    char name[256] = {0};
+    chk = abcdk_cuda_get_device_name(name, gpu);
+    assert(chk == 0);
+
+    fprintf(stderr, "%s\n", name);
+
+    CUcontext cuda_ctx = abcdk_cuda_ctx_create(gpu, 0);
+
     if (cmd == 1)
-        return abcdk_test_cuda_1(args);
+        return abcdk_test_cuda_1(args, cuda_ctx);
     else if (cmd == 2)
-        return abcdk_test_cuda_2(args);
+        return abcdk_test_cuda_2(args, cuda_ctx);
     else if (cmd == 3)
-        return abcdk_test_cuda_3(args);
+        return abcdk_test_cuda_3(args, cuda_ctx);
+    else if (cmd == 4)
+        return abcdk_test_cuda_4(args, cuda_ctx);
+
+    abcdk_cuda_ctx_destroy(&cuda_ctx);
 
     return 0;
 }
