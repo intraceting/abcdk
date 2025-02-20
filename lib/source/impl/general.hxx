@@ -117,7 +117,6 @@ namespace abcdk
             else
                 return src;
         }
-
     } // namespace general
 
 } // namespace abcdk
