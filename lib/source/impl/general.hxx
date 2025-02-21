@@ -31,8 +31,8 @@ namespace abcdk
             size_t off = 0;
 
             off = n * h * ws;
-            off += x * c * sizeof(T);
             off += y * ws;
+            off += x * c * sizeof(T);
             off += z * sizeof(T);
 
             return off;
@@ -44,9 +44,9 @@ namespace abcdk
             size_t off = 0;
 
             off = n * c * h * ws;
-            off += x * sizeof(T);
-            off += y * ws;
             off += z * h * ws;
+            off += y * ws;
+            off += x * sizeof(T);
 
             return off;
         }

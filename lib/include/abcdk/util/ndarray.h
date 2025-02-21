@@ -8,6 +8,7 @@
 #define ABCDK_UTIL_NDARRAY_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/object.h"
 
 __BEGIN_DECLS
 
@@ -16,20 +17,36 @@ typedef struct _abcdk_ndarray
 {
     /**格式。*/
     int fmt;
+
     /**块数量。*/
     size_t block;
+
     /**宽(每块)。*/
     size_t width;
+    
     /**高(每块)。*/
     size_t height;
+
     /**深(每块)。*/
     size_t depth;
+
     /**宽占用的字节数量(包括对齐字节)。*/
     size_t stride;
+
     /**单元格占用的字节数量。*/
     size_t cell;
+
     /**数据指针。*/
     void *data;
+
+    /**数据长度。*/
+    size_t size;
+
+    /**缓存。*/
+    abcdk_object_t *buf;
+
+    /**硬件环境。*/
+    abcdk_object_t *hw_ctx;
 } abcdk_ndarray_t;
 
 /**多维数组常量。*/
@@ -69,7 +86,11 @@ void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray,size_t align);
  */
 size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t y, size_t z, int flag);
 
+/**释放。*/
+void abcdk_ndarray_free(abcdk_ndarray_t **ctx);
 
+/**创建。*/
+abcdk_ndarray_t *abcdk_ndarray_alloc(int fmt, size_t block, size_t width, size_t height, size_t depth, size_t cell, size_t align, int no_space);
 
 __END_DECLS
 

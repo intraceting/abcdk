@@ -82,3 +82,64 @@ size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t
 
     return off;
 }
+
+void abcdk_ndarray_free(abcdk_ndarray_t **ctx)
+{
+    abcdk_ndarray_t *ctx_p;
+
+    if(!ctx || !*ctx)
+        return;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    abcdk_object_unref(&ctx_p->buf);
+    abcdk_object_unref(&ctx_p->hw_ctx);
+    abcdk_heap_free(ctx_p);
+}
+
+abcdk_ndarray_t *abcdk_ndarray_alloc(int fmt, size_t block, size_t width, size_t height, size_t depth, size_t cell, size_t align, int no_space)
+{
+    abcdk_ndarray_t *ctx;
+    int buf_size = 0;
+    void *buf_ptr = NULL;
+
+    assert(fmt == ABCDK_NDARRAY_NCHW || fmt == ABCDK_NDARRAY_NHWC);
+    assert(block > 0 && width > 0 && height > 0 && depth > 0);
+
+    ctx = (abcdk_ndarray_t *)abcdk_heap_alloc(sizeof(abcdk_ndarray_t));
+    if (!ctx)
+        return NULL;
+
+    ctx->fmt = fmt;
+    ctx->block = block;
+    ctx->width = width;
+    ctx->height = height;
+    ctx->depth = depth;
+    ctx->stride = 0;
+    ctx->cell = cell;
+    ctx->data = NULL;
+    ctx->size = 0;
+    ctx->hw_ctx = NULL;
+    ctx->buf = NULL;
+
+    abcdk_ndarray_set_stride(ctx, align);
+
+    /*如果不需要空间直接返回。*/
+    if(no_space)
+        return ctx;
+
+    buf_size = abcdk_ndarray_size(ctx);
+
+    ctx->buf = abcdk_object_alloc2(buf_size);
+    if (!ctx->buf)
+    {
+        abcdk_ndarray_free(&ctx);
+        return NULL;
+    }
+    
+    ctx->data = ctx->buf->pptrs[0];
+    ctx->size = buf_size;
+
+    return ctx;
+}

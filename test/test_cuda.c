@@ -279,46 +279,92 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
     return 0;
 }
 
+void access_nhwc(int N, int H, int W, int C)
+{
+    printf("hwc\n");
+
+    int total_elements = N * H * W * C; // 总元素数量
+    for (int i = 0; i < total_elements; i++)
+    {
+        int n = i / (H * W * C);    // 批次索引
+        int hw = i % (H * W * C);   // 余数，表示二维的 Height 和 Width 维度
+        int h = hw / (W * C);       // 高度索引
+        int w = (hw % (W * C)) / C; // 宽度索引
+        int c = hw % C;             // 通道索引
+
+        printf("i = %d -> n = %d, h = %d, w = %d, c = %d\n", i, n, h, w, c);
+    }
+
+    printf("hwc\n");
+}
+
+void access_nchw(int N, int H, int W, int C)
+{
+    printf("chw\n");
+
+    int total_elements = N * H * W * C; // 总元素数量
+    for (int i = 0; i < total_elements; i++)
+    {
+        int n = i / (C * H * W);   // 批次索引
+        int chw = i % (C * H * W); // 余数，表示 C, H, W 维度
+        int c = chw / (H * W);     // 通道索引
+        int hw = chw % (H * W);    // 余数，表示 Height 和 Width
+        int h = hw / W;            // 高度索引
+        int w = hw % W;            // 宽度索引
+
+        printf("i = %d -> n = %d, c = %d, h = %d, w = %d\n", i, n, c, h, w);
+    }
+
+    printf("chw\n");
+}
+
 int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 {
-    int w = 300,h = 300;
+    int n = 1, w = 300, h = 300 , depth =3;
+
+  //  access_nhwc(4,4,4,4);
+  //  access_nchw(4,4,4,4);
 
     cuCtxPushCurrent(cuda_ctx);
 
-    AVFrame *a = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_RGB24, 1);
-    AVFrame *b = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_GBRPF32, 16);
-    AVFrame *c = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_RGB24, 32);
-    AVFrame *d = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_GBRPF32, 1);
+    AVFrame *a = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 1);
+    AVFrame *c = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 1);
 
-    uint8_t scale2[3] = {255,128,0};
-    float scale[3] = {255,255,255};
-    float mean[3] = {127.5,127.5,127.5};
-    float std[3] = {128.0,128.0,128.0};
+    abcdk_ndarray_t *b = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 1);
+    abcdk_ndarray_t *d = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NHWC, n, w, h, depth, sizeof(float), 1);
+    abcdk_ndarray_t *e = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 1);
 
-    abcdk_cuda_tensorproc_reshape_32f_R(1,(float*)d->data[0],1,d->width,d->linesize[0],d->height,3,0,(float*)b->data[0],1,b->width,b->linesize[0],b->height,3);
+    uint8_t scale2[3] = {255, 128, 0};
+    float scale[3] = {255, 255, 255};
+    float mean[3] = {127.5, 127.5, 127.5};
+    float std[3] = {128.0, 128.0, 128.0};
 
-    abcdk_cuda_imgproc_stuff_8u_C3R(a->data[0],a->width,a->linesize[0],a->height,scale2);
+    abcdk_cuda_imgproc_stuff_8u_C3R(a->data[0], a->width, a->linesize[0], a->height, scale2);
 
-    abcdk_cuda_tensorproc_blob_8u_to_32f_3R(0,(float*)b->data[0],b->linesize[0],1,a->data[0],a->linesize[0],w,h,scale,mean,std);
+    abcdk_cuda_tensorproc_blob_8u_to_32f_3R(0, (float *)b->data, b->stride, 1, a->data[0], a->linesize[0], w, h, scale, mean, std);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1,c->data[0],c->linesize[0],0,(float*)b->data[0],b->linesize[0],w,h,scale,mean,std);
+    abcdk_cuda_tensorproc_reshape_32f_R(1, (float *)d->data, 1, d->width, d->stride, d->height, 3, 0, (float *)b->data, 1, b->width, b->stride, b->height, 3);
 
-    abcdk_cuda_avframe_save("/tmp/a.bmp",a);
-    abcdk_cuda_avframe_save("/tmp/c.bmp",c);
+    abcdk_cuda_tensorproc_reshape_32f_R(0, (float *)e->data, 1, e->width, e->stride, e->height, 3, 1, (float *)d->data, 1, d->width, d->stride, d->height, 3);
 
-    abcdk_cuda_tensorproc_blob_8u_to_32f_3R(1,(float*)d->data[0],d->linesize[0],1,a->data[0],a->linesize[0],w,h,scale,mean,std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 0, (float *)e->data, e->stride, w, h, scale, mean, std);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1,c->data[0],c->linesize[0],1,(float*)d->data[0],d->linesize[0],w,h,scale,mean,std);
+    abcdk_cuda_avframe_save("/tmp/a.bmp", a);
+    abcdk_cuda_avframe_save("/tmp/c.bmp", c);
 
-    abcdk_cuda_avframe_save("/tmp/a2.bmp",a);
-    abcdk_cuda_avframe_save("/tmp/c2.bmp",c);
+    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 0, (float *)b->data, b->stride, w, h, scale, mean, std);
+
+    abcdk_cuda_avframe_save("/tmp/c2.bmp", c);
 
     av_frame_free(&a);
-    av_frame_free(&b);
     av_frame_free(&c);
+    abcdk_ndarray_free(&b);
+    abcdk_ndarray_free(&d);
+    abcdk_ndarray_free(&e);
 
     cuCtxPopCurrent(NULL);
 }
+
 
 int abcdk_test_cuda(abcdk_option_t *args)
 {
@@ -347,6 +393,7 @@ int abcdk_test_cuda(abcdk_option_t *args)
         return abcdk_test_cuda_3(args, cuda_ctx);
     else if (cmd == 4)
         return abcdk_test_cuda_4(args, cuda_ctx);
+
 
     abcdk_cuda_ctx_destroy(&cuda_ctx);
 

@@ -163,5 +163,6 @@
 #include "abcdk/cuda/tensorproc.h"
 #include "abcdk/cuda/jpeg.h"
 #include "abcdk/cuda/video.h"
+#include "abcdk/cuda/ndarray.h"
 
 #endif //ABCDK_H
