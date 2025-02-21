@@ -27,9 +27,9 @@ __BEGIN_DECLS
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_8u_to_32f_c1r(int dst_packed, float *dst, size_t dst_ws,
-                                             int src_packed, uint8_t *src, size_t src_ws,
-                                             size_t w, size_t h, float scale[1], float mean[1], float std[1]);
+int abcdk_cuda_tensorproc_blob_8u_to_32f_1R(int dst_packed, float *dst, size_t dst_ws,
+                                            int src_packed, uint8_t *src, size_t src_ws,
+                                            size_t w, size_t h, float scale[1], float mean[1], float std[1]);
 
 /**
  * 张量值转换。
@@ -38,9 +38,9 @@ int abcdk_cuda_tensorproc_blob_8u_to_32f_c1r(int dst_packed, float *dst, size_t 
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_8u_to_32f_c3r(int dst_packed, float *dst, size_t dst_ws,
-                                             int src_packed, uint8_t *src, size_t src_ws,
-                                             size_t w, size_t h, float scale[3], float mean[3], float std[3]);
+int abcdk_cuda_tensorproc_blob_8u_to_32f_3R(int dst_packed, float *dst, size_t dst_ws,
+                                            int src_packed, uint8_t *src, size_t src_ws,
+                                            size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 
 /**
  * 张量值转换。
@@ -49,9 +49,9 @@ int abcdk_cuda_tensorproc_blob_8u_to_32f_c3r(int dst_packed, float *dst, size_t 
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_32f_to_8u_c1r(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                             int src_packed, float *src, size_t src_ws,
-                                             size_t w, size_t h, float scale[1], float mean[1], float std[1]);
+int abcdk_cuda_tensorproc_blob_32f_to_8u_1R(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                            int src_packed, float *src, size_t src_ws,
+                                            size_t w, size_t h, float scale[1], float mean[1], float std[1]);
 
 /**
  * 张量值转换。
@@ -60,9 +60,9 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u_c1r(int dst_packed, uint8_t *dst, size_
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_32f_to_8u_c3r(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                             int src_packed, float *src, size_t src_ws,
-                                             size_t w, size_t h, float scale[3], float mean[3], float std[3]);
+int abcdk_cuda_tensorproc_blob_32f_to_8u_3R(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                            int src_packed, float *src, size_t src_ws,
+                                            size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 
 __END_DECLS
 

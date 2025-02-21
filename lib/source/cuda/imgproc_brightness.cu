@@ -42,13 +42,13 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
     abcdk::cuda::grid::make_dim_dim(dim, w * h, 64);
 
     _abcdk_cuda_imgproc_brightness_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_ws, src, src_ws, w, h, (float *)gpu_alpha, (float *)gpu_bate);
-
     abcdk_cuda_free(&gpu_alpha);
     abcdk_cuda_free(&gpu_bate);
+
     return 0;
 }
 
-int abcdk_cuda_imgproc_brightness_8u_c1r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_brightness_8u_C1R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate)
 {
     assert(dst != NULL && dst_ws > 0);
@@ -59,7 +59,7 @@ int abcdk_cuda_imgproc_brightness_8u_c1r(uint8_t *dst, size_t dst_ws, uint8_t *s
     return _abcdk_cuda_imgproc_brightness(1, true, dst, dst_ws, src, src_ws, w, h, alpha, bate);
 }
 
-int abcdk_cuda_imgproc_brightness_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_brightness_8u_C3R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate)
 {
     assert(dst != NULL && dst_ws > 0);
@@ -70,7 +70,7 @@ int abcdk_cuda_imgproc_brightness_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *s
     return _abcdk_cuda_imgproc_brightness(3, true, dst, dst_ws, src, src_ws, w, h, alpha, bate);
 }
 
-int abcdk_cuda_imgproc_brightness_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_brightness_8u_C4R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate)
 {
     assert(dst != NULL && dst_ws > 0);

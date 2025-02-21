@@ -52,6 +52,11 @@ CXX_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR}
 CXX_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}
 CXX_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
+#绑定C++编译器。
+NVCC_FLAGS += -ccbin ${CC}
+#抑制“未识别的属性”的诊断消息输出，让编译日志更简洁。
+NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
+
 #
 LD_FLAGS += -Wl,--as-needed
 
@@ -59,9 +64,12 @@ LD_FLAGS += -Wl,--as-needed
 ifeq (${BUILD_TYPE},debug)
 C_FLAGS += -g
 CXX_FLAGS += -g
-LD_FLAGS += -g
+#生成调试信息。
+NVCC_FLAGS += -g -G
 endif
 ifeq (${BUILD_TYPE},release)
+#仅保留用于性能分性的调式信息。
+NVCC_FLAGS += -lineinfo
 LD_FLAGS += -s
 endif
 
@@ -105,10 +113,7 @@ CXX_FLAGS += ${DEPEND_FLAGS}
 C_FLAGS += -I$(CURDIR)/lib/include/
 CXX_FLAGS += -I$(CURDIR)/lib/include/
 
-#
-NVCC_FLAGS += -ccbin ${CC}
-NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
-NVCC_FLAGS += -lineinfo
+#C++编译选项绑定到CUDA编译选项。
 NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 
 #

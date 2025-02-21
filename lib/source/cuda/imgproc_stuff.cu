@@ -21,37 +21,37 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packe
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar)
 {
-    T *gpu_scalar;
+    void *gpu_scalar;
     uint3 dim[2];
 
-    gpu_scalar = (T *)abcdk_cuda_copyfrom(scalar, channels * sizeof(T), 1);
+    gpu_scalar = abcdk_cuda_copyfrom(scalar, channels * sizeof(T), 1);
     if (!gpu_scalar)
         return -1;
 
     /*2D-2D*/
     abcdk::cuda::grid::make_dim_dim(dim, width * height, 64);
 
-    _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(3, true, dst, width, pitch, height, gpu_scalar);
-    abcdk_cuda_free((void **)&gpu_scalar);
+    _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, width, pitch, height, (T*)gpu_scalar);
+    abcdk_cuda_free(&gpu_scalar);
 
-    return -1;
+    return 0;
 }
 
-int abcdk_cuda_imgproc_stuff_8u_c1r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1])
+int abcdk_cuda_imgproc_stuff_8u_C1R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1])
 {
     assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
 
     return _abcdk_cuda_imgproc_stuff<uint8_t>(1, true, dst, width, pitch, height, scalar);
 }
 
-int abcdk_cuda_imgproc_stuff_8u_c3r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[3])
+int abcdk_cuda_imgproc_stuff_8u_C3R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[3])
 {
     assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
 
     return _abcdk_cuda_imgproc_stuff<uint8_t>(3, true, dst, width, pitch, height, scalar);
 }
 
-int abcdk_cuda_imgproc_stuff_8u_c4r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[4])
+int abcdk_cuda_imgproc_stuff_8u_C4R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[4])
 {
     assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
 

@@ -19,21 +19,21 @@ __BEGIN_DECLS
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_stuff_8u_c1r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1]);
+int abcdk_cuda_imgproc_stuff_8u_C1R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1]);
 
 /**
  * 图像填充。
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_stuff_8u_c3r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[3]);
+int abcdk_cuda_imgproc_stuff_8u_C3R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[3]);
 
 /**
  * 图像填充。
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_stuff_8u_c4r(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[4]);
+int abcdk_cuda_imgproc_stuff_8u_C4R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[4]);
 
 /**
  * 全景图像融合(从左到右)。
@@ -53,7 +53,7 @@ int abcdk_cuda_imgproc_stuff_8u_c4r(uint8_t *dst, size_t width, size_t pitch, si
  * 
  * @return 0 成功，< 0  失败。
 */
-int abcdk_cuda_imgproc_compose_8u_c1r(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+int abcdk_cuda_imgproc_compose_8u_C1R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                       uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                       uint8_t scalar[1], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam);
 
@@ -62,7 +62,7 @@ int abcdk_cuda_imgproc_compose_8u_c1r(uint8_t *panorama, size_t panorama_w, size
  *
  * @return 0 成功，< 0  失败。
 */
-int abcdk_cuda_imgproc_compose_8u_c3r(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+int abcdk_cuda_imgproc_compose_8u_C3R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                       uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                       uint8_t scalar[3], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam);
 
@@ -71,7 +71,7 @@ int abcdk_cuda_imgproc_compose_8u_c3r(uint8_t *panorama, size_t panorama_w, size
  *
  * @return 0 成功，< 0  失败。
 */
-int abcdk_cuda_imgproc_compose_8u_c4r(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+int abcdk_cuda_imgproc_compose_8u_C4R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                       uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                       uint8_t scalar[4], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam);
 
@@ -82,7 +82,7 @@ int abcdk_cuda_imgproc_compose_8u_c4r(uint8_t *panorama, size_t panorama_w, size
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_brightness_8u_c1r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_brightness_8u_C1R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate);
 
 /**
@@ -90,7 +90,7 @@ int abcdk_cuda_imgproc_brightness_8u_c1r(uint8_t *dst, size_t dst_ws, uint8_t *s
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_brightness_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_brightness_8u_C3R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate);
 
 /**
@@ -98,7 +98,7 @@ int abcdk_cuda_imgproc_brightness_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *s
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_brightness_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_brightness_8u_C4R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate);
 
 /**
@@ -112,7 +112,7 @@ int abcdk_cuda_imgproc_brightness_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *s
  * 
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_defog_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_defog_8u_C3R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                     size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w);
 
 /**
@@ -120,7 +120,7 @@ int abcdk_cuda_imgproc_defog_8u_c3r(uint8_t *dst, size_t dst_ws, uint8_t *src, s
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_defog_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+int abcdk_cuda_imgproc_defog_8u_C4R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                     size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w);
 
 /**
@@ -130,7 +130,7 @@ int abcdk_cuda_imgproc_defog_8u_c4r(uint8_t *dst, size_t dst_ws, uint8_t *src, s
  * 
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_drawrect_8u_c1r(uint8_t *dst, size_t w, size_t ws, size_t h,
+int abcdk_cuda_imgproc_drawrect_8u_C1R(uint8_t *dst, size_t w, size_t ws, size_t h,
                                        uint8_t color[1], int weight, int corner[4]);
 
 /**
@@ -138,7 +138,7 @@ int abcdk_cuda_imgproc_drawrect_8u_c1r(uint8_t *dst, size_t w, size_t ws, size_t
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_drawrect_8u_c3r(uint8_t *dst, size_t w, size_t ws, size_t h,
+int abcdk_cuda_imgproc_drawrect_8u_C3R(uint8_t *dst, size_t w, size_t ws, size_t h,
                                        uint8_t color[3], int weight, int corner[4]);
 
 /**
@@ -146,7 +146,7 @@ int abcdk_cuda_imgproc_drawrect_8u_c3r(uint8_t *dst, size_t w, size_t ws, size_t
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_drawrect_8u_c4r(uint8_t *dst, size_t w, size_t ws, size_t h,
+int abcdk_cuda_imgproc_drawrect_8u_C4R(uint8_t *dst, size_t w, size_t ws, size_t h,
                                        uint8_t color[4], int weight, int corner[4]);
 
 

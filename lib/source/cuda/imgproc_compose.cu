@@ -28,10 +28,10 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
                                                   T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                                   T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam)
 {
-    T *gpu_scalar;
+    void *gpu_scalar;
     uint3 dim[2];
 
-    gpu_scalar = (T *)abcdk_cuda_copyfrom(scalar, channels * sizeof(T), 1);
+    gpu_scalar = abcdk_cuda_copyfrom(scalar, channels * sizeof(T), 1);
     if (!gpu_scalar)
         return -1;
 
@@ -40,14 +40,13 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
 
     _abcdk_cuda_imgproc_compose_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
                                                             compose, compose_w, compose_ws, compose_h,
-                                                            gpu_scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
+                                                            (T*)gpu_scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
+    abcdk_cuda_free(&gpu_scalar);
 
-    abcdk_cuda_free((void **)&gpu_scalar);
-
-    return -1;
+    return 0;
 }
 
-int abcdk_cuda_imgproc_compose_8u_c1r(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+int abcdk_cuda_imgproc_compose_8u_C1R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                       uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                       uint8_t scalar[1], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
@@ -60,7 +59,7 @@ int abcdk_cuda_imgproc_compose_8u_c1r(uint8_t *panorama, size_t panorama_w, size
                                        scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
 
-int abcdk_cuda_imgproc_compose_8u_c3r(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+int abcdk_cuda_imgproc_compose_8u_C3R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                       uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                       uint8_t scalar[3], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
@@ -73,7 +72,7 @@ int abcdk_cuda_imgproc_compose_8u_c3r(uint8_t *panorama, size_t panorama_w, size
                                        scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
 
-int abcdk_cuda_imgproc_compose_8u_c4r(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+int abcdk_cuda_imgproc_compose_8u_C4R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                       uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                       uint8_t scalar[4], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {

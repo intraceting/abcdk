@@ -159,20 +159,20 @@ INSTALL_PREFIX="/usr/local/"
 KIT_NAME=""
 
 #
-THIRDPARTY_PACKAGES="openmp,openssl,archive,libmagic,nghttp2,lz4,ffmpeg"
-THIRDPARTY_FIND_ROOT="/usr/"
+THIRDPARTY_PACKAGES="openssl,ffmpeg"
+THIRDPARTY_FIND_ROOT="/usr/local/"
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
 
 #
-CUDA_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/local/cuda/"
-CUDA_COMPILER_BIN="${THIRDPARTY_FIND_ROOT}/local/cuda/bin/nvcc"
+CUDA_FIND_ROOT=
+CUDA_COMPILER_BIN=
 
 #
-CUDNN_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/local/cudnn/"
+CUDNN_FIND_ROOT=
 
 #
-TRNSORRT_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/local/TensorRT/"
+TRNSORRT_FIND_ROOT=
 
 #
 PrintUsage()
@@ -207,11 +207,11 @@ VARIABLE:
      
      COMPILER_PREFIX=${COMPILER_PREFIX}
 
-     COMPILER_PREFIX(编译器路径前缀)与编译器名字组成完整路径.
+     COMPILER_PREFIX(C/C++编译器路径的前缀)与编译器名字组成完整路径.
 
      COMPILER_NAME=${COMPILER_NAME}
 
-     COMPILER_NAME(编译器名字)与编译器前缀组成完整路径.
+     COMPILER_NAME(C/C++编译器的名字)与编译器前缀组成完整路径.
 
      COMPILER_C_FLAGS=${COMPILER_C_FLAGS}
 
@@ -219,7 +219,7 @@ VARIABLE:
 
      COMPILER_CXX_FLAGS=${COMPILER_CXX_FLAGS}
 
-     COMPILER_CXX_FLAGS(CXX编译器的编译参数)用于编译器的源码编译. 
+     COMPILER_CXX_FLAGS(C++编译器的编译参数)用于编译器的源码编译. 
 
      COMPILER_LD_FLAGS=${COMPILER_LD_FLAGS}
 
@@ -246,21 +246,25 @@ VARIABLE:
      THIRDPARTY_FIND_MODE(依赖组件搜索模式)支持以下关键字:
      only,both,(default)
 
-     CUDA_FIND_ROOT=${CUDA_FIND_ROOT}
+     CUDA_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/cuda/
 
      CUDA_FIND_ROOT(CUDA组件搜索根路径)用于查找依赖组件完整路径.
 
-     CUDNN_FIND_ROOT=${CUDNN_FIND_ROOT}
+     CUDA_COMPILER_BIN=\${THIRDPARTY_FIND_ROOT}/cuda/bin/nvcc
+
+     CUDA_COMPILER_BIN(CUDA编译器的完整路径).
+
+     CUDNN_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/cudnn/
 
      CUDNN_FIND_ROOT(CUDNN组件搜索根路径)用于查找依赖组件完整路径.
 
-     TRNSORRT_FIND_ROOT=${TRNSORRT_FIND_ROOT}
+     TRNSORRT_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/TensorRT/
 
      TRNSORRT_FIND_ROOT(TensorRT组件搜索根路径)用于查找依赖组件完整路径.
 
      INSTALL_PREFIX=${INSTALL_PREFIX}
 
-     INSTALL_PREFIX(安装路经前缀).
+     INSTALL_PREFIX(安装路经的前缀).
 
      BUILD_PATH=${BUILD_PATH}
 
@@ -322,36 +326,6 @@ if [ "${INSTALL_PREFIX}" == "" ] || [ "${INSTALL_PREFIX}" == "/" ];then
 }
 fi
 
-#获组件包名称。
-KIT_NAME=$(CheckPackageKitName)
-
-#
-if [ "${KIT_NAME}" == "rpm" ];then
-{
-    #
-    CheckHavePackage rpmbuild 1
-    if [ $? -ne 0 ];then
-        echo "'$(CheckHavePackage rpmbuild 4)' not found."
-        exit 22
-    fi
-}
-elif [ "${KIT_NAME}" == "deb" ];then
-{
-    #
-    CheckHavePackage dpkg 1
-    if [ $? -ne 0 ];then
-        echo "'$(CheckHavePackage dpkg 4)' not found."
-        exit 22
-    fi
-}
-fi
-
-#
-CheckHavePackage pkgconfig 1
-if [ $? -ne 0 ];then
-    echo "'$(CheckHavePackage pkgconfig 4)' not found."
-    exit 22
-fi
 
 #检查编译器。
 CheckCompiler "${COMPILER_PREFIX}" "${COMPILER_NAME}" "${BUILD_PATH}/compiler.conf"
@@ -382,6 +356,62 @@ if [ $? -ne 0 ];then
     exit 22
 }
 fi
+
+
+#
+if [ "${_NATIVE_PLATFORM}" == "${_TARGET_PLATFORM}" ];then
+{
+    #获组件包名称。
+    KIT_NAME=$(CheckPackageKitName)
+
+    #
+    if [ "${KIT_NAME}" == "rpm" ];then
+    {
+        #
+        CheckHavePackage rpmbuild 1
+        if [ $? -ne 0 ];then
+            echo "'$(CheckHavePackage rpmbuild 4)' not found."
+            exit 22
+        fi
+    }
+    elif [ "${KIT_NAME}" == "deb" ];then
+    {
+        #
+        CheckHavePackage dpkg 1
+        if [ $? -ne 0 ];then
+            echo "'$(CheckHavePackage dpkg 4)' not found."
+            exit 22
+        fi
+    }
+    fi
+}
+fi
+
+#
+CheckHavePackage pkgconfig 1
+if [ $? -ne 0 ];then
+    echo "'$(CheckHavePackage pkgconfig 4)' not found."
+    exit 22
+fi
+
+#
+if [ "${CUDA_FIND_ROOT}" == "" ];then
+CUDA_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cuda/"
+fi
+if [ "${CUDA_COMPILER_BIN}" == "" ];then
+CUDA_COMPILER_BIN="${THIRDPARTY_FIND_ROOT}/cuda/bin/nvcc"
+fi
+
+#
+if [ "${CUDNN_FIND_ROOT}" == "" ];then
+CUDNN_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cudnn/"
+fi
+
+#
+if [ " ${TRNSORRT_FIND_ROOT}" == "" ];then
+TRNSORRT_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/TensorRT/"
+fi
+
 
 #设置环境变量，用于搜索依赖包。
 export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
