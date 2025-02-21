@@ -82,12 +82,12 @@ int abcdk_cuda_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src)
     assert(dst->width == src->width);
     assert(dst->height == src->height);
     assert(dst->fmt == src->fmt);
-    assert(dst->fmt == ABCDK_NDARRAY_NCHW || dst->fmt == ABCDK_NDARRAY_NCHW);
+    assert(dst->fmt == ABCDK_NDARRAY_NCHW || dst->fmt == ABCDK_NDARRAY_NHWC);
 
     dst_in_host = (abcdk_cuda_ndarray_memory_type(dst) != CU_MEMORYTYPE_DEVICE);
     src_in_host = (abcdk_cuda_ndarray_memory_type(src) != CU_MEMORYTYPE_DEVICE);
 
-    if (dst->fmt == ABCDK_NDARRAY_NCHW)
+    if (dst->fmt == ABCDK_NDARRAY_NHWC)
     {
         chk = abcdk_cuda_memcpy_2d(dst->data, dst->stride, 0, 0, dst_in_host,
                                    src->data, src->stride, 0, 0, src_in_host,
@@ -100,7 +100,7 @@ int abcdk_cuda_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src)
     {
         chk = abcdk_cuda_memcpy_2d(dst->data, dst->stride, 0, 0, dst_in_host,
                                    src->data, src->stride, 0, 0, src_in_host,
-                                   src->depth * src->width, src->block * src->cell * src->height);
+                                   src->cell * src->width, src->block * src->depth * src->height);
 
         if (chk != 0)
             return -1;
