@@ -109,6 +109,7 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
                              const AVFrame *xmap, const AVFrame *ymap,
                              NppiInterpolationMode inter_mode);
 
+
 __END_DECLS
 
 #endif // AVUTIL_AVUTIL_H

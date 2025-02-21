@@ -9,7 +9,6 @@
 
 #include "abcdk/cuda/avutil.h"
 #include "abcdk/util/trace.h"
-#include "string.hxx"
 
 #ifdef HAVE_OPENCV
 #include "opencv2/opencv.hpp"
@@ -17,6 +16,9 @@
 #include "opencv2/xfeatures2d.hpp"
 #endif // OPENCV_ENABLE_NONFREE
 #endif // HAVE_OPENCV
+
+#include "imageproc.hxx"
+#include "string.hxx"
 
 #ifdef OPENCV_CORE_HPP
 
