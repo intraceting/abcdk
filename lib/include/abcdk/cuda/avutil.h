@@ -57,7 +57,7 @@ AVFrame *abcdk_cuda_avframe_clone(int dst_in_host, const AVFrame *src);
 /**
  * 帧图保存到文件。
  * 
- * @note 仅支持BMP格式，所有非RBG24、BGR24、RBG32、BGR32格式自动换转RGB24格式。
+ * @note 仅支持BMP格式，所有非BGR32格式自动换转BGR32格式。
  * 
  * @return 0 成功，< 0 失败。
  */
