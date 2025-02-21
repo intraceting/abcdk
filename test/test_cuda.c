@@ -327,12 +327,12 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 
     cuCtxPushCurrent(cuda_ctx);
 
-    AVFrame *a = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 1);
-    AVFrame *c = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 1);
+    AVFrame *a = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 16);
+    AVFrame *c = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 32);
 
-    abcdk_ndarray_t *b = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 1);
-    abcdk_ndarray_t *d = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NHWC, n, w, h, depth, sizeof(float), 1);
-    abcdk_ndarray_t *e = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 1);
+    abcdk_ndarray_t *b = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 16);
+    abcdk_ndarray_t *d = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NHWC, n, w, h, depth, sizeof(float), 32);
+    abcdk_ndarray_t *e = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 64);
 
     uint8_t scale2[3] = {255, 128, 0};
     float scale[3] = {255, 255, 255};
