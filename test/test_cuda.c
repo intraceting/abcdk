@@ -288,11 +288,14 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
     AVFrame *a = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_RGB24, 1);
     AVFrame *b = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_GBRPF32, 16);
     AVFrame *c = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_RGB24, 32);
+    AVFrame *d = abcdk_cuda_avframe_alloc(w, h , AV_PIX_FMT_GBRPF32, 1);
 
     uint8_t scale2[3] = {255,128,0};
     float scale[3] = {255,255,255};
     float mean[3] = {127.5,127.5,127.5};
     float std[3] = {128.0,128.0,128.0};
+
+    abcdk_cuda_tensorproc_reshape_32f_R(1,(float*)d->data[0],1,d->width,d->linesize[0],d->height,3,0,(float*)b->data[0],1,b->width,b->linesize[0],b->height,3);
 
     abcdk_cuda_imgproc_stuff_8u_C3R(a->data[0],a->width,a->linesize[0],a->height,scale2);
 
@@ -302,6 +305,13 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_cuda_avframe_save("/tmp/a.bmp",a);
     abcdk_cuda_avframe_save("/tmp/c.bmp",c);
+
+    abcdk_cuda_tensorproc_blob_8u_to_32f_3R(1,(float*)d->data[0],d->linesize[0],1,a->data[0],a->linesize[0],w,h,scale,mean,std);
+
+    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1,c->data[0],c->linesize[0],1,(float*)d->data[0],d->linesize[0],w,h,scale,mean,std);
+
+    abcdk_cuda_avframe_save("/tmp/a2.bmp",a);
+    abcdk_cuda_avframe_save("/tmp/c2.bmp",c);
 
     av_frame_free(&a);
     av_frame_free(&b);

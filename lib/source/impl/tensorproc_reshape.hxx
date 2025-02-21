@@ -67,9 +67,17 @@ namespace abcdk
         ABCDK_INVOKE_HOST void reshape(bool dst_packed, T *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
                                        bool src_packed, T *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
         {
-            size_t dst_total = dst_b * dst_w * dst_h * dst_c;
-            size_t src_total = src_b * src_w * src_h * src_c;
-
+            size_t dst_total, src_total;
+        
+            assert(dst != NULL && dst_b > 0 && dst_w > 0 && dst_ws > 0 && dst_h > 0 && dst_c > 0);
+            assert(dst != NULL && src_b > 0 && src_w > 0 && src_ws > 0 && src_h > 0 && src_c > 0);
+        
+            assert(dst_packed ? (dst_ws >= dst_w * dst_c * sizeof(T)) : (dst_ws >= dst_w * sizeof(T)));
+            assert(src_packed ? (src_ws >= src_w * src_c * sizeof(T)) : (src_ws >= src_w * sizeof(T)));
+        
+            dst_total = dst_b * dst_w * dst_h * dst_c;
+            src_total = src_b * src_w * src_h * src_c;
+        
             assert(dst_total == src_total);
 
             for (size_t i = 0; i < dst_total; i++)

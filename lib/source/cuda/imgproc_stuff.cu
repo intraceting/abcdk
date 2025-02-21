@@ -24,6 +24,8 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
     void *gpu_scalar;
     uint3 dim[2];
 
+    assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
+
     gpu_scalar = abcdk_cuda_copyfrom(scalar, channels * sizeof(T), 1);
     if (!gpu_scalar)
         return -1;
@@ -39,22 +41,16 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
 
 int abcdk_cuda_imgproc_stuff_8u_C1R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1])
 {
-    assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
-
     return _abcdk_cuda_imgproc_stuff<uint8_t>(1, true, dst, width, pitch, height, scalar);
 }
 
 int abcdk_cuda_imgproc_stuff_8u_C3R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[3])
 {
-    assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
-
     return _abcdk_cuda_imgproc_stuff<uint8_t>(3, true, dst, width, pitch, height, scalar);
 }
 
 int abcdk_cuda_imgproc_stuff_8u_C4R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[4])
 {
-    assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
-
     return _abcdk_cuda_imgproc_stuff<uint8_t>(4, true, dst, width, pitch, height, scalar);
 }
 

@@ -30,6 +30,11 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_tensorproc_blob(int channels, bool revert,
     void *gpu_scale = NULL, *gpu_mean = NULL, *gpu_std = NULL;
     uint3 dim[2];
 
+    assert(dst != NULL && dst_ws > 0);
+    assert(src != NULL && src_ws > 0);
+    assert(w > 0 && h > 0);
+    assert(scale != NULL && mean != NULL && std != NULL);
+
     gpu_scale = abcdk_cuda_copyfrom(scale, channels * sizeof(float), 1);
     gpu_mean = abcdk_cuda_copyfrom(mean, channels * sizeof(float), 1);
     gpu_std = abcdk_cuda_copyfrom(std, channels * sizeof(float), 1);
@@ -60,11 +65,6 @@ int abcdk_cuda_tensorproc_blob_8u_to_32f_1R(int dst_packed, float *dst, size_t d
                                             int src_packed, uint8_t *src, size_t src_ws,
                                             size_t w, size_t h, float scale[1], float mean[1], float std[1])
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(scale != NULL && mean != NULL && std != NULL);
-
     return _abcdk_cuda_tensorproc_blob<uint8_t, float>(1, false, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
@@ -72,11 +72,6 @@ int abcdk_cuda_tensorproc_blob_8u_to_32f_3R(int dst_packed, float *dst, size_t d
                                             int src_packed, uint8_t *src, size_t src_ws,
                                             size_t w, size_t h, float scale[3], float mean[3], float std[3])
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(scale != NULL && mean != NULL && std != NULL);
-
     return _abcdk_cuda_tensorproc_blob<uint8_t, float>(3, false, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
@@ -84,11 +79,6 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u_1R(int dst_packed, uint8_t *dst, size_t
                                             int src_packed, float *src, size_t src_ws,
                                             size_t w, size_t h, float scale[1], float mean[1], float std[1])
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(scale != NULL && mean != NULL && std != NULL);
-
     return _abcdk_cuda_tensorproc_blob<float, uint8_t>(1, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
@@ -96,11 +86,6 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u_3R(int dst_packed, uint8_t *dst, size_t
                                             int src_packed, float *src, size_t src_ws,
                                             size_t w, size_t h, float scale[3], float mean[3], float std[3])
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(scale != NULL && mean != NULL && std != NULL);
-
     return _abcdk_cuda_tensorproc_blob<float, uint8_t>(3, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 

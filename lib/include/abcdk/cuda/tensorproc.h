@@ -64,6 +64,54 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u_3R(int dst_packed, uint8_t *dst, size_t
                                             int src_packed, float *src, size_t src_ws,
                                             size_t w, size_t h, float scale[3], float mean[3], float std[3]);
 
+/**
+ * 存储格式转换。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_reshape_8u_R(int dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+                                       int src_packed, uint8_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c);
+
+/**
+ * 存储格式转换。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_reshape_16u_R(int dst_packed, uint16_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+                                        int src_packed, uint16_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c);
+
+/**
+ * 存储格式转换。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_reshape_32u_R(int dst_packed, uint32_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+                                        int src_packed, uint32_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c);
+
+/**
+ * 存储格式转换。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_reshape_64u_R(int dst_packed, uint64_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+                                        int src_packed, uint64_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c);
+
+/**
+ * 存储格式转换。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_reshape_32f_R(int dst_packed, float *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+                                        int src_packed, float *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c);
+
+/**
+ * 存储格式转换。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_tensorproc_reshape_64f_R(int dst_packed, double *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+                                        int src_packed, double *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c);
+
 __END_DECLS
 
 #endif //__cuda_cuda_h__

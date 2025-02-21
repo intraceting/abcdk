@@ -28,6 +28,9 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_drawrect(int channels, bool packed,
     void *gpu_color = NULL, *gpu_conrer = NULL;
     uint3 dim[2];
 
+    assert(dst != NULL && w > 0 && ws > 0 && h > 0);
+    assert(color != NULL && weight > 0 && corner != NULL);
+
     gpu_color = abcdk_cuda_copyfrom(color, channels * sizeof(T), 1);
     gpu_conrer = abcdk_cuda_copyfrom(corner, 4 * sizeof(int), 1);
 
@@ -51,27 +54,18 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_drawrect(int channels, bool packed,
 int abcdk_cuda_imgproc_drawrect_8u_C1R(uint8_t *dst, size_t w, size_t ws, size_t h,
                                        uint8_t color[1], int weight, int corner[4])
 {
-    assert(dst != NULL && w > 0 && ws > 0 && h > 0);
-    assert(color != NULL && weight > 0 && corner != NULL);
-
     return _abcdk_cuda_imgproc_drawrect<uint8_t>(1, true, dst, w, ws, h, color, weight, corner);
 }
 
 int abcdk_cuda_imgproc_drawrect_8u_C3R(uint8_t *dst, size_t w, size_t ws, size_t h,
                                        uint8_t color[3], int weight, int corner[4])
 {
-    assert(dst != NULL && w > 0 && ws > 0 && h > 0);
-    assert(color != NULL && weight > 0 && corner != NULL);
-
     return _abcdk_cuda_imgproc_drawrect<uint8_t>(3, true, dst, w, ws, h, color, weight, corner);
 }
 
 int abcdk_cuda_imgproc_drawrect_8u_C4R(uint8_t *dst, size_t w, size_t ws, size_t h,
                                        uint8_t color[4], int weight, int corner[4])
 {
-    assert(dst != NULL && w > 0 && ws > 0 && h > 0);
-    assert(color != NULL && weight > 0 && corner != NULL);
-
     return _abcdk_cuda_imgproc_drawrect<uint8_t>(4, true, dst, w, ws, h, color, weight, corner);
 }
 

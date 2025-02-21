@@ -28,6 +28,11 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
     void *gpu_alpha = NULL, *gpu_bate = NULL;
     uint3 dim[2];
 
+    assert(dst != NULL && dst_ws > 0);
+    assert(src != NULL && src_ws > 0);
+    assert(w > 0 && h > 0);
+    assert(alpha != NULL && bate != NULL);
+
     gpu_alpha = abcdk_cuda_copyfrom(alpha, channels * sizeof(float), 1);
     gpu_bate = abcdk_cuda_copyfrom(bate, channels * sizeof(float), 1);
 
@@ -51,33 +56,18 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
 int abcdk_cuda_imgproc_brightness_8u_C1R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate)
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(alpha != NULL && bate != NULL);
-
     return _abcdk_cuda_imgproc_brightness(1, true, dst, dst_ws, src, src_ws, w, h, alpha, bate);
 }
 
 int abcdk_cuda_imgproc_brightness_8u_C3R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate)
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(alpha != NULL && bate != NULL);
-
     return _abcdk_cuda_imgproc_brightness(3, true, dst, dst_ws, src, src_ws, w, h, alpha, bate);
 }
 
 int abcdk_cuda_imgproc_brightness_8u_C4R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                          size_t w, size_t h, float *alpha, float *bate)
 {
-    assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
-    assert(alpha != NULL && bate != NULL);
-
     return _abcdk_cuda_imgproc_brightness(4, true, dst, dst_ws, src, src_ws, w, h, alpha, bate);
 }
 
