@@ -20,41 +20,42 @@ namespace abcdk
         {
             size_t dst_n, dst_x, dst_y, dst_z;
             size_t src_n, src_x, src_y, src_z;
+            size_t chw, hw;
 
-            if (dst_packed)
+            if (1)
             {
-                dst_n = tid / (dst_h * dst_w * dst_c);     // 批次索引
-                size_t hw = tid % (dst_h * dst_w * dst_c); // 余数，表示二维的 Height 和 Width 维度
-                dst_y = hw / (dst_w * dst_c);              // 高度索引
-                dst_x = (hw % (dst_w * dst_c)) / dst_c;    // 宽度索引
-                dst_z = hw % dst_c;                        // 通道索引
+                dst_n = tid / (dst_h * dst_w * dst_c);  // 批次索引
+                hw = tid % (dst_h * dst_w * dst_c);     // 余数，表示二维的 Height 和 Width 维度
+                dst_y = hw / (dst_w * dst_c);           // 高度索引
+                dst_x = (hw % (dst_w * dst_c)) / dst_c; // 宽度索引
+                dst_z = hw % dst_c;                     // 通道索引
             }
             else
             {
-                dst_n = tid / (dst_c * dst_h * dst_w);      // 批次索引
-                size_t chw = tid % (dst_c * dst_h * dst_w); // 余数，表示 C, H, W 维度
-                dst_z = chw / (dst_h * dst_w);              // 通道索引
-                size_t hw = chw % (dst_h * dst_w);          // 余数，表示 Height 和 Width
-                dst_y = hw / dst_w;                         // 高度索引
-                dst_x = hw % dst_w;                         // 宽度索引
+                dst_n = tid / (dst_c * dst_h * dst_w); // 批次索引
+                chw = tid % (dst_c * dst_h * dst_w);   // 余数，表示 C, H, W 维度
+                dst_z = chw / (dst_h * dst_w);         // 通道索引
+                hw = chw % (dst_h * dst_w);            // 余数，表示 Height 和 Width
+                dst_y = hw / dst_w;                    // 高度索引
+                dst_x = hw % dst_w;                    // 宽度索引
             }
 
-            if (src_packed)
+            if(1)
             {
-                src_n = tid / (src_h * src_w * src_c);     // 批次索引
-                size_t hw = tid % (src_h * src_w * src_c); // 余数，表示二维的 Height 和 Width 维度
-                src_y = hw / (src_w * src_c);              // 高度索引
-                src_x = (hw % (src_w * src_c)) / src_c;    // 宽度索引
-                src_z = hw % src_c;                        // 通道索引
+                src_n = tid / (src_h * src_w * src_c);  // 批次索引
+                hw = tid % (src_h * src_w * src_c);     // 余数，表示二维的 Height 和 Width 维度
+                src_y = hw / (src_w * src_c);           // 高度索引
+                src_x = (hw % (src_w * src_c)) / src_c; // 宽度索引
+                src_z = hw % src_c;                     // 通道索引
             }
             else
             {
-                src_n = tid / (src_c * src_h * src_w);      // 批次索引
-                size_t chw = tid % (src_c * src_h * src_w); // 余数，表示 C, H, W 维度
-                dst_z = chw / (src_h * src_w);              // 通道索引
-                size_t hw = chw % (src_h * src_w);          // 余数，表示 Height 和 Width
-                src_y = hw / src_w;                         // 高度索引
-                src_x = hw % src_w;                         // 宽度索引
+                src_n = tid / (src_c * src_h * src_w); // 批次索引
+                chw = tid % (src_c * src_h * src_w);   // 余数，表示 C, H, W 维度
+                dst_z = chw / (src_h * src_w);         // 通道索引
+                hw = chw % (src_h * src_w);            // 余数，表示 Height 和 Width
+                src_y = hw / src_w;                    // 高度索引
+                src_x = hw % src_w;                    // 宽度索引
             }
 
             if (dst_n >= dst_b || dst_x >= dst_w || dst_y >= dst_h || dst_z >= dst_c)
