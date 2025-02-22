@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_IMPL_IMAGEPROC_HXX
-#define ABCDK_IMPL_IMAGEPROC_HXX
+#ifndef ABCDK_GENERIC_IMAGEPROC_HXX
+#define ABCDK_GENERIC_IMAGEPROC_HXX
 
 #include "imageproc_brightness.hxx"
 #include "imageproc_compose.hxx"
@@ -15,11 +15,13 @@
 
 namespace abcdk
 {
-    namespace imageproc
+    namespace generic
     {
+        namespace imageproc
+        {
 
-    } // namespace imageproc
-
+        } // namespace imageproc
+    } //    namespace generic
 } // namespace abcdk
 
-#endif // ABCDK_IMPL_IMAGEPROC_HXX
+#endif // ABCDK_GENERIC_IMAGEPROC_HXX

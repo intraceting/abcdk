@@ -8,7 +8,8 @@
 
 
 #ifdef __cuda_cuda_h__
-#if defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)
+#ifdef AVUTIL_AVUTIL_H
+#ifdef SWSCALE_SWSCALE_H
 
 static int _abcdk_cuda_avframe_convert_ffmpeg(AVFrame *dst, const AVFrame *src)
 {
@@ -307,5 +308,6 @@ int abcdk_cuda_avframe_convert(AVFrame *dst, const AVFrame *src)
     return 0;
 }
 
-#endif // defined(AVUTIL_AVUTIL_H) && defined(SWSCALE_SWSCALE_H)
+#endif // SWSCALE_SWSCALE_H
+#endif // AVUTIL_AVUTIL_H
 #endif //__cuda_cuda_h__

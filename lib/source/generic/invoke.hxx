@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_IMPL_INVOKE_HXX
-#define ABCDK_IMPL_INVOKE_HXX
+#ifndef ABCDK_GENERIC_INVOKE_HXX
+#define ABCDK_GENERIC_INVOKE_HXX
 
 #include "abcdk/util/defs.h"
 
@@ -19,4 +19,4 @@
 #define ABCDK_INVOKE_GLOBAL __attribute__((always_inline))
 #endif //__NVCC__
 
-#endif //ABCDK_IMPL_INVOKE_HXX
+#endif //ABCDK_GENERIC_INVOKE_HXX

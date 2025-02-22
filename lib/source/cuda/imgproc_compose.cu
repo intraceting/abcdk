@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "../impl/imageproc.hxx"
+#include "../generic/imageproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -18,7 +18,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool pac
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::imageproc::compose_kernel<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h, compose, compose_w, compose_ws, compose_h, scalar,
+    abcdk::generic::imageproc::compose_kernel<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h, compose, compose_w, compose_ws, compose_h, scalar,
                                         overlap_x, overlap_y, overlap_w, optimize_seam, tid);
 }
 

@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "../impl/imageproc.hxx"
+#include "../generic/imageproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -17,7 +17,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_brightness_2d2d(int channels, bool 
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::imageproc::brightness_kernel<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, tid);
+    abcdk::generic::imageproc::brightness_kernel<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, tid);
 }
 
 template <typename T>

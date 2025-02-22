@@ -8,6 +8,7 @@
 
 
 #ifdef __cuda_cuda_h__
+#ifdef AVUTIL_AVUTIL_H
 
 int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
                              const AVFrame *src, const NppiRect *src_roi,
@@ -133,4 +134,5 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
     return 0;
 }
 
+#endif // AVUTIL_AVUTIL_H
 #endif //__cuda_cuda_h__

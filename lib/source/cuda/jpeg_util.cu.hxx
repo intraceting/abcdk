@@ -19,7 +19,6 @@
 
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
-#ifdef AVCODEC_AVCODEC_H
 
 namespace abcdk
 {
@@ -32,7 +31,6 @@ namespace abcdk
     } // namespace cuda
 } // namespace abcdk
 
-#endif // AVCODEC_AVCODEC_H
 #endif // AVUTIL_AVUTIL_H
 #endif //__cuda_cuda_h__
 

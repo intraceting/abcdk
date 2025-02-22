@@ -109,6 +109,13 @@ int abcdk_cuda_avframe_remap(AVFrame *dst, const NppiRect *dst_roi,
                              const AVFrame *xmap, const AVFrame *ymap,
                              NppiInterpolationMode inter_mode);
 
+/**
+ * 全景图像融合(从左到右)。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_avframe_compose(AVFrame *panorama, const AVFrame *compose,
+                               uint8_t scalar[4], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam);
 
 __END_DECLS
 

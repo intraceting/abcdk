@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/tensorproc.h"
-#include "../impl/tensorproc.hxx"
+#include "../generic/tensorproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -18,7 +18,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_tensorproc_blob_2d2d(int channels, bool rev
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::tensorproc::blob_kernel<ST, DT>(channels, revert, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std, tid);
+    abcdk::generic::tensorproc::blob_kernel<ST, DT>(channels, revert, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std, tid);
 }
 
 template <typename ST, typename DT>

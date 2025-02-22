@@ -8,6 +8,7 @@
 
 
 #ifdef __cuda_cuda_h__
+#ifdef AVUTIL_AVUTIL_H
 
 int abcdk_cuda_avframe_save(const char *dst, const AVFrame *src)
 {
@@ -63,4 +64,5 @@ int abcdk_cuda_avframe_save(const char *dst, const AVFrame *src)
     return 0;
 }
 
+#endif // AVUTIL_AVUTIL_H
 #endif //__cuda_cuda_h__

@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/tensorproc.h"
-#include "../impl/tensorproc.hxx"
+#include "../generic/tensorproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -16,7 +16,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_tensorproc_reshape_2d2d(bool dst_packed, T 
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::tensorproc::reshape_kernel<T>(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c, src_packed, src, src_b, src_w, src_ws, src_h, src_c, tid);
+    abcdk::generic::tensorproc::reshape_kernel<T>(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c, src_packed, src, src_b, src_w, src_ws, src_h, src_c, tid);
 }
 
 template <typename T>

@@ -8,7 +8,7 @@
 #define ABCDK_CUDA_GRID_HXX
 
 #include "abcdk/cuda/cuda.h"
-#include "../impl/invoke.hxx"
+#include "../generic/invoke.hxx"
 
 #ifdef __cuda_cuda_h__
 

@@ -7,6 +7,7 @@
 #include "abcdk/cuda/avutil.h"
 
 #ifdef __cuda_cuda_h__
+#ifdef AVUTIL_AVUTIL_H
 
 int abcdk_cuda_avframe_warp(AVFrame *dst, const NppiRect *dst_roi, const NppiPoint dst_quad[4],
                             const AVFrame *src, const NppiRect *src_roi, const NppiPoint src_quad[4],
@@ -163,4 +164,5 @@ int abcdk_cuda_avframe_warp(AVFrame *dst, const NppiRect *dst_roi, const NppiPoi
     return 0;
 }
 
+#endif // AVUTIL_AVUTIL_H
 #endif //__cuda_cuda_h__

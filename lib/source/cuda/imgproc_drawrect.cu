@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/imgproc.h"
-#include "../impl/imageproc.hxx"
+#include "../generic/imageproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -17,7 +17,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_drawrect_2d2d(int channels, bool pa
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::imageproc::drawrect_kernel<T>(channels, packed, dst, w, ws, h, color, weight, corner, tid);
+    abcdk::generic::imageproc::drawrect_kernel<T>(channels, packed, dst, w, ws, h, color, weight, corner, tid);
 }
 
 template <typename T>

@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/cuda/ndarray.h"
-#include "../impl/invoke.hxx"
+#include "../generic/invoke.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__

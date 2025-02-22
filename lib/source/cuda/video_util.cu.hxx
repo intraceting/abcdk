@@ -83,6 +83,7 @@ namespace abcdk
 #endif //__aarch64__
                 return -1;
             }
+            
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
             static bool operator==(const GUID &guid1, const GUID &guid2)
             {
