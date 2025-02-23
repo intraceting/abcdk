@@ -30,12 +30,12 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     AVFrame *b = abcdk_avframe_alloc(200, 200, AV_PIX_FMT_RGB24, 234);
 
     uint8_t scalar[3] = {128, 255, 0};
-    abcdk_cuda_imgproc_stuff_8u_C3R(a->data[0], a->width, a->linesize[0], a->height, scalar);
+    abcdk_cuda_imgproc_stuff_8u(3,1,a->data[0], a->width, a->linesize[0], a->height, scalar);
 
     uint8_t color[3] = {255, 0, 0};
     int corner[4] = {10, 10, 100, 100};
 
-    abcdk_cuda_imgproc_drawrect_8u_C3R(a->data[0], a->width, a->linesize[0], a->height, color, 3, corner);
+    abcdk_cuda_imgproc_drawrect_8u(3,1,a->data[0], a->width, a->linesize[0], a->height, color, 3, corner);
 
     chk = abcdk_cuda_avframe_copy(b, a);
     assert(chk == 0);
@@ -53,7 +53,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     AVFrame *e = abcdk_cuda_avframe_alloc(800, 600, AV_PIX_FMT_RGB24, 678);
 
-    abcdk_cuda_avframe_resize(e, NULL, d, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_cuda_imgproc_resize_8u(3,1,e->data[0],e->width,e->linesize[0],e->height, NULL, d->data[0],d->width,d->linesize[0],d->height, NULL, 1, NPPI_INTER_CUBIC);
 
     abcdk_cuda_avframe_save("/tmp/test.cuda.e.bmp", e);
 
@@ -69,7 +69,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     NppiRect src_roi = {100, 100, 200, 200};
 
     // abcdk_cuda_avframe_warp(f, NULL, dst_quad , e, &src_roi , NULL,2 , NPPI_INTER_CUBIC);
-    abcdk_cuda_avframe_warp(f, NULL, dst_quad, e, NULL, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_cuda_imgproc_warp_8u(3,1,f->data[0],f->width,f->linesize[0],f->height, NULL, dst_quad, e->data[0],d->width,d->linesize[0],d->height, NULL, NULL, 1, NPPI_INTER_CUBIC);
 
     abcdk_cuda_avframe_save("/tmp/test.cuda.f.bmp", f);
 
@@ -89,7 +89,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     {
         AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
 
-        abcdk_cuda_imgproc_drawrect_8u_C3R(g->data[0], g->width, g->linesize[0], g->height, color, 3, corner);
+        abcdk_cuda_imgproc_drawrect_8u(3,1,g->data[0], g->width, g->linesize[0], g->height, color, 3, corner);
 
         abcdk_cuda_avframe_save("/tmp/test.cuda.g2.bmp", g);
         abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g, cuda_ctx);
@@ -299,37 +299,37 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
     float mean[3] = {127.5, 127.5, 127.5};
     float std[3] = {128.0, 128.0, 128.0};
 
-    abcdk_cuda_imgproc_stuff_8u_C3R(a->data[0], a->width, a->linesize[0], a->height, scale2);
+    abcdk_cuda_imgproc_stuff_8u(3,1,a->data[0], a->width, a->linesize[0], a->height, scale2);
 
     abcdk_cuda_avframe_save("/tmp/a.bmp", a);
 
-    abcdk_cuda_tensorproc_blob_8u_to_32f_3R(0, (float *)b->data, b->stride, 1, a->data[0], a->linesize[0], w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_8u_to_32f(3,0, (float *)b->data, b->stride, 1, a->data[0], a->linesize[0], w, h, scale, mean, std);
 
-    abcdk_cuda_tensorproc_reshape_32f_R(1, (float *)d->data, 1, d->width, d->stride, d->height, 3, 0, (float *)b->data, 1, b->width, b->stride, b->height, 3);
+    abcdk_cuda_tensorproc_reshape_32f(1, (float *)d->data, 1, d->width, d->stride, d->height, 3, 0, (float *)b->data, 1, b->width, b->stride, b->height, 3);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 1, (float *)d->data, d->stride, w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 1, (float *)d->data, d->stride, w, h, scale, mean, std);
 
     abcdk_cuda_avframe_save("/tmp/c1.bmp", c);
 
-    abcdk_cuda_tensorproc_reshape_32f_R(0, (float *)e->data, 1, e->width, e->stride, e->height, 3, 1, (float *)d->data, 1, d->width, d->stride, d->height, 3);
+    abcdk_cuda_tensorproc_reshape_32f(0, (float *)e->data, 1, e->width, e->stride, e->height, 3, 1, (float *)d->data, 1, d->width, d->stride, d->height, 3);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 0, (float *)e->data, e->stride, w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)e->data, e->stride, w, h, scale, mean, std);
 
     abcdk_cuda_avframe_save("/tmp/c2.bmp", c);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 0, (float *)b->data, b->stride, w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)b->data, b->stride, w, h, scale, mean, std);
 
     abcdk_cuda_avframe_save("/tmp/c3.bmp", c);
 
     abcdk_ndarray_t *f = abcdk_cuda_ndarray_clone(0,d);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 1, (float *)f->data, f->stride, w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 1, (float *)f->data, f->stride, w, h, scale, mean, std);
 
     abcdk_cuda_avframe_save("/tmp/c4.bmp", c);
 
     abcdk_ndarray_t *g = abcdk_cuda_ndarray_clone(0,e);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 0, (float *)g->data, g->stride, w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)g->data, g->stride, w, h, scale, mean, std);
 
     abcdk_cuda_avframe_save("/tmp/c5.bmp", c);
 
@@ -338,7 +338,7 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_cuda_ndarray_copy(p,q);
 
-    abcdk_cuda_tensorproc_blob_32f_to_8u_3R(1, c->data[0], c->linesize[0], 0, (float *)p->data, p->stride, w, h, scale, mean, std);
+    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)p->data, p->stride, w, h, scale, mean, std);
 
     abcdk_cuda_avframe_save("/tmp/c6.bmp", c);
 

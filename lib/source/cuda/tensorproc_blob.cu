@@ -61,32 +61,20 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_tensorproc_blob(int channels, bool revert,
     return 0;
 }
 
-int abcdk_cuda_tensorproc_blob_8u_to_32f_1R(int dst_packed, float *dst, size_t dst_ws,
-                                            int src_packed, uint8_t *src, size_t src_ws,
-                                            size_t w, size_t h, float scale[1], float mean[1], float std[1])
+int abcdk_cuda_tensorproc_blob_8u_to_32f(int channels,
+                                         int dst_packed, float *dst, size_t dst_ws,
+                                         int src_packed, uint8_t *src, size_t src_ws,
+                                         size_t w, size_t h, float scale[], float mean[], float std[])
 {
-    return _abcdk_cuda_tensorproc_blob<uint8_t, float>(1, false, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
+    return _abcdk_cuda_tensorproc_blob<uint8_t, float>(channels, false, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
-int abcdk_cuda_tensorproc_blob_8u_to_32f_3R(int dst_packed, float *dst, size_t dst_ws,
-                                            int src_packed, uint8_t *src, size_t src_ws,
-                                            size_t w, size_t h, float scale[3], float mean[3], float std[3])
+int abcdk_cuda_tensorproc_blob_32f_to_8u(int channels,
+                                         int dst_packed, uint8_t *dst, size_t dst_ws,
+                                         int src_packed, float *src, size_t src_ws,
+                                         size_t w, size_t h, float scale[], float mean[], float std[])
 {
-    return _abcdk_cuda_tensorproc_blob<uint8_t, float>(3, false, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
-}
-
-int abcdk_cuda_tensorproc_blob_32f_to_8u_1R(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                            int src_packed, float *src, size_t src_ws,
-                                            size_t w, size_t h, float scale[1], float mean[1], float std[1])
-{
-    return _abcdk_cuda_tensorproc_blob<float, uint8_t>(1, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
-}
-
-int abcdk_cuda_tensorproc_blob_32f_to_8u_3R(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                            int src_packed, float *src, size_t src_ws,
-                                            size_t w, size_t h, float scale[3], float mean[3], float std[3])
-{
-    return _abcdk_cuda_tensorproc_blob<float, uint8_t>(3, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
+    return _abcdk_cuda_tensorproc_blob<float, uint8_t>(channels, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
 #endif // __cuda_cuda_h__

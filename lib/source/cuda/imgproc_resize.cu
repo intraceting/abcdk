@@ -11,7 +11,7 @@
 int abcdk_cuda_imgproc_resize_8u(int channels, int packed,
                                  uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi,
                                  const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi,
-                                 int keep_aspect_ratio, NppiInterpolationMode inter_mode);
+                                 int keep_aspect_ratio, NppiInterpolationMode inter_mode)
 {
     NppiSize tmp_src_size = {0};
     NppiRect tmp_dst_roi = {0}, tmp_src_roi = {0};

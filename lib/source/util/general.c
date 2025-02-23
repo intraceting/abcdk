@@ -101,19 +101,18 @@ const char *abcdk_match_env(const char *line, const char *name, uint8_t delim)
     return NULL;
 }
 
-void abcdk_memcopy_1d(void *dst, size_t dst_offset, const void *src,size_t src_offset, size_t count)
+void abcdk_memcpy_1d(void *dst, size_t dst_offset, const void *src,size_t src_offset, size_t count)
 {
     memcpy(ABCDK_PTR2VPTR(dst, dst_offset), ABCDK_PTR2VPTR(src, src_offset), count);
 }
 
-void abcdk_memcopy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y,
+void abcdk_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y,
                       const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y,
                       size_t roi_width_bytes, size_t roi_height)
 {
     /*一行一行的复制。*/
-//#pragma omp parallel
     for (int h = 0; h < roi_height; h++)
-        abcdk_memcopy_1d(dst, (h + dst_y) * dst_pitch + dst_x_bytes, src, (h + src_y) * src_pitch + src_x_bytes, roi_width_bytes);
+        abcdk_memcpy_1d(dst, (h + dst_y) * dst_pitch + dst_x_bytes, src, (h + src_y) * src_pitch + src_x_bytes, roi_width_bytes);
 }
 
 pid_t abcdk_waitpid(pid_t pid, int options, int *exitcode, int *sigcode)

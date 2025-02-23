@@ -28,7 +28,7 @@ int abcdk_cuda_avimage_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_
 
     for (int i = 0; i < 4; i++)
     {
-        if (!src_datas[i])
+        if (!src_data[i])
             break;
 
         chk = abcdk_cuda_memcpy_2d(dst_data[i], dst_stride[i], 0, 0, dst_in_host,
@@ -45,7 +45,7 @@ CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src)
 {
     assert(src != NULL);
 
-    if (src->hw_frames_ctx && ABCDK_PTR2I64(src->hw_frames_ctx->data,0) == 'cuda')
+    if (src->hw_frames_ctx && memcmp(src->hw_frames_ctx->data,"cuda",4) == 0)
         return CU_MEMORYTYPE_DEVICE;
 
     return CU_MEMORYTYPE_UNIFIED;
@@ -95,7 +95,7 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
 
     av_frame->buf[0] = av_buffer; // bind to array.
 
-    av_frame->hw_frames_ctx = av_buffer_allocz(sizeof(int64_t));
+    av_frame->hw_frames_ctx = av_buffer_allocz(4);
     if(!av_frame->hw_frames_ctx)
     {
         av_frame_free(&av_frame);
@@ -103,7 +103,7 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
     }
 
     /*标志已经占用。*/
-    ABCDK_PTR2I64(av_frame->hw_frames_ctx->data,0) = 'cuda';
+    memcpy(av_frame->hw_frames_ctx->data,"cuda",4);
 
     chk_size = abcdk_avimage_fill_pointers(av_frame->data, stride, height, pixfmt, av_buffer->data);
     assert(buf_size == chk_size);

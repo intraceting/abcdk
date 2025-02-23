@@ -11,7 +11,6 @@
 #include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/ffmpeg/swscale.h"
-#include "abcdk/util/geometry.h"
 #include "abcdk/image/bmp.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"

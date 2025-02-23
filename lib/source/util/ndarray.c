@@ -146,8 +146,6 @@ abcdk_ndarray_t *abcdk_ndarray_alloc(int fmt, size_t block, size_t width, size_t
 
 int abcdk_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src)
 {
-    int chk;
-
     assert(dst != NULL && src != NULL);
 
     assert(dst->width == src->width);
@@ -157,21 +155,15 @@ int abcdk_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src)
 
     if (dst->fmt == ABCDK_NDARRAY_NHWC)
     {
-        chk = abcdk_memcpy_2d(dst->data, dst->stride, 0, 0,
-                              src->data, src->stride, 0, 0,
-                              src->cell * src->depth * src->width, src->block * src->height);
-
-        if (chk != 0)
-            return -1;
+        abcdk_memcpy_2d(dst->data, dst->stride, 0, 0,
+                        src->data, src->stride, 0, 0,
+                        src->cell * src->depth * src->width, src->block * src->height);
     }
     else if (dst->fmt == ABCDK_NDARRAY_NCHW)
     {
-        chk = abcdk_memcpy_2d(dst->data, dst->stride, 0, 0,
-                              src->data, src->stride, 0, 0,
-                              src->cell * src->width, src->block * src->depth * src->height);
-
-        if (chk != 0)
-            return -1;
+        abcdk_memcpy_2d(dst->data, dst->stride, 0, 0,
+                        src->data, src->stride, 0, 0,
+                        src->cell * src->width, src->block * src->depth * src->height);
     }
     else
     {
@@ -208,7 +200,7 @@ abcdk_ndarray_t *abcdk_ndarray_clone2(const uint8_t *src_data, const int src_str
     abcdk_ndarray_t *dst, tmp_src = {0};
     int chk;
 
-    assert(src != NULL);
+    assert(src_data != NULL && src_stride >0);
 
     dst = abcdk_ndarray_alloc(fmt, block, width, height, depth, cell, 1, 0);
     if (!dst)
@@ -222,12 +214,15 @@ abcdk_ndarray_t *abcdk_ndarray_clone2(const uint8_t *src_data, const int src_str
     tmp_src.cell = cell;
     tmp_src.stride = src_stride;
 
-    tmp_src.data = src_data;
+    tmp_src.data = (void *)src_data;
     tmp_src.size = abcdk_ndarray_size(&tmp_src);
 
     chk = abcdk_ndarray_copy(dst, &tmp_src);
     if (chk != 0)
-        return -1;
+    {
+        abcdk_ndarray_free(&dst);
+        return NULL;
+    }
 
-    return 0;
+    return dst;
 }

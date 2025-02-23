@@ -15,7 +15,7 @@ CUmemorytype abcdk_cuda_ndarray_memory_type(const abcdk_ndarray_t *src)
 {
     assert(src != NULL);
 
-    if (src->hw_ctx && ABCDK_PTR2I64(src->hw_ctx->pptrs[0],0) == 'cuda')
+    if (src->hw_ctx && memcmp(src->hw_ctx->pstrs[0],"cuda",4) == 0)
         return CU_MEMORYTYPE_DEVICE;
 
     return CU_MEMORYTYPE_UNIFIED;
@@ -43,7 +43,7 @@ abcdk_ndarray_t *abcdk_cuda_ndarray_alloc(int fmt, size_t block, size_t width, s
         return NULL;
     }
 
-    ctx->hw_ctx = abcdk_object_alloc2(sizeof(int64_t));
+    ctx->hw_ctx = abcdk_object_alloc2(4);
     if (!ctx->hw_ctx)
     {
         abcdk_ndarray_free(&ctx);
@@ -60,7 +60,7 @@ abcdk_ndarray_t *abcdk_cuda_ndarray_alloc(int fmt, size_t block, size_t width, s
     }
 
     /*标志已经占用。*/
-    ABCDK_PTR2I64(ctx->hw_ctx->pptrs[0],0) = 'cuda';
+    memcpy(ctx->hw_ctx->pstrs[0],"cuda",4);
     
     ctx->data = buf_ptr;
     ctx->size = buf_size;
@@ -144,7 +144,7 @@ abcdk_ndarray_t *abcdk_cuda_ndarray_clone2(int dst_in_host,
     abcdk_ndarray_t *dst, tmp_src = {0};
     int chk;
 
-    assert(src != NULL);
+    assert(src_data != NULL && src_stride > 0);
 
     if (dst_in_host)
         dst = abcdk_ndarray_alloc(fmt, block, width, height, depth, cell, 1, 0);
@@ -161,14 +161,17 @@ abcdk_ndarray_t *abcdk_cuda_ndarray_clone2(int dst_in_host,
     tmp_src.cell = cell;
     tmp_src.stride = src_stride;
 
-    tmp_src.data = src_data;
+    tmp_src.data = (void *)src_data;
     tmp_src.size = abcdk_ndarray_size(&tmp_src);
 
     chk = abcdk_cuda_ndarray_copy(dst, &tmp_src);
     if (chk != 0)
-        return -1;
+    {
+        abcdk_ndarray_free(&dst);
+        return NULL;
+    }
 
-    return 0;
+    return dst;
 }
 
 #endif //__cuda_cuda_h__
