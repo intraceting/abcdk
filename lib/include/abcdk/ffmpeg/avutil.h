@@ -74,7 +74,7 @@ int abcdk_avimage_fill_heights(int heights[4], int height, enum AVPixelFormat pi
  *
  * @return > 0 成功(图层数量)， <= 0 失败。
  */
-int abcdk_avimage_fill_strides(int strides[4], int width, int height, enum AVPixelFormat pixfmt, int align);
+int abcdk_avimage_fill_strides(int stride[4], int width, int height, enum AVPixelFormat pixfmt, int align);
 
 /**
  * 分派存储空间。
@@ -83,7 +83,7 @@ int abcdk_avimage_fill_strides(int strides[4], int width, int height, enum AVPix
  *
  * @return >0 成功(分派的内存大小)， <= 0 失败。
  */
-int abcdk_avimage_fill_pointers(uint8_t *datas[4], const int strides[4], int height,
+int abcdk_avimage_fill_pointers(uint8_t *data[4], const int stride[4], int height,
                                 enum AVPixelFormat pixfmt, void *buffer);
 
 /**
@@ -91,7 +91,7 @@ int abcdk_avimage_fill_pointers(uint8_t *datas[4], const int strides[4], int hei
  *
  * @return >0 成功(需要的内存大小)， <= 0 失败。
  */
-int abcdk_avimage_size(const int strides[4], int height, enum AVPixelFormat pixfmt);
+int abcdk_avimage_size(const int stride[4], int height, enum AVPixelFormat pixfmt);
 
 /**
  * 计算需要的内存大小。
@@ -103,8 +103,9 @@ int abcdk_avimage_size2(int width, int height, enum AVPixelFormat pixfmt, int al
 /**
  * 图像复制。
  */
-void abcdk_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4],
-                        const int src_strides[4], int width, int height, enum AVPixelFormat pixfmt);
+void abcdk_avimage_copy(uint8_t *dst_data[4], int dst_stride[4],
+                        const uint8_t *src_data[4], const int src_stride[4],
+                        int width, int height, enum AVPixelFormat pixfmt);
 
 /**
  * 帧复制。

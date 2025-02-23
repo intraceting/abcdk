@@ -39,19 +39,9 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
     return 0;
 }
 
-int abcdk_cuda_imgproc_stuff_8u_C1R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1])
+int abcdk_cuda_imgproc_stuff_8u(int channels, int packed,uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[])
 {
-    return _abcdk_cuda_imgproc_stuff<uint8_t>(1, true, dst, width, pitch, height, scalar);
-}
-
-int abcdk_cuda_imgproc_stuff_8u_C3R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[3])
-{
-    return _abcdk_cuda_imgproc_stuff<uint8_t>(3, true, dst, width, pitch, height, scalar);
-}
-
-int abcdk_cuda_imgproc_stuff_8u_C4R(uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[4])
-{
-    return _abcdk_cuda_imgproc_stuff<uint8_t>(4, true, dst, width, pitch, height, scalar);
+    return _abcdk_cuda_imgproc_stuff<uint8_t>(channels, packed, dst, width, pitch, height, scalar);
 }
 
 #endif // __cuda_cuda_h__

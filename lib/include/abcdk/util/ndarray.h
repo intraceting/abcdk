@@ -92,6 +92,30 @@ void abcdk_ndarray_free(abcdk_ndarray_t **ctx);
 /**创建。*/
 abcdk_ndarray_t *abcdk_ndarray_alloc(int fmt, size_t block, size_t width, size_t height, size_t depth, size_t cell, size_t align, int no_space);
 
+/**
+ * 多维数组复制。
+ *
+ * @note 仅数组数据。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src);
+
+/**
+ * 多维数组克隆。
+ *
+ * @note 仅数组数据。
+ */
+abcdk_ndarray_t *abcdk_ndarray_clone(const abcdk_ndarray_t *src);
+
+/**
+ * 多维数组克隆。
+ *
+ * @note 仅数组数据。
+ */
+abcdk_ndarray_t *abcdk_ndarray_clone2(const uint8_t *src_data, const int src_stride,
+                                      int fmt, size_t block, size_t width, size_t height, size_t depth, size_t cell);
+
 __END_DECLS
 
 #endif // ABCDK_UTIL_NDARRAY_H

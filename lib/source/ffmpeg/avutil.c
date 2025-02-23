@@ -78,71 +78,71 @@ int abcdk_avimage_fill_heights(int heights[4], int height, enum AVPixelFormat pi
     return planes_nb;
 }
 
-int abcdk_avimage_fill_strides(int strides[4],int width,int height,enum AVPixelFormat pixfmt,int align)
+int abcdk_avimage_fill_strides(int stride[4],int width,int height,enum AVPixelFormat pixfmt,int align)
 {
     int stride_nb;
 
-    assert(strides != NULL && width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
+    assert(stride != NULL && width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
-    if (av_image_fill_linesizes(strides, pixfmt, width) < 0)
+    if (av_image_fill_linesizes(stride, pixfmt, width) < 0)
         ABCDK_ERRNO_AND_RETURN1(EINVAL, -1);
 
     stride_nb = 0;
     for (int i = 0; i < 4; i++)
     {
-        if (strides[i] <= 0)
+        if (stride[i] <= 0)
             continue;
 
-        strides[i] = abcdk_align(strides[i], align);
+        stride[i] = abcdk_align(stride[i], align);
         stride_nb += 1;
     }
 
     return stride_nb;
 }
 
-int abcdk_avimage_fill_pointers(uint8_t *datas[4], const int strides[4], int height,
+int abcdk_avimage_fill_pointers(uint8_t *data[4], const int stride[4], int height,
                                  enum AVPixelFormat pixfmt, void *buffer)
 {
     int size;
 
-    assert(datas != NULL && strides != NULL && height > 0 && pixfmt > AV_PIX_FMT_NONE);
+    assert(data != NULL && stride != NULL && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
-    size = av_image_fill_pointers(datas, pixfmt, height, (uint8_t *)buffer, strides);
+    size = av_image_fill_pointers(data, pixfmt, height, (uint8_t *)buffer, stride);
 
     /*只是计算大小，清空无效指针。*/
     if (!buffer)
-        datas[0] = datas[1] = datas[2] = datas[3] = NULL;
+        data[0] = data[1] = data[2] = data[3] = NULL;
 
     return size;
 }
 
-int abcdk_avimage_size(const int strides[4], int height, enum AVPixelFormat pixfmt)
+int abcdk_avimage_size(const int stride[4], int height, enum AVPixelFormat pixfmt)
 {
-    uint8_t *datas[4] = {0};
+    uint8_t *data[4] = {0};
 
-    return abcdk_avimage_fill_pointers(datas, strides, height, pixfmt, NULL);
+    return abcdk_avimage_fill_pointers(data, stride, height, pixfmt, NULL);
 }
 
 int abcdk_avimage_size2(int width,int height,enum AVPixelFormat pixfmt,int align)
 {
-    int strides[4] = {0};
+    int stride[4] = {0};
     int chk;
 
-    chk = abcdk_avimage_fill_strides(strides,width,height,pixfmt,align);
+    chk = abcdk_avimage_fill_strides(stride,width,height,pixfmt,align);
     if(chk<=0)
         return chk;
 
-    return abcdk_avimage_size(strides,height,pixfmt);
+    return abcdk_avimage_size(stride,height,pixfmt);
 }
 
-void abcdk_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], const uint8_t *src_datas[4],
-                         const int src_strides[4], int width, int height, enum AVPixelFormat pixfmt)
+void abcdk_avimage_copy(uint8_t *dst_data[4], int dst_stride[4], const uint8_t *src_data[4],
+                         const int src_stride[4], int width, int height, enum AVPixelFormat pixfmt)
 {
-    assert(dst_datas != NULL && dst_strides != NULL);
-    assert(src_datas != NULL && src_strides != NULL);
+    assert(dst_data != NULL && dst_stride != NULL);
+    assert(src_data != NULL && src_stride != NULL);
     assert(width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
 
-    av_image_copy(dst_datas, dst_strides, src_datas, src_strides, pixfmt, width, height);
+    av_image_copy(dst_data, dst_stride, src_data, src_stride, pixfmt, width, height);
 }
 
 
@@ -168,7 +168,7 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
 {
     AVBufferRef *av_buffer = NULL;
     AVFrame *av_frame = NULL;
-    int strides[4] = {0};
+    int stride[4] = {0};
     int buf_size;
     void *buf_ptr = NULL;
     int chk_size;
@@ -176,10 +176,10 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
     assert(width > 0 && height > 0);
     assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
     
-    if (abcdk_avimage_fill_strides(strides, width, height, pixfmt, align) <= 0)
+    if (abcdk_avimage_fill_strides(stride, width, height, pixfmt, align) <= 0)
         return NULL;
 
-    buf_size = abcdk_avimage_size(strides, height, pixfmt);
+    buf_size = abcdk_avimage_size(stride, height, pixfmt);
     if (buf_size <= 0)
         return NULL;
 
@@ -201,7 +201,7 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
         return NULL;
     }
 
-    chk_size = abcdk_avimage_fill_pointers(av_frame->data, strides, height, pixfmt, av_buffer->data);
+    chk_size = abcdk_avimage_fill_pointers(av_frame->data, stride, height, pixfmt, av_buffer->data);
     assert(buf_size == chk_size);
 
     av_frame->width = width;
@@ -211,7 +211,7 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
 
     /*copy strides to linesize.*/
     for (int i = 0; i < 4; i++)
-        av_frame->linesize[i] = strides[i];
+        av_frame->linesize[i] = stride[i];
 
     return av_frame;
 }

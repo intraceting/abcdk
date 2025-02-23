@@ -50,29 +50,12 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
     return 0;
 }
 
-int abcdk_cuda_imgproc_compose_8u_C1R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                      uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                      uint8_t scalar[1], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
+int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
+                                  uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+                                  uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
+                                  uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
-    return _abcdk_cuda_imgproc_compose(1, true, panorama, panorama_w, panorama_ws, panorama_h,
-                                       compose, compose_w, compose_ws, compose_h,
-                                       scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
-}
-
-int abcdk_cuda_imgproc_compose_8u_C3R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                      uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                      uint8_t scalar[3], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
-{
-    return _abcdk_cuda_imgproc_compose(3, true, panorama, panorama_w, panorama_ws, panorama_h,
-                                       compose, compose_w, compose_ws, compose_h,
-                                       scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
-}
-
-int abcdk_cuda_imgproc_compose_8u_C4R(uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                      uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                      uint8_t scalar[4], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
-{
-    return _abcdk_cuda_imgproc_compose(4, true, panorama, panorama_w, panorama_ws, panorama_h,
+    return _abcdk_cuda_imgproc_compose(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
                                        compose, compose_w, compose_ws, compose_h,
                                        scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }

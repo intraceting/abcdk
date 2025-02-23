@@ -51,22 +51,11 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_drawrect(int channels, bool packed,
     return 0;
 }
 
-int abcdk_cuda_imgproc_drawrect_8u_C1R(uint8_t *dst, size_t w, size_t ws, size_t h,
-                                       uint8_t color[1], int weight, int corner[4])
+int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
+                                   uint8_t *dst, size_t w, size_t ws, size_t h,
+                                   uint8_t color[], int weight, int corner[4])
 {
-    return _abcdk_cuda_imgproc_drawrect<uint8_t>(1, true, dst, w, ws, h, color, weight, corner);
-}
-
-int abcdk_cuda_imgproc_drawrect_8u_C3R(uint8_t *dst, size_t w, size_t ws, size_t h,
-                                       uint8_t color[3], int weight, int corner[4])
-{
-    return _abcdk_cuda_imgproc_drawrect<uint8_t>(3, true, dst, w, ws, h, color, weight, corner);
-}
-
-int abcdk_cuda_imgproc_drawrect_8u_C4R(uint8_t *dst, size_t w, size_t ws, size_t h,
-                                       uint8_t color[4], int weight, int corner[4])
-{
-    return _abcdk_cuda_imgproc_drawrect<uint8_t>(4, true, dst, w, ws, h, color, weight, corner);
+    return _abcdk_cuda_imgproc_drawrect<uint8_t>(channels, packed, dst, w, ws, h, color, weight, corner);
 }
 
 #endif // __cuda_cuda_h__

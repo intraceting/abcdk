@@ -14,6 +14,7 @@
 
 __BEGIN_DECLS
 
+
 /**获取多维数组的内存类型。*/
 CUmemorytype abcdk_cuda_ndarray_memory_type(const abcdk_ndarray_t *src);
 
@@ -35,6 +36,15 @@ int abcdk_cuda_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src);
  * @note 仅数组数据。
  */
 abcdk_ndarray_t *abcdk_cuda_ndarray_clone(int dst_in_host, const abcdk_ndarray_t *src);
+
+/**
+ * 多维数组克隆。
+ *
+ * @note 仅数组数据。
+ */
+abcdk_ndarray_t *abcdk_cuda_ndarray_clone2(int dst_in_host,
+                                           const uint8_t *src_data, const int src_stride, int src_in_host,
+                                           int fmt, size_t block, size_t width, size_t height, size_t depth, size_t cell);
 
 __END_DECLS
 

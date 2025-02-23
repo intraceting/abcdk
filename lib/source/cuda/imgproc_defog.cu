@@ -39,16 +39,11 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_defog(int channels, bool packed,
     return 0;
 }
 
-int abcdk_cuda_imgproc_defog_8u_C3R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
-                                    size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w)
+int abcdk_cuda_imgproc_defog_8u(int channels, int packed,
+                                uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
+                                size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w)
 {
-    return _abcdk_cuda_imgproc_defog(3, true, dst, dst_ws, src, src_ws, w, h, dack_a, dack_m, dack_w);
-}
-
-int abcdk_cuda_imgproc_defog_8u_C4R(uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
-                                    size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w)
-{
-    return _abcdk_cuda_imgproc_defog(4, true, dst, dst_ws, src, src_ws, w, h, dack_a, dack_m, dack_w);
+    return _abcdk_cuda_imgproc_defog(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_a, dack_m, dack_w);
 }
 
 #endif // __cuda_cuda_h__

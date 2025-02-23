@@ -10,16 +10,16 @@
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
 
-int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_in_host,
-                            const uint8_t *src_datas[4], const int src_strides[4], int src_in_host,
+int abcdk_cuda_avimage_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
+                            const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
                             int width, int height, enum AVPixelFormat pixfmt)
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
     int chk;
 
-    assert(dst_datas != NULL && dst_strides != NULL);
-    assert(src_datas != NULL && src_strides != NULL);
+    assert(dst_data != NULL && dst_stride != NULL);
+    assert(src_data != NULL && src_stride != NULL);
     assert(width > 0 && height > 0);
     assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
 
@@ -31,8 +31,8 @@ int abcdk_cuda_avimage_copy(uint8_t *dst_datas[4], int dst_strides[4], int dst_i
         if (!src_datas[i])
             break;
 
-        chk = abcdk_cuda_memcpy_2d(dst_datas[i], dst_strides[i], 0, 0, dst_in_host,
-                                   src_datas[i], src_strides[i], 0, 0, src_in_host,
+        chk = abcdk_cuda_memcpy_2d(dst_data[i], dst_stride[i], 0, 0, dst_in_host,
+                                   src_data[i], src_stride[i], 0, 0, src_in_host,
                                    real_stride[i], real_height[i]);
         if (chk != 0)
             return -1;
@@ -45,7 +45,7 @@ CUmemorytype abcdk_cuda_avframe_memory_type(const AVFrame *src)
 {
     assert(src != NULL);
 
-    if (src->hw_frames_ctx && ABCDK_PTR2I64(src->hw_frames_ctx->data,0) == 0x123456789)
+    if (src->hw_frames_ctx && ABCDK_PTR2I64(src->hw_frames_ctx->data,0) == 'cuda')
         return CU_MEMORYTYPE_DEVICE;
 
     return CU_MEMORYTYPE_UNIFIED;
@@ -60,7 +60,7 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
 {
     AVBufferRef *av_buffer = NULL;
     AVFrame *av_frame = NULL;
-    int strides[4] = {0};
+    int stride[4] = {0};
     int buf_size;
     void *buf_ptr = NULL;
     int chk_size;
@@ -68,10 +68,10 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
     assert(width > 0 && height > 0);
     assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
 
-    if (abcdk_avimage_fill_strides(strides, width, height, pixfmt, align) <= 0)
+    if (abcdk_avimage_fill_strides(stride, width, height, pixfmt, align) <= 0)
         return NULL;
 
-    buf_size = abcdk_avimage_size(strides, height, pixfmt);
+    buf_size = abcdk_avimage_size(stride, height, pixfmt);
     if (buf_size <= 0)
         return NULL;
 
@@ -103,9 +103,9 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
     }
 
     /*标志已经占用。*/
-    ABCDK_PTR2I64(av_frame->hw_frames_ctx->data,0) = 0x123456789;
+    ABCDK_PTR2I64(av_frame->hw_frames_ctx->data,0) = 'cuda';
 
-    chk_size = abcdk_avimage_fill_pointers(av_frame->data, strides, height, pixfmt, av_buffer->data);
+    chk_size = abcdk_avimage_fill_pointers(av_frame->data, stride, height, pixfmt, av_buffer->data);
     assert(buf_size == chk_size);
 
     av_frame->width = width;
@@ -114,7 +114,7 @@ AVFrame *abcdk_cuda_avframe_alloc(int width, int height, enum AVPixelFormat pixf
 
     /*copy strides to linesize.*/
     for (int i = 0; i < 4; i++)
-        av_frame->linesize[i] = strides[i];
+        av_frame->linesize[i] = stride[i];
 
     return av_frame;
 }

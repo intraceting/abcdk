@@ -1,8 +1,8 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
- * 
+ *
  */
 #include "abcdk/util/ndarray.h"
 
@@ -27,7 +27,7 @@ size_t abcdk_ndarray_size(abcdk_ndarray_t *ndarray)
     return size;
 }
 
-void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray,size_t align)
+void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray, size_t align)
 {
     assert(ndarray != NULL);
     assert(ndarray->fmt == ABCDK_NDARRAY_NCHW || ndarray->fmt == ABCDK_NDARRAY_NHWC);
@@ -44,7 +44,7 @@ void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray,size_t align)
     }
 }
 
-size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t y, size_t z,int flag)
+size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t y, size_t z, int flag)
 {
     size_t off = SIZE_MAX;
 
@@ -87,7 +87,7 @@ void abcdk_ndarray_free(abcdk_ndarray_t **ctx)
 {
     abcdk_ndarray_t *ctx_p;
 
-    if(!ctx || !*ctx)
+    if (!ctx || !*ctx)
         return;
 
     ctx_p = *ctx;
@@ -126,7 +126,7 @@ abcdk_ndarray_t *abcdk_ndarray_alloc(int fmt, size_t block, size_t width, size_t
     abcdk_ndarray_set_stride(ctx, align);
 
     /*如果不需要空间直接返回。*/
-    if(no_space)
+    if (no_space)
         return ctx;
 
     buf_size = abcdk_ndarray_size(ctx);
@@ -137,9 +137,97 @@ abcdk_ndarray_t *abcdk_ndarray_alloc(int fmt, size_t block, size_t width, size_t
         abcdk_ndarray_free(&ctx);
         return NULL;
     }
-    
+
     ctx->data = ctx->buf->pptrs[0];
     ctx->size = buf_size;
 
     return ctx;
+}
+
+int abcdk_ndarray_copy(abcdk_ndarray_t *dst, const abcdk_ndarray_t *src)
+{
+    int chk;
+
+    assert(dst != NULL && src != NULL);
+
+    assert(dst->width == src->width);
+    assert(dst->height == src->height);
+    assert(dst->fmt == src->fmt);
+    assert(dst->fmt == ABCDK_NDARRAY_NCHW || dst->fmt == ABCDK_NDARRAY_NHWC);
+
+    if (dst->fmt == ABCDK_NDARRAY_NHWC)
+    {
+        chk = abcdk_memcpy_2d(dst->data, dst->stride, 0, 0,
+                              src->data, src->stride, 0, 0,
+                              src->cell * src->depth * src->width, src->block * src->height);
+
+        if (chk != 0)
+            return -1;
+    }
+    else if (dst->fmt == ABCDK_NDARRAY_NCHW)
+    {
+        chk = abcdk_memcpy_2d(dst->data, dst->stride, 0, 0,
+                              src->data, src->stride, 0, 0,
+                              src->cell * src->width, src->block * src->depth * src->height);
+
+        if (chk != 0)
+            return -1;
+    }
+    else
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+abcdk_ndarray_t *abcdk_ndarray_clone(const abcdk_ndarray_t *src)
+{
+    abcdk_ndarray_t *dst;
+    int chk;
+
+    assert(src != NULL);
+
+    dst = abcdk_ndarray_alloc(src->fmt, src->block, src->width, src->height, src->depth, src->cell, 1, 0);
+    if (!dst)
+        return NULL;
+
+    chk = abcdk_ndarray_copy(dst, src);
+    if (chk != 0)
+    {
+        abcdk_ndarray_free(&dst);
+        return NULL;
+    }
+
+    return dst;
+}
+
+abcdk_ndarray_t *abcdk_ndarray_clone2(const uint8_t *src_data, const int src_stride,
+                                      int fmt, size_t block, size_t width, size_t height, size_t depth, size_t cell)
+{
+    abcdk_ndarray_t *dst, tmp_src = {0};
+    int chk;
+
+    assert(src != NULL);
+
+    dst = abcdk_ndarray_alloc(fmt, block, width, height, depth, cell, 1, 0);
+    if (!dst)
+        return NULL;
+
+    tmp_src.fmt = fmt;
+    tmp_src.block = block;
+    tmp_src.width = width;
+    tmp_src.height = height;
+    tmp_src.depth = depth;
+    tmp_src.cell = cell;
+    tmp_src.stride = src_stride;
+
+    tmp_src.data = src_data;
+    tmp_src.size = abcdk_ndarray_size(&tmp_src);
+
+    chk = abcdk_ndarray_copy(dst, &tmp_src);
+    if (chk != 0)
+        return -1;
+
+    return 0;
 }
