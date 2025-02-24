@@ -129,22 +129,14 @@ OBJ_PATH = ${BUILD_PATH}/tmp
 LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/shell/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/log/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/rtp/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/audio/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/database/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/http/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/sdp/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/video/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/image/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/curl/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/license/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/redis/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/sqlite/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/odbc/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/lz4/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
@@ -204,12 +196,6 @@ $(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
 	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/log/%.o: lib/source/log/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/log/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
 $(OBJ_PATH)/lib/source/shell/%.o: lib/source/shell/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/shell/
 	rm -f $@
@@ -222,8 +208,8 @@ $(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/rtp/%.o: lib/source/rtp/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/rtp/
+$(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/net/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
@@ -234,44 +220,20 @@ $(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/audio/%.o: lib/source/audio/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/audio/
+$(OBJ_PATH)/lib/source/redis/%.o: lib/source/redis/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/redis/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/database/%.o: lib/source/database/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/database/
+$(OBJ_PATH)/lib/source/sqlite/%.o: lib/source/sqlite/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/sqlite/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/image/%.o: lib/source/image/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/image/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/json/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/http/%.o: lib/source/http/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/http/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/sdp/%.o: lib/source/sdp/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/sdp/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/rtsp/%.o: lib/source/rtsp/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/rtsp/
+$(OBJ_PATH)/lib/source/odbc/%.o: lib/source/odbc/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/odbc/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
@@ -282,38 +244,14 @@ $(OBJ_PATH)/lib/source/openssl/%.o: lib/source/openssl/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/video/%.o: lib/source/video/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/video/
+$(OBJ_PATH)/lib/source/lz4/%.o: lib/source/lz4/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/lz4/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/curl/%.o: lib/source/curl/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/curl/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/net/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/enigma/%.o: lib/source/enigma/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/enigma/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/ssl/%.o: lib/source/ssl/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/ssl/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/license/
+$(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/json/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 

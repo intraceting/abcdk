@@ -14,8 +14,7 @@
 #include "abcdk/util/exec.h"
 #include "abcdk/util/thread.h"
 #include "abcdk/util/popen.h"
-#include "abcdk/log/logger.h"
-
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 

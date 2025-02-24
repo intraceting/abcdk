@@ -11,7 +11,7 @@
 #include "abcdk/util/sha256.h"
 #include "abcdk/util/crc.h"
 #include "abcdk/util/spinlock.h"
-#include "abcdk/openssl/openssl.h"
+#include "abcdk/openssl/util.h"
 
 __BEGIN_DECLS
 

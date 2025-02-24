@@ -4,7 +4,6 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/database/odbc.h"
 #include "entry.h"
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
