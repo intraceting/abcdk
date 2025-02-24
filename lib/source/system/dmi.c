@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/shell/dmi.h"
+#include "abcdk/system/dmi.h"
 
 int _abcdk_dmi_hash_dump_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {

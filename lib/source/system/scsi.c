@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/shell/scsi.h"
+#include "abcdk/system/scsi.h"
 
 int _abcdk_scsi_get_type(const char* path,uint32_t *type)
 {

@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/shell/mmc.h"
+#include "abcdk/system/mmc.h"
 
 int _abcdk_mmc_get_type(const char *path, char type[NAME_MAX])
 {

@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_SCSI_H
-#define ABCDK_SHELL_SCSI_H
+#ifndef ABCDK_SYSTEM_SCSI_H
+#define ABCDK_SYSTEM_SCSI_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/dirent.h"
@@ -68,4 +68,4 @@ void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t 
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_SCSI_H
+#endif //ABCDK_SYSTEM_SCSI_H

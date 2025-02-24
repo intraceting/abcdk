@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_MTAB_H
-#define ABCDK_SHELL_MTAB_H
+#ifndef ABCDK_SYSTEM_MTAB_H
+#define ABCDK_SYSTEM_MTAB_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/tree.h"
@@ -46,4 +46,4 @@ void abcdk_mtab_list(abcdk_tree_t *list);
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_MTAB_H
+#endif //ABCDK_SYSTEM_MTAB_H

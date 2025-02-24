@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/shell/net.h"
+#include "abcdk/system/net.h"
 
 int abcdk_net_get_link_state(const char *ifname)
 {

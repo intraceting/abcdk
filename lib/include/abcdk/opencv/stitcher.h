@@ -12,7 +12,7 @@
 
 __BEGIN_DECLS
 
-/*简单的全景拼接。*/
+/**简单的全景拼接引擎。*/
 typedef struct _abcdk_stitcher abcdk_stitcher_t;
 
 /**销毁。 */

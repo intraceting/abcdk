@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_MMC_H
-#define ABCDK_SHELL_MMC_H
+#ifndef ABCDK_SYSTEM_MMC_H
+#define ABCDK_SYSTEM_MMC_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/dirent.h"
@@ -57,4 +57,4 @@ void abcdk_mmc_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t *
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_MMC_H
+#endif //ABCDK_SYSTEM_MMC_H

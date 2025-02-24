@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_USER_H
-#define ABCDK_SHELL_USER_H
+#ifndef ABCDK_SYSTEM_USER_H
+#define ABCDK_SYSTEM_USER_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/io.h"
@@ -25,4 +25,4 @@ char* abcdk_user_dirname(char* buf,const char* append);
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_USER_H
+#endif //ABCDK_SYSTEM_USER_H

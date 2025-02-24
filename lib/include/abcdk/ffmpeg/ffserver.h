@@ -13,13 +13,11 @@
 #include "abcdk/util/bloom.h"
 #include "abcdk/util/stream.h"
 #include "abcdk/util/md5.h"
-#include "abcdk/shell/file.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/system/file.h"
 #include "abcdk/ffmpeg/ffeditor.h"
 
 __BEGIN_DECLS
-
-#if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
-
 
 /**简单的流媒体服务。*/
 typedef struct _abcdk_ffserver abcdk_ffserver_t;
@@ -123,7 +121,6 @@ typedef struct _abcdk_ffserver_config
     } u;
 } abcdk_ffserver_config_t;
 
-
 /**销毁。*/
 void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx);
 
@@ -158,9 +155,6 @@ void abcdk_ffserver_task_del(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t **task
  * @return >= 0 成功(ID)，< 0 失败。
  */
 abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffserver_config_t *cfg);
-
-
-#endif //AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 
 
 __END_DECLS

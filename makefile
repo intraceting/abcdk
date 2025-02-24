@@ -127,7 +127,7 @@ OBJ_PATH = ${BUILD_PATH}/tmp
 
 #C
 LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/shell/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/system/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
@@ -196,8 +196,8 @@ $(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
 	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/shell/%.o: lib/source/shell/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/shell/
+$(OBJ_PATH)/lib/source/system/%.o: lib/source/system/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/system/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 

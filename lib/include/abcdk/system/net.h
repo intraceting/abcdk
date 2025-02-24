@@ -4,14 +4,14 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_NET_H
-#define ABCDK_SHELL_NET_H
+#ifndef ABCDK_SYSTEM_NET_H
+#define ABCDK_SYSTEM_NET_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/string.h"
 #include "abcdk/util/socket.h"
-#include "abcdk/shell/proc.h"
+#include "abcdk/system/proc.h"
 
 __BEGIN_DECLS
 
@@ -95,4 +95,4 @@ int abcdk_net_set_txqueuelen(uint16_t len,const char *ifname);
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_NET_H
+#endif //ABCDK_SYSTEM_NET_H

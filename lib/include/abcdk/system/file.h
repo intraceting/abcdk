@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_FILE_H
-#define ABCDK_SHELL_FILE_H
+#ifndef ABCDK_SYSTEM_FILE_H
+#define ABCDK_SYSTEM_FILE_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/popen.h"
@@ -60,4 +60,4 @@ int abcdk_file_segment(const char *src,const char *dst, uint16_t winsize, uint64
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_FILE_H
+#endif //ABCDK_SYSTEM_FILE_H

@@ -4,10 +4,10 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_DMI_H
-#define ABCDK_SHELL_DMI_H
+#ifndef ABCDK_SYSTEM_DMI_H
+#define ABCDK_SYSTEM_DMI_H
 
-#include "abcdk/shell/block.h"
+#include "abcdk/system/block.h"
 #include "abcdk/util/socket.h"
 #include "abcdk/util/md5.h"
 
@@ -46,4 +46,4 @@ const uint8_t *abcdk_dmi_hash(uint8_t uuid[16], uint32_t flag, const char *stuff
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_DMI_H
+#endif //ABCDK_SYSTEM_DMI_H

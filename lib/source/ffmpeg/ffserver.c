@@ -8,7 +8,6 @@
 
 #if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
-
 /**流媒体对象。*/
 typedef struct _abcdk_ffserver_item
 {
@@ -820,6 +819,41 @@ abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffser
     abcdk_mutex_unlock(ctx->dst_mutex);
 
     return (abcdk_ffserver_task_t *)task;
+}
+
+#else //AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
+
+void abcdk_ffserver_destroy(abcdk_ffserver_t **ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFMPEG工具。");
+}
+
+abcdk_ffserver_t *abcdk_ffserver_create(abcdk_ffserver_config_t *cfg)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFMPEG工具。");
+    return NULL;
+}
+
+void abcdk_ffserver_task_heartbeat(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t *task)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFMPEG工具。");
+}
+
+uint64_t abcdk_ffserver_get_index(abcdk_ffserver_t *ctx,abcdk_ffserver_task_t *task)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFMPEG工具。");
+    return -1;
+}
+
+void abcdk_ffserver_task_del(abcdk_ffserver_t *ctx, abcdk_ffserver_task_t **task)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFMPEG工具。");
+}
+
+abcdk_ffserver_task_t *abcdk_ffserver_task_add(abcdk_ffserver_t *ctx,abcdk_ffserver_config_t *cfg)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFMPEG工具。");
+    return NULL;
 }
 
 

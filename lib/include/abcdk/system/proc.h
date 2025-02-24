@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_SHELL_PROC_H
-#define ABCDK_SHELL_PROC_H
+#ifndef ABCDK_SYSTEM_PROC_H
+#define ABCDK_SYSTEM_PROC_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/io.h"
@@ -132,4 +132,4 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode);
 
 __END_DECLS
 
-#endif //ABCDK_SHELL_PROC_H
+#endif //ABCDK_SYSTEM_PROC_H

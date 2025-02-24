@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/shell/user.h"
+#include "abcdk/system/user.h"
 
 char *abcdk_user_dirname(char *buf, const char *append)
 {

@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/shell/block.h"
+#include "abcdk/system/block.h"
 
 int abcdk_block_find_device(const char *name, char devpath[PATH_MAX])
 {
