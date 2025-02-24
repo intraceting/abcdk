@@ -151,6 +151,5 @@
 #include "abcdk/net/https.h"
 #include "abcdk/net/srpc.h"
 
-#include "abcdk/license/license.h"
 
 #endif //ABCDK_H
