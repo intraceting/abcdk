@@ -24,19 +24,6 @@
 
 __BEGIN_DECLS
 
-/**/
-#ifndef OPENSSL_VERSION_NUMBER
-typedef struct ssl_st SSL;
-typedef struct ssl_ctx_st SSL_CTX;
-typedef struct bio_st BIO;
-typedef struct evp_pkey_st EVP_PKEY;
-typedef struct x509_st X509;
-typedef struct rsa_st RSA;
-#define SSL_read(f,b,s) 0
-#define SSL_write(f,b,s) 0
-#define BIO_read(f,b,s) 0
-#define BIO_write(f,b,s) 0
-#endif //OPENSSL_VERSION_NUMBER
 
 /**简单的TCP环境。 */
 typedef struct _abcdk_stcp abcdk_stcp_t;

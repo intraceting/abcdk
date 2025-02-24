@@ -6,7 +6,6 @@
  */
 #include "abcdk/openssl/cipherex.h"
 
-#ifdef OPENSSL_VERSION_NUMBER
 
 /**简单的加密接口。 */
 struct _abcdk_openssl_cipherex
@@ -122,5 +121,3 @@ abcdk_object_t *abcdk_openssl_cipherex_update_pack(abcdk_openssl_cipherex_t *ctx
 
     return dst_p;
 }
-
-#endif //OPENSSL_VERSION_NUMBER

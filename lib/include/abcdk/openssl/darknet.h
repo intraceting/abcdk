@@ -18,7 +18,6 @@
 
 __BEGIN_DECLS
 
-#ifdef OPENSSL_VERSION_NUMBER
 
 /**简单的安全套接字。*/
 typedef struct _abcdk_openssl_darknet abcdk_openssl_darknet_t;
@@ -75,7 +74,6 @@ ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx,const void *dat
 */
 ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx,void *data,size_t size);
 
-#endif //OPENSSL_VERSION_NUMBER
 
 __END_DECLS
 

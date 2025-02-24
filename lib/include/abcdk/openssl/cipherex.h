@@ -11,8 +11,6 @@
 
 __BEGIN_DECLS
 
-#ifdef OPENSSL_VERSION_NUMBER
-
 /**简单的加密接口。 */
 typedef struct _abcdk_openssl_cipherex abcdk_openssl_cipherex_t;
 
@@ -32,7 +30,6 @@ abcdk_object_t *abcdk_openssl_cipherex_update(abcdk_openssl_cipherex_t *ctx, con
 /**执行。*/
 abcdk_object_t *abcdk_openssl_cipherex_update_pack(abcdk_openssl_cipherex_t *ctx, const uint8_t *in, int in_len, int enc);
 
-#endif // OPENSSL_VERSION_NUMBER
 
 __END_DECLS
 

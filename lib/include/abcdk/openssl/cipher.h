@@ -15,7 +15,6 @@
 
 __BEGIN_DECLS
 
-#ifdef OPENSSL_VERSION_NUMBER
 
 /**简单的加密接口。 */
 typedef struct _abcdk_openssl_cipher abcdk_openssl_cipher_t;
@@ -64,7 +63,7 @@ void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx);
 /**解锁。 */
 int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode);
 
-#endif // OPENSSL_VERSION_NUMBER
+
 
 __END_DECLS
 
