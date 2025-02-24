@@ -5,13 +5,13 @@
  *
  */
 #include "abcdk/opencv/stitcher.h"
-#include "stitcher.hxx"
+#include "stitcher_general.hxx"
 
 /*简单的全景拼接。*/
 struct _abcdk_stitcher
 {
 #ifdef OPENCV_CORE_HPP
-    abcdk::opencv::stitcher *opencv_ctx;
+    abcdk::opencv::stitcher_general *impl_ctx;
 #endif // OPENCV_CORE_HPP
 }; // abcdk_stitcher_t;
 
@@ -26,7 +26,7 @@ void abcdk_stitcher_destroy(abcdk_stitcher_t **ctx)
     *ctx = NULL;
 
 #ifdef OPENCV_CORE_HPP
-    delete ctx_p->opencv_ctx;
+    delete ctx_p->impl_ctx;
 #endif // OPENCV_CORE_HPP
 
     abcdk_heap_free(ctx_p);
@@ -41,8 +41,8 @@ abcdk_stitcher_t *abcdk_stitcher_create()
         return NULL;
 
 #ifdef OPENCV_CORE_HPP
-    ctx->opencv_ctx = new abcdk::opencv::stitcher();
-    if(!ctx->opencv_ctx)
+    ctx->impl_ctx = new abcdk::opencv::stitcher_general();
+    if(!ctx->impl_ctx)
         goto ERR;
 #else // OPENCV_CORE_HPP
     abcdk_trace_printf(LOG_WARNING, "当前环境未包含OpenCV工具，无法创建对象。");
@@ -67,7 +67,7 @@ abcdk_object_t *abcdk_stitcher_metadata_dump(abcdk_stitcher_t *ctx, const char *
 
 #ifdef OPENCV_CORE_HPP
 
-    chk = abcdk::opencv::stitcher::Dump(out_data,*ctx->opencv_ctx,magic);
+    chk = abcdk::opencv::stitcher_general::Dump(out_data,*ctx->impl_ctx,magic);
     if(chk != 0)
         return NULL;
 
@@ -87,7 +87,7 @@ int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const
 
 #ifdef OPENCV_CORE_HPP
 
-    chk = abcdk::opencv::stitcher::Load(data,*ctx->opencv_ctx,magic);
+    chk = abcdk::opencv::stitcher_general::Load(data,*ctx->impl_ctx,magic);
     if(chk == 0)
         return 0;
     else if (chk == -127)
