@@ -11,7 +11,7 @@
 #include "abcdk/util/time.h"
 #include "abcdk/util/thread.h"
 #include "abcdk/util/pool.h"
-#include "abcdk/odbc/util.h"
+#include "abcdk/odbc/easy.h"
 
 
 __BEGIN_DECLS

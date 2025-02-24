@@ -8,9 +8,7 @@
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-/**
- * ODBC接口。
- */
+/**简单的ODBC接口。*/
 struct _abcdk_odbc
 {
     /** 连接池ID。*/

@@ -133,7 +133,7 @@
 #include "abcdk/sqlite/util.h"
 
 #include "abcdk/odbc/odbc.h"
-#include "abcdk/odbc/util.h"
+#include "abcdk/odbc/easy.h"
 #include "abcdk/odbc/pool.h"
 
 #include "abcdk/openssl/openssl.h"

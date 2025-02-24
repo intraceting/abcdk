@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_ODBC_UTIL_H
-#define ABCDK_ODBC_UTIL_H
+#ifndef ABCDK_ODBC_EASY_H
+#define ABCDK_ODBC_EASY_H
 
 #include "abcdk/odbc/odbc.h"
 #include "abcdk/util/object.h"
@@ -15,7 +15,7 @@ __BEGIN_DECLS
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
-/** ODBC接口。*/
+/**简单的ODBC接口。*/
 typedef struct _abcdk_odbc abcdk_odbc_t;
 
 /** 释放对象。*/
@@ -194,4 +194,4 @@ SQLRETURN abcdk_odbc_error_info(abcdk_odbc_t *ctx, SQLCHAR *Sqlstate, SQLINTEGER
 
 __END_DECLS
 
-#endif // ABCDK_ODBC_UTIL_H
+#endif // ABCDK_ODBC_EASY_H
