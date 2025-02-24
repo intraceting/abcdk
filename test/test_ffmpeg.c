@@ -14,7 +14,7 @@
 #ifdef HAVE_FFMPEG
 int abcdk_test_record(abcdk_option_t *args)
 {
-    abcdk_ffmpeg_config_t rcfg = {0},wcfg = {1};
+    abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
@@ -23,17 +23,17 @@ int abcdk_test_record(abcdk_option_t *args)
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&rcfg);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open(&wcfg);
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
+    abcdk_ffeditor_t *w = abcdk_ffeditor_open(&wcfg);
 
-    AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
-    AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
+    AVFormatContext *rf = abcdk_ffeditor_ctxptr(r);
+    AVFormatContext *wf = abcdk_ffeditor_ctxptr(w);
 
     abcdk_avformat_dump(rf,0);
     
-    for(int i = 0;i<abcdk_ffmpeg_streams(r);i++)
+    for(int i = 0;i<abcdk_ffeditor_streams(r);i++)
     {
-        AVStream * p = abcdk_ffmpeg_streamptr(r,i);
+        AVStream * p = abcdk_ffeditor_streamptr(r,i);
 
         if(p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {   
@@ -51,10 +51,10 @@ int abcdk_test_record(abcdk_option_t *args)
         abcdk_avstream_parameters_to_context(opt,p);
 
         opt->codec_tag = 0;
-        // int fps = abcdk_ffmpeg_fps(r,p->index);
+        // int fps = abcdk_ffeditor_fps(r,p->index);
         // abcdk_avcodec_encode_video_fill_time_base(opt, fps);
 
-        int n = abcdk_ffmpeg_add_stream(w,opt,1);
+        int n = abcdk_ffeditor_add_stream(w,opt,1);
 
         wf->streams[n]->avg_frame_rate = p->avg_frame_rate;
         wf->streams[n]->r_frame_rate = p->r_frame_rate;
@@ -75,7 +75,7 @@ int abcdk_test_record(abcdk_option_t *args)
     
     av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
         
-    abcdk_ffmpeg_write_header0(w,dict);
+    abcdk_ffeditor_write_header0(w,dict);
 
     av_dict_free(&dict);
 
@@ -88,9 +88,9 @@ int abcdk_test_record(abcdk_option_t *args)
     av_init_packet(&pkt);
     for(int i = 0;i<1000;i++)
     {
-       // abcdk_ffmpeg_read_delay(r,0);
+       // abcdk_ffeditor_read_delay(r,0);
 
-        int n= abcdk_ffmpeg_read_packet(r,&pkt,-1);
+        int n= abcdk_ffeditor_read_packet(r,&pkt,-1);
         if(n<0)
             break;
 
@@ -100,16 +100,16 @@ int abcdk_test_record(abcdk_option_t *args)
         else if(rf->streams[n]->codecpar->codec_id == AV_CODEC_ID_HEVC)
             m = abcdk_hevc_irap(pkt.data,pkt.size);
 
-        double psec = abcdk_ffmpeg_ts2sec(r, pkt.stream_index, pkt.pts);
-        double dsec = abcdk_ffmpeg_ts2sec(r, pkt.stream_index, pkt.dts);
+        double psec = abcdk_ffeditor_ts2sec(r, pkt.stream_index, pkt.pts);
+        double dsec = abcdk_ffeditor_ts2sec(r, pkt.stream_index, pkt.dts);
 
         double dru = (double)pkt.duration * abcdk_avmatch_r2d(rf->streams[n]->time_base,rcfg.read_speed);
 
         fprintf(stderr, "flag(%d,%d),pts(%.6f),dts(%.6f),dur(%.6f)\n",m, pkt.flags, psec, dsec, dru);
 
-        abcdk_ffmpeg_write_packet(w, &pkt, &rf->streams[n]->time_base);
+        abcdk_ffeditor_write_packet(w, &pkt, &rf->streams[n]->time_base);
 
-        //   abcdk_ffmpeg_write_packet(w,pkt.data,pkt.size,0,n);
+        //   abcdk_ffeditor_write_packet(w,pkt.data,pkt.size,0,n);
 
       //  abcdk_file_segment(NULL,"/tmp/ccc/aaaa%llu.ts",10,1,pos);
     }
@@ -117,14 +117,14 @@ int abcdk_test_record(abcdk_option_t *args)
     av_packet_unref(&pkt);
 
 
-    abcdk_ffmpeg_write_trailer(w);
-    abcdk_ffmpeg_destroy(&w);
-    abcdk_ffmpeg_destroy(&r);
+    abcdk_ffeditor_write_trailer(w);
+    abcdk_ffeditor_destroy(&w);
+    abcdk_ffeditor_destroy(&r);
 }
 
 int abcdk_test_codec(abcdk_option_t *args)
 {
-    abcdk_ffmpeg_config_t rcfg = {0},wcfg = {1};
+    abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
@@ -133,48 +133,48 @@ int abcdk_test_codec(abcdk_option_t *args)
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&rcfg);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open(&wcfg);
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
+    abcdk_ffeditor_t *w = abcdk_ffeditor_open(&wcfg);
 
-    AVFormatContext *rf = abcdk_ffmpeg_ctxptr(r);
-    AVFormatContext *wf = abcdk_ffmpeg_ctxptr(w);
+    AVFormatContext *rf = abcdk_ffeditor_ctxptr(r);
+    AVFormatContext *wf = abcdk_ffeditor_ctxptr(w);
 
     abcdk_avformat_dump(rf,0);
     
-    for(int i = 0;i<abcdk_ffmpeg_streams(r);i++)
+    for(int i = 0;i<abcdk_ffeditor_streams(r);i++)
     {
-        AVStream * p = abcdk_ffmpeg_streamptr(r,i);
+        AVStream * p = abcdk_ffeditor_streamptr(r,i);
 
         AVCodecContext *opt = abcdk_avcodec_alloc3(p->codecpar->codec_id,1);
 
         abcdk_avstream_parameters_to_context(opt,p);
 
-        int fps = abcdk_ffmpeg_fps(r,i);
+        int fps = abcdk_ffeditor_fps(r,i);
 
         opt->codec_tag = 0;
         opt->gop_size = fps;
         
         abcdk_avcodec_encode_video_fill_time_base(opt, fps);
 
-        abcdk_ffmpeg_add_stream(w,opt,0);
+        abcdk_ffeditor_add_stream(w,opt,0);
 
         abcdk_avcodec_free(&opt);
     }
     
-    abcdk_ffmpeg_write_header(w,0);
+    abcdk_ffeditor_write_header(w,0);
 
     abcdk_avformat_dump(wf,1);
 
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<10000;i++)
     {
-       // abcdk_ffmpeg_read_delay(r,0);
+       // abcdk_ffeditor_read_delay(r,0);
         
-        int n= abcdk_ffmpeg_read_frame(r,inframe,-1);
+        int n= abcdk_ffeditor_read_frame(r,inframe,-1);
         if(n<0)
             break;
 
-         abcdk_ffmpeg_write_frame(w,inframe,n);
+         abcdk_ffeditor_write_frame(w,inframe,n);
 
          usleep(rand() %40 * 1000);
     }
@@ -182,14 +182,14 @@ int abcdk_test_codec(abcdk_option_t *args)
     av_frame_free(&inframe);
 
 
-    abcdk_ffmpeg_write_trailer(w);
-    abcdk_ffmpeg_destroy(&w);
-    abcdk_ffmpeg_destroy(&r);
+    abcdk_ffeditor_write_trailer(w);
+    abcdk_ffeditor_destroy(&w);
+    abcdk_ffeditor_destroy(&r);
 }
 
 int abcdk_test_extradata(abcdk_option_t *args)
 {
-    abcdk_ffmpeg_config_t rcfg = {0},wcfg = {1};
+    abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
@@ -197,10 +197,10 @@ int abcdk_test_extradata(abcdk_option_t *args)
     wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
     wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&rcfg);
-    abcdk_ffmpeg_t *w = abcdk_ffmpeg_open(&wcfg);
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
+    abcdk_ffeditor_t *w = abcdk_ffeditor_open(&wcfg);
 
-    AVStream *vs_p = abcdk_ffmpeg_streamptr(r,0);
+    AVStream *vs_p = abcdk_ffeditor_streamptr(r,0);
 
     abcdk_hexdump(stderr,vs_p->codecpar->extradata,vs_p->codecpar->extradata_size,0,NULL);
 
@@ -228,30 +228,30 @@ int abcdk_test_extradata(abcdk_option_t *args)
         }
     }
 
-    abcdk_ffmpeg_destroy(&w);
-    abcdk_ffmpeg_destroy(&r);
+    abcdk_ffeditor_destroy(&w);
+    abcdk_ffeditor_destroy(&r);
 }
 
 int abcdk_test_audio(abcdk_option_t *args)
 {
-    abcdk_ffmpeg_config_t rcfg = {0};
+    abcdk_ffeditor_config_t rcfg = {0};
 
     rcfg.file_name = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     rcfg.bit_stream_filter = 1;
 
-    abcdk_ffmpeg_t *r = abcdk_ffmpeg_open(&rcfg);
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
 
-    AVStream *vs_p = abcdk_ffmpeg_find_stream(r,AVMEDIA_TYPE_AUDIO);
+    AVStream *vs_p = abcdk_ffeditor_find_stream(r,AVMEDIA_TYPE_AUDIO);
 
     int stream_idx = vs_p->index;
 
     AVFrame *inframe = av_frame_alloc();
     for(int i = 0;i<1000;i++)
     {
-       // abcdk_ffmpeg_read_delay(r,0);
+       // abcdk_ffeditor_read_delay(r,0);
         
-        int n = abcdk_ffmpeg_read_frame(r,inframe,stream_idx);
+        int n = abcdk_ffeditor_read_frame(r,inframe,stream_idx);
         if(n<0)
             break;
 
@@ -261,7 +261,7 @@ int abcdk_test_audio(abcdk_option_t *args)
     av_frame_free(&inframe);
 
 
-    abcdk_ffmpeg_destroy(&r);
+    abcdk_ffeditor_destroy(&r);
 }
 
 #endif //HAVE_FFMPEG

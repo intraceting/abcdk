@@ -22,8 +22,8 @@ typedef struct _abcdk_ffserver_item
     int64_t open_count;
     volatile int64_t user_active;
     
-    abcdk_ffmpeg_config_t ff_cfg;
-    abcdk_ffmpeg_t *ff_ctx;
+    abcdk_ffeditor_config_t ff_cfg;
+    abcdk_ffeditor_t *ff_ctx;
 
     char src_md5[33];
 
@@ -67,7 +67,7 @@ static void _abcdk_ffserver_item_destructor_cb(abcdk_object_t *obj, void *opaque
 
     ctx_p = (abcdk_ffserver_item_t *)obj->pptrs[0];
 
-    abcdk_ffmpeg_destroy(&ctx_p->ff_ctx);
+    abcdk_ffeditor_destroy(&ctx_p->ff_ctx);
     
     if(ctx_p->cfg.flag == ABCDK_FFSERVER_CFG_FLAG_LIVE)
     {
@@ -295,8 +295,8 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
         dst_item->session = ctx->src_session;
         if (dst_item->ff_ctx)
         {
-            abcdk_ffmpeg_write_trailer(dst_item->ff_ctx);
-            abcdk_ffmpeg_destroy(&dst_item->ff_ctx);
+            abcdk_ffeditor_write_trailer(dst_item->ff_ctx);
+            abcdk_ffeditor_destroy(&dst_item->ff_ctx);
             abcdk_trace_printf(LOG_INFO, "关闭输出环境(%s)。", dst_item->tip);
         }
 
@@ -343,16 +343,16 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
 
     abcdk_trace_printf(LOG_INFO, "创建输出环境(%s)...", dst_item->tip);
 
-    dst_item->ff_ctx = abcdk_ffmpeg_open(&dst_item->ff_cfg);
+    dst_item->ff_ctx = abcdk_ffeditor_open(&dst_item->ff_cfg);
     if (!dst_item->ff_ctx)
     {
         abcdk_trace_printf(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
         return -2;
     }
 
-    for (int i = 0; i < abcdk_ffmpeg_streams(src_item_p->ff_ctx); i++)
+    for (int i = 0; i < abcdk_ffeditor_streams(src_item_p->ff_ctx); i++)
     {
-        src_vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, i);
+        src_vs_p = abcdk_ffeditor_streamptr(src_item_p->ff_ctx, i);
 
         /*编码器可能未安装，这里初始索引为-1。*/
         idx_p = &dst_item->s2d_idx[src_vs_p->index];
@@ -366,11 +366,11 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
         abcdk_avstream_parameters_to_context(opt, src_vs_p);
 
         opt->codec_tag = 0;
-        *idx_p = abcdk_ffmpeg_add_stream(dst_item->ff_ctx, opt, 1);
+        *idx_p = abcdk_ffeditor_add_stream(dst_item->ff_ctx, opt, 1);
         if (*idx_p < 0)
             goto ERR;
 
-        vs_p = abcdk_ffmpeg_streamptr(dst_item->ff_ctx, *idx_p);
+        vs_p = abcdk_ffeditor_streamptr(dst_item->ff_ctx, *idx_p);
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
         codecpar = vs_p->codec;
@@ -389,7 +389,7 @@ static int _abcdk_ffserver_dst_init(abcdk_ffserver_t *ctx,abcdk_ffserver_item_t 
         abcdk_avcodec_free(&opt);
     }
 
-    chk = abcdk_ffmpeg_write_header(dst_item->ff_ctx, 1);
+    chk = abcdk_ffeditor_write_header(dst_item->ff_ctx, 1);
     if (chk != 0)
     {
         abcdk_trace_printf(LOG_WARNING, "创建输出环境失败(%s)，稍后重试。",dst_item->tip);
@@ -447,7 +447,7 @@ RECORD_SEGMENT_NEW:
     if (*idx_p < 0)
         return;
 
-    vs_p = abcdk_ffmpeg_streamptr(dst_item->ff_ctx, *idx_p);
+    vs_p = abcdk_ffeditor_streamptr(dst_item->ff_ctx, *idx_p);
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
     codecpar = vs_p->codec;
@@ -499,14 +499,14 @@ RECORD_SEGMENT_NEW:
         {
             abcdk_trace_printf(LOG_WARNING, "直播(%s)延时超过设定阈值(delay_max=%.3f,delay_ns=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
                                         dst_item->tip,dst_item->cfg.u.live.delay_max,delay_ns, pkt->stream_index, 
-                                        abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
-                                        abcdk_ffmpeg_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
+                                        abcdk_ffeditor_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts), 
+                                        abcdk_ffeditor_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
 
             return;
         }
     }
 
-    src_vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, pkt->stream_index);
+    src_vs_p = abcdk_ffeditor_streamptr(src_item_p->ff_ctx, pkt->stream_index);
 
     av_init_packet(&pkt_cp);
 
@@ -519,7 +519,7 @@ RECORD_SEGMENT_NEW:
     pkt_cp.flags = pkt->flags;
     pkt_cp.stream_index = *idx_p;
 
-    chk = abcdk_ffmpeg_write_packet(dst_item->ff_ctx, &pkt_cp, &src_vs_p->time_base);
+    chk = abcdk_ffeditor_write_packet(dst_item->ff_ctx, &pkt_cp, &src_vs_p->time_base);
     if (chk != 0)
         goto ERR;
 
@@ -595,9 +595,9 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
     if(!src_item_p->ff_ctx)
         goto END;
 
-    for (int i = 0; i < abcdk_ffmpeg_streams(src_item_p->ff_ctx); i++)
+    for (int i = 0; i < abcdk_ffeditor_streams(src_item_p->ff_ctx); i++)
     {
-        vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, i);
+        vs_p = abcdk_ffeditor_streamptr(src_item_p->ff_ctx, i);
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
         codecpar = vs_p->codec;
 #else
@@ -610,15 +610,15 @@ int _abcdk_ffserver_src_change_check(abcdk_ffserver_t *ctx)
         abcdk_trace_printf(LOG_DEBUG, "codec_id=%08x,codec_type=%08x,codec_tag=%08x",
                                     codecpar->codec_id, codecpar->codec_type, codecpar->codec_tag);
 
-        // int fps = abcdk_ffmpeg_fps(src_item_p->ff_ctx,vs_p->index);
+        // int fps = abcdk_ffeditor_fps(src_item_p->ff_ctx,vs_p->index);
         // abcdk_md5_update(md5_ctx,&fps,sizeof(int));
 
         // abcdk_trace_printf(LOG_DEBUG, "fps=%d",fps);
 
         if(codecpar->codec_type == AVMEDIA_TYPE_VIDEO || codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
         {
-            int width = abcdk_ffmpeg_width(src_item_p->ff_ctx,vs_p->index);
-            int height = abcdk_ffmpeg_height(src_item_p->ff_ctx,vs_p->index);
+            int width = abcdk_ffeditor_width(src_item_p->ff_ctx,vs_p->index);
+            int height = abcdk_ffeditor_height(src_item_p->ff_ctx,vs_p->index);
             abcdk_md5_update(md5_ctx,&width,sizeof(int));
             abcdk_md5_update(md5_ctx,&height,sizeof(int));
 
@@ -679,7 +679,7 @@ RETRY:
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
         goto END;
 
-    abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
+    abcdk_ffeditor_destroy(&src_item_p->ff_ctx);
 
     /*第一次连接时不需要休息。*/
     if (retry_count++ > 0)
@@ -690,7 +690,7 @@ RETRY:
 
     abcdk_trace_printf(LOG_INFO, "打开输入源(%s)...", src_item_p->tip);
 
-    src_item_p->ff_ctx = abcdk_ffmpeg_open(&src_item_p->ff_cfg);
+    src_item_p->ff_ctx = abcdk_ffeditor_open(&src_item_p->ff_cfg);
     if (!src_item_p->ff_ctx)
         goto RETRY;
     
@@ -709,11 +709,11 @@ LOOP:
     if (!abcdk_atomic_compare(&ctx->work_exit, 1))
         goto END;
 
-    chk = abcdk_ffmpeg_read_packet(src_item_p->ff_ctx, &pkt, -1);
+    chk = abcdk_ffeditor_read_packet(src_item_p->ff_ctx, &pkt, -1);
     if (chk < 0)
         goto RETRY;
 
-    vs_p = abcdk_ffmpeg_streamptr(src_item_p->ff_ctx, pkt.stream_index);
+    vs_p = abcdk_ffeditor_streamptr(src_item_p->ff_ctx, pkt.stream_index);
 
     /*修复错误的时长。*/
     if(pkt.duration == 0)
@@ -730,7 +730,7 @@ END:
     _abcdk_ffserver_write(ctx, NULL);
 
     av_packet_unref(&pkt);
-    abcdk_ffmpeg_destroy(&src_item_p->ff_ctx);
+    abcdk_ffeditor_destroy(&src_item_p->ff_ctx);
 
     abcdk_trace_printf(LOG_INFO, "输入源(%s)已关闭。", src_item_p->tip);
 

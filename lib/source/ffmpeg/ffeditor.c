@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/ffeditor.h"
 
 #if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
@@ -14,11 +14,11 @@
 /** 最大支持16个。*/
 #define ABCDK_FFMPEG_MAX_STREAMS     16
 
-/** 视频对象。*/
-typedef struct _abcdk_ffmpeg
+/**简的视音编辑。*/
+struct _abcdk_ffeditor
 {
     /** 配置。*/
-    abcdk_ffmpeg_config_t cfg;
+    abcdk_ffeditor_config_t cfg;
 
     /** 中断。*/
     AVIOInterruptCB io_itcb;
@@ -90,17 +90,17 @@ typedef struct _abcdk_ffmpeg
     /** 是否已经写入文件头部。*/
     int write_header_ok;
 
-} abcdk_ffmpeg_t;
+};// abcdk_ffeditor_t;
 
 
-static int64_t _abcdk_ffmpeg_clock()
+static int64_t _abcdk_ffeditor_clock()
 {
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 6);
 }
 
-void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx)
+void abcdk_ffeditor_destroy(abcdk_ffeditor_t **ctx)
 {
-    abcdk_ffmpeg_t *ctx_p;
+    abcdk_ffeditor_t *ctx_p;
 
     if(!ctx || !*ctx)
         return;
@@ -136,12 +136,12 @@ void abcdk_ffmpeg_destroy(abcdk_ffmpeg_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-static abcdk_ffmpeg_t *_abcdk_ffmpeg_alloc()
+static abcdk_ffeditor_t *_abcdk_ffeditor_alloc()
 {
-    abcdk_ffmpeg_t *ctx = NULL;
+    abcdk_ffeditor_t *ctx = NULL;
     int chk;
 
-    ctx = abcdk_heap_alloc(sizeof(abcdk_ffmpeg_t));
+    ctx = abcdk_heap_alloc(sizeof(abcdk_ffeditor_t));
     if(!ctx)
         return NULL;
 
@@ -160,33 +160,33 @@ static abcdk_ffmpeg_t *_abcdk_ffmpeg_alloc()
 
 final_error:
 
-    abcdk_ffmpeg_destroy(&ctx);
+    abcdk_ffeditor_destroy(&ctx);
 
     return NULL;
 }
 
-AVFormatContext *abcdk_ffmpeg_ctxptr(abcdk_ffmpeg_t *ctx)
+AVFormatContext *abcdk_ffeditor_ctxptr(abcdk_ffeditor_t *ctx)
 {
     assert(ctx != NULL);
 
     return ctx->avctx;
 }
 
-AVStream *abcdk_ffmpeg_find_stream(abcdk_ffmpeg_t *ctx,enum AVMediaType type)
+AVStream *abcdk_ffeditor_find_stream(abcdk_ffeditor_t *ctx,enum AVMediaType type)
 {
     assert(ctx != NULL);
 
     return abcdk_avstream_find(ctx->avctx,type);
 }
 
-int abcdk_ffmpeg_streams(abcdk_ffmpeg_t *ctx)
+int abcdk_ffeditor_streams(abcdk_ffeditor_t *ctx)
 {
     assert(ctx != NULL);
 
     return ctx->avctx->nb_streams;
 }
 
-AVStream *abcdk_ffmpeg_streamptr(abcdk_ffmpeg_t *ctx,int stream)
+AVStream *abcdk_ffeditor_streamptr(abcdk_ffeditor_t *ctx,int stream)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -194,7 +194,7 @@ AVStream *abcdk_ffmpeg_streamptr(abcdk_ffmpeg_t *ctx,int stream)
     return ctx->avctx->streams[stream];
 }
 
-double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream)
+double abcdk_ffeditor_duration(abcdk_ffeditor_t *ctx,int stream)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -205,7 +205,7 @@ double abcdk_ffmpeg_duration(abcdk_ffmpeg_t *ctx,int stream)
     return abcdk_avstream_duration(ctx->avctx,ctx->avctx->streams[stream],1.0);
 }
 
-double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream)
+double abcdk_ffeditor_fps(abcdk_ffeditor_t *ctx,int stream)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -216,7 +216,7 @@ double abcdk_ffmpeg_fps(abcdk_ffmpeg_t *ctx,int stream)
     return abcdk_avstream_fps(ctx->avctx,ctx->avctx->streams[stream],1.0);
 }
 
-double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts)
+double abcdk_ffeditor_ts2sec(abcdk_ffeditor_t *ctx,int stream, int64_t ts)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -227,7 +227,7 @@ double abcdk_ffmpeg_ts2sec(abcdk_ffmpeg_t *ctx,int stream, int64_t ts)
     return abcdk_avstream_ts2sec(ctx->avctx,ctx->avctx->streams[stream],ts,1.0);
 }
 
-int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts)
+int64_t abcdk_ffeditor_ts2num(abcdk_ffeditor_t *ctx,int stream, int64_t ts)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -238,7 +238,7 @@ int64_t abcdk_ffmpeg_ts2num(abcdk_ffmpeg_t *ctx,int stream, int64_t ts)
     return abcdk_avstream_ts2num(ctx->avctx,ctx->avctx->streams[stream],ts,1.0);
 }
 
-int abcdk_ffmpeg_width(abcdk_ffmpeg_t *ctx,int stream)
+int abcdk_ffeditor_width(abcdk_ffeditor_t *ctx,int stream)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -246,7 +246,7 @@ int abcdk_ffmpeg_width(abcdk_ffmpeg_t *ctx,int stream)
     return abcdk_avstream_width(ctx->avctx,ctx->avctx->streams[stream]);
 }
 
-int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream)
+int abcdk_ffeditor_height(abcdk_ffeditor_t *ctx,int stream)
 {
     assert(ctx != NULL && stream >= 0);
     assert(stream < ctx->avctx->nb_streams);
@@ -254,10 +254,10 @@ int abcdk_ffmpeg_height(abcdk_ffmpeg_t *ctx,int stream)
     return abcdk_avstream_height(ctx->avctx,ctx->avctx->streams[stream]);
 }
 
-static int _abcdk_ffmpeg_interrupt_cb(void *args)
+static int _abcdk_ffeditor_interrupt_cb(void *args)
 {
-    abcdk_ffmpeg_t *ctx = (abcdk_ffmpeg_t *)args;
-    uint64_t cur_time = _abcdk_ffmpeg_clock();
+    abcdk_ffeditor_t *ctx = (abcdk_ffeditor_t *)args;
+    uint64_t cur_time = _abcdk_ffeditor_clock();
 
     /*如果当前角色是作者，并且已经连接成功，超时检测忽略。*/
     if(ctx->cfg.writer && ctx->write_header_ok)
@@ -273,7 +273,7 @@ static int _abcdk_ffmpeg_interrupt_cb(void *args)
     return 0;
 }
 
-static int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx)
+static int _abcdk_ffeditor_init_capture(abcdk_ffeditor_t *ctx)
 {
     int is_mp4_file = 0;
     int chk;
@@ -330,7 +330,7 @@ static int _abcdk_ffmpeg_init_capture(abcdk_ffmpeg_t *ctx)
     return 0;
 }
 
-static int _abcdk_ffmpeg_init_writer(abcdk_ffmpeg_t *ctx)
+static int _abcdk_ffeditor_init_writer(abcdk_ffeditor_t *ctx)
 {
     ctx->avctx = abcdk_avformat_output_open(ctx->cfg.short_name, ctx->cfg.file_name, ctx->cfg.mime_type, &ctx->io_itcb,ctx->io_custom);
     if(!ctx->avctx)
@@ -342,14 +342,14 @@ static int _abcdk_ffmpeg_init_writer(abcdk_ffmpeg_t *ctx)
     return 0;
 }
 
-abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg)
+abcdk_ffeditor_t *abcdk_ffeditor_open(abcdk_ffeditor_config_t *cfg)
 {
-    abcdk_ffmpeg_t *ctx = NULL;
+    abcdk_ffeditor_t *ctx = NULL;
     int chk;
 
     assert(cfg != NULL);
 
-    ctx = _abcdk_ffmpeg_alloc();
+    ctx = _abcdk_ffeditor_alloc();
     if(!ctx)
         return NULL;
 
@@ -362,9 +362,9 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg)
     ctx->cfg.read_speed = ABCDK_CLAMP(ctx->cfg.read_speed,(float)0.01,(float)100.0);
     ctx->cfg.read_delay_max = ABCDK_CLAMP(ctx->cfg.read_delay_max,(float)0.020,(float)86400.0);
 
-    ctx->last_packet_time = _abcdk_ffmpeg_clock();
+    ctx->last_packet_time = _abcdk_ffeditor_clock();
 
-    ctx->io_itcb.callback = _abcdk_ffmpeg_interrupt_cb;
+    ctx->io_itcb.callback = _abcdk_ffeditor_interrupt_cb;
     ctx->io_itcb.opaque = ctx;
     
     /*按需创建自定义IO环境。*/
@@ -376,19 +376,19 @@ abcdk_ffmpeg_t *abcdk_ffmpeg_open(abcdk_ffmpeg_config_t *cfg)
     }
 
     if(ctx->cfg.writer)
-        chk = _abcdk_ffmpeg_init_writer(ctx);
+        chk = _abcdk_ffeditor_init_writer(ctx);
     else 
-        chk = _abcdk_ffmpeg_init_capture(ctx);
+        chk = _abcdk_ffeditor_init_capture(ctx);
 
     if (chk == 0)
         return ctx;
 
-    abcdk_ffmpeg_destroy(&ctx);
+    abcdk_ffeditor_destroy(&ctx);
 
     return NULL;
 }
 
-int _abcdk_ffmpeg_capture_open_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *codec)
+int _abcdk_ffeditor_capture_open_codec(abcdk_ffeditor_t *ctx, int stream, AVCodec *codec)
 {
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
@@ -436,7 +436,7 @@ final_error:
     return -1;
 }
 
-static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
+static int _abcdk_ffeditor_capture_codec_init(abcdk_ffeditor_t *ctx, int stream)
 {
     AVStream *vs_p = NULL;
     AVCodecContext *codec_ctx_p = NULL;
@@ -462,9 +462,9 @@ static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
     {
         /*NVCODEC硬件解码，必须用下面的写法，因为解码器可能未安装。*/
         if (codecpar->codec_id == AV_CODEC_ID_HEVC)
-            _abcdk_ffmpeg_capture_open_codec(ctx, stream, abcdk_avcodec_find("hevc_cuvid", 0));
+            _abcdk_ffeditor_capture_open_codec(ctx, stream, abcdk_avcodec_find("hevc_cuvid", 0));
         else if (codecpar->codec_id == AV_CODEC_ID_H264)
-            _abcdk_ffmpeg_capture_open_codec(ctx, stream, abcdk_avcodec_find("h264_cuvid", 0));
+            _abcdk_ffeditor_capture_open_codec(ctx, stream, abcdk_avcodec_find("h264_cuvid", 0));
     }
 
     /*如果硬件解码已经安装，到这里可能已经成功了。*/
@@ -472,7 +472,7 @@ static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
     if (codec_ctx_p)
         return 0;
 
-    chk = _abcdk_ffmpeg_capture_open_codec(ctx, stream, abcdk_avcodec_find2(codecpar->codec_id, 0));
+    chk = _abcdk_ffeditor_capture_open_codec(ctx, stream, abcdk_avcodec_find2(codecpar->codec_id, 0));
     if (chk < 0)
         return -1;
 
@@ -484,7 +484,7 @@ static int _abcdk_ffmpeg_capture_codec_init(abcdk_ffmpeg_t *ctx, int stream)
  * 
  * @return 0 未满足，!0 已满足。
 */
-static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int flag)
+static int _abcdk_ffeditor_read_delay_check(abcdk_ffeditor_t *ctx, int stream, int flag)
 {
     double a1, a2, a, b;
     int block;
@@ -503,10 +503,10 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
         if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
             return 0;
 
-        a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
-        a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max / ctx->cfg.read_speed;
+        a1 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
+        a2 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max / ctx->cfg.read_speed;
         a = (a2 - a1) - (a1 - a1);
-        b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000.;
+        b = (double)(_abcdk_ffeditor_clock() - ctx->read_start[stream]) / 1000000.;
 
         block = (a >= b?0:1);
 
@@ -522,10 +522,10 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
         if(ctx->read_dts[stream] == (int64_t)AV_NOPTS_VALUE)
             return 1;
 
-        a1 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
-        a2 = abcdk_ffmpeg_ts2sec(ctx, stream, ctx->read_dts[stream]);
+        a1 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
+        a2 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts[stream]);
         a = (a2 - a1) - (a1 - a1);
-        b = (double)(_abcdk_ffmpeg_clock() - ctx->read_start[stream]) / 1000000.;
+        b = (double)(_abcdk_ffeditor_clock() - ctx->read_start[stream]) / 1000000.;
 
         block = (a > b?0:1);
 
@@ -535,7 +535,7 @@ static int _abcdk_ffmpeg_read_delay_check(abcdk_ffmpeg_t *ctx, int stream, int f
     return block;
 }
 
-static void _abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx)
+static void _abcdk_ffeditor_read_delay(abcdk_ffeditor_t *ctx)
 {
     AVStream * vs_p = NULL;
     int64_t start_time = 0;
@@ -547,18 +547,18 @@ static void _abcdk_ffmpeg_read_delay(abcdk_ffmpeg_t *ctx)
 next_delay:
 
     /*如果已经超时，则直接返回。*/
-    if(_abcdk_ffmpeg_interrupt_cb(ctx) != 0)
+    if(_abcdk_ffeditor_interrupt_cb(ctx) != 0)
         return;
 
-    for (int i = 0; i < abcdk_ffmpeg_streams(ctx); i++)
+    for (int i = 0; i < abcdk_ffeditor_streams(ctx); i++)
     {
-        vs_p = abcdk_ffmpeg_streamptr(ctx,i);
+        vs_p = abcdk_ffeditor_streamptr(ctx,i);
 
         start_time = vs_p->start_time;
         stream_idx = vs_p->index;
         
         /*检测延时是否已经满足。*/
-        block = !_abcdk_ffmpeg_read_delay_check(ctx, stream_idx,0);
+        block = !_abcdk_ffeditor_read_delay_check(ctx, stream_idx,0);
         
         /*以最慢流的为基准。*/
         if(block)
@@ -574,7 +574,7 @@ next_delay:
     return ;
 }
 
-int abcdk_ffmpeg_read_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, int stream)
+int abcdk_ffeditor_read_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, int stream)
 {
     AVStream * vs_p = NULL;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
@@ -593,7 +593,7 @@ next_packet:
     obsolete = 0;
 
     /*等待下一帧时间到达。*/
-    _abcdk_ffmpeg_read_delay(ctx);
+    _abcdk_ffeditor_read_delay(ctx);
 
     chk = abcdk_avformat_input_read(ctx->avctx, pkt, AVMEDIA_TYPE_NB);
     if (chk < 0)
@@ -608,11 +608,11 @@ next_packet:
 #endif
 
     /*更新最近包时间，不然会超时。*/
-    ctx->last_packet_time = _abcdk_ffmpeg_clock();
+    ctx->last_packet_time = _abcdk_ffeditor_clock();
 
     /*记录KEY帧和帧分组时间。*/
     if ((pkt->flags & AV_PKT_FLAG_KEY) || (codecpar->codec_type != AVMEDIA_TYPE_VIDEO))
-        ctx->read_key_ns[pkt->stream_index] = ctx->read_gop_ns[pkt->stream_index] = _abcdk_ffmpeg_clock();
+        ctx->read_key_ns[pkt->stream_index] = ctx->read_gop_ns[pkt->stream_index] = _abcdk_ffeditor_clock();
 
     /*记录有效的DTS，并记录开始读取时间(用于记算拉流延时)。*/
     if(pkt->dts != (int64_t)AV_NOPTS_VALUE)
@@ -629,7 +629,7 @@ next_packet:
             ctx->read_dts_first[pkt->stream_index] > ctx->read_dts[pkt->stream_index]) 
         {
             ctx->read_dts_first[pkt->stream_index] = ctx->read_dts[pkt->stream_index];
-            ctx->read_start[pkt->stream_index] = _abcdk_ffmpeg_clock();
+            ctx->read_start[pkt->stream_index] = _abcdk_ffeditor_clock();
         }
     }
 
@@ -641,7 +641,7 @@ next_packet:
     }
 
     /*检测延时是否超过阈值。*/
-    if(_abcdk_ffmpeg_read_delay_check(ctx, pkt->stream_index,1))
+    if(_abcdk_ffeditor_read_delay_check(ctx, pkt->stream_index,1))
         ctx->read_gop_ns[pkt->stream_index] = 0;
 
     /*可能已经不在同一个GOP中。*/
@@ -653,8 +653,8 @@ next_packet:
     {
         abcdk_trace_printf(LOG_WARNING, "拉流延时超过设定阈值(delay_max=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
                            ctx->cfg.read_delay_max,pkt->stream_index, 
-                           abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->dts), 
-                           abcdk_ffmpeg_ts2sec(ctx, pkt->stream_index, pkt->pts));
+                           abcdk_ffeditor_ts2sec(ctx, pkt->stream_index, pkt->dts), 
+                           abcdk_ffeditor_ts2sec(ctx, pkt->stream_index, pkt->pts));
 
         goto next_packet;
     }
@@ -677,7 +677,7 @@ next_packet:
     return pkt->stream_index;
 }
 
-int abcdk_ffmpeg_read_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
+int abcdk_ffeditor_read_frame(abcdk_ffeditor_t *ctx, AVFrame *frame, int stream)
 {
     AVCodecContext *codec_ctx_p;
     AVPacket *pkt_p;
@@ -694,7 +694,7 @@ next_packet:
 
     if (!ctx->read_eof)
     {
-        ctx->read_idx = abcdk_ffmpeg_read_packet(ctx, &ctx->read_pkt, stream);
+        ctx->read_idx = abcdk_ffeditor_read_packet(ctx, &ctx->read_pkt, stream);
         if (ctx->read_idx < 0)
         {
             /*标记读到末尾或断开。*/
@@ -709,7 +709,7 @@ next_packet:
             goto next_packet;
         }
         
-        chk = _abcdk_ffmpeg_capture_codec_init(ctx, ctx->read_idx);
+        chk = _abcdk_ffeditor_capture_codec_init(ctx, ctx->read_idx);
         if (chk < 0)
             return -1;
     }
@@ -765,7 +765,7 @@ next_packet:
 
 }
 
-int _abcdk_ffmpeg_writer_open_codec(abcdk_ffmpeg_t *ctx, int stream, AVCodec *codec,const AVCodecContext *opt)
+int _abcdk_ffeditor_writer_open_codec(abcdk_ffeditor_t *ctx, int stream, AVCodec *codec,const AVCodecContext *opt)
 {
     AVCodecContext *ctx_p = NULL;
     AVDictionary *dict_p = NULL;
@@ -871,7 +871,7 @@ final_error:
     return -1;
 }
 
-int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int have_codec)
+int abcdk_ffeditor_add_stream(abcdk_ffeditor_t *ctx, const AVCodecContext *opt, int have_codec)
 {
     AVStream *vs = NULL;
     int chk = -1;
@@ -901,16 +901,16 @@ int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int 
         {
             /*NVCODEC硬件编码，必须用下面的写法，因为编码器可能未安装。*/
             if (opt->codec_id == AV_CODEC_ID_HEVC)
-                chk = _abcdk_ffmpeg_writer_open_codec(ctx, vs->index, abcdk_avcodec_find("hevc_nvenc", 1), opt);
+                chk = _abcdk_ffeditor_writer_open_codec(ctx, vs->index, abcdk_avcodec_find("hevc_nvenc", 1), opt);
             else if (opt->codec_id == AV_CODEC_ID_H264)
-                chk = _abcdk_ffmpeg_writer_open_codec(ctx, vs->index, abcdk_avcodec_find("h264_nvenc", 1), opt);
+                chk = _abcdk_ffeditor_writer_open_codec(ctx, vs->index, abcdk_avcodec_find("h264_nvenc", 1), opt);
             else
                 chk = -1;
         }
 
         /*如果硬件解码已经安装，到这里可能已经成功了。*/
         if (chk < 0)
-            chk = _abcdk_ffmpeg_writer_open_codec(ctx, vs->index, abcdk_avcodec_find2(opt->codec_id, 1), opt);
+            chk = _abcdk_ffeditor_writer_open_codec(ctx, vs->index, abcdk_avcodec_find2(opt->codec_id, 1), opt);
 
         if (chk < 0)
             return -1;
@@ -919,7 +919,7 @@ int abcdk_ffmpeg_add_stream(abcdk_ffmpeg_t *ctx, const AVCodecContext *opt, int 
     return vs->index;
 }
 
-int abcdk_ffmpeg_write_header0(abcdk_ffmpeg_t *ctx,const AVDictionary *dict)
+int abcdk_ffeditor_write_header0(abcdk_ffeditor_t *ctx,const AVDictionary *dict)
 {
     int chk;
 
@@ -943,7 +943,7 @@ int abcdk_ffmpeg_write_header0(abcdk_ffmpeg_t *ctx,const AVDictionary *dict)
     return 0;
 }
 
-int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
+int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx, int fmp4)
 {
     AVDictionary *dict = NULL;
     int chk;
@@ -951,14 +951,14 @@ int abcdk_ffmpeg_write_header(abcdk_ffmpeg_t *ctx, int fmp4)
     if(fmp4)
         av_dict_set(&dict, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
 
-    chk = abcdk_ffmpeg_write_header0(ctx,dict);
+    chk = abcdk_ffeditor_write_header0(ctx,dict);
 
     av_dict_free(&dict);
 
     return chk;
 }
 
-int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
+int abcdk_ffeditor_write_trailer(abcdk_ffeditor_t *ctx)
 {
     AVCodecContext *ctx_p = NULL;
     AVPacket pkt = {0};
@@ -997,7 +997,7 @@ int abcdk_ffmpeg_write_trailer(abcdk_ffmpeg_t *ctx)
 
             pkt.stream_index = idx;
 
-            chk = abcdk_ffmpeg_write_packet(ctx, &pkt, NULL);
+            chk = abcdk_ffeditor_write_packet(ctx, &pkt, NULL);
             if (chk < 0)
                 goto final;
         }
@@ -1015,7 +1015,7 @@ final:
     return 0;
 }
 
-int abcdk_ffmpeg_write_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *src_time_base)
+int abcdk_ffeditor_write_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, AVRational *src_time_base)
 {
     AVRational bq,cq;
     AVCodecContext *ctx_p = NULL;
@@ -1070,7 +1070,7 @@ int abcdk_ffmpeg_write_packet(abcdk_ffmpeg_t *ctx, AVPacket *pkt, AVRational *sr
     return 0;
 }
 
-int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int keyframe, int stream)
+int abcdk_ffeditor_write_packet2(abcdk_ffeditor_t *ctx, void *data, int size, int keyframe, int stream)
 {
     AVPacket pkt = {0};
     AVStream *vs_p = NULL;
@@ -1111,14 +1111,14 @@ int abcdk_ffmpeg_write_packet2(abcdk_ffmpeg_t *ctx, void *data, int size, int ke
         ABCDK_ASSERT(0,"fix me.");
     }
 
-    chk = abcdk_ffmpeg_write_packet(ctx, &pkt, NULL);
+    chk = abcdk_ffeditor_write_packet(ctx, &pkt, NULL);
     if (chk < 0)
         return -1;
 
     return 0;
 }
 
-int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
+int abcdk_ffeditor_write_frame(abcdk_ffeditor_t *ctx, AVFrame *frame, int stream)
 {
     AVCodecContext *ctx_p = NULL;
     AVStream *vs_p = NULL;
@@ -1164,7 +1164,7 @@ int abcdk_ffmpeg_write_frame(abcdk_ffmpeg_t *ctx, AVFrame *frame, int stream)
         goto final;
 
     pkt.stream_index = stream;
-    chk = abcdk_ffmpeg_write_packet(ctx, &pkt,NULL);
+    chk = abcdk_ffeditor_write_packet(ctx, &pkt,NULL);
 
 final:
 

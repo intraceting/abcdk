@@ -14,7 +14,7 @@
 #include "abcdk/util/stream.h"
 #include "abcdk/util/md5.h"
 #include "abcdk/shell/file.h"
-#include "abcdk/ffmpeg/ffmpeg.h"
+#include "abcdk/ffmpeg/ffeditor.h"
 
 __BEGIN_DECLS
 

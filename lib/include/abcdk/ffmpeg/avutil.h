@@ -9,28 +9,9 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/trace.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
 
 __BEGIN_DECLS
-
-#ifdef HAVE_FFMPEG
-
-#ifndef __STDC_CONSTANT_MACROS
-#define __STDC_CONSTANT_MACROS
-#endif //__STDC_CONSTANT_MACROS
-
-#include <libavutil/avutil.h>
-#include <libavutil/imgutils.h>
-#include <libavutil/pixdesc.h>
-#include <libavutil/dict.h>
-#include <libavutil/avutil.h>
-#include <libavutil/base64.h>
-#include <libavutil/common.h>
-#include <libavutil/log.h>
-#include <libavutil/opt.h>
-#include <libavutil/frame.h>
-#include <libavutil/rational.h>
-
-#endif // HAVE_FFMPEG
 
 #ifdef AVUTIL_AVUTIL_H
 

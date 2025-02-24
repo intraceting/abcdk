@@ -12,22 +12,7 @@
 
 __BEGIN_DECLS
 
-#ifdef HAVE_FFMPEG
-
-#ifndef __STDC_CONSTANT_MACROS
-#define __STDC_CONSTANT_MACROS
-#endif //__STDC_CONSTANT_MACROS
-#include <libavcodec/version.h>
-#include <libavcodec/avcodec.h>
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(60, 3, 100)
-#include <libavcodec/bsf.h>
-#endif //
-
-#endif // HAVE_FFMPEG
-
 #ifdef AVCODEC_AVCODEC_H
-
 
 /**
  * 根据名字查找编/解码器。

@@ -12,16 +12,6 @@
 
 __BEGIN_DECLS
 
-#ifdef HAVE_FFMPEG
-
-#ifndef __STDC_CONSTANT_MACROS
-#define __STDC_CONSTANT_MACROS
-#endif //__STDC_CONSTANT_MACROS
-
-#include <libswscale/swscale.h>
-
-#endif //HAVE_FFMPEG
-
 #ifdef SWSCALE_SWSCALE_H
 
 /**
