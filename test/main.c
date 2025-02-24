@@ -51,6 +51,7 @@ static struct _abcdk_test_entry
     {"ncurses",abcdk_test_ncurses},
     {"gtk",abcdk_test_gtk},
     {"cuda",abcdk_test_cuda},
+    {"stitcher",abcdk_test_stitcher},
 };
 
 void _abcdk_test_print_usage()

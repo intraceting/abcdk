@@ -154,6 +154,7 @@
 #include "abcdk/cuda/ndarray.h"
 
 #include "abcdk/opencv/opencv.h"
+#include "abcdk/opencv/util.h"
 #include "abcdk/opencv/stitcher.h"
 
 #endif //ABCDK_H

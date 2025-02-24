@@ -181,8 +181,8 @@ namespace abcdk
                     obj.m_camera_params[i].t = node.mat();
                 }
 
-                /*Set not OK.*/
-                obj.m_build_map_ok = false;
+                obj.m_panorama_param_ok = false; // Not OK.
+                obj.m_camera_param_ok = true;    // OK.
 
                 return 0;
             }
@@ -208,95 +208,18 @@ namespace abcdk
             int m_blend_height;
             std::vector<int> m_blend_idxs;
             std::vector<cv::Rect> m_blend_rects;
-            bool m_build_map_ok;
+            bool m_camera_param_ok;
+            bool m_panorama_param_ok;
+
         public:
             stitcher_general()
             {
-                m_build_map_ok = false;
+                m_camera_param_ok = false;
+                m_panorama_param_ok = false;
             }
 
             virtual ~stitcher_general()
             {
-            }
-
-        public:
-            void set_feature_finder(cv::Ptr<cv::Feature2D> feature_finder)
-            {
-                m_feature_finder = feature_finder;
-            }
-
-            void set_feature_matcher(cv::Ptr<cv::detail::FeaturesMatcher> feature_matcher)
-            {
-                m_feature_matcher = feature_matcher;
-            }
-
-            void set_estimator(cv::Ptr<cv::detail::Estimator> estimator)
-            {
-                m_estimator = estimator;
-            }
-
-            void set_bundle_adjuster(cv::Ptr<cv::detail::BundleAdjusterBase> adjuster)
-            {
-                m_bundle_adjuster = adjuster;
-            }
-
-            void set_warper(cv::Ptr<cv::detail::RotationWarper> warper)
-            {
-                m_rotation_warper = warper;
-            }
-
-            void set_feature_finder(const char *name)
-            {
-#ifdef OPENCV_ENABLE_NONFREE
-                if (strcasecmp(name, "SIFT") == 0)
-                    set_feature_finder(cv::xfeatures2d::SIFT::create());
-                else if (strcasecmp(name, "SURF") == 0)
-                    set_feature_finder(cv::xfeatures2d::SURF::create());
-                else /*if(strcasecmp(name,"orb")==0)*/
-#endif               // OPENCV_ENABLE_NONFREE
-                    set_feature_finder(cv::ORB::create());
-            }
-
-            void set_feature_matcher(const char *name, float match_conf = 0.3)
-            {
-                if (strcasecmp(name, "Range") == 0)
-                    set_feature_matcher(cv::makePtr<cv::detail::BestOf2NearestRangeMatcher>(5, false, match_conf));
-                else if (strcasecmp(name, "Affine") == 0)
-                    set_feature_matcher(cv::makePtr<cv::detail::AffineBestOf2NearestMatcher>(false, false, match_conf));
-                else /*if(strcasecmp(name,"Best")==0)*/
-                    set_feature_matcher(cv::makePtr<cv::detail::BestOf2NearestMatcher>(false, match_conf));
-            }
-
-            void set_estimator(const char *name)
-            {
-                if (strcasecmp(name, "affine") == 0)
-                    set_estimator(cv::makePtr<cv::detail::AffineBasedEstimator>());
-                else /*if (strcasecmp(name,"Homography")==)*/
-                    set_estimator(cv::makePtr<cv::detail::HomographyBasedEstimator>());
-            }
-
-            void set_bundle_adjuster(const char *name)
-            {
-                if (strcasecmp(name, "reproj") == 0)
-                    set_bundle_adjuster(cv::makePtr<cv::detail::BundleAdjusterReproj>());
-                else if (strcasecmp(name, "ray") == 0)
-                    set_bundle_adjuster(cv::makePtr<cv::detail::BundleAdjusterRay>());
-                else if (strcasecmp(name, "affine") == 0)
-                    set_bundle_adjuster(cv::makePtr<cv::detail::BundleAdjusterAffinePartial>());
-                else /*if (strcasecmp(name,"no")  ==0)*/
-                    set_bundle_adjuster(cv::makePtr<cv::detail::NoBundleAdjuster>());
-            }
-
-            void set_warper(const char *name, float scale = 1.0)
-            {
-                if (strcasecmp(name, "plane") == 0)
-                    set_warper(cv::makePtr<cv::detail::PlaneWarper>(scale));
-                else if (strcasecmp(name, "affine") == 0)
-                    set_warper(cv::makePtr<cv::detail::AffineWarper>(scale));
-                else if (strcasecmp(name, "cylindrical") == 0)
-                    set_warper(cv::makePtr<cv::detail::CylindricalWarper>(scale));
-                else /*if (strcasecmp(name,"spherical")==0)*/
-                    set_warper(cv::makePtr<cv::detail::SphericalWarper>(scale));
             }
 
         protected:
@@ -334,8 +257,8 @@ namespace abcdk
 
                         cv::drawKeypoints(imgs[i], m_img_features[i].keypoints, img_tmp, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
-                        std::string img_name = "./stitcher-find-feature-image-";
-                        std::string mask_name = "./stitcher-find-feature-mask-";
+                        std::string img_name = "./abcdk-opencv-stitcher-find-feature-image-";
+                        std::string mask_name = "./abcdk-opencv-stitcher-find-feature-mask-";
                         img_name += std::to_string(i);
                         mask_name += std::to_string(i);
                         img_name += ".jpg";
@@ -481,7 +404,7 @@ namespace abcdk
                     m_camera_params[i].R = rmats[i];
             }
 
-            void build_map()
+            void panorama_param_correct()
             {
                 float seam_work_aspect = 1;
                 float warp_scale = 0.0;
@@ -583,9 +506,6 @@ namespace abcdk
                         }
                     }
                 }
-
-                /*Set OK.*/
-                m_build_map_ok = true;
             }
 
             bool remap(std::vector<cv::Mat> &outs, const std::vector<cv::Mat> &imgs)
@@ -596,8 +516,6 @@ namespace abcdk
                 assert(m_warper_rects.size() == m_img_good_idxs.size());
                 assert(m_warper_xmaps.size() == m_img_good_idxs.size());
                 assert(m_warper_ymaps.size() == m_img_good_idxs.size());
-
-                assert(m_build_map_ok);
 
                 /*输出的数量和顺序相同，但未能拼接的输出图像为空。*/
                 if (outs.size() != imgs.size())
@@ -617,7 +535,7 @@ namespace abcdk
 
                     /*创建变换后的图像存储空间。*/
                     outs_it.create(warper_h, warper_w, imgs_it.type());
-                    if(outs_it.empty())
+                    if (outs_it.empty())
                         return false;
 
                     cv::remap(imgs_it, outs[idx], m_warper_xmaps[i], m_warper_ymaps[i], cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
@@ -632,11 +550,9 @@ namespace abcdk
 
                 assert(imgs.size() >= 0);
 
-                assert(m_build_map_ok);
-
                 /*创建全景图像存储空间。*/
                 out.create(m_blend_height, m_blend_width, imgs[0].type());
-                if(out.empty())
+                if (out.empty())
                     return false;
 
                 for (int i = 0; i < m_blend_idxs.size(); i++)
@@ -659,41 +575,137 @@ namespace abcdk
                 return true;
             }
 
-            void build_panorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
-            {
-                std::vector<cv::Mat> remap_imgs;
-
-                assert(imgs.size() >= 0);
-                assert(imgs.size() >= m_img_good_idxs.size());
-
-                remap(remap_imgs, imgs);
-
-                compose(out, remap_imgs, optimize_seam);
-            }
-
         public:
-            void BuildMap(const char *warper_name, float warper_scale = 1.0)
+            void set_feature_finder(cv::Ptr<cv::Feature2D> feature_finder)
             {
-                set_warper(warper_name, warper_scale);
-                build_map();
+                m_feature_finder = feature_finder;
             }
 
-            void BuildPanorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
+            void set_feature_matcher(cv::Ptr<cv::detail::FeaturesMatcher> feature_matcher)
             {
-                build_panorama(out, imgs, optimize_seam);
+                m_feature_matcher = feature_matcher;
             }
 
-            void DrawKeypointsMatches(const std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &outs)
+            void set_estimator(cv::Ptr<cv::detail::Estimator> estimator)
+            {
+                m_estimator = estimator;
+            }
+
+            void set_bundle_adjuster(cv::Ptr<cv::detail::BundleAdjusterBase> adjuster)
+            {
+                m_bundle_adjuster = adjuster;
+            }
+
+            void set_warper(cv::Ptr<cv::detail::RotationWarper> warper)
+            {
+                m_rotation_warper = warper;
+            }
+
+            void set_feature_finder(const char *name)
+            {
+                assert(name != NULL);
+
+                if (strcasecmp(name, "ORB") == 0)
+                    set_feature_finder(cv::ORB::create());
+#ifdef OPENCV_ENABLE_NONFREE
+                else if (strcasecmp(name, "SIFT") == 0)
+                    set_feature_finder(cv::xfeatures2d::SIFT::create());
+                else if (strcasecmp(name, "SURF") == 0)
+                    set_feature_finder(cv::xfeatures2d::SURF::create());
+#endif // OPENCV_ENABLE_NONFREE
+                else
+                {
+                    abcdk_trace_printf(LOG_WARNING, "特征发现算法('%s')未找到，启用默认的算法('ORB')。", name);
+                    set_feature_finder("ORB");
+                }
+            }
+
+            void set_feature_matcher(const char *name, float match_conf = 0.3)
+            {
+                assert(name != NULL);
+
+                if (strcasecmp(name, "Range") == 0)
+                    set_feature_matcher(cv::makePtr<cv::detail::BestOf2NearestRangeMatcher>(5, false, match_conf));
+                else if (strcasecmp(name, "Affine") == 0)
+                    set_feature_matcher(cv::makePtr<cv::detail::AffineBestOf2NearestMatcher>(false, false, match_conf));
+                else if (strcasecmp(name, "Best") == 0)
+                    set_feature_matcher(cv::makePtr<cv::detail::BestOf2NearestMatcher>(false, match_conf));
+                else
+                {
+                    abcdk_trace_printf(LOG_WARNING, "特征匹配算法('%s')未找到，启用默认的算法('Best')。", name);
+                    set_feature_matcher("Best");
+                }
+            }
+
+            void set_estimator(const char *name)
+            {
+                assert(name != NULL);
+
+                if (strcasecmp(name, "Affine") == 0)
+                    set_estimator(cv::makePtr<cv::detail::AffineBasedEstimator>());
+                else if (strcasecmp(name, "Homography") == 0)
+                    set_estimator(cv::makePtr<cv::detail::HomographyBasedEstimator>());
+                else
+                {
+                    abcdk_trace_printf(LOG_WARNING, "相机参数估计算法('%s')未找到，启用默认的算法('Homography')。", name);
+                    set_estimator("Homography");
+                }
+            }
+
+            void set_bundle_adjuster(const char *name)
+            {
+                assert(name != NULL);
+
+                if (strcasecmp(name, "reproj") == 0)
+                    set_bundle_adjuster(cv::makePtr<cv::detail::BundleAdjusterReproj>());
+                else if (strcasecmp(name, "ray") == 0)
+                    set_bundle_adjuster(cv::makePtr<cv::detail::BundleAdjusterRay>());
+                else if (strcasecmp(name, "affine") == 0)
+                    set_bundle_adjuster(cv::makePtr<cv::detail::BundleAdjusterAffinePartial>());
+                else if (strcasecmp(name, "no") == 0)
+                    set_bundle_adjuster(cv::makePtr<cv::detail::NoBundleAdjuster>());
+                else
+                {
+                    abcdk_trace_printf(LOG_WARNING, "相机参数调节算法('%s')未找到，启用默认的算法('ray')。", name);
+                    set_bundle_adjuster("ray");
+                }
+            }
+
+            void set_warper(const char *name, float scale = 1.0)
+            {
+                assert(name != NULL);
+
+                if (strcasecmp(name, "plane") == 0)
+                    set_warper(cv::makePtr<cv::detail::PlaneWarper>(scale));
+                else if (strcasecmp(name, "affine") == 0)
+                    set_warper(cv::makePtr<cv::detail::AffineWarper>(scale));
+                else if (strcasecmp(name, "cylindrical") == 0)
+                    set_warper(cv::makePtr<cv::detail::CylindricalWarper>(scale));
+                else if (strcasecmp(name, "spherical") == 0)
+                    set_warper(cv::makePtr<cv::detail::SphericalWarper>(scale));
+                else
+                {
+                    abcdk_trace_printf(LOG_WARNING, "图像变换算法('%s')未找到，启用默认的算法('spherical')。", name);
+                    set_warper("spherical");
+                }
+
+                /*通知必须重新构建相机参数。*/
+                m_panorama_param_ok = false;
+            }
+
+            void DrawKeypointsMatches(std::vector<cv::Mat> &outs, const std::vector<cv::Mat> &imgs)
             {
                 draw_keypoints_matches(imgs, outs);
             }
 
-            int Prepare(const std::vector<cv::Mat> &imgs, const std::vector<cv::Mat> &masks,
-                        float good_threshold = 0.8, float adjuster_threshold = 0.8, const char adjuster_mask[5] = "xxxxx",
-                        cv::detail::WaveCorrectKind wave_correct_kind = (cv::detail::WaveCorrectKind)-1)
+            int EstimateTransform(const std::vector<cv::Mat> &imgs, const std::vector<cv::Mat> &masks,
+                                  float good_threshold = 0.8, float adjuster_threshold = 0.8,
+                                  cv::detail::WaveCorrectKind wave_correct_kind = (cv::detail::WaveCorrectKind)-1)
             {
                 assert(imgs.size() >= 2);
                 assert(masks.size() == 0 || imgs.size() == masks.size());
+
+                assert(!m_camera_param_ok);
 
                 find_feature(imgs, masks);
 
@@ -706,10 +718,39 @@ namespace abcdk
                 if (!estimate_camera())
                     return -3;
 
-                if (!camera_adjuster(adjuster_threshold, adjuster_mask))
+                if (!camera_adjuster(adjuster_threshold))
                     return -4;
 
                 camera_param_wave_correct(wave_correct_kind);
+
+                m_camera_param_ok = true; // OK.
+
+                return 0;
+            }
+
+            void BuildPanoramaParam()
+            {
+                assert(!m_panorama_param_ok);
+
+                panorama_param_correct();
+
+                m_panorama_param_ok = true; // OK.
+            }
+
+            int ComposePanorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
+            {
+                std::vector<cv::Mat> remap_imgs;
+
+                assert(imgs.size() >= 0);
+                assert(imgs.size() >= m_img_good_idxs.size());
+
+                assert(m_panorama_param_ok);
+
+                if (!remap(remap_imgs, imgs))
+                    return -1;
+
+                if (!compose(out, remap_imgs, optimize_seam))
+                    return -2;
 
                 return 0;
             }

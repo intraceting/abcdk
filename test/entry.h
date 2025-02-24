@@ -38,6 +38,7 @@ int abcdk_test_runonce(abcdk_option_t *args);
 int abcdk_test_ncurses(abcdk_option_t *args);
 int abcdk_test_gtk(abcdk_option_t *args);
 int abcdk_test_cuda(abcdk_option_t *args);
+int abcdk_test_stitcher(abcdk_option_t *args);
 
 
 __END_DECLS

@@ -70,21 +70,26 @@ typedef enum _abcdk_ndarray_constant
 }abcdk_ndarray_constant_t;
 
 /**
- * 计算多维数组占用的空间(字节)。
+ * 计算占用空间(字节)。
 */
-size_t abcdk_ndarray_size(abcdk_ndarray_t *ndarray);
+size_t abcdk_ndarray_size(abcdk_ndarray_t *ctx);
 
 /**
- * 设置多维数组宽度占用的空间(字节)。
+ * 设置宽度步长(字节)。
  * 
  * @param align 对齐字节。
 */
-void abcdk_ndarray_set_stride(abcdk_ndarray_t *ndarray,size_t align);
+void abcdk_ndarray_set_stride(abcdk_ndarray_t *ctx,size_t align);
 
 /**
- * 计算多维数组单元格的偏移量。
+ * 计算坐标的偏移量(字节)。
  */
-size_t abcdk_ndarray_offset(abcdk_ndarray_t *ndarray, size_t n, size_t x, size_t y, size_t z, int flag);
+size_t abcdk_ndarray_offset(abcdk_ndarray_t *ctx, size_t n, size_t x, size_t y, size_t z, int flag);
+
+/**
+ * 计算坐标的偏移地址。
+*/
+void *abcdk_ndarray_seek(abcdk_ndarray_t *ctx, size_t n, size_t x, size_t y, size_t z, int flag);
 
 /**释放。*/
 void abcdk_ndarray_free(abcdk_ndarray_t **ctx);

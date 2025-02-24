@@ -33,10 +33,16 @@ abcdk_object_t *abcdk_stitcher_metadata_dump(abcdk_stitcher_t *ctx, const char *
 /**
  * 加载元数据。
  *
- * @return 0 成功，< 0 失败，-127 魔法字符串验证失败。
+ * @return 0 成功， < 0 失败，-127 魔法字符串验证失败。
  */
 int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const char *data);
 
+/**
+ * 评估。
+ * 
+ * @return 0 成功， < 0 失败。
+ */
+int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx,int count, abcdk_ndarray_t *img[], abcdk_ndarray_t *mask[], float good_threshold);
 
 __END_DECLS
 
