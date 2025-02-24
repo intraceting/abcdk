@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/odbc/util.h"
+#include "abcdk/odbc/easy.h"
 
 #if defined(__SQL_H) && defined(__SQLEXT_H)
 
