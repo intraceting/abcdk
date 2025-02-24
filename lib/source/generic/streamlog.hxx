@@ -9,10 +9,6 @@
 
 #include "abcdk/util/trace.h"
 
-#include <streambuf>
-#include <iostream>
-#include <vector>
-
 namespace abcdk
 {
     namespace generic

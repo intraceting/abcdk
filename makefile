@@ -125,7 +125,7 @@ LD_FLAGS += -L${BUILD_PATH}
 #
 OBJ_PATH = ${BUILD_PATH}/tmp
 
-#
+#C
 LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/shell/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
@@ -146,6 +146,10 @@ LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/license/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
+
+#C++
+LIB_SRC_CXX_FILES += $(wildcard lib/source/opencv/*.cpp)
+LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.o,${LIB_SRC_CXX_FILES}))
 
 #CUDA是可选项，可能未启用。
 ifneq ($(strip $(NVCC)),)
@@ -312,6 +316,12 @@ $(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/license/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/opencv/%.o: lib/source/opencv/%.cpp
+	mkdir -p $(OBJ_PATH)/lib/source/opencv/
+	rm -f $@
+	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/cuda/%.o: lib/source/cuda/%.cu

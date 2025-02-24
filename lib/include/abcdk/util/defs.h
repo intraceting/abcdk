@@ -72,6 +72,14 @@
 #include <omp.h>
 #endif //_OPENMP
 
+#ifdef __cplusplus
+#include <streambuf>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#endif //__cplusplus
+
 
 /** 转字符串。*/
 #define ABCDK_STR_NOT_USE(s) #s

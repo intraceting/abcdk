@@ -98,4 +98,30 @@ CUcontext abcdk_cuda_ctx_create(int device, int flag)
     return ctx;
 }
 
+int abcdk_cuda_ctx_push_current(CUcontext ctx)
+{
+    CUresult chk;
+
+    assert(ctx != NULL);
+
+    chk = cuCtxPushCurrent(ctx);
+    if (chk != CUDA_SUCCESS)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_cuda_ctx_pop_current(CUcontext *ctx)
+{
+    CUresult chk;
+
+    assert(ctx != NULL);
+
+    chk = cuCtxPopCurrent(ctx);
+    if (chk != CUDA_SUCCESS)
+        return -1;
+
+    return 0;
+}
+
 #endif //__cuda_cuda_h__

@@ -81,6 +81,7 @@
 #include "abcdk/util/ipool.h"
 #include "abcdk/util/registry.h"
 #include "abcdk/util/nonce.h"
+#include "abcdk/util/download.h"
 
 #include "abcdk/log/logger.h"
 
@@ -145,7 +146,6 @@
 #include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipherex.h"
 
-#include "abcdk/curl/curl.h"
 
 #include "abcdk/net/stcp.h"
 #include "abcdk/net/sudp.h"
@@ -164,5 +164,8 @@
 #include "abcdk/cuda/jpeg.h"
 #include "abcdk/cuda/video.h"
 #include "abcdk/cuda/ndarray.h"
+
+#include "abcdk/opencv/opencv.h"
+#include "abcdk/opencv/stitcher.h"
 
 #endif //ABCDK_H

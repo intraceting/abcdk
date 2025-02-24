@@ -51,6 +51,20 @@ void abcdk_cuda_ctx_destroy(CUcontext *ctx);
 /**创建。*/
 CUcontext abcdk_cuda_ctx_create(int device, int flag);
 
+/**
+ * 入栈。
+ *
+ * @return 0 成功，< 0  失败。 
+*/
+int abcdk_cuda_ctx_push_current(CUcontext ctx);
+
+/**
+ * 出栈。
+ * 
+ * @return 0 成功，< 0  失败。
+*/
+int abcdk_cuda_ctx_pop_current(CUcontext *ctx);
+
 __END_DECLS
 
 #endif //__cuda_cuda_h__

@@ -4,8 +4,8 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#ifndef ABCDK_CURL_CURL_H
-#define ABCDK_CURL_CURL_H
+#ifndef ABCDK_UTIL_DOWNLOAD_H
+#define ABCDK_UTIL_DOWNLOAD_H
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
@@ -19,8 +19,6 @@
 
 __BEGIN_DECLS
 
-#ifdef CURLINC_CURL_H
-
 /**
  * 下载文件。
  * 
@@ -31,15 +29,14 @@ __BEGIN_DECLS
  * 
  * @return 0 成功，-1 失败(超时、不支持)。
 */
-int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
+int abcdk_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
 
 /**
  * 下载文件。
 */
-int abcdk_curl_download_filename(const char *file,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
+int abcdk_download_filename(const char *file,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
 
-#endif //CURLINC_CURL_H
 
 __END_DECLS
 
-#endif //ABCDK_CURL_CURL_H
+#endif //ABCDK_UTIL_DOWNLOAD_H

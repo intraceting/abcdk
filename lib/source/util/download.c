@@ -4,7 +4,7 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/curl/curl.h"
+#include "abcdk/util/download.h"
 
 #ifdef CURLINC_CURL_H
 
@@ -19,8 +19,12 @@ static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nm
     return 0;
 }
 
+#endif //CURLINC_CURL_H
+
 int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout)
 {
+#ifdef CURLINC_CURL_H
+
     CURL *curl_ctx = NULL;
     struct curl_slist *header_list = NULL;
     abcdk_object_t *url_en = NULL;
@@ -90,6 +94,11 @@ END:
         return 0;
 
     return -1;
+#else //CURLINC_CURL_H
+    
+    abcdk_trace_printf(LOG_WARNING, "当前环境未包含CURL工具，无法下载文件。");
+    return -1;
+#endif //CURLINC_CURL_H
 }
 
 int abcdk_curl_download_filename(const char *file,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout)
@@ -108,6 +117,3 @@ int abcdk_curl_download_filename(const char *file,const char *url,size_t offset,
 
     return chk;
 }
-
-
-#endif //CURLINC_CURL_H

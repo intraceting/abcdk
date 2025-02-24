@@ -21,6 +21,4 @@
 #endif //__x86_64__
 #endif //HAVE_CUDA
 
-
-
 #endif //ABCDK_CUDA_CUDA_H

@@ -24,8 +24,6 @@
 #include "jetson/NvJpegEncoder.h"
 #endif //__aarch64__
 
-#include <vector>
-
 #ifdef __cuda_cuda_h__
 #ifdef AVUTIL_AVUTIL_H
 #ifdef AVCODEC_AVCODEC_H

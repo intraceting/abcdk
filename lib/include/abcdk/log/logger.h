@@ -53,11 +53,6 @@ void abcdk_logger_close(abcdk_logger_t **ctx);
 /**
  * 打开。
  *
- * @code
- * //打开日志。
- * abcdk_logger_open("/tmp/abcdk-log/abcdk.log","abcdk.%d.log", 10, 10, 0, 1);
- * @endcode
- *
  * @param [in] name 文件名(包括路径)。
  * @param [in] segment_name 分段文件名(包括路径)，NULL(0) 不分段。注：分段文件名仅支持一个数值格式控制符。如：%d 。
  * @param [in] segment_max 分段数量，0 不分段。

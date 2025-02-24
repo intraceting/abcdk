@@ -110,7 +110,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libopencv_core.so)"
         checkReturnCode
 
-        echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d -lopencv_xfeatures2d   ${LDFLAG}"
+        echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d -lopencv_xfeatures2d -lopencv_flann  ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "libopencv-dev"

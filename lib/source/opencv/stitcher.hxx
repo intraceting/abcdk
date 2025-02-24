@@ -4,25 +4,24 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_STITCHER_STITCHER_HXX
-#define ABCDK_STITCHER_STITCHER_HXX
+#ifndef ABCDK_OPENCV_STITCHER_HXX
+#define ABCDK_OPENCV_STITCHER_HXX
 
-#include "mat.hxx"
+#include "abcdk/opencv/opencv.h"
+#include "../generic/imageproc.hxx"
 
 #ifdef OPENCV_CORE_HPP
 
 namespace abcdk
 {
-    namespace stitcher
+    namespace opencv
     {
         class stitcher
         {
         public:
-            static int Dump(const char *file, stitcher &obj, const char *magic = NULL)
+            static int Dump(std::string &metadata, stitcher &obj, const char *magic = NULL)
             {
-                assert(file != NULL);
-
-                cv::FileStorage f(file, cv::FileStorage::WRITE | cv::FileStorage::FORMAT_XML);
+                cv::FileStorage f("{}", cv::FileStorage::MEMORY | cv::FileStorage::WRITE | cv::FileStorage::FORMAT_XML);
                 if (!f.isOpened())
                     return -1;
 
@@ -80,18 +79,18 @@ namespace abcdk
                     cv::write(f, key, obj.m_camera_params[i].t);
                 }
 
-                f.release();
+                metadata = f.releaseAndGetString();
 
                 return 0;
             }
 
-            static int Load(const char *file, stitcher &obj, const char *magic = NULL)
+            static int Load(const char *metadata, stitcher &obj, const char *magic = NULL)
             {
                 std::string old_magic;
 
-                assert(file != NULL);
+                assert(metadata != NULL);
 
-                cv::FileStorage f(file, cv::FileStorage::READ | cv::FileStorage::FORMAT_XML);
+                cv::FileStorage f(metadata, cv::FileStorage::MEMORY | cv::FileStorage::FORMAT_XML);
                 if (!f.isOpened())
                     return -1;
 
@@ -182,18 +181,20 @@ namespace abcdk
                     obj.m_camera_params[i].t = node.mat();
                 }
 
+                /*Set not OK.*/
+                obj.m_build_map_ok = false;
+
                 return 0;
             }
 
         protected:
-            /**/
             cv::Ptr<cv::Feature2D> m_feature_finder;
             cv::Ptr<cv::detail::FeaturesMatcher> m_feature_matcher;
             cv::Ptr<cv::detail::Estimator> m_estimator;
             cv::Ptr<cv::detail::BundleAdjusterBase> m_bundle_adjuster;
             cv::Ptr<cv::detail::RotationWarper> m_rotation_warper;
 
-            /**/
+        protected:
             std::vector<cv::detail::ImageFeatures> m_img_features;
             std::vector<cv::detail::MatchesInfo> m_img_matches;
             std::vector<int> m_img_good_idxs;
@@ -203,14 +204,15 @@ namespace abcdk
             std::vector<cv::Mat> m_warper_ymaps;
             std::vector<cv::Rect> m_warper_rects;
             std::vector<cv::Rect> m_screen_rects;
+            int m_blend_width;
+            int m_blend_height;
             std::vector<int> m_blend_idxs;
             std::vector<cv::Rect> m_blend_rects;
-            size_t m_blend_width;
-            size_t m_blend_height;
-
-        protected:
+            bool m_build_map_ok;
+        public:
             stitcher()
             {
+                m_build_map_ok = false;
             }
 
             virtual ~stitcher()
@@ -326,7 +328,7 @@ namespace abcdk
 
                     m_feature_finder->detectAndCompute(gray, mask, m_img_features[i].keypoints, m_img_features[i].descriptors);
 
-                    if (getenv("ABCDK_STITCHER_FIND_FEATURE_DUMP"))
+                    if (getenv("ABCDK_OPENCV_STITCHER_FIND_FEATURE_DUMP"))
                     {
                         cv::Mat img_tmp;
 
@@ -581,35 +583,92 @@ namespace abcdk
                         }
                     }
                 }
+
+                /*Set OK.*/
+                m_build_map_ok = true;
             }
 
-            virtual bool remap(const std::vector<mat> &imgs)
+            bool remap(std::vector<cv::Mat> &outs, const std::vector<cv::Mat> &imgs)
             {
-                return false;
+                assert(imgs.size() > 0);
+                assert(imgs.size() >= m_img_good_idxs.size());
+                assert(m_img_good_sizes.size() == m_img_good_idxs.size());
+                assert(m_warper_rects.size() == m_img_good_idxs.size());
+                assert(m_warper_xmaps.size() == m_img_good_idxs.size());
+                assert(m_warper_ymaps.size() == m_img_good_idxs.size());
+
+                assert(m_build_map_ok);
+
+                /*输出的数量和顺序相同，但未能拼接的输出图像为空。*/
+                if (outs.size() != imgs.size())
+                    outs.resize(imgs.size());
+
+                for (int i = 0; i < m_img_good_idxs.size(); i++)
+                {
+                    int idx = m_img_good_idxs[i];
+                    int img_w = m_img_good_sizes[i].width;
+                    int img_h = m_img_good_sizes[i].height;
+                    int warper_w = m_warper_rects[i].width;
+                    int warper_h = m_warper_rects[i].height;
+                    auto &imgs_it = imgs[idx];
+                    auto &outs_it = outs[idx];
+
+                    assert(imgs_it.cols == img_w && imgs_it.rows == img_h);
+
+                    /*创建变换后的图像存储空间。*/
+                    outs_it.create(warper_h, warper_w, imgs_it.type());
+                    if(outs_it.empty())
+                        return false;
+
+                    cv::remap(imgs_it, outs[idx], m_warper_xmaps[i], m_warper_ymaps[i], cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+                }
+
+                return true;
             }
 
-            virtual bool compose(mat &out, bool optimize_seam = true)
+            bool compose(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
             {
-                return false;
+                uint8_t scalar[4] = {0};
+
+                assert(imgs.size() >= 0);
+
+                assert(m_build_map_ok);
+
+                /*创建全景图像存储空间。*/
+                out.create(m_blend_height, m_blend_width, imgs[0].type());
+                if(out.empty())
+                    return false;
+
+                for (int i = 0; i < m_blend_idxs.size(); i++)
+                {
+                    int idx = m_blend_idxs[i];
+                    cv::Rect r = m_blend_rects[i];
+                    auto &imgs_it = imgs[idx];
+
+                    assert(imgs_it.type() == out.type());
+
+                    /*计算重叠宽度。*/
+                    int overlap_w = (i <= 0 ? 0 : (m_blend_rects[i - 1].width + m_blend_rects[i - 1].x - m_blend_rects[i].x));
+
+                    abcdk::generic::imageproc::compose<uint8_t>(out.channels(), true,
+                                                                out.data, out.cols, out.step, out.rows,
+                                                                imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows,
+                                                                scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
+                }
+
+                return true;
             }
 
-            template <typename T>
-            int build_panorama(T &out, const std::vector<T> &imgs, bool optimize_seam = true)
+            void build_panorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
             {
-                bool chk;
+                std::vector<cv::Mat> remap_imgs;
 
-                assert(out != NULL);
-                assert(imgs.size() >= 2);
+                assert(imgs.size() >= 0);
+                assert(imgs.size() >= m_img_good_idxs.size());
 
-                chk = remap(imgs);
-                if (!chk)
-                    return -1;
+                remap(remap_imgs, imgs);
 
-                chk = compose(out, optimize_seam);
-                if (!chk)
-                    return -1;
-
-                return 0;
+                compose(out, remap_imgs, optimize_seam);
             }
 
         public:
@@ -619,16 +678,9 @@ namespace abcdk
                 build_map();
             }
 
-            template <typename T>
-            int BuildPanorama(T &out, const std::vector<T> &imgs, bool optimize_seam = true)
+            void BuildPanorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
             {
-                int chk;
-
-                chk = build_panorama<T>(out, imgs, optimize_seam);
-                if (chk != 0)
-                    return -1;
-
-                return 0;
+                build_panorama(out, imgs, optimize_seam);
             }
 
             void DrawKeypointsMatches(const std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &outs)
@@ -661,60 +713,10 @@ namespace abcdk
 
                 return 0;
             }
-
-            int Prepare(const std::vector<cv::Mat> &imgs, const std::vector<std::vector<cv::Rect>> &masks,
-                        float good_threshold = 0.8, float adjuster_threshold = 0.8, const char adjuster_mask[5] = "xxxxx",
-                        cv::detail::WaveCorrectKind wave_correct_kind = (cv::detail::WaveCorrectKind)-1)
-            {
-                std::vector<cv::Mat> masks2;
-
-                assert(imgs.size() >= 2);
-                assert(masks.size() == 0 || imgs.size() == masks.size());
-
-                masks2.resize(masks.size());
-                for (int i = 0; i < masks.size(); i++)
-                {
-                    masks2[i].create(imgs[i].rows, imgs[i].cols, CV_8UC1);
-
-                    /*白色背景。*/
-                    masks2[i].setTo(cv::Scalar(255, 255, 255));
-
-                    for (int j = 0; j < masks[i].size(); j++)
-                        masks2[i](masks[i][j]).setTo(cv::Scalar(0, 0, 0));
-                }
-
-                return Prepare(imgs, masks2, good_threshold, adjuster_threshold, adjuster_mask, wave_correct_kind);
-            }
-
-            int Prepare(const std::vector<cv::Mat> &imgs, const std::vector<std::string> &masks, const char *delim = ";",
-                        float good_threshold = 0.8, float adjuster_threshold = 0.8, const char adjuster_mask[5] = "xxxxx",
-                        cv::detail::WaveCorrectKind wave_correct_kind = (cv::detail::WaveCorrectKind)-1)
-            {
-                std::vector<std::string> tmp;
-                std::vector<std::vector<cv::Rect>> masks2;
-
-                assert(imgs.size() >= 2);
-                assert(masks.size() == 0 || imgs.size() == masks.size());
-
-                masks2.resize(masks.size());
-                for (int i = 0; i < masks.size(); i++)
-                {
-                    tmp.clear();
-                    string::split(tmp, masks[i].c_str(), delim);
-
-                    masks2[i].resize(tmp.size());
-                    for (int j = 0; j < tmp.size(); j++)
-                    {
-                        sscanf(tmp[j].c_str(), "%d,%d,%d,%d", &masks2[i][j].x, &masks2[i][j].y, &masks2[i][j].width, &masks2[i][j].height);
-                    }
-                }
-
-                return Prepare(imgs, masks2, good_threshold, adjuster_threshold, adjuster_mask, wave_correct_kind);
-            }
         };
-    } //    namespace stitcher
+    } //    namespace opencv
 } // namespace abcdk
 
 #endif // OPENCV_CORE_HPP
 
-#endif // ABCDK_STITCHER_STITCHER_HXX
+#endif // ABCDK_OPENCV_STITCHER_HXX
