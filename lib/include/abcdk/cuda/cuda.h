@@ -21,4 +21,16 @@
 #endif //__x86_64__
 #endif //HAVE_CUDA
 
+#ifndef __cuda_cuda_h__
+/**/
+typedef struct CUctx_st *CUcontext;
+/**Memory types */
+typedef enum CUmemorytype_enum {
+    CU_MEMORYTYPE_HOST    = 0x01,    /**< Host memory */
+    CU_MEMORYTYPE_DEVICE  = 0x02,    /**< Device memory */
+    CU_MEMORYTYPE_ARRAY   = 0x03,    /**< Array memory */
+    CU_MEMORYTYPE_UNIFIED = 0x04     /**< Unified device or host memory */
+} CUmemorytype;
+#endif //__cuda_cuda_h__
+
 #endif //ABCDK_CUDA_CUDA_H

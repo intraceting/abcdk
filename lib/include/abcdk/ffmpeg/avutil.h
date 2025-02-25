@@ -17,10 +17,10 @@ __BEGIN_DECLS
 
 /**
  * R2D(num/den)。
- * 
+ *
  * @param scale 比例。
- * 
-*/
+ *
+ */
 double abcdk_avmatch_r2d(AVRational r, double scale);
 
 /**
@@ -90,13 +90,13 @@ void abcdk_avimage_copy(uint8_t *dst_data[4], int dst_stride[4],
 
 /**
  * 帧复制。
- * 
+ *
  * @note 仅图像数据。
  */
 void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src);
 
 /**创建帧图。 */
-AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int align);
+AVFrame *abcdk_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
 
 /**重定向到轨迹日志。*/
 void abcdk_avlog_redirect2trace();

@@ -130,6 +130,7 @@ LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/system/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/media/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/redis/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/sqlite/*.c)
@@ -210,6 +211,12 @@ $(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
 #
 $(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/net/
+	rm -f $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/media/%.o: lib/source/media/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/media/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
