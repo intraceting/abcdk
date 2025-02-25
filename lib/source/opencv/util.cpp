@@ -8,10 +8,12 @@
 
 #ifdef OPENCV_CORE_HPP
 
-abcdk_ndarray_t *abcdk_opencv_image_load(const char *file, int gray)
+abcdk_media_frame_t *abcdk_opencv_image_load(const char *file, int gray)
 {
-    abcdk_ndarray_t *dst;
+    abcdk_media_frame_t *dst;
     cv::Mat tmp_src;
+    uint8_t *src_data[4] = {NULL, NULL, NULL, NULL};
+    int src_stride[4] = {-1, -1, -1, -1};
 
     assert(file != NULL);
 
@@ -19,16 +21,21 @@ abcdk_ndarray_t *abcdk_opencv_image_load(const char *file, int gray)
     if (tmp_src.empty())
         return NULL;
 
-    dst = abcdk_ndarray_clone2(tmp_src.data, tmp_src.step, ABCDK_NDARRAY_NHWC, 1, tmp_src.cols, tmp_src.rows, tmp_src.channels(), 1);
+    src_data[0] = tmp_src.data;
+    src_stride[0] = tmp_src.step;
+
+    dst = abcdk_media_frame_clone2((const uint8_t **)src_data, src_stride, tmp_src.cols, tmp_src.rows, (gray ? ABCDK_MEDIA_PIXFMT_GRAY8 : ABCDK_MEDIA_PIXFMT_BGR24));
     if (!dst)
         return NULL;
+
+    
 
     return dst;
 }
 
 #else //OPENCV_CORE_HPP
 
-abcdk_ndarray_t *abcdk_opencv_image_load(const char *file, int gray)
+abcdk_media_frame_t *abcdk_opencv_image_load(const char *file, int gray)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return NULL;

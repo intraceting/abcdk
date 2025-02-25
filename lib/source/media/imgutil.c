@@ -13,30 +13,30 @@ static int _abcdk_meida_image_fill_height(int heights[4], int height, int pixfmt
 
     switch (pixfmt)
     {
-    case ABCDK_PIXFMT_YUV420P:
-    case ABCDK_PIXFMT_I420:
-    case ABCDK_PIXFMT_YV12:
-    case ABCDK_PIXFMT_NV12:
-    case ABCDK_PIXFMT_NV21:
+    case ABCDK_MEDIA_PIXFMT_YUV420P:
+    case ABCDK_MEDIA_PIXFMT_I420:
+    case ABCDK_MEDIA_PIXFMT_YV12:
+    case ABCDK_MEDIA_PIXFMT_NV12:
+    case ABCDK_MEDIA_PIXFMT_NV21:
         heights[1] = heights[2] = (height + 1) / 2;
         break;
-    case ABCDK_PIXFMT_YUV422P:
-    case ABCDK_PIXFMT_YUYV:
-    case ABCDK_PIXFMT_UYVY:
-    case ABCDK_PIXFMT_NV16:
-    case ABCDK_PIXFMT_YUV411P:
+    case ABCDK_MEDIA_PIXFMT_YUV422P:
+    case ABCDK_MEDIA_PIXFMT_YUYV:
+    case ABCDK_MEDIA_PIXFMT_UYVY:
+    case ABCDK_MEDIA_PIXFMT_NV16:
+    case ABCDK_MEDIA_PIXFMT_YUV411P:
         heights[1] = heights[2] = height;
         break;
-    case ABCDK_PIXFMT_YUV444P:
-    case ABCDK_PIXFMT_NV24:
+    case ABCDK_MEDIA_PIXFMT_YUV444P:
+    case ABCDK_MEDIA_PIXFMT_NV24:
         heights[1] = heights[2] = height;
         break;
-    case ABCDK_PIXFMT_RGB24:
-    case ABCDK_PIXFMT_RGB32:
-    case ABCDK_PIXFMT_BGR24:
-    case ABCDK_PIXFMT_BGR32:
-    case ABCDK_PIXFMT_GRAY8:
-    case ABCDK_PIXFMT_GRAYF32:
+    case ABCDK_MEDIA_PIXFMT_RGB24:
+    case ABCDK_MEDIA_PIXFMT_BGR24:
+    case ABCDK_MEDIA_PIXFMT_RGB32:
+    case ABCDK_MEDIA_PIXFMT_BGR32:
+    case ABCDK_MEDIA_PIXFMT_GRAY8:
+    case ABCDK_MEDIA_PIXFMT_GRAYF32:
         heights[0] = height;
         break;
     default:
@@ -69,38 +69,38 @@ static int _abcdk_meida_image_fill_stride(int stride[4], int width, int pixfmt)
 
     switch (pixfmt)
     {
-    case ABCDK_PIXFMT_YUV420P:
-    case ABCDK_PIXFMT_I420:
-    case ABCDK_PIXFMT_YV12:
-    case ABCDK_PIXFMT_NV12:
-    case ABCDK_PIXFMT_NV21:
+    case ABCDK_MEDIA_PIXFMT_YUV420P:
+    case ABCDK_MEDIA_PIXFMT_I420:
+    case ABCDK_MEDIA_PIXFMT_YV12:
+    case ABCDK_MEDIA_PIXFMT_NV12:
+    case ABCDK_MEDIA_PIXFMT_NV21:
         stride[1] = stride[2] = (width + 1) / 2;
         break;
-    case ABCDK_PIXFMT_YUV422P:
-    case ABCDK_PIXFMT_YUYV:
-    case ABCDK_PIXFMT_UYVY:
-    case ABCDK_PIXFMT_NV16:
+    case ABCDK_MEDIA_PIXFMT_YUV422P:
+    case ABCDK_MEDIA_PIXFMT_YUYV:
+    case ABCDK_MEDIA_PIXFMT_UYVY:
+    case ABCDK_MEDIA_PIXFMT_NV16:
         stride[1] = stride[2] = (width + 1) / 2;
         break;
-    case ABCDK_PIXFMT_YUV444P:
-    case ABCDK_PIXFMT_NV24:
+    case ABCDK_MEDIA_PIXFMT_YUV444P:
+    case ABCDK_MEDIA_PIXFMT_NV24:
         stride[1] = stride[2] = width;
         break;
-    case ABCDK_PIXFMT_YUV411P:
+    case ABCDK_MEDIA_PIXFMT_YUV411P:
         stride[1] = stride[2] = (width + 3) / 4;
         break;
-    case ABCDK_PIXFMT_RGB24:
-    case ABCDK_PIXFMT_BGR24:
+    case ABCDK_MEDIA_PIXFMT_RGB24:
+    case ABCDK_MEDIA_PIXFMT_BGR24:
         stride[0] = width * 3;
         break;
-    case ABCDK_PIXFMT_RGB32:
-    case ABCDK_PIXFMT_BGR32:
+    case ABCDK_MEDIA_PIXFMT_RGB32:
+    case ABCDK_MEDIA_PIXFMT_BGR32:
         stride[0] = width * 4;
         break;
-    case ABCDK_PIXFMT_GRAY8:
+    case ABCDK_MEDIA_PIXFMT_GRAY8:
         stride[0] = width;
         break;
-    case ABCDK_PIXFMT_GRAYF32:
+    case ABCDK_MEDIA_PIXFMT_GRAYF32:
         stride[0] = width * 4;
         break;
     default:

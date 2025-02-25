@@ -528,6 +528,8 @@ namespace abcdk
                     int img_h = m_img_good_sizes[i].height;
                     int warper_w = m_warper_rects[i].width;
                     int warper_h = m_warper_rects[i].height;
+                    auto &xmap_it = m_warper_xmaps[i];
+                    auto &ymap_it = m_warper_ymaps[i];
                     auto &imgs_it = imgs[idx];
                     auto &outs_it = outs[idx];
 
@@ -538,7 +540,7 @@ namespace abcdk
                     if (outs_it.empty())
                         return false;
 
-                    cv::remap(imgs_it, outs[idx], m_warper_xmaps[i], m_warper_ymaps[i], cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+                    cv::remap(imgs_it, outs_it, xmap_it, ymap_it, cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
                 }
 
                 return true;

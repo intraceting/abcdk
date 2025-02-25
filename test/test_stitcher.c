@@ -31,12 +31,25 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     abcdk_object_unref(&metadata);
   }
 
-  abcdk_ndarray_t *img[2] = {0}, *mask[2] = {0};
+  abcdk_media_frame_t *img[4] = {0}, *mask[4] = {0};
 
-  img[0] = abcdk_opencv_image_load("/home/devel/job/doc/R-C.jpeg",0);
-  img[1] = abcdk_opencv_image_load("/home/devel/job/tmp/R-C.bae903075499bac16355cb69694ea4db.jpeg",0);
+  img[0] = abcdk_opencv_image_load("/tmp/ccc/you1.jpg",0);
+  img[3] = abcdk_opencv_image_load("/tmp/ccc/you2.jpg",0);
+  img[1] = abcdk_opencv_image_load("/tmp/ccc/you3.jpg",0);
+  img[2] = abcdk_opencv_image_load("/tmp/ccc/you4.jpg",0);
 
-  int chk = abcdk_stitcher_estimate_transform(ctx, 2, img, mask, 0.8);
+  int chk = abcdk_stitcher_estimate_transform(ctx, 4, img, mask, 0.8);
+
+  abcdk_stitcher_build_panorama_param(ctx);
+
+  abcdk_media_frame_t *out = NULL;
+  chk = abcdk_stitcher_compose_panorama(ctx, &out, 4, img);
+
+  abcdk_media_frame_save("/tmp/ccc/pano.bmp",out);
+  abcdk_media_frame_free(&out);
+
+  for (int i = 0; i < 4; i++)
+    abcdk_media_frame_free(&img[i]);
 
   abcdk_stitcher_destroy(&ctx);
 
