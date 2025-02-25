@@ -7,8 +7,8 @@
 #ifndef ABCDK_MEDIA_IMGUTIL_H
 #define ABCDK_MEDIA_IMGUTIL_H
 
-#include "abcdk/util/general.h"
-#include "abcdk/util/object.h"
+
+#include "abcdk/media/media.h"
 #include "abcdk/media/pixfmt.h"
 
 __BEGIN_DECLS

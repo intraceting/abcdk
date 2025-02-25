@@ -153,7 +153,7 @@ int abcdk_media_image_fill_pointer(uint8_t *data[4], const int stride[4], int he
             break;
 
         if (buffer)
-            data[i] = ABCDK_PTR2I8PTR(buffer, off);
+            data[i] = ABCDK_PTR2U8PTR(buffer, off);
 
         off += stride[i] * heights[i];
     }

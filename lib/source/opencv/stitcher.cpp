@@ -94,45 +94,45 @@ int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_me
 
     assert(ctx != NULL && count >= 2 && img != NULL && mask != NULL);
 
-    tmp_imgs.resize(count);
-    tmp_masks.resize(count);
+    // tmp_imgs.resize(count);
+    // tmp_masks.resize(count);
 
-    for (int i = 0; i < count; i++)
-    {
-        auto &dst_img = tmp_imgs[i];
-        auto &dst_mask = tmp_masks[i];
-        auto &src_img = img[i];
-        auto &src_mask = mask[i];
+    // for (int i = 0; i < count; i++)
+    // {
+    //     auto &dst_img = tmp_imgs[i];
+    //     auto &dst_mask = tmp_masks[i];
+    //     auto &src_img = img[i];
+    //     auto &src_mask = mask[i];
 
-        assert(src_img != NULL);
-        assert(src_img->tag == ABCDK_MEDIA_FRAME_TAG_HOST);
+    //     assert(src_img != NULL);
+    //     assert(src_img->tag == ABCDK_MEDIA_FRAME_TAG_HOST);
 
-        int src_img_depth = abcdk_media_pixfmt_channels(src_img->pixfmt);
+    //     int src_img_depth = abcdk_media_pixfmt_channels(src_img->pixfmt);
 
-        dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
-        if (dst_img.empty())
-            return -1;
+    //     dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
+    //     if (dst_img.empty())
+    //         return -1;
 
-        abcdk_memcpy_2d(dst_img.data, dst_img.step, 0, 0,
-                        src_img->data[0], src_img->stride[0], 0, 0,
-                        src_img_depth * src_img->width, src_img->height);
+    //     abcdk_memcpy_2d(dst_img.data, dst_img.step, 0, 0,
+    //                     src_img->data[0], src_img->stride[0], 0, 0,
+    //                     src_img_depth * src_img->width, src_img->height);
 
-        if (src_mask)
-        {
-            assert(src_mask != NULL);
-            assert(src_mask->tag == ABCDK_MEDIA_FRAME_TAG_HOST);
+    //     if (src_mask)
+    //     {
+    //         assert(src_mask != NULL);
+    //         assert(src_mask->tag == ABCDK_MEDIA_FRAME_TAG_HOST);
 
-            int src_mask_depth = abcdk_media_pixfmt_channels(src_mask->pixfmt);
+    //         int src_mask_depth = abcdk_media_pixfmt_channels(src_mask->pixfmt);
 
-            dst_mask.create(src_mask->height, src_mask->width, CV_8UC(src_mask_depth));
-            if (dst_mask.empty())
-                return -1;
+    //         dst_mask.create(src_mask->height, src_mask->width, CV_8UC(src_mask_depth));
+    //         if (dst_mask.empty())
+    //             return -1;
 
-            abcdk_memcpy_2d(dst_mask.data, dst_mask.step, 0, 0,
-                            src_mask->data[0], src_mask->stride[0], 0, 0,
-                            src_mask_depth * src_mask->width, src_mask->height);
-        }
-    }
+    //         abcdk_memcpy_2d(dst_mask.data, dst_mask.step, 0, 0,
+    //                         src_mask->data[0], src_mask->stride[0], 0, 0,
+    //                         src_mask_depth * src_mask->width, src_mask->height);
+    //     }
+    // }
 
     chk = ctx->impl_ctx->EstimateTransform(tmp_imgs, tmp_masks, good_threshold);
     if (chk != 0)
@@ -158,38 +158,38 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_frame_t *
 
     assert(ctx != NULL && out != NULL && count >= 2 && img != NULL);
 
-    tmp_imgs.resize(count);
+    // tmp_imgs.resize(count);
 
-    for (int i = 0; i < count; i++)
-    {
-        auto &dst_img = tmp_imgs[i];
-        auto &src_img = img[i];
+    // for (int i = 0; i < count; i++)
+    // {
+    //     auto &dst_img = tmp_imgs[i];
+    //     auto &src_img = img[i];
 
-        assert(src_img != NULL);
-        assert(src_img->tag == ABCDK_MEDIA_FRAME_TAG_HOST);
+    //     assert(src_img != NULL);
+    //     assert(src_img->tag == ABCDK_MEDIA_FRAME_TAG_HOST);
 
-        int src_img_depth = abcdk_media_pixfmt_channels(src_img->pixfmt);
+    //     int src_img_depth = abcdk_media_pixfmt_channels(src_img->pixfmt);
 
-        dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
-        if (dst_img.empty())
-            return -1;
+    //     dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
+    //     if (dst_img.empty())
+    //         return -1;
 
-        abcdk_memcpy_2d(dst_img.data, dst_img.step, 0, 0,
-                        src_img->data[0], src_img->stride[0], 0, 0,
-                        src_img_depth * src_img->width, src_img->height);
-    }
+    //     abcdk_memcpy_2d(dst_img.data, dst_img.step, 0, 0,
+    //                     src_img->data[0], src_img->stride[0], 0, 0,
+    //                     src_img_depth * src_img->width, src_img->height);
+    // }
 
-    chk = ctx->impl_ctx->ComposePanorama(tmp_out,tmp_imgs);
-    if(chk != 0)
-        return -1;
+    // chk = ctx->impl_ctx->ComposePanorama(tmp_out,tmp_imgs);
+    // if(chk != 0)
+    //     return -1;
 
-    uint8_t *out_data[4] = {NULL, NULL, NULL, NULL};
-    int out_stride[4] = {-1, -1, -1, -1};
+    // uint8_t *out_data[4] = {NULL, NULL, NULL, NULL};
+    // int out_stride[4] = {-1, -1, -1, -1};
 
-    out_data[0] = tmp_out.data;
-    out_stride[0] = tmp_out.step;
+    // out_data[0] = tmp_out.data;
+    // out_stride[0] = tmp_out.step;
 
-    *out = abcdk_media_frame_clone2((const uint8_t **)out_data,out_stride,tmp_out.cols,tmp_out.rows,ABCDK_MEDIA_PIXFMT_BGR24);
+    // *out = abcdk_media_frame_clone2((const uint8_t **)out_data,out_stride,tmp_out.cols,tmp_out.rows,ABCDK_MEDIA_PIXFMT_BGR24);
 
     return 0;
 }

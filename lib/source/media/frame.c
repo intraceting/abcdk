@@ -6,57 +6,64 @@
  */
 #include "abcdk/media/frame.h"
 
+static void _abcdk_media_frame_clear(abcdk_media_frame_t *ctx)
+{
+    abcdk_object_unref(&ctx->buf);
+
+    ctx->data[0] = ctx->data[1] = ctx->data[2] = ctx->data[3] = NULL;
+    ctx->stride[0] = ctx->stride[1] = ctx->stride[2] = ctx->stride[3] = -1;
+    ctx->width = -1;
+    ctx->height = -1;
+    ctx->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
+    ctx->tag = ABCDK_MEDIA_TAG_HOST;
+    ctx->buf = NULL;
+    ctx->dts = -1;
+    ctx->pts = -1;
+}
+
 void abcdk_media_frame_free(abcdk_media_frame_t **ctx)
 {
     abcdk_media_frame_t *ctx_p;
 
-    if(!ctx || !*ctx)
+    if (!ctx || !*ctx)
         return;
 
     ctx_p = *ctx;
     *ctx = NULL;
 
     abcdk_object_unref(&ctx_p->buf);
-    abcdk_object_unref(&ctx_p->private_ctx);
+
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_media_frame_t *abcdk_media_frame_alloc(uint32_t tag)
+abcdk_media_frame_t *abcdk_media_frame_alloc()
 {
     abcdk_media_frame_t *ctx;
 
-    assert(tag == ABCDK_MEDIA_FRAME_TAG_HOST ||
-           tag == ABCDK_MEDIA_FRAME_TAG_CUDA);
-
-    ctx = (abcdk_media_frame_t*)abcdk_heap_alloc(sizeof(abcdk_media_frame_t));
-    if(!ctx)
+    ctx = (abcdk_media_frame_t *)abcdk_heap_alloc(sizeof(abcdk_media_frame_t));
+    if (!ctx)
         return NULL;
-
-    ctx->stride[0] = ctx->stride[1] = ctx->stride[2] = ctx->stride[3] = -1;
-    ctx->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
-    ctx->width = -1;
-    ctx->height = -1;
-    ctx->dts = -1;
-    ctx->pts = -1;
-    ctx->tag = tag;
+    
+    _abcdk_media_frame_clear(ctx);
 
     return ctx;
 }
 
-abcdk_media_frame_t *abcdk_media_frame_alloc2(int width, int height, int pixfmt, int align)
+int abcdk_media_frame_reset(abcdk_media_frame_t *ctx, int width, int height, int pixfmt, int align)
 {
-    abcdk_media_frame_t *ctx;
     int buf_size,chk_size;
-    int block;
+    int chk;
 
-    assert(width > 0 && height > 0 && pixfmt > 0);
+    assert(ctx != NULL && width > 0 && height > 0 && pixfmt > 0);
+    assert(ctx->tag == ABCDK_MEDIA_TAG_HOST);
 
-    ctx = abcdk_media_frame_alloc(ABCDK_MEDIA_FRAME_TAG_HOST);
-    if (!ctx)
-        return NULL;
+    if(ctx->width == width || ctx->height == height || ctx->pixfmt == pixfmt)
+        return 0;
 
-    block = abcdk_media_image_fill_stride(ctx->stride, width, pixfmt, align);
-    if(block <=0)
+    _abcdk_media_frame_clear(ctx);
+
+    chk = abcdk_media_image_fill_stride(ctx->stride, width, pixfmt, align);
+    if (chk <= 0)
         goto ERR;
 
     buf_size = abcdk_media_image_size(ctx->stride,height,pixfmt);
@@ -74,23 +81,32 @@ abcdk_media_frame_t *abcdk_media_frame_alloc2(int width, int height, int pixfmt,
     ctx->height = height;
     ctx->pixfmt = pixfmt;
 
-    return ctx;
+    return 0;
 
 ERR:
 
-    abcdk_media_frame_free(&ctx);
-    return NULL;
+    _abcdk_media_frame_clear(ctx);
+
+    return -1;
 }
 
 abcdk_media_frame_t *abcdk_media_frame_clone(const abcdk_media_frame_t *src)
 {
     abcdk_media_frame_t *dst;
+    int chk;
 
     assert(src != NULL);
 
-    dst = abcdk_media_frame_alloc2(src->width, src->height, src->pixfmt, 1);
+    dst = abcdk_media_frame_alloc();
     if (!dst)
         return NULL;
+
+    chk = abcdk_media_frame_reset(dst, src->width, src->height, src->pixfmt, 1);
+    if(chk != 0)
+    {
+        abcdk_media_frame_free(&dst);
+        return NULL;
+    }
 
     abcdk_media_image_copy(dst->data, dst->stride, (const uint8_t **)src->data, src->stride, src->width, src->height, src->pixfmt);
 
@@ -100,12 +116,20 @@ abcdk_media_frame_t *abcdk_media_frame_clone(const abcdk_media_frame_t *src)
 abcdk_media_frame_t *abcdk_media_frame_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt)
 {
     abcdk_media_frame_t *dst;
+    int chk;
 
     assert(src_data != NULL && src_stride != NULL && src_width > 0 && src_height > 0 && src_pixfmt > 0);
 
-    dst = abcdk_media_frame_alloc2(src_width, src_height, src_pixfmt, 1);
+    dst = abcdk_media_frame_alloc();
     if (!dst)
         return NULL;
+
+    chk = abcdk_media_frame_reset(dst, src_width, src_height, src_pixfmt, 1);
+    if(chk != 0)
+    {
+        abcdk_media_frame_free(&dst);
+        return NULL;
+    }
 
     abcdk_media_image_copy(dst->data, dst->stride, src_data, src_stride, src_width, src_height, src_pixfmt);
 

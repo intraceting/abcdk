@@ -7,7 +7,7 @@
 #ifndef ABCDK_MEDIA_FRAME_H
 #define ABCDK_MEDIA_FRAME_H
 
-#include "abcdk/util/bmp.h"
+#include "abcdk/media/media.h"
 #include "abcdk/media/imgutil.h"
 
 __BEGIN_DECLS
@@ -15,54 +15,42 @@ __BEGIN_DECLS
 /**媒体帧图结构。*/
 typedef struct _abcdk_media_frame
 {
-    /**图像数据指针。 */
+    /**图层指针。 */
     uint8_t *data[4];
 
-    /**图像数据步长(字节)。 */
+    /**图层步长。 */
     int stride[4];
 
-    /**图像格式。 */
+    /**像素格式。 */
     int pixfmt;
 
-    /**宽(像素)。 */
+    /**宽。*/
     int width;
 
-    /**高(像素)。 */
+    /**高。*/
     int height;
-
-    /**解码时间。*/
-    int64_t dts;
-
-    /**播放时间。*/
-    int64_t pts;
 
     /**缓存。*/
     abcdk_object_t *buf;
 
-    /**标志。*/
+    /**标签。*/
     uint32_t tag;
-#define ABCDK_MEDIA_FRAME_TAG_HOST ABCDK_FOURCC_MKTAG('h', 'o', 's', 't')
-#define ABCDK_MEDIA_FRAME_TAG_CUDA ABCDK_FOURCC_MKTAG('c', 'u', 'd', 'a')
 
-    /**私有环境。*/
-    abcdk_object_t *private_ctx;
+    /**解码时间。 */
+    int64_t dts;
 
-} abcdk_media_frame_t;
+    /**播放时间。 */
+    int64_t pts;
+}abcdk_media_frame_t;
 
 /**释放。*/
 void abcdk_media_frame_free(abcdk_media_frame_t **ctx);
 
 /**创建。*/
-abcdk_media_frame_t *abcdk_media_frame_alloc(uint32_t tag);
+abcdk_media_frame_t *abcdk_media_frame_alloc();
 
-/**创建。*/
-abcdk_media_frame_t *abcdk_media_frame_alloc2(int width, int height, int pixfmt, int align);
-
-/**克隆。*/
-abcdk_media_frame_t *abcdk_media_frame_clone(const abcdk_media_frame_t *src);
-
-/**克隆。*/
-abcdk_media_frame_t *abcdk_media_frame_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt);
+/**重置。*/
+int abcdk_media_frame_reset(abcdk_media_frame_t *ctx, int width, int height, int pixfmt, int align);
 
 /**
  * 保存到文件(BMP)。
@@ -72,6 +60,13 @@ abcdk_media_frame_t *abcdk_media_frame_clone2(const uint8_t *src_data[4], const 
  * @return 0 成功，< 0 失败。
  */
 int abcdk_media_frame_save(const char *dst, const abcdk_media_frame_t *src);
+
+/**克隆。*/
+abcdk_media_frame_t *abcdk_media_frame_clone(const abcdk_media_frame_t *src);
+
+/**克隆。*/
+abcdk_media_frame_t *abcdk_media_frame_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt);
+
 
 __END_DECLS
 

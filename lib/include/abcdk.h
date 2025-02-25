@@ -143,6 +143,11 @@
 #include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipherex.h"
 
+#include "abcdk/media/media.h"
+#include "abcdk/media/imgutil.h"
+#include "abcdk/media/pixfmt.h"
+#include "abcdk/media/frame.h"
+
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"
 #include "abcdk/cuda/device.h"

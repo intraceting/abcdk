@@ -21,12 +21,12 @@ abcdk_media_frame_t *abcdk_opencv_image_load(const char *file, int gray)
     if (tmp_src.empty())
         return NULL;
 
-    src_data[0] = tmp_src.data;
-    src_stride[0] = tmp_src.step;
+    // src_data[0] = tmp_src.data;
+    // src_stride[0] = tmp_src.step;
 
-    dst = abcdk_media_frame_clone2((const uint8_t **)src_data, src_stride, tmp_src.cols, tmp_src.rows, (gray ? ABCDK_MEDIA_PIXFMT_GRAY8 : ABCDK_MEDIA_PIXFMT_BGR24));
-    if (!dst)
-        return NULL;
+    // dst = abcdk_media_frame_clone2((const uint8_t **)src_data, src_stride, tmp_src.cols, tmp_src.rows, (gray ? ABCDK_MEDIA_PIXFMT_GRAY8 : ABCDK_MEDIA_PIXFMT_BGR24));
+    // if (!dst)
+    //     return NULL;
 
     
 
