@@ -92,12 +92,6 @@ namespace abcdk
                     if (cfg)
                         abcdk_option_merge(m_cfg, cfg);
 
-                    device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
-
-                    m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
-                    if (!m_gpu_ctx)
-                        return -1;
-
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
                     m_ctx = NvJPEGDecoder::createJPEGDecoder("jpegdec");

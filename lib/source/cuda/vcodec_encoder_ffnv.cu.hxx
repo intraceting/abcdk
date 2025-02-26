@@ -4,26 +4,26 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_VIDEO_ENCODER_FFNV_HXX
-#define ABCDK_CUDA_VIDEO_ENCODER_FFNV_HXX
+#ifndef ABCDK_CUDA_VCODEC_ENCODER_FFNV_HXX
+#define ABCDK_CUDA_VCODEC_ENCODER_FFNV_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
-#include "video_encoder.cu.hxx"
-#include "video_util.cu.hxx"
+#include "abcdk/cuda/frame.h"
+#include "abcdk/media/packet.h"
+#include "abcdk/media/vcodec.h"
+#include "vcodec_encoder.cu.hxx"
+#include "vcodec_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
-#ifdef AVCODEC_AVCODEC_H
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
 
 namespace abcdk
 {
     namespace cuda
     {
-        namespace video
+        namespace vcodec
         {
             class encoder_ffnv : public encoder
             {
@@ -74,8 +74,6 @@ namespace abcdk
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedRefBuffers;
                 std::vector<void *> m_vpCompletionEvent;
 
-                abcdk_option_t *m_cfg;
-
             public:
                 encoder_ffnv(CUcontext cuda_ctx)
                 {
@@ -93,7 +91,6 @@ namespace abcdk
                     m_nExtraOutputDelay = 0;
                     m_nEncoderBuffer = 0;
 
-                    m_cfg = NULL;
                 }
 
                 virtual ~encoder_ffnv()
@@ -429,32 +426,7 @@ namespace abcdk
                     abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_option_t *cfg)
-                {
-                    int device;
-
-                    assert(m_cfg == NULL);
-
-                    if (!m_funcs)
-                        return -1;
-
-                    m_cfg = abcdk_option_alloc("--");
-                    if (!m_cfg)
-                        return -1;
-
-                    if (cfg)
-                        abcdk_option_merge(m_cfg, cfg);
-
-                    device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
-
-                    m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
-                    if (!m_gpu_ctx)
-                        return -1;
-
-                    return 0;
-                }
-
-                virtual int sync(AVCodecContext *opt)
+                virtual int open(abcdk_media_vcodec_param_t *param)
                 {
                     uint32_t version = 0;
                     uint32_t currentVersion = (NVENCAPI_MAJOR_VERSION << 4) | NVENCAPI_MINOR_VERSION;
@@ -463,12 +435,12 @@ namespace abcdk
                     std::vector<uint8_t> ext_data;
                     NVENCSTATUS chk;
 
-                    assert(opt != NULL);
+                    assert(param != NULL);
 
                     if (!m_funcs)
                         return -1;
 
-                    fps = abcdk_avmatch_r2d(opt->framerate, 1);
+                    fps = param->fps_n/param->fps_d;
                     width = opt->width;
                     height = opt->height;
                     nvcodec_id = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
@@ -637,8 +609,6 @@ namespace abcdk
 } // namespace abcdk
 
 #endif // FFNV_CUDA_DYNLINK_LOADER_H
-#endif // AVCODEC_AVCODEC_H
-#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_VIDEO_ENCODER_FFNV_HXX
+#endif // ABCDK_CUDA_VCODEC_ENCODER_FFNV_HXX

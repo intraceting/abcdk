@@ -4,11 +4,11 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_VIDEO_UTIL_HXX
-#define ABCDK_CUDA_VIDEO_UTIL_HXX
+#ifndef ABCDK_CUDA_VCODEC_UTIL_HXX
+#define ABCDK_CUDA_VCODEC_UTIL_HXX
 
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/media/cdcfmt.h"
+#include "abcdk/media/vcodec.h"
 #include "context_robot.cu.hxx"
 
 #ifdef __x86_64__
@@ -30,48 +30,48 @@ namespace abcdk
 {
     namespace cuda
     {
-        namespace video
+        namespace vcodec
         {
-            int cdcfmt_to_nvcodec(int cdcfmt)
+            int vcodec_to_nvcodec(int format)
             {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-                switch (id)
+                switch (format)
                 {
-                case ABCDK_MEDIA_CDCFMT_H264:
+                case ABCDK_MEDIA_VCODEC_H264:
                     return cudaVideoCodec_H264;
-                case ABCDK_MEDIA_CDCFMT_HEVC:
+                case ABCDK_MEDIA_VCODEC_HEVC:
                     return cudaVideoCodec_HEVC;
-                case ABCDK_MEDIA_CDCFMT_MJPEG:
+                case ABCDK_MEDIA_VCODEC_MJPEG:
                     return cudaVideoCodec_JPEG;
-                case ABCDK_MEDIA_CDCFMT_MPEG1VIDEO:
+                case ABCDK_MEDIA_VCODEC_MPEG1VIDEO:
                     return cudaVideoCodec_MPEG1;
-                case ABCDK_MEDIA_CDCFMT_MPEG2VIDEO:
+                case ABCDK_MEDIA_VCODEC_MPEG2VIDEO:
                     return cudaVideoCodec_MPEG2;
-                case ABCDK_MEDIA_CDCFMT_MPEG4:
+                case ABCDK_MEDIA_VCODEC_MPEG4:
                     return cudaVideoCodec_MPEG4;
-                case ABCDK_MEDIA_CDCFMT_VC1:
+                case ABCDK_MEDIA_VCODEC_VC1:
                     return cudaVideoCodec_VC1;
-                case ABCDK_MEDIA_CDCFMT_VP8:
+                case ABCDK_MEDIA_VCODEC_VP8:
                     return cudaVideoCodec_VP8;
-                case ABCDK_MEDIA_CDCFMT_VP9:
+                case ABCDK_MEDIA_VCODEC_VP9:
                     return cudaVideoCodec_VP9;
-                case ABCDK_MEDIA_CDCFMT_WMV3:
+                case ABCDK_MEDIA_VCODEC_WMV3:
                     return cudaVideoCodec_VC1;
                 }
 #elif defined(__aarch64__)
-                switch (id)
+                switch (format)
                 {
-                case ABCDK_MEDIA_CDCFMT_H264:
+                case ABCDK_MEDIA_VCODEC_H264:
                     return NV_VIDEO_CodingH264;
-                case ABCDK_MEDIA_CDCFMT_HEVC:
+                case ABCDK_MEDIA_VCODEC_HEVC:
                     return NV_VIDEO_CodingHEVC;
-                case ABCDK_MEDIA_CDCFMT_VP8:
+                case ABCDK_MEDIA_VCODEC_VP8:
                     return NV_VIDEO_CodingVP8;
-                case ABCDK_MEDIA_CDCFMT_VP9:
+                case ABCDK_MEDIA_VCODEC_VP9:
                     return NV_VIDEO_CodingVP9;
-                case ABCDK_MEDIA_CDCFMT_MPEG4:
+                case ABCDK_MEDIA_VCODEC_MPEG4:
                     return NV_VIDEO_CodingMPEG4;
-                case ABCDK_MEDIA_CDCFMT_MPEG2VIDEO:
+                case ABCDK_MEDIA_VCODEC_MPEG2VIDEO:
                     return NV_VIDEO_CodingMPEG2;
                 default:
                     return NV_VIDEO_CodingUnused;

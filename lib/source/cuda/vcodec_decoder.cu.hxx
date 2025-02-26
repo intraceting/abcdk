@@ -4,13 +4,15 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_VIDEO_ENCODER_HXX
-#define ABCDK_CUDA_VIDEO_ENCODER_HXX
+#ifndef ABCDK_CUDA_VCODEC_DECODER_HXX
+#define ABCDK_CUDA_VCODEC_DECODER_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/frame.h"
-#include "video_util.cu.hxx"
+#include "abcdk/media/packet.h"
+#include "abcdk/media/vcodec.h"
+#include "vcodec_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -18,16 +20,16 @@ namespace abcdk
 {
     namespace cuda
     {
-        namespace video
+        namespace vcodec
         {
-            class encoder
+            class decoder
             {
             protected:
-                encoder()
+                decoder()
                 {
                 }
 
-                virtual ~encoder()
+                virtual ~decoder()
                 {
                     close();
                 }
@@ -37,17 +39,15 @@ namespace abcdk
                 {
                 }
 
-                virtual int open(abcdk_option_t *cfg) = 0;
+                virtual int open(abcdk_media_vcodec_param_t *param) = 0;
 
-                virtual int sync(AVCodecContext *opt) = 0;
-
-                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src) = 0;
+                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src) = 0;
             };
-        } // namespace video
+        } // namespace vcodec
     } // namespace cuda
 } // namespace abcdk
 
 
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_VIDEO_ENCODER_HXX
+#endif // ABCDK_CUDA_VCODEC_DECODER_HXX

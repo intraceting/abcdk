@@ -4,26 +4,26 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_CUDA_VIDEO_ENCODER_AARCH64_HXX
-#define ABCDK_CUDA_VIDEO_ENCODER_AARCH64_HXX
+#ifndef ABCDK_CUDA_VCODEC_ENCODER_AARCH64_HXX
+#define ABCDK_CUDA_VCODEC_ENCODER_AARCH64_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
-#include "video_encoder.cu.hxx"
-#include "video_util.cu.hxx"
+#include "abcdk/media/packet.h"
+#include "abcdk/media/vcodec.h"
+#include "vcodec_encoder.cu.hxx"
+#include "vcodec_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
-#ifdef AVCODEC_AVCODEC_H
 #ifdef __aarch64__
 
 namespace abcdk
 {
     namespace cuda
     {
-        namespace video
+        namespace vcodec
         {
             class encoder_aarch64 : public encoder
             {
@@ -215,12 +215,6 @@ namespace abcdk
                     if (cfg)
                         abcdk_option_merge(m_cfg, cfg);
 
-                    device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
-
-                    m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
-                    if (!m_gpu_ctx)
-                        return -1;
-
                     return 0;
                 }
 
@@ -367,13 +361,11 @@ namespace abcdk
                     return 1;
                 }
             };
-        } // namespace video
+        } // namespace vcodec
     } // namespace cuda
 } // namespace abcdk
 
 #endif // __aarch64__
-#endif // AVCODEC_AVCODEC_H
-#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_VIDEO_ENCODER_AARCH64_HXX
+#endif // ABCDK_CUDA_VCODEC_ENCODER_AARCH64_HXX

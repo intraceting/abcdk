@@ -11,19 +11,17 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
-#include "video_decoder.cu.hxx"
-#include "video_util.cu.hxx"
+#include "vcodec_decoder.cu.hxx"
+#include "vcodec_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
-#ifdef AVCODEC_AVCODEC_H
 #ifdef __aarch64__
 
 namespace abcdk
 {
     namespace cuda
     {
-        namespace video
+        namespace vcodec
         {
             class decoder_aarch64 : public decoder
             {
@@ -89,39 +87,15 @@ namespace abcdk
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
 
-                    abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_option_t *cfg)
+                virtual int open(abcdk_media_vcodec_param_t *param)
                 {
-                    int device;
-                    CUresult chk;
-
-                    assert(m_cfg == NULL);
-
-                    m_cfg = abcdk_option_alloc("--");
-                    if (!m_cfg)
-                        return -1;
-
-                    if (cfg)
-                        abcdk_option_merge(m_cfg, cfg);
-
-                    device = abcdk_option_get_int(m_cfg, "--device", 0, 0);
-
-                    m_gpu_ctx = abcdk_cuda_ctx_create(device, 0);
-                    if (!m_gpu_ctx)
-                        return -1;
-
-                    return 0;
-                }
-
-                virtual int sync(AVCodecContext *opt)
-                {
-                    assert(opt != NULL);
+                    assert(param != NULL);
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
-                    m_decoder = nvmpi_create_decoder((nvCodingType)codecid_ffmpeg_to_nvcodec(opt->codec_id), NV_PIX_YUV420);
+                    m_decoder = nvmpi_create_decoder((nvCodingType)codecid_ffmpeg_to_nvcodec(param->format), NV_PIX_YUV420);
                     if (!m_decoder)
                         return -1;
 
@@ -167,13 +141,11 @@ namespace abcdk
                     return 0;
                 }
             };
-        } // namespace video
+        } // namespace vcodec
     } // namespace cuda
 } // namespace abcdk
 
 #endif // __aarch64__
-#endif // AVCODEC_AVCODEC_H
-#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
-#endif // ABCDK_CUDA_VIDEO_DECODER_AARCH64_HXX
+#endif // ABCDK_CUDA_VCODEC_DECODER_AARCH64_HXX
