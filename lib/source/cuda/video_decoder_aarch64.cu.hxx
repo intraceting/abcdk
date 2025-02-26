@@ -9,7 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
 #include "video_decoder.cu.hxx"
 #include "video_util.cu.hxx"
@@ -52,7 +52,7 @@ namespace abcdk
 
                 static void frame_queue_destroy_cb(void *msg)
                 {
-                    av_frame_free((AVFrame **)&msg);
+                    av_frame_free((abcdk_media_frame_t **)&msg);
                 }
 
             private:
@@ -128,7 +128,7 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(AVFrame **dst, const AVPacket *src)
+                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
                 {
                     nvPacket packet = {0};
                     nvFrame frame = {0};

@@ -156,7 +156,7 @@
 #include "abcdk/cuda/tensorproc.h"
 #include "abcdk/cuda/jpeg.h"
 #include "abcdk/cuda/video.h"
-#include "abcdk/cuda/ndarray.h"
+#include "abcdk/cuda/frame.h"
 
 #include "abcdk/opencv/opencv.h"
 #include "abcdk/opencv/util.h"

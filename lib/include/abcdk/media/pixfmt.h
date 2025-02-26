@@ -21,7 +21,7 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_YUV420P,
 #define ABCDK_MEDIA_PIXFMT_YUV420P ABCDK_MEDIA_PIXFMT_YUV420P
 
-    ABCDK_MEDIA_PIXFMT_YUVJ420P = ABCDK_MEDIA_PIXFMT_YUV420P, //Similar YUV420P.
+    ABCDK_MEDIA_PIXFMT_YUVJ420P, //Similar YUV420P.
 #define ABCDK_MEDIA_PIXFMT_YUVJ420P ABCDK_MEDIA_PIXFMT_YUVJ420P
 
     ABCDK_MEDIA_PIXFMT_I420,
@@ -39,7 +39,7 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_YUV422P,
 #define ABCDK_MEDIA_PIXFMT_YUV422P ABCDK_MEDIA_PIXFMT_YUV422P
 
-    ABCDK_MEDIA_PIXFMT_YUVJ422P = ABCDK_MEDIA_PIXFMT_YUV422P, //Similar YUV422P.
+    ABCDK_MEDIA_PIXFMT_YUVJ422P, //Similar YUV422P.
 #define ABCDK_MEDIA_PIXFMT_YUVJ422P ABCDK_MEDIA_PIXFMT_YUVJ422P
 
     ABCDK_MEDIA_PIXFMT_YUYV,
@@ -54,7 +54,7 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_YUV444P,
 #define ABCDK_MEDIA_PIXFMT_YUV444P ABCDK_MEDIA_PIXFMT_YUV444P
 
-    ABCDK_MEDIA_PIXFMT_YUVJ444P = ABCDK_MEDIA_PIXFMT_YUV444P, //Similar YUV444P.
+    ABCDK_MEDIA_PIXFMT_YUVJ444P, //Similar YUV444P.
 #define ABCDK_MEDIA_PIXFMT_YUVJ444P ABCDK_MEDIA_PIXFMT_YUVJ444P
 
     ABCDK_MEDIA_PIXFMT_NV24,
@@ -84,13 +84,13 @@ typedef enum _abcdk_media_pixfmt_constant
 } abcdk_media_pixfmt_constant_t;
 
 /**获取通道数量。*/
-int abcdk_media_pixfmt_channels(int pixfmt);
+int abcdk_media_pixfmt_channels(int format);
 
 /**转为ffmpeg类型。*/
-int abcdk_media_pixfmt_to_ffmpeg(int pixfmt);
+int abcdk_media_pixfmt_to_ffmpeg(int format);
 
 /**从ffmpeg类型转。*/
-int abcdk_media_pixfmt_from_ffmpeg(int pixfmt);
+int abcdk_media_pixfmt_from_ffmpeg(int format);
 
 __END_DECLS
 

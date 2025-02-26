@@ -9,11 +9,10 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "jpeg_encoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 #ifdef __aarch64__
 
 namespace abcdk
@@ -115,9 +114,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual abcdk_object_t *update(const AVFrame *src)
+                virtual abcdk_object_t *update(const abcdk_media_frame_t *src)
                 {
-                    AVFrame *tmp_src = NULL;
+                    abcdk_media_frame_t *tmp_src = NULL;
                     abcdk_object_t *dst;
                     uint8_t *out_buf = NULL;
                     unsigned long out_size = 0;
@@ -127,13 +126,13 @@ namespace abcdk
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
-                    if (src->format != (int)AV_PIX_FMT_YUV420P)
+                    if (src->format != ABCDK_MEDIA_PIXFMT_YUV420P)
                     {
-                        tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_YUV420P, 1);
+                        tmp_src = abcdk_cuda_frame_create(src->width, src->height, ABCDK_MEDIA_PIXFMT_YUV420P, 1);
                         if (!tmp_src)
                             return NULL;
 
-                        chk = abcdk_cuda_avframe_convert(tmp_src, src); // 转换格式。
+                        chk = abcdk_cuda_frame_convert(tmp_src, src); // 转换格式。
 
                         if (chk == 0)
                             dst = update(tmp_src);
@@ -174,7 +173,7 @@ namespace abcdk
                     return dst;
                 }
 
-                virtual int update(const char *dst , const AVFrame *src)
+                virtual int update(const char *dst , const abcdk_media_frame_t *src)
                 {
                     abcdk_object_t *dst_data;
                     ssize_t save_chk;
@@ -203,7 +202,6 @@ namespace abcdk
 } // namespace abcdk
 
 #endif //__aarch64__
-#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_ENCODER_AARCH64_HXX

@@ -60,4 +60,15 @@ int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
                                        scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
 
+#else // __cuda_cuda_h__
+
+int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
+                                  uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+                                  uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
+                                  uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif // __cuda_cuda_h__

@@ -9,11 +9,10 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "jpeg_decoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 #ifdef __aarch64__
 
 namespace abcdk
@@ -108,9 +107,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual AVFrame * update(const void *src, int src_size)
+                virtual abcdk_media_frame_t * update(const void *src, int src_size)
                 {
-                    AVFrame *dst;
+                    abcdk_media_frame_t *dst;
                     NvBuffer *buffer = NULL;
                     uint32_t pixfmt = 0, width = 0,height = 0;
                     int chk;
@@ -124,11 +123,11 @@ namespace abcdk
                         return NULL;
                     
                     if(pixfmt == V4L2_PIX_FMT_YUV420M)
-                        dst = abcdk_cuda_avframe_alloc(width,height,AV_PIX_FMT_YUV420P,1);
+                        dst = abcdk_cuda_frame_create(width,height,ABCDK_MEDIA_PIXFMT_YUV420P,1);
                     else if(pixfmt == V4L2_PIX_FMT_YUV422M)
-                        dst = abcdk_cuda_avframe_alloc(width,height,AV_PIX_FMT_YUV422P,1);
+                        dst = abcdk_cuda_frame_create(width,height,ABCDK_MEDIA_PIXFMT_YUV422P,1);
                     else if(pixfmt == V4L2_PIX_FMT_YUV444M)
-                        dst = abcdk_cuda_avframe_alloc(width,height,AV_PIX_FMT_YUV444P,1);
+                        dst = abcdk_cuda_frame_create(width,height,ABCDK_MEDIA_PIXFMT_YUV444P,1);
                     else 
                         return NULL;
 
@@ -147,10 +146,10 @@ namespace abcdk
                     return dst;
                 }
 
-                virtual AVFrame * update(const void *src)
+                virtual abcdk_media_frame_t * update(const void *src)
                 {
                     abcdk_object_t *src_data;
-                    AVFrame *dst;
+                    abcdk_media_frame_t *dst;
 
                     assert(src != NULL);
 
@@ -169,7 +168,6 @@ namespace abcdk
 } // namespace abcdk
 
 #endif //__aarch64__
-#endif //AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_DECODER_AARCH64_HXX

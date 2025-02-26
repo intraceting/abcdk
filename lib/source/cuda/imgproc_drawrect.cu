@@ -58,4 +58,14 @@ int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
     return _abcdk_cuda_imgproc_drawrect<uint8_t>(channels, packed, dst, w, ws, h, color, weight, corner);
 }
 
+#else // __cuda_cuda_h__
+
+int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
+                                   uint8_t *dst, size_t w, size_t ws, size_t h,
+                                   uint8_t color[], int weight, int corner[4])
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif // __cuda_cuda_h__

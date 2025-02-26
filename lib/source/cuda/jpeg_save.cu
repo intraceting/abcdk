@@ -7,9 +7,8 @@
 #include "abcdk/cuda/jpeg.h"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 
-int abcdk_cuda_jpeg_save(const char *dst, const AVFrame *src, CUcontext cuda_ctx)
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcontext cuda_ctx)
 {
     abcdk_cuda_jpeg_t *ctx;
     int chk;
@@ -31,5 +30,12 @@ int abcdk_cuda_jpeg_save(const char *dst, const AVFrame *src, CUcontext cuda_ctx
     return 0;
 }
 
-#endif // AVUTIL_AVUTIL_H
+#else //__cuda_cuda_h__
+
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcontext cuda_ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif //__cuda_cuda_h__

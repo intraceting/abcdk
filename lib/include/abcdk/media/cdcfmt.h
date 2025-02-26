@@ -1,0 +1,62 @@
+/*
+ * This file is part of ABCDK.
+ *
+ * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
+ *
+ */
+#ifndef ABCDK_MEDIA_CDCFMT_H
+#define ABCDK_MEDIA_CDCFMT_H
+
+#include "abcdk/util/general.h"
+#include "abcdk/ffmpeg/avcodec.h"
+
+__BEGIN_DECLS
+
+/**常量。*/
+typedef enum _abcdk_media_cdcfmt_constant
+{
+    ABCDK_MEDIA_CDCFMT_NONE = -1,
+#define ABCDK_MEDIA_CDCFMT_NONE ABCDK_MEDIA_CDCFMT_NONE
+
+    ABCDK_MEDIA_CDCFMT_H264,
+#define ABCDK_MEDIA_CDCFMT_H264 ABCDK_MEDIA_CDCFMT_H264
+
+    ABCDK_MEDIA_CDCFMT_HEVC,
+#define ABCDK_MEDIA_CDCFMT_HEVC ABCDK_MEDIA_CDCFMT_HEVC
+
+    ABCDK_MEDIA_CDCFMT_MJPEG,
+#define ABCDK_MEDIA_CDCFMT_MJPEG ABCDK_MEDIA_CDCFMT_MJPEG
+
+    ABCDK_MEDIA_CDCFMT_MPEG1VIDEO,
+#define ABCDK_MEDIA_CDCFMT_MPEG1VIDEO ABCDK_MEDIA_CDCFMT_MPEG1VIDEO
+
+    ABCDK_MEDIA_CDCFMT_MPEG2VIDEO,
+#define ABCDK_MEDIA_CDCFMT_MPEG2VIDEO ABCDK_MEDIA_CDCFMT_MPEG2VIDEO
+
+    ABCDK_MEDIA_CDCFMT_MPEG4,
+#define ABCDK_MEDIA_CDCFMT_MPEG4 ABCDK_MEDIA_CDCFMT_MPEG4
+
+    ABCDK_MEDIA_CDCFMT_VC1,
+#define ABCDK_MEDIA_CDCFMT_VC1 ABCDK_MEDIA_CDCFMT_VC1
+
+    ABCDK_MEDIA_CDCFMT_VP8,
+#define ABCDK_MEDIA_CDCFMT_VP8 ABCDK_MEDIA_CDCFMT_VP8
+
+    ABCDK_MEDIA_CDCFMT_VP9,
+#define ABCDK_MEDIA_CDCFMT_VP9 ABCDK_MEDIA_CDCFMT_VP9
+
+    ABCDK_MEDIA_CDCFMT_WMV3,
+#define ABCDK_MEDIA_CDCFMT_WMV3 ABCDK_MEDIA_CDCFMT_WMV3
+
+} abcdk_media_cdcfmt_constant_t;
+
+
+/**转为ffmpeg类型。*/
+int abcdk_media_cdcfmt_to_ffmpeg(int format);
+
+/**从ffmpeg类型转。*/
+int abcdk_media_cdcfmt_from_ffmpeg(int format);
+
+__END_DECLS
+
+#endif // ABCDK_MEDIA_CDCFMT_H

@@ -53,7 +53,7 @@ abcdk_media_frame_t *abcdk_cuda_frame_clone(int dst_in_host, const abcdk_media_f
  *
  * @note 仅图像数据。
  */
-abcdk_media_frame_t *abcdk_media_frame_clone2(int dst_in_host, const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt);
+abcdk_media_frame_t *abcdk_cuda_frame_clone2(int dst_in_host, const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt);
 
 /**
  * 帧图格式转换。

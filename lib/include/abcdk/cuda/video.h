@@ -9,14 +9,10 @@
 
 #include "abcdk/util/queue.h"
 #include "abcdk/util/option.h"
-#include "abcdk/util/object.h"
+#include "abcdk/media/packet.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/device.h"
-#include "abcdk/cuda/avutil.h"
-
-#ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
-#ifdef AVCODEC_AVCODEC_H
+#include "abcdk/cuda/frame.h"
 
 __BEGIN_DECLS
 
@@ -48,7 +44,7 @@ int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx, AVCodecContext *opt);
  *
  * @return 1 有输出，0 无输出，< 0 出错了。
  */
-int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx, AVPacket **dst, const AVFrame *src);
+int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx, abcdk_media_packet_t **dst, const abcdk_media_frame_t *src);
 
 /**
  * 解码。
@@ -57,12 +53,8 @@ int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx, AVPacket **dst, const AVFra
  *
  * @return 1 有输出，0 无输出，< 0 出错了。
  */
-int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx, AVFrame **dst, const AVPacket *src);
+int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx, abcdk_media_frame_t **dst, const abcdk_media_packet_t *src);
 
 __END_DECLS
-
-#endif // AVCODEC_AVCODEC_H
-#endif // AVUTIL_AVUTIL_H
-#endif //__cuda_cuda_h__
 
 #endif // ABCDK_CUDA_VIDEO_H

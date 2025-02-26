@@ -39,38 +39,49 @@ static struct _abcdk_media_pixfmt_ffmpeg_dict
     {ABCDK_MEDIA_PIXFMT_GRAY8, AV_PIX_FMT_GRAY8},
     {ABCDK_MEDIA_PIXFMT_GRAYF32, AV_PIX_FMT_GRAYF32}};
 
-int abcdk_media_pixfmt_to_ffmpeg(int pixfmt)
+int abcdk_media_pixfmt_to_ffmpeg(int format)
 {
     struct _abcdk_media_pixfmt_ffmpeg_dict *p;
 
-    assert(pixfmt > 0);
+    assert(format > 0);
 
     for (int i = 0; i < ABCDK_ARRAY_SIZE(abcdk_media_pixfmt_ffmpeg_dict); i++)
     {
         p = &abcdk_media_pixfmt_ffmpeg_dict[i];
 
-        if (p->local == pixfmt)
+        if (p->local == format)
             return p->ffmpeg;
     }
 
     return -1;
 }
 
-int abcdk_media_pixfmt_from_ffmpeg(int pixfmt)
+int abcdk_media_pixfmt_from_ffmpeg(int format)
 {
-    assert(pixfmt > 0);
+    struct _abcdk_media_pixfmt_ffmpeg_dict *p;
 
+    assert(format > 0);
+
+    for (int i = 0; i < ABCDK_ARRAY_SIZE(abcdk_media_pixfmt_ffmpeg_dict); i++)
+    {
+        p = &abcdk_media_pixfmt_ffmpeg_dict[i];
+
+        if (p->ffmpeg == format)
+            return p->local;
+    }
+
+    return -1;
 }
 
 #else // AVUTIL_PIXFMT_H
 
-int abcdk_media_pixfmt_to_ffmpeg(int pixfmt)
+int abcdk_media_pixfmt_to_ffmpeg(int format)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;
 }
 
-int abcdk_media_pixfmt_from_ffmpeg(int pixfmt)
+int abcdk_media_pixfmt_from_ffmpeg(int format)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;

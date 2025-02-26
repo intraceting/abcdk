@@ -9,12 +9,11 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
 #include "jpeg_decoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 #ifdef __x86_64__
 
 namespace abcdk
@@ -198,9 +197,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual AVFrame *update(const void *src, int src_size)
+                virtual abcdk_media_frame_t *update(const void *src, int src_size)
                 {
-                    AVFrame *dst;
+                    abcdk_media_frame_t *dst;
                     nvjpegImage_t dst_data = {0};
                     int components;
                     nvjpegChromaSubsampling_t subsampling;
@@ -247,10 +246,10 @@ namespace abcdk
                     return NULL;
                 }
 
-                virtual AVFrame *update(const void *src)
+                virtual abcdk_media_frame_t *update(const void *src)
                 {
                     abcdk_object_t *src_data;
-                    AVFrame *dst;
+                    abcdk_media_frame_t *dst;
 
                     assert(src != NULL);
 
@@ -269,7 +268,6 @@ namespace abcdk
 } // namespace abcdk
 
 #endif //__x86_64__
-#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_DECODER_GENERAL_HXX

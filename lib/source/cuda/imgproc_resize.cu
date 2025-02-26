@@ -62,4 +62,16 @@ int abcdk_cuda_imgproc_resize_8u(int channels, int packed,
     return 0;
 }
 
+
+#else // __cuda_cuda_h__
+
+int abcdk_cuda_imgproc_resize_8u(int channels, int packed,
+                                 uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi,
+                                 const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi,
+                                 int keep_aspect_ratio, NppiInterpolationMode inter_mode)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif //__cuda_cuda_h__

@@ -9,7 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
 #include "video_encoder.cu.hxx"
 #include "video_util.cu.hxx"
@@ -68,7 +68,7 @@ namespace abcdk
 
                 std::vector<NV_ENC_OUTPUT_PTR> m_vBitstreamOutputBuffer;
 
-                std::vector<AVFrame *> m_vInputFrames;
+                std::vector<abcdk_media_frame_t *> m_vInputFrames;
                 std::vector<NV_ENC_REGISTERED_PTR> m_vRegisteredResources;
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedInputBuffers;
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedRefBuffers;
@@ -358,7 +358,7 @@ namespace abcdk
                     }
                 }
 
-                int encode(const AVFrame *img, std::vector<std::vector<uint8_t>> &out)
+                int encode(const abcdk_media_frame_t *img, std::vector<std::vector<uint8_t>> &out)
                 {
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
@@ -563,9 +563,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(AVPacket **dst, const AVFrame *src)
+                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
                 {
-                    AVFrame *tmp_src = NULL;
+                    abcdk_media_frame_t *tmp_src = NULL;
                     std::vector<std::vector<uint8_t>> out;
                     int dst_off = 0;
                     int chk;

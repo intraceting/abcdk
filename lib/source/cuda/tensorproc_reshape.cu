@@ -81,4 +81,48 @@ int abcdk_cuda_tensorproc_reshape_64f(int dst_packed, double *dst, size_t dst_b,
     return _abcdk_cuda_tensorproc_reshape<double>(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c, src_packed, src, src_b, src_w, src_ws, src_h, src_c);
 }
 
+#else //__cuda_cuda_h__
+
+int abcdk_cuda_tensorproc_reshape_8u(int dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+    int src_packed, uint8_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_tensorproc_reshape_16u(int dst_packed, uint16_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+     int src_packed, uint16_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_tensorproc_reshape_32u(int dst_packed, uint32_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+     int src_packed, uint32_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_tensorproc_reshape_64u(int dst_packed, uint64_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+     int src_packed, uint64_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_tensorproc_reshape_32f(int dst_packed, float *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+     int src_packed, float *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_tensorproc_reshape_64f(int dst_packed, double *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+     int src_packed, double *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif // __cuda_cuda_h__

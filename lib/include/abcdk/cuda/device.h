@@ -9,8 +9,6 @@
 
 #include "abcdk/cuda/cuda.h"
 
-#ifdef __cuda_cuda_h__
-
 __BEGIN_DECLS
 
 /** 
@@ -67,6 +65,5 @@ int abcdk_cuda_ctx_pop_current(CUcontext *ctx);
 
 __END_DECLS
 
-#endif //__cuda_cuda_h__
 
 #endif //ABCDK_CUDA_DEVICE_H

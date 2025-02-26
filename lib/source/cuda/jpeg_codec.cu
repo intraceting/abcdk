@@ -11,7 +11,6 @@
 #include "jpeg_encoder_aarch64.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 
 /**JPEG编解码器。*/
 typedef struct _abcdk_cuda_jpeg
@@ -108,10 +107,10 @@ ERR:
     return NULL;
 }
 
-abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const AVFrame *src)
+abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const abcdk_media_frame_t *src)
 {
     abcdk_object_t *dst;
-    AVFrame *tmp_src = NULL;
+    abcdk_media_frame_t *tmp_src = NULL;
     int src_in_host;
 
     assert(ctx != NULL && src != NULL);
@@ -135,7 +134,7 @@ abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const AVFrame *sr
     return ctx->encoder_ctx->update(src);
 }
 
-int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const AVFrame *src)
+int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const abcdk_media_frame_t *src)
 {
     int chk;
 
@@ -150,7 +149,7 @@ int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, cons
     return 0;
 }
 
-AVFrame *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size)
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size)
 {
     assert(ctx != NULL && src != NULL && src_size > 0);
 
@@ -159,7 +158,7 @@ AVFrame *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src
     return ctx->decoder_ctx->update(src,src_size);
 }
 
-AVFrame *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx,const void *src)
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx,const void *src)
 {
     assert(ctx != NULL && src != NULL);
 
@@ -168,6 +167,43 @@ AVFrame *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx,const void *src
     return ctx->decoder_ctx->update(src);
 }
 
+#else // __cuda_cuda_h__
 
-#endif // AVUTIL_AVUTIL_H
+void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return;
+}
+
+abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+
+abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const abcdk_media_frame_t *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const abcdk_media_frame_t *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx,const void *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
 #endif //__cuda_cuda_h__

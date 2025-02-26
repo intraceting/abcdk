@@ -11,7 +11,6 @@
 #include "video_encoder_aarch64.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 
 /**JPEG编解码器。*/
 typedef struct _abcdk_cuda_video
@@ -125,9 +124,9 @@ int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx,AVCodecContext *opt)
     return chk;
 }
 
-int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFrame *src)
+int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
 {
-    AVFrame *tmp_src = NULL;
+    abcdk_media_frame_t *tmp_src = NULL;
     int src_in_host;
     int chk;
 
@@ -137,16 +136,16 @@ int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFram
 
     if (src)
     {
-        src_in_host = (abcdk_cuda_avframe_memory_type(src) != CU_MEMORYTYPE_DEVICE);
+        src_in_host = (src->tag == ABCDK_MEDIA_TAG_HOST);
 
         if (src_in_host)
         {
-            tmp_src = abcdk_cuda_avframe_clone(0, src);
+            tmp_src = abcdk_cuda_frame_clone(0, src);
             if (!tmp_src)
                 return -1;
 
             chk = abcdk_cuda_video_encode(ctx, dst, tmp_src);
-            av_frame_free(&tmp_src);
+            abcdk_media_frame_free(&tmp_src);
 
             return chk;
         }
@@ -155,7 +154,7 @@ int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,AVPacket **dst, const AVFram
     return ctx->encoder_ctx->update(dst,src);
 }
 
-int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,AVFrame **dst, const AVPacket *src)
+int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
 {
     assert(ctx != NULL && dst != NULL);
 
@@ -164,5 +163,36 @@ int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,AVFrame **dst, const AVPacke
     return ctx->decoder_ctx->update(dst,src);
 }
 
-#endif // AVUTIL_AVUTIL_H
+#else //__cuda_cuda_h__
+
+void abcdk_cuda_video_destroy(abcdk_cuda_video_t **ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return ;
+}
+
+abcdk_cuda_video_t *abcdk_cuda_video_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+int abcdk_cuda_video_sync(abcdk_cuda_video_t *ctx,AVCodecContext *opt)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_video_encode(abcdk_cuda_video_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_video_decode(abcdk_cuda_video_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif //__cuda_cuda_h__

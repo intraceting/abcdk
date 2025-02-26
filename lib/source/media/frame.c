@@ -6,9 +6,24 @@
  */
 #include "abcdk/media/frame.h"
 
+static void _abcdk_media_frame_buffer_free_cb(void **ptr, int size)
+{
+    abcdk_heap_freep(ptr);
+}
+
+static int _abcdk_media_frame_buffer_alloc_cb(void **ptr, int size)
+{
+    *ptr = abcdk_heap_alloc(size);
+    if (*ptr)
+        return 0;
+
+    return -1;
+}
+
 static void _abcdk_media_frame_clear(abcdk_media_frame_t *ctx)
 {
-    abcdk_object_unref(&ctx->buf);
+    if (ctx->buffer_free_cb)
+        ctx->buffer_free_cb(&ctx->buf_ptr, ctx->buf_size);
 
     ctx->data[0] = ctx->data[1] = ctx->data[2] = ctx->data[3] = NULL;
     ctx->stride[0] = ctx->stride[1] = ctx->stride[2] = ctx->stride[3] = -1;
@@ -30,7 +45,7 @@ void abcdk_media_frame_free(abcdk_media_frame_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_object_unref(&ctx_p->buf);
+    _abcdk_media_frame_clear(ctx_p);
 
     abcdk_heap_free(ctx_p);
 }
@@ -47,19 +62,19 @@ abcdk_media_frame_t *abcdk_media_frame_alloc(uint32_t tag)
     
     _abcdk_media_frame_clear(ctx);
 
-    /*绑定TAG。*/
     ctx->tag = tag;
+    ctx->buffer_free_cb = _abcdk_media_frame_buffer_free_cb;
+    ctx->buffer_alloc_cb = _abcdk_media_frame_buffer_alloc_cb;
 
     return ctx;
 }
 
 int abcdk_media_frame_reset(abcdk_media_frame_t *ctx, int width, int height, int pixfmt, int align)
 {
-    int buf_size,chk_size;
     int chk;
 
     assert(ctx != NULL && width > 0 && height > 0 && pixfmt > 0);
-    assert(ctx->tag == ABCDK_MEDIA_TAG_HOST);
+    assert(ctx->tag == ABCDK_MEDIA_TAG_HOST || ctx->tag == ABCDK_MEDIA_TAG_CUDA);
 
     if(ctx->width == width || ctx->height == height || ctx->pixfmt == pixfmt)
         return 0;
@@ -70,23 +85,20 @@ int abcdk_media_frame_reset(abcdk_media_frame_t *ctx, int width, int height, int
     if (chk <= 0)
         goto ERR;
 
-    buf_size = abcdk_media_image_size(ctx->stride,height,pixfmt);
-    if(buf_size <=0)
+    ctx->buf_size = abcdk_media_image_size(ctx->stride,height,pixfmt);
+    if(ctx->buf_size <= 0)
         goto ERR;
 
-    ctx->buf = abcdk_object_alloc2(buf_size);
-    if (!ctx->buf)
+    chk = ctx->buffer_alloc_cb(&ctx->buf_ptr,ctx->buf_size);
+    if (chk != 0)
         goto ERR;
 
-    chk_size = abcdk_media_image_fill_pointer(ctx->data, ctx->stride, height, pixfmt, ctx->buf->pptrs[0]);
-    assert(chk_size == buf_size);
+    chk = abcdk_media_image_fill_pointer(ctx->data, ctx->stride, height, pixfmt, ctx->buf_ptr);
+    assert(chk == ctx->buf_size);
 
     ctx->width = width;
     ctx->height = height;
     ctx->pixfmt = pixfmt;
-
-    for (int i = 0; i < 4; i++)
-        ctx->stride[i] = stride[i];
 
     return 0;
 

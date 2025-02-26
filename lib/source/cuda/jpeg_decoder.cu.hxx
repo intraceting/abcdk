@@ -9,11 +9,10 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "jpeg_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 
 namespace abcdk
 {
@@ -42,15 +41,15 @@ namespace abcdk
 
                 virtual int open(abcdk_option_t *cfg) = 0;
 
-                virtual AVFrame * update(const void *src, int src_size) = 0;
+                virtual abcdk_media_frame_t * update(const void *src, int src_size) = 0;
 
-                virtual AVFrame * update(const void *src) = 0;
+                virtual abcdk_media_frame_t * update(const void *src) = 0;
             };
         } // namespace jpeg
     } // namespace cuda
 } // namespace abcdk
 
-#endif //AVUTIL_AVUTIL_H
+
 #endif // __cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_DECODER_HXX

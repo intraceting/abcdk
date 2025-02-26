@@ -11,10 +11,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/device.h"
-#include "abcdk/cuda/avutil.h"
-
-#ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
+#include "abcdk/cuda/frame.h"
 
 __BEGIN_DECLS
 
@@ -32,30 +29,28 @@ void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx);
 abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx);
 
 /**编码。 */
-abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const AVFrame *src);
+abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const abcdk_media_frame_t *src);
 
 /**
  * 编码。
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const AVFrame *src);
+int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const abcdk_media_frame_t *src);
 
 /**解码。 */
-AVFrame *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size);
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size);
 
 /**解码。 */
-AVFrame *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx, const void *src);
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx, const void *src);
 
 /**保存。*/
-int abcdk_cuda_jpeg_save(const char *dst, const AVFrame *src, CUcontext cuda_ctx);
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcontext cuda_ctx);
 
 /**加载。*/
-AVFrame *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx);
+abcdk_media_frame_t *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx);
 
 __END_DECLS
 
-#endif // AVUTIL_AVUTIL_H
-#endif //__cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_H

@@ -10,7 +10,6 @@
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"
 
-#ifdef __cuda_cuda_h__
 
 __BEGIN_DECLS
 
@@ -94,6 +93,5 @@ int abcdk_cuda_tensorproc_reshape_64f(int dst_packed, double *dst, size_t dst_b,
 
 __END_DECLS
 
-#endif //__cuda_cuda_h__
 
 #endif // ABCDK_CUDA_TENSORPROC_H

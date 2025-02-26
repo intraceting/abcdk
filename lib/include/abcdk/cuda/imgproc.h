@@ -20,7 +20,7 @@ __BEGIN_DECLS
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_stuff_8u(int channels, int packed, uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[1]);
+int abcdk_cuda_imgproc_stuff_8u(int channels, int packed, uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[]);
 
 /**
  * 全景图像融合(从左到右)。

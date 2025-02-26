@@ -44,4 +44,12 @@ int abcdk_cuda_imgproc_stuff_8u(int channels, int packed,uint8_t *dst, size_t wi
     return _abcdk_cuda_imgproc_stuff<uint8_t>(channels, packed, dst, width, pitch, height, scalar);
 }
 
+#else // __cuda_cuda_h__
+
+int abcdk_cuda_imgproc_stuff_8u(int channels, int packed,uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[])
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
 #endif // __cuda_cuda_h__

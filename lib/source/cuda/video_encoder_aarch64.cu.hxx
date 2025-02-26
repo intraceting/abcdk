@@ -9,7 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "abcdk/cuda/device.h"
 #include "video_encoder.cu.hxx"
 #include "video_util.cu.hxx"
@@ -73,7 +73,7 @@ namespace abcdk
             protected:
                 void GetSequenceParams(nvEncParam *param, std::vector<uint8_t> &seqParams)
                 {
-                    AVFrame *tmp;
+                    abcdk_media_frame_t *tmp;
                     std::vector<uint8_t> out;
 
                     /*创建一个图像，用于编码。*/
@@ -143,7 +143,7 @@ namespace abcdk
                     }
                 }
 
-                int encode(const AVFrame *img, std::vector<uint8_t> &out)
+                int encode(const abcdk_media_frame_t *img, std::vector<uint8_t> &out)
                 {
                     int frame_height[4] = {0};
                     nvFrame frame = {0};
@@ -305,9 +305,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(AVPacket **dst, const AVFrame *src)
+                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
                 {
-                    AVFrame *tmp_src = NULL;
+                    abcdk_media_frame_t *tmp_src = NULL;
                     std::vector<uint8_t> out;
                     int chk;
 

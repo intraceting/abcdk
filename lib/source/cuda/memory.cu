@@ -152,4 +152,49 @@ void *abcdk_cuda_copyfrom(const void *src, size_t size, int src_in_host)
     return NULL;
 }
 
+#else //__cuda_cuda_h__
+
+void abcdk_cuda_free(void **data)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+}
+
+void *abcdk_cuda_alloc(size_t size)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+void *abcdk_cuda_alloc_z(size_t size)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+void *abcdk_cuda_memset(void *dst, int val, size_t size)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
+int abcdk_cuda_memcpy(void *dst, int dst_in_host, const void *src, int src_in_host, size_t size)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y, int dst_in_host,
+                         const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y, int src_in_host,
+                         size_t roi_width_bytes, size_t roi_height)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+void *abcdk_cuda_copyfrom(const void *src, size_t size, int src_in_host)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return NULL;
+}
+
 #endif //__cuda_cuda_h__

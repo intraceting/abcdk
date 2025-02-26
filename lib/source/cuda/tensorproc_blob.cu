@@ -77,4 +77,25 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u(int channels,
     return _abcdk_cuda_tensorproc_blob<float, uint8_t>(channels, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
+#else //__cuda_cuda_h__
+
+int abcdk_cuda_tensorproc_blob_8u_to_32f(int channels,
+    int dst_packed, float *dst, size_t dst_ws,
+    int src_packed, uint8_t *src, size_t src_ws,
+    size_t w, size_t h, float scale[], float mean[], float std[])
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_tensorproc_blob_32f_to_8u(int channels,
+    int dst_packed, uint8_t *dst, size_t dst_ws,
+    int src_packed, float *src, size_t src_ws,
+    size_t w, size_t h, float scale[], float mean[], float std[])
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+
 #endif // __cuda_cuda_h__

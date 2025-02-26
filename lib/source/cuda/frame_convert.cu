@@ -55,7 +55,7 @@ static int _abcdk_cuda_frame_convert_cpu(abcdk_media_frame_t *dst, const abcdk_m
 
 static int _abcdk_cuda_frame_convert(abcdk_media_frame_t *dst, const abcdk_media_frame_t *src)
 {
-    AVFrame *tmp_dst = NULL, *tmp_src = NULL;
+    abcdk_media_frame_t *tmp_dst = NULL, *tmp_src = NULL;
     int dst_in_host, src_in_host;
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
     int chk;

@@ -9,7 +9,6 @@
 
 #include "abcdk/cuda/cuda.h"
 
-#ifdef __cuda_cuda_h__
 
 __BEGIN_DECLS
 
@@ -53,6 +52,6 @@ void *abcdk_cuda_copyfrom(const void *src, size_t size, int src_in_host);
 
 __END_DECLS
 
-#endif //__cuda_cuda_h__
+
 
 #endif // ABCDK_CUDA_MEMORY_H

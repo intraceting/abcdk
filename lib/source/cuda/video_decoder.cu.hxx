@@ -9,12 +9,10 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "video_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
-#ifdef AVCODEC_AVCODEC_H
 
 namespace abcdk
 {
@@ -43,15 +41,13 @@ namespace abcdk
 
                 virtual int sync(AVCodecContext *opt) = 0;
 
-                virtual int update(AVFrame **dst, const AVPacket *src) = 0;
+                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src) = 0;
             };
         } // namespace video
     } // namespace cuda
 } // namespace abcdk
 
 
-#endif // AVCODEC_AVCODEC_H
-#endif // AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
 #endif // ABCDK_CUDA_VIDEO_DECODER_HXX
