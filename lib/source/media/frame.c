@@ -15,7 +15,6 @@ static void _abcdk_media_frame_clear(abcdk_media_frame_t *ctx)
     ctx->width = -1;
     ctx->height = -1;
     ctx->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
-    ctx->tag = ABCDK_MEDIA_TAG_HOST;
     ctx->buf = NULL;
     ctx->dts = -1;
     ctx->pts = -1;
@@ -36,15 +35,20 @@ void abcdk_media_frame_free(abcdk_media_frame_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_media_frame_t *abcdk_media_frame_alloc()
+abcdk_media_frame_t *abcdk_media_frame_alloc(uint32_t tag)
 {
     abcdk_media_frame_t *ctx;
+
+    assert(tag == ABCDK_MEDIA_TAG_HOST || tag == ABCDK_MEDIA_TAG_CUDA);
 
     ctx = (abcdk_media_frame_t *)abcdk_heap_alloc(sizeof(abcdk_media_frame_t));
     if (!ctx)
         return NULL;
     
     _abcdk_media_frame_clear(ctx);
+
+    /*绑定TAG。*/
+    ctx->tag = tag;
 
     return ctx;
 }
@@ -81,6 +85,9 @@ int abcdk_media_frame_reset(abcdk_media_frame_t *ctx, int width, int height, int
     ctx->height = height;
     ctx->pixfmt = pixfmt;
 
+    for (int i = 0; i < 4; i++)
+        ctx->stride[i] = stride[i];
+
     return 0;
 
 ERR:
@@ -90,50 +97,25 @@ ERR:
     return -1;
 }
 
-abcdk_media_frame_t *abcdk_media_frame_clone(const abcdk_media_frame_t *src)
+abcdk_media_frame_t *abcdk_media_frame_create(int width, int height, int pixfmt, int align)
 {
-    abcdk_media_frame_t *dst;
+    abcdk_media_frame_t *ctx;
     int chk;
 
-    assert(src != NULL);
+    assert(width > 0 && height > 0 && pixfmt > 0);
 
-    dst = abcdk_media_frame_alloc();
-    if (!dst)
+    ctx = abcdk_media_frame_alloc(ABCDK_MEDIA_TAG_HOST);
+    if (!ctx)
         return NULL;
 
-    chk = abcdk_media_frame_reset(dst, src->width, src->height, src->pixfmt, 1);
+    chk = abcdk_media_frame_reset(ctx, width, height, pixfmt, 1);
     if(chk != 0)
     {
-        abcdk_media_frame_free(&dst);
+        abcdk_media_frame_free(&ctx);
         return NULL;
     }
 
-    abcdk_media_image_copy(dst->data, dst->stride, (const uint8_t **)src->data, src->stride, src->width, src->height, src->pixfmt);
-
-    return dst;
-}
-
-abcdk_media_frame_t *abcdk_media_frame_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt)
-{
-    abcdk_media_frame_t *dst;
-    int chk;
-
-    assert(src_data != NULL && src_stride != NULL && src_width > 0 && src_height > 0 && src_pixfmt > 0);
-
-    dst = abcdk_media_frame_alloc();
-    if (!dst)
-        return NULL;
-
-    chk = abcdk_media_frame_reset(dst, src_width, src_height, src_pixfmt, 1);
-    if(chk != 0)
-    {
-        abcdk_media_frame_free(&dst);
-        return NULL;
-    }
-
-    abcdk_media_image_copy(dst->data, dst->stride, src_data, src_stride, src_width, src_height, src_pixfmt);
-
-    return dst;
+    return ctx;
 }
 
 int abcdk_media_frame_save(const char *dst, const abcdk_media_frame_t *src)
@@ -142,6 +124,7 @@ int abcdk_media_frame_save(const char *dst, const abcdk_media_frame_t *src)
     int chk;
 
     assert(dst != NULL && src != NULL);
+    assert(src->tag == ABCDK_MEDIA_TAG_HOST);
 
     src_bit_depth = abcdk_media_pixfmt_channels(src->pixfmt) * 8;
 
@@ -153,4 +136,58 @@ int abcdk_media_frame_save(const char *dst, const abcdk_media_frame_t *src)
         return -1;
 
     return 0;
+}
+
+int abcdk_media_frame_copy(abcdk_media_frame_t *dst, const abcdk_media_frame_t *src)
+{
+    int chk;
+    
+    assert(dst != NULL && src != NULL);
+    assert(dst->tag == ABCDK_MEDIA_TAG_HOST);
+    assert(src->tag == ABCDK_MEDIA_TAG_HOST);
+    assert(dst->width ==  src->width);
+    assert(dst->height ==  src->height);
+    assert(dst->pixfmt ==  src->pixfmt);
+
+    /*复制图像数据。*/
+    abcdk_media_image_copy(dst->data, dst->stride, (const uint8_t **)src->data, src->stride, src->width, src->height, src->pixfmt);
+    
+    /*复制其它数据。*/
+    dst->dts = src->dts;
+    dst->pts = src->pts;
+
+    return 0;
+}
+
+abcdk_media_frame_t *abcdk_media_frame_clone(const abcdk_media_frame_t *src)
+{
+    abcdk_media_frame_t *dst;
+    int chk;
+
+    assert(src != NULL);
+    assert(src->tag == ABCDK_MEDIA_TAG_HOST);
+
+    dst = abcdk_media_frame_create(src->width, src->height, src->pixfmt, 1);
+    if(!dst)
+        return NULL;
+    
+    abcdk_media_frame_copy(dst,src);
+
+    return dst;
+}
+
+abcdk_media_frame_t *abcdk_media_frame_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt)
+{
+    abcdk_media_frame_t *dst;
+    int chk;
+
+    assert(src_data != NULL && src_stride != NULL && src_width > 0 && src_height > 0 && src_pixfmt > 0);
+
+    dst = abcdk_media_frame_create(src_width, src_height, src_pixfmt, 1);
+    if (!dst)
+        return NULL;
+
+    abcdk_media_image_copy(dst->data, dst->stride, src_data, src_stride, src_width, src_height, src_pixfmt);
+
+    return dst;
 }

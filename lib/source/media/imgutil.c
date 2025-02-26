@@ -14,22 +14,27 @@ static int _abcdk_meida_image_fill_height(int heights[4], int height, int pixfmt
     switch (pixfmt)
     {
     case ABCDK_MEDIA_PIXFMT_YUV420P:
+    case ABCDK_MEDIA_PIXFMT_YUVJ420P:
     case ABCDK_MEDIA_PIXFMT_I420:
     case ABCDK_MEDIA_PIXFMT_YV12:
     case ABCDK_MEDIA_PIXFMT_NV12:
     case ABCDK_MEDIA_PIXFMT_NV21:
-        heights[1] = heights[2] = (height + 1) / 2;
+        heights[1] = heights[2] = (height + 1) / 2;  // UV 高度向上取整
         break;
     case ABCDK_MEDIA_PIXFMT_YUV422P:
+    case ABCDK_MEDIA_PIXFMT_YUVJ422P:
     case ABCDK_MEDIA_PIXFMT_YUYV:
     case ABCDK_MEDIA_PIXFMT_UYVY:
     case ABCDK_MEDIA_PIXFMT_NV16:
-    case ABCDK_MEDIA_PIXFMT_YUV411P:
-        heights[1] = heights[2] = height;
+        heights[1] = heights[2] = height;  // 4:2:2 格式，UV 高度与 Y 相同
         break;
     case ABCDK_MEDIA_PIXFMT_YUV444P:
+    case ABCDK_MEDIA_PIXFMT_YUVJ444P:
     case ABCDK_MEDIA_PIXFMT_NV24:
-        heights[1] = heights[2] = height;
+        heights[1] = heights[2] = height;  // 4:4:4 格式，UV 高度与 Y 相同
+        break;
+    case ABCDK_MEDIA_PIXFMT_YUV411P:
+        heights[1] = heights[2] = (height + 3) / 4;  // UV 高度向上取整
         break;
     case ABCDK_MEDIA_PIXFMT_RGB24:
     case ABCDK_MEDIA_PIXFMT_BGR24:
@@ -37,7 +42,7 @@ static int _abcdk_meida_image_fill_height(int heights[4], int height, int pixfmt
     case ABCDK_MEDIA_PIXFMT_BGR32:
     case ABCDK_MEDIA_PIXFMT_GRAY8:
     case ABCDK_MEDIA_PIXFMT_GRAYF32:
-        heights[0] = height;
+        /*heights[0] = height;*/
         break;
     default:
         return -1;
@@ -55,13 +60,6 @@ static int _abcdk_meida_image_fill_height(int heights[4], int height, int pixfmt
     return 0;
 }
 
-int abcdk_media_image_fill_height(int heights[4], int height, int pixfmt)
-{
-    assert(heights != NULL && height > 0 && pixfmt > 0);
-
-    return _abcdk_meida_image_fill_height(heights, height, pixfmt);
-}
-
 static int _abcdk_meida_image_fill_stride(int stride[4], int width, int pixfmt)
 {
     stride[0] = width;
@@ -70,24 +68,27 @@ static int _abcdk_meida_image_fill_stride(int stride[4], int width, int pixfmt)
     switch (pixfmt)
     {
     case ABCDK_MEDIA_PIXFMT_YUV420P:
+    case ABCDK_MEDIA_PIXFMT_YUVJ420P:
     case ABCDK_MEDIA_PIXFMT_I420:
     case ABCDK_MEDIA_PIXFMT_YV12:
     case ABCDK_MEDIA_PIXFMT_NV12:
     case ABCDK_MEDIA_PIXFMT_NV21:
-        stride[1] = stride[2] = (width + 1) / 2;
+        stride[1] = stride[2] = (width + 1) / 2;  // UV 步长向上取整
         break;
     case ABCDK_MEDIA_PIXFMT_YUV422P:
+    case ABCDK_MEDIA_PIXFMT_YUVJ422P:
     case ABCDK_MEDIA_PIXFMT_YUYV:
     case ABCDK_MEDIA_PIXFMT_UYVY:
     case ABCDK_MEDIA_PIXFMT_NV16:
-        stride[1] = stride[2] = (width + 1) / 2;
+        stride[1] = stride[2] = width;  // 4:2:2 格式，UV 步长与 Y 相同
         break;
     case ABCDK_MEDIA_PIXFMT_YUV444P:
+    case ABCDK_MEDIA_PIXFMT_YUVJ444P:
     case ABCDK_MEDIA_PIXFMT_NV24:
-        stride[1] = stride[2] = width;
+        stride[1] = stride[2] = width;  // 4:4:4 格式，UV 步长与 Y 相同
         break;
     case ABCDK_MEDIA_PIXFMT_YUV411P:
-        stride[1] = stride[2] = (width + 3) / 4;
+        stride[1] = stride[2] = (width + 3) / 4;  // UV 步长向上取整
         break;
     case ABCDK_MEDIA_PIXFMT_RGB24:
     case ABCDK_MEDIA_PIXFMT_BGR24:
@@ -117,6 +118,13 @@ static int _abcdk_meida_image_fill_stride(int stride[4], int width, int pixfmt)
         return 1;
 
     return 0;
+}
+
+int abcdk_media_image_fill_height(int heights[4], int height, int pixfmt)
+{
+    assert(heights != NULL && height > 0 && pixfmt > 0);
+
+    return _abcdk_meida_image_fill_height(heights, height, pixfmt);
 }
 
 int abcdk_media_image_fill_stride(int stride[4], int width, int pixfmt, int align)
