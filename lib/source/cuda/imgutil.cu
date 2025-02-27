@@ -18,7 +18,7 @@ int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_
 
     assert(dst_data != NULL && dst_stride != NULL);
     assert(src_data != NULL && src_stride != NULL);
-    assert(width > 0 && height > 0 && pixfmt > 0);
+    assert(width > 0 && height > 0 && pixfmt >= 0);
 
     abcdk_media_imgutil_fill_stride(real_stride, width, pixfmt, 1);
     abcdk_media_imgutil_fill_height(real_height, height, pixfmt);
