@@ -9,7 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
+#include "abcdk/cuda/image.h"
 #include "abcdk/cuda/device.h"
 #include "jpeg_decoder.cu.hxx"
 
@@ -145,19 +145,16 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_media_jpeg_param_t *param)
+                virtual int open(abcdk_media_jcodec_param_t *param)
                 {
-                    int device;
                     cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
                     nvjpegDevAllocator_t dev_allocator = {0};
                     nvjpegPinnedAllocator_t pinned_allocator = {0};
                     
-                    assert(param == NULL);
+                    assert(param != NULL);
                     
                     check_memory_leak_version();
 
@@ -183,9 +180,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual abcdk_media_frame_t *update(const void *src, int src_size)
+                virtual abcdk_media_image_t *update(const void *src, int src_size)
                 {
-                    abcdk_media_frame_t *dst;
+                    abcdk_media_image_t *dst;
                     nvjpegImage_t dst_data = {0};
                     int components;
                     nvjpegChromaSubsampling_t subsampling;
@@ -202,18 +199,15 @@ namespace abcdk
                     
                     /*全部转成RGB和GRAY。*/
                     if (components == 3)
-                        dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_RGB24, 1);//只使用第一层的宽和高。
+                        dst = abcdk_cuda_image_create(width[0], height[0], ABCDK_MEDIA_PIXFMT_RGB24, 1);//只使用第一层的宽和高。
                     else if (components == 1)
-                        dst = abcdk_cuda_avframe_alloc(width[0], height[0], AV_PIX_FMT_GRAY8, 1);
+                        dst = abcdk_cuda_image_create(width[0], height[0], ABCDK_MEDIA_PIXFMT_GRAY8, 1);
                     else
                         return NULL;
 
-                    for (int i = 0; i < 4; i++)
-                    {
-                        dst_data.channel[i] = dst->data[i];
-                        dst_data.pitch[i] = dst->linesize[i];
-                    }
-
+                    dst_data.channel[0] = dst->data[0];
+                    dst_data.pitch[0] = dst->stride[0];
+                    
                     if (components == 3)
                         jpeg_chk = nvjpegDecode(m_ctx, m_state, (uint8_t *)src, src_size, NVJPEG_OUTPUT_RGBI, &dst_data, m_stream);
                     else if (components == 1)
@@ -228,14 +222,14 @@ namespace abcdk
 
                 ERR:
 
-                    av_frame_free(&dst);
+                    abcdk_media_image_free(&dst);
                     return NULL;
                 }
 
-                virtual abcdk_media_frame_t *update(const void *src)
+                virtual abcdk_media_image_t *update(const void *src)
                 {
                     abcdk_object_t *src_data;
-                    abcdk_media_frame_t *dst;
+                    abcdk_media_image_t *dst;
 
                     assert(src != NULL);
 

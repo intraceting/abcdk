@@ -30,6 +30,8 @@ void abcdk_media_image_free(abcdk_media_image_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
+    assert(ctx_p->tag == ABCDK_MEDIA_TAG_HOST || ctx_p->tag == ABCDK_MEDIA_TAG_CUDA);
+
     if (ctx_p->buffer_free_cb)
         ctx_p->buffer_free_cb(&ctx_p->buf_ptr, ctx_p->buf_size);
 
@@ -62,7 +64,7 @@ int abcdk_media_image_reset(abcdk_media_image_t *ctx, int width, int height, int
 {
     int chk;
 
-    assert(ctx != NULL && width > 0 && height > 0 && pixfmt > 0);
+    assert(ctx != NULL && width > 0 && height > 0 && pixfmt >= 0);
     assert(ctx->tag == ABCDK_MEDIA_TAG_HOST || ctx->tag == ABCDK_MEDIA_TAG_CUDA);
 
     if (ctx->width == width || ctx->height == height || ctx->pixfmt == pixfmt)
@@ -104,13 +106,13 @@ abcdk_media_image_t *abcdk_media_image_create(int width, int height, int pixfmt,
     abcdk_media_image_t *ctx;
     int chk;
 
-    assert(width > 0 && height > 0 && pixfmt > 0);
+    assert(width > 0 && height > 0 && pixfmt >= 0);
 
     ctx = abcdk_media_image_alloc(ABCDK_MEDIA_TAG_HOST);
     if (!ctx)
         return NULL;
 
-    chk = abcdk_media_image_reset(ctx, width, height, pixfmt, 1);
+    chk = abcdk_media_image_reset(ctx, width, height, pixfmt, align);
     if(chk != 0)
     {
         abcdk_media_image_free(&ctx);
@@ -119,7 +121,6 @@ abcdk_media_image_t *abcdk_media_image_create(int width, int height, int pixfmt,
 
     return ctx;
 }
-
 
 int abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src)
 {
@@ -173,7 +174,7 @@ int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src)
 
         /*转格式成功后继续执行保存操作。*/
         if(chk == 0)
-            chk = abcdk_cuda_image_save(dst,tmp_src);
+            chk = abcdk_media_image_save(dst,tmp_src);
 
         abcdk_media_image_free(&tmp_src);
         return chk;

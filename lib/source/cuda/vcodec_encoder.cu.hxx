@@ -7,11 +7,9 @@
 #ifndef ABCDK_CUDA_VCODEC_ENCODER_HXX
 #define ABCDK_CUDA_VCODEC_ENCODER_HXX
 
-#include "abcdk/util/option.h"
-#include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
-#include "abcdk/media/packet.h"
 #include "abcdk/media/vcodec.h"
+#include "abcdk/cuda/cuda.h"
+#include "abcdk/cuda/image.h"
 #include "vcodec_util.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -41,7 +39,7 @@ namespace abcdk
 
                 virtual int open(abcdk_media_vcodec_param_t *param) = 0;
 
-                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src) = 0;
+                virtual int update(abcdk_object_t **dst, const abcdk_media_image_t *src) = 0;
             };
         } // namespace vcodec
     } // namespace cuda

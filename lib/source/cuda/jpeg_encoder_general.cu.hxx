@@ -9,7 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
+#include "abcdk/cuda/image.h"
 #include "abcdk/cuda/device.h"
 #include "jpeg_encoder.cu.hxx"
 
@@ -94,13 +94,13 @@ namespace abcdk
                         cuCtxPopCurrent(NULL);
                 }
 
-                virtual int open(abcdk_media_jpeg_param_t *param)
+                virtual int open(abcdk_media_jcodec_param_t *param)
                 {
                     int quality;
                     cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
 
-                    assert(param == NULL);
+                    assert(param != NULL);
 
                     quality = ABCDK_CLAMP(param->quality, 1, 99);
 
@@ -122,10 +122,10 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual abcdk_media_packet_t *update(const abcdk_media_frame_t *src)
+                virtual abcdk_object_t *update(const abcdk_media_image_t *src)
                 {
-                    abcdk_media_frame_t *tmp_src = NULL;
-                    abcdk_media_packet_t *dst;
+                    abcdk_media_image_t *tmp_src = NULL;
+                    abcdk_object_t *dst;
                     size_t dst_size = 0;
                     nvjpegImage_t src_data = {0};
                     nvjpegStatus_t jpeg_chk;
@@ -135,28 +135,28 @@ namespace abcdk
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
-                    if (src->format != ABCDK_MEDIA_PIXFMT_RGB24 && src->format !=  ABCDK_MEDIA_PIXFMT_BGR24)
+                    if (src->pixfmt != ABCDK_MEDIA_PIXFMT_RGB24 && src->pixfmt !=  ABCDK_MEDIA_PIXFMT_BGR24)
                     {
-                        tmp_src = abcdk_cuda_frame_create(src->width, src->height,  ABCDK_MEDIA_PIXFMT_RGB24, 1);
+                        tmp_src = abcdk_cuda_image_create(src->width, src->height,  ABCDK_MEDIA_PIXFMT_RGB24, 1);
                         if (!tmp_src)
                             return NULL;
 
-                        chk = abcdk_cuda_frame_convert(tmp_src, src); // 转换格式。
+                        chk = abcdk_cuda_image_convert(tmp_src, src); // 转换格式。
 
                         if (chk == 0)
                             dst = update(tmp_src);
 
-                        abcdk_media_frame_free(&tmp_src);
+                        abcdk_media_image_free(&tmp_src);
 
                         return dst;
                     }
 
                     src_data.channel[0] = src->data[0];
-                    src_data.pitch[0] = src->linesize[0];
+                    src_data.pitch[0] = src->stride[0];
                     
-                    if (src->format ==  ABCDK_MEDIA_PIXFMT_RGB24)
+                    if (src->pixfmt ==  ABCDK_MEDIA_PIXFMT_RGB24)
                         jpeg_chk = nvjpegEncodeImage(m_ctx, m_state, m_params, &src_data, NVJPEG_INPUT_RGBI, src->width, src->height, m_stream);
-                    else if (src->format == ABCDK_MEDIA_PIXFMT_BGR24)
+                    else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_BGR24)
                         jpeg_chk = nvjpegEncodeImage(m_ctx, m_state, m_params, &src_data, NVJPEG_INPUT_BGRI, src->width, src->height, m_stream);
 
                     if(jpeg_chk != NVJPEG_STATUS_SUCCESS)
@@ -167,23 +167,24 @@ namespace abcdk
                         return NULL;
 
            
-                    dst = abcdk_media_packet_create(dst_size);
+                    dst = abcdk_object_alloc2(dst_size);
                     if(!dst)
                         return NULL;
 
-                    jpeg_chk = nvjpegEncodeRetrieveBitstream(m_ctx, m_state,dst->data, &dst_size, m_stream);
+                    jpeg_chk = nvjpegEncodeRetrieveBitstream(m_ctx, m_state,dst->pptrs[0], &dst_size, m_stream);
                     if(jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         goto ERR;
 
                     return dst;
 
                 ERR:
-                    abcdk_media_packet_free(&dst);
+
+                    abcdk_object_unref(&dst);
 
                     return NULL;
                 }
 
-                virtual int update(const char *dst, const abcdk_media_frame_t *src)
+                virtual int update(const char *dst, const abcdk_media_image_t *src)
                 {
                     abcdk_object_t *dst_data;
                     ssize_t save_chk;
@@ -212,7 +213,6 @@ namespace abcdk
 } // namespace abcdk
 
 #endif //__x86_64__
-#endif //AVUTIL_AVUTIL_H
 #endif // __cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_ENCODER_GENERAL_HXX

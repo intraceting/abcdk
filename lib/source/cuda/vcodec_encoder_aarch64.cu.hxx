@@ -7,12 +7,10 @@
 #ifndef ABCDK_CUDA_VCODEC_ENCODER_AARCH64_HXX
 #define ABCDK_CUDA_VCODEC_ENCODER_AARCH64_HXX
 
-#include "abcdk/util/option.h"
-#include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
-#include "abcdk/cuda/device.h"
-#include "abcdk/media/packet.h"
 #include "abcdk/media/vcodec.h"
+#include "abcdk/cuda/cuda.h"
+#include "abcdk/cuda/image.h"
+#include "abcdk/cuda/device.h"
 #include "vcodec_encoder.cu.hxx"
 #include "vcodec_util.cu.hxx"
 
@@ -73,7 +71,7 @@ namespace abcdk
             protected:
                 void GetSequenceParams(nvEncParam *param, std::vector<uint8_t> &seqParams)
                 {
-                    abcdk_media_frame_t *tmp;
+                    abcdk_media_image_t *tmp;
                     std::vector<uint8_t> out;
 
                     /*创建一个图像，用于编码。*/
@@ -143,7 +141,7 @@ namespace abcdk
                     }
                 }
 
-                int encode(const abcdk_media_frame_t *img, std::vector<uint8_t> &out)
+                int encode(const abcdk_media_image_t *img, std::vector<uint8_t> &out)
                 {
                     int frame_height[4] = {0};
                     nvFrame frame = {0};
@@ -299,9 +297,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
+                virtual int update(abcdk_object_t **dst, const abcdk_media_image_t *src)
                 {
-                    abcdk_media_frame_t *tmp_src = NULL;
+                    abcdk_media_image_t *tmp_src = NULL;
                     std::vector<uint8_t> out;
                     int chk;
 
@@ -345,18 +343,18 @@ namespace abcdk
                     if (out.size() <= 0)
                         return 0;
 
-                    *dst = av_packet_alloc();
-                    if (!*dst)
-                        return -1;
+                    // *dst = av_packet_alloc();
+                    // if (!*dst)
+                    //     return -1;
 
-                    chk = av_grow_packet(*dst, out.size());
-                    if (chk != 0)
-                    {
-                        av_packet_free(dst);
-                        return -1;
-                    }
+                    // chk = av_grow_packet(*dst, out.size());
+                    // if (chk != 0)
+                    // {
+                    //     av_packet_free(dst);
+                    //     return -1;
+                    // }
 
-                    memcpy((*dst)->data, out.data(), out.size());
+                    // memcpy((*dst)->data, out.data(), out.size());
 
                     return 1;
                 }

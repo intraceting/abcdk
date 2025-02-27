@@ -7,8 +7,8 @@
 #ifndef ABCDK_CUDA_VCODEC_UTIL_HXX
 #define ABCDK_CUDA_VCODEC_UTIL_HXX
 
-#include "abcdk/cuda/cuda.h"
 #include "abcdk/media/vcodec.h"
+#include "abcdk/cuda/cuda.h"
 #include "context_robot.cu.hxx"
 
 #ifdef __x86_64__

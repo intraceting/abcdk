@@ -171,7 +171,7 @@ typedef struct _abcdk_media_vcodec
     uint32_t tag;
 
     /**私有环境释放。*/
-    int (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
+    void (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
 
 } abcdk_media_vcodec_t;
 

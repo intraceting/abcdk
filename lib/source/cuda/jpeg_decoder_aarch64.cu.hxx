@@ -9,7 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
+#include "abcdk/cuda/image.h"
 #include "jpeg_decoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -76,19 +76,13 @@ namespace abcdk
                         cuCtxPopCurrent(NULL);
                 }
 
-                virtual int open(abcdk_media_jpeg_param_t *param)
+                virtual int open(abcdk_media_jcodec_param_t *param)
                 {
-                    int device;
                     cudaError_t cuda_chk;
-                    assert(m_cfg == NULL);
 
-                    m_cfg = abcdk_option_alloc("--");
-                    if (!m_cfg)
-                        return -1;
+                    assert(param != NULL);
 
-                    if (cfg)
-                        abcdk_option_merge(m_cfg, cfg);
-
+      
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
                     m_ctx = NvJPEGDecoder::createJPEGDecoder("jpegdec");
@@ -98,9 +92,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual abcdk_media_frame_t * update(const void *src, int src_size)
+                virtual abcdk_media_image_t * update(const void *src, int src_size)
                 {
-                    abcdk_media_frame_t *dst;
+                    abcdk_media_image_t *dst;
                     NvBuffer *buffer = NULL;
                     uint32_t pixfmt = 0, width = 0,height = 0;
                     int chk;
@@ -137,10 +131,10 @@ namespace abcdk
                     return dst;
                 }
 
-                virtual abcdk_media_frame_t * update(const void *src)
+                virtual abcdk_media_image_t * update(const void *src)
                 {
                     abcdk_object_t *src_data;
-                    abcdk_media_frame_t *dst;
+                    abcdk_media_image_t *dst;
 
                     assert(src != NULL);
 

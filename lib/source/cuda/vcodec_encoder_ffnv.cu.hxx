@@ -7,12 +7,10 @@
 #ifndef ABCDK_CUDA_VCODEC_ENCODER_FFNV_HXX
 #define ABCDK_CUDA_VCODEC_ENCODER_FFNV_HXX
 
-#include "abcdk/util/option.h"
+#include "abcdk/media/vcodec.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/device.h"
-#include "abcdk/cuda/frame.h"
-#include "abcdk/media/packet.h"
-#include "abcdk/media/vcodec.h"
+#include "abcdk/cuda/image.h"
 #include "vcodec_encoder.cu.hxx"
 #include "vcodec_util.cu.hxx"
 
@@ -68,7 +66,7 @@ namespace abcdk
 
                 std::vector<NV_ENC_OUTPUT_PTR> m_vBitstreamOutputBuffer;
 
-                std::vector<abcdk_media_frame_t *> m_vInputFrames;
+                std::vector<abcdk_media_image_t *> m_vInputFrames;
                 std::vector<NV_ENC_REGISTERED_PTR> m_vRegisteredResources;
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedInputBuffers;
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedRefBuffers;
@@ -355,7 +353,7 @@ namespace abcdk
                     }
                 }
 
-                int encode(const abcdk_media_frame_t *img, std::vector<std::vector<uint8_t>> &out)
+                int encode(const abcdk_media_image_t *img, std::vector<std::vector<uint8_t>> &out)
                 {
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
@@ -535,9 +533,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
+                virtual int update(abcdk_object_t **dst, const abcdk_media_image_t *src)
                 {
-                    abcdk_media_frame_t *tmp_src = NULL;
+                    abcdk_media_image_t *tmp_src = NULL;
                     std::vector<std::vector<uint8_t>> out;
                     int dst_off = 0;
                     int chk;
@@ -584,22 +582,22 @@ namespace abcdk
                     if (out.size() <= 0)
                         return 0;
 
-                    *dst = av_packet_alloc();
-                    if (!*dst)
-                        return -1;
+                    // *dst = av_packet_alloc();
+                    // if (!*dst)
+                    //     return -1;
 
-                    for (int j = 0; j < out.size(); j++)
-                    {
-                        chk = av_grow_packet(*dst, out[j].size());
-                        if (chk != 0)
-                        {
-                            av_packet_free(dst);
-                            return -1;
-                        }
+                    // for (int j = 0; j < out.size(); j++)
+                    // {
+                    //     chk = av_grow_packet(*dst, out[j].size());
+                    //     if (chk != 0)
+                    //     {
+                    //         av_packet_free(dst);
+                    //         return -1;
+                    //     }
 
-                        memcpy(ABCDK_PTR2VPTR((*dst)->data, dst_off), out[j].data(), out[j].size());
-                        dst_off += out[j].size();
-                    }
+                    //     memcpy(ABCDK_PTR2VPTR((*dst)->data, dst_off), out[j].data(), out[j].size());
+                    //     dst_off += out[j].size();
+                    // }
 
                     return 1;
                 }

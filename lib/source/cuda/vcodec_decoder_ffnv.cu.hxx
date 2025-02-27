@@ -8,9 +8,9 @@
 #define ABCDK_CUDA_VCODEC_DECODER_FFNV_HXX
 
 #include "abcdk/util/queue.h"
-#include "abcdk/util/option.h"
+#include "abcdk/media/vcodec.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
+#include "abcdk/cuda/image.h"
 #include "abcdk/cuda/device.h"
 #include "vcodec_decoder.cu.hxx"
 #include "vcodec_util.cu.hxx"
@@ -101,7 +101,7 @@ namespace abcdk
 
                 static void frame_queue_destroy_cb(void *msg)
                 {
-                    av_frame_free((abcdk_media_frame_t **)&msg);
+                    av_frame_free((abcdk_media_image_t **)&msg);
                 }
 
             private:
@@ -245,7 +245,7 @@ namespace abcdk
                     enum AVPixelFormat pixfmt;
                     uint8_t *src_data[4] = {0};
                     int src_linesize[4] = {0};
-                    abcdk_media_frame_t *frame_src;
+                    abcdk_media_image_t *frame_src;
                     CUresult cuda_chk;
                     int chk;
 
@@ -392,7 +392,7 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
+                virtual int update(abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
                 {
                     CUVIDSOURCEDATAPACKET packet = {0};
                     CUresult cuda_chk;
@@ -421,7 +421,7 @@ namespace abcdk
                     if (dst)
                     {
                         abcdk_queue_lock(m_frame_queue);
-                        *dst = (abcdk_media_frame_t *)abcdk_queue_pop(m_frame_queue);
+                        *dst = (abcdk_media_image_t *)abcdk_queue_pop(m_frame_queue);
                         abcdk_queue_unlock(m_frame_queue);
 
                         if (*dst)

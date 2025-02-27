@@ -32,7 +32,7 @@ int abcdk_media_vcodec_to_ffmpeg(int format)
 {
     struct _abcdk_media_vcodec_ffmpeg_dict *p;
 
-    assert(format > 0);
+    assert(format >= 0);
 
     for (int i = 0; i < ABCDK_ARRAY_SIZE(abcdk_media_vcodec_ffmpeg_dict); i++)
     {
@@ -49,7 +49,7 @@ int abcdk_media_vcodec_from_ffmpeg(int format)
 {
     struct _abcdk_media_vcodec_ffmpeg_dict *p;
 
-    assert(format > 0);
+    assert(format >= 0);
 
     for (int i = 0; i < ABCDK_ARRAY_SIZE(abcdk_media_vcodec_ffmpeg_dict); i++)
     {

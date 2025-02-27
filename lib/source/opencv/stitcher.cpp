@@ -219,7 +219,7 @@ int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const
     return -1;
 }
 
-int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_media_frame_t *img[], abcdk_media_frame_t *mask[], float good_threshold)
+int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_media_image_t *img[], abcdk_media_image_t *mask[], float good_threshold)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;
@@ -231,7 +231,7 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
     return -1;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_frame_t **out, int count, abcdk_media_frame_t *img[])
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t **out, int count, abcdk_media_image_t *img[])
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;

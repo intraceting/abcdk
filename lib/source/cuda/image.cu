@@ -41,13 +41,13 @@ abcdk_media_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, 
     abcdk_media_image_t *ctx;
     int chk;
 
-    assert(width > 0 && height > 0 && pixfmt > 0);
+    assert(width > 0 && height > 0 && pixfmt >= 0);
 
     ctx = abcdk_cuda_image_alloc();
     if (!ctx)
         return NULL;
 
-    chk = abcdk_media_image_reset(ctx, width, height, pixfmt, 1);
+    chk = abcdk_media_image_reset(ctx, width, height, pixfmt, align);
     if(chk != 0)
     {
         abcdk_media_image_free(&ctx);

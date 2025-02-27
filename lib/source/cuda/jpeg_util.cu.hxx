@@ -8,7 +8,7 @@
 #define ABCDK_CUDA_JPEG_UTIL_HXX
 
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
+#include "abcdk/cuda/image.h"
 #include "context_robot.cu.hxx"
 
 #ifdef __aarch64__

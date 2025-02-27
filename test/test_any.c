@@ -1646,6 +1646,42 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
+    for (int i = 0; i < ABCDK_MEDIA_PIXFMT_GRAYF32; i++)
+    {
+        // abcdk_media_image_t a = {0} ,b = {0};
+
+        int c = abcdk_media_pixfmt_to_ffmpeg(i);
+        if(c < 0)
+            continue;
+            
+        for (int h = 1; h < 100; h++)
+        {
+            for (int w = 1; w < 100; w++)
+            {
+                int a = abcdk_media_imgutil_size2(w, h, i, 123);
+
+                    
+
+                int b = abcdk_avimage_size2(w, h, (enum AVPixelFormat)c, 123);
+
+                if(a != b)
+                {
+                    abcdk_media_image_t a2 = {0} ,b2 = {0};
+
+                    abcdk_media_imgutil_fill_stride(a2.stride,w,i,123);
+                    abcdk_avimage_fill_strides(b2.stride,w,h,c,123);
+
+                    abcdk_media_image_t a22 = {0} ,b22 = {0};
+
+                    abcdk_media_imgutil_fill_height(a22.stride,h,i);
+                    abcdk_avimage_fill_heights(b22.stride,h,c);
+
+                    break;
+                }
+            }
+        }
+    }
+
 #endif 
     return 0;
 }

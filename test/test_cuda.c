@@ -11,53 +11,44 @@
 #include <locale.h>
 #include "entry.h"
 
-// environ
-
-#ifdef HAVE_CUDA
-#ifdef HAVE_FFMPEG
+#ifdef  HAVE_CUDA 
 
 int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 {
     int chk;
 
-    // AVFrame *a = abcdk_cuda_avframe_alloc(100,1000,AV_PIX_FMT_YUV420P,1);
-    // AVFrame *b = abcdk_avframe_alloc(100,1000,AV_PIX_FMT_YUV420P,1);
-    // AVFrame *a = abcdk_cuda_avframe_alloc(100,1000,AV_PIX_FMT_NV16,123);
-    // AVFrame *b = abcdk_avframe_alloc(100,1000,AV_PIX_FMT_NV16,234);
-    // AVFrame *a = abcdk_cuda_avframe_alloc(100,1000,AV_PIX_FMT_NV12,123);
-    // AVFrame *b = abcdk_avframe_alloc(100,1000,AV_PIX_FMT_NV12,234);
-    AVFrame *a = abcdk_cuda_avframe_alloc(200, 200, AV_PIX_FMT_RGB24, 123);
-    AVFrame *b = abcdk_avframe_alloc(200, 200, AV_PIX_FMT_RGB24, 234);
+    abcdk_media_image_t *a = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_RGB24, 123);
+    abcdk_media_image_t *b = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_RGB24, 234);
 
     uint8_t scalar[3] = {128, 255, 0};
-    abcdk_cuda_imgproc_stuff_8u(3,1,a->data[0], a->width, a->linesize[0], a->height, scalar);
+    abcdk_cuda_imgproc_stuff_8u(3,1,a->data[0], a->width, a->stride[0], a->height, scalar);
 
     uint8_t color[3] = {255, 0, 0};
     int corner[4] = {10, 10, 100, 100};
 
-    abcdk_cuda_imgproc_drawrect_8u(3,1,a->data[0], a->width, a->linesize[0], a->height, color, 3, corner);
+    abcdk_cuda_imgproc_drawrect_8u(3,1,a->data[0], a->width, a->stride[0], a->height, color, 3, corner);
 
-    chk = abcdk_cuda_avframe_copy(b, a);
+    chk = abcdk_cuda_image_copy(b, a);
     assert(chk == 0);
 
-    // abcdk_bmp_save_file("/tmp/test.cuda.a.bmp",a->data[0],a->linesize[0],a->width,a->height,24);
-    abcdk_cuda_avframe_save("/tmp/test.cuda.b.bmp", b);
+    // abcdk_bmp_save_file("/tmp/test.cuda.a.bmp",a->data[0],a->stride[0],a->width,a->height,24);
+    abcdk_cuda_image_save("/tmp/test.cuda.b.bmp", b);
 
-    AVFrame *c = abcdk_cuda_avframe_alloc(200, 200, AV_PIX_FMT_YUV420P, 567);
+    abcdk_media_image_t *c = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_YUV420P, 567);
 
-    abcdk_cuda_avframe_convert(c, a);
+    abcdk_cuda_image_convert(c, a);
 
-    AVFrame *d = abcdk_cuda_avframe_alloc(200, 200, AV_PIX_FMT_RGB24, 678);
+    abcdk_media_image_t *d = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_RGB24, 678);
 
-    abcdk_cuda_avframe_convert(d, c);
+    abcdk_cuda_image_convert(d, c);
 
-    AVFrame *e = abcdk_cuda_avframe_alloc(800, 600, AV_PIX_FMT_RGB24, 678);
+    abcdk_media_image_t *e = abcdk_cuda_image_create(800, 600, ABCDK_MEDIA_PIXFMT_RGB24, 678);
 
-    abcdk_cuda_imgproc_resize_8u(3,1,e->data[0],e->width,e->linesize[0],e->height, NULL, d->data[0],d->width,d->linesize[0],d->height, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_cuda_imgproc_resize_8u(3,1,e->data[0],e->width,e->stride[0],e->height, NULL, d->data[0],d->width,d->stride[0],d->height, NULL, 1, NPPI_INTER_CUBIC);
 
-    abcdk_cuda_avframe_save("/tmp/test.cuda.e.bmp", e);
+    abcdk_cuda_image_save("/tmp/test.cuda.e.bmp", e);
 
-    AVFrame *f = abcdk_cuda_avframe_alloc(800, 600, AV_PIX_FMT_RGB24, 678);
+    abcdk_media_image_t *f = abcdk_cuda_image_create(800, 600, ABCDK_MEDIA_PIXFMT_RGB24, 678);
 
     NppiPoint dst_quad[4] = {
         {30, 30},   // 变换后的左上角
@@ -68,37 +59,38 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     NppiRect src_roi = {100, 100, 200, 200};
 
-    // abcdk_cuda_avframe_warp(f, NULL, dst_quad , e, &src_roi , NULL,2 , NPPI_INTER_CUBIC);
-    abcdk_cuda_imgproc_warp_8u(3,1,f->data[0],f->width,f->linesize[0],f->height, NULL, dst_quad, e->data[0],d->width,d->linesize[0],d->height, NULL, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_cuda_imgproc_warp_8u(3, 1, f->data[0], f->width, f->stride[0], f->height, NULL, dst_quad, e->data[0], e->width, e->stride[0], e->height, NULL, NULL, 1, NPPI_INTER_CUBIC);
 
-    abcdk_cuda_avframe_save("/tmp/test.cuda.f.bmp", f);
+    abcdk_cuda_image_save("/tmp/test.cuda.f.bmp", f);
 
     abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f, cuda_ctx);
     // abcdk_cuda_jpeg_save("/tmp/test.cuda.f2.jpg", f);
 
-    // abcdk_cuda_avframe_save("/tmp/test.cuda.f2.bmp", f);
+    // abcdk_cuda_image_save("/tmp/test.cuda.f2.bmp", f);
 
-    av_frame_free(&a);
-    av_frame_free(&b);
-    av_frame_free(&c);
-    av_frame_free(&d);
-    av_frame_free(&e);
-    av_frame_free(&f);
+    abcdk_media_image_free(&a);
+    abcdk_media_image_free(&b);
+    abcdk_media_image_free(&c);
+    abcdk_media_image_free(&d);
+    abcdk_media_image_free(&e);
+    abcdk_media_image_free(&f);
 
     for (int i = 0; i < 10; i++)
     {
-        AVFrame *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
+        abcdk_media_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
 
-        abcdk_cuda_imgproc_drawrect_8u(3,1,g->data[0], g->width, g->linesize[0], g->height, color, 3, corner);
+        abcdk_cuda_imgproc_drawrect_8u(3,1,g->data[0], g->width, g->stride[0], g->height, color, 3, corner);
 
-        abcdk_cuda_avframe_save("/tmp/test.cuda.g2.bmp", g);
+        abcdk_cuda_image_save("/tmp/test.cuda.g2.bmp", g);
         abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g, cuda_ctx);
 
-        av_frame_free(&g);
+        abcdk_media_image_free(&g);
     }
 
     return 0;
 }
+
+#if 0
 
 int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
 {
@@ -279,6 +271,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
     return 0;
 }
 
+#endif //HAVE_FFMPEG
 
 int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 {
@@ -286,71 +279,6 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 
     cuCtxPushCurrent(cuda_ctx);
 
-    AVFrame *a = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 16);
-    AVFrame *c = abcdk_cuda_avframe_alloc(w, h, AV_PIX_FMT_RGB24, 32);
-
-    abcdk_ndarray_t *b = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 16);
-    abcdk_ndarray_t *d = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NHWC, n, w, h, depth, sizeof(float), 32);
-    abcdk_ndarray_t *e = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 64);
-
-
-    uint8_t scale2[3] = {255, 128, 0};
-    float scale[3] = {255, 255, 255};
-    float mean[3] = {127.5, 127.5, 127.5};
-    float std[3] = {128.0, 128.0, 128.0};
-
-    abcdk_cuda_imgproc_stuff_8u(3,1,a->data[0], a->width, a->linesize[0], a->height, scale2);
-
-    abcdk_cuda_avframe_save("/tmp/a.bmp", a);
-
-    abcdk_cuda_tensorproc_blob_8u_to_32f(3,0, (float *)b->data, b->stride, 1, a->data[0], a->linesize[0], w, h, scale, mean, std);
-
-    abcdk_cuda_tensorproc_reshape_32f(1, (float *)d->data, 1, d->width, d->stride, d->height, 3, 0, (float *)b->data, 1, b->width, b->stride, b->height, 3);
-
-    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 1, (float *)d->data, d->stride, w, h, scale, mean, std);
-
-    abcdk_cuda_avframe_save("/tmp/c1.bmp", c);
-
-    abcdk_cuda_tensorproc_reshape_32f(0, (float *)e->data, 1, e->width, e->stride, e->height, 3, 1, (float *)d->data, 1, d->width, d->stride, d->height, 3);
-
-    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)e->data, e->stride, w, h, scale, mean, std);
-
-    abcdk_cuda_avframe_save("/tmp/c2.bmp", c);
-
-    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)b->data, b->stride, w, h, scale, mean, std);
-
-    abcdk_cuda_avframe_save("/tmp/c3.bmp", c);
-
-    abcdk_ndarray_t *f = abcdk_cuda_ndarray_clone(0,d);
-
-    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 1, (float *)f->data, f->stride, w, h, scale, mean, std);
-
-    abcdk_cuda_avframe_save("/tmp/c4.bmp", c);
-
-    abcdk_ndarray_t *g = abcdk_cuda_ndarray_clone(0,e);
-
-    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)g->data, g->stride, w, h, scale, mean, std);
-
-    abcdk_cuda_avframe_save("/tmp/c5.bmp", c);
-
-    abcdk_ndarray_t *q = abcdk_cuda_ndarray_clone(1,g);
-    abcdk_ndarray_t *p = abcdk_cuda_ndarray_alloc(ABCDK_NDARRAY_NCHW, n, w, h, depth, sizeof(float), 3);
-
-    abcdk_cuda_ndarray_copy(p,q);
-
-    abcdk_cuda_tensorproc_blob_32f_to_8u(3,1, c->data[0], c->linesize[0], 0, (float *)p->data, p->stride, w, h, scale, mean, std);
-
-    abcdk_cuda_avframe_save("/tmp/c6.bmp", c);
-
-    av_frame_free(&a);
-    av_frame_free(&c);
-    abcdk_ndarray_free(&b);
-    abcdk_ndarray_free(&d);
-    abcdk_ndarray_free(&e);
-    abcdk_ndarray_free(&f);
-    abcdk_ndarray_free(&g);
-    abcdk_ndarray_free(&p);
-    abcdk_ndarray_free(&q);
 
     cuCtxPopCurrent(NULL);
 }
@@ -377,10 +305,12 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     if (cmd == 1)
         return abcdk_test_cuda_1(args, cuda_ctx);
+#if 0
     else if (cmd == 2)
         return abcdk_test_cuda_2(args, cuda_ctx);
     else if (cmd == 3)
         return abcdk_test_cuda_3(args, cuda_ctx);
+#endif //HAVE_FFMPEG
     else if (cmd == 4)
         return abcdk_test_cuda_4(args, cuda_ctx);
 
@@ -390,12 +320,11 @@ int abcdk_test_cuda(abcdk_option_t *args)
     return 0;
 }
 
-#endif // HAVE_FFMPEG
-#else  // HAVE_CUDA
+#else  // HAVE_CUDA && HAVE_FFMPEG
 
 int abcdk_test_cuda(abcdk_option_t *args)
 {
     return 0;
 }
 
-#endif // HAVE_CUDA
+#endif // HAVE_CUDA && HAVE_FFMPEG

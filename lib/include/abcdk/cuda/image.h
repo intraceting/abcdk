@@ -15,13 +15,13 @@
 
 __BEGIN_DECLS
 
+
 /**申请。 */
 abcdk_media_image_t *abcdk_cuda_image_alloc();
 
 
 /**创建。*/
 abcdk_media_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, int align);
-
 
 /**
  * 复制。

@@ -8,7 +8,7 @@
 #define ABCDK_OPENCV_STITCHER_H
 
 #include "abcdk/util/object.h"
-#include "abcdk/media/frame.h"
+#include "abcdk/media/image.h"
 #include "abcdk/opencv/opencv.h"
 
 __BEGIN_DECLS
@@ -43,7 +43,7 @@ int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const
  * 
  * @return 0 成功， < 0 失败。
  */
-int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx,int count, abcdk_media_frame_t *img[], abcdk_media_frame_t *mask[], float good_threshold);
+int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx,int count, abcdk_media_image_t *img[], abcdk_media_image_t *mask[], float good_threshold);
 
 /**
  * 构建全景参数。
@@ -57,7 +57,7 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx);
  * 
  * @return 0 成功， < 0 失败。
 */
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx,abcdk_media_frame_t **out, int count, abcdk_media_frame_t *img[]);
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx,abcdk_media_image_t **out, int count, abcdk_media_image_t *img[]);
 
 __END_DECLS
 

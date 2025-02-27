@@ -12,6 +12,7 @@ int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_
 {
     struct SwsContext *ctx = NULL;
     AVFrame tmp_dst = {0}, tmp_src = {0};
+    int chk;
 
     assert(dst != NULL && src != NULL);
     assert(dst->tag == ABCDK_MEDIA_TAG_HOST);
@@ -33,11 +34,11 @@ int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_
     tmp_src.width = src->width;
     tmp_src.height = src->height;
 
-    ctx = abcdk_sws_alloc2(tmp_src, tmp_dst, 0);
+    ctx = abcdk_sws_alloc2(&tmp_src, &tmp_dst, 0);
     if (!ctx)
         return -1;
 
-    chk = abcdk_sws_scale(ctx, tmp_src, tmp_dst);
+    chk = abcdk_sws_scale(ctx, &tmp_src, &tmp_dst);
     abcdk_sws_free(&ctx);
 
     return -1;

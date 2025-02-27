@@ -7,9 +7,9 @@
 #ifndef ABCDK_CUDA_VIDEO_DECODER_AARCH64_HXX
 #define ABCDK_CUDA_VIDEO_DECODER_AARCH64_HXX
 
-#include "abcdk/util/option.h"
+#include "abcdk/media/vcodec.h"
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/frame.h"
+#include "abcdk/cuda/image.h"
 #include "abcdk/cuda/device.h"
 #include "vcodec_decoder.cu.hxx"
 #include "vcodec_util.cu.hxx"
@@ -50,7 +50,7 @@ namespace abcdk
 
                 static void frame_queue_destroy_cb(void *msg)
                 {
-                    av_frame_free((abcdk_media_frame_t **)&msg);
+                    av_frame_free((abcdk_media_image_t **)&msg);
                 }
 
             private:
@@ -102,7 +102,7 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
+                virtual int update(abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
                 {
                     nvPacket packet = {0};
                     nvFrame frame = {0};

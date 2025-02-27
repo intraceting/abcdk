@@ -54,7 +54,11 @@ void abcdk_media_image_free(abcdk_media_image_t **ctx);
 /**申请。*/
 abcdk_media_image_t *abcdk_media_image_alloc(uint32_t tag);
 
-/**重置。*/
+/**
+ * 重置。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
 int abcdk_media_image_reset(abcdk_media_image_t *ctx, int width, int height, int pixfmt, int align);
 
 /**创建。*/

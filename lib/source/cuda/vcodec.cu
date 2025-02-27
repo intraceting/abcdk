@@ -14,41 +14,30 @@
 
 static void _abcdk_cuda_vcodec_private_free_cb(void **ctx, uint8_t encoder)
 {
-    abcdk::cuda::video::encoder *encoder_ctx_p;
-    abcdk::cuda::video::decoder *decoder_ctx_p;
-
     if (!ctx || !*ctx)
         return;
 
-    if (encode)
+    if (encoder)
     {
-        encoder_ctx_p = *ctx;
-        *ctx = NULL;
-
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        abcdk::cuda::video::encoder_ffnv::destory(&encoder_ctx_p);
+        abcdk::cuda::vcodec::encoder_ffnv::destory((abcdk::cuda::vcodec::encoder **)ctx);
 #elif defined(__aarch64__)
-        abcdk::cuda::video::encoder_aarch64::destory(&encoder_ctx_p);
+        abcdk::cuda::vcodec::encoder_aarch64::destory((abcdk::cuda::vcodec::encoder **)ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
     }
     else
     {
-        decoder_ctx_p = *ctx;
-        *ctx = NULL;
-
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        abcdk::cuda::video::decoder_ffnv::destory(&decoder_ctx_p);
+        abcdk::cuda::vcodec::decoder_ffnv::destory((abcdk::cuda::vcodec::decoder **)ctx);
 #elif defined(__aarch64__)
-        abcdk::cuda::video::decoder_aarch64::destory(&decoder_ctx_p);
+        abcdk::cuda::vcodec::decoder_aarch64::destory((abcdk::cuda::vcodec::decoder **)ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
-
     }
 }
 
-abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(CUcontext cuda_ctx)
+abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx)
 {
     abcdk_media_vcodec_t *ctx;
-    int chk;
 
     assert(cuda_ctx != NULL);
 
@@ -58,12 +47,12 @@ abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(CUcontext cuda_ctx)
 
     ctx->private_ctx_free_cb = _abcdk_cuda_vcodec_private_free_cb;
     
-    if (ctx->encoder)
+    if (ctx->encoder = encoder)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx->private_ctx = abcdk::cuda::video::encoder_ffnv::create(cuda_ctx);
+        ctx->private_ctx = abcdk::cuda::vcodec::encoder_ffnv::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->private_ctx = abcdk::cuda::video::encoder_aarch64::create(cuda_ctx);
+        ctx->private_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(cuda_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!ctx->private_ctx)
@@ -72,9 +61,9 @@ abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(CUcontext cuda_ctx)
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx->private_ctx = abcdk::cuda::video::decoder_ffnv::create(cuda_ctx);
+        ctx->private_ctx = abcdk::cuda::vcodec::decoder_ffnv::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->private_ctx = abcdk::cuda::video::decoder_aarch64::create(cuda_ctx);
+        ctx->private_ctx = abcdk::cuda::vcodec::decoder_aarch64::create(cuda_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!ctx->private_ctx)
@@ -92,15 +81,15 @@ ERR:
 
 int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_t *param)
 {
-    abcdk::cuda::video::encoder *encoder_ctx;
-    abcdk::cuda::video::decoder *decoder_ctx;
+    abcdk::cuda::vcodec::encoder *encoder_ctx;
+    abcdk::cuda::vcodec::decoder *decoder_ctx;
     int chk;
 
     assert(ctx != NULL);
 
     if (ctx->encoder)
     {
-        encoder_ctx = (abcdk::cuda::video::encoder *)ctx->private_ctx;
+        encoder_ctx = (abcdk::cuda::vcodec::encoder *)ctx->private_ctx;
 
         chk = encoder_ctx->open(param);
         if(chk != 0)
@@ -108,7 +97,7 @@ int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_
     }
     else
     {
-        decoder_ctx = (abcdk::cuda::video::decoder *)ctx->private_ctx;
+        decoder_ctx = (abcdk::cuda::vcodec::decoder *)ctx->private_ctx;
 
         chk = decoder_ctx->open(param);
         if(chk != 0)
@@ -118,50 +107,44 @@ int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_
     return 0;
 }
 
-int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
+int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_object_t **dst, const abcdk_media_image_t *src)
 {
-    abcdk::cuda::video::encoder *encoder_ctx;
-    abcdk_media_frame_t *tmp_src = NULL;
-    int src_in_host;
+    abcdk::cuda::vcodec::encoder *encoder_ctx;
+    abcdk_media_image_t *tmp_src = NULL;
     int chk;
 
     assert(ctx != NULL && dst != NULL);
 
-    ABCDK_ASSERT(ctx->encode, "解码器不能用于编码。");
+    ABCDK_ASSERT(ctx->encoder, "解码器不能用于编码。");
 
-    if (src)
+    encoder_ctx = (abcdk::cuda::vcodec::encoder *)ctx->private_ctx;
+
+    if(src->tag == ABCDK_MEDIA_TAG_HOST)
     {
-        src_in_host = (src->tag == ABCDK_MEDIA_TAG_HOST);
+        tmp_src = abcdk_cuda_image_clone(0, src);
+        if(!tmp_src)
+            return -1;
 
-        if (src_in_host)
-        {
-            tmp_src = abcdk_cuda_frame_clone(0, src);
-            if (!tmp_src)
-                return -1;
+        chk = abcdk_cuda_vcodec_encode(ctx, dst,tmp_src);
+        abcdk_media_image_free(&tmp_src);
 
-            chk = abcdk_cuda_video_encode(ctx, dst, tmp_src);
-            abcdk_media_frame_free(&tmp_src);
-
-            return chk;
-        }
+        return chk;
     }
-
-    encoder_ctx = (abcdk::cuda::video::encoder *)ctx->private_ctx;
 
     return encoder_ctx->update(dst,src);
 }
 
-int abcdk_cuda_video_decode(abcdk_media_vcodec_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
+int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
 {
-    abcdk::cuda::video::decoder *decoder_ctx;
+    abcdk::cuda::vcodec::decoder *decoder_ctx;
 
     assert(ctx != NULL && dst != NULL);
 
-    ABCDK_ASSERT(!ctx->encode, "编码器不能用于解码。");
+    ABCDK_ASSERT(!ctx->encoder, "编码器不能用于解码。");
 
-    decoder_ctx = (abcdk::cuda::video::encoder *)ctx->private_ctx;
+    decoder_ctx = (abcdk::cuda::vcodec::decoder *)ctx->private_ctx;
 
-    return decoder_ctx->update(dst,src);
+    return decoder_ctx->update(dst, dst_pts, src_data, src_size, src_pts);
 }
 
 #else //__cuda_cuda_h__
@@ -184,13 +167,13 @@ int abcdk_cuda_vcodec_sync(abcdk_media_vcodec_t *ctx,AVCodecContext *opt)
     return -1;
 }
 
-int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
+int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_object_t **dst, const abcdk_media_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
 
-int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
+int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
