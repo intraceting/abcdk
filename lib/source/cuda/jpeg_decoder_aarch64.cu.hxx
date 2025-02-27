@@ -46,15 +46,14 @@ namespace abcdk
                     delete (decoder_aarch64 *)ctx_p;
                 }
             private:
-                abcdk_option_t *m_cfg;
-
                 CUcontext m_gpu_ctx;
+
                 NvJPEGDecoder *m_ctx;
             public:
                 decoder_aarch64(CUcontext cuda_ctx)
                 {
-                    m_cfg = NULL;
                     m_gpu_ctx = cuda_ctx;
+
                     m_ctx = NULL;
                 }
 
@@ -75,11 +74,9 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_option_t *cfg)
+                virtual int open(abcdk_media_jpeg_param_t *param)
                 {
                     int device;
                     cudaError_t cuda_chk;

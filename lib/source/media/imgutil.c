@@ -6,7 +6,7 @@
  */
 #include "abcdk/media/imgutil.h"
 
-static int _abcdk_meida_image_fill_height(int heights[4], int height, int pixfmt)
+static int _abcdk_meida_imgutil_fill_height(int heights[4], int height, int pixfmt)
 {
     heights[0] = height;
     heights[1] = heights[2] = heights[3] = -1;
@@ -60,7 +60,7 @@ static int _abcdk_meida_image_fill_height(int heights[4], int height, int pixfmt
     return 0;
 }
 
-static int _abcdk_meida_image_fill_stride(int stride[4], int width, int pixfmt)
+static int _abcdk_meida_imgutil_fill_stride(int stride[4], int width, int pixfmt)
 {
     stride[0] = width;
     stride[1] = stride[2] = stride[3] = -1;
@@ -120,20 +120,20 @@ static int _abcdk_meida_image_fill_stride(int stride[4], int width, int pixfmt)
     return 0;
 }
 
-int abcdk_media_image_fill_height(int heights[4], int height, int pixfmt)
+int abcdk_media_imgutil_fill_height(int heights[4], int height, int pixfmt)
 {
     assert(heights != NULL && height > 0 && pixfmt > 0);
 
-    return _abcdk_meida_image_fill_height(heights, height, pixfmt);
+    return _abcdk_meida_imgutil_fill_height(heights, height, pixfmt);
 }
 
-int abcdk_media_image_fill_stride(int stride[4], int width, int pixfmt, int align)
+int abcdk_media_imgutil_fill_stride(int stride[4], int width, int pixfmt, int align)
 {
     int block = 0;
 
     assert(stride != NULL && width > 0 && pixfmt > 0);
 
-    block = _abcdk_meida_image_fill_stride(stride, width, pixfmt);
+    block = _abcdk_meida_imgutil_fill_stride(stride, width, pixfmt);
     if (block <= 0)
         return -1;
 
@@ -143,7 +143,7 @@ int abcdk_media_image_fill_stride(int stride[4], int width, int pixfmt, int alig
     return block;
 }
 
-int abcdk_media_image_fill_pointer(uint8_t *data[4], const int stride[4], int height, int pixfmt, void *buffer)
+int abcdk_media_imgutil_fill_pointer(uint8_t *data[4], const int stride[4], int height, int pixfmt, void *buffer)
 {
     int heights[4] = {0};
     int block = 0;
@@ -151,7 +151,7 @@ int abcdk_media_image_fill_pointer(uint8_t *data[4], const int stride[4], int he
 
     assert(data != NULL && stride != NULL && height > 0 && pixfmt > 0);
 
-    block = abcdk_media_image_fill_height(heights, height, pixfmt);
+    block = abcdk_media_imgutil_fill_height(heights, height, pixfmt);
     if (block <= 0)
         return -1;
 
@@ -169,34 +169,33 @@ int abcdk_media_image_fill_pointer(uint8_t *data[4], const int stride[4], int he
     return off;
 }
 
-int abcdk_media_image_size(const int stride[4], int height, int pixfmt)
+int abcdk_media_imgutil_size(const int stride[4], int height, int pixfmt)
 {
     uint8_t *data[4] = {0};
 
     assert(stride != NULL && height > 0 && pixfmt > 0);
 
-    return abcdk_media_image_fill_pointer(data, stride, height, pixfmt, NULL);
+    return abcdk_media_imgutil_fill_pointer(data, stride, height, pixfmt, NULL);
 }
 
-int abcdk_media_image_size2(int width, int height, int pixfmt, int align)
+int abcdk_media_imgutil_size2(int width, int height, int pixfmt, int align)
 {
     int stride[4] = {0};
     int block = 0;
 
-    block = abcdk_media_image_fill_stride(stride, width, pixfmt, align);
+    block = abcdk_media_imgutil_fill_stride(stride, width, pixfmt, align);
     if (block <= 0)
         return -1;
 
-    return abcdk_media_image_size(stride, height, pixfmt);
+    return abcdk_media_imgutil_size(stride, height, pixfmt);
 }
 
-void abcdk_media_image_copy(uint8_t *dst_data[4], int dst_stride[4],
-                            const uint8_t *src_data[4], const int src_stride[4],
-                            int width, int height, int pixfmt)
+void abcdk_media_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4],
+                              const uint8_t *src_data[4], const int src_stride[4],
+                              int width, int height, int pixfmt)
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
-    int chk;
 
     assert(dst_data != NULL && dst_stride != NULL);
     assert(src_data != NULL && src_stride != NULL);

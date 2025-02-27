@@ -4,11 +4,11 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/media/frame.h"
+#include "abcdk/media/image.h"
 
 #ifdef SWSCALE_SWSCALE_H
 
-int abcdk_media_frame_convert(abcdk_media_frame_t *dst, const abcdk_media_frame_t *src)
+int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_t *src)
 {
     struct SwsContext *ctx = NULL;
     AVFrame tmp_dst = {0}, tmp_src = {0};
@@ -45,7 +45,7 @@ int abcdk_media_frame_convert(abcdk_media_frame_t *dst, const abcdk_media_frame_
 
 #else
 
-int abcdk_media_frame_convert(abcdk_media_frame_t *dst, const abcdk_media_frame_t *src)
+int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_t *src)
 {
     return -1;
 }

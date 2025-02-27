@@ -12,13 +12,6 @@ static void _abcdk_media_jcodec_private_free_cb(void **ctx, uint8_t encoder)
 
 }
 
-
-static void _abcdk_media_jcodec_clear(abcdk_media_jcodec_t *ctx)
-{
-    if (ctx->private_ctx_free_cb)
-        ctx->private_ctx_free_cb(&ctx->private_ctx,ctx->encoder);
-}
-
 void abcdk_media_jcodec_free(abcdk_media_jcodec_t **ctx)
 {
     abcdk_media_jcodec_t *ctx_p;
@@ -29,7 +22,8 @@ void abcdk_media_jcodec_free(abcdk_media_jcodec_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    _abcdk_media_jcodec_clear(ctx);
+    if (ctx_p->private_ctx_free_cb)
+        ctx_p->private_ctx_free_cb(&ctx_p->private_ctx, ctx_p->encoder);
 
     abcdk_heap_free(ctx_p);
 }

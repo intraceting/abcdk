@@ -81,23 +81,14 @@ namespace abcdk
                     abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_option_t *cfg)
+                virtual int open(abcdk_media_jpeg_param_t *param)
                 {
-                    int device;
                     cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
 
-                    assert(m_cfg == NULL);
-
-                    m_cfg = abcdk_option_alloc("--");
-                    if (!m_cfg)
-                        return -1;
-
-                    if (cfg)
-                        abcdk_option_merge(m_cfg, cfg);
-
-                    m_quality = abcdk_option_get_int(m_cfg, "--quality", 0, 99);
-                    m_quality = ABCDK_CLAMP(m_quality, 1, 99);
+                    assert(param == NULL);
+  
+                    m_quality = ABCDK_CLAMP(param->quality, 1, 99);
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
@@ -108,11 +99,10 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual abcdk_object_t *update(const abcdk_media_frame_t *src)
+                virtual abcdk_media_packet_t *update(const abcdk_media_frame_t *src)
                 {
                     abcdk_media_frame_t *tmp_src = NULL;
-                    abcdk_object_t *dst;
-                    uint8_t *out_buf = NULL;
+                    abcdk_media_packet_t *dst;
                     unsigned long out_size = 0;
                     int chk;
 
@@ -152,17 +142,19 @@ namespace abcdk
                     }
 
                     out_size = src->width * src->height *3 /2;
-                    out_buf = (uint8_t*)abcdk_heap_alloc(out_size);
+                    dst = abcdk_media_packet_create(out_size);
+                    if(!dst)
+                        return NULL;
 
-                    chk = m_ctx->encodeFromBuffer(buffer, JCS_YCbCr, &out_buf, out_size, m_quality);
+                    chk = m_ctx->encodeFromBuffer(buffer, JCS_YCbCr, (uint8_t*)&dst->data, out_size, m_quality);
                     if(chk != 0)
                     {
-                        abcdk_heap_free(out_buf);    
+                        abcdk_media_packet_free(&dst);
                         return NULL;
                     }
 
-                    dst = abcdk_object_copyfrom(out_buf,out_size);
-                    abcdk_heap_free(out_buf);
+                    /*真实长度。*/
+                    dst->size = out_size;
 
                     return dst;
                 }

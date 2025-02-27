@@ -92,9 +92,8 @@ namespace abcdk
                 }
 
             private:
-                abcdk_option_t *m_cfg;
-
                 CUcontext m_gpu_ctx;
+
                 cudaStream_t m_stream;
                 nvjpegHandle_t m_ctx;
                 nvjpegJpegState_t m_state;
@@ -102,8 +101,8 @@ namespace abcdk
             public:
                 decoder_general(CUcontext cuda_ctx)
                 {
-                    m_cfg = NULL;
                     m_gpu_ctx = cuda_ctx;
+
                     m_stream = NULL;
                     m_ctx = NULL;
                     m_state = NULL;
@@ -150,7 +149,7 @@ namespace abcdk
                     abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_option_t *cfg)
+                virtual int open(abcdk_media_jpeg_param_t *param)
                 {
                     int device;
                     cudaError_t cuda_chk;
@@ -158,16 +157,9 @@ namespace abcdk
                     nvjpegDevAllocator_t dev_allocator = {0};
                     nvjpegPinnedAllocator_t pinned_allocator = {0};
                     
-                    assert(m_cfg == NULL);
+                    assert(param == NULL);
                     
                     check_memory_leak_version();
-
-                    m_cfg = abcdk_option_alloc("--");
-                    if (!m_cfg)
-                        return -1;
-
-                    if (cfg)
-                        abcdk_option_merge(m_cfg, cfg);
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 

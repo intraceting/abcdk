@@ -9,40 +9,44 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/util/object.h"
+#include "abcdk/media/packet.h"
+#include "abcdk/media/jcodec.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/device.h"
 #include "abcdk/cuda/frame.h"
 
+
 __BEGIN_DECLS
 
-/**JPEG编/解码器。*/
-typedef struct _abcdk_cuda_jpeg abcdk_cuda_jpeg_t;
-
-/**释放。*/
-void abcdk_cuda_jpeg_destroy(abcdk_cuda_jpeg_t **ctx);
-
 /**
- * 创建。
+ * 申请。
  *
  * @param [in] cuda_ctx CUDA环境。仅作指针复制，对象关闭时不会释放。
  */
-abcdk_cuda_jpeg_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx);
+abcdk_media_jcodec_t *abcdk_cuda_jpeg_create(CUcontext cuda_ctx);
+
+/** 
+ * 启动。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_cuda_vcodec_start(abcdk_media_jcodec_t *ctx, abcdk_media_jpeg_param_t *param);
 
 /**编码。 */
-abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_cuda_jpeg_t *ctx, const abcdk_media_frame_t *src);
+abcdk_media_packet_t *abcdk_cuda_jpeg_encode(abcdk_media_jcodec_t *ctx, const abcdk_media_frame_t *src);
 
 /**
  * 编码。
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_jpeg_encode_to_file(abcdk_cuda_jpeg_t *ctx, const char *dst, const abcdk_media_frame_t *src);
+int abcdk_cuda_jpeg_encode_to_file(abcdk_media_jcodec_t *ctx, const char *dst, const abcdk_media_frame_t *src);
 
 /**解码。 */
-abcdk_media_frame_t *abcdk_cuda_jpeg_decode(abcdk_cuda_jpeg_t *ctx, const void *src, int src_size);
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode(abcdk_media_jcodec_t *ctx, const void *src, int src_size);
 
 /**解码。 */
-abcdk_media_frame_t *abcdk_cuda_jpeg_decode_from_file(abcdk_cuda_jpeg_t *ctx, const void *src);
+abcdk_media_frame_t *abcdk_cuda_jpeg_decode_from_file(abcdk_media_jcodec_t *ctx, const void *src);
 
 /**保存。*/
 int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcontext cuda_ctx);

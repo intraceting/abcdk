@@ -8,7 +8,7 @@
 #define ABCDK_CUDA_JPEG_UTIL_HXX
 
 #include "abcdk/cuda/cuda.h"
-#include "abcdk/cuda/avutil.h"
+#include "abcdk/cuda/frame.h"
 #include "context_robot.cu.hxx"
 
 #ifdef __aarch64__
@@ -18,7 +18,6 @@
 #endif //__aarch64__
 
 #ifdef __cuda_cuda_h__
-#ifdef AVUTIL_AVUTIL_H
 
 namespace abcdk
 {
@@ -31,7 +30,7 @@ namespace abcdk
     } // namespace cuda
 } // namespace abcdk
 
-#endif // AVUTIL_AVUTIL_H
+
 #endif //__cuda_cuda_h__
 
 #endif // ABCDK_CUDA_JPEG_UTIL_HXX

@@ -48,8 +48,6 @@ namespace abcdk
                 }
 
             private:
-                abcdk_option_t *m_cfg;
-
                 CUcontext m_gpu_ctx;
 
                 cudaStream_t m_stream;
@@ -60,8 +58,8 @@ namespace abcdk
             public:
                 encoder_general(CUcontext cuda_ctx)
                 {
-                    m_cfg = NULL;
                     m_gpu_ctx = cuda_ctx;
+
                     m_stream = NULL;
                     m_ctx = NULL;
                     m_state = NULL;
@@ -94,28 +92,17 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_option_free(&m_cfg);
                 }
 
-                virtual int open(abcdk_option_t *cfg)
+                virtual int open(abcdk_media_jpeg_param_t *param)
                 {
-                    int device;
                     int quality;
                     cudaError_t cuda_chk;
                     nvjpegStatus_t jpeg_chk;
 
-                    assert(m_cfg == NULL);
+                    assert(param == NULL);
 
-                    m_cfg = abcdk_option_alloc("--");
-                    if (!m_cfg)
-                        return -1;
-
-                    if (cfg)
-                        abcdk_option_merge(m_cfg, cfg);
-
-                    quality = abcdk_option_get_int(m_cfg, "--quality", 0, 99);
-                    quality = ABCDK_CLAMP(quality, 1, 99);
+                    quality = ABCDK_CLAMP(param->quality, 1, 99);
 
                     abcdk::cuda::context::robot robot(m_gpu_ctx);
 
@@ -135,10 +122,10 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual abcdk_object_t *update(const abcdk_media_frame_t *src)
+                virtual abcdk_media_packet_t *update(const abcdk_media_frame_t *src)
                 {
                     abcdk_media_frame_t *tmp_src = NULL;
-                    abcdk_object_t *dst;
+                    abcdk_media_packet_t *dst;
                     size_t dst_size = 0;
                     nvjpegImage_t src_data = {0};
                     nvjpegStatus_t jpeg_chk;
@@ -180,18 +167,18 @@ namespace abcdk
                         return NULL;
 
            
-                    dst = abcdk_object_alloc2(dst_size);
+                    dst = abcdk_media_packet_create(dst_size);
                     if(!dst)
                         return NULL;
 
-                    jpeg_chk = nvjpegEncodeRetrieveBitstream(m_ctx, m_state,dst->pptrs[0], &dst_size, m_stream);
+                    jpeg_chk = nvjpegEncodeRetrieveBitstream(m_ctx, m_state,dst->data, &dst_size, m_stream);
                     if(jpeg_chk != NVJPEG_STATUS_SUCCESS)
                         goto ERR;
 
                     return dst;
 
                 ERR:
-                    abcdk_object_unref(&dst);
+                    abcdk_media_packet_free(&dst);
 
                     return NULL;
                 }

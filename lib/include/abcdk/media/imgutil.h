@@ -21,7 +21,7 @@ __BEGIN_DECLS
  *
  * @return > 0 成功(图层数量)， <= 0 失败。
  */
-int abcdk_media_image_fill_height(int heights[4], int height, int pixfmt);
+int abcdk_media_imgutil_fill_height(int heights[4], int height, int pixfmt);
 
 /**
  * 计算图像每个图层的宽步长(字节)。
@@ -31,7 +31,7 @@ int abcdk_media_image_fill_height(int heights[4], int height, int pixfmt);
  *
  * @return > 0 成功(图层数量)， <= 0 失败。
  */
-int abcdk_media_image_fill_stride(int stride[4], int width, int pixfmt, int align);
+int abcdk_media_imgutil_fill_stride(int stride[4], int width, int pixfmt, int align);
 
 /**
  * 分派存储空间。
@@ -40,28 +40,28 @@ int abcdk_media_image_fill_stride(int stride[4], int width, int pixfmt, int alig
  *
  * @return >0 成功(分派的内存大小)， <= 0 失败。
  */
-int abcdk_media_image_fill_pointer(uint8_t *data[4], const int stride[4], int height, int pixfmt, void *buffer);
+int abcdk_media_imgutil_fill_pointer(uint8_t *data[4], const int stride[4], int height, int pixfmt, void *buffer);
 
 /**
  * 计算需要的内存大小。
  *
  * @return >0 成功(需要的内存大小)， <= 0 失败。
  */
-int abcdk_media_image_size(const int stride[4], int height, int pixfmt);
+int abcdk_media_imgutil_size(const int stride[4], int height, int pixfmt);
 
 /**
  * 计算需要的内存大小。
  *
  * @return >0 成功(需要的内存大小)， <= 0 失败。
  */
-int abcdk_media_image_size2(int width, int height, int pixfmt, int align);
+int abcdk_media_imgutil_size2(int width, int height, int pixfmt, int align);
 
 /**
  * 图像复制。
  */
-void abcdk_media_image_copy(uint8_t *dst_data[4], int dst_stride[4],
-                            const uint8_t *src_data[4], const int src_stride[4],
-                            int width, int height, int pixfmt);
+void abcdk_media_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4],
+                              const uint8_t *src_data[4], const int src_stride[4],
+                              int width, int height, int pixfmt);
 
 __END_DECLS
 

@@ -12,21 +12,7 @@
 
 #ifdef __cuda_cuda_h__
 
-/**视频编解码器。*/
-typedef struct _abcdk_cuda_vocdec
-{
-    /** !0 编码，0 解码。*/
-    int encode;
-
-    /**编码器。*/
-    abcdk::cuda::video::encoder *encoder_ctx;
-
-    /**解码器。*/
-    abcdk::cuda::video::decoder *decoder_ctx;
-
-} abcdk_cuda_vocdec_t;
-
-static void _abcdk_media_vcodec_private_free_cb(void **ctx, uint8_t encoder)
+static void _abcdk_cuda_vcodec_private_free_cb(void **ctx, uint8_t encoder)
 {
     abcdk::cuda::video::encoder *encoder_ctx_p;
     abcdk::cuda::video::decoder *decoder_ctx_p;
@@ -70,7 +56,7 @@ abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(CUcontext cuda_ctx)
     if (!ctx)
         return NULL;
 
-    ctx->private_ctx_free_cb = _abcdk_media_vcodec_private_free_cb;
+    ctx->private_ctx_free_cb = _abcdk_cuda_vcodec_private_free_cb;
     
     if (ctx->encoder)
     {
@@ -104,7 +90,7 @@ ERR:
     return NULL;
 }
 
-int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx)
+int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_t *param)
 {
     abcdk::cuda::video::encoder *encoder_ctx;
     abcdk::cuda::video::decoder *decoder_ctx;
@@ -115,13 +101,21 @@ int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx)
     if (ctx->encoder)
     {
         encoder_ctx = (abcdk::cuda::video::encoder *)ctx->private_ctx;
+
+        chk = encoder_ctx->open(param);
+        if(chk != 0)
+            return -1;
     }
     else
     {
         decoder_ctx = (abcdk::cuda::video::decoder *)ctx->private_ctx;
+
+        chk = decoder_ctx->open(param);
+        if(chk != 0)
+            return -1;
     }
 
-    return chk;
+    return 0;
 }
 
 int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)

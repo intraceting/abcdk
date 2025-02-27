@@ -8,7 +8,7 @@
 
 #ifdef __cuda_cuda_h__
 
-int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcontext cuda_ctx)
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_cuda_frame_t *src, CUcontext cuda_ctx)
 {
     abcdk_cuda_jpeg_t *ctx;
     int chk;
@@ -32,7 +32,7 @@ int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcont
 
 #else //__cuda_cuda_h__
 
-int abcdk_cuda_jpeg_save(const char *dst, const abcdk_media_frame_t *src, CUcontext cuda_ctx)
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_cuda_frame_t *src, CUcontext cuda_ctx)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;

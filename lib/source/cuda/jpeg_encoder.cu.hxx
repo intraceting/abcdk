@@ -8,6 +8,7 @@
 #define ABCDK_CUDA_JPEG_ENCODER_HXX
 
 #include "abcdk/util/option.h"
+#include "abcdk/media/jcodec.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/frame.h"
 #include "jpeg_util.cu.hxx"
@@ -39,9 +40,9 @@ namespace abcdk
                     
                 }
 
-                virtual int open(abcdk_option_t *cfg) = 0;
+                virtual int open(abcdk_media_jpeg_param_t *param) = 0;
 
-                virtual abcdk_object_t * update(const abcdk_media_frame_t *src) = 0;
+                virtual abcdk_media_packet_t * update(const abcdk_media_frame_t *src) = 0;
 
                 virtual int update(const char *dst , const abcdk_media_frame_t *src) = 0;
             };

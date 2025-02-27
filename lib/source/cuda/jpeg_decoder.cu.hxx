@@ -9,6 +9,7 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/cuda/cuda.h"
+#include "abcdk/media/jcodec.h"
 #include "abcdk/cuda/frame.h"
 #include "jpeg_util.cu.hxx"
 
@@ -39,7 +40,7 @@ namespace abcdk
                     
                 }
 
-                virtual int open(abcdk_option_t *cfg) = 0;
+                virtual int open(abcdk_media_jpeg_param_t *param) = 0;
 
                 virtual abcdk_media_frame_t * update(const void *src, int src_size) = 0;
 

@@ -17,27 +17,27 @@ typedef struct _abcdk_media_jcodec_param
 {
     /**
      * 质量。
-     * 
+     *
      * 1~99 值越大越清晰，占用的空间越多。
-    */
-   int quality;
+     */
+    int quality;
 
-}abcdk_media_jcodec_param_t;
+} abcdk_media_jcodec_param_t;
 
 /** 媒体JPEG编/解码器。*/
 typedef struct _abcdk_media_jcodec
 {
-    /**标签。*/
-    uint32_t tag;
-
     /**私有环境。*/
     void *private_ctx;
 
+    /**是否为编码器（true = 是，false = 否）。 */
+    uint8_t encoder;
+
+    /**标签。*/
+    uint32_t tag;
+
     /**私有环境释放。*/
     int (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
-
-    /** 是否为编码器（true = 是，false = 否）。 */
-    uint8_t encoder;
 
 } abcdk_media_jcodec_t;
 

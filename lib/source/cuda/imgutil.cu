@@ -8,9 +8,9 @@
 
 #ifdef __cuda_cuda_h__
 
-int abcdk_cuda_image_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
-                          const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
-                          int width, int height, int pixfmt)
+int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
+                            const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
+                            int width, int height, int pixfmt)
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
@@ -20,8 +20,8 @@ int abcdk_cuda_image_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_ho
     assert(src_data != NULL && src_stride != NULL);
     assert(width > 0 && height > 0 && pixfmt > 0);
 
-    abcdk_media_image_fill_stride(real_stride, width, pixfmt, 1);
-    abcdk_media_image_fill_height(real_height, height, pixfmt);
+    abcdk_media_imgutil_fill_stride(real_stride, width, pixfmt, 1);
+    abcdk_media_imgutil_fill_height(real_height, height, pixfmt);
 
     for (int i = 0; i < 4; i++)
     {
@@ -40,9 +40,9 @@ int abcdk_cuda_image_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_ho
 
 #else //__cuda_cuda_h__
 
-int abcdk_cuda_image_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
-                          const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
-                          int width, int height, int pixfmt)
+int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
+                            const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
+                            int width, int height, int pixfmt)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;

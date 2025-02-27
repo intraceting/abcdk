@@ -14,6 +14,18 @@ __BEGIN_DECLS
 /**媒体数据包结构。*/
 typedef struct _abcdk_media_packet
 {
+    /**数据指针。*/
+    void *data;
+
+    /**数据长度。*/
+    int size;
+
+    /**解码时间。 */
+    int64_t dts;
+
+    /**播放时间。 */
+    int64_t pts;
+
     /**标签。*/
     uint32_t tag;
 
@@ -29,17 +41,6 @@ typedef struct _abcdk_media_packet
     /**缓存申请。*/
     int (*buffer_alloc_cb)(void **ptr, int size);
 
-    /**数据指针。*/
-    void *data;
-
-    /**数据长度。*/
-    int size;
-
-    /**解码时间。 */
-    int64_t dts;
-
-    /**播放时间。 */
-    int64_t pts;
 } abcdk_media_packet_t;
 
 /**释放。*/

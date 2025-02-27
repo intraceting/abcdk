@@ -161,17 +161,17 @@ typedef struct _abcdk_media_vcodec_param
 /** 媒体视频编/解码器。*/
 typedef struct _abcdk_media_vcodec
 {
-    /** 标签。*/
-    uint32_t tag;
-
-    /** 私有环境。*/
+    /**私有环境。*/
     void *private_ctx;
 
-    /** 私有环境释放。*/
-    int (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
-
-    /** 是否为编码器（true = 是，false = 否）。 */
+    /**是否为编码器（true = 是，false = 否）。 */
     uint8_t encoder;
+
+    /**标签。*/
+    uint32_t tag;
+
+    /**私有环境释放。*/
+    int (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
 
 } abcdk_media_vcodec_t;
 

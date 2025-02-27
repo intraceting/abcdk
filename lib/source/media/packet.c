@@ -20,17 +20,6 @@ static int _abcdk_media_packet_buffer_alloc_cb(void **ptr, int size)
     return -1;
 }
 
-static void _abcdk_media_packet_clear(abcdk_media_packet_t *ctx)
-{
-    if (ctx->buffer_free_cb)
-        ctx->buffer_free_cb(&ctx->buf_ptr, ctx->buf_size);
-
-    ctx->data = NULL;
-    ctx->size = -1;
-    ctx->dts = -1;
-    ctx->pts = -1;
-}
-
 void abcdk_media_packet_free(abcdk_media_packet_t **ctx)
 {
     abcdk_media_packet_t *ctx_p;
@@ -41,7 +30,8 @@ void abcdk_media_packet_free(abcdk_media_packet_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    _abcdk_media_packet_clear(ctx_p);
+    if (ctx_p->buffer_free_cb)
+        ctx_p->buffer_free_cb(&ctx_p->buf_ptr, ctx_p->buf_size);
 
     abcdk_heap_free(ctx_p);
 }
@@ -57,9 +47,10 @@ abcdk_media_packet_t *abcdk_media_packet_alloc(uint32_t tag)
     if (!ctx)
         return NULL;
     
-    _abcdk_media_packet_clear(ctx);
-
-
+    ctx->data = NULL;
+    ctx->size = -1;
+    ctx->dts = -1;
+    ctx->pts = -1;
     ctx->tag = tag;
     ctx->buffer_free_cb = _abcdk_media_packet_buffer_free_cb;
     ctx->buffer_alloc_cb = _abcdk_media_packet_buffer_alloc_cb;
@@ -78,22 +69,23 @@ int abcdk_media_packet_reset(abcdk_media_packet_t *ctx, int size)
     if(ctx->size == size)
         return 0;
 
-    _abcdk_media_packet_clear(ctx);
+    if (ctx->buffer_free_cb)
+        ctx->buffer_free_cb(&ctx->buf_ptr, ctx->buf_size);
+
+    ctx->data = NULL;
+    ctx->size = -1;
+    ctx->dts = -1;
+    ctx->pts = -1;
 
     chk = ctx->buffer_alloc_cb(&ctx->buf_ptr,ctx->buf_size = size);
     if (chk != 0)
-        goto ERR;
+        return -1;
 
     ctx->data = ctx->buf_ptr;
     ctx->size = ctx->buf_size;
 
     return 0;
-
-ERR:
-
-    _abcdk_media_packet_clear(ctx);
-
-    return -1;
+   
 }
 
 
