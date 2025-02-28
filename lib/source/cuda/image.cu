@@ -104,7 +104,6 @@ abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_i
     return dst;
 }
 
-
 int abcdk_cuda_image_save(const char *dst, const abcdk_media_image_t *src)
 {
     abcdk_media_image_t *tmp_src;

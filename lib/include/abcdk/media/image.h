@@ -74,6 +74,9 @@ int abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *
 /**克隆。*/
 abcdk_media_image_t *abcdk_media_image_clone(const abcdk_media_image_t *src);
 
+/**克隆。*/
+abcdk_media_image_t *abcdk_media_image_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt);
+
 /**
  * 保存到文件(BMP)。
  * 

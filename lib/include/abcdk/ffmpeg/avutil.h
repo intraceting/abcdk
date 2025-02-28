@@ -15,6 +15,9 @@ __BEGIN_DECLS
 
 #ifdef AVUTIL_AVUTIL_H
 
+/**重定向到轨迹日志。*/
+void abcdk_avlog_redirect2trace();
+
 /**
  * R2D(num/den)。
  *
@@ -38,6 +41,11 @@ int abcdk_avimage_pixfmt_bits(enum AVPixelFormat pixfmt, int padded);
 const char *abcdk_avimage_pixfmt_name(enum AVPixelFormat pixfmt);
 
 /**
+ * 获取像素格式通道数。
+ */
+int abcdk_avimage_pixfmt_channels(enum AVPixelFormat pixfmt);
+
+/**
  * 计算图像每个图层的高度。
  *
  * @param pixfmt 像素格式
@@ -45,7 +53,7 @@ const char *abcdk_avimage_pixfmt_name(enum AVPixelFormat pixfmt);
  *
  * @return > 0 成功(图层数量)， <= 0 失败。
  */
-int abcdk_avimage_fill_heights(int heights[4], int height, enum AVPixelFormat pixfmt);
+int abcdk_avimage_fill_height(int heights[4], int height, enum AVPixelFormat pixfmt);
 
 /**
  * 计算图像每个图层的宽步长(字节)。
@@ -55,7 +63,7 @@ int abcdk_avimage_fill_heights(int heights[4], int height, enum AVPixelFormat pi
  *
  * @return > 0 成功(图层数量)， <= 0 失败。
  */
-int abcdk_avimage_fill_strides(int stride[4], int width, int height, enum AVPixelFormat pixfmt, int align);
+int abcdk_avimage_fill_stride(int stride[4], int width, enum AVPixelFormat pixfmt, int align);
 
 /**
  * 分派存储空间。
@@ -64,8 +72,7 @@ int abcdk_avimage_fill_strides(int stride[4], int width, int height, enum AVPixe
  *
  * @return >0 成功(分派的内存大小)， <= 0 失败。
  */
-int abcdk_avimage_fill_pointers(uint8_t *data[4], const int stride[4], int height,
-                                enum AVPixelFormat pixfmt, void *buffer);
+int abcdk_avimage_fill_pointer(uint8_t *data[4], const int stride[4], int height, enum AVPixelFormat pixfmt, void *buffer);
 
 /**
  * 计算需要的内存大小。
@@ -98,8 +105,6 @@ void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src);
 /**创建帧图。 */
 AVFrame *abcdk_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
 
-/**重定向到轨迹日志。*/
-void abcdk_avlog_redirect2trace();
 
 #endif // AVUTIL_AVUTIL_H
 

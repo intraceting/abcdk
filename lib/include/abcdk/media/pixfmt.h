@@ -33,7 +33,7 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_YUV444P = 5, ///< planar YUV 4:4:4, 24bpp, (1 Cr & Cb sample per 1x1 Y samples)
 #define ABCDK_MEDIA_PIXFMT_YUV444P ABCDK_MEDIA_PIXFMT_YUV444P
 
-    ABCDK_MEDIA_PIXFMT_YUVJ411P = 6,    ///< planar YUV 4:1:1, 12bpp, (1 Cr & Cb sample per 4x1 Y samples) full scale (JPEG), deprecated in favor of AV_PIX_FMT_YUV411P and setting color_range
+    ABCDK_MEDIA_PIXFMT_YUVJ411P = 6, ///< planar YUV 4:1:1, 12bpp, (1 Cr & Cb sample per 4x1 Y samples) full scale (JPEG), deprecated in favor of AV_PIX_FMT_YUV411P and setting color_range
 #define ABCDK_MEDIA_PIXFMT_YUVJ411P ABCDK_MEDIA_PIXFMT_YUVJ411P
 
     ABCDK_MEDIA_PIXFMT_YUVJ420P = 7, ///< planar YUV 4:2:0, 12bpp, full scale (JPEG), deprecated in favor of AV_PIX_FMT_YUV420P and setting color_range
@@ -48,8 +48,8 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_YUYV422 = 10, ///< packed YUV 4:2:2, 16bpp, Y0 Cb Y1 Cr
 #define ABCDK_MEDIA_PIXFMT_YUYV422 ABCDK_MEDIA_PIXFMT_YUYV422
 
-    ABCDK_MEDIA_PIXFMT_UYVY422 = 11, ///< packed YUV 4:2:2, 16bpp, Cb Y0 Cr Y1
-#define ABCDK_MEDIA_PIXFMT_UYVY422 ABCDK_MEDIA_PIXFMT_UYVY422
+    ABCDK_MEDIA_PIXFMT_YVYU422 = 11, ///< packed YUV 4:2:2, 16bpp, Y0 Cr Y1 Cb
+#define ABCDK_MEDIA_PIXFMT_YVYU422 ABCDK_MEDIA_PIXFMT_YVYU422
 
     ABCDK_MEDIA_PIXFMT_NV12 = 1000, ///< planar YUV 4:2:0, 12bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
 #define ABCDK_MEDIA_PIXFMT_NV12 ABCDK_MEDIA_PIXFMT_NV12
@@ -86,17 +86,17 @@ typedef enum _abcdk_media_pixfmt_constant
 
 } abcdk_media_pixfmt_constant_t;
 
-/**获取通道数量。*/
-int abcdk_media_pixfmt_channels(int format);
-
-/**获取通道位宽。*/
-int abcdk_media_pixfmt_bitwidth(int format, int plane);
 
 /**转为ffmpeg类型。*/
 int abcdk_media_pixfmt_to_ffmpeg(int format);
 
 /**从ffmpeg类型转。*/
 int abcdk_media_pixfmt_from_ffmpeg(int format);
+
+/**
+ * 获取像素格式通道数。
+ */
+int abcdk_media_pixfmt_channels(int format);
 
 __END_DECLS
 

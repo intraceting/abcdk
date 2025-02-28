@@ -11,6 +11,28 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+static void _abcdk_avlog_callback(void* opaque, int level, const char* fmt, va_list v)
+{
+    int sys_level;
+    if((AV_LOG_QUIET == level) || (AV_LOG_PANIC == level)  || (AV_LOG_FATAL == level) || (AV_LOG_ERROR == level))
+        sys_level = LOG_ERR;
+    else if(AV_LOG_WARNING == level)
+        sys_level = LOG_WARNING;
+    else if(AV_LOG_INFO == level)
+        sys_level = LOG_INFO;
+    else if(AV_LOG_VERBOSE == level)
+        sys_level = LOG_DEBUG;
+    else
+        return ;
+    
+    abcdk_trace_vprintf(sys_level,fmt,v);
+}
+
+void abcdk_avlog_redirect2trace()
+{
+    av_log_set_callback(_abcdk_avlog_callback);
+}
+
 double abcdk_avmatch_r2d(AVRational r, double scale)
 {
     double a = (r.num == 0 || r.den == 0 ? 0. : (double)r.num / (double)r.den);
@@ -35,17 +57,29 @@ const char *abcdk_avimage_pixfmt_name(enum AVPixelFormat pixfmt)
 {
     const AVPixFmtDescriptor *desc;
 
-    if (pixfmt > AV_PIX_FMT_NONE)
-    {
+    assert(pixfmt > AV_PIX_FMT_NONE);
+    
         desc = av_pix_fmt_desc_get(pixfmt);
         if (desc)
             return av_get_pix_fmt_name(pixfmt);
-    }
-
+    
     return NULL;
 }
 
-int abcdk_avimage_fill_heights(int heights[4], int height, enum AVPixelFormat pixfmt)
+int abcdk_avimage_pixfmt_channels(enum AVPixelFormat pixfmt)
+{
+    const AVPixFmtDescriptor *desc;
+
+    assert(pixfmt > AV_PIX_FMT_NONE);
+
+    desc = av_pix_fmt_desc_get(pixfmt);
+    if (desc)
+        return desc->nb_components;
+
+    return 0;
+}
+
+int abcdk_avimage_fill_height(int heights[4], int height, enum AVPixelFormat pixfmt)
 {
     const AVPixFmtDescriptor *desc;
     int h;
@@ -78,11 +112,11 @@ int abcdk_avimage_fill_heights(int heights[4], int height, enum AVPixelFormat pi
     return planes_nb;
 }
 
-int abcdk_avimage_fill_strides(int stride[4],int width,int height,enum AVPixelFormat pixfmt,int align)
+int abcdk_avimage_fill_stride(int stride[4],int width,enum AVPixelFormat pixfmt,int align)
 {
     int stride_nb;
 
-    assert(stride != NULL && width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
+    assert(stride != NULL && width > 0 && pixfmt > AV_PIX_FMT_NONE);
 
     if (av_image_fill_linesizes(stride, pixfmt, width) < 0)
         ABCDK_ERRNO_AND_RETURN1(EINVAL, -1);
@@ -100,8 +134,7 @@ int abcdk_avimage_fill_strides(int stride[4],int width,int height,enum AVPixelFo
     return stride_nb;
 }
 
-int abcdk_avimage_fill_pointers(uint8_t *data[4], const int stride[4], int height,
-                                 enum AVPixelFormat pixfmt, void *buffer)
+int abcdk_avimage_fill_pointer(uint8_t *data[4], const int stride[4], int height, enum AVPixelFormat pixfmt, void *buffer)
 {
     int size;
 
@@ -120,7 +153,7 @@ int abcdk_avimage_size(const int stride[4], int height, enum AVPixelFormat pixfm
 {
     uint8_t *data[4] = {0};
 
-    return abcdk_avimage_fill_pointers(data, stride, height, pixfmt, NULL);
+    return abcdk_avimage_fill_pointer(data, stride, height, pixfmt, NULL);
 }
 
 int abcdk_avimage_size2(int width,int height,enum AVPixelFormat pixfmt,int align)
@@ -128,7 +161,7 @@ int abcdk_avimage_size2(int width,int height,enum AVPixelFormat pixfmt,int align
     int stride[4] = {0};
     int chk;
 
-    chk = abcdk_avimage_fill_strides(stride,width,height,pixfmt,align);
+    chk = abcdk_avimage_fill_stride(stride,width,pixfmt,align);
     if(chk<=0)
         return chk;
 
@@ -154,8 +187,7 @@ void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src)
     assert(dst->height == src->height);
     assert(dst->format == src->format);
 
-    abcdk_avimage_copy(dst->data,dst->linesize,(const uint8_t **)src->data,src->linesize,
-                        src->width,src->height,src->format);
+    abcdk_avimage_copy(dst->data,dst->linesize,(const uint8_t **)src->data,src->linesize,src->width,src->height,src->format);
 }
 
 static void _abcdk_avbuffer_free(void *opaque, uint8_t *data) 
@@ -173,10 +205,9 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
     void *buf_ptr = NULL;
     int chk_size;
 
-    assert(width > 0 && height > 0);
-    assert(AV_PIX_FMT_NONE < pixfmt && pixfmt < AV_PIX_FMT_NB);
+    assert(width > 0 && height > 0 && pixfmt > AV_PIX_FMT_NONE);
     
-    if (abcdk_avimage_fill_strides(stride, width, height, pixfmt, align) <= 0)
+    if (abcdk_avimage_fill_stride(stride, width, pixfmt, align) <= 0)
         return NULL;
 
     buf_size = abcdk_avimage_size(stride, height, pixfmt);
@@ -201,7 +232,7 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
         return NULL;
     }
 
-    chk_size = abcdk_avimage_fill_pointers(av_frame->data, stride, height, pixfmt, av_buffer->data);
+    chk_size = abcdk_avimage_fill_pointer(av_frame->data, stride, height, pixfmt, av_buffer->data);
     assert(buf_size == chk_size);
 
     av_frame->width = width;
@@ -214,28 +245,6 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
         av_frame->linesize[i] = stride[i];
 
     return av_frame;
-}
-
-static void _abcdk_avlog_callback(void* opaque, int level, const char* fmt, va_list v)
-{
-    int sys_level;
-    if((AV_LOG_QUIET == level) || (AV_LOG_PANIC == level)  || (AV_LOG_FATAL == level) || (AV_LOG_ERROR == level))
-        sys_level = LOG_ERR;
-    else if(AV_LOG_WARNING == level)
-        sys_level = LOG_WARNING;
-    else if(AV_LOG_INFO == level)
-        sys_level = LOG_INFO;
-    else if(AV_LOG_VERBOSE == level)
-        sys_level = LOG_DEBUG;
-    else
-        return ;
-    
-    abcdk_trace_vprintf(sys_level,fmt,v);
-}
-
-void abcdk_avlog_redirect2trace()
-{
-    av_log_set_callback(_abcdk_avlog_callback);
 }
 
 #pragma GCC diagnostic pop

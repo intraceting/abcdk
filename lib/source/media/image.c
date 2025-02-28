@@ -156,6 +156,23 @@ abcdk_media_image_t *abcdk_media_image_clone(const abcdk_media_image_t *src)
     return dst;
 }
 
+/**克隆。*/
+abcdk_media_image_t *abcdk_media_image_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt)
+{
+    abcdk_media_image_t *dst;
+
+    assert(src_data != NULL && src_stride != NULL && src_width > 0 && src_height > 0 && src_pixfmt > 0);
+
+    dst = abcdk_media_image_create(src_width, src_height, src_pixfmt, 1);
+    if(!dst)
+        return NULL;
+
+    /*复制图像数据。*/
+    abcdk_media_imgutil_copy(dst->data, dst->stride, src_data, src_stride, src_width, src_height, src_pixfmt);
+
+    return dst;
+}
+
 int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src)
 {
     abcdk_media_image_t *tmp_src;

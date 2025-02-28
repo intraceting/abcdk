@@ -48,6 +48,7 @@ int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_
 
 int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_t *src)
 {
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;
 }
 

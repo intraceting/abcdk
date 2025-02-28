@@ -30,7 +30,7 @@ abcdk_media_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, 
  */
 int abcdk_cuda_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
 
-/** 克隆。*/
+/**克隆。*/
 abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_image_t *src);
 
 /**

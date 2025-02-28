@@ -26,8 +26,8 @@ static struct _abcdk_media_pixfmt_ffmpeg_dict
     {ABCDK_MEDIA_PIXFMT_YUVJ420P, AV_PIX_FMT_YUVJ420P},
     {ABCDK_MEDIA_PIXFMT_YUVJ422P, AV_PIX_FMT_YUVJ422P},
     {ABCDK_MEDIA_PIXFMT_YUVJ444P, AV_PIX_FMT_YUVJ444P},
-    {ABCDK_MEDIA_PIXFMT_YUYV422, AV_PIX_FMT_YVYU422},
-    {ABCDK_MEDIA_PIXFMT_UYVY422, AV_PIX_FMT_UYVY422},
+    {ABCDK_MEDIA_PIXFMT_YUYV422, AV_PIX_FMT_YUYV422},
+    {ABCDK_MEDIA_PIXFMT_YVYU422, AV_PIX_FMT_YVYU422},
     {ABCDK_MEDIA_PIXFMT_NV12, AV_PIX_FMT_NV12},
     {ABCDK_MEDIA_PIXFMT_NV21, AV_PIX_FMT_NV21},
     {ABCDK_MEDIA_PIXFMT_NV16, AV_PIX_FMT_NV16},
@@ -77,6 +77,13 @@ int abcdk_media_pixfmt_from_ffmpeg(int format)
     }
 
     return -1;
+}
+
+int abcdk_media_pixfmt_channels(int format)
+{
+    assert(format >= 0);
+
+    return abcdk_avimage_pixfmt_channels(abcdk_media_pixfmt_to_ffmpeg(format));
 }
 
 #else // AVUTIL_PIXFMT_H

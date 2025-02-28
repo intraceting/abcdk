@@ -4,9 +4,10 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_OPENCV_STITCHER_GENERAL_HXX
-#define ABCDK_OPENCV_STITCHER_GENERAL_HXX
+#ifndef ABCDK_OPENCV_STITCHER_HXX
+#define ABCDK_OPENCV_STITCHER_HXX
 
+#include "abcdk/media/imgutil.h"
 #include "abcdk/opencv/opencv.h"
 #include "../generic/imageproc.hxx"
 
@@ -16,10 +17,10 @@ namespace abcdk
 {
     namespace opencv
     {
-        class stitcher_general
+        class stitcher
         {
         public:
-            static int Dump(std::string &metadata, stitcher_general &obj, const char *magic = NULL)
+            static int Dump(std::string &metadata, stitcher &obj, const char *magic = NULL)
             {
                 cv::FileStorage f("{}", cv::FileStorage::MEMORY | cv::FileStorage::WRITE | cv::FileStorage::FORMAT_XML);
                 if (!f.isOpened())
@@ -84,7 +85,7 @@ namespace abcdk
                 return 0;
             }
 
-            static int Load(const char *metadata, stitcher_general &obj, const char *magic = NULL)
+            static int Load(const char *metadata, stitcher &obj, const char *magic = NULL)
             {
                 std::string old_magic;
 
@@ -212,13 +213,13 @@ namespace abcdk
             bool m_panorama_param_ok;
 
         public:
-            stitcher_general()
+            stitcher()
             {
                 m_camera_param_ok = false;
                 m_panorama_param_ok = false;
             }
 
-            virtual ~stitcher_general()
+            virtual ~stitcher()
             {
             }
 
