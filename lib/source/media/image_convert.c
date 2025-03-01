@@ -26,11 +26,11 @@ int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_
         tmp_src.linesize[i] = src->stride[i];
     }
 
-    tmp_dst.format = abcdk_media_pixfmt_to_ffmpeg(dst->pixfmt);
+    tmp_dst.format = abcdk_media_pixfmt_convert_to_ffmpeg(dst->pixfmt);
     tmp_dst.width = dst->width;
     tmp_dst.height = dst->height;
 
-    tmp_src.format = abcdk_media_pixfmt_to_ffmpeg(src->pixfmt);
+    tmp_src.format = abcdk_media_pixfmt_convert_to_ffmpeg(src->pixfmt);
     tmp_src.width = src->width;
     tmp_src.height = src->height;
 
@@ -41,7 +41,7 @@ int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_
     chk = abcdk_sws_scale(ctx, &tmp_src, &tmp_dst);
     abcdk_sws_free(&ctx);
 
-    return -1;
+    return (chk > 0 ? 0 : -1);
 }
 
 #else

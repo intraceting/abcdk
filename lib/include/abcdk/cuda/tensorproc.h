@@ -7,6 +7,7 @@
 #ifndef ABCDK_CUDA_TENSORPROC_H
 #define ABCDK_CUDA_TENSORPROC_H
 
+#include "abcdk/util/trace.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"
 

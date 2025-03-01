@@ -9,6 +9,7 @@
 
 #include "abcdk/util/object.h"
 #include "abcdk/media/jcodec.h"
+#include "abcdk/media/packet.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/device.h"
 #include "abcdk/cuda/image.h"

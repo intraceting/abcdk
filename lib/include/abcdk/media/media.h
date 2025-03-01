@@ -9,6 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/object.h"
+#include "abcdk/util/trace.h"
 #include "abcdk/util/bmp.h"
 #include "abcdk/cuda/memory.h"
 #include "abcdk/opencv/opencv.h"

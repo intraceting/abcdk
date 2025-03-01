@@ -34,13 +34,16 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     // abcdk_bmp_save_file("/tmp/test.cuda.a.bmp",a->data[0],a->stride[0],a->width,a->height,24);
     abcdk_cuda_image_save("/tmp/test.cuda.b.bmp", b);
 
-    abcdk_media_image_t *c = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_YUV420P, 567);
+    //abcdk_media_image_t *c = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_YUV420P, 567);
+    abcdk_media_image_t *c = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_NV21, 567);
 
     abcdk_cuda_image_convert(c, a);
 
     abcdk_media_image_t *d = abcdk_cuda_image_create(200, 200, ABCDK_MEDIA_PIXFMT_RGB24, 678);
 
     abcdk_cuda_image_convert(d, c);
+
+    abcdk_cuda_image_save("/tmp/test.cuda.d.bmp", d);
 
     abcdk_media_image_t *e = abcdk_cuda_image_create(800, 600, ABCDK_MEDIA_PIXFMT_RGB24, 678);
 

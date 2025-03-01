@@ -42,10 +42,10 @@ int abcdk_test_stitcher(abcdk_option_t *args)
 
   abcdk_stitcher_build_panorama_param(ctx);
 
-  abcdk_media_image_t *out = NULL;
-  chk = abcdk_stitcher_compose_panorama(ctx, &out, 4, img);
+  abcdk_media_image_t *out = abcdk_media_image_alloc(ABCDK_MEDIA_TAG_HOST);
+  chk = abcdk_stitcher_compose_panorama(ctx, out, 4, img);
 
-  abcdk_media_image_save("/tmp/ccc/pano.bmp",out);
+  abcdk_opencv_image_save("/tmp/ccc/pano.jpg",out);
   abcdk_media_image_free(&out);
 
   for (int i = 0; i < 4; i++)

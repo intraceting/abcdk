@@ -7,6 +7,7 @@
 #ifndef ABCDK_CUDA_IMGPROC_H
 #define ABCDK_CUDA_IMGPROC_H
 
+#include "abcdk/util/trace.h"
 #include "abcdk/util/geometry.h"
 #include "abcdk/cuda/cuda.h"
 #include "abcdk/cuda/memory.h"

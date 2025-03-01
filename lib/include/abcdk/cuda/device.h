@@ -7,6 +7,7 @@
 #ifndef ABCDK_CUDA_DEVICE_H
 #define ABCDK_CUDA_DEVICE_H
 
+#include "abcdk/util/trace.h"
 #include "abcdk/cuda/cuda.h"
 
 __BEGIN_DECLS

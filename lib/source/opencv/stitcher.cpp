@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/opencv/stitcher.h"
-#include "../generic/stitcher.hxx"
+#include "stitcher.hxx"
 
 #ifdef OPENCV_STITCHING_STITCHER_HPP
 
@@ -13,7 +13,7 @@
 struct _abcdk_stitcher
 {
     /**/
-    abcdk::generic::opencv::stitcher *impl_ctx;
+    abcdk::opencv::stitcher *impl_ctx;
 
 }; // abcdk_stitcher_t;
 
@@ -150,13 +150,14 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
     return 0;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t **out, int count, abcdk_media_image_t *img[])
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *out, int count, abcdk_media_image_t *img[])
 {
     std::vector<cv::Mat> tmp_imgs;
     cv::Mat tmp_out;
     int chk;
 
     assert(ctx != NULL && out != NULL && count >= 2 && img != NULL);
+    assert(out->tag == ABCDK_MEDIA_TAG_HOST);
 
     tmp_imgs.resize(count);
 
@@ -183,8 +184,8 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *
     if(chk != 0)
         return -1;
 
-    abcdk_media_image_reset(out,tmp_out.cols, tmp_out.rows, ABCDK_MEDIA_PIXFMT_BGR24,1);
-    abcdk_media_image_copy_plane(*out,0,tmp_out.data,tmp_out.step);
+    abcdk_media_image_reset(&out,tmp_out.cols, tmp_out.rows, ABCDK_MEDIA_PIXFMT_BGR24,1);
+    abcdk_media_image_copy_plane(out,0,tmp_out.data,tmp_out.step);
 
     return 0;
 }
@@ -226,7 +227,7 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
     return -1;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t **out, int count, abcdk_media_image_t *img[])
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *out, int count, abcdk_media_image_t *img[])
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;

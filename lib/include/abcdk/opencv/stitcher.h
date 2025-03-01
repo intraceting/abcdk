@@ -57,7 +57,7 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx);
  * 
  * @return 0 成功， < 0 失败。
 */
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx,abcdk_media_image_t **out, int count, abcdk_media_image_t *img[]);
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx,abcdk_media_image_t *out, int count, abcdk_media_image_t *img[]);
 
 __END_DECLS
 

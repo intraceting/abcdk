@@ -47,7 +47,7 @@ static int _abcdk_cuda_image_convert_cpu(abcdk_media_image_t *dst, const abcdk_m
     }
 
     chk = abcdk_media_image_convert(dst,src);
-    if (chk <= 0)
+    if (chk != 0)
         return -1;
 
     return 0;
@@ -265,6 +265,10 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
             abcdk_media_image_free(&tmp_dst);
             return chk;
         }
+    }
+    else
+    {
+        return _abcdk_cuda_image_convert_cpu(dst,src);
     }
 
     if (npp_chk != NPP_SUCCESS)

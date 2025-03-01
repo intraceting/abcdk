@@ -8,16 +8,17 @@
 #define ABCDK_CUDA_CUDA_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/trace.h"
 
 #ifdef HAVE_CUDA
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cuda_runtime_api.h>
-#include <device_launch_parameters.h>
-#include <cublas_v2.h>
-#include <npp.h>
+#include <cuda.h> //强制编译器从指定路径查找，而不是项目里。
+#include "cuda_runtime.h"
+#include "cuda_runtime_api.h"
+#include "device_launch_parameters.h"
+#include "cublas_v2.h"
+#include "npp.h"
 #ifdef __x86_64__
-#include <nvjpeg.h>
+#include "nvjpeg.h"
 #endif //__x86_64__
 #endif //HAVE_CUDA
 

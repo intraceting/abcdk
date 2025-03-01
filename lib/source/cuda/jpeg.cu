@@ -184,7 +184,7 @@ abcdk_media_jcodec_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CU
     return NULL;
 }
 
-abcdk_media_packet_t *abcdk_cuda_jpeg_encode(abcdk_media_jcodec_t *ctx, const abcdk_media_image_t *src)
+abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_media_jcodec_t *ctx, const abcdk_media_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return NULL;

@@ -22,15 +22,19 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
         heights[1] = height / 2;
         heights[2] = height / 2;
     }
+    break;
     case ABCDK_MEDIA_PIXFMT_YUV420P9:
     case ABCDK_MEDIA_PIXFMT_YUV420P10:
     case ABCDK_MEDIA_PIXFMT_YUV420P12:
     case ABCDK_MEDIA_PIXFMT_YUV420P14:
     case ABCDK_MEDIA_PIXFMT_YUV420P16:
     {
-        stride[0] = stride[0] * 2; // 2 bytes.
-        stride[1] = stride[0] * 2; // 2 bytes.
-        stride[2] = stride[0] * 2; // 2 bytes.
+        stride[0] = width * 2; // 2 bytes.
+        stride[1] = width / 2 * 2; // 2 bytes.
+        stride[2] = width / 2 * 2; // 2 bytes.
+        heights[0] = height;
+        heights[1] = height / 2;
+        heights[2] = height / 2;
     }
     break;
     case ABCDK_MEDIA_PIXFMT_YUV422P:
@@ -42,15 +46,19 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
         heights[1] = height;
         heights[2] = height;
     }
+    break;
     case ABCDK_MEDIA_PIXFMT_YUV422P9:
     case ABCDK_MEDIA_PIXFMT_YUV422P10:
     case ABCDK_MEDIA_PIXFMT_YUV422P12:
     case ABCDK_MEDIA_PIXFMT_YUV422P14:
     case ABCDK_MEDIA_PIXFMT_YUV422P16:
     {
-        stride[0] = stride[0] * 2; // 2 bytes.
-        stride[1] = stride[0] * 2; // 2 bytes.
-        stride[2] = stride[0] * 2; // 2 bytes.
+        stride[0] = width * 2; // 2 bytes.
+        stride[1] = width / 2 * 2; // 2 bytes.
+        stride[2] = width / 2 * 2; // 2 bytes.
+        heights[0] = height;
+        heights[1] = height;
+        heights[2] = height;
     }
     break;
     case ABCDK_MEDIA_PIXFMT_YUV444P:
@@ -62,21 +70,26 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
         heights[1] = height;
         heights[2] = height;
     }
+    break;
     case ABCDK_MEDIA_PIXFMT_YUV444P9:
     case ABCDK_MEDIA_PIXFMT_YUV444P10:
     case ABCDK_MEDIA_PIXFMT_YUV444P12:
     case ABCDK_MEDIA_PIXFMT_YUV444P14:
     case ABCDK_MEDIA_PIXFMT_YUV444P16:
     {
-        stride[0] = stride[0] * 2; // 2 bytes.
-        stride[1] = stride[0] * 2; // 2 bytes.
-        stride[2] = stride[0] * 2; // 2 bytes.
+        stride[0] = width * 2; // 2 bytes.
+        stride[1] = width * 2; // 2 bytes.
+        stride[2] = width * 2; // 2 bytes.
+        heights[0] = height;
+        heights[1] = height;
+        heights[2] = height;
     }
     break;
     case ABCDK_MEDIA_PIXFMT_NV12: // YUV 4:2:0
+    case ABCDK_MEDIA_PIXFMT_NV21: // YUV 4:2:0
     {
         stride[0] = width;
-        stride[1] = width * 2; // 1 bytes, U+V | V+U.
+        stride[1] = width; // U+V | V+U.
         heights[0] = height;
         heights[1] = height / 2;
     }
@@ -84,7 +97,7 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     case ABCDK_MEDIA_PIXFMT_NV16: // YUV 4:2:2
     {
         stride[0] = width;
-        stride[1] = width / 2 * 2; // 1 bytes, U+V.
+        stride[1] = width ; // U+V.
         heights[0] = height;
         heights[1] = height;
     }
@@ -93,7 +106,7 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     case ABCDK_MEDIA_PIXFMT_NV42: //YUV 4:4:4 
     {
         stride[0] = width;
-        stride[1] = width * 2; // 1 bytes, U+V | V+U.
+        stride[1] = width; //  U+V | V+U.
         heights[0] = height;
         heights[1] = height;
     }

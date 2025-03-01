@@ -398,6 +398,8 @@ fi
 if [ "${CUDA_FIND_ROOT}" == "" ];then
 CUDA_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cuda/"
 fi
+
+#
 if [ "${CUDA_COMPILER_BIN}" == "" ];then
 CUDA_COMPILER_BIN="${THIRDPARTY_FIND_ROOT}/cuda/bin/nvcc"
 fi
@@ -485,7 +487,13 @@ if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} cuda) -eq 1 ];then
     #如果NVCC存在，再查找依赖组件。
     if [ -f ${CUDA_COMPILER_BIN} ];then
         DependPackageCheck cuda HAVE_CUDA
+    else 
+        THIRDPARTY_NOFOUND="${CUDA_COMPILER_BIN} ${THIRDPARTY_NOFOUND}"
     fi
+}
+else
+{
+    CUDA_COMPILER_BIN=""
 }
 fi
 

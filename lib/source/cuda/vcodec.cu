@@ -141,13 +141,13 @@ void abcdk_cuda_vcodec_destroy(abcdk_media_vcodec_t **ctx)
     return ;
 }
 
-abcdk_media_vcodec_t *abcdk_cuda_vcodec_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
+abcdk_media_vcodec_t *abcdk_cuda_vcodec_create(int encode, CUcontext cuda_ctx)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return NULL;
 }
 
-int abcdk_cuda_vcodec_sync(abcdk_media_vcodec_t *ctx,AVCodecContext *opt)
+int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_t *param)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;

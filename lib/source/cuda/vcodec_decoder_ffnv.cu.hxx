@@ -17,6 +17,9 @@
 
 #ifdef __cuda_cuda_h__
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic ignored "-Wsign-conversion"
+// #pragma GCC diagnostic ignored "-Wconversion"
 
 namespace abcdk
 {
@@ -434,6 +437,7 @@ namespace abcdk
     } // namespace cuda
 } // namespace abcdk
 
+// #pragma GCC diagnostic pop
 #endif // FFNV_CUDA_DYNLINK_LOADER_H
 #endif // __cuda_cuda_h__
 
