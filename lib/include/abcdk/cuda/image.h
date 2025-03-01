@@ -19,6 +19,12 @@ __BEGIN_DECLS
 /**申请。 */
 abcdk_media_image_t *abcdk_cuda_image_alloc();
 
+/**
+ * 重置。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+int abcdk_cuda_image_reset(abcdk_media_image_t **ctx, int width, int height, int pixfmt, int align);
 
 /**创建。*/
 abcdk_media_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, int align);
@@ -29,6 +35,9 @@ abcdk_media_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, 
  * @return 0 成功，< 0 失败。
  */
 int abcdk_cuda_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
+
+/**复制。 */
+void abcdk_cuda_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride);
 
 /**克隆。*/
 abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_image_t *src);

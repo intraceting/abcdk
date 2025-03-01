@@ -12,7 +12,7 @@
 
 __BEGIN_DECLS
 
-/** 媒体JPEG编/解码器参数。*/
+/**JPEG编/解码器参数。*/
 typedef struct _abcdk_media_jcodec_param
 {
     /**
@@ -24,7 +24,7 @@ typedef struct _abcdk_media_jcodec_param
 
 } abcdk_media_jcodec_param_t;
 
-/** 媒体JPEG编/解码器。*/
+/**JPEG编/解码器。*/
 typedef struct _abcdk_media_jcodec
 {
     /**私有环境。*/

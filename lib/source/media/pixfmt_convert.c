@@ -17,17 +17,24 @@ static struct _abcdk_media_pixfmt_ffmpeg_dict
     int ffmpeg;
 
 } abcdk_media_pixfmt_ffmpeg_dict[] = {
-    {ABCDK_MEDIA_PIXFMT_YUV410P, AV_PIX_FMT_YUV410P},
-    {ABCDK_MEDIA_PIXFMT_YUV411P, AV_PIX_FMT_YUV411P},
     {ABCDK_MEDIA_PIXFMT_YUV420P, AV_PIX_FMT_YUV420P},
+    {ABCDK_MEDIA_PIXFMT_YUV420P9, AV_PIX_FMT_YUV420P9},
+    {ABCDK_MEDIA_PIXFMT_YUV420P10, AV_PIX_FMT_YUV420P10},
+    {ABCDK_MEDIA_PIXFMT_YUV420P12, AV_PIX_FMT_YUV420P12},
+    {ABCDK_MEDIA_PIXFMT_YUV420P14, AV_PIX_FMT_YUV420P14},
+    {ABCDK_MEDIA_PIXFMT_YUV420P16, AV_PIX_FMT_YUV420P16},
     {ABCDK_MEDIA_PIXFMT_YUV422P, AV_PIX_FMT_YUV422P},
+    {ABCDK_MEDIA_PIXFMT_YUV422P9, AV_PIX_FMT_YUV422P9},
+    {ABCDK_MEDIA_PIXFMT_YUV422P10, AV_PIX_FMT_YUV422P10},
+    {ABCDK_MEDIA_PIXFMT_YUV422P12, AV_PIX_FMT_YUV422P12},
+    {ABCDK_MEDIA_PIXFMT_YUV422P14, AV_PIX_FMT_YUV422P14},
+    {ABCDK_MEDIA_PIXFMT_YUV422P16, AV_PIX_FMT_YUV422P16},
     {ABCDK_MEDIA_PIXFMT_YUV444P, AV_PIX_FMT_YUV444P},
-    {ABCDK_MEDIA_PIXFMT_YUVJ411P, AV_PIX_FMT_YUVJ411P},
-    {ABCDK_MEDIA_PIXFMT_YUVJ420P, AV_PIX_FMT_YUVJ420P},
-    {ABCDK_MEDIA_PIXFMT_YUVJ422P, AV_PIX_FMT_YUVJ422P},
-    {ABCDK_MEDIA_PIXFMT_YUVJ444P, AV_PIX_FMT_YUVJ444P},
-    {ABCDK_MEDIA_PIXFMT_YUYV422, AV_PIX_FMT_YUYV422},
-    {ABCDK_MEDIA_PIXFMT_YVYU422, AV_PIX_FMT_YVYU422},
+    {ABCDK_MEDIA_PIXFMT_YUV444P9, AV_PIX_FMT_YUV444P9},
+    {ABCDK_MEDIA_PIXFMT_YUV444P10, AV_PIX_FMT_YUV444P10},
+    {ABCDK_MEDIA_PIXFMT_YUV444P12, AV_PIX_FMT_YUV444P12},
+    {ABCDK_MEDIA_PIXFMT_YUV444P14, AV_PIX_FMT_YUV444P14},
+    {ABCDK_MEDIA_PIXFMT_YUV444P16, AV_PIX_FMT_YUV444P16},
     {ABCDK_MEDIA_PIXFMT_NV12, AV_PIX_FMT_NV12},
     {ABCDK_MEDIA_PIXFMT_NV21, AV_PIX_FMT_NV21},
     {ABCDK_MEDIA_PIXFMT_NV16, AV_PIX_FMT_NV16},
@@ -39,13 +46,14 @@ static struct _abcdk_media_pixfmt_ffmpeg_dict
     {ABCDK_MEDIA_PIXFMT_NV42, -1},
 #endif //#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(56, 31, 100)
     {ABCDK_MEDIA_PIXFMT_GRAY8, AV_PIX_FMT_GRAY8},
+    {ABCDK_MEDIA_PIXFMT_GRAY16, AV_PIX_FMT_GRAY16},
+    {ABCDK_MEDIA_PIXFMT_GRAYF32, AV_PIX_FMT_GRAYF32},
     {ABCDK_MEDIA_PIXFMT_RGB24, AV_PIX_FMT_RGB24},
     {ABCDK_MEDIA_PIXFMT_BGR24, AV_PIX_FMT_BGR24},
     {ABCDK_MEDIA_PIXFMT_RGB32, AV_PIX_FMT_RGB32},
-    {ABCDK_MEDIA_PIXFMT_BGR32, AV_PIX_FMT_BGR32},
-    {ABCDK_MEDIA_PIXFMT_GRAYF32, AV_PIX_FMT_GRAYF32}};
+    {ABCDK_MEDIA_PIXFMT_BGR32, AV_PIX_FMT_BGR32}};
 
-int abcdk_media_pixfmt_to_ffmpeg(int format)
+int abcdk_media_pixfmt_convert_to_ffmpeg(int format)
 {
     struct _abcdk_media_pixfmt_ffmpeg_dict *p;
 
@@ -62,7 +70,7 @@ int abcdk_media_pixfmt_to_ffmpeg(int format)
     return -1;
 }
 
-int abcdk_media_pixfmt_from_ffmpeg(int format)
+int abcdk_media_pixfmt_convert_from_ffmpeg(int format)
 {
     struct _abcdk_media_pixfmt_ffmpeg_dict *p;
 
@@ -79,22 +87,15 @@ int abcdk_media_pixfmt_from_ffmpeg(int format)
     return -1;
 }
 
-int abcdk_media_pixfmt_channels(int format)
-{
-    assert(format >= 0);
-
-    return abcdk_avimage_pixfmt_channels(abcdk_media_pixfmt_to_ffmpeg(format));
-}
-
 #else // AVUTIL_PIXFMT_H
 
-int abcdk_media_pixfmt_to_ffmpeg(int format)
+int abcdk_media_pixfmt_convert_to_ffmpeg(int format)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;
 }
 
-int abcdk_media_pixfmt_from_ffmpeg(int format)
+int abcdk_media_pixfmt_convert_from_ffmpeg(int format)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;

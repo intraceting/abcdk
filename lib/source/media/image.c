@@ -6,18 +6,9 @@
  */
 #include "abcdk/media/image.h"
 
-static void _abcdk_media_image_buffer_free_cb(void **ptr, int size)
+static void _abcdk_media_image_private_ctx_free_cb(void **ctx)
 {
-    abcdk_heap_freep(ptr);
-}
-
-static int _abcdk_media_image_buffer_alloc_cb(void **ptr, int size)
-{
-    *ptr = abcdk_heap_alloc(size);
-    if (*ptr)
-        return 0;
-
-    return -1;
+    abcdk_heap_freep(ctx);
 }
 
 void abcdk_media_image_free(abcdk_media_image_t **ctx)
@@ -32,8 +23,8 @@ void abcdk_media_image_free(abcdk_media_image_t **ctx)
 
     assert(ctx_p->tag == ABCDK_MEDIA_TAG_HOST || ctx_p->tag == ABCDK_MEDIA_TAG_CUDA);
 
-    if (ctx_p->buffer_free_cb)
-        ctx_p->buffer_free_cb(&ctx_p->buf_ptr, ctx_p->buf_size);
+    if (ctx_p->private_ctx_free_cb)
+        ctx_p->private_ctx_free_cb(&ctx_p->private_ctx);
 
     abcdk_heap_free(ctx_p);
 }
@@ -54,78 +45,86 @@ abcdk_media_image_t *abcdk_media_image_alloc(uint32_t tag)
     ctx->height = -1;
     ctx->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
     ctx->tag = tag;
-    ctx->buffer_free_cb = _abcdk_media_image_buffer_free_cb;
-    ctx->buffer_alloc_cb = _abcdk_media_image_buffer_alloc_cb;
+    ctx->private_ctx_free_cb = _abcdk_media_image_private_ctx_free_cb;
 
     return ctx;
 }
 
-int abcdk_media_image_reset(abcdk_media_image_t *ctx, int width, int height, int pixfmt, int align)
+int abcdk_media_image_reset(abcdk_media_image_t **ctx, int width, int height, int pixfmt, int align)
 {
+    abcdk_media_image_t *ctx_p;
+    int buf_size;
     int chk;
 
     assert(ctx != NULL && width > 0 && height > 0 && pixfmt >= 0);
-    assert(ctx->tag == ABCDK_MEDIA_TAG_HOST || ctx->tag == ABCDK_MEDIA_TAG_CUDA);
 
-    if (ctx->width == width || ctx->height == height || ctx->pixfmt == pixfmt)
+    ctx_p = *ctx;
+
+    if (!ctx_p)
+    {
+        *ctx = abcdk_media_image_alloc(ABCDK_MEDIA_TAG_HOST);
+        if (!*ctx)
+            return -1;
+
+        chk = abcdk_media_image_reset(ctx, width, height, pixfmt, align);
+        if (chk != 0)
+            abcdk_media_image_free(ctx);
+
+        return chk;
+    }
+    
+    assert(ctx_p->tag == ABCDK_MEDIA_TAG_HOST);
+
+    if (ctx_p->width == width || ctx_p->height == height || ctx_p->pixfmt == pixfmt)
         return 0;
 
-    if (ctx->buffer_free_cb)
-        ctx->buffer_free_cb(&ctx->buf_ptr, ctx->buf_size);
+    if (ctx_p->private_ctx_free_cb)
+        ctx_p->private_ctx_free_cb(&ctx_p->private_ctx);
 
-    ctx->data[0] = ctx->data[1] = ctx->data[2] = ctx->data[3] = NULL;
-    ctx->stride[0] = ctx->stride[1] = ctx->stride[2] = ctx->stride[3] = -1;
-    ctx->width = -1;
-    ctx->height = -1;
-    ctx->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
+    ctx_p->data[0] = ctx_p->data[1] = ctx_p->data[2] = ctx_p->data[3] = NULL;
+    ctx_p->stride[0] = ctx_p->stride[1] = ctx_p->stride[2] = ctx_p->stride[3] = -1;
+    ctx_p->width = -1;
+    ctx_p->height = -1;
+    ctx_p->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
 
-    chk = abcdk_media_imgutil_fill_stride(ctx->stride, width, pixfmt, align);
+    chk = abcdk_media_imgutil_fill_stride(ctx_p->stride, width, pixfmt, align);
     if (chk <= 0)
         return -1;
 
-    ctx->buf_size = abcdk_media_imgutil_size(ctx->stride, height, pixfmt);
-    if (ctx->buf_size <= 0)
+    buf_size = abcdk_media_imgutil_size(ctx_p->stride, height, pixfmt);
+    if (buf_size <= 0)
         return -1;
 
-    chk = ctx->buffer_alloc_cb(&ctx->buf_ptr, ctx->buf_size);
-    if (chk != 0)
+    ctx_p->private_ctx = abcdk_heap_alloc(buf_size);
+    if (!ctx_p->private_ctx)
         return -1;
 
-    chk = abcdk_media_imgutil_fill_pointer(ctx->data, ctx->stride, height, pixfmt, ctx->buf_ptr);
-    assert(chk == ctx->buf_size);
+    chk = abcdk_media_imgutil_fill_pointer(ctx_p->data, ctx_p->stride, height, pixfmt, ctx_p->private_ctx);
+    assert(chk == buf_size);
 
-    ctx->width = width;
-    ctx->height = height;
-    ctx->pixfmt = pixfmt;
+    ctx_p->width = width;
+    ctx_p->height = height;
+    ctx_p->pixfmt = pixfmt;
 
     return 0;
 }
 
 abcdk_media_image_t *abcdk_media_image_create(int width, int height, int pixfmt, int align)
 {
-    abcdk_media_image_t *ctx;
+    abcdk_media_image_t *ctx = NULL;
     int chk;
 
     assert(width > 0 && height > 0 && pixfmt >= 0);
 
-    ctx = abcdk_media_image_alloc(ABCDK_MEDIA_TAG_HOST);
-    if (!ctx)
-        return NULL;
-
-    chk = abcdk_media_image_reset(ctx, width, height, pixfmt, align);
+    chk = abcdk_media_image_reset(&ctx, width, height, pixfmt, align);
     if(chk != 0)
-    {
-        abcdk_media_image_free(&ctx);
         return NULL;
-    }
 
     return ctx;
 }
 
-int abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src)
+void abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src)
 {
-    int chk;
-    
     assert(dst != NULL && src != NULL);
     assert(dst->tag == ABCDK_MEDIA_TAG_HOST);
     assert(src->tag == ABCDK_MEDIA_TAG_HOST);
@@ -136,7 +135,27 @@ int abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *
     /*复制图像数据。*/
     abcdk_media_imgutil_copy(dst->data, dst->stride, (const uint8_t **)src->data, src->stride, src->width, src->height, src->pixfmt);
 
-    return 0;
+}
+
+void abcdk_media_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
+{
+    int real_stride[4] = {0};
+    int real_height[4] = {0};
+    int chk, chk_stride, chk_height;
+
+    assert(dst != NULL && dst_plane >= 0);
+    assert(dst->tag == ABCDK_MEDIA_TAG_HOST);
+    assert(src_data != NULL && src_stride > 0);
+
+    chk_stride = abcdk_media_imgutil_fill_stride(real_stride, dst->width, dst->pixfmt,1);
+    chk_height = abcdk_media_imgutil_fill_height(real_height, dst->height, dst->pixfmt);
+    chk = ABCDK_MIN(chk_stride, chk_height);
+
+    assert(dst_plane < chk);
+
+    abcdk_memcpy_2d(dst->data[dst_plane], dst->stride[dst_plane], 0, 0,
+                    src_data, src_stride, 0, 0,
+                    real_stride[dst_plane], real_height[dst_plane]);
 }
 
 abcdk_media_image_t *abcdk_media_image_clone(const abcdk_media_image_t *src)
@@ -152,23 +171,6 @@ abcdk_media_image_t *abcdk_media_image_clone(const abcdk_media_image_t *src)
         return NULL;
     
     abcdk_media_image_copy(dst,src);
-
-    return dst;
-}
-
-/**克隆。*/
-abcdk_media_image_t *abcdk_media_image_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt)
-{
-    abcdk_media_image_t *dst;
-
-    assert(src_data != NULL && src_stride != NULL && src_width > 0 && src_height > 0 && src_pixfmt > 0);
-
-    dst = abcdk_media_image_create(src_width, src_height, src_pixfmt, 1);
-    if(!dst)
-        return NULL;
-
-    /*复制图像数据。*/
-    abcdk_media_imgutil_copy(dst->data, dst->stride, src_data, src_stride, src_width, src_height, src_pixfmt);
 
     return dst;
 }

@@ -763,4 +763,4 @@ namespace abcdk
 
 #endif // OPENCV_CORE_HPP
 
-#endif // ABCDK_OPENCV_STITCHER_GENERAL_HXX
+#endif // ABCDK_OPENCV_STITCHER_HXX

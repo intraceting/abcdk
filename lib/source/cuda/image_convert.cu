@@ -130,24 +130,21 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
             int dst_order[3] = {2, 1, 0};
             npp_chk = nppiSwapChannels_8u_C4C3R(src->data[0], src->stride[0], dst->data[0], dst->stride[0], src_roi, dst_order);
         }
-        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUVJ420P ||
-                 src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV420P)
+        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV420P)
         {
             npp_chk = nppiYUV420ToRGB_8u_P3C3R(src->data, (int *)src->stride, dst->data[0], dst->stride[0], src_roi);
+        }
+        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV422P)
+        {
+            npp_chk = nppiYUV422ToRGB_8u_P3C3R(src->data, (int *)src->stride, dst->data[0], dst->stride[0], src_roi);
+        }
+        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV444P)
+        {
+            npp_chk = nppiYCbCr444ToRGB_JPEG_8u_P3C3R(src->data, src->stride[0], dst->data[0], dst->stride[0], src_roi);
         }
         else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_NV12)
         {
             npp_chk = nppiNV12ToRGB_8u_P2C3R(src->data, src->stride[0], dst->data[0], dst->stride[0], src_roi);
-        }
-        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUVJ422P ||
-                 src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV422P)
-        {
-            npp_chk = nppiYUV422ToRGB_8u_P3C3R(src->data, (int *)src->stride, dst->data[0], dst->stride[0], src_roi);
-        }
-        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV444P ||
-                 src->pixfmt == ABCDK_MEDIA_PIXFMT_YUVJ444P)
-        {
-            npp_chk = nppiYCbCr444ToRGB_JPEG_8u_P3C3R(src->data, src->stride[0], dst->data[0], dst->stride[0], src_roi);
         }
         else
         {
@@ -171,8 +168,7 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
             int dst_order[3] = {2, 1, 0};
             npp_chk = nppiSwapChannels_8u_C4C3R(src->data[0], src->stride[0], dst->data[0], dst->stride[0], src_roi, dst_order);
         }
-        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUVJ420P ||
-                 src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV420P)
+        else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_YUV420P)
         {
             npp_chk = nppiYUV420ToBGR_8u_P3C3R(src->data, (int *)src->stride, dst->data[0], dst->stride[0], src_roi);
         }
@@ -194,8 +190,7 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
             return chk;
         }
     }
-    else if (dst->pixfmt == ABCDK_MEDIA_PIXFMT_YUVJ420P ||
-             dst->pixfmt == ABCDK_MEDIA_PIXFMT_YUV420P)
+    else if (dst->pixfmt == ABCDK_MEDIA_PIXFMT_YUV420P)
     {
         if (src->pixfmt == ABCDK_MEDIA_PIXFMT_RGB24)
         {

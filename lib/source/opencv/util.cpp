@@ -10,7 +10,7 @@
 
 abcdk_media_image_t *abcdk_opencv_image_load(const char *file, int gray)
 {
-    abcdk_media_image_t *dst = NULL, tmp_src = {0};
+    abcdk_media_image_t *dst = NULL;
     cv::Mat src;
 
     assert(file != NULL);
@@ -19,18 +19,11 @@ abcdk_media_image_t *abcdk_opencv_image_load(const char *file, int gray)
     if (src.empty())
         return NULL;
 
-    tmp_src.tag = ABCDK_MEDIA_TAG_HOST;
-    tmp_src.data[0] = src.data;
-    tmp_src.data[1] = tmp_src.data[2] = tmp_src.data[3] = NULL;
-    tmp_src.stride[0] = src.step;
-    tmp_src.stride[1] = tmp_src.stride[2] = tmp_src.stride[3] = -1;
-    tmp_src.width = src.cols;
-    tmp_src.height = src.rows;
-    tmp_src.pixfmt = (gray ? ABCDK_MEDIA_PIXFMT_GRAY8 : ABCDK_MEDIA_PIXFMT_BGR24);
-
-    dst = abcdk_media_image_clone(&tmp_src);
+    dst = abcdk_media_image_create(src.cols, src.rows, (gray ? ABCDK_MEDIA_PIXFMT_GRAY8 : ABCDK_MEDIA_PIXFMT_BGR24), 1);
     if (!dst)
         return NULL;
+
+    abcdk_media_image_copy_plane(dst,0, src.data, src.step);
 
     return dst;
 }

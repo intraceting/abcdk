@@ -107,11 +107,9 @@ int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_
     return 0;
 }
 
-int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_object_t **dst, const abcdk_media_image_t *src)
+int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
 {
     abcdk::cuda::vcodec::encoder *encoder_ctx;
-    abcdk_media_image_t *tmp_src = NULL;
-    int chk;
 
     assert(ctx != NULL && dst != NULL);
 
@@ -119,22 +117,10 @@ int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_object_t **dst, con
 
     encoder_ctx = (abcdk::cuda::vcodec::encoder *)ctx->private_ctx;
 
-    if(src->tag == ABCDK_MEDIA_TAG_HOST)
-    {
-        tmp_src = abcdk_cuda_image_clone(0, src);
-        if(!tmp_src)
-            return -1;
-
-        chk = abcdk_cuda_vcodec_encode(ctx, dst,tmp_src);
-        abcdk_media_image_free(&tmp_src);
-
-        return chk;
-    }
-
     return encoder_ctx->update(dst,src);
 }
 
-int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
+int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
 {
     abcdk::cuda::vcodec::decoder *decoder_ctx;
 
@@ -144,7 +130,7 @@ int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_image_t **dst
 
     decoder_ctx = (abcdk::cuda::vcodec::decoder *)ctx->private_ctx;
 
-    return decoder_ctx->update(dst, dst_pts, src_data, src_size, src_pts);
+    return decoder_ctx->update(dst, src);
 }
 
 #else //__cuda_cuda_h__
@@ -167,13 +153,13 @@ int abcdk_cuda_vcodec_sync(abcdk_media_vcodec_t *ctx,AVCodecContext *opt)
     return -1;
 }
 
-int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_object_t **dst, const abcdk_media_image_t *src)
+int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
 
-int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
+int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;

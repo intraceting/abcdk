@@ -39,7 +39,7 @@ namespace abcdk
 
                 virtual int open(abcdk_media_vcodec_param_t *param) = 0;
 
-                virtual int update(abcdk_object_t **dst, const abcdk_media_image_t *src) = 0;
+                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src) = 0;
             };
         } // namespace vcodec
     } // namespace cuda

@@ -28,7 +28,7 @@ static struct _abcdk_media_vcodec_ffmpeg_dict
     {ABCDK_MEDIA_VCODEC_VP9, AV_CODEC_ID_VP9},
     {ABCDK_MEDIA_VCODEC_WMV3, AV_CODEC_ID_WMV3}};
 
-int abcdk_media_vcodec_to_ffmpeg(int format)
+int abcdk_media_vcodec_convert_to_ffmpeg(int format)
 {
     struct _abcdk_media_vcodec_ffmpeg_dict *p;
 
@@ -45,7 +45,7 @@ int abcdk_media_vcodec_to_ffmpeg(int format)
     return -1;
 }
 
-int abcdk_media_vcodec_from_ffmpeg(int format)
+int abcdk_media_vcodec_convert_from_ffmpeg(int format)
 {
     struct _abcdk_media_vcodec_ffmpeg_dict *p;
 
@@ -64,13 +64,13 @@ int abcdk_media_vcodec_from_ffmpeg(int format)
 
 #else // AVUTIL_PIXFMT_H
 
-int abcdk_media_vcodec_to_ffmpeg(int format)
+int abcdk_media_vcodec_convert_to_ffmpeg(int format)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;
 }
 
-int abcdk_media_vcodec_from_ffmpeg(int format)
+int abcdk_media_vcodec_convert_from_ffmpeg(int format)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
     return -1;

@@ -297,9 +297,9 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_object_t **dst, const abcdk_media_image_t *src)
+                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
                 {
-                    abcdk_media_image_t *tmp_src = NULL;
+                    abcdk_media_frame_t *tmp_src = NULL;
                     std::vector<uint8_t> out;
                     int chk;
 

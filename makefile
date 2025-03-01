@@ -47,6 +47,7 @@ CXX_FLAGS += -Wno-deprecated-declarations
 CXX_FLAGS += -Wint-to-pointer-cast
 CXX_FLAGS += -Wno-attributes
 CXX_FLAGS += -Wno-format
+CXX_FLAGS += -Wno-overloaded-virtual
 CXX_FLAGS += -DABCDK_VERSION_MAJOR=${VERSION_MAJOR} 
 CXX_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR} 
 CXX_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}

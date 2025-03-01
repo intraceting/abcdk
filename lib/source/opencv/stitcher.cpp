@@ -183,13 +183,8 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *
     if(chk != 0)
         return -1;
 
-    uint8_t *out_data[4] = {NULL, NULL, NULL, NULL};
-    int out_stride[4] = {-1, -1, -1, -1};
-
-    out_data[0] = tmp_out.data;
-    out_stride[0] = tmp_out.step;
-
-    *out = abcdk_media_image_clone2((const uint8_t **)out_data, out_stride, tmp_out.cols, tmp_out.rows, ABCDK_MEDIA_PIXFMT_BGR24);
+    abcdk_media_image_reset(out,tmp_out.cols, tmp_out.rows, ABCDK_MEDIA_PIXFMT_BGR24,1);
+    abcdk_media_image_copy_plane(*out,0,tmp_out.data,tmp_out.step);
 
     return 0;
 }

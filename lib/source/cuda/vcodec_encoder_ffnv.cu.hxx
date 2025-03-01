@@ -258,14 +258,14 @@ namespace abcdk
                     m_vInputFrames.resize(m_nEncoderBuffer);
                     for (int i = 0; i < m_vInputFrames.size(); i++)
                     {
-                        m_vInputFrames[i] = abcdk_cuda_avframe_alloc(m_params.encodeWidth, m_params.encodeHeight, AV_PIX_FMT_RGB32, 1);
+                        m_vInputFrames[i] = abcdk_cuda_image_create(m_params.encodeWidth, m_params.encodeHeight, ABCDK_MEDIA_PIXFMT_RGB32, 1);
 
                         NV_ENC_REGISTER_RESOURCE registerResource = {NV_ENC_REGISTER_RESOURCE_VER};
                         registerResource.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR;
                         registerResource.resourceToRegister = (void *)m_vInputFrames[i]->data[0];
                         registerResource.width = m_vInputFrames[i]->width;
                         registerResource.height = m_vInputFrames[i]->height;
-                        registerResource.pitch = m_vInputFrames[i]->linesize[0];
+                        registerResource.pitch = m_vInputFrames[i]->stride[0];
                         registerResource.bufferFormat = NV_ENC_BUFFER_FORMAT_ABGR;
                         NVENCSTATUS chk = m_nvenc.nvEncRegisterResource(m_encoder, &registerResource);
                         if (chk == NV_ENC_SUCCESS)
@@ -361,7 +361,7 @@ namespace abcdk
                     {
                         int i = m_iToSend % m_nEncoderBuffer;
 
-                        abcdk_cuda_avframe_copy(m_vInputFrames[i], img);
+                        abcdk_cuda_image_copy(m_vInputFrames[i], img);
 
                         NV_ENC_MAP_INPUT_RESOURCE mapInputResource = {NV_ENC_MAP_INPUT_RESOURCE_VER};
                         mapInputResource.registeredResource = m_vRegisteredResources[i];
@@ -414,14 +414,12 @@ namespace abcdk
 
                     /*数组内的成员是指针对象，必须逐个释放。*/
                     for (auto &t : m_vInputFrames)
-                        av_frame_free(&t);
+                        abcdk_media_image_free(&t);
 
                     m_vInputFrames.clear();
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_option_free(&m_cfg);
                 }
 
                 virtual int open(abcdk_media_vcodec_param_t *param)
@@ -439,9 +437,9 @@ namespace abcdk
                         return -1;
 
                     fps = param->fps_n/param->fps_d;
-                    width = opt->width;
-                    height = opt->height;
-                    nvcodec_id = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
+                    width = param->width;
+                    height = param->height;
+                    nvcodec_id = (cudaVideoCodec)vcodec_to_nvcodec(param->format);
 
                     if (fps > 1000 || fps <= 0)
                         return -1;
@@ -519,25 +517,18 @@ namespace abcdk
                     /*输出扩展数据帧。*/
                     if (ext_data.size() > 0)
                     {
-                        if (opt->extradata)
-                        {
-                            av_free(opt->extradata);
-                            opt->extradata = NULL;
-                            opt->extradata_size = 0;
-                        }
-
-                        opt->extradata = (uint8_t *)av_memdup(ext_data.data(), ext_data.size());
-                        opt->extradata_size = ext_data.size();
+                        abcdk_object_unref(&param->extradata);
+                        param->extradata = abcdk_object_copyfrom(ext_data.data(), ext_data.size());
                     }
 
                     return 0;
                 }
 
-                virtual int update(abcdk_object_t **dst, const abcdk_media_image_t *src)
+                virtual int update(abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
                 {
-                    abcdk_media_image_t *tmp_src = NULL;
+                    abcdk_media_frame_t *tmp_src = NULL;
                     std::vector<std::vector<uint8_t>> out;
-                    int dst_off = 0;
+                    int dst_size = 0, dst_off = 0;
                     int chk;
 
                     assert(dst != NULL);
@@ -552,23 +543,30 @@ namespace abcdk
 
                     if (src)
                     {
-                        if (src->format != (int)AV_PIX_FMT_RGB32)
+                        if (src->img->pixfmt != ABCDK_MEDIA_PIXFMT_RGB32)
                         {
-                            tmp_src = abcdk_cuda_avframe_alloc(src->width, src->height, AV_PIX_FMT_RGB32, 1);
+                            tmp_src = abcdk_cuda_frame_create(src->img->width, src->img->height, ABCDK_MEDIA_PIXFMT_RGB32, 1);
                             if (!tmp_src)
                                 return -1;
-
-                            chk = abcdk_cuda_avframe_convert(tmp_src, src); // 转换格式。
+                            
+                            /*转换格式。*/
+                            chk = abcdk_cuda_image_convert(tmp_src->img, src->img); 
 
                             if (chk == 0)
-                                chk = update(dst, tmp_src);
+                            {
+                                /*复制其它参数。*/
+                                tmp_src->dts = src->dts;
+                                tmp_src->pts = src->pts;
 
-                            av_frame_free(&tmp_src);
+                                chk = update(dst, tmp_src);
+                            }
+
+                            abcdk_media_frame_free(&tmp_src);
 
                             return chk;
                         }
 
-                        chk = encode(src, out);
+                        chk = encode(src->img, out);
                         if (chk < 0)
                             return -1;
                     }
@@ -582,22 +580,18 @@ namespace abcdk
                     if (out.size() <= 0)
                         return 0;
 
-                    // *dst = av_packet_alloc();
-                    // if (!*dst)
-                    //     return -1;
+                    for (int j = 0; j < out.size(); j++)
+                        dst_size += out[j].size();
 
-                    // for (int j = 0; j < out.size(); j++)
-                    // {
-                    //     chk = av_grow_packet(*dst, out[j].size());
-                    //     if (chk != 0)
-                    //     {
-                    //         av_packet_free(dst);
-                    //         return -1;
-                    //     }
+                    chk = abcdk_media_packet_reset(dst,dst_size);
+                    if(chk != 0)
+                        return -1;
 
-                    //     memcpy(ABCDK_PTR2VPTR((*dst)->data, dst_off), out[j].data(), out[j].size());
-                    //     dst_off += out[j].size();
-                    // }
+                    for (int j = 0; j < out.size(); j++)
+                    {
+                        memcpy(ABCDK_PTR2VPTR((*dst)->data, dst_off), out[j].data(), out[j].size());
+                        dst_off += out[j].size();
+                    }
 
                     return 1;
                 }

@@ -16,6 +16,9 @@ __BEGIN_DECLS
 /**媒体图像结构。*/
 typedef struct _abcdk_media_image
 {
+    /**私有环境。*/
+    void *private_ctx;
+
     /**图层指针。 */
     uint8_t *data[4];
 
@@ -34,17 +37,8 @@ typedef struct _abcdk_media_image
     /**标签。*/
     uint32_t tag;
 
-    /**缓存指针。*/
-    void *buf_ptr;
-
-    /**缓存长度。*/
-    int buf_size;
-
-    /**缓存释放。*/
-    void (*buffer_free_cb)(void **ptr, int size);
-
-    /**缓存申请。*/
-    int (*buffer_alloc_cb)(void **ptr, int size);
+    /**私有环境释放。*/
+    void (*private_ctx_free_cb)(void **ctx);
 
 }abcdk_media_image_t;
 
@@ -59,23 +53,19 @@ abcdk_media_image_t *abcdk_media_image_alloc(uint32_t tag);
  * 
  * @return 0 成功，< 0 失败。
 */
-int abcdk_media_image_reset(abcdk_media_image_t *ctx, int width, int height, int pixfmt, int align);
+int abcdk_media_image_reset(abcdk_media_image_t **ctx, int width, int height, int pixfmt, int align);
 
 /**创建。*/
 abcdk_media_image_t *abcdk_media_image_create(int width, int height, int pixfmt, int align);
 
-/**
- * 复制。
- *
- * @return 0 成功，< 0 失败。
- */
-int abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
+/** 复制。 */
+void abcdk_media_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
+
+/** 复制。 */
+void abcdk_media_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride);
 
 /**克隆。*/
 abcdk_media_image_t *abcdk_media_image_clone(const abcdk_media_image_t *src);
-
-/**克隆。*/
-abcdk_media_image_t *abcdk_media_image_clone2(const uint8_t *src_data[4], const int src_stride[4], int src_width, int src_height, int src_pixfmt);
 
 /**
  * 保存到文件(BMP)。

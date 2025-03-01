@@ -9,10 +9,12 @@
 
 #include "abcdk/util/object.h"
 #include "abcdk/media/media.h"
+#include "abcdk/media/packet.h"
+#include "abcdk/cuda/frame.h"
 
 __BEGIN_DECLS
 
-/**媒体视频编码常量。*/
+/**视频编码常量。*/
 typedef enum _abcdk_media_vcodec_constant
 {
     ABCDK_MEDIA_VCODEC_NONE = -1,
@@ -50,7 +52,7 @@ typedef enum _abcdk_media_vcodec_constant
 
 } abcdk_media_vcodec_constant_t;
 
-/** 媒体视频编/解码器参数。*/
+/**视频编/解码器参数。*/
 typedef struct _abcdk_media_vcodec_param
 {
     /** 编码格式 */
@@ -176,10 +178,10 @@ typedef struct _abcdk_media_vcodec
 } abcdk_media_vcodec_t;
 
 /**转为ffmpeg类型。*/
-int abcdk_media_vcodec_to_ffmpeg(int format);
+int abcdk_media_vcodec_convert_to_ffmpeg(int format);
 
 /**从ffmpeg类型转。*/
-int abcdk_media_vcodec_from_ffmpeg(int format);
+int abcdk_media_vcodec_convert_from_ffmpeg(int format);
 
 /**释放。*/
 void abcdk_media_vcodec_free(abcdk_media_vcodec_t **ctx);

@@ -102,7 +102,7 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
+                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
                 {
                     nvPacket packet = {0};
                     nvFrame frame = {0};

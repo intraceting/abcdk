@@ -119,7 +119,7 @@ int abcdk_avimage_fill_stride(int stride[4],int width,enum AVPixelFormat pixfmt,
     assert(stride != NULL && width > 0 && pixfmt > AV_PIX_FMT_NONE);
 
     if (av_image_fill_linesizes(stride, pixfmt, width) < 0)
-        ABCDK_ERRNO_AND_RETURN1(EINVAL, -1);
+        return -1;
 
     stride_nb = 0;
     for (int i = 0; i < 4; i++)

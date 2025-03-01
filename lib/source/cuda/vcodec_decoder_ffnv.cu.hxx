@@ -101,7 +101,7 @@ namespace abcdk
 
                 static void frame_queue_destroy_cb(void *msg)
                 {
-                    av_frame_free((abcdk_media_image_t **)&msg);
+                    abcdk_media_image_free((abcdk_media_image_t **)&msg);
                 }
 
             private:
@@ -241,11 +241,8 @@ namespace abcdk
                     CUVIDGETDECODESTATUS status;
                     CUdeviceptr src_frame = 0;
                     unsigned int src_pitch = 0;
-                    int width, height;
-                    enum AVPixelFormat pixfmt;
-                    uint8_t *src_data[4] = {0};
-                    int src_linesize[4] = {0};
-                    abcdk_media_image_t *frame_src;
+                    abcdk_media_image_t tmp_src;
+                    abcdk_media_frame_t *frame_src;
                     CUresult cuda_chk;
                     int chk;
 
@@ -273,19 +270,21 @@ namespace abcdk
                         }
                     }
 
-                    width = m_videoformat.display_area.right - m_videoformat.display_area.left;
-                    height = m_videoformat.display_area.bottom - m_videoformat.display_area.top;
-                    pixfmt = AV_PIX_FMT_NV12;
+                    tmp_src.tag = ABCDK_MEDIA_TAG_HOST;
+                    tmp_src.width = m_videoformat.display_area.right - m_videoformat.display_area.left;
+                    tmp_src.height = m_videoformat.display_area.bottom - m_videoformat.display_area.top;
+                    tmp_src.pixfmt = ABCDK_MEDIA_PIXFMT_NV12;
 
-                    src_linesize[0] = src_pitch;
-                    src_linesize[1] = src_pitch;
+                    tmp_src.stride[0] = src_pitch;
+                    tmp_src.stride[1] = src_pitch;
+                    tmp_src.stride[2] = tmp_src.stride[3] = 0;
 
-                    abcdk_avimage_fill_pointers(src_data, src_linesize, height, pixfmt, (void **)src_frame);
+                    abcdk_media_imgutil_fill_pointer(tmp_src.data, tmp_src.stride, tmp_src.height, tmp_src.pixfmt, (void *)src_frame);
 
-                    frame_src = abcdk_cuda_avframe_alloc(width, height, pixfmt, 1);
+                    frame_src = abcdk_cuda_frame_create(tmp_src.width, tmp_src.height, tmp_src.pixfmt, 1);
                     if (frame_src)
                     {
-                        abcdk_cuda_avimage_copy(frame_src->data, frame_src->linesize, 0, (const uint8_t **)src_data, src_linesize, 0, width, height, pixfmt);
+                        abcdk_cuda_image_copy(frame_src->img, &tmp_src);
 
                         frame_src->pts = info->timestamp; // bind PTS
 
@@ -295,7 +294,7 @@ namespace abcdk
 
                         /*加入队列失败，直接删除。*/
                         if (chk != 0)
-                            av_frame_free(&frame_src);
+                            abcdk_media_frame_free(&frame_src);
                     }
                     else
                     {
@@ -359,7 +358,7 @@ namespace abcdk
 
                     memset(&params, 0, sizeof(params));
                     
-                    params.CodecType = (cudaVideoCodec)codecid_ffmpeg_to_nvcodec(opt->codec_id);
+                    params.CodecType = (cudaVideoCodec)vcodec_to_nvcodec(param->format);
                     params.ulMaxNumDecodeSurfaces = 25;
                     params.ulMaxDisplayDelay = 4;
                     params.pUserData = this;
@@ -368,16 +367,16 @@ namespace abcdk
                     params.pfnDisplayPicture = picture_display_cb;
                     params.pExtVideoInfo = NULL;
 
-                    if (opt->extradata != NULL && opt->extradata_size > 0)
+                    if (param->extradata != NULL)
                     {
                         /*空间有限。*/
-                        if (sizeof(m_ext_data.raw_seqhdr_data) < opt->extradata_size)
+                        if (sizeof(m_ext_data.raw_seqhdr_data) < param->extradata->sizes[0])
                             return -1;
 
                         memset(&m_ext_data, 0, sizeof(m_ext_data));
 
-                        m_ext_data.format.seqhdr_data_length = opt->extradata_size;
-                        memcpy(m_ext_data.raw_seqhdr_data, opt->extradata, opt->extradata_size);
+                        m_ext_data.format.seqhdr_data_length = param->extradata->sizes[0];
+                        memcpy(m_ext_data.raw_seqhdr_data, param->extradata->pptrs[0], param->extradata->sizes[0]);
 
                         params.pExtVideoInfo = &m_ext_data;
                     }
@@ -392,7 +391,7 @@ namespace abcdk
                     return 0;
                 }
 
-                virtual int update(abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts)
+                virtual int update(abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
                 {
                     CUVIDSOURCEDATAPACKET packet = {0};
                     CUresult cuda_chk;
@@ -421,7 +420,7 @@ namespace abcdk
                     if (dst)
                     {
                         abcdk_queue_lock(m_frame_queue);
-                        *dst = (abcdk_media_image_t *)abcdk_queue_pop(m_frame_queue);
+                        *dst = (abcdk_media_frame_t *)abcdk_queue_pop(m_frame_queue);
                         abcdk_queue_unlock(m_frame_queue);
 
                         if (*dst)

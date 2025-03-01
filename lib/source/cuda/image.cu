@@ -8,18 +8,9 @@
 
 #ifdef __cuda_cuda_h__
 
-static void _abcdk_cuda_image_buffer_free_cb(void **ptr, int size)
+static void _abcdk_cuda_image_private_ctx_free_cb(void **ctx)
 {
-    abcdk_cuda_free(ptr);
-}
-
-static int _abcdk_cuda_image_buffer_alloc_cb(void **ptr, int size)
-{
-    *ptr = abcdk_cuda_alloc(size);
-    if (*ptr)
-        return 0;
-
-    return -1;
+    abcdk_cuda_free(ctx);
 }
 
 abcdk_media_image_t *abcdk_cuda_image_alloc()
@@ -30,29 +21,81 @@ abcdk_media_image_t *abcdk_cuda_image_alloc()
     if(!ctx)
         return NULL;
 
-    ctx->buffer_free_cb = _abcdk_cuda_image_buffer_free_cb;
-    ctx->buffer_alloc_cb = _abcdk_cuda_image_buffer_alloc_cb;
+    ctx->private_ctx_free_cb = _abcdk_cuda_image_private_ctx_free_cb;
 
     return ctx;
 }
 
+int abcdk_cuda_image_reset(abcdk_media_image_t **ctx, int width, int height, int pixfmt, int align)
+{
+    abcdk_media_image_t *ctx_p;
+    int buf_size;
+    int chk;
+
+    assert(ctx != NULL && width > 0 && height > 0 && pixfmt >= 0);
+
+    ctx_p = *ctx;
+
+    if (!ctx_p)
+    {
+        *ctx = abcdk_cuda_image_alloc();
+        if (!*ctx)
+            return -1;
+
+        chk = abcdk_cuda_image_reset(ctx, width, height, pixfmt, align);
+        if (chk != 0)
+            abcdk_media_image_free(ctx);
+
+        return chk;
+    }
+    
+    assert(ctx_p->tag == ABCDK_MEDIA_TAG_CUDA);
+
+    if (ctx_p->width == width || ctx_p->height == height || ctx_p->pixfmt == pixfmt)
+        return 0;
+
+    if (ctx_p->private_ctx_free_cb)
+        ctx_p->private_ctx_free_cb(&ctx_p->private_ctx);
+
+    ctx_p->data[0] = ctx_p->data[1] = ctx_p->data[2] = ctx_p->data[3] = NULL;
+    ctx_p->stride[0] = ctx_p->stride[1] = ctx_p->stride[2] = ctx_p->stride[3] = -1;
+    ctx_p->width = -1;
+    ctx_p->height = -1;
+    ctx_p->pixfmt = ABCDK_MEDIA_PIXFMT_NONE;
+
+    chk = abcdk_media_imgutil_fill_stride(ctx_p->stride, width, pixfmt, align);
+    if (chk <= 0)
+        return -1;
+
+    buf_size = abcdk_media_imgutil_size(ctx_p->stride, height, pixfmt);
+    if (buf_size <= 0)
+        return -1;
+
+    ctx_p->private_ctx = abcdk_cuda_alloc_z(buf_size);
+    if (!ctx_p->private_ctx)
+        return -1;
+
+    chk = abcdk_media_imgutil_fill_pointer(ctx_p->data, ctx_p->stride, height, pixfmt, ctx_p->private_ctx);
+    assert(chk == buf_size);
+
+    ctx_p->width = width;
+    ctx_p->height = height;
+    ctx_p->pixfmt = pixfmt;
+
+    return 0;
+}
+
 abcdk_media_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, int align)
 {
-    abcdk_media_image_t *ctx;
+    abcdk_media_image_t *ctx = NULL;
     int chk;
 
     assert(width > 0 && height > 0 && pixfmt >= 0);
 
-    ctx = abcdk_cuda_image_alloc();
-    if (!ctx)
-        return NULL;
-
-    chk = abcdk_media_image_reset(ctx, width, height, pixfmt, align);
+    chk = abcdk_cuda_image_reset(&ctx, width, height, pixfmt, align);
     if(chk != 0)
-    {
-        abcdk_media_image_free(&ctx);
         return NULL;
-    }
+    
 
     return ctx;
 }
@@ -78,6 +121,27 @@ int abcdk_cuda_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *s
     return 0;
 }
 
+void abcdk_cuda_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
+{
+    int real_stride[4] = {0};
+    int real_height[4] = {0};
+    int chk, chk_stride, chk_height;
+
+    assert(dst != NULL && dst_plane >= 0);
+    assert(dst->tag == ABCDK_MEDIA_TAG_HOST || dst->tag == ABCDK_MEDIA_TAG_CUDA);
+    assert(src_data != NULL && src_stride > 0);
+
+    chk_stride = abcdk_media_imgutil_fill_stride(real_stride, dst->width, dst->pixfmt, 1);
+    chk_height = abcdk_media_imgutil_fill_height(real_height, dst->height, dst->pixfmt);
+    chk = ABCDK_MIN(chk_stride, chk_height);
+
+    assert(dst_plane < chk);
+
+    abcdk_cuda_memcpy_2d(dst->data[dst_plane], dst->stride[dst_plane], 0, 0, (dst->tag == ABCDK_MEDIA_TAG_HOST),
+                         src_data, src_stride, 0, 0, 1,
+                         real_stride[dst_plane], real_height[dst_plane]);
+}
+
 abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_image_t *src)
 {
     abcdk_media_image_t *dst;
@@ -86,9 +150,9 @@ abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_i
     assert(src != NULL);
     assert(src->tag == ABCDK_MEDIA_TAG_HOST || src->tag == ABCDK_MEDIA_TAG_CUDA);
 
-    if (dst_in_host)
+    if(dst_in_host)
         dst = abcdk_media_image_create(src->width, src->height, src->pixfmt, 1);
-    else
+    else 
         dst = abcdk_cuda_image_create(src->width, src->height, src->pixfmt, 1);
 
     if (!dst)
@@ -154,7 +218,7 @@ abcdk_media_image_t *abcdk_cuda_image_alloc()
     return NULL;
 }
 
-int abcdk_cuda_image_reset(abcdk_media_image_t *ctx, int width, int height, int pixfmt, int align)
+int abcdk_cuda_image_reset(abcdk_media_image_t **ctx, int width, int height, int pixfmt, int align)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
@@ -170,6 +234,11 @@ int abcdk_cuda_image_copy(abcdk_media_image_t *dst, const abcdk_media_image_t *s
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
+}
+
+void abcdk_cuda_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
 }
 
 abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_image_t *src)

@@ -37,7 +37,7 @@ int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_
  *
  * @return 1 有输出，0 无输出，< 0 出错了。
  */
-int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx, abcdk_object_t **dst, const abcdk_media_image_t *src);
+int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx, abcdk_media_packet_t **dst, const abcdk_media_frame_t *src);
 
 /**
  * 解码。
@@ -48,7 +48,7 @@ int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx, abcdk_object_t **dst, co
  *
  * @return 1 有输出，0 无输出，< 0 出错了。
  */
-int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx, abcdk_media_image_t **dst, int64_t *dst_pts, const void *src_data, int src_size, int64_t src_pts);
+int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx, abcdk_media_frame_t **dst, const abcdk_media_packet_t *src);
 
 __END_DECLS
 
