@@ -5,15 +5,15 @@
  *
  */
 #include "abcdk/opencv/stitcher.h"
-#include "stitcher.hxx"
+#include "../generic/stitcher.hxx"
 
-#ifdef OPENCV_CORE_HPP
+#ifdef OPENCV_STITCHING_STITCHER_HPP
 
 /**简单的全景拼接引擎。*/
 struct _abcdk_stitcher
 {
     /**/
-    abcdk::opencv::stitcher *impl_ctx;
+    abcdk::generic::opencv::stitcher *impl_ctx;
 
 }; // abcdk_stitcher_t;
 
@@ -189,7 +189,7 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *
     return 0;
 }
 
-#else // OPENCV_CORE_HPP
+#else // OPENCV_STITCHING_STITCHER_HPP
 
 void abcdk_stitcher_destroy(abcdk_stitcher_t **ctx)
 {
@@ -232,4 +232,4 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *
     return -1;
 }
 
-#endif // OPENCV_CORE_HPP
+#endif // OPENCV_STITCHING_STITCHER_HPP
