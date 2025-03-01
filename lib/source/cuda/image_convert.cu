@@ -78,7 +78,8 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
     /*最后检查这个参数，因为输出项需要复制。*/
     if(dst_in_host)
     {
-        tmp_dst = abcdk_cuda_image_clone(0, dst);
+        //tmp_dst = abcdk_cuda_image_clone(0, dst);
+        tmp_dst = abcdk_cuda_image_create(dst->width,dst->height,dst->pixfmt,1);
         if(!tmp_dst)
             return -1;
 
@@ -92,6 +93,13 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
     }
 
     NppiSize src_roi = {src->width, src->height};
+
+    // 颜色变换矩阵（标准 RGB → YUV 转换）
+    Npp32f rgb_to_yuv_twist[3][4] = {
+        {0.299f, 0.587f, 0.114f, 0.0f},     // Y
+        {-0.169f, -0.331f, 0.500f, 128.0f}, // U
+        {0.500f, -0.419f, -0.081f, 128.0f}  // V
+    };
 
     if (dst->pixfmt == ABCDK_MEDIA_PIXFMT_GRAY8)
     {
@@ -199,6 +207,67 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
         else if (src->pixfmt == ABCDK_MEDIA_PIXFMT_NV12)
         {
             npp_chk = nppiNV12ToYUV420_8u_P2P3R(src->data, src->stride[0], dst->data, dst->stride, src_roi);
+        }
+        else
+        {
+            tmp_dst = abcdk_cuda_image_create(dst->width,dst->height,ABCDK_MEDIA_PIXFMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_image_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_image_convert(dst, tmp_dst);
+
+            abcdk_media_image_free(&tmp_dst);
+            return chk;
+        }
+    }
+    else if (dst->pixfmt == ABCDK_MEDIA_PIXFMT_YUV422P)
+    {
+        if (src->pixfmt == ABCDK_MEDIA_PIXFMT_RGB24)
+        {
+            npp_chk = nppiRGBToYUV422_8u_C3P3R(src->data[0], src->stride[0], dst->data, dst->stride, src_roi);
+        }
+        else
+        {
+            tmp_dst = abcdk_cuda_image_create(dst->width,dst->height,ABCDK_MEDIA_PIXFMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_image_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_image_convert(dst, tmp_dst);
+
+            abcdk_media_image_free(&tmp_dst);
+            return chk;
+        }
+    }
+    else if (dst->pixfmt == ABCDK_MEDIA_PIXFMT_YUV444P)
+    {
+        if (src->pixfmt == ABCDK_MEDIA_PIXFMT_RGB24)
+        {
+            npp_chk = nppiRGBToYCbCr444_JPEG_8u_C3P3R(src->data[0], src->stride[0], dst->data, dst->stride[0], src_roi);
+        }
+        else
+        {
+            tmp_dst = abcdk_cuda_image_create(dst->width,dst->height,ABCDK_MEDIA_PIXFMT_RGB24,1);
+            if(!tmp_dst)
+                return -1;
+
+            chk = _abcdk_cuda_image_convert(tmp_dst, src);
+            if (chk == 0)
+                chk = _abcdk_cuda_image_convert(dst, tmp_dst);
+
+            abcdk_media_image_free(&tmp_dst);
+            return chk;
+        }
+    }
+    else if (dst->pixfmt == ABCDK_MEDIA_PIXFMT_NV12)
+    {
+        if (src->pixfmt == ABCDK_MEDIA_PIXFMT_RGB24)
+        {
+            NppStreamContext stream_ctx = { 0 };
+            npp_chk = nppiRGBToNV12_8u_ColorTwist32f_C3P2R_Ctx(src->data[0],src->stride[0],dst->data,dst->stride,src_roi,rgb_to_yuv_twist,stream_ctx);
         }
         else
         {
