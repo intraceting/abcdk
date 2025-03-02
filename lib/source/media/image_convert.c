@@ -34,7 +34,7 @@ int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_
     tmp_src.width = src->width;
     tmp_src.height = src->height;
 
-    ctx = abcdk_sws_alloc2(&tmp_src, &tmp_dst, 0);
+    ctx = abcdk_sws_alloc2(&tmp_src, &tmp_dst, SWS_BICUBIC);
     if (!ctx)
         return -1;
 

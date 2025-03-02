@@ -83,11 +83,6 @@ size_t abcdk_ndarray_offset(abcdk_ndarray_t *ctx, size_t n, size_t x, size_t y, 
     return off;
 }
 
-void *abcdk_ndarray_seek(abcdk_ndarray_t *ctx, size_t n, size_t x, size_t y, size_t z, int flag)
-{
-    size_t off = abcdk_ndarray_offset(ctx,n,x,y,z,flag);
-}
-
 void abcdk_ndarray_free(abcdk_ndarray_t **ctx)
 {
     abcdk_ndarray_t *ctx_p;

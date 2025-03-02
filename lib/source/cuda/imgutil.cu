@@ -14,7 +14,7 @@ int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
-    int chk, chk_stride, chk_height;
+    int chk,chk_plane,chk_stride, chk_height;
 
     assert(dst_data != NULL && dst_stride != NULL);
     assert(src_data != NULL && src_stride != NULL);
@@ -22,9 +22,9 @@ int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_
 
     chk_stride = abcdk_media_imgutil_fill_stride(real_stride, width, pixfmt, 1);
     chk_height = abcdk_media_imgutil_fill_height(real_height, height, pixfmt);
-    chk = ABCDK_MIN(chk_stride, chk_height);
+    chk_plane = ABCDK_MIN(chk_stride, chk_height);
 
-    for (int i = 0; i < chk; i++)
+    for (int i = 0; i < chk_plane; i++)
     {
         chk = abcdk_cuda_memcpy_2d(dst_data[i], dst_stride[i], 0, 0, dst_in_host,
                                    src_data[i], src_stride[i], 0, 0, src_in_host,

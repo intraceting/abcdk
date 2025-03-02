@@ -1646,6 +1646,74 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
+#ifdef HAVE_FFMPEG
+
+    int w = 1920,h = 1080;
+
+    abcdk_media_image_t *a = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 4);
+    abcdk_media_image_t *b = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_YUV444P, 8);
+    abcdk_media_image_t *c = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 28);
+    abcdk_media_image_t *d = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_ARGB, 18);
+    abcdk_media_image_t *e = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 38);
+
+    abcdk_ndarray_t s;
+    s.block = 1;
+    s.cell = 1;
+    s.depth = 3;
+    s.fmt = ABCDK_NDARRAY_NHWC;
+    s.width = w;
+    s.height = h;
+    s.stride = a->stride[0];
+    s.data = a->data[0];
+    s.size = 0;
+
+    for (int y = 0; y < 100; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            
+            size_t off = abcdk_ndarray_offset(&s, 0, x, y, 0, 0);
+            ABCDK_PTR2U8(a->data[0],off) = 255;
+        }
+    }
+
+    for (int y = 100; y < 200; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            size_t off = abcdk_ndarray_offset(&s, 0, x, y, 1, 0);
+            ABCDK_PTR2U8(a->data[0],off) = 255;
+        }
+    }
+
+    for (int y = 200; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            size_t off = abcdk_ndarray_offset(&s, 0, x, y, 2, 0);
+            ABCDK_PTR2U8(a->data[0],off) = 255;
+        }
+    }
+
+    abcdk_media_image_save("/tmp/test.cpu.a.bmp", a);
+
+    abcdk_media_image_convert(b,a);
+    abcdk_media_image_convert(c,b);
+
+    abcdk_media_image_save("/tmp/test.cpu.c.bmp", c);
+
+    abcdk_media_image_convert(d,c);
+    abcdk_media_image_convert(e,d);
+
+    abcdk_media_image_save("/tmp/test.cpu.e.bmp", e);
+
+    abcdk_media_image_free(&a);
+    abcdk_media_image_free(&b);
+    abcdk_media_image_free(&c);
+    abcdk_media_image_free(&d);
+    abcdk_media_image_free(&e);
+
+#endif //HAVE_FFMPEG
 
 
 #endif 

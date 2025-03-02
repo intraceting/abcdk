@@ -43,6 +43,15 @@ void abcdk_cuda_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const 
 abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_image_t *src);
 
 /**
+ * 帧图格式转换。
+ *
+ * @note 仅图像数据。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
+
+/**
  * 帧图保存到文件。
  * 
  * @note 仅支持BMP格式，所有非BGR32格式自动换转BGR32格式。
@@ -51,14 +60,6 @@ abcdk_media_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_media_i
  */
 int abcdk_cuda_image_save(const char *dst, const abcdk_media_image_t *src);
 
-/**
- * 帧图格式转换。
- *
- * @note 仅图像数据。
- *
- * @return 0 成功，< 0 失败。
- */
-int abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
 
 __END_DECLS
 

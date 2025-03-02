@@ -15,12 +15,11 @@
 #include "abcdk/opencv/opencv.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
+
 /**主机对象。*/
 #define ABCDK_MEDIA_TAG_HOST ABCDK_FOURCC_MKTAG('h', 'o', 's', 't')
 
 /**CUDA对象。*/
 #define ABCDK_MEDIA_TAG_CUDA ABCDK_FOURCC_MKTAG('C', 'U', 'D', 'A')
-
-
 
 #endif //ABCDK_MEDIA_MEDIA_H

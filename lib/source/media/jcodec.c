@@ -23,7 +23,7 @@ void abcdk_media_jcodec_free(abcdk_media_jcodec_t **ctx)
     *ctx = NULL;
 
     if (ctx_p->private_ctx_free_cb)
-        ctx_p->private_ctx_free_cb(&ctx_p->private_ctx, ctx_p->encoder);
+        ctx_p->private_ctx_free_cb(&ctx_p->private_ctx);
 
     abcdk_heap_free(ctx_p);
 }

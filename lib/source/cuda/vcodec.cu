@@ -12,32 +12,54 @@
 
 #ifdef __cuda_cuda_h__
 
-static void _abcdk_cuda_vcodec_private_free_cb(void **ctx, uint8_t encoder)
+/** CUDA视频编/解码器。*/
+typedef struct _abcdk_cuda_vcodec
 {
+    /**是否为编码器。!0 是，0 否。*/
+    uint8_t encoder;
+
+    /**编码器。*/
+    abcdk::cuda::vcodec::encoder *encoder_ctx;
+
+    /**解码器。*/
+    abcdk::cuda::vcodec::decoder *decoder_ctx;
+
+} abcdk_cuda_vcodec_t;
+
+static void _abcdk_cuda_vcodec_private_free_cb(void **ctx)
+{
+    abcdk_cuda_vcodec_t *ctx_p;
+
     if (!ctx || !*ctx)
         return;
 
-    if (encoder)
+    ctx_p = (abcdk_cuda_vcodec_t *)*ctx;
+    *ctx = NULL;
+
+    if (ctx_p->encoder)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        abcdk::cuda::vcodec::encoder_ffnv::destory((abcdk::cuda::vcodec::encoder **)ctx);
+        abcdk::cuda::vcodec::encoder_ffnv::destory(&ctx_p->encoder_ctx);
 #elif defined(__aarch64__)
-        abcdk::cuda::vcodec::encoder_aarch64::destory((abcdk::cuda::vcodec::encoder **)ctx);
+        abcdk::cuda::vcodec::encoder_aarch64::destory(&ctx_p->encoder_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
     }
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        abcdk::cuda::vcodec::decoder_ffnv::destory((abcdk::cuda::vcodec::decoder **)ctx);
+        abcdk::cuda::vcodec::decoder_ffnv::destory(&ctx_p->decoder_ctx);
 #elif defined(__aarch64__)
-        abcdk::cuda::vcodec::decoder_aarch64::destory((abcdk::cuda::vcodec::decoder **)ctx);
+        abcdk::cuda::vcodec::decoder_aarch64::destory(&ctx_p->decoder_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
     }
+
+    abcdk_heap_free(ctx_p);
 }
 
 abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx)
 {
     abcdk_media_vcodec_t *ctx;
+    abcdk_cuda_vcodec_t *ctx_p;
 
     assert(cuda_ctx != NULL);
 
@@ -46,27 +68,34 @@ abcdk_media_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx)
         return NULL;
 
     ctx->private_ctx_free_cb = _abcdk_cuda_vcodec_private_free_cb;
+
+    /*创建内部对象。*/
+    ctx->private_ctx = abcdk_heap_alloc(sizeof(abcdk_cuda_vcodec_t));
+    if(!ctx->private_ctx)
+        goto ERR;
+
+    ctx_p = (abcdk_cuda_vcodec_t *)ctx->private_ctx;
     
-    if (ctx->encoder = encoder)
+    if (ctx_p->encoder = encoder)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx->private_ctx = abcdk::cuda::vcodec::encoder_ffnv::create(cuda_ctx);
+        ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_ffnv::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->private_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(cuda_ctx);
+        ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(cuda_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
-        if (!ctx->private_ctx)
+        if (!ctx_p->encoder_ctx)
             goto ERR;
     }
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx->private_ctx = abcdk::cuda::vcodec::decoder_ffnv::create(cuda_ctx);
+        ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_ffnv::create(cuda_ctx);
 #elif defined(__aarch64__)
-        ctx->private_ctx = abcdk::cuda::vcodec::decoder_aarch64::create(cuda_ctx);
+        ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_aarch64::create(cuda_ctx);
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
-        if (!ctx->private_ctx)
+        if (!ctx_p->decoder_ctx)
             goto ERR;
     }
 
@@ -81,26 +110,23 @@ ERR:
 
 int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_t *param)
 {
-    abcdk::cuda::vcodec::encoder *encoder_ctx;
-    abcdk::cuda::vcodec::decoder *decoder_ctx;
+    abcdk_cuda_vcodec_t *ctx_p;
     int chk;
 
     assert(ctx != NULL);
 
-    if (ctx->encoder)
-    {
-        encoder_ctx = (abcdk::cuda::vcodec::encoder *)ctx->private_ctx;
+    ctx_p = (abcdk_cuda_vcodec_t *)ctx->private_ctx;
 
-        chk = encoder_ctx->open(param);
-        if(chk != 0)
+    if (ctx_p->encoder)
+    {
+        chk = ctx_p->encoder_ctx->open(param);
+        if (chk != 0)
             return -1;
     }
     else
     {
-        decoder_ctx = (abcdk::cuda::vcodec::decoder *)ctx->private_ctx;
-
-        chk = decoder_ctx->open(param);
-        if(chk != 0)
+        chk = ctx_p->decoder_ctx->open(param);
+        if (chk != 0)
             return -1;
     }
 
@@ -109,28 +135,28 @@ int abcdk_cuda_vcodec_start(abcdk_media_vcodec_t *ctx, abcdk_media_vcodec_param_
 
 int abcdk_cuda_vcodec_encode(abcdk_media_vcodec_t *ctx,abcdk_media_packet_t **dst, const abcdk_media_frame_t *src)
 {
-    abcdk::cuda::vcodec::encoder *encoder_ctx;
+    abcdk_cuda_vcodec_t *ctx_p;
 
     assert(ctx != NULL && dst != NULL);
 
-    ABCDK_ASSERT(ctx->encoder, "解码器不能用于编码。");
+    ctx_p = (abcdk_cuda_vcodec_t *)ctx->private_ctx;
 
-    encoder_ctx = (abcdk::cuda::vcodec::encoder *)ctx->private_ctx;
+    ABCDK_ASSERT(ctx_p->encoder, "解码器不能用于编码。");
 
-    return encoder_ctx->update(dst,src);
+    return ctx_p->encoder_ctx->update(dst,src);
 }
 
 int abcdk_cuda_vcodec_decode(abcdk_media_vcodec_t *ctx,abcdk_media_frame_t **dst, const abcdk_media_packet_t *src)
 {
-    abcdk::cuda::vcodec::decoder *decoder_ctx;
+    abcdk_cuda_vcodec_t *ctx_p;
 
     assert(ctx != NULL && dst != NULL);
 
-    ABCDK_ASSERT(!ctx->encoder, "编码器不能用于解码。");
+    ctx_p = (abcdk_cuda_vcodec_t *)ctx->private_ctx;
 
-    decoder_ctx = (abcdk::cuda::vcodec::decoder *)ctx->private_ctx;
+    ABCDK_ASSERT(!ctx_p->encoder, "编码器不能用于解码。");
 
-    return decoder_ctx->update(dst, src);
+    return ctx_p->decoder_ctx->update(dst, src);
 }
 
 #else //__cuda_cuda_h__

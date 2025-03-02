@@ -33,7 +33,8 @@ static int _abcdk_cuda_image_convert_cpu(abcdk_media_image_t *dst, const abcdk_m
     /*最后检查这个参数，因为输出项需要复制。*/
     if(!dst_in_host)
     {
-        tmp_dst = abcdk_cuda_image_clone(1, dst);
+        //tmp_dst = abcdk_cuda_image_clone(1, dst);
+        tmp_dst = abcdk_media_image_create(dst->width,dst->height,dst->pixfmt,1);
         if(!tmp_dst)
             return -1;
 
@@ -92,9 +93,10 @@ static int _abcdk_cuda_image_convert(abcdk_media_image_t *dst, const abcdk_media
         return chk;
     }
 
+
     NppiSize src_roi = {src->width, src->height};
 
-    // 颜色变换矩阵（标准 RGB → YUV 转换）
+    /* 颜色变换矩阵（标准 RGB → YUV 转换）*/
     Npp32f rgb_to_yuv_twist[3][4] = {
         {0.299f, 0.587f, 0.114f, 0.0f},     // Y
         {-0.169f, -0.331f, 0.500f, 128.0f}, // U

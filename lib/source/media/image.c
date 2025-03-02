@@ -183,9 +183,9 @@ int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src)
     assert(dst != NULL && src != NULL);
     assert(src->tag == ABCDK_MEDIA_TAG_HOST);
 
-    if(src->pixfmt != ABCDK_MEDIA_PIXFMT_BGR32)
+    if(src->pixfmt != ABCDK_MEDIA_PIXFMT_BGR24)
     {
-        tmp_src = abcdk_media_image_create(src->width,src->height,ABCDK_MEDIA_PIXFMT_BGR32,1);
+        tmp_src = abcdk_media_image_create(src->width,src->height,ABCDK_MEDIA_PIXFMT_BGR24,4);
         if(!tmp_src)
             return -1;
         
@@ -200,7 +200,7 @@ int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src)
     }
 
     /*BMP图像默认是倒投影存储。这里高度传入负值，使图像正投影存储。*/
-    chk = abcdk_bmp_save_file(dst, src->data[0], src->stride[0], src->width, -src->height, 32);
+    chk = abcdk_bmp_save_file(dst, src->data[0], src->stride[0], src->width, -src->height, 24);
     if (chk != 0)
         return -1;
 

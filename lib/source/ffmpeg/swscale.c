@@ -11,17 +11,18 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-
 void abcdk_sws_free(struct SwsContext **ctx)
 {
-    if(!ctx)
+    struct SwsContext *ctx_p;
+
+    if (!ctx || !*ctx)
         return;
 
-    if(*ctx)
-        sws_freeContext(*ctx);
-
-    /*Set to NULL(0).*/
+    ctx_p = *ctx;
     *ctx = NULL;
+
+    if (ctx_p)
+        sws_freeContext(ctx_p);
 }
 
 struct SwsContext *abcdk_sws_alloc(int src_width, int src_height, enum AVPixelFormat src_pixfmt,

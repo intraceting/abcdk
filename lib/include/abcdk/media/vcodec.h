@@ -155,25 +155,25 @@ typedef struct _abcdk_media_vcodec_param
      */
     uint32_t hw_preset_type;
 
-    /**扩展参数。*/
-    abcdk_object_t *extradata;
+    /**扩展参数指针。*/
+    const uint8_t *ext_data;
+
+    /**扩展参数长度。*/
+    uint32_t ext_size;
 
 } abcdk_media_vcodec_param_t;
 
 /** 媒体视频编/解码器。*/
 typedef struct _abcdk_media_vcodec
 {
-    /**私有环境。*/
-    void *private_ctx;
-
-    /**是否为编码器（true = 是，false = 否）。 */
-    uint8_t encoder;
-
     /**标签。*/
     uint32_t tag;
 
+    /**私有环境。*/
+    void *private_ctx;
+
     /**私有环境释放。*/
-    void (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
+    void (*private_ctx_free_cb)(void **ctx);
 
 } abcdk_media_vcodec_t;
 

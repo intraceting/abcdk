@@ -176,9 +176,9 @@ int abcdk_cuda_image_save(const char *dst, const abcdk_media_image_t *src)
     assert(dst != NULL && src != NULL);
     assert(src->tag == ABCDK_MEDIA_TAG_HOST || src->tag == ABCDK_MEDIA_TAG_CUDA);
 
-    if(src->pixfmt != ABCDK_MEDIA_PIXFMT_BGR32)
+    if(src->pixfmt != ABCDK_MEDIA_PIXFMT_BGR24)
     {
-        tmp_src = abcdk_cuda_image_create(src->width,src->height,ABCDK_MEDIA_PIXFMT_BGR32,1);
+        tmp_src = abcdk_cuda_image_create(src->width,src->height,ABCDK_MEDIA_PIXFMT_BGR24,4);
         if(!tmp_src)
             return -1;
         

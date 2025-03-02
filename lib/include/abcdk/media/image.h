@@ -16,9 +16,6 @@ __BEGIN_DECLS
 /**媒体图像结构。*/
 typedef struct _abcdk_media_image
 {
-    /**私有环境。*/
-    void *private_ctx;
-
     /**图层指针。 */
     uint8_t *data[4];
 
@@ -36,6 +33,9 @@ typedef struct _abcdk_media_image
 
     /**标签。*/
     uint32_t tag;
+
+    /**私有环境。*/
+    void *private_ctx;
 
     /**私有环境释放。*/
     void (*private_ctx_free_cb)(void **ctx);
@@ -68,15 +68,6 @@ void abcdk_media_image_copy_plane(abcdk_media_image_t *dst, int dst_plane, const
 abcdk_media_image_t *abcdk_media_image_clone(const abcdk_media_image_t *src);
 
 /**
- * 保存到文件(BMP)。
- * 
- * @note 仅支持RGB24、BGR24、RGB32、BGR32四种格式。
- * 
- * @return 0 成功，< 0 失败。
- */
-int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src);
-
-/**
  * 帧图格式转换。
  *
  * @note 仅图像数据。
@@ -84,6 +75,14 @@ int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src);
  * @return 0 成功，< 0 失败。
  */
 int abcdk_media_image_convert(abcdk_media_image_t *dst, const abcdk_media_image_t *src);
+
+/**
+ * 保存到文件(BMP)。
+ * 
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_media_image_save(const char *dst, const abcdk_media_image_t *src);
+
 
 __END_DECLS
 

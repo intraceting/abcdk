@@ -370,16 +370,16 @@ namespace abcdk
                     params.pfnDisplayPicture = picture_display_cb;
                     params.pExtVideoInfo = NULL;
 
-                    if (param->extradata != NULL)
+                    if (param->ext_data != NULL && param->ext_size > 0)
                     {
                         /*空间有限。*/
-                        if (sizeof(m_ext_data.raw_seqhdr_data) < param->extradata->sizes[0])
+                        if (sizeof(m_ext_data.raw_seqhdr_data) < param->ext_size)
                             return -1;
 
                         memset(&m_ext_data, 0, sizeof(m_ext_data));
 
-                        m_ext_data.format.seqhdr_data_length = param->extradata->sizes[0];
-                        memcpy(m_ext_data.raw_seqhdr_data, param->extradata->pptrs[0], param->extradata->sizes[0]);
+                        m_ext_data.format.seqhdr_data_length = param->ext_size;
+                        memcpy(m_ext_data.raw_seqhdr_data, param->ext_data, param->ext_size);
 
                         params.pExtVideoInfo = &m_ext_data;
                     }

@@ -15,6 +15,9 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     {
     case ABCDK_MEDIA_PIXFMT_YUV420P:
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+        height = abcdk_align(height, 2);//高度较正为偶数。
+
         stride[0] = width;
         stride[1] = width / 2;
         stride[2] = width / 2;
@@ -29,6 +32,9 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     case ABCDK_MEDIA_PIXFMT_YUV420P14:
     case ABCDK_MEDIA_PIXFMT_YUV420P16:
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+        height = abcdk_align(height, 2);//高度较正为偶数。
+
         stride[0] = width * 2; // 2 bytes.
         stride[1] = width / 2 * 2; // 2 bytes.
         stride[2] = width / 2 * 2; // 2 bytes.
@@ -39,6 +45,8 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     break;
     case ABCDK_MEDIA_PIXFMT_YUV422P:
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+
         stride[0] = width;
         stride[1] = width / 2;
         stride[2] = width / 2;
@@ -53,6 +61,8 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     case ABCDK_MEDIA_PIXFMT_YUV422P14:
     case ABCDK_MEDIA_PIXFMT_YUV422P16:
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+
         stride[0] = width * 2; // 2 bytes.
         stride[1] = width / 2 * 2; // 2 bytes.
         stride[2] = width / 2 * 2; // 2 bytes.
@@ -88,14 +98,31 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     case ABCDK_MEDIA_PIXFMT_NV12: // YUV 4:2:0
     case ABCDK_MEDIA_PIXFMT_NV21: // YUV 4:2:0
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+        height = abcdk_align(height, 2);//高度较正为偶数。
+
         stride[0] = width;
         stride[1] = width; // U+V | V+U.
         heights[0] = height;
         heights[1] = height / 2;
     }
     break;
+    case ABCDK_MEDIA_PIXFMT_P016: // YUV 4:2:0
+    {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+        height = abcdk_align(height, 2);//高度较正为偶数。
+
+        stride[0] = width * 2; // 2 bytes.
+        stride[1] = width * 2; // 2 bytes, U+V | V+U. 
+        heights[0] = height;
+        heights[1] = height / 2;
+    }
+    break;
     case ABCDK_MEDIA_PIXFMT_NV16: // YUV 4:2:2
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+        height = abcdk_align(height, 2);//高度较正为偶数。
+
         stride[0] = width;
         stride[1] = width ; // U+V.
         heights[0] = height;
@@ -105,6 +132,9 @@ static int _abcdk_media_imgutil_fill_size(int stride[4], int heights[4], int wid
     case ABCDK_MEDIA_PIXFMT_NV24: //YUV 4:4:4 
     case ABCDK_MEDIA_PIXFMT_NV42: //YUV 4:4:4 
     {
+        width = abcdk_align(width, 2);//宽度较正为偶数。
+        height = abcdk_align(height, 2);//高度较正为偶数。
+
         stride[0] = width;
         stride[1] = width; //  U+V | V+U.
         heights[0] = height;
@@ -175,7 +205,12 @@ int abcdk_media_imgutil_fill_height(int heights[4], int height, int pixfmt)
 
     assert(heights != NULL && height > 0 && pixfmt >= 0);
 
+#ifdef AVUTIL_AVUTIL_H
+    return abcdk_avimage_fill_height(heights, height, abcdk_media_pixfmt_convert_to_ffmpeg(pixfmt));
+#else //AVUTIL_AVUTIL_H
     return _abcdk_media_imgutil_fill_size(stride, heights, 0, height, pixfmt);
+#endif //AVUTIL_AVUTIL_H
+
 }
 
 int abcdk_media_imgutil_fill_stride(int stride[4], int width, int pixfmt, int align)
@@ -185,6 +220,9 @@ int abcdk_media_imgutil_fill_stride(int stride[4], int width, int pixfmt, int al
 
     assert(stride != NULL && width > 0 && pixfmt >= 0);
 
+#ifdef AVUTIL_AVUTIL_H
+    return abcdk_avimage_fill_stride(stride, width, abcdk_media_pixfmt_convert_to_ffmpeg(pixfmt), align);
+#else //AVUTIL_AVUTIL_H
     chk = _abcdk_media_imgutil_fill_size(stride, heights, width, 0, pixfmt);
     if (chk <= 0)
         return 0;
@@ -195,6 +233,7 @@ int abcdk_media_imgutil_fill_stride(int stride[4], int width, int pixfmt, int al
     }
 
     return chk;
+#endif //AVUTIL_AVUTIL_H
 }
 
 int abcdk_media_imgutil_fill_pointer(uint8_t *data[4], const int stride[4], int height, int pixfmt, void *buffer)
@@ -205,6 +244,9 @@ int abcdk_media_imgutil_fill_pointer(uint8_t *data[4], const int stride[4], int 
 
     assert(data != NULL && stride != NULL && height > 0 && pixfmt >= 0);
 
+#ifdef AVUTIL_AVUTIL_H
+    return abcdk_avimage_fill_pointer(data,stride,height,abcdk_media_pixfmt_convert_to_ffmpeg(pixfmt),buffer);
+#else //AVUTIL_AVUTIL_H
     chk = abcdk_media_imgutil_fill_height(heights, height, pixfmt);
     if (chk <= 0)
         return -1;
@@ -216,6 +258,7 @@ int abcdk_media_imgutil_fill_pointer(uint8_t *data[4], const int stride[4], int 
     }
 
     return off;
+#endif //AVUTIL_AVUTIL_H
 }
 
 int abcdk_media_imgutil_size(const int stride[4], int height, int pixfmt)
@@ -247,7 +290,7 @@ void abcdk_media_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4],
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
-    int chk, chk_stride, chk_height;
+    int chk, chk_plane,chk_stride, chk_height;
 
     assert(dst_data != NULL && dst_stride != NULL);
     assert(src_data != NULL && src_stride != NULL);
@@ -255,9 +298,9 @@ void abcdk_media_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4],
 
     chk_stride = abcdk_media_imgutil_fill_stride(real_stride, width, pixfmt, 1);
     chk_height = abcdk_media_imgutil_fill_height(real_height, height, pixfmt);
-    chk = ABCDK_MIN(chk_stride, chk_height);
+    chk_plane = ABCDK_MIN(chk_stride, chk_height);
 
-    for (int i = 0; i < chk; i++)
+    for (int i = 0; i < chk_plane; i++)
     {
         abcdk_memcpy_2d(dst_data[i], dst_stride[i], 0, 0,
                         src_data[i], src_stride[i], 0, 0,

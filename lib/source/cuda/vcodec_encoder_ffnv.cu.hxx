@@ -55,6 +55,7 @@ namespace abcdk
                 NvencFunctions *m_funcs;
                 CUcontext m_gpu_ctx;
 
+                std::vector<uint8_t> m_ext_data;
                 NV_ENCODE_API_FUNCTION_LIST m_nvenc;
                 void *m_encoder;
                 NV_ENC_INITIALIZE_PARAMS m_params;
@@ -431,7 +432,7 @@ namespace abcdk
                     uint32_t currentVersion = (NVENCAPI_MAJOR_VERSION << 4) | NVENCAPI_MINOR_VERSION;
                     int fps, width, height;
                     cudaVideoCodec nvcodec_id;
-                    std::vector<uint8_t> ext_data;
+                    
                     NVENCSTATUS chk;
 
                     assert(param != NULL);
@@ -510,7 +511,7 @@ namespace abcdk
                         m_vRegisteredResources.size() == m_nEncoderBuffer &&
                         m_vInputFrames.size() == m_nEncoderBuffer)
                     {
-                        GetSequenceParams(ext_data);
+                        GetSequenceParams(m_ext_data);
                     }
                     else
                     {
@@ -518,10 +519,10 @@ namespace abcdk
                     }
 
                     /*输出扩展数据帧。*/
-                    if (ext_data.size() > 0)
+                    if (m_ext_data.size() > 0)
                     {
-                        abcdk_object_unref(&param->extradata);
-                        param->extradata = abcdk_object_copyfrom(ext_data.data(), ext_data.size());
+                        param->ext_data = m_ext_data.data();
+                        param->ext_size = m_ext_data.size();
                     }
 
                     return 0;

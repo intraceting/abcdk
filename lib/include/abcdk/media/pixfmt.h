@@ -75,11 +75,14 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_NV12 = 40, ///< planar YUV 4:2:0, 12bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
 #define ABCDK_MEDIA_PIXFMT_NV12 ABCDK_MEDIA_PIXFMT_NV12
 
-    ABCDK_MEDIA_PIXFMT_NV21, ///< as above, but U and V bytes are swapped
-#define ABCDK_MEDIA_PIXFMT_NV21 ABCDK_MEDIA_PIXFMT_NV21
+    ABCDK_MEDIA_PIXFMT_P016, ///< like NV12, with 16bpp per component
+#define ABCDK_MEDIA_PIXFMT_P016 ABCDK_MEDIA_PIXFMT_P016
 
     ABCDK_MEDIA_PIXFMT_NV16, ///< interleaved chroma YUV 4:2:2, 16bpp, (1 Cr & Cb sample per 2x1 Y samples)
 #define ABCDK_MEDIA_PIXFMT_NV16 ABCDK_MEDIA_PIXFMT_NV16
+
+    ABCDK_MEDIA_PIXFMT_NV21, ///< as above, but U and V bytes are swapped
+#define ABCDK_MEDIA_PIXFMT_NV21 ABCDK_MEDIA_PIXFMT_NV21
 
     ABCDK_MEDIA_PIXFMT_NV24, ///< planar YUV 4:4:4, 24bpp, 1 plane for Y and 1 plane for the UV components, which are interleaved (first byte U and the following byte V)
 #define ABCDK_MEDIA_PIXFMT_NV24 ABCDK_MEDIA_PIXFMT_NV24
@@ -102,10 +105,10 @@ typedef enum _abcdk_media_pixfmt_constant
     ABCDK_MEDIA_PIXFMT_BGR24, ///< packed RGB 8:8:8, 24bpp, BGRBGR...
 #define ABCDK_MEDIA_PIXFMT_BGR24 ABCDK_MEDIA_PIXFMT_BGR24
 
-    ABCDK_MEDIA_PIXFMT_RGB32,
+    ABCDK_MEDIA_PIXFMT_RGB32, 
 #define ABCDK_MEDIA_PIXFMT_RGB32 ABCDK_MEDIA_PIXFMT_RGB32
 
-    ABCDK_MEDIA_PIXFMT_BGR32,
+    ABCDK_MEDIA_PIXFMT_BGR32, 
 #define ABCDK_MEDIA_PIXFMT_BGR32 ABCDK_MEDIA_PIXFMT_BGR32
 
 } abcdk_media_pixfmt_constant_t;

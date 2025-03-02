@@ -27,17 +27,14 @@ typedef struct _abcdk_media_jcodec_param
 /**JPEG编/解码器。*/
 typedef struct _abcdk_media_jcodec
 {
-    /**私有环境。*/
-    void *private_ctx;
-
-    /**是否为编码器（true = 是，false = 否）。 */
-    uint8_t encoder;
-
     /**标签。*/
     uint32_t tag;
 
+    /**私有环境。*/
+    void *private_ctx;
+
     /**私有环境释放。*/
-    void (*private_ctx_free_cb)(void **ctx, uint8_t encoder);
+    void (*private_ctx_free_cb)(void **ctx);
 
 } abcdk_media_jcodec_t;
 

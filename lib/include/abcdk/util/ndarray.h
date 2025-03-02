@@ -86,11 +86,6 @@ void abcdk_ndarray_set_stride(abcdk_ndarray_t *ctx,size_t align);
  */
 size_t abcdk_ndarray_offset(abcdk_ndarray_t *ctx, size_t n, size_t x, size_t y, size_t z, int flag);
 
-/**
- * 计算坐标的偏移地址。
-*/
-void *abcdk_ndarray_seek(abcdk_ndarray_t *ctx, size_t n, size_t x, size_t y, size_t z, int flag);
-
 /**释放。*/
 void abcdk_ndarray_free(abcdk_ndarray_t **ctx);
 
