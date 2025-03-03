@@ -6,6 +6,9 @@
  */
 #include "abcdk/nvidia/jpeg.h"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 int abcdk_cuda_jpeg_save(const char *dst, const abcdk_torch_image_t *src, CUcontext cuda_ctx)
@@ -49,3 +52,6 @@ int abcdk_cuda_jpeg_save(const char *dst, const abcdk_torch_image_t *src, CUcont
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

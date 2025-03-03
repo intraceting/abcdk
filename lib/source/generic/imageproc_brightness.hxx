@@ -15,11 +15,12 @@ namespace abcdk
     {
         namespace imageproc
         {
+            /**调整亮度。*/
             template <typename T>
-            ABCDK_INVOKE_DEVICE void brightness_kernel(int channels, bool packed,
-                                                       T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                       size_t w, size_t h, float *alpha, float *bate,
-                                                       size_t tid)
+            ABCDK_INVOKE_DEVICE void brightness(int channels, bool packed,
+                                                T *dst, size_t dst_ws, T *src, size_t src_ws,
+                                                size_t w, size_t h, float *alpha, float *bate,
+                                                size_t tid)
             {
                 size_t y = tid / w;
                 size_t x = tid % w;
@@ -33,17 +34,6 @@ namespace abcdk
                     size_t dst_offset = abcdk::generic::util::off<T>(packed, w, dst_ws, h, channels, 0, x, y, z);
 
                     *abcdk::generic::util::ptr<T>(dst, dst_offset) = (T)abcdk::generic::util::pixel_clamp<float>(abcdk::generic::util::obj<T>(src, src_offset) * alpha[z] + bate[z]);
-                }
-            }
-
-            /**调整亮度。*/
-            template <typename T>
-            ABCDK_INVOKE_HOST void brightness(int channels, bool packed, T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                              size_t w, size_t h, float *alpha, float *bate)
-            {
-                for (size_t i = 0; i < w * h; i++)
-                {
-                    brightness_kernel<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, i);
                 }
             }
 

@@ -17,7 +17,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_brightness_2d2d(int channels, bool 
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::brightness_kernel<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, tid);
+    abcdk::generic::imageproc::brightness<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, tid);
 }
 
 template <typename T>
@@ -53,14 +53,22 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
     return 0;
 }
 
+
+__BEGIN_DECLS
+
 int abcdk_cuda_imgproc_brightness_8u(int channels, int packed,
                                      uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                      size_t w, size_t h, float *alpha, float *bate)
 {
-    return _abcdk_cuda_imgproc_brightness(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate);
+    return _abcdk_cuda_imgproc_brightness<uint8_t>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate);
 }
 
+__END_DECLS
+
 #else // __cuda_cuda_h__
+
+
+__BEGIN_DECLS
 
 int abcdk_cuda_imgproc_brightness_8u(int channels, int packed,
                                      uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
@@ -69,5 +77,7 @@ int abcdk_cuda_imgproc_brightness_8u(int channels, int packed,
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
+
+__END_DECLS
 
 #endif // __cuda_cuda_h__

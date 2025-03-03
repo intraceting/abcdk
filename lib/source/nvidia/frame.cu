@@ -6,6 +6,8 @@
  */
 #include "abcdk/nvidia/frame.h"
 
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 int abcdk_cuda_frame_reset(abcdk_torch_frame_t **ctx, int width, int height, int pixfmt, int align)
@@ -74,3 +76,5 @@ abcdk_torch_frame_t *abcdk_cuda_frame_create(int width, int height, int pixfmt, 
 }
 
 #endif //__cuda_cuda_h__
+
+__END_DECLS

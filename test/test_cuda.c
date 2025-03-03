@@ -82,14 +82,14 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_torch_image_t *f = abcdk_cuda_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
-    NppiPoint dst_quad[4] = {
+    abcdk_torch_point_t dst_quad[4] = {
         {30, 30},   // 变换后的左上角
         {220, 50},  // 变换后的右上角
         {210, 220}, // 变换后的右下角
         {50, 230},  // 变换后的左下角
     };
 
-    NppiRect src_roi = {100, 100, 200, 200};
+    abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
     abcdk_cuda_imgproc_warp_8u(3, 1, f->data[0], f->width, f->stride[0], f->height, NULL, dst_quad, e->data[0], e->width, e->stride[0], e->height, NULL, NULL, 1, NPPI_INTER_CUBIC);
 

@@ -9,7 +9,7 @@
 
 #include "abcdk/opencv/opencv.h"
 #include "abcdk/torch/image.h"
-#include "../generic/imageproc.hxx"
+#include "abcdk/torch/imgproc.h"
 
 #ifdef OPENCV_STITCHING_STITCHER_HPP
 
@@ -568,10 +568,10 @@ namespace abcdk
                     /*计算重叠宽度。*/
                     int overlap_w = (i <= 0 ? 0 : (m_blend_rects[i - 1].width + m_blend_rects[i - 1].x - m_blend_rects[i].x));
 
-                    abcdk::generic::imageproc::compose<uint8_t>(out.channels(), true,
-                                                                out.data, out.cols, out.step, out.rows,
-                                                                imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows,
-                                                                scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
+                    abcdk_torch_imgproc_compose_8u(out.channels(), 1,
+                                                   out.data, out.cols, out.step, out.rows,
+                                                   imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows,
+                                                   scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
                 }
 
                 return true;

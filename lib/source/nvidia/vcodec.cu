@@ -10,6 +10,9 @@
 #include "vcodec_encoder_ffnv.cu.hxx"
 #include "vcodec_encoder_aarch64.cu.hxx"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 /** CUDA视频编/解码器。*/
@@ -192,3 +195,6 @@ int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

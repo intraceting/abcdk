@@ -16,7 +16,7 @@ namespace abcdk
         namespace imageproc
         {
             template <typename T>
-            ABCDK_INVOKE_DEVICE void stuff_kernel(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar, size_t tid)
+            ABCDK_INVOKE_DEVICE void stuff(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar, size_t tid)
             {
 
                 size_t y = tid / width;
@@ -33,17 +33,6 @@ namespace abcdk
                 }
             }
 
-            /**填充颜色。*/
-            template <typename T>
-            ABCDK_INVOKE_HOST void stuff(int channels, bool packed,
-                                         T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
-                                         T *scalar)
-            {
-                for (size_t i = 0; i < dst_w * dst_h; i++)
-                {
-                    stuff_kernel<T>(channels, packed, dst, dst_w, dst_ws, dst_h, scalar, i);
-                }
-            }
 
         } // namespace imageproc
     } //    namespace generic

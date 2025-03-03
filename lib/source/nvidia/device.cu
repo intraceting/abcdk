@@ -6,6 +6,7 @@
  */
 #include "abcdk/nvidia/device.h"
 
+__BEGIN_DECLS
 
 #ifdef __cuda_cuda_h__
 
@@ -174,3 +175,6 @@ int abcdk_cuda_ctx_pop_current(CUcontext *ctx)
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

@@ -18,7 +18,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool pac
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::compose_kernel<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h, compose, compose_w, compose_ws, compose_h, scalar,
+    abcdk::generic::imageproc::compose<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h, compose, compose_w, compose_ws, compose_h, scalar,
                                         overlap_x, overlap_y, overlap_w, optimize_seam, tid);
 }
 
@@ -50,17 +50,23 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
     return 0;
 }
 
+__BEGIN_DECLS
+
 int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
                                   uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                   uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                   uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
-    return _abcdk_cuda_imgproc_compose(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
-                                       compose, compose_w, compose_ws, compose_h,
-                                       scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
+    return _abcdk_cuda_imgproc_compose<uint8_t>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
+                                                compose, compose_w, compose_ws, compose_h,
+                                                scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
 
+__END_DECLS
+
 #else // __cuda_cuda_h__
+
+__BEGIN_DECLS
 
 int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
                                   uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
@@ -70,5 +76,7 @@ int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
+
+__END_DECLS
 
 #endif // __cuda_cuda_h__

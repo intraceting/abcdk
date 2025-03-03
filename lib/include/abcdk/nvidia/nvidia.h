@@ -45,40 +45,6 @@ typedef enum
     NPPI_SMOOTH_EDGE             = (int)0x8000000 /**<  Smooth edge filtering. */
 } NppiInterpolationMode; 
 
-/** 
- * 2D Point
- */
-typedef struct 
-{
-    int x;      /**<  x-coordinate. */
-    int y;      /**<  y-coordinate. */
-} NppiPoint;
-
-/**
- * 2D Size
- * This struct typically represents the size of a a rectangular region in
- * two space.
- */
-typedef struct 
-{
-    int width;  /**<  Rectangle width. */
-    int height; /**<  Rectangle height. */
-} NppiSize;
-
-/**
- * 2D Rectangle
- * This struct contains position and size information of a rectangle in 
- * two space.
- * The rectangle's position is usually signified by the coordinate of its
- * upper-left corner.
- */
-typedef struct
-{
-    int x;          /**<  x-coordinate of upper left corner (lowest memory address). */
-    int y;          /**<  y-coordinate of upper left corner (lowest memory address). */
-    int width;      /**<  Rectangle width. */
-    int height;     /**<  Rectangle height. */
-} NppiRect;
 
 #endif //__cuda_cuda_h__
 

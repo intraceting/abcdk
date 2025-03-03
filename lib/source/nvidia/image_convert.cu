@@ -6,6 +6,9 @@
  */
 #include "abcdk/nvidia/image.h"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 static int _abcdk_cuda_image_convert_cpu(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
@@ -383,3 +386,6 @@ int abcdk_cuda_image_convert(abcdk_torch_image_t *dst, const abcdk_torch_image_t
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

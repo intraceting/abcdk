@@ -15,11 +15,12 @@ namespace abcdk
     {
         namespace imageproc
         {
+            /**暗通道除雾。*/
             template <typename T>
-            ABCDK_INVOKE_DEVICE void defog_kernel(int channels, bool packed,
-                                                  T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                  size_t w, size_t h, float dack_m, T dack_a, float dack_w,
-                                                  size_t tid)
+            ABCDK_INVOKE_DEVICE void defog(int channels, bool packed,
+                                           T *dst, size_t dst_ws, T *src, size_t src_ws,
+                                           size_t w, size_t h, float dack_m, T dack_a, float dack_w,
+                                           size_t tid)
             {
 
                 size_t y = tid / w;
@@ -46,18 +47,6 @@ namespace abcdk
                 for (size_t z = 0; z < channels; z++)
                 {
                     *abcdk::generic::util::ptr<T>(dst, dst_of[z]) = abcdk::generic::util::pixel_clamp<T>(((abcdk::generic::util::obj<T>(src, src_of[z]) - dack_a) / t + dack_a));
-                }
-            }
-
-            /**暗通道除雾。*/
-            template <typename T>
-            ABCDK_INVOKE_HOST void defog(int channels, bool packed,
-                                         T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                         size_t w, size_t h, float dack_m = 0.35, T dack_a = 220, float dack_w = 0.9)
-            {
-                for (size_t i = 0; i < w * h; i++)
-                {
-                    defog_kernel<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_m, dack_a, dack_w, i);
                 }
             }
 

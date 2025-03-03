@@ -15,7 +15,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packe
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::stuff_kernel<T>(channels,packed,dst,width,pitch,height,scalar,tid);
+    abcdk::generic::imageproc::stuff<T>(channels,packed,dst,width,pitch,height,scalar,tid);
 }
 
 template <typename T>
@@ -39,10 +39,14 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
     return 0;
 }
 
+__BEGIN_DECLS
+
 int abcdk_cuda_imgproc_stuff_8u(int channels, int packed,uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[])
 {
     return _abcdk_cuda_imgproc_stuff<uint8_t>(channels, packed, dst, width, pitch, height, scalar);
 }
+
+__END_DECLS
 
 #else // __cuda_cuda_h__
 
@@ -51,5 +55,7 @@ int abcdk_cuda_imgproc_stuff_8u(int channels, int packed,uint8_t *dst, size_t wi
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
+
+__END_DECLS
 
 #endif // __cuda_cuda_h__

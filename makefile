@@ -144,12 +144,13 @@ LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
 LIB_SRC_CXX_FILES += $(wildcard lib/source/opencv/*.cpp)
-LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.o,${LIB_SRC_CXX_FILES}))
+LIB_SRC_CXX_FILES += $(wildcard lib/source/torch/*.cpp)
+LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
 
 #CUDA是可选项，可能未启用。
 ifneq ($(strip $(NVCC)),)
 LIB_SRC_CU_FILES += $(wildcard lib/source/nvidia/*.cu)
-LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.o,${LIB_SRC_CU_FILES}))
+LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.cu.o,${LIB_SRC_CU_FILES}))
 endif
 
 #
@@ -260,7 +261,7 @@ $(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 	
 #
-$(OBJ_PATH)/lib/source/opencv/%.o: lib/source/opencv/%.cpp
+$(OBJ_PATH)/lib/source/opencv/%.cpp.o: lib/source/opencv/%.cpp
 	mkdir -p $(OBJ_PATH)/lib/source/opencv/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
@@ -272,7 +273,13 @@ $(OBJ_PATH)/lib/source/torch/%.o: lib/source/torch/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/nvidia/%.o: lib/source/nvidia/%.cu
+$(OBJ_PATH)/lib/source/torch/%.cpp.o: lib/source/torch/%.cpp
+	mkdir -p $(OBJ_PATH)/lib/source/torch/
+	rm -f $@
+	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/nvidia/%.cu.o: lib/source/nvidia/%.cu
 	mkdir -p $(OBJ_PATH)/lib/source/nvidia/
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@

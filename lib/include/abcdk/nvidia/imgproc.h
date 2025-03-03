@@ -9,10 +9,10 @@
 
 #include "abcdk/util/trace.h"
 #include "abcdk/util/geometry.h"
+#include "abcdk/torch/torch.h"
 #include "abcdk/nvidia/nvidia.h"
 #include "abcdk/nvidia/memory.h"
 
-#ifdef __cuda_cuda_h__
 
 __BEGIN_DECLS
 
@@ -92,8 +92,8 @@ int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
  * @return 0 成功，< 0 失败。
  */
 int abcdk_cuda_imgproc_resize_8u(int channels, int packed,
-                                 uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi,
-                                 const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi,
+                                 uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
+                                 const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
                                  int keep_aspect_ratio, NppiInterpolationMode inter_mode);
 
 /**
@@ -106,8 +106,8 @@ int abcdk_cuda_imgproc_resize_8u(int channels, int packed,
  * @return 0 成功，< 0 失败。
  */
 int abcdk_cuda_imgproc_warp_8u(int channels, int packed,
-                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi, const NppiPoint dst_quad[4],
-                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi, const NppiPoint src_quad[4],
+                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi, const abcdk_torch_point_t dst_quad[4],
+                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi, const abcdk_torch_point_t src_quad[4],
                                int warp_mode, NppiInterpolationMode inter_mode);
 
 /**
@@ -116,13 +116,12 @@ int abcdk_cuda_imgproc_warp_8u(int channels, int packed,
  * @return 0 成功，< 0 失败。
  */
 int abcdk_cuda_imgproc_remap_8u(int channels, int packed,
-                                uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi,
-                                const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi,
+                                uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
+                                const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
                                 const float *xmap, size_t xmap_ws, const float *ymap, size_t ymap_ws,
                                 NppiInterpolationMode inter_mode);
 
 __END_DECLS
 
-#endif //__cuda_cuda_h__
 
 #endif // ABCDK_NVIDIA_IMGPROC_H

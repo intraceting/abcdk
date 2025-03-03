@@ -6,6 +6,9 @@
  */
 #include "abcdk/nvidia/imgutil.h"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
@@ -47,3 +50,6 @@ int abcdk_cuda_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4], int dst_in_
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

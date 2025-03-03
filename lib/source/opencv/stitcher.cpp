@@ -7,6 +7,10 @@
 #include "abcdk/opencv/stitcher.h"
 #include "stitcher.hxx"
 
+
+__BEGIN_DECLS
+
+
 #ifdef OPENCV_STITCHING_STITCHER_HPP
 
 /**简单的全景拼接引擎。*/
@@ -234,3 +238,6 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *
 }
 
 #endif // OPENCV_STITCHING_STITCHER_HPP
+
+
+__END_DECLS

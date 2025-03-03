@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  *
- * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
+ * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
 #ifndef ABCDK_TORCH_TENUTIL_H

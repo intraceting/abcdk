@@ -17,7 +17,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_drawrect_2d2d(int channels, bool pa
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::drawrect_kernel<T>(channels, packed, dst, w, ws, h, color, weight, corner, tid);
+    abcdk::generic::imageproc::drawrect<T>(channels, packed, dst, w, ws, h, color, weight, corner, tid);
 }
 
 template <typename T>
@@ -51,6 +51,8 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_drawrect(int channels, bool packed,
     return 0;
 }
 
+__BEGIN_DECLS
+
 int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
                                    uint8_t *dst, size_t w, size_t ws, size_t h,
                                    uint8_t color[], int weight, int corner[4])
@@ -58,7 +60,11 @@ int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
     return _abcdk_cuda_imgproc_drawrect<uint8_t>(channels, packed, dst, w, ws, h, color, weight, corner);
 }
 
+__END_DECLS
+
 #else // __cuda_cuda_h__
+
+__BEGIN_DECLS
 
 int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
                                    uint8_t *dst, size_t w, size_t ws, size_t h,
@@ -67,5 +73,7 @@ int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
+
+__END_DECLS
 
 #endif // __cuda_cuda_h__

@@ -61,6 +61,9 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_tensorproc_blob(int channels, bool revert,
     return 0;
 }
 
+
+__BEGIN_DECLS
+
 int abcdk_cuda_tensorproc_blob_8u_to_32f(int channels,
                                          int dst_packed, float *dst, size_t dst_ws,
                                          int src_packed, uint8_t *src, size_t src_ws,
@@ -77,7 +80,13 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u(int channels,
     return _abcdk_cuda_tensorproc_blob<float, uint8_t>(channels, true, dst_packed, dst, dst_ws, src_packed, src, src_ws, w, h, scale, mean, std);
 }
 
+
+__END_DECLS
+
 #else //__cuda_cuda_h__
+
+
+__BEGIN_DECLS
 
 int abcdk_cuda_tensorproc_blob_8u_to_32f(int channels,
     int dst_packed, float *dst, size_t dst_ws,
@@ -97,5 +106,7 @@ int abcdk_cuda_tensorproc_blob_32f_to_8u(int channels,
     return -1;
 }
 
+
+__END_DECLS
 
 #endif // __cuda_cuda_h__

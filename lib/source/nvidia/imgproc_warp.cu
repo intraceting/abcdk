@@ -6,11 +6,13 @@
  */
 #include "abcdk/nvidia/imgproc.h"
 
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 int abcdk_cuda_imgproc_warp_8u(int channels, int packed,
-                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi, const NppiPoint dst_quad[4],
-                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi, const NppiPoint src_quad[4],
+                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi, const abcdk_torch_point_t dst_quad[4],
+                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi, const abcdk_torch_point_t src_quad[4],
                                int warp_mode, NppiInterpolationMode inter_mode)
 {
 
@@ -131,8 +133,8 @@ int abcdk_cuda_imgproc_warp_8u(int channels, int packed,
 #else //__cuda_cuda_h__
 
 int abcdk_cuda_imgproc_warp_8u(int channels, int packed,
-                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const NppiRect *dst_roi, const NppiPoint dst_quad[4],
-                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const NppiRect *src_roi, const NppiPoint src_quad[4],
+                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi, const abcdk_torch_point_t dst_quad[4],
+                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi, const abcdk_torch_point_t src_quad[4],
                                int warp_mode, NppiInterpolationMode inter_mode)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
@@ -140,3 +142,5 @@ int abcdk_cuda_imgproc_warp_8u(int channels, int packed,
 }
 
 #endif //__cuda_cuda_h__
+
+__END_DECLS

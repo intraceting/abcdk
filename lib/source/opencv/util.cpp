@@ -6,6 +6,9 @@
  */
 #include "abcdk/opencv/util.h"
 
+__BEGIN_DECLS
+
+
 #ifdef OPENCV_CORE_HPP
 
 abcdk_torch_image_t *abcdk_opencv_image_load(const char *src, int gray)
@@ -62,3 +65,5 @@ int abcdk_opencv_image_save(const char *dst, abcdk_torch_image_t *src)
 }
 
 #endif //OPENCV_CORE_HPP
+
+__END_DECLS

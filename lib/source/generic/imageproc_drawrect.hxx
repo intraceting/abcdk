@@ -15,11 +15,16 @@ namespace abcdk
     {
         namespace imageproc
         {
+            /**
+             * 画矩形框。
+             *
+             * @param corner 左上，右下。[x1][y1][x2][y2]
+             */
             template <typename T>
-            ABCDK_INVOKE_DEVICE void drawrect_kernel(int channels, bool packed,
-                                                     T *dst, size_t w, size_t ws, size_t h,
-                                                     T *color, int weight, int *corner,
-                                                     size_t tid)
+            ABCDK_INVOKE_DEVICE void drawrect(int channels, bool packed,
+                                              T *dst, size_t w, size_t ws, size_t h,
+                                              T *color, int weight, int *corner,
+                                              size_t tid)
             {
                 size_t y = tid / w;
                 size_t x = tid % w;
@@ -59,22 +64,6 @@ namespace abcdk
                 {
                     size_t off = abcdk::generic::util::off<T>(packed, w, ws, h, channels, 0, x, y, z);
                     *abcdk::generic::util::ptr<T>(dst, off) = color[z];
-                }
-            }
-
-            /**
-             * 画矩形框。
-             *
-             * @param corner 左上，右下。[x1][y1][x2][y2]
-             */
-            template <typename T>
-            ABCDK_INVOKE_HOST void drawrect(int channels, bool packed, T *dst, size_t w, size_t ws, size_t h, T *color, int weight, int *corner)
-            {
-
-                // #pragma omp parallel
-                for (size_t i = 0; i < w * h; i++)
-                {
-                    drawrect_kernel<T>(channels, packed, dst, w, ws, h, color, weight, corner, i);
                 }
             }
 

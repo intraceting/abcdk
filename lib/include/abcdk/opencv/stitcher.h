@@ -9,6 +9,7 @@
 
 #include "abcdk/util/object.h"
 #include "abcdk/torch/image.h"
+#include "abcdk/nvidia/image.h"
 #include "abcdk/opencv/opencv.h"
 
 __BEGIN_DECLS

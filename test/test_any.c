@@ -1646,74 +1646,70 @@ int abcdk_test_any(abcdk_option_t *args)
 
 #elif 1
 
-#ifdef HAVE_FFMPEG
+
 
     int w = 1920,h = 1080;
 
-    abcdk_media_image_t *a = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 4);
-    abcdk_media_image_t *b = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_YUV444P, 8);
-    abcdk_media_image_t *c = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 28);
-    abcdk_media_image_t *d = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_ARGB, 18);
-    abcdk_media_image_t *e = abcdk_media_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 38);
+    abcdk_torch_image_t *a = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 4);
+    abcdk_torch_image_t *b = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P, 8);
+    abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 28);
+    abcdk_torch_image_t *d = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB32, 18);
+    abcdk_torch_image_t *e = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 38);
+    abcdk_torch_image_t *f = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 38);
 
-    abcdk_ndarray_t s;
-    s.block = 1;
-    s.cell = 1;
-    s.depth = 3;
-    s.fmt = ABCDK_NDARRAY_NHWC;
-    s.width = w;
-    s.height = h;
-    s.stride = a->stride[0];
-    s.data = a->data[0];
-    s.size = 0;
 
-    for (int y = 0; y < 100; y++)
-    {
-        for (int x = 0; x < w; x++)
-        {
-            
-            size_t off = abcdk_ndarray_offset(&s, 0, x, y, 0, 0);
-            ABCDK_PTR2U8(a->data[0],off) = 255;
-        }
-    }
+    uint8_t scalar[3] = {0, 0, 255};
+    abcdk_torch_imgproc_stuff_8u(3, 1, a->data[0], a->width, a->stride[0], 100, scalar);
 
-    for (int y = 100; y < 200; y++)
-    {
-        for (int x = 0; x < w; x++)
-        {
-            size_t off = abcdk_ndarray_offset(&s, 0, x, y, 1, 0);
-            ABCDK_PTR2U8(a->data[0],off) = 255;
-        }
-    }
+    uint8_t scalar2[3] = {0, 255, 0};
+    abcdk_torch_imgproc_stuff_8u(3, 1, a->data[0] + a->stride[0] * 100, a->width, a->stride[0], 100, scalar2);
 
-    for (int y = 200; y < h; y++)
-    {
-        for (int x = 0; x < w; x++)
-        {
-            size_t off = abcdk_ndarray_offset(&s, 0, x, y, 2, 0);
-            ABCDK_PTR2U8(a->data[0],off) = 255;
-        }
-    }
+    uint8_t scalar3[3] = {255, 0, 0};
+    abcdk_torch_imgproc_stuff_8u(3, 1, a->data[0] + a->stride[0] * 200, a->width, a->stride[0], a->height - 200, scalar3);
 
-    abcdk_media_image_save("/tmp/test.cpu.a.bmp", a);
+    abcdk_torch_image_save("/tmp/test.cpu.a.bmp", a);
+    
+    abcdk_torch_point_t dst_quad[4] = {
+        {30, 30},   // 变换后的左上角
+        {220, 50},  // 变换后的右上角
+        {210, 220}, // 变换后的右下角
+        {50, 230},  // 变换后的左下角
+    };
 
-    abcdk_media_image_convert(b,a);
-    abcdk_media_image_convert(c,b);
+    abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
-    abcdk_media_image_save("/tmp/test.cpu.c.bmp", c);
+    abcdk_torch_imgproc_warp_8u(3, 1, f->data[0], f->width, f->stride[0], f->height, NULL, dst_quad, a->data[0], a->width, a->stride[0], a->height, NULL, NULL, 1, 1);
 
-    abcdk_media_image_convert(d,c);
-    abcdk_media_image_convert(e,d);
+    abcdk_torch_image_save("/tmp/test.cpu.f.bmp", f);
 
-    abcdk_media_image_save("/tmp/test.cpu.e.bmp", e);
+    abcdk_torch_image_t *g = abcdk_torch_image_create(600, 800, ABCDK_TORCH_PIXFMT_BGR24, 38);
 
-    abcdk_media_image_free(&a);
-    abcdk_media_image_free(&b);
-    abcdk_media_image_free(&c);
-    abcdk_media_image_free(&d);
-    abcdk_media_image_free(&e);
+    uint8_t scalar4[3] = {128, 128, 128};
+    abcdk_torch_imgproc_stuff_8u(3, 1, g->data[0], g->width, g->stride[0], g->height, scalar4);
 
-#endif //HAVE_FFMPEG
+    abcdk_torch_imgproc_resize_8u(3,1,g->data[0], g->width, g->stride[0], g->height, NULL,a->data[0], a->width, a->stride[0], a->height, NULL,0,1);
+
+    abcdk_torch_image_save("/tmp/test.cpu.g.bmp", g);
+
+    abcdk_torch_image_free(&g);
+
+    abcdk_torch_image_convert(b,a);
+    abcdk_torch_image_convert(c,b);
+
+    abcdk_torch_image_save("/tmp/test.cpu.c.bmp", c);
+
+    abcdk_torch_image_convert(d,c);
+    abcdk_torch_image_convert(e,d);
+
+    abcdk_torch_image_save("/tmp/test.cpu.e.bmp", e);
+
+    abcdk_torch_image_free(&a);
+    abcdk_torch_image_free(&b);
+    abcdk_torch_image_free(&c);
+    abcdk_torch_image_free(&d);
+    abcdk_torch_image_free(&e);
+    abcdk_torch_image_free(&f);
+
 
 
 #endif 

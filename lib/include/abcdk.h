@@ -148,6 +148,11 @@
 #include "abcdk/torch/jcodec.h"
 #include "abcdk/torch/vcodec.h"
 #include "abcdk/torch/tensor.h"
+#include "abcdk/torch/tenfmt.h"
+#include "abcdk/torch/tenutil.h"
+#include "abcdk/torch/imgproc.h"
+#include "abcdk/torch/frame.h"
+#include "abcdk/torch/packet.h"
 
 #include "abcdk/nvidia/nvidia.h"
 #include "abcdk/nvidia/memory.h"

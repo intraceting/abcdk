@@ -1,7 +1,7 @@
 /*
  * This file is part of ABCDK.
  *
- * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
+ * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
 #include "abcdk/torch/tensor.h"
@@ -63,7 +63,7 @@ int abcdk_torch_tensor_reset(abcdk_torch_tensor_t **ctx, int format, size_t bloc
         if(!*ctx)
             return -1;
 
-        chk = abcdk_torch_tensor_reset(ctx,format,block,width,height,depth,cell,align);
+        chk = abcdk_torch_tensor_reset(ctx, format, block, width, height, depth, cell, align);
         if (chk != 0)
             abcdk_torch_tensor_free(ctx);
 
@@ -82,7 +82,7 @@ int abcdk_torch_tensor_reset(abcdk_torch_tensor_t **ctx, int format, size_t bloc
     ctx_p->format = -1;
     ctx_p->block = ctx_p->width = ctx_p->stride = ctx_p->height = ctx_p->depth = ctx_p->cell = 0;
 
-    ctx_p->stride = abcdk_torch_tensor_get_stride(format, width, height, depth, cell, align);
+    ctx_p->stride = abcdk_torch_tenutil_stride(format, width, depth, cell, align);
     buf_size = abcdk_torch_tenutil_size(format, block, width, ctx_p->stride, height, depth);
 
     ctx_p->private_ctx = abcdk_heap_alloc(buf_size);
@@ -107,8 +107,8 @@ abcdk_torch_tensor_t *abcdk_torch_tensor_create(int format, size_t block, size_t
     assert(format == ABCDK_TORCH_TENFMT_NCHW || format == ABCDK_TORCH_TENFMT_NHWC);
     assert(block > 0 && width > 0 && height > 0 && depth > 0 && cell);
 
-    chk = abcdk_torch_tensor_reset(ctx,format,block,width,height,depth,cell,align);
-    if(chk != 0)
+    chk = abcdk_torch_tensor_reset(&ctx, format, block, width, height, depth, cell, align);
+    if (chk != 0)
         return NULL;
 
     return ctx;

@@ -8,6 +8,9 @@
 #include "../generic/invoke.hxx"
 #include "grid.cu.hxx"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 void abcdk_cuda_free(void **data)
@@ -50,29 +53,6 @@ void *abcdk_cuda_alloc_z(size_t size)
     abcdk_cuda_memset(data, 0, size);
 
     return data;
-}
-
-template <typename T>
-ABCDK_INVOKE_GLOBAL void _abcdk_cuda_memset_2d2d(T *data, T value, size_t size)
-{
-    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
-
-    if (tid >= size)
-        return;
-
-    data[tid] = value;
-}
-
-void *abcdk_cuda_memset(void *dst, int val, size_t size)
-{
-    uint3 dim[2];
-
-    /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, size, 64);
-
-    _abcdk_cuda_memset_2d2d<uint8_t><<<dim[0], dim[1]>>>((uint8_t *)dst, (uint8_t)val, size);
-
-    return dst;
 }
 
 int abcdk_cuda_memcpy(void *dst, int dst_in_host, const void *src, int src_in_host, size_t size)
@@ -198,3 +178,6 @@ void *abcdk_cuda_copyfrom(const void *src, size_t size, int src_in_host)
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

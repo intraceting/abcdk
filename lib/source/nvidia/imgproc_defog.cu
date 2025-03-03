@@ -17,7 +17,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_defog_2d2d(int channels, bool packe
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::defog_kernel<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_m, dack_a, dack_w, tid);
+    abcdk::generic::imageproc::defog<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_m, dack_a, dack_w, tid);
 }
 
 template <typename T>
@@ -39,14 +39,20 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_defog(int channels, bool packed,
     return 0;
 }
 
+__BEGIN_DECLS
+
 int abcdk_cuda_imgproc_defog_8u(int channels, int packed,
                                 uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
                                 size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w)
 {
-    return _abcdk_cuda_imgproc_defog(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_a, dack_m, dack_w);
+    return _abcdk_cuda_imgproc_defog<uint8_t>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_a, dack_m, dack_w);
 }
 
+__END_DECLS
+
 #else // __cuda_cuda_h__
+
+__BEGIN_DECLS
 
 int abcdk_cuda_imgproc_defog_8u(int channels, int packed,
                                 uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
@@ -55,5 +61,7 @@ int abcdk_cuda_imgproc_defog_8u(int channels, int packed,
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
+
+__END_DECLS
 
 #endif // __cuda_cuda_h__

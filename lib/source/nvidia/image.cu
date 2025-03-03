@@ -6,6 +6,9 @@
  */
 #include "abcdk/nvidia/image.h"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 static void _abcdk_cuda_image_private_ctx_free_cb(void **ctx)
@@ -254,3 +257,6 @@ int abcdk_cuda_image_save(const char *dst, const abcdk_torch_image_t *src)
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS

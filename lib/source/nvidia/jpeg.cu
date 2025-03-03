@@ -10,6 +10,9 @@
 #include "jpeg_encoder_general.cu.hxx"
 #include "jpeg_encoder_aarch64.cu.hxx"
 
+
+__BEGIN_DECLS
+
 #ifdef __cuda_cuda_h__
 
 /** JPEG编/解码器。*/
@@ -237,3 +240,6 @@ abcdk_torch_image_t *abcdk_cuda_jpeg_decode_from_file(abcdk_torch_jcodec_t *ctx,
 }
 
 #endif //__cuda_cuda_h__
+
+
+__END_DECLS
