@@ -50,6 +50,7 @@ int abcdk_torch_imgproc_resize_8u(int channels, int packed,
     tmp_dst2 = tmp_dst(cv::Rect(tmp_param.x_shift, tmp_param.y_shift, tmp_dst2_size.width, tmp_dst2_size.height));
 
     cv::resize(tmp_src, tmp_dst2, tmp_dst2_size, 0, 0, inter_mode);
+    //cv::resize(tmp_src, tmp_dst2, cv::Size(), tmp_param.x_factor, tmp_param.y_factor, inter_mode);//不好用。
 
     return 0;
 }
