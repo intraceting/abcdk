@@ -132,7 +132,6 @@ LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/system/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/media/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/redis/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/sqlite/*.c)
@@ -140,6 +139,7 @@ LIB_SRC_FILES += $(wildcard lib/source/odbc/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/torch/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
@@ -148,7 +148,7 @@ LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.o,${LIB_SRC_CXX_FIL
 
 #CUDA是可选项，可能未启用。
 ifneq ($(strip $(NVCC)),)
-LIB_SRC_CU_FILES += $(wildcard lib/source/cuda/*.cu)
+LIB_SRC_CU_FILES += $(wildcard lib/source/nvidia/*.cu)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.o,${LIB_SRC_CU_FILES}))
 endif
 
@@ -216,11 +216,6 @@ $(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
-#
-$(OBJ_PATH)/lib/source/media/%.o: lib/source/media/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/media/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
@@ -263,7 +258,7 @@ $(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/json/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
+	
 #
 $(OBJ_PATH)/lib/source/opencv/%.o: lib/source/opencv/%.cpp
 	mkdir -p $(OBJ_PATH)/lib/source/opencv/
@@ -271,8 +266,14 @@ $(OBJ_PATH)/lib/source/opencv/%.o: lib/source/opencv/%.cpp
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/cuda/%.o: lib/source/cuda/%.cu
-	mkdir -p $(OBJ_PATH)/lib/source/cuda/
+$(OBJ_PATH)/lib/source/torch/%.o: lib/source/torch/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/torch/
+	rm -f $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/nvidia/%.o: lib/source/nvidia/%.cu
+	mkdir -p $(OBJ_PATH)/lib/source/nvidia/
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
 

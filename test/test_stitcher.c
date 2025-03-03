@@ -31,7 +31,7 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     abcdk_object_unref(&metadata);
   }
 
-  abcdk_media_image_t *img[4] = {0}, *mask[4] = {0};
+  abcdk_torch_image_t *img[4] = {0}, *mask[4] = {0};
 
   img[0] = abcdk_opencv_image_load("/tmp/ccc/you1.jpg",0);
   img[3] = abcdk_opencv_image_load("/tmp/ccc/you2.jpg",0);
@@ -42,14 +42,14 @@ int abcdk_test_stitcher(abcdk_option_t *args)
 
   abcdk_stitcher_build_panorama_param(ctx);
 
-  abcdk_media_image_t *out = abcdk_media_image_alloc(ABCDK_MEDIA_TAG_HOST);
+  abcdk_torch_image_t *out = abcdk_torch_image_alloc(ABCDK_TORCH_TAG_HOST);
   chk = abcdk_stitcher_compose_panorama(ctx, out, 4, img);
 
   abcdk_opencv_image_save("/tmp/ccc/pano.jpg",out);
-  abcdk_media_image_free(&out);
+  abcdk_torch_image_free(&out);
 
   for (int i = 0; i < 4; i++)
-    abcdk_media_image_free(&img[i]);
+    abcdk_torch_image_free(&img[i]);
 
   abcdk_stitcher_destroy(&ctx);
 

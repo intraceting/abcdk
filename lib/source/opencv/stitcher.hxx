@@ -8,7 +8,7 @@
 #define ABCDK_OPENCV_STITCHER_HXX
 
 #include "abcdk/opencv/opencv.h"
-#include "abcdk/media/image.h"
+#include "abcdk/torch/image.h"
 #include "../generic/imageproc.hxx"
 
 #ifdef OPENCV_STITCHING_STITCHER_HPP

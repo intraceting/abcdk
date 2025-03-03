@@ -20,8 +20,8 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     int w = 1920 ,h = 1080;
     //int w = 1920-1 ,h = 1080-1;
 
-    abcdk_media_image_t *a = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 4);
-    abcdk_media_image_t *b = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR24, 8);
+    abcdk_torch_image_t *a = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 4);
+    abcdk_torch_image_t *b = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 8);
 
     uint8_t scalar[3] = {0, 0, 255};
     abcdk_cuda_imgproc_stuff_8u(3, 1, a->data[0], a->width, a->stride[0], 100, scalar);
@@ -34,9 +34,9 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     //abcdk_cuda_image_save("/tmp/test.cuda.a1.bmp", a);
 
-    abcdk_media_image_t *aa = abcdk_cuda_image_clone(1,a);
+    abcdk_torch_image_t *aa = abcdk_cuda_image_clone(1,a);
     abcdk_bmp_save_file("/tmp/test.cuda.a1.bmp",aa->data[0],aa->stride[0],aa->width,-aa->height,24);
-    abcdk_media_image_free(&aa);
+    abcdk_torch_image_free(&aa);
 
     uint8_t color[4] = {255, 0,0, 0};
     int corner[4] = {10, 10, 100, 100};
@@ -46,7 +46,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     // abcdk_cuda_image_save("/tmp/test.cuda.a2.bmp", a);
     aa = abcdk_cuda_image_clone(1, a);
     abcdk_bmp_save_file("/tmp/test.cuda.a2.bmp", aa->data[0], aa->stride[0], aa->width, -aa->height, 24);
-    abcdk_media_image_free(&aa);
+    abcdk_torch_image_free(&aa);
 
     chk = abcdk_cuda_image_copy(b, a);
     assert(chk == 0);
@@ -55,32 +55,32 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     abcdk_cuda_image_save("/tmp/test.cuda.a3.bmp", a);
     abcdk_cuda_image_save("/tmp/test.cuda.b.bmp", b);
 
-   // abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_YUV420P, 567);
-   // abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_YUV422P, 567);
-   // abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_YUV444P, 567);
-    //abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_NV12, 1);
-    //abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_ARGB, 1);
-    //abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_BGR32, 1);
-    abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_RGB32, 1);
-   // abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_NV21, 2);
-    //abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_NV21, 2);
-    //abcdk_media_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_YUV444P10, 1);
+   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV420P, 567);
+   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV422P, 567);
+   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P, 567);
+    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_NV12, 1);
+    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_ARGB, 1);
+    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR32, 1);
+    abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB32, 1);
+   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
+    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
+    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P10, 1);
 
     abcdk_cuda_image_convert(c, a);
 
-    abcdk_media_image_t *d = abcdk_cuda_image_create(w, h, ABCDK_MEDIA_PIXFMT_RGB24, 1);
+    abcdk_torch_image_t *d = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB24, 1);
 
     abcdk_cuda_image_convert(d, c);
 
     abcdk_cuda_image_save("/tmp/test.cuda.d.bmp", d);
 
-    abcdk_media_image_t *e = abcdk_cuda_image_create(800, 600, ABCDK_MEDIA_PIXFMT_RGB24, 678);
+    abcdk_torch_image_t *e = abcdk_cuda_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
     abcdk_cuda_imgproc_resize_8u(3,1,e->data[0],e->width,e->stride[0],e->height, NULL, d->data[0],d->width,d->stride[0],d->height, NULL, 1, NPPI_INTER_CUBIC);
 
     abcdk_cuda_image_save("/tmp/test.cuda.e.bmp", e);
 
-    abcdk_media_image_t *f = abcdk_cuda_image_create(800, 600, ABCDK_MEDIA_PIXFMT_RGB24, 678);
+    abcdk_torch_image_t *f = abcdk_cuda_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
     NppiPoint dst_quad[4] = {
         {30, 30},   // 变换后的左上角
@@ -100,23 +100,23 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     // abcdk_cuda_image_save("/tmp/test.cuda.f2.bmp", f);
 
-    abcdk_media_image_free(&a);
-    abcdk_media_image_free(&b);
-    abcdk_media_image_free(&c);
-    abcdk_media_image_free(&d);
-    abcdk_media_image_free(&e);
-    abcdk_media_image_free(&f);
+    abcdk_torch_image_free(&a);
+    abcdk_torch_image_free(&b);
+    abcdk_torch_image_free(&c);
+    abcdk_torch_image_free(&d);
+    abcdk_torch_image_free(&e);
+    abcdk_torch_image_free(&f);
 
     for (int i = 0; i < 10; i++)
     {
-        abcdk_media_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
+        abcdk_torch_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
 
         abcdk_cuda_imgproc_drawrect_8u(3,1,g->data[0], g->width, g->stride[0], g->height, color, 3, corner);
 
         abcdk_cuda_image_save("/tmp/test.cuda.g2.bmp", g);
         abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g, cuda_ctx);
 
-        abcdk_media_image_free(&g);
+        abcdk_torch_image_free(&g);
     }
 
     return 0;

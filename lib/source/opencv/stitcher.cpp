@@ -86,7 +86,7 @@ int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const
     return -1;
 }
 
-int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_media_image_t *img[], abcdk_media_image_t *mask[], float good_threshold)
+int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
 {
     std::vector<cv::Mat> tmp_imgs;
     std::vector<cv::Mat> tmp_masks;
@@ -105,9 +105,9 @@ int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_me
         auto &src_mask = mask[i];
 
         assert(src_img != NULL);
-        assert(src_img->tag == ABCDK_MEDIA_TAG_HOST);
+        assert(src_img->tag == ABCDK_TORCH_TAG_HOST);
 
-        int src_img_depth = abcdk_media_pixfmt_channels(src_img->pixfmt);
+        int src_img_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
 
         dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
         if (dst_img.empty())
@@ -120,9 +120,9 @@ int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_me
         if (src_mask)
         {
             assert(src_mask != NULL);
-            assert(src_mask->tag == ABCDK_MEDIA_TAG_HOST);
+            assert(src_mask->tag == ABCDK_TORCH_TAG_HOST);
 
-            int src_mask_depth = abcdk_media_pixfmt_channels(src_mask->pixfmt);
+            int src_mask_depth = abcdk_torch_pixfmt_channels(src_mask->pixfmt);
 
             dst_mask.create(src_mask->height, src_mask->width, CV_8UC(src_mask_depth));
             if (dst_mask.empty())
@@ -150,14 +150,14 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
     return 0;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *out, int count, abcdk_media_image_t *img[])
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
 {
     std::vector<cv::Mat> tmp_imgs;
     cv::Mat tmp_out;
     int chk;
 
     assert(ctx != NULL && out != NULL && count >= 2 && img != NULL);
-    assert(out->tag == ABCDK_MEDIA_TAG_HOST);
+    assert(out->tag == ABCDK_TORCH_TAG_HOST);
 
     tmp_imgs.resize(count);
 
@@ -167,9 +167,9 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *
         auto &src_img = img[i];
 
         assert(src_img != NULL);
-        assert(src_img->tag == ABCDK_MEDIA_TAG_HOST);
+        assert(src_img->tag == ABCDK_TORCH_TAG_HOST);
 
-        int src_img_depth = abcdk_media_pixfmt_channels(src_img->pixfmt);
+        int src_img_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
 
         dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
         if (dst_img.empty())
@@ -184,8 +184,8 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *
     if(chk != 0)
         return -1;
 
-    abcdk_media_image_reset(&out,tmp_out.cols, tmp_out.rows, ABCDK_MEDIA_PIXFMT_BGR24,1);
-    abcdk_media_image_copy_plane(out,0,tmp_out.data,tmp_out.step);
+    abcdk_torch_image_reset(&out,tmp_out.cols, tmp_out.rows, ABCDK_TORCH_PIXFMT_BGR24,1);
+    abcdk_torch_image_copy_plane(out,0,tmp_out.data,tmp_out.step);
 
     return 0;
 }
@@ -215,7 +215,7 @@ int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const
     return -1;
 }
 
-int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_media_image_t *img[], abcdk_media_image_t *mask[], float good_threshold)
+int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;
@@ -227,7 +227,7 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
     return -1;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_media_image_t *out, int count, abcdk_media_image_t *img[])
+int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;

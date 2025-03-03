@@ -8,9 +8,9 @@
 
 #ifdef OPENCV_CORE_HPP
 
-abcdk_media_image_t *abcdk_opencv_image_load(const char *src, int gray)
+abcdk_torch_image_t *abcdk_opencv_image_load(const char *src, int gray)
 {
-    abcdk_media_image_t *dst = NULL;
+    abcdk_torch_image_t *dst = NULL;
     cv::Mat tmp_src;
 
     assert(src != NULL);
@@ -19,24 +19,24 @@ abcdk_media_image_t *abcdk_opencv_image_load(const char *src, int gray)
     if (tmp_src.empty())
         return NULL;
 
-    dst = abcdk_media_image_create(tmp_src.cols, tmp_src.rows, (gray ? ABCDK_MEDIA_PIXFMT_GRAY8 : ABCDK_MEDIA_PIXFMT_BGR24), 1);
+    dst = abcdk_torch_image_create(tmp_src.cols, tmp_src.rows, (gray ? ABCDK_TORCH_PIXFMT_GRAY8 : ABCDK_TORCH_PIXFMT_BGR24), 1);
     if (!dst)
         return NULL;
 
-    abcdk_media_image_copy_plane(dst, 0, tmp_src.data, tmp_src.step);
+    abcdk_torch_image_copy_plane(dst, 0, tmp_src.data, tmp_src.step);
 
     return dst;
 }
 
-int abcdk_opencv_image_save(const char *dst, abcdk_media_image_t *src)
+int abcdk_opencv_image_save(const char *dst, abcdk_torch_image_t *src)
 {
     cv::Mat tmp_src;
     bool chk;
 
     assert(dst != NULL && src != NULL);
-    assert(src->tag == ABCDK_MEDIA_TAG_HOST);
+    assert(src->tag == ABCDK_TORCH_TAG_HOST);
 
-    int src_depth = abcdk_media_pixfmt_channels(src->pixfmt);
+    int src_depth = abcdk_torch_pixfmt_channels(src->pixfmt);
 
     tmp_src = cv::Mat(src->height,src->width,CV_8UC(src_depth),src->data[0]);
 
@@ -49,13 +49,13 @@ int abcdk_opencv_image_save(const char *dst, abcdk_media_image_t *src)
 
 #else //OPENCV_CORE_HPP
 
-abcdk_media_image_t *abcdk_opencv_image_load(const char *src, int gray)
+abcdk_torch_image_t *abcdk_opencv_image_load(const char *src, int gray)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return NULL;
 }
 
-int abcdk_opencv_image_save(const char *dst, abcdk_media_image_t *src)
+int abcdk_opencv_image_save(const char *dst, abcdk_torch_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;

@@ -18,8 +18,8 @@ namespace abcdk
         class stitcher_cuda : public stitcher
         {
         protected:
-            std::vector<abcdk_media_image_t *> m_cuda_warper_xmaps;
-            std::vector<abcdk_media_image_t *> m_cuda_warper_ymaps;
+            std::vector<abcdk_torch_image_t *> m_cuda_warper_xmaps;
+            std::vector<abcdk_torch_image_t *> m_cuda_warper_ymaps;
 
         public:
             stitcher_cuda()

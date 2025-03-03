@@ -7,7 +7,6 @@
 #ifndef ABCDK_OPENCV_OPENCV_H
 #define ABCDK_OPENCV_OPENCV_H
 
-#include "abcdk/util/ndarray.h"
 #include "abcdk/util/trace.h"
 
 #ifdef HAVE_OPENCV
