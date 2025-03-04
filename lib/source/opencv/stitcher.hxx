@@ -542,7 +542,12 @@ namespace abcdk
                     if (outs_it.empty())
                         return false;
 
-                    cv::remap(imgs_it, outs_it, xmap_it, ymap_it, cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+                    //cv::remap(imgs_it, outs_it, xmap_it, ymap_it, cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+
+                    // abcdk_torch_imgproc_remap_8u(outs_it.channels(), 1,
+                    //                              outs_it.data, outs_it.cols, outs_it.step, outs_it.rows, NULL,
+                    //                              imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows, NULL,
+                    //                              (float *)xmap_it.data, xmap_it.step, (float *)ymap_it.data, ymap_it.step, cv::INTER_CUBIC);
                 }
 
                 return true;
@@ -570,10 +575,10 @@ namespace abcdk
                     /*计算重叠宽度。*/
                     int overlap_w = (i <= 0 ? 0 : (m_blend_rects[i - 1].width + m_blend_rects[i - 1].x - m_blend_rects[i].x));
 
-                    abcdk_torch_imgproc_compose_8u(out.channels(), 1,
-                                                   out.data, out.cols, out.step, out.rows,
-                                                   imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows,
-                                                   scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
+                    // abcdk_torch_imgproc_compose_8u(out.channels(), 1,
+                    //                                out.data, out.cols, out.step, out.rows,
+                    //                                imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows,
+                    //                                scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
                 }
 
                 return true;

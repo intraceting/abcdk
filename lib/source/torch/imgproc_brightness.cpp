@@ -9,38 +9,44 @@
 
 template <typename T>
 ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_brightness_1d(int channels, bool packed,
-                                                          T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                          size_t w, size_t h, float *alpha, float *bate)
+                                                          T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate)
 {
-    for (size_t i = 0; i < w * h; i++)
+    for (size_t i = 0; i < dst_w * dst_h; i++)
     {
-        abcdk::generic::imageproc::brightness<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, i);
+        abcdk::generic::imageproc::brightness<T>(channels, packed, dst, dst_ws, dst_ws, dst_h, alpha, bate, i);
     }
 }
 
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_brightness(int channels, bool packed,
-                                                      T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                      size_t w, size_t h, float *alpha, float *bate)
+                                                      T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate)
 {
 
     assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
+    assert(dst_w > 0 && dst_h > 0);
     assert(alpha != NULL && bate != NULL);
 
-    _abcdk_torch_imgproc_brightness_1d<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate);
+    _abcdk_torch_imgproc_brightness_1d<T>(channels, packed, dst, dst_ws, dst_ws, dst_h, alpha, bate);
 
     return 0;
 }
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_brightness_8u(int channels, int packed,
-                                      uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
-                                      size_t w, size_t h, float *alpha, float *bate)
+int abcdk_torch_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[])
 {
-    return _abcdk_torch_imgproc_brightness<uint8_t>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate);
+    int dst_depth;
+
+    assert(dst != NULL && alpha != NULL && bate != NULL);
+    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
+
+    return _abcdk_torch_imgproc_brightness<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, alpha, bate);
 }
 
 __END_DECLS

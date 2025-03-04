@@ -53,11 +53,20 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_drawrect(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
-                                   uint8_t *dst, size_t w, size_t ws, size_t h,
-                                   uint8_t color[], int weight, int corner[4])
+int abcdk_cuda_imgproc_drawrect_8u(abcdk_torch_image_t *dst, uint8_t color[], int weight, int corner[4])
 {
-    return _abcdk_cuda_imgproc_drawrect<uint8_t>(channels, packed, dst, w, ws, h, color, weight, corner);
+    int dst_depth;
+
+    assert(dst != NULL && color != NULL && weight > 0 && corner != NULL);
+    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
+
+    return _abcdk_cuda_imgproc_drawrect<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, color, weight, corner);
 }
 
 __END_DECLS
@@ -66,9 +75,7 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_drawrect_8u(int channels, int packed,
-                                   uint8_t *dst, size_t w, size_t ws, size_t h,
-                                   uint8_t color[], int weight, int corner[4])
+int abcdk_cuda_imgproc_drawrect_8u(abcdk_torch_image_t *dst, uint8_t color[], int weight, int corner[4])
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;

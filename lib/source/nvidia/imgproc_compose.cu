@@ -52,13 +52,24 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
-                                  uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                  uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
+int abcdk_cuda_imgproc_compose_8u(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
                                   uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
-    return _abcdk_cuda_imgproc_compose<uint8_t>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
-                                                compose, compose_w, compose_ws, compose_h,
+    int dst_depth;
+
+    assert(panorama != NULL && compose != NULL && scalar != NULL);
+    assert(panorama->pixfmt == compose->pixfmt);
+    assert(panorama->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           panorama->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           panorama->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           panorama->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           panorama->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(panorama->pixfmt);
+
+    return _abcdk_cuda_imgproc_compose<uint8_t>(dst_depth, true,
+                                                panorama->data[0], panorama->width, panorama->stride[0], panorama->height,
+                                                compose->data[0], compose->width, compose->stride[0], compose->height,
                                                 scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
 }
 
@@ -68,9 +79,7 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_compose_8u(int channels, int packed,
-                                  uint8_t *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                  uint8_t *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
+int abcdk_cuda_imgproc_compose_8u(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
                                   uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");

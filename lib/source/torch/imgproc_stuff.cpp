@@ -9,8 +9,7 @@
 
 template <typename T>
 ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d(int channels, bool packed,
-                                                     T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
-                                                     T *scalar)
+                                                     T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar)
 {
     for (size_t i = 0; i < dst_w * dst_h; i++)
     {
@@ -20,21 +19,31 @@ ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d(int channels, bool packed,
 
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_stuff(int channels, bool packed,
-                                                 T *dst, size_t width, size_t pitch, size_t height,
-                                                 T *scalar)
+                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar)
 {
-    assert(dst != NULL && width > 0 && pitch > 0 && height > 0 && scalar != NULL);
+    assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0 && scalar != NULL);
 
-    _abcdk_torch_imgproc_stuff_1d<T>(channels, packed, dst, width, pitch, height, scalar);
+    _abcdk_torch_imgproc_stuff_1d<T>(channels, packed, dst, dst_w, dst_ws, dst_h, scalar);
 
     return 0;
 }
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_stuff_8u(int channels, int packed, uint8_t *dst, size_t width, size_t pitch, size_t height, uint8_t scalar[])
+int abcdk_torch_imgproc_stuff_8u(abcdk_torch_image_t *dst, uint8_t scalar[])
 {
-    return _abcdk_torch_imgproc_stuff<uint8_t>(channels, packed, dst, width, pitch, height, scalar);
+    int dst_depth;
+
+    assert(dst != NULL && scalar != NULL);
+    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
+
+    return _abcdk_torch_imgproc_stuff<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, scalar);
 }
 
 __END_DECLS

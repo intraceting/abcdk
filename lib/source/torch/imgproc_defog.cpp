@@ -9,36 +9,44 @@
 
 template <typename T>
 ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_defog_1d(int channels, bool packed,
-                                                     T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                     size_t w, size_t h, float dack_m = 0.35, T dack_a = 220, float dack_w = 0.9)
+                                                     T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
+                                                     float dack_m, T dack_a, float dack_w)
 {
-    for (size_t i = 0; i < w * h; i++)
+    for (size_t i = 0; i < dst_w * dst_h; i++)
     {
-        abcdk::generic::imageproc::defog<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_m, dack_a, dack_w, i);
+        abcdk::generic::imageproc::defog<T>(channels, packed, dst, dst_w, dst_ws, dst_h, dack_m, dack_a, dack_w, i);
     }
 }
 
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_defog(int channels, bool packed,
-                                                 T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                 size_t w, size_t h, float dack_m, T dack_a, float dack_w)
+                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
+                                                 float dack_m, T dack_a, float dack_w)
 {
     assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
+    assert(dst_w > 0 && dst_h > 0);
 
-    _abcdk_torch_imgproc_defog_1d<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_m, dack_a, dack_w);
+    _abcdk_torch_imgproc_defog_1d<T>(channels, packed, dst, dst_w, dst_ws, dst_h, dack_m, dack_a, dack_w);
 
     return 0;
 }
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_defog_8u(int channels, int packed,
-                                 uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
-                                 size_t w, size_t h, uint8_t dack_a, float dack_m, float dack_w)
+int abcdk_torch_imgproc_defog_8u(abcdk_torch_image_t *dst, uint8_t dack_a, float dack_m, float dack_w)
 {
-    return _abcdk_torch_imgproc_defog<uint8_t>(channels, packed, dst, dst_ws, src, src_ws, w, h, dack_a, dack_m, dack_w);
+    int dst_depth;
+
+    assert(dst != NULL);
+    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
+
+    return _abcdk_torch_imgproc_defog<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, dack_a, dack_m, dack_w);
 }
 
 __END_DECLS

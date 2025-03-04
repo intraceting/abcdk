@@ -16,20 +16,22 @@ namespace abcdk
         namespace imageproc
         {
             template <typename T>
-            ABCDK_INVOKE_DEVICE void stuff(int channels, bool packed, T *dst, size_t width, size_t pitch, size_t height, T *scalar, size_t tid)
+            ABCDK_INVOKE_DEVICE void stuff(int channels, bool packed,
+                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar,
+                                           size_t tid)
             {
 
-                size_t y = tid / width;
-                size_t x = tid % width;
+                size_t y = tid / dst_w;
+                size_t x = tid % dst_w;
 
-                if (x >= width || y >= height)
+                if (x >= dst_w || y >= dst_h)
                     return;
 
                 for (size_t i = 0; i < channels; i++)
                 {
-                    size_t offset = abcdk::generic::util::off<T>(packed, width, pitch, height, channels, 0, x, y, i);
+                    size_t dst_off = abcdk::generic::util::off<T>(packed, dst_w, dst_ws, dst_h, channels, 0, x, y, i);
 
-                    *abcdk::generic::util::ptr<T>(dst, offset) = (scalar ? scalar[i] : (T)0);
+                    *abcdk::generic::util::ptr<T>(dst, dst_off) = (scalar ? scalar[i] : (T)0);
                 }
             }
 

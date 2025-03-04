@@ -24,13 +24,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     abcdk_torch_image_t *b = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 8);
 
     uint8_t scalar[3] = {0, 0, 255};
-    abcdk_cuda_imgproc_stuff_8u(3, 1, a->data[0], a->width, a->stride[0], 100, scalar);
-
-    uint8_t scalar2[3] = {0, 255, 0};
-    abcdk_cuda_imgproc_stuff_8u(3, 1, a->data[0] + a->stride[0] * 100, a->width, a->stride[0], 100, scalar2);
-
-    uint8_t scalar3[3] = {255, 0, 0};
-    abcdk_cuda_imgproc_stuff_8u(3, 1, a->data[0] + a->stride[0] * 200, a->width, a->stride[0], a->height - 200, scalar3);
+    abcdk_cuda_imgproc_stuff_8u(a, scalar);
 
     //abcdk_cuda_image_save("/tmp/test.cuda.a1.bmp", a);
 
@@ -41,7 +35,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     uint8_t color[4] = {255, 0,0, 0};
     int corner[4] = {10, 10, 100, 100};
 
-    abcdk_cuda_imgproc_drawrect_8u(3,1,a->data[0], a->width, a->stride[0], a->height, color, 3, corner);
+    abcdk_cuda_imgproc_drawrect_8u(a, color, 3, corner);
 
     // abcdk_cuda_image_save("/tmp/test.cuda.a2.bmp", a);
     aa = abcdk_cuda_image_clone(1, a);
@@ -76,7 +70,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_torch_image_t *e = abcdk_cuda_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
-    abcdk_cuda_imgproc_resize_8u(3,1,e->data[0],e->width,e->stride[0],e->height, NULL, d->data[0],d->width,d->stride[0],d->height, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_cuda_imgproc_resize_8u(e, NULL, d, NULL, 1, NPPI_INTER_CUBIC);
 
     abcdk_cuda_image_save("/tmp/test.cuda.e.bmp", e);
 
@@ -91,7 +85,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
-    abcdk_cuda_imgproc_warp_8u(3, 1, f->data[0], f->width, f->stride[0], f->height, NULL, dst_quad, e->data[0], e->width, e->stride[0], e->height, NULL, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_cuda_imgproc_warp_8u(f, NULL, dst_quad, e, NULL, NULL, 1, NPPI_INTER_CUBIC);
 
     abcdk_cuda_image_save("/tmp/test.cuda.f.bmp", f);
 
@@ -111,7 +105,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     {
         abcdk_torch_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
 
-        abcdk_cuda_imgproc_drawrect_8u(3,1,g->data[0], g->width, g->stride[0], g->height, color, 3, corner);
+        abcdk_cuda_imgproc_drawrect_8u(g, color, 3, corner);
 
         abcdk_cuda_image_save("/tmp/test.cuda.g2.bmp", g);
         abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g, cuda_ctx);

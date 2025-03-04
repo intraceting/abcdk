@@ -1659,13 +1659,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
 
     uint8_t scalar[3] = {0, 0, 255};
-    abcdk_torch_imgproc_stuff_8u(3, 1, a->data[0], a->width, a->stride[0], 100, scalar);
-
-    uint8_t scalar2[3] = {0, 255, 0};
-    abcdk_torch_imgproc_stuff_8u(3, 1, a->data[0] + a->stride[0] * 100, a->width, a->stride[0], 100, scalar2);
-
-    uint8_t scalar3[3] = {255, 0, 0};
-    abcdk_torch_imgproc_stuff_8u(3, 1, a->data[0] + a->stride[0] * 200, a->width, a->stride[0], a->height - 200, scalar3);
+    abcdk_torch_imgproc_stuff_8u(a, scalar);
 
     abcdk_torch_image_save("/tmp/test.cpu.a.bmp", a);
     
@@ -1678,16 +1672,16 @@ int abcdk_test_any(abcdk_option_t *args)
 
     abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
-    abcdk_torch_imgproc_warp_8u(3, 1, f->data[0], f->width, f->stride[0], f->height, NULL, dst_quad, a->data[0], a->width, a->stride[0], a->height, NULL, NULL, 1, 1);
+    abcdk_torch_imgproc_warp_8u(f, NULL, dst_quad, a, NULL, NULL, 1, 1);
 
     abcdk_torch_image_save("/tmp/test.cpu.f.bmp", f);
 
     abcdk_torch_image_t *g = abcdk_torch_image_create(600, 800, ABCDK_TORCH_PIXFMT_BGR24, 38);
 
     uint8_t scalar4[3] = {128, 128, 128};
-    abcdk_torch_imgproc_stuff_8u(3, 1, g->data[0], g->width, g->stride[0], g->height, scalar4);
+    abcdk_torch_imgproc_stuff_8u(g, scalar4);
 
-    abcdk_torch_imgproc_resize_8u(3,1,g->data[0], g->width, g->stride[0], g->height, NULL,a->data[0], a->width, a->stride[0], a->height, NULL,0,1);
+    abcdk_torch_imgproc_resize_8u(g, NULL,a, NULL,1,1);
 
     abcdk_torch_image_save("/tmp/test.cpu.g.bmp", g);
 

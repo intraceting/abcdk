@@ -22,8 +22,7 @@ namespace abcdk
              */
             template <typename T>
             ABCDK_INVOKE_DEVICE void drawrect(int channels, bool packed,
-                                              T *dst, size_t w, size_t ws, size_t h,
-                                              T *color, int weight, int *corner,
+                                              T *dst, size_t w, size_t ws, size_t h, T *color, int weight, int *corner,
                                               size_t tid)
             {
                 size_t y = tid / w;

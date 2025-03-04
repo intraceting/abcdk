@@ -11,10 +11,10 @@ __BEGIN_DECLS
 
 #ifdef OPENCV_IMGPROC_HPP
 
-int abcdk_torch_imgproc_resize_8u(int channels, int packed,
-                                  uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
-                                  const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
-                                  int keep_aspect_ratio, int inter_mode)
+static int _abcdk_torch_imgproc_resize_8u(int channels, int packed,
+                                          uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
+                                          const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
+                                          int keep_aspect_ratio, int inter_mode)
 {
     abcdk_torch_size_t tmp_src_size = {0};
     abcdk_torch_rect_t tmp_dst_roi = {0}, tmp_src_roi = {0};
@@ -58,12 +58,33 @@ int abcdk_torch_imgproc_resize_8u(int channels, int packed,
     return 0;
 }
 
+int abcdk_torch_imgproc_resize_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                                  const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
+                                  int keep_aspect_ratio, int inter_mode)
+{
+    int dst_depth;
+
+    assert(dst != NULL && src != NULL);
+    // assert(dst_roi != NULL && src_roi != NULL);
+    assert(dst->pixfmt == src->pixfmt);
+    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
+
+    return _abcdk_torch_imgproc_resize_8u(dst_depth, true,
+                                          dst->data[0], dst->width, dst->stride[0], dst->height, dst_roi,
+                                          src->data[0], src->width, src->stride[0], src->height, src_roi,
+                                          keep_aspect_ratio, inter_mode);
+}
 
 #else // OPENCV_IMGPROC_HPP
 
-int abcdk_torch_imgproc_resize_8u(int channels, int packed,
-                                  uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
-                                  const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
+int abcdk_torch_imgproc_resize_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                                  const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
                                   int keep_aspect_ratio, int inter_mode)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");

@@ -12,25 +12,22 @@
 
 template <typename T>
 ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_brightness_2d2d(int channels, bool packed,
-                                                             T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                             size_t w, size_t h, float *alpha, float *bate)
+                                                             T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate)
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::brightness<T>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate, tid);
+    abcdk::generic::imageproc::brightness<T>(channels, packed, dst, dst_ws, dst_ws, dst_h, alpha, bate, tid);
 }
 
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
-                                                     T *dst, size_t dst_ws, T *src, size_t src_ws,
-                                                     size_t w, size_t h, float *alpha, float *bate)
+                                                     T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate)
 {
     void *gpu_alpha = NULL, *gpu_bate = NULL;
     uint3 dim[2];
 
     assert(dst != NULL && dst_ws > 0);
-    assert(src != NULL && src_ws > 0);
-    assert(w > 0 && h > 0);
+    assert(dst_w > 0 && dst_h > 0);
     assert(alpha != NULL && bate != NULL);
 
     gpu_alpha = abcdk_cuda_copyfrom(alpha, channels * sizeof(float), 1);
@@ -44,35 +41,40 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, w * h, 64);
+    abcdk::cuda::grid::make_dim_dim(dim, dst_w * dst_h, 64);
 
-    _abcdk_cuda_imgproc_brightness_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_ws, src, src_ws, w, h, (float *)gpu_alpha, (float *)gpu_bate);
+    _abcdk_cuda_imgproc_brightness_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_ws, dst_ws, dst_h, (float *)gpu_alpha, (float *)gpu_bate);
     abcdk_cuda_free(&gpu_alpha);
     abcdk_cuda_free(&gpu_bate);
 
     return 0;
 }
 
-
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_brightness_8u(int channels, int packed,
-                                     uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
-                                     size_t w, size_t h, float *alpha, float *bate)
+int abcdk_cuda_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[])
 {
-    return _abcdk_cuda_imgproc_brightness<uint8_t>(channels, packed, dst, dst_ws, src, src_ws, w, h, alpha, bate);
+    int dst_depth;
+
+    assert(dst != NULL && alpha != NULL && bate != NULL);
+    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+
+    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
+
+    return _abcdk_cuda_imgproc_brightness<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, alpha, bate);
 }
 
 __END_DECLS
 
 #else // __cuda_cuda_h__
 
-
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_brightness_8u(int channels, int packed,
-                                     uint8_t *dst, size_t dst_ws, uint8_t *src, size_t src_ws,
-                                     size_t w, size_t h, float *alpha, float *bate)
+int abcdk_cuda_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[])
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
