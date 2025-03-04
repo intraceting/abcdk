@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/opencv/stitcher.h"
-#include "stitcher.hxx"
+#include "stitcher_cpu.hxx"
 
 
 __BEGIN_DECLS
@@ -31,7 +31,7 @@ void abcdk_stitcher_destroy(abcdk_stitcher_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    delete ctx_p->impl_ctx;
+    delete (abcdk::opencv::stitcher_cpu*)ctx_p->impl_ctx;
 
     abcdk_heap_free(ctx_p);
 }
@@ -44,7 +44,7 @@ abcdk_stitcher_t *abcdk_stitcher_create()
     if (!ctx)
         return NULL;
 
-    ctx->impl_ctx = new abcdk::opencv::stitcher();
+    ctx->impl_ctx = new abcdk::opencv::stitcher_cpu();
     if (!ctx->impl_ctx)
         goto ERR;
 
@@ -94,6 +94,7 @@ int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_to
 {
     std::vector<cv::Mat> tmp_imgs;
     std::vector<cv::Mat> tmp_masks;
+    int src_depth;
     int chk;
 
     assert(ctx != NULL && count >= 2 && img != NULL && mask != NULL);
@@ -111,30 +112,19 @@ int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_to
         assert(src_img != NULL);
         assert(src_img->tag == ABCDK_TORCH_TAG_HOST);
 
-        int src_img_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
+        src_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
 
-        dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
-        if (dst_img.empty())
-            return -1;
-
-        abcdk_memcpy_2d(dst_img.data, dst_img.step, 0, 0,
-                        src_img->data[0], src_img->stride[0], 0, 0,
-                        src_img_depth * src_img->width, src_img->height);
+        /*用已存在数据构造cv::Mat对象。*/
+        dst_img = cv::Mat(src_img->height, src_img->width, CV_8UC(src_depth), (void *)src_img->data[0], src_img->stride[0]);
 
         if (src_mask)
         {
-            assert(src_mask != NULL);
             assert(src_mask->tag == ABCDK_TORCH_TAG_HOST);
 
-            int src_mask_depth = abcdk_torch_pixfmt_channels(src_mask->pixfmt);
+            src_depth = abcdk_torch_pixfmt_channels(src_mask->pixfmt);
 
-            dst_mask.create(src_mask->height, src_mask->width, CV_8UC(src_mask_depth));
-            if (dst_mask.empty())
-                return -1;
-
-            abcdk_memcpy_2d(dst_mask.data, dst_mask.step, 0, 0,
-                            src_mask->data[0], src_mask->stride[0], 0, 0,
-                            src_mask_depth * src_mask->width, src_mask->height);
+            /*用已存在数据构造cv::Mat对象。*/
+            dst_mask = cv::Mat(src_mask->height, src_mask->width, CV_8UC(src_depth), (void *)src_mask->data[0], src_mask->stride[0]);
         }
     }
 
@@ -156,8 +146,7 @@ int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
 
 int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
 {
-    std::vector<cv::Mat> tmp_imgs;
-    cv::Mat tmp_out;
+    std::vector<abcdk_torch_image_t *> tmp_imgs;
     int chk;
 
     assert(ctx != NULL && out != NULL && count >= 2 && img != NULL);
@@ -167,29 +156,17 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *
 
     for (int i = 0; i < count; i++)
     {
-        auto &dst_img = tmp_imgs[i];
-        auto &src_img = img[i];
+        auto &img_it = img[i];
 
-        assert(src_img != NULL);
-        assert(src_img->tag == ABCDK_TORCH_TAG_HOST);
+        assert(img_it != NULL);
+        assert(img_it->tag == ABCDK_TORCH_TAG_HOST);
 
-        int src_img_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
-
-        dst_img.create(src_img->height, src_img->width, CV_8UC(src_img_depth));
-        if (dst_img.empty())
-            return -1;
-
-        abcdk_memcpy_2d(dst_img.data, dst_img.step, 0, 0,
-                        src_img->data[0], src_img->stride[0], 0, 0,
-                        src_img_depth * src_img->width, src_img->height);
+        tmp_imgs[i] = img_it;
     }
 
-    chk = ctx->impl_ctx->ComposePanorama(tmp_out,tmp_imgs);
+    chk = ctx->impl_ctx->ComposePanorama<abcdk_torch_image_t>(out,tmp_imgs);
     if(chk != 0)
         return -1;
-
-    abcdk_torch_image_reset(&out,tmp_out.cols, tmp_out.rows, ABCDK_TORCH_PIXFMT_BGR24,1);
-    abcdk_torch_image_copy_plane(out,0,tmp_out.data,tmp_out.step);
 
     return 0;
 }

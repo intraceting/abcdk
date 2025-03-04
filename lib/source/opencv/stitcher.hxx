@@ -211,7 +211,7 @@ namespace abcdk
             std::vector<cv::Rect> m_blend_rects;
             bool m_camera_param_ok;
             bool m_panorama_param_ok;
-            std::vector<cv::Mat> m_warper_outs;
+            std::vector<abcdk_torch_image_t *> m_warper_outs;
 
         public:
             stitcher()
@@ -222,6 +222,8 @@ namespace abcdk
 
             virtual ~stitcher()
             {
+                for (auto &t : m_warper_outs)
+                    abcdk_torch_image_free(&t);
             }
 
         protected:
@@ -510,78 +512,14 @@ namespace abcdk
                 }
             }
 
-            virtual bool remap(const std::vector<cv::Mat> &imgs)
+            virtual bool remap(const std::vector<abcdk_torch_image_t *> &imgs)
             {
-                assert(imgs.size() > 0);
-                assert(imgs.size() >= m_img_good_idxs.size());
-                assert(m_img_good_sizes.size() == m_img_good_idxs.size());
-                assert(m_warper_rects.size() == m_img_good_idxs.size());
-                assert(m_warper_xmaps.size() == m_img_good_idxs.size());
-                assert(m_warper_ymaps.size() == m_img_good_idxs.size());
-
-                /*输出的数量和顺序相同，但未能拼接的输出图像为空。*/
-                if(m_warper_outs.size() != imgs.size())
-                    m_warper_outs.resize(imgs.size());
-
-                for (int i = 0; i < m_img_good_idxs.size(); i++)
-                {
-                    int idx = m_img_good_idxs[i];
-                    int img_w = m_img_good_sizes[i].width;
-                    int img_h = m_img_good_sizes[i].height;
-                    int warper_w = m_warper_rects[i].width;
-                    int warper_h = m_warper_rects[i].height;
-                    auto &xmap_it = m_warper_xmaps[i];
-                    auto &ymap_it = m_warper_ymaps[i];
-                    auto &outs_it = m_warper_outs[idx];
-                    auto &imgs_it = imgs[idx];
-                    
-                    assert(imgs_it.cols == img_w && imgs_it.rows == img_h);
-
-                    /*创建变换后的图像存储空间。*/
-                    outs_it.create(warper_h, warper_w, imgs_it.type());
-                    if (outs_it.empty())
-                        return false;
-
-                    //cv::remap(imgs_it, outs_it, xmap_it, ymap_it, cv::INTER_CUBIC, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
-
-                    // abcdk_torch_imgproc_remap_8u(outs_it.channels(), 1,
-                    //                              outs_it.data, outs_it.cols, outs_it.step, outs_it.rows, NULL,
-                    //                              imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows, NULL,
-                    //                              (float *)xmap_it.data, xmap_it.step, (float *)ymap_it.data, ymap_it.step, cv::INTER_CUBIC);
-                }
-
-                return true;
+                return false;
             }
 
-            virtual bool compose(cv::Mat &out, bool optimize_seam = true)
+            virtual bool compose(abcdk_torch_image_t *out, bool optimize_seam = true)
             {
-                uint8_t scalar[4] = {0};
-
-                assert(m_warper_outs.size() >= 0);
-
-                /*创建全景图像存储空间。*/
-                out.create(m_blend_height, m_blend_width, m_warper_outs[0].type());
-                if (out.empty())
-                    return false;
-
-                for (int i = 0; i < m_blend_idxs.size(); i++)
-                {
-                    int idx = m_blend_idxs[i];
-                    cv::Rect r = m_blend_rects[i];
-                    auto &imgs_it = m_warper_outs[idx];
-
-                    assert(imgs_it.type() == out.type());
-
-                    /*计算重叠宽度。*/
-                    int overlap_w = (i <= 0 ? 0 : (m_blend_rects[i - 1].width + m_blend_rects[i - 1].x - m_blend_rects[i].x));
-
-                    // abcdk_torch_imgproc_compose_8u(out.channels(), 1,
-                    //                                out.data, out.cols, out.step, out.rows,
-                    //                                imgs_it.data, imgs_it.cols, imgs_it.step, imgs_it.rows,
-                    //                                scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
-                }
-
-                return true;
+                return false;
             }
 
         public:
@@ -746,7 +684,8 @@ namespace abcdk
                 m_panorama_param_ok = true; // OK.
             }
 
-            int ComposePanorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
+            template <typename T>
+            int ComposePanorama(T *out, const std::vector<T *> &imgs, bool optimize_seam = true)
             {
                 assert(imgs.size() >= 0);
                 assert(imgs.size() >= m_img_good_idxs.size());
