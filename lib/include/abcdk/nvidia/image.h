@@ -54,11 +54,20 @@ int abcdk_cuda_image_convert(abcdk_torch_image_t *dst, const abcdk_torch_image_t
 /**
  * 帧图保存到文件。
  * 
- * @note 仅支持BMP格式，所有非BGR32格式自动换转BGR32格式。
+ * @note 在没有第三方支持的情况下仅支持BMP格式或RAW格式。
  * 
  * @return 0 成功，< 0 失败。
  */
 int abcdk_cuda_image_save(const char *dst, const abcdk_torch_image_t *src);
+
+/**
+ * 从文件加载。
+ * 
+ * @param [in] gray 是否加载为灰度图。0 否，!0 是。
+ * 
+ * @return 0 成功，< 0 失败。
+*/
+abcdk_torch_image_t *abcdk_cuda_image_load(const char *src, int gray);
 
 
 __END_DECLS

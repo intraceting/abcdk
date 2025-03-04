@@ -11,7 +11,6 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/bmp.h"
-#include "abcdk/opencv/opencv.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
 /**主机对象。*/

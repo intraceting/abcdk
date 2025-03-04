@@ -38,6 +38,7 @@
 #include <sched.h>
 #include <syslog.h>
 #include <pwd.h>
+#include <libintl.h>
 #include <locale.h>
 #include <malloc.h>
 #include <sys/socket.h>
@@ -235,6 +236,9 @@
 #else
 #define ABCDK_DEPRECATED
 #endif
+
+/** 定义gettext别名。*/ 
+#define ABCDK_GETTEXT(T) gettext(T)
 
 
 #endif //ABCDK_UTIL_DEFS_H

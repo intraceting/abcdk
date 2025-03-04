@@ -213,6 +213,22 @@ int abcdk_cuda_image_save(const char *dst, const abcdk_torch_image_t *src)
     return 0;
 }
 
+abcdk_torch_image_t *abcdk_cuda_image_load(const char *src, int gray)
+{
+    abcdk_torch_image_t *dst, *tmp_dst;
+
+    assert(src != NULL);
+
+    tmp_dst = abcdk_torch_image_load(src,gray);
+    if(!tmp_dst)
+        return NULL;
+
+    dst = abcdk_cuda_image_clone(0,tmp_dst);
+    abcdk_torch_image_free(&tmp_dst);
+
+    return dst;
+}
+
 #else //__cuda_cuda_h__
 
 abcdk_torch_image_t *abcdk_cuda_image_alloc()

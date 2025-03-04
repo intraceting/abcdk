@@ -11,9 +11,9 @@
 
 #ifdef HAVE_OPENCV
 #ifdef __cplusplus
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 #ifdef OPENCV_ENABLE_NONFREE
-#include "opencv2/xfeatures2d.hpp"
+#include <opencv2/xfeatures2d.hpp>
 #endif // OPENCV_ENABLE_NONFREE
 #endif //__cplusplus
 #endif // HAVE_OPENCV

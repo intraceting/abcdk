@@ -211,6 +211,7 @@ namespace abcdk
             std::vector<cv::Rect> m_blend_rects;
             bool m_camera_param_ok;
             bool m_panorama_param_ok;
+            std::vector<cv::Mat> m_warper_outs;
 
         public:
             stitcher()
@@ -509,7 +510,7 @@ namespace abcdk
                 }
             }
 
-            virtual bool remap(std::vector<cv::Mat> &outs, const std::vector<cv::Mat> &imgs)
+            virtual bool remap(const std::vector<cv::Mat> &imgs)
             {
                 assert(imgs.size() > 0);
                 assert(imgs.size() >= m_img_good_idxs.size());
@@ -519,7 +520,8 @@ namespace abcdk
                 assert(m_warper_ymaps.size() == m_img_good_idxs.size());
 
                 /*输出的数量和顺序相同，但未能拼接的输出图像为空。*/
-                assert(outs.size() == imgs.size());
+                if(m_warper_outs.size() != imgs.size())
+                    m_warper_outs.resize(imgs.size());
 
                 for (int i = 0; i < m_img_good_idxs.size(); i++)
                 {
@@ -530,9 +532,9 @@ namespace abcdk
                     int warper_h = m_warper_rects[i].height;
                     auto &xmap_it = m_warper_xmaps[i];
                     auto &ymap_it = m_warper_ymaps[i];
+                    auto &outs_it = m_warper_outs[idx];
                     auto &imgs_it = imgs[idx];
-                    auto &outs_it = outs[idx];
-
+                    
                     assert(imgs_it.cols == img_w && imgs_it.rows == img_h);
 
                     /*创建变换后的图像存储空间。*/
@@ -546,14 +548,14 @@ namespace abcdk
                 return true;
             }
 
-            virtual bool compose(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
+            virtual bool compose(cv::Mat &out, bool optimize_seam = true)
             {
                 uint8_t scalar[4] = {0};
 
-                assert(imgs.size() >= 0);
+                assert(m_warper_outs.size() >= 0);
 
                 /*创建全景图像存储空间。*/
-                out.create(m_blend_height, m_blend_width, imgs[0].type());
+                out.create(m_blend_height, m_blend_width, m_warper_outs[0].type());
                 if (out.empty())
                     return false;
 
@@ -561,7 +563,7 @@ namespace abcdk
                 {
                     int idx = m_blend_idxs[i];
                     cv::Rect r = m_blend_rects[i];
-                    auto &imgs_it = imgs[idx];
+                    auto &imgs_it = m_warper_outs[idx];
 
                     assert(imgs_it.type() == out.type());
 
@@ -741,19 +743,15 @@ namespace abcdk
 
             int ComposePanorama(cv::Mat &out, const std::vector<cv::Mat> &imgs, bool optimize_seam = true)
             {
-                std::vector<cv::Mat> remap_imgs;
-
                 assert(imgs.size() >= 0);
                 assert(imgs.size() >= m_img_good_idxs.size());
 
                 assert(m_panorama_param_ok);
 
-                remap_imgs.resize(imgs.size());
-
-                if (!remap(remap_imgs, imgs))
+                if (!remap(imgs))
                     return -1;
 
-                if (!compose(out, remap_imgs, optimize_seam))
+                if (!compose(out, optimize_seam))
                     return -2;
 
                 return 0;

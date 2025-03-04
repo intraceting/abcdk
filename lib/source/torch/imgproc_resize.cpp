@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/nvidia/imgproc.h"
+#include "abcdk/opencv/opencv.h"
 
 __BEGIN_DECLS
 
@@ -25,6 +26,8 @@ int abcdk_torch_imgproc_resize_8u(int channels, int packed,
     assert(channels == 1 || channels == 3 || channels == 4);
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0);
     assert(src != NULL && src_w > 0 && src_ws > 0 && src_h > 0);
+
+    ABCDK_ASSERT(dst_roi == NULL && src_roi == NULL,"尚未支持感兴趣区域。");
 
     tmp_dst_roi.x = (dst_roi ? dst_roi->x : 0);
     tmp_dst_roi.y = (dst_roi ? dst_roi->y : 0);

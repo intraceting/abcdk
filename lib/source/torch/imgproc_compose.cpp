@@ -30,7 +30,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_compose(int channels, bool packed,
 {
     assert(panorama != NULL && panorama_w > 0 && panorama_ws > 0 && panorama_h > 0);
     assert(compose != NULL && compose_w > 0 && compose_ws > 0 && compose_h > 0);
-    assert(scalar != NULL && overlap_x > 0 && overlap_y > 0 && overlap_w > 0);
+    assert(scalar != NULL);// && overlap_x >= 0 && overlap_y >= 0 && overlap_w >= 0);
 
     _abcdk_torch_imgproc_compose_1d<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
                                        compose, compose_w, compose_ws, compose_h,

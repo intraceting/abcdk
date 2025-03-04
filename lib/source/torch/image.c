@@ -174,35 +174,3 @@ abcdk_torch_image_t *abcdk_torch_image_clone(const abcdk_torch_image_t *src)
 
     return dst;
 }
-
-int abcdk_torch_image_save(const char *dst, const abcdk_torch_image_t *src)
-{
-    abcdk_torch_image_t *tmp_src;
-    int chk;
-
-    assert(dst != NULL && src != NULL);
-    assert(src->tag == ABCDK_TORCH_TAG_HOST);
-
-    if(src->pixfmt != ABCDK_TORCH_PIXFMT_BGR24)
-    {
-        tmp_src = abcdk_torch_image_create(src->width,src->height,ABCDK_TORCH_PIXFMT_BGR24,4);
-        if(!tmp_src)
-            return -1;
-        
-        chk = abcdk_torch_image_convert(tmp_src,src);
-
-        /*转格式成功后继续执行保存操作。*/
-        if(chk == 0)
-            chk = abcdk_torch_image_save(dst,tmp_src);
-
-        abcdk_torch_image_free(&tmp_src);
-        return chk;
-    }
-
-    /*BMP图像默认是倒投影存储。这里高度传入负值，使图像正投影存储。*/
-    chk = abcdk_bmp_save_file(dst, src->data[0], src->stride[0], src->width, -src->height, 24);
-    if (chk != 0)
-        return -1;
-
-    return 0;
-}

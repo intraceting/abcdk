@@ -165,7 +165,6 @@
 #include "abcdk/nvidia/image.h"
 
 #include "abcdk/opencv/opencv.h"
-#include "abcdk/opencv/util.h"
 #include "abcdk/opencv/stitcher.h"
 
 #endif //ABCDK_H
