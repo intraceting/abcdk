@@ -17,54 +17,42 @@ namespace abcdk
     {
         class stitcher_cuda : public stitcher
         {
-        protected:
+        private:
+            CUcontext m_cuda_ctx;
+
             std::vector<abcdk_torch_image_t *> m_owner_warper_xmaps;
             std::vector<abcdk_torch_image_t *> m_owner_warper_ymaps;
         public:
-            stitcher_cuda()
+            stitcher_cuda(CUcontext cuda_ctx)
             {
+                m_cuda_ctx = cuda_ctx;
             }
 
             virtual ~stitcher_cuda()
             {
+                if(m_cuda_ctx)
+                    abcdk_cuda_ctx_push_current(m_cuda_ctx);
+
                 for (auto &t : m_owner_warper_xmaps)
                     abcdk_torch_image_free(&t);
 
                 for (auto &t : m_owner_warper_ymaps)
                     abcdk_torch_image_free(&t);
-            }
 
-        private:
-            bool update_warper_maps()
+                abcdk_cuda_ctx_pop_current(NULL);
+            }
+        protected:
+            virtual void ctx_push_current()
             {
-                /*可能还未复制，且仅复制一次即可。*/
-                if (m_owner_warper_xmaps.size() != m_img_good_sizes.size() ||
-                    m_owner_warper_ymaps.size() != m_img_good_sizes.size())
-                {
-                    for (auto &t : m_owner_warper_xmaps)
-                        abcdk_torch_image_free(&t);
-
-                    for (auto &t : m_owner_warper_ymaps)
-                        abcdk_torch_image_free(&t);
-
-                    m_owner_warper_xmaps.resize(m_img_good_sizes.size());
-                    m_owner_warper_ymaps.resize(m_img_good_sizes.size());
-
-                    for (int i = 0; i < m_img_good_sizes.size(); i++)
-                    {
-                        m_owner_warper_xmaps[i] = abcdk_cuda_image_create(m_warper_xmaps[i].cols, m_warper_xmaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
-
-                        abcdk_cuda_image_copy_plane(m_owner_warper_xmaps[i], 0, m_warper_xmaps[i].data, m_warper_xmaps[i].step);
-
-                        m_owner_warper_ymaps[i] = abcdk_cuda_image_create(m_warper_ymaps[i].cols, m_warper_ymaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
-
-                        abcdk_cuda_image_copy_plane(m_owner_warper_ymaps[i], 0, m_warper_ymaps[i].data, m_warper_ymaps[i].step);
-                    }
-                }
-
-                return true;
+                if(m_cuda_ctx)
+                    abcdk_cuda_ctx_push_current(m_cuda_ctx);
             }
-            protected:
+
+            virtual void ctx_pop_current()
+            {
+                abcdk_cuda_ctx_pop_current(NULL);
+            }
+
             virtual bool remap(const std::vector<abcdk_torch_image_t *> &imgs)
             {
                 int chk;
@@ -82,10 +70,38 @@ namespace abcdk
                     for (auto &t : m_warper_outs)
                         abcdk_torch_image_free(&t);
 
-                    m_warper_outs.resize(imgs.size());
+                    for (int i = 0; i < imgs.size(); i++)
+                        m_warper_outs.push_back(abcdk_cuda_image_alloc());
                 }
 
-                update_owner_warper_maps();
+                /*可能还未复制，且仅复制一次即可。*/
+                if (m_owner_warper_xmaps.size() != m_img_good_sizes.size() ||
+                    m_owner_warper_ymaps.size() != m_img_good_sizes.size())
+                {
+                    for (auto &t : m_owner_warper_xmaps)
+                        abcdk_torch_image_free(&t);
+
+                    for (auto &t : m_owner_warper_ymaps)
+                        abcdk_torch_image_free(&t);
+
+                    m_owner_warper_xmaps.resize(m_img_good_sizes.size());
+                    m_owner_warper_ymaps.resize(m_img_good_sizes.size());
+
+                    for (int i = 0; i < m_img_good_sizes.size(); i++)
+                    {
+                        m_owner_warper_xmaps[i] = abcdk_cuda_image_create(m_warper_xmaps[i].cols, m_warper_xmaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+                        if(!m_owner_warper_xmaps[i])
+                            return false;
+
+                        abcdk_cuda_image_copy_plane(m_owner_warper_xmaps[i], 0, m_warper_xmaps[i].data, m_warper_xmaps[i].step);
+
+                        m_owner_warper_ymaps[i] = abcdk_cuda_image_create(m_warper_ymaps[i].cols, m_warper_ymaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+                        if(!m_owner_warper_ymaps[i])
+                            return false;
+
+                        abcdk_cuda_image_copy_plane(m_owner_warper_ymaps[i], 0, m_warper_ymaps[i].data, m_warper_ymaps[i].step);
+                    }
+                }
 
                 for (int i = 0; i < m_img_good_idxs.size(); i++)
                 {
@@ -94,19 +110,19 @@ namespace abcdk
                     int img_h = m_img_good_sizes[i].height;
                     int warper_w = m_warper_rects[i].width;
                     int warper_h = m_warper_rects[i].height;
-                    auto &xmap_it = m_owner_warper_xmaps[i];
-                    auto &ymap_it = m_owner_warper_ymaps[i];
-                    auto &outs_it = m_warper_outs[idx];
-                    auto &imgs_it = imgs[idx];
+                    abcdk_torch_image_t *xmap_it = m_owner_warper_xmaps[i];
+                    abcdk_torch_image_t *ymap_it = m_owner_warper_ymaps[i];
+                    abcdk_torch_image_t *outs_it = m_warper_outs[idx];
+                    abcdk_torch_image_t *imgs_it = imgs[idx];
 
                     assert(imgs_it->width == img_w && imgs_it->height == img_h);
 
                     /*创建变换后的图像存储空间。*/
-                    chk = abcdk_cuda_image_reset(&outs_it, warper_h, warper_w, imgs_it->pixfmt, 1);
+                    chk = abcdk_cuda_image_reset(&outs_it, warper_w, warper_h, imgs_it->pixfmt, 1);
                     if (chk != 0)
                         return false;
 
-                    abcdk_cuda_imgproc_remap_8u(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, cv::INTER_CUBIC);
+                    abcdk_cuda_imgproc_remap_8u(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, NPPI_INTER_CUBIC);
                 }
 
                 return true;
@@ -120,7 +136,7 @@ namespace abcdk
                 assert(m_warper_outs.size() >= 0);
 
                 /*创建全景图像存储空间。*/
-                chk = abcdk_cuda_image_reset(&out, m_blend_height, m_blend_width, m_warper_outs[0]->pixfmt, 1);
+                chk = abcdk_cuda_image_reset(&out, m_blend_width, m_blend_height,  m_warper_outs[0]->pixfmt, 1);
                 if (chk != 0)
                     return false;
 
@@ -128,7 +144,7 @@ namespace abcdk
                 {
                     int idx = m_blend_idxs[i];
                     cv::Rect r = m_blend_rects[i];
-                    auto &imgs_it = m_warper_outs[idx];
+                    abcdk_torch_image_t *imgs_it = m_warper_outs[idx];
 
                     assert(imgs_it->pixfmt == out->pixfmt);
 

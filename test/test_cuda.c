@@ -11,8 +11,6 @@
 #include <locale.h>
 #include "entry.h"
 
-#ifdef  HAVE_CUDA 
-
 int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 {
     int chk;
@@ -345,12 +343,3 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     return 0;
 }
-
-#else  // HAVE_CUDA && HAVE_FFMPEG
-
-int abcdk_test_cuda(abcdk_option_t *args)
-{
-    return 0;
-}
-
-#endif // HAVE_CUDA && HAVE_FFMPEG

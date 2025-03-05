@@ -6,6 +6,7 @@
  */
 #include "abcdk/opencv/stitcher.h"
 #include "stitcher_cpu.hxx"
+#include "stitcher_cuda.hxx"
 
 
 __BEGIN_DECLS
@@ -14,16 +15,19 @@ __BEGIN_DECLS
 #ifdef OPENCV_STITCHING_STITCHER_HPP
 
 /**简单的全景拼接引擎。*/
-struct _abcdk_stitcher
+struct _abcdk_opencv_stitcher
 {
-    /**/
+    /**标签。*/
+    uint32_t tag;
+
+    /**引擎。*/
     abcdk::opencv::stitcher *impl_ctx;
 
-}; // abcdk_stitcher_t;
+}; // abcdk_opencv_stitcher_t;
 
-void abcdk_stitcher_destroy(abcdk_stitcher_t **ctx)
+void abcdk_opencv_stitcher_destroy(abcdk_opencv_stitcher_t **ctx)
 {
-    abcdk_stitcher_t *ctx_p;
+    abcdk_opencv_stitcher_t *ctx_p;
 
     if (!ctx || !*ctx)
         return;
@@ -31,19 +35,37 @@ void abcdk_stitcher_destroy(abcdk_stitcher_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    delete (abcdk::opencv::stitcher_cpu*)ctx_p->impl_ctx;
-
+    if(ctx_p->tag == ABCDK_TORCH_TAG_HOST)
+        delete (abcdk::opencv::stitcher_cpu*)ctx_p->impl_ctx;
+    else if(ctx_p->tag == ABCDK_TORCH_TAG_CUDA)
+        delete (abcdk::opencv::stitcher_cuda*)ctx_p->impl_ctx;
+    
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_stitcher_t *abcdk_stitcher_create()
+static abcdk_opencv_stitcher_t *_abcdk_opencv_stitcher_create(uint32_t tag)
 {
-    abcdk_stitcher_t *ctx;
+    abcdk_opencv_stitcher_t *ctx;
 
-    ctx = (abcdk_stitcher_t *)abcdk_heap_alloc(sizeof(abcdk_stitcher_t));
+    assert(tag == ABCDK_TORCH_TAG_HOST || tag == ABCDK_TORCH_TAG_CUDA);
+
+    ctx = (abcdk_opencv_stitcher_t *)abcdk_heap_alloc(sizeof(abcdk_opencv_stitcher_t));
     if (!ctx)
         return NULL;
 
+    ctx->tag = tag;
+
+    return ctx;
+}
+
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create()
+{
+    abcdk_opencv_stitcher_t *ctx;
+
+    ctx = _abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_HOST);
+    if (!ctx)
+        return NULL;
+    
     ctx->impl_ctx = new abcdk::opencv::stitcher_cpu();
     if (!ctx->impl_ctx)
         goto ERR;
@@ -52,11 +74,33 @@ abcdk_stitcher_t *abcdk_stitcher_create()
 
 ERR:
 
-    abcdk_stitcher_destroy(&ctx);
+    abcdk_opencv_stitcher_destroy(&ctx);
     return NULL;
 }
 
-abcdk_object_t *abcdk_stitcher_metadata_dump(abcdk_stitcher_t *ctx, const char *magic)
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create_cuda(CUcontext cuda_ctx)
+{
+    abcdk_opencv_stitcher_t *ctx;
+
+    assert(cuda_ctx != NULL);
+
+    ctx = _abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_CUDA);
+    if (!ctx)
+        return NULL;
+    
+    ctx->impl_ctx = new abcdk::opencv::stitcher_cuda(cuda_ctx);
+    if (!ctx->impl_ctx)
+        goto ERR;
+
+    return ctx;
+
+ERR:
+
+    abcdk_opencv_stitcher_destroy(&ctx);
+    return NULL;
+}
+
+abcdk_object_t *abcdk_opencv_stitcher_metadata_dump(abcdk_opencv_stitcher_t *ctx, const char *magic)
 {
     abcdk_object_t *out = NULL;
     std::string out_data;
@@ -75,7 +119,7 @@ abcdk_object_t *abcdk_stitcher_metadata_dump(abcdk_stitcher_t *ctx, const char *
     return out;
 }
 
-int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const char *data)
+int abcdk_opencv_stitcher_metadata_load(abcdk_opencv_stitcher_t *ctx, const char *magic, const char *data)
 {
     int chk;
 
@@ -90,7 +134,14 @@ int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const
     return -1;
 }
 
-int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
+void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name)
+{
+    assert(ctx != NULL && name != NULL);
+
+    ctx->impl_ctx->set_feature_finder(name);
+}
+
+int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
 {
     std::vector<cv::Mat> tmp_imgs;
     std::vector<cv::Mat> tmp_masks;
@@ -135,37 +186,49 @@ int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_to
     return 0;
 }
 
-int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
+void abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx,const char *name)
 {
+    assert(ctx != NULL && name != NULL);
+
+    ctx->impl_ctx->set_warper(name);
+}
+
+int abcdk_opencv_stitcher_build_panorama_param(abcdk_opencv_stitcher_t *ctx)
+{
+    int chk;
+
     assert(ctx != NULL);
 
-    ctx->impl_ctx->BuildPanoramaParam();
+    chk = ctx->impl_ctx->BuildPanoramaParam();
+    if(chk != 0)
+        return -1;
 
     return 0;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
+int abcdk_opencv_stitcher_compose_panorama(abcdk_opencv_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
 {
     std::vector<abcdk_torch_image_t *> tmp_imgs;
     int chk;
 
     assert(ctx != NULL && out != NULL && count >= 2 && img != NULL);
-    assert(out->tag == ABCDK_TORCH_TAG_HOST);
+
+    assert(out->tag == ctx->tag);
 
     tmp_imgs.resize(count);
 
     for (int i = 0; i < count; i++)
     {
-        auto &img_it = img[i];
+        abcdk_torch_image_t *img_it = img[i];
 
         assert(img_it != NULL);
-        assert(img_it->tag == ABCDK_TORCH_TAG_HOST);
+        assert(img_it->tag == ctx->tag);
 
         tmp_imgs[i] = img_it;
     }
 
-    chk = ctx->impl_ctx->ComposePanorama<abcdk_torch_image_t>(out,tmp_imgs);
-    if(chk != 0)
+    chk = ctx->impl_ctx->ComposePanorama<abcdk_torch_image_t>(out, tmp_imgs);
+    if (chk != 0)
         return -1;
 
     return 0;
@@ -173,42 +236,54 @@ int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *
 
 #else // OPENCV_STITCHING_STITCHER_HPP
 
-void abcdk_stitcher_destroy(abcdk_stitcher_t **ctx)
+void abcdk_opencv_stitcher_destroy(abcdk_opencv_stitcher_t **ctx)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
 }
 
-abcdk_stitcher_t *abcdk_stitcher_create()
-{
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
-    return NULL;
-}
-
-abcdk_object_t *abcdk_stitcher_metadata_dump(abcdk_stitcher_t *ctx, const char *magic)
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create(uint32_t tag)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return NULL;
 }
 
-int abcdk_stitcher_metadata_load(abcdk_stitcher_t *ctx, const char *magic, const char *data)
+abcdk_object_t *abcdk_opencv_stitcher_metadata_dump(abcdk_opencv_stitcher_t *ctx, const char *magic)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
+    return NULL;
+}
+
+int abcdk_opencv_stitcher_metadata_load(abcdk_opencv_stitcher_t *ctx, const char *magic, const char *data)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;
 }
 
-int abcdk_stitcher_estimate_transform(abcdk_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
+void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
+    return ;
+}
+
+int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;
 }
 
-int abcdk_stitcher_build_panorama_param(abcdk_stitcher_t *ctx)
+void abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx,const char *name)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
+    return ;
+}
+
+int abcdk_opencv_stitcher_build_panorama_param(abcdk_opencv_stitcher_t *ctx)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;
 }
 
-int abcdk_stitcher_compose_panorama(abcdk_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
+int abcdk_opencv_stitcher_compose_panorama(abcdk_opencv_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return -1;

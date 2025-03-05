@@ -41,21 +41,21 @@ static int _abcdk_cuda_imgproc_remap_8u(int channels, int packed,
         npp_chk = nppiRemap_8u_C1R(src, tmp_src_size, src_ws, tmp_src_roi,
                                    xmap, xmap_ws, ymap, ymap_ws,
                                    dst, dst_ws, tmp_dst_size,
-                                   (NppiInterpolationMode)inter_mode);
+                                   inter_mode);
     }
     else if (channels == 3)
     {
         npp_chk = nppiRemap_8u_C3R(src, tmp_src_size, src_ws, tmp_src_roi,
                                    xmap, xmap_ws, ymap, ymap_ws,
                                    dst, dst_ws, tmp_dst_size,
-                                   (NppiInterpolationMode)inter_mode);
+                                   inter_mode);
     }
     else if (channels == 4)
     {
         npp_chk = nppiRemap_8u_C4R(src, tmp_src_size, src_ws, tmp_src_roi,
                                    xmap, xmap_ws, ymap, ymap_ws,
                                    dst, dst_ws, tmp_dst_size,
-                                   (NppiInterpolationMode)inter_mode);
+                                   inter_mode);
     }
 
     if (npp_chk != NPP_SUCCESS)

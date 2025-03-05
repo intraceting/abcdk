@@ -298,6 +298,7 @@ namespace abcdk
                 assert(imgs.size() > 0);
                 assert(imgs.size() == m_img_features.size());
 
+                /*返回索引顺序，可能与原始顺序不一至。*/
                 m_img_good_idxs = cv::detail::leaveBiggestComponent(m_img_features, m_img_matches, threshold);
 
                 m_img_good_sizes.resize(m_img_good_idxs.size());
@@ -408,7 +409,7 @@ namespace abcdk
                     m_camera_params[i].R = rmats[i];
             }
 
-            void panorama_param_correct()
+            bool panorama_param_correct()
             {
                 float seam_work_aspect = 1;
                 float warp_scale = 0.0;
@@ -445,7 +446,15 @@ namespace abcdk
                     K(1, 1) *= seam_work_aspect;
                     K(1, 2) *= seam_work_aspect;
 
-                    m_warper_rects[i] = m_rotation_warper->buildMaps(m_img_good_sizes[i], K, m_camera_params[i].R, m_warper_xmaps[i], m_warper_ymaps[i]);
+                    try
+                    {
+                        m_warper_rects[i] = m_rotation_warper->buildMaps(m_img_good_sizes[i], K, m_camera_params[i].R, m_warper_xmaps[i], m_warper_ymaps[i]);
+                    }
+                    catch (const cv::Exception &e)
+                    {
+                        abcdk_trace_printf(LOG_WARNING, "%s(errno=%d).", e.err.c_str(), e.code);
+                        return false;
+                    }
 
                     /*for @remap(+1,+1)*/
                     m_warper_rects[i].height += 1;
@@ -510,6 +519,17 @@ namespace abcdk
                         }
                     }
                 }
+
+                return true;
+            }
+
+            virtual void ctx_push_current()
+            {
+            }
+
+            virtual void ctx_pop_current()
+            {
+                
             }
 
             virtual bool remap(const std::vector<abcdk_torch_image_t *> &imgs)
@@ -635,9 +655,6 @@ namespace abcdk
                     abcdk_trace_printf(LOG_WARNING, "图像变换算法('%s')未找到，启用默认的算法('spherical')。", name);
                     set_warper("spherical");
                 }
-
-                /*通知必须重新构建相机参数。*/
-                m_panorama_param_ok = false;
             }
 
             void DrawKeypointsMatches(std::vector<cv::Mat> &outs, const std::vector<cv::Mat> &imgs)
@@ -652,7 +669,7 @@ namespace abcdk
                 assert(imgs.size() >= 2);
                 assert(masks.size() == 0 || imgs.size() == masks.size());
 
-                assert(!m_camera_param_ok);
+                ABCDK_ASSERT(!m_camera_param_ok, "评估参数已经建立，不能重复评估。");
 
                 find_feature(imgs, masks);
 
@@ -675,13 +692,17 @@ namespace abcdk
                 return 0;
             }
 
-            void BuildPanoramaParam()
+            int BuildPanoramaParam()
             {
-                assert(!m_panorama_param_ok);
+                ABCDK_ASSERT(!m_panorama_param_ok, "全景参数已经构建完成，不能重复构建。");
+                ABCDK_ASSERT(m_camera_param_ok, "评估参数未建立，或未加载。");
 
-                panorama_param_correct();
+                if (!panorama_param_correct())
+                    return -1;
 
                 m_panorama_param_ok = true; // OK.
+
+                return 0;
             }
 
             template <typename T>
@@ -690,13 +711,23 @@ namespace abcdk
                 assert(imgs.size() >= 0);
                 assert(imgs.size() >= m_img_good_idxs.size());
 
-                assert(m_panorama_param_ok);
+                ABCDK_ASSERT(m_panorama_param_ok, "全景参数构建完成后才能执行全景融合。");
+
+                ctx_push_current();
 
                 if (!remap(imgs))
+                {
+                    ctx_pop_current();
                     return -1;
+                }
 
                 if (!compose(out, optimize_seam))
+                {
+                    ctx_pop_current();
                     return -2;
+                }
+
+                ctx_pop_current();
 
                 return 0;
             }

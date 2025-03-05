@@ -116,8 +116,6 @@ int abcdk_cuda_ctx_pop_current(CUcontext *ctx)
 {
     CUresult chk;
 
-    assert(ctx != NULL);
-
     chk = cuCtxPopCurrent(ctx);
     if (chk != CUDA_SUCCESS)
         return -1;

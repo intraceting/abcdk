@@ -18,8 +18,10 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_compose_2d2d(int channels, bool pac
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::compose<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h, compose, compose_w, compose_ws, compose_h, scalar,
-                                          overlap_x, overlap_y, overlap_w, optimize_seam, tid);
+    abcdk::generic::imageproc::compose<T>(channels, packed,
+                                          panorama, panorama_w, panorama_ws, panorama_h,
+                                          compose, compose_w, compose_ws, compose_h,
+                                          scalar, overlap_x, overlap_y, overlap_w, optimize_seam, tid);
 }
 
 template <typename T>
@@ -42,9 +44,10 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_compose(int channels, bool packed,
     /*2D-2D*/
     abcdk::cuda::grid::make_dim_dim(dim, compose_w * compose_h, 64);
 
-    _abcdk_cuda_imgproc_compose_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,
+    _abcdk_cuda_imgproc_compose_2d2d<T><<<dim[0], dim[1]>>>(channels, packed,
+                                                            panorama, panorama_w, panorama_ws, panorama_h,
                                                             compose, compose_w, compose_ws, compose_h,
-                                                            (T*)gpu_scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
+                                                            (T *)gpu_scalar, overlap_x, overlap_y, overlap_w, optimize_seam);
     abcdk_cuda_free(&gpu_scalar);
 
     return 0;
