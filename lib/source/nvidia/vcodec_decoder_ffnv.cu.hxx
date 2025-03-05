@@ -17,9 +17,7 @@
 
 #ifdef __cuda_cuda_h__
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-// #pragma GCC diagnostic push
-// #pragma GCC diagnostic ignored "-Wsign-conversion"
-// #pragma GCC diagnostic ignored "-Wconversion"
+
 
 namespace abcdk
 {
@@ -104,7 +102,7 @@ namespace abcdk
 
                 static void frame_queue_destroy_cb(void *msg)
                 {
-                    abcdk_torch_image_free((abcdk_torch_image_t **)&msg);
+                    abcdk_torch_frame_free((abcdk_torch_frame_t **)&msg);
                 }
 
             private:
@@ -336,9 +334,6 @@ namespace abcdk
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);
-
-                    abcdk_cuda_ctx_destroy(&m_gpu_ctx);
-
                 }
 
                 virtual int open(abcdk_torch_vcodec_param_t *param)
@@ -422,6 +417,8 @@ namespace abcdk
 
                     if (dst)
                     {
+                        abcdk_torch_frame_free(dst);
+
                         abcdk_queue_lock(m_frame_queue);
                         *dst = (abcdk_torch_frame_t *)abcdk_queue_pop(m_frame_queue);
                         abcdk_queue_unlock(m_frame_queue);
@@ -437,7 +434,7 @@ namespace abcdk
     } // namespace cuda
 } // namespace abcdk
 
-// #pragma GCC diagnostic pop
+
 #endif // FFNV_CUDA_DYNLINK_LOADER_H
 #endif // __cuda_cuda_h__
 

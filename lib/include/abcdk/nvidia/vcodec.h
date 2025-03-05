@@ -50,6 +50,23 @@ int abcdk_cuda_vcodec_encode(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet_t **d
  */
 int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src);
 
+#ifdef AVCODEC_AVCODEC_H
+
+/**
+ * 编码。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_cuda_vcodec_encode_to_ffmpeg(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src);
+
+/**
+ * 解码。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_cuda_vcodec_decode_from_ffmpeg(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src);
+#endif //AVCODEC_AVCODEC_H
+
 __END_DECLS
 
 #endif // ABCDK_NVIDIA_VCODEC_H

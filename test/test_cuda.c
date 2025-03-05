@@ -114,7 +114,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     return 0;
 }
 
-#if 0
+#ifdef  HAVE_FFMPEG
 
 int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
 {
@@ -130,17 +130,26 @@ int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
 
     AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0, NULL, cuda_ctx);
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0,cuda_ctx);
 
-    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id, 0);
-    abcdk_avstream_parameters_to_context(dec_opt, r_video_steam);
-    abcdk_cuda_video_sync(dec_ctx, dec_opt);
-    abcdk_avcodec_free(&dec_opt);
+
+    abcdk_torch_vcodec_param_t dec_param = {0};
+
+    dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
+    dec_param.ext_data = r_video_steam->codecpar->extradata;
+    dec_param.ext_size = r_video_steam->codecpar->extradata_size;
+
+    abcdk_cuda_vcodec_start(dec_ctx,&dec_param);
 
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
 
-    abcdk_cuda_jpeg_t *jpeg_w = abcdk_cuda_jpeg_create(1, NULL, cuda_ctx);
+    abcdk_torch_jcodec_t *jpeg_w = abcdk_cuda_jpeg_create(1, cuda_ctx);
+
+    abcdk_torch_jcodec_param_t jpeg_param = {0};
+    jpeg_param.quality = 99;
+
+    abcdk_cuda_jpeg_start(jpeg_w,&jpeg_param);
 
     for (int i = 0; i < 10000; i++)
     {
@@ -148,8 +157,8 @@ int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
         if (chk < 0)
             break;
 
-        AVFrame *r_fae = NULL;
-        chk = abcdk_cuda_video_decode(dec_ctx, &r_fae, &r_pkt);
+        abcdk_torch_frame_t *r_fae = NULL;
+        chk = abcdk_cuda_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
         if (chk < 0)
         {
             break;
@@ -157,21 +166,21 @@ int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
         else if (chk > 0)
         {
             char filename[PATH_MAX] = {0};
-            sprintf(filename, "/tmp/ccc/%06d.jpg", r_fae->pts);
+            sprintf(filename, "/tmp/ddd/%06d.jpg", r_fae->pts);
 
             abcdk_mkdir(filename, 0755);
 
-            abcdk_cuda_jpeg_encode_to_file(jpeg_w, filename, r_fae);
+            abcdk_cuda_jpeg_encode_to_file(jpeg_w, filename, r_fae->img);
         }
 
-        av_frame_free(&r_fae);
+        abcdk_torch_frame_free(&r_fae);
     }
 
-    abcdk_cuda_jpeg_destroy(&jpeg_w);
+    abcdk_torch_jcodec_free(&jpeg_w);
 
     av_packet_unref(&r_pkt);
 
-    abcdk_cuda_video_destroy(&dec_ctx);
+    abcdk_torch_vcodec_free(&dec_ctx);
     abcdk_ffeditor_destroy(&r);
 
     return 0;
@@ -194,33 +203,45 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
 
     AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_cuda_video_t *dec_ctx = abcdk_cuda_video_create(0, NULL, cuda_ctx);
-    abcdk_cuda_video_t *enc_ctx = abcdk_cuda_video_create(1, NULL, cuda_ctx);
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0, cuda_ctx);
+    abcdk_torch_vcodec_t *enc_ctx = abcdk_cuda_vcodec_alloc(1, cuda_ctx);
 
-    AVCodecContext *dec_opt = abcdk_avcodec_alloc3(r_video_steam->codecpar->codec_id, 0);
-    abcdk_avstream_parameters_to_context(dec_opt, r_video_steam);
-    abcdk_cuda_video_sync(dec_ctx, dec_opt);
-    abcdk_avcodec_free(&dec_opt);
 
-    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_HEVC, 0);
+    abcdk_torch_vcodec_param_t dec_param = {0},enc_param = {0};
+
+    dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
+    dec_param.ext_data = r_video_steam->codecpar->extradata;
+    dec_param.ext_size = r_video_steam->codecpar->extradata_size;
+
+    abcdk_cuda_vcodec_start(dec_ctx,&dec_param);
+  
+    enc_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(AV_CODEC_ID_H264);
+    enc_param.fps_d = 1;
+    enc_param.fps_n = 25;
+    enc_param.width = r_video_steam->codecpar->width;
+    enc_param.height = r_video_steam->codecpar->height;
+    enc_param.bitrate = 15000 * 1000;
+    enc_param.peak_bitrate = 15000 * 1000;
+
+    abcdk_cuda_vcodec_start(enc_ctx,&enc_param);
+
+    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264, 1);
 
     abcdk_avcodec_encode_video_fill_time_base(enc_opt, 25);
 
     enc_opt->width = r_video_steam->codecpar->width;
     enc_opt->height = r_video_steam->codecpar->height;
-    enc_opt->extradata = NULL;
-    enc_opt->extradata_size = 0;
-    enc_opt->max_b_frames = 0;
-    enc_opt->bit_rate_tolerance = 15000 * 1000;
-    enc_opt->bit_rate = 15000 * 1000;
-
-    abcdk_cuda_video_sync(enc_ctx, enc_opt);
+    enc_opt->extradata = (uint8_t*)av_memdup(enc_param.ext_data, enc_param.ext_size);
+    enc_opt->extradata_size = enc_param.ext_size;
+    enc_opt->max_b_frames = enc_param.max_b_frames;
+    enc_opt->bit_rate_tolerance = enc_param.peak_bitrate;
+    enc_opt->bit_rate = enc_param.bitrate ;
 
     int w_stream_idx = abcdk_ffeditor_add_stream(w, enc_opt, 1);
 
-    abcdk_avcodec_free(&dec_opt);
+    abcdk_avcodec_free(&enc_opt);
 
-    abcdk_ffeditor_write_header(w, 0);
+    abcdk_ffeditor_write_header(w, 1);
 
     AVPacket r_pkt, *w_pkt = NULL;
     av_init_packet(&r_pkt);
@@ -231,8 +252,8 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
         if (chk < 0)
             break;
 
-        AVFrame *r_fae = NULL;
-        chk = abcdk_cuda_video_decode(dec_ctx, &r_fae, &r_pkt);
+        abcdk_torch_frame_t *r_fae = NULL;
+        chk = abcdk_cuda_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
         if (chk < 0)
         {
             break;
@@ -240,7 +261,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
         else if (chk > 0)
         {
             AVPacket *w_pkt = NULL;
-            int chk = abcdk_cuda_video_encode(enc_ctx, &w_pkt, r_fae);
+            int chk = abcdk_cuda_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk <= 0)
                 break;
 
@@ -248,35 +269,23 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
             av_packet_free(&w_pkt);
         }
 
-        av_frame_free(&r_fae);
+        abcdk_torch_frame_free(&r_fae);
     }
 
     av_packet_unref(&r_pkt);
 
     for (int i = 0; i < 1000; i++)
     {
-        AVFrame *r_fae = NULL;
+        abcdk_torch_frame_t *r_fae = NULL;
         AVPacket *w_pkt = NULL;
 
-        if (i == 0)
+        /*通知解码器是结束包。*/
+        int chk = abcdk_cuda_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
+        if (chk < 0)
+            break;
+        else if (chk > 0)
         {
-            /*通知解码器是结束包。*/
-            int chk = abcdk_cuda_video_decode(dec_ctx, &r_fae, &r_pkt);
-            if (chk < 0)
-                break;
-            else if (chk > 0)
-            {
-                chk = abcdk_cuda_video_encode(enc_ctx, &w_pkt, r_fae);
-                if (chk <= 0)
-                    break;
-
-                abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
-                av_packet_free(&w_pkt);
-            }
-        }
-        else
-        {
-            int chk = abcdk_cuda_video_encode(enc_ctx, &w_pkt, NULL);
+            chk = abcdk_cuda_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk <= 0)
                 break;
 
@@ -287,8 +296,10 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_ffeditor_write_trailer(w);
 
-    abcdk_cuda_video_destroy(&dec_ctx);
-    abcdk_cuda_video_destroy(&enc_ctx);
+    
+    abcdk_torch_vcodec_free(&dec_ctx);
+    abcdk_torch_vcodec_free(&enc_ctx);
+    
     abcdk_ffeditor_destroy(&r);
     abcdk_ffeditor_destroy(&w);
 
@@ -301,10 +312,10 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 {
     int n = 1, w = 300, h = 300 , depth =3;
 
-    cuCtxPushCurrent(cuda_ctx);
+    abcdk_cuda_ctx_push_current(cuda_ctx);
 
 
-    cuCtxPopCurrent(NULL);
+    abcdk_cuda_ctx_pop_current(NULL);
 }
 
 
@@ -329,7 +340,7 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     if (cmd == 1)
         return abcdk_test_cuda_1(args, cuda_ctx);
-#if 0
+#ifdef HAVE_FFMPEG
     else if (cmd == 2)
         return abcdk_test_cuda_2(args, cuda_ctx);
     else if (cmd == 3)

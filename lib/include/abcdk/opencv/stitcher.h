@@ -53,6 +53,11 @@ void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, cons
 /**
  * 评估。
  * 
+ * @note 仅支持主机内存对象。
+ * 
+ * @param [in] img 分屏图像的数组。顺序无关，评估时自动排序。
+ * @param [in] mask 掩码图像的数组，顺序与分屏图像对应。元素的值为NULL(0)时，忽略。
+ * 
  * @return 0 成功， < 0 失败。
  */
 int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx,int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold);

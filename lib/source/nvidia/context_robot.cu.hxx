@@ -21,15 +21,9 @@ namespace abcdk
             /*环境机器人，自动执行入栈和出栈。*/
             class robot
             {
-            private:
-                CUcontext m_old_ctx;
-
             public:
                 robot(CUcontext ctx)
                 {
-                    // m_old_ctx = NULL;
-                    // cuCtxPopCurrent(&m_old_ctx);
-
                     assert(ctx != NULL);
                     cuCtxPushCurrent(ctx);
                 }
@@ -37,9 +31,6 @@ namespace abcdk
                 virtual ~robot()
                 {
                     cuCtxPopCurrent(NULL);
-
-                    // if (m_old_ctx)
-                    //     cuCtxPushCurrent(m_old_ctx);
                 }
             };
         } // namespace context

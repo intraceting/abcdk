@@ -162,6 +162,59 @@ int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst
     return ctx_p->decoder_ctx->update(dst, src);
 }
 
+#ifdef AVCODEC_AVCODEC_H
+
+int abcdk_cuda_vcodec_encode_to_ffmpeg(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src)
+{
+    abcdk_torch_packet_t *tmp_dst = NULL;
+    AVPacket *dst_p;
+    int chk;
+
+    assert(ctx != NULL && dst != NULL);
+
+    chk = abcdk_cuda_vcodec_encode(ctx, &tmp_dst, src);
+    if (chk > 0)
+    {
+        dst_p = *dst;
+
+        if (dst_p)
+            av_packet_unref(dst_p);
+        else
+            dst_p = *dst = av_packet_alloc();
+
+        if (!dst_p)
+        {
+            abcdk_torch_packet_free(&tmp_dst);
+            return -1;
+        }
+
+        av_new_packet(dst_p, tmp_dst->size);
+        memcpy(dst_p->data, tmp_dst->data, tmp_dst->size);
+    }
+
+    abcdk_torch_packet_free(&tmp_dst);
+
+    return chk;
+}
+
+int abcdk_cuda_vcodec_decode_from_ffmpeg(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src)
+{
+    abcdk_torch_packet_t tmp_src = {0};
+
+    assert(ctx != NULL && dst != NULL);
+
+    if (src)
+    {
+        tmp_src.data = src->data;
+        tmp_src.size = src->size;
+        tmp_src.pts = src->pts;
+    }
+
+    return abcdk_cuda_vcodec_decode(ctx, dst, (src ? &tmp_src : NULL));
+}
+
+#endif //AVCODEC_AVCODEC_H
+
 #else //__cuda_cuda_h__
 
 void abcdk_cuda_vcodec_destroy(abcdk_torch_vcodec_t **ctx)
@@ -193,6 +246,22 @@ int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
     return -1;
 }
+
+#ifdef AVCODEC_AVCODEC_H
+
+int abcdk_cuda_vcodec_encode_to_ffmpeg(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+int abcdk_cuda_vcodec_decode_from_ffmpeg(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src)
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    return -1;
+}
+
+#endif //AVCODEC_AVCODEC_H
 
 #endif //__cuda_cuda_h__
 

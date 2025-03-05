@@ -22,11 +22,6 @@ ABCDK为了支持在Linux/Unix系统中快速开发软件项目而创建的解�
 - test 测试组件
 - tool 工具组件
 
-## 拉取子项目
-
-```bash
-$ git submodule update --init --remote  --force  --merge --recursive
-```
 
 ## 查看编译帮助
 

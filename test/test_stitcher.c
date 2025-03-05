@@ -105,7 +105,7 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
 
   abcdk_torch_image_t *out = abcdk_cuda_image_alloc();
 
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i < 1000; i++)
   {
     chk = abcdk_opencv_stitcher_compose_panorama(ctx, out, 4, cuda_img);
 

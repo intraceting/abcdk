@@ -8,6 +8,7 @@
 #define ABCDK_TORCH_IMGUTIL_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/pixfmt.h"
 
