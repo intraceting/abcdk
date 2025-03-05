@@ -314,7 +314,7 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_cuda_ctx_push_current(cuda_ctx);
 
-    abcdk_trace_printf(LOG_WARNING,_("哈哈哈"));
+   // abcdk_trace_printf(LOG_WARNING,_("哈哈哈"));
 
     abcdk_cuda_ctx_pop_current(NULL);
 }
