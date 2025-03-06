@@ -66,13 +66,13 @@ int abcdk_torch_tensor_reset(abcdk_torch_tensor_t **ctx, int format, size_t bloc
 /**创建。*/
 abcdk_torch_tensor_t *abcdk_torch_tensor_create(int format, size_t block, size_t width, size_t height, size_t depth, size_t cell, size_t align);
 
-/** 复制。
- */
+/** 复制。 */
 void abcdk_torch_tensor_copy(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
 
-/**
- * 克隆。
- */
+/** 复制。 */
+void abcdk_torch_tensor_copy_block(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride);
+
+/** 克隆。 */
 abcdk_torch_tensor_t *abcdk_torch_tensor_clone(const abcdk_torch_tensor_t *src);
 
 

@@ -31,8 +31,6 @@ void abcdk_torch_tensor_free(abcdk_torch_tensor_t **ctx)
 abcdk_torch_tensor_t *abcdk_torch_tensor_alloc(uint32_t tag)
 {
     abcdk_torch_tensor_t *ctx;
-    int buf_size = 0;
-    void *buf_ptr = NULL;
 
     assert(tag == ABCDK_TORCH_TAG_HOST || tag == ABCDK_TORCH_TAG_CUDA);
 
@@ -137,11 +135,39 @@ void abcdk_torch_tensor_copy(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor
     }
 }
 
+void abcdk_torch_tensor_copy_block(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
+{
+    size_t dst_off;
+    uint8_t *dst_data;
+
+    assert(dst != NULL && dst_block > 0);
+    assert(src_data != NULL && src_stride > 0);
+    assert(dst->tag == ABCDK_TORCH_TAG_HOST);
+    assert(dst->stride <= src_stride);
+
+    dst_off = abcdk_torch_tensor_offset(dst->format, dst->block, dst->width, dst->stride, dst->height, dst->depth, dst->cell, dst_block, 0, 0, 0);
+    dst_data = ABCDK_PTR2U8PTR(dst->data, dst_off);
+
+    if (dst->format == ABCDK_TORCH_TENFMT_NHWC)
+    {
+        abcdk_memcpy_2d(dst_data, dst->stride, 0, 0,
+                        src_data, src_stride, 0, 0,
+                        dst->cell * dst->depth * dst->width, dst->block * dst->height);
+    }
+    else if (dst->format == ABCDK_TORCH_TENFMT_NCHW)
+    {
+        abcdk_memcpy_2d(dst_data, dst->stride, 0, 0,
+                        src_data, src_stride, 0, 0,
+                        dst->cell * dst->width, dst->block * dst->depth * dst->height);
+    }
+}
+
 abcdk_torch_tensor_t *abcdk_torch_tensor_clone(const abcdk_torch_tensor_t *src)
 {
     abcdk_torch_tensor_t *dst;
 
     assert(src != NULL);
+    assert(src->tag == ABCDK_TORCH_TAG_HOST);
 
     dst = abcdk_torch_tensor_create(src->format, src->block, src->width, src->height, src->depth, src->cell, 1);
     if (!dst)
