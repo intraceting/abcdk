@@ -15,34 +15,6 @@ namespace abcdk
     {
         namespace tensorproc
         {
-            template <typename ST, typename DT>
-            ABCDK_INVOKE_DEVICE void blob_kernel(int channels, bool revert,
-                                                 bool dst_packed, DT *dst, size_t dst_ws,
-                                                 bool src_packed, ST *src, size_t src_ws,
-                                                 size_t w, size_t h, float *scale, float *mean, float *std,
-                                                 size_t tid)
-            {
-
-                size_t y = tid / w;
-                size_t x = tid % w;
-
-                if (x >= w || y >= h)
-                    return;
-
-                for (size_t z = 0; z < channels; z++)
-                {
-                    size_t src_of = abcdk::generic::util::off<ST>(src_packed, w, src_ws, h, channels, 0, x, y, z);
-                    size_t dst_of = abcdk::generic::util::off<DT>(dst_packed, w, dst_ws, h, channels, 0, x, y, z);
-
-                    ST *src_p = abcdk::generic::util::ptr<ST>(src, src_of);
-                    DT *dst_p = abcdk::generic::util::ptr<DT>(dst, dst_of);
-
-                    if (revert)
-                        *dst_p = (DT)((((float)(*src_p) * std[z]) + mean[z]) * scale[z]);
-                    else
-                        *dst_p = (DT)((((float)(*src_p) / scale[z]) - mean[z]) / std[z]);
-                }
-            }
 
             /**
              * 数值转换。
@@ -51,18 +23,39 @@ namespace abcdk
              * @param [in] mean 均值。
              * @param [in] std 方差。
              */
-            template <typename ST, typename DT>
-            ABCDK_INVOKE_HOST void blob(int channels, bool revert,
-                                        DT *dst, size_t dst_ws, bool dst_nchw,
-                                        ST *src, size_t src_ws, bool src_nchw,
-                                        size_t c, size_t w, size_t h,
-                                        float *scale, float *mean, float *std)
+            template <typename DT, typename ST>
+            ABCDK_INVOKE_DEVICE void blob(bool dst_packed, DT *dst, size_t dst_ws,
+                                          bool src_packed, ST *src, size_t src_ws,
+                                          size_t b, size_t w, size_t h, size_t c,
+                                          bool revert, float *scale, float *mean, float *std,
+                                          size_t tid)
             {
-                for (size_t i = 0; i < w * h; i++)
-                {
-                    blob_kernel<ST, DT>(channels, revert, dst, dst_ws, dst_nchw, src, src_ws, src_nchw, c, w, h, scale, mean, std, i);
-                }
+                size_t n, x, y, z;
+                size_t hw;
+
+                /*源和目标索引算法必须一样。*/
+
+                n = tid / (w * h * c);  // 块索引
+                hw = tid % (w * h * c); // 块余数
+                y = hw / (w * c);       // 高度索引
+                x = (hw % (w * c)) / c; // 宽度索引
+                z = hw % c;             // 通道索引
+
+                if (n >= b || x >= w || y >= h || z >= c)
+                    return;
+
+                size_t src_of = abcdk::generic::util::off<ST>(src_packed, w, src_ws, h, c, n, x, y, z);
+                size_t dst_of = abcdk::generic::util::off<DT>(dst_packed, w, dst_ws, h, c, n, x, y, z);
+
+                ST *src_p = abcdk::generic::util::ptr<ST>(src, src_of);
+                DT *dst_p = abcdk::generic::util::ptr<DT>(dst, dst_of);
+
+                if (revert)
+                    *dst_p = (DT)((((float)(*src_p) * std[z]) + mean[z]) * scale[z]);
+                else
+                    *dst_p = (DT)((((float)(*src_p) / scale[z]) - mean[z]) / std[z]);
             }
+
         } // namespace tensorproc
     } // namespace generic
 } // namespace abcdk

@@ -4,10 +4,10 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_NVIDIA_TENSORPROC_H
-#define ABCDK_NVIDIA_TENSORPROC_H
+#ifndef ABCDK_TORCH_TENSORPROC_H
+#define ABCDK_TORCH_TENSORPROC_H
 
-#include "abcdk/nvidia/tensor.h"
+#include "abcdk/torch/tensor.h"
 
 
 __BEGIN_DECLS
@@ -23,7 +23,7 @@ __BEGIN_DECLS
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_8u_to_32f(abcdk_torch_tensor_t *dst,const abcdk_torch_tensor_t *src, float scale[], float mean[], float std[]);
+int abcdk_torch_tensorproc_blob_8u_to_32f(abcdk_torch_tensor_t *dst,const abcdk_torch_tensor_t *src, float scale[], float mean[], float std[]);
 
 /**
  * 值转换。
@@ -32,17 +32,17 @@ int abcdk_cuda_tensorproc_blob_8u_to_32f(abcdk_torch_tensor_t *dst,const abcdk_t
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_blob_32f_to_8u(abcdk_torch_tensor_t *dst,const abcdk_torch_tensor_t *src, float scale[], float mean[], float std[]);
+int abcdk_torch_tensorproc_blob_32f_to_8u(abcdk_torch_tensor_t *dst,const abcdk_torch_tensor_t *src, float scale[], float mean[], float std[]);
 
 /**
  * 重塑。
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_tensorproc_reshape(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
+int abcdk_torch_tensorproc_reshape(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
 
 
 __END_DECLS
 
 
-#endif // ABCDK_NVIDIA_TENSORPROC_H
+#endif // ABCDK_TORCH_TENSORPROC_H
