@@ -235,7 +235,7 @@ VARIABLE:
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libmagic,nghttp2,libdrm,
      pam,curl,ncurses,fltk,x264,x265,ffnvcodec,
-     cuda,cudnn,tensorrt,opencv
+     cuda,cudnn,tensorrt,opencv,live555
 
      THIRDPARTY_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 
@@ -463,6 +463,7 @@ DependPackageCheck x264 HAVE_H264
 DependPackageCheck x265 HAVE_H265
 DependPackageCheck ffnvcodec HAVE_FFNVCODEC
 DependPackageCheck opencv HAVE_OPENCV
+DependPackageCheck live555 HAVE_LIVE555
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=

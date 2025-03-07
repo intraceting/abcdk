@@ -60,7 +60,8 @@ void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, cons
  * 
  * @return 0 成功， < 0 失败。
  */
-int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx,int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold);
+int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold);
+
 
 /**
  * 设图像变换算法。

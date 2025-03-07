@@ -1181,7 +1181,7 @@ void abcdk_https_unref(abcdk_https_stream_t **stream)
     abcdk_object_unref(&stream_p);
 }
 
-/** 引用流。*/
+
 abcdk_https_stream_t *abcdk_https_refer(abcdk_https_stream_t *src)
 {
     abcdk_object_t *stream_p;
