@@ -52,7 +52,6 @@
 #include "abcdk/util/mmap.h"
 #include "abcdk/util/hexdump.h"
 #include "abcdk/util/fnmatch.h"
-#include "abcdk/util/register.h"
 #include "abcdk/util/queue.h"
 #include "abcdk/util/waiter.h"
 #include "abcdk/util/bit.h"
