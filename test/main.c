@@ -162,6 +162,12 @@ int main(int argc, char **argv)
 
     abcdk_openssl_init();
 
+#ifdef __cuda_cuda_h__
+
+    abcdk_cuda_init(0);
+
+#endif //__cuda_cuda_h__
+
     args = abcdk_option_alloc("--");
     if (!args)
         ABCDK_ERRNO_AND_GOTO1(errcode = errno,final_end);

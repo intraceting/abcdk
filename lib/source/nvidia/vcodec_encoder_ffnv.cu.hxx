@@ -70,8 +70,10 @@ namespace abcdk
 
                 std::vector<abcdk_torch_image_t *> m_vInputFrames;
                 std::vector<NV_ENC_REGISTERED_PTR> m_vRegisteredResources;
+
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedInputBuffers;
                 std::vector<NV_ENC_INPUT_PTR> m_vMappedRefBuffers;
+
                 std::vector<void *> m_vpCompletionEvent;
 
             public:
@@ -172,6 +174,7 @@ namespace abcdk
                         {
                             pIntializeParams->encodeConfig->encodeCodecConfig.h264Config.chromaFormatIDC = 3;
                         }
+
                         pIntializeParams->encodeConfig->encodeCodecConfig.h264Config.idrPeriod = pIntializeParams->encodeConfig->gopLength;
                         pIntializeParams->encodeConfig->encodeCodecConfig.h264Config.maxNumRefFrames = 1; // No B-Frames.
                     }
@@ -179,6 +182,7 @@ namespace abcdk
                     {
                         pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.pixelBitDepthMinus8 =
                             (bufmt == NV_ENC_BUFFER_FORMAT_YUV420_10BIT || bufmt == NV_ENC_BUFFER_FORMAT_YUV444_10BIT) ? 2 : 0;
+
                         if (bufmt == NV_ENC_BUFFER_FORMAT_YUV444 || bufmt == NV_ENC_BUFFER_FORMAT_YUV444_10BIT)
                         {
                             pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.chromaFormatIDC = 3;
@@ -273,6 +277,26 @@ namespace abcdk
                         if (chk == NV_ENC_SUCCESS)
                             m_vRegisteredResources.push_back(registerResource.registeredResource);
                     }
+                }
+
+                void DestroyResources()
+                {
+                    if (!m_encoder)
+                        return;
+
+                    abcdk::cuda::context::robot robot(m_gpu_ctx);
+
+                    /*数组内的成员是指针对象，必须逐个释放。*/
+                    for(auto &t: m_vRegisteredResources)
+                        m_nvenc.nvEncUnregisterResource(m_encoder,t);
+
+                    m_vRegisteredResources.clear();
+
+                    /*数组内的成员是指针对象，必须逐个释放。*/
+                    for (auto &t : m_vInputFrames)
+                        abcdk_torch_image_free(&t);
+
+                    m_vInputFrames.clear();
                 }
 
                 void DoEncode(NV_ENC_INPUT_PTR inputBuffer, std::vector<std::vector<uint8_t>> &vPacket)
@@ -397,10 +421,7 @@ namespace abcdk
                         cuCtxPushCurrent(m_gpu_ctx);
 
                     DestroyBitstreamBuffer();
-
-                    if (m_encoder)
-                        m_nvenc.nvEncDestroyEncoder(m_encoder);
-                    m_encoder = NULL;
+                    DestroyResources();
 
                     memset(&m_params, 0, sizeof(m_params));
                     memset(&m_config, 0, sizeof(m_config));
@@ -414,11 +435,10 @@ namespace abcdk
                     m_vMappedInputBuffers.clear();
                     m_vRegisteredResources.clear();
 
-                    /*数组内的成员是指针对象，必须逐个释放。*/
-                    for (auto &t : m_vInputFrames)
-                        abcdk_torch_image_free(&t);
 
-                    m_vInputFrames.clear();
+                    if (m_encoder)
+                        m_nvenc.nvEncDestroyEncoder(m_encoder);
+                    m_encoder = NULL;
 
                     if (m_gpu_ctx)
                         cuCtxPopCurrent(NULL);

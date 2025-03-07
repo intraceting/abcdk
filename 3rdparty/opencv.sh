@@ -107,10 +107,19 @@ if [ "deb" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        LDFLAG="-L$(FindLibPath libopencv_core.so)"
-        checkReturnCode
+        LDFLAG="-L$(FindLibPath libopencv_xfeatures2d.so)"
+        if [ $? -eq 0 ];then
+        {
+            echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d -lopencv_xfeatures2d   ${LDFLAG}"
+        }
+        else 
+        {
+            LDFLAG="-L$(FindLibPath libopencv_core.so)"
+            checkReturnCode
 
-        echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d -lopencv_xfeatures2d -lopencv_flann  ${LDFLAG}"
+            echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d ${LDFLAG}"
+        }
+        fi
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "libopencv-dev"
@@ -140,10 +149,19 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     }
     elif [ ${FLAG} -eq 3 ];then
     {
-        LDFLAG="-L$(FindLibPath libopencv_core.so)"
-        checkReturnCode
+        LDFLAG="-L$(FindLibPath libopencv_xfeatures2d.so)"
+        if [ $? -eq 0 ];then
+        {
+            echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d -lopencv_xfeatures2d   ${LDFLAG}"
+        }
+        else 
+        {
+            LDFLAG="-L$(FindLibPath libopencv_core.so)"
+            checkReturnCode
 
-        echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d -lopencv_xfeatures2d   ${LDFLAG}"
+            echo "-lopencv_calib3d -lopencv_highgui -lopencv_freetype -lopencv_dnn -lopencv_photo -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_video -lopencv_stitching -lopencv_features2d ${LDFLAG}"
+        }
+        fi
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "opencv-devel"

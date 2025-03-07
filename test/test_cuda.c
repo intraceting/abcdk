@@ -11,6 +11,9 @@
 #include <locale.h>
 #include "entry.h"
 
+#ifdef __cuda_cuda_h__
+
+
 int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 {
     int chk;
@@ -292,6 +295,8 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
             abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
             av_packet_free(&w_pkt);
         }
+
+        abcdk_torch_frame_free(&r_fae);
     }
 
     abcdk_ffeditor_write_trailer(w);
@@ -319,12 +324,9 @@ int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
     abcdk_cuda_ctx_pop_current(NULL);
 }
 
-
 int abcdk_test_cuda(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
-
-    cuInit(0);
 
     int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
 
@@ -355,3 +357,12 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     return 0;
 }
+
+#else //__cuda_cuda_h__
+
+int abcdk_test_cuda(abcdk_option_t *args)
+{
+    return 0;
+}
+
+#endif //__cuda_cuda_h__

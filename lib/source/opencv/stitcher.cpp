@@ -241,7 +241,13 @@ void abcdk_opencv_stitcher_destroy(abcdk_opencv_stitcher_t **ctx)
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
 }
 
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create(uint32_t tag)
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create()
+{
+    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
+    return NULL;
+}
+
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create_cuda(CUcontext cuda_ctx)
 {
     abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
     return NULL;

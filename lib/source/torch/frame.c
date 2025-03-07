@@ -31,8 +31,8 @@ abcdk_torch_frame_t *abcdk_torch_frame_alloc()
         return NULL;
 
     ctx->img = NULL;
-    ctx->dts = -1;
-    ctx->pts = -1;
+    ctx->dts = (int64_t)UINT64_C(0x8000000000000000);
+    ctx->pts = (int64_t)UINT64_C(0x8000000000000000);
 
     return ctx;
 }

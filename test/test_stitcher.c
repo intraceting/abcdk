@@ -56,9 +56,11 @@ int abcdk_test_stitcher_cpu(abcdk_option_t *args)
   return 0;
 }
 
+
+
 int abcdk_test_stitcher_cuda(abcdk_option_t *args)
 {
-  cuInit(0);
+#ifdef __cuda_cuda_h__
 
   int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
 
@@ -98,8 +100,8 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
 
   int chk = abcdk_opencv_stitcher_estimate_transform(ctx, 4, cpu_img, cpu_mask, 0.8);
 
-  abcdk_opencv_stitcher_set_warper(ctx,"spherical");
-  //abcdk_opencv_stitcher_set_warper(ctx,"plane");
+  abcdk_opencv_stitcher_set_warper(ctx, "spherical");
+  // abcdk_opencv_stitcher_set_warper(ctx,"plane");
 
   abcdk_opencv_stitcher_build_panorama_param(ctx);
 
@@ -126,6 +128,8 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
   abcdk_cuda_ctx_pop_current(NULL);
 
   abcdk_cuda_ctx_destroy(&cuda_ctx);
+
+#endif //__cuda_cuda_h__
 
   return 0;
 }

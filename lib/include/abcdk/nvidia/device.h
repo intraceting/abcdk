@@ -13,6 +13,13 @@
 __BEGIN_DECLS
 
 /** 
+ * 初始化。
+ * 
+ * @return = 0 成功，< 0  失败。
+*/
+int abcdk_cuda_init(uint32_t flags);
+
+/** 
  * 获取用于执行计算的设备编号。
  * 
  * @return >= 0 成功(设备编号)，< 0  失败。
