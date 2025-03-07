@@ -59,7 +59,7 @@ NVCC_FLAGS += -ccbin ${CC}
 #抑制“未识别的属性”的诊断消息输出，让编译日志更简洁。
 NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
 
-#
+#在GCC中，链接器按照从左到右的顺序解析库，因此想让这个生效，必须写在链接参数的第一个。
 LD_FLAGS += -Wl,--as-needed
 
 #
