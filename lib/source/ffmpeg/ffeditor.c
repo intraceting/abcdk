@@ -651,7 +651,7 @@ next_packet:
     /*按需丢弃延时过多的帧，以便减少延时。*/
     if (obsolete)
     {
-        abcdk_trace_printf(LOG_WARNING, "拉流延时超过设定阈值(delay_max=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。",
+        abcdk_trace_printf(LOG_WARNING, TT("拉流延时超过设定阈值(delay_max=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。"),
                            ctx->cfg.read_delay_max,pkt->stream_index, 
                            abcdk_ffeditor_ts2sec(ctx, pkt->stream_index, pkt->dts), 
                            abcdk_ffeditor_ts2sec(ctx, pkt->stream_index, pkt->pts));
@@ -1108,7 +1108,7 @@ int abcdk_ffeditor_write_packet2(abcdk_ffeditor_t *ctx, void *data, int size, in
     }
     else if(codec_p->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-        ABCDK_ASSERT(0,"fix me.");
+        ABCDK_ASSERT(0,TT("fix me."));
     }
 
     chk = abcdk_ffeditor_write_packet(ctx, &pkt, NULL);

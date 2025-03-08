@@ -70,7 +70,7 @@ __BEGIN_DECLS
 
 int abcdk_cuda_tensorproc_reshape(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 

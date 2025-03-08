@@ -498,43 +498,43 @@ NEXT_LOOP:
 
 void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
 }
 
 
 abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
     return NULL;
 }
 
 abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file, int pubkey)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
     return NULL;
 }
 
 int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx,int fd,int flag)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
     return -1;
 }
 
 int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx,int flag)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
     return -1;
 }
 
 ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx,const void *data,size_t size)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
     return 0;
 }
 
 ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx,void *data,size_t size)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenSSL工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
     return 0;
 }
 

@@ -94,11 +94,11 @@ static int _abcdk_enigma_init_check(abcdk_enigma_t *ctx,uint8_t rotors[],uint8_t
         {
             c = rotors[y * ctx->cols + x];
 
-            ABCDK_ASSERT(c < ctx->cols,"转子中内字符的值超出通道范围。");
+            ABCDK_ASSERT(c < ctx->cols,TT("转子中内字符的值超出通道范围。"));
 
             chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
 
-            ABCDK_ASSERT(chk == 0,"每个转子内字符的值不能出现重复。");
+            ABCDK_ASSERT(chk == 0,TT("每个转子内字符的值不能出现重复。"));
         }
     }
 
@@ -109,11 +109,11 @@ static int _abcdk_enigma_init_check(abcdk_enigma_t *ctx,uint8_t rotors[],uint8_t
     {
         c = rboard[x];
 
-        ABCDK_ASSERT(c < ctx->cols,"反射板字符的值超出范围。");
+        ABCDK_ASSERT(c < ctx->cols,TT("反射板字符的值超出范围。"));
 
         chk = abcdk_bloom_mark(chk_dict, sizeof(chk_dict),c);
 
-        ABCDK_ASSERT(chk == 0,"在反射板内字符的值不能出现重复。");
+        ABCDK_ASSERT(chk == 0,TT("在反射板内字符的值不能出现重复。"));
     }
 
     return 0;

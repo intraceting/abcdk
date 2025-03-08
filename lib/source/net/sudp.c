@@ -102,7 +102,7 @@ static void _abcdk_sudp_ctx_unref(abcdk_sudp_t **ctx)
     assert(ctx_p->refcount == 0);
     ctx_p->magic = 0xcccccccc;
 
-    ABCDK_ASSERT(ctx_p->worker_ctx == NULL, "销毁前必须先停止。");
+    ABCDK_ASSERT(ctx_p->worker_ctx == NULL, TT("销毁前必须先停止。"));
 
     abcdk_asioex_destroy(&ctx_p->asioex_ctx);
     abcdk_nonce_destroy(&ctx_p->nonce_ctx);
@@ -308,7 +308,7 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node, const uint8_t *key, size_t 
     chk = ((node->cipherex_in && node->cipherex_out) ? 0 : -1);
 
 #else  // OPENSSL_VERSION_NUMBER
-    abcdk_trace_printf(LOG_WARNING, "当前环境未包含加密套件，忽略密钥文件。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境未包含加密套件，忽略密钥文件。"));
 #endif // OPENSSL_VERSION_NUMBER
 
     abcdk_rwlock_unlock(node->cipher_locker);
@@ -459,7 +459,7 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 
     assert(node != NULL && cfg != NULL);
     assert(cfg->bind_addr.family == AF_INET || cfg->bind_addr.family == AF_INET6);
-    ABCDK_ASSERT(cfg->input_cb != NULL, "未绑定通知回调函数，通讯对象无法正常工作。");
+    ABCDK_ASSERT(cfg->input_cb != NULL, TT("未绑定通知回调函数，通讯对象无法正常工作。"));
 
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_sudp_refer(node);
@@ -518,7 +518,7 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING, "绑定设备需要root权限支持，忽略配置。");
+            abcdk_trace_printf(LOG_WARNING, TT("绑定设备需要root权限支持，忽略配置。"));
         }
     }
 
@@ -565,7 +565,7 @@ static void _abcdk_sudp_input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remo
     if (chk != 0)
     {
         abcdk_sockaddr_to_string(remote_str, remote, 0);
-        abcdk_trace_printf(LOG_WARNING, "NONCE无效(%d)，丢弃来自(%s)的数据包。\n", chk, remote_str);
+        abcdk_trace_printf(LOG_WARNING, TT("NONCE无效(%d)，丢弃来自(%s)的数据包。\n"), chk, remote_str);
         return;
     }
 
@@ -585,7 +585,7 @@ static void _abcdk_sudp_input_hook(abcdk_sudp_node_t *node, abcdk_sockaddr_t *re
         if (!dec_p)
         {
             abcdk_sockaddr_to_string(remote_str, remote, 0);
-            abcdk_trace_printf(LOG_WARNING, "解密错误，丢弃来自(%s)的数据包。\n", remote_str);
+            abcdk_trace_printf(LOG_WARNING, TT("解密错误，丢弃来自(%s)的数据包。\n"), remote_str);
             
         }
         else
@@ -651,7 +651,7 @@ static int _abcdk_sudp_output_hook(abcdk_sudp_node_t *node, abcdk_sockaddr_t *re
 
     if (chk <= 0)
     {
-        abcdk_trace_printf(LOG_DEBUG, "输出缓慢，当前数据包未能发送。\n");
+        abcdk_trace_printf(LOG_DEBUG, TT("输出缓慢，当前数据包未能发送。\n"));
         return -1;
     }
 

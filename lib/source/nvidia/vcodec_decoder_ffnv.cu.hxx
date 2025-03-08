@@ -267,7 +267,7 @@ namespace abcdk
                         cuda_chk = m_funcs->cuvidGetDecodeStatus(m_decoder, info->picture_index, &status);
                         if (cuda_chk == CUDA_SUCCESS && (status.decodeStatus == cuvidDecodeStatus_Error || status.decodeStatus == cuvidDecodeStatus_Error_Concealed))
                         {
-                            abcdk_trace_printf(LOG_WARNING, "Decode Error occurred for picture %d", m_pic_in_decode_order[info->picture_index]);
+                            abcdk_trace_printf(LOG_WARNING, TT("Decode Error occurred for picture %d"), m_pic_in_decode_order[info->picture_index]);
                         }
                     }
 
@@ -299,7 +299,7 @@ namespace abcdk
                     }
                     else
                     {
-                        abcdk_trace_printf(LOG_WARNING, "内存不足。");
+                        abcdk_trace_printf(LOG_WARNING, TT("内存不足。"));
                     }
 
                     chk = m_funcs->cuvidUnmapVideoFrame(m_decoder, src_frame);

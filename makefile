@@ -161,10 +161,15 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test
+.PHONY: lib tool test tt
 
 #
-all: lib tool test
+all: lib tool test tt
+
+#
+tt:
+	find $(CURDIR)/lib/source/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" >> $(BUILD_PATH)/gettext.filelist.txt
+	xgettext --force-po --no-wrap --no-location -o $(BUILD_PATH)/gettext.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/gettext.filelist.txt -L c++
 
 #
 lib: lib-src
@@ -334,6 +339,7 @@ install-runtime:
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
 	cp -rf $(CURDIR)/share/. ${INSTALL_PATH_DOC}/abcdk/
+	cp -f $(BUILD_PATH)/gettext.pot ${INSTALL_PATH_DOC}/abcdk/locale/gettext.pot
 #	
 	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;

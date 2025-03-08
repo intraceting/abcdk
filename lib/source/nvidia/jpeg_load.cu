@@ -41,7 +41,7 @@ abcdk_torch_image_t *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx)
 
 abcdk_torch_image_t *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 

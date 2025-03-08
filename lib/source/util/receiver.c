@@ -527,7 +527,7 @@ const void *abcdk_receiver_data(abcdk_receiver_t *ctx, off_t off)
     p = ctx->buf;
     l = ctx->offset;
 
-    ABCDK_ASSERT(off < l, "偏移量必须小于数据长度。");
+    ABCDK_ASSERT(off < l, TT("偏移量必须小于数据长度。"));
 
     p = ABCDK_PTR2VPTR(p, off);
 
@@ -594,7 +594,7 @@ const void *abcdk_receiver_body(abcdk_receiver_t *ctx, off_t off)
     hlen = abcdk_receiver_header_length(ctx);
     dlen = abcdk_receiver_body_length(ctx);
 
-    ABCDK_ASSERT(off < dlen, "偏移量必须小于实体长度。");
+    ABCDK_ASSERT(off < dlen, TT("偏移量必须小于实体长度。"));
 
     return abcdk_receiver_data(ctx, hlen + off);
 }

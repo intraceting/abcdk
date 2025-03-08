@@ -164,7 +164,7 @@ int abcdk_cuda_imgproc_warp_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_
                                const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi, const abcdk_torch_point_t src_quad[4],
                                int warp_mode, int inter_mode)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 

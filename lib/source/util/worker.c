@@ -265,7 +265,7 @@ int abcdk_worker_dispatch_ex(abcdk_worker_t *ctx,uint64_t event,void *item,int k
     }
     else
     {
-        abcdk_trace_printf(LOG_DEBUG, "处理缓慢，队列积压过长(len=%d)，丢弃当前作业(event=%llu,item=%p)。\n", qlen, event, item);
+        abcdk_trace_printf(LOG_DEBUG, TT("处理缓慢，队列积压过长(len=%d)，丢弃当前作业(event=%llu,item=%p)。\n"), qlen, event, item);
 
         _abcdk_worker_item_free(&item_p);
         chk = -1;

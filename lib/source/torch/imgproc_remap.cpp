@@ -28,7 +28,7 @@ static int _abcdk_torch_imgproc_remap_8u(int channels, int packed,
     assert(xmap != NULL && xmap_ws > 0);
     assert(ymap != NULL && ymap_ws > 0);
 
-    ABCDK_ASSERT(dst_roi == NULL && src_roi == NULL,"尚未支持感兴趣区域。");
+    ABCDK_ASSERT(dst_roi == NULL && src_roi == NULL,TT("尚未支持感兴趣区域。"));
 
     tmp_dst_size.width = dst_w;
     tmp_dst_size.height = dst_h;
@@ -84,7 +84,7 @@ int abcdk_torch_imgproc_remap_8u(abcdk_torch_image_t *dst, const abcdk_torch_rec
                                  const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
                                  int inter_mode)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
 

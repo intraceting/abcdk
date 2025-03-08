@@ -65,13 +65,13 @@ void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
     while (p->pop_nbs > 0)
     {
         abcdk_mutex_wait(p->mutex, 60 * 60 * 1000);
-        ABCDK_ASSERT(p->pop_nbs <= 0, "当您看见这个消息时，表示已弹出的连接还有未被回收的。");
+        ABCDK_ASSERT(p->pop_nbs <= 0, TT("当您看见这个消息时，表示已弹出的连接还有未被回收的。"));
     }
 
     /*关闭所有连接。*/
     while (abcdk_pool_pull(p->pool, &odbc_p) == 0)
     {
-        ABCDK_ASSERT(odbc_p != NULL, "当您看见这个消息时，表示应用程序已经发生严重的错误。");
+        ABCDK_ASSERT(odbc_p != NULL, TT("当您看见这个消息时，表示应用程序已经发生严重的错误。"));
         abcdk_odbc_disconnect(odbc_p);
         abcdk_odbc_free(&odbc_p);
     }
@@ -90,7 +90,7 @@ abcdk_odbcpool_t *abcdk_odbcpool_create(size_t size, abcdk_odbcpool_connect_cb c
     static volatile uint32_t magic = 1;
     int chk;
 
-    ABCDK_ASSERT(size > 0 && connect_cb != NULL, "池大小不能为0，并且连接回调函数指针不能为空。");
+    ABCDK_ASSERT(size > 0 && connect_cb != NULL, TT("池大小不能为0，并且连接回调函数指针不能为空。"));
 
     p = (abcdk_odbcpool_t*)abcdk_heap_alloc(sizeof(abcdk_odbcpool_t));
     if(!p)
@@ -180,7 +180,7 @@ void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
 
     assert(ctx != NULL && odbc != NULL);
     
-    ABCDK_ASSERT(*odbc != NULL,"无效的连接。");
+    ABCDK_ASSERT(*odbc != NULL,TT("无效的连接。"));
 
     p = ctx;
 
@@ -188,7 +188,7 @@ void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
     odbc_p = *odbc;
     *odbc = NULL;
 
-    ABCDK_ASSERT(p->magic == abcdk_odbc_get_pool(odbc_p),"不属于当前连池。");
+    ABCDK_ASSERT(p->magic == abcdk_odbc_get_pool(odbc_p),TT("不属于当前连池。"));
 
     abcdk_mutex_lock(p->mutex,1);
 
@@ -207,7 +207,7 @@ void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
 
     abcdk_mutex_unlock(p->mutex);
 
-    ABCDK_ASSERT(chk == 0,"连接池已满，可能有不属于这个连接池的连接已经被回收。");
+    ABCDK_ASSERT(chk == 0,TT("连接池已满，可能有不属于这个连接池的连接已经被回收。"));
 }
 
 #endif // defined(__SQL_H) && defined(__SQLEXT_H)

@@ -43,7 +43,7 @@ __BEGIN_DECLS
 
 void *abcdk_cuda_memset(void *dst, int val, size_t size)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 

@@ -88,7 +88,7 @@ END:
         curl_easy_cleanup(curl_ctx);
     abcdk_object_unref(&url_en);
 
-    abcdk_trace_printf(LOG_DEBUG,"++++++++\nsrc: '%s'\nrsp: %ld\nchk: '%s'\n--------\n", url, rspcode, curl_easy_strerror(chk));
+    abcdk_trace_printf(LOG_DEBUG,TT("++++++++\nsrc: '%s'\nrsp: %ld\nchk: '%s'\n--------\n"), url, rspcode, curl_easy_strerror(chk));
 
     if (chk == CURLE_OK && (rspcode == 200||rspcode == 206))
         return 0;
@@ -96,7 +96,7 @@ END:
     return -1;
 #else //CURLINC_CURL_H
     
-    abcdk_trace_printf(LOG_WARNING, "当前环境未包含CURL工具，无法下载文件。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境未包含CURL工具，无法下载文件。"));
     return -1;
 #endif //CURLINC_CURL_H
 }

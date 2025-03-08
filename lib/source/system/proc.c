@@ -172,12 +172,12 @@ pid_t abcdk_proc_vpopen(int *stdin_fd, int *stdout_fd, int *stderr_fd, const cha
 
     vsnprintf(buf,40*1024,cmd,ap);
 
-    abcdk_trace_printf(LOG_DEBUG,"popen: %s",buf);
+    abcdk_trace_printf(LOG_DEBUG,TT("popen: %s"),buf);
 
     pid = abcdk_popen(buf, NULL, 0, 0, NULL, NULL, stdin_fd, stdout_fd, stderr_fd);
     if (pid < 0)
     {
-        abcdk_trace_printf(LOG_ERR, "'%s'执行失败。");
+        abcdk_trace_printf(LOG_ERR, TT("'%s'执行失败。"));
 
         goto ERR;
     }
@@ -226,7 +226,7 @@ int abcdk_proc_signal_block(const sigset_t *news, sigset_t *olds)
 {
     sigset_t default_sigs = {0},*p = NULL;
 
-    ABCDK_ASSERT(getpid() == abcdk_gettid(),"仅限主线程调用。");
+    ABCDK_ASSERT(getpid() == abcdk_gettid(),TT("仅限主线程调用。"));
 
     /*阻塞信号。*/
     abcdk_signal_fill(&default_sigs, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP, -1);
@@ -259,7 +259,7 @@ RETRY:
     if (SIGILL == info.si_signo || SIGTERM == info.si_signo || SIGINT == info.si_signo || SIGQUIT == info.si_signo)
         return 1;
     
-    abcdk_trace_printf(LOG_WARNING, "终止进程，请按Ctrl+c组合键或发送SIGTERM(15)信号。例：kill -s 15 %d\n", getpid());
+    abcdk_trace_printf(LOG_WARNING, TT("终止进程，请按Ctrl+c组合键或发送SIGTERM(15)信号。例：kill -s 15 %d\n"), getpid());
 
 CHECK_RETRY:
 
@@ -280,11 +280,11 @@ int abcdk_proc_subprocess(abcdk_fork_process_cb process_cb, void *opaque,int *ex
     cid = abcdk_fork(process_cb, opaque, NULL, NULL, NULL);
     if (cid < 0)
     {
-        abcdk_trace_printf(LOG_ERR, "无法创建子进程，资源不足。\n");
+        abcdk_trace_printf(LOG_ERR, TT("无法创建子进程，资源不足。\n"));
         return -1;
     }
 
-    abcdk_trace_printf(LOG_INFO, "创建子进程(PID=%d)完成，等待其运行结束。\n", cid);
+    abcdk_trace_printf(LOG_INFO, TT("创建子进程(PID=%d)完成，等待其运行结束。\n"), cid);
 
     for (;;)
     {
@@ -315,7 +315,7 @@ int abcdk_proc_subprocess(abcdk_fork_process_cb process_cb, void *opaque,int *ex
         }
     }
 
-    abcdk_trace_printf(LOG_INFO, "子进程(PID=%d)已终止。\n", cid);
+    abcdk_trace_printf(LOG_INFO, TT("子进程(PID=%d)已终止。\n"), cid);
 
     return chk;
 }
@@ -330,11 +330,11 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
     cid = abcdk_proc_popen(NULL, NULL, NULL, cmdline);
     if (cid < 0)
     {
-        abcdk_trace_printf(LOG_ERR, "父进程无法创建子进程，结束守护服务。\n");
+        abcdk_trace_printf(LOG_ERR, TT("父进程无法创建子进程，结束守护服务。\n"));
         return -1;
     }
 
-    abcdk_trace_printf(LOG_INFO, "创建子进程(PID=%d)完成，等待其运行结束。\n", cid);
+    abcdk_trace_printf(LOG_INFO, TT("创建子进程(PID=%d)完成，等待其运行结束。\n"), cid);
 
     for (;;)
     {
@@ -365,7 +365,7 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
         }
     }
 
-    abcdk_trace_printf(LOG_INFO, "子进程(PID=%d)已终止。\n", cid);
+    abcdk_trace_printf(LOG_INFO, TT("子进程(PID=%d)已终止。\n"), cid);
 
     return chk;
 }

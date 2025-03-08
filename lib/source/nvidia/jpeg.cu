@@ -146,7 +146,7 @@ abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_torch_jcodec_t *ctx, const abcdk_to
 
     ctx_p = (abcdk_cuda_jpeg_t *)ctx->private_ctx;
 
-    ABCDK_ASSERT(ctx_p->encoder, "解码器不能用于编码。");
+    ABCDK_ASSERT(ctx_p->encoder, TT("解码器不能用于编码。"));
 
     if (src->tag == ABCDK_TORCH_TAG_HOST)
     {
@@ -172,7 +172,7 @@ int abcdk_cuda_jpeg_encode_to_file(abcdk_torch_jcodec_t *ctx, const char *dst, c
 
     ctx_p = (abcdk_cuda_jpeg_t *)ctx->private_ctx;
 
-    ABCDK_ASSERT(ctx_p->encoder, "解码器不能用于编码。");
+    ABCDK_ASSERT(ctx_p->encoder, TT("解码器不能用于编码。"));
 
     chk = ctx_p->encoder_ctx->update(dst, src);
     if (chk != 0)
@@ -189,7 +189,7 @@ abcdk_torch_image_t *abcdk_cuda_jpeg_decode(abcdk_torch_jcodec_t *ctx, const voi
 
     ctx_p = (abcdk_cuda_jpeg_t *)ctx->private_ctx;
 
-    ABCDK_ASSERT(!ctx_p->encoder, "编码器不能用于解码。");
+    ABCDK_ASSERT(!ctx_p->encoder, TT("编码器不能用于解码。"));
 
     return ctx_p->decoder_ctx->update(src, src_size);
 }
@@ -202,7 +202,7 @@ abcdk_torch_image_t *abcdk_cuda_jpeg_decode_from_file(abcdk_torch_jcodec_t *ctx,
 
     ctx_p = (abcdk_cuda_jpeg_t *)ctx->private_ctx;
 
-    ABCDK_ASSERT(!ctx_p->encoder, "编码器不能用于解码。");
+    ABCDK_ASSERT(!ctx_p->encoder, TT("编码器不能用于解码。"));
 
     return ctx_p->decoder_ctx->update(src);
 }
@@ -211,31 +211,31 @@ abcdk_torch_image_t *abcdk_cuda_jpeg_decode_from_file(abcdk_torch_jcodec_t *ctx,
 
 abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 abcdk_object_t *abcdk_cuda_jpeg_encode(abcdk_torch_jcodec_t *ctx, const abcdk_torch_image_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 int abcdk_cuda_jpeg_encode_to_file(abcdk_torch_jcodec_t *ctx, const char *dst, const abcdk_torch_image_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 abcdk_torch_image_t *abcdk_cuda_jpeg_decode(abcdk_torch_jcodec_t *ctx, const void *src, int src_size)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 abcdk_torch_image_t *abcdk_cuda_jpeg_decode_from_file(abcdk_torch_jcodec_t *ctx, const void *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 

@@ -80,7 +80,7 @@ int abcdk_torch_image_save(const char *dst, const abcdk_torch_image_t *src)
 
     if (abcdk_strcmp(dst_ext_p, "bmp", 0) != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具，暂时不支持使用当前(%s)格式保存。", dst_ext_p);
+        abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具，暂时不支持使用当前(%s)格式保存。"), dst_ext_p);
         return -1;
     }
  

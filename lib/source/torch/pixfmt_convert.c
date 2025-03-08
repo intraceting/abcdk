@@ -92,13 +92,13 @@ int abcdk_torch_pixfmt_convert_from_ffmpeg(int format)
 
 int abcdk_torch_pixfmt_convert_to_ffmpeg(int format)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
     return -1;
 }
 
 int abcdk_torch_pixfmt_convert_from_ffmpeg(int format)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含FFmpeg工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
     return -1;
 }
 

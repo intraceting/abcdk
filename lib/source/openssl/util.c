@@ -949,9 +949,9 @@ SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *c
         if (chk != 1)
         {
             if (cafile)
-                abcdk_trace_printf(LOG_WARNING, "加载CA证书('%s')错误。\n", cafile);
+                abcdk_trace_printf(LOG_WARNING, TT("加载CA证书('%s')错误。\n"), cafile);
             if (capath)
-                abcdk_trace_printf(LOG_WARNING, "加载CA路径('%s')错误。\n", capath);
+                abcdk_trace_printf(LOG_WARNING, TT("加载CA路径('%s')错误。\n"), capath);
 
             goto ERR;
         }

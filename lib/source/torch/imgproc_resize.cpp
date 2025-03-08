@@ -27,7 +27,7 @@ static int _abcdk_torch_imgproc_resize_8u(int channels, int packed,
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0);
     assert(src != NULL && src_w > 0 && src_ws > 0 && src_h > 0);
 
-    ABCDK_ASSERT(dst_roi == NULL && src_roi == NULL,"尚未支持感兴趣区域。");
+    ABCDK_ASSERT(dst_roi == NULL && src_roi == NULL,TT("尚未支持感兴趣区域。"));
 
     tmp_dst_roi.x = (dst_roi ? dst_roi->x : 0);
     tmp_dst_roi.y = (dst_roi ? dst_roi->y : 0);
@@ -87,7 +87,7 @@ int abcdk_torch_imgproc_resize_8u(abcdk_torch_image_t *dst, const abcdk_torch_re
                                   const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
                                   int keep_aspect_ratio, int inter_mode)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含OpenCV工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
 

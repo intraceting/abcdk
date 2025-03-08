@@ -173,37 +173,37 @@ abcdk_torch_tensor_t *abcdk_cuda_tensor_clone(int dst_in_host, const abcdk_torch
 
 abcdk_torch_tensor_t *abcdk_cuda_tensor_alloc()
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 int abcdk_cuda_tensor_reset(abcdk_torch_tensor_t **ctx, int format, size_t block, size_t width, size_t height, size_t depth, size_t cell, size_t align)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 abcdk_torch_tensor_t *abcdk_cuda_tensor_create(int format, size_t block, size_t width, size_t height, size_t depth, size_t cell, size_t align)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 void abcdk_cuda_tensor_copy(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return ;
 }
 
 void abcdk_cuda_tensor_copy_block(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return;
 }
 
 abcdk_torch_tensor_t *abcdk_cuda_tensor_clone(int dst_in_host, const abcdk_torch_tensor_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 

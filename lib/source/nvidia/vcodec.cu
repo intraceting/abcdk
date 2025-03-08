@@ -144,7 +144,7 @@ int abcdk_cuda_vcodec_encode(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_t **ds
 
     ctx_p = (abcdk_cuda_vcodec_t *)ctx->private_ctx;
 
-    ABCDK_ASSERT(ctx_p->encoder, "解码器不能用于编码。");
+    ABCDK_ASSERT(ctx_p->encoder, TT("解码器不能用于编码。"));
 
     return ctx_p->encoder_ctx->update(dst,src);
 }
@@ -157,7 +157,7 @@ int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst
 
     ctx_p = (abcdk_cuda_vcodec_t *)ctx->private_ctx;
 
-    ABCDK_ASSERT(!ctx_p->encoder, "编码器不能用于解码。");
+    ABCDK_ASSERT(!ctx_p->encoder, TT("编码器不能用于解码。"));
 
     return ctx_p->decoder_ctx->update(dst, src);
 }
@@ -219,31 +219,31 @@ int abcdk_cuda_vcodec_decode_from_ffmpeg(abcdk_torch_vcodec_t *ctx, abcdk_torch_
 
 void abcdk_cuda_vcodec_destroy(abcdk_torch_vcodec_t **ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return ;
 }
 
 abcdk_torch_vcodec_t *abcdk_cuda_vcodec_create(int encode, CUcontext cuda_ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 int abcdk_cuda_vcodec_start(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_param_t *param)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 int abcdk_cuda_vcodec_encode(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
@@ -251,13 +251,13 @@ int abcdk_cuda_vcodec_decode(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst
 
 int abcdk_cuda_vcodec_encode_to_ffmpeg(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 int abcdk_cuda_vcodec_decode_from_ffmpeg(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 

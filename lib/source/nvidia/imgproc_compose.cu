@@ -85,7 +85,7 @@ __BEGIN_DECLS
 int abcdk_cuda_imgproc_compose_8u(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
                                   uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 

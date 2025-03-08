@@ -65,13 +65,13 @@ abcdk_torch_frame_t *abcdk_cuda_frame_create(int width, int height, int pixfmt, 
 
 int abcdk_cuda_frame_reset(abcdk_torch_frame_t **ctx, int width, int height, int pixfmt, int align)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 abcdk_torch_frame_t *abcdk_cuda_frame_create(int width, int height, int pixfmt, int align)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 

@@ -238,7 +238,9 @@
 #endif
 
 /** 定义gettext别名。*/ 
-#define ABCDK_GETTEXT(T) gettext(T)
-
+#define ABCDK_TT(T) gettext(T)
+#ifndef TT
+#define TT ABCDK_TT 
+#endif //TT
 
 #endif //ABCDK_UTIL_DEFS_H

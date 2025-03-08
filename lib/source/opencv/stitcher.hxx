@@ -669,7 +669,7 @@ namespace abcdk
                 assert(imgs.size() >= 2);
                 assert(masks.size() == 0 || imgs.size() == masks.size());
 
-                ABCDK_ASSERT(!m_camera_param_ok, "评估参数已经建立，不能重复评估。");
+                ABCDK_ASSERT(!m_camera_param_ok, TT("评估参数已经建立，不能重复评估。"));
 
                 find_feature(imgs, masks);
 
@@ -694,8 +694,8 @@ namespace abcdk
 
             int BuildPanoramaParam()
             {
-                ABCDK_ASSERT(!m_panorama_param_ok, "全景参数已经构建完成，不能重复构建。");
-                ABCDK_ASSERT(m_camera_param_ok, "评估参数未建立，或未加载。");
+                ABCDK_ASSERT(!m_panorama_param_ok, TT("全景参数已经构建完成，不能重复构建。"));
+                ABCDK_ASSERT(m_camera_param_ok, TT("评估参数未建立，或未加载。"));
 
                 if (!panorama_param_correct())
                     return -1;
@@ -711,7 +711,7 @@ namespace abcdk
                 assert(imgs.size() >= 0);
                 assert(imgs.size() >= m_img_good_idxs.size());
 
-                ABCDK_ASSERT(m_panorama_param_ok, "全景参数构建完成后才能执行全景融合。");
+                ABCDK_ASSERT(m_panorama_param_ok, TT("全景参数构建完成后才能执行全景融合。"));
 
                 ctx_push_current();
 

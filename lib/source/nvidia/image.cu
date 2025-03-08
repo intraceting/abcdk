@@ -233,42 +233,42 @@ abcdk_torch_image_t *abcdk_cuda_image_load(const char *src, int gray)
 
 abcdk_torch_image_t *abcdk_cuda_image_alloc()
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 int abcdk_cuda_image_reset(abcdk_torch_image_t **ctx, int width, int height, int pixfmt, int align)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 abcdk_torch_image_t *abcdk_cuda_image_create(int width, int height, int pixfmt, int align)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 int abcdk_cuda_image_copy(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
 void abcdk_cuda_image_copy_plane(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
 }
 
 abcdk_torch_image_t *abcdk_cuda_image_clone(int dst_in_host, const abcdk_torch_image_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
 int abcdk_cuda_image_save(const char *dst, const abcdk_torch_image_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, "当前环境在构建时未包含CUDA工具。");
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
