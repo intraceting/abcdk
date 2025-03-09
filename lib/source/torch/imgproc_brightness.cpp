@@ -33,7 +33,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_brightness(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[])
+int abcdk_torch_imgproc_brightness(abcdk_torch_image_t *dst, float alpha[], float bate[])
 {
     int dst_depth;
 

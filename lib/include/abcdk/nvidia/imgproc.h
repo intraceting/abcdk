@@ -20,7 +20,7 @@ __BEGIN_DECLS
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_stuff_8u(abcdk_torch_image_t *dst, uint8_t scalar[]);
+int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[]);
 
 /**
  * 全景图像融合(从左到右)。
@@ -35,9 +35,9 @@ int abcdk_cuda_imgproc_stuff_8u(abcdk_torch_image_t *dst, uint8_t scalar[]);
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_compose_8u(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
-                                  uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w,
-                                  int optimize_seam);
+int abcdk_cuda_imgproc_compose(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
+                               uint32_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w,
+                               int optimize_seam);
 
 /**
  * 调整亮度。
@@ -46,7 +46,7 @@ int abcdk_cuda_imgproc_compose_8u(abcdk_torch_image_t *panorama, abcdk_torch_ima
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[]);
+int abcdk_cuda_imgproc_brightness(abcdk_torch_image_t *dst, float alpha[], float bate[]);
 
 /**
  * 暗通道除雾。
@@ -59,7 +59,7 @@ int abcdk_cuda_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], fl
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_defog_8u(abcdk_torch_image_t *dst, uint8_t dack_a, float dack_m, float dack_w);
+int abcdk_cuda_imgproc_defog(abcdk_torch_image_t *dst, uint32_t dack_a, float dack_m, float dack_w);
 
 /**
  * 画矩形框。
@@ -68,7 +68,7 @@ int abcdk_cuda_imgproc_defog_8u(abcdk_torch_image_t *dst, uint8_t dack_a, float 
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_cuda_imgproc_drawrect_8u(abcdk_torch_image_t *dst, uint8_t color[], int weight, int corner[4]);
+int abcdk_cuda_imgproc_drawrect(abcdk_torch_image_t *dst, uint32_t color[], int weight, int corner[4]);
 
 /**
  * 缩放。
@@ -78,9 +78,9 @@ int abcdk_cuda_imgproc_drawrect_8u(abcdk_torch_image_t *dst, uint8_t color[], in
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_imgproc_resize_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
-                                 const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
-                                 int keep_aspect_ratio, int inter_mode);
+int abcdk_cuda_imgproc_resize(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                              const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
+                              int keep_aspect_ratio, int inter_mode);
 
 /**
  * 变换。
@@ -91,19 +91,19 @@ int abcdk_cuda_imgproc_resize_8u(abcdk_torch_image_t *dst, const abcdk_torch_rec
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_imgproc_warp_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi, const abcdk_torch_point_t dst_quad[4],
-                               const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi, const abcdk_torch_point_t src_quad[4],
-                               int warp_mode, int inter_mode);
+int abcdk_cuda_imgproc_warp(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi, const abcdk_torch_point_t dst_quad[4],
+                            const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi, const abcdk_torch_point_t src_quad[4],
+                            int warp_mode, int inter_mode);
 
 /**
  * 重映射。
  *
  * @return 0 成功，< 0 失败。
  */
-int abcdk_cuda_imgproc_remap_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
-                                const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
-                                const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
-                                int inter_mode);
+int abcdk_cuda_imgproc_remap(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                             const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
+                             const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
+                             int inter_mode);
 
 __END_DECLS
 

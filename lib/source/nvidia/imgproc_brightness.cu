@@ -52,7 +52,7 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_brightness(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[])
+int abcdk_cuda_imgproc_brightness(abcdk_torch_image_t *dst, float alpha[], float bate[])
 {
     int dst_depth;
 
@@ -74,7 +74,7 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_brightness_8u(abcdk_torch_image_t *dst, float alpha[], float bate[])
+int abcdk_cuda_imgproc_brightness(abcdk_torch_image_t *dst, float alpha[], float bate[])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;

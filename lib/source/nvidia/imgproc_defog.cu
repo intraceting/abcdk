@@ -13,7 +13,7 @@
 template <typename T>
 ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_defog_2d2d(int channels, bool packed,
                                                         T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
-                                                        float dack_m, T dack_a, float dack_w)
+                                                        uint32_t dack_a, float dack_m, float dack_w)
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
@@ -23,7 +23,7 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_defog_2d2d(int channels, bool packe
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_defog(int channels, bool packed,
                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
-                                                T dack_a, float dack_m, float dack_w)
+                                                uint32_t dack_a, float dack_m, float dack_w)
 {
     uint3 dim[2];
 
@@ -41,7 +41,7 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_defog(int channels, bool packed,
 __BEGIN_DECLS
 
 
-int abcdk_cuda_imgproc_defog_8u(abcdk_torch_image_t *dst, uint8_t dack_a, float dack_m, float dack_w)
+int abcdk_cuda_imgproc_defog(abcdk_torch_image_t *dst, uint32_t dack_a, float dack_m, float dack_w)
 {
     int dst_depth;
 
@@ -63,7 +63,7 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_defog_8u(abcdk_torch_image_t *dst, uint8_t dack_a, float dack_m, float dack_w)
+int abcdk_cuda_imgproc_defog(abcdk_torch_image_t *dst, uint32_t dack_a, float dack_m, float dack_w)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;

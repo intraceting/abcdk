@@ -108,16 +108,16 @@ namespace abcdk
             }
 
             template <typename T>
-            ABCDK_INVOKE_DEVICE T pixel_clamp(T src)
+            ABCDK_INVOKE_DEVICE T pixel(uint64_t src)
             {
                 if (sizeof(T) == sizeof(uint8_t))
-                    return clamp<int64_t>(src, 0, 0xff);
+                    return (T)clamp<uint64_t>(src, 0, 0xff);
                 else if (sizeof(T) == sizeof(uint16_t))
-                    return clamp<int64_t>(src, 0, 0xffff);
+                    return (T)clamp<uint64_t>(src, 0, 0xffff);
                 else if (sizeof(T) == sizeof(uint32_t))
-                    return clamp<int64_t>(src, 0, 0xffffffff);
+                    return (T)clamp<uint64_t>(src, 0, 0xffffffff);
                 else
-                    return src;
+                    return (T)src;
             }
         } // namespace util
 

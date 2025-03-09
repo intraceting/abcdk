@@ -17,7 +17,7 @@ namespace abcdk
         {
             template <typename T>
             ABCDK_INVOKE_DEVICE void stuff(int channels, bool packed,
-                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar,
+                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
                                            size_t tid)
             {
 
@@ -31,7 +31,7 @@ namespace abcdk
                 {
                     size_t dst_off = abcdk::generic::util::off<T>(packed, dst_w, dst_ws, dst_h, channels, 0, x, y, i);
 
-                    *abcdk::generic::util::ptr<T>(dst, dst_off) = (scalar ? scalar[i] : (T)0);
+                    *abcdk::generic::util::ptr<T>(dst, dst_off) = (scalar ? abcdk::generic::util::pixel<T>(scalar[i]) : (T)0);
                 }
             }
 

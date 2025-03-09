@@ -9,7 +9,7 @@
 
 template <typename T>
 ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d(int channels, bool packed,
-                                                     T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar)
+                                                     T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar)
 {
     for (size_t i = 0; i < dst_w * dst_h; i++)
     {
@@ -19,7 +19,7 @@ ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d(int channels, bool packed,
 
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_stuff(int channels, bool packed,
-                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar)
+                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar)
 {
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0 && scalar != NULL);
 
@@ -30,7 +30,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_stuff(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_stuff_8u(abcdk_torch_image_t *dst, uint8_t scalar[])
+int abcdk_torch_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[])
 {
     int dst_depth;
 

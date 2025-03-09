@@ -20,7 +20,7 @@ namespace abcdk
             ABCDK_INVOKE_DEVICE void compose(int channels, bool packed,
                                              T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                              T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                             T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam,
+                                             uint32_t *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam,
                                              size_t tid)
             {
                 size_t y = tid / compose_w;
@@ -31,7 +31,7 @@ namespace abcdk
                 size_t panorama_scalars = 0;
                 size_t compose_scalars = 0;
 
-                /*融合权重。-1.0 ～ 0～ 1.0 。*/
+                /*融合权重。-1.0 ～ 0 ～ 1.0 。*/
                 double scale = 0;
 
                 if (x >= compose_w || y >= compose_h)
@@ -43,10 +43,10 @@ namespace abcdk
                     compose_offset[i] = abcdk::generic::util::off<T>(packed, compose_w, compose_ws, compose_h, channels, 0, x, y, i);
 
                     /*计算融合图象素是否为填充色。*/
-                    panorama_scalars += (abcdk::generic::util::obj<T>(panorama, panorama_offset[i]) == scalar[i] ? 1 : 0);
+                    panorama_scalars += (abcdk::generic::util::obj<T>(panorama, panorama_offset[i]) == abcdk::generic::util::pixel<T>(scalar[i]) ? 1 : 0);
 
                     /*计算融合图象素是否为填充色。*/
-                    compose_scalars += (abcdk::generic::util::obj<T>(compose, compose_offset[i]) == scalar[i] ? 1 : 0);
+                    compose_scalars += (abcdk::generic::util::obj<T>(compose, compose_offset[i]) == abcdk::generic::util::pixel<T>(scalar[i]) ? 1 : 0);
                 }
 
                 if (panorama_scalars == channels)

@@ -51,10 +51,10 @@ static int _abcdk_torch_imgproc_remap_8u(int channels, int packed,
     return 0;
 }
 
-int abcdk_torch_imgproc_remap_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
-                                 const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
-                                 const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
-                                 int inter_mode)
+int abcdk_torch_imgproc_remap(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                              const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
+                              const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
+                              int inter_mode)
 {
     int dst_depth;
 

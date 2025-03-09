@@ -106,7 +106,7 @@ namespace abcdk
                     if (chk != 0)
                         return false;
 
-                    abcdk_torch_imgproc_remap_8u(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, cv::INTER_CUBIC);
+                    abcdk_torch_imgproc_remap(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, cv::INTER_CUBIC);
                 }
 
                 return true;
@@ -114,7 +114,7 @@ namespace abcdk
 
             virtual bool compose(abcdk_torch_image_t *out, bool optimize_seam = true)
             {
-                uint8_t scalar[4] = {0};
+                uint32_t scalar[4] = {0};
                 int chk;
 
                 assert(m_warper_outs.size() >= 0);
@@ -135,7 +135,7 @@ namespace abcdk
                     /*计算重叠宽度。*/
                     int overlap_w = (i <= 0 ? 0 : (m_blend_rects[i - 1].width + m_blend_rects[i - 1].x - m_blend_rects[i].x));
 
-                    abcdk_torch_imgproc_compose_8u(out, imgs_it, scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
+                    abcdk_torch_imgproc_compose(out, imgs_it, scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
                 }
 
                 return true;

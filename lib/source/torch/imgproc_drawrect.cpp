@@ -10,7 +10,7 @@
 template <typename T>
 ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_drawrect_1d(int channels, bool packed,
                                                         T *dst, size_t w, size_t ws, size_t h,
-                                                        T *color, int weight, int *corner)
+                                                        uint32_t *color, int weight, int *corner)
 {
 
     // #pragma omp parallel
@@ -23,7 +23,7 @@ ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_drawrect_1d(int channels, bool packe
 template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_drawrect(int channels, bool packed,
                                                     T *dst, size_t w, size_t ws, size_t h,
-                                                    T *color, int weight, int *corner)
+                                                    uint32_t *color, int weight, int *corner)
 {
     assert(dst != NULL && w > 0 && ws > 0 && h > 0);
     assert(color != NULL && weight > 0 && corner != NULL);
@@ -35,7 +35,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_drawrect(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_drawrect_8u(abcdk_torch_image_t *dst, uint8_t color[], int weight, int corner[4])
+int abcdk_torch_imgproc_drawrect(abcdk_torch_image_t *dst, uint32_t color[], int weight, int corner[4])
 {
     int dst_depth;
 

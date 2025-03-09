@@ -31,7 +31,7 @@ namespace abcdk
                 {
                     size_t dst_offset = abcdk::generic::util::off<T>(packed, dst_w, dst_ws, dst_h, channels, 0, x, y, z);
 
-                    *abcdk::generic::util::ptr<T>(dst, dst_offset) = (T)abcdk::generic::util::pixel_clamp<float>(abcdk::generic::util::obj<T>(dst, dst_offset) * alpha[z] + bate[z]);
+                    *abcdk::generic::util::ptr<T>(dst, dst_offset) = abcdk::generic::util::pixel<T>(abcdk::generic::util::obj<T>(dst, dst_offset) * alpha[z] + bate[z]);
                 }
             }
 

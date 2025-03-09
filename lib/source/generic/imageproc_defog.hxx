@@ -22,7 +22,7 @@ namespace abcdk
             template <typename T>
             ABCDK_INVOKE_DEVICE void defog(int channels, bool packed,
                                            T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, 
-                                           float dack_m, T dack_a, float dack_w,
+                                           uint32_t dack_a, float dack_m, float dack_w,
                                            size_t tid)
             {
 
@@ -32,7 +32,9 @@ namespace abcdk
                 if (x >= dst_w || y >= dst_h)
                     return;
 
-                T dack_c = (T)abcdk::generic::util::pixel_clamp<uint32_t>(0xffffffff);
+                dack_a = abcdk::generic::util::pixel<T>(dack_a);
+
+                T dack_c = abcdk::generic::util::pixel<T>(0xffffffff);
                 size_t dst_of[4] = {0, 0, 0, 0};
 
                 for (size_t z = 0; z < channels; z++)
@@ -47,7 +49,7 @@ namespace abcdk
 
                 for (size_t z = 0; z < channels; z++)
                 {
-                    *abcdk::generic::util::ptr<T>(dst, dst_of[z]) = abcdk::generic::util::pixel_clamp<T>(((abcdk::generic::util::obj<T>(dst, dst_of[z]) - dack_a) / t + dack_a));
+                    *abcdk::generic::util::ptr<T>(dst, dst_of[z]) = abcdk::generic::util::pixel<T>(((abcdk::generic::util::obj<T>(dst, dst_of[z]) - dack_a) / t + dack_a));
                 }
             }
 

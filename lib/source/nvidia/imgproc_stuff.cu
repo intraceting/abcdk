@@ -11,7 +11,7 @@
 #ifdef __cuda_cuda_h__
 
 template <typename T>
-ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar)
+ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar)
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
@@ -19,21 +19,21 @@ ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packe
 }
 
 template <typename T>
-ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, T *scalar)
+ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar)
 {
     void *gpu_scalar;
     uint3 dim[2];
 
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0 && scalar != NULL);
 
-    gpu_scalar = abcdk_cuda_copyfrom(scalar, channels * sizeof(T), 1);
+    gpu_scalar = abcdk_cuda_copyfrom(scalar, channels * sizeof(uint32_t), 1);
     if (!gpu_scalar)
         return -1;
 
     /*2D-2D*/
     abcdk::cuda::grid::make_dim_dim(dim, dst_w * dst_h, 64);
 
-    _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (T*)gpu_scalar);
+    _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t*)gpu_scalar);
     abcdk_cuda_free(&gpu_scalar);
 
     return 0;
@@ -41,7 +41,7 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_stuff_8u(abcdk_torch_image_t *dst, uint8_t scalar[])
+int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[])
 {
     int dst_depth;
 
@@ -61,7 +61,7 @@ __END_DECLS
 
 #else // __cuda_cuda_h__
 
-int abcdk_cuda_imgproc_stuff_8u(abcdk_torch_image_t *dst, uint8_t scalar[])
+int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;

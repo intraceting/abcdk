@@ -66,10 +66,10 @@ static int _abcdk_cuda_imgproc_remap_8u(int channels, int packed,
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_remap_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
-                                const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
-                                const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
-                                int inter_mode)
+int abcdk_cuda_imgproc_remap(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                             const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
+                             const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
+                             int inter_mode)
 {
     int dst_depth;
 
@@ -98,10 +98,10 @@ __END_DECLS
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_remap_8u(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
-                                const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
-                                const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
-                                int inter_mode)
+int abcdk_cuda_imgproc_remap(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
+                             const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
+                             const abcdk_torch_image_t *xmap, const abcdk_torch_image_t *ymap,
+                             int inter_mode)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;

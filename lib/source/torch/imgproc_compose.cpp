@@ -11,7 +11,7 @@ template <typename T>
 ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_compose_1d(int channels, bool packed,
                                                        T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                                        T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                                       T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
+                                                       uint32_t *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
 
     for (size_t i = 0; i < compose_w * compose_h; i++)
@@ -26,7 +26,7 @@ template <typename T>
 ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_compose(int channels, bool packed,
                                                    T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
                                                    T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                                   T *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam)
+                                                   uint32_t *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam)
 {
     assert(panorama != NULL && panorama_w > 0 && panorama_ws > 0 && panorama_h > 0);
     assert(compose != NULL && compose_w > 0 && compose_ws > 0 && compose_h > 0);
@@ -40,8 +40,8 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_compose(int channels, bool packed,
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_compose_8u(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
-                                   uint8_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
+int abcdk_torch_imgproc_compose(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
+                                uint32_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
     int dst_depth;
 

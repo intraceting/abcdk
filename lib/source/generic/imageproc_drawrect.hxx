@@ -22,7 +22,7 @@ namespace abcdk
              */
             template <typename T>
             ABCDK_INVOKE_DEVICE void drawrect(int channels, bool packed,
-                                              T *dst, size_t w, size_t ws, size_t h, T *color, int weight, int *corner,
+                                              T *dst, size_t w, size_t ws, size_t h, uint32_t *color, int weight, int *corner,
                                               size_t tid)
             {
                 size_t y = tid / w;
@@ -62,7 +62,7 @@ namespace abcdk
                 for (size_t z = 0; z < channels; z++)
                 {
                     size_t off = abcdk::generic::util::off<T>(packed, w, ws, h, channels, 0, x, y, z);
-                    *abcdk::generic::util::ptr<T>(dst, off) = color[z];
+                    *abcdk::generic::util::ptr<T>(dst, off) = abcdk::generic::util::pixel<T>(color[z]);
                 }
             }
 
