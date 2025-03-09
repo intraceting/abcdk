@@ -137,6 +137,7 @@ LIB_SRC_FILES += $(wildcard lib/source/odbc/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
+LIB_SRC_FILES += $(wildcard lib/source/license/*.c)
 LIB_SRC_FILES += $(wildcard lib/source/torch/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
@@ -168,7 +169,7 @@ all: lib tool test tt
 
 #
 tt:
-	find $(CURDIR)/lib/source/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" >> $(BUILD_PATH)/gettext.filelist.txt
+	find $(CURDIR)/lib/source/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/gettext.filelist.txt
 	xgettext --force-po --no-wrap --no-location -o $(BUILD_PATH)/gettext.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/gettext.filelist.txt -L c++
 
 #
@@ -268,6 +269,12 @@ $(OBJ_PATH)/lib/source/opencv/%.cpp.o: lib/source/opencv/%.cpp
 	mkdir -p $(OBJ_PATH)/lib/source/opencv/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
+	mkdir -p $(OBJ_PATH)/lib/source/license/
+	rm -f $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/lib/source/torch/%.o: lib/source/torch/%.c

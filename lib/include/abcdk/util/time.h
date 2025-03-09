@@ -39,6 +39,7 @@ uint64_t abcdk_time_clock2kind_realtime(uint8_t precision);
 */
 uint64_t abcdk_time_clock2kind_systime(uint8_t precision);
 
+
 /**
  * 本地时间转国际时间。
  * 
