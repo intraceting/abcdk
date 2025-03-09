@@ -30,6 +30,16 @@ uint64_t abcdk_time_clock2kind(struct timespec* ts,uint8_t precision);
 uint64_t abcdk_time_clock2kind_with(clockid_t id ,uint8_t precision);
 
 /**
+ * 获取时间戳(自然时间)并整形化。
+*/
+uint64_t abcdk_time_clock2kind_realtime(uint8_t precision);
+
+/**
+ * 获取时间戳(系统时间)并整形化。
+*/
+uint64_t abcdk_time_clock2kind_systime(uint8_t precision);
+
+/**
  * 本地时间转国际时间。
  * 
  * @param reverse 0 本地转国际，!0 国际转本地。
