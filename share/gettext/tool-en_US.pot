@@ -1,0 +1,18 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2025 The ABCDK project authors. All Rights Reserved.
+# This file is distributed under the same license as the ABCDK package.
+# INTRACETING<traceting@gmail.com>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: ABCDK 3.0.1\n"
+"Report-Msgid-Bugs-To: INTRACETING<traceting@gmail.com>\n"
+"POT-Creation-Date: 2025-03-10 15:14+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: INTRACETING<traceting@gmail.com>\n"
+"Language-Team: INTRACETING<traceting@gmail.com>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"

@@ -137,6 +137,8 @@ LSB_RELEASE="linux-gnu"
 
 #
 XGETTEXT_BIN=$(which xgettext)
+MSGFMT_BIN=$(which msgfmt)
+MSGCAT_BIN=$(which msgcat)
 
 #
 COMPILER_PREFIX=/usr/bin/
@@ -168,14 +170,14 @@ THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
 
 #
-CUDA_FIND_ROOT=
-CUDA_COMPILER_BIN=
+CUDA_FIND_ROOT=""
+CUDA_COMPILER_BIN=""
 
 #
-CUDNN_FIND_ROOT=
+CUDNN_FIND_ROOT=""
 
 #
-TRNSORRT_FIND_ROOT=
+TRNSORRT_FIND_ROOT=""
 
 #
 PrintUsage()
@@ -360,6 +362,12 @@ if [ $? -ne 0 ];then
 }
 fi
 
+#
+CheckHavePackage pkgconfig 1
+if [ $? -ne 0 ];then
+    echo "'$(CheckHavePackage pkgconfig 4)' not found."
+    exit 22
+fi
 
 #
 if [ "${_NATIVE_PLATFORM}" == "${_TARGET_PLATFORM}" ];then
@@ -390,12 +398,6 @@ if [ "${_NATIVE_PLATFORM}" == "${_TARGET_PLATFORM}" ];then
 }
 fi
 
-#
-CheckHavePackage pkgconfig 1
-if [ $? -ne 0 ];then
-    echo "'$(CheckHavePackage pkgconfig 4)' not found."
-    exit 22
-fi
 
 #
 if [ "${CUDA_FIND_ROOT}" == "" ];then
@@ -592,6 +594,8 @@ BUILD_PACKAGE_PATH = ${BUILD_PACKAGE_PATH}
 LSB_RELEASE = ${LSB_RELEASE}
 #
 XGETTEXT = ${XGETTEXT_BIN}
+MSGFMT = ${MSGFMT_BIN}
+MSGCAT = ${MSGCAT_BIN}
 #
 CC = ${_TARGET_COMPILER_BIN}
 AR = ${_TARGET_COMPILER_AR}

@@ -162,21 +162,23 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test tt
+.PHONY: lib tool test xgettext
 
 #
-all: lib tool test tt
-
-#
-tt:
+xgettext:
 	@if [ -x "${XGETTEXT}" ]; then \
+		cp -f $(CURDIR)/share/gettext/lib-en_US.pot $(BUILD_PATH)/lib-en_US.pot ; \
 		find $(CURDIR)/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt ; \
-		${XGETTEXT} --force-po --no-wrap --no-location -o $(BUILD_PATH)/lib.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/lib-en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
 		rm -f $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		cp -f $(CURDIR)/share/gettext/tool-en_US.pot $(BUILD_PATH)/tool-en_US.pot ; \
 		find $(CURDIR)/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
-		${XGETTEXT} --force-po --no-wrap --no-location -o $(BUILD_PATH)/tool.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/tool-en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
 		rm -f $(BUILD_PATH)/tool.gettext.filelist.txt ; \
 	fi
+
+#
+all: lib tool test
 
 #
 lib: lib-src
@@ -352,11 +354,7 @@ install-runtime:
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
 	cp -rf $(CURDIR)/share/. ${INSTALL_PATH_DOC}/abcdk/
-#替换占位文件
-	@if [ -x "${XGETTEXT}" ]; then \
-		cp -f $(BUILD_PATH)/lib.pot ${INSTALL_PATH_DOC}/abcdk/gettext/lib.pot ; \
-		cp -f $(BUILD_PATH)/tool.pot ${INSTALL_PATH_DOC}/abcdk/gettext/tool.pot ; \
-	fi
+
 #	
 	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
