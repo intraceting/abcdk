@@ -34,7 +34,7 @@ int64_t abcdk_license_status(const abcdk_license_info_t *info, uint64_t realtime
 
     assert(info != NULL);
 
-    remain_sec = abcdk_clock_remainder(info->begin, info->duration * 24 * 60 * 60LU, realtime);
+    remain_sec = abcdk_clock_remainder(info->begin, info->duration * 24 * 3600ULL, realtime);
 
     if (remain_sec <= 0 && dump_if_expire)
         abcdk_license_dump(info);

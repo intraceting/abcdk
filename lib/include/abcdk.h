@@ -140,6 +140,10 @@
 #include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipherex.h"
 
+#include "abcdk/license/license.h"
+#include "abcdk/license/util.h"
+#include "abcdk/license/codec.h"
+
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/imgutil.h"
 #include "abcdk/torch/pixfmt.h"
