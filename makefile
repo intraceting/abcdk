@@ -169,10 +169,15 @@ all: lib tool test tt
 
 #
 tt:
-	find $(CURDIR)/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt
-	xgettext --force-po --no-wrap --no-location -o $(BUILD_PATH)/lib.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++
-	find $(CURDIR)/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt
-	xgettext --force-po --no-wrap --no-location -o $(BUILD_PATH)/tool.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++
+	@if [ -x "${XGETTEXT}" ]; then \
+		find $(CURDIR)/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location -o $(BUILD_PATH)/lib.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		find $(CURDIR)/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location -o $(BUILD_PATH)/tool.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+	fi
+
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
@@ -347,8 +352,11 @@ install-runtime:
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
 	cp -rf $(CURDIR)/share/. ${INSTALL_PATH_DOC}/abcdk/
-	cp -f $(BUILD_PATH)/lib.pot ${INSTALL_PATH_DOC}/abcdk/gettext/lib.pot
-	cp -f $(BUILD_PATH)/tool.pot ${INSTALL_PATH_DOC}/abcdk/gettext/tool.pot
+#替换占位文件
+	@if [ -x "${XGETTEXT}" ]; then \
+		cp -f $(BUILD_PATH)/lib.pot ${INSTALL_PATH_DOC}/abcdk/gettext/lib.pot ; \
+		cp -f $(BUILD_PATH)/tool.pot ${INSTALL_PATH_DOC}/abcdk/gettext/tool.pot ; \
+	fi
 #	
 	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
