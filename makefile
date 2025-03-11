@@ -113,8 +113,8 @@ LD_FLAGS += -ldl -pthread -lc -lm -lstdc++ -lstdc++fs
 endif
 
 #
-C_FLAGS += -I$(CURDIR)/lib/include/
-CXX_FLAGS += -I$(CURDIR)/lib/include/
+C_FLAGS += -I$(CURDIR)/src/lib/include/
+CXX_FLAGS += -I$(CURDIR)/src/lib/include/
 
 #C++编译选项绑定到CUDA编译选项。
 NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
@@ -126,66 +126,63 @@ LD_FLAGS += -L${BUILD_PATH}
 OBJ_PATH = ${BUILD_PATH}/tmp
 
 #C
-LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/system/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/redis/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/sqlite/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/odbc/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/lz4/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/license/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/torch/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/util/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/system/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/mp4/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/net/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/ffmpeg/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/redis/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/sqlite/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/odbc/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/json/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/license/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
-LIB_SRC_CXX_FILES += $(wildcard lib/source/opencv/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard lib/source/torch/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/opencv/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
 
 #CUDA是可选项，可能未启用。
 ifneq ($(strip $(NVCC)),)
-LIB_SRC_CU_FILES += $(wildcard lib/source/nvidia/*.cu)
+LIB_SRC_CU_FILES += $(wildcard src/lib/source/nvidia/*.cu)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.cu.o,${LIB_SRC_CU_FILES}))
 endif
 
 #
-TOOL_SRC_FILES = $(wildcard tool/*.c)
+TOOL_SRC_FILES = $(wildcard src/tool/*.c)
 TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
 
 #
-TEST_SRC_FILES = $(wildcard test/*.c)
+TEST_SRC_FILES = $(wildcard src/test/*.c)
 TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
 .PHONY: lib tool test xgettext
 
-#更新POT文件。
-xgettext: xgettext-lib xgettext-tool
 
-#把POT文件从share目录复制到build目录进行更新。
-xgettext-lib:
-	@if [ -x "${XGETTEXT}" ]; then \
-		cp -f $(CURDIR)/share/locale/en_US/gettext/lib.pot $(BUILD_PATH)/lib.en_US.pot ; \
-		find $(CURDIR)/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt ; \
-		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/lib.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
-		rm -f $(BUILD_PATH)/lib.gettext.filelist.txt ; \
-	fi
+#
+all: lib tool test xgettext
+
+
+#更新POT文件。
+xgettext: xgettext-tool
+
 
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-tool:
 	@if [ -x "${XGETTEXT}" ]; then \
 		cp -f $(CURDIR)/share/locale/en_US/gettext/tool.pot $(BUILD_PATH)/tool.en_US.pot ; \
-		find $(CURDIR)/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" >> $(BUILD_PATH)/tool.gettext.filelist.txt ; \
 		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/tool.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
 		rm -f $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+		echo "'$(BUILD_PATH)/tool.en_US.pot' Update completed." ; \
 	fi
-#
-all: lib tool test
 
 #
 lib: lib-src
@@ -213,111 +210,111 @@ test: test-src lib
 test-src: ${TEST_OBJ_FILES} 
 
 #
-$(OBJ_PATH)/lib/source/util/%.o: lib/source/util/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/util/
+$(OBJ_PATH)/src/lib/source/util/%.o: src/lib/source/util/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/util/
 	rm -f $@
 	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/system/%.o: lib/source/system/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/system/
+$(OBJ_PATH)/src/lib/source/system/%.o: src/lib/source/system/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/system/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/mp4/%.o: lib/source/mp4/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/mp4/
+$(OBJ_PATH)/src/lib/source/mp4/%.o: src/lib/source/mp4/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/mp4/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/net/%.o: lib/source/net/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/net/
+$(OBJ_PATH)/src/lib/source/net/%.o: src/lib/source/net/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/net/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 
 #
-$(OBJ_PATH)/lib/source/ffmpeg/%.o: lib/source/ffmpeg/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/ffmpeg/
+$(OBJ_PATH)/src/lib/source/ffmpeg/%.o: src/lib/source/ffmpeg/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/ffmpeg/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/redis/%.o: lib/source/redis/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/redis/
+$(OBJ_PATH)/src/lib/source/redis/%.o: src/lib/source/redis/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/redis/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/sqlite/%.o: lib/source/sqlite/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/sqlite/
+$(OBJ_PATH)/src/lib/source/sqlite/%.o: src/lib/source/sqlite/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/sqlite/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/odbc/%.o: lib/source/odbc/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/odbc/
+$(OBJ_PATH)/src/lib/source/odbc/%.o: src/lib/source/odbc/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/odbc/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/openssl/%.o: lib/source/openssl/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/openssl/
+$(OBJ_PATH)/src/lib/source/openssl/%.o: src/lib/source/openssl/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/openssl/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/lz4/%.o: lib/source/lz4/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/lz4/
+$(OBJ_PATH)/src/lib/source/lz4/%.o: src/lib/source/lz4/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/lz4/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/json/%.o: lib/source/json/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/json/
+$(OBJ_PATH)/src/lib/source/json/%.o: src/lib/source/json/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/json/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 	
 #
-$(OBJ_PATH)/lib/source/opencv/%.cpp.o: lib/source/opencv/%.cpp
-	mkdir -p $(OBJ_PATH)/lib/source/opencv/
+$(OBJ_PATH)/src/lib/source/opencv/%.cpp.o: src/lib/source/opencv/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/opencv/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/license/%.o: lib/source/license/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/license/
+$(OBJ_PATH)/src/lib/source/license/%.o: src/lib/source/license/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/license/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/torch/%.o: lib/source/torch/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/torch/
+$(OBJ_PATH)/src/lib/source/torch/%.o: src/lib/source/torch/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/torch/%.cpp.o: lib/source/torch/%.cpp
-	mkdir -p $(OBJ_PATH)/lib/source/torch/
+$(OBJ_PATH)/src/lib/source/torch/%.cpp.o: src/lib/source/torch/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/lib/source/nvidia/%.cu.o: lib/source/nvidia/%.cu
-	mkdir -p $(OBJ_PATH)/lib/source/nvidia/
+$(OBJ_PATH)/src/lib/source/nvidia/%.cu.o: src/lib/source/nvidia/%.cu
+	mkdir -p $(OBJ_PATH)/src/lib/source/nvidia/
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
 
 #
-$(OBJ_PATH)/tool/%.o: tool/%.c
-	mkdir -p $(OBJ_PATH)/tool/
+$(OBJ_PATH)/src/tool/%.o: src/tool/%.c
+	mkdir -p $(OBJ_PATH)/src/tool/
 	rm -f $@
 	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/test/%.o: test/%.c
-	mkdir -p $(OBJ_PATH)/test/
+$(OBJ_PATH)/src/test/%.o: src/test/%.c
+	mkdir -p $(OBJ_PATH)/src/test/
 	rm -f $@
 	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 
@@ -376,8 +373,8 @@ install-devel:
 	mkdir -p ${INSTALL_PATH_INC}
 #
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
-	cp  -rf $(CURDIR)/lib/include/abcdk ${INSTALL_PATH_INC}/
-	cp  -f $(CURDIR)/lib/include/abcdk.h ${INSTALL_PATH_INC}/
+	cp  -rf $(CURDIR)/src/lib/include/abcdk ${INSTALL_PATH_INC}/
+	cp  -f $(CURDIR)/src/lib/include/abcdk.h ${INSTALL_PATH_INC}/
 	cp  -f ${PKG_PC} ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 #
 	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.a
