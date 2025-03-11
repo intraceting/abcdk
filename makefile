@@ -320,21 +320,21 @@ $(OBJ_PATH)/src/test/%.o: src/test/%.c
 
 #
 clean: clean-lib clean-tool clean-test
-
+	rm -rf ${OBJ_PATH}/*
 #
 clean-lib:
-	rm -rf ${OBJ_PATH}/lib
+	rm -rf ${OBJ_PATH}/src/lib
 	rm -f $(BUILD_PATH)/libabcdk.so
 	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
 clean-tool:
-	rm -rf ${OBJ_PATH}/tool
+	rm -rf ${OBJ_PATH}/src/tool
 	rm -f $(BUILD_PATH)/abcdk-tool
 
 #
 clean-test:
-	rm -rf ${OBJ_PATH}/test
+	rm -rf ${OBJ_PATH}/src/test
 	rm -f $(BUILD_PATH)/abcdk-test
 
 #

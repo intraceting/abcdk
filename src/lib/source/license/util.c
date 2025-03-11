@@ -19,7 +19,6 @@ void abcdk_license_dump(const abcdk_license_info_t *info)
 
     sprintf(msg + strlen(msg), TT("产品类别(%hhu)；"), info->category);
     sprintf(msg + strlen(msg), TT("产品型号(%hhu)；"), info->product);
-    sprintf(msg + strlen(msg), TT("节点数量(%hu)；"), info->node);
     sprintf(msg + strlen(msg), TT("生效日期(%04d年%02d月%02d日)；"), begin_tm.tm_year + 1900, begin_tm.tm_mon + 1, begin_tm.tm_mday);
     sprintf(msg + strlen(msg), TT("终止日期(%04d年%02d月%02d日)；"), end_tm.tm_year + 1900, end_tm.tm_mon + 1, end_tm.tm_mday);
 

@@ -25,9 +25,6 @@ typedef struct _abcdk_license_info
     /**型号。*/
     uint8_t product;
 
-    /**节点数量(个)。*/
-    uint16_t node;
-
     /**有效期限(天)。*/
     uint16_t duration;
 

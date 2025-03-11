@@ -8,14 +8,15 @@
 
 /*
  * ------------------------------------------------------------------|
- * |Licence Data                                                     |
+ * |Licence Data(V1)                                                 |
  * ------------------------------------------------------------------|
- * |Version |Category |Product |Begin   |Durations |Nodes   |Reserve |
- * |1 byte  |1 byte   |1 byte  |8 Bytes |2 Bytes   |2 Bytes |2 Bytes |
+ * |Version |Category |Product |Begin   |Durations |Reserve          |
+ * |1 byte  |1 byte   |1 byte  |8 Bytes |2 Bytes   |4 Bytes          |
  * ------------------------------------------------------------------|
 */
 
-#define ABCDK_LICENSE_VER_1_SRC_LEN (1 + 1 + 1 + 8 + 2 + 2 + 2)
+
+#define ABCDK_LICENSE_VER_1_SRC_LEN (1 + 1 + 1 + 8 + 2 + 4)
 
 
 int abcdk_license_codec_encode(abcdk_object_t **dst, const abcdk_license_info_t *src, abcdk_license_codec_encrypt_cb encrypt_cb, void *opaque)
@@ -36,8 +37,7 @@ int abcdk_license_codec_encode(abcdk_object_t **dst, const abcdk_license_info_t 
     abcdk_bit_write_number(&src_bit, 8, src->product);
     abcdk_bit_write_number(&src_bit, 64, src->begin);
     abcdk_bit_write_number(&src_bit, 16, src->duration);
-    abcdk_bit_write_number(&src_bit, 16, src->node);
-    abcdk_bit_seek(&src_bit,16);
+    abcdk_bit_seek(&src_bit,32);
 
     tmp_dst = encrypt_cb(src_bit.data, src_bit.pos / 8, 1, opaque);
     if (!tmp_dst)
@@ -84,7 +84,7 @@ int abcdk_license_codec_decode(abcdk_license_info_t *dst, const char *src, abcdk
     dst->product = abcdk_bit_read2number(&src_bit, 8);
     dst->begin = abcdk_bit_read2number(&src_bit, 64);
     dst->duration = abcdk_bit_read2number(&src_bit, 16);
-    dst->node = abcdk_bit_read2number(&src_bit, 16);
+    abcdk_bit_seek(&src_bit,32);
 
     abcdk_object_unref(&tmp_src);
     abcdk_object_unref(&tmp_src2);
