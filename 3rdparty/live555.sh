@@ -104,9 +104,19 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "live555-devel")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags live555
+    {
+        CFLAG="-I$(FindIncPath liveMedia/liveMedia.hh)"
+        checkReturnCode
+
+        echo "${CFLAG}"
+    }
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs live555 
+    {
+        LDFLAG="-L$(FindLibPath libliveMedia.so)"
+        checkReturnCode
+
+        echo "-lmagliveMedia ${LDFLAG}"
+    }
     elif [ ${FLAG} -eq 4 ];then
         echo "live555-devel"
     else
