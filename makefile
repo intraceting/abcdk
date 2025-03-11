@@ -170,8 +170,18 @@ all: lib tool test xgettext
 
 
 #更新POT文件。
-xgettext: xgettext-tool
+xgettext: xgettext-lib xgettext-tool
 
+
+#把POT文件从share目录复制到build目录进行更新。
+xgettext-lib:
+	@if [ -x "${XGETTEXT}" ]; then \
+		cp -f $(CURDIR)/share/locale/en_US/gettext/lib.pot $(BUILD_PATH)/lib.en_US.pot ; \
+		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/lib.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		echo "'$(BUILD_PATH)/lib.en_US.pot' Update completed." ; \
+	fi
 
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-tool:
