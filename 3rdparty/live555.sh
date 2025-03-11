@@ -115,7 +115,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libliveMedia.so)"
         checkReturnCode
 
-        echo "-lmagliveMedia ${LDFLAG}"
+        echo "-lliveMedia ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "live555-devel"
