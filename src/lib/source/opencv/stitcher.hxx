@@ -574,12 +574,14 @@ namespace abcdk
 
                 if (strcasecmp(name, "ORB") == 0)
                     set_feature_finder(cv::ORB::create());
-#ifdef OPENCV_ENABLE_NONFREE
+#ifdef HAVE_OPENCV_XFEATURES2D
                 else if (strcasecmp(name, "SIFT") == 0)
                     set_feature_finder(cv::xfeatures2d::SIFT::create());
+#ifdef OPENCV_ENABLE_NONFREE
                 else if (strcasecmp(name, "SURF") == 0)
                     set_feature_finder(cv::xfeatures2d::SURF::create());
 #endif // OPENCV_ENABLE_NONFREE
+#endif //HAVE_OPENCV_XFEATURES2D
                 else
                 {
                     abcdk_trace_printf(LOG_WARNING, "特征发现算法('%s')未找到，启用默认的算法('ORB')。", name);

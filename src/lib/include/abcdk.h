@@ -169,5 +169,6 @@
 
 #include "abcdk/opencv/opencv.h"
 #include "abcdk/opencv/stitcher.h"
+#include "abcdk/opencv/freetype.h"
 
 #endif //ABCDK_H

@@ -12,9 +12,12 @@
 #ifdef HAVE_OPENCV
 #ifdef __cplusplus
 #include <opencv2/opencv.hpp>
-#ifdef OPENCV_ENABLE_NONFREE
+#ifdef HAVE_OPENCV_XFEATURES2D
 #include <opencv2/xfeatures2d.hpp>
-#endif // OPENCV_ENABLE_NONFREE
+#endif // HAVE_OPENCV_XFEATURES2D
+#ifdef HAVE_OPENCV_FREETYPE
+#include <opencv2/freetype.hpp>
+#endif //HAVE_OPENCV_FREETYPE
 #endif //__cplusplus
 #endif // HAVE_OPENCV
 
