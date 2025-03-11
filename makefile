@@ -188,7 +188,6 @@ xgettext-tool:
 	@if [ -x "${XGETTEXT}" ]; then \
 		cp -f $(CURDIR)/share/locale/en_US/gettext/tool.pot $(BUILD_PATH)/tool.en_US.pot ; \
 		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
-		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" >> $(BUILD_PATH)/tool.gettext.filelist.txt ; \
 		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/tool.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
 		rm -f $(BUILD_PATH)/tool.gettext.filelist.txt ; \
 		echo "'$(BUILD_PATH)/tool.en_US.pot' Update completed." ; \
