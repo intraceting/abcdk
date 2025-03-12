@@ -1644,7 +1644,7 @@ int abcdk_test_any(abcdk_option_t *args)
     // abcdk_openssl_evp_pkey_free(&pubkey);
 #endif //HAVE_OPENSSL
 
-#elif 1
+#elif 0
 
 
 
@@ -1705,6 +1705,25 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_torch_image_free(&f);
 
 
+#elif 1
+
+    uint64_t counter = time(NULL)/30;
+    //uint64_t counter = 59/30;
+    //uint64_t counter = 1111111109/30;
+
+    uint8_t key[] = {"12345678901234567890"};
+
+    abcdk_object_t *en_key = abcdk_basecode_encode2(key,strlen(key),32);
+    printf("\n%s\n",en_key->pstrs[0]);
+    abcdk_object_unref(&en_key);
+
+    uint32_t otp_sha1 = abcdk_openssl_totp_generate_sha1(key,strlen(key),counter);
+    uint32_t otp_sha256 = abcdk_openssl_totp_generate_sha256(key,strlen(key),counter);
+    uint32_t otp_sha512 = abcdk_openssl_totp_generate_sha512(key,strlen(key),counter);
+
+    printf("OTP-SHA1: %08u\n",otp_sha1%100000000);
+    printf("OTP-SHA256: %08u\n",otp_sha256%100000000);
+    printf("OTP-SHA512: %08u\n",otp_sha512%100000000);
 
 #endif 
     return 0;

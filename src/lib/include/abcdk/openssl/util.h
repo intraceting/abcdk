@@ -155,7 +155,7 @@ HMAC_CTX *abcdk_openssl_hmac_alloc();
  * 
  *  @return 0 成功，!0 失败。
 */
-int abcdk_openssl_hmac_init(HMAC_CTX *hmac,const void *key, int len,int type);
+int abcdk_openssl_hmac_init(HMAC_CTX *ctx,const void *key, int len,int type);
 
 
 #endif //HEADER_HMAC_H

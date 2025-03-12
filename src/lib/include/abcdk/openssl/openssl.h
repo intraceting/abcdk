@@ -46,7 +46,10 @@ typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 typedef struct bio_st BIO;
 typedef struct evp_pkey_st EVP_PKEY;
+typedef struct evp_md_st EVP_MD;
 typedef struct x509_st X509;
+typedef struct X509_crl_st X509_CRL;
+typedef struct x509_store_ctx_st X509_STORE_CTX;
 typedef struct rsa_st RSA;
 #define SSL_read(f,b,s) 0
 #define SSL_write(f,b,s) 0

@@ -139,6 +139,7 @@
 #include "abcdk/openssl/darknet.h"
 #include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipherex.h"
+#include "abcdk/openssl/totp.h"
 
 #include "abcdk/license/license.h"
 #include "abcdk/license/util.h"
