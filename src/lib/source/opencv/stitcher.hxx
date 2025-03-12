@@ -233,7 +233,7 @@ namespace abcdk
                 assert(masks.size() == 0 || imgs.size() == masks.size());
 
                 if (m_feature_finder.get() == NULL)
-                    set_feature_finder("SIFT");
+                    set_feature_finder("SURF");
 
                 m_img_features.resize(imgs.size());
 

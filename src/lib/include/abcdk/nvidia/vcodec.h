@@ -42,9 +42,8 @@ int abcdk_cuda_vcodec_encode(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet_t **d
 /**
  * 解码。
  *
- * @param [in] src_data 数据包指针。NULL(0) 仅获取解码图。
- * @param [in] src_size 数据包长度。0 是结束帧。
- * @param [in] src_pts 播放时间。一个递增的时间值，影响解码图的输出顺序。
+ * @param [in] src_data 数据包指针。NULL(0) 仅获取解码图。src.size(数据包长度) 0 是结束帧。src.pts(播放时间) 一个递增的时间值，影响解码图的输出顺序。
+ * 
  *
  * @return 1 有输出，0 无输出，< 0 出错了。
  */
