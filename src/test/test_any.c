@@ -1725,6 +1725,8 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("OTP-SHA256: %08u\n",otp_sha256%100000000);
     printf("OTP-SHA512: %08u\n",otp_sha512%100000000);
 
+    // 可以使用oathtool 进行验证。
+
 #endif 
     return 0;
 }
