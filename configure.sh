@@ -630,14 +630,9 @@ INSTALL_PREFIX = ${INSTALL_PREFIX}
 #
 ROOT_PATH ?= /
 
+#
+DEV_TOOL_HOME = ${SHELLDIR}/script/devel/
+
 EOF
 checkReturnCode
 
-#
-if [ "${KIT_NAME}" == "deb" ];then
-#
-cat >>${MAKE_CONF} <<EOF
-#
-DEB_TOOL_ROOT = ${SHELLDIR}/script/devel/
-EOF
-fi

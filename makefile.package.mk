@@ -91,7 +91,7 @@ package-runtime-deb:
 #	创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
 	ln -s -f ${TMP_ROOT_PATH}/DEBIAN ${TMP_ROOT_PATH}/debian
 #   更新debian/control文件Pre-Depends字段。	
-	${DEB_TOOL_ROOT}/dpkg-shlibdeps2control.sh "${TMP_ROOT_PATH}"
+	${DEV_TOOL_HOME}/dpkg-shlibdeps2control.sh "${TMP_ROOT_PATH}"
 #	删除软链接，因为dpkg-deb会把这个当成普通文件复制。下同。
 	unlink ${TMP_ROOT_PATH}/debian
 	mkdir -p ${PACKAGE_PATH}
