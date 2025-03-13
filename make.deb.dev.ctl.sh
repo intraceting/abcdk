@@ -43,7 +43,7 @@ VARIABLE:
 
     TARGET_ARCH(目标平台).
 
-    OUTPUT(SPEC文件名)用于存放SPEC文件.
+    OUTPUT(CTL目录)用于存放CTL文件.
 
 EOF
 }
