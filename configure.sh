@@ -577,17 +577,6 @@ fi
 MAKE_CONF=${BUILD_PATH}/makefile.conf
 
 #
-PKG_PC=${BUILD_PATH}/pkg_conf.pc
-
-#
-RPM_RT_SPEC=${BUILD_PATH}/rpm_rt.spec
-RPM_DEV_SPEC=${BUILD_PATH}/rpm_devel.spec
-
-#
-DEB_RT_CTL=${BUILD_PATH}/deb_rt.ctl
-DEB_DEV_CTL=${BUILD_PATH}/deb_devel.ctl
-
-#
 cat >${MAKE_CONF} <<EOF
 #
 KIT_NAME = ${KIT_NAME}
