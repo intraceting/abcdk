@@ -282,7 +282,7 @@ EOF
 }
 
 #
-while getopts "hS:o:gf:l:d:e:i:b:B:" ARGKEY 
+while getopts "hd:" ARGKEY 
 do
     case $ARGKEY in
     h)
@@ -634,236 +634,21 @@ EOF
 checkReturnCode
 
 #
-cat >${PKG_PC} <<EOF
-prefix=${INSTALL_PREFIX}
-libdir=\${prefix}/lib
-includedir=\${prefix}/include
-
-Name: ABCDK
-Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Description: ABCDK library
-Requires:
-Libs: -L\${libdir} -labcdk
-Cflags: -I\${includedir}
-EOF
-checkReturnCode
-
-#
-if [ "${KIT_NAME}" == "rpm" ];then
+if [ "${KIT_NAME}" == "RPM" ];then
 {
-
 #
 cat >>${MAKE_CONF} <<EOF
-#
-PKG_PC = ${PKG_PC}
 #
 RPM_RT_SPEC = ${RPM_RT_SPEC}
 RPM_DEV_SPEC = ${RPM_DEV_SPEC}
 EOF
-checkReturnCode
-
-#
-cat >${RPM_RT_SPEC} <<EOF
-Name: abcdk
-Version: ${VERSION_MAJOR}.${VERSION_MINOR}
-Release: ${VERSION_RELEASE}
-Summary: A Better C language Development Kit.
-URL: https://github.com/intraceting/abcdk
-Group: Applications/System
-License: MIT
-AutoReqProv: yes
-
-%description
-ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
-providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
-files, directories, multimedia, etc.
-.
-This package contains the development files(documents,scripts,libraries).
-
-
-%files
-${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
-${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
-${INSTALL_PREFIX}/bin/abcdk-tool
-${INSTALL_PREFIX}/bin/abcdk-script
-${INSTALL_PREFIX}/share/abcdk
-
-%post
-#!/bin/sh
-#
-echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
-chmod 0755 /etc/profile.d/abcdk.sh
-#
-echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
-ldconfig
-#
-exit 0
-
-%postun
-#!/bin/sh
-#
-rm -f /etc/profile.d/abcdk.sh
-#
-rm -f /etc/ld.so.conf.d/abcdk.conf
-ldconfig
-#
-exit 0
-EOF
-checkReturnCode
-
-#
-cat >${RPM_DEV_SPEC} <<EOF
-Name: abcdk-devel
-Version: ${VERSION_MAJOR}.${VERSION_MINOR}
-Release: ${VERSION_RELEASE}
-Summary: A Better C language Development Kit.
-URL: https://github.com/intraceting/abcdk
-Group: Applications/System
-License: MIT
-Requires: abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
-AutoReqProv: yes
-
-%description
-ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
-providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
-files, directories, multimedia, etc.
-.
-This package contains the development files(headers, static libraries).
-
-%files
-${INSTALL_PREFIX}/lib/libabcdk.so
-${INSTALL_PREFIX}/lib/libabcdk.a
-${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
-${INSTALL_PREFIX}/include/abcdk
-${INSTALL_PREFIX}/include/abcdk.h
-
-%post
-#!/bin/sh
-#
-#echo "nothing to do."
-#
-exit 0
-
-%postun
-#!/bin/sh
-#
-#echo "nothing to do."
-#
-exit 0
-EOF
-checkReturnCode
-
 }
-elif [ "${KIT_NAME}" == "deb" ];then
-{
-
-#
-mkdir -p ${DEB_RT_CTL}
-mkdir -p ${DEB_DEV_CTL}
-
-#
-rm -rf ${DEB_RT_CTL}/*
-rm -rf ${DEB_DEV_CTL}/*
-
+else if [ "${KIT_NAME}" == "deb" ];then
 #
 cat >>${MAKE_CONF} <<EOF
 #
-PKG_PC = ${PKG_PC}
-#
 DEB_RT_CTL = ${DEB_RT_CTL}
 DEB_DEV_CTL = ${DEB_DEV_CTL}
-#
 DEB_TOOL_ROOT = ${SHELLDIR}/script/devel/
 EOF
-checkReturnCode
-
-#
-cat >${DEB_RT_CTL}/control <<EOF
-Source: abcdk
-Package: abcdk
-Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Section: Applications/System
-Priority: optional
-Architecture: ${_TARGET_ARCH}
-Maintainer: https://github.com/intraceting/abcdk
-Pre-Depends: \${shlibs:Depends}
-Description: ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
- providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
- files, directories, multimedia, etc.
- .
- This package contains the runtime files(documents,scripts,libraries).
-EOF
-checkReturnCode
-
-#
-cat >${DEB_RT_CTL}/postinst <<EOF
-#!/bin/sh
-#
-echo "export PATH=\\\$PATH:${INSTALL_PREFIX}/bin" > /etc/profile.d/abcdk.sh
-chmod 0755 /etc/profile.d/abcdk.sh
-#
-echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
-ldconfig
-#
-exit 0
-EOF
-checkReturnCode
-
-#
-cat >${DEB_RT_CTL}/postrm <<EOF
-#!/bin/sh
-#
-rm -f /etc/profile.d/abcdk.sh
-#
-rm -f /etc/ld.so.conf.d/abcdk.conf
-#
-exit 0
-EOF
-checkReturnCode
-
-#
-cat >${DEB_DEV_CTL}/control <<EOF
-Source: abcdk
-Package: abcdk-devel
-Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
-Section: Applications/System
-Priority: optional
-Architecture: ${_TARGET_ARCH}
-Maintainer: https://github.com/intraceting/abcdk
-Pre-Depends: abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
-Description: ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
- providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
- files, directories, multimedia, etc.
- .
- This package contains the development files(headers, static libraries).
-EOF
-checkReturnCode
-
-#
-cat >${DEB_DEV_CTL}/postinst <<EOF
-#!/bin/sh
-#
-#echo "nothing to do."
-#
-exit 0
-EOF
-checkReturnCode
-
-#
-cat >${DEB_DEV_CTL}/postrm <<EOF
-#!/bin/sh
-#
-#echo "nothing to do."
-#
-exit 0
-EOF
-checkReturnCode
-
-#
-chmod 755 ${DEB_RT_CTL}/postinst
-chmod 755 ${DEB_RT_CTL}/postrm
-chmod 755 ${DEB_DEV_CTL}/postinst
-chmod 755 ${DEB_DEV_CTL}/postrm
-
-}
 fi
