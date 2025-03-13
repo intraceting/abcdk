@@ -634,21 +634,10 @@ EOF
 checkReturnCode
 
 #
-if [ "${KIT_NAME}" == "RPM" ];then
-{
+if [ "${KIT_NAME}" == "deb" ];then
 #
 cat >>${MAKE_CONF} <<EOF
 #
-RPM_RT_SPEC = ${RPM_RT_SPEC}
-RPM_DEV_SPEC = ${RPM_DEV_SPEC}
-EOF
-}
-else if [ "${KIT_NAME}" == "deb" ];then
-#
-cat >>${MAKE_CONF} <<EOF
-#
-DEB_RT_CTL = ${DEB_RT_CTL}
-DEB_DEV_CTL = ${DEB_DEV_CTL}
 DEB_TOOL_ROOT = ${SHELLDIR}/script/devel/
 EOF
 fi
