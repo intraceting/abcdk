@@ -107,7 +107,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libcudnn.so)"
         checkReturnCode
 
-        echo "-lcudnn -lcudnn_adv_infer -lcudnn_adv_train -lcudnn_cnn_infer -lcudnn_cnn_train -lcudnn_ops_infer -lcudnn_ops_train ${LDFLAG}"
+        echo "-lcudnn ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "cudnn-dev"
@@ -131,7 +131,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libcudnn.so)"
         checkReturnCode
 
-        echo "-lcudnn -lcudnn_adv_infer -lcudnn_adv_train -lcudnn_cnn_infer -lcudnn_cnn_train -lcudnn_ops_infer -lcudnn_ops_train ${LDFLAG}"
+        echo "-lcudnn ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "cudnn-devel"

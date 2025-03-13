@@ -164,7 +164,9 @@ INSTALL_PREFIX="/usr/local/"
 KIT_NAME=""
 
 #
-THIRDPARTY_PACKAGES="openssl,ffmpeg"
+THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,"
+THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
+THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_FIND_ROOT="/usr/local/"
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
@@ -233,14 +235,16 @@ VARIABLE:
      THIRDPARTY_PACKAGES=${THIRDPARTY_PACKAGES}
 
      THIRDPARTY_PACKAGES(依赖组件列表)支持以下关键字:
-     openmp,unixodbc,sqlite,openssl,ffmpeg,
-     freeimage,fuse,libnm,lz4,zlib,
-     archive,modbus,libusb,mqtt,redis,json-c,
+     ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,
+     unixodbc,opencv,openssl,redis,sqlite,curl,
+     archive,nghttp2,libmagic,
+     freeimage,fuse,libnm,zlib,
+     openmp,modbus,libusb,mqtt,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
-     kafka,uuid,libmagic,nghttp2,libdrm,
-     pam,curl,ncurses,fltk,x264,x265,ffnvcodec,
-     cuda,cudnn,tensorrt,opencv,live555
+     kafka,uuid,libdrm,
+     pam,ncurses,fltk,x264,x265,
+     tensorrt,live555
 
      THIRDPARTY_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 
@@ -259,7 +263,7 @@ VARIABLE:
 
      CUDA_COMPILER_BIN(CUDA编译器的完整路径).
 
-     CUDNN_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/cudnn/
+     CUDNN_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/cuda/
 
      CUDNN_FIND_ROOT(CUDNN组件搜索根路径)用于查找依赖组件完整路径.
 
@@ -411,7 +415,7 @@ fi
 
 #
 if [ "${CUDNN_FIND_ROOT}" == "" ];then
-CUDNN_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cudnn/"
+CUDNN_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cuda/"
 fi
 
 #
