@@ -147,7 +147,7 @@ clean: clean-lib clean-tool clean-test
 
 #加载子项目。
 #顺序不能更换。
-include $(CURDIR)/makefile.steup.mk
+include $(CURDIR)/makefile.setup.mk
 
 #
 install: install-runtime install-devel
