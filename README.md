@@ -14,13 +14,9 @@ ABCDK为了支持在Linux/Unix系统中快速开发软件项目而创建的解�
 ## 主要模块
 
 - 3rdparty 第三方组件
-- build 构建目录
-- lib 基础组件
-- release 发行目录
 - script 脚本组件
 - share 共享文档
-- test 测试组件
-- tool 工具组件
+- src 源码目录
 
 
 ## 查看编译帮助
