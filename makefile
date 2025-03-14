@@ -134,9 +134,7 @@ all: build
 
 #加载子项目。
 #顺序不能更换。
-include $(CURDIR)/makefile.lib.mk
-include $(CURDIR)/makefile.tool.mk
-include $(CURDIR)/makefile.test.mk
+include $(CURDIR)/makefile.build.mk
 
 #
 build: lib tool test lib-xgettext tool-xgettext
