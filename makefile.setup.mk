@@ -25,11 +25,11 @@ install-runtime:
 	cp -rf $(CURDIR)/share/. ${INSTALL_PATH_DOC}/abcdk/
 
 #	
-	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
+	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
-	chmod 0555 ${INSTALL_PATH_BIN}/abcdk-tool
-	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name "*.sh" -exec chmod 0555 {} \;
-	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0444 {} \;
+	chmod 0755 ${INSTALL_PATH_BIN}/abcdk-tool
+	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name "*.sh" -exec chmod 0755 {} \;
+	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0644 {} \;
 
 #
 install-devel:
@@ -47,11 +47,11 @@ install-devel:
 		-d VERSION_MINOR=${VERSION_MINOR} \
 		-d VERSION_RELEASE=${VERSION_RELEASE} 
 #
-	chmod 0555 ${INSTALL_PATH_LIB}/libabcdk.a
+	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.a
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_MAIN} libabcdk.so ;
-	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0444 {} \;
-	chmod 0444 ${INSTALL_PATH_INC}/abcdk.h
-	chmod 0444 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
+	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0644 {} \;
+	chmod 0644 ${INSTALL_PATH_INC}/abcdk.h
+	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 #
 uninstall-runtime:
 #
