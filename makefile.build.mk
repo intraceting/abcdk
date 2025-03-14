@@ -17,7 +17,6 @@ LIB_SRC_FILES += $(wildcard src/lib/source/odbc/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/json/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/license/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
@@ -127,12 +126,6 @@ $(OBJ_PATH)/src/lib/source/opencv/%.cpp.o: src/lib/source/opencv/%.cpp
 	mkdir -p $(OBJ_PATH)/src/lib/source/opencv/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/license/%.o: src/lib/source/license/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/license/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/src/lib/source/torch/%.o: src/lib/source/torch/%.c
