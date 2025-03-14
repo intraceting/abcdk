@@ -79,21 +79,21 @@ usage: [ OPTIONS ]
      
      NATIVE_COMPILER_PREFIX=${NATIVE_COMPILER_PREFIX}
      NATIVE_COMPILER_NAME=${NATIVE_COMPILER_NAME}
-     NATIVE_COMPILER_BIN=${NATIVE_COMPILER_BIN}
-     NATIVE_COMPILER_SYSROOT=${NATIVE_COMPILER_SYSROOT}
-     NATIVE_COMPILER_AR=${NATIVE_COMPILER_AR}
-     NATIVE_COMPILER_LD=${NATIVE_COMPILER_LD}
-     NATIVE_COMPILER_RANLIB=${NATIVE_COMPILER_RANLIB}
-     NATIVE_COMPILER_READELF=${NATIVE_COMPILER_READELF}
+     NATIVE_COMPILER_BIN=\${NATIVE_COMPILER_PREFIX}\${NATIVE_COMPILER_NAME}
+     NATIVE_COMPILER_SYSROOT=\$(\${NATIVE_COMPILER_BIN} "--print-sysroot")
+     NATIVE_COMPILER_AR=\$(\${NATIVE_COMPILER_BIN} "-print-prog-name=ar")
+     NATIVE_COMPILER_LD=\$(\${NATIVE_COMPILER_BIN} "-print-prog-name=ld")
+     NATIVE_COMPILER_RANLIB=\$(\${NATIVE_COMPILER_BIN} "-print-prog-name=ranlib")
+     NATIVE_COMPILER_READELF=\$(\${NATIVE_COMPILER_BIN} "-print-prog-name=readelf")
      
      TARGET_COMPILER_PREFIX=${TARGET_COMPILER_PREFIX}
      TARGET_COMPILER_NAME=${TARGET_COMPILER_NAME}
-     TARGET_COMPILER_BIN=${TARGET_COMPILER_BIN}
-     TARGET_COMPILER_SYSROOT=${TARGET_COMPILER_SYSROOT}
-     TARGET_COMPILER_AR=${TARGET_COMPILER_AR}
-     TARGET_COMPILER_LD=${TARGET_COMPILER_LD}
-     TARGET_COMPILER_RANLIB=${TARGET_COMPILER_RANLIB}
-     TARGET_COMPILER_READELF=${TARGET_COMPILER_READELF}
+     TARGET_COMPILER_BIN=\${TARGET_COMPILER_PREFIX}\${TARGET_COMPILER_NAME}
+     TARGET_COMPILER_SYSROOT=\$(\${TARGET_COMPILER_BIN} "--print-sysroot")
+     TARGET_COMPILER_AR=\$(\${TARGET_COMPILER_BIN} "-print-prog-name=ar")
+     TARGET_COMPILER_LD=\$(\${TARGET_COMPILER_BIN} "-print-prog-name=ld")
+     TARGET_COMPILER_RANLIB=\$(\${TARGET_COMPILER_BIN} "-print-prog-name=ranlib")
+     TARGET_COMPILER_READELF=\$(\${TARGET_COMPILER_BIN} "-print-prog-name=readelf")
 
     -p < PREFIX >
      变量前缀。默认：${VAR_PREFIX}
@@ -237,7 +237,7 @@ elif [ "${NATIVE_PLATFORM}" == "aarch64" ] || [ "${NATIVE_PLATFORM}" == "armv8l"
     NATIVE_ARCH="arm64"
     NATIVE_BITWIDE="64"
 }
-elif [ "${NATIVE_PLATFORM}" == "arm" ] || [ "${NATIVE_PLATFORM}" == "armv7l" ] || "${NATIVE_PLATFORM}" == "armv7a" ];then
+elif [ "${NATIVE_PLATFORM}" == "arm" ] || [ "${NATIVE_PLATFORM}" == "armv7l" ] || [ "${NATIVE_PLATFORM}" == "armv7a" ];then
 {
     NATIVE_ARCH="arm"
     NATIVE_BITWIDE="32"
@@ -255,7 +255,7 @@ elif [ "${TARGET_PLATFORM}" == "aarch64" ] || [ "${TARGET_PLATFORM}" == "armv8l"
     TARGET_ARCH="arm64"
     TARGET_BITWIDE="64"
 }
-elif [ "${TARGET_PLATFORM}" == "arm" ] || [ "${TARGET_PLATFORM}" == "armv7l" ] || "${TARGET_PLATFORM}" == "armv7a" ];then
+elif [ "${TARGET_PLATFORM}" == "arm" ] || [ "${TARGET_PLATFORM}" == "armv7l" ] || [ "${TARGET_PLATFORM}" == "armv7a" ];then
 {
     TARGET_ARCH="arm"
     TARGET_BITWIDE="32"
@@ -285,6 +285,10 @@ else
         TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib64/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
     elif [ -f ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 ];then
         TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
+    elif [ -f ${TARGET_COMPILER_SYSROOT}/${TARGET_PLATFORM}-linux-gun/lib/libc.so.6 ];then
+        TARGET_GLIBC_MAX_VER=$(${TARGET_COMPILER_READELF} -V ${TARGET_COMPILER_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
+    else
+        TARGET_GLIBC_MAX_VER="0.0"
     fi
 }
 fi
