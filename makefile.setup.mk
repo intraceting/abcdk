@@ -17,12 +17,12 @@ install-runtime:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
-	mkdir -p ${INSTALL_PATH_DOC}/
+	mkdir -p ${INSTALL_PATH_DOC}/abcdk/
 #
 	cp -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PATH_LIB}/
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
 	cp -rf $(CURDIR)/script/. ${INSTALL_PATH_BIN}/abcdk-script/
-	cp -rf $(CURDIR)/share/. ${INSTALL_PATH_DOC}/
+	cp -rf $(CURDIR)/share/abcdk/. ${INSTALL_PATH_DOC}/abcdk/
 
 #	
 	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
