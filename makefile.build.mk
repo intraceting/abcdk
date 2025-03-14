@@ -201,7 +201,7 @@ clean-test:
 #把POT文件从share目录复制到build目录进行更新。
 xgettext:
 	@if [ -x "${XGETTEXT}" ]; then \
-		cp -f $(CURDIR)/share/locale/en_US/gettext/abcdk.pot $(BUILD_PATH)/abcdk.en_US.pot ; \
+		cp -f $(CURDIR)/share/abcdk/locale/en_US/gettext/abcdk.pot $(BUILD_PATH)/abcdk.en_US.pot ; \
 		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/abcdk.gettext.filelist.txt ; \
 		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" >> $(BUILD_PATH)/abcdk.gettext.filelist.txt ; \
 		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/abcdk.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/abcdk.gettext.filelist.txt -L c++ ; \
