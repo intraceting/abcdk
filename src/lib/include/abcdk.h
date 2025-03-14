@@ -141,5 +141,34 @@
 #include "abcdk/openssl/cipherex.h"
 #include "abcdk/openssl/totp.h"
 
+<<<<<<< HEAD
+=======
+#include "abcdk/torch/torch.h"
+#include "abcdk/torch/imgutil.h"
+#include "abcdk/torch/pixfmt.h"
+#include "abcdk/torch/image.h"
+#include "abcdk/torch/jcodec.h"
+#include "abcdk/torch/vcodec.h"
+#include "abcdk/torch/tensor.h"
+#include "abcdk/torch/tenfmt.h"
+#include "abcdk/torch/tenutil.h"
+#include "abcdk/torch/imgproc.h"
+#include "abcdk/torch/frame.h"
+#include "abcdk/torch/packet.h"
+
+#include "abcdk/nvidia/nvidia.h"
+#include "abcdk/nvidia/memory.h"
+#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/imgproc.h"
+#include "abcdk/nvidia/tensorproc.h"
+#include "abcdk/nvidia/jpeg.h"
+#include "abcdk/nvidia/vcodec.h"
+#include "abcdk/nvidia/imgutil.h"
+#include "abcdk/nvidia/image.h"
+
+#include "abcdk/opencv/opencv.h"
+#include "abcdk/opencv/stitcher.h"
+#include "abcdk/opencv/freetype.h"
+>>>>>>> release/3.0
 
 #endif //ABCDK_H
