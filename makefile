@@ -137,7 +137,7 @@ all: build
 include $(CURDIR)/makefile.build.mk
 
 #
-build: lib tool test lib-xgettext tool-xgettext
+build: lib tool test xgettext
 
 #
 clean: clean-lib clean-tool clean-test
