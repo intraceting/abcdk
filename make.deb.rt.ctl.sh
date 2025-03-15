@@ -116,11 +116,9 @@ Priority: optional
 Architecture: ${TARGET_ARCH}
 Maintainer: https://github.com/intraceting/abcdk
 Pre-Depends: \${shlibs:Depends}
-Description: ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
- providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
- files, directories, multimedia, etc.
+Description: This is the ABCDK component package.
  .
- This package contains the runtime files(documents,scripts,libraries).
+ This package contains the runtime files(bin,doc).
 EOF
 checkReturnCode
 

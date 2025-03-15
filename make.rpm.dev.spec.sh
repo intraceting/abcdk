@@ -121,11 +121,9 @@ Requires: abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 AutoReqProv: yes
 
 %description
-ABCDK is a solution created to support the rapid development of software projects in Linux/Unix systems, 
-providing development interfaces for networks, databases, linked lists, multi-trees, hard disks, tapes, 
-files, directories, multimedia, etc.
+This is the ABCDK component package.
 .
-This package contains the development files(headers, static libraries).
+This package contains the runtime files(headers, static libraries).
 
 %files
 ${INSTALL_PREFIX}/lib/libabcdk.so
