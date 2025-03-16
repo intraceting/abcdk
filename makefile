@@ -166,17 +166,10 @@ uninstall: uninstall-runtime uninstall-devel
 
 #加载子项目。
 #顺序不能更换。
-include $(CURDIR)/makefile.release.mk
+include $(CURDIR)/makefile.package.mk
 
 #
 package: package-devel package-runtime
-
-#
-package-devel: release-devel
-
-#
-package-runtime: release-runtime
-
 
 #
 help:
