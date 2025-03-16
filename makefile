@@ -125,6 +125,10 @@ LD_FLAGS += -L${BUILD_PATH}
 #
 OBJ_PATH = ${BUILD_PATH}/tmp
 
+#更新动态链接库的搜索路径。
+export LD_LIBRARY_PATH += :${DEPEND_LIB_PATH}
+
+
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
 .PHONY: build

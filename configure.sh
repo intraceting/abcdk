@@ -622,7 +622,9 @@ TARGET_ARCH = ${_TARGET_ARCH}
 TARGET_BITWIDE = ${_TARGET_BITWIDE}
 #
 DEPEND_FLAGS = ${DEPEND_FLAGS}
-DEPEND_LINKS = ${DEPEND_LINKS} 
+DEPEND_LINKS = ${DEPEND_LINKS}
+#
+DEPEND_LIB_PATH = $(echo "${DEPEND_LINKS}" | tr ' ' '\n' | grep "^-L" | sed 's/^-L//' | sort | uniq | tr '\n' ':' | sed 's/:$//')
 #
 DEV_TOOL_HOME = ${SHELLDIR}/script/devel/
 
