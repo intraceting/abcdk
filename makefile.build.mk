@@ -148,7 +148,7 @@ $(OBJ_PATH)/src/lib/source/nvidia/%.cu.o: src/lib/source/nvidia/%.cu
 #
 clean-lib:
 	rm -rf ${OBJ_PATH}/src/lib
-	rm -f $(BUILD_PATH)/libabcdk.so
+	rm -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL}
 	rm -f $(BUILD_PATH)/libabcdk.a
 
 
