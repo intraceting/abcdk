@@ -40,36 +40,14 @@ uint64_t abcdk_time_clock2kind_with(clockid_t id,uint8_t precision)
     return abcdk_time_clock2kind(&ts,precision);
 }
 
-uint64_t abcdk_time_clock2kind_realtime(uint8_t precision)
+uint64_t abcdk_time_realtime(uint8_t precision)
 {
     return abcdk_time_clock2kind_with(CLOCK_REALTIME,precision);
 }
 
-uint64_t abcdk_time_clock2kind_systime(uint8_t precision)
+uint64_t abcdk_time_systime(uint8_t precision)
 {
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,precision);
-}
-
-
-
-struct tm *abcdk_time_local2utc(struct tm *dst, const struct tm *src, int reverse)
-{
-    time_t sec = 0;
-
-    assert(dst && src);
-
-    if (reverse)
-    {
-        sec = timegm((struct tm*)src);
-        localtime_r(&sec,dst);
-    }
-    else
-    {
-        sec = timelocal((struct tm *)src);
-        gmtime_r(&sec, dst);
-    }
-
-    return dst;
 }
 
 struct tm* abcdk_time_get(struct tm* tm,int utc)
@@ -89,6 +67,13 @@ struct tm *abcdk_time_sec2tm(struct tm *tm, time_t sec, int utc)
     assert(tm != NULL);
 
     return (utc ? gmtime_r(&sec, tm) : localtime_r(&sec, tm));
+}
+
+time_t abcdk_time_tm2sec(struct tm *tm, int utc)
+{
+    assert(tm != NULL);
+
+    return (utc ? timegm(tm) : timelocal(tm));
 }
 
 time_t abcdk_time_diff(struct tm *t1, struct tm *t0, int utc)

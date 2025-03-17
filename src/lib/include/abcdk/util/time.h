@@ -30,22 +30,15 @@ uint64_t abcdk_time_clock2kind(struct timespec* ts,uint8_t precision);
 uint64_t abcdk_time_clock2kind_with(clockid_t id ,uint8_t precision);
 
 /**
- * 获取时间戳(自然时间)并整形化。
+ * 获取时间戳(自然时间,UTC)并整形化。
 */
-uint64_t abcdk_time_clock2kind_realtime(uint8_t precision);
+uint64_t abcdk_time_realtime(uint8_t precision);
 
 /**
  * 获取时间戳(系统时间)并整形化。
 */
-uint64_t abcdk_time_clock2kind_systime(uint8_t precision);
+uint64_t abcdk_time_systime(uint8_t precision);
 
-
-/**
- * 本地时间转国际时间。
- * 
- * @param reverse 0 本地转国际，!0 国际转本地。
-*/
-struct tm* abcdk_time_local2utc(struct tm* dst,const struct tm* src,int reverse);
 
 /**
  * 获取自然时间。
@@ -57,10 +50,16 @@ struct tm* abcdk_time_get(struct tm* tm,int utc);
 /**
  * 秒转自然时间。
  * 
- * @param sec 秒。
  * @param utc 0 转本地，!0 转国际。
 */
 struct tm* abcdk_time_sec2tm(struct tm* tm,time_t sec,int utc);
+
+/**
+ * 自然时间转秒。
+ * 
+ * @param utc 0 转本地，!0 转国际。
+*/
+time_t abcdk_time_tm2sec(struct tm* tm,int utc);
 
 /**
  * 计算时间差。

@@ -6,10 +6,17 @@
 #
 
 #
-MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
+MAKE_CONF ?= $(abspath $(CURDIR)/../aconf/build/makefile.conf)
 
 # 加载配置项。
 include ${MAKE_CONF}
+
+#把产品的版本号修改为项目的版本号。
+VERSION_MAJOR = 3
+VERSION_MINOR = 0
+VERSION_RELEASE = 2
+VERSION_STR_MAIN = ${VERSION_MAJOR}.${VERSION_MINOR}
+VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
 #gcc临时文件目录。
 export TMPDIR=${BUILD_PATH}/
@@ -123,7 +130,11 @@ NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 LD_FLAGS += -L${BUILD_PATH}
 
 #
-OBJ_PATH = ${BUILD_PATH}/tmp
+OBJ_PATH = ${BUILD_PATH}/abcdk.tmp/
+
+#更新动态链接库的搜索路径。
+export LD_LIBRARY_PATH += :${DEPEND_LIB_PATH}
+
 
 #
 LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
@@ -207,13 +218,6 @@ install: install-runtime install-devel
 #
 uninstall: uninstall-runtime uninstall-devel
 
-#加载子项目。
-#顺序不能更换。
-include $(CURDIR)/makefile.package.mk
-
-#
-package: package-tar package-${KIT_NAME}
-
 #
 help:
 	@echo "make"
@@ -225,6 +229,3 @@ help:
 	@echo "make uninstall"
 	@echo "make uninstall-runtime"
 	@echo "make uninstall-devel"
-	@echo "make package"
-	@echo "make package-tar"
-	@echo "make package-${KIT_NAME}"
