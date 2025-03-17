@@ -136,35 +136,6 @@ OBJ_PATH = ${BUILD_PATH}/abcdk.tmp/
 export LD_LIBRARY_PATH += :${DEPEND_LIB_PATH}
 
 
-#
-LIB_SRC_FILES += $(wildcard lib/source/util/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/shell/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/mp4/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/log/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/rtp/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/ffmpeg/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/audio/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/database/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/http/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/json/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/sdp/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/rtsp/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/openssl/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/video/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/image/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/curl/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/net/*.c)
-LIB_SRC_FILES += $(wildcard lib/source/enigma/*.c)
-LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
-
-#
-TOOL_SRC_FILES = $(wildcard tool/*.c)
-TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
-
-#
-TEST_SRC_FILES = $(wildcard test/*.c)
-TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
-
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
 .PHONY: build
