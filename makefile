@@ -164,13 +164,6 @@ install: install-runtime install-devel
 #
 uninstall: uninstall-runtime uninstall-devel
 
-#加载子项目。
-#顺序不能更换。
-include $(CURDIR)/makefile.package.mk
-
-#
-package: package-devel package-runtime
-
 #
 help:
 	@echo "make"
@@ -182,6 +175,3 @@ help:
 	@echo "make uninstall"
 	@echo "make uninstall-runtime"
 	@echo "make uninstall-devel"
-	@echo "make package"
-	@echo "make package-devel"
-	@echo "make package-runtime"

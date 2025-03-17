@@ -30,6 +30,27 @@ install-runtime:
 	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0644 {} \;
 
 #
+install-runtime-package: install-runtime
+#
+	echo ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN} >> ${BUILD_PATH}/package.runtime.files.txt
+	echo ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}  >> ${BUILD_PATH}/package.runtime.files.txt
+	echo ${INSTALL_PREFIX}/bin/abcdk-tool  >> ${BUILD_PATH}/package.runtime.files.txt
+	echo ${INSTALL_PREFIX}/share/abcdk  >> ${BUILD_PATH}/package.runtime.files.txt
+#
+	echo "#abcdk-runtime-post-begin" >> ${BUILD_PATH}/package.runtime.post.txt
+	echo "echo \"export PATH=\\\$${PATH}:${INSTALL_PREFIX}/bin\" > /etc/profile.d/abcdk.sh" >> ${BUILD_PATH}/package.runtime.post.txt
+	echo "chmod 0755 /etc/profile.d/abcdk.sh"  >> ${BUILD_PATH}/package.runtime.post.txt
+	echo "echo \"${INSTALL_PREFIX}/lib\" > /etc/ld.so.conf.d/abcdk.conf"  >> ${BUILD_PATH}/package.runtime.post.txt
+	echo "ldconfig"  >> ${BUILD_PATH}/package.runtime.post.txt
+	echo "#abcdk-runtime-post-end" >> ${BUILD_PATH}/package.runtime.post.txt
+#
+	echo "#abcdk-runtime-postun-begin" >> ${BUILD_PATH}/package.runtime.postun.txt
+	echo "rm -f /etc/profile.d/abcdk.sh" >> ${BUILD_PATH}/package.runtime.postun.txt
+	echo "rm -f /etc/ld.so.conf.d/abcdk.conf" >> ${BUILD_PATH}/package.runtime.postun.txt
+	echo "ldconfig" >> ${BUILD_PATH}/package.runtime.postun.txt
+	echo "#abcdk-runtime-postun-end" >> ${BUILD_PATH}/package.runtime.postun.txt	
+
+#
 install-devel:
 #
 	mkdir -p ${INSTALL_PATH_LIB}/pkgconfig/
@@ -47,7 +68,7 @@ install-devel:
 	echo "Version: ${VERSION_STR_FULL}" >> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 	echo "Description: ABCDK library" >> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 	echo "Requires:" >> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Libs: -L$${libdir} -labcdk" >> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
+	echo "Libs: -labcdk -L$${libdir}" >> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 	echo "Cflags: -I$${includedir}" >> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 
 #
@@ -56,6 +77,24 @@ install-devel:
 	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0644 {} \;
 	chmod 0644 ${INSTALL_PATH_INC}/abcdk.h
 	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
+
+
+#
+install-devel-package: install-devel
+#
+	echo ${INSTALL_PREFIX}/lib/libabcdk.so >> ${BUILD_PATH}/package.devel.files.txt
+	echo ${INSTALL_PREFIX}/lib/libabcdk.a >> ${BUILD_PATH}/package.devel.files.txt
+	echo ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc >> ${BUILD_PATH}/package.devel.files.txt
+	echo ${INSTALL_PREFIX}/include/abcdk >> ${BUILD_PATH}/package.devel.files.txt
+	echo ${INSTALL_PREFIX}/include/abcdk.h >> ${BUILD_PATH}/package.devel.files.txt
+#
+	echo "#abcdk-devel-post-begin" >> ${BUILD_PATH}/package.devel.post.txt
+	echo "#abcdk-devel-post-end" >> ${BUILD_PATH}/package.devel.post.txt
+#
+	echo "#abcdk-devel-postun-begin" >> ${BUILD_PATH}/package.devel.postun.txt
+	echo "#abcdk-devel-postun-end" >> ${BUILD_PATH}/package.devel.postun.txt
+
+
 #
 uninstall-runtime:
 #
