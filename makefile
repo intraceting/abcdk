@@ -177,28 +177,7 @@ all: build
 include $(CURDIR)/makefile.build.mk
 
 #
-$(OBJ_PATH)/lib/source/enigma/%.o: lib/source/enigma/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/enigma/
-	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/lib/source/ssl/%.o: lib/source/ssl/%.c
-	mkdir -p $(OBJ_PATH)/lib/source/ssl/
-	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/tool/%.o: tool/%.c
-	mkdir -p $(OBJ_PATH)/tool/
-	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/test/%.o: test/%.c
-	mkdir -p $(OBJ_PATH)/test/
-	rm -f $@
-	$(CC)  $(C_FLAGS) -c $< -o $@
+build: lib tool test xgettext
 
 #
 clean: clean-lib clean-tool clean-test
