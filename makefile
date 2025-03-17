@@ -177,7 +177,6 @@ all: build
 include $(CURDIR)/makefile.build.mk
 
 #
-<<<<<<< HEAD
 $(OBJ_PATH)/lib/source/enigma/%.o: lib/source/enigma/%.c
 	mkdir -p $(OBJ_PATH)/lib/source/enigma/
 	rm -f $@
@@ -200,9 +199,6 @@ $(OBJ_PATH)/test/%.o: test/%.c
 	mkdir -p $(OBJ_PATH)/test/
 	rm -f $@
 	$(CC)  $(C_FLAGS) -c $< -o $@
-=======
-build: lib tool test xgettext
->>>>>>> release/3.0
 
 #
 clean: clean-lib clean-tool clean-test
