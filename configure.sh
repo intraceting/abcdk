@@ -156,9 +156,6 @@ BUILD_TYPE="release"
 OPTIMIZE_LEVEL=""
 
 #
-KIT_NAME=""
-
-#
 THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,"
 THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
@@ -560,8 +557,7 @@ VERSION_RELEASE = ${VERSION_RELEASE}
 BUILD_PATH = ${BUILD_PATH}
 #
 INSTALL_PREFIX ?= ${INSTALL_PREFIX}
-#
-KIT_NAME = ${KIT_NAME}
+
 #
 LSB_RELEASE = ${LSB_RELEASE}
 #
