@@ -602,5 +602,5 @@ EOF
 checkReturnCode
 
 #
-echo "${THIRDPARTY_LIBS_PATH}" > ${BUILD_PATH}/abcdk.depend.lib.path.txt
+echo "${THIRDPARTY_LIBS_PATH}" > ${BUILD_PATH}/depend.lib.path.txt
 

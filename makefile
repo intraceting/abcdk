@@ -127,7 +127,7 @@ NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 LD_FLAGS += -L${BUILD_PATH}
 
 #
-OBJ_PATH = ${BUILD_PATH}/abcdk.tmp/
+OBJ_PATH = ${BUILD_PATH}/tmp/
 
 #更新动态链接库的搜索路径。
 export LD_LIBRARY_PATH += :${DEPEND_LIB_PATH}
