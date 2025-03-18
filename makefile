@@ -159,9 +159,6 @@ include $(CURDIR)/makefile.setup.mk
 install: install-runtime install-devel
 
 #
-install-package: install-runtime-package install-devel-package
-
-#
 uninstall: uninstall-runtime uninstall-devel
 
 #

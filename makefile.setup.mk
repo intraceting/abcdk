@@ -32,28 +32,6 @@ install-runtime:
 	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0644 {} \;
 
 #
-install-runtime-package: install-runtime
-#
-	echo ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN} 	>> ${INSTALL_PATH}/package.runtime.files.txt
-	echo ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}  >> ${INSTALL_PATH}/package.runtime.files.txt
-	echo ${INSTALL_PREFIX}/bin/abcdk-tool  						>> ${INSTALL_PATH}/package.runtime.files.txt
-	echo ${INSTALL_PREFIX}/bin/abcdk-script						>> ${INSTALL_PATH}/package.runtime.files.txt
-	echo ${INSTALL_PREFIX}/share/abcdk  						>> ${INSTALL_PATH}/package.runtime.files.txt
-#
-	echo "#abcdk-runtime-post-begin" 														>> ${INSTALL_PATH}/package.runtime.post.txt
-	echo "echo \"export PATH=\\\$${PATH}:${INSTALL_PREFIX}/bin\" > /etc/profile.d/abcdk.sh" >> ${INSTALL_PATH}/package.runtime.post.txt
-	echo "chmod 0755 /etc/profile.d/abcdk.sh"  												>> ${INSTALL_PATH}/package.runtime.post.txt
-	echo "echo \"${INSTALL_PREFIX}/lib\" > /etc/ld.so.conf.d/abcdk.conf"  					>> ${INSTALL_PATH}/package.runtime.post.txt
-	echo "ldconfig"  																		>> ${INSTALL_PATH}/package.runtime.post.txt
-	echo "#abcdk-runtime-post-end" 															>> ${INSTALL_PATH}/package.runtime.post.txt
-#
-	echo "#abcdk-runtime-postun-begin" 				>> ${INSTALL_PATH}/package.runtime.postun.txt
-	echo "rm -f /etc/profile.d/abcdk.sh" 			>> ${INSTALL_PATH}/package.runtime.postun.txt
-	echo "rm -f /etc/ld.so.conf.d/abcdk.conf" 		>> ${INSTALL_PATH}/package.runtime.postun.txt
-	echo "ldconfig" 								>> ${INSTALL_PATH}/package.runtime.postun.txt
-	echo "#abcdk-runtime-postun-end" 				>> ${INSTALL_PATH}/package.runtime.postun.txt	
-	
-#
 install-devel:
 #
 	mkdir -p ${INSTALL_PATH_LIB}/pkgconfig/
@@ -81,23 +59,6 @@ install-devel:
 	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0644 {} \;
 	chmod 0644 ${INSTALL_PATH_INC}/abcdk.h
 	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-
-
-#
-install-devel-package: install-devel
-#
-	echo ${INSTALL_PREFIX}/lib/libabcdk.so 			>> ${INSTALL_PATH}/package.devel.files.txt
-	echo ${INSTALL_PREFIX}/lib/libabcdk.a 			>> ${INSTALL_PATH}/package.devel.files.txt
-	echo ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc 	>> ${INSTALL_PATH}/package.devel.files.txt
-	echo ${INSTALL_PREFIX}/include/abcdk 			>> ${INSTALL_PATH}/package.devel.files.txt
-	echo ${INSTALL_PREFIX}/include/abcdk.h 			>> ${INSTALL_PATH}/package.devel.files.txt
-#
-	echo "#abcdk-devel-post-begin" >> ${INSTALL_PATH}/package.devel.post.txt
-	echo "#abcdk-devel-post-end" >> ${INSTALL_PATH}/package.devel.post.txt
-#
-	echo "#abcdk-devel-postun-begin" >> ${INSTALL_PATH}/package.devel.postun.txt
-	echo "#abcdk-devel-postun-end" >> ${INSTALL_PATH}/package.devel.postun.txt
-
 
 #
 uninstall-runtime:
