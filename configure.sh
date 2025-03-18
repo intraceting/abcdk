@@ -218,9 +218,9 @@ VARIABLE:
 
      BUILD_PATH(过程文件存放的路径)用于存放构建过程文件.
 
-     RELEASE_PATH=${RELEASE_PATH}
+     PACKAGE_PATH=${PACKAGE_PATH}
 
-     RELEASE_PATH(发行包存放的路径)用于存放发行包.
+     PACKAGE_PATH(发行包存放的路径)用于存放发行包.
 
      OPTIMIZE_LEVEL=${OPTIMIZE_LEVEL}
 
