@@ -6,15 +6,12 @@
 #
 
 #
-MAKE_CONF ?= $(abspath $(CURDIR)/../aconf/build/makefile.conf)
+MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 
 # 加载配置项。
 include ${MAKE_CONF}
 
-#把产品的版本号修改为项目的版本号。
-VERSION_MAJOR = 3
-VERSION_MINOR = 0
-VERSION_RELEASE = 2
+#
 VERSION_STR_MAIN = ${VERSION_MAJOR}.${VERSION_MINOR}
 VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
@@ -160,6 +157,9 @@ include $(CURDIR)/makefile.setup.mk
 
 #
 install: install-runtime install-devel
+
+#
+install-package: install-runtime-package install-devel-package
 
 #
 uninstall: uninstall-runtime uninstall-devel
