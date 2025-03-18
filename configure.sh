@@ -544,6 +544,8 @@ if [ "${THIRDPARTY_NOFOUND}" != "" ];then
 }
 fi
 
+#提取第三方依整包的所有路径。
+THIRDPARTY_LIBS_PATH = $(echo "${THIRDPARTY_LINKS}" | tr ' ' '\n' | grep "^-L" | sed 's/^-L//' | sort | uniq | tr '\n' ':' | sed 's/:$//')
 
 #
 MAKE_CONF=${BUILD_PATH}/makefile.conf
@@ -592,7 +594,7 @@ TARGET_BITWIDE = ${_TARGET_BITWIDE}
 DEPEND_FLAGS = ${THIRDPARTY_FLAGS}
 DEPEND_LINKS = ${THIRDPARTY_LINKS}
 #
-DEPEND_LIB_PATH = $(echo "${THIRDPARTY_LINKS}" | tr ' ' '\n' | grep "^-L" | sed 's/^-L//' | sort | uniq | tr '\n' ':' | sed 's/:$//')
+DEPEND_LIB_PATH = ${THIRDPARTY_LIBS_PATH}
 #
 DEV_TOOL_HOME = ${SHELLDIR}/tools/
 
@@ -600,5 +602,5 @@ EOF
 checkReturnCode
 
 #
-echo "${DEPEND_LIB_PATH}" > ${BUILD_PATH}/abcdk.depend.lib.path.txt
+echo "${THIRDPARTY_LIBS_PATH}" > ${BUILD_PATH}/abcdk.depend.lib.path.txt
 
