@@ -310,7 +310,6 @@ done
 
 #转换为绝对路径。
 BUILD_PATH=$(realpath ${BUILD_PATH})
-PACKAGE_PATH=$(realpath ${PACKAGE_PATH})
 INSTALL_PREFIX=$(realpath ${INSTALL_PREFIX})
 
 #
