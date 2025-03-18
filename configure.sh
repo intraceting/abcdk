@@ -599,3 +599,6 @@ DEV_TOOL_HOME = ${SHELLDIR}/tools/
 EOF
 checkReturnCode
 
+#
+echo "${DEPEND_LIB_PATH}" > ${BUILD_PATH}/abcdk.depend.lib.path.txt
+

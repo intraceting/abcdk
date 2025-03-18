@@ -52,7 +52,7 @@ install-runtime-package: install-runtime
 	echo "rm -f /etc/ld.so.conf.d/abcdk.conf" 		>> ${INSTALL_PATH}/package.runtime.postun.txt
 	echo "ldconfig" 								>> ${INSTALL_PATH}/package.runtime.postun.txt
 	echo "#abcdk-runtime-postun-end" 				>> ${INSTALL_PATH}/package.runtime.postun.txt	
-
+	
 #
 install-devel:
 #
