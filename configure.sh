@@ -133,7 +133,6 @@ LSB_RELEASE="linux-gnu"
 
 #
 BUILD_PATH="${SHELLDIR}/build/"
-PACKAGE_PATH="${SHELLDIR}/package/"
 #
 INSTALL_PREFIX="/usr/local/"
 
@@ -217,10 +216,6 @@ VARIABLE:
      BUILD_PATH=${BUILD_PATH}
 
      BUILD_PATH(过程文件存放的路径)用于存放构建过程文件.
-
-     PACKAGE_PATH=${PACKAGE_PATH}
-
-     PACKAGE_PATH(发行包存放的路径)用于存放发行包.
 
      OPTIMIZE_LEVEL=${OPTIMIZE_LEVEL}
 
@@ -326,16 +321,6 @@ if [ ! -d ${BUILD_PATH} ];then
     exit 22
 }
 fi
-
-#
-mkdir -p ${PACKAGE_PATH}
-if [ ! -d ${PACKAGE_PATH} ];then
-{
-    echo "'PACKAGE_PATH=${PACKAGE_PATH}' invalid or unsupported."
-    exit 22
-}
-fi
-
 
 #安装路径必须有效，并且不支持安装到根(/)路径。
 if [ "${INSTALL_PREFIX}" == "" ] || [ "${INSTALL_PREFIX}" == "/" ];then
@@ -572,7 +557,6 @@ VERSION_MINOR = ${VERSION_MINOR}
 VERSION_RELEASE = ${VERSION_RELEASE}
 #
 BUILD_PATH = ${BUILD_PATH}
-PACKAGE_PATH = ${PACKAGE_PATH}
 #
 INSTALL_PREFIX ?= ${INSTALL_PREFIX}
 #
