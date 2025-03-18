@@ -545,7 +545,7 @@ if [ "${THIRDPARTY_NOFOUND}" != "" ];then
 fi
 
 #提取第三方依整包的所有路径。
-THIRDPARTY_LIBS_PATH = $(echo "${THIRDPARTY_LINKS}" | tr ' ' '\n' | grep "^-L" | sed 's/^-L//' | sort | uniq | tr '\n' ':' | sed 's/:$//')
+THIRDPARTY_LIBS_PATH=$(echo "${THIRDPARTY_LINKS}" | tr ' ' '\n' | grep "^-L" | sed 's/^-L//' | sort | uniq | tr '\n' ':' | sed 's/:$//')
 
 #
 MAKE_CONF=${BUILD_PATH}/makefile.conf
