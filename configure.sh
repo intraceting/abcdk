@@ -163,7 +163,7 @@ KIT_NAME=""
 THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,"
 THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
-THIRDPARTY_FIND_ROOT="${INSTALL_PREFIX}"
+THIRDPARTY_FIND_ROOT=""
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
 
@@ -266,7 +266,7 @@ VARIABLE:
      pam,ncurses,fltk,x264,x265,
      tensorrt,live555
 
-     THIRDPARTY_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
+     THIRDPARTY_FIND_ROOT=\${INSTALL_PREFIX}
 
      THIRDPARTY_FIND_ROOT(依赖组件搜索根路径)用于查找依赖组件完整路径.
 
