@@ -163,7 +163,7 @@ KIT_NAME=""
 THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,"
 THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
-THIRDPARTY_FIND_ROOT="/usr/local/"
+THIRDPARTY_FIND_ROOT="${INSTALL_PREFIX}"
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
 
