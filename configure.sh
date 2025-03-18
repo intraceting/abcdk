@@ -279,11 +279,11 @@ VARIABLE:
 
      CUDA_FIND_ROOT(CUDA组件搜索根路径)用于查找依赖组件完整路径.
 
-     CUDA_COMPILER_BIN=\${THIRDPARTY_FIND_ROOT}/cuda/bin/nvcc
+     CUDA_COMPILER_BIN=\${CUDA_FIND_ROOT}/bin/nvcc
 
      CUDA_COMPILER_BIN(CUDA编译器的完整路径).
 
-     CUDNN_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/cuda/
+     CUDNN_FIND_ROOT=\${CUDA_FIND_ROOT}/
 
      CUDNN_FIND_ROOT(CUDNN组件搜索根路径)用于查找依赖组件完整路径.
 
@@ -396,12 +396,12 @@ fi
 
 #
 if [ "${CUDA_COMPILER_BIN}" == "" ];then
-CUDA_COMPILER_BIN="${THIRDPARTY_FIND_ROOT}/cuda/bin/nvcc"
+CUDA_COMPILER_BIN="${CUDA_FIND_ROOT}/bin/nvcc"
 fi
 
 #
 if [ "${CUDNN_FIND_ROOT}" == "" ];then
-CUDNN_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cuda/"
+CUDNN_FIND_ROOT="${CUDA_FIND_ROOT}/"
 fi
 
 #
