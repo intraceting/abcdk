@@ -383,35 +383,11 @@ if [ $? -ne 0 ];then
     exit 22
 fi
 
-#
-if [ "${_NATIVE_PLATFORM}" == "${_TARGET_PLATFORM}" ];then
-{
-    #获组件包名称。
-    KIT_NAME=$(CheckPackageKitName)
 
-    #
-    if [ "${KIT_NAME}" == "rpm" ];then
-    {
-        #
-        CheckHavePackage rpmbuild 1
-        if [ $? -ne 0 ];then
-            echo "'$(CheckHavePackage rpmbuild 4)' not found."
-            exit 22
-        fi
-    }
-    elif [ "${KIT_NAME}" == "deb" ];then
-    {
-        #
-        CheckHavePackage dpkg 1
-        if [ $? -ne 0 ];then
-            echo "'$(CheckHavePackage dpkg 4)' not found."
-            exit 22
-        fi
-    }
-    fi
-}
+#如果未指定第三方根路径，则直接用安装路径。
+if [ "${THIRDPARTY_FIND_ROOT}" == "" ];then
+    THIRDPARTY_FIND_ROOT=${INSTALL_PREFIX}
 fi
-
 
 #
 if [ "${CUDA_FIND_ROOT}" == "" ];then
