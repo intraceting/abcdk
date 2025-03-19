@@ -305,9 +305,6 @@ do
     esac
 done
 
-#转换为绝对路径。
-BUILD_PATH=$(realpath ${BUILD_PATH})
-INSTALL_PREFIX=$(realpath ${INSTALL_PREFIX})
 
 #
 mkdir -p ${BUILD_PATH}
