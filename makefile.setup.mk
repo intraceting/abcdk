@@ -14,20 +14,29 @@ INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/share/)
 
 
 #
-install-bin:
+install-tool:
 #
-	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
-	mkdir -p ${INSTALL_PATH_DOC}/abcdk/bin/
+	mkdir -p ${INSTALL_PATH_DOC}/abcdk/tool/
 #
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
-	cp -rf $(CURDIR)/src/script/. ${INSTALL_PATH_BIN}/abcdk-script/
-	cp -rf $(CURDIR)/share/bin/. ${INSTALL_PATH_DOC}/abcdk/bin/
+	cp -rf $(CURDIR)/share/tool/. ${INSTALL_PATH_DOC}/abcdk/tool/
 #
 	chmod 0755 ${INSTALL_PATH_BIN}/abcdk-tool
-	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name *.sh -exec chmod 0755 {} \;
-	find ${INSTALL_PATH_DOC}/abcdk/bin/ -type f -exec chmod 0644 {} \;
+	find ${INSTALL_PATH_DOC}/abcdk/tool/ -type f -exec chmod 0644 {} \;
+
 #
-install-runtime:
+install-script:
+#
+	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
+#
+	cp -rf $(CURDIR)/src/script/. ${INSTALL_PATH_BIN}/abcdk-script/
+	cp -rf $(CURDIR)/share/script/. ${INSTALL_PATH_DOC}/abcdk/script/
+#
+	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name *.sh -exec chmod 0755 {} \;
+
+
+#
+install-lib:
 #
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_DOC}/abcdk/lib/
@@ -41,7 +50,7 @@ install-runtime:
 	find ${INSTALL_PATH_DOC}/abcdk/lib/ -type f -exec chmod 0644 {} \;
 
 #
-install-devel:
+install-dev:
 #
 	mkdir -p ${INSTALL_PATH_LIB}/pkgconfig/
 	mkdir -p ${INSTALL_PATH_INC}
@@ -70,23 +79,28 @@ install-devel:
 	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 
 #
-uninstall-bin:
+uninstall-tool:
 #
 	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
+	rm -rf $(INSTALL_PATH_DOC)/abcdk/tool
+
+
+uninstall-script:
+#
 	rm -rf ${INSTALL_PATH_BIN}/abcdk-script
-	rm -rf $(INSTALL_PATH_DOC)/abcdk/bin
+	rm -rf $(INSTALL_PATH_DOC)/abcdk/script
 
 #
-uninstall-runtime:
+uninstall-lib:
 #
-	unlink ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_MAIN}
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	rm -rf $(INSTALL_PATH_DOC)/abcdk/lib
 	
 #
-uninstall-devel:
+uninstall-dev:
 #
-	unlink ${INSTALL_PATH_LIB}/libabcdk.so
+	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
 	rm -rf ${INSTALL_PATH_INC}/abcdk
 	rm -f ${INSTALL_PATH_INC}/abcdk.h

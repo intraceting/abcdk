@@ -156,10 +156,10 @@ clean: clean-lib clean-tool clean-test
 include $(CURDIR)/makefile.setup.mk
 
 #
-install: install-runtime install-devel install-bin
+install: install-lib install-dev install-tool install-script
 
 #
-uninstall: uninstall-runtime uninstall-devel uninstall-bin
+uninstall: uninstall-lib uninstall-dev uninstall-tool uninstall-script
 
 #
 help:
@@ -167,8 +167,12 @@ help:
 	@echo "make all"
 	@echo "make clean"
 	@echo "make install"
-	@echo "make install-runtime"
-	@echo "make install-devel"
+	@echo "make install-lib"
+	@echo "make install-dev"
+	@echo "make install-tool"
+	@echo "make install-script"
 	@echo "make uninstall"
-	@echo "make uninstall-runtime"
-	@echo "make uninstall-devel"
+	@echo "make uninstall-lib"
+	@echo "make uninstall-dev"
+	@echo "make uninstall-tool"
+	@echo "make uninstall-script"
