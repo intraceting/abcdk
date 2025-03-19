@@ -16,6 +16,7 @@ INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/share/)
 #
 install-tool:
 #
+	mkdir -p ${INSTALL_PATH_BIN}/
 	mkdir -p ${INSTALL_PATH_DOC}/abcdk/tool/
 #
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
