@@ -12,24 +12,33 @@ INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
 INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
 INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/share/)
 
+
+#
+install-bin:
+#
+	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
+	mkdir -p ${INSTALL_PATH_DOC}/abcdk/bin/
+#
+	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
+	cp -rf $(CURDIR)/src/script/. ${INSTALL_PATH_BIN}/abcdk-script/
+	cp -rf $(CURDIR)/share/bin/. ${INSTALL_PATH_DOC}/abcdk/bin/
+#
+	chmod 0755 ${INSTALL_PATH_BIN}/abcdk-tool
+	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name *.sh -exec chmod 0755 {} \;
+	find ${INSTALL_PATH_DOC}/abcdk/bin/ -type f -exec chmod 0644 {} \;
 #
 install-runtime:
 #
-	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
 	mkdir -p ${INSTALL_PATH_LIB}
-	mkdir -p ${INSTALL_PATH_DOC}/abcdk/
+	mkdir -p ${INSTALL_PATH_DOC}/abcdk/lib/
 #
 	cp -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PATH_LIB}/
-	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
-	cp -rf $(CURDIR)/src/script/. ${INSTALL_PATH_BIN}/abcdk-script/
-	cp -rf $(CURDIR)/share/abcdk/. ${INSTALL_PATH_DOC}/abcdk/
-
+	cp -rf $(CURDIR)/share/lib/. ${INSTALL_PATH_DOC}/abcdk/lib/
 #	
 	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
 	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
-	chmod 0755 ${INSTALL_PATH_BIN}/abcdk-tool
-	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name *.sh -exec chmod 0755 {} \;
-	find ${INSTALL_PATH_DOC}/abcdk/ -type f -exec chmod 0644 {} \;
+#
+	find ${INSTALL_PATH_DOC}/abcdk/lib/ -type f -exec chmod 0644 {} \;
 
 #
 install-devel:
@@ -61,14 +70,18 @@ install-devel:
 	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
 
 #
+uninstall-bin:
+#
+	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
+	rm -rf ${INSTALL_PATH_BIN}/abcdk-script
+	rm -rf $(INSTALL_PATH_DOC)/abcdk/bin
+
+#
 uninstall-runtime:
 #
 	unlink ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
-	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
-	rm -rf ${INSTALL_PATH_BIN}/abcdk-script
-	rm -rf $(INSTALL_PATH_DOC)/abcdk
-
+	rm -rf $(INSTALL_PATH_DOC)/abcdk/lib
 	
 #
 uninstall-devel:

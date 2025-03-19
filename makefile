@@ -156,10 +156,10 @@ clean: clean-lib clean-tool clean-test
 include $(CURDIR)/makefile.setup.mk
 
 #
-install: install-runtime install-devel
+install: install-runtime install-devel install-bin
 
 #
-uninstall: uninstall-runtime uninstall-devel
+uninstall: uninstall-runtime uninstall-devel uninstall-bin
 
 #
 help:

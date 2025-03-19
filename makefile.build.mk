@@ -190,14 +190,26 @@ clean-test:
 	rm -rf ${OBJ_PATH}/src/test
 	rm -f $(BUILD_PATH)/abcdk-test
 
+#
+xgettext: xgettext-lib xgettext-tool
 
 #把POT文件从share目录复制到build目录进行更新。
-xgettext:
+xgettext-lib:
 	@if [ -x "${XGETTEXT}" ]; then \
-		cp -f $(CURDIR)/share/abcdk/locale/en_US/gettext/abcdk.pot $(BUILD_PATH)/abcdk.en_US.pot ; \
-		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/abcdk.gettext.filelist.txt ; \
-		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" >> $(BUILD_PATH)/abcdk.gettext.filelist.txt ; \
-		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/abcdk.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/abcdk.gettext.filelist.txt -L c++ ; \
-		rm -f $(BUILD_PATH)/abcdk.gettext.filelist.txt ; \
-		echo "'$(BUILD_PATH)/abcdk.en_US.pot' Update completed." ; \
+		cp -f $(CURDIR)/share/lib/locale/en_US/gettext/lib.pot $(BUILD_PATH)/lib.en_US.pot ; \
+		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/lib.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/lib.gettext.filelist.txt ; \
+		echo "'$(BUILD_PATH)/lib.en_US.pot' Update completed." ; \
+	fi
+
+
+#把POT文件从share目录复制到build目录进行更新。
+xgettext-tool:
+	@if [ -x "${XGETTEXT}" ]; then \
+		cp -f $(CURDIR)/share/bin/locale/en_US/gettext/tool.pot $(BUILD_PATH)/tool.en_US.pot ; \
+		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/tool.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/tool.gettext.filelist.txt ; \
+		echo "'$(BUILD_PATH)/tool.en_US.pot' Update completed." ; \
 	fi
