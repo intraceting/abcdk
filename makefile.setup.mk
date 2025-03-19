@@ -29,6 +29,7 @@ install-tool:
 install-script:
 #
 	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
+	mkdir -p ${INSTALL_PATH_DOC}/abcdk/script/
 #
 	cp -rf $(CURDIR)/src/script/. ${INSTALL_PATH_BIN}/abcdk-script/
 	cp -rf $(CURDIR)/share/script/. ${INSTALL_PATH_DOC}/abcdk/script/
