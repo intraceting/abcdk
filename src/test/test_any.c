@@ -1730,7 +1730,7 @@ int abcdk_test_any(abcdk_option_t *args)
 #elif 1
 
     uint8_t uuid[16] = {0};
-    int chk = abcdk_dmi_hash2(uuid,"aaaaa");
+    int chk = abcdk_dmi_hash(uuid,"aaaaa");
     assert(chk == 0);
 
     char str[33] = {0};
