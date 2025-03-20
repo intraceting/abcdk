@@ -9,7 +9,11 @@
 
 #include "abcdk/system/block.h"
 #include "abcdk/util/socket.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/dirent.h"
 #include "abcdk/util/md5.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/fnmatch.h"
 
 __BEGIN_DECLS
 
@@ -43,6 +47,11 @@ typedef enum _abcdk_dmi_constant
  * @return !NULL(0) 成功，NULL(0) 失败。
 */
 const uint8_t *abcdk_dmi_hash(uint8_t uuid[16], uint32_t flag, const char *stuff);
+
+/**
+ * 
+*/
+int abcdk_dmi_hash2(uint8_t uuid[16], const char *stuff);
 
 __END_DECLS
 

@@ -1705,7 +1705,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_torch_image_free(&f);
 
 
-#elif 1
+#elif 0
 
     uint64_t counter = time(NULL)/30;
     //uint64_t counter = 59/30;
@@ -1726,6 +1726,18 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("OTP-SHA512: %08u\n",otp_sha512%100000000);
 
     // 可以使用oathtool 进行验证。
+
+#elif 1
+
+    uint8_t uuid[16] = {0};
+    int chk = abcdk_dmi_hash2(uuid,"aaaaa");
+    assert(chk == 0);
+
+    char str[33] = {0};
+
+    abcdk_bin2hex(str,uuid,16,0);
+
+    printf("%s\n",str);
 
 #endif 
     return 0;
