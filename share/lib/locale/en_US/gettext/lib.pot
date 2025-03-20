@@ -1,22 +1,21 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) 2025 The ABCDK project authors. All Rights Reserved.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the ABCDK package.
-# INTRACETING<traceting@gmail.com>, 2025.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ABCDK 3.0.1\n"
-"Report-Msgid-Bugs-To: INTRACETING<traceting@gmail.com>\n"
-"POT-Creation-Date: 2025-03-10 15:14+0800\n"
+"Project-Id-Version: ABCDK 3.1.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-20 16:10+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: INTRACETING<traceting@gmail.com>\n"
-"Language-Team: INTRACETING<traceting@gmail.com>\n"
-"Language: en_US\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-
 
 #, c-format
 msgid "popen: %s"
@@ -417,3 +416,14 @@ msgstr "Region of interest not yet supported."
 
 msgid "当前环境在构建时未包含FFmpeg工具。"
 msgstr "The current environment was built without FFmpeg tools."
+
+#, c-format
+msgid "打开目录(%s)失败，无权限或不存在，忽略。"
+msgstr "Failed to open directory (%s), insufficient permissions or not found, ignored."
+
+#, c-format
+msgid "块设备分区的别名(%s)将被用于计算DMI的哈希值。"
+msgstr "Alias of block device partition (%s) will be used to compute the DMI hash value."
+
+msgid "没有发现可用于计算DMI哈希值的固定块设备"
+msgstr "No fixed block device found for computing the DMI hash value."

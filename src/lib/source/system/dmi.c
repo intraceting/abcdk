@@ -109,19 +109,19 @@ int abcdk_dmi_hash(uint8_t uuid[16], const char *stuff)
     chk = abcdk_dirent_open(&dir_ctx,"/dev/disk/by-uuid");
     if(chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING,"打开目录(%s)失败，无权限或不存在，忽略。","/dev/disk/by-uuid");
+        abcdk_trace_printf(LOG_WARNING,TT("打开目录(%s)失败，无权限或不存在，忽略。"),"/dev/disk/by-uuid");
     }
 
     chk = abcdk_dirent_open(&dir_ctx,"/dev/disk/by-partuuid");
     if(chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING,"打开目录(%s)失败，无权限或不存在，忽略。","/dev/disk/by-partuuid");
+        abcdk_trace_printf(LOG_WARNING,TT("打开目录(%s)失败，无权限或不存在，忽略。"),"/dev/disk/by-partuuid");
     }
 
     chk = abcdk_dirent_open(&dir_ctx,"/dev/disk/by-id");
     if(chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING,"打开目录(%s)失败，无权限或不存在，忽略。","/dev/disk/by-id");
+        abcdk_trace_printf(LOG_WARNING,TT("打开目录(%s)失败，无权限或不存在，忽略。"),"/dev/disk/by-id");
     }
 
     while(1)
@@ -165,7 +165,7 @@ int abcdk_dmi_hash(uint8_t uuid[16], const char *stuff)
         /*提取分区别名。*/
         abcdk_basename(alias_name,tmp_file);
 
-        abcdk_trace_printf(LOG_DEBUG,"块设备分区的别名(%s)将被用于计算DMI的哈希值。",alias_name);
+        abcdk_trace_printf(LOG_DEBUG,TT("块设备分区的别名(%s)将被用于计算DMI的哈希值。"),alias_name);
 
         /*创建关键字节点，并复制分区别名。*/
         p = abcdk_tree_alloc4(alias_name, strlen(alias_name));
@@ -182,7 +182,7 @@ int abcdk_dmi_hash(uint8_t uuid[16], const char *stuff)
     p = abcdk_tree_child(keyword_list, 1);//first.
     if(!p)
     {
-        abcdk_trace_printf(LOG_ERR,"没有发现可用于计算DMI哈希值的固定块设备");
+        abcdk_trace_printf(LOG_ERR,TT("没有发现可用于计算DMI哈希值的固定块设备"));
 
         abcdk_tree_free(&keyword_list);//free.
         return -1;
