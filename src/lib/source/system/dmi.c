@@ -329,19 +329,13 @@ int abcdk_dmi_hash2(uint8_t uuid[16], const char *stuff)
     p = abcdk_tree_child(keyword_list, 1);//first.
     if(!p)
     {
-        abcdk_trace_printf(LOG_ERR,"没有发可用于计算DMI哈希值的固定块设备");
+        abcdk_trace_printf(LOG_ERR,"没有发现可用于计算DMI哈希值的固定块设备");
 
         abcdk_tree_free(&keyword_list);//free.
         return -1;
     }
 
-    abcdk_tree_iterator_t it = {0,NULL,_abcdk_dmi_hash_dump_cb,_abcdk_dmi_hash_compare_cb};
-
-    /*排序并去重。*/
-    abcdk_tree_sort(keyword_list,&it,1);
-    abcdk_tree_distinct(keyword_list,&it);
-
-    /*可能存在填充物。*/
+    /*如果填充物有效，追加到列表中。*/
     if(stuff && *stuff)
     {
         p = abcdk_tree_alloc4(stuff, strlen(stuff));
@@ -354,8 +348,14 @@ int abcdk_dmi_hash2(uint8_t uuid[16], const char *stuff)
         abcdk_tree_insert2(keyword_list, p, 0);
     }
 
-    /*再次排序。*/
+    abcdk_tree_iterator_t it = {0,NULL,_abcdk_dmi_hash_dump_cb,_abcdk_dmi_hash_compare_cb};
+
+    /*排序并去重。*/
     abcdk_tree_sort(keyword_list,&it,1);
+    abcdk_tree_distinct(keyword_list,&it);
+
+    /*打印。*/
+    abcdk_tree_scan(keyword_list,&it);
 
     /*创建MD5环境。*/
     md5_ctx = abcdk_md5_create();
