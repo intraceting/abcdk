@@ -11,15 +11,19 @@
 #ifdef __cuda_cuda_h__
 
 template <typename T>
-ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed, T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar)
+ABCDK_INVOKE_GLOBAL void _abcdk_cuda_imgproc_stuff_2d2d(int channels, bool packed,
+                                                        T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
+                                                        size_t roi_x, size_t roi_y, size_t roi_w, size_t roi_h)
 {
     size_t tid = abcdk::cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::stuff<T>(channels,packed,dst, dst_w, dst_ws, dst_h,scalar,tid);
+    abcdk::generic::imageproc::stuff<T>(channels, packed, dst, dst_w, dst_ws, dst_h, scalar, roi_x, roi_y, roi_w, roi_h, tid);
 }
 
 template <typename T>
-ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar)
+ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed,
+                                                T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
+                                                const abcdk_torch_rect_t *roi)
 {
     void *gpu_scalar;
     uint3 dim[2];
@@ -33,7 +37,11 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
     /*2D-2D*/
     abcdk::cuda::grid::make_dim_dim(dim, dst_w * dst_h, 64);
 
-    _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t*)gpu_scalar);
+    if (roi)
+        _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t *)gpu_scalar, roi->x, roi->y, roi->width, roi->height);
+    else
+        _abcdk_cuda_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t *)gpu_scalar, 0, 0, dst_w, dst_h);
+
     abcdk_cuda_free(&gpu_scalar);
 
     return 0;
@@ -41,7 +49,7 @@ ABCDK_INVOKE_HOST int _abcdk_cuda_imgproc_stuff(int channels, bool packed, T *ds
 
 __BEGIN_DECLS
 
-int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[])
+int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[], const abcdk_torch_rect_t *roi)
 {
     int dst_depth;
 
@@ -54,14 +62,14 @@ int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[])
 
     dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
 
-    return _abcdk_cuda_imgproc_stuff<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, scalar);
+    return _abcdk_cuda_imgproc_stuff<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, scalar, roi);
 }
 
 __END_DECLS
 
 #else // __cuda_cuda_h__
 
-int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[])
+int abcdk_cuda_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[], const abcdk_torch_rect_t *roi)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;

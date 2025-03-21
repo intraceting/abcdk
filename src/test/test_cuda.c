@@ -25,7 +25,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
     abcdk_torch_image_t *b = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 8);
 
     uint32_t scalar[3] = {0, 0, 255};
-    abcdk_cuda_imgproc_stuff(a, scalar);
+    abcdk_cuda_imgproc_stuff(a, scalar,NULL);
 
     //abcdk_cuda_image_save("/tmp/test.cuda.a1.bmp", a);
 

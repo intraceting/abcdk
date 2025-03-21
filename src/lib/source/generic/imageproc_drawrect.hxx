@@ -25,8 +25,8 @@ namespace abcdk
                                               T *dst, size_t w, size_t ws, size_t h, uint32_t *color, int weight, int *corner,
                                               size_t tid)
             {
-                size_t y = tid / w;
-                size_t x = tid % w;
+                int y = tid / w;//必须是有符号的。
+                int x = tid % w;//必须是有符号的。
 
                 if (x >= w || y >= h)
                     return;

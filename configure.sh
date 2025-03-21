@@ -124,7 +124,7 @@ DependPackageCheck()
 #主版本
 VERSION_MAJOR="3"
 #副版本
-VERSION_MINOR="1"
+VERSION_MINOR="2"
 #发行版本
 VERSION_RELEASE="1"
 

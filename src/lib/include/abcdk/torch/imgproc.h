@@ -18,10 +18,12 @@ __BEGIN_DECLS
 
 /**
  * 图像填充。
+ * 
+ * @param [in] roi 感兴趣区域。NULL(0) 全部。
  *
  * @return 0 成功，< 0  失败。
  */
-int abcdk_torch_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[]);
+int abcdk_torch_imgproc_stuff(abcdk_torch_image_t *dst, uint32_t scalar[], const abcdk_torch_rect_t *roi);
 
 /**
  * 全景图像融合(从左到右)。

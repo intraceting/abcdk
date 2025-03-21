@@ -1644,7 +1644,7 @@ int abcdk_test_any(abcdk_option_t *args)
     // abcdk_openssl_evp_pkey_free(&pubkey);
 #endif //HAVE_OPENSSL
 
-#elif 0
+#elif 1
 
 
 
@@ -1659,7 +1659,22 @@ int abcdk_test_any(abcdk_option_t *args)
 
 
     uint32_t scalar[3] = {0, 0, 255};
-    abcdk_torch_imgproc_stuff(a, scalar);
+
+    abcdk_torch_rect_t roi ={ 50,50,300,300};
+
+    abcdk_torch_imgproc_stuff(a, scalar, &roi);
+
+
+    abcdk_torch_rect_t roi2 ={ 500,500,300,300};
+    uint32_t scalar2[3] = {255, 0, 0};
+
+    abcdk_torch_imgproc_stuff(a, scalar2, &roi2);
+
+
+
+ //   int corner[4] = {100,100,1920,1080};
+
+  //  abcdk_torch_imgproc_drawrect(a,scalar2,500000,corner);
 
     abcdk_torch_image_save("/tmp/test.cpu.a.bmp", a);
     
@@ -1679,7 +1694,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_torch_image_t *g = abcdk_torch_image_create(600, 800, ABCDK_TORCH_PIXFMT_BGR24, 38);
 
     uint32_t scalar4[3] = {128, 128, 128};
-    abcdk_torch_imgproc_stuff(g, scalar4);
+    abcdk_torch_imgproc_stuff(g, scalar4,NULL);
 
     abcdk_torch_imgproc_resize(g, NULL,a, NULL,1,1);
 
@@ -1727,7 +1742,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     // 可以使用oathtool 进行验证。
 
-#elif 1
+#elif 0
 
     uint8_t uuid[16] = {0};
     int chk = abcdk_dmi_hash(uuid,"aaaaa");
