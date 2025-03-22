@@ -134,11 +134,17 @@ int abcdk_opencv_stitcher_metadata_load(abcdk_opencv_stitcher_t *ctx, const char
     return -1;
 }
 
-void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name)
+int abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name)
 {
+    int chk;
+
     assert(ctx != NULL && name != NULL);
 
-    ctx->impl_ctx->set_feature_finder(name);
+    chk = ctx->impl_ctx->set_feature_finder(name);
+    if(chk != 0)
+        return -1;
+
+    return 0;
 }
 
 int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
@@ -186,11 +192,17 @@ int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int c
     return 0;
 }
 
-void abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx,const char *name)
+int abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx,const char *name)
 {
+    int chk;
+
     assert(ctx != NULL && name != NULL);
 
-    ctx->impl_ctx->set_warper(name);
+    chk = ctx->impl_ctx->set_warper(name);
+    if(chk != 0)
+        return -1;
+
+    return 0;
 }
 
 int abcdk_opencv_stitcher_build_panorama_param(abcdk_opencv_stitcher_t *ctx)

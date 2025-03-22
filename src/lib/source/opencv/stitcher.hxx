@@ -233,7 +233,7 @@ namespace abcdk
                 assert(masks.size() == 0 || imgs.size() == masks.size());
 
                 if (m_feature_finder.get() == NULL)
-                    set_feature_finder("SURF");
+                    set_feature_finder("ORB");
 
                 m_img_features.resize(imgs.size());
 
@@ -568,7 +568,7 @@ namespace abcdk
                 m_rotation_warper = warper;
             }
 
-            void set_feature_finder(const char *name)
+            int set_feature_finder(const char *name)
             {
                 assert(name != NULL);
 
@@ -584,12 +584,16 @@ namespace abcdk
 #endif //HAVE_OPENCV_XFEATURES2D
                 else
                 {
-                    abcdk_trace_printf(LOG_WARNING, "特征发现算法('%s')未找到，启用默认的算法('ORB')。", name);
+                    abcdk_trace_printf(LOG_WARNING, TT("特征发现算法('%s')未找到，启用默认的算法('ORB')。"), name);
+
                     set_feature_finder("ORB");
+                    return -1;
                 }
+
+                return 0;
             }
 
-            void set_feature_matcher(const char *name, float match_conf = 0.3)
+            int set_feature_matcher(const char *name, float match_conf = 0.3)
             {
                 assert(name != NULL);
 
@@ -601,12 +605,16 @@ namespace abcdk
                     set_feature_matcher(cv::makePtr<cv::detail::BestOf2NearestMatcher>(false, match_conf));
                 else
                 {
-                    abcdk_trace_printf(LOG_WARNING, "特征匹配算法('%s')未找到，启用默认的算法('Best')。", name);
+                    abcdk_trace_printf(LOG_WARNING, TT("特征匹配算法('%s')未找到，启用默认的算法('Best')。"), name);
+
                     set_feature_matcher("Best");
+                    return -1;
                 }
+
+                return 0;
             }
 
-            void set_estimator(const char *name)
+            int set_estimator(const char *name)
             {
                 assert(name != NULL);
 
@@ -616,12 +624,16 @@ namespace abcdk
                     set_estimator(cv::makePtr<cv::detail::HomographyBasedEstimator>());
                 else
                 {
-                    abcdk_trace_printf(LOG_WARNING, "相机参数估计算法('%s')未找到，启用默认的算法('Homography')。", name);
+                    abcdk_trace_printf(LOG_WARNING, TT("相机参数估计算法('%s')未找到，启用默认的算法('Homography')。"), name);
                     set_estimator("Homography");
+
+                    return -1;
                 }
+
+                return 0;
             }
 
-            void set_bundle_adjuster(const char *name)
+            int set_bundle_adjuster(const char *name)
             {
                 assert(name != NULL);
 
@@ -635,12 +647,16 @@ namespace abcdk
                     set_bundle_adjuster(cv::makePtr<cv::detail::NoBundleAdjuster>());
                 else
                 {
-                    abcdk_trace_printf(LOG_WARNING, "相机参数调节算法('%s')未找到，启用默认的算法('ray')。", name);
+                    abcdk_trace_printf(LOG_WARNING, TT("相机参数调节算法('%s')未找到，启用默认的算法('ray')。"), name);
+
                     set_bundle_adjuster("ray");
+                    return -1;
                 }
+
+                return 0;
             }
 
-            void set_warper(const char *name, float scale = 1.0)
+            int set_warper(const char *name, float scale = 1.0)
             {
                 assert(name != NULL);
 
@@ -654,9 +670,13 @@ namespace abcdk
                     set_warper(cv::makePtr<cv::detail::SphericalWarper>(scale));
                 else
                 {
-                    abcdk_trace_printf(LOG_WARNING, "图像变换算法('%s')未找到，启用默认的算法('spherical')。", name);
+                    abcdk_trace_printf(LOG_WARNING, TT("图像变换算法('%s')未找到，启用默认的算法('spherical')。"), name);
+
                     set_warper("spherical");
+                    return -1;
                 }
+
+                return 0;
             }
 
             void DrawKeypointsMatches(std::vector<cv::Mat> &outs, const std::vector<cv::Mat> &imgs)

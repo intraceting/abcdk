@@ -47,8 +47,10 @@ int abcdk_opencv_stitcher_metadata_load(abcdk_opencv_stitcher_t *ctx, const char
  * 设特征发现算法。
  * 
  * @param [in] name 名称。目前仅支持ORB、SIFT、SURF。默认：ORB
+ * 
+ * @return 0 成功，-1 失败(恢复默认)。
  */
-void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name);
+int abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name);
 
 /**
  * 评估。
@@ -67,8 +69,10 @@ int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int c
  * 设图像变换算法。
  * 
  * @param [in] name 名称。目前仅支持plane、spherical。默认：spherical
+ * 
+ * @return 0 成功，-1 失败(恢复默认)。
  */
-void abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx, const char *name);
+int abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx, const char *name);
 
 /**
  * 构建全景参数。
