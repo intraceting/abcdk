@@ -75,7 +75,7 @@ int abcdk_torch_image_reset(abcdk_torch_image_t **ctx, int width, int height, in
     
     assert(ctx_p->tag == ABCDK_TORCH_TAG_HOST);
 
-    if (ctx_p->width == width || ctx_p->height == height || ctx_p->pixfmt == pixfmt)
+    if (ctx_p->width == width && ctx_p->height == height && ctx_p->pixfmt == pixfmt)
         return 0;
 
     if (ctx_p->private_ctx_free_cb)

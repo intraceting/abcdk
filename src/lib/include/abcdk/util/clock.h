@@ -14,7 +14,7 @@
 __BEGIN_DECLS
 
 /**
- * 计时器(微秒)。
+ * 计时器(纳秒)。
  * 
  * @param [in] start 起始时刻。
  * @param [out] dot 打点时刻，NULL(0) 忽略。
