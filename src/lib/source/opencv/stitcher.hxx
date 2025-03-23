@@ -239,9 +239,17 @@ namespace abcdk
 
                 for (int i = 0; i < imgs.size(); i++)
                 {
-                    cv::Mat gray, mask;
+                    cv::Mat gray, mask = cv::Mat();
 
-                    mask = (masks.size() > 0 ? masks[i] : cv::Mat());
+                    if (masks.size() > 0)
+                    {
+                        if (masks[i].channels() == 3)
+                            cv::cvtColor(masks[i], mask, cv::COLOR_RGB2GRAY);
+                        else if (masks[i].channels() == 4)
+                            cv::cvtColor(masks[i], mask, cv::COLOR_RGBA2GRAY);
+                        else
+                            mask = masks[i];
+                    }
 
                     if (imgs[i].channels() == 3)
                         cv::cvtColor(imgs[i], gray, cv::COLOR_RGB2GRAY);

@@ -168,6 +168,11 @@ int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int c
 
         assert(src_img != NULL);
         assert(src_img->tag == ABCDK_TORCH_TAG_HOST);
+        assert(src_img->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+               src_img->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+               src_img->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+               src_img->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+               src_img->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
 
         src_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
 
@@ -177,6 +182,11 @@ int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int c
         if (src_mask)
         {
             assert(src_mask->tag == ABCDK_TORCH_TAG_HOST);
+            assert(src_mask->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
+                   src_mask->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
+                   src_mask->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
+                   src_mask->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
+                   src_mask->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
 
             src_depth = abcdk_torch_pixfmt_channels(src_mask->pixfmt);
 
