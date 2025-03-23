@@ -13,6 +13,8 @@
 #include "abcdk/util/bmp.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
+__BEGIN_DECLS
+
 /**主机对象。*/
 #define ABCDK_TORCH_TAG_HOST ABCDK_FOURCC_MKTAG('h', 'o', 's', 't')
 
@@ -41,5 +43,7 @@ typedef struct _abcdk_torch_rect
     int width;
     int height;
 } abcdk_torch_rect_t;
+
+__END_DECLS
 
 #endif //ABCDK_TORCH_TORCH_H

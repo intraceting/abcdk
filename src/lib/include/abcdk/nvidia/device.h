@@ -51,6 +51,7 @@ int abcdk_cuda_get_device_name(char name[256], int device);
 */
 int abcdk_cuda_get_runtime_version(int *minor);
 
+
 /**销毁。 */
 void abcdk_cuda_ctx_destroy(CUcontext *ctx);
 
