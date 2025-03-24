@@ -9,6 +9,7 @@
 
 #include "abcdk/util/trace.h"
 #include "abcdk/nvidia/nvidia.h"
+#include "abcdk/nvidia/context.h"
 
 #ifdef __cuda_cuda_h__
 
@@ -24,13 +25,12 @@ namespace abcdk
             public:
                 robot(CUcontext ctx)
                 {
-                    assert(ctx != NULL);
-                    cuCtxPushCurrent(ctx);
+                    abcdk_cuda_ctx_push(ctx);
                 }
 
                 virtual ~robot()
                 {
-                    cuCtxPopCurrent(NULL);
+                    abcdk_cuda_ctx_pop();
                 }
             };
         } // namespace context

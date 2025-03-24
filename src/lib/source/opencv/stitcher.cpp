@@ -43,10 +43,10 @@ void abcdk_opencv_stitcher_destroy(abcdk_opencv_stitcher_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-static abcdk_opencv_stitcher_t *_abcdk_opencv_stitcher_create(uint32_t tag)
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create(uint32_t tag)
 {
     abcdk_opencv_stitcher_t *ctx;
-
+    
     assert(tag == ABCDK_TORCH_TAG_HOST || tag == ABCDK_TORCH_TAG_CUDA);
 
     ctx = (abcdk_opencv_stitcher_t *)abcdk_heap_alloc(sizeof(abcdk_opencv_stitcher_t));
@@ -55,42 +55,18 @@ static abcdk_opencv_stitcher_t *_abcdk_opencv_stitcher_create(uint32_t tag)
 
     ctx->tag = tag;
 
-    return ctx;
-}
-
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create()
-{
-    abcdk_opencv_stitcher_t *ctx;
-
-    ctx = _abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_HOST);
-    if (!ctx)
-        return NULL;
-    
-    ctx->impl_ctx = new abcdk::opencv::stitcher_cpu();
-    if (!ctx->impl_ctx)
-        goto ERR;
-
-    return ctx;
-
-ERR:
-
-    abcdk_opencv_stitcher_destroy(&ctx);
-    return NULL;
-}
-
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create_cuda(CUcontext cuda_ctx)
-{
-    abcdk_opencv_stitcher_t *ctx;
-
-    assert(cuda_ctx != NULL);
-
-    ctx = _abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_CUDA);
-    if (!ctx)
-        return NULL;
-    
-    ctx->impl_ctx = new abcdk::opencv::stitcher_cuda(cuda_ctx);
-    if (!ctx->impl_ctx)
-        goto ERR;
+    if (tag == ABCDK_TORCH_TAG_HOST)
+    {
+        ctx->impl_ctx = new abcdk::opencv::stitcher_cpu();
+        if (!ctx->impl_ctx)
+            goto ERR;
+    }
+    else if (tag == ABCDK_TORCH_TAG_CUDA)
+    {
+        ctx->impl_ctx = new abcdk::opencv::stitcher_cuda(abcdk_cuda_ctx_getspecific());
+        if (!ctx->impl_ctx)
+            goto ERR;
+    }
 
     return ctx;
 

@@ -45,7 +45,35 @@ typedef enum
     NPPI_SMOOTH_EDGE             = (int)0x8000000 /**<  Smooth edge filtering. */
 } NppiInterpolationMode; 
 
-
 #endif //__cuda_cuda_h__
+
+
+__BEGIN_DECLS
+
+/** 
+ * 初始化。
+ * 
+ * @return = 0 成功，< 0  失败。
+*/
+int abcdk_cuda_init(uint32_t flags);
+
+/**
+ * 获取运行时库的版本号。
+ * 
+ * @param [out] minor 次版本。NULL(0) 忽略。
+ * 
+ * @return >=0 主版本，< 0  失败。
+*/
+int abcdk_cuda_get_runtime_version(int *minor);
+
+/** 
+ * 获取设备名称。
+ * 
+ * @return 0 成功，< 0  失败。
+*/
+int abcdk_cuda_get_device_name(char name[256], int device);
+
+
+__END_DECLS
 
 #endif //ABCDK_NVIDIA_NVIDIA_H

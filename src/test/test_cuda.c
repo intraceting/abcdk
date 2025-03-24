@@ -14,7 +14,7 @@
 #ifdef __cuda_cuda_h__
 
 
-int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
+int abcdk_test_cuda_1(abcdk_option_t *args)
 {
     int chk;
 
@@ -90,7 +90,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     abcdk_cuda_image_save("/tmp/test.cuda.f.bmp", f);
 
-    abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f, cuda_ctx);
+    abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f);
     // abcdk_cuda_jpeg_save("/tmp/test.cuda.f2.jpg", f);
 
     // abcdk_cuda_image_save("/tmp/test.cuda.f2.bmp", f);
@@ -104,12 +104,12 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
     for (int i = 0; i < 10; i++)
     {
-        abcdk_torch_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg", cuda_ctx);
+        abcdk_torch_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
 
         abcdk_cuda_imgproc_drawrect(g, color, 3, corner);
 
         abcdk_cuda_image_save("/tmp/test.cuda.g2.bmp", g);
-        abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g, cuda_ctx);
+        abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g);
 
         abcdk_torch_image_free(&g);
     }
@@ -119,7 +119,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args, CUcontext cuda_ctx)
 
 #ifdef  HAVE_FFMPEG
 
-int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
+int abcdk_test_cuda_2(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t ff_r_cfg = {0};
 
@@ -133,7 +133,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
 
     AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0,cuda_ctx);
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0);
 
 
     abcdk_torch_vcodec_param_t dec_param = {0};
@@ -147,7 +147,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
 
-    abcdk_torch_jcodec_t *jpeg_w = abcdk_cuda_jpeg_create(1, cuda_ctx);
+    abcdk_torch_jcodec_t *jpeg_w = abcdk_cuda_jpeg_create(1);
 
     abcdk_torch_jcodec_param_t jpeg_param = {0};
     jpeg_param.quality = 99;
@@ -189,7 +189,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args, CUcontext cuda_ctx)
     return 0;
 }
 
-int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
+int abcdk_test_cuda_3(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t ff_r_cfg = {0}, ff_w_cfg = {1};
 
@@ -206,8 +206,8 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
 
     AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0, cuda_ctx);
-    abcdk_torch_vcodec_t *enc_ctx = abcdk_cuda_vcodec_alloc(1, cuda_ctx);
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0);
+    abcdk_torch_vcodec_t *enc_ctx = abcdk_cuda_vcodec_alloc(1);
 
 
     abcdk_torch_vcodec_param_t dec_param = {0},enc_param = {0};
@@ -313,15 +313,12 @@ int abcdk_test_cuda_3(abcdk_option_t *args, CUcontext cuda_ctx)
 
 #endif //HAVE_FFMPEG
 
-int abcdk_test_cuda_4(abcdk_option_t *args, CUcontext cuda_ctx)
+int abcdk_test_cuda_4(abcdk_option_t *args)
 {
     int n = 1, w = 300, h = 300 , depth =3;
 
-    abcdk_cuda_ctx_push_current(cuda_ctx);
-
    // abcdk_trace_printf(LOG_WARNING,_("哈哈哈"));
 
-    abcdk_cuda_ctx_pop_current(NULL);
 }
 
 int abcdk_test_cuda(abcdk_option_t *args)
@@ -330,29 +327,30 @@ int abcdk_test_cuda(abcdk_option_t *args)
 
     int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
 
-    int chk = abcdk_cuda_set_device(gpu);
-    assert(chk == 0);
-
     char name[256] = {0};
-    chk = abcdk_cuda_get_device_name(name, gpu);
+    int chk = abcdk_cuda_get_device_name(name, gpu);
     assert(chk == 0);
 
     fprintf(stderr, "%s\n", name);
 
     CUcontext cuda_ctx = abcdk_cuda_ctx_create(gpu, 0);
 
+    abcdk_cuda_ctx_setspecific(cuda_ctx);
+    abcdk_cuda_ctx_push(cuda_ctx);
+
     if (cmd == 1)
-        return abcdk_test_cuda_1(args, cuda_ctx);
+        return abcdk_test_cuda_1(args);
 #ifdef HAVE_FFMPEG
     else if (cmd == 2)
-        return abcdk_test_cuda_2(args, cuda_ctx);
+        return abcdk_test_cuda_2(args);
     else if (cmd == 3)
-        return abcdk_test_cuda_3(args, cuda_ctx);
+        return abcdk_test_cuda_3(args);
 #endif //HAVE_FFMPEG
     else if (cmd == 4)
-        return abcdk_test_cuda_4(args, cuda_ctx);
+        return abcdk_test_cuda_4(args);
 
-
+    abcdk_cuda_ctx_pop();
+    abcdk_cuda_ctx_setspecific(NULL);
     abcdk_cuda_ctx_destroy(&cuda_ctx);
 
     return 0;

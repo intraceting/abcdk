@@ -7,7 +7,7 @@
 #include "abcdk/torch/jcodec.h"
 
 
-static void _abcdk_torch_jcodec_private_free_cb(void **ctx, uint8_t encoder)
+static void _abcdk_torch_jcodec_private_free_cb(void **ctx)
 {
 
 }

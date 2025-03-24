@@ -10,7 +10,7 @@
 #include "abcdk/util/queue.h"
 #include "abcdk/torch/vcodec.h"
 #include "abcdk/nvidia/nvidia.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "abcdk/nvidia/image.h"
 
 
@@ -18,10 +18,8 @@ __BEGIN_DECLS
 
 /**
  * 申请。
- *
- * @param [in] cuda_ctx CUDA环境。仅作指针复制，对象关闭时不会释放。
  */
-abcdk_torch_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx);
+abcdk_torch_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder);
 
 /** 
  * 启动。

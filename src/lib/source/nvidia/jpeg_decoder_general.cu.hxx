@@ -10,7 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/nvidia/nvidia.h"
 #include "abcdk/nvidia/image.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "jpeg_decoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__

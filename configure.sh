@@ -124,9 +124,9 @@ DependPackageCheck()
 #主版本
 VERSION_MAJOR="3"
 #副版本
-VERSION_MINOR="2"
+VERSION_MINOR="3"
 #发行版本
-VERSION_RELEASE="4"
+VERSION_RELEASE="1"
 
 #
 LSB_RELEASE="linux-gnu"

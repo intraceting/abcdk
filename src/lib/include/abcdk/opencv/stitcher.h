@@ -10,7 +10,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/nvidia/image.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "abcdk/opencv/opencv.h"
 
 __BEGIN_DECLS
@@ -22,10 +22,7 @@ typedef struct _abcdk_opencv_stitcher abcdk_opencv_stitcher_t;
 void abcdk_opencv_stitcher_destroy(abcdk_opencv_stitcher_t **ctx);
 
 /**创建。 */
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create();
-
-/**创建(NVIDIA)。 */
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create_cuda(CUcontext cuda_ctx);
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create(uint32_t tag);
 
 /**
  * 保存元数据。

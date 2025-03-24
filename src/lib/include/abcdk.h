@@ -156,7 +156,7 @@
 
 #include "abcdk/nvidia/nvidia.h"
 #include "abcdk/nvidia/memory.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "abcdk/nvidia/imgproc.h"
 #include "abcdk/nvidia/tensorproc.h"
 #include "abcdk/nvidia/jpeg.h"

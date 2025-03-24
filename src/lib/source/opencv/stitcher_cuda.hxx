@@ -31,7 +31,7 @@ namespace abcdk
             virtual ~stitcher_cuda()
             {
                 if(m_cuda_ctx)
-                    abcdk_cuda_ctx_push_current(m_cuda_ctx);
+                    abcdk_cuda_ctx_push(m_cuda_ctx);
 
                 for (auto &t : m_owner_warper_xmaps)
                     abcdk_torch_image_free(&t);
@@ -39,18 +39,18 @@ namespace abcdk
                 for (auto &t : m_owner_warper_ymaps)
                     abcdk_torch_image_free(&t);
 
-                abcdk_cuda_ctx_pop_current(NULL);
+                abcdk_cuda_ctx_pop();
             }
         protected:
             virtual void ctx_push_current()
             {
                 if(m_cuda_ctx)
-                    abcdk_cuda_ctx_push_current(m_cuda_ctx);
+                    abcdk_cuda_ctx_push(m_cuda_ctx);
             }
 
             virtual void ctx_pop_current()
             {
-                abcdk_cuda_ctx_pop_current(NULL);
+                abcdk_cuda_ctx_pop();
             }
 
             virtual bool remap(const std::vector<abcdk_torch_image_t *> &imgs)

@@ -59,12 +59,10 @@ static void _abcdk_cuda_jpeg_private_free_cb(void **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encoder,CUcontext cuda_ctx)
+abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encoder)
 {
     abcdk_torch_jcodec_t *ctx;
     abcdk_cuda_jpeg_t *ctx_p;
-
-    assert(cuda_ctx != NULL);
 
     ctx = abcdk_torch_jcodec_alloc(ABCDK_TORCH_TAG_CUDA);
     if (!ctx)
@@ -82,9 +80,9 @@ abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encoder,CUcontext cuda_ctx)
     if (ctx_p->encoder = encoder)
     {
 #ifdef __x86_64__
-        ctx_p->encoder_ctx = abcdk::cuda::jpeg::encoder_general::create(cuda_ctx);
+        ctx_p->encoder_ctx = abcdk::cuda::jpeg::encoder_general::create(abcdk_cuda_ctx_getspecific());
 #elif defined(__aarch64__)
-        ctx_p->encoder_ctx = abcdk::cuda::jpeg::encoder_aarch64::create(cuda_ctx);
+        ctx_p->encoder_ctx = abcdk::cuda::jpeg::encoder_aarch64::create(abcdk_cuda_ctx_getspecific());
 #endif //__x86_64__ || __aarch64__
 
         if (!ctx_p->encoder_ctx)
@@ -93,9 +91,9 @@ abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encoder,CUcontext cuda_ctx)
     else
     {
 #ifdef __x86_64__
-        ctx_p->decoder_ctx = abcdk::cuda::jpeg::decoder_general::create(cuda_ctx);
+        ctx_p->decoder_ctx = abcdk::cuda::jpeg::decoder_general::create(abcdk_cuda_ctx_getspecific());
 #elif defined(__aarch64__)
-        ctx_p->decoder_ctx = abcdk::cuda::jpeg::decoder_aarch64::create(cuda_ctx);
+        ctx_p->decoder_ctx = abcdk::cuda::jpeg::decoder_aarch64::create(abcdk_cuda_ctx_getspecific());
 #endif //__x86_64__ || __aarch64__
 
         if (!ctx_p->decoder_ctx)

@@ -10,7 +10,7 @@
 #include "abcdk/util/option.h"
 #include "abcdk/nvidia/nvidia.h"
 #include "abcdk/nvidia/image.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "jpeg_encoder.cu.hxx"
 
 #ifdef __cuda_cuda_h__
@@ -197,6 +197,8 @@ namespace abcdk
                         return -1;
 
                     chk = truncate(dst, 0);
+                    if(chk != 0)
+                        return -1;
 
                     save_chk = abcdk_save(dst, dst_data->pptrs[0], dst_data->sizes[0], 0);
                     if (save_chk != dst_data->sizes[0])

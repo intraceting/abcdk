@@ -14,7 +14,7 @@
 int abcdk_test_stitcher_cpu(abcdk_option_t *args)
 {
 
-    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create();
+    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_HOST);
 
     abcdk_object_t *metadata = abcdk_object_copyfrom_file(abcdk_option_get(args, "--metadata-load", 0, ""));
 
@@ -64,7 +64,10 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
 
     CUcontext cuda_ctx = abcdk_cuda_ctx_create(gpu, 0);
 
-    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create_cuda(cuda_ctx);
+    abcdk_cuda_ctx_setspecific(cuda_ctx);
+    abcdk_cuda_ctx_push(cuda_ctx);
+
+    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_HOST);
 
     abcdk_object_t *metadata = abcdk_object_copyfrom_file(abcdk_option_get(args, "--metadata-load", 0, ""));
 
@@ -88,8 +91,6 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
     cpu_img[3] = abcdk_torch_image_load("/tmp/ccc/you2.jpg", 0);
     cpu_img[1] = abcdk_torch_image_load("/tmp/ccc/you3.jpg", 0);
     cpu_img[2] = abcdk_torch_image_load("/tmp/ccc/you4.jpg", 0);
-
-    abcdk_cuda_ctx_push_current(cuda_ctx);
 
     cuda_img[0] = abcdk_cuda_image_clone(0, cpu_img[0]);
     cuda_img[3] = abcdk_cuda_image_clone(0, cpu_img[3]);
@@ -123,8 +124,8 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
 
     abcdk_opencv_stitcher_destroy(&ctx);
 
-    abcdk_cuda_ctx_pop_current(NULL);
-
+    abcdk_cuda_ctx_pop();
+    abcdk_cuda_ctx_setspecific(NULL);
     abcdk_cuda_ctx_destroy(&cuda_ctx);
 
 #endif //__cuda_cuda_h__

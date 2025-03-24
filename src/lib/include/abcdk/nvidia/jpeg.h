@@ -11,7 +11,7 @@
 #include "abcdk/torch/jcodec.h"
 #include "abcdk/torch/packet.h"
 #include "abcdk/nvidia/nvidia.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "abcdk/nvidia/image.h"
 
 
@@ -19,10 +19,8 @@ __BEGIN_DECLS
 
 /**
  * 申请。
- *
- * @param [in] cuda_ctx CUDA环境。仅作指针复制，对象关闭时不会释放。
  */
-abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encoder, CUcontext cuda_ctx);
+abcdk_torch_jcodec_t *abcdk_cuda_jpeg_create(int encoder);
 
 /** 
  * 启动。
@@ -48,10 +46,10 @@ abcdk_torch_image_t *abcdk_cuda_jpeg_decode(abcdk_torch_jcodec_t *ctx, const voi
 abcdk_torch_image_t *abcdk_cuda_jpeg_decode_from_file(abcdk_torch_jcodec_t *ctx, const void *src);
 
 /**保存。*/
-int abcdk_cuda_jpeg_save(const char *dst, const abcdk_torch_image_t *src, CUcontext cuda_ctx);
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_torch_image_t *src);
 
 /**加载。*/
-abcdk_torch_image_t *abcdk_cuda_jpeg_load(const char *src, CUcontext cuda_ctx);
+abcdk_torch_image_t *abcdk_cuda_jpeg_load(const char *src);
 
 __END_DECLS
 

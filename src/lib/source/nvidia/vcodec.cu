@@ -59,12 +59,10 @@ static void _abcdk_cuda_vcodec_private_free_cb(void **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_torch_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx)
+abcdk_torch_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder)
 {
     abcdk_torch_vcodec_t *ctx;
     abcdk_cuda_vcodec_t *ctx_p;
-
-    assert(cuda_ctx != NULL);
 
     ctx = abcdk_torch_vcodec_alloc(ABCDK_TORCH_TAG_CUDA);
     if (!ctx)
@@ -82,9 +80,9 @@ abcdk_torch_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx)
     if (ctx_p->encoder = encoder)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_ffnv::create(cuda_ctx);
+        ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_ffnv::create(abcdk_cuda_ctx_getspecific());
 #elif defined(__aarch64__)
-        ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(cuda_ctx);
+        ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(abcdk_cuda_ctx_getspecific());
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!ctx_p->encoder_ctx)
@@ -93,9 +91,9 @@ abcdk_torch_vcodec_t *abcdk_cuda_vcodec_alloc(int encoder,CUcontext cuda_ctx)
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-        ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_ffnv::create(cuda_ctx);
+        ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_ffnv::create(abcdk_cuda_ctx_getspecific());
 #elif defined(__aarch64__)
-        ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_aarch64::create(cuda_ctx);
+        ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_aarch64::create(abcdk_cuda_ctx_getspecific());
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!ctx_p->decoder_ctx)

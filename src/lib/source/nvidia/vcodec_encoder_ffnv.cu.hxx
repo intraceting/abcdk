@@ -9,7 +9,7 @@
 
 #include "abcdk/torch/vcodec.h"
 #include "abcdk/nvidia/nvidia.h"
-#include "abcdk/nvidia/device.h"
+#include "abcdk/nvidia/context.h"
 #include "abcdk/nvidia/image.h"
 #include "vcodec_encoder.cu.hxx"
 #include "vcodec_util.cu.hxx"

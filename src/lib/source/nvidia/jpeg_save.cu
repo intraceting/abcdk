@@ -11,15 +11,15 @@ __BEGIN_DECLS
 
 #ifdef __cuda_cuda_h__
 
-int abcdk_cuda_jpeg_save(const char *dst, const abcdk_torch_image_t *src, CUcontext cuda_ctx)
+int abcdk_cuda_jpeg_save(const char *dst, const abcdk_torch_image_t *src)
 {
     abcdk_torch_jcodec_t *ctx;
     abcdk_torch_jcodec_param_t param = {0};
     int chk;
 
-    assert(dst != NULL && src != NULL && cuda_ctx != NULL);
+    assert(dst != NULL && src != NULL);
 
-    ctx = abcdk_cuda_jpeg_create(1,cuda_ctx);
+    ctx = abcdk_cuda_jpeg_create(1);
     if(!ctx)
         return -1;
 

@@ -11,6 +11,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/util/bmp.h"
+#include "abcdk/util/thread.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
 __BEGIN_DECLS
@@ -43,6 +44,7 @@ typedef struct _abcdk_torch_rect
     int width;
     int height;
 } abcdk_torch_rect_t;
+
 
 __END_DECLS
 
