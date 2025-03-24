@@ -188,6 +188,7 @@ namespace abcdk
                 {
                     abcdk_object_t *dst_data;
                     ssize_t save_chk;
+                    int chk;
 
                     assert(dst != NULL && src != NULL);
 
@@ -195,7 +196,7 @@ namespace abcdk
                     if (!dst_data)
                         return -1;
 
-                    truncate(dst, 0);
+                    chk = truncate(dst, 0);
 
                     save_chk = abcdk_save(dst, dst_data->pptrs[0], dst_data->sizes[0], 0);
                     if (save_chk != dst_data->sizes[0])
