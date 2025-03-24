@@ -130,8 +130,7 @@ namespace abcdk
             public:
                 virtual void close()
                 {
-                    if (m_gpu_ctx)
-                        cuCtxPushCurrent(m_gpu_ctx);
+                    cuCtxPushCurrent(m_gpu_ctx);
 
                     if (m_state)
                         nvjpegJpegStateDestroy(m_state);
@@ -143,8 +142,7 @@ namespace abcdk
                         cudaStreamDestroy(m_stream);
                     m_stream = NULL;
 
-                    if (m_gpu_ctx)
-                        cuCtxPopCurrent(NULL);
+                    cuCtxPopCurrent(NULL);
                 }
 
                 virtual int open(abcdk_torch_jcodec_param_t *param)
