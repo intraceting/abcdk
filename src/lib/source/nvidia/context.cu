@@ -103,7 +103,7 @@ CUcontext abcdk_cuda_ctx_getspecific()
     CUcontext old_ctx = NULL;
 
     old_ctx = (CUcontext)pthread_getspecific(_abcdk_cuda_ctx_specific_key);
-    ABCDK_ASSERT(old_ctx != NULL, TT("当前线程尚未绑定GPU环境。"));
+    ABCDK_ASSERT(old_ctx != NULL, TT("当前线程尚未绑定CUDA环境。"));
 
     return old_ctx;
 }
