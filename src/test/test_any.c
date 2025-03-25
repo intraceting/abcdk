@@ -1644,7 +1644,7 @@ int abcdk_test_any(abcdk_option_t *args)
     // abcdk_openssl_evp_pkey_free(&pubkey);
 #endif //HAVE_OPENSSL
 
-#elif 1
+#elif 0
 
 
 
@@ -1753,6 +1753,16 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_bin2hex(str,uuid,16,0);
 
     printf("%s\n",str);
+
+#elif 1
+
+    uint32_t c = abcdk_crc32("abc",3);
+
+    printf("abc: %08x,%u\n",c, c);
+
+    c = abcdk_crc32("abcdefg",7);
+
+    printf("abcdefg: %08x,%u\n",c,c);
 
 #endif 
     return 0;
