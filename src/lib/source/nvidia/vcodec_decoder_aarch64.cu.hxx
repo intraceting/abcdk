@@ -74,15 +74,13 @@ namespace abcdk
             public:
                 virtual void close()
                 {
-                    if (m_gpu_ctx)
-                        cuCtxPushCurrent(m_gpu_ctx);
+                    cuCtxPushCurrent(m_gpu_ctx);
 
                     if (m_decoder)
                         nvmpi_decoder_close(m_decoder);
                     m_decoder = NULL;
 
-                    if (m_gpu_ctx)
-                        cuCtxPopCurrent(NULL);
+                    cuCtxPopCurrent(NULL);
 
                 }
 
