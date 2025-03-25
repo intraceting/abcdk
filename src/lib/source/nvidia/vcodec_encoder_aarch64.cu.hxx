@@ -187,13 +187,13 @@ namespace abcdk
             public:
                 virtual void close()
                 {
-                    cuCtxPushCurrent(m_gpu_ctx);
+                    abcdk_cuda_ctx_push(m_gpu_ctx);
 
                     if (m_encoder)
                         nvmpi_encoder_close(m_encoder);
                     m_encoder = NULL;
 
-                    cuCtxPopCurrent(NULL);
+                    abcdk_cuda_ctx_pop();
 
                 }
 

@@ -417,8 +417,7 @@ namespace abcdk
                     if (!m_funcs)
                         return;
 
-                    if (m_gpu_ctx)
-                        cuCtxPushCurrent(m_gpu_ctx);
+                    abcdk_cuda_ctx_push(m_gpu_ctx);
 
                     DestroyBitstreamBuffer();
                     DestroyResources();
@@ -440,8 +439,7 @@ namespace abcdk
                         m_nvenc.nvEncDestroyEncoder(m_encoder);
                     m_encoder = NULL;
 
-                    if (m_gpu_ctx)
-                        cuCtxPopCurrent(NULL);
+                    abcdk_cuda_ctx_pop();
                 }
 
                 virtual int open(abcdk_torch_vcodec_param_t *param)

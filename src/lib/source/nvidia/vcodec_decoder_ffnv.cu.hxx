@@ -314,8 +314,7 @@ namespace abcdk
                     if (!m_funcs)
                         return;
 
-                    if (m_gpu_ctx)
-                        cuCtxPushCurrent(m_gpu_ctx);
+                    abcdk_cuda_ctx_push(m_gpu_ctx);
 
                     if (m_parser)
                         m_funcs->cuvidDestroyVideoParser(m_parser);
@@ -332,8 +331,7 @@ namespace abcdk
                     /*在这里删除。*/
                     abcdk_queue_free(&m_frame_queue);
 
-                    if (m_gpu_ctx)
-                        cuCtxPopCurrent(NULL);
+                    abcdk_cuda_ctx_pop();
                 }
 
                 virtual int open(abcdk_torch_vcodec_param_t *param)
