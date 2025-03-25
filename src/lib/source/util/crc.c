@@ -6,12 +6,13 @@
  */
 #include "abcdk/util/crc.h"
 
-int _abcdk_crc32_init(void *opaque)
-{
-    uint32_t *table = (uint32_t *)opaque;
 
-    unsigned int c;
-    unsigned int i, j;
+static pthread_once_t _abcdk_crc32_table_init_status = PTHREAD_ONCE_INIT;
+static uint32_t _abcdk_crc32_table[256] = {0};
+
+void _abcdk_crc32_table_init()
+{
+    uint32_t c, i, j;
 
     for (i = 0; i < 256; i++)
     {
@@ -24,27 +25,24 @@ int _abcdk_crc32_init(void *opaque)
                 c = c >> 1;
         }
 
-        table[i] = c;
+        _abcdk_crc32_table[i] = c;
     }
-
-    return 0;
 }
 
 uint32_t abcdk_crc32(const void *data, size_t size, ...)
 {
     uint32_t sum = ~0;
-    static volatile int init = 0;
-    static uint32_t table[256] = {0};
     int chk;
 
     assert(data != NULL && size > 0);
 
-    chk = abcdk_once(&init, _abcdk_crc32_init, table);
-    assert(chk >= 0);
+    /*初始化一次。*/
+    chk = pthread_once(&_abcdk_crc32_table_init_status,_abcdk_crc32_table_init);
+    assert(chk == 0);
 
     for (size_t i = 0; i < size; i++)
     {
-        sum = table[(sum ^ ABCDK_PTR2OBJ(uint8_t, data, i)) & 0xFF] ^ (sum >> 8);
+        sum = _abcdk_crc32_table[(sum ^ ABCDK_PTR2OBJ(uint8_t, data, i)) & 0xFF] ^ (sum >> 8);
     }
 
     return ~sum;

@@ -20,16 +20,6 @@ __BEGIN_DECLS
 size_t abcdk_align(size_t size, size_t align);
 
 /**
- * 执行一次。
- *
- * @param status 状态，一般是静态类型。必须初始化为0。
- * @param routine 执行函数。0 成功，!0 失败。
- *
- * @return  = 0 成功(第一次)，>= 1 成功(已执行)，-1 失败。
- */
-int abcdk_once(volatile int *status, int (*routine)(void *opaque), void *opaque);
-
-/**
  * 二进制转十六进制。
  *
  * @param dst 十六进制数据的指针。可用空间至少是二进制数据长度的两倍。

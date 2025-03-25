@@ -109,19 +109,16 @@ time_t abcdk_time_diff2(const char *t1, const char *t0, int utc)
     return abcdk_time_diff(&e,&b,utc);
 }
 
-int _abcdk_time_format_init(void *opaque)
-{
-    pthread_key_t *key_p = (pthread_key_t*)opaque;
+static pthread_once_t _abcdk_time_format_key_init_status = PTHREAD_ONCE_INIT;
+static pthread_key_t _abcdk_time_format_key = 0xffffffff;
 
-    pthread_key_create(key_p,abcdk_heap_free);
-    return 0;
+void _abcdk_time_format_key_init()
+{
+    pthread_key_create(&_abcdk_time_format_key,abcdk_heap_free);
 }
 
 const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc)
 {
-    static volatile int init_status = 0;
-    static pthread_key_t key = -1;
-
     struct tm tmp;
     char *buf;
     int chk;
@@ -136,18 +133,18 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc
         return abcdk_time_format(fmt,&tmp,loc);
     }
 
-    chk = abcdk_once(&init_status,_abcdk_time_format_init,&key);
-    if(chk < 0)
-        return NULL;
+    /*初始化一次。*/
+    chk = pthread_once(&_abcdk_time_format_key_init_status,_abcdk_time_format_key_init);
+    assert(chk == 0);
 
-    buf = pthread_getspecific(key);
+    buf = pthread_getspecific(_abcdk_time_format_key);
     if(!buf)
     {
         buf = abcdk_heap_alloc(PATH_MAX);
         if(!buf)
             return NULL;
 
-        pthread_setspecific(key,buf);
+        pthread_setspecific(_abcdk_time_format_key,buf);
     }
     
     if(loc)

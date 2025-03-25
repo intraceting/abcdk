@@ -19,30 +19,6 @@ size_t abcdk_align(size_t size, size_t align)
     return size;
 }
 
-int abcdk_once(volatile int *status, int (*routine)(void *opaque), void *opaque)
-{
-    int chk, ret;
-
-    assert(status != NULL && routine != NULL);
-
-    if (abcdk_atomic_compare_and_swap(status,0, 1))
-    {
-        ret = 0;
-        chk = routine(opaque);
-        abcdk_atomic_store(status, ((chk == 0) ? 2 : 0));
-    }
-    else
-    {
-        ret = 1;
-        while (abcdk_atomic_load(status) == 1)
-            sched_yield();
-    }
-
-    chk = ((abcdk_atomic_load(status) == 2) ? 0 : -1);
-
-    return (chk == 0 ? ret : -1);
-}
-
 char *abcdk_bin2hex(char* dst,const void *src,size_t size, int ABC)
 {
     assert(dst != NULL && src != NULL && size>0);

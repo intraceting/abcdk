@@ -20,15 +20,12 @@ void abcdk_cuda_ctx_destroy(CUcontext *ctx)
     cuCtxDestroy(ctx_p);
 }
 
-static volatile int _abcdk_cuda_ctx_specific_init_status = 0;
-static pthread_key_t _abcdk_cuda_ctx_specific_key = 0xFFFFFFFF;
+static pthread_once_t _abcdk_cuda_ctx_key_init_status = PTHREAD_ONCE_INIT;
+static pthread_key_t _abcdk_cuda_ctx_key = 0xFFFFFFFF;
 
-static int _abcdk_cuda_ctx_specific_init(void *opaque)
+static void _abcdk_cuda_ctx_key_init()
 {
-    pthread_key_t *key_p = (pthread_key_t*)opaque;
-
-    pthread_key_create(key_p,NULL);
-    return 0;
+    pthread_key_create(&_abcdk_cuda_ctx_key,NULL);
 }
 
 CUcontext abcdk_cuda_ctx_create(int device, int flag)
@@ -40,10 +37,9 @@ CUcontext abcdk_cuda_ctx_create(int device, int flag)
 
     assert(device >= 0);
 
-    /*注册KEY。*/
-    chk = abcdk_once(&_abcdk_cuda_ctx_specific_init_status,_abcdk_cuda_ctx_specific_init,&_abcdk_cuda_ctx_specific_key);
-    if(chk < 0)
-        return NULL;
+    /*初始化一次。*/
+    chk = pthread_once(&_abcdk_cuda_ctx_key_init_status,_abcdk_cuda_ctx_key_init);
+    assert(chk == 0);
 
     cu_chk = cuDeviceGet(&dev_ctx, device);
     if (cu_chk != CUDA_SUCCESS)
@@ -91,7 +87,7 @@ int abcdk_cuda_ctx_setspecific(CUcontext ctx)
     int chk;
 
     /*绑定到线程。*/
-    chk = pthread_setspecific(_abcdk_cuda_ctx_specific_key, ctx);
+    chk = pthread_setspecific(_abcdk_cuda_ctx_key, ctx);
     if (chk != 0)
         return -1;
     
@@ -102,7 +98,7 @@ CUcontext abcdk_cuda_ctx_getspecific()
 {
     CUcontext old_ctx = NULL;
 
-    old_ctx = (CUcontext)pthread_getspecific(_abcdk_cuda_ctx_specific_key);
+    old_ctx = (CUcontext)pthread_getspecific(_abcdk_cuda_ctx_key);
     ABCDK_ASSERT(old_ctx != NULL, TT("当前线程尚未绑定CUDA环境。"));
 
     return old_ctx;
