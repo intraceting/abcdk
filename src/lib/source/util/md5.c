@@ -329,7 +329,7 @@ void abcdk_md5_final2hex(abcdk_md5_t *ctx, char hashcode[33],int ABC)
     abcdk_bin2hex(hashcode, buf, 16, ABC);
 }
 
-int abcdk_md5_once(const void *data, size_t size, uint8_t hashcode[32])
+int abcdk_md5_once(const void *data, size_t size, uint8_t hashcode[16])
 {
     abcdk_md5_t *ctx = NULL;
 

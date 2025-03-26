@@ -36,7 +36,7 @@ void abcdk_md5_final(abcdk_md5_t *ctx,uint8_t hashcode[16]);
 void abcdk_md5_final2hex(abcdk_md5_t *ctx,char hashcode[33],int ABC);
 
 /**计算内存块的MD5。*/
-int abcdk_md5_once(const void *data, size_t size, uint8_t hashcode[32]);
+int abcdk_md5_once(const void *data, size_t size, uint8_t hashcode[16]);
 
 /**
  * 计算内存块的MD5，并转换成字符串。
