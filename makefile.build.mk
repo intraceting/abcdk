@@ -17,6 +17,7 @@ LIB_SRC_FILES += $(wildcard src/lib/source/odbc/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/json/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/curl/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
@@ -118,6 +119,12 @@ $(OBJ_PATH)/src/lib/source/lz4/%.o: src/lib/source/lz4/%.c
 #
 $(OBJ_PATH)/src/lib/source/json/%.o: src/lib/source/json/%.c
 	mkdir -p $(OBJ_PATH)/src/lib/source/json/
+	rm -f $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/src/lib/source/curl/%.o: src/lib/source/curl/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/curl/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 	

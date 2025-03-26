@@ -4,11 +4,11 @@
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
  * 
  */
-#include "abcdk/util/download.h"
+#include "abcdk/curl/util.h"
 
 #ifdef CURLINC_CURL_H
 
-static size_t _abcdk_download_write_cb(void *buffer, size_t size, size_t nmemb, void *user_p)
+static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nmemb, void *user_p)
 {
     int *fd = (int *)user_p;
 
@@ -21,7 +21,7 @@ static size_t _abcdk_download_write_cb(void *buffer, size_t size, size_t nmemb, 
 
 #endif //CURLINC_CURL_H
 
-int abcdk_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout)
+int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout)
 {
 #ifdef CURLINC_CURL_H
 
@@ -59,7 +59,7 @@ int abcdk_download_fd(int fd,const char *url,size_t offset,size_t count,time_t c
     curl_easy_setopt(curl_ctx, CURLOPT_VERBOSE, 0);
 
     curl_easy_setopt(curl_ctx, CURLOPT_READFUNCTION, NULL);
-    curl_easy_setopt(curl_ctx, CURLOPT_WRITEFUNCTION, &_abcdk_download_write_cb);
+    curl_easy_setopt(curl_ctx, CURLOPT_WRITEFUNCTION, &_abcdk_curl_download_write_cb);
     curl_easy_setopt(curl_ctx, CURLOPT_WRITEDATA, &fd);
 
     curl_easy_setopt(curl_ctx, CURLOPT_NOSIGNAL, 1);
@@ -101,7 +101,7 @@ END:
 #endif //CURLINC_CURL_H
 }
 
-int abcdk_download_filename(const char *file, const char *url, size_t offset, size_t count, time_t ctimeout, time_t stimeout)
+int abcdk_curl_download_filename(const char *file, const char *url, size_t offset, size_t count, time_t ctimeout, time_t stimeout)
 {
     int fd;
     int chk;
@@ -112,7 +112,7 @@ int abcdk_download_filename(const char *file, const char *url, size_t offset, si
     if (fd < 0)
         return -1;
 
-    chk = abcdk_download_fd(fd, url, offset, count, ctimeout, stimeout);
+    chk = abcdk_curl_download_fd(fd, url, offset, count, ctimeout, stimeout);
     abcdk_closep(&fd);
 
     return chk;

@@ -77,7 +77,6 @@
 #include "abcdk/util/ipool.h"
 #include "abcdk/util/registry.h"
 #include "abcdk/util/nonce.h"
-#include "abcdk/util/download.h"
 #include "abcdk/util/bmp.h"
 #include "abcdk/util/aac.h"
 #include "abcdk/util/h2645.h"
@@ -140,6 +139,9 @@
 #include "abcdk/openssl/bio.h"
 #include "abcdk/openssl/cipherex.h"
 #include "abcdk/openssl/totp.h"
+
+#include "abcdk/curl/curl.h"
+#include "abcdk/curl/util.h"
 
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/imgutil.h"
