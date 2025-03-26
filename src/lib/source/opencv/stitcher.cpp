@@ -239,17 +239,12 @@ void abcdk_opencv_stitcher_destroy(abcdk_opencv_stitcher_t **ctx)
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
 }
 
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create()
+abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create(uint32_t tag)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return NULL;
 }
 
-abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create_cuda(CUcontext cuda_ctx)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
-    return NULL;
-}
 
 abcdk_object_t *abcdk_opencv_stitcher_metadata_dump(abcdk_opencv_stitcher_t *ctx, const char *magic)
 {
@@ -263,10 +258,10 @@ int abcdk_opencv_stitcher_metadata_load(abcdk_opencv_stitcher_t *ctx, const char
     return -1;
 }
 
-void abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name)
+int abcdk_opencv_stitcher_set_feature_finder(abcdk_opencv_stitcher_t *ctx, const char *name)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
-    return ;
+    return -1;
 }
 
 int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
@@ -275,10 +270,10 @@ int abcdk_opencv_stitcher_estimate_transform(abcdk_opencv_stitcher_t *ctx, int c
     return -1;
 }
 
-void abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx,const char *name)
+int abcdk_opencv_stitcher_set_warper(abcdk_opencv_stitcher_t *ctx,const char *name)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
-    return ;
+    return -1;
 }
 
 int abcdk_opencv_stitcher_build_panorama_param(abcdk_opencv_stitcher_t *ctx)

@@ -56,7 +56,7 @@ int abcdk_cuda_get_device_name(char name[256], int device)
 
 #else // __cuda_cuda_h__
 
-int abcdk_cuda_ctx_init(uint32_t flags)
+int abcdk_cuda_init(uint32_t flags)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
