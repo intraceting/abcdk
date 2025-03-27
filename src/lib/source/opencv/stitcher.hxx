@@ -269,8 +269,8 @@ namespace abcdk
 
                         cv::drawKeypoints(imgs[i], m_img_features[i].keypoints, img_tmp, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 
-                        std::string img_name = "./abcdk-opencv-stitcher-find-feature-image-";
-                        std::string mask_name = "./abcdk-opencv-stitcher-find-feature-mask-";
+                        std::string img_name = "/tmp/abcdk-opencv-stitcher-find-feature-image-";
+                        std::string mask_name = "/tmp/abcdk-opencv-stitcher-find-feature-mask-";
                         img_name += std::to_string(i);
                         mask_name += std::to_string(i);
                         img_name += ".jpg";
