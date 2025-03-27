@@ -33,10 +33,16 @@ int abcdk_test_stitcher_cpu(abcdk_option_t *args)
 
     abcdk_torch_image_t *img[4] = {0}, *mask[4] = {0};
 
-    img[0] = abcdk_torch_image_load("/tmp/ccc/you1.jpg", 0);
-    img[3] = abcdk_torch_image_load("/tmp/ccc/you2.jpg", 0);
-    img[1] = abcdk_torch_image_load("/tmp/ccc/you3.jpg", 0);
-    img[2] = abcdk_torch_image_load("/tmp/ccc/you4.jpg", 0);
+    // img[0] = abcdk_torch_image_load("/tmp/ccc/you1.jpg", 0);
+    // img[3] = abcdk_torch_image_load("/tmp/ccc/you2.jpg", 0);
+    // img[1] = abcdk_torch_image_load("/tmp/ccc/you3.jpg", 0);
+    // img[2] = abcdk_torch_image_load("/tmp/ccc/you4.jpg", 0);
+
+
+    img[0] = abcdk_torch_image_load("/home/devel/job/download/eee/1.jpg", 0);
+    img[3] = abcdk_torch_image_load("/home/devel/job/download/eee/2.jpg", 0);
+    img[1] = abcdk_torch_image_load("/home/devel/job/download/eee/3.jpg", 0);
+    img[2] = abcdk_torch_image_load("/home/devel/job/download/eee/4.jpg", 0);
 
     int chk = abcdk_opencv_stitcher_estimate_transform(ctx, 4, img, mask, 0.8);
 
@@ -87,10 +93,15 @@ int abcdk_test_stitcher_cuda(abcdk_option_t *args)
     abcdk_torch_image_t *cuda_img[4] = {0}, *cuda_mask[4] = {0};
     abcdk_torch_image_t *cpu_img[4] = {0}, *cpu_mask[4] = {0};
 
-    cpu_img[0] = abcdk_torch_image_load("/tmp/ccc/you1.jpg", 0);
-    cpu_img[3] = abcdk_torch_image_load("/tmp/ccc/you2.jpg", 0);
-    cpu_img[1] = abcdk_torch_image_load("/tmp/ccc/you3.jpg", 0);
-    cpu_img[2] = abcdk_torch_image_load("/tmp/ccc/you4.jpg", 0);
+    // cpu_img[0] = abcdk_torch_image_load("/tmp/ccc/you1.jpg", 0);
+    // cpu_img[3] = abcdk_torch_image_load("/tmp/ccc/you2.jpg", 0);
+    // cpu_img[1] = abcdk_torch_image_load("/tmp/ccc/you3.jpg", 0);
+    // cpu_img[2] = abcdk_torch_image_load("/tmp/ccc/you4.jpg", 0);
+
+    cpu_img[0] = abcdk_torch_image_load("/home/devel/job/download/eee/1.jpg", 0);
+    cpu_img[3] = abcdk_torch_image_load("/home/devel/job/download/eee/2.jpg", 0);
+    cpu_img[1] = abcdk_torch_image_load("/home/devel/job/download/eee/3.jpg", 0);
+    cpu_img[2] = abcdk_torch_image_load("/home/devel/job/download/eee/4.jpg", 0);
 
     cuda_img[0] = abcdk_cuda_image_clone(0, cpu_img[0]);
     cuda_img[3] = abcdk_cuda_image_clone(0, cpu_img[3]);

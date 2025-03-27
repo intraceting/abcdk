@@ -134,7 +134,7 @@ namespace abcdk
                 assert(m_warper_outs.size() >= 0);
 
                 /*创建全景图像存储空间。*/
-                chk = abcdk_cuda_image_reset(&out, m_blend_width, m_blend_height,  m_warper_outs[0]->pixfmt, 1);
+                chk = abcdk_cuda_image_reset(&out, m_blend_width, m_blend_height,  m_warper_outs[m_img_good_idxs[0]]->pixfmt, 1);
                 if (chk != 0)
                     return false;
 
