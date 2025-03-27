@@ -1062,7 +1062,7 @@ int abcdk_ffeditor_write_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, AVRational
 
     pkt->pos = -1;
 
-    chk = abcdk_avformat_output_write(ctx->avctx, pkt,ctx->cfg.write_flush);
+    chk = abcdk_avformat_output_write(ctx->avctx, pkt, ctx->avctx->nb_streams, ctx->cfg.write_flush);
 
     if (chk < 0)
         return -1;

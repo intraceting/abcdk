@@ -136,14 +136,16 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict);
 
 /**
  * 向流(输出)写入数据包。
+ * 
+ * @note 无论是直接写或交错写都有可能存在延迟写入的情况。
  *
- * @param [in] flush 是否立即刷新。0 否，!0 是。
+ * @param [in] tracks 轨道数量 。= 1 直接写，> 1 交错写。
+ * @param [in] flush 立即刷新。0 否，!0 是。
  *
  * @return 0 成功，!0 失败。
  *
  */
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt,int flush);
-
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt, int tracks, int flush);
 
 /**
  * 向流(输出)写入结束信息。

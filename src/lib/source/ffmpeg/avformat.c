@@ -476,12 +476,12 @@ int abcdk_avformat_output_header(AVFormatContext *ctx, AVDictionary **dict)
     return 0;
 }
 
-int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt,int flush)
+int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt, int tracks, int flush)
 {
     int chk;
-    assert(ctx != NULL && pkt != NULL);
+    assert(ctx != NULL && pkt != NULL && tracks >= 1);
 
-    chk = av_interleaved_write_frame(ctx, pkt);
+    chk = (tracks > 1 ? av_interleaved_write_frame(ctx, pkt) : av_write_frame(ctx, pkt));
     if(chk != 0)
         return -1;
 
