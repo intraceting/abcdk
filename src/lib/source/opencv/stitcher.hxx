@@ -581,7 +581,7 @@ namespace abcdk
                 assert(name != NULL);
 
                 if (strcasecmp(name, "ORB") == 0)
-                    set_feature_finder(cv::ORB::create());
+                    set_feature_finder(cv::ORB::create(800));
 #ifdef HAVE_OPENCV_XFEATURES2D
                 else if (strcasecmp(name, "SIFT") == 0)
                     set_feature_finder(cv::xfeatures2d::SIFT::create());
