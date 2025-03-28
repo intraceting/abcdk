@@ -155,16 +155,8 @@
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/frame.h"
 #include "abcdk/torch/packet.h"
-
-#include "abcdk/nvidia/nvidia.h"
-#include "abcdk/nvidia/memory.h"
-#include "abcdk/nvidia/context.h"
-#include "abcdk/nvidia/imgproc.h"
-#include "abcdk/nvidia/tensorproc.h"
-#include "abcdk/nvidia/jpeg.h"
-#include "abcdk/nvidia/vcodec.h"
-#include "abcdk/nvidia/imgutil.h"
-#include "abcdk/nvidia/image.h"
+#include "abcdk/torch/memory.h"
+#include "abcdk/torch/context.h"
 
 #include "abcdk/opencv/opencv.h"
 #include "abcdk/opencv/stitcher.h"

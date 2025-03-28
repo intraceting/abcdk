@@ -8,7 +8,7 @@
 #define ABCDK_TORCH_JCODEC_H
 
 #include "abcdk/util/object.h"
-#include "abcdk/torch/torch.h"
+#include "abcdk/torch/image.h"
 
 __BEGIN_DECLS
 
@@ -33,16 +33,134 @@ typedef struct _abcdk_torch_jcodec
     /**私有环境。*/
     void *private_ctx;
 
-    /**私有环境释放。*/
-    void (*private_ctx_free_cb)(void **ctx);
-
 } abcdk_torch_jcodec_t;
 
 /**释放。*/
-void abcdk_torch_jcodec_free(abcdk_torch_jcodec_t **ctx);
+void abcdk_torch_jcodec_free_host(abcdk_torch_jcodec_t **ctx);
 
-/**申请。 */
-abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc(uint32_t tag);
+/**释放。*/
+void abcdk_torch_jcodec_free_cuda(abcdk_torch_jcodec_t **ctx);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_free abcdk_torch_jcodec_free_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_free abcdk_torch_jcodec_free_host
+#endif //
+
+/** 申请。*/
+abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_host(int encoder);
+
+/** 申请。*/
+abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_cuda(int encoder);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_alloc abcdk_torch_jcodec_alloc_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_alloc abcdk_torch_jcodec_alloc_host
+#endif //
+
+/** 
+ * 启动。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_jcodec_start_host(abcdk_torch_jcodec_t *ctx, abcdk_torch_jcodec_param_t *param);
+
+/** 
+ * 启动。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_jcodec_start_cuda(abcdk_torch_jcodec_t *ctx, abcdk_torch_jcodec_param_t *param);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_start abcdk_torch_jcodec_start_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_start abcdk_torch_jcodec_start_host
+#endif //
+
+/**编码。 */
+abcdk_object_t *abcdk_torch_jcodec_encode_host(abcdk_torch_jcodec_t *ctx, const abcdk_torch_image_t *src);
+
+/**编码。 */
+abcdk_object_t *abcdk_torch_jcodec_encode_cuda(abcdk_torch_jcodec_t *ctx, const abcdk_torch_image_t *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_encode abcdk_torch_jcodec_encode_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_encode abcdk_torch_jcodec_encode_host
+#endif //
+
+/**
+ * 编码。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_jcodec_encode_to_file_host(abcdk_torch_jcodec_t *ctx, const char *dst, const abcdk_torch_image_t *src);
+
+/**
+ * 编码。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_jcodec_encode_to_file_cuda(abcdk_torch_jcodec_t *ctx, const char *dst, const abcdk_torch_image_t *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_encode_to_file abcdk_torch_jcodec_encode_to_file_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_encode_to_file abcdk_torch_jcodec_encode_to_file_host
+#endif //
+
+
+/**解码。 */
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_host(abcdk_torch_jcodec_t *ctx, const void *src, int src_size);
+
+/**解码。 */
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_cuda(abcdk_torch_jcodec_t *ctx, const void *src, int src_size);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_decode abcdk_torch_jcodec_decode_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_decode abcdk_torch_jcodec_decode_host
+#endif //
+
+/**解码。 */
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_host(abcdk_torch_jcodec_t *ctx, const void *src);
+
+/**解码。 */
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec_t *ctx, const void *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_decode_from_file abcdk_torch_jcodec_decode_from_file_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_decode_from_file abcdk_torch_jcodec_decode_from_file_host
+#endif //
+
+
+/**保存。*/
+int abcdk_torch_jcodec_save_host(const char *dst, const abcdk_torch_image_t *src);
+
+/**保存。*/
+int abcdk_torch_jcodec_save_cuda(const char *dst, const abcdk_torch_image_t *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_save abcdk_torch_jcodec_save_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_save abcdk_torch_jcodec_save_host
+#endif //
+
+/**加载。*/
+abcdk_torch_image_t *abcdk_torch_jcodec_load_host(const char *src);
+
+/**加载。*/
+abcdk_torch_image_t *abcdk_torch_jcodec_load_cuda(const char *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_jcodec_load abcdk_torch_jcodec_load_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_jcodec_load abcdk_torch_jcodec_load_host
+#endif //
+
 
 __END_DECLS
 

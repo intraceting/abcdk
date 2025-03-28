@@ -59,10 +59,27 @@ int abcdk_torch_imgutil_size2(int width, int height, int pixfmt, int align);
 
 /**
  * 图像复制。
+ *
+ * @return 0 成功，< 0 失败。
  */
-void abcdk_torch_imgutil_copy(uint8_t *dst_data[4], int dst_stride[4],
-                              const uint8_t *src_data[4], const int src_stride[4],
-                              int width, int height, int pixfmt);
+int abcdk_torch_imgutil_copy_host(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
+                                  const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
+                                  int width, int height, int pixfmt);
+
+/**
+ * 图像复制。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_torch_imgutil_copy_cuda(uint8_t *dst_data[4], int dst_stride[4], int dst_in_host,
+                                  const uint8_t *src_data[4], const int src_stride[4], int src_in_host,
+                                  int width, int height, int pixfmt);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_imgutil_copy abcdk_torch_imgutil_copy_cuda
+#else // ABCDK_TORCH_USE_HOST
+#define abcdk_torch_imgutil_copy abcdk_torch_imgutil_copy_host
+#endif //
 
 __END_DECLS
 

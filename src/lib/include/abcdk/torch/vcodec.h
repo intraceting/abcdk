@@ -172,9 +172,6 @@ typedef struct _abcdk_torch_vcodec
     /**私有环境。*/
     void *private_ctx;
 
-    /**私有环境释放。*/
-    void (*private_ctx_free_cb)(void **ctx);
-
 } abcdk_torch_vcodec_t;
 
 /**转为ffmpeg类型。*/
@@ -184,10 +181,146 @@ int abcdk_torch_vcodec_convert_to_ffmpeg(int format);
 int abcdk_torch_vcodec_convert_from_ffmpeg(int format);
 
 /**释放。*/
-void abcdk_torch_vcodec_free(abcdk_torch_vcodec_t **ctx);
+void abcdk_torch_vcodec_free_host(abcdk_torch_vcodec_t **ctx);
 
-/**申请。 */
-abcdk_torch_vcodec_t *abcdk_torch_vcodec_alloc(uint32_t tag);
+/**释放。*/
+void abcdk_torch_vcodec_free_cuda(abcdk_torch_vcodec_t **ctx);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_free abcdk_torch_vcodec_free_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_free abcdk_torch_vcodec_free_host
+#endif //
+
+/**
+ * 申请。
+ */
+abcdk_torch_vcodec_t *abcdk_torch_vcodec_alloc_host(int encoder);
+
+/**
+ * 申请。
+ */
+abcdk_torch_vcodec_t *abcdk_torch_vcodec_alloc_cuda(int encoder);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_alloc abcdk_torch_vcodec_alloc_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_alloc abcdk_torch_vcodec_alloc_host
+#endif //
+
+/** 
+ * 启动。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_vcodec_start_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_param_t *param);
+
+/** 
+ * 启动。
+ * 
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_vcodec_start_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_param_t *param);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_start abcdk_torch_vcodec_start_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_start abcdk_torch_vcodec_start_host
+#endif //
+
+/**
+ * 编码。
+ *
+ * @param [in] src 图像。NULL(0) 仅获取编码帧。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_encode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src);
+
+/**
+ * 编码。
+ *
+ * @param [in] src 图像。NULL(0) 仅获取编码帧。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_encode abcdk_torch_vcodec_encode_host
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_encode abcdk_torch_vcodec_encode_cuda
+#endif //
+
+/**
+ * 解码。
+ *
+ * @param [in] src_data 数据包指针。NULL(0) 仅获取解码图。src.size(数据包长度) 0 是结束帧。src.pts(播放时间) 一个递增的时间值，影响解码图的输出顺序。
+ * 
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_decode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src);
+
+/**
+ * 解码。
+ *
+ * @param [in] src_data 数据包指针。NULL(0) 仅获取解码图。src.size(数据包长度) 0 是结束帧。src.pts(播放时间) 一个递增的时间值，影响解码图的输出顺序。
+ * 
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_decode abcdk_torch_vcodec_decode_host
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_decode abcdk_torch_vcodec_decode_cuda
+#endif //
+
+#ifdef AVCODEC_AVCODEC_H
+
+/**
+ * 编码。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_encode_to_ffmpeg_host(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src);
+
+/**
+ * 编码。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_encode_to_ffmpeg_cuda(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_encode_to_ffmpeg abcdk_torch_vcodec_encode_to_ffmpeg_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_encode_to_ffmpeg abcdk_torch_vcodec_encode_to_ffmpeg_host
+#endif //
+
+/**
+ * 解码。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_decode_from_ffmpeg_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src);
+
+/**
+ * 解码。
+ *
+ * @return 1 有输出，0 无输出，< 0 出错了。
+ */
+int abcdk_torch_vcodec_decode_from_ffmpeg_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_vcodec_decode_from_ffmpeg abcdk_torch_vcodec_decode_from_ffmpeg_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_vcodec_decode_from_ffmpeg abcdk_torch_vcodec_decode_from_ffmpeg_host
+#endif //
+
+#endif //AVCODEC_AVCODEC_H
 
 __END_DECLS
 
