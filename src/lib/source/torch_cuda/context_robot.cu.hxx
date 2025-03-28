@@ -25,12 +25,12 @@ namespace abcdk
             public:
                 robot(CUcontext ctx)
                 {
-                    abcdk_torch_ctx_push(ctx);
+                    cuCtxPushCurrent(ctx);
                 }
 
                 virtual ~robot()
                 {
-                    abcdk_torch_ctx_pop();
+                    cuCtxPopCurrent();
                 }
             };
         } // namespace context
