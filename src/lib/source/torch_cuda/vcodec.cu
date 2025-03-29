@@ -19,7 +19,7 @@ __BEGIN_DECLS
 /** CUDA视频编/解码器。*/
 typedef struct _abcdk_torch_vcodec_cuda
 {
-    /**是否为编码器。!0 是，0 否。*/
+    /**编码器。!0 是，0 否。*/
     uint8_t encoder;
 
     /**编码器。*/

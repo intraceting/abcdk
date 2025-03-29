@@ -263,11 +263,13 @@ int abcdk_test_torch_3(abcdk_option_t *args)
         {
             AVPacket *w_pkt = NULL;
             int chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
-            if (chk <= 0)
+            if (chk < 0)
                 break;
-
-            abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
-            av_packet_free(&w_pkt);
+            else if( chk > 0)
+            {
+                abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
+                av_packet_free(&w_pkt);
+            }
         }
 
         abcdk_torch_frame_free(&r_fae);

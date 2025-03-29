@@ -163,7 +163,7 @@ typedef struct _abcdk_torch_vcodec_param
 
 } abcdk_torch_vcodec_param_t;
 
-/** 媒体视频编/解码器。*/
+/** 视频编/解码器。*/
 typedef struct _abcdk_torch_vcodec
 {
     /**标签。*/
