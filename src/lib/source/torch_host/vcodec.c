@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/torch/vcodec.h"
-
+#include "abcdk/ffmpeg/ffmpeg.h"
 
 void abcdk_torch_vcodec_free_host(abcdk_torch_vcodec_t **ctx)
 {

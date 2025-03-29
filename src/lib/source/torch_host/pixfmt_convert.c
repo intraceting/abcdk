@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/pixfmt.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
 
 #ifdef AVUTIL_PIXFMT_H
 

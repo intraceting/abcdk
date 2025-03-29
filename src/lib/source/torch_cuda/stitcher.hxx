@@ -7,6 +7,8 @@
 #ifndef ABCDK_TORCH_CUDA_STITCHER_HXX
 #define ABCDK_TORCH_CUDA_STITCHER_HXX
 
+#include "abcdk/torch/nvidia.h"
+#include "abcdk/torch/opencv.h"
 #include "../torch/stitcher.hxx"
 
 #ifdef OPENCV_STITCHING_STITCHER_HPP

@@ -63,8 +63,6 @@ ERR:
 int abcdk_torch_context_current_set_host(abcdk_torch_context_t *ctx)
 {
     abcdk_torch_context_t *old_ctx = NULL;
-    CUcontext cu_old_ctx = NULL;
-    CUresult cu_chk;
     int chk;
 
     if (ctx)

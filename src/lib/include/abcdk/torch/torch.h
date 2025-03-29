@@ -12,10 +12,6 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/util/bmp.h"
 #include "abcdk/util/thread.h"
-#include "abcdk/ffmpeg/ffmpeg.h"
-#include "abcdk/torch/nvidia.h"
-#include "abcdk/torch/opencv.h"
-
 
 __BEGIN_DECLS
 

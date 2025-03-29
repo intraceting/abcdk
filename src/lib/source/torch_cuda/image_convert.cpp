@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/torch/image.h"
-
+#include "abcdk/torch/nvidia.h"
 
 __BEGIN_DECLS
 

@@ -8,7 +8,8 @@
 #define ABCDK_TORCH_NVIDIA_JPEG_UTIL_HXX
 
 #include "abcdk/torch/image.h"
-#include "context_robot.cu.hxx"
+#include "abcdk/torch/nvidia.h"
+#include "context_robot.hxx"
 
 #ifdef __aarch64__
 #include "jetson/nvmpi.h"

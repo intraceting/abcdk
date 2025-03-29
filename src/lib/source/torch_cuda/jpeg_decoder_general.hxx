@@ -10,7 +10,8 @@
 #include "abcdk/util/option.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/context.h"
-#include "jpeg_decoder.cu.hxx"
+#include "abcdk/torch/nvidia.h"
+#include "jpeg_decoder.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef __x86_64__

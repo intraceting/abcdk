@@ -157,9 +157,9 @@
 #include "abcdk/torch/packet.h"
 #include "abcdk/torch/memory.h"
 #include "abcdk/torch/context.h"
-
-#include "abcdk/opencv/opencv.h"
-#include "abcdk/opencv/stitcher.h"
-#include "abcdk/opencv/freetype.h"
+#include "abcdk/torch/opencv.h"
+#include "abcdk/torch/nvidia.h"
+#include "abcdk/torch/stitcher.h"
+#include "abcdk/torch/freetype.h"
 
 #endif //ABCDK_H

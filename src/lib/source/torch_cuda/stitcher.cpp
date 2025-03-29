@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/stitcher.h"
+#include "abcdk/torch/nvidia.h"
 #include "stitcher.hxx"
 
 __BEGIN_DECLS

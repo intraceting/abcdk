@@ -5,8 +5,9 @@
  *
  */
 #include "abcdk/torch/memory.h"
+#include "abcdk/torch/nvidia.h"
 #include "../torch/invoke.hxx"
-#include "grid.cu.hxx"
+#include "grid.hxx"
 
 #ifdef __cuda_cuda_h__
 

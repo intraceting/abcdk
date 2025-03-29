@@ -11,8 +11,9 @@
 #include "abcdk/torch/vcodec.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/context.h"
-#include "vcodec_decoder.cu.hxx"
-#include "vcodec_util.cu.hxx"
+#include "abcdk/torch/nvidia.h"
+#include "vcodec_decoder.hxx"
+#include "vcodec_util.hxx"
 
 #ifdef __cuda_cuda_h__
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H

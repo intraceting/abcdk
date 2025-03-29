@@ -11,7 +11,6 @@
 #include <locale.h>
 #include "entry.h"
 
-
 int abcdk_test_stitcher(abcdk_option_t *args)
 {
 
@@ -22,21 +21,17 @@ int abcdk_test_stitcher(abcdk_option_t *args)
 
     abcdk_torch_context_current_set(torch_ctx);
 
-#ifdef ABCDK_TORCH_USE_CUDA
-    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_CUDA);
-#else 
-    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_HOST);
-#endif 
+    abcdk_torch_stitcher_t *ctx = abcdk_torch_stitcher_create();
 
     abcdk_object_t *metadata = abcdk_object_copyfrom_file(abcdk_option_get(args, "--metadata-load", 0, ""));
 
     if (metadata)
     {
-        abcdk_opencv_stitcher_metadata_load(ctx, "7b1a5e0796419a8278e1f6df640f0bfb", metadata->pstrs[0]);
+        abcdk_torch_stitcher_metadata_load(ctx, "7b1a5e0796419a8278e1f6df640f0bfb", metadata->pstrs[0]);
         abcdk_object_unref(&metadata);
     }
 
-    metadata = abcdk_opencv_stitcher_metadata_dump(ctx, "abcdk");
+    metadata = abcdk_torch_stitcher_metadata_dump(ctx, "abcdk");
     if (metadata)
     {
         fprintf(stderr, "%s\n", metadata->pstrs[0]);
@@ -50,7 +45,6 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     // img[1] = abcdk_torch_image_load("/tmp/ccc/you3.jpg", 0);
     // img[2] = abcdk_torch_image_load("/tmp/ccc/you4.jpg", 0);
 
-
     img[0] = abcdk_torch_image_load("/home/devel/job/download/eee/1.jpg", 0);
     img[3] = abcdk_torch_image_load("/home/devel/job/download/eee/2.jpg", 0);
     img[1] = abcdk_torch_image_load("/home/devel/job/download/eee/3.jpg", 0);
@@ -58,16 +52,16 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     img[5] = abcdk_torch_image_load("/home/devel/job/download/eee/5.jpg", 0);
     img[4] = abcdk_torch_image_load("/home/devel/job/download/eee/6.jpg", 0);
 
-    //abcdk_opencv_stitcher_set_feature_finder(ctx,"SURF");
-    abcdk_opencv_stitcher_set_feature_finder(ctx,"SIFT");
+    // abcdk_opencv_stitcher_set_feature(ctx,"SURF");
+    abcdk_torch_stitcher_set_feature(ctx, "SIFT");
 
-    int chk = abcdk_opencv_stitcher_estimate_transform(ctx, 6, img, mask, 0.8);
+    int chk = abcdk_torch_stitcher_estimate(ctx, 6, img, mask, 0.8);
 
-    //abcdk_opencv_stitcher_set_warper(ctx,"plane");
-    abcdk_opencv_stitcher_build_panorama_param(ctx);
+    // abcdk_opencv_stitcher_set_warper(ctx,"plane");
+    abcdk_torch_stitcher_build(ctx);
 
     abcdk_torch_image_t *out = abcdk_torch_image_alloc();
-    chk = abcdk_opencv_stitcher_compose_panorama(ctx, out, 6, img);
+    chk = abcdk_torch_stitcher_compose(ctx, out, 6, img);
 
     abcdk_torch_image_save("/tmp/ccc/pano.jpg", out);
     abcdk_torch_image_free(&out);
@@ -75,7 +69,7 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     for (int i = 0; i < 6; i++)
         abcdk_torch_image_free(&img[i]);
 
-    abcdk_opencv_stitcher_destroy(&ctx);
+    abcdk_torch_stitcher_destroy(&ctx);
 
     abcdk_torch_context_current_set(NULL);
     abcdk_torch_context_destroy(&torch_ctx);

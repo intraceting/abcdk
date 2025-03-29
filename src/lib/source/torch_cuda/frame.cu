@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/frame.h"
+#include "abcdk/torch/nvidia.h"
 
 __BEGIN_DECLS
 

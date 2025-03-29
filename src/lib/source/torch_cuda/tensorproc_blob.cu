@@ -5,8 +5,9 @@
  *
  */
 #include "abcdk/torch/tensorproc.h"
+#include "abcdk/torch/nvidia.h"
 #include "../torch/tensorproc.hxx"
-#include "grid.cu.hxx"
+#include "grid.hxx"
 
 #ifdef __cuda_cuda_h__
 

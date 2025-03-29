@@ -8,7 +8,8 @@
 #define ABCDK_TORCH_NVIDIA_VCODEC_UTIL_HXX
 
 #include "abcdk/torch/vcodec.h"
-#include "context_robot.cu.hxx"
+#include "abcdk/torch/nvidia.h"
+#include "context_robot.hxx"
 
 #ifdef __x86_64__
 #ifdef HAVE_FFNVCODEC

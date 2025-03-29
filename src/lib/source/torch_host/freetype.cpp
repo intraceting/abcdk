@@ -4,24 +4,24 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/opencv/freetype.h"
+#include "abcdk/torch/freetype.h"
 
 __BEGIN_DECLS
 
 #ifdef _OPENCV_FREETYPE_H_
 
 /**简单的文字引擎。*/
-struct _abcdk_opencv_freetype
+struct _abcdk_torch_freetype
 {   
     /**引擎。*/
     cv::Ptr<cv::freetype::FreeType2> impl_ctx;
 
-};// abcdk_opencv_freetype_t;
+};// abcdk_torch_freetype_t;
 
 
-void abcdk_opencv_freetype_destroy(abcdk_opencv_freetype_t **ctx)
+void abcdk_torch_freetype_destroy(abcdk_torch_freetype_t **ctx)
 {
-    abcdk_opencv_freetype_t *ctx_p;
+    abcdk_torch_freetype_t *ctx_p;
 
     if(!ctx ||!*ctx)
         return;
@@ -36,11 +36,11 @@ void abcdk_opencv_freetype_destroy(abcdk_opencv_freetype_t **ctx)
 }
 
 
-abcdk_opencv_freetype_t *abcdk_opencv_freetype_create()
+abcdk_torch_freetype_t *abcdk_torch_freetype_create()
 {
-    abcdk_opencv_freetype_t *ctx;
+    abcdk_torch_freetype_t *ctx;
 
-    ctx = (abcdk_opencv_freetype_t *)abcdk_heap_alloc(sizeof(abcdk_opencv_freetype_t));
+    ctx = (abcdk_torch_freetype_t *)abcdk_heap_alloc(sizeof(abcdk_torch_freetype_t));
     if (!ctx)
         return NULL;
 
@@ -52,11 +52,11 @@ abcdk_opencv_freetype_t *abcdk_opencv_freetype_create()
 
 ERR:
 
-    abcdk_opencv_freetype_destroy(&ctx);
+    abcdk_torch_freetype_destroy(&ctx);
     return NULL;
 }
 
-int abcdk_opencv_freetype_load_font(abcdk_opencv_freetype_t *ctx, const char *file, int id)
+int abcdk_torch_freetype_load_font(abcdk_torch_freetype_t *ctx, const char *file, int id)
 {
     assert(ctx != NULL && file != NULL && id >= 0);
 
@@ -73,7 +73,7 @@ int abcdk_opencv_freetype_load_font(abcdk_opencv_freetype_t *ctx, const char *fi
     return 0;
 }
 
-int abcdk_opencv_freetype_set_split_number(abcdk_opencv_freetype_t *ctx, int num)
+int abcdk_torch_freetype_set_split_number(abcdk_torch_freetype_t *ctx, int num)
 {
     assert(ctx != NULL && num >=0);
 
@@ -90,7 +90,7 @@ int abcdk_opencv_freetype_set_split_number(abcdk_opencv_freetype_t *ctx, int num
     return 0;
 }
 
-int abcdk_opencv_freetype_get_text_size(abcdk_opencv_freetype_t *ctx,
+int abcdk_torch_freetype_get_text_size(abcdk_torch_freetype_t *ctx,
                                         abcdk_torch_size_t *size, const char *text,
                                         int height, int thickness, int *base_line)
 {
@@ -112,7 +112,7 @@ int abcdk_opencv_freetype_get_text_size(abcdk_opencv_freetype_t *ctx,
     return 0;
 }
 
-int abcdk_opencv_freetype_put_text(abcdk_opencv_freetype_t *ctx,
+int abcdk_torch_freetype_put_text_host(abcdk_torch_freetype_t *ctx,
                                    abcdk_torch_image_t *img, const char *text,
                                    abcdk_torch_point_t *org, int height, uint32_t color[4],
                                    int thickness, int line_type, uint8_t bottom_left_origin)
@@ -138,31 +138,31 @@ int abcdk_opencv_freetype_put_text(abcdk_opencv_freetype_t *ctx,
 
 #else //_OPENCV_FREETYPE_H_
 
-void abcdk_opencv_freetype_destroy(abcdk_opencv_freetype_t **ctx)
+void abcdk_torch_freetype_destroy(abcdk_torch_freetype_t **ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return ;
 }
 
-abcdk_opencv_freetype_t *abcdk_opencv_freetype_create()
+abcdk_torch_freetype_t *abcdk_torch_freetype_create()
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return NULL;
 }
 
-int abcdk_opencv_freetype_load_font(abcdk_opencv_freetype_t *ctx, const char *file,int id)
+int abcdk_torch_freetype_load_font(abcdk_torch_freetype_t *ctx, const char *file,int id)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
 
-int abcdk_opencv_freetype_set_split_number(abcdk_opencv_freetype_t *ctx, int num)
+int abcdk_torch_freetype_set_split_number(abcdk_torch_freetype_t *ctx, int num)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
 
-int abcdk_opencv_freetype_get_text_size(abcdk_opencv_freetype_t *ctx,
+int abcdk_torch_freetype_get_text_size(abcdk_torch_freetype_t *ctx,
                                         abcdk_torch_size_t *size, const char *text,
                                         int height, int thickness, int *base_line)
 {
@@ -170,7 +170,7 @@ int abcdk_opencv_freetype_get_text_size(abcdk_opencv_freetype_t *ctx,
     return -1;
 }
 
-int abcdk_opencv_freetype_put_text(abcdk_opencv_freetype_t *ctx,
+int abcdk_torch_freetype_put_text_host(abcdk_torch_freetype_t *ctx,
                                    abcdk_torch_image_t *img, const char *text,
                                    abcdk_torch_point_t *org, int height, uint32_t color[4],
                                    int thickness, int line_type, uint8_t bottom_left_origin)
@@ -178,6 +178,7 @@ int abcdk_opencv_freetype_put_text(abcdk_opencv_freetype_t *ctx,
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
+
 #endif // _OPENCV_FREETYPE_H_
 
 

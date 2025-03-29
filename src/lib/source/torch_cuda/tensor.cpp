@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/tensor.h"
+#include "abcdk/torch/nvidia.h"
 
 __BEGIN_DECLS
 

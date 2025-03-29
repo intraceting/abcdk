@@ -5,8 +5,9 @@
  *
  */
 #include "abcdk/torch/imgproc.h"
+#include "abcdk/torch/nvidia.h"
 #include "../torch/imageproc.hxx"
-#include "grid.cu.hxx"
+#include "grid.hxx"
 
 #ifdef __cuda_cuda_h__
 

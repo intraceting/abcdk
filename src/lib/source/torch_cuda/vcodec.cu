@@ -4,12 +4,13 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
+#include "abcdk/ffmpeg/ffmpeg.h"
 #include "abcdk/torch/vcodec.h"
-#include "vcodec_decoder_ffnv.cu.hxx"
-#include "vcodec_decoder_aarch64.cu.hxx"
-#include "vcodec_encoder_ffnv.cu.hxx"
-#include "vcodec_encoder_aarch64.cu.hxx"
-
+#include "abcdk/torch/nvidia.h"
+#include "vcodec_decoder_ffnv.hxx"
+#include "vcodec_decoder_aarch64.hxx"
+#include "vcodec_encoder_ffnv.hxx"
+#include "vcodec_encoder_aarch64.hxx"
 
 __BEGIN_DECLS
 
@@ -50,7 +51,7 @@ void abcdk_torch_vcodec_free_cuda(abcdk_torch_vcodec_t **ctx)
         abcdk::torch_cuda::vcodec::encoder_ffnv::destory(&cu_ctx_p->encoder_ctx);
 #elif defined(__aarch64__)
         abcdk::torch_cuda::vcodec::encoder_aarch64::destory(&cu_ctx_p->encoder_ctx);
-#endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
+#endif // FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
     }
     else
     {
@@ -58,7 +59,7 @@ void abcdk_torch_vcodec_free_cuda(abcdk_torch_vcodec_t **ctx)
         abcdk::torch_cuda::vcodec::decoder_ffnv::destory(&cu_ctx_p->decoder_ctx);
 #elif defined(__aarch64__)
         abcdk::torch_cuda::vcodec::decoder_aarch64::destory(&cu_ctx_p->decoder_ctx);
-#endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
+#endif // FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
     }
 
     abcdk_heap_free(cu_ctx_p);
@@ -71,25 +72,25 @@ abcdk_torch_vcodec_t *abcdk_torch_vcodec_alloc_cuda(int encoder)
     abcdk_torch_vcodec_cuda_t *cu_ctx_p;
 
     ctx = (abcdk_torch_vcodec_t *)abcdk_heap_alloc(sizeof(abcdk_torch_vcodec_t));
-    if(!ctx)
+    if (!ctx)
         return NULL;
 
     ctx->tag = ABCDK_TORCH_TAG_CUDA;
 
     /*创建内部对象。*/
     ctx->private_ctx = abcdk_heap_alloc(sizeof(abcdk_torch_vcodec_t));
-    if(!ctx->private_ctx)
+    if (!ctx->private_ctx)
         goto ERR;
 
-        cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx->private_ctx;
-    
+    cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx->private_ctx;
+
     if (cu_ctx_p->encoder = encoder)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-cu_ctx_p->encoder_ctx = abcdk::torch_cuda::vcodec::encoder_ffnv::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
+        cu_ctx_p->encoder_ctx = abcdk::torch_cuda::vcodec::encoder_ffnv::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
 #elif defined(__aarch64__)
-cu_ctx_p->encoder_ctx = abcdk::torch_cuda::vcodec::encoder_aarch64::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
-#endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
+        cu_ctx_p->encoder_ctx = abcdk::torch_cuda::vcodec::encoder_aarch64::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
+#endif // FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!cu_ctx_p->encoder_ctx)
             goto ERR;
@@ -97,10 +98,10 @@ cu_ctx_p->encoder_ctx = abcdk::torch_cuda::vcodec::encoder_aarch64::create((CUco
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-cu_ctx_p->decoder_ctx = abcdk::torch_cuda::vcodec::decoder_ffnv::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
+        cu_ctx_p->decoder_ctx = abcdk::torch_cuda::vcodec::decoder_ffnv::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
 #elif defined(__aarch64__)
-cu_ctx_p->decoder_ctx = abcdk::torch_cuda::vcodec::decoder_aarch64::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
-#endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
+        cu_ctx_p->decoder_ctx = abcdk::torch_cuda::vcodec::decoder_aarch64::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
+#endif // FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!cu_ctx_p->decoder_ctx)
             goto ERR;
@@ -142,7 +143,7 @@ int abcdk_torch_vcodec_start_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_
     return 0;
 }
 
-int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src)
+int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src)
 {
     abcdk_torch_vcodec_cuda_t *cu_ctx_p;
 
@@ -155,10 +156,10 @@ int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_
 
     ABCDK_ASSERT(cu_ctx_p->encoder, TT("解码器不能用于编码。"));
 
-    return cu_ctx_p->encoder_ctx->update(dst,src);
+    return cu_ctx_p->encoder_ctx->update(dst, src);
 }
 
-int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src)
+int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src)
 {
     abcdk_torch_vcodec_cuda_t *cu_ctx_p;
 
@@ -224,14 +225,14 @@ int abcdk_torch_vcodec_decode_from_ffmpeg_cuda(abcdk_torch_vcodec_t *ctx, abcdk_
     return abcdk_torch_vcodec_decode_cuda(ctx, dst, (src ? &tmp_src : NULL));
 }
 
-#endif //AVCODEC_AVCODEC_H
+#endif // AVCODEC_AVCODEC_H
 
 #else //__cuda_cuda_h__
 
 void abcdk_torch_vcodec_free_cuda(abcdk_torch_vcodec_t **ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return ;
+    return;
 }
 
 abcdk_torch_vcodec_t *abcdk_torch_vcodec_alloc_cuda(int encode)
@@ -246,13 +247,13 @@ int abcdk_torch_vcodec_start_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_
     return -1;
 }
 
-int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src)
+int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet_t **dst, const abcdk_torch_frame_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
-int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src)
+int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const abcdk_torch_packet_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
@@ -272,9 +273,8 @@ int abcdk_torch_vcodec_decode_from_ffmpeg_cuda(abcdk_torch_vcodec_t *ctx, abcdk_
     return -1;
 }
 
-#endif //AVCODEC_AVCODEC_H
+#endif // AVCODEC_AVCODEC_H
 
 #endif //__cuda_cuda_h__
-
 
 __END_DECLS

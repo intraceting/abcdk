@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/imgproc.h"
+#include "abcdk/torch/nvidia.h"
 
 #ifdef __cuda_cuda_h__
 

@@ -24,9 +24,6 @@ __BEGIN_DECLS
 
 #ifndef __cuda_cuda_h__
 
-/** */
-typedef struct CUctx_st *CUcontext;
-
 /** 
  * Filtering methods.
  */

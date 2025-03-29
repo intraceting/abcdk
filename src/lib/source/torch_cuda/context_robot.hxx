@@ -9,6 +9,7 @@
 
 #include "abcdk/util/trace.h"
 #include "abcdk/torch/context.h"
+#include "abcdk/torch/nvidia.h"
 
 #ifdef __cuda_cuda_h__
 

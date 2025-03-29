@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/vcodec.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
 
 #ifdef AVCODEC_AVCODEC_H
 

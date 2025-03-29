@@ -5,10 +5,11 @@
  *
  */
 #include "abcdk/torch/jcodec.h"
-#include "jpeg_decoder_general.cu.hxx"
-#include "jpeg_decoder_aarch64.cu.hxx"
-#include "jpeg_encoder_general.cu.hxx"
-#include "jpeg_encoder_aarch64.cu.hxx"
+#include "abcdk/torch/nvidia.h"
+#include "jpeg_decoder_general.hxx"
+#include "jpeg_decoder_aarch64.hxx"
+#include "jpeg_encoder_general.hxx"
+#include "jpeg_encoder_aarch64.hxx"
 
 
 __BEGIN_DECLS

@@ -7,7 +7,7 @@
 #ifndef ABCDK_TORCH_STITCHER_HXX
 #define ABCDK_TORCH_STITCHER_HXX
 
-#include "abcdk/opencv/opencv.h"
+#include "abcdk/torch/opencv.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/imgproc.h"
 

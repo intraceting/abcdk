@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/torch/image.h"
-#include "abcdk/opencv/opencv.h"
+#include "abcdk/torch/opencv.h"
 
 __BEGIN_DECLS
 

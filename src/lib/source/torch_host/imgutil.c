@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/imgutil.h"
+#include "abcdk/ffmpeg/ffmpeg.h"
 
 static int _abcdk_torch_imgutil_fill_size(int stride[4], int heights[4], int width, int height, int pixfmt)
 {

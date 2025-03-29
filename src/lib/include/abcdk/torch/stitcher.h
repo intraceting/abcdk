@@ -10,6 +10,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/context.h"
+#include "abcdk/torch/opencv.h"
 
 
 __BEGIN_DECLS
