@@ -155,7 +155,7 @@ int abcdk_torch_vcodec_encode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet
     abcdk_torch_frame_t *tmp_src;
     int chk;
 
-    assert(ctx != NULL && src != NULL);
+    assert(ctx != NULL && dst != NULL);
     assert(ctx->tag == ABCDK_TORCH_TAG_HOST);
 
     ht_ctx_p = (abcdk_torch_vcodec_host_t *)ctx->private_ctx;
@@ -231,7 +231,7 @@ int abcdk_torch_vcodec_decode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_
     abcdk_torch_frame_t *tmp_src;
     int chk;
 
-    assert(ctx != NULL && src != NULL);
+    assert(ctx != NULL && dst != NULL);
     assert(ctx->tag == ABCDK_TORCH_TAG_HOST);
 
     ht_ctx_p = (abcdk_torch_vcodec_host_t *)ctx->private_ctx;

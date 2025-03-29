@@ -147,7 +147,7 @@ int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet
 {
     abcdk_torch_vcodec_cuda_t *cu_ctx_p;
 
-    assert(ctx != NULL && dst != NULL && src != NULL);
+    assert(ctx != NULL && dst != NULL);
 
     assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
     assert(src->img->tag == ABCDK_TORCH_TAG_CUDA);
