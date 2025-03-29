@@ -114,7 +114,8 @@ int abcdk_torch_vcodec_start_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_
         ht_ctx_p->ff_ctx->width = param->width;
         ht_ctx_p->ff_ctx->height = param->height;
         ht_ctx_p->ff_ctx->gop_size = param->fps_n/param->fps_d;
-        ht_ctx_p->ff_ctx->pix_fmt = (ht_ctx_p->ff_ctx->codec->pix_fmts ? ht_ctx_p->ff_ctx->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P);
+        ht_ctx_p->ff_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
+        //ht_ctx_p->ff_ctx->pix_fmt = (ht_ctx_p->ff_ctx->codec->pix_fmts ? ht_ctx_p->ff_ctx->codec->pix_fmts[0] : AV_PIX_FMT_YUV420P);
 
         /*No b frame.*/
         ht_ctx_p->ff_ctx->max_b_frames = 0;
