@@ -214,16 +214,22 @@ abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec
 
 #else // __cuda_cuda_h__
 
-void abcdk_torch_jcodec_free_cuda(void **ctx)
+void abcdk_torch_jcodec_free_cuda(abcdk_torch_jcodec_t **ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return ;
 }
 
-abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_cuda(int encode, abcdk_option_t *cfg, CUcontext cuda_ctx)
+abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_cuda(int encode)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
+}
+
+int abcdk_torch_jcodec_start_cuda(abcdk_torch_jcodec_t *ctx, abcdk_torch_jcodec_param_t *param)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
 }
 
 abcdk_object_t *abcdk_torch_jcodec_encode_cuda(abcdk_torch_jcodec_t *ctx, const abcdk_torch_image_t *src)

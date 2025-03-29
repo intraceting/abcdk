@@ -133,25 +133,25 @@ abcdk_torch_context_t *abcdk_torch_context_current_get_cuda()
 
 #else // __cuda_cuda_h__
 
-void abcdk_torch_context_destroy_cuda(CUcontext *ctx)
+void abcdk_torch_context_destroy_cuda(abcdk_torch_context_t **ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return ;
 }
 
-abcdk_torch_context_t abcdk_torch_context_create_cuda(int device, int flag)
+abcdk_torch_context_t *abcdk_torch_context_create_cuda(int device, int flag)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
-int abcdk_torch_context_current_set_cuda(CUcontext ctx)
+int abcdk_torch_context_current_set_cuda(abcdk_torch_context_t *ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
-abcdk_torch_context_t abcdk_torch_context_current_get_cuda()
+abcdk_torch_context_t *abcdk_torch_context_current_get_cuda()
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;

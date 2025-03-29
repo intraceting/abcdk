@@ -213,16 +213,16 @@ abcdk_torch_tensor_t *abcdk_torch_tensor_create_cuda(int format, size_t block, s
     return NULL;
 }
 
-void abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
+int abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return ;
+    return -1;
 }
 
-void abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
+int abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return;
+    return -1;
 }
 
 abcdk_torch_tensor_t *abcdk_torch_tensor_clone_cuda(int dst_in_host, const abcdk_torch_tensor_t *src)

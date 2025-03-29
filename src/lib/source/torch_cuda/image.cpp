@@ -248,48 +248,49 @@ abcdk_torch_image_t *abcdk_torch_image_load_cuda(const char *src, int gray)
 
 #else //__cuda_cuda_h__
 
-void abcdk_torch_image_free_host(abcdk_torch_image_t **ctx)
+void abcdk_torch_image_free_cuda(abcdk_torch_image_t **ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return;
 }
 
-abcdk_torch_image_t *abcdk_torch_image_alloc_host()
+abcdk_torch_image_t *abcdk_torch_image_alloc_cuda()
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
-int abcdk_torch_image_reset_host(abcdk_torch_image_t **ctx, int width, int height, int pixfmt, int align)
+int abcdk_torch_image_reset_cuda(abcdk_torch_image_t **ctx, int width, int height, int pixfmt, int align)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
-abcdk_torch_image_t *abcdk_torch_image_create_host(int width, int height, int pixfmt, int align)
+abcdk_torch_image_t *abcdk_torch_image_create_cuda(int width, int height, int pixfmt, int align)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
-int abcdk_torch_image_copy_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
+int abcdk_torch_image_copy_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
-void abcdk_torch_image_copy_plane_host(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
+int abcdk_torch_image_copy_plane_cuda(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
 }
 
-abcdk_torch_image_t *abcdk_torch_image_clone_host(int dst_in_host, const abcdk_torch_image_t *src)
+abcdk_torch_image_t *abcdk_torch_image_clone_cuda(int dst_in_host, const abcdk_torch_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;
 }
 
-int abcdk_torch_image_save_host(const char *dst, const abcdk_torch_image_t *src)
+int abcdk_torch_image_save_cuda(const char *dst, const abcdk_torch_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
