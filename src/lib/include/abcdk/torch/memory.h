@@ -89,6 +89,15 @@ int abcdk_torch_memcpy_cuda(void *dst, int dst_in_host, const void *src, int src
 
 /**
  * 复制(2D)。
+ * 
+ * @param [in] dst_x_bytes 宽度偏移量(字节)。
+ * @param [in] dst_y 高度偏移量(行)。
+ * 
+ * @param [in] src_x_bytes 宽度偏移量(字节)。
+ * @param [in] src_y 高度偏移量(行)。
+ * 
+ * @param [in] roi_width_bytes 复制的宽度(字节)。
+ * @param [in] roi_height 复制的高度(行)。
  *
  * @return 0 成功，< 0  失败。
  */
@@ -98,7 +107,16 @@ int abcdk_torch_memcpy_2d_host(void *dst, size_t dst_pitch, size_t dst_x_bytes, 
 
 /**
  * 复制(2D)。
- *
+ * 
+ * @param [in] dst_x_bytes 宽度偏移量(字节)。
+ * @param [in] dst_y 高度偏移量(行)。
+ * 
+ * @param [in] src_x_bytes 宽度偏移量(字节)。
+ * @param [in] src_y 高度偏移量(行)。
+ * 
+ * @param [in] roi_width_bytes 复制的宽度(字节)。
+ * @param [in] roi_height 复制的高度(行)。
+ * 
  * @return 0 成功，< 0  失败。
  */
 int abcdk_torch_memcpy_2d_cuda(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst_y, int dst_in_host,

@@ -52,6 +52,8 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     img[5] = abcdk_torch_image_load("/home/devel/job/download/eee/5.jpg", 0);
     img[4] = abcdk_torch_image_load("/home/devel/job/download/eee/6.jpg", 0);
 
+    //abcdk_torch_image_save("/tmp/ccc/a.jpg",img[0]);
+
     // abcdk_opencv_stitcher_set_feature(ctx,"SURF");
     abcdk_torch_stitcher_set_feature(ctx, "SIFT");
 

@@ -139,8 +139,14 @@ int abcdk_torch_stitcher_estimate_cuda(abcdk_torch_stitcher_t *ctx, int count, a
 
         src_depth = abcdk_torch_pixfmt_channels(src_img->pixfmt);
 
-        /*用已存在数据构造cv::Mat对象。*/
-        dst_img = cv::Mat(src_img->height, src_img->width, CV_8UC(src_depth), (void *)src_img->data[0], src_img->stride[0]);
+        
+        /*创建cv::Mat对象。*/
+        dst_img.create(src_img->height, src_img->width, CV_8UC(src_depth));
+        
+        /*从设备复制到主机。*/
+        abcdk_torch_memcpy_2d_cuda(dst_img.data, dst_img.step, 0, 0, 1,
+                                   src_img->data[0], src_img->stride[0], 0, 0, 0,
+                                   src_img->width * src_depth, src_img->height);
 
         if (src_mask)
         {
@@ -153,8 +159,13 @@ int abcdk_torch_stitcher_estimate_cuda(abcdk_torch_stitcher_t *ctx, int count, a
 
             src_depth = abcdk_torch_pixfmt_channels(src_mask->pixfmt);
 
-            /*用已存在数据构造cv::Mat对象。*/
-            dst_mask = cv::Mat(src_mask->height, src_mask->width, CV_8UC(src_depth), (void *)src_mask->data[0], src_mask->stride[0]);
+            /*创建cv::Mat对象。*/
+            dst_mask.create(src_mask->height, src_mask->width, CV_8UC(src_depth));
+
+            /*从设备复制到主机。*/
+            abcdk_torch_memcpy_2d_cuda(dst_mask.data, dst_mask.step, dst_mask.cols * src_depth, dst_mask.rows, 1,
+                                       src_mask->data[0], src_mask->stride[0], src_mask->width * src_depth, src_mask->height, 0,
+                                       src_mask->width * src_depth, src_mask->height);
         }
     }
 
@@ -187,6 +198,8 @@ int abcdk_torch_stitcher_build_cuda(abcdk_torch_stitcher_t *ctx)
     int chk;
 
     assert(ctx != NULL);
+
+    st_ctx_p = (abcdk::torch_cuda::stitcher *)ctx->private_ctx;
 
     chk = st_ctx_p->BuildPanoramaParam();
     if(chk != 0)

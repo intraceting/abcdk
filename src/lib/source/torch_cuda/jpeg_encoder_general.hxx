@@ -193,9 +193,12 @@ namespace abcdk
                     if (!dst_data)
                         return -1;
 
-                    chk = truncate(dst, 0);
-                    if (chk != 0)
-                        return -1;
+                    if (access(dst, F_OK) == 0)
+                    {
+                        chk = truncate(dst, 0);
+                        if (chk != 0)
+                            return -1;
+                    }
 
                     save_chk = abcdk_save(dst, dst_data->pptrs[0], dst_data->sizes[0], 0);
                     if (save_chk != dst_data->sizes[0])

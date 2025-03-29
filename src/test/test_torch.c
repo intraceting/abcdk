@@ -29,7 +29,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_image_t *aa = abcdk_torch_image_clone(1,a);
     abcdk_bmp_save_file("/tmp/test.cuda.a1.bmp",aa->data[0],aa->stride[0],aa->width,-aa->height,24);
-    abcdk_torch_image_free(&aa);
+    abcdk_torch_image_free_host(&aa);
 
     uint32_t color[4] = {255, 0,0, 0};
     int corner[4] = {10, 10, 100, 100};
@@ -39,7 +39,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
     // abcdk_torch_image_save("/tmp/test.cuda.a2.bmp", a);
     aa = abcdk_torch_image_clone(1, a);
     abcdk_bmp_save_file("/tmp/test.cuda.a2.bmp", aa->data[0], aa->stride[0], aa->width, -aa->height, 24);
-    abcdk_torch_image_free(&aa);
+    abcdk_torch_image_free_host(&aa);
 
     chk = abcdk_torch_image_copy(b, a);
     assert(chk == 0);

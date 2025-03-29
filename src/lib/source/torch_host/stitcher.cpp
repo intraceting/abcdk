@@ -187,6 +187,8 @@ int abcdk_torch_stitcher_build_host(abcdk_torch_stitcher_t *ctx)
 
     assert(ctx != NULL);
 
+    st_ctx_p = (abcdk::torch_host::stitcher *)ctx->private_ctx;
+
     chk = st_ctx_p->BuildPanoramaParam();
     if(chk != 0)
         return -1;
