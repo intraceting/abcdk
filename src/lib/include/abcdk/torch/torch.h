@@ -89,7 +89,30 @@ typedef struct _abcdk_torch_rect
  * 
  * @return = 0 成功，< 0  失败。
 */
+int abcdk_torch_init_host(uint32_t flags);
+
+/** 
+ * 初始化。
+ * 
+ * @return = 0 成功，< 0  失败。
+*/
 int abcdk_torch_init_cuda(uint32_t flags);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_init abcdk_torch_init_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_init abcdk_torch_init_host
+#endif //
+
+/**
+ * 获取运行时库的版本号。
+ * 
+ * @param [out] minor 次版本。NULL(0) 忽略。
+ * 
+ * @return >=0 主版本，< 0  失败。
+*/
+int abcdk_torch_get_runtime_version_host(int *minor);
+
 
 /**
  * 获取运行时库的版本号。
@@ -100,12 +123,31 @@ int abcdk_torch_init_cuda(uint32_t flags);
 */
 int abcdk_torch_get_runtime_version_cuda(int *minor);
 
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_get_runtime_version abcdk_torch_get_runtime_version_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_get_runtime_version abcdk_torch_get_runtime_version_host
+#endif //
+
 /** 
  * 获取设备名称。
  * 
  * @return 0 成功，< 0  失败。
 */
-int abcdk_torch_get_device_name_cuda(char name[256], int device);
+int abcdk_torch_get_device_name_host(char name[256], int id);
+
+/** 
+ * 获取设备名称。
+ * 
+ * @return 0 成功，< 0  失败。
+*/
+int abcdk_torch_get_device_name_cuda(char name[256], int id);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_get_device_name abcdk_torch_get_device_name_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_get_device_name abcdk_torch_get_device_name_host
+#endif //
 
 __END_DECLS
 

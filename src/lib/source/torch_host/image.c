@@ -107,7 +107,7 @@ abcdk_torch_image_t *abcdk_torch_image_create_host(int width, int height, int pi
 
     assert(width > 0 && height > 0 && pixfmt >= 0);
 
-    chk = abcdk_torch_image_reset(&ctx, width, height, pixfmt, align);
+    chk = abcdk_torch_image_reset_host(&ctx, width, height, pixfmt, align);
     if(chk != 0)
         return NULL;
 

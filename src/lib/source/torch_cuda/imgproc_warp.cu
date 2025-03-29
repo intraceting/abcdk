@@ -146,6 +146,9 @@ int abcdk_torch_imgproc_warp_cuda(abcdk_torch_image_t *dst, const abcdk_torch_re
            dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
            dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
 
+    assert(dst->tag == ABCDK_TORCH_TAG_CUDA);
+    assert(src->tag == ABCDK_TORCH_TAG_CUDA);
+
     dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
 
     return _abcdk_torch_imgproc_warp_8u_cuda(dst_depth, true,

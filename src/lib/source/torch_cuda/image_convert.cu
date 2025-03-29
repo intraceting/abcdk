@@ -14,13 +14,9 @@ __BEGIN_DECLS
 static int _abcdk_torch_image_convert_cuda_use_cpu(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
 {
     abcdk_torch_image_t *tmp_dst = NULL, *tmp_src = NULL;
-    int dst_in_host, src_in_host;
     int chk = -1;
-    
-    dst_in_host = (dst->tag == ABCDK_TORCH_TAG_HOST);
-    src_in_host = (src->tag == ABCDK_TORCH_TAG_HOST);
 
-    if(!src_in_host)
+    if(src->tag != ABCDK_TORCH_TAG_HOST)
     {
         tmp_src = abcdk_torch_image_clone_cuda(1, src);
         if(!tmp_src)
@@ -28,24 +24,23 @@ static int _abcdk_torch_image_convert_cuda_use_cpu(abcdk_torch_image_t *dst, con
 
         chk = _abcdk_torch_image_convert_cuda_use_cpu(dst,tmp_src);
 
-        abcdk_torch_image_free_cuda(&tmp_src);
+        abcdk_torch_image_free_host(&tmp_src);
 
         return chk;
     }
 
     /*最后检查这个参数，因为输出项需要复制。*/
-    if(!dst_in_host)
+    if(dst->tag != ABCDK_TORCH_TAG_HOST)
     {
-        //tmp_dst = abcdk_torch_image_clone_cuda(1, dst);
-        tmp_dst = abcdk_torch_image_create_cuda(dst->width,dst->height,dst->pixfmt,1);
+        tmp_dst = abcdk_torch_image_create_host(dst->width,dst->height,dst->pixfmt,1);
         if(!tmp_dst)
             return -1;
 
         chk = _abcdk_torch_image_convert_cuda_use_cpu(tmp_dst,src);
         if(chk == 0)
-            abcdk_torch_image_copy(dst,tmp_dst);
+            abcdk_torch_image_copy_cuda(dst,tmp_dst);
 
-        abcdk_torch_image_free(&tmp_dst);
+        abcdk_torch_image_free_host(&tmp_dst);
 
         return chk;
     }
@@ -59,43 +54,7 @@ static int _abcdk_torch_image_convert_cuda_use_cpu(abcdk_torch_image_t *dst, con
 
 static int _abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
 {
-    abcdk_torch_image_t *tmp_dst = NULL, *tmp_src = NULL;
-    int dst_in_host, src_in_host;
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
-    int chk;
-
-    dst_in_host = (dst->tag == ABCDK_TORCH_TAG_HOST);
-    src_in_host = (src->tag == ABCDK_TORCH_TAG_HOST);
-
-    if(src_in_host)
-    {
-        tmp_src = abcdk_torch_image_clone_cuda(0, src);
-        if(!tmp_src)
-            return -1;
-
-        chk = _abcdk_torch_image_convert_cuda(dst,tmp_src);
-        abcdk_torch_image_free_cuda(&tmp_src);
-
-        return chk;
-    }
-
-    /*最后检查这个参数，因为输出项需要复制。*/
-    if(dst_in_host)
-    {
-        //tmp_dst = abcdk_torch_image_clone_cuda(0, dst);
-        tmp_dst = abcdk_torch_image_create_cuda(dst->width,dst->height,dst->pixfmt,1);
-        if(!tmp_dst)
-            return -1;
-
-        chk = _abcdk_torch_image_convert_cuda(tmp_dst,src);
-        if(chk == 0)
-            abcdk_torch_image_copy_cuda(dst,tmp_dst);
-
-        abcdk_torch_image_free_cuda(&tmp_dst);
-
-        return chk;
-    }
-
 
     NppiSize src_roi = {src->width, src->height};
 
@@ -105,6 +64,8 @@ static int _abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk
         {-0.169f, -0.331f, 0.500f, 128.0f}, // U
         {0.500f, -0.419f, -0.081f, 128.0f}  // V
     };
+
+    int chk;
 
     if (dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8)
     {
@@ -356,8 +317,8 @@ int abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_i
     int chk;
 
     assert(dst != NULL && src != NULL);
-    assert(dst->tag == ABCDK_TORCH_TAG_HOST || dst->tag == ABCDK_TORCH_TAG_CUDA);
-    assert(src->tag == ABCDK_TORCH_TAG_HOST || src->tag == ABCDK_TORCH_TAG_CUDA);
+    assert(dst->tag == ABCDK_TORCH_TAG_CUDA);
+    assert(src->tag == ABCDK_TORCH_TAG_CUDA);
     assert(dst->width == src->width);
     assert(dst->height == src->height);
 

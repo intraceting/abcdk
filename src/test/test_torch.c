@@ -11,71 +11,73 @@
 #include <locale.h>
 #include "entry.h"
 
+
 #ifdef __cuda_cuda_h__
+#define ABCDK_TORCH_USE_CUDA
+#endif //__cuda_cuda_h__
 
-
-int abcdk_test_cuda_1(abcdk_option_t *args)
+int abcdk_test_torch_1(abcdk_option_t *args)
 {
     int chk;
 
     int w = 1920 ,h = 1080;
     //int w = 1920-1 ,h = 1080-1;
 
-    abcdk_torch_image_t *a = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 4);
-    abcdk_torch_image_t *b = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 8);
+    abcdk_torch_image_t *a = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 4);
+    abcdk_torch_image_t *b = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 8);
 
     uint32_t scalar[3] = {0, 0, 255};
-    abcdk_cuda_imgproc_stuff(a, scalar,NULL);
+    abcdk_torch_imgproc_stuff(a, scalar,NULL);
 
-    //abcdk_cuda_image_save("/tmp/test.cuda.a1.bmp", a);
+    //abcdk_torch_image_save("/tmp/test.cuda.a1.bmp", a);
 
-    abcdk_torch_image_t *aa = abcdk_cuda_image_clone(1,a);
+    abcdk_torch_image_t *aa = abcdk_torch_image_clone(1,a);
     abcdk_bmp_save_file("/tmp/test.cuda.a1.bmp",aa->data[0],aa->stride[0],aa->width,-aa->height,24);
     abcdk_torch_image_free(&aa);
 
     uint32_t color[4] = {255, 0,0, 0};
     int corner[4] = {10, 10, 100, 100};
 
-    abcdk_cuda_imgproc_drawrect(a, color, 3, corner);
+    abcdk_torch_imgproc_drawrect(a, color, 3, corner);
 
-    // abcdk_cuda_image_save("/tmp/test.cuda.a2.bmp", a);
-    aa = abcdk_cuda_image_clone(1, a);
+    // abcdk_torch_image_save("/tmp/test.cuda.a2.bmp", a);
+    aa = abcdk_torch_image_clone(1, a);
     abcdk_bmp_save_file("/tmp/test.cuda.a2.bmp", aa->data[0], aa->stride[0], aa->width, -aa->height, 24);
     abcdk_torch_image_free(&aa);
 
-    chk = abcdk_cuda_image_copy(b, a);
+    chk = abcdk_torch_image_copy(b, a);
     assert(chk == 0);
 
     // abcdk_bmp_save_file("/tmp/test.cuda.a.bmp",a->data[0],a->stride[0],a->width,a->height,24);
-    abcdk_cuda_image_save("/tmp/test.cuda.a3.bmp", a);
-    abcdk_cuda_image_save("/tmp/test.cuda.b.bmp", b);
+    abcdk_torch_image_save("/tmp/test.cuda.a3.bmp", a);
+    abcdk_torch_image_save("/tmp/test.cuda.b.bmp", b);
 
-   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV420P, 567);
-   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV422P, 567);
-   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P, 567);
-    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_NV12, 1);
-    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_ARGB, 1);
-    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR32, 1);
-    abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB32, 1);
-   // abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
-    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
-    //abcdk_torch_image_t *c = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P10, 1);
+   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV420P, 567);
+   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV422P, 567);
+   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P, 567);
+    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV12, 1);
+    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_ARGB, 1);
+    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR32, 1);
+    abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB32, 1);
+   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
+    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
+    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P10, 1);
 
-    abcdk_cuda_image_convert(c, a);
+    abcdk_torch_image_convert(c, a);
 
-    abcdk_torch_image_t *d = abcdk_cuda_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB24, 1);
+    abcdk_torch_image_t *d = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB24, 1);
 
-    abcdk_cuda_image_convert(d, c);
+    abcdk_torch_image_convert(d, c);
 
-    abcdk_cuda_image_save("/tmp/test.cuda.d.bmp", d);
+    abcdk_torch_image_save("/tmp/test.cuda.d.bmp", d);
 
-    abcdk_torch_image_t *e = abcdk_cuda_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
+    abcdk_torch_image_t *e = abcdk_torch_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
-    abcdk_cuda_imgproc_resize(e, NULL, d, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_torch_imgproc_resize(e, NULL, d, NULL, 1, NPPI_INTER_CUBIC);
 
-    abcdk_cuda_image_save("/tmp/test.cuda.e.bmp", e);
+    abcdk_torch_image_save("/tmp/test.cuda.e.bmp", e);
 
-    abcdk_torch_image_t *f = abcdk_cuda_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
+    abcdk_torch_image_t *f = abcdk_torch_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
     abcdk_torch_point_t dst_quad[4] = {
         {30, 30},   // 变换后的左上角
@@ -86,14 +88,14 @@ int abcdk_test_cuda_1(abcdk_option_t *args)
 
     abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
-    abcdk_cuda_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, NPPI_INTER_CUBIC);
 
-    abcdk_cuda_image_save("/tmp/test.cuda.f.bmp", f);
+    abcdk_torch_image_save("/tmp/test.cuda.f.bmp", f);
 
-    abcdk_cuda_jpeg_save("/tmp/test.cuda.f.jpg", f);
-    // abcdk_cuda_jpeg_save("/tmp/test.cuda.f2.jpg", f);
+    abcdk_torch_jpeg_save("/tmp/test.cuda.f.jpg", f);
+    // abcdk_torch_jpeg_save("/tmp/test.cuda.f2.jpg", f);
 
-    // abcdk_cuda_image_save("/tmp/test.cuda.f2.bmp", f);
+    // abcdk_torch_image_save("/tmp/test.cuda.f2.bmp", f);
 
     abcdk_torch_image_free(&a);
     abcdk_torch_image_free(&b);
@@ -104,12 +106,12 @@ int abcdk_test_cuda_1(abcdk_option_t *args)
 
     for (int i = 0; i < 10; i++)
     {
-        abcdk_torch_image_t *g = abcdk_cuda_jpeg_load("/tmp/test.cuda.f.jpg");
+        abcdk_torch_image_t *g = abcdk_torch_jpeg_load("/tmp/test.cuda.f.jpg");
 
-        abcdk_cuda_imgproc_drawrect(g, color, 3, corner);
+        abcdk_torch_imgproc_drawrect(g, color, 3, corner);
 
-        abcdk_cuda_image_save("/tmp/test.cuda.g2.bmp", g);
-        abcdk_cuda_jpeg_save("/tmp/test.cuda.g2.jpg", g);
+        abcdk_torch_image_save("/tmp/test.cuda.g2.bmp", g);
+        abcdk_torch_jpeg_save("/tmp/test.cuda.g2.jpg", g);
 
         abcdk_torch_image_free(&g);
     }
@@ -119,7 +121,7 @@ int abcdk_test_cuda_1(abcdk_option_t *args)
 
 #ifdef  HAVE_FFMPEG
 
-int abcdk_test_cuda_2(abcdk_option_t *args)
+int abcdk_test_torch_2(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t ff_r_cfg = {0};
 
@@ -133,7 +135,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
 
     AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0);
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
 
 
     abcdk_torch_vcodec_param_t dec_param = {0};
@@ -142,17 +144,17 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
     dec_param.ext_data = r_video_steam->codecpar->extradata;
     dec_param.ext_size = r_video_steam->codecpar->extradata_size;
 
-    abcdk_cuda_vcodec_start(dec_ctx,&dec_param);
+    abcdk_torch_vcodec_start(dec_ctx,&dec_param);
 
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
 
-    abcdk_torch_jcodec_t *jpeg_w = abcdk_cuda_jpeg_create(1);
+    abcdk_torch_jcodec_t *jpeg_w = abcdk_torch_jpeg_create(1);
 
     abcdk_torch_jcodec_param_t jpeg_param = {0};
     jpeg_param.quality = 99;
 
-    abcdk_cuda_jpeg_start(jpeg_w,&jpeg_param);
+    abcdk_torch_jpeg_start(jpeg_w,&jpeg_param);
 
     for (int i = 0; i < 10000; i++)
     {
@@ -161,7 +163,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
             break;
 
         abcdk_torch_frame_t *r_fae = NULL;
-        chk = abcdk_cuda_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
+        chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
         if (chk < 0)
         {
             break;
@@ -173,7 +175,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
 
             abcdk_mkdir(filename, 0755);
 
-            abcdk_cuda_jpeg_encode_to_file(jpeg_w, filename, r_fae->img);
+            abcdk_torch_jpeg_encode_to_file(jpeg_w, filename, r_fae->img);
         }
 
         abcdk_torch_frame_free(&r_fae);
@@ -189,7 +191,7 @@ int abcdk_test_cuda_2(abcdk_option_t *args)
     return 0;
 }
 
-int abcdk_test_cuda_3(abcdk_option_t *args)
+int abcdk_test_torch_3(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t ff_r_cfg = {0}, ff_w_cfg = {1};
 
@@ -206,8 +208,8 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
 
     AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
 
-    abcdk_torch_vcodec_t *dec_ctx = abcdk_cuda_vcodec_alloc(0);
-    abcdk_torch_vcodec_t *enc_ctx = abcdk_cuda_vcodec_alloc(1);
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
+    abcdk_torch_vcodec_t *enc_ctx = abcdk_torch_vcodec_alloc(1);
 
 
     abcdk_torch_vcodec_param_t dec_param = {0},enc_param = {0};
@@ -216,7 +218,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
     dec_param.ext_data = r_video_steam->codecpar->extradata;
     dec_param.ext_size = r_video_steam->codecpar->extradata_size;
 
-    abcdk_cuda_vcodec_start(dec_ctx,&dec_param);
+    abcdk_torch_vcodec_start(dec_ctx,&dec_param);
   
     enc_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(AV_CODEC_ID_H264);
     enc_param.fps_d = 1;
@@ -226,7 +228,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
     enc_param.bitrate = 15000 * 1000;
     enc_param.peak_bitrate = 15000 * 1000;
 
-    abcdk_cuda_vcodec_start(enc_ctx,&enc_param);
+    abcdk_torch_vcodec_start(enc_ctx,&enc_param);
 
     AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264, 1);
 
@@ -256,7 +258,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
             break;
 
         abcdk_torch_frame_t *r_fae = NULL;
-        chk = abcdk_cuda_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
+        chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
         if (chk < 0)
         {
             break;
@@ -264,7 +266,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
         else if (chk > 0)
         {
             AVPacket *w_pkt = NULL;
-            int chk = abcdk_cuda_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
+            int chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk <= 0)
                 break;
 
@@ -283,12 +285,12 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
         AVPacket *w_pkt = NULL;
 
         /*通知解码器是结束包。*/
-        int chk = abcdk_cuda_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
+        int chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
         if (chk < 0)
             break;
         else if (chk > 0)
         {
-            chk = abcdk_cuda_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
+            chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk <= 0)
                 break;
 
@@ -313,7 +315,7 @@ int abcdk_test_cuda_3(abcdk_option_t *args)
 
 #endif //HAVE_FFMPEG
 
-int abcdk_test_cuda_4(abcdk_option_t *args)
+int abcdk_test_torch_4(abcdk_option_t *args)
 {
     int n = 1, w = 300, h = 300 , depth =3;
 
@@ -321,46 +323,42 @@ int abcdk_test_cuda_4(abcdk_option_t *args)
 
 }
 
-int abcdk_test_cuda(abcdk_option_t *args)
+int abcdk_test_torch(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
 
     int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
 
     char name[256] = {0};
-    int chk = abcdk_cuda_get_device_name(name, gpu);
+    int chk = abcdk_torch_get_device_name(name, gpu);
     assert(chk == 0);
 
     fprintf(stderr, "%s\n", name);
 
-    CUcontext cuda_ctx = abcdk_cuda_ctx_create(gpu, 0);
+    abcdk_torch_context *torch_ctx = abcdk_torch_context_create(gpu, 0);
 
-    abcdk_cuda_ctx_setspecific(cuda_ctx);
-    abcdk_cuda_ctx_push(cuda_ctx);
+    abcdk_torch_context_current_set(torch_ctx);
+
 
     if (cmd == 1)
-        return abcdk_test_cuda_1(args);
+        return abcdk_test_torch_1(args);
 #ifdef HAVE_FFMPEG
     else if (cmd == 2)
-        return abcdk_test_cuda_2(args);
+        return abcdk_test_torch_2(args);
     else if (cmd == 3)
-        return abcdk_test_cuda_3(args);
+        return abcdk_test_torch_3(args);
 #endif //HAVE_FFMPEG
     else if (cmd == 4)
-        return abcdk_test_cuda_4(args);
+        return abcdk_test_torch_4(args);
 
-    abcdk_cuda_ctx_pop();
-    abcdk_cuda_ctx_setspecific(NULL);
-    abcdk_cuda_ctx_destroy(&cuda_ctx);
+
+    abcdk_torch_context_current_set(NULL);
+    abcdk_torch_context_destroy(&torch_ctx);
 
     return 0;
 }
 
-#else //__cuda_cuda_h__
-
-int abcdk_test_cuda(abcdk_option_t *args)
-{
-    return 0;
-}
-
+#ifdef __cuda_cuda_h__
+#undef ABCDK_TORCH_USE_CUDA
 #endif //__cuda_cuda_h__
+

@@ -50,7 +50,7 @@ static struct _abcdk_test_entry
     {"runonce",abcdk_test_runonce},
     {"ncurses",abcdk_test_ncurses},
     {"gtk",abcdk_test_gtk},
-    {"cuda",abcdk_test_cuda},
+    {"torch",abcdk_test_torch},
     {"stitcher",abcdk_test_stitcher},
 };
 

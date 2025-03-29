@@ -46,6 +46,8 @@ int abcdk_torch_imgproc_stuff_host(abcdk_torch_image_t *dst, uint32_t scalar[], 
            dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
            dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
 
+    assert(dst->tag == ABCDK_TORCH_TAG_HOST);
+
     dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
 
     return _abcdk_torch_imgproc_stuff_host<uint8_t>(dst_depth, true, dst->data[0], dst->width, dst->stride[0], dst->height, scalar, roi);

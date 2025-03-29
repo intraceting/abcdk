@@ -19,6 +19,8 @@ int abcdk_torch_jcodec_save_cuda(const char *dst, const abcdk_torch_image_t *src
 
     assert(dst != NULL && src != NULL);
 
+    assert(src->tag == ABCDK_TORCH_TAG_CUDA);
+
     ctx = abcdk_torch_jcodec_alloc_cuda();
     if(!ctx)
         return -1;

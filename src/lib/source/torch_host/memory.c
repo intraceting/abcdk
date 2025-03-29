@@ -29,7 +29,7 @@ void *abcdk_torch_memset_host(void *dst, int val, size_t size)
 
 int abcdk_torch_memcpy_host(void *dst, int dst_in_host, const void *src, int src_in_host, size_t size)
 {
-    assert(dst != NULL && dst_in_host != 0 && src != NULL src_in_host != 0 && size > 0);
+    assert(dst != NULL && dst_in_host != 0 && src != NULL && src_in_host != 0 && size > 0);
 
     memcpy(dst, src, size);
 

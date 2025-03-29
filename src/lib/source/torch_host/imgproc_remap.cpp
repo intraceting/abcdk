@@ -68,6 +68,11 @@ int abcdk_torch_imgproc_remap_host(abcdk_torch_image_t *dst, const abcdk_torch_r
            dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
            dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
 
+    assert(dst->tag == ABCDK_TORCH_TAG_HOST);
+    assert(src->tag == ABCDK_TORCH_TAG_HOST);
+    assert(xmap->tag == ABCDK_TORCH_TAG_HOST);
+    assert(ymap->tag == ABCDK_TORCH_TAG_HOST);
+
     dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
 
     return _abcdk_torch_imgproc_remap_8u_host(dst_depth, true,

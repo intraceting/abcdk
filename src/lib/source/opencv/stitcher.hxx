@@ -223,7 +223,12 @@ namespace abcdk
             virtual ~stitcher()
             {
                 for (auto &t : m_warper_outs)
-                    abcdk_torch_image_free(&t);
+                {
+                    if(t->tag == ABCDK_TORCH_TAG_HOST)
+                        abcdk_torch_image_free_host(&t);
+                    if(t->tag == ABCDK_TORCH_TAG_CUDA)
+                        abcdk_torch_image_free_cuda(&t);
+                }
             }
 
         protected:

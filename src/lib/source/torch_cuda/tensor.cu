@@ -122,14 +122,14 @@ void abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_t
     if (dst->format == ABCDK_TORCH_TENFMT_NHWC)
     {
         abcdk_torch_memcpy_2d_cuda(dst->data, dst->stride, 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
-                             src->data, src->stride, 0, 0, (src->tag == ABCDK_TORCH_TAG_HOST),
-                             src->cell * src->depth * src->width, src->block * src->height);
+                                   src->data, src->stride, 0, 0, (src->tag == ABCDK_TORCH_TAG_HOST),
+                                   src->cell * src->depth * src->width, src->block * src->height);
     }
     else if (dst->format == ABCDK_TORCH_TENFMT_NCHW)
     {
         abcdk_torch_memcpy_2d_cuda(dst->data, dst->stride, 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
-                             src->data, src->stride, 0, 0, (src->tag == ABCDK_TORCH_TAG_HOST),
-                             src->cell * src->width, src->block * src->depth * src->height);
+                                   src->data, src->stride, 0, 0, (src->tag == ABCDK_TORCH_TAG_HOST),
+                                   src->cell * src->width, src->block * src->depth * src->height);
     }
 }
 
@@ -150,14 +150,14 @@ void abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block
     if (dst->format == ABCDK_TORCH_TENFMT_NHWC)
     {
         abcdk_torch_memcpy_2d_cuda(dst_data, dst->stride, 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
-                             src_data, src_stride, 0, 0, 1,
-                             dst->cell * dst->depth * dst->width, dst->block * dst->height);
+                                   src_data, src_stride, 0, 0, 1,
+                                   dst->cell * dst->depth * dst->width, dst->block * dst->height);
     }
     else if (dst->format == ABCDK_TORCH_TENFMT_NCHW)
     {
         abcdk_torch_memcpy_2d_cuda(dst_data, dst->stride, 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
-                             src_data, src_stride, 0, 0, 1,
-                             dst->cell * dst->width, dst->block * dst->depth * dst->height);
+                                   src_data, src_stride, 0, 0, 1,
+                                   dst->cell * dst->width, dst->block * dst->depth * dst->height);
     }
 }
 

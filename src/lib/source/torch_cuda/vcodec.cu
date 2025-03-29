@@ -144,7 +144,9 @@ int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_
 {
     abcdk_torch_vcodec_cuda_t *cu_ctx_p;
 
-    assert(ctx != NULL && dst != NULL);
+    assert(ctx != NULL && dst != NULL && src != NULL);
+
+    assert(src->img->tag == ABCDK_TORCH_TAG_CUDA);
 
     cu_ctx_p = (abcdk_torch_vcodec_t *)ctx->private_ctx;
 
@@ -255,13 +257,13 @@ int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t
 
 int abcdk_torch_vcodec_encode_to_ffmpeg_cuda(abcdk_torch_vcodec_t *ctx, AVPacket **dst, const abcdk_torch_frame_t *src)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
     return -1;
 }
 
 int abcdk_torch_vcodec_decode_from_ffmpeg_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_t **dst, const AVPacket *src)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
     return -1;
 }
 

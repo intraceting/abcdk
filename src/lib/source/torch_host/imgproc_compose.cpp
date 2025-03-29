@@ -53,6 +53,9 @@ int abcdk_torch_imgproc_compose_host(abcdk_torch_image_t *panorama, abcdk_torch_
            panorama->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
            panorama->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
 
+    assert(panorama->tag == ABCDK_TORCH_TAG_HOST);
+    assert(compose->tag == ABCDK_TORCH_TAG_HOST);
+
     dst_depth = abcdk_torch_pixfmt_channels(panorama->pixfmt);
 
     return _abcdk_torch_imgproc_compose_host<uint8_t>(dst_depth, true,

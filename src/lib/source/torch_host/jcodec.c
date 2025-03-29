@@ -35,3 +35,38 @@ abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_host()
 
     return ctx;
 }
+
+int abcdk_torch_jcodec_start_host(abcdk_torch_jcodec_t *ctx, abcdk_torch_jcodec_param_t *param)
+{
+    return -1;
+}
+
+abcdk_object_t *abcdk_torch_jcodec_encode_host(abcdk_torch_jcodec_t *ctx, const abcdk_torch_image_t *src)
+{
+    return NULL;
+}
+
+int abcdk_torch_jcodec_encode_to_file_host(abcdk_torch_jcodec_t *ctx, const char *dst, const abcdk_torch_image_t *src)
+{
+    return -1;
+}
+
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_host(abcdk_torch_jcodec_t *ctx, const void *src, int src_size)
+{
+    return NULL;
+}
+
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_host(abcdk_torch_jcodec_t *ctx, const void *src)
+{
+    return NULL;
+}
+
+int abcdk_torch_jcodec_save_host(const char *dst, const abcdk_torch_image_t *src)
+{
+    return -1;
+}
+
+abcdk_torch_image_t *abcdk_torch_jcodec_load_host(const char *src)
+{
+    return NULL;
+}

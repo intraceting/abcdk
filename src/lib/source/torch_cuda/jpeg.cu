@@ -148,6 +148,8 @@ abcdk_object_t *abcdk_torch_jcodec_encode_cuda(abcdk_torch_jcodec_t *ctx, const 
 
     assert(ctx != NULL && src != NULL);
 
+    assert(src->tag == ABCDK_TORCH_TAG_CUDA);
+
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
 
     ABCDK_ASSERT(cu_ctx_p->encoder, TT("解码器不能用于编码。"));
@@ -173,6 +175,8 @@ int abcdk_torch_jcodec_encode_to_file_cuda(abcdk_torch_jcodec_t *ctx, const char
     int chk;
 
     assert(ctx != NULL && dst != NULL && src != NULL);
+
+    assert(src->tag == ABCDK_TORCH_TAG_CUDA);
 
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
 

@@ -50,6 +50,9 @@ int abcdk_torch_tensorproc_blob_8u_to_32f_host(abcdk_torch_tensor_t *dst, const 
     assert(dst->depth == src->depth);
     assert(dst->cell == sizeof(float) && src->cell == sizeof(uint8_t));
 
+    assert(dst->tag == ABCDK_TORCH_TAG_HOST);
+    assert(src->tag == ABCDK_TORCH_TAG_HOST);
+
     return _abcdk_torch_tensorproc_blob<float, uint8_t>((dst->format == ABCDK_TORCH_TENFMT_NHWC), (float *)dst->data, dst->stride,
                                                         (src->format == ABCDK_TORCH_TENFMT_NHWC), src->data, src->stride,
                                                         dst->block, dst->width, dst->height, dst->depth,
@@ -65,6 +68,9 @@ int abcdk_torch_tensorproc_blob_32f_to_8u_host(abcdk_torch_tensor_t *dst, const 
     assert(dst->height == src->height);
     assert(dst->depth == src->depth);
     assert(dst->cell == sizeof(uint8_t) && src->cell == sizeof(float));
+    
+    assert(dst->tag == ABCDK_TORCH_TAG_HOST);
+    assert(src->tag == ABCDK_TORCH_TAG_HOST);
 
     return _abcdk_torch_tensorproc_blob<uint8_t, float>((dst->format == ABCDK_TORCH_TENFMT_NHWC), dst->data, dst->stride,
                                                         (src->format == ABCDK_TORCH_TENFMT_NHWC), (float *)src->data, src->stride,

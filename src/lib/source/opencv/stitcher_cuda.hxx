@@ -30,25 +30,29 @@ namespace abcdk
 
             virtual ~stitcher_cuda()
             {
-                abcdk_cuda_ctx_push(m_cuda_ctx);
+                ctx_push_current();
 
                 for (auto &t : m_owner_warper_xmaps)
-                    abcdk_torch_image_free(&t);
+                    abcdk_torch_image_free_cuda(&t);
 
                 for (auto &t : m_owner_warper_ymaps)
-                    abcdk_torch_image_free(&t);
+                    abcdk_torch_image_free_cuda(&t);
 
-                abcdk_cuda_ctx_pop();
+                ctx_pop_current();
             }
         protected:
             virtual void ctx_push_current()
             {
-                abcdk_cuda_ctx_push(m_cuda_ctx);
+#ifdef __cuda_cuda_h__
+                cuCtxPushCurrent(m_cuda_ctx);
+#endif //__cuda_cuda_h__
             }
 
             virtual void ctx_pop_current()
             {
-                abcdk_cuda_ctx_pop();
+#ifdef __cuda_cuda_h__
+                cuCtxPopCurrent();
+#endif //__cuda_cuda_h__
             }
 
             virtual bool remap(const std::vector<abcdk_torch_image_t *> &imgs)
@@ -66,7 +70,7 @@ namespace abcdk
                 if (m_warper_outs.size() != imgs.size())
                 {
                     for (auto &t : m_warper_outs)
-                        abcdk_torch_image_free(&t);
+                        abcdk_torch_image_free_cuda(&t);
 
                     for (int i = 0; i < imgs.size(); i++)
                         m_warper_outs.push_back(abcdk_cuda_image_alloc());
@@ -77,27 +81,27 @@ namespace abcdk
                     m_owner_warper_ymaps.size() != m_img_good_sizes.size())
                 {
                     for (auto &t : m_owner_warper_xmaps)
-                        abcdk_torch_image_free(&t);
+                        abcdk_torch_image_free_cuda(&t);
 
                     for (auto &t : m_owner_warper_ymaps)
-                        abcdk_torch_image_free(&t);
+                        abcdk_torch_image_free_cuda(&t);
 
                     m_owner_warper_xmaps.resize(m_img_good_sizes.size());
                     m_owner_warper_ymaps.resize(m_img_good_sizes.size());
 
                     for (int i = 0; i < m_img_good_sizes.size(); i++)
                     {
-                        m_owner_warper_xmaps[i] = abcdk_cuda_image_create(m_warper_xmaps[i].cols, m_warper_xmaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+                        m_owner_warper_xmaps[i] = abcdk_torch_image_create_cuda(m_warper_xmaps[i].cols, m_warper_xmaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
                         if(!m_owner_warper_xmaps[i])
                             return false;
 
                         abcdk_cuda_image_copy_plane(m_owner_warper_xmaps[i], 0, m_warper_xmaps[i].data, m_warper_xmaps[i].step);
 
-                        m_owner_warper_ymaps[i] = abcdk_cuda_image_create(m_warper_ymaps[i].cols, m_warper_ymaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+                        m_owner_warper_ymaps[i] = abcdk_torch_image_create_cuda(m_warper_ymaps[i].cols, m_warper_ymaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
                         if(!m_owner_warper_ymaps[i])
                             return false;
 
-                        abcdk_cuda_image_copy_plane(m_owner_warper_ymaps[i], 0, m_warper_ymaps[i].data, m_warper_ymaps[i].step);
+                        abcdk_torch_image_copy_plane_cuda(m_owner_warper_ymaps[i], 0, m_warper_ymaps[i].data, m_warper_ymaps[i].step);
                     }
                 }
 
@@ -116,11 +120,11 @@ namespace abcdk
                     assert(imgs_it->width == img_w && imgs_it->height == img_h);
 
                     /*创建变换后的图像存储空间。*/
-                    chk = abcdk_cuda_image_reset(&outs_it, warper_w, warper_h, imgs_it->pixfmt, 1);
+                    chk = abcdk_torch_image_reset_cuda(&outs_it, warper_w, warper_h, imgs_it->pixfmt, 1);
                     if (chk != 0)
                         return false;
 
-                    abcdk_cuda_imgproc_remap(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, NPPI_INTER_CUBIC);
+                    abcdk_torch_imgproc_remap_cuda(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, NPPI_INTER_CUBIC);
                 }
 
                 return true;
@@ -134,7 +138,7 @@ namespace abcdk
                 assert(m_warper_outs.size() >= 0);
 
                 /*创建全景图像存储空间。*/
-                chk = abcdk_cuda_image_reset(&out, m_blend_width, m_blend_height,  m_warper_outs[m_img_good_idxs[0]]->pixfmt, 1);
+                chk = abcdk_torch_image_reset_cuda(&out, m_blend_width, m_blend_height,  m_warper_outs[m_img_good_idxs[0]]->pixfmt, 1);
                 if (chk != 0)
                     return false;
 
@@ -149,7 +153,7 @@ namespace abcdk
                     /*计算重叠宽度。*/
                     int overlap_w = (i <= 0 ? 0 : (m_blend_rects[i - 1].width + m_blend_rects[i - 1].x - m_blend_rects[i].x));
 
-                    abcdk_cuda_imgproc_compose(out, imgs_it, scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
+                    abcdk_torch_imgproc_compose_cuda(out, imgs_it, scalar, r.x, r.y, overlap_w, (optimize_seam ? 1 : 0));
                 }
 
                 return true;

@@ -57,6 +57,9 @@ int abcdk_torch_tensorproc_reshape_cuda(abcdk_torch_tensor_t *dst, const abcdk_t
     assert(dst != NULL && src != NULL);
     assert(dst->cell == src->cell);
 
+    assert(dst->tag == ABCDK_TORCH_TAG_CUDA);
+    assert(src->tag == ABCDK_TORCH_TAG_CUDA);
+
     return _abcdk_torch_tensorproc_reshape_cuda((dst->format == ABCDK_TORCH_TENFMT_NHWC), dst->data, dst->block, dst->width, dst->stride, dst->height, dst->depth,
                                                 (src->format == ABCDK_TORCH_TENFMT_NHWC), src->data, src->block, src->width, src->stride, src->height, src->depth,
                                                 dst->cell);
