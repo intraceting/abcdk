@@ -32,15 +32,18 @@ int abcdk_torch_frame_reset_cuda(abcdk_torch_frame_t **ctx, int width, int heigh
         return chk;
     }
 
-    if(ctx_p->tag == ABCDK_TORCH_TAG_HOST)
-        abcdk_torch_image_free_host(&ctx_p->img);
-    if(ctx_p->tag == ABCDK_TORCH_TAG_CUDA)
-        abcdk_torch_image_free_cuda(&ctx_p->img);
+    if (ctx_p->img)
+    {
+        if (ctx_p->img->tag == ABCDK_TORCH_TAG_HOST)
+            abcdk_torch_image_free_host(&ctx_p->img);
+        if (ctx_p->img->tag == ABCDK_TORCH_TAG_CUDA)
+            abcdk_torch_image_free_cuda(&ctx_p->img);
+    }
 
     ctx_p->dts = (int64_t)UINT64_C(0x8000000000000000);
     ctx_p->pts = (int64_t)UINT64_C(0x8000000000000000);
 
-    ctx_p->img = abcdk_torch_image_create(width,height,pixfmt,align);
+    ctx_p->img = abcdk_torch_image_create_cuda(width,height,pixfmt,align);
     if(!ctx_p->img)
     {
         abcdk_torch_frame_free(&ctx_p);

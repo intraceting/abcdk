@@ -4,7 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/nvidia/imgproc.h"
+#include "abcdk/torch/imgproc.h"
 #include "../generic/imageproc.hxx"
 
 template <typename T>

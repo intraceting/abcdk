@@ -38,9 +38,9 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_stuff_cuda(int channels, bool packed,
     abcdk::cuda::grid::make_dim_dim(dim, dst_w * dst_h, 64);
 
     if (roi)
-        _abcdk_torch_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t *)gpu_scalar, roi->x, roi->y, roi->width, roi->height);
+        _abcdk_torch_imgproc_stuff_2d2d_cuda<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t *)gpu_scalar, roi->x, roi->y, roi->width, roi->height);
     else
-        _abcdk_torch_imgproc_stuff_2d2d<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t *)gpu_scalar, 0, 0, dst_w, dst_h);
+        _abcdk_torch_imgproc_stuff_2d2d_cuda<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_w, dst_ws, dst_h, (uint32_t *)gpu_scalar, 0, 0, dst_w, dst_h);
 
     abcdk_torch_free(&gpu_scalar);
 

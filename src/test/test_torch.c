@@ -92,8 +92,8 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_image_save("/tmp/test.cuda.f.bmp", f);
 
-    abcdk_torch_jpeg_save("/tmp/test.cuda.f.jpg", f);
-    // abcdk_torch_jpeg_save("/tmp/test.cuda.f2.jpg", f);
+    abcdk_torch_jcodec_save("/tmp/test.cuda.f.jpg", f);
+    // abcdk_torch_jcodec_save("/tmp/test.cuda.f2.jpg", f);
 
     // abcdk_torch_image_save("/tmp/test.cuda.f2.bmp", f);
 
@@ -106,12 +106,12 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     for (int i = 0; i < 10; i++)
     {
-        abcdk_torch_image_t *g = abcdk_torch_jpeg_load("/tmp/test.cuda.f.jpg");
+        abcdk_torch_image_t *g = abcdk_torch_jcodec_load("/tmp/test.cuda.f.jpg");
 
         abcdk_torch_imgproc_drawrect(g, color, 3, corner);
 
         abcdk_torch_image_save("/tmp/test.cuda.g2.bmp", g);
-        abcdk_torch_jpeg_save("/tmp/test.cuda.g2.jpg", g);
+        abcdk_torch_jcodec_save("/tmp/test.cuda.g2.jpg", g);
 
         abcdk_torch_image_free(&g);
     }
@@ -149,12 +149,12 @@ int abcdk_test_torch_2(abcdk_option_t *args)
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
 
-    abcdk_torch_jcodec_t *jpeg_w = abcdk_torch_jpeg_create(1);
+    abcdk_torch_jcodec_t *jpeg_w = abcdk_torch_jcodec_create(1);
 
     abcdk_torch_jcodec_param_t jpeg_param = {0};
     jpeg_param.quality = 99;
 
-    abcdk_torch_jpeg_start(jpeg_w,&jpeg_param);
+    abcdk_torch_jcodec_start(jpeg_w,&jpeg_param);
 
     for (int i = 0; i < 10000; i++)
     {
@@ -175,7 +175,7 @@ int abcdk_test_torch_2(abcdk_option_t *args)
 
             abcdk_mkdir(filename, 0755);
 
-            abcdk_torch_jpeg_encode_to_file(jpeg_w, filename, r_fae->img);
+            abcdk_torch_jcodec_encode_to_file(jpeg_w, filename, r_fae->img);
         }
 
         abcdk_torch_frame_free(&r_fae);
@@ -335,7 +335,7 @@ int abcdk_test_torch(abcdk_option_t *args)
 
     fprintf(stderr, "%s\n", name);
 
-    abcdk_torch_context *torch_ctx = abcdk_torch_context_create(gpu, 0);
+    abcdk_torch_context_t *torch_ctx = abcdk_torch_context_create(gpu, 0);
 
     abcdk_torch_context_current_set(torch_ctx);
 

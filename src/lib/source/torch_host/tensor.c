@@ -105,7 +105,7 @@ abcdk_torch_tensor_t *abcdk_torch_tensor_create_host(int format, size_t block, s
     return ctx;
 }
 
-void abcdk_torch_tensor_copy_host(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
+int abcdk_torch_tensor_copy_host(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
 {
     assert(dst != NULL && src != NULL);
     assert(dst->tag == ABCDK_TORCH_TAG_HOST);
@@ -126,9 +126,11 @@ void abcdk_torch_tensor_copy_host(abcdk_torch_tensor_t *dst, const abcdk_torch_t
                         src->data, src->stride, 0, 0,
                         src->cell * src->width, src->block * src->depth * src->height);
     }
+
+    return 0;
 }
 
-void abcdk_torch_tensor_copy_block_host(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
+int abcdk_torch_tensor_copy_block_host(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
 {
     size_t dst_off;
     uint8_t *dst_data;
@@ -153,13 +155,15 @@ void abcdk_torch_tensor_copy_block_host(abcdk_torch_tensor_t *dst, int dst_block
                         src_data, src_stride, 0, 0,
                         dst->cell * dst->width, dst->block * dst->depth * dst->height);
     }
+
+    return 0;
 }
 
-abcdk_torch_tensor_t *abcdk_torch_tensor_clone_host(const abcdk_torch_tensor_t *src)
+abcdk_torch_tensor_t *abcdk_torch_tensor_clone_host(int dst_in_host,const abcdk_torch_tensor_t *src)
 {
     abcdk_torch_tensor_t *dst;
 
-    assert(src != NULL);
+    assert(dst_in_host != 0 && src != NULL);
     assert(src->tag == ABCDK_TORCH_TAG_HOST);
 
     dst = abcdk_torch_tensor_create_host(src->format, src->block, src->width, src->height, src->depth, src->cell, 1);

@@ -8,7 +8,6 @@
 #define ABCDK_TORCH_NVIDIA_VCODEC_ENCODER_FFNV_HXX
 
 #include "abcdk/torch/vcodec.h"
-#include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/context.h"
 #include "abcdk/torch/image.h"
 #include "vcodec_encoder.cu.hxx"
@@ -387,7 +386,7 @@ namespace abcdk
                     {
                         int i = m_iToSend % m_nEncoderBuffer;
 
-                        abcdk_torch_image_copy(m_vInputFrames[i], img);
+                        abcdk_torch_image_copy_cuda(m_vInputFrames[i], img);
 
                         NV_ENC_MAP_INPUT_RESOURCE mapInputResource = {NV_ENC_MAP_INPUT_RESOURCE_VER};
                         mapInputResource.registeredResource = m_vRegisteredResources[i];
@@ -417,7 +416,7 @@ namespace abcdk
                     if (!m_funcs)
                         return;
 
-                    abcdk_torch_ctx_push(m_gpu_ctx);
+                    cuCtxPushCurrent(m_gpu_ctx);
 
                     DestroyBitstreamBuffer();
                     DestroyResources();
@@ -439,7 +438,7 @@ namespace abcdk
                         m_nvenc.nvEncDestroyEncoder(m_encoder);
                     m_encoder = NULL;
 
-                    abcdk_torch_ctx_pop();
+                    cuCtxPopCurrent(NULL);
                 }
 
                 virtual int open(abcdk_torch_vcodec_param_t *param)

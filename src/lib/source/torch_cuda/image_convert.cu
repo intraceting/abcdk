@@ -54,6 +54,7 @@ static int _abcdk_torch_image_convert_cuda_use_cpu(abcdk_torch_image_t *dst, con
 
 static int _abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
 {
+    abcdk_torch_image_t *tmp_dst = NULL;
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
 
     NppiSize src_roi = {src->width, src->height};

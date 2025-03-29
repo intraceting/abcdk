@@ -114,7 +114,7 @@ abcdk_torch_image_t *abcdk_torch_image_create_host(int width, int height, int pi
     return ctx;
 }
 
-void abcdk_torch_image_copy_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
+int abcdk_torch_image_copy_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
 {
     assert(dst != NULL && src != NULL);
     assert(dst->tag == ABCDK_TORCH_TAG_HOST);
@@ -126,9 +126,10 @@ void abcdk_torch_image_copy_host(abcdk_torch_image_t *dst, const abcdk_torch_ima
     /*复制图像数据。*/
     abcdk_torch_imgutil_copy_host(dst->data, dst->stride, 1, (const uint8_t **)src->data, src->stride, 1, src->width, src->height, src->pixfmt);
 
+    return 0;
 }
 
-void abcdk_torch_image_copy_plane_host(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
+int abcdk_torch_image_copy_plane_host(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
@@ -147,6 +148,8 @@ void abcdk_torch_image_copy_plane_host(abcdk_torch_image_t *dst, int dst_plane, 
     abcdk_memcpy_2d(dst->data[dst_plane], dst->stride[dst_plane], 0, 0,
                     src_data, src_stride, 0, 0,
                     real_stride[dst_plane], real_height[dst_plane]);
+
+    return 0;
 }
 
 abcdk_torch_image_t *abcdk_torch_image_clone_host(int dst_in_host, const abcdk_torch_image_t *src)

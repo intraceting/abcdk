@@ -18,17 +18,18 @@ LIB_SRC_FILES += $(wildcard src/lib/source/json/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/curl/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/torch_host/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/torch_cuda/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/opencv/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
 
 #CUDA是可选项，可能未启用。
 ifneq ($(strip $(NVCC)),)
-LIB_SRC_CU_FILES += $(wildcard src/lib/source/nvidia/*.cu)
+LIB_SRC_CU_FILES += $(wildcard src/lib/source/torch_cuda/*.cu)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.cu.o,${LIB_SRC_CU_FILES}))
 endif
 
@@ -135,20 +136,20 @@ $(OBJ_PATH)/src/lib/source/opencv/%.cpp.o: src/lib/source/opencv/%.cpp
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/src/lib/source/torch/%.o: src/lib/source/torch/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
+$(OBJ_PATH)/src/lib/source/torch_host/%.o: src/lib/source/torch_host/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/src/lib/source/torch/%.cpp.o: src/lib/source/torch/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
+$(OBJ_PATH)/src/lib/source/torch_host/%.cpp.o: src/lib/source/torch_host/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/src/lib/source/nvidia/%.cu.o: src/lib/source/nvidia/%.cu
-	mkdir -p $(OBJ_PATH)/src/lib/source/nvidia/
+$(OBJ_PATH)/src/lib/source/torch_cuda/%.cu.o: src/lib/source/torch_cuda/%.cu
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
 

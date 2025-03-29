@@ -8,7 +8,6 @@
 #define ABCDK_TORCH_NVIDIA_VCODEC_ENCODER_AARCH64_HXX
 
 #include "abcdk/torch/vcodec.h"
-#include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/context.h"
 #include "vcodec_encoder.cu.hxx"

@@ -22,7 +22,7 @@ void abcdk_torch_jcodec_free_host(abcdk_torch_jcodec_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_host()
+abcdk_torch_jcodec_t *abcdk_torch_jcodec_alloc_host(int encoder)
 {
     abcdk_torch_jcodec_t *ctx;
 

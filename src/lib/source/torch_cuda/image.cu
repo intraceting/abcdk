@@ -138,7 +138,7 @@ int abcdk_torch_image_copy_cuda(abcdk_torch_image_t *dst, const abcdk_torch_imag
     return 0;
 }
 
-void abcdk_torch_image_copy_plane_cuda(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
+int abcdk_torch_image_copy_plane_cuda(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride)
 {
     int real_stride[4] = {0};
     int real_height[4] = {0};
@@ -157,6 +157,8 @@ void abcdk_torch_image_copy_plane_cuda(abcdk_torch_image_t *dst, int dst_plane, 
     abcdk_torch_memcpy_2d_cuda(dst->data[dst_plane], dst->stride[dst_plane], 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
                                src_data, src_stride, 0, 0, 1,
                                real_stride[dst_plane], real_height[dst_plane]);
+
+    return 0;
 }
 
 abcdk_torch_image_t *abcdk_torch_image_clone_cuda(int dst_in_host, const abcdk_torch_image_t *src)

@@ -7,7 +7,6 @@
 #ifndef ABCDK_TORCH_NVIDIA_VCODEC_UTIL_HXX
 #define ABCDK_TORCH_NVIDIA_VCODEC_UTIL_HXX
 
-#include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/vcodec.h"
 #include "context_robot.cu.hxx"
 

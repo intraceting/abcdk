@@ -16,8 +16,9 @@ int abcdk_test_stitcher(abcdk_option_t *args)
 {
 
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
+    int gpu = abcdk_option_get_int(args, "--gpu", 0, 0);
 
-    abcdk_torch_context *torch_ctx = abcdk_torch_context_create(gpu, 0);
+    abcdk_torch_context_t *torch_ctx = abcdk_torch_context_create(gpu, 0);
 
     abcdk_torch_context_current_set(torch_ctx);
 

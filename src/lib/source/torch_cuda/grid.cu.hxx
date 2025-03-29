@@ -7,7 +7,7 @@
 #ifndef ABCDK_TORCH_NVIDIA_GRID_HXX
 #define ABCDK_TORCH_NVIDIA_GRID_HXX
 
-#include "abcdk/torch/nvidia.h"
+#include "abcdk/torch/torch.h"
 #include "../generic/invoke.hxx"
 
 #ifdef __cuda_cuda_h__

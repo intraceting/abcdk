@@ -10,7 +10,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/packet.h"
-#include "abcdk/nvidia/frame.h"
+#include "abcdk/torch/frame.h"
 
 __BEGIN_DECLS
 

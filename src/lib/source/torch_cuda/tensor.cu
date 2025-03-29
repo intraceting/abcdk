@@ -110,7 +110,7 @@ abcdk_torch_tensor_t *abcdk_torch_tensor_create_cuda(int format, size_t block, s
     return ctx;
 }
 
-void abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
+int abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src)
 {
     assert(dst != NULL && src != NULL);
     assert(dst->tag == ABCDK_TORCH_TAG_HOST || dst->tag == ABCDK_TORCH_TAG_CUDA);
@@ -131,9 +131,11 @@ void abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_t
                                    src->data, src->stride, 0, 0, (src->tag == ABCDK_TORCH_TAG_HOST),
                                    src->cell * src->width, src->block * src->depth * src->height);
     }
+
+    return 0;
 }
 
-void abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
+int abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride)
 {
     size_t dst_off;
     uint8_t *dst_data;
@@ -159,6 +161,8 @@ void abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block
                                    src_data, src_stride, 0, 0, 1,
                                    dst->cell * dst->width, dst->block * dst->depth * dst->height);
     }
+
+    return 0;
 }
 
 abcdk_torch_tensor_t *abcdk_torch_tensor_clone_cuda(int dst_in_host, const abcdk_torch_tensor_t *src)

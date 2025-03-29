@@ -122,7 +122,7 @@ abcdk_torch_context_t *abcdk_torch_context_current_get_cuda()
     abcdk_torch_context_t *old_ctx = NULL;
 
     old_ctx = (abcdk_torch_context_t *)pthread_getspecific(_abcdk_torch_context_key_cuda);
-    ABCDK_ASSERT(old_ctx != NULL, TT("当前线程尚未绑定运行环境。"));
+    ABCDK_ASSERT(old_ctx != NULL, TT("当前线程未绑定运行环境。"));
 
     return old_ctx;
 }

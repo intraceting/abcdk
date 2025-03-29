@@ -42,7 +42,7 @@ void abcdk_torch_vcodec_free_cuda(abcdk_torch_vcodec_t **ctx)
 
     assert(ctx_p->tag == ABCDK_TORCH_TAG_CUDA);
 
-    cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx->private_ctx;
+    cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx_p->private_ctx;
 
     if (cu_ctx_p->encoder)
     {
@@ -86,9 +86,9 @@ abcdk_torch_vcodec_t *abcdk_torch_vcodec_alloc(int encoder)
     if (cu_ctx_p->encoder = encoder)
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-cu_ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_ffnv::create(abcdk_torch_ctx_getspecific());
+cu_ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_ffnv::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
 #elif defined(__aarch64__)
-cu_ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(abcdk_torch_ctx_getspecific());
+cu_ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_aarch64::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!cu_ctx_p->encoder_ctx)
@@ -97,9 +97,9 @@ cu_ctx_p->encoder_ctx = abcdk::cuda::vcodec::encoder_aarch64::create(abcdk_torch
     else
     {
 #ifdef FFNV_CUDA_DYNLINK_LOADER_H
-cu_ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_ffnv::create(abcdk_torch_ctx_getspecific());
+cu_ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_ffnv::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
 #elif defined(__aarch64__)
-cu_ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_aarch64::create(abcdk_torch_ctx_getspecific());
+cu_ctx_p->decoder_ctx = abcdk::cuda::vcodec::decoder_aarch64::create((CUcontext)(abcdk_torch_context_current_get_cuda()->private_ctx));
 #endif //FFNV_CUDA_DYNLINK_LOADER_H || __aarch64__
 
         if (!cu_ctx_p->decoder_ctx)
@@ -122,7 +122,9 @@ int abcdk_torch_vcodec_start_cuda(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_
 
     assert(ctx != NULL);
 
-    cu_ctx_p = (abcdk_torch_vcodec_t *)ctx->private_ctx;
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
+
+    cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx->private_ctx;
 
     if (cu_ctx_p->encoder)
     {
@@ -146,9 +148,10 @@ int abcdk_torch_vcodec_encode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_packet_
 
     assert(ctx != NULL && dst != NULL && src != NULL);
 
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
     assert(src->img->tag == ABCDK_TORCH_TAG_CUDA);
 
-    cu_ctx_p = (abcdk_torch_vcodec_t *)ctx->private_ctx;
+    cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx->private_ctx;
 
     ABCDK_ASSERT(cu_ctx_p->encoder, TT("解码器不能用于编码。"));
 
@@ -161,7 +164,9 @@ int abcdk_torch_vcodec_decode_cuda(abcdk_torch_vcodec_t *ctx,abcdk_torch_frame_t
 
     assert(ctx != NULL && dst != NULL);
 
-    cu_ctx_p = (abcdk_torch_vcodec_t *)ctx->private_ctx;
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
+    
+    cu_ctx_p = (abcdk_torch_vcodec_cuda_t *)ctx->private_ctx;
 
     ABCDK_ASSERT(!cu_ctx_p->encoder, TT("编码器不能用于解码。"));
 

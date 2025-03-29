@@ -8,7 +8,6 @@
 #define ABCDK_TORCH_NVIDIA_CONTEXT_ROBOT_HXX
 
 #include "abcdk/util/trace.h"
-#include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/context.h"
 
 #ifdef __cuda_cuda_h__
@@ -30,7 +29,7 @@ namespace abcdk
 
                 virtual ~robot()
                 {
-                    cuCtxPopCurrent();
+                    cuCtxPopCurrent(NULL);
                 }
             };
         } // namespace context

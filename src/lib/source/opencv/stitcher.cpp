@@ -63,7 +63,7 @@ abcdk_opencv_stitcher_t *abcdk_opencv_stitcher_create(uint32_t tag)
     }
     else if (tag == ABCDK_TORCH_TAG_CUDA)
     {
-        ctx->impl_ctx = new abcdk::opencv::stitcher_cuda(abcdk_cuda_ctx_getspecific());
+        ctx->impl_ctx = new abcdk::opencv::stitcher_cuda(abcdk_torch_context_current_get_cuda());
         if (!ctx->impl_ctx)
             goto ERR;
     }

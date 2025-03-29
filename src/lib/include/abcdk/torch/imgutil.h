@@ -11,6 +11,7 @@
 #include "abcdk/ffmpeg/avutil.h"
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/pixfmt.h"
+#include "abcdk/torch/memory.h"
 
 __BEGIN_DECLS
 

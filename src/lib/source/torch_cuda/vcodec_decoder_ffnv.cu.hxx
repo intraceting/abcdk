@@ -9,7 +9,6 @@
 
 #include "abcdk/util/queue.h"
 #include "abcdk/torch/vcodec.h"
-#include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/context.h"
 #include "vcodec_decoder.cu.hxx"
@@ -295,7 +294,7 @@ namespace abcdk
 
                         /*加入队列失败，直接删除。*/
                         if (chk != 0)
-                            abcdk_torch_frame_free_cuda(&frame_src);
+                            abcdk_torch_frame_free(&frame_src);
                     }
                     else
                     {
@@ -314,7 +313,7 @@ namespace abcdk
                     if (!m_funcs)
                         return;
 
-                    abcdk_torch_ctx_push(m_gpu_ctx);
+                    cuCtxPushCurrent(m_gpu_ctx);
 
                     if (m_parser)
                         m_funcs->cuvidDestroyVideoParser(m_parser);
@@ -331,7 +330,7 @@ namespace abcdk
                     /*在这里删除。*/
                     abcdk_queue_free(&m_frame_queue);
 
-                    abcdk_torch_ctx_pop();
+                    cuCtxPopCurrent(NULL);
                 }
 
                 virtual int open(abcdk_torch_vcodec_param_t *param)
@@ -415,7 +414,7 @@ namespace abcdk
 
                     if (dst)
                     {
-                        abcdk_torch_frame_free_cuda(dst);
+                        abcdk_torch_frame_free(dst);
 
                         abcdk_queue_lock(m_frame_queue);
                         *dst = (abcdk_torch_frame_t *)abcdk_queue_pop(m_frame_queue);

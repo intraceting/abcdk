@@ -55,7 +55,7 @@ namespace abcdk
                         abcdk_torch_image_free_host(&t);
 
                     for (int i = 0; i < imgs.size(); i++)
-                        m_warper_outs.push_back(abcdk_torch_image_alloc_host(ABCDK_TORCH_TAG_HOST));
+                        m_warper_outs.push_back(abcdk_torch_image_alloc_host());
                 }
 
                 /*可能还未复制，且仅复制一次即可。*/

@@ -98,10 +98,10 @@ abcdk_torch_image_t *abcdk_torch_image_create_cuda(int width, int height, int pi
 #endif //
 
 /** 复制。 */
-void abcdk_torch_image_copy_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src);
+int abcdk_torch_image_copy_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src);
 
 /** 复制。 */
-void abcdk_torch_image_copy_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src);
+int abcdk_torch_image_copy_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src);
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_image_copy abcdk_torch_image_copy_cuda
@@ -110,10 +110,10 @@ void abcdk_torch_image_copy_cuda(abcdk_torch_image_t *dst, const abcdk_torch_ima
 #endif //
 
 /** 复制。 */
-void abcdk_torch_image_copy_plane_host(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride);
+int abcdk_torch_image_copy_plane_host(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride);
 
 /** 复制。 */
-void abcdk_torch_image_copy_plane_cuda(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride);
+int abcdk_torch_image_copy_plane_cuda(abcdk_torch_image_t *dst, int dst_plane, const uint8_t *src_data, int src_stride);
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_image_copy_plane abcdk_torch_image_copy_plane_cuda

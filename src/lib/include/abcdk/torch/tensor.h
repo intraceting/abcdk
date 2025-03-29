@@ -63,10 +63,10 @@ void abcdk_torch_tensor_free_cuda(abcdk_torch_tensor_t **ctx);
 
 
 /**申请。*/
-abcdk_torch_tensor_t *abcdk_torch_tensor_alloc_host(uint32_t tag);
+abcdk_torch_tensor_t *abcdk_torch_tensor_alloc_host();
 
 /**申请。*/
-abcdk_torch_tensor_t *abcdk_torch_tensor_alloc_cuda(uint32_t tag);
+abcdk_torch_tensor_t *abcdk_torch_tensor_alloc_cuda();
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_tensor_alloc abcdk_torch_tensor_alloc_cuda
@@ -107,10 +107,10 @@ abcdk_torch_tensor_t *abcdk_torch_tensor_create_cuda(int format, size_t block, s
 #endif //
 
 /** 复制。 */
-void abcdk_torch_tensor_copy_host(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
+int abcdk_torch_tensor_copy_host(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
 
 /** 复制。 */
-void abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
+int abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_tensor_t *src);
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_tensor_copy abcdk_torch_tensor_copy_cuda
@@ -119,10 +119,10 @@ void abcdk_torch_tensor_copy_cuda(abcdk_torch_tensor_t *dst, const abcdk_torch_t
 #endif //
 
 /** 复制。 */
-void abcdk_torch_tensor_copy_block_host(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride);
+int abcdk_torch_tensor_copy_block_host(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride);
 
 /** 复制。 */
-void abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride);
+int abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block, const uint8_t *src_data, int src_stride);
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_tensor_copy_block abcdk_torch_tensor_copy_block_cuda

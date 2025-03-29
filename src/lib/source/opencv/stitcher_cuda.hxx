@@ -18,12 +18,12 @@ namespace abcdk
         class stitcher_cuda : public stitcher
         {
         private:
-            CUcontext m_cuda_ctx;
+            abcdk_torch_context_t *m_cuda_ctx;
 
             std::vector<abcdk_torch_image_t *> m_owner_warper_xmaps;
             std::vector<abcdk_torch_image_t *> m_owner_warper_ymaps;
         public:
-            stitcher_cuda(CUcontext cuda_ctx)
+            stitcher_cuda(abcdk_torch_context_t *cuda_ctx)
             {
                 m_cuda_ctx = cuda_ctx;
             }
@@ -43,16 +43,12 @@ namespace abcdk
         protected:
             virtual void ctx_push_current()
             {
-#ifdef __cuda_cuda_h__
-                cuCtxPushCurrent(m_cuda_ctx);
-#endif //__cuda_cuda_h__
+                abcdk_torch_context_current_set_cuda(m_cuda_ctx);
             }
 
             virtual void ctx_pop_current()
             {
-#ifdef __cuda_cuda_h__
-                cuCtxPopCurrent();
-#endif //__cuda_cuda_h__
+                abcdk_torch_context_current_set_cuda(NULL);
             }
 
             virtual bool remap(const std::vector<abcdk_torch_image_t *> &imgs)
@@ -73,7 +69,7 @@ namespace abcdk
                         abcdk_torch_image_free_cuda(&t);
 
                     for (int i = 0; i < imgs.size(); i++)
-                        m_warper_outs.push_back(abcdk_cuda_image_alloc());
+                        m_warper_outs.push_back(abcdk_torch_image_alloc_cuda());
                 }
 
                 /*可能还未复制，且仅复制一次即可。*/
@@ -95,7 +91,7 @@ namespace abcdk
                         if(!m_owner_warper_xmaps[i])
                             return false;
 
-                        abcdk_cuda_image_copy_plane(m_owner_warper_xmaps[i], 0, m_warper_xmaps[i].data, m_warper_xmaps[i].step);
+                        abcdk_torch_image_copy_plane_cuda(m_owner_warper_xmaps[i], 0, m_warper_xmaps[i].data, m_warper_xmaps[i].step);
 
                         m_owner_warper_ymaps[i] = abcdk_torch_image_create_cuda(m_warper_ymaps[i].cols, m_warper_ymaps[i].rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
                         if(!m_owner_warper_ymaps[i])

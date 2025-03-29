@@ -4,7 +4,7 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#include "abcdk/torch/jpeg.h"
+#include "abcdk/torch/jcodec.h"
 #include "jpeg_decoder_general.cu.hxx"
 #include "jpeg_decoder_aarch64.cu.hxx"
 #include "jpeg_encoder_general.cu.hxx"
