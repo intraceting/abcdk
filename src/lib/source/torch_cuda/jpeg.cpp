@@ -123,6 +123,8 @@ int abcdk_torch_jcodec_start_cuda(abcdk_torch_jcodec_t *ctx, abcdk_torch_jcodec_
 
     assert(ctx != NULL);
 
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
+
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
 
     if (cu_ctx_p->encoder)
@@ -149,23 +151,12 @@ abcdk_object_t *abcdk_torch_jcodec_encode_cuda(abcdk_torch_jcodec_t *ctx, const 
 
     assert(ctx != NULL && src != NULL);
 
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
     assert(src->tag == ABCDK_TORCH_TAG_CUDA);
 
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
 
     ABCDK_ASSERT(cu_ctx_p->encoder, TT("解码器不能用于编码。"));
-
-    if (src->tag == ABCDK_TORCH_TAG_HOST)
-    {
-        tmp_src = abcdk_torch_image_clone_cuda(0, src);
-        if (!tmp_src)
-            return NULL;
-
-        dst = abcdk_torch_jcodec_encode_cuda(ctx, tmp_src);
-        abcdk_torch_image_free_cuda(&tmp_src);
-
-        return dst;
-    }
 
     return cu_ctx_p->encoder_ctx->update(src);
 }
@@ -177,6 +168,7 @@ int abcdk_torch_jcodec_encode_to_file_cuda(abcdk_torch_jcodec_t *ctx, const char
 
     assert(ctx != NULL && dst != NULL && src != NULL);
 
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
     assert(src->tag == ABCDK_TORCH_TAG_CUDA);
 
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
@@ -196,6 +188,8 @@ abcdk_torch_image_t *abcdk_torch_jcodec_decode_cuda(abcdk_torch_jcodec_t *ctx, c
 
     assert(ctx != NULL && src != NULL && src_size > 0);
 
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
+
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
 
     ABCDK_ASSERT(!cu_ctx_p->encoder, TT("编码器不能用于解码。"));
@@ -208,6 +202,8 @@ abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec
     abcdk_torch_jcodec_cuda_t *cu_ctx_p;
 
     assert(ctx != NULL && src != NULL);
+
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
 
     cu_ctx_p = (abcdk_torch_jcodec_cuda_t *)ctx->private_ctx;
 
