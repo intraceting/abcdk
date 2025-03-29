@@ -5,21 +5,21 @@
  *
  */
 #include "abcdk/torch/imgproc.h"
-#include "../generic/imageproc.hxx"
+#include "../torch/imageproc.hxx"
 
 template <typename T>
-ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d_host(int channels, bool packed,
+ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d_host(int channels, bool packed,
                                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
                                                           size_t roi_x, size_t roi_y, size_t roi_w, size_t roi_h)
 {
     for (size_t i = 0; i < dst_w * dst_h; i++)
     {
-        abcdk::generic::imageproc::stuff<T>(channels, packed, dst, dst_w, dst_ws, dst_h, scalar, roi_x, roi_y, roi_w, roi_h, i);
+        abcdk::torch::imageproc::stuff<T>(channels, packed, dst, dst_w, dst_ws, dst_h, scalar, roi_x, roi_y, roi_w, roi_h, i);
     }
 }
 
 template <typename T>
-ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_stuff_host(int channels, bool packed,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgproc_stuff_host(int channels, bool packed,
                                                       T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
                                                       const abcdk_torch_rect_t *roi)
 {

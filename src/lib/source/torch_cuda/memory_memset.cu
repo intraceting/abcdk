@@ -5,15 +5,15 @@
  *
  */
 #include "abcdk/torch/memory.h"
-#include "../generic/invoke.hxx"
+#include "../torch/invoke.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
 template <typename T>
-ABCDK_INVOKE_GLOBAL void _abcdk_torch_memset_2d2d_cuda(T *data, T value, size_t size)
+ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_memset_2d2d_cuda(T *data, T value, size_t size)
 {
-    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
+    size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
     if (tid >= size)
         return;
@@ -28,7 +28,7 @@ void *abcdk_torch_memset_cuda(void *dst, int val, size_t size)
     uint3 dim[2];
 
     /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, size, 64);
+    abcdk::torch_cuda::grid::make_dim_dim(dim, size, 64);
 
     _abcdk_torch_memset_2d2d_cuda<uint8_t><<<dim[0], dim[1]>>>((uint8_t *)dst, (uint8_t)val, size);
 

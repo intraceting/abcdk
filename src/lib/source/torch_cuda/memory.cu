@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/torch/memory.h"
-#include "../generic/invoke.hxx"
+#include "../torch/invoke.hxx"
 #include "grid.cu.hxx"
 
 __BEGIN_DECLS

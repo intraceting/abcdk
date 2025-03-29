@@ -5,22 +5,22 @@
  *
  */
 #include "abcdk/torch/imgproc.h"
-#include "../generic/imageproc.hxx"
+#include "../torch/imageproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
 template <typename T>
-ABCDK_INVOKE_GLOBAL void _abcdk_torch_imgproc_brightness_2d2d_cuda(int channels, bool packed,
+ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_imgproc_brightness_2d2d_cuda(int channels, bool packed,
                                                                    T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate)
 {
-    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
+    size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::brightness<T>(channels, packed, dst, dst_ws, dst_ws, dst_h, alpha, bate, tid);
+    abcdk::torch::imageproc::brightness<T>(channels, packed, dst, dst_ws, dst_ws, dst_h, alpha, bate, tid);
 }
 
 template <typename T>
-ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_brightness_cuda(int channels, bool packed,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgproc_brightness_cuda(int channels, bool packed,
                                                            T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate)
 {
     void *gpu_alpha = NULL, *gpu_bate = NULL;
@@ -41,7 +41,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_brightness_cuda(int channels, bool pa
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, dst_w * dst_h, 64);
+    abcdk::torch_cuda::grid::make_dim_dim(dim, dst_w * dst_h, 64);
 
     _abcdk_torch_imgproc_brightness_2d2d_cuda<T><<<dim[0], dim[1]>>>(channels, packed, dst, dst_ws, dst_ws, dst_h, (float *)gpu_alpha, (float *)gpu_bate);
     abcdk_torch_free_cuda(&gpu_alpha);

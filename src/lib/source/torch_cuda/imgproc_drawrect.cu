@@ -5,23 +5,23 @@
  *
  */
 #include "abcdk/torch/imgproc.h"
-#include "../generic/imageproc.hxx"
+#include "../torch/imageproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
 template <typename T>
-ABCDK_INVOKE_GLOBAL void _abcdk_torch_imgproc_drawrect_2d2d_cuda(int channels, bool packed,
+ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_imgproc_drawrect_2d2d_cuda(int channels, bool packed,
                                                                  T *dst, size_t w, size_t ws, size_t h,
                                                                  uint32_t *color, int weight, int *corner)
 {
-    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
+    size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::imageproc::drawrect<T>(channels, packed, dst, w, ws, h, color, weight, corner, tid);
+    abcdk::torch::imageproc::drawrect<T>(channels, packed, dst, w, ws, h, color, weight, corner, tid);
 }
 
 template <typename T>
-ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_drawrect_cuda(int channels, bool packed,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgproc_drawrect_cuda(int channels, bool packed,
                                                          T *dst, size_t w, size_t ws, size_t h,
                                                          uint32_t *color, int weight, int *corner)
 {
@@ -42,7 +42,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_drawrect_cuda(int channels, bool pack
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, w * h, 64);
+    abcdk::torch_cuda::grid::make_dim_dim(dim, w * h, 64);
 
     _abcdk_torch_imgproc_drawrect_2d2d_cuda<T><<<dim[0], dim[1]>>>(channels, packed, dst, w, ws, h, (uint32_t *)gpu_color, weight, (int *)gpu_conrer);
     abcdk_torch_free_cuda(&gpu_color);

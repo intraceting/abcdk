@@ -12,10 +12,6 @@
 #include "entry.h"
 
 
-#ifdef __cuda_cuda_h__
-#define ABCDK_TORCH_USE_CUDA
-#endif //__cuda_cuda_h__
-
 int abcdk_test_torch_1(abcdk_option_t *args)
 {
     int chk;
@@ -149,7 +145,7 @@ int abcdk_test_torch_2(abcdk_option_t *args)
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
 
-    abcdk_torch_jcodec_t *jpeg_w = abcdk_torch_jcodec_create(1);
+    abcdk_torch_jcodec_t *jpeg_w = abcdk_torch_jcodec_alloc(1);
 
     abcdk_torch_jcodec_param_t jpeg_param = {0};
     jpeg_param.quality = 99;
@@ -357,8 +353,4 @@ int abcdk_test_torch(abcdk_option_t *args)
 
     return 0;
 }
-
-#ifdef __cuda_cuda_h__
-#undef ABCDK_TORCH_USE_CUDA
-#endif //__cuda_cuda_h__
 

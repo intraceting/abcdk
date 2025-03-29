@@ -25,15 +25,15 @@ int abcdk_torch_get_device_name_host(char name[256], int id)
         return -1;
 
 #ifdef __x86_64__
-    strncpy(name, 256, "CPU x86 64-bit");
+    strcpy(name, "CPU x86 64-bit");
 #elif defined(__i386__)
-    strncpy(name, 256, "CPU x86 32-bit");
+    strcpy(name, "CPU x86 32-bit");
 #elif defined(__aarch64__)
-    strncpy(name, 256, "CPU ARM 64-bit");
+    strcpy(name, "CPU ARM 64-bit");
 #elif defined(__arm__)
-    strncpy(name, 256, "CPU ARM 32-bit");
+    strcpy(name, "CPU ARM 32-bit");
 #else
-    strncpy(name, 256, "CPU General");
+    strcpy(name, "CPU General");
 #endif
 
     return 0;

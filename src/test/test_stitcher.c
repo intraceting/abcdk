@@ -22,8 +22,11 @@ int abcdk_test_stitcher(abcdk_option_t *args)
 
     abcdk_torch_context_current_set(torch_ctx);
 
-
+#ifdef ABCDK_TORCH_USE_CUDA
+    abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_CUDA);
+#else 
     abcdk_opencv_stitcher_t *ctx = abcdk_opencv_stitcher_create(ABCDK_TORCH_TAG_HOST);
+#endif 
 
     abcdk_object_t *metadata = abcdk_object_copyfrom_file(abcdk_option_get(args, "--metadata-load", 0, ""));
 
@@ -69,7 +72,7 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     abcdk_torch_image_save("/tmp/ccc/pano.jpg", out);
     abcdk_torch_image_free(&out);
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 6; i++)
         abcdk_torch_image_free(&img[i]);
 
     abcdk_opencv_stitcher_destroy(&ctx);

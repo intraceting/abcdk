@@ -5,21 +5,21 @@
  *
  */
 #include "abcdk/torch/imgproc.h"
-#include "../generic/imageproc.hxx"
+#include "../torch/imageproc.hxx"
 
 template <typename T>
-ABCDK_INVOKE_HOST void _abcdk_torch_imgproc_defog_1d_host(int channels, bool packed,
+ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgproc_defog_1d_host(int channels, bool packed,
                                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
                                                           uint32_t dack_a, float dack_m, float dack_w)
 {
     for (size_t i = 0; i < dst_w * dst_h; i++)
     {
-        abcdk::generic::imageproc::defog<T>(channels, packed, dst, dst_w, dst_ws, dst_h, dack_a, dack_m, dack_w, i);
+        abcdk::torch::imageproc::defog<T>(channels, packed, dst, dst_w, dst_ws, dst_h, dack_a, dack_m, dack_w, i);
     }
 }
 
 template <typename T>
-ABCDK_INVOKE_HOST int _abcdk_torch_imgproc_defog_host(int channels, bool packed,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgproc_defog_host(int channels, bool packed,
                                                       T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
                                                       uint32_t dack_a, float dack_m, float dack_w)
 {

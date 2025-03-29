@@ -9,7 +9,6 @@
 
 #include "abcdk/util/option.h"
 #include "abcdk/torch/jcodec.h"
-#include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/image.h"
 #include "jpeg_util.cu.hxx"
 
@@ -17,7 +16,7 @@
 
 namespace abcdk
 {
-    namespace cuda
+    namespace torch_cuda
     {
         namespace jpeg
         {
@@ -47,7 +46,7 @@ namespace abcdk
                 virtual abcdk_torch_image_t * update(const void *src) = 0;
             };
         } // namespace jpeg
-    } // namespace cuda
+    } // namespace torch_cuda
 } // namespace abcdk
 
 

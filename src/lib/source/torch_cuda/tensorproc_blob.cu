@@ -5,25 +5,25 @@
  *
  */
 #include "abcdk/torch/tensorproc.h"
-#include "../generic/tensorproc.hxx"
+#include "../torch/tensorproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
 template <typename DT, typename ST>
-ABCDK_INVOKE_GLOBAL void _abcdk_torch_tensorproc_blob_2d2d_cuda(bool dst_packed, DT *dst, size_t dst_ws,
+ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_tensorproc_blob_2d2d_cuda(bool dst_packed, DT *dst, size_t dst_ws,
                                                                 bool src_packed, ST *src, size_t src_ws,
                                                                 size_t b, size_t w, size_t h, size_t c,
                                                                 bool revert, float *scale, float *mean, float *std)
 {
-    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
+    size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::tensorproc::blob<DT, ST>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
+    abcdk::torch::tensorproc::blob<DT, ST>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
                                              revert, scale, mean, std, tid);
 }
 
 template <typename DT, typename ST>
-ABCDK_INVOKE_HOST int _abcdk_torch_tensorproc_blob_cuda(bool dst_packed, DT *dst, size_t dst_ws,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_tensorproc_blob_cuda(bool dst_packed, DT *dst, size_t dst_ws,
                                                         bool src_packed, ST *src, size_t src_ws,
                                                         size_t b, size_t w, size_t h, size_t c,
                                                         bool revert, float *scale, float *mean, float *std)
@@ -49,7 +49,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_tensorproc_blob_cuda(bool dst_packed, DT *dst
     }
 
     /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, b * w * h * c, 64);
+    abcdk::torch_cuda::grid::make_dim_dim(dim, b * w * h * c, 64);
 
     _abcdk_torch_tensorproc_blob_2d2d_cuda<DT, ST><<<dim[0], dim[1]>>>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
                                                                        revert, (float *)gpu_scale, (float *)gpu_mean, (float *)gpu_std);

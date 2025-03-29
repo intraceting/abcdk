@@ -5,10 +5,10 @@
  *
  */
 #include "abcdk/torch/tensorproc.h"
-#include "../generic/tensorproc.hxx"
+#include "../torch/tensorproc.hxx"
 
 template <typename DT, typename ST>
-ABCDK_INVOKE_HOST void _abcdk_torch_tensorproc_blob_1d(bool dst_packed, DT *dst, size_t dst_ws,
+ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_tensorproc_blob_1d(bool dst_packed, DT *dst, size_t dst_ws,
                                                        bool src_packed, ST *src, size_t src_ws,
                                                        size_t b, size_t w, size_t h, size_t c,
                                                        bool revert, float *scale, float *mean, float *std)
@@ -16,13 +16,13 @@ ABCDK_INVOKE_HOST void _abcdk_torch_tensorproc_blob_1d(bool dst_packed, DT *dst,
     // #pragma omp parallel
     for (size_t i = 0; i < b * w * h * c; i++)
     {
-        abcdk::generic::tensorproc::blob<DT, ST>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
+        abcdk::torch::tensorproc::blob<DT, ST>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
                                                  revert, scale, mean, std, i);
     }
 }
 
 template <typename DT, typename ST>
-ABCDK_INVOKE_HOST int _abcdk_torch_tensorproc_blob(bool dst_packed, DT *dst, size_t dst_ws,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_tensorproc_blob(bool dst_packed, DT *dst, size_t dst_ws,
                                                    bool src_packed, ST *src, size_t src_ws,
                                                    size_t b, size_t w, size_t h, size_t c,
                                                    bool revert, float *scale, float *mean, float *std)

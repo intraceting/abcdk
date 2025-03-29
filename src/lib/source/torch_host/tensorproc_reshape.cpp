@@ -5,22 +5,22 @@
  *
  */
 #include "abcdk/torch/tensorproc.h"
-#include "../generic/tensorproc.hxx"
+#include "../torch/tensorproc.hxx"
 
-ABCDK_INVOKE_HOST void _abcdk_torch_tensorproc_reshape_1d(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_tensorproc_reshape_1d(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
                                                           bool src_packed, uint8_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c,
                                                           size_t cell)
 {
     /*源和目标的元素数量是一样的。*/
     for (size_t i = 0; i < dst_b * dst_w * dst_h * dst_c; i++)
     {
-        abcdk::generic::tensorproc::reshape(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c,
+        abcdk::torch::tensorproc::reshape(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c,
                                             src_packed, src, src_b, src_w, src_ws, src_h, src_c,
                                             cell, i);
     }
 }
 
-ABCDK_INVOKE_HOST int _abcdk_torch_tensorproc_reshape(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_tensorproc_reshape(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
                                                       bool src_packed, uint8_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c,
                                                       size_t cell)
 {

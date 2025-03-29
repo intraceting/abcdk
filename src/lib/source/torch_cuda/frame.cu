@@ -36,7 +36,7 @@ int abcdk_torch_frame_reset_cuda(abcdk_torch_frame_t **ctx, int width, int heigh
     {
         if (ctx_p->img->tag == ABCDK_TORCH_TAG_HOST)
             abcdk_torch_image_free_host(&ctx_p->img);
-        if (ctx_p->img->tag == ABCDK_TORCH_TAG_CUDA)
+        else if (ctx_p->img->tag == ABCDK_TORCH_TAG_CUDA)
             abcdk_torch_image_free_cuda(&ctx_p->img);
     }
 

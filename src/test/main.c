@@ -165,9 +165,11 @@ int main(int argc, char **argv)
 
 #ifdef __cuda_cuda_h__
 
-    abcdk_cuda_init(0);
+    abcdk_torch_init_cuda(0);
 
 #endif //__cuda_cuda_h__
+
+    abcdk_torch_init_host(0);
 
     args = abcdk_option_alloc("--");
     if (!args)

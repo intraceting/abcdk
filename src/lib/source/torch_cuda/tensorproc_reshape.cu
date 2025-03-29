@@ -5,23 +5,23 @@
  *
  */
 #include "abcdk/torch/tensorproc.h"
-#include "../generic/tensorproc.hxx"
+#include "../torch/tensorproc.hxx"
 #include "grid.cu.hxx"
 
 #ifdef __cuda_cuda_h__
 
-ABCDK_INVOKE_GLOBAL void _abcdk_torch_tensorproc_reshape_2d2d_cuda(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_tensorproc_reshape_2d2d_cuda(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
                                                                    bool src_packed, uint8_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c,
                                                                    size_t cell)
 {
-    size_t tid = abcdk::cuda::grid::get_tid(2, 2);
+    size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
-    abcdk::generic::tensorproc::reshape(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c,
+    abcdk::torch::tensorproc::reshape(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c,
                                         src_packed, src, src_b, src_w, src_ws, src_h, src_c,
                                         cell, tid);
 }
 
-ABCDK_INVOKE_HOST int _abcdk_torch_tensorproc_reshape_cuda(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_tensorproc_reshape_cuda(bool dst_packed, uint8_t *dst, size_t dst_b, size_t dst_w, size_t dst_ws, size_t dst_h, size_t dst_c,
                                                            bool src_packed, uint8_t *src, size_t src_b, size_t src_w, size_t src_ws, size_t src_h, size_t src_c,
                                                            size_t cell)
 {
@@ -41,7 +41,7 @@ ABCDK_INVOKE_HOST int _abcdk_torch_tensorproc_reshape_cuda(bool dst_packed, uint
     assert(dst_total == src_total);
 
     /*2D-2D*/
-    abcdk::cuda::grid::make_dim_dim(dim, dst_total, 64);
+    abcdk::torch_cuda::grid::make_dim_dim(dim, dst_total, 64);
 
     _abcdk_torch_tensorproc_reshape_2d2d_cuda<<<dim[0], dim[1]>>>(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c,
                                                                   src_packed, src, src_b, src_w, src_ws, src_h, src_c,

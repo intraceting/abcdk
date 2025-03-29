@@ -25,6 +25,7 @@ LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 #C++
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/opencv/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_cuda/*.cpp)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
 
 #CUDA是可选项，可能未启用。
@@ -152,6 +153,12 @@ $(OBJ_PATH)/src/lib/source/torch_cuda/%.cu.o: src/lib/source/torch_cuda/%.cu
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
+
+#
+$(OBJ_PATH)/src/lib/source/torch_cuda/%.cpp.o: src/lib/source/torch_cuda/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
+	rm -f $@
+	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
 clean-lib:
