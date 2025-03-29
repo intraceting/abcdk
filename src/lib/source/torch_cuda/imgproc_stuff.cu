@@ -70,14 +70,5 @@ int abcdk_torch_imgproc_stuff_cuda(abcdk_torch_image_t *dst, uint32_t scalar[], 
 
 __END_DECLS
 
-#else // __cuda_cuda_h__
-
-int abcdk_torch_imgproc_stuff_cuda(abcdk_torch_image_t *dst, uint32_t scalar[], const abcdk_torch_rect_t *roi)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return -1;
-}
-
-__END_DECLS
 
 #endif // __cuda_cuda_h__

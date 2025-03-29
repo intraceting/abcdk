@@ -74,16 +74,5 @@ int abcdk_torch_imgproc_drawrect_cuda(abcdk_torch_image_t *dst, uint32_t color[]
 
 __END_DECLS
 
-#else // __cuda_cuda_h__
-
-__BEGIN_DECLS
-
-int abcdk_torch_imgproc_drawrect_cuda(abcdk_torch_image_t *dst, uint32_t color[], int weight, int corner[4])
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return -1;
-}
-
-__END_DECLS
 
 #endif // __cuda_cuda_h__

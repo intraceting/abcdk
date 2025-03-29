@@ -339,13 +339,6 @@ int abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_i
     return 0;
 }
 
-#else //__cuda_cuda_h__
-
-int abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return -1;
-}
 
 #endif //__cuda_cuda_h__
 

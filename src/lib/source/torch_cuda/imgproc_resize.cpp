@@ -93,18 +93,5 @@ int abcdk_torch_imgproc_resize_cuda(abcdk_torch_image_t *dst, const abcdk_torch_
 
 __END_DECLS
 
-#else // __cuda_cuda_h__
-
-__BEGIN_DECLS
-
-int abcdk_torch_imgproc_resize_cuda(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
-                                    const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
-                                    int keep_aspect_ratio, int inter_mode)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return -1;
-}
-
-__END_DECLS
 
 #endif //__cuda_cuda_h__

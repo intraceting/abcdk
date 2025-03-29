@@ -82,17 +82,4 @@ int abcdk_torch_imgproc_compose_cuda(abcdk_torch_image_t *panorama, abcdk_torch_
 
 __END_DECLS
 
-#else // __cuda_cuda_h__
-
-__BEGIN_DECLS
-
-int abcdk_torch_imgproc_compose_cuda(abcdk_torch_image_t *panorama, abcdk_torch_image_t *compose,
-                                     uint32_t scalar[], size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return -1;
-}
-
-__END_DECLS
-
 #endif // __cuda_cuda_h__

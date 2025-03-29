@@ -290,10 +290,22 @@ abcdk_torch_image_t *abcdk_torch_image_clone_cuda(int dst_in_host, const abcdk_t
     return NULL;
 }
 
+int abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
+}
+
 int abcdk_torch_image_save_cuda(const char *dst, const abcdk_torch_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
+}
+
+abcdk_torch_image_t *abcdk_torch_image_load_cuda(const char *src, int gray)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return NULL;
 }
 
 #endif //__cuda_cuda_h__

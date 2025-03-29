@@ -73,16 +73,5 @@ int abcdk_torch_imgproc_brightness_cuda(abcdk_torch_image_t *dst, float alpha[],
 
 __END_DECLS
 
-#else // __cuda_cuda_h__
-
-__BEGIN_DECLS
-
-int abcdk_torch_imgproc_brightness_cuda(abcdk_torch_image_t *dst, float alpha[], float bate[])
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return -1;
-}
-
-__END_DECLS
 
 #endif // __cuda_cuda_h__

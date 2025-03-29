@@ -10,8 +10,7 @@
 
 __BEGIN_DECLS
 
-#ifdef OPENCV_STITCHING_STITCHER_HPP
-
+#if defined(__cuda_cuda_h__) && defined(OPENCV_STITCHING_STITCHER_HPP)
 
 void abcdk_torch_stitcher_destroy_cuda(abcdk_torch_stitcher_t **ctx)
 {
@@ -238,7 +237,8 @@ int abcdk_torch_stitcher_compose_cuda(abcdk_torch_stitcher_t *ctx, abcdk_torch_i
     return 0;
 }
 
-#else // OPENCV_STITCHING_STITCHER_HPP
+
+#else // defined(__cuda_cuda_h__) && defined(OPENCV_STITCHING_STITCHER_HPP)
 
 void abcdk_torch_stitcher_destroy_cuda(abcdk_torch_stitcher_t **ctx)
 {
@@ -294,7 +294,7 @@ int abcdk_torch_stitcher_compose_cuda(abcdk_torch_stitcher_t *ctx, abcdk_torch_i
     return -1;
 }
 
-#endif // OPENCV_STITCHING_STITCHER_HPP
+#endif // defined(__cuda_cuda_h__) && defined(OPENCV_STITCHING_STITCHER_HPP)
 
 
 __END_DECLS

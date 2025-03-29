@@ -9,7 +9,7 @@
 
 __BEGIN_DECLS
 
-#ifdef _OPENCV_FREETYPE_H_
+#if defined(__cuda_cuda_h__) && defined(_OPENCV_FREETYPE_H_) 
 
 int abcdk_torch_freetype_put_text_cuda(abcdk_torch_freetype_t *ctx,
                                        abcdk_torch_image_t *img, const char *text,
@@ -36,7 +36,7 @@ int abcdk_torch_freetype_put_text_cuda(abcdk_torch_freetype_t *ctx,
     return 0;
 }
 
-#else //_OPENCV_FREETYPE_H_
+#else //defined(__cuda_cuda_h__) && defined(_OPENCV_FREETYPE_H_)
 
 int abcdk_torch_freetype_put_text_cuda(abcdk_torch_freetype_t *ctx,
                                        abcdk_torch_image_t *img, const char *text,
@@ -47,6 +47,6 @@ int abcdk_torch_freetype_put_text_cuda(abcdk_torch_freetype_t *ctx,
     return -1;
 }
 
-#endif // _OPENCV_FREETYPE_H_
+#endif // defined(__cuda_cuda_h__) && defined(_OPENCV_FREETYPE_H_)
 
 __END_DECLS

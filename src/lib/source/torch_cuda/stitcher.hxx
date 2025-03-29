@@ -11,6 +11,8 @@
 #include "abcdk/torch/opencv.h"
 #include "../torch/stitcher.hxx"
 
+#ifdef __cuda_cuda_h__
+
 #ifdef OPENCV_STITCHING_STITCHER_HPP
 
 namespace abcdk
@@ -168,5 +170,7 @@ namespace abcdk
 } // namespace abcdk
 
 #endif // OPENCV_STITCHING_STITCHER_HPP
+
+#endif //__cuda_cuda_h__
 
 #endif // ABCDK_TORCH_CUDA_STITCHER_HXX

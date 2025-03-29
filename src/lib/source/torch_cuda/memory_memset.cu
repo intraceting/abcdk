@@ -38,16 +38,4 @@ void *abcdk_torch_memset_cuda(void *dst, int val, size_t size)
 
 __END_DECLS
 
-#else //__cuda_cuda_h__
-
-__BEGIN_DECLS
-
-void *abcdk_torch_memset_cuda(void *dst, int val, size_t size)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return NULL;
-}
-
-__END_DECLS
-
 #endif //__cuda_cuda_h__
