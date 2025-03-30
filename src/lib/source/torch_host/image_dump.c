@@ -21,6 +21,9 @@ int abcdk_torch_image_dump_host(const char *dst, const abcdk_torch_image_t *src)
     if (src_plane <= 0)
         return -1;
 
+    /*创建需要的路径。*/
+    abcdk_mkdir(dst,0755);
+
     fd = abcdk_open(dst, 1, 0, 1);
     if (fd < 0)
         return -1;

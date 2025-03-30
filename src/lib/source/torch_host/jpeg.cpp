@@ -146,6 +146,9 @@ int abcdk_torch_jcodec_encode_to_file_host(abcdk_torch_jcodec_t *ctx, const char
     if (!tmp_dst)
         return -1;
 
+    /*创建需要的路径。*/
+    abcdk_mkdir(dst,0755);
+
     if (access(dst, F_OK) == 0)
     {
         chk = truncate(dst, 0);

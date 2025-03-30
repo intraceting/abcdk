@@ -171,6 +171,9 @@ namespace abcdk
                     if (!dst_data)
                         return -1;
 
+                    /*创建需要的路径。*/
+                    abcdk_mkdir(dst,0755);
+
                     if (access(dst, F_OK) == 0)
                     {
                         chk = truncate(dst, 0);
