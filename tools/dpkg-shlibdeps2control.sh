@@ -29,7 +29,8 @@ do
 done
 
 #
-DEPENDS=$(cd ${ROOT_PATH};dpkg-shlibdeps -e ${EXE_FILES} -O 2>/dev/null)
+#DEPENDS=$(cd ${ROOT_PATH};dpkg-shlibdeps -e ${EXE_FILES} -O 2>/dev/null)
+DEPENDS=$(cd ${ROOT_PATH};dpkg-shlibdeps --ignore-missing-info -e ${EXE_FILES} -O 2>/dev/null)
 
 #替换shlibs:Depends=为空。
 #例：${字符串变量/待查找的字符串/替换字符串(允许无)}
