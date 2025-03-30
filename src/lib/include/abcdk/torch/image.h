@@ -10,7 +10,6 @@
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/memory.h"
 #include "abcdk/torch/imgutil.h"
-#include "abcdk/ffmpeg/swscale.h"
 
 __BEGIN_DECLS
 
@@ -135,7 +134,7 @@ abcdk_torch_image_t *abcdk_torch_image_clone_cuda(int dst_in_host, const abcdk_t
 #endif //
 
 /**
- * 帧图格式转换。
+ * 格式转换。
  *
  * @note 仅图像数据。
  *
@@ -144,7 +143,7 @@ abcdk_torch_image_t *abcdk_torch_image_clone_cuda(int dst_in_host, const abcdk_t
 int abcdk_torch_image_convert_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src);
 
 /**
- * 帧图格式转换。
+ * 格式转换。
  *
  * @note 仅图像数据。
  *
@@ -159,54 +158,30 @@ int abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_i
 #endif //
 
 /**
- * 保存到文件。
- * 
- * @note 在没有第三方支持的情况下仅支持BMP格式或RAW格式。
- * 
- * @return 0 成功，< 0 失败。
- */
-int abcdk_torch_image_save_host(const char *dst, const abcdk_torch_image_t *src);
-
-/**
- * 保存到文件。
- * 
- * @note 在没有第三方支持的情况下仅支持BMP格式或RAW格式。
- * 
- * @return 0 成功，< 0 失败。
- */
-int abcdk_torch_image_save_cuda(const char *dst, const abcdk_torch_image_t *src);
-
-
-#ifdef ABCDK_TORCH_USE_CUDA
-#define abcdk_torch_image_save abcdk_torch_image_save_cuda
-#else //ABCDK_TORCH_USE_HOST
-#define abcdk_torch_image_save abcdk_torch_image_save_host
-#endif //
-
-/**
- * 从文件加载。
- * 
- * @param [in] gray 是否加载为灰度图。0 否，!0 是。
- * 
+ * 保存(RAW)。
+ *
+ * @note 仅图像数据。
+ *
  * @return 0 成功，< 0 失败。
 */
-abcdk_torch_image_t *abcdk_torch_image_load_host(const char *src, int gray);
+int abcdk_torch_image_dump_host(const char *dst, const abcdk_torch_image_t *src);
 
 /**
- * 从文件加载。
- * 
- * @param [in] gray 是否加载为灰度图。0 否，!0 是。
- * 
+ * 保存(RAW)。
+ *
+ * @note 仅图像数据。
+ *
  * @return 0 成功，< 0 失败。
 */
-abcdk_torch_image_t *abcdk_torch_image_load_cuda(const char *src, int gray);
+int abcdk_torch_image_dump_cuda(const char *dst, const abcdk_torch_image_t *src);
 
 #ifdef ABCDK_TORCH_USE_CUDA
-#define abcdk_torch_image_load abcdk_torch_image_load_cuda
+#define abcdk_torch_image_dump abcdk_torch_image_dump_cuda
 #else //ABCDK_TORCH_USE_HOST
-#define abcdk_torch_image_load abcdk_torch_image_load_host
+#define abcdk_torch_image_dump abcdk_torch_image_dump_host
 #endif //
+
 
 __END_DECLS
 
-#endif // ABCDK_TORCH_FRAME_H
+#endif // ABCDK_TORCH_IMAGE_H

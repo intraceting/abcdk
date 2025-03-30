@@ -146,11 +146,14 @@ int abcdk_avcodec_decode(AVCodecContext *ctx, AVFrame *out,const AVPacket *in)
     }
 
     return got;
-#else 
+#else
 
-    chk = avcodec_send_packet(ctx, in);
-    if(chk < 0)
-        return -1;
+    if(in)
+    {
+        chk = avcodec_send_packet(ctx, in);
+        if(chk < 0)
+            return -1;
+    }
 
     chk = avcodec_receive_frame(ctx,out);
     if(chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)

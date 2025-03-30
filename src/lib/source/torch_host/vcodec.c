@@ -9,7 +9,7 @@
 
 #ifdef AVCODEC_AVCODEC_H
 
-/** HOST媒体视频编/解码器。*/
+/** 视频编/解码器。*/
 typedef struct _abcdk_torch_vcodec_host
 {
     /**编码器。!0 是，0 否。*/
@@ -140,7 +140,9 @@ int abcdk_torch_vcodec_start_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_
         av_freep(&ht_ctx_p->ff_ctx->extradata);
 
         ht_ctx_p->ff_ctx->extradata_size = param->ext_size;
-        ht_ctx_p->ff_ctx->extradata = av_memdup(param->ext_data,param->ext_size);
+        ht_ctx_p->ff_ctx->extradata = (uint8_t *)av_mallocz(param->ext_size + AV_INPUT_BUFFER_PADDING_SIZE);
+
+        memcpy(ht_ctx_p->ff_ctx->extradata, param->ext_data, param->ext_size);
 
         chk = abcdk_avcodec_open(ht_ctx_p->ff_ctx, NULL);
         if(chk < 0)
@@ -163,6 +165,8 @@ int abcdk_torch_vcodec_encode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet
 
     if (src)
     {
+        assert(src->img->tag == ABCDK_TORCH_TAG_HOST);
+
         if (src->img->pixfmt != ABCDK_TORCH_PIXFMT_YUV420P)
         {
             tmp_src = abcdk_torch_frame_create_host(src->img->width, src->img->height, ABCDK_TORCH_PIXFMT_YUV420P, 1);
@@ -264,6 +268,8 @@ int abcdk_torch_vcodec_decode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_frame_
 
         abcdk_torch_image_copy_plane_host((*dst)->img, i, ht_ctx_p->ff_tmp_fae->data[i], ht_ctx_p->ff_tmp_fae->linesize[i]);
     }
+
+    (*dst)->pts = ht_ctx_p->ff_tmp_fae->pts;//bind PTS
 
     return 1;
 }

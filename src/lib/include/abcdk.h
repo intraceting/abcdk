@@ -153,6 +153,7 @@
 #include "abcdk/torch/tenfmt.h"
 #include "abcdk/torch/tenutil.h"
 #include "abcdk/torch/imgproc.h"
+#include "abcdk/torch/imgcode.h"
 #include "abcdk/torch/frame.h"
 #include "abcdk/torch/packet.h"
 #include "abcdk/torch/memory.h"

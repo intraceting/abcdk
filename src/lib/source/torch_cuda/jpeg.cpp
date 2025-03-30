@@ -197,7 +197,7 @@ abcdk_torch_image_t *abcdk_torch_jcodec_decode_cuda(abcdk_torch_jcodec_t *ctx, c
     return cu_ctx_p->decoder_ctx->update(src, src_size);
 }
 
-abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec_t *ctx, const void *src)
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec_t *ctx, const char *src)
 {
     abcdk_torch_jcodec_cuda_t *cu_ctx_p;
 
@@ -250,7 +250,7 @@ abcdk_torch_image_t *abcdk_torch_jcodec_decode_cuda(abcdk_torch_jcodec_t *ctx, c
     return NULL;
 }
 
-abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec_t *ctx, const void *src)
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_cuda(abcdk_torch_jcodec_t *ctx, const char *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return NULL;

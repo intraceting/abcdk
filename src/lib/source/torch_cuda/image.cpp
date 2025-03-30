@@ -188,64 +188,6 @@ abcdk_torch_image_t *abcdk_torch_image_clone_cuda(int dst_in_host, const abcdk_t
     return dst;
 }
 
-int abcdk_torch_image_save_cuda(const char *dst, const abcdk_torch_image_t *src)
-{
-    abcdk_torch_image_t *tmp_src;
-    int chk;
-
-    assert(dst != NULL && src != NULL);
-    assert(src->tag == ABCDK_TORCH_TAG_HOST || src->tag == ABCDK_TORCH_TAG_CUDA);
-
-    if (src->pixfmt != ABCDK_TORCH_PIXFMT_BGR24)
-    {
-        tmp_src = abcdk_torch_image_create_cuda(src->width, src->height, ABCDK_TORCH_PIXFMT_BGR24, 4);
-        if (!tmp_src)
-            return -1;
-
-        chk = abcdk_torch_image_convert_cuda(tmp_src, src);
-
-        /*转格式成功后继续执行保存操作。*/
-        if (chk == 0)
-            chk = abcdk_torch_image_save_cuda(dst, tmp_src);
-
-        abcdk_torch_image_free_cuda(&tmp_src);
-        return chk;
-    }
-
-    if (src->tag == ABCDK_TORCH_TAG_CUDA)
-    {
-        tmp_src = abcdk_torch_image_clone_cuda(1, src);
-        if (!tmp_src)
-            return -1;
-
-        chk = abcdk_torch_image_save_cuda(dst, tmp_src);
-        abcdk_torch_image_free_host(&tmp_src);
-        return chk;
-    }
-
-    chk = abcdk_torch_image_save_host(dst, src);
-    if (chk != 0)
-        return -1;
-
-    return 0;
-}
-
-abcdk_torch_image_t *abcdk_torch_image_load_cuda(const char *src, int gray)
-{
-    abcdk_torch_image_t *dst, *tmp_dst;
-
-    assert(src != NULL);
-
-    tmp_dst = abcdk_torch_image_load_host(src, gray);
-    if (!tmp_dst)
-        return NULL;
-
-    dst = abcdk_torch_image_clone_cuda(0, tmp_dst);
-    abcdk_torch_image_free_host(&tmp_dst);
-
-    return dst;
-}
-
 #else //__cuda_cuda_h__
 
 void abcdk_torch_image_free_cuda(abcdk_torch_image_t **ctx)
@@ -296,17 +238,12 @@ int abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk_torch_i
     return -1;
 }
 
-int abcdk_torch_image_save_cuda(const char *dst, const abcdk_torch_image_t *src)
+int abcdk_torch_image_dump_cuda(const char *dst, const abcdk_torch_image_t *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1;
 }
 
-abcdk_torch_image_t *abcdk_torch_image_load_cuda(const char *src, int gray)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
-    return NULL;
-}
 
 #endif //__cuda_cuda_h__
 

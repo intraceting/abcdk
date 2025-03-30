@@ -25,7 +25,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
     uint32_t scalar[3] = {0, 0, 255};
     abcdk_torch_imgproc_stuff(a, scalar,NULL);
 
-    //abcdk_torch_image_save("/tmp/test.cuda.a1.bmp", a);
+    //abcdk_torch_imgcode_save("/tmp/test.cuda.a1.bmp", a);
 
     abcdk_torch_image_t *aa = abcdk_torch_image_clone(1,a);
     abcdk_bmp_save_file("/tmp/test.cuda.a1.bmp",aa->data[0],aa->stride[0],aa->width,-aa->height,24);
@@ -36,7 +36,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_imgproc_drawrect(a, color, 3, corner);
 
-    // abcdk_torch_image_save("/tmp/test.cuda.a2.bmp", a);
+    // abcdk_torch_imgcode_save("/tmp/test.cuda.a2.bmp", a);
     aa = abcdk_torch_image_clone(1, a);
     abcdk_bmp_save_file("/tmp/test.cuda.a2.bmp", aa->data[0], aa->stride[0], aa->width, -aa->height, 24);
     abcdk_torch_image_free_host(&aa);
@@ -45,8 +45,8 @@ int abcdk_test_torch_1(abcdk_option_t *args)
     assert(chk == 0);
 
     // abcdk_bmp_save_file("/tmp/test.cuda.a.bmp",a->data[0],a->stride[0],a->width,a->height,24);
-    abcdk_torch_image_save("/tmp/test.cuda.a3.bmp", a);
-    abcdk_torch_image_save("/tmp/test.cuda.b.bmp", b);
+    abcdk_torch_imgcode_save("/tmp/test.cuda.a3.jmp", a);
+    abcdk_torch_imgcode_save("/tmp/test.cuda.b.bmp", b);
 
    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV420P, 567);
    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV422P, 567);
@@ -65,13 +65,13 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_image_convert(d, c);
 
-    abcdk_torch_image_save("/tmp/test.cuda.d.bmp", d);
+    abcdk_torch_imgcode_save("/tmp/test.cuda.d.jmp", d);
 
     abcdk_torch_image_t *e = abcdk_torch_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
     abcdk_torch_imgproc_resize(e, NULL, d, NULL, 1, NPPI_INTER_CUBIC);
 
-    abcdk_torch_image_save("/tmp/test.cuda.e.bmp", e);
+    abcdk_torch_imgcode_save("/tmp/test.cuda.e.jmp", e);
 
     abcdk_torch_image_t *f = abcdk_torch_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
@@ -86,12 +86,10 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, NPPI_INTER_CUBIC);
 
-    abcdk_torch_image_save("/tmp/test.cuda.f.bmp", f);
+    abcdk_torch_imgcode_save("/tmp/test.cuda.f.jpg", f);
+    // abcdk_torch_imgcode_save("/tmp/test.cuda.f2.jpg", f);
 
-    abcdk_torch_jcodec_save("/tmp/test.cuda.f.jpg", f);
-    // abcdk_torch_jcodec_save("/tmp/test.cuda.f2.jpg", f);
-
-    // abcdk_torch_image_save("/tmp/test.cuda.f2.bmp", f);
+    // abcdk_torch_imgcode_save("/tmp/test.cuda.f2.bmp", f);
 
     abcdk_torch_image_free(&a);
     abcdk_torch_image_free(&b);
@@ -102,12 +100,11 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     for (int i = 0; i < 10; i++)
     {
-        abcdk_torch_image_t *g = abcdk_torch_jcodec_load("/tmp/test.cuda.f.jpg");
+        abcdk_torch_image_t *g = abcdk_torch_imgcode_load("/tmp/test.cuda.f.jpg");
 
         abcdk_torch_imgproc_drawrect(g, color, 3, corner);
 
-        abcdk_torch_image_save("/tmp/test.cuda.g2.bmp", g);
-        abcdk_torch_jcodec_save("/tmp/test.cuda.g2.jpg", g);
+        abcdk_torch_imgcode_save("/tmp/test.cuda.g2.jpg", g);
 
         abcdk_torch_image_free(&g);
     }
@@ -152,7 +149,7 @@ int abcdk_test_torch_2(abcdk_option_t *args)
 
     abcdk_torch_jcodec_start(jpeg_w,&jpeg_param);
 
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 100; i++)
     {
         int chk = abcdk_ffeditor_read_packet(r, &r_pkt, r_video_steam->index);
         if (chk < 0)
@@ -277,7 +274,7 @@ int abcdk_test_torch_3(abcdk_option_t *args)
 
     av_packet_unref(&r_pkt);
 
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < 100; i++)
     {
         abcdk_torch_frame_t *r_fae = NULL;
         AVPacket *w_pkt = NULL;
@@ -286,7 +283,7 @@ int abcdk_test_torch_3(abcdk_option_t *args)
         int chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
         if (chk < 0)
             break;
-        else if (chk > 0)
+        else //if (chk > 0)
         {
             chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk <= 0)

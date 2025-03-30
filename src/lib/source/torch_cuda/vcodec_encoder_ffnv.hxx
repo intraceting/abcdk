@@ -264,7 +264,7 @@ namespace abcdk
                     m_vInputFrames.resize(m_nEncoderBuffer);
                     for (int i = 0; i < m_vInputFrames.size(); i++)
                     {
-                        m_vInputFrames[i] = abcdk_torch_image_create(m_params.encodeWidth, m_params.encodeHeight, ABCDK_TORCH_PIXFMT_RGB32, 1);
+                        m_vInputFrames[i] = abcdk_torch_image_create_cuda(m_params.encodeWidth, m_params.encodeHeight, ABCDK_TORCH_PIXFMT_RGB32, 1);
 
                         NV_ENC_REGISTER_RESOURCE registerResource = {NV_ENC_REGISTER_RESOURCE_VER};
                         registerResource.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR;
@@ -294,7 +294,7 @@ namespace abcdk
 
                     /*数组内的成员是指针对象，必须逐个释放。*/
                     for (auto &t : m_vInputFrames)
-                        abcdk_torch_image_free(&t);
+                        abcdk_torch_image_free_cuda(&t);
 
                     m_vInputFrames.clear();
                 }

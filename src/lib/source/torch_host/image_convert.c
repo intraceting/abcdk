@@ -5,6 +5,7 @@
  *
  */
 #include "abcdk/torch/image.h"
+#include "abcdk/ffmpeg/swscale.h"
 
 #ifdef SWSCALE_SWSCALE_H
 
