@@ -79,7 +79,7 @@ int abcdk_torch_imgcode_save_host(const char *dst, const abcdk_torch_image_t *sr
     return -1;
 }
 
-abcdk_torch_image_t *abcdk_torch_imgcode_load_host(const char *src, int gray)
+abcdk_torch_image_t *abcdk_torch_imgcode_load_host(const char *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return NULL;

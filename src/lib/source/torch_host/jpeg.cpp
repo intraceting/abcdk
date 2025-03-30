@@ -249,7 +249,7 @@ abcdk_torch_image_t *abcdk_torch_jcodec_decode_host(abcdk_torch_jcodec_t *ctx, c
     return NULL;
 }
 
-abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_host(abcdk_torch_jcodec_t *ctx, const void *src)
+abcdk_torch_image_t *abcdk_torch_jcodec_decode_from_file_host(abcdk_torch_jcodec_t *ctx, const char *src)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return NULL;
