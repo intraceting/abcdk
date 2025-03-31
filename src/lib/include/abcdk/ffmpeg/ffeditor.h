@@ -18,7 +18,7 @@ __BEGIN_DECLS
 
 #if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
-/**简的视音编辑。*/
+/**简单的视音编辑。*/
 typedef struct _abcdk_ffeditor abcdk_ffeditor_t;
 
 /**配置。*/
