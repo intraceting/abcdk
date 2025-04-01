@@ -162,8 +162,8 @@ int abcdk_torch_stitcher_estimate_cuda(abcdk_torch_stitcher_t *ctx, int count, a
             dst_mask.create(src_mask->height, src_mask->width, CV_8UC(src_depth));
 
             /*从设备复制到主机。*/
-            abcdk_torch_memcpy_2d_cuda(dst_mask.data, dst_mask.step, dst_mask.cols * src_depth, dst_mask.rows, 1,
-                                       src_mask->data[0], src_mask->stride[0], src_mask->width * src_depth, src_mask->height, 0,
+            abcdk_torch_memcpy_2d_cuda(dst_mask.data, dst_mask.step, 0,0, 1,
+                                       src_mask->data[0], src_mask->stride[0], 0, 0, 0,
                                        src_mask->width * src_depth, src_mask->height);
         }
     }
