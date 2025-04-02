@@ -161,6 +161,6 @@
 #include "abcdk/torch/opencv.h"
 #include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/stitcher.h"
-#include "abcdk/torch/freetype.h"
+
 
 #endif //ABCDK_H
