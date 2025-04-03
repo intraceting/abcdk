@@ -461,9 +461,9 @@ int _abcdk_receiver_check_weight(abcdk_receiver_t *ctx, size_t *diff)
         chk = _abcdk_receiver_check_weight_chunked(ctx, diff);
     else if (ctx->protocol == ABCDK_RECEIVER_PROTO_RTCP)
         chk = _abcdk_receiver_check_weight_rtcp(ctx, diff);
-    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB)
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_NBT)
         chk = _abcdk_receiver_check_weight_smb(ctx, diff);
-    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB_HALF)
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_NBT_HALF)
         chk = _abcdk_receiver_check_weight_smb_half(ctx, diff);
     else
         chk = -1;
@@ -557,7 +557,7 @@ size_t abcdk_receiver_header_length(abcdk_receiver_t *ctx)
         l = ctx->hdr_len;
     else if (ctx->protocol == ABCDK_RECEIVER_PROTO_RTCP)
         l = 4;
-    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB)
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_NBT)
         l = 4;
     else 
         l = 0;
@@ -577,7 +577,7 @@ size_t abcdk_receiver_body_length(abcdk_receiver_t *ctx)
         l = ctx->body_len;
     else if (ctx->protocol == ABCDK_RECEIVER_PROTO_RTCP)
         l = ctx->offset - 4;
-    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_SMB)
+    else if (ctx->protocol == ABCDK_RECEIVER_PROTO_NBT)
         l = ctx->offset - 4;
     else 
         l = ctx->offset;

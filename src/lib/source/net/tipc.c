@@ -674,7 +674,7 @@ static void _abcdk_tipc_input_cb(abcdk_stcp_node_t *node, const void *data, size
     *remain = 0;
 
     if (!node_ctx_p->req_data)
-        node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_SMB, 16 * 1024 * 1024, NULL);
+        node_ctx_p->req_data = abcdk_receiver_alloc(ABCDK_RECEIVER_PROTO_NBT, 16 * 1024 * 1024, NULL);
 
     if (!node_ctx_p->req_data)
         goto ERR;

@@ -150,7 +150,7 @@ int abcdk_test_fmp4(abcdk_option_t *args)
     cfg.stream_output_cb = stream_output_cb;
     cfg.req_max_size = 123456789;
     cfg.req_tmp_path = NULL;
-    cfg.name = "test_fmp4";
+    cfg.name = "test_fmp4.mp4";
     cfg.realm = "httpd";
     cfg.auth_path = NULL;
     cfg.a_c_a_o = "*";
