@@ -410,9 +410,9 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
         codecpar = vs_p->codecpar;
 #endif
 
-        /*复制帧率。有问题，在未找到原因之前，不能启用。*/
-        // vs_p->avg_frame_rate = src_vs_p->avg_frame_rate;
-        // vs_p->r_frame_rate = src_vs_p->r_frame_rate;
+        /*复制帧率。*/
+        vs_p->avg_frame_rate = src_vs_p->avg_frame_rate;
+        vs_p->r_frame_rate = src_vs_p->r_frame_rate;
 
         /*也许没有视频流。*/
         if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
@@ -605,7 +605,7 @@ static void _abcdk_ffmpeg_nvr_process(abcdk_ffmpeg_nvr_t *ctx)
 
     src_item_p->ff_cfg.file_name = src_item_p->cfg.u.src.url;
     src_item_p->ff_cfg.short_name = src_item_p->cfg.u.src.fmt;
-    src_item_p->ff_cfg.bit_stream_filter = 1;
+    src_item_p->ff_cfg.bit_stream_filter = 0; // 不进解码器，这个不需要。
     src_item_p->ff_cfg.read_speed = src_item_p->cfg.u.src.speed;
     src_item_p->ff_cfg.read_delay_max = src_item_p->cfg.u.src.delay_max;
     src_item_p->ff_cfg.timeout = src_item_p->cfg.u.src.timeout;
