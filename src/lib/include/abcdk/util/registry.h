@@ -105,6 +105,29 @@ void abcdk_registry_wrlock(abcdk_registry_t *ctx);
 /**解锁。 */
 int abcdk_registry_unlock(abcdk_registry_t *ctx,int exitcode);
 
+/**删除。*/
+void abcdk_registry_remove_safe(abcdk_registry_t *ctx, const void *key);
+
+/**
+ * 插入。
+ *
+ * @note 返回值会增加引用计数。
+ */
+abcdk_context_t *abcdk_registry_insert_safe(abcdk_registry_t *ctx, const void *key, size_t userdata);
+
+/**
+ * 查找。
+ *
+ * @note 返回值会增加引用计数。
+ */
+abcdk_context_t *abcdk_registry_lookup_safe(abcdk_registry_t *ctx, const void *key);
+
+/**
+ * 监视(遍历)。
+ *
+ * @note 返回值会增加引用计数。
+ */
+abcdk_context_t *abcdk_registry_next_safe(abcdk_registry_t *ctx, void **it);
 
 __END_DECLS
 

@@ -39,6 +39,9 @@ void abcdk_context_wrlock(abcdk_context_t *ctx);
 /**解锁。 */
 int abcdk_context_unlock(abcdk_context_t *ctx,int exitcode);
 
+/**解锁并释放。 */
+int abcdk_context_unlock_unref(abcdk_context_t **ctx,int exitcode);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_CONTEXT_H

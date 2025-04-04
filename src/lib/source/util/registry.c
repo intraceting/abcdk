@@ -337,3 +337,65 @@ int abcdk_registry_unlock(abcdk_registry_t *ctx,int exitcode)
 
     return exitcode;
 }
+
+void abcdk_registry_remove_safe(abcdk_registry_t *ctx, const void *key)
+{
+    assert(ctx != NULL && key != NULL);
+
+    abcdk_registry_wrlock(ctx);
+
+    abcdk_registry_remove(ctx, key);
+
+    abcdk_registry_unlock(ctx, 0);
+}
+
+abcdk_context_t *abcdk_registry_insert_safe(abcdk_registry_t *ctx, const void *key, size_t userdata)
+{
+    abcdk_context_t *userdata_p = NULL;
+
+    assert(ctx != NULL && key != NULL);
+
+    abcdk_registry_wrlock(ctx);
+
+    userdata_p = abcdk_registry_insert(ctx, key, userdata);
+    if (userdata_p)
+        userdata_p = abcdk_context_refer(userdata_p); /*增加引用计数。*/
+
+    abcdk_registry_unlock(ctx, 0);
+
+    return userdata_p;
+}
+
+abcdk_context_t *abcdk_registry_lookup_safe(abcdk_registry_t *ctx, const void *key)
+{
+    abcdk_context_t *userdata_p = NULL;
+
+    assert(ctx != NULL && key != NULL);
+
+    abcdk_registry_rdlock(ctx);
+
+    userdata_p = abcdk_registry_lookup(ctx, key);
+    if (userdata_p)
+        userdata_p = abcdk_context_refer(userdata_p); /*增加引用计数。*/
+
+    abcdk_registry_unlock(ctx, 0);
+
+    return userdata_p;
+}
+
+abcdk_context_t *abcdk_registry_next_safe(abcdk_registry_t *ctx, void **it)
+{
+    abcdk_context_t *userdata_p = NULL;
+
+    assert(ctx != NULL && it != NULL);
+
+    abcdk_registry_rdlock(ctx);
+
+    userdata_p = abcdk_registry_next(ctx, it);
+    if (userdata_p)
+        userdata_p = abcdk_context_refer(userdata_p); /*增加引用计数。*/
+
+    abcdk_registry_unlock(ctx, 0);
+
+    return userdata_p;
+}

@@ -482,6 +482,7 @@ int abcdk_avformat_output_write(AVFormatContext *ctx, AVPacket *pkt, int tracks,
     assert(ctx != NULL && pkt != NULL && tracks >= 1);
 
     chk = (tracks > 1 ? av_interleaved_write_frame(ctx, pkt) : av_write_frame(ctx, pkt));
+    //chk = av_interleaved_write_frame(ctx, pkt);
     if(chk != 0)
         return -1;
 

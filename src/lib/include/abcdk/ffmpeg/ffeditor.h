@@ -49,6 +49,7 @@ typedef struct _abcdk_ffeditor_config
 
         /** 写回调。 */
         int (*write_cb)(void *opaque, uint8_t *buf, int size);
+
     } io;
 
     /** 超时(秒)。*/

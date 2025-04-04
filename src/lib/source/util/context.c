@@ -126,3 +126,14 @@ int abcdk_context_unlock(abcdk_context_t *ctx,int exitcode)
 
     return exitcode;
 }
+
+int abcdk_context_unlock_unref(abcdk_context_t **ctx,int exitcode)
+{
+    assert(ctx != NULL && *ctx != NULL);
+
+    abcdk_rwlock_unlock((*ctx)->locker_ctx);
+    abcdk_context_unref(ctx);
+
+    return exitcode;
+}
+

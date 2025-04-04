@@ -61,6 +61,9 @@ struct _abcdk_ffeditor
     /** 读最近帧分组的时间(系统时间，微秒)。 */
     uint64_t read_gop_ns[ABCDK_FFMPEG_MAX_STREAMS];
 
+    /** 写最后DTS。*/
+    int64_t write_last_dts[ABCDK_FFMPEG_MAX_STREAMS];
+
     /** 流容器。*/
     AVFormatContext *avctx;
 
@@ -152,6 +155,7 @@ static abcdk_ffeditor_t *_abcdk_ffeditor_alloc()
         ctx->read_start[i] = UINT64_MAX;
         ctx->read_key_ns[i] = UINT64_MAX;
         ctx->read_gop_ns[i] = UINT64_MAX;
+        ctx->write_last_dts[i] = (int64_t)AV_NOPTS_VALUE;
     }
 
     av_init_packet(&ctx->read_pkt);
@@ -1061,6 +1065,17 @@ int abcdk_ffeditor_write_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, AVRational
 #endif 
 
     pkt->pos = -1;
+
+    /* 确保DTS单调递增(简单修复) */
+    if (pkt->dts <= ctx->write_last_dts[pkt->stream_index])
+        pkt->dts = ctx->write_last_dts[pkt->stream_index] + 1;
+
+    /* 记录最新的DTS*/
+    ctx->write_last_dts[pkt->stream_index] = pkt->dts;
+
+    /* 确保 DTS <= PTS */
+    if (pkt->dts > pkt->pts)
+        pkt->dts = pkt->pts;
 
     chk = abcdk_avformat_output_write(ctx->avctx, pkt, ctx->avctx->nb_streams, ctx->cfg.write_flush);
 

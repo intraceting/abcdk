@@ -15,12 +15,14 @@
 
 typedef struct _node
 {
-    abcdk_ffserver_config_t live_cfg;
-    abcdk_ffserver_task_t *task_ctx;
-    abcdk_stream_t *live_buf;
-}node_t;
+    /**流缓存。*/
+    abcdk_stream_t *buf;
 
-static abcdk_ffserver_t *g_ffserver_ctx = NULL;
+    abcdk_ffmpeg_nvr_config_t live_cfg;
+    char task_id[33];
+} node_t;
+
+static abcdk_ffmpeg_nvr_t *g_ff_nvr_ctx = NULL;
 
 
 static void session_prepare_cb(void *opaque, abcdk_https_session_t **session, abcdk_https_session_t *listen)
@@ -52,7 +54,7 @@ static void stream_destructor_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
-    abcdk_stream_destroy(&p->live_buf);
+    abcdk_stream_destroy(&p->buf);
     abcdk_heap_free(p);
 }
 
@@ -62,16 +64,18 @@ static void stream_construct_cb(void *opaque, abcdk_https_stream_t *stream)
     node_t * p = abcdk_heap_alloc(sizeof(node_t));
 
     abcdk_https_set_userdata(stream,p);
+
+    p->buf = abcdk_stream_create();
 }
 
 static void stream_close_cb(void *opaque,abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
-    abcdk_ffserver_task_del(g_ffserver_ctx,&p->task_ctx);
+    abcdk_ffmpeg_nvr_task_del(g_ff_nvr_ctx,p->task_id);
 }
 
-static void _live_delete_cb(void *opaque)
+static void _live_remove_cb(void *opaque)
 {
     abcdk_https_stream_t *stream_p =(abcdk_https_stream_t *)opaque;
 
@@ -89,15 +93,15 @@ static void stream_request_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t*)abcdk_https_get_userdata(stream);
 
-    p->live_buf = abcdk_stream_create();
-    p->live_cfg.flag = 3;
-    p->live_cfg.u.live.buf = p->live_buf;
-    p->live_cfg.u.live.delay_max = 3.0;
+    p->live_cfg.opaque = abcdk_https_refer(stream);
+    p->live_cfg.flag = ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE;
     p->live_cfg.u.live.ready_cb = _live_ready_cb;
-    p->live_cfg.u.live.delete_cb = _live_delete_cb;
-    p->live_cfg.u.live.opaque = abcdk_https_refer(stream);
+    p->live_cfg.u.live.delay_max = 3.0;
+    p->live_cfg.u.live.buf = p->buf;
 
-    p->task_ctx = abcdk_ffserver_task_add(g_ffserver_ctx,&p->live_cfg);
+    abcdk_rand_bytes(p->task_id,32,1);
+
+    abcdk_ffmpeg_nvr_task_add(g_ff_nvr_ctx,p->task_id, &p->live_cfg);
 
     abcdk_https_response_header_set(stream, "Status","%d",200);
     abcdk_https_response_header_set(stream, "Content-Type","%s","video/mp4");
@@ -111,20 +115,23 @@ static void stream_output_cb(void *opaque, abcdk_https_stream_t *stream)
 {
     node_t *p = (node_t *)abcdk_https_get_userdata(stream);
 
-    abcdk_object_t *buf = abcdk_object_alloc2(1000000);
+    abcdk_object_t *data = abcdk_object_alloc2(10000);
 
-    int rlen = abcdk_stream_read(p->live_buf, buf->pptrs[0], buf->sizes[0]);
-    if (rlen > 0)
+    int chk = abcdk_stream_read(p->buf, data->pptrs[0], data->sizes[0]);
+    if (chk > 0)
     {
-        buf->sizes[0] = rlen;
-        abcdk_https_response(stream, buf);
+        data->sizes[0] = chk;
+
+        chk = abcdk_https_response(stream, data);
+        if (chk != 0)
+            abcdk_object_unref(&data);
     }
     else
     {
-        abcdk_object_unref(&buf);
+        abcdk_object_unref(&data);
     }
 
-    abcdk_ffserver_task_heartbeat(g_ffserver_ctx,p->task_ctx);
+    abcdk_ffmpeg_nvr_task_heartbeat(g_ff_nvr_ctx, p->task_id);
 }
 
 int abcdk_test_fmp4(abcdk_option_t *args)
@@ -159,9 +166,9 @@ int abcdk_test_fmp4(abcdk_option_t *args)
 
     abcdk_https_session_listen(listen_p,&listen_addr,&cfg);
 
-    abcdk_ffserver_config_t src_cfg ={0};
-    abcdk_ffserver_config_t record_cfg ={0};
-    abcdk_ffserver_config_t push_cfg ={0};
+    abcdk_ffmpeg_nvr_config_t src_cfg ={0};
+    abcdk_ffmpeg_nvr_config_t record_cfg ={0};
+    abcdk_ffmpeg_nvr_config_t push_cfg ={0};
 
     src_cfg.u.src.url = abcdk_option_get(args,"--src",0,"");
     src_cfg.u.src.speed = 1.0;
@@ -170,26 +177,34 @@ int abcdk_test_fmp4(abcdk_option_t *args)
 
 
 
-    g_ffserver_ctx = abcdk_ffserver_create(&src_cfg);
+    g_ff_nvr_ctx = abcdk_ffmpeg_nvr_create(&src_cfg);
 
     record_cfg.flag = 1;
     record_cfg.u.record.prefix = "/tmp/cccc/cccc_";
     record_cfg.u.record.count = 10;
-    record_cfg.u.record.duration = 5;
+    record_cfg.u.record.duration = 60;
+
+    char record_id[33] = {0};
+    abcdk_rand_bytes(record_id,32,1);
 
     push_cfg.flag = 2;
-    push_cfg.u.push.url = "rtmp://192.168.100.96/live/cccc";
-    push_cfg.u.push.fmt = "rtmp";
+  //  push_cfg.u.push.url = "rtmp://192.168.100.96/live/cccc";
+  //  push_cfg.u.push.fmt = "rtmp";
+    push_cfg.u.push.url = "rtsp://192.168.100.96/live/cccc";
+    push_cfg.u.push.fmt = "rtsp";
 
-    abcdk_ffserver_task_add(g_ffserver_ctx,&record_cfg);
-    abcdk_ffserver_task_add(g_ffserver_ctx,&push_cfg);
+    char push_id[33] = {0};
+    abcdk_rand_bytes(push_id,32,1);
+
+    abcdk_ffmpeg_nvr_task_add(g_ff_nvr_ctx,record_id,&record_cfg);
+    abcdk_ffmpeg_nvr_task_add(g_ff_nvr_ctx,push_id,&push_cfg);
 
     /*等待终止信号。*/
     abcdk_proc_wait_exit_signal(-1);
 
 final:
 
-    abcdk_ffserver_destroy(&g_ffserver_ctx);
+    abcdk_ffmpeg_nvr_destroy(&g_ff_nvr_ctx);
 
     abcdk_https_destroy(&io_ctx);
     abcdk_https_session_unref(&listen_p);
