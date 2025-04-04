@@ -16,11 +16,12 @@ typedef struct _abcdk_ffmpeg_nvr_item
 
     /*初始状态。*/
     int init_status;
-
+    
     uint64_t session;
     int closing;
     int64_t open_count;
     int64_t user_active;
+    uint64_t open_next;
 
     abcdk_ffeditor_config_t ff_cfg;
     abcdk_ffeditor_t *ff_ctx;
@@ -322,10 +323,15 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
             abcdk_trace_printf(LOG_INFO, TT("关闭输出环境(%s)。"), dst_item->tip);
         }
 
+
         if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_REC)
         {
             /*录像分段，同时删除较早的录像文件。*/
             abcdk_file_segment(dst_item->record_path_file, dst_item->record_segment_file, dst_item->cfg.u.record.count, 1, dst_item->record_segment_pos);
+        }
+        else if(dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_PUSH)
+        {
+            dst_item->open_next = abcdk_time_systime(0) + 5;
         }
         else if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE)
         {
@@ -355,6 +361,10 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
     {
         dst_item->ff_cfg.file_name = dst_item->cfg.u.push.url;
         dst_item->ff_cfg.short_name = dst_item->cfg.u.push.fmt;
+
+        /*推流重试不需要太频繁。*/
+        if (abcdk_time_systime(0) < dst_item->open_next)
+            return -15;
     }
     else if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE)
     {
