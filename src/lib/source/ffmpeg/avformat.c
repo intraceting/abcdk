@@ -267,6 +267,9 @@ int abcdk_avformat_input_filter(AVFormatContext *ctx, AVPacket *pkt, AVBSFContex
             return -1;
 
         avcodec_parameters_copy(filter_p->par_in, codecpar);
+
+        av_opt_set_int(filter_p, "pps_id", -1, 0); // 只修复超出范围的ID。-1 表示保留原始ID，除非无效。
+
         av_bsf_init(filter_p);
 
         /*保存过滤器环境指针。*/
