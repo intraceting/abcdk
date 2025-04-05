@@ -1068,18 +1068,14 @@ int abcdk_ffeditor_write_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, AVRational
 
     cq = vs_p->time_base;
 
-#if 0
-    pkt->dts = av_rescale_q(pkt->dts, bq, cq);
-    pkt->pts = av_rescale_q(pkt->pts, bq, cq);
-	pkt->duration = av_rescale_q(pkt->duration, bq, cq);
-#else
-    pkt->dts = av_rescale_q_rnd(pkt->dts, bq, cq,
-                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-    pkt->pts = av_rescale_q_rnd(pkt->pts, bq, cq,
-                                AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-    pkt->duration = av_rescale_q(pkt->duration, bq, cq);
-#endif 
+    /*修复错误的时长。*/
+    if (pkt->duration == 0)
+        pkt->duration = av_rescale_q(1, vs_p->time_base, AV_TIME_BASE_Q);
 
+    /**/
+    pkt->dts = av_rescale_q_rnd(pkt->dts, bq, cq, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+    pkt->pts = av_rescale_q_rnd(pkt->pts, bq, cq, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+    pkt->duration = av_rescale_q(pkt->duration, bq, cq);
     pkt->pos = -1;
 
     /* 确保DTS单调递增(简单修复) */

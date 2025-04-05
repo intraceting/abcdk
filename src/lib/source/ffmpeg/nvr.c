@@ -542,7 +542,6 @@ static void _abcdk_ffmpeg_nvr_process(abcdk_ffmpeg_nvr_t *ctx)
 {
     const char *tip_p;
     abcdk_ffmpeg_nvr_item_t *src_item_p;
-    AVStream *vs_p = NULL;
     AVPacket pkt = {0};
     uint64_t retry_count = 0;
     int chk;
@@ -597,12 +596,7 @@ LOOP:
     if (chk < 0)
         goto RETRY;
 
-    vs_p = abcdk_ffeditor_streamptr(src_item_p->ff_ctx, pkt.stream_index);
-
-    /*修复错误的时长。*/
-    if (pkt.duration == 0)
-        pkt.duration = av_rescale_q(1, vs_p->time_base, AV_TIME_BASE_Q);
-
+    /**/
     _abcdk_ffmpeg_nvr_write(ctx, &pkt);
     av_packet_unref(&pkt);
 
