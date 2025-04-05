@@ -20,7 +20,6 @@ typedef struct _abcdk_ffmpeg_nvr_item
     uint64_t session;
     int closing;
     int64_t open_count;
-    int64_t user_active;
     uint64_t open_next;
 
     abcdk_ffeditor_config_t ff_cfg;
@@ -30,13 +29,12 @@ typedef struct _abcdk_ffmpeg_nvr_item
     int64_t read_key_ns[16];
     int64_t read_gop_ns[16];
     int video_have;
+    int first_key_ok;
 
     char record_path_file[PATH_MAX];
     char record_segment_file[PATH_MAX];
     uint64_t record_segment_start;
     uint64_t record_segment_pos[2];
-
-    abcdk_stream_t *live_buf;
 
     char tip[PATH_MAX];
 
@@ -50,7 +48,7 @@ struct _abcdk_ffmpeg_nvr
 
     /**工作线程。 */
     abcdk_thread_t worker_thread;
-
+    
     /**数据目标。*/
     abcdk_registry_config_t dst_cfg;
     abcdk_registry_t *dst_item;
@@ -60,19 +58,30 @@ struct _abcdk_ffmpeg_nvr
 
 }; // abcdk_ffmpeg_nvr_t;
 
-static void _abcdk_ffmpeg_nvr_item_remove_cb(const void *key, abcdk_context_t *userdata, void *opaque)
+static uint64_t _abcdk_ffmpeg_nvr_item_key_size_cb(const void *key, void *opaque)
+{
+    return sizeof(uint64_t);
+}
+
+static int _abcdk_ffmpeg_nvr_item_key_compare_cb(const void *key1, const void *key2, void *opaque)
+{
+    if (ABCDK_PTR2U64(key1, 0) == ABCDK_PTR2U64(key2, 0))
+        return 0;
+    if (ABCDK_PTR2U64(key1, 0) > ABCDK_PTR2U64(key2, 0))
+        return 1;
+    if (ABCDK_PTR2U64(key1, 0) < ABCDK_PTR2U64(key2, 0))
+        return -1;
+}
+
+static void _abcdk_ffmpeg_nvr_item_key_remove_cb(const void *key, abcdk_context_t *userdata, void *opaque)
 {
     abcdk_ffmpeg_nvr_item_t *item_ctx_p;
 
     item_ctx_p = (abcdk_ffmpeg_nvr_item_t *)abcdk_context_get_userdata(userdata);
 
-    if (item_ctx_p->cfg.remove_cb)
-        item_ctx_p->cfg.remove_cb(item_ctx_p->cfg.opaque);
-
     abcdk_ffeditor_destroy(&item_ctx_p->ff_ctx);
-    abcdk_stream_destroy(&item_ctx_p->live_buf);
 
-    abcdk_trace_printf(LOG_INFO, TT("任务(%s)被删除。"), key);
+    abcdk_trace_printf(LOG_INFO, TT("任务(%lld)被删除。"), ABCDK_PTR2U64(key, 0));
 }
 
 static int _abcdk_ffmpeg_nvr_item_init(abcdk_ffmpeg_nvr_item_t *item_ctx, abcdk_ffmpeg_nvr_config_t *cfg)
@@ -119,19 +128,6 @@ static int _abcdk_ffmpeg_nvr_item_init(abcdk_ffmpeg_nvr_item_t *item_ctx, abcdk_
         else
             snprintf(item_ctx->tip, PATH_MAX, "%s", item_ctx->cfg.u.push.url);
     }
-    else if (item_ctx->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE)
-    {
-        /*修复不支持的参数。*/
-        item_ctx->cfg.u.live.delay_max = ABCDK_CLAMP(item_ctx->cfg.u.live.delay_max, (float)0.300, (float)4.999);
-
-        if (item_ctx->cfg.tip && !*item_ctx->cfg.tip)
-            snprintf(item_ctx->tip, PATH_MAX, "%s", item_ctx->cfg.tip);
-        else
-            snprintf(item_ctx->tip, PATH_MAX, "%s", "FMP4 Live Streaming");
-
-        /*引用对象。*/
-        item_ctx->live_buf = abcdk_stream_refer(item_ctx->cfg.u.live.buf);
-    }
     else
     {
         return -1;
@@ -141,7 +137,7 @@ static int _abcdk_ffmpeg_nvr_item_init(abcdk_ffmpeg_nvr_item_t *item_ctx, abcdk_
     item_ctx->session = 0;
     item_ctx->video_have = 0;
     item_ctx->open_count = 0;
-    item_ctx->user_active = abcdk_time_systime(6);
+    item_ctx->open_next = 0;
 
     return 0;
 }
@@ -200,7 +196,9 @@ abcdk_ffmpeg_nvr_t *abcdk_ffmpeg_nvr_create(abcdk_ffmpeg_nvr_config_t *cfg)
 
     ctx->dst_cfg.enable_watch = 1;
     ctx->dst_cfg.opaque = ctx;
-    ctx->dst_cfg.key_remove_cb = _abcdk_ffmpeg_nvr_item_remove_cb;
+    ctx->dst_cfg.key_size_cb = _abcdk_ffmpeg_nvr_item_key_size_cb;
+    ctx->dst_cfg.key_compare_cb = _abcdk_ffmpeg_nvr_item_key_compare_cb;
+    ctx->dst_cfg.key_remove_cb = _abcdk_ffmpeg_nvr_item_key_remove_cb;
     ctx->dst_item = abcdk_registry_create(&ctx->dst_cfg);
     if (!ctx->dst_item)
         goto ERR;
@@ -221,23 +219,24 @@ ERR:
     return NULL;
 }
 
-void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, const char *id)
+void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, uint64_t id)
 {
-    assert(ctx != NULL && id != NULL);
+    assert(ctx != NULL && id != 0);
 
-    abcdk_registry_remove_safe(ctx->dst_item, id);
+    abcdk_registry_remove_safe(ctx->dst_item, &id);
 }
 
-int abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, const char *id, abcdk_ffmpeg_nvr_config_t *cfg)
+uint64_t abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_config_t *cfg)
 {
     abcdk_context_t *item_p;
     abcdk_ffmpeg_nvr_item_t *item_ctx_p;
+    uint64_t id = abcdk_sequence_num();
     int chk;
 
-    assert(ctx != NULL && id != NULL && cfg != NULL);
-    assert(cfg->flag == ABCDK_FFMPEG_NVR_CFG_FLAG_REC || cfg->flag == ABCDK_FFMPEG_NVR_CFG_FLAG_PUSH || cfg->flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE);
+    assert(ctx != NULL && cfg != NULL);
+    assert(cfg->flag == ABCDK_FFMPEG_NVR_CFG_FLAG_REC || cfg->flag == ABCDK_FFMPEG_NVR_CFG_FLAG_PUSH);
 
-    item_p = abcdk_registry_insert_safe(ctx->dst_item, id, sizeof(abcdk_ffmpeg_nvr_item_t));
+    item_p = abcdk_registry_insert_safe(ctx->dst_item, &id, sizeof(abcdk_ffmpeg_nvr_item_t));
     if (!item_p)
         return -1;
 
@@ -247,55 +246,22 @@ int abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, const char *id, abcdk_ffm
 
     if (item_ctx_p->init_status != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, TT("任务ID(%s)已经存在。"), id);
-        return abcdk_context_unlock_unref(&item_p, -1);
+        abcdk_trace_printf(LOG_WARNING, TT("任务ID(%llu)已经存在。"), id);
+        return abcdk_context_unlock_unref(&item_p, 0);
     }
 
     chk = _abcdk_ffmpeg_nvr_item_init(item_ctx_p, cfg);
     if (chk != 0)
     {
-        abcdk_registry_remove_safe(ctx->dst_item, id);
-        return abcdk_context_unlock_unref(&item_p, -1);
+        abcdk_registry_remove_safe(ctx->dst_item, &id);
+        return abcdk_context_unlock_unref(&item_p, 0);
     }
 
-    abcdk_trace_printf(LOG_INFO, TT("任务(%s)已创建。"), id);
-
-    return abcdk_context_unlock_unref(&item_p, 0);
-}
-
-void abcdk_ffmpeg_nvr_task_heartbeat(abcdk_ffmpeg_nvr_t *ctx, const char *id)
-{
-    abcdk_context_t *item_p = NULL;
-    abcdk_ffmpeg_nvr_item_t *item_ctx_p = NULL;
-
-    assert(ctx != NULL && id != NULL);
-
-    item_p = abcdk_registry_lookup_safe(ctx->dst_item, id);
-    if (!item_p)
-        return;
-
-    abcdk_context_wrlock(item_p);
-
-    item_ctx_p = (abcdk_ffmpeg_nvr_item_t *)abcdk_context_get_userdata(item_p);
-
-    abcdk_atomic_store(&item_ctx_p->user_active, abcdk_time_systime(6));
+    abcdk_trace_printf(LOG_INFO, TT("任务(%llu)已创建。"), id);
 
     abcdk_context_unlock_unref(&item_p, 0);
-}
 
-int _abcdk_ffmpeg_nvr_live_write_packet_cb(void *opaque, uint8_t *buf, int buf_size)
-{
-    abcdk_ffmpeg_nvr_item_t *item_ctx_p = (abcdk_ffmpeg_nvr_item_t*)opaque;
-    int chk;
-    
-    chk = abcdk_stream_write_buffer(item_ctx_p->live_buf,buf,buf_size);
-    if(chk != 0)
-        return -1;
-
-    if(item_ctx_p->cfg.u.live.ready_cb)
-        item_ctx_p->cfg.u.live.ready_cb(item_ctx_p->cfg.opaque);
-
-    return buf_size;
+    return id;
 }
 
 static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_item_t *dst_item)
@@ -323,7 +289,6 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
             abcdk_trace_printf(LOG_INFO, TT("关闭输出环境(%s)。"), dst_item->tip);
         }
 
-
         if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_REC)
         {
             /*录像分段，同时删除较早的录像文件。*/
@@ -331,13 +296,9 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
         }
         else if(dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_PUSH)
         {
-            dst_item->open_next = abcdk_time_systime(0) + 5;
-        }
-        else if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE)
-        {
-            /*直播不能重新打开，需要应用层主动创建新行务。*/
+            /*推流重试不需要太频繁，间隔5秒。*/
             if (dst_item->open_count > 0)
-                dst_item->closing = 1;
+                dst_item->open_next = abcdk_time_systime(0) + 5;
         }
     }
 
@@ -365,12 +326,6 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
         /*推流重试不需要太频繁。*/
         if (abcdk_time_systime(0) < dst_item->open_next)
             return -15;
-    }
-    else if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE)
-    {
-        dst_item->ff_cfg.io.opaque = dst_item;
-        dst_item->ff_cfg.io.write_cb = _abcdk_ffmpeg_nvr_live_write_packet_cb;
-        dst_item->ff_cfg.short_name = "mp4";
     }
 
     abcdk_trace_printf(LOG_INFO, TT("创建输出环境(%s)..."), dst_item->tip);
@@ -428,8 +383,11 @@ static int _abcdk_ffmpeg_nvr_dst_init(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_
         goto ERR;
     }
 
-    /*+1*/
+    /*打开次数累加。*/
     dst_item->open_count += 1;
+
+    /*clear old flag.*/
+    dst_item->first_key_ok = 0;
 
     if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_REC)
     {
@@ -486,6 +444,23 @@ RECORD_SEGMENT_NEW:
 #else
     codecpar = vs_p->codecpar;
 #endif
+    
+    if (!dst_item->first_key_ok)
+    {
+        if (dst_item->video_have)
+        {
+            /*视频流，必须从关键帧开始。*/
+            if ((codecpar->codec_type == AVMEDIA_TYPE_VIDEO) && (pkt->flags & AV_PKT_FLAG_KEY))
+                dst_item->first_key_ok = 1;
+        }
+        else
+        {
+            dst_item->first_key_ok = 1;
+        }
+
+        if (!dst_item->first_key_ok)
+            return;
+    }
 
     if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_REC)
     {
@@ -507,37 +482,8 @@ RECORD_SEGMENT_NEW:
             goto RECORD_SEGMENT_NEW;
         }
     }
-    else if (dst_item->cfg.flag == ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE)
-    {
-        /*通知缓存数据准备好了。*/
-        if (dst_item->cfg.u.live.ready_cb)
-            dst_item->cfg.u.live.ready_cb(dst_item->cfg.opaque);
 
-        /*记录KEY帧和帧分组时间。*/
-        if ((pkt->flags & AV_PKT_FLAG_KEY) || (codecpar->codec_type != AVMEDIA_TYPE_VIDEO))
-            dst_item->read_key_ns[*idx_p] = dst_item->read_gop_ns[*idx_p] = abcdk_time_systime(6);
-
-        /*应用层长时间不活动时丢掉一些帧。*/
-        delay_ns = (double)(abcdk_time_systime(6) - abcdk_atomic_load(&dst_item->user_active)) / 1000000.;
-        if (delay_ns > dst_item->cfg.u.live.delay_max)
-            dst_item->read_gop_ns[*idx_p] = 0;
-
-        /*可能已经不在同一个GOP中。*/
-        if (dst_item->read_key_ns[*idx_p] != dst_item->read_gop_ns[*idx_p])
-            obsolete = 1;
-
-        /*按需丢弃延时过多的帧，以便减少延时。*/
-        if (obsolete)
-        {
-            abcdk_trace_printf(LOG_WARNING, TT("直播(%s)延时超过设定阈值(delay_max=%.3f,delay_ns=%.3f)，丢弃此数据包(index=%d,dts=%.3f,pts=%.3f)。"),
-                               dst_item->tip, dst_item->cfg.u.live.delay_max, delay_ns, pkt->stream_index,
-                               abcdk_ffeditor_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->dts),
-                               abcdk_ffeditor_ts2sec(src_item_p->ff_ctx, pkt->stream_index, pkt->pts));
-
-            return;
-        }
-    }
-
+    /**/
     src_vs_p = abcdk_ffeditor_streamptr(src_item_p->ff_ctx, pkt->stream_index);
 
     av_init_packet(&pkt_cp);
@@ -667,8 +613,9 @@ END:
     /*通知关闭连接或文件。*/
     _abcdk_ffmpeg_nvr_write(ctx, NULL);
 
-    av_packet_unref(&pkt);
+    /**/
     abcdk_ffeditor_destroy(&src_item_p->ff_ctx);
+    av_packet_unref(&pkt);
 
     abcdk_trace_printf(LOG_INFO, TT("输入源(%s)已关闭。"), src_item_p->tip);
 
@@ -698,17 +645,6 @@ abcdk_ffmpeg_nvr_t *abcdk_ffmpeg_nvr_create(abcdk_ffmpeg_nvr_config_t *cfg)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return NULL;
-}
-
-void abcdk_ffmpeg_nvr_task_heartbeat(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_task_t *task)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
-}
-
-uint64_t abcdk_ffmpeg_nvr_get_index(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_task_t *task)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
-    return -1;
 }
 
 void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_task_t **task)

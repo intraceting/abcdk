@@ -120,7 +120,6 @@
 #include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/ffeditor.h"
-#include "abcdk/ffmpeg/ffserver.h"
 #include "abcdk/ffmpeg/nvr.h"
 
 #include "abcdk/redis/redis.h"

@@ -42,7 +42,7 @@ static struct _abcdk_test_entry
     {"timer",abcdk_test_timer},
     {"tun",abcdk_test_tun},
     {"srpc",abcdk_test_srpc},
-    {"fmp4",abcdk_test_fmp4},
+    {"nvr",abcdk_test_nvr},
     {"sudp",abcdk_test_sudp},
     {"pem",abcdk_test_pem},
     {"usb",abcdk_test_usb},

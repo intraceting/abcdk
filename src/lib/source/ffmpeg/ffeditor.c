@@ -93,6 +93,9 @@ struct _abcdk_ffeditor
     /** 是否已经写入文件头部。*/
     int write_header_ok;
 
+    /** 是否已经写入文件尾部。*/
+    int write_trailer_ok;
+
 };// abcdk_ffeditor_t;
 
 
@@ -110,6 +113,10 @@ void abcdk_ffeditor_destroy(abcdk_ffeditor_t **ctx)
 
     ctx_p = *ctx;
     *ctx = NULL;
+
+    /*最后保证写入结尾信息。*/
+    if (ctx_p->cfg.writer)
+        abcdk_ffeditor_write_trailer(ctx_p);
 
     abcdk_avio_free(&ctx_p->io_custom);
 
@@ -508,14 +515,15 @@ static int _abcdk_ffeditor_read_delay_check(abcdk_ffeditor_t *ctx, int stream, i
             return 0;
 
         a1 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
-        a2 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max / ctx->cfg.read_speed;
+        a2 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts[stream]) + (double)ctx->cfg.read_delay_max; 
         a = (a2 - a1) - (a1 - a1);
+        a /= ctx->cfg.read_speed;//倍速。
         b = (double)(_abcdk_ffeditor_clock() - ctx->read_start[stream]) / 1000000.;
 
-        block = (a >= b?0:1);
+        block = (a >= b ? 0 : 1);
 
-        if(block)
-            abcdk_trace_printf(LOG_WARNING,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+        //     abcdk_trace_printf(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+
     }
     else
     {
@@ -529,11 +537,12 @@ static int _abcdk_ffeditor_read_delay_check(abcdk_ffeditor_t *ctx, int stream, i
         a1 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
         a2 = abcdk_ffeditor_ts2sec(ctx, stream, ctx->read_dts[stream]);
         a = (a2 - a1) - (a1 - a1);
+        a /= ctx->cfg.read_speed;//倍速。
         b = (double)(_abcdk_ffeditor_clock() - ctx->read_start[stream]) / 1000000.;
 
-        block = (a > b?0:1);
+        block = (a > b ? 0 : 1);
 
-        //   abcdk_trace_printf(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
+        //       abcdk_trace_printf(LOG_DEBUG,"stream(%d),flag(%d),a1(%.3f),a2(%.3f),a(%.3f),b(%.3f),block(%d)\n",stream,flag,a1,a2, a, b,block);
     }
 
     return block;
@@ -975,6 +984,10 @@ int abcdk_ffeditor_write_trailer(abcdk_ffeditor_t *ctx)
     if(!ctx->write_header_ok)
         return -2;
 
+    /*写入一次即可。*/
+    if (ctx->write_trailer_ok)
+        return 0;
+
     av_init_packet(&pkt);
 
     /* 写入所有延时编码数据包。*/
@@ -1011,6 +1024,9 @@ final:
 
     /*不要忘记。*/
     av_packet_unref(&pkt);
+
+    /*标记已经写入末尾。*/
+    ctx->write_trailer_ok = 1;
 
     chk = abcdk_avformat_output_trailer(ctx->avctx);
     if (chk < 0)

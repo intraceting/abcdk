@@ -29,38 +29,22 @@ typedef struct _abcdk_ffmpeg_nvr_config
 {
     /**
      * 标志。
-     * 0：源，1：录像，2：推流，3：直播。
+     * 
+     * @note 0：源，1：录像，2：推流。
     */
     int flag;
 #define ABCDK_FFMPEG_NVR_CFG_FLAG_SRC   0
 #define ABCDK_FFMPEG_NVR_CFG_FLAG_REC   1
 #define ABCDK_FFMPEG_NVR_CFG_FLAG_PUSH  2
-#define ABCDK_FFMPEG_NVR_CFG_FLAG_LIVE  3
 
     /**提示。*/
     const char *tip;
 
-    /** 应用环境指针。*/
-    void *opaque;
-
-    /**
-     * 移除通知。
-     *
-     * @note NULL(0) 忽略。
-     * @warning 不能被阻塞。
-     */
-    void (*remove_cb)(void *opaque);
-
     union
     {
-
         struct
         {
-            /**
-             * 地址。
-             * 
-             * @note unix://本地管道。
-            */
+            /**地址。*/
             const char *url;
 
             /**格式。*/
@@ -81,7 +65,6 @@ typedef struct _abcdk_ffmpeg_nvr_config
 
         struct
         {
-
             /**前缀。*/
             const char *prefix;
 
@@ -94,31 +77,12 @@ typedef struct _abcdk_ffmpeg_nvr_config
 
         struct
         {
-
             /**地址。*/
             const char *url;
 
             /**格式。*/
             const char *fmt;
         } push;
-
-        struct
-        {
-            /**流缓存。*/
-            abcdk_stream_t *buf;
-
-            /** 
-             * 缓存更新通知。
-             * 
-             * @note NULL(0) 忽略。
-             * @warning 不能被阻塞。
-            */
-            void (*ready_cb)(void *opaque);
-
-            /**最大延时(秒.毫秒)。0.300~4.999。*/
-            float delay_max;
-
-        } live;
 
     } u;
 } abcdk_ffmpeg_nvr_config_t;
@@ -136,19 +100,15 @@ abcdk_ffmpeg_nvr_t *abcdk_ffmpeg_nvr_create(abcdk_ffmpeg_nvr_config_t *cfg);
 /**
  * 删除任务。
  */
-void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, const char *id);
+void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, uint64_t id);
 
 /**
  * 添加任务。
  *
- * @return 0 成功，- 1 失败。
+ * @return !0 成功，0 失败。
  */
-int abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, const char *id, abcdk_ffmpeg_nvr_config_t *cfg);
+uint64_t abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_config_t *cfg);
 
-/**
- * 心跳。
-*/
-void abcdk_ffmpeg_nvr_task_heartbeat(abcdk_ffmpeg_nvr_t *ctx, const char *id);
 
 
 
