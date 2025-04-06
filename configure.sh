@@ -156,7 +156,7 @@ BUILD_TYPE="release"
 OPTIMIZE_LEVEL=""
 
 #
-THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,"
+THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,live555,"
 THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_FIND_ROOT=""
