@@ -90,9 +90,24 @@ if [ "deb" == "${KIT_NAME}" ];then
     if [ ${FLAG} -eq 1 ];then
         exit $(CheckHavePackageFromKit "liblivemedia-dev")
     elif [ ${FLAG} -eq 2 ];then
-        PackageConfig  --cflags live555 
+    {
+        CFLAG="-I$(FindIncPath liveMedia/liveMedia.hh)"
+        checkReturnCode
+
+        echo "${CFLAG}/liveMedia ${CFLAG}/BasicUsageEnvironment ${CFLAG}/groupsock ${CFLAG}/UsageEnvironment"
+    }
     elif [ ${FLAG} -eq 3 ];then
-        PackageConfig  --libs live555
+    {
+        LDFLAG="-L$(FindLibPath libliveMedia.so)"
+        if [ $? != 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath libliveMedia.a)"
+            checkReturnCode
+        }
+        fi
+
+        echo "-lliveMedia -lUsageEnvironment -lgroupsock -lBasicUsageEnvironment ${LDFLAG}"
+    }
     elif [ ${FLAG} -eq 4 ];then
         echo "liblivemedia-dev"
     else
@@ -108,14 +123,19 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         CFLAG="-I$(FindIncPath liveMedia/liveMedia.hh)"
         checkReturnCode
 
-        echo "${CFLAG}"
+        echo "${CFLAG}/liveMedia ${CFLAG}/BasicUsageEnvironment ${CFLAG}/groupsock ${CFLAG}/UsageEnvironment"
     }
     elif [ ${FLAG} -eq 3 ];then
     {
         LDFLAG="-L$(FindLibPath libliveMedia.so)"
-        checkReturnCode
+        if [ $? != 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath libliveMedia.a)"
+            checkReturnCode
+        }
+        fi
 
-        echo "-lliveMedia ${LDFLAG}"
+        echo "-lliveMedia -lUsageEnvironment -lgroupsock -lBasicUsageEnvironment ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "live555-devel"

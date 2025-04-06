@@ -79,6 +79,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <array>
 #endif //__cplusplus
 
 

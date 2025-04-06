@@ -143,6 +143,9 @@
 #include "abcdk/curl/curl.h"
 #include "abcdk/curl/util.h"
 
+#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/server.h"
+
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/imgutil.h"
 #include "abcdk/torch/pixfmt.h"

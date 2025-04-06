@@ -39,6 +39,7 @@ int abcdk_test_ncurses(abcdk_option_t *args);
 int abcdk_test_gtk(abcdk_option_t *args);
 int abcdk_test_torch(abcdk_option_t *args);
 int abcdk_test_stitcher(abcdk_option_t *args);
+int abcdk_test_rtspserver(abcdk_option_t *args);
 
 
 __END_DECLS

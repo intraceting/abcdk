@@ -23,7 +23,7 @@ LIB_SRC_FILES += $(wildcard src/lib/source/torch_cuda/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/opencv/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/rtsp/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_cuda/*.cpp)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
@@ -131,8 +131,8 @@ $(OBJ_PATH)/src/lib/source/curl/%.o: src/lib/source/curl/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 	
 #
-$(OBJ_PATH)/src/lib/source/opencv/%.cpp.o: src/lib/source/opencv/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/opencv/
+$(OBJ_PATH)/src/lib/source/rtsp/%.cpp.o: src/lib/source/rtsp/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
