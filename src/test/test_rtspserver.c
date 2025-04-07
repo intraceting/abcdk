@@ -11,6 +11,7 @@
 #include <locale.h>
 #include "entry.h"
 
+#ifdef HAVE_LIVE555
 
 int abcdk_test_rtspserver(abcdk_option_t *args)
 {
@@ -26,3 +27,12 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
     return 0;
 }
+
+#else // HAVE_LIVE555
+
+int abcdk_test_rtspserver(abcdk_option_t *args)
+{
+    return 0
+}
+
+#endif // HAVE_LIVE555
