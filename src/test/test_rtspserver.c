@@ -32,7 +32,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
 int abcdk_test_rtspserver(abcdk_option_t *args)
 {
-    return 0
+    return 0;
 }
 
 #endif // HAVE_LIVE555
