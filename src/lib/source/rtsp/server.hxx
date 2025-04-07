@@ -150,19 +150,24 @@ namespace abcdk
                 server *ctx_p = (server *)clientData;
                 std::pair<int, std::string> cmdinfo;
 
-                rtsp::rwlock_robot autolock(&ctx->m_cmdlist_locker, 1);
+                rtsp::rwlock_robot autolock(&ctx_p->m_cmdlist_locker, 1);
 
-                cmdinfo = ctx->m_cmdlist.pop();
+                if(ctx_p->m_cmdlist.size() <= 0)
+                    return;
+
+                cmdinfo = ctx_p->m_cmdlist.front();
+                ctx_p->m_cmdlist.pop();
+
                 if (cmdinfo.first == 1)
                 {
                     if (cmdinfo.second.size() <= 0)
-                        impl_remove_media_all();
+                        ctx_p->impl_remove_media_all();
                     else
-                        impl_remove_media(cmdinfo.second.c_str());
+                        ctx_p->impl_remove_media(cmdinfo.second.c_str());
                 }
                 else if (cmdinfo.first == 2)
                 {
-                    impl_media_play(cmdinfo.second.c_str());
+                    ctx_p->impl_media_play(cmdinfo.second.c_str());
                 }
             }
 
