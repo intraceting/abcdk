@@ -68,12 +68,12 @@ namespace abcdk
                     return -1;
                 }
 
-                return 0;
+                return idx;
             }
 
-            int append_stream(int idx,const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
+            int append_stream(int stream,const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
             {
-                std::map<int, rtsp::ringbuf>::iterator it = m_rgbuf.find(idx);
+                std::map<int, rtsp::ringbuf>::iterator it = m_rgbuf.find(stream);
                 if(it == m_rgbuf.end())
                     return -1;
 
