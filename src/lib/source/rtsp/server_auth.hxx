@@ -8,7 +8,7 @@
 #define ABCDK_RTSP_SERVER_AUTH_HXX
 
 #include "abcdk/rtsp/live555.h"
-#include "abcdk/util/rwlock.h"
+#include "rwlock_robot.hxx"
 
 #ifdef _GENERIC_MEDIA_SERVER_HH
 
@@ -19,18 +19,19 @@ namespace abcdk
         class auth : public UserAuthenticationDatabase
         {
         private:
+            rtsp::rwlock m_db_locker;
             std::map<std::string, std::array<char,NAME_MAX>> m_db;//固定大小的值，因为查询接口是用指针，但是对象又随时被删除。
-            abcdk_rwlock_t *m_locker;
+            
         public:
             auth(char const *realm = NULL)
                 : UserAuthenticationDatabase(realm)
             {
-                m_locker = abcdk_rwlock_create();
+
             }
 
             virtual ~auth()
             {
-                abcdk_rwlock_destroy(&m_locker);
+
             }
 
         public:
@@ -38,18 +39,16 @@ namespace abcdk
             {
                 assert(username != NULL && password != NULL);
 
-                abcdk_rwlock_wrlock(m_locker,1);
+                rtsp::rwlock_robot autolock(&m_db_locker,1);
 
                 strncpy(m_db[username].data(),password,NAME_MAX);
-
-                abcdk_rwlock_unlock(m_locker);
             }
 
             void removeUserRecord(char const *username)
             {
                 assert(username != NULL);
 
-                abcdk_rwlock_wrlock(m_locker,1);
+                rtsp::rwlock_robot autolock(&m_db_locker,1);
 
                 std::map<std::string, std::array<char,NAME_MAX>>::iterator it = m_db.find(username);
                 if (it == m_db.end())
@@ -57,7 +56,7 @@ namespace abcdk
 
                 m_db[username].fill('\0');
 
-                abcdk_rwlock_unlock(m_locker);
+
             }
 
             char const *lookupPassword(char const *username)
@@ -66,13 +65,11 @@ namespace abcdk
 
                 assert(username != NULL);
 
-                abcdk_rwlock_rdlock(m_locker,1);
+                rtsp::rwlock_robot autolock(&m_db_locker,0);
 
                 std::map<std::string, std::array<char,NAME_MAX>>::iterator it = m_db.find(username);
                 if (it != m_db.end())
                     p = it->second.data();
-
-                abcdk_rwlock_unlock(m_locker);
 
                 return p;
             }

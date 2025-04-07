@@ -39,8 +39,7 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx)
 
     if (ctx_p->l5_server_ctx)
     {
-        ctx_p->l5_server_ctx->DeleteAllChannel();
-        Medium::close(ctx_p->l5_server_ctx, &ctx_p->l5_server_ctx->envir());
+        abcdk::rtsp::server::deleteOld(&ctx_p->l5_server_ctx);
         ctx_p->l5_server_ctx = NULL;
     }
 

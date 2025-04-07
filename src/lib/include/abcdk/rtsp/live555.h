@@ -7,6 +7,8 @@
 #ifndef ABCDK_RTSP_LIVE555_H
 #define ABCDK_RTSP_LIVE555_H
 
+#include "abcdk/util/defs.h"
+
 #ifdef HAVE_LIVE555
 #ifdef __cplusplus
 #include <liveMedia.hh>

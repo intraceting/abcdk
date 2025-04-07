@@ -33,6 +33,7 @@ abcdk_torch_packet_t *abcdk_torch_packet_alloc()
     ctx->size = 0;
     ctx->dts = (int64_t)UINT64_C(0x8000000000000000);
     ctx->pts = (int64_t)UINT64_C(0x8000000000000000);
+    ctx->dur = 0;
 
     return ctx;
 }
@@ -65,6 +66,7 @@ int abcdk_torch_packet_reset(abcdk_torch_packet_t **ctx, size_t size)
     ctx_p->size = 0;
     ctx_p->dts = (int64_t)UINT64_C(0x8000000000000000);
     ctx_p->pts = (int64_t)UINT64_C(0x8000000000000000);
+    ctx_p->dur = 0;
 
     ctx_p->buf = abcdk_object_alloc2(size);
     if (!ctx_p->buf)

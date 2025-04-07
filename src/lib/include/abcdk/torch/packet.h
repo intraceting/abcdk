@@ -26,6 +26,9 @@ typedef struct _abcdk_torch_packet
     /**PTS.*/
     int64_t pts;
 
+    /**时长.*/
+    int64_t dur;
+
     /**缓存。*/
     abcdk_object_t *buf;
 

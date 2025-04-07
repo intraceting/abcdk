@@ -1,0 +1,60 @@
+/*
+ * This file is part of ABCDK.
+ *
+ * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
+ *
+ */
+#ifndef ABCDK_RTSP_SERVER_ACC_SOURCE_HXX
+#define ABCDK_RTSP_SERVER_ACC_SOURCE_HXX
+
+#include "server_source.hxx"
+#include "ringbuf.hxx"
+
+#ifdef _FRAMED_SOURCE_HH
+
+namespace abcdk
+{
+    namespace rtsp_server
+    {
+        class acc_source : public source
+        {
+        private:
+            rtsp::ringbuf *m_rgbuf_ctx_p;
+            uint64_t m_rgbuf_idx;
+
+        public:
+            static acc_source *createNew(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx)
+            {
+                return new acc_source(env, rgbuf_ctx);
+            }
+
+        protected:
+            acc_source(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx)
+                : source(env)
+            {
+                m_rgbuf_ctx_p = rgbuf_ctx;
+                m_rgbuf_idx = 0;
+            }
+
+            virtual ~acc_source()
+            {
+                
+            }
+
+            int fetch(rtsp::packet &pkt)
+            {
+                int chk;
+
+                chk = m_rgbuf_ctx_p->read(pkt, m_rgbuf_idx);
+                if (chk <= 0)
+                    return 0;
+
+                return 1;
+            }
+        };
+    } // namespace rtsp_server
+} // namespace abcdk
+
+#endif //_FRAMED_SOURCE_HH
+
+#endif // ABCDK_RTSP_SERVER_ACC_SOURCE_HXX
