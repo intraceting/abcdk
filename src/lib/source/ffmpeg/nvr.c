@@ -641,12 +641,12 @@ abcdk_ffmpeg_nvr_t *abcdk_ffmpeg_nvr_create(abcdk_ffmpeg_nvr_config_t *cfg)
     return NULL;
 }
 
-void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_task_t **task)
+void abcdk_ffmpeg_nvr_task_del(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_t **task)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
 }
 
-abcdk_ffmpeg_nvr_task_t *abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_config_t *cfg)
+abcdk_ffmpeg_nvr_t *abcdk_ffmpeg_nvr_task_add(abcdk_ffmpeg_nvr_t *ctx, abcdk_ffmpeg_nvr_config_t *cfg)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return NULL;
