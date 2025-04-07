@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_RWLOCK_HXX
 #define ABCDK_RTSP_RWLOCK_HXX
 
-#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/rtsp.h"
 #include "abcdk/util/rwlock.h"
 
 namespace abcdk
@@ -37,7 +37,7 @@ namespace abcdk
 
             void wrlock(int block = 1)
             {
-                abcdk_rdlock_wrlock(m_ctx, block);
+                abcdk_rwlock_wrlock(m_ctx, block);
             }
 
             void lock(int block = 1)
@@ -49,7 +49,7 @@ namespace abcdk
             {
                 abcdk_rwlock_unlock(m_ctx);
             }
-        }
+        };
     } // namespace rtsp
 } // namespace abcdk
 #endif // ABCDK_RTSP_RWLOCK_HXX

@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_PACKET_HXX
 #define ABCDK_RTSP_PACKET_HXX
 
-#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/rtsp.h"
 
 namespace abcdk
 {
@@ -107,7 +107,7 @@ namespace abcdk
                 m_dur = dur;
                 gettimeofday(&m_time, NULL);
             }
-        }
+        };
     } // namespace rtsp
 } // namespace abcdk
 #endif // ABCDK_RTSP_PACKET_HXX

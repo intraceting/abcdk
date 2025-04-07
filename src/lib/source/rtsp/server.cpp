@@ -5,7 +5,7 @@
  *
  */
 #include "abcdk/rtsp/server.h"
-#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/rtsp.h"
 #include "server.hxx"
 #include "server_auth.hxx"
 
@@ -17,7 +17,7 @@ __BEGIN_DECLS
 struct _abcdk_rtsp_server
 {
     /*退出标志。0 运行，!0 退出。*/
-    volatile int8_t exit_flag;
+    volatile char exit_flag;
 
     TaskScheduler* l5_scheduler_ctx;
     UsageEnvironment* l5_env_ctx;
@@ -65,7 +65,7 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx)
 
 }
 
-abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, char const *realm)
+abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char *realm)
 {
     abcdk_rtsp_server_t *ctx;
 
@@ -96,6 +96,69 @@ ERR:
 
     abcdk_rtsp_server_destroy(&ctx);
     return NULL;
+}
+
+
+int abcdk_rtsp_server_media_play(abcdk_rtsp_server_t *ctx, const char *name)
+{
+    int chk;
+
+    assert(ctx != NULL && name != NULL);
+
+    chk = ctx->l5_server_ctx->media_play(name);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
+
+int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *info, const char *desc)
+{
+    int chk;
+
+    assert(ctx != NULL && name != NULL);
+
+    chk = ctx->l5_server_ctx->create_media(name,info,desc);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_rtsp_server_media_add_stream(abcdk_rtsp_server_t *ctx, const char *name, int codec, abcdk_object_t *extdata, int cache)
+{
+    int chk;
+
+    assert(ctx != NULL && name != NULL);
+
+    chk = ctx->l5_server_ctx->media_add_stream(name, codec, extdata, cache);
+    if (chk < 0)
+        return -1;
+
+    return chk;
+}
+
+int abcdk_rtsp_server_media_append_stream(abcdk_rtsp_server_t *ctx, const char *name, int idx, const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
+{
+    int chk;
+
+    assert(ctx != NULL && name != NULL);
+
+    chk = ctx->l5_server_ctx->media_append_stream(name,idx,data,size,dts,pts,dur);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
+void abcdk_rtsp_runloop(abcdk_rtsp_server_t *ctx)
+{
+    int chk;
+
+    assert(ctx != NULL);
+
+    ctx->l5_env_ctx->taskScheduler().doEventLoop(&ctx->exit_flag);
 }
 
 

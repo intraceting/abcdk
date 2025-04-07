@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_SERVER_HXX
 #define ABCDK_RTSP_SERVER_HXX
 
-#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/rtsp.h"
 #include "abcdk/util/rwlock.h"
 #include "server_media.hxx"
 #include "rwlock_robot.hxx"
@@ -21,9 +21,11 @@ namespace abcdk
         class server : public RTSPServer
         {
         private:
-            rtsp::rwlock m_playlist_locker;
-            std::map<std::string,rtsp_server::meida*> m_playlist;
-            
+            rtsp::rwlock m_medialist_locker;
+            std::map<std::string,rtsp_server::media*> m_medialist;
+
+            rtsp::rwlock m_cmdlist_locker;
+            std::queue<std::pair<int,std::string>> m_cmdlist;
         public:
             static server *createNew(UsageEnvironment &env, Port ourPort, UserAuthenticationDatabase *authDatabase, unsigned reclamationTestSeconds = 65)
             {
@@ -45,35 +47,86 @@ namespace abcdk
                 ctx_p = *ctx;
                 *ctx = NULL;
 
-                ctx_p->remove_session_all();
-                delete ctx_p;
+                ctx_p->impl_remove_media_all();
+                RTSPServer::close(ctx_p);
             }
 
-            void remove_session(const char *name)
+            void remove_media_all()
             {
-                rtsp::rwlock_robot autolock(&m_playlist_locker,1);
+                rtsp::rwlock_robot autolock(&m_cmdlist_locker,1);
 
-                std::map<std::string, rtsp_server::meida *>::iterator it = m_playlist.find(name);
-                if (it == m_playlist.end())
-                    return;
+                m_cmdlist.push(std::pair<int,std::string>(1,""));
 
-                deleteServerMediaSession(it->second);
-                rtsp_server::meida::deleteOld(&it->second);
-
-                m_playlist.erase(it);
+                envir().taskScheduler().scheduleDelayedTask(0, async_cmd_process, this);
             }
 
-            void remove_session_all()
+            void remove_media(const char *name)
             {
-                rtsp::rwlock_robot autolock(&m_playlist_locker,1);
-                
-                for(auto &t: m_playlist)
-                {
-                    deleteServerMediaSession(t.second);
-                    rtsp_server::meida::deleteOld(&t.second);
-                }
+                rtsp::rwlock_robot autolock(&m_cmdlist_locker,1);
 
-                m_playlist.clear();
+                m_cmdlist.push(std::pair<int,std::string>(1,name));
+
+                envir().taskScheduler().scheduleDelayedTask(0, async_cmd_process, this);
+            }
+
+            int media_play(char const *name)
+            {
+                rtsp::rwlock_robot autolock(&m_cmdlist_locker,1);
+
+                m_cmdlist.push(std::pair<int,std::string>(2,name));
+
+                envir().taskScheduler().scheduleDelayedTask(0, async_cmd_process, this);
+
+                return 0;
+            }
+
+            int create_media(char const *name = NULL, char const *info = NULL, char const *desc = NULL)
+            {
+                rtsp_server::media *media_ctx;
+
+                rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
+
+                media_ctx = rtsp_server::media::createNew(envir(), name, info, desc);
+                if (!media_ctx)
+                    return -1;
+
+                m_medialist[name] = media_ctx;
+
+                return 0;
+            }
+
+            int media_add_stream(char const *name, int codec, abcdk_object_t *extdata, int cache)
+            {
+                int chk;
+
+                rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
+
+                std::map<std::string, rtsp_server::media *>::iterator it = m_medialist.find(name);
+                if (it == m_medialist.end())
+                    return -1;
+
+                chk = it->second->add_stream(codec,extdata,cache);
+                if(chk != 0)
+                    return -1;
+
+                return 0;
+            }
+
+            int media_append_stream(char const *name, int idx, const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
+            {
+                int chk;
+
+                rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
+
+                std::map<std::string, rtsp_server::media *>::iterator it = m_medialist.find(name);
+                if (it == m_medialist.end())
+                    return -1;
+
+                chk = it->second->append_stream(idx, data, size, dts, pts, dur);
+                if(chk != 0)
+                    return -1;
+
+                return 0;
             }
 
         protected:
@@ -90,6 +143,67 @@ namespace abcdk
         protected:
             virtual void lookupServerMediaSession(char const *streamName, lookupServerMediaSessionCompletionFunc *completionFunc, void *completionClientData, Boolean isFirstLookupInSession)
             {
+            }
+
+            static void async_cmd_process(void *clientData)
+            {
+                server *ctx_p = (server *)clientData;
+                std::pair<int, std::string> cmdinfo;
+
+                rtsp::rwlock_robot autolock(&ctx->m_cmdlist_locker, 1);
+
+                cmdinfo = ctx->m_cmdlist.pop();
+                if (cmdinfo.first == 1)
+                {
+                    if (cmdinfo.second.size() <= 0)
+                        impl_remove_media_all();
+                    else
+                        impl_remove_media(cmdinfo.second.c_str());
+                }
+                else if (cmdinfo.first == 2)
+                {
+                    impl_media_play(cmdinfo.second.c_str());
+                }
+            }
+
+            void impl_remove_media_all()
+            {
+                rtsp::rwlock_robot autolock(&m_medialist_locker,1);
+                
+                for(auto &t: m_medialist)
+                {
+                    deleteServerMediaSession(t.second);
+                    rtsp_server::media::deleteOld(&t.second);
+                }
+
+                m_medialist.clear();
+            }
+
+            void impl_remove_media(const char *name)
+            {
+                rtsp::rwlock_robot autolock(&m_medialist_locker,1);
+
+                std::map<std::string, rtsp_server::media *>::iterator it = m_medialist.find(name);
+                if (it == m_medialist.end())
+                    return;
+
+                deleteServerMediaSession(it->second);
+                rtsp_server::media::deleteOld(&it->second);
+
+                m_medialist.erase(it);
+            }
+
+            int impl_media_play(char const *name)
+            {
+                rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
+
+                std::map<std::string, rtsp_server::media *>::iterator it = m_medialist.find(name);
+                if (it == m_medialist.end())
+                    return -1;
+
+                addServerMediaSession(it->second);
+
+                return 0;
             }
         };
     } // namespace rtsp

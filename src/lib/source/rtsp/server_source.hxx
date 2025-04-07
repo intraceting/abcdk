@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_SERVER_SOURCE_HXX
 #define ABCDK_RTSP_SERVER_SOURCE_HXX
 
-#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/rtsp.h"
 #include "packet.hxx"
 
 #ifdef _FRAMED_SOURCE_HH
@@ -28,7 +28,7 @@ namespace abcdk
                 int chk;
 
                 chk = fetch(m_pkt);
-                if (chk == 0)
+                if (chk <= 0)
                 {
                     m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(10 * 1000, afterGetNextFrame, this);
                     return;
@@ -54,12 +54,6 @@ namespace abcdk
 
                 FramedSource::afterGetting(this);
             }
-
-            void doStopGettingFrames()
-            {
-                stopCreateFrame();
-            }
-
         protected:
             source(UsageEnvironment &env)
                 : FramedSource(env)

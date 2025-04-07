@@ -70,7 +70,7 @@ namespace abcdk
 
                 return 1;
             }
-        }
+        };
     } // namespace rtsp
 } // namespace abcdk
 #endif // ABCDK_RTSP_RINGBUF_HXX

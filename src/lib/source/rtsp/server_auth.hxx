@@ -7,7 +7,7 @@
 #ifndef ABCDK_RTSP_SERVER_AUTH_HXX
 #define ABCDK_RTSP_SERVER_AUTH_HXX
 
-#include "abcdk/rtsp/live555.h"
+#include "abcdk/rtsp/rtsp.h"
 #include "rwlock_robot.hxx"
 
 #ifdef _GENERIC_MEDIA_SERVER_HH
