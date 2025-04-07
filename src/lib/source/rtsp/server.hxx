@@ -49,7 +49,7 @@ namespace abcdk
                 *ctx = NULL;
 
                 ctx_p->impl_remove_media_all();
-                RTSPServer::close(ctx_p);
+                delete ctx_p;
             }
 
             void remove_media_all()
@@ -72,11 +72,16 @@ namespace abcdk
 
             int media_play(int media)
             {
+            #if 0
                 rtsp::rwlock_robot autolock(&m_cmdlist_locker,1);
 
                 m_cmdlist.push(std::pair<int,std::string>(2,std::to_string(media)));
 
                 envir().taskScheduler().scheduleDelayedTask(0, async_cmd_process, this);
+            #else 
+
+                impl_media_play(media);
+            #endif
 
                 return 0;
             }

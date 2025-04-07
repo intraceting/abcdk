@@ -84,7 +84,7 @@ namespace abcdk
 
         protected:
             media(UsageEnvironment &env, char const *name, char const *info, char const *desc)
-                : ServerMediaSession(env, name, info, desc, false, NULL)
+                : ServerMediaSession(env, name, info, desc, False, NULL)
             {
             }
 

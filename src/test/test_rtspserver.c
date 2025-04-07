@@ -18,10 +18,10 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
     abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345,"ABCDK");
 
-    abcdk_rtsp_server_start(ctx);
+ //   abcdk_rtsp_server_start(ctx);
 
 
-    int media = abcdk_rtsp_server_create_media(ctx,"aaa.mp4","haha","haha test");
+    int media = abcdk_rtsp_server_create_media(ctx,"aaa","haha","haha test");
     assert(media > 0);
 
     abcdk_ffeditor_config_t rcfg = {0};
@@ -35,7 +35,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
     AVFormatContext *rf = abcdk_ffeditor_ctxptr(r);
 
-    abcdk_avformat_dump(rf,0);
+    //abcdk_avformat_dump(rf,0);
 
     int stream = -1;
     
@@ -63,6 +63,8 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
     }
 
     abcdk_rtsp_server_media_play(ctx,media);
+
+   abcdk_rtsp_server_start(ctx);
 
     AVPacket pkt;
 

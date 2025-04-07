@@ -19,7 +19,7 @@ namespace abcdk
         class session : public OnDemandServerMediaSubsession
         {
         protected:
-            session(UsageEnvironment &env, Boolean reuseFirstSource, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            session(UsageEnvironment &env, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
                 : OnDemandServerMediaSubsession(env, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
             {
             }

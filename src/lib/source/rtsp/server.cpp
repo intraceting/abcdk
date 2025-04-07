@@ -98,7 +98,7 @@ abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char *realm)
     // ctx->l5_auth_ctx->addUserRecord("aaaa","bbbb");
 
     ctx->l5_server_ctx = abcdk::rtsp::server::createNew(*ctx->l5_env_ctx, port, ctx->l5_auth_ctx);
-    if(!ctx->l5_env_ctx)
+    if(!ctx->l5_server_ctx)
         goto ERR;
 
     return ctx;
@@ -143,6 +143,9 @@ void abcdk_rtsp_server_stop(abcdk_rtsp_server_t *ctx)
 int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx)
 {
     int chk;
+
+    ctx->worker_flag = 0;
+   ctx->l5_env_ctx->taskScheduler().doEventLoop(&ctx->worker_flag);
 
     assert(ctx != NULL);
 
