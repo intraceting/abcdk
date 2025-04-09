@@ -91,11 +91,11 @@ abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char *realm)
     if(!ctx->l5_env_ctx)
         goto ERR;
 
-    // ctx->l5_auth_ctx = new abcdk::rtsp_server::auth(realm);
-    // if(!ctx->l5_auth_ctx)
-    //     goto ERR;
+    ctx->l5_auth_ctx = new abcdk::rtsp_server::auth(realm);
+    if(!ctx->l5_auth_ctx)
+        goto ERR;
 
-    // ctx->l5_auth_ctx->addUserRecord("aaaa","bbbb");
+    ctx->l5_auth_ctx->addUserRecord("aaaa","bbbb");
 
     ctx->l5_server_ctx = abcdk::rtsp::server::createNew(*ctx->l5_env_ctx, port, ctx->l5_auth_ctx);
     if(!ctx->l5_server_ctx)
@@ -144,8 +144,8 @@ int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx)
 {
     int chk;
 
-    ctx->worker_flag = 0;
-   ctx->l5_env_ctx->taskScheduler().doEventLoop(&ctx->worker_flag);
+//     ctx->worker_flag = 0;
+//    ctx->l5_env_ctx->taskScheduler().doEventLoop(&ctx->worker_flag);
 
     assert(ctx != NULL);
 
@@ -159,6 +159,14 @@ int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx)
 
     return 0;
 }
+
+void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media)
+{
+    assert(ctx != NULL && media > 0);
+
+    ctx->l5_server_ctx->remove_media(media);
+}
+
 
 int abcdk_rtsp_server_media_play(abcdk_rtsp_server_t *ctx, int media)
 {

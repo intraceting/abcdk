@@ -62,7 +62,7 @@ namespace abcdk
             {
                 rtsp::rwlock_robot autolock(&m_queuq_locker,0);
 
-                if (pos == m_pos)
+                if (pos % m_queue.size() == m_pos % m_queue.size())
                     return 0;
 
                 m_queue[pos % m_queue.size()].copy_to(dst);

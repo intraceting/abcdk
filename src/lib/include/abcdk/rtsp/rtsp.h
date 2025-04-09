@@ -39,8 +39,8 @@ typedef enum _abcdk_rtsp_codec_constant
     ABCDK_RTSP_CODEC_VP9,
 #define ABCDK_RTSP_CODEC_VP9 ABCDK_RTSP_CODEC_VP9
 
-    ABCDK_RTSP_CODEC_ACC = 100,
-#define ABCDK_RTSP_CODEC_ACC ABCDK_RTSP_CODEC_ACC
+    ABCDK_RTSP_CODEC_AAC = 100,
+#define ABCDK_RTSP_CODEC_AAC ABCDK_RTSP_CODEC_AAC
 
 } abcdk_rtsp_codec_constant_t;
 

@@ -31,6 +31,9 @@ void abcdk_rtsp_server_stop(abcdk_rtsp_server_t *ctx);
 /**启动。*/
 int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx);
 
+/**删除。*/
+void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media);
+
 /**媒体播放。*/
 int abcdk_rtsp_server_media_play(abcdk_rtsp_server_t *ctx,  int media);
 

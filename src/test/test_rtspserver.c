@@ -18,7 +18,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
     abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345,"ABCDK");
 
- //   abcdk_rtsp_server_start(ctx);
+   abcdk_rtsp_server_start(ctx);
 
 
     int media = abcdk_rtsp_server_create_media(ctx,"aaa","haha","haha test");
@@ -37,7 +37,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
     //abcdk_avformat_dump(rf,0);
 
-    int stream = -1;
+    int stream[16] = {-1,-1,-1,-1};
     
     for(int i = 0;i<abcdk_ffeditor_streams(r);i++)
     {
@@ -49,7 +49,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_hevc_extradata_deserialize(p->codecpar->extradata, p->codecpar->extradata_size, &extradata);
 
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,100);
+            stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,10);
             abcdk_object_unref(&extdata);
 
 
@@ -57,14 +57,23 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         else if(p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H264,extdata,100);
+            stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H264,extdata,10);
+            abcdk_object_unref(&extdata);
+        }
+        else if(p->codecpar->codec_id == AV_CODEC_ID_AAC)
+        {
+            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
+            stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_AAC,extdata,10);
             abcdk_object_unref(&extdata);
         }
     }
 
     abcdk_rtsp_server_media_play(ctx,media);
+    abcdk_rtsp_server_remove_media(ctx,media);
 
-   abcdk_rtsp_server_start(ctx);
+    goto END;
+
+   //abcdk_rtsp_server_start(ctx);
 
     AVPacket pkt;
 
@@ -75,8 +84,12 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         if (n < 0)
             break;
 
-        abcdk_rtsp_server_media_append_stream(ctx, media, stream, pkt.data + 4, pkt.size - 4, pkt.dts, pkt.pts, pkt.duration * 1000);
+     //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration*1000);
+
+        abcdk_rtsp_server_media_append_stream(ctx, media, stream[pkt.stream_index], pkt.data , pkt.size , pkt.dts, pkt.pts, pkt.duration/abcdk_ffeditor_fps(r,pkt.stream_index)*1000);
     }
+
+END:
 
     abcdk_rtsp_server_stop(ctx);
 

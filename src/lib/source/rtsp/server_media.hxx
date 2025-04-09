@@ -12,7 +12,7 @@
 #include "ringbuf.hxx"
 #include "server_h264_session.hxx"
 #include "server_h265_session.hxx"
-#include "server_acc_session.hxx"
+#include "server_aac_session.hxx"
 
 #ifdef _SERVER_MEDIA_SESSION_HH
 
@@ -23,7 +23,7 @@ namespace abcdk
         class media : public ServerMediaSession
         {
         private:
-            std::map<int, rtsp::ringbuf> m_rgbuf;
+            std::map<int, std::pair<rtsp_server::session *, rtsp::ringbuf>> m_stream;
             int m_stream_index;
 
         public:
@@ -43,41 +43,81 @@ namespace abcdk
                 *ctx = NULL;
 
                 ctx_p->deleteAllSubsessions();
-                Medium::close(ctx_p);// 删除对象，防止内存泄漏。
+                Medium::close(ctx_p);
             }
 
             int add_stream(int codec, abcdk_object_t *extdata, int cache)
             {
+                rtsp_server::session *subsession_ctx;
                 int idx;
                 Boolean bchk;
 
                 idx = (m_stream_index += 1);
-                m_rgbuf[idx].reset(cache);
+                m_stream[idx].first = NULL;
+                m_stream[idx].second.reset(cache);
 
                 if (codec == ABCDK_RTSP_CODEC_H264)
-                    bchk = addSubsession(rtsp_server::h264_session::createNew(envir(), &m_rgbuf[idx], extdata));
+                    subsession_ctx = rtsp_server::h264_session::createNew(envir(),ABCDK_RTSP_CODEC_H264, &m_stream[idx].second, extdata);
                 else if (codec == ABCDK_RTSP_CODEC_H265)
-                    bchk = addSubsession(rtsp_server::h265_session::createNew(envir(), &m_rgbuf[idx], extdata));
+                    subsession_ctx = rtsp_server::h265_session::createNew(envir(),ABCDK_RTSP_CODEC_H265, &m_stream[idx].second, extdata);
+                else if (codec == ABCDK_RTSP_CODEC_AAC)
+                    subsession_ctx = rtsp_server::aac_session::createNew(envir(),ABCDK_RTSP_CODEC_AAC, &m_stream[idx].second, extdata);
                 else
-                    bchk = False;
+                    goto ERR;
 
+                bchk = addSubsession(subsession_ctx);
                 if (!bchk)
                 {
-                    m_rgbuf.erase(idx);
-                    m_stream_index -= 1;
-                    return -1;
+                    if (codec == ABCDK_RTSP_CODEC_H264)
+                        rtsp_server::h264_session::deleteOld((rtsp_server::h264_session **)&subsession_ctx);
+                    else if (codec == ABCDK_RTSP_CODEC_H265)
+                        rtsp_server::h265_session::deleteOld((rtsp_server::h265_session **)&subsession_ctx);
+                    else if (codec == ABCDK_RTSP_CODEC_AAC)
+                        rtsp_server::aac_session::deleteOld((rtsp_server::aac_session **)&subsession_ctx);
+
+                    goto ERR;
                 }
 
+                /*copy .*/
+                m_stream[idx].first = subsession_ctx;
+
                 return idx;
+
+            ERR:
+
+                m_stream_index -= 1;//-1
+                m_stream.erase(idx);
+
+                return -1;
+
             }
 
             int append_stream(int stream,const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
             {
-                std::map<int, rtsp::ringbuf>::iterator it = m_rgbuf.find(stream);
-                if(it == m_rgbuf.end())
+                uint8_t startcode3[3] = {0,0,1};
+                uint8_t startcode4[4] = {0,0,0,1};
+
+                std::map<int, std::pair<rtsp_server::session *, rtsp::ringbuf>>::iterator it = m_stream.find(stream);
+                if(it == m_stream.end())
                     return -1;
 
-                it->second.write(data,size,dts,pts,dur);
+                /*H264，H265不需要起始码。*/
+                if (it->second.first->codec_id() == ABCDK_RTSP_CODEC_H264 ||
+                    it->second.first->codec_id() == ABCDK_RTSP_CODEC_H265)
+                {
+                    if (memcmp(data, startcode4, 4) == 0)
+                    {
+                        data = ABCDK_PTR2VPTR(data, 4);
+                        size -= 4;
+                    }
+                    else if (memcmp(data, startcode4, 3) == 0)
+                    {
+                        data = ABCDK_PTR2VPTR(data, 3);
+                        size -= 3;
+                    }
+                }
+
+                it->second.second.write(data,size,dts,pts,dur);
 
                 return 0;
             }

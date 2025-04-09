@@ -23,14 +23,14 @@ namespace abcdk
             uint64_t m_rgbuf_idx;
 
         public:
-            static h265_source *createNew(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx)
+            static h265_source *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx)
             {
-                return new h265_source(env, rgbuf_ctx);
+                return new h265_source(env, codec_id, rgbuf_ctx);
             }
 
         protected:
-            h265_source(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx)
-                : source(env)
+            h265_source(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx)
+                : source(env ,codec_id)
             {
                 m_rgbuf_ctx_p = rgbuf_ctx;
                 m_rgbuf_idx = 0;

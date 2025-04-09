@@ -30,9 +30,42 @@ namespace abcdk
             RTPSink *m_dummy_rtp_sink;
 
         public:
-            static h264_session *createNew(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            static h264_session *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
             {
-                return new h264_session(env, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+                return new h264_session(env, codec_id, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+            }
+
+            static void deleteOld(h264_session **ctx)
+            {
+                h264_session *ctx_p;
+
+                if (!ctx || !*ctx)
+                    return;
+
+                ctx_p = *ctx;
+                *ctx = NULL;
+
+                delete ctx_p;
+            }
+
+        protected:
+            h264_session(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+                : session(env, codec_id, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
+            {
+                m_rgbuf_ctx_p = rgbuf_ctx;
+                
+                memset(&m_extdata,0,sizeof(m_extdata));
+                abcdk_h264_extradata_deserialize(extdata->pptrs[0], extdata->sizes[0],&m_extdata);
+
+                m_aux_sdp_line = NULL;
+                m_done_flag = 0;
+                m_dummy_rtp_sink = NULL;
+            }
+            virtual ~h264_session()
+            {
+                abcdk_object_unref(&m_extdata.sps);
+                abcdk_object_unref(&m_extdata.pps);
+                delete[] m_aux_sdp_line;
             }
 
             void checkForAuxSDPLine1()
@@ -63,37 +96,17 @@ namespace abcdk
                 envir().taskScheduler().unscheduleDelayedTask(nextTask());
                 setDoneFlag();
             }
-
-        protected:
-            h264_session(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
-                : session(env, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
-            {
-                m_rgbuf_ctx_p = rgbuf_ctx;
-                
-                memset(&m_extdata,0,sizeof(m_extdata));
-                abcdk_h264_extradata_deserialize(extdata->pptrs[0], extdata->sizes[0],&m_extdata);
-
-                m_aux_sdp_line = NULL;
-                m_done_flag = 0;
-                m_dummy_rtp_sink = NULL;
-            }
-            virtual ~h264_session()
-            {
-                abcdk_object_unref(&m_extdata.sps);
-                abcdk_object_unref(&m_extdata.pps);
-                delete[] m_aux_sdp_line;
-            }
-
+            
             static void afterPlayingDummy(void *clientData)
             {
-                h264_session *subsess = (h264_session *)clientData;
-                subsess->afterPlayingDummy1();
+                h264_session *session_ctx = (h264_session *)clientData;
+                session_ctx->afterPlayingDummy1();
             }
 
             static void checkForAuxSDPLine(void *clientData)
             {
-                h264_session *subsess = (h264_session *)clientData;
-                subsess->checkForAuxSDPLine1();
+                h264_session *session_ctx = (h264_session *)clientData;
+                session_ctx->checkForAuxSDPLine1();
             }
 
             void setDoneFlag()
@@ -120,7 +133,9 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                h264_source *source_ctx = h264_source::createNew(envir(), m_rgbuf_ctx_p);
+                estBitrate = 50000; // 50 Mbps.
+
+                h264_source *source_ctx = h264_source::createNew(envir(), codec_id(),m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 

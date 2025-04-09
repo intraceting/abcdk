@@ -7,6 +7,7 @@
 #ifndef ABCDK_RTSP_SERVER_SOURCE_HXX
 #define ABCDK_RTSP_SERVER_SOURCE_HXX
 
+#include "abcdk/util/trace.h"
 #include "abcdk/rtsp/rtsp.h"
 #include "packet.hxx"
 
@@ -19,10 +20,17 @@ namespace abcdk
         class source : public FramedSource
         {
         private:
+            int m_codec_id;
+
             TaskToken m_next_tasktoken;
             rtsp::packet m_pkt;
 
         public:
+            int codec_id()
+            {
+                return m_codec_id;
+            }
+            
             void doGetNextFrame()
             {
                 int chk;
@@ -30,11 +38,13 @@ namespace abcdk
                 chk = fetch(m_pkt);
                 if (chk <= 0)
                 {
-                    m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(10 * 1000, afterGetNextFrame, this);
+                    m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(10*1000, afterGetNextFrame, this);
                     return;
                 }
 
                 m_next_tasktoken = 0;
+
+                //abcdk_trace_printf(LOG_DEBUG,"DTS(%lld),PTS(%lld),DUR(%lld),",m_pkt.dts(),m_pkt.pts(),m_pkt.dur());
 
                 if (m_pkt.size() > fMaxSize)
                 {
@@ -47,7 +57,7 @@ namespace abcdk
                     fNumTruncatedBytes = 0;
                 }
 
-                fPresentationTime = *m_pkt.time();
+                gettimeofday(&fPresentationTime, NULL);
                 fDurationInMicroseconds = m_pkt.dur();
 
                 memcpy(fTo, m_pkt.data(), fFrameSize);
@@ -55,10 +65,13 @@ namespace abcdk
                 FramedSource::afterGetting(this);
             }
         protected:
-            source(UsageEnvironment &env)
+            source(UsageEnvironment &env,int codec_id)
                 : FramedSource(env)
             {
+                m_codec_id = codec_id;
+                m_next_tasktoken = 0;
             }
+
             virtual ~source()
             {
                 envir().taskScheduler().unscheduleDelayedTask(m_next_tasktoken);

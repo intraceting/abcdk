@@ -18,10 +18,20 @@ namespace abcdk
     {
         class session : public OnDemandServerMediaSubsession
         {
+        private:
+            int m_codec_id;
+
+        public:
+            int codec_id()
+            {
+                return m_codec_id;
+            }
+
         protected:
-            session(UsageEnvironment &env, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            session(UsageEnvironment &env, int codec_id, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
                 : OnDemandServerMediaSubsession(env, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
             {
+                m_codec_id = codec_id;
             }
 
             virtual ~session()

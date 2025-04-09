@@ -20,7 +20,6 @@ namespace abcdk
             int64_t m_pts;
             int64_t m_dts;
             int64_t m_dur; // 时长(微秒)。
-            timeval m_time;
         public:
             packet()
             {
@@ -61,11 +60,6 @@ namespace abcdk
                 return m_dur;
             }
 
-            timeval *time()
-            {
-                return &m_time;
-            }
-
         public:
             void clear()
             {
@@ -73,7 +67,6 @@ namespace abcdk
                 m_pts = (int64_t)UINT64_C(0x8000000000000000);
                 m_dts = (int64_t)UINT64_C(0x8000000000000000);
                 m_dur = 0;
-                m_time.tv_sec = m_time.tv_usec = 0;
             }
 
             packet &operator=(const packet &src)
@@ -82,7 +75,6 @@ namespace abcdk
                 m_dts = src.m_dts;
                 m_pts = src.m_pts;
                 m_dur = src.m_dur;
-                m_time = src.m_time;
 
                 return *this;
             }
@@ -105,7 +97,6 @@ namespace abcdk
                 m_dts = dts;
                 m_pts = pts;
                 m_dur = dur;
-                gettimeofday(&m_time, NULL);
             }
         };
     } // namespace rtsp

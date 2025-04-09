@@ -171,6 +171,13 @@ int abcdk_socket_option(int fd, int level, int name, void *data, int *len, int d
 int abcdk_sockopt_option_int(int fd, int level, int name, int *flag, int direction);
 
 /**
+ * 设置SOCKET选项(integer)。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_sockopt_option_int_set(int fd, int level, int name, int flag);
+
+/**
  * 获取或设置SOCKET选项(timeout)。
  * 
  * @param direction 方向。 1 读，2 写。

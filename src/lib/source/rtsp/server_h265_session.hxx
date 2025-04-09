@@ -31,9 +31,43 @@ namespace abcdk
             RTPSink *m_dummy_rtp_sink;
 
         public:
-            static h265_session *createNew(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            static h265_session *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
             {
-                return new h265_session(env, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+                return new h265_session(env, codec_id, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+            }
+
+            static void deleteOld(h265_session **ctx)
+            {
+                h265_session *ctx_p;
+
+                if (!ctx || !*ctx)
+                    return;
+
+                ctx_p = *ctx;
+                *ctx = NULL;
+
+                delete ctx_p;
+            }
+
+        protected:
+            h265_session(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+                : session(env, codec_id, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
+            {
+                m_rgbuf_ctx_p = rgbuf_ctx;
+
+                memset(&m_extdata,0,sizeof(m_extdata));
+                abcdk_hevc_extradata_deserialize(extdata->pptrs[0], extdata->sizes[0],&m_extdata);
+
+                m_aux_sdp_line = NULL;
+                m_done_flag = 0;
+                m_dummy_rtp_sink = NULL;
+            }
+            virtual ~h265_session()
+            {
+                for (int i = 0; i < m_extdata.nal_array_num; i++)
+                    abcdk_object_unref(&m_extdata.nal_array[i].nal);
+
+                delete[] m_aux_sdp_line;
             }
 
             void checkForAuxSDPLine1()
@@ -64,38 +98,17 @@ namespace abcdk
                 envir().taskScheduler().unscheduleDelayedTask(nextTask());
                 setDoneFlag();
             }
-
-        protected:
-            h265_session(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
-                : session(env, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
-            {
-                m_rgbuf_ctx_p = rgbuf_ctx;
-
-                memset(&m_extdata,0,sizeof(m_extdata));
-                abcdk_hevc_extradata_deserialize(extdata->pptrs[0], extdata->sizes[0],&m_extdata);
-
-                m_aux_sdp_line = NULL;
-                m_done_flag = 0;
-                m_dummy_rtp_sink = NULL;
-            }
-            virtual ~h265_session()
-            {
-                for (int i = 0; i < m_extdata.nal_array_num; i++)
-                    abcdk_object_unref(&m_extdata.nal_array[i].nal);
-
-                delete[] m_aux_sdp_line;
-            }
-
+            
             static void afterPlayingDummy(void *clientData)
             {
-                h265_session *subsess = (h265_session *)clientData;
-                subsess->afterPlayingDummy1();
+                h265_session *session_ctx = (h265_session *)clientData;
+                session_ctx->afterPlayingDummy1();
             }
 
             static void checkForAuxSDPLine(void *clientData)
             {
-                h265_session *subsess = (h265_session *)clientData;
-                subsess->checkForAuxSDPLine1();
+                h265_session *session_ctx = (h265_session *)clientData;
+                session_ctx->checkForAuxSDPLine1();
             }
 
             void setDoneFlag()
@@ -122,7 +135,9 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                h265_source *source_ctx = h265_source::createNew(envir(), m_rgbuf_ctx_p);
+                estBitrate = 50000; // 50 Mbps.
+
+                h265_source *source_ctx = h265_source::createNew(envir(), codec_id(), m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 

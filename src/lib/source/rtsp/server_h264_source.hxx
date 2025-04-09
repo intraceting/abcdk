@@ -23,14 +23,14 @@ namespace abcdk
             uint64_t m_rgbuf_idx;
 
         public:
-            static h264_source *createNew(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx)
+            static h264_source *createNew(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx)
             {
-                return new h264_source(env, rgbuf_ctx);
+                return new h264_source(env, codec_id, rgbuf_ctx);
             }
 
         protected:
-            h264_source(UsageEnvironment &env, rtsp::ringbuf *rgbuf_ctx)
-                : source(env)
+            h264_source(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx)
+                : source(env, codec_id)
             {
                 m_rgbuf_ctx_p = rgbuf_ctx;
                 m_rgbuf_idx = 0;
@@ -38,7 +38,6 @@ namespace abcdk
 
             virtual ~h264_source()
             {
-                
             }
 
             int fetch(rtsp::packet &pkt)
@@ -48,6 +47,8 @@ namespace abcdk
                 chk = m_rgbuf_ctx_p->read(pkt, m_rgbuf_idx);
                 if (chk <= 0)
                     return 0;
+
+                //  abcdk_trace_printf(LOG_DEBUG,"DTS(%lld),PTS(%lld),DUR(%lld),IDX(%llu)",pkt.dts(),pkt.pts(),pkt.dur(),m_rgbuf_idx);
 
                 return 1;
             }

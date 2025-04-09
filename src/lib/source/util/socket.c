@@ -232,6 +232,13 @@ int abcdk_sockopt_option_int(int fd,int level, int name,int *flag,int direction)
     return abcdk_socket_option(fd,level,name,flag,&len,direction);
 }
 
+int abcdk_sockopt_option_int_set(int fd, int level, int name, int flag)
+{
+    assert(fd >= 0 && level >= 0 && name > 0);
+    
+    return abcdk_sockopt_option_int(fd, level, name, &flag, 2);
+}
+
 int abcdk_sockopt_option_timeout(int fd,int name, struct timeval *tv,int direction)
 {
     socklen_t len = sizeof(struct timeval);
