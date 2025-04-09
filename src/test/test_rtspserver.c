@@ -75,7 +75,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
     }
 
    abcdk_rtsp_server_play_media(ctx,media);
-   abcdk_rtsp_server_remove_media(ctx,media);
+ //  abcdk_rtsp_server_remove_media(ctx,media);
 
  //  goto END;
 
