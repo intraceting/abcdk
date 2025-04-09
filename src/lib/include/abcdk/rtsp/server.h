@@ -31,11 +31,17 @@ void abcdk_rtsp_server_stop(abcdk_rtsp_server_t *ctx);
 /**启动。*/
 int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx);
 
-/**删除。*/
+/**删除账户。*/
+void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *username);
+
+/**添加账户。*/
+void abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password);
+
+/**删除媒体。*/
 void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media);
 
-/**媒体播放。*/
-int abcdk_rtsp_server_media_play(abcdk_rtsp_server_t *ctx,  int media);
+/**播放媒体。*/
+int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
 
 /**创建媒体。*/
 int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *info, const char *desc);

@@ -20,6 +20,15 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
    abcdk_rtsp_server_start(ctx);
 
+    abcdk_rtsp_server_add_user(ctx,"cccc","aaaa");
+    abcdk_rtsp_server_add_user(ctx,"dddd","bbbb");
+
+    abcdk_rtsp_server_remove_user(ctx,"cccc");
+    abcdk_rtsp_server_remove_user(ctx,"dddd");
+
+    abcdk_rtsp_server_add_user(ctx,"aaaa","aaaa");
+    abcdk_rtsp_server_add_user(ctx,"aaaa","bbbb");
+
 
     int media = abcdk_rtsp_server_create_media(ctx,"aaa","haha","haha test");
     assert(media > 0);
@@ -45,9 +54,6 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
         if(p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {   
-            abcdk_hevc_extradata_t extradata = {0};
-            abcdk_hevc_extradata_deserialize(p->codecpar->extradata, p->codecpar->extradata_size, &extradata);
-
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
             stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,10);
             abcdk_object_unref(&extdata);
@@ -68,17 +74,17 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         }
     }
 
-    abcdk_rtsp_server_media_play(ctx,media);
-    abcdk_rtsp_server_remove_media(ctx,media);
+   abcdk_rtsp_server_play_media(ctx,media);
+   abcdk_rtsp_server_remove_media(ctx,media);
 
-    goto END;
+ //  goto END;
 
    //abcdk_rtsp_server_start(ctx);
 
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for (int i = 0; i < 1000000; i++)
+    for (int i = 0; i < 100; i++)
     {
         int n = abcdk_ffeditor_read_packet(r, &pkt, -1);
         if (n < 0)
@@ -89,11 +95,15 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         abcdk_rtsp_server_media_append_stream(ctx, media, stream[pkt.stream_index], pkt.data , pkt.size , pkt.dts, pkt.pts, pkt.duration/abcdk_ffeditor_fps(r,pkt.stream_index)*1000);
     }
 
+    av_packet_unref(&pkt);
+
 END:
 
     abcdk_rtsp_server_stop(ctx);
 
     abcdk_rtsp_server_destroy(&ctx);
+
+    abcdk_ffeditor_destroy(&r);
 
     return 0;
 }

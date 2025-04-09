@@ -10,6 +10,7 @@
 #include "abcdk/rtsp/rtsp.h"
 #include "abcdk/util/rwlock.h"
 #include "abcdk/util/socket.h"
+#include "server_auth.hxx"
 #include "server_media.hxx"
 #include "rwlock_robot.hxx"
 #include "waiter.hxx"
@@ -22,14 +23,25 @@ namespace abcdk
     {
         class server : public RTSPServer
         {
+        protected:
+            enum async_cmd
+            {
+                MEDIA_DEL = 1,
+                MEDIA_PLAY = 2,
+                MEDIA_ADD = 3,
+                USER_ADD = 4,
+                USER_DEL = 5
+            };
         private:
             rtsp::rwlock m_medialist_locker;
-            std::map<int,rtsp_server::media*> m_medialist;
+            std::map<int,std::pair<int, rtsp_server::media*>> m_medialist;
             int m_media_index;
             
             rtsp::waiter m_cmdlist_waiter;
             rtsp::rwlock m_cmdlist_locker;
             std::queue<std::pair<int,std::vector<std::string>>> m_cmdlist;
+
+            UserAuthenticationDatabase *m_auth_ctx_p;
         public:
             static server *createNew(UsageEnvironment &env, Port ourPort, UserAuthenticationDatabase *authDatabase, unsigned reclamationTestSeconds = 65)
             {
@@ -49,6 +61,7 @@ namespace abcdk
                     abcdk_sockopt_option_int_set(ourSocketIPv6, SOL_SOCKET, SO_REUSEPORT, 1);
                     abcdk_sockopt_option_int_set(ourSocketIPv6, SOL_SOCKET, SO_REUSEADDR, 1);
                 }
+             
 
                 return new server(env, ourSocketIPv4, ourSocketIPv6, ourPort, authDatabase, reclamationTestSeconds);
             }
@@ -63,8 +76,65 @@ namespace abcdk
                 ctx_p = *ctx;
                 *ctx = NULL;
 
-                ctx_p->impl_remove_media_all();
-                delete ctx_p;
+                Medium::close(ctx_p->envir(),ctx_p->name());
+                //delete ctx_p;
+            }
+
+            void add_user(char const *username, char const *password)
+            {
+                uint64_t rsp_key = m_cmdlist_waiter.reg();
+                std::string *rsp_p = NULL;
+
+                m_cmdlist_locker.lock();
+
+                std::pair<int, std::vector<std::string>> param;
+
+                param.first = async_cmd::USER_ADD; // cmd
+
+                param.second.resize(3);
+                param.second[0] = std::to_string(rsp_key);
+                param.second[1] = username;
+                param.second[2] = password;
+
+                m_cmdlist.push(param);
+
+                envir().taskScheduler().scheduleDelayedTask(0, async_cmd_process, this);
+
+                m_cmdlist_locker.unlock();
+
+                rsp_p = (std::string *)m_cmdlist_waiter.wait(rsp_key, 15 * 1000);
+                if (!rsp_p)
+                    return;
+
+                delete rsp_p;
+            }
+
+            void remove_user(char const *username)
+            {
+                uint64_t rsp_key = m_cmdlist_waiter.reg();
+                std::string *rsp_p = NULL;
+
+                m_cmdlist_locker.lock();
+
+                std::pair<int, std::vector<std::string>> param;
+
+                param.first = async_cmd::USER_DEL; // cmd
+
+                param.second.resize(2);
+                param.second[0] = std::to_string(rsp_key);
+                param.second[1] = username;
+
+                m_cmdlist.push(param);
+
+                envir().taskScheduler().scheduleDelayedTask(0, async_cmd_process, this);
+
+                m_cmdlist_locker.unlock();
+
+                rsp_p = (std::string *)m_cmdlist_waiter.wait(rsp_key, 15 * 1000);
+                if (!rsp_p)
+                    return;
+
+                delete rsp_p;
             }
 
             void remove_media_all()
@@ -76,7 +146,7 @@ namespace abcdk
 
                 std::pair<int,std::vector<std::string>> param;
 
-                param.first = 1;//cmd
+                param.first = async_cmd::MEDIA_DEL;//cmd
 
                 param.second.resize(2);
                 param.second[0] = std::to_string(rsp_key);
@@ -104,7 +174,7 @@ namespace abcdk
 
                 std::pair<int, std::vector<std::string>> param;
 
-                param.first = 1; // cmd
+                param.first = async_cmd::MEDIA_DEL; // cmd
 
                 param.second.resize(2);
                 param.second[0] = std::to_string(rsp_key);
@@ -123,7 +193,7 @@ namespace abcdk
                 delete rsp_p;
             }
 
-            int media_play(int media)
+            int play_media(int media)
             {
                 uint64_t rsp_key = m_cmdlist_waiter.reg();
                 std::string *rsp_p = NULL;
@@ -133,7 +203,7 @@ namespace abcdk
 
                 std::pair<int,std::vector<std::string>> param;
 
-                param.first = 2;//cmd
+                param.first = async_cmd::MEDIA_PLAY;//cmd
 
                 param.second.resize(2);
                 param.second[0] = std::to_string(rsp_key);
@@ -165,7 +235,7 @@ namespace abcdk
 
                 std::pair<int, std::vector<std::string>> param;
 
-                param.first = 3; // cmd
+                param.first = async_cmd::MEDIA_ADD; // cmd
 
                 param.second.resize(4);
                 param.second[0] = std::to_string(rsp_key);
@@ -195,11 +265,17 @@ namespace abcdk
 
                 rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
 
-                std::map<int, rtsp_server::media *>::iterator it = m_medialist.find(media);
+                std::map<int,std::pair<int, rtsp_server::media*>>::iterator it = m_medialist.find(media);
                 if (it == m_medialist.end())
                     return -1;
 
-                idx = it->second->add_stream(codec,extdata,cache);
+                if(it->second.first != 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING,"媒体已经播放，不能添加新的流。");
+                    return -1;
+                }
+
+                idx = it->second.second->add_stream(codec,extdata,cache);
                 if(idx <= 0)
                     return -1;
 
@@ -212,11 +288,17 @@ namespace abcdk
 
                 rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
 
-                std::map<int, rtsp_server::media *>::iterator it = m_medialist.find(media);
+                std::map<int,std::pair<int, rtsp_server::media*>>::iterator it = m_medialist.find(media);
                 if (it == m_medialist.end())
                     return -1;
 
-                chk = it->second->append_stream(stream, data, size, dts, pts, dur);
+                if(it->second.first == 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING,"媒体尚未播放，不能接收数据包。");
+                    return -1;
+                }
+
+                chk = it->second.second->append_stream(stream, data, size, dts, pts, dur);
                 if(chk != 0)
                     return -1;
 
@@ -228,11 +310,14 @@ namespace abcdk
                 : RTSPServer(env, ourSocketIPv4, ourSocketIPv6, ourPort, authDatabase, reclamationTestSeconds)
             {
                 OutPacketBuffer::maxSize = 1024 * 1024; // 1MB
+
+                m_auth_ctx_p = authDatabase;
             }
 
             virtual ~server()
             {
-                cleanup();
+              //  impl_remove_media_all();
+                //cleanup();
             }
 
         protected:
@@ -260,7 +345,7 @@ namespace abcdk
                 {
                     return;
                 }
-                else if (cmdinfo.first == 1)
+                else if (cmdinfo.first == async_cmd::MEDIA_DEL)
                 {
                     rsp_key = atoi(cmdinfo.second[0].c_str());
 
@@ -271,15 +356,15 @@ namespace abcdk
 
                     ctx_p->m_cmdlist_waiter.response(rsp_key,new std::string(""));
                 }
-                else if (cmdinfo.first == 2)
+                else if (cmdinfo.first == async_cmd::MEDIA_PLAY)
                 {
                     rsp_key = atoi(cmdinfo.second[0].c_str());
 
-                    chk = ctx_p->impl_media_play(atoi(cmdinfo.second[1].c_str()));
+                    chk = ctx_p->impl_play_media(atoi(cmdinfo.second[1].c_str()));
 
                     ctx_p->m_cmdlist_waiter.response(rsp_key,new std::string(std::to_string(chk)));
                 }
-                else if (cmdinfo.first == 3)
+                else if (cmdinfo.first == async_cmd::MEDIA_ADD)
                 {
                     rsp_key = atoi(cmdinfo.second[0].c_str());
 
@@ -287,6 +372,32 @@ namespace abcdk
 
                     ctx_p->m_cmdlist_waiter.response(rsp_key,new std::string(std::to_string(chk)));
                 }
+                else if (cmdinfo.first == async_cmd::USER_ADD)
+                {
+                    rsp_key = atoi(cmdinfo.second[0].c_str());
+
+                    ctx_p->impl_add_user(cmdinfo.second[1].c_str(),cmdinfo.second[2].c_str());
+
+                    ctx_p->m_cmdlist_waiter.response(rsp_key,new std::string(""));
+                }
+                else if (cmdinfo.first == async_cmd::USER_DEL)
+                {
+                    rsp_key = atoi(cmdinfo.second[0].c_str());
+
+                    ctx_p->impl_remove_user(cmdinfo.second[1].c_str());
+
+                    ctx_p->m_cmdlist_waiter.response(rsp_key,new std::string(""));
+                }
+            }
+
+            void impl_add_user(char const *username, char const *password)
+            {
+                m_auth_ctx_p->addUserRecord(username,password);
+            }
+
+            void impl_remove_user(char const *username)
+            {
+                m_auth_ctx_p->removeUserRecord(username);
             }
 
             void impl_remove_media_all()
@@ -295,8 +406,10 @@ namespace abcdk
                 
                 for(auto &t: m_medialist)
                 {
-                    deleteServerMediaSession(t.second);
-                    rtsp_server::media::deleteOld(&t.second);
+                    if(t.second.first)
+                        deleteServerMediaSession(t.second.second);//已播放。
+                    else 
+                        rtsp_server::media::deleteOld(&t.second.second);//未播放。
                 }
 
                 m_medialist.clear();
@@ -306,25 +419,34 @@ namespace abcdk
             {
                 rtsp::rwlock_robot autolock(&m_medialist_locker,1);
 
-                std::map<int, rtsp_server::media *>::iterator it = m_medialist.find(media);
+                std::map<int,std::pair<int, rtsp_server::media*>>::iterator it = m_medialist.find(media);
                 if (it == m_medialist.end())
                     return;
 
-                deleteServerMediaSession(it->second);
-                rtsp_server::media::deleteOld(&it->second);
+                if(it->second.first)
+                    deleteServerMediaSession(it->second.second);//已播放。
+                else
+                    rtsp_server::media::deleteOld(&it->second.second);//未播放。
 
                 m_medialist.erase(it);
             }
 
-            int impl_media_play(int media)
+            int impl_play_media(int media)
             {
                 rtsp::rwlock_robot autolock(&m_medialist_locker, 1);
 
-                std::map<int, rtsp_server::media *>::iterator it = m_medialist.find(media);
+                std::map<int,std::pair<int, rtsp_server::media*>>::iterator it = m_medialist.find(media);
                 if (it == m_medialist.end())
                     return -1;
 
-                addServerMediaSession(it->second);
+                if(it->second.first != 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING,"媒体正在播放。");
+                    return 0;
+                }
+
+                addServerMediaSession(it->second.second);
+                it->second.first = 1;//已播放。
 
                 return 0;
             }
@@ -341,8 +463,9 @@ namespace abcdk
                     return -1;
 
                 idx = (m_media_index += 1);
-
-                m_medialist[idx] = media_ctx;
+                
+                m_medialist[idx].first = 0;//未播放。
+                m_medialist[idx].second = media_ctx;
 
                 return idx;
             }

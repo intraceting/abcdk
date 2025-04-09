@@ -41,7 +41,8 @@ namespace abcdk
                 ctx_p = *ctx;
                 *ctx = NULL;
 
-                delete ctx_p;
+                Medium::close(ctx_p->envir(),ctx_p->name());
+                //delete ctx_p;
             }
 
         protected:

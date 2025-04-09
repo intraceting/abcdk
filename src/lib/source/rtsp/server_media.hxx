@@ -43,7 +43,8 @@ namespace abcdk
                 *ctx = NULL;
 
                 ctx_p->deleteAllSubsessions();
-                Medium::close(ctx_p);
+                Medium::close(ctx_p->envir(),ctx_p->name());
+                //delete ctx_p;
             }
 
             int add_stream(int codec, abcdk_object_t *extdata, int cache)
