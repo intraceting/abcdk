@@ -84,7 +84,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 1000000000; i++)
     {
         int n = abcdk_ffeditor_read_packet(r, &pkt, -1);
         if (n < 0)
