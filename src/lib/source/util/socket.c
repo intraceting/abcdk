@@ -777,3 +777,22 @@ int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockadd
 
     return -1;
 }
+
+void abcdk_socket_getname(int fd, abcdk_sockaddr_t *re, abcdk_sockaddr_t *lc)
+{
+    socklen_t sock_len = 0;
+
+    assert(fd >= 0);
+
+    if(re)
+    {
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getpeername(fd, (struct sockaddr *)re, &sock_len);
+    }
+
+    if(lc)
+    {
+        sock_len = sizeof(abcdk_sockaddr_t);
+        getsockname(fd, (struct sockaddr *)lc, &sock_len);
+    }
+}

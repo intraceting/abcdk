@@ -8,6 +8,8 @@
 #define ABCDK_RTSP_SERVER_SESSION_HXX
 
 #include "abcdk/rtsp/rtsp.h"
+#include "abcdk/util/trace.h"
+#include "abcdk/util/socket.h"
 #include "packet.hxx"
 
 #ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
@@ -37,6 +39,44 @@ namespace abcdk
             virtual ~session()
             {
                 
+            }
+
+        protected:
+            void startStream(unsigned clientSessionId, void *streamToken, TaskFunc *rtcpRRHandler, void *rtcpRRHandlerClientData, unsigned short &rtpSeqNum, unsigned &rtpTimestamp,
+                             ServerRequestAlternativeByteHandler *serverRequestAlternativeByteHandler, void *serverRequestAlternativeByteHandlerClientData)
+            {
+
+                abcdk_sockaddr_t remote_addr = {0}, local_addr = {0};
+                char remote_str[NAME_MAX] = {0}, local_str[NAME_MAX] = {0};
+
+                Destinations *dest_p = (Destinations *)(fDestinationsHashTable->Lookup((char const *)(size_t)clientSessionId));
+                if (dest_p)
+                {
+                    if (dest_p->isTCP && dest_p->tcpSocketNum >= 0)
+                    {
+                        abcdk_socket_getname(dest_p->tcpSocketNum, &remote_addr, &local_addr);
+
+                        abcdk_sockaddr_to_string(remote_str, &remote_addr, 0);
+                        abcdk_sockaddr_to_string(local_str, &local_addr, 0);
+                    }
+                    else if (dest_p->addr.ss_family == AF_INET6 || dest_p->addr.ss_family == AF_INET)
+                    {
+                        abcdk_sockaddr_to_string(remote_str, (abcdk_sockaddr_t *)&dest_p->addr, 0);
+                    }
+                }
+
+                abcdk_trace_printf(LOG_DEBUG, "++++++++++++++++++++\nFunction: %s\nSession ID: %u\nMedia Name: %s\nTransport: %s\nRemote Address: %s\nLocal Address: %s\n++++++++++++++++++++\n",
+                                   __FUNCTION__, clientSessionId, fParentSession->streamName(), (dest_p->isTCP ? "TCP" : "UDP"), remote_str, local_str);
+
+                OnDemandServerMediaSubsession::startStream(clientSessionId, streamToken, rtcpRRHandler, rtcpRRHandlerClientData, rtpSeqNum, rtpTimestamp, serverRequestAlternativeByteHandler, serverRequestAlternativeByteHandlerClientData);
+            }
+
+            void deleteStream(unsigned clientSessionId, void *&streamToken)
+            {
+                abcdk_trace_printf(LOG_DEBUG, "++++++++++++++++++++\nFunction: %s\nSession ID: %u\n++++++++++++++++++++\n",
+                                   __FUNCTION__, clientSessionId);
+
+                OnDemandServerMediaSubsession::deleteStream(clientSessionId, streamToken);
             }
         };
     } // namespace rtsp_server

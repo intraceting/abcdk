@@ -59,7 +59,7 @@ namespace abcdk
                 if (sock4_fd < 0 && sock6_fd < 0)
                     return NULL;
 
-                /*启用，但可以未创建成功。*/
+                /*启用，但可能未创建成功。*/
                 if (((flag & 0x01) && sock4_fd < 0) || ((flag & 0x02) && sock6_fd < 0))
                 {
                     abcdk_closep(&sock4_fd);

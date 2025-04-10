@@ -361,6 +361,9 @@ void abcdk_sockaddr_make_range(abcdk_sockaddr_t *b,abcdk_sockaddr_t *e, const ab
 */
 int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockaddr_t *net);
 
+/** 获取地址。*/
+void abcdk_socket_getname(int fd, abcdk_sockaddr_t *re, abcdk_sockaddr_t *lc);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_SOCKET_H
