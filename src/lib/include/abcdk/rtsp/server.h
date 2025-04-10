@@ -77,17 +77,21 @@ int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
 */
 int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *title, const char *comment);
 
-/**向媒体添加流。*/
+/**
+ * 向媒体添加流。
+ * 
+ * @return 0 成功(流ID)，-1 失败。
+*/
 int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, int cache);
 
 /**
  * 向媒体播放流。
  * 
  * @param dur 播放时长(微秒)。
+ * 
+ * @return 0 成功，-1 失败。
 */
 int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t dur);
-
-
 
 
 __END_DECLS
