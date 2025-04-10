@@ -64,7 +64,7 @@ int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
  * @param [in] title 标题。
  * @param [in] comment 注释。
  * 
- * @return 0 成功，-1 失败。
+ * @return 0 成功(媒体ID)，-1 失败。
 */
 int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *title, const char *comment);
 
