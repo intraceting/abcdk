@@ -21,8 +21,26 @@ namespace abcdk
         private:
             rtsp::rwlock m_db_locker;
             std::map<std::string, std::array<char,NAME_MAX>> m_db;//固定大小的值，因为查询接口是用指针，但是对象又随时可能被删除。
-            
         public:
+            static auth *createNew(char const *realm = NULL)
+            {
+                return new auth(realm);
+            }
+
+            static void deleteOld(auth **ctx)
+            {
+                auth *ctx_p;
+
+                if (!ctx || !*ctx)
+                    return;
+
+                ctx_p = *ctx;
+                *ctx = NULL;
+
+                delete ctx_p;
+            }
+
+        protected:
             auth(char const *realm = NULL)
                 : UserAuthenticationDatabase(realm)
             {
@@ -41,6 +59,7 @@ namespace abcdk
 
                 rtsp::rwlock_robot autolock(&m_db_locker,1);
 
+                m_db[username].fill('\0');
                 strncpy(m_db[username].data(),password,NAME_MAX);
             }
 
@@ -55,8 +74,6 @@ namespace abcdk
                     return ;
 
                 m_db[username].fill('\0');
-
-
             }
 
             char const *lookupPassword(char const *username)
@@ -69,7 +86,11 @@ namespace abcdk
 
                 std::map<std::string, std::array<char,NAME_MAX>>::iterator it = m_db.find(username);
                 if (it != m_db.end())
+                {
                     p = it->second.data();
+                    if(*p == '\0')
+                        return NULL;
+                }
 
                 return p;
             }

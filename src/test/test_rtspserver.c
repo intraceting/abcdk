@@ -16,21 +16,30 @@
 int abcdk_test_rtspserver(abcdk_option_t *args)
 {
 
-    abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345,"ABCDK");
+    abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345,0x01|0x02);
 
-   abcdk_rtsp_server_start(ctx);
+    int chk = abcdk_rtsp_server_set_auth(ctx,"haha");
+    chk = abcdk_rtsp_server_set_auth(ctx,"hehe");
+    assert(chk == 0);
 
-    abcdk_rtsp_server_add_user(ctx,"cccc","aaaa");
-    abcdk_rtsp_server_add_user(ctx,"dddd","bbbb");
+    chk = abcdk_rtsp_server_start(ctx);
+    assert(chk == 0);
+
+    chk = abcdk_rtsp_server_add_user(ctx,"cccc","aaaa");
+    assert(chk == 0);
+    chk = abcdk_rtsp_server_add_user(ctx,"dddd","bbbb");
+    assert(chk == 0);
 
     abcdk_rtsp_server_remove_user(ctx,"cccc");
     abcdk_rtsp_server_remove_user(ctx,"dddd");
 
-    abcdk_rtsp_server_add_user(ctx,"aaaa","aaaa");
-    abcdk_rtsp_server_add_user(ctx,"aaaa","bbbb");
+    chk = abcdk_rtsp_server_add_user(ctx,"aaaa","aaaa");
+    assert(chk == 0);
+    chk = abcdk_rtsp_server_add_user(ctx,"aaaa","bbbb");
+    assert(chk == 0);
 
 
-    int media = abcdk_rtsp_server_create_media(ctx,"aaa","haha","haha test");
+    int media = abcdk_rtsp_server_create_media(ctx,"aaa",NULL,NULL);
     assert(media > 0);
 
     abcdk_ffeditor_config_t rcfg = {0};
@@ -55,7 +64,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         if(p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {   
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,10);
             abcdk_object_unref(&extdata);
 
 
@@ -63,13 +72,13 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         else if(p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_H264,extdata,10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_H264,extdata,10);
             abcdk_object_unref(&extdata);
         }
         else if(p->codecpar->codec_id == AV_CODEC_ID_AAC)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_media_add_stream(ctx,media,ABCDK_RTSP_CODEC_AAC,extdata,10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_AAC,extdata,10);
             abcdk_object_unref(&extdata);
         }
     }
@@ -92,18 +101,22 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
      //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration*1000);
 
-        abcdk_rtsp_server_media_append_stream(ctx, media, stream[pkt.stream_index], pkt.data , pkt.size , pkt.dts, pkt.pts, pkt.duration/abcdk_ffeditor_fps(r,pkt.stream_index)*1000);
+        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data , pkt.size , pkt.duration/abcdk_ffeditor_fps(r,pkt.stream_index)*1000);
     }
 
     av_packet_unref(&pkt);
 
+    abcdk_rtsp_server_remove_media(ctx,media);
+
 END:
+
+
+    abcdk_ffeditor_destroy(&r);
 
     abcdk_rtsp_server_stop(ctx);
 
     abcdk_rtsp_server_destroy(&ctx);
 
-    abcdk_ffeditor_destroy(&r);
 
     return 0;
 }

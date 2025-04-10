@@ -22,11 +22,18 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx);
 /**
  * 创建。
  * 
- * @param [in] realm 领域。
+ * @param [in] flag 标志。0x01(IPV4)，0x02(IPV6)。
 */
-abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char  *realm);
+abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, int flag);
 
-
+/**
+ * 设置授权管理。
+ * 
+ * @param [in] realm 领域。NULL(0) 默认。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx,const char  *realm);
 
 /**
  * 设置TLS证书和私钥。
@@ -48,8 +55,10 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
  * 添加账户。
  * 
  * @note 如果账户已经存在，则只更新密码。
+ * 
+ * @return 0 成功，-1 失败。
 */
-void abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password);
+int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password);
 
 /**删除媒体。*/
 void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media);
@@ -61,8 +70,8 @@ int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
  * 创建媒体。
  * 
  * @param [in] name 资源名称。
- * @param [in] title 标题。
- * @param [in] comment 注释。
+ * @param [in] title 标题。NULL(0) 默认。
+ * @param [in] comment 注释。NULL(0) 默认。
  * 
  * @return 0 成功(媒体ID)，-1 失败。
 */

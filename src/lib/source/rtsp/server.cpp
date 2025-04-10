@@ -27,7 +27,6 @@ struct _abcdk_rtsp_server
 
     TaskScheduler *l5_scheduler_ctx;
     abcdk::rtsp_server::env *l5_env_ctx;
-    abcdk::rtsp_server::auth *l5_auth_ctx;
     abcdk::rtsp::server *l5_server_ctx;
 
 }; // abcdk_rtsp_server_t;
@@ -50,12 +49,6 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx)
         ctx_p->l5_server_ctx = NULL;
     }
 
-    if (ctx_p->l5_auth_ctx)
-    {
-        delete ctx_p->l5_auth_ctx;
-        ctx_p->l5_auth_ctx = NULL;
-    }
-
     if (ctx_p->l5_env_ctx)
     {
         abcdk::rtsp_server::env::deleteOld(&ctx_p->l5_env_ctx);
@@ -71,7 +64,7 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char *realm)
+abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, int flag)
 {
     abcdk_rtsp_server_t *ctx;
 
@@ -92,11 +85,7 @@ abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char *realm)
     if (!ctx->l5_env_ctx)
         goto ERR;
 
-    ctx->l5_auth_ctx = new abcdk::rtsp_server::auth(realm?realm:ABCDK_RTSP_SERVER_REALM);
-    if (!ctx->l5_auth_ctx)
-        goto ERR;
-
-    ctx->l5_server_ctx = abcdk::rtsp::server::createNew(*ctx->l5_env_ctx, port, ctx->l5_auth_ctx);
+    ctx->l5_server_ctx = abcdk::rtsp::server::createNew(*ctx->l5_env_ctx, port, flag);
     if (!ctx->l5_server_ctx)
         goto ERR;
 
@@ -107,14 +96,33 @@ ERR:
     return NULL;
 }
 
+int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx, const char *realm)
+{
+    int chk;
+
+    assert(ctx != NULL && realm != NULL);
+
+    ABCDK_ASSERT(ctx->worker_flag, TT("服务已经启动，禁止修改基础配置。"));
+
+    chk = ctx->l5_server_ctx->set_auth(realm ? realm : ABCDK_RTSP_SERVER_REALM);
+    if(chk != 0)
+        return -1;
+
+    return 0;
+}
+
 int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx, const char *cert, const char *key)
 {
+    int chk;
+
     assert(ctx != NULL && cert != NULL && key != NULL);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务已经启动，禁止修改基础配置。"));
+    ABCDK_ASSERT(ctx->worker_flag, TT("服务已经启动，禁止修改基础配置。"));
 
-    ctx->l5_server_ctx->setTLSState(cert, key);
-
+    chk = ctx->l5_server_ctx->set_tls(cert, key);
+    if(chk != 0)
+        return -1;
+        
     return 0;
 }
 
@@ -156,25 +164,31 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
 {
     assert(ctx != NULL && username != NULL);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
     ctx->l5_server_ctx->remove_user(username);
 }
 
-void abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password)
+int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password)
 {
+    int chk;
+
     assert(ctx != NULL && username != NULL && password != NULL);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
-    ctx->l5_server_ctx->add_user(username, password);
+    chk = ctx->l5_server_ctx->add_user(username, password);
+    if(chk != 0)
+        return -1;
+
+    return 0;
 }
 
 void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media)
 {
     assert(ctx != NULL && media > 0);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
     ctx->l5_server_ctx->remove_media(media);
 }
@@ -185,7 +199,7 @@ int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx, int media)
 
     assert(ctx != NULL && media > 0);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
     chk = ctx->l5_server_ctx->play_media(media);
     if (chk != 0)
@@ -200,7 +214,7 @@ int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, c
 
     assert(ctx != NULL && name != NULL);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
     chk = ctx->l5_server_ctx->create_media(name, (comment ? comment : ABCDK_RTSP_SERVER_REALM), (title ? title : ABCDK_RTSP_SERVER_REALM));
     if (chk <= 0)
@@ -215,7 +229,7 @@ int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec,
 
     assert(ctx != NULL && media > 0 && codec > ABCDK_RTSP_CODEC_NONE && extdata != NULL && cache >= 2);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
     chk = ctx->l5_server_ctx->add_stream(media, codec, extdata, cache);
     if (chk <= 0)
@@ -228,9 +242,9 @@ int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int strea
 {
     int chk;
 
-    assert(ctx != NULL && media > 0 && stream > 0 && data != NULL && size > 0 && dur > 0);
+    assert(ctx != NULL && media > 0 && stream > 0 && data != NULL && size > 0 && dur >= 0);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
+    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
     chk = ctx->l5_server_ctx->play_stream(media, stream, data, size, dur);
     if (chk != 0)
