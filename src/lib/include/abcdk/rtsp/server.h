@@ -19,11 +19,21 @@ typedef struct _abcdk_rtsp_server abcdk_rtsp_server_t;
 /**销毁。*/
 void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx);
 
-/**创建。*/
+/**
+ * 创建。
+ * 
+ * @param [in] realm 领域。
+*/
 abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, const char  *realm);
 
-/**启用TLS。*/
-int abcdk_rtsp_server_enable_tls(abcdk_rtsp_server_t *ctx,const char *cert,const char *key);
+
+
+/**
+ * 设置TLS证书和私钥。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx,const char *cert,const char *key);
 
 /**停止。*/
 void abcdk_rtsp_server_stop(abcdk_rtsp_server_t *ctx);
@@ -34,7 +44,11 @@ int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx);
 /**删除账户。*/
 void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *username);
 
-/**添加账户。*/
+/**
+ * 添加账户。
+ * 
+ * @note 如果账户已经存在，则只更新密码。
+*/
 void abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password);
 
 /**删除媒体。*/
@@ -43,14 +57,26 @@ void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media);
 /**播放媒体。*/
 int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
 
-/**创建媒体。*/
-int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *info, const char *desc);
+/**
+ * 创建媒体。
+ * 
+ * @param [in] name 资源名称。
+ * @param [in] title 标题。
+ * @param [in] comment 注释。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *title, const char *comment);
 
-/**媒体添加流。*/
-int abcdk_rtsp_server_media_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, int cache);
+/**向媒体添加流。*/
+int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, int cache);
 
-/**媒体流附加数据。*/
-int abcdk_rtsp_server_media_append_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur);
+/**
+ * 向媒体播放流。
+ * 
+ * @param dur 播放时长(微秒)。
+*/
+int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t dur);
 
 
 

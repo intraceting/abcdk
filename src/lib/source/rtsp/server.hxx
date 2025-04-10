@@ -259,7 +259,7 @@ namespace abcdk
                 return idx;
             }
 
-            int media_add_stream(int media, int codec, abcdk_object_t *extdata, int cache)
+            int add_stream(int media, int codec, abcdk_object_t *extdata, int cache)
             {
                 int idx;
 
@@ -271,7 +271,7 @@ namespace abcdk
 
                 if(it->second.first != 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING,"媒体已经播放，不能添加新的流。");
+                    abcdk_trace_printf(LOG_WARNING,TT("媒体已经播放，不能添加新的流。"));
                     return -1;
                 }
 
@@ -282,7 +282,7 @@ namespace abcdk
                 return idx;
             }
 
-            int media_append_stream(int media, int stream, const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
+            int play_stream(int media, int stream, const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
             {
                 int chk;
 
@@ -294,7 +294,7 @@ namespace abcdk
 
                 if(it->second.first == 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING,"媒体尚未播放，不能接收数据包。");
+                    abcdk_trace_printf(LOG_WARNING,TT("媒体尚未播放，不能接收数据包。"));
                     return -1;
                 }
 
@@ -316,8 +316,7 @@ namespace abcdk
 
             virtual ~server()
             {
-              //  impl_remove_media_all();
-                //cleanup();
+
             }
 
         protected:

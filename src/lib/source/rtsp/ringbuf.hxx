@@ -36,7 +36,7 @@ namespace abcdk
             {
                 assert(size > 0);
 
-                rtsp::rwlock_robot autolock(&m_queuq_locker,1);
+                rtsp::rwlock_robot autolock(&m_queuq_locker, 1);
 
                 m_queue.resize(size);
                 m_pos = 0;
@@ -44,29 +44,29 @@ namespace abcdk
 
             void write(packet &src)
             {
-                rtsp::rwlock_robot autolock(&m_queuq_locker,0);
+                rtsp::rwlock_robot autolock(&m_queuq_locker, 0);
 
                 m_queue[m_pos % m_queue.size()].copy_from(src);
-                m_pos += 1;//next
+                m_pos += 1; // next
             }
 
-            void write(const void *data, size_t size, int64_t dts, int64_t pts, int64_t dur)
+            void write(const void *data, size_t size, int64_t dur)
             {
-                rtsp::rwlock_robot autolock(&m_queuq_locker,0);
+                rtsp::rwlock_robot autolock(&m_queuq_locker, 0);
 
-                m_queue[m_pos % m_queue.size()].copy_from(data,size,dts,pts,dur);
-                m_pos += 1;//next
+                m_queue[m_pos % m_queue.size()].copy_from(data, size, dur);
+                m_pos += 1; // next
             }
 
             int read(packet &dst, uint64_t &pos)
             {
-                rtsp::rwlock_robot autolock(&m_queuq_locker,0);
+                rtsp::rwlock_robot autolock(&m_queuq_locker, 0);
 
                 if (pos % m_queue.size() == m_pos % m_queue.size())
                     return 0;
 
                 m_queue[pos % m_queue.size()].copy_to(dst);
-                pos += 1;//next 
+                pos += 1; // next
 
                 return 1;
             }
