@@ -43,7 +43,7 @@ typedef enum _abcdk_rtsp_codec_constant
 #define ABCDK_RTSP_CODEC_AAC ABCDK_RTSP_CODEC_AAC
 
     /*extdata[0] = channels,extdata[1]=sample_rate.*/
-    ABCDK_RTSP_CODEC_PCM_MULAW,
+    ABCDK_RTSP_CODEC_PCM_MULAW = 200,
 #define ABCDK_RTSP_CODEC_PCM_MULAW ABCDK_RTSP_CODEC_PCM_MULAW
 #define ABCDK_RTSP_CODEC_G711U ABCDK_RTSP_CODEC_PCM_MULAW
 

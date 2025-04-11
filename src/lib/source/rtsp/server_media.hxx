@@ -9,6 +9,7 @@
 
 #include "abcdk/rtsp/rtsp.h"
 #include "abcdk/util/rwlock.h"
+#include "abcdk/util/h2645.h"
 #include "ringbuf.hxx"
 #include "server_h264_session.hxx"
 #include "server_h265_session.hxx"
@@ -48,7 +49,7 @@ namespace abcdk
                 //delete ctx_p;
             }
 
-            int add_stream(int codec, abcdk_object_t *extdata, int cache)
+            int add_stream(int codec, abcdk_object_t *extdata, uint32_t bitrate, uint32_t cache)
             {
                 rtsp_server::session *subsession_ctx;
                 int idx;
@@ -59,13 +60,13 @@ namespace abcdk
                 m_stream[idx].second.reset(cache);
 
                 if (codec == ABCDK_RTSP_CODEC_H264)
-                    subsession_ctx = rtsp_server::h264_session::createNew(envir(),ABCDK_RTSP_CODEC_H264, &m_stream[idx].second, extdata);
+                    subsession_ctx = rtsp_server::h264_session::createNew(envir(), ABCDK_RTSP_CODEC_H264, &m_stream[idx].second, extdata, bitrate);
                 else if (codec == ABCDK_RTSP_CODEC_H265)
-                    subsession_ctx = rtsp_server::h265_session::createNew(envir(),ABCDK_RTSP_CODEC_H265, &m_stream[idx].second, extdata);
+                    subsession_ctx = rtsp_server::h265_session::createNew(envir(), ABCDK_RTSP_CODEC_H265, &m_stream[idx].second, extdata, bitrate);
                 else if (codec == ABCDK_RTSP_CODEC_AAC)
-                    subsession_ctx = rtsp_server::aac_session::createNew(envir(),ABCDK_RTSP_CODEC_AAC, &m_stream[idx].second, extdata);
+                    subsession_ctx = rtsp_server::aac_session::createNew(envir(), ABCDK_RTSP_CODEC_AAC, &m_stream[idx].second, extdata, bitrate);
                 else if (codec == ABCDK_RTSP_CODEC_G711A || codec == ABCDK_RTSP_CODEC_G711U)
-                    subsession_ctx = rtsp_server::g711_session::createNew(envir(),codec, &m_stream[idx].second, extdata);
+                    subsession_ctx = rtsp_server::g711_session::createNew(envir(), codec, &m_stream[idx].second, extdata, bitrate);
                 else
                     goto ERR;
 
@@ -81,6 +82,7 @@ namespace abcdk
                     else if (codec == ABCDK_RTSP_CODEC_G711A || codec == ABCDK_RTSP_CODEC_G711U)
                         rtsp_server::g711_session::deleteOld((rtsp_server::g711_session **)&subsession_ctx);
 
+                    /**/
                     goto ERR;
                 }
 
@@ -98,10 +100,9 @@ namespace abcdk
 
             }
 
-            int append_stream(int stream,const void *data, size_t size, int64_t dur)
+            int append_stream0(int stream,const void *data, size_t size, int64_t dur)
             {
-                uint8_t startcode3[3] = {0,0,1};
-                uint8_t startcode4[4] = {0,0,0,1};
+                uint8_t sc3[3] = {0,0,1},sc4[4] = {0,0,0,1};
 
                 std::map<int, std::pair<rtsp_server::session *, rtsp::ringbuf>>::iterator it = m_stream.find(stream);
                 if(it == m_stream.end())
@@ -111,12 +112,12 @@ namespace abcdk
                 if (it->second.first->codec_id() == ABCDK_RTSP_CODEC_H264 ||
                     it->second.first->codec_id() == ABCDK_RTSP_CODEC_H265)
                 {
-                    if (memcmp(data, startcode4, 4) == 0)
+                    if (memcmp(data, sc4, 4) == 0)
                     {
                         data = ABCDK_PTR2VPTR(data, 4);
                         size -= 4;
                     }
-                    else if (memcmp(data, startcode4, 3) == 0)
+                    else if (memcmp(data, sc3, 3) == 0)
                     {
                         data = ABCDK_PTR2VPTR(data, 3);
                         size -= 3;
@@ -126,6 +127,54 @@ namespace abcdk
                 it->second.second.write(data,size,dur);
 
                 return 0;
+            }
+
+            int append_stream(int stream, const void *data, size_t size, int64_t dur)
+            {
+                uint8_t sc3[3] = {0,0,1},sc4[4] = {0,0,0,1};
+                const void *p1 = NULL, *p2 = NULL, *p3 = NULL;
+                int chk;
+
+                std::map<int, std::pair<rtsp_server::session *, rtsp::ringbuf>>::iterator it = m_stream.find(stream);
+                if (it == m_stream.end())
+                    return -1;
+
+                /*H264，H265。*/
+                if (it->second.first->codec_id() == ABCDK_RTSP_CODEC_H264 ||
+                    it->second.first->codec_id() == ABCDK_RTSP_CODEC_H265)
+                {
+                    if (memcmp(data, sc4, 4) == 0 || memcmp(data, sc3, 3) == 0)
+                    {
+                        /*存在起始码必须先拆包，因为RTP不支持码流内的拼包。*/
+                        p1 = data;
+                        p2 = NULL;
+                        p3 = ABCDK_PTR2VPTR(data, size - 1); /*末尾指针要减1。*/
+
+                        for (;;)
+                        {
+                            if (p1 > p3)
+                                return 0;
+
+                            p2 = abcdk_h2645_packet_split((void **)&p1, p3);
+                            if (p2 == NULL)
+                                return 0;
+
+                            chk = append_stream0(stream, p2, (size_t)p1 - (size_t)p2, dur);
+                            if (chk != 0)
+                                return chk;
+                        }
+                    }
+                    else
+                    {
+                        return append_stream0(stream, data, size, dur);
+                    }
+                }
+                else
+                {
+                    return append_stream0(stream, data, size, dur);
+                }
+
+                return -1;
             }
 
         protected:

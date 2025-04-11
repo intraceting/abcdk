@@ -10,7 +10,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/basecode.h"
 #include "abcdk/util/aac.h"
-#include "server_aac_source.hxx"
+#include "server_general_source.hxx"
 #include "server_session.hxx"
 
 #ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
@@ -24,11 +24,12 @@ namespace abcdk
         private:
             rtsp::ringbuf *m_rgbuf_ctx_p;
             abcdk_aac_adts_header_t m_extdata;
+            uint32_t m_bitrate;
 
         public:
-            static aac_session *createNew(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            static aac_session *createNew(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, uint32_t bitrate)
             {
-                return new aac_session(env, codec_id, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+                return new aac_session(env, codec_id, rgbuf_ctx, extdata, bitrate);
             }
 
             static void deleteOld(aac_session **ctx)
@@ -46,13 +47,15 @@ namespace abcdk
             }
 
         protected:
-            aac_session(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
-                : session(env, codec_id, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
+            aac_session(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, uint32_t bitrate)
+                : session(env, codec_id)
             {
                 m_rgbuf_ctx_p = rgbuf_ctx;
 
                 memset(&m_extdata, 0, sizeof(m_extdata));
                 abcdk_aac_extradata_deserialize(extdata->pptrs[0], extdata->sizes[0], &m_extdata);
+
+                m_bitrate = bitrate;
             }
             virtual ~aac_session()
             {
@@ -60,9 +63,9 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                estBitrate = 96; // 96 kbps.
+                estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)96, m_bitrate); // bps, 96 ~ MAX.
 
-                aac_source *source_ctx = aac_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
+                general_source *source_ctx = general_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 

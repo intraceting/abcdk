@@ -38,9 +38,12 @@ int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx,const char  *realm);
 /**
  * 设置TLS证书和私钥。
  * 
+ * @param [in] enable_srtp 启用SRTP协议。0 禁用，!0 启用。
+ * @param [in] encrypt_srtp SRTP数据加密。0 否，!0 是。
+ * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx,const char *cert,const char *key);
+int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx,const char *cert,const char *key, int enable_srtp, int encrypt_srtp);
 
 /**停止。*/
 void abcdk_rtsp_server_stop(abcdk_rtsp_server_t *ctx);
@@ -80,9 +83,13 @@ int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, c
 /**
  * 向媒体添加流。
  * 
+ * @param [in] extdata 编码信息。
+ * @param [in] bitrate 码率(kbps)。
+ * @param [in] cache 缓存(帧)。
+ * 
  * @return 0 成功(流ID)，-1 失败。
 */
-int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, int cache);
+int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, uint32_t bitrate, int cache);
 
 /**
  * 向媒体播放流。

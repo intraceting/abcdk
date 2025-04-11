@@ -10,7 +10,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/basecode.h"
 #include "abcdk/util/h264.h"
-#include "server_h264_source.hxx"
+#include "server_h2645_source.hxx"
 #include "server_session.hxx"
 
 #ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
@@ -24,15 +24,16 @@ namespace abcdk
         private:
             rtsp::ringbuf *m_rgbuf_ctx_p;
             abcdk_h264_extradata_t m_extdata;
+            uint32_t m_bitrate;
 
             char *m_aux_sdp_line;
             char m_done_flag;
             RTPSink *m_dummy_rtp_sink;
 
         public:
-            static h264_session *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            static h264_session *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, uint32_t bitrate)
             {
-                return new h264_session(env, codec_id, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+                return new h264_session(env, codec_id, rgbuf_ctx, extdata, bitrate);
             }
 
             static void deleteOld(h264_session **ctx)
@@ -50,13 +51,15 @@ namespace abcdk
             }
 
         protected:
-            h264_session(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
-                : session(env, codec_id, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
+            h264_session(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, uint32_t bitrate)
+                : session(env, codec_id)
             {
                 m_rgbuf_ctx_p = rgbuf_ctx;
                 
                 memset(&m_extdata,0,sizeof(m_extdata));
                 abcdk_h264_extradata_deserialize(extdata->pptrs[0], extdata->sizes[0],&m_extdata);
+
+                m_bitrate = bitrate;
 
                 m_aux_sdp_line = NULL;
                 m_done_flag = 0;
@@ -134,9 +137,9 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                estBitrate = 50000; // 50 Mbps.
+                estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)1500, m_bitrate); // bps, 1500 ~ MAX.
 
-                h264_source *source_ctx = h264_source::createNew(envir(), codec_id(),m_rgbuf_ctx_p);
+                h2645_source *source_ctx = h2645_source::createNew(envir(), codec_id(),m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 

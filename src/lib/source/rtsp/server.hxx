@@ -101,9 +101,9 @@ namespace abcdk
                 return 0;
             }
 
-            int set_tls(const char *cert, const char *key)
+            int set_tls(const char *cert, const char *key, int enable_srtp, int encrypt_srtp)
             {
-                setTLSState(cert, key);
+                setTLSState(cert, key, enable_srtp, encrypt_srtp);
 
                 return 0;
             }
@@ -291,7 +291,7 @@ namespace abcdk
                 return idx;
             }
 
-            int add_stream(int media, int codec, abcdk_object_t *extdata, int cache)
+            int add_stream(int media, int codec, abcdk_object_t *extdata, uint32_t bitrate, int cache)
             {
                 int idx;
 
@@ -307,7 +307,7 @@ namespace abcdk
                     return -1;
                 }
 
-                idx = it->second.second->add_stream(codec, extdata, cache);
+                idx = it->second.second->add_stream(codec, extdata, bitrate, cache);
                 if (idx <= 0)
                     return -1;
 
@@ -341,7 +341,7 @@ namespace abcdk
             server(UsageEnvironment &env, int ourSocketIPv4, int ourSocketIPv6, Port ourPort, unsigned reclamationTestSeconds)
                 : RTSPServer(env, ourSocketIPv4, ourSocketIPv6, ourPort, NULL, reclamationTestSeconds)
             {
-                OutPacketBuffer::maxSize = 1024 * 1024; // 1MB
+                OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
 
                 m_auth_ctx = NULL; // no auth.
             }

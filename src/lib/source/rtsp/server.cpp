@@ -111,7 +111,7 @@ int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx, const char *realm)
     return 0;
 }
 
-int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx, const char *cert, const char *key)
+int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx, const char *cert, const char *key, int enable_srtp, int encrypt_srtp)
 {
     int chk;
 
@@ -119,10 +119,10 @@ int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx, const char *cert, const 
 
     ABCDK_ASSERT(ctx->worker_flag, TT("服务已经启动，禁止修改基础配置。"));
 
-    chk = ctx->l5_server_ctx->set_tls(cert, key);
-    if(chk != 0)
+    chk = ctx->l5_server_ctx->set_tls(cert, key, enable_srtp, encrypt_srtp);
+    if (chk != 0)
         return -1;
-        
+
     return 0;
 }
 
@@ -223,15 +223,15 @@ int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, c
     return chk;
 }
 
-int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, int cache)
+int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, uint32_t bitrate, int cache)
 {
     int chk;
 
-    assert(ctx != NULL && media > 0 && codec > ABCDK_RTSP_CODEC_NONE && extdata != NULL && cache >= 2);
+    assert(ctx != NULL && media > 0 && codec > ABCDK_RTSP_CODEC_NONE && extdata != NULL && bitrate > 0 && cache >= 2);
 
     ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
-    chk = ctx->l5_server_ctx->add_stream(media, codec, extdata, cache);
+    chk = ctx->l5_server_ctx->add_stream(media, codec, extdata, bitrate, cache);
     if (chk <= 0)
         return -1;
 

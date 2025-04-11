@@ -16,93 +16,98 @@
 int abcdk_test_rtspserver(abcdk_option_t *args)
 {
 
-    abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345,0x01|0x02);
+    abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345, 0x01 | 0x02);
 
-    int chk = abcdk_rtsp_server_set_auth(ctx,"haha");
-    chk = abcdk_rtsp_server_set_auth(ctx,"hehe");
+    int chk = abcdk_rtsp_server_set_auth(ctx, "haha");
+    chk = abcdk_rtsp_server_set_auth(ctx, "hehe");
     assert(chk == 0);
+
+    const char *cert_p = abcdk_option_get(args, "--cert", 0, NULL);
+    const char *key_p = abcdk_option_get(args, "--key", 0, NULL);
+
+    if (cert_p && key_p)
+        abcdk_rtsp_server_set_tls(ctx, cert_p, key_p, 0, 0);
 
     chk = abcdk_rtsp_server_start(ctx);
     assert(chk == 0);
 
-    chk = abcdk_rtsp_server_add_user(ctx,"cccc","aaaa");
+    chk = abcdk_rtsp_server_add_user(ctx, "cccc", "aaaa");
     assert(chk == 0);
-    chk = abcdk_rtsp_server_add_user(ctx,"dddd","bbbb");
-    assert(chk == 0);
-
-    abcdk_rtsp_server_remove_user(ctx,"cccc");
-    abcdk_rtsp_server_remove_user(ctx,"dddd");
-
-    chk = abcdk_rtsp_server_add_user(ctx,"aaaa","aaaa");
-    assert(chk == 0);
-    chk = abcdk_rtsp_server_add_user(ctx,"aaaa","bbbb");
+    chk = abcdk_rtsp_server_add_user(ctx, "dddd", "bbbb");
     assert(chk == 0);
 
+    abcdk_rtsp_server_remove_user(ctx, "cccc");
+    abcdk_rtsp_server_remove_user(ctx, "dddd");
 
-    int media = abcdk_rtsp_server_create_media(ctx,"aaa",NULL,NULL);
+    chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "aaaa");
+    assert(chk == 0);
+    chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "bbbb");
+    assert(chk == 0);
+
+    int media = abcdk_rtsp_server_create_media(ctx, "aaa", NULL, NULL);
     assert(media > 0);
 
     abcdk_ffeditor_config_t rcfg = {0};
 
-    rcfg.file_name = abcdk_option_get(args,"--src",0,"");
-    rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
-    rcfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,1);
+    rcfg.file_name = abcdk_option_get(args, "--src", 0, "");
+    rcfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
+    rcfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 1);
     rcfg.bit_stream_filter = 1;
 
     abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
 
     AVFormatContext *rf = abcdk_ffeditor_ctxptr(r);
 
-    //abcdk_avformat_dump(rf,0);
+    // abcdk_avformat_dump(rf,0);
 
-    int stream[16] = {-1,-1,-1,-1};
-    
-    for(int i = 0;i<abcdk_ffeditor_streams(r);i++)
+    int stream[16] = {-1, -1, -1, -1};
+
+    for (int i = 0; i < abcdk_ffeditor_streams(r); i++)
     {
-        AVStream * p = abcdk_ffeditor_streamptr(r,i);
+        AVStream *p = abcdk_ffeditor_streamptr(r, i);
 
-        if(p->codecpar->codec_id == AV_CODEC_ID_HEVC)
-        {   
-            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,10);
+        if (p->codecpar->codec_id == AV_CODEC_ID_HEVC)
+        {
+            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H265, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 100);
             abcdk_object_unref(&extdata);
         }
-        else if(p->codecpar->codec_id == AV_CODEC_ID_H264)
+        else if (p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
-            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_H264,extdata,10);
+            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H264, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 100);
             abcdk_object_unref(&extdata);
         }
-        else if(p->codecpar->codec_id == AV_CODEC_ID_AAC)
+        else if (p->codecpar->codec_id == AV_CODEC_ID_AAC)
         {
-            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_AAC,extdata,10);
+            abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_AAC, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 100);
             abcdk_object_unref(&extdata);
         }
-        else if(p->codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
+        else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
         {
-            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int),2);//[0] = channels,[1]=sample_rate
-            ABCDK_PTR2I32(extdata->pptrs[0],0) = p->codecpar->channels;
-            ABCDK_PTR2I32(extdata->pptrs[1],0) = p->codecpar->sample_rate;
-            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_G711U,extdata,10);
+            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
+            ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711U, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 100);
             abcdk_object_unref(&extdata);
         }
-        else if(p->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
+        else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
         {
-            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int),2);//[0] = channels,[1]=sample_rate
-            ABCDK_PTR2I32(extdata->pptrs[0],0) = p->codecpar->channels;
-            ABCDK_PTR2I32(extdata->pptrs[1],0) = p->codecpar->sample_rate;
-            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_G711A,extdata,10);
+            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
+            ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 100);
             abcdk_object_unref(&extdata);
         }
     }
 
-   abcdk_rtsp_server_play_media(ctx,media);
- //  abcdk_rtsp_server_remove_media(ctx,media);
+    abcdk_rtsp_server_play_media(ctx, media);
+    //  abcdk_rtsp_server_remove_media(ctx,media);
 
- //  goto END;
+    //  goto END;
 
-   //abcdk_rtsp_server_start(ctx);
+    // abcdk_rtsp_server_start(ctx);
 
     AVPacket pkt;
 
@@ -113,24 +118,25 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         if (n < 0)
             break;
 
-     //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration*1000);
+            //abcdk_h2645_mp4toannexb(pkt.data,pkt.size,4);
 
-        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data , pkt.size , pkt.duration/abcdk_ffeditor_fps(r,pkt.stream_index)*1000);
+        //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration*1000);
+
+        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration / abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
+      //  abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration);
     }
 
     av_packet_unref(&pkt);
 
-    abcdk_rtsp_server_remove_media(ctx,media);
+    abcdk_rtsp_server_remove_media(ctx, media);
 
 END:
-
 
     abcdk_ffeditor_destroy(&r);
 
     abcdk_rtsp_server_stop(ctx);
 
     abcdk_rtsp_server_destroy(&ctx);
-
 
     return 0;
 }

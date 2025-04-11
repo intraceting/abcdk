@@ -58,7 +58,7 @@ namespace abcdk
             packet &operator=(const packet &src)
             {
                 m_buf = src.m_buf;
-                  m_dur = src.m_dur;
+                m_dur = src.m_dur;
 
                 return *this;
             }

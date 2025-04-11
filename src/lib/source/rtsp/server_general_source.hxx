@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_RTSP_SERVER_AAC_SOURCE_HXX
-#define ABCDK_RTSP_SERVER_AAC_SOURCE_HXX
+#ifndef ABCDK_RTSP_SERVER_GENERAL_SOURCE_HXX
+#define ABCDK_RTSP_SERVER_GENERAL_SOURCE_HXX
 
 #include "server_source.hxx"
 #include "ringbuf.hxx"
@@ -16,32 +16,32 @@ namespace abcdk
 {
     namespace rtsp_server
     {
-        class aac_source : public source
+        class general_source : public source
         {
         private:
             rtsp::ringbuf *m_rgbuf_ctx_p;
             uint64_t m_rgbuf_idx;
 
         public:
-            static aac_source *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx)
+            static general_source *createNew(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx)
             {
-                return new aac_source(env, codec_id, rgbuf_ctx);
+                return new general_source(env, codec_id, rgbuf_ctx);
             }
 
         protected:
-            aac_source(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx)
+            general_source(UsageEnvironment &env,int codec_id, rtsp::ringbuf *rgbuf_ctx)
                 : source(env, codec_id)
             {
                 m_rgbuf_ctx_p = rgbuf_ctx;
                 m_rgbuf_idx = 0;
             }
 
-            virtual ~aac_source()
+            virtual ~general_source()
             {
                 
             }
 
-            int fetch(rtsp::packet &pkt)
+            virtual int fetch(rtsp::packet &pkt)
             {
                 int chk;
 
@@ -57,4 +57,4 @@ namespace abcdk
 
 #endif //_FRAMED_SOURCE_HH
 
-#endif // ABCDK_RTSP_SERVER_AAC_SOURCE_HXX
+#endif // ABCDK_RTSP_SERVER_GENERAL_SOURCE_HXX

@@ -9,7 +9,7 @@
 
 #include "abcdk/util/object.h"
 #include "abcdk/util/basecode.h"
-#include "server_g711_source.hxx"
+#include "server_general_source.hxx"
 #include "server_session.hxx"
 
 #ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
@@ -24,11 +24,12 @@ namespace abcdk
             rtsp::ringbuf *m_rgbuf_ctx_p;
             int m_channels;
             int m_sample_rate;
+            uint32_t m_bitrate;
 
         public:
-            static g711_session *createNew(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
+            static g711_session *createNew(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, uint32_t bitrate)
             {
-                return new g711_session(env, codec_id, rgbuf_ctx, extdata, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP);
+                return new g711_session(env, codec_id, rgbuf_ctx, extdata, bitrate);
             }
 
             static void deleteOld(g711_session **ctx)
@@ -46,13 +47,15 @@ namespace abcdk
             }
 
         protected:
-            g711_session(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, Boolean reuseFirstSource = True, portNumBits initialPortNum = 6970, Boolean multiplexRTCPWithRTP = False)
-                : session(env, codec_id, reuseFirstSource, initialPortNum, multiplexRTCPWithRTP)
+            g711_session(UsageEnvironment &env, int codec_id, rtsp::ringbuf *rgbuf_ctx, abcdk_object_t *extdata, uint32_t bitrate)
+                : session(env, codec_id)
             {
                 m_rgbuf_ctx_p = rgbuf_ctx;
 
                 m_channels = ABCDK_PTR2I32(extdata->pptrs[0],0);
                 m_sample_rate = ABCDK_PTR2I32(extdata->pptrs[1],0);
+
+                m_bitrate = bitrate;
 
             }
             virtual ~g711_session()
@@ -62,9 +65,9 @@ namespace abcdk
 
             virtual FramedSource *createNewStreamSource(unsigned clientSessionId, unsigned &estBitrate)
             {
-                estBitrate = 96; // 96 kbps.
+                estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)64, m_bitrate); // bps, 64 ~ MAX.
 
-                g711_source *source_ctx = g711_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
+                general_source *source_ctx = general_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 
