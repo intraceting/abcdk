@@ -8,6 +8,7 @@
 #define ABCDK_RTSP_PACKET_HXX
 
 #include "abcdk/rtsp/rtsp.h"
+#include "abcdk/util/object.h"
 
 namespace abcdk
 {
@@ -16,50 +17,72 @@ namespace abcdk
         class packet
         {
         private:
-            std::vector<uint8_t> m_buf;
+            uint8_t *m_data;
+            size_t m_size;
+
             int64_t m_dur; // 时长(微秒)。
+
+            abcdk_object_t *m_buf;
+            
         public:
-            packet()
+            packet(const void *data = NULL, size_t size = 0, int64_t dur = 0)
             {
-                clear();
+                clear(true);
+
+                m_data = (uint8_t*)data;
+                m_size = size;
+                m_dur = dur;
             }
+
             packet(const packet &src)
             {
                 copy_from(src);
             }
+
             virtual ~packet()
             {
                 clear();
             }
 
         public:
-            uint8_t *data()
+            uint8_t *data() const
             {
-                return m_buf.data();
+                return m_data;
             }
 
-            size_t size()
+            size_t size() const
             {
-                return m_buf.size();
+                return m_size;
             }
 
-            int64_t dur()
+            int64_t dur() const
             {
                 return m_dur;
             }
 
         public:
-            void clear()
+            void clear(bool first = false)
             {
-                m_buf.clear();
+                m_data = NULL;
+                m_size = 0;
                 m_dur = 0;
+
+                if (first)
+                    m_buf = NULL;
+                else
+                    abcdk_object_unref(&m_buf);
             }
 
             packet &operator=(const packet &src)
             {
-                m_buf = src.m_buf;
-                m_dur = src.m_dur;
+                clear();
 
+                m_buf = abcdk_object_copyfrom(src.data(),src.size());
+                m_dur = src.dur();
+
+                m_data = m_buf->pptrs[0];
+                m_size = m_buf->sizes[0];
+                
                 return *this;
             }
 
@@ -75,10 +98,9 @@ namespace abcdk
 
             void copy_from(const void *data, size_t size, int64_t dur)
             {
-                m_buf.resize(size);
-                memcpy(m_buf.data(),data,size);
+                packet src(data,size,dur);
 
-                m_dur = dur;
+                *this = src;
             }
         };
     } // namespace rtsp

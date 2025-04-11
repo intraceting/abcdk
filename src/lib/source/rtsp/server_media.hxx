@@ -100,81 +100,17 @@ namespace abcdk
 
             }
 
-            int append_stream0(int stream,const void *data, size_t size, int64_t dur)
-            {
-                uint8_t sc3[3] = {0,0,1},sc4[4] = {0,0,0,1};
-
-                std::map<int, std::pair<rtsp_server::session *, rtsp::ringbuf>>::iterator it = m_stream.find(stream);
-                if(it == m_stream.end())
-                    return -1;
-
-                /*H264，H265不需要起始码。*/
-                if (it->second.first->codec_id() == ABCDK_RTSP_CODEC_H264 ||
-                    it->second.first->codec_id() == ABCDK_RTSP_CODEC_H265)
-                {
-                    if (memcmp(data, sc4, 4) == 0)
-                    {
-                        data = ABCDK_PTR2VPTR(data, 4);
-                        size -= 4;
-                    }
-                    else if (memcmp(data, sc3, 3) == 0)
-                    {
-                        data = ABCDK_PTR2VPTR(data, 3);
-                        size -= 3;
-                    }
-                }
-
-                it->second.second.write(data,size,dur);
-
-                return 0;
-            }
-
             int append_stream(int stream, const void *data, size_t size, int64_t dur)
             {
-                uint8_t sc3[3] = {0,0,1},sc4[4] = {0,0,0,1};
-                const void *p1 = NULL, *p2 = NULL, *p3 = NULL;
                 int chk;
 
                 std::map<int, std::pair<rtsp_server::session *, rtsp::ringbuf>>::iterator it = m_stream.find(stream);
                 if (it == m_stream.end())
                     return -1;
+ 
+                it->second.second.write(data, size, dur);
 
-                /*H264，H265。*/
-                if (it->second.first->codec_id() == ABCDK_RTSP_CODEC_H264 ||
-                    it->second.first->codec_id() == ABCDK_RTSP_CODEC_H265)
-                {
-                    if (memcmp(data, sc4, 4) == 0 || memcmp(data, sc3, 3) == 0)
-                    {
-                        /*存在起始码必须先拆包，因为RTP不支持码流内的拼包。*/
-                        p1 = data;
-                        p2 = NULL;
-                        p3 = ABCDK_PTR2VPTR(data, size - 1); /*末尾指针要减1。*/
-
-                        for (;;)
-                        {
-                            if (p1 > p3)
-                                return 0;
-
-                            p2 = abcdk_h2645_packet_split((void **)&p1, p3);
-                            if (p2 == NULL)
-                                return 0;
-
-                            chk = append_stream0(stream, p2, (size_t)p1 - (size_t)p2, dur);
-                            if (chk != 0)
-                                return chk;
-                        }
-                    }
-                    else
-                    {
-                        return append_stream0(stream, data, size, dur);
-                    }
-                }
-                else
-                {
-                    return append_stream0(stream, data, size, dur);
-                }
-
-                return -1;
+                return 0;
             }
 
         protected:

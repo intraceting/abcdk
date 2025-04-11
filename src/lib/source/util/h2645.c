@@ -59,7 +59,7 @@ const void *abcdk_h2645_packet_split(void **next, const void *e)
     if (i1 < 0)
         return NULL;
 
-    i2 = abcdk_h2645_find_start_code(p + i1 + ksize, e, &ksize);
+    i2 = abcdk_h2645_find_start_code(p + i1 + ksize, e, NULL);
     if(i2 < 0)
         *next = (void*)(e+1);
     else 

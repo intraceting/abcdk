@@ -118,12 +118,36 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         if (n < 0)
             break;
 
-            //abcdk_h2645_mp4toannexb(pkt.data,pkt.size,4);
+#if 0
 
-        //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration*1000);
+        uint8_t sc3[3] = {0, 0, 1}, sc4[4] = {0, 0, 0, 1};
+        const void *p1 = NULL, *p2 = NULL, *p3 = NULL;
 
-        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration / abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
-      //  abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration);
+        /*存在起始码必须先拆包，因为RTP不支持码流内的拼包。*/
+        p1 = pkt.data;
+        p2 = NULL;
+        p3 = ABCDK_PTR2VPTR(pkt.data, pkt.size - 1); /*末尾指针要减1。*/
+
+        for (;;)
+        {
+            if (p1 > p3)
+                return 0;
+
+            p2 = abcdk_h2645_packet_split((void **)&p1, p3);
+            if (p2 == NULL)
+                return 0;
+
+            abcdk_trace_printf(LOG_DEBUG,"p1: %hhd,%hhd,%hhd,%hhd",ABCDK_PTR2I8(p1,0),ABCDK_PTR2I8(p1,1),ABCDK_PTR2I8(p1,2),ABCDK_PTR2I8(p1,3));
+            abcdk_trace_printf(LOG_DEBUG,"p2: %hhd,%hhd,%hhd,%hhd",ABCDK_PTR2I8(p2,-4),ABCDK_PTR2I8(p2,-3),ABCDK_PTR2I8(p2,-2),ABCDK_PTR2I8(p2,-1));
+        }
+
+#endif 
+
+           abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration);
+           abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,(int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
+
+       // abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, (int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
+        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration);
     }
 
     av_packet_unref(&pkt);
