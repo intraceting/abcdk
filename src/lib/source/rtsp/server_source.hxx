@@ -38,7 +38,7 @@ namespace abcdk
                 chk = fetch(m_pkt);
                 if (chk <= 0)
                 {
-                    m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(10*1000, afterGetNextFrame, this);
+                    m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(1000, afterGetNextFrame, this);
                     return;
                 }
 
