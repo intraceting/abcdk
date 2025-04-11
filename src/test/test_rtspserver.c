@@ -143,8 +143,8 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
 #endif 
 
-           abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration);
-           abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,(int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
+         //  abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration);
+        //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,(int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
 
        // abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, (int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
         abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration);
