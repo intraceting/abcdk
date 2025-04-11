@@ -66,8 +66,6 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
             stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_H265,extdata,10);
             abcdk_object_unref(&extdata);
-
-
         }
         else if(p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
@@ -79,6 +77,22 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata,p->codecpar->extradata_size);
             stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_AAC,extdata,10);
+            abcdk_object_unref(&extdata);
+        }
+        else if(p->codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
+        {
+            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int),2);//[0] = channels,[1]=sample_rate
+            ABCDK_PTR2I32(extdata->pptrs[0],0) = p->codecpar->channels;
+            ABCDK_PTR2I32(extdata->pptrs[1],0) = p->codecpar->sample_rate;
+            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_G711U,extdata,10);
+            abcdk_object_unref(&extdata);
+        }
+        else if(p->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
+        {
+            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int),2);//[0] = channels,[1]=sample_rate
+            ABCDK_PTR2I32(extdata->pptrs[0],0) = p->codecpar->channels;
+            ABCDK_PTR2I32(extdata->pptrs[1],0) = p->codecpar->sample_rate;
+            stream[i] = abcdk_rtsp_server_add_stream(ctx,media,ABCDK_RTSP_CODEC_G711A,extdata,10);
             abcdk_object_unref(&extdata);
         }
     }
