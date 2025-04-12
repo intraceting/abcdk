@@ -15,6 +15,8 @@
 #include "rwlock_robot.hxx"
 #include "waiter.hxx"
 
+#define ABCDK_RTSP_SERVER_REALM "ABCDK MediaServer"
+
 #ifdef _RTSP_SERVER_HH
 
 namespace abcdk
@@ -272,8 +274,8 @@ namespace abcdk
                 param.second.resize(4);
                 param.second[0] = std::to_string(rsp_key);
                 param.second[1] = (name ? name : "");
-                param.second[2] = (info ? info : "");
-                param.second[3] = (desc ? desc : "");
+                param.second[2] = (info ? info : ABCDK_RTSP_SERVER_REALM);
+                param.second[3] = (desc ? desc : ABCDK_RTSP_SERVER_REALM);
 
                 m_cmdlist.push(param);
 

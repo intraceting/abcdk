@@ -14,7 +14,6 @@ __BEGIN_DECLS
 
 #ifdef _RTSP_SERVER_HH
 
-#define ABCDK_RTSP_SERVER_REALM "ABCDK MediaServer"
 
 /*简单的RTSP服务。*/
 struct _abcdk_rtsp_server
@@ -104,7 +103,7 @@ int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx, const char *realm)
 
     ABCDK_ASSERT(ctx->worker_flag, TT("服务已经启动，禁止修改基础配置。"));
 
-    chk = ctx->l5_server_ctx->set_auth(realm ? realm : ABCDK_RTSP_SERVER_REALM);
+    chk = ctx->l5_server_ctx->set_auth(realm);
     if(chk != 0)
         return -1;
 
@@ -216,7 +215,7 @@ int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, c
 
     ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
-    chk = ctx->l5_server_ctx->create_media(name, (comment ? comment : ABCDK_RTSP_SERVER_REALM), (title ? title : ABCDK_RTSP_SERVER_REALM));
+    chk = ctx->l5_server_ctx->create_media(name, comment, title);
     if (chk <= 0)
         return -1;
 

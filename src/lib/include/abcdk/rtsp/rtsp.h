@@ -20,6 +20,7 @@
 
 __BEGIN_DECLS
 
+
 /**视频编码常量。*/
 typedef enum _abcdk_rtsp_codec_constant
 {
