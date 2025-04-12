@@ -92,7 +92,7 @@ namespace abcdk
                 abcdk::rtsp_server::auth *auth_new_ctx = NULL;
 
                 /*创建新的。*/
-                auth_new_ctx = abcdk::rtsp_server::auth::createNew(realm);
+                auth_new_ctx = abcdk::rtsp_server::auth::createNew(realm ? realm : ABCDK_RTSP_SERVER_REALM);
                 if (!auth_new_ctx)
                     return -1;
 
