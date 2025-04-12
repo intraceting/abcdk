@@ -238,7 +238,7 @@ int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec,
     return chk;
 }
 
-int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t dur)
+int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t pts, int64_t dur)
 {
     int chk;
 
@@ -246,7 +246,7 @@ int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int strea
 
     ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
-    chk = ctx->l5_server_ctx->play_stream(media, stream, data, size, dur);
+    chk = ctx->l5_server_ctx->play_stream(media, stream, data, size, pts, dur);
     if (chk != 0)
         return -1;
 

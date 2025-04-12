@@ -314,7 +314,7 @@ namespace abcdk
                 return idx;
             }
 
-            int play_stream(int media, int stream, const void *data, size_t size, int64_t dur)
+            int play_stream(int media, int stream, const void *data, size_t size, int64_t pts, int64_t dur)
             {
                 int chk;
 
@@ -330,7 +330,7 @@ namespace abcdk
                     return -1;
                 }
 
-                chk = it->second.second->append_stream(stream, data, size, dur);
+                chk = it->second.second->append_stream(stream, data, size, pts, dur);
                 if (chk != 0)
                     return -1;
 

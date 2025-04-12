@@ -69,19 +69,19 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         if (p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H265, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 100);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H265, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H264, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 100);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H264, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_AAC)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_AAC, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 100);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_AAC, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
@@ -89,7 +89,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711U, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 100);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711U, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
@@ -97,7 +97,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 100);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
     }
@@ -141,13 +141,15 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_trace_printf(LOG_DEBUG,"p2: %hhd,%hhd,%hhd,%hhd",ABCDK_PTR2I8(p2,-4),ABCDK_PTR2I8(p2,-3),ABCDK_PTR2I8(p2,-2),ABCDK_PTR2I8(p2,-1));
         }
 
-#endif 
+#endif
 
-         //  abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,pkt.duration);
-        //   abcdk_trace_printf(LOG_DEBUG,"src: DTS(%lld),PTS(%lld),DUR(%lld),",pkt.dts,pkt.pts,(int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
+        double pts_sec = abcdk_ffeditor_ts2sec(r, pkt.stream_index, pkt.pts);                     //// 秒。
+        double dur_sec = (double)pkt.duration * abcdk_ffeditor_timebase_q2d(r, pkt.stream_index); // 秒。
 
-       // abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, (int64_t)1000 / (int64_t)abcdk_ffeditor_fps(r, pkt.stream_index) * 1000);
-        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size, pkt.duration);
+        //  abcdk_trace_printf(LOG_DEBUG, "IDX(%d), DTS(%lld),PTS(%lld,%.6f),DUR(%.6f),", pkt.stream_index,pkt.dts, pkt.pts,pts_sec, dur_sec);
+
+        
+        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size,pts_sec*1000000, dur_sec*1000000);// 转微秒。
     }
 
     av_packet_unref(&pkt);

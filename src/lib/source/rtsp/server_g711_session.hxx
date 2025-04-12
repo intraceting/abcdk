@@ -9,7 +9,7 @@
 
 #include "abcdk/util/object.h"
 #include "abcdk/util/basecode.h"
-#include "server_general_source.hxx"
+#include "server_g711_source.hxx"
 #include "server_session.hxx"
 
 #ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
@@ -67,7 +67,7 @@ namespace abcdk
             {
                 estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)64, m_bitrate); // bps, 64 ~ MAX.
 
-                general_source *source_ctx = general_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
+                g711_source *source_ctx = g711_source::createNew(envir(),codec_id(), m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 

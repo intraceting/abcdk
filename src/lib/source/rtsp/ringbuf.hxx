@@ -50,11 +50,11 @@ namespace abcdk
                 m_pos += 1; // next
             }
 
-            void write(const void *data, size_t size, int64_t dur)
+            void write(const void *data, size_t size, int64_t pts, int64_t dur)
             {
                 rtsp::rwlock_robot autolock(&m_queuq_locker, 0);
 
-                m_queue[m_pos % m_queue.size()].copy_from(data, size, dur);
+                m_queue[m_pos % m_queue.size()].copy_from(data, size, pts, dur);
                 m_pos += 1; // next
             }
 

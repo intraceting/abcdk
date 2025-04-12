@@ -168,6 +168,10 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
  */
 int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs);
 
+/**
+ * 时间基值转浮点。
+ */
+double abcdk_avstream_timebase_q2d(AVFormatContext *ctx,AVStream *vs,double xspeed);
 
 /**
  * 获取流的时长(秒)。

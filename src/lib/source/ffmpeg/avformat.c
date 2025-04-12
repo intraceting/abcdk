@@ -670,7 +670,13 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 
 /*-------------Copy from OpenCV----begin------------------*/
 
-
+double abcdk_avstream_timebase_q2d(AVFormatContext *ctx,AVStream *vs,double xspeed)
+{
+    assert(ctx != NULL && vs != NULL);
+    assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
+    
+    return abcdk_avmatch_r2d(vs->time_base,xspeed);
+}
 
 double abcdk_avstream_duration(AVFormatContext *ctx, AVStream *vs,double xspeed)
 {

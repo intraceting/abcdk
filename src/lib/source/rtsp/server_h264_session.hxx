@@ -10,7 +10,7 @@
 #include "abcdk/util/object.h"
 #include "abcdk/util/basecode.h"
 #include "abcdk/util/h264.h"
-#include "server_h2645_source.hxx"
+#include "server_h264_source.hxx"
 #include "server_session.hxx"
 
 #ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
@@ -139,11 +139,11 @@ namespace abcdk
             {
                 estBitrate = ABCDK_CLAMP(m_bitrate,(unsigned int)1500, m_bitrate); // bps, 1500 ~ MAX.
 
-                h2645_source *source_ctx = h2645_source::createNew(envir(), codec_id(),m_rgbuf_ctx_p);
+                h264_source *source_ctx = h264_source::createNew(envir(), codec_id(),m_rgbuf_ctx_p);
                 if (!source_ctx)
                     return NULL;
 
-                return H264VideoStreamDiscreteFramer::createNew(envir(), source_ctx);
+                return H264VideoStreamFramer::createNew(envir(), source_ctx);
             }
 
             virtual RTPSink *createNewRTPSink(Groupsock *rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource *inputSource)

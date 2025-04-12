@@ -20,17 +20,18 @@ namespace abcdk
             uint8_t *m_data;
             size_t m_size;
 
-            int64_t m_dur; // 时长(微秒)。
+            int64_t m_pts; // 显示时间(微秒)。
+            int64_t m_dur; // 播放时长(微秒)。
 
             abcdk_object_t *m_buf;
-            
         public:
-            packet(const void *data = NULL, size_t size = 0, int64_t dur = 0)
+            packet(const void *data = NULL, size_t size = 0, int64_t pts = 0, int64_t dur = 0)
             {
                 clear(true);
 
                 m_data = (uint8_t*)data;
                 m_size = size;
+                m_pts = pts;
                 m_dur = dur;
             }
 
@@ -45,14 +46,23 @@ namespace abcdk
             }
 
         public:
-            uint8_t *data() const
+            uint8_t *data(size_t off = 0) const
             {
-                return m_data;
+                assert(off <= m_size);
+
+                return m_data + off;
             }
 
-            size_t size() const
+            size_t size(size_t off = 0) const
             {
-                return m_size;
+                assert(off <= m_size);
+
+                return m_size - off;
+            }
+
+            int64_t pts() const
+            {
+                return m_pts;
             }
 
             int64_t dur() const
@@ -65,6 +75,7 @@ namespace abcdk
             {
                 m_data = NULL;
                 m_size = 0;
+                m_pts = 0;
                 m_dur = 0;
 
                 if (first)
@@ -78,6 +89,7 @@ namespace abcdk
                 clear();
 
                 m_buf = abcdk_object_copyfrom(src.data(),src.size());
+                m_pts = src.pts();
                 m_dur = src.dur();
 
                 m_data = m_buf->pptrs[0];
@@ -91,16 +103,16 @@ namespace abcdk
                 *this = src;
             }
 
+            void copy_from(const void *data, size_t size, int64_t pts, int64_t dur)
+            {
+                packet src(data,size,pts,dur);
+
+                *this = src;
+            }
+
             void copy_to(packet &dst)
             {
                 dst = *this;
-            }
-
-            void copy_from(const void *data, size_t size, int64_t dur)
-            {
-                packet src(data,size,dur);
-
-                *this = src;
             }
         };
     } // namespace rtsp

@@ -94,11 +94,12 @@ int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec,
 /**
  * 向媒体播放流。
  * 
- * @param dur 播放时长(微秒)。
+ * @param [in] pts 显示时间(微秒)。
+ * @param [in] dur 播放时长(微秒)。
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t dur);
+int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t pts, int64_t dur);
 
 
 __END_DECLS

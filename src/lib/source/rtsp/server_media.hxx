@@ -100,7 +100,7 @@ namespace abcdk
 
             }
 
-            int append_stream(int stream, const void *data, size_t size, int64_t dur)
+            int append_stream(int stream, const void *data, size_t size, int64_t pts, int64_t dur)
             {
                 int chk;
 
@@ -108,7 +108,7 @@ namespace abcdk
                 if (it == m_stream.end())
                     return -1;
  
-                it->second.second.write(data, size, dur);
+                it->second.second.write(data, size, pts, dur);
 
                 return 0;
             }

@@ -158,6 +158,11 @@ double abcdk_ffeditor_ts2sec(abcdk_ffeditor_t *ctx,int stream, int64_t ts);
 int64_t abcdk_ffeditor_ts2num(abcdk_ffeditor_t *ctx,int stream, int64_t ts);
 
 /**
+ * 时间基值转浮点。
+ */
+double abcdk_ffeditor_timebase_q2d(abcdk_ffeditor_t *ctx,int stream);
+
+/**
  * 获取指定流图像的宽。
  * 
  * @return 像素。

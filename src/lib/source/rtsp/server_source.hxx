@@ -23,7 +23,9 @@ namespace abcdk
             int m_codec_id;
 
             TaskToken m_next_tasktoken;
+
             rtsp::packet m_pkt;
+            size_t m_pkt_offset;
 
         public:
             int codec_id()
@@ -35,32 +37,42 @@ namespace abcdk
             {
                 int chk;
 
-                chk = fetch(m_pkt);
-                if (chk <= 0)
+                if (m_pkt.size() == 0 || m_pkt.size() == m_pkt_offset)
                 {
-                    m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(1000, afterGetNextFrame, this);
-                    return;
+                    chk = fetch(m_pkt);
+                    if (chk <= 0)
+                    {
+                        m_next_tasktoken = envir().taskScheduler().scheduleDelayedTask(10 * 1000, afterGetNextFrame, this); // 100fps
+                        return;
+                    }
+
+                    m_next_tasktoken = 0;
+                    m_pkt_offset = 0;//must to 0.
                 }
 
-                m_next_tasktoken = 0;
-
-                //abcdk_trace_printf(LOG_DEBUG,"DTS(%lld),PTS(%lld),DUR(%lld),",m_pkt.dts(),m_pkt.pts(),m_pkt.dur());
-
-                if (m_pkt.size() > fMaxSize)
+                if (m_pkt.size(m_pkt_offset) > fMaxSize)
                 {
                     fFrameSize = fMaxSize;
-                    fNumTruncatedBytes = m_pkt.size() - fMaxSize;
+                    fNumTruncatedBytes = m_pkt.size(m_pkt_offset) - fMaxSize;
                 }
                 else
                 {
-                    fFrameSize = m_pkt.size();
+                    fFrameSize = m_pkt.size(m_pkt_offset);
                     fNumTruncatedBytes = 0;
                 }
 
+                memcpy(fTo, m_pkt.data(m_pkt_offset), fFrameSize);
+                m_pkt_offset += fFrameSize;
+
+#if 1
                 gettimeofday(&fPresentationTime, NULL);
+#else 
+                fPresentationTime.tv_sec = m_pkt.pts()/1000000;
+                fPresentationTime.tv_usec = m_pkt.pts()%1000000;
+#endif
+                
                 fDurationInMicroseconds = m_pkt.dur();
 
-                memcpy(fTo, m_pkt.data(), fFrameSize);
 
                 FramedSource::afterGetting(this);
             }
@@ -70,6 +82,8 @@ namespace abcdk
             {
                 m_codec_id = codec_id;
                 m_next_tasktoken = 0;
+
+                m_pkt_offset = 0;
             }
 
             virtual ~source()

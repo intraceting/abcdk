@@ -249,6 +249,17 @@ int64_t abcdk_ffeditor_ts2num(abcdk_ffeditor_t *ctx,int stream, int64_t ts)
     return abcdk_avstream_ts2num(ctx->avctx,ctx->avctx->streams[stream],ts,1.0);
 }
 
+double abcdk_ffeditor_timebase_q2d(abcdk_ffeditor_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(stream < ctx->avctx->nb_streams);
+
+    if(ctx->avctx->iformat)
+        return abcdk_avstream_timebase_q2d(ctx->avctx,ctx->avctx->streams[stream],ctx->cfg.read_speed);
+
+    return abcdk_avstream_timebase_q2d(ctx->avctx,ctx->avctx->streams[stream],1.0);
+}
+
 int abcdk_ffeditor_width(abcdk_ffeditor_t *ctx,int stream)
 {
     assert(ctx != NULL && stream >= 0);
