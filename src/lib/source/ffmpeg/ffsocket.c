@@ -6,6 +6,8 @@
  */
 #include "abcdk/ffmpeg/ffsocket.h"
 
+#ifdef AVUTIL_AVUTIL_H
+
 /*简单的IO通讯。*/
 struct _abcdk_ffsocket
 {
@@ -221,3 +223,35 @@ int abcdk_ffsocket_write(void *opaque, uint8_t *buf, int size)
 
     return chk;
 }
+
+#else //AVUTIL_AVUTIL_H
+
+
+void abcdk_ffsocket_destroy(abcdk_ffsocket_t **ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
+    return ;
+}
+
+
+abcdk_ffsocket_t *abcdk_ffsocket_create(const char *addr, int timeout, const char *cert, const char *key, const char *capath)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
+    return NULL;
+}
+
+
+int abcdk_ffsocket_read(void *opaque, uint8_t *buf, int size)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
+    return 0;
+}
+
+
+int abcdk_ffsocket_write(void *opaque, uint8_t *buf, int size)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFmpeg工具。"));
+    return 0;
+}
+
+#endif //AVUTIL_AVUTIL_H
