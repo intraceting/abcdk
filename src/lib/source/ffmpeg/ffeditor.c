@@ -307,25 +307,20 @@ static int _abcdk_ffeditor_init_capture(abcdk_ffeditor_t *ctx)
         av_dict_set_int(&ctx->dict, "rw_timeout", ctx->cfg.timeout * 1000000, 0); // rtmp
     }
 
-    if (ctx->io_custom)
-        ctx->avctx = abcdk_avformat_input_open(ctx->cfg.fmt, NULL, &ctx->io_itcb, ctx->io_custom, &ctx->dict);
-    else
-        ctx->avctx = abcdk_avformat_input_open(ctx->cfg.fmt, ctx->cfg.url, &ctx->io_itcb, NULL, &ctx->dict);
-
+    ctx->avctx = abcdk_avformat_input_open(ctx->cfg.fmt, ctx->cfg.url, &ctx->io_itcb, ctx->io_custom, &ctx->dict);
     if (!ctx->avctx)
     {
-        /*如果是RTSP流，则用UDP再试一次。*/
-        if ((abcdk_strncmp(ctx->cfg.url, "rtsp://", 7, 0) == 0 || abcdk_strncmp(ctx->cfg.url, "rtsps://", 8, 0) == 0))
-        {
-            av_dict_set(&ctx->dict, "rtsp_transport", "udp", 0);
-            ctx->avctx = abcdk_avformat_input_open(ctx->cfg.fmt, ctx->cfg.url, &ctx->io_itcb, ctx->io_custom, &ctx->dict);
-            if (!ctx->avctx)
-                return -1;
-        }
-        else
-        {
+        if (!ctx->cfg.url)
             return -1;
-        }
+
+        /*如果是RTSP流，则用UDP再试一次。*/
+        if (abcdk_strncmp(ctx->cfg.url, "rtsp://", 7, 0) != 0 && abcdk_strncmp(ctx->cfg.url, "rtsps://", 8, 0) != 0)
+            return -1;
+
+        av_dict_set(&ctx->dict, "rtsp_transport", "udp", 0);
+        ctx->avctx = abcdk_avformat_input_open(ctx->cfg.fmt, ctx->cfg.url, &ctx->io_itcb, ctx->io_custom, &ctx->dict);
+        if (!ctx->avctx)
+            return -1;
     }
 
     /*清理托管之后的野指针。*/
@@ -358,11 +353,7 @@ static int _abcdk_ffeditor_init_capture(abcdk_ffeditor_t *ctx)
 
 static int _abcdk_ffeditor_init_writer(abcdk_ffeditor_t *ctx)
 {
-    if (ctx->io_custom)
-        ctx->avctx = abcdk_avformat_output_open(ctx->cfg.fmt, NULL, ctx->cfg.mime_type, &ctx->io_itcb, ctx->io_custom);
-    else
-        ctx->avctx = abcdk_avformat_output_open(ctx->cfg.fmt, ctx->cfg.url, ctx->cfg.mime_type, &ctx->io_itcb, NULL);
-
+    ctx->avctx = abcdk_avformat_output_open(ctx->cfg.fmt, ctx->cfg.url, ctx->cfg.mime_type, &ctx->io_itcb, ctx->io_custom);
     if (!ctx->avctx)
         return -1;
 
@@ -388,7 +379,7 @@ abcdk_ffeditor_t *abcdk_ffeditor_open(abcdk_ffeditor_config_t *cfg)
 
     /*修复不支持的参数。*/
     ctx->cfg.io.buffer_size = ABCDK_CLAMP(ctx->cfg.io.buffer_size, (int)8, (int)1024);
-    ctx->cfg.timeout = ABCDK_CLAMP(ctx->cfg.timeout, (int)-1, (int)180);
+    ctx->cfg.timeout = ABCDK_CLAMP(ctx->cfg.timeout, (int)-1, (int)15);
     ctx->cfg.read_speed = ABCDK_CLAMP(ctx->cfg.read_speed, (float)0.01, (float)100.0);
     ctx->cfg.read_delay_max = ABCDK_CLAMP(ctx->cfg.read_delay_max, (float)0.020, (float)86400.0);
 
@@ -400,6 +391,13 @@ abcdk_ffeditor_t *abcdk_ffeditor_open(abcdk_ffeditor_config_t *cfg)
     /*按需创建自定义IO环境。*/
     if (ctx->cfg.io.read_cb || ctx->cfg.io.write_cb)
     {
+        /*自定义IO必须输入格式。*/
+        if(!ctx->cfg.fmt)
+            goto ERR;
+
+        /*自定义IO不支持输入URL.*/
+        ctx->cfg.url = NULL;
+
         ctx->io_custom = abcdk_avio_alloc(ctx->cfg.io.buffer_size, ctx->cfg.writer, ctx->cfg.io.opaque);
         ctx->io_custom->read_packet = ctx->cfg.io.read_cb;
         ctx->io_custom->write_packet = ctx->cfg.io.write_cb;

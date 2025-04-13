@@ -14,6 +14,7 @@
 #include "abcdk/util/socket.h"
 #include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/avcodec.h"
+#include "abcdk/ffmpeg/ffsocket.h"
 
 __BEGIN_DECLS
 
@@ -71,9 +72,6 @@ typedef struct _abcdk_ffeditor_config
     /** 
      * 文件名或资源名的完整名称。
      * 
-     * @note sock://IPV4:PORT
-     * @note sock://[IPV6]:PORT
-     * @note sock:///PATHFILE
      * @note rtmp[s]://PATHFILE
      * @note rtsp[s]://PATHFILE
      * @note http[s]://PATHFILE

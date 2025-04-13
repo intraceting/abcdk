@@ -23,7 +23,17 @@ void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx);
 
 /**
  * 创建。
+ *
+ * @note ffsock://IPV4:PORT
+ * @note ffsock://[IPV6]:PORT
+ * @note ffsock:///UNIXPATH
+ * @note rtmp[s]://PATHFILE
+ * @note rtsp[s]://PATHFILE
+ * @note http[s]://PATHFILE
+ * @note /PATHFILE
  * 
+ * @param [in] src_fmt 格式。使用FFSOCK协议必须有效。
+ *
  * @param [in] src_timeout 超时(秒)。
  * @param [in] src_retry 重试间隔(秒)。
  */

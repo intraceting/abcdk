@@ -145,20 +145,6 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     if (!ctx)
         return NULL;
 
-    if (dict)
-    {
-        av_dict_set(dict, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
-
-        /* RTSP默认走TCP，可以减少丢包。*/
-        if(filename)
-        {
-            if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
-            {
-                av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
-            }
-        }
-    }
-
     /*
      * 1: 如果不知道下面标志如何使用，一定不要附加这个标志。
      * 2: 如果附加此标志，会造成数据流开头的数据包丢失(N个)。
@@ -173,6 +159,20 @@ AVFormatContext *abcdk_avformat_input_open(const char *short_name, const char *f
     {
         ctx->pb = io;
         ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+    }
+
+    if (dict)
+    {
+        av_dict_set(dict, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+        
+        if(filename)
+        {
+            /* RTSP默认走TCP，可以减少丢包。*/
+            if (strncmp(filename, "rtsp://", 7) == 0 || strncmp(filename, "rtsps://", 8) == 0)
+            {
+                av_dict_set(dict, "rtsp_transport", "tcp", AV_DICT_DONT_OVERWRITE);
+            }
+        }
     }
 
     fmt = (AVInputFormat *)av_find_input_format(short_name);

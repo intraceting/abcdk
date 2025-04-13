@@ -75,7 +75,7 @@ abcdk_ffsocket_t *abcdk_ffsocket_create(const char *addr, int timeout, const cha
     ctx->sock_listen_fd = -1;
 
     ctx->addr = (addr ? abcdk_heap_clone(addr, strlen(addr)) : NULL);
-    ctx->timeout = ABCDK_CLAMP(timeout, 1, 180);
+    ctx->timeout = ABCDK_CLAMP(timeout, 1, 15);
     ctx->cert = (cert ? abcdk_heap_clone(cert, strlen(cert)) : NULL);
     ctx->key = (key ? abcdk_heap_clone(key, strlen(key)) : NULL);
     ctx->capath = (capath ? abcdk_heap_clone(capath, strlen(capath)) : NULL);
