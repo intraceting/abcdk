@@ -49,6 +49,11 @@ namespace abcdk
                 //delete ctx_p;
             }
 
+            size_t stream_count()
+            {
+                return m_stream.size();
+            }
+
             int add_stream(int codec, abcdk_object_t *extdata, uint32_t bitrate, uint32_t cache)
             {
                 rtsp_server::session *subsession_ctx;

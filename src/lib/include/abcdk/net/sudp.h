@@ -49,6 +49,8 @@ typedef enum _abcdk_sudp_constant
 
 /** 
  * 配置。
+ * 
+ * @note 对象关闭前，所有资源必须可用，且不能被修改。
 */
 typedef struct _abcdk_sudp_config
 {

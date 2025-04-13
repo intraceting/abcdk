@@ -11,6 +11,7 @@
 #include "abcdk/util/time.h"
 #include "abcdk/util/option.h"
 #include "abcdk/util/trace.h"
+#include "abcdk/util/socket.h"
 #include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/avcodec.h"
 
@@ -21,7 +22,11 @@ __BEGIN_DECLS
 /**简单的视音编辑。*/
 typedef struct _abcdk_ffeditor abcdk_ffeditor_t;
 
-/**配置。*/
+/**
+ * 配置。
+ * 
+ * @note 对象关闭前，所有资源必须可用，且不能被修改。
+*/
 typedef struct _abcdk_ffeditor_config
 {
     /** 角色。0 读者，!0 作者。*/
@@ -59,11 +64,22 @@ typedef struct _abcdk_ffeditor_config
      * 文件名或资源名的简写名称。
      * 
      * @note 允许为NULL(0)。
+     * @note 当使用自定义IO环境时，必须有效。
     */
-    const char *short_name;
+    const char *fmt;
 
-    /** 文件名或资源名的完整名称。*/
-    const char *file_name;
+    /** 
+     * 文件名或资源名的完整名称。
+     * 
+     * @note sock://IPV4:PORT
+     * @note sock://[IPV6]:PORT
+     * @note sock:///PATHFILE
+     * @note rtmp[s]://PATHFILE
+     * @note rtsp[s]://PATHFILE
+     * @note http[s]://PATHFILE
+     * @note /PATHFILE
+    */
+    const char *url;
 
     /** 
      * MIME类型。

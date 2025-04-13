@@ -27,7 +27,11 @@ typedef struct _abcdk_https_session abcdk_https_session_t;
 /**HTTP流。*/
 typedef struct _abcdk_https_stream abcdk_https_stream_t;
 
-/**配置。*/
+/**
+ * 配置。
+ * 
+ * @note 对象关闭前，所有资源必须可用，且不能被修改。
+*/
 typedef struct _abcdk_https_config
 {
     /**环境指针。*/

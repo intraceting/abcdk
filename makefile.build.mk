@@ -18,12 +18,15 @@ LIB_SRC_FILES += $(wildcard src/lib/source/json/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/curl/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/rtsp/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch_host/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch_cuda/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/rtsp/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_cuda/*.cpp)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
@@ -129,12 +132,18 @@ $(OBJ_PATH)/src/lib/source/curl/%.o: src/lib/source/curl/%.c
 	mkdir -p $(OBJ_PATH)/src/lib/source/curl/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-	
+
 #
-$(OBJ_PATH)/src/lib/source/rtsp/%.cpp.o: src/lib/source/rtsp/%.cpp
+$(OBJ_PATH)/src/lib/source/rtsp/%.o: src/lib/source/rtsp/%.c
 	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
 	rm -f $@
-	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+	
+#
+$(OBJ_PATH)/src/lib/source/torch/%.o: src/lib/source/torch/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
+	rm -f $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/src/lib/source/torch_host/%.o: src/lib/source/torch_host/%.c
@@ -143,22 +152,29 @@ $(OBJ_PATH)/src/lib/source/torch_host/%.o: src/lib/source/torch_host/%.c
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
 
 #
+$(OBJ_PATH)/src/lib/source/rtsp/%.cpp.o: src/lib/source/rtsp/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
+	rm -f $@
+	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+
+#
 $(OBJ_PATH)/src/lib/source/torch_host/%.cpp.o: src/lib/source/torch_host/%.cpp
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
 	rm -f $@
 	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
+$(OBJ_PATH)/src/lib/source/torch_cuda/%.cpp.o: src/lib/source/torch_cuda/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
+	rm -f $@
+	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+	
+#
 $(OBJ_PATH)/src/lib/source/torch_cuda/%.cu.o: src/lib/source/torch_cuda/%.cu
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
 
-#
-$(OBJ_PATH)/src/lib/source/torch_cuda/%.cpp.o: src/lib/source/torch_cuda/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
-	rm -f $@
-	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
 clean-lib:

@@ -20,7 +20,11 @@ __BEGIN_DECLS
 /**简单的TIPC服务。*/
 typedef struct _abcdk_tipc abcdk_tipc_t;
 
-/**配置。*/
+/**
+ * 配置。
+ * 
+ * @note 对象关闭前，所有资源必须可用，且不能被修改。
+*/
 typedef struct _abcdk_tipc_config
 {
     /*环境指针。*/

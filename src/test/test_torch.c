@@ -118,7 +118,7 @@ int abcdk_test_torch_2(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t ff_r_cfg = {0};
 
-    ff_r_cfg.file_name = abcdk_option_get(args, "--src", 0, "");
+    ff_r_cfg.url = abcdk_option_get(args, "--src", 0, "");
     ff_r_cfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
     ff_r_cfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
     ff_r_cfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 10);
@@ -188,13 +188,13 @@ int abcdk_test_torch_3(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t ff_r_cfg = {0}, ff_w_cfg = {1};
 
-    ff_r_cfg.file_name = abcdk_option_get(args, "--src", 0, "");
+    ff_r_cfg.url = abcdk_option_get(args, "--src", 0, "");
     ff_r_cfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
     ff_r_cfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
     ff_r_cfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 10);
     ff_r_cfg.bit_stream_filter = 1;
-    ff_w_cfg.file_name = abcdk_option_get(args, "--dst", 0, "");
-    ff_w_cfg.short_name = abcdk_option_get(args, "--dst-fmt", 0, "");
+    ff_w_cfg.url = abcdk_option_get(args, "--dst", 0, "");
+    ff_w_cfg.fmt = abcdk_option_get(args, "--dst-fmt", 0, "");
 
     abcdk_ffeditor_t *r = abcdk_ffeditor_open(&ff_r_cfg);
     abcdk_ffeditor_t *w = abcdk_ffeditor_open(&ff_w_cfg);

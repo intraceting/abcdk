@@ -120,7 +120,7 @@
 #include "abcdk/ffmpeg/avcodec.h"
 #include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/ffeditor.h"
-#include "abcdk/ffmpeg/nvr.h"
+#include "abcdk/ffmpeg/ffsocket.h"
 
 #include "abcdk/redis/redis.h"
 #include "abcdk/redis/util.h"
@@ -145,6 +145,8 @@
 
 #include "abcdk/rtsp/rtsp.h"
 #include "abcdk/rtsp/server.h"
+#include "abcdk/rtsp/relay.h"
+
 
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/imgutil.h"

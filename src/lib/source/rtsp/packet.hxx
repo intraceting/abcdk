@@ -86,6 +86,10 @@ namespace abcdk
 
             packet &operator=(const packet &src)
             {
+                /*如是自已，则忽略。*/
+                if (this == &src)
+                    return *this;
+
                 clear();
 
                 m_buf = abcdk_object_copyfrom(src.data(),src.size());

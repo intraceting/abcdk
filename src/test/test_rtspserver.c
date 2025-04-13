@@ -13,7 +13,7 @@
 
 #ifdef HAVE_LIVE555
 
-int abcdk_test_rtspserver(abcdk_option_t *args)
+int abcdk_test_server(abcdk_option_t *args)
 {
 
     abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345, 0x01 | 0x02);
@@ -44,12 +44,14 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
     chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "bbbb");
     assert(chk == 0);
 
-    int media = abcdk_rtsp_server_create_media(ctx, "aaa", NULL, NULL);
-    assert(media > 0);
+    const char *name = "aaa";
+
+    chk = abcdk_rtsp_server_create_media(ctx, name, NULL, NULL);
+    assert(chk == 0);
 
     abcdk_ffeditor_config_t rcfg = {0};
 
-    rcfg.file_name = abcdk_option_get(args, "--src", 0, "");
+    rcfg.url = abcdk_option_get(args, "--src", 0, "");
     rcfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
     rcfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 1);
     rcfg.bit_stream_filter = 1;
@@ -69,19 +71,19 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
         if (p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H265, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_H265, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 3000), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_H264)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_H264, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 3000), 10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_H264, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 3000), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_AAC)
         {
             abcdk_object_t *extdata = abcdk_object_copyfrom(p->codecpar->extradata, p->codecpar->extradata_size);
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_AAC, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_AAC, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_MULAW)
@@ -89,7 +91,7 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711U, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_G711U, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
         else if (p->codecpar->codec_id == AV_CODEC_ID_PCM_ALAW)
@@ -97,13 +99,13 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
             abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
             ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
-            stream[i] = abcdk_rtsp_server_add_stream(ctx, media, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate/1000 : 96), 10);
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
     }
 
-    abcdk_rtsp_server_play_media(ctx, media);
-    //  abcdk_rtsp_server_remove_media(ctx,media);
+    abcdk_rtsp_server_play_media(ctx, name);
+    //  abcdk_rtsp_server_remove_media(ctx,name);
 
     //  goto END;
 
@@ -148,13 +150,12 @@ int abcdk_test_rtspserver(abcdk_option_t *args)
 
         //  abcdk_trace_printf(LOG_DEBUG, "IDX(%d), DTS(%lld),PTS(%lld,%.6f),DUR(%.6f),", pkt.stream_index,pkt.dts, pkt.pts,pts_sec, dur_sec);
 
-        
-        abcdk_rtsp_server_play_stream(ctx, media, stream[pkt.stream_index], pkt.data, pkt.size,pts_sec*1000000, dur_sec*1000000);// 转微秒。
+        abcdk_rtsp_server_play_stream(ctx, name, stream[pkt.stream_index], pkt.data, pkt.size, pts_sec * 1000000, dur_sec * 1000000); // 转微秒。
     }
 
     av_packet_unref(&pkt);
 
-    abcdk_rtsp_server_remove_media(ctx, media);
+    abcdk_rtsp_server_remove_media(ctx, name);
 
 END:
 
@@ -163,6 +164,57 @@ END:
     abcdk_rtsp_server_stop(ctx);
 
     abcdk_rtsp_server_destroy(&ctx);
+
+    return 0;
+}
+
+int abcdk_test_relay(abcdk_option_t *args)
+{
+    int chk;
+
+    abcdk_rtsp_server_t *server_ctx = abcdk_rtsp_server_create(12345, 0x01 | 0x02);
+    chk = abcdk_rtsp_server_start(server_ctx);
+    assert(chk == 0);
+
+    abcdk_rtsp_relay_t *relay_ctx[100] = {0};
+
+    for (int i = 0; i < 100; i++)
+    {
+        const char *src_p = abcdk_option_get(args, "--src", i, NULL);
+        if (!src_p)
+            break;
+
+        char name[NAME_MAX] = {0};
+
+        sprintf(name, "relay%d", i + 1);
+
+        relay_ctx[i] = abcdk_rtsp_relay_create(server_ctx, name, src_p, NULL, 1, 5, 5);
+    }
+
+    fprintf(stderr, "\npress q key to exit.\n");
+    while (getchar() != 'q')
+        ;
+
+    for (int i = 0; i < 100; i++)
+    {
+        abcdk_rtsp_relay_destroy(&relay_ctx[i]);
+    }
+
+    abcdk_rtsp_server_stop(server_ctx);
+
+    abcdk_rtsp_server_destroy(&server_ctx);
+
+    return 0;
+}
+
+int abcdk_test_rtspserver(abcdk_option_t *args)
+{
+    int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
+
+    if (cmd == 1)
+        abcdk_test_server(args);
+    if (cmd == 2)
+        abcdk_test_relay(args);
 
     return 0;
 }

@@ -16,12 +16,12 @@ int abcdk_test_record(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
-    rcfg.file_name = abcdk_option_get(args,"--src",0,"");
+    rcfg.url = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     rcfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,1);
     rcfg.bit_stream_filter = 1;
-    wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
-    wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
+    wcfg.url = abcdk_option_get(args,"--dst",0,"");
+    wcfg.fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
     abcdk_ffeditor_t *w = abcdk_ffeditor_open(&wcfg);
@@ -126,12 +126,12 @@ int abcdk_test_codec(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
-    rcfg.file_name = abcdk_option_get(args,"--src",0,"");
+    rcfg.url = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     rcfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,1);
     rcfg.bit_stream_filter = 1;
-    wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
-    wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
+    wcfg.url = abcdk_option_get(args,"--dst",0,"");
+    wcfg.fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
     abcdk_ffeditor_t *w = abcdk_ffeditor_open(&wcfg);
@@ -191,11 +191,11 @@ int abcdk_test_extradata(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
-    rcfg.file_name = abcdk_option_get(args,"--src",0,"");
+    rcfg.url = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     rcfg.bit_stream_filter = 1;
-    wcfg.file_name = abcdk_option_get(args,"--dst",0,"");
-    wcfg.short_name = abcdk_option_get(args,"--dst-fmt",0,"");
+    wcfg.url = abcdk_option_get(args,"--dst",0,"");
+    wcfg.fmt = abcdk_option_get(args,"--dst-fmt",0,"");
 
     abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
     abcdk_ffeditor_t *w = abcdk_ffeditor_open(&wcfg);
@@ -236,7 +236,7 @@ int abcdk_test_audio(abcdk_option_t *args)
 {
     abcdk_ffeditor_config_t rcfg = {0};
 
-    rcfg.file_name = abcdk_option_get(args,"--src",0,"");
+    rcfg.url = abcdk_option_get(args,"--src",0,"");
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     rcfg.bit_stream_filter = 1;
 

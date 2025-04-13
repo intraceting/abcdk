@@ -28,7 +28,6 @@ int abcdk_test_tipc(abcdk_option_t *args);
 int abcdk_test_timer(abcdk_option_t *args);
 int abcdk_test_tun(abcdk_option_t *args);
 int abcdk_test_srpc(abcdk_option_t *args);
-int abcdk_test_nvr(abcdk_option_t *args);
 int abcdk_test_worker(abcdk_option_t *args);
 int abcdk_test_sudp(abcdk_option_t *args);
 int abcdk_test_pem(abcdk_option_t *args);

@@ -64,10 +64,10 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
 int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password);
 
 /**删除媒体。*/
-void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, int media);
+void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, const char *name);
 
 /**播放媒体。*/
-int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
+int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx, const char *name);
 
 /**
  * 创建媒体。
@@ -76,20 +76,20 @@ int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  int media);
  * @param [in] title 标题。NULL(0) 默认。
  * @param [in] comment 注释。NULL(0) 默认。
  * 
- * @return 0 成功(媒体ID)，-1 失败。
+ * @return 0 成功，-1 失败。
 */
 int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *title, const char *comment);
 
 /**
  * 向媒体添加流。
  * 
- * @param [in] extdata 编码信息。
+ * @param [in] extdata 编码信息。函数返回后，对象可以立即删除或修改。
  * @param [in] bitrate 码率(kbps)。
  * @param [in] cache 缓存(帧)。
  * 
- * @return 0 成功(流ID)，-1 失败。
+ * @return > 0 成功(流ID)，<= 0 失败。
 */
-int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec, abcdk_object_t *extdata, uint32_t bitrate, int cache);
+int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, const char *name, int codec, abcdk_object_t *extdata, uint32_t bitrate, int cache);
 
 /**
  * 向媒体播放流。
@@ -99,7 +99,7 @@ int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, int media, int codec,
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, int media, int stream, const void *data, size_t size, int64_t pts, int64_t dur);
+int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, const char *name, int stream, const void *data, size_t size, int64_t pts, int64_t dur);
 
 
 __END_DECLS

@@ -422,7 +422,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
 
     assert(dst != NULL && src != NULL);
 
-    if (abcdk_strncmp("uinx://", src, 7, 0) == 0)
+    if (abcdk_strncmp("unix://", src, 7, 0) == 0)
     {
         dst->family = AF_UNIX;
         return abcdk_sockaddr_from_string(dst, src + 7, try_lookup);

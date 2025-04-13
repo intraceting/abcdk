@@ -90,11 +90,16 @@ ssize_t abcdk_read(int fd, void *data, size_t size)
 
 void abcdk_closep(int *fd)
 {
-    if (!fd || *fd < 0)
-        ABCDK_ERRNO_AND_RETURN0(EINVAL);
+    int fd_cp;
 
-    close(*fd);
+    if (!fd)
+        return;
+
+    fd_cp = *fd;
     *fd = -1;
+
+    if (fd_cp >= 0)
+        close(fd_cp);
 }
 
 int abcdk_open(const char *file, int rw, int nonblock, int create)

@@ -106,6 +106,8 @@ typedef enum _abcdk_stcp_constant
 
 /** 
  * 配置。
+ * 
+ * @note 对象关闭前，所有资源必须可用，且不能被修改。
 */
 typedef struct _abcdk_stcp_config
 {
