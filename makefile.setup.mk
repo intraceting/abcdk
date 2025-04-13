@@ -43,11 +43,11 @@ install-lib:
 	mkdir -p ${INSTALL_PATH_LIB}
 	mkdir -p ${INSTALL_PATH_DOC}/abcdk/lib/
 #
-	cp -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PATH_LIB}/
+	cp -f $(BUILD_PATH)/${LIB_SONAME_FULL} ${INSTALL_PATH_LIB}/
 	cp -rf $(CURDIR)/share/lib/. ${INSTALL_PATH_DOC}/abcdk/lib/
 #	
-	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
-	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
+	chmod 0755 ${INSTALL_PATH_LIB}/${LIB_SONAME_FULL}
+	cd ${INSTALL_PATH_LIB} ; ln -sf ${LIB_SONAME_FULL} ${LIB_SONAME_MAIN} ;
 #
 	find ${INSTALL_PATH_DOC}/abcdk/lib/ -type f -exec chmod 0644 {} \;
 
@@ -75,7 +75,7 @@ install-dev:
 
 #
 	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.a
-	cd ${INSTALL_PATH_LIB} ; ln -sf libabcdk.so.${VERSION_STR_MAIN} libabcdk.so ;
+	cd ${INSTALL_PATH_LIB} ; ln -sf ${LIB_SONAME_MAIN} libabcdk.so ;
 	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0644 {} \;
 	chmod 0644 ${INSTALL_PATH_INC}/abcdk.h
 	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
@@ -95,8 +95,8 @@ uninstall-script:
 #
 uninstall-lib:
 #
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_MAIN}
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.so.${VERSION_STR_FULL}
+	rm -f ${INSTALL_PATH_LIB}/${LIB_SONAME_MAIN}
+	rm -f ${INSTALL_PATH_LIB}/${LIB_SONAME_FULL}
 	rm -rf $(INSTALL_PATH_DOC)/abcdk/lib
 	
 #
