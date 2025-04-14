@@ -63,9 +63,8 @@ int abcdk_test_record(abcdk_option_t *args)
         abcdk_avcodec_free(&opt);
     }
 
-    
-    abcdk_ffeditor_write_header_hls(w,NULL,1,10,NULL,2);
-    //abcdk_ffeditor_write_header_mp4(w,1);
+
+    abcdk_ffeditor_write_header_fmp4(w);
 
 
     abcdk_avformat_dump(wf,1);

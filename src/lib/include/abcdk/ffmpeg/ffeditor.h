@@ -234,18 +234,10 @@ int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx,const AVDictionary *dict);
 /**
  * 写入头部信息。
  * 
- * @param fmp4 0 默认的格式，!0 FMP4格式。
- * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffeditor_write_header_mp4(abcdk_ffeditor_t *ctx,int fmp4);
+int abcdk_ffeditor_write_header_fmp4(abcdk_ffeditor_t *ctx);
 
-/**
- * 写入头部信息。
- * 
- * @return >= 0 成功，< 0 失败。
-*/
-int abcdk_ffeditor_write_header_hls(abcdk_ffeditor_t *ctx,const char *segment_prefix, int64_t segment_duration,int segment_max, const char *base_url, int list_size);
 
 /**
  * 写入结束信息。

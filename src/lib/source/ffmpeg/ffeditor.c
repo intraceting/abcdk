@@ -973,37 +973,12 @@ int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx, const AVDictionary *dict)
     return 0;
 }
 
-int abcdk_ffeditor_write_header_mp4(abcdk_ffeditor_t *ctx, int fmp4)
+int abcdk_ffeditor_write_header_fmp4(abcdk_ffeditor_t *ctx)
 {
     AVDictionary *dict = NULL;
     int chk;
 
-    if (fmp4)
-        abcdk_avdict_make_fmp4(&dict);
-
-    chk = abcdk_ffeditor_write_header(ctx, dict);
-
-    av_dict_free(&dict);
-
-    return chk;
-}
-
-int abcdk_ffeditor_write_header_hls(abcdk_ffeditor_t *ctx,const char *segment_prefix, int64_t segment_duration,int segment_max, const char *base_url, int list_size)
-{
-    AVDictionary *dict = NULL;
-    char m3u8_path[PATH_MAX] = {0};
-    int chk;
-
-    assert(segment_duration >= 1 && segment_max > 1 && list_size >= 1);
-    assert(segment_max > list_size);
-
-    if(!segment_prefix)
-    {
-        abcdk_dirname(m3u8_path,ctx->cfg.url);
-        abcdk_dirdir(m3u8_path,"/segment-");
-    }
-
-    abcdk_avdict_make_hls(&dict, (segment_prefix ? segment_prefix : m3u8_path), segment_duration, segment_max, (base_url?base_url:""), list_size);
+    abcdk_avdict_make_fmp4(&dict);
 
     chk = abcdk_ffeditor_write_header(ctx, dict);
 
