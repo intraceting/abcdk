@@ -239,7 +239,7 @@ int abcdk_test_torch_3(abcdk_option_t *args)
 
     abcdk_avcodec_free(&enc_opt);
 
-    abcdk_ffeditor_write_header(w, 1);
+    abcdk_ffeditor_write_header(w, NULL);
 
     AVPacket r_pkt, *w_pkt = NULL;
     av_init_packet(&r_pkt);
