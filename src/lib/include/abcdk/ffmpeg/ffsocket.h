@@ -10,7 +10,10 @@
 #include "abcdk/util/socket.h"
 #include "abcdk/ffmpeg/ffeditor.h"
 
-/*简单的IO通讯。*/
+/**
+ * 简单的IO通讯。
+ * 还不能用，监听必须从read方法独立出来。
+*/
 typedef struct _abcdk_ffsocket abcdk_ffsocket_t;
 
 /**销毁。 */
@@ -27,7 +30,7 @@ abcdk_ffsocket_t *abcdk_ffsocket_create(const char *addr, int timeout, const cha
 int abcdk_ffsocket_read(void *opaque, uint8_t *buf, int size);
 
 /**
- * 读。
+ * 写。
  *
  * @return > 0 成功(长度)，0 断开或已满，< 0 失败(参考AVERROR(n))
  */

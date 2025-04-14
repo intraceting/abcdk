@@ -27,7 +27,7 @@ struct _abcdk_rtsp_relay
     abcdk_ffsocket_t *ff_sock;
 
     /**流索引映射表。 */
-    int index_s2d[16];
+    int index_s2d[ABCDK_FFMPEG_MAX_STREAMS];
 
     /**服务指针。 */
     abcdk_rtsp_server_t *server_ctx_p;

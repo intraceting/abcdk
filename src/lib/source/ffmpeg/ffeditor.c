@@ -11,8 +11,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-/** 最大支持16个。*/
-#define ABCDK_FFMPEG_MAX_STREAMS 16
 
 /**简的视音编辑。*/
 struct _abcdk_ffeditor
@@ -381,7 +379,7 @@ abcdk_ffeditor_t *abcdk_ffeditor_open(abcdk_ffeditor_config_t *cfg)
     ctx->cfg.io.buffer_size = ABCDK_CLAMP(ctx->cfg.io.buffer_size, (int)8, (int)1024);
     ctx->cfg.timeout = ABCDK_CLAMP(ctx->cfg.timeout, (int)-1, (int)15);
     ctx->cfg.read_speed = ABCDK_CLAMP(ctx->cfg.read_speed, (float)0.01, (float)100.0);
-    ctx->cfg.read_delay_max = ABCDK_CLAMP(ctx->cfg.read_delay_max, (float)0.020, (float)86400.0);
+    ctx->cfg.read_delay_max = ABCDK_CLAMP(ctx->cfg.read_delay_max, (float)2.0, (float)86400.0);
 
     ctx->last_packet_time = _abcdk_ffeditor_clock();
 

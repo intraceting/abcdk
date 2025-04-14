@@ -252,6 +252,57 @@ int abcdk_test_audio(abcdk_option_t *args)
     abcdk_ffeditor_destroy(&r);
 }
 
+int abcdk_test_record2(abcdk_option_t *args)
+{
+    abcdk_ffeditor_config_t rcfg = {0};
+
+    rcfg.url = abcdk_option_get(args, "--src", 0, "");
+    rcfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
+    rcfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
+    rcfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 3);
+    rcfg.bit_stream_filter = 1;
+
+    const char *save_path = abcdk_option_get(args, "--save-path", 0, "/tmp/aaa/");
+    const char *segment_prefix = abcdk_option_get(args, "--segment-prefix", 0, NULL);
+    int segment_duration = abcdk_option_get_int(args, "--segment-duration", 0, 5);
+    int segment_size = abcdk_option_get_int(args, "--segment-size", 0, 10);
+
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
+    abcdk_ffrecord_t *w = abcdk_ffrecord_create(save_path, segment_prefix, segment_duration, segment_size);
+
+    for (int i = 0; i < abcdk_ffeditor_streams(r); i++)
+    {
+        AVStream *p = abcdk_ffeditor_streamptr(r, i);
+
+        int chk = abcdk_ffrecord_add_stream(w, p);
+        assert(chk == 0);
+    }
+
+    AVPacket pkt;
+
+    av_init_packet(&pkt);
+    for (int i = 0; i < 10000000; i++)
+    {
+        int n = abcdk_ffeditor_read_packet(r, &pkt, -1);
+        if (n < 0)
+            break;
+
+        AVStream *p = abcdk_ffeditor_streamptr(r, n);
+
+        int chk = abcdk_ffrecord_write_packet(w, &pkt, &p->time_base);
+        assert(chk == 0);
+    }
+
+    av_packet_unref(&pkt);
+
+    abcdk_ffrecord_write_packet(w, NULL, NULL);
+
+    abcdk_ffrecord_destroy(&w);
+    abcdk_ffeditor_destroy(&r);
+
+    return 0;
+}
+
 #endif //HAVE_FFMPEG
 
 int abcdk_test_ffmpeg(abcdk_option_t *args)
@@ -268,6 +319,8 @@ int abcdk_test_ffmpeg(abcdk_option_t *args)
         abcdk_test_extradata(args);
     else if(cmd == 4)
         abcdk_test_audio(args);
+    else if(cmd == 5)
+        abcdk_test_record2(args);
 
 #endif //HAVE_FFMPEG
 

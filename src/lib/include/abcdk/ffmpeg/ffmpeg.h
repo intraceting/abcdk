@@ -43,4 +43,7 @@ __BEGIN_DECLS
 __END_DECLS
 #endif // HAVE_FFMPEG
 
+/** 最大支持16个。*/
+#define ABCDK_FFMPEG_MAX_STREAMS 16
+
 #endif //ABCDK_FFMPEG_FFMPEG_H

@@ -106,7 +106,7 @@ typedef struct _abcdk_ffeditor_config
     /** 读的速度(倍数)。0.01~100.0 */
     float read_speed;
 
-    /** 读的最大延迟(秒.毫秒)。0.020~86400.0*/
+    /** 读的最大延迟(秒.毫秒)。2.0~86400.0*/
     float read_delay_max;
 
     /** 

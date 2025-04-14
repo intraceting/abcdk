@@ -121,6 +121,7 @@
 #include "abcdk/ffmpeg/avformat.h"
 #include "abcdk/ffmpeg/ffeditor.h"
 #include "abcdk/ffmpeg/ffsocket.h"
+#include "abcdk/ffmpeg/ffrecord.h"
 
 #include "abcdk/redis/redis.h"
 #include "abcdk/redis/util.h"
