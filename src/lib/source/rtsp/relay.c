@@ -106,10 +106,6 @@ abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, con
     if (!ctx)
         return NULL;
 
-    /*ffsock协议必输入格式。*/
-    if (abcdk_strncmp(src_url, "ffsock://", 9, 0) == 0 && src_fmt == NULL)
-        goto ERR;
-
     ctx->server_ctx_p = server_ctx;
     ctx->media_name = abcdk_heap_clone(media_name, strlen(media_name));
     ctx->src_url = abcdk_heap_clone(src_url, strlen(src_url));
@@ -278,19 +274,7 @@ RETRY:
 
     abcdk_trace_printf(LOG_INFO, TT("打开源(%s)..."), ctx->src_url);
 
-    if (abcdk_strncmp(ctx->src_url, "ffsock://", 9, 0) == 0)
-    {
-        ctx->ff_cfg.io.read_cb = abcdk_ffsocket_read;
-        ctx->ff_cfg.io.opaque = ctx->ff_sock = abcdk_ffsocket_create(ctx->src_url + 9, ctx->src_timeout, NULL, NULL, NULL);
-
-        if (!ctx->ff_sock)
-            goto RETRY;
-    }
-    else
-    {
-        ctx->ff_cfg.url = ctx->src_url;
-    }
-    
+    ctx->ff_cfg.url = ctx->src_url;
     ctx->ff_cfg.fmt = ctx->src_fmt;
     ctx->ff_cfg.timeout = ctx->src_timeout;
     ctx->ff_cfg.read_speed = ctx->src_xspeed;
