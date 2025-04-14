@@ -9,6 +9,8 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/trace.h"
+#include "abcdk/util/path.h"
+#include "abcdk/util/dirent.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 
 __BEGIN_DECLS
@@ -105,6 +107,11 @@ void abcdk_avframe_copy(AVFrame *dst, const AVFrame *src);
 /**创建帧图。 */
 AVFrame *abcdk_avframe_alloc(int width, int height, enum AVPixelFormat pixfmt, int align);
 
+/**生成FMP4选项。*/
+void abcdk_avdict_make_fmp4(AVDictionary **opt);
+
+/**生成HLS选项。*/
+void abcdk_avdict_make_hls(AVDictionary **opt, const char *segment_prefix, int64_t segment_duration,int segment_max, const char *base_url, int list_size);
 
 #endif // AVUTIL_AVUTIL_H
 

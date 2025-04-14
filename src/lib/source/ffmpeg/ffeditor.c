@@ -949,7 +949,7 @@ int abcdk_ffeditor_add_stream(abcdk_ffeditor_t *ctx, const AVCodecContext *opt, 
     return vs->index;
 }
 
-int abcdk_ffeditor_write_header0(abcdk_ffeditor_t *ctx, const AVDictionary *dict)
+int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx, const AVDictionary *dict)
 {
     int chk;
 
@@ -973,15 +973,39 @@ int abcdk_ffeditor_write_header0(abcdk_ffeditor_t *ctx, const AVDictionary *dict
     return 0;
 }
 
-int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx, int fmp4)
+int abcdk_ffeditor_write_header_mp4(abcdk_ffeditor_t *ctx, int fmp4)
 {
     AVDictionary *dict = NULL;
     int chk;
 
     if (fmp4)
-        av_dict_set(&dict, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
+        abcdk_avdict_make_fmp4(&dict);
 
-    chk = abcdk_ffeditor_write_header0(ctx, dict);
+    chk = abcdk_ffeditor_write_header(ctx, dict);
+
+    av_dict_free(&dict);
+
+    return chk;
+}
+
+int abcdk_ffeditor_write_header_hls(abcdk_ffeditor_t *ctx,const char *segment_prefix, int64_t segment_duration,int segment_max, const char *base_url, int list_size)
+{
+    AVDictionary *dict = NULL;
+    char m3u8_path[PATH_MAX] = {0};
+    int chk;
+
+    assert(segment_duration >= 1 && segment_max > 1 && list_size >= 1);
+    assert(segment_max > list_size);
+
+    if(!segment_prefix)
+    {
+        abcdk_dirname(m3u8_path,ctx->cfg.url);
+        abcdk_dirdir(m3u8_path,"/segment-");
+    }
+
+    abcdk_avdict_make_hls(&dict, (segment_prefix ? segment_prefix : m3u8_path), segment_duration, segment_max, (base_url?base_url:""), list_size);
+
+    chk = abcdk_ffeditor_write_header(ctx, dict);
 
     av_dict_free(&dict);
 

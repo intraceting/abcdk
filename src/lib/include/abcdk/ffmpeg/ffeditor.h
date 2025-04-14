@@ -229,7 +229,7 @@ int abcdk_ffeditor_add_stream(abcdk_ffeditor_t *ctx, const AVCodecContext *opt, 
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffeditor_write_header0(abcdk_ffeditor_t *ctx,const AVDictionary *dict);
+int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx,const AVDictionary *dict);
 
 /**
  * 写入头部信息。
@@ -238,7 +238,14 @@ int abcdk_ffeditor_write_header0(abcdk_ffeditor_t *ctx,const AVDictionary *dict)
  * 
  * @return >= 0 成功，< 0 失败。
 */
-int abcdk_ffeditor_write_header(abcdk_ffeditor_t *ctx,int fmp4);
+int abcdk_ffeditor_write_header_mp4(abcdk_ffeditor_t *ctx,int fmp4);
+
+/**
+ * 写入头部信息。
+ * 
+ * @return >= 0 成功，< 0 失败。
+*/
+int abcdk_ffeditor_write_header_hls(abcdk_ffeditor_t *ctx,const char *segment_prefix, int64_t segment_duration,int segment_max, const char *base_url, int list_size);
 
 /**
  * 写入结束信息。

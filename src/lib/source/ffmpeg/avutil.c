@@ -247,6 +247,70 @@ AVFrame *abcdk_avframe_alloc(int width,int height,enum AVPixelFormat pixfmt,int 
     return av_frame;
 }
 
+
+void abcdk_avdict_make_fmp4(AVDictionary **opt)
+{
+    av_dict_set(opt, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart",  0);
+}
+
+static int _abcdk_avdict_make_hls_find_start_number(const char *segment_file)
+{
+    char segment_path[PATH_MAX] = {0}, segment_name[NAME_MAX] = {0} , tmp_name[NAME_MAX] = {0};
+    int number_max = 1,tmp_number = 1;
+    abcdk_tree_t *dir_ctx = NULL;
+    int chk;
+
+    abcdk_dirname(segment_path, segment_file);
+    abcdk_basename(segment_name, segment_file);
+
+    chk = abcdk_dirent_open(&dir_ctx,segment_path);
+    if(chk != 0)
+        return number_max;
+
+    while (1)
+    {
+        chk = abcdk_dirent_read(dir_ctx, "*.ts", tmp_name, 0);
+        if (chk != 0)
+            break;
+
+        chk = sscanf(tmp_name, segment_name, &tmp_number);
+        if (chk != 1)
+            continue;
+
+        /*取最大的。*/
+        number_max = ABCDK_MAX(number_max, tmp_number);
+    }
+
+    abcdk_tree_free(&dir_ctx);
+
+    return number_max;
+}
+
+void abcdk_avdict_make_hls(AVDictionary **opt, const char *segment_prefix, int64_t segment_duration, int segment_max, const char *base_url, int list_size)
+{
+    char segment_file[PATH_MAX] = {0};
+    int start_number = 1;
+
+    assert(segment_prefix != NULL && segment_duration >= 1 && segment_max > 1 && base_url != NULL && list_size >= 1);
+    assert(segment_max > list_size);
+
+    snprintf(segment_file, PATH_MAX, "%s%%05d.ts", segment_prefix);
+
+    /*修饰路径。*/
+    abcdk_abspath(segment_file, 0);
+
+    /*找最大的编号。*/
+    start_number = _abcdk_avdict_make_hls_find_start_number(segment_file);
+
+    av_dict_set_int(opt, "hls_time", segment_duration, 0);
+    av_dict_set_int(opt, "hls_list_size", list_size, 0);
+    av_dict_set(opt, "hls_flags", "append_list+delete_segments+omit_endlist+temp_file", 0);
+    av_dict_set(opt, "hls_segment_filename", segment_file, 0);
+    av_dict_set(opt, "hls_base_url", base_url, 0);
+    av_dict_set_int(opt, "hls_start_number", start_number, 0);
+    av_dict_set_int(opt, "hls_delete_threshold", segment_max-list_size, 0);
+}
+
 #pragma GCC diagnostic pop
 
 #endif //AVUTIL_AVUTIL_H

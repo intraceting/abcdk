@@ -17,6 +17,7 @@ int abcdk_test_record(abcdk_option_t *args)
     abcdk_ffeditor_config_t rcfg = {0},wcfg = {1};
 
     rcfg.url = abcdk_option_get(args,"--src",0,"");
+    rcfg.read_flush = abcdk_option_get_double(args,"--src-flush",0,0);
     rcfg.read_speed = abcdk_option_get_double(args,"--src-xpeed",0,1);
     rcfg.read_delay_max = abcdk_option_get_double(args,"--src-delay-max",0,1);
     rcfg.bit_stream_filter = 1;
@@ -62,22 +63,10 @@ int abcdk_test_record(abcdk_option_t *args)
         abcdk_avcodec_free(&opt);
     }
 
-    AVDictionary *dict = NULL;
-
-   /// av_dict_set(&dict, "hls_segment_filename", "/tmp/ccc/aaaa%d.ts", 0);
-   // av_dict_set(&dict, "hls_time", "2", 0);
-  //  av_dict_set(&dict, "hls_list_size","5", 0);
-  //  av_dict_set(&dict, "start_number", "1", 0);
-  //  av_dict_set(&dict, "hls_delete_threshold","100",0);
-  //  av_dict_set(&dict, "hls_flags","+delete_segments+append_list+omit_endlist+temp_file",0);
-
-   //   av_dict_set(&dict, "hls_flags","append_list+omit_endlist+temp_file",0);
     
-    av_dict_set(&dict, "movflags", "empty_moov+default_base_moof+frag_keyframe", 0);
-        
-    abcdk_ffeditor_write_header0(w,dict);
+    abcdk_ffeditor_write_header_hls(w,NULL,1,10,NULL,2);
+    //abcdk_ffeditor_write_header_mp4(w,1);
 
-    av_dict_free(&dict);
 
     abcdk_avformat_dump(wf,1);
 
@@ -86,7 +75,7 @@ int abcdk_test_record(abcdk_option_t *args)
     AVPacket pkt;
 
     av_init_packet(&pkt);
-    for(int i = 0;i<1000;i++)
+    for(int i = 0;i<10000000;i++)
     {
        // abcdk_ffeditor_read_delay(r,0);
 
@@ -161,7 +150,7 @@ int abcdk_test_codec(abcdk_option_t *args)
         abcdk_avcodec_free(&opt);
     }
     
-    abcdk_ffeditor_write_header(w,0);
+    abcdk_ffeditor_write_header(w,NULL);
 
     abcdk_avformat_dump(wf,1);
 
