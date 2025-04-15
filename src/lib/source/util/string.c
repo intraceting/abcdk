@@ -23,7 +23,7 @@ char *abcdk_strdup_safe(const char *str)
     if (!str)
         return NULL;
 
-    if (*str != '\0')
+    if (*str)
         return abcdk_strdup(str);
     else
         return (char *)abcdk_heap_alloc(1);
