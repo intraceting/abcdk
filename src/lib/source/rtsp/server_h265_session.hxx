@@ -149,22 +149,37 @@ namespace abcdk
 
             virtual RTPSink *createNewRTPSink(Groupsock *rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource *inputSource)
             {
-                abcdk_object_t *vps_p = NULL, *sps_p = NULL, *pps_p = NULL;
+                uint8_t *vps_p = NULL, *sps_p = NULL, *pps_p = NULL;
+                int vps_size = 0, sps_size = 0, pps_size = 0;
 
                 for (int i = 0; i < m_extdata.nal_array_num; i++)
                 {
-                    if (m_extdata.nal_array[i].unit_type == 32)
-                        vps_p = m_extdata.nal_array[i].nal;
-                    else if (m_extdata.nal_array[i].unit_type == 33)
-                        sps_p = m_extdata.nal_array[i].nal;
-                    else if (m_extdata.nal_array[i].unit_type == 34)
-                        pps_p = m_extdata.nal_array[i].nal;
+                    for (int j = 0; j < m_extdata.nal_array[i].nal_num; j++)
+                    {
+                        uint8_t unit_type = (m_extdata.nal_array[i].nal->pptrs[j] >> 1) & 0x3F;
+
+                        if (unit_type == 32)
+                        {
+                            vps_p = m_extdata.nal_array[i].nal->pptrs[j];
+                            vps_size = m_extdata.nal_array[i].nal->sizes[j];
+                        }
+                        else if (unit_type == 33)
+                        {
+                            sps_p = m_extdata.nal_array[i].nal->pptrs[j];
+                            sps_size = m_extdata.nal_array[i].nal->sizes[j];
+                        }
+                        else if (unit_type == 34)
+                        {
+                            pps_p = m_extdata.nal_array[i].nal->pptrs[j];
+                            pps_size = m_extdata.nal_array[i].nal->sizes[j];
+                        }
+                    }
                 }
 
                 if(!vps_p || !sps_p || !pps_p)
                     return NULL;
 
-                return H265VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, vps_p->pptrs[0], vps_p->sizes[0], sps_p->pptrs[0], sps_p->sizes[0], pps_p->pptrs[0], pps_p->sizes[0]);
+                return H265VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, vps_p, vps_size, sps_p, sps_size, pps_p, pps_size);
             }
         };
     } // namespace rtsp_server
