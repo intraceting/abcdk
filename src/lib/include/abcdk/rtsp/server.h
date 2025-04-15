@@ -66,7 +66,11 @@ int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, 
 /**删除媒体。*/
 void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, const char *name);
 
-/**播放媒体。*/
+/**
+ * 播放媒体。
+ * 
+ * @return 0 成功，-1 失败。
+*/
 int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx, const char *name);
 
 /**
