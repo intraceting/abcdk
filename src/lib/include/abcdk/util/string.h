@@ -28,6 +28,13 @@ int abcdk_isodigit(int c);
 char *abcdk_strdup(const char *str);
 
 /**
+ * 字符串克隆。
+ * 
+ * @note 克隆的指针需要用abcdk_heap_free释放。
+*/
+char *abcdk_strdup_safe(const char *str);
+
+/**
  * 字符串查找。
  * 
  * @param caseAb 0 不区分大小写，!0 区分大小写。

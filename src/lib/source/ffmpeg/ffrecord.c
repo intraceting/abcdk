@@ -50,8 +50,8 @@ void abcdk_ffrecord_destroy(abcdk_ffrecord_t **ctx)
     for (int i = 0; i < ABCDK_FFMPEG_MAX_STREAMS; i++)
         abcdk_avcodec_free(&ctx_p->codec_ctx[i]);
 
-    abcdk_heap_free(ctx_p->save_path);
-    abcdk_heap_free(ctx_p->segment_prefix);
+    abcdk_heap_free((char*)ctx_p->save_path);
+    abcdk_heap_free((char*)ctx_p->segment_prefix);
 
     abcdk_heap_free(ctx_p);
 }
@@ -67,8 +67,8 @@ abcdk_ffrecord_t *abcdk_ffrecord_create(const char *save_path, const char *segme
     for (int i = 0; i < ABCDK_FFMPEG_MAX_STREAMS; i++)
         ctx->index_s2d[i] = -1;
 
-    ctx->save_path = abcdk_heap_clone(save_path, strlen(save_path));
-    ctx->segment_prefix = (segment_prefix ? abcdk_heap_clone(segment_prefix, strlen(segment_prefix)) : NULL);
+    ctx->save_path = abcdk_strdup_safe(save_path);
+    ctx->segment_prefix = abcdk_strdup_safe(segment_prefix);
     ctx->segment_duration = segment_duration;
     ctx->segment_size = segment_size;
 

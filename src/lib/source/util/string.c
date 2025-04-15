@@ -18,6 +18,17 @@ char *abcdk_strdup(const char *str)
     return (char*)abcdk_heap_clone(str,strlen(str));
 }
 
+char *abcdk_strdup_safe(const char *str)
+{
+    if (!str)
+        return NULL;
+
+    if (*str != '\0')
+        return abcdk_strdup(str);
+    else
+        return (char *)abcdk_heap_alloc(1);
+}
+
 const char *abcdk_strstr(const char *str, const char *sub, int caseAb)
 {
     assert(str != NULL && sub != NULL);
