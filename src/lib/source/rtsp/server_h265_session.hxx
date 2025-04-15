@@ -154,24 +154,26 @@ namespace abcdk
 
                 for (int i = 0; i < m_extdata.nal_array_num; i++)
                 {
+                    abcdk_object_t *nal_p = m_extdata.nal_array[i].nal;
+
                     for (int j = 0; j < m_extdata.nal_array[i].nal_num; j++)
                     {
-                        uint8_t unit_type = (m_extdata.nal_array[i].nal->pptrs[j] >> 1) & 0x3F;
+                        uint8_t unit_type = (nal_p->pptrs[j][0] >> 1) & 0x3F;
 
                         if (unit_type == 32)
                         {
-                            vps_p = m_extdata.nal_array[i].nal->pptrs[j];
-                            vps_size = m_extdata.nal_array[i].nal->sizes[j];
+                            vps_p = nal_p->pptrs[j];
+                            vps_size = nal_p->sizes[j];
                         }
                         else if (unit_type == 33)
                         {
-                            sps_p = m_extdata.nal_array[i].nal->pptrs[j];
-                            sps_size = m_extdata.nal_array[i].nal->sizes[j];
+                            sps_p = nal_p->pptrs[j];
+                            sps_size = nal_p->sizes[j];
                         }
                         else if (unit_type == 34)
                         {
-                            pps_p = m_extdata.nal_array[i].nal->pptrs[j];
-                            pps_size = m_extdata.nal_array[i].nal->sizes[j];
+                            pps_p = nal_p->pptrs[j];
+                            pps_size = nal_p->sizes[j];
                         }
                     }
                 }
