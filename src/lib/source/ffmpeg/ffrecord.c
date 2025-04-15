@@ -28,8 +28,8 @@ struct _abcdk_ffrecord
     char segment_file[PATH_MAX];
     uint64_t segment_begin;
 
-    char *save_path;
-    char *segment_prefix;
+    const char *save_path;
+    const char *segment_prefix;
     int segment_duration;
     int segment_size;
 
