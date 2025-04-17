@@ -33,10 +33,21 @@ int abcdk_ffrecord_add_stream(abcdk_ffrecord_t *ctx, AVStream *src_stream);
 
 /**
  * 写数据包。
+ * 
+ * @param [in] src_pkt 源数据包。NULL(0) 结束。
  *
  * @return  0 成功，< 0 失败(已满或其它)。
  */
 int abcdk_ffrecord_write_packet(abcdk_ffrecord_t *ctx, AVPacket *src_pkt, AVRational *src_time_base);
+
+/**
+ * 写入数据包。
+ * 
+ * @note 不支持B帧。
+ * 
+ * @return 0 成功，< 0 失败(已满或其它)。
+*/
+int abcdk_ffrecord_write_packet2(abcdk_ffrecord_t *ctx, void *data, int size, int keyframe, int stream);
 
 #endif //AVCODEC_AVCODEC_H && AVFORMAT_AVFORMAT_H && AVDEVICE_AVDEVICE_H
 

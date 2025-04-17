@@ -227,7 +227,7 @@ static int _abcdk_ffrecord_new_segment(abcdk_ffrecord_t *ctx)
     return 0;
 }
 
-int abcdk_ffrecord_write_packet(abcdk_ffrecord_t *ctx, AVPacket *src_pkt, AVRational *src_time_base)
+static int _abcdk_ffrecord_write_packet(abcdk_ffrecord_t *ctx, AVPacket *src_pkt, AVRational *src_time_base)
 {
     AVCodecContext *dst_codec_ctx_p = NULL;
     AVPacket dst_pkt = {0};
@@ -237,7 +237,7 @@ int abcdk_ffrecord_write_packet(abcdk_ffrecord_t *ctx, AVPacket *src_pkt, AVRati
     assert(ctx != NULL);
 
     /*强制结束断片。*/
-    if (src_pkt == NULL || src_time_base == NULL)
+    if (src_pkt == NULL)
     {
         _abcdk_ffrecord_del_segment(ctx);
         return 0;
@@ -287,9 +287,49 @@ SEGMENT_NEW:
     dst_pkt.flags = src_pkt->flags;
     dst_pkt.stream_index = ctx->index_s2d[src_pkt->stream_index];//从映表中取索引。
 
-    chk = abcdk_ffeditor_write_packet(ctx->ff_ctx, &dst_pkt, src_time_base);
+    if (src_time_base)
+        chk = abcdk_ffeditor_write_packet(ctx->ff_ctx, &dst_pkt, src_time_base);
+    else
+        chk = abcdk_ffeditor_write_packet2(ctx->ff_ctx, dst_pkt.data, dst_pkt.size, dst_pkt.flags & AV_PKT_FLAG_KEY, dst_pkt.stream_index);
     if (chk != 0)
         return -3;
+
+    return 0;
+}
+
+int abcdk_ffrecord_write_packet(abcdk_ffrecord_t *ctx, AVPacket *src_pkt, AVRational *src_time_base)
+{
+    int chk;
+
+    assert(ctx != NULL);
+
+    chk = _abcdk_ffrecord_write_packet(ctx, src_pkt, src_time_base);
+    if (chk != 0)
+        return -1;
+
+    return 0;
+}
+
+int abcdk_ffrecord_write_packet2(abcdk_ffrecord_t *ctx, void *data, int size, int keyframe, int stream)
+{
+    AVPacket src_pkt = {0};
+    int chk;
+
+    assert(ctx != NULL && data != NULL && size >0 && stream >= 0);
+
+    /*初始化。*/
+    av_init_packet(&src_pkt);
+
+    src_pkt.data = (uint8_t*)data;
+    src_pkt.size = size;
+    src_pkt.dts = (int64_t)UINT64_C(0x8000000000000000);
+    src_pkt.pts = (int64_t)UINT64_C(0x8000000000000000);
+    src_pkt.flags |= (keyframe?AV_PKT_FLAG_KEY:0);
+    src_pkt.stream_index = stream;
+
+    chk = _abcdk_ffrecord_write_packet(ctx,&src_pkt,NULL);
+    if(chk != 0)
+        return -1;
 
     return 0;
 }
