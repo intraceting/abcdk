@@ -15,7 +15,7 @@ __BEGIN_DECLS
 
 #if defined(AVCODEC_AVCODEC_H) && defined(AVFORMAT_AVFORMAT_H) && defined(AVDEVICE_AVDEVICE_H)
 
-/*简单的视音录像。*/
+/**简单的视音录像。*/
 typedef struct _abcdk_ffrecord abcdk_ffrecord_t;
 
 /**销毁。 */
@@ -34,6 +34,8 @@ int abcdk_ffrecord_add_stream(abcdk_ffrecord_t *ctx, AVStream *src_stream);
 /**
  * 写数据包。
  * 
+ * @note 视频流关键帧标志必须周期性存在，否则无法正常分段。
+ * 
  * @param [in] src_pkt 源数据包。NULL(0) 结束。
  *
  * @return  0 成功，< 0 失败(已满或其它)。
@@ -43,7 +45,8 @@ int abcdk_ffrecord_write_packet(abcdk_ffrecord_t *ctx, AVPacket *src_pkt, AVRati
 /**
  * 写入数据包。
  * 
- * @note 不支持B帧。
+ * @note 仅支持视频流，并且不支持B帧。
+ * @note 视频流关键帧标志必须周期性存在，否则无法正常分段。
  * 
  * @return 0 成功，< 0 失败(已满或其它)。
 */

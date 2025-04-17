@@ -324,6 +324,7 @@ int abcdk_ffrecord_write_packet2(abcdk_ffrecord_t *ctx, void *data, int size, in
     src_pkt.size = size;
     src_pkt.dts = (int64_t)UINT64_C(0x8000000000000000);
     src_pkt.pts = (int64_t)UINT64_C(0x8000000000000000);
+    src_pkt.duration = 0;
     src_pkt.flags |= (keyframe?AV_PKT_FLAG_KEY:0);
     src_pkt.stream_index = stream;
 

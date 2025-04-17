@@ -260,7 +260,7 @@ int abcdk_ffeditor_write_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, AVRational
 /**
  * 写入数据包(已编码)。
  * 
- * @note 不支持B帧。
+ * @note 仅支持视频流，并且不支持B帧。
  * 
  * @return >= 0 成功，< 0 失败。
 */
