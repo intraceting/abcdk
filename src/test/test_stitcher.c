@@ -38,6 +38,8 @@ int abcdk_test_stitcher(abcdk_option_t *args)
         abcdk_object_unref(&metadata);
     }
 
+    int c = 2;
+
     abcdk_torch_image_t *img[6] = {0}, *mask[6] = {0};
 
     // img[0] = abcdk_torch_imgcode_load("/tmp/ccc/you1.jpg", 0);
@@ -45,25 +47,31 @@ int abcdk_test_stitcher(abcdk_option_t *args)
     // img[1] = abcdk_torch_imgcode_load("/tmp/ccc/you3.jpg", 0);
     // img[2] = abcdk_torch_imgcode_load("/tmp/ccc/you4.jpg", 0);
 
-    img[0] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/1.jpg");
-    img[3] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/2.jpg");
-    img[1] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/3.jpg");
-    img[2] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/4.jpg");
-    img[5] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/5.jpg");
-    img[4] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/6.jpg");
+    // img[0] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/1.jpg");
+    // img[3] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/2.jpg");
+    // img[1] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/3.jpg");
+    // img[2] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/4.jpg");
+    // img[5] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/5.jpg");
+    // img[4] = abcdk_torch_imgcode_load("/home/devel/job/download/eee/6.jpg");
 
+    img[0] = abcdk_torch_imgcode_load("/home/devel/job/download/fff/1.jpg");
+    img[1] = abcdk_torch_imgcode_load("/home/devel/job/download/fff/2.jpg");
+    //img[1] = abcdk_torch_imgcode_load("/home/devel/job/download/fff/3.jpg");
+    //img[2] = abcdk_torch_imgcode_load("/home/devel/job/download/fff/4.jpg");
+    //img[4] = abcdk_torch_imgcode_load("/home/devel/job/download/fff/5.jpg");
     //abcdk_torch_imgcode_save("/tmp/ccc/a.jpg",img[0]);
 
-    // abcdk_opencv_stitcher_set_feature(ctx,"SURF");
-    abcdk_torch_stitcher_set_feature(ctx, "SIFT");
+     abcdk_torch_stitcher_set_feature(ctx,"SURF");
+   // abcdk_torch_stitcher_set_feature(ctx, "SIFT");
 
-    int chk = abcdk_torch_stitcher_estimate(ctx, 6, img, mask, 0.8);
+    int chk = abcdk_torch_stitcher_estimate(ctx, c, img, mask, 0.8);
 
-    // abcdk_opencv_stitcher_set_warper(ctx,"plane");
+   // abcdk_torch_stitcher_set_warper(ctx,"plane");
+    abcdk_torch_stitcher_set_warper(ctx,"cylindrical");
     abcdk_torch_stitcher_build(ctx);
 
     abcdk_torch_image_t *out = abcdk_torch_image_alloc();
-    chk = abcdk_torch_stitcher_compose(ctx, out, 6, img);
+    chk = abcdk_torch_stitcher_compose(ctx, out, c, img);
 
     abcdk_torch_imgcode_save("/tmp/ccc/pano.jpg", out);
     abcdk_torch_image_free(&out);
