@@ -39,10 +39,10 @@ install-tool:
 	cp -f $(CURDIR)/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/
 	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
 #
-	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/tool/
-	cp -rfP $(CURDIR)/share/abcdk/sample/tool/. ${INSTALL_PATH}/share/abcdk/sample/tool/
-	find ${INSTALL_PATH}/share/abcdk/sample/tool -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PATH}/share/abcdk/sample/tool -type f -exec chmod 0644 {} \;
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool/
+	cp -rfP $(CURDIR)/share/abcdk/sample/abcdk-tool/. ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool/
+	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool -type f -exec chmod 0644 {} \;
 
 #
 install-script:
@@ -53,10 +53,10 @@ install-script:
 	find ${INSTALL_PATH}/bin/abcdk-script -type f -exec chmod 0644 {} \;
 	find ${INSTALL_PATH}/bin/abcdk-script -type f -name "*.sh" -exec chmod 0755 {} \;
 #
-	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/script/
-	cp -rfP $(CURDIR)/share/abcdk/sample/script/. ${INSTALL_PATH}/share/abcdk/sample/script/
-	find ${INSTALL_PATH}/share/abcdk/sample/script -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PATH}/share/abcdk/sample/script -type f -exec chmod 0644 {} \;
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/abcdk-script/
+	cp -rfP $(CURDIR)/share/abcdk/sample/abcdk-script/. ${INSTALL_PATH}/share/abcdk/sample/abcdk-script/
+	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-script -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-script -type f -exec chmod 0644 {} \;
 
 #
 install-lib:
@@ -66,10 +66,10 @@ install-lib:
 	chmod 0755 ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
 	cd ${INSTALL_PATH}/lib/ ; ln -sf ${LIB_SONAME_FULL} ${LIB_SONAME_MAIN} ;
 #
-	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/protocol/lib/
-	cp -rfP $(CURDIR)/share/abcdk/protocol/lib/. ${INSTALL_PATH}/share/abcdk/protocol/lib/
-	find ${INSTALL_PATH}/share/abcdk/protocol/lib -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PATH}/share/abcdk/protocol/lib -type f -exec chmod 0644 {} \;
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/protocol/libabcdk/
+	cp -rfP $(CURDIR)/share/abcdk/protocol/libabcdk/. ${INSTALL_PATH}/share/abcdk/protocol/libabcdk/
+	find ${INSTALL_PATH}/share/abcdk/protocol/libabcdk -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/protocol/libabcdk -type f -exec chmod 0644 {} \;
 
 
 #
@@ -98,20 +98,20 @@ uninstall-tool:
 	rm -f ${INSTALL_PATH}/bin/abcdk-tool
 	rm -f ${INSTALL_PATH}/share/locale/en_US/gettext/abcdk-tool.pot
 	rm -f ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
-	rm -rf ${INSTALL_PATH}/share/abcdk/sample/tool
+	rm -rf ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool
 
 
 uninstall-script:
 #
 	rm -rf ${INSTALL_PATH}/bin/abcdk-script
-	rm -rf ${INSTALL_PATH}/share/abcdk/sample/script
+	rm -rf ${INSTALL_PATH}/share/abcdk/sample/abcdk-script
 
 #
 uninstall-lib:
 #
 	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_MAIN}
 	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
-	rm -rf ${INSTALL_PATH}/share/abcdk/protocol/lib
+	rm -rf ${INSTALL_PATH}/share/abcdk/protocol/libabcdk
 	
 #
 uninstall-dev:
