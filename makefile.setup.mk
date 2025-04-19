@@ -5,108 +5,122 @@
 #
 #
 
-#
+#拼接完整安装路径。
 INSTALL_PATH=${INSTALL_PREFIX}
-INSTALL_PATH_INC = $(abspath ${INSTALL_PATH}/include/)
-INSTALL_PATH_LIB = $(abspath ${INSTALL_PATH}/lib/)
-INSTALL_PATH_BIN = $(abspath ${INSTALL_PATH}/bin/)
-INSTALL_PATH_DOC = $(abspath ${INSTALL_PATH}/share/)
 
+
+#生成desktop文件内容。
+define LIB_PKGCONFIG_CONTEXT
+prefix=${INSTALL_PREFIX}
+libdir=$${prefix}/lib
+includedir=$${prefix}/include
+
+Name: ABCDK
+Version: ${VERSION_STR_FULL}
+Description: ABCDK library
+Requires:
+Libs: -labcdk -L$${libdir}
+Cflags: -I$${includedir}
+endef
+export LIB_PKGCONFIG_CONTEXT
 
 #
 install-tool:
 #
-	mkdir -p ${INSTALL_PATH_BIN}/
-	mkdir -p ${INSTALL_PATH_DOC}/abcdk/tool/
+	mkdir -p -m 0755 ${INSTALL_PATH}/bin
+	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH}/bin
+	chmod 0755 ${INSTALL_PATH}/bin/abcdk-tool
 #
-	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH_BIN}/
-	cp -rf $(CURDIR)/share/tool/. ${INSTALL_PATH_DOC}/abcdk/tool/
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/locale/en_US/gettext
+	cp -f $(CURDIR)/share/locale/en_US/gettext/abcdk-tool.pot ${INSTALL_PATH}/share/locale/en_US/gettext/
+	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/gettext/abcdk-tool.pot
 #
-	chmod 0755 ${INSTALL_PATH_BIN}/abcdk-tool
-	find ${INSTALL_PATH_DOC}/abcdk/tool/ -type f -exec chmod 0644 {} \;
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES
+	cp -f $(CURDIR)/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/
+	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
+#
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/tool/
+	cp -rfP $(CURDIR)/share/abcdk/sample/tool/. ${INSTALL_PATH}/share/abcdk/sample/tool/
+	find ${INSTALL_PATH}/share/abcdk/sample/tool -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/sample/tool -type f -exec chmod 0644 {} \;
 
 #
 install-script:
 #
-	mkdir -p ${INSTALL_PATH_BIN}/abcdk-script/
-	mkdir -p ${INSTALL_PATH_DOC}/abcdk/script/
+	mkdir -p -m 0755 ${INSTALL_PATH}/bin/abcdk-script/
+	cp -rfP $(CURDIR)/src/script/. ${INSTALL_PATH}/bin/abcdk-script/
+	find ${INSTALL_PATH}/bin/abcdk-script -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/bin/abcdk-script -type f -exec chmod 0644 {} \;
+	find ${INSTALL_PATH}/bin/abcdk-script -type f -name "*.sh" -exec chmod 0755 {} \;
 #
-	cp -rf $(CURDIR)/src/script/. ${INSTALL_PATH_BIN}/abcdk-script/
-	cp -rf $(CURDIR)/share/script/. ${INSTALL_PATH_DOC}/abcdk/script/
-#
-	find ${INSTALL_PATH_BIN}/abcdk-script/ -type f -name *.sh -exec chmod 0755 {} \;
-
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/script/
+	cp -rfP $(CURDIR)/share/abcdk/sample/script/. ${INSTALL_PATH}/share/abcdk/sample/script/
+	find ${INSTALL_PATH}/share/abcdk/sample/script -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/sample/script -type f -exec chmod 0644 {} \;
 
 #
 install-lib:
 #
-	mkdir -p ${INSTALL_PATH_LIB}
-	mkdir -p ${INSTALL_PATH_DOC}/abcdk/lib/
+	mkdir -p -m 0755 ${INSTALL_PATH}/lib
+	cp -f $(BUILD_PATH)/${LIB_SONAME_FULL} ${INSTALL_PATH}/lib/
+	chmod 0755 ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
+	cd ${INSTALL_PATH}/lib/ ; ln -sf ${LIB_SONAME_FULL} ${LIB_SONAME_MAIN} ;
 #
-	cp -f $(BUILD_PATH)/${LIB_SONAME_FULL} ${INSTALL_PATH_LIB}/
-	cp -rf $(CURDIR)/share/lib/. ${INSTALL_PATH_DOC}/abcdk/lib/
-#	
-	chmod 0755 ${INSTALL_PATH_LIB}/${LIB_SONAME_FULL}
-	cd ${INSTALL_PATH_LIB} ; ln -sf ${LIB_SONAME_FULL} ${LIB_SONAME_MAIN} ;
-#
-	find ${INSTALL_PATH_DOC}/abcdk/lib/ -type f -exec chmod 0644 {} \;
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/protocol/lib/
+	cp -rfP $(CURDIR)/share/abcdk/protocol/lib/. ${INSTALL_PATH}/share/abcdk/protocol/lib/
+	find ${INSTALL_PATH}/share/abcdk/protocol/lib -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/protocol/lib -type f -exec chmod 0644 {} \;
+
 
 #
 install-dev:
 #
-	mkdir -p ${INSTALL_PATH_LIB}/pkgconfig/
-	mkdir -p ${INSTALL_PATH_INC}
+	mkdir -p -m 0755 ${INSTALL_PATH}/lib
+	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH}/lib/
+	chmod 0755 ${INSTALL_PATH}/lib/libabcdk.a
+	cd ${INSTALL_PATH}/lib/; ln -sf ${LIB_SONAME_MAIN} libabcdk.so ;
 #
-	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH_LIB}/
-	cp  -rf $(CURDIR)/src/lib/include/abcdk ${INSTALL_PATH_INC}/
-	cp  -f $(CURDIR)/src/lib/include/abcdk.h ${INSTALL_PATH_INC}/
+	mkdir -p -m 0755 ${INSTALL_PATH}/lib/pkgconfig
+	printf "%s" "$${LIB_PKGCONFIG_CONTEXT}" > ${INSTALL_PATH}/lib/pkgconfig/abcdk.pc
+	chmod 0644 ${INSTALL_PATH}/lib/pkgconfig/abcdk.pc
+#
+	mkdir -p -m 0755 ${INSTALL_PATH}/include
+	cp -f $(CURDIR)/src/lib/include/abcdk.h ${INSTALL_PATH}/include/
+	chmod 0644 ${INSTALL_PATH}/include/abcdk.h
+	mkdir -p -m 0755 ${INSTALL_PATH}/include/abcdk
+	cp -rfP $(CURDIR)/src/lib/include/abcdk/. ${INSTALL_PATH}/include/abcdk/
+	find ${INSTALL_PATH}/include/abcdk -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/include/abcdk -type f -exec chmod 0644 {} \;
 	
-#生成PC文件。
-	echo "prefix=${INSTALL_PREFIX}" 		> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "libdir=\$${prefix}/lib" 			>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "includedir=\$${prefix}/include" 	>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "" 								>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Name: ABCDK" 						>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Version: ${VERSION_STR_FULL}" 	>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Description: ABCDK library" 		>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Requires:" 						>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Libs: -labcdk -L\$${libdir}" 		>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-	echo "Cflags: -I\$${includedir}" 		>> ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-
-#
-	chmod 0755 ${INSTALL_PATH_LIB}/libabcdk.a
-	cd ${INSTALL_PATH_LIB} ; ln -sf ${LIB_SONAME_MAIN} libabcdk.so ;
-	find ${INSTALL_PATH_INC}/abcdk/ -type f -exec chmod 0644 {} \;
-	chmod 0644 ${INSTALL_PATH_INC}/abcdk.h
-	chmod 0644 ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
-
 #
 uninstall-tool:
 #
-	rm -f ${INSTALL_PATH_BIN}/abcdk-tool
-	rm -rf $(INSTALL_PATH_DOC)/abcdk/tool
+	rm -f ${INSTALL_PATH}/bin/abcdk-tool
+	rm -f ${INSTALL_PATH}/share/locale/en_US/gettext/abcdk-tool.pot
+	rm -f ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
+	rm -rf ${INSTALL_PATH}/share/abcdk/sample/tool
 
 
 uninstall-script:
 #
-	rm -rf ${INSTALL_PATH_BIN}/abcdk-script
-	rm -rf $(INSTALL_PATH_DOC)/abcdk/script
+	rm -rf ${INSTALL_PATH}/bin/abcdk-script
+	rm -rf ${INSTALL_PATH}/share/abcdk/sample/script
 
 #
 uninstall-lib:
 #
-	rm -f ${INSTALL_PATH_LIB}/${LIB_SONAME_MAIN}
-	rm -f ${INSTALL_PATH_LIB}/${LIB_SONAME_FULL}
-	rm -rf $(INSTALL_PATH_DOC)/abcdk/lib
+	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_MAIN}
+	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
+	rm -rf ${INSTALL_PATH}/share/abcdk/protocol/lib
 	
 #
 uninstall-dev:
 #
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.so
-	rm -f ${INSTALL_PATH_LIB}/libabcdk.a
-	rm -rf ${INSTALL_PATH_INC}/abcdk
-	rm -f ${INSTALL_PATH_INC}/abcdk.h
-	rm -f ${INSTALL_PATH_LIB}/pkgconfig/abcdk.pc
+	rm -f ${INSTALL_PATH}/lib/libabcdk.so
+	rm -f ${INSTALL_PATH}/lib/libabcdk.a
+	rm -f ${INSTALL_PATH}/include/abcdk.h
+	rm -rf ${INSTALL_PATH}/include/abcdk
+	rm -f ${INSTALL_PATH}/lib/pkgconfig/abcdk.pc
 
 	
 

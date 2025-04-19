@@ -120,6 +120,9 @@ int abcdk_torch_vcodec_start_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_vcodec_
         /*No b frame.*/
         ht_ctx_p->ff_ctx->max_b_frames = 0;
 
+        /*设置全局头部。*/
+        ht_ctx_p->ff_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
         chk = abcdk_avcodec_open(ht_ctx_p->ff_ctx, NULL);
         if(chk < 0)
             return -1;

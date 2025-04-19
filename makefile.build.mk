@@ -228,20 +228,20 @@ xgettext: xgettext-lib xgettext-tool
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-lib:
 	@if [ -x "${XGETTEXT}" ]; then \
-		cp -f $(CURDIR)/share/lib/locale/en_US/gettext/lib.pot $(BUILD_PATH)/lib.en_US.pot ; \
-		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.hxx" -o -iname "*.cu" > $(BUILD_PATH)/lib.gettext.filelist.txt ; \
-		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/lib.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/lib.gettext.filelist.txt -L c++ ; \
-		rm -f $(BUILD_PATH)/lib.gettext.filelist.txt ; \
-		echo "'$(BUILD_PATH)/lib.en_US.pot' Update completed." ; \
+		cp -f $(CURDIR)/share/locale/en_US/gettext/libabcdk.pot $(BUILD_PATH)/libabcdk.en_US.pot ; \
+		find $(CURDIR)/src/lib/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.hxx" -o -iname "*.cu" > $(BUILD_PATH)/libabcdk.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/libabcdk.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/libabcdk.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/libabcdk.gettext.filelist.txt ; \
+		echo "'$(BUILD_PATH)/libabcdk.en_US.pot' Update completed." ; \
 	fi
 
 
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-tool:
 	@if [ -x "${XGETTEXT}" ]; then \
-		cp -f $(CURDIR)/share/tool/locale/en_US/gettext/tool.pot $(BUILD_PATH)/tool.en_US.pot ; \
-		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.hxx" > $(BUILD_PATH)/tool.gettext.filelist.txt ; \
-		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/tool.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/tool.gettext.filelist.txt -L c++ ; \
-		rm -f $(BUILD_PATH)/tool.gettext.filelist.txt ; \
-		echo "'$(BUILD_PATH)/tool.en_US.pot' Update completed." ; \
+		cp -f $(CURDIR)/share/locale/en_US/gettext/abcdk-tool.pot $(BUILD_PATH)/abcdk-tool.en_US.pot ; \
+		find $(CURDIR)/src/tool/ -iname "*.c" -o -iname "*.cpp" -o -iname "*.hxx" > $(BUILD_PATH)/abcdk-tool.gettext.filelist.txt ; \
+		${XGETTEXT} --force-po --no-wrap --no-location --join-existing --package-name=ABCDK --package-version=${VERSION_STR_FULL} -o $(BUILD_PATH)/abcdk-tool.en_US.pot --from-code=UTF-8 --keyword=TT -f $(BUILD_PATH)/abcdk-tool.gettext.filelist.txt -L c++ ; \
+		rm -f $(BUILD_PATH)/abcdk-tool.gettext.filelist.txt ; \
+		echo "'$(BUILD_PATH)/abcdk-tool.en_US.pot' Update completed." ; \
 	fi
