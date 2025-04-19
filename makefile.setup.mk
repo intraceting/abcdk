@@ -31,6 +31,11 @@ install-tool:
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PATH}/bin
 	chmod 0755 ${INSTALL_PATH}/bin/abcdk-tool
 #
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool/
+	cp -rfP $(CURDIR)/share/abcdk/sample/abcdk-tool/. ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool/
+	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool -type f -exec chmod 0644 {} \;
+#
 	mkdir -p -m 0755 ${INSTALL_PATH}/share/locale/en_US/gettext
 	cp -f $(CURDIR)/share/locale/en_US/gettext/abcdk-tool.pot ${INSTALL_PATH}/share/locale/en_US/gettext/
 	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/gettext/abcdk-tool.pot
@@ -38,11 +43,7 @@ install-tool:
 	mkdir -p -m 0755 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES
 	cp -f $(CURDIR)/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/
 	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
-#
-	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool/
-	cp -rfP $(CURDIR)/share/abcdk/sample/abcdk-tool/. ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool/
-	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PATH}/share/abcdk/sample/abcdk-tool -type f -exec chmod 0644 {} \;
+
 
 #
 install-script:
@@ -70,7 +71,14 @@ install-lib:
 	cp -rfP $(CURDIR)/share/abcdk/protocol/libabcdk/. ${INSTALL_PATH}/share/abcdk/protocol/libabcdk/
 	find ${INSTALL_PATH}/share/abcdk/protocol/libabcdk -type d -exec chmod 0755 {} \;
 	find ${INSTALL_PATH}/share/abcdk/protocol/libabcdk -type f -exec chmod 0644 {} \;
-
+#
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/locale/en_US/gettext
+	cp -f $(CURDIR)/share/locale/en_US/gettext/libabcdk.pot ${INSTALL_PATH}/share/locale/en_US/gettext/
+	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/gettext/libabcdk.pot
+#
+	mkdir -p -m 0755 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES
+	cp -f $(CURDIR)/share/locale/en_US/LC_MESSAGES/libabcdk.mo ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/
+	chmod 0644 ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/libabcdk.mo
 
 #
 install-dev:
@@ -112,6 +120,8 @@ uninstall-lib:
 	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_MAIN}
 	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
 	rm -rf ${INSTALL_PATH}/share/abcdk/protocol/libabcdk
+	rm -f ${INSTALL_PATH}/share/locale/en_US/gettext/libabcdk.pot
+	rm -f ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/libabcdk.mo
 	
 #
 uninstall-dev:
