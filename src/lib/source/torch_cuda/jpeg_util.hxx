@@ -11,13 +11,13 @@
 #include "abcdk/torch/nvidia.h"
 #include "context_robot.hxx"
 
+#ifdef __cuda_cuda_h__
+
 #ifdef __aarch64__
-#include "jetson/nvmpi.h"
 #include "jetson/NvJpegDecoder.h"
 #include "jetson/NvJpegEncoder.h"
 #endif //__aarch64__
 
-#ifdef __cuda_cuda_h__
 
 namespace abcdk
 {

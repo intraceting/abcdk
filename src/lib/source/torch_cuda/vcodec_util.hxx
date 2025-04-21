@@ -11,6 +11,8 @@
 #include "abcdk/torch/nvidia.h"
 #include "context_robot.hxx"
 
+#ifdef __cuda_cuda_h__
+
 #ifdef __x86_64__
 #ifdef HAVE_FFNVCODEC
 #include <ffnvcodec/dynlink_loader.h> //在指定路径和系统路径中查找。
@@ -23,11 +25,8 @@
 
 #ifdef __aarch64__
 #include "jetson/nvmpi.h"
-#include "jetson/NvJpegDecoder.h"
-#include "jetson/NvJpegEncoder.h"
 #endif //__aarch64__
 
-#ifdef __cuda_cuda_h__
 
 namespace abcdk
 {

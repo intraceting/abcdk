@@ -18,39 +18,6 @@ checkReturnCode()
 }
 
 #
-CheckSystemName()
-# $1 System Name
-{
-    ${SHELLDIR}/tools/check-os-id.sh "$1"
-}
-
-#
-GetSystemVersion()
-{
-    ${SHELLDIR}/tools/get-os-ver.sh
-}
-
-#
-CheckPackageKitName()
-{
-	${SHELLDIR}/tools/get-kit-name.sh
-}
-
-#
-CheckHavePackageFromKit()
-# $1 PACKAGE
-{
-    ${SHELLDIR}/tools/check-package.sh "$1"
-}
-
-#
-CheckHavePackageFromWhich()
-# $1 PACKAGE
-{
-	${SHELLDIR}/tools/check-which.sh "$1"
-}
-
-#
 CheckHavePackage()
 # $1 PKG_NAME
 # $2 FLAG
@@ -76,12 +43,41 @@ CheckSTD()
 }
 
 #
-CheckCompiler()
-# $1 CC
-# $2 AR
-# $3 OUTPUT 
+GetCompilerArch()
+#$1 BIN
 {
-    ${SHELLDIR}/tools/compiler-select.sh "-d" "TARGET_COMPILER_PREFIX=$1" "-d" "TARGET_COMPILER_NAME=$2" "-o" "$3" "-p" ""
+    ${SHELLDIR}/tools/get-compiler-arch.sh "$1" 
+}
+
+
+#
+GetCompilerBitWide()
+#$1 BIN
+{
+    ${SHELLDIR}/tools/get-compiler-bitwide.sh "$1" 
+}
+
+
+#
+GetCompilerMachine()
+#$1 BIN
+{
+    ${SHELLDIR}/tools/get-compiler-machine.sh "$1" 
+}
+
+#
+GetCompilerPlatform()
+#$1 BIN
+{
+    ${SHELLDIR}/tools/get-compiler-platform.sh "$1" 
+}
+
+#
+GetCompilerProgName()
+#$1 BIN
+#$2 NAME
+{
+    ${SHELLDIR}/tools/get-compiler-prog-name.sh "$1" "$2"
 }
 
 #
@@ -330,21 +326,11 @@ if [ "${INSTALL_PREFIX}" == "" ] || [ "${INSTALL_PREFIX}" == "/" ];then
 }
 fi
 
-
-#检查编译器。
-CheckCompiler "${COMPILER_PREFIX}" "${COMPILER_NAME}" "${BUILD_PATH}/compiler.conf"
-if [ $? -ne 0 ];then
-{
-    echo "'${COMPILER_PREFIX}${COMPILER_NAME}' not found."
-    exit 22
-}
-fi
-
-#加载编译器环境。
-source ${BUILD_PATH}/compiler.conf
+#
+TARGET_COMPILER_BIN=${COMPILER_PREFIX}${COMPILER_NAME}
 
 #
-CheckSTD c "${_TARGET_COMPILER_BIN}" "c99"
+CheckSTD c "${TARGET_COMPILER_BIN}" "c99"
 if [ $? -ne 0 ];then
 {
     echo "The compiler supports at least the c99 standard."
@@ -353,13 +339,21 @@ if [ $? -ne 0 ];then
 fi
 
 #
-CheckSTD cxx "${_TARGET_COMPILER_BIN}" "c++11"
+CheckSTD cxx "${TARGET_COMPILER_BIN}" "c++11"
 if [ $? -ne 0 ];then
 {
     echo "The compiler supports at least the c++11 standard."
     exit 22
 }
 fi
+
+#
+TARGET_COMPILER_AR=$(GetCompilerProgName "${TARGET_COMPILER_BIN}" "ar")
+TARGET_MACHINE=$(GetCompilerMachine "${TARGET_COMPILER_BIN}" )
+TARGET_PLATFORM=$(GetCompilerPlatform "${TARGET_COMPILER_BIN}")
+TARGET_ARCH=$(GetCompilerArch "${TARGET_COMPILER_BIN}")
+TARGET_BITWIDE=$(GetCompilerBitWide "${TARGET_COMPILER_BIN}")
+
 
 #
 CheckHavePackage pkgconfig 1
@@ -396,8 +390,8 @@ fi
 
 
 #设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
@@ -455,8 +449,8 @@ export _3RDPARTY_PKG_FIND_MODE=
 
 
 #设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${CUDA_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
@@ -495,8 +489,8 @@ if [ "${THIRDPARTY_NOFOUND}" != "" ];then
 fi
 
 #设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${CUDNN_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
@@ -521,8 +515,8 @@ fi
 
 
 #设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${_TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${_TARGET_BITWIDE}
+export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
+export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
 export _3RDPARTY_PKG_FIND_ROOT=${TRNSORRT_FIND_ROOT}
 export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
@@ -570,8 +564,8 @@ XGETTEXT = ${XGETTEXT_BIN}
 MSGFMT = ${MSGFMT_BIN}
 MSGCAT = ${MSGCAT_BIN}
 #
-CC = ${_TARGET_COMPILER_BIN}
-AR = ${_TARGET_COMPILER_AR}
+CC = ${TARGET_COMPILER_BIN}
+AR = ${TARGET_COMPILER_AR}
 #
 NVCC = ${CUDA_COMPILER_BIN}
 #
@@ -583,12 +577,9 @@ BUILD_TYPE = ${BUILD_TYPE}
 #
 OPTIMIZE_LEVEL = ${OPTIMIZE_LEVEL}
 #
-NATIVE_PLATFORM = ${_NATIVE_PLATFORM}
-NATIVE_ARCH = ${_NATIVE_ARCH}
-NATIVE_BITWIDE = ${_NATIVE_BITWIDE}
-TARGET_PLATFORM = ${_TARGET_PLATFORM}
-TARGET_ARCH = ${_TARGET_ARCH}
-TARGET_BITWIDE = ${_TARGET_BITWIDE}
+TARGET_PLATFORM = ${TARGET_PLATFORM}
+TARGET_ARCH = ${TARGET_ARCH}
+TARGET_BITWIDE = ${TARGET_BITWIDE}
 #
 DEPEND_FLAGS = ${THIRDPARTY_FLAGS}
 DEPEND_LINKS = ${THIRDPARTY_LINKS}
