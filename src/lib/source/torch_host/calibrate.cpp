@@ -56,9 +56,9 @@ double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, ab
         }
     }
 
-    for (int y = 0; y < dst_dist_coeffs.rows; y++)
+    for (int x = 0; x < dst_dist_coeffs.cols; x++)
     {
-        dist_coeffs[y] = dst_dist_coeffs.at<float>(y, 0);
+        dist_coeffs[x] = dst_dist_coeffs.at<float>(0, x);
     }
 
     return chk_rms;

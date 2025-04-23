@@ -52,6 +52,12 @@ int abcdk_torch_imgproc_remap_cuda(abcdk_torch_image_t *dst, const abcdk_torch_r
     return -1;
 }
 
+int abcdk_torch_imgproc_undistort_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const float camera_matrix[3][3], const float dist_coeffs[5])
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
+}
+
 int abcdk_torch_imgproc_resize_cuda(abcdk_torch_image_t *dst, const abcdk_torch_rect_t *dst_roi,
                                     const abcdk_torch_image_t *src, const abcdk_torch_rect_t *src_roi,
                                     int keep_aspect_ratio, int inter_mode)

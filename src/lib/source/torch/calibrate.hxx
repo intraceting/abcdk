@@ -42,6 +42,14 @@ namespace abcdk
 
                 ctx.AppraiseCamera();
 
+                ctx.GetParam(camera_matrix,dist_coeffs);
+
+                cv::Mat dst;
+
+                cv::undistort(imgs[0], dst, camera_matrix, dist_coeffs);
+
+                cv::imwrite("/tmp/ccc/Estimate.jpg",dst);
+
                 return chk_rms;
             }
 
@@ -82,6 +90,13 @@ namespace abcdk
 
             virtual ~calibrate()
             {
+            }
+
+        public:
+            void GetParam(cv::Mat &camera_matrix, cv::Mat &dist_coeffs)
+            {
+                camera_matrix = m_camera_matrix;
+                dist_coeffs = m_dist_coeffs;
             }
 
         protected:
@@ -151,7 +166,7 @@ namespace abcdk
                 for (int i = 0; i < m_pts_2d.size(); i++)
                 {
                     /*务必保证图像中的有效角点数量与设定的数量一致。*/
-                    assert(m_pts_2d.size() == m_pattern_size.area());
+                    assert(m_pts_2d[i].size() == m_pattern_size.area());
 
                     /*初始化标定板上角点的三维坐标。 */
 

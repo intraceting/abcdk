@@ -247,6 +247,29 @@ int abcdk_torch_imgproc_remap_cuda(abcdk_torch_image_t *dst, const abcdk_torch_r
 #define abcdk_torch_imgproc_remap abcdk_torch_imgproc_remap_host
 #endif //
 
+
+/**
+ * 畸变矫正。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_torch_imgproc_undistort_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const float camera_matrix[3][3], const float dist_coeffs[5]);
+
+/**
+ * 畸变矫正。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_torch_imgproc_undistort_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const float camera_matrix[3][3], const float dist_coeffs[5]);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_imgproc_undistort abcdk_torch_imgproc_undistort_cuda
+#else // ABCDK_TORCH_USE_HOST
+#define abcdk_torch_imgproc_undistort abcdk_torch_imgproc_undistort_host
+#endif //
+
+
+
 __END_DECLS
 
 #endif // ABCDK_TORCH_IMGPROC_H
