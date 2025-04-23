@@ -58,22 +58,23 @@ int abcdk_test_calibrate(abcdk_option_t *args)
 
     int count = _abcdk_test_calibrate_load(img,img_path_p);
 
-    float camera_matrix[3][3] = {0};
-    float dist_coeff[5] = {0};
+    double camera_matrix[3][3] = {0};
+    double dist_coeff[5] = {0};
 
     double rms = abcdk_torch_calibrate_estimate_2d(&board_size, &grid_size, count, img, camera_matrix, dist_coeff);
 
     abcdk_trace_printf(LOG_INFO,"RSM:%0.6f",rms);
 
+    abcdk_torch_image_t *img_p = img[20];
 
-    abcdk_torch_image_t *out = abcdk_torch_image_create(img[0]->width,img[0]->height,img[0]->pixfmt,1);
+    abcdk_torch_image_t *out = abcdk_torch_image_create(img_p->width,img_p->height,img_p->pixfmt,1);
 
-    abcdk_torch_imgproc_undistort(out,img[0] ,camera_matrix, dist_coeff);
+    abcdk_torch_imgproc_undistort(out,img_p ,camera_matrix, dist_coeff);
 
-    abcdk_bmp_save_file("/tmp/ccc/img.bmp",img[0]->data[0],img[0]->stride[0],img[0]->width,img[0]->height,24);
-    abcdk_bmp_save_file("/tmp/ccc/out.bmp",out->data[0],out->stride[0],out->width,out->height,24);
+    abcdk_bmp_save_file("/tmp/ccc/img.bmp",img_p->data[0],img_p->stride[0],img_p->width,-img_p->height,24);
+    abcdk_bmp_save_file("/tmp/ccc/out.bmp",out->data[0],out->stride[0],out->width,-out->height,24);
 
-    abcdk_torch_imgcode_save("/tmp/ccc/img.jpg", img[0]);
+    abcdk_torch_imgcode_save("/tmp/ccc/img.jpg", img_p);
     abcdk_torch_imgcode_save("/tmp/ccc/out.jpg", out);
     abcdk_torch_image_free(&out);
 

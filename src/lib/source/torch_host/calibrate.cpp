@@ -9,7 +9,9 @@
 
 __BEGIN_DECLS
 
-double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], float camera_matrix[3][3], float dist_coeffs[5])
+#ifdef OPENCV_CALIB3D_HPP
+
+double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], double camera_matrix[3][3], double dist_coeffs[5])
 {
     cv::Size tmp_board_size, tmp_grid_size;
     std::vector<cv::Mat> tmp_img;
@@ -52,16 +54,26 @@ double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, ab
     {
         for (int x = 0; x < dst_camera_matrix.cols; x++)
         {
-            camera_matrix[y][x] = dst_camera_matrix.at<float>(y, x);
+            camera_matrix[y][x] = dst_camera_matrix.at<double>(y, x);
         }
     }
 
     for (int x = 0; x < dst_dist_coeffs.cols; x++)
     {
-        dist_coeffs[x] = dst_dist_coeffs.at<float>(0, x);
+        dist_coeffs[x] = dst_dist_coeffs.at<double>(0, x);
     }
 
     return chk_rms;
 }
+
+#else //OPENCV_CALIB3D_HPP
+
+double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], double camera_matrix[3][3], double dist_coeffs[5])
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    return 1.0;
+}
+
+#endif //OPENCV_CALIB3D_HPP
 
 __END_DECLS

@@ -44,11 +44,12 @@ namespace abcdk
 
                 ctx.GetParam(camera_matrix,dist_coeffs);
 
-                cv::Mat dst;
+                assert(camera_matrix.depth() == CV_64F);
+                assert(dist_coeffs.depth() == CV_64F);
 
-                cv::undistort(imgs[0], dst, camera_matrix, dist_coeffs);
-
-                cv::imwrite("/tmp/ccc/Estimate.jpg",dst);
+                // cv::Mat dst;
+                // cv::undistort(imgs[0], dst, camera_matrix, dist_coeffs);
+                // cv::imwrite("/tmp/ccc/Estimate.jpg",dst);
 
                 return chk_rms;
             }
@@ -127,7 +128,6 @@ namespace abcdk
                     }
 
                     /* 提取角点。 */
-
                     std::vector<cv::Point2f> pts_2d;
                     if (!cv::findChessboardCorners(src_img, m_pattern_size, pts_2d))
                     {
@@ -143,7 +143,7 @@ namespace abcdk
 #if 0
 			            cv::find4QuadCornerSubpix(src_img_gray, pts_2d, cv::Size(11, 11));
 #else
-                    cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 20, 0.001);
+                    cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
                     cv::cornerSubPix(src_img_gray, pts_2d, cv::Size(5, 5), cv::Size(-1, -1), criteria);
 #endif
 

@@ -27,7 +27,7 @@ __BEGIN_DECLS
  *
  * @return RMS。
  */
-double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], float camera_matrix[3][3], float dist_coeffs[5]);
+double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], double camera_matrix[3][3], double dist_coeffs[5]);
 
 /**
  * 标定评估。
@@ -41,7 +41,7 @@ double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, ab
  *
  * @return RMS。
  */
-double abcdk_torch_calibrate_estimate_2d_cuda(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], float camera_matrix[3][3], float dist_coeff[5]);
+double abcdk_torch_calibrate_estimate_2d_cuda(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], double camera_matrix[3][3], double dist_coeff[5]);
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_calibrate_estimate_2d abcdk_torch_calibrate_estimate_2d_cuda

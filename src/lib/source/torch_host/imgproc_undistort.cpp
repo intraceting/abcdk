@@ -14,7 +14,7 @@ __BEGIN_DECLS
 static int _abcdk_torch_imgproc_undistort_8u_host(int channels, int packed,
                                                   uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
                                                   const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h,
-                                                  const float camera_matrix[3][3], const float dist_coeffs[5])
+                                                  const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     cv::Mat tmp_dst, tmp_src;
     cv::Mat tmp_camera_matrix, tmp_dist_coeffs;
@@ -22,15 +22,22 @@ static int _abcdk_torch_imgproc_undistort_8u_host(int channels, int packed,
     tmp_dst = cv::Mat(dst_h, dst_w, CV_8UC(channels), (void *)dst, dst_ws);
     tmp_src = cv::Mat(src_h, src_w, CV_8UC(channels), (void *)src, src_ws);
 
-    tmp_camera_matrix = cv::Mat(3, 3, CV_32FC1, (void *)camera_matrix, 3 * sizeof(float));
-    tmp_dist_coeffs = cv::Mat(1, 5, CV_32FC1, (void *)dist_coeffs, 5 * sizeof(float));
+    tmp_camera_matrix = cv::Mat(3, 3, CV_64FC1, (void *)camera_matrix, 3 * sizeof(double));
+    tmp_dist_coeffs = cv::Mat(1, 5, CV_64FC1, (void *)dist_coeffs, 5 * sizeof(double));
 
     cv::undistort(tmp_src, tmp_dst, tmp_camera_matrix, tmp_dist_coeffs);
+
+    // cv::imwrite("/tmp/ccc/src.jpg", tmp_src);
+    // cv::imwrite("/tmp/ccc/dst.jpg", tmp_dst);
+
+    // cv::Mat dst2;
+    // cv::undistort(tmp_src, dst2, tmp_camera_matrix, tmp_dist_coeffs);
+    // cv::imwrite("/tmp/ccc/dst2.jpg", dst2);
 
     return 0;
 }
 
-int abcdk_torch_imgproc_undistort_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const float camera_matrix[3][3], const float dist_coeffs[5])
+int abcdk_torch_imgproc_undistort_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     int dst_depth;
 

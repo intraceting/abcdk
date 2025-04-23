@@ -11,7 +11,7 @@
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgproc_undistort_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const float camera_matrix[3][3], const float dist_coeffs[5])
+int abcdk_torch_imgproc_undistort_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     return -1;
 }
