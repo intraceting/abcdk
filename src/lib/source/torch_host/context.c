@@ -67,6 +67,8 @@ int abcdk_torch_context_current_set_host(abcdk_torch_context_t *ctx)
 
     if (ctx)
     {
+        assert(ctx->tag == ABCDK_TORCH_TAG_HOST);
+
         old_ctx = (abcdk_torch_context_t *)pthread_getspecific(_abcdk_torch_context_key_host);
         if (old_ctx == ctx)
             return 0;

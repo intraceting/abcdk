@@ -124,8 +124,6 @@ int abcdk_torch_stitcher_set_feature_cuda(abcdk_torch_stitcher_t *ctx, const cha
 /**
  * 评估。
  *
- * @note 仅支持主机内存对象。
- *
  * @param [in] img 分屏图像的数组。顺序无关，评估时自动排序。
  * @param [in] mask 掩码图像的数组，顺序与分屏图像对应。元素的值为NULL(0)时，忽略。
  *
@@ -135,8 +133,6 @@ int abcdk_torch_stitcher_estimate_host(abcdk_torch_stitcher_t *ctx, int count, a
 
 /**
  * 评估。
- *
- * @note 仅支持主机内存对象。
  *
  * @param [in] img 分屏图像的数组。顺序无关，评估时自动排序。
  * @param [in] mask 掩码图像的数组，顺序与分屏图像对应。元素的值为NULL(0)时，忽略。
@@ -152,7 +148,7 @@ int abcdk_torch_stitcher_estimate_cuda(abcdk_torch_stitcher_t *ctx, int count, a
 #endif //
 
 /**
- * 设图像变换算法。
+ * 设置图像变换算法。
  *
  * @param [in] name 名称。目前仅支持plane、spherical。默认：spherical
  *
@@ -161,7 +157,7 @@ int abcdk_torch_stitcher_estimate_cuda(abcdk_torch_stitcher_t *ctx, int count, a
 int abcdk_torch_stitcher_set_warper_host(abcdk_torch_stitcher_t *ctx, const char *name);
 
 /**
- * 设图像变换算法。
+ * 设置图像变换算法。
  *
  * @param [in] name 名称。目前仅支持plane、spherical。默认：spherical
  *
