@@ -17,6 +17,8 @@ __BEGIN_DECLS
 
 /**
  * 标定评估。
+ * 
+ * @note RMS值越少，质量越好。
  *
  * @param [in] board_size 板子尺寸(行*列)。
  * @param [in] grid_size 格子尺寸(毫米)。
@@ -30,6 +32,8 @@ double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, ab
 /**
  * 标定评估。
  *
+ * @note RMS值越少，质量越好。
+ * 
  * @param [in] grid_size 板子尺寸(行*列)。
  * @param [in] square_size 方格尺寸(毫米)。
  * @param [out] camera_matrix 内参矩阵。R,T.

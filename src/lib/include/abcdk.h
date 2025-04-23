@@ -167,6 +167,7 @@
 #include "abcdk/torch/opencv.h"
 #include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/stitcher.h"
+#include "abcdk/torch/calibrate.h"
 
 
 #endif //ABCDK_H
