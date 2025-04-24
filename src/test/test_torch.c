@@ -308,15 +308,185 @@ int abcdk_test_torch_3(abcdk_option_t *args)
     return 0;
 }
 
-#endif //HAVE_FFMPEG
-
 int abcdk_test_torch_4(abcdk_option_t *args)
 {
-    int n = 1, w = 300, h = 300 , depth =3;
+    double camera_matrix[3][3] = {0};
+    double dist_coeff[5] = {0};
 
-   // abcdk_trace_printf(LOG_WARNING,_("哈哈哈"));
+    abcdk_load("/tmp/ccc/camera_matrix.bin",camera_matrix,9*sizeof(double),0);
+    abcdk_load("/tmp/ccc/dist_coeff.bin",dist_coeff,5*sizeof(double),0);
 
+    abcdk_torch_image_t *xmap = NULL,* ymap = NULL;
+    abcdk_torch_size_t img_size = {2340,1296};
+
+    abcdk_torch_imgproc_undistort_buildmap(&xmap,&ymap,&img_size,0,camera_matrix, dist_coeff);
+
+
+    abcdk_ffeditor_config_t ff_r_cfg = {0}, ff_w_cfg = {1};
+
+    ff_r_cfg.url = abcdk_option_get(args, "--src", 0, "");
+    ff_r_cfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
+    ff_r_cfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
+    ff_r_cfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 10);
+    ff_r_cfg.bit_stream_filter = 1;
+    ff_w_cfg.url = abcdk_option_get(args, "--dst", 0, "");
+    ff_w_cfg.fmt = abcdk_option_get(args, "--dst-fmt", 0, "");
+
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&ff_r_cfg);
+    abcdk_ffeditor_t *w = abcdk_ffeditor_open(&ff_w_cfg);
+
+    AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
+
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
+    abcdk_torch_vcodec_t *enc_ctx = abcdk_torch_vcodec_alloc(1);
+
+
+    abcdk_torch_vcodec_param_t dec_param = {0},enc_param = {0};
+
+    dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
+    dec_param.ext_data = r_video_steam->codecpar->extradata;
+    dec_param.ext_size = r_video_steam->codecpar->extradata_size;
+
+    abcdk_torch_vcodec_start(dec_ctx,&dec_param);
+  
+    enc_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(AV_CODEC_ID_H264);
+    enc_param.fps_d = 1;
+    enc_param.fps_n = 25;
+    enc_param.width = r_video_steam->codecpar->width;
+    enc_param.height = r_video_steam->codecpar->height;
+    enc_param.bitrate = 15000 * 1000;
+    enc_param.peak_bitrate = 15000 * 1000;
+
+    abcdk_torch_vcodec_start(enc_ctx,&enc_param);
+
+    AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264, 1);
+
+    abcdk_avcodec_encode_video_fill_time_base(enc_opt, 25);
+
+    enc_opt->width = r_video_steam->codecpar->width;
+    enc_opt->height = r_video_steam->codecpar->height;
+    enc_opt->extradata = (uint8_t*)av_memdup(enc_param.ext_data, enc_param.ext_size);
+    enc_opt->extradata_size = enc_param.ext_size;
+    enc_opt->max_b_frames = enc_param.max_b_frames;
+    enc_opt->bit_rate_tolerance = enc_param.peak_bitrate;
+    enc_opt->bit_rate = enc_param.bitrate ;
+
+    int w_stream_idx = abcdk_ffeditor_add_stream(w, enc_opt, 1);
+
+    abcdk_avcodec_free(&enc_opt);
+
+    abcdk_ffeditor_write_header(w, NULL);
+
+    AVPacket r_pkt, *w_pkt = NULL;
+    av_init_packet(&r_pkt);
+
+    abcdk_torch_frame_t *r_fae2 = NULL;
+    abcdk_torch_frame_t *r_fae3 = NULL;
+
+    for (int i = 0; i < 10000000; i++)
+    {
+        int chk = abcdk_ffeditor_read_packet(r, &r_pkt, r_video_steam->index);
+        if (chk < 0)
+            break;
+
+        abcdk_torch_frame_t *r_fae = NULL;
+        chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
+        if (chk < 0)
+        {
+            break;
+        }
+        else if (chk > 0)
+        {
+            if(!r_fae2)
+                r_fae2 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+
+            if(!r_fae3)
+                r_fae3 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+
+            abcdk_torch_image_convert(r_fae3->img,r_fae->img);
+
+            abcdk_torch_imgproc_remap(r_fae2->img, NULL, r_fae3->img, NULL, xmap, ymap, 2);
+
+            r_fae2->dts = r_fae->dts;
+            r_fae2->pts = r_fae->pts;
+
+            AVPacket *w_pkt = NULL;
+            int chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae2);
+            
+            if (chk < 0)
+                break;
+            else if( chk > 0)
+            {
+                abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
+                av_packet_free(&w_pkt);
+            }
+        }
+
+        abcdk_torch_frame_free(&r_fae);
+    }
+
+    abcdk_torch_frame_free(&r_fae2);
+    abcdk_torch_frame_free(&r_fae3);
+
+    av_packet_unref(&r_pkt);
+
+    for (int i = 0; i < 100; i++)
+    {
+        abcdk_torch_frame_t *r_fae = NULL;
+        AVPacket *w_pkt = NULL;
+
+        /*通知解码器是结束包。*/
+        int chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
+        if (chk < 0)
+            break;
+        else //if (chk > 0)
+        {
+            if(!r_fae2)
+                r_fae2 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+
+            
+            if(!r_fae3)
+                r_fae3 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+
+            abcdk_torch_image_convert(r_fae3->img,r_fae->img);
+
+            abcdk_torch_imgproc_remap(r_fae2->img, NULL, r_fae->img, NULL, xmap, ymap, 2);
+
+            r_fae2->dts = r_fae->dts;
+            r_fae2->pts = r_fae->pts;
+
+            chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae2);
+            if (chk <= 0)
+                break;
+
+            abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
+            av_packet_free(&w_pkt);
+        }
+
+        abcdk_torch_frame_free(&r_fae);
+    }
+
+    abcdk_torch_frame_free(&r_fae2);
+    abcdk_torch_frame_free(&r_fae3);
+
+    abcdk_ffeditor_write_trailer(w);
+
+    
+    abcdk_torch_vcodec_free(&dec_ctx);
+    abcdk_torch_vcodec_free(&enc_ctx);
+    
+    abcdk_ffeditor_destroy(&r);
+    abcdk_ffeditor_destroy(&w);
+        
+    abcdk_torch_image_free(&xmap);
+    abcdk_torch_image_free(&ymap);
+
+    return 0;
 }
+
+
+#endif //HAVE_FFMPEG
+
 
 int abcdk_test_torch(abcdk_option_t *args)
 {
@@ -342,9 +512,9 @@ int abcdk_test_torch(abcdk_option_t *args)
         return abcdk_test_torch_2(args);
     else if (cmd == 3)
         return abcdk_test_torch_3(args);
-#endif //HAVE_FFMPEG
     else if (cmd == 4)
         return abcdk_test_torch_4(args);
+#endif //HAVE_FFMPEG
 
 
     abcdk_torch_context_current_set(NULL);
