@@ -25,35 +25,6 @@ namespace abcdk
     {
         class calibrate
         {
-        public:
-            static double Estimate(const cv::Size &board_size, const cv::Size &grid_size, const std::vector<cv::Mat> &imgs, cv::Mat &camera_matrix, cv::Mat &dist_coeffs)
-            {
-                calibrate ctx(board_size,grid_size);
-                size_t chk_pts;
-                double chk_rms;
-
-                chk_pts = ctx.FindCorners(imgs);
-                if(chk_pts <2)
-                    return 1.0;
-
-                chk_rms = ctx.EstimateCamera();
-                if(chk_rms >= 1.0)
-                    return chk_rms;
-
-                ctx.AppraiseCamera();
-
-                ctx.GetParam(camera_matrix,dist_coeffs);
-
-                assert(camera_matrix.depth() == CV_64F);
-                assert(dist_coeffs.depth() == CV_64F);
-
-                // cv::Mat dst;
-                // cv::undistort(imgs[0], dst, camera_matrix, dist_coeffs);
-                // cv::imwrite("/tmp/ccc/Estimate.jpg",dst);
-
-                return chk_rms;
-            }
-
         private:
             /*角点数量(行-1*列-1)。*/
             cv::Size m_pattern_size;
@@ -82,11 +53,10 @@ namespace abcdk
             /*每幅图像的平移向量。 */
             std::vector<cv::Mat> m_rvecs;
 
-        protected:
-            calibrate(const cv::Size &board_size = cv::Size(7, 10), const cv::Size &grid_size = cv::Size(25, 25))
+        public:
+            calibrate()
             {
-                m_pattern_size = cv::Size(board_size.width - 1, board_size.height - 1);
-                m_grid_size = grid_size;
+                Setup();
             }
 
             virtual ~calibrate()
@@ -94,62 +64,105 @@ namespace abcdk
             }
 
         public:
+            void Setup(const cv::Size &board_size = cv::Size(7, 10), const cv::Size &grid_size = cv::Size(25, 25))
+            {
+                assert(board_size.area() >= 4 && grid_size.area() >= 1);
+
+                m_pattern_size = cv::Size(board_size.width - 1, board_size.height - 1);
+                m_grid_size = grid_size;
+                m_image_size = cv::Size(0, 0);
+                m_pts_2d.clear();
+                m_pts_3d.clear();
+                m_camera_matrix.release();
+                m_dist_coeffs.release();
+                m_tvecs.clear();
+                m_rvecs.clear();
+            }
+
+            size_t Bind(const cv::Mat &img)
+            {
+                return FindCorners(img);
+            }
+
+            double Estimate()
+            {
+                double chk_rms;
+
+                chk_rms = EstimateCamera();
+
+                AppraiseCamera();
+
+                return chk_rms;
+            }
+
             void GetParam(cv::Mat &camera_matrix, cv::Mat &dist_coeffs)
             {
+                assert(m_camera_matrix.depth() == CV_64F);
+                assert(m_dist_coeffs.depth() == CV_64F);
+
+                /*复制参数。*/
                 camera_matrix = m_camera_matrix;
                 dist_coeffs = m_dist_coeffs;
+
+            }
+
+            void GetRectifyMap(double alpha, cv::Mat &xmap, cv::Mat &ymap)
+            {
+                assert(m_camera_matrix.depth() == CV_64F);
+                assert(m_dist_coeffs.depth() == CV_64F);
+
+                cv::Mat R = cv::Mat::eye(3, 3, CV_64F); // 不做旋转
+                cv::Mat newCameraMatrix = cv::getOptimalNewCameraMatrix(m_camera_matrix, m_dist_coeffs, m_image_size, alpha, m_image_size, 0);
+
+                // 生成映射表，注意 xmap 和 ymap 都是 CV_32FC1（CUDA兼容）
+                cv::initUndistortRectifyMap(m_camera_matrix, m_dist_coeffs, R, newCameraMatrix, m_image_size, CV_32FC1, xmap, ymap);
             }
 
         protected:
-            size_t FindCorners(const std::vector<cv::Mat> &imgs)
+
+            size_t FindCorners(const cv::Mat &img)
             {
                 assert(m_pattern_size.area() > 0);
                 assert(m_grid_size.area() > 0);
-                assert(imgs.size() >= 2);
 
-                /*清空。*/
-                m_pts_2d.clear();
+                if (img.empty())
+                    return m_pts_2d.size();
 
-                for (int i = 0; i < imgs.size(); i++)
+                /*图像尺寸(像素)。所有图像尺寸必须统一。*/
+                if (m_image_size.area() <= 0)
                 {
-                    auto &src_img = imgs[i];
+                    m_image_size.width = img.cols;
+                    m_image_size.height = img.rows;
+                }
 
-                    /*图像尺寸(像素)。所有图像尺寸必须统一。*/
-                    if (m_image_size.area() <= 0)
-                    {
-                        m_image_size.width = src_img.cols;
-                        m_image_size.height = src_img.rows;
-                    }
+                if (img.cols != m_image_size.width || img.rows != m_image_size.height)
+                {
+                    abcdk_trace_printf(LOG_WARNING, TT("当前图像尺寸与之前的图像尺寸不同，忽略。"));
+                    return m_pts_2d.size();
+                }
 
-                    if (src_img.cols != m_image_size.width || src_img.rows != m_image_size.height)
-                    {
-                        abcdk_trace_printf(LOG_WARNING, TT("imgs[i]与img[0]尺寸不同，忽略。"), i);
-                        continue;
-                    }
+                /* 提取角点。 */
+                std::vector<cv::Point2f> pts_2d;
+                if (!cv::findChessboardCorners(img, m_pattern_size, pts_2d))
+                {
+                    abcdk_trace_printf(LOG_WARNING, TT("在当前图像中找不到角点或数量不足，忽略。"));
+                    return m_pts_2d.size();
+                }
 
-                    /* 提取角点。 */
-                    std::vector<cv::Point2f> pts_2d;
-                    if (!cv::findChessboardCorners(src_img, m_pattern_size, pts_2d))
-                    {
-                        abcdk_trace_printf(LOG_WARNING, "在imgs[i]找不到角点或数量不足，忽略。", i);
-                        continue;
-                    }
+                /*灰度化。*/
+                cv::Mat img_gray;
+                cv::cvtColor(img, img_gray, cv::COLOR_BGR2GRAY);
 
-                    /*灰度化。*/
-                    cv::Mat src_img_gray;
-                    cv::cvtColor(src_img, src_img_gray, cv::COLOR_BGR2GRAY);
-
-                    /* 亚像素精确化(对粗提取的角点进行精确化)。*/
+                /* 亚像素精确化(对粗提取的角点进行精确化)。*/
 #if 0
-			            cv::find4QuadCornerSubpix(src_img_gray, pts_2d, cv::Size(11, 11));
+			    cv::find4QuadCornerSubpix(img_gray, pts_2d, cv::Size(11, 11));
 #else
-                    cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
-                    cv::cornerSubPix(src_img_gray, pts_2d, cv::Size(5, 5), cv::Size(-1, -1), criteria);
+                cv::TermCriteria criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
+                cv::cornerSubPix(img_gray, pts_2d, cv::Size(5, 5), cv::Size(-1, -1), criteria);
 #endif
 
-                    /*保存角点。*/
-                    m_pts_2d.push_back(pts_2d);
-                }
+                /*保存角点。*/
+                m_pts_2d.push_back(pts_2d);
 
                 return m_pts_2d.size();
             }

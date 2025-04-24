@@ -242,55 +242,55 @@ int abcdk_torch_stitcher_compose_cuda(abcdk_torch_stitcher_t *ctx, abcdk_torch_i
 
 void abcdk_torch_stitcher_destroy_cuda(abcdk_torch_stitcher_t **ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
 }
 
 abcdk_torch_stitcher_t *abcdk_torch_stitcher_create_cuda()
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return NULL;
 }
 
 
 abcdk_object_t *abcdk_torch_stitcher_metadata_dump_cuda(abcdk_torch_stitcher_t *ctx, const char *magic)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return NULL;
 }
 
 int abcdk_torch_stitcher_metadata_load_cuda(abcdk_torch_stitcher_t *ctx, const char *magic, const char *data)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return -1;
 }
 
 int abcdk_torch_stitcher_set_feature_cuda(abcdk_torch_stitcher_t *ctx, const char *name)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return -1;
 }
 
 int abcdk_torch_stitcher_estimate_cuda(abcdk_torch_stitcher_t *ctx, int count, abcdk_torch_image_t *img[], abcdk_torch_image_t *mask[], float good_threshold)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return -1;
 }
 
 int abcdk_torch_stitcher_set_warper_cuda(abcdk_torch_stitcher_t *ctx,const char *name)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return -1;
 }
 
 int abcdk_torch_stitcher_build_cuda(abcdk_torch_stitcher_t *ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return -1;
 }
 
 int abcdk_torch_stitcher_compose_cuda(abcdk_torch_stitcher_t *ctx, abcdk_torch_image_t *out, int count, abcdk_torch_image_t *img[])
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或OpenCV工具。"));
     return -1;
 }
 

@@ -49,39 +49,61 @@ int abcdk_test_calibrate(abcdk_option_t *args)
 
     abcdk_torch_context_current_set(torch_ctx);
 
+    abcdk_torch_calibrate_t *ctx = abcdk_torch_calibrate_alloc();
+
     abcdk_torch_size_t board_size = {-1,-1},grid_size = {-1,-1};
 
     sscanf(board_size_p,"%d,%d",&board_size.width,&board_size.height);
     sscanf(grid_size_p,"%d,%d",&grid_size.width,&grid_size.height);
 
+    abcdk_torch_calibrate_reset(ctx,&board_size, &grid_size);
+
     abcdk_torch_image_t *img[100] = {0};
 
     int count = _abcdk_test_calibrate_load(img,img_path_p);
+    int count2 = 0;
 
-    double camera_matrix[3][3] = {0};
-    double dist_coeff[5] = {0};
+    for(int i = 0;i<count;i++)
+        count2 = abcdk_torch_calibrate_bind(ctx,img[i]);
 
-    double rms = abcdk_torch_calibrate_estimate_2d(&board_size, &grid_size, count, img, camera_matrix, dist_coeff);
+    assert(count2 >= 2);
+
+    double rms = abcdk_torch_calibrate_estimate(ctx);
 
     abcdk_trace_printf(LOG_INFO,"RSM:%0.6f",rms);
 
-    abcdk_torch_image_t *img_p = img[20];
-
+    abcdk_torch_image_t *img_p = img[13];
     abcdk_torch_image_t *out = abcdk_torch_image_create(img_p->width,img_p->height,img_p->pixfmt,1);
+        
+    double camera_matrix[3][3] = {0};
+    double dist_coeff[5] = {0};
 
-    abcdk_torch_imgproc_undistort(out,img_p ,camera_matrix, dist_coeff);
+    abcdk_torch_calibrate_getparam(ctx,camera_matrix, dist_coeff);
+
+    abcdk_torch_image_t *xmap = NULL,* ymap = NULL;
+    abcdk_torch_size_t img_size = {img_p->width,img_p->height};
+
+    abcdk_torch_imgproc_undistort_buildmap(&xmap,&ymap,&img_size,0,camera_matrix, dist_coeff);
+
+    for (int i = 0; i < 10000; i++)
+        abcdk_torch_imgproc_remap(out, NULL, img_p, NULL, xmap, ymap, 2);
 
     abcdk_bmp_save_file("/tmp/ccc/img.bmp",img_p->data[0],img_p->stride[0],img_p->width,-img_p->height,24);
     abcdk_bmp_save_file("/tmp/ccc/out.bmp",out->data[0],out->stride[0],out->width,-out->height,24);
 
     abcdk_torch_imgcode_save("/tmp/ccc/img.jpg", img_p);
     abcdk_torch_imgcode_save("/tmp/ccc/out.jpg", out);
+
+        
+    abcdk_torch_image_free(&xmap);
+    abcdk_torch_image_free(&ymap);
+    
     abcdk_torch_image_free(&out);
 
     for (int i = 0; i < 6; i++)
         abcdk_torch_image_free(&img[i]);
 
-
+    abcdk_torch_calibrate_free(&ctx);
 
     abcdk_torch_context_current_set(NULL);
     abcdk_torch_context_destroy(&torch_ctx);

@@ -11,58 +11,52 @@ __BEGIN_DECLS
 
 #ifdef OPENCV_CALIB3D_HPP
 
-static int _abcdk_torch_imgproc_undistort_8u_host(int channels, int packed,
-                                                  uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
-                                                  const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h,
-                                                  const double camera_matrix[3][3], const double dist_coeffs[5])
+int abcdk_torch_imgproc_undistort_buildmap_host(abcdk_torch_image_t **xmap, abcdk_torch_image_t **ymap,
+                                                abcdk_torch_size_t *size, double alpha,
+                                                const double camera_matrix[3][3], const double dist_coeffs[5])
 {
-    cv::Mat tmp_dst, tmp_src;
+    cv::Size tmp_size;
     cv::Mat tmp_camera_matrix, tmp_dist_coeffs;
+    cv::Mat tmp_xmap, tmp_ymap;
+    int chk;
 
-    tmp_dst = cv::Mat(dst_h, dst_w, CV_8UC(channels), (void *)dst, dst_ws);
-    tmp_src = cv::Mat(src_h, src_w, CV_8UC(channels), (void *)src, src_ws);
+    assert(xmap != NULL && ymap != NULL && size != NULL && alpha >= 0.0 && alpha <= 1.0 && camera_matrix != NULL && dist_coeffs != NULL);
+    assert(size->width > 0 && size->height > 1);
+
+    tmp_size.width = size->width;
+    tmp_size.height = size->height;
 
     tmp_camera_matrix = cv::Mat(3, 3, CV_64FC1, (void *)camera_matrix, 3 * sizeof(double));
     tmp_dist_coeffs = cv::Mat(1, 5, CV_64FC1, (void *)dist_coeffs, 5 * sizeof(double));
 
-    cv::undistort(tmp_src, tmp_dst, tmp_camera_matrix, tmp_dist_coeffs);
+    cv::Mat R = cv::Mat::eye(3, 3, CV_64F); // 不做旋转。
+    cv::Mat newCameraMatrix = cv::getOptimalNewCameraMatrix(tmp_camera_matrix, tmp_dist_coeffs, tmp_size, alpha, tmp_size, 0);
 
-    // cv::imwrite("/tmp/ccc/src.jpg", tmp_src);
-    // cv::imwrite("/tmp/ccc/dst.jpg", tmp_dst);
+    // 生成映射表，注意 xmap 和 ymap 都是 CV_32FC1（CUDA兼容）
+    cv::initUndistortRectifyMap(tmp_camera_matrix, tmp_dist_coeffs, R, newCameraMatrix, tmp_size, CV_32FC1, tmp_xmap, tmp_ymap);
 
-    // cv::Mat dst2;
-    // cv::undistort(tmp_src, dst2, tmp_camera_matrix, tmp_dist_coeffs);
-    // cv::imwrite("/tmp/ccc/dst2.jpg", dst2);
+    if (tmp_xmap.empty() || tmp_ymap.empty())
+        return -1;
+
+    chk = abcdk_torch_image_reset_host(xmap, tmp_xmap.cols, tmp_xmap.rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+    if (chk != 0)
+        return -2;
+
+    chk = abcdk_torch_image_reset_host(ymap, tmp_ymap.cols, tmp_ymap.rows, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+    if (chk != 0)
+        return -3;
+
+    abcdk_torch_image_copy_plane_host(*xmap, 0, tmp_xmap.data, tmp_xmap.step);
+    abcdk_torch_image_copy_plane_host(*ymap, 0, tmp_ymap.data, tmp_ymap.step);
 
     return 0;
 }
 
-int abcdk_torch_imgproc_undistort_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const double camera_matrix[3][3], const double dist_coeffs[5])
-{
-    int dst_depth;
-
-    assert(dst != NULL && src != NULL && camera_matrix != NULL && dist_coeffs != NULL);
-    assert(dst->pixfmt == src->pixfmt);
-    assert(dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAY8 ||
-           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
-           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
-           dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
-           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
-
-    assert(dst->tag == ABCDK_TORCH_TAG_HOST);
-    assert(src->tag == ABCDK_TORCH_TAG_HOST);
-
-    dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
-
-    return _abcdk_torch_imgproc_undistort_8u_host(dst_depth, true,
-                                                  dst->data[0], dst->width, dst->stride[0], dst->height,
-                                                  src->data[0], src->width, src->stride[0], src->height,
-                                                  camera_matrix, dist_coeffs);
-}
-
 #else // OPENCV_CALIB3D_HPP
 
-int abcdk_torch_imgproc_undistort_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const float camera_matrix[3][3], const float dist_coeffs[5])
+int abcdk_torch_imgproc_undistort_buildmap_host(abcdk_torch_image_t **xmap, abcdk_torch_image_t **ymap,
+                                                abcdk_torch_size_t *size, double alpha,
+                                                const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;

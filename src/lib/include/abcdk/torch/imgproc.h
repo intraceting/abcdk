@@ -247,27 +247,39 @@ int abcdk_torch_imgproc_remap_cuda(abcdk_torch_image_t *dst, const abcdk_torch_r
 #define abcdk_torch_imgproc_remap abcdk_torch_imgproc_remap_host
 #endif //
 
+/**
+ * 构建畸变矫正表。
+ *
+ * @param [out] xmap 水平矫正表。
+ * @param [out] ymap 垂直矫正表。
+ * @param [in] size 图像尺寸。
+ * @param [in] alpha 图像的裁剪系数，介于0(无黑边)和1(无黑边)之间。
+ *
+ * @return 0 成功，-1 失败。
+ */
+int abcdk_torch_imgproc_undistort_buildmap_host(abcdk_torch_image_t **xmap, abcdk_torch_image_t **ymap,
+                                                abcdk_torch_size_t *size, double alpha,
+                                                const double camera_matrix[3][3], const double dist_coeffs[5]);
 
 /**
- * 畸变矫正。
+ * 构建畸变矫正表。
  *
- * @return 0 成功，< 0 失败。
- */
-int abcdk_torch_imgproc_undistort_host(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const double camera_matrix[3][3], const double dist_coeffs[5]);
-
-/**
- * 畸变矫正。
+ * @param [out] xmap 水平矫正表。
+ * @param [out] ymap 垂直矫正表。
+ * @param [in] size 图像尺寸。
+ * @param [in] alpha 图像的裁剪系数，介于0(无黑边)和1(无黑边)之间。
  *
- * @return 0 成功，< 0 失败。
+ * @return 0 成功，-1 失败。
  */
-int abcdk_torch_imgproc_undistort_cuda(abcdk_torch_image_t *dst, const abcdk_torch_image_t *src, const double camera_matrix[3][3], const double dist_coeffs[5]);
+int abcdk_torch_imgproc_undistort_buildmap_cuda(abcdk_torch_image_t **xmap, abcdk_torch_image_t **ymap,
+                                                abcdk_torch_size_t *size, double alpha,
+                                                const double camera_matrix[3][3], const double dist_coeffs[5]);
 
 #ifdef ABCDK_TORCH_USE_CUDA
-#define abcdk_torch_imgproc_undistort abcdk_torch_imgproc_undistort_cuda
+#define abcdk_torch_imgproc_undistort_buildmap abcdk_torch_imgproc_undistort_buildmap_cuda
 #else // ABCDK_TORCH_USE_HOST
-#define abcdk_torch_imgproc_undistort abcdk_torch_imgproc_undistort_host
+#define abcdk_torch_imgproc_undistort_buildmap abcdk_torch_imgproc_undistort_buildmap_host
 #endif //
-
 
 
 __END_DECLS

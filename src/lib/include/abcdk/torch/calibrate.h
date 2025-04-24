@@ -15,39 +15,144 @@
 
 __BEGIN_DECLS
 
-/**
- * 标定评估。
- * 
- * @note RMS值越少，质量越好。
- *
- * @param [in] board_size 板子尺寸(行*列)。
- * @param [in] grid_size 格子尺寸(毫米)。
- * @param [out] camera_matrix 内参矩阵。R,T.
- * @param [out] dist_coeffs 畸变系数。k1,k2,p1,p2,k3.
- *
- * @return RMS。
- */
-double abcdk_torch_calibrate_estimate_2d_host(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], double camera_matrix[3][3], double dist_coeffs[5]);
 
-/**
- * 标定评估。
- *
- * @note RMS值越少，质量越好。
- * 
- * @param [in] grid_size 板子尺寸(行*列)。
- * @param [in] square_size 方格尺寸(毫米)。
- * @param [out] camera_matrix 内参矩阵。R,T.
- * @param [out] dist_coeffs 畸变系数。k1,k2,p1,p2,k3.
- *
- * @return RMS。
- */
-double abcdk_torch_calibrate_estimate_2d_cuda(abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size, int count, abcdk_torch_image_t *img[], double camera_matrix[3][3], double dist_coeff[5]);
+/**图像标定。*/
+typedef struct _abcdk_torch_calibrate
+{
+    /**标签。*/
+    uint32_t tag;
+
+    /**私有环境。*/
+    void *private_ctx;
+
+} abcdk_torch_calibrate_t;
+
+/**释放。*/
+void abcdk_torch_calibrate_free_host(abcdk_torch_calibrate_t **ctx);
+
+/**释放。*/
+void abcdk_torch_calibrate_free_cuda(abcdk_torch_calibrate_t **ctx);
 
 #ifdef ABCDK_TORCH_USE_CUDA
-#define abcdk_torch_calibrate_estimate_2d abcdk_torch_calibrate_estimate_2d_cuda
-#else // ABCDK_TORCH_USE_HOST
-#define abcdk_torch_calibrate_estimate_2d abcdk_torch_calibrate_estimate_2d_host
+#define abcdk_torch_calibrate_free abcdk_torch_calibrate_free_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_calibrate_free abcdk_torch_calibrate_free_host
 #endif //
+
+/** 申请。*/
+abcdk_torch_calibrate_t *abcdk_torch_calibrate_alloc_host();
+
+/** 申请。*/
+abcdk_torch_calibrate_t *abcdk_torch_calibrate_alloc_cuda();
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_calibrate_alloc abcdk_torch_calibrate_alloc_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_calibrate_alloc abcdk_torch_calibrate_alloc_host
+#endif //
+
+/**
+ * 重置。
+ * 
+ * @note 默认的标定板尺寸是7行10列，格子尺寸是宽25毫米高25毫米。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_calibrate_reset_host(abcdk_torch_calibrate_t *ctx, abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size);
+
+
+/**
+ * 重置。
+ * 
+ * @note 默认的标定板尺寸是7行10列，格子尺寸是宽25毫米高25毫米。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_calibrate_reset_cuda(abcdk_torch_calibrate_t *ctx, abcdk_torch_size_t *board_size, abcdk_torch_size_t *grid_size);
+
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_calibrate_reset abcdk_torch_calibrate_reset_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_calibrate_reset abcdk_torch_calibrate_reset_host
+#endif //
+
+/**
+ * 绑定图像。
+ * 
+ * @note 角点不存在或不足时，图像将被忽略。
+ * 
+ * @return 已绑定的数量。
+ */
+int abcdk_torch_calibrate_bind_host(abcdk_torch_calibrate_t *ctx, abcdk_torch_image_t *img);
+
+/**
+ * 绑定图像。
+ * 
+ * @note 角点不存在或不足时，图像将被忽略。
+ * 
+ * @return 已绑定的数量。
+ */
+int abcdk_torch_calibrate_bind_cuda(abcdk_torch_calibrate_t *ctx, abcdk_torch_image_t *img);
+
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_calibrate_bind abcdk_torch_calibrate_bind_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_calibrate_bind abcdk_torch_calibrate_bind_host
+#endif //
+
+
+/**
+ * 评估。
+ * 
+ * @note RMS值越少，质量越好。
+ *
+ * @return RMS。
+ */
+double abcdk_torch_calibrate_estimate_host(abcdk_torch_calibrate_t *ctx);
+
+/**
+ * 评估。
+ *
+ * @note RMS值越少，质量越好。
+ *
+ * @return RMS。
+ */
+double abcdk_torch_calibrate_estimate_cuda(abcdk_torch_calibrate_t *ctx);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_calibrate_estimate abcdk_torch_calibrate_estimate_cuda
+#else // ABCDK_TORCH_USE_HOST
+#define abcdk_torch_calibrate_estimate abcdk_torch_calibrate_estimate_host
+#endif //
+
+/**
+ * 获取参数。
+ *
+ * @param [out] camera_matrix 内参矩阵。R,T.
+ * @param [out] dist_coeffs 畸变系数。k1,k2,p1,p2,k3.
+ * 
+ * @return 0 成功，-1 失败。
+ */
+int abcdk_torch_calibrate_getparam_host(abcdk_torch_calibrate_t *ctx, double camera_matrix[3][3], double dist_coeffs[5]);
+
+/**
+ * 获取参数。
+ * 
+ * @param [out] camera_matrix 内参矩阵。R,T.
+ * @param [out] dist_coeffs 畸变系数。k1,k2,p1,p2,k3.
+ * 
+ * @return 0 成功，-1 失败。
+ */
+int abcdk_torch_calibrate_getparam_cuda(abcdk_torch_calibrate_t *ctx, double camera_matrix[3][3], double dist_coeffs[5]);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_calibrate_getparam abcdk_torch_calibrate_getparam_cuda
+#else // ABCDK_TORCH_USE_HOST
+#define abcdk_torch_calibrate_getparam abcdk_torch_calibrate_getparam_host
+#endif //
+
 
 __END_DECLS
 

@@ -16,9 +16,8 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
                                                const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
                                                int keep_aspect_ratio, int inter_mode)
 {
-    abcdk_torch_size_t tmp_src_size = {0};
-    abcdk_torch_rect_t tmp_dst_roi = {0}, tmp_src_roi = {0};
     abcdk_resize_t tmp_param = {0};
+    cv::Rect tmp_dst_roi, tmp_src_roi;
     cv::Mat tmp_dst, tmp_src;
     cv::Mat tmp_dst2;
     cv::Size tmp_dst2_size;
@@ -27,25 +26,40 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0);
     assert(src != NULL && src_w > 0 && src_ws > 0 && src_h > 0);
 
-    ABCDK_ASSERT(dst_roi == NULL && src_roi == NULL, TT("尚未支持感兴趣区域。"));
-
-    tmp_dst_roi.x = (dst_roi ? dst_roi->x : 0);
-    tmp_dst_roi.y = (dst_roi ? dst_roi->y : 0);
-    tmp_dst_roi.width = (dst_roi ? dst_roi->width : dst_w);
-    tmp_dst_roi.height = (dst_roi ? dst_roi->height : dst_h);
-
-    tmp_src_size.width = src_w;
-    tmp_src_size.height = src_h;
-
-    tmp_src_roi.x = (src_roi ? src_roi->x : 0);
-    tmp_src_roi.y = (src_roi ? src_roi->y : 0);
-    tmp_src_roi.width = (src_roi ? src_roi->width : src_w);
-    tmp_src_roi.height = (src_roi ? src_roi->height : src_h);
-
-    abcdk_resize_ratio_2d(&tmp_param, tmp_src_roi.width, tmp_src_roi.height, tmp_dst_roi.width, tmp_dst_roi.height, keep_aspect_ratio);
-
     tmp_dst = cv::Mat(dst_h, dst_w, CV_8UC(channels), (void *)dst, dst_ws);
     tmp_src = cv::Mat(src_h, src_w, CV_8UC(channels), (void *)src, src_ws);
+
+    if(dst_roi)
+    {
+        tmp_dst_roi.x = (dst_roi ? dst_roi->x : 0);
+        tmp_dst_roi.y = (dst_roi ? dst_roi->y : 0);
+        tmp_dst_roi.width = (dst_roi ? dst_roi->width : dst_w);
+        tmp_dst_roi.height = (dst_roi ? dst_roi->height : dst_h);
+
+        tmp_dst = tmp_dst(tmp_dst_roi);
+
+        return _abcdk_torch_imgproc_resize_8u_host(channels, packed,
+                                                   tmp_dst.data, tmp_dst.cols, tmp_dst.step, tmp_dst.rows, NULL,
+                                                   tmp_src.data, tmp_src.cols, tmp_src.step, tmp_src.rows, src_roi,
+                                                   keep_aspect_ratio, inter_mode);
+    }
+
+    if(src_roi)
+    {
+        tmp_src_roi.x = (src_roi ? src_roi->x : 0);
+        tmp_src_roi.y = (src_roi ? src_roi->y : 0);
+        tmp_src_roi.width = (src_roi ? src_roi->width : src_w);
+        tmp_src_roi.height = (src_roi ? src_roi->height : src_h);
+
+        tmp_src = tmp_src(tmp_src_roi);
+
+        return _abcdk_torch_imgproc_resize_8u_host(channels, packed,
+                                                   tmp_dst.data, tmp_dst.cols, tmp_dst.step, tmp_dst.rows, dst_roi,
+                                                   tmp_src.data, tmp_src.cols, tmp_src.step, tmp_src.rows, NULL,
+                                                   keep_aspect_ratio, inter_mode);
+    }
+    
+    abcdk_resize_ratio_2d(&tmp_param, tmp_src.cols, tmp_src.rows, tmp_dst.cols, tmp_dst.rows, keep_aspect_ratio);
 
     tmp_dst2_size.width = abcdk_resize_src2dst_2d(&tmp_param, src_w, 1) - tmp_param.x_shift;
     tmp_dst2_size.height = abcdk_resize_src2dst_2d(&tmp_param, src_h, 0) - tmp_param.y_shift;
