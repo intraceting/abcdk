@@ -144,12 +144,12 @@ int abcdk_torch_calibrate_getparam_host(abcdk_torch_calibrate_t *ctx, double cam
     return 0;
 }
 
-abcdk_object_t *abcdk_torch_calibrate_param_dump(const double camera_matrix[3][3], const double dist_coeffs[5])
+abcdk_object_t *abcdk_torch_calibrate_param_dump(const abcdk_torch_size_t *size, const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     cv::Mat tmp_camera_matrix, tmp_dist_coeffs;
     std::string metadata;
 
-    assert(camera_matrix != NULL && dist_coeffs != NULL);
+    assert(size != NULL && camera_matrix != NULL && dist_coeffs != NULL);
 
     tmp_camera_matrix = cv::Mat(3, 3, CV_64FC1, (void *)camera_matrix, 3 * sizeof(double));
     tmp_dist_coeffs = cv::Mat(1, 5, CV_64FC1, (void *)dist_coeffs, 5 * sizeof(double));
@@ -158,6 +158,8 @@ abcdk_object_t *abcdk_torch_calibrate_param_dump(const double camera_matrix[3][3
     if (!fd.isOpened())
         return NULL;
 
+    cv::write(fd, "width",size->width);
+    cv::write(fd, "height",size->height);
     cv::write(fd, "camera_matrix",tmp_camera_matrix);
     cv::write(fd, "dist_coeffs",tmp_dist_coeffs);
 
@@ -168,12 +170,12 @@ abcdk_object_t *abcdk_torch_calibrate_param_dump(const double camera_matrix[3][3
     return abcdk_object_copyfrom(metadata.data(),metadata.length());
 }
 
-int abcdk_torch_calibrate_param_dump_file(const char *file, const double camera_matrix[3][3], const double dist_coeffs[5])
+int abcdk_torch_calibrate_param_dump_file(const char *file, const abcdk_torch_size_t *size, const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     abcdk_object_t *metadata;
     int chk;
 
-    assert(file != NULL && camera_matrix != NULL && dist_coeffs != NULL);
+    assert(file != NULL && size != NULL && camera_matrix != NULL && dist_coeffs != NULL);
 
     abcdk_mkdir(file, 0755);
 
@@ -184,7 +186,7 @@ int abcdk_torch_calibrate_param_dump_file(const char *file, const double camera_
             return -1;
     }
 
-    metadata = abcdk_torch_calibrate_param_dump(camera_matrix, dist_coeffs);
+    metadata = abcdk_torch_calibrate_param_dump(size, camera_matrix, dist_coeffs);
     if (!metadata)
         return -1;
 
@@ -197,17 +199,25 @@ int abcdk_torch_calibrate_param_dump_file(const char *file, const double camera_
     return 0;
 }
 
-int abcdk_torch_calibrate_param_load(double camera_matrix[3][3], double dist_coeffs[5], const char *data)
+int abcdk_torch_calibrate_param_load(abcdk_torch_size_t *size, double camera_matrix[3][3], double dist_coeffs[5], const char *data)
 {
     cv::Mat tmp_camera_matrix, tmp_dist_coeffs;
 
-    assert(camera_matrix != NULL && dist_coeffs != NULL && data != NULL);
+    assert(size != NULL && camera_matrix != NULL && dist_coeffs != NULL && data != NULL);
 
     tmp_camera_matrix = cv::Mat(3, 3, CV_64FC1, (void *)camera_matrix, 3 * sizeof(double));
     tmp_dist_coeffs = cv::Mat(1, 5, CV_64FC1, (void *)dist_coeffs, 5 * sizeof(double));
 
     cv::FileStorage fd(data, cv::FileStorage::MEMORY | cv::FileStorage::FORMAT_XML);
     if (!fd.isOpened())
+        return -1;
+    
+    cv::FileNode width_node = fd["width"];
+    if (width_node.empty())
+        return -1;
+
+    cv::FileNode height_node = fd["height"];
+    if (height_node.empty())
         return -1;
 
     cv::FileNode camera_matrix_node = fd["camera_matrix"];
@@ -218,24 +228,27 @@ int abcdk_torch_calibrate_param_load(double camera_matrix[3][3], double dist_coe
     if (dist_coeffs_node.empty())
         return -1;
 
+    size->width = width_node;
+    size->height = height_node;
+
     camera_matrix_node.mat().copyTo(tmp_camera_matrix);
     dist_coeffs_node.mat().copyTo(tmp_dist_coeffs);
 
     return 0;
 }
 
-int abcdk_torch_calibrate_param_load_file(double camera_matrix[3][3], double dist_coeffs[5], const char *file)
+int abcdk_torch_calibrate_param_load_file(abcdk_torch_size_t *size, double camera_matrix[3][3], double dist_coeffs[5], const char *file)
 {
     abcdk_object_t *metadata;
     int chk;
 
-    assert(camera_matrix != NULL && dist_coeffs != NULL && file != NULL);
+    assert(size != NULL && camera_matrix != NULL && dist_coeffs != NULL && file != NULL);
 
     metadata = abcdk_object_copyfrom_file(file);
     if(!metadata)
         return -1;
 
-    chk = abcdk_torch_calibrate_param_load(camera_matrix,dist_coeffs,metadata->pstrs[0]);
+    chk = abcdk_torch_calibrate_param_load(size,camera_matrix,dist_coeffs,metadata->pstrs[0]);
     abcdk_object_unref(&metadata);
 
     if (chk != 0)
@@ -283,25 +296,25 @@ int abcdk_torch_calibrate_getparam_host(abcdk_torch_calibrate_t *ctx, double cam
     return -1;
 }
 
-abcdk_object_t *abcdk_torch_calibrate_param_dump(const double camera_matrix[3][3], const double dist_coeffs[5])
+abcdk_object_t *abcdk_torch_calibrate_param_dump(const abcdk_torch_size_t *size, const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return NULL;
 }
 
-int abcdk_torch_calibrate_param_dump_file(const char *file, const double camera_matrix[3][3], const double dist_coeffs[5])
+int abcdk_torch_calibrate_param_dump_file(const char *file, const abcdk_torch_size_t *size, const double camera_matrix[3][3], const double dist_coeffs[5])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
 
-int abcdk_torch_calibrate_param_load(double camera_matrix[3][3], double dist_coeffs[5], const char *data)
+int abcdk_torch_calibrate_param_load(abcdk_torch_size_t *size, double camera_matrix[3][3], double dist_coeffs[5], const char *data)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;
 }
 
-int abcdk_torch_calibrate_param_load_file(double camera_matrix[3][3], double dist_coeffs[5], const char *file)
+int abcdk_torch_calibrate_param_load_file(abcdk_torch_size_t *size, double camera_matrix[3][3], double dist_coeffs[5], const char *file)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return -1;

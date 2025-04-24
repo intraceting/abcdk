@@ -148,6 +148,9 @@ namespace abcdk
 
             virtual RTPSink *createNewRTPSink(Groupsock *rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource *inputSource)
             {
+                if(!m_extdata.sps || !m_extdata.pps)
+                    return NULL;
+
                 return H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, m_extdata.sps->pptrs[0], m_extdata.sps->sizes[0], m_extdata.pps->pptrs[0], m_extdata.pps->sizes[0]);
             }
         };

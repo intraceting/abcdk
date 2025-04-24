@@ -310,14 +310,14 @@ int abcdk_test_torch_3(abcdk_option_t *args)
 
 int abcdk_test_torch_4(abcdk_option_t *args)
 {
+    abcdk_torch_size_t img_size = {0};
     double camera_matrix[3][3] = {0};
     double dist_coeff[5] = {0};
 
-    abcdk_torch_calibrate_param_load_file(camera_matrix,dist_coeff,"/tmp/ccc/calibrate-param.xml");
+    abcdk_torch_calibrate_param_load_file(&img_size,camera_matrix,dist_coeff,"/tmp/ccc/calibrate-param.xml");
 
 
     abcdk_torch_image_t *xmap = NULL,* ymap = NULL;
-    abcdk_torch_size_t img_size = {2340,1296};
 
     abcdk_torch_imgproc_undistort_buildmap(&xmap,&ymap,&img_size,0,camera_matrix, dist_coeff);
 

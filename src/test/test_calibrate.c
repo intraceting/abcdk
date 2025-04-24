@@ -80,10 +80,10 @@ int abcdk_test_calibrate(abcdk_option_t *args)
 
     abcdk_torch_calibrate_getparam(ctx,camera_matrix, dist_coeff);
 
-    abcdk_torch_calibrate_param_dump_file("/tmp/ccc/calibrate-param.xml",camera_matrix,dist_coeff);
-
     abcdk_torch_image_t *xmap = NULL,* ymap = NULL;
     abcdk_torch_size_t img_size = {img_p->width,img_p->height};
+
+    abcdk_torch_calibrate_param_dump_file("/tmp/ccc/calibrate-param.xml",&img_size,camera_matrix,dist_coeff);
 
     abcdk_torch_imgproc_undistort_buildmap(&xmap,&ymap,&img_size,1,camera_matrix, dist_coeff);
 
