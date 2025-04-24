@@ -153,6 +153,30 @@ int abcdk_torch_calibrate_getparam_cuda(abcdk_torch_calibrate_t *ctx, double cam
 #define abcdk_torch_calibrate_getparam abcdk_torch_calibrate_getparam_host
 #endif //
 
+/** 保存参数。*/
+abcdk_object_t *abcdk_torch_calibrate_param_dump(const double camera_matrix[3][3], const double dist_coeffs[5]);
+
+/** 
+ * 保存参数。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_calibrate_param_dump_file(const char *file, const double camera_matrix[3][3], const double dist_coeffs[5]);
+
+/** 
+ * 加载参数。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_calibrate_param_load(double camera_matrix[3][3], double dist_coeffs[5], const char *data);
+
+/** 
+ * 加载参数。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_calibrate_param_load_file(double camera_matrix[3][3], double dist_coeffs[5], const char *file);
+
 
 __END_DECLS
 

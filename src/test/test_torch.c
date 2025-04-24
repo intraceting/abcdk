@@ -313,8 +313,8 @@ int abcdk_test_torch_4(abcdk_option_t *args)
     double camera_matrix[3][3] = {0};
     double dist_coeff[5] = {0};
 
-    abcdk_load("/tmp/ccc/camera_matrix.bin",camera_matrix,9*sizeof(double),0);
-    abcdk_load("/tmp/ccc/dist_coeff.bin",dist_coeff,5*sizeof(double),0);
+    abcdk_torch_calibrate_param_load_file(camera_matrix,dist_coeff,"/tmp/ccc/calibrate-param.xml");
+
 
     abcdk_torch_image_t *xmap = NULL,* ymap = NULL;
     abcdk_torch_size_t img_size = {2340,1296};

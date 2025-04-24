@@ -276,11 +276,14 @@ abcdk_object_t *abcdk_object_copyfrom_file(const void *file)
 
     if(attr.st_size > 0)
     {
-        obj = abcdk_object_alloc2(attr.st_size);
-        if(obj)
+        obj = abcdk_object_alloc2(attr.st_size + 1);//多一个字节。
+        if (obj)
         {
-            rlen = abcdk_read(fd,obj->pptrs[0],obj->sizes[0]);
-            if(rlen != obj->sizes[0])
+
+            obj->sizes[0] = attr.st_size;//修复长度。
+
+            rlen = abcdk_read(fd, obj->pptrs[0], obj->sizes[0]);
+            if (rlen != obj->sizes[0])
                 abcdk_object_unref(&obj);
         }
     }
