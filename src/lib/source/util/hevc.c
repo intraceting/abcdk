@@ -98,9 +98,9 @@ void abcdk_hevc_extradata_deserialize(const void *data, size_t size, abcdk_hevc_
 
         nal_p = &extradata->nal_array[0];
 
-        nal_p->nal = abcdk_object_alloc3(rbuf.size, 5); // 足够的长度，保证不会溢出。
+        nal_p->nal = abcdk_object_alloc3(rbuf.size, 10); // 足够的长度，保证不会溢出。
 
-        for (int j = 0; j < 5; j++)
+        for (int j = 0; j < 10; j++)
         {
             if (p1 > p3)
                 return;

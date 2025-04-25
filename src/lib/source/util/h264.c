@@ -45,7 +45,7 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
         p2 = NULL;
         p3 = rbuf.data + rbuf.size - 1;/*末尾指针要减1。*/
 
-        for (int j = 0; j < 2; j++)
+        for (int j = 0; j < 10; j++)
         {
             if (p1 > p3)
                 return;

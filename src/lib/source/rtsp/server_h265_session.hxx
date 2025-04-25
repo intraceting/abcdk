@@ -67,8 +67,7 @@ namespace abcdk
             }
             virtual ~h265_session()
             {
-                for (int i = 0; i < m_extdata.nal_array_num; i++)
-                    abcdk_object_unref(&m_extdata.nal_array[i].nal);
+                abcdk_hevc_extradata_clean(&m_extdata);
 
                 delete[] m_aux_sdp_line;
             }

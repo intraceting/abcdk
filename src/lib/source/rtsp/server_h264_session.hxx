@@ -67,8 +67,8 @@ namespace abcdk
             }
             virtual ~h264_session()
             {
-                abcdk_object_unref(&m_extdata.sps);
-                abcdk_object_unref(&m_extdata.pps);
+                abcdk_h264_extradata_clean(&m_extdata);
+
                 delete[] m_aux_sdp_line;
             }
 
