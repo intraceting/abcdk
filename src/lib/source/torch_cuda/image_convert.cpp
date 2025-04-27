@@ -231,12 +231,14 @@ static int _abcdk_torch_image_convert_cuda(abcdk_torch_image_t *dst, const abcdk
     }
     else if (dst->pixfmt == ABCDK_TORCH_PIXFMT_NV12)
     {
+#if NPP_VERSION >= (11 * 1000 + 2 * 100 + 0)
         if (src->pixfmt == ABCDK_TORCH_PIXFMT_RGB24)
         {
             NppStreamContext stream_ctx = { 0 };
             npp_chk = nppiRGBToNV12_8u_ColorTwist32f_C3P2R_Ctx(src->data[0],src->stride[0],dst->data,dst->stride,src_roi,rgb_to_yuv_twist,stream_ctx);
         }
         else
+#endif //#if NPP_VERSION >= (11 * 1000 + 2 * 100 + 0)
         {
             tmp_dst = abcdk_torch_image_create(dst->width,dst->height,ABCDK_TORCH_PIXFMT_RGB24,1);
             if(!tmp_dst)
