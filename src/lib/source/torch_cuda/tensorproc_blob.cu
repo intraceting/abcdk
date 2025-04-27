@@ -13,21 +13,21 @@
 
 template <typename DT, typename ST>
 ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_tensorproc_blob_2d2d_cuda(bool dst_packed, DT *dst, size_t dst_ws,
-                                                                bool src_packed, ST *src, size_t src_ws,
-                                                                size_t b, size_t w, size_t h, size_t c,
-                                                                bool revert, float *scale, float *mean, float *std)
+                                                                      bool src_packed, ST *src, size_t src_ws,
+                                                                      size_t b, size_t w, size_t h, size_t c,
+                                                                      bool revert, float *scale, float *mean, float *std)
 {
     size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
     abcdk::torch::tensorproc::blob<DT, ST>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
-                                             revert, scale, mean, std, tid);
+                                           revert, scale, mean, std, tid);
 }
 
 template <typename DT, typename ST>
 ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_tensorproc_blob_cuda(bool dst_packed, DT *dst, size_t dst_ws,
-                                                        bool src_packed, ST *src, size_t src_ws,
-                                                        size_t b, size_t w, size_t h, size_t c,
-                                                        bool revert, float *scale, float *mean, float *std)
+                                                              bool src_packed, ST *src, size_t src_ws,
+                                                              size_t b, size_t w, size_t h, size_t c,
+                                                              bool revert, float *scale, float *mean, float *std)
 {
     void *gpu_scale = NULL, *gpu_mean = NULL, *gpu_std = NULL;
     uint3 dim[2];

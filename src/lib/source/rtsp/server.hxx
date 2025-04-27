@@ -108,8 +108,11 @@ namespace abcdk
 
             int set_tls(const char *cert, const char *key, int enable_srtp, int encrypt_srtp)
             {
+#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 setTLSState(cert, key, enable_srtp, encrypt_srtp);
-
+#else //LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+                abcdk_trace_printf(LOG_WARNING, TT("当前Live555版本(%s)暂不支持此功能(%s)。"),LIVEMEDIA_LIBRARY_VERSION_STRING,__FUNCTION__);
+#else //LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 return 0;
             }
 
