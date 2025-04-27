@@ -53,26 +53,39 @@ namespace abcdk
         public:
             static server *createNew(UsageEnvironment &env, Port ourPort, int flag, unsigned reclamationTestSeconds = 65)
             {
-                int sock4_fd = -1, sock6_fd = -1;
+                int sock_fd = -1, sock6_fd = -1;
+
+#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
 
                 if (flag & 0x01)
-                    sock4_fd = setUpOurSocket(env, ourPort, AF_INET);
+                    sock_fd = setUpOurSocket(env, ourPort, AF_INET);
 
                 if (flag & 0x02)
                     sock6_fd = setUpOurSocket(env, ourPort, AF_INET6);
 
-                if (sock4_fd < 0 && sock6_fd < 0)
+                if (sock_fd < 0 && sock6_fd < 0)
                     return NULL;
 
                 /*启用，但可能未创建成功。*/
-                if (((flag & 0x01) && sock4_fd < 0) || ((flag & 0x02) && sock6_fd < 0))
+                if (((flag & 0x01) && sock_fd < 0) || ((flag & 0x02) && sock6_fd < 0))
                 {
-                    abcdk_closep(&sock4_fd);
+                    abcdk_closep(&sock_fd);
                     abcdk_closep(&sock6_fd);
                     return NULL;
                 }
 
-                return new server(env, sock4_fd, sock6_fd, ourPort, reclamationTestSeconds);
+                return new server(env, sock_fd, sock6_fd, ourPort, reclamationTestSeconds);
+
+#else // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+
+                sock_fd = setUpOurSocket(env, ourPort);
+
+                if (sock_fd < 0)
+                    return NULL;
+
+                return new server(env, sock_fd, ourPort, reclamationTestSeconds);
+
+#endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
             }
 
             static void deleteOld(server **ctx)
@@ -110,9 +123,9 @@ namespace abcdk
             {
 #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 setTLSState(cert, key, enable_srtp, encrypt_srtp);
-#else //LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+#else //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 abcdk_trace_printf(LOG_WARNING, TT("当前Live555版本(%s)暂不支持此功能(%s)。"),LIVEMEDIA_LIBRARY_VERSION_STRING,__FUNCTION__);
-#endif //LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+#endif //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 return 0;
             }
 
