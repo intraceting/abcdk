@@ -59,7 +59,11 @@ namespace abcdk
                         abcdk_sockaddr_to_string(remote_str, &remote_addr, 0);
                         abcdk_sockaddr_to_string(local_str, &local_addr, 0);
                     }
+#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                     else if (dest_p->addr.ss_family == AF_INET6 || dest_p->addr.ss_family == AF_INET)
+#else // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+                    else if (dest_p->addr.sa_family == AF_INET6 || dest_p->addr.sa_family == AF_INET)
+#endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                     {
                         abcdk_sockaddr_to_string(remote_str, (abcdk_sockaddr_t *)&dest_p->addr, 0);
                     }
