@@ -83,7 +83,7 @@ namespace abcdk
                 if (sock_fd < 0)
                     return NULL;
 
-                return new server(env, sock_fd, ourPort, reclamationTestSeconds);
+                return new server(env, sock_fd, -1, ourPort, reclamationTestSeconds);
 
 #endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
             }
