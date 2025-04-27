@@ -67,7 +67,7 @@ namespace abcdk
 #else // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                     else
                     {
-                        inet_ntop(AF_INET, &addr->addr4.sin_addr, remote_str, NAME_MAX);
+                        inet_ntop(AF_INET, &dest_p->addr, remote_str, NAME_MAX);
                     }
 #endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 }
