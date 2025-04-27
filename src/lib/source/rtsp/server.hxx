@@ -365,7 +365,7 @@ namespace abcdk
 #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 : RTSPServer(env, ourSocketIPv4, ourSocketIPv6, ourPort, NULL, reclamationTestSeconds)
 #else //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
-                : RTSPServer(env, ourSocketIPv4, ourPort, NULL, reclamationTestSeconds)
+                : RTSPServer(env, ourSocket, ourPort, NULL, reclamationTestSeconds)
 #endif //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
             {
                 OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
