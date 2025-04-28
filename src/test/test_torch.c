@@ -488,6 +488,19 @@ int abcdk_test_torch_4(abcdk_option_t *args)
 #endif //HAVE_FFMPEG
 
 
+int abcdk_test_torch_5(abcdk_option_t *args)
+{
+    const char *src = abcdk_option_get(args,"--src",0,"");
+    const char *dst = abcdk_option_get(args,"--dst",0,"");
+
+    int chk;
+
+    chk = abcdk_torch_infer_model_forward(dst,src,args);
+    
+    return 0;
+}
+
+
 int abcdk_test_torch(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
@@ -515,6 +528,8 @@ int abcdk_test_torch(abcdk_option_t *args)
     else if (cmd == 4)
         return abcdk_test_torch_4(args);
 #endif //HAVE_FFMPEG
+    else if (cmd == 5)
+        return abcdk_test_torch_5(args);
 
 
     abcdk_torch_context_current_set(NULL);

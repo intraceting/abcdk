@@ -22,9 +22,11 @@
 
 /*TensorRT interface.*/
 #ifdef HAVE_TENSORRT
+#ifdef __cplusplus
 #include "NvInfer.h"
 #include "NvInferPlugin.h"
 #include "NvOnnxParser.h"
+#endif //__cplusplus
 #endif //HAVE_TENSORRT
 
 __BEGIN_DECLS

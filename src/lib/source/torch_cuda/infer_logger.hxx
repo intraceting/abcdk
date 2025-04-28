@@ -36,7 +36,7 @@ namespace abcdk
                 }
 
             public:
-                virtual void log(nvinfer1::ILogger::Severity level, const char *msg)
+                void log(nvinfer1::ILogger::Severity level, const char *msg) noexcept
                 {
                     int qos;
 

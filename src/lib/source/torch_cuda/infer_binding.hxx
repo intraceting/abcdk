@@ -4,14 +4,14 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_TORCH_NVIDIA_INFER_UTIL_HXX
-#define ABCDK_TORCH_NVIDIA_INFER_UTIL_HXX
+#ifndef ABCDK_TORCH_NVIDIA_INFER_BINDING_HXX
+#define ABCDK_TORCH_NVIDIA_INFER_BINDING_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/torch/context.h"
 #include "abcdk/torch/imgproc.h"
-#include "abcdk/torch/tensor.h"
+#include "abcdk/torch/tensorproc.h"
 #include "abcdk/torch/nvidia.h"
 
 #if defined(__cuda_cuda_h__) && defined(NV_INFER_H)
@@ -59,16 +59,19 @@ namespace abcdk
                 int m_tensor_w_size;
 
                 /*主机内存。*/
-                abcdk_torch_tensor_t *m_tensor_mem_cpu;
+                abcdk_torch_tensor_t *m_tensor_mem_f32_cpu;
 
                 /*设备内存。*/
-                abcdk_torch_tensor_t *m_tensor_mem_gpu;
+                abcdk_torch_tensor_t *m_tensor_mem_f32_gpu;
+
+                /*设备内存。*/
+                abcdk_torch_tensor_t *m_tensor_mem_u8_gpu;
 
                 /*输入图像缓存。*/
                 std::vector<abcdk_torch_image_t *> m_input_img_cache;
 
                 /*输入图像缩放系数。*/
-                std::vector<abcdk_resize_scale_t> m_input_img_scale;
+                std::vector<abcdk_resize_scale_t> m_input_img_resize;
 
                 /*输入图像原始尺寸。*/
                 std::vector<abcdk_torch_size_t> m_input_img_size;
@@ -77,8 +80,9 @@ namespace abcdk
             public:
                 binding()
                 {
-                    m_tensor_mem_cpu = NULL;
-                    m_tensor_mem_gpu = NULL;
+                    m_tensor_mem_f32_cpu = NULL;
+                    m_tensor_mem_f32_gpu = NULL;
+                    m_tensor_mem_u8_gpu = NULL;
                 }
 
                 virtual ~binding()
@@ -112,28 +116,59 @@ namespace abcdk
 
                     return size;
                 }
+            public:
+                int b() const
+                {
+                    return m_tensor_b_size;
+                }
+
+                int c() const
+                {
+                    return m_tensor_c_size;
+                }
+
+                int h() const
+                {
+                    return m_tensor_h_size;
+                }
+
+                int w() const
+                {
+                    return m_tensor_w_size;
+                }
+
+                void *mem_f32_cpu() const 
+                {
+                    return m_tensor_mem_f32_cpu->data;
+                }
+
+                void *mem_f32_gpu() const
+                {
+                    return m_tensor_mem_f32_gpu->data;
+                }
 
             public:
                 void clear()
                 {
-                    abcdk_torch_tensor_free_host(&m_tensor_mem_cpu);
-                    abcdk_torch_tensor_free_cuda(&m_tensor_mem_gpu);
+                    abcdk_torch_tensor_free_host(&m_tensor_mem_f32_cpu);
+                    abcdk_torch_tensor_free_cuda(&m_tensor_mem_f32_gpu);
+                    abcdk_torch_tensor_free_cuda(&m_tensor_mem_u8_gpu);
 
                     for(auto &t:m_input_img_cache)
                         abcdk_torch_image_free_cuda(&t);
 
-                    m_input_img_scale.clear();
+                    m_input_img_resize.clear();
                     m_input_img_size.clear();
 
                     m_input = 0;
                     m_index = -1;
                     m_name = "";
                     m_dims.nbDims = 0;
-                    m_dims.nbDims[0] = m_dims.nbDims[1] = m_dims.nbDims[2] = m_dims.nbDims[3] = -1;
+                    m_dims.d[0] = m_dims.d[1] = m_dims.d[2] = m_dims.d[3] = -1;
                     m_type = (nvinfer1::DataType)-1;
                 }
 
-                int prepare(int input, int index, const char *name, nvinfer1::DataType type, nvinfer1::Dims &dims, abcdk_option_t *opt)
+                int prepare(int input, int index, const char *name, nvinfer1::DataType type,const nvinfer1::Dims &dims, abcdk_option_t *opt)
                 {
                     int tensor_b_index, tensor_c_index, tensor_h_index , tensor_w_index;
                     int tensor_cell_size;
@@ -180,14 +215,15 @@ namespace abcdk
 
                     tensor_cell_size = data_type_size(type);
 
-                    abcdk_torch_tensor_reset_host(&m_tensor_mem_cpu, ABCDK_TORCH_TENFMT_NCHW, m_tensor_b_size, m_tensor_w_size, m_tensor_h_size, m_tensor_c_size, tensor_cell_size, 1);
-                    abcdk_torch_tensor_reset_cuda(&m_tensor_mem_gpu, ABCDK_TORCH_TENFMT_NCHW, m_tensor_b_size, m_tensor_w_size, m_tensor_h_size, m_tensor_c_size, tensor_cell_size, 1);
+                    abcdk_torch_tensor_reset_host(&m_tensor_mem_f32_cpu, ABCDK_TORCH_TENFMT_NCHW, m_tensor_b_size, m_tensor_w_size, m_tensor_h_size, m_tensor_c_size, tensor_cell_size, 1);
+                    abcdk_torch_tensor_reset_cuda(&m_tensor_mem_f32_gpu, ABCDK_TORCH_TENFMT_NCHW, m_tensor_b_size, m_tensor_w_size, m_tensor_h_size, m_tensor_c_size, tensor_cell_size, 1);
+                    abcdk_torch_tensor_reset_cuda(&m_tensor_mem_u8_gpu, ABCDK_TORCH_TENFMT_NCHW, m_tensor_b_size, m_tensor_w_size, m_tensor_h_size, m_tensor_c_size, 1, 1);
 
-                    if(!m_tensor_mem_cpu || !m_tensor_mem_gpu)
+                    if(!m_tensor_mem_f32_cpu || !m_tensor_mem_f32_gpu || !m_tensor_mem_u8_gpu)
                         return -5;
 
                     m_input_img_cache.resize(m_tensor_b_size);
-                    m_input_img_scale.resize(m_tensor_b_size);
+                    m_input_img_resize.resize(m_tensor_b_size);
                     m_input_img_size.resize(m_tensor_b_size);
 
                     for (int i = 0; i < m_tensor_b_size; i++)
@@ -211,18 +247,23 @@ namespace abcdk
 
                         abcdk_torch_image_t *src_img_p = img[i];
                         abcdk_torch_image_t *dst_img_p = m_input_img_cache[i];
-                        abcdk_resize_scale_t *img_scale_p = &m_input_img_scale[i];
+                        abcdk_resize_scale_t *img_resize_p = &m_input_img_resize[i];
                         abcdk_torch_size_t *img_size_p = &m_input_img_size[i];
 
                         assert(src_img_p->tag == ABCDK_TORCH_TAG_CUDA);
                         assert(src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24);
 
-                        abcdk_resize_ratio_2d(img_scale_p, src_img_p->width, src_img_p->eight, m_tensor_w_size, m_tensor_h_size, m_input_img_kar);
+                        abcdk_resize_ratio_2d(img_resize_p, src_img_p->width, src_img_p->height, m_tensor_w_size, m_tensor_h_size, m_input_img_kar);
 
                         /*缩放或复制。*/
                         abcdk_torch_imgproc_resize_cuda(dst_img_p, NULL, src_img_p, NULL, m_input_img_kar, NPPI_INTER_CUBIC);
 
+                        abcdk_torch_tensor_copy_block_cuda(m_tensor_mem_u8_gpu, i, dst_img_p->data[0], dst_img_p->stride[0]);
                     }
+
+                    abcdk_torch_tensorproc_blob_8u_to_32f_cuda(m_tensor_mem_f32_gpu, m_tensor_mem_u8_gpu, m_input_img_scale, m_input_img_mean, m_input_img_std);
+
+                    return 0;
                 }
             };
 
@@ -232,4 +273,4 @@ namespace abcdk
 
 #endif // #if defined(__cuda_cuda_h__) && defined(NV_INFER_H)
 
-#endif // ABCDK_TORCH_NVIDIA_INFER_UTIL_HXX
+#endif // ABCDK_TORCH_NVIDIA_INFER_BINDING_HXX

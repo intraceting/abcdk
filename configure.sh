@@ -142,7 +142,8 @@ MSGCAT_BIN=$(which msgcat)
 
 #
 COMPILER_PREFIX=/usr/bin/
-COMPILER_NAME=gcc
+COMPILER_C_NAME=gcc
+COMPILER_CXX_NAME=g++
 
 #
 COMPILER_C_FLAGS=""
@@ -231,9 +232,13 @@ VARIABLE:
 
      COMPILER_PREFIX(C/C++编译器路径的前缀)与编译器名字组成完整路径.
 
-     COMPILER_NAME=${COMPILER_NAME}
+     COMPILER_C_NAME=${COMPILER_C_NAME}
 
-     COMPILER_NAME(C/C++编译器的名字)与编译器前缀组成完整路径.
+     COMPILER_C_NAME(C编译器的名字)与编译器前缀组成完整路径.
+
+     COMPILER_CXX_NAME=${COMPILER_CXX_NAME}
+
+     COMPILER_CXX_NAME(C++编译器的名字)与编译器前缀组成完整路径.
 
      COMPILER_C_FLAGS=${COMPILER_C_FLAGS}
 
@@ -328,10 +333,11 @@ if [ "${INSTALL_PREFIX}" == "" ] || [ "${INSTALL_PREFIX}" == "/" ];then
 fi
 
 #
-TARGET_COMPILER_BIN=${COMPILER_PREFIX}${COMPILER_NAME}
+TARGET_COMPILER_C=${COMPILER_PREFIX}${COMPILER_C_NAME}
+TARGET_COMPILER_CXX=${COMPILER_PREFIX}${COMPILER_CXX_NAME}
 
 #
-CheckSTD c "${TARGET_COMPILER_BIN}" "c99"
+CheckSTD c "${TARGET_COMPILER_C}" "c99"
 if [ $? -ne 0 ];then
 {
     echo "The compiler supports at least the c99 standard."
@@ -340,7 +346,7 @@ if [ $? -ne 0 ];then
 fi
 
 #
-CheckSTD cxx "${TARGET_COMPILER_BIN}" "c++11"
+CheckSTD cxx "${TARGET_COMPILER_CXX}" "c++11"
 if [ $? -ne 0 ];then
 {
     echo "The compiler supports at least the c++11 standard."
@@ -349,12 +355,11 @@ if [ $? -ne 0 ];then
 fi
 
 #
-TARGET_COMPILER_AR=$(GetCompilerProgName "${TARGET_COMPILER_BIN}" "ar")
-TARGET_MACHINE=$(GetCompilerMachine "${TARGET_COMPILER_BIN}" )
-TARGET_PLATFORM=$(GetCompilerPlatform "${TARGET_COMPILER_BIN}")
-TARGET_ARCH=$(GetCompilerArch "${TARGET_COMPILER_BIN}")
-TARGET_BITWIDE=$(GetCompilerBitWide "${TARGET_COMPILER_BIN}")
-
+TARGET_COMPILER_AR=$(GetCompilerProgName "${TARGET_COMPILER_C}" "ar")
+TARGET_MACHINE=$(GetCompilerMachine "${TARGET_COMPILER_C}" )
+TARGET_PLATFORM=$(GetCompilerPlatform "${TARGET_COMPILER_C}")
+TARGET_ARCH=$(GetCompilerArch "${TARGET_COMPILER_C}")
+TARGET_BITWIDE=$(GetCompilerBitWide "${TARGET_COMPILER_C}")
 
 #
 CheckHavePackage pkgconfig 1
@@ -565,7 +570,8 @@ XGETTEXT = ${XGETTEXT_BIN}
 MSGFMT = ${MSGFMT_BIN}
 MSGCAT = ${MSGCAT_BIN}
 #
-CC = ${TARGET_COMPILER_BIN}
+CC = ${TARGET_COMPILER_C}
+CXX = ${TARGET_COMPILER_CXX}
 AR = ${TARGET_COMPILER_AR}
 #
 NVCC = ${CUDA_COMPILER_BIN}

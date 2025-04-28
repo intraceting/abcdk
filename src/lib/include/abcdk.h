@@ -168,6 +168,7 @@
 #include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/stitcher.h"
 #include "abcdk/torch/calibrate.h"
+#include "abcdk/torch/infer.h"
 
 
 #endif //ABCDK_H

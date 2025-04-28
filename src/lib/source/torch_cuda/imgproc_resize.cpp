@@ -16,7 +16,7 @@ static int _abcdk_torch_imgproc_resize_8u_cuda(int channels, int packed,
 {
     NppiSize tmp_src_size = {0};
     NppiRect tmp_dst_roi = {0}, tmp_src_roi = {0};
-    abcdk_resize_t tmp_param = {0};
+    abcdk_resize_scale_t tmp_param = {0};
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
 
     assert(channels == 1 || channels == 3 || channels == 4);

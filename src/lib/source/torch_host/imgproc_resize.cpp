@@ -16,7 +16,7 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
                                                const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
                                                int keep_aspect_ratio, int inter_mode)
 {
-    abcdk_resize_t tmp_param = {0};
+    abcdk_resize_scale_t tmp_param = {0};
     cv::Rect tmp_dst_roi, tmp_src_roi;
     cv::Mat tmp_dst, tmp_src;
     cv::Mat tmp_dst2;

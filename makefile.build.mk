@@ -156,19 +156,19 @@ $(OBJ_PATH)/src/lib/source/torch_host/%.o: src/lib/source/torch_host/%.c
 $(OBJ_PATH)/src/lib/source/rtsp/%.cpp.o: src/lib/source/rtsp/%.cpp
 	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
 	rm -f $@
-	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/src/lib/source/torch_host/%.cpp.o: src/lib/source/torch_host/%.cpp
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
 	rm -f $@
-	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
 $(OBJ_PATH)/src/lib/source/torch_cuda/%.cpp.o: src/lib/source/torch_cuda/%.cpp
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
 	rm -f $@
-	$(CC) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 	
 #
 $(OBJ_PATH)/src/lib/source/torch_cuda/%.cu.o: src/lib/source/torch_cuda/%.cu
