@@ -100,7 +100,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libnvinfer.so)"
         checkReturnCode
 
-        echo "-lnvinfer -lnvparsers -lnvinfer_plugin  -lnvcaffe_parser -lnvonnxparser  ${LDFLAG}"
+        echo "-lnvinfer -lnvparsers -lnvinfer_plugin -lnvonnxparser  ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "tensorrt-dev"
@@ -124,7 +124,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libnvinfer.so)"
         checkReturnCode
 
-        echo "-lnvinfer -lnvparsers -lnvinfer_plugin  -lnvcaffe_parser -lnvonnxparser  ${LDFLAG}"
+        echo "-lnvinfer -lnvparsers -lnvinfer_plugin -lnvonnxparser  ${LDFLAG}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "tensorrt-devel"

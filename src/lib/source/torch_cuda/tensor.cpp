@@ -147,20 +147,20 @@ int abcdk_torch_tensor_copy_block_cuda(abcdk_torch_tensor_t *dst, int dst_block,
     assert(dst->block > dst_block);
     assert(dst->stride <= src_stride);
 
-    dst_off = abcdk_torch_tensor_offset(dst->format, dst->block, dst->width, dst->stride, dst->height, dst->depth, dst->cell, dst_block, 0, 0, 0);
+    dst_off = abcdk_torch_tenutil_offset(dst->format, dst->block, dst->width, dst->stride, dst->height, dst->depth, dst->cell, dst_block, 0, 0, 0);
     dst_data = ABCDK_PTR2U8PTR(dst->data, dst_off);
 
     if (dst->format == ABCDK_TORCH_TENFMT_NHWC)
     {
         abcdk_torch_memcpy_2d_cuda(dst_data, dst->stride, 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
                                    src_data, src_stride, 0, 0, 1,
-                                   dst->cell * dst->depth * dst->width, dst->block * dst->height);
+                                   dst->cell * dst->depth * dst->width, dst->height);
     }
     else if (dst->format == ABCDK_TORCH_TENFMT_NCHW)
     {
         abcdk_torch_memcpy_2d_cuda(dst_data, dst->stride, 0, 0, (dst->tag == ABCDK_TORCH_TAG_HOST),
                                    src_data, src_stride, 0, 0, 1,
-                                   dst->cell * dst->width, dst->block * dst->depth * dst->height);
+                                   dst->cell * dst->width,  dst->depth * dst->height);
     }
 
     return 0;

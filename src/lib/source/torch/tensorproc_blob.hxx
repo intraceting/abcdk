@@ -25,10 +25,10 @@ namespace abcdk
              */
             template <typename DT, typename ST>
             ABCDK_TORCH_INVOKE_DEVICE void blob(bool dst_packed, DT *dst, size_t dst_ws,
-                                          bool src_packed, ST *src, size_t src_ws,
-                                          size_t b, size_t w, size_t h, size_t c,
-                                          bool revert, float *scale, float *mean, float *std,
-                                          size_t tid)
+                                                bool src_packed, ST *src, size_t src_ws,
+                                                size_t b, size_t w, size_t h, size_t c,
+                                                bool revert, float *scale, float *mean, float *std,
+                                                size_t tid)
             {
                 size_t n, x, y, z;
                 size_t hw;

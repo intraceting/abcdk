@@ -15,8 +15,8 @@ ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_tensorproc_reshape_1d(bool dst_packed,
     for (size_t i = 0; i < dst_b * dst_w * dst_h * dst_c; i++)
     {
         abcdk::torch::tensorproc::reshape(dst_packed, dst, dst_b, dst_w, dst_ws, dst_h, dst_c,
-                                            src_packed, src, src_b, src_w, src_ws, src_h, src_c,
-                                            cell, i);
+                                          src_packed, src, src_b, src_w, src_ws, src_h, src_c,
+                                          cell, i);
     }
 }
 

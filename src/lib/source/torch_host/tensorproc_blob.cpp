@@ -9,23 +9,23 @@
 
 template <typename DT, typename ST>
 ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_tensorproc_blob_1d(bool dst_packed, DT *dst, size_t dst_ws,
-                                                       bool src_packed, ST *src, size_t src_ws,
-                                                       size_t b, size_t w, size_t h, size_t c,
-                                                       bool revert, float *scale, float *mean, float *std)
+                                                             bool src_packed, ST *src, size_t src_ws,
+                                                             size_t b, size_t w, size_t h, size_t c,
+                                                             bool revert, float *scale, float *mean, float *std)
 {
     // #pragma omp parallel
     for (size_t i = 0; i < b * w * h * c; i++)
     {
         abcdk::torch::tensorproc::blob<DT, ST>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c,
-                                                 revert, scale, mean, std, i);
+                                               revert, scale, mean, std, i);
     }
 }
 
 template <typename DT, typename ST>
 ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_tensorproc_blob(bool dst_packed, DT *dst, size_t dst_ws,
-                                                   bool src_packed, ST *src, size_t src_ws,
-                                                   size_t b, size_t w, size_t h, size_t c,
-                                                   bool revert, float *scale, float *mean, float *std)
+                                                         bool src_packed, ST *src, size_t src_ws,
+                                                         size_t b, size_t w, size_t h, size_t c,
+                                                         bool revert, float *scale, float *mean, float *std)
 {
     assert(dst != NULL && dst_ws > 0);
     assert(src != NULL && src_ws > 0);
@@ -68,7 +68,7 @@ int abcdk_torch_tensorproc_blob_32f_to_8u_host(abcdk_torch_tensor_t *dst, const 
     assert(dst->height == src->height);
     assert(dst->depth == src->depth);
     assert(dst->cell == sizeof(uint8_t) && src->cell == sizeof(float));
-    
+
     assert(dst->tag == ABCDK_TORCH_TAG_HOST);
     assert(src->tag == ABCDK_TORCH_TAG_HOST);
 

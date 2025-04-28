@@ -7,7 +7,7 @@
 #ifndef ABCDK_TORCH_NVIDIA_H
 #define ABCDK_TORCH_NVIDIA_H
 
-
+/*CUDA interface.*/
 #ifdef HAVE_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -19,6 +19,13 @@
 #include <nvjpeg.h>
 #endif //__x86_64__
 #endif //HAVE_CUDA
+
+/*TensorRT interface.*/
+#ifdef HAVE_TENSORRT
+#include "NvInfer.h"
+#include "NvInferPlugin.h"
+#include "NvOnnxParser.h"
+#endif //HAVE_TENSORRT
 
 __BEGIN_DECLS
 

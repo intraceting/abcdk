@@ -25,7 +25,7 @@ typedef struct _abcdk_point
 } abcdk_point_t;
 
 /** 尺寸变换系数。*/
-typedef struct _abcdk_resize
+typedef struct _abcdk_resize_scale
 {
 	/** X轴因子。 */
 	double x_factor;
@@ -39,7 +39,7 @@ typedef struct _abcdk_resize
     /** Y轴位移。*/
 	double y_shift;
 
-}abcdk_resize_t;
+}abcdk_resize_scale_t;
 
 /**
  * 计算空间两点之间的直线距离。
@@ -76,21 +76,21 @@ void abcdk_point_shift_2d(const abcdk_point_t *b,double radian,double dist,abcdk
  * 
  * @param keep_ratio !0 保持纵横比，0 不保持纵横比。
 */
-void abcdk_resize_ratio_2d(abcdk_resize_t *ratio,double src_w, double src_h,double dst_w, double dst_h,int keep_ratio);
+void abcdk_resize_ratio_2d(abcdk_resize_scale_t *ratio,double src_w, double src_h,double dst_w, double dst_h,int keep_ratio);
 
 /**
  * 源图到目标图坐标变换。
  * 
  * @param x !0 X轴坐标，0 Y轴坐标。
 */
-double abcdk_resize_src2dst_2d(const abcdk_resize_t *ratio,double src, int x);
+double abcdk_resize_src2dst_2d(const abcdk_resize_scale_t *ratio,double src, int x);
 
 /**
  * 目标图到源图坐标变换。
  * 
  * @param x !0 X轴坐标，0 Y轴坐标。
 */
-double abcdk_resize_dst2src_2d(const abcdk_resize_t *ratio,double dst, int x);
+double abcdk_resize_dst2src_2d(const abcdk_resize_scale_t *ratio,double dst, int x);
 
 /**
  * 测试点是否多边形内部。

@@ -48,8 +48,8 @@ size_t abcdk_torch_tenutil_size(int format, size_t block, size_t width, size_t s
     return size;
 }
 
-size_t abcdk_torch_tensor_offset(int format, size_t block, size_t width, size_t stride, size_t height, size_t depth, size_t cell,
-                                 size_t n, size_t x, size_t y, size_t z)
+size_t abcdk_torch_tenutil_offset(int format, size_t block, size_t width, size_t stride, size_t height, size_t depth, size_t cell,
+                                  size_t n, size_t x, size_t y, size_t z)
 {
 
     size_t off = 0;

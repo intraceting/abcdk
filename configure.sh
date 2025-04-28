@@ -155,7 +155,7 @@ BUILD_TYPE="release"
 OPTIMIZE_LEVEL=""
 
 #
-THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,live555,"
+THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,tensorrt,ffnvcodec,live555,"
 THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_FIND_ROOT=""
@@ -253,13 +253,14 @@ VARIABLE:
      ffmpeg,json-c,lz4,cuda,cudnn,ffnvcodec,
      unixodbc,opencv,openssl,redis,sqlite,curl,
      archive,nghttp2,libmagic,gtk,appindicator,
+     tensorrt,live555,x264,x265,
      freeimage,fuse,libnm,zlib,
      openmp,modbus,libusb,mqtt,
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,qrencode,zbar,magickwand,
      kafka,uuid,libdrm,
-     pam,ncurses,fltk,x264,x265,
-     tensorrt,live555
+     pam,ncurses,fltk,
+     
 
      THIRDPARTY_FIND_ROOT=\${INSTALL_PREFIX}
 

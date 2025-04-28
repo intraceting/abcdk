@@ -140,7 +140,7 @@ int abcdk_torch_tensor_copy_block_host(abcdk_torch_tensor_t *dst, int dst_block,
     assert(dst->tag == ABCDK_TORCH_TAG_HOST);
     assert(dst->stride <= src_stride);
 
-    dst_off = abcdk_torch_tensor_offset(dst->format, dst->block, dst->width, dst->stride, dst->height, dst->depth, dst->cell, dst_block, 0, 0, 0);
+    dst_off = abcdk_torch_tenutil_offset(dst->format, dst->block, dst->width, dst->stride, dst->height, dst->depth, dst->cell, dst_block, 0, 0, 0);
     dst_data = ABCDK_PTR2U8PTR(dst->data, dst_off);
 
     if (dst->format == ABCDK_TORCH_TENFMT_NHWC)
