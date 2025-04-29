@@ -44,6 +44,42 @@ typedef struct _abcdk_torch_rect
     int height;
 } abcdk_torch_rect_t;
 
+/**维度。*/
+typedef struct _abcdk_torch_dims
+{
+    int32_t nb;
+    int64_t d[8];
+} abcdk_torch_dims_t;
+
+/**检测框。*/
+typedef struct _abcdk_torch_bbox
+{
+    /*标签。*/
+    int label;
+
+    /*坐标。*/
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+
+    /*评分。*/
+    int score;
+
+    /*关键点。x,y*/
+    int nkeypoint;
+    int *kp;
+
+    /*特征。*/
+    int nfeature;
+    float *ft;
+
+    /*分割。*/
+    int seg_step;
+    uint8_t *seg;
+
+} abcdk_torch_bbox_t;
+
 /** 
  * 初始化。
  * 

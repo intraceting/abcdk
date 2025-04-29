@@ -24,7 +24,6 @@ namespace abcdk
         {
             class tensor
             {
-
             public:
                 static inline size_t type_size(nvinfer1::DataType type)
                 {
@@ -242,15 +241,15 @@ namespace abcdk
                         if (!m_data || !m_input_data)
                             return -1;
 
-                        chk = sscanf(img_scale_p, "%d,%d,%d", &m_input_img_scale[0], &m_input_img_scale[1], &m_input_img_scale[2]);
+                        chk = sscanf(img_scale_p, "%f,%f,%f", &m_input_img_scale[0], &m_input_img_scale[1], &m_input_img_scale[2]);
                         if (chk != 3)
                             return -2;
 
-                        chk = sscanf(img_mean_p, "%d,%d,%d", &m_input_img_mean[0], &m_input_img_mean[1], &m_input_img_mean[2]);
+                        chk = sscanf(img_mean_p, "%f,%f,%f", &m_input_img_mean[0], &m_input_img_mean[1], &m_input_img_mean[2]);
                         if (chk != 3)
                             return -3;
 
-                        chk = sscanf(img_std_p, "%d,%d,%d", &m_input_img_std[0], &m_input_img_std[1], &m_input_img_std[2]);
+                        chk = sscanf(img_std_p, "%f,%f,%f", &m_input_img_std[0], &m_input_img_std[1], &m_input_img_std[2]);
                         if (chk != 3)
                             return -4;
 
