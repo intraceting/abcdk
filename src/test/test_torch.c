@@ -495,7 +495,38 @@ int abcdk_test_torch_5(abcdk_option_t *args)
 
     int chk;
 
-    chk = abcdk_torch_infer_model_forward(dst,src,args);
+    chk = abcdk_torch_inferutil_model_forward(dst,src,args);
+    
+    return 0;
+}
+
+
+int abcdk_test_torch_6(abcdk_option_t *args)
+{
+    const char *model = abcdk_option_get(args,"--model",0,"");
+    const char *img_src = abcdk_option_get(args,"--img-src",0,"");
+
+    int chk;
+
+    abcdk_torch_infer_t *ctx = abcdk_torch_infer_alloc();
+
+    chk = abcdk_torch_infer_load_model(ctx,model,args);
+    assert(chk == 0);
+
+    
+    abcdk_torch_image_t *vec_img[100] = {0};
+
+    int count = 1;
+
+    vec_img[0] = abcdk_torch_imgcode_load(img_src);
+
+    chk = abcdk_torch_infer_execute(ctx,count,vec_img);
+    assert(chk == 0);
+
+    for(int i = 0;i<100;i++)
+        abcdk_torch_image_free(&vec_img[i]);
+
+    abcdk_torch_infer_free(&ctx);
     
     return 0;
 }
@@ -530,7 +561,8 @@ int abcdk_test_torch(abcdk_option_t *args)
 #endif //HAVE_FFMPEG
     else if (cmd == 5)
         return abcdk_test_torch_5(args);
-
+    else if (cmd == 6)
+        return abcdk_test_torch_6(args);
 
     abcdk_torch_context_current_set(NULL);
     abcdk_torch_context_destroy(&torch_ctx);

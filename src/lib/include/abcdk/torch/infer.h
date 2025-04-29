@@ -12,26 +12,82 @@
 
 __BEGIN_DECLS
 
-/**
- * 模型加速。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_torch_infer_model_forward_host(const char *dst,const char *src, abcdk_option_t *opt);
+/**推理引擎。*/
+typedef struct _abcdk_torch_infer
+{
+    /**标签。*/
+    uint32_t tag;
 
+    /**私有环境。*/
+    void *private_ctx;
 
-/**
- * 模型加速。
- * 
- * @return 0 成功，-1 失败。
-*/
-int abcdk_torch_infer_model_forward_cuda(const char *dst,const char *src, abcdk_option_t *opt);
+} abcdk_torch_infer_t;
+
+/**释放。*/
+void abcdk_torch_infer_free_host(abcdk_torch_infer_t **ctx);
+
+/**释放。*/
+void abcdk_torch_infer_free_cuda(abcdk_torch_infer_t **ctx);
 
 #ifdef ABCDK_TORCH_USE_CUDA
-#define abcdk_torch_infer_model_forward abcdk_torch_infer_model_forward_cuda
-#else // ABCDK_TORCH_USE_HOST
-#define abcdk_torch_infer_model_forward abcdk_torch_infer_model_forward_host
+#define abcdk_torch_infer_free abcdk_torch_infer_free_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_infer_free abcdk_torch_infer_free_host
 #endif //
+
+/**申请。*/
+abcdk_torch_infer_t *abcdk_torch_infer_alloc_host();
+
+/**申请。*/
+abcdk_torch_infer_t *abcdk_torch_infer_alloc_cuda();
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_infer_alloc abcdk_torch_infer_alloc_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_infer_alloc abcdk_torch_infer_alloc_host
+#endif //
+
+
+/**
+ * 加载模型。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_infer_load_model_host(abcdk_torch_infer_t *ctx, const char *file, abcdk_option_t *opt);
+
+/**
+ * 加载模型。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_infer_load_model_cuda(abcdk_torch_infer_t *ctx, const char *file, abcdk_option_t *opt);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_infer_load_model abcdk_torch_infer_load_model_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_infer_load_model abcdk_torch_infer_load_model_host
+#endif //
+
+/**
+ * 推理。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_infer_execute_host(abcdk_torch_infer_t *ctx, int count, abcdk_torch_image_t *img[]);
+
+/**
+ * 推理。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_torch_infer_execute_cuda(abcdk_torch_infer_t *ctx, int count, abcdk_torch_image_t *img[]);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_infer_execute abcdk_torch_infer_execute_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_infer_execute abcdk_torch_infer_execute_host
+#endif //
+
 
 __END_DECLS
 

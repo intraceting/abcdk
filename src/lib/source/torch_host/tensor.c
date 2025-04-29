@@ -82,6 +82,7 @@ int abcdk_torch_tensor_reset_host(abcdk_torch_tensor_t **ctx, int format, size_t
 
     ctx_p->data = (uint8_t *)ctx_p->private_ctx;
     ctx_p->format = format;
+    ctx_p->block = block;
     ctx_p->width = width;
     ctx_p->height = height;
     ctx_p->depth = depth;

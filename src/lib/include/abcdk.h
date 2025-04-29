@@ -169,6 +169,7 @@
 #include "abcdk/torch/stitcher.h"
 #include "abcdk/torch/calibrate.h"
 #include "abcdk/torch/infer.h"
+#include "abcdk/torch/inferutil.h"
 
 
 #endif //ABCDK_H

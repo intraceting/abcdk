@@ -7,61 +7,122 @@
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/infer.h"
-#include "infer_forward.hxx"
+#include "infer_engine.hxx"
 
 __BEGIN_DECLS
 
 #if defined(__cuda_cuda_h__) && defined(NV_INFER_H)
 
-
-int abcdk_torch_infer_model_forward_cuda(const char *dst,const char *src, abcdk_option_t *opt)
+void abcdk_torch_infer_free_cuda(abcdk_torch_infer_t **ctx)
 {
-    abcdk::torch_cuda::infer::forward forward;
-    int dla_core;
-    const char *data_type_p;
-    const char *input_tensor_index_p;
-    const char *input_tensor_dims_p;
-    int input_tensor_new_dims[4];
-    int input_tensor_old_dims[4];
-    int input_tensor_idx_dims[4];
+    abcdk_torch_infer_t *ctx_p;
+    abcdk::torch_cuda::infer::engine *cu_ctx_p;
+
+    if (!ctx || !*ctx)
+        return;
+
+    ctx_p = (abcdk_torch_infer_t *)*ctx;
+    *ctx = NULL;
+
+    assert(ctx_p->tag == ABCDK_TORCH_TAG_CUDA);
+
+    cu_ctx_p = (abcdk::torch_cuda::infer::engine *)ctx_p->private_ctx;
+
+    abcdk::torch::memory::delete_object(&cu_ctx_p);
+    abcdk_heap_free(ctx_p);
+}
+
+abcdk_torch_infer_t *abcdk_torch_infer_alloc_cuda()
+{
+    abcdk_torch_infer_t *ctx;
+
+    ctx = (abcdk_torch_infer_t *)abcdk_heap_alloc(sizeof(abcdk_torch_infer_t));
+    if(!ctx)
+        return NULL;
+
+    ctx->tag = ABCDK_TORCH_TAG_CUDA;
+
+    ctx->private_ctx = new abcdk::torch_cuda::infer::engine();
+    if(!ctx->private_ctx)
+        goto ERR;
+
+    return ctx;
+
+ERR:
+
+    abcdk_torch_infer_free_cuda(&ctx);
+    return NULL;
+}
+
+int abcdk_torch_infer_load_model_cuda(abcdk_torch_infer_t *ctx, const char *file, abcdk_option_t *opt)
+{
+    abcdk::torch_cuda::infer::engine *cu_ctx_p;
     int chk;
 
-    assert(dst != NULL && src != NULL && opt != NULL);
+    assert(ctx != NULL && file != NULL);
 
-    dla_core = abcdk_option_get_int(opt,"--dla-core",0,-1);
-    data_type_p = abcdk_option_get(opt,"--data-type",0,"fp32");
-    input_tensor_index_p = abcdk_option_get(opt,"--input-tensor-dims-index",0,"0,1,2,3");
-    input_tensor_dims_p = abcdk_option_get(opt,"--input-tensor-dims-size",0,"-1,-1,-1,-1");
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
 
-    sscanf(input_tensor_index_p, "%d,%d,%d,%d", &input_tensor_idx_dims[0], &input_tensor_idx_dims[1], &input_tensor_idx_dims[2], &input_tensor_idx_dims[3]);
-    sscanf(input_tensor_dims_p, "%d,%d,%d,%d", &input_tensor_new_dims[0], &input_tensor_new_dims[1], &input_tensor_new_dims[2], &input_tensor_new_dims[3]);
+    cu_ctx_p = (abcdk::torch_cuda::infer::engine *)ctx->private_ctx;
 
-    chk = forward.create((uint32_t)nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+    chk = cu_ctx_p->load(file);
     if(chk != 0)
         return -1;
 
-    chk = forward.load_onnx(src);
+    chk = cu_ctx_p->prepare(opt);
     if(chk != 0)
         return -1;
-        
-    initLibNvInferPlugins((void*)forward.logger_ctx(),"");
 
-    forward.get_input_dims(input_tensor_old_dims, input_tensor_idx_dims, 0);
+    return 0;
+}
 
-    for (int i = 0; i < 4; i++)
+int abcdk_torch_infer_execute_cuda(abcdk_torch_infer_t *ctx, int count, abcdk_torch_image_t *img[])
+{
+    abcdk::torch_cuda::infer::engine *cu_ctx_p;
+    std::vector<abcdk_torch_image_t *> tmp_img;
+    int chk;
+
+    assert(ctx != NULL && count > 0 && img != NULL);
+
+    assert(ctx->tag == ABCDK_TORCH_TAG_CUDA);
+
+    cu_ctx_p = (abcdk::torch_cuda::infer::engine *)ctx->private_ctx;
+
+    tmp_img.resize(count);
+    for (int i = 0; i < count; i++)
     {
-        if (input_tensor_new_dims[i] < 0)
-            input_tensor_new_dims[i] = input_tensor_old_dims[i];
+        tmp_img[i] = img[i];
     }
 
-    forward.set_input_dims(input_tensor_new_dims, input_tensor_idx_dims, 0);
+    chk = cu_ctx_p->execute(tmp_img);
+    if(chk != 0)
+        return -1;
 
     return 0;
 }
 
 #else // #if defined(__cuda_cuda_h__) && defined(NV_INFER_H)
 
-int abcdk_torch_infer_model_forward_cuda(const char *dst,const char *src, abcdk_option_t *opt)
+
+void abcdk_torch_infer_free_cuda(abcdk_torch_infer_t **ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或TensorRT工具。"));
+    return ;
+}
+
+abcdk_torch_infer_t *abcdk_torch_infer_alloc_cuda()
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或TensorRT工具。"));
+    return NULL;
+}
+
+int abcdk_torch_infer_load_model_cuda(abcdk_torch_infer_t *ctx, const char *file, abcdk_option_t *opt)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或TensorRT工具。"));
+    return -1;
+}
+
+int abcdk_torch_infer_execute_cuda(abcdk_torch_infer_t *ctx, int count, abcdk_torch_image_t *img[])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA或TensorRT工具。"));
     return -1;

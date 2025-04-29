@@ -127,11 +127,40 @@ namespace abcdk
                     return 0;
                 }
 
+                int load_onnx(const char *file)
+                {
+                    bool chk_bool;
+
+                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL);
+
+                    assert(file != NULL);
+
+                    abcdk::torch::memory::delete_object(&m_onnx_ctx);
+
+                    m_onnx_ctx = nvonnxparser::createParser(*m_network_ctx, m_logger);
+                    if (!m_onnx_ctx)
+                        return -1;
+
+                    chk_bool = m_onnx_ctx->parseFromFile(file, (int)nvinfer1::ILogger::Severity::kVERBOSE);
+                    if (!chk_bool)
+                        return -2;
+
+                    return 0;
+                }
+
                 void enable_dla(int core = 0)
                 {
                     int core_nb;
 
-                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL);
+                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL && m_onnx_ctx != NULL);
+
+                    /*
+                     * core = 0，用第一个 DLA 核心
+                     * core = 1，用第二个 DLA 核心（如果有）
+                     * core = -1（默认值），表示不使用 DLA，用普通的 GPU。
+                    */
+                    if(core < 0)
+                        return;
 
                     core_nb = m_builder_ctx->getNbDLACores();
 
@@ -158,7 +187,7 @@ namespace abcdk
 
                 int build()
                 {
-                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL);
+                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL && m_onnx_ctx != NULL);
 
                     abcdk::torch::memory::delete_object(&m_engine_ctx);
                     abcdk::torch::memory::delete_object(&m_stream_ctx);
@@ -174,26 +203,6 @@ namespace abcdk
                     return 0;
                 }
 
-                int load_onnx(const char *file)
-                {
-                    bool chk_bool;
-
-                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL);
-
-                    assert(file != NULL);
-
-                    abcdk::torch::memory::delete_object(&m_onnx_ctx);
-
-                    m_onnx_ctx = nvonnxparser::createParser(*m_network_ctx, m_logger);
-                    if (!m_onnx_ctx)
-                        return -1;
-
-                    chk_bool = m_onnx_ctx->parseFromFile(file, (int)nvinfer1::ILogger::Severity::kVERBOSE);
-                    if (!chk_bool)
-                        return -2;
-
-                    return 0;
-                }
 
                 int get_input_nb()
                 {
@@ -202,11 +211,9 @@ namespace abcdk
                     return m_network_ctx->getNbInputs();
                 }
 
-                int get_input_dims(int bchw[4], const int idx[4], int layer = 0)
+                int get_input_dims(nvinfer1::Dims &bchw, const nvinfer1::Dims &idx, int layer = 0)
                 {
                     assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL && m_onnx_ctx != NULL);
-
-                    assert(bchw != NULL && idx != NULL && layer >= 0);
 
                     nvinfer1::ITensor *tensor_p = m_network_ctx->getInput(layer);
                     if (!tensor_p)
@@ -214,27 +221,27 @@ namespace abcdk
 
                     nvinfer1::Dims dims = tensor_p->getDimensions();
 
-                    for (int i = 0; i < 4; i++)
+                    bchw.nbDims = dims.nbDims;
+                    for (int i = 0; i < dims.nbDims; i++)
                     {
-                        if (idx[i] >= 0 && dims.nbDims > idx[i])
-                            bchw[i] = dims.d[idx[i]];
+                        if (idx.d[i] >= 0 && dims.nbDims > idx.d[i])
+                            bchw.d[i] = dims.d[idx.d[i]];
                     }
 
                     return 0;
                 }
 
-                int set_input_dims(int bchw[4], const int idx[4], int layer = 0)
+                int set_input_dims(nvinfer1::Dims &bchw, const nvinfer1::Dims &idx, int layer = 0)
                 {
-                    nvinfer1::Dims4 dims;
+                    nvinfer1::Dims dims;
 
                     assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL && m_onnx_ctx != NULL);
 
-                    assert(bchw != NULL && idx != NULL && layer >= 0);
-
-                    for (int i = 0; i < 4; i++)
+                    dims.nbDims = bchw.nbDims;
+                    for (int i = 0; i < dims.nbDims; i++)
                     {
-                        if (idx[i] >= 0 && dims.nbDims > idx[i])
-                            dims.d[idx[i]] = bchw[i];
+                        if (idx.d[i] >= 0 && dims.nbDims > idx.d[i])
+                            dims.d[idx.d[i]] = bchw.d[i];
                     }
 
                     nvinfer1::ITensor *tensor_p = m_network_ctx->getInput(layer);
@@ -246,31 +253,27 @@ namespace abcdk
                     return 0;
                 }
 
-                void set_fp16()
+                void set_flag(int flag)
                 {
                     assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL);
 
-                    if (m_builder_ctx->platformHasFastFp16())
+                    if (nvinfer1::BuilderFlag::kFP16 == (nvinfer1::BuilderFlag)flag)
                     {
-                        m_config_ctx->setFlag(nvinfer1::BuilderFlag::kFP16);
+                        if (m_builder_ctx->platformHasFastFp16())
+                            m_config_ctx->setFlag(nvinfer1::BuilderFlag::kFP16);
+                        else
+                            abcdk_trace_printf(LOG_INFO, TT("不支持FP16，忽略并使用默认类型。"));
+                    }
+                    else if (nvinfer1::BuilderFlag::kINT8 == (nvinfer1::BuilderFlag)flag)
+                    {
+                        if (m_builder_ctx->platformHasFastInt8())
+                            m_config_ctx->setFlag(nvinfer1::BuilderFlag::kINT8);
+                        else
+                            abcdk_trace_printf(LOG_INFO, TT("不支持int8，忽略并使用默认类型。"));
                     }
                     else
                     {
-                        abcdk_trace_printf(LOG_INFO, TT("不支持FP16，忽略并使用默认类型。"));
-                    }
-                }
-
-                void set_int8()
-                {
-                    assert(m_builder_ctx != NULL && m_config_ctx != NULL && m_network_ctx != NULL);
-
-                    if (m_builder_ctx->platformHasFastInt8())
-                    {
-                        m_config_ctx->setFlag(nvinfer1::BuilderFlag::kINT8);
-                    }
-                    else
-                    {
-                        abcdk_trace_printf(LOG_INFO, TT("不支持int8，忽略并使用默认类型。"));
+                        m_config_ctx->setFlag((nvinfer1::BuilderFlag)flag);
                     }
                 }
             };
