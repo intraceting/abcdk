@@ -11,27 +11,26 @@
 #include <locale.h>
 #include "entry.h"
 
-
 int abcdk_test_torch_1(abcdk_option_t *args)
 {
     int chk;
 
-    int w = 1920 ,h = 1080;
-    //int w = 1920-1 ,h = 1080-1;
+    int w = 1920, h = 1080;
+    // int w = 1920-1 ,h = 1080-1;
 
     abcdk_torch_image_t *a = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 4);
     abcdk_torch_image_t *b = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR24, 8);
 
     uint32_t scalar[3] = {0, 0, 255};
-    abcdk_torch_imgproc_stuff(a, scalar,NULL);
+    abcdk_torch_imgproc_stuff(a, scalar, NULL);
 
-    //abcdk_torch_imgcode_save("/tmp/test.cuda.a1.bmp", a);
+    // abcdk_torch_imgcode_save("/tmp/test.cuda.a1.bmp", a);
 
-    abcdk_torch_image_t *aa = abcdk_torch_image_clone(1,a);
-    abcdk_bmp_save_file("/tmp/test.cuda.a1.bmp",aa->data[0],aa->stride[0],aa->width,-aa->height,24);
+    abcdk_torch_image_t *aa = abcdk_torch_image_clone(1, a);
+    abcdk_bmp_save_file("/tmp/test.cuda.a1.bmp", aa->data[0], aa->stride[0], aa->width, -aa->height, 24);
     abcdk_torch_image_free_host(&aa);
 
-    uint32_t color[4] = {255, 0,0, 0};
+    uint32_t color[4] = {255, 0, 0, 0};
     int corner[4] = {10, 10, 100, 100};
 
     abcdk_torch_imgproc_drawrect(a, color, 3, corner);
@@ -48,16 +47,16 @@ int abcdk_test_torch_1(abcdk_option_t *args)
     abcdk_torch_imgcode_save("/tmp/test.cuda.a3.jmp", a);
     abcdk_torch_imgcode_save("/tmp/test.cuda.b.bmp", b);
 
-   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV420P, 567);
-   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV422P, 567);
-   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P, 567);
-    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV12, 1);
-    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_ARGB, 1);
-    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR32, 1);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV420P, 567);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV422P, 567);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P, 567);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV12, 1);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_ARGB, 1);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_BGR32, 1);
     abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_RGB32, 1);
-   // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
-    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
-    //abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P10, 1);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_NV21, 2);
+    // abcdk_torch_image_t *c = abcdk_torch_image_create(w, h, ABCDK_TORCH_PIXFMT_YUV444P10, 1);
 
     abcdk_torch_image_convert(c, a);
 
@@ -112,7 +111,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
     return 0;
 }
 
-#ifdef  HAVE_FFMPEG
+#ifdef HAVE_FFMPEG
 
 int abcdk_test_torch_2(abcdk_option_t *args)
 {
@@ -130,14 +129,13 @@ int abcdk_test_torch_2(abcdk_option_t *args)
 
     abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
 
-
     abcdk_torch_vcodec_param_t dec_param = {0};
 
     dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
     dec_param.ext_data = r_video_steam->codecpar->extradata;
     dec_param.ext_size = r_video_steam->codecpar->extradata_size;
 
-    abcdk_torch_vcodec_start(dec_ctx,&dec_param);
+    abcdk_torch_vcodec_start(dec_ctx, &dec_param);
 
     AVPacket r_pkt;
     av_init_packet(&r_pkt);
@@ -147,7 +145,7 @@ int abcdk_test_torch_2(abcdk_option_t *args)
     abcdk_torch_jcodec_param_t jpeg_param = {0};
     jpeg_param.quality = 99;
 
-    abcdk_torch_jcodec_start(jpeg_w,&jpeg_param);
+    abcdk_torch_jcodec_start(jpeg_w, &jpeg_param);
 
     for (int i = 0; i < 100; i++)
     {
@@ -204,15 +202,14 @@ int abcdk_test_torch_3(abcdk_option_t *args)
     abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
     abcdk_torch_vcodec_t *enc_ctx = abcdk_torch_vcodec_alloc(1);
 
-
-    abcdk_torch_vcodec_param_t dec_param = {0},enc_param = {0};
+    abcdk_torch_vcodec_param_t dec_param = {0}, enc_param = {0};
 
     dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
     dec_param.ext_data = r_video_steam->codecpar->extradata;
     dec_param.ext_size = r_video_steam->codecpar->extradata_size;
 
-    abcdk_torch_vcodec_start(dec_ctx,&dec_param);
-  
+    abcdk_torch_vcodec_start(dec_ctx, &dec_param);
+
     enc_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(AV_CODEC_ID_H264);
     enc_param.fps_d = 1;
     enc_param.fps_n = 25;
@@ -221,7 +218,7 @@ int abcdk_test_torch_3(abcdk_option_t *args)
     enc_param.bitrate = 15000 * 1000;
     enc_param.peak_bitrate = 15000 * 1000;
 
-    abcdk_torch_vcodec_start(enc_ctx,&enc_param);
+    abcdk_torch_vcodec_start(enc_ctx, &enc_param);
 
     AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264, 1);
 
@@ -229,11 +226,11 @@ int abcdk_test_torch_3(abcdk_option_t *args)
 
     enc_opt->width = r_video_steam->codecpar->width;
     enc_opt->height = r_video_steam->codecpar->height;
-    enc_opt->extradata = (uint8_t*)av_memdup(enc_param.ext_data, enc_param.ext_size);
+    enc_opt->extradata = (uint8_t *)av_memdup(enc_param.ext_data, enc_param.ext_size);
     enc_opt->extradata_size = enc_param.ext_size;
     enc_opt->max_b_frames = enc_param.max_b_frames;
     enc_opt->bit_rate_tolerance = enc_param.peak_bitrate;
-    enc_opt->bit_rate = enc_param.bitrate ;
+    enc_opt->bit_rate = enc_param.bitrate;
 
     int w_stream_idx = abcdk_ffeditor_add_stream(w, enc_opt, 1);
 
@@ -262,7 +259,7 @@ int abcdk_test_torch_3(abcdk_option_t *args)
             int chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk < 0)
                 break;
-            else if( chk > 0)
+            else if (chk > 0)
             {
                 abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
                 av_packet_free(&w_pkt);
@@ -283,7 +280,7 @@ int abcdk_test_torch_3(abcdk_option_t *args)
         int chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
         if (chk < 0)
             break;
-        else //if (chk > 0)
+        else // if (chk > 0)
         {
             chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae);
             if (chk <= 0)
@@ -298,10 +295,9 @@ int abcdk_test_torch_3(abcdk_option_t *args)
 
     abcdk_ffeditor_write_trailer(w);
 
-    
     abcdk_torch_vcodec_free(&dec_ctx);
     abcdk_torch_vcodec_free(&enc_ctx);
-    
+
     abcdk_ffeditor_destroy(&r);
     abcdk_ffeditor_destroy(&w);
 
@@ -314,13 +310,11 @@ int abcdk_test_torch_4(abcdk_option_t *args)
     double camera_matrix[3][3] = {0};
     double dist_coeff[5] = {0};
 
-    abcdk_torch_calibrate_param_load_file(&img_size,camera_matrix,dist_coeff,"/tmp/ccc/calibrate-param.xml");
+    abcdk_torch_calibrate_param_load_file(&img_size, camera_matrix, dist_coeff, "/tmp/ccc/calibrate-param.xml");
 
+    abcdk_torch_image_t *xmap = NULL, *ymap = NULL;
 
-    abcdk_torch_image_t *xmap = NULL,* ymap = NULL;
-
-    abcdk_torch_imgproc_undistort_buildmap(&xmap,&ymap,&img_size,0,camera_matrix, dist_coeff);
-
+    abcdk_torch_imgproc_undistort_buildmap(&xmap, &ymap, &img_size, 0, camera_matrix, dist_coeff);
 
     abcdk_ffeditor_config_t ff_r_cfg = {0}, ff_w_cfg = {1};
 
@@ -340,15 +334,14 @@ int abcdk_test_torch_4(abcdk_option_t *args)
     abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
     abcdk_torch_vcodec_t *enc_ctx = abcdk_torch_vcodec_alloc(1);
 
-
-    abcdk_torch_vcodec_param_t dec_param = {0},enc_param = {0};
+    abcdk_torch_vcodec_param_t dec_param = {0}, enc_param = {0};
 
     dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
     dec_param.ext_data = r_video_steam->codecpar->extradata;
     dec_param.ext_size = r_video_steam->codecpar->extradata_size;
 
-    abcdk_torch_vcodec_start(dec_ctx,&dec_param);
-  
+    abcdk_torch_vcodec_start(dec_ctx, &dec_param);
+
     enc_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(AV_CODEC_ID_H264);
     enc_param.fps_d = 1;
     enc_param.fps_n = 25;
@@ -357,7 +350,7 @@ int abcdk_test_torch_4(abcdk_option_t *args)
     enc_param.bitrate = 15000 * 1000;
     enc_param.peak_bitrate = 15000 * 1000;
 
-    abcdk_torch_vcodec_start(enc_ctx,&enc_param);
+    abcdk_torch_vcodec_start(enc_ctx, &enc_param);
 
     AVCodecContext *enc_opt = abcdk_avcodec_alloc3(AV_CODEC_ID_H264, 1);
 
@@ -365,11 +358,11 @@ int abcdk_test_torch_4(abcdk_option_t *args)
 
     enc_opt->width = r_video_steam->codecpar->width;
     enc_opt->height = r_video_steam->codecpar->height;
-    enc_opt->extradata = (uint8_t*)av_memdup(enc_param.ext_data, enc_param.ext_size);
+    enc_opt->extradata = (uint8_t *)av_memdup(enc_param.ext_data, enc_param.ext_size);
     enc_opt->extradata_size = enc_param.ext_size;
     enc_opt->max_b_frames = enc_param.max_b_frames;
     enc_opt->bit_rate_tolerance = enc_param.peak_bitrate;
-    enc_opt->bit_rate = enc_param.bitrate ;
+    enc_opt->bit_rate = enc_param.bitrate;
 
     int w_stream_idx = abcdk_ffeditor_add_stream(w, enc_opt, 1);
 
@@ -397,13 +390,13 @@ int abcdk_test_torch_4(abcdk_option_t *args)
         }
         else if (chk > 0)
         {
-            if(!r_fae2)
-                r_fae2 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+            if (!r_fae2)
+                r_fae2 = abcdk_torch_frame_create(r_fae->img->width, r_fae->img->height, ABCDK_TORCH_PIXFMT_BGR24, 1);
 
-            if(!r_fae3)
-                r_fae3 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+            if (!r_fae3)
+                r_fae3 = abcdk_torch_frame_create(r_fae->img->width, r_fae->img->height, ABCDK_TORCH_PIXFMT_BGR24, 1);
 
-            abcdk_torch_image_convert(r_fae3->img,r_fae->img);
+            abcdk_torch_image_convert(r_fae3->img, r_fae->img);
 
             abcdk_torch_imgproc_remap(r_fae2->img, NULL, r_fae3->img, NULL, xmap, ymap, 2);
 
@@ -412,10 +405,10 @@ int abcdk_test_torch_4(abcdk_option_t *args)
 
             AVPacket *w_pkt = NULL;
             int chk = abcdk_torch_vcodec_encode_to_ffmpeg(enc_ctx, &w_pkt, r_fae2);
-            
+
             if (chk < 0)
                 break;
-            else if( chk > 0)
+            else if (chk > 0)
             {
                 abcdk_ffeditor_write_packet2(w, w_pkt->data, w_pkt->size, w_pkt->flags, w_stream_idx);
                 av_packet_free(&w_pkt);
@@ -439,16 +432,15 @@ int abcdk_test_torch_4(abcdk_option_t *args)
         int chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, (i == 0 ? &r_pkt : NULL));
         if (chk < 0)
             break;
-        else //if (chk > 0)
+        else // if (chk > 0)
         {
-            if(!r_fae2)
-                r_fae2 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+            if (!r_fae2)
+                r_fae2 = abcdk_torch_frame_create(r_fae->img->width, r_fae->img->height, ABCDK_TORCH_PIXFMT_BGR24, 1);
 
-            
-            if(!r_fae3)
-                r_fae3 = abcdk_torch_frame_create(r_fae->img->width,r_fae->img->height,ABCDK_TORCH_PIXFMT_BGR24,1);
+            if (!r_fae3)
+                r_fae3 = abcdk_torch_frame_create(r_fae->img->width, r_fae->img->height, ABCDK_TORCH_PIXFMT_BGR24, 1);
 
-            abcdk_torch_image_convert(r_fae3->img,r_fae->img);
+            abcdk_torch_image_convert(r_fae3->img, r_fae->img);
 
             abcdk_torch_imgproc_remap(r_fae2->img, NULL, r_fae->img, NULL, xmap, ymap, 2);
 
@@ -471,66 +463,72 @@ int abcdk_test_torch_4(abcdk_option_t *args)
 
     abcdk_ffeditor_write_trailer(w);
 
-    
     abcdk_torch_vcodec_free(&dec_ctx);
     abcdk_torch_vcodec_free(&enc_ctx);
-    
+
     abcdk_ffeditor_destroy(&r);
     abcdk_ffeditor_destroy(&w);
-        
+
     abcdk_torch_image_free(&xmap);
     abcdk_torch_image_free(&ymap);
 
     return 0;
 }
 
-
-#endif //HAVE_FFMPEG
-
+#endif // HAVE_FFMPEG
 
 int abcdk_test_torch_5(abcdk_option_t *args)
 {
-    const char *src = abcdk_option_get(args,"--src",0,"");
-    const char *dst = abcdk_option_get(args,"--dst",0,"");
+    const char *src = abcdk_option_get(args, "--src", 0, "");
+    const char *dst = abcdk_option_get(args, "--dst", 0, "");
 
     int chk;
 
-    chk = abcdk_torch_inferutil_model_forward(dst,src,args);
-    
+    chk = abcdk_torch_dnn_model_forward(dst, src, args);
+
     return 0;
 }
-
 
 int abcdk_test_torch_6(abcdk_option_t *args)
 {
-    const char *model = abcdk_option_get(args,"--model",0,"");
-    const char *img_src = abcdk_option_get(args,"--img-src",0,"");
+    const char *model = abcdk_option_get(args, "--model", 0, "");
+    const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
 
     int chk;
 
-    abcdk_torch_infer_t *ctx = abcdk_torch_infer_alloc();
+    abcdk_torch_dnn_engine_t *ctx = abcdk_torch_dnn_engine_alloc();
 
-    chk = abcdk_torch_infer_load_model(ctx,model,args);
+    chk = abcdk_torch_dnn_engine_load_model(ctx, model, args);
     assert(chk == 0);
 
-    
+    abcdk_torch_dnn_tensor vec_tensor[10];
+
+    chk = abcdk_torch_dnn_engine_fetch_tensor(ctx, 10, vec_tensor);
+    assert(chk >= 2);
+
     abcdk_torch_image_t *vec_img[100] = {0};
+    int count = 0;
 
-    int count = 1;
+    for (int i = 0; i < vec_tensor[0].dims.d[0]; i++)
+    {
+        const char *img_src_p = abcdk_option_get(args, "--img-src", i, NULL);
+        if (!img_src_p)
+            break;
 
-    vec_img[0] = abcdk_torch_imgcode_load(img_src);
+        vec_img[i] = abcdk_torch_imgcode_load(img_src_p);
+        count += 1;
+    }
 
-    chk = abcdk_torch_infer_execute(ctx,count,vec_img);
+    chk = abcdk_torch_dnn_engine_infer(ctx, count, vec_img);
     assert(chk == 0);
 
-    for(int i = 0;i<100;i++)
+    for (int i = 0; i < 100; i++)
         abcdk_torch_image_free(&vec_img[i]);
 
-    abcdk_torch_infer_free(&ctx);
-    
+    abcdk_torch_dnn_engine_free(&ctx);
+
     return 0;
 }
-
 
 int abcdk_test_torch(abcdk_option_t *args)
 {
@@ -548,7 +546,6 @@ int abcdk_test_torch(abcdk_option_t *args)
 
     abcdk_torch_context_current_set(torch_ctx);
 
-
     if (cmd == 1)
         return abcdk_test_torch_1(args);
 #ifdef HAVE_FFMPEG
@@ -558,7 +555,7 @@ int abcdk_test_torch(abcdk_option_t *args)
         return abcdk_test_torch_3(args);
     else if (cmd == 4)
         return abcdk_test_torch_4(args);
-#endif //HAVE_FFMPEG
+#endif // HAVE_FFMPEG
     else if (cmd == 5)
         return abcdk_test_torch_5(args);
     else if (cmd == 6)
@@ -569,4 +566,3 @@ int abcdk_test_torch(abcdk_option_t *args)
 
     return 0;
 }
-

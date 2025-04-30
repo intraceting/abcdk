@@ -17,9 +17,9 @@ namespace abcdk
         {
             template <typename T>
             ABCDK_TORCH_INVOKE_DEVICE void stuff(int channels, bool packed,
-                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
-                                           size_t roi_x, size_t roi_y, size_t roi_w, size_t roi_h,
-                                           size_t tid)
+                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
+                                                 size_t roi_x, size_t roi_y, size_t roi_w, size_t roi_h,
+                                                 size_t tid)
             {
 
                 size_t y = tid / dst_w;
@@ -41,7 +41,6 @@ namespace abcdk
                     *abcdk::torch::util::ptr<T>(dst, dst_off) = abcdk::torch::util::pixel<T>(scalar[i]);
                 }
             }
-
 
         } // namespace imageproc
     } //    namespace torch

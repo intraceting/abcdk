@@ -11,7 +11,6 @@
 #include "abcdk/torch/torch.h"
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/imgcode.h"
-#include "abcdk/torch/tensor.h"
 
 __BEGIN_DECLS
 

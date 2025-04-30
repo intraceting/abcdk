@@ -49,6 +49,24 @@ int abcdk_torch_imgutil_copy_cuda(uint8_t *dst_data[4], int dst_stride[4], int d
     return -1;
 }
 
+int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t dst_ws,
+                                            int src_packed, uint8_t *src, size_t src_ws,
+                                            size_t b, size_t w, size_t h, size_t c,
+                                            float scale[], float mean[], float std[])
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
+}
+
+int abcdk_torch_imgutil_blob_32f_to_8u_cuda(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                            int src_packed, float *src, size_t src_ws,
+                                            size_t b, size_t w, size_t h, size_t c,
+                                            float scale[], float mean[], float std[])
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
+}
+
 #endif //__cuda_cuda_h__
 
 __END_DECLS

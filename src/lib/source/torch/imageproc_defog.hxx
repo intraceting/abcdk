@@ -18,12 +18,12 @@ namespace abcdk
             /**
              * 暗通道除雾。
              * 建议：a=220,m=0.35,w=0.9
-            */
+             */
             template <typename T>
             ABCDK_TORCH_INVOKE_DEVICE void defog(int channels, bool packed,
-                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, 
-                                           uint32_t dack_a, float dack_m, float dack_w,
-                                           size_t tid)
+                                                 T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
+                                                 uint32_t dack_a, float dack_m, float dack_w,
+                                                 size_t tid)
             {
 
                 size_t y = tid / dst_w;

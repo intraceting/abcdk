@@ -155,9 +155,6 @@
 #include "abcdk/torch/image.h"
 #include "abcdk/torch/jcodec.h"
 #include "abcdk/torch/vcodec.h"
-#include "abcdk/torch/tensor.h"
-#include "abcdk/torch/tenfmt.h"
-#include "abcdk/torch/tenutil.h"
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/imgcode.h"
 #include "abcdk/torch/frame.h"
@@ -168,8 +165,10 @@
 #include "abcdk/torch/nvidia.h"
 #include "abcdk/torch/stitcher.h"
 #include "abcdk/torch/calibrate.h"
-#include "abcdk/torch/infer.h"
-#include "abcdk/torch/inferutil.h"
+#include "abcdk/torch/dnn.h"
+#include "abcdk/torch/dnnutil.h"
+#include "abcdk/torch/dnnengine.h"
+#include "abcdk/torch/dnnpost.h"
 
 
 #endif //ABCDK_H

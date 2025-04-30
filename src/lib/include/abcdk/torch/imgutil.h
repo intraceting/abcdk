@@ -82,6 +82,76 @@ int abcdk_torch_imgutil_copy_cuda(uint8_t *dst_data[4], int dst_stride[4], int d
 #define abcdk_torch_imgutil_copy abcdk_torch_imgutil_copy_host
 #endif //
 
+
+/**
+ * 值转换。
+ *
+ * @note dst[z] = ((src[z] / scale[z]) - mean[z]) / std[z];
+ *
+ * @param [in] scale 系数。
+ * @param [in] mean 均值。
+ * @param [in] std 方差。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_imgutil_blob_8u_to_32f_host(int dst_packed, float *dst, size_t dst_ws,
+                                            int src_packed, uint8_t *src, size_t src_ws,
+                                            size_t b, size_t w, size_t h, size_t c,
+                                            float scale[], float mean[], float std[]);
+
+/**
+ * 值转换。
+ *
+ * @note dst[z] = ((src[z] / scale[z]) - mean[z]) / std[z];
+ *
+ * @param [in] scale 系数。
+ * @param [in] mean 均值。
+ * @param [in] std 方差。
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t dst_ws,
+                                            int src_packed, uint8_t *src, size_t src_ws,
+                                            size_t b, size_t w, size_t h, size_t c, 
+                                            float scale[], float mean[], float std[]);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_imgutil_blob_8u_to_32f abcdk_torch_imgutil_blob_8u_to_32f_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_imgutil_blob_8u_to_32f abcdk_torch_imgutil_blob_8u_to_32f_host
+#endif //
+
+/**
+ * 值转换。
+ *
+ * @note dst[z] = ((src[z] * std[z]) + mean[z]) * scale[z];
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_imgutil_blob_32f_to_8u_host(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                            int src_packed, float *src, size_t src_ws,
+                                            size_t b, size_t w, size_t h, size_t c,
+                                            float scale[], float mean[], float std[]);
+
+/**
+ * 值转换。
+ *
+ * @note dst[z] = ((src[z] * std[z]) + mean[z]) * scale[z];
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_imgutil_blob_32f_to_8u_cuda(int dst_packed, uint8_t *dst, size_t dst_ws,
+                                            int src_packed, float *src, size_t src_ws,
+                                            size_t b, size_t w, size_t h, size_t c,
+                                            float scale[], float mean[], float std[]);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_imgutil_blob_32f_to_8u abcdk_torch_imgutil_blob_32f_to_8u_cuda
+#else //ABCDK_TORCH_USE_HOST
+#define abcdk_torch_imgutil_blob_32f_to_8u abcdk_torch_imgutil_blob_32f_to_8u_host
+#endif //
+
+
 __END_DECLS
 
 #endif // ABCDK_TORCH_IMGUTIL_H

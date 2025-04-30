@@ -22,11 +22,11 @@ namespace abcdk
              */
             template <typename T>
             ABCDK_TORCH_INVOKE_DEVICE void drawrect(int channels, bool packed,
-                                              T *dst, size_t w, size_t ws, size_t h, uint32_t *color, int weight, int *corner,
-                                              size_t tid)
+                                                    T *dst, size_t w, size_t ws, size_t h, uint32_t *color, int weight, int *corner,
+                                                    size_t tid)
             {
-                int y = tid / w;//必须是有符号的。
-                int x = tid % w;//必须是有符号的。
+                int y = tid / w; // 必须是有符号的。
+                int x = tid % w; // 必须是有符号的。
 
                 if (x >= w || y >= h)
                     return;

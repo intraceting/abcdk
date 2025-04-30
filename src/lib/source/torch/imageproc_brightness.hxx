@@ -18,8 +18,8 @@ namespace abcdk
             /**调整亮度。*/
             template <typename T>
             ABCDK_TORCH_INVOKE_DEVICE void brightness(int channels, bool packed,
-                                                T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate, 
-                                                size_t tid)
+                                                      T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, float *alpha, float *bate,
+                                                      size_t tid)
             {
                 size_t y = tid / dst_w;
                 size_t x = tid % dst_w;

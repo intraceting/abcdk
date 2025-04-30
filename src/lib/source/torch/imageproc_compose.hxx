@@ -18,10 +18,10 @@ namespace abcdk
             /**图像融合。*/
             template <typename T>
             ABCDK_TORCH_INVOKE_DEVICE void compose(int channels, bool packed,
-                                             T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
-                                             T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
-                                             uint32_t *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam,
-                                             size_t tid)
+                                                   T *panorama, size_t panorama_w, size_t panorama_ws, size_t panorama_h,
+                                                   T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
+                                                   uint32_t *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, bool optimize_seam,
+                                                   size_t tid)
             {
                 size_t y = tid / compose_w;
                 size_t x = tid % compose_w;

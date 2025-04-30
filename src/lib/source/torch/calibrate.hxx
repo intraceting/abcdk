@@ -9,8 +9,6 @@
 
 #include "abcdk/util/trace.h"
 #include "abcdk/torch/opencv.h"
-#include "abcdk/torch/image.h"
-#include "abcdk/torch/imgproc.h"
 
 #ifdef OPENCV_CALIB3D_HPP
 
