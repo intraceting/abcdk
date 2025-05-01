@@ -116,7 +116,7 @@ namespace abcdk
                     if (!m_builder_ctx)
                         return -1;
 
-                    m_network_ctx = m_builder_ctx->createNetworkV2(flag);
+                    m_network_ctx = m_builder_ctx->createNetworkV2(1U << flag);
                     if (!m_network_ctx)
                         return -2;
 
