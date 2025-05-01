@@ -118,6 +118,7 @@ namespace abcdk
                     m_rect_x2 = -1;
                     m_rect_y2 = -1;
                     m_rotate = 0;
+                    m_seg_step = 0;
                 }
 
                 object(const object &src)

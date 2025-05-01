@@ -12,7 +12,9 @@
 #include "abcdk/torch/context.h"
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/imgutil.h"
+#include "abcdk/torch/imgcode.h"
 #include "abcdk/torch/nvidia.h"
+#include "abcdk/torch/opencv.h"
 
 #if defined(__cuda_cuda_h__) && defined(NV_INFER_H)
 
@@ -273,10 +275,13 @@ namespace abcdk
                             continue;
 
                         assert(src_img_p->tag == ABCDK_TORCH_TAG_CUDA);
+                        assert(src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24);
                         assert(src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24);
 
                         /*缩放或复制。*/
                         abcdk_torch_imgproc_resize_cuda(src_img_cache_p, NULL, src_img_p, NULL, m_input_img_kar, NPPI_INTER_CUBIC);
+
+                        
 
                         dst_off = i * m_input_h_size * dst_dw * m_input_c_size;
                         dst_p = ABCDK_PTR2PTR(float,m_data_cuda, dst_off);
@@ -285,6 +290,31 @@ namespace abcdk
                                                                 1, src_img_cache_p->data[0], src_img_cache_p->stride[0],
                                                                 1, m_input_w_size, m_input_h_size, m_input_c_size,
                                                                 m_input_img_scale, m_input_img_mean, m_input_img_std);
+
+
+                        // abcdk_torch_imgcode_save_cuda("/tmp/aaa-1.jpg",src_img_cache_p);
+
+                        // abcdk_torch_imgutil_blob_32f_to_8u_cuda(1, src_img_cache_p->data[0], src_img_cache_p->stride[0],
+                        //                                         0, dst_p, dst_dw,
+                        //                                         1, m_input_w_size, m_input_h_size, m_input_c_size,
+                        //                                         m_input_img_scale, m_input_img_mean, m_input_img_std);
+
+                        // abcdk_torch_imgcode_save_cuda("/tmp/aaa-2.jpg",src_img_cache_p);
+
+                        // abcdk_torch_memcpy_cuda(m_data_host,1,m_data_cuda,0,m_data_size);
+
+                        // abcdk_save("/tmp/bbb-1.bin",m_data_host,m_data_size,0);
+                        
+                        // abcdk_torch_image_t *b = abcdk_torch_image_create_host(m_input_w_size,m_input_h_size,ABCDK_TORCH_PIXFMT_RGB24,1);
+
+                        // abcdk_torch_image_copy_cuda(b,src_img_cache_p);
+
+                        // cv::Mat bb = cv::Mat(m_input_h_size,m_input_w_size,CV_8UC3,(void*)b->data[0],b->stride[0]);
+                        // cv::Mat bb2 = cv::dnn::blobFromImage(bb, 1.0 / 255, cv::Size(640, 640), cv::Scalar(0,0,0), false, false);
+
+                        // abcdk_save("/tmp/bbb-2.bin",bb2.data,m_data_size,0);
+
+                        // abcdk_torch_image_free_host(&b);
                     }
 
                     return 0;

@@ -16,34 +16,34 @@ namespace abcdk
         namespace memory
         {
             template <typename T>
-            void delete_object(T **obj)
+            static inline void delete_object(T **ctx)
             {
-                T *obj_p;
+                T *ctx_p;
 
-                if (!obj || !*obj)
+                if (!ctx || !*ctx)
                     return;
 
-                obj_p = *obj;
-                *obj = NULL;
+                ctx_p = *ctx;
+                *ctx = NULL;
 
-                delete obj_p;
+                delete ctx_p;
             }
 
             template <typename T>
-            void delete_array(T **obj)
+            static inline void delete_array(T **ctx)
             {
-                T *obj_p;
+                T *ctx_p;
 
-                if (!obj || !*obj)
+                if (!ctx || !*ctx)
                     return;
 
-                obj_p = *obj;
-                *obj = NULL;
+                ctx_p = *ctx;
+                *ctx = NULL;
 
-                delete [] obj_p;
+                delete[] ctx_p;
             }
 
-        } // namespace memory 
+        } // namespace memory
 
     } // namespace torch
 

@@ -119,6 +119,16 @@ namespace abcdk
                 else
                     return (T)src;
             }
+
+            /*线性坐标转NYXZ坐标。*/
+            ABCDK_TORCH_INVOKE_DEVICE void idx2nyxz(size_t idx, size_t h, size_t w,  size_t c, size_t &n, size_t &y, size_t &x, size_t &z)
+            {
+                n = idx / (h * w * c);
+                y = (idx / (w * c)) % h;
+                x = (idx / c) % w;
+                z = idx % c;
+
+            }
         } // namespace util
 
     } // namespace torch

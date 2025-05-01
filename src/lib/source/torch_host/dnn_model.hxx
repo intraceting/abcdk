@@ -7,6 +7,8 @@
 #ifndef ABCDK_TORCH_HOST_DNN_MODEL_HXX
 #define ABCDK_TORCH_HOST_DNN_MODEL_HXX
 
+#include "abcdk/util/math.h"
+#include "../torch/util.hxx"
 #include "dnn_object.hxx"
 
 namespace abcdk
@@ -44,6 +46,8 @@ namespace abcdk
 
                 static inline void nms_iou(std::vector<object> &dst, std::map<int, std::vector<object>> &src, float threshold)
                 {
+                    dst.clear();
+
                     /*按KEY分别做NMS。*/
                     for (auto &t : src)
                     {
@@ -58,6 +62,7 @@ namespace abcdk
                 }
 
             private:
+                //<batch<object>>
                 std::vector<std::vector<object>> m_object;
 
             public:
@@ -67,27 +72,61 @@ namespace abcdk
                 virtual ~model()
                 {
                 }
+
             public:
 
-                virtual void collect_object(std::vector<abcdk_torch_dnn_tensor> &tensor, float score_threshold, float nms_threshold)
+                virtual void prepare(abcdk_option_t *opt)
                 {
-                    //<batch<label<object>>>
-                    std::vector<std::map<int, std::vector<object>>> tmp;
 
-                    get_object(tmp, score_threshold);
+                }
 
-                    //<batch<object>>
-                    m_object.resize(tmp.size());
-                    for (int i = 0; i < tmp.size(); i++)
+                virtual void process(std::vector<abcdk_torch_dnn_tensor> &tensor, float score_threshold, float nms_threshold)
+                {
+                    std::vector<std::map<int, std::vector<object>>> src;
+
+                    collect_object(src, tensor, score_threshold);
+
+                    nms_object(m_object, src, nms_threshold);
+                }
+
+                virtual void fetch(std::vector<abcdk_torch_dnn_object_t> &dst, int index)
+                {
+                    ABCDK_ASSERT(index < m_object.size(), TT("超出图像批量范围。"));
+
+                    dst.clear();
+                    dst.resize(m_object[index].size());
+
+                    for (int i = 0; i < m_object[index].size(); i++)
                     {
-                        nms_iou(m_object[i], tmp[i], nms_threshold);
+                        dst[i].label = m_object[index][i].m_label;
+                        dst[i].score = m_object[index][i].m_score;
+                        dst[i].x1 = m_object[index][i].m_rect_x1;
+                        dst[i].y1 = m_object[index][i].m_rect_y1;
+                        dst[i].x2 = m_object[index][i].m_rect_x2;
+                        dst[i].y2 = m_object[index][i].m_rect_y2;
                     }
                 }
 
-                virtual void collect_object(std::vector<abcdk_torch_dnn_tensor> &tensor, float threshold)
-                {
+            protected:
 
+                /**
+                 * @param dst <batch<label<object>>>
+                 */
+                virtual void collect_object(std::vector<std::map<int, std::vector<object>>> &dst, std::vector<abcdk_torch_dnn_tensor> &tensor, float threshold) = 0;
+
+                /**
+                 * @param dst <batch<object>>
+                 * @param src <batch<label<object>>>
+                 */
+                virtual void nms_object(std::vector<std::vector<object>> &dst, std::vector<std::map<int, std::vector<object>>> &src, float threshold)
+                {
+                    dst.resize(src.size());
+                    for (int i = 0; i < src.size(); i++)
+                    {
+                        nms_iou(dst[i], src[i], threshold);
+                    }
                 }
+
             };
         } // namespace dnn
     } // namespace torch_host

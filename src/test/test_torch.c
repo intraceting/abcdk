@@ -489,21 +489,35 @@ int abcdk_test_torch_5(abcdk_option_t *args)
     return 0;
 }
 
+void idx2nyxz(size_t idx, size_t h, size_t w, size_t c)
+{
+    size_t n = idx / (h * w * c);
+    size_t y = (idx / (w * c)) % h;
+    size_t x = (idx / c) % w;
+    size_t z = idx % c;
+
+    abcdk_trace_printf(LOG_DEBUG,"[%zu][%zu][%zu][%zu]",n,y,x,z);
+}
+
 int abcdk_test_torch_6(abcdk_option_t *args)
 {
+
+    // for(int i = 0;i<1000;i++)
+    //     idx2nyxz(i,3,3,3);
+
     const char *model = abcdk_option_get(args, "--model", 0, "");
     const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
 
     int chk;
 
-    abcdk_torch_dnn_engine_t *ctx = abcdk_torch_dnn_engine_alloc();
+    abcdk_torch_dnn_engine_t *engine_ctx = abcdk_torch_dnn_engine_alloc();
 
-    chk = abcdk_torch_dnn_engine_load_model(ctx, model, args);
+    chk = abcdk_torch_dnn_engine_load_model(engine_ctx, model, args);
     assert(chk == 0);
 
     abcdk_torch_dnn_tensor vec_tensor[10];
 
-    chk = abcdk_torch_dnn_engine_fetch_tensor(ctx, 10, vec_tensor);
+    chk = abcdk_torch_dnn_engine_fetch_tensor(engine_ctx, 10, vec_tensor);
     assert(chk >= 2);
 
     abcdk_torch_image_t *vec_img[100] = {0};
@@ -519,13 +533,58 @@ int abcdk_test_torch_6(abcdk_option_t *args)
         count += 1;
     }
 
-    chk = abcdk_torch_dnn_engine_infer(ctx, count, vec_img);
+    chk = abcdk_torch_dnn_engine_infer(engine_ctx, count, vec_img);
     assert(chk == 0);
+
+    abcdk_torch_dnn_post_t *post_ctx = abcdk_torch_dnn_post_alloc();
+
+    abcdk_torch_dnn_post_init(post_ctx,"yolo-11",NULL);
+
+    abcdk_torch_dnn_post_process(post_ctx, 2, vec_tensor, 0.1, 0.1);
+
+    abcdk_torch_dnn_tensor *input_tensor_p = &vec_tensor[0];
+
+    for (int i = 0; i < input_tensor_p->dims.d[0]; i++)
+    {
+        abcdk_torch_dnn_object_t vec_obj[100] = {0};
+        chk = abcdk_torch_dnn_post_fetch(post_ctx, i, 100, vec_obj);
+        if (chk <= 0)
+            continue;
+
+        abcdk_torch_image_t *img_p = vec_img[i];
+
+        abcdk_resize_scale_t r = {0};
+
+        abcdk_resize_ratio_2d(&r, img_p->width, img_p->height, input_tensor_p->dims.d[3], input_tensor_p->dims.d[2], 0);
+
+        for (int j = 0; j < chk; j++)
+        {
+            abcdk_torch_dnn_object_t *obj_p = &vec_obj[j];
+
+            obj_p->x1 = abcdk_resize_dst2src_2d(&r, obj_p->x1, 1);
+            obj_p->y1 = abcdk_resize_dst2src_2d(&r, obj_p->y1, 0);
+            obj_p->x2 = abcdk_resize_dst2src_2d(&r, obj_p->x2, 1);
+            obj_p->y2 = abcdk_resize_dst2src_2d(&r, obj_p->y2, 0);
+
+            uint32_t color[3] = {255, 0, 0};
+            int weight = 3;
+            int corner[4] = {obj_p->x1, obj_p->y1, obj_p->x2, obj_p->y2};
+
+            abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
+        }
+
+        char tmp_file[100] = {0};
+        snprintf(tmp_file, 100, "/tmp/ccc/dnn-%d.jpg", i);
+
+        abcdk_torch_imgcode_save(tmp_file, img_p);
+    }
+
+    abcdk_torch_dnn_post_free(&post_ctx);
 
     for (int i = 0; i < 100; i++)
         abcdk_torch_image_free(&vec_img[i]);
 
-    abcdk_torch_dnn_engine_free(&ctx);
+    abcdk_torch_dnn_engine_free(&engine_ctx);
 
     return 0;
 }

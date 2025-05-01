@@ -31,18 +31,13 @@ namespace abcdk
                                                 bool revert, size_t tid)
             {
                 size_t n, x, y, z;
-                size_t hw;
 
-                /*源和目标索引算法必须一样。*/
-
-                n = tid / (w * h * c);  // 块索引
-                hw = tid % (w * h * c); // 块余数
-                y = hw / (w * c);       // 高度索引
-                x = (hw % (w * c)) / c; // 宽度索引
-                z = hw % c;             // 通道索引
+                abcdk::torch::util::idx2nyxz(tid,h,w,c,n,y,x,z);
 
                 if (n >= b || x >= w || y >= h || z >= c)
                     return;
+
+                /*源和目标索引算法必须一样。*/
 
                 size_t src_of = abcdk::torch::util::off<ST>(src_packed, w, src_ws, h, c, n, x, y, z);
                 size_t dst_of = abcdk::torch::util::off<DT>(dst_packed, w, dst_ws, h, c, n, x, y, z);
