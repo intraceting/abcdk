@@ -54,16 +54,19 @@ typedef struct _abcdk_torch_dnn_object
     /*标签。*/
     int label;
 
+    /*评分。*/
+    int score;
+
     /*坐标。*/
     int x1;
     int y1;
     int x2;
     int y2;
 
-    /*评分。*/
-    int score;
+    /*旋转角度。-90 ~ 90 */
+    int rotate;
 
-    /*关键点。x,y*/
+    /*关键点。x,y,v*/
     int nkeypoint;
     int *kp;
 

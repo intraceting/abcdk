@@ -38,7 +38,7 @@ namespace abcdk
                 /*旋转角度。-90 ~ 90 */
                 int m_rotate;
 
-                /*关键点。x,y*/
+                /*关键点。x,y,v*/
                 std::vector<int> m_keypoint;
 
                 /*特征。*/

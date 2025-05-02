@@ -9,15 +9,13 @@
 #include "../torch/memory.hxx"
 #include "dnn_yolo_v11.hxx"
 #include "dnn_yolo_v11_obb.hxx"
+#include "dnn_yolo_v11_pose.hxx"
 
 __BEGIN_DECLS
 
 /** DNN后处理环境。*/
 struct _abcdk_torch_dnn_post
 {
-    /**模型名字。*/
-    const char *model_name;
-
     /**模型环境。*/
     abcdk::torch_host::dnn::model *model_ctx;
 }; // abcdk_torch_dnn_post_t;
@@ -32,14 +30,20 @@ void abcdk_torch_dnn_post_free(abcdk_torch_dnn_post_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    if (abcdk_strcmp(ctx_p->model_name, "yolo-v11", 0) == 0)
+    /*可能未初始化。*/
+    if(!ctx_p->model_ctx)
+        goto END;
+
+    if (abcdk_strcmp(ctx_p->model_ctx->name(), "yolo-v11", 0) == 0)
         abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11 **)&ctx_p->model_ctx);
-    if (abcdk_strcmp(ctx_p->model_name, "yolo-v11-obb", 0) == 0)
+    else if (abcdk_strcmp(ctx_p->model_ctx->name(), "yolo-v11-obb", 0) == 0)
+        abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11_obb **)&ctx_p->model_ctx);
+    else if (abcdk_strcmp(ctx_p->model_ctx->name(), "yolo-v11-pose", 0) == 0)
         abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11_obb **)&ctx_p->model_ctx);
     else
         abcdk::torch::memory::delete_object(&ctx_p->model_ctx);
 
-    abcdk_heap_free((void*)ctx_p->model_name);
+END:
 
     abcdk_heap_free(ctx_p);
 }
@@ -62,36 +66,37 @@ ERR:
 
 int abcdk_torch_dnn_post_init(abcdk_torch_dnn_post_t *ctx, const char *name, abcdk_option_t *opt)
 {
-    assert(ctx != NULL && name != NULL);
+    assert(ctx != NULL && name != NULL && opt != NULL);
 
     ABCDK_ASSERT(ctx->model_ctx == NULL, TT("仅允许初始化一次。"));
 
     if (abcdk_strcmp(name, "yolo-v11", 0) == 0)
     {
-        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11();
+        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11(name);
         if (!ctx->model_ctx)
             return -1;
-
-        ctx->model_name = abcdk_strdup_safe(name);
-
-        return 0;
     }
     else if (abcdk_strcmp(name, "yolo-v11-obb", 0) == 0)
     {
-        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11_obb();
+        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11_obb(name);
         if (!ctx->model_ctx)
             return -1;
-
-        ctx->model_name = abcdk_strdup_safe(name);
-
-        return 0;
+    }
+    else if (abcdk_strcmp(name, "yolo-v11-pose", 0) == 0)
+    {
+        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11_pose(name);
+        if (!ctx->model_ctx)
+            return -1;
     }
     else
     {
         abcdk_trace_printf(LOG_WARNING, TT("尚未支持的模型(%s)。"), name);
+        return -1;
     }
 
-    return -1;
+    ctx->model_ctx->prepare(opt);
+
+    return 0;
 }
 
 int abcdk_torch_dnn_post_process(abcdk_torch_dnn_post_t *ctx, int count, abcdk_torch_dnn_tensor tensor[], float score_threshold, float nms_threshold)

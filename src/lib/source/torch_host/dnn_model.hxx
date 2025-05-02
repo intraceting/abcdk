@@ -145,15 +145,27 @@ namespace abcdk
                 }
 
             private:
+                /**/
+                std::string m_name;
+
                 //<batch<object>>
                 std::vector<std::vector<object>> m_object;
 
             public:
-                model()
+                model(const char *name = "")
                 {
+                    m_name = (name ? name : "");
                 }
+                
                 virtual ~model()
                 {
+
+                }
+                
+            public:
+                const char *name()
+                {
+                    return m_name.c_str();
                 }
 
             public:
@@ -187,6 +199,13 @@ namespace abcdk
                         dst[i].y1 = m_object[index][i].m_rect_y1;
                         dst[i].x2 = m_object[index][i].m_rect_x2;
                         dst[i].y2 = m_object[index][i].m_rect_y2;
+                        dst[i].rotate = m_object[index][i].m_rotate;
+                        dst[i].nkeypoint = m_object[index][i].m_keypoint.size() / 3;
+                        dst[i].kp = m_object[index][i].m_keypoint.data();
+                        dst[i].nfeature = m_object[index][i].m_feature.size();
+                        dst[i].ft = m_object[index][i].m_feature.data();
+                        dst[i].seg_step = m_object[index][i].m_seg_step;
+                        dst[i].seg = m_object[index][i].m_segment.data();
                     }
                 }
 
