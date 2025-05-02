@@ -8,6 +8,7 @@
 #define ABCDK_TORCH_DNN_OBJECT_HXX
 
 #include "abcdk/torch/dnn.h"
+#include "abcdk/torch/opencv.h"
 
 #include <vector>
 #include <algorithm>
@@ -21,67 +22,6 @@ namespace abcdk
         {
             class object
             {
-            public:
-                /**
-                 * @param dst <object>
-                 * @param src <object>
-                 */
-                static inline void nms_iou(std::vector<object> &dst, std::vector<object> &src, float threshold)
-                {
-                    /*按分数排序(降序)*/
-                    std::sort(src.begin(), src.end(), [](object &b1, object &b2)
-                              { return b1.m_score > b2.m_score; });
-
-                    for (size_t i = 0; i < src.size(); i++)
-                    {
-                        bool keep = true;
-                        double overlap = 0.0;
-                        for (size_t j = 0; j < dst.size(); j++)
-                        {
-                            overlap = dst[j].overlap_ratio(src[i]);
-
-                            keep = (overlap < threshold);
-                            if (!keep)
-                                break;
-                        }
-
-                        if (keep)
-                            dst.push_back(src[i]);
-                    }
-                }
-
-                /**
-                 * @param dst <object>
-                 * @param src <label<object>>
-                 */
-                static inline void nms_iou(std::vector<object> &dst, std::map<int, std::vector<object>> &src, float threshold)
-                {
-                    /*按KEY分别做NMS。*/
-                    for (auto &t : src)
-                    {
-                        std::vector<object> tmp_dst;
-                        nms_iou(tmp_dst, t.second, threshold);
-
-                        for (auto &t2 : tmp_dst)
-                        {
-                            dst.push_back(t2);
-                        }
-                    }
-                }
-
-                /**
-                 * @param dst <batch<object>>
-                 * @param src <batch<label<object>>>
-                 */
-                static inline void nms_iou(std::vector<std::vector<object>> &dst, std::vector<std::map<int, std::vector<object>>> &src, float threshold)
-                {
-                    dst.resize(src.size());
-                    for (int i = 0; i < src.size(); i++)
-                    {
-                        nms_iou(dst[i], src[i], threshold);
-                    }
-                }
-
             public:
                 /*标签。*/
                 int m_label;
@@ -150,6 +90,25 @@ namespace abcdk
                 {
                     return m_rect_y2 - m_rect_y1;
                 }
+
+                double cx() const
+                {
+                    return x() + w() / 2;
+                }
+        
+                double cy() const
+                {
+                    return y() + h() / 2;
+                }
+
+#ifdef OPENCV_CORE_HPP
+                cv::RotatedRect rrect()
+                {
+                    cv::RotatedRect rb(cv::Point2f(cx(), cy()), cv::Size(w(), h()), m_rotate);
+        
+                    return rb;
+                }
+#endif //OPENCV_CORE_HPP
 
             public:
                 object &operator=(const object &src)

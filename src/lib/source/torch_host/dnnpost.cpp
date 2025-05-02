@@ -7,7 +7,8 @@
 #include "abcdk/util/trace.h"
 #include "abcdk/torch/dnnpost.h"
 #include "../torch/memory.hxx"
-#include "dnn_yolo.hxx"
+#include "dnn_yolo_v11.hxx"
+#include "dnn_yolo_v11_obb.hxx"
 
 __BEGIN_DECLS
 
@@ -31,8 +32,10 @@ void abcdk_torch_dnn_post_free(abcdk_torch_dnn_post_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    if (abcdk_strcmp(ctx_p->model_name, "yolo-11", 0) == 0)
-        abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_11 **)&ctx_p->model_ctx);
+    if (abcdk_strcmp(ctx_p->model_name, "yolo-v11", 0) == 0)
+        abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11 **)&ctx_p->model_ctx);
+    if (abcdk_strcmp(ctx_p->model_name, "yolo-v11-obb", 0) == 0)
+        abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11_obb **)&ctx_p->model_ctx);
     else
         abcdk::torch::memory::delete_object(&ctx_p->model_ctx);
 
@@ -63,9 +66,19 @@ int abcdk_torch_dnn_post_init(abcdk_torch_dnn_post_t *ctx, const char *name, abc
 
     ABCDK_ASSERT(ctx->model_ctx == NULL, TT("仅允许初始化一次。"));
 
-    if (abcdk_strcmp(name, "yolo-11", 0) == 0)
+    if (abcdk_strcmp(name, "yolo-v11", 0) == 0)
     {
-        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_11();
+        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11();
+        if (!ctx->model_ctx)
+            return -1;
+
+        ctx->model_name = abcdk_strdup_safe(name);
+
+        return 0;
+    }
+    else if (abcdk_strcmp(name, "yolo-v11-obb", 0) == 0)
+    {
+        ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11_obb();
         if (!ctx->model_ctx)
             return -1;
 

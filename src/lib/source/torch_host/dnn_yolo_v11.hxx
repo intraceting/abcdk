@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_TORCH_HOST_DNN_YOLO_HXX
-#define ABCDK_TORCH_HOST_DNN_YOLO_HXX
+#ifndef ABCDK_TORCH_HOST_DNN_YOLO_V11_HXX
+#define ABCDK_TORCH_HOST_DNN_YOLO_V11_HXX
 
 #include "dnn_model.hxx"
 
@@ -15,35 +15,13 @@ namespace abcdk
     {
         namespace dnn
         {
-            class yolo : public model
+            class yolo_v11 : public model
             {
             public:
-                yolo()
+                yolo_v11()
                 {
                 }
-                virtual ~yolo()
-                {
-                }
-
-            public:
-                virtual void prepare(abcdk_option_t *opt)
-                {
-                }
-
-            protected:
-                virtual void collect_object(std::vector<std::map<int, std::vector<object>>> &dst, std::vector<abcdk_torch_dnn_tensor> &tensor, float threshold)
-                {
-
-                }
-            };
-
-            class yolo_11 : public yolo
-            {
-            public:
-                yolo_11()
-                {
-                }
-                virtual ~yolo_11()
+                virtual ~yolo_v11()
                 {
                 }
             public:
@@ -166,4 +144,4 @@ namespace abcdk
     } // namespace torch_host
 } // namespace abcdk
 
-#endif // ABCDK_TORCH_HOST_DNN_YOLO_HXX
+#endif // ABCDK_TORCH_HOST_DNN_YOLO_V11_HXX

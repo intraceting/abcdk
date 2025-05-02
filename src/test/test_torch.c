@@ -505,14 +505,15 @@ int abcdk_test_torch_6(abcdk_option_t *args)
     // for(int i = 0;i<1000;i++)
     //     idx2nyxz(i,3,3,3);
 
-    const char *model = abcdk_option_get(args, "--model", 0, "");
+    const char *model_p = abcdk_option_get(args, "--model", 0, "");
+    const char *model_name_p = abcdk_option_get(args, "--model-name",0, "yolo-v11");
     const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
 
     int chk;
 
     abcdk_torch_dnn_engine_t *engine_ctx = abcdk_torch_dnn_engine_alloc();
 
-    chk = abcdk_torch_dnn_engine_load_model(engine_ctx, model, args);
+    chk = abcdk_torch_dnn_engine_load_model(engine_ctx, model_p, args);
     assert(chk == 0);
 
     abcdk_torch_dnn_tensor vec_tensor[10];
@@ -538,7 +539,7 @@ int abcdk_test_torch_6(abcdk_option_t *args)
 
     abcdk_torch_dnn_post_t *post_ctx = abcdk_torch_dnn_post_alloc();
 
-    abcdk_torch_dnn_post_init(post_ctx,"yolo-11",NULL);
+    abcdk_torch_dnn_post_init(post_ctx,model_name_p,NULL);
 
     abcdk_torch_dnn_post_process(post_ctx, 2, vec_tensor, 0.1, 0.1);
 
