@@ -111,6 +111,8 @@ int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1
                         const abcdk_point_t *line2_b, const abcdk_point_t *line2_e,
                         abcdk_point_t *p);
 
+
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_GEOMETRY_H

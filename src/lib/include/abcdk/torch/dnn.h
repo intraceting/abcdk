@@ -51,32 +51,45 @@ typedef struct _abcdk_torch_dnn_tensor
 /**DNN目标。*/
 typedef struct _abcdk_torch_dnn_object
 {
-    /*标签。*/
+    /**标签。*/
     int label;
 
-    /*评分。*/
+    /**评分。*/
     int score;
 
-    /*坐标。*/
+    /**矩形坐标。*/
     int x1;
     int y1;
     int x2;
     int y2;
 
-    /*旋转角度。-90 ~ 90 */
-    int rotate;
+    /** 旋转角度。*/
+    int angle;
 
-    /*关键点。x,y,v*/
+    /**
+     * 旋转矩形坐标。
+     * 
+     * [x1,y1],[x2,y2],[x3,y3],[x4,y4]
+     * 
+     * @note 顺时针。
+     * @note 可能超出图像范围。
+     */
+    int rrect[4][2];
+
+    /**关键点。x,y,v*/
     int nkeypoint;
     int *kp;
 
-    /*特征。*/
+    /**特征。*/
     int nfeature;
     float *ft;
 
-    /*分割。*/
+    /**分割。*/
     int seg_step;
     uint8_t *seg;
+
+    /**ID。*/
+    int id;
 
 } abcdk_torch_dnn_object_t;
 

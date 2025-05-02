@@ -123,6 +123,7 @@ int abcdk_torch_pixfmt_convert_from_ffmpeg(int format);
  */
 int abcdk_torch_pixfmt_channels(int format);
 
+
 __END_DECLS
 
 #endif // ABCDK_TORCH_PIXFMT_H

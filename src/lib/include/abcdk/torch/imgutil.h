@@ -58,6 +58,9 @@ int abcdk_torch_imgutil_size(const int stride[4], int height, int pixfmt);
  */
 int abcdk_torch_imgutil_size2(int width, int height, int pixfmt, int align);
 
+/** 选取颜色。*/
+uint8_t abcdk_torch_imgutil_select_color(int idx, int channel);
+
 /**
  * 图像复制。
  *

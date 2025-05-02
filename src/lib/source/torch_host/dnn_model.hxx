@@ -135,7 +135,9 @@ namespace abcdk
                     for (auto &t : src)
                     {
                         std::vector<object> tmp_dst;
+#ifdef OPENCV_CORE_HPP
                         nms_rotated(tmp_dst, t.second, threshold);
+#endif // OPENCV_CORE_HPP
 
                         for (auto &t2 : tmp_dst)
                         {
@@ -194,18 +196,28 @@ namespace abcdk
                     for (int i = 0; i < m_object[index].size(); i++)
                     {
                         dst[i].label = m_object[index][i].m_label;
+
                         dst[i].score = m_object[index][i].m_score;
+
                         dst[i].x1 = m_object[index][i].m_rect_x1;
                         dst[i].y1 = m_object[index][i].m_rect_y1;
                         dst[i].x2 = m_object[index][i].m_rect_x2;
                         dst[i].y2 = m_object[index][i].m_rect_y2;
-                        dst[i].rotate = m_object[index][i].m_rotate;
+
+                        dst[i].angle = m_object[index][i].m_angle;
+#ifdef OPENCV_CORE_HPP
+                        m_object[index][i].rrect2pts(dst[i].rrect);
+#endif // OPENCV_CORE_HPP
+
                         dst[i].nkeypoint = m_object[index][i].m_keypoint.size() / 3;
                         dst[i].kp = m_object[index][i].m_keypoint.data();
+
                         dst[i].nfeature = m_object[index][i].m_feature.size();
                         dst[i].ft = m_object[index][i].m_feature.data();
+
                         dst[i].seg_step = m_object[index][i].m_seg_step;
                         dst[i].seg = m_object[index][i].m_segment.data();
+
                     }
                 }
 

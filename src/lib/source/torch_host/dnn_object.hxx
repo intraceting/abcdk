@@ -36,7 +36,7 @@ namespace abcdk
                 int m_rect_y2;
 
                 /*旋转角度。-90 ~ 90 */
-                int m_rotate;
+                int m_angle;
 
                 /*关键点。x,y,v*/
                 std::vector<int> m_keypoint;
@@ -57,7 +57,7 @@ namespace abcdk
                     m_rect_y1 = -1;
                     m_rect_x2 = -1;
                     m_rect_y2 = -1;
-                    m_rotate = 0;
+                    m_angle = 0;
                     m_seg_step = 0;
                 }
 
@@ -95,20 +95,37 @@ namespace abcdk
                 {
                     return x() + w() / 2;
                 }
-        
+
                 double cy() const
                 {
                     return y() + h() / 2;
                 }
 
+                double radian()
+                {
+                    return m_angle * M_PI / 180.;
+                }
+
 #ifdef OPENCV_CORE_HPP
                 cv::RotatedRect rrect()
                 {
-                    cv::RotatedRect rb(cv::Point2f(cx(), cy()), cv::Size(w(), h()), m_rotate);
-        
+                    cv::RotatedRect rb(cv::Point2f(cx(), cy()), cv::Size(w(), h()), m_angle);
+
                     return rb;
                 }
-#endif //OPENCV_CORE_HPP
+
+                void rrect2pts(int dst[4][2])
+                {
+                    cv::Point2f vec_pts[4];
+                    rrect().points(vec_pts);
+
+                    for (int i = 0; i < 4; i++)
+                    {
+                        dst[i][0] = vec_pts[i].x;
+                        dst[i][1] = vec_pts[i].y;
+                    }
+                }
+#endif // OPENCV_CORE_HPP
 
             public:
                 object &operator=(const object &src)
@@ -123,7 +140,7 @@ namespace abcdk
                     m_rect_y1 = src.m_rect_y1;
                     m_rect_x2 = src.m_rect_x2;
                     m_rect_y2 = src.m_rect_y2;
-                    m_rotate = src.m_rotate;
+                    m_angle = src.m_angle;
                     m_keypoint = src.m_keypoint;
                     m_feature = src.m_feature;
                     m_seg_step = src.m_seg_step;

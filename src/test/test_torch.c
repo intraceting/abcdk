@@ -567,16 +567,31 @@ int abcdk_test_torch_6(abcdk_option_t *args)
             obj_p->x2 = abcdk_resize_dst2src_2d(&r, obj_p->x2, 1);
             obj_p->y2 = abcdk_resize_dst2src_2d(&r, obj_p->y2, 0);
 
-            abcdk_trace_printf(LOG_INFO, "r=%d", obj_p->rotate);
-
-
-
+            
             uint32_t color[3] = {255, 0, 0};
             int weight = 3;
             int corner[4] = {obj_p->x1, obj_p->y1, obj_p->x2, obj_p->y2};
 
-            abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
+         //   abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
 
+            abcdk_trace_printf(LOG_INFO, "r=%d", obj_p->angle);
+
+            for (int k = 0; k < 4; k++)
+            {
+                obj_p->rrect[k][0] = abcdk_resize_dst2src_2d(&r, obj_p->rrect[k][0]>=0?obj_p->rrect[k][0]:0, 1);
+                obj_p->rrect[k][1] = abcdk_resize_dst2src_2d(&r, obj_p->rrect[k][1]>=0?obj_p->rrect[k][1]:0, 0);
+
+                corner[0] = obj_p->rrect[k][0] - 5;
+                corner[1] = obj_p->rrect[k][1] - 5;
+                corner[2] = obj_p->rrect[k][0] + 5;
+                corner[3] = obj_p->rrect[k][1] + 5;
+
+                color[0]= abcdk_torch_imgutil_select_color(j,0);
+                color[1]= abcdk_torch_imgutil_select_color(j,1);
+                color[2]= abcdk_torch_imgutil_select_color(j,2);
+
+                abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
+            }
 
             for (int k = 0; k < obj_p->nkeypoint * 3; k += 3)
             {
