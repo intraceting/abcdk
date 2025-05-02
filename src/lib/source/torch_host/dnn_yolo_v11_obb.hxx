@@ -148,7 +148,7 @@ namespace abcdk
                             float _r = abcdk::torch::util::obj<float>(output_data, r_off);
                             
                            // one_dst.m_angle = 90 - (int)_r;// 0~180 To -90~90.
-                            one_dst.m_angle = (int)(_r * (180.0 / M_PI));
+                            one_dst.m_angle = (int)(_r * (180.0 / M_PI));//弧度转角度。
                     //        one_dst.m_angle = (int)(_r * (M_PI/2) * 90.);
                         //    one_dst.m_angle = (int)(_r); 
 
