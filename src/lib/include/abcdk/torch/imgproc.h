@@ -281,6 +281,26 @@ int abcdk_torch_imgproc_undistort_buildmap_cuda(abcdk_torch_image_t **xmap, abcd
 #define abcdk_torch_imgproc_undistort_buildmap abcdk_torch_imgproc_undistort_buildmap_host
 #endif //
 
+/**
+ * 画线段。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_torch_imgproc_line_host(abcdk_torch_image_t *dst, const abcdk_torch_point_t *p1, const abcdk_torch_point_t *p2, uint32_t color[], int weight);
+
+/**
+ * 画线段。
+ *
+ * @return 0 成功，< 0 失败。
+ */
+int abcdk_torch_imgproc_line_cuda(abcdk_torch_image_t *dst, const abcdk_torch_point_t *p1, const abcdk_torch_point_t *p2, uint32_t color[], int weight);
+
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_imgproc_line abcdk_torch_imgproc_line_cuda
+#else // ABCDK_TORCH_USE_HOST
+#define abcdk_torch_imgproc_line abcdk_torch_imgproc_line_host
+#endif //
 
 __END_DECLS
 

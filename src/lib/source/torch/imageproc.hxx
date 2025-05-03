@@ -12,6 +12,7 @@
 #include "imageproc_defog.hxx"
 #include "imageproc_drawrect.hxx"
 #include "imageproc_stuff.hxx"
+#include "imageproc_line.hxx"
 
 namespace abcdk
 {

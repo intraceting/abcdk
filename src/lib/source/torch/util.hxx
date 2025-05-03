@@ -121,14 +121,43 @@ namespace abcdk
             }
 
             /*线性坐标转NYXZ坐标。*/
-            ABCDK_TORCH_INVOKE_DEVICE void idx2nyxz(size_t idx, size_t h, size_t w,  size_t c, size_t &n, size_t &y, size_t &x, size_t &z)
+            ABCDK_TORCH_INVOKE_DEVICE void idx2nyxz(size_t idx, size_t h, size_t w, size_t c, size_t &n, size_t &y, size_t &x, size_t &z)
             {
                 n = idx / (h * w * c);
                 y = (idx / (w * c)) % h;
                 x = (idx / c) % w;
                 z = idx % c;
-
             }
+
+            /*断判点是否在线上。*/
+            ABCDK_TORCH_INVOKE_DEVICE bool point_on_line(float x1, float y1, float x2, float y2, float px, float py, float linewidth)
+            {
+                float vx = x2 - x1;
+                float vy = y2 - y1;
+                float ux = px - x1;
+                float uy = py - y1;
+
+                float v_len2 = vx * vx + vy * vy;
+                if (v_len2 == 0)
+                    return false; // 线段退化为点
+
+                float t = (ux * vx + uy * vy) / v_len2;
+
+                if (t < 0.0f || t > 1.0f)
+                    return false; // 投影不在线段内
+
+                // 计算投影点坐标
+                float proj_x = x1 + t * vx;
+                float proj_y = y1 + t * vy;
+
+                // 计算距离
+                float dx = px - proj_x;
+                float dy = py - proj_y;
+                float dist = sqrtf(dx * dx + dy * dy);
+
+                return dist <= linewidth / 2.0f;
+            }
+
         } // namespace util
 
     } // namespace torch
