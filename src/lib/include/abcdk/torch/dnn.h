@@ -57,11 +57,13 @@ typedef struct _abcdk_torch_dnn_object
     /**评分。*/
     int score;
 
-    /**矩形坐标。*/
-    int x1;
-    int y1;
-    int x2;
-    int y2;
+    /**
+     * 矩形坐标。
+     * 
+     * 左上：pt[0]
+     * 右下：pt[1]
+    */
+    abcdk_torch_polygon_t rect;
 
     /** 旋转角度。*/
     int angle;
@@ -69,14 +71,20 @@ typedef struct _abcdk_torch_dnn_object
     /**
      * 旋转矩形坐标。
      * 
-     * [x1,y1],[x2,y2],[x3,y3],[x4,y4]
+     * 左上：pt[0]
+     * 右上：pt[1]
+     * 右下：pt[2]
+     * 左下：pt[3]
      * 
-     * @note 顺时针。
      * @note 可能超出图像范围。
      */
-    int rrect[4][2];
+    abcdk_torch_polygon_t rrect;
 
-    /**关键点。x,y,v*/
+    /**
+     * 关键点。
+     * 
+     * [[x,y,v],...]
+    */
     int nkeypoint;
     int *kp;
 

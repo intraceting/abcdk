@@ -114,16 +114,9 @@ namespace abcdk
                     return rb;
                 }
 
-                void rrect2pts(int dst[4][2])
+                void rrect2pts(cv::Point2f vec_pts[4])
                 {
-                    cv::Point2f vec_pts[4];
                     rrect().points(vec_pts);
-
-                    for (int i = 0; i < 4; i++)
-                    {
-                        dst[i][0] = vec_pts[i].x;
-                        dst[i][1] = vec_pts[i].y;
-                    }
                 }
 #endif // OPENCV_CORE_HPP
 

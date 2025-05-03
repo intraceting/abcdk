@@ -21,7 +21,7 @@ __BEGIN_DECLS
 /**CUDA对象。*/
 #define ABCDK_TORCH_TAG_CUDA ABCDK_FOURCC_MKTAG('C', 'U', 'D', 'A')
 
-/**点。*/
+/**坐标(点)。*/
 typedef struct _abcdk_torch_point
 {
     int x;
@@ -35,7 +35,7 @@ typedef struct _abcdk_torch_size
     int height;
 } abcdk_torch_size_t;
 
-/**区域。*/
+/**矩形区域。*/
 typedef struct _abcdk_torch_rect
 {
     int x;
@@ -43,6 +43,13 @@ typedef struct _abcdk_torch_rect
     int width;
     int height;
 } abcdk_torch_rect_t;
+
+/**多边形(坐标)。*/
+typedef struct _abcdk_torch_polygon
+{
+    int nb;
+    abcdk_torch_point_t pt[11];
+} abcdk_torch_polygon_t;
 
 /**维度。*/
 typedef struct _abcdk_torch_dims

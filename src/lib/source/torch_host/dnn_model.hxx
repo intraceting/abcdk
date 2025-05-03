@@ -199,14 +199,23 @@ namespace abcdk
 
                         dst[i].score = m_object[index][i].m_score;
 
-                        dst[i].x1 = m_object[index][i].m_rect_x1;
-                        dst[i].y1 = m_object[index][i].m_rect_y1;
-                        dst[i].x2 = m_object[index][i].m_rect_x2;
-                        dst[i].y2 = m_object[index][i].m_rect_y2;
+                        dst[i].rect.nb = 2;
+                        dst[i].rect.pt[0].x = m_object[index][i].m_rect_x1;
+                        dst[i].rect.pt[0].y = m_object[index][i].m_rect_y1;
+                        dst[i].rect.pt[1].x = m_object[index][i].m_rect_x2;
+                        dst[i].rect.pt[1].y = m_object[index][i].m_rect_y2;
 
                         dst[i].angle = m_object[index][i].m_angle;
 #ifdef OPENCV_CORE_HPP
-                        m_object[index][i].rrect2pts(dst[i].rrect);
+                        cv::Point2f vec_pts[4];
+                        m_object[index][i].rrect2pts(vec_pts);
+
+                        dst[i].rrect.nb = 4;
+                        for (int j = 0; j < 4; j++)
+                        {
+                            dst[i].rrect.pt[j].x = vec_pts[j].x;
+                            dst[i].rrect.pt[j].y = vec_pts[j].y;
+                        }
 #endif // OPENCV_CORE_HPP
 
                         dst[i].nkeypoint = m_object[index][i].m_keypoint.size() / 3;
