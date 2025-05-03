@@ -32,7 +32,7 @@ namespace abcdk
                 virtual void prepare(abcdk_option_t *opt)
                 {
                     m_output_kpt_2d = abcdk_option_get_int(opt, "--output-keypoint-dims-2d", 0, 1);
-                    m_output_kpt_num = abcdk_option_get_int(opt, "--output-keypoint-number", 0, 4);
+                    m_output_kpt_num = abcdk_option_get_int(opt, "--output-keypoint-number", 0, 0);
                 }
 
             protected:
@@ -98,7 +98,7 @@ namespace abcdk
                             int label = -1;
                             float max_score = 0.0;
 
-                            /*cx,cy,w,h,[c,...],[x1,y1,x2,y2,x3,y3,x4,y4]*/
+                            /*cx,cy,w,h,c0,[c1,...],r,[x1,y1,...]*/
 
                             /*在所有分类中找出最大的。*/
                             for (int c = 0; c < output_classes ; c++)
@@ -147,28 +147,24 @@ namespace abcdk
 
                             float _r = abcdk::torch::util::obj<float>(output_data, r_off);
                             
-                           // one_dst.m_angle = 90 - (int)_r;// 0~180 To -90~90.
-                            one_dst.m_angle = (int)(_r * (180.0 / M_PI));//弧度转角度。
-                    //        one_dst.m_angle = (int)(_r * (M_PI/2) * 90.);
-                        //    one_dst.m_angle = (int)(_r); 
+                            /*弧度转角度。*/
+                            one_dst.m_angle = (int)(_r * (180.0 / M_PI));
 
-                          //  没有关键点。15个全是分类。
-                             
-                            // one_dst.m_keypoint.resize(m_output_kpt_num * 3);
+                            one_dst.m_keypoint.resize(m_output_kpt_num * 3);
 
-                            // for (int c = 4 + output_classes , k = 0; c < output_c; c += output_kpt_size, k += 3)
-                            // {
-                            //     size_t kpt_x_off = abcdk::torch::util::off<float>(output_packed, output_w, output_w * sizeof(float), output_h, output_c, b, 0, y, c + 0);
-                            //     size_t kpt_y_off = abcdk::torch::util::off<float>(output_packed, output_w, output_w * sizeof(float), output_h, output_c, b, 0, y, c + 1);
+                            for (int c = 5 + output_classes , k = 0; c < output_c; c += output_kpt_size, k += 3)
+                            {
+                                size_t kpt_x_off = abcdk::torch::util::off<float>(output_packed, output_w, output_w * sizeof(float), output_h, output_c, b, 0, y, c + 0);
+                                size_t kpt_y_off = abcdk::torch::util::off<float>(output_packed, output_w, output_w * sizeof(float), output_h, output_c, b, 0, y, c + 1);
 
-                            //     float _kpt_x = abcdk::torch::util::obj<float>(output_data, kpt_x_off) * input_w;
-                            //     float _kpt_y = abcdk::torch::util::obj<float>(output_data, kpt_y_off) * input_h;
+                                float _kpt_x = abcdk::torch::util::obj<float>(output_data, kpt_x_off) * input_w;
+                                float _kpt_y = abcdk::torch::util::obj<float>(output_data, kpt_y_off) * input_h;
 
-                            //     /*修正坐标，不要超出图像范围。*/
-                            //     one_dst.m_keypoint[k + 0] = abcdk::torch::util::clamp<int>((int)_kpt_x, 0, input_w - 1);
-                            //     one_dst.m_keypoint[k + 1] = abcdk::torch::util::clamp<int>((int)_kpt_y, 0, input_h - 1);
-                            //     one_dst.m_keypoint[k + 2] = 99;
-                            // }
+                                /*修正坐标，不要超出图像范围。*/
+                                one_dst.m_keypoint[k + 0] = abcdk::torch::util::clamp<int>((int)_kpt_x, 0, input_w - 1);
+                                one_dst.m_keypoint[k + 1] = abcdk::torch::util::clamp<int>((int)_kpt_y, 0, input_h - 1);
+                                one_dst.m_keypoint[k + 2] = 99;
+                            }
 
                             dst[b][label].push_back(one_dst);
                         }

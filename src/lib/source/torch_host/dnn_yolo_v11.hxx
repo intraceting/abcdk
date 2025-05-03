@@ -92,7 +92,7 @@ namespace abcdk
                             int label = -1;
                             float max_score = 0.0;
 
-                            /*cx,cy,w,h,[c,...]*/
+                            /*cx,cy,w,h,c0,[c1,...]*/
 
                             /*在所有分类中找出最大的。*/
                             for (int c = 0; c < output_classes ; c++)

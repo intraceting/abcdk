@@ -572,7 +572,7 @@ int abcdk_test_torch_6(abcdk_option_t *args)
             int weight = 3;
             int corner[4] = {obj_p->x1, obj_p->y1, obj_p->x2, obj_p->y2};
 
-         //   abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
+            abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
 
             abcdk_trace_printf(LOG_INFO, "r=%d", obj_p->angle);
 

@@ -102,10 +102,10 @@ namespace abcdk
 
                             /*
                              * 2D
-                             * cx,cy,w,h,[c,...],[x,y,...]
+                             * cx,cy,w,h,c0,[c1,...],[x1,y1,...]
                              * 
                              * 3D
-                             * cx,cy,w,h,[c,...],[x,y,v,...]
+                             * cx,cy,w,h,c0,[c1,...],[x1,y1,v1,...]
                              */
 
                             /*在所有分类中找出最大的。*/
@@ -151,6 +151,7 @@ namespace abcdk
                             one_dst.m_rect_y1 = abcdk::torch::util::clamp<int>(one_dst.m_rect_y1, 0, input_h - 1);
                             one_dst.m_rect_x2 = abcdk::torch::util::clamp<int>(one_dst.m_rect_x2, 0, input_w - 1);
                             one_dst.m_rect_y2 = abcdk::torch::util::clamp<int>(one_dst.m_rect_y2, 0, input_h - 1);
+
 
                             one_dst.m_keypoint.resize(m_output_kpt_num * 3);
 
