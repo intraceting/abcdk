@@ -10,6 +10,7 @@
 #include "abcdk/util/math.h"
 #include "abcdk/torch/opencv.h"
 #include "../torch/util.hxx"
+#include "../torch/ndarray.hxx"
 #include "dnn_object.hxx"
 
 namespace abcdk

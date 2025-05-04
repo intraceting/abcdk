@@ -75,6 +75,18 @@ namespace abcdk
             }
 
             template <typename T>
+            ABCDK_TORCH_INVOKE_DEVICE T *ptr(void *data, bool packed, size_t w, size_t ws, size_t h, size_t c, size_t n, size_t x, size_t y, size_t z)
+            {
+                return ptr<T>(data, off<T>(packed, w, ws, h, c, n, x, y, z));
+            }
+
+            template <typename T>
+            ABCDK_TORCH_INVOKE_DEVICE T obj(void *data, bool packed, size_t w, size_t ws, size_t h, size_t c, size_t n, size_t x, size_t y, size_t z)
+            {
+                return obj<T>(data, off<T>(packed, w, ws, h, c, n, x, y, z));
+            }
+
+            template <typename T>
             ABCDK_TORCH_INVOKE_DEVICE void swap(T &a, T &b)
             {
                 T c;

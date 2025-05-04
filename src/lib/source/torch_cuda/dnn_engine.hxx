@@ -4,8 +4,8 @@
  * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
  *
  */
-#ifndef ABCDK_TORCH_NVIDIA_DNN_FORWARD_HXX
-#define ABCDK_TORCH_NVIDIA_DNN_FORWARD_HXX
+#ifndef ABCDK_TORCH_NVIDIA_DNN_ENGINE_HXX
+#define ABCDK_TORCH_NVIDIA_DNN_ENGINE_HXX
 
 #include "abcdk/util/option.h"
 #include "abcdk/util/trace.h"
@@ -71,6 +71,8 @@ namespace abcdk
 
                 int load(const void *data, size_t size)
                 {
+                    assert(data != NULL && size > 0);
+
                     m_runtime_ctx = nvinfer1::createInferRuntime(m_logger);
                     if (!m_runtime_ctx)
                         return -1;
@@ -171,4 +173,4 @@ namespace abcdk
 
 #endif // #if defined(__cuda_cuda_h__) && defined(NV_INFER_H)
 
-#endif // ABCDK_TORCH_NVIDIA_DNN_FORWARD_HXX
+#endif // ABCDK_TORCH_NVIDIA_DNN_ENGINE_HXX
