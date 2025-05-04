@@ -580,15 +580,32 @@ namespace abcdk
                 assert(name != NULL);
 
                 if (strcasecmp(name, "ORB") == 0)
+                {
                     set_feature_finder(cv::ORB::create(800));
-#ifdef HAVE_OPENCV_XFEATURES2D
+                }
+
                 else if (strcasecmp(name, "SIFT") == 0)
+                {
+#if (CV_VERSION_MAJOR >= 4 && CV_VERSION_MINOR >= 4)
+                    set_feature_finder(cv::SIFT::create());
+#else //#if (CV_VERSION_MAJOR >= 4 && CV_VERSION_MINOR >= 4)
+#ifdef HAVE_OPENCV_XFEATURES2D
                     set_feature_finder(cv::xfeatures2d::SIFT::create());
-#ifdef OPENCV_ENABLE_NONFREE
-                else if (strcasecmp(name, "SURF") == 0)
-                    set_feature_finder(cv::xfeatures2d::SURF::create());
-#endif // OPENCV_ENABLE_NONFREE
+#else //HAVE_OPENCV_XFEATURES2D
+                    set_feature_finder("non-SIFT");
 #endif //HAVE_OPENCV_XFEATURES2D
+#endif //#if (CV_MAJOR_VERSION >= 4 && CV_MINOR_VERSION >= 4)
+                }
+                else if (strcasecmp(name, "SURF") == 0)
+                {
+#ifdef HAVE_OPENCV_XFEATURES2D
+#ifdef OPENCV_ENABLE_NONFREE
+                    set_feature_finder(cv::xfeatures2d::SURF::create());
+#else //OPENCV_ENABLE_NONFREE
+                    set_feature_finder("non-SURF");
+#endif // OPENCV_ENABLE_NONFREE
+#endif // HAVE_OPENCV_XFEATURES2D
+                }
                 else
                 {
                     abcdk_trace_printf(LOG_WARNING, TT("特征发现算法('%s')未找到，启用默认的算法('ORB')。"), name);

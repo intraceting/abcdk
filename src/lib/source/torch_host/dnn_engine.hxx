@@ -93,19 +93,27 @@ namespace abcdk
                     int k = 0;
                     int chk;
 
-                    std::vector<std::string> vec_name = m_engine_ctx.getLayerNames();
+                    //std::vector<std::string> vec_name = m_engine_ctx.getLayerNames();
+                    std::vector<std::string> vec_name = m_engine_ctx.getUnconnectedOutLayersNames();
 
                     std::vector<std::string> vec_input_name;
 
-
-                    for(int i = 0;i<vec_name.size();i++)
+                    for (int i = 0; i < vec_name.size(); i++)
                     {
-                        cv::Ptr<cv::dnn::Layer> layer =  m_engine_ctx.getLayer(m_engine_ctx.getLayerId(vec_name[i]));
+                        //std::vector<cv::Ptr<cv::dnn::Layer>> layer2 = m_engine_ctx.getLayerInputs(m_engine_ctx.getLayerId(vec_name[i]));
+                        cv::Ptr<cv::dnn::Layer> t = m_engine_ctx.getLayer(m_engine_ctx.getLayerId(vec_name[i]));
 
-                        assert(layer->blobs[0].type() == tensor::DataType::kFLOAT);
+                      
+
+                            abcdk_trace_printf(LOG_DEBUG, "name:%s", t->name.c_str());
+                            abcdk_trace_printf(LOG_DEBUG, "type:%s", t->type.c_str());
+
+                            auto a = m_engine_ctx.getParam(m_engine_ctx.getLayerId(vec_name[i]), 0);
+
+                            std::cerr << a.size << std::endl;
+                        
                     }
 
-                    
                     // std::vector<std::string> input_vec_name = m_engine_ctx.getInputsNames();
                     // std::vector<std::string> output_vec_name = m_engine_ctx.getUnconnectedOutLayersNames();
 
