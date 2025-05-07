@@ -21,13 +21,13 @@ namespace abcdk
             cv::InterpolationFlags convert2opencv(int mode)
             {
                 if (mode == ABCDK_TORCH_INTER_NEAREST)
-                    return INTER_NEAREST;
+                    return cv::INTER_NEAREST;
                 else if (mode == ABCDK_TORCH_INTER_LINEAR)
-                    return INTER_LINEAR;
+                    return cv::INTER_LINEAR;
                 else if (mode == ABCDK_TORCH_INTER_CUBIC)
-                    return INTER_CUBIC;
+                    return cv::INTER_CUBIC;
                 else
-                    return INTER_MAX;
+                    return cv::INTER_MAX;
             }
 
         } // namespace inter_mode
