@@ -18,7 +18,7 @@ namespace abcdk
     {
         namespace inter_mode
         {
-            NppiInterpolationMode convert2nppi(int mode)
+            static inline NppiInterpolationMode convert2nppi(int mode)
             {
                 if (mode == ABCDK_TORCH_INTER_NEAREST)
                     return NPPI_INTER_NN;

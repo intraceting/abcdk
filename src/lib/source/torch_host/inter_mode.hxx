@@ -18,7 +18,7 @@ namespace abcdk
     {
         namespace inter_mode
         {
-            cv::InterpolationFlags convert2opencv(int mode)
+            static inline cv::InterpolationFlags convert2opencv(int mode)
             {
                 if (mode == ABCDK_TORCH_INTER_NEAREST)
                     return cv::INTER_NEAREST;

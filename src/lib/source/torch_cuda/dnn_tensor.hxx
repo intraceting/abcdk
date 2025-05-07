@@ -267,7 +267,7 @@ namespace abcdk
                         assert(src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 || src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_BGR24);
 
                         abcdk_torch_image_reset_cuda(&m_input_img_cache[i], m_input_w_size, m_input_h_size, src_img_p->pixfmt, 1);
-                        if (!src_img_cache_p[i])
+                        if (!m_input_img_cache[i])
                             return -1;
 
                         abcdk_torch_image_t *src_img_cache_p = m_input_img_cache[i];
