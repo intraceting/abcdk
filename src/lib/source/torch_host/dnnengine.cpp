@@ -78,7 +78,38 @@ int abcdk_torch_dnn_engine_load_model_host(abcdk_torch_dnn_engine_t *ctx, const 
 
 int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor tensor[])
 {
-    return -1;
+    abcdk::torch_host::dnn::engine *ht_ctx_p;
+    int chk_count = 0;
+
+    assert(ctx != NULL && count > 0 && tensor != NULL);
+
+    assert(ctx->tag == ABCDK_TORCH_TAG_HOST);
+
+    ht_ctx_p = (abcdk::torch_host::dnn::engine *)ctx->private_ctx;
+
+    for (int i = 0; i < count; i++)
+    {
+        abcdk::torch_host::dnn::tensor *src_p = ht_ctx_p->tensor_ptr(i);
+        if (!src_p)
+            break;
+
+        abcdk_torch_dnn_tensor *dst_p = &tensor[i];
+
+        dst_p->index = src_p->index();
+        dst_p->name_p = src_p->name();
+        dst_p->mode = (src_p->input() ? 1 : 2);
+
+        dst_p->dims.nb = src_p->dims().size();
+
+        for (int i = 0; i < dst_p->dims.nb; i++)
+            dst_p->dims.d[i] = (int)src_p->dims()[i];
+
+        dst_p->data_p = (src_p->input() ? NULL : src_p->data());
+
+        chk_count += 1;
+    }
+
+    return chk_count;
 }
 
 int abcdk_torch_dnn_engine_infer_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_image_t *img[])

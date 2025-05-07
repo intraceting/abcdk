@@ -11,21 +11,22 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-static void _abcdk_avlog_callback(void* opaque, int level, const char* fmt, va_list v)
+static void _abcdk_avlog_callback(void *opaque, int level, const char *fmt, va_list v)
 {
-    int sys_level;
-    if((AV_LOG_QUIET == level) || (AV_LOG_PANIC == level)  || (AV_LOG_FATAL == level) || (AV_LOG_ERROR == level))
-        sys_level = LOG_ERR;
-    else if(AV_LOG_WARNING == level)
-        sys_level = LOG_WARNING;
-    else if(AV_LOG_INFO == level)
-        sys_level = LOG_INFO;
-    else if(AV_LOG_VERBOSE == level)
-        sys_level = LOG_DEBUG;
+    int type;
+
+    if ((AV_LOG_QUIET == level) || (AV_LOG_PANIC == level) || (AV_LOG_FATAL == level) || (AV_LOG_ERROR == level))
+        type = LOG_ERR;
+    else if (AV_LOG_WARNING == level)
+        type = LOG_WARNING;
+    else if (AV_LOG_INFO == level)
+        type = LOG_INFO;
+    else if (AV_LOG_VERBOSE == level)
+        type = LOG_DEBUG;
     else
-        return ;
-    
-    abcdk_trace_vprintf(sys_level,fmt,v);
+        return;
+
+    abcdk_trace_vprintf(type, fmt, v);
 }
 
 void abcdk_avlog_redirect2trace()

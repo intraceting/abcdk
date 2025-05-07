@@ -592,7 +592,7 @@ namespace abcdk
 #ifdef HAVE_OPENCV_XFEATURES2D
                     set_feature_finder(cv::xfeatures2d::SIFT::create());
 #else //HAVE_OPENCV_XFEATURES2D
-                    set_feature_finder("non-SIFT");
+                    set_feature_finder("cv::xfeatures2d::SIFT");
 #endif //HAVE_OPENCV_XFEATURES2D
 #endif //#if (CV_MAJOR_VERSION >= 4 && CV_MINOR_VERSION >= 4)
                 }
@@ -602,7 +602,7 @@ namespace abcdk
 #ifdef OPENCV_ENABLE_NONFREE
                     set_feature_finder(cv::xfeatures2d::SURF::create());
 #else //OPENCV_ENABLE_NONFREE
-                    set_feature_finder("non-SURF");
+                    set_feature_finder("cv::xfeatures2d::SURF");
 #endif // OPENCV_ENABLE_NONFREE
 #endif // HAVE_OPENCV_XFEATURES2D
                 }

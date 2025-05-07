@@ -22,13 +22,9 @@ namespace abcdk
         {
             class logger : public nvinfer1::ILogger
             {
-            private:
-                int m_level;
-
             public:
-                logger(int level = LOG_INFO)
+                logger()
                 {
-                    m_level = level;
                 }
 
                 virtual ~logger()
@@ -38,26 +34,22 @@ namespace abcdk
             public:
                 void log(nvinfer1::ILogger::Severity level, const char *msg) noexcept
                 {
-                    int qos;
+                    int type;
 
                     if (nvinfer1::ILogger::Severity::kVERBOSE == level)
-                        qos = LOG_DEBUG;
+                        type = LOG_DEBUG;
                     else if (nvinfer1::ILogger::Severity::kINFO == level)
-                        qos = LOG_INFO;
+                        type = LOG_INFO;
                     else if (nvinfer1::ILogger::Severity::kWARNING == level)
-                        qos = LOG_WARNING;
+                        type = LOG_WARNING;
                     else if (nvinfer1::ILogger::Severity::kERROR == level)
-                        qos = LOG_ERR;
+                        type = LOG_ERR;
                     else if (nvinfer1::ILogger::Severity::kINTERNAL_ERROR == level)
-                        qos = LOG_ALERT;
+                        type = LOG_ALERT;
                     else
-                        qos = LOG_INFO;
+                        type = LOG_INFO;
 
-                    if (m_level < qos)
-                        return;
-                    
-                    abcdk_trace_printf(qos, "NvLogger(%d): %s", (int)level, msg);
-                    
+                    abcdk_trace_printf(type, "NvLogger(%d): %s", (int)level, msg);
                 }
             };
 

@@ -14,8 +14,10 @@
 #include "abcdk/torch/imgutil.h"
 #include "abcdk/torch/imgcode.h"
 #include "abcdk/torch/opencv.h"
+#include "abcdk/torch/onnxruntime.h"
+#include "dnn_status.hxx"
 
-#ifdef OPENCV_DNN_HPP
+#ifdef ORT_API_VERSION
 
 namespace abcdk
 {
@@ -26,19 +28,21 @@ namespace abcdk
             class tensor
             {
             public:
+                typedef std::vector<int64_t> Shape;
+
                 enum DataType
                 {
                     //! 32-bit floating point format.
-                    kFLOAT = CV_32FC1,
+                    kFLOAT = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT,
 
                     //! IEEE 16-bit floating-point format -- has a 5 bit exponent and 11 bit significand.
-                    kHALF = CV_16FC1,
+                    kHALF = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16,
 
                     //! Signed 8-bit integer representing a quantized floating-point value.
-                    kINT8 = CV_8SC1,
+                    kINT8 = ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8,
 
                     //! Signed 32-bit integer format.
-                    kINT32 = CV_32SC1
+                    kINT32 = ONNX_TENSOR_ELEMENT_DATA_TYPE_INT32
                 };
                 
                 enum TensorIOMode
@@ -79,7 +83,7 @@ namespace abcdk
                     return size;
                 }
                 
-                static size_t dims_size(const cv::dnn::MatShape &dims, DataType type)
+                static size_t dims_size(const Shape &dims, DataType type)
                 {
                     size_t size = type_size(type);
     
@@ -91,8 +95,10 @@ namespace abcdk
                     return size;
                 }
 
-
             private:
+                /*API环境。*/
+                const OrtApi *m_api_ctx;
+
                 /*索引(输入输出分别计数）。*/
                 int m_index;
 
@@ -106,13 +112,14 @@ namespace abcdk
                 DataType m_type;
 
                 /*维度。*/
-                cv::dnn::MatShape m_dims;
+                Shape m_dims;
 
                 /*数据长度。*/
                 size_t m_data_size;
 
                 /*数据对象(host)。*/
                 void *m_data_host;
+                OrtValue* m_data_ort;
 
                 /*输入数据维度。*/
                 int m_input_b_size;
@@ -138,14 +145,16 @@ namespace abcdk
             public:
                 tensor()
                 {
+                    m_api_ctx = NULL;
+
                     m_data_host = NULL;
+                    m_data_ort = NULL;
                 }
 
                 virtual ~tensor()
                 {
                     clear();
                 }
-
             public:
                 int index() const
                 {
@@ -167,7 +176,7 @@ namespace abcdk
                     return m_type;
                 }
 
-                const cv::dnn::MatShape &dims() const
+                const Shape &dims() const
                 {
                     return m_dims;
                 }
@@ -177,9 +186,9 @@ namespace abcdk
                     return m_data_size;
                 }
 
-                void *data() const
+                void *data(int in_host = 0) const
                 {
-                    return m_data_host;
+                    return (in_host ? m_data_host : (void *)m_data_ort);
                 }
 
             public:
@@ -195,14 +204,23 @@ namespace abcdk
                     
                     abcdk_torch_free_host(&m_data_host);
 
+                    if(m_data_ort)
+                    {
+                        m_api_ctx->ReleaseValue(m_data_ort);
+                        m_data_ort = NULL;
+                    }
+
                     for (auto &t : m_input_img_cache)
                         abcdk_torch_image_free_host(&t);
                 }
 
-                int prepare(int index, const char *name, TensorIOMode mode, DataType type, const cv::dnn::MatShape &dims, abcdk_option_t *opt)
+                int prepare(const OrtApi *api_ctx, OrtMemoryInfo *mem_info, int index, const char *name, TensorIOMode mode, DataType type, const Shape &dims, abcdk_option_t *opt)
                 {
                     int tensor_b_index, tensor_c_index, tensor_h_index, tensor_w_index;
+                    dnn::status status(api_ctx);
                     int chk;
+
+                    m_api_ctx = api_ctx;
 
                     m_index = index;
                     m_name = (name ? name : "");
@@ -219,7 +237,12 @@ namespace abcdk
 
                     m_data_host = abcdk_torch_alloc_z_host(m_data_size);
 
-                    if (!m_data_host)
+                    /*绑定主机内存，并创建新对象。*/
+                    status = m_api_ctx->CreateTensorWithDataAsOrtValue(mem_info, m_data_host, m_data_size, m_dims.data(), m_dims.size(), (ONNXTensorElementDataType)m_type, &m_data_ort);
+                    if (status.check() != 0)
+                        return -1;
+
+                    if (!m_data_host || !m_data_ort)
                         return -1;
 
                     /*输出张量走到这里就结束了。*/
@@ -321,9 +344,9 @@ namespace abcdk
             };
 
         } // namespace dnn
-    } // namespace torch_cuda
+    } // namespace torch_host
 } // namespace abcdk
 
-#endif // OPENCV_DNN_HPP
+#endif // ORT_API_VERSION
 
 #endif // ABCDK_TORCH_HOST_DNN_TENSOR_HXX

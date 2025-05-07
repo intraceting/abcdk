@@ -43,7 +43,7 @@ namespace abcdk
 
                 virtual ~engine()
                 {
-
+                    release();
                 }
             public:
                 int tensor_size() 
