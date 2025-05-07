@@ -49,8 +49,8 @@ int abcdk_torch_imgutil_copy_cuda(uint8_t *dst_data[4], int dst_stride[4], int d
     return -1;
 }
 
-int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t dst_ws,
-                                            int src_packed, uint8_t *src, size_t src_ws,
+int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t dst_ws, int dst_c_invert,
+                                            int src_packed, uint8_t *src, size_t src_ws, int src_c_invert,
                                             size_t b, size_t w, size_t h, size_t c,
                                             float scale[], float mean[], float std[])
 {
@@ -58,8 +58,8 @@ int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t d
     return -1;
 }
 
-int abcdk_torch_imgutil_blob_32f_to_8u_cuda(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                            int src_packed, float *src, size_t src_ws,
+int abcdk_torch_imgutil_blob_32f_to_8u_cuda(int dst_packed, uint8_t *dst, size_t dst_ws, int dst_c_invert,
+                                            int src_packed, float *src, size_t src_ws, int src_c_invert,
                                             size_t b, size_t w, size_t h, size_t c,
                                             float scale[], float mean[], float std[])
 {

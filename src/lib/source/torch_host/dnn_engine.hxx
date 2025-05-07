@@ -245,13 +245,20 @@ namespace abcdk
                         else
                         {
                             output_vec_name[output_count] = (char *)t.name();
-                            output_vec_value[output_count] = NULL;
+                            output_vec_value[output_count] = (OrtValue *)t.data(0);
 
                             output_count += 1;
                         }
                     }
 
                     status = m_api_ctx->Run(m_ses_ctx, NULL, input_vec_name, input_vec_value, input_count, output_vec_name, output_count, output_vec_value);
+                    if(status.check() != 0)
+                        return -1;
+
+                    for (auto &t : m_tensor_ctx)
+                    {
+                        t.post_processing();
+                    }
 
                     return 0;
                 }

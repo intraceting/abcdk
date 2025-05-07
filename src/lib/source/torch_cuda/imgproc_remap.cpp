@@ -6,6 +6,7 @@
  */
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/nvidia.h"
+#include "inter_mode.hxx"
 
 #ifdef __cuda_cuda_h__
 
@@ -18,7 +19,7 @@ static int _abcdk_torch_imgproc_remap_8u_cuda(int channels, int packed,
     NppiSize tmp_dst_size = {0}, tmp_src_size = {0};
     NppiRect tmp_src_roi = {0};
     NppStatus npp_chk = NPP_NOT_IMPLEMENTED_ERROR;
-
+        
     assert(channels == 1 || channels == 3 || channels == 4);
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0);
     assert(src != NULL && src_w > 0 && src_ws > 0 && src_h > 0);
@@ -41,21 +42,21 @@ static int _abcdk_torch_imgproc_remap_8u_cuda(int channels, int packed,
         npp_chk = nppiRemap_8u_C1R(src, tmp_src_size, src_ws, tmp_src_roi,
                                    xmap, xmap_ws, ymap, ymap_ws,
                                    dst, dst_ws, tmp_dst_size,
-                                   inter_mode);
+                                   abcdk::torch_cuda::inter_mode::convert2nppi(inter_mode));
     }
     else if (channels == 3)
     {
         npp_chk = nppiRemap_8u_C3R(src, tmp_src_size, src_ws, tmp_src_roi,
                                    xmap, xmap_ws, ymap, ymap_ws,
                                    dst, dst_ws, tmp_dst_size,
-                                   inter_mode);
+                                   abcdk::torch_cuda::inter_mode::convert2nppi(inter_mode));
     }
     else if (channels == 4)
     {
         npp_chk = nppiRemap_8u_C4R(src, tmp_src_size, src_ws, tmp_src_roi,
                                    xmap, xmap_ws, ymap, ymap_ws,
                                    dst, dst_ws, tmp_dst_size,
-                                   inter_mode);
+                                   abcdk::torch_cuda::inter_mode::convert2nppi(inter_mode));
     }
 
     if (npp_chk != NPP_SUCCESS)

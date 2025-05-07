@@ -6,6 +6,7 @@
  */
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/opencv.h"
+#include "inter_mode.hxx"
 
 __BEGIN_DECLS
 
@@ -46,7 +47,7 @@ static int _abcdk_torch_imgproc_remap_8u_host(int channels, int packed,
     tmp_xmap = cv::Mat(dst_h, dst_w, CV_32FC1, (void *)xmap, xmap_ws);
     tmp_ymap = cv::Mat(dst_h, dst_w, CV_32FC1, (void *)ymap, ymap_ws);
 
-    cv::remap(tmp_src, tmp_dst, tmp_xmap, tmp_ymap, inter_mode);
+    cv::remap(tmp_src, tmp_dst, tmp_xmap, tmp_ymap, abcdk::torch_host::inter_mode::convert2opencv(inter_mode));
 
     return 0;
 }

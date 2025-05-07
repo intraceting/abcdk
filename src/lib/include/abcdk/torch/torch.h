@@ -58,6 +58,22 @@ typedef struct _abcdk_torch_dims
     int d[8];
 } abcdk_torch_dims_t;
 
+/*插值算法。*/
+typedef enum _abcdk_torch_inter_mode
+{
+    /** nearest neighbor interpolation */
+    ABCDK_TORCH_INTER_NEAREST = 0,
+#define ABCDK_TORCH_INTER_NEAREST ABCDK_TORCH_INTER_NEAREST
+
+    /** bilinear interpolation */
+    ABCDK_TORCH_INTER_LINEAR = 1,
+#define ABCDK_TORCH_INTER_LINEAR ABCDK_TORCH_INTER_LINEAR
+
+    /** bicubic interpolation */
+    ABCDK_TORCH_INTER_CUBIC = 2,
+#define ABCDK_TORCH_INTER_CUBIC ABCDK_TORCH_INTER_CUBIC
+
+} abcdk_torch_inter_mode_t;
 
 /** 
  * 初始化。

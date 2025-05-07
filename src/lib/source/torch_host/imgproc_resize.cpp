@@ -6,6 +6,7 @@
  */
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/opencv.h"
+#include "inter_mode.hxx"
 
 __BEGIN_DECLS
 
@@ -66,8 +67,8 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
 
     tmp_dst2 = tmp_dst(cv::Rect(tmp_param.x_shift, tmp_param.y_shift, tmp_dst2_size.width, tmp_dst2_size.height));
 
-    cv::resize(tmp_src, tmp_dst2, tmp_dst2_size, 0, 0, inter_mode);
-    // cv::resize(tmp_src, tmp_dst2, cv::Size(), tmp_param.x_factor, tmp_param.y_factor, inter_mode);//不好用。
+    cv::resize(tmp_src, tmp_dst2, tmp_dst2_size, 0, 0, abcdk::torch_host::inter_mode::convert2opencv(inter_mode));
+    // cv::resize(tmp_src, tmp_dst2, cv::Size(), tmp_param.x_factor, tmp_param.y_factor, abcdk::torch_host::inter_mode::convert2opencv(inter_mode));//不好用。
 
     return 0;
 }

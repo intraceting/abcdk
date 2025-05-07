@@ -33,23 +33,7 @@ __BEGIN_DECLS
 
 #ifndef __cuda_cuda_h__
 
-/** 
- * Filtering methods.
- */
-typedef enum 
-{
-    NPPI_INTER_UNDEFINED         = 0,        /**<  Undefined filtering interpolation mode. */
-    NPPI_INTER_NN                = 1,        /**<  Nearest neighbor filtering. */
-    NPPI_INTER_LINEAR            = 2,        /**<  Linear interpolation. */
-    NPPI_INTER_CUBIC             = 4,        /**<  Cubic interpolation. */
-    NPPI_INTER_CUBIC2P_BSPLINE,              /**<  Two-parameter cubic filter (B=1, C=0) */
-    NPPI_INTER_CUBIC2P_CATMULLROM,           /**<  Two-parameter cubic filter (B=0, C=1/2) */
-    NPPI_INTER_CUBIC2P_B05C03,               /**<  Two-parameter cubic filter (B=1/2, C=3/10) */
-    NPPI_INTER_SUPER             = 8,        /**<  Super sampling. */
-    NPPI_INTER_LANCZOS           = 16,       /**<  Lanczos filtering. */
-    NPPI_INTER_LANCZOS3_ADVANCED = 17,       /**<  Generic Lanczos filtering with order 3. */
-    NPPI_SMOOTH_EDGE             = (int)0x8000000 /**<  Smooth edge filtering. */
-} NppiInterpolationMode; 
+
 
 #endif //__cuda_cuda_h__
 

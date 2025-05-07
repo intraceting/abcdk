@@ -130,7 +130,7 @@ namespace abcdk
                     if (chk != 0)
                         return false;
 
-                    abcdk_torch_imgproc_remap_cuda(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, NPPI_INTER_CUBIC);
+                    abcdk_torch_imgproc_remap_cuda(outs_it, NULL, imgs_it, NULL, xmap_it, ymap_it, ABCDK_TORCH_INTER_CUBIC);
                 }
 
                 return true;

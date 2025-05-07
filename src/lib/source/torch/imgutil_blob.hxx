@@ -24,23 +24,25 @@ namespace abcdk
              * @param [in] std 方差。
              */
             template <typename DT, typename ST, typename BT>
-            ABCDK_TORCH_INVOKE_DEVICE void blob(bool dst_packed, DT *dst, size_t dst_ws,
-                                                bool src_packed, ST *src, size_t src_ws,
+            ABCDK_TORCH_INVOKE_DEVICE void blob(bool dst_packed, DT *dst, size_t dst_ws, bool dst_c_invert,
+                                                bool src_packed, ST *src, size_t src_ws, bool src_c_invert,
                                                 size_t b, size_t w, size_t h, size_t c,
                                                 BT *scale, BT *mean, BT *std,
                                                 bool revert, size_t tid)
             {
                 size_t n, x, y, z;
 
+                /*源和目标索引算法必须一样。*/
                 abcdk::torch::util::idx2nyxz(tid,h,w,c,n,y,x,z);
 
                 if (n >= b || x >= w || y >= h || z >= c)
                     return;
+                
+                size_t src_z = (src_c_invert ? c - z : z);
+                size_t dst_z = (dst_c_invert ? c - z : z);
 
-                /*源和目标索引算法必须一样。*/
-
-                size_t src_of = abcdk::torch::util::off<ST>(src_packed, w, src_ws, h, c, n, x, y, z);
-                size_t dst_of = abcdk::torch::util::off<DT>(dst_packed, w, dst_ws, h, c, n, x, y, z);
+                size_t src_of = abcdk::torch::util::off<ST>(src_packed, w, src_ws, h, c, n, x, y, src_z);
+                size_t dst_of = abcdk::torch::util::off<DT>(dst_packed, w, dst_ws, h, c, n, x, y, dst_z);
 
                 ST *src_p = abcdk::torch::util::ptr<ST>(src, src_of);
                 DT *dst_p = abcdk::torch::util::ptr<DT>(dst, dst_of);

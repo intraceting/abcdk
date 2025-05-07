@@ -6,6 +6,7 @@
  */
 #include "abcdk/torch/imgproc.h"
 #include "abcdk/torch/opencv.h"
+#include "inter_mode.hxx"
 
 __BEGIN_DECLS
 
@@ -89,11 +90,11 @@ static int _abcdk_torch_imgproc_warp_8u_host(int channels, int packed,
 
     if (warp_mode == 1)
     {
-        cv::warpPerspective(tmp_src, tmp_dst, m, cv::Size(dst_w, dst_h), inter_mode);
+        cv::warpPerspective(tmp_src, tmp_dst, m, cv::Size(dst_w, dst_h), abcdk::torch_host::inter_mode::convert2opencv(inter_mode));
     }
     else if (warp_mode == 2)
     {
-        cv::warpAffine(tmp_src, tmp_dst, m, cv::Size(dst_w, dst_h), inter_mode);
+        cv::warpAffine(tmp_src, tmp_dst, m, cv::Size(dst_w, dst_h), abcdk::torch_host::inter_mode::convert2opencv(inter_mode));
     }
 
     return 0;

@@ -11,7 +11,7 @@
 
 __BEGIN_DECLS
 
-#ifdef OPENCV_DNN_HPP
+#ifdef ORT_API_VERSION
 
 void abcdk_torch_dnn_engine_free_host(abcdk_torch_dnn_engine_t **ctx)
 {
@@ -114,41 +114,66 @@ int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int 
 
 int abcdk_torch_dnn_engine_infer_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_image_t *img[])
 {
-    return -1;
+    abcdk::torch_host::dnn::engine *ht_ctx_p;
+    std::vector<abcdk_torch_image_t *> tmp_img;
+    int chk;
+
+    assert(ctx != NULL && count > 0 && img != NULL);
+
+    assert(ctx->tag == ABCDK_TORCH_TAG_HOST);
+
+    ht_ctx_p = (abcdk::torch_host::dnn::engine *)ctx->private_ctx;
+
+    tmp_img.resize(count);
+    for (int i = 0; i < count; i++)
+    {
+        if (!img[i])
+            continue;
+
+        assert(img[i]->tag == ABCDK_TORCH_TAG_HOST);
+
+        tmp_img[i] = img[i];
+    }
+
+    chk = ht_ctx_p->execute(tmp_img);
+    if (chk != 0)
+        return -1;
+
+    return 0;
 }
 
-#else // OPENCV_DNN_HPP
+#else // ORT_API_VERSION
 
 void abcdk_torch_dnn_engine_free_host(abcdk_torch_dnn_engine_t **ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含ONNXRuntime工具。"));
     return ;
 }
 
 abcdk_torch_dnn_engine_t *abcdk_torch_dnn_engine_alloc_host()
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含ONNXRuntime工具。"));
     return NULL;
 }
 
 int abcdk_torch_dnn_engine_load_model_host(abcdk_torch_dnn_engine_t *ctx, const char *file, abcdk_option_t *opt)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含ONNXRuntime工具。"));
     return -1; 
 }
 
 int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor info[])
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含ONNXRuntime工具。"));
     return -1;
 }
 
 int abcdk_torch_dnn_engine_infer_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_image_t *img[])
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含ONNXRuntime工具。"));
     return -1; 
 }
 
-#endif // OPENCV_DNN_HPP
+#endif // ORT_API_VERSION
 
 __END_DECLS

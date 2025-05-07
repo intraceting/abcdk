@@ -12,20 +12,24 @@
 #ifdef __cuda_cuda_h__
 
 template <typename DT, typename ST, typename BT>
-ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_imgutil_blob_2d2d_cuda(bool dst_packed, DT *dst, size_t dst_ws,
-                                                                   bool src_packed, ST *src, size_t src_ws,
+ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_imgutil_blob_2d2d_cuda(bool dst_packed, DT *dst, size_t dst_ws, bool dst_c_invert,
+                                                                   bool src_packed, ST *src, size_t src_ws, bool src_c_invert,
                                                                    size_t b, size_t w, size_t h, size_t c,
                                                                    BT *scale, BT *mean, BT *std,
                                                                    bool revert)
 {
     size_t tid = abcdk::torch_cuda::grid::get_tid(2, 2);
 
-    abcdk::torch::imgutil::blob<DT, ST, BT>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c, scale, mean, std, revert, tid);
+    abcdk::torch::imgutil::blob<DT, ST, BT>(dst_packed, dst, dst_ws, dst_c_invert,
+                                            src_packed, src, src_ws, src_c_invert,
+                                            b, w, h, c,
+                                            scale, mean, std,
+                                            revert, tid);
 }
 
 template <typename DT, typename ST, typename BT>
-ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgutil_blob_cuda(bool dst_packed, DT *dst, size_t dst_ws,
-                                                           bool src_packed, ST *src, size_t src_ws,
+ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgutil_blob_cuda(bool dst_packed, DT *dst, size_t dst_ws, bool dst_c_invert,
+                                                           bool src_packed, ST *src, size_t src_ws, bool src_c_invert,
                                                            size_t b, size_t w, size_t h, size_t c,
                                                            BT *scale, BT *mean, BT *std,
                                                            bool revert)
@@ -53,7 +57,11 @@ ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgutil_blob_cuda(bool dst_packed, DT *
     /*2D-2D*/
     abcdk::torch_cuda::grid::make_dim_dim(dim, b * w * h * c, 64);
 
-    _abcdk_torch_imgutil_blob_2d2d_cuda<DT, ST, BT><<<dim[0], dim[1]>>>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c, (BT *)gpu_scale, (BT *)gpu_mean, (BT *)gpu_std, revert);
+    _abcdk_torch_imgutil_blob_2d2d_cuda<DT, ST, BT><<<dim[0], dim[1]>>>(dst_packed, dst, dst_ws, dst_c_invert,
+                                                                        src_packed, src, src_ws, src_c_invert,
+                                                                        b, w, h, c,
+                                                                        (BT *)gpu_scale, (BT *)gpu_mean, (BT *)gpu_std,
+                                                                        revert);
 
     abcdk_torch_free_cuda(&gpu_scale);
     abcdk_torch_free_cuda(&gpu_mean);
@@ -64,20 +72,28 @@ ABCDK_TORCH_INVOKE_HOST int _abcdk_torch_imgutil_blob_cuda(bool dst_packed, DT *
 
 __BEGIN_DECLS
 
-int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t dst_ws,
-                                            int src_packed, uint8_t *src, size_t src_ws,
+int abcdk_torch_imgutil_blob_8u_to_32f_cuda(int dst_packed, float *dst, size_t dst_ws, int dst_c_invert,
+                                            int src_packed, uint8_t *src, size_t src_ws, int src_c_invert,
                                             size_t b, size_t w, size_t h, size_t c,
                                             float scale[], float mean[], float std[])
 {
-    return _abcdk_torch_imgutil_blob_cuda<float, uint8_t, float>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c, scale, mean, std, false);
+    return _abcdk_torch_imgutil_blob_cuda<float, uint8_t, float>(dst_packed, dst, dst_ws, dst_c_invert,
+                                                                 src_packed, src, src_ws, src_c_invert,
+                                                                 b, w, h, c,
+                                                                 scale, mean, std,
+                                                                 false);
 }
 
-int abcdk_torch_imgutil_blob_32f_to_8u_cuda(int dst_packed, uint8_t *dst, size_t dst_ws,
-                                            int src_packed, float *src, size_t src_ws,
+int abcdk_torch_imgutil_blob_32f_to_8u_cuda(int dst_packed, uint8_t *dst, size_t dst_ws, int dst_c_invert,
+                                            int src_packed, float *src, size_t src_ws, int src_c_invert,
                                             size_t b, size_t w, size_t h, size_t c,
                                             float scale[], float mean[], float std[])
 {
-    return _abcdk_torch_imgutil_blob_cuda<uint8_t, float, float>(dst_packed, dst, dst_ws, src_packed, src, src_ws, b, w, h, c, scale, mean, std, true);
+    return _abcdk_torch_imgutil_blob_cuda<uint8_t, float, float>(dst_packed, dst, dst_ws, dst_c_invert,
+                                                                 src_packed, src, src_ws, src_c_invert,
+                                                                 b, w, h, c,
+                                                                 scale, mean, std,
+                                                                 true);
 }
 
 __END_DECLS

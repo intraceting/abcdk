@@ -280,6 +280,8 @@ namespace abcdk
                     if (chk != 3)
                         return -4;
 
+                    m_input_img_cache.resize(m_input_b_size);
+
                     return 0;
                 }
 
@@ -311,25 +313,32 @@ namespace abcdk
                             break;
 
                         abcdk_torch_image_t *src_img_p = img[i];
-                        abcdk_torch_image_t *src_img_cache_p = m_input_img_cache[i];
-
+                        
                         /*可能未输入图像。*/
                         if (!src_img_p)
                             continue;
 
                         assert(src_img_p->tag == ABCDK_TORCH_TAG_HOST);
-                        assert(src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24);
-                        assert(src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24);
+                        assert(src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 || src_img_p->pixfmt == ABCDK_TORCH_PIXFMT_BGR24);
+
+                        abcdk_torch_image_reset_cuda(&m_input_img_cache[i], m_input_w_size, m_input_h_size, src_img_p->pixfmt, 1);
+                        if (!m_input_img_cache[i])
+                                return -1;
+
+                        abcdk_torch_image_t *src_img_cache_p = m_input_img_cache[i];
 
                         /*缩放或复制。*/
-                        abcdk_torch_imgproc_resize_host(src_img_cache_p, NULL, src_img_p, NULL, m_input_img_kar, cv::INTER_CUBIC);
+                        abcdk_torch_imgproc_resize_host(src_img_cache_p, NULL, src_img_p, NULL, m_input_img_kar, ABCDK_TORCH_INTER_CUBIC);
                         
 
                         dst_off = i * m_input_h_size * dst_dw * m_input_c_size;
                         dst_p = ABCDK_PTR2PTR(float,m_data_host, dst_off);
 
-                        abcdk_torch_imgutil_blob_8u_to_32f_host(0, dst_p, dst_dw,
-                                                                1, src_img_cache_p->data[0], src_img_cache_p->stride[0],
+                        bool dst_c_invert = false;
+                        bool src_c_invert = (src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ? true : false);
+
+                        abcdk_torch_imgutil_blob_8u_to_32f_host(0, dst_p, dst_dw, dst_c_invert,
+                                                                1, src_img_cache_p->data[0], src_img_cache_p->stride[0], src_c_invert,
                                                                 1, m_input_w_size, m_input_h_size, m_input_c_size,
                                                                 m_input_img_scale, m_input_img_mean, m_input_img_std);
                         }
