@@ -68,7 +68,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_image_t *e = abcdk_torch_image_create(800, 600, ABCDK_TORCH_PIXFMT_RGB24, 678);
 
-    abcdk_torch_imgproc_resize(e, NULL, d, NULL, 1, NPPI_INTER_CUBIC);
+    abcdk_torch_imgproc_resize(e, NULL, d, NULL, 1, ABCDK_TORCH_INTER_CUBIC);
 
     abcdk_torch_imgcode_save("/tmp/test.cuda.e.jmp", e);
 
@@ -77,13 +77,14 @@ int abcdk_test_torch_1(abcdk_option_t *args)
     abcdk_torch_point_t dst_quad[4] = {
         {30, 30},   // 变换后的左上角
         {220, 50},  // 变换后的右上角
-        {210, 220}, // 变换后的右下角
+        {310, 320}, // 变换后的右下角
         {50, 230},  // 变换后的左下角
     };
 
     abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
-    abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, NPPI_INTER_CUBIC);
+   // abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, ABCDK_TORCH_INTER_CUBIC);
+    abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 2, ABCDK_TORCH_INTER_LINEAR);
 
     abcdk_torch_imgcode_save("/tmp/test.cuda.f.jpg", f);
     // abcdk_torch_imgcode_save("/tmp/test.cuda.f2.jpg", f);

@@ -94,7 +94,7 @@ static int _abcdk_torch_imgproc_warp_8u_host(int channels, int packed,
     }
     else if (warp_mode == 2)
     {
-        cv::warpAffine(tmp_src, tmp_dst, m, cv::Size(dst_w, dst_h), abcdk::torch_host::inter_mode::convert2opencv(inter_mode));
+        cv::warpAffine(tmp_src, tmp_dst, m(cv::Rect(0, 0, 3, 2)).clone(), cv::Size(dst_w, dst_h), abcdk::torch_host::inter_mode::convert2opencv(inter_mode));
     }
 
     return 0;

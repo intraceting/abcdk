@@ -192,6 +192,8 @@ int abcdk_torch_imgproc_resize_cuda(abcdk_torch_image_t *dst, const abcdk_torch_
 
 /**
  * 变换。
+ * 
+ * @note 仿射变换仅支持平行四边形角点，否则可能产生预料之外的结果。
  *
  * @param [in] dst_quad 目标角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
  * @param [in] src_quad 源图角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
@@ -204,6 +206,8 @@ int abcdk_torch_imgproc_warp_host(abcdk_torch_image_t *dst, const abcdk_torch_re
                                   int warp_mode, int inter_mode);
 /**
  * 变换。
+ * 
+ * @note 仿射变换仅支持平行四边形角点，否则可能产生预料之外的结果。
  *
  * @param [in] dst_quad 目标角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
  * @param [in] src_quad 源图角点。 [0][] 左上，[1][] 右上，[2][] 右下，[3][]左下。
