@@ -9,11 +9,12 @@
 
 template <typename T>
 ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgproc_drawrect_1d_host(int channels, bool packed,
-                                                             T *dst, size_t w, size_t ws, size_t h,
-                                                             uint32_t *color, int weight, int *corner)
+                                                                   T *dst, size_t w, size_t ws, size_t h,
+                                                                   uint32_t *color, int weight, int *corner)
 {
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
 
-    // #pragma omp parallel
+#pragma omp parallel for num_threads(abcdk_align(cpus / 2, 1))
     for (size_t i = 0; i < w * h; i++)
     {
         abcdk::torch::imageproc::drawrect<T>(channels, packed, dst, w, ws, h, color, weight, corner, i);

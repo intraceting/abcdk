@@ -13,7 +13,9 @@ ABCDK_TORCH_INVOKE_GLOBAL void _abcdk_torch_imgproc_line_1d_host(int channels, b
                                                                    int x1, int y1, int x2, int y2,
                                                                    uint32_t *color, int weight)
 {
-    // #pragma omp parallel
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+
+#pragma omp parallel for num_threads(abcdk_align(cpus / 2, 1))
     for (size_t i = 0; i < w * h; i++)
     {
         abcdk::torch::imageproc::line<T>(channels, packed, dst, w, ws, h, x1, y1, x2, y2, color, weight, i);

@@ -12,6 +12,9 @@ ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgproc_defog_1d_host(int channels, bo
                                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h,
                                                           uint32_t dack_a, float dack_m, float dack_w)
 {
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+
+#pragma omp parallel for num_threads(abcdk_align(cpus / 2, 1))
     for (size_t i = 0; i < dst_w * dst_h; i++)
     {
         abcdk::torch::imageproc::defog<T>(channels, packed, dst, dst_w, dst_ws, dst_h, dack_a, dack_m, dack_w, i);

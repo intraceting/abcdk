@@ -14,6 +14,9 @@ ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgutil_blob_1d_host(bool dst_packed, 
                                                                BT *scale, BT *mean, BT *std,
                                                                bool revert)
 {
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+
+#pragma omp parallel for num_threads(abcdk_align(cpus / 2, 1))
     for (size_t i = 0; i < b * w * h * c; i++)
     {
         abcdk::torch::imgutil::blob<DT, ST, BT>(dst_packed, dst, dst_ws, dst_c_invert,

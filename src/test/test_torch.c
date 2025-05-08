@@ -505,6 +505,8 @@ int abcdk_test_torch_6(abcdk_option_t *args)
     // for(int i = 0;i<1000;i++)
     //     idx2nyxz(i,3,3,3);
 
+    int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
+
     const char *model_p = abcdk_option_get(args, "--model", 0, "");
     const char *model_name_p = abcdk_option_get(args, "--model-name",0, "yolo-v11");
     const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
@@ -534,8 +536,19 @@ int abcdk_test_torch_6(abcdk_option_t *args)
         count += 1;
     }
 
-    chk = abcdk_torch_dnn_engine_infer(engine_ctx, count, vec_img);
-    assert(chk == 0);
+    for (int i = 0; i < test_count; i++)
+    {
+        uint64_t s = abcdk_time_systime(9);
+
+        abcdk_clock(s, &s);
+
+        chk = abcdk_torch_dnn_engine_infer(engine_ctx, count, vec_img);
+        assert(chk == 0);
+
+        uint64_t step = abcdk_clock(s, &s);
+
+        abcdk_trace_printf(LOG_INFO, "step: %.6lf", ((double)step) / 1000000000.);
+    }
 
     abcdk_torch_dnn_post_t *post_ctx = abcdk_torch_dnn_post_alloc();
 
@@ -619,10 +632,12 @@ int abcdk_test_torch_6(abcdk_option_t *args)
                 obj_p->kp[k + 0] = abcdk_resize_dst2src_2d(&r, obj_p->kp[k + 0], 1);
                 obj_p->kp[k + 1] = abcdk_resize_dst2src_2d(&r, obj_p->kp[k + 1], 0);
 
-                corner[0] = obj_p->kp[k + 0]-3;
-                corner[1] = obj_p->kp[k + 1]-3;
-                corner[2] = obj_p->kp[k + 0]+3;
-                corner[3] = obj_p->kp[k + 1]+3;
+                corner[0] = obj_p->kp[k + 0]-10;
+                corner[1] = obj_p->kp[k + 1]-10;
+                corner[2] = obj_p->kp[k + 0]+10;
+                corner[3] = obj_p->kp[k + 1]+10;
+
+                weight = 5;
 
                 abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
             }

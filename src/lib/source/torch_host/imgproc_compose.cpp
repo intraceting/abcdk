@@ -13,7 +13,9 @@ ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgproc_compose_1d_host(int channels, 
                                                             T *compose, size_t compose_w, size_t compose_ws, size_t compose_h,
                                                             uint32_t *scalar, size_t overlap_x, size_t overlap_y, size_t overlap_w, int optimize_seam)
 {
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
 
+#pragma omp parallel for num_threads(abcdk_align(cpus / 2, 1))
     for (size_t i = 0; i < compose_w * compose_h; i++)
     {
         abcdk::torch::imageproc::compose<T>(channels, packed, panorama, panorama_w, panorama_ws, panorama_h,

@@ -12,6 +12,9 @@ ABCDK_TORCH_INVOKE_HOST void _abcdk_torch_imgproc_stuff_1d_host(int channels, bo
                                                           T *dst, size_t dst_w, size_t dst_ws, size_t dst_h, uint32_t *scalar,
                                                           size_t roi_x, size_t roi_y, size_t roi_w, size_t roi_h)
 {
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+
+#pragma omp parallel for num_threads(abcdk_align(cpus / 2, 1))
     for (size_t i = 0; i < dst_w * dst_h; i++)
     {
         abcdk::torch::imageproc::stuff<T>(channels, packed, dst, dst_w, dst_ws, dst_h, scalar, roi_x, roi_y, roi_w, roi_h, i);
