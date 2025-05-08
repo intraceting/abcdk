@@ -96,8 +96,8 @@ typedef struct _abcdk_torch_dnn_object
     int seg_step;
     uint8_t *seg;
 
-    /**ID。*/
-    int id;
+    /**追踪ID。*/
+    int track_id;
 
 } abcdk_torch_dnn_object_t;
 
