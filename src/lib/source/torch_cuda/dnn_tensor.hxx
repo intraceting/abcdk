@@ -279,7 +279,7 @@ namespace abcdk
                         dst_p = ABCDK_PTR2PTR(float,m_data_cuda, dst_off);
 
                         bool dst_c_invert = false;
-                        bool src_c_invert = (src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ? true : false);
+                        bool src_c_invert = (src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ? false : true);
 
                         abcdk_torch_imgutil_blob_8u_to_32f_cuda(0, dst_p, dst_dw, dst_c_invert,
                                                                 1, src_img_cache_p->data[0], src_img_cache_p->stride[0], src_c_invert,

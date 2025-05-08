@@ -104,7 +104,7 @@ int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int 
         for (int i = 0; i < dst_p->dims.nb; i++)
             dst_p->dims.d[i] = (int)src_p->dims()[i];
 
-        dst_p->data_p = (src_p->input() ? NULL : src_p->data());
+        dst_p->data_p = (src_p->input() ? NULL : src_p->data(1));
 
         chk_count += 1;
     }

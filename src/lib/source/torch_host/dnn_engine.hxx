@@ -117,9 +117,10 @@ namespace abcdk
                     if (!m_env_ctx || !m_ses_opt_ctx)
                         return -3;
 
-                    status = m_api_ctx->SetInterOpNumThreads(m_ses_opt_ctx, cpus / 2); // 每个算子内部线程数。
-                    status = m_api_ctx->SetInterOpNumThreads(m_ses_opt_ctx, cpus / 4); // 并行执行算子线程数。
                     status = m_api_ctx->SetSessionGraphOptimizationLevel(m_ses_opt_ctx, GraphOptimizationLevel::ORT_ENABLE_ALL);
+                    status = m_api_ctx->SetSessionExecutionMode(m_ses_opt_ctx,ExecutionMode::ORT_PARALLEL);
+                    status = m_api_ctx->SetIntraOpNumThreads(m_ses_opt_ctx, cpus / 2); // 每个算子内部线程数。
+                    status = m_api_ctx->SetInterOpNumThreads(m_ses_opt_ctx, cpus / 4); // 并行执行算子线程数。
 
                     status = m_api_ctx->CreateSessionFromArray(m_env_ctx, data, size, m_ses_opt_ctx, &m_ses_ctx);
                     if (!m_ses_ctx)
@@ -254,6 +255,9 @@ namespace abcdk
                     status = m_api_ctx->Run(m_ses_ctx, NULL, input_vec_name, input_vec_value, input_count, output_vec_name, output_count, output_vec_value);
                     if(status.check() != 0)
                         return -1;
+
+                    // void* out_class_data = NULL;
+                    // status = m_api_ctx->GetTensorMutableData(output_vec_value[0], &out_class_data);
 
                     for (auto &t : m_tensor_ctx)
                     {

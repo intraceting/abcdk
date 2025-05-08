@@ -292,18 +292,6 @@ namespace abcdk
                     float *dst_p;
                     int chk;
 
-                    /*图像缓存创建一次即可。*/
-                    if (m_input_img_cache.size() <= 0)
-                    {
-                        m_input_img_cache.resize(m_input_b_size);
-                        for (int i = 0; i < m_input_b_size; i++)
-                        {
-                            abcdk_torch_image_reset_cuda(&m_input_img_cache[i], m_input_w_size, m_input_h_size, ABCDK_TORCH_PIXFMT_RGB24, 1);
-                            if (!m_input_img_cache[i])
-                                return -1;
-                        }
-                    }
-
                     /*计算步长。*/
                     dst_dw = m_input_w_size * type_size(m_type);
 
@@ -335,7 +323,7 @@ namespace abcdk
                         dst_p = ABCDK_PTR2PTR(float,m_data_host, dst_off);
 
                         bool dst_c_invert = false;
-                        bool src_c_invert = (src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ? true : false);
+                        bool src_c_invert = (src_img_cache_p->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ? false : true);
 
                         abcdk_torch_imgutil_blob_8u_to_32f_host(0, dst_p, dst_dw, dst_c_invert,
                                                                 1, src_img_cache_p->data[0], src_img_cache_p->stride[0], src_c_invert,
