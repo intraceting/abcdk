@@ -284,7 +284,7 @@ int abcdk_torch_calibrate_bind_host(abcdk_torch_calibrate_t *ctx, abcdk_torch_im
     return 0;
 }
 
-double abcdk_torch_calibrate_estimate_host(abcdk_torch_calibrate_t *ctx, double camera_matrix[3][3], double dist_coeffs[5])
+double abcdk_torch_calibrate_estimate_host(abcdk_torch_calibrate_t *ctx)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenCV工具。"));
     return 1.0;
