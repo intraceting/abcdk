@@ -58,7 +58,7 @@ int abcdk_torch_imgproc_undistort_cuda(abcdk_torch_image_t *dst, const abcdk_tor
     return -1;
 }
 
-int abcdk_torch_imgproc_line_cuda(abcdk_torch_image_t *dst, const abcdk_torch_point_t *p1, const abcdk_torch_point_t *p2, uint32_t color[], int weight);
+int abcdk_torch_imgproc_line_cuda(abcdk_torch_image_t *dst, const abcdk_torch_point_t *p1, const abcdk_torch_point_t *p2, uint32_t color[], int weight)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
     return -1; 
