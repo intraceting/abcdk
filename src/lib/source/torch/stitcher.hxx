@@ -583,7 +583,6 @@ namespace abcdk
                 {
                     set_feature_finder(cv::ORB::create(800));
                 }
-
                 else if (strcasecmp(name, "SIFT") == 0)
                 {
 #if (CV_VERSION_MAJOR >= 4 && CV_VERSION_MINOR >= 4)
