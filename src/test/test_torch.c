@@ -664,6 +664,49 @@ int abcdk_test_torch_6(abcdk_option_t *args)
     return 0;
 }
 
+
+int abcdk_test_torch_7(abcdk_option_t *args)
+{
+    const char *src_p = abcdk_option_get(args,"--src",0,"");
+    const char *dst_p = abcdk_option_get(args,"--dst",0,"");
+
+    abcdk_torch_image_t *src_img = abcdk_torch_imgcode_load_cuda(src_p);
+    abcdk_torch_image_t *dst_img = abcdk_torch_imgcode_load_cuda(dst_p);
+    
+    abcdk_torch_point_t dst_quad[4] = {
+        {30, 30},   // 左上角
+        {220, 50},  // 右上角
+        {210, 220}, // 右下角
+        {50, 230},  // 左下角
+    };
+
+    abcdk_torch_point_t src_quad[4] = {
+        {86, 136},  // 左上角
+        {173, 186}, // 右上角
+        {123, 273}, // 右下角
+        {36, 223}, // 左下角
+    };
+
+    abcdk_torch_rect_t src_roi = {150, 150, 200, 200};
+    //abcdk_torch_rect_t dst_roi = {100, 100, 200, 200};
+
+    abcdk_torch_rect_t dst_roi = {150, 150, 200, 200};
+
+    //abcdk_torch_imgproc_warp_cuda(dst_img, NULL, dst_quad, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+  //  abcdk_torch_imgproc_warp_cuda(dst_img, NULL, dst_quad, src_img, NULL, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+   // abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, dst_quad, src_img, NULL, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+  //  abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, NULL, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+    abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, NULL, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+   // abcdk_torch_imgproc_warp_cuda(dst_img, NULL, src_quad, src_img, NULL, dst_quad, 1, ABCDK_TORCH_INTER_LINEAR);
+
+  //abcdk_torch_imgproc_warp_cuda(dst_img, NULL, NULL, src_img, &src_roi, src_quad, 1, ABCDK_TORCH_INTER_LINEAR);
+
+    abcdk_torch_imgcode_save_cuda("/tmp/test.warp.jpg", dst_img);
+
+    abcdk_torch_image_free_cuda(&src_img);
+    abcdk_torch_image_free_cuda(&dst_img);
+}
+
 int abcdk_test_torch(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
@@ -694,6 +737,8 @@ int abcdk_test_torch(abcdk_option_t *args)
         return abcdk_test_torch_5(args);
     else if (cmd == 6)
         return abcdk_test_torch_6(args);
+    else if (cmd == 7)
+        return abcdk_test_torch_7(args);
 
     abcdk_torch_context_current_set(NULL);
     abcdk_torch_context_destroy(&torch_ctx);

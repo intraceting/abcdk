@@ -1754,7 +1754,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("%s\n",str);
 
-#elif 1
+#elif 0
 
     uint32_t c = abcdk_crc32("abc",3);
 
@@ -1763,6 +1763,10 @@ int abcdk_test_any(abcdk_option_t *args)
     c = abcdk_crc32("abcdefg",7);
 
     printf("abcdefg: %08x,%u\n",c,c);
+
+#elif 1
+
+
 
 #endif 
     return 0;
