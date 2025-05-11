@@ -102,7 +102,7 @@ if [ "deb" == "${KIT_NAME}" ];then
 elif [ "rpm" == "${KIT_NAME}" ];then 
 {
     if [ ${FLAG} -eq 1 ];then
-        exit $(CheckHavePackageFromKit "qrencode-dev")
+        exit $(CheckHavePackageFromKit "qrencode-devel")
     elif [ ${FLAG} -eq 2 ];then
         PackageConfig  --cflags libqrencode 
     elif [ ${FLAG} -eq 3 ];then
