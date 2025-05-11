@@ -1720,7 +1720,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_torch_image_free(&f);
 
 
-#elif 0
+#elif 1
 
     uint64_t counter = time(NULL)/30;
     //uint64_t counter = 59/30;
@@ -1736,9 +1736,13 @@ int abcdk_test_any(abcdk_option_t *args)
     uint32_t otp_sha256 = abcdk_openssl_totp_generate_sha256(key,strlen(key),counter);
     uint32_t otp_sha512 = abcdk_openssl_totp_generate_sha512(key,strlen(key),counter);
 
-    printf("OTP-SHA1: %08u\n",otp_sha1%100000000);
-    printf("OTP-SHA256: %08u\n",otp_sha256%100000000);
-    printf("OTP-SHA512: %08u\n",otp_sha512%100000000);
+    printf("OTP-SHA1-6d: %06u\n",otp_sha1%1000000);
+    printf("OTP-SHA256-6d: %06u\n",otp_sha256%1000000);
+    printf("OTP-SHA512-6d: %06u\n",otp_sha512%1000000);
+
+    printf("OTP-SHA1-8d: %08u\n",otp_sha1%100000000);
+    printf("OTP-SHA256-8d: %08u\n",otp_sha256%100000000);
+    printf("OTP-SHA512-8d: %08u\n",otp_sha512%100000000);
 
     // 可以使用oathtool 进行验证。
 
@@ -1764,7 +1768,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("abcdefg: %08x,%u\n",c,c);
 
-#elif 1
+#elif 0
 
 
 
