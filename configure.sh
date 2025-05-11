@@ -157,7 +157,7 @@ OPTIMIZE_LEVEL=""
 
 #
 THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,tensorrt,ffnvcodec,onnxruntime,live555,"
-THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,${THIRDPARTY_PACKAGES}"
+THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,qrencode,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
 THIRDPARTY_FIND_ROOT=""
 THIRDPARTY_FIND_MODE="both"
@@ -259,10 +259,10 @@ VARIABLE:
      unixodbc,opencv,openssl,redis,sqlite,curl,
      archive,nghttp2,libmagic,gtk,appindicator,
      tensorrt,live555,onnxruntime,x264,x265,
-     freeimage,fuse,libnm,zlib,
+     qrencode,zlib,freeimage,fuse,libnm,
      openmp,modbus,libusb,mqtt,
      bluez,blkid,libcap,fastcgi,systemd,
-     libudev,dmtx,qrencode,zbar,magickwand,
+     libudev,dmtx,,zbar,magickwand,
      kafka,uuid,libdrm,
      pam,ncurses,fltk,
      

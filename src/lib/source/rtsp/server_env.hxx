@@ -15,7 +15,7 @@ namespace abcdk
 {
     namespace rtsp_server
     {
-    class env : public BasicUsageEnvironment
+        class env : public BasicUsageEnvironment
         {
         public:
             static env *createNew(TaskScheduler &taskScheduler)
@@ -44,7 +44,6 @@ namespace abcdk
 
             virtual ~env()
             {
-                
             }
         };
     } // namespace rtsp_server
