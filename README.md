@@ -14,9 +14,9 @@ ABCDK(A Better C language Development Kit)
 ## 主要模块
 
 - 3rdparty 第三方组件
-- script 脚本组件
 - share 共享文档
 - src 源码目录
+- tools 工具组件
 
 
 ## 查看编译帮助
@@ -39,7 +39,7 @@ $ make package
 ## 交叉编译和打包
 
 ```bash
-$ ../aconf/configure.sh -d COMPILER_PREFIX=/target_platform/bin/ -d COMPILER_NAME=gcc [ ... ]
+$ ../aconf/configure.sh -d COMPILER_PREFIX=/target_platform/bin/ -d COMPILER_C_NAME=gcc -d COMPILER_C_NAME=g++ [ ... ]
 $ make
 $ make package
 ```
