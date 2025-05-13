@@ -31,17 +31,17 @@ int abcdk_test_server(abcdk_option_t *args)
     chk = abcdk_rtsp_server_start(ctx);
     assert(chk == 0);
 
-    chk = abcdk_rtsp_server_add_user(ctx, "cccc", "aaaa");
+    chk = abcdk_rtsp_server_add_user(ctx, "cccc", "aaaa",ABCDK_RTSP_AUTH_NORMAL,0,0);
     assert(chk == 0);
-    chk = abcdk_rtsp_server_add_user(ctx, "dddd", "bbbb");
+    chk = abcdk_rtsp_server_add_user(ctx, "dddd", "bbbb",ABCDK_RTSP_AUTH_NORMAL,0,0);
     assert(chk == 0);
 
     abcdk_rtsp_server_remove_user(ctx, "cccc");
     abcdk_rtsp_server_remove_user(ctx, "dddd");
 
-    chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "aaaa");
+    chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "aaaa",ABCDK_RTSP_AUTH_NORMAL,0,0);
     assert(chk == 0);
-    chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "bbbb");
+    chk = abcdk_rtsp_server_add_user(ctx, "aaaa", "bbbb",ABCDK_RTSP_AUTH_NORMAL,0,0);
     assert(chk == 0);
 
     const char *name = "aaa";
@@ -148,7 +148,21 @@ int abcdk_test_relay(abcdk_option_t *args)
     int chk;
 
     abcdk_rtsp_server_t *server_ctx = abcdk_rtsp_server_create(12345, 0x01 | 0x02);
+
+    chk = abcdk_rtsp_server_set_auth(server_ctx, "haha");
+    assert(chk == 0);
+
     chk = abcdk_rtsp_server_start(server_ctx);
+    assert(chk == 0);
+
+    int auth_scheme = abcdk_option_get_int(args, "--auth-pawd-scheme", 0, ABCDK_RTSP_AUTH_NORMAL);
+    int totp_time_step = abcdk_option_get_int(args, "--auth-pawd-totp-time-step", 0, 30);
+    int totp_digit_size = abcdk_option_get_int(args, "--auth-pawd-totp-digit-size", 0, 6);
+
+    chk = abcdk_rtsp_server_add_user(server_ctx, "aaaa", "bbbb",ABCDK_RTSP_AUTH_NORMAL,0,0);
+    assert(chk == 0);
+
+    chk = abcdk_rtsp_server_add_user(server_ctx, "bbbb", "12345678901234567890",auth_scheme,totp_time_step,totp_digit_size);
     assert(chk == 0);
 
     abcdk_rtsp_relay_t *relay_ctx[100] = {0};

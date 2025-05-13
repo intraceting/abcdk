@@ -56,12 +56,16 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
 
 /**
  * 添加账户。
- * 
+ *
  * @note 如果账户已经存在，则只更新密码。
  * 
+ * @param [in] scheme 密钥方案。
+ * @param [in] totp_time_step 时间步长(秒)。
+ * @param [in] totp_digit_size 数字数量(个)。
+ *
  * @return 0 成功，-1 失败。
-*/
-int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password);
+ */
+int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password, int scheme, int totp_time_step, int totp_digit_size);
 
 /**删除媒体。*/
 void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, const char *name);

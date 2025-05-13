@@ -10,6 +10,8 @@
 #include "abcdk/util/endian.h"
 #include "abcdk/openssl/util.h"
 
+__BEGIN_DECLS
+
 /**
  * 基于时间的一次性密码。
  *
@@ -37,5 +39,8 @@ uint32_t abcdk_openssl_totp_generate_sha256(const uint8_t *key, int klen, uint64
  * @note RFC6238(sha-512）
  */
 uint32_t abcdk_openssl_totp_generate_sha512(const uint8_t *key, int klen, uint64_t counter);
+
+__END_DECLS
+
 
 #endif //ABCDK_OPENSSL_TOTP_H

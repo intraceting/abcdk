@@ -15,7 +15,6 @@
 #include "rwlock_robot.hxx"
 #include "waiter.hxx"
 
-#define ABCDK_RTSP_SERVER_REALM "ABCDK MediaServer"
 
 #ifdef _RTSP_SERVER_HH
 
@@ -108,7 +107,7 @@ namespace abcdk
                 abcdk::rtsp_server::auth *auth_new_ctx = NULL;
 
                 /*创建新的。*/
-                auth_new_ctx = abcdk::rtsp_server::auth::createNew(realm ? realm : ABCDK_RTSP_SERVER_REALM);
+                auth_new_ctx = abcdk::rtsp_server::auth::createNew(realm);
                 if (!auth_new_ctx)
                     return -1;
 
@@ -129,7 +128,7 @@ namespace abcdk
                 return 0;
             }
 
-            int add_user(char const *username, char const *password)
+            int add_user(char const *username, char const *password, int scheme, int totp_time_step, int totp_digit_size)
             {
                 uint64_t rsp_key = m_cmdlist_waiter.reg();
                 std::string *rsp_p = NULL;
@@ -141,10 +140,13 @@ namespace abcdk
 
                 param.first = async_cmd::USER_ADD; // cmd
 
-                param.second.resize(3);
+                param.second.resize(6);
                 param.second[0] = std::to_string(rsp_key);
                 param.second[1] = username;
                 param.second[2] = password;
+                param.second[3] = std::to_string(scheme);
+                param.second[4] = std::to_string(totp_time_step);
+                param.second[5] = std::to_string(totp_digit_size);
 
                 m_cmdlist.push(param);
 
@@ -433,7 +435,7 @@ namespace abcdk
                 {
                     rsp_key = atoi(cmdinfo.second[0].c_str());
 
-                    chk = ctx_p->impl_add_user(cmdinfo.second[1].c_str(), cmdinfo.second[2].c_str());
+                    chk = ctx_p->impl_add_user(cmdinfo.second[1].c_str(), cmdinfo.second[2].c_str(), cmdinfo.second[3].c_str(), cmdinfo.second[4].c_str(), cmdinfo.second[5].c_str());
 
                     ctx_p->m_cmdlist_waiter.response(rsp_key, new std::string(std::to_string(chk)));
                 }
@@ -447,12 +449,12 @@ namespace abcdk
                 }
             }
 
-            int impl_add_user(char const *username, char const *password)
+            int impl_add_user(char const *username, char const *password, const char *scheme, const char *totp_time_step, const char *totp_digit_size)
             {
                 if (!m_auth_ctx)
                     return -1;
 
-                m_auth_ctx->addUserRecord(username, password);
+                m_auth_ctx->addUserRecord(username, password, atoi(scheme), atoi(totp_time_step), atoi(totp_digit_size));
 
                 return 0;
             }

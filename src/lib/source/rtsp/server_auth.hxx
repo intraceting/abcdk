@@ -7,8 +7,10 @@
 #ifndef ABCDK_RTSP_SERVER_AUTH_HXX
 #define ABCDK_RTSP_SERVER_AUTH_HXX
 
+#include "abcdk/openssl/totp.h"
 #include "abcdk/rtsp/rtsp.h"
 #include "rwlock_robot.hxx"
+#include "pawd.hxx"
 
 #ifdef _GENERIC_MEDIA_SERVER_HH
 
@@ -20,7 +22,7 @@ namespace abcdk
         {
         private:
             rtsp::rwlock m_db_locker;
-            std::map<std::string, std::array<char,NAME_MAX>> m_db;//固定大小的值，因为查询接口是用指针，但是对象又随时可能被删除。
+            std::map<std::string, rtsp::pawd> m_db;//固定大小的值，因为查询接口是用指针，但是对象又随时可能被删除。
         public:
             static auth *createNew(char const *realm = NULL)
             {
@@ -42,7 +44,7 @@ namespace abcdk
 
         protected:
             auth(char const *realm = NULL)
-                : UserAuthenticationDatabase(realm)
+                : UserAuthenticationDatabase(realm ? realm : ABCDK_RTSP_SERVER_REALM)
             {
 
             }
@@ -53,14 +55,13 @@ namespace abcdk
             }
 
         public:
-            void addUserRecord(char const *username, char const *password)
+            void addUserRecord(char const *username, char const *password, int scheme, int totp_time_step, int totp_digit_size)
             {
                 assert(username != NULL && password != NULL);
 
                 rtsp::rwlock_robot autolock(&m_db_locker,1);
 
-                m_db[username].fill('\0');
-                strncpy(m_db[username].data(),password,NAME_MAX);
+                m_db[username].setup(password,scheme,totp_time_step,totp_digit_size);
             }
 
             void removeUserRecord(char const *username)
@@ -69,25 +70,25 @@ namespace abcdk
 
                 rtsp::rwlock_robot autolock(&m_db_locker,1);
 
-                std::map<std::string, std::array<char,NAME_MAX>>::iterator it = m_db.find(username);
+                std::map<std::string, rtsp::pawd>::iterator it = m_db.find(username);
                 if (it == m_db.end())
                     return ;
 
-                m_db[username].fill('\0');
+                m_db[username].clear();
             }
 
             char const *lookupPassword(char const *username)
             {
-                char *p = NULL;
+                const char *p = NULL;
 
                 assert(username != NULL);
 
                 rtsp::rwlock_robot autolock(&m_db_locker,0);
 
-                std::map<std::string, std::array<char,NAME_MAX>>::iterator it = m_db.find(username);
+                std::map<std::string, rtsp::pawd>::iterator it = m_db.find(username);
                 if (it != m_db.end())
                 {
-                    p = it->second.data();
+                    p = it->second.get();
                     if(*p == '\0')
                         return NULL;
                 }

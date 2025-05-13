@@ -171,7 +171,7 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
     ctx->l5_server_ctx->remove_user(username);
 }
 
-int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password)
+int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password, int scheme, int totp_time_step, int totp_digit_size)
 {
     int chk;
 
@@ -179,8 +179,8 @@ int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, c
 
     ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动，禁止修改运行配置。"));
 
-    chk = ctx->l5_server_ctx->add_user(username, password);
-    if(chk != 0)
+    chk = ctx->l5_server_ctx->add_user(username, password, scheme, totp_time_step, totp_digit_size);
+    if (chk != 0)
         return -1;
 
     return 0;
