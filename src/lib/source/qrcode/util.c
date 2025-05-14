@@ -8,18 +8,26 @@
 
 #ifdef QRENCODE_H
 
-abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale)
+abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin)
 {
     abcdk_object_t *dst = NULL;
     QRcode *src = NULL;
+    int qr_width,qr_height;
+    int y8_width,y8_height;
 
-    assert(data != NULL && size > 0 && (level >= QR_ECLEVEL_L && level <= QR_ECLEVEL_H) && scale > 0);
+    assert(data != NULL && size > 0 && (level >= QR_ECLEVEL_L && level <= QR_ECLEVEL_H) && scale > 0 && margin > 0);
 
     src = QRcode_encodeData(size, data, 0, level);
     if(!src)
         return NULL;
 
-    dst = abcdk_object_alloc3(src->width * scale, src->width * scale);
+    qr_height = src->width;
+    qr_width = src->width;
+
+    y8_height = (qr_height + margin * 2) * scale;
+    y8_width = (qr_width + margin * 2) * scale;
+
+    dst = abcdk_object_alloc3(y8_width,y8_height);
     if (!dst)
         goto ERR;
 
@@ -28,17 +36,21 @@ abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, in
      *Y8: 0x00=black, 0xFF=white.
      */
 
-    for (int src_y = 0; src_y < src->width; src_y++)
+    /*fill 0xFF(white).*/
+    for (int dst_y = 0; dst_y < y8_height; dst_y++)
+        memset(dst->pptrs[dst_y], 0xFF, y8_width);
+
+    for (int src_y = 0; src_y < qr_height; src_y++)
     {
-        for (int src_x = 0; src_x < src->width; src_x++)
+        for (int src_x = 0; src_x < qr_width; src_x++)
         {
-            uint8_t *src_p = ABCDK_PTR2U8PTR(src->data, src_y * src->width + src_x);
+            uint8_t *src_p = ABCDK_PTR2U8PTR(src->data, src_y * qr_width + src_x);
 
             for (int dst_y = 0; dst_y < scale; dst_y++)
             {
                 for (int dst_x = 0; dst_x < scale; dst_x++)
                 {
-                    uint8_t *dst_p = ABCDK_PTR2U8PTR(dst->pptrs[src_y * scale + dst_y], src_x * scale + dst_x);
+                    uint8_t *dst_p = ABCDK_PTR2U8PTR(dst->pptrs[(src_y + margin) * scale + dst_y], (src_x + margin) * scale + dst_x);
 
                     *dst_p = (*src_p & 0x01 ? 0x00 : 0xFF);
                 }
@@ -60,7 +72,7 @@ ERR:
     return NULL;
 }
 
-int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale)
+int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin)
 {
     abcdk_object_t *src = NULL;
     abcdk_object_t *src_rgb = NULL;
@@ -76,13 +88,13 @@ int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int
             return -1;
     }
 
-    src = abcdk_qrcode_encode(data, size, level, scale);
+    src = abcdk_qrcode_encode(data, size, level, scale, margin);
     if (!src)
         return -1;
 
-    width = src->sizes[0];
     height = src->numbers;
-
+    width = src->sizes[0];
+    
     src_rgb = abcdk_object_alloc2(height * width * 3);
     if(!src_rgb)
         goto ERR;

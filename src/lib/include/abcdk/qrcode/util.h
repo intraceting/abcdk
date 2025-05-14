@@ -19,7 +19,7 @@ __BEGIN_DECLS
  * @note 编码使用Y8格式。
  * 
 */
-abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale);
+abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin);
 
 /**
  * 编码并保存。
@@ -28,7 +28,7 @@ abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, in
  * 
  * @return 0 成功，-1 失败。
 */
-int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale);
+int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin);
 
 __END_DECLS
 

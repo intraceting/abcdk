@@ -1733,9 +1733,9 @@ int abcdk_test_any(abcdk_option_t *args)
 
     char buf[1000] = {0};
 
-    snprintf(buf,1000,"otpauth://totp/ABCDK:traceting@gmail.com?secret=%s&issuer=ABCDK",en_key->pstrs[0]);
+    snprintf(buf,1000,"otpauth://totp/ABCDK:haha@hehe.com?issuer=ABCDK&secret=%s",en_key->pstrs[0]);
 
-    abcdk_qrcode_encode_save("/tmp/test-totp.bmp",buf,strlen(buf),QR_ECLEVEL_L,10);
+    abcdk_qrcode_encode_save("/tmp/test-totp.bmp",buf,strlen(buf),QR_ECLEVEL_L,10,4);
 
     abcdk_object_unref(&en_key);
 
