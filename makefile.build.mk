@@ -20,6 +20,7 @@ LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/curl/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/rtsp/*.c)
+LIB_SRC_FILES += $(wildcard src/lib/source/qrcode/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch_host/*.c)
 LIB_SRC_FILES += $(wildcard src/lib/source/torch_cuda/*.c)
@@ -139,7 +140,13 @@ $(OBJ_PATH)/src/lib/source/rtsp/%.o: src/lib/source/rtsp/%.c
 	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
 	rm -f $@
 	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-	
+
+#
+$(OBJ_PATH)/src/lib/source/qrcode/%.o: src/lib/source/qrcode/%.c
+	mkdir -p $(OBJ_PATH)/src/lib/source/qrcode/
+	rm -f $@
+	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
+
 #
 $(OBJ_PATH)/src/lib/source/torch/%.o: src/lib/source/torch/%.c
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
