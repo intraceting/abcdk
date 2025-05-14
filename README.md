@@ -22,25 +22,25 @@ ABCDK(A Better C language Development Kit)
 ## 查看编译帮助
 
 ```bash
-$ ../aconf/configure.sh -h
+$ ./configure.sh -h
 $ make help
 ```
 ## 编译和安装
 
 
-## 本地编译和打包
+## 本地编译和安装
 
 ```bash
-$ ../aconf/configure.sh [ ... ]
+$ ./configure.sh [ ... ]
 $ make
-$ make package
+$ make install
 ```
 
-## 交叉编译和打包
+## 交叉编译和安装
 
 ```bash
-$ ../aconf/configure.sh -d COMPILER_PREFIX=/target_platform/bin/ -d COMPILER_C_NAME=gcc -d COMPILER_C_NAME=g++ [ ... ]
+$ ./configure.sh -d COMPILER_PREFIX=/target_platform/bin/ -d COMPILER_C_NAME=gcc -d COMPILER_C_NAME=g++ [ ... ]
 $ make
-$ make package
+$ make install
 ```
 
