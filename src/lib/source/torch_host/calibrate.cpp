@@ -191,12 +191,10 @@ int abcdk_torch_calibrate_param_dump_file(const char *file, const abcdk_torch_si
         return -1;
 
     chk = abcdk_save(file, metadata->pptrs[0], metadata->sizes[0], 0);
+    chk = (chk == metadata->sizes[0] ? 0 : -1); // check out.
+
     abcdk_object_unref(&metadata);
-
-    if (chk != 0)
-        return -1;
-
-    return 0;
+    return chk;
 }
 
 int abcdk_torch_calibrate_param_load(abcdk_torch_size_t *size, double camera_matrix[3][3], double dist_coeffs[5], const char *data)
