@@ -73,7 +73,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
 void _abcdk_file_segment_find_pos(const char *dst, uint64_t start, uint64_t pos[2])
 {
     abcdk_tree_t *dir = NULL;
-    char tmp[PATH_MAX] = {0},tmp2[NAME_MAX] = {0},tmp3[NAME_MAX] = {0};
+    char tmp[PATH_MAX] = {0},tmp2[PATH_MAX] = {0},tmp3[PATH_MAX] = {0};
     uint64_t pos_tmp = 0;
     int chk;
     
@@ -89,7 +89,7 @@ void _abcdk_file_segment_find_pos(const char *dst, uint64_t start, uint64_t pos[
 
     while (1)
     {
-        memset(tmp3, 0, NAME_MAX);
+        memset(tmp3, 0, PATH_MAX);
         chk = abcdk_dirent_read(dir, NULL, tmp3, 0);
         if (chk != 0)
             break;

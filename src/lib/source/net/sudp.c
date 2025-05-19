@@ -548,7 +548,7 @@ ERR:
 
 static void _abcdk_sudp_input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const void *data, size_t size)
 {
-    char remote_str[100] = {0};
+    char remote_str[NAME_MAX] = {0};
     int chk;
 
 
@@ -576,7 +576,7 @@ static void _abcdk_sudp_input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remo
 static void _abcdk_sudp_input_hook(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const void *data, size_t size)
 {
     abcdk_object_t *dec_p = NULL;
-    char remote_str[100] = {0};
+    char remote_str[NAME_MAX] = {0};
     int chk;
 
     if (node->cfg.ssl_scheme != ABCDK_SUDP_SSL_SCHEME_RAW)

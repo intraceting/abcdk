@@ -7,6 +7,7 @@
 #ifndef ABCDK_QRCODE_UTIL_H
 #define ABCDK_QRCODE_UTIL_H
 
+#include "abcdk/util/trace.h"
 #include "abcdk/util/bmp.h"
 #include "abcdk/util/object.h"
 #include "abcdk/qrcode/qrcode.h"

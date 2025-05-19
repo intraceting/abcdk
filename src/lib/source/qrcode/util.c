@@ -135,13 +135,13 @@ ERR:
 
 #else //QRENCODE_H
 
-abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level)
+abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
     return NULL; 
 }
 
-int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level)
+int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
     return -1;  

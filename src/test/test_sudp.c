@@ -20,7 +20,7 @@ static void close_cb(abcdk_sudp_node_t *node)
 
 static void input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remote, const void *data, size_t size)
 {
-    char addrbuf[100] = {0};
+    char addrbuf[NAME_MAX] = {0};
     int len;
     int flag;
 

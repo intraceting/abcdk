@@ -305,7 +305,7 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
 }
 
 
-int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx,  const char *username, const char *password)
+int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password, int scheme, int totp_time_step, int totp_digit_size)
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具。"));
     return -1;
