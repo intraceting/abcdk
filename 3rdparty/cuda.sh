@@ -107,7 +107,10 @@ if [ "deb" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libcudart.so)"
         checkReturnCode
 
-        echo "-lcublasLt -lcublas -lcudart -lnppig -lnppc -lnppial -lnppicc -lnppidei -lnppif -lnppim -lnppisu -lnpps -lnvjpeg  ${LDFLAG}"
+        LDFLAG2="-L$(FindLibPath stubs/libcuda.so)/stubs"
+        checkReturnCode
+
+        echo "-lcublasLt -lcublas -lcudart -lnppig -lnppc -lnppial -lnppicc -lnppidei -lnppif -lnppim -lnppisu -lnpps -lnvjpeg -lcuda ${LDFLAG} ${LDFLAG2}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "cuda-dev"
@@ -138,7 +141,10 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         LDFLAG="-L$(FindLibPath libcudart.so)"
         checkReturnCode
 
-        echo "-lcublasLt -lcublas -lcudart -lnppig -lnppc -lnppial -lnppicc -lnppidei -lnppif -lnppim -lnppisu -lnpps -lnvjpeg ${LDFLAG}"
+        LDFLAG2="-L$(FindLibPath stubs/libcuda.so)/stubs"
+        checkReturnCode
+
+        echo "-lcublasLt -lcublas -lcudart -lnppig -lnppc -lnppial -lnppicc -lnppidei -lnppif -lnppim -lnppisu -lnpps -lnvjpeg -lcuda ${LDFLAG} ${LDFLAG2}"
     }
     elif [ ${FLAG} -eq 4 ];then
         echo "cuda-devel"
