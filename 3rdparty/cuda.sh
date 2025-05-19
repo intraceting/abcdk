@@ -105,7 +105,13 @@ if [ "deb" == "${KIT_NAME}" ];then
     elif [ ${FLAG} -eq 3 ];then
     {
         LDFLAG="-L$(FindLibPath libcuda.so)"
-        checkReturnCode
+        if [ $? != 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath stubs/libcuda.so)/stubs"
+            checkReturnCode
+
+        }
+        fi
 
         echo "-lcublasLt -lcublas -lcudart -lcuda -lnppig -lnppc -lnppial -lnppicc -lnppidei -lnppif -lnppim -lnppisu -lnpps -lnvjpeg  ${LDFLAG}"
     }
@@ -136,7 +142,13 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     elif [ ${FLAG} -eq 3 ];then
     {
         LDFLAG="-L$(FindLibPath libcuda.so)"
-        checkReturnCode
+        if [ $? != 0 ];then
+        {
+            LDFLAG="-L$(FindLibPath stubs/libcuda.so)/stubs"
+            checkReturnCode
+
+        }
+        fi
 
         echo "-lcublasLt -lcublas -lcudart -lcuda -lnppig -lnppc -lnppial -lnppicc -lnppidei -lnppif -lnppim -lnppisu -lnpps -lnvjpeg ${LDFLAG}"
     }
