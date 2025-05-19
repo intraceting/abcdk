@@ -60,6 +60,7 @@ CXX_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
 #
 C_FLAGS += ${DEPEND_FLAGS}
+#
 CXX_FLAGS += ${DEPEND_FLAGS}
 
 #绑定C++编译器。
@@ -117,14 +118,24 @@ LD_FLAGS += -ldl -pthread -lc -lm -lstdc++
 endif
 
 #
-C_FLAGS += -I$(CURDIR)/src/lib/include/
-CXX_FLAGS += -I$(CURDIR)/src/lib/include/
+C_FLAGS += -I$(CURDIR)/src/lib/include/ 
+C_FLAGS += ${EXTRA_C_FLAGS}
+#
+CXX_FLAGS += -I$(CURDIR)/src/lib/include/ 
+CXX_FLAGS += ${EXTRA_CXX_FLAGS}
 
 #C++编译选项绑定到CUDA编译选项。
 NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 
 #
 LD_FLAGS += -L${BUILD_PATH}
+#把依赖组件路径拆分，加上前缀用于搜所深度依赖项。
+# aaa/bbb:ccc/ddd:eee/fff
+# -Wl,-rpath-link=aaa/bbb -Wl,-rpath-link=ccc/ddd -Wl,-rpath-link=eee/fff
+LD_FLAGS += $(foreach DE_LIB_PATH,$(subst :, ,$(DEPEND_LIB_PATH)),-Wl,-rpath-link=$(DE_LIB_PATH))
+#
+LD_FLAGS += ${EXTRA_LD_FLAGS}
+ 
 
 #
 OBJ_PATH = ${BUILD_PATH}/tmp/
@@ -132,9 +143,6 @@ OBJ_PATH = ${BUILD_PATH}/tmp/
 #
 LIB_SONAME_FULL = libabcdk.so.${VERSION_STR_FULL}${LIB_SONAME_SUFFIX}
 LIB_SONAME_MAIN = libabcdk.so.${VERSION_STR_MAIN}${LIB_SONAME_SUFFIX}
-
-#更新动态链接库的搜索路径。
-export LD_LIBRARY_PATH += :${DEPEND_LIB_PATH}
 
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
