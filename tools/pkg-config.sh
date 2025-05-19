@@ -39,7 +39,7 @@ fi
 PKG_CFG_PATH=${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/pkgconfig:${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/pkgconfig:${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/pkgconfig:${PKG_FIND_ROOT}/lib/pkgconfig:${PKG_FIND_ROOT}/share/pkgconfig
 
 #
-export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+#export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
 
 #
 if [ "${PKG_FIND_MODE}" == "only" ];then
