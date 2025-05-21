@@ -8,7 +8,9 @@
 #define ABCDK_RTSP_RTSP_H
 
 #include "abcdk/util/defs.h"
+#include "abcdk/openssl/openssl.h"
 
+#ifdef OPENSSL_VERSION_NUMBER
 #ifdef HAVE_LIVE555
 #ifdef __cplusplus
 #include <liveMedia.hh>
@@ -17,6 +19,7 @@
 #include <RTSPServer.hh>
 #endif //__cplusplus
 #endif // HAVE_LIVE555
+#endif //OPENSSL_VERSION_NUMBER
 
 __BEGIN_DECLS
 
