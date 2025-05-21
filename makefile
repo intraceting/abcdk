@@ -111,10 +111,10 @@ endif
 ifeq (${LSB_RELEASE},linux-gnu)
 C_FLAGS += -D_GNU_SOURCE
 CXX_FLAGS += -D_GNU_SOURCE
-LD_FLAGS += -ldl -pthread -lc -lm -lrt -lstdc++
+LD_FLAGS += -ldl -pthread -lc -lm -lrt
 endif
 ifeq (${LSB_RELEASE},android)
-LD_FLAGS += -ldl -pthread -lc -lm -lstdc++
+LD_FLAGS += -ldl -pthread -lc -lm
 endif
 
 #

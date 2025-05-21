@@ -55,7 +55,7 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
-	$(CC) -shared -o $(BUILD_PATH)/${LIB_SONAME_FULL} $(LIB_OBJ_FILES) $(LD_FLAGS) -Wl,-soname,${LIB_SONAME_MAIN}
+	$(CXX) -shared -o $(BUILD_PATH)/${LIB_SONAME_FULL} $(LIB_OBJ_FILES) $(LD_FLAGS) -Wl,-soname,${LIB_SONAME_MAIN}
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #
@@ -194,7 +194,7 @@ clean-lib:
 #
 tool: tool-src lib
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
+	$(CXX) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
 
 #
 tool-src: ${TOOL_OBJ_FILES} 
@@ -214,7 +214,7 @@ clean-tool:
 #
 test: test-src lib
 	mkdir -p $(BUILD_PATH)
-	$(CC) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
+	$(CXX) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
 
 #
 test-src: ${TEST_OBJ_FILES} 
