@@ -11,10 +11,12 @@
 #include <locale.h>
 #include "entry.h"
 
-#ifdef HAVE_LIVE555
+#ifdef HAVE_LIVE555 
 
 int abcdk_test_server(abcdk_option_t *args)
 {
+
+#ifdef HAVE_FFMPEG
 
     abcdk_rtsp_server_t *ctx = abcdk_rtsp_server_create(12345, 0x01 | 0x02);
 
@@ -139,6 +141,8 @@ END:
     abcdk_rtsp_server_stop(ctx);
 
     abcdk_rtsp_server_destroy(&ctx);
+
+#endif //HAVE_FFMPEG
 
     return 0;
 }
