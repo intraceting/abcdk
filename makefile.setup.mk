@@ -6,7 +6,7 @@
 #
 
 #拼接完整安装路径。
-INSTALL_PATH=${INSTALL_PREFIX}
+INSTALL_PATH=${SYSROOT_PREFIX}${INSTALL_PREFIX}
 
 
 #生成desktop文件内容。
