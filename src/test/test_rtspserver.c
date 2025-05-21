@@ -161,14 +161,14 @@ int abcdk_test_relay(abcdk_option_t *args)
     chk = abcdk_rtsp_server_start(server_ctx);
     assert(chk == 0);
 
-    int auth_scheme = abcdk_option_get_int(args, "--auth-pawd-scheme", 0, ABCDK_RTSP_AUTH_NORMAL);
-    int totp_time_step = abcdk_option_get_int(args, "--auth-pawd-totp-time-step", 0, 30);
-    int totp_digit_size = abcdk_option_get_int(args, "--auth-pawd-totp-digit-size", 0, 6);
+    int totp_scheme = abcdk_option_get_int(args, "--totp-scheme", 0, ABCDK_RTSP_AUTH_TOTP_SHA1);
+    int totp_time_step = abcdk_option_get_int(args, "--totp-time-step", 0, 30);
+    int totp_digit_size = abcdk_option_get_int(args, "--totp-digit-size", 0, 6);
 
     chk = abcdk_rtsp_server_add_user(server_ctx, "aaaa", "bbbb",ABCDK_RTSP_AUTH_NORMAL,0,0);
     assert(chk == 0);
 
-    chk = abcdk_rtsp_server_add_user(server_ctx, "bbbb", "12345678901234567890",auth_scheme,totp_time_step,totp_digit_size);
+    chk = abcdk_rtsp_server_add_user(server_ctx, "bbbb", "12345678901234567890",totp_scheme,totp_time_step,totp_digit_size);
     assert(chk == 0);
 
     abcdk_rtsp_relay_t *relay_ctx[100] = {0};
