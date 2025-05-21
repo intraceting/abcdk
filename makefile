@@ -117,6 +117,9 @@ ifeq (${LSB_RELEASE},android)
 LD_FLAGS += -ldl -pthread -lc -lm
 endif
 
+#在使用对应的编译器链接时，下面的动态链接库会自动进行链接。
+#-lstdc++ -lstdgcc_s
+
 #
 C_FLAGS += -I$(CURDIR)/src/lib/include/ 
 C_FLAGS += ${EXTRA_C_FLAGS}
