@@ -72,7 +72,7 @@ pack-rt-deb: pack-rt-prepare
 		-d FILES_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt \
 		-d POST_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh \
 		-d POSTUN_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh \
-		-d REQUIRE_LIST=""
+		-d REQUIRE_LIST="glibc"
 #复制到临时的系统根路径。
 	cp -rf ${PACK_TMP}/${RT_PACKAGE_NAME}.deb.ctl ${RT_SYSROOT_PREFIX}/DEBIAN
 #创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
@@ -100,7 +100,7 @@ pack-rt-rpm: pack-rt-prepare
 		-d FILES_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt \
 		-d POST_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh \
 		-d POSTUN_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh \
-		-d REQUIRE_LIST=""
+		-d REQUIRE_LIST="glibc"
 #创建不存在的路径。
 	mkdir -p ${PACKAGE_PATH}
 #打包成RPM格式。
