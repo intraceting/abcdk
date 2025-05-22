@@ -143,10 +143,6 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
 #
 OBJ_PATH = ${BUILD_PATH}/tmp/
 
-#
-LIB_SONAME_FULL = libabcdk.so.${VERSION_STR_FULL}${LIB_SONAME_SUFFIX}
-LIB_SONAME_MAIN = libabcdk.so.${VERSION_STR_MAIN}${LIB_SONAME_SUFFIX}
-
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
@@ -176,6 +172,20 @@ install: install-lib install-dev install-tool install-script
 #
 uninstall: uninstall-lib uninstall-dev uninstall-tool uninstall-script
 
+
+#加载子项目。
+#顺序不能更换。
+include $(CURDIR)/makefile.pack.mk
+
+#
+pack: pack-rt pack-dev 
+
+#
+pack-rt: pack-rt-${KIT_NAME} 
+
+#
+pack-dev: pack-dev-${KIT_NAME}
+
 #
 help:
 	@echo "make"
@@ -191,3 +201,6 @@ help:
 	@echo "make uninstall-dev"
 	@echo "make uninstall-tool"
 	@echo "make uninstall-script"
+	@echo "make pack"
+	@echo "make pack-rt"
+	@echo "make pack-dev"

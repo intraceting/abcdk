@@ -55,7 +55,7 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
-	$(CXX) -shared -o $(BUILD_PATH)/${LIB_SONAME_FULL} $(LIB_OBJ_FILES) $(LD_FLAGS) -Wl,-soname,${LIB_SONAME_MAIN}
+	$(CXX) -shared -o $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} $(LIB_OBJ_FILES) $(LD_FLAGS) -Wl,-soname,libabcdk.so.${VERSION_STR_MAIN}
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #

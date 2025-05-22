@@ -26,6 +26,12 @@ CheckHavePackage()
 }
 
 #
+CheckPackageKitName()
+{
+	${SHELLDIR}/tools/get-kit-name.sh
+}
+
+#
 CheckKeyword()
 # $1 keywords
 # $2 word
@@ -128,14 +134,20 @@ VERSION_RELEASE="1"
 LSB_RELEASE="linux-gnu"
 
 #
-LIB_SONAME_SUFFIX=""
-
-#
 SYSROOT_PREFIX="/"
 INSTALL_PREFIX="/usr/local/"
 
 #
 BUILD_PATH="${SHELLDIR}/build/"
+
+#组件包名称。
+KIT_NAME=$(CheckPackageKitName)
+
+#安装包后缀。
+PACKAGE_SUFFIX=""
+
+#安装包存放路径。
+PACKAGE_PATH="${SHELLDIR}/package/"
 
 #
 XGETTEXT_BIN=$(which xgettext)
@@ -223,6 +235,10 @@ VARIABLE:
      BUILD_PATH=${BUILD_PATH}
 
      BUILD_PATH(过程文件存放的路径)用于存放构建过程文件.
+
+     PACKAGE_PATH=${PACKAGE_PATH}
+
+     PACKAGE_PATH(安装包存放的路径)用于存放安装包文件.
 
      OPTIMIZE_LEVEL=${OPTIMIZE_LEVEL}
 
@@ -374,6 +390,27 @@ if [ $? -ne 0 ];then
     exit 22
 fi
 
+
+#
+if [ "${KIT_NAME}" == "rpm" ];then
+{
+    #
+    CheckHavePackage rpmbuild 1
+    if [ $? -ne 0 ];then
+        echo "'$(CheckHavePackage rpmbuild 4)' not found."
+        exit 22
+    fi
+}
+elif [ "${KIT_NAME}" == "deb" ];then
+{
+    #
+    CheckHavePackage dpkg 1
+    if [ $? -ne 0 ];then
+        echo "'$(CheckHavePackage dpkg 4)' not found."
+        exit 22
+    fi
+}
+fi
 
 #如果未指定第三方根路径，则直接用安装路径。
 if [ "${THIRDPARTY_FIND_ROOT}" == "" ];then
@@ -566,6 +603,12 @@ VERSION_MINOR = ${VERSION_MINOR}
 VERSION_RELEASE = ${VERSION_RELEASE}
 #
 BUILD_PATH = ${BUILD_PATH}
+#
+KIT_NAME = ${KIT_NAME}
+#
+PACKAGE_SUFFIX = ${PACKAGE_SUFFIX}
+#
+PACKAGE_PATH = ${PACKAGE_PATH}
 #
 SYSROOT_PREFIX ?= ${SYSROOT_PREFIX}
 #

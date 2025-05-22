@@ -63,9 +63,9 @@ install-script:
 install-lib:
 #
 	mkdir -p -m 0755 ${INSTALL_PATH}/lib
-	cp -f $(BUILD_PATH)/${LIB_SONAME_FULL} ${INSTALL_PATH}/lib/
-	chmod 0755 ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
-	cd ${INSTALL_PATH}/lib/ ; ln -sf ${LIB_SONAME_FULL} ${LIB_SONAME_MAIN} ;
+	cp -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PATH}/lib/
+	chmod 0755 ${INSTALL_PATH}/lib/libabcdk.so.${VERSION_STR_FULL}
+	cd ${INSTALL_PATH}/lib/ ; ln -sf libabcdk.so.${VERSION_STR_FULL} libabcdk.so.${VERSION_STR_MAIN} ;
 #
 	mkdir -p -m 0755 ${INSTALL_PATH}/share/abcdk/protocol/libabcdk/
 	cp -rfP $(CURDIR)/share/abcdk/protocol/libabcdk/. ${INSTALL_PATH}/share/abcdk/protocol/libabcdk/
@@ -86,7 +86,7 @@ install-dev:
 	mkdir -p -m 0755 ${INSTALL_PATH}/lib
 	cp -f $(BUILD_PATH)/libabcdk.a ${INSTALL_PATH}/lib/
 	chmod 0755 ${INSTALL_PATH}/lib/libabcdk.a
-	cd ${INSTALL_PATH}/lib/; ln -sf ${LIB_SONAME_MAIN} libabcdk.so ;
+	cd ${INSTALL_PATH}/lib/; ln -sf libabcdk.so.${VERSION_STR_MAIN} libabcdk.so ;
 #
 	mkdir -p -m 0755 ${INSTALL_PATH}/lib/pkgconfig
 	printf "%s" "$${LIB_PKGCONFIG_CONTEXT}" > ${INSTALL_PATH}/lib/pkgconfig/abcdk.pc
@@ -117,8 +117,8 @@ uninstall-script:
 #
 uninstall-lib:
 #
-	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_MAIN}
-	rm -f ${INSTALL_PATH}/lib/${LIB_SONAME_FULL}
+	rm -f ${INSTALL_PATH}/lib/libabcdk.so.${VERSION_STR_MAIN}
+	rm -f ${INSTALL_PATH}/lib/libabcdk.so.${VERSION_STR_FULL}
 	rm -rf ${INSTALL_PATH}/share/abcdk/protocol/libabcdk
 	rm -f ${INSTALL_PATH}/share/locale/en_US/gettext/libabcdk.pot
 	rm -f ${INSTALL_PATH}/share/locale/en_US/LC_MESSAGES/libabcdk.mo
