@@ -154,6 +154,13 @@ Exclusivearch : ${TARGET_PLATFORM}
 License: none
 AutoReqProv: yes
 
+# disable '.build-id soft-link'.
+%global debug_package %{nil}
+%define _build_id_links none
+
+# disable 'debug-info'.
+%define _enable_debug_package 0
+
 %description
 This is the ${PACK_NAME} component package.
 .

@@ -154,6 +154,13 @@ License: none
 Requires: ${PACK_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
 AutoReqProv: no
 
+# disable '.build-id soft-link'.
+%global debug_package %{nil}
+%define _build_id_links none
+
+# disable 'debug-info'.
+%define _enable_debug_package 0
+
 %description
 This is the ${PACK_NAME} component package.
 .
