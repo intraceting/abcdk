@@ -86,6 +86,26 @@ pack-rt-deb: pack-rt-prepare
 	dpkg-deb --build "${RT_SYSROOT_PREFIX}/" "${PACKAGE_PATH}/${RT_PACKAGE_NAME}.deb"
 
 #
+pack-rt-rpm: pack-rt-prepare
+#生成SPEC文件。
+	${DEV_TOOL_HOME}/make.rpm.rt.spec.sh \
+    	-d OUTPUT=${PACK_TMP}/${RT_PACKAGE_NAME}.rpm.spec \
+    	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+    	-d PACK_NAME=abcdk \
+		-d VERSION_MAJOR=${VERSION_MAJOR} \
+		-d VERSION_MINOR=${VERSION_MINOR} \
+		-d VERSION_RELEASE=${VERSION_RELEASE} \
+		-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+		-d FILES_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt \
+		-d POST_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh \
+		-d POSTUN_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh
+#创建不存在的路径。
+	mkdir -p ${PACKAGE_PATH}
+#打包成RPM格式。
+	rpmbuild --noclean --buildroot "${RT_SYSROOT_PREFIX}/" -bb ${PACK_TMP}/${RT_PACKAGE_NAME}.rpm.spec --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${RT_PACKAGE_NAME}.rpm"
+
+
+#
 pack-rt-prepare:
 #创建不存在的路径。
 	mkdir -p ${PACK_TMP}
@@ -101,7 +121,6 @@ pack-rt-prepare:
 #生成安装后和卸载后运行的脚本。
 	printf "%s" "$${RT_PACKAGE_POST_CONTEXT}" > ${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh
 	printf "%s" "$${RT_PACKAGE_POSTUN_CONTEXT}" > ${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh
-
 
 #
 pack-dev-deb: pack-dev-prepare
@@ -123,6 +142,26 @@ pack-dev-deb: pack-dev-prepare
 	mkdir -p ${PACKAGE_PATH}
 #打包成DEB格式。
 	dpkg-deb --build "${DEV_SYSROOT_PREFIX}/" "${PACKAGE_PATH}/${DEV_PACKAGE_NAME}.deb"
+
+
+#
+pack-dev-rpm: pack-dev-prepare
+#生成SPEC文件。
+	${DEV_TOOL_HOME}/make.rpm.dev.spec.sh \
+    	-d OUTPUT=${PACK_TMP}/${DEV_PACKAGE_NAME}.rpm.spec \
+    	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+    	-d PACK_NAME=abcdk-devel \
+		-d VERSION_MAJOR=${VERSION_MAJOR} \
+		-d VERSION_MINOR=${VERSION_MINOR} \
+		-d VERSION_RELEASE=${VERSION_RELEASE} \
+		-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+		-d FILES_NAME=${PACK_TMP}/${DEV_PACKAGE_NAME}.filelist.txt \
+		-d POST_NAME=${PACK_TMP}/${DEV_PACKAGE_NAME}.post.sh \
+		-d POSTUN_NAME=${PACK_TMP}/${DEV_PACKAGE_NAME}.postun.sh
+#创建不存在的路径。
+	mkdir -p ${PACKAGE_PATH}
+#打包成RPM格式。
+	rpmbuild --noclean --buildroot "${DEV_SYSROOT_PREFIX}/" -bb ${PACK_TMP}/${DEV_PACKAGE_NAME}.rpm.spec --define="_rpmdir ${PACKAGE_PATH}" --define="_rpmfilename ${DEV_PACKAGE_NAME}.rpm"
 
 
 #
