@@ -152,7 +152,7 @@ Group: Applications/System
 Exclusivearch : ${TARGET_PLATFORM}
 License: none
 Requires: ${PACK_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
-AutoReqProv: yes
+AutoReqProv: no
 
 %description
 This is the ${PACK_NAME} component package.
