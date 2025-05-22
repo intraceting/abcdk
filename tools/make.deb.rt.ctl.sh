@@ -53,6 +53,7 @@ VARIABLE:
 
     OUTPUT(CTL目录)用于存放CTL文件.
 
+    REQUIRE_LIST(依赖列表).
 EOF
 }
 
@@ -148,6 +149,10 @@ fi
 mkdir -p "${OUTPUT}"
 
 #
+#Pre-Depends: \${shlibs:Depends}
+#
+
+#
 cat >${OUTPUT}/control <<EOF
 Source: ${PACK_NAME}
 Package: ${PACK_NAME}
@@ -156,7 +161,7 @@ Section: Applications/System
 Priority: optional
 Architecture: ${TARGET_PLATFORM}
 Maintainer: ${VENDOR_NAME}
-Pre-Depends: \${shlibs:Depends}
+Pre-Depends: ${REQUIRE_LIST}
 Description: This is the ${PACK_NAME} component package.
  .
  This package contains the runtime files(bin,doc).

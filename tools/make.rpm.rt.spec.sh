@@ -53,6 +53,7 @@ VARIABLE:
 
     OUTPUT(SPEC文件名)用于存放SPEC文件.
 
+    REQUIRE_LIST(依赖列表).
 EOF
 }
 
@@ -152,7 +153,8 @@ Vendor: ${VENDOR_NAME}
 Group: Applications/System
 Exclusivearch : ${TARGET_PLATFORM}
 License: none
-AutoReqProv: yes
+Requires: ${REQUIRE_LIST} 
+AutoReqProv: no
 
 # disable '.build-id soft-link'.
 %global debug_package %{nil}

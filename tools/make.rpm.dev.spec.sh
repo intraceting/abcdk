@@ -45,14 +45,15 @@ VARIABLE:
 
     TARGET_PLATFORM(目标平台).
 
-    FILES_NAME=(文件列表的文件名).
+    FILES_NAME(文件列表的文件名).
 
-    POST_NAME=(安装后运行的脚本文件名).
+    POST_NAME(安装后运行的脚本文件名).
 
-    POSTUN_NAME=(卸载后运行的脚本文件名).
+    POSTUN_NAME(卸载后运行的脚本文件名).
 
     OUTPUT(SPEC文件名)用于存放SPEC文件.
 
+    REQUIRE_LIST(依赖列表).
 EOF
 }
 
@@ -143,7 +144,7 @@ mkdir -p "${FATHER_PATH}"
 
 #
 cat >${OUTPUT} <<EOF
-Name: ${PACK_NAME}-devel
+Name: ${PACK_NAME}
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}
 Release: ${VERSION_RELEASE}
 Summary: ${PACK_NAME}.
@@ -151,7 +152,7 @@ Vendor: ${VENDOR_NAME}
 Group: Applications/System
 Exclusivearch : ${TARGET_PLATFORM}
 License: none
-Requires: ${PACK_NAME} = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_RELEASE}
+Requires: ${REQUIRE_LIST} 
 AutoReqProv: no
 
 # disable '.build-id soft-link'.

@@ -53,6 +53,7 @@ VARIABLE:
 
     OUTPUT(CTL目录)用于存放CTL文件.
 
+    REQUIRE_LIST(依赖列表).
 EOF
 }
 
@@ -149,13 +150,13 @@ mkdir -p "${OUTPUT}"
 #
 cat >${OUTPUT}/control <<EOF
 Source: ${PACK_NAME}
-Package: ${PACK_NAME}-devel
+Package: ${PACK_NAME}
 Version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 Section: Applications/System
 Priority: optional
 Architecture: ${TARGET_PLATFORM}
 Maintainer: ${VENDOR_NAME}
-Pre-Depends: ${PACK_NAME} (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE})
+Pre-Depends: ${REQUIRE_LIST}
 Description: This is the ${PACK_NAME} component package.
  .
  This package contains the runtime files(headers, static libraries).
