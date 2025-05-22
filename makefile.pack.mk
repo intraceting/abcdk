@@ -76,11 +76,11 @@ pack-rt-deb: pack-rt-prepare
 #复制到临时的系统根路径。
 	cp -rf ${PACK_TMP}/${RT_PACKAGE_NAME}.deb.ctl ${RT_SYSROOT_PREFIX}/DEBIAN
 #创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
-	ln -s -f ${RT_SYSROOT_PREFIX}/DEBIAN ${RT_SYSROOT_PREFIX}/debian
+#	ln -s -f ${RT_SYSROOT_PREFIX}/DEBIAN ${RT_SYSROOT_PREFIX}/debian
 #更新debian/control文件Pre-Depends字段。	
-	${DEV_TOOL_HOME}/dpkg-shlibdeps2control.sh "${RT_SYSROOT_PREFIX}"
+#	${DEV_TOOL_HOME}/dpkg-shlibdeps2control.sh "${RT_SYSROOT_PREFIX}"
 #删除软链接，因为dpkg-deb会把这个当成普通文件复制。下同。
-	unlink ${RT_SYSROOT_PREFIX}/debian
+#	unlink ${RT_SYSROOT_PREFIX}/debian
 #创建不存在的路径。
 	mkdir -p ${PACKAGE_PATH}
 #打包成DEB格式。
