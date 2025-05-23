@@ -210,7 +210,9 @@ int abcdk_torch_vcodec_encode_host(abcdk_torch_vcodec_t *ctx, abcdk_torch_packet
 
         ht_ctx_p->ff_tmp_fae->pts = ++ht_ctx_p->ff_en_pts; // 递增。
         ht_ctx_p->ff_tmp_fae->pkt_dts = (int64_t)AV_NOPTS_VALUE;
+#if FF_API_PKT_PTS
         ht_ctx_p->ff_tmp_fae->pkt_pts = (int64_t)AV_NOPTS_VALUE;
+#endif //FF_API_PKT_PTS
 
         /*下面设置会使编码器自行决定帧类型。*/
         ht_ctx_p->ff_tmp_fae->key_frame = 0;
