@@ -1191,7 +1191,9 @@ int abcdk_ffeditor_write_frame(abcdk_ffeditor_t *ctx, AVFrame *frame, int stream
     }
 
     frame_cp->pkt_dts = (int64_t)AV_NOPTS_VALUE;
+#if FF_API_PKT_PTS
     frame_cp->pkt_pts = (int64_t)AV_NOPTS_VALUE;
+#endif //FF_API_PKT_PTS
 
     /*下面设置会使编码器自行决定帧类型。*/
     frame_cp->key_frame = 0;

@@ -507,26 +507,25 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
     assert(vs != NULL && ctx != NULL);
 
     /*如果是编码，帧率也一并复制。*/
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#if FF_API_LAVF_AVCTX
     if (av_codec_is_encoder(vs->codec->codec))
-#else 
+#else //FF_API_LAVF_AVCTX
     if (av_codec_is_encoder(ctx->codec))
-#endif 
+#endif //FF_API_LAVF_AVCTX
     {
         vs->time_base = ctx->time_base;
         vs->avg_frame_rate = vs->r_frame_rate = ctx->framerate;//av_make_q(ctx->time_base.den, ctx->time_base.num);
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#if FF_API_LAVF_AVCTX
         vs->codec->time_base = ctx->time_base;
         vs->codec->framerate = ctx->framerate;
-#endif
+#endif //FF_API_LAVF_AVCTX
     }
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
+    /**/
     avcodec_parameters_from_context(vs->codecpar, ctx);
-#endif 
 
     /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#if FF_API_LAVF_AVCTX
     vs->codec->codec_type = ctx->codec_type;
     vs->codec->codec_id = ctx->codec_id;
     vs->codec->codec_tag = ctx->codec_tag;
@@ -587,7 +586,7 @@ int abcdk_avstream_parameters_from_context(AVStream *vs, const AVCodecContext *c
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
-#endif //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#endif //FF_API_LAVF_AVCTX
 
     return 0;
 }
@@ -596,12 +595,11 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
 {
     assert(vs != NULL && ctx != NULL);
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 35, 100)
+    /**/
     avcodec_parameters_to_context(ctx, vs->codecpar);
-#endif
 
     /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#if FF_API_LAVF_AVCTX
     ctx->time_base = vs->codec->time_base;
     ctx->framerate = vs->codec->framerate;
     ctx->codec_type = vs->codec->codec_type;
@@ -663,7 +661,7 @@ int abcdk_avstream_parameters_to_context(AVCodecContext *ctx, const AVStream *vs
             av_log(NULL, AV_LOG_INFO, "@av_mallocz ENOMEM!");
         }
     }
-#endif //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#endif //FF_API_LAVF_AVCTX
 
     return 0;
 }
@@ -705,11 +703,11 @@ double abcdk_avstream_fps(AVFormatContext *ctx, AVStream *vs,double xspeed)
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
         fps = abcdk_avmatch_r2d(vs->avg_frame_rate,xspeed);
     if (fps < ABCDK_AVSTREAM_EPS_ZERO)
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#if FF_API_LAVF_AVCTX
         fps = 1.0 / abcdk_avmatch_r2d(vs->codec->time_base,xspeed);
-#else 
+#else //FF_API_LAVF_AVCTX
         fps = 1.0 / abcdk_avmatch_r2d(vs->time_base,xspeed);
-#endif 
+#endif //FF_API_LAVF_AVCTX
 
     return ABCDK_CLAMP(fps,(double)1.0,(double)999999999.0);
 }
@@ -746,11 +744,11 @@ int abcdk_avstream_width(AVFormatContext *ctx, AVStream *vs)
     assert(ctx != NULL && vs != NULL);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if FF_API_LAVF_AVCTX
     return vs->codec->width;
-#else 
+#else //FF_API_LAVF_AVCTX
     return vs->codecpar->width;
-#endif
+#endif //FF_API_LAVF_AVCTX
 }
 
 int abcdk_avstream_height(AVFormatContext *ctx, AVStream *vs)
@@ -759,20 +757,20 @@ int abcdk_avstream_height(AVFormatContext *ctx, AVStream *vs)
     assert(ctx != NULL && vs != NULL);
     assert(ctx->nb_streams > vs->index && ctx->streams[vs->index] == vs);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if FF_API_LAVF_AVCTX
     return vs->codec->height;
-#else 
+#else //FF_API_LAVF_AVCTX
     return vs->codecpar->height;
-#endif
+#endif //FF_API_LAVF_AVCTX
 }
 
 AVStream *abcdk_avstream_find(AVFormatContext *ctx,enum AVMediaType type)
 {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if FF_API_LAVF_AVCTX
     AVCodecContext *codecpar = NULL;
-#else 
+#else //FF_API_LAVF_AVCTX
     AVCodecParameters *codecpar = NULL;
-#endif
+#endif //FF_API_LAVF_AVCTX
     AVStream *vs_p;
 
     assert(ctx != NULL && type > AVMEDIA_TYPE_UNKNOWN && type < AVMEDIA_TYPE_NB);
@@ -780,11 +778,11 @@ AVStream *abcdk_avstream_find(AVFormatContext *ctx,enum AVMediaType type)
     for (int i = 0; i < ctx->nb_streams; i++)
     {
         vs_p = ctx->streams[i];
-    #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+#if FF_API_LAVF_AVCTX
         codecpar = vs_p->codec;
-    #else 
+#else //FF_API_LAVF_AVCTX
         codecpar = vs_p->codecpar;
-    #endif
+#endif //FF_API_LAVF_AVCTX
 
         if(codecpar->codec_type == type)
             return vs_p;
