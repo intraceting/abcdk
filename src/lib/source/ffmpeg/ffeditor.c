@@ -917,11 +917,12 @@ int abcdk_ffeditor_add_stream(abcdk_ffeditor_t *ctx, const AVCodecContext *opt, 
     {
         abcdk_avstream_parameters_from_context(vs, opt);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+#if FF_API_LAVF_AVCTX
         /*如果流需要设置全局头部，则编码器需要知道这个请求。*/
         if (ctx->avctx->oformat->flags & AVFMT_GLOBALHEADER)
             vs->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-#endif
+#endif //FF_API_LAVF_AVCTX
+
     }
     else
     {
@@ -1072,11 +1073,11 @@ int abcdk_ffeditor_write_packet(abcdk_ffeditor_t *ctx, AVPacket *pkt, AVRational
     if (src_time_base)
         bq = *src_time_base;
     else
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+#if FF_API_LAVF_AVCTX
         bq = (ctx_p ? ctx_p->time_base : vs_p->codec->time_base);
-#else
+#else //FF_API_LAVF_AVCTX
         bq = (ctx_p ? ctx_p->time_base : av_make_q(1, abcdk_avstream_fps(ctx->avctx, vs_p, 1)));
-#endif
+#endif //FF_API_LAVF_AVCTX
 
     cq = vs_p->time_base;
 
@@ -1113,11 +1114,11 @@ int abcdk_ffeditor_write_packet2(abcdk_ffeditor_t *ctx, void *data, int size, in
 {
     AVPacket pkt = {0};
     AVStream *vs_p = NULL;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+#if FF_API_LAVF_AVCTX
     AVCodecContext *codec_p;
-#else
+#else //FF_API_LAVF_AVCTX
     AVCodecParameters *codec_p;
-#endif
+#endif //FF_API_LAVF_AVCTX
     int chk;
 
     assert(ctx != NULL && data != NULL && size > 0 && stream >= 0);
@@ -1125,11 +1126,11 @@ int abcdk_ffeditor_write_packet2(abcdk_ffeditor_t *ctx, void *data, int size, in
 
     vs_p = ctx->avctx->streams[stream];
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 3, 100)
+#if FF_API_LAVF_AVCTX
     codec_p = vs_p->codec;
-#else
+#else //FF_API_LAVF_AVCTX
     codec_p = vs_p->codecpar;
-#endif
+#endif //FF_API_LAVF_AVCTX
 
     av_init_packet(&pkt);
 
