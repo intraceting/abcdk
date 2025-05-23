@@ -178,13 +178,16 @@ uninstall: uninstall-lib uninstall-dev uninstall-tool uninstall-script
 include $(CURDIR)/makefile.pack.mk
 
 #
-pack: pack-rt pack-dev 
+pack: pack-rt pack-dev pack-util
 
 #
 pack-rt: pack-rt-${KIT_NAME} 
 
 #
 pack-dev: pack-dev-${KIT_NAME}
+
+#
+pack-util: pack-util-${KIT_NAME}
 
 #
 help:
@@ -204,3 +207,4 @@ help:
 	@echo "make pack"
 	@echo "make pack-rt"
 	@echo "make pack-dev"
+	@echo "make pack-util"
