@@ -117,7 +117,7 @@ if [ "deb" == "${KIT_NAME}" ];then
             LDFLAG="-L$(FindLibPath libopencv_core.so)"
             checkReturnCode
 
-            echo "-lopencv_calib3d -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_stitching -lopencv_flann -lopencv_features2d -lopencv_xfeatures2d  ${LDFLAG}"
+            echo "-lopencv_calib3d -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_stitching -lopencv_flann -lopencv_features2d  ${LDFLAG}"
         }
         fi
     }
@@ -159,7 +159,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
             LDFLAG="-L$(FindLibPath libopencv_core.so)"
             checkReturnCode
 
-            echo "-lopencv_calib3d -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_stitching -lopencv_flann -lopencv_features2d -lopencv_xfeatures2d  ${LDFLAG}"
+            echo "-lopencv_calib3d -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_stitching -lopencv_flann -lopencv_features2d  ${LDFLAG}"
         }
         fi
     }
