@@ -36,7 +36,7 @@ __BEGIN_DECLS
 
 #include <libswscale/swscale.h>
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(60, 3, 100)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
 #include <libavcodec/bsf.h>
 #endif //
 
