@@ -141,7 +141,7 @@ INSTALL_PREFIX="/usr/local/"
 BUILD_PATH="${SHELLDIR}/build/"
 
 #组件包名称。
-KIT_NAME=$(CheckPackageKitName)
+KIT_NAME=""
 
 #安装包后缀。
 PACKAGE_SUFFIX=""
