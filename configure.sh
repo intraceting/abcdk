@@ -355,6 +355,11 @@ if [ "${INSTALL_PREFIX}" == "" ] || [ "${INSTALL_PREFIX}" == "/" ];then
 }
 fi
 
+#如果未指定组件包名称，则认为是与本地平台一致。
+if [ "${KIT_NAME}" == "" ];then
+KIT_NAME=$(CheckPackageKitName)
+fi
+
 #
 TARGET_COMPILER_C=${COMPILER_PREFIX}${COMPILER_C_NAME}
 TARGET_COMPILER_CXX=${COMPILER_PREFIX}${COMPILER_CXX_NAME}
@@ -391,31 +396,6 @@ if [ $? -ne 0 ];then
     exit 22
 fi
 
-#如果未指定组件包名称，则认为是与本地平台一致。
-if [ "${KIT_NAME}" == "" ];then
-KIT_NAME=$(CheckPackageKitName)
-fi
-
-#
-if [ "${KIT_NAME}" == "rpm" ];then
-{
-    #
-    CheckHavePackage rpmbuild 1
-    if [ $? -ne 0 ];then
-        echo "'$(CheckHavePackage rpmbuild 4)' not found."
-        exit 22
-    fi
-}
-elif [ "${KIT_NAME}" == "deb" ];then
-{
-    #
-    CheckHavePackage dpkg 1
-    if [ $? -ne 0 ];then
-        echo "'$(CheckHavePackage dpkg 4)' not found."
-        exit 22
-    fi
-}
-fi
 
 #如果未指定第三方根路径，则直接用安装路径。
 if [ "${THIRDPARTY_FIND_ROOT}" == "" ];then
