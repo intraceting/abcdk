@@ -232,6 +232,11 @@ VARIABLE:
 
      BUILD_PATH(过程文件存放的路径)用于存放构建过程文件.
 
+     KIT_NAME=${TARGET_KIT_NAME}
+
+     KIT_NAME(组件包名字)支持以下关键字:
+     deb,rpm,(local)
+
      PACKAGE_PATH=${PACKAGE_PATH}
 
      PACKAGE_PATH(安装包存放的路径)用于存放安装包文件.
@@ -386,6 +391,10 @@ if [ $? -ne 0 ];then
     exit 22
 fi
 
+#如果未指定组件包名称，则认为是与本地平台一致。
+if [ "${KIT_NAME}" == "" ];then
+KIT_NAME=$(CheckPackageKitName)
+fi
 
 #
 if [ "${KIT_NAME}" == "rpm" ];then
