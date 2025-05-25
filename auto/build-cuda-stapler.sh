@@ -18,13 +18,24 @@ checkReturnCode()
 }
 
 #
+COMPILER_PREFIX=${1}
+
+#
+GCC_VERSION=${SHELLDIR}/../tools/get-compiler-version.sh ${COMPILER_PREFIX}gcc
+checkReturnCode
+
+#
+GLIBC_VERSION=${SHELLDIR}/../tools/get-compiler-glibc-version.sh ${COMPILER_PREFIX}gcc
+checkReturnCode
+
+#
 ${SHELLDIR}/../configure.sh \
     -d INSTALL_PREFIX="/usr/local/stapler/" \
-    -d PACKAGE_SUFFIX="-cuda-stapler" \
+    -d PACKAGE_SUFFIX="-cuda-stapler-gcc_${GCC_VERSION}-glibc_${GLIBC_VERSION}" \
     -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,live555,qrencode,onnxruntime,curl,sqlite,cuda" \
     -d THIRDPARTY_FIND_ROOT="/usr/local/stapler/" \
     -d CUDA_FIND_ROOT="/usr/local/cuda/" \
-    -d COMPILER_PREFIX=${1}
+    -d COMPILER_PREFIX=${COMPILER_PREFIX}
 checkReturnCode
 
 #
