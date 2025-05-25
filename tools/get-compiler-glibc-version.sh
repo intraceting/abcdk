@@ -30,33 +30,32 @@ TARGET_SYSROOT=$(${SHELLDIR}/get-compiler-sysroot.sh "${1}")
 checkReturnCode
 
 #
-TARGET_READELF=$(${SHELLDIR}/get-compiler-prog-name.sh "${1}" "readelf")
-checkReturnCode
+#TARGET_READELF=$(${SHELLDIR}/get-compiler-prog-name.sh "${1}" "readelf")
+#checkReturnCode
 
 #
 TARGET_BITWIDE=$(${SHELLDIR}/get-compiler-bitwide.sh "${1}")
 checkReturnCode
 
-
-#
-if [ "${NATIVE_PLATFORM}" == "${TARGET_PLATFORM}" ];then
+#提取目标平台的glibc最大版本。
+if [ -L ${TARGET_SYSROOT}/lib${TARGET_BITWIDE}/libc.so.6 ];then
+    TARGET_GLIBC_MAX_VERSION=$(basename $(readlink ${TARGET_SYSROOT}/lib${TARGET_BITWIDE}/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
+elif [ -L ${TARGET_SYSROOT}/lib/libc.so.6 ];then
+    TARGET_GLIBC_MAX_VERSION=$(basename $(readlink ${TARGET_SYSROOT}/lib/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
+elif [ "${NATIVE_PLATFORM}" == "${TARGET_PLATFORM}" ];then
 {
-    #提取目标平台的glibc最大版本。
-    TARGET_GLIBC_MAX_VER=$(ldd --version |head -n 1 |rev |cut -d ' ' -f 1 |rev)
-}
-else
-{
-    #提取目标平台的glibc最大版本。
-    if [ -f ${TARGET_SYSROOT}/lib${TARGET_BITWIDE}/libc.so.6 ];then
-        TARGET_GLIBC_MAX_VER=$(${TARGET_READELF} -V ${TARGET_SYSROOT}/lib${TARGET_BITWIDE}/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
-    elif [ -f ${TARGET_SYSROOT}/lib/libc.so.6 ];then
-        TARGET_GLIBC_MAX_VER=$(${TARGET_READELF} -V ${TARGET_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
-    elif [ -f ${TARGET_SYSROOT}/${TARGET_PLATFORM}-linux-gnu/lib/libc.so.6 ];then
-        TARGET_GLIBC_MAX_VER=$(${TARGET_READELF} -V ${TARGET_SYSROOT}/lib/libc.so.6 | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -u -V -r |head -n 1 |cut -d '_' -f 2)
-    else
-        TARGET_GLIBC_MAX_VER="0.0"
+    if [ -L /usr/lib${TARGET_BITWIDE}/libc.so.6 ];then
+        TARGET_GLIBC_MAX_VERSION=$(basename $(readlink /usr/lib${TARGET_BITWIDE}/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
+    elif [ -L /usr/lib/${TARGET_PLATFORM}-linux-gnu/libc.so.6 ];then
+        TARGET_GLIBC_MAX_VERSION=$(basename $(readlink /usr/lib/${TARGET_PLATFORM}-linux-gnu/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
+    elif  [ -L /usr/lib/libc.so.6 ];then
+        TARGET_GLIBC_MAX_VERSION=$(basename $(readlink /usr/lib/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
+    else 
+        TARGET_GLIBC_MAX_VERSION=$(ldd --version |head -n 1 |rev |cut -d ' ' -f 1 |rev)
     fi
 }
+else
+    TARGET_GLIBC_MAX_VERSION="0.0"
 fi
 
-echo "${TARGET_GLIBC_MAX_VER}"
+echo "${TARGET_GLIBC_MAX_VERSION}"
