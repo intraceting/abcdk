@@ -2,4 +2,4 @@
 /.vscode
 #
 /build
-/package
+package
