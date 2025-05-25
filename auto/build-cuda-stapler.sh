@@ -18,8 +18,17 @@ checkReturnCode()
 }
 
 #
-${SHELLDIR}/../configure.sh  -d PACKAGE_SUFFIX="-cuda-stapler" -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,live555,qrencode,onnxruntime,curl,sqlite,cuda" -d CUDA_FIND_ROOT="/usr/local/cuda/" $@
+${SHELLDIR}/../configure.sh \
+    -d INSTALL_PREFIX="/usr/local/stapler/" \
+    -d PACKAGE_SUFFIX="-cuda-stapler" \
+    -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,live555,qrencode,onnxruntime,curl,sqlite,cuda" \
+    -d THIRDPARTY_FIND_ROOT="/usr/local/stapler/" \
+    -d CUDA_FIND_ROOT="/usr/local/cuda/" \
+    -d COMPILER_PREFIX=${1}
 checkReturnCode
+
+#
+make -s -C ${SHELLDIR}/../ clean
 
 #
 make -s -j4 -C ${SHELLDIR}/../
