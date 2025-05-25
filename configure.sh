@@ -170,9 +170,7 @@ BUILD_TYPE="release"
 OPTIMIZE_LEVEL=""
 
 #
-THIRDPARTY_PACKAGES="ffmpeg,json-c,lz4,cuda,cudnn,tensorrt,ffnvcodec,onnxruntime,live555,"
-THIRDPARTY_PACKAGES="unixodbc,opencv,openssl,redis,sqlite,curl,qrencode,${THIRDPARTY_PACKAGES}"
-THIRDPARTY_PACKAGES="archive,nghttp2,libmagic,gtk,appindicator,${THIRDPARTY_PACKAGES}"
+THIRDPARTY_PACKAGES=""
 THIRDPARTY_FIND_ROOT=""
 THIRDPARTY_FIND_MODE="both"
 THIRDPARTY_NOFOUND=""
@@ -236,6 +234,10 @@ VARIABLE:
 
      KIT_NAME(组件包名字)支持以下关键字:
      deb,rpm,(local)
+
+     PACKAGE_SUFFIX=${PACKAGE_SUFFIX}
+
+     PACKAGE_SUFFIX(安装包名称后缀).
 
      PACKAGE_PATH=${PACKAGE_PATH}
 
