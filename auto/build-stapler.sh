@@ -21,11 +21,11 @@ checkReturnCode()
 COMPILER_PREFIX=${1}
 
 #
-GCC_VERSION=${SHELLDIR}/../tools/get-compiler-version.sh ${COMPILER_PREFIX}gcc
+GCC_VERSION=$(${SHELLDIR}/../tools/get-compiler-version.sh ${COMPILER_PREFIX}gcc)
 checkReturnCode
 
 #
-GLIBC_VERSION=${SHELLDIR}/../tools/get-compiler-glibc-version.sh ${COMPILER_PREFIX}gcc
+GLIBC_VERSION=$(${SHELLDIR}/../tools/get-compiler-glibc-version.sh ${COMPILER_PREFIX}gcc)
 checkReturnCode
 
 #
