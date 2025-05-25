@@ -91,7 +91,7 @@ if [ "deb" == "${KIT_NAME}" ];then
     elif [ ${FLAG} -eq 2 ];then
     {
         CFLAG="-I$(FindIncPath opencv2/opencv.hpp)"
-        if [ $? == 0 ];then
+        if [ $? -eq 0 ];then
         {
             echo "${CFLAG}"
         }
@@ -134,7 +134,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
     elif [ ${FLAG} -eq 2 ];then
     {
         CFLAG="-I$(FindIncPath opencv2/opencv.hpp)"
-        if [ $? != 0 ];then
+        if [ $? -eq 0 ];then
         {
             echo "${CFLAG}"
         }
