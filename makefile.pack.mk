@@ -268,5 +268,5 @@ pack-util-prepare:
 	find ${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt
 	find ${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt
 #生成安装后和卸载后运行的脚本。
-	printf "%s" "$${RT_PACKAGE_POST_CONTEXT}" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.post.sh
-	printf "%s" "$${RT_PACKAGE_POSTUN_CONTEXT}" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.postun.sh
+	printf "%s" "$${UTIL_PACKAGE_POST_CONTEXT}" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.post.sh
+	printf "%s" "$${UTIL_PACKAGE_POSTUN_CONTEXT}" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.postun.sh
