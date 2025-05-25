@@ -155,7 +155,7 @@ pack-dev-rpm: pack-dev-prepare
 	${DEV_TOOL_HOME}/make.rpm.dev.spec.sh \
     	-d OUTPUT=${PACK_TMP}/${DEV_PACKAGE_NAME}.rpm.spec \
     	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
-    	-d PACK_NAME=abcdk-devel \
+    	-d PACK_NAME=abcdk-dev \
 		-d VERSION_MAJOR=${VERSION_MAJOR} \
 		-d VERSION_MINOR=${VERSION_MINOR} \
 		-d VERSION_RELEASE=${VERSION_RELEASE} \
