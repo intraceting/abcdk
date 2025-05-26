@@ -147,7 +147,7 @@ KIT_NAME=""
 PACKAGE_SUFFIX=""
 
 #安装包存放路径。
-PACKAGE_PATH="${SHELLDIR}/package/"
+PACKAGE_PATH="${SHELLDIR}/package/${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}"
 
 #
 XGETTEXT_BIN=$(which xgettext)
@@ -360,6 +360,14 @@ fi
 #如果未指定组件包名称，则认为是与本地平台一致。
 if [ "${KIT_NAME}" == "" ];then
 KIT_NAME=$(CheckPackageKitName)
+fi
+
+#安装包存放路径必须有效。
+if [ "${PACKAGE_PATH}" == "" ] ;then
+{
+    echo "'PACKAGE_PATH=${PACKAGE_PATH}' invalid or unsupported."
+    exit 22
+}
 fi
 
 #
