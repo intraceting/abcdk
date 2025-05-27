@@ -163,6 +163,9 @@ AutoReqProv: no
 # disable 'debug-info'.
 %define _enable_debug_package 0
 
+# use gzip for old RPM.
+%define _binary_payload w9.gzdio
+
 %description
 This is the ${PACK_NAME} component package.
 .
