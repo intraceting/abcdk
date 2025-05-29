@@ -42,6 +42,28 @@ namespace abcdk
             }
 
         protected:
+            void getStreamParameters(unsigned clientSessionId, struct sockaddr_storage const &clientAddress, Port const &clientRTPPort, Port const &clientRTCPPort,
+                                     int tcpSocketNum, unsigned char rtpChannelId, unsigned char rtcpChannelId, TLSState *tlsState, struct sockaddr_storage &destinationAddress,
+                                     u_int8_t &destinationTTL, Boolean &isMulticast, Port &serverRTPPort, Port &serverRTCPPort, void *&streamToken)
+            {
+                if (tcpSocketNum < 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING, TT("客户端未请求RTP/TCP， 拒绝连接。"));
+
+                    destinationTTL = 0;
+                    isMulticast = False;
+                    serverRTPPort = Port(0);
+                    serverRTCPPort = Port(0);
+                    streamToken = nullptr;
+                }
+                else
+                {
+                    OnDemandServerMediaSubsession::getStreamParameters(clientSessionId, clientAddress, clientRTPPort, clientRTCPPort,
+                                                                       tcpSocketNum, rtpChannelId, rtcpChannelId, tlsState, destinationAddress,
+                                                                       destinationTTL, isMulticast, serverRTPPort, serverRTCPPort, streamToken);
+                }
+            }
+
             void startStream(unsigned clientSessionId, void *streamToken, TaskFunc *rtcpRRHandler, void *rtcpRRHandlerClientData, unsigned short &rtpSeqNum, unsigned &rtpTimestamp,
                              ServerRequestAlternativeByteHandler *serverRequestAlternativeByteHandler, void *serverRequestAlternativeByteHandlerClientData)
             {
@@ -64,16 +86,16 @@ namespace abcdk
                     {
                         abcdk_sockaddr_to_string(remote_str, (abcdk_sockaddr_t *)&dest_p->addr, 0);
                     }
-#else // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+#else  // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                     else
                     {
                         inet_ntop(AF_INET, &dest_p->addr, remote_str, NAME_MAX);
                     }
 #endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
-                }
 
-                abcdk_trace_printf(LOG_DEBUG, "++++++++++++++++++++\nFunction: %s\nSession ID: %u\nMedia Name: %s\nTransport: %s\nRemote Address: %s\nLocal Address: %s\n++++++++++++++++++++\n",
-                                   __FUNCTION__, clientSessionId, fParentSession->streamName(), (dest_p->isTCP ? "TCP" : "UDP"), remote_str, local_str);
+                    abcdk_trace_printf(LOG_DEBUG, "++++++++++++++++++++\nFunction: %s\nSession ID: %u\nMedia Name: %s\nTransport: %s\nRemote Address: %s\nLocal Address: %s\n++++++++++++++++++++\n",
+                                       __FUNCTION__, clientSessionId, fParentSession->streamName(), (dest_p->isTCP ? "TCP" : "UDP"), remote_str, local_str);
+                }
 
                 OnDemandServerMediaSubsession::startStream(clientSessionId, streamToken, rtcpRRHandler, rtcpRRHandlerClientData, rtpSeqNum, rtpTimestamp, serverRequestAlternativeByteHandler, serverRequestAlternativeByteHandlerClientData);
             }
