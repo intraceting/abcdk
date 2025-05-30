@@ -153,7 +153,7 @@ int abcdk_test_relay(abcdk_option_t *args)
 
     int port = abcdk_option_get_int(args, "--port", 0, 12345);
 
-    abcdk_rtsp_server_t *server_ctx = abcdk_rtsp_server_create(port, 0x01 | 0x02);
+    abcdk_rtsp_server_t *server_ctx = abcdk_rtsp_server_create(port, 0x01 | 0x02| 0x10);
 
     chk = abcdk_rtsp_server_set_auth(server_ctx, "haha");
     assert(chk == 0);

@@ -22,7 +22,7 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx);
 /**
  * 创建。
  * 
- * @param [in] flag 标志。0x01(IPV4)，0x02(IPV6)。
+ * @param [in] flag 标志。0x01(IPV4)，0x02(IPV6)，0x10(UDP)。
 */
 abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, int flag);
 

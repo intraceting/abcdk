@@ -293,6 +293,19 @@ abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim)
     return buf;
 }
 
+const char *abcdk_streod(const char *str, const char *delim)
+{
+    const char *p = NULL;
+
+    assert(str != NULL && delim != NULL);
+
+    p = abcdk_strstr(str, delim, 1);
+    if (!p)
+        p = str + strlen(str);
+
+    return p;
+}
+
 int abcdk_strtype(const char* str,int (*isctype_cb)(int c))
 {
     const char* s = NULL;

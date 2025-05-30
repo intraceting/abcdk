@@ -50,6 +50,7 @@ const char* abcdk_strstr(const char *str, const char *sub,int caseAb);
 */
 const char* abcdk_strstr_eod(const char *str, const char *sub,int caseAb);
 
+
 /**
  * 字符串比较。
  * 
@@ -141,6 +142,13 @@ abcdk_object_t *abcdk_strtok2pair(const char *str, const char *delim);
  * @return !NULL(0) 成功，NULL(0) 出错或已到末尾。
 */
 abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim);
+
+/** 
+ * 查找字符串末尾指针。
+ * 
+ * @return !NULL(0) 成功。
+*/
+const char* abcdk_streod(const char *str, const char *delim);
 
 /**
  * 检测字符串中的字符类型。

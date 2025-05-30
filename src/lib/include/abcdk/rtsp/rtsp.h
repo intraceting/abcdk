@@ -23,9 +23,6 @@
 
 __BEGIN_DECLS
 
-/** */
-#define ABCDK_RTSP_SERVER_REALM "ABCDK MediaServer"
-
 /**RTSP授权管理常量。*/
 typedef enum _abcdk_rtsp_auth_constant
 {
@@ -85,6 +82,10 @@ typedef enum _abcdk_rtsp_codec_constant
 #define ABCDK_RTSP_CODEC_G711A ABCDK_RTSP_CODEC_PCM_ALAW
 
 } abcdk_rtsp_codec_constant_t;
+
+
+/** */
+#define ABCDK_RTSP_SERVER_REALM "ABCDK MediaServer"
 
 
 __END_DECLS

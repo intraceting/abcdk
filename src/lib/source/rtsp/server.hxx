@@ -15,7 +15,6 @@
 #include "rwlock_robot.hxx"
 #include "waiter.hxx"
 
-
 #ifdef _RTSP_SERVER_HH
 
 namespace abcdk
@@ -46,8 +45,14 @@ namespace abcdk
             /*<<cmd,<param>>>*/
             std::queue<std::pair<int, std::vector<std::string>>> m_cmdlist;
 
+            /*启用UDP.*/
+            Boolean m_use_udp;
+
             /*授权管理。*/
             abcdk::rtsp_server::auth *m_auth_ctx;
+
+            /*启用TLS.*/
+            Boolean m_use_tls;
 
         public:
             static server *createNew(UsageEnvironment &env, Port ourPort, int flag, unsigned reclamationTestSeconds = 65)
@@ -73,7 +78,7 @@ namespace abcdk
                     return NULL;
                 }
 
-                return new server(env, sock_fd, sock6_fd, ourPort, reclamationTestSeconds);
+                return new server(env, sock_fd, sock6_fd, ourPort, (flag & 0x10), reclamationTestSeconds);
 
 #else // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
 
@@ -122,9 +127,10 @@ namespace abcdk
             {
 #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 setTLSState(cert, key, enable_srtp, encrypt_srtp);
-#else //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
-                abcdk_trace_printf(LOG_WARNING, TT("当前Live555版本(%s)暂不支持此功能(%s)。"),LIVEMEDIA_LIBRARY_VERSION_STRING,__FUNCTION__);
-#endif //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+                m_use_tls = True; //
+#else                             // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+                abcdk_trace_printf(LOG_WARNING, TT("当前Live555版本(%s)暂不支持此功能(%s)。"), LIVEMEDIA_LIBRARY_VERSION_STRING, __FUNCTION__);
+#endif                            // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 return 0;
             }
 
@@ -326,7 +332,7 @@ namespace abcdk
 
                 if (it->second.first != 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING, TT("媒体(%s)已经播放，不能添加新的流。"),name);
+                    abcdk_trace_printf(LOG_WARNING, TT("媒体(%s)已经播放，不能添加新的流。"), name);
                     return -1;
                 }
 
@@ -363,21 +369,139 @@ namespace abcdk
             }
 
         protected:
-            server(UsageEnvironment &env, int ourSocketIPv4, int ourSocketIPv6, Port ourPort, unsigned reclamationTestSeconds)
+            server(UsageEnvironment &env, int ourSocketIPv4, int ourSocketIPv6, Port ourPort, Boolean use_udp, unsigned reclamationTestSeconds)
 #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 : RTSPServer(env, ourSocketIPv4, ourSocketIPv6, ourPort, NULL, reclamationTestSeconds)
-#else //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+#else  // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 : RTSPServer(env, ourSocketIPv4, ourPort, NULL, reclamationTestSeconds)
-#endif //#if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
+#endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
             {
                 OutPacketBuffer::maxSize = 4 * 1024 * 1024; // 4MB
 
+                m_use_udp = use_udp;
                 m_auth_ctx = NULL; // no auth.
+                m_use_tls = False;
             }
 
             virtual ~server()
             {
                 abcdk::rtsp_server::auth::deleteOld(&m_auth_ctx);
+            }
+
+        protected:
+            class CustomRTSPClientConnection : public RTSPServer::RTSPClientConnection
+            {
+            private:
+                std::vector<char> m_re_addr_str;
+                std::vector<char> m_lo_addr_str;
+
+            protected:
+                friend class server;
+                friend class CustomRTSPClientSession;
+
+                CustomRTSPClientConnection(RTSPServer &ourServer, int clientSocket, struct sockaddr_storage const &clientAddr, Boolean useTLS = False)
+                    : RTSPServer::RTSPClientConnection(ourServer, clientSocket, clientAddr, useTLS)
+                {
+                    abcdk_sockaddr_t remote_addr = {0}, local_addr = {0};
+
+                    abcdk_socket_getname(clientSocket, &remote_addr, &local_addr);
+
+                    m_re_addr_str.resize(NAME_MAX);
+                    m_lo_addr_str.resize(NAME_MAX);
+
+                    if (remote_addr.family == AF_INET6 || remote_addr.family == AF_INET)
+                        abcdk_sockaddr_to_string(m_re_addr_str.data(), &remote_addr, 0);
+
+                    if (local_addr.family == AF_INET6 || local_addr.family == AF_INET)
+                        abcdk_sockaddr_to_string(m_lo_addr_str.data(), &local_addr, 0);
+
+                    abcdk_trace_printf(LOG_INFO, "++++++++++online++++++++++\nRemote Address: %s\nLocal Address: %s\n+++++++++online+++++++++++\n",
+                                       m_re_addr_str.data(), m_lo_addr_str.data());
+                }
+
+                virtual ~CustomRTSPClientConnection()
+                {
+                    abcdk_trace_printf(LOG_INFO, "++++++++++offline++++++++++\nRemote Address: %s\nLocal Address: %s\n+++++++++offline+++++++++++\n",
+                                       m_re_addr_str.data(), m_lo_addr_str.data());
+                }
+            };
+
+            class CustomRTSPClientSession : public RTSPServer::RTSPClientSession
+            {
+            private:
+                u_int32_t m_sessionId_copy;
+                Boolean m_use_udp;
+
+            protected:
+                friend class server;
+
+                CustomRTSPClientSession(RTSPServer &ourServer, u_int32_t sessionId,Boolean use_udp = True)
+                    : RTSPServer::RTSPClientSession(ourServer, sessionId)
+                {
+                    m_sessionId_copy = sessionId;
+                    m_use_udp = use_udp;
+                }
+
+                virtual ~CustomRTSPClientSession()
+                {
+                }
+
+                void handleCmd_SETUP(RTSPClientConnection *ourClientConnection, char const *urlPreSuffix, char const *urlSuffix, char const *fullRequestStr)
+                {
+                    // 转自定义类指针。
+                    CustomRTSPClientConnection *cu_co_p = (CustomRTSPClientConnection *)ourClientConnection;
+
+                    // abcdk_trace_printf(LOG_DEBUG,"%s",fullRequestStr);
+
+                    // 查找"Transport:"关键字。
+                    const char *transport_p = abcdk_strstr_eod(fullRequestStr, "Transport: ", 0);
+                    transport_p = (transport_p ? transport_p : abcdk_strstr_eod(fullRequestStr, "Transport:", 0));
+                    const char *transport_eod_p = (transport_p != NULL ? abcdk_streod(transport_p, "\r\n") : NULL);
+
+                    // 计算长度。
+                    int transport_len = (int)(transport_eod_p ? transport_eod_p - transport_p : 0);
+
+                    abcdk_trace_printf(LOG_INFO, "++++++++++SETUP++++++++++\nSessionId: %u\nPath: %s/%s\nTransport: '%.*s'\nRemoteAddr: %s\nLocalAddr: %s\n++++++++++SETUP++++++++++\n",
+                                       m_sessionId_copy, urlPreSuffix, urlSuffix, transport_len, transport_p, cu_co_p->m_re_addr_str.data(), cu_co_p->m_lo_addr_str.data());
+
+                    // 查找"RTP/"关键字。
+                    const char *specifier_p = (transport_p != NULL ? abcdk_strstr(transport_p, "RTP/", 1) : NULL);
+                    const char *specifier_eod_p = (specifier_p != NULL ? abcdk_streod(specifier_p, ";") : NULL);
+
+                    // 计算长度。
+                    int specifier_len = (int)(specifier_eod_p ? specifier_eod_p - specifier_p : 0);
+
+                    // 比较"RTP/AVP/TCP"关键字。
+                    Boolean chk_avp_tcp = (specifier_p != NULL ? abcdk_strncmp(specifier_p, "RTP/AVP/TCP", specifier_len, 1) == 0 : False);
+
+                    // 比较"RTP/SAVP/TCP"关键字。
+                    Boolean chk_savp_tcp = (specifier_p != NULL ? abcdk_strncmp(specifier_p, "RTP/SAVP/TCP", specifier_len, 1) == 0 : True);
+
+                    if (m_use_udp || chk_avp_tcp || chk_savp_tcp)
+                    {
+                        // 调用基类，继续处理请求。
+                        RTSPServer::RTSPClientSession::handleCmd_SETUP(ourClientConnection, urlPreSuffix, urlSuffix, fullRequestStr);
+                    }
+                    else
+                    {
+                        /*通知客户端不支持。*/
+                        RTSPServer::RTSPClientSession::setRTSPResponse(ourClientConnection, "461 Unsupported Transport");
+
+                        abcdk_trace_printf(LOG_INFO, "++++++++++SETUP++++++++++\nSessionId: %u\nTransport: '%.*s'\nResponse: '461 Unsupported Transport'\n++++++++++SETUP++++++++++\n",
+                                           m_sessionId_copy, transport_len, transport_p);
+                    }
+                }
+            };
+
+        protected:
+            RTSPServer::ClientConnection *createNewClientConnection(int clientSocket, struct sockaddr_storage const &clientAddr)
+            {
+                return new CustomRTSPClientConnection(*this, clientSocket, clientAddr, m_use_tls);
+            }
+
+            RTSPServer::ClientSession *createNewClientSession(u_int32_t sessionId)
+            {
+                return new CustomRTSPClientSession(*this, sessionId, m_use_udp);
             }
 
         protected:
@@ -498,7 +622,6 @@ namespace abcdk
                     rtsp_server::media::deleteOld(&it->second.second); // 删除未播放。
 
                 m_medialist.erase(it);
-                
             }
 
             int impl_play_media(const char *name)
