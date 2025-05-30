@@ -472,10 +472,10 @@ namespace abcdk
                     int specifier_len = (int)(specifier_eod_p ? specifier_eod_p - specifier_p : 0);
 
                     // 比较"RTP/AVP/TCP"关键字。
-                    Boolean chk_avp_tcp = (specifier_p != NULL ? abcdk_strncmp(specifier_p, "RTP/AVP/TCP", specifier_len, 1) == 0 : False);
+                    Boolean chk_avp_tcp = (specifier_p != NULL ? abcdk_strncmp(specifier_p, "RTP/AVP/TCP", 11, 1) == 0 : False);
 
                     // 比较"RTP/SAVP/TCP"关键字。
-                    Boolean chk_savp_tcp = (specifier_p != NULL ? abcdk_strncmp(specifier_p, "RTP/SAVP/TCP", specifier_len, 1) == 0 : True);
+                    Boolean chk_savp_tcp = (specifier_p != NULL ? abcdk_strncmp(specifier_p, "RTP/SAVP/TCP", 12, 1) == 0 : True);
 
                     if (m_use_udp || chk_avp_tcp || chk_savp_tcp)
                     {
