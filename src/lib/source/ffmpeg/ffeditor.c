@@ -335,15 +335,15 @@ static int _abcdk_ffeditor_init_capture(abcdk_ffeditor_t *ctx)
     for (int i = 0; i < ctx->avctx->nb_streams; i++)
     {
         int idx = ctx->avctx->streams[i]->index;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+#if FF_API_LAVF_AVCTX
         ctx->input_mp4_h264[idx] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
         ctx->input_mp4_h265[idx] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
         ctx->input_mp4_mpeg4[idx] = (ctx->avctx->streams[i]->codec->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
-#else
+#else //FF_API_LAVF_AVCTX
         ctx->input_mp4_h264[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_H264 && is_mp4_file);
         ctx->input_mp4_h265[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC && is_mp4_file);
         ctx->input_mp4_mpeg4[idx] = (ctx->avctx->streams[i]->codecpar->codec_id == AV_CODEC_ID_MPEG4 && is_mp4_file);
-#endif
+#endif //FF_API_LAVF_AVCTX
     }
 
     return 0;

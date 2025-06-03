@@ -104,6 +104,14 @@ int abcdk_test_server(abcdk_option_t *args)
             stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_G711A, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
             abcdk_object_unref(&extdata);
         }
+        else if (p->codecpar->codec_id == AV_CODEC_ID_OPUS)
+        {
+            abcdk_object_t *extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = p->codecpar->channels;
+            ABCDK_PTR2I32(extdata->pptrs[1], 0) = p->codecpar->sample_rate;
+            stream[i] = abcdk_rtsp_server_add_stream(ctx, name, ABCDK_RTSP_CODEC_OPUS, extdata, (p->codecpar->bit_rate > 0 ? p->codecpar->bit_rate / 1000 : 96), 10);
+            abcdk_object_unref(&extdata);
+        }
     }
 
     abcdk_rtsp_server_play_media(ctx, name);

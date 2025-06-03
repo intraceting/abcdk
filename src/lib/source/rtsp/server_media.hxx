@@ -15,6 +15,7 @@
 #include "server_h265_session.hxx"
 #include "server_aac_session.hxx"
 #include "server_g711_session.hxx"
+#include "server_opus_session.hxx"
 
 #ifdef _SERVER_MEDIA_SESSION_HH
 
@@ -72,6 +73,8 @@ namespace abcdk
                     subsession_ctx = rtsp_server::aac_session::createNew(envir(), ABCDK_RTSP_CODEC_AAC, &m_stream[idx].second, extdata, bitrate);
                 else if (codec == ABCDK_RTSP_CODEC_G711A || codec == ABCDK_RTSP_CODEC_G711U)
                     subsession_ctx = rtsp_server::g711_session::createNew(envir(), codec, &m_stream[idx].second, extdata, bitrate);
+                else if (codec == ABCDK_RTSP_CODEC_OPUS)
+                    subsession_ctx = rtsp_server::opus_session::createNew(envir(), ABCDK_RTSP_CODEC_OPUS, &m_stream[idx].second, extdata, bitrate);
                 else
                     goto ERR;
 
@@ -86,6 +89,8 @@ namespace abcdk
                         rtsp_server::aac_session::deleteOld((rtsp_server::aac_session **)&subsession_ctx);
                     else if (codec == ABCDK_RTSP_CODEC_G711A || codec == ABCDK_RTSP_CODEC_G711U)
                         rtsp_server::g711_session::deleteOld((rtsp_server::g711_session **)&subsession_ctx);
+                    else if (codec == ABCDK_RTSP_CODEC_OPUS)
+                        rtsp_server::opus_session::deleteOld((rtsp_server::opus_session **)&subsession_ctx);
 
                     /**/
                     goto ERR;

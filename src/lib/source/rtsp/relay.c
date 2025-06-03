@@ -133,11 +133,11 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
     int cache = 0;
     AVStream *src_vs_p = NULL;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+#if FF_API_LAVF_AVCTX
     AVCodecContext *codecpar = NULL;
-#else
+#else //FF_API_LAVF_AVCTX
     AVCodecParameters *codecpar = NULL;
-#endif
+#endif //FF_API_LAVF_AVCTX
 
     int chk;
 
@@ -155,11 +155,11 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
 
         src_vs_p = abcdk_ffeditor_streamptr(ctx->ff_ctx, i);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+#if FF_API_LAVF_AVCTX
         codecpar = src_vs_p->codec;
-#else
+#else //FF_API_LAVF_AVCTX
         codecpar = src_vs_p->codecpar;
-#endif
+#endif //FF_API_LAVF_AVCTX
 
         /*获取流的帧率作为缓存长度。*/
         cache = abcdk_ffeditor_fps(ctx->ff_ctx, i);
@@ -199,6 +199,14 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
             ABCDK_PTR2I32(extdata->pptrs[1], 0) = codecpar->sample_rate;
 
             ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_G711A, extdata, ABCDK_CLAMP(bitrate, 96, 512), ABCDK_CLAMP(cache, 5, 10));
+        }
+        else if (codecpar->codec_id == AV_CODEC_ID_OPUS)
+        {
+            extdata = abcdk_object_alloc3(sizeof(int), 2); //[0] = channels,[1]=sample_rate
+            ABCDK_PTR2I32(extdata->pptrs[0], 0) = codecpar->channels;
+            ABCDK_PTR2I32(extdata->pptrs[1], 0) = codecpar->sample_rate;
+
+            ctx->index_s2d[i] = abcdk_rtsp_server_add_stream(ctx->server_ctx_p, ctx->media_name, ABCDK_RTSP_CODEC_OPUS, extdata, ABCDK_CLAMP(bitrate, 96, 512), ABCDK_CLAMP(cache, 5, 10));
         }
         else
         {

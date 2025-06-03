@@ -81,6 +81,10 @@ typedef enum _abcdk_rtsp_codec_constant
 #define ABCDK_RTSP_CODEC_PCM_ALAW ABCDK_RTSP_CODEC_PCM_ALAW
 #define ABCDK_RTSP_CODEC_G711A ABCDK_RTSP_CODEC_PCM_ALAW
 
+    /*extdata[0] = channels,extdata[1]=sample_rate.*/
+    ABCDK_RTSP_CODEC_OPUS = 300,
+#define ABCDK_RTSP_CODEC_OPUS ABCDK_RTSP_CODEC_OPUS
+
 } abcdk_rtsp_codec_constant_t;
 
 
