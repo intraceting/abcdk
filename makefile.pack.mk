@@ -58,7 +58,7 @@ pack-rt-deb: pack-rt-prepare
 		-d FILES_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt \
 		-d POST_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh \
 		-d POSTUN_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh \
-		-d REQUIRE_LIST="libc-bin, stapler (>= 5.97.2)"
+		-d REQUIRE_LIST="libc-bin"
 #复制到临时的系统根路径。
 	cp -rf ${PACK_TMP}/${RT_PACKAGE_NAME}.deb.ctl ${RT_SYSROOT_PREFIX}/DEBIAN
 #创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
@@ -86,7 +86,7 @@ pack-rt-rpm: pack-rt-prepare
 		-d FILES_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt \
 		-d POST_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh \
 		-d POSTUN_NAME=${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh \
-		-d REQUIRE_LIST="glibc, stapler >= 5.97-2"
+		-d REQUIRE_LIST="glibc"
 #创建不存在的路径。
 	mkdir -p ${PACKAGE_PATH}
 #打包成RPM格式。
@@ -102,10 +102,10 @@ pack-rt-prepare:
 #清理临时的系统路径。
 	rm -rf ${RT_SYSROOT_PREFIX}/*
 #安装需要的文件到临时的系统路径。
-	$(MAKE) install-lib SYSROOT_PREFIX=${RT_SYSROOT_PREFIX}
+	$(MAKE) install-lib INSTALL_PREFIX=${RT_SYSROOT_PREFIX}/${INSTALL_PREFIX}/
 #生成文件列表。
-	find ${RT_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt
-	find ${RT_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt
+	find ${RT_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt
+	find ${RT_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${RT_PACKAGE_NAME}.filelist.txt
 #生成安装后和卸载后运行的脚本。
 	printf "%s" "$${RT_PACKAGE_POST_CONTEXT}" > ${PACK_TMP}/${RT_PACKAGE_NAME}.post.sh
 	printf "%s" "$${RT_PACKAGE_POSTUN_CONTEXT}" > ${PACK_TMP}/${RT_PACKAGE_NAME}.postun.sh
@@ -179,10 +179,12 @@ pack-dev-prepare:
 #清理临时的系统路径。
 	rm -rf ${DEV_SYSROOT_PREFIX}/*
 #安装需要的文件到临时的系统路径。
-	$(MAKE) install-dev SYSROOT_PREFIX=${DEV_SYSROOT_PREFIX}
+	$(MAKE) install-dev INSTALL_PREFIX=${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX}/
+#替换PC文件中的路径为安装路径。
+	find ${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type f -name "*.pc" -exec sed -i "s#${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX}/#${INSTALL_PREFIX}#g" {} \;
 #生成文件列表。
-	find ${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${DEV_PACKAGE_NAME}.filelist.txt
-	find ${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${DEV_PACKAGE_NAME}.filelist.txt
+	find ${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${DEV_PACKAGE_NAME}.filelist.txt
+	find ${DEV_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${DEV_PACKAGE_NAME}.filelist.txt
 #生成安装后和卸载后运行的脚本。
 	printf "%s" "$${DEV_PACKAGE_POST_CONTEXT}" > ${PACK_TMP}/${DEV_PACKAGE_NAME}.post.sh
 	printf "%s" "$${DEV_PACKAGE_POSTUN_CONTEXT}" > ${PACK_TMP}/${DEV_PACKAGE_NAME}.postun.sh
@@ -219,7 +221,7 @@ pack-util-deb: pack-util-prepare
 		-d FILES_NAME=${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt \
 		-d POST_NAME=${PACK_TMP}/${UTIL_PACKAGE_NAME}.post.sh \
 		-d POSTUN_NAME=${PACK_TMP}/${UTIL_PACKAGE_NAME}.postun.sh \
-		-d REQUIRE_LIST="libc-bin, stapler (>= 5.97.2)"
+		-d REQUIRE_LIST="libc-bin"
 #复制到临时的系统根路径。
 	cp -rf ${PACK_TMP}/${UTIL_PACKAGE_NAME}.deb.ctl ${UTIL_SYSROOT_PREFIX}/DEBIAN
 #创建软链接，因为dpkg-shlibdeps要使用debian/control文件。下同。
@@ -247,7 +249,7 @@ pack-util-rpm: pack-util-prepare
 		-d FILES_NAME=${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt \
 		-d POST_NAME=${PACK_TMP}/${UTIL_PACKAGE_NAME}.post.sh \
 		-d POSTUN_NAME=${PACK_TMP}/${UTIL_PACKAGE_NAME}.postun.sh \
-		-d REQUIRE_LIST="glibc, stapler >= 5.97-2"
+		-d REQUIRE_LIST="glibc"
 #创建不存在的路径。
 	mkdir -p ${PACKAGE_PATH}
 #打包成RPM格式。
@@ -263,10 +265,10 @@ pack-util-prepare:
 #清理临时的系统路径。
 	rm -rf ${UTIL_SYSROOT_PREFIX}/*
 #安装需要的文件到临时的系统路径。
-	$(MAKE) install-tool install-script SYSROOT_PREFIX=${UTIL_SYSROOT_PREFIX}
+	$(MAKE) install-tool install-script INSTALL_PREFIX=${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX}/
 #生成文件列表。
-	find ${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt
-	find ${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt
+	find ${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type f -printf "${INSTALL_PREFIX}/%P\n" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt
+	find ${UTIL_SYSROOT_PREFIX}/${INSTALL_PREFIX}/ -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${PACK_TMP}/${UTIL_PACKAGE_NAME}.filelist.txt
 #生成安装后和卸载后运行的脚本。
 	printf "%s" "$${UTIL_PACKAGE_POST_CONTEXT}" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.post.sh
 	printf "%s" "$${UTIL_PACKAGE_POSTUN_CONTEXT}" > ${PACK_TMP}/${UTIL_PACKAGE_NAME}.postun.sh

@@ -17,24 +17,19 @@ checkReturnCode()
     fi
 }
 
-#
-COMPILER_PREFIX=${1}
-
-#
-GCC_VERSION=$(${SHELLDIR}/../tools/get-compiler-version.sh ${COMPILER_PREFIX}gcc)
-checkReturnCode
-
-#
-GLIBC_VERSION=$(${SHELLDIR}/../tools/get-compiler-glibc-version.sh ${COMPILER_PREFIX}gcc)
-checkReturnCode
+#加载配置环境。
+source ${1}
 
 #
 ${SHELLDIR}/../configure.sh \
-    -d INSTALL_PREFIX="/usr/local/stapler/" \
-    -d PACKAGE_SUFFIX="-stapler-gcc_${GCC_VERSION}-glibc_${GLIBC_VERSION}" \
-    -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,live555,qrencode,curl,sqlite" \
-    -d THIRDPARTY_FIND_ROOT="/usr/local/stapler/" \
-    -d COMPILER_PREFIX=${COMPILER_PREFIX}
+    -d INSTALL_PREFIX="${STAPLER_RELEASE_PATH}" \
+    -d PACKAGE_SUFFIX="-stapler-gcc_${STAPLER_TARGET_COMPILER_VERSION}-glibc_${STAPLER_TARGET_GLIBC_MAX_VERSION}" \
+    -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,live555,qrencode,curl,sqlite,nghttp2" \
+    -d COMPILER_PREFIX=${STAPLER_TARGET_COMPILER_PREFIX}
+checkReturnCode
+
+#
+make -s -C ${SHELLDIR}/../ uninstall
 checkReturnCode
 
 #
@@ -45,12 +40,9 @@ make -s -j4 -C ${SHELLDIR}/../
 checkReturnCode
 
 #
-#make -s -C ${SHELLDIR}/../ install 
-#checkReturnCode
-
-#
-make -s -C ${SHELLDIR}/../ pack
+make -s -C ${SHELLDIR}/../ install 
 checkReturnCode
 
 #
-make -s -C ${SHELLDIR}/../ clean
+make -s -C ${SHELLDIR}/../ pack INSTALL_PREFIX=/usr/local/stapler/ 
+checkReturnCode
