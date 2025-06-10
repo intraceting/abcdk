@@ -134,7 +134,6 @@ VERSION_RELEASE="8"
 LSB_RELEASE="linux-gnu"
 
 #
-SYSROOT_PREFIX="/"
 INSTALL_PREFIX="/usr/local/"
 
 #
