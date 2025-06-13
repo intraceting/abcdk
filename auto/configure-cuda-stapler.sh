@@ -29,18 +29,3 @@ ${SHELLDIR}/../configure.sh \
     -d CUDA_FIND_ROOT=/usr/local/cuda/ \
     -d COMPILER_PREFIX=${STAPLER_TARGET_COMPILER_PREFIX}
 checkReturnCode
-
-#
-make -s -C ${SHELLDIR}/../ clean
-
-#
-make -s -j4 -C ${SHELLDIR}/../
-checkReturnCode
-
-#
-make -s -C ${SHELLDIR}/../ install 
-checkReturnCode
-
-#
-make -s -C ${SHELLDIR}/../ pack INSTALL_PREFIX=/usr/local/stapler/ 
-checkReturnCode

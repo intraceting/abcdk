@@ -306,6 +306,28 @@ int abcdk_torch_imgproc_line_cuda(abcdk_torch_image_t *dst, const abcdk_torch_po
 #define abcdk_torch_imgproc_line abcdk_torch_imgproc_line_host
 #endif //
 
+/**
+ * 画掩码。
+ *
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_imgproc_drawmask_host(abcdk_torch_image_t *dst, abcdk_torch_image_t *mask, float threshold, uint32_t color[]);
+
+/**
+ * 画掩码。
+ *
+ *
+ * @return 0 成功，< 0  失败。
+ */
+int abcdk_torch_imgproc_drawmask_cuda(abcdk_torch_image_t *dst, abcdk_torch_image_t *mask, float threshold, uint32_t color[]);
+
+#ifdef ABCDK_TORCH_USE_CUDA
+#define abcdk_torch_imgproc_drawmask abcdk_torch_imgproc_drawmask_cuda
+#else // ABCDK_TORCH_USE_HOST
+#define abcdk_torch_imgproc_drawmask abcdk_torch_imgproc_drawmask_host
+#endif //
+
 __END_DECLS
 
 #endif // ABCDK_TORCH_IMGPROC_H

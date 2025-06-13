@@ -524,9 +524,10 @@ int abcdk_test_torch_6(abcdk_option_t *args)
     assert(chk == 0);
 
     abcdk_torch_dnn_tensor vec_tensor[10];
+    
 
-    chk = abcdk_torch_dnn_engine_fetch_tensor(engine_ctx, 10, vec_tensor);
-    assert(chk >= 2);
+    int tensor_num = abcdk_torch_dnn_engine_fetch_tensor(engine_ctx, 10, vec_tensor);
+    assert(tensor_num >= 2);
 
     abcdk_torch_image_t *vec_img[100] = {0};
     int count = 0;
@@ -537,8 +538,9 @@ int abcdk_test_torch_6(abcdk_option_t *args)
         if (!img_src_p)
             break;
 
-        vec_img[i] = abcdk_torch_imgcode_load(img_src_p);
-        count += 1;
+        vec_img[count] = abcdk_torch_imgcode_load(img_src_p);
+        if(vec_img[count])
+            count += 1;
     }
 
     for (int i = 0; i < test_count; i++)
@@ -559,7 +561,7 @@ int abcdk_test_torch_6(abcdk_option_t *args)
 
     abcdk_torch_dnn_post_init(post_ctx,model_name_p,args);
 
-    abcdk_torch_dnn_post_process(post_ctx, 2, vec_tensor, 0.1, 0.1);
+    abcdk_torch_dnn_post_process(post_ctx, tensor_num, vec_tensor, 0.1, 0.1);
 
     abcdk_torch_dnn_tensor *input_tensor_p = &vec_tensor[0];
 
@@ -646,6 +648,18 @@ int abcdk_test_torch_6(abcdk_option_t *args)
 
                 abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
             }
+
+            abcdk_torch_image_t *seg_img_src = abcdk_torch_image_create(input_tensor_p->dims.d[3], input_tensor_p->dims.d[2], ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+            abcdk_torch_image_t *seg_img_dst = abcdk_torch_image_create(img_p->width, img_p->height, ABCDK_TORCH_PIXFMT_GRAYF32, 1);
+
+            abcdk_torch_image_copy_plane(seg_img_src, 0, (uint8_t *)obj_p->seg, obj_p->seg_step);
+
+            abcdk_torch_imgproc_resize(seg_img_dst, NULL, seg_img_src, NULL, 0, ABCDK_TORCH_INTER_CUBIC);
+
+            abcdk_torch_imgproc_drawmask(img_p, seg_img_dst, 0.5, color);
+
+            abcdk_torch_image_free(&seg_img_src);
+            abcdk_torch_image_free(&seg_img_dst);
         }
 
         char tmp_file[100] = {0};

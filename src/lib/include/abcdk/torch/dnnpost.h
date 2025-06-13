@@ -23,6 +23,8 @@ abcdk_torch_dnn_post_t *abcdk_torch_dnn_post_alloc();
 
 /**
  * 初始化。
+ * 
+ * @param [in] name 模形名字。目前仅支持：yolo-v11，yolo-v11-obb，yolo-v11-pose。
  *
  * @return 0 成功，-1 失败。
  */

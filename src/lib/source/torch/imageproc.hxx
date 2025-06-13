@@ -13,6 +13,7 @@
 #include "imageproc_drawrect.hxx"
 #include "imageproc_stuff.hxx"
 #include "imageproc_line.hxx"
+#include "imageproc_drawmask.hxx"
 
 namespace abcdk
 {

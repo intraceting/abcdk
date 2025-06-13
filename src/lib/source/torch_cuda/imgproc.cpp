@@ -86,6 +86,12 @@ int abcdk_torch_imgproc_warp_cuda(abcdk_torch_image_t *dst, const abcdk_torch_re
     return -1;
 }
 
+int abcdk_torch_imgproc_drawmask_cuda(abcdk_torch_image_t *dst, abcdk_torch_image_t *mask, float threshold, uint32_t color[])
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CUDA工具。"));
+    return -1;
+}
+
 __END_DECLS
 
 #endif //__cuda_cuda_h__

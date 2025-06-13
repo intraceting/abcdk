@@ -225,9 +225,10 @@ namespace abcdk
                         dst[i].nfeature = m_object[index][i].m_feature.size();
                         dst[i].ft = m_object[index][i].m_feature.data();
 
-                        dst[i].seg_step = m_object[index][i].m_seg_step;
-                        dst[i].seg = m_object[index][i].m_segment.data();
-
+#ifdef OPENCV_CORE_HPP
+                        dst[i].seg_step = m_object[index][i].m_segment.step;
+                        dst[i].seg = (float*)m_object[index][i].m_segment.data;
+#endif // OPENCV_CORE_HPP
                     }
                 }
 

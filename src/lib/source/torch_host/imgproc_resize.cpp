@@ -12,10 +12,10 @@ __BEGIN_DECLS
 
 #ifdef OPENCV_IMGPROC_HPP
 
-static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
-                                               uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
-                                               const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
-                                               int keep_aspect_ratio, int inter_mode)
+static int _abcdk_torch_imgproc_resize_host(int channels, int packed, int pixfmt,
+                                            uint8_t *dst, size_t dst_w, size_t dst_ws, size_t dst_h, const abcdk_torch_rect_t *dst_roi,
+                                            const uint8_t *src, size_t src_w, size_t src_ws, size_t src_h, const abcdk_torch_rect_t *src_roi,
+                                            int keep_aspect_ratio, int inter_mode)
 {
     abcdk_resize_scale_t tmp_param = {0};
     cv::Rect tmp_dst_roi, tmp_src_roi;
@@ -27,10 +27,18 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
     assert(dst != NULL && dst_w > 0 && dst_ws > 0 && dst_h > 0);
     assert(src != NULL && src_w > 0 && src_ws > 0 && src_h > 0);
 
-    tmp_dst = cv::Mat(dst_h, dst_w, CV_8UC(channels), (void *)dst, dst_ws);
-    tmp_src = cv::Mat(src_h, src_w, CV_8UC(channels), (void *)src, src_ws);
+    if (pixfmt == ABCDK_TORCH_PIXFMT_GRAYF32)
+    {
+        tmp_dst = cv::Mat(dst_h, dst_w, CV_32FC(channels), (void *)dst, dst_ws);
+        tmp_src = cv::Mat(src_h, src_w, CV_32FC(channels), (void *)src, src_ws);
+    }
+    else
+    {
+        tmp_dst = cv::Mat(dst_h, dst_w, CV_8UC(channels), (void *)dst, dst_ws);
+        tmp_src = cv::Mat(src_h, src_w, CV_8UC(channels), (void *)src, src_ws);
+    }
 
-    if(dst_roi)
+    if (dst_roi)
     {
         tmp_dst_roi.x = (dst_roi ? dst_roi->x : 0);
         tmp_dst_roi.y = (dst_roi ? dst_roi->y : 0);
@@ -39,13 +47,13 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
 
         tmp_dst = tmp_dst(tmp_dst_roi);
 
-        return _abcdk_torch_imgproc_resize_8u_host(channels, packed,
-                                                   tmp_dst.data, tmp_dst.cols, tmp_dst.step, tmp_dst.rows, NULL,
-                                                   tmp_src.data, tmp_src.cols, tmp_src.step, tmp_src.rows, src_roi,
-                                                   keep_aspect_ratio, inter_mode);
+        return _abcdk_torch_imgproc_resize_host(channels, packed, pixfmt,
+                                                tmp_dst.data, tmp_dst.cols, tmp_dst.step, tmp_dst.rows, NULL,
+                                                tmp_src.data, tmp_src.cols, tmp_src.step, tmp_src.rows, src_roi,
+                                                keep_aspect_ratio, inter_mode);
     }
 
-    if(src_roi)
+    if (src_roi)
     {
         tmp_src_roi.x = (src_roi ? src_roi->x : 0);
         tmp_src_roi.y = (src_roi ? src_roi->y : 0);
@@ -54,12 +62,12 @@ static int _abcdk_torch_imgproc_resize_8u_host(int channels, int packed,
 
         tmp_src = tmp_src(tmp_src_roi);
 
-        return _abcdk_torch_imgproc_resize_8u_host(channels, packed,
-                                                   tmp_dst.data, tmp_dst.cols, tmp_dst.step, tmp_dst.rows, dst_roi,
-                                                   tmp_src.data, tmp_src.cols, tmp_src.step, tmp_src.rows, NULL,
-                                                   keep_aspect_ratio, inter_mode);
+        return _abcdk_torch_imgproc_resize_host(channels, packed, pixfmt,
+                                                tmp_dst.data, tmp_dst.cols, tmp_dst.step, tmp_dst.rows, dst_roi,
+                                                tmp_src.data, tmp_src.cols, tmp_src.step, tmp_src.rows, NULL,
+                                                keep_aspect_ratio, inter_mode);
     }
-    
+
     abcdk_resize_ratio_2d(&tmp_param, tmp_src.cols, tmp_src.rows, tmp_dst.cols, tmp_dst.rows, keep_aspect_ratio);
 
     tmp_dst2_size.width = abcdk_resize_src2dst_2d(&tmp_param, src_w, 1) - tmp_param.x_shift;
@@ -86,17 +94,18 @@ int abcdk_torch_imgproc_resize_host(abcdk_torch_image_t *dst, const abcdk_torch_
            dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB24 ||
            dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR24 ||
            dst->pixfmt == ABCDK_TORCH_PIXFMT_RGB32 ||
-           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32);
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_BGR32 ||
+           dst->pixfmt == ABCDK_TORCH_PIXFMT_GRAYF32);
 
     assert(dst->tag == ABCDK_TORCH_TAG_HOST);
     assert(src->tag == ABCDK_TORCH_TAG_HOST);
 
     dst_depth = abcdk_torch_pixfmt_channels(dst->pixfmt);
 
-    return _abcdk_torch_imgproc_resize_8u_host(dst_depth, true,
-                                               dst->data[0], dst->width, dst->stride[0], dst->height, dst_roi,
-                                               src->data[0], src->width, src->stride[0], src->height, src_roi,
-                                               keep_aspect_ratio, inter_mode);
+    return _abcdk_torch_imgproc_resize_host(dst_depth, true, dst->pixfmt,
+                                            dst->data[0], dst->width, dst->stride[0], dst->height, dst_roi,
+                                            src->data[0], src->width, src->stride[0], src->height, src_roi,
+                                            keep_aspect_ratio, inter_mode);
 }
 
 #else // OPENCV_IMGPROC_HPP

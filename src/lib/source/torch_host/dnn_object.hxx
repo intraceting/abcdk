@@ -44,9 +44,11 @@ namespace abcdk
                 /*特征。*/
                 std::vector<float> m_feature;
 
+#ifdef OPENCV_CORE_HPP
                 /*分割。*/
-                int m_seg_step;
-                std::vector<uint8_t> m_segment;
+                cv::Mat m_segment;
+#endif //OPENCV_CORE_HPP
+
 
             public:
                 object()
@@ -58,7 +60,6 @@ namespace abcdk
                     m_rect_x2 = -1;
                     m_rect_y2 = -1;
                     m_angle = 0;
-                    m_seg_step = 0;
                 }
 
                 object(const object &src)
@@ -136,8 +137,9 @@ namespace abcdk
                     m_angle = src.m_angle;
                     m_keypoint = src.m_keypoint;
                     m_feature = src.m_feature;
-                    m_seg_step = src.m_seg_step;
+#ifdef OPENCV_CORE_HPP
                     m_segment = src.m_segment;
+#endif // OPENCV_CORE_HPP
 
                     return *this;
                 }
