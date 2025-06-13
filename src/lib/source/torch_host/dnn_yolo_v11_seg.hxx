@@ -93,6 +93,7 @@ namespace abcdk
                     assert(output_c >= 5);
 
                     abcdk::torch::ndarray output_data((void *)output_tensor_p->data_p, false, output_b, output_c, output_h, output_w, output_w * sizeof(float));
+                    abcdk::torch::ndarray output2_data((void *)output2_tensor_p->data_p, false, output2_b, output2_c, output2_h, output2_w, output2_w * sizeof(float));
 
                     int output_classes = output_c - 4 - output2_c;
 
@@ -156,7 +157,7 @@ namespace abcdk
                             }
 
                             /*完整图像的系数。*/
-                            cv::Mat mask_protos = cv::Mat(output2_c, output2_h * output2_w, CV_32FC1,(void*)output2_tensor_p->data_p);
+                            cv::Mat mask_protos = cv::Mat(output2_c, output2_h * output2_w, CV_32FC1,output2_data.ptr<void*>(b,0,0,0));
 
                             /*相乘。*/
                             cv::Mat mask_mul2 = (mask_coef * mask_protos);
