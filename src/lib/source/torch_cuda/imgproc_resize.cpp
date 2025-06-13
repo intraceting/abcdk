@@ -68,7 +68,7 @@ static int _abcdk_torch_imgproc_resize_cuda(int channels, int packed, int pixfmt
         }
         else if (pixfmt == ABCDK_TORCH_PIXFMT_GRAYF32)
         {
-                        npp_chk = nppiResizeSqrPixel_32f_C3R((Npp32f *)src, tmp_src_size, src_ws, tmp_src_roi,
+            npp_chk = nppiResizeSqrPixel_32f_C3R((Npp32f *)src, tmp_src_size, src_ws, tmp_src_roi,
                                                  (Npp32f *)dst, dst_ws, tmp_dst_roi,
                                                  tmp_param.x_factor, tmp_param.y_factor, tmp_param.x_shift, tmp_param.y_shift,
                                                  abcdk::torch_cuda::inter_mode::convert2nppi(inter_mode));
