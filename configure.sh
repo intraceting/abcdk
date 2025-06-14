@@ -280,9 +280,9 @@ VARIABLE:
      archive,nghttp2,libmagic,gtk,appindicator,
      tensorrt,live555,onnxruntime,x264,x265,
      qrencode,zlib,freeimage,fuse,libnm,
-     openmp,modbus,libusb,mqtt,
+     openmp,modbus,libusb,mqtt,eigen,
      bluez,blkid,libcap,fastcgi,systemd,
-     libudev,dmtx,,zbar,magickwand,
+     libudev,dmtx,zbar,magickwand,
      kafka,uuid,libdrm,
      pam,ncurses,fltk,
      
@@ -479,7 +479,7 @@ DependPackageCheck ffnvcodec HAVE_FFNVCODEC
 DependPackageCheck opencv HAVE_OPENCV
 DependPackageCheck live555 HAVE_LIVE555
 DependPackageCheck onnxruntime HAVE_ONNXRUNTIME
-
+DependPackageCheck eigen HAVE_EIGEN
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=

@@ -30,6 +30,7 @@ LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/rtsp/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/bytetrack/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_cuda/*.cpp)
 LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
 
@@ -168,6 +169,12 @@ $(OBJ_PATH)/src/lib/source/rtsp/%.cpp.o: src/lib/source/rtsp/%.cpp
 #
 $(OBJ_PATH)/src/lib/source/torch_host/%.cpp.o: src/lib/source/torch_host/%.cpp
 	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
+	rm -f $@
+	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/src/lib/source/torch_host/bytetrack/%.cpp.o: src/lib/source/torch_host/bytetrack/%.cpp
+	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/bytetrack/
 	rm -f $@
 	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
