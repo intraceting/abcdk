@@ -76,7 +76,7 @@ int abcdk_torch_dnn_engine_load_model_host(abcdk_torch_dnn_engine_t *ctx, const 
     return 0;
 }
 
-int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor tensor[])
+int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor_t tensor[])
 {
     abcdk::torch_host::dnn::engine *ht_ctx_p;
     int chk_count = 0;
@@ -93,7 +93,7 @@ int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int 
         if (!src_p)
             break;
 
-        abcdk_torch_dnn_tensor *dst_p = &tensor[i];
+        abcdk_torch_dnn_tensor_t *dst_p = &tensor[i];
 
         dst_p->index = src_p->index();
         dst_p->name_p = src_p->name();
@@ -162,7 +162,7 @@ int abcdk_torch_dnn_engine_load_model_host(abcdk_torch_dnn_engine_t *ctx, const 
     return -1; 
 }
 
-int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor info[])
+int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor_t info[])
 {
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含ONNXRuntime工具。"));
     return -1;

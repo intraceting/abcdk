@@ -38,9 +38,9 @@ namespace abcdk
                 }
 
             protected:
-                virtual void collect_object(std::vector<std::map<int, std::vector<object>>> &dst, std::vector<abcdk_torch_dnn_tensor> &tensor, float threshold)
+                virtual void collect_object(std::vector<std::map<int, std::vector<object>>> &dst, std::vector<abcdk_torch_dnn_tensor_t> &tensor, float threshold)
                 {
-                    abcdk_torch_dnn_tensor *input_tensor_p = NULL, *output_tensor_p = NULL;
+                    abcdk_torch_dnn_tensor_t *input_tensor_p = NULL, *output_tensor_p = NULL;
 
                     //<batch<label<object>>>
                     std::vector<std::map<int, std::vector<object>>> tmp_object;

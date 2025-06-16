@@ -171,6 +171,7 @@
 #include "abcdk/torch/dnnutil.h"
 #include "abcdk/torch/dnnengine.h"
 #include "abcdk/torch/dnnpost.h"
+#include "abcdk/torch/dnntrack.h"
 
 
 #endif //ABCDK_H

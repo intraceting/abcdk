@@ -87,7 +87,7 @@ int abcdk_test_torch_1(abcdk_option_t *args)
 
     abcdk_torch_rect_t src_roi = {100, 100, 200, 200};
 
-   // abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, ABCDK_TORCH_INTER_CUBIC);
+    // abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 1, ABCDK_TORCH_INTER_CUBIC);
     abcdk_torch_imgproc_warp(f, NULL, dst_quad, e, NULL, NULL, 2, ABCDK_TORCH_INTER_LINEAR);
 
     abcdk_torch_imgcode_save("/tmp/test.cuda.f.jpg", f);
@@ -501,7 +501,7 @@ void idx2nyxz(size_t idx, size_t h, size_t w, size_t c)
     size_t x = (idx / c) % w;
     size_t z = idx % c;
 
-    abcdk_trace_printf(LOG_DEBUG,"[%zu][%zu][%zu][%zu]",n,y,x,z);
+    abcdk_trace_printf(LOG_DEBUG, "[%zu][%zu][%zu][%zu]", n, y, x, z);
 }
 
 int abcdk_test_torch_6(abcdk_option_t *args)
@@ -513,18 +513,21 @@ int abcdk_test_torch_6(abcdk_option_t *args)
     int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
 
     const char *model_p = abcdk_option_get(args, "--model", 0, "");
-    const char *model_name_p = abcdk_option_get(args, "--model-name",0, "yolo-v11");
+    const char *model_name_p = abcdk_option_get(args, "--model-name", 0, "yolo-v11");
     const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
 
     int chk;
+
+    abcdk_torch_dnn_post_t *post_ctx = abcdk_torch_dnn_post_alloc();
+
+    abcdk_torch_dnn_post_init(post_ctx, model_name_p, args);
 
     abcdk_torch_dnn_engine_t *engine_ctx = abcdk_torch_dnn_engine_alloc();
 
     chk = abcdk_torch_dnn_engine_load_model(engine_ctx, model_p, args);
     assert(chk == 0);
 
-    abcdk_torch_dnn_tensor vec_tensor[10];
-    
+    abcdk_torch_dnn_tensor_t vec_tensor[10];
 
     int tensor_num = abcdk_torch_dnn_engine_fetch_tensor(engine_ctx, 10, vec_tensor);
     assert(tensor_num >= 2);
@@ -539,11 +542,11 @@ int abcdk_test_torch_6(abcdk_option_t *args)
             break;
 
         vec_img[count] = abcdk_torch_imgcode_load(img_src_p);
-        if(vec_img[count])
+        if (vec_img[count])
             count += 1;
     }
 
-    for (int i = 0; i < test_count; i++)
+    for (int t = 0; t < test_count; t++)
     {
         uint64_t s = abcdk_time_systime(9);
 
@@ -557,13 +560,9 @@ int abcdk_test_torch_6(abcdk_option_t *args)
         abcdk_trace_printf(LOG_INFO, "step: %.6lf", ((double)step) / 1000000000.);
     }
 
-    abcdk_torch_dnn_post_t *post_ctx = abcdk_torch_dnn_post_alloc();
-
-    abcdk_torch_dnn_post_init(post_ctx,model_name_p,args);
-
     abcdk_torch_dnn_post_process(post_ctx, tensor_num, vec_tensor, 0.1, 0.1);
 
-    abcdk_torch_dnn_tensor *input_tensor_p = &vec_tensor[0];
+    abcdk_torch_dnn_tensor_t *input_tensor_p = &vec_tensor[0];
 
     for (int i = 0; i < input_tensor_p->dims.d[0]; i++)
     {
@@ -591,15 +590,15 @@ int abcdk_test_torch_6(abcdk_option_t *args)
             int weight = 3;
             int corner[4] = {obj_p->rect.pt[0].x, obj_p->rect.pt[0].y, obj_p->rect.pt[1].x, obj_p->rect.pt[1].y};
 
-         //   abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
+            //   abcdk_torch_imgproc_drawrect(img_p, color, weight, corner);
 
-         //   abcdk_trace_printf(LOG_INFO, "r=%d", obj_p->angle);
+            //   abcdk_trace_printf(LOG_INFO, "r=%d", obj_p->angle);
 
             int idx = rand();
 
-            color[0]= abcdk_torch_imgutil_select_color(idx,0);
-            color[1]= abcdk_torch_imgutil_select_color(idx,1);
-            color[2]= abcdk_torch_imgutil_select_color(idx,2);
+            color[0] = abcdk_torch_imgutil_select_color(idx, 0);
+            color[1] = abcdk_torch_imgutil_select_color(idx, 1);
+            color[2] = abcdk_torch_imgutil_select_color(idx, 2);
 
             for (int k = 0; k < obj_p->rrect.nb; k++)
             {
@@ -623,7 +622,7 @@ int abcdk_test_torch_6(abcdk_option_t *args)
                 pt2_p->x = ABCDK_CLAMP(pt2_p->x, 0, img_p->width - 1);
                 pt2_p->y = ABCDK_CLAMP(pt2_p->y, 0, img_p->height - 1);
 
-                abcdk_torch_imgproc_line(img_p,pt1_p,pt2_p, color, weight);
+                abcdk_torch_imgproc_line(img_p, pt1_p, pt2_p, color, weight);
 #else
                 corner[0] = pt_p->x - 3;
                 corner[1] = pt_p->y - 3;
@@ -639,10 +638,10 @@ int abcdk_test_torch_6(abcdk_option_t *args)
                 obj_p->kp[k + 0] = abcdk_resize_dst2src_2d(&r, obj_p->kp[k + 0], 1);
                 obj_p->kp[k + 1] = abcdk_resize_dst2src_2d(&r, obj_p->kp[k + 1], 0);
 
-                corner[0] = obj_p->kp[k + 0]-10;
-                corner[1] = obj_p->kp[k + 1]-10;
-                corner[2] = obj_p->kp[k + 0]+10;
-                corner[3] = obj_p->kp[k + 1]+10;
+                corner[0] = obj_p->kp[k + 0] - 10;
+                corner[1] = obj_p->kp[k + 1] - 10;
+                corner[2] = obj_p->kp[k + 0] + 10;
+                corner[3] = obj_p->kp[k + 1] + 10;
 
                 weight = 5;
 
@@ -678,15 +677,14 @@ int abcdk_test_torch_6(abcdk_option_t *args)
     return 0;
 }
 
-
 int abcdk_test_torch_7(abcdk_option_t *args)
 {
-    const char *src_p = abcdk_option_get(args,"--src",0,"");
-    const char *dst_p = abcdk_option_get(args,"--dst",0,"");
+    const char *src_p = abcdk_option_get(args, "--src", 0, "");
+    const char *dst_p = abcdk_option_get(args, "--dst", 0, "");
 
     abcdk_torch_image_t *src_img = abcdk_torch_imgcode_load_cuda(src_p);
     abcdk_torch_image_t *dst_img = abcdk_torch_imgcode_load_cuda(dst_p);
-    
+
     abcdk_torch_point_t dst_quad[4] = {
         {30, 30},   // 左上角
         {220, 50},  // 右上角
@@ -698,27 +696,148 @@ int abcdk_test_torch_7(abcdk_option_t *args)
         {86, 136},  // 左上角
         {173, 186}, // 右上角
         {123, 273}, // 右下角
-        {36, 223}, // 左下角
+        {36, 223},  // 左下角
     };
 
     abcdk_torch_rect_t src_roi = {150, 150, 200, 200};
-    //abcdk_torch_rect_t dst_roi = {100, 100, 200, 200};
+    // abcdk_torch_rect_t dst_roi = {100, 100, 200, 200};
 
     abcdk_torch_rect_t dst_roi = {150, 150, 200, 200};
 
-    //abcdk_torch_imgproc_warp_cuda(dst_img, NULL, dst_quad, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
-  //  abcdk_torch_imgproc_warp_cuda(dst_img, NULL, dst_quad, src_img, NULL, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
-   // abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, dst_quad, src_img, NULL, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
-  //  abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, NULL, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+    // abcdk_torch_imgproc_warp_cuda(dst_img, NULL, dst_quad, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+    //  abcdk_torch_imgproc_warp_cuda(dst_img, NULL, dst_quad, src_img, NULL, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+    // abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, dst_quad, src_img, NULL, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
+    //  abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, NULL, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
     abcdk_torch_imgproc_warp_cuda(dst_img, &dst_roi, NULL, src_img, &src_roi, NULL, 1, ABCDK_TORCH_INTER_LINEAR);
-   // abcdk_torch_imgproc_warp_cuda(dst_img, NULL, src_quad, src_img, NULL, dst_quad, 1, ABCDK_TORCH_INTER_LINEAR);
+    // abcdk_torch_imgproc_warp_cuda(dst_img, NULL, src_quad, src_img, NULL, dst_quad, 1, ABCDK_TORCH_INTER_LINEAR);
 
-  //abcdk_torch_imgproc_warp_cuda(dst_img, NULL, NULL, src_img, &src_roi, src_quad, 1, ABCDK_TORCH_INTER_LINEAR);
+    // abcdk_torch_imgproc_warp_cuda(dst_img, NULL, NULL, src_img, &src_roi, src_quad, 1, ABCDK_TORCH_INTER_LINEAR);
 
     abcdk_torch_imgcode_save_cuda("/tmp/test.warp.jpg", dst_img);
 
     abcdk_torch_image_free_cuda(&src_img);
     abcdk_torch_image_free_cuda(&dst_img);
+}
+
+
+int abcdk_test_torch_8(abcdk_option_t *args)
+{
+    const char *model_p = abcdk_option_get(args, "--model", 0, "");
+    const char *model_name_p = abcdk_option_get(args, "--model-name", 0, "yolo-v11");
+
+    int chk;
+
+    abcdk_torch_dnn_track_t *track_ctx = abcdk_torch_dnn_track_alloc();
+
+    abcdk_torch_dnn_track_init(track_ctx, "bytetrack", args);
+
+    abcdk_torch_dnn_post_t *post_ctx = abcdk_torch_dnn_post_alloc();
+
+    abcdk_torch_dnn_post_init(post_ctx, model_name_p, args);
+
+    abcdk_torch_dnn_engine_t *engine_ctx = abcdk_torch_dnn_engine_alloc();
+
+    chk = abcdk_torch_dnn_engine_load_model(engine_ctx, model_p, args);
+    assert(chk == 0);
+
+    abcdk_torch_dnn_tensor_t vec_tensor[10];
+
+    int tensor_num = abcdk_torch_dnn_engine_fetch_tensor(engine_ctx, 10, vec_tensor);
+
+    abcdk_ffeditor_config_t ff_r_cfg = {0};
+
+    ff_r_cfg.url = abcdk_option_get(args, "--src", 0, "");
+    ff_r_cfg.read_flush = abcdk_option_get_double(args, "--src-flush", 0, 0);
+    ff_r_cfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
+    ff_r_cfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 10);
+    ff_r_cfg.bit_stream_filter = 1;
+
+    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&ff_r_cfg);
+
+    AVStream *r_video_steam = abcdk_ffeditor_find_stream(r, AVMEDIA_TYPE_VIDEO);
+
+    abcdk_torch_vcodec_t *dec_ctx = abcdk_torch_vcodec_alloc(0);
+
+    abcdk_torch_vcodec_param_t dec_param = {0}, enc_param = {0};
+
+    dec_param.format = abcdk_torch_vcodec_convert_from_ffmpeg(r_video_steam->codecpar->codec_id);
+    dec_param.ext_data = r_video_steam->codecpar->extradata;
+    dec_param.ext_size = r_video_steam->codecpar->extradata_size;
+
+    abcdk_torch_vcodec_start(dec_ctx, &dec_param);
+
+   AVPacket r_pkt, *w_pkt = NULL;
+    av_init_packet(&r_pkt);
+
+    abcdk_torch_frame_t *r_fae2 = NULL;
+    abcdk_torch_frame_t *r_fae3 = NULL;
+
+    for (int i = 0; i < 10000000; i++)
+    {
+        int chk = abcdk_ffeditor_read_packet(r, &r_pkt, r_video_steam->index);
+        if (chk < 0)
+            break;
+
+        abcdk_torch_frame_t *r_fae = NULL;
+        chk = abcdk_torch_vcodec_decode_from_ffmpeg(dec_ctx, &r_fae, &r_pkt);
+        if (chk < 0)
+        {
+            break;
+        }
+        else if (chk > 0)
+        {
+            if (!r_fae2)
+                r_fae2 = abcdk_torch_frame_create(r_fae->img->width, r_fae->img->height, ABCDK_TORCH_PIXFMT_RGB24, 1);
+
+            if (!r_fae3)
+                r_fae3 = abcdk_torch_frame_create(r_fae->img->width, r_fae->img->height, ABCDK_TORCH_PIXFMT_BGR24, 1);
+
+            abcdk_torch_image_convert(r_fae3->img, r_fae->img);
+
+
+            chk = abcdk_torch_dnn_engine_infer(engine_ctx, 1, &r_fae3->img);
+            assert(chk == 0);
+
+            abcdk_torch_dnn_post_process(post_ctx, tensor_num, vec_tensor, 0.1, 0.1);
+
+            abcdk_torch_dnn_tensor_t *input_tensor_p = &vec_tensor[0];
+
+            abcdk_torch_dnn_object_t vec_obj[100] = {0};
+            chk = abcdk_torch_dnn_post_fetch(post_ctx, 0, 100, vec_obj);
+            if (chk <= 0)
+                continue;
+
+            abcdk_trace_printf(LOG_DEBUG, "---------------%d-----------------------", i);
+#if 0
+            
+            abcdk_torch_dnn_track_update(track_ctx,chk,vec_obj);
+            for (int i = 0; i < chk; i++)
+            {
+                abcdk_trace_printf(LOG_DEBUG, "%d(%0.2f,%d):%d,%d,%d,%d", vec_obj[i].label, (float)vec_obj[i].score / 100.0, vec_obj[i].track_id,
+                                   vec_obj[i].rect.pt[0].x, vec_obj[i].rect.pt[0].y,
+                                   vec_obj[i].rect.pt[1].x, vec_obj[i].rect.pt[1].y);
+            }
+#endif 
+            abcdk_trace_printf(LOG_DEBUG, "---------------%d-----------------------", i);
+
+        }
+
+        abcdk_torch_frame_free(&r_fae);
+    }
+
+    abcdk_torch_frame_free(&r_fae2);
+    abcdk_torch_frame_free(&r_fae3);
+
+    av_packet_unref(&r_pkt);
+
+    abcdk_torch_vcodec_free(&dec_ctx);
+    abcdk_ffeditor_destroy(&r);
+
+    abcdk_torch_dnn_track_free(&track_ctx);
+
+    abcdk_torch_dnn_post_free(&post_ctx);
+
+    abcdk_torch_dnn_engine_free(&engine_ctx);
 }
 
 int abcdk_test_torch(abcdk_option_t *args)
@@ -753,6 +872,8 @@ int abcdk_test_torch(abcdk_option_t *args)
         return abcdk_test_torch_6(args);
     else if (cmd == 7)
         return abcdk_test_torch_7(args);
+    else if (cmd == 8)
+        return abcdk_test_torch_8(args);
 
     abcdk_torch_context_current_set(NULL);
     abcdk_torch_context_destroy(&torch_ctx);

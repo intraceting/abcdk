@@ -178,7 +178,7 @@ namespace abcdk
 
                 }
 
-                virtual void process(std::vector<abcdk_torch_dnn_tensor> &tensor, float score_threshold, float nms_threshold)
+                virtual void process(std::vector<abcdk_torch_dnn_tensor_t> &tensor, float score_threshold, float nms_threshold)
                 {
                     std::vector<std::map<int, std::vector<object>>> src;
 
@@ -237,7 +237,7 @@ namespace abcdk
                 /**
                  * @param dst <batch<label<object>>>
                  */
-                virtual void collect_object(std::vector<std::map<int, std::vector<object>>> &dst, std::vector<abcdk_torch_dnn_tensor> &tensor, float threshold) = 0;
+                virtual void collect_object(std::vector<std::map<int, std::vector<object>>> &dst, std::vector<abcdk_torch_dnn_tensor_t> &tensor, float threshold) = 0;
 
                 /**
                  * @param dst <batch<object>>

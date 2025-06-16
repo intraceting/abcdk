@@ -75,14 +75,14 @@ int abcdk_torch_dnn_engine_load_model_cuda(abcdk_torch_dnn_engine_t *ctx, const 
  *
  * @return 数量。
  */
-int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor tensor[]);
+int abcdk_torch_dnn_engine_fetch_tensor_host(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor_t tensor[]);
 
 /**
  * 获取张量信息。
  *
  * @return 数量。
  */
-int abcdk_torch_dnn_engine_fetch_tensor_cuda(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor tensor[]);
+int abcdk_torch_dnn_engine_fetch_tensor_cuda(abcdk_torch_dnn_engine_t *ctx, int count, abcdk_torch_dnn_tensor_t tensor[]);
 
 #ifdef ABCDK_TORCH_USE_CUDA
 #define abcdk_torch_dnn_engine_fetch_tensor abcdk_torch_dnn_engine_fetch_tensor_cuda

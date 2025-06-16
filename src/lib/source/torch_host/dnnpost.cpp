@@ -108,12 +108,12 @@ int abcdk_torch_dnn_post_init(abcdk_torch_dnn_post_t *ctx, const char *name, abc
     return 0;
 }
 
-int abcdk_torch_dnn_post_process(abcdk_torch_dnn_post_t *ctx, int count, abcdk_torch_dnn_tensor tensor[], float score_threshold, float nms_threshold)
+int abcdk_torch_dnn_post_process(abcdk_torch_dnn_post_t *ctx, int count, abcdk_torch_dnn_tensor_t tensor[], float score_threshold, float nms_threshold)
 {
-    std::vector<abcdk_torch_dnn_tensor> tmp_tensor;
+    std::vector<abcdk_torch_dnn_tensor_t> tmp_tensor;
 
     assert(ctx != NULL && count > 0 && tensor != NULL);
-    ABCDK_ASSERT(ctx->model_ctx != NULL,TT("未初始化，不能执行后处理操作。"));
+    ABCDK_ASSERT(ctx->model_ctx != NULL,TT("未初始化，不能执行此操作。"));
 
     tmp_tensor.resize(count);
 
@@ -133,7 +133,7 @@ int abcdk_torch_dnn_post_fetch(abcdk_torch_dnn_post_t *ctx, int index, int count
     int chk_count = 0;
 
     assert(ctx != NULL && index >= 0 && count > 0 && object != NULL);
-    ABCDK_ASSERT(ctx->model_ctx != NULL,TT("未初始化，不能执行获取结果操作。"));
+    ABCDK_ASSERT(ctx->model_ctx != NULL,TT("未初始化，不能执行此操作。"));
 
     ctx->model_ctx->fetch(dst_object, index);
 

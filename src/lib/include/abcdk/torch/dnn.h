@@ -46,7 +46,7 @@ typedef struct _abcdk_torch_dnn_tensor
     */
     const void *data_p;
 
-} abcdk_torch_dnn_tensor;
+} abcdk_torch_dnn_tensor_t;
 
 /**DNN目标。*/
 typedef struct _abcdk_torch_dnn_object

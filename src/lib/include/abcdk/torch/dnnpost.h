@@ -35,7 +35,7 @@ int abcdk_torch_dnn_post_init(abcdk_torch_dnn_post_t *ctx, const char *name, abc
  *
  * @return 0 成功，-1 失败。
  */
-int abcdk_torch_dnn_post_process(abcdk_torch_dnn_post_t *ctx, int count, abcdk_torch_dnn_tensor tensor[], float score_threshold, float nms_threshold);
+int abcdk_torch_dnn_post_process(abcdk_torch_dnn_post_t *ctx, int count, abcdk_torch_dnn_tensor_t tensor[], float score_threshold, float nms_threshold);
 
 /**
  * 获取结果。
