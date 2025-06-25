@@ -207,6 +207,7 @@ namespace abcdk
                         dst[i].rect.pt[1].y = m_object[index][i].m_rect_y2;
 
                         dst[i].angle = m_object[index][i].m_angle;
+                        
 #ifdef OPENCV_CORE_HPP
                         cv::Point2f vec_pts[4];
                         m_object[index][i].rrect2pts(vec_pts);

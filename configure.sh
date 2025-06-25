@@ -128,7 +128,7 @@ VERSION_MAJOR="3"
 #副版本
 VERSION_MINOR="5"
 #发行版本
-VERSION_RELEASE="9"
+VERSION_RELEASE="10"
 
 #
 LSB_RELEASE="linux-gnu"
@@ -284,7 +284,7 @@ VARIABLE:
      bluez,blkid,libcap,fastcgi,systemd,
      libudev,dmtx,zbar,magickwand,
      kafka,uuid,libdrm,
-     pam,ncurses,fltk,
+     pam,ncurses,fltk,faiss
      
 
      THIRDPARTY_FIND_ROOT=\${INSTALL_PREFIX}
@@ -480,6 +480,7 @@ DependPackageCheck opencv HAVE_OPENCV
 DependPackageCheck live555 HAVE_LIVE555
 DependPackageCheck onnxruntime HAVE_ONNXRUNTIME
 DependPackageCheck eigen HAVE_EIGEN
+DependPackageCheck faiss HAVE_FAISS
 
 #恢复默认。
 export _3RDPARTY_PKG_MACHINE=
