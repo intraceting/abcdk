@@ -11,6 +11,7 @@
 #include "dnn_yolo_v11_obb.hxx"
 #include "dnn_yolo_v11_pose.hxx"
 #include "dnn_yolo_v11_seg.hxx"
+#include "dnn_retinaface_fpn.hxx"
 
 __BEGIN_DECLS
 
@@ -43,6 +44,8 @@ void abcdk_torch_dnn_post_free(abcdk_torch_dnn_post_t **ctx)
         abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11_pose **)&ctx_p->model_ctx);
     else if (abcdk_strcmp(ctx_p->model_ctx->name(), "yolo-v11-seg", 0) == 0)
         abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::yolo_v11_seg **)&ctx_p->model_ctx);
+    else if (abcdk_strcmp(ctx_p->model_ctx->name(), "retinaface-fpn", 0) == 0)
+        abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::retinaface_fpn **)&ctx_p->model_ctx);
     else
         abcdk::torch::memory::delete_object(&ctx_p->model_ctx);
 
@@ -94,6 +97,12 @@ int abcdk_torch_dnn_post_init(abcdk_torch_dnn_post_t *ctx, const char *name, abc
     else if (abcdk_strcmp(name, "yolo-v11-seg", 0) == 0)
     {
         ctx->model_ctx = new abcdk::torch_host::dnn::yolo_v11_seg(name);
+        if (!ctx->model_ctx)
+            return -1;
+    }
+    else if (abcdk_strcmp(name, "retinaface-fpn", 0) == 0)
+    {
+        ctx->model_ctx = new abcdk::torch_host::dnn::retinaface_fpn(name);
         if (!ctx->model_ctx)
             return -1;
     }
