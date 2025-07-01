@@ -8,6 +8,11 @@
 #define ABCDK_UTIL_ICONV_H
 
 #include "abcdk/util/general.h"
+#include "abcdk/util/trace.h"
+
+#ifndef HAVE_ICONV_H
+typedef void *iconv_t;
+#endif //HAVE_ICONV_H
 
 __BEGIN_DECLS
 

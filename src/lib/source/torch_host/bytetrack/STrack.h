@@ -7,10 +7,10 @@
 
 #include "kalmanFilter.h"
 
+#if defined(OPENCV_CORE_HPP) && defined(EIGEN_CORE_H)
+
 using namespace cv;
 using namespace std;
-
-#if defined(OPENCV_CORE_HPP) && defined(EIGEN_CORE_H)
 
 namespace bytetrack
 {

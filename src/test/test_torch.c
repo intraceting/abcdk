@@ -722,6 +722,7 @@ int abcdk_test_torch_7(abcdk_option_t *args)
     abcdk_torch_image_free_cuda(&dst_img);
 }
 
+#ifdef HAVE_FFMPEG
 
 int abcdk_test_torch_8(abcdk_option_t *args)
 {
@@ -843,6 +844,8 @@ int abcdk_test_torch_8(abcdk_option_t *args)
     abcdk_torch_dnn_engine_free(&engine_ctx);
 }
 
+#endif // HAVE_FFMPEG
+
 int abcdk_test_torch(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
@@ -875,8 +878,10 @@ int abcdk_test_torch(abcdk_option_t *args)
         return abcdk_test_torch_6(args);
     else if (cmd == 7)
         return abcdk_test_torch_7(args);
+#ifdef HAVE_FFMPEG
     else if (cmd == 8)
         return abcdk_test_torch_8(args);
+#endif // HAVE_FFMPEG
 
     abcdk_torch_context_current_set(NULL);
     abcdk_torch_context_destroy(&torch_ctx);

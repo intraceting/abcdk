@@ -18,7 +18,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
+#endif //HAVE_PTHREAD_H
 #include <ctype.h>
 #include <memory.h>
 #include <time.h>
@@ -29,7 +31,9 @@
 #include <limits.h>
 #include <dirent.h>
 #include <poll.h>
+#ifdef HAVE_ICONV_H
 #include <iconv.h>
+#endif //HAVE_ICONV_H
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <tar.h>
@@ -38,7 +42,9 @@
 #include <sched.h>
 #include <syslog.h>
 #include <pwd.h>
+#ifdef HAVE_LIBINTL_H
 #include <libintl.h>
+#endif //HAVE_LIBINTL_H
 #include <locale.h>
 #include <malloc.h>
 #include <sys/socket.h>
@@ -68,6 +74,9 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <net/ethernet.h>
+#ifdef HAVE_GPIO_H
+#include <linux/gpio.h>
+#endif //HAVE_GPIO_H
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -240,8 +249,14 @@
 #define ABCDK_DEPRECATED
 #endif
 
-/** 定义gettext别名。*/ 
+/** 定义gettext别名。*/
+#ifdef HAVE_LIBINTL_H 
 #define ABCDK_TT(T) gettext(T)
+#else 
+#define ABCDK_TT
+#endif //HAVE_LIBINTL_H
+
+/** 定义ABCDK_TT别名。*/
 #ifndef TT
 #define TT ABCDK_TT 
 #endif //TT

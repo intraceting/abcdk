@@ -48,6 +48,17 @@ CheckSTD()
     ${SHELLDIR}/tools/check-$1-std.sh "$2" "$3"
 }
 
+
+#
+CheckHeader()
+# $1 LANG
+# $2 COMPILER
+# $3 STD
+# $4 HEADER
+{
+    ${SHELLDIR}/tools/check-$1-std-header.sh "$2" "$3" "$4"
+}
+
 #
 GetCompilerArch()
 #$1 BIN
@@ -88,8 +99,8 @@ GetCompilerProgName()
 
 #
 DependPackageCheck()
-# 1 key
-# 2 def
+# $1 key
+# $2 def
 {
     PACKAGE_KEY=$1
     PACKAGE_DEF=$2
@@ -121,6 +132,22 @@ DependPackageCheck()
 
 #    echo ${THIRDPARTY_FLAGS} 
 #    echo ${THIRDPARTY_LINKS}
+}
+
+#
+DependHeaderCheck()
+# $1 LANG
+# $2 COMPILER
+# $3 STD
+# $4 HEADER
+# $5 DEFINED
+{
+    CheckHeader $1 "$2" "$3" "$4"
+    if [ $? -eq 0 ];then
+        THIRDPARTY_FLAGS="-D$5 ${THIRDPARTY_FLAGS}"
+    fi
+
+#    echo ${THIRDPARTY_FLAGS} 
 }
 
 #主版本
@@ -366,8 +393,8 @@ if [ "${PACKAGE_PATH}" == "" ] ;then
 fi
 
 #
-TARGET_COMPILER_C=${COMPILER_PREFIX}${COMPILER_C_NAME}
-TARGET_COMPILER_CXX=${COMPILER_PREFIX}${COMPILER_CXX_NAME}
+TARGET_COMPILER_C=$(realpath ${COMPILER_PREFIX}${COMPILER_C_NAME})
+TARGET_COMPILER_CXX=$(realpath ${COMPILER_PREFIX}${COMPILER_CXX_NAME})
 
 #
 CheckSTD c "${TARGET_COMPILER_C}" "c99"
@@ -426,6 +453,12 @@ fi
 if [ " ${TRNSORRT_FIND_ROOT}" == "" ];then
 TRNSORRT_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/TensorRT/"
 fi
+
+#
+DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "libintl.h" HAVE_LIBINTL_H
+DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "pthread.h" HAVE_PTHREAD_H
+DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "iconv.h" HAVE_ICONV_H
+DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "linux/gpio.h" HAVE_GPIO_H
 
 
 #设置环境变量，用于搜索依赖包。

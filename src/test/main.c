@@ -52,7 +52,8 @@ static struct _abcdk_test_entry
     {"torch",abcdk_test_torch},
     {"stitcher",abcdk_test_stitcher},
     {"rtspserver",abcdk_test_rtspserver},
-    {"calibrate",abcdk_test_calibrate}
+    {"calibrate",abcdk_test_calibrate},
+    {"gpio",abcdk_test_gpio},
 };
 
 void _abcdk_test_print_usage()

@@ -40,6 +40,7 @@ int abcdk_test_torch(abcdk_option_t *args);
 int abcdk_test_stitcher(abcdk_option_t *args);
 int abcdk_test_rtspserver(abcdk_option_t *args);
 int abcdk_test_calibrate(abcdk_option_t *args);
+int abcdk_test_gpio(abcdk_option_t *args);
 
 
 __END_DECLS

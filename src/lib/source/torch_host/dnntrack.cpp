@@ -36,6 +36,8 @@ void abcdk_torch_dnn_track_free(abcdk_torch_dnn_track_t **ctx)
     if (abcdk_strcmp(ctx_p->mot_ctx->name(), "bytetrack", 0) == 0)
 #ifdef __BYTETRACK__
         abcdk::torch::memory::delete_object((abcdk::torch_host::dnn::mot_bytetrack **)&ctx_p->mot_ctx);
+#else  //__BYTETRACK__
+        assert(0); // Impossible.
 #endif //__BYTETRACK__
     else
         abcdk::torch::memory::delete_object(&ctx_p->mot_ctx);
