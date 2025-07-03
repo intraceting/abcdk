@@ -27,6 +27,11 @@ typedef struct _abcdk_object_hdr
     /** 环境指针。*/
     void *opaque;
 
+    /** mmap环境。*/
+    void *mmap_ptr;
+    size_t mmap_size;
+    int mmap_fd;
+
     /**
      * 内存块信息。
      * 
@@ -88,6 +93,9 @@ abcdk_object_t *abcdk_object_alloc(size_t *sizes, size_t numbers, int drag)
     in_p->refcount = 1;
     in_p->destructor_cb = NULL;
     in_p->opaque = NULL;
+    in_p->mmap_ptr = MAP_FAILED;
+    in_p->mmap_size = 0;
+    in_p->mmap_fd = -1;
 
     /* 填充各项信息。*/
     in_p->out.refcount = &in_p->refcount;
@@ -152,7 +160,7 @@ void abcdk_object_unref(abcdk_object_t **dst)
     abcdk_object_hdr_t *in_p = NULL;
 
     if (!dst || !*dst)
-        ABCDK_ERRNO_AND_RETURN0(EINVAL);
+        return;
 
     in_p = ABCDK_OBJECT_PTR_OUT2IN(*dst);
     *dst = NULL;
@@ -167,9 +175,21 @@ void abcdk_object_unref(abcdk_object_t **dst)
     if (in_p->destructor_cb)
         in_p->destructor_cb(&in_p->out, in_p->opaque);
 
+    if (in_p->mmap_ptr != MAP_FAILED && in_p->mmap_size > 0)
+        munmap(in_p->mmap_ptr, in_p->mmap_size);
+    
+    if (in_p->mmap_fd >= 0)
+        abcdk_closep(&in_p->mmap_fd);
+
     in_p->magic = 0xcccccccc;
+
     in_p->destructor_cb = NULL;
     in_p->opaque = NULL;
+
+    in_p->mmap_ptr = MAP_FAILED;
+    in_p->mmap_size = 0;
+    in_p->mmap_fd = -1;
+
     in_p->out.refcount = NULL;
     in_p->out.numbers = 0;
     in_p->out.sizes = NULL;
@@ -290,4 +310,135 @@ abcdk_object_t *abcdk_object_copyfrom_file(const void *file)
 
     abcdk_closep(&fd);
     return obj;
+}
+
+abcdk_object_t *abcdk_object_mmap(int fd, size_t truncate, int rw, int shared)
+{
+    abcdk_object_t *obj = NULL;
+    abcdk_object_hdr_t *in_p = NULL;
+    void *mmptr = MAP_FAILED;
+    int prot = PROT_READ, flags = MAP_PRIVATE;
+    struct stat attr;
+    int chk;
+
+    assert(fd >= 0);
+
+    obj = abcdk_object_alloc(NULL, 1, 0);
+    if (!obj)
+        return NULL;
+
+    in_p = ABCDK_OBJECT_PTR_OUT2IN(obj);
+
+    if (truncate > 0)
+    {
+        chk = ftruncate(fd, truncate);
+        if (chk != 0)
+            goto final_error;
+    }
+
+    if (fstat(fd, &attr) == -1)
+        goto final_error;
+
+    if (attr.st_size <= 0)
+        goto final_error;
+
+    if (rw)
+        prot = PROT_READ | PROT_WRITE;
+    if (shared)
+        flags = MAP_SHARED;
+
+    mmptr = mmap(0, attr.st_size, prot, flags, fd, 0);
+    if (mmptr == MAP_FAILED)
+        goto final_error;
+
+    /*绑定内存和文件句柄(外部)。*/
+    obj->pptrs[0] = mmptr;
+    obj->sizes[0] = attr.st_size;
+
+    /*绑定内存和文件句柄(内部)。*/
+    in_p->mmap_ptr = mmptr;
+    in_p->mmap_size = attr.st_size;
+    in_p->mmap_fd = dup(fd);
+
+    return obj;
+
+final_error:
+
+    abcdk_object_unref(&obj);
+
+    return NULL;
+}
+
+
+int abcdk_object_remmap(abcdk_object_t *obj, size_t truncate, int rw, int shared)
+{
+    abcdk_object_hdr_t *in_p = NULL;
+    void *mmptr = MAP_FAILED;
+    int prot = PROT_READ, flags = MAP_PRIVATE;
+    struct stat attr;
+    int fd;
+    int chk;
+
+    assert(obj != NULL);
+
+    in_p = ABCDK_OBJECT_PTR_OUT2IN(obj);
+
+    ABCDK_ASSERT(in_p->mmap_fd >= 0, TT("内存对象不支持此项操作。"));
+
+    if (truncate > 0)
+    {
+        chk = ftruncate(in_p->mmap_fd, truncate);
+        if (chk != 0)
+            return -1;
+    }
+
+    if (fstat(in_p->mmap_fd, &attr) == -1)
+        return -2;
+
+    if (attr.st_size <= 0)
+        return -3;
+
+    if (rw)
+        prot = PROT_READ | PROT_WRITE;
+    if (shared)
+        flags = MAP_SHARED;
+
+    mmptr = mmap(0, attr.st_size, prot, flags, in_p->mmap_fd, 0);
+    if (mmptr == MAP_FAILED)
+        return -4;
+
+    /*释放旧的内存映射。*/
+    if (in_p->mmap_ptr != MAP_FAILED && in_p->mmap_size > 0)
+        munmap(in_p->mmap_ptr, in_p->mmap_size);
+
+    /*重新绑定内存和文件句柄(外部)。*/
+    obj->pptrs[0] = mmptr;
+    obj->sizes[0] = attr.st_size;
+
+    /*重新绑定内存和文件句柄(内部)。*/
+    in_p->mmap_ptr = mmptr;
+    in_p->mmap_size = attr.st_size;
+
+    return 0;
+}
+
+int abcdk_object_msync(abcdk_object_t *obj, int async)
+{
+    abcdk_object_hdr_t *in_p = NULL;
+    int flags;
+    int chk;
+
+    assert(obj);
+
+    in_p = ABCDK_OBJECT_PTR_OUT2IN(obj);
+
+    ABCDK_ASSERT(in_p->mmap_fd >= 0, TT("内存对象不支持此项操作。"));
+
+    flags = (async ? MS_ASYNC : MS_SYNC);
+
+    chk = msync(in_p->mmap_ptr, in_p->mmap_size, flags);
+    if (chk != 0)
+        return -1;
+
+    return 0;
 }

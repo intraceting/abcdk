@@ -143,6 +143,7 @@ final_error:
 
 int abcdk_msync(abcdk_object_t *obj, int async)
 {
+#if 0 
     int flags;
 
     assert(obj);
@@ -151,13 +152,23 @@ int abcdk_msync(abcdk_object_t *obj, int async)
     flags = (async ? MS_ASYNC : MS_SYNC);
 
     return msync(obj->pptrs[1], obj->sizes[1], flags);
+#else 
+
+    return abcdk_object_msync(obj,async);
+
+#endif 
 }
 
 abcdk_object_t *abcdk_mmap_fd(int fd, size_t truncate, int rw, int shared)
 {
+#if 0  
     assert(fd >= 0);
-
+  
     return _abcdk_mmap(fd, truncate, rw, shared);
+#else
+    return abcdk_object_mmap(fd, truncate, rw, shared);
+#endif //
+
 }
 
 abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, int shared,int create)
@@ -219,7 +230,11 @@ abcdk_object_t* abcdk_mmap_shm(const char* name,size_t truncate,int rw,int share
 
 int abcdk_mremap(abcdk_object_t *obj, size_t truncate, int rw, int shared)
 {
+#if 0
     assert(obj);
 
     return _abcdk_mremap(obj, truncate, rw, shared);
+#else
+    return abcdk_object_remmap(obj, truncate, rw, shared);
+#endif //
 }

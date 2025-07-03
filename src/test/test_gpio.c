@@ -212,7 +212,7 @@ int abcdk_test_gpio_3(abcdk_option_t *args)
     chk = ioctl(left_1_req.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &left_1_data);
     assert(chk >= 0);
 
-    left_2_data.values[0] = 1;
+    left_2_data.values[0] = 0;
     chk = ioctl(left_2_req.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &left_2_data);
     assert(chk >= 0);
 

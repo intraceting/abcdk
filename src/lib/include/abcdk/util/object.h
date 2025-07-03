@@ -112,6 +112,36 @@ abcdk_object_t *abcdk_object_copypair(const void *key, size_t ksize,const void *
 /** 申请一个内存块，并复制文件数据。*/
 abcdk_object_t *abcdk_object_copyfrom_file(const void *file);
 
+
+/**
+ * 映射文件到内存页面。
+ * 
+ * @note 文件句柄可以提前关闭。
+ * 
+ * @param [in] truncate 截断文件(或扩展文件)。0 忽略。
+ *
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_object_t* abcdk_object_mmap(int fd,size_t truncate,int rw,int shared);
+
+/**
+ * 重新映射。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_object_remmap(abcdk_object_t* obj,size_t truncate,int rw,int shared);
+
+/**
+ * 刷新数据。
+ * 
+ * @warning 如果映射的内存页面是私有模式，对数据修改不会影响原文件。
+ * 
+ * @param async 0 同步，!0 异步。
+ * 
+ * @return 0 成功，-1 失败。
+*/
+int abcdk_object_msync(abcdk_object_t* obj,int async);
+
 __END_DECLS
 
 #endif //ABCDK_UTIL_OBJECT_H
