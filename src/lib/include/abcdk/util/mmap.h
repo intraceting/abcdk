@@ -23,6 +23,7 @@ __BEGIN_DECLS
  * 
  * @return 0 成功，-1 失败。
 */
+ABCDK_DEPRECATED
 int abcdk_msync(abcdk_object_t* obj,int async);
 
 /**
@@ -34,6 +35,7 @@ int abcdk_msync(abcdk_object_t* obj,int async);
  *
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
+ABCDK_DEPRECATED
 abcdk_object_t* abcdk_mmap_fd(int fd,size_t truncate,int rw,int shared);
 
 /**
@@ -41,6 +43,7 @@ abcdk_object_t* abcdk_mmap_fd(int fd,size_t truncate,int rw,int shared);
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
+ABCDK_DEPRECATED
 abcdk_object_t* abcdk_mmap_filename(const char* name,size_t truncate,int rw,int shared,int create);
 
 /**
@@ -48,6 +51,7 @@ abcdk_object_t* abcdk_mmap_filename(const char* name,size_t truncate,int rw,int 
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
+ABCDK_DEPRECATED
 abcdk_object_t* abcdk_mmap_tempfile(char* name,size_t truncate,int rw,int shared);
 
 #if !defined(__ANDROID__)
@@ -57,6 +61,7 @@ abcdk_object_t* abcdk_mmap_tempfile(char* name,size_t truncate,int rw,int shared
  * 
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
+ABCDK_DEPRECATED
 abcdk_object_t* abcdk_mmap_shm(const char* name,size_t truncate,int rw,int shared,int create);
 
 #endif //__ANDROID__
@@ -66,6 +71,7 @@ abcdk_object_t* abcdk_mmap_shm(const char* name,size_t truncate,int rw,int share
  * 
  * @return 0 成功，-1 失败。
 */
+ABCDK_DEPRECATED
 int abcdk_mremap(abcdk_object_t* obj,size_t truncate,int rw,int shared);
 
 __END_DECLS

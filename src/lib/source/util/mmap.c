@@ -173,6 +173,7 @@ abcdk_object_t *abcdk_mmap_fd(int fd, size_t truncate, int rw, int shared)
 
 abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, int shared,int create)
 {
+#if 0
     abcdk_object_t *obj = NULL;
     int fd = -1;
     int chk;
@@ -187,10 +188,14 @@ abcdk_object_t *abcdk_mmap_filename(const char *name, size_t truncate, int rw, i
     abcdk_closep(&fd);
 
     return obj;
+#else 
+    return abcdk_object_mmap_filename(name,truncate,rw,shared,create);
+#endif 
 }
 
 abcdk_object_t *abcdk_mmap_tempfile(char *name, size_t truncate, int rw, int shared)
 {
+#if 0 
     abcdk_object_t *obj = NULL;
     int fd = -1;
 
@@ -204,12 +209,16 @@ abcdk_object_t *abcdk_mmap_tempfile(char *name, size_t truncate, int rw, int sha
     abcdk_closep(&fd);
 
     return obj;
+#else 
+    return abcdk_object_mmap_tempfile(name,truncate,rw,shared);
+#endif 
 }
 
 #if !defined(__ANDROID__)
 
 abcdk_object_t* abcdk_mmap_shm(const char* name,size_t truncate,int rw,int shared,int create)
 {
+#if 0
     abcdk_object_t *obj = NULL;
     int fd = -1;
     int chk;
@@ -224,6 +233,9 @@ abcdk_object_t* abcdk_mmap_shm(const char* name,size_t truncate,int rw,int share
     abcdk_closep(&fd);
 
     return obj;
+#else 
+    return abcdk_object_mmap_shm(name,truncate,rw,shared,create);
+#endif 
 }
 
 #endif //__ANDROID__

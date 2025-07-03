@@ -10,6 +10,7 @@
 #include "abcdk/util/general.h"
 #include "abcdk/util/heap.h"
 #include "abcdk/util/io.h"
+#include "abcdk/util/shm.h"
 
 __BEGIN_DECLS
 
@@ -123,6 +124,31 @@ abcdk_object_t *abcdk_object_copyfrom_file(const void *file);
  * @return NULL(0) 失败，!NULL(0) 成功。
 */
 abcdk_object_t* abcdk_object_mmap(int fd,size_t truncate,int rw,int shared);
+
+/**
+ * 映射文件到内存页面。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_object_t* abcdk_object_mmap_filename(const char* name,size_t truncate,int rw,int shared,int create);
+
+/**
+ * 映射临时文件到内存页面。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_object_t* abcdk_object_mmap_tempfile(char* name,size_t truncate,int rw,int shared);
+
+#if !defined(__ANDROID__)
+
+/**
+ * 映射共离内存文件到内存页面。
+ * 
+ * @return NULL(0) 失败，!NULL(0) 成功。
+*/
+abcdk_object_t* abcdk_object_mmap_shm(const char* name,size_t truncate,int rw,int shared,int create);
+
+#endif //__ANDROID__
 
 /**
  * 重新映射。
