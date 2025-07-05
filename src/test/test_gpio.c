@@ -52,7 +52,7 @@ float _abcdk_test_gpio_2_dis_measure(int trig_fd, int echo_fd)
     chk = ioctl(trig_fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &trig_data);
     assert(chk >= 0);
 
-    usleep(2);// 2 microseconds pulse
+    usleep(2); // 2 microseconds pulse
 
     trig_data.values[0] = 1;
     chk = ioctl(trig_fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &trig_data);
@@ -135,7 +135,7 @@ int abcdk_test_gpio_2(abcdk_option_t *args)
     chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &echo_req);
     assert(chk >= 0);
 
-    fprintf(stdout,"\n");
+    fprintf(stdout, "\n");
 
     for (int i = 0; i < 999999999; i++)
     {
@@ -153,7 +153,6 @@ int abcdk_test_gpio_2(abcdk_option_t *args)
     abcdk_closep(&fd);
 }
 
-
 int abcdk_test_gpio_3(abcdk_option_t *args)
 {
 
@@ -162,6 +161,9 @@ int abcdk_test_gpio_3(abcdk_option_t *args)
     int left_2_pin = abcdk_option_get_int(args, "--left-2-pin", 0, 15);
     int right_1_pin = abcdk_option_get_int(args, "--right-1-pin", 0, 23);
     int right_2_pin = abcdk_option_get_int(args, "--right-2-pin", 0, 24);
+
+    int left_dir = abcdk_option_get_int(args, "--left-dir", 0, 0);
+    int right_dir = abcdk_option_get_int(args, "--right-dir", 0, 0);
 
     int fd = abcdk_open(dev_p, 1, 0, 0);
     assert(fd >= 0);
@@ -177,28 +179,28 @@ int abcdk_test_gpio_3(abcdk_option_t *args)
     left_1_req.lines = 1;
     left_1_req.flags = GPIOHANDLE_REQUEST_OUTPUT;
     left_1_req.default_values[0] = 0; // Initially LOW
-     chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &left_1_req);
+    chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &left_1_req);
     assert(chk >= 0);
 
     left_2_req.lineoffsets[0] = left_2_pin;
     left_2_req.lines = 1;
     left_2_req.flags = GPIOHANDLE_REQUEST_OUTPUT;
     left_2_req.default_values[0] = 0; // Initially LOW
-     chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &left_2_req);
+    chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &left_2_req);
     assert(chk >= 0);
 
     right_1_req.lineoffsets[0] = right_1_pin;
     right_1_req.lines = 1;
     right_1_req.flags = GPIOHANDLE_REQUEST_OUTPUT;
     right_1_req.default_values[0] = 0; // Initially LOW
-     chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &right_1_req);
+    chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &right_1_req);
     assert(chk >= 0);
 
     right_2_req.lineoffsets[0] = right_2_pin;
     right_2_req.lines = 1;
     right_2_req.flags = GPIOHANDLE_REQUEST_OUTPUT;
     right_2_req.default_values[0] = 0; // Initially LOW
-     chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &right_2_req);
+    chk = ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &right_2_req);
     assert(chk >= 0);
 
     struct gpiohandle_data left_1_data = {0};
@@ -207,25 +209,45 @@ int abcdk_test_gpio_3(abcdk_option_t *args)
     struct gpiohandle_data right_1_data = {0};
     struct gpiohandle_data right_2_data = {0};
 
+    if (left_dir != 0)
+        left_1_data.values[0] = (left_dir == 1 ? 1 : 0);
+    else
+        left_1_data.values[0] = 0;
 
-    left_1_data.values[0] = 1;
     chk = ioctl(left_1_req.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &left_1_data);
     assert(chk >= 0);
 
-    left_2_data.values[0] = 0;
+    if (left_dir != 0)
+        left_2_data.values[0] = (left_dir == 1 ? 0 : 1);
+    else
+        left_2_data.values[0] = 0;
+
     chk = ioctl(left_2_req.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &left_2_data);
     assert(chk >= 0);
 
+    if (right_dir != 0)
+        right_1_data.values[0] = (right_dir == 1 ? 1 : 0);
+    else
+        right_1_data.values[0] = 0;
+    chk = ioctl(right_1_req.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &right_1_data);
+    assert(chk >= 0);
+
+    if (right_dir != 0)
+        right_2_data.values[0] = (right_dir == 1 ? 0 : 1);
+    else
+        right_2_data.values[0] = 0;
+
+    chk = ioctl(right_2_req.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &right_2_data);
+    assert(chk >= 0);
 
     abcdk_proc_wait_exit_signal(-1);
-   
+
     abcdk_closep(&left_1_req.fd);
     abcdk_closep(&left_2_req.fd);
     abcdk_closep(&right_1_req.fd);
     abcdk_closep(&right_2_req.fd);
-    abcdk_closep(&fd); 
+    abcdk_closep(&fd);
 }
-
 
 int abcdk_test_gpio(abcdk_option_t *args)
 {
