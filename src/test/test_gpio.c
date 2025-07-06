@@ -157,10 +157,10 @@ int abcdk_test_gpio_3(abcdk_option_t *args)
 {
 
     const char *dev_p = abcdk_option_get(args, "--dev", 0, "/dev/gpiochip0");
-    int left_1_pin = abcdk_option_get_int(args, "--left-1-pin", 0, 14);
-    int left_2_pin = abcdk_option_get_int(args, "--left-2-pin", 0, 15);
-    int right_1_pin = abcdk_option_get_int(args, "--right-1-pin", 0, 23);
-    int right_2_pin = abcdk_option_get_int(args, "--right-2-pin", 0, 24);
+    int left_1_pin = abcdk_option_get_int(args, "--left-1-pin", 0, 25);
+    int left_2_pin = abcdk_option_get_int(args, "--left-2-pin", 0, 8);
+    int right_1_pin = abcdk_option_get_int(args, "--right-1-pin", 0, 7);
+    int right_2_pin = abcdk_option_get_int(args, "--right-2-pin", 0, 1);
 
     int left_dir = abcdk_option_get_int(args, "--left-dir", 0, 0);
     int right_dir = abcdk_option_get_int(args, "--right-dir", 0, 0);
