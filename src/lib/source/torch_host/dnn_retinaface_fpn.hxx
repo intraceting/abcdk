@@ -136,7 +136,7 @@ namespace abcdk
 
                         assert(output_cls_c / 2 == one_anchor.second.size()); // 输出层里包括背景和前景，背景在推理时使用，后处理时不需要。
 
-#if 1
+#if 0
                         abcdk::torch::ndarray output_cls_data((void *)output_cls_tensor_p->data_p, false, output_cls_b, output_cls_c, output_cls_h, output_cls_w, output_cls_w * sizeof(float));
                         abcdk::torch::ndarray output_box_data((void *)output_box_tensor_p->data_p, false, output_box_b, output_box_c, output_box_h, output_box_w, output_box_w * sizeof(float));
                         abcdk::torch::ndarray output_kpt_data((void *)output_kpt_tensor_p->data_p, false, output_kpt_b, output_kpt_c, output_kpt_h, output_kpt_w, output_kpt_w * sizeof(float));
