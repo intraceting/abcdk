@@ -249,6 +249,7 @@ int abcdk_test_gpio_3(abcdk_option_t *args)
     abcdk_closep(&fd);
 }
 
+
 int abcdk_test_gpio(abcdk_option_t *args)
 {
     int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
@@ -259,6 +260,13 @@ int abcdk_test_gpio(abcdk_option_t *args)
         return abcdk_test_gpio_2(args);
     else if (cmd == 3)
         return abcdk_test_gpio_3(args);
+}
+
+#else //HAVE_GPIO_H
+
+int abcdk_test_gpio(abcdk_option_t *args)
+{
+    return 0;
 }
 
 #endif // HAVE_GPIO_H
