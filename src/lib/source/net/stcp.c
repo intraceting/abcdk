@@ -713,7 +713,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             }
             else
             {
-                SSL_set_fd(node->openssl_ssl, node->fd);
+                SSL_set_fd(node->openssl_ssl, node->fd);//内部使用BIO_NOCLOSE标志绑定。
             }
 
             if (node->flag == ABCDK_STCP_FLAG_ACCPET)
