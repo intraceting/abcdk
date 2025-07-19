@@ -29,5 +29,6 @@ ${SHELLDIR}/../configure.sh \
     -d PACKAGE_SUFFIX="-cuda-stapler-glibc_${STAPLER_TARGET_GLIBC_MAX_VERSION}" \
     -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,eigen,live555,qrencode,curl,sqlite,nghttp2,eigen,cuda," \
     -d CUDA_FIND_ROOT=/usr/local/cuda/ \
+    -d COMPILER_LD_FLAGS="-Wl,-rpath=${STAPLER_RELEASE_PATH}/lib/compat/ -Wl,-rpath=${STAPLER_RELEASE_PATH}/lib64/compat/" \
     -d COMPILER_PREFIX=${STAPLER_TARGET_COMPILER_PREFIX}
 checkReturnCode
