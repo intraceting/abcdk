@@ -30,6 +30,6 @@ ${SHELLDIR}/../configure.sh \
     -d THIRDPARTY_PACKAGES="openssl,ffmpeg,opencv,live555,qrencode,curl,sqlite,nghttp2,eigen,cuda,tensorrt,faiss" \
     -d CUDA_FIND_ROOT=/usr/local/cuda/ \
     -d TRNSORRT_FIND_ROOT=/usr/local/TensorRT/ \
-    -d COMPILER_LD_FLAGS="-Wl,-rpath=./ -Wl,-rpath=../compat/ -Wl,-rpath=../lib/ -Wl,-rpath=../lib/compat/ -Wl,-rpath=../lib64/  -Wl,-rpath=../lib64/compat/" \
+    -d COMPILER_LD_FLAGS="-Wl,-rpath=/usr/local/stapler/lib/ -Wl,-rpath=/usr/local/stapler/lib/compat/ -Wl,-rpath=/usr/local/stapler/lib64/  -Wl,-rpath=/usr/local/stapler/lib64/compat/" \
     -d COMPILER_PREFIX=${STAPLER_TARGET_COMPILER_PREFIX}
 checkReturnCode
