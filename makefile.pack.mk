@@ -28,8 +28,8 @@ UTIL_PACKAGE_NAME=abcdk-util-${VERSION_STR_FULL}-${TARGET_PLATFORM}${PACKAGE_SUF
 #生成安装后运行的脚本文件内容。
 define RT_PACKAGE_POST_CONTEXT
 #
-echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
-ldconfig
+#echo "${INSTALL_PREFIX}/lib" > /etc/ld.so.conf.d/abcdk.conf
+#ldconfig
 #
 endef
 export RT_PACKAGE_POST_CONTEXT
@@ -37,8 +37,8 @@ export RT_PACKAGE_POST_CONTEXT
 #生成卸载后运行的脚本文件内容。
 define RT_PACKAGE_POSTUN_CONTEXT
 #
-rm -f /etc/ld.so.conf.d/abcdk.conf
-ldconfig
+#rm -f /etc/ld.so.conf.d/abcdk.conf
+#ldconfig
 #
 endef
 export RT_PACKAGE_POSTUN_CONTEXT
