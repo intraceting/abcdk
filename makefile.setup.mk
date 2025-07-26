@@ -102,6 +102,7 @@ install-dev:
 #
 uninstall-tool:
 #
+	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
 	rm -f ${INSTALL_PREFIX}/share/locale/en_US/gettext/abcdk-tool.pot
 	rm -f ${INSTALL_PREFIX}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
