@@ -1720,7 +1720,7 @@ int abcdk_test_any(abcdk_option_t *args)
     abcdk_torch_image_free(&f);
 
 
-#elif 1
+#elif 0
 
     uint64_t counter = time(NULL)/30;
     //uint64_t counter = 59/30;
@@ -1775,9 +1775,41 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("abcdefg: %08x,%u\n",c,c);
 
-#elif 0
+#elif 1
 
+    const char *prikey_p = abcdk_option_get(args, "--prikey-file", 0, "");
+    const char *pubkey_p = abcdk_option_get(args, "--pubkey-file", 0, "");
+    int cmd = abcdk_option_get_int(args,"--cmd",0,1);
 
+    RSA *prikey_ctx = abcdk_openssl_rsa_load(prikey_p, 0, NULL);
+    RSA *pubkey_ctx = abcdk_openssl_rsa_load(pubkey_p, 1, NULL);
+
+#if 0
+
+    char buf[128] = {"123"};
+
+    abcdk_object_t *enc_data = abcdk_openssl_rsa_update(cmd?pubkey_ctx:prikey_ctx, buf, 128, 1);
+
+    abcdk_object_t *dec_data = abcdk_openssl_rsa_update(cmd?prikey_ctx:pubkey_ctx, enc_data->pptrs[0], enc_data->sizes[0], 0);
+
+    abcdk_object_unref(&enc_data);
+    abcdk_object_unref(&dec_data);
+
+#else 
+
+    abcdk_openssl_darknet_t *cli_ctx =  abcdk_openssl_darknet_create(pubkey_ctx,1);
+
+    abcdk_openssl_darknet_set_fd(cli_ctx,0,1);
+    abcdk_openssl_darknet_set_fd(cli_ctx,1,2);
+
+    abcdk_openssl_darknet_write(cli_ctx,"123",3);
+
+    abcdk_openssl_darknet_destroy(&cli_ctx);
+
+#endif 
+
+    abcdk_openssl_rsa_free(&prikey_ctx);
+    abcdk_openssl_rsa_free(&pubkey_ctx);
 
 #endif 
     return 0;
