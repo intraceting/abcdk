@@ -20,13 +20,12 @@ checkReturnCode()
 #转换成绝对路径。
 COMPILER_BIN=$(which "${1}")
 
-#兼容性写法，因为在gcc7之后参数'-dumpversion'默认只显示主版本。
-TARGET_VERSION=$(${COMPILER_BIN} "-dumpfullversion" 2>>/dev/null)
-if [ $? -ne 0 ] || [ "${TARGET_VERSION}" == "" ];then
+#在GCC7(包括)之后, 参数'-dumpversion'默认只显示主版本. 如果需要显示完整版本号可以使用-dumpfullversion参数.
+#GCC组织承诺, 在GCC7(包括)之后发布的版本, 当主版号相同时会保持ABI稳定, 副版本号及修正版本号的变化不影向兼容性.
+
+#
 TARGET_VERSION=$(${COMPILER_BIN} "-dumpversion" 2>>/dev/null)
 checkReturnCode
-fi
-
 
 #
 echo "${TARGET_VERSION}"
