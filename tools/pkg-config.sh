@@ -38,22 +38,15 @@ fi
 #
 PKG_CFG_PATH=${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/${PKG_MACHINE}/pkgconfig:${PKG_FIND_ROOT}/lib${PKG_WORDBIT}/pkgconfig:${PKG_FIND_ROOT}/lib/${PKG_MACHINE}/pkgconfig:${PKG_FIND_ROOT}/lib/pkgconfig:${PKG_FIND_ROOT}/share/pkgconfig
 
-#
-#export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+
 
 #
 if [ "${PKG_FIND_MODE}" == "only" ];then
-{
-    export PKG_CONFIG_LIBDIR=${PKG_CFG_PATH}
-    pkg-config --define-variable=prefix=${PKG_FIND_ROOT} $@ 2>>/dev/null
-}
+export PKG_CONFIG_LIBDIR=${PKG_CFG_PATH}
 elif [ "${PKG_FIND_MODE}" == "both" ];then
-{
-    export PKG_CONFIG_PATH=${PKG_CFG_PATH}
-    pkg-config $@ 2>>/dev/null
-}
-else
-{
-    pkg-config $@ 2>>/dev/null
-}
+export PKG_CONFIG_PATH=${PKG_CFG_PATH}
 fi
+
+#
+pkg-config $@ 2>>/dev/null
+

@@ -27,7 +27,11 @@ namespace abcdk
             uint32_t m_bitrate;
 
             char *m_aux_sdp_line;
+#if USAGEENVIRONMENT_LIBRARY_VERSION_INT >= 1687219200
+            volatile EventLoopWatchVariable m_done_flag;
+#else //#if USAGEENVIRONMENT_LIBRARY_VERSION_INT >= 1687219200
             char m_done_flag;
+#endif //#if USAGEENVIRONMENT_LIBRARY_VERSION_INT >= 1687219200
             RTPSink *m_dummy_rtp_sink;
 
         public:

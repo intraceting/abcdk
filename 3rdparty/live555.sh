@@ -94,7 +94,7 @@ if [ "deb" == "${KIT_NAME}" ];then
         CFLAG="-I$(FindIncPath liveMedia/liveMedia.hh)"
         checkReturnCode
 
-        echo "${CFLAG}/liveMedia ${CFLAG}/BasicUsageEnvironment ${CFLAG}/groupsock ${CFLAG}/UsageEnvironment"
+        echo "-DNO_STD_LIB ${CFLAG}/liveMedia ${CFLAG}/BasicUsageEnvironment ${CFLAG}/groupsock ${CFLAG}/UsageEnvironment"
     }
     elif [ ${FLAG} -eq 3 ];then
     {
@@ -123,7 +123,7 @@ elif [ "rpm" == "${KIT_NAME}" ];then
         CFLAG="-I$(FindIncPath liveMedia/liveMedia.hh)"
         checkReturnCode
 
-        echo "${CFLAG}/liveMedia ${CFLAG}/BasicUsageEnvironment ${CFLAG}/groupsock ${CFLAG}/UsageEnvironment"
+        echo "-DNO_STD_LIB ${CFLAG}/liveMedia ${CFLAG}/BasicUsageEnvironment ${CFLAG}/groupsock ${CFLAG}/UsageEnvironment"
     }
     elif [ ${FLAG} -eq 3 ];then
     {

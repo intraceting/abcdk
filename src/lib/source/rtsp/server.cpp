@@ -19,7 +19,11 @@ __BEGIN_DECLS
 struct _abcdk_rtsp_server
 {
     /*工作标志。0 运行，!0 退出。*/
+#if USAGEENVIRONMENT_LIBRARY_VERSION_INT >= 1687219200
+    volatile EventLoopWatchVariable worker_flag;
+#else //#if USAGEENVIRONMENT_LIBRARY_VERSION_INT >= 1687219200
     volatile char worker_flag;
+#endif //#if USAGEENVIRONMENT_LIBRARY_VERSION_INT >= 1687219200
 
     /**工作线程。 */
     abcdk_thread_t worker_thread;
