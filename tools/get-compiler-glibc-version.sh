@@ -18,23 +18,35 @@ checkReturnCode()
 }
 
 #
-NATIVE_PLATFORM=$(${SHELLDIR}/get-compiler-platform.sh "gcc")
+NATIVE_PLATFORM=$(${SHELLDIR}/get-compiler-platform.sh "${1}")
 checkReturnCode
 
 #
-TARGET_PLATFORM=$(${SHELLDIR}/get-compiler-platform.sh "${1}")
+NATIVE_PLATFORM=$(${SHELLDIR}/get-compiler-platform.sh "${1}")
 checkReturnCode
 
 #
-TARGET_SYSROOT=$(${SHELLDIR}/get-compiler-sysroot.sh "${1}")
+NATIVE_VERSION=$(${SHELLDIR}/get-compiler-version.sh "${1}")
 checkReturnCode
 
 #
-#TARGET_READELF=$(${SHELLDIR}/get-compiler-prog-name.sh "${1}" "readelf")
-#checkReturnCode
+TARGET_PLATFORM=$(${SHELLDIR}/get-compiler-platform.sh "${2}")
+checkReturnCode
 
 #
-TARGET_BITWIDE=$(${SHELLDIR}/get-compiler-bitwide.sh "${1}")
+TARGET_PLATFORM=$(${SHELLDIR}/get-compiler-platform.sh "${2}")
+checkReturnCode
+
+#
+TARGET_SYSROOT=$(${SHELLDIR}/get-compiler-sysroot.sh "${2}")
+checkReturnCode
+
+#
+TARGET_VERSION=$(${SHELLDIR}/get-compiler-version.sh "${2}")
+checkReturnCode
+
+#
+TARGET_BITWIDE=$(${SHELLDIR}/get-compiler-bitwide.sh "${2}")
 checkReturnCode
 
 #提取目标平台的glibc最大版本。
@@ -42,7 +54,7 @@ if [ -L ${TARGET_SYSROOT}/lib${TARGET_BITWIDE}/libc.so.6 ];then
     TARGET_GLIBC_MAX_VERSION=$(basename $(readlink ${TARGET_SYSROOT}/lib${TARGET_BITWIDE}/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
 elif [ -L ${TARGET_SYSROOT}/lib/libc.so.6 ];then
     TARGET_GLIBC_MAX_VERSION=$(basename $(readlink ${TARGET_SYSROOT}/lib/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
-elif [ "${NATIVE_PLATFORM}" == "${TARGET_PLATFORM}" ];then
+elif [ "${NATIVE_PLATFORM}" == "${TARGET_PLATFORM}" ] && [ "${NATIVE_VERSION}" == "${TARGET_VERSION}" ];then
 {
     if [ -L /usr/lib${TARGET_BITWIDE}/libc.so.6 ];then
         TARGET_GLIBC_MAX_VERSION=$(basename $(readlink /usr/lib${TARGET_BITWIDE}/libc.so.6) |grep -o 'libc-[0-9]\+\.[0-9]\+' | cut -d '-' -f2)
