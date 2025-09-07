@@ -22,61 +22,61 @@ checkReturnCode()
 CheckSystemName()
 # $1 System Name
 {
-    ${SHELLDIR}/../tools/check-os-id.sh "$1"
+    ${SHELLKITS_HOME}/tools/check-os-id.sh "$1"
 }
 
 #
 GetSystemVersion()
 {
-    ${SHELLDIR}/../tools/get-os-ver.sh
+    ${SHELLKITS_HOME}/tools/get-os-ver.sh
 }
 
 #
 CheckPackageKitName()
 {
-	${SHELLDIR}/../tools/get-kit-name.sh
+	${SHELLKITS_HOME}/tools/get-kit-name.sh
 }
 
 #
 CheckHavePackageFromKit()
 # $1 PACKAGE
 {
-    ${SHELLDIR}/../tools/check-package.sh "$1"
+    ${SHELLKITS_HOME}/tools/check-package.sh "$1"
 }
 
 #
 CheckHavePackageFromWhich()
 # $1 PACKAGE
 {
-	${SHELLDIR}/../tools/check-which.sh "$1"
+	${SHELLKITS_HOME}/tools/check-which.sh "$1"
 }
 
 #
 FindBinPath()
 # $1 HDNAME
 {
-	${SHELLDIR}/../tools/find-bin-path.sh "$1"
+	${SHELLKITS_HOME}/tools/find-bin-path.sh "$1"
 }
 
 #
 FindIncPath()
 # $1 HDNAME
 {
-	${SHELLDIR}/../tools/find-inc-path.sh "$1"
+	${SHELLKITS_HOME}/tools/find-inc-path.sh "$1"
 }
 
 #
 FindLibPath()
 # $1 SONAME
 {
-	${SHELLDIR}/../tools/find-lib-path.sh "$1"
+	${SHELLKITS_HOME}/tools/find-lib-path.sh "$1"
 }
 
 #
 PackageConfig()
 # $1 SONAME
 {
-	${SHELLDIR}/../tools/pkg-config.sh $@
+	${SHELLKITS_HOME}/tools/pkg-config.sh $@
 }
 
 

@@ -39,10 +39,13 @@ done
 if [ "${SHELLKITS_HOME}" == "" ] || [ ! -d "${SHELLKITS_HOME}" ];then
 {
     echo "The environment variable SHELLKITS_HOME points to an invalid or non-existent path."
+    echo "The required toolset can be downloaded from 'https://github.com/intraceting/SHellKits.git'."
     exit 1
 }
 fi 
 
+#导出SHELLKITS_HOME变量给其它子工具集使用。
+export SHELLKITS_HOME
 
 
 # Functions
@@ -702,7 +705,7 @@ DEPEND_LINKS = ${THIRDPARTY_LINKS}
 #
 DEPEND_LIB_PATH = ${THIRDPARTY_LIBS_PATH}
 #
-DEV_TOOL_HOME = ${SHELLDIR}/tools/
+DEV_TOOL_HOME = ${SHELLKITS_HOME}/tools/
 
 EOF
 checkReturnCode
