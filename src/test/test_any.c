@@ -1775,7 +1775,7 @@ int abcdk_test_any(abcdk_option_t *args)
 
     printf("abcdefg: %08x,%u\n",c,c);
 
-#elif 1
+#elif 0
 
     const char *prikey_p = abcdk_option_get(args, "--prikey-file", 0, "");
     const char *pubkey_p = abcdk_option_get(args, "--pubkey-file", 0, "");
