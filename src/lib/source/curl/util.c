@@ -6,6 +6,9 @@
  */
 #include "abcdk/curl/util.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattribute-warning"
+
 #ifdef CURLINC_CURL_H
 
 static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nmemb, void *user_p)
@@ -117,3 +120,5 @@ int abcdk_curl_download_filename(const char *file, const char *url, size_t offse
 
     return chk;
 }
+
+#pragma GCC diagnostic pop
