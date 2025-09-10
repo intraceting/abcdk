@@ -57,13 +57,6 @@ checkReturnCode()
     fi
 }
 
-#
-CheckHavePackage()
-# $1 PKG_NAME
-# $2 FLAG
-{
-    ${SHELLDIR}/3rdparty/$1.sh "$2"
-}
 
 #
 CheckPackageKitName()
@@ -137,6 +130,17 @@ GetCompilerProgName()
     ${SHELLKITS_HOME}/tools/get-compiler-prog-name.sh "$1" "$2"
 }
 
+
+#
+DependCheck()
+# $1 PACKAGE_NAME
+# $2 PACKAGE_FLAG
+# $3 SYSROOT_PATH
+# $4 TARGET_MACHINE
+{
+    ${SHELLKITS_HOME}/requires/find_package.sh -d PACKAGE_FLAG="$2" -d PACKAGE_NAME="$1" -d SYSROOT_PATH="$3" -d TARGET_MACHINE="$4"
+}
+
 #
 DependPackageCheck()
 # $1 key
@@ -147,17 +151,17 @@ DependPackageCheck()
     #
     if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} ${PACKAGE_KEY}) -eq 1 ];then
     {
-        CheckHavePackage ${PACKAGE_KEY} 3
+        (DependCheck ${PACKAGE_KEY} 3 ${THIRDPARTY_FIND_ROOT} ${TARGET_MACHINE})
         CHK=$?
 
         if [ ${CHK} -eq 0 ];then
         {
-            THIRDPARTY_FLAGS="-D${PACKAGE_DEF} $(CheckHavePackage ${PACKAGE_KEY} 2) ${THIRDPARTY_FLAGS}"
-            THIRDPARTY_LINKS="$(CheckHavePackage ${PACKAGE_KEY} 3) ${THIRDPARTY_LINKS}"
+            THIRDPARTY_FLAGS="-D${PACKAGE_DEF} $(DependCheck ${PACKAGE_KEY} 2 ${THIRDPARTY_FIND_ROOT} ${TARGET_MACHINE}) ${THIRDPARTY_FLAGS}"
+            THIRDPARTY_LINKS="$(DependCheck ${PACKAGE_KEY} 3 ${THIRDPARTY_FIND_ROOT} ${TARGET_MACHINE}) ${THIRDPARTY_LINKS}"
         }
         else
         {
-            THIRDPARTY_NOFOUND="$(CheckHavePackage ${PACKAGE_KEY} 4) ${THIRDPARTY_NOFOUND}"
+            THIRDPARTY_NOFOUND="$(DependCheck ${PACKAGE_KEY} 1 ${THIRDPARTY_FIND_ROOT} ${TARGET_MACHINE}) ${THIRDPARTY_NOFOUND}"
         }
         fi
 
@@ -231,25 +235,19 @@ COMPILER_CXX_FLAGS=""
 COMPILER_LD_FLAGS=""
 
 #
+CUDA_COMPILER_BIN="/usr/local/cuda/bin/nvcc"
+
+#
 BUILD_TYPE="release"
+
 #
 OPTIMIZE_LEVEL=""
 
 #
-THIRDPARTY_PACKAGES=""
-THIRDPARTY_FIND_ROOT=""
-THIRDPARTY_FIND_MODE="both"
+THIRDPARTY_PACKAGES="ffmpeg,lz4,openssl,redis,curl,archive,nghttp2,libmagic,live555,opencv,cuda,cudnn,tensorrt2"
+THIRDPARTY_FIND_ROOT="/usr/:/usr/local/:/usr/local/cuda/:/usr/local/TensorRT/:"
 THIRDPARTY_NOFOUND=""
 
-#
-CUDA_FIND_ROOT=""
-CUDA_COMPILER_BIN=""
-
-#
-CUDNN_FIND_ROOT=""
-
-#
-TRNSORRT_FIND_ROOT=""
 
 #
 PrintUsage()
@@ -339,6 +337,10 @@ VARIABLE:
 
      COMPILER_LD_FLAGS(编译器的链接参数)用于编译器的目标链接. 
 
+     CUDA_COMPILER_BIN=${CUDA_COMPILER_BIN}
+
+     CUDA_COMPILER_BIN(CUDA编译器的完整路径).
+
      THIRDPARTY_PACKAGES=${THIRDPARTY_PACKAGES}
 
      THIRDPARTY_PACKAGES(依赖组件列表)支持以下关键字:
@@ -353,7 +355,6 @@ VARIABLE:
      kafka,uuid,libdrm,
      pam,ncurses,fltk,faiss
      
-
      THIRDPARTY_FIND_ROOT=\${INSTALL_PREFIX}
 
      THIRDPARTY_FIND_ROOT(依赖组件搜索根路径)用于查找依赖组件完整路径.
@@ -362,22 +363,6 @@ VARIABLE:
 
      THIRDPARTY_FIND_MODE(依赖组件搜索模式)支持以下关键字:
      only,both,(default)
-
-     CUDA_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/cuda/
-
-     CUDA_FIND_ROOT(CUDA组件搜索根路径)用于查找依赖组件完整路径.
-
-     CUDA_COMPILER_BIN=\${CUDA_FIND_ROOT}/bin/nvcc
-
-     CUDA_COMPILER_BIN(CUDA编译器的完整路径).
-
-     CUDNN_FIND_ROOT=\${CUDA_FIND_ROOT}/
-
-     CUDNN_FIND_ROOT(CUDNN组件搜索根路径)用于查找依赖组件完整路径.
-
-     TRNSORRT_FIND_ROOT=\${THIRDPARTY_FIND_ROOT}/TensorRT/
-
-     TRNSORRT_FIND_ROOT(TensorRT组件搜索根路径)用于查找依赖组件完整路径.
 
 EOF
 }
@@ -461,13 +446,6 @@ TARGET_PLATFORM=$(GetCompilerPlatform "${TARGET_COMPILER_C}")
 TARGET_ARCH=$(GetCompilerArch "${TARGET_COMPILER_C}")
 TARGET_BITWIDE=$(GetCompilerBitWide "${TARGET_COMPILER_C}")
 
-#
-CheckHavePackage pkgconfig 1
-if [ $? -ne 0 ];then
-    echo "'$(CheckHavePackage pkgconfig 4)' not found."
-    exit 22
-fi
-
 
 #如果未指定第三方根路径，则直接用安装路径。
 if [ "${THIRDPARTY_FIND_ROOT}" == "" ];then
@@ -475,37 +453,10 @@ if [ "${THIRDPARTY_FIND_ROOT}" == "" ];then
 fi
 
 #
-if [ "${CUDA_FIND_ROOT}" == "" ];then
-CUDA_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/cuda/"
-fi
-
-#
-if [ "${CUDA_COMPILER_BIN}" == "" ];then
-CUDA_COMPILER_BIN="${CUDA_FIND_ROOT}/bin/nvcc"
-fi
-
-#
-if [ "${CUDNN_FIND_ROOT}" == "" ];then
-CUDNN_FIND_ROOT="${CUDA_FIND_ROOT}/"
-fi
-
-#
-if [ " ${TRNSORRT_FIND_ROOT}" == "" ];then
-TRNSORRT_FIND_ROOT="${THIRDPARTY_FIND_ROOT}/TensorRT/"
-fi
-
-#
 DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "libintl.h" HAVE_LIBINTL_H
 DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "pthread.h" HAVE_PTHREAD_H
 DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "iconv.h" HAVE_ICONV_H
 DependHeaderCheck c "${TARGET_COMPILER_C}" c99 "linux/gpio.h" HAVE_GPIO_H
-
-
-#设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
-export _3RDPARTY_PKG_FIND_ROOT=${THIRDPARTY_FIND_ROOT}
-export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
 
 #
 DependPackageCheck openmp HAVE_OPENMP
@@ -555,95 +506,19 @@ DependPackageCheck onnxruntime HAVE_ONNXRUNTIME
 DependPackageCheck eigen HAVE_EIGEN
 DependPackageCheck faiss HAVE_FAISS
 
-#恢复默认。
-export _3RDPARTY_PKG_MACHINE=
-export _3RDPARTY_PKG_WORDBIT=
-export _3RDPARTY_PKG_FIND_ROOT=
-export _3RDPARTY_PKG_FIND_MODE=
-
-
-#设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
-export _3RDPARTY_PKG_FIND_ROOT=${CUDA_FIND_ROOT}
-export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
-
-if [ $(CheckKeyword ${THIRDPARTY_PACKAGES} cuda) -eq 1 ];then
+#
+if [ "${CUDA_COMPILER_BIN}" != "" ] && [ -f "${CUDA_COMPILER_BIN}" ];then
 {
-    #查找NVCC。
-    if [ "${CUDA_COMPILER_BIN}" == "" ];then
-        CUDA_COMPILER_BIN=$(CheckHavePackage cuda 5)
-    fi
-
-    #如果NVCC存在，再查找依赖组件。
-    if [ -f ${CUDA_COMPILER_BIN} ];then
-        DependPackageCheck cuda HAVE_CUDA
-    else 
-        THIRDPARTY_NOFOUND="${CUDA_COMPILER_BIN} ${THIRDPARTY_NOFOUND}"
-    fi
+    DependPackageCheck cuda HAVE_CUDA
+    DependPackageCheck cudnn HAVE_CUDNN
+    DependPackageCheck tensorrt HAVE_TENSORRT
 }
 else
 {
+    #disable NVIDIA
     CUDA_COMPILER_BIN=""
 }
 fi
-
-#恢复默认。
-export _3RDPARTY_PKG_MACHINE=
-export _3RDPARTY_PKG_WORDBIT=
-export _3RDPARTY_PKG_FIND_ROOT=
-export _3RDPARTY_PKG_FIND_MODE=
-
-#
-if [ "${THIRDPARTY_NOFOUND}" != "" ];then
-{
-    echo -e "\x1b[33m${THIRDPARTY_NOFOUND}\x1b[31m not found. \x1b[0m"
-    exit 22
-}
-fi
-
-#设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
-export _3RDPARTY_PKG_FIND_ROOT=${CUDNN_FIND_ROOT}
-export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
-
-#如果NVCC存在，再查找依赖组件。
-if [ -f ${CUDA_COMPILER_BIN} ];then
-    DependPackageCheck cudnn HAVE_CUDNN
-fi
-
-#恢复默认。
-export _3RDPARTY_PKG_MACHINE=
-export _3RDPARTY_PKG_WORDBIT=
-export _3RDPARTY_PKG_FIND_ROOT=
-export _3RDPARTY_PKG_FIND_MODE=
-
-#
-if [ "${THIRDPARTY_NOFOUND}" != "" ];then
-{
-    echo -e "\x1b[33m${THIRDPARTY_NOFOUND}\x1b[31m not found. \x1b[0m"
-    exit 22
-}
-fi
-
-
-#设置环境变量，用于搜索依赖包。
-export _3RDPARTY_PKG_MACHINE=${TARGET_MACHINE}
-export _3RDPARTY_PKG_WORDBIT=${TARGET_BITWIDE}
-export _3RDPARTY_PKG_FIND_ROOT=${TRNSORRT_FIND_ROOT}
-export _3RDPARTY_PKG_FIND_MODE=${THIRDPARTY_FIND_MODE}
-
-#如果NVCC存在，再查找依赖组件。
-if [ -f ${CUDA_COMPILER_BIN} ];then
-    DependPackageCheck tensorrt HAVE_TENSORRT
-fi
-
-#恢复默认。
-export _3RDPARTY_PKG_MACHINE=
-export _3RDPARTY_PKG_WORDBIT=
-export _3RDPARTY_PKG_FIND_ROOT=
-export _3RDPARTY_PKG_FIND_MODE=
 
 #
 if [ "${THIRDPARTY_NOFOUND}" != "" ];then
