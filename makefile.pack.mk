@@ -5,13 +5,6 @@
 #
 #
 
-#
-ifneq (${KIT_NAME},rpm)
-ifneq (${KIT_NAME},deb)
-$(error Unsupported KIT_NAME: ${KIT_NAME}. Only 'rpm' or 'deb' are allowed.)
-endif
-endif
-
 #打包用的临时目录。
 PACK_TMP=${BUILD_PATH}/tmp/pack/
 

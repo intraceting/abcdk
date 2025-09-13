@@ -11,6 +11,15 @@ MAKE_CONF ?= $(abspath $(CURDIR)/build/makefile.conf)
 # 加载配置项。
 include ${MAKE_CONF}
 
+#主版本
+VERSION_MAJOR = 3
+
+#副版本
+VERSION_MINOR = 5
+
+#发行版本
+VERSION_RELEASE = 14
+
 #
 VERSION_STR_MAIN = ${VERSION_MAJOR}.${VERSION_MINOR}
 VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
@@ -59,17 +68,22 @@ CXX_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}
 CXX_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
 #
+C_FLAGS += -I${INSTALL_PREFIX}/include
 C_FLAGS += ${DEPEND_FLAGS}
 #
+CXX_FLAGS += -I${INSTALL_PREFIX}/include
 CXX_FLAGS += ${DEPEND_FLAGS}
 
 #绑定C++编译器。
-NVCC_FLAGS += -ccbin ${CC}
+NVCC_FLAGS += -ccbin ${CXX}
 #抑制“未识别的属性”的诊断消息输出，让编译日志更简洁。
 NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
 
 #在GCC中，链接器按照从左到右的顺序解析库，因此想让这个生效，必须写在链接参数的第一个。
 LD_FLAGS += -Wl,--as-needed
+#
+LD_FLAGS += -L${INSTALL_PREFIX}/lib -Wl,-rpath-link=${INSTALL_PREFIX}/lib
+#
 LD_FLAGS += ${DEPEND_LINKS}
 
 #

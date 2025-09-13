@@ -32,12 +32,12 @@ LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/bytetrack/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_cuda/*.cpp)
-LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.cpp.o,${LIB_SRC_CXX_FILES}))
+LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.o,${LIB_SRC_CXX_FILES}))
 
 #CUDA是可选项，可能未启用。
-ifneq ($(strip $(NVCC)),)
+ifeq (${HAVE_CUDA},yes)
 LIB_SRC_CU_FILES += $(wildcard src/lib/source/torch_cuda/*.cu)
-LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.cu.o,${LIB_SRC_CU_FILES}))
+LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.o,${LIB_SRC_CU_FILES}))
 endif
 
 #
@@ -63,133 +63,23 @@ lib: lib-src
 lib-src: $(LIB_OBJ_FILES)
 
 
-#
-$(OBJ_PATH)/src/lib/source/util/%.o: src/lib/source/util/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/util/
-	rm -f $@
-	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
+# $@: 目标文件
+# $<: 源文件
+# 自动匹配多级路径.
+$(OBJ_PATH)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) -std=c99  $(C_FLAGS)  -c $< -o $@
 
 #
-$(OBJ_PATH)/src/lib/source/system/%.o: src/lib/source/system/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/system/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/mp4/%.o: src/lib/source/mp4/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/mp4/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/net/%.o: src/lib/source/net/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/net/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-
-#
-$(OBJ_PATH)/src/lib/source/ffmpeg/%.o: src/lib/source/ffmpeg/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/ffmpeg/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/redis/%.o: src/lib/source/redis/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/redis/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/sqlite/%.o: src/lib/source/sqlite/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/sqlite/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/odbc/%.o: src/lib/source/odbc/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/odbc/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/openssl/%.o: src/lib/source/openssl/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/openssl/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/lz4/%.o: src/lib/source/lz4/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/lz4/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/json/%.o: src/lib/source/json/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/json/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/curl/%.o: src/lib/source/curl/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/curl/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/rtsp/%.o: src/lib/source/rtsp/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/qrcode/%.o: src/lib/source/qrcode/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/qrcode/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/torch/%.o: src/lib/source/torch/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/torch_host/%.o: src/lib/source/torch_host/%.c
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
-	rm -f $@
-	$(CC) -std=c99  $(C_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/rtsp/%.cpp.o: src/lib/source/rtsp/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/rtsp/
-	rm -f $@
+$(OBJ_PATH)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
 
 #
-$(OBJ_PATH)/src/lib/source/torch_host/%.cpp.o: src/lib/source/torch_host/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/
-	rm -f $@
-	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/torch_host/bytetrack/%.cpp.o: src/lib/source/torch_host/bytetrack/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch_host/bytetrack/
-	rm -f $@
-	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/src/lib/source/torch_cuda/%.cpp.o: src/lib/source/torch_cuda/%.cpp
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
-	rm -f $@
-	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
-	
-#
-$(OBJ_PATH)/src/lib/source/torch_cuda/%.cu.o: src/lib/source/torch_cuda/%.cu
-	mkdir -p $(OBJ_PATH)/src/lib/source/torch_cuda/
+$(OBJ_PATH)/%.o: %.cu
+	mkdir -p $(dir $@)
 	rm -f $@
 	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
-
 
 #
 clean-lib:
