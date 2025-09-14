@@ -181,27 +181,11 @@ clean: clean-lib clean-tool clean-test
 include $(CURDIR)/makefile.setup.mk
 
 #
-install: install-lib install-dev install-tool install-script
+install: install-lib install-dev install-tool
 
 #
-uninstall: uninstall-lib uninstall-dev uninstall-tool uninstall-script
+uninstall: uninstall-lib uninstall-dev uninstall-tool
 
-
-#加载子项目。
-#顺序不能更换。
-include $(CURDIR)/makefile.pack.mk
-
-#
-pack: pack-rt pack-dev pack-util
-
-#
-pack-rt: pack-rt-${KIT_NAME} 
-
-#
-pack-dev: pack-dev-${KIT_NAME}
-
-#
-pack-util: pack-util-${KIT_NAME}
 
 #
 help:
@@ -212,13 +196,7 @@ help:
 	@echo "make install-lib"
 	@echo "make install-dev"
 	@echo "make install-tool"
-	@echo "make install-script"
 	@echo "make uninstall"
 	@echo "make uninstall-lib"
 	@echo "make uninstall-dev"
 	@echo "make uninstall-tool"
-	@echo "make uninstall-script"
-	@echo "make pack"
-	@echo "make pack-rt"
-	@echo "make pack-dev"
-	@echo "make pack-util"

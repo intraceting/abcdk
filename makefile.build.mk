@@ -52,7 +52,6 @@ TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
 .PHONY: lib tool test xgettext
 
-
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
@@ -61,25 +60,6 @@ lib: lib-src
 
 #
 lib-src: $(LIB_OBJ_FILES)
-
-
-# $@: 目标文件
-# $<: 源文件
-# 自动匹配多级路径.
-$(OBJ_PATH)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) -std=c99  $(C_FLAGS)  -c $< -o $@
-
-#
-$(OBJ_PATH)/%.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
-
-#
-$(OBJ_PATH)/%.o: %.cu
-	mkdir -p $(dir $@)
-	rm -f $@
-	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
 
 #
 clean-lib:
@@ -97,16 +77,9 @@ tool: tool-src lib
 tool-src: ${TOOL_OBJ_FILES} 
 
 #
-$(OBJ_PATH)/src/tool/%.o: src/tool/%.c
-	mkdir -p $(OBJ_PATH)/src/tool/
-	rm -f $@
-	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
-
-#
 clean-tool:
 	rm -rf ${OBJ_PATH}/src/tool
 	rm -f $(BUILD_PATH)/abcdk-tool
-
 
 #
 test: test-src lib
@@ -116,11 +89,6 @@ test: test-src lib
 #
 test-src: ${TEST_OBJ_FILES} 
 
-#
-$(OBJ_PATH)/src/test/%.o: src/test/%.c
-	mkdir -p $(OBJ_PATH)/src/test/
-	rm -f $@
-	$(CC) -std=c99 $(C_FLAGS) -c $< -o $@
 #
 clean-test:
 	rm -rf ${OBJ_PATH}/src/test
@@ -149,3 +117,22 @@ xgettext-tool:
 		rm -f $(BUILD_PATH)/abcdk-tool.gettext.filelist.txt ; \
 		echo "'$(BUILD_PATH)/abcdk-tool.en_US.pot' Update completed." ; \
 	fi
+
+
+# $@: 目标文件
+# $<: 源文件
+# 自动匹配多级路径.
+$(OBJ_PATH)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) -std=c99  $(C_FLAGS)  -c $< -o $@
+
+#
+$(OBJ_PATH)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+
+#
+$(OBJ_PATH)/%.o: %.cu
+	mkdir -p $(dir $@)
+	rm -f $@
+	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@

@@ -39,20 +39,6 @@ install-tool:
 	chmod 0644 ${INSTALL_PREFIX}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
 
 #
-install-script:
-#
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/bin/abcdk-script/
-	cp -rfP $(CURDIR)/src/script/. ${INSTALL_PREFIX}/bin/abcdk-script/
-	find ${INSTALL_PREFIX}/bin/abcdk-script -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PREFIX}/bin/abcdk-script -type f -exec chmod 0644 {} \;
-	find ${INSTALL_PREFIX}/bin/abcdk-script -type f -name "*.sh" -exec chmod 0755 {} \;
-#
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-script/
-	cp -rfP $(CURDIR)/share/abcdk/sample/abcdk-script/. ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-script/
-	find ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-script -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-script -type f -exec chmod 0644 {} \;
-
-#
 install-lib:
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib
@@ -104,12 +90,6 @@ uninstall-tool:
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
 	rm -f ${INSTALL_PREFIX}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-tool
-
-
-uninstall-script:
-#
-	rm -rf ${INSTALL_PREFIX}/bin/abcdk-script
-	rm -rf ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-script
 
 #
 uninstall-lib:
