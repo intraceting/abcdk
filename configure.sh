@@ -65,7 +65,7 @@ SYSROOT_PATH=/usr/local/
 mkdir -p ${BUILD_PATH}
 
 #
-export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
+#export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
 
 #
 ${SHELLKITS_HOME}/solution/aaaaa-configure.sh $@ \
