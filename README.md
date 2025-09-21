@@ -13,10 +13,8 @@ ABCDK(A Better C language Development Kit)
 
 ## 主要模块
 
-- 3rdparty 第三方组件
 - share 共享文档
 - src 源码目录
-- tools 工具组件
 
 
 ## 查看编译帮助
@@ -39,7 +37,7 @@ $ make install
 ## 交叉编译和安装
 
 ```bash
-$ ./configure.sh -d COMPILER_PREFIX=/target_platform/bin/ -d COMPILER_C_NAME=gcc -d COMPILER_C_NAME=g++ [ ... ]
+$ ./configure.sh -d COMPILER_PREFIX=/target_platform/bin/ [ ... ]
 $ make
 $ make install
 ```

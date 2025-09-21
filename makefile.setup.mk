@@ -5,7 +5,7 @@
 #
 #
 
-#生成desktop文件内容。
+#生成PC文件内容。
 define LIB_PKGCONFIG_CONTEXT
 prefix=${INSTALL_PREFIX}
 libdir=$${prefix}/lib

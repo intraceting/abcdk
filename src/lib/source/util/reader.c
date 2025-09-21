@@ -109,9 +109,11 @@ final_error:
 
 void abcdk_reader_stop(abcdk_reader_t *reader)
 {
+    int expected_status = 1;
+
     assert(reader != NULL);
 
-    if (!abcdk_atomic_compare_and_swap(&reader->status, 1, 2))
+    if (!abcdk_atomic_compare_and_swap(&reader->status, &expected_status, 2))
         return;
 
     abcdk_mutex_signal(reader->qlock, 1);
@@ -123,11 +125,12 @@ static void *_abcdk_reader_readfile(void *opaque);
 int abcdk_reader_start(abcdk_reader_t *reader, int fd)
 {
     abcdk_tree_t *buf;
+    int expected_status = 2;
     int chk;
 
     assert(reader != NULL && fd >= 0);
 
-    if (!abcdk_atomic_compare_and_swap(&reader->status, 2, 1))
+    if (!abcdk_atomic_compare_and_swap(&reader->status, &expected_status, 1))
         return -2;
 
     reader->tid.opaque = reader;

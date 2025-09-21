@@ -59,7 +59,7 @@ checkReturnCode()
 
 #
 BUILD_PATH=${SHELLDIR}/build/
-SYSROOT_PATH=/usr/local/
+INSTALL_PREFIX=/usr/local/
 
 #创建不存在的路径。
 mkdir -p ${BUILD_PATH}
@@ -70,5 +70,5 @@ mkdir -p ${BUILD_PATH}
 #
 ${SHELLKITS_HOME}/solution/aaaaa-configure.sh $@ \
     -d BUILD_PATH=${BUILD_PATH} \
-    -d INSTALL_PREFIX=${SYSROOT_PATH}
+    -d INSTALL_PREFIX=${INSTALL_PREFIX}
 exit $?

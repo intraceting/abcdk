@@ -125,8 +125,9 @@ int abcdk_thread_setaffinity2(pthread_t tid,int cpu)
 int abcdk_thread_leader_vote(volatile pthread_t *tid)
 {
     pthread_t self_tid = pthread_self();
+    pthread_t expected_tid = 0;
 
-    if(abcdk_atomic_compare_and_swap(tid, 0, self_tid))
+    if(abcdk_atomic_compare_and_swap(tid, &expected_tid, self_tid))
         return 0;
 
     return -1;
@@ -146,7 +147,7 @@ int abcdk_thread_leader_quit(volatile pthread_t *tid)
 {
     pthread_t self_tid = pthread_self();
 
-    if(abcdk_atomic_compare_and_swap(tid, self_tid, 0))
+    if(abcdk_atomic_compare_and_swap(tid, &self_tid, 0))
         return 0;
 
     return -1;
