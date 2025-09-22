@@ -24,8 +24,6 @@ VERSION_RELEASE = 15
 VERSION_STR_MAIN = ${VERSION_MAJOR}.${VERSION_MINOR}
 VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
-#再加一层目录，预防多个项目共用一个。立即更新。
-BUILD_PATH := ${BUILD_PATH}/abcdk.tmp/
 
 #gcc临时文件目录。
 export TMPDIR=${BUILD_PATH}/
@@ -158,7 +156,7 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
  
 
 #
-OBJ_PATH = ${BUILD_PATH}/tmp/
+OBJ_PATH = ${BUILD_PATH}/
 
 
 #伪目标，告诉make这些都是标志，而不是实体目录。
