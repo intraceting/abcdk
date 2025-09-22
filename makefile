@@ -156,7 +156,7 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
  
 
 #
-OBJ_PATH = ${BUILD_PATH}/
+OBJ_PATH = ${BUILD_PATH}/obj/
 
 
 #伪目标，告诉make这些都是标志，而不是实体目录。

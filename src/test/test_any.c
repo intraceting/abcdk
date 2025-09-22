@@ -22,7 +22,7 @@
 
 int abcdk_test_any(abcdk_option_t *args)
 {
-#if 0
+#if 1
     size_t b = 100;
     int a = ABCDK_CLAMP(0,-(ssize_t)b,(ssize_t)b);
 
