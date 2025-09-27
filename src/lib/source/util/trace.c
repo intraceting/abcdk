@@ -90,12 +90,17 @@ next_char:
 static void *g_trace_printf_cb_opaque = NULL;
 static abcdk_trace_output_cb g_trace_printf_cb_func = NULL;
 
-void abcdk_trace_printf_set_callback(abcdk_trace_output_cb cb,void *opaque)
+void abcdk_trace_printf_redirect(abcdk_trace_output_cb cb,void *opaque)
 {
     assert(cb);
 
     g_trace_printf_cb_func = cb;
     g_trace_printf_cb_opaque = opaque;
+}
+
+void abcdk_trace_printf_set_callback(abcdk_trace_output_cb cb,void *opaque)
+{
+    abcdk_trace_printf_redirect(cb,opaque);
 }
 
 void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)

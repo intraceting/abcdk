@@ -21,10 +21,18 @@ typedef void (*abcdk_trace_output_cb)(void *opaque,int type, const char *str);
 void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, void *opaque);
 
 /**
- * 设置格式化输出回调函数。
+ * 格式化输出重定向。
  * 
  * @note 如果未设置则使用默认的。
 */
+void abcdk_trace_printf_redirect(abcdk_trace_output_cb cb,void *opaque);
+
+/**
+ * 格式化输出重定向。
+ * 
+ * @note 如果未设置则使用默认的。
+*/
+ABCDK_DEPRECATED
 void abcdk_trace_printf_set_callback(abcdk_trace_output_cb cb,void *opaque);
 
 /**格式化输出。*/
