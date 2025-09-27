@@ -8,10 +8,9 @@
 #define ABCDK_UTIL_LZ4_H
 
 #include "abcdk/lz4/lz4.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
-
-#ifdef LZ4_VERSION_NUMBER
 
 /**
  * 解压(safe)。
@@ -37,8 +36,6 @@ int abcdk_lz4_dec(void* plaintext, int plaintext_size, const void* ciphertext, i
 */
 int abcdk_lz4_enc(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size);
 
-
-#endif //LZ4_VERSION_NUMBER
 
 __END_DECLS
 

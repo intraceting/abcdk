@@ -99,7 +99,7 @@ END:
     return -1;
 #else //CURLINC_CURL_H
     
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境未包含CURL工具，无法下载文件。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CURL工具。"));
     return -1;
 #endif //CURLINC_CURL_H
 }

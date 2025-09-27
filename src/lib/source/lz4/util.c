@@ -22,4 +22,18 @@ int abcdk_lz4_enc(void* ciphertext, int ciphertext_max, const void* plaintext, i
     return LZ4_compress_default(plaintext,ciphertext,plaintext_size,ciphertext_max);
 }
 
+#else //#ifdef LZ4_VERSION_NUMBER
+
+int abcdk_lz4_dec(void* plaintext, int plaintext_size, const void* ciphertext, int ciphertext_size)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含LZ4工具。"));
+    return -1;
+}
+
+int abcdk_lz4_enc(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含LZ4工具。"));
+    return -1;
+}
+
 #endif //LZ4_VERSION_NUMBER
