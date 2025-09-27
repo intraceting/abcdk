@@ -60,105 +60,6 @@ void _abcdk_lsscsi_print_usage(abcdk_option_t *args)
 }
 
 
-int _abcdk_lsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
-{
-    abcdk_lsscsi_t *ctx = (abcdk_lsscsi_t*)opaque;
-    abcdk_scsi_info_t *dev_p = NULL;
-    
-    if(node && node->obj)
-        dev_p = (abcdk_scsi_info_t*)node->obj->pptrs[0];
-
-    if (depth == 0)
-    {
-        if(ctx->fmt == ABCDK_LSSCSI_FMT_XML)
-        {
-            fprintf(stdout,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            fprintf(stdout,"<devices>\n");
-        }
-        else if(ctx->fmt == ABCDK_LSSCSI_FMT_JSON)
-        {
-            fprintf(stdout,"{\n");
-            fprintf(stdout,"\"devices\":[\n");
-        }
-        else if(ctx->fmt == ABCDK_LSSCSI_FMT_TEXT)
-        {
-            fprintf(stdout, "|%-10s|%-8s|%-10s|%-16s|%-4.4s|%-16s|%-10s\t|%-10s\t|\n",
-                    "bus", "type", "vendor", "model", "revision", "serial", "generic", "devname");
-        }
-        else
-        {
-            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
-        }
-    }
-    else if (depth == SIZE_MAX)
-    {
-        if(ctx->fmt == ABCDK_LSSCSI_FMT_XML)
-        {
-            fprintf(stdout,"</devices>\n");
-        }
-        else if(ctx->fmt == ABCDK_LSSCSI_FMT_JSON)
-        {
-            fprintf(stdout,"\t]\n");
-            fprintf(stdout,"}\n");
-        }
-        else
-        {
-            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
-        }
-    }
-    else
-    {
-        if (ctx->fmt == ABCDK_LSSCSI_FMT_XML)
-        {
-            fprintf(stdout, "\t<device>\n");
-            fprintf(stdout, "\t\t<bus>%s</bus>\n",dev_p->bus);
-            fprintf(stdout, "\t\t<type name=\"%s\">%u</type>\n",abcdk_scsi_type2string(dev_p->type,0),dev_p->type);
-            fprintf(stdout, "\t\t<vendor>%s</vendor>\n",dev_p->vendor);
-            fprintf(stdout, "\t\t<model>%s</model>\n",dev_p->model);
-            fprintf(stdout, "\t\t<revision>%s</revision>\n",dev_p->revision);
-            fprintf(stdout, "\t\t<serial>%s</serial>\n",dev_p->serial);
-            fprintf(stdout, "\t\t<devname>%s</devname>\n",dev_p->devname);
-            fprintf(stdout, "\t\t<generic>%s</generic>\n",dev_p->generic);
-            fprintf(stdout, "\t</device>\n");
-        }
-        else if(ctx->fmt == ABCDK_LSSCSI_FMT_JSON)
-        {
-            fprintf(stdout, "\t{\n");
-            fprintf(stdout,"\t\t\"bus\":\"%s\",\n",dev_p->bus);
-            fprintf(stdout,"\t\t\"type\":{\"num\":\"%u\",\"name\":\"%s\"},\n",dev_p->type,abcdk_scsi_type2string(dev_p->type,0));
-            fprintf(stdout,"\t\t\"vendor\":\"%s\",\n",dev_p->vendor);
-            fprintf(stdout,"\t\t\"model\":\"%s\",\n",dev_p->model);
-            fprintf(stdout,"\t\t\"revison\":\"%s\",\n",dev_p->revision);
-            fprintf(stdout,"\t\t\"serial\":\"%s\",\n",dev_p->serial);
-            fprintf(stdout,"\t\t\"devname\":\"%s\",\n",dev_p->devname);
-            fprintf(stdout,"\t\t\"generic\":\"%s\"\n",dev_p->generic);
-            fprintf(stdout, "\t}");
-            fprintf(stdout, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
-             
-        }
-        else if(ctx->fmt == ABCDK_LSSCSI_FMT_TEXT)
-        {
-            fprintf(stdout, "|%-10s|%-8s|%-10s|%-16s|%-4s|%-16s|%-10s\t|%-10s\t|\n",
-                    dev_p->bus, abcdk_scsi_type2string(dev_p->type, 0), dev_p->vendor,
-                    dev_p->model, dev_p->revision, dev_p->serial, dev_p->generic, dev_p->devname);
-        }
-        else
-        {
-            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
-        }
-    }
-
-    ABCDK_ERRNO_AND_RETURN1(0,1);
-}
-
-void _abcdk_lsscsi_printf_elements(abcdk_lsscsi_t *ctx)
-{
-    // abcdk_tree_iterator_t it = {0, ctx, _abcdk_lsscsi_printf_elements_cb};
-    // abcdk_tree_scan(ctx->list, &it);
-
-    abcdk_scsi_format(ctx->list,ctx->fmt,stdout);
-}
-
 void _abcdk_lsscsi_work(abcdk_lsscsi_t *ctx)
 {
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
@@ -177,9 +78,7 @@ void _abcdk_lsscsi_work(abcdk_lsscsi_t *ctx)
         }
     }
 
-    _abcdk_lsscsi_printf_elements(ctx);
-
-    fflush(stdout);
+    abcdk_scsi_format(ctx->list,ctx->fmt,stdout);
 
 final:
 

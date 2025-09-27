@@ -136,7 +136,7 @@ int abcdk_mmc_get_info(const char *path,abcdk_mmc_info_t *info)
     return 0;
 }
 
-void abcdk_mmc_list(abcdk_tree_t *list)
+void abcdk_mmc_fetch(abcdk_tree_t *list)
 {
     abcdk_tree_t *dev = NULL;
     abcdk_mmc_info_t *dev_p = NULL;
@@ -298,7 +298,7 @@ void abcdk_mmc_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t *
     if (!tmp)
         return;
 
-    abcdk_mmc_list(tmp);
+    abcdk_mmc_fetch(tmp);
     _abcdk_mmc_check_ok(tmp);
 
     if(*snapshot)
@@ -318,4 +318,98 @@ void abcdk_mmc_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t *
     _abcdk_mmc_diff(NULL,tmp,snapshot,1);
     
     abcdk_tree_free(&tmp);
+}
+
+typedef struct _abcdk_mmc_format_param
+{
+    int fmt;
+    FILE *out;
+
+}abcdk_mmc_format_param_t;
+
+int _abcdk_mmc_format_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+{
+    abcdk_mmc_format_param_t *param_p = (abcdk_mmc_format_param_t*)opaque;
+    abcdk_mmc_info_t *dev_p = NULL;
+    
+    if(node && node->obj)
+        dev_p = (abcdk_mmc_info_t*)node->obj->pptrs[0];
+
+    if (depth == 0)
+    {
+        if(param_p->fmt == 2)
+        {
+            fprintf(param_p->out,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            fprintf(param_p->out,"<devices>\n");
+        }
+        else if(param_p->fmt == 3)
+        {
+            fprintf(param_p->out,"{\n");
+            fprintf(param_p->out,"\"devices\":[\n");
+        }
+        else if(param_p->fmt == 1)
+        {
+            fprintf(param_p->out, "|%-10s|%-8s|%-16s|%-32s|%-10s\t|\n",
+                    "bus", "type", "name", "cid", "devname");
+        }
+    }
+    else if (depth == SIZE_MAX)
+    {
+        if(param_p->fmt == 2)
+        {
+            fprintf(param_p->out,"</devices>\n");
+        }
+        else if(param_p->fmt == 3)
+        {
+            fprintf(param_p->out,"\t]\n");
+            fprintf(param_p->out,"}\n");
+        }
+    }
+    else
+    {
+        if (param_p->fmt == 2)
+        {
+            fprintf(param_p->out, "\t<device>\n");
+            fprintf(param_p->out, "\t\t<bus>%s</bus>\n",dev_p->bus);
+            fprintf(param_p->out, "\t\t<type>%s</type>\n",dev_p->type);
+            fprintf(param_p->out, "\t\t<name>%s</name>\n",dev_p->name);
+            fprintf(param_p->out, "\t\t<cid>%s</cid>\n",dev_p->cid);
+            fprintf(param_p->out, "\t\t<devname>%s</devname>\n",dev_p->devname);
+            fprintf(param_p->out, "\t</device>\n");
+        }
+        else if(param_p->fmt == 3)
+        {
+            fprintf(param_p->out, "\t{\n");
+            fprintf(param_p->out,"\t\t\"bus\":\"%s\",\n",dev_p->bus);
+            fprintf(param_p->out,"\t\t\"type\":\"%s\",\n",dev_p->type);
+            fprintf(param_p->out,"\t\t\"name\":\"%s\",\n",dev_p->name);
+            fprintf(param_p->out,"\t\t\"cid\":\"%s\",\n",dev_p->cid);
+            fprintf(param_p->out,"\t\t\"devname\":\"%s\"\n",dev_p->devname);
+            fprintf(param_p->out, "\t}");
+            fprintf(param_p->out, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
+             
+        }
+        else if(param_p->fmt == 1)
+        {
+            fprintf(param_p->out, "|%-10s|%-8s|%-16s|%-32s|%-10s\t|\n",
+                    dev_p->bus, dev_p->type, dev_p->name, dev_p->cid, dev_p->devname);
+        }
+    }
+
+    return 1;//next.
+}
+
+
+void abcdk_mmc_format(abcdk_tree_t *list, int fmt, FILE *out)
+{
+    abcdk_mmc_format_param_t param = {0};
+
+    assert(list != NULL && fmt != 0 && out != NULL);
+    assert(fmt == 1 || fmt == 2 || fmt == 3);
+
+    param.fmt = fmt;
+    param.out = out;
+
+    abcdk_tree_iterator_t it = {0, &param, _abcdk_mmc_format_cb};
+    abcdk_tree_scan(list, &it);
 }

@@ -59,97 +59,6 @@ void _abcdk_lsmmc_print_usage(abcdk_option_t *args)
     ABCDK_ERRNO_AND_RETURN0(0);
 }
 
-
-int _abcdk_lsmmc_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opaque)
-{
-    abcdk_lsmmc_t *ctx = (abcdk_lsmmc_t*)opaque;
-    abcdk_mmc_info_t *dev_p = NULL;
-    
-    if(node && node->obj)
-        dev_p = (abcdk_mmc_info_t*)node->obj->pptrs[0];
-
-    if (depth == 0)
-    {
-        if(ctx->fmt == ABCDK_LSMMC_FMT_XML)
-        {
-            fprintf(stdout,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            fprintf(stdout,"<devices>\n");
-        }
-        else if(ctx->fmt == ABCDK_LSMMC_FMT_JSON)
-        {
-            fprintf(stdout,"{\n");
-            fprintf(stdout,"\"devices\":[\n");
-        }
-        else if(ctx->fmt == ABCDK_LSMMC_FMT_TEXT)
-        {
-            fprintf(stdout, "|%-10s|%-8s|%-16s|%-32s|%-10s\t|\n",
-                    "bus", "type", "name", "cid", "devname");
-        }
-        else
-        {
-            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
-        }
-    }
-    else if (depth == SIZE_MAX)
-    {
-        if(ctx->fmt == ABCDK_LSMMC_FMT_XML)
-        {
-            fprintf(stdout,"</devices>\n");
-        }
-        else if(ctx->fmt == ABCDK_LSMMC_FMT_JSON)
-        {
-            fprintf(stdout,"\t]\n");
-            fprintf(stdout,"}\n");
-        }
-        else
-        {
-            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
-        }
-    }
-    else
-    {
-        if (ctx->fmt == ABCDK_LSMMC_FMT_XML)
-        {
-            fprintf(stdout, "\t<device>\n");
-            fprintf(stdout, "\t\t<bus>%s</bus>\n",dev_p->bus);
-            fprintf(stdout, "\t\t<type>%s</type>\n",dev_p->type);
-            fprintf(stdout, "\t\t<name>%s</name>\n",dev_p->name);
-            fprintf(stdout, "\t\t<cid>%s</cid>\n",dev_p->cid);
-            fprintf(stdout, "\t\t<devname>%s</devname>\n",dev_p->devname);
-            fprintf(stdout, "\t</device>\n");
-        }
-        else if(ctx->fmt == ABCDK_LSMMC_FMT_JSON)
-        {
-            fprintf(stdout, "\t{\n");
-            fprintf(stdout,"\t\t\"bus\":\"%s\",\n",dev_p->bus);
-            fprintf(stdout,"\t\t\"type\":\"%s\",\n",dev_p->type);
-            fprintf(stdout,"\t\t\"name\":\"%s\",\n",dev_p->name);
-            fprintf(stdout,"\t\t\"cid\":\"%s\",\n",dev_p->cid);
-            fprintf(stdout,"\t\t\"devname\":\"%s\"\n",dev_p->devname);
-            fprintf(stdout, "\t}");
-            fprintf(stdout, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
-             
-        }
-        else if(ctx->fmt == ABCDK_LSMMC_FMT_TEXT)
-        {
-            fprintf(stdout, "|%-10s|%-8s|%-16s|%-32s|%-10s\t|\n",
-                    dev_p->bus, dev_p->type, dev_p->name, dev_p->cid, dev_p->devname);
-        }
-        else
-        {
-            ABCDK_ERRNO_AND_RETURN1(EINVAL,-1);
-        }
-    }
-
-    ABCDK_ERRNO_AND_RETURN1(0,1);
-}
-
-void _abcdk_lsmmc_printf_elements(abcdk_lsmmc_t *ctx)
-{
-    abcdk_tree_iterator_t it = {0, ctx, _abcdk_lsmmc_printf_elements_cb};
-    abcdk_tree_scan(ctx->list, &it);
-}
-
 void _abcdk_lsmmc_work(abcdk_lsmmc_t *ctx)
 {
     ctx->outfile = abcdk_option_get(ctx->args, "--output", 0, NULL);
@@ -168,8 +77,7 @@ void _abcdk_lsmmc_work(abcdk_lsmmc_t *ctx)
         }
     }
 
-    _abcdk_lsmmc_printf_elements(ctx);
-
+    abcdk_mmc_format(ctx->list,ctx->fmt,stdout);
     fflush(stdout);
 
 final:
