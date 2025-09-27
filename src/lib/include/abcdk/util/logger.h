@@ -109,9 +109,11 @@ void abcdk_logger_vprintf(abcdk_logger_t *ctx, int type, const char *fmt, va_lis
 void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...);
 
 /**
- * 轨迹函数入口。
+ * 代理。
+ * 
+ * @note 接收转发来的日志。
  */
-void abcdk_logger_from_trace(void *opaque, int type, const char *str);
+void abcdk_logger_proxy(void *opaque, int type, const char *str);
 
 __END_DECLS
 

@@ -58,12 +58,19 @@ int abcdk_scsi_get_info(const char *path,abcdk_scsi_info_t *info);
 /**
  * 枚举SCSI设备。
 */
-void abcdk_scsi_list(abcdk_tree_t *list);
+void abcdk_scsi_fetch(abcdk_tree_t *list);
 
 /**
  * 观察SCSI设备变化。
 */
 void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t **del);
+
+/**
+ * 格式化。
+ * 
+ * @param [in] fmt 格式{TEXT(1)，XML(2)，JSON(3)}。
+*/
+void abcdk_scsi_format(abcdk_tree_t *list, int fmt, FILE *out);
 
 
 __END_DECLS

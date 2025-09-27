@@ -98,11 +98,6 @@ void abcdk_trace_printf_redirect(abcdk_trace_output_cb cb,void *opaque)
     g_trace_printf_cb_opaque = opaque;
 }
 
-void abcdk_trace_printf_set_callback(abcdk_trace_output_cb cb,void *opaque)
-{
-    abcdk_trace_printf_redirect(cb,opaque);
-}
-
 void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)
 {
     char buf[8000] = {0};

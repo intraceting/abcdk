@@ -597,7 +597,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     ctx->logger = abcdk_logger_open2(log_path, "httpd.log", "httpd.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
-    abcdk_trace_printf_set_callback(abcdk_logger_from_trace, ctx->logger);
+    abcdk_trace_printf_redirect(abcdk_logger_proxy, ctx->logger);
 
     abcdk_trace_printf(LOG_INFO, "启动……");
 
@@ -720,7 +720,7 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
     logger = abcdk_logger_open2(log_path, "httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志。*/
-    abcdk_trace_printf_set_callback(abcdk_logger_from_trace, logger);
+    abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);
 
     while(1)
     {

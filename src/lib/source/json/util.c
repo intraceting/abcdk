@@ -8,7 +8,7 @@
 
 #ifdef _json_h_
 
-void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
+void _abcdk_json_format(FILE *fp,int better,size_t depth,json_object *obj)
 {
     struct json_object_iterator it;
     struct json_object_iterator it_end;
@@ -31,7 +31,7 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
         str_ptr = json_object_get_string(obj);
         str_len = json_object_get_string_len(obj);
         if (better && str_len > 80)
-            fprintf(fp, "\"(len=%d)%.80s\"",str_len,str_ptr);
+            fprintf(fp, "\"%.80s[...+%dB]\"", str_ptr, str_len - 80);
         else
             fprintf(fp, "\"%s\"",str_ptr);
     }
@@ -51,7 +51,7 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
                 fprintf(fp, "\t");
 
             sub = json_object_array_get_idx(obj, i);
-            abcdk_json_readable(fp, better, depth + 1, sub);
+            _abcdk_json_format(fp, better, depth + 1, sub);
         }
 
         fprintf(fp, "\n");
@@ -82,7 +82,7 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
                 fprintf(fp, "\t");
 
             fprintf(fp, "\t\"%s\": ", key);
-            abcdk_json_readable(fp, better, depth + 1, sub);
+            _abcdk_json_format(fp, better, depth + 1, sub);
 
             json_object_iter_next(&it);
         }
@@ -97,158 +97,46 @@ void abcdk_json_readable(FILE *fp,int better,size_t depth,json_object *obj)
 
 }
 
-void abcdk_json_unref(json_object **obj)
+int abcdk_json_format_from_string(const char *str, size_t depth, int readable, FILE *out)
 {
-    int chk;
-    
-    if(!obj || !*obj)
-        return;
+    assert(str && out);
 
-    chk = json_object_put(*obj);
-    assert(chk == 1);
+    json_object *ctx = json_tokener_parse(str);
+    if(!ctx)
+        return -1;
 
-    /*Set to NULL(0).*/
-    *obj = NULL;
+    _abcdk_json_format(out,readable,depth,ctx);
+    json_object_put(ctx);
+
+    return 0;
 }
 
-json_object *abcdk_json_refer(json_object *obj)
+int abcdk_json_format_from_file(const char *file, size_t depth, int readable, FILE *out)
 {
-    assert(obj != NULL);
+    assert(file && out);
 
-    return json_object_get(obj);
+    json_object *ctx = json_object_from_file(file);
+    if(!ctx)
+        return -1;
+
+    _abcdk_json_format(out,readable,depth,ctx);
+    json_object_put(ctx);
+
+    return 0;
 }
 
-json_object* abcdk_json_locate(json_object *father,...)
+#else //#ifdef _json_h_
+
+int abcdk_json_format_from_string(const char *str, size_t depth, int readable, FILE *out)
 {
-    const char *key_p = NULL;
-    json_object *prev = NULL,*next = NULL;
-    json_bool chk = 0;
-
-    assert(father != NULL);
-    
-    va_list vaptr;
-    va_start(vaptr, father);
-
-    for (prev = father;;prev = next)
-    {
-        key_p = va_arg(vaptr, const char *);
-        if (!key_p)
-            break;
-
-        next = NULL;
-        chk = json_object_object_get_ex(prev,key_p,&next);
-        if(!chk)
-            break;
-    }
-
-    va_end(vaptr);
-
-    return next;
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含JSON-C工具。"));
+    return -1;
 }
 
-json_object *abcdk_json_parse(const char *str)
+int abcdk_json_format_from_file(const char *file, size_t depth, int readable, FILE *out)
 {
-    assert(str != NULL);
-
-    return json_tokener_parse(str);
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含JSON-C工具。"));
+    return -1;
 }
 
-const char *abcdk_json_string(json_object *obj)
-{
-    assert(obj != NULL);
-
-    return json_object_to_json_string(obj);
-}
-
-void abcdk_json_add(json_object *father, const char *key, json_object *val)
-{
-    assert(father != NULL && key != NULL && val != NULL);
-    assert(key[0] != '\0');
-
-    /*不会改变子节点的引用计数。*/
-    json_object_object_add(father, key, val);
-}
-
-json_object *abcdk_json_add_vformat(json_object *father, const char *key, const char *val_fmt, va_list val_args)
-{
-    json_object *sub = NULL;
-    char buf[1024] = {0};
-
-    assert(val_fmt != NULL && val_args != NULL);
-
-    vsnprintf(buf, 1024, val_fmt, val_args);
-    sub = json_object_new_string(buf);
-    if (!sub)
-        return NULL;
-
-    if (father && key)
-        abcdk_json_add(father, key, sub);
-
-    return sub;
-}
-
-json_object *abcdk_json_add_format(json_object *father,const char *key, const char *val_fmt, ...)
-{
-    json_object *sub = NULL;
-
-    va_list vaptr;
-    va_start(vaptr, val_fmt);
-
-    sub = abcdk_json_add_vformat(father,key,val_fmt, vaptr);
-
-    va_end(vaptr);
-
-    return sub;
-}
-
-json_object *abcdk_json_add_int32(json_object *father,const char *key,int32_t val)
-{
-    json_object *sub = NULL;
-
-    sub = json_object_new_int(val);
-    
-    if (father && key)
-        abcdk_json_add(father, key, sub);
-
-    return sub;
-}
-
-json_object *abcdk_json_add_int64(json_object *father,const char *key,int64_t val)
-{
-    json_object *sub = NULL;
-
-    sub = json_object_new_int64(val);
-    
-    if (father && key)
-        abcdk_json_add(father, key, sub);
-
-    return sub;
-}
-
-json_object *abcdk_json_add_boolean(json_object *father,const char *key,json_bool val)
-{
-    json_object *sub = NULL;
-
-    sub = json_object_new_boolean(val);
-    
-    if (father && key)
-        abcdk_json_add(father, key, sub);
-
-    return sub;
-}
-
-json_object* abcdk_json_add_double(json_object *father,const char *key,double val)
-{
-    json_object *sub = NULL;
-
-    sub = json_object_new_double(val);
-    
-    if (father && key)
-        abcdk_json_add(father, key, sub);
-
-    return sub;
-}
-
-
-
-#endif //_json_h_
+#endif //#ifdef _json_h_

@@ -297,7 +297,7 @@ void abcdk_logger_printf(abcdk_logger_t *ctx, int type, const char *fmt, ...)
     va_end(ap);
 }
 
-void abcdk_logger_from_trace(void *opaque,int type, const char* str)
+void abcdk_logger_proxy(void *opaque,int type, const char* str)
 {
     abcdk_logger_t *ctx = (abcdk_logger_t *)opaque;
 

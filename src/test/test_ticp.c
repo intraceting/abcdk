@@ -40,7 +40,7 @@ int abcdk_test_tipc(abcdk_option_t *args)
 
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.tipc.log","test.tipc.%d.log",10,10,1,1);
 
-    abcdk_trace_printf_set_callback(abcdk_logger_from_trace,log_ctx);
+    abcdk_trace_printf_redirect(abcdk_logger_proxy,log_ctx);
 
     cfg.opaque = NULL;
     cfg.id = abcdk_option_get_llong(args,"--id",0,1);

@@ -153,8 +153,10 @@ int _abcdk_lsscsi_printf_elements_cb(size_t depth, abcdk_tree_t *node, void *opa
 
 void _abcdk_lsscsi_printf_elements(abcdk_lsscsi_t *ctx)
 {
-    abcdk_tree_iterator_t it = {0, ctx, _abcdk_lsscsi_printf_elements_cb};
-    abcdk_tree_scan(ctx->list, &it);
+    // abcdk_tree_iterator_t it = {0, ctx, _abcdk_lsscsi_printf_elements_cb};
+    // abcdk_tree_scan(ctx->list, &it);
+
+    abcdk_scsi_format(ctx->list,ctx->fmt,stdout);
 }
 
 void _abcdk_lsscsi_work(abcdk_lsscsi_t *ctx)

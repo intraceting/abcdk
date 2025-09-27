@@ -497,7 +497,7 @@ int abcdk_test_http(abcdk_option_t *args)
 
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.http.log","test.http.%d.log",10,10,1,1);
 
-    abcdk_trace_printf_set_callback(abcdk_logger_from_trace,log_ctx);
+    abcdk_trace_printf_redirect(abcdk_logger_proxy,log_ctx);
 
     abcdk_https_t *ctx = abcdk_https_create();
 

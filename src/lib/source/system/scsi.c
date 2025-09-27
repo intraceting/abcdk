@@ -297,7 +297,7 @@ int abcdk_scsi_get_info(const char *path, abcdk_scsi_info_t *info)
     return 0;
 }
 
-void abcdk_scsi_list(abcdk_tree_t *list)
+void abcdk_scsi_fetch(abcdk_tree_t *list)
 {
     abcdk_tree_t *dev = NULL;
     abcdk_scsi_info_t *dev_p = NULL;
@@ -455,7 +455,7 @@ void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t 
     if (!tmp)
         return;
 
-    abcdk_scsi_list(tmp);
+    abcdk_scsi_fetch(tmp);
     _abcdk_scsi_check_ok(tmp);
 
     if(*snapshot)
@@ -475,4 +475,105 @@ void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t 
     _abcdk_scsi_diff(NULL,tmp,snapshot,1);
     
     abcdk_tree_free(&tmp);
+}
+
+typedef struct _abcdk_scsi_format_param
+{
+    int fmt;
+    FILE *out;
+
+}abcdk_scsi_format_param_t;
+
+
+int _abcdk_scsi_format_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+{
+    abcdk_scsi_format_param_t *param_p = (abcdk_scsi_format_param_t*)opaque;
+    abcdk_scsi_info_t *dev_p = NULL;
+    
+    if(node && node->obj)
+        dev_p = (abcdk_scsi_info_t*)node->obj->pptrs[0];
+
+    if (depth == 0)
+    {
+        if(param_p->fmt == 2)
+        {
+            fprintf(param_p->out,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            fprintf(param_p->out,"<devices>\n");
+        }
+        else if(param_p->fmt == 3)
+        {
+            fprintf(param_p->out,"{\n");
+            fprintf(param_p->out,"\"devices\":[\n");
+        }
+        else if(param_p->fmt == 1)
+        {
+            fprintf(param_p->out, "|%-10s|%-8s|%-10s|%-16s|%-4.4s|%-16s|%-10s\t|%-10s\t|\n",
+                    "bus", "type", "vendor", "model", "revision", "serial", "generic", "devname");
+        }
+    }
+    else if (depth == SIZE_MAX)
+    {
+        if(param_p->fmt == 2)
+        {
+            fprintf(param_p->out,"</devices>\n");
+        }
+        else if(param_p->fmt == 3)
+        {
+            fprintf(param_p->out,"\t]\n");
+            fprintf(param_p->out,"}\n");
+        }
+    }
+    else
+    {
+        if (param_p->fmt == 2)
+        {
+            fprintf(param_p->out, "\t<device>\n");
+            fprintf(param_p->out, "\t\t<bus>%s</bus>\n",dev_p->bus);
+            fprintf(param_p->out, "\t\t<type name=\"%s\">%u</type>\n",abcdk_scsi_type2string(dev_p->type,0),dev_p->type);
+            fprintf(param_p->out, "\t\t<vendor>%s</vendor>\n",dev_p->vendor);
+            fprintf(param_p->out, "\t\t<model>%s</model>\n",dev_p->model);
+            fprintf(param_p->out, "\t\t<revision>%s</revision>\n",dev_p->revision);
+            fprintf(param_p->out, "\t\t<serial>%s</serial>\n",dev_p->serial);
+            fprintf(param_p->out, "\t\t<devname>%s</devname>\n",dev_p->devname);
+            fprintf(param_p->out, "\t\t<generic>%s</generic>\n",dev_p->generic);
+            fprintf(param_p->out, "\t</device>\n");
+        }
+        else if(param_p->fmt == 3)
+        {
+            fprintf(param_p->out, "\t{\n");
+            fprintf(param_p->out,"\t\t\"bus\":\"%s\",\n",dev_p->bus);
+            fprintf(param_p->out,"\t\t\"type\":{\"num\":\"%u\",\"name\":\"%s\"},\n",dev_p->type,abcdk_scsi_type2string(dev_p->type,0));
+            fprintf(param_p->out,"\t\t\"vendor\":\"%s\",\n",dev_p->vendor);
+            fprintf(param_p->out,"\t\t\"model\":\"%s\",\n",dev_p->model);
+            fprintf(param_p->out,"\t\t\"revison\":\"%s\",\n",dev_p->revision);
+            fprintf(param_p->out,"\t\t\"serial\":\"%s\",\n",dev_p->serial);
+            fprintf(param_p->out,"\t\t\"devname\":\"%s\",\n",dev_p->devname);
+            fprintf(param_p->out,"\t\t\"generic\":\"%s\"\n",dev_p->generic);
+            fprintf(param_p->out, "\t}");
+            fprintf(param_p->out, "%s\n",(abcdk_tree_sibling(node,0)?",":""));
+             
+        }
+        else if(param_p->fmt == 1)
+        {
+            fprintf(param_p->out, "|%-10s|%-8s|%-10s|%-16s|%-4s|%-16s|%-10s\t|%-10s\t|\n",
+                    dev_p->bus, abcdk_scsi_type2string(dev_p->type, 0), dev_p->vendor,
+                    dev_p->model, dev_p->revision, dev_p->serial, dev_p->generic, dev_p->devname);
+        }
+    }
+
+    return 1;//next.
+}
+
+void abcdk_scsi_format(abcdk_tree_t *list, int fmt, FILE *out)
+{
+    abcdk_scsi_format_param_t param = {0};
+
+    assert(list != NULL && fmt != 0 && out != NULL);
+    assert(fmt == 1 || fmt == 2 || fmt == 3);
+
+    param.fmt = fmt;
+    param.out = out;
+
+    abcdk_tree_iterator_t it = {0, &param, _abcdk_scsi_format_cb};
+    abcdk_tree_scan(list, &it);
 }

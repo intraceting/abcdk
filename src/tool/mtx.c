@@ -279,7 +279,7 @@ void _abcdk_mtx_printf_elements(abcdk_mtx_t *ctx)
     if (!ctx->devlist)
         return;
 
-    abcdk_scsi_list(ctx->devlist);
+    abcdk_scsi_fetch(ctx->devlist);
 
     abcdk_tree_iterator_t it = {0, ctx, _abcdk_mtx_printf_elements_cb};
     abcdk_tree_scan(ctx->root, &it);

@@ -15,11 +15,7 @@ typedef struct _abcdk_json
     const char *file;
     int readable;
     const char *outfile;
-
-#ifdef _json_h_
-    json_object *obj;
-#endif //_json_h_
-
+    
 }abcdk_json_t;
 
 #ifdef _json_h_
@@ -56,13 +52,13 @@ void _abcdk_json_wrok(abcdk_json_t *ctx)
     if (!ctx->file || !*ctx->file)
     {
         fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
+        ABCDK_ERRNO_AND_RETURN0(ctx->errcode = EINVAL);
     }
 
     if (access(ctx->file, R_OK) != 0)
     {
         fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(errno));
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
+        ABCDK_ERRNO_AND_RETURN0(ctx->errcode = errno);
     }
 
 
@@ -71,25 +67,19 @@ void _abcdk_json_wrok(abcdk_json_t *ctx)
         if(abcdk_reopen(STDOUT_FILENO,ctx->outfile,1,0,1)<0)
         {
             fprintf(stderr, "'%s' %s.\n", ctx->outfile, strerror(errno));
-            ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno,final);
+            ABCDK_ERRNO_AND_RETURN0(ctx->errcode = errno);
         }
     }
 
-    ctx->obj = json_object_from_file(ctx->file);
-    if(!ctx->obj)
+    int chk = abcdk_json_format_from_file(ctx->file,0,ctx->readable,stdout);
+    if(chk != 0)
     {
-        fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(ESPIPE));
-        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE,final);
+        fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(ENOENT));
+        ABCDK_ERRNO_AND_RETURN0(ctx->errcode = ENOENT);
     }
-
-    abcdk_json_readable(stdout,ctx->readable,0,ctx->obj);
     
     fprintf(stdout, "\n");
     fflush(stdout);
-
-final:
-
-    abcdk_json_unref(&ctx->obj);
 }
 
 #endif //_json_h_

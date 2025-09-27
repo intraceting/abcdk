@@ -58,7 +58,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
 {
     abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/", "test.srpc.log", "test.srpc.%d.log", 10, 10, 1, 1);
 
-    abcdk_trace_printf_set_callback(abcdk_logger_from_trace, log_ctx);
+    abcdk_trace_printf_redirect(abcdk_logger_proxy, log_ctx);
 
     abcdk_srpc_t *srpc_ctx = abcdk_srpc_create(4,5);
 
