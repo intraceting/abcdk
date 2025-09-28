@@ -147,9 +147,9 @@ int abcdk_mediumx_read_element_status(int fd, uint8_t type,
     return abcdk_scsi_sgioctl2(fd, SG_DXFER_FROM_DEV, cdb, 12, transfer, transferlen, timeout, stat);
 }
 
-void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *element, uint16_t count)
+void abcdk_mediumx_parse_element_status(abcdk_tree_t *list, const uint8_t *element, uint16_t count)
 {
-    assert(father != NULL && element != NULL && count > 0);
+    assert(list != NULL && element != NULL && count > 0);
 
     /**/
     uint8_t type = element[8];
@@ -230,14 +230,14 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
         abcdk_strtrim(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], isspace, 2);
 
         /*添加到子节点末尾。*/
-        abcdk_tree_insert2(father, one, 0);
+        abcdk_tree_insert2(list, one, 0);
 
         /*下一页。*/
         ptr += psize;
     }
 }
 
-int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag, int dvcid,
+int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *list, int fd, int voltag, int dvcid,
                                          uint32_t timeout, abcdk_scsi_io_stat_t *stat)
 {
     char buf[255] = {0};
@@ -267,7 +267,7 @@ int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int volta
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, count[0]);
+    abcdk_mediumx_parse_element_status(list, buf2, count[0]);
 
     /*ABCDK_MEDIUMX_ELEMENT_STORAGE:4+6,4+8*/
     addr[1] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 6));
@@ -281,7 +281,7 @@ int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int volta
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, count[1]);
+    abcdk_mediumx_parse_element_status(list, buf2, count[1]);
 
     
     /*ABCDK_MEDIUMX_ELEMENT_IE_PORT:4+10,4+12*/
@@ -294,7 +294,7 @@ int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int volta
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, count[2]);
+    abcdk_mediumx_parse_element_status(list, buf2, count[2]);
 
     /*ABCDK_MEDIUMX_ELEMENT_DXFER:4+14,4+16*/
     addr[3] = abcdk_endian_b_to_h16(ABCDK_PTR2OBJ(uint16_t, buf, 4 + 14));
@@ -306,11 +306,52 @@ int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int volta
     if (chk != 0)
         goto final;
 
-    abcdk_mediumx_parse_element_status(father, buf2, count[3]);
+    abcdk_mediumx_parse_element_status(list, buf2, count[3]);
 
 final:
 
     abcdk_heap_freep((void **)&buf2);
 
     return chk;
+}
+
+typedef struct _abcdk_mediumx_find_param
+{
+    uint8_t find_type;
+
+    uint16_t changer_addr;
+
+}abcdk_mediumx_find_param_t;
+
+int _abcdk_mediumx_find_changer_address_cb(size_t depth, abcdk_tree_t *node, void *opaque)
+{
+    abcdk_mediumx_find_param_t *param_p = (abcdk_mediumx_find_param_t *)opaque;
+
+    /*已经结束。*/
+    if(depth == SIZE_MAX)
+        return -1;
+
+    if (depth == 0)
+        return 1;
+
+    if (ABCDK_PTR2U8(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) != param_p->find_type)
+        return 1;
+
+    param_p->changer_addr = ABCDK_PTR2U16(node->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0);
+
+    return -1;
+}
+
+uint16_t abcdk_mediumx_find_changer_address(abcdk_tree_t *list)
+{
+    abcdk_mediumx_find_param_t param = {0};
+
+    assert(list != NULL);
+
+    param.find_type = ABCDK_MEDIUMX_ELEMENT_CHANGER;
+
+    abcdk_tree_iterator_t it = {0, &param, _abcdk_mediumx_find_changer_address_cb};
+    abcdk_tree_scan(list, &it);
+
+    return param.changer_addr;
 }

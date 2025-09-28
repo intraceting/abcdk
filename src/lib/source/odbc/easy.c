@@ -6,8 +6,6 @@
  */
 #include "abcdk/odbc/easy.h"
 
-#if defined(__SQL_H) && defined(__SQLEXT_H)
-
 /**简单的ODBC接口。*/
 struct _abcdk_odbc
 {
@@ -27,6 +25,8 @@ struct _abcdk_odbc
     abcdk_object_t *attr;
 
 };// abcdk_odbc_t;
+
+#if defined(__SQL_H) && defined(__SQLEXT_H)
 
 SQLRETURN _abcdk_odbc_check_return(SQLRETURN ret)
 {
@@ -327,6 +327,14 @@ final_error:
     return chk;
 }
 
+SQLRETURN abcdk_odbc_tran_begin(abcdk_odbc_t *ctx) 
+{
+    assert(ctx != NULL);
+
+    return abcdk_odbc_autocommit(ctx, 0);
+}
+
+
 SQLRETURN abcdk_odbc_tran_end(abcdk_odbc_t *ctx, SQLSMALLINT type)
 {
     SQLRETURN chk;
@@ -342,6 +350,21 @@ SQLRETURN abcdk_odbc_tran_end(abcdk_odbc_t *ctx, SQLSMALLINT type)
 final_error:
 
     return chk;
+}
+
+SQLRETURN abcdk_odbc_tran_commit(abcdk_odbc_t *ctx)
+{
+    assert(ctx != NULL);
+
+    return abcdk_odbc_tran_end(ctx, SQL_COMMIT);
+}
+
+
+SQLRETURN abcdk_odbc_tran_rollback(abcdk_odbc_t *ctx)
+{
+    assert(ctx != NULL);
+
+    return abcdk_odbc_tran_end(ctx, SQL_ROLLBACK);
 }
 
 SQLRETURN abcdk_odbc_prepare(abcdk_odbc_t *ctx, const char *sql)
@@ -489,6 +512,21 @@ final_error:
     return chk;
 }
 
+SQLRETURN abcdk_odbc_fetch_first(abcdk_odbc_t *ctx)
+{
+    assert(ctx != NULL);
+
+    return abcdk_odbc_fetch(ctx, SQL_FETCH_FIRST, 0);
+}
+
+
+SQLRETURN abcdk_odbc_fetch_next(abcdk_odbc_t *ctx) 
+{
+    assert(ctx != NULL);
+
+    return abcdk_odbc_fetch(ctx, SQL_FETCH_NEXT, 0);
+}
+
 SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT type,
                               SQLPOINTER buf, SQLULEN max, SQLULEN *len)
 {
@@ -589,4 +627,151 @@ final_error:
     return chk;
 }
 
-#endif // defined(__SQL_H) && defined(__SQLEXT_H)
+
+#else //#if defined(__SQL_H) && defined(__SQLEXT_H)
+
+void abcdk_odbc_free(abcdk_odbc_t **ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+}
+
+abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return NULL;
+}
+
+uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return rand();
+}
+
+SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_connect(abcdk_odbc_t *ctx, const char *uri, time_t timeout, const char *tracefile)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;    
+}
+
+SQLRETURN abcdk_odbc_connect2(abcdk_odbc_t *ctx, const char *product, const char *driver,
+                              const char *host, uint16_t port, const char *db,
+                              const char *user, const char *pwd,
+                              time_t timeout, const char *tracefile)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_autocommit(abcdk_odbc_t *ctx, int enable)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_tran_begin(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_tran_end(abcdk_odbc_t *ctx, SQLSMALLINT type)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_tran_commit(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_tran_rollback(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_prepare(abcdk_odbc_t *ctx, const char *sql)
+{
+        abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_bind_parameter(abcdk_odbc_t *ctx, SQLUSMALLINT ipar, SQLSMALLINT fParamType,
+                                    SQLSMALLINT fCType, SQLSMALLINT fSqlType, SQLULEN cbColDef,
+                                    SQLSMALLINT ibScale, SQLPOINTER rgbValue, SQLLEN cbValueMax)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_execute(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_finalize(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_exec_direct(abcdk_odbc_t *ctx, const char *sql)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_affect(abcdk_odbc_t *ctx, SQLLEN *rows)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_fetch(abcdk_odbc_t *ctx, SQLSMALLINT direction, SQLLEN offset)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_fetch_first(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_fetch_next(abcdk_odbc_t *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT type,
+                              SQLPOINTER buf, SQLULEN max, SQLULEN *len)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+SQLRETURN abcdk_odbc_error_info(abcdk_odbc_t *ctx, SQLCHAR *Sqlstate, SQLINTEGER *NativeError,
+                                SQLCHAR *MessageText, SQLSMALLINT MessageMax)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    return SQL_ERROR;
+}
+
+#endif //#if defined(__SQL_H) && defined(__SQLEXT_H)

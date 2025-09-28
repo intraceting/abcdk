@@ -48,7 +48,13 @@ int abcdk_mmc_get_info(const char *path,abcdk_mmc_info_t *info);
 /**
  * 枚举MMC设备。
 */
+ABCDK_DEPRECATED
 void abcdk_mmc_fetch(abcdk_tree_t *list);
+
+/**
+ * 枚举MMC设备。
+*/
+void abcdk_mmc_fetch2(abcdk_tree_t **list);
 
 /**
  * 观察MMC设备变化。

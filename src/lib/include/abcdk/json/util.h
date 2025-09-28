@@ -8,6 +8,7 @@
 #define ABCDK_JSON_UTIL_H
 
 #include "abcdk/json/json.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 

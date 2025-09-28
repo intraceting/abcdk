@@ -58,7 +58,13 @@ int abcdk_scsi_get_info(const char *path,abcdk_scsi_info_t *info);
 /**
  * 枚举SCSI设备。
 */
+ABCDK_DEPRECATED
 void abcdk_scsi_fetch(abcdk_tree_t *list);
+
+/**
+ * 枚举SCSI设备。
+*/
+void abcdk_scsi_fetch2(abcdk_tree_t **list);
 
 /**
  * 观察SCSI设备变化。

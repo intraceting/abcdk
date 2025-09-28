@@ -6,7 +6,6 @@
  */
 #include "abcdk/odbc/pool.h"
 
-#if defined(__SQL_H) && defined(__SQLEXT_H)
 
 /**
  * ODBC连接池。
@@ -209,5 +208,3 @@ void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
 
     ABCDK_ASSERT(chk == 0,TT("连接池已满，可能有不属于这个连接池的连接已经被回收。"));
 }
-
-#endif // defined(__SQL_H) && defined(__SQLEXT_H)

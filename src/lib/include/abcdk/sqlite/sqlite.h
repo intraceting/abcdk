@@ -13,4 +13,11 @@
 #include <sqlite3.h>
 #endif //HAVE_SQLITE
 
+#if !defined(_SQLITE3_H_) && !defined(SQLITE3_H)
+typedef struct sqlite3 sqlite3;
+typedef struct sqlite3_stmt sqlite3_stmt;
+#define SQLITE_OK 0
+#define SQLITE_ERROR 1
+#endif // #if !defined(_SQLITE3_H_) && !defined(SQLITE3_H)
+
 #endif //ABCDK_SQLITE_SQLITE_H

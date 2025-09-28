@@ -16,8 +16,6 @@
 
 __BEGIN_DECLS
 
-#if defined(__SQL_H) && defined(__SQLEXT_H)
-
 /** ODBC连接池。*/
 typedef struct _abcdk_odbcpool abcdk_odbcpool_t;
 
@@ -60,7 +58,6 @@ abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx,time_t timeout);
 */
 void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc);
 
-#endif // defined(__SQL_H) && defined(__SQLEXT_H)
 
 __END_DECLS
 

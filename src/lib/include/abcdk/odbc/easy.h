@@ -10,10 +10,10 @@
 #include "abcdk/odbc/odbc.h"
 #include "abcdk/util/object.h"
 #include "abcdk/util/string.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 
-#if defined(__SQL_H) && defined(__SQLEXT_H)
 
 /**简单的ODBC接口。*/
 typedef struct _abcdk_odbc abcdk_odbc_t;
@@ -77,7 +77,7 @@ SQLRETURN abcdk_odbc_autocommit(abcdk_odbc_t *ctx, int enable);
 /**
  * 开启事务(关闭自动提交)。
  */
-#define abcdk_odbc_tran_begin(ctx) abcdk_odbc_autocommit(ctx, 0)
+SQLRETURN abcdk_odbc_tran_begin(abcdk_odbc_t *ctx);
 
 /**
  * 结束事务。
@@ -87,12 +87,12 @@ SQLRETURN abcdk_odbc_tran_end(abcdk_odbc_t *ctx, SQLSMALLINT type);
 /**
  * 提交事务。
  */
-#define abcdk_odbc_tran_commit(ctx) abcdk_odbc_tran_end(ctx, SQL_COMMIT)
+SQLRETURN abcdk_odbc_tran_commit(abcdk_odbc_t *ctx);
 
 /**
  * 回滚事务。
  */
-#define abcdk_odbc_tran_rollback(ctx) abcdk_odbc_tran_end(ctx, SQL_ROLLBACK)
+SQLRETURN abcdk_odbc_tran_rollback(abcdk_odbc_t *ctx);
 
 /**
  * 准备SQL语句。
@@ -154,12 +154,12 @@ SQLRETURN abcdk_odbc_fetch(abcdk_odbc_t *ctx, SQLSMALLINT direction, SQLLEN offs
 /**
  * 在数据集中移动游标到首行。
  */
-#define abcdk_odbc_fetch_first(ctx) abcdk_odbc_fetch(ctx, SQL_FETCH_FIRST, 0)
+SQLRETURN abcdk_odbc_fetch_first(abcdk_odbc_t *ctx);
 
 /**
  * 在数据集中向下移动游标。
  */
-#define abcdk_odbc_fetch_next(ctx) abcdk_odbc_fetch(ctx, SQL_FETCH_NEXT, 0)
+SQLRETURN abcdk_odbc_fetch_next(abcdk_odbc_t *ctx);
 
 /**
  * 获取数据集中指定字段的值。
@@ -189,8 +189,6 @@ SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name);
 */
 SQLRETURN abcdk_odbc_error_info(abcdk_odbc_t *ctx, SQLCHAR *Sqlstate, SQLINTEGER *NativeError,
                                 SQLCHAR *MessageText, SQLSMALLINT MessageMax);
-
-#endif // defined(__SQL_H) && defined(__SQLEXT_H)
 
 __END_DECLS
 

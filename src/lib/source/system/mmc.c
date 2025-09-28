@@ -192,6 +192,18 @@ final:
     return;
 }
 
+void abcdk_mmc_fetch2(abcdk_tree_t **list)
+{
+    assert(list != NULL);
+
+    if(*list == NULL)
+        *list = abcdk_tree_alloc3(1);
+
+    if(*list == NULL)
+        return;
+
+    abcdk_mmc_fetch(*list);
+}
 
 int _abcdk_mmc_find(abcdk_tree_t *list, abcdk_tree_t *node)
 {

@@ -151,7 +151,7 @@ int abcdk_mediumx_read_element_status(int fd, uint8_t type,
  * 分析设备元件状态，构造结构化数据。
  * 
  */
-void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *element, uint16_t count);
+void abcdk_mediumx_parse_element_status(abcdk_tree_t *list, const uint8_t *element, uint16_t count);
 
 /**
  * 查询设备所有元件状态。
@@ -159,8 +159,13 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *father, const uint8_t *ele
  * @return 0 成功，-1 失败。
  *
  */
-int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *father, int fd, int voltag, int dvcid,
+int abcdk_mediumx_inquiry_element_status(abcdk_tree_t *list, int fd, int voltag, int dvcid,
                                          uint32_t timeout, abcdk_scsi_io_stat_t *stat);
+
+/**
+ * 查找机械手地址。
+ */
+uint16_t abcdk_mediumx_find_changer_address(abcdk_tree_t *list);
 
 __END_DECLS
 

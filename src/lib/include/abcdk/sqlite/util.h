@@ -9,11 +9,10 @@
 
 #include "abcdk/sqlite/sqlite.h"
 #include "abcdk/util/string.h"
-
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 
-#if defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
 /**
  * 字段类型。
@@ -63,7 +62,7 @@ typedef enum _abcdk_sqlite_journal_mode
 }abcdk_sqlite_journal_mode_t;
 
 /**
- * 备份参数
+ * 备份参数。
 */
 typedef struct _abcdk_sqlite_backup_param
 {
@@ -133,27 +132,27 @@ sqlite3 *abcdk_sqlite_open(const char *name);
 /**
  * 打开内存数据库。
 */
-#define abcdk_sqlite_memopen() abcdk_sqlite_open(":memory:")
+sqlite3* abcdk_sqlite_memopen();
 
 /**
  * 启动事物。
 */
-#define abcdk_sqlite_tran_begin(ctx) sqlite3_exec(ctx, "begin;", NULL, NULL, NULL)
+int abcdk_sqlite_tran_begin(sqlite3 *ctx);
 
 /**
  * 提交事物。
 */
-#define abcdk_sqlite_tran_commit(ctx) sqlite3_exec(ctx, "commit;", NULL, NULL, NULL)
+int abcdk_sqlite_tran_commit(sqlite3 *ctx);
 
 /**
  * 回滚事物。
 */
-#define abcdk_sqlite_tran_rollback(ctx) sqlite3_exec(ctx, "rollback;", NULL, NULL, NULL)
+int abcdk_sqlite_tran_rollback(sqlite3 *ctx);
 
 /**
  * 回收空间。
 */
-#define abcdk_sqlite_tran_vacuum(ctx) sqlite3_exec(ctx, "vacuum;", NULL, NULL, NULL)
+int abcdk_sqlite_tran_vacuum(sqlite3 *ctx);
 
 /** 
  * 设置页大小。
@@ -213,8 +212,6 @@ int abcdk_sqlite_exec_direct(sqlite3 *ctx,const char *sql);
 */
 int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name);
 
-
-#endif //defined(_SQLITE3_H_) || defined(SQLITE3_H)
 
 __END_DECLS
 

@@ -349,6 +349,19 @@ final:
     return;
 }
 
+void abcdk_scsi_fetch2(abcdk_tree_t **list)
+{
+    assert(list != NULL);
+
+    if(*list == NULL)
+        *list = abcdk_tree_alloc3(1);
+
+    if(*list == NULL)
+        return;
+
+    abcdk_scsi_fetch(*list);
+}
+
 int _abcdk_scsi_find(abcdk_tree_t *list, abcdk_tree_t *node)
 {
     abcdk_tree_t *p;

@@ -1,9 +1,9 @@
 /*
  * This file is part of ABCDK.
- * 
+ *
  * Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
- * 
-*/
+ *
+ */
 #include "abcdk/sqlite/util.h"
 
 #if defined(_SQLITE3_H_) || defined(SQLITE3_H)
@@ -35,20 +35,20 @@ int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param)
 
     } while (chk == SQLITE_OK || chk == SQLITE_BUSY || chk == SQLITE_LOCKED);
 
-    if(chk == SQLITE_DONE)
+    if (chk == SQLITE_DONE)
         chk = sqlite3_backup_finish(backup_ctx);
 
     return ((chk == SQLITE_DONE) ? SQLITE_OK : chk);
 }
 
-int  abcdk_sqlite_close(sqlite3 *ctx)
+int abcdk_sqlite_close(sqlite3 *ctx)
 {
     assert(ctx != NULL);
 
     return sqlite3_close(ctx);
 }
 
-int abcdk_sqlite_busy_melt(void *opaque,int count)
+int abcdk_sqlite_busy_melt(void *opaque, int count)
 {
     /**/
     sched_yield();
@@ -56,12 +56,12 @@ int abcdk_sqlite_busy_melt(void *opaque,int count)
     /*
      * 1: try again.
      * 0: not.
-    */
+     */
 
     return 1;
 }
 
-sqlite3* abcdk_sqlite_open(const char *name)
+sqlite3 *abcdk_sqlite_open(const char *name)
 {
     sqlite3 *ctx = NULL;
     int chk;
@@ -69,16 +69,49 @@ sqlite3* abcdk_sqlite_open(const char *name)
     assert(name != NULL);
 
     chk = sqlite3_open(name, &ctx);
-    if(chk != SQLITE_OK)
-        ABCDK_ERRNO_AND_RETURN1(EINVAL,NULL);
+    if (chk != SQLITE_OK)
+        ABCDK_ERRNO_AND_RETURN1(EINVAL, NULL);
 
     /*注册忙碌处理函数。*/
-    sqlite3_busy_handler(ctx,abcdk_sqlite_busy_melt,ctx);
+    sqlite3_busy_handler(ctx, abcdk_sqlite_busy_melt, ctx);
 
     return ctx;
 }
 
-int abcdk_sqlite_pagesize(sqlite3 * ctx,int size)
+sqlite3 *abcdk_sqlite_memopen()
+{
+    return abcdk_sqlite_open(":memory:");
+}
+
+int abcdk_sqlite_tran_begin(sqlite3 *ctx)
+{
+    assert(ctx != NULL);
+
+    return sqlite3_exec(ctx, "begin;", NULL, NULL, NULL);
+}
+
+int abcdk_sqlite_tran_commit(sqlite3 *ctx)
+{
+    assert(ctx != NULL);
+
+    return sqlite3_exec(ctx, "commit;", NULL, NULL, NULL);
+}
+
+int abcdk_sqlite_tran_rollback(sqlite3 *ctx)
+{
+    assert(ctx != NULL);
+
+    return sqlite3_exec(ctx, "rollback;", NULL, NULL, NULL);
+}
+
+int abcdk_sqlite_tran_vacuum(sqlite3 *ctx)
+{
+    assert(ctx != NULL);
+
+    return sqlite3_exec(ctx, "vacuum;", NULL, NULL, NULL);
+}
+
+int abcdk_sqlite_pagesize(sqlite3 *ctx, int size)
 {
     char sql[100] = {0};
 
@@ -125,7 +158,7 @@ int abcdk_sqlite_journal_mode(sqlite3 *ctx, int mode)
     return sqlite3_exec(ctx, sql, NULL, NULL, NULL);
 }
 
-sqlite3_stmt* abcdk_sqlite_prepare(sqlite3 *ctx,const char *sql)
+sqlite3_stmt *abcdk_sqlite_prepare(sqlite3 *ctx, const char *sql)
 {
     sqlite3_stmt *stmt = NULL;
     int chk;
@@ -134,7 +167,7 @@ sqlite3_stmt* abcdk_sqlite_prepare(sqlite3 *ctx,const char *sql)
 
     chk = sqlite3_prepare(ctx, sql, -1, &stmt, NULL);
     if (SQLITE_OK != chk)
-        ABCDK_ERRNO_AND_RETURN1(EINVAL,NULL);
+        ABCDK_ERRNO_AND_RETURN1(EINVAL, NULL);
 
     return stmt;
 }
@@ -201,4 +234,102 @@ int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name)
     return idx;
 }
 
-#endif //defined(_SQLITE3_H_) || defined(SQLITE3_H)
+#else // #if defined(_SQLITE3_H_) || defined(SQLITE3_H)
+
+int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_close(sqlite3 *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_busy_melt(void *opaque, int count)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+sqlite3 *abcdk_sqlite_open(const char *name)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return NULL;
+}
+
+sqlite3 *abcdk_sqlite_memopen()
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return NULL;
+}
+
+int abcdk_sqlite_tran_begin(sqlite3 *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_tran_commit(sqlite3 *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_tran_rollback(sqlite3 *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_tran_vacuum(sqlite3 *ctx)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_pagesize(sqlite3 *ctx, int size)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_journal_mode(sqlite3 *ctx, int mode)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+sqlite3_stmt *abcdk_sqlite_prepare(sqlite3 *ctx, const char *sql)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return NULL;
+}
+
+int abcdk_sqlite_step(sqlite3_stmt *stmt)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_finalize(sqlite3_stmt *stmt)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_exec_direct(sqlite3 *ctx, const char *sql)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name)
+{
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    return SQLITE_ERROR;
+}
+
+#endif // #if defined(_SQLITE3_H_) || defined(SQLITE3_H)
