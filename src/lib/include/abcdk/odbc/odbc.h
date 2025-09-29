@@ -14,11 +14,11 @@
 #include <sqlext.h>
 #endif // HAVE_UNIXODBC
 
-#if !defined(__SQL_H)
+#ifndef __SQL_H
 #define SQL_ERROR (-1)
-#endif // #if !defined(__SQL_H)
+#endif // #ifndef __SQL_H
 
-#if !defined(__SQLTYPES_H)
+#ifndef __SQLTYPES_H
 typedef signed short int   SQLSMALLINT;
 typedef unsigned short  SQLUSMALLINT;
 typedef SQLSMALLINT     SQLRETURN;
@@ -80,6 +80,6 @@ typedef void *                  SQLHSTMT;
 typedef void * 			        SQLHANDLE; 
 #endif //#if (ODBCVER >= 0x0300)
 
-#endif //#if !defined(__SQLTYPES_H)
+#endif //#ifndef __SQLTYPES_H
 
 #endif //ABCDK_ODBC_ODBC_H

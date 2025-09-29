@@ -9,8 +9,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattribute-warning"
 
-#ifdef CURLINC_CURL_H
-
 static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nmemb, void *user_p)
 {
     int *fd = (int *)user_p;
@@ -22,12 +20,12 @@ static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nm
     return 0;
 }
 
-#endif //CURLINC_CURL_H
-
 int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout)
 {
-#ifdef CURLINC_CURL_H
-
+#ifndef HAVE_CURL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CURL工具。"));
+    return -1;
+#else //#ifndef HAVE_CURL
     CURL *curl_ctx = NULL;
     struct curl_slist *header_list = NULL;
     abcdk_object_t *url_en = NULL;
@@ -97,11 +95,8 @@ END:
         return 0;
 
     return -1;
-#else //CURLINC_CURL_H
-    
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CURL工具。"));
-    return -1;
-#endif //CURLINC_CURL_H
+
+#endif //#ifndef HAVE_CURL
 }
 
 int abcdk_curl_download_filename(const char *file, const char *url, size_t offset, size_t count, time_t ctimeout, time_t stimeout)
