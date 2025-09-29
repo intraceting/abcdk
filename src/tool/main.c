@@ -107,7 +107,6 @@ int main(int argc, char **argv)
     /*拦截信号。*/
     abcdk_proc_signal_block(NULL,NULL);
 
-    abcdk_openssl_init();
 
     args = abcdk_option_alloc("--");
     if (!args)
@@ -118,7 +117,6 @@ int main(int argc, char **argv)
 
     errcode = _abcdk_tool_dispatch(args);
 
-    abcdk_openssl_cleanup();
     abcdk_option_free(&args);
 
     return errcode;

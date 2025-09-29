@@ -205,6 +205,15 @@ int abcdk_sqlite_finalize(sqlite3_stmt *stmt);
 int abcdk_sqlite_exec_direct(sqlite3 *ctx,const char *sql);
 
 /**
+ * 获取数据集中指定字段的值。
+ *
+ * @param [in] max 缓存区最大长度，值超过这个长度的则会被截断。
+ *
+ * @return >= 0 成功(数据长度)， < 0 失败(未找到)。
+ */
+int abcdk_sqlite_get_data(sqlite3_stmt *ctx, int column, int type, void *buf, int max);
+
+/**
  * 在数据集中查找字段的索引。
  * 
  * @return >= 0 成功(索引)，< 0 失败(未找到)。

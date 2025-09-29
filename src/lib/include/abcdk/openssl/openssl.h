@@ -42,15 +42,22 @@
 
 /**/
 #ifndef OPENSSL_VERSION_NUMBER
+#define STACK_OF(type) struct stack_st_##type
+typedef struct stack_st_X509 stack_st_X509;
 typedef struct ssl_st SSL;
 typedef struct ssl_ctx_st SSL_CTX;
 typedef struct bio_st BIO;
+typedef struct bignum_st BIGNUM;
 typedef struct evp_pkey_st EVP_PKEY;
+typedef struct evp_cipher_st EVP_CIPHER;
+typedef struct evp_cipher_ctx_st EVP_CIPHER_CTX;
 typedef struct evp_md_st EVP_MD;
 typedef struct x509_st X509;
 typedef struct X509_crl_st X509_CRL;
 typedef struct x509_store_ctx_st X509_STORE_CTX;
+typedef struct x509_store_st X509_STORE;
 typedef struct rsa_st RSA;
+typedef struct hmac_ctx_st HMAC_CTX;
 #define SSL_read(f,b,s) 0
 #define SSL_write(f,b,s) 0
 #define BIO_read(f,b,s) 0

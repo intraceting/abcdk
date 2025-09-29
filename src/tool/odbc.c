@@ -6,8 +6,6 @@
  */
 #include "entry.h"
 
-#if defined(__SQL_H) && defined(__SQLEXT_H)
-
 typedef struct _abcdk_odbc
 {
     int errcode;
@@ -62,7 +60,7 @@ void _abcdk_odbc_print_usage(abcdk_option_t *args)
 
 void _abcdk_odbc_work(abcdk_odbc_t *ctx)
 {
-    abcdk_odbc_t *odbc = abcdk_odbc_alloc(0);
+    abcdk_odbc_t *odbc = NULL;
     const char *product = NULL;
     const char *driver = NULL;
     const char *server = NULL;
@@ -85,6 +83,10 @@ void _abcdk_odbc_work(abcdk_odbc_t *ctx)
     uri = abcdk_option_get(ctx->args, "--uri", 0, NULL);
     timeout = abcdk_option_get_long(ctx->args, "--timeout", 0, 30);
     tracefile = abcdk_option_get(ctx->args, "--trace-file", 0, NULL);
+
+    odbc = abcdk_odbc_alloc(0);
+    if(!odbc)
+        ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
 
     /*优先检查自定义是否可用。*/
     if (uri && *uri)
@@ -166,13 +168,8 @@ final:
     abcdk_odbc_free(&odbc);
 }
 
-#endif //defined(__SQL_H) && defined(__SQLEXT_H)
-
-
 int abcdk_tool_odbc(abcdk_option_t *args)
 {
-#if defined(__SQL_H) && defined(__SQLEXT_H)
-
     abcdk_odbc_t ctx = {0};
     ctx.args = args;
 
@@ -186,12 +183,4 @@ int abcdk_tool_odbc(abcdk_option_t *args)
     }
 
     return ctx.errcode;
-
-#else //defined(__SQL_H) && defined(__SQLEXT_H)
-
-    fprintf(stderr, "当前构建版本未包含此工具。\n");
-    return EPERM;
-
-#endif //defined(__SQL_H) && defined(__SQLEXT_H)
-
 }

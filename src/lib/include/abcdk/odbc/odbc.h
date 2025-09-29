@@ -15,6 +15,7 @@
 #endif // HAVE_UNIXODBC
 
 #ifndef __SQL_H
+#define SQL_SUCCESS 0
 #define SQL_ERROR (-1)
 #endif // #ifndef __SQL_H
 

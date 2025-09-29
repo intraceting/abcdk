@@ -6,8 +6,6 @@
  */
 #include "abcdk/openssl/darknet.h"
 
-#ifdef OPENSSL_VERSION_NUMBER
-
 /**简单的安全套接字。*/
 struct _abcdk_openssl_darknet
 {
@@ -67,6 +65,10 @@ struct _abcdk_openssl_darknet
 
 void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     abcdk_openssl_darknet_t *ctx_p;
 
     if (!ctx || !*ctx)
@@ -87,7 +89,10 @@ void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
     abcdk_object_unref(&ctx_p->recv_hdr);
 
     abcdk_heap_free(ctx_p);
+#endif //#ifndef HAVE_OPENSSL
 }
+
+#ifdef HAVE_OPENSSL
 
 size_t _abcdk_openssl_darknet_hdr_size(RSA *rsa_ctx,int payload)
 {
@@ -112,9 +117,14 @@ END:
 
     return chk;
 }
+#endif //#ifdef HAVE_OPENSSL
 
 abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_openssl_darknet_t *ctx;
     int chk;
 
@@ -178,10 +188,15 @@ ERR:
 
     abcdk_openssl_darknet_destroy(&ctx);
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file,int pubkey)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_openssl_darknet_t *ctx;
     RSA *rsa_ctx;
 
@@ -198,10 +213,15 @@ abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_
         return NULL;
 
     return ctx;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx, int fd, int flag)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL && fd >= 0);
 
     if (flag == 0)
@@ -222,10 +242,15 @@ int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx, int fd, int flag)
     }
 
     return 0;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx, int flag)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     int old;
 
     assert(ctx != NULL);
@@ -247,7 +272,10 @@ int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx, int flag)
     }
 
     return -1;
+#endif //#ifndef HAVE_OPENSSL
 }
+
+#ifdef HAVE_OPENSSL
 
 static int _abcdk_openssl_darknet_write_init(abcdk_openssl_darknet_t *ctx)
 {
@@ -291,8 +319,14 @@ static abcdk_tree_t *_abcdk_openssl_darknet_write_update(abcdk_openssl_darknet_t
     return en_data;
 }
 
+#endif //#ifdef HAVE_OPENSSL
+
 ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     char salt[256 + 1] = {0};
     abcdk_tree_t *en_data = NULL;
     abcdk_tree_t *p = NULL;
@@ -374,7 +408,10 @@ NEXT_MSG:
 
     /*并继续发送剩余节点。*/
     goto NEXT_MSG;
+#endif //#ifndef HAVE_OPENSSL
 }
+
+#ifdef HAVE_OPENSSL
 
 static int _abcdk_openssl_darknet_read_init(abcdk_openssl_darknet_t *ctx)
 {
@@ -421,9 +458,14 @@ static abcdk_object_t *_abcdk_openssl_darknet_read_update(abcdk_openssl_darknet_
     return de_data;
 }
 
+#endif //#ifdef HAVE_OPENSSL
 
 ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx, void *data, size_t size)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     abcdk_object_t *de_data = NULL;
     ssize_t rlen = 0;
     int chk;
@@ -491,51 +533,6 @@ NEXT_LOOP:
     }
 
     goto NEXT_LOOP;
+#endif //#ifndef HAVE_OPENSSL
 }
 
-#else //OPENSSL_VERSION_NUMBER
-
-
-void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-}
-
-
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return NULL;
-}
-
-abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file, int pubkey)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return NULL;
-}
-
-int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx,int fd,int flag)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return -1;
-}
-
-int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx,int flag)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return -1;
-}
-
-ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx,const void *data,size_t size)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return 0;
-}
-
-ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx,void *data,size_t size)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return 0;
-}
-
-#endif //OPENSSL_VERSION_NUMBER

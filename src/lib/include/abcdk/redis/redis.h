@@ -13,4 +13,9 @@
 #include <hiredis/hiredis.h>
 #endif //HAVE_REDIS
 
+#ifndef __HIREDIS_H
+typedef struct redisReply redisReply;
+typedef struct redisContext redisContext;
+#endif //#ifndef __HIREDIS_H
+
 #endif //ABCDK_REDIS_REDIS_H

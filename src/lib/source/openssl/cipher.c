@@ -6,8 +6,6 @@
  */
 #include "abcdk/openssl/cipher.h"
 
-#ifdef OPENSSL_VERSION_NUMBER
-
 /**简单的加密接口。 */
 struct _abcdk_openssl_cipher
 {
@@ -34,6 +32,8 @@ struct _abcdk_openssl_cipher
 
 }; // abcdk_openssl_cipher_t;
 
+#ifdef HAVE_OPENSSL
+
 void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
 {
     if (len <= 0)
@@ -48,8 +48,14 @@ void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
 #endif
 }
 
+#endif //#ifdef HAVE_OPENSSL
+
 void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     abcdk_openssl_cipher_t *ctx_p;
 
     if (!ctx || !*ctx)
@@ -62,7 +68,10 @@ void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
     abcdk_object_unref(&ctx_p->evp_key);
     abcdk_spinlock_destroy(&ctx_p->locker_ctx);
     abcdk_heap_free(ctx_p);
+#endif //#ifndef HAVE_OPENSSL
 }
+
+#ifdef HAVE_OPENSSL
 
 static int _abcdk_openssl_cipher_aes256gcm_init(abcdk_openssl_cipher_t *ctx, const uint8_t *key, size_t key_len)
 {
@@ -389,9 +398,14 @@ static int _abcdk_openssl_cipher_init(abcdk_openssl_cipher_t *ctx, int scheme, c
 
     return chk;
 }
+#endif //#ifdef HAVE_OPENSSL
 
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *key, size_t key_len)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_openssl_cipher_t *ctx;
     int chk;
 
@@ -416,10 +430,15 @@ ERR:
 
     abcdk_openssl_cipher_destroy(&ctx);
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const char *key_file)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_object_t *key;
     abcdk_openssl_cipher_t *ctx;
 
@@ -433,10 +452,15 @@ abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const 
     abcdk_object_unref(&key);
 
     return ctx;
+#endif //#ifdef HAVE_OPENSSL
 }
 
 abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_object_t *out;
 
     assert(ctx != NULL && in != NULL && in_len > 0);
@@ -449,10 +473,15 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
         out = NULL;
 
     return out;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_object_t *src_p = NULL;
     abcdk_object_t *dst_p = NULL;
     uint32_t old_len = 0;
@@ -517,68 +546,31 @@ ERR:
     abcdk_object_unref(&src_p);
     abcdk_object_unref(&dst_p);
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL);
 
     abcdk_spinlock_lock(ctx->locker_ctx,1);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    return exitcode;
+#else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL);
 
     abcdk_spinlock_unlock(ctx->locker_ctx);
 
     return exitcode;
+#endif //#ifndef HAVE_OPENSSL
 }
-
-#else //OPENSSL_VERSION_NUMBER
-
-void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-}
-
-abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *key, size_t key_len)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return NULL;
-}
-
-
-abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const char *key_file)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return NULL;
-}
-
-
-abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return NULL;
-}
-
-
-abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return NULL;
-}
-
-void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-}
-
-
-int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
-    return exitcode;
-}
-
-#endif // OPENSSL_VERSION_NUMBER

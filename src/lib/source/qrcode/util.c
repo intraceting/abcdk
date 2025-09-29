@@ -6,10 +6,13 @@
 */
 #include "abcdk/qrcode/util.h"
 
-#ifdef QRENCODE_H
 
 abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin)
 {
+#ifndef HAVE_QRENCODE
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
+    return NULL; 
+#else //#ifndef HAVE_QRENCODE
     abcdk_object_t *dst = NULL;
     QRcode *src = NULL;
     int qr_width,qr_height;
@@ -70,10 +73,15 @@ ERR:
     abcdk_object_unref(&dst);
 
     return NULL;
+#endif //#ifndef HAVE_QRENCODE
 }
 
 int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin)
 {
+#ifndef HAVE_QRENCODE
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
+    return -1; 
+#else //#ifndef HAVE_QRENCODE
     abcdk_object_t *src = NULL;
     abcdk_object_t *src_rgb = NULL;
     int width,height;
@@ -131,21 +139,5 @@ ERR:
     abcdk_object_unref(&src_rgb);
 
     return -1;
+#endif //#ifndef HAVE_QRENCODE
 }
-
-#else //QRENCODE_H
-
-abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
-    return NULL; 
-}
-
-int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin)
-{
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
-    return -1;  
-}
-
-
-#endif //QRENCODE_H

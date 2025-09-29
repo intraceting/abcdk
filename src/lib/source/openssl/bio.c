@@ -6,7 +6,7 @@
  */
 #include "abcdk/openssl/bio.h"
 
-#ifdef HEADER_BIO_H
+#ifdef HAVE_OPENSSL
 
 typedef struct _abcdk_openssl_BIO
 {
@@ -314,8 +314,14 @@ static int _abcdk_openssl_BIO_destroy_cb(BIO *bio_ctx)
     return 1;
 }
 
+#endif //#ifdef HAVE_OPENSSL
+
 void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
     BIO *bio_ctx_p;
 
     if(!bio_ctx ||!*bio_ctx)
@@ -325,10 +331,15 @@ void abcdk_openssl_BIO_destroy(BIO **bio_ctx)
     *bio_ctx = NULL;
 
     BIO_free(bio_ctx_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_openssl_BIO_t *bio_p;
     BIO *openssl_bio_p;
 
@@ -376,10 +387,15 @@ ERR:
     }
 
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     BIO *bio_ctx;
     RSA *rsa_ctx;
 
@@ -396,6 +412,7 @@ BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey)
         return NULL;
 
     return bio_ctx;
+#endif //#ifndef HAVE_OPENSSL
 }
 
-#endif // HEADER_BIO_H
+

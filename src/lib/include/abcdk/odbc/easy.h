@@ -167,9 +167,10 @@ SQLRETURN abcdk_odbc_fetch_next(abcdk_odbc_t *ctx);
  * @param [in] max 缓存区最大长度，值超过这个长度的则会被截断。
  * @param [out] len 字段值长度的指针，NULL(0)忽略。
  *
+ * @return >= 0 成功(数据长度)， < 0 失败(未找到)。
  */
-SQLRETURN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT type,
-                              SQLPOINTER buf, SQLULEN max, SQLULEN *len);
+SQLULEN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT type,
+                              SQLPOINTER buf, SQLULEN max);
 
 /**
  * 在数据集中查找字段的索引。

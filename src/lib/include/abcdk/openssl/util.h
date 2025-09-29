@@ -27,8 +27,6 @@ void abcdk_openssl_init();
 
 /******************************************************************************************************/
 
-#ifdef OPENSSL_VERSION_NUMBER
-
 /**释放。 */
 void abcdk_openssl_bn_free(BIGNUM **bn);
 
@@ -50,11 +48,9 @@ void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher);
 */
 EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *key,int pubkey, abcdk_object_t **passwd);
 
-#endif //OPENSSL_VERSION_NUMBER
 
 /******************************************************************************************************/
 
-#ifdef HEADER_RSA_H
 
 /**释放。 */
 void abcdk_openssl_rsa_free(RSA **rsa);
@@ -99,11 +95,8 @@ abcdk_object_t *abcdk_openssl_rsa_export(RSA *rsa);
 */
 abcdk_object_t *abcdk_openssl_rsa_update(RSA *rsa, const uint8_t *in, int in_len, int enc);
 
-#endif //EADER_RSA_H
 
 /******************************************************************************************************/
-
-#ifdef HEADER_HMAC_H
 
 /**
  * HMAC支持的算法。
@@ -158,12 +151,8 @@ HMAC_CTX *abcdk_openssl_hmac_alloc();
 int abcdk_openssl_hmac_init(HMAC_CTX *ctx,const void *key, int len,int type);
 
 
-#endif //HEADER_HMAC_H
-
 /******************************************************************************************************/
 
-
-#ifdef HEADER_X509_H
 
 /**释放。 */
 void abcdk_openssl_x509_free(X509 **x509);
@@ -251,11 +240,7 @@ X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *c
 X509_STORE_CTX *abcdk_openssl_cert_verify_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain);
 
 
-#endif //HEADER_X509_H
-
 /******************************************************************************************************/
-
-#ifdef HEADER_SSL_H
 
 /**
  * 释放SSL_CTX句柄。
@@ -311,7 +296,6 @@ int abcdk_openssl_ssl_handshake(int fd, SSL *ssl, int server, time_t timeout);
 */
 int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256]);
 
-#endif //HEADER_SSL_H
 
 /************************************************************************************************************************/
 

@@ -8,7 +8,7 @@
 
 /******************************************************************************************************/
 
-#ifdef OPENSSL_VERSION_NUMBER
+#ifdef HAVE_OPENSSL
 #if OPENSSL_VERSION_NUMBER < 0x10000000L
 
 static pthread_mutex_t *_abcdk_openssl_crypto_locker_array = NULL;
@@ -54,11 +54,14 @@ void _abcdk_openssl_crypto_cleanup()
 }
 
 #endif //#if OPENSSL_VERSION_NUMBER < 0x10000000L
-#endif //OPENSSL_VERSION_NUMBER
+#endif //HAVE_OPENSSL
 
 void abcdk_openssl_cleanup()
 {
-#ifdef OPENSSL_VERSION_NUMBER
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
 
     ERR_remove_thread_state(NULL);
     ERR_free_strings();
@@ -77,12 +80,15 @@ void abcdk_openssl_cleanup()
     _abcdk_openssl_crypto_cleanup();
 #endif //#if OPENSSL_VERSION_NUMBER < 0x10000000L
 
-#endif // OPENSSL_VERSION_NUMBER
+#endif // #ifndef HAVE_OPENSSL
 }
 
 void abcdk_openssl_init()
 {
-#ifdef OPENSSL_VERSION_NUMBER
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
 
     SSL_library_init();
     OpenSSL_add_all_algorithms();
@@ -94,12 +100,10 @@ void abcdk_openssl_init()
     _abcdk_openssl_crypto_setup();
 #endif //#if OPENSSL_VERSION_NUMBER < 0x10000000L
 
-#endif //OPENSSL_VERSION_NUMBER
+#endif //#ifndef HAVE_OPENSSL
 }
 
 /******************************************************************************************************/
-
-#ifdef OPENSSL_VERSION_NUMBER
 
 typedef struct _abcdk_openssl_pem_password_ctx
 {
@@ -123,6 +127,10 @@ static int _abcdk_openssl_pem_password_cb(char *buf, int size, int rwflag, void 
 
 void abcdk_openssl_bn_free(BIGNUM **bn)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
     BIGNUM *bn_p;
 
     if(!bn || !*bn)
@@ -132,10 +140,15 @@ void abcdk_openssl_bn_free(BIGNUM **bn)
     *bn = NULL;
 
     BN_clear_free(bn_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 void abcdk_openssl_evp_pkey_free(EVP_PKEY **pkey)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
     EVP_PKEY *pkey_p;
 
     if(!pkey || !*pkey)
@@ -145,10 +158,15 @@ void abcdk_openssl_evp_pkey_free(EVP_PKEY **pkey)
     *pkey = NULL;
 
     EVP_PKEY_free(pkey_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
     EVP_CIPHER_CTX *cipher_p;
 
     if(!cipher || !*cipher)
@@ -159,10 +177,15 @@ void abcdk_openssl_evp_cipher_ctx_free(EVP_CIPHER_CTX **cipher)
 
     EVP_CIPHER_CTX_cleanup(cipher_p);
     EVP_CIPHER_CTX_free(cipher_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *key, int pubkey, abcdk_object_t **passwd)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     EVP_PKEY *pkey = NULL;
     FILE *fp = NULL;
     abcdk_openssl_pem_password_ctx_t ctx = {0};
@@ -188,16 +211,19 @@ EVP_PKEY *abcdk_openssl_evp_pkey_load(const char *key, int pubkey, abcdk_object_
 
     abcdk_object_unref(&ctx.passwd); // free.
     return pkey;
+#endif //#ifndef HAVE_OPENSSL
 }
 
-#endif //OPENSSL_VERSION_NUMBER
 
 /******************************************************************************************************/
 
-#ifdef HEADER_RSA_H
 
 void abcdk_openssl_rsa_free(RSA **rsa)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return ;
+#else //#ifndef HAVE_OPENSSL
     RSA *rsa_p;
 
     if(!rsa || !*rsa)
@@ -207,24 +233,15 @@ void abcdk_openssl_rsa_free(RSA **rsa)
     *rsa = NULL;
 
     RSA_free(rsa_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_rsa_is_prikey(RSA *rsa) 
 {
-#if 0
-    RSA *rsa_p;
-    int chk;
-
-    assert(rsa != NULL);
-
-    rsa_p = RSAPrivateKey_dup(rsa);
-    chk = (rsa_p != NULL);
-
-    abcdk_openssl_rsa_free(&rsa_p);
-
-    return chk;
-#else //上面的代码，当传入的是公钥时，会有内存泄漏问题。
-
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return 0;
+#else //#ifndef HAVE_OPENSSL
     const BIGNUM *d_p = NULL;
 
     assert(rsa != NULL);
@@ -237,13 +254,15 @@ int abcdk_openssl_rsa_is_prikey(RSA *rsa)
 
     /*仅私钥中存在这个组件，公钥中没有。*/
     return (d_p != NULL);
-
-#endif //
+#endif //#ifndef HAVE_OPENSSL
 }
 
 RSA *abcdk_openssl_rsa_create(int bits, unsigned long e)
 {
-#ifdef HEADER_BIO_H
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
 
     RSA *key = NULL;
     BIGNUM *bne = NULL;
@@ -272,14 +291,16 @@ ERR:
         
     abcdk_openssl_rsa_free(&key);
     abcdk_openssl_bn_free(&bne);
-
-#endif //HEADER_BIO_H
-
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 RSA *abcdk_openssl_rsa_load(const char *key, int pubkey, abcdk_object_t **passwd)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     EVP_PKEY *pkey;
     RSA *rsa_ctx;
 
@@ -296,11 +317,15 @@ RSA *abcdk_openssl_rsa_load(const char *key, int pubkey, abcdk_object_t **passwd
         return NULL;
 
     return rsa_ctx;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_object_t *abcdk_openssl_rsa_export(RSA *rsa)
 {
-#ifdef HEADER_BIO_H
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
 
     abcdk_object_t *out;
     BIO *pem_bio = NULL;
@@ -336,11 +361,11 @@ ERR:
     if(pem_bio)
         BIO_free_all(pem_bio);
 
-#endif //HEADER_BIO_H
-
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
+#ifdef HAVE_OPENSSL
 static int _abcdk_openssl_rsa_update_fragment(uint8_t *out, int out_max, const uint8_t *in, int in_len,
                                               int enc, RSA *rsa, int pubkey, int pt_bsize, int ct_bsize, int padding)
 {
@@ -390,9 +415,14 @@ static int _abcdk_openssl_rsa_update_fragment(uint8_t *out, int out_max, const u
 
     return -1;
 }
+#endif //#ifndef HAVE_OPENSSL
 
 abcdk_object_t *abcdk_openssl_rsa_update(RSA *rsa, const uint8_t *in, int in_len, int enc)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     abcdk_object_t *out;
     int pubkey,blocks,pt_bsize, ct_bsize;
     int chk;
@@ -449,16 +479,18 @@ abcdk_object_t *abcdk_openssl_rsa_update(RSA *rsa, const uint8_t *in, int in_len
     }
 
     return out;
+#endif //#ifndef HAVE_OPENSSL
 }
 
-#endif //HEADER_RSA_H
 
 /******************************************************************************************************/
 
-#ifdef HEADER_HMAC_H
-
 void abcdk_openssl_hmac_free(HMAC_CTX **ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     HMAC_CTX *ctx_p;
 
     if(!ctx || !*ctx)
@@ -473,11 +505,17 @@ void abcdk_openssl_hmac_free(HMAC_CTX **ctx)
 #else //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
     HMAC_CTX_free(ctx_p);
 #endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
+
+#endif //#ifndef HAVE_OPENSSL
 }
 
 /**申请。*/
 HMAC_CTX *abcdk_openssl_hmac_alloc()
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     HMAC_CTX *ctx;
 
 #if OPENSSL_VERSION_NUMBER <= 0x100020bfL
@@ -494,10 +532,15 @@ HMAC_CTX *abcdk_openssl_hmac_alloc()
 #endif //#if OPENSSL_VERSION_NUMBER <= 0x100020bfL
     
     return ctx;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_hmac_init(HMAC_CTX *ctx, const void *key, int len, int type)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     int chk = -1;
 
     assert(ctx != NULL && key != NULL && len > 0);
@@ -547,16 +590,18 @@ int abcdk_openssl_hmac_init(HMAC_CTX *ctx, const void *key, int len, int type)
 #endif
 
     return (chk == 1) ? 0 : -1;
+#endif //#ifndef HAVE_OPENSSL
 }
 
-#endif //HEADER_HMAC_H
 
 /******************************************************************************************************/
 
-#ifdef HEADER_X509_H
-
 void abcdk_openssl_x509_free(X509 **x509)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     X509 *x509_p;
 
     if(!x509 || !*x509)
@@ -566,11 +611,15 @@ void abcdk_openssl_x509_free(X509 **x509)
     *x509 = NULL;
 
     X509_free(x509_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509)
 {
-# ifndef OPENSSL_NO_BIO
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     BIO *mem;
     char *data_p = NULL;
     long data_l = 0;
@@ -589,13 +638,15 @@ abcdk_object_t *abcdk_openssl_cert_dump(X509 *x509)
     BIO_free(mem);
 
     return cert_info;
-#else //# ifndef OPENSSL_NO_BIO
-    return NULL;
-#endif  //# ifndef OPENSSL_NO_BIO
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     int err_num,err_depth;
     X509 *err_cert = NULL;
     abcdk_object_t *err_cert_info = NULL;
@@ -618,10 +669,15 @@ abcdk_object_t *abcdk_openssl_cert_verify_error_dump(X509_STORE_CTX *store_ctx)
                                    err_depth, err_num, X509_verify_cert_error_string(err_num), (err_cert_info ? err_cert_info->pstrs[0] : ""));
 
     return err_info;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 RSA *abcdk_openssl_cert_get_rsa_pubkey(X509 *x509)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     RSA *rsa = NULL;
     EVP_PKEY *pkey = NULL;
 
@@ -638,11 +694,15 @@ RSA *abcdk_openssl_cert_get_rsa_pubkey(X509 *x509)
     abcdk_openssl_evp_pkey_free(&pkey);
 
     return rsa;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 abcdk_object_t *abcdk_openssl_cert_to_pem(X509 *leaf_cert,STACK_OF(X509) *cert_chain)
 {
-# ifndef OPENSSL_NO_BIO
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     BIO *bio;
     BUF_MEM *bmem_p;
     X509 *cert_p; 
@@ -677,13 +737,15 @@ ERR:
 
     BIO_free(bio);
     return NULL;
-#else //# ifndef OPENSSL_NO_BIO
-    return NULL;
-#endif  //# ifndef OPENSSL_NO_BIO
+#endif //#ifndef HAVE_OPENSSL
 }
 
 X509_CRL *abcdk_openssl_crl_load(const char *crl)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     X509_CRL *ctx = NULL;
     FILE *fp = NULL;
 
@@ -698,10 +760,15 @@ X509_CRL *abcdk_openssl_crl_load(const char *crl)
     fclose(fp);
 
     return ctx;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 X509 *abcdk_openssl_cert_load(const char *crt)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     X509 *ctx = NULL;
     FILE *fp = NULL;
 
@@ -715,11 +782,16 @@ X509 *abcdk_openssl_cert_load(const char *crt)
     fclose(fp);
 
     return ctx;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 
 X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const char *pattern)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     X509_NAME *issuer_name,*subject_name;
     X509 *father_cert = NULL;
     abcdk_tree_t *dir = NULL;
@@ -765,10 +837,15 @@ X509 *abcdk_openssl_cert_father_find(X509 *leaf_cert,const char *ca_path,const c
     abcdk_tree_free(&dir);
 
     return father_cert;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 STACK_OF(X509) *abcdk_openssl_cert_chain_load(X509 *leaf_cert, const char *ca_path,const char *pattern)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     STACK_OF(X509) *cert_chain;
     X509 *curt_cert,*father_cert;
 
@@ -806,10 +883,15 @@ ERR:
         sk_X509_pop_free(cert_chain, X509_free);
 
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 STACK_OF(X509) *abcdk_openssl_cert_chain_load_mem(const char *buf,int len)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     STACK_OF(X509) *cert_chain;
     X509 *cert_p = NULL;
     FILE *fp = NULL;
@@ -847,10 +929,15 @@ ERR:
         sk_X509_pop_free(cert_chain, X509_free);
     
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 X509_STORE *abcdk_openssl_cert_load_locations(const char *ca_file, const char *ca_path)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     X509_STORE *store;
     int chk;
 
@@ -869,10 +956,15 @@ ERR:
 
     X509_STORE_free(store);
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 X509_STORE_CTX *abcdk_openssl_cert_verify_prepare(X509_STORE *store,X509 *leaf_cert,STACK_OF(X509) *cert_chain)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     X509_STORE_CTX *store_ctx = NULL;
     int chk;
 
@@ -895,17 +987,19 @@ ERR:
     }
 
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 
-#endif //HEADER_X509_H
-
 /******************************************************************************************************/
 
-#ifdef HEADER_SSL_H
 
 void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     SSL_CTX *ctx_p = NULL;
 
     if (!ctx || !*ctx)
@@ -915,10 +1009,15 @@ void abcdk_openssl_ssl_ctx_free(SSL_CTX **ctx)
     *ctx = NULL;
 
     SSL_CTX_free(ctx_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 SSL_CTX *abcdk_openssl_ssl_ctx_alloc(int server,const char *cafile,const char *capath, int chk_crl,X509 *use_crt, EVP_PKEY *use_key)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     const SSL_METHOD *method = NULL;
     SSL_CTX *ctx = NULL;
     int chk;
@@ -1019,8 +1118,10 @@ ERR:
 
     abcdk_openssl_ssl_ctx_free(&ctx);
     return NULL;
+#endif //#ifndef HAVE_OPENSSL
 }
 
+#ifdef HAVE_OPENSSL
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
 static int _abcdk_openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen,
                                          const unsigned char *in, unsigned int inlen, void *arg)
@@ -1046,11 +1147,17 @@ static int _abcdk_openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, un
     }
 
     return SSL_TLSEXT_ERR_OK;
+
 }
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+#endif //#ifndef HAVE_OPENSSL
 
 int abcdk_openssl_ssl_ctx_set_alpn(SSL_CTX *ctx,const uint8_t *next_proto,const char *cipher_list)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     int chk;
 
     assert(ctx != NULL && next_proto != NULL);
@@ -1067,10 +1174,15 @@ int abcdk_openssl_ssl_ctx_set_alpn(SSL_CTX *ctx,const uint8_t *next_proto,const 
     }
 
     return 0;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 void abcdk_openssl_ssl_free(SSL **ssl)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return;
+#else //#ifndef HAVE_OPENSSL
     SSL *ssl_p;
     int chk,ssl_chk,ssl_err;
     int fd;
@@ -1105,10 +1217,15 @@ void abcdk_openssl_ssl_free(SSL **ssl)
 final:
 
     SSL_free(ssl_p);
+#endif //#ifndef HAVE_OPENSSL
 }
 
 SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return NULL;
+#else //#ifndef HAVE_OPENSSL
     SSL *ssl;
     assert(ctx != NULL);
 
@@ -1122,10 +1239,15 @@ SSL *abcdk_openssl_ssl_alloc(SSL_CTX *ctx)
 #endif //SSL_OP_NO_RENEGOTIATION
 
     return ssl;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_ssl_handshake(int fd, SSL *ssl, int server, time_t timeout)
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     int err;
     int chk;
 
@@ -1172,10 +1294,15 @@ try_again:
     }
 
     return 0;
+#endif //#ifndef HAVE_OPENSSL
 }
 
 int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256])
 {
+#ifndef HAVE_OPENSSL
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OPENSSL工具。"));
+    return -1;
+#else //#ifndef HAVE_OPENSSL
     const uint8_t *ver_p;
     unsigned int ver_l;
 
@@ -1190,8 +1317,9 @@ int abcdk_openssl_ssl_get_alpn_selected(SSL *ssl,char buf[256])
 #else 
     return -1;
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
+
+#endif //#ifndef HAVE_OPENSSL
 }
 
-#endif //HEADER_SSL_H
 
 /******************************************************************************************************/

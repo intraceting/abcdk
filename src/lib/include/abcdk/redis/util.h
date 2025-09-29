@@ -8,10 +8,9 @@
 #define ABCDK_REDIS_UTIL_H
 
 #include "abcdk/redis/redis.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
-
-#ifdef __HIREDIS_H
 
 /**
  * 
@@ -57,7 +56,6 @@ int abcdk_redis_set_auth(redisContext *ctx,const char *auth);
 */
 int abcdk_redis_get_auth(redisContext *ctx,char auth[128]);
 
-#endif //__HIREDIS_H
 
 __END_DECLS
 

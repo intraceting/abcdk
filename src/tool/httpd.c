@@ -601,6 +601,8 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
 
     abcdk_trace_printf(LOG_INFO, "启动……");
 
+    abcdk_openssl_init();
+
     ctx->name_p = abcdk_option_get(ctx->args, "--name", 0, "ABCDK");
     ctx->acao_p = abcdk_option_get(ctx->args, "--access-control-allow-origin", 0, "*");
 #ifdef OPENSSL_VERSION_NUMBER
@@ -689,6 +691,8 @@ ERR:
     abcdk_openssl_x509_free(&ctx->pki_cert_ctx);
     abcdk_openssl_evp_pkey_free(&ctx->pki_key_ctx);
 #endif //OPENSSL_VERSION_NUMBER
+
+    abcdk_openssl_cleanup();
 
     abcdk_trace_printf(LOG_INFO, "停止。");
 

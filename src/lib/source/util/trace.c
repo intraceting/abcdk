@@ -32,7 +32,7 @@ void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, voi
 #endif //__USE_GNU
 
     /*格式化行的头部：时间、PID、进程名字*/
-    hdrlen = snprintf(buf, sizeof(buf), "%04d%02d%02d%02d%02d%02d.%06llu p%d %s: ",
+    hdrlen = snprintf(buf, sizeof(buf), "%04d%02d%02dT%02d%02d%02d.%06llu [%d] %s: ",
                       tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), name);
 
 next_line:

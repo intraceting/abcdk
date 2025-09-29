@@ -11,7 +11,6 @@
 
 __BEGIN_DECLS
 
-#ifdef HEADER_BIO_H
 
 /**销毁。*/
 void abcdk_openssl_BIO_destroy(BIO **bio);
@@ -26,8 +25,6 @@ BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey);
 */
 BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey);
 
-
-#endif //HEADER_BIO_H
 
 __END_DECLS
 
