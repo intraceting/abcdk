@@ -10,7 +10,7 @@
 /**
  * ODBC连接池。
 */
-struct _abcdk_odbcpool
+struct _abcdk_odbc_pool
 {
     /** 魔法数。*/
     uint32_t magic;
@@ -29,22 +29,22 @@ struct _abcdk_odbcpool
     volatile size_t pop_nbs;
 
     /** 连接数据库回调函数指针。*/
-    abcdk_odbcpool_connect_cb connect_cb;
+    abcdk_odbc_pool_connect_cb connect_cb;
 
     /** 环境指针。*/
     void *opaque;
 
-};//abcdk_odbcpool_t;
+};//abcdk_odbc_pool_t;
 
 
-time_t _abcdk_odbcpool_clock()
+time_t _abcdk_odbc_pool_clock()
 {
     return abcdk_time_clock2kind_with(CLOCK_MONOTONIC,3);
 }
 
-void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
+void abcdk_odbc_pool_destroy(abcdk_odbc_pool_t **ctx)
 {
-    abcdk_odbcpool_t *p = NULL;
+    abcdk_odbc_pool_t *p = NULL;
     abcdk_odbc_t *odbc_p = NULL;
 
     if (!ctx || !*ctx)
@@ -83,15 +83,15 @@ void abcdk_odbcpool_destroy(abcdk_odbcpool_t **ctx)
     abcdk_heap_free(p);
 }
 
-abcdk_odbcpool_t *abcdk_odbcpool_create(size_t size, abcdk_odbcpool_connect_cb connect_cb, void *opaque)
+abcdk_odbc_pool_t *abcdk_odbc_pool_create(size_t size, abcdk_odbc_pool_connect_cb connect_cb, void *opaque)
 {
-    abcdk_odbcpool_t *p = NULL;
+    abcdk_odbc_pool_t *p = NULL;
     static volatile uint32_t magic = 1;
     int chk;
 
     ABCDK_ASSERT(size > 0 && connect_cb != NULL, TT("池大小不能为0，并且连接回调函数指针不能为空。"));
 
-    p = (abcdk_odbcpool_t*)abcdk_heap_alloc(sizeof(abcdk_odbcpool_t));
+    p = (abcdk_odbc_pool_t*)abcdk_heap_alloc(sizeof(abcdk_odbc_pool_t));
     if(!p)
         return NULL;
 
@@ -109,9 +109,9 @@ abcdk_odbcpool_t *abcdk_odbcpool_create(size_t size, abcdk_odbcpool_connect_cb c
 }
 
 
-abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx,time_t timeout)
+abcdk_odbc_t *abcdk_odbc_pool_pop(abcdk_odbc_pool_t *ctx,time_t timeout)
 {
-    abcdk_odbcpool_t *p = NULL;
+    abcdk_odbc_pool_t *p = NULL;
     abcdk_odbc_t *odbc_p = NULL;
     time_t time_end;
     time_t time_span;
@@ -122,7 +122,7 @@ abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx,time_t timeout)
     p = ctx;
 
     /*计算过期时间。*/
-    time_end = _abcdk_odbcpool_clock() + timeout;
+    time_end = _abcdk_odbc_pool_clock() + timeout;
 
     abcdk_mutex_lock(p->mutex,1);
 
@@ -135,7 +135,7 @@ abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx,time_t timeout)
             break;
 
         /*计算剩余超时时长。*/
-        time_span = time_end - _abcdk_odbcpool_clock();
+        time_span = time_end - _abcdk_odbc_pool_clock();
         if (time_span <= 0)
             break;
 
@@ -171,9 +171,9 @@ abcdk_odbc_t *abcdk_odbcpool_pop(abcdk_odbcpool_t *ctx,time_t timeout)
     return odbc_p;
 }
 
-void abcdk_odbcpool_push(abcdk_odbcpool_t *ctx, abcdk_odbc_t **odbc)
+void abcdk_odbc_pool_push(abcdk_odbc_pool_t *ctx, abcdk_odbc_t **odbc)
 {
-    abcdk_odbcpool_t *p = NULL;
+    abcdk_odbc_pool_t *p = NULL;
     abcdk_odbc_t *odbc_p = NULL;
     int chk = -1;
 

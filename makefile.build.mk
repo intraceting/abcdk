@@ -27,6 +27,7 @@ LIB_SRC_FILES += $(wildcard src/lib/source/torch_cuda/*.c)
 LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
 
 #C++
+LIB_SRC_CXX_FILES += $(wildcard src/lib/source/ffmpeg/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/rtsp/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
 LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)

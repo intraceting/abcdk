@@ -38,10 +38,35 @@ __BEGIN_DECLS
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
 #include <libavcodec/bsf.h>
-#endif //
+#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
+
+//
+typedef enum AVCodecID AVCodecID;
+typedef enum AVPixelFormat AVPixelFormat;
 
 __END_DECLS
 #endif // HAVE_FFMPEG
+
+#ifndef AVUTIL_FRAME_H
+typedef struct AVFrame AVFrame;
+#endif //#ifndef AVUTIL_FRAME_H
+
+#ifndef AVCODEC_AVCODEC_H
+typedef struct AVPacket AVPacket;
+typedef struct AVCodecContext AVCodecContext;
+typedef struct AVCodecParameters AVCodecParameters;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+typedef struct AVBitStreamFilter AVBitStreamFilter;
+typedef struct AVBSFContext AVBSFContext;
+#endif //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
+#endif //#ifndef AVCODEC_AVCODEC_H
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
+#ifndef AVCODEC_BSF_H
+typedef struct AVBitStreamFilter AVBitStreamFilter;
+typedef struct AVBSFContext AVBSFContext;
+#endif //#ifndef AVCODEC_BSF_H
+#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
 
 /** 最大支持16个。*/
 #define ABCDK_FFMPEG_MAX_STREAMS 16
