@@ -123,6 +123,12 @@
 #include "abcdk/ffmpeg/ffeditor.h"
 #include "abcdk/ffmpeg/ffsocket.h"
 #include "abcdk/ffmpeg/ffrecord.h"
+#include "abcdk/ffmpeg/util.h"
+#include "abcdk/ffmpeg/bsf.h"
+#include "abcdk/ffmpeg/sws.h"
+#include "abcdk/ffmpeg/encoder.h"
+#include "abcdk/ffmpeg/decoder.h"
+#include "abcdk/ffmpeg/editor.h"
 
 #include "abcdk/redis/redis.h"
 #include "abcdk/redis/util.h"

@@ -8,20 +8,68 @@
 
 void abcdk_ffmpeg_library_deinit()
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     avformat_network_deinit();
+#endif //#ifndef HAVE_FFMPEG
 }
 
 void abcdk_ffmpeg_library_init()
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     avformat_network_init();
     avdevice_register_all();
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     avcodec_register_all();
 #endif //#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
+
+#endif //#ifndef HAVE_FFMPEG
 }
+
+#ifdef HAVE_FFMPEG
+
+static void _abcdk_ffmpeg_log_callback(void *opaque, int level, const char *fmt, va_list v)
+{
+    int type;
+
+    if ((AV_LOG_QUIET == level) || (AV_LOG_PANIC == level) || (AV_LOG_FATAL == level) || (AV_LOG_ERROR == level))
+        type = LOG_ERR;
+    else if (AV_LOG_WARNING == level)
+        type = LOG_WARNING;
+    else if (AV_LOG_INFO == level)
+        type = LOG_INFO;
+    else if (AV_LOG_VERBOSE == level)
+        type = LOG_DEBUG;
+    else
+        return;
+
+    abcdk_trace_vprintf(type, fmt, v);
+}
+
+#endif //#ifdef HAVE_FFMPEG
+
+void abcdk_ffmpeg_log_redirect()
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
+    av_log_set_callback(_abcdk_ffmpeg_log_callback);
+#endif //#ifndef HAVE_FFMPEG
+}
+
 
 void abcdk_ffmpeg_io_free(AVIOContext **ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     AVIOContext *ctx_p = NULL;
 
     if (!ctx || !*ctx)
@@ -35,13 +83,19 @@ void abcdk_ffmpeg_io_free(AVIOContext **ctx)
 
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
     avio_context_free(&ctx_p);
-#else
+#else //#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
     av_free(ctx_p);
-#endif
+#endif //#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
+
+#endif //#ifndef HAVE_FFMPEG
 }
 
 AVIOContext *abcdk_ffmpeg_io_alloc(int buf_blocks, int write_flag)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return NULL;
+#else //#ifndef HAVE_FFMPEG
     int buf_size = 8 * 4096; /* 4k bytes 的倍数。 */
     void *buf = NULL;
     AVIOContext *ctx = NULL;
@@ -61,22 +115,33 @@ AVIOContext *abcdk_ffmpeg_io_alloc(int buf_blocks, int write_flag)
     }
 
     return ctx;
+#endif //#ifndef HAVE_FFMPEG
 }
 
 void abcdk_ffmpeg_media_dump(AVFormatContext *ctx,int output)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     if (!ctx)
         return;
 
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     av_dump_format(ctx, 0, ctx->filename, output);
-#else
+#else //#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
     av_dump_format(ctx, 0, ctx->url, output);
-#endif
+#endif //#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
+
+#endif //#ifndef HAVE_FFMPEG
 }
 
 void abcdk_ffmpeg_media_option_dump(AVFormatContext *ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     if (!ctx)
         return;
 
@@ -99,10 +164,15 @@ void abcdk_ffmpeg_media_option_dump(AVFormatContext *ctx)
         else
             av_log(NULL, AV_LOG_INFO, "No options for `%s'.\n", (ctx->oformat->long_name ? ctx->oformat->long_name : ctx->oformat->name));
     }
+#endif //#ifndef HAVE_FFMPEG
 }
 
 void abcdk_ffmpeg_media_free(AVFormatContext **ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     AVFormatContext *ctx_p = NULL;
     AVIOContext *pb = NULL;
 
@@ -127,122 +197,15 @@ void abcdk_ffmpeg_media_free(AVFormatContext **ctx)
         avformat_close_input(&ctx_p);
     else
         avformat_free_context(ctx_p);
-}
-
-int abcdk_avformat_media_open(AVFormatContext **ctx, int writer, const char *fmt, const char *url, AVIOContext *vio_ctx,
-                                    AVIOInterruptCB *inter_ctx, AVDictionary **options)
-{
-    AVInputFormat *fmt_ctx = NULL;
-    AVFormatContext *media_ctx = NULL;
-    int chk;
-
-    assert(ctx != NULL);
-    assert(url != NULL || (fmt != NULL && vio_ctx != NULL));
-
-    //free old context.
-    abcdk_ffmpeg_media_free(ctx);
-
-    media_ctx = avformat_alloc_context();
-    if (!media_ctx)
-        return AVERROR(ENOMEM);
-
-    /*
-     * 1: 如果不知道下面标志如何使用，一定不要附加这个标志。
-     * 2: 如果附加此标志，会造成数据流开头的数据包丢失(N个)。
-     * 3: 如果未附加此标志，网络流会产生不确定的延时(N毫秒~N秒)。
-    */
-    //media_ctx->flags |= AVFMT_FLAG_NOBUFFER;
-
-    if (inter_ctx)
-        media_ctx->interrupt_callback = *inter_ctx;
-
-    if (vio_ctx)
-    {
-        media_ctx->pb = vio_ctx;
-        media_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-    }
-
-    fmt_ctx = (AVInputFormat *)av_find_input_format(fmt);
-    chk = avformat_open_input(&media_ctx, url, fmt_ctx, options);
-
-    if (chk != 0)
-        abcdk_ffmpeg_media_free(&media_ctx);
-
-    //copy, may be is NULL.
-    *ctx = media_ctx;
-
-    return chk;
-}
-
-int abcdk_avformat_media_open_output(AVFormatContext **ctx, const char *fmt, const char *url, AVIOContext *vio_ctx,
-                                     AVIOInterruptCB *inter_ctx, AVDictionary **options)
-{
-    AVInputFormat *fmt_ctx = NULL;
-    AVFormatContext *media_ctx = NULL;
-    int chk;
-
-    assert(ctx != NULL);
-    assert(url != NULL || (fmt != NULL && vio_ctx != NULL));
-
-    //free old context.
-    abcdk_ffmpeg_media_free(ctx);
-
-    if (abcdk_strncmp(url, "rtsp://", 7, 0) == 0)
-        ctx->oformat = av_guess_format("rtsp", NULL, NULL);
-    else if (abcdk_strncmp(url, "rtsps://", 8, 0) == 0)
-        ctx->oformat = av_guess_format("rtsp", NULL, NULL);
-    else if (abcdk_strncmp(url, "rtmp://", 7, 0) == 0)
-        ctx->oformat = av_guess_format("flv", NULL, NULL);
-    else if (abcdk_strncmp(url, "rtmps://", 8, 0) == 0)
-        ctx->oformat = av_guess_format("flv", NULL, NULL);
-
-    media_ctx = avformat_alloc_context();
-    if (!media_ctx)
-        return AVERROR(ENOMEM);
-
-    if (url)
-    {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
-        strncpy(ctx->filename, url, sizeof(ctx->filename));
-#else
-        ctx->url = av_strdup(url);
-#endif
-    }
-
-    //
-    ctx->oformat = av_guess_format(fmt, url, NULL);
-
-    if (!ctx->oformat)
-        goto final_error;
-    
-#if 0
-    av_dict_set(&ctx->metadata, "service", ABCDK, 0);
-    av_dict_set(&ctx->metadata, "service_name", ABCDK, 0);
-    av_dict_set(&ctx->metadata, "service_provider", ABCDK, 0);
-    av_dict_set(&ctx->metadata, "artist", ABCDK, 0);
-#endif
-
-    if (inter_ctx)
-        ctx->interrupt_callback = *inter_ctx;
-
-    if (io)
-    {
-        ctx->pb = io;
-        ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-        ctx->flags |= AVFMT_FLAG_FLUSH_PACKETS;
-    }
-
-    return ctx;
-
-final_error:
-
-    abcdk_avformat_free(&ctx);
-
-    return NULL;
+#endif //#ifndef HAVE_FFMPEG
 }
 
 void abcdk_ffmpeg_codec_option_dump(AVCodec *ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     if (!ctx)
         return;
 
@@ -250,10 +213,15 @@ void abcdk_ffmpeg_codec_option_dump(AVCodec *ctx)
         av_opt_show2((void *)&ctx->priv_class, NULL, -1, 0);
     else
         av_log(NULL, AV_LOG_INFO, "No options for `%s'.\n", (ctx->long_name ? ctx->long_name : ctx->name));
+#endif //#ifndef HAVE_FFMPEG
 }
 
 void abcdk_ffmpeg_codec_free(AVCodecContext **ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     AVCodecContext *ctx_p;
 
     if(!ctx || !*ctx)
@@ -266,4 +234,87 @@ void abcdk_ffmpeg_codec_free(AVCodecContext **ctx)
         avcodec_close(ctx_p);
 
     avcodec_free_context(&ctx_p);
+#endif //#ifndef HAVE_FFMPEG
+}
+
+double abcdk_ffmpeg_q2d(AVRational r, double scale)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return 0.0;
+#else //#ifndef HAVE_FFMPEG
+    double d = (r.num == 0 || r.den == 0 ? 0. : av_q2d(r));
+
+    return scale * d;
+#endif //#ifndef HAVE_FFMPEG
+}
+
+double abcdk_ffmpeg_stream_timebase_q2d(AVStream *vs_ctx,double scale)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return 0.0;
+#else //#ifndef HAVE_FFMPEG
+    assert(vs_ctx != NULL);
+    
+    return abcdk_ffmpeg_q2d(vs_ctx->time_base, scale);
+#endif //#ifndef HAVE_FFMPEG
+}
+
+double abcdk_ffmpeg_stream_duration(AVStream *vs_ctx, double scale)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return 0.0;
+#else //#ifndef HAVE_FFMPEG
+    double sec = 0.0;
+
+    assert(vs_ctx != NULL);
+
+    if (vs_ctx->duration > 0)
+        sec = (double)vs_ctx->duration * abcdk_ffmpeg_q2d(vs_ctx->time_base,scale);
+
+    return sec;
+#endif //#ifndef HAVE_FFMPEG
+}
+
+double abcdk_ffmpeg_stream_fps(AVFormatContext *ctx, AVStream *vs_ctx,double scale)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return 0.000001;
+#else //#ifndef HAVE_FFMPEG
+    double fps = 0.000001;
+
+    assert(vs_ctx != NULL);
+    
+    if (fps < 0.000025)
+        fps = abcdk_ffmpeg_q2d(vs_ctx->r_frame_rate,scale);
+    if (fps < 0.000025)
+        fps = abcdk_ffmpeg_q2d(vs_ctx->avg_frame_rate,scale);
+    if (fps < 0.000025)
+#if FF_API_LAVF_AVCTX
+        fps = 1.0 / abcdk_ffmpeg_q2d(vs_ctx->codec->time_base,scale);
+#else //FF_API_LAVF_AVCTX
+        fps = 1.0 / abcdk_ffmpeg_q2d(vs_ctx->time_base,scale);
+#endif //FF_API_LAVF_AVCTX
+
+    return ABCDK_CLAMP(fps,(double)0.001,(double)999999999.0);
+#endif //#ifndef HAVE_FFMPEG
+}
+
+double abcdk_ffmpeg_stream_ts2sec(AVStream *vs_ctx, int64_t ts, double scale)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return -0.000001;
+#else //#ifndef HAVE_FFMPEG
+    double sec = -0.000001;
+
+    assert(vs_ctx != NULL);
+
+    sec = (double)(ts - vs_ctx->start_time) * abcdk_ffmpeg_q2d(vs_ctx->time_base, 1.0 / scale);
+
+    return sec;
+#endif //#ifndef HAVE_FFMPEG
 }

@@ -19,6 +19,10 @@ void abcdk_ffmpeg_library_deinit();
 /**初始化库环境. */
 void abcdk_ffmpeg_library_init();
 
+/**日志重定向. */
+void abcdk_ffmpeg_log_redirect();
+
+
 /**释放.*/
 void abcdk_ffmpeg_io_free(AVIOContext **ctx);
 
@@ -47,6 +51,25 @@ void abcdk_ffmpeg_codec_option_dump(AVCodec *ctx);
 
 /**释放. */
 void abcdk_ffmpeg_codec_free(AVCodecContext **ctx);
+
+/**
+ * 转成浮点数.
+ * 
+ * @param [in] scale 缩放比例.
+*/
+double abcdk_ffmpeg_q2d(AVRational r, double scale);
+
+/** 时间基值转浮点。*/
+double abcdk_ffmpeg_stream_timebase_q2d(AVStream *vs_ctx,double scale);
+
+/** 获取时长(秒)。*/
+double abcdk_ffmpeg_stream_duration(AVStream *vs_ctx, double scale);
+
+/** 获取帧率。*/
+double abcdk_ffmpeg_stream_fps(AVFormatContext *ctx, AVStream *vs_ctx,double scale);
+
+/** TS转秒。*/
+double abcdk_ffmpeg_stream_ts2sec(AVStream *vs_ctx, int64_t ts, double scale);
 
 
 __END_DECLS

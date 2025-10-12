@@ -30,14 +30,7 @@ void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    if (ctx_p->codec_ctx)
-    {
-#ifdef FF_API_AVCODEC_CLOSE
-        avcodec_close(ctx_p->codec_ctx);
-#endif // FF_API_AVCODEC_CLOSE
-        avcodec_free_context(&ctx_p->codec_ctx);
-    }
-
+    abcdk_ffmpeg_codec_free(&ctx_p->codec_ctx);
     abcdk_ffmpeg_sws_free(&ctx_p->sws_ctx);
 
     av_frame_free(&ctx_p->recv_cache);

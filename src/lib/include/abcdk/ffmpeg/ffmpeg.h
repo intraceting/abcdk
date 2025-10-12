@@ -68,6 +68,10 @@ typedef struct AVBSFContext AVBSFContext;
 #endif //#ifndef AVCODEC_BSF_H
 #endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
 
+#ifndef AVUTIL_RATIONAL_H
+typedef struct AVRational AVRational;
+#endif //#ifndef AVUTIL_RATIONAL_H
+
 /** 最大支持16个。*/
 #define ABCDK_FFMPEG_MAX_STREAMS 16
 

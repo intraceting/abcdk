@@ -8,13 +8,17 @@
 #define ABCDK_FFMPEG_EDITOR_H
 
 #include "abcdk/util/trace.h"
+#include "abcdk/util/time.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 #include "abcdk/ffmpeg/util.h"
-#include "abcdk/util/time.h"
+#include "abcdk/ffmpeg/encoder.h"
+#include "abcdk/ffmpeg/decoder.h"
+#include "abcdk/ffmpeg/bsf.h"
+
 
 __BEGIN_DECLS
 
-typedef struct _abcdk_editor_param
+typedef struct _abcdk_ffmpeg_editor_param
 {
     /**格式.*/
     const char *fmt;
@@ -25,32 +29,35 @@ typedef struct _abcdk_editor_param
     /**超时(秒). */
     int timeout;
 
-    /**读倍速.*/
-    float read_speed;
+    /**读,倍速(3位小数). <=0 无效.*/
+    int read_speed;
 
-    /**读最大延迟(秒.毫秒).*/
-    float read_max_delay;
+    /**读,是否启用MP4流转换.*/
+    int read_mp4toannexb;
 
-    /**写禁用延迟. */
+    /**写,是否禁用延迟刷新. */
     int write_nodelay;
 
-    /**虚拟IO. */
+    /**虚拟IO环境. */
     struct
     {
         int (*read_cb)(void *opaque, uint8_t *buf, int size);
         int (*write_cb)(void *opaque, uint8_t *buf, int size);
         void *opaque;
-
     } vio;
 
-} abcdk_editor_param_t;
+} abcdk_ffmpeg_editor_param_t;
 
 typedef struct _abcdk_ffmpeg_editor abcdk_ffmpeg_editor_t;
 
+/**释放.*/
 void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx);
+
+/**创建.*/
 abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer);
 
-int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_editor_param_t *param);
+/**打开. */
+int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_param_t *param);
 
 __END_DECLS
 

@@ -63,6 +63,8 @@ abcdk_ffmpeg_bsf_t *abcdk_ffmpeg_bsf_alloc(const char *name)
         return NULL;
     }
 
+    ctx->bsf_ctx = NULL;
+
     return ctx;
 #endif //#ifndef HAVE_FFMPEG
 }

@@ -162,6 +162,7 @@ int main(int argc, char **argv)
     /*随机数种子。*/
     srand(time(NULL));
 
+    abcdk_ffmpeg_library_init();
     abcdk_openssl_init();
 
 
@@ -203,6 +204,7 @@ int main(int argc, char **argv)
 final_end:
 
     abcdk_openssl_cleanup();
+    abcdk_ffmpeg_library_deinit();
     
     abcdk_option_free(&args);
 
