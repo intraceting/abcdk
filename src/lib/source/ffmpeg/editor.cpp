@@ -15,7 +15,18 @@ struct _abcdk_ffmpeg_editor
     AVFormatContext *media_ctx;
     AVIOContext *vio_ctx;
 
-    uint64_t read_last_time;
+    /*最新活动时间(微秒).*/
+    uint64_t latest_time;
+
+    /**读, 第一帧DTS出现时间(微秒).*/
+    std::map<int, uint64_t> read_dts_first_time;
+
+    /**读, 第一帧DTS.*/
+    std::map<int, int64_t> read_dts_first;
+
+    /**读, 最近的DTS.*/
+    std::map<int, int64_t> read_dts_latest;
+
     int write_header_ok;
 
     std::map<int, abcdk_ffmpeg_bsf_t *> bsf_list;
@@ -67,7 +78,7 @@ abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
     ctx->option_ctx = NULL;
     ctx->media_ctx = NULL;
     ctx->vio_ctx = NULL;
-    ctx->read_last_time = 0;
+    ctx->latest_time = 0;
     ctx->write_header_ok = 0;
 
     return ctx;
@@ -76,7 +87,7 @@ abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
 static int _abcdk_ffmpeg_editor_interrupt_cb(void *args)
 {
     abcdk_ffmpeg_editor_t *ctx = (abcdk_ffmpeg_editor_t *)args;
-    uint64_t check_time = abcdk_time_systime(0);
+    uint64_t check_time = abcdk_time_systime(6);
 
     // 允许未启用.
     if (ctx->param.timeout <= 0)
@@ -87,7 +98,7 @@ static int _abcdk_ffmpeg_editor_interrupt_cb(void *args)
         return 0;
 
     // 超时检测, 未超时返回0, 否则返回-1.
-    if ((check_time - ctx->read_last_time) < ctx->param.timeout)
+    if ((check_time - ctx->latest_time) < ctx->param.timeout * 1000000)
         return 0;
 
     return -1;
@@ -105,6 +116,9 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
     ctx->media_ctx = avformat_alloc_context();
     if (!ctx->media_ctx)
         return AVERROR(ENOMEM);
+
+    // 更新时间, 否则重复打开时会有超时发生.
+    ctx->latest_time = abcdk_time_systime(6);
 
     ctx->media_ctx->interrupt_callback.callback = _abcdk_ffmpeg_editor_interrupt_cb;
     ctx->media_ctx->interrupt_callback.opaque = ctx;
@@ -131,9 +145,6 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
     }
     else
     {
-        // 更新时间, 否则重复打开时会有超时发生.
-        ctx->read_last_time = abcdk_time_systime(0);
-
         /*
          * 1: 如果不知道下面标志如何使用，一定不要附加这个标志。
          * 2: 如果附加此标志，会造成数据流开头的数据包丢失(N个)。
@@ -290,4 +301,138 @@ int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_par
         return chk;
 
     return 0;
+}
+
+double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, (double)ctx->param.read_speed_scale / 1000);
+}
+
+/**
+ * 延时检查。
+ *
+ * @return 0 未满足，!0 已满足。
+ */
+static int _abcdk_ffmpeg_editor_read_delay_check(abcdk_ffmpeg_editor_t *ctx, int stream)
+{
+    double a1, a2, a, b;
+
+    if (ctx->param.read_speed_scale <= 0)
+        return 0;
+
+    /*如果是无效的DTS则直接返回已满足(!0).*/
+    if (ctx->read_dts_latest[stream] == (int64_t)AV_NOPTS_VALUE)
+        return 1;
+
+    a1 = abcdk_ffmpeg_editor_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
+    a2 = abcdk_ffmpeg_editor_ts2sec(ctx, stream, ctx->read_dts_latest[stream]);
+
+    /*
+     * 1：计算当前帧与第一帧的时间差.
+     * 2：因为流的起始值可能不为零(或为负, 或为正), 所以时间轴调整为从零开始以便于计算延时.
+     */
+
+    a = (a2 - a1) - (a1 - a1);
+    b = (double)(abcdk_time_systime(6) - ctx->read_dts_first_time[stream]) / 1000000.;
+
+    return (a >= b ? 0 : 1);
+}
+
+static void _abcdk_ffmpeg_editor_read_delay(abcdk_ffmpeg_editor_t *ctx)
+{
+    AVStream *vs_ctx_p = NULL;
+    int blocks = 0;
+
+next_delay:
+
+    /*如果已经超时则直接返回. */
+    if (_abcdk_ffmpeg_editor_interrupt_cb(ctx) != 0)
+        return;
+
+    blocks = 0;
+    for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
+    {
+        vs_ctx_p = ctx->media_ctx->streams[i];
+
+        /*检测延时是否已经满足.*/
+        if (!_abcdk_ffmpeg_editor_read_delay_check(ctx, vs_ctx_p->index))
+            blocks += 1;
+    }
+
+    /*以最慢流的为基准.*/
+    if (blocks > 0)
+    {
+        usleep(1000); // 1000fps
+        goto next_delay;
+    }
+
+    return;
+}
+
+int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *pkt)
+{
+    AVStream *vs_ctx_p = NULL;
+    int chk;
+
+next_packet:
+
+    /*等待下一帧时间到达.*/
+    _abcdk_ffmpeg_editor_read_delay(ctx);
+
+    chk = av_read_frame(ctx->media_ctx, pkt);
+    if (chk < 0)
+        return chk;
+
+    /*更新最新的活动时间, 不然会超时.*/
+    ctx->latest_time = abcdk_time_systime(6);
+
+    vs_ctx_p = ctx->media_ctx->streams[pkt->stream_index];
+
+    /*记录有效的DTS, 并且记录开始读取时间(用于记算拉流延时).*/
+    if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
+    {
+        /*记录当前的DTS。*/
+        ctx->read_dts_latest[pkt->stream_index] = pkt->dts;
+
+        /*
+         * 满足以下两个条件时, 需要更新时间轴开始时间.
+         * 1：开始时间无效时.
+         * 2：时间轴重置.
+         */
+        if (ctx->read_dts_first[pkt->stream_index] == (int64_t)AV_NOPTS_VALUE ||
+            ctx->read_dts_first[pkt->stream_index] > ctx->read_dts_latest[pkt->stream_index])
+        {
+            ctx->read_dts_first[pkt->stream_index] = ctx->read_dts_latest[pkt->stream_index];
+            ctx->read_dts_first_time[pkt->stream_index] = abcdk_time_systime(6);
+        }
+    }
+
+    if (ctx->param.read_ignore_video && vs_ctx_p->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        av_packet_unref(pkt);
+        goto next_packet;
+    }
+    else if (ctx->param.read_ignore_audio && vs_ctx_p->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+        av_packet_unref(pkt);
+        goto next_packet;
+    }
+    else if (ctx->param.read_ignore_subtitle && vs_ctx_p->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
+    {
+        av_packet_unref(pkt);
+        goto next_packet;
+    }
+    else if (vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
+             vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
+             vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)
+    {
+        av_packet_unref(pkt);
+        goto next_packet;
+    }
+
+    return chk;
 }

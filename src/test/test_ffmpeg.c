@@ -20,8 +20,7 @@ int abcdk_test_record(abcdk_option_t *args)
 
     rd_param.url = abcdk_option_get(args,"--src-fmt",0,"");
     rd_param.url = abcdk_option_get(args,"--src",0,"");
-    rd_param.read_speed = abcdk_option_get_int(args,"--src-xpeed",0,1);
-    rd_param.read_max_delay = abcdk_option_get_int(args,"--src-max-delay",0,1000);
+    rd_param.read_speed_scale = abcdk_option_get_int(args,"--src-xpeed",0,1000);
     rd_param.read_mp4toannexb = abcdk_option_get_int(args,"--src-mp4toannexb ",0,1);
     wr_param.fmt = abcdk_option_get(args,"--dst-fmt",0,"");
     wr_param.url = abcdk_option_get(args,"--dst",0,"");
@@ -34,6 +33,23 @@ int abcdk_test_record(abcdk_option_t *args)
     assert(chk == 0);
     chk = abcdk_ffmpeg_editor_open(wr_ctx,&wr_param);
     assert(chk == 0);
+
+    AVPacket *rd_pkt = av_packet_alloc();
+
+    for(int i = 0;i<1000;i++)
+    {
+        av_packet_unref(rd_pkt);
+        chk = abcdk_ffmpeg_editor_read_packet(rd_ctx,rd_pkt);
+        if(chk != 0)
+            break;
+
+        double dts_sec = abcdk_ffmpeg_editor_ts2sec(rd_ctx,rd_pkt->stream_index,rd_pkt->dts);
+        double pts_sec = abcdk_ffmpeg_editor_ts2sec(rd_ctx,rd_pkt->stream_index,rd_pkt->pts);
+
+        abcdk_trace_printf(LOG_DEBUG,"dts(%0.3f),pts(%0.3f) ",dts_sec,pts_sec);
+    }
+
+    av_packet_free(&rd_pkt);
 
     abcdk_ffmpeg_editor_free(&rd_ctx);
     abcdk_ffmpeg_editor_free(&wr_ctx);
