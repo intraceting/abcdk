@@ -27,9 +27,15 @@ struct _abcdk_ffmpeg_editor
     /**读, 最近的DTS.*/
     std::map<int, int64_t> read_dts_latest;
 
+    /**读, 是否已经到末尾. */
+    int read_packet_eof;
+    int read_frame_eof;
+
+    /**写, 头部写入是否成功. */
     int write_header_ok;
 
     std::map<int, abcdk_ffmpeg_bsf_t *> bsf_list;
+    int bsf_list_read_pos;
     std::map<int, abcdk_ffmpeg_decoder_t *> decoder_list;
     std::map<int, abcdk_ffmpeg_encoder_t *> encoder_list;
 
@@ -79,7 +85,10 @@ abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
     ctx->media_ctx = NULL;
     ctx->vio_ctx = NULL;
     ctx->latest_time = 0;
+    ctx->read_packet_eof = 0;
+    ctx->read_frame_eof = 0;
     ctx->write_header_ok = 0;
+    ctx->bsf_list_read_pos = 0;
 
     return ctx;
 }
@@ -131,12 +140,10 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
 
     if (ctx->writer)
     {
-#if 0
-        av_dict_set(&ctx->media_ctx->metadata, "service", ABCDK, 0);
-        av_dict_set(&ctx->media_ctx->metadata, "service_name", ABCDK, 0);
-        av_dict_set(&ctx->media_ctx->metadata, "service_provider", ABCDK, 0);
-        av_dict_set(&ctx->media_ctx->metadata, "artist", ABCDK, 0);
-#endif
+        av_dict_set(&ctx->media_ctx->metadata, "service", "ABCDK", 0);
+        av_dict_set(&ctx->media_ctx->metadata, "service_name", "ABCDK", 0);
+        av_dict_set(&ctx->media_ctx->metadata, "service_provider", "ABCDK", 0);
+        av_dict_set(&ctx->media_ctx->metadata, "artist", "ABCDK", 0);
 
         if (ctx->param.write_nodelay)
             ctx->media_ctx->flags |= AVFMT_FLAG_FLUSH_PACKETS;
@@ -188,27 +195,38 @@ static int _abcdk_avformat_media_init_bsf(abcdk_ffmpeg_editor_t *ctx)
         is_mp4_file |= (strcmp(ctx->media_ctx->iformat->long_name, "FLV (Flash Video)") == 0 ? 0x2 : 0);
         is_mp4_file |= (strcmp(ctx->media_ctx->iformat->long_name, "Matroska / WebM") == 0 ? 0x4 : 0);
 
-        if (!is_mp4_file)
-            return 0;
-
         for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
         {
-            int bsf_open_check = 1;
+            const char *name_p = NULL;
             AVStream *stream_p = ctx->media_ctx->streams[i];
 
-            if (stream_p->codecpar->codec_id == AV_CODEC_ID_H264)
-                ctx->bsf_list[stream_p->index] = abcdk_ffmpeg_bsf_alloc("h264_mp4toannexb");
-            else if (stream_p->codecpar->codec_id == AV_CODEC_ID_H265)
-                ctx->bsf_list[stream_p->index] = abcdk_ffmpeg_bsf_alloc("hevc_mp4toannexb");
+            if (is_mp4_file && stream_p->codecpar->codec_id == AV_CODEC_ID_H264)
+                name_p = "h264_mp4toannexb";
+            else if (is_mp4_file && stream_p->codecpar->codec_id == AV_CODEC_ID_H265)
+                name_p = "hevc_mp4toannexb";
             else
-                bsf_open_check = 0;
+                name_p = "fifo";
 
-            if (!bsf_open_check)
-                continue;
+            ctx->bsf_list[stream_p->index] = abcdk_ffmpeg_bsf_alloc(name_p);
 
-            if (!ctx->bsf_list[ctx->media_ctx->streams[i]->index])
-                return AVERROR(ENOMEM);
+            if (!ctx->bsf_list[stream_p->index])
+                return AVERROR_FILTER_NOT_FOUND;
+
+            if (abcdk_strncmp(name_p, "fifo", 4, 1) != 0)
+                abcdk_ffmpeg_bsf_init2(ctx->bsf_list[stream_p->index], stream_p->codecpar);
         }
+    }
+
+    return 0;
+}
+
+static int _abcdk_avformat_media_init_ts(abcdk_ffmpeg_editor_t *ctx)
+{
+    for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
+    {
+        ctx->read_dts_first[i] = (int64_t)AV_NOPTS_VALUE;
+        ctx->read_dts_latest[i] = (int64_t)AV_NOPTS_VALUE;
+        ctx->read_dts_first_time[i] = 0;
     }
 
     return 0;
@@ -216,7 +234,6 @@ static int _abcdk_avformat_media_init_bsf(abcdk_ffmpeg_editor_t *ctx)
 
 int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_param_t *param)
 {
-
     int chk;
 
     assert(ctx != NULL && param != NULL);
@@ -300,16 +317,27 @@ int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_par
     if (chk < 0)
         return chk;
 
+    chk = _abcdk_avformat_media_init_ts(ctx);
+    if (chk < 0)
+        return chk;
+
     return 0;
 }
 
 double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
+    double scale;
+
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
 
-    return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, (double)ctx->param.read_speed_scale / 1000);
+    if(ctx->media_ctx->iformat)
+        scale = (ctx->param.read_speed_scale > 0 ? (double)ctx->param.read_speed_scale / 1000. : 1.0);
+    else 
+        scale = 1.0;
+
+    return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, scale);
 }
 
 /**
@@ -373,66 +401,219 @@ next_delay:
     return;
 }
 
-int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *pkt)
+static int _abcdk_ffmpeg_editor_bsf_send(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet)
+{
+    return abcdk_ffmpeg_bsf_send(ctx->bsf_list[packet->stream_index], packet);
+}
+
+static int _abcdk_ffmpeg_editor_bsf_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet)
+{
+    std::map<int, abcdk_ffmpeg_bsf_t *>::iterator bsf_it;
+    int chk;
+
+    //更新最新的活动时间, 不然会超时.
+    ctx->latest_time = abcdk_time_systime(6);
+
+    for (int i = 0; i < ctx->bsf_list.size(); i++)
+    {
+        chk = abcdk_ffmpeg_bsf_recv(ctx->bsf_list[ctx->bsf_list_read_pos], packet);
+
+        //循环滚动游标.
+        ctx->bsf_list_read_pos += 1;
+        ctx->bsf_list_read_pos = ctx->bsf_list_read_pos % ctx->bsf_list.size();
+
+        if (chk == 0)
+            continue;
+        else if (chk > 0)
+            return 0;
+        else 
+            return AVERROR(EPIPE);
+    }
+
+    if (ctx->read_packet_eof)
+    {
+        ctx->read_packet_eof = 2;
+        return AVERROR_EOF;
+    }
+    else
+    {
+        return AVERROR(EAGAIN);
+    }
+}
+
+static int _abcdk_ffmpeg_editor_packet_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet)
 {
     AVStream *vs_ctx_p = NULL;
     int chk;
 
-next_packet:
+    // 返回重试, 如果已经到末尾并且已启用流过滤.
+    if (ctx->read_packet_eof && ctx->param.read_mp4toannexb)
+        return AVERROR(EAGAIN);
 
-    /*等待下一帧时间到达.*/
-    _abcdk_ffmpeg_editor_read_delay(ctx);
-
-    chk = av_read_frame(ctx->media_ctx, pkt);
-    if (chk < 0)
-        return chk;
-
-    /*更新最新的活动时间, 不然会超时.*/
+    // 返回结束, 如果已经到末尾并且未启动流过滤.
+    if (ctx->read_packet_eof && !ctx->param.read_mp4toannexb)
+        return AVERROR_EOF;
+    
+    //更新最新的活动时间, 不然会超时.
     ctx->latest_time = abcdk_time_systime(6);
 
-    vs_ctx_p = ctx->media_ctx->streams[pkt->stream_index];
+    chk = av_read_frame(ctx->media_ctx, packet);
+    if (chk == AVERROR_EOF)
+    {
+        ctx->read_packet_eof = 1;
+        return (ctx->param.read_mp4toannexb ? AVERROR(EAGAIN) : AVERROR_EOF);
+    }
+    else if( chk < 0)
+    {
+        return chk;
+    }
+
+    vs_ctx_p = ctx->media_ctx->streams[packet->stream_index];
 
     /*记录有效的DTS, 并且记录开始读取时间(用于记算拉流延时).*/
-    if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
+    if (packet->dts != (int64_t)AV_NOPTS_VALUE)
     {
         /*记录当前的DTS。*/
-        ctx->read_dts_latest[pkt->stream_index] = pkt->dts;
+        ctx->read_dts_latest[packet->stream_index] = packet->dts;
 
         /*
          * 满足以下两个条件时, 需要更新时间轴开始时间.
          * 1：开始时间无效时.
          * 2：时间轴重置.
          */
-        if (ctx->read_dts_first[pkt->stream_index] == (int64_t)AV_NOPTS_VALUE ||
-            ctx->read_dts_first[pkt->stream_index] > ctx->read_dts_latest[pkt->stream_index])
+        if (ctx->read_dts_first[packet->stream_index] == (int64_t)AV_NOPTS_VALUE ||
+            ctx->read_dts_first[packet->stream_index] > ctx->read_dts_latest[packet->stream_index])
         {
-            ctx->read_dts_first[pkt->stream_index] = ctx->read_dts_latest[pkt->stream_index];
-            ctx->read_dts_first_time[pkt->stream_index] = abcdk_time_systime(6);
+            ctx->read_dts_first[packet->stream_index] = ctx->read_dts_latest[packet->stream_index];
+            ctx->read_dts_first_time[packet->stream_index] = abcdk_time_systime(6);
         }
     }
 
     if (ctx->param.read_ignore_video && vs_ctx_p->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        av_packet_unref(pkt);
-        goto next_packet;
+        av_packet_unref(packet);
+        return AVERROR(EAGAIN);
     }
     else if (ctx->param.read_ignore_audio && vs_ctx_p->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-        av_packet_unref(pkt);
-        goto next_packet;
+        av_packet_unref(packet);
+        return AVERROR(EAGAIN);
     }
     else if (ctx->param.read_ignore_subtitle && vs_ctx_p->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
     {
-        av_packet_unref(pkt);
-        goto next_packet;
+        av_packet_unref(packet);
+        return AVERROR(EAGAIN);
     }
     else if (vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
              vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
              vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)
     {
-        av_packet_unref(pkt);
+        av_packet_unref(packet);
+        return AVERROR(EAGAIN);
+    }
+
+    return 0;
+}
+
+int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet)
+{
+    int need_delay = 1;
+    int chk;
+
+next_packet:
+    
+    if(need_delay)
+    {
+        //等待下一帧时间到达.
+        _abcdk_ffmpeg_editor_read_delay(ctx);
+        need_delay = 0;
+    }
+
+    if(ctx->param.read_mp4toannexb)
+    {
+        chk = _abcdk_ffmpeg_editor_bsf_recv(ctx, packet);
+        if (chk == 0)
+            return 0;
+
+        if(chk == AVERROR(EAGAIN))
+            chk = _abcdk_ffmpeg_editor_packet_recv(ctx,packet);
+    }
+    else
+    {
+        chk = _abcdk_ffmpeg_editor_packet_recv(ctx,packet);
+    }
+
+    if (chk == AVERROR(EAGAIN))
+        goto next_packet;
+    else if (chk < 0)
+        return chk;
+
+    if (ctx->param.read_mp4toannexb)
+    {
+        _abcdk_ffmpeg_editor_bsf_send(ctx, packet);//auto unref.
         goto next_packet;
     }
+
+    return 0;
+}
+
+static int _abcdk_ffmpeg_editor_read_decode(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet, AVFrame *frame)
+{
+    abcdk_ffmpeg_decoder_t *decoder_ctx_p = NULL;
+    AVStream *vs_ctx_p = NULL;
+    int chk;
+
+    vs_ctx_p = ctx->media_ctx->streams[packet->stream_index];
+
+    if (!ctx->decoder_list[packet->stream_index])
+    {
+        ctx->decoder_list[packet->stream_index] = abcdk_ffmpeg_decoder_alloc();
+        if (!ctx->decoder_list[packet->stream_index])
+            return AVERROR(ENOMEM);
+
+        chk = abcdk_ffmpeg_decoder_init3(ctx->decoder_list[packet->stream_index], vs_ctx_p->codecpar->codec_id, vs_ctx_p->codecpar, 0);
+        if (chk != 0)
+            return chk;
+    }
+
+    decoder_ctx_p = ctx->decoder_list[packet->stream_index];
+    if (!decoder_ctx_p)
+        return AVERROR_DECODER_NOT_FOUND;
+
+    abcdk_ffmpeg_decoder_send(decoder_ctx_p, packet);
+
+    chk = abcdk_ffmpeg_decoder_recv(decoder_ctx_p, frame);
+    if (chk == 0)
+        return AVERROR(EAGAIN);
+    else if (chk > 0)
+        return 0;
+    else
+        return AVERROR_EOF;
+}
+
+int abcdk_ffmpeg_editor_read_frame(abcdk_ffmpeg_editor_t *ctx, AVFrame *frame, int *stream)
+{
+    AVPacket *packet = NULL;
+    int chk;
+
+next_packet:
+
+    packet = av_packet_alloc();
+    if (!packet)
+        return AVERROR(ENOMEM);
+
+    chk = abcdk_ffmpeg_editor_read_packet(ctx, packet);
+    if (chk != 0)
+        return chk;
+
+    if(stream)
+        *stream = packet->stream_index;
+
+    chk = _abcdk_ffmpeg_editor_read_decode(ctx, packet, frame);
+    av_packet_free(&packet);
+
+    if(chk == AVERROR(EAGAIN))
+        goto next_packet;
 
     return chk;
 }

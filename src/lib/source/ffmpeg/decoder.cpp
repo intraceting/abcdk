@@ -102,15 +102,15 @@ int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, const AVCodec *codec_
 
     ctx->codec_ctx = avcodec_alloc_context3(codec_ctx);
     if (!ctx->codec_ctx)
-        return -1;
+        return AVERROR(ENOMEM);
 
     if (param->codec_type == AVMEDIA_TYPE_VIDEO)
     {
         assert(param->format > (int)AV_PIX_FMT_NONE);
 
         chk = avcodec_parameters_to_context(ctx->codec_ctx, param);
-        if (chk < 0)
-            return -2;
+        if (chk != 0)
+            return chk;
 
         // copy.
         ctx->pixfmt = (AVPixelFormat)param->format;
@@ -122,14 +122,14 @@ int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, const AVCodec *codec_
     else
     {
         abcdk_trace_printf(LOG_WARNING, TT("尚未支持的类型(%d)."), param->codec_type);
-        return -127;
+        return AVERROR(EINVAL);
     }
 
     chk = avcodec_open2(ctx->codec_ctx, codec_ctx, &opts);
     av_dict_free(&opts);
 
-    if (chk < 0)
-        return -3;
+    if (chk != 0)
+        return chk;
 
     return 0;
 #endif //#ifndef HAVE_FFMPEG
@@ -147,7 +147,7 @@ int abcdk_ffmpeg_decoder_init2(abcdk_ffmpeg_decoder_t *ctx, const char *codec_na
 
     codec_ctx = avcodec_find_encoder_by_name(codec_name);
     if(!codec_ctx)
-        return -1;
+        return AVERROR_DECODER_NOT_FOUND;
 
     return abcdk_ffmpeg_decoder_init(ctx, codec_ctx, param, device);
 #endif //#ifndef HAVE_FFMPEG
@@ -165,7 +165,7 @@ int abcdk_ffmpeg_decoder_init3(abcdk_ffmpeg_decoder_t *ctx, AVCodecID codec_id, 
 
     codec_ctx = avcodec_find_encoder(codec_id);
     if(!codec_ctx)
-        return -1;
+        return AVERROR_DECODER_NOT_FOUND;
 
     return abcdk_ffmpeg_decoder_init(ctx, codec_ctx, param, device);
 #endif //#ifndef HAVE_FFMPEG

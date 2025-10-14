@@ -7,6 +7,7 @@
 #ifndef ABCDK_FFMPEG_BSF_H
 #define ABCDK_FFMPEG_BSF_H
 
+#include "abcdk/util/string.h"
 #include "abcdk/util/trace.h"
 #include "abcdk/ffmpeg/ffmpeg.h"
 

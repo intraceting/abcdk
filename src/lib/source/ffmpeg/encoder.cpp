@@ -151,7 +151,6 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
 
         ctx->codec_ctx->gop_size = framerate;
         ctx->codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-        ctx->codec_ctx->max_b_frames = 0; // no b frame.
 
         if (param->codec_id == AV_CODEC_ID_MJPEG)
             ctx->codec_ctx->color_range = AVCOL_RANGE_JPEG;
@@ -159,14 +158,15 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
         // 设置FPS.
         _abcdk_ffmpeg_encoder_venc_set_fps(ctx->codec_ctx, framerate);
 
-#if 0
-        //低延迟配置, 直播或喊话时需要.
-        av_dict_set(&opts, "preset", "ultrafast", 0);
-        av_dict_set(&opts, "tune", "zerolatency", 0);
-        av_dict_set(&opts, "bframes", "0", 0);
-        av_dict_set(&opts, "rc-lookahead", "0", 0);
-#endif
-
+        // 低延迟配置, 直播或喊话时需要.
+        if (param->video_delay <= 0)
+        {
+            ctx->codec_ctx->has_b_frames = 0;
+            ctx->codec_ctx->max_b_frames = 0;
+            av_dict_set(&opts, "preset", "ultrafast", 0); // 快速编码
+            av_dict_set(&opts, "tune", "zerolatency", 0); // 禁用所有缓冲/重排.
+            av_dict_set(&opts, "rc-lookahead", "0", 0);   // 不做前瞻分析.
+        }
     }
     else
     {

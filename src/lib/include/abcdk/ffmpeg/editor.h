@@ -76,7 +76,14 @@ double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t
  * 
  * @return 0 成功, < 0 失败(出错或结束)。
 */
-int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *pkt);
+int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet);
+
+/**
+ * 读数据帧。
+ * 
+ * @return 0 成功, < 0 失败(出错或结束)。
+*/
+int abcdk_ffmpeg_editor_read_frame(abcdk_ffmpeg_editor_t *ctx, AVFrame *frame, int *stream);
 
 __END_DECLS
 
