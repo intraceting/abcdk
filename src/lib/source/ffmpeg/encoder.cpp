@@ -135,7 +135,7 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
 
     ctx->codec_ctx = avcodec_alloc_context3(codec_ctx);
     if (!ctx->codec_ctx)
-        return -1;
+        return AVERROR(ENOMEM);
 
     if(param->codec_type == AVMEDIA_TYPE_VIDEO)
     {
@@ -147,7 +147,7 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
 
         chk = avcodec_parameters_to_context(ctx->codec_ctx, param);
         if (chk < 0)
-            return -2;
+            return chk;
 
         ctx->codec_ctx->gop_size = framerate;
         ctx->codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -171,14 +171,14 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
     else
     {
         abcdk_trace_printf(LOG_WARNING, TT("尚未支持的类型(%d)."), param->codec_type);
-        return -127;
+        return AVERROR(ENODEV);
     }
 
     chk = avcodec_open2(ctx->codec_ctx, codec_ctx, &opts);
     av_dict_free(&opts);
 
     if (chk < 0)
-        return -3;
+        return chk;
 
     return 0;
 #endif //#ifndef HAVE_FFMPEG

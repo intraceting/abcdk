@@ -122,7 +122,7 @@ int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, const AVCodec *codec_
     else
     {
         abcdk_trace_printf(LOG_WARNING, TT("尚未支持的类型(%d)."), param->codec_type);
-        return AVERROR(EINVAL);
+        return AVERROR(ENODEV);
     }
 
     chk = avcodec_open2(ctx->codec_ctx, codec_ctx, &opts);

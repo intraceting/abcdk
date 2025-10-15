@@ -47,6 +47,18 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**写,是否禁用延迟刷新. */
     int write_nodelay;
 
+    /**写,启用FMP4封装. */
+    int write_fmp4;
+
+    /**
+     * RTSP传输协议. 
+     * 
+     * 0: auto.
+     * 1: udp.
+     * 2: tcp.
+    */
+    int rtsp_transport;
+
     /**虚拟IO环境. */
     struct
     {
@@ -62,28 +74,54 @@ typedef struct _abcdk_ffmpeg_editor abcdk_ffmpeg_editor_t;
 /**释放.*/
 void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx);
 
+/** DTS/PTS转时间(秒).*/
+double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
+
 /**创建.*/
 abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer);
 
 /**打开. */
 int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_param_t *param);
 
-/** DTS/PTS转时间(秒).*/
-double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
-
 /**
  * 读数据包。
  * 
  * @return 0 成功, < 0 失败(出错或结束)。
 */
-int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *packet);
+int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *dst);
 
 /**
- * 读数据帧。
+ * 创建流。
+ * 
+ * @return >= 0 成功(流索引)，< 0 失败。
+*/
+int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecContext *opt);
+
+/**
+ * 写数据包。
  * 
  * @return 0 成功, < 0 失败(出错或结束)。
 */
-int abcdk_ffmpeg_editor_read_frame(abcdk_ffmpeg_editor_t *ctx, AVFrame *frame, int *stream);
+int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src, AVRational *src_time_base);
+
+/**
+ * 写头部信息。
+ * 
+ * @note 第一个数据包写入前会自动检测并执行, 如果不关注返回结果可以省略主动执行.
+ * 
+ * @return 0 成功, < 0 失败(出错或空间不足)。
+*/
+int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx);
+
+/**
+ * 写结尾信息。
+ * 
+ * @note 关闭时会自动检测并执行, 如果不关注返回结果可以省略主动执行.
+ * 
+ * @return 0 成功, < 0 失败(出错或空间不足)。
+*/
+int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx);
+
 
 __END_DECLS
 

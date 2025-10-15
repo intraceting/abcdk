@@ -24,7 +24,7 @@ int abcdk_test_record(abcdk_option_t *args)
     rd_param.read_mp4toannexb = abcdk_option_get_int(args,"--src-mp4toannexb ",0,1);
     rd_param.read_ignore_video = abcdk_option_get_int(args,"--src-ignore-video",0,0);
     rd_param.read_ignore_audio = abcdk_option_get_int(args,"--src-ignore-audio",0,0);
-    rd_param.read_ignore_subtitle = abcdk_option_get_int(args,"--src-ignore-subtitle ",0,0);
+    rd_param.read_ignore_subtitle = abcdk_option_get_int(args,"--src-ignore-subtitle",0,0);
     wr_param.fmt = abcdk_option_get(args,"--dst-fmt",0,"");
     wr_param.url = abcdk_option_get(args,"--dst",0,"");
 
@@ -39,9 +39,8 @@ int abcdk_test_record(abcdk_option_t *args)
 
     AVPacket *rd_pkt = av_packet_alloc();
 
-    for(int i = 0;i<1000;i++)
+    for(int i = 0;i<10000000;i++)
     {
-        av_packet_unref(rd_pkt);
         chk = abcdk_ffmpeg_editor_read_packet(rd_ctx,rd_pkt);
         if(chk != 0)
             break;

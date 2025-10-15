@@ -71,6 +71,11 @@ double abcdk_ffmpeg_stream_fps(AVFormatContext *ctx, AVStream *vs_ctx,double sca
 /** DTS/PTS转时间(秒).*/
 double abcdk_ffmpeg_stream_ts2sec(AVStream *vs_ctx, int64_t ts, double scale);
 
+/** 从编(或解)码器向流复制参数。 */
+int abcdk_ffmpeg_stream_parameters_from_context(AVStream *vs_ctx, const AVCodecContext *codec_ctx);
+
+/** 从流向编(或解)码器复制参数。 */
+int abcdk_ffmpeg_stream_parameters_to_context(AVCodecContext *codec_ctx, const AVStream *vs_ctx);
 
 __END_DECLS
 
