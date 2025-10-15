@@ -619,18 +619,13 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
         if (ctx->param.write_fmp4)
             av_dict_set(&ctx->option_ctx, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
 
-        /*
-         * $ChatGPT> 控制在写输出或流时，音频和视频数据包之间的最大"交织时间差".
-         * $ChatGPT> 0表示不允许任何时间差异(即严格交织输出).
-         */
+        //控制输出时音频和视频数据包之间的最大"交织时间差".
         av_dict_set(&ctx->option_ctx, "max_interleave_delta", "0", 0);
     }
 
     chk = avformat_write_header(ctx->media_ctx, &ctx->option_ctx);
     if (chk < 0)
         return chk;
-
-
 
     return 0;
 
