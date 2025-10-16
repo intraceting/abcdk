@@ -29,6 +29,7 @@ VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 export TMPDIR=${BUILD_PATH}/
 
 #
+C_FLAGS += -std=${STD_C} 
 C_FLAGS += -fPIC 
 C_FLAGS += -Wno-unused-result
 C_FLAGS += -Wno-unused-variable 
@@ -48,6 +49,7 @@ C_FLAGS += -DABCDK_VERSION_RELEASE=${VERSION_RELEASE}
 C_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
 #
+CXX_FLAGS += -std=${STD_CXX}
 CXX_FLAGS += -fPIC 
 CXX_FLAGS += -Wno-unused-result
 CXX_FLAGS += -Wno-unused-variable 
@@ -75,7 +77,8 @@ C_FLAGS += ${DEPEND_FLAGS}
 CXX_FLAGS += -I${INSTALL_PREFIX}/include
 CXX_FLAGS += ${DEPEND_FLAGS}
 
-#绑定C++编译器。
+#
+NVCC_FLAGS += -std=${STD_CXX}
 NVCC_FLAGS += -ccbin ${CXX}
 #抑制“未识别的属性”的诊断消息输出，让编译日志更简洁。
 NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
@@ -159,9 +162,6 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
 OBJ_PATH = ${BUILD_PATH}/obj/
 
 
-#伪目标，告诉make这些都是标志，而不是实体目录。
-#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: build
 
 #
 all: build
@@ -174,8 +174,8 @@ include $(CURDIR)/makefile.build.mk
 build: lib tool test xgettext
 
 #
-clean: clean-lib clean-tool clean-test
-	rm -rf ${OBJ_PATH}/*
+clean: clean-lib clean-tool clean-test clean-xgettext
+
 
 #加载子项目。
 #顺序不能更换。
@@ -186,7 +186,6 @@ install: install-lib install-dev install-tool
 
 #
 uninstall: uninstall-lib uninstall-dev uninstall-tool
-
 
 #
 help:
@@ -201,3 +200,8 @@ help:
 	@echo "make uninstall-lib"
 	@echo "make uninstall-dev"
 	@echo "make uninstall-tool"
+
+
+#伪目标，告诉make这些都是标志，而不是实体目录。
+#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
+.PHONY: build

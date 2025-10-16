@@ -278,7 +278,7 @@ double abcdk_ffmpeg_stream_duration(AVStream *vs_ctx, double scale)
 #endif //#ifndef HAVE_FFMPEG
 }
 
-double abcdk_ffmpeg_stream_fps(AVFormatContext *ctx, AVStream *vs_ctx,double scale)
+double abcdk_ffmpeg_stream_fps(AVStream *vs_ctx,double scale)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -309,13 +309,31 @@ double abcdk_ffmpeg_stream_ts2sec(AVStream *vs_ctx, int64_t ts, double scale)
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return -0.000001;
 #else //#ifndef HAVE_FFMPEG
-    double sec = -0.000001;
+    double sec;
 
     assert(vs_ctx != NULL);
 
     sec = (double)(ts - vs_ctx->start_time) * abcdk_ffmpeg_q2d(vs_ctx->time_base, 1.0 / scale);
 
     return sec;
+#endif //#ifndef HAVE_FFMPEG
+}
+
+int64_t abcdk_ffmpeg_stream_ts2num(AVStream *vs_ctx, int64_t ts, double scale)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
+    int64_t num;
+    double sec;
+
+    assert(vs_ctx != NULL);
+
+    sec = abcdk_ffmpeg_stream_ts2sec(vs_ctx, ts, scale);
+    num = (int64_t)(abcdk_ffmpeg_stream_fps(vs_ctx, scale) * sec + 0.5);
+
+    return num;
 #endif //#ifndef HAVE_FFMPEG
 }
 

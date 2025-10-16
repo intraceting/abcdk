@@ -34,6 +34,16 @@ int abcdk_test_record(abcdk_option_t *args)
 
     chk = abcdk_ffmpeg_editor_open(rd_ctx,&rd_param);
     assert(chk == 0);
+
+    for (int i = 0; i < abcdk_ffmpeg_editor_stream_nb(rd_ctx); i++)
+    {
+        abcdk_trace_printf(LOG_DEBUG, "duration: %0.3f, fps: %0.3f, width: %d, height: %d. ",
+                           abcdk_ffmpeg_editor_duration(rd_ctx, i),
+                           abcdk_ffmpeg_editor_fps(rd_ctx, i),
+                           abcdk_ffmpeg_editor_width(rd_ctx, i),
+                           abcdk_ffmpeg_editor_height(rd_ctx, i));
+    }
+
     chk = abcdk_ffmpeg_editor_open(wr_ctx,&wr_param);
     assert(chk == 0);
 

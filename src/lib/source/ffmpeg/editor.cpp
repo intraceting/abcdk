@@ -35,6 +35,9 @@ struct _abcdk_ffmpeg_editor
     int read_packet_eof;
     int read_frame_eof;
 
+    /**写, 最近的DTS.*/
+    std::map<int, int64_t>  write_dts_latest;
+
     /**写, 头部写入是否成功. */
     int write_header_ok;
 
@@ -90,20 +93,85 @@ abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
     return ctx;
 }
 
-double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
+int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx)
 {
     double scale;
 
+    assert(ctx != NULL);
+    assert(ctx->media_ctx != NULL);
+
+    return ctx->media_ctx->nb_streams;
+}
+
+AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream)
+{
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
 
-    if(ctx->media_ctx->iformat)
-        scale = (ctx->param.read_speed_scale > 0 ? (double)ctx->param.read_speed_scale / 1000. : 1.0);
-    else 
-        scale = 1.0;
+    return ctx->media_ctx->streams[stream];
+}
 
-    return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, scale);
+static double _abcdk_ffmpeg_editor_speed_scale(abcdk_ffmpeg_editor_t *ctx)
+{
+    if (ctx->writer)
+        return 1.0;
+
+    return (ctx->param.read_speed_scale > 0 ? (double)ctx->param.read_speed_scale / 1000. : 1.0);
+}
+
+double abcdk_ffmpeg_editor_duration(abcdk_ffmpeg_editor_t *ctx, int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return abcdk_ffmpeg_stream_duration(ctx->media_ctx->streams[stream], _abcdk_ffmpeg_editor_speed_scale(ctx));
+}
+
+double abcdk_ffmpeg_editor_fps(abcdk_ffmpeg_editor_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return abcdk_ffmpeg_stream_fps(ctx->media_ctx->streams[stream], _abcdk_ffmpeg_editor_speed_scale(ctx));
+}
+
+double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, _abcdk_ffmpeg_editor_speed_scale(ctx));
+}
+
+int64_t abcdk_ffmpeg_editor_ts2num(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return abcdk_ffmpeg_stream_ts2num(ctx->media_ctx->streams[stream], ts, _abcdk_ffmpeg_editor_speed_scale(ctx));
+}
+
+int abcdk_ffmpeg_editor_width(abcdk_ffmpeg_editor_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return ctx->media_ctx->streams[stream]->codecpar->width;
+}
+
+int abcdk_ffmpeg_editor_height(abcdk_ffmpeg_editor_t *ctx,int stream)
+{
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    return ctx->media_ctx->streams[stream]->codecpar->height; 
 }
 
 static int _abcdk_ffmpeg_editor_interrupt_cb(void *args)
@@ -237,9 +305,10 @@ static int _abcdk_avformat_media_init_ts(abcdk_ffmpeg_editor_t *ctx)
 {
     for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
     {
-        ctx->read_dts_first[i] = (int64_t)AV_NOPTS_VALUE;
-        ctx->read_dts_latest[i] = (int64_t)AV_NOPTS_VALUE;
+        ctx->read_dts_first[i] = AV_NOPTS_VALUE;
+        ctx->read_dts_latest[i] = AV_NOPTS_VALUE;
         ctx->read_dts_first_time[i] = 0;
+        ctx->write_dts_latest[i] = AV_NOPTS_VALUE;
     }
 
     return 0;
@@ -576,6 +645,66 @@ int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecCont
 
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src, AVRational *src_time_base)
 {
+    AVRational bq, cq;
+    AVStream *vs_ctx_p = NULL;
+    int chk;
+
+    assert(ctx != NULL && src != NULL);
+    assert(ctx->writer);
+    assert(ctx->media_ctx);
+    assert(ctx->media_ctx->oformat);
+
+    assert(src->stream_index >= 0 && src->stream_index < ctx->media_ctx->nb_streams);
+
+    /*The body can only be written after the header is written.*/
+    if (!ctx->write_header_ok)
+    {
+        chk = abcdk_ffmpeg_editor_write_header(ctx);
+        if (chk < 0)
+            return chk;
+    }
+
+    vs_ctx_p = ctx->media_ctx->streams[src->stream_index];
+
+    /*
+     * 如果没有源时间基, 则使用内部时间基值.
+     * 注: 如果时间基值错误, 编码数据在解码后无法正常播放, 常见的现像是DTS,PTS,DURATION异常.
+     */
+    if (src_time_base)
+        bq = *src_time_base;
+    else
+        bq = vs_ctx_p->time_base; //av_make_q(1, abcdk_ffmpeg_stream_fps(ctx->media_ctx, vs_ctx_p, 1.));
+
+    cq = vs_ctx_p->time_base;
+
+    /*修复错误的时长.*/
+    if (src->duration == 0)
+        src->duration = av_rescale_q(1, vs_ctx_p->time_base, AV_TIME_BASE_Q);
+
+    /*填充DTS,PTS,DURATION.*/
+    src->dts = av_rescale_q_rnd(src->dts, bq, cq, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+    src->pts = av_rescale_q_rnd(src->pts, bq, cq, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+    src->duration = av_rescale_q(src->duration, bq, cq);
+    src->pos = -1;
+
+    /*确保DTS单调递增(简单修复). */
+    if (src->dts <= ctx->write_dts_latest[src->stream_index])
+        src->dts = ctx->write_dts_latest[src->stream_index] + 1;
+
+    /*记录最新的DTS.*/
+    ctx->write_dts_latest[src->stream_index] = src->dts;
+
+    /*确保PTS大小DTS.*/
+    if (src->dts > src->pts)
+        src->dts = src->pts;
+
+    chk = (ctx->media_ctx->nb_streams > 1 ? av_interleaved_write_frame(ctx->media_ctx, src) : av_write_frame(ctx->media_ctx, src));
+    if(chk != 0)
+        return chk;
+
+    if(ctx->param.write_nodelay && ctx->media_ctx->pb)
+       avio_flush(ctx->media_ctx->pb);
+
     return 0;
 }
 
@@ -586,9 +715,10 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
 
     assert(ctx != NULL);
     assert(ctx->writer);
+    assert(ctx->media_ctx);
     assert(ctx->media_ctx->oformat);
 
-    // only once.
+    /*Just once.*/
     if (ctx->write_header_ok)
         return 0;
 
@@ -636,12 +766,15 @@ int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx)
     int chk;
     
     assert(ctx != NULL);
+    assert(ctx->writer);
+    assert(ctx->media_ctx);
+    assert(ctx->media_ctx->oformat);
 
-    /*写入头部后，才能写末尾。*/
+    /*The end can only be written after the header is written.*/
     if (!ctx->write_header_ok)
         return AVERROR(EPERM);
 
-    /*写入一次即可。*/
+    /*Just once.*/
     if (ctx->write_trailer_ok)
         return 0;
 

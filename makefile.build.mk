@@ -4,54 +4,42 @@
 # Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
 #
 #
+# Makefile 所在目录（绝对路径）
+MAKEFILE_DIRNAME := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
+#
+SRC_DIR := ${MAKEFILE_DIRNAME}/src/
 
 #C
-LIB_SRC_FILES += $(wildcard src/lib/source/util/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/system/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/mp4/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/net/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/ffmpeg/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/redis/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/sqlite/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/odbc/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/json/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/lz4/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/openssl/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/curl/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/rtsp/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/qrcode/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/torch/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/torch_host/*.c)
-LIB_SRC_FILES += $(wildcard src/lib/source/torch_cuda/*.c)
-LIB_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${LIB_SRC_FILES}))
+LIB_SRC_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.c)
 
 #C++
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/ffmpeg/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/rtsp/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_host/bytetrack/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard src/lib/source/torch_cuda/*.cpp)
-LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cpp,%.o,${LIB_SRC_CXX_FILES}))
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/torch_host/bytetrack/*.cpp)
 
 #CUDA是可选项，可能未启用。
 ifeq (${HAVE_CUDA},yes)
-LIB_SRC_CU_FILES += $(wildcard src/lib/source/torch_cuda/*.cu)
-LIB_OBJ_FILES += $(addprefix ${OBJ_PATH}/,$(patsubst %.cu,%.o,${LIB_SRC_CU_FILES}))
+LIB_SRC_CU_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cu)
 endif
 
 #
-TOOL_SRC_FILES = $(wildcard src/tool/*.c)
-TOOL_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TOOL_SRC_FILES}))
+TOOL_SRC_FILES = $(wildcard $(SRC_DIR)/tool/*.c)
 
 #
-TEST_SRC_FILES = $(wildcard src/test/*.c)
-TEST_OBJ_FILES = $(addprefix ${OBJ_PATH}/,$(patsubst %.c,%.o,${TEST_SRC_FILES}))
+TEST_SRC_FILES = $(wildcard $(SRC_DIR)/test/*.c)
 
-#伪目标，告诉make这些都是标志，而不是实体目录。
-#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test xgettext
+#
+LIB_OBJ_FILES := $(patsubst $(SRC_DIR)/lib/%, $(OBJ_PATH)/lib/%, $(LIB_SRC_FILES:.c=.o) $(LIB_SRC_CXX_FILES:.cpp=.o) $(LIB_SRC_CU_FILES:.cu=.o))
+LIB_OBJ_DEPS += $(LIB_OBJ_FILES:.o=.d)
+
+#
+TOOL_OBJ_FILES := $(patsubst $(SRC_DIR)/tool/%, $(OBJ_PATH)/tool/%, $(TOOL_SRC_FILES:.c=.o))
+TOOL_OBJ_DEPS += $(TOOL_OBJ_FILES:.o=.d)
+
+#
+TEST_OBJ_FILES := $(patsubst $(SRC_DIR)/test/%, $(OBJ_PATH)/test/%, $(TEST_SRC_FILES:.c=.o))
+TEST_OBJ_DEPS += $(TEST_OBJ_FILES:.o=.d)
+
 
 #
 lib: lib-src
@@ -63,13 +51,6 @@ lib: lib-src
 lib-src: $(LIB_OBJ_FILES)
 
 #
-clean-lib:
-	rm -rf ${OBJ_PATH}/src/lib
-	rm -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL}
-	rm -f $(BUILD_PATH)/libabcdk.a
-
-
-#
 tool: tool-src lib
 	mkdir -p $(BUILD_PATH)
 	$(CXX) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
@@ -77,10 +58,6 @@ tool: tool-src lib
 #
 tool-src: ${TOOL_OBJ_FILES} 
 
-#
-clean-tool:
-	rm -rf ${OBJ_PATH}/src/tool
-	rm -f $(BUILD_PATH)/abcdk-tool
 
 #
 test: test-src lib
@@ -90,10 +67,29 @@ test: test-src lib
 #
 test-src: ${TEST_OBJ_FILES} 
 
+# $@: 目标文件
+# $<: 源文件
+# 自动匹配多级路径.
+$(OBJ_PATH)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(C_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
+
 #
-clean-test:
-	rm -rf ${OBJ_PATH}/src/test
-	rm -f $(BUILD_PATH)/abcdk-test
+$(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXX_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
+
+#
+$(OBJ_PATH)/%.o: $(SRC_DIR)/%.cu
+	mkdir -p $(dir $@)
+	rm -f $@
+	$(NVCC) $(NVCC_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
+
+
+#包含依赖文件(不能晚于此处).
+-include $(LIB_OBJ_DEPS) 
+-include $(TOOL_OBJ_DEPS)
+-include $(TEST_OBJ_DEPS)
 
 #
 xgettext: xgettext-lib xgettext-tool
@@ -110,20 +106,28 @@ xgettext-tool:
 	${SHELL_TOOLS_HOME}/xgettext.sh ABCDK ${VERSION_STR_FULL} TT $(CURDIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.en_US.pot
 	echo "'$(BUILD_PATH)/abcdk-tool.en_US.pot' Update completed."
 
-# $@: 目标文件
-# $<: 源文件
-# 自动匹配多级路径.
-$(OBJ_PATH)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) -std=c99  $(C_FLAGS)  -c $< -o $@
 
 #
-$(OBJ_PATH)/%.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) -std=c++11 $(CXX_FLAGS) -c $< -o $@
+clean-lib:
+	rm -rf ${OBJ_PATH}/lib
+	rm -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL}
+	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
-$(OBJ_PATH)/%.o: %.cu
-	mkdir -p $(dir $@)
-	rm -f $@
-	$(NVCC) -std=c++11 $(NVCC_FLAGS) -Xcompiler -std=c++11  -c $< -o $@
+clean-tool:
+	rm -rf ${OBJ_PATH}/tool
+	rm -f $(BUILD_PATH)/abcdk-tool
+
+#
+clean-test:
+	rm -rf ${OBJ_PATH}/test
+	rm -f $(BUILD_PATH)/abcdk-test
+
+#
+clean-xgettext:
+	rm -rf $(BUILD_PATH)/libabcdk.en_US.pot
+	rm -rf $(BUILD_PATH)/abcdk-tool.en_US.pot
+
+#伪目标，告诉make这些都是标志，而不是实体目录。
+#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
+.PHONY: lib tool test 

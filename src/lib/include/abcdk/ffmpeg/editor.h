@@ -74,11 +74,33 @@ typedef struct _abcdk_ffmpeg_editor abcdk_ffmpeg_editor_t;
 /**释放.*/
 void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx);
 
-/** DTS/PTS转时间(秒).*/
-double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
-
 /**创建.*/
 abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer);
+
+/**获取AVStream对象数量. */
+int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx);
+
+/**获取AVStream对象指针.*/
+AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream);
+
+/**获取流的时长(秒). */
+double abcdk_ffmpeg_editor_duration(abcdk_ffmpeg_editor_t *ctx,int stream);
+
+/**获取FPS(帧数/秒). */
+double abcdk_ffmpeg_editor_fps(abcdk_ffmpeg_editor_t *ctx,int stream);
+
+/**DTS/PTS转时间(秒).*/
+double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
+
+/**DTS/PTS转序号.*/
+int64_t abcdk_ffmpeg_editor_ts2num(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
+
+/**获取指定流图像的宽(像素).*/
+int abcdk_ffmpeg_editor_width(abcdk_ffmpeg_editor_t *ctx,int stream);
+
+/**获取指定流图像的高(像素)*/
+int abcdk_ffmpeg_editor_height(abcdk_ffmpeg_editor_t *ctx,int stream);
+
 
 /**打开. */
 int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_param_t *param);
