@@ -22,6 +22,10 @@ struct _abcdk_ffmpeg_editor
     std::map<int, abcdk_ffmpeg_bsf_t *> read_bsf_list;
     int read_bsf_list_pos;
 
+    /**读, 解码器. */
+    std::map<int, abcdk_ffmpeg_decoder_t *> read_dec_list;
+    int read_dec_list_pos;
+
     /**读, 第一帧DTS出现时间(微秒).*/
     std::map<int, uint64_t> read_dts_first_time;
 
@@ -37,6 +41,10 @@ struct _abcdk_ffmpeg_editor
 
     /**写, 最近的DTS.*/
     std::map<int, int64_t> write_dts_latest;
+
+    /**写, 编码器. */
+    std::map<int, abcdk_ffmpeg_encoder_t *> read_enc_list;
+    int read_enc_list_pos;
 
     /**写, 头部写入是否成功. */
     int write_header_ok;
@@ -71,6 +79,16 @@ void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
         abcdk_ffmpeg_bsf_free(&one.second);
 
     ctx_p->read_bsf_list.clear();
+
+    for (auto &one : ctx_p->read_dec_list)
+        abcdk_ffmpeg_decoder_free(&one.second);
+
+    ctx_p->read_dec_list.clear();
+
+    for (auto &one : ctx_p->read_enc_list)
+        abcdk_ffmpeg_encoder_free(&one.second);
+
+    ctx_p->read_enc_list.clear();
 
     delete ctx_p;
 }
@@ -608,6 +626,58 @@ next_packet:
     }
 
     return 0;
+}
+
+static int _abcdk_ffmpeg_editor_frame_recv(abcdk_ffmpeg_editor_t *ctx, AVFrame *dst, int *dst_stream)
+{
+    AVStream *vs_ctx_p;
+    int chk;
+
+    if(ctx->read_enc_list.size() <= 0)
+    {
+        for(int i = 0;i<ctx->media_ctx->nb_streams;i++)
+        {
+            vs_ctx_p = ctx->media_ctx->streams[i];
+
+            if (vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_VIDEO && 
+                vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_AUDIO && 
+                vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)
+            {
+                ctx->read_dec_list[i] = NULL;
+                continue;
+            }
+
+            ctx->read_dec_list[i] = abcdk_ffmpeg_decoder_alloc();
+            if (!ctx->read_dec_list[i])
+                return AVERROR_DECODER_NOT_FOUND;
+
+            chk = abcdk_ffmpeg_decoder_init3(ctx->read_dec_list[i], vs_ctx_p->codecpar->codec_id, vs_ctx_p->codecpar,0);
+            if(chk != 0)
+                return chk;
+        }
+    }
+
+    return 0;
+}
+
+int abcdk_ffmpeg_editor_read_frame(abcdk_ffmpeg_editor_t *ctx, AVFrame *dst, int *dst_stream)
+{
+    AVPacket *src = NULL;
+    int chk;
+
+    assert(ctx != NULL && dst != NULL);
+    assert(!ctx->writer);
+    assert(ctx->media_ctx);
+
+    // Clean up data that is no longer used.
+    av_frame_unref(dst);
+
+    src = av_packet_alloc();
+    if (!src)
+        return AVERROR(ENOMEM);
+
+    return 0;
+    
 }
 
 int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecContext *opt)
