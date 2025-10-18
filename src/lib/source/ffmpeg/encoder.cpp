@@ -69,59 +69,83 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc()
 }
 
 #ifdef HAVE_FFMPEG
-static void _abcdk_ffmpeg_encoder_venc_set_fps(AVCodecContext *ctx, double fps)
+static void _abcdk_ffmpeg_encoder_set_rate(AVCodecContext *ctx, double rate)
 {
-#if 1
-    /*-------------Copy from OpenCV----begin------------------*/
-
-    int frame_rate = (int)(fps + 0.5);
-    int frame_rate_base = 1;
-    while (fabs(((double)frame_rate / frame_rate_base) - fps) > 0.001)
+    if (ctx->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        frame_rate_base *= 10;
-        frame_rate = (int)(fps * frame_rate_base + 0.5);
-    }
+        //进位.
+        int frame_rate = (int)(rate + 0.5);
+        int frame_rate_base = 1;
 
-    ctx->time_base.den = frame_rate;
-    ctx->time_base.num = frame_rate_base;
-
-    /* adjust time base for supported framerates */
-    if (ctx->codec && ctx->codec->supported_framerates)
-    {
-        const AVRational *p = ctx->codec->supported_framerates;
-        AVRational req = {frame_rate, frame_rate_base};
-        const AVRational *best = NULL;
-        AVRational best_error = {INT_MAX, 1};
-        for (; p->den != 0; p++)
+        while (fabs(((double)frame_rate / frame_rate_base) - rate) > 0.001)
         {
-            AVRational error = av_sub_q(req, *p);
-            if (error.num < 0)
-                error.num *= -1;
-            if (av_cmp_q(error, best_error) < 0)
+            frame_rate_base *= 10;
+            frame_rate = (int)(rate * frame_rate_base + 0.5);
+        }
+
+        ctx->time_base.den = frame_rate;
+        ctx->time_base.num = frame_rate_base;
+
+        //匹配编码器支持的帧率.
+        if (ctx->codec->supported_framerates)
+        {
+            const AVRational *p = ctx->codec->supported_framerates;
+            AVRational req = {frame_rate, frame_rate_base};
+            const AVRational *best = NULL;
+            AVRational best_error = {INT_MAX, 1};
+            for (; p->den != 0; p++)
             {
-                best_error = error;
-                best = p;
+                AVRational error = av_sub_q(req, *p);
+                if (error.num < 0)
+                    error.num *= -1;
+                if (av_cmp_q(error, best_error) < 0)
+                {
+                    best_error = error;
+                    best = p;
+                }
+            }
+
+            if (best)
+            {
+                ctx->time_base.den = best->num;
+                ctx->time_base.num = best->den;
             }
         }
 
-        if (best)
-        {
-            ctx->time_base.den = best->num;
-            ctx->time_base.num = best->den;
-        }
+        ctx->framerate.den = ctx->time_base.num;
+        ctx->framerate.num = ctx->time_base.den;
     }
-    /*-------------Copy from OpenCV-----end---------------*/
-#else
-    ctx->time_base = (AVRational){1, fps};
-#endif
+    else if (ctx->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+        //进位.
+        ctx->sample_rate = (int)(rate + 0.5);
 
-    /*非常重要。*/
-    ctx->framerate.den = ctx->time_base.num;
-    ctx->framerate.num = ctx->time_base.den;
+        //检查编码器支持的采样率.
+        if (ctx->codec->supported_samplerates)
+        {
+            const int *p = ctx->codec->supported_samplerates;
+            int best = *p;
+            int best_diff = abs(ctx->sample_rate - best);
+
+            for (; *p; p++)
+            {
+                int diff = abs(ctx->sample_rate - *p);
+                if (diff < best_diff)
+                {
+                    best = *p;
+                    best_diff = diff;
+                }
+            }
+            ctx->sample_rate = best;
+        }
+
+        ctx->time_base.num = 1;
+        ctx->time_base.den = ctx->sample_rate;
+    }
 }
 #endif //#ifdef HAVE_FFMPEG
 
-int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int framerate, int device)
+int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int rate, int device)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -139,7 +163,7 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
 
     if(param->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        assert(framerate > 0 && framerate <= 1000);
+        assert(rate > 0 && rate <= 1000);
         assert(param->width > 0);
         assert(param->height > 0);
         assert(param->bit_rate > 0);
@@ -149,14 +173,14 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
         if (chk < 0)
             return chk;
 
-        ctx->codec_ctx->gop_size = framerate;
+        ctx->codec_ctx->gop_size = rate;
         ctx->codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
         if (param->codec_id == AV_CODEC_ID_MJPEG)
             ctx->codec_ctx->color_range = AVCOL_RANGE_JPEG;
 
-        // 设置FPS.
-        _abcdk_ffmpeg_encoder_venc_set_fps(ctx->codec_ctx, framerate);
+        // 设置速率.
+        _abcdk_ffmpeg_encoder_set_rate(ctx->codec_ctx, rate);
 
         // 低延迟配置, 直播或喊话时需要.
         if (param->video_delay <= 0)
@@ -167,6 +191,21 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
             av_dict_set(&opts, "tune", "zerolatency", 0); // 禁用所有缓冲/重排.
             av_dict_set(&opts, "rc-lookahead", "0", 0);   // 不做前瞻分析.
         }
+    }
+    else if(param->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+        assert(rate > 0);
+
+        chk = avcodec_parameters_to_context(ctx->codec_ctx, param);
+        if (chk < 0)
+            return chk;
+
+        // 设置速率.
+        _abcdk_ffmpeg_encoder_set_rate(ctx->codec_ctx, rate);
+
+        if (ctx->codec_ctx->codec_id == AV_CODEC_ID_AAC)
+            av_dict_set(&opts, "strict", "-2", 0);
+
     }
     else
     {
@@ -184,7 +223,7 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_
 #endif //#ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, const char *codec_name, AVCodecParameters *param, int framerate, int device)
+int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, const char *codec_name, AVCodecParameters *param, int rate, int device)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -198,11 +237,11 @@ int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, const char *codec_na
     if(!codec_ctx)
         return -1;
 
-    return abcdk_ffmpeg_encoder_init(ctx, codec_ctx, param, framerate, device);
+    return abcdk_ffmpeg_encoder_init(ctx, codec_ctx, param, rate, device);
 #endif //#ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_encoder_init3(abcdk_ffmpeg_encoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int framerate, int device)
+int abcdk_ffmpeg_encoder_init3(abcdk_ffmpeg_encoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int rate, int device)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -216,7 +255,7 @@ int abcdk_ffmpeg_encoder_init3(abcdk_ffmpeg_encoder_t *ctx, AVCodecID codec_id, 
     if(!codec_ctx)
         return -1;
 
-    return abcdk_ffmpeg_encoder_init(ctx, codec_ctx, param, framerate, device);
+    return abcdk_ffmpeg_encoder_init(ctx, codec_ctx, param, rate, device);
 #endif //#ifndef HAVE_FFMPEG
 }
 

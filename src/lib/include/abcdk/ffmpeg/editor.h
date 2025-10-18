@@ -38,8 +38,11 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**读,是否忽略字幕. */
     int read_ignore_subtitle;
 
-    /**读,倍速(3位小数). <=0 无效.*/
-    int read_speed_scale;
+    /**写,是否禁用延迟刷新. */
+    int read_nodelay;
+
+    /**读,速率比例(3位小数). <=0 无效.*/
+    int read_rate_scale;
 
     /**读,是否启用MP4流转换.*/
     int read_mp4toannexb;
@@ -83,64 +86,59 @@ int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx);
 /**获取AVStream对象指针.*/
 AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream);
 
-/**获取流的时长(秒). */
-double abcdk_ffmpeg_editor_duration(abcdk_ffmpeg_editor_t *ctx,int stream);
-
-/**获取FPS(帧数/秒). */
-double abcdk_ffmpeg_editor_fps(abcdk_ffmpeg_editor_t *ctx,int stream);
-
 /**DTS/PTS转时间(秒).*/
-double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
+double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts);
 
-/**DTS/PTS转序号.*/
-int64_t abcdk_ffmpeg_editor_ts2num(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts);
-
-/**获取指定流图像的宽(像素).*/
-int abcdk_ffmpeg_editor_width(abcdk_ffmpeg_editor_t *ctx,int stream);
-
-/**获取指定流图像的高(像素)*/
-int abcdk_ffmpeg_editor_height(abcdk_ffmpeg_editor_t *ctx,int stream);
-
+/** DTS/PTS转序号.*/
+int64_t abcdk_ffmpeg_editor_stream_ts2num(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts);
 
 /**打开. */
-int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_param_t *param);
+int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_editor_param_t *param);
 
 /**
- * 读数据包。
+ * 读数据包.
  * 
- * @return 0 成功, < 0 失败(出错或结束)。
+ * @return 0 成功, < 0 失败(出错或结束).
 */
 int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *dst);
 
 /**
- * 创建流。
+ * 创建流.
  * 
- * @return >= 0 成功(流索引)，< 0 失败。
+ * @return >= 0 成功(流索引), < 0 失败.
 */
 int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecContext *opt);
 
 /**
- * 写数据包。
+ * 创建流.
  * 
- * @return 0 成功, < 0 失败(出错或结束)。
+ * @return >= 0 成功(流索引), < 0 失败.
+*/
+int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecParameters *opt,
+                                    const AVRational *time_base, const AVRational *avg_frame_rate,const AVRational *r_frame_rate);
+
+/**
+ * 写数据包.
+ * 
+ * @return 0 成功, < 0 失败(出错或结束).
 */
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src, AVRational *src_time_base);
 
 /**
- * 写头部信息。
+ * 写头部信息.
  * 
  * @note 第一个数据包写入前会自动检测并执行, 如果不关注返回结果可以省略主动执行.
  * 
- * @return 0 成功, < 0 失败(出错或空间不足)。
+ * @return 0 成功, < 0 失败(出错或空间不足).
 */
 int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx);
 
 /**
- * 写结尾信息。
+ * 写结尾信息.
  * 
  * @note 关闭时会自动检测并执行, 如果不关注返回结果可以省略主动执行.
  * 
- * @return 0 成功, < 0 失败(出错或空间不足)。
+ * @return 0 成功, < 0 失败(出错或空间不足).
 */
 int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx);
 

@@ -24,13 +24,13 @@ void abcdk_ffmpeg_encoder_free(abcdk_ffmpeg_encoder_t **ctx);
 abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc();
 
 /**初始化.*/
-int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int framerate, int device);
+int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int rate, int device);
 
 /**初始化.*/
-int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, const char *codec_name, AVCodecParameters *param, int framerate, int device);
+int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, const char *codec_name, AVCodecParameters *param, int rate, int device);
 
 /**初始化.*/
-int abcdk_ffmpeg_encoder_init3(abcdk_ffmpeg_encoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int framerate, int device);
+int abcdk_ffmpeg_encoder_init3(abcdk_ffmpeg_encoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int rate, int device);
 
 /**
  * 获取扩展数据.

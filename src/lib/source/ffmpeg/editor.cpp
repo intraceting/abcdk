@@ -20,7 +20,7 @@ struct _abcdk_ffmpeg_editor
 
     /**读, 流过滤器. */
     std::map<int, abcdk_ffmpeg_bsf_t *> read_bsf_list;
-    int read_bsf_list_pos;    
+    int read_bsf_list_pos;
 
     /**读, 第一帧DTS出现时间(微秒).*/
     std::map<int, uint64_t> read_dts_first_time;
@@ -36,7 +36,7 @@ struct _abcdk_ffmpeg_editor
     int read_frame_eof;
 
     /**写, 最近的DTS.*/
-    std::map<int, int64_t>  write_dts_latest;
+    std::map<int, int64_t> write_dts_latest;
 
     /**写, 头部写入是否成功. */
     int write_header_ok;
@@ -55,6 +55,10 @@ void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
 
     ctx_p = *ctx;
     *ctx = NULL;
+
+    // 作者, 写入末尾.
+    if (ctx_p->writer)
+        abcdk_ffmpeg_editor_write_trailer(ctx_p);
 
     abcdk_heap_freep((void **)&ctx_p->param.fmt);
     abcdk_heap_freep((void **)&ctx_p->param.url);
@@ -112,66 +116,28 @@ AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream)
     return ctx->media_ctx->streams[stream];
 }
 
-static double _abcdk_ffmpeg_editor_speed_scale(abcdk_ffmpeg_editor_t *ctx)
-{
-    if (ctx->writer)
-        return 1.0;
-
-    return (ctx->param.read_speed_scale > 0 ? (double)ctx->param.read_speed_scale / 1000. : 1.0);
-}
-
-double abcdk_ffmpeg_editor_duration(abcdk_ffmpeg_editor_t *ctx, int stream)
+double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
 
-    return abcdk_ffmpeg_stream_duration(ctx->media_ctx->streams[stream], _abcdk_ffmpeg_editor_speed_scale(ctx));
+    if (ctx->writer || ctx->param.read_rate_scale <= 0)
+        return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, 1.0);
+    else
+        return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, (double)ctx->param.read_rate_scale / 1000.);
 }
 
-double abcdk_ffmpeg_editor_fps(abcdk_ffmpeg_editor_t *ctx,int stream)
+int64_t abcdk_ffmpeg_editor_stream_ts2num(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
 
-    return abcdk_ffmpeg_stream_fps(ctx->media_ctx->streams[stream], _abcdk_ffmpeg_editor_speed_scale(ctx));
-}
-
-double abcdk_ffmpeg_editor_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
-{
-    assert(ctx != NULL && stream >= 0);
-    assert(ctx->media_ctx != NULL);
-    assert(ctx->media_ctx->nb_streams > stream);
-
-    return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, _abcdk_ffmpeg_editor_speed_scale(ctx));
-}
-
-int64_t abcdk_ffmpeg_editor_ts2num(abcdk_ffmpeg_editor_t *ctx,int stream, int64_t ts)
-{
-    assert(ctx != NULL && stream >= 0);
-    assert(ctx->media_ctx != NULL);
-    assert(ctx->media_ctx->nb_streams > stream);
-
-    return abcdk_ffmpeg_stream_ts2num(ctx->media_ctx->streams[stream], ts, _abcdk_ffmpeg_editor_speed_scale(ctx));
-}
-
-int abcdk_ffmpeg_editor_width(abcdk_ffmpeg_editor_t *ctx,int stream)
-{
-    assert(ctx != NULL && stream >= 0);
-    assert(ctx->media_ctx != NULL);
-    assert(ctx->media_ctx->nb_streams > stream);
-
-    return ctx->media_ctx->streams[stream]->codecpar->width;
-}
-
-int abcdk_ffmpeg_editor_height(abcdk_ffmpeg_editor_t *ctx,int stream)
-{
-    assert(ctx != NULL && stream >= 0);
-    assert(ctx->media_ctx != NULL);
-    assert(ctx->media_ctx->nb_streams > stream);
-
-    return ctx->media_ctx->streams[stream]->codecpar->height; 
+    if (ctx->writer || ctx->param.read_rate_scale <= 0)
+        return abcdk_ffmpeg_stream_ts2num(ctx->media_ctx->streams[stream], ts, 1.0);
+    else
+        return abcdk_ffmpeg_stream_ts2num(ctx->media_ctx->streams[stream], ts, (double)ctx->param.read_rate_scale / 1000.);
 }
 
 static int _abcdk_ffmpeg_editor_interrupt_cb(void *args)
@@ -221,15 +187,32 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
 
     if (ctx->writer)
     {
+
+#ifdef ABCDK_FFMPEG_EDITOR_METDATA_OVERWRITE
         av_dict_set(&ctx->media_ctx->metadata, "service", "ABCDK", 0);
         av_dict_set(&ctx->media_ctx->metadata, "service_name", "ABCDK", 0);
         av_dict_set(&ctx->media_ctx->metadata, "service_provider", "ABCDK", 0);
         av_dict_set(&ctx->media_ctx->metadata, "artist", "ABCDK", 0);
+#endif //#ifdef ABCDK_FFMPEG_EDITOR_METDATA_OVERWRITE
 
         if (ctx->param.write_nodelay)
             ctx->media_ctx->flags |= AVFMT_FLAG_FLUSH_PACKETS;
 
         ctx->media_ctx->oformat = av_guess_format(ctx->param.fmt, ctx->param.url, NULL);
+        if (!ctx->media_ctx->oformat)
+        {
+            abcdk_ffmpeg_media_free(&ctx->media_ctx);
+            return AVERROR_MUXER_NOT_FOUND;
+        }
+
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
+        ctx->media_ctx->url = av_strdup(ctx->param.url);
+#if FF_API_FORMAT_FILENAME
+        strncpy(ctx->media_ctx->filename, ctx->param.url, sizeof(ctx->media_ctx->filename));
+#endif // #if FF_API_FORMAT_FILENAME
+#else  // #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
+        strncpy(ctx->media_ctx->filename, ctx->param.url, sizeof(ctx->media_ctx->filename));
+#endif // #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
     }
     else
     {
@@ -305,16 +288,22 @@ static int _abcdk_avformat_media_init_ts(abcdk_ffmpeg_editor_t *ctx)
 {
     for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
     {
-        ctx->read_dts_first[i] = AV_NOPTS_VALUE;
-        ctx->read_dts_latest[i] = AV_NOPTS_VALUE;
-        ctx->read_dts_first_time[i] = 0;
-        ctx->write_dts_latest[i] = AV_NOPTS_VALUE;
+        if (ctx->writer)
+        {
+            ctx->write_dts_latest[i] = AV_NOPTS_VALUE;
+        }
+        else
+        {
+            ctx->read_dts_first[i] = AV_NOPTS_VALUE;
+            ctx->read_dts_latest[i] = AV_NOPTS_VALUE;
+            ctx->read_dts_first_time[i] = 0;
+        }
     }
 
     return 0;
 }
 
-int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_param_t *param)
+int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_editor_param_t *param)
 {
     int chk;
 
@@ -397,7 +386,6 @@ int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, abcdk_ffmpeg_editor_par
     return 0;
 }
 
-
 /**
  * 延时检查。
  *
@@ -407,15 +395,15 @@ static int _abcdk_ffmpeg_editor_read_delay_check(abcdk_ffmpeg_editor_t *ctx, int
 {
     double a1, a2, a, b;
 
-    if (ctx->param.read_speed_scale <= 0)
-        return 0;
+    if (ctx->param.read_nodelay)
+        return 1;
 
     /*如果是无效的DTS则直接返回已满足(!0).*/
     if (ctx->read_dts_latest[stream] == (int64_t)AV_NOPTS_VALUE)
         return 1;
 
-    a1 = abcdk_ffmpeg_editor_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
-    a2 = abcdk_ffmpeg_editor_ts2sec(ctx, stream, ctx->read_dts_latest[stream]);
+    a1 = abcdk_ffmpeg_editor_stream_ts2sec(ctx, stream, ctx->read_dts_first[stream]);
+    a2 = abcdk_ffmpeg_editor_stream_ts2sec(ctx, stream, ctx->read_dts_latest[stream]);
 
     /*
      * 1：计算当前帧与第一帧的时间差.
@@ -469,14 +457,14 @@ static int _abcdk_ffmpeg_editor_bsf_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket *d
     std::map<int, abcdk_ffmpeg_bsf_t *>::iterator bsf_it;
     int chk;
 
-    //更新最新的活动时间, 不然会超时.
+    // 更新最新的活动时间, 不然会超时.
     ctx->latest_time = abcdk_time_systime(6);
 
     for (int i = 0; i < ctx->read_bsf_list.size(); i++)
     {
         chk = abcdk_ffmpeg_bsf_recv(ctx->read_bsf_list[ctx->read_bsf_list_pos], dst);
 
-        //循环滚动游标.
+        // 循环滚动游标.
         ctx->read_bsf_list_pos += 1;
         ctx->read_bsf_list_pos = ctx->read_bsf_list_pos % ctx->read_bsf_list.size();
 
@@ -484,7 +472,7 @@ static int _abcdk_ffmpeg_editor_bsf_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket *d
             continue;
         else if (chk > 0)
             return 0;
-        else 
+        else
             return AVERROR(EPIPE);
     }
 
@@ -511,8 +499,8 @@ static int _abcdk_ffmpeg_editor_packet_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket
     // 返回结束, 如果已经到末尾并且未启动流过滤.
     if (ctx->read_packet_eof && !ctx->param.read_mp4toannexb)
         return AVERROR_EOF;
-    
-    //更新最新的活动时间, 不然会超时.
+
+    // 更新最新的活动时间, 不然会超时.
     ctx->latest_time = abcdk_time_systime(6);
 
     chk = av_read_frame(ctx->media_ctx, dst);
@@ -521,7 +509,7 @@ static int _abcdk_ffmpeg_editor_packet_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket
         ctx->read_packet_eof = 1;
         return (ctx->param.read_mp4toannexb ? AVERROR(EAGAIN) : AVERROR_EOF);
     }
-    else if( chk < 0)
+    else if (chk < 0)
     {
         return chk;
     }
@@ -579,31 +567,33 @@ int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *dst)
     int chk;
 
     assert(ctx != NULL && dst != NULL);
+    assert(!ctx->writer);
+    assert(ctx->media_ctx);
 
-    //Clean up data that is no longer used.
+    // Clean up data that is no longer used.
     av_packet_unref(dst);
 
 next_packet:
-    
-    if(need_delay)
+
+    if (need_delay)
     {
-        //等待下一帧时间到达.
+        // 等待下一帧时间到达.
         _abcdk_ffmpeg_editor_read_delay(ctx);
         need_delay = 0;
     }
 
-    if(ctx->param.read_mp4toannexb)
+    if (ctx->param.read_mp4toannexb)
     {
         chk = _abcdk_ffmpeg_editor_bsf_recv(ctx, dst);
         if (chk == 0)
             return 0;
 
-        if(chk == AVERROR(EAGAIN))
-            chk = _abcdk_ffmpeg_editor_packet_recv(ctx,dst);
+        if (chk == AVERROR(EAGAIN))
+            chk = _abcdk_ffmpeg_editor_packet_recv(ctx, dst);
     }
     else
     {
-        chk = _abcdk_ffmpeg_editor_packet_recv(ctx,dst);
+        chk = _abcdk_ffmpeg_editor_packet_recv(ctx, dst);
     }
 
     if (chk == AVERROR(EAGAIN))
@@ -613,7 +603,7 @@ next_packet:
 
     if (ctx->param.read_mp4toannexb)
     {
-        _abcdk_ffmpeg_editor_bsf_send(ctx, dst);//auto unref.
+        _abcdk_ffmpeg_editor_bsf_send(ctx, dst); // auto unref.
         goto next_packet;
     }
 
@@ -627,25 +617,94 @@ int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecCont
     int chk;
 
     assert(ctx != NULL && opt != NULL);
+    assert(ctx->writer);
+    assert(ctx->media_ctx);
 
     codec_ctx_p = avcodec_find_encoder(opt->codec_id);
-    if(!codec_ctx_p)
+    if (!codec_ctx_p)
         return AVERROR_ENCODER_NOT_FOUND;
 
     vs_ctx = avformat_new_stream(ctx->media_ctx, codec_ctx_p);
     if (!vs_ctx)
         return AVERROR(ENOMEM);
 
-    chk = abcdk_ffmpeg_stream_parameters_from_context(vs_ctx, opt);
-    if(chk < 0)
+    chk = avcodec_parameters_from_context(vs_ctx->codecpar, opt);
+    if (chk < 0)
         return chk;
+
+    vs_ctx->codecpar->codec_tag = 0; // 不能复用.
+
+    vs_ctx->time_base = opt->time_base;
+    vs_ctx->avg_frame_rate = vs_ctx->r_frame_rate = opt->framerate;
+
+    /*下面的也要复制, 因为一些定制的ffmpeg未完成启用新的参数. */
+#if FF_API_LAVF_AVCTX
+    chk = avcodec_parameters_to_context(vs_ctx->codec, vs_ctx->codecpar);
+    if (chk < 0)
+        return chk;
+
+    vs_ctx->codec->codec_tag = 0; // 不能复用.
+
+    vs_ctx->codec->time_base = opt->time_base;
+    vs_ctx->codec->framerate = opt->framerate;
+
+    /*如果流需要设置全局头部, 则编码器需要知道这个请求. */
+    if (ctx->media_ctx->oformat->flags & AVFMT_GLOBALHEADER)
+        vs_ctx->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#endif // FF_API_LAVF_AVCTX
+
+    return vs_ctx->index;
+}
+
+int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecParameters *opt,
+                                    const AVRational *time_base, const AVRational *avg_frame_rate,const AVRational *r_frame_rate)
+{
+    AVCodec *codec_ctx_p = NULL;
+    AVStream *vs_ctx = NULL;
+    int chk;
+
+    assert(ctx != NULL && opt != NULL && time_base != NULL);
+    assert(ctx->writer);
+    assert(ctx->media_ctx);
+
+    codec_ctx_p = avcodec_find_encoder(opt->codec_id);
+    if (!codec_ctx_p)
+        return AVERROR_ENCODER_NOT_FOUND;
+
+    vs_ctx = avformat_new_stream(ctx->media_ctx, codec_ctx_p);
+    if (!vs_ctx)
+        return AVERROR(ENOMEM);
+
+    chk = avcodec_parameters_copy(vs_ctx->codecpar, opt);
+    if (chk < 0)
+        return chk;
+
+    vs_ctx->codecpar->codec_tag = 0; // 不能复用.
+    vs_ctx->time_base = *time_base;
+    vs_ctx->avg_frame_rate = (avg_frame_rate ? *avg_frame_rate : (r_frame_rate ? *r_frame_rate : av_make_q(time_base->den, time_base->num)));
+    vs_ctx->r_frame_rate = (r_frame_rate ? *r_frame_rate : (avg_frame_rate ? *avg_frame_rate : av_make_q(time_base->den, time_base->num)));
+
+    /*下面的也要复制, 因为一些定制的ffmpeg未完成启用新的参数. */
+#if FF_API_LAVF_AVCTX
+    chk = avcodec_parameters_to_context(vs_ctx->codec, opt);
+    if (chk < 0)
+        return chk;
+
+    vs_ctx->codec->codec_tag = 0; // 不能复用.
+    vs_ctx->codec->time_base = *time_base;
+    vs_ctx->codec->framerate = (avg_frame_rate ? *avg_frame_rate : (r_frame_rate ? *r_frame_rate : av_make_q(time_base->den, time_base->num)));
+
+    /*如果流需要设置全局头部, 则编码器需要知道这个请求. */
+    if (ctx->media_ctx->oformat->flags & AVFMT_GLOBALHEADER)
+        vs_ctx->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#endif // FF_API_LAVF_AVCTX
 
     return vs_ctx->index;
 }
 
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src, AVRational *src_time_base)
 {
-    AVRational bq, cq;
+    AVRational tb_src, tb_dst;
     AVStream *vs_ctx_p = NULL;
     int chk;
 
@@ -670,40 +729,42 @@ int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src, 
      * 如果没有源时间基, 则使用内部时间基值.
      * 注: 如果时间基值错误, 编码数据在解码后无法正常播放, 常见的现像是DTS,PTS,DURATION异常.
      */
-    if (src_time_base)
-        bq = *src_time_base;
-    else
-        bq = vs_ctx_p->time_base; //av_make_q(1, abcdk_ffmpeg_stream_fps(ctx->media_ctx, vs_ctx_p, 1.));
+    tb_dst = vs_ctx_p->time_base;
+    tb_src = (src_time_base ? *src_time_base : tb_dst);
 
-    cq = vs_ctx_p->time_base;
-
+#if 0
     /*修复错误的时长.*/
     if (src->duration == 0)
-        src->duration = av_rescale_q(1, vs_ctx_p->time_base, AV_TIME_BASE_Q);
+        src->duration = av_rescale_q(1, tb_src, AV_TIME_BASE_Q);
 
     /*填充DTS,PTS,DURATION.*/
-    src->dts = av_rescale_q_rnd(src->dts, bq, cq, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-    src->pts = av_rescale_q_rnd(src->pts, bq, cq, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-    src->duration = av_rescale_q(src->duration, bq, cq);
+    src->dts = av_rescale_q_rnd(src->dts, tb_src, tb_dst, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+    src->pts = av_rescale_q_rnd(src->pts, tb_src, tb_dst, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+    src->duration = av_rescale_q(src->duration, tb_src, tb_dst);
     src->pos = -1;
 
-    /*确保DTS单调递增(简单修复). */
-    if (src->dts <= ctx->write_dts_latest[src->stream_index])
+#else
+    av_packet_rescale_ts(src, tb_src, tb_dst);
+#endif
+
+    //确保DTS单调递增(简单修复).
+    if (src->dts != AV_NOPTS_VALUE && src->dts <= ctx->write_dts_latest[src->stream_index])
         src->dts = ctx->write_dts_latest[src->stream_index] + 1;
 
-    /*记录最新的DTS.*/
+    //记录最新的DTS.
     ctx->write_dts_latest[src->stream_index] = src->dts;
 
-    /*确保PTS大小DTS.*/
+    //确保PTS大小DTS.
     if (src->dts > src->pts)
         src->dts = src->pts;
 
+    //当存在多个流时需要交替写入, 否则可能无法正常播放.
     chk = (ctx->media_ctx->nb_streams > 1 ? av_interleaved_write_frame(ctx->media_ctx, src) : av_write_frame(ctx->media_ctx, src));
-    if(chk != 0)
+    if (chk != 0)
         return chk;
 
-    if(ctx->param.write_nodelay && ctx->media_ctx->pb)
-       avio_flush(ctx->media_ctx->pb);
+    if (ctx->param.write_nodelay && ctx->media_ctx->pb)
+        avio_flush(ctx->media_ctx->pb);
 
     return 0;
 }
@@ -728,11 +789,11 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
     }
     else
     {
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
-        url_p = ctx->media_ctx->filename;
-#else //#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
         url_p = ctx->media_ctx->url;
-#endif //#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 20, 100)
+#else  // #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
+        url_p = ctx->media_ctx->filename;
+#endif // #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(58, 20, 100)
 
         chk = avio_open(&ctx->media_ctx->pb, url_p, AVIO_FLAG_WRITE);
         if (chk < 0)
@@ -749,7 +810,7 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
         if (ctx->param.write_fmp4)
             av_dict_set(&ctx->option_ctx, "movflags", "frag_keyframe+empty_moov+default_base_moof+faststart", 0);
 
-        //控制输出时音频和视频数据包之间的最大"交织时间差".
+        // 控制输出时音频和视频数据包之间的最大"交织时间差".
         av_dict_set(&ctx->option_ctx, "max_interleave_delta", "0", 0);
     }
 
@@ -757,14 +818,27 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
     if (chk < 0)
         return chk;
 
-    return 0;
+    chk = _abcdk_avformat_media_init_bsf(ctx);
+    if (chk < 0)
+        return chk;
 
+    chk = _abcdk_avformat_media_init_ts(ctx);
+    if (chk < 0)
+        return chk;
+
+    /*it's ok.*/
+    ctx->write_header_ok = 1;
+
+    // 打印媒体信息.
+    abcdk_ffmpeg_media_dump(ctx->media_ctx, 1);
+
+    return 0;
 }
 
 int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx)
 {
     int chk;
-    
+
     assert(ctx != NULL);
     assert(ctx->writer);
     assert(ctx->media_ctx);

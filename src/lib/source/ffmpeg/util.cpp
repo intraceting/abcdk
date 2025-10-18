@@ -278,29 +278,31 @@ double abcdk_ffmpeg_stream_duration(AVStream *vs_ctx, double scale)
 #endif //#ifndef HAVE_FFMPEG
 }
 
-double abcdk_ffmpeg_stream_fps(AVStream *vs_ctx,double scale)
+double abcdk_ffmpeg_stream_rate(AVStream *vs_ctx, double scale)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return 0.000001;
-#else //#ifndef HAVE_FFMPEG
-    double fps = 0.000001;
+#else // #ifndef HAVE_FFMPEG
+    double rate = 0.000001, base_rate = 0.000025;
 
     assert(vs_ctx != NULL);
-    
-    if (fps < 0.000025)
-        fps = abcdk_ffmpeg_q2d(vs_ctx->r_frame_rate,scale);
-    if (fps < 0.000025)
-        fps = abcdk_ffmpeg_q2d(vs_ctx->avg_frame_rate,scale);
-    if (fps < 0.000025)
-#if FF_API_LAVF_AVCTX
-        fps = 1.0 / abcdk_ffmpeg_q2d(vs_ctx->codec->time_base,scale);
-#else //FF_API_LAVF_AVCTX
-        fps = 1.0 / abcdk_ffmpeg_q2d(vs_ctx->time_base,scale);
-#endif //FF_API_LAVF_AVCTX
 
-    return ABCDK_CLAMP(fps,(double)0.001,(double)999999999.0);
-#endif //#ifndef HAVE_FFMPEG
+#if LIBAVCODEC_BUILD >= AV_VERSION_INT(54, 1, 0)
+    rate = abcdk_ffmpeg_q2d(vs_ctx->avg_frame_rate, scale);
+#else  // #if LIBAVCODEC_BUILD >= AV_VERSION_INT(54, 1, 0)
+    rate = abcdk_ffmpeg_q2d(vs_ctx->r_frame_rate, scale);
+#endif // #if LIBAVCODEC_BUILD >= AV_VERSION_INT(54, 1, 0)
+
+    if (rate < base_rate)
+#if FF_API_LAVF_AVCTX
+        rate = 1.0 / abcdk_ffmpeg_q2d(vs_ctx->codec->time_base, scale);
+#else  // FF_API_LAVF_AVCTX
+        rate = 1.0 / abcdk_ffmpeg_q2d(vs_ctx->time_base, scale);
+#endif // FF_API_LAVF_AVCTX
+
+    return ABCDK_CLAMP(rate, (double)base_rate, (double)999999999.0);
+#endif // #ifndef HAVE_FFMPEG
 }
 
 double abcdk_ffmpeg_stream_ts2sec(AVStream *vs_ctx, int64_t ts, double scale)
@@ -331,178 +333,8 @@ int64_t abcdk_ffmpeg_stream_ts2num(AVStream *vs_ctx, int64_t ts, double scale)
     assert(vs_ctx != NULL);
 
     sec = abcdk_ffmpeg_stream_ts2sec(vs_ctx, ts, scale);
-    num = (int64_t)(abcdk_ffmpeg_stream_fps(vs_ctx, scale) * sec + 0.5);
+    num = (int64_t)(abcdk_ffmpeg_stream_rate(vs_ctx, scale) * sec + 0.5);
 
     return num;
-#endif //#ifndef HAVE_FFMPEG
-}
-
-
-int abcdk_ffmpeg_stream_parameters_from_context(AVStream *vs_ctx, const AVCodecContext *codec_ctx)
-{
-#ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
-    return -1;
-#else //#ifndef HAVE_FFMPEG
-    assert(vs_ctx != NULL && codec_ctx != NULL);
-
-    /*如果是编码，帧率也一并复制。*/
-#if FF_API_LAVF_AVCTX
-    if (av_codec_is_encoder(vs_ctx->codec->codec))
-#else //FF_API_LAVF_AVCTX
-    if (av_codec_is_encoder(codec_ctx->codec))
-#endif //FF_API_LAVF_AVCTX
-    {
-        vs_ctx->time_base = codec_ctx->time_base;
-        vs_ctx->avg_frame_rate = vs_ctx->r_frame_rate = codec_ctx->framerate;//av_make_q(codec_ctx->time_base.den, codec_ctx->time_base.num);
-#if FF_API_LAVF_AVCTX
-        vs_ctx->codec->time_base = codec_ctx->time_base;
-        vs_ctx->codec->framerate = codec_ctx->framerate;
-#endif //FF_API_LAVF_AVCTX
-    }
-
-    /**/
-    avcodec_parameters_from_context(vs_ctx->codecpar, codec_ctx);
-
-    /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
-#if FF_API_LAVF_AVCTX
-    vs_ctx->codec->codec_type = codec_ctx->codec_type;
-    vs_ctx->codec->codec_id = codec_ctx->codec_id;
-    vs_ctx->codec->codec_tag = codec_ctx->codec_tag;
-    vs_ctx->codec->bit_rate = codec_ctx->bit_rate;
-    vs_ctx->codec->bits_per_coded_sample = codec_ctx->bits_per_coded_sample;
-    vs_ctx->codec->bits_per_raw_sample = codec_ctx->bits_per_raw_sample;
-    vs_ctx->codec->profile = codec_ctx->profile;
-    vs_ctx->codec->level = codec_ctx->level;
-    vs_ctx->codec->flags = codec_ctx->flags;
-
-    switch (codec_ctx->codec_type)
-    {
-    case AVMEDIA_TYPE_VIDEO:
-        vs_ctx->codec->pix_fmt = codec_ctx->pix_fmt;
-        vs_ctx->codec->width = codec_ctx->width;
-        vs_ctx->codec->height = codec_ctx->height;
-        vs_ctx->codec->gop_size = codec_ctx->gop_size;
-        vs_ctx->codec->field_order = codec_ctx->field_order;
-        vs_ctx->codec->color_range = codec_ctx->color_range;
-        vs_ctx->codec->color_primaries = codec_ctx->color_primaries;
-        vs_ctx->codec->color_trc = codec_ctx->color_trc;
-        vs_ctx->codec->colorspace = codec_ctx->colorspace;
-        vs_ctx->codec->chroma_sample_location = codec_ctx->chroma_sample_location;
-        vs_ctx->codec->sample_aspect_ratio = codec_ctx->sample_aspect_ratio;
-        vs_ctx->codec->has_b_frames = codec_ctx->has_b_frames;
-        break;
-    case AVMEDIA_TYPE_AUDIO:
-        vs_ctx->codec->sample_fmt = codec_ctx->sample_fmt;
-        vs_ctx->codec->channel_layout = codec_ctx->channel_layout;
-        vs_ctx->codec->channels = codec_ctx->channels;
-        vs_ctx->codec->sample_rate = codec_ctx->sample_rate;
-        vs_ctx->codec->block_align = codec_ctx->block_align;
-        vs_ctx->codec->frame_size = codec_ctx->frame_size;
-        vs_ctx->codec->initial_padding = codec_ctx->initial_padding;
-        vs_ctx->codec->seek_preroll = codec_ctx->seek_preroll;
-        break;
-    case AVMEDIA_TYPE_SUBTITLE:
-        vs_ctx->codec->width = codec_ctx->width;
-        vs_ctx->codec->height = codec_ctx->height;
-        break;
-    default:
-        break;
-    }
-
-    if (codec_ctx->extradata)
-    {
-        vs_ctx->codec->extradata_size = 0;
-        av_free(vs_ctx->codec->extradata);
-
-        vs_ctx->codec->extradata = (uint8_t *)av_mallocz(codec_ctx->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!vs_ctx->codec->extradata)
-            return AVERROR(ENOMEM);
-        
-        memcpy(vs_ctx->codec->extradata, codec_ctx->extradata, codec_ctx->extradata_size);
-        vs_ctx->codec->extradata_size = codec_ctx->extradata_size;
-
-    }
-#endif //FF_API_LAVF_AVCTX
-
-    return 0;
-
-#endif //#ifndef HAVE_FFMPEG
-}
-
-int abcdk_ffmpeg_stream_parameters_to_context(AVCodecContext *codec_ctx, const AVStream *vs_ctx)
-{
-#ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
-    return -1;
-#else //#ifndef HAVE_FFMPEG
-    assert(vs_ctx != NULL && codec_ctx != NULL);
-
-    /**/
-    avcodec_parameters_to_context(codec_ctx, vs_ctx->codecpar);
-
-    /*下面的也要复制，因为一些定制的ffmpeg未完成启用新的参数。*/
-#if FF_API_LAVF_AVCTX
-    codec_ctx->time_base = vs_ctx->codec->time_base;
-    codec_ctx->framerate = vs_ctx->codec->framerate;
-    codec_ctx->codec_type = vs_ctx->codec->codec_type;
-    codec_ctx->codec_id = vs_ctx->codec->codec_id;
-    codec_ctx->codec_tag = vs_ctx->codec->codec_tag;
-    codec_ctx->bit_rate = vs_ctx->codec->bit_rate;
-    codec_ctx->bits_per_coded_sample = vs_ctx->codec->bits_per_coded_sample;
-    codec_ctx->bits_per_raw_sample = vs_ctx->codec->bits_per_raw_sample;
-    codec_ctx->profile = vs_ctx->codec->profile;
-    codec_ctx->level = vs_ctx->codec->level;
-    codec_ctx->flags = vs_ctx->codec->flags;
-
-    switch (vs_ctx->codec->codec_type)
-    {
-    case AVMEDIA_TYPE_VIDEO:
-        codec_ctx->pix_fmt = vs_ctx->codec->pix_fmt;
-        codec_ctx->width = vs_ctx->codec->width;
-        codec_ctx->height = vs_ctx->codec->height;
-        codec_ctx->field_order = vs_ctx->codec->field_order;
-        codec_ctx->color_range = vs_ctx->codec->color_range;
-        codec_ctx->color_primaries = vs_ctx->codec->color_primaries;
-        codec_ctx->color_trc = vs_ctx->codec->color_trc;
-        codec_ctx->colorspace = vs_ctx->codec->colorspace;
-        codec_ctx->chroma_sample_location = vs_ctx->codec->chroma_sample_location;
-        codec_ctx->sample_aspect_ratio = vs_ctx->codec->sample_aspect_ratio;
-        codec_ctx->has_b_frames = vs_ctx->codec->has_b_frames;
-        break;
-    case AVMEDIA_TYPE_AUDIO:
-        codec_ctx->sample_fmt = vs_ctx->codec->sample_fmt;
-        codec_ctx->channel_layout = vs_ctx->codec->channel_layout;
-        codec_ctx->channels = vs_ctx->codec->channels;
-        codec_ctx->sample_rate = vs_ctx->codec->sample_rate;
-        codec_ctx->block_align = vs_ctx->codec->block_align;
-        codec_ctx->frame_size = vs_ctx->codec->frame_size;
-        codec_ctx->delay = codec_ctx->initial_padding = vs_ctx->codec->initial_padding;
-        codec_ctx->seek_preroll = vs_ctx->codec->seek_preroll;
-        break;
-    case AVMEDIA_TYPE_SUBTITLE:
-        codec_ctx->width = vs_ctx->codec->width;
-        codec_ctx->height = vs_ctx->codec->height;
-        break;
-    default:
-        break;
-    }
-
-    if (vs_ctx->codec->extradata)
-    {
-        codec_ctx->extradata_size = 0;
-        av_free(codec_ctx->extradata);
-
-        codec_ctx->extradata = (uint8_t *)av_mallocz(vs_ctx->codec->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
-        if (!codec_ctx->extradata)
-            return AVERROR(ENOMEM);
-
-        memcpy(codec_ctx->extradata, vs_ctx->codec->extradata, vs_ctx->codec->extradata_size);
-        codec_ctx->extradata_size = vs_ctx->codec->extradata_size;
-    }
-#endif //FF_API_LAVF_AVCTX
-
-    return 0;
-
 #endif //#ifndef HAVE_FFMPEG
 }

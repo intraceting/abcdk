@@ -20,8 +20,9 @@ int abcdk_test_record(abcdk_option_t *args)
 
     rd_param.url = abcdk_option_get(args,"--src-fmt",0,"");
     rd_param.url = abcdk_option_get(args,"--src",0,"");
-    rd_param.read_speed_scale = abcdk_option_get_int(args,"--src-xpeed",0,1000);
-    rd_param.read_mp4toannexb = abcdk_option_get_int(args,"--src-mp4toannexb ",0,1);
+    rd_param.read_nodelay = abcdk_option_get_int(args,"--src-nodelay",0,0);
+    rd_param.read_rate_scale = abcdk_option_get_int(args,"--src-rate-scale",0,1000);
+    rd_param.read_mp4toannexb = abcdk_option_get_int(args,"--src-mp4toannexb",0,1);
     rd_param.read_ignore_video = abcdk_option_get_int(args,"--src-ignore-video",0,0);
     rd_param.read_ignore_audio = abcdk_option_get_int(args,"--src-ignore-audio",0,0);
     rd_param.read_ignore_subtitle = abcdk_option_get_int(args,"--src-ignore-subtitle",0,0);
@@ -35,17 +36,26 @@ int abcdk_test_record(abcdk_option_t *args)
     chk = abcdk_ffmpeg_editor_open(rd_ctx,&rd_param);
     assert(chk == 0);
 
-    for (int i = 0; i < abcdk_ffmpeg_editor_stream_nb(rd_ctx); i++)
-    {
-        abcdk_trace_printf(LOG_DEBUG, "duration: %0.3f, fps: %0.3f, width: %d, height: %d. ",
-                           abcdk_ffmpeg_editor_duration(rd_ctx, i),
-                           abcdk_ffmpeg_editor_fps(rd_ctx, i),
-                           abcdk_ffmpeg_editor_width(rd_ctx, i),
-                           abcdk_ffmpeg_editor_height(rd_ctx, i));
-    }
-
     chk = abcdk_ffmpeg_editor_open(wr_ctx,&wr_param);
     assert(chk == 0);
+
+    for (int i = 0; i < abcdk_ffmpeg_editor_stream_nb(rd_ctx); i++)
+    {
+        AVStream *p = abcdk_ffmpeg_editor_stream_ctx(rd_ctx,i);
+        
+#if 0
+#ifdef FF_API_LAVF_AVCTX
+        chk = abcdk_ffmpeg_editor_add_stream(wr_ctx,p->codec);
+        assert(chk == i);
+#endif //#ifdef FF_API_LAVF_AVCTX
+#else 
+        chk = abcdk_ffmpeg_editor_add_stream2(wr_ctx,p->codecpar,&p->time_base,&p->avg_frame_rate,&p->r_frame_rate);
+        assert(chk == i);
+#endif 
+    }
+
+    // chk = abcdk_ffmpeg_editor_write_header(wr_ctx);
+    // assert(chk == 0);
 
     AVPacket *rd_pkt = av_packet_alloc();
 
@@ -55,13 +65,25 @@ int abcdk_test_record(abcdk_option_t *args)
         if(chk != 0)
             break;
 
-        double dts_sec = abcdk_ffmpeg_editor_ts2sec(rd_ctx,rd_pkt->stream_index,rd_pkt->dts);
-        double pts_sec = abcdk_ffmpeg_editor_ts2sec(rd_ctx,rd_pkt->stream_index,rd_pkt->pts);
+        double dts_sec = abcdk_ffmpeg_editor_stream_ts2sec(rd_ctx,rd_pkt->stream_index,rd_pkt->dts);
+        double pts_sec = abcdk_ffmpeg_editor_stream_ts2sec(rd_ctx,rd_pkt->stream_index,rd_pkt->pts);
 
         abcdk_trace_printf(LOG_DEBUG,"stream(%d),dts(%0.3f),pts(%0.3f) ",rd_pkt->stream_index,dts_sec,pts_sec);
+
+        AVStream *p = abcdk_ffmpeg_editor_stream_ctx(wr_ctx,rd_pkt->stream_index);
+
+//        AVRational time_base = p->time_base;
+
+     //   chk = abcdk_ffmpeg_editor_write_packet(wr_ctx,rd_pkt,&p->time_base);
+        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx,rd_pkt,NULL);
+        if(chk != 0)
+            break;
     }
 
     av_packet_free(&rd_pkt);
+
+    // chk = abcdk_ffmpeg_editor_write_trailer(wr_ctx);
+    // assert(chk == 0);
 
     abcdk_ffmpeg_editor_free(&rd_ctx);
     abcdk_ffmpeg_editor_free(&wr_ctx);
@@ -77,7 +99,7 @@ int abcdk_test_codec(abcdk_option_t *args)
 
     rd_param.url = abcdk_option_get(args,"--src-fmt",0,"");
     rd_param.url = abcdk_option_get(args,"--src",0,"");
-    rd_param.read_speed_scale = abcdk_option_get_int(args,"--src-xpeed",0,1000);
+    rd_param.read_rate_scale = abcdk_option_get_int(args,"--src-rate-scale",0,1000);
     rd_param.read_mp4toannexb = abcdk_option_get_int(args,"--src-mp4toannexb ",0,1);
     wr_param.fmt = abcdk_option_get(args,"--dst-fmt",0,"");
     wr_param.url = abcdk_option_get(args,"--dst",0,"");
