@@ -278,7 +278,7 @@ double abcdk_ffmpeg_stream_duration(AVStream *vs_ctx, double scale)
 #endif //#ifndef HAVE_FFMPEG
 }
 
-double abcdk_ffmpeg_stream_rate(AVStream *vs_ctx, double scale)
+double abcdk_ffmpeg_stream_time2rate(AVStream *vs_ctx, double scale)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -333,8 +333,54 @@ int64_t abcdk_ffmpeg_stream_ts2num(AVStream *vs_ctx, int64_t ts, double scale)
     assert(vs_ctx != NULL);
 
     sec = abcdk_ffmpeg_stream_ts2sec(vs_ctx, ts, scale);
-    num = (int64_t)(abcdk_ffmpeg_stream_rate(vs_ctx, scale) * sec + 0.5);
+    num = (int64_t)(abcdk_ffmpeg_stream_time2rate(vs_ctx, scale) * sec + 0.5);
 
     return num;
+#endif //#ifndef HAVE_FFMPEG
+}
+
+void abcdk_ffmpeg_stream_fix_bitrate(AVStream *vs_ctx)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return;
+#else //#ifndef HAVE_FFMPEG
+    int64_t bit_rate;
+    double video_fps;
+
+    assert(vs_ctx != NULL);
+
+    if (vs_ctx->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        video_fps = abcdk_ffmpeg_stream_time2rate(vs_ctx, 1.0);
+        
+        if (vs_ctx->codecpar->codec_id == AV_CODEC_ID_H264)
+            bit_rate = vs_ctx->codecpar->width * vs_ctx->codecpar->height * video_fps * 0.1; // 经验估算.
+        else if (vs_ctx->codecpar->codec_id == AV_CODEC_ID_H265)
+            bit_rate = vs_ctx->codecpar->width * vs_ctx->codecpar->height * video_fps * 0.6; // 经验估算.
+        else
+            bit_rate = vs_ctx->codecpar->width * vs_ctx->codecpar->height * video_fps * 0.3; // fix me.
+    }
+    else if (vs_ctx->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+        bit_rate = vs_ctx->codecpar->sample_rate * vs_ctx->codecpar->channels * 0.12; // 经验估算.
+    }
+    else
+    {
+        return;
+    }
+
+#if FF_API_LAVF_AVCTX 
+    if (vs_ctx->codecpar->bit_rate <= 0 || vs_ctx->codec->bit_rate <= 0)
+#else //#if FF_API_LAVF_AVCTX 
+    if (vs_ctx->codecpar->bit_rate <= 0)
+#endif //#if FF_API_LAVF_AVCTX 
+    {
+        vs_ctx->codecpar->bit_rate = bit_rate;
+#if FF_API_LAVF_AVCTX 
+        vs_ctx->codec->bit_rate = bit_rate;
+        vs_ctx->codec->bit_rate_tolerance = bit_rate; 
+#endif //#if FF_API_LAVF_AVCTX 
+    }
 #endif //#ifndef HAVE_FFMPEG
 }

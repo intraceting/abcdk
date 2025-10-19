@@ -58,20 +58,23 @@ void abcdk_ffmpeg_codec_free(AVCodecContext **ctx);
  */
 double abcdk_ffmpeg_q2d(AVRational r, double scale);
 
-/** 时间基值转浮点.*/
+/**时间基值转浮点.*/
 double abcdk_ffmpeg_stream_timebase_q2d(AVStream *vs_ctx, double scale);
 
-/** 获取时长(秒).*/
+/**获取时长(秒).*/
 double abcdk_ffmpeg_stream_duration(AVStream *vs_ctx, double scale);
 
-/** 获取速率.*/
-double abcdk_ffmpeg_stream_rate(AVStream *vs_ctx, double scale);
+/**获取时间速率.*/
+double abcdk_ffmpeg_stream_time2rate(AVStream *vs_ctx, double scale);
 
-/** DTS/PTS转时间(秒).*/
+/**DTS/PTS转时间(秒).*/
 double abcdk_ffmpeg_stream_ts2sec(AVStream *vs_ctx, int64_t ts, double scale);
 
-/** DTS/PTS转序号.*/
+/**DTS/PTS转序号.*/
 int64_t abcdk_ffmpeg_stream_ts2num(AVStream *vs_ctx, int64_t ts, double scale);
+
+/**修复比特速率.*/
+void abcdk_ffmpeg_stream_fix_bitrate(AVStream *vs_ctx);
 
 __END_DECLS
 

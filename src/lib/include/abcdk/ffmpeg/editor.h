@@ -26,8 +26,25 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**地址. */
     const char *url;
 
+    /**虚拟的输入/输出. */
+    struct
+    {
+        int (*read_cb)(void *opaque, uint8_t *buf, int size);
+        int (*write_cb)(void *opaque, uint8_t *buf, int size);
+        void *opaque;
+    } vio;
+
     /**超时(秒). */
     int timeout;
+
+    /**
+     * RTSP传输协议. 
+     * 
+     * 0: auto.
+     * 1: udp.
+     * 2: tcp.
+    */
+    int rtsp_transport;
 
     /**读,是否忽略视频. */
     int read_ignore_video;
@@ -47,46 +64,11 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**读,是否启用MP4流转换.*/
     int read_mp4toannexb;
 
-    /**读,是否启用解码.*/
-    int read_decoder_enable;
-
-    /**读,H264是否启用硬解码.*/
-    int read_h264_cuvid;
-
-    /**读,H265是否启用硬解码.*/
-    int read_hevc_cuvid;
-
     /**写,是否禁用延迟刷新. */
     int write_nodelay;
 
     /**写,启用FMP4封装. */
     int write_fmp4;
-
-    /**读,是否启用编码.*/
-    int write_encoder_enable;
-
-    /**写,H264是否启用硬编码.*/
-    int write_h264_nvenc;
-
-    /**写,H265是否启用硬编码.*/
-    int write_hevc_nvenc;
-
-    /**
-     * RTSP传输协议. 
-     * 
-     * 0: auto.
-     * 1: udp.
-     * 2: tcp.
-    */
-    int rtsp_transport;
-
-    /**虚拟IO环境. */
-    struct
-    {
-        int (*read_cb)(void *opaque, uint8_t *buf, int size);
-        int (*write_cb)(void *opaque, uint8_t *buf, int size);
-        void *opaque;
-    } vio;
 
 } abcdk_ffmpeg_editor_param_t;
 
@@ -119,13 +101,6 @@ int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_edit
  * @return 0 成功, < 0 失败(出错或结束).
 */
 int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *dst);
-
-/**
- * 读数据帧.
- * 
- * @return 0 成功, < 0 失败(出错或结束).
-*/
-int abcdk_ffmpeg_editor_read_frame(abcdk_ffmpeg_editor_t *ctx, AVFrame *dst);
 
 /**
  * 创建流.

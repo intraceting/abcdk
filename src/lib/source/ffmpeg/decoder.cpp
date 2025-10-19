@@ -8,7 +8,9 @@
 
 struct _abcdk_ffmpeg_decoder
 {
-    AVCodecContext *codec_ctx;
+    const AVCodec *codec_ctx_p;
+    AVDictionary *coder_opt;
+    AVCodecContext *coder_ctx;
     abcdk_ffmpeg_sws_t *sws_ctx;
     AVPixelFormat pixfmt;
     AVFrame *recv_cache;
@@ -30,7 +32,8 @@ void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    abcdk_ffmpeg_codec_free(&ctx_p->codec_ctx);
+    abcdk_ffmpeg_codec_free(&ctx_p->coder_ctx);
+    av_dict_free(&ctx_p->coder_opt);
     abcdk_ffmpeg_sws_free(&ctx_p->sws_ctx);
 
     av_frame_free(&ctx_p->recv_cache);
@@ -47,7 +50,7 @@ void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
 #endif //#ifndef HAVE_FFMPEG
 }
 
-abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc()
+abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -59,13 +62,61 @@ abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc()
     if (!ctx)
         return NULL;
 
-    ctx->codec_ctx = NULL;
+    ctx->codec_ctx_p = NULL;
+    ctx->coder_ctx = NULL;
+    ctx->coder_opt = NULL;
     ctx->sws_ctx = abcdk_ffmpeg_sws_alloc();
     ctx->pixfmt = AV_PIX_FMT_NONE;
     ctx->recv_cache = av_frame_alloc();
     ctx->recv_cache_hw = av_frame_alloc();
 
+    ctx->coder_ctx = avcodec_alloc_context3(codec_ctx);
+    if (!ctx->coder_ctx)
+    {
+        abcdk_ffmpeg_decoder_free(&ctx);
+        return NULL;
+    }
+
+    //copy.
+    ctx->codec_ctx_p = codec_ctx;
+
     return ctx;
+#endif //#ifndef HAVE_FFMPEG
+}
+
+abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc2(const char *codec_name)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return NULL;
+#else //#ifndef HAVE_FFMPEG
+    const AVCodec *codec_ctx_p = NULL;
+
+    assert(codec_name != NULL);
+
+    codec_ctx_p = avcodec_find_decoder_by_name(codec_name);
+    if(!codec_ctx_p)
+        return NULL;
+
+    return abcdk_ffmpeg_decoder_alloc(codec_ctx_p);
+#endif //#ifndef HAVE_FFMPEG
+}
+
+abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc3(AVCodecID codec_id)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
+    const AVCodec *codec_ctx_p = NULL;
+
+    assert(codec_id > AV_CODEC_ID_NONE);
+
+    codec_ctx_p = avcodec_find_decoder(codec_id);
+    if(!codec_ctx_p)
+        return NULL;
+
+    return abcdk_ffmpeg_decoder_alloc(codec_ctx_p);
 #endif //#ifndef HAVE_FFMPEG
 }
 
@@ -89,22 +140,17 @@ static AVPixelFormat _abcdk_ffmpeg_decoder_get_format(AVCodecContext *ctx, const
 
 #endif //#ifdef HAVE_FFMPEG
 
-int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int device)
+int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, AVCodecParameters *param)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return -1;
 #else //#ifndef HAVE_FFMPEG
-    AVDictionary *opts = NULL;
     int chk;
 
-    assert(ctx != NULL && codec_ctx != NULL && param != NULL);
+    assert(ctx != NULL && param != NULL);
 
-    ctx->codec_ctx = avcodec_alloc_context3(codec_ctx);
-    if (!ctx->codec_ctx)
-        return AVERROR(ENOMEM);
-
-    chk = avcodec_parameters_to_context(ctx->codec_ctx, param);
+    chk = avcodec_parameters_to_context(ctx->coder_ctx, param);
     if (chk != 0)
         return chk;
 
@@ -113,58 +159,75 @@ int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, const AVCodec *codec_
         // copy.
         ctx->pixfmt = (AVPixelFormat)param->format;
 
-        ctx->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P; // must be valid.
-        ctx->codec_ctx->get_format = _abcdk_ffmpeg_decoder_get_format;
-        ctx->codec_ctx->opaque = ctx;
+        ctx->coder_ctx->pix_fmt = AV_PIX_FMT_YUV420P; // must be valid.
+        ctx->coder_ctx->get_format = _abcdk_ffmpeg_decoder_get_format;
+        ctx->coder_ctx->opaque = ctx;
     }
     else
     {
         ;// nothing.
     }
 
-    chk = avcodec_open2(ctx->codec_ctx, codec_ctx, &opts);
-    av_dict_free(&opts);
-
-    if (chk != 0)
-        return chk;
-
     return 0;
 #endif //#ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_decoder_init2(abcdk_ffmpeg_decoder_t *ctx, const char *codec_name, AVCodecParameters *param, int device)
+int abcdk_ffmpeg_decoder_open(abcdk_ffmpeg_decoder_t *ctx, const AVDictionary *opt)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return -1;
-#else //#ifndef HAVE_FFMPEG
-    const AVCodec *codec_ctx = NULL;
+#else  // #ifndef HAVE_FFMPEG
+    int chk;
 
-    assert(ctx != NULL && codec_name != NULL && param != NULL);
+    assert(ctx != NULL && opt != NULL);
 
-    codec_ctx = avcodec_find_decoder_by_name(codec_name);
-    if(!codec_ctx)
-        return AVERROR_DECODER_NOT_FOUND;
+    if (opt)
+        av_dict_copy(&ctx->coder_opt, opt, 0);
 
-    return abcdk_ffmpeg_decoder_init(ctx, codec_ctx, param, device);
-#endif //#ifndef HAVE_FFMPEG
+    chk = avcodec_open2(ctx->coder_ctx, ctx->codec_ctx_p, &ctx->coder_opt);
+    if (chk != 0)
+        return chk;
+
+    return 0;
+#endif // #ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_decoder_init3(abcdk_ffmpeg_decoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int device)
+int abcdk_ffmpeg_decoder_send(abcdk_ffmpeg_decoder_t *ctx, AVPacket *src)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return -1;
 #else //#ifndef HAVE_FFMPEG
-    const AVCodec *codec_ctx = NULL;
+    int chk;
 
-    assert(ctx != NULL && codec_id > AV_CODEC_ID_NONE && param != NULL);
+    assert(ctx != NULL);
 
-    codec_ctx = avcodec_find_decoder(codec_id);
-    if(!codec_ctx)
-        return AVERROR_DECODER_NOT_FOUND;
+    // First, process the packets in the send cache queue.
+    while (ctx->send_cache.size() > 0)
+    {
+        auto cache_p = ctx->send_cache.front();
+        chk = avcodec_send_packet(ctx->coder_ctx, cache_p);
+        if (chk != 0)
+            break;
 
-    return abcdk_ffmpeg_decoder_init(ctx, codec_ctx, param, device);
+        // Pop from the queue and release.
+        ctx->send_cache.pop();
+        av_packet_free(&cache_p);
+    }
+
+    // Next, process the most recent packet.
+    if (ctx->send_cache.size() <= 0)
+    {
+        chk = avcodec_send_packet(ctx->coder_ctx, src);
+        if (chk == 0)
+            return 0;
+    }
+
+    // Ignore the error type and clone a copy to save at the end of the queue.
+    ctx->send_cache.push(av_packet_clone(src));
+
+    return 0;
 #endif //#ifndef HAVE_FFMPEG
 }
 
@@ -178,7 +241,7 @@ int abcdk_ffmpeg_decoder_recv(abcdk_ffmpeg_decoder_t *ctx, AVFrame *dst)
 
     assert(ctx != NULL && dst != NULL);
 
-    chk = avcodec_receive_frame(ctx->codec_ctx, ctx->recv_cache);
+    chk = avcodec_receive_frame(ctx->coder_ctx, ctx->recv_cache);
     if (chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
         return 0; // no frame.
 
@@ -216,43 +279,5 @@ int abcdk_ffmpeg_decoder_recv(abcdk_ffmpeg_decoder_t *ctx, AVFrame *dst)
     }
 
     return 1; // 1 frame.
-#endif //#ifndef HAVE_FFMPEG
-}
-
-int abcdk_ffmpeg_decoder_send(abcdk_ffmpeg_decoder_t *ctx, AVPacket *src)
-{
-#ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
-    return -1;
-#else //#ifndef HAVE_FFMPEG
-    int chk;
-
-    assert(ctx != NULL);
-
-    // First, process the packets in the send cache queue.
-    while (ctx->send_cache.size() > 0)
-    {
-        auto cache_p = ctx->send_cache.front();
-        chk = avcodec_send_packet(ctx->codec_ctx, cache_p);
-        if (chk != 0)
-            break;
-
-        // Pop from the queue and release.
-        ctx->send_cache.pop();
-        av_packet_free(&cache_p);
-    }
-
-    // Next, process the most recent packet.
-    if (ctx->send_cache.size() <= 0)
-    {
-        chk = avcodec_send_packet(ctx->codec_ctx, src);
-        if (chk == 0)
-            return 0;
-    }
-
-    // Ignore the error type and clone a copy to save at the end of the queue.
-    ctx->send_cache.push(av_packet_clone(src));
-
-    return 0;
 #endif //#ifndef HAVE_FFMPEG
 }

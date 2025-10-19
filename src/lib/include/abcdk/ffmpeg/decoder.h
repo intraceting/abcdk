@@ -21,16 +21,15 @@ typedef struct _abcdk_ffmpeg_decoder abcdk_ffmpeg_decoder_t;
 void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx);
 
 /**创建.*/
-abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc();
+abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx);
+abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc2(const char *codec_name);
+abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc3(AVCodecID codec_id);
 
 /**初始化.*/
-int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int device);
+int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, AVCodecParameters *param);
 
-/**初始化.*/
-int abcdk_ffmpeg_decoder_init2(abcdk_ffmpeg_decoder_t *ctx, const char *codec_name, AVCodecParameters *param, int device);
-
-/**初始化.*/
-int abcdk_ffmpeg_decoder_init3(abcdk_ffmpeg_decoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int device);
+/**打开.*/
+int abcdk_ffmpeg_decoder_open(abcdk_ffmpeg_decoder_t *ctx, const AVDictionary *opt);
 
 /**
  * 接收.
