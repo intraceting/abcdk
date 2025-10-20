@@ -14,8 +14,8 @@ struct _abcdk_ffmpeg_decoder
     abcdk_ffmpeg_sws_t *sws_ctx;
     AVPixelFormat pixfmt;
     AVFrame *recv_cache;
-    AVFrame *recv_cache_hw;
     std::queue<AVPacket *> send_cache;
+    AVFrame *recv_cache_hw;
 }; // abcdk_ffmpeg_decoder_t;
 
 void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
@@ -57,6 +57,8 @@ abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx)
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_decoder_t *ctx;
+
+    assert(codec_ctx != NULL);
 
     ctx = new abcdk_ffmpeg_decoder_t;
     if (!ctx)
@@ -180,7 +182,8 @@ int abcdk_ffmpeg_decoder_open(abcdk_ffmpeg_decoder_t *ctx, const AVDictionary *o
 #else  // #ifndef HAVE_FFMPEG
     int chk;
 
-    assert(ctx != NULL && opt != NULL);
+    assert(ctx != NULL);
+    assert(ctx->coder_ctx != NULL);
 
     if (opt)
         av_dict_copy(&ctx->coder_opt, opt, 0);
@@ -202,6 +205,7 @@ int abcdk_ffmpeg_decoder_send(abcdk_ffmpeg_decoder_t *ctx, AVPacket *src)
     int chk;
 
     assert(ctx != NULL);
+    assert(ctx->coder_ctx != NULL);
 
     // First, process the packets in the send cache queue.
     while (ctx->send_cache.size() > 0)
@@ -240,6 +244,7 @@ int abcdk_ffmpeg_decoder_recv(abcdk_ffmpeg_decoder_t *ctx, AVFrame *dst)
     int chk;
 
     assert(ctx != NULL && dst != NULL);
+    assert(ctx->coder_ctx != NULL);
 
     chk = avcodec_receive_frame(ctx->coder_ctx, ctx->recv_cache);
     if (chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
@@ -248,7 +253,7 @@ int abcdk_ffmpeg_decoder_recv(abcdk_ffmpeg_decoder_t *ctx, AVFrame *dst)
     if (chk != 0)
         return -1; // error.
 
-    if (ctx->recv_cache->format == AV_PIX_FMT_DRM_PRIME)
+    if (ctx->recv_cache->format == AV_PIX_FMT_CUDA || ctx->recv_cache->format == AV_PIX_FMT_DRM_PRIME)
     {
         av_frame_move_ref(ctx->recv_cache_hw, ctx->recv_cache);
         av_frame_unref(ctx->recv_cache);

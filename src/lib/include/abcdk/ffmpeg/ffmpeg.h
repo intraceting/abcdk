@@ -19,6 +19,10 @@ __BEGIN_DECLS
 #include <libavcodec/version.h>
 #include <libavcodec/avcodec.h>
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
+#include <libavcodec/bsf.h>
+#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
+
 #include <libavformat/avformat.h>
 #include <libavdevice/avdevice.h>
 
@@ -33,16 +37,17 @@ __BEGIN_DECLS
 #include <libavutil/opt.h>
 #include <libavutil/frame.h>
 #include <libavutil/rational.h>
+#include <libavutil/hwcontext.h>
+#include <libavutil/hwcontext_drm.h>
 
 #include <libswscale/swscale.h>
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
-#include <libavcodec/bsf.h>
-#endif //#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 91, 100)
+
 
 //
 typedef enum AVCodecID AVCodecID;
 typedef enum AVPixelFormat AVPixelFormat;
+typedef enum AVHWDeviceType AVHWDeviceType;
 
 __END_DECLS
 #endif // HAVE_FFMPEG
@@ -71,6 +76,7 @@ typedef struct AVBSFContext AVBSFContext;
 #ifndef AVUTIL_RATIONAL_H
 typedef struct AVRational AVRational;
 #endif //#ifndef AVUTIL_RATIONAL_H
+
 
 /** 最大支持16个。*/
 #define ABCDK_FFMPEG_MAX_STREAMS 16

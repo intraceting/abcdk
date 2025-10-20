@@ -46,6 +46,9 @@ typedef struct _abcdk_ffmpeg_editor_param
     */
     int rtsp_transport;
 
+    /**是否启用编解码器.*/
+    int coder_enable;
+
     /**读,是否忽略视频. */
     int read_ignore_video;
 
@@ -55,7 +58,7 @@ typedef struct _abcdk_ffmpeg_editor_param
     /**读,是否忽略字幕. */
     int read_ignore_subtitle;
 
-    /**写,是否禁用延迟刷新. */
+    /**读,是否禁用延迟刷新.*/
     int read_nodelay;
 
     /**读,速率比例(3位小数). <=0 无效.*/

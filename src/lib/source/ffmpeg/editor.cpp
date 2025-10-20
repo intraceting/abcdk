@@ -31,12 +31,20 @@ struct _abcdk_ffmpeg_editor
     /**读, 最近的DTS.*/
     std::map<int, int64_t> read_dts_latest;
 
+    /**读, 解码器.*/
+    std::map<int, abcdk_ffmpeg_decoder_t*> read_dec_list;
+    int read_dec_list_pos;
+
     /**读, 是否已经到末尾. */
     int read_packet_eof;
     int read_frame_eof;
 
     /**写, 最近的DTS.*/
     std::map<int, int64_t> write_dts_latest;
+
+    /**写, 编码器.*/
+    std::map<int, abcdk_ffmpeg_encoder_t*> write_enc_list;
+    int write_enc_list_pos;
 
     /**写, 头部写入是否成功. */
     int write_header_ok;
@@ -70,7 +78,15 @@ void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
     for (auto &one : ctx_p->read_bsf_list)
         abcdk_ffmpeg_bsf_free(&one.second);
 
+    for (auto &one :ctx_p->read_dec_list)
+        abcdk_ffmpeg_decoder_free(&one.second);
+
+    for (auto &one :ctx_p->write_enc_list)
+        abcdk_ffmpeg_encoder_free(&one.second);
+
     ctx_p->read_bsf_list.clear();
+    ctx_p->read_dec_list.clear();
+    ctx_p->write_enc_list.clear();
 
     delete ctx_p;
 }
@@ -247,6 +263,8 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
 
 static int _abcdk_avformat_media_init_bsf(abcdk_ffmpeg_editor_t *ctx)
 {
+    const char *name_p;
+    AVStream *vs_ctx_p;
     int is_mp4_file = 0;
 
     if (ctx->writer)
@@ -261,23 +279,23 @@ static int _abcdk_avformat_media_init_bsf(abcdk_ffmpeg_editor_t *ctx)
 
         for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
         {
-            const char *name_p = NULL;
-            AVStream *stream_p = ctx->media_ctx->streams[i];
+            name_p = NULL;
+            vs_ctx_p = ctx->media_ctx->streams[i];
 
-            if (is_mp4_file && stream_p->codecpar->codec_id == AV_CODEC_ID_H264)
+            if (is_mp4_file && vs_ctx_p->codecpar->codec_id == AV_CODEC_ID_H264)
                 name_p = "h264_mp4toannexb";
-            else if (is_mp4_file && stream_p->codecpar->codec_id == AV_CODEC_ID_H265)
+            else if (is_mp4_file && vs_ctx_p->codecpar->codec_id == AV_CODEC_ID_H265)
                 name_p = "hevc_mp4toannexb";
             else
                 name_p = "fifo";
 
-            ctx->read_bsf_list[stream_p->index] = abcdk_ffmpeg_bsf_alloc(name_p);
+            ctx->read_bsf_list[vs_ctx_p->index] = abcdk_ffmpeg_bsf_alloc(name_p);
 
-            if (!ctx->read_bsf_list[stream_p->index])
+            if (!ctx->read_bsf_list[vs_ctx_p->index])
                 return AVERROR_FILTER_NOT_FOUND;
 
             if (abcdk_strncmp(name_p, "fifo", 4, 1) != 0)
-                abcdk_ffmpeg_bsf_init2(ctx->read_bsf_list[stream_p->index], stream_p->codecpar);
+                abcdk_ffmpeg_bsf_init2(ctx->read_bsf_list[vs_ctx_p->index], vs_ctx_p->codecpar);
         }
     }
 
@@ -300,6 +318,80 @@ static int _abcdk_avformat_media_init_ts(abcdk_ffmpeg_editor_t *ctx)
             ctx->read_dts_first[i] = AV_NOPTS_VALUE;
             ctx->read_dts_latest[i] = AV_NOPTS_VALUE;
             ctx->read_dts_first_time[i] = 0;
+        }
+    }
+
+    return 0;
+}
+
+static int _abcdk_avformat_media_init_coder(abcdk_ffmpeg_editor_t *ctx)
+{
+    AVStream *vs_ctx_p;
+    int chk;
+
+    if(!ctx->param.coder_enable)
+        return 0;
+
+    if (ctx->writer)
+    {
+        for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
+        {
+            vs_ctx_p = ctx->media_ctx->streams[i];
+
+            if (vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
+                vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
+                vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)
+            {
+                ctx->write_enc_list[i] = NULL;
+                continue;
+            }
+            else
+            {
+                ctx->write_enc_list[i] = abcdk_ffmpeg_encoder_alloc3(vs_ctx_p->codecpar->codec_id);
+                if (!ctx->write_enc_list[i])
+                    return AVERROR_ENCODER_NOT_FOUND;
+
+                chk = abcdk_ffmpeg_encoder_init(ctx->write_enc_list[i], vs_ctx_p->codecpar);
+                if (chk != 0)
+                    return chk;
+
+                chk = abcdk_ffmpeg_encoder_init2(ctx->write_enc_list[i], &vs_ctx_p->time_base, &vs_ctx_p->avg_frame_rate);
+                if (chk != 0)
+                    return chk;
+
+                chk = abcdk_ffmpeg_encoder_open(ctx->write_enc_list[i], NULL);
+                if (chk != 0)
+                    return chk;
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < ctx->media_ctx->nb_streams; i++)
+        {
+            vs_ctx_p = ctx->media_ctx->streams[i];
+
+            if (vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_VIDEO &&
+                vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_AUDIO &&
+                vs_ctx_p->codecpar->codec_type != AVMEDIA_TYPE_SUBTITLE)
+            {
+                ctx->read_dec_list[i] = NULL;
+                continue;
+            }
+            else
+            {
+                ctx->read_dec_list[i] = abcdk_ffmpeg_decoder_alloc3(vs_ctx_p->codecpar->codec_id);
+                if (!ctx->write_enc_list[i])
+                    return AVERROR_ENCODER_NOT_FOUND;
+
+                chk = abcdk_ffmpeg_decoder_init(ctx->read_dec_list[i], vs_ctx_p->codecpar);
+                if (chk != 0)
+                    return chk;
+
+                chk = abcdk_ffmpeg_decoder_open(ctx->read_dec_list[i], NULL);
+                if (chk != 0)
+                    return chk;
+            }
         }
     }
 

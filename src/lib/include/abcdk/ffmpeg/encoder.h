@@ -21,16 +21,16 @@ typedef struct _abcdk_ffmpeg_encoder abcdk_ffmpeg_encoder_t;
 void abcdk_ffmpeg_encoder_free(abcdk_ffmpeg_encoder_t **ctx);
 
 /**创建.*/
-abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc();
+abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc(const AVCodec *codec_ctx);
+abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc2(const char *codec_name);
+abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc3(AVCodecID codec_id);
 
 /**初始化.*/
-int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodec *codec_ctx, AVCodecParameters *param, int frame_rate, int device);
+int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *param);
+int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, AVRational *time_base, AVRational *frame_rate);
 
-/**初始化.*/
-int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, const char *codec_name, AVCodecParameters *param, int frame_rate, int device);
-
-/**初始化.*/
-int abcdk_ffmpeg_encoder_init3(abcdk_ffmpeg_encoder_t *ctx, AVCodecID codec_id, AVCodecParameters *param, int frame_rate, int device);
+/**打开.*/
+int abcdk_ffmpeg_encoder_open(abcdk_ffmpeg_encoder_t *ctx, const AVDictionary *opt);
 
 /**
  * 获取扩展数据.
