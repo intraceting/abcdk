@@ -25,23 +25,27 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc(const AVCodec *codec_ctx);
 abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc2(const char *codec_name);
 abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc3(AVCodecID codec_id);
 
-/**初始化.*/
-int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *param);
-int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, AVRational *time_base, AVRational *frame_rate);
+/**
+ * 初始化.
+ * 
+ * @return 0 成功, < 0 失败.
+*/
+int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, const AVCodecParameters *param,
+                              const AVRational *time_base, const AVRational *frame_rate);
 
-/**打开.*/
+/**
+ * 打开.
+ * 
+ * @return 0 成功, < 0 失败.
+*/
 int abcdk_ffmpeg_encoder_open(abcdk_ffmpeg_encoder_t *ctx, const AVDictionary *opt);
 
 /**
- * 获取扩展数据.
+ * 获取参数.
  * 
- * @note 扩展数据由内部管理和释放, 外部只能引用.
- * 
- * @param [out] data 数据指针.
- * 
- * @return >=0 扩展数据长度. < 0 出错.
+ * @return 0 成功, < 0 失败.
 */
-int abcdk_ffmpeg_encoder_get_extradata(abcdk_ffmpeg_encoder_t *ctx, void **data);
+int abcdk_ffmpeg_encoder_get_param(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *param);
 
 /**
  * 接收.

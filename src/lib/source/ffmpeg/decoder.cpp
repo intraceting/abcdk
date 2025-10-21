@@ -16,6 +16,7 @@ struct _abcdk_ffmpeg_decoder
     AVFrame *recv_cache;
     std::queue<AVPacket *> send_cache;
     AVFrame *recv_cache_hw;
+    int recv_eof;
 }; // abcdk_ffmpeg_decoder_t;
 
 void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
@@ -71,6 +72,7 @@ abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx)
     ctx->pixfmt = AV_PIX_FMT_NONE;
     ctx->recv_cache = av_frame_alloc();
     ctx->recv_cache_hw = av_frame_alloc();
+    ctx->recv_eof = 0;
 
     ctx->coder_ctx = avcodec_alloc_context3(codec_ctx);
     if (!ctx->coder_ctx)
@@ -142,7 +144,7 @@ static AVPixelFormat _abcdk_ffmpeg_decoder_get_format(AVCodecContext *ctx, const
 
 #endif //#ifdef HAVE_FFMPEG
 
-int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, AVCodecParameters *param)
+int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx,const AVCodecParameters *param)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -229,7 +231,8 @@ int abcdk_ffmpeg_decoder_send(abcdk_ffmpeg_decoder_t *ctx, AVPacket *src)
     }
 
     // Ignore the error type and clone a copy to save at the end of the queue.
-    ctx->send_cache.push(av_packet_clone(src));
+    if(src)
+        ctx->send_cache.push(av_packet_clone(src));
 
     return 0;
 #endif //#ifndef HAVE_FFMPEG
@@ -246,10 +249,21 @@ int abcdk_ffmpeg_decoder_recv(abcdk_ffmpeg_decoder_t *ctx, AVFrame *dst)
     assert(ctx != NULL && dst != NULL);
     assert(ctx->coder_ctx != NULL);
 
+    av_frame_unref(dst);
+
+    if (ctx->recv_eof)
+        return -1;
+
     chk = avcodec_receive_frame(ctx->coder_ctx, ctx->recv_cache);
-    if (chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
+    if (chk == AVERROR(EAGAIN))
         return 0; // no frame.
 
+    if (chk == AVERROR(EINVAL) || chk == AVERROR_EOF)
+    {
+        ctx->recv_eof = 1;
+        return -1;
+    }
+    
     if (chk != 0)
         return -1; // error.
 

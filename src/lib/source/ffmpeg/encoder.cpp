@@ -15,6 +15,7 @@ struct _abcdk_ffmpeg_encoder
     int64_t send_seqnum;
     std::queue<AVFrame *> send_cache;
     AVFrame *send_convert;
+    int recv_eof;
 }; // abcdk_ffmpeg_encoder_t;
 
 void abcdk_ffmpeg_encoder_free(abcdk_ffmpeg_encoder_t **ctx)
@@ -68,6 +69,7 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc(const AVCodec *codec_ctx)
     ctx->sws_ctx = abcdk_ffmpeg_sws_alloc();
     ctx->send_seqnum = 0;
     ctx->send_convert = av_frame_alloc();
+    ctx->recv_eof = 0;
 
     ctx->coder_ctx = avcodec_alloc_context3(codec_ctx);
     if (!ctx->coder_ctx)
@@ -119,7 +121,8 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc3(AVCodecID codec_id)
 #endif // #ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *param)
+int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx,const AVCodecParameters *param,
+                              const AVRational *time_base,const AVRational *frame_rate)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
@@ -135,14 +138,15 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *pa
     if (chk < 0)
         return chk;
 
-    ctx->coder_ctx->time_base = av_make_q(1, 30);
-    ctx->coder_ctx->framerate = av_make_q(30, 1);
-
-    ctx->coder_ctx->gop_size = abcdk_ffmpeg_q2d(ctx->coder_ctx->framerate, 1.0);
     ctx->coder_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
     if (ctx->coder_ctx->codec_type == AVMEDIA_TYPE_VIDEO)
     {
+        ctx->coder_ctx->time_base = (time_base ? *time_base : av_make_q(1, 30));
+        ctx->coder_ctx->framerate = (frame_rate ? *frame_rate : av_make_q(time_base->den, time_base->num));
+
+        ctx->coder_ctx->gop_size = abcdk_ffmpeg_q2d(ctx->coder_ctx->framerate, 1.0);
+
         if (param->codec_id == AV_CODEC_ID_MJPEG)
             ctx->coder_ctx->color_range = AVCOL_RANGE_JPEG;
 
@@ -158,35 +162,14 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *pa
     }
     else if (ctx->coder_ctx->codec_type == AVMEDIA_TYPE_AUDIO)
     {
+        ctx->coder_ctx->time_base = (time_base ? *time_base : av_make_q(1, 9600));
+
         if (ctx->coder_ctx->codec_id == AV_CODEC_ID_AAC)
             av_dict_set(&opts, "strict", "-2", 0);
     }
     else
     {
         ; // nothing.
-    }
-
-    return 0;
-#endif // #ifndef HAVE_FFMPEG
-}
-
-int abcdk_ffmpeg_encoder_init2(abcdk_ffmpeg_encoder_t *ctx, AVRational *time_base, AVRational *frame_rate)
-{
-#ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
-    return -1;
-#else // #ifndef HAVE_FFMPEG
-    int chk;
-
-    assert(ctx != NULL && time_base != NULL);
-    assert(ctx->coder_ctx != NULL);
-
-    ctx->coder_ctx->time_base = *time_base;
-    ctx->coder_ctx->framerate = (frame_rate ? *frame_rate : av_make_q(time_base->den, time_base->num));
-
-    if (ctx->coder_ctx->codec_type == AVMEDIA_TYPE_VIDEO)
-    {
-        ctx->coder_ctx->gop_size = abcdk_ffmpeg_q2d(ctx->coder_ctx->framerate, 1.0);
     }
 
     return 0;
@@ -215,19 +198,22 @@ int abcdk_ffmpeg_encoder_open(abcdk_ffmpeg_encoder_t *ctx, const AVDictionary *o
 #endif // #ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_encoder_get_extradata(abcdk_ffmpeg_encoder_t *ctx, void **data)
+int abcdk_ffmpeg_encoder_get_param(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *param)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
     return -1;
 #else  // #ifndef HAVE_FFMPEG
-    assert(ctx != NULL);
+    int chk;
+
+    assert(ctx != NULL && param != NULL);
     assert(ctx->coder_ctx != NULL);
 
-    if (data)
-        *data = ctx->coder_ctx->extradata;
+    chk = avcodec_parameters_from_context(param, ctx->coder_ctx);
+    if (chk < 0)
+        return chk;
 
-    return ctx->coder_ctx->extradata_size;
+    return 0;
 #endif // #ifndef HAVE_FFMPEG
 }
 
@@ -242,10 +228,21 @@ int abcdk_ffmpeg_encoder_recv(abcdk_ffmpeg_encoder_t *ctx, AVPacket *dst)
     assert(ctx != NULL && dst != NULL);
     assert(ctx->coder_ctx != NULL);
 
+    av_packet_unref(dst);
+
+    if(ctx->recv_eof)
+        return -1;
+
     chk = avcodec_receive_packet(ctx->coder_ctx, dst);
-    if (chk == AVERROR(EAGAIN) || chk == AVERROR_EOF)
+    if (chk == AVERROR(EAGAIN))
         return 0; // no packet.
 
+    if (chk == AVERROR(EINVAL) || chk == AVERROR_EOF)
+    {
+        ctx->recv_eof = 1;
+        return -1;
+    }
+        
     if (chk != 0)
         return -1; // error.
 
@@ -318,7 +315,9 @@ int abcdk_ffmpeg_encoder_send(abcdk_ffmpeg_encoder_t *ctx, AVFrame *src)
     }
 
     // 走到这里, 忽略错误类型, 直接追加到缓存末尾.
-    ctx->send_cache.push(av_frame_clone(src_p));
+    if(src_p)
+        ctx->send_cache.push(av_frame_clone(src_p));
+        
     return 0;
 #endif // #ifndef HAVE_FFMPEG
 }

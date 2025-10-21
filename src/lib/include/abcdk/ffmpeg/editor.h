@@ -125,7 +125,7 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
  * 
  * @return 0 成功, < 0 失败(出错或结束).
 */
-int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src, AVRational *src_time_base);
+int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src);
 
 /**
  * 写头部信息.

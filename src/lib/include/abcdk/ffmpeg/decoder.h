@@ -25,11 +25,19 @@ abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx);
 abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc2(const char *codec_name);
 abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc3(AVCodecID codec_id);
 
-/**初始化.*/
-int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx, AVCodecParameters *param);
+/**
+ * 初始化.
+ * 
+ * @return 0 成功, < 0 失败.
+*/
+int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx,const AVCodecParameters *param);
 
 
-/**打开.*/
+/**
+ * 打开.
+ * 
+ * @return 0 成功, < 0 失败.
+*/
 int abcdk_ffmpeg_decoder_open(abcdk_ffmpeg_decoder_t *ctx, const AVDictionary *opt);
 
 /**
