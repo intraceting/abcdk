@@ -51,6 +51,10 @@ struct _abcdk_ffmpeg_editor
 
 void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return ;
+#else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_editor_t *ctx_p;
 
     if (!ctx || !*ctx)
@@ -76,10 +80,15 @@ void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
     ctx_p->read_bsf_list.clear();
 
     delete ctx_p;
+#endif //#ifndef HAVE_FFMPEG
 }
 
 abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return NULL;
+#else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_editor_t *ctx;
 
     ctx = new abcdk_ffmpeg_editor_t;
@@ -98,29 +107,44 @@ abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
     ctx->write_trailer_ok = 0;
 
     return ctx;
+#endif // #ifndef HAVE_FFMPEG
 }
 
 int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     double scale;
 
     assert(ctx != NULL);
     assert(ctx->media_ctx != NULL);
 
     return ctx->media_ctx->nb_streams;
+#endif // #ifndef HAVE_FFMPEG
 }
 
 AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return NULL;
+#else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
 
     return ctx->media_ctx->streams[stream];
+#endif // #ifndef HAVE_FFMPEG
 }
 
 double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -0.000001;
+#else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
@@ -129,10 +153,15 @@ double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream,
         return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, 1.0);
     else
         return abcdk_ffmpeg_stream_ts2sec(ctx->media_ctx->streams[stream], ts, (double)ctx->param.read_rate_scale / 1000.);
+#endif // #ifndef HAVE_FFMPEG
 }
 
 int64_t abcdk_ffmpeg_editor_stream_ts2num(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
     assert(ctx->media_ctx != NULL);
     assert(ctx->media_ctx->nb_streams > stream);
@@ -141,7 +170,10 @@ int64_t abcdk_ffmpeg_editor_stream_ts2num(abcdk_ffmpeg_editor_t *ctx, int stream
         return abcdk_ffmpeg_stream_ts2num(ctx->media_ctx->streams[stream], ts, 1.0);
     else
         return abcdk_ffmpeg_stream_ts2num(ctx->media_ctx->streams[stream], ts, (double)ctx->param.read_rate_scale / 1000.);
+#endif // #ifndef HAVE_FFMPEG
 }
+
+#ifdef HAVE_FFMPEG
 
 static int _abcdk_ffmpeg_editor_interrupt_cb(void *args)
 {
@@ -190,14 +222,6 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
 
     if (ctx->writer)
     {
-
-#ifdef ABCDK_FFMPEG_EDITOR_METDATA_OVERWRITE
-        av_dict_set(&ctx->media_ctx->metadata, "service", "ABCDK", 0);
-        av_dict_set(&ctx->media_ctx->metadata, "service_name", "ABCDK", 0);
-        av_dict_set(&ctx->media_ctx->metadata, "service_provider", "ABCDK", 0);
-        av_dict_set(&ctx->media_ctx->metadata, "artist", "ABCDK", 0);
-#endif //#ifdef ABCDK_FFMPEG_EDITOR_METDATA_OVERWRITE
-
         if (ctx->param.write_nodelay)
             ctx->media_ctx->flags |= AVFMT_FLAG_FLUSH_PACKETS;
 
@@ -311,8 +335,14 @@ static int _abcdk_avformat_media_init_ts(abcdk_ffmpeg_editor_t *ctx)
     return 0;
 }
 
+#endif //#ifdef HAVE_FFMPEG
+
 int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_editor_param_t *param)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     int chk;
 
     assert(ctx != NULL && param != NULL);
@@ -392,7 +422,10 @@ int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_edit
         return chk;
 
     return 0;
+#endif // #ifndef HAVE_FFMPEG
 }
+
+#ifdef HAVE_FFMPEG
 
 /**
  * 延时检查。
@@ -569,8 +602,14 @@ static int _abcdk_ffmpeg_editor_packet_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket
     return 0;
 }
 
+#endif //#ifdef HAVE_FFMPEG
+
 int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *dst)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     int need_delay = 1;
     int chk;
 
@@ -616,10 +655,15 @@ next_packet:
     }
 
     return 0;
+#endif // #ifndef HAVE_FFMPEG
 }
 
 int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecContext *opt)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     AVCodec *codec_ctx_p = NULL;
     AVStream *vs_ctx = NULL;
     int chk;
@@ -667,11 +711,16 @@ int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecCont
     ctx->write_src_time_base[vs_ctx->index] = opt->time_base;
 
     return vs_ctx->index;
+#endif // #ifndef HAVE_FFMPEG
 }
 
-int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecParameters *opt,
-                                    const AVRational *time_base, const AVRational *avg_frame_rate,const AVRational *r_frame_rate)
+int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecParameters *opt, const AVRational *time_base, 
+                                    const AVRational *avg_frame_rate,const AVRational *r_frame_rate)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     AVCodec *codec_ctx_p = NULL;
     AVStream *vs_ctx = NULL;
     int chk;
@@ -718,10 +767,15 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
     ctx->write_src_time_base[vs_ctx->index] = *time_base;
 
     return vs_ctx->index;
+#endif // #ifndef HAVE_FFMPEG
 }
 
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     AVRational tb_src, tb_dst;
     AVStream *vs_ctx_p = NULL;
     int chk;
@@ -760,9 +814,9 @@ int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
     //记录最新的DTS.
     ctx->write_dts_latest[src->stream_index] = src->dts;
 
-    //修复错误的时长.
+    //修复错误的时长(简单修复).
     if (src->duration == 0)
-        src->duration = 1;//帧率和时间基础互反时可以这么写, 否则用av_rescale_q(1, (AVRational){1, fps}, tb_src)计算;
+        src->duration = 1;
 
     //重置DTS,PTS,DURATION.
     av_packet_rescale_ts(src, tb_src, tb_dst);
@@ -780,10 +834,15 @@ int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
         avio_flush(ctx->media_ctx->pb);
 
     return 0;
+#endif // #ifndef HAVE_FFMPEG
 }
 
 int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     char *url_p;
     int chk;
 
@@ -846,10 +905,15 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
     abcdk_ffmpeg_media_dump(ctx->media_ctx, 1);
 
     return 0;
+#endif // #ifndef HAVE_FFMPEG
 }
 
 int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx)
 {
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return -1;
+#else //#ifndef HAVE_FFMPEG
     int chk;
 
     assert(ctx != NULL);
@@ -873,4 +937,5 @@ int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx)
     ctx->write_trailer_ok = 1;
 
     return 0;
+#endif // #ifndef HAVE_FFMPEG
 }

@@ -117,8 +117,8 @@ int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecCont
  * 
  * @return >= 0 成功(流索引), < 0 失败.
 */
-int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecParameters *opt,
-                                    const AVRational *time_base, const AVRational *avg_frame_rate,const AVRational *r_frame_rate);
+int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecParameters *opt, const AVRational *time_base,
+                                    const AVRational *avg_frame_rate, const AVRational *r_frame_rate);
 
 /**
  * 写数据包.

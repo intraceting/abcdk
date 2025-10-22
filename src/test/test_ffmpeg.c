@@ -74,7 +74,7 @@ int abcdk_test_record(abcdk_option_t *args)
         //        AVRational time_base = p->time_base;
 
         //   chk = abcdk_ffmpeg_editor_write_packet(wr_ctx,rd_pkt,&p->time_base);
-        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx, rd_pkt, NULL);
+        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx, rd_pkt);
         if (chk != 0)
             break;
     }
@@ -96,7 +96,7 @@ static void _abcdk_test_codec_fill_enc_params(AVCodecParameters *enc_param, int 
     enc_param->codec_type = AVMEDIA_TYPE_VIDEO;
 
     // 设置编码ID为 H.265 (HEVC)
-    enc_param->codec_id = AV_CODEC_ID_H265;
+    enc_param->codec_id = AV_CODEC_ID_H264;
 
     // 设置分辨率
     enc_param->width = width;
@@ -112,7 +112,7 @@ static void _abcdk_test_codec_fill_enc_params(AVCodecParameters *enc_param, int 
     enc_param->bit_rate = bitrate;
 
     // 可选：时间基（有时需要在 AVStream 设置）
-    // enc_param->video_delay = 0;
+     enc_param->video_delay = 10;
 
     // 如果是 HDR 或 10-bit，可以设置如下：
     // enc_param->format = AV_PIX_FMT_YUV420P10LE;
@@ -171,7 +171,7 @@ int abcdk_test_codec(abcdk_option_t *args)
 
             _abcdk_test_codec_fill_enc_params(enc_param, p->codecpar->width, p->codecpar->height, 5000 * 1000);
 
-            AVRational time_base = av_make_q(1, 50);
+            AVRational time_base = av_make_q(1, 130);
             
             enc_ctx = abcdk_ffmpeg_encoder_alloc3(enc_param->codec_id);
             abcdk_ffmpeg_encoder_init(enc_ctx, enc_param, &time_base, NULL);
@@ -218,7 +218,7 @@ int abcdk_test_codec(abcdk_option_t *args)
         else if (chk < 0)
             break;
 
-        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx, rd_pkt, NULL);
+        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx, rd_pkt);
         if (chk != 0)
             break;
     }
@@ -246,7 +246,7 @@ int abcdk_test_codec(abcdk_option_t *args)
         else if (chk < 0)
             break;
 
-        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx, rd_pkt, NULL);
+        chk = abcdk_ffmpeg_editor_write_packet(wr_ctx, rd_pkt);
         if (chk != 0)
             break;
     }

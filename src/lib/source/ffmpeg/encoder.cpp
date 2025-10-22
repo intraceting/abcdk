@@ -21,7 +21,7 @@ struct _abcdk_ffmpeg_encoder
 void abcdk_ffmpeg_encoder_free(abcdk_ffmpeg_encoder_t **ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return;
 #else  // #ifndef HAVE_FFMPEG
     abcdk_ffmpeg_encoder_t *ctx_p;
@@ -54,7 +54,7 @@ void abcdk_ffmpeg_encoder_free(abcdk_ffmpeg_encoder_t **ctx)
 abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc(const AVCodec *codec_ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else  // #ifndef HAVE_FFMPEG
     abcdk_ffmpeg_encoder_t *ctx;
@@ -88,7 +88,7 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc(const AVCodec *codec_ctx)
 abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc2(const char *codec_name)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else  // #ifndef HAVE_FFMPEG
     const AVCodec *codec_ctx_p = NULL;
@@ -106,7 +106,7 @@ abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc2(const char *codec_name)
 abcdk_ffmpeg_encoder_t *abcdk_ffmpeg_encoder_alloc3(AVCodecID codec_id)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else  // #ifndef HAVE_FFMPEG
     const AVCodec *codec_ctx_p = NULL;
@@ -125,7 +125,7 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx,const AVCodecParameter
                               const AVRational *time_base,const AVRational *frame_rate)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else  // #ifndef HAVE_FFMPEG
     AVDictionary *opts = NULL;
@@ -145,20 +145,28 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx,const AVCodecParameter
         ctx->coder_ctx->time_base = (time_base ? *time_base : av_make_q(1, 30));
         ctx->coder_ctx->framerate = (frame_rate ? *frame_rate : av_make_q(time_base->den, time_base->num));
 
-        ctx->coder_ctx->gop_size = abcdk_ffmpeg_q2d(ctx->coder_ctx->framerate, 1.0);
+        ctx->coder_ctx->gop_size = abcdk_ffmpeg_q2d(&ctx->coder_ctx->framerate, 1.0);
 
         if (param->codec_id == AV_CODEC_ID_MJPEG)
             ctx->coder_ctx->color_range = AVCOL_RANGE_JPEG;
 
-        // 低延迟配置, 直播或喊话时需要.
-        if (param->video_delay <= 0)
+        if (param->video_delay > 0)
         {
-            ctx->coder_ctx->has_b_frames = 0;
-            ctx->coder_ctx->max_b_frames = 0;
-            av_dict_set(&opts, "preset", "ultrafast", 0); // 快速编码
-            av_dict_set(&opts, "tune", "zerolatency", 0); // 禁用所有缓冲/重排.
-            av_dict_set(&opts, "rc-lookahead", "0", 0);   // 不做前瞻分析.
+            ctx->coder_ctx->max_b_frames = ABCDK_MIN(param->video_delay,ctx->coder_ctx->gop_size);
         }
+        else 
+        {
+            /*
+             * 低延迟配置, 直播或喊话时需要.
+            */
+           
+            ctx->coder_ctx->max_b_frames = 0;//禁用B帧.
+            av_dict_set(&ctx->coder_opt, "preset", "ultrafast", 0); // 快速编码
+            av_dict_set(&ctx->coder_opt, "tune", "zerolatency", 0); // 禁用所有缓冲/重排.
+            av_dict_set(&ctx->coder_opt, "rc-lookahead", "0", 0);   // 不做前瞻分析.
+        }
+        
+
     }
     else if (ctx->coder_ctx->codec_type == AVMEDIA_TYPE_AUDIO)
     {
@@ -179,7 +187,7 @@ int abcdk_ffmpeg_encoder_init(abcdk_ffmpeg_encoder_t *ctx,const AVCodecParameter
 int abcdk_ffmpeg_encoder_open(abcdk_ffmpeg_encoder_t *ctx, const AVDictionary *opt)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else  // #ifndef HAVE_FFMPEG
     int chk;
@@ -201,7 +209,7 @@ int abcdk_ffmpeg_encoder_open(abcdk_ffmpeg_encoder_t *ctx, const AVDictionary *o
 int abcdk_ffmpeg_encoder_get_param(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameters *param)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else  // #ifndef HAVE_FFMPEG
     int chk;
@@ -220,7 +228,7 @@ int abcdk_ffmpeg_encoder_get_param(abcdk_ffmpeg_encoder_t *ctx, AVCodecParameter
 int abcdk_ffmpeg_encoder_recv(abcdk_ffmpeg_encoder_t *ctx, AVPacket *dst)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else  // #ifndef HAVE_FFMPEG
     int chk;
@@ -253,7 +261,7 @@ int abcdk_ffmpeg_encoder_recv(abcdk_ffmpeg_encoder_t *ctx, AVPacket *dst)
 int abcdk_ffmpeg_encoder_send(abcdk_ffmpeg_encoder_t *ctx, AVFrame *src)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else // #ifndef HAVE_FFMPEG
     int need_convert = 0;

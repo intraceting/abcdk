@@ -42,15 +42,25 @@ __BEGIN_DECLS
 
 #include <libswscale/swscale.h>
 
-
-
-//
+//Alias.
 typedef enum AVCodecID AVCodecID;
 typedef enum AVPixelFormat AVPixelFormat;
 typedef enum AVHWDeviceType AVHWDeviceType;
 
 __END_DECLS
-#endif // HAVE_FFMPEG
+#else //#ifdef HAVE_FFMPEG
+
+#define AV_VERSION_INT(a, b, c) ((a)<<16 | (b)<<8 | (c))
+#define AV_VERSION_DOT(a, b, c) a ##.## b ##.## c
+#define AV_VERSION(a, b, c) AV_VERSION_DOT(a, b, c)
+
+//Alias.
+typedef int AVCodecID;
+typedef int AVPixelFormat;
+typedef int AVHWDeviceType;
+
+#endif //#ifdef HAVE_FFMPEG
+
 
 #ifndef AVUTIL_FRAME_H
 typedef struct AVFrame AVFrame;
@@ -58,6 +68,7 @@ typedef struct AVFrame AVFrame;
 
 #ifndef AVCODEC_AVCODEC_H
 typedef struct AVPacket AVPacket;
+typedef struct AVCodec AVCodec;
 typedef struct AVCodecContext AVCodecContext;
 typedef struct AVCodecParameters AVCodecParameters;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 91, 100)
@@ -77,6 +88,19 @@ typedef struct AVBSFContext AVBSFContext;
 typedef struct AVRational AVRational;
 #endif //#ifndef AVUTIL_RATIONAL_H
 
+#ifndef AVFORMAT_AVIO_H
+typedef struct AVIOContext AVIOContext;
+typedef struct AVIOInterruptCB AVIOInterruptCB;
+#endif //#ifndef AVFORMAT_AVIO_H
+
+#ifndef AVFORMAT_AVFORMAT_H
+typedef struct AVFormatContext AVFormatContext;
+typedef struct AVStream AVStream;
+#endif //#ifndef AVFORMAT_AVFORMAT_H
+
+#ifndef AVUTIL_DICT_H
+typedef struct AVDictionary AVDictionary;
+#endif //#ifndef AVUTIL_DICT_H
 
 /** 最大支持16个。*/
 #define ABCDK_FFMPEG_MAX_STREAMS 16
