@@ -89,6 +89,21 @@ int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx);
 /**获取AVStream对象指针.*/
 AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream);
 
+/**时间基值转浮点.*/
+double abcdk_ffmpeg_editor_stream_timebase_q2d(abcdk_ffmpeg_editor_t *ctx, int stream);
+
+/**获取时长(秒).*/
+double abcdk_ffmpeg_editor_stream_duration(abcdk_ffmpeg_editor_t *ctx, int stream);
+
+/**
+ * 获取时间速率.
+ * 
+ * @note video: frame rate 
+ * @note audio: sample rate
+ * 
+*/
+double abcdk_ffmpeg_editor_stream_time2rate(abcdk_ffmpeg_editor_t *ctx, int stream);
+
 /**DTS/PTS转时间(秒).*/
 double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts);
 
@@ -114,6 +129,9 @@ int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecCont
 
 /**
  * 创建流.
+ * 
+ * @param [in] avg_frame_rate 平均帧率. 允许为NULL(0).
+ * @param [in] r_frame_rate 实际帧率. 允许为NULL(0).
  * 
  * @return >= 0 成功(流索引), < 0 失败.
 */

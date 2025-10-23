@@ -9,7 +9,7 @@
 
 #include "abcdk/rtsp/rtsp.h"
 
-#ifdef _BASIC_USAGE_ENVIRONMENT_HH
+#ifdef HAVE_LIVE555
 
 namespace abcdk
 {
@@ -49,6 +49,6 @@ namespace abcdk
     } // namespace rtsp_server
 } // namespace abcdk
 
-#endif //_BASIC_USAGE_ENVIRONMENT_HH
+#endif //HAVE_LIVE555
 
 #endif // ABCDK_RTSP_SERVER_ENV_HXX

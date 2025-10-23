@@ -15,7 +15,6 @@ LIB_SRC_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.c)
 
 #C++
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cpp)
-LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/torch_host/bytetrack/*.cpp)
 
 #CUDA是可选项，可能未启用。
 ifeq (${HAVE_CUDA},yes)

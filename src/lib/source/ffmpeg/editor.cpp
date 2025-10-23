@@ -139,6 +139,60 @@ AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream)
 #endif // #ifndef HAVE_FFMPEG
 }
 
+
+double abcdk_ffmpeg_editor_stream_timebase_q2d(abcdk_ffmpeg_editor_t *ctx, int stream)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return 0.0;
+#else //#ifndef HAVE_FFMPEG
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    if (ctx->writer || ctx->param.read_rate_scale <= 0)
+        return abcdk_ffmpeg_stream_timebase_q2d(ctx->media_ctx->streams[stream], 1.0);
+    else
+        return abcdk_ffmpeg_stream_timebase_q2d(ctx->media_ctx->streams[stream], (double)ctx->param.read_rate_scale / 1000.);
+#endif // #ifndef HAVE_FFMPEG  
+}
+
+
+double abcdk_ffmpeg_editor_stream_duration(abcdk_ffmpeg_editor_t *ctx, int stream)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return 0.0;
+#else //#ifndef HAVE_FFMPEG
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    if (ctx->writer || ctx->param.read_rate_scale <= 0)
+        return abcdk_ffmpeg_stream_duration(ctx->media_ctx->streams[stream], 1.0);
+    else
+        return abcdk_ffmpeg_stream_duration(ctx->media_ctx->streams[stream], (double)ctx->param.read_rate_scale / 1000.);
+#endif // #ifndef HAVE_FFMPEG  
+}
+
+
+double abcdk_ffmpeg_editor_stream_time2rate(abcdk_ffmpeg_editor_t *ctx, int stream)
+{
+#ifndef HAVE_FFMPEG
+    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    return 0.000001;
+#else //#ifndef HAVE_FFMPEG
+    assert(ctx != NULL && stream >= 0);
+    assert(ctx->media_ctx != NULL);
+    assert(ctx->media_ctx->nb_streams > stream);
+
+    if (ctx->writer || ctx->param.read_rate_scale <= 0)
+        return abcdk_ffmpeg_stream_time2rate(ctx->media_ctx->streams[stream], 1.0);
+    else
+        return abcdk_ffmpeg_stream_time2rate(ctx->media_ctx->streams[stream], (double)ctx->param.read_rate_scale / 1000.);
+#endif // #ifndef HAVE_FFMPEG  
+}
+
 double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
 #ifndef HAVE_FFMPEG
@@ -305,7 +359,7 @@ static int _abcdk_avformat_media_init_bsf(abcdk_ffmpeg_editor_t *ctx)
             if (!ctx->read_bsf_list[vs_ctx_p->index])
                 return AVERROR_FILTER_NOT_FOUND;
 
-            if (abcdk_strncmp(name_p, "fifo", 4, 1) != 0)
+            if (abcdk_strcmp(name_p, "fifo", 1) != 0)
                 abcdk_ffmpeg_bsf_init2(ctx->read_bsf_list[vs_ctx_p->index], vs_ctx_p->codecpar);
         }
     }

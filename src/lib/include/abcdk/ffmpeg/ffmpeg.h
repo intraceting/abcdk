@@ -102,7 +102,4 @@ typedef struct AVStream AVStream;
 typedef struct AVDictionary AVDictionary;
 #endif //#ifndef AVUTIL_DICT_H
 
-/** 最大支持16个。*/
-#define ABCDK_FFMPEG_MAX_STREAMS 16
-
 #endif //ABCDK_FFMPEG_FFMPEG_H

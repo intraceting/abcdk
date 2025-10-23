@@ -56,6 +56,7 @@ abcdk_ffmpeg_bsf_t *abcdk_ffmpeg_bsf_alloc(const char *name)
     if (!ctx)
         return NULL;
 
+    ctx->fifo = 0;
     ctx->bsf_ctx = NULL;
     ctx->filter_p = NULL;
 

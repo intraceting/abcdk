@@ -10,7 +10,7 @@
 #include "server_source.hxx"
 #include "ringbuf.hxx"
 
-#ifdef _FRAMED_SOURCE_HH
+#ifdef HAVE_LIVE555
 
 namespace abcdk
 {
@@ -55,6 +55,6 @@ namespace abcdk
     } // namespace rtsp_server
 } // namespace abcdk
 
-#endif //_FRAMED_SOURCE_HH
+#endif //HAVE_LIVE555
 
 #endif // ABCDK_RTSP_SERVER_G711_SOURCE_HXX

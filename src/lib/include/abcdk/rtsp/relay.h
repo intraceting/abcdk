@@ -9,8 +9,7 @@
 
 #include "abcdk/util/general.h"
 #include "abcdk/util/thread.h"
-#include "abcdk/ffmpeg/ffeditor.h"
-#include "abcdk/ffmpeg/ffsocket.h"
+#include "abcdk/ffmpeg/editor.h"
 #include "abcdk/rtsp/server.h"
 
 __BEGIN_DECLS

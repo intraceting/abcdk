@@ -12,7 +12,7 @@
 #include "server_opus_source.hxx"
 #include "server_session.hxx"
 
-#ifdef _ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
+#ifdef HAVE_LIVE555
 
 namespace abcdk
 {
@@ -83,6 +83,6 @@ namespace abcdk
         };
     } // namespace rtsp_server
 } // namespace abcdk
-#endif //_ON_DEMAND_SERVER_MEDIA_SUBSESSION_HH
+#endif //HAVE_LIVE555
 
 #endif // ABCDK_RTSP_SERVER_OPUS_SESSION_HXX

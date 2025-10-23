@@ -49,10 +49,7 @@ static struct _abcdk_test_entry
     {"runonce",abcdk_test_runonce},
     {"ncurses",abcdk_test_ncurses},
     {"gtk",abcdk_test_gtk},
-    {"torch",abcdk_test_torch},
-    {"stitcher",abcdk_test_stitcher},
     {"rtspserver",abcdk_test_rtspserver},
-    {"calibrate",abcdk_test_calibrate},
     {"gpio",abcdk_test_gpio},
 };
 
@@ -164,15 +161,6 @@ int main(int argc, char **argv)
 
     abcdk_ffmpeg_library_init();
     abcdk_openssl_init();
-
-
-#ifdef __cuda_cuda_h__
-
-    abcdk_torch_init_cuda(0);
-
-#endif //__cuda_cuda_h__
-
-    abcdk_torch_init_host(0);
 
     args = abcdk_option_alloc("--");
     if (!args)

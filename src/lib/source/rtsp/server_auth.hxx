@@ -12,7 +12,7 @@
 #include "rwlock_robot.hxx"
 #include "pawd.hxx"
 
-#ifdef _GENERIC_MEDIA_SERVER_HH
+#ifdef HAVE_LIVE555
 
 namespace abcdk
 {
@@ -99,6 +99,6 @@ namespace abcdk
     } // namespace rtsp_server
 } // namespace abcdk
 
-#endif //_GENERIC_MEDIA_SERVER_HH
+#endif //HAVE_LIVE555
 
 #endif // ABCDK_RTSP_SERVER_AUTH_HXX

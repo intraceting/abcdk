@@ -51,24 +51,23 @@ int abcdk_test_server(abcdk_option_t *args)
     chk = abcdk_rtsp_server_create_media(ctx, name, NULL, NULL);
     assert(chk == 0);
 
-    abcdk_ffeditor_config_t rcfg = {0};
+    abcdk_ffmpeg_editor_param_t rcfg = {0};
 
     rcfg.url = abcdk_option_get(args, "--src", 0, "");
-    rcfg.read_speed = abcdk_option_get_double(args, "--src-xpeed", 0, 1);
-    rcfg.read_delay_max = abcdk_option_get_double(args, "--src-delay-max", 0, 1);
-    rcfg.bit_stream_filter = 1;
+    rcfg.read_rate_scale = abcdk_option_get_double(args, "--src-xpeed", 0, 1000);
+    rcfg.read_mp4toannexb = 1;
 
-    abcdk_ffeditor_t *r = abcdk_ffeditor_open(&rcfg);
+    abcdk_ffmpeg_editor_t *r = abcdk_ffmpeg_editor_alloc(0);
 
-    AVFormatContext *rf = abcdk_ffeditor_ctxptr(r);
+    abcdk_ffmpeg_editor_open(r,&rcfg);
 
     // abcdk_avformat_dump(rf,0);
 
     int stream[16] = {-1, -1, -1, -1};
 
-    for (int i = 0; i < abcdk_ffeditor_streams(r); i++)
+    for (int i = 0; i < abcdk_ffmpeg_editor_stream_nb(r); i++)
     {
-        AVStream *p = abcdk_ffeditor_streamptr(r, i);
+        AVStream *p = abcdk_ffmpeg_editor_stream_ctx(r, i);
 
         if (p->codecpar->codec_id == AV_CODEC_ID_HEVC)
         {
@@ -126,12 +125,12 @@ int abcdk_test_server(abcdk_option_t *args)
     av_init_packet(&pkt);
     for (int i = 0; i < 10000; i++)
     {
-        int n = abcdk_ffeditor_read_packet(r, &pkt, -1);
+        int n = abcdk_ffmpeg_editor_read_packet(r, &pkt);
         if (n < 0)
             break;
 
-        double pts_sec = abcdk_ffeditor_ts2sec(r, pkt.stream_index, pkt.pts);                     //// 秒。
-        double dur_sec = (double)pkt.duration * abcdk_ffeditor_timebase_q2d(r, pkt.stream_index); // 秒。
+        double pts_sec = abcdk_ffmpeg_editor_stream_ts2sec(r, pkt.stream_index, pkt.pts);                     //// 秒。
+        double dur_sec = (double)pkt.duration * abcdk_ffmpeg_editor_stream_timebase_q2d(r, pkt.stream_index); // 秒。
 
         //  abcdk_trace_printf(LOG_DEBUG, "IDX(%d), DTS(%lld),PTS(%lld,%.6f),DUR(%.6f),", pkt.stream_index,pkt.dts, pkt.pts,pts_sec, dur_sec);
 
@@ -144,7 +143,7 @@ int abcdk_test_server(abcdk_option_t *args)
 
 END:
 
-    abcdk_ffeditor_destroy(&r);
+    abcdk_ffmpeg_editor_free(&r);
 
     abcdk_rtsp_server_stop(ctx);
 
@@ -183,6 +182,7 @@ int abcdk_test_relay(abcdk_option_t *args)
 
     for (int i = 0; i < 100; i++)
     {
+        int src_xspeed = abcdk_option_get_int(args, "--src-xpeed", 0, 1000);
         const char *src_p = abcdk_option_get(args, "--src", i, NULL);
         if (!src_p)
             break;
@@ -191,7 +191,7 @@ int abcdk_test_relay(abcdk_option_t *args)
 
         sprintf(name, "relay%d", i + 1);
 
-        relay_ctx[i] = abcdk_rtsp_relay_create(server_ctx, name, src_p, NULL, 1, 5, 5);
+        relay_ctx[i] = abcdk_rtsp_relay_create(server_ctx, name, src_p, NULL, src_xspeed, 5, 5);
     }
 
     fprintf(stderr, "\npress q key to exit.\n");

@@ -34,7 +34,6 @@ static struct _abcdk_tool_entry
     {"mcdump",abcdk_tool_mcdump},
     {"uart",abcdk_tool_uart},
     {"ipconfig",abcdk_tool_ipconfig},
-    {"calibrate",abcdk_tool_calibrate},
 };
 
 void _abcdk_tool_print_usage()

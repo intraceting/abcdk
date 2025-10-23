@@ -17,7 +17,7 @@
 #include "server_g711_session.hxx"
 #include "server_opus_session.hxx"
 
-#ifdef _SERVER_MEDIA_SESSION_HH
+#ifdef HAVE_LIVE555
 
 namespace abcdk
 {
@@ -136,6 +136,6 @@ namespace abcdk
     } // namespace rtsp_server
 } // namespace abcdk
 
-#endif //_SERVER_MEDIA_SESSION_HH
+#endif //HAVE_LIVE555
 
 #endif // ABCDK_RTSP_SERVER_MEDIA_HXX

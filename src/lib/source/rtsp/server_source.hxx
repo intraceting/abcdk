@@ -11,7 +11,7 @@
 #include "abcdk/rtsp/rtsp.h"
 #include "packet.hxx"
 
-#ifdef _FRAMED_SOURCE_HH
+#ifdef HAVE_LIVE555
 
 namespace abcdk
 {
@@ -102,6 +102,6 @@ namespace abcdk
     } // namespace rtsp_server
 } // namespace abcdk
 
-#endif //_FRAMED_SOURCE_HH
+#endif //HAVE_LIVE555
 
 #endif // ABCDK_RTSP_SERVER_SOURCE_HXX
