@@ -73,7 +73,6 @@ namespace abcdk
                 
                 fDurationInMicroseconds = m_pkt.dur();
 
-
                 FramedSource::afterGetting(this);
             }
         protected:
