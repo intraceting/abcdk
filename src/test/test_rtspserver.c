@@ -182,7 +182,6 @@ int abcdk_test_relay(abcdk_option_t *args)
 
     for (int i = 0; i < 100; i++)
     {
-        int src_xspeed = abcdk_option_get_int(args, "--src-xpeed", 0, 1000);
         const char *src_p = abcdk_option_get(args, "--src", i, NULL);
         if (!src_p)
             break;
@@ -191,7 +190,7 @@ int abcdk_test_relay(abcdk_option_t *args)
 
         sprintf(name, "relay%d", i + 1);
 
-        relay_ctx[i] = abcdk_rtsp_relay_create(server_ctx, name, src_p, NULL, src_xspeed, 5, 5);
+        relay_ctx[i] = abcdk_rtsp_relay_create(server_ctx, name, src_p, NULL, 5, 5);
     }
 
     fprintf(stderr, "\npress q key to exit.\n");

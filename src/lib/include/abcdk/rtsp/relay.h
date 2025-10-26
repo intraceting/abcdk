@@ -31,7 +31,7 @@ void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx);
  * @param [in] src_timeout 超时(秒)。
  * @param [in] src_retry 重试间隔(秒)。
  */
-abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, float src_xspeed, int src_timeout, int src_retry);
+abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, int src_timeout, int src_retry);
 
 __END_DECLS
 

@@ -36,10 +36,7 @@ struct _abcdk_rtsp_relay
 
     /**源格式.*/
     char *src_fmt;
-
-    /**源倍速.*/
-    float src_xspeed;
-
+    
     /**源超时(秒).*/
     int src_timeout;
 
@@ -100,7 +97,7 @@ void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx)
 #endif //#ifndef HAVE_FFMPEG
 }
 
-abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, float src_xspeed, int src_timeout, int src_retry)
+abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, int src_timeout, int src_retry)
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
@@ -124,7 +121,6 @@ abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, con
     ctx->media_name = abcdk_strdup_safe(media_name);
     ctx->src_url = abcdk_strdup_safe(src_url);
     ctx->src_fmt = abcdk_strdup_safe(src_fmt);
-    ctx->src_xspeed = src_xspeed;
     ctx->src_timeout = src_timeout;
     ctx->src_retry = src_retry;
 
@@ -292,7 +288,7 @@ RETRY:
     ctx->ff_cfg.url = ctx->src_url;
     ctx->ff_cfg.fmt = ctx->src_fmt;
     ctx->ff_cfg.timeout = ctx->src_timeout;
-    ctx->ff_cfg.read_rate_scale = ctx->src_xspeed;
+    ctx->ff_cfg.read_rate_scale = 0;
     ctx->ff_cfg.read_mp4toannexb = 1;
 
     ctx->ff_ctx = abcdk_ffmpeg_editor_alloc(0);
