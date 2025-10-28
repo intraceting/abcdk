@@ -159,7 +159,7 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
  
 
 #
-OBJ_PATH = ${BUILD_PATH}/obj/
+OBJ_PATH = ${BUILD_PATH}/abcdk.obj.tmp/
 
 
 
