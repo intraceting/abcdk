@@ -16,11 +16,6 @@ LIB_SRC_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.c)
 #C++
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cpp)
 
-#CUDA是可选项，可能未启用。
-ifeq (${HAVE_CUDA},yes)
-LIB_SRC_CU_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cu)
-endif
-
 #
 TOOL_SRC_FILES = $(wildcard $(SRC_DIR)/tool/*.c)
 
@@ -28,7 +23,7 @@ TOOL_SRC_FILES = $(wildcard $(SRC_DIR)/tool/*.c)
 TEST_SRC_FILES = $(wildcard $(SRC_DIR)/test/*.c)
 
 #
-LIB_OBJ_FILES := $(patsubst $(SRC_DIR)/lib/%, $(OBJ_PATH)/lib/%, $(LIB_SRC_FILES:.c=.o) $(LIB_SRC_CXX_FILES:.cpp=.o) $(LIB_SRC_CU_FILES:.cu=.o))
+LIB_OBJ_FILES := $(patsubst $(SRC_DIR)/lib/%, $(OBJ_PATH)/lib/%, $(LIB_SRC_FILES:.c=.o) $(LIB_SRC_CXX_FILES:.cpp=.o))
 LIB_OBJ_DEPS += $(LIB_OBJ_FILES:.o=.d)
 
 #
