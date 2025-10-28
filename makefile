@@ -25,9 +25,6 @@ VERSION_STR_MAIN = ${VERSION_MAJOR}.${VERSION_MINOR}
 VERSION_STR_FULL = ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_RELEASE}
 
 
-#gcc临时文件目录。
-export TMPDIR=${BUILD_PATH}/
-
 #
 C_FLAGS += -std=${STD_C} 
 C_FLAGS += -fPIC 
@@ -161,6 +158,9 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
 #
 OBJ_PATH = ${BUILD_PATH}/abcdk.obj.tmp/
 
+
+#gcc临时文件目录。
+export TMPDIR=${OBJ_PATH}/
 
 
 #
