@@ -159,12 +159,8 @@ int main(int argc, char **argv)
     /*随机数种子。*/
     srand(time(NULL));
 
-    abcdk_ffmpeg_library_init();
-    abcdk_openssl_init();
 
     args = abcdk_option_alloc("--");
-    if (!args)
-        ABCDK_ERRNO_AND_GOTO1(errcode = errno,final_end);
    
     /*解析参数。*/
     abcdk_getargs(args, argc, argv);
@@ -181,16 +177,18 @@ int main(int argc, char **argv)
     abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);
 
     abcdk_ffmpeg_log_redirect();
+    abcdk_ffmpeg_init();
+    
+    abcdk_openssl_init();
 
     errcode = _abcdk_test_dispatch(args);
+
+    abcdk_openssl_cleanup();
+    abcdk_ffmpeg_deinit();
 
     /*关闭日志。*/
     abcdk_logger_close(&logger);
 
-final_end:
-
-    abcdk_openssl_cleanup();
-    abcdk_ffmpeg_library_deinit();
     
     abcdk_option_free(&args);
 

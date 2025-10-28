@@ -14,10 +14,10 @@
 __BEGIN_DECLS
 
 /**反初始化库环境. */
-void abcdk_ffmpeg_library_deinit();
+void abcdk_ffmpeg_deinit();
 
 /**初始化库环境. */
-void abcdk_ffmpeg_library_init();
+void abcdk_ffmpeg_init();
 
 /**日志重定向. */
 void abcdk_ffmpeg_log_redirect();
@@ -36,14 +36,6 @@ void abcdk_ffmpeg_media_option_dump(AVFormatContext *ctx);
 
 /**释放.*/
 void abcdk_ffmpeg_media_free(AVFormatContext **ctx);
-
-/**打开输入.*/
-int abcdk_avformat_media_open_input(AVFormatContext **ctx, const char *fmt, const char *url, AVIOContext *vio_ctx,
-                                    AVIOInterruptCB *inter_ctx, AVDictionary **options);
-
-/**打开输出.*/
-int abcdk_avformat_media_open_output(AVFormatContext **ctx, const char *fmt, const char *url, AVIOContext *vio_ctx,
-                                     AVIOInterruptCB *inter_ctx, AVDictionary **options);
 
 /**打印编码信息. */
 void abcdk_ffmpeg_codec_option_dump(AVCodec *ctx);

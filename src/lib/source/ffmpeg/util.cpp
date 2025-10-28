@@ -6,7 +6,7 @@
  */
 #include "abcdk/ffmpeg/util.h"
 
-void abcdk_ffmpeg_library_deinit()
+void abcdk_ffmpeg_deinit()
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
@@ -16,7 +16,7 @@ void abcdk_ffmpeg_library_deinit()
 #endif // #ifndef HAVE_FFMPEG
 }
 
-void abcdk_ffmpeg_library_init()
+void abcdk_ffmpeg_init()
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
