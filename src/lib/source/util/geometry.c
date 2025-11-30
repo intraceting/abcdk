@@ -61,23 +61,23 @@ void abcdk_resize_ratio_2d(abcdk_resize_scale_t *ratio, double src_w, double src
     ratio->y_shift = (dst_h - (ratio->y_factor * src_h)) / 2.0;
 }
 
-double abcdk_resize_src2dst_2d(const abcdk_resize_scale_t *ratio, double src, int x)
+double abcdk_resize_src2dst_2d(const abcdk_resize_scale_t *ratio, double src, int x_or_y)
 {
     assert(ratio != NULL);
     assert(src >= 0.0);
 
-    if (x)
+    if (x_or_y)
         return (src * ratio->x_factor) + ratio->x_shift;
 
     return (src * ratio->y_factor) + ratio->y_shift;
 }
 
-double abcdk_resize_dst2src_2d(const abcdk_resize_scale_t *ratio, double dst, int x)
+double abcdk_resize_dst2src_2d(const abcdk_resize_scale_t *ratio, double dst, int x_or_y)
 {
     assert(ratio != NULL);
     assert(dst >= 0.0);
 
-    if (x)
+    if (x_or_y)
         return (dst - ratio->x_shift) / ratio->x_factor;
 
     return (dst - ratio->y_shift) / ratio->y_factor;

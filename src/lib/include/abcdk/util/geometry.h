@@ -83,14 +83,14 @@ void abcdk_resize_ratio_2d(abcdk_resize_scale_t *ratio,double src_w, double src_
  * 
  * @param x !0 X轴坐标，0 Y轴坐标。
 */
-double abcdk_resize_src2dst_2d(const abcdk_resize_scale_t *ratio,double src, int x);
+double abcdk_resize_src2dst_2d(const abcdk_resize_scale_t *ratio,double src, int x_or_y);
 
 /**
  * 目标图到源图坐标变换。
  * 
  * @param x !0 X轴坐标，0 Y轴坐标。
 */
-double abcdk_resize_dst2src_2d(const abcdk_resize_scale_t *ratio,double dst, int x);
+double abcdk_resize_dst2src_2d(const abcdk_resize_scale_t *ratio,double dst, int x_or_y);
 
 /**
  * 测试点是否多边形内部。
