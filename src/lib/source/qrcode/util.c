@@ -10,7 +10,7 @@
 abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin)
 {
 #ifndef HAVE_QRENCODE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含QRencode工具。"));
     return NULL; 
 #else //#ifndef HAVE_QRENCODE
     abcdk_object_t *dst = NULL;
@@ -79,7 +79,7 @@ ERR:
 int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin)
 {
 #ifndef HAVE_QRENCODE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含QRencode工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含QRencode工具。"));
     return -1; 
 #else //#ifndef HAVE_QRENCODE
     abcdk_object_t *src = NULL;

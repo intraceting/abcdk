@@ -52,7 +52,7 @@ struct _abcdk_ffmpeg_editor
 void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return ;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_editor_t *ctx_p;
@@ -86,7 +86,7 @@ void abcdk_ffmpeg_editor_free(abcdk_ffmpeg_editor_t **ctx)
 abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_editor_t *ctx;
@@ -113,7 +113,7 @@ abcdk_ffmpeg_editor_t *abcdk_ffmpeg_editor_alloc(int writer)
 int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     double scale;
@@ -128,7 +128,7 @@ int abcdk_ffmpeg_editor_stream_nb(abcdk_ffmpeg_editor_t *ctx)
 AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
@@ -143,7 +143,7 @@ AVStream *abcdk_ffmpeg_editor_stream_ctx(abcdk_ffmpeg_editor_t *ctx, int stream)
 double abcdk_ffmpeg_editor_stream_timebase_q2d(abcdk_ffmpeg_editor_t *ctx, int stream)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return 0.0;
 #else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
@@ -161,7 +161,7 @@ double abcdk_ffmpeg_editor_stream_timebase_q2d(abcdk_ffmpeg_editor_t *ctx, int s
 double abcdk_ffmpeg_editor_stream_duration(abcdk_ffmpeg_editor_t *ctx, int stream)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return 0.0;
 #else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
@@ -179,7 +179,7 @@ double abcdk_ffmpeg_editor_stream_duration(abcdk_ffmpeg_editor_t *ctx, int strea
 double abcdk_ffmpeg_editor_stream_time2rate(abcdk_ffmpeg_editor_t *ctx, int stream)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return 0.000001;
 #else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
@@ -196,7 +196,7 @@ double abcdk_ffmpeg_editor_stream_time2rate(abcdk_ffmpeg_editor_t *ctx, int stre
 double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -0.000001;
 #else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
@@ -213,7 +213,7 @@ double abcdk_ffmpeg_editor_stream_ts2sec(abcdk_ffmpeg_editor_t *ctx, int stream,
 int64_t abcdk_ffmpeg_editor_stream_ts2num(abcdk_ffmpeg_editor_t *ctx, int stream, int64_t ts)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     assert(ctx != NULL && stream >= 0);
@@ -394,7 +394,7 @@ static int _abcdk_avformat_media_init_ts(abcdk_ffmpeg_editor_t *ctx)
 int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_editor_param_t *param)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int chk;
@@ -661,7 +661,7 @@ static int _abcdk_ffmpeg_editor_packet_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket
 int abcdk_ffmpeg_editor_read_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *dst)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int need_delay = 1;
@@ -715,7 +715,7 @@ next_packet:
 int abcdk_ffmpeg_editor_add_stream(abcdk_ffmpeg_editor_t *ctx, const AVCodecContext *opt)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     AVCodec *codec_ctx_p = NULL;
@@ -772,7 +772,7 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
                                     const AVRational *avg_frame_rate,const AVRational *r_frame_rate)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     AVCodec *codec_ctx_p = NULL;
@@ -827,7 +827,7 @@ int abcdk_ffmpeg_editor_add_stream2(abcdk_ffmpeg_editor_t *ctx, const AVCodecPar
 int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     AVRational tb_src, tb_dst;
@@ -894,7 +894,7 @@ int abcdk_ffmpeg_editor_write_packet(abcdk_ffmpeg_editor_t *ctx, AVPacket *src)
 int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     char *url_p;
@@ -965,7 +965,7 @@ int abcdk_ffmpeg_editor_write_header(abcdk_ffmpeg_editor_t *ctx)
 int abcdk_ffmpeg_editor_write_trailer(abcdk_ffmpeg_editor_t *ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int chk;

@@ -44,7 +44,7 @@ void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    ABCDK_ASSERT(ctx_p->worker_flag, TT("服务停止后才能销毁."));
+    ABCDK_TRACE_ASSERT(ctx_p->worker_flag, ABCDK_GETTEXT("服务停止后才能销毁."));
 
     if (ctx_p->l5_server_ctx)
     {
@@ -105,7 +105,7 @@ int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx, const char *realm)
 
     assert(ctx != NULL && realm != NULL);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务已经启动,禁止修改基础配置."));
+    ABCDK_TRACE_ASSERT(ctx->worker_flag, ABCDK_GETTEXT("服务已经启动,禁止修改基础配置."));
 
     chk = ctx->l5_server_ctx->set_auth(realm);
     if(chk != 0)
@@ -120,7 +120,7 @@ int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx, const char *cert, const 
 
     assert(ctx != NULL && cert != NULL && key != NULL);
 
-    ABCDK_ASSERT(ctx->worker_flag, TT("服务已经启动,禁止修改基础配置."));
+    ABCDK_TRACE_ASSERT(ctx->worker_flag, ABCDK_GETTEXT("服务已经启动,禁止修改基础配置."));
 
     chk = ctx->l5_server_ctx->set_tls(cert, key, enable_srtp, encrypt_srtp);
     if (chk != 0)
@@ -170,7 +170,7 @@ void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *usernam
 {
     assert(ctx != NULL && username != NULL);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     ctx->l5_server_ctx->remove_user(username);
 }
@@ -181,7 +181,7 @@ int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, c
 
     assert(ctx != NULL && username != NULL && password != NULL);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     chk = ctx->l5_server_ctx->add_user(username, password, scheme, totp_time_step, totp_digit_size);
     if (chk != 0)
@@ -194,7 +194,7 @@ void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, const char *name)
 {
     assert(ctx != NULL && name != NULL);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     ctx->l5_server_ctx->remove_media(name);
 }
@@ -205,7 +205,7 @@ int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx, const char *name)
 
     assert(ctx != NULL && name != NULL);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     chk = ctx->l5_server_ctx->play_media(name);
     if (chk != 0)
@@ -220,7 +220,7 @@ int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, c
 
     assert(ctx != NULL && name != NULL);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     chk = ctx->l5_server_ctx->create_media(name, comment, title);
     if (chk != 0)
@@ -235,7 +235,7 @@ int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, const char *name, int
 
     assert(ctx != NULL && name != NULL && codec > ABCDK_RTSP_CODEC_NONE && extdata != NULL && bitrate > 0 && cache >= 2);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     chk = ctx->l5_server_ctx->add_stream(name, codec, extdata, bitrate, cache);
     if (chk <= 0)
@@ -250,7 +250,7 @@ int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, const char *name, in
 
     assert(ctx != NULL && name != NULL && stream > 0 && data != NULL && size > 0 && dur >= 0);
 
-    ABCDK_ASSERT(!ctx->worker_flag, TT("服务尚未启动,禁止修改运行配置."));
+    ABCDK_TRACE_ASSERT(!ctx->worker_flag, ABCDK_GETTEXT("服务尚未启动,禁止修改运行配置."));
 
     chk = ctx->l5_server_ctx->play_stream(name, stream, data, size, pts, dur);
     if (chk != 0)
@@ -264,84 +264,84 @@ int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, const char *name, in
 
 void abcdk_rtsp_server_destroy(abcdk_rtsp_server_t **ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return ;
 }
 
 
 abcdk_rtsp_server_t *abcdk_rtsp_server_create(uint16_t port, int flag)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return NULL;
 }
 
 
 int abcdk_rtsp_server_set_auth(abcdk_rtsp_server_t *ctx,const char  *realm)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 int abcdk_rtsp_server_set_tls(abcdk_rtsp_server_t *ctx,const char *cert,const char *key, int enable_srtp, int encrypt_srtp)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 
 void abcdk_rtsp_server_stop(abcdk_rtsp_server_t *ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return ;
 }
 
 int abcdk_rtsp_server_start(abcdk_rtsp_server_t *ctx)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 
 void abcdk_rtsp_server_remove_user(abcdk_rtsp_server_t *ctx, const char *username)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return;
 }
 
 
 int abcdk_rtsp_server_add_user(abcdk_rtsp_server_t *ctx, const char *username, const char *password, int scheme, int totp_time_step, int totp_digit_size)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 void abcdk_rtsp_server_remove_media(abcdk_rtsp_server_t *ctx, const char *name)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return ;
 }
 
 int abcdk_rtsp_server_play_media(abcdk_rtsp_server_t *ctx,  const char *name)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 int abcdk_rtsp_server_create_media(abcdk_rtsp_server_t *ctx, const char *name, const char *title, const char *comment)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 int abcdk_rtsp_server_add_stream(abcdk_rtsp_server_t *ctx, const char *name, int codec, abcdk_object_t *extdata, uint32_t bitrate, int cache)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 
 int abcdk_rtsp_server_play_stream(abcdk_rtsp_server_t *ctx, const char *name, int stream, const void *data, size_t size, int64_t pts, int64_t dur)
 {
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含Live555工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Live555工具."));
     return -1;
 }
 

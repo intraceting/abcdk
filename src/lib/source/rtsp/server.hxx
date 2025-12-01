@@ -129,7 +129,7 @@ namespace abcdk
                 setTLSState(cert, key, enable_srtp, encrypt_srtp);
                 m_use_tls = True; //
 #else // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
-                abcdk_trace_printf(LOG_WARNING, TT("当前Live555版本(%s)暂不支持此功能(%s)."), LIVEMEDIA_LIBRARY_VERSION_STRING, __FUNCTION__);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前Live555版本(%s)暂不支持此功能(%s)."), LIVEMEDIA_LIBRARY_VERSION_STRING, __FUNCTION__);
 #endif // #if LIVEMEDIA_LIBRARY_VERSION_INT >= 1687219200
                 return 0;
             }
@@ -332,11 +332,11 @@ namespace abcdk
 
                 if (it->second.first != 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING, TT("媒体(%s)已经播放,不能添加新的流."), name);
+                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("媒体(%s)已经播放,不能添加新的流."), name);
                     return -1;
                 }
 
-                abcdk_trace_printf(LOG_INFO, TT("媒体(%s)添加新的流(CODEC=%d)."), name, codec);
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("媒体(%s)添加新的流(CODEC=%d)."), name, codec);
 
                 idx = it->second.second->add_stream(codec, extdata, bitrate, cache);
                 if (idx <= 0)
@@ -357,7 +357,7 @@ namespace abcdk
 
                 if (it->second.first == 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING, TT("媒体尚未播放,不能接收数据包."));
+                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("媒体尚未播放,不能接收数据包."));
                     return -1;
                 }
 
@@ -614,7 +614,7 @@ namespace abcdk
                 if (it == m_medialist.end())
                     return;
 
-                abcdk_trace_printf(LOG_INFO, TT("删除媒体(%s)."), name);
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("删除媒体(%s)."), name);
 
                 if (it->second.first)
                     deleteServerMediaSession(it->second.second); // 删除已播放.
@@ -640,7 +640,7 @@ namespace abcdk
                 if (it->second.first != 0)
                     return 0;
 
-                abcdk_trace_printf(LOG_INFO, TT("播放媒体(%s)."), name);
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("播放媒体(%s)."), name);
 
                 addServerMediaSession(it->second.second);
                 it->second.first = 1; // 已播放.
@@ -658,7 +658,7 @@ namespace abcdk
                 if (it != m_medialist.end())
                     return -1;
 
-                abcdk_trace_printf(LOG_INFO, TT("创建媒体(%s)."), name);
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("创建媒体(%s)."), name);
 
                 media_ctx = rtsp_server::media::createNew(envir(), name, info, desc);
                 if (!media_ctx)

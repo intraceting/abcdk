@@ -138,7 +138,7 @@ final_error:
 void abcdk_odbc_free(abcdk_odbc_t **ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return;
 #else //#ifndef HAVE_UNIXODBC
 
@@ -159,7 +159,7 @@ void abcdk_odbc_free(abcdk_odbc_t **ctx)
 abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return NULL;
 #else //#ifndef HAVE_UNIXODBC
     abcdk_odbc_t *odbc = (abcdk_odbc_t *)abcdk_heap_alloc(sizeof(abcdk_odbc_t));
@@ -179,7 +179,7 @@ abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool)
 uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return 0;
 #else //#ifndef HAVE_UNIXODBC
     assert(ctx != NULL);
@@ -191,7 +191,7 @@ uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx)
 SQLRETURN abcdk_odbc_disconnect(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -244,7 +244,7 @@ final_error:
 SQLRETURN abcdk_odbc_connect(abcdk_odbc_t *ctx, const char *uri, time_t timeout, const char *tracefile)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -302,7 +302,7 @@ SQLRETURN abcdk_odbc_connect2(abcdk_odbc_t *ctx, const char *product, const char
                               time_t timeout, const char *tracefile)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     char uri[NAME_MAX] = {0};
@@ -346,7 +346,7 @@ SQLRETURN abcdk_odbc_connect2(abcdk_odbc_t *ctx, const char *product, const char
 SQLRETURN abcdk_odbc_autocommit(abcdk_odbc_t *ctx, int enable)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     long flag;
@@ -372,7 +372,7 @@ final_error:
 SQLRETURN abcdk_odbc_tran_begin(abcdk_odbc_t *ctx) 
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     assert(ctx != NULL);
@@ -386,7 +386,7 @@ SQLRETURN abcdk_odbc_tran_begin(abcdk_odbc_t *ctx)
 SQLRETURN abcdk_odbc_tran_end(abcdk_odbc_t *ctx, SQLSMALLINT type)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -408,7 +408,7 @@ final_error:
 SQLRETURN abcdk_odbc_tran_commit(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     assert(ctx != NULL);
@@ -421,7 +421,7 @@ SQLRETURN abcdk_odbc_tran_commit(abcdk_odbc_t *ctx)
 SQLRETURN abcdk_odbc_tran_rollback(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     assert(ctx != NULL);
@@ -433,7 +433,7 @@ SQLRETURN abcdk_odbc_tran_rollback(abcdk_odbc_t *ctx)
 SQLRETURN abcdk_odbc_prepare(abcdk_odbc_t *ctx, const char *sql)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -471,7 +471,7 @@ SQLRETURN abcdk_odbc_bind_parameter(abcdk_odbc_t *ctx, SQLUSMALLINT ipar, SQLSMA
                                     SQLSMALLINT ibScale, SQLPOINTER rgbValue, SQLLEN cbValueMax)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -493,7 +493,7 @@ final_error:
 SQLRETURN abcdk_odbc_execute(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -515,7 +515,7 @@ final_error:
 SQLRETURN abcdk_odbc_finalize(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -545,7 +545,7 @@ final_error:
 SQLRETURN abcdk_odbc_exec_direct(abcdk_odbc_t *ctx, const char *sql)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -569,7 +569,7 @@ final_error:
 SQLRETURN abcdk_odbc_affect(abcdk_odbc_t *ctx, SQLLEN *rows)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -591,7 +591,7 @@ final_error:
 SQLRETURN abcdk_odbc_fetch(abcdk_odbc_t *ctx, SQLSMALLINT direction, SQLLEN offset)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;
@@ -613,7 +613,7 @@ final_error:
 SQLRETURN abcdk_odbc_fetch_first(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     assert(ctx != NULL);
@@ -626,7 +626,7 @@ SQLRETURN abcdk_odbc_fetch_first(abcdk_odbc_t *ctx)
 SQLRETURN abcdk_odbc_fetch_next(abcdk_odbc_t *ctx) 
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     assert(ctx != NULL);
@@ -639,7 +639,7 @@ SQLULEN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT t
                               SQLPOINTER buf, SQLULEN max)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return -1;
 #else //#ifndef HAVE_UNIXODBC
     SQLLEN StrLen_or_Ind = 0;
@@ -681,7 +681,7 @@ SQLULEN abcdk_odbc_get_data(abcdk_odbc_t *ctx, SQLSMALLINT column, SQLSMALLINT t
 SQLSMALLINT abcdk_odbc_name2index(abcdk_odbc_t *ctx, const char *name)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return -1;
 #else //#ifndef HAVE_UNIXODBC
     SQLSMALLINT columns;
@@ -721,7 +721,7 @@ SQLRETURN abcdk_odbc_error_info(abcdk_odbc_t *ctx, SQLCHAR *Sqlstate, SQLINTEGER
                                 SQLCHAR *MessageText, SQLSMALLINT BufferLength)
 {
 #ifndef HAVE_UNIXODBC
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含unixODBC工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具。"));
     return SQL_ERROR;
 #else //#ifndef HAVE_UNIXODBC
     SQLRETURN chk;

@@ -812,7 +812,7 @@ static void _abcdk_https_event_accept(abcdk_stcp_node_t *node, int *result)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_https_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_printf(LOG_WARNING, TT("禁止客户端(%s)连接到本机(%s)。"), node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("禁止客户端(%s)连接到本机(%s)。"), node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
@@ -835,7 +835,7 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
         }
     }
 
-    abcdk_trace_printf(LOG_WARNING, TT("本机(%s)与远端(%s)的连接已建立。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
     
     /*设置超时。*/
     abcdk_stcp_set_timeout(node, 180);
@@ -901,11 +901,11 @@ static void _abcdk_https_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_printf(LOG_INFO, TT("监听关闭，忽略。"));
+        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭，忽略。"));
         return;
     }
 
-    abcdk_trace_printf(LOG_INFO, TT("本机(%s)与远端(%s)的连接已断开。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
     abcdk_map_destroy(&node_ctx_p->stream_map);
@@ -1665,7 +1665,7 @@ int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *ke
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,TT("应答数据已经发送完成,不能修改。"));
+    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答数据已经发送完成,不能修改。"));
 
     if(!stream_ctx_p->rsp_hdr)
     {
@@ -1734,7 +1734,7 @@ void abcdk_https_response_header_unset(abcdk_https_stream_t *stream,const char *
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
 
-    ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,TT("应答数据已经发送完成,不能修改。"));
+    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答数据已经发送完成,不能修改。"));
 
     if(!stream_ctx_p->rsp_hdr)
         return;
@@ -1757,8 +1757,8 @@ int abcdk_https_response_header_end(abcdk_https_stream_t *stream)
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    ABCDK_ASSERT(!stream_ctx_p->rsp_hdr_sent,TT("应答的头部已经结束。"));
-    ABCDK_ASSERT(stream_ctx_p->rsp_hdr,TT("还未设置应答的头部信息。"));
+    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答的头部已经结束。"));
+    ABCDK_TRACE_ASSERT(stream_ctx_p->rsp_hdr,ABCDK_GETTEXT("还未设置应答的头部信息。"));
     
     /*如果未设置应答长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
     chk = abcdk_option_exist(stream_ctx_p->rsp_hdr,"Content-Length");

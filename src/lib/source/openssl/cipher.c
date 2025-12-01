@@ -53,7 +53,7 @@ void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
 void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_cipher_t *ctx_p;
@@ -403,7 +403,7 @@ static int _abcdk_openssl_cipher_init(abcdk_openssl_cipher_t *ctx, int scheme, c
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *key, size_t key_len)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_cipher_t *ctx;
@@ -436,7 +436,7 @@ ERR:
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const char *key_file)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *key;
@@ -458,7 +458,7 @@ abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const 
 abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *out;
@@ -479,7 +479,7 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *src_p = NULL;
@@ -552,7 +552,7 @@ ERR:
 void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return;
 #else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL);
@@ -564,7 +564,7 @@ void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
 int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return exitcode;
 #else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL);

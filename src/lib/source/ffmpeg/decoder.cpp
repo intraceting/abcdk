@@ -22,7 +22,7 @@ struct _abcdk_ffmpeg_decoder
 void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return ;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_decoder_t *ctx_p;
@@ -54,7 +54,7 @@ void abcdk_ffmpeg_decoder_free(abcdk_ffmpeg_decoder_t **ctx)
 abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_decoder_t *ctx;
@@ -91,7 +91,7 @@ abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc(const AVCodec *codec_ctx)
 abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc2(const char *codec_name)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     const AVCodec *codec_ctx_p = NULL;
@@ -109,7 +109,7 @@ abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc2(const char *codec_name)
 abcdk_ffmpeg_decoder_t *abcdk_ffmpeg_decoder_alloc3(AVCodecID codec_id)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     const AVCodec *codec_ctx_p = NULL;
@@ -147,7 +147,7 @@ static AVPixelFormat _abcdk_ffmpeg_decoder_get_format(AVCodecContext *ctx, const
 int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx,const AVCodecParameters *param)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int chk;
@@ -179,7 +179,7 @@ int abcdk_ffmpeg_decoder_init(abcdk_ffmpeg_decoder_t *ctx,const AVCodecParameter
 int abcdk_ffmpeg_decoder_open(abcdk_ffmpeg_decoder_t *ctx, const AVDictionary *opt)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else  // #ifndef HAVE_FFMPEG
     int chk;
@@ -201,7 +201,7 @@ int abcdk_ffmpeg_decoder_open(abcdk_ffmpeg_decoder_t *ctx, const AVDictionary *o
 int abcdk_ffmpeg_decoder_send(abcdk_ffmpeg_decoder_t *ctx, AVPacket *src)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int chk;
@@ -241,7 +241,7 @@ int abcdk_ffmpeg_decoder_send(abcdk_ffmpeg_decoder_t *ctx, AVPacket *src)
 int abcdk_ffmpeg_decoder_recv(abcdk_ffmpeg_decoder_t *ctx, AVFrame *dst)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int chk;

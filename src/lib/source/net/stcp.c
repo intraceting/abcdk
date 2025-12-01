@@ -135,7 +135,7 @@ static void _abcdk_stcp_ctx_unref(abcdk_stcp_t **ctx)
     assert(ctx_p->refcount == 0);
     ctx_p->magic = 0xcccccccc;
 
-    ABCDK_ASSERT(ctx_p->worker_ctx == NULL, TT("销毁前必须先停止。"));
+    ABCDK_TRACE_ASSERT(ctx_p->worker_ctx == NULL, ABCDK_GETTEXT("销毁前必须先停止。"));
 
     abcdk_asioex_destroy(&ctx_p->asioex_ctx);
     abcdk_heap_free(ctx_p);
@@ -369,7 +369,7 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     /*仅工作线程拥有读权利。*/
     chk = abcdk_thread_leader_test(&node->recv_leader);
-    ABCDK_ASSERT(chk == 0, TT("当前线程没有读权利。"));
+    ABCDK_TRACE_ASSERT(chk == 0, ABCDK_GETTEXT("当前线程没有读权利。"));
 
     while (rsize_all < size)
     {
@@ -414,7 +414,7 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     /*仅工作线程拥有写权利。*/
     chk = abcdk_thread_leader_test(&node->send_leader);
-    ABCDK_ASSERT(chk == 0, TT("当前线程没有读权利。"));
+    ABCDK_TRACE_ASSERT(chk == 0, ABCDK_GETTEXT("当前线程没有读权利。"));
 
     while (wsize_all < size)
     {
@@ -572,7 +572,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         abcdk_object_t *info = abcdk_openssl_cert_dump(cert);
         if (info)
         {
-            abcdk_trace_printf(LOG_DEBUG, TT("远端(%s)的证书信息：\n%s"), remote_addr, info->pstrs[0]);
+            abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("远端(%s)的证书信息：\n%s"), remote_addr, info->pstrs[0]);
             abcdk_object_unref(&info);
         }
 
@@ -584,7 +584,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         chk = SSL_get_verify_result(node->openssl_ssl);
         if (chk != X509_V_OK)
         {
-            abcdk_trace_printf(LOG_WARNING, TT("远端(%s)的证书验证有错误发生(ssl-errno=%d)。"), remote_addr, chk);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("远端(%s)的证书验证有错误发生(ssl-errno=%d)。"), remote_addr, chk);
             return -1;
         }
     }
@@ -602,7 +602,7 @@ static void _abcdk_stcp_openssl_dump_errmsg(abcdk_stcp_node_t *node, unsigned lo
 
     abcdk_stcp_get_sockaddr_str(node, local_addr, remote_addr);
 
-    abcdk_trace_printf(LOG_INFO, TT("本机(%s)与远端(%s)的连接有错误发生(%s)。"), local_addr, remote_addr, errmsg);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接有错误发生(%s)。"), local_addr, remote_addr, errmsg);
 }
 
 #endif // HEADER_SSL_H
@@ -684,7 +684,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 
             if (!node->openssl_bio)
             {
-                abcdk_trace_printf(LOG_WARNING, TT("创建RSA(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败。"), node->cfg.ssl_scheme);
                 return -1;
             }
 
@@ -700,7 +700,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 
             if (!node->openssl_ssl)
             {
-                abcdk_trace_printf(LOG_WARNING, TT("创建PKI(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建PKI(%d)环境失败。"), node->cfg.ssl_scheme);
                 return -1;
             }
         
@@ -729,7 +729,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 #endif // HEADER_SSL_H
     else
     {
-        abcdk_trace_printf(LOG_WARNING,  TT("尚未支持的SSL配置，或构建时未包含SSL组件。"));
+        abcdk_trace_printf(LOG_WARNING,  ABCDK_GETTEXT("尚未支持的SSL配置，或构建时未包含SSL组件。"));
     }
 
     return -22;
@@ -985,7 +985,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
             node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key, node->flag == ABCDK_STCP_FLAG_CLIENT);
             if (!node->openssl_bio)
             {
-                abcdk_trace_printf(LOG_WARNING, TT("创建RSA(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败。"), node->cfg.ssl_scheme);
                 return -2;
             }
 
@@ -1000,7 +1000,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 
             if (!node->openssl_ctx)
             {
-                abcdk_trace_printf(LOG_WARNING, TT("创建PKI(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建PKI(%d)环境失败。"), node->cfg.ssl_scheme);
                 return -2;
             }
 
@@ -1010,7 +1010,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
                 chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list);
                 if (chk != 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING, TT("设置PKI(%d)环境下层协议和密码套件失败。"), node->cfg.ssl_scheme);
+                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("设置PKI(%d)环境下层协议和密码套件失败。"), node->cfg.ssl_scheme);
                     return -3;
                 }
             }
@@ -1021,7 +1021,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 #endif // HEADER_SSL_H
     else
     {
-        abcdk_trace_printf(LOG_WARNING,  TT("尚未支持的SSL配置，或构建时未包含SSL组件。"));
+        abcdk_trace_printf(LOG_WARNING,  ABCDK_GETTEXT("尚未支持的SSL配置，或构建时未包含SSL组件。"));
     }
 
     return -22;
@@ -1064,8 +1064,8 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
     int chk;
 
     assert(node != NULL && cfg != NULL);
-    ABCDK_ASSERT(cfg->prepare_cb != NULL, TT("未绑定通知回调函数，通讯对象无法正常工作。"));
-    ABCDK_ASSERT(cfg->event_cb != NULL, TT("未绑定通知回调函数，通讯对象无法正常工作。"));
+    ABCDK_TRACE_ASSERT(cfg->prepare_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
+    ABCDK_TRACE_ASSERT(cfg->event_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
 
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_stcp_refer(node);
@@ -1129,7 +1129,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING,TT("绑定设备需要root权限支持，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("绑定设备需要root权限支持，忽略配置。"));
         }
     }
 
@@ -1168,7 +1168,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     int chk;
 
     assert(node != NULL && addr != NULL && cfg != NULL);
-    ABCDK_ASSERT(cfg->event_cb != NULL, TT("未绑定通知回调函数，通讯对象无法正常工作。"));
+    ABCDK_TRACE_ASSERT(cfg->event_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
 
     /*异步环境，首先得增加对象引用。*/
     node_p = abcdk_stcp_refer(node);
@@ -1202,7 +1202,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING, TT("绑定地址的协议和远程的地址协议不同，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("绑定地址的协议和远程的地址协议不同，忽略配置。"));
         }
     }
 
@@ -1216,7 +1216,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING,TT("绑定设备需要root权限支持，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("绑定设备需要root权限支持，忽略配置。"));
         }
     }
 
@@ -1391,7 +1391,7 @@ int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
     }
     else
     {
-        abcdk_trace_printf(LOG_DEBUG, TT("输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n"), node->out_len, p->obj->sizes[0]);
+        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n"), node->out_len, p->obj->sizes[0]);
 
         abcdk_tree_free(&p);
     }

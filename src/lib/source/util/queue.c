@@ -111,7 +111,7 @@ void _abcdk_queue_destroy_cb(abcdk_object_t *alloc, void *opaque)
     if(!msg_p)
         return;
 
-    ABCDK_ASSERT(queue_p->msg_destroy_cb,TT("未注册销毁函数，消息对象无法销毁。"));
+    ABCDK_TRACE_ASSERT(queue_p->msg_destroy_cb,ABCDK_GETTEXT("未注册销毁函数，消息对象无法销毁。"));
     queue_p->msg_destroy_cb(msg_p);
 }
 

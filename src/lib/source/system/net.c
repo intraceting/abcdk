@@ -62,12 +62,12 @@ int abcdk_net_down(const char *ifname)
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf( LOG_ERR, TT("停用IFN(%s)失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("停用IFN(%s)失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
 
         return -2;
     }
 
-    abcdk_trace_printf(LOG_INFO, TT("停用IFN(%s)完成。"), ifname);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("停用IFN(%s)完成。"), ifname);
 
     return 0;
 }
@@ -86,12 +86,12 @@ int abcdk_net_up(const char *ifname)
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf( LOG_ERR, TT("启用IFN(%s)失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("启用IFN(%s)失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
 
         return -2;
     }
 
-    abcdk_trace_printf( LOG_INFO, TT("启用IFN(%s)完成。"), ifname);
+    abcdk_trace_printf( LOG_INFO, ABCDK_GETTEXT("启用IFN(%s)完成。"), ifname);
 
     return 0;
 }
@@ -110,11 +110,11 @@ int abcdk_net_address_flush(const char *ifname)
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf(LOG_ERR, TT("清除IFN(%s)配置失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("清除IFN(%s)配置失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
         return -2;
     }
 
-    abcdk_trace_printf(LOG_INFO, TT("清除IFN(%s)配置完成。"), ifname);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("清除IFN(%s)配置完成。"), ifname);
 
     return 0;
 }
@@ -133,11 +133,11 @@ int abcdk_net_route_flush(const char *ifname)
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf( LOG_ERR, TT("清除IFN(%s)路由配置失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("清除IFN(%s)路由配置失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
         return -2;
     }
 
-    abcdk_trace_printf( LOG_INFO, TT("清除IFN(%s)路由配置完成。"), ifname);
+    abcdk_trace_printf( LOG_INFO, ABCDK_GETTEXT("清除IFN(%s)路由配置完成。"), ifname);
 
     return 0;
 }
@@ -161,12 +161,12 @@ int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, i
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0 && exitcode != 2)
     {
-        abcdk_trace_printf( LOG_ERR, TT("添加IPLAN('IPV%d','%s/%d','%s','%d')到IFN(%s)失败(exit=%d,signal=%d)。"),
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("添加IPLAN('IPV%d','%s/%d','%s','%d')到IFN(%s)失败(exit=%d,signal=%d)。"),
                                 ver, net, prefix, gw, metric, ifname, exitcode, sigcode);
         return -2;
     }
 
-    abcdk_trace_printf( LOG_INFO, TT("添加IPLAN('IPV%d','%s/%d','%s','%d')到IFN(%s)完成。"),
+    abcdk_trace_printf( LOG_INFO, ABCDK_GETTEXT("添加IPLAN('IPV%d','%s/%d','%s','%d')到IFN(%s)完成。"),
                             ver, net, prefix, gw, metric, ifname);
 
     return 0;
@@ -188,12 +188,12 @@ int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw,
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf( LOG_ERR, TT("添加IPADDR('IPV%d','%s/%d')到IFN(%s)失败(exit=%d,signal=%d)。"),
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("添加IPADDR('IPV%d','%s/%d')到IFN(%s)失败(exit=%d,signal=%d)。"),
                                 ver, host, prefix, ifname, exitcode, sigcode);
         return -2;
     }
 
-    abcdk_trace_printf( LOG_INFO, TT("添加IPADDR('IPV%d','%s/%d')到IFN(%s)完成。"),
+    abcdk_trace_printf( LOG_INFO, ABCDK_GETTEXT("添加IPADDR('IPV%d','%s/%d')到IFN(%s)完成。"),
                             ver, host, prefix, ifname);
 
     /*可能没有网关。*/
@@ -225,11 +225,11 @@ int abcdk_net_set_mtu(uint16_t mtu, const char *ifname)
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf( LOG_ERR, TT("更新IFN(%s)最大传输单元失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("更新IFN(%s)最大传输单元失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
         return -2;
     }
 
-    abcdk_trace_printf( LOG_INFO, TT("更新IFN(%s)最大传输单元完成。"), ifname);
+    abcdk_trace_printf( LOG_INFO, ABCDK_GETTEXT("更新IFN(%s)最大传输单元完成。"), ifname);
 
     return 0;
 }
@@ -250,11 +250,11 @@ int abcdk_net_set_txqueuelen(uint16_t len,const char *ifname)
     abcdk_waitpid(pid, 0, &exitcode, &sigcode);
     if (exitcode != 0)
     {
-        abcdk_trace_printf( LOG_ERR, TT("更新IFN(%s)队列长度失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
+        abcdk_trace_printf( LOG_ERR, ABCDK_GETTEXT("更新IFN(%s)队列长度失败(exit=%d,signal=%d)。"), ifname, exitcode, sigcode);
         return -2;
     }
 
-    abcdk_trace_printf( LOG_INFO, TT("更新IFN(%s)队列长度完成。"), ifname);
+    abcdk_trace_printf( LOG_INFO, ABCDK_GETTEXT("更新IFN(%s)队列长度完成。"), ifname);
 
     return 0; 
 }

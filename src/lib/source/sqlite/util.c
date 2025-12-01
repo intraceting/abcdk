@@ -9,7 +9,7 @@
 int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     sqlite3_backup *backup_ctx = NULL;
@@ -47,7 +47,7 @@ int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param)
 int abcdk_sqlite_close(sqlite3 *ctx)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     assert(ctx != NULL);
@@ -72,7 +72,7 @@ int abcdk_sqlite_busy_melt(void *opaque, int count)
 sqlite3 *abcdk_sqlite_open(const char *name)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return NULL;
 #else //#ifndef HAVE_SQLITE
     sqlite3 *ctx = NULL;
@@ -94,7 +94,7 @@ sqlite3 *abcdk_sqlite_open(const char *name)
 sqlite3 *abcdk_sqlite_memopen()
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return NULL;
 #else //#ifndef HAVE_SQLITE
     return abcdk_sqlite_open(":memory:");
@@ -104,7 +104,7 @@ sqlite3 *abcdk_sqlite_memopen()
 int abcdk_sqlite_tran_begin(sqlite3 *ctx)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     assert(ctx != NULL);
@@ -116,7 +116,7 @@ int abcdk_sqlite_tran_begin(sqlite3 *ctx)
 int abcdk_sqlite_tran_commit(sqlite3 *ctx)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     assert(ctx != NULL);
@@ -128,7 +128,7 @@ int abcdk_sqlite_tran_commit(sqlite3 *ctx)
 int abcdk_sqlite_tran_rollback(sqlite3 *ctx)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     assert(ctx != NULL);
@@ -140,7 +140,7 @@ int abcdk_sqlite_tran_rollback(sqlite3 *ctx)
 int abcdk_sqlite_tran_vacuum(sqlite3 *ctx)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     assert(ctx != NULL);
@@ -152,7 +152,7 @@ int abcdk_sqlite_tran_vacuum(sqlite3 *ctx)
 int abcdk_sqlite_pagesize(sqlite3 *ctx, int size)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     char sql[100] = {0};
@@ -170,7 +170,7 @@ int abcdk_sqlite_pagesize(sqlite3 *ctx, int size)
 int abcdk_sqlite_journal_mode(sqlite3 *ctx, int mode)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     const char *sql = "";
@@ -209,7 +209,7 @@ int abcdk_sqlite_journal_mode(sqlite3 *ctx, int mode)
 sqlite3_stmt *abcdk_sqlite_prepare(sqlite3 *ctx, const char *sql)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return NULL;
 #else //#ifndef HAVE_SQLITE
     sqlite3_stmt *stmt = NULL;
@@ -228,7 +228,7 @@ sqlite3_stmt *abcdk_sqlite_prepare(sqlite3 *ctx, const char *sql)
 int abcdk_sqlite_step(sqlite3_stmt *stmt)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return -1;
 #else //#ifndef HAVE_SQLITE
     int chk;
@@ -250,7 +250,7 @@ int abcdk_sqlite_step(sqlite3_stmt *stmt)
 int abcdk_sqlite_finalize(sqlite3_stmt *stmt)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     assert(stmt != NULL);
@@ -262,7 +262,7 @@ int abcdk_sqlite_finalize(sqlite3_stmt *stmt)
 int abcdk_sqlite_exec_direct(sqlite3 *ctx, const char *sql)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return SQLITE_ERROR;
 #else //#ifndef HAVE_SQLITE
     sqlite3_stmt *stmt;
@@ -284,7 +284,7 @@ int abcdk_sqlite_exec_direct(sqlite3 *ctx, const char *sql)
 int abcdk_sqlite_get_data(sqlite3_stmt *ctx, int column, int type, void *buf, int max)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return -1;
 #else //#ifndef HAVE_SQLITE
 
@@ -327,7 +327,7 @@ int abcdk_sqlite_get_data(sqlite3_stmt *ctx, int column, int type, void *buf, in
 int abcdk_sqlite_name2index(sqlite3_stmt *stmt, const char *name)
 {
 #ifndef HAVE_SQLITE
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含SQLITE工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含SQLITE工具。"));
     return -1;
 #else //#ifndef HAVE_SQLITE
     int count;

@@ -11,7 +11,7 @@
 uint32_t abcdk_openssl_totp_generate(const EVP_MD *evp_md_ctx, const uint8_t *key, int klen, uint64_t counter)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return 0xFFFFFFFF;
 #else //#ifndef HAVE_OPENSSL
     uint64_t be_counter;
@@ -52,7 +52,7 @@ uint32_t abcdk_openssl_totp_generate(const EVP_MD *evp_md_ctx, const uint8_t *ke
 uint32_t abcdk_openssl_totp_generate_sha1(const uint8_t *key, int klen, uint64_t counter)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return 0xFFFFFFFF;
 #else //#ifndef HAVE_OPENSSL
     assert(key != NULL && klen > 0);
@@ -65,7 +65,7 @@ uint32_t abcdk_openssl_totp_generate_sha1(const uint8_t *key, int klen, uint64_t
 uint32_t abcdk_openssl_totp_generate_sha256(const uint8_t *key, int klen, uint64_t counter)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return 0xFFFFFFFF;
 #else //#ifndef HAVE_OPENSSL
     assert(key != NULL && klen > 0);
@@ -77,7 +77,7 @@ uint32_t abcdk_openssl_totp_generate_sha256(const uint8_t *key, int klen, uint64
 uint32_t abcdk_openssl_totp_generate_sha512(const uint8_t *key, int klen, uint64_t counter)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
     return 0xFFFFFFFF;
 #else //#ifndef HAVE_OPENSSL
     assert(key != NULL && klen > 0);

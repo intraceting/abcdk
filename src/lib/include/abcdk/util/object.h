@@ -11,6 +11,7 @@
 #include "abcdk/util/heap.h"
 #include "abcdk/util/io.h"
 #include "abcdk/util/shm.h"
+#include "abcdk/util/trace.h"
 
 __BEGIN_DECLS
 

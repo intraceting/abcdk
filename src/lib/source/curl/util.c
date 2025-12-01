@@ -23,7 +23,7 @@ static size_t _abcdk_curl_download_write_cb(void *buffer, size_t size, size_t nm
 int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout)
 {
 #ifndef HAVE_CURL
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含CURL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含CURL工具。"));
     return -1;
 #else //#ifndef HAVE_CURL
     CURL *curl_ctx = NULL;
@@ -89,7 +89,7 @@ END:
         curl_easy_cleanup(curl_ctx);
     abcdk_object_unref(&url_en);
 
-    abcdk_trace_printf(LOG_DEBUG,TT("++++++++\n源地址：'%s'\n状态码：%ld\n出错码：'%s'\n--------\n"), url, rspcode, curl_easy_strerror(chk));
+    abcdk_trace_printf(LOG_DEBUG,ABCDK_GETTEXT("++++++++\n源地址：'%s'\n状态码：%ld\n出错码：'%s'\n--------\n"), url, rspcode, curl_easy_strerror(chk));
 
     if (chk == CURLE_OK && (rspcode == 200||rspcode == 206))
         return 0;

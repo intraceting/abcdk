@@ -55,7 +55,7 @@ static int _abcdk_ffmpeg_sws_init2(abcdk_ffmpeg_sws_t *ctx ,const AVFrame *src, 
 void abcdk_ffmpeg_sws_free(abcdk_ffmpeg_sws_t **ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具。"));
     return ;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_sws_t *ctx_p;
@@ -76,7 +76,7 @@ void abcdk_ffmpeg_sws_free(abcdk_ffmpeg_sws_t **ctx)
 abcdk_ffmpeg_sws_t *abcdk_ffmpeg_sws_alloc()
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具。"));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     abcdk_ffmpeg_sws_t *ctx;
@@ -98,7 +98,7 @@ abcdk_ffmpeg_sws_t *abcdk_ffmpeg_sws_alloc()
 int abcdk_ffmpeg_sws_scale(abcdk_ffmpeg_sws_t *ctx, const AVFrame *src, AVFrame *dst)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具。"));
     return -1;
 #else //#ifndef HAVE_FFMPEG
     int chk;

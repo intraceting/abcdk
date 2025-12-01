@@ -75,7 +75,7 @@ static int _abcdk_rtsp_relay_worker_thread_start(abcdk_rtsp_relay_t *ctx)
 void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return ;
 #else //#ifndef HAVE_FFMPEG
     abcdk_rtsp_relay_t *ctx_p;
@@ -100,7 +100,7 @@ void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx)
 abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, int src_timeout, int src_retry)
 {
 #ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, TT("当前环境在构建时未包含FFMPEG工具."));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return NULL;
 #else //#ifndef HAVE_FFMPEG
     abcdk_rtsp_relay_t *ctx;
@@ -153,7 +153,7 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
     chk = abcdk_rtsp_server_create_media(ctx->server_ctx_p, ctx->media_name, NULL, NULL);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, TT("媒体(%s)已存在,或其它错误."), ctx->media_name);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("媒体(%s)已存在,或其它错误."), ctx->media_name);
         return -1;
     }
 
@@ -216,7 +216,7 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
         {
             ctx->index_s2d[i] = -1;
 
-            abcdk_trace_printf(LOG_WARNING, TT("媒体(%s)不支持编码格式(FF-CODEC-ID=%d),忽略."), ctx->media_name, codecpar->codec_id);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("媒体(%s)不支持编码格式(FF-CODEC-ID=%d),忽略."), ctx->media_name, codecpar->codec_id);
         }
     }
 
@@ -225,7 +225,7 @@ static int _abcdk_rtsp_realy_create_media(abcdk_rtsp_relay_t *ctx)
     chk = abcdk_rtsp_server_play_media(ctx->server_ctx_p, ctx->media_name);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_WARNING, TT("媒体(%s)不存在,或没有需要播放的流."), ctx->media_name);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("媒体(%s)不存在,或没有需要播放的流."), ctx->media_name);
         return -1;
     }
 
@@ -279,11 +279,11 @@ RETRY:
     /*第一次连接时不需要休息.*/
     if (retry_count++ > 0)
     {
-        abcdk_trace_printf(LOG_WARNING, TT("源(%s)已关闭或到末尾,%d秒后重连."), ctx->src_url, ctx->src_retry);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("源(%s)已关闭或到末尾,%d秒后重连."), ctx->src_url, ctx->src_retry);
         usleep(ctx->src_retry * 1000000);
     }
 
-    abcdk_trace_printf(LOG_INFO, TT("打开源(%s)..."), ctx->src_url);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("打开源(%s)..."), ctx->src_url);
 
     ctx->ff_cfg.url = ctx->src_url;
     ctx->ff_cfg.fmt = ctx->src_fmt;
@@ -320,7 +320,7 @@ END:
 
     abcdk_ffmpeg_editor_free(&ctx->ff_ctx);
 
-    abcdk_trace_printf(LOG_INFO, TT("源(%s)关闭,退出."), ctx->src_url);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("源(%s)关闭,退出."), ctx->src_url);
 
     return;
 }

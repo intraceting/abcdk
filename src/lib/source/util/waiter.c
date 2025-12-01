@@ -74,7 +74,7 @@ void _abcdk_waiter_destroy_cb(abcdk_object_t *alloc, void *opaque)
     if (!msg_p)
         return;
 
-    ABCDK_ASSERT(waiter->msg_destroy_cb,TT("未注册销毁函数，MSG对象无法销毁。"));
+    ABCDK_TRACE_ASSERT(waiter->msg_destroy_cb,ABCDK_GETTEXT("未注册销毁函数，MSG对象无法销毁。"));
     waiter->msg_destroy_cb(msg_p);
 }
 

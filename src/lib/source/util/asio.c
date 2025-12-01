@@ -344,7 +344,7 @@ void abcdk_asio_destroy(abcdk_asio_t **ctx)
 
     if(ctx_p->init_ok)
     {
-        ABCDK_ASSERT(_abcdk_asio_count(ctx_p) == 0 ,TT("所有关联句柄分离后才允许销毁。"));
+        ABCDK_TRACE_ASSERT(_abcdk_asio_count(ctx_p) == 0 ,ABCDK_GETTEXT("所有关联句柄分离后才允许销毁。"));
     }
 
     abcdk_object_unref(&ctx_p->node_list);

@@ -440,7 +440,7 @@ int abcdk_object_remmap(abcdk_object_t *obj, size_t truncate, int rw, int shared
 
     in_p = ABCDK_OBJECT_PTR_OUT2IN(obj);
 
-    ABCDK_ASSERT(in_p->mmap_fd >= 0, TT("内存对象不支持此项操作。"));
+    ABCDK_TRACE_ASSERT(in_p->mmap_fd >= 0, ABCDK_GETTEXT("内存对象不支持此项操作。"));
 
     if (truncate > 0)
     {
@@ -489,7 +489,7 @@ int abcdk_object_msync(abcdk_object_t *obj, int async)
 
     in_p = ABCDK_OBJECT_PTR_OUT2IN(obj);
 
-    ABCDK_ASSERT(in_p->mmap_fd >= 0, TT("内存对象不支持此项操作。"));
+    ABCDK_TRACE_ASSERT(in_p->mmap_fd >= 0, ABCDK_GETTEXT("内存对象不支持此项操作。"));
 
     flags = (async ? MS_ASYNC : MS_SYNC);
 
