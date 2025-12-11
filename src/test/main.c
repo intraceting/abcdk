@@ -59,7 +59,7 @@ void _abcdk_test_print_usage()
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_RELEASE);
+    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
 
     fprintf(stderr, "\n命令：\n");
     fprintf(stderr, "\n\t");

@@ -5,7 +5,7 @@
 #
 #
 
-#生成PC文件内容。
+#生成PC文件内容.
 define LIB_PKGCONFIG_CONTEXT
 prefix=${INSTALL_PREFIX}
 libdir=$${prefix}/lib
@@ -26,7 +26,7 @@ install-tool:
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/bin
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool.exe
-	cp -f ${SHELL_TOOLS_HOME}/rt0.sh ${INSTALL_PREFIX}/bin/abcdk-tool
+	cp -f ${SHELLKITS_HOME}/tools/rt0.sh ${INSTALL_PREFIX}/bin/abcdk-tool
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-tool/

@@ -4,11 +4,9 @@
 # Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
 #
 #
-# Makefile 所在目录（绝对路径）
-MAKEFILE_DIRNAME := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 #
-SRC_DIR := ${MAKEFILE_DIRNAME}/src/
+SRC_DIR := $(CURDIR)/src/
 
 #C
 LIB_SRC_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.c)
@@ -34,6 +32,10 @@ TOOL_OBJ_DEPS += $(TOOL_OBJ_FILES:.o=.d)
 TEST_OBJ_FILES := $(patsubst $(SRC_DIR)/test/%, $(OBJ_PATH)/test/%, $(TEST_SRC_FILES:.c=.o))
 TEST_OBJ_DEPS += $(TEST_OBJ_FILES:.o=.d)
 
+
+#伪目标，告诉make这些都是标志，而不是实体目录。
+#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
+.PHONY: lib tool test xgettext
 
 #
 lib: lib-src
@@ -91,13 +93,13 @@ xgettext: xgettext-lib xgettext-tool
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-lib:
 	cp -f $(CURDIR)/share/locale/en_US/gettext/libabcdk.pot $(BUILD_PATH)/libabcdk.en_US.pot
-	${SHELL_TOOLS_HOME}/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(CURDIR)/src/lib/ $(BUILD_PATH)/libabcdk.en_US.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(CURDIR)/src/lib/ $(BUILD_PATH)/libabcdk.en_US.pot
 	echo "'$(BUILD_PATH)/libabcdk.en_US.pot' Update completed."
 
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-tool:
 	cp -f $(CURDIR)/share/locale/en_US/gettext/abcdk-tool.pot $(BUILD_PATH)/abcdk-tool.en_US.pot
-	${SHELL_TOOLS_HOME}/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(CURDIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.en_US.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(CURDIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.en_US.pot
 	echo "'$(BUILD_PATH)/abcdk-tool.en_US.pot' Update completed."
 
 
@@ -121,7 +123,3 @@ clean-test:
 clean-xgettext:
 	rm -rf $(BUILD_PATH)/libabcdk.en_US.pot
 	rm -rf $(BUILD_PATH)/abcdk-tool.en_US.pot
-
-#伪目标，告诉make这些都是标志，而不是实体目录。
-#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test 

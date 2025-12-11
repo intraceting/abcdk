@@ -6,7 +6,7 @@
 */
 #include "abcdk/json/util.h"
 
-#ifdef HAVE_JSON_C
+#ifdef HAVE_JSONC
 
 void _abcdk_json_format(FILE *fp,int better,size_t depth,json_object *obj)
 {
@@ -97,14 +97,14 @@ void _abcdk_json_format(FILE *fp,int better,size_t depth,json_object *obj)
 
 }
 
-#endif //#ifdef HAVE_JSON_C
+#endif //#ifdef HAVE_JSONC
 
 int abcdk_json_format_from_string(const char *str, size_t depth, int readable, FILE *out)
 {
-#ifndef HAVE_JSON_C
+#ifndef HAVE_JSONC
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含JSON-C工具。"));
     return -1;
-#else //#ifndef HAVE_JSON_C
+#else //#ifndef HAVE_JSONC
     assert(str && out);
 
     json_object *ctx = json_tokener_parse(str);
@@ -115,15 +115,15 @@ int abcdk_json_format_from_string(const char *str, size_t depth, int readable, F
     json_object_put(ctx);
 
     return 0;
-#endif //#ifndef HAVE_JSON_C
+#endif //#ifndef HAVE_JSONC
 }
 
 int abcdk_json_format_from_file(const char *file, size_t depth, int readable, FILE *out)
 {
-#ifndef HAVE_JSON_C
+#ifndef HAVE_JSONC
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含JSON-C工具。"));
     return -1;
-#else //#ifndef HAVE_JSON_C
+#else //#ifndef HAVE_JSONC
     assert(file && out);
 
     json_object *ctx = json_object_from_file(file);
@@ -134,5 +134,5 @@ int abcdk_json_format_from_file(const char *file, size_t depth, int readable, FI
     json_object_put(ctx);
 
     return 0;
-#endif //#ifndef HAVE_JSON_C
+#endif //#ifndef HAVE_JSONC
 }

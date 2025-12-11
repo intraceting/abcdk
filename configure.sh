@@ -9,21 +9,21 @@
 SHELLDIR=$(cd `dirname "$0"`; pwd)
 
 #
-SHELLKITS_HOME_CHECK_LISTS[0]="${SHELLKITS_HOME}"
-SHELLKITS_HOME_CHECK_LISTS[1]="${SHELLDIR}/../SHellKits"
-SHELLKITS_HOME_CHECK_LISTS[2]="${SHELLDIR}/../../SHellKits"
-SHELLKITS_HOME_CHECK_LISTS[3]="${SHELLDIR}/../../../SHellKits"
-SHELLKITS_HOME_CHECK_LISTS[4]="${SHELLDIR}/../../../../SHellKits"
-SHELLKITS_HOME_CHECK_LISTS[5]="${SHELLDIR}/../../../../../SHellKits"
+SHELLKITS_HOME_CHECK_LIST+=("${SHELLKITS_HOME}")
+SHELLKITS_HOME_CHECK_LIST+=("${SHELLDIR}/../SHellKits")
+SHELLKITS_HOME_CHECK_LIST+=("${SHELLDIR}/../../SHellKits")
+SHELLKITS_HOME_CHECK_LIST+=("${SHELLDIR}/../../../SHellKits")
+SHELLKITS_HOME_CHECK_LIST+=("${SHELLDIR}/../../../../SHellKits")
+SHELLKITS_HOME_CHECK_LIST+=("${SHELLDIR}/../../../../../SHellKits")
 
 #clear.
 SHELLKITS_HOME=""
 
 #
-for CHECK_ONE in "${SHELLKITS_HOME_CHECK_LISTS[@]}"; do
+for CHECK_ONE in "${SHELLKITS_HOME_CHECK_LIST[@]}"; do
 {
     if [ "${CHECK_ONE}" != "" ];then
-        CHECK_ONE=$(realpath -s "${CHECK_ONE}")
+        CHECK_ONE=$(realpath -m "${CHECK_ONE}")
     fi
 
     if [ -d "${CHECK_ONE}" ];then
@@ -42,21 +42,37 @@ if [ "${SHELLKITS_HOME}" == "" ] || [ ! -d "${SHELLKITS_HOME}" ];then
     echo "The required toolset can be downloaded from 'https://github.com/intraceting/SHellKits.git'."
     exit 1
 }
-fi 
-
-#导出SHELLKITS_HOME变量给其它子工具集使用。
-export SHELLKITS_HOME
+fi
 
 
-# Functions
-checkReturnCode()
+#
+exit_if_error()
+#errno
+#errstr
+#exitcode
 {
-    rc=$?
-    if [ $rc != 0 ];then
-        exit $rc
+    if [ $# -ne 3 ];then
+    {
+        echo "Requires three parameters: errno, errstr, exitcode."
+        exit 1
+    }
+    fi 
+    
+    if [ $1 -ne 0 ];then
+    {
+        echo $2
+        exit $3
+    }
     fi
 }
 
+#必须在项目之外运行此脚本.
+if [ "${SHELLDIR}" == "${PWD}" ];then
+{
+    exit_if_error 1 "This script must be run outside of the project." 1
+}
+fi
+
 #
-${SHELLKITS_HOME}/solution/aaaaa-configure.sh $@
-exit $?
+${SHELLKITS_HOME}/fast-c-cxx/configure.sh $@
+exit_if_error $? "Configuration failed." $?

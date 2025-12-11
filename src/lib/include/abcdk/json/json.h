@@ -9,8 +9,8 @@
 
 #include "abcdk/util/general.h"
 
-#ifdef HAVE_JSON_C
+#ifdef HAVE_JSONC
 #include <json-c/json.h>
-#endif //HAVE_JSON_C
+#endif //HAVE_JSONC
 
 #endif //ABCDK_JSON_JSON_H
