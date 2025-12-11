@@ -9,9 +9,9 @@
 
 #include "abcdk/util/general.h"
 
-#ifdef HAVE_REDIS
+#ifdef HAVE_HIREDIS
 #include <hiredis/hiredis.h>
-#endif //HAVE_REDIS
+#endif //HAVE_HIREDIS
 
 #ifndef __HIREDIS_H
 typedef struct redisReply redisReply;

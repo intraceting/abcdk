@@ -8,10 +8,10 @@
 
 void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)
 {
-#ifndef HAVE_REDIS
+#ifndef HAVE_HIREDIS
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
     return ;
-#else //#ifndef HAVE_REDIS
+#else //#ifndef HAVE_HIREDIS
     static char *str_type[]={"","STRING","ARRAY","INTEGER","NIL","STATUS","ERROR"};
 
     assert(fp != NULL && reply != NULL);
@@ -34,15 +34,15 @@ void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)
             abcdk_redis_reply_dump(fp, reply->element[i]);
         }
     }
-#endif //#ifndef HAVE_REDIS
+#endif //#ifndef HAVE_HIREDIS
 }
 
 void abcdk_redis_disconnect(redisContext **ctx)
 {
-#ifndef HAVE_REDIS
+#ifndef HAVE_HIREDIS
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
     return ;
-#else //#ifndef HAVE_REDIS
+#else //#ifndef HAVE_HIREDIS
     redisContext *ctx_p = NULL;
 
     if(!ctx || !*ctx)
@@ -52,15 +52,15 @@ void abcdk_redis_disconnect(redisContext **ctx)
     *ctx = NULL;
 
     redisFree(ctx_p);
-#endif //#ifndef HAVE_REDIS
+#endif //#ifndef HAVE_HIREDIS
 }
 
 redisContext *abcdk_redis_connect(const char *server, uint16_t port, time_t timeout)
 {
-#ifndef HAVE_REDIS
+#ifndef HAVE_HIREDIS
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
     return NULL;
-#else //#ifndef HAVE_REDIS
+#else //#ifndef HAVE_HIREDIS
     struct timeval tv;
 
     assert(server != NULL && port > 0 && port < 65536 && timeout > 0);
@@ -69,15 +69,15 @@ redisContext *abcdk_redis_connect(const char *server, uint16_t port, time_t time
     tv.tv_usec = (timeout % 1000) * 1000;
 
     return redisConnectWithTimeout(server, port, tv);
-#endif //#ifndef HAVE_REDIS
+#endif //#ifndef HAVE_HIREDIS
 }
 
 int abcdk_redis_auth(redisContext *ctx, const char *auth)
 {
-#ifndef HAVE_REDIS
+#ifndef HAVE_HIREDIS
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
     return -1;
-#else //#ifndef HAVE_REDIS
+#else //#ifndef HAVE_HIREDIS
     redisReply *reply = NULL;
 
     assert(ctx != NULL && auth != NULL);
@@ -92,15 +92,15 @@ int abcdk_redis_auth(redisContext *ctx, const char *auth)
         freeReplyObject(reply);
 
     return 0;
-#endif //#ifndef HAVE_REDIS
+#endif //#ifndef HAVE_HIREDIS
 }
 
 int abcdk_redis_set_auth(redisContext *ctx,const char *auth)
 {
-#ifndef HAVE_REDIS
+#ifndef HAVE_HIREDIS
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
     return -1;
-#else //#ifndef HAVE_REDIS
+#else //#ifndef HAVE_HIREDIS
     redisReply *reply = NULL;
 
     assert(ctx != NULL && auth != NULL);
@@ -115,15 +115,15 @@ int abcdk_redis_set_auth(redisContext *ctx,const char *auth)
         freeReplyObject(reply);
 
     return 0;
-#endif //#ifndef HAVE_REDIS
+#endif //#ifndef HAVE_HIREDIS
 }
 
 int abcdk_redis_get_auth(redisContext *ctx,char auth[128])
 {
-#ifndef HAVE_REDIS
+#ifndef HAVE_HIREDIS
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
     return -1;
-#else //#ifndef HAVE_REDIS
+#else //#ifndef HAVE_HIREDIS
     redisReply *reply = NULL;
 
     assert(ctx != NULL && auth != NULL);
@@ -140,5 +140,5 @@ int abcdk_redis_get_auth(redisContext *ctx,char auth[128])
         freeReplyObject(reply);
 
     return 0;
-#endif //#ifndef HAVE_REDIS
+#endif //#ifndef HAVE_HIREDIS
 }
