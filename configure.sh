@@ -66,13 +66,8 @@ exit_if_error()
     fi
 }
 
-#必须在项目之外运行此脚本.
-if [ "${SHELLDIR}" == "${PWD}" ];then
-{
-    exit_if_error 1 "This script must be run outside of the project." 1
-}
-fi
-
 #
 ${SHELLKITS_HOME}/fast-c-cxx/configure.sh $@
 exit_if_error $? "Configuration failed." $?
+
+

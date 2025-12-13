@@ -4,10 +4,12 @@
 # Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
 #
 #
-#
-CONF_FILE ?= $(CURDIR)/build/makefile.conf
+MAKEFILE_DIR := $(dir $(shell realpath "$(lastword $(MAKEFILE_LIST))"))
 
-# 加载配置项。
+#
+CONF_FILE ?= $(MAKEFILE_DIR)/build/makefile.conf
+
+#加载配置项.
 include ${CONF_FILE}
 
 #
@@ -97,10 +99,10 @@ endif
 
 
 #
-C_FLAGS += -I$(CURDIR)/src/lib/include/ 
+C_FLAGS += -I$(MAKEFILE_DIR)/src/lib/include/ 
 C_FLAGS += ${EXTRA_C_FLAGS}
 #
-CXX_FLAGS += -I$(CURDIR)/src/lib/include/ 
+CXX_FLAGS += -I$(MAKEFILE_DIR)/src/lib/include/ 
 CXX_FLAGS += ${EXTRA_C_FLAGS} ${EXTRA_CXX_FLAGS}
 
 #C++编译选项绑定到CUDA编译选项.
@@ -133,7 +135,7 @@ all: build
 
 #加载子项目.
 #顺序不能更换.
-include $(CURDIR)/makefile.build.mk
+include $(MAKEFILE_DIR)/makefile.build.mk
 
 #
 build: lib tool test xgettext
@@ -144,7 +146,7 @@ clean: clean-lib clean-tool clean-test clean-xgettext
 
 #加载子项目.
 #顺序不能更换.
-include $(CURDIR)/makefile.setup.mk
+include $(MAKEFILE_DIR)/makefile.setup.mk
 
 #
 install: install-lib install-dev install-tool
