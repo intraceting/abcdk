@@ -14,32 +14,32 @@
 __BEGIN_DECLS
 
 /**
- * 挂载信息。
+ * 挂载信息.
  */
 typedef struct _abcdk_mtab_info
 {
-    /** 文件系统(分区或设备)。*/
+    /** 文件系统(分区或设备).*/
     const char *fs;
 
-    /** 挂载点。*/
+    /** 挂载点.*/
     const char *mpoint;
 
-    /** 类型。*/
+    /** 类型.*/
     const char *type;
 
-    /** 选项。*/
+    /** 选项.*/
     const char *options;
 
-    /** dump。*/
+    /** dump.*/
     const char *dump;
 
-    /** pass。*/
+    /** pass.*/
     const char *pass;
 } abcdk_mtab_info_t;
 
 
 /**
- * 枚举挂载信息。
+ * 枚举挂载信息.
 */
 void abcdk_mtab_list(abcdk_tree_t *list);
 

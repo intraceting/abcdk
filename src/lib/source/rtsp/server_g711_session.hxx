@@ -77,11 +77,11 @@ namespace abcdk
             virtual RTPSink *createNewRTPSink(Groupsock *rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource *inputSource)
             {
                 /*
-                G.711 标准 RTP payload 是 固定 8000 Hz / 1 channel，标准 Payload Type 是：
+                G.711 标准 RTP payload 是 固定 8000 Hz / 1 channel, 标准 Payload Type 是: 
                     0: PCMU (μ-law)
                     8: PCMA (A-law)
 
-                如果非要用 48kHz/双声道 + G.711，那必须用 动态负载类型（如 97）+ SDP 明确声明，且接收方要能处理。
+                如果非要用 48kHz/双声道 + G.711, 那必须用 动态负载类型(如 97)+ SDP 明确声明, 且接收方要能处理.
                 */
 
                 if (codec_id() == ABCDK_RTSP_CODEC_G711A)

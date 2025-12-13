@@ -23,27 +23,27 @@ void _abcdk_bc_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\tbasecode编解码工具。\n");
+    fprintf(stderr, "\n\tbasecode编解码工具.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--decode\n");
-    fprintf(stderr, "\t\t解码。如果未指定，则启用编码。\n");
+    fprintf(stderr, "\t\t解码.如果未指定, 则启用编码.\n");
 
     fprintf(stderr, "\n\t--base < CODE >\n");
-    fprintf(stderr, "\t\t基值（32|64）。默认：64\n");
+    fprintf(stderr, "\t\t基值(32|64).默认: 64\n");
 
     fprintf(stderr, "\n\t--in < FILE | STRING >\n");
-    fprintf(stderr, "\t\t输入的文件或字符串。\n");
+    fprintf(stderr, "\t\t输入的文件或字符串.\n");
 
     fprintf(stderr, "\n\t--out < FILE >\n");
-    fprintf(stderr, "\t\t输出的文件。默认: 终端\n");
+    fprintf(stderr, "\t\t输出的文件.默认: 终端\n");
 
     fprintf(stderr, "\n\t--no-ambiguity\n");
-    fprintf(stderr, "\t\t不使用有歧义的字符。注：仅base32有效\n");
+    fprintf(stderr, "\t\t不使用有歧义的字符.注: 仅base32有效\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -84,13 +84,13 @@ void _abcdk_bc_work(abcdk_bc_t *ctx)
 
     if (ctx->base != 32 && ctx->base != 64)
     {
-        fprintf(stderr, "仅支持base32或base64。\n");
+        fprintf(stderr, "仅支持base32或base64.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (strlen(ctx->in) <= 0)
     {
-        fprintf(stderr, "'--in < FILE | STRING >' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--in < FILE | STRING >' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
     else if (access(ctx->in, R_OK) == 0)
@@ -98,7 +98,7 @@ void _abcdk_bc_work(abcdk_bc_t *ctx)
         inbuf = abcdk_mmap_filename(ctx->in,0, 0, 0,0);
         if (!inbuf)
         {
-            fprintf(stderr, "'%s' %s。\n", ctx->in, strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", ctx->in, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -107,7 +107,7 @@ void _abcdk_bc_work(abcdk_bc_t *ctx)
         inbuf = abcdk_object_alloc2(0);
         if (!inbuf)
         {
-            fprintf(stderr, "%s。\n", strerror(errno));
+            fprintf(stderr, "%s.\n", strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
 
@@ -118,7 +118,7 @@ void _abcdk_bc_work(abcdk_bc_t *ctx)
     outbuf = abcdk_object_alloc2(inbuf->sizes[0] * 4);
     if (!outbuf)
     {
-        fprintf(stderr, "%s。\n", strerror(errno));
+        fprintf(stderr, "%s.\n", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -147,7 +147,7 @@ void _abcdk_bc_work(abcdk_bc_t *ctx)
 
     if(outsize2 != outsize)
     {
-        fprintf(stderr, "空间不足或无法格式化输出。\n");
+        fprintf(stderr, "空间不足或无法格式化输出.\n");
         ctx->errcode = ENOSPC;
     }
 

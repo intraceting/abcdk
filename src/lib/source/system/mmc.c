@@ -90,16 +90,16 @@ int _abcdk_mmc_get_devname(const char *path,const char *type, char devname[NAME_
         if (chk != 0)
             break;
 
-        /*暂存设备名字。*/
+        /*暂存设备名字.*/
         memset(devname, 0, NAME_MAX);
         abcdk_dirdir(devname, "/dev/");
         abcdk_basename(devname + strlen(devname), buf);
 
-        /*检查/dev/下是否存在。*/
+        /*检查/dev/下是否存在.*/
         if (access(devname, F_OK) != 0)
             continue;
 
-        /*存在则跳出。*/
+        /*存在则跳出.*/
         break;
     }
 
@@ -155,7 +155,7 @@ void abcdk_mmc_fetch(abcdk_tree_t *list)
     if (chk != 0)
         goto final;
 
-    /*遍历目录。*/
+    /*遍历目录.*/
     while (1)
     {
         memset(path, 0, PATH_MAX);
@@ -163,11 +163,11 @@ void abcdk_mmc_fetch(abcdk_tree_t *list)
         if (chk != 0)
             break;
 
-        /*获取设备类型(可能会失败)。*/
+        /*获取设备类型(可能会失败).*/
         memset(type, 0, NAME_MAX);
         chk = _abcdk_mmc_get_type(path,type);
 
-        /*跳过无法获取类型的设备。*/
+        /*跳过无法获取类型的设备.*/
         if (chk != 0)
             continue;
 
@@ -178,9 +178,9 @@ void abcdk_mmc_fetch(abcdk_tree_t *list)
         dev_p = (abcdk_mmc_info_t*)dev->obj->pptrs[0];
         abcdk_tree_insert2(list,dev,0);
         
-        /*从路径中分离bus并保存。*/
+        /*从路径中分离bus并保存.*/
         abcdk_basename(dev_p->bus,path);
-        /*提取其它字段并保存。*/
+        /*提取其它字段并保存.*/
         abcdk_mmc_get_info(path,dev_p);
         
     }
@@ -210,7 +210,7 @@ int _abcdk_mmc_find(abcdk_tree_t *list, abcdk_tree_t *node)
     abcdk_tree_t *p;
     abcdk_mmc_info_t *dev_p, *dev_q;
 
-    /*链表为空，直接返回“未找到”。*/
+    /*链表为空, 直接返回“未找到”.*/
     if (!list)
         return 0;
 
@@ -247,8 +247,8 @@ void _abcdk_mmc_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t 
     diff_p = *diff;
 
     /*
-     * add == 1 : 从旧的中查找新的。
-     * del == 0 ; 从新的中查找旧的。
+     * add == 1 : 从旧的中查找新的.
+     * del == 0 ; 从新的中查找旧的.
     */
    
     p = abcdk_tree_child((add ? new_list : old_list), 1);
@@ -256,7 +256,7 @@ void _abcdk_mmc_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t 
     {
         if (!_abcdk_mmc_find((add ? old_list : new_list), p))
         {
-            tmp = abcdk_tree_alloc(abcdk_object_refer(p->obj));//增加引用计数。
+            tmp = abcdk_tree_alloc(abcdk_object_refer(p->obj));//增加引用计数.
             if (!tmp)
                 return;
 
@@ -266,7 +266,7 @@ void _abcdk_mmc_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t 
         p = abcdk_tree_sibling(p, 0);
     }
 
-    /*如果未发生变化，删除差异链表。*/
+    /*如果未发生变化, 删除差异链表.*/
     if(!abcdk_tree_child(diff_p,1))
         abcdk_tree_free(diff);
 
@@ -285,16 +285,16 @@ void _abcdk_mmc_check_ok(abcdk_tree_t *list)
 
         if (dev_p->devname[0] == '\0')
         {
-            /*下一个节点。*/
+            /*下一个节点.*/
             p = abcdk_tree_sibling(tmp = p, 0);
 
-            /*删除不完成的节点。*/
+            /*删除不完成的节点.*/
             abcdk_tree_unlink(tmp);
             abcdk_tree_free(&tmp);
         }
         else 
         {
-            /*下一个节点。*/
+            /*下一个节点.*/
             p = abcdk_tree_sibling(p, 0);
         }
     }

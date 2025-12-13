@@ -6,48 +6,48 @@
  */
 #include "abcdk/util/logger.h"
 
-/** 日志接口。*/
+/** 日志接口.*/
 struct _abcdk_logger
 {
-    /** 文件锁。*/
+    /** 文件锁.*/
     abcdk_mutex_t *locker;
 
-    /**PID。 */
+    /**PID. */
     pid_t pid;
 
-    /** 文件句柄。*/
+    /** 文件句柄.*/
     int fd;
 
-    /** 文件名(包括路径)。*/
+    /** 文件名(包括路径).*/
     char name[PATH_MAX];
 
-    /** 分段文件名(包括路径)。*/
+    /** 分段文件名(包括路径).*/
     char segment_name[PATH_MAX];
 
-    /** 分段数量。*/
+    /** 分段数量.*/
     size_t segment_max;
     
-    /** 分段大小(MB)。*/
+    /** 分段大小(MB).*/
     size_t segment_size;
 
     /** 
-     * 复制到stderr。
-     * 是：!0
-     * 否： 0
+     * 复制到stderr.
+     * 是: !0
+     * 否:  0
     */
     int copy2stderr;
 
     /** 
-     * 复制到syslog。
-     * 是：!0
-     * 否： 0
+     * 复制到syslog.
+     * 是: !0
+     * 否:  0
     */
     int copy2syslog;
 
     /** 
-     * 掩码。
+     * 掩码.
      * 
-     * 见syslog。
+     * 见syslog.
     */
     volatile uint32_t mask;
 
@@ -87,10 +87,10 @@ abcdk_logger_t *abcdk_logger_open(const char *name,const char *segment_name,size
     ctx->mask = 0xFFFFFFFF;
     ctx->locker = abcdk_mutex_create();
 
-    /*复制文件名。*/
+    /*复制文件名.*/
     strncpy(ctx->name, name, PATH_MAX);
 
-    /*复制或构造分段文件名。*/
+    /*复制或构造分段文件名.*/
     if (segment_name)
     {
         if (segment_name[0] == '/')
@@ -115,7 +115,7 @@ abcdk_logger_t *abcdk_logger_open2(const char *path,const char *name, const char
     return abcdk_logger_open(pathfile,segment_name,segment_max,segment_size,copy2syslog,copy2stderr);
 }
 
-/** 检查日志类型。*/
+/** 检查日志类型.*/
 #define ABCDK_LOGGER_TYPE_CHECK(t) ((t) >= ABCDK_LOGGER_TYPE_ERROR && (t) < ABCDK_LOGGER_TYPE_MAX)
 
 void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
@@ -133,12 +133,12 @@ void abcdk_logger_mask(abcdk_logger_t *ctx, int type, ...)
 
         mask |= (1 << type);
 
-        /*遍历后续的。*/
+        /*遍历后续的.*/
         type = va_arg(vaptr, int);
     }
     va_end(vaptr);
 
-    /*覆盖现有的。*/
+    /*覆盖现有的.*/
     abcdk_atomic_store(&ctx->mask, mask);
 }
 
@@ -150,13 +150,13 @@ static int _abcdk_logger_segment(const char *src, const char *dst, int max)
 
     assert(src != NULL && dst != NULL && max > 0);
 
-    /*依次修改分段文件编号。*/
+    /*依次修改分段文件编号.*/
     for (int i = max; i > 0; i--)
     {
-        /*编号较大的分段文件。*/
+        /*编号较大的分段文件.*/
         snprintf(tmp2, PATH_MAX, dst, i);
 
-        /*删除编号最大的分段文件。*/
+        /*删除编号最大的分段文件.*/
         if (i == max)
         {
             if (access(tmp2, F_OK) == 0)
@@ -167,13 +167,13 @@ static int _abcdk_logger_segment(const char *src, const char *dst, int max)
             }
         }
 
-        /*编号较小的分段文件。*/
+        /*编号较小的分段文件.*/
         if (i > 1)
             snprintf(tmp, PATH_MAX, dst, i - 1);
         else
             strncpy(tmp, src, PATH_MAX);
 
-        /*跳过不存在的分段文件。*/
+        /*跳过不存在的分段文件.*/
         if (access(tmp, F_OK) != 0)
             continue;
 
@@ -223,20 +223,20 @@ open_log_file:
     }
     else
     {
-        /*加锁。*/
+        /*加锁.*/
         flock(ctx->fd,LOCK_EX);
 
-        /*在末尾追加。*/
+        /*在末尾追加.*/
         lseek(ctx->fd, 0, SEEK_END);
 
-        /*写，内部会保正写完。如果写不完，就是出错或没空间了。*/
+        /*写, 内部会保正写完.如果写不完, 就是出错或没空间了.*/
         abcdk_write(ctx->fd, str, strlen(str));
 
-        /*解锁。*/
+        /*解锁.*/
         flock(ctx->fd,LOCK_UN);
 
 #if 0
-        /*落盘，非常慢。*/
+        /*落盘, 非常慢.*/
         fsync(ctx->fd);
 #endif
     }
@@ -246,18 +246,18 @@ static void _abcdk_logger_dump(void *opaque,int type, const char* str)
 {
     abcdk_logger_t *ctx = (abcdk_logger_t *)opaque;
 
-    /*如果不需要记录，直接跳过。*/
+    /*如果不需要记录, 直接跳过.*/
     if (!(abcdk_atomic_load(&ctx->mask) & (1 << type)))
         return;
 
-    /*记录到文件。*/
+    /*记录到文件.*/
     _abcdk_logger_dump2file(ctx, str);
 
-    /*可能需要复制到stderr。*/
+    /*可能需要复制到stderr.*/
     if (ctx->copy2stderr)
         fprintf(stderr, "%s", str);
 
-    /*可能需要复制到syslog。*/
+    /*可能需要复制到syslog.*/
     if (ctx->copy2syslog)
         syslog(type, "%s", str);
 }
@@ -266,13 +266,13 @@ void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str)
 {
     assert(ctx != NULL && str != NULL);
 
-    /*加锁，确保每个线程写操作不被打断。*/
+    /*加锁, 确保每个线程写操作不被打断.*/
     abcdk_mutex_lock(ctx->locker, 1);
 
-    /*输出。*/
+    /*输出.*/
     abcdk_trace_output(type,str,_abcdk_logger_dump,ctx);
     
-    /*解锁，给其它线程写入的机会。*/
+    /*解锁, 给其它线程写入的机会.*/
     abcdk_mutex_unlock(ctx->locker);
 }
 

@@ -6,19 +6,19 @@
  */
 #include "abcdk/util/queue.h"
 
-/** 简单的队列。*/
+/** 简单的队列.*/
 struct _abcdk_queue
 {
-    /**同步锁。*/
+    /**同步锁.*/
     abcdk_mutex_t *locker;
 
-    /**队列。*/
+    /**队列.*/
     abcdk_tree_t *qlist;
 
-    /**计数器。*/
+    /**计数器.*/
     uint64_t count;
 
-    /** 消息销毁回调函数。*/
+    /** 消息销毁回调函数.*/
     abcdk_queue_msg_destroy_cb msg_destroy_cb;
 
 };// abcdk_queue_t;
@@ -104,14 +104,14 @@ void _abcdk_queue_destroy_cb(abcdk_object_t *alloc, void *opaque)
 
     queue_p = (abcdk_queue_t *)opaque;
 
-    /*复制数据，解除绑定关系。*/
+    /*复制数据, 解除绑定关系.*/
     msg_p = (void*)alloc->pptrs[0];
     alloc->pptrs[0] = NULL;
 
     if(!msg_p)
         return;
 
-    ABCDK_TRACE_ASSERT(queue_p->msg_destroy_cb,ABCDK_GETTEXT("未注册销毁函数，消息对象无法销毁。"));
+    ABCDK_TRACE_ASSERT(queue_p->msg_destroy_cb,ABCDK_GETTEXT("未注册销毁函数, 消息对象无法销毁."));
     queue_p->msg_destroy_cb(msg_p);
 }
 
@@ -125,10 +125,10 @@ int abcdk_queue_push(abcdk_queue_t *ctx, void *msg)
     if (!msg_node)
         return -1;
 
-    /*注册消息对象释放函数。*/
+    /*注册消息对象释放函数.*/
     abcdk_object_atfree(msg_node->obj, _abcdk_queue_destroy_cb, ctx);
 
-    /*绑定到节点，添加到队列末尾。*/
+    /*绑定到节点, 添加到队列末尾.*/
     msg_node->obj->pptrs[0] = (uint8_t *)msg;
     abcdk_tree_insert2(ctx->qlist, msg_node, 0);
 
@@ -150,14 +150,14 @@ void *abcdk_queue_pop(abcdk_queue_t *ctx)
     if (!msg_node)
         return NULL;
 
-    /*断开节点。*/
+    /*断开节点.*/
     abcdk_tree_unlink(msg_node);
 
-    /*复制消息对象指针，解除绑定关系。*/
+    /*复制消息对象指针, 解除绑定关系.*/
     msg_p = (void *)msg_node->obj->pptrs[0];
     msg_node->obj->pptrs[0] = NULL;
 
-    /*删除节点。*/
+    /*删除节点.*/
     abcdk_tree_free(&msg_node);
 
     /*-1.*/

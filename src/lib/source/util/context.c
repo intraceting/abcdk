@@ -6,23 +6,23 @@
  */
 #include "abcdk/util/context.h"
 
-/**简单的上下文环境。 */
+/**简单的上下文环境. */
 struct _abcdk_context 
 {
-    /** 魔法数。*/
+    /** 魔法数.*/
     uint32_t magic;
 #define ABCDK_CONTEXT_MAGIC 123456789
 
-    /** 引用计数器。*/
+    /** 引用计数器.*/
     volatile int refcount;
 
-     /**同步锁。*/
+     /**同步锁.*/
     abcdk_rwlock_t *locker_ctx;
 
-    /** 用户环境指针。*/
+    /** 用户环境指针.*/
     abcdk_object_t *userdata;
 
-    /** 用户环境销毁函数。*/
+    /** 用户环境销毁函数.*/
     void (*userdata_free_cb)(void *userdata);
  
 };//abcdk_context_t

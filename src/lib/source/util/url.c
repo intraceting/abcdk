@@ -52,7 +52,7 @@ abcdk_object_t *abcdk_url_split(const char *url)
         p_next += 3;
     }
 
-    /*查找HOST:PORT。*/
+    /*查找HOST:PORT.*/
     p = abcdk_strtok(&p_next, "/");
     if (!p)
         goto final;
@@ -71,12 +71,12 @@ abcdk_object_t *abcdk_url_split(const char *url)
         if (*p_next == '@')
             p_next += 1;
 
-        /*查找HOST:PORT。*/
+        /*查找HOST:PORT.*/
         p = abcdk_strtok(&p_next, "/");
         if (!p)
             goto final;
 
-        /*拆分用户名和密码。*/
+        /*拆分用户名和密码.*/
         
         p2_next = obj->pstrs[ABCDK_URL_AUTH];
         p2 = abcdk_strtok(&p2_next, ":");
@@ -106,7 +106,7 @@ host_split:
     }
     else
     {
-        /*可能域名后面直接跟锚点。*/
+        /*可能域名后面直接跟锚点.*/
         p_next = p;
         p = abcdk_strtok(&p_next, "#");
         if (!p)
@@ -127,7 +127,7 @@ path_split:
 
     p_next = obj->pstrs[ABCDK_URL_SCRIPT];
 
-    /*可能没有参数，这里要判断一下。*/
+    /*可能没有参数, 这里要判断一下.*/
     p2 = abcdk_strstr(p_next, "?", 0);
     if (p2)
     {
@@ -238,7 +238,7 @@ ssize_t abcdk_url_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
         }
         else
         {
-            /*不能超过密文可用空间。*/
+            /*不能超过密文可用空间.*/
             if (d + 3 > *dlen)
                 break;
 
@@ -247,7 +247,7 @@ ssize_t abcdk_url_encode(const char *src, size_t slen, char *dst, size_t *dlen, 
         }
     }
 
-    /*更新密文长度。*/
+    /*更新密文长度.*/
     *dlen = d;
 
     return (slen - s);
@@ -302,7 +302,7 @@ ssize_t abcdk_url_decode(const char *src,size_t slen,char *dst,size_t *dlen,int 
         }
     }
 
-    /*更新明文长度。*/
+    /*更新明文长度.*/
     *dlen = d;
 
     return (slen - s);

@@ -12,19 +12,19 @@
 __BEGIN_DECLS
 
 /**
- * 下载文件。
+ * 下载文件.
  * 
- * @param [in] offset 偏移量。0 无效。
- * @param [in] count 长度。0 无效。
- * @param [in] ctimeout 连接超时。
- * @param [in] stimeout 读写超时。
+ * @param [in] offset 偏移量.0 无效.
+ * @param [in] count 长度.0 无效.
+ * @param [in] ctimeout 连接超时.
+ * @param [in] stimeout 读写超时.
  * 
- * @return 0 成功，-1 失败(超时、不支持)。
+ * @return 0 成功, -1 失败(超时、不支持).
 */
 int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
 
 /**
- * 下载文件。
+ * 下载文件.
 */
 int abcdk_curl_download_filename(const char *file,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
 

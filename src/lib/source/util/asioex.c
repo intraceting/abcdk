@@ -6,19 +6,19 @@
  */
 #include "abcdk/util/asioex.h"
 
-/**异步IO对象扩展。*/
+/**异步IO对象扩展.*/
 struct _abcdk_asioex
 {
-    /**数组。 */
+    /**数组. */
     abcdk_asio_t **group_ctx;
     
-    /**最大数量。*/
+    /**最大数量.*/
     int total_max;
 
-    /**分组数量。*/
+    /**分组数量.*/
     int group_size;
 
-    /**分配游标。 */
+    /**分配游标. */
     int disp_pos;
 
 };//abcdk_asioex_t

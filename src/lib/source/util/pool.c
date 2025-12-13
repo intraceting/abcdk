@@ -7,35 +7,35 @@
 #include "abcdk/util/pool.h"
 
 /**
- * 一个简单的池子。
+ * 一个简单的池子.
 */
 struct _abcdk_pool
 {
     /**
-     * 池子。
+     * 池子.
      * 
-     * @note 尽量不要直接修改。
+     * @note 尽量不要直接修改.
     */
     abcdk_object_t *table;
 
     /**
-     * 队列长度。
+     * 队列长度.
      * 
-     * @note 尽量不要直接修改。
+     * @note 尽量不要直接修改.
     */
     size_t count;
 
     /**
-     * 拉取游标。
+     * 拉取游标.
      * 
-     * @note 尽量不要直接修改。
+     * @note 尽量不要直接修改.
     */
     size_t pull_pos;
 
     /**
-     * 推送游标。
+     * 推送游标.
      * 
-     * @note 尽量不要直接修改。
+     * @note 尽量不要直接修改.
     */
     size_t push_pos;
 
@@ -97,16 +97,16 @@ int abcdk_pool_pull(abcdk_pool_t *ctx, void *buf)
 {
     assert(ctx != NULL && buf != NULL);
 
-    /*池不能是空的。*/
+    /*池不能是空的.*/
     if (ctx->count > 0)
     {
-        /*按游标位置从池子中读取数据。*/
+        /*按游标位置从池子中读取数据.*/
         memcpy(buf, ctx->table->pptrs[ctx->pull_pos], ctx->table->sizes[ctx->pull_pos]);
 
-        /*队列长度减去1。*/
+        /*队列长度减去1.*/
         ctx->count -= 1;
 
-        /*滚动游标。*/
+        /*滚动游标.*/
         ctx->pull_pos = (ctx->pull_pos + 1) % ctx->table->numbers;
 
         return 0;
@@ -119,16 +119,16 @@ int abcdk_pool_push(abcdk_pool_t *ctx, const void *buf)
 {
     assert(ctx != NULL && buf != NULL);
 
-    /*池不能是满的。*/
+    /*池不能是满的.*/
     if (ctx->count < ctx->table->numbers)
     {
-        /*按游标位置向池子中写入数据。*/
+        /*按游标位置向池子中写入数据.*/
         memcpy(ctx->table->pptrs[ctx->push_pos], buf, ctx->table->sizes[ctx->push_pos]);
 
-        /*队列长度加1。*/
+        /*队列长度加1.*/
         ctx->count += 1;
 
-        /*滚动游标。*/
+        /*滚动游标.*/
         ctx->push_pos = (ctx->push_pos + 1) % ctx->table->numbers;
 
         return 0;

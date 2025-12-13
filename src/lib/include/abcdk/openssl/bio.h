@@ -12,16 +12,16 @@
 __BEGIN_DECLS
 
 
-/**销毁。*/
+/**销毁.*/
 void abcdk_openssl_BIO_destroy(BIO **bio);
 
 /**
- * 创建兼容Darknet的BIO环境。
+ * 创建兼容Darknet的BIO环境.
 */
 BIO *abcdk_openssl_BIO_s_Darknet(RSA *rsa_ctx, int use_pubkey);
 
 /**
- * 创建兼容Darknet的BIO环境。
+ * 创建兼容Darknet的BIO环境.
 */
 BIO *abcdk_openssl_BIO_s_Darknet_form_file(const char *rsa_file, int pubkey);
 

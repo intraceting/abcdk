@@ -76,7 +76,7 @@ namespace abcdk
 
             virtual RTPSink *createNewRTPSink(Groupsock *rtpGroupsock, unsigned char rtpPayloadTypeIfDynamic, FramedSource *inputSource)
             {
-                // OPUS使用固定采样率(48000Hz)。
+                // OPUS使用固定采样率(48000Hz).
 
                 return SimpleRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, m_sample_rate, "audio", "OPUS", m_channels, True, False);
             }

@@ -20,8 +20,8 @@ namespace abcdk
             uint8_t *m_data;
             size_t m_size;
 
-            int64_t m_pts; // 显示时间(微秒)。
-            int64_t m_dur; // 播放时长(微秒)。
+            int64_t m_pts; // 显示时间(微秒).
+            int64_t m_dur; // 播放时长(微秒).
 
             abcdk_object_t *m_buf;
         public:
@@ -86,7 +86,7 @@ namespace abcdk
 
             packet &operator=(const packet &src)
             {
-                /*如是自已，则忽略。*/
+                /*如是自已, 则忽略.*/
                 if (this == &src)
                     return *this;
 

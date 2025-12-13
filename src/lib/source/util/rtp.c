@@ -63,23 +63,23 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
      * 
      * AU Header lengths(2Bytes) + AU Header(Nbits) + AU Header(Nbits) + AU Header(Nbits) + Pidding(bits)
      * 
-     * AU Header lengths 不包括自身。
+     * AU Header lengths 不包括自身.
     */
 
-    /*所有AU分包的头部的总长度(bits)。*/
+    /*所有AU分包的头部的总长度(bits).*/
     au_len = abcdk_bloom_read_number(data, size, 0, 16);
 
-    /*单个包头部的长度(bits)。*/
+    /*单个包头部的长度(bits).*/
     au_size = size_bits + index_bits;
 
-    /*仅支持Size Length和Index Length两个可变头部组合。*/
+    /*仅支持Size Length和Index Length两个可变头部组合.*/
     if (au_len <= 0 || au_len % au_size != 0)
         return -2;
 
-    /*最大支持100个封包。*/
+    /*最大支持100个封包.*/
     for (int j = 0, pos = 16; j < 200; j++)
     {
-        /*不能完成表达一个封包头部，表示结束。*/
+        /*不能完成表达一个封包头部, 表示结束.*/
         if (pos + au_size > au_len)
             break;
 
@@ -103,13 +103,13 @@ int abcdk_rtp_aac_revert(const void *data, size_t size, abcdk_queue_t *q, int si
         if (!msg)
             return -1;
 
-        /*模拟接收。*/
+        /*模拟接收.*/
         abcdk_receiver_append(msg,p,flen[j][0],&remain);
 
         chk = abcdk_queue_push(q,msg);
         if (chk != 0)
         {
-            /*加入队列失败，删除消息。*/
+            /*加入队列失败, 删除消息.*/
             abcdk_receiver_unref(&msg);
             return -1;
         }
@@ -133,7 +133,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
     assert(data != NULL && size > 0 && q != NULL);
 
     /*
-     * NAL Header，or FU indicator.
+     * NAL Header, or FU indicator.
      * 
      *  0 1 2 3 4 5 6 7
      * +-+-+-+-+-+-+-+-+
@@ -147,7 +147,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
     if(type >= 1 && type <= 12)
     {
         /* 
-        * 其它，单个NAL包。
+        * 其它, 单个NAL包.
         *
         * NAL Header + data(Nbytes)
         */
@@ -155,13 +155,13 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
         if (!msg)
             return -1;
         
-        /*模拟接收数据。*/
+        /*模拟接收数据.*/
         abcdk_receiver_append(msg,data,size,&remain);
 
         chk = abcdk_queue_push(q,msg);
         if (chk != 0)
         {       
-            /*加入队列失败，删除消息。*/
+            /*加入队列失败, 删除消息.*/
             abcdk_receiver_unref(&msg);
             return -1;
         }
@@ -171,7 +171,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
     else if (type == 24)
     {
         /* 
-        * 24，单时间聚合包(STAP-A)。
+        * 24, 单时间聚合包(STAP-A).
         *
         * NAL Header + len(2byte) + data(Nbytes) + ... + len(2byte) + data(Nbytes)
         */
@@ -181,14 +181,14 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
         
         while (1)
         {
-            /*单个NAL长度，16bits。不包含字段本身。*/
+            /*单个NAL长度, 16bits.不包含字段本身.*/
             len = abcdk_bloom_read_number(p, size2, 0, 16);
 
             /*
-            * 递归解包。
+            * 递归解包.
             * 
-            * 因为RTP设计不支嵌套，这里递归解包是可行的。
-            * 但是如果遇到伪造的嵌套数据包，递归深度过高很可能造成异常。
+            * 因为RTP设计不支嵌套, 这里递归解包是可行的.
+            * 但是如果遇到伪造的嵌套数据包, 递归深度过高很可能造成异常.
             */
             chk = abcdk_rtp_h264_revert(ABCDK_PTR2VPTR(p, 2), len, q);
             if (chk != 1)
@@ -198,7 +198,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
             size2 = size2 - (len + 2);
             p = ABCDK_PTR2VPTR(p, len + 2);
 
-            /*没有更多的数据包。*/
+            /*没有更多的数据包.*/
             if (size2 <= 0)
                 return 1;
         }
@@ -206,7 +206,7 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
     else if (type == 28)
     {
         /*
-        * 28，分片单元包(FU-A)。
+        * 28, 分片单元包(FU-A).
         * FU indicator + FU Header + data(Ntypes)
         */
         size2 = size - 1;
@@ -220,8 +220,8 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
          * |S|E|R|  Type   |
          * +---------------+
         */
-        s = abcdk_bloom_read_number(p, size2, 0, 1);// !0 起始包，0 非起始包。
-        e = abcdk_bloom_read_number(p, size2, 1, 1);// !0 结束包，0 非结束包。
+        s = abcdk_bloom_read_number(p, size2, 0, 1);// !0 起始包, 0 非起始包.
+        e = abcdk_bloom_read_number(p, size2, 1, 1);// !0 结束包, 0 非结束包.
         r = abcdk_bloom_read_number(p, size2, 2, 1);
         type2 = abcdk_bloom_read_number(p, size2, 3, 5);
 
@@ -231,18 +231,18 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
             if (!msg)
                 return -1;
 
-            /*模拟接收数据。*/
+            /*模拟接收数据.*/
             abcdk_receiver_append(msg, data, 1, &remain);
             abcdk_receiver_append(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);
 
-            /* 还原NAL Header。分片时，原始头type被放在FU Header中。。*/
+            /* 还原NAL Header.分片时, 原始头type被放在FU Header中..*/
             p = abcdk_receiver_data(msg,0);
             abcdk_bloom_write_number(ABCDK_PTR2U8PTR(p,0), 1, 3, 5, type2);
 
             chk = abcdk_queue_push(q, msg);
             if (chk != 0)
             {
-                /*加入队列失败，删除消息。*/
+                /*加入队列失败, 删除消息.*/
                 abcdk_receiver_unref(&msg);
                 return -1;
             }
@@ -255,13 +255,13 @@ int abcdk_rtp_h264_revert(const void *data, size_t size, abcdk_queue_t *q)
             if (!msg)
                 return -1;
 
-            /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
+            /*拼接数据包.跑过分片包的FU indicator和FU Header.*/
             abcdk_receiver_append(msg, ABCDK_PTR2VPTR(p, 1), size2 - 1, &remain);
 
             chk = abcdk_queue_push(q,msg);
             if (chk != 0)
             {    
-                /*加入队列失败，删除消息。*/
+                /*加入队列失败, 删除消息.*/
                 abcdk_receiver_unref(&msg);
                 return -1;
             }
@@ -290,7 +290,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
     assert(data != NULL && size > 0 && q != NULL);
 
     /*
-     * NAL Header，or FU indicator.
+     * NAL Header, or FU indicator.
      * 
      *  0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
      * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -306,7 +306,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
     if(type >= 1 && type < 48)
     {
         /* 
-        * 其它，单个NAL包。
+        * 其它, 单个NAL包.
         *
         * NAL Header + data(Nbytes)
         */
@@ -314,13 +314,13 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
         if (!msg)
             return -1;
         
-        /*模拟接收数据。*/
+        /*模拟接收数据.*/
         abcdk_receiver_append(msg, data, size, &remain);
 
         chk = abcdk_queue_push(q, msg);
         if (chk != 0)
         {       
-            /*加入队列失败，删除消息。*/
+            /*加入队列失败, 删除消息.*/
             abcdk_receiver_unref(&msg);
             return -1;
         }
@@ -330,7 +330,7 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
     else if(type == 49)
     {
         /*
-        * 49，分片单元包(FU-A)。
+        * 49, 分片单元包(FU-A).
         * FU indicator + FU Header + data(Ntypes)
         */
 
@@ -342,8 +342,8 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
          * |S|E|    Type   |
          * +---------------+
         */
-        s = abcdk_bloom_read_number(ABCDK_PTR2VPTR(data, 2), 1, 0, 1);// !0 起始包，0 非起始包。
-        e = abcdk_bloom_read_number(ABCDK_PTR2VPTR(data, 2), 1, 1, 1);// !0 结束包，0 非结束包。
+        s = abcdk_bloom_read_number(ABCDK_PTR2VPTR(data, 2), 1, 0, 1);// !0 起始包, 0 非起始包.
+        e = abcdk_bloom_read_number(ABCDK_PTR2VPTR(data, 2), 1, 1, 1);// !0 结束包, 0 非结束包.
         type2 = abcdk_bloom_read_number(ABCDK_PTR2VPTR(data, 2), 1, 2, 6);
 
         if (s)
@@ -352,18 +352,18 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             if (!msg)
                 return -1;
 
-            /*模拟接收数据。*/
+            /*模拟接收数据.*/
             abcdk_receiver_append(msg, data, 2, &remain);
             abcdk_receiver_append(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
-            /* 还原NAL Header。分片时，原始头type被放在FU Header中。*/
+            /* 还原NAL Header.分片时, 原始头type被放在FU Header中.*/
             p = abcdk_receiver_data(msg,0);
             abcdk_bloom_write_number(ABCDK_PTR2U8PTR(p,0), 1, 1, 6, type2);
 
             chk = abcdk_queue_push(q,msg);
             if (chk != 0)
             {
-                /*加入队列失败，删除消息。*/
+                /*加入队列失败, 删除消息.*/
                 abcdk_receiver_unref(&msg);
                 return -1;
             }
@@ -376,13 +376,13 @@ int abcdk_rtp_hevc_revert(const void *data, size_t size, abcdk_queue_t *q)
             if (!msg)
                 return -1;
 
-            /*拼接数据包。跑过分片包的FU indicator和FU Header。*/
+            /*拼接数据包.跑过分片包的FU indicator和FU Header.*/
             abcdk_receiver_append(msg, ABCDK_PTR2VPTR(data, 3), size - 3, &remain);
 
             chk = abcdk_queue_push(q,msg);
             if (chk != 0)
             {    
-                /*加入队列失败，删除消息。*/
+                /*加入队列失败, 删除消息.*/
                 abcdk_receiver_unref(&msg);
                 return -1;
             }

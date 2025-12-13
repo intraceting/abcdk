@@ -47,7 +47,7 @@ void abcdk_mkdir(const char *path, mode_t mode)
     if (!tmp)
         ABCDK_ERRNO_AND_RETURN0(ENOMEM);
 
-    /* 必须允许当前用户具有读、写、执行权限。 */
+    /* 必须允许当前用户具有读、写、执行权限. */
     mode |= S_IRWXU;
 
     for (size_t i = 1; i < len; i++)
@@ -115,12 +115,12 @@ char *abcdk_abspath(char *buf, size_t decrease)
     abcdk_tree_t *stack = NULL, *pos = NULL;
     const char *p, *p_next;
 
-    /*准备堆栈。*/
+    /*准备堆栈.*/
     stack = abcdk_tree_alloc3(1);
     if (!stack)
         return NULL;
 
-    /*拆分路径。*/
+    /*拆分路径.*/
     p_next = buf;
 
     while (1)
@@ -129,11 +129,11 @@ char *abcdk_abspath(char *buf, size_t decrease)
         if (!p)
             break;
 
-        /*“.”表示当前目录。*/
+        /*“.”表示当前目录.*/
         if (abcdk_strncmp(p, ".", p_next - p, 1) == 0)
             continue;
 
-        /*“..”表示上一层目录，这里要从堆栈中删除上一层。*/
+        /*“..”表示上一层目录, 这里要从堆栈中删除上一层.*/
         if (abcdk_strncmp(p, "..", p_next - p, 1) == 0)
         {
             pos = abcdk_tree_child(stack, 0);
@@ -154,7 +154,7 @@ char *abcdk_abspath(char *buf, size_t decrease)
         abcdk_tree_insert2(stack, pos, 0);
     }
 
-    /*清空旧路径。*/
+    /*清空旧路径.*/
     for (int i = 0; buf[i]; i++)
     {
         if (i == 0 && buf[i] == '/')
@@ -163,7 +163,7 @@ char *abcdk_abspath(char *buf, size_t decrease)
         buf[i] = 0;
     }
 
-    /*缩减深度。*/
+    /*缩减深度.*/
     for (int i = 0; i < decrease; i++)
     {
         pos = abcdk_tree_child(stack, 0);
@@ -174,7 +174,7 @@ char *abcdk_abspath(char *buf, size_t decrease)
         abcdk_tree_free(&pos);
     }
 
-    /*拼装路径。*/
+    /*拼装路径.*/
     pos = abcdk_tree_child(stack, 1);
     while (pos)
     {

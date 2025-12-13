@@ -14,7 +14,7 @@
 #include <magic.h>
 #endif // HAVE_LIBMAGIC
 
-/**简单的HTTP服务。*/
+/**简单的HTTP服务.*/
 struct _abcdk_https
 {
     /*IO对象*/
@@ -22,66 +22,66 @@ struct _abcdk_https
     
 }; // abcdk_https_t;
 
-/**HTTP节点。*/
+/**HTTP节点.*/
 typedef struct _abcdk_https_node
 {
-    /*父级。*/
+    /*父级.*/
     abcdk_https_t *father;
 
-    /*配置。*/
+    /*配置.*/
     abcdk_https_config_t cfg;
 
-    /*标志。0 监听，1 服务端，2 客户端。*/
+    /*标志.0 监听, 1 服务端, 2 客户端.*/
     int flag;
 
-    /*协议。0：未选择 1：HTTP/1.1/1.0/0.9 2: HTTP/2 3：HTTP/3*/
+    /*协议.0: 未选择 1: HTTP/1.1/1.0/0.9 2: HTTP/2 3: HTTP/3*/
     int protocol;
 
     /*安全方案*/
     int ssl_scheme;
 
-    /*远程地址。*/
+    /*远程地址.*/
     char remote_addr[NAME_MAX];
 
-    /*本机地址。*/
+    /*本机地址.*/
     char local_addr[NAME_MAX];
     
 #ifdef NGHTTP2_H
-    /*H2的回调和句柄。*/
+    /*H2的回调和句柄.*/
     nghttp2_session_callbacks *h2_cbs;
     nghttp2_session *h2_handle;
 #endif // NGHTTP2_H
 
-    /*H2发送状态。*/
+    /*H2发送状态.*/
     int h2_send_busy;
     int64_t h2_send_want;
     int64_t h2_send_active;
 
-    /*流容器。*/
+    /*流容器.*/
     abcdk_map_t *stream_map;
 
 
-    /*用户环境指针。*/
+    /*用户环境指针.*/
     void *userdata;
 
 } abcdk_https_node_t;
 
-/*流。*/
+/*流.*/
 typedef struct _abcdk_https_stream_internal
 {
-    /*流ID。*/
+    /*流ID.*/
     int id;
 
-    /*协议。1：HTTP 4：TUNNEL*/
+    /*协议.1: HTTP 4: TUNNEL*/
     int protocol;
 
     /*时间环境*/
     locale_t loc_ctx;
 
-    /*IO节点。*/
+    /*IO节点.*/
     abcdk_stcp_node_t *io_node;
 
-    /*上行数据。*/
+    /*上行数据.*/
     abcdk_receiver_t *updata;
 
     abcdk_object_t *method;
@@ -90,32 +90,32 @@ typedef struct _abcdk_https_stream_internal
     abcdk_object_t *host;
     abcdk_object_t *scheme;
 
-    /*H2的请求头部是否已经结束。*/
+    /*H2的请求头部是否已经结束.*/
     int h2_req_hdr_end;
 
-    /*H2输出流。*/
+    /*H2输出流.*/
     abcdk_stream_t *h2_out;
 
-    /*应答头。*/
+    /*应答头.*/
     abcdk_option_t *rsp_hdr;
 
-    /*H1应答头。*/
+    /*H1应答头.*/
     abcdk_object_t *h1_rsp_hdrs;
     int h1_rsp_count;
 
-    /*H2应答头。*/
+    /*H2应答头.*/
 #ifdef NGHTTP2_H
     nghttp2_nv h2_rsp_hdrs[100];
     int h2_rsp_count;
 #endif //NGHTTP2_H
 
-    /*应答头是否已发送。*/
+    /*应答头是否已发送.*/
     int rsp_hdr_sent;
     
-    /*应答是否结束。*/
+    /*应答是否结束.*/
     int rsp_end;
 
-    /*用户环境指针。*/
+    /*用户环境指针.*/
     void *userdata;
 
 }abcdk_https_stream_internal_t;
@@ -135,7 +135,7 @@ static void _abcdk_https_stream_destructor_cb(abcdk_object_t *obj, void *opaque)
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_https_stream_internal_t *)obj->pptrs[ABCDK_MAP_VALUE];
 
-    /*通知流执行析构。*/
+    /*通知流执行析构.*/
     if(node_ctx_p->cfg.stream_destructor_cb)
         node_ctx_p->cfg.stream_destructor_cb(node_ctx_p->cfg.opaque,(abcdk_https_stream_t *)obj);
 
@@ -171,7 +171,7 @@ static void _abcdk_https_stream_construct_cb(abcdk_object_t *obj, void *opaque)
     stream_ctx_p->h2_out = abcdk_stream_create();
     stream_ctx_p->loc_ctx = newlocale(LC_ALL_MASK,"en_US.UTF-8",NULL);
 
-    /*通知流执行构造。*/
+    /*通知流执行构造.*/
     if(node_ctx_p->cfg.stream_construct_cb)
         node_ctx_p->cfg.stream_construct_cb(node_ctx_p->cfg.opaque,(abcdk_https_stream_t *)obj);
 }
@@ -186,7 +186,7 @@ static void _abcdk_https_stream_remove_cb(abcdk_object_t *stream, void *opaque)
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(io_node_p);
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
 
-    /*通知流已关闭。*/
+    /*通知流已关闭.*/
     if(node_ctx_p->cfg.stream_close_cb)
         node_ctx_p->cfg.stream_close_cb(node_ctx_p->cfg.opaque,(abcdk_https_stream_t *)stream);
 }
@@ -221,7 +221,7 @@ static void _abcdk_https_log(abcdk_object_t *stream, uint32_t status)
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    /*只记录HTTP日志。*/
+    /*只记录HTTP日志.*/
     if (node_ctx_p->protocol != 1 && node_ctx_p->protocol != 2)
         return;
 
@@ -257,7 +257,7 @@ static void _abcdk_https_process(abcdk_object_t *stream)
 
     _abcdk_https_log(stream,0);
 
-    /*通知应用层数据到达。*/
+    /*通知应用层数据到达.*/
     node_ctx_p->cfg.stream_request_cb(node_ctx_p->cfg.opaque,(abcdk_https_stream_t *)stream);
 
 }
@@ -295,11 +295,11 @@ static int _abcdk_https_h2_frame_recv_cb(nghttp2_session *session, const nghttp2
 
     stream_id = frame->hd.stream_id;
 
-    /*过滤掉不需要的，但也不能返回失败。*/
+    /*过滤掉不需要的, 但也不能返回失败.*/
     if(frame->hd.type != NGHTTP2_DATA && frame->hd.type != NGHTTP2_HEADERS)
         return 0;
     
-    /*数据不完整，继续等待。*/
+    /*数据不完整, 继续等待.*/
     if (!(frame->hd.flags & NGHTTP2_FLAG_END_STREAM))
         return 0;
     
@@ -330,7 +330,7 @@ static int _abcdk_https_h2_frame_recv_cb(nghttp2_session *session, const nghttp2
 
 
 
-    /*一定要回收。*/
+    /*一定要回收.*/
     abcdk_receiver_unref(&stream_ctx_p->updata);
 
     return 0;
@@ -345,10 +345,10 @@ static int _abcdk_https_h2_data_chunk_recv_cb(nghttp2_session *session, uint8_t 
     size_t remain = 0;
     int chk;
 
-    /*更新流量控制窗口。*/
+    /*更新流量控制窗口.*/
     nghttp2_session_consume(session, stream_id, len);
 
-    /*如果没有设置自动更新窗口，需要手动提交 WINDOW_UPDATE 帧。*/
+    /*如果没有设置自动更新窗口, 需要手动提交 WINDOW_UPDATE 帧.*/
     nghttp2_submit_window_update(session, NGHTTP2_FLAG_NONE, stream_id, len);
 
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, 0);
@@ -379,7 +379,7 @@ static int _abcdk_https_h2_data_chunk_recv_cb(nghttp2_session *session, uint8_t 
         chk = abcdk_receiver_append(stream_ctx_p->updata, data, len, &remain);
         if (chk < 0)
             return -3;
-        else if (chk == 0) /*数据包不完整，继续接收。*/
+        else if (chk == 0) /*数据包不完整, 继续接收.*/
             return 0;
 
     }
@@ -388,7 +388,7 @@ static int _abcdk_https_h2_data_chunk_recv_cb(nghttp2_session *session, uint8_t 
         chk = abcdk_receiver_append(stream_ctx_p->updata, data, len, &remain);
         if (chk < 0)
             return -3;
-        else if (chk == 0) /*数据包不完整，继续接收。*/
+        else if (chk == 0) /*数据包不完整, 继续接收.*/
             return 0;
     }
     else
@@ -413,7 +413,7 @@ static int _abcdk_https_h2_header_cb(nghttp2_session *session, const nghttp2_fra
 
     stream_id = frame->hd.stream_id;
 
-    /*过滤掉不需要的，但也不能返回失败。*/
+    /*过滤掉不需要的, 但也不能返回失败.*/
     if(frame->hd.type != NGHTTP2_HEADERS)
         return 0;
 
@@ -479,7 +479,7 @@ static int _abcdk_https_h2_begin_headers_cb(nghttp2_session *session, const nght
 
     stream_id = frame->hd.stream_id;
 
-    /*过滤掉不需要的，但也不能返回失败。*/
+    /*过滤掉不需要的, 但也不能返回失败.*/
     if (frame->hd.type != NGHTTP2_HEADERS || frame->headers.cat != NGHTTP2_HCAT_REQUEST)
         return 0;
 
@@ -489,7 +489,7 @@ static int _abcdk_https_h2_begin_headers_cb(nghttp2_session *session, const nght
 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
 
-    /*删除过时的。*/
+    /*删除过时的.*/
     abcdk_object_unref(&stream_ctx_p->method);
     abcdk_object_unref(&stream_ctx_p->script);
     abcdk_object_unref(&stream_ctx_p->version);
@@ -507,7 +507,7 @@ static int _abcdk_https_h2_stream_close_cb(nghttp2_session *session, int32_t str
     abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
     abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*移除这个节点。*/
+    /*移除这个节点.*/
     abcdk_map_remove2(node_ctx_p->stream_map, &stream_id);
 
     return 0;
@@ -519,18 +519,18 @@ static ssize_t _abcdk_https_h2_send_cb(nghttp2_session *session, const uint8_t *
     abcdk_https_node_t *node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
     int chk;
 
-    /*记录活动时间。*/
+    /*记录活动时间.*/
     node_ctx_p->h2_send_active = _abcdk_https_clock(0);
 
-    /*等待线路空闲时再发送。*/
+    /*等待线路空闲时再发送.*/
     if(node_ctx_p->h2_send_busy)
     {
-        /*不忙了。*/
+        /*不忙了.*/
         node_ctx_p->h2_send_busy = 0;
         return NGHTTP2_ERR_WOULDBLOCK; 
     }
 
-    /*假设线路即将忙碌。*/
+    /*假设线路即将忙碌.*/
     node_ctx_p->h2_send_busy = 1; 
     chk = abcdk_stcp_post_buffer(node, data, length);
     if (chk != 0)
@@ -560,19 +560,19 @@ static ssize_t _abcdk_https_h2_response_read_cb(nghttp2_session *session, int32_
         if (rlen > 0)
             return rlen;
 
-        /*如果应用层已经应答结束后，标记已结束。*/
+        /*如果应用层已经应答结束后, 标记已结束.*/
         if (stream_ctx_p->rsp_end)
         {
             *data_flags |= NGHTTP2_DATA_FLAG_EOF;
             return 0;
         }
 
-        /*通知流空闲。*/
+        /*通知流空闲.*/
         if (node_ctx_p->cfg.stream_output_cb)
             node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque, (abcdk_https_stream_t *)stream_p);
     }
 
-    /*如果缓存区没有待发送数据，并且应用层也没有数据准备好，才会走到这里。*/
+    /*如果缓存区没有待发送数据, 并且应用层也没有数据准备好, 才会走到这里.*/
     return NGHTTP2_ERR_DEFERRED;
 }
 
@@ -593,7 +593,7 @@ static void _abcdk_https_process_1(abcdk_object_t *stream)
         if (!line_p)
             goto ERR;
 
-        /*解析请求行。*/
+        /*解析请求行.*/
         abcdk_http_parse_request_header0(line_p, &stream_ctx_p->method, &stream_ctx_p->script, &stream_ctx_p->version);
 
         line_p = abcdk_receiver_header_line_getenv(stream_ctx_p->updata,"Host",':');
@@ -633,7 +633,7 @@ static void _abcdk_https_request_1(abcdk_stcp_node_t *node, const void *data, si
 
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认没有剩余数据。*/
+    /*默认没有剩余数据.*/
     *remain = 0;
 
     stream_p = abcdk_map_find2(node_ctx_p->stream_map, &stream_id, sizeof(abcdk_https_stream_internal_t));
@@ -661,10 +661,10 @@ static void _abcdk_https_request_1(abcdk_stcp_node_t *node, const void *data, si
         *remain = 0;
         goto ERR;
     }
-    else if (chk == 0) /*数据包不完整，继续接收。*/
+    else if (chk == 0) /*数据包不完整, 继续接收.*/
         return;
 
-    /*删除过时的。*/
+    /*删除过时的.*/
     abcdk_object_unref(&stream_ctx_p->method);
     abcdk_object_unref(&stream_ctx_p->script);
     abcdk_object_unref(&stream_ctx_p->version);
@@ -679,7 +679,7 @@ static void _abcdk_https_request_1(abcdk_stcp_node_t *node, const void *data, si
     /**/
     _abcdk_https_process_1(stream_p);
     
-    /*一定要回收。*/
+    /*一定要回收.*/
     abcdk_receiver_unref(&stream_ctx_p->updata);
 
     /*No Error.*/
@@ -697,7 +697,7 @@ static void _abcdk_https_request_2(abcdk_stcp_node_t *node, const void *data, si
 
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认没有剩余数据。*/
+    /*默认没有剩余数据.*/
     *remain = 0;
     
 #ifdef NGHTTP2_H
@@ -734,7 +734,7 @@ static void _abcdk_https_output_1(abcdk_stcp_node_t *node)
 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
 
-    /*通知流空闲。*/
+    /*通知流空闲.*/
     if(node_ctx_p->cfg.stream_output_cb)
         node_ctx_p->cfg.stream_output_cb(node_ctx_p->cfg.opaque,(abcdk_https_stream_t *)stream_p);
 }
@@ -749,17 +749,17 @@ static void _abcdk_https_output_2(abcdk_stcp_node_t *node)
 
 #ifdef NGHTTP2_H
 
-    /*记录活动时间。*/
+    /*记录活动时间.*/
     node_ctx_p->h2_send_want = _abcdk_https_clock(0);
 
-    /*如果线路长时间不活动，表示没数据要发送。*/
+    /*如果线路长时间不活动, 表示没数据要发送.*/
     if(node_ctx_p->h2_send_active != 0 && node_ctx_p->h2_send_want - node_ctx_p->h2_send_active > 5)
         return;
 
-    /*控制流量。*/
+    /*控制流量.*/
     if (nghttp2_session_want_write(node_ctx_p->h2_handle))
     {
-        /*把缓存数据串行化，并通过回调发送出去。*/
+        /*把缓存数据串行化, 并通过回调发送出去.*/
         chk = nghttp2_session_send(node_ctx_p->h2_handle);
         if (chk < 0)
         {
@@ -768,7 +768,7 @@ static void _abcdk_https_output_2(abcdk_stcp_node_t *node)
         }
     }
 
-    /*继续监听，尽可能快的发送数据到客户端。*/
+    /*继续监听, 尽可能快的发送数据到客户端.*/
     abcdk_stcp_send_watch(node);
 
 #endif //NGHTTP2_H
@@ -793,7 +793,7 @@ static void _abcdk_https_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t 
     node_ctx_p->protocol = 0;
     node_ctx_p->ssl_scheme = listen_ctx_p->cfg.ssl_scheme;
 
-    /*准备完毕，返回。*/
+    /*准备完毕, 返回.*/
     *node = node_p;
 }
 
@@ -805,14 +805,14 @@ static void _abcdk_https_event_accept(abcdk_stcp_node_t *node, int *result)
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
 
-    /*默认：允许。*/
+    /*默认: 允许.*/
     *result = 0;
 
     if(node_ctx_p->cfg.session_accept_cb)
         node_ctx_p->cfg.session_accept_cb(node_ctx_p->cfg.opaque, (abcdk_https_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("禁止客户端(%s)连接到本机(%s)。"), node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("禁止客户端(%s)连接到本机(%s)."), node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
@@ -835,12 +835,12 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
         }
     }
 
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立."),node_ctx_p->local_addr,node_ctx_p->remote_addr);
     
-    /*设置超时。*/
+    /*设置超时.*/
     abcdk_stcp_set_timeout(node, 180);
 
-    /*如果未选择协议，则使用默认协议。*/
+    /*如果未选择协议, 则使用默认协议.*/
     if(node_ctx_p->protocol == 0)
         node_ctx_p->protocol = 1;
 
@@ -863,7 +863,7 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
             {NGHTTP2_SETTINGS_MAX_FRAME_SIZE, 65535},
             {NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, 16 * 1024 * 1024}};
 
-        /*必须要设置。*/
+        /*必须要设置.*/
         nghttp2_submit_settings(node_ctx_p->h2_handle, NGHTTP2_FLAG_NONE, iv, 4);
 #endif // NGHTTP2_H
     }
@@ -871,7 +871,7 @@ static void _abcdk_https_event_connect(abcdk_stcp_node_t *node)
     if(node_ctx_p->cfg.session_ready_cb)
         node_ctx_p->cfg.session_ready_cb(node_ctx_p->cfg.opaque, (abcdk_https_session_t*)node);
 
-    /*已连接到远端，注册读写事件。*/
+    /*已连接到远端, 注册读写事件.*/
     abcdk_stcp_recv_watch(node);
     abcdk_stcp_send_watch(node);
 }
@@ -901,13 +901,13 @@ static void _abcdk_https_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭，忽略。"));
+        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭, 忽略."));
         return;
     }
 
-    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开."),node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
-    /*一定要在这里释放，否则在单路复用时，由于多次引用的原因会使当前链路得不到释放。*/
+    /*一定要在这里释放, 否则在单路复用时, 由于多次引用的原因会使当前链路得不到释放.*/
     abcdk_map_destroy(&node_ctx_p->stream_map);
 
     if(node_ctx_p->cfg.session_close_cb)
@@ -956,7 +956,7 @@ static void _abcdk_https_input_cb(abcdk_stcp_node_t *node, const void *data, siz
 
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认没有剩余数据。*/
+    /*默认没有剩余数据.*/
     *remain = 0;
 
     if (node_ctx_p->protocol == 1)
@@ -1167,7 +1167,7 @@ ERR:
     return NULL;
 }
 
-/** 释放流。*/
+/** 释放流.*/
 void abcdk_https_unref(abcdk_https_stream_t **stream)
 {
     abcdk_object_t *stream_p;
@@ -1255,7 +1255,7 @@ const char *abcdk_https_request_header_get(abcdk_https_stream_t *stream, const c
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    /*HTTP协议有头部数据。*/
+    /*HTTP协议有头部数据.*/
     if (stream_ctx_p->protocol != 1)
         goto ERR;
 
@@ -1287,7 +1287,7 @@ const char* abcdk_https_request_header_getline(abcdk_https_stream_t *stream,int 
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    /*HTTP协议有头部数据。*/
+    /*HTTP协议有头部数据.*/
     if (stream_ctx_p->protocol != 1)
         goto ERR;
     
@@ -1331,7 +1331,7 @@ static int _abcdk_https_rsp_hdr_dump_cb(const char *key, const char *value, void
 
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    /*状态码不在这里处理。*/
+    /*状态码不在这里处理.*/
     if (abcdk_strcmp("Status", key, 0) == 0)
         return 0;
 
@@ -1387,32 +1387,32 @@ static int _abcdk_https_response_header_h1(abcdk_https_stream_t *stream)
     if(status == 0)
         return -3;
     
-    /*构造状态行。*/
+    /*构造状态行.*/
     chk = snprintf(stream_ctx_p->h1_rsp_hdrs->pstrs[0] + stream_ctx_p->h1_rsp_count, stream_ctx_p->h1_rsp_hdrs->sizes[0] - stream_ctx_p->h1_rsp_count, "HTTP/1.1 %s\r\n", abcdk_http_status_desc(status));
     if (chk <= 0)
         return -4;
 
     stream_ctx_p->h1_rsp_count += chk;
 
-    /*遍历其它行。*/
+    /*遍历其它行.*/
     it.opaque = stream_ctx_p;
     it.dump_cb = _abcdk_https_rsp_hdr_dump_cb;
     abcdk_option_scan(stream_ctx_p->rsp_hdr,&it);
 
-    /*构造结束行。*/
+    /*构造结束行.*/
     chk = snprintf(stream_ctx_p->h1_rsp_hdrs->pstrs[0] + stream_ctx_p->h1_rsp_count, stream_ctx_p->h1_rsp_hdrs->sizes[0] - stream_ctx_p->h1_rsp_count, "\r\n");
     if (chk <= 0)
         return -4;
 
     stream_ctx_p->h1_rsp_count += chk;
 
-    /*标记头部长度。*/
+    /*标记头部长度.*/
     stream_ctx_p->h1_rsp_hdrs->sizes[0] = stream_ctx_p->h1_rsp_count;
     chk = abcdk_stcp_post(stream_ctx_p->io_node, stream_ctx_p->h1_rsp_hdrs,1);
     if (chk != 0)
         return -2;
 
-    /*发送成功就托管了。*/
+    /*发送成功就托管了.*/
     stream_ctx_p->h1_rsp_hdrs = NULL;
 
     return 0;
@@ -1440,18 +1440,18 @@ static int _abcdk_https_response_header_h2(abcdk_https_stream_t *stream)
     if(status == 0)
         return -3;
     
-    /*记录活动时间。*/
+    /*记录活动时间.*/
     node_ctx_p->h2_send_active = _abcdk_https_clock(0);
 
-    /*构造状态行。*/
+    /*构造状态行.*/
     stream_ctx_p->h2_rsp_hdrs[stream_ctx_p->h2_rsp_count].name = (uint8_t*)":status";
     stream_ctx_p->h2_rsp_hdrs[stream_ctx_p->h2_rsp_count].namelen = 7;
     stream_ctx_p->h2_rsp_hdrs[stream_ctx_p->h2_rsp_count].value = (uint8_t*)abcdk_http_status_desc(status);
-    stream_ctx_p->h2_rsp_hdrs[stream_ctx_p->h2_rsp_count].valuelen = 3; //只有数字，不能有字符。
+    stream_ctx_p->h2_rsp_hdrs[stream_ctx_p->h2_rsp_count].valuelen = 3; //只有数字, 不能有字符.
 
     stream_ctx_p->h2_rsp_count += 1;
 
-    /*遍历其它行。*/
+    /*遍历其它行.*/
     it.opaque = stream_ctx_p;
     it.dump_cb = _abcdk_https_rsp_hdr_dump_cb;
     abcdk_option_scan(stream_ctx_p->rsp_hdr,&it);
@@ -1464,7 +1464,7 @@ static int _abcdk_https_response_header_h2(abcdk_https_stream_t *stream)
         return -4;
 
 #ifdef NGHTTP2_H
-    /*恢复发送。非常重要。*/
+    /*恢复发送.非常重要.*/
     nghttp2_session_resume_data(node_ctx_p->h2_handle,stream_ctx_p->id);
 #endif //NGHTTP2_H
 
@@ -1522,22 +1522,22 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
     chunked_body = abcdk_option_exist(stream_ctx_p->rsp_hdr, "Transfer-Encoding");
     if (chunked_body)
     {
-        /*发送分块头部。*/
+        /*发送分块头部.*/
         chunked_size = (data ? data->sizes[0] : 0);
         chk = abcdk_stcp_post_format(stream_ctx_p->io_node, 18, "%zx\r\n", chunked_size);
         if (chk != 0)
             return -1;
 
-        /*可能是结束包。*/
+        /*可能是结束包.*/
         stream_ctx_p->rsp_end = (chunked_size <= 0);
     }
     else
     {
-        /*可能是结束包。*/
+        /*可能是结束包.*/
         stream_ctx_p->rsp_end = (!data ? 1 : 0);
     }
 
-    /*如果不是结束包，发送有效的数据块。*/
+    /*如果不是结束包, 发送有效的数据块.*/
     if (!stream_ctx_p->rsp_end)
     {
         chk = abcdk_stcp_post(stream_ctx_p->io_node, data,1);
@@ -1545,7 +1545,7 @@ static int _abcdk_https_response_body_h1(abcdk_https_stream_t *stream, abcdk_obj
             return -1;
     }
 
-    /*发送分块尾部。*/
+    /*发送分块尾部.*/
     if (chunked_body)
     {
         chk = abcdk_stcp_post_buffer(stream_ctx_p->io_node,"\r\n",2);
@@ -1571,14 +1571,14 @@ static int _abcdk_https_response_body_h2(abcdk_https_stream_t *stream, abcdk_obj
     if (node_ctx_p->protocol != 2)
         return -1;
 
-    /*可能是结束包。*/
+    /*可能是结束包.*/
     stream_ctx_p->rsp_end = (!data ? 1 : 0);
 
-    /*结束包不需要发送。*/
+    /*结束包不需要发送.*/
     if(stream_ctx_p->rsp_end)
         return 0;
     
-    /*记录活动时间。*/
+    /*记录活动时间.*/
     node_ctx_p->h2_send_active = _abcdk_https_clock(0);
 
     chk = abcdk_stream_write(stream_ctx_p->h2_out, data);
@@ -1586,7 +1586,7 @@ static int _abcdk_https_response_body_h2(abcdk_https_stream_t *stream, abcdk_obj
         return -2;
 
 #ifdef NGHTTP2_H
-    /*恢复发送。非常重要。*/
+    /*恢复发送.非常重要.*/
     nghttp2_session_resume_data(node_ctx_p->h2_handle,stream_ctx_p->id);
 #endif //NGHTTP2_H
 
@@ -1643,7 +1643,7 @@ void abcdk_https_response_ready(abcdk_https_stream_t *stream)
     else if (node_ctx_p->protocol == 2)
     {
 #ifdef NGHTTP2_H
-        /*恢复发送。非常重要。*/
+        /*恢复发送.非常重要.*/
         nghttp2_session_resume_data(node_ctx_p->h2_handle,stream_ctx_p->id);
 #endif //NGHTTP2_H
     }
@@ -1665,7 +1665,7 @@ int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *ke
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答数据已经发送完成,不能修改。"));
+    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答数据已经发送完成,不能修改."));
 
     if(!stream_ctx_p->rsp_hdr)
     {
@@ -1673,7 +1673,7 @@ int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *ke
         if(!stream_ctx_p->rsp_hdr)
             return -1;
         
-        /*添加默认的应答头部。*/
+        /*添加默认的应答头部.*/
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Status", "200");
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Server","%s",node_ctx_p->cfg.name);
         abcdk_option_fset(stream_ctx_p->rsp_hdr,"Date","%s",abcdk_time_format_gmt(NULL, stream_ctx_p->loc_ctx));
@@ -1689,7 +1689,7 @@ int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *ke
 
     }
 
-    /*有些HTTP/2客户端兼容性不友好，这里要过滤一下。*/
+    /*有些HTTP/2客户端兼容性不友好, 这里要过滤一下.*/
     if (node_ctx_p->protocol == 2)
     {
         if (abcdk_strcmp(key, "Transfer-Encoding", 0) == 0)
@@ -1700,10 +1700,10 @@ int abcdk_https_response_header_vset(abcdk_https_stream_t *stream,const char *ke
 
     vsnprintf(buf,4000,val,ap);
 
-    /*删除旧的。*/
+    /*删除旧的.*/
     abcdk_option_remove(stream_ctx_p->rsp_hdr,key);
 
-    /*添加新的。*/
+    /*添加新的.*/
     chk = abcdk_option_set(stream_ctx_p->rsp_hdr,key,buf);
     if(chk != 0)
         return -2;
@@ -1734,7 +1734,7 @@ void abcdk_https_response_header_unset(abcdk_https_stream_t *stream,const char *
     stream_p = (abcdk_object_t *)stream;
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
 
-    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答数据已经发送完成,不能修改。"));
+    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答数据已经发送完成,不能修改."));
 
     if(!stream_ctx_p->rsp_hdr)
         return;
@@ -1757,10 +1757,10 @@ int abcdk_https_response_header_end(abcdk_https_stream_t *stream)
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答的头部已经结束。"));
-    ABCDK_TRACE_ASSERT(stream_ctx_p->rsp_hdr,ABCDK_GETTEXT("还未设置应答的头部信息。"));
+    ABCDK_TRACE_ASSERT(!stream_ctx_p->rsp_hdr_sent,ABCDK_GETTEXT("应答的头部已经结束."));
+    ABCDK_TRACE_ASSERT(stream_ctx_p->rsp_hdr,ABCDK_GETTEXT("还未设置应答的头部信息."));
     
-    /*如果未设置应答长度，并且当前数据包不是末尾包，则添加分块传输标志。*/
+    /*如果未设置应答长度, 并且当前数据包不是末尾包, 则添加分块传输标志.*/
     chk = abcdk_option_exist(stream_ctx_p->rsp_hdr,"Content-Length");
     if(!chk)
     {
@@ -1771,7 +1771,7 @@ int abcdk_https_response_header_end(abcdk_https_stream_t *stream)
 
     status = abcdk_option_get_int(stream_ctx_p->rsp_hdr,"Status",0,0);
 
-    /*按需转换为隧道模式。*/
+    /*按需转换为隧道模式.*/
     if (stream_ctx_p->protocol == 1 && status == 200)
     {
         if (abcdk_strcmp(stream_ctx_p->method->pstrs[0], "CONNECT", 0) == 0)
@@ -1809,7 +1809,7 @@ int abcdk_https_response(abcdk_https_stream_t *stream, abcdk_object_t *data)
     stream_ctx_p = (abcdk_https_stream_internal_t *)stream_p->pptrs[ABCDK_MAP_VALUE];
     node_ctx_p = (abcdk_https_node_t *)abcdk_stcp_get_userdata(stream_ctx_p->io_node);
 
-    /*如果头部未结束，先结束头部应答。*/
+    /*如果头部未结束, 先结束头部应答.*/
     if(!stream_ctx_p->rsp_hdr_sent)
     {
         chk = abcdk_https_response_header_end(stream);
@@ -1922,7 +1922,7 @@ int abcdk_https_check_auth(abcdk_https_stream_t *stream)
         is_proxy = (auth_p!=NULL);
     }
 
-    /*如果客户端没携带授权，则提示客户端提交授权。*/
+    /*如果客户端没携带授权, 则提示客户端提交授权.*/
     if (!auth_p)
         goto ERR;
 

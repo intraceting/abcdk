@@ -94,9 +94,9 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p, const abcdk_point_t *polyg
 
     for (size_t i = 0; i < numbers; i++)
     {
-        /*点b与e形成连线段。*/
+        /*点b与e形成连线段.*/
         b = polygon[i];
-        e = polygon[(i + 1) % numbers]; // 最后的点连起来，组成封闭的多边形。
+        e = polygon[(i + 1) % numbers]; // 最后的点连起来, 组成封闭的多边形.
 
         if (b.y == e.y)
             continue;
@@ -105,17 +105,17 @@ int abcdk_point_in_polygon_2d(const abcdk_point_t *p, const abcdk_point_t *polyg
         if (p->y >= ABCDK_MAX(b.y, e.y))
             continue;
 
-        /*求交点的x坐标(由直线两点式方程转化而来)。*/
+        /*求交点的x坐标(由直线两点式方程转化而来).*/
         x = (double)(p->y - b.y) * (double)(e.x - b.x) / (double)(e.y - b.y) + b.x;
 
-        /*只统计b和e与p向右射线的交点。*/
+        /*只统计b和e与p向右射线的交点.*/
         if (x > p->x)
             cross++;
     }
 
     /*
-     * 交点为偶数，点在多边形之外。
-     * 交点为奇数，点在多边形之内。
+     * 交点为偶数, 点在多边形之外.
+     * 交点为奇数, 点在多边形之内.
      *
      */
     chk = ((cross % 2) == 1);
@@ -145,7 +145,7 @@ int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1
     c2 = a2 * line2_b->x + b2 * line2_b->y;
     d = a1 * b2 - a2 * b1;
 
-    /*如果分母为0，则平行或共线，无交点。*/
+    /*如果分母为0, 则平行或共线, 无交点.*/
     if (d == 0)
         return -1;
 
@@ -157,9 +157,9 @@ int abcdk_line_cross_2d(const abcdk_point_t *line1_b, const abcdk_point_t *line1
     rx1 = (p->x - line2_b->x) / (line2_e->x - line2_b->x),
     ry1 = (p->y - line2_b->y) / (line2_e->y - line2_b->y);
 
-    /* 判断交点是否在线段1上。*/
+    /* 判断交点是否在线段1上.*/
     chk1 = ((rx0 >= 0 && rx0 <= 1) || (ry0 >= 0 && ry0 <= 1));
-    /* 判断交点是否在线段2上。*/
+    /* 判断交点是否在线段2上.*/
     chk2 = ((rx1 >= 0 && rx1 <= 1) || (ry1 >= 0 && ry1 <= 1));
 
     if (chk1 && chk2)

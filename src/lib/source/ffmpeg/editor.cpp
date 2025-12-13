@@ -298,9 +298,9 @@ static int _abcdk_avformat_media_init(abcdk_ffmpeg_editor_t *ctx)
     else
     {
         /*
-         * 1: 如果不知道下面标志如何使用，一定不要附加这个标志。
-         * 2: 如果附加此标志，会造成数据流开头的数据包丢失(N个)。
-         * 3: 如果未附加此标志，网络流会产生不确定的延时(N毫秒~N秒)。
+         * 1: 如果不知道下面标志如何使用, 一定不要附加这个标志.
+         * 2: 如果附加此标志, 会造成数据流开头的数据包丢失(N个).
+         * 3: 如果未附加此标志, 网络流会产生不确定的延时(N毫秒~N秒).
          */
         // ctx->media_ctx->flags |= AVFMT_FLAG_NOBUFFER;
 
@@ -482,9 +482,9 @@ int abcdk_ffmpeg_editor_open(abcdk_ffmpeg_editor_t *ctx, const abcdk_ffmpeg_edit
 #ifdef HAVE_FFMPEG
 
 /**
- * 延时检查。
+ * 延时检查.
  *
- * @return 0 未满足，!0 已满足。
+ * @return 0 未满足, !0 已满足.
  */
 static int _abcdk_ffmpeg_editor_read_delay_check(abcdk_ffmpeg_editor_t *ctx, int stream)
 {
@@ -501,8 +501,8 @@ static int _abcdk_ffmpeg_editor_read_delay_check(abcdk_ffmpeg_editor_t *ctx, int
     a2 = abcdk_ffmpeg_editor_stream_ts2sec(ctx, stream, ctx->read_dts_latest[stream]);
 
     /*
-     * 1：计算当前帧与第一帧的时间差.
-     * 2：因为流的起始值可能不为零(或为负, 或为正), 所以时间轴调整为从零开始以便于计算延时.
+     * 1: 计算当前帧与第一帧的时间差.
+     * 2: 因为流的起始值可能不为零(或为负, 或为正), 所以时间轴调整为从零开始以便于计算延时.
      */
 
     a = (a2 - a1) - (a1 - a1);
@@ -614,13 +614,13 @@ static int _abcdk_ffmpeg_editor_packet_recv(abcdk_ffmpeg_editor_t *ctx, AVPacket
     /*记录有效的DTS, 并且记录开始读取时间(用于记算拉流延时).*/
     if (dst->dts != (int64_t)AV_NOPTS_VALUE)
     {
-        /*记录当前的DTS。*/
+        /*记录当前的DTS.*/
         ctx->read_dts_latest[dst->stream_index] = dst->dts;
 
         /*
          * 满足以下两个条件时, 需要更新时间轴开始时间.
-         * 1：开始时间无效时.
-         * 2：时间轴重置.
+         * 1: 开始时间无效时.
+         * 2: 时间轴重置.
          */
         if (ctx->read_dts_first[dst->stream_index] == (int64_t)AV_NOPTS_VALUE ||
             ctx->read_dts_first[dst->stream_index] > ctx->read_dts_latest[dst->stream_index])

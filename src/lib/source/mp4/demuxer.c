@@ -7,7 +7,7 @@
 #include "abcdk/mp4/demuxer.h"
 
 /*
- * 读取atom头，但不改变文件指针位置。
+ * 读取atom头, 但不改变文件指针位置.
 */
 abcdk_tree_t *abcdk_mp4_read_header(int fd)
 {
@@ -30,7 +30,7 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
 
     atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
 
-    /* 保存数据偏移量。*/
+    /* 保存数据偏移量.*/
     atom->off_head = lseek(fd, 0, SEEK_CUR);
 
     chk = abcdk_mp4_read_u32(fd, &size32);
@@ -41,7 +41,7 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
     if (chk != 0)
         goto final_error;
 
-    /* 当size32==1时，需要读取扩展字段来确定长度。*/
+    /* 当size32==1时, 需要读取扩展字段来确定长度.*/
     if (size32 == 1)
     {
         chk = abcdk_mp4_read_u64(fd, &size64);
@@ -62,11 +62,11 @@ abcdk_tree_t *abcdk_mp4_read_header(int fd)
         atom->off_data = atom->off_head + 8;
     }
 
-    /*不能超过文件末尾。*/
+    /*不能超过文件末尾.*/
     if (atom->off_head + atom->size > fsize)
         atom->size = fsize - atom->off_head;
 
-    /* 恢复偏移量。*/
+    /* 恢复偏移量.*/
     lseek(fd, atom->off_head, SEEK_SET);
 
     return node;
@@ -92,7 +92,7 @@ int abcdk_mp4_read_fullheader(int fd, uint8_t *ver, uint32_t *flags)
     return 0;
 }
 
-/*在这里声明一下，实现在下面。*/
+/*在这里声明一下, 实现在下面.*/
 int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop);
 
 
@@ -1009,19 +1009,19 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
 
     abcdk_mp4_read_u32(fd, &data->numbers);
 
-    /* 读取已知的选项字段。*/
+    /* 读取已知的选项字段.*/
     if (data->flags & ABCDK_MP4_TRUN_FLAG_DATA_OFFSET_PRESENT)
         abcdk_mp4_read_u32(fd, &data->data_offset);
     if (data->flags & ABCDK_MP4_TRUN_FLAG_FIRST_SAMPLE_FLAGS_PRESENT)
         abcdk_mp4_read_u32(fd, &data->first_sample_flags);
 
-    /* 跳过未知的选项字段。*/
+    /* 跳过未知的选项字段.*/
     for (uint32_t i = 0; i < 8; i++)
     {
         uint32_t c = (1 << i);
         uint32_t c2 = data->flags & 0x0000FF;
 
-        /* 跳过未定义的选项字段。*/
+        /* 跳过未定义的选项字段.*/
         if (!(c2 & c))
             continue;
         
@@ -1037,7 +1037,7 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
 
         for (size_t i = 0; i < data->numbers; i++)
         {
-            /* 读取已知采样表的字段。*/
+            /* 读取已知采样表的字段.*/
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_DURATION_PRESENT)
                 abcdk_mp4_read_u32(fd, &data->tables[i].sample_duration);
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_SIZE_PRESENT)
@@ -1047,13 +1047,13 @@ int _abcdk_mp4_read_trun(int fd, abcdk_tree_t *node)
             if (data->flags & ABCDK_MP4_TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT)
                 abcdk_mp4_read_u32(fd, &data->tables[i].composition_offset);
 
-            /* 跳过未知的采样表的字段。*/
+            /* 跳过未知的采样表的字段.*/
             for (uint32_t i = 0; i < 8; i++)
             {
                 uint32_t c = (1 << (i + 8));
                 uint32_t c2 = data->flags & 0x00FF00;
 
-                /* 跳过未定义的可选字段。*/
+                /* 跳过未定义的可选字段.*/
                 if (!(c2 & c))
                     continue;
                 
@@ -1199,7 +1199,7 @@ int _abcdk_mp4_read_sample_video(int fd, abcdk_tree_t *node)
     abcdk_mp4_read_u16(fd, &data->detail.video.depth);
     abcdk_mp4_read_u16(fd, &data->detail.video.reserved5);
 
-    /* 如果后面还有跟着的子项，则继续解析。 */
+    /* 如果后面还有跟着的子项, 则继续解析. */
     chk = _abcdk_mp4_read_probe(node, fd, NULL);
     if (chk == -1)
         goto final_error;
@@ -1269,7 +1269,7 @@ int _abcdk_mp4_read_sample_sound(int fd, abcdk_tree_t *node)
         }
     }
 
-    /* 如果后面还有跟着的子项，则继续解析。 */
+    /* 如果后面还有跟着的子项, 则继续解析. */
     chk = _abcdk_mp4_read_probe(node, fd, NULL);
     if (chk == -1)
         goto final_error;
@@ -1484,7 +1484,7 @@ int _abcdk_mp4_read_esds(int fd, abcdk_tree_t *node)
         }
         else
         {
-            /*跳过其它的。*/
+            /*跳过其它的.*/
             lseek(fd,len,SEEK_CUR);
         }
     }
@@ -1607,7 +1607,7 @@ int abcdk_mp4_read_content(int fd, abcdk_tree_t *node)
 
     atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
 
-    /*可能有数据。*/
+    /*可能有数据.*/
     atom->have_data = 1;
 
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_mp4_read_content_methods); i++)
@@ -1640,7 +1640,7 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
 
     off_curt = lseek(fd, 0, SEEK_CUR);
 
-    /*限制在容器内部解析。*/
+    /*限制在容器内部解析.*/
     keep = ((off_curt < root_atom->off_head + root_atom->size) ? 1 : 0);
 
     while (keep)
@@ -1653,7 +1653,7 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
 
         atom = (abcdk_mp4_atom_t *)node->obj->pptrs[0];
 
-        /*统一标记为无数据(容器)。*/
+        /*统一标记为无数据(容器).*/
         atom->have_data = 0;
         
         switch (atom->type.u32)
@@ -1670,7 +1670,7 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
         case ABCDK_MP4_ATOM_TYPE_TRAF:
         case ABCDK_MP4_ATOM_TYPE_MFRA:
         {
-            /*跳转文件指针到容器内部。*/
+            /*跳转文件指针到容器内部.*/
             lseek(fd, atom->off_data, SEEK_SET);
 
             chk = _abcdk_mp4_read_probe(node, fd, stop);
@@ -1688,14 +1688,14 @@ int _abcdk_mp4_read_probe(abcdk_tree_t *root, int fd, abcdk_mp4_tag_t *stop)
             break;
         }
 
-        /*跳转文件指针到下一个atom。*/
+        /*跳转文件指针到下一个atom.*/
         lseek(fd, atom->off_head + atom->size, SEEK_SET);
 
-        /*遇到中断tag，则提前终止。*/
+        /*遇到中断tag, 则提前终止.*/
         if(stop && stop->u32 == atom->type.u32)
             break;
 
-        /*限制在容器内部解析。*/
+        /*限制在容器内部解析.*/
         keep = ((atom->off_head + atom->size < root_atom->off_head + root_atom->size) ? 1 : 0);
     }
 
@@ -1720,23 +1720,23 @@ abcdk_tree_t *abcdk_mp4_read_probe(int fd, uint64_t offset, uint64_t size, abcdk
     if (chk != 0)
         return NULL;
 
-    /*最小的atom为8字节，文件不能比8还小。*/
+    /*最小的atom为8字节, 文件不能比8还小.*/
     if (fsize < 8)
         ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
 
-    /*偏移量不能超过文件末尾。*/
+    /*偏移量不能超过文件末尾.*/
     if (offset >= fsize)
         ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
 
-    /*偏移量到文件末尾之间的数据必须大于8字节。*/
+    /*偏移量到文件末尾之间的数据必须大于8字节.*/
     if (fsize - offset < 8)
         ABCDK_ERRNO_AND_RETURN1(ESPIPE, NULL);
 
-    /*修正最大值，不能超过文件末尾。*/
+    /*修正最大值, 不能超过文件末尾.*/
     if (size > fsize - offset)
         size = fsize - offset;
 
-    /*移动文件指针到指定位置。*/
+    /*移动文件指针到指定位置.*/
     if (lseek(fd, offset, SEEK_SET) == -1UL)
         return NULL;
 

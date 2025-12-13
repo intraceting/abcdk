@@ -24,14 +24,14 @@ next_line:
     rlen = abcdk_fgetline(fp, &line, &len, delim, 0);
     if (rlen > 0)
     {
-        /*替换换行符。*/
+        /*替换换行符.*/
         if (line[rlen - 1] == delim)
             line[rlen - 1] = '\0';
 
-        /*去掉字符串两端所有空白字符。 */
+        /*去掉字符串两端所有空白字符. */
         abcdk_strtrim(line, isspace, 2);
 
-        /*跳过空行。*/
+        /*跳过空行.*/
         if (*line == '\0')
             goto next_line;
 
@@ -116,14 +116,14 @@ abcdk_tree_t *abcdk_sdp_parse(const char *data, size_t size)
         if (!sub)
             goto fianl_error;
 
-        /*注册清理函数。*/
+        /*注册清理函数.*/
         abcdk_object_atfree(sub->obj, _abcdk_sdp_destroy_cb, NULL);
 
         sub->obj->pstrs[0] = _abcdk_sdp_fgetline(fp, '\n');
         if (!sub->obj->pstrs[0])
             break;
 
-        /*分解字段。*/
+        /*分解字段.*/
         _abcdk_sdp_split(sub);
 
         if (sub->obj->pstrs[0][0] != 'm')
@@ -132,7 +132,7 @@ abcdk_tree_t *abcdk_sdp_parse(const char *data, size_t size)
         }
         else
         {
-            /*指向新的媒体节点。*/
+            /*指向新的媒体节点.*/
             abcdk_tree_insert2(sdp, sub, 0);
             sdp_p = sub;
         }
@@ -201,7 +201,7 @@ abcdk_tree_t *abcdk_sdp_find_media(abcdk_tree_t *sdp, uint8_t fmt)
     {
         if (p->obj->pstrs[1][0] == 'm')
         {
-            /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
+            /*遍历媒体格式列表, 判断当前节点是否包含需要媒体信息.*/
             for (int i = 5; i < 100; i++)
             {
                 if (!p->obj->pstrs[i])
@@ -337,7 +337,7 @@ abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t 
 
     assert(sdp != NULL);
 
-    /*也许传入的是根节点。*/ 
+    /*也许传入的是根节点.*/ 
     if(!abcdk_tree_father(sdp))
     {
         sdp = abcdk_sdp_find_media(sdp,fmt);
@@ -348,7 +348,7 @@ abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t 
     }
     else if (sdp->obj->pstrs[1][0] == 'm')
     {
-        /*遍历媒体格式列表，判断当前节点是否包含需要媒体信息。*/
+        /*遍历媒体格式列表, 判断当前节点是否包含需要媒体信息.*/
         for (int i = 5; i < 100; i++)
         {
             if (!sdp->obj->pstrs[i])
@@ -364,7 +364,7 @@ abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t 
     if (!ctx)
         return NULL;
 
-    /*遍历属性节点。*/
+    /*遍历属性节点.*/
     a_p = abcdk_tree_child(sdp, 1);
 
     while (a_p)
@@ -380,7 +380,7 @@ abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t 
 
             p_next = a_p->obj->pstrs[3];
 
-            /*拆分编码名称。*/
+            /*拆分编码名称.*/
             p = abcdk_strtok(&p_next, "/");
             if (!p)
                 goto final_error;
@@ -389,14 +389,14 @@ abcdk_sdp_media_base_t *abcdk_sdp_media_base_collect(abcdk_tree_t *sdp, uint8_t 
             if (!ctx->encoder)
                 goto final_error;
 
-            /*拆分时间速率。*/
+            /*拆分时间速率.*/
             p = abcdk_strtok(&p_next, "/");
             if (!p)
                 goto final_error;
 
             sscanf(p, "%u", &ctx->clock_rate);
 
-            /*拆分编码参数(可能不存在)。*/
+            /*拆分编码参数(可能不存在).*/
             p = abcdk_strtok(&p_next, "/");
             if (!p)
             {

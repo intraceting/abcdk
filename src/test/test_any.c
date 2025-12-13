@@ -568,7 +568,7 @@ int abcdk_test_any(abcdk_option_t *args)
 #elif 0
 
     //abcdk_option_merge(args,args);
-        // 身份验证成功，进行其他操作...
+        // 身份验证成功, 进行其他操作...
     fprintf(stderr, "euid:%d,uid:%d\n", geteuid(), getuid());
 #elif 0
 
@@ -1348,7 +1348,7 @@ int abcdk_test_any(abcdk_option_t *args)
         printf("idx(%d),qlen(%d): %s\n",i+1, qlen, drop ? "丢弃" : "保留");
     }
 
-    printf("丢包数量：%d\n",drop_count);
+    printf("丢包数量: %d\n",drop_count);
 
     abcdk_wred_destroy(&ctx);
 
@@ -1751,7 +1751,7 @@ int abcdk_test_any(abcdk_option_t *args)
     printf("OTP-SHA256-8d: %08u\n",otp_sha256%100000000);
     printf("OTP-SHA512-8d: %08u\n",otp_sha512%100000000);
 
-    // 可以使用oathtool 进行验证。
+    // 可以使用oathtool 进行验证.
 
 #elif 0
 

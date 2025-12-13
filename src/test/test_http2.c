@@ -75,7 +75,7 @@ static void test_submit_response(nghttp2_session *session, int32_t stream_id)
     assert(rv == 0);
 }
 
-// nghttp2回调函数，用于处理HTTP/2会话事件
+// nghttp2回调函数, 用于处理HTTP/2会话事件
 static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
 {
     // 在这里处理接收到的数据
@@ -88,7 +88,7 @@ static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, 
     {
         test_submit_response(session,stream_id);
 
-        /*通知链路有数据要发送。*/
+        /*通知链路有数据要发送.*/
         abcdk_stcp_send_watch(node);
     }
 
@@ -96,7 +96,7 @@ static int on_data_chunk_recv_callback(nghttp2_session *session, uint8_t flags, 
     return 0;
 }
 
-// nghttp2回调函数，用于处理HTTP/2帧头部
+// nghttp2回调函数, 用于处理HTTP/2帧头部
 static int on_header_callback(nghttp2_session *session, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value, size_t valuelen, uint8_t flags, void *user_data)
 {
     // 在这里处理帧头部
@@ -109,7 +109,7 @@ static int on_header_callback(nghttp2_session *session, const nghttp2_frame *fra
     {
         test_submit_response(session,frame->hd.stream_id);
 
-        /*通知链路有数据要发送。*/
+        /*通知链路有数据要发送.*/
         abcdk_stcp_send_watch(node);
     }
 
@@ -117,7 +117,7 @@ static int on_header_callback(nghttp2_session *session, const nghttp2_frame *fra
     return 0;
 }
 
-// nghttp2回调函数，用于处理流关闭事件
+// nghttp2回调函数, 用于处理流关闭事件
 static int on_stream_close_callback(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data)
 {
     // 在这里处理流关闭事件
@@ -129,8 +129,8 @@ static int on_stream_close_callback(nghttp2_session *session, int32_t stream_id,
 
 // 发送数据的回调函数
 static ssize_t on_send_callback(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data) {
-    // 在这里实现具体的发送逻辑，例如使用 socket 发送数据
-    // 这里的示例代码仅为演示，实际情况需要根据你的应用程序做适当修改
+    // 在这里实现具体的发送逻辑, 例如使用 socket 发送数据
+    // 这里的示例代码仅为演示, 实际情况需要根据你的应用程序做适当修改
     //printf("Sending data: %.*s\n", (int)length, data);
 
     abcdk_stcp_node_t *node = (abcdk_stcp_node_t *)user_data;
@@ -198,7 +198,7 @@ static void _prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
         {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 100}};
     int rv;
 
-    /*必须要设置。*/
+    /*必须要设置.*/
     rv = nghttp2_submit_settings(node_new_p->session, NGHTTP2_FLAG_NONE, iv, ARRLEN(iv));
     assert(rv == 0);
 
@@ -207,7 +207,7 @@ static void _prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 
 static void _accept_event(abcdk_stcp_node_t *node, int *result)
 {
-    /*接受新的连接。*/
+    /*接受新的连接.*/
     *result = 0;
 }
 
@@ -221,7 +221,7 @@ static void _connect_event(abcdk_stcp_node_t *node)
 
     http_p = (h2_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*设置默认协议。*/
+    /*设置默认协议.*/
     http_p->protocol = 1;
 
     ssl_p = abcdk_stcp_openssl_ctx(node);
@@ -229,22 +229,22 @@ static void _connect_event(abcdk_stcp_node_t *node)
         goto final;
 
 #ifdef HEADER_SSL_H
-    /*检查SSL验证结果。*/
+    /*检查SSL验证结果.*/
     chk = SSL_get_verify_result(ssl_p);
     if (chk != X509_V_OK)
     {
-        /*修改超时，使用超时检测器关闭。*/
+        /*修改超时, 使用超时检测器关闭.*/
         abcdk_stcp_set_timeout(node, -1);
         return;
     }
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
-    /*获取应用层协议。*/
+    /*获取应用层协议.*/
     SSL_get0_alpn_selected(ssl_p, &ver_p, &ver_l);
     if (ver_p == NULL || ver_l <= 0)
         goto final;
 
-    /*只区别h2版本。*/
+    /*只区别h2版本.*/
     http_p->protocol = ((abcdk_strncmp("h2", ver_p, ABCDK_MIN(ver_l, 2), 0) == 0) ? 2 : 1);
 #endif // TLSEXT_TYPE_application_layer_protocol_negotiation
 #endif // HEADER_SSL_H
@@ -253,7 +253,7 @@ static void _connect_event(abcdk_stcp_node_t *node)
 
 final:
 
-    /*已连接到远端，注册读写事件。*/
+    /*已连接到远端, 注册读写事件.*/
     abcdk_stcp_recv_watch(node);
     abcdk_stcp_send_watch(node);
 }
@@ -264,7 +264,7 @@ static void _output_event(abcdk_stcp_node_t *node)
 
     http_p = (h2_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*把缓存数据串行化，并通过回调发送出去。*/
+    /*把缓存数据串行化, 并通过回调发送出去.*/
     nghttp2_session_send(http_p->session);
 }
 
@@ -301,7 +301,7 @@ static void _request_cb(abcdk_stcp_node_t *node, const void *data, size_t size, 
 
     http_p = (h2_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认没有剩余数据。*/
+    /*默认没有剩余数据.*/
     *remain = 0;
 
     if (http_p->protocol == 1)
@@ -327,14 +327,14 @@ int _test_http2_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned cha
 {
     unsigned int srvlen;
 
-    /*协议选择时，仅做指针的复制，因此这里要么用静态的变量，要么创建一个全局有效的。*/
+    /*协议选择时, 仅做指针的复制, 因此这里要么用静态的变量, 要么创建一个全局有效的.*/
     //static unsigned char srv[] = {"\x08http/1.1\x08http/1.0\x08http/0.9"};
     static unsigned char srv[] = {"\x02h2\x08http/1.1\x08http/1.0\x08http/0.9"};
 
-    /*精确的长度。*/
+    /*精确的长度.*/
     srvlen = sizeof(srv) - 1;
 
-    /*服务端在客户端支持的协议列表中选择一个支持协议，从左到右按顺序匹配。*/
+    /*服务端在客户端支持的协议列表中选择一个支持协议, 从左到右按顺序匹配.*/
     if (SSL_select_next_proto((unsigned char **)out, outlen, in, inlen, srv, srvlen) != OPENSSL_NPN_NEGOTIATED)
     {
         return SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -377,7 +377,7 @@ int abcdk_test_http2(abcdk_option_t *args)
     abcdk_stcp_callback_t cb = {_prepare_cb, _event_cb, _request_cb};
     abcdk_stcp_listen(listen_node, &listen_addr, &cb);
 
-    /*等待终止信号。*/
+    /*等待终止信号.*/
     abcdk_proc_wait_exit_signal(-1);
 
     return 0;

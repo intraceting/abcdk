@@ -9,7 +9,7 @@
 int abcdk_lz4_dec(void* plaintext, int plaintext_size, const void* ciphertext, int ciphertext_size)
 {
 #ifndef HAVE_LZ4
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含LZ4工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含LZ4工具."));
     return -1;
 #else //#ifdef HAVE_LZ4
     assert(plaintext != NULL && plaintext_size > 0 && ciphertext != NULL);
@@ -21,7 +21,7 @@ int abcdk_lz4_dec(void* plaintext, int plaintext_size, const void* ciphertext, i
 int abcdk_lz4_enc(void* ciphertext, int ciphertext_max, const void* plaintext, int plaintext_size)
 {
 #ifndef HAVE_LZ4
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含LZ4工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含LZ4工具."));
     return -1;
 #else //#ifdef HAVE_LZ4
     assert(ciphertext != NULL && ciphertext_max > 0 && plaintext != NULL && plaintext_size > 0 );

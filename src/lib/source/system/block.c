@@ -24,7 +24,7 @@ int abcdk_block_find_device(const char *name, char devpath[PATH_MAX])
     if (chk != 0)
         goto final;
 
-    /*遍历目录。*/
+    /*遍历目录.*/
     while (1)
     {
         memset(path, 0, PATH_MAX);
@@ -32,27 +32,27 @@ int abcdk_block_find_device(const char *name, char devpath[PATH_MAX])
         if (chk != 0)
             break;
 
-        /*截取名字。*/
+        /*截取名字.*/
         abcdk_basename(name2, path);
 
-        /*比较当前名字。*/
+        /*比较当前名字.*/
         if (abcdk_strcmp(name, name2, 1) != 0)
         {
-            /*拼接子级名字。*/
+            /*拼接子级名字.*/
             memset(path2, 0, PATH_MAX);
             abcdk_dirdir(path2, path);
             abcdk_dirdir(path2, name);
 
-            /*比较子级名字。*/
+            /*比较子级名字.*/
             if (access(path2, F_OK) != 0)
                 continue;
         }
 
-        /*拼接成设备信息路径。*/
+        /*拼接成设备信息路径.*/
         abcdk_dirdir(devpath, path);
         abcdk_dirdir(devpath, "device");
 
-        /*走到这里，表示找到了。*/
+        /*走到这里, 表示找到了.*/
         chk = 0;
         break;
     }

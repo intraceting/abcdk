@@ -14,56 +14,56 @@
 
 __BEGIN_DECLS
 
-/**服务员。*/
+/**服务员.*/
 typedef struct _abcdk_waiter abcdk_waiter_t;
 
-/** 消息销毁回调函数。*/
+/** 消息销毁回调函数.*/
 typedef void (*abcdk_waiter_msg_destroy_cb)(void *msg);
 
 /**
- * 释放。
+ * 释放.
 */
 void abcdk_waiter_free(abcdk_waiter_t **waiter);
 
 /** 
- * 创建。
+ * 创建.
  * 
- * @param [in] cb 消息销毁回调函数。
+ * @param [in] cb 消息销毁回调函数.
 */
 abcdk_waiter_t *abcdk_waiter_alloc(abcdk_waiter_msg_destroy_cb cb);
 
 /**
- * 注册。
+ * 注册.
  * 
- * @return 0 成功，-1 失败(KEY重复)。
+ * @return 0 成功, -1 失败(KEY重复).
 */
 int abcdk_waiter_register(abcdk_waiter_t *waiter,uint64_t key);
 
 /**
- * 等待。
+ * 等待.
  * 
- * @param timeout 超时(毫秒)。
+ * @param timeout 超时(毫秒).
  * 
- * @return !NULL(0) 成功(对象指针)，NULL(0) 失败(超时或KEY不存在)。
+ * @return !NULL(0) 成功(对象指针), NULL(0) 失败(超时或KEY不存在).
 */
 void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key,time_t timeout);
 
 /**
- * 应答。
+ * 应答.
  * 
- * @note 将被托管理，应用层不可以继续访问应答对象。
+ * @note 将被托管理, 应用层不可以继续访问应答对象.
  * 
- * @return 0 成功，-1 失败(KEY不存在)。
+ * @return 0 成功, -1 失败(KEY不存在).
 */
 int abcdk_waiter_response(abcdk_waiter_t *waiter,uint64_t key, void *msg);
 
 /** 
- * 取消(仅影响等待)。
+ * 取消(仅影响等待).
 */
 void abcdk_waiter_cancel(abcdk_waiter_t *waiter);
 
 /** 
- * 恢复(仅影响等待)。
+ * 恢复(仅影响等待).
 */
 void abcdk_waiter_resume(abcdk_waiter_t *waiter);
 

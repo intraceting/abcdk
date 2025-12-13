@@ -280,7 +280,7 @@ static void sha256_done(sha256_context *ctx, uint8_t *hash)
 
 // -----------------------------------------------------------------------------
 
-/** 简单的SHA256。*/
+/** 简单的SHA256.*/
 struct _abcdk_sha256
 {
     sha256_context self;
@@ -314,7 +314,7 @@ abcdk_sha256_t *abcdk_sha256_create()
     return ctx;
 }
 
-/*重置 。*/
+/*重置 .*/
 void abcdk_sha256_reset(abcdk_sha256_t *ctx)
 {
     assert(ctx != NULL);
@@ -322,7 +322,7 @@ void abcdk_sha256_reset(abcdk_sha256_t *ctx)
     sha256_init(&ctx->self);
 }
 
-/**更新。*/
+/**更新.*/
 void abcdk_sha256_update(abcdk_sha256_t *ctx, const void *data, size_t size)
 {
     assert(ctx != NULL && data != NULL);

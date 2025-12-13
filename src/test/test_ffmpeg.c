@@ -92,7 +92,7 @@ int abcdk_test_record(abcdk_option_t *args)
 
 static void _abcdk_test_codec_fill_enc_params(AVCodecParameters *enc_param, int width, int height, int bitrate)
 {
-    // 设置编码类型：视频流
+    // 设置编码类型: 视频流
     enc_param->codec_type = AVMEDIA_TYPE_VIDEO;
 
     // 设置编码ID为 H.265 (HEVC)
@@ -102,22 +102,22 @@ static void _abcdk_test_codec_fill_enc_params(AVCodecParameters *enc_param, int 
     enc_param->width = width;
     enc_param->height = height;
 
-    // 设置帧率（通常与 time_base 成反比）
+    // 设置帧率(通常与 time_base 成反比)
     enc_param->sample_aspect_ratio = (AVRational){1, 1};
 
     // 设置像素格式 (例如 YUV420P)
     enc_param->format = AV_PIX_FMT_YUV420P;
 
-    // 设置码率（单位：bit/s）
+    // 设置码率(单位: bit/s)
     enc_param->bit_rate = bitrate;
 
-    // 可选：时间基（有时需要在 AVStream 设置）
+    // 可选: 时间基(有时需要在 AVStream 设置)
      enc_param->video_delay = 10;
 
-    // 如果是 HDR 或 10-bit，可以设置如下：
+    // 如果是 HDR 或 10-bit, 可以设置如下: 
     // enc_param->format = AV_PIX_FMT_YUV420P10LE;
 
-    // 可选：颜色空间信息
+    // 可选: 颜色空间信息
     // enc_param->color_primaries = AVCOL_PRI_BT709;
     // enc_param->color_trc = AVCOL_TRC_BT709;
     // enc_param->colorspace = AVCOL_SPC_BT709;

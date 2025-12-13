@@ -10,7 +10,7 @@ void abcdk_sockaddr_copy(const abcdk_sockaddr_t *src, abcdk_sockaddr_t *dst)
 {
     assert(src != NULL && dst != NULL);
 
-    /*全部复制。*/
+    /*全部复制.*/
     memcpy(dst->padding, src->padding, 255);
 }
 
@@ -108,19 +108,19 @@ int abcdk_ifname_fetch(abcdk_ifaddrs_t *addrs, int max, int ex_loopback,int ex_v
 
         if (ex_loopback)
         {
-            /*跳过回环接口。*/
+            /*跳过回环接口.*/
             if ((it->ifa_flags & IFF_LOOPBACK))
                 continue;
         }
 
         if (ex_virtual)
         {
-            /*虚拟接口会在这个目录存在相同名字的目录。*/
+            /*虚拟接口会在这个目录存在相同名字的目录.*/
             memset(tmp, 0, sizeof(tmp));
             abcdk_dirdir(tmp, "/sys/devices/virtual/net/");
             abcdk_dirdir(tmp, it->ifa_name);
 
-            /*跳过虚拟接口。*/
+            /*跳过虚拟接口.*/
             if (access(tmp, F_OK) == 0)
                 continue;
         }
@@ -376,7 +376,7 @@ int abcdk_accept(int fd, abcdk_sockaddr_t *addr)
     if (sub_fd < 0)
         return -1;
 
-    /* 添加个非必要标志，忽略可能的出错信息。 */
+    /* 添加个非必要标志, 忽略可能的出错信息. */
     abcdk_fflag_add(sub_fd, O_CLOEXEC);
 
     return sub_fd;
@@ -461,7 +461,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else if (p = strchr(src, ':'))
     {
-        /*如果字符串内含有两个或以上的“:”，则按IPV6处理。"*/
+        /*如果字符串内含有两个或以上的“:”, 则按IPV6处理."*/
         if (p = strchr(p + 1, ':'))
             dst->family = AF_INET6;
 
@@ -500,7 +500,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
             goto TRY_PORT;
     }
 
-    /*走到这里表示地址转换失败，尝试域名解析。*/
+    /*走到这里表示地址转换失败, 尝试域名解析.*/
     if(try_lookup)
     {
         chk = (abcdk_gethostbyname(name, dst->family, dst, 1, NULL) == 1 ? 0 : -1);
@@ -508,12 +508,12 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
             goto TRY_PORT;
     }
 
-    /*地址换转和域名解析都失败。*/
+    /*地址换转和域名解析都失败.*/
     return -1;
 
 TRY_PORT:
 
-    /*地址转换成功后，再转换端口号。*/
+    /*地址转换成功后, 再转换端口号.*/
 
     if (dst->family == AF_INET6)
         dst->addr6.sin6_port = abcdk_endian_h_to_b16(port);
@@ -618,7 +618,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
     {
         addr_p = addrs+i;// &addrs[i]
 
-        /*只比较同类型的地址。*/
+        /*只比较同类型的地址.*/
         if(addr_p->addr.family != test->family)
             continue;
 
@@ -627,7 +627,7 @@ int abcdk_sockaddr_where(const abcdk_sockaddr_t *test,int where)
         if (addr_p->addr.family == AF_INET)
             chk = memcmp(&addr_p->addr.addr4.sin_addr, &test->addr4.sin_addr, sizeof(struct in_addr));
 
-        /*地址相同则计数。*/
+        /*地址相同则计数.*/
         if (chk == 0)
             match_num += 1;
     }
@@ -757,20 +757,20 @@ int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockadd
 
     if(dst->family == AF_INET)
     {
-        /*目标地址和子网地址进行“与”运算。*/
+        /*目标地址和子网地址进行“与”运算.*/
         chk.addr4.sin_addr.s_addr = (dst->addr4.sin_addr.s_addr & net->addr4.sin_addr.s_addr);
 
-        /*运算相等时，表示属于同一个子网。*/
+        /*运算相等时, 表示属于同一个子网.*/
         if(chk.addr4.sin_addr.s_addr == net->addr4.sin_addr.s_addr)
             return 0;
     }
     else if(dst->family == AF_INET6)
     {
-        /*目标地址和子网地址进行“与”运算。*/
+        /*目标地址和子网地址进行“与”运算.*/
         for (int i = 0; i < 16; i++)
             chk.addr6.sin6_addr.s6_addr[i] = (dst->addr6.sin6_addr.s6_addr[i] & net->addr6.sin6_addr.s6_addr[i]);
 
-        /*运算相等时，表示属于同一个子网。*/
+        /*运算相等时, 表示属于同一个子网.*/
         if (memcmp(chk.addr6.sin6_addr.s6_addr, net->addr6.sin6_addr.s6_addr, 16) == 0)
             return 0;
     }

@@ -102,7 +102,7 @@ void _abcdk_json_format(FILE *fp,int better,size_t depth,json_object *obj)
 int abcdk_json_format_from_string(const char *str, size_t depth, int readable, FILE *out)
 {
 #ifndef HAVE_JSONC
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含JSON-C工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含JSON-C工具."));
     return -1;
 #else //#ifndef HAVE_JSONC
     assert(str && out);
@@ -121,7 +121,7 @@ int abcdk_json_format_from_string(const char *str, size_t depth, int readable, F
 int abcdk_json_format_from_file(const char *file, size_t depth, int readable, FILE *out)
 {
 #ifndef HAVE_JSONC
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含JSON-C工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含JSON-C工具."));
     return -1;
 #else //#ifndef HAVE_JSONC
     assert(file && out);

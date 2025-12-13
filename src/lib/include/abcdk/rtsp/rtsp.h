@@ -23,33 +23,33 @@
 
 __BEGIN_DECLS
 
-/**RTSP授权管理常量。*/
+/**RTSP授权管理常量.*/
 typedef enum _abcdk_rtsp_auth_constant
 {
-    /**无。*/
+    /**无.*/
     ABCDK_RTSP_AUTH_NONE = -1,
 #define ABCDK_RTSP_AUTH_NONE ABCDK_RTSP_AUTH_NONE
 
-    /**常态。*/
+    /**常态.*/
     ABCDK_RTSP_AUTH_NORMAL = 1,
 #define ABCDK_RTSP_AUTH_NORMAL ABCDK_RTSP_AUTH_NORMAL
 
-    /**基于时间的一次性密码算法Time-based One-Time Password）。*/
+    /**基于时间的一次性密码算法Time-based One-Time Password).*/
     ABCDK_RTSP_AUTH_TOTP_SHA1 = 10,
 #define ABCDK_RTSP_AUTH_TOTP_SHA1 ABCDK_RTSP_AUTH_TOTP_SHA1
 #define ABCDK_RTSP_AUTH_TOTP_SHA128 ABCDK_RTSP_AUTH_TOTP_SHA1
 
-    /**基于时间的一次性密码算法Time-based One-Time Password）。*/
+    /**基于时间的一次性密码算法Time-based One-Time Password).*/
     ABCDK_RTSP_AUTH_TOTP_SHA256 = 11,
 #define ABCDK_RTSP_AUTH_TOTP_SHA256 ABCDK_RTSP_AUTH_TOTP_SHA256
 
-    /**基于时间的一次性密码算法Time-based One-Time Password）。*/
+    /**基于时间的一次性密码算法Time-based One-Time Password).*/
     ABCDK_RTSP_AUTH_TOTP_SHA512 = 12,
 #define ABCDK_RTSP_AUTH_TOTP_SHA512 ABCDK_RTSP_AUTH_TOTP_SHA512
 
 } abcdk_rtsp_auth_constant_t;
 
-/**RTSP媒体编码常量。*/
+/**RTSP媒体编码常量.*/
 typedef enum _abcdk_rtsp_codec_constant
 {
     ABCDK_RTSP_CODEC_NONE = -1,

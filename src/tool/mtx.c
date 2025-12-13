@@ -37,26 +37,26 @@ typedef struct _abcdk_mtx
 }abcdk_mtx_t;
 
 
-/** 常量。*/
+/** 常量.*/
 enum _abcdk_mtx_constant
 {
-    /** 打印报表。*/
+    /** 打印报表.*/
     ABCDK_MTX_STATUS = 1,
 #define ABCDK_MTX_STATUS ABCDK_MTX_STATUS
 
-    /** 移动介质。*/
+    /** 移动介质.*/
     ABCDK_MTX_MOVE = 2,
 #define ABCDK_MTX_MOVE ABCDK_MTX_MOVE
 
-    /** 文本报表。*/
+    /** 文本报表.*/
     ABCDK_MTX_STATUS_FMT_TEXT = 1,
 #define ABCDK_MTX_STATUS_FMT_TEXT ABCDK_MTX_STATUS_FMT_TEXT
 
-    /** XML报表。*/
+    /** XML报表.*/
     ABCDK_MTX_STATUS_FMT_XML = 2,
 #define ABCDK_MTX_STATUS_FMT_XML ABCDK_MTX_STATUS_FMT_XML
 
-    /** JSON报表。*/
+    /** JSON报表.*/
     ABCDK_MTX_STATUS_FMT_JSON = 3
 #define ABCDK_MTX_STATUS_FMT_JSON ABCDK_MTX_STATUS_FMT_JSON
 
@@ -66,41 +66,41 @@ void _abcdk_mtx_print_usage(abcdk_mtx_t *ctx)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的机械手(磁带库，光盘库等)工具。\n");
+    fprintf(stderr, "\n\t简单的机械手(磁带库, 光盘库等)工具.\n");
 
     fprintf(stderr, "\n通用选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--dev < DEVICE >\n");
-    fprintf(stderr, "\t\t机械手设备文件(包括路径)。\n");
+    fprintf(stderr, "\t\t机械手设备文件(包括路径).\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
-    fprintf(stderr, "\t\t命令。默认: %d\n", ABCDK_MTX_STATUS);
+    fprintf(stderr, "\t\t命令.默认: %d\n", ABCDK_MTX_STATUS);
 
-    fprintf(stderr, "\n\t\t%d: 打印报表。\n", ABCDK_MTX_STATUS);
-    fprintf(stderr, "\t\t%d: 移动介质。\n", ABCDK_MTX_MOVE);
+    fprintf(stderr, "\n\t\t%d: 打印报表.\n", ABCDK_MTX_STATUS);
+    fprintf(stderr, "\t\t%d: 移动介质.\n", ABCDK_MTX_MOVE);
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDK_MTX_STATUS);
 
     fprintf(stderr, "\n\t--out < FILE >\n");
-    fprintf(stderr, "\t\t输出到文件(包括路径)。\n");
+    fprintf(stderr, "\t\t输出到文件(包括路径).\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
-    fprintf(stderr, "\t\t报表格式。默认: %d\n", ABCDK_MTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t报表格式.默认: %d\n", ABCDK_MTX_STATUS_FMT_TEXT);
 
-    fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDK_MTX_STATUS_FMT_TEXT);
-    fprintf(stderr, "\t\t%d: XML。\n",ABCDK_MTX_STATUS_FMT_XML);
-    fprintf(stderr, "\t\t%d: JSON。\n",ABCDK_MTX_STATUS_FMT_JSON);
+    fprintf(stderr, "\n\t\t%d: TEXT.\n",ABCDK_MTX_STATUS_FMT_TEXT);
+    fprintf(stderr, "\t\t%d: XML.\n",ABCDK_MTX_STATUS_FMT_XML);
+    fprintf(stderr, "\t\t%d: JSON.\n",ABCDK_MTX_STATUS_FMT_JSON);
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDK_MTX_MOVE);
 
     fprintf(stderr, "\n\t--src < ADDRESS >\n");
-    fprintf(stderr, "\t\t源地址。\n");
+    fprintf(stderr, "\t\t源地址.\n");
 
     fprintf(stderr, "\n\t--dst < ADDRESS >\n");
-    fprintf(stderr, "\t\t目标地址。\n");
+    fprintf(stderr, "\t\t目标地址.\n");
 }
 
 void _abcdk_mtx_printf_sense(abcdk_scsi_io_stat_t *stat)
@@ -154,13 +154,13 @@ void _abcdk_mtx_work(abcdk_mtx_t *ctx)
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
-        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--dev DEVICE' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->dev_p, F_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。\n", ctx->dev_p, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", ctx->dev_p, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -182,7 +182,7 @@ void _abcdk_mtx_work(abcdk_mtx_t *ctx)
 
     if (ctx->type != TYPE_MEDIUM_CHANGER)
     {
-        fprintf(stderr, "'%s' 不是机械手。\n", ctx->dev_p);
+        fprintf(stderr, "'%s' 不是机械手.\n", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 
@@ -204,7 +204,7 @@ void _abcdk_mtx_work(abcdk_mtx_t *ctx)
         {
             if (abcdk_reopen(STDOUT_FILENO, ctx->outfile, 1, 0, 1) < 0)
             {
-                fprintf(stderr, "'%s' %s。\n", ctx->outfile, strerror(errno));
+                fprintf(stderr, "'%s' %s.\n", ctx->outfile, strerror(errno));
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
             }
         }
@@ -217,7 +217,7 @@ void _abcdk_mtx_work(abcdk_mtx_t *ctx)
     }
     else
     {
-        fprintf(stderr, "尚未支持。\n");
+        fprintf(stderr, "尚未支持.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL,final);
     }
 

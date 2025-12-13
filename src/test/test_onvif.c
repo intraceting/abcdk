@@ -9,24 +9,24 @@
 #include <string.h>
 #include "entry.h"
 
-/* 从技术层面来说，通过单播、多播、广播三种方式都能探测到IPC，但多播最具实用性*/
+/* 从技术层面来说, 通过单播、多播、广播三种方式都能探测到IPC, 但多播最具实用性*/
 #define COMM_TYPE_UNICAST         1                                             // 单播
 #define COMM_TYPE_MULTICAST       2                                             // 多播
 #define COMM_TYPE_BROADCAST       3                                             // 广播
 #define COMM_TYPE                 COMM_TYPE_MULTICAST
 
-/* 发送探测消息（Probe）的目标地址、端口号 */
+/* 发送探测消息(Probe)的目标地址、端口号 */
 #if COMM_TYPE == COMM_TYPE_UNICAST
-#define CAST_ADDR "100.100.100.15"                                          // 单播地址，预先知道的IPC地址
+#define CAST_ADDR "100.100.100.15"                                          // 单播地址, 预先知道的IPC地址
 #elif COMM_TYPE == COMM_TYPE_MULTICAST
-#define CAST_ADDR "239.255.255.250"                                         // 多播地址，固定的239.255.255.250
+#define CAST_ADDR "239.255.255.250"                                         // 多播地址, 固定的239.255.255.250
 #elif COMM_TYPE == COMM_TYPE_BROADCAST
 #define CAST_ADDR "100.100.100.255"                                         // 广播地址
 #endif
 
 #define CAST_PORT 3702                                                          // 端口号
 
-/* 以下几个宏是为了socket编程能够跨平台，这几个宏是从gsoap中拷贝来的 */
+/* 以下几个宏是为了socket编程能够跨平台, 这几个宏是从gsoap中拷贝来的 */
 #ifndef SOAP_SOCKET
 # ifdef WIN32
 #  define SOAP_SOCKET SOCKET
@@ -59,7 +59,7 @@
 #define SLEEP(n)    sleep((n))
 #endif
 
-/* 探测消息(Probe)，这些内容是ONVIF Device Test Tool 15.06工具搜索IPC时的Probe消息，通过Wireshark抓包工具抓包到的 */
+/* 探测消息(Probe), 这些内容是ONVIF Device Test Tool 15.06工具搜索IPC时的Probe消息, 通过Wireshark抓包工具抓包到的 */
 const char *probe = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Envelope xmlns:dn=\"http://www.onvif.org/ver10/network/wsdl\" xmlns=\"http://www.w3.org/2003/05/soap-envelope\"><Header><wsa:MessageID xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\">uuid:fc0bad56-5f5a-47f3-8ae2-c94a4e907d70</wsa:MessageID><wsa:To xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\">urn:schemas-xmlsoap-org:ws:2005:04:discovery</wsa:To><wsa:Action xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\">http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</wsa:Action></Header><Body><Probe xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns=\"http://schemas.xmlsoap.org/ws/2005/04/discovery\"><Types>dn:NetworkVideoTransmitter</Types><Scopes /></Probe></Body></Envelope>";
 
 int abcdk_test_onvif(abcdk_option_t *args)
@@ -95,7 +95,7 @@ int abcdk_test_onvif(abcdk_option_t *args)
     ret = setsockopt(s, SOL_SOCKET, SO_BROADCAST, (const char*)&optval, sizeof(int));
 #endif
 
-    multi_addr.sin_family = AF_INET;                                            // 搜索IPC：使用UDP向指定地址发送探测消息(Probe)
+    multi_addr.sin_family = AF_INET;                                            // 搜索IPC: 使用UDP向指定地址发送探测消息(Probe)
     multi_addr.sin_port = htons(CAST_PORT);
     multi_addr.sin_addr.s_addr = inet_addr(CAST_ADDR);
     ret = sendto(s, probe, strlen(probe), 0, (struct sockaddr*)&multi_addr, sizeof(multi_addr));

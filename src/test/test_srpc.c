@@ -109,7 +109,7 @@ int abcdk_test_srpc(abcdk_option_t *args)
         cfg.bind_addr = addr;
         abcdk_srpc_listen(session_p, &cfg);
 
-        /*等待终止信号。*/
+        /*等待终止信号.*/
         abcdk_proc_wait_exit_signal(-1);
     }
     else

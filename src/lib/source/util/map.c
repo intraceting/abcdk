@@ -41,12 +41,12 @@ static int _abcdk_map_init(abcdk_map_t *map, size_t size)
 {
     assert(map && size > 0);
 
-    /* 创建树节点，用于表格。 */
+    /* 创建树节点, 用于表格. */
     map->table = abcdk_tree_alloc2(NULL, size,0);
     if (!map->table)
         return -1;
 
-    /* 如果未指定，则启用默认函数。 */
+    /* 如果未指定, 则启用默认函数. */
     if (!map->hash_cb)
         map->hash_cb = _abcdk_map_hash;
     if (!map->compare_cb)
@@ -95,17 +95,17 @@ static abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t k
     hash = map->hash_cb(key, ksize, map->opaque);
     bucket = hash % map->table->obj->numbers;
 
-    /* 查找桶，不存在则创建。*/
+    /* 查找桶, 不存在则创建.*/
     it = (abcdk_tree_t *)map->table->obj->pptrs[bucket];
     if (!it)
     {
         it = abcdk_tree_alloc3(sizeof(bucket));
         if (it)
         {
-            /*存放桶的索引值。*/
+            /*存放桶的索引值.*/
             ABCDK_PTR2OBJ(uint64_t, it->obj->pptrs[ABCDK_MAP_BUCKET], 0) = bucket;
 
-            /* 桶加入到表格中。*/
+            /* 桶加入到表格中.*/
             abcdk_tree_insert2(map->table, it, 0);
             map->table->obj->pptrs[bucket] = (uint8_t *)it;
         }
@@ -114,7 +114,7 @@ static abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t k
     if (!it)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
 
-    /* 链表存储的节点，依次比较查找。*/
+    /* 链表存储的节点, 依次比较查找.*/
     node = abcdk_tree_child(it, 1);
     while (node)
     {
@@ -125,35 +125,35 @@ static abcdk_tree_t *_abcdk_map_find(abcdk_map_t *map, const void *key, size_t k
         node = abcdk_tree_sibling(node, 0);
     }
 
-    /*如果节点不存在并且需要创建，则添加到链表头。 */
+    /*如果节点不存在并且需要创建, 则添加到链表头. */
     if (!node && vsize > 0)
     {
-        /*多申请一个字节。*/
+        /*多申请一个字节.*/
         size_t sizes[2] = {ksize + 1, vsize + 1};
         node = abcdk_tree_alloc2(sizes, 2, 0);
         if (!node)
             ABCDK_ERRNO_AND_RETURN1(ENOMEM, NULL);
 
-        /*修正。*/
+        /*修正.*/
         node->obj->sizes[ABCDK_MAP_KEY] = ksize;
         node->obj->sizes[ABCDK_MAP_VALUE] = vsize;
 
-        /* 注册删除回调函数。*/
+        /* 注册删除回调函数.*/
         node->destructor_cb = map->remove_cb;
         node->opaque = map->opaque;
 
-        /* 注册释构回调函数。*/
+        /* 注册释构回调函数.*/
         if(map->destructor_cb)
             abcdk_object_atfree(node->obj,map->destructor_cb,map->opaque);
 
-        /*复制KEY。*/
+        /*复制KEY.*/
         memcpy(node->obj->pptrs[ABCDK_MAP_KEY], key, ksize);
 
-        /*执行构造回调函数。*/
+        /*执行构造回调函数.*/
         if(map->construct_cb)
             map->construct_cb(node->obj,map->opaque);
 
-        /* 加入到链表头。 */
+        /* 加入到链表头. */
         abcdk_tree_insert2(it, node, 1);
     }
 
@@ -190,11 +190,11 @@ static int _abcdk_map_scan_cb(size_t depth, abcdk_tree_t *node, void *opaque)
 {
     abcdk_map_t *map = (abcdk_map_t *)opaque;
 
-    /*已经结束。*/
+    /*已经结束.*/
     if(depth == SIZE_MAX)
         return -1;
 
-    /*跳过组织结构。*/
+    /*跳过组织结构.*/
     if (depth <= 1)
         return 1;
 

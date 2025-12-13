@@ -6,31 +6,31 @@
  */
 #include "abcdk/util/ipool.h"
 
-/** IP池。 */
+/** IP池. */
 struct _abcdk_ipool
 {
-    /**同步锁。*/
+    /**同步锁.*/
     abcdk_rwlock_t *locker_ctx;
 
-    /**地址池。*/
+    /**地址池.*/
     abcdk_object_t *pool_ctx;
 
-    /**地址的起止。 */
+    /**地址的起止. */
     abcdk_sockaddr_t addr_b;
     abcdk_sockaddr_t addr_e;
 
-    /**池的范围。 */
+    /**池的范围. */
     uint64_t pool_b;
     uint64_t pool_e;
 
-    /**HDCP状态. 0 停用，!0 启用。 */
+    /**HDCP状态. 0 停用, !0 启用. */
     int dhcp_enable;
 
-    /**DHCP的范围。*/
+    /**DHCP的范围.*/
     uint64_t dhcp_b;
     uint64_t dhcp_e;
 
-    /**DHCP游标。*/
+    /**DHCP游标.*/
     uint64_t dhcp_pos;
 
 }; // abcdk_ipool_t
@@ -67,14 +67,14 @@ static int _abcdk_ipool_get_addr_pos(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr,
 
     if (addr->family == AF_INET6)
     {
-        /*检测前缀是否相同。*/
+        /*检测前缀是否相同.*/
         if (memcmp(ctx->addr_b.addr6.sin6_addr.s6_addr, addr->addr6.sin6_addr.s6_addr, 12) != 0)
             return -22;
     }
 
     *pos = _abcdk_ipool_get_addr_pos_32b(addr);
 
-    /*不能超过池范围。*/
+    /*不能超过池范围.*/
     if (*pos < ctx->pool_b || *pos > ctx->pool_e)
         return -14;
 
@@ -143,7 +143,7 @@ static int _abcdk_ipool_reset_base(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, 
 
     if (begin->family == AF_INET6)
     {
-        /*IPV6检测前缀是否相同。*/
+        /*IPV6检测前缀是否相同.*/
         if (memcmp(begin->addr6.sin6_addr.s6_addr, end->addr6.sin6_addr.s6_addr, 12) != 0)
             return -4;
     }
@@ -153,7 +153,7 @@ static int _abcdk_ipool_reset_base(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, 
     if (e < b)
         return -1;
 
-    c = e - b + 1; // 区间差+1才是数量。
+    c = e - b + 1; // 区间差+1才是数量.
 
     pool_ctx_p = abcdk_object_alloc2(abcdk_align(c, 8) / 8);
     if (!pool_ctx_p)
@@ -167,7 +167,7 @@ static int _abcdk_ipool_reset_base(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, 
     ctx->pool_b = b;
     ctx->pool_e = e;
 
-    /*默认关闭。*/
+    /*默认关闭.*/
     ctx->dhcp_enable = 0;
 
     return 0;
@@ -180,7 +180,7 @@ static int _abcdk_ipool_reset_dhcp(abcdk_ipool_t *ctx, abcdk_sockaddr_t *begin, 
 
     if (begin->family == AF_INET6)
     {
-        /*检测前缀是否相同。*/
+        /*检测前缀是否相同.*/
         if (memcmp(begin->addr6.sin6_addr.s6_addr, end->addr6.sin6_addr.s6_addr, 12) != 0)
             return -22;
     }
@@ -306,7 +306,7 @@ uint8_t abcdk_ipool_prefix(abcdk_ipool_t *ctx)
 
     c = abcdk_ipool_count(ctx, 0);
 
-    /*计算后缀长度。*/
+    /*计算后缀长度.*/
     while (c > 0)
     {
         suffix += 1;
@@ -333,10 +333,10 @@ int abcdk_ipool_static_request(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
     if (chk != 0)
         return -22;
 
-    /*标记占用。*/
+    /*标记占用.*/
     chk = abcdk_bloom_mark(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
     if (chk == 1)
-        return -1; // 已经被占用。
+        return -1; // 已经被占用.
 
     return 0;
 }
@@ -362,13 +362,13 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
 
     assert(ctx != NULL && addr != NULL);
 
-    /*可能未启用。*/
+    /*可能未启用.*/
     if (!ctx->dhcp_enable)
         return -1;
 
     c = abcdk_ipool_count(ctx, 2);
 
-    /*限制在一个轮回中查找。*/
+    /*限制在一个轮回中查找.*/
     for (uint64_t i = 0; i < c; i++)
     {
         chk = abcdk_bloom_filter(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], ctx->dhcp_pos - ctx->pool_b);
@@ -384,10 +384,10 @@ int abcdk_ipool_dhcp_request(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
         if (chk != 0)
             continue;
 
-        /*标记占用。*/
+        /*标记占用.*/
         abcdk_bloom_mark(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
 
-        /*填充地址。*/
+        /*填充地址.*/
         _abcdk_ipool_set_addr_pos(ctx, addr, pos);
         return 0;
     }
@@ -407,7 +407,7 @@ int abcdk_ipool_reclaim(abcdk_ipool_t *ctx, abcdk_sockaddr_t *addr)
     if (chk != 0)
         return -22;
 
-    /*标记空闲。*/
+    /*标记空闲.*/
     abcdk_bloom_unset(ctx->pool_ctx->pptrs[0], ctx->pool_ctx->sizes[0], pos - ctx->pool_b);
 
     return 0;

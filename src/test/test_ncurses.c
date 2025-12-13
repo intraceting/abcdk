@@ -39,8 +39,8 @@ int abcdk_test_ncurses(abcdk_option_t *args)
     const char *line2 = "This is the second line.";
 
     // 计算文字位置并打印到窗体
-    int text_start_y = 2;   // 行位置（窗体内部的第几行）
-    int text_start_x = 2;   // 列位置（左对齐距离边框2个字符）
+    int text_start_y = 2;   // 行位置(窗体内部的第几行)
+    int text_start_x = 2;   // 列位置(左对齐距离边框2个字符)
 
     mvwprintw(win, text_start_y, text_start_x, "%s", line1);
     mvwprintw(win, text_start_y + 2, text_start_x, "%s", line2);

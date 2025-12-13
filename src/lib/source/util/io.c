@@ -56,7 +56,7 @@ ssize_t abcdk_write(int fd, const void *data, size_t size)
     {
         if (wsize < size)
         {
-            /*有的系统超过2GB，需要分段落盘。*/
+            /*有的系统超过2GB, 需要分段落盘.*/
             wsize2 = abcdk_write(fd, ABCDK_PTR2PTR(void, data, wsize), size - wsize);
             if (wsize2 > 0)
                 wsize += wsize2;
@@ -78,7 +78,7 @@ ssize_t abcdk_read(int fd, void *data, size_t size)
     {
         if (rsize < size)
         {
-            /*有的系统超过2GB，需要分段读取。*/
+            /*有的系统超过2GB, 需要分段读取.*/
             rsize2 = abcdk_read(fd, ABCDK_PTR2PTR(char, data, rsize), size - rsize);
             if (rsize2 > 0)
                 rsize += rsize2;
@@ -137,7 +137,7 @@ int abcdk_reopen(int fd2, const char *file, int rw, int nonblock, int create)
 
     fd3 = dup2(fd, fd2);
 
-    /*必须要关闭，不然句柄就会丢失，造成资源泄露。*/
+    /*必须要关闭, 不然句柄就会丢失, 造成资源泄露.*/
     abcdk_closep(&fd);
 
     return fd3;
@@ -353,14 +353,14 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
     assert(fd >= 0 && data != NULL && size > 0 && direction != 0 && timeout > 0);
     assert(direction == 1 || direction == 2);
 
-    /*计算过期时间。*/
+    /*计算过期时间.*/
     time_end = abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3) + timeout;
     time_span = timeout;
 
-    /*获取句柄标志。*/
+    /*获取句柄标志.*/
     fd_flag = abcdk_fflag_get(fd);
 
-    /*仅支持带有异步标志的句柄。*/
+    /*仅支持带有异步标志的句柄.*/
     if (!(fd_flag & O_NONBLOCK))
         return -2;
 
@@ -396,15 +396,15 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
             all += len;
 
 
-        /*输出数据时不需要检查起始码。*/
+        /*输出数据时不需要检查起始码.*/
         if(direction != 1)
             continue;
 
-        /*未定义起始码，忽略。*/
+        /*未定义起始码, 忽略.*/
         if (!magic || mglen <= 0)
             continue;
 
-        /*已读取数据长度不能小于起始码长度。*/
+        /*已读取数据长度不能小于起始码长度.*/
         if(all < mglen)
             continue;
         
@@ -414,24 +414,24 @@ ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t ti
             if (memcmp(ABCDK_PTR2VPTR(data, i), magic, mglen) == 0)
                 break;
 
-            /*逐个字节查找。*/
+            /*逐个字节查找.*/
             len += 1;
         }
 
-        /*根据起始码位移动数据，并重新计算数据长度。*/
+        /*根据起始码位移动数据, 并重新计算数据长度.*/
         if (len > 0)
         {
             memmove(data, ABCDK_PTR2VPTR(data, len), all - len);
             all -= len;
 
-            /*起始码不符合，计算剩余超时时长。*/
+            /*起始码不符合, 计算剩余超时时长.*/
             time_span = time_end - abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 3);
             if (time_span <= 0)
                 break;
         }
         else
         {
-            /*数据不足，继续按原超时等待。*/
+            /*数据不足, 继续按原超时等待.*/
             time_span = timeout;
         }
     }

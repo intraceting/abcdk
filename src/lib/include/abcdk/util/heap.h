@@ -14,43 +14,43 @@
 __BEGIN_DECLS
 
 /**
- * 内存回收。
+ * 内存回收.
  */
 void abcdk_heap_trim (size_t pad);
 
 /**
- * 内存申请(对齐)。
+ * 内存申请(对齐).
  */
 void* abcdk_heap_alloc_align(size_t alignment,size_t size);
 
 /**
- * 内存申请。
+ * 内存申请.
  */
 void* abcdk_heap_alloc(size_t size);
 
 /**
- * 内存重新申请。
+ * 内存重新申请.
  */
 void* abcdk_heap_realloc(void *buf,size_t size);
 
 /**
- * 内存释放。
+ * 内存释放.
  * 
- * @param data 内存的指针。
+ * @param data 内存的指针.
  */
 void abcdk_heap_free(void *data);
 
 /**
- * 内存释放。
+ * 内存释放.
  * 
- * @param data 指针的指针。返回时赋值NULL(0)。
+ * @param data 指针的指针.返回时赋值NULL(0).
  */
 void abcdk_heap_freep(void **data);
 
 /**
- * 内存克隆。
+ * 内存克隆.
  * 
- * @note 申请内存大小为size+1。
+ * @note 申请内存大小为size+1.
 */
 void *abcdk_heap_clone(const void *data, size_t size);
 

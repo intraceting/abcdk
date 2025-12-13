@@ -269,7 +269,7 @@ void MD5Transform(u_int32_t buf[4], u_int32_t const in[16])
     buf[3] += d;
 }
 
-/** 简单的MD5。*/
+/** 简单的MD5.*/
 struct _abcdk_md5
 {
     MD5_CTX self;

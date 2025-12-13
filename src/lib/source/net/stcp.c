@@ -6,113 +6,113 @@
  */
 #include "abcdk/net/stcp.h"
 
-/**简单的异步TCP通讯。 */
+/**简单的异步TCP通讯. */
 struct _abcdk_stcp
 {
-    /**魔法数。*/
+    /**魔法数.*/
     uint32_t magic;
 #define ABCDK_STCP_MAGIC 123456789
 
-    /**引用计数器。*/
+    /**引用计数器.*/
     volatile int refcount;
 
-    /**ASIOEX环境。*/
+    /**ASIOEX环境.*/
     abcdk_asioex_t *asioex_ctx;
 
-    /**线程池配置。*/
+    /**线程池配置.*/
     abcdk_worker_config_t worker_cfg;
 
-    /**线程池环境。*/
+    /**线程池环境.*/
     abcdk_worker_t *worker_ctx;
 
 }; // abcdk_stcp_t;
 
-/**TCP节点。 */
+/**TCP节点. */
 struct _abcdk_stcp_node
 {
-    /**魔法数。*/
+    /**魔法数.*/
     uint32_t magic;
 #define ABCDK_STCP_NODE_MAGIC 123456789
 
-    /**引用计数器。*/
+    /**引用计数器.*/
     volatile int refcount;
 
-    /**通讯环境指针。*/
+    /**通讯环境指针.*/
     abcdk_stcp_t *ctx;
 
-    /**配置。*/
+    /**配置.*/
     abcdk_stcp_config_t cfg;
 
-    /** 索引。*/
+    /** 索引.*/
     uint64_t index;
 
-    /**句柄来源。*/
+    /**句柄来源.*/
     volatile int flag;
 #define ABCDK_STCP_FLAG_CLIENT 1
 #define ABCDK_STCP_FLAG_LISTEN 2
 #define ABCDK_STCP_FLAG_ACCPET 3
 
-    /**句柄状态。*/
+    /**句柄状态.*/
     volatile int status;
 #define ABCDK_STCP_STATUS_STABLE 1
 #define ABCDK_STCP_STATUS_SYNC 2
 #define ABCDK_STCP_STATUS_SYNC_SSL 3
 
-    /**本机地址。*/
+    /**本机地址.*/
     abcdk_sockaddr_t local;
 
-    /**远端地址。*/
+    /**远端地址.*/
     abcdk_sockaddr_t remote;
 
-    /**ASIO环境。*/
+    /**ASIO环境.*/
     abcdk_asio_t *asio_ctx;
 
-    /**伪句柄。*/
+    /**伪句柄.*/
     int64_t pfd;
 
-    /**句柄。*/
+    /**句柄.*/
     int fd;
 
-    /**OpenSSL环境指针。*/
+    /**OpenSSL环境指针.*/
     SSL_CTX *openssl_ctx;
 
-    /**OpenSSL环境指针。*/
+    /**OpenSSL环境指针.*/
     SSL *openssl_ssl;
 
-    /**BIO环境指针。*/
+    /**BIO环境指针.*/
     BIO *openssl_bio;
 
-    /**读线程。*/
+    /**读线程.*/
     volatile pthread_t recv_leader;
 
-    /**写线程。*/
+    /**写线程.*/
     volatile pthread_t send_leader;
 
-    /**用户环境指针。*/
+    /**用户环境指针.*/
     abcdk_object_t *userdata;
 
-    /**用户环境销毁函数。*/
+    /**用户环境销毁函数.*/
     void (*userdata_free_cb)(void *userdata);
 
-    /**发送算法。 */
+    /**发送算法. */
     abcdk_wred_t *out_wred;
 
-    /**发送队列长度。 */
+    /**发送队列长度. */
     int out_len;
 
-    /**发送队列。*/
+    /**发送队列.*/
     abcdk_tree_t *out_queue;
 
-    /**发送队列锁。*/
+    /**发送队列锁.*/
     abcdk_spinlock_t *out_locker;
 
-    /**发送游标。*/
+    /**发送游标.*/
     size_t out_pos;
 
-    /**接收缓存。*/
+    /**接收缓存.*/
     abcdk_object_t *in_buffer;
 
-    /**来自哪个监听节点。*/
+    /**来自哪个监听节点.*/
     abcdk_stcp_node_t *from_listen;
 
 }; // abcdk_stcp_node_t;
@@ -135,7 +135,7 @@ static void _abcdk_stcp_ctx_unref(abcdk_stcp_t **ctx)
     assert(ctx_p->refcount == 0);
     ctx_p->magic = 0xcccccccc;
 
-    ABCDK_TRACE_ASSERT(ctx_p->worker_ctx == NULL, ABCDK_GETTEXT("销毁前必须先停止。"));
+    ABCDK_TRACE_ASSERT(ctx_p->worker_ctx == NULL, ABCDK_GETTEXT("销毁前必须先停止."));
 
     abcdk_asioex_destroy(&ctx_p->asioex_ctx);
     abcdk_heap_free(ctx_p);
@@ -179,7 +179,7 @@ static abcdk_stcp_t *_abcdk_stcp_ctx_alloc(int worker)
     if (!ctx->worker_ctx)
         goto ERR;
 
-    /*每个ASIO分配一个线程处理。*/
+    /*每个ASIO分配一个线程处理.*/
     for (int i = 0; i < worker; i++)
         abcdk_worker_dispatch(ctx->worker_ctx, i, (void *)-1);
 
@@ -219,7 +219,7 @@ void abcdk_stcp_unref(abcdk_stcp_node_t **node)
     abcdk_openssl_ssl_ctx_free(&node_p->openssl_ctx);
 #endif // HEADER_SSL_H
 
-    /*直接关闭，快速回收资源，不会处于time_wait状态。*/
+    /*直接关闭, 快速回收资源, 不会处于time_wait状态.*/
     if (node_p->fd >= 0)
         abcdk_socket_option_linger_set(node_p->fd, 1, 0);
 
@@ -325,7 +325,7 @@ int abcdk_stcp_set_timeout(abcdk_stcp_node_t *node, time_t timeout)
     assert(node != NULL);
     assert(node->ctx != NULL);
 
-    /*没有确定节点属性和状态前，不能调用此接口。*/
+    /*没有确定节点属性和状态前, 不能调用此接口.*/
     if (!node->flag || !node->status)
         return -3;
 
@@ -367,9 +367,9 @@ ssize_t abcdk_stcp_recv(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     assert(node != NULL && buf != NULL && size > 0);
 
-    /*仅工作线程拥有读权利。*/
+    /*仅工作线程拥有读权利.*/
     chk = abcdk_thread_leader_test(&node->recv_leader);
-    ABCDK_TRACE_ASSERT(chk == 0, ABCDK_GETTEXT("当前线程没有读权利。"));
+    ABCDK_TRACE_ASSERT(chk == 0, ABCDK_GETTEXT("当前线程没有读权利."));
 
     while (rsize_all < size)
     {
@@ -396,7 +396,7 @@ int abcdk_stcp_recv_watch(abcdk_stcp_node_t *node)
     assert(node != NULL);
     assert(node->ctx != NULL);
 
-    /*没有确定节点属性和状态前，不能调用此接口。*/
+    /*没有确定节点属性和状态前, 不能调用此接口.*/
     if (!node->flag || !node->status)
         return -3;
 
@@ -412,9 +412,9 @@ ssize_t abcdk_stcp_send(abcdk_stcp_node_t *node, void *buf, size_t size)
 
     assert(node != NULL && buf != NULL && size > 0);
 
-    /*仅工作线程拥有写权利。*/
+    /*仅工作线程拥有写权利.*/
     chk = abcdk_thread_leader_test(&node->send_leader);
-    ABCDK_TRACE_ASSERT(chk == 0, ABCDK_GETTEXT("当前线程没有读权利。"));
+    ABCDK_TRACE_ASSERT(chk == 0, ABCDK_GETTEXT("当前线程没有读权利."));
 
     while (wsize_all < size)
     {
@@ -441,7 +441,7 @@ int abcdk_stcp_send_watch(abcdk_stcp_node_t *node)
     assert(node != NULL);
     assert(node->ctx != NULL);
 
-    /*没有确定节点属性和状态前，不能调用此接口。*/
+    /*没有确定节点属性和状态前, 不能调用此接口.*/
     if (!node->flag || !node->status)
         return -3;
 
@@ -461,15 +461,15 @@ void _abcdk_stcp_cleanup_cb(epoll_data_t *data, void *opaque)
 
 void _abcdk_stcp_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *listen)
 {
-    /*通知应用层处理事件。*/
+    /*通知应用层处理事件.*/
     if (listen->cfg.prepare_cb)
         listen->cfg.prepare_cb(node, listen);
 }
 
-/*声明输入事件钩子函数。*/
+/*声明输入事件钩子函数.*/
 static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node);
 
-/*声明输出事件钩子函数。*/
+/*声明输出事件钩子函数.*/
 static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node);
 
 static void _abcdk_stcp_event_cb(abcdk_stcp_node_t *node, uint32_t event, int *result)
@@ -498,27 +498,27 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     epoll_data_t ep_data;
     int chk;
 
-    /*通知初始化。*/
+    /*通知初始化.*/
     _abcdk_stcp_prepare_cb(&node, listen);
     if (!node)
         return;
 
-    /*配置参数。*/
+    /*配置参数.*/
     node->flag = ABCDK_STCP_FLAG_ACCPET;
     node->status = ABCDK_STCP_STATUS_SYNC;
 
-    /*记住来源。*/
+    /*记住来源.*/
     node->from_listen = abcdk_stcp_refer(listen);
 
-    /*复制监听环境的配置。*/
+    /*复制监听环境的配置.*/
     node->cfg = listen->cfg;
 
-    /*每次取出一个句柄。*/
+    /*每次取出一个句柄.*/
     node->fd = abcdk_accept(listen->fd, &node->remote);
     if (node->fd < 0)
         goto ERR;
 
-    /*通知应用层新连接到来。*/
+    /*通知应用层新连接到来.*/
     _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_ACCEPT, &chk);
     if (chk != 0)
         goto ERR;
@@ -541,17 +541,17 @@ void _abcdk_stcp_accept(abcdk_stcp_node_t *listen)
     if (node->pfd <= 0)
         goto ERR;
 
-    /*关闭超时。*/
+    /*关闭超时.*/
     abcdk_asio_timeout(node->asio_ctx, node->pfd, 0);
 
-    /*注册输出事件用于探测连接状态。*/
+    /*注册输出事件用于探测连接状态.*/
     abcdk_asio_mark(node->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
     return;
 
 ERR:
 
-    /*通知关闭。*/
+    /*通知关闭.*/
     _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INTERRUPT, &chk);
     abcdk_stcp_unref(&node);
 
@@ -572,7 +572,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         abcdk_object_t *info = abcdk_openssl_cert_dump(cert);
         if (info)
         {
-            abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("远端(%s)的证书信息：\n%s"), remote_addr, info->pstrs[0]);
+            abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("远端(%s)的证书信息: \n%s"), remote_addr, info->pstrs[0]);
             abcdk_object_unref(&info);
         }
 
@@ -584,7 +584,7 @@ static int _abcdk_stcp_openssl_verify_result(abcdk_stcp_node_t *node)
         chk = SSL_get_verify_result(node->openssl_ssl);
         if (chk != X509_V_OK)
         {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("远端(%s)的证书验证有错误发生(ssl-errno=%d)。"), remote_addr, chk);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("远端(%s)的证书验证有错误发生(ssl-errno=%d)."), remote_addr, chk);
             return -1;
         }
     }
@@ -602,7 +602,7 @@ static void _abcdk_stcp_openssl_dump_errmsg(abcdk_stcp_node_t *node, unsigned lo
 
     abcdk_stcp_get_sockaddr_str(node, local_addr, remote_addr);
 
-    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接有错误发生(%s)。"), local_addr, remote_addr, errmsg);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接有错误发生(%s)."), local_addr, remote_addr, errmsg);
 }
 
 #endif // HEADER_SSL_H
@@ -614,52 +614,52 @@ static void _abcdk_stcp_handshake_sync_after(abcdk_stcp_node_t *node)
     struct timeval tv;
     int chk;
 
-    /*获取远程地址。*/
+    /*获取远程地址.*/
     if (!node->remote.family)
     {
         sock_len = sizeof(abcdk_sockaddr_t);
         getpeername(node->fd, &node->remote.addr, &sock_len);
     }
 
-    /*获取本机地址。*/
+    /*获取本机地址.*/
     if (!node->local.family)
     {
         sock_len = sizeof(abcdk_sockaddr_t);
         getsockname(node->fd, &node->local.addr, &sock_len);
     }
 
-    /*去掉默认的发和收超时设置。*/
+    /*去掉默认的发和收超时设置.*/
     tv.tv_sec = tv.tv_usec = 0;
     chk = abcdk_sockopt_option_timeout(node->fd, SO_RCVTIMEO, &tv, 2);
     chk = abcdk_sockopt_option_timeout(node->fd, SO_SNDTIMEO, &tv, 2);
 
-    // /*设置发送缓存区。*/
+    // /*设置发送缓存区.*/
     // sock_flag = 512*1024;
     // chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_SNDBUF, &sock_flag, 2);
 
-    // /*设置接收缓存区。*/
+    // /*设置接收缓存区.*/
     // sock_flag = 512*1024;
     // chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_RCVBUF, &sock_flag, 2);
 
-    /*修改保活参数，以防在远程断电的情况下本地无法检测到连接断开信号。*/
+    /*修改保活参数, 以防在远程断电的情况下本地无法检测到连接断开信号.*/
 
     /*开启keepalive属性*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node->fd, SOL_SOCKET, SO_KEEPALIVE, &sock_flag, 2);
 
-    /*连接在60秒内没有任何数据往来，则进行探测。*/
+    /*连接在60秒内没有任何数据往来, 则进行探测.*/
     sock_flag = 60;
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPIDLE, &sock_flag, 2);
 
-    /*探测时发包的时间间隔为5秒。*/
+    /*探测时发包的时间间隔为5秒.*/
     sock_flag = 5;
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPINTVL, &sock_flag, 2);
 
-    /*探测尝试的次数.如果第一次探测包就收到响应，则后两次的不再发。*/
+    /*探测尝试的次数.如果第一次探测包就收到响应, 则后两次的不再发.*/
     sock_flag = 3;
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_KEEPCNT, &sock_flag, 2);
 
-    /*关闭延迟发送。*/
+    /*关闭延迟发送.*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node->fd, IPPROTO_TCP, TCP_NODELAY, &sock_flag, 2);
 }
@@ -684,7 +684,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 
             if (!node->openssl_bio)
             {
-                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败."), node->cfg.ssl_scheme);
                 return -1;
             }
 
@@ -700,7 +700,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 
             if (!node->openssl_ssl)
             {
-                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建PKI(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建PKI(%d)环境失败."), node->cfg.ssl_scheme);
                 return -1;
             }
         
@@ -708,12 +708,12 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
             {
                 SSL_set_bio(node->openssl_ssl, node->openssl_bio, node->openssl_bio);
 
-                /*托管理给SSL，这里要清理野指针。*/
+                /*托管理给SSL, 这里要清理野指针.*/
                 node->openssl_bio = NULL;
             }
             else
             {
-                SSL_set_fd(node->openssl_ssl, node->fd);//内部使用BIO_NOCLOSE标志绑定。
+                SSL_set_fd(node->openssl_ssl, node->fd);//内部使用BIO_NOCLOSE标志绑定.
             }
 
             if (node->flag == ABCDK_STCP_FLAG_ACCPET)
@@ -729,7 +729,7 @@ static int _abcdk_stcp_handshake_ssl_init(abcdk_stcp_node_t *node)
 #endif // HEADER_SSL_H
     else
     {
-        abcdk_trace_printf(LOG_WARNING,  ABCDK_GETTEXT("尚未支持的SSL配置，或构建时未包含SSL组件。"));
+        abcdk_trace_printf(LOG_WARNING,  ABCDK_GETTEXT("尚未支持的SSL配置, 或构建时未包含SSL组件."));
     }
 
     return -22;
@@ -746,7 +746,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
         chk = abcdk_poll(node->fd, 0x02, 0);
         if (chk > 0)
         {
-            /*初始化SSL方案。*/
+            /*初始化SSL方案.*/
             chk = _abcdk_stcp_handshake_ssl_init(node);
             if (chk != 0)
                 goto ERR;
@@ -767,7 +767,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
                 goto END;
         }
 
-        /*获取连接信息并设置默认值。*/
+        /*获取连接信息并设置默认值.*/
         _abcdk_stcp_handshake_sync_after(node);
     }
 
@@ -775,7 +775,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
     {
 #ifdef HEADER_SSL_H
 
-        /*清除历史错误记录，否则SSL_get_error()可能会返回意料之外的值。*/
+        /*清除历史错误记录, 否则SSL_get_error()可能会返回意料之外的值.*/
         ERR_clear_error();
 
         ssl_chk = SSL_do_handshake(node->openssl_ssl);
@@ -789,7 +789,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
         }
         else
         {
-            /*必须通过返回值获取出错码。*/
+            /*必须通过返回值获取出错码.*/
             ssl_err = SSL_get_error(node->openssl_ssl, ssl_chk);
 
             if (ssl_err == SSL_ERROR_WANT_READ)
@@ -806,7 +806,7 @@ void _abcdk_stcp_handshake(abcdk_stcp_node_t *node)
             }
             else
             {
-                /*其它的全部当作出错处理。*/
+                /*其它的全部当作出错处理.*/
                 _abcdk_stcp_openssl_dump_errmsg(node, ssl_err);
             }
 
@@ -823,7 +823,7 @@ END:
 
 ERR:
 
-    /*修改超时，使用超时检测器关闭。*/
+    /*修改超时, 使用超时检测器关闭.*/
     abcdk_asio_timeout(node->asio_ctx, node->pfd, -1);
 }
 
@@ -834,21 +834,21 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
 
     if (event & ABCDK_EPOLL_ERROR)
     {
-        /*清除状态。*/
+        /*清除状态.*/
         node->status = 0;
 
         _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_CLOSE, &chk);
 
-        /*释放事件计数。*/
+        /*释放事件计数.*/
         abcdk_asio_unref(node->asio_ctx, node->pfd, ABCDK_EPOLL_ERROR);
 
-        /*解除绑定关系。*/
+        /*解除绑定关系.*/
         abcdk_asio_detch(node->asio_ctx, node->pfd);
 
-        /*释放引用后，指针会被清空，因此这里需要复制一下。*/
+        /*释放引用后, 指针会被清空, 因此这里需要复制一下.*/
         node_p = node;
 
-        /*释放引用(关联时的引用)。*/
+        /*释放引用(关联时的引用).*/
         abcdk_stcp_unref(&node_p);
     }
 
@@ -865,10 +865,10 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
             _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_OUTPUT, &chk);
         }
 
-        /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
+        /*无论连接状态如何, 写权利必须内部释放, 不能开放给应用层.*/
         abcdk_asio_mark(node->asio_ctx, node->pfd, 0, ABCDK_EPOLL_OUTPUT);
 
-        /*释放事件计数。*/
+        /*释放事件计数.*/
         abcdk_asio_unref(node->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT);
     }
 
@@ -876,10 +876,10 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
     {
         if (node->flag == ABCDK_STCP_FLAG_LISTEN)
         {
-            /*每次处理一个新连接。*/
+            /*每次处理一个新连接.*/
             _abcdk_stcp_accept(node);
 
-            /*释放监听权利，并注册监听事件。*/
+            /*释放监听权利, 并注册监听事件.*/
             abcdk_asio_mark(node->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT, ABCDK_EPOLL_INPUT);
         }
         else
@@ -895,11 +895,11 @@ static void _abcdk_stcp_dispatch(abcdk_stcp_t *ctx, uint32_t event, abcdk_stcp_n
                 _abcdk_stcp_event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
             }
 
-            /*无论连接状态如何，读权利必须内部释放，不能开放给应用层。*/
+            /*无论连接状态如何, 读权利必须内部释放, 不能开放给应用层.*/
             abcdk_asio_mark(node->asio_ctx, node->pfd, 0, ABCDK_EPOLL_INPUT);
         }
 
-        /*释放事件计数。*/
+        /*释放事件计数.*/
         abcdk_asio_unref(node->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT);
     }
 }
@@ -923,14 +923,14 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
 
         node = (abcdk_stcp_node_t *)e.data.ptr;
 
-        /*设置线程名字，日志记录会用到。*/
+        /*设置线程名字, 日志记录会用到.*/
         abcdk_thread_setname(0, "%x", node->index);
 
         _abcdk_stcp_dispatch(ctx, e.events, node);
     }
 
 #ifdef OPENSSL_VERSION_NUMBER
-    /*清理当前线程的状态队列的内存，否则会有内存泄露。*/
+    /*清理当前线程的状态队列的内存, 否则会有内存泄露.*/
     ERR_remove_thread_state(NULL);
 #endif //OPENSSL_VERSION_NUMBER
 }
@@ -957,11 +957,11 @@ void abcdk_stcp_stop(abcdk_stcp_t *ctx)
     if(!ctx)
         return;
     
-    /*通知ASIO取消等待。*/
+    /*通知ASIO取消等待.*/
     if (ctx->asioex_ctx)
         abcdk_asioex_abort(ctx->asioex_ctx);
 
-    /*线程池销毁。*/
+    /*线程池销毁.*/
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 
@@ -985,11 +985,11 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
             node->openssl_bio = abcdk_openssl_BIO_s_Darknet(node->cfg.rsa_use_key, node->flag == ABCDK_STCP_FLAG_CLIENT);
             if (!node->openssl_bio)
             {
-                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建RSA(%d)环境失败."), node->cfg.ssl_scheme);
                 return -2;
             }
 
-            /*仅用于验证。*/
+            /*仅用于验证.*/
             abcdk_openssl_BIO_destroy(&node->openssl_bio);
         }
 
@@ -1000,17 +1000,17 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 
             if (!node->openssl_ctx)
             {
-                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建PKI(%d)环境失败。"), node->cfg.ssl_scheme);
+                abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("创建PKI(%d)环境失败."), node->cfg.ssl_scheme);
                 return -2;
             }
 
-            /*设置下层协议和密码套件。*/
+            /*设置下层协议和密码套件.*/
             if (node->cfg.pki_next_proto)
             {
                 chk = abcdk_openssl_ssl_ctx_set_alpn(node->openssl_ctx, node->cfg.pki_next_proto, node->cfg.pki_cipher_list);
                 if (chk != 0)
                 {
-                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("设置PKI(%d)环境下层协议和密码套件失败。"), node->cfg.ssl_scheme);
+                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("设置PKI(%d)环境下层协议和密码套件失败."), node->cfg.ssl_scheme);
                     return -3;
                 }
             }
@@ -1021,7 +1021,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 #endif // HEADER_SSL_H
     else
     {
-        abcdk_trace_printf(LOG_WARNING,  ABCDK_GETTEXT("尚未支持的SSL配置，或构建时未包含SSL组件。"));
+        abcdk_trace_printf(LOG_WARNING,  ABCDK_GETTEXT("尚未支持的SSL配置, 或构建时未包含SSL组件."));
     }
 
     return -22;
@@ -1029,7 +1029,7 @@ static int _abcdk_stcp_ssl_init(abcdk_stcp_node_t *node)
 
 static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
 {
-    /*修复不支持的配置和默认值。*/
+    /*修复不支持的配置和默认值.*/
 
     if (node->cfg.out_hook_min_th <= 0)
         node->cfg.out_hook_min_th = 200;
@@ -1051,7 +1051,7 @@ static void _abcdk_stcp_fix_cfg(abcdk_stcp_node_t *node)
     else
         node->cfg.out_hook_prob = ABCDK_CLAMP(node->cfg.out_hook_prob, 1, 99);
 
-    /*最小阈值和最大阈值必须符合区间要求。*/
+    /*最小阈值和最大阈值必须符合区间要求.*/
     if (node->cfg.out_hook_min_th > node->cfg.out_hook_max_th)
         ABCDK_INTEGER_SWAP(node->cfg.out_hook_min_th, node->cfg.out_hook_max_th);
 }
@@ -1064,10 +1064,10 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
     int chk;
 
     assert(node != NULL && cfg != NULL);
-    ABCDK_TRACE_ASSERT(cfg->prepare_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
-    ABCDK_TRACE_ASSERT(cfg->event_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
+    ABCDK_TRACE_ASSERT(cfg->prepare_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数, 通讯对象无法正常工作."));
+    ABCDK_TRACE_ASSERT(cfg->event_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数, 通讯对象无法正常工作."));
 
-    /*异步环境，首先得增加对象引用。*/
+    /*异步环境, 首先得增加对象引用.*/
     node_p = abcdk_stcp_refer(node);
 
     node_p->cfg = *cfg;
@@ -1076,23 +1076,23 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
     node_p->status = ABCDK_STCP_STATUS_STABLE;
 
 
-    /*修复不支持的配置。*/
+    /*修复不支持的配置.*/
     _abcdk_stcp_fix_cfg(node_p);
 
-    /*复制绑定地址到节点上。*/
+    /*复制绑定地址到节点上.*/
     abcdk_sockaddr_copy(&node_p->cfg.bind_addr,&node_p->local);
 
     node_p->fd = abcdk_socket(node_p->local.family, 0);
     if (node_p->fd < 0)
         goto ERR;
 
-    /*端口复用，用于快速重启恢复。*/
+    /*端口复用, 用于快速重启恢复.*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node_p->fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag, 2);
     if (chk != 0)
         goto ERR;
 
-    /*地址复用，用于快速重启恢复。*/
+    /*地址复用, 用于快速重启恢复.*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node_p->fd, SOL_SOCKET, SO_REUSEADDR, &sock_flag, 2);
     if (chk != 0)
@@ -1100,7 +1100,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
 
     if (node_p->local.family == AF_INET6)
     {
-        /*IPv6仅支持IPv6。*/
+        /*IPv6仅支持IPv6.*/
         sock_flag = 1;
         chk = abcdk_sockopt_option_int(node_p->fd, IPPROTO_IPV6, IPV6_V6ONLY, &sock_flag, 2);
         if (chk != 0)
@@ -1129,7 +1129,7 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("绑定设备需要root权限支持，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("绑定设备需要root权限支持, 忽略配置."));
         }
     }
 
@@ -1141,13 +1141,13 @@ int abcdk_stcp_listen(abcdk_stcp_node_t *node, abcdk_stcp_config_t *cfg)
     if (!node_p->asio_ctx)
         goto ERR;
 
-    /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
+    /*节点加入epoll池中.在解除绑定关系前, 节点不会被释放.*/
     ep_data.ptr = node_p;
     node_p->pfd = abcdk_asio_attach(node_p->asio_ctx, node_p->fd, &ep_data);
     if (node_p->pfd <= 0)
         goto ERR;
 
-    /*关闭超时。*/
+    /*关闭超时.*/
     abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 0);
     abcdk_asio_mark(node_p->asio_ctx, node_p->pfd, ABCDK_EPOLL_INPUT, 0);
 
@@ -1168,9 +1168,9 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     int chk;
 
     assert(node != NULL && addr != NULL && cfg != NULL);
-    ABCDK_TRACE_ASSERT(cfg->event_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
+    ABCDK_TRACE_ASSERT(cfg->event_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数, 通讯对象无法正常工作."));
 
-    /*异步环境，首先得增加对象引用。*/
+    /*异步环境, 首先得增加对象引用.*/
     node_p = abcdk_stcp_refer(node);
 
     node_p->cfg = *cfg;
@@ -1178,10 +1178,10 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     node_p->flag = ABCDK_STCP_FLAG_CLIENT;
     node_p->status = ABCDK_STCP_STATUS_SYNC;
 
-    /*修复不支持的配置。*/
+    /*修复不支持的配置.*/
     _abcdk_stcp_fix_cfg(node_p);
 
-    /*复制远程地址到节点上。*/
+    /*复制远程地址到节点上.*/
     abcdk_sockaddr_copy(addr,&node_p->remote);
 
     node_p->fd = abcdk_socket(node_p->remote.family, 0);
@@ -1202,7 +1202,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("绑定地址的协议和远程的地址协议不同，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("绑定地址的协议和远程的地址协议不同, 忽略配置."));
         }
     }
 
@@ -1216,7 +1216,7 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("绑定设备需要root权限支持，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("绑定设备需要root权限支持, 忽略配置."));
         }
     }
 
@@ -1237,13 +1237,13 @@ int abcdk_stcp_connect(abcdk_stcp_node_t *node, abcdk_sockaddr_t *addr, abcdk_st
     if (!node_p->asio_ctx)
         goto ERR;
 
-    /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
+    /*节点加入epoll池中.在解除绑定关系前, 节点不会被释放.*/
     ep_data.ptr = node_p;
     node_p->pfd = abcdk_asio_attach(node_p->asio_ctx, node_p->fd, &ep_data);
     if (node_p->pfd <= 0)
         goto ERR;
 
-    /*关闭超时。*/
+    /*关闭超时.*/
     abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 0);
     abcdk_asio_mark(node_p->asio_ctx, node_p->pfd, ABCDK_EPOLL_OUTPUT, 0);
 
@@ -1263,7 +1263,7 @@ static void _abcdk_stcp_input_hook(abcdk_stcp_node_t *node)
     size_t remain = 0;
     int chk = 0;
 
-    /*当未注册输入数据到达通知回调函数时，直接发事件通知。*/
+    /*当未注册输入数据到达通知回调函数时, 直接发事件通知.*/
     if (!node->cfg.input_cb)
     {
         node->cfg.event_cb(node, ABCDK_STCP_EVENT_INPUT, &chk);
@@ -1286,7 +1286,7 @@ NEXT_MSG:
     rlen = pos = 0;
     remain = 0;
 
-    /*收。*/
+    /*收.*/
     rlen = abcdk_stcp_recv(node, node->in_buffer->pptrs[0], node->in_buffer->sizes[0]);
     if (rlen <= 0)
     {
@@ -1294,14 +1294,14 @@ NEXT_MSG:
         return;
     }
 
-    /*缓存中可能存在多个请求，因此处理所有请求才能退出循环。*/
+    /*缓存中可能存在多个请求, 因此处理所有请求才能退出循环.*/
     while (pos < rlen)
     {
         node->cfg.input_cb(node, ABCDK_PTR2VPTR(node->in_buffer->pptrs[0], pos), rlen - pos, &remain);
         pos += (rlen - pos) - remain;
     }
 
-    /*继续读取缓存内可能存在数据，直到为空。*/
+    /*继续读取缓存内可能存在数据, 直到为空.*/
     goto NEXT_MSG;
 }
 
@@ -1313,12 +1313,12 @@ static void _abcdk_stcp_output_hook(abcdk_stcp_node_t *node)
 
 NEXT_MSG:
 
-    /*从队列头部开始发送。*/
+    /*从队列头部开始发送.*/
     abcdk_spinlock_lock(node->out_locker, 1);
     p = abcdk_tree_child(node->out_queue, 1);
     abcdk_spinlock_unlock(node->out_locker);
 
-    /*通知应用层，发送队列空闲。*/
+    /*通知应用层, 发送队列空闲.*/
     if (!p)
     {
         node->cfg.event_cb(node, ABCDK_STCP_EVENT_OUTPUT, &chk);
@@ -1326,10 +1326,10 @@ NEXT_MSG:
     }
 
     /*
-     * 发。
+     * 发.
      * 
-     * 注1：能发多少发多少。
-     * 注2：重发时，数据的参数不能改变(指针和长度)。
+     * 注1: 能发多少发多少.
+     * 注2: 重发时, 数据的参数不能改变(指针和长度).
      */
     while (node->out_pos < p->obj->sizes[0])
     {
@@ -1340,20 +1340,20 @@ NEXT_MSG:
             return;
         }
 
-        /*累加已发送的长度。*/
+        /*累加已发送的长度.*/
         node->out_pos += slen;
     }
 
-    /*代码走到这里，表示当前节点的数据已经全部发出，因此游标归零。*/
+    /*代码走到这里, 表示当前节点的数据已经全部发出, 因此游标归零.*/
     node->out_pos = 0;
 
-    /*移除节点。*/
+    /*移除节点.*/
     abcdk_spinlock_lock(node->out_locker, 1);
     abcdk_tree_unlink(p);
     node->out_len -= 1;
     abcdk_spinlock_unlock(node->out_locker);
 
-    /*删除节点。*/
+    /*删除节点.*/
     abcdk_tree_free(&p);
 
     goto NEXT_MSG;
@@ -1368,7 +1368,7 @@ int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
     assert(node != NULL && data != NULL);
     assert(data->pptrs[0] != NULL && data->sizes[0] > 0);
 
-    /*没有确定节点属性和状态前，不能调用此接口。*/
+    /*没有确定节点属性和状态前, 不能调用此接口.*/
     if (!node->flag || !node->status)
         return -3;
 
@@ -1381,17 +1381,17 @@ int abcdk_stcp_post(abcdk_stcp_node_t *node, abcdk_object_t *data, int key)
 
     abcdk_spinlock_lock(node->out_locker, 1);
 
-    /*非关键数据根据WRED算法决定是否添加到队列中。*/
+    /*非关键数据根据WRED算法决定是否添加到队列中.*/
     chk = (key ? 0 : abcdk_wred_update(node->out_wred, node->out_len + 1));
     if (chk == 0)
     {
-        /*添加到队列末尾。*/
+        /*添加到队列末尾.*/
         abcdk_tree_insert2(node->out_queue, p, 0);
         node->out_len += 1;
     }
     else
     {
-        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("输出缓慢，队列积压过长(len=%d)，丢弃当前数据包(size=%zd)。\n"), node->out_len, p->obj->sizes[0]);
+        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("输出缓慢, 队列积压过长(len=%d), 丢弃当前数据包(size=%zd).\n"), node->out_len, p->obj->sizes[0]);
 
         abcdk_tree_free(&p);
     }
@@ -1419,7 +1419,7 @@ int abcdk_stcp_post_buffer(abcdk_stcp_node_t *node, const void *data, size_t siz
     if (chk == 0)
         return 0;
 
-    /*删除投递失败的。*/
+    /*删除投递失败的.*/
     abcdk_object_unref(&obj);
     return chk;
 }
@@ -1439,7 +1439,7 @@ int abcdk_stcp_post_vformat(abcdk_stcp_node_t *node, int max, const char *fmt, v
     if (chk == 0)
         return 0;
 
-    /*删除投递失败的。*/
+    /*删除投递失败的.*/
     abcdk_object_unref(&obj);
     return chk;
 }

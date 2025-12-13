@@ -22,7 +22,7 @@ void abcdk_signal_set(sigset_t *sigs,int op, int sig,...)
         else 
             sigaddset(sigs, sig);
 
-        /*遍历后续的。*/
+        /*遍历后续的.*/
         sig = va_arg(vaptr, int);
     }
     va_end(vaptr);
@@ -44,7 +44,7 @@ void abcdk_signal_fill(sigset_t *sigs,int sigdel,...)
 
         abcdk_signal_set(sigs,1, sigdel,-1);
 
-        /*遍历后续的。*/
+        /*遍历后续的.*/
         sigdel = va_arg(vaptr, int);
     }
     va_end(vaptr);

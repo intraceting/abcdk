@@ -27,7 +27,7 @@ ssize_t abcdk_iconv(iconv_t cd, const char *src, size_t slen, char *dst, size_t 
     if(chk == -1)
         return -1;
 
-    /* 调用者可能关注未转换成功的。*/    
+    /* 调用者可能关注未转换成功的.*/    
     if(remain != NULL)
         *remain = chk;
     
@@ -58,13 +58,13 @@ ssize_t abcdk_iconv2(const char *from,const char *to, const char *src, size_t sl
 
 ssize_t abcdk_iconv(iconv_t cd, const char *src, size_t slen, char *dst, size_t dlen,size_t *remain)
 {
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含ICONV工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含ICONV工具."));
     return -1;
 }
 
 ssize_t abcdk_iconv2(const char *from,const char *to, const char *src, size_t slen, char *dst, size_t dlen,size_t *remain)
 {
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含ICONV工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含ICONV工具."));
     return -1;
 }
 

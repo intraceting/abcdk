@@ -16,40 +16,40 @@ typedef struct _abcdk_httpd
     int errcode;
     abcdk_option_t *args;
 
-    /*名称。*/
+    /*名称.*/
     const char *name_p;
 
-    /*授权存储路径。*/
+    /*授权存储路径.*/
     const char *auth_path_p;
 
-    /*WEB根目录。*/
+    /*WEB根目录.*/
     const char *root_path_p;
 
-    /*CA证书。*/
+    /*CA证书.*/
     const char *ca_file_p;
 
-    /*CA证书目录。*/
+    /*CA证书目录.*/
     const char *ca_path_p;
 
-    /*服务器证书。*/
+    /*服务器证书.*/
     const char *cert_file_p;
 
-    /*服务器证书私钥。*/
+    /*服务器证书私钥.*/
     const char *key_file_p;
 
-    /*上行数量包最大长度。*/
+    /*上行数量包最大长度.*/
     size_t up_max_size;
 
-    /*上行数量包临时缓存目录。*/
+    /*上行数量包临时缓存目录.*/
     const char *up_tmp_path_p;
 
-    /*是否自动索引目录和文件。*/
+    /*是否自动索引目录和文件.*/
     int auto_index;
 
-    /*跨域服务器地址。*/
+    /*跨域服务器地址.*/
     const char *acao_p;
 
-    /*是否启用HTTP/2支持。*/
+    /*是否启用HTTP/2支持.*/
     int enable_h2;
 
     abcdk_logger_t *logger;
@@ -61,10 +61,10 @@ typedef struct _abcdk_httpd
     /*时间环境*/
     locale_t loc_ctx;
 
-    /**证书。*/
+    /**证书.*/
     X509 *pki_cert_ctx;
 
-    /**私钥。*/
+    /**私钥.*/
     EVP_PKEY *pki_key_ctx;
 
     abcdk_https_t *io_ctx;
@@ -95,80 +95,80 @@ void _abcdk_httpd_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的HTTP服务器。\n");
+    fprintf(stderr, "\n\t简单的HTTP服务器.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--log-path < PATH >\n");
-    fprintf(stderr, "\t\t日志路径。默认：/tmp/abcdk/log/\n");
+    fprintf(stderr, "\t\t日志路径.默认: /tmp/abcdk/log/\n");
 
     fprintf(stderr, "\n\t--daemon < INTERVAL > \n");
-    fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
-    fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
+    fprintf(stderr, "\t\t启用后台守护模式(秒), 1～60之间有效.默认: 30\n");
+    fprintf(stderr, "\t\t注: 此功能不支持supervisor或类似的工具.\n");
 
     fprintf(stderr, "\n\t--name < NAME >\n");
-    fprintf(stderr, "\t\t名称。默认：%s\n", "ABCDK");
+    fprintf(stderr, "\t\t名称.默认: %s\n", "ABCDK");
 
     fprintf(stderr, "\n\t--auth-path < PATH >\n");
-    fprintf(stderr, "\t\t授权存储路径。注：文件名为账号名，文件内容为密码。\n");
+    fprintf(stderr, "\t\t授权存储路径.注: 文件名为账号名, 文件内容为密码.\n");
 
     fprintf(stderr, "\n\t--access-control-allow-origin < DOMAIN >\n");
-    fprintf(stderr, "\t\t访问控制允许源。默认：*\n");
+    fprintf(stderr, "\t\t访问控制允许源.默认: *\n");
 
     fprintf(stderr, "\n\t--listen < ADDR >\n");
-    fprintf(stderr, "\t\t监听地址。\n");
+    fprintf(stderr, "\t\t监听地址.\n");
 
     fprintf(stderr, "\n\t\tIPv4://IP:PORT\n");
     fprintf(stderr, "\t\tIPv6://[IP]:PORT\n");
     fprintf(stderr, "\t\tIPv6://IP,PORT\n");
 #ifdef HEADER_SSL_H
     fprintf(stderr, "\n\t--listen-ssl < ADDR >\n");
-    fprintf(stderr, "\t\tSSL监听地址。\n");
+    fprintf(stderr, "\t\tSSL监听地址.\n");
  
     fprintf(stderr, "\n\t--ca-file < FILE >\n");
-    fprintf(stderr, "\t\tCA证书文件。\n");
+    fprintf(stderr, "\t\tCA证书文件.\n");
 
-    fprintf(stderr, "\n\t\t注：仅支持PEM格式，并且要求客户提供证书。\n");
+    fprintf(stderr, "\n\t\t注: 仅支持PEM格式, 并且要求客户提供证书.\n");
 
     fprintf(stderr, "\n\t--ca-path < PATH >\n");
-    fprintf(stderr, "\t\tCA证书路径。\n");
+    fprintf(stderr, "\t\tCA证书路径.\n");
 
-    fprintf(stderr, "\n\t\t注：仅支持PEM格式，并且要求客户提供证书，同时验证吊销列表。\n");
+    fprintf(stderr, "\n\t\t注: 仅支持PEM格式, 并且要求客户提供证书, 同时验证吊销列表.\n");
 
     fprintf(stderr, "\n\t--cert-file < FILE >\n");
-    fprintf(stderr, "\t\t证书文件。\n");
+    fprintf(stderr, "\t\t证书文件.\n");
 
-    fprintf(stderr, "\n\t\t注：仅支持PEM格式。\n");
+    fprintf(stderr, "\n\t\t注: 仅支持PEM格式.\n");
 
     fprintf(stderr, "\n\t--key-file < FILE >\n");
-    fprintf(stderr, "\t\t私钥文件。\n");
+    fprintf(stderr, "\t\t私钥文件.\n");
 
-    fprintf(stderr, "\n\t\t注：仅支持PEM格式。\n");
+    fprintf(stderr, "\n\t\t注: 仅支持PEM格式.\n");
 
     fprintf(stderr, "\n\t--check-cert < 0|1 >\n");
-    fprintf(stderr, "\t\t是否验证对端证书。默认：0。\n");
+    fprintf(stderr, "\t\t是否验证对端证书.默认: 0.\n");
 
-    fprintf(stderr, "\n\t\t0：否\n");
-    fprintf(stderr, "\t\t1：是\n");
+    fprintf(stderr, "\n\t\t0: 否\n");
+    fprintf(stderr, "\t\t1: 是\n");
 #endif // HEADER_SSL_H
 
     fprintf(stderr, "\n\t--root-path < PATH >\n");
-    fprintf(stderr, "\t\t服务器根据路径。默认：/var/abcdk/\n");
+    fprintf(stderr, "\t\t服务器根据路径.默认: /var/abcdk/\n");
 
     fprintf(stderr, "\n\t--up-max-size < SIZE >\n");
-    fprintf(stderr, "\t\t上行数据最大长度(字节)。默认：%d\n", 4 * 1024 * 1024);
+    fprintf(stderr, "\t\t上行数据最大长度(字节).默认: %d\n", 4 * 1024 * 1024);
 
     fprintf(stderr, "\n\t--up-tmp-path < PATH >\n");
-    fprintf(stderr, "\t\t上行数据临时缓存目录。\n");
+    fprintf(stderr, "\t\t上行数据临时缓存目录.\n");
 
     fprintf(stderr, "\n\t--auto-index\n");
-    fprintf(stderr, "\t\t启用自动索引。\n");
+    fprintf(stderr, "\t\t启用自动索引.\n");
 
     fprintf(stderr, "\n\t--enable-h2\n");
-    fprintf(stderr, "\t\t启用HTTP2协议。\n");
+    fprintf(stderr, "\t\t启用HTTP2协议.\n");
 }
 
 static void _abcdk_httpd_reply_nobody(abcdk_https_stream_t *stream, int status, const char *acam)
@@ -266,7 +266,7 @@ static void _abcdk_httpd_reply_dirent_more(abcdk_https_stream_t *stream)
 
         abcdk_basename(tmp3, tmp);
 
-        /*以“.”开头的文件表示具有隐藏属性。*/
+        /*以“.”开头的文件表示具有隐藏属性.*/
         if (tmp3[0] == '.')
             continue;
 
@@ -341,7 +341,7 @@ static void _abcdk_httpd_reply_file(abcdk_https_stream_t *stream)
         return;
     }
 
-    /*保存文件大小。*/
+    /*保存文件大小.*/
     file_size = stream_ctx_p->file_ctx->sizes[0];
 
 #ifdef _MAGIC_H
@@ -349,7 +349,7 @@ static void _abcdk_httpd_reply_file(abcdk_https_stream_t *stream)
         type = magic_buffer(stream_ctx_p->ctx_p->magic_ctx, stream_ctx_p->file_ctx->pptrs[0], stream_ctx_p->file_ctx->sizes[0]);
 #endif // _MAGIC_H
 
-    /*如果无法通过内容判断类型，尝试通过文件名获取。*/
+    /*如果无法通过内容判断类型, 尝试通过文件名获取.*/
     if (!type)
         type = abcdk_http_content_type_desc(stream_ctx_p->pathfile->pstrs[0]);
 
@@ -373,10 +373,10 @@ static void _abcdk_httpd_reply_file(abcdk_https_stream_t *stream)
             return;
         }
 
-        /*也许未指定末尾。*/
+        /*也许未指定末尾.*/
         range_e = ABCDK_MIN(stream_ctx_p->file_ctx->sizes[0] - 1, range_e);
 
-        /*修改地址和长度为请求的数据范围。*/
+        /*修改地址和长度为请求的数据范围.*/
         stream_ctx_p->file_ctx->pptrs[0] += range_s;
         stream_ctx_p->file_ctx->sizes[0] = range_e - range_s + 1;
 
@@ -398,7 +398,7 @@ static void _abcdk_httpd_reply_file(abcdk_https_stream_t *stream)
     
     abcdk_https_response(stream, NULL);
 
-    /*不需要发送或发送失败时，需要主动删除。*/
+    /*不需要发送或发送失败时, 需要主动删除.*/
     if (chk != 0)
         abcdk_object_unref(&stream_ctx_p->file_ctx);
     else 
@@ -454,7 +454,7 @@ static void _abcdk_httpd_stream_request_cb(void *opaque, abcdk_https_stream_t *s
     abcdk_httpd_stream_t *stream_ctx_p = (abcdk_httpd_stream_t *)abcdk_https_get_userdata(stream);
     int chk;
 
-    /*删除过时的。*/
+    /*删除过时的.*/
     abcdk_tree_free(&stream_ctx_p->dir_ctx);
     abcdk_object_unref(&stream_ctx_p->file_ctx);
     abcdk_object_unref(&stream_ctx_p->pathfile);
@@ -471,10 +471,10 @@ static void _abcdk_httpd_stream_request_cb(void *opaque, abcdk_https_stream_t *s
     stream_ctx_p->script_p = abcdk_https_request_header_get(stream, "Script");
     stream_ctx_p->range_p = abcdk_https_request_header_get(stream, "Range");
 
-    /*解码路径。*/
+    /*解码路径.*/
     stream_ctx_p->script_de = abcdk_url_decode2(stream_ctx_p->script_p, strlen(stream_ctx_p->script_p), 1);
 
-    /*转换成绝对路径，以防路径中存在“..”绕过根目录。*/
+    /*转换成绝对路径, 以防路径中存在“..”绕过根目录.*/
     abcdk_url_abspath(stream_ctx_p->script_de->pstrs[0], 0);
     stream_ctx_p->script_de->sizes[0] = strlen(stream_ctx_p->script_de->pstrs[0]);
 
@@ -528,14 +528,14 @@ static int _abcdk_httpd_start_listen(abcdk_httpd_t *ctx,int ssl)
     else
         listen = abcdk_option_get(ctx->args, "--listen", 0, NULL);
 
-    /*未启用。*/
+    /*未启用.*/
     if(!listen)
         return 0;
 
     chk = abcdk_sockaddr_from_string(&listen_addr, listen, 0);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, "监听地址'%s'无法识别。", listen);
+        abcdk_trace_printf(LOG_ERR, "监听地址'%s'无法识别.", listen);
         return -1;
     }
 
@@ -573,7 +573,7 @@ static int _abcdk_httpd_start_listen(abcdk_httpd_t *ctx,int ssl)
 
     if (!listen_p)
     {
-        abcdk_trace_printf(LOG_ERR, "内部错误。");
+        abcdk_trace_printf(LOG_ERR, "内部错误.");
         return -2;
     }
 
@@ -593,10 +593,10 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
 
     log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
 
-    /*打开日志。*/
+    /*打开日志.*/
     ctx->logger = abcdk_logger_open2(log_path, "httpd.log", "httpd.%d.log", 10, 10, 0, 1);
 
-    /*注册为轨迹日志。*/
+    /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, ctx->logger);
 
     abcdk_trace_printf(LOG_INFO, "启动……");
@@ -632,7 +632,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
         ctx->pki_cert_ctx = abcdk_openssl_cert_load(ctx->cert_file_p);
         if (!ctx->pki_cert_ctx)
         {
-            abcdk_trace_printf(LOG_ERR, "加载证书(%s)失败。", ctx->cert_file_p);
+            abcdk_trace_printf(LOG_ERR, "加载证书(%s)失败.", ctx->cert_file_p);
             goto ERR;
         }
     }
@@ -642,21 +642,21 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
         ctx->pki_key_ctx = abcdk_openssl_evp_pkey_load(ctx->cert_file_p, 0, NULL);
         if (!ctx->pki_key_ctx)
         {
-            abcdk_trace_printf(LOG_ERR, "加载密钥(%s)失败。", ctx->key_file_p);
+            abcdk_trace_printf(LOG_ERR, "加载密钥(%s)失败.", ctx->key_file_p);
             goto ERR;
         }
     }
 
 #endif //OPENSSL_VERSION_NUMBER
 
-    /*创建可能不存在的路径。*/
+    /*创建可能不存在的路径.*/
     if(ctx->up_tmp_path_p)
         abcdk_mkdir(ctx->up_tmp_path_p, 0600);
 
     ctx->io_ctx = abcdk_https_create();
     if (!ctx->io_ctx)
     {
-        abcdk_trace_printf(LOG_WARNING, "内存错误。\n");
+        abcdk_trace_printf(LOG_WARNING, "内存错误.\n");
         goto ERR;
     }
 
@@ -670,7 +670,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
         goto ERR;
 #endif //OPENSSL_VERSION_NUMBER
 
-    /*等待终止信号。*/
+    /*等待终止信号.*/
     abcdk_proc_wait_exit_signal(-1);
 
 ERR:
@@ -694,9 +694,9 @@ ERR:
 
     abcdk_openssl_cleanup();
 
-    abcdk_trace_printf(LOG_INFO, "停止。");
+    abcdk_trace_printf(LOG_INFO, "停止.");
 
-    /*关闭日志。*/
+    /*关闭日志.*/
     abcdk_logger_close(&ctx->logger);
 }
 
@@ -720,10 +720,10 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
     interval = abcdk_option_get_int(ctx->args, "--daemon", 0, 30);
     interval = ABCDK_CLAMP(interval, 1, 60);
 
-    /*打开日志。*/
+    /*打开日志.*/
     logger = abcdk_logger_open2(log_path, "httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
 
-    /*注册为轨迹日志。*/
+    /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);
 
     while(1)
@@ -735,7 +735,7 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
         sleep(interval);
     }
 
-    /*关闭日志。*/
+    /*关闭日志.*/
     abcdk_logger_close(&logger);
 }
 
@@ -754,7 +754,7 @@ int abcdk_tool_httpd(abcdk_option_t *args)
     {
         if (abcdk_option_exist(ctx.args, "--daemon"))
         {
-            fprintf(stderr, "进入后台守护模式。\n");
+            fprintf(stderr, "进入后台守护模式.\n");
             daemon(1, 0);
 
             _abcdk_httpd_daemon(&ctx);

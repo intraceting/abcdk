@@ -16,80 +16,80 @@
 __BEGIN_DECLS
 
 /**
- * 获取网卡线路连接状态。
+ * 获取网卡线路连接状态.
  * 
- * @return 1 已连接，0 未加接，-1 未知的。
+ * @return 1 已连接, 0 未加接, -1 未知的.
 */
 int abcdk_net_get_link_state(const char *ifname);
 
 /**
- * 获取网卡操作状态。
+ * 获取网卡操作状态.
  * 
- * @return 1 上线，0 下线，< 0 未知的。
+ * @return 1 上线, 0 下线, < 0 未知的.
 */
 int abcdk_net_get_oper_state(const char *ifname);
 
 /**
- * 停用网卡。
+ * 停用网卡.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_down(const char *ifname);
 
 /**
- * 启用网卡。
+ * 启用网卡.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_up(const char *ifname);
 
 /**
- * 清理网卡地址配置。
+ * 清理网卡地址配置.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_address_flush(const char *ifname);
 
 /**
- * 清理网卡路由配置。
+ * 清理网卡路由配置.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_route_flush(const char *ifname);
 
 /**
- * 添加网卡路由配置。
+ * 添加网卡路由配置.
  * 
- * @param [in] ver IPV4或IPV6。
- * @param [in] host 主机地址。
- * @param [in] prefix 子网掩码长度。
- * @param [in] gw 网关地址。
- * @param [in] metric 路由跃点。
+ * @param [in] ver IPV4或IPV6.
+ * @param [in] host 主机地址.
+ * @param [in] prefix 子网掩码长度.
+ * @param [in] gw 网关地址.
+ * @param [in] metric 路由跃点.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_route_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
 
 /**
- * 添加网卡地址配置。
+ * 添加网卡地址配置.
  * 
- * @param [in] gw 网关地址。NULL(0) 忽略。
+ * @param [in] gw 网关地址.NULL(0) 忽略.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_address_add(int ver, const char *host, int prefix, const char *gw, int metric, const char *ifname);
 
 /**
- * 设置网卡最大传输单元。
+ * 设置网卡最大传输单元.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_set_mtu(uint16_t mtu,const char *ifname);
 
 /**
- * 设置网卡队列长度。
+ * 设置网卡队列长度.
  * 
- * @return 0 成功，-1 系统错误，-2 权限不足。
+ * @return 0 成功, -1 系统错误, -2 权限不足.
 */
 int abcdk_net_set_txqueuelen(uint16_t len,const char *ifname);
 

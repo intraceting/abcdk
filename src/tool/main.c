@@ -6,16 +6,16 @@
  */
 #include "entry.h"
 
-/** 工具集合。*/
+/** 工具集合.*/
 static struct _abcdk_tool_entry
 {
-    /** 名字。*/
+    /** 名字.*/
     const char *name;
 
     /** 
-     * 回调函数。
+     * 回调函数.
      * 
-     * @return 出错码。
+     * @return 出错码.
     */
     int (*func_cb)(abcdk_option_t *args);
 }abcdk_tool_entry[] = {
@@ -44,7 +44,7 @@ void _abcdk_tool_print_usage()
 
     fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
 
-    fprintf(stderr, "\n命令：\n");
+    fprintf(stderr, "\n命令: \n");
     fprintf(stderr, "\n\t");
 
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tool_entry); i++)
@@ -54,7 +54,7 @@ void _abcdk_tool_print_usage()
 
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "\n示例：\n");
+    fprintf(stderr, "\n示例: \n");
     fprintf(stderr, "\n\t%s < CMD > --help\n", name);
     fprintf(stderr, "\n\t%s < CMD > [ ... ]\n", name);
 }
@@ -97,13 +97,13 @@ int main(int argc, char **argv)
     abcdk_option_t *args = NULL;
     int errcode = 0;
 
-    /*中文；UTF-8。*/
+    /*中文; UTF-8.*/
     setlocale(LC_ALL, "zh_CN.UTF-8");
 
-    /*随机数种子。*/
+    /*随机数种子.*/
     srand(time(NULL));
 
-    /*拦截信号。*/
+    /*拦截信号.*/
     abcdk_proc_signal_block(NULL,NULL);
 
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     if (!args)
         return -1;
     
-    /*解析参数。*/
+    /*解析参数.*/
     abcdk_getargs(args, argc, argv);
 
     errcode = _abcdk_tool_dispatch(args);

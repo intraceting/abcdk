@@ -131,7 +131,7 @@ static void dhcpv4_client()
         exit(EXIT_FAILURE);
     }
 
-    // 此处需要解析DHCP Offer消息的格式，获取IP等信息
+    // 此处需要解析DHCP Offer消息的格式, 获取IP等信息
 
     // 关闭套接字
     close(sockfd);

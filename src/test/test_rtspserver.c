@@ -129,12 +129,12 @@ int abcdk_test_server(abcdk_option_t *args)
         if (n < 0)
             break;
 
-        double pts_sec = abcdk_ffmpeg_editor_stream_ts2sec(r, pkt.stream_index, pkt.pts);                     //// 秒。
-        double dur_sec = (double)pkt.duration * abcdk_ffmpeg_editor_stream_timebase_q2d(r, pkt.stream_index); // 秒。
+        double pts_sec = abcdk_ffmpeg_editor_stream_ts2sec(r, pkt.stream_index, pkt.pts);                     //// 秒.
+        double dur_sec = (double)pkt.duration * abcdk_ffmpeg_editor_stream_timebase_q2d(r, pkt.stream_index); // 秒.
 
         //  abcdk_trace_printf(LOG_DEBUG, "IDX(%d), DTS(%lld),PTS(%lld,%.6f),DUR(%.6f),", pkt.stream_index,pkt.dts, pkt.pts,pts_sec, dur_sec);
 
-        abcdk_rtsp_server_play_stream(ctx, name, stream[pkt.stream_index], pkt.data, pkt.size, pts_sec * 1000000, dur_sec * 1000000); // 转微秒。
+        abcdk_rtsp_server_play_stream(ctx, name, stream[pkt.stream_index], pkt.data, pkt.size, pts_sec * 1000000, dur_sec * 1000000); // 转微秒.
     }
 
     av_packet_unref(&pkt);

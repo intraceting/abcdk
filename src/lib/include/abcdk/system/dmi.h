@@ -19,11 +19,11 @@ __BEGIN_DECLS
 
 
 /**
- * 计算DMI的哈希值。
+ * 计算DMI的哈希值.
  * 
- * @param [in] stuff 填充物。NULL(0) 忽略。
+ * @param [in] stuff 填充物.NULL(0) 忽略.
  * 
- * @return 0 成功，-1 失败。
+ * @return 0 成功, -1 失败.
 */
 int abcdk_dmi_hash(uint8_t uuid[16], const char *stuff);
 

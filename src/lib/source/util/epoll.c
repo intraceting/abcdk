@@ -16,7 +16,7 @@ int abcdk_epoll_create()
     if (fd < 0)
         return -1;
 
-    /* 添加个非必要标志，忽略可能的出错信息。 */
+    /* 添加个非必要标志, 忽略可能的出错信息. */
     abcdk_fflag_add(fd, SOCK_CLOEXEC);
 
     return fd;
@@ -32,14 +32,14 @@ int abcdk_epoll_mark(int efd, int fd, const abcdk_epoll_event_t *event, int firs
 
     memset(&mark,0,sizeof(mark));
 
-    /*如果注册事件中包括错误事件，则直接跳转出错流程。*/
+    /*如果注册事件中包括错误事件, 则直接跳转出错流程.*/
     if (event->events & ABCDK_EPOLL_ERROR)
         goto final_error;
 
     mark.data = event->data;
     mark.events |= (EPOLLERR | EPOLLHUP | EPOLLRDHUP | EPOLLET);
 
-    /*转换事件。*/
+    /*转换事件.*/
     if (event->events & ABCDK_EPOLL_INPUT)
         mark.events |= EPOLLIN;
     if (event->events & ABCDK_EPOLL_OUTPUT)
@@ -72,7 +72,7 @@ int abcdk_epoll_wait(int efd,abcdk_epoll_event_t* events,int max,time_t timeout)
     if(chk == -1 && errno == EINTR)
         return 0;
 
-    /*转换事件。 */
+    /*转换事件. */
     for (int i = 0; i < chk; i++)
     {
         tmp = events[i].events;

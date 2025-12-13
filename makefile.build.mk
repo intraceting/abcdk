@@ -92,16 +92,11 @@ xgettext: xgettext-lib xgettext-tool
 
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-lib:
-	cp -f $(MAKEFILE_DIR)/share/locale/en_US/gettext/libabcdk.pot $(BUILD_PATH)/libabcdk.en_US.pot
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/libabcdk.en_US.pot
-	echo "'$(BUILD_PATH)/libabcdk.en_US.pot' Update completed."
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/libabcdk.pot
 
 #把POT文件从share目录复制到build目录进行更新。
 xgettext-tool:
-	cp -f $(MAKEFILE_DIR)/share/locale/en_US/gettext/abcdk-tool.pot $(BUILD_PATH)/abcdk-tool.en_US.pot
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.en_US.pot
-	echo "'$(BUILD_PATH)/abcdk-tool.en_US.pot' Update completed."
-
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.pot
 
 #
 clean-lib:
@@ -121,5 +116,5 @@ clean-test:
 
 #
 clean-xgettext:
-	rm -rf $(BUILD_PATH)/libabcdk.en_US.pot
-	rm -rf $(BUILD_PATH)/abcdk-tool.en_US.pot
+	rm -rf $(BUILD_PATH)/libabcdk.pot
+	rm -rf $(BUILD_PATH)/abcdk-tool.pot

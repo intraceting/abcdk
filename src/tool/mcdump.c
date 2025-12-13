@@ -19,18 +19,18 @@ void _abcdk_mcdump_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t获取硬件散列值。\n");
+    fprintf(stderr, "\n\t获取硬件散列值.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\t输出到文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到文件(包括路径).默认: 终端\n");
 
     fprintf(stderr, "\n\t--stuff < STUFF >\n");
-    fprintf(stderr, "\t\t填充物。\n");
+    fprintf(stderr, "\t\t填充物.\n");
 }
 
 void _abcdk_mcdump_work(abcdk_mcdump_t *ctx)

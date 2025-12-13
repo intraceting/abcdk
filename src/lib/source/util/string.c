@@ -184,7 +184,7 @@ NEXT_SEGMENT:
     find_p = abcdk_strstr(start_p, delim, 1);
     if (!find_p)
     {
-        /*未找到分割符，定位到字符串末尾。*/
+        /*未找到分割符, 定位到字符串末尾.*/
         find_p = start_p;
         while (*find_p)
             find_p++;
@@ -226,7 +226,7 @@ abcdk_object_t *abcdk_strtok2pair(const char *str, const char *delim)
         return NULL;
 
     field_p[0] = p;
-    field_size[0] = (next - p) + 1; // 加上终止符。
+    field_size[0] = (next - p) + 1; // 加上终止符.
 
     next += strlen(delim);
 
@@ -235,7 +235,7 @@ abcdk_object_t *abcdk_strtok2pair(const char *str, const char *delim)
         return NULL;
 
     field_p[1] = p;
-    field_size[1] = (next - p) + 1; // 加上终止符。
+    field_size[1] = (next - p) + 1; // 加上终止符.
 
     buf = abcdk_object_alloc(field_size, 2, 0);
     if (!buf)
@@ -247,7 +247,7 @@ abcdk_object_t *abcdk_strtok2pair(const char *str, const char *delim)
             continue;
 
         strncpy(buf->pstrs[i], field_p[i], field_size[i] - 1);
-        buf->sizes[i] -= 1;//减去终止符。
+        buf->sizes[i] -= 1;//减去终止符.
     }
 
     return buf;
@@ -272,7 +272,7 @@ abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim)
             break;
 
         field_p[cols] = p;
-        field_size[cols] = (next - p) + 1; // 加上终止符。
+        field_size[cols] = (next - p) + 1; // 加上终止符.
 
         cols += 1;
     }
@@ -287,7 +287,7 @@ abcdk_object_t *abcdk_strtok2vector(const char *str, const char *delim)
             continue;
 
         strncpy(buf->pstrs[i], field_p[i], field_size[i] - 1);
-        buf->sizes[i] -= 1;//减去终止符。
+        buf->sizes[i] -= 1;//减去终止符.
     }
 
     return buf;

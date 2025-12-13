@@ -144,13 +144,13 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
 
         if (row > 0 && col == 0 && i+width < size)
         {
-            /*检查是否与上一行重复。*/
+            /*检查是否与上一行重复.*/
             if (memcmp(p, p - width, width) == 0)
                 repeat += 1;
             else
                 repeat = 0;
 
-            /*当与上一行重复用*号代替，但多行重复也仅打印一行。*/
+            /*当与上一行重复用*号代替, 但多行重复也仅打印一行.*/
             if (repeat == 1)
             {
                 chk = _abcdk_hexdump_print(&wsize, fd, "*\n");
@@ -158,7 +158,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     goto final;
             }
 
-            /*下一行。*/
+            /*下一行.*/
             if (repeat > 0)
             {
                 /**/
@@ -194,7 +194,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     color_s = i;
                     color_e = i + opt->keyword->sizes[kwidx];
 
-                    /*可能存在多段不同颜色，因这里准备颜色队列。*/
+                    /*可能存在多段不同颜色, 因这里准备颜色队列.*/
                     if(!stack)
                     {
                         stack = abcdk_tree_alloc3(1);
@@ -210,7 +210,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                     stack_p->obj->sizes[1] = color_s;
                     stack_p->obj->sizes[2] = color_e;
 
-                    /*按顺序压入队列。*/
+                    /*按顺序压入队列.*/
                     abcdk_tree_insert2(stack,stack_p,0);
                     stack_p = NULL;
                 }
@@ -221,7 +221,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
             kwidx = color_s = color_e = -1UL;
         }
 
-        /*从调色板选取颜色。*/
+        /*从调色板选取颜色.*/
         color = _abcdk_hexdump_select_color(kwidx, opt);
 
         chk = _abcdk_hexdump_print2(&wsize, fd, *p, i, size, color, color_s, color_e, 1,opt->base);
@@ -241,7 +241,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                 {
                     size_t i2 = i - col + j;
 
-                    /*从颜色队列中取出颜色，如果存在的话。*/
+                    /*从颜色队列中取出颜色, 如果存在的话.*/
                     while(stack)
                     {
                         kwidx2 = color2_s = color2_e = -1UL;
@@ -267,7 +267,7 @@ ssize_t abcdk_hexdump(FILE *fd, const void *data, size_t size, size_t offset, co
                         }
                     }
 
-                    /*从调色板选取颜色。*/
+                    /*从调色板选取颜色.*/
                     color2 = _abcdk_hexdump_select_color(kwidx2, opt);
 
                     chk = _abcdk_hexdump_print2(&wsize, fd, *q, i2, size, color2, color2_s, color2_e, 0,opt->base);

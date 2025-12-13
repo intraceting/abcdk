@@ -17,9 +17,9 @@
 __BEGIN_DECLS
 
 /**
- * 根据块名字查找设备(的路径)。
+ * 根据块名字查找设备(的路径).
  * 
- * @return 0 成功，-1 失败(未找到)。
+ * @return 0 成功, -1 失败(未找到).
 */
 int abcdk_block_find_device(const char *name,char devpath[PATH_MAX]);
 

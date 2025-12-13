@@ -14,18 +14,18 @@ __BEGIN_DECLS
 #if !defined(__ANDROID__)
 
 /**
- * 打开共享内存文件。
+ * 打开共享内存文件.
  *
- * @note 通常是在'/dev/shm/'目录内创建。
+ * @note 通常是在'/dev/shm/'目录内创建.
  * 
- * @return >= 0 句柄，-1 失败。
+ * @return >= 0 句柄, -1 失败.
 */
 int abcdk_shm_open(const char* name,int rw, int create);
 
 /**
- * 删除共享内存文件。
+ * 删除共享内存文件.
  * 
- * @return 0 成功，-1 失败。
+ * @return 0 成功, -1 失败.
 */
 int abcdk_shm_unlink(const char* name);
 

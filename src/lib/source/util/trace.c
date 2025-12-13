@@ -20,18 +20,18 @@ void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, voi
 
     assert(str != NULL);
 
-    /*获取自然时间。*/
+    /*获取自然时间.*/
     ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
     abcdk_time_sec2tm(&tm, ts / 1000000UL, 0);
 
-    /*获进程或线程名称。*/
+    /*获进程或线程名称.*/
 #ifndef __USE_GNU
     abcdk_proc_basename(name);
 #else //__USE_GNU
     abcdk_thread_getname(pthread_self(),name);
 #endif //__USE_GNU
 
-    /*格式化行的头部：时间、PID、进程名字*/
+    /*格式化行的头部: 时间, PID, 进程名字*/
     hdrlen = snprintf(buf, sizeof(buf), "%04d%02d%02dT%02d%02d%02d.%06llu [%d] %s: ",
                       tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), name);
 
@@ -40,41 +40,41 @@ next_line:
     if(!*str)
         return;
 
-    /*从头部之后开始。*/
+    /*从头部之后开始.*/
     bufpos = hdrlen;
 
 next_char:
 
     if (*str)
     {
-        /*读一个字符。*/
+        /*读一个字符.*/
         c = *str++;
 
-        /*回车符转成换行符。*/
+        /*回车符转成换行符.*/
         c = (c == '\r' ? '\n' : c);
     }
     else
     {
-        /*未尾没有换行符，自动添加。*/
+        /*未尾没有换行符, 自动添加.*/
         c = '\n';
     }
 
-    /*跳过所有空行。*/
+    /*跳过所有空行.*/
     if (c == '\n' && bufpos == hdrlen)
         goto next_line;
 
-    /*追加字符。*/
+    /*追加字符.*/
     buf[bufpos++] = c;
 
-    /*缓存已满时自动添加换行符。*/
+    /*缓存已满时自动添加换行符.*/
     if (bufpos == sizeof(buf) - 2)
         buf[bufpos++] = c = '\n';
 
-    /* 当前字符是换行时落盘，否则仅缓存。*/
+    /* 当前字符是换行时落盘, 否则仅缓存.*/
     if (c != '\n')
         goto next_char;
 
-    /*结束符。*/
+    /*结束符.*/
     buf[bufpos] = '\0';
 
     if(cb)
@@ -82,7 +82,7 @@ next_char:
     else
         fprintf(stderr, "%s", buf);
 
-    /*下一行。*/
+    /*下一行.*/
     goto next_line;
 }
 

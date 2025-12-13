@@ -40,7 +40,7 @@ namespace abcdk
         public:
             pawd &operator=(const pawd &src)
             {
-                /*如是自已，则忽略。*/
+                /*如是自已, 则忽略.*/
                 if (this == &src)
                     return *this;
 

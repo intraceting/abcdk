@@ -59,7 +59,7 @@ void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,co
         if(rlen < 0)
             break;
 
-        /* 去掉字符串两端所有空白字符。 */
+        /* 去掉字符串两端所有空白字符. */
         abcdk_strtrim(line, isspace, 2);
 
         if (abcdk_strncmp(line, prefix, prefix_len, 1) != 0)
@@ -79,7 +79,7 @@ void abcdk_getargs_fp(abcdk_option_t *opt, FILE *fp, uint8_t delim, char note,co
         }
     }
 
-    /*不要忘记释放这两块内存，不然可能会有内存泄漏的风险。 */
+    /*不要忘记释放这两块内存, 不然可能会有内存泄漏的风险. */
     if (line)
         free(line);
     if (it_key != prefix)
@@ -132,7 +132,7 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
 
     if (p->prev_key != key)
     {
-        wlen = fprintf(p->fp, "%s%s%s%s", p->pack, key, p->pack, p->delim); //  包装，KEY，包装，分割符。
+        wlen = fprintf(p->fp, "%s%s%s%s", p->pack, key, p->pack, p->delim); //  包装, KEY, 包装, 分割符.
         if (wlen <= 0)
             return -1;
 
@@ -140,7 +140,7 @@ int _abcdk_getargs_scan_cb(const char *key, const char *value, void *opaque)
         p->wlen += wlen;
     }
 
-    wlen = fprintf(p->fp, "%s%s%s%s", p->pack, value, p->pack, p->delim); // 包装，KEY，包装，分割符。
+    wlen = fprintf(p->fp, "%s%s%s%s", p->pack, value, p->pack, p->delim); // 包装, KEY, 包装, 分割符.
     if (wlen <= 0)
         return -1;
 

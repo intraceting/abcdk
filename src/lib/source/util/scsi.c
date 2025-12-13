@@ -80,7 +80,7 @@ const char *abcdk_scsi_type2string(uint8_t type, int longname)
             "no dev",
         };
 
-    /*已知的定义。*/
+    /*已知的定义.*/
     type = (0x1f &type);
 
     return (longname?types_table[type]:short_types_table[type]);
@@ -206,7 +206,7 @@ int abcdk_scsi_inquiry_standard(int fd, uint8_t *type, char vendor[8], char prod
     if (stat->status != GOOD)
         return -1;
 
-    /* TYPE，VENDOR，PRODUCT。*/
+    /* TYPE, VENDOR, PRODUCT.*/
     if (type)
         *type = tmp[0] & 0x1f;
     if (vendor)
@@ -214,7 +214,7 @@ int abcdk_scsi_inquiry_standard(int fd, uint8_t *type, char vendor[8], char prod
     if (product)
         memcpy(product, tmp + 16, 16);
 
-    /* 去掉两端的空格。 */
+    /* 去掉两端的空格. */
     if (vendor)
         abcdk_strtrim(vendor, isspace, 2);
     if (product)
@@ -236,13 +236,13 @@ int abcdk_scsi_inquiry_serial(int fd, uint8_t *type, char serial[255],
     if (stat->status != GOOD)
         return -1;
 
-    /* TYPE，SERIAL。*/
+    /* TYPE, SERIAL.*/
     if (type)
         *type = tmp[0] & 0x1f;
     if (serial)
         memcpy(serial, tmp + 4, tmp[3]);
 
-    /* 去掉两端的空格。 */
+    /* 去掉两端的空格. */
     if (serial)
         abcdk_strtrim(serial, isspace, 2);
 

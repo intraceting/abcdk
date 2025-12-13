@@ -13,7 +13,7 @@
 __BEGIN_DECLS
 
 /**
- * TAR的块长度(512Bytes)。
+ * TAR的块长度(512Bytes).
 */
 #define ABCDK_TAR_BLOCK_SIZE 512
 
@@ -83,46 +83,46 @@ typedef union _abcdk_tar_hdr
  * gnu tar extensions:
 */
 
-/** 长链接、长路径标识。*/
+/** 长链接、长路径标识.*/
 #define ABCDK_USTAR_LONGNAME_MAGIC "././@LongLink"
-/** 标识长度(字节，包括结束符号)。 */
+/** 标识长度(字节, 包括结束符号). */
 #define ABCDK_USTAR_LONGNAME_MAGIC_LEN 14
-/** 长链接类型。*/
+/** 长链接类型.*/
 #define ABCDK_USTAR_LONGLINK_TYPE 'K'
-/** 长路径类型。*/
+/** 长路径类型.*/
 #define ABCDK_USTAR_LONGNAME_TYPE 'L'
 
 /*
- * USTAR格式如下：
+ * USTAR格式如下: 
  *
  * |长链接头部+长链接实体 (可选) |长路径头部+长路径实体 (可选) |头部 |实体(可选) |块对齐 |
 */
 
 /** 
- * TAR格式专用的数值转字符。
+ * TAR格式专用的数值转字符.
  * 
- * @param len 输出长度(包含结束字符)。
+ * @param len 输出长度(包含结束字符).
  * 
- * @return 0 成功，-1 失败(空间不足)。
+ * @return 0 成功, -1 失败(空间不足).
 */
 int abcdk_tar_num2char(uintmax_t val, char *buf, size_t len);
 
 /** 
- * TAR格式专用的字符转数值。
+ * TAR格式专用的字符转数值.
  * 
- * @param len 输入长度(包含结束字符)。
+ * @param len 输入长度(包含结束字符).
  * 
- * @return 0 成功，-1 失败(字符中包含非法字符或数值溢出)。
+ * @return 0 成功, -1 失败(字符中包含非法字符或数值溢出).
 */
 int abcdk_tar_char2num(const char *buf, size_t len, uintmax_t *val);
 
 /**
- * 计算TAR头部较验和。
+ * 计算TAR头部较验和.
 */
 uint32_t abcdk_tar_calc_checksum(abcdk_tar_hdr *hdr);
 
 /** 
- * 提取TAR头部中的较验和字段。
+ * 提取TAR头部中的较验和字段.
 */
 uint32_t abcdk_tar_get_checksum(abcdk_tar_hdr *hdr);
 

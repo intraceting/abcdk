@@ -32,7 +32,7 @@ pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
 
     if (child == 0)
     {
-        /*创建一个新会话并脱离终端控制。*/
+        /*创建一个新会话并脱离终端控制.*/
         sid = setsid();
         if (sid < 0)
             exit(126);
@@ -61,14 +61,14 @@ pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
         abcdk_closep(&in2err_fd[0]);
         abcdk_closep(&in2err_fd[1]);
 
-        /*执行子进程处理流程。*/
+        /*执行子进程处理流程.*/
         chk = process_cb(opaque);
         exit(chk & 0x7F);
     }
     else
     {
         /*
-         * 关闭不需要的句柄。
+         * 关闭不需要的句柄.
          */
         abcdk_closep(&out2in_fd[0]);
         abcdk_closep(&in2out_fd[1]);
@@ -152,7 +152,7 @@ int _abcdk_system_process_cb(void *opaque)
     if (chk != 0)
         return errno;
 
-    /*正常情况下，永远也不可能到这里.*/
+    /*正常情况下, 永远也不可能到这里.*/
     return 121;
 }
 
@@ -183,7 +183,7 @@ pid_t abcdk_popen(const char *cmdline, char *const *envs, uid_t uid,
 
     assert(cmdline != NULL);
 
-    args[0] = "/bin/sh";//不会执行，仅做为第一个参数传给/bin/sh。
+    args[0] = "/bin/sh";//不会执行, 仅做为第一个参数传给/bin/sh.
     args[1] = "-c";
     args[2] = (char*)cmdline;
     args[3] = NULL;

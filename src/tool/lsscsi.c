@@ -18,18 +18,18 @@ typedef struct _abcdk_lsscsi
 
 }abcdk_lsscsi_t;
 
-/** 输出格式。*/
+/** 输出格式.*/
 enum _abcdk_lsscsi_fmt
 {
-    /** 文本。*/
+    /** 文本.*/
     ABCDK_LSSCSI_FMT_TEXT = 1,
 #define ABCDK_LSSCSI_FMT_TEXT ABCDK_LSSCSI_FMT_TEXT
 
-    /** XML。*/
+    /** XML.*/
     ABCDK_LSSCSI_FMT_XML = 2,
 #define ABCDK_LSSCSI_FMT_XML ABCDK_LSSCSI_FMT_XML
 
-    /** JSON。*/
+    /** JSON.*/
     ABCDK_LSSCSI_FMT_JSON = 3
 #define ABCDK_LSSCSI_FMT_JSON ABCDK_LSSCSI_FMT_JSON
 
@@ -39,22 +39,22 @@ void _abcdk_lsscsi_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\tSCSI设备枚举器。\n");
+    fprintf(stderr, "\n\tSCSI设备枚举器.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\t输出到文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到文件(包括路径).默认: 终端\n");
 
     fprintf(stderr, "\n\t--fmt < FORMAT >\n");
-    fprintf(stderr, "\t\t报表格式。默认: %d\n", ABCDK_LSSCSI_FMT_TEXT);
+    fprintf(stderr, "\t\t报表格式.默认: %d\n", ABCDK_LSSCSI_FMT_TEXT);
 
-    fprintf(stderr, "\n\t\t%d: TEXT。\n",ABCDK_LSSCSI_FMT_TEXT);
-    fprintf(stderr, "\t\t%d: XML。\n",ABCDK_LSSCSI_FMT_XML);
-    fprintf(stderr, "\t\t%d: JSON。\n",ABCDK_LSSCSI_FMT_JSON);
+    fprintf(stderr, "\n\t\t%d: TEXT.\n",ABCDK_LSSCSI_FMT_TEXT);
+    fprintf(stderr, "\t\t%d: XML.\n",ABCDK_LSSCSI_FMT_XML);
+    fprintf(stderr, "\t\t%d: JSON.\n",ABCDK_LSSCSI_FMT_JSON);
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }

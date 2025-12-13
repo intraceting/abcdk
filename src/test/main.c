@@ -14,13 +14,13 @@
 
 static struct _abcdk_test_entry
 {
-    /** 名字。*/
+    /** 名字.*/
     const char *name;
 
     /** 
-     * 回调函数。
+     * 回调函数.
      * 
-     * @return 出错码。
+     * @return 出错码.
     */
     int (*func_cb)(abcdk_option_t *args);
 }abcdk_test_entry[] = {
@@ -61,7 +61,7 @@ void _abcdk_test_print_usage()
 
     fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
 
-    fprintf(stderr, "\n命令：\n");
+    fprintf(stderr, "\n命令: \n");
     fprintf(stderr, "\n\t");
 
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_test_entry); i++)
@@ -71,7 +71,7 @@ void _abcdk_test_print_usage()
 
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "\n示例：\n");
+    fprintf(stderr, "\n示例: \n");
     fprintf(stderr, "\n\t%s < CMD > [ ... ]\n", name);
 }
 
@@ -153,16 +153,16 @@ int main(int argc, char **argv)
     // sig_thread.routine = _abcdk_test_signal_cb;
     // abcdk_thread_create(&sig_thread,0);
     
-    /*中文；UTF-8。*/
+    /*中文; UTF-8.*/
     setlocale(LC_ALL, "zh_CN.UTF-8");
 
-    /*随机数种子。*/
+    /*随机数种子.*/
     srand(time(NULL));
 
 
     args = abcdk_option_alloc("--");
    
-    /*解析参数。*/
+    /*解析参数.*/
     abcdk_getargs(args, argc, argv);
 
     abcdk_getargs_fprintf(args,stderr,"\n","");
@@ -170,10 +170,10 @@ int main(int argc, char **argv)
     abcdk_logger_t *logger;
     const char *log_path = abcdk_option_get(args, "--log-path", 0, "/tmp/abcdk/log/");
 
-    /*打开日志。*/
+    /*打开日志.*/
     logger = abcdk_logger_open2(log_path, "test.log", "test.%d.log", 10, 10, 0, 1);
 
-    /*注册为轨迹日志。*/
+    /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);
 
     abcdk_ffmpeg_log_redirect();
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
     abcdk_openssl_cleanup();
     abcdk_ffmpeg_deinit();
 
-    /*关闭日志。*/
+    /*关闭日志.*/
     abcdk_logger_close(&logger);
 
     

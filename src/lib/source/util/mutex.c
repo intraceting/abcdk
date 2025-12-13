@@ -7,27 +7,27 @@
 #include "abcdk/util/mutex.h"
 
 /**
- * 互斥量、事件。
+ * 互斥量、事件.
 */
 struct _abcdk_mutex
 {
     /**
-     * 事件属性。
+     * 事件属性.
     */
     pthread_condattr_t condattr;
 
     /**
-     * 事件。
+     * 事件.
     */
     pthread_cond_t cond;
 
     /**
-     * 互斥量属性。
+     * 互斥量属性.
     */
     pthread_mutexattr_t mutexattr;
 
     /**
-     * 互斥量。
+     * 互斥量.
     */
     pthread_mutex_t mutex;
 
@@ -90,14 +90,14 @@ int abcdk_mutex_lock(abcdk_mutex_t *ctx, int block)
     else 
         err = pthread_mutex_trylock(&ctx->mutex);
 
-    /*当互斥量的拥有者异外结束时，恢复互斥量状态的一致性。*/
+    /*当互斥量的拥有者异外结束时, 恢复互斥量状态的一致性.*/
     if (err == EOWNERDEAD)
     {
 #if !defined(__ANDROID__)
         pthread_mutex_consistent(&ctx->mutex);
 #endif //__ANDROID__
         pthread_mutex_unlock(&ctx->mutex);
-        /*回调自己，重试。*/
+        /*回调自己, 重试.*/
         err = abcdk_mutex_lock(ctx,block);
     }    
 
@@ -140,7 +140,7 @@ int abcdk_mutex_wait(abcdk_mutex_t* ctx,time_t timeout)
         out_ts.tv_sec = sys_ts.tv_sec + (timeout / 1000);
         out_ts.tv_nsec = sys_ts.tv_nsec + (timeout % 1000) * 1000000;
 
-        /*纳秒时间必须小于1秒，因此可能存在进位。*/
+        /*纳秒时间必须小于1秒, 因此可能存在进位.*/
         out_ts.tv_sec += out_ts.tv_nsec / 1000000000L;
         out_ts.tv_nsec = out_ts.tv_nsec % 1000000000L;
 

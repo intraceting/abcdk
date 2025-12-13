@@ -6,50 +6,50 @@
  */
 #include "abcdk/net/srpc.h"
 
-/**简单的RPC服务。*/
+/**简单的RPC服务.*/
 struct _abcdk_srpc
 {
-    /*IO环境。*/
+    /*IO环境.*/
     abcdk_stcp_t *io_ctx;
 
-    /*NONCE环境。*/
+    /*NONCE环境.*/
     abcdk_nonce_t *nonce_ctx;
 
-    /*NONCE前缀。*/
+    /*NONCE前缀.*/
     uint8_t nonce_prefix[16];
 };//abcdk_srpc_t
 
-/**RPC会话(内部)。*/
+/**RPC会话(内部).*/
 typedef struct _abcdk_srpc_node
 {
-    /*父级。*/
+    /*父级.*/
     abcdk_srpc_t *father;
 
-    /*配置。*/
+    /*配置.*/
     abcdk_srpc_config_t cfg;
 
-    /*标志。0 监听，1 服务端，2 客户端。*/
+    /*标志.0 监听, 1 服务端, 2 客户端.*/
     int flag;
 
-    /*远程地址。*/
+    /*远程地址.*/
     char remote_addr[NAME_MAX];
 
-    /*本机地址。*/
+    /*本机地址.*/
     char local_addr[NAME_MAX];
 
-    /*请求数据。*/
+    /*请求数据.*/
     abcdk_receiver_t *req_data;
 
-    /*请求服务员。*/
+    /*请求服务员.*/
     abcdk_waiter_t *req_waiter;
 
     /*消息编号*/
     uint64_t mid_next;
 
-    /** 用户环境指针。*/
+    /** 用户环境指针.*/
     abcdk_object_t *userdata;
 
-    /** 用户环境销毁函数。*/
+    /** 用户环境销毁函数.*/
     void (*userdata_free_cb)(void *userdata);
 
 } abcdk_srpc_node_t;
@@ -75,7 +75,7 @@ static void _abcdk_srpc_node_destroy_cb(void *userdata)
 
     node_p = (abcdk_srpc_node_t *)userdata;
 
-    /*通知应用层回收内存。*/
+    /*通知应用层回收内存.*/
     if(node_p->userdata_free_cb)
         node_p->userdata_free_cb(node_p->userdata->pptrs[0]);
 
@@ -256,7 +256,7 @@ static void _abcdk_srpc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *
 
     cfg_p = &node_ctx_p->cfg;
 
-    /*准备完毕，返回。*/
+    /*准备完毕, 返回.*/
     *node = node_p;
 }
 
@@ -267,14 +267,14 @@ static void _abcdk_srpc_event_accept(abcdk_stcp_node_t *node, int *result)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认：允许。*/
+    /*默认: 允许.*/
     *result = 0;
 
     if(node_ctx_p->cfg.accept_cb)
         node_ctx_p->cfg.accept_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node, result);
     
     if(*result != 0)
-        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("禁止远端(%s)连接到本机(%s)。"), node_ctx_p->remote_addr, node_ctx_p->local_addr);
+        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("禁止远端(%s)连接到本机(%s)."), node_ctx_p->remote_addr, node_ctx_p->local_addr);
 }
 
 static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
@@ -285,16 +285,16 @@ static void _abcdk_srpc_event_connect(abcdk_stcp_node_t *node)
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立。"),node_ctx_p->local_addr,node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立."),node_ctx_p->local_addr,node_ctx_p->remote_addr);
 
     
-    /*设置超时。*/
+    /*设置超时.*/
     abcdk_stcp_set_timeout(node, 180);
 
     if(node_ctx_p->cfg.ready_cb)
         node_ctx_p->cfg.ready_cb(node_ctx_p->cfg.opaque, (abcdk_srpc_session_t*)node);
 
-    /*已连接到远端，注册读写事件。*/
+    /*已连接到远端, 注册读写事件.*/
     abcdk_stcp_recv_watch(node);
     abcdk_stcp_send_watch(node);
 }
@@ -319,13 +319,13 @@ static void _abcdk_srpc_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭，忽略。"));
+        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭, 忽略."));
         return;
     }
     
-    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开。"), node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开."), node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
-    /*如果连接关闭则一定要取消等待的事务，否则可能会造成应用层阻塞。*/
+    /*如果连接关闭则一定要取消等待的事务, 否则可能会造成应用层阻塞.*/
     if(node_ctx_p->flag)
         abcdk_waiter_cancel(node_ctx_p->req_waiter);
 
@@ -401,7 +401,7 @@ static void _abcdk_srpc_input_translate(abcdk_stcp_node_t *node)
     if (chk != 0)
     {
         abcdk_stcp_get_sockaddr_str(node,NULL,remote_addr);
-        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("NONCE无效(%d)，丢弃来自(%s)的数据包。\n"),chk,remote_addr);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("NONCE无效(%d), 丢弃来自(%s)的数据包.\n"),chk,remote_addr);
         return;
     }
 
@@ -438,7 +438,7 @@ static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size
 
     node_ctx_p = (abcdk_srpc_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认没有剩余数据。*/
+    /*默认没有剩余数据.*/
     *remain = 0;
 
     if (!node_ctx_p->req_data)
@@ -447,19 +447,19 @@ static void _abcdk_srpc_input_cb(abcdk_stcp_node_t *node, const void *data, size
     if (!node_ctx_p->req_data)
         goto ERR;
 
-    /*解包。*/
+    /*解包.*/
     chk = abcdk_receiver_append(node_ctx_p->req_data, data, size, remain);
     if (chk < 0)
     {
         *remain = 0;
         goto ERR;
     }
-    else if (chk == 0) /*数据包不完整，继续接收。*/
+    else if (chk == 0) /*数据包不完整, 继续接收.*/
         return;
 
     _abcdk_srpc_input_translate(node);
 
-    /*一定要回收。*/
+    /*一定要回收.*/
     abcdk_receiver_unref(&node_ctx_p->req_data);
 
     /*No Error.*/
@@ -581,7 +581,7 @@ static int _abcdk_srpc_post(abcdk_stcp_node_t *node,  uint8_t cmd, uint64_t mid,
     if(chk == 0)
         return 0;
 
-    /*如果发送失败则删除消息，避免发生内存泄漏。*/
+    /*如果发送失败则删除消息, 避免发生内存泄漏.*/
     abcdk_object_unref(&reqbuf);
     return -2;
 }
@@ -611,7 +611,7 @@ int abcdk_srpc_request(abcdk_srpc_session_t *session, const void *req, size_t re
     if (chk != 0)
         return -2;
 
-    /*如果需要等待应签，这里就可以返回了。*/
+    /*如果需要等待应签, 这里就可以返回了.*/
     if(!rsp)
         return 0;
 

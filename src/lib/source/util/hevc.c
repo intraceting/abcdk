@@ -74,7 +74,7 @@ void abcdk_hevc_extradata_deserialize(const void *data, size_t size, abcdk_hevc_
             nal_p->reserve1 = abcdk_bit_read(&rbuf, 1);
             nal_p->unit_type = abcdk_bit_read(&rbuf, 6);
             nal_p->nal_num = abcdk_bit_read(&rbuf, 16);
-            nal_p->nal = abcdk_object_alloc3(rbuf.size, nal_p->nal_num); // 足够的长度，保证不会溢出。
+            nal_p->nal = abcdk_object_alloc3(rbuf.size, nal_p->nal_num); // 足够的长度, 保证不会溢出.
 
             for (int j = 0; j < nal_p->nal_num; j++)
             {
@@ -92,13 +92,13 @@ void abcdk_hevc_extradata_deserialize(const void *data, size_t size, abcdk_hevc_
     {
         p1 = rbuf.data;
         p2 = NULL;
-        p3 = rbuf.data + rbuf.size - 1;/*末尾指针要减1。*/
+        p3 = rbuf.data + rbuf.size - 1;/*末尾指针要减1.*/
 
         extradata->nal_array_num = 1;
 
         nal_p = &extradata->nal_array[0];
 
-        nal_p->nal = abcdk_object_alloc3(rbuf.size, 10); // 足够的长度，保证不会溢出。
+        nal_p->nal = abcdk_object_alloc3(rbuf.size, 10); // 足够的长度, 保证不会溢出.
 
         for (int j = 0; j < 10; j++)
         {

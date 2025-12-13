@@ -7,17 +7,17 @@
 #include "abcdk/openssl/cipherex.h"
 
 
-/**简单的加密接口。 */
+/**简单的加密接口. */
 struct _abcdk_openssl_cipherex
 {
-    /*魔法数。*/
+    /*魔法数.*/
     uint32_t magic;
 #define ABCDK_OPENSSL_CIPHEREX_MAGIC 123456789
 
-    /*负截均衡游标。*/
+    /*负截均衡游标.*/
     volatile uint64_t lb_pos;
 
-    /*密钥组环境。*/
+    /*密钥组环境.*/
     abcdk_object_t *cipher_gp;
 
 } ;//abcdk_openssl_cipherex_t;

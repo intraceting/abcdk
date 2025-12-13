@@ -6,26 +6,26 @@
  */
 #include "abcdk/util/option.h"
 
-/** 选项。*/
+/** 选项.*/
 struct _abcdk_option
 {
     abcdk_tree_t *table;
 };//abcdk_option_t;
 
 /**
- * 选项的字段索引。
+ * 选项的字段索引.
  */
 typedef enum _abcdk_option_field
 {
-    /** Prefix。*/
+    /** Prefix.*/
     ABCDK_OPTION_PREFIX = 0,
 #define ABCDK_OPTION_PREFIX ABCDK_OPTION_PREFIX
 
-    /** Key。*/
+    /** Key.*/
     ABCDK_OPTION_KEY = 0,
 #define ABCDK_OPTION_KEY ABCDK_OPTION_KEY
 
-    /** Value。*/
+    /** Value.*/
     ABCDK_OPTION_VALUE = 0
 #define ABCDK_OPTION_VALUE ABCDK_OPTION_VALUE
 
@@ -42,7 +42,7 @@ static abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key
     prefix = opt->table->obj->pstrs[ABCDK_OPTION_PREFIX];
     pfx_len = strlen(opt->table->obj->pstrs[ABCDK_OPTION_PREFIX]);
 
-    /*检测KEY是否包含前缀，如果不包含则添加。*/
+    /*检测KEY是否包含前缀, 如果不包含则添加.*/
     in_key = (char *)key;
     if (pfx_len > 0 && abcdk_strncmp(prefix, key, pfx_len, 0) != 0)
     {
@@ -74,7 +74,7 @@ static abcdk_tree_t *_abcdk_option_find_key(abcdk_option_t *opt, const char *key
         }
     }
 
-    /*新创建要释放掉。*/
+    /*新创建要释放掉.*/
     if(in_key != key)   
         abcdk_heap_free(in_key);
 
@@ -128,7 +128,7 @@ void abcdk_option_free(abcdk_option_t **opt)
     abcdk_heap_free(opt_p);
 }
 
-/** 创建对象。*/
+/** 创建对象.*/
 abcdk_option_t *abcdk_option_alloc(const char *prefix)
 {
     abcdk_option_t *opt = NULL;
@@ -174,7 +174,7 @@ int abcdk_option_set(abcdk_option_t *opt, const char *key, const char *value)
         ABCDK_ERRNO_AND_RETURN1(ENOMEM,-1);
 
     /*
-     * 允许没有值。
+     * 允许没有值.
     */
     if (value == NULL || value[0] == '\0')
         return 0;

@@ -16,45 +16,45 @@
 
 __BEGIN_DECLS
 
-/** ODBC连接池。*/
+/** ODBC连接池.*/
 typedef struct _abcdk_odbc_pool abcdk_odbc_pool_t;
 
 /** 
- * 连接数据库回调函数。
+ * 连接数据库回调函数.
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功, !0 失败.
 */
 typedef int (*abcdk_odbc_pool_connect_cb)(abcdk_odbc_t *ctx, void *opaque);
 
 /**
- * 销毁连接池。
+ * 销毁连接池.
  */
 void abcdk_odbc_pool_destroy(abcdk_odbc_pool_t **ctx);
 
 /**
- * 创建连接池。
+ * 创建连接池.
  *
- * @param size 池大小。
- * @param connect_cb 连接函数指针。
- * @param opaque 环境指针。
+ * @param size 池大小.
+ * @param connect_cb 连接函数指针.
+ * @param opaque 环境指针.
  *
- * @return !NULL(0) 成功(连接池对象的指针)，NULL(0) 失败(系统错误或内存不足)。
+ * @return !NULL(0) 成功(连接池对象的指针), NULL(0) 失败(系统错误或内存不足).
  */
 abcdk_odbc_pool_t *abcdk_odbc_pool_create(size_t size, abcdk_odbc_pool_connect_cb connect_cb, void *opaque);
 
 /**
- * 弹出一个连接。
+ * 弹出一个连接.
  * 
- * @param [in] timeout 超时(毫秒)。
+ * @param [in] timeout 超时(毫秒).
  * 
- * @return !NULL(0) 成功(连接对象的指针)，NULL(0) 失败(数据库无法连接)。
+ * @return !NULL(0) 成功(连接对象的指针), NULL(0) 失败(数据库无法连接).
 */
 abcdk_odbc_t *abcdk_odbc_pool_pop(abcdk_odbc_pool_t *ctx,time_t timeout);
 
 /**
- * 回收一个连接。
+ * 回收一个连接.
  * 
- * @param [in out] odbc 连接对象指针的指针。
+ * @param [in out] odbc 连接对象指针的指针.
 */
 void abcdk_odbc_pool_push(abcdk_odbc_pool_t *ctx, abcdk_odbc_t **odbc);
 

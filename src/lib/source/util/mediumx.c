@@ -160,32 +160,32 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *list, const uint8_t *eleme
 
     for (uint16_t i = 0; i < count; i++)
     {
-        /*申请节点。*/
+        /*申请节点.*/
         size_t sizes[5] = {sizeof(uint16_t), sizeof(uint8_t), sizeof(uint8_t), 36 + 1, 32 + 1};
         abcdk_tree_t *one = abcdk_tree_alloc2(sizes, 5, 0);
 
-        /*如果节点申请失败提结束。*/
+        /*如果节点申请失败提结束.*/
         if (one == NULL)
             break;
 
-        /*是否有条码字段。*/
+        /*是否有条码字段.*/
         uint8_t volsize = (pvoltag ? 36 : 0);
 
-        /*获取部分字段。*/
+        /*获取部分字段.*/
         ABCDK_PTR2U16(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ADDR], 0) = abcdk_endian_b_to_h16(ABCDK_PTR2U16(ptr, 0));
         ABCDK_PTR2U8(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_TYPE], 0) = type;
         ABCDK_PTR2U8(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_ISFULL], 0) = ((ptr[2] & 0x01) ? 1 : 0);
         if (volsize > 0)
             memcpy(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE], ptr + 12, volsize);
 
-        /*是否有机械臂或驱动器信息。*/
+        /*是否有机械臂或驱动器信息.*/
         uint8_t dvcid_set = ptr[12 + volsize] & 0x0F;
 
-        /*0x01或0x02有效。*/
+        /*0x01或0x02有效.*/
         if (dvcid_set == 0)
             goto next;
 
-        /*机械臂或驱动器才有下面的数据。*/
+        /*机械臂或驱动器才有下面的数据.*/
         if (ABCDK_MEDIUMX_ELEMENT_CHANGER == type || ABCDK_MEDIUMX_ELEMENT_DXFER == type)
         {
             uint8_t dvcid_type = ptr[13 + volsize] & 0x0F;
@@ -225,14 +225,14 @@ void abcdk_mediumx_parse_element_status(abcdk_tree_t *list, const uint8_t *eleme
 
     next:
 
-        /*清除两端的空格。*/
+        /*清除两端的空格.*/
         abcdk_strtrim(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_BARCODE], isspace, 2);
         abcdk_strtrim(one->obj->pptrs[ABCDK_MEDIUMX_ELEMENT_DVCID], isspace, 2);
 
-        /*添加到子节点末尾。*/
+        /*添加到子节点末尾.*/
         abcdk_tree_insert2(list, one, 0);
 
-        /*下一页。*/
+        /*下一页.*/
         ptr += psize;
     }
 }
@@ -327,7 +327,7 @@ int _abcdk_mediumx_find_changer_address_cb(size_t depth, abcdk_tree_t *node, voi
 {
     abcdk_mediumx_find_param_t *param_p = (abcdk_mediumx_find_param_t *)opaque;
 
-    /*已经结束。*/
+    /*已经结束.*/
     if(depth == SIZE_MAX)
         return -1;
 

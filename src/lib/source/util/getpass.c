@@ -14,7 +14,7 @@ abcdk_object_t *abcdk_getpass(FILE *istream,const char *prompt,...)
     struct termios in_old = {0};
     int chk,chk2;
 
-    /*如果没有提示词，则使用默认的提示词。*/
+    /*如果没有提示词, 则使用默认的提示词.*/
     if (!prompt || !*prompt)
         return abcdk_getpass(istream, "Enter passphrase");
 
@@ -25,10 +25,10 @@ abcdk_object_t *abcdk_getpass(FILE *istream,const char *prompt,...)
 
     fprintf(stdout, ": ");
 
-    /*立即显示。*/
+    /*立即显示.*/
     fflush(stdout);
 
-    /*最大1024字符，包括结束符号。*/
+    /*最大1024字符, 包括结束符号.*/
     passwd = abcdk_object_alloc2(1024);
     if(!passwd)
         return NULL;
@@ -64,7 +64,7 @@ abcdk_object_t *abcdk_getpass(FILE *istream,const char *prompt,...)
     if(chk != 0)
         goto ERR;
 
-    /*换行。*/
+    /*换行.*/
     fprintf(stdout, "\n");
 
     return passwd;

@@ -126,14 +126,14 @@ const char *abcdk_time_format(const char *fmt, const struct tm *tm, locale_t loc
     if(!fmt)
         fmt = "%Y-%m-%d %H:%M:%S";
 
-    /*如果未输入时间，则使用UTC时间。*/
+    /*如果未输入时间, 则使用UTC时间.*/
     if(!tm)
     {
         abcdk_time_get(&tmp,1);
         return abcdk_time_format(fmt,&tmp,loc);
     }
 
-    /*初始化一次。*/
+    /*初始化一次.*/
     chk = pthread_once(&_abcdk_time_format_key_init_status,_abcdk_time_format_key_init);
     assert(chk == 0);
 

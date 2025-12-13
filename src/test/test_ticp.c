@@ -15,7 +15,7 @@ abcdk_tipc_t * g_ctx = NULL;
 
 static void _abcdk_test_tipc_offline_cb(void *opaque, uint64_t id)
 {
-    abcdk_trace_printf(LOG_INFO,"id=%llu 离线。",id);
+    abcdk_trace_printf(LOG_INFO,"id=%llu 离线.",id);
 }
 
 static void _abcdk_test_tipc_request_cb(void *opaque, uint64_t id, uint64_t mid, const void *data, size_t size)

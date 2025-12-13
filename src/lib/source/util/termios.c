@@ -92,7 +92,7 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
 
     assert(fd >= 0);
 
-    /*查找波特率配置。*/
+    /*查找波特率配置.*/
     for (int i = 0; i < ABCDK_ARRAY_SIZE(abcdk_tcattr_serial_baudrate_dict); i++)
     {
         if(abcdk_tcattr_serial_baudrate_dict[i].code == baudrate)
@@ -102,11 +102,11 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
         }
     }
 
-    /*不支持的波特率。*/
+    /*不支持的波特率.*/
     if(speed == B0)
         return -1;
 
-    /*设置波特率。*/
+    /*设置波特率.*/
     cfsetispeed(&now, speed);
     cfsetospeed(&now, speed);
 
@@ -119,7 +119,7 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
     /*禁用校验位*/
     now.c_cflag &= ~PARENB;
 
-    /*设置数据位。*/
+    /*设置数据位.*/
     if(bits == 5)
         now.c_cflag |= CS5;
     else if(bits == 6)
@@ -129,22 +129,22 @@ int abcdk_tcattr_serial(int fd, int baudrate, int bits, int parity, int stop,str
     else /*if(bits == 8)*/
         now.c_cflag |= CS8;
 
-    /*设置校验位。*/
+    /*设置校验位.*/
     if (parity == 1)
     {
-        /*奇。*/
+        /*奇.*/
         now.c_cflag |= PARENB;
         now.c_cflag |= PARODD;
     }
     else if (parity == 2)
     {
-        /*偶。*/
+        /*偶.*/
         now.c_cflag |= PARENB;
         now.c_cflag &= ~PARODD;
     }
 
 
-    /*设置停止位。*/
+    /*设置停止位.*/
     if(stop == 2)
         now.c_cflag |= CSTOPB;
     else /*if(stop == 1)*/
@@ -165,7 +165,7 @@ int abcdk_tcattr_transfer(int fd, const void *out, size_t outlen, void *in, size
 
     assert(fd >=0 && timeout > 0);
 
-    /*如需要接收数据，则先清除缓存中未处理的数据。*/
+    /*如需要接收数据, 则先清除缓存中未处理的数据.*/
     if (in != NULL && inlen > 0)
         tcflush(fd,TCIFLUSH);
 
@@ -175,7 +175,7 @@ int abcdk_tcattr_transfer(int fd, const void *out, size_t outlen, void *in, size
         if (wlen != outlen)
             return -1;
 
-        /*等待发送完成。*/
+        /*等待发送完成.*/
         chk = tcdrain(fd);
         if(chk != 0)
             return -1;

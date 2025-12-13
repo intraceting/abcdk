@@ -13,9 +13,9 @@
 __BEGIN_DECLS
 
 /**
- * 格式化。
+ * 格式化.
  * 
- * @param [in] fmt 格式{TEXT(1)，XML(2)，JSON(3)}。
+ * @param [in] fmt 格式{TEXT(1), XML(2), JSON(3)}.
 */
 int abcdk_mediumx_element_status_format(abcdk_tree_t *list,int fmt, FILE* out);                        
 

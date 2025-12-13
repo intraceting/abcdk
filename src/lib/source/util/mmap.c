@@ -45,10 +45,10 @@ abcdk_object_t *_abcdk_mmap(int fd, size_t truncate, int rw, int shared)
     if (!obj)
         return NULL;
 
-    /*初始化。*/
+    /*初始化.*/
     obj->pptrs[0] = obj->pptrs[1] = obj->pptrs[2] = MAP_FAILED;
 
-    /* 注册析构函数。 */
+    /* 注册析构函数. */
     abcdk_object_atfree(obj, _abcdk_munmap_cb, NULL);
 
     if (truncate > 0)
@@ -73,7 +73,7 @@ abcdk_object_t *_abcdk_mmap(int fd, size_t truncate, int rw, int shared)
     if (mmptr == MAP_FAILED)
         goto final_error;
 
-    /*绑定内存和文件句柄。*/
+    /*绑定内存和文件句柄.*/
     obj->pptrs[0] = mmptr;
     obj->sizes[0] = attr.st_size;
     obj->pptrs[1] = mmptr;
@@ -97,7 +97,7 @@ int _abcdk_mremap(abcdk_object_t *obj, size_t truncate, int rw, int shared)
     int fd;
     int chk;
 
-    /*复制FD。*/
+    /*复制FD.*/
     fd = dup((long)obj->pptrs[2]);
 
     if (truncate > 0)
@@ -122,10 +122,10 @@ int _abcdk_mremap(abcdk_object_t *obj, size_t truncate, int rw, int shared)
     if (mmptr == MAP_FAILED)
         goto final_error;
 
-    /*释放旧的内存。*/
+    /*释放旧的内存.*/
     _abcdk_munmap(obj);
 
-    /*绑定内存和文件句柄。*/
+    /*绑定内存和文件句柄.*/
     obj->pptrs[0] = mmptr;
     obj->sizes[0] = attr.st_size;
     obj->pptrs[1] = mmptr;

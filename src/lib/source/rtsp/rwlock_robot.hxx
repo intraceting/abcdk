@@ -13,7 +13,7 @@ namespace abcdk
 {
     namespace rtsp
     {
-        /*读写锁机器人，自动执行入栈和出栈。*/
+        /*读写锁机器人, 自动执行入栈和出栈.*/
         class rwlock_robot
         {
         private:

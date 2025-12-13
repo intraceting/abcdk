@@ -34,7 +34,7 @@ ssize_t abcdk_h2645_find_start_code(const void *b, const void *e, int *ksize)
         k = 0;
     }
 
-    /*可能未找到。*/
+    /*可能未找到.*/
     if (p > e)
         return -1;
 
@@ -89,17 +89,17 @@ next_nal:
     if (n <= 0)
         return;
 
-    /*回滚游标。*/
+    /*回滚游标.*/
     abcdk_bit_seek(&buf, -bits_count);
 
-    /*替换长度为字流节头标识('01','001','0001',...,'00000001')。*/
+    /*替换长度为字流节头标识('01','001','0001',...,'00000001').*/
     abcdk_bit_write(&buf, bits_count - 8, 0);
     abcdk_bit_write(&buf, 8, 1);
 
-    /*游标跳过实体数据。*/
+    /*游标跳过实体数据.*/
     abcdk_bit_seek(&buf, (n * 8));
 
-    /*未到末尾，继续下一个NAL。*/
+    /*未到末尾, 继续下一个NAL.*/
     if (!abcdk_bit_eof(&buf))
         goto next_nal;
 

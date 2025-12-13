@@ -39,7 +39,7 @@ static void create_fb(int fd, uint32_t width, uint32_t height, uint32_t color, s
     drmModeAddFB(fd, create.width, create.height, 24, 32, create.pitch, create.handle, &fb_id);
 
     map.handle = create.handle;
-    drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map); // 显存绑定fd，并根据handle返回offset
+    drmIoctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map); // 显存绑定fd, 并根据handle返回offset
 
     // 通过offset找到对应的显存(framebuffer)并映射到用户空间
     uint32_t *vaddr = mmap(0, create.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, map.offset);
@@ -77,7 +77,7 @@ int _abcdk_test_drm_work(abcdk_option_t *args)
     uint32_t conn_id;
     uint32_t crtc_id;
 
-    fd = open(dev_p, O_RDWR | O_CLOEXEC); // 打开card0，card0一般绑定HDMI和LVDS
+    fd = open(dev_p, O_RDWR | O_CLOEXEC); // 打开card0, card0一般绑定HDMI和LVDS
 
     resources = drmModeGetResources(fd); // 获取drmModeRes资源,包含fb、crtc、encoder、connector等
 
@@ -93,7 +93,7 @@ int _abcdk_test_drm_work(abcdk_option_t *args)
     create_fb(fd, connector->modes[0].hdisplay, connector->modes[0].vdisplay, 0x0000ff, &buf[2]);
 
     drmModeSetCrtc(fd, crtc_id, buf[0].fb_id,
-                   0, 0, &conn_id, 1, &connector->modes[0]); // 初始化和设置crtc，对应显存立即刷新
+                   0, 0, &conn_id, 1, &connector->modes[0]); // 初始化和设置crtc, 对应显存立即刷新
     sleep(5);
 
     drmModeSetCrtc(fd, crtc_id, buf[1].fb_id,

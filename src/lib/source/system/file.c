@@ -24,7 +24,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
 
     snprintf(cmd,PATH_MAX,"lsof -F pf \"%s\"",file);
 
-    /*如果无法执行查询，则返回无进程占用文件。*/
+    /*如果无法执行查询, 则返回无进程占用文件.*/
     t = abcdk_popen(cmd,NULL,0,0, NULL, NULL, NULL, &ofd, NULL);
     if (t < 0)
         return -1;
@@ -39,7 +39,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
         if(rlen < 0)
             break;
             
-        /*跳过无法存储的（不能超过数组容量），不然管道中有数据但无“人”读取的话，会卡死父进程。*/
+        /*跳过无法存储的(不能超过数组容量), 不然管道中有数据但无“人”读取的话, 会卡死父进程.*/
         if (line_c >= max)
             continue;
 
@@ -53,12 +53,12 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
             fc[1] += 1;
         }
 
-        /*每行的所有字段都读取后，行号滚动。*/
+        /*每行的所有字段都读取后, 行号滚动.*/
         if (fc[0] == fc[1])
             line_c += 1;
     }
 
-    /*获取子进程退出状态，防止出现僵尸子进程。*/
+    /*获取子进程退出状态, 防止出现僵尸子进程.*/
     waitpid(t,&status,0);
     exitcode = WIFEXITED(status);
 
@@ -129,11 +129,11 @@ int abcdk_file_segment(const char *src,const char *dst, uint16_t winsize, uint64
 
     assert(dst != NULL && winsize > 0 && start > 0 && pos != NULL);
 
-    /*重启生产。*/
+    /*重启生产.*/
     if (pos[0] > pos[1])
         _abcdk_file_segment_find_pos(dst,start,pos);
 
-    /*有序的增长最大编号。*/
+    /*有序的增长最大编号.*/
     for (; pos[1] < UINT64_MAX; pos[1]++)
     {
         memset(tmp,0,PATH_MAX);
@@ -152,7 +152,7 @@ int abcdk_file_segment(const char *src,const char *dst, uint16_t winsize, uint64
             return -2;
     }
 
-    /*删除冗余窗口之前的。*/
+    /*删除冗余窗口之前的.*/
     for (; pos[0] < pos[1]; pos[0]++)
     {
         if (pos[1] - pos[0] < winsize)

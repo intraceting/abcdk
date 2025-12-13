@@ -10,26 +10,26 @@ const char *_abcdk_mtab_split_field(char **pos)
 {
     char *b = NULL,*p = NULL;
 
-    /*找到字段开头。*/
+    /*找到字段开头.*/
     p = *pos;
     while (*p != '\0' && isspace(*p))
     {
         p++;
     }
 
-    /*记录字段头指针。*/
+    /*记录字段头指针.*/
     b = p;
 
-    /*找到字段末尾。*/
+    /*找到字段末尾.*/
     while (*p != '\0' && !isspace(*p))
     {
         p++;
     }
 
-    /*修改末尾结束符。*/
+    /*修改末尾结束符.*/
     *p = '\0';
 
-    /*指针向后移动并保存。*/
+    /*指针向后移动并保存.*/
     *pos = p + 1;
 
     return b;
@@ -69,7 +69,7 @@ void abcdk_mtab_list(abcdk_tree_t *list)
         dev_p = (abcdk_mtab_info_t*)dev->obj->pptrs[0];
         pos = (char*)dev->obj->pptrs[1];
 
-        /*字段分割，顺序不能换。*/
+        /*字段分割, 顺序不能换.*/
         dev_p->fs = _abcdk_mtab_split_field(&pos);
         dev_p->mpoint = _abcdk_mtab_split_field(&pos);
         dev_p->type = _abcdk_mtab_split_field(&pos);
@@ -80,7 +80,7 @@ void abcdk_mtab_list(abcdk_tree_t *list)
 
 final:
 
-    /*不要忘记释放这块内存，不然可能会有内存泄漏的风险。 */
+    /*不要忘记释放这块内存, 不然可能会有内存泄漏的风险. */
     if (line)
         free(line);
     if (fp)

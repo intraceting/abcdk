@@ -7,7 +7,7 @@
 #include "abcdk/util/rwlock.h"
 
 /**
- * 读写锁。
+ * 读写锁.
 */
 struct _abcdk_rwlock
 {

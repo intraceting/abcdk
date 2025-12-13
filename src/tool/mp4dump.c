@@ -10,24 +10,24 @@ void _abcdk_m4d_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的MP4结构查看工具。\n");
+    fprintf(stderr, "\n\t简单的MP4结构查看工具.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--file < FILE >\n");
-    fprintf(stderr, "\t\t文件(包括路径)。\n");
+    fprintf(stderr, "\t\t文件(包括路径).\n");
 
     fprintf(stderr, "\n\t--offset < OFFSET >\n");
-    fprintf(stderr, "\t\t偏移量。默认：0\n");
+    fprintf(stderr, "\t\t偏移量.默认: 0\n");
 
     fprintf(stderr, "\n\t--all\n");
-    fprintf(stderr, "\t\t打印全部结构。默认：打印基本结构。\n");
+    fprintf(stderr, "\t\t打印全部结构.默认: 打印基本结构.\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到指定的文件(包括路径).默认: 终端\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -53,7 +53,7 @@ void _abcdk_m4d_work(abcdk_option_t *args)
 
     if (!file || !*file)
     {
-        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--file FILE' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
@@ -82,7 +82,7 @@ void _abcdk_m4d_work(abcdk_option_t *args)
 
     if(!abcdk_mp4_find2(doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        fprintf(stderr, "'%s' 可能不是MP4文件，或尚未支持此格式。\n", file);
+        fprintf(stderr, "'%s' 可能不是MP4文件, 或尚未支持此格式.\n", file);
         ABCDK_ERRNO_AND_GOTO1(EPERM, final);
     }
 

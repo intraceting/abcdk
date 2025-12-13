@@ -146,7 +146,7 @@ int abcdk_test_ping(abcdk_option_t *args)
  
 /**
  * addr 指向需校验数据缓冲区的指针
- * len  需校验数据的总长度（字节单位）
+ * len  需校验数据的总长度(字节单位)
  */
 USHORT checkSum(USHORT *addr, int len){
     UINT sum = 0;  
@@ -168,7 +168,7 @@ USHORT checkSum(USHORT *addr, int len){
 }
  
 /**
- * 返回值单位：ms
+ * 返回值单位: ms
  * begin 开始时间戳
  * end   结束时间戳
  */
@@ -210,10 +210,10 @@ int unpack(char * buf, int len, char * addr){
  
    ip = (struct ip *)buf;
  
-   // 计算ip首部长度，即ip首部的长度标识乘4
+   // 计算ip首部长度, 即ip首部的长度标识乘4
    ipheadlen = ip->hlen << 2;
  
-   // 越过ip首部，指向ICMP报文
+   // 越过ip首部, 指向ICMP报文
    icmp = (struct icmp *)(buf + ipheadlen);
  
    // ICMP报文的总长度
@@ -236,7 +236,7 @@ int unpack(char * buf, int len, char * addr){
    gettimeofday(&end, 0);
    rtt = timediff(&icmp->timestamp, &end);
  
-   // 打印ttl，rtt，seq
+   // 打印ttl, rtt, seq
    printf("%d bytes from %s : icmp_seq=%u ttl=%d rtt=%fms \n",
            len, addr, icmp->sequence, ip->ttl, rtt);
  

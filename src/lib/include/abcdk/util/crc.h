@@ -12,16 +12,16 @@
 __BEGIN_DECLS
 
 /**
- * 计算CRC32值。
+ * 计算CRC32值.
  * 
- * @note 默认：未分类
+ * @note 默认: 未分类
 */
 uint32_t abcdk_crc32(const void *data,size_t size, ...);
 
 /**
- * 计算CRC16值。
+ * 计算CRC16值.
  * 
- * @note 默认：MODBUS
+ * @note 默认: MODBUS
 */
 uint16_t abcdk_crc16(const void *data, size_t size, ...);
 

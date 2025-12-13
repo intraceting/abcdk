@@ -73,7 +73,7 @@ void abcdk_tree_unlink(abcdk_tree_t *self)
             root->least->next = NULL;
     }
 
-    /* 打断与父节点的关系链，但同时保留子节点关系链。*/
+    /* 打断与父节点的关系链, 但同时保留子节点关系链.*/
     self->father = NULL;
     self->next = NULL;
     self->prev = NULL;
@@ -83,12 +83,12 @@ void abcdk_tree_insert(abcdk_tree_t *father, abcdk_tree_t *child, abcdk_tree_t *
 {
     assert(father && child);
 
-    /*必须是根节点，或独立节点。 */
+    /*必须是根节点, 或独立节点. */
     assert(NULL == child->father);
     assert(NULL == child->prev);
     assert(NULL == child->next);
 
-    /* 绑定新父节点。*/
+    /* 绑定新父节点.*/
     child->father = father;
 
     if (where)
@@ -97,11 +97,11 @@ void abcdk_tree_insert(abcdk_tree_t *father, abcdk_tree_t *child, abcdk_tree_t *
 
         if (where == father->first)
         {
-            /*添加到头节点之前。*/
+            /*添加到头节点之前.*/
             where->prev = child;
             child->next = where;
 
-            /* 新的头节点。*/
+            /* 新的头节点.*/
             father->first = child;
         }
         else
@@ -117,16 +117,16 @@ void abcdk_tree_insert(abcdk_tree_t *father, abcdk_tree_t *child, abcdk_tree_t *
     {
         if (father->least)
         {
-            /* 添加到尾节点之后。*/
+            /* 添加到尾节点之后.*/
             father->least->next = child;
             child->prev = father->least;
 
-            /* 新的尾节点。*/
+            /* 新的尾节点.*/
             father->least = child;
         }
         else
         {
-            /* 空链表，添加第一个节点。*/
+            /* 空链表, 添加第一个节点.*/
             father->least = father->first = child;
         }
     }
@@ -159,7 +159,7 @@ void abcdk_tree_swap(abcdk_tree_t *src,abcdk_tree_t *dst)
     src_next = abcdk_tree_sibling(src,0);
     dst_next = abcdk_tree_sibling(dst,0);
 
-    /* 两个兄弟紧挨着。*/
+    /* 两个兄弟紧挨着.*/
     if(src_next == dst)
     {
         abcdk_tree_unlink(dst);
@@ -172,7 +172,7 @@ void abcdk_tree_swap(abcdk_tree_t *src,abcdk_tree_t *dst)
     }
     else
     {
-        /* 有其它兄弟姐妺夹在中间。 */
+        /* 有其它兄弟姐妺夹在中间. */
         abcdk_tree_unlink(dst);
         abcdk_tree_unlink(src);
 
@@ -201,7 +201,7 @@ void abcdk_tree_free(abcdk_tree_t **root)
     /* 复制一下 */
     root_p = *root;
 
-    /* 以防清理到父和兄弟节点。 */
+    /* 以防清理到父和兄弟节点. */
     assert(NULL == root_p->father);
     assert(NULL == root_p->prev);
     assert(NULL == root_p->next);
@@ -214,7 +214,7 @@ void abcdk_tree_free(abcdk_tree_t **root)
         {
             child = abcdk_tree_child(node,0);
 
-            /* 检测是否有子节点，如果有先清理子节点。  */
+            /* 检测是否有子节点, 如果有先清理子节点.  */
             if (child)
             {
                 root_p = node;
@@ -232,12 +232,12 @@ void abcdk_tree_free(abcdk_tree_t **root)
         }
         else
         {
-            /* 没有子节点，返回到父节点。*/
+            /* 没有子节点, 返回到父节点.*/
             root_p = abcdk_tree_father(root_p);
         }
     }
 
-    /* 再次复制一下，并清理最野指针。 */
+    /* 再次复制一下, 并清理最野指针. */
     root_p = *root;
     *root = NULL;
 
@@ -277,7 +277,7 @@ abcdk_tree_t *abcdk_tree_alloc2(size_t *sizes, size_t numbers,int drag)
 
 final_error:
 
-    /* 走到这里出错了。 */
+    /* 走到这里出错了. */
     abcdk_tree_free(&node);
     abcdk_object_unref(&obj);
     
@@ -317,7 +317,7 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
     assert(root != NULL && it != NULL);
     assert(it->dump_cb!= NULL);
         
-    /* 如果调用者不确定，则在内部自动确定。  */
+    /* 如果调用者不确定, 则在内部自动确定.  */
     if (it->depth_max > 0)
         stack_size = it->depth_max;
 
@@ -330,7 +330,7 @@ void abcdk_tree_scan(abcdk_tree_t *root,abcdk_tree_iterator_t* it)
     if(chk <= 0)
         goto final;
 
-    /* 从第一个孩子开始遍历。 */
+    /* 从第一个孩子开始遍历. */
     node = abcdk_tree_child(root,1);
 
     while(node)
@@ -403,7 +403,7 @@ void abcdk_tree_sort(abcdk_tree_t *father,abcdk_tree_iterator_t *it,int order)
             t3 = abcdk_tree_sibling(t3, 0);
         }
 
-        /*需要交换时，再进行交换。*/
+        /*需要交换时, 再进行交换.*/
         if (t1 != t2)
             abcdk_tree_swap(t1, t2);
 
@@ -477,7 +477,7 @@ ssize_t abcdk_tree_vfprintf(FILE* fp,size_t depth,const abcdk_tree_t *node,const
     }
     else
     {
-        /*准备堆栈。 */
+        /*准备堆栈. */
         stack = abcdk_heap_alloc(depth * sizeof(abcdk_tree_t *));
         if(!stack)
             ABCDK_ERRNO_AND_RETURN1(ENOMEM,-1);

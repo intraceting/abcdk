@@ -62,7 +62,7 @@ const char *abcdk_match_env(const char *line, const char *name, uint8_t delim)
         d += 1;
     }
 
-    /* 提前结束，表示不匹配。*/
+    /* 提前结束, 表示不匹配.*/
     if (*s == '\0' || (!isspace(*s) && *s != delim) || *d != '\0')
         return NULL;
 
@@ -86,7 +86,7 @@ void abcdk_memcpy_2d(void *dst, size_t dst_pitch, size_t dst_x_bytes, size_t dst
                       const void *src, size_t src_pitch, size_t src_x_bytes, size_t src_y,
                       size_t roi_width_bytes, size_t roi_height)
 {
-    /*一行一行的复制。*/
+    /*一行一行的复制.*/
     for (int h = 0; h < roi_height; h++)
         abcdk_memcpy_1d(dst, (h + dst_y) * dst_pitch + dst_x_bytes, src, (h + src_y) * src_pitch + src_x_bytes, roi_width_bytes);
 }

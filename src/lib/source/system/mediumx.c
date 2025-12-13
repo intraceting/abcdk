@@ -14,7 +14,7 @@ typedef struct _abcdk_mediumx_element_status_format_param
 
     int head_out;
 
-    /*设备列表。*/
+    /*设备列表.*/
     abcdk_tree_t *devs;
 
 }abcdk_mediumx_element_status_format_param_t;
@@ -140,7 +140,7 @@ int abcdk_mediumx_element_status_format(abcdk_tree_t *list,int fmt, FILE* out)
 
     param.head_out = 0;//must be 0.
 
-    /*枚举设备。*/
+    /*枚举设备.*/
     abcdk_scsi_fetch2(&param.devs);
 
     abcdk_tree_iterator_t it = {0, &param, _abcdk_mediumx_element_status_format_cb};

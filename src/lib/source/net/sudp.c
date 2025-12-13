@@ -6,81 +6,81 @@
  */
 #include "abcdk/net/sudp.h"
 
-/**简单的UDP环境。 */
+/**简单的UDP环境. */
 struct _abcdk_sudp
 {
-    /**魔法数。*/
+    /**魔法数.*/
     uint32_t magic;
 #define ABCDK_SUDP_MAGIC 123456789
 
-    /**引用计数器。*/
+    /**引用计数器.*/
     volatile int refcount;
 
-    /**ASIOEX环境。*/
+    /**ASIOEX环境.*/
     abcdk_asioex_t *asioex_ctx;
 
-    /**线程池配置。*/
+    /**线程池配置.*/
     abcdk_worker_config_t worker_cfg;
 
-    /**线程池环境。*/
+    /**线程池环境.*/
     abcdk_worker_t *worker_ctx;
     
-    /*NONCE环境。*/
+    /*NONCE环境.*/
     abcdk_nonce_t *nonce_ctx;
 
-    /*NONCE前缀。*/
+    /*NONCE前缀.*/
     uint8_t nonce_prefix[16];
 
 }; // abcdk_sudp_t;
 
-/**UDP节点。 */
+/**UDP节点. */
 struct _abcdk_sudp_node
 {
-    /**魔法数。*/
+    /**魔法数.*/
     uint32_t magic;
 #define ABCDK_SUDP_NODE_MAGIC 123456789
 
-    /**引用计数器。*/
+    /**引用计数器.*/
     volatile int refcount;
 
-    /**通讯环境指针。*/
+    /**通讯环境指针.*/
     abcdk_sudp_t *ctx;
 
-    /**配置。*/
+    /**配置.*/
     abcdk_sudp_config_t cfg;
 
-    /**索引。*/
+    /**索引.*/
     uint64_t index;
 
-    /**状态。*/
+    /**状态.*/
     volatile int status;
 #define ABCDK_SUDP_STATUS_STABLE 1
 
-    /**ASIO环境。*/
+    /**ASIO环境.*/
     abcdk_asio_t *asio_ctx;
 
-    /**伪句柄。*/
+    /**伪句柄.*/
     int64_t pfd;
 
-    /**句柄。*/
+    /**句柄.*/
     int fd;
 
-    /**密钥同步锁。*/
+    /**密钥同步锁.*/
     abcdk_rwlock_t *cipher_locker;
 
 #ifdef OPENSSL_VERSION_NUMBER
-    /**密钥环境。*/
+    /**密钥环境.*/
     abcdk_openssl_cipherex_t *cipherex_out;
     abcdk_openssl_cipherex_t *cipherex_in;
 #endif // OPENSSL_VERSION_NUMBER
 
-    /**用户环境指针。*/
+    /**用户环境指针.*/
     abcdk_object_t *userdata;
 
-    /**用户环境销毁函数。*/
+    /**用户环境销毁函数.*/
     void (*userdata_free_cb)(void *userdata);
 
-    /**接收缓存。*/
+    /**接收缓存.*/
     abcdk_object_t *in_buffer;
 }; // abcdk_sudp_node_t
 
@@ -102,7 +102,7 @@ static void _abcdk_sudp_ctx_unref(abcdk_sudp_t **ctx)
     assert(ctx_p->refcount == 0);
     ctx_p->magic = 0xcccccccc;
 
-    ABCDK_TRACE_ASSERT(ctx_p->worker_ctx == NULL, ABCDK_GETTEXT("销毁前必须先停止。"));
+    ABCDK_TRACE_ASSERT(ctx_p->worker_ctx == NULL, ABCDK_GETTEXT("销毁前必须先停止."));
 
     abcdk_asioex_destroy(&ctx_p->asioex_ctx);
     abcdk_nonce_destroy(&ctx_p->nonce_ctx);
@@ -158,7 +158,7 @@ static abcdk_sudp_t *_abcdk_sudp_ctx_alloc(int worker, int diff)
     if (!ctx->worker_ctx)
         goto ERR;
 
-    /*每个ASIO分配一个线程处理。*/
+    /*每个ASIO分配一个线程处理.*/
     for (int i = 0; i < worker; i++)
         abcdk_worker_dispatch(ctx->worker_ctx, i, (void *)-1);
 
@@ -284,7 +284,7 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node, const uint8_t *key, size_t 
 
     if (flag & 0x01)
     {
-        /*关闭旧的，并创建新的。*/
+        /*关闭旧的, 并创建新的.*/
         abcdk_openssl_cipherex_destroy(&node->cipherex_in);
 
         if (node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_AES256GCM)
@@ -295,7 +295,7 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node, const uint8_t *key, size_t 
 
     if (flag & 0x02)
     {
-        /*关闭旧的，并创建新的。*/
+        /*关闭旧的, 并创建新的.*/
         abcdk_openssl_cipherex_destroy(&node->cipherex_out);
 
         if (node->cfg.ssl_scheme == ABCDK_SUDP_SSL_SCHEME_AES256GCM)
@@ -304,11 +304,11 @@ int abcdk_sudp_cipher_reset(abcdk_sudp_node_t *node, const uint8_t *key, size_t 
             node->cipherex_out = abcdk_openssl_cipherex_create(4, ABCDK_OPENSSL_CIPHER_SCHEME_AES256CBC, key, klen);
     }
 
-    /*必须都成功。*/
+    /*必须都成功.*/
     chk = ((node->cipherex_in && node->cipherex_out) ? 0 : -1);
 
 #else  // OPENSSL_VERSION_NUMBER
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境未包含加密套件，忽略密钥文件。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境未包含加密套件, 忽略密钥文件."));
 #endif // OPENSSL_VERSION_NUMBER
 
     abcdk_rwlock_unlock(node->cipher_locker);
@@ -355,30 +355,30 @@ static void _abcdk_sudp_dispatch(abcdk_sudp_t *ctx, uint32_t event, abcdk_sudp_n
 
     if (event & ABCDK_EPOLL_ERROR)
     {
-        /*清除状态。*/
+        /*清除状态.*/
         node->status == 0;
 
         _abcdk_sudp_close_cb(node);
 
-        /*释放事件计数。*/
+        /*释放事件计数.*/
         abcdk_asio_unref(node->asio_ctx, node->pfd, ABCDK_EPOLL_ERROR);
 
-        /*解除绑定关系。*/
+        /*解除绑定关系.*/
         abcdk_asio_detch(node->asio_ctx, node->pfd);
 
-        /*释放引用后，指针会被清空，因此这里需要复制一下。*/
+        /*释放引用后, 指针会被清空, 因此这里需要复制一下.*/
         node_p = node;
 
-        /*释放引用(关联时的引用)。*/
+        /*释放引用(关联时的引用).*/
         abcdk_sudp_unref(&node_p);
     }
 
     if (event & ABCDK_EPOLL_OUTPUT)
     {
-        /*无论连接状态如何，写权利必须内部释放，不能开放给应用层。*/
+        /*无论连接状态如何, 写权利必须内部释放, 不能开放给应用层.*/
         abcdk_asio_mark(node->asio_ctx, node->pfd, 0, ABCDK_EPOLL_OUTPUT);
 
-        /*释放事件计数。*/
+        /*释放事件计数.*/
         abcdk_asio_unref(node->asio_ctx, node->pfd, ABCDK_EPOLL_OUTPUT);
     }
 
@@ -386,10 +386,10 @@ static void _abcdk_sudp_dispatch(abcdk_sudp_t *ctx, uint32_t event, abcdk_sudp_n
     {
         _abcdk_sudp_input(node);
 
-        /*无论连接状态如何，读权利必须内部释放，不能开放给应用层。*/
+        /*无论连接状态如何, 读权利必须内部释放, 不能开放给应用层.*/
         abcdk_asio_mark(node->asio_ctx, node->pfd, 0, ABCDK_EPOLL_INPUT);
 
-        /*释放事件计数。*/
+        /*释放事件计数.*/
         abcdk_asio_unref(node->asio_ctx, node->pfd, ABCDK_EPOLL_INPUT);
     }
 }
@@ -413,7 +413,7 @@ static void _abcdk_sudp_perform(abcdk_sudp_t *ctx, int idx)
 
         node = (abcdk_sudp_node_t *)e.data.ptr;
 
-        /*设置线程名字，日志记录会用到。*/
+        /*设置线程名字, 日志记录会用到.*/
         abcdk_thread_setname(0, "%x", node->index);
 
         _abcdk_sudp_dispatch(ctx, e.events, node);
@@ -442,11 +442,11 @@ void abcdk_sudp_stop(abcdk_sudp_t *ctx)
     if (!ctx)
         return;
 
-    /*通知ASIO取消等待。*/
+    /*通知ASIO取消等待.*/
     if (ctx->asioex_ctx)
         abcdk_asioex_abort(ctx->asioex_ctx);
 
-    /*线程池销毁。*/
+    /*线程池销毁.*/
     abcdk_worker_stop(&ctx->worker_ctx);
 }
 
@@ -459,9 +459,9 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 
     assert(node != NULL && cfg != NULL);
     assert(cfg->bind_addr.family == AF_INET || cfg->bind_addr.family == AF_INET6);
-    ABCDK_TRACE_ASSERT(cfg->input_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数，通讯对象无法正常工作。"));
+    ABCDK_TRACE_ASSERT(cfg->input_cb != NULL, ABCDK_GETTEXT("未绑定通知回调函数, 通讯对象无法正常工作."));
 
-    /*异步环境，首先得增加对象引用。*/
+    /*异步环境, 首先得增加对象引用.*/
     node_p = abcdk_sudp_refer(node);
 
     node_p->cfg = *cfg;
@@ -472,13 +472,13 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
     if (node->fd < 0)
         goto ERR;
 
-    /*端口复用，用于快速重启恢复。*/
+    /*端口复用, 用于快速重启恢复.*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node_p->fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag, 2);
     if (chk != 0)
         goto ERR;
 
-    /*地址复用，用于快速重启恢复。*/
+    /*地址复用, 用于快速重启恢复.*/
     sock_flag = 1;
     chk = abcdk_sockopt_option_int(node_p->fd, SOL_SOCKET, SO_REUSEADDR, &sock_flag, 2);
     if (chk != 0)
@@ -486,7 +486,7 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
 
     if (node_p->cfg.bind_addr.family == AF_INET6)
     {
-        /*IPv6仅支持IPv6。*/
+        /*IPv6仅支持IPv6.*/
         sock_flag = 1;
         chk = abcdk_sockopt_option_int(node_p->fd, IPPROTO_IPV6, IPV6_V6ONLY, &sock_flag, 2);
         if (chk != 0)
@@ -518,7 +518,7 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
         }
         else
         {
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("绑定设备需要root权限支持，忽略配置。"));
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("绑定设备需要root权限支持, 忽略配置."));
         }
     }
 
@@ -526,13 +526,13 @@ int abcdk_sudp_enroll(abcdk_sudp_node_t *node, abcdk_sudp_config_t *cfg)
     if (!node_p->asio_ctx)
         goto ERR;
 
-    /*节点加入epoll池中。在解除绑定关系前，节点不会被释放。*/
+    /*节点加入epoll池中.在解除绑定关系前, 节点不会被释放.*/
     ep_data.ptr = node_p;
     node_p->pfd = abcdk_asio_attach(node_p->asio_ctx, node_p->fd, &ep_data);
     if (node_p->pfd <= 0)
         goto ERR;
 
-    /*关闭超时。*/
+    /*关闭超时.*/
     abcdk_asio_timeout(node_p->asio_ctx, node_p->pfd, 0);
     abcdk_asio_mark(node_p->asio_ctx, node_p->pfd, ABCDK_EPOLL_INPUT, 0);
 
@@ -565,7 +565,7 @@ static void _abcdk_sudp_input_cb(abcdk_sudp_node_t *node, abcdk_sockaddr_t *remo
     if (chk != 0)
     {
         abcdk_sockaddr_to_string(remote_str, remote, 0);
-        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("NONCE无效(%d)，丢弃来自(%s)的数据包。\n"), chk, remote_str);
+        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("NONCE无效(%d), 丢弃来自(%s)的数据包.\n"), chk, remote_str);
         return;
     }
 
@@ -585,7 +585,7 @@ static void _abcdk_sudp_input_hook(abcdk_sudp_node_t *node, abcdk_sockaddr_t *re
         if (!dec_p)
         {
             abcdk_sockaddr_to_string(remote_str, remote, 0);
-            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("解密错误，丢弃来自(%s)的数据包。\n"), remote_str);
+            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("解密错误, 丢弃来自(%s)的数据包.\n"), remote_str);
             
         }
         else
@@ -616,7 +616,7 @@ static void _abcdk_sudp_input(abcdk_sudp_node_t *node)
 
 NEXT_MSG:
 
-    /*收。*/
+    /*收.*/
     rlen = recvfrom(node->fd, node->in_buffer->pptrs[0], node->in_buffer->sizes[0], 0, (struct sockaddr *)&remote_addr, &addr_len);
     if (rlen <= 0)
     {
@@ -626,7 +626,7 @@ NEXT_MSG:
 
     _abcdk_sudp_input_hook(node, &remote_addr, node->in_buffer->pptrs[0], rlen);
 
-    /*继续读取缓存内可能存在数据，直到为空。*/
+    /*继续读取缓存内可能存在数据, 直到为空.*/
     goto NEXT_MSG;
 }
 
@@ -651,7 +651,7 @@ static int _abcdk_sudp_output_hook(abcdk_sudp_node_t *node, abcdk_sockaddr_t *re
 
     if (chk <= 0)
     {
-        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("输出缓慢，当前数据包未能发送。\n"));
+        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("输出缓慢, 当前数据包未能发送.\n"));
         return -1;
     }
 

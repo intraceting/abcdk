@@ -6,59 +6,59 @@
  */
 #include "abcdk/openssl/darknet.h"
 
-/**简单的安全套接字。*/
+/**简单的安全套接字.*/
 struct _abcdk_openssl_darknet
 {
-    /*密钥环境。*/
+    /*密钥环境.*/
     RSA *rsa_send_ctx;
     RSA *rsa_recv_ctx;
     EVP_CIPHER_CTX *evp_send_ctx;
     EVP_CIPHER_CTX *evp_recv_ctx;
 
-    /*密钥。*/
+    /*密钥.*/
     uint8_t evp_send_key[32];
     uint8_t evp_recv_key[32];
 
-    /*向量。*/
+    /*向量.*/
     uint8_t evp_send_iv[32];
     uint8_t evp_recv_iv[32];
 
-    /**发送队列。*/
+    /**发送队列.*/
     abcdk_tree_t *send_queue;
 
-    /**发送游标。*/
+    /**发送游标.*/
     size_t send_pos;
 
-    /**重发指针和长度。*/
+    /**重发指针和长度.*/
     const void *send_repeated_p;
     size_t send_repeated_l;
 
-    /**接收队列。*/
+    /**接收队列.*/
     abcdk_stream_t *recv_queue;
 
-    /**接收缓存。*/
+    /**接收缓存.*/
     abcdk_object_t *recv_buf;
 
-    /**接收数据包。*/
+    /**接收数据包.*/
     abcdk_receiver_t *recv_pack;
 
-    /**头部缓存。*/
+    /**头部缓存.*/
     abcdk_object_t *send_hdr;
     abcdk_object_t *recv_hdr;
 
-    /**头部长度。*/
+    /**头部长度.*/
     size_t hdr_len;
 
-    /**头部是否已经发送。*/
+    /**头部是否已经发送.*/
     int send_hdr_ok;
 
-    /**已接收头部的长度。*/
+    /**已接收头部的长度.*/
     size_t recv_hdr_len;
 
-    /** 发送句柄。*/
+    /** 发送句柄.*/
     int send_fd;
 
-    /** 接收句柄。*/
+    /** 接收句柄.*/
     int recv_fd;
 
 }; // abcdk_openssl_darknet_t;
@@ -66,7 +66,7 @@ struct _abcdk_openssl_darknet
 void abcdk_openssl_darknet_destroy(abcdk_openssl_darknet_t **ctx)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_darknet_t *ctx_p;
@@ -122,7 +122,7 @@ END:
 abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubkey)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_darknet_t *ctx;
@@ -166,7 +166,7 @@ abcdk_openssl_darknet_t *abcdk_openssl_darknet_create(RSA *rsa_ctx, int use_pubk
     if (!ctx->recv_buf)
         goto ERR;
 
-    /*计算头部长度。*/
+    /*计算头部长度.*/
     ctx->hdr_len = _abcdk_openssl_darknet_hdr_size(rsa_ctx, 1 + 32 + 16 + 79);
 
     ctx->recv_hdr = abcdk_object_alloc2(ctx->hdr_len);
@@ -194,7 +194,7 @@ ERR:
 abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_file,int pubkey)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_darknet_t *ctx;
@@ -219,7 +219,7 @@ abcdk_openssl_darknet_t *abcdk_openssl_darknet_create_from_file(const char *rsa_
 int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx, int fd, int flag)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return -1;
 #else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL && fd >= 0);
@@ -248,7 +248,7 @@ int abcdk_openssl_darknet_set_fd(abcdk_openssl_darknet_t *ctx, int fd, int flag)
 int abcdk_openssl_darknet_get_fd(abcdk_openssl_darknet_t *ctx, int flag)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return -1;
 #else //#ifndef HAVE_OPENSSL
     int old;
@@ -283,16 +283,16 @@ static int _abcdk_openssl_darknet_write_init(abcdk_openssl_darknet_t *ctx)
     int ver = 1;
     int chk;
 
-    /*生成随机密钥和向量。*/
+    /*生成随机密钥和向量.*/
     RAND_bytes(ctx->evp_send_key,32);
     RAND_bytes(ctx->evp_send_iv,16);
 
-    /*填充明文头部。*/
+    /*填充明文头部.*/
     abcdk_bloom_write_number(hdr, 128, 0, 8, ver);
     memcpy(hdr + 1, ctx->evp_send_key, 32);
     memcpy(hdr + 1 + 32, ctx->evp_send_iv, 16);
 
-    /*用RSA加密头部。*/
+    /*用RSA加密头部.*/
     ctx->send_hdr = abcdk_openssl_rsa_update(ctx->rsa_send_ctx, hdr, 128, 1);
     if (!ctx->send_hdr)
         return -1;
@@ -324,7 +324,7 @@ static abcdk_tree_t *_abcdk_openssl_darknet_write_update(abcdk_openssl_darknet_t
 ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx, const void *data, size_t size)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return -1;
 #else //#ifndef HAVE_OPENSSL
     char salt[256 + 1] = {0};
@@ -335,39 +335,39 @@ ssize_t abcdk_openssl_darknet_write(abcdk_openssl_darknet_t *ctx, const void *da
 
     assert(ctx != NULL && data != NULL && size > 0);
 
-    /*先发送头部。*/
+    /*先发送头部.*/
     if (!ctx->send_hdr_ok)
     {
-        /*初始化发送环境。*/
+        /*初始化发送环境.*/
         chk = _abcdk_openssl_darknet_write_init(ctx);
         if (chk != 0)
-            return 0; // 内存不足时，关闭当前句柄。
+            return 0; // 内存不足时, 关闭当前句柄.
 
-        /*复制头部。*/
+        /*复制头部.*/
         en_data = abcdk_tree_alloc4(ctx->send_hdr->pptrs[0],ctx->send_hdr->sizes[0]);
         if (!en_data)
-            return 0; // 内存不足时，关闭当前句柄。
+            return 0; // 内存不足时, 关闭当前句柄.
 
-        /*追加到发送队列末尾。*/
+        /*追加到发送队列末尾.*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
 
-        /*发送一次即可。*/
+        /*发送一次即可.*/
         ctx->send_hdr_ok = 1;
     }
 
-    /*警告：如果参数的指针和长度未改变，则认为是管道空闲重发。由于前一次调用已经对数据进行加密并加入待发送对列，因此忽略即可。*/
+    /*警告: 如果参数的指针和长度未改变, 则认为是管道空闲重发.由于前一次调用已经对数据进行加密并加入待发送对列, 因此忽略即可.*/
     if (ctx->send_repeated_p != data || ctx->send_repeated_l != size)
     {
-        /*记录指针和长度，重发时会检测这两个值。*/
+        /*记录指针和长度, 重发时会检测这两个值.*/
         ctx->send_repeated_p = data;
         ctx->send_repeated_l = size;
 
-        /*加密。*/
+        /*加密.*/
         en_data = _abcdk_openssl_darknet_write_update(ctx, data, size);
         if (!en_data)
-            return 0; // 内存不足时，关闭当前句柄。
+            return 0; // 内存不足时, 关闭当前句柄.
 
-        /*追加到发送队列末尾。*/
+        /*追加到发送队列末尾.*/
         abcdk_tree_insert2(ctx->send_queue, en_data, 0);
     }
 
@@ -375,38 +375,38 @@ NEXT_MSG:
 
     p = abcdk_tree_child(ctx->send_queue, 1);
 
-    /*通知应用层，发送队列空闲。*/
+    /*通知应用层, 发送队列空闲.*/
     if (!p)
     {
         ctx->send_repeated_p = NULL;
         ctx->send_repeated_l = 0;
-        return size;//在这里返回发送数据的实际长度。
+        return size;//在这里返回发送数据的实际长度.
     }
 
     assert(ctx->send_fd >= 0);
 
-    /*发。*/
+    /*发.*/
     slen = write(ctx->send_fd, ABCDK_PTR2VPTR(p->obj->pptrs[0], ctx->send_pos), p->obj->sizes[0] - ctx->send_pos);
     if (slen < 0)
         return -1;
     else if (slen == 0)
         return 0;
 
-    /*滚动发送游标。*/
+    /*滚动发送游标.*/
     ctx->send_pos += slen;
 
-    /*当前节点未发送完整，则继续发送。*/
+    /*当前节点未发送完整, 则继续发送.*/
     if (ctx->send_pos < p->obj->sizes[0])
         goto NEXT_MSG;
 
-    /*发送游标归零。*/
+    /*发送游标归零.*/
     ctx->send_pos = 0;
 
-    /*从队列中删除已经发送完整的节点。*/
+    /*从队列中删除已经发送完整的节点.*/
     abcdk_tree_unlink(p);
     abcdk_tree_free(&p);
 
-    /*并继续发送剩余节点。*/
+    /*并继续发送剩余节点.*/
     goto NEXT_MSG;
 #endif //#ifndef HAVE_OPENSSL
 }
@@ -419,20 +419,20 @@ static int _abcdk_openssl_darknet_read_init(abcdk_openssl_darknet_t *ctx)
     int ver;
     int chk;
 
-    /*用RSA解密头部。*/
+    /*用RSA解密头部.*/
     hdr = abcdk_openssl_rsa_update(ctx->rsa_recv_ctx,ctx->recv_hdr->pptrs[0],ctx->recv_hdr->sizes[0],0);
     if(!hdr)
         return -1;
 
-    /*解析头部。*/
+    /*解析头部.*/
     ver = abcdk_bloom_read_number(hdr->pptrs[0], hdr->sizes[0], 0, 8);
     memcpy(ctx->evp_recv_key, hdr->pptrs[0] + 1, 32);
     memcpy(ctx->evp_recv_iv, hdr->pptrs[0] + 1 + 32, 16);
 
-    /*释放。*/
+    /*释放.*/
     abcdk_object_unref(&hdr);
 
-    /*仅支持1版本。*/
+    /*仅支持1版本.*/
     if (ver != 1)
         return -2;
 
@@ -463,7 +463,7 @@ static abcdk_object_t *_abcdk_openssl_darknet_read_update(abcdk_openssl_darknet_
 ssize_t abcdk_openssl_darknet_read(abcdk_openssl_darknet_t *ctx, void *data, size_t size)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return -1;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *de_data = NULL;
@@ -483,53 +483,53 @@ NEXT_LOOP:
 
     assert(ctx->recv_fd >= 0);
 
-    /*收。*/
+    /*收.*/
     rlen = read(ctx->recv_fd, ctx->recv_buf->pptrs[0], ctx->recv_buf->sizes[0]);
     if (rlen < 0)
         return -1;
     else if (rlen == 0)
         return 0;
 
-    /*先读取头部。*/
+    /*先读取头部.*/
     if (ctx->recv_hdr_len < ctx->hdr_len)
     {
-        /*计算待提取的头部长度并提取。*/
+        /*计算待提取的头部长度并提取.*/
         size_t diff = ABCDK_MIN(ctx->hdr_len - ctx->recv_hdr_len, rlen);
         memcpy(ctx->recv_hdr->pptrs[0] + ctx->recv_hdr_len, ctx->recv_buf->pptrs[0], diff);
         ctx->recv_hdr_len += diff;
 
-        /*当向量读取完整后，进行初始化。*/
+        /*当向量读取完整后, 进行初始化.*/
         if (ctx->recv_hdr_len == ctx->hdr_len)
         {
-            /*初始化接收环境。*/
+            /*初始化接收环境.*/
             chk = _abcdk_openssl_darknet_read_init(ctx);
             if (chk != 0)
                 return 0;
         }
 
-        /*如果缓存没有剩余数据，则继续接收。*/
+        /*如果缓存没有剩余数据, 则继续接收.*/
         if (rlen - diff <= 0)
             goto NEXT_LOOP;
 
-        /*解密。*/
+        /*解密.*/
         de_data = _abcdk_openssl_darknet_read_update(ctx, ctx->recv_buf->pptrs[0] + diff, rlen - diff);
         if (!de_data)
-            return 0; // 内存不足时，关闭当前句柄。
+            return 0; // 内存不足时, 关闭当前句柄.
     }
     else
     {
-        /*解密。*/
+        /*解密.*/
         de_data = _abcdk_openssl_darknet_read_update(ctx,ctx->recv_buf->pptrs[0], rlen);
         if (!de_data)
-            return 0; // 内存不足时，关闭当前句柄。
+            return 0; // 内存不足时, 关闭当前句柄.
     }
 
-    /*追加到接收队列。*/
+    /*追加到接收队列.*/
     chk = abcdk_stream_write(ctx->recv_queue, de_data);
     if (chk != 0)
     {
         abcdk_object_unref(&de_data);
-        return 0; // 内存不足时，关闭当前句柄。
+        return 0; // 内存不足时, 关闭当前句柄.
     }
 
     goto NEXT_LOOP;

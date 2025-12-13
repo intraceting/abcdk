@@ -182,10 +182,10 @@ void abcdk_ffmpeg_media_free(AVFormatContext **ctx)
     *ctx = NULL;
 
     /*
-     * IO对象在以下两个条件下，需要单独释放.
+     * IO对象在以下两个条件下, 需要单独释放.
      *
-     * 1：自定义环境.
-     * 2：输出对象.
+     * 1: 自定义环境.
+     * 2: 输出对象.
      */
     if (ctx_p->flags & AVFMT_FLAG_CUSTOM_IO)
         abcdk_ffmpeg_io_free(&ctx_p->pb);

@@ -6,24 +6,24 @@
  */
 #include "abcdk/util/waiter.h"
 
-/** 服务员。*/
+/** 服务员.*/
 struct _abcdk_waiter
 {
     /** 
-     * 状态。
+     * 状态.
      * 
-     * 1：正常。
-     * 2：取消。
+     * 1: 正常.
+     * 2: 取消.
     */
     int status;
 
-    /** 锁。*/
+    /** 锁.*/
     abcdk_mutex_t *locker;
 
-    /** 表。*/
+    /** 表.*/
     abcdk_map_t *map;
     
-    /** 消息销毁回调函数。*/
+    /** 消息销毁回调函数.*/
     abcdk_waiter_msg_destroy_cb msg_destroy_cb;
 
 };// abcdk_waiter_t;
@@ -67,14 +67,14 @@ void _abcdk_waiter_destroy_cb(abcdk_object_t *alloc, void *opaque)
     abcdk_waiter_t *waiter = (abcdk_waiter_t*)opaque;
     void *msg_p = NULL;
 
-    /*复制应答数据，解除绑定关系。*/
+    /*复制应答数据, 解除绑定关系.*/
     msg_p = (void*)alloc->pptrs[ABCDK_MAP_VALUE];
     alloc->pptrs[ABCDK_MAP_VALUE] = NULL;
 
     if (!msg_p)
         return;
 
-    ABCDK_TRACE_ASSERT(waiter->msg_destroy_cb,ABCDK_GETTEXT("未注册销毁函数，MSG对象无法销毁。"));
+    ABCDK_TRACE_ASSERT(waiter->msg_destroy_cb,ABCDK_GETTEXT("未注册销毁函数, MSG对象无法销毁."));
     waiter->msg_destroy_cb(msg_p);
 }
 
@@ -107,16 +107,16 @@ int abcdk_waiter_register(abcdk_waiter_t *waiter, uint64_t key)
 
     abcdk_mutex_lock(waiter->locker, 1);
 
-    /*申请一个字节的VALUE用于占位。*/
+    /*申请一个字节的VALUE用于占位.*/
     it = abcdk_map_find(waiter->map, &key, sizeof(key), 1);
     if (!it)
         goto final;
 
-    /*未修改长度表示重复注册。*/
+    /*未修改长度表示重复注册.*/
     if (it->sizes[ABCDK_MAP_VALUE] == -1)
         goto final;
 
-    /*覆盖占位指针和长度。*/
+    /*覆盖占位指针和长度.*/
     it->pptrs[ABCDK_MAP_VALUE] = NULL;
     it->sizes[ABCDK_MAP_VALUE] = -1;
     
@@ -124,7 +124,7 @@ int abcdk_waiter_register(abcdk_waiter_t *waiter, uint64_t key)
 
 final:
 
-    /*如果有错误，则删除KEY。*/
+    /*如果有错误, 则删除KEY.*/
     if (chk != 0)
         abcdk_map_remove(waiter->map, &key, sizeof(key));
 
@@ -147,7 +147,7 @@ void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
 
     assert(waiter != NULL && timeout > 0);
 
-    /*计算过期时间。*/
+    /*计算过期时间.*/
     time_end = _abcdk_waiter_clock() + timeout;
 
     abcdk_mutex_lock(waiter->locker, 1);
@@ -156,26 +156,26 @@ void *abcdk_waiter_wait(abcdk_waiter_t *waiter,uint64_t key, time_t timeout)
     if (!it)
         goto final;
 
-    /*等待到达，或超时。*/
+    /*等待到达, 或超时.*/
     while (!it->pptrs[ABCDK_MAP_VALUE])
     {
-        /*计算剩余超时时长。*/
+        /*计算剩余超时时长.*/
         time_span = time_end - _abcdk_waiter_clock();
         if (time_span <= 0)
             break;
         
-        /*有可能随时被取消。*/
+        /*有可能随时被取消.*/
         if (waiter->status != 1)
             break;
 
         abcdk_mutex_wait(waiter->locker, time_span);
     }
 
-    /*复制应答数据，解除绑定关系。*/
+    /*复制应答数据, 解除绑定关系.*/
     msg_p = (void *)it->pptrs[ABCDK_MAP_VALUE];
     it->pptrs[ABCDK_MAP_VALUE] = NULL;
 
-    /*删除KEY。*/
+    /*删除KEY.*/
     abcdk_map_remove(waiter->map, &key, sizeof(key));
 
 final:
@@ -198,10 +198,10 @@ int abcdk_waiter_response(abcdk_waiter_t *waiter, uint64_t key, void *msg)
     if (!it)
         goto final;
 
-    /*复制对象指针。*/
+    /*复制对象指针.*/
     it->pptrs[ABCDK_MAP_VALUE] = (uint8_t*)msg;
 
-    /*通知到达。*/
+    /*通知到达.*/
     abcdk_mutex_signal(waiter->locker, 1);
 
     chk = 0;

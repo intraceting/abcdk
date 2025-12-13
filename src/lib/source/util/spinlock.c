@@ -7,7 +7,7 @@
 #include "abcdk/util/spinlock.h"
 
 /**
- * 自旋锁。
+ * 自旋锁.
 */
 struct _abcdk_spinlock
 {

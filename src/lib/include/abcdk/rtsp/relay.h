@@ -14,22 +14,22 @@
 
 __BEGIN_DECLS
 
-/**简单的RTSP中继服务。*/
+/**简单的RTSP中继服务.*/
 typedef struct _abcdk_rtsp_relay abcdk_rtsp_relay_t;
 
-/**销毁。*/
+/**销毁.*/
 void abcdk_rtsp_relay_destroy(abcdk_rtsp_relay_t **ctx);
 
 /**
- * 创建。
+ * 创建.
  *
  * @note rtmp[s]://PATHFILE
  * @note rtsp[s]://PATHFILE
  * @note http[s]://PATHFILE
  * @note /PATHFILE
  *
- * @param [in] src_timeout 超时(秒)。
- * @param [in] src_retry 重试间隔(秒)。
+ * @param [in] src_timeout 超时(秒).
+ * @param [in] src_retry 重试间隔(秒).
  */
 abcdk_rtsp_relay_t *abcdk_rtsp_relay_create(abcdk_rtsp_server_t *server_ctx, const char *media_name, const char *src_url, const char *src_fmt, int src_timeout, int src_retry);
 

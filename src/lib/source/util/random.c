@@ -18,7 +18,7 @@ static void _abcdk_rand_globe_fd_open(void)
 {
     abcdk_atomic_lock();
 
-    /*如果已经在子进程中，则关闭。*/
+    /*如果已经在子进程中, 则关闭.*/
     if(_abcdk_rand_globe_pid != getpid())
         abcdk_closep(&_abcdk_rand_globe_fd);
 
@@ -27,10 +27,10 @@ static void _abcdk_rand_globe_fd_open(void)
         _abcdk_rand_globe_fd = abcdk_open("/dev/urandom", 0, 0, 0);
         assert(_abcdk_rand_globe_fd >= 0);
 
-        /*记录当前进程PID。*/
+        /*记录当前进程PID.*/
         _abcdk_rand_globe_pid = getpid();
 
-        /*注册退出前关闭函数。*/
+        /*注册退出前关闭函数.*/
         atexit(_abcdk_rand_globe_fd_close_cb);
     }
     
@@ -63,7 +63,7 @@ uint64_t abcdk_rand(uint64_t min, uint64_t max)
     if (chk != sizeof(num))
         num = rand();
 
-    /*限制到区间内。*/
+    /*限制到区间内.*/
     num = num % (max - min + 1) + min;
 
     return num;
@@ -127,13 +127,13 @@ void abcdk_rand_shuffle(size_t size, abcdk_rand_shuffle_swap_cb swap_cb, void *o
 {
     assert(size > 0 && swap_cb != NULL);
 
-    /*洗牌算法(Fisher-Yates)打乱顺序。*/
+    /*洗牌算法(Fisher-Yates)打乱顺序.*/
     for (size_t a = size - 1; a > 0; a--)
     {
-        /*生成一个0到a的随机整数。*/
+        /*生成一个0到a的随机整数.*/
         size_t b = abcdk_rand(0,a);
 
-        /*交换a和b。*/
+        /*交换a和b.*/
         swap_cb(a, b, opaque);
     }
 }

@@ -19,25 +19,25 @@ __BEGIN_DECLS
 /** MP4 tag.*/
 typedef union _abcdk_mp4_tag
 {
-    /** 字符型。*/
+    /** 字符型.*/
     uint8_t u8[4];
 
     /** 
-     * 整型。
+     * 整型.
      * 
-     * @note 大端字节序。
+     * @note 大端字节序.
     */
     uint32_t u32;
 
 }abcdk_mp4_tag_t;
 
-/** MP4 tag 构造宏。*/
+/** MP4 tag 构造宏.*/
 #define ABCDK_MP4_ATOM_MKTAG    ABCDK_FOURCC_MKTAG
 
 /*
  * atom types
  * 
- * @note 从Bento4复制来的。
+ * @note 从Bento4复制来的.
 */
 
 #define ABCDK_MP4_ATOM_TYPE_UDTA ABCDK_MP4_ATOM_MKTAG('u', 'd', 't', 'a')
@@ -190,7 +190,7 @@ typedef union _abcdk_mp4_tag
 /*
  * file type/brands
  *
- * @note 从Bento4复制来的。
+ * @note 从Bento4复制来的.
 */
 
 #define ABCDK_MP4_ATOM_FTYP_BRAND_QT__ ABCDK_MP4_ATOM_MKTAG('q', 't', ' ', ' ')
@@ -222,13 +222,13 @@ typedef union _abcdk_mp4_tag
 /** MP4 ftyp atom.*/
 typedef struct _abcdk_mp4_atom_ftyp
 {
-    /** 主版本。*/
+    /** 主版本.*/
     abcdk_mp4_tag_t major;
 
-    /** 副版本。*/
+    /** 副版本.*/
     uint32_t minor;
 
-    /** 兼容版本。*/
+    /** 兼容版本.*/
     abcdk_object_t *compat;
 
 }abcdk_mp4_atom_ftyp_t;
@@ -237,58 +237,58 @@ typedef struct _abcdk_mp4_atom_ftyp
 /** MP4 mvhd atom.*/
 typedef struct _abcdk_mp4_atom_mvhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 
-     * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 创建时间(秒), 开始于1904-01-01 00:00:00 +0000 (UTC).
      * 
      * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t ctime;
 
     /** 
-     * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 修改时间(秒), 开始于1904-01-01 00:00:00 +0000 (UTC).
      * 
      * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t mtime;
 
-    /** 时间的刻度值(可以理解为1秒被分成多少份)。*/
+    /** 时间的刻度值(可以理解为1秒被分成多少份).*/
     uint32_t timescale;
 
-    /** 时长(秒×时间的刻度值)。*/
+    /** 时长(秒×时间的刻度值).*/
     uint64_t duration;
 
     /** 
-     * 推荐播放速率(以整数形式存储的定点数)。
+     * 推荐播放速率(以整数形式存储的定点数).
      * 
-     * 高16位：整数。
-     * 低16位：小数。 
+     * 高16位: 整数.
+     * 低16位: 小数. 
     */
     uint32_t rate;
 
     /** 
-     * 推荐音量(以整数形式存储的定点数)。
+     * 推荐音量(以整数形式存储的定点数).
      * 
-     * 高8位：整数。
-     * 低8位：小数。 
+     * 高8位: 整数.
+     * 低8位: 小数. 
     */
     uint16_t volume;
 
-    /** 预留的。*/
+    /** 预留的.*/
     uint8_t reserved[10];
 
-    /**变换矩阵。*/
+    /**变换矩阵.*/
     uint32_t matrix[9];
 
-    /** 预定义。*/
+    /** 预定义.*/
     uint32_t predefined[6];
 
-    /** 下一个TRACK ID。*/
+    /** 下一个TRACK ID.*/
     uint32_t nexttrackid;
 
 }abcdk_mp4_atom_mvhd_t;
@@ -297,74 +297,74 @@ typedef struct _abcdk_mp4_atom_mvhd
 /** MP4 tkhd atom.*/
 typedef struct _abcdk_mp4_atom_tkhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 
-     * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 创建时间(秒), 开始于1904-01-01 00:00:00 +0000 (UTC).
      * 
      * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t ctime;
 
     /** 
-     * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 修改时间(秒), 开始于1904-01-01 00:00:00 +0000 (UTC).
      * 
      * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t mtime;
 
-    /** TRACK ID。*/
+    /** TRACK ID.*/
     uint32_t trackid;
 
-    /** 预留。*/
+    /** 预留.*/
     uint32_t reserved1;
 
-    /** 时长(秒×时间的刻度值)。*/
+    /** 时长(秒×时间的刻度值).*/
     uint64_t duration;
 
-    /** 预留。*/
+    /** 预留.*/
     uint64_t reserved2;
 
-    /** 预留。*/
+    /** 预留.*/
     uint16_t layer;
 
-    /** 预留。*/
+    /** 预留.*/
     uint16_t alternategroup;
 
     /** 
-     * 音量(以整数形式存储的定点数)。
+     * 音量(以整数形式存储的定点数).
      * 
-     * 高8位：整数。
-     * 低8位：小数。 
+     * 高8位: 整数.
+     * 低8位: 小数. 
      * 
-     * -video: 无效。
-     * -sound: 有效。
+     * -video: 无效.
+     * -sound: 有效.
     */
     uint16_t volume;
 
-    /** 预留。*/
+    /** 预留.*/
     uint16_t reserved3;
 
-    /** 变换矩阵。*/
+    /** 变换矩阵.*/
     uint32_t matrix[9];
 
     /** 
-     * 宽(以整数形式存储的定点数)(像素)。
+     * 宽(以整数形式存储的定点数)(像素).
      * 
-     * 高16位：整数。
-     * 低16位：小数。 
+     * 高16位: 整数.
+     * 低16位: 小数. 
     */
     uint32_t width;
 
     /** 
-     * 高(以整数形式存储的定点数)(像素)。
+     * 高(以整数形式存储的定点数)(像素).
      * 
-     * 高16位：整数。
-     * 低16位：小数。 
+     * 高16位: 整数.
+     * 低16位: 小数. 
     */
     uint32_t height;
 
@@ -373,36 +373,36 @@ typedef struct _abcdk_mp4_atom_tkhd
 /** MP4 mdhd atom.*/
 typedef struct _abcdk_mp4_atom_mdhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 
-     * 创建时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 创建时间(秒), 开始于1904-01-01 00:00:00 +0000 (UTC).
      * 
      * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t ctime;
 
     /** 
-     * 修改时间(秒)，开始于1904-01-01 00:00:00 +0000 (UTC)。
+     * 修改时间(秒), 开始于1904-01-01 00:00:00 +0000 (UTC).
      * 
      * 1970 to 1904 : +2082844800(0x7C25B080)
     */
     uint64_t mtime;
 
-    /** 时间的刻度值(可以理解为1秒被分成多少份)。*/
+    /** 时间的刻度值(可以理解为1秒被分成多少份).*/
     uint32_t timescale;
 
-    /** 时长(秒×时间的刻度值)。*/
+    /** 时长(秒×时间的刻度值).*/
     uint64_t duration;
 
-    /** 语言。*/
+    /** 语言.*/
     uint16_t language;
 
-    /** 质量。*/
+    /** 质量.*/
     uint16_t quality;
 
 }abcdk_mp4_atom_mdhd_t;
@@ -410,22 +410,22 @@ typedef struct _abcdk_mp4_atom_mdhd
 /** MP4 hdlr atom.*/
 typedef struct _abcdk_mp4_atom_hdlr
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
     
-    /** 类型。*/
+    /** 类型.*/
     abcdk_mp4_tag_t type;
 
-    /** 子类型。*/
+    /** 子类型.*/
     abcdk_mp4_tag_t subtype;
 
-    /** 预留。*/
+    /** 预留.*/
     uint32_t reserved[3];
 
-    /** 名称。*/
+    /** 名称.*/
     abcdk_object_t *name;
 
 }abcdk_mp4_atom_hdlr_t;
@@ -434,17 +434,17 @@ typedef struct _abcdk_mp4_atom_hdlr
 /** MP4 vmhd atom.*/
 typedef struct _abcdk_mp4_atom_vmhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
-    /** 图像模式。*/
+    /** 图像模式.*/
     uint16_t mode;
 
     /** 
-     * 操作颜色。
+     * 操作颜色.
      * 
      * [0]: red
      * [1]: green
@@ -458,10 +458,10 @@ typedef struct _abcdk_mp4_atom_vmhd
 /** MP4 dref atom.*/
 typedef struct _abcdk_mp4_atom_dref
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 子项数量*/
@@ -472,10 +472,10 @@ typedef struct _abcdk_mp4_atom_dref
 /** MP4 stsd atom.*/
 typedef struct _abcdk_mp4_atom_stsd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 子项数量*/
@@ -486,10 +486,10 @@ typedef struct _abcdk_mp4_atom_stsd
 /** MP4 sample description atom.*/
 typedef struct _abcdk_mp4_atom_sample_desc
 {   
-    /** 预留。*/
+    /** 预留.*/
     uint8_t reserved[6];
 
-    /** 数据引用索引。*/
+    /** 数据引用索引.*/
     uint16_t data_refer_index;
 
     /** 详细*/
@@ -497,131 +497,131 @@ typedef struct _abcdk_mp4_atom_sample_desc
     {
         struct
         {
-            /** 预留。*/
+            /** 预留.*/
             uint16_t reserved1;
 
-            /** 预留。*/
+            /** 预留.*/
             uint16_t reserved2;
 
-            /** 预留。*/
+            /** 预留.*/
             uint32_t reserved3[3];
 
-            /** 宽(像素)。*/
+            /** 宽(像素).*/
             uint16_t width;
 
-            /** 高(像素)。*/
+            /** 高(像素).*/
             uint16_t height;
 
             /** 
-             * 水平分辨率(以整数形式存储的定点数)(DPI)。
+             * 水平分辨率(以整数形式存储的定点数)(DPI).
              * 
-             * 高16位：整数。
-             * 低16位：小数。 
+             * 高16位: 整数.
+             * 低16位: 小数. 
             */
             uint32_t horiz;
 
             /** 
-             * 垂直分辨率(以整数形式存储的定点数)(DPI)。
+             * 垂直分辨率(以整数形式存储的定点数)(DPI).
              * 
-             * 高16位：整数。
-             * 低16位：小数。
+             * 高16位: 整数.
+             * 低16位: 小数.
             */
             uint32_t vert;
 
-            /** 预留。*/
+            /** 预留.*/
             uint32_t reserved4;
 
-            /** 每个采样中包括的帧数量。*/
+            /** 每个采样中包括的帧数量.*/
             uint16_t frame_count;
 
             /** 
-             * 编码器名字(Pascal string)(32字节)。
+             * 编码器名字(Pascal string)(32字节).
              * 
-             * @note 第一个字符是长度。
+             * @note 第一个字符是长度.
             */
             char encname[33];
 
-            /** 位深(bit)。*/
+            /** 位深(bit).*/
             uint16_t depth;
 
-            /** 预留。*/
+            /** 预留.*/
             uint16_t reserved5;
         } video;
 
         struct
         {
-            /** 版本。*/
+            /** 版本.*/
             uint16_t version;
 
             /** */
             uint16_t revision;
 
-            /** 预留。*/
+            /** 预留.*/
             uint32_t reserved1;
 
-            /** 声道数量。*/
+            /** 声道数量.*/
             uint16_t channels; 
 
-            /** 采样大小。*/
+            /** 采样大小.*/
             uint16_t sample_size; 
 
-            /** 压缩ID。*/
+            /** 压缩ID.*/
             uint16_t compression_id;
 
-            /**  包大小。*/
+            /**  包大小.*/
             uint16_t packet_size;   
 
-            /** 采样速率(以整数形式存储的定点数)。
+            /** 采样速率(以整数形式存储的定点数).
              * 
-             * 高16位：整数。
-             * 低16位：小数。 
+             * 高16位: 整数.
+             * 低16位: 小数. 
             */
             uint32_t sample_rate;
 
-            /** V1 描述信息。*/
+            /** V1 描述信息.*/
             struct
             {
-                /** 每个包含有几个采样。*/
+                /** 每个包含有几个采样.*/
                 uint32_t samples_per_packet;
 
-                /** 每个包字节数。*/
+                /** 每个包字节数.*/
                 uint32_t bytes_per_Packet;
 
-                /** 每个帧字节数。*/
+                /** 每个帧字节数.*/
                 uint32_t bytes_per_frame;
 
-                /** 每个采样字节数。*/
+                /** 每个采样字节数.*/
                 uint32_t bytes_per_sample;
             } v1;
 
-            /** V2 描述信息。*/
+            /** V2 描述信息.*/
             struct
             {
-                /** V2结构大小(包括所有字段)。*/
+                /** V2结构大小(包括所有字段).*/
                 uint32_t struct_size;
 
-                /** 速率(64bits)(浮点)。*/
+                /** 速率(64bits)(浮点).*/
                 double sample_rate;
 
-                /** 声道数量。*/
+                /** 声道数量.*/
                 uint32_t channels;
 
-                /** 声道数量。*/
+                /** 声道数量.*/
                 uint32_t reserved;
 
-                /** 每个声道多少bit。*/
+                /** 每个声道多少bit.*/
                 uint32_t bits_per_channel;
 
                 /** 标志*/
                 uint32_t format_specific_flags;
 
-                /** 每个包多少字节。*/
+                /** 每个包多少字节.*/
                 uint32_t bytes_per_audio_packet;
 
                 /** */
                 uint32_t lpcm_frames_per_audio_packet;
 
-                /** 扩展信息。*/
+                /** 扩展信息.*/
                 abcdk_object_t *extension;
             } v2;
 
@@ -629,7 +629,7 @@ typedef struct _abcdk_mp4_atom_sample_desc
 
         struct
         {
-            /** 扩展信息。*/
+            /** 扩展信息.*/
             abcdk_object_t *extension;
         } subtitle;
 
@@ -640,7 +640,7 @@ typedef struct _abcdk_mp4_atom_sample_desc
 /** MP4 avcc(h264)atom.*/
 typedef struct _abcdk_mp4_atom_avcc
 {
-    /** 扩展数据(Global Header)。 */
+    /** 扩展数据(Global Header). */
     abcdk_object_t *extradata;
 
 } abcdk_mp4_atom_avcc_t;
@@ -648,7 +648,7 @@ typedef struct _abcdk_mp4_atom_avcc
 /** MP4 hvcc(h265)atom.*/
 typedef struct _abcdk_mp4_atom_hvcc
 {
-    /** 扩展数据(Global Header)。 */
+    /** 扩展数据(Global Header). */
     abcdk_object_t *extradata;
 
 } abcdk_mp4_atom_hvcc_t;
@@ -656,10 +656,10 @@ typedef struct _abcdk_mp4_atom_hvcc
 /** MP4 stts atom table.*/
 typedef struct _abcdk_mp4_atom_stts_table
 {
-    /** sample数量。*/
+    /** sample数量.*/
     uint32_t sample_count;
 
-    /** sample时长差(帧与帧之间)。*/
+    /** sample时长差(帧与帧之间).*/
     uint32_t sample_duration;
 
 }abcdk_mp4_atom_stts_table_t;
@@ -667,10 +667,10 @@ typedef struct _abcdk_mp4_atom_stts_table
 /** MP4 stts(DTS) atom.*/
 typedef struct _abcdk_mp4_atom_stts
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 采样数量*/
@@ -684,10 +684,10 @@ typedef struct _abcdk_mp4_atom_stts
 /** MP4 ctts atom table.*/
 typedef struct _abcdk_mp4_atom_ctts_table
 {
-    /** sample数量。*/
+    /** sample数量.*/
     uint32_t sample_count;
 
-    /** PTS相对于DTS的偏移量(帧与帧之间)。*/
+    /** PTS相对于DTS的偏移量(帧与帧之间).*/
     int32_t composition_offset;
 
 }abcdk_mp4_atom_ctts_table_t;
@@ -697,14 +697,14 @@ typedef struct _abcdk_mp4_atom_ctts_table
  * 
  * PTS = DTS + CTS
  * 
- * @note 无，表示没有B帧。
+ * @note 无, 表示没有B帧.
 */
 typedef struct _abcdk_mp4_atom_ctts
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 采样数量*/
@@ -718,13 +718,13 @@ typedef struct _abcdk_mp4_atom_ctts
 /** MP4 stsc atom table.*/
 typedef struct _abcdk_mp4_atom_stsc_table
 {
-    /** 一组chunk中第一个chunk编号。*/
+    /** 一组chunk中第一个chunk编号.*/
     uint32_t first_chunk;
 
-    /** 每个chunk内包含的sample数量。*/
+    /** 每个chunk内包含的sample数量.*/
     uint32_t samples_perchunk;
 
-    /** sample ID。*/
+    /** sample ID.*/
     uint32_t sample_desc_id;
 
 }abcdk_mp4_atom_stsc_table_t;
@@ -732,10 +732,10 @@ typedef struct _abcdk_mp4_atom_stsc_table
 /** MP4 stsc atom.*/
 typedef struct _abcdk_mp4_atom_stsc
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 采样数量*/
@@ -749,7 +749,7 @@ typedef struct _abcdk_mp4_atom_stsc
 /** MP4 stsz atom table.*/
 typedef struct _abcdk_mp4_atom_stsz_table
 {
-    /** sample大小(字节)。*/
+    /** sample大小(字节).*/
     uint32_t size;
 
 }abcdk_mp4_atom_stsz_table_t;
@@ -757,18 +757,18 @@ typedef struct _abcdk_mp4_atom_stsz_table
 /** MP4 stsz atom.*/
 typedef struct _abcdk_mp4_atom_stsz
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 
-     * 采样大小。
+     * 采样大小.
      * 
-     * > 0 有效。
+     * > 0 有效.
      * 
-     * = 0 见采样表。
+     * = 0 见采样表.
     */
     uint32_t sample_size;
 
@@ -783,7 +783,7 @@ typedef struct _abcdk_mp4_atom_stsz
 /** MP4 stco or co64 atom table.*/
 typedef struct _abcdk_mp4_atom_stco_table
 {
-    /** chunk偏移量(以0为基值)。*/
+    /** chunk偏移量(以0为基值).*/
     uint64_t offset;
 
 }abcdk_mp4_atom_stco_table_t;
@@ -791,10 +791,10 @@ typedef struct _abcdk_mp4_atom_stco_table
 /** MP4 stco or co64 atom.*/
 typedef struct _abcdk_mp4_atom_stco
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 采样数量*/
@@ -808,7 +808,7 @@ typedef struct _abcdk_mp4_atom_stco
 /** MP4 stss atom table.*/
 typedef struct _abcdk_mp4_atom_stss_table
 {
-    /** 关健帧编号，以1为基值)。*/
+    /** 关健帧编号, 以1为基值).*/
     uint32_t sync;
 
 }abcdk_mp4_atom_stss_table_t;
@@ -816,14 +816,14 @@ typedef struct _abcdk_mp4_atom_stss_table
 /** 
  * MP4 stss atom.
  * 
- * @note 无，全部是关键帧。
+ * @note 无, 全部是关键帧.
 */
 typedef struct _abcdk_mp4_atom_stss
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 采样数量*/
@@ -837,21 +837,21 @@ typedef struct _abcdk_mp4_atom_stss
 /** MP4 smhd atom.*/
 typedef struct _abcdk_mp4_atom_smhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 
-     * 均衡(以整数形式存储的定点数)。
+     * 均衡(以整数形式存储的定点数).
      * 
-     * 高8位：整数。
-     * 低8位：小数。 
+     * 高8位: 整数.
+     * 低8位: 小数. 
     */
     uint16_t balance;
 
-    /** 预留。*/
+    /** 预留.*/
     uint16_t reserved;
     
 }abcdk_mp4_atom_smhd_t;
@@ -866,10 +866,10 @@ typedef struct _abcdk_mp4_atom_elst_table
     uint64_t media_time;
 
     /** 
-     * 速率(以整数形式存储的定点数)。
+     * 速率(以整数形式存储的定点数).
      * 
-     * 高16位：整数。
-     * 低16位：小数。 
+     * 高16位: 整数.
+     * 低16位: 小数. 
     */
     uint32_t media_rate;
 
@@ -878,10 +878,10 @@ typedef struct _abcdk_mp4_atom_elst_table
 /** MP4 elst atom.*/
 typedef struct _abcdk_mp4_atom_elst
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** 采样数量*/
@@ -900,10 +900,10 @@ typedef struct _abcdk_mp4_atom_elst
 /** MP4 esds atom.*/
 typedef struct _abcdk_mp4_atom_esds
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** */
@@ -926,9 +926,9 @@ typedef struct _abcdk_mp4_atom_esds
         uint16_t depends;
 
         /** 
-        * URL(Pascal string)。
+        * URL(Pascal string).
         * 
-        * @note 第一个字符是长度。
+        * @note 第一个字符是长度.
         */
         char url[260];
 
@@ -963,9 +963,9 @@ typedef struct _abcdk_mp4_atom_esds
     struct
     {
         /** 
-         * 扩展数据(Global Header)。
+         * 扩展数据(Global Header).
          * 
-         * @note ADTS 在这里。
+         * @note ADTS 在这里.
          */
         abcdk_object_t *extradata;
 
@@ -984,13 +984,13 @@ typedef struct _abcdk_mp4_atom_esds
 /** MP4 mehd atom.*/
 typedef struct _abcdk_mp4_atom_mehd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
-    /** 时长(秒×时间的刻度值)。*/
+    /** 时长(秒×时间的刻度值).*/
     uint64_t duration;
 
 }abcdk_mp4_atom_mehd_t;
@@ -998,25 +998,25 @@ typedef struct _abcdk_mp4_atom_mehd
 /** MP4 trex atom.*/
 typedef struct _abcdk_mp4_atom_trex
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
     
     /** TRACK ID.*/
     uint32_t trackid; 
 
-    /** 默认的采样描述索引。*/
+    /** 默认的采样描述索引.*/
     uint32_t sample_desc_idx;
 
-    /** 默认的sample时长。*/
+    /** 默认的sample时长.*/
     uint64_t sample_duration;
 
-    /** 默认的sample大小(字节)。*/
+    /** 默认的sample大小(字节).*/
     uint32_t sample_size; 
 
-    /** 默认的sample标志。*/
+    /** 默认的sample标志.*/
     uint32_t sample_flags; 
 
 }abcdk_mp4_atom_trex_t;
@@ -1024,13 +1024,13 @@ typedef struct _abcdk_mp4_atom_trex
 /** MP4 mfhd atom.*/
 typedef struct _abcdk_mp4_atom_mfhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
-    /** 顺序编号。*/
+    /** 顺序编号.*/
     uint64_t sequence_number;
 
 }abcdk_mp4_atom_mfhd_t;
@@ -1039,7 +1039,7 @@ typedef struct _abcdk_mp4_atom_mfhd
 /*
  * MP4 tfhd flags
  *
- * @note 从Bento4复制来的。
+ * @note 从Bento4复制来的.
 */
 
 #define ABCDK_MP4_TFHD_FLAG_BASE_DATA_OFFSET_PRESENT            0x00001
@@ -1048,37 +1048,37 @@ typedef struct _abcdk_mp4_atom_mfhd
 #define ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_SIZE_PRESENT         0x00010
 #define ABCDK_MP4_TFHD_FLAG_DEFAULT_SAMPLE_FLAGS_PRESENT        0x00020
 #define ABCDK_MP4_TFHD_FLAG_DURATION_IS_EMPTY                   0x10000
-#define ABCDK_MP4_TFHD_FLAG_DEFAULT_BASE_IS_MOOF                0x20000 //此标志非常有用，用于计算数据的偏移量。
+#define ABCDK_MP4_TFHD_FLAG_DEFAULT_BASE_IS_MOOF                0x20000 //此标志非常有用, 用于计算数据的偏移量.
 
 /** MP4 tfhd atom.*/
 typedef struct _abcdk_mp4_atom_tfhd
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
     
     /** TRACK ID.*/
     uint32_t trackid; 
 
     /** 
-     * sample偏移量的基值。
+     * sample偏移量的基值.
      * 
-     * @note 如果未设置，sample偏移量以moof起始为基值；否则，以此为基值。
+     * @note 如果未设置, sample偏移量以moof起始为基值; 否则, 以此为基值.
     */
     uint64_t base_data_offset;
 
-    /** 默认的sample索引。*/
+    /** 默认的sample索引.*/
     uint32_t sample_desc_idx;
 
-    /** 默认的sample时长(秒×时间的刻度值)。*/
+    /** 默认的sample时长(秒×时间的刻度值).*/
     uint64_t sample_duration; 
 
-    /** 默认的sample大小。*/
+    /** 默认的sample大小.*/
     uint32_t sample_size; 
 
-    /** 默认的标志。*/
+    /** 默认的标志.*/
     uint32_t sample_flags; 
 
 }abcdk_mp4_atom_tfhd_t;
@@ -1087,13 +1087,13 @@ typedef struct _abcdk_mp4_atom_tfhd
 /** MP4 tfdt atom.*/
 typedef struct _abcdk_mp4_atom_tfdt
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
-    /** DTS时间基值。*/
+    /** DTS时间基值.*/
     uint64_t base_decode_time;
 
 }abcdk_mp4_atom_tfdt_t;
@@ -1101,7 +1101,7 @@ typedef struct _abcdk_mp4_atom_tfdt
 /*
  * MP4 trun flags
  *
- * @note 从Bento4复制来的。
+ * @note 从Bento4复制来的.
 */
 
 #define ABCDK_MP4_TRUN_FLAG_DATA_OFFSET_PRESENT                     0x0001
@@ -1127,30 +1127,30 @@ typedef struct _abcdk_mp4_atom_tfdt
 typedef struct _abcdk_mp4_atom_trun_table
 {
     /** 
-     * sample时长。
+     * sample时长.
      *  
-     * @note 未设置时，使用默认值(在tfhd或trex中)。
+     * @note 未设置时, 使用默认值(在tfhd或trex中).
     */
     uint32_t sample_duration;
 
     /** 
-     * sample大小(字节)。
+     * sample大小(字节).
      * 
-     * @note 未设置时，使用默认值(在tfhd或trex中)。
+     * @note 未设置时, 使用默认值(在tfhd或trex中).
     */
     uint32_t sample_size;
 
     /** 
-     * sample标志。
+     * sample标志.
      * 
-     * @note 未设置时，使用默认值(在tfhd或trex中)。
+     * @note 未设置时, 使用默认值(在tfhd或trex中).
     */
     uint32_t sample_flags;
 
     /** 
-     * PTS相对于DTS的偏移量(帧与帧之间)。
+     * PTS相对于DTS的偏移量(帧与帧之间).
      * 
-     * @note 未设置时，使用默认值(0)。
+     * @note 未设置时, 使用默认值(0).
     */
     int32_t composition_offset;
 
@@ -1159,13 +1159,13 @@ typedef struct _abcdk_mp4_atom_trun_table
 /** MP4 trun atom.*/
 typedef struct _abcdk_mp4_atom_trun
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。
+    /** 标志.
      *      
-     * 0～7位：1 选项字段‘有’，0 选项字段‘无’。
-     * 8～15位：1 采样表字段‘有’，0 采样表字段‘无’。
+     * 0～7位: 1 选项字段‘有’, 0 选项字段‘无’.
+     * 8～15位: 1 采样表字段‘有’, 0 采样表字段‘无’.
     */
     uint32_t flags;
 
@@ -1173,16 +1173,16 @@ typedef struct _abcdk_mp4_atom_trun
     uint32_t numbers;
 
     /** 
-     * sample偏移量(基值在tfhd中)。
+     * sample偏移量(基值在tfhd中).
      * 
-     * @note 未设置时，使用默认值(0)。
+     * @note 未设置时, 使用默认值(0).
     */
     uint32_t data_offset;
 
     /** 
-     * 第一个sample标志。
+     * 第一个sample标志.
      * 
-     * @note 未设置时，使用默认值(0)。
+     * @note 未设置时, 使用默认值(0).
     */
     uint32_t first_sample_flags;
 
@@ -1194,10 +1194,10 @@ typedef struct _abcdk_mp4_atom_trun
 /** MP4 mfro atom.*/
 typedef struct _abcdk_mp4_atom_mfro
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** */
@@ -1228,10 +1228,10 @@ typedef struct _abcdk_mp4_atom_tfra_table
 /** MP4 tfra atom.*/
 typedef struct _abcdk_mp4_atom_tfra
 {
-    /** 版本。*/
+    /** 版本.*/
     uint8_t version;
 
-    /** 标志。*/
+    /** 标志.*/
     uint32_t flags;
 
     /** TRACK ID.*/
@@ -1278,7 +1278,7 @@ typedef struct _abcdk_mp4_atom_tfra
 /** MP4 unknown atom.*/
 typedef struct _abcdk_mp4_atom_unknown
 {
-    /** 原始数据。 */
+    /** 原始数据. */
     abcdk_object_t *rawbytes;
 
 } abcdk_mp4_atom_unknown_t;
@@ -1287,29 +1287,29 @@ typedef struct _abcdk_mp4_atom_unknown
 /** MP4 atom.*/
 typedef struct _abcdk_mp4_atom
 {
-    /** 长度(字节，头部+数据)。*/
+    /** 长度(字节, 头部+数据).*/
     uint64_t size;
 
-    /** 类型。*/
+    /** 类型.*/
     abcdk_mp4_tag_t type;
 
-    /** 头部偏移量(字节，以0为基值)。*/
+    /** 头部偏移量(字节, 以0为基值).*/
     uint64_t off_head;
 
-    /** 数据偏移量(字节，以0为基值)。*/
+    /** 数据偏移量(字节, 以0为基值).*/
     uint64_t off_data;
 
     /** 
-     * 是否有数据。
+     * 是否有数据.
      * 
-     * 0 无(容器)，!0 有。
+     * 0 无(容器), !0 有.
     */
     int have_data;
 
     /**
-     * 数据。
+     * 数据.
      * 
-     * @note 详细结构见各类型定义。
+     * @note 详细结构见各类型定义.
     */
     union 
     {
@@ -1347,83 +1347,83 @@ typedef struct _abcdk_mp4_atom
 } abcdk_mp4_atom_t;
 
 /**
- * 创建atom。
+ * 创建atom.
 */
 abcdk_tree_t *abcdk_mp4_alloc();
 
 /** 
- * 查找atom。
+ * 查找atom.
  * 
- * @param index 索引(以1为基值)。
- * @param recursive 0 仅查找根和一级子节点，!0 递归查找所有子节点。
+ * @param index 索引(以1为基值).
+ * @param recursive 0 仅查找根和一级子节点, !0 递归查找所有子节点.
  * 
- * @return !NULL(0) 成功，NULL(0) 失败。
+ * @return !NULL(0) 成功, NULL(0) 失败.
 */
 abcdk_tree_t *abcdk_mp4_find(abcdk_tree_t *root,abcdk_mp4_tag_t *type,size_t index,int recursive);
 
 /** 
- * 查找atom。
+ * 查找atom.
  * 
- * @param type 类型(大端字节序)。
+ * @param type 类型(大端字节序).
  * 
- * @return !NULL(0) 成功，NULL(0) 失败。
+ * @return !NULL(0) 成功, NULL(0) 失败.
 */
 abcdk_tree_t *abcdk_mp4_find2(abcdk_tree_t *root,uint32_t type,size_t index,int recursive);
 
 /**
- * 打印结构。
+ * 打印结构.
 */
 void abcdk_mp4_dump(FILE *fd, abcdk_tree_t *root);
 
 /**
- * 查询数据包所属的chunk编号(在stco中，以1为基值)，在chunk内部的偏移量(第几个，以1为基值)，和所属的ID。
+ * 查询数据包所属的chunk编号(在stco中, 以1为基值), 在chunk内部的偏移量(第几个, 以1为基值), 和所属的ID.
  * 
- * @param sample 数据包编号(在stsz中，以1为基值)。
- * @param chunk chunk编号的指针，返回前填写。
- * @param offset 偏移量的指针，返回前填写。
- * @param id ID的指针，返回前填写。
+ * @param sample 数据包编号(在stsz中, 以1为基值).
+ * @param chunk chunk编号的指针, 返回前填写.
+ * @param offset 偏移量的指针, 返回前填写.
+ * @param id ID的指针, 返回前填写.
  * 
- * @return 0 成功，-1 失败(值错误)。
+ * @return 0 成功, -1 失败(值错误).
 */
 int abcdk_mp4_stsc_tell(abcdk_mp4_atom_stsc_t *stsc,uint32_t sample,uint32_t *chunk,uint32_t *offset,uint32_t *id);
 
 /**
- * 查询数据包所在chunk中的偏移量(在stco中，以0为基值)，和数据包的长度。
+ * 查询数据包所在chunk中的偏移量(在stco中, 以0为基值), 和数据包的长度.
  * 
- * @param off_chunk 数据包所在chunk的内部编号(第几个，以1为基值)。
- * @param sample 数据包编号(在stsz中，以1为基值)。
- * @param offset 偏移量的指针，返回前填写。
- * @param size 长度的指针，返回前填写。
+ * @param off_chunk 数据包所在chunk的内部编号(第几个, 以1为基值).
+ * @param sample 数据包编号(在stsz中, 以1为基值).
+ * @param offset 偏移量的指针, 返回前填写.
+ * @param size 长度的指针, 返回前填写.
  * 
- * @return 0 成功，-1 失败(超出范围)。
+ * @return 0 成功, -1 失败(超出范围).
 */
 int abcdk_mp4_stsz_tell(abcdk_mp4_atom_stsz_t *stsz, uint32_t off_chunk, uint32_t sample, uint32_t *offset, uint32_t *size);
 
 /**
- * 查询数据包的DTS，和时长。
+ * 查询数据包的DTS, 和时长.
  * 
- * @param sample 数据包编号(在stsz中，以1为基值)。
- * @param dts DTS的指针，返回前填写。
- * @param duration 时长的指针，返回前填写。
+ * @param sample 数据包编号(在stsz中, 以1为基值).
+ * @param dts DTS的指针, 返回前填写.
+ * @param duration 时长的指针, 返回前填写.
  * 
- * @return 0 成功，-1 失败(超出范围)。
+ * @return 0 成功, -1 失败(超出范围).
 */
 int abcdk_mp4_stts_tell(abcdk_mp4_atom_stts_t *stts, uint32_t sample, uint64_t *dts, uint32_t *duration);
 
 /**
- * 查询数据包的CTS(PTS相对于DTS的偏移量)。
+ * 查询数据包的CTS(PTS相对于DTS的偏移量).
  * 
- * @param sample 数据包编号(在stsz中，以1为基值)。
- * @param offset CTS的指针，返回前填写。
+ * @param sample 数据包编号(在stsz中, 以1为基值).
+ * @param offset CTS的指针, 返回前填写.
  * 
- * @return 0 成功，-1 失败(超出范围)。
+ * @return 0 成功, -1 失败(超出范围).
 */
 int abcdk_mp4_ctts_tell(abcdk_mp4_atom_ctts_t *ctts,uint32_t sample,  int32_t *offset);
 
 /**
- * 查询是否为关键帧。
+ * 查询是否为关键帧.
  * 
- * @return 0 成功(是)，-1 失败(否，或超出范围)。
+ * @return 0 成功(是), -1 失败(否, 或超出范围).
 */
 int abcdk_mp4_stss_tell(abcdk_mp4_atom_stss_t *stss,uint32_t sample);
 

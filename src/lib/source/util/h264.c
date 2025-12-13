@@ -43,7 +43,7 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
     {
         p1 = rbuf.data;
         p2 = NULL;
-        p3 = rbuf.data + rbuf.size - 1;/*末尾指针要减1。*/
+        p3 = rbuf.data + rbuf.size - 1;/*末尾指针要减1.*/
 
         for (int j = 0; j < 10; j++)
         {
@@ -78,7 +78,7 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
         extdata->reserve2 = abcdk_bit_read(&rbuf, 3);
 
         extdata->sps_num = abcdk_bit_read(&rbuf, 5);
-        extdata->sps = abcdk_object_alloc3(rbuf.size, extdata->sps_num); // 足够的长度，保证不会溢出。
+        extdata->sps = abcdk_object_alloc3(rbuf.size, extdata->sps_num); // 足够的长度, 保证不会溢出.
         for (int i = 0; i < extdata->sps_num; i++)
         {
             extdata->sps->sizes[i] = abcdk_bit_read(&rbuf, 16);
@@ -91,7 +91,7 @@ void abcdk_h264_extradata_deserialize(const void *data, size_t size, abcdk_h264_
         }
 
         extdata->pps_num = abcdk_bit_read(&rbuf, 8);
-        extdata->pps = abcdk_object_alloc3(rbuf.size, extdata->pps_num); // 足够的长度，保证不会溢出。
+        extdata->pps = abcdk_object_alloc3(rbuf.size, extdata->pps_num); // 足够的长度, 保证不会溢出.
         for (int i = 0; i < extdata->pps_num; i++)
         {
             extdata->pps->sizes[i] = abcdk_bit_read(&rbuf, 16);

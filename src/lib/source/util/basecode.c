@@ -80,11 +80,11 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
     assert(ctx != NULL && src != NULL && slen > 0 && dst != NULL && dmaxlen > 0);
     assert(ctx->base != 0 && ctx->encode_table_cb != NULL);
 
-    /*计算每个编码的bit数。*/
+    /*计算每个编码的bit数.*/
     for (size_t i = 1; i < ctx->base; i <<= 1)
         base_bits += 1;
 
-    /*最小公倍数。*/
+    /*最小公倍数.*/
     bit_align = abcdk_math_lcm(base_bits, 8);
 
     src_bits = slen * 8;
@@ -92,7 +92,7 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
     dst_bits_align = abcdk_align(src_bits, bit_align);
     dlen_align = dst_bits_align / base_bits;
 
-    /*不能超过目标缓存大小。*/
+    /*不能超过目标缓存大小.*/
     assert(dlen_align <= dmaxlen);
 
     for (size_t i = 0; i < src_bits_align;)
@@ -107,7 +107,7 @@ ssize_t abcdk_basecode_encode(const abcdk_basecode_t *ctx,
         dst[dlen++] = ctx->encode_table_cb(v);
     }
 
-    /*补齐数据。*/
+    /*补齐数据.*/
     for (; dlen < dlen_align;)
         dst[dlen++] = ctx->pad;
 
@@ -128,19 +128,19 @@ ssize_t abcdk_basecode_decode(const abcdk_basecode_t *ctx,
     assert(ctx != NULL && src != NULL && slen > 0 && dst != NULL && dmaxlen > 0);
     assert(ctx->base != 0 && ctx->decode_table_cb != NULL);
 
-    /*计算每个编码的bit数。*/
+    /*计算每个编码的bit数.*/
     for (size_t i = 1; i < ctx->base; i <<= 1)
         base_bits += 1;
 
     src_bits = slen * base_bits;
     dlen_align = src_bits / 8;
 
-    /*不能超过目标缓存大小。*/
+    /*不能超过目标缓存大小.*/
     assert(dlen_align <= dmaxlen);
 
     for (size_t i = 0; i < slen; i++)
     {
-        /*遇到补齐数据则停止。*/
+        /*遇到补齐数据则停止.*/
         if (src[i] == ctx->pad)
             break;
 

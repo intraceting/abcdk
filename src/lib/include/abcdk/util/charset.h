@@ -13,9 +13,9 @@
 __BEGIN_DECLS
 
 /**
- * 检验UTF-8编码。
+ * 检验UTF-8编码.
  * 
- * @note 不识别BOM头。
+ * @note 不识别BOM头.
  * 
  * 1 bytes: 0xxxxxxx ;
  * 2 bytes: 110xxxxx 10xxxxxx ;
@@ -24,7 +24,7 @@ __BEGIN_DECLS
  * 5 bytes: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx ;
  * 6 bytes: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx ;
  * 
- * @return 符合的长度(字节)。
+ * @return 符合的长度(字节).
 */
 ssize_t abcdk_verify_utf8(const void *data,size_t max);
 

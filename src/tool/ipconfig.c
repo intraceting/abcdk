@@ -13,7 +13,7 @@ typedef struct _abcdk_ipcfg
 
     abcdk_logger_t *logger;
 
-    /*0：运行，1：退出。*/
+    /*0: 运行, 1: 退出.*/
     volatile int exitflag;
 
     const char *dhclient_cmd;
@@ -32,43 +32,43 @@ typedef struct _abcdk_ipcfg_node
     pid_t dhcp_pid;
 
     /*
-     * 应用状态。
+     * 应用状态.
      *
-     * 0：未应用。
-     * 1：已应用。
+     * 0: 未应用.
+     * 1: 已应用.
      */
     int implement_state;
 
     /*
-     * 物理链路状态。
+     * 物理链路状态.
      *
-     * 0：未连接。
-     * 1：已连接。
+     * 0: 未连接.
+     * 1: 已连接.
      */
     int link_state;
 
     /*
-     * 逻辑链路状态。
+     * 逻辑链路状态.
      *
-     *  0：未启动。
-     *  1：已启动。
+     *  0: 未启动.
+     *  1: 已启动.
      *
      */
     int oper_state;
 
-    /* 地址哈希值。*/
+    /* 地址哈希值.*/
     char addr_hcode[33];
 
-    /* 旧的配置。*/
+    /* 旧的配置.*/
     abcdk_object_t *old_resolv;
 
-    /* resolv哈希值。*/
+    /* resolv哈希值.*/
     char resolv_hcode[33];
 
-    /* 启动次数。*/
+    /* 启动次数.*/
     int start_link_count;
 
-    /* 下一次启动时间。*/
+    /* 下一次启动时间.*/
     uint64_t start_link_next;
 
 } abcdk_ipcfg_node_t;
@@ -77,31 +77,31 @@ void _abcdk_ipcfg_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的IP配置工具。\n");
+    fprintf(stderr, "\n\t简单的IP配置工具.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--log-path < PATH >\n");
-    fprintf(stderr, "\t\t日志路径。默认：/tmp/abcdk/log/\n");
+    fprintf(stderr, "\t\t日志路径.默认: /tmp/abcdk/log/\n");
 
     fprintf(stderr, "\n\t--daemon < INTERVAL > \n");
-    fprintf(stderr, "\t\t启用后台守护模式(秒)，1～60之间有效。默认：30\n");
-    fprintf(stderr, "\t\t注：此功能不支持supervisor或类似的工具。\n");
+    fprintf(stderr, "\t\t启用后台守护模式(秒), 1～60之间有效.默认: 30\n");
+    fprintf(stderr, "\t\t注: 此功能不支持supervisor或类似的工具.\n");
 
     fprintf(stderr, "\n\t--conf < CONF [CONF ...] >\n");
-    fprintf(stderr, "\t\t配置文件名(包括路径)。\n");
-    fprintf(stderr, "\t\t注：具体的配置说明见doc/tool/ipconfig/*.sample。\n");
+    fprintf(stderr, "\t\t配置文件名(包括路径).\n");
+    fprintf(stderr, "\t\t注: 具体的配置说明见doc/tool/ipconfig/*.sample.\n");
 
     fprintf(stderr, "\n\t--dhclient-cmd < NAME >\n");
-    fprintf(stderr, "\t\tdhclient客户端工具名称(包括路径)。默认：dhclient\n");
-    fprintf(stderr, "\t\t注：使能方法为DHCP时有效.\n");
+    fprintf(stderr, "\t\tdhclient客户端工具名称(包括路径).默认: dhclient\n");
+    fprintf(stderr, "\t\t注: 使能方法为DHCP时有效.\n");
 
     fprintf(stderr, "\n\t--udhcpc-cmd < NAME >\n");
-    fprintf(stderr, "\t\tudhcpc客户端工具名称(包括路径)。默认：udhcpc\n");
-    fprintf(stderr, "\t\t注：使能方法为DHCP时有效.\n");
+    fprintf(stderr, "\t\tudhcpc客户端工具名称(包括路径).默认: udhcpc\n");
+    fprintf(stderr, "\t\t注: 使能方法为DHCP时有效.\n");
 }
 
 void _abcdk_ipcfg_find_dhcp_client(abcdk_ipcfg_t *ctx)
@@ -298,7 +298,7 @@ END:
         p2 = abcdk_tree_sibling(p2, 0);
     }
 
-    /*加入接口名字，使得不同的接口在具体相同配置情况下哈希值也不相同。*/
+    /*加入接口名字, 使得不同的接口在具体相同配置情况下哈希值也不相同.*/
     abcdk_md5_update(md5_ctx, ifname, strlen(ifname));
 
     abcdk_md5_final2hex(md5_ctx, buf, 0);
@@ -360,14 +360,14 @@ void _abcdk_ipcfg_start_link(abcdk_ipcfg_node_t *ctx, const char *ifname)
 
     if (!link_state || !oper_state)
     {
-        /*未到时间不尝试启动。*/
+        /*未到时间不尝试启动.*/
         if (ctx->start_link_next >= abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0))
             return;
 
-        abcdk_trace_printf(LOG_INFO, "链路('%s')未活动或被关闭，尝试重新启动。", ifname);
+        abcdk_trace_printf(LOG_INFO, "链路('%s')未活动或被关闭, 尝试重新启动.", ifname);
         abcdk_net_up(ifname);
 
-        /*下次启动间隔增加1秒，60次为一个周期。*/
+        /*下次启动间隔增加1秒, 60次为一个周期.*/
         ctx->start_link_count += 1;
         ctx->start_link_count %= 60;
         ctx->start_link_next = (abcdk_time_clock2kind_with(CLOCK_MONOTONIC, 0) + ctx->start_link_count);
@@ -384,21 +384,21 @@ void _abcdk_ipcfg_check_link(abcdk_ipcfg_node_t *ctx, const char *ifname)
 {
     int prev_link_state, prev_oper_state;
 
-    /*记录旧状态，并读取最新状态。*/
+    /*记录旧状态, 并读取最新状态.*/
     prev_link_state = ctx->link_state;
     prev_oper_state = ctx->oper_state;
     ctx->link_state = (abcdk_net_get_link_state(ifname) <= 0 ? 0 : 1);
     ctx->oper_state = (abcdk_net_get_oper_state(ifname) <= 0 ? 0 : 1);
 
-    /*检查链路状态是否发生变化，如果发生变化则重新应用配置。*/
+    /*检查链路状态是否发生变化, 如果发生变化则重新应用配置.*/
     if (prev_link_state != ctx->link_state || prev_oper_state != ctx->oper_state)
     {
-        abcdk_trace_printf( LOG_INFO, "链路('%s')状态发生变化(link=%d,oper=%d)。", ifname, ctx->link_state, ctx->oper_state);
+        abcdk_trace_printf( LOG_INFO, "链路('%s')状态发生变化(link=%d,oper=%d).", ifname, ctx->link_state, ctx->oper_state);
 
         if (ctx->link_state && ctx->oper_state)
             ctx->implement_state = 0;
 
-        /*当链路断开后，清理地址和路由表。*/
+        /*当链路断开后, 清理地址和路由表.*/
         if (!ctx->link_state || !ctx->oper_state)
         {
             abcdk_net_address_flush(ifname);
@@ -411,18 +411,18 @@ void _abcdk_ipcfg_check_address(abcdk_ipcfg_node_t *ctx, const char *ifname)
 {
     char curt_addr_hcode[33];
 
-    /*链路不可用时，不需要检测地址变化。*/
+    /*链路不可用时, 不需要检测地址变化.*/
     if (!ctx->link_state || !ctx->oper_state)
         return;
 
-    /*读取当前配置。*/
+    /*读取当前配置.*/
     _abcdk_ipcfg_eth_hash_code(curt_addr_hcode, ifname);
 
-    /*检查配置是否已经改变，如果未改变则不需要更新。*/
+    /*检查配置是否已经改变, 如果未改变则不需要更新.*/
     if (abcdk_strcmp(curt_addr_hcode, ctx->addr_hcode, 0) == 0)
         return;
 
-    abcdk_trace_printf( LOG_INFO, "链路('%s')配置被改变，恢复应用配置。", ifname);
+    abcdk_trace_printf( LOG_INFO, "链路('%s')配置被改变, 恢复应用配置.", ifname);
 
     ctx->implement_state = 0;
 }
@@ -433,11 +433,11 @@ void _abcdk_ipcfg_check_resolv(abcdk_ipcfg_node_t *ctx)
 
     _abcdk_ipcfg_resolv_hash_code(curt_resolv_hcode);
 
-    /*检查配置是否已经改变，如果未改变则不需要更新。*/
+    /*检查配置是否已经改变, 如果未改变则不需要更新.*/
     if (abcdk_strcmp(curt_resolv_hcode, ctx->resolv_hcode, 0) == 0)
         return;
 
-    abcdk_trace_printf( LOG_INFO, "resolv配置被改变，恢复应用配置。");
+    abcdk_trace_printf( LOG_INFO, "resolv配置被改变, 恢复应用配置.");
 
     ctx->implement_state = 0;
 }
@@ -475,13 +475,13 @@ int _abcdk_ipcfg_eth_add(abcdk_ipcfg_node_t *ctx, int idx, int ver, const char *
 
     if (addr_conf->numbers < 2)
     {
-        abcdk_trace_printf( LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求，其中网关和跃点为可选项。");
+        abcdk_trace_printf( LOG_ERR, "不符合四段参数(IP,前缀长度,网关,跃点)要求, 其中网关和跃点为可选项.");
 
         chk = -22;
         goto END;
     }
 
-    /*清除字符串两端“空白”字符。*/
+    /*清除字符串两端“空白”字符.*/
     for (int i = 0; i < addr_conf->numbers; i++)
     {
         abcdk_strtrim(addr_conf->pstrs[i], isspace, 2);
@@ -499,7 +499,7 @@ int _abcdk_ipcfg_eth_add(abcdk_ipcfg_node_t *ctx, int idx, int ver, const char *
 
     if (gw != NULL && *gw != '\0')
     {
-        /*第一个网关，设为默认路由。*/
+        /*第一个网关, 设为默认路由.*/
         if (idx == 0)
         {
             chk = _abcdk_ipcfg_route_add(ctx, ver, (ver == 6 ? "0" : "0.0.0.0"), 0, gw, 0, ifname);
@@ -523,7 +523,7 @@ END:
 
 void _abcdk_ipcfg_eth_close_dhcp(abcdk_ipcfg_node_t *ctx)
 {
-    /*关闭DHCP客户端。*/
+    /*关闭DHCP客户端.*/
     if (ctx->dhcp_pid >= 0)
     {
         kill(ctx->dhcp_pid, 9);
@@ -546,7 +546,7 @@ int _abcdk_ipcfg_eth_start_dhclient(abcdk_ipcfg_node_t *ctx, const char *ifname)
             return -1;
     }
 
-    /*非阻塞调用，如果存在但未结束，则返回0。*/
+    /*非阻塞调用, 如果存在但未结束, 则返回0.*/
     pid_chk = abcdk_waitpid(ctx->dhcp_pid, WNOHANG, &ctx->exitcode, &ctx->sigcode);
     if (pid_chk != 0)
     {
@@ -558,7 +558,7 @@ int _abcdk_ipcfg_eth_start_dhclient(abcdk_ipcfg_node_t *ctx, const char *ifname)
             return 0;
     }
 
-    /*重试。*/
+    /*重试.*/
     return -15;
 }
 
@@ -576,7 +576,7 @@ int _abcdk_ipcfg_eth_start_udhcpc(abcdk_ipcfg_node_t *ctx, const char *ifname)
             return -3;
     }
 
-    /*非阻塞调用，如果存在但未结束，则返回0。*/
+    /*非阻塞调用, 如果存在但未结束, 则返回0.*/
     pid_chk = abcdk_waitpid(ctx->dhcp_pid, WNOHANG, &ctx->exitcode, &ctx->sigcode);
     if (pid_chk != 0)
     {
@@ -588,7 +588,7 @@ int _abcdk_ipcfg_eth_start_udhcpc(abcdk_ipcfg_node_t *ctx, const char *ifname)
             return 0;
     }
 
-    /*重试。*/
+    /*重试.*/
     return -15;
 }
 
@@ -606,16 +606,16 @@ int _abcdk_ipcfg_eth_start_dhcp(abcdk_ipcfg_node_t *ctx, const char *ifname)
     }
     else
     {
-        abcdk_trace_printf( LOG_ERR, "未支持的DHCP客户端。");
+        abcdk_trace_printf( LOG_ERR, "未支持的DHCP客户端.");
         return -5;
     }
 
     if (chk == 0)
-        abcdk_trace_printf( LOG_INFO, "为'%s'申请动态地址完成。", ifname);
+        abcdk_trace_printf( LOG_INFO, "为'%s'申请动态地址完成.", ifname);
     else if (chk == -15)
         abcdk_trace_printf( LOG_INFO, "正在为'%s'申请动态地址……", ifname);
     else
-        abcdk_trace_printf( LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d)。", ifname, ctx->exitcode, ctx->sigcode);
+        abcdk_trace_printf( LOG_ERR, "为'%s'申请动态地址失败(exit=%d,signal=%d).", ifname, ctx->exitcode, ctx->sigcode);
 
     return chk;
 }
@@ -647,11 +647,11 @@ int _abcdk_ipcfg_resolv_change(abcdk_ipcfg_node_t *ctx, const char *const *nss)
     chk = abcdk_save("/etc/resolv.conf", buf, len, 0);
     if (chk != len)
     {
-        abcdk_trace_printf( LOG_ERR, "更新'resolv'失败。");
+        abcdk_trace_printf( LOG_ERR, "更新'resolv'失败.");
         goto ERR;
     }
 
-    abcdk_trace_printf( LOG_INFO, "更新'resolv'完成。");
+    abcdk_trace_printf( LOG_INFO, "更新'resolv'完成.");
 
     abcdk_heap_freep((void **)&buf);
     return 0;
@@ -679,8 +679,8 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
         _abcdk_ipcfg_check_address(ctx, ifname);
 
         /*
-         * 1:如果链路未连接或未启动，则不需要应用配置。
-         * 2:如果已经应用成功，则不需要重复配置。
+         * 1:如果链路未连接或未启动, 则不需要应用配置.
+         * 2:如果已经应用成功, 则不需要重复配置.
          */
         if (!ctx->link_state || !ctx->oper_state || ctx->implement_state)
             return;
@@ -688,11 +688,11 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
         addr4_count = abcdk_option_count(opt, "--address4");
         addr6_count = abcdk_option_count(opt, "--address6");
 
-        /*没有新配置的情况下，保持现有配置不变。*/
+        /*没有新配置的情况下, 保持现有配置不变.*/
         if (addr4_count <= 0 && addr6_count <= 0)
             goto ERROR;
 
-        /*关闭可能存在的DHCP客户端。*/
+        /*关闭可能存在的DHCP客户端.*/
         _abcdk_ipcfg_eth_close_dhcp(ctx);
 
         chk = _abcdk_ipcfg_eth_up(ctx, ifname);
@@ -723,7 +723,7 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
                 goto ERROR;
         }
 
-        /*记录最新配置。*/
+        /*记录最新配置.*/
         _abcdk_ipcfg_eth_hash_code(ctx->addr_hcode, ifname);
     }
     else if (abcdk_strcmp(enable, "dhcp", 0) == 0)
@@ -733,8 +733,8 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
         _abcdk_ipcfg_check_address(ctx, ifname);
 
         /*
-         * 1:如果链路未连接或未启动，则不需要应用配置。
-         * 2:如果已经应用成功，则不需要重复配置。
+         * 1:如果链路未连接或未启动, 则不需要应用配置.
+         * 2:如果已经应用成功, 则不需要重复配置.
          */
         if (!ctx->link_state || !ctx->oper_state || ctx->implement_state)
             return;
@@ -743,19 +743,19 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
         if (chk != 0)
             goto ERROR;
 
-        /*记录最新配置。*/
+        /*记录最新配置.*/
         _abcdk_ipcfg_eth_hash_code(ctx->addr_hcode, ifname);
     }
     else if (abcdk_strcmp(enable, "resolv", 0) == 0)
     {
-        /*旧的配置只加载一次。*/
+        /*旧的配置只加载一次.*/
         if (!ctx->old_resolv)
             ctx->old_resolv = _abcdk_ipcfg_resolv_load();
 
         _abcdk_ipcfg_check_resolv(ctx);
 
         /*
-         * 1:如果已经应用成功，则不需要重复配置。
+         * 1:如果已经应用成功, 则不需要重复配置.
          */
         if (ctx->implement_state)
             return;
@@ -771,12 +771,12 @@ void _abcdk_ipcfg_implement(abcdk_ipcfg_node_t *ctx, abcdk_option_t *opt)
         if (chk != 0)
             goto ERROR;
 
-        /*记录最新配置。*/
+        /*记录最新配置.*/
         _abcdk_ipcfg_resolv_hash_code(ctx->resolv_hcode);
     }
     else
     {
-        abcdk_trace_printf( LOG_INFO, "未支持的使能方案，跳过。");
+        abcdk_trace_printf( LOG_INFO, "未支持的使能方案, 跳过.");
     }
 
     ctx->implement_state = 1;
@@ -802,7 +802,7 @@ void _abcdk_ipcfg_work_real(abcdk_ipcfg_t *ctx, uint32_t idx)
 
 WATCHDOG:
 
-    /*1秒间隔，太频繁无用。*/
+    /*1秒间隔, 太频繁无用.*/
     sleep(1);
 
     abcdk_option_free(&conf_a);
@@ -810,7 +810,7 @@ WATCHDOG:
     if (!conf_a)
         goto END;
 
-    /*3秒间隔，太频繁无用。*/
+    /*3秒间隔, 太频繁无用.*/
     sleep(3);
 
     abcdk_option_free(&conf_b);
@@ -818,40 +818,40 @@ WATCHDOG:
     if (!conf_b)
         goto END;
 
-    /*判断文件是否正在被修改。*/
+    /*判断文件是否正在被修改.*/
     chk = _abcdk_ipcfg_compare_option(conf_a, conf_b);
     if (chk != 0)
         goto END;
 
-    /*检查数据是否发生过变更。*/
+    /*检查数据是否发生过变更.*/
     if (conf_prev)
     {
         chk = _abcdk_ipcfg_compare_option(conf_b, conf_prev);
         if (chk == 0)
             goto END;
 
-        /*释放旧的配置。*/
+        /*释放旧的配置.*/
         abcdk_option_free(&conf_prev);
-        /*复制新配置。*/
+        /*复制新配置.*/
         conf_prev = conf_b;
         conf_b = NULL;
     }
     else
     {
-        /*可能是第一次运行，直接复制。*/
+        /*可能是第一次运行, 直接复制.*/
         conf_prev = conf_b;
         conf_b = NULL;
     }
 
-    /*重置出错码和信号量。*/
+    /*重置出错码和信号量.*/
     node_ctx->exitcode = 0;
     node_ctx->sigcode = 0;
 
-    /*标记为未应用。*/
+    /*标记为未应用.*/
     node_ctx->implement_state = 0;
 
     _abcdk_ipcfg_dump_option(conf_prev, node_ctx->father->logger);
-    abcdk_trace_printf( LOG_INFO, "配置文件('%s')已经更新，在应用新配置过程中网络连接可能发生抖动。", conf_file);
+    abcdk_trace_printf( LOG_INFO, "配置文件('%s')已经更新, 在应用新配置过程中网络连接可能发生抖动.", conf_file);
 
 END:
 
@@ -888,42 +888,42 @@ void _abcdk_ipcfg_process(abcdk_ipcfg_t *ctx)
 
     _abcdk_ipcfg_find_dhcp_client(ctx);
 
-    /*打开日志。*/
+    /*打开日志.*/
     ctx->logger = abcdk_logger_open2(log_path,"ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
 
-    /*注册为轨迹日志。*/
+    /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy,ctx->logger);
 
     abcdk_trace_printf( LOG_INFO, "启动……");
 
     if (conf_num <= 0)
     {
-        abcdk_trace_printf( LOG_ERR, "至少指定一个配置文件。");
+        abcdk_trace_printf( LOG_ERR, "至少指定一个配置文件.");
         goto ERR;
     }
 
-    /*创建足够数量的工人。*/
+    /*创建足够数量的工人.*/
     worker_cfg.numbers = conf_num;
     worker_ctx = abcdk_worker_start(&worker_cfg);
 
-    /*每个配置文件将由一个工人处理。*/
+    /*每个配置文件将由一个工人处理.*/
     for (int i = 0; i < conf_num; i++)
         abcdk_worker_dispatch(worker_ctx, i, NULL);
 
-    /*等待终止信号。*/
+    /*等待终止信号.*/
     abcdk_proc_wait_exit_signal(-1);
 
-    /*通知所有线程退出。*/
+    /*通知所有线程退出.*/
     abcdk_atomic_store(&ctx->exitflag, 1);
 
-    /*销毁工人。*/
+    /*销毁工人.*/
     abcdk_worker_stop(&worker_ctx);
 
 ERR:
 
-    abcdk_trace_printf( LOG_INFO, "停止。");
+    abcdk_trace_printf( LOG_INFO, "停止.");
 
-    /*关闭日志。*/
+    /*关闭日志.*/
     abcdk_logger_close(&ctx->logger);
 }
 
@@ -947,10 +947,10 @@ void _abcdk_ipcfg_daemon(abcdk_ipcfg_t *ctx)
     interval = abcdk_option_get_int(ctx->args, "--daemon", 0, 30);
     interval = ABCDK_CLAMP(interval, 1, 60);
 
-    /*打开日志。*/
+    /*打开日志.*/
     logger = abcdk_logger_open2(log_path,"ipconfig-daemon.log", "ipconfig-daemon.%d.log", 10, 10, 0, 1);
 
-    /*注册为轨迹日志。*/
+    /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy,logger);
 
     while (1)
@@ -962,7 +962,7 @@ void _abcdk_ipcfg_daemon(abcdk_ipcfg_t *ctx)
         sleep(interval);
     }
 
-    /*关闭日志。*/
+    /*关闭日志.*/
     abcdk_logger_close(&logger);
 }
 
@@ -981,7 +981,7 @@ int abcdk_tool_ipconfig(abcdk_option_t *args)
     {
         if (abcdk_option_exist(ctx.args, "--daemon"))
         {
-            fprintf(stderr, "进入后台守护模式。\n");
+            fprintf(stderr, "进入后台守护模式.\n");
             daemon(1, 0);
 
             _abcdk_ipcfg_daemon(&ctx);

@@ -24,21 +24,21 @@ void _abcdk_json_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的JSON格式化工具。\n");
+    fprintf(stderr, "\n\t简单的JSON格式化工具.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--file < FILE >\n");
-    fprintf(stderr, "\t\tJSON文件。\n");
+    fprintf(stderr, "\t\tJSON文件.\n");
 
     fprintf(stderr, "\n\t--readable\n");
-    fprintf(stderr, "\t\t使文本便于阅读(截断超过80字节的文本)。默认：原文\n");
+    fprintf(stderr, "\t\t使文本便于阅读(截断超过80字节的文本).默认: 原文\n");
 
     fprintf(stderr, "\n\t--output < FILE >\n");
-    fprintf(stderr, "\t\t输出到指定的文件(包括路径)。默认：终端\n");
+    fprintf(stderr, "\t\t输出到指定的文件(包括路径).默认: 终端\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -51,13 +51,13 @@ void _abcdk_json_wrok(abcdk_json_t *ctx)
 
     if (!ctx->file || !*ctx->file)
     {
-        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--file FILE' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = EINVAL);
     }
 
     if (access(ctx->file, R_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", ctx->file, strerror(errno));
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = errno);
     }
 
@@ -74,7 +74,7 @@ void _abcdk_json_wrok(abcdk_json_t *ctx)
     int chk = abcdk_json_format_from_file(ctx->file,0,ctx->readable,stdout);
     if(chk != 0)
     {
-        fprintf(stderr, "'%s' %s。\n", ctx->file, strerror(ENOENT));
+        fprintf(stderr, "'%s' %s.\n", ctx->file, strerror(ENOENT));
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = ENOENT);
     }
     
@@ -103,7 +103,7 @@ int abcdk_tool_json(abcdk_option_t *args)
 
 #else 
     
-    fprintf(stderr, "当前构建版本未包含此工具。\n");
+    fprintf(stderr, "当前构建版本未包含此工具.\n");
     ctx.errcode = EPERM;
 
 #endif //_json_h_

@@ -27,22 +27,22 @@
 #define	ARCHIVE_FILTER_LRZIP ARCHIVE_COMPRESSION_LRZIP	
 #endif
 
-/** 常量。*/
+/** 常量.*/
 enum _abcdk_archive_constant
 {
-    /** 回迁。*/
+    /** 回迁.*/
     ABCDK_ARCHIVE_READ = 1,
 #define ABCDK_ARCHIVE_READ ABCDK_ARCHIVE_READ
 
-    /** 归档。*/
+    /** 归档.*/
     ABCDK_ARCHIVE_WRITE = 2,
 #define ABCDK_ARCHIVE_WRITE ABCDK_ARCHIVE_WRITE
 
-    /** 归档开始前写入FILEMARK。*/
+    /** 归档开始前写入FILEMARK.*/
     ABCDK_ARCHIVE_WRITE_FM_BEFOR = 1,
 #define ABCDK_ARCHIVE_WRITE_FM_BEFOR ABCDK_ARCHIVE_WRITE_FM_BEFOR
 
-    /** 归档结束后写入FILEMARK。*/
+    /** 归档结束后写入FILEMARK.*/
     ABCDK_ARCHIVE_WRITE_FM_AFTER = 2
 #define ABCDK_ARCHIVE_WRITE_FM_AFTER ABCDK_ARCHIVE_WRITE_FM_AFTER
 };
@@ -87,14 +87,14 @@ typedef struct _abcdk_archive
     abcdk_reader_t *reader;
 
     /*
-     * 属性列表(后进先出)，用于回迁后的属性恢复。
+     * 属性列表(后进先出), 用于回迁后的属性恢复.
      * 
-     * 路径长度，路径，属性。
+     * 路径长度, 路径, 属性.
     */
     abcdk_object_t *attr_list;
     off_t attr_list_pos;
 
-    /*属性列表临时文件名。*/
+    /*属性列表临时文件名.*/
     char attr_list_tmpname[NAME_MAX];
 
 } abcdk_archive_t;
@@ -195,24 +195,24 @@ void _abcdk_archive_print_usage(abcdk_option_t *args)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的文件回迁和归档工具。\n");
+    fprintf(stderr, "\n\t简单的文件回迁和归档工具.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息，并退出。\n");
+    fprintf(stderr, "\t\t显示帮助信息, 并退出.\n");
 
     fprintf(stderr, "\n\t--quiet \n");
-    fprintf(stderr, "\t\t安静的工作，仅输出错误或警告信息。\n");
+    fprintf(stderr, "\t\t安静的工作, 仅输出错误或警告信息.\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER > \n");
-    fprintf(stderr, "\t\t操作码。默认：%d\n", ABCDK_ARCHIVE_READ);
+    fprintf(stderr, "\t\t操作码.默认: %d\n", ABCDK_ARCHIVE_READ);
 
-    fprintf(stderr, "\n\t\t%d：回迁。\n", ABCDK_ARCHIVE_READ);
-    fprintf(stderr, "\t\t%d：归档。\n", ABCDK_ARCHIVE_WRITE);
+    fprintf(stderr, "\n\t\t%d: 回迁.\n", ABCDK_ARCHIVE_READ);
+    fprintf(stderr, "\t\t%d: 归档.\n", ABCDK_ARCHIVE_WRITE);
 
     fprintf(stderr, "\n\t--filter < NUMBER >\n");
-    fprintf(stderr, "\t\t滤波器。\n");
+    fprintf(stderr, "\t\t滤波器.\n");
 
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_archive_filter_dict); i++)
@@ -223,11 +223,11 @@ void _abcdk_archive_print_usage(abcdk_option_t *args)
     }
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "\n\t\t归档：如果未指定，则跟据格式确定。\n");
-    fprintf(stderr, "\t\t回迁：如果未指定，则自动检查。\n");
+    fprintf(stderr, "\n\t\t归档: 如果未指定, 则跟据格式确定.\n");
+    fprintf(stderr, "\t\t回迁: 如果未指定, 则自动检查.\n");
 
     fprintf(stderr, "\n\t--format < NUMBER >\n");
-    fprintf(stderr, "\t\t格式。\n");
+    fprintf(stderr, "\t\t格式.\n");
 
     fprintf(stderr, "\n");
     for (size_t i = 0; i < ABCDK_ARRAY_SIZE(abcdk_archive_format_dict); i++)
@@ -238,81 +238,81 @@ void _abcdk_archive_print_usage(abcdk_option_t *args)
     }
     fprintf(stderr, "\n");
 
-    fprintf(stderr, "\n\t\t归档：必须指定。\n");
-    fprintf(stderr, "\t\t回迁：如果未指定，则自动检查。\n");
+    fprintf(stderr, "\n\t\t归档: 必须指定.\n");
+    fprintf(stderr, "\t\t回迁: 如果未指定, 则自动检查.\n");
 
 #if ARCHIVE_VERSION_NUMBER >= 3003003
     fprintf(stderr, "\n\t--password < STRING >\n");
-    fprintf(stderr, "\t\t密码。默认：无\n");
+    fprintf(stderr, "\t\t密码.默认: 无\n");
 #endif // ARCHIVE_VERSION_NUMBER >= 3003003
 
     fprintf(stderr, "\n\t--option < STRING >\n");
-    fprintf(stderr, "\t\t附加选项。见：man archive_write_set_options 或 man archive_read_set_options\n");
+    fprintf(stderr, "\t\t附加选项.见: man archive_write_set_options 或 man archive_read_set_options\n");
 
     fprintf(stderr, "\n\t--block-factor < NUMBER >\n");
-    fprintf(stderr, "\t\t每次读写块的数量（个）。默认：20\n");
+    fprintf(stderr, "\t\t每次读写块的数量(个).默认: 20\n");
 
     fprintf(stderr, "\n\t--block-size < NUMBER >\n");
-    fprintf(stderr, "\t\t每次读写块的大小（字节）。默认：512\n");
+    fprintf(stderr, "\t\t每次读写块的大小(字节).默认: 512\n");
 
     fprintf(stderr, "\n\t--metadata-charset < CODE >\n");
-    fprintf(stderr, "\t\t元数据编码。默认：UTF-8，其它参考iconv -l\n");
+    fprintf(stderr, "\t\t元数据编码.默认: UTF-8, 其它参考iconv -l\n");
     
-    fprintf(stderr, "\n\t\t归档：忽略。使用系统默认设置。\n");
-    fprintf(stderr, "\t\t回迁：归档时元数据的编码。\n");
+    fprintf(stderr, "\n\t\t归档: 忽略.使用系统默认设置.\n");
+    fprintf(stderr, "\t\t回迁: 归档时元数据的编码.\n");
 
     fprintf(stderr, "\n\t--metadata-char-width\n");
-    fprintf(stderr, "\t\t元数据编码字符宽度。默认：1\n");
+    fprintf(stderr, "\t\t元数据编码字符宽度.默认: 1\n");
 
-    fprintf(stderr, "\n\t\t1：多字节(变长)。\n");
-    fprintf(stderr, "\t\t2：二字节(定长)。\n");
-    fprintf(stderr, "\t\t4：四字节(定长)。\n");
+    fprintf(stderr, "\n\t\t1: 多字节(变长).\n");
+    fprintf(stderr, "\t\t2: 二字节(定长).\n");
+    fprintf(stderr, "\t\t4: 四字节(定长).\n");
     
-    fprintf(stderr, "\n\t\t归档：忽略。使用系统默认设置。\n");
-    fprintf(stderr, "\t\t回迁：归档时元数据编码的字符宽度。\n");
+    fprintf(stderr, "\n\t\t归档: 忽略.使用系统默认设置.\n");
+    fprintf(stderr, "\t\t回迁: 归档时元数据编码的字符宽度.\n");
 
     fprintf(stderr, "\n\t--work-space < PATH >\n");
-    fprintf(stderr, "\t\t工作路径。如果未指定，则使用当前路径。\n");
+    fprintf(stderr, "\t\t工作路径.如果未指定, 则使用当前路径.\n");
     
-    fprintf(stderr, "\n\t\t归档：从这里开始查找并读取数据。\n");
-    fprintf(stderr, "\t\t回迁：数据将回迁到这里。\n");
+    fprintf(stderr, "\n\t\t归档: 从这里开始查找并读取数据.\n");
+    fprintf(stderr, "\t\t回迁: 数据将回迁到这里.\n");
 
     fprintf(stderr, "\n\t--name < NAME [ NAME ... ] >\n");
-    fprintf(stderr, "\t\t归档包的文件名或设备名（包括路径）。注：最大支持254个。\n");
+    fprintf(stderr, "\t\t归档包的文件名或设备名(包括路径).注: 最大支持254个.\n");
 
-    fprintf(stderr, "\n\t\t归档：当存在多个归档包时，表示制作多副本。\n");
+    fprintf(stderr, "\n\t\t归档: 当存在多个归档包时, 表示制作多副本.\n");
 #if ARCHIVE_VERSION_NUMBER >= 3000000
-    fprintf(stderr, "\t\t回迁：当指定多个归档包时，表示存在分卷。\n");
+    fprintf(stderr, "\t\t回迁: 当指定多个归档包时, 表示存在分卷.\n");
 #else 
-    fprintf(stderr, "\t\t回迁：当指定多个归档包时，仅第一个包有效，其余包将被忽略。\n");
+    fprintf(stderr, "\t\t回迁: 当指定多个归档包时, 仅第一个包有效, 其余包将被忽略.\n");
 #endif //ARCHIVE_VERSION_NUMBER >= 3000000
 
     fprintf(stderr, "\n\t--file-list < FILE|DIR [ FILE|DIR ... ] >\n");
-    fprintf(stderr, "\t\t文件或目录清单。注：最大支持254个。\n");
+    fprintf(stderr, "\t\t文件或目录清单.注: 最大支持254个.\n");
 
-    fprintf(stderr, "\n\t\t归档：相对于工作路径，匹配全路径名称（区分大小写）。\n");
-    fprintf(stderr, "\t\t回迁：在归档包内，匹配全路径名称（区分大小写），并且支持通配符（“*”匹配多个连续字符；“?”匹配单个字符。）。如果未指定，则回迁归档包内的所有文件和目录。\n");
+    fprintf(stderr, "\n\t\t归档: 相对于工作路径, 匹配全路径名称(区分大小写).\n");
+    fprintf(stderr, "\t\t回迁: 在归档包内, 匹配全路径名称(区分大小写), 并且支持通配符(“*”匹配多个连续字符; “?”匹配单个字符.).如果未指定, 则回迁归档包内的所有文件和目录.\n");
 
     fprintf(stderr, "\n\t--save-fullpath\n");
-    fprintf(stderr, "\t\t保留完整路径。\n");
+    fprintf(stderr, "\t\t保留完整路径.\n");
     
-    fprintf(stderr, "\n\t\t归档：元数据将包含完整的路径。如果未指定，则归档包内的文件名将被剪除工作路径。\n");
-    fprintf(stderr, "\t\t回迁：忽略，不使用。\n");
+    fprintf(stderr, "\n\t\t归档: 元数据将包含完整的路径.如果未指定, 则归档包内的文件名将被剪除工作路径.\n");
+    fprintf(stderr, "\t\t回迁: 忽略, 不使用.\n");
 
     fprintf(stderr, "\n\t--write-filemark < FLAG >\n");
-    fprintf(stderr, "\t\t写FILEMARK标记。\n");
+    fprintf(stderr, "\t\t写FILEMARK标记.\n");
 
-    fprintf(stderr, "\n\t\t%d：在归档开始前写入。\n",ABCDK_ARCHIVE_WRITE_FM_BEFOR);
-    fprintf(stderr, "\t\t%d：在归档结束后写入。\n",ABCDK_ARCHIVE_WRITE_FM_AFTER);
+    fprintf(stderr, "\n\t\t%d: 在归档开始前写入.\n",ABCDK_ARCHIVE_WRITE_FM_BEFOR);
+    fprintf(stderr, "\t\t%d: 在归档结束后写入.\n",ABCDK_ARCHIVE_WRITE_FM_AFTER);
 
-    fprintf(stderr, "\n\t\t归档：仅对磁带有效。\n");
-    fprintf(stderr, "\t\t回迁：忽略，不使用。\n");
+    fprintf(stderr, "\n\t\t归档: 仅对磁带有效.\n");
+    fprintf(stderr, "\t\t回迁: 忽略, 不使用.\n");
 
     fprintf(stderr, "\n\t--just-list-detail\n");
-    fprintf(stderr, "\t\t仅打印匹配后的清单详情。\n");
+    fprintf(stderr, "\t\t仅打印匹配后的清单详情.\n");
         
-    fprintf(stderr, "\n\t\t归档：忽略，不使用。\n");
-    fprintf(stderr, "\t\t回迁：对工作路径没有影响。如果未指定，将直接回迁实体到工作路径内。\n");
+    fprintf(stderr, "\n\t\t归档: 忽略, 不使用.\n");
+    fprintf(stderr, "\t\t回迁: 对工作路径没有影响.如果未指定, 将直接回迁实体到工作路径内.\n");
     
 }
 
@@ -387,19 +387,19 @@ int _abcdk_archive_read_one(abcdk_archive_t *ctx)
 
     name = archive_entry_pathname(ctx->arch_entry);
 
-    /*转成本地的字符集编码。*/
+    /*转成本地的字符集编码.*/
     abcdk_iconv2(ctx->md_cst, "UTF-8", name, abcdk_cslen(name,ctx->md_cst_w) * ctx->md_cst_w, name_cp, PATH_MAX, NULL);
 
 #if 0
     fprintf(stderr, "%s\n", name_cp);
 #endif 
 
-    /*去掉冗余的路径信息。*/
+    /*去掉冗余的路径信息.*/
     abcdk_abspath(name_cp,0);
     if (name_cp[0] == 0)
         return 0;
 
-    /*如果不存在文件列表，则默认匹配成功。*/
+    /*如果不存在文件列表, 则默认匹配成功.*/
     if (ctx->file_num > 0)
     {
         for (int i = 0; i < ctx->file_num; i++)
@@ -421,7 +421,7 @@ MATCH_OK:
         chk = archive_read_data_skip(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final_error);
         }
     }
@@ -436,13 +436,13 @@ MATCH_OK:
         {
             if (access(pathfile, F_OK) == 0)
             {
-                fprintf(stderr, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
+                fprintf(stderr, "%s -> 同名文件已经存在, 跳过. \n", name_cp);
                 ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
             }
 
             lkname = archive_entry_symlink(ctx->arch_entry);
 
-            /*转成本地的字符集编码。*/
+            /*转成本地的字符集编码.*/
             abcdk_iconv2(ctx->md_cst, "UTF-8", lkname, abcdk_cslen(lkname,ctx->md_cst_w) * ctx->md_cst_w, lkname_cp, PATH_MAX, NULL);
 
             abcdk_mkdir(pathfile, 0700);
@@ -450,7 +450,7 @@ MATCH_OK:
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
-            /*不需要恢复软链接属性。*/
+            /*不需要恢复软链接属性.*/
             ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
         }
         else if (S_ISDIR(file_stat.st_mode))
@@ -466,7 +466,7 @@ MATCH_OK:
             if (chk != 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
-            ctx->fd[0] = open(pathfile, O_DIRECTORY | O_CLOEXEC, 0); //打开目录。
+            ctx->fd[0] = open(pathfile, O_DIRECTORY | O_CLOEXEC, 0); //打开目录.
             if (ctx->fd[0] < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
         }
@@ -474,12 +474,12 @@ MATCH_OK:
         {
             if (access(pathfile, F_OK) == 0)
             {
-                fprintf(stderr, "%s -> 同名文件已经存在，跳过。 \n", name_cp);
+                fprintf(stderr, "%s -> 同名文件已经存在, 跳过. \n", name_cp);
                 ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
             }
 
             abcdk_mkdir(pathfile, 0700);
-            ctx->fd[0] = abcdk_open(pathfile, 1, 0, 1); //打开文件。
+            ctx->fd[0] = abcdk_open(pathfile, 1, 0, 1); //打开文件.
             if (ctx->fd[0] < 0)
                 ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final_error);
 
@@ -489,11 +489,11 @@ MATCH_OK:
         }
         else
         {
-            fprintf(stderr, "%s -> 不支持的类型，跳过。 \n", name_cp);
+            fprintf(stderr, "%s -> 不支持的类型, 跳过. \n", name_cp);
             ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
         }
 
-        /*属性和路径缓存起来。*/
+        /*属性和路径缓存起来.*/
         _abcdk_archive_read_push_attr(ctx,name_cp,&file_stat);
     }
 
@@ -538,7 +538,7 @@ void _abcdk_archive_read_recover_attr(abcdk_archive_t *ctx)
 
         if (S_ISDIR(file_stat.st_mode))
         {
-            ctx->fd[0] = open(pathfile, O_DIRECTORY | O_CLOEXEC, 0); //打开目录。
+            ctx->fd[0] = open(pathfile, O_DIRECTORY | O_CLOEXEC, 0); //打开目录.
         }
         else if (S_ISREG((file_stat.st_mode)))
         {
@@ -546,29 +546,29 @@ void _abcdk_archive_read_recover_attr(abcdk_archive_t *ctx)
         }
         else
         {
-            /*跳过所有不支持的类型。*/
+            /*跳过所有不支持的类型.*/
             continue;
         }
 
-        /*恢复文件(目录)属性的时间。*/
+        /*恢复文件(目录)属性的时间.*/
         chk = abcdk_futimens(ctx->fd[0], &file_stat.st_atim, &file_stat.st_mtim);
         if (chk != 0)
-            fprintf(stderr, "%s -> 未能恢复文件时间，忽略。\n", name_cp);
+            fprintf(stderr, "%s -> 未能恢复文件时间, 忽略.\n", name_cp);
 
-        /*恢复文件(目录)属性的权限。*/
+        /*恢复文件(目录)属性的权限.*/
         if (file_stat.st_mode & ACCESSPERMS)
         {
             chk = fchmod(ctx->fd[0], file_stat.st_mode & ACCESSPERMS);
             if (chk != 0)
-                fprintf(stderr, "%s -> 未能恢复文件权限，忽略。\n", name_cp);
+                fprintf(stderr, "%s -> 未能恢复文件权限, 忽略.\n", name_cp);
         }
 
-        /*恢复文件(目录)所有者和所属组。*/
+        /*恢复文件(目录)所有者和所属组.*/
         if(getuid() == 0)
         {
             chk = fchown(ctx->fd[0], file_stat.st_uid, file_stat.st_gid);
             if (chk != 0)
-                fprintf(stderr, "%s -> 未能恢复文件的用户和组，忽略。\n", name_cp);
+                fprintf(stderr, "%s -> 未能恢复文件的用户和组, 忽略.\n", name_cp);
         }
     }
 
@@ -585,7 +585,7 @@ void _abcdk_archive_read_real(abcdk_archive_t *ctx)
 #endif //ARCHIVE_VERSION_NUMBER >= 3000000
     if (chk != ARCHIVE_OK)
     {
-        fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
 
@@ -594,13 +594,13 @@ void _abcdk_archive_read_real(abcdk_archive_t *ctx)
         chk = archive_read_next_header(ctx->arch_fd, &ctx->arch_entry);
         if (chk == ARCHIVE_EOF)
         {
-            /*尝试恢复属性。*/
+            /*尝试恢复属性.*/
             _abcdk_archive_read_recover_attr(ctx);
             goto final;
         }
         else if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
 
@@ -629,7 +629,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
 
     if (ctx->volumes[0] == NULL || ctx->volumes[0][0] == '\0')
     {
-        fprintf(stderr, "'--name NAME [ NAME ... ]' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--name NAME [ NAME ... ]' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -637,7 +637,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
     {
         if (access(ctx->volumes[0], R_OK) != 0)
         {
-            fprintf(stderr, "'%s' %s。\n", ctx->volumes[i], strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", ctx->volumes[i], strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -646,13 +646,13 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
     {
         if (ctx->wksp == NULL || *ctx->wksp == '\0')
         {
-            fprintf(stderr, "'--work-space PATH' 不能省略，且不能为空。\n");
+            fprintf(stderr, "'--work-space PATH' 不能省略, 且不能为空.\n");
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
         }
 
         if (access(ctx->wksp, W_OK) != 0)
         {
-            fprintf(stderr, "'%s' %s。\n", ctx->wksp, strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", ctx->wksp, strerror(errno));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
         }
     }
@@ -660,7 +660,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
     ctx->arch_fd = archive_read_new();
     if (!ctx->arch_fd)
     {
-        fprintf(stderr, "%s。\n", strerror(errno));
+        fprintf(stderr, "%s.\n", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
@@ -670,7 +670,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
         chk = archive_read_append_filter(ctx->arch_fd, abcdk_archive_find_filter(ctx->flt));
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -679,7 +679,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
         chk = archive_read_support_filter_all(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -691,7 +691,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
         chk = archive_read_set_format(ctx->arch_fd, abcdk_archive_find_format(ctx->fmt));
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -701,7 +701,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
         chk = archive_read_support_format_all(ctx->arch_fd);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -711,7 +711,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
         chk = archive_read_set_options(ctx->arch_fd, ctx->opt);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -722,7 +722,7 @@ void _abcdk_archive_read(abcdk_archive_t *ctx)
         chk = archive_read_add_passphrase(ctx->arch_fd, ctx->pwd);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -756,7 +756,7 @@ int _abcdk_archive_write_one(abcdk_archive_t *ctx,const char *file,struct stat *
 
     if (!(S_ISREG(attr->st_mode) || S_ISLNK(attr->st_mode) || S_ISDIR(attr->st_mode)))
     {
-        fprintf(stderr, "'%s' 不支持此类文件归档。\n", file);
+        fprintf(stderr, "'%s' 不支持此类文件归档.\n", file);
         return -2;
     }
 
@@ -783,11 +783,11 @@ int _abcdk_archive_write_one(abcdk_archive_t *ctx,const char *file,struct stat *
     chk = archive_write_header(ctx->arch_fd, entry);
     if (chk != ARCHIVE_OK)
     {
-        fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
 
-    /*目录和软链接没有实体。*/
+    /*目录和软链接没有实体.*/
     if (S_ISDIR(attr->st_mode) || S_ISLNK(attr->st_mode))
         ABCDK_ERRNO_AND_GOTO1(chk = 0, final);
 
@@ -795,17 +795,17 @@ int _abcdk_archive_write_one(abcdk_archive_t *ctx,const char *file,struct stat *
     fd = abcdk_open(file, 0, 0, 0);
     if (fd < 0)
     {
-        fprintf(stderr, "'%s' %s。\n", file,strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", file,strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
-    /*当文件大小大于读写缓存时启用加速器。*/
+    /*当文件大小大于读写缓存时启用加速器.*/
     if (attr->st_size > ctx->buf_size)
     {
         if (!ctx->reader)
             ctx->reader = abcdk_reader_create(ctx->buf_size);
         if (!ctx->reader)
-            fprintf(stderr, "'启动加速器失败' %s。\n", strerror(errno));
+            fprintf(stderr, "'启动加速器失败' %s.\n", strerror(errno));
 
         if(ctx->reader)
             reader_chk = abcdk_reader_start(ctx->reader, fd);
@@ -830,7 +830,7 @@ int _abcdk_archive_write_one(abcdk_archive_t *ctx,const char *file,struct stat *
         wlen = archive_write_data(ctx->arch_fd, ctx->buf, rlen);
         if (wlen != rlen)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -838,7 +838,7 @@ int _abcdk_archive_write_one(abcdk_archive_t *ctx,const char *file,struct stat *
     chk = archive_write_finish_entry(ctx->arch_fd);
     if (chk != ARCHIVE_OK)
     {
-        fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
    
@@ -877,7 +877,7 @@ void _abcdk_archive_write_real(abcdk_archive_t *ctx)
         chk = lstat(file,&attr);
         if(chk != 0)
         {
-            fprintf(stderr, "'%s' %s。\n",file,strerror(errno));
+            fprintf(stderr, "'%s' %s.\n",file,strerror(errno));
             continue;
         }
 
@@ -886,7 +886,7 @@ void _abcdk_archive_write_real(abcdk_archive_t *ctx)
             chk = abcdk_dirent_open(&dir,file);
             if(chk != 0)
             {
-                fprintf(stderr, "'%s' %s。\n",file,strerror(errno));
+                fprintf(stderr, "'%s' %s.\n",file,strerror(errno));
                 continue;
             }
         }
@@ -906,7 +906,7 @@ void _abcdk_archive_write_real(abcdk_archive_t *ctx)
         chk = lstat(file, &attr);
         if (chk != 0)
         {
-            fprintf(stderr, "'%s' %s。\n", file, strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", file, strerror(errno));
             continue;
         }
 
@@ -915,7 +915,7 @@ void _abcdk_archive_write_real(abcdk_archive_t *ctx)
             chk = abcdk_dirent_open(&dir,file);
             if(chk != 0)
             {
-                fprintf(stderr, "'%s' %s。\n",file,strerror(errno));
+                fprintf(stderr, "'%s' %s.\n",file,strerror(errno));
                 continue;
             }
         }
@@ -940,13 +940,13 @@ void _abcdk_archive_write_fm(int fidx, abcdk_archive_t *ctx)
     chk = fstat(ctx->fd[fidx],&file_stat);
     if(chk != 0)
     {
-        fprintf(stderr,"'%s'无法获取属性，忽略。\n",ctx->volumes[fidx]);
+        fprintf(stderr,"'%s'无法获取属性, 忽略.\n",ctx->volumes[fidx]);
         return;
     }
 
     if(S_ISREG(file_stat.st_mode))
     {
-        fprintf(stderr,"'%s'不支持FILEMARK，忽略。\n",ctx->volumes[fidx]);
+        fprintf(stderr,"'%s'不支持FILEMARK, 忽略.\n",ctx->volumes[fidx]);
         return;
     }   
 
@@ -957,12 +957,12 @@ void _abcdk_archive_write_fm(int fidx, abcdk_archive_t *ctx)
         {
             chk = abcdk_tape_operate(ctx->fd[fidx], MTWEOF, 1, &scsi_stat);
             if(chk != 0)
-                fprintf(stderr,"'%s'写FILEMARK失败，忽略。\n",ctx->volumes[fidx]);
+                fprintf(stderr,"'%s'写FILEMARK失败, 忽略.\n",ctx->volumes[fidx]);
         }
     }
     else
     {
-        fprintf(stderr,"'%s'无法获取设备类型，忽略。\n",ctx->volumes[fidx]);
+        fprintf(stderr,"'%s'无法获取设备类型, 忽略.\n",ctx->volumes[fidx]);
     }
 }
 
@@ -975,7 +975,7 @@ int _abcdk_archive_write_open_cb(struct archive *fd, void *opaque)
         ctx->fd[i] = abcdk_open(ctx->volumes[i], 1, 0, 1);
         if (ctx->fd[i] < 0)
         {
-            fprintf(stderr, "'%s' %s。\n", ctx->volumes[i], strerror(errno));
+            fprintf(stderr, "'%s' %s.\n", ctx->volumes[i], strerror(errno));
             ABCDK_ERRNO_AND_RETURN1(ctx->errcode = errno, ARCHIVE_FAILED);
         }
 
@@ -999,7 +999,7 @@ ssize_t _abcdk_archive_write_write_cb(struct archive *fd, void *opaque, const vo
         wall += ((wlen > 0) ? wlen : 0);
     }
     
-    /*任何一路写失败就报错。*/
+    /*任何一路写失败就报错.*/
     return (((wall / ctx->volume_num) == _length)?_length:-1);
 }
 
@@ -1038,39 +1038,39 @@ void _abcdk_archive_write(abcdk_archive_t *ctx)
 
     if (ctx->volumes[0] == NULL || ctx->volumes[0][0] == '\0')
     {
-        fprintf(stderr, "'--volume NAME [ NAME-1 NAME-2 ... ]' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--volume NAME [ NAME-1 NAME-2 ... ]' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (ctx->files[0] == NULL || *ctx->files[0] == '\0')
     {
-        fprintf(stderr, "'--file-list FILE|DIR [ FILE|DIR ... ]' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--file-list FILE|DIR [ FILE|DIR ... ]' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (ctx->wksp == NULL || *ctx->wksp == '\0')
     {
-        fprintf(stderr, "'--work-space PATH' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--work-space PATH' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (access(ctx->wksp, R_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。\n", ctx->wksp, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", ctx->wksp, strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
     ctx->arch_fd = archive_write_new();
     if (!ctx->arch_fd)
     {
-        fprintf(stderr, "%s。\n", strerror(errno));
+        fprintf(stderr, "%s.\n", strerror(errno));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
     }
 
     chk = archive_write_set_bytes_per_block(ctx->arch_fd, ctx->blf*ctx->blk);
     if (chk != ARCHIVE_OK)
     {
-        fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
     
@@ -1080,7 +1080,7 @@ void _abcdk_archive_write(abcdk_archive_t *ctx)
         chk = archive_write_add_filter(ctx->arch_fd, abcdk_archive_find_filter(ctx->flt));
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -1091,13 +1091,13 @@ void _abcdk_archive_write(abcdk_archive_t *ctx)
         chk = archive_write_set_format(ctx->arch_fd, abcdk_archive_find_format(ctx->fmt));
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
     else
     {
-        fprintf(stderr, "'--format NUMBER' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--format NUMBER' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 22, final);
     }
     
@@ -1107,7 +1107,7 @@ void _abcdk_archive_write(abcdk_archive_t *ctx)
         chk = archive_write_set_options(ctx->arch_fd, ctx->opt);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -1118,7 +1118,7 @@ void _abcdk_archive_write(abcdk_archive_t *ctx)
         chk = archive_write_set_passphrase(ctx->arch_fd, ctx->pwd);
         if (chk != ARCHIVE_OK)
         {
-            fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+            fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
             ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
         }
     }
@@ -1127,7 +1127,7 @@ void _abcdk_archive_write(abcdk_archive_t *ctx)
     chk = archive_write_open(ctx->arch_fd,ctx,_abcdk_archive_write_open_cb,_abcdk_archive_write_write_cb,_abcdk_archive_write_close_cb);
     if (chk != ARCHIVE_OK)
     {
-        fprintf(stderr, "%s。\n", archive_error_string(ctx->arch_fd));
+        fprintf(stderr, "%s.\n", archive_error_string(ctx->arch_fd));
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = archive_errno(ctx->arch_fd), final);
     }
     
@@ -1178,7 +1178,7 @@ void _abcdk_archive_work(abcdk_archive_t *ctx)
     }
     else
     {
-        fprintf(stderr, "尚未支持。\n");
+        fprintf(stderr, "尚未支持.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -1209,7 +1209,7 @@ int abcdk_tool_archive(abcdk_option_t *args)
 
 #else // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)
 
-    fprintf(stderr, "当前构建版本未包含此工具。\n");
+    fprintf(stderr, "当前构建版本未包含此工具.\n");
     return EPERM;
 
 #endif // defined(ARCHIVE_H_INCLUDED) && defined(ARCHIVE_ENTRY_H_INCLUDED)

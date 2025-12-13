@@ -88,19 +88,19 @@ int abcdk_thread_setaffinity(pthread_t tid, int cpus[])
 
     for (int i = 0; i < nps; i++)
     {
-        /*-1 结束。*/
+        /*-1 结束.*/
         if (cpus[i] < 0)
             break;
 
-        /*检查ID范围。*/
+        /*检查ID范围.*/
         if (cpus[i] >= nps)
             continue;
 
-        /*检查是否已存在。*/
+        /*检查是否已存在.*/
         if(CPU_ISSET(cpus[i], &mark))
             continue;
 
-        /*记录。*/
+        /*记录.*/
         CPU_SET(cpus[i], &mark);
     }
 

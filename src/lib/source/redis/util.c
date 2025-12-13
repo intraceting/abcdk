@@ -9,7 +9,7 @@
 void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)
 {
 #ifndef HAVE_HIREDIS
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具."));
     return ;
 #else //#ifndef HAVE_HIREDIS
     static char *str_type[]={"","STRING","ARRAY","INTEGER","NIL","STATUS","ERROR"};
@@ -40,7 +40,7 @@ void abcdk_redis_reply_dump(FILE *fp, redisReply *reply)
 void abcdk_redis_disconnect(redisContext **ctx)
 {
 #ifndef HAVE_HIREDIS
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具."));
     return ;
 #else //#ifndef HAVE_HIREDIS
     redisContext *ctx_p = NULL;
@@ -58,7 +58,7 @@ void abcdk_redis_disconnect(redisContext **ctx)
 redisContext *abcdk_redis_connect(const char *server, uint16_t port, time_t timeout)
 {
 #ifndef HAVE_HIREDIS
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具."));
     return NULL;
 #else //#ifndef HAVE_HIREDIS
     struct timeval tv;
@@ -75,7 +75,7 @@ redisContext *abcdk_redis_connect(const char *server, uint16_t port, time_t time
 int abcdk_redis_auth(redisContext *ctx, const char *auth)
 {
 #ifndef HAVE_HIREDIS
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具."));
     return -1;
 #else //#ifndef HAVE_HIREDIS
     redisReply *reply = NULL;
@@ -98,7 +98,7 @@ int abcdk_redis_auth(redisContext *ctx, const char *auth)
 int abcdk_redis_set_auth(redisContext *ctx,const char *auth)
 {
 #ifndef HAVE_HIREDIS
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具."));
     return -1;
 #else //#ifndef HAVE_HIREDIS
     redisReply *reply = NULL;
@@ -121,7 +121,7 @@ int abcdk_redis_set_auth(redisContext *ctx,const char *auth)
 int abcdk_redis_get_auth(redisContext *ctx,char auth[128])
 {
 #ifndef HAVE_HIREDIS
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含REDIS工具."));
     return -1;
 #else //#ifndef HAVE_HIREDIS
     redisReply *reply = NULL;

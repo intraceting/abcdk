@@ -85,24 +85,24 @@ void _abcdk_m4j_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\tMP4视音频提取器，仅支持H264和ACC。\n");
+    fprintf(stderr, "\n\tMP4视音频提取器，仅支持H264和ACC.\n");
 
     fprintf(stderr, "\n选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--file < FILE >\n");
-    fprintf(stderr, "\t\t文件(包括路径)。\n");
+    fprintf(stderr, "\t\t文件(包括路径).\n");
 
     fprintf(stderr, "\n\t--save < PATH >\n");
-    fprintf(stderr, "\t\t保存路径。默认：./\n");
+    fprintf(stderr, "\t\t保存路径.默认: ./\n");
 
     fprintf(stderr, "\n\t--ignore-video\n");
-    fprintf(stderr, "\t\t忽略视频。默认：提取\n");
+    fprintf(stderr, "\t\t忽略视频.默认: 提取\n");
 
     fprintf(stderr, "\n\t--ignore-audio\n");
-    fprintf(stderr, "\t\t忽略音频。默认：提取\n");
+    fprintf(stderr, "\t\t忽略音频.默认: 提取\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -115,7 +115,7 @@ int _abcdk_m4j_aac_decode_extradata(abcdk_m4j_t *ctx, uint8_t *data, int size)
         ctx->adts_hdr.profile = 32 + abcdk_bloom_read_number(data,size,5,6);
         ctx->adts_hdr.sample_rate_index = abcdk_bloom_read_number(data,size,11,4);
         if(ctx->adts_hdr.sample_rate_index == 15)
-            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15+24,4); //跳过24bits自定义的采样率。
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15+24,4); //跳过24bits自定义的采样率.
         else
             ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,15,4); 
     }
@@ -123,12 +123,12 @@ int _abcdk_m4j_aac_decode_extradata(abcdk_m4j_t *ctx, uint8_t *data, int size)
     {
         ctx->adts_hdr.sample_rate_index = abcdk_bloom_read_number(data,size,5,4);
         if(ctx->adts_hdr.sample_rate_index == 15)
-            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9+24,4); //跳过24bits自定义的采样率。
+            ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9+24,4); //跳过24bits自定义的采样率.
         else
             ctx->adts_hdr.channel_cfg = abcdk_bloom_read_number(data,size,9,4); 
     }
 
-    /*填充其它头部字段。*/
+    /*填充其它头部字段.*/
     ctx->adts_hdr.syncword = 0xfff;
     ctx->adts_hdr.id = 0;
     ctx->adts_hdr.protection_absent = 1;
@@ -147,7 +147,7 @@ void _abcdk_m4j_dump_h264(abcdk_m4j_t *ctx)
 
     if (!ctx->avcc_p)
     {
-        fprintf(stderr, "H264描述信息不存在，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "H264描述信息不存在，忽略当前视频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -156,7 +156,7 @@ void _abcdk_m4j_dump_h264(abcdk_m4j_t *ctx)
 
     abcdk_h264_extradata_deserialize(ctx->avcc->data.avcc.extradata->pptrs[0],ctx->avcc->data.avcc.extradata->sizes[0],&exdata);
 
-    /*比真实长度少一个字节。*/
+    /*比真实长度少一个字节.*/
     sc_len = exdata.nal_length_size + 1;
 
     if (sc_len == 3)
@@ -165,18 +165,18 @@ void _abcdk_m4j_dump_h264(abcdk_m4j_t *ctx)
         memcpy(sc, "\0\0\0\1", 4);
     else
     {
-        fprintf(stderr, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "H264仅支持001或0001格式起始码，忽略当前视频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    /*构造文件名。*/
+    /*构造文件名.*/
     memset(ctx->out_file, 0, PATH_MAX);
     sprintf(ctx->out_file, "%s/%s-%u.h264", ctx->save, ctx->in_name, ctx->tkhd->data.tkhd.trackid);
 
     if (access(ctx->out_file, F_OK) == 0)
     {
 
-        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u)。\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u).\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -187,8 +187,8 @@ void _abcdk_m4j_dump_h264(abcdk_m4j_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
     /*
-     * 1：在流的头部写入SPS，PPS等。
-     * 2：正常的做法是在每个关键帧前都写一次，但会增加流的体积。
+     * 1: 在流的头部写入SPS，PPS等.
+     * 2: 正常的做法是在每个关键帧前都写一次，但会增加流的体积.
     */
     abcdk_write(ctx->out_fd, sc, sc_len);
     abcdk_write(ctx->out_fd, exdata.sps->pptrs[0], exdata.sps->sizes[0]);
@@ -297,7 +297,7 @@ void _abcdk_m4j_dump_hevc(abcdk_m4j_t *ctx)
 
     if (!ctx->hvcc_p)
     {
-        fprintf(stderr, "HEVC描述信息不存在，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "HEVC描述信息不存在，忽略当前视频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -306,7 +306,7 @@ void _abcdk_m4j_dump_hevc(abcdk_m4j_t *ctx)
 
     abcdk_hevc_extradata_deserialize(ctx->hvcc->data.hvcc.extradata->pptrs[0],ctx->hvcc->data.hvcc.extradata->sizes[0],&exdata);
 
-    /*比真实长度少一个字节。*/
+    /*比真实长度少一个字节.*/
     sc_len = exdata.nal_length_size + 1;
 
     if (sc_len == 3)
@@ -315,18 +315,18 @@ void _abcdk_m4j_dump_hevc(abcdk_m4j_t *ctx)
         memcpy(sc, "\0\0\0\1", 4);
     else
     {
-        fprintf(stderr, "HEVC仅支持001或0001格式起始码，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "HEVC仅支持001或0001格式起始码，忽略当前视频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
-    /*构造文件名。*/
+    /*构造文件名.*/
     memset(ctx->out_file, 0, PATH_MAX);
     sprintf(ctx->out_file, "%s/%s-%u.hevc", ctx->save, ctx->in_name, ctx->tkhd->data.tkhd.trackid);
 
     if (access(ctx->out_file, F_OK) == 0)
     {
 
-        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u)。\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前视频ID(%u).\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -337,8 +337,8 @@ void _abcdk_m4j_dump_hevc(abcdk_m4j_t *ctx)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
     /*
-     * 1：在流的头部写入VPS，SPS，PPS，SEI等。
-     * 2：正常的做法是在每个关键帧前都写一次，但会增加流的体积。
+     * 1: 在流的头部写入VPS，SPS，PPS，SEI等.
+     * 2: 正常的做法是在每个关键帧前都写一次，但会增加流的体积.
     */
     for (int j = 0; j < exdata.nal_array_num; j++)
     {
@@ -447,7 +447,7 @@ void _abcdk_m4j_dump_acc(abcdk_m4j_t *ctx)
 
     if (!ctx->esds_p)
     {
-        fprintf(stderr, "AAC描述信息不存在，忽略当前音频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "AAC描述信息不存在，忽略当前音频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -459,7 +459,7 @@ void _abcdk_m4j_dump_acc(abcdk_m4j_t *ctx)
 
     if (access(ctx->out_file, F_OK) == 0)
     {
-        fprintf(stderr, "'%s' 已经存在，忽略当前音频ID(%u)。\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "'%s' 已经存在，忽略当前音频ID(%u).\n",ctx->out_file,ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = 0, final);
     }
 
@@ -469,7 +469,7 @@ void _abcdk_m4j_dump_acc(abcdk_m4j_t *ctx)
     if (ctx->out_fd < 0)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
-    /*解析ADTS信息。*/
+    /*解析ADTS信息.*/
 #if 0
     _abcdk_m4j_aac_decode_extradata(ctx,ctx->esds->data.esds.dec_sp_info.extradata->pptrs[0],
                                    ctx->esds->data.esds.dec_sp_info.extradata->sizes[0]);
@@ -523,10 +523,10 @@ traf_next:
 
                 abcdk_mp4_read(ctx->in_fd, ctx->buf, size);
 
-                /*每帧都要加7字节的帧头。*/
+                /*每帧都要加7字节的帧头.*/
                 char hdr[7] = {0};
 
-                ctx->adts_hdr.aac_frame_length = 7 + size; // size是数据帧的大小。
+                ctx->adts_hdr.aac_frame_length = 7 + size; // size是数据帧的大小.
                 abcdk_aac_adts_header_serialize(&ctx->adts_hdr, hdr, 7);
 
                 abcdk_write(ctx->out_fd, hdr, 7);
@@ -568,7 +568,7 @@ moof_next:
 
             char hdr[7] = {0};
                     
-            ctx->adts_hdr.aac_frame_length = 7+size;//size是数据帧的大小。
+            ctx->adts_hdr.aac_frame_length = 7+size;//size是数据帧的大小.
             abcdk_aac_adts_header_serialize(&ctx->adts_hdr,hdr,7);
 
             abcdk_write(ctx->out_fd, hdr, 7);
@@ -590,7 +590,7 @@ void _abcdk_m4j_dump_video(abcdk_m4j_t *ctx)
 
     if (!ctx->avc1_p && !ctx->hev1_p)
     {
-        fprintf(stderr, "仅支持H264或HEVC编码提取，忽略当前视频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "仅支持H264或HEVC编码提取，忽略当前视频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = 0);
     }
 
@@ -606,7 +606,7 @@ void _abcdk_m4j_dump_audio(abcdk_m4j_t *ctx)
 
     if (!ctx->mp4a_p)
     {
-        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u)。\n", ctx->tkhd->data.tkhd.trackid);
+        fprintf(stderr, "仅支持AAC编码提取，忽略当前音频ID(%u).\n", ctx->tkhd->data.tkhd.trackid);
         ABCDK_ERRNO_AND_RETURN0(ctx->errcode = 0);
     }
 
@@ -622,7 +622,7 @@ void _abcdk_m4j_dump(abcdk_m4j_t *ctx)
     if(!ctx->moov_p)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = ESPIPE, final);
 
-    /*查找mvex，用于区别MP4和FMP4。*/
+    /*查找mvex，用于区别MP4和FMP4.*/
     ctx->mvex_p = abcdk_mp4_find2(ctx->moov_p,ABCDK_MP4_ATOM_TYPE_MVEX,1,1);
 
     for (int i = 0; i < 1000; i++)
@@ -651,7 +651,7 @@ void _abcdk_m4j_dump(abcdk_m4j_t *ctx)
             _abcdk_m4j_dump_audio(ctx);
         }
 
-        /*有错误发生，提前终止。*/
+        /*有错误发生，提前终止.*/
         if(ctx->errcode)
             break;
     }
@@ -673,7 +673,7 @@ void _abcdk_m4j_work(abcdk_m4j_t *ctx)
 
     if (!ctx->file || !*ctx->file)
     {
-        fprintf(stderr, "'--file FILE' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--file FILE' 不能省略，且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -685,7 +685,7 @@ void _abcdk_m4j_work(abcdk_m4j_t *ctx)
 
     if (!ctx->save || !*ctx->save)
     {
-        fprintf(stderr, "'--save PATH' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--save PATH' 不能省略，且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
@@ -699,7 +699,7 @@ void _abcdk_m4j_work(abcdk_m4j_t *ctx)
     if(!ctx->out_file)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
 
-    ctx->buf_size = 16 * 1024 * 1024; //希望够用。
+    ctx->buf_size = 16 * 1024 * 1024; //希望够用.
     ctx->buf = abcdk_heap_alloc(ctx->buf_size);
     if(!ctx->buf)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = errno, final);
@@ -714,7 +714,7 @@ void _abcdk_m4j_work(abcdk_m4j_t *ctx)
 
     if(!abcdk_mp4_find2(ctx->doc,ABCDK_MP4_ATOM_TYPE_FTYP,1,1))
     {
-        fprintf(stderr, "'%s' 可能不是MP4文件。\n", ctx->file);
+        fprintf(stderr, "'%s' 可能不是MP4文件.\n", ctx->file);
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM, final);
     }
 

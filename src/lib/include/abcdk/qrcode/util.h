@@ -15,19 +15,19 @@
 __BEGIN_DECLS
 
 /**
- * 编码。
+ * 编码.
  * 
- * @note 编码使用Y8格式。
+ * @note 编码使用Y8格式.
  * 
 */
 abcdk_object_t *abcdk_qrcode_encode(const char *data, size_t size, int level, int scale, int margin);
 
 /**
- * 编码并保存。
+ * 编码并保存.
  * 
- * @note 保存为BMP格式。
+ * @note 保存为BMP格式.
  * 
- * @return 0 成功，-1 失败。
+ * @return 0 成功, -1 失败.
 */
 int abcdk_qrcode_encode_save(const char *dst, const char *data, size_t size, int level, int scale, int margin);
 

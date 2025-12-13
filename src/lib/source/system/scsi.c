@@ -25,7 +25,7 @@ int _abcdk_scsi_get_type(const char* path,uint32_t *type)
     if (chk == 0)
         return -1;
 
-    /*字符串转数值。*/
+    /*字符串转数值.*/
     *type = atoi(buf);
 
     return 0;
@@ -157,16 +157,16 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
         if (chk != 0)
             break;
 
-        /*暂存设备名字。*/
+        /*暂存设备名字.*/
         memset(devname, 0, NAME_MAX);
         abcdk_dirdir(devname, "/dev/");
         abcdk_basename(devname + strlen(devname), buf);
 
-        /*检查/dev/下是否存在。*/
+        /*检查/dev/下是否存在.*/
         if (access(devname, F_OK) != 0)
             continue;
 
-        /*获取设备号(主，次)。*/
+        /*获取设备号(主, 次).*/
         major = -1, minor = -1;
         memset(buf2, 0, PATH_MAX);
 
@@ -185,13 +185,13 @@ int _abcdk_scsi_get_devname(const char *path,int type, char devname[NAME_MAX])
             abcdk_dirdir(buf2, "defined");
             abcdk_load(buf2,buf3,39,0);
 
-            /*只查找已经定义的设备。*/
+            /*只查找已经定义的设备.*/
             deflag = 0;
             sscanf(buf3, "%d", &deflag);
             if (deflag == 0)
                 continue;
 
-            /*次设备号 >= 128，关闭设备后不执行自动倒带。*/
+            /*次设备号 >= 128, 关闭设备后不执行自动倒带.*/
             if (minor >= 128)
                 break;
         }
@@ -244,12 +244,12 @@ int _abcdk_scsi_get_generic(const char *path, char generic[NAME_MAX])
         if (chk != 0)
             break;
 
-        /*暂存设备名字。*/
+        /*暂存设备名字.*/
         memset(generic, 0, NAME_MAX);
         abcdk_dirdir(generic, "/dev/");
         abcdk_basename(generic + strlen(generic), buf);
 
-        /*检查/dev/下是否存在。*/
+        /*检查/dev/下是否存在.*/
         if (access(generic, F_OK) != 0)
             continue;
     }
@@ -290,7 +290,7 @@ int abcdk_scsi_get_info(const char *path, abcdk_scsi_info_t *info)
     _abcdk_scsi_get_devname(path, info->type, info->devname);
     _abcdk_scsi_get_generic(path, info->generic);
 
-    /*尝试通过设备获取，但需要具备相应的权限。*/
+    /*尝试通过设备获取, 但需要具备相应的权限.*/
     if(info->serial[0] == '\0')
         _abcdk_scsi_get_serial_from_dev(info->generic,info->serial);
 
@@ -316,7 +316,7 @@ void abcdk_scsi_fetch(abcdk_tree_t *list)
     if (chk != 0)
         goto final;
 
-    /*遍历目录。*/
+    /*遍历目录.*/
     while (1)
     {
         memset(path, 0, PATH_MAX);
@@ -324,7 +324,7 @@ void abcdk_scsi_fetch(abcdk_tree_t *list)
         if (chk != 0)
             break;
 
-        /*如果无法识别类型则跳过。*/
+        /*如果无法识别类型则跳过.*/
         chk = _abcdk_scsi_get_type(path,&type);
         if(chk != 0)
             continue;
@@ -336,9 +336,9 @@ void abcdk_scsi_fetch(abcdk_tree_t *list)
         dev_p = (abcdk_scsi_info_t*)dev->obj->pptrs[0];
         abcdk_tree_insert2(list,dev,0);
 
-        /*从路径中分离bus并保存。*/
+        /*从路径中分离bus并保存.*/
         abcdk_basename(dev_p->bus,path);
-        /*提取其它字段并保存。*/
+        /*提取其它字段并保存.*/
         abcdk_scsi_get_info(path,dev_p);
     }
 
@@ -367,7 +367,7 @@ int _abcdk_scsi_find(abcdk_tree_t *list, abcdk_tree_t *node)
     abcdk_tree_t *p;
     abcdk_scsi_info_t *dev_p, *dev_q;
 
-    /*链表为空，直接返回“未找到”。*/
+    /*链表为空, 直接返回“未找到”.*/
     if (!list)
         return 0;
 
@@ -405,8 +405,8 @@ void _abcdk_scsi_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t
     diff_p = *diff;
 
     /*
-     * add == 1 : 从旧的中查找新的。
-     * del == 0 ; 从新的中查找旧的。
+     * add == 1 : 从旧的中查找新的.
+     * del == 0 ; 从新的中查找旧的.
     */
    
     p = abcdk_tree_child((add ? new_list : old_list), 1);
@@ -414,7 +414,7 @@ void _abcdk_scsi_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t
     {
         if (!_abcdk_scsi_find((add ? old_list : new_list), p))
         {
-            tmp = abcdk_tree_alloc(abcdk_object_refer(p->obj));//增加引用计数。
+            tmp = abcdk_tree_alloc(abcdk_object_refer(p->obj));//增加引用计数.
             if (!tmp)
                 return;
 
@@ -424,7 +424,7 @@ void _abcdk_scsi_diff(abcdk_tree_t *old_list,abcdk_tree_t *new_list,abcdk_tree_t
         p = abcdk_tree_sibling(p, 0);
     }
 
-    /*如果未发生变化，删除差异链表。*/
+    /*如果未发生变化, 删除差异链表.*/
     if(!abcdk_tree_child(diff_p,1))
         abcdk_tree_free(diff);
 
@@ -443,16 +443,16 @@ void _abcdk_scsi_check_ok(abcdk_tree_t *list)
 
         if (dev_p->devname[0] == '\0' || dev_p->generic[0] == '\0')
         {
-            /*下一个节点。*/
+            /*下一个节点.*/
             p = abcdk_tree_sibling(tmp = p, 0);
 
-            /*删除不完成的节点。*/
+            /*删除不完成的节点.*/
             abcdk_tree_unlink(tmp);
             abcdk_tree_free(&tmp);
         }
         else 
         {
-            /*下一个节点。*/
+            /*下一个节点.*/
             p = abcdk_tree_sibling(p, 0);
         }
     }

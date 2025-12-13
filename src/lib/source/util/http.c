@@ -6,7 +6,7 @@
  */
 #include "abcdk/util/http.h"
 
-/** HTTP状态码。*/
+/** HTTP状态码.*/
 static struct _abcdk_http_status_dict
 {
     uint32_t code;
@@ -76,7 +76,7 @@ const char *abcdk_http_status_desc(uint32_t code)
     return NULL;
 }
 
-/** HTTP内容类型。*/
+/** HTTP内容类型.*/
 static struct _abcdk_http_content_type_dict
 {
     const char *ext;
@@ -595,7 +595,7 @@ abcdk_object_t *abcdk_http_chunked_copyfrom(const void *data, size_t size)
     memcpy(obj->pstrs[0] + pos, "\r\n", 2);
     pos += 2;
 
-    /*修正格式化后的数据长度。*/
+    /*修正格式化后的数据长度.*/
     obj->sizes[0] = pos;
 
     return obj;
@@ -619,26 +619,26 @@ abcdk_object_t *abcdk_http_chunked_vformat(int max, const char *fmt, va_list ap)
     if (!obj)
         return NULL;
 
-    /*头部长度。*/
+    /*头部长度.*/
     pos += 18;
 
-    /*先格式化数据，计算出数据长度。*/
+    /*先格式化数据, 计算出数据长度.*/
     chk = vsprintf(obj->pstrs[0] + pos, fmt, ap);
     if (chk <= 0)
         goto final_error;
 
-    /*格式化长度，填充到块头部。*/
+    /*格式化长度, 填充到块头部.*/
     sprintf(hdr, "%-16x\r\n", chk);
     memcpy(obj->pstrs[0], hdr, 18);
 
-    /*累加长度。*/
+    /*累加长度.*/
     pos += chk;
 
-    /*添加尾部。*/
+    /*添加尾部.*/
     memcpy(obj->pstrs[0] + pos, "\r\n", 2);
     pos += 2;
 
-    /*修正格式化后的数据长度。*/
+    /*修正格式化后的数据长度.*/
     obj->sizes[0] = pos;
 
     return obj;
@@ -673,7 +673,7 @@ void abcdk_http_parse_auth(abcdk_option_t **opt,const char *auth)
 
     assert(opt != NULL && auth != NULL);
 
-    /*可以需要创建新的。*/
+    /*可以需要创建新的.*/
     if (*opt == NULL)
         opt_p = *opt = abcdk_option_alloc("");
     else

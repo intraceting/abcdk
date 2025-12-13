@@ -16,65 +16,65 @@
 __BEGIN_DECLS
 
 /**
- * SCSI设备信息。
+ * SCSI设备信息.
 */
 typedef struct _abcdk_scsi_info
 {
-    /** 总线。*/
+    /** 总线.*/
     char bus[NAME_MAX];
 
-    /** 设备类型。*/
+    /** 设备类型.*/
     uint32_t type;
 
-    /** 序列号。*/
+    /** 序列号.*/
     char serial[NAME_MAX];
 
-    /** 生产商。*/
+    /** 生产商.*/
     char vendor[NAME_MAX];
 
-    /** 型号。*/
+    /** 型号.*/
     char model[NAME_MAX];
 
-    /** 修订。*/
+    /** 修订.*/
     char revision[NAME_MAX];
 
-    /** 设备名称(可不能存在)。*/
+    /** 设备名称(可不能存在).*/
     char devname[NAME_MAX];
 
-    /** 设备名称(可不能存在)。*/
+    /** 设备名称(可不能存在).*/
     char generic[NAME_MAX];
 
 }abcdk_scsi_info_t;
 
 /**
- * 获取SCSI设备信息。
+ * 获取SCSI设备信息.
  * 
- * @note 不包括bus字段。
+ * @note 不包括bus字段.
  * 
- * @return 0 成功，-1 失败(可能不是SCSI设备)。
+ * @return 0 成功, -1 失败(可能不是SCSI设备).
 */
 int abcdk_scsi_get_info(const char *path,abcdk_scsi_info_t *info);
 
 /**
- * 枚举SCSI设备。
+ * 枚举SCSI设备.
 */
 ABCDK_DEPRECATED
 void abcdk_scsi_fetch(abcdk_tree_t *list);
 
 /**
- * 枚举SCSI设备。
+ * 枚举SCSI设备.
 */
 void abcdk_scsi_fetch2(abcdk_tree_t **list);
 
 /**
- * 观察SCSI设备变化。
+ * 观察SCSI设备变化.
 */
 void abcdk_scsi_watch(abcdk_tree_t **snapshot, abcdk_tree_t **add, abcdk_tree_t **del);
 
 /**
- * 格式化。
+ * 格式化.
  * 
- * @param [in] fmt 格式{TEXT(1)，XML(2)，JSON(3)}。
+ * @param [in] fmt 格式{TEXT(1), XML(2), JSON(3)}.
 */
 void abcdk_scsi_format(abcdk_tree_t *list, int fmt, FILE *out);
 

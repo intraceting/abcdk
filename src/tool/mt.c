@@ -27,43 +27,43 @@ typedef struct _abcdk_mt
 /**/
 enum _abcdk_mt_constant
 {
-    /** 倒带。*/
+    /** 倒带.*/
     ABCDK_MT_REWIND = 1,
 #define ABCDK_MT_REWIND ABCDK_MT_REWIND
 
-    /** 加载。*/
+    /** 加载.*/
     ABCDK_MT_LOAD = 2,
 #define ABCDK_MT_LOAD ABCDK_MT_LOAD
 
-    /** 卸载。*/
+    /** 卸载.*/
     ABCDK_MT_UNLOAD = 3,
 #define ABCDK_MT_UNLOAD ABCDK_MT_UNLOAD
 
-    /** 加锁。*/
+    /** 加锁.*/
     ABCDK_MT_LOCK = 4,
 #define ABCDK_MT_LOCK ABCDK_MT_LOCK
 
-    /** 解锁。*/
+    /** 解锁.*/
     ABCDK_MT_UNLOCK = 5,
 #define ABCDK_MT_UNLOCK ABCDK_MT_UNLOCK
 
-    /** 读取磁头位置(逻辑)。*/
+    /** 读取磁头位置(逻辑).*/
     ABCDK_MT_TELL_POS = 6,
 #define ABCDK_MT_TELL_POS ABCDK_MT_TELL_POS
 
-    /** 移动磁头位置(逻辑)。*/
+    /** 移动磁头位置(逻辑).*/
     ABCDK_MT_SEEK_POS = 7,
 #define ABCDK_MT_SEEK_POS ABCDK_MT_SEEK_POS
 
-    /** 写文件标记(filemark)。*/
+    /** 写文件标记(filemark).*/
     ABCDK_MT_WRITE_FILEMARK = 8,
 #define ABCDK_MT_WRITE_FILEMARK ABCDK_MT_WRITE_FILEMARK
 
-    /** 读取MAM信息。*/
+    /** 读取MAM信息.*/
     ABCDK_MT_READ_MAM = 9,
 #define ABCDK_MT_READ_MAM ABCDK_MT_READ_MAM
 
-    /** 写入MAM信息。*/
+    /** 写入MAM信息.*/
     ABCDK_MT_WRITE_MAM = 10
 #define ABCDK_MT_WRITE_MAM ABCDK_MT_WRITE_MAM
 
@@ -73,58 +73,58 @@ void _abcdk_mt_print_usage(abcdk_option_t *args, int only_version)
 {
     fprintf(stderr, "\n描述:\n");
 
-    fprintf(stderr, "\n\t简单的磁带驱动器和磁带工具。\n");
+    fprintf(stderr, "\n\t简单的磁带驱动器和磁带工具.\n");
 
     fprintf(stderr, "\n通用选项:\n");
 
     fprintf(stderr, "\n\t--help\n");
-    fprintf(stderr, "\t\t显示帮助信息。\n");
+    fprintf(stderr, "\t\t显示帮助信息.\n");
 
     fprintf(stderr, "\n\t--dev < DEVICE >\n");
-    fprintf(stderr, "\t\t驱动器设备文件(包括路径)。\n");
+    fprintf(stderr, "\t\t驱动器设备文件(包括路径).\n");
 
     fprintf(stderr, "\n\t--cmd < NUMBER >\n");
-    fprintf(stderr, "\t\t命令。 默认: %d\n", ABCDK_MT_READ_MAM);
+    fprintf(stderr, "\t\t命令. 默认: %d\n", ABCDK_MT_READ_MAM);
 
-    fprintf(stderr, "\n\t\t%d: 倒带。\n", ABCDK_MT_REWIND);
-    fprintf(stderr, "\t\t%d: 加载磁带。\n", ABCDK_MT_LOAD);
-    fprintf(stderr, "\t\t%d: 卸载磁带。\n", ABCDK_MT_UNLOAD);
-    fprintf(stderr, "\t\t%d: 仓门加锁(禁止磁带被移出驱动器)。\n", ABCDK_MT_LOCK);
-    fprintf(stderr, "\t\t%d: 仓门解锁(允许磁带被移出驱动器)。\n", ABCDK_MT_UNLOCK);
-    fprintf(stderr, "\t\t%d: 读取磁头位置(逻辑)。\n", ABCDK_MT_TELL_POS);
-    fprintf(stderr, "\t\t%d: 移动磁头位置(逻辑)。\n", ABCDK_MT_SEEK_POS);
-    fprintf(stderr, "\t\t%d: 写入文件结束标记(filemark)。\n", ABCDK_MT_WRITE_FILEMARK);
-    fprintf(stderr, "\t\t%d: 读取MAM信息。\n", ABCDK_MT_READ_MAM);
-    fprintf(stderr, "\t\t%d: 写入MAM信息。\n", ABCDK_MT_WRITE_MAM);
+    fprintf(stderr, "\n\t\t%d: 倒带.\n", ABCDK_MT_REWIND);
+    fprintf(stderr, "\t\t%d: 加载磁带.\n", ABCDK_MT_LOAD);
+    fprintf(stderr, "\t\t%d: 卸载磁带.\n", ABCDK_MT_UNLOAD);
+    fprintf(stderr, "\t\t%d: 仓门加锁(禁止磁带被移出驱动器).\n", ABCDK_MT_LOCK);
+    fprintf(stderr, "\t\t%d: 仓门解锁(允许磁带被移出驱动器).\n", ABCDK_MT_UNLOCK);
+    fprintf(stderr, "\t\t%d: 读取磁头位置(逻辑).\n", ABCDK_MT_TELL_POS);
+    fprintf(stderr, "\t\t%d: 移动磁头位置(逻辑).\n", ABCDK_MT_SEEK_POS);
+    fprintf(stderr, "\t\t%d: 写入文件结束标记(filemark).\n", ABCDK_MT_WRITE_FILEMARK);
+    fprintf(stderr, "\t\t%d: 读取MAM信息.\n", ABCDK_MT_READ_MAM);
+    fprintf(stderr, "\t\t%d: 写入MAM信息.\n", ABCDK_MT_WRITE_MAM);
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDK_MT_SEEK_POS);
 
     fprintf(stderr, "\n\t--part < NUMBER >\n");
-    fprintf(stderr, "\t\t分区号。 默认: 0\n");
+    fprintf(stderr, "\t\t分区号. 默认: 0\n");
 
     fprintf(stderr, "\n\t--type < NUMBER >\n");
-    fprintf(stderr, "\t\t索引类型。默认: 0\n");
+    fprintf(stderr, "\t\t索引类型.默认: 0\n");
 
-    fprintf(stderr, "\n\t\t0: 逻辑块。\n");
-    fprintf(stderr, "\t\t1: 逻辑文件。\n");
+    fprintf(stderr, "\n\t\t0: 逻辑块.\n");
+    fprintf(stderr, "\t\t1: 逻辑文件.\n");
 
     fprintf(stderr, "\n\t--pos < NUMBER >\n");
-    fprintf(stderr, "\t\t索引位置。默认: 末尾\n");
+    fprintf(stderr, "\t\t索引位置.默认: 末尾\n");
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDK_MT_WRITE_FILEMARK);
 
     fprintf(stderr, "\n\t--count < NUMBER >\n");
-    fprintf(stderr, "\t\t数量。 默认: 1\n");
+    fprintf(stderr, "\t\t数量. 默认: 1\n");
 
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDK_MT_READ_MAM);
 
     fprintf(stderr, "\n\t--part < NUMBER >\n");
-    fprintf(stderr, "\t\t分区号。 默认: 0\n");
+    fprintf(stderr, "\t\t分区号. 默认: 0\n");
     
     fprintf(stderr, "\nCMD(%d)选项:\n",ABCDK_MT_WRITE_MAM);
 
     fprintf(stderr, "\n\t--id < NUMBER >\n");
-    fprintf(stderr, "\t\t编号。\n");
+    fprintf(stderr, "\t\t编号.\n");
 
     fprintf(stderr, "\n");
     for (int i = 0,j = 0; i < 65536; i++)
@@ -139,7 +139,7 @@ void _abcdk_mt_print_usage(abcdk_option_t *args, int only_version)
     }
 
     fprintf(stderr, "\n\t--value < VALUE >\n");
-    fprintf(stderr, "\t\t内容(TEXT,ASCII)。\n");
+    fprintf(stderr, "\t\t内容(TEXT,ASCII).\n");
 
     ABCDK_ERRNO_AND_RETURN0(0);
 }
@@ -398,7 +398,7 @@ void _abcdk_mt_read_mam(abcdk_mt_t *ctx)
         }
         else 
         {
-            /*如果磁带没准备好，直接跳出。*/
+            /*如果磁带没准备好, 直接跳出.*/
             if (abcdk_scsi_sense_key(ctx->stat.sense) == 0x02 &&
                 abcdk_scsi_sense_code(ctx->stat.sense) == 0x3A &&
                 abcdk_scsi_sense_qualifier(ctx->stat.sense) == 0x00)
@@ -408,7 +408,7 @@ void _abcdk_mt_read_mam(abcdk_mt_t *ctx)
 
 final:
 
-    /*打印。*/
+    /*打印.*/
     abcdk_tree_scan(root, &it);
 
 final2:
@@ -430,13 +430,13 @@ void _abcdk_mt_write_mam(abcdk_mt_t *ctx)
 
     if (!abcdk_tape_attr2string(id))
     {
-        fprintf(stderr, "'--id < NUMBER >' 不能省略，且不能为空，同时必须在有效范围内。\n");
+        fprintf(stderr, "'--id < NUMBER >' 不能省略, 且不能为空, 同时必须在有效范围内.\n");
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EINVAL, final);
     }
 
     if (val_len <= 0)
     {
-        fprintf(stderr, "没有输入ID的值，MAM中ID的值将被清空。\n");
+        fprintf(stderr, "没有输入ID的值, MAM中ID的值将被清空.\n");
     }
 
     attr_p = abcdk_tape_read_attribute(ctx->fd,0,id,3000,&ctx->stat);
@@ -448,7 +448,7 @@ void _abcdk_mt_write_mam(abcdk_mt_t *ctx)
     if (val_len > ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0))
     {
         val_len = ABCDK_PTR2U16(attr_p->pptrs[ABCDK_TAPE_ATTR_LENGTH], 0);
-        fprintf(stderr, "ID的值将被截断为%d字节。\n",val_len);
+        fprintf(stderr, "ID的值将被截断为%d字节.\n",val_len);
     }
 
     memcpy(attr_p->pptrs[ABCDK_TAPE_ATTR_VALUE],value,val_len);
@@ -499,13 +499,13 @@ void _abcdk_mt_work(abcdk_mt_t *ctx)
 
     if (!ctx->dev_p || !*ctx->dev_p)
     {
-        fprintf(stderr, "'--dev DEVICE' 不能省略，且不能为空。\n");
+        fprintf(stderr, "'--dev DEVICE' 不能省略, 且不能为空.\n");
         ABCDK_ERRNO_AND_GOTO1(EINVAL, final);
     }
 
     if (access(ctx->dev_p, F_OK) != 0)
     {
-        fprintf(stderr, "'%s' %s。\n", ctx->dev_p, strerror(errno));
+        fprintf(stderr, "'%s' %s.\n", ctx->dev_p, strerror(errno));
         goto final;
     }
 
@@ -522,7 +522,7 @@ void _abcdk_mt_work(abcdk_mt_t *ctx)
 
     if (ctx->type != TYPE_TAPE)
     {
-        fprintf(stderr, "'%s' 不是磁带驱动器。\n", ctx->dev_p);
+        fprintf(stderr, "'%s' 不是磁带驱动器.\n", ctx->dev_p);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 
@@ -532,7 +532,7 @@ void _abcdk_mt_work(abcdk_mt_t *ctx)
 
     fprintf(stderr,"Driver: %s(%s,%s)\n",ctx->sn,ctx->vendor,ctx->product);
 
-    /*加载磁带前不需要执行测试。*/
+    /*加载磁带前不需要执行测试.*/
     if(ctx->cmd != ABCDK_MT_LOAD)
     {
         chk = abcdk_scsi_test(ctx->fd,1000,&ctx->stat);
@@ -551,7 +551,7 @@ void _abcdk_mt_work(abcdk_mt_t *ctx)
 
     if (!_method)
     {
-        fprintf(stderr, "CMD(%d)尚未支持。\n", ctx->cmd);
+        fprintf(stderr, "CMD(%d)尚未支持.\n", ctx->cmd);
         ABCDK_ERRNO_AND_GOTO1(EINVAL,final);
     }
 

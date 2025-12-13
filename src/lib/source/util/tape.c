@@ -418,7 +418,7 @@ abcdk_object_t *abcdk_tape_read_attribute(int fd, uint8_t part, uint16_t id,
     rid = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 4)); /*4,5*/
     rlen = abcdk_endian_b_to_h16(ABCDK_PTR2U16(buf, 7)); /*7,8*/
 
-    /*如果第一个区不是要找的，则直接返回。*/
+    /*如果第一个区不是要找的, 则直接返回.*/
     if(rid != id)
         return NULL;
 

@@ -9,84 +9,84 @@
 #define ABCDK_TIPC_SLAVE_MAX  9999
 #define ABCDK_TIPC_TOPIC_MAX  9999
 
-/**简单的TIPC服务。*/
+/**简单的TIPC服务.*/
 struct _abcdk_tipc
 {
-    /*配置。*/
+    /*配置.*/
     abcdk_tipc_config_t cfg;
 
-    /*通讯IO。*/
+    /*通讯IO.*/
     abcdk_stcp_t *io_ctx;
 
-    /*重连定时器。*/
+    /*重连定时器.*/
     abcdk_timer_t *reconnect_timer;
 
-    /*节点列表。*/
+    /*节点列表.*/
     struct _abcdk_tipc_slave *slave_list[ABCDK_TIPC_SLAVE_MAX];
 
-    /*节点同步锁。*/
+    /*节点同步锁.*/
     abcdk_mutex_t *slave_mutex;
 
-    /*主题列表。*/
+    /*主题列表.*/
     uint8_t topic_list[ABCDK_TIPC_TOPIC_MAX/8];
 
-    /*主题同步锁。*/
+    /*主题同步锁.*/
     abcdk_mutex_t *topic_mutex;
 
-    /*下一个MID。*/
+    /*下一个MID.*/
     volatile uint64_t mid_next;
 
 }; // abcdk_tipc_t;
 
 typedef struct _abcdk_tipc_node
 {
-    /*父级。*/
+    /*父级.*/
     abcdk_tipc_t *father;
 
-    /*远程地址。*/
+    /*远程地址.*/
     char remote_addr[NAME_MAX];
 
-    /*本机地址。*/
+    /*本机地址.*/
     char local_addr[NAME_MAX];
 
-    /*标志。0 监听，1 服务端，2 客户端。*/
+    /*标志.0 监听, 1 服务端, 2 客户端.*/
     int flag;
 
-    /*远端ID。*/
+    /*远端ID.*/
     uint64_t id;
 
-    /*远端位置。*/
+    /*远端位置.*/
     char location[NAME_MAX];
 
-    /*请求数据。*/
+    /*请求数据.*/
     abcdk_receiver_t *req_data;
 
-    /*请求服务员。*/
+    /*请求服务员.*/
     abcdk_waiter_t *req_waiter;
 
 } abcdk_tipc_node_t;
 
 typedef struct _abcdk_tipc_slave
 {
-    /*远端ID。*/
+    /*远端ID.*/
     uint64_t id;
 
-    /*远端位置。*/
+    /*远端位置.*/
     char location[NAME_MAX];
 
-    /*标志。0 任意，1 被动，2 主动。*/
+    /*标志.0 任意, 1 被动, 2 主动.*/
     int flag;
 
-    /*状态。1 已连接，2 已断开，3 正在重建连接。*/
+    /*状态.1 已连接, 2 已断开, 3 正在重建连接.*/
     int state;
 
-    /*被动连接的管道。*/
+    /*被动连接的管道.*/
     abcdk_stcp_node_t *pipe1;
 
-    /*主动连接的管道。*/
+    /*主动连接的管道.*/
     abcdk_stcp_node_t *pipe2;
 
-    /*订阅主题列表。*/
+    /*订阅主题列表.*/
     uint8_t topic_list[ABCDK_TIPC_TOPIC_MAX/8];
 
 } abcdk_tipc_slave_t;
@@ -116,7 +116,7 @@ static abcdk_tipc_slave_t *_abcdk_tipc_slave_alloc(uint64_t id)
 
     ctx->id = id;
 
-    /*远端默认订阅所有主题。*/
+    /*远端默认订阅所有主题.*/
     for(int i = 1;i < ABCDK_TIPC_TOPIC_MAX;i++)
         abcdk_bloom_mark(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),i);
     
@@ -131,17 +131,17 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(pipe);
 
-    /*远程的ID不能与自己的ID相同。*/
+    /*远程的ID不能与自己的ID相同.*/
     if (ctx->cfg.id == node_ctx_p->id)
         return -1;
     
-    /*可能还未初始化。*/
+    /*可能还未初始化.*/
     if(node_ctx_p->id <= 0 || node_ctx_p->id >=ABCDK_TIPC_SLAVE_MAX)
         chk = -2;
 
     abcdk_mutex_lock(ctx->slave_mutex, 1);
 
-    /*没有则先创建。*/
+    /*没有则先创建.*/
     if(!ctx->slave_list[node_ctx_p->id])
         ctx->slave_list[node_ctx_p->id] = _abcdk_tipc_slave_alloc(node_ctx_p->id);
 
@@ -152,7 +152,7 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe
         goto END;
     }
 
-    /*标记为已连接。*/
+    /*标记为已连接.*/
     slave_ctx_p->state = 1;
 
     if(slave_ctx_p->location[0] == '\0')
@@ -183,7 +183,7 @@ static int _abcdk_tipc_slave_register(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe
         }
     }
 
-    /* 当双向建立连接成功时，保留由ID大到小的主动连接。*/
+    /* 当双向建立连接成功时, 保留由ID大到小的主动连接.*/
     if (slave_ctx_p->pipe1 && slave_ctx_p->pipe2)
     {
         if (ctx->cfg.id > node_ctx_p->id)
@@ -211,7 +211,7 @@ END:
 }
 
 /*
- * 如果节点存在返回可用的管道数量，否则返回一个负值。
+ * 如果节点存在返回可用的管道数量, 否则返回一个负值.
 */
 static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pipe)
 {
@@ -222,13 +222,13 @@ static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pi
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(pipe);
 
-    /*可能还未初始化。*/
+    /*可能还未初始化.*/
     if(node_ctx_p->id <= 0 || node_ctx_p->id >=ABCDK_TIPC_SLAVE_MAX)
         return -2;
 
     abcdk_mutex_lock(ctx->slave_mutex, 1);
 
-    /*没有则先创建。*/
+    /*没有则先创建.*/
     if(!ctx->slave_list[node_ctx_p->id])
         ctx->slave_list[node_ctx_p->id] = _abcdk_tipc_slave_alloc(node_ctx_p->id);
 
@@ -251,10 +251,10 @@ static int _abcdk_tipc_slave_unregister(abcdk_tipc_t *ctx, abcdk_stcp_node_t *pi
         abcdk_stcp_unref(&slave_ctx_p->pipe2);
     }
 
-    /*还剩几个。*/
+    /*还剩几个.*/
     chk = (slave_ctx_p->pipe1 ? 1 : 0) + (slave_ctx_p->pipe2 ? 1 : 0);
 
-    /*当所有连接都已经断开后，标记为已断开。*/
+    /*当所有连接都已经断开后, 标记为已断开.*/
     if(chk == 0)
         slave_ctx_p->state = 2;
     
@@ -275,13 +275,13 @@ static abcdk_stcp_node_t *_abcdk_tipc_slave_find_pipe(abcdk_tipc_t *ctx,uint64_t
     if (!slave_ctx_p)
         goto END;
 
-    /*优先选择可能被保留的链路。*/
+    /*优先选择可能被保留的链路.*/
     if(ctx->cfg.id > id)
         node_p = (slave_ctx_p->pipe2?slave_ctx_p->pipe2:slave_ctx_p->pipe1);
     else 
         node_p = (slave_ctx_p->pipe1?slave_ctx_p->pipe1:slave_ctx_p->pipe2);
 
-    /*增加引用计数。*/
+    /*增加引用计数.*/
     if(node_p)
         node_p = abcdk_stcp_refer(node_p);
 
@@ -311,11 +311,11 @@ NEXT:
         if (!slave_ctx_p)
             continue;
 
-        /*未断开的不需要处理。*/
+        /*未断开的不需要处理.*/
         if (slave_ctx_p->state != 2)
             continue;
 
-        /*标志为正在重连。*/
+        /*标志为正在重连.*/
         slave_ctx_p->state = 3;
 
         /*copy*/
@@ -326,16 +326,16 @@ NEXT:
 
     abcdk_mutex_unlock(ctx->slave_mutex);
 
-    /*遍历完在，返回。*/
+    /*遍历完在, 返回.*/
     if( id >= ABCDK_TIPC_SLAVE_MAX )
         return 5000;
 
-    /*如果是被动连接，则等待另外一端发起连接。*/
+    /*如果是被动连接, 则等待另外一端发起连接.*/
     if(flag == 1)
         goto NEXT;
 
     chk = abcdk_tipc_connect(ctx,location,id);
-    ABCDK_TRACE_ASSERT((chk == 0 || chk == -4),"不应当在这里出错的。");
+    ABCDK_TRACE_ASSERT((chk == 0 || chk == -4),"不应当在这里出错的.");
 
     goto NEXT;
 }
@@ -379,13 +379,13 @@ static abcdk_stcp_node_t *_abcdk_tipc_slave_topic_find_pipe(abcdk_tipc_t *ctx,ui
     if(chk != 1)
         goto END;
 
-    /*优先选择可能被保留的链路。*/
+    /*优先选择可能被保留的链路.*/
     if(ctx->cfg.id > id)
         node_p = (slave_ctx_p->pipe2?slave_ctx_p->pipe2:slave_ctx_p->pipe1);
     else 
         node_p = (slave_ctx_p->pipe1?slave_ctx_p->pipe1:slave_ctx_p->pipe2);
 
-    /*增加引用计数。*/
+    /*增加引用计数.*/
     if(node_p)
         node_p = abcdk_stcp_refer(node_p);
 
@@ -414,9 +414,9 @@ static int _abcdk_tipc_subscribe(abcdk_tipc_t *ctx,uint64_t topic,int unset)
 }
 
 /**
- * 验证本机节点订阅主题。
+ * 验证本机节点订阅主题.
  * 
- * @return 0 未订阅，1 已订阅。
+ * @return 0 未订阅, 1 已订阅.
 */
 static int _abcdk_tipc_subscribe_filter(abcdk_tipc_t *ctx,uint64_t topic)
 {
@@ -474,11 +474,11 @@ abcdk_tipc_t *abcdk_tipc_create(abcdk_tipc_config_t *cfg)
     ctx->topic_mutex = abcdk_mutex_create();
     ctx->mid_next = 1;
 
-    /*本机默认不订阅任何主题。*/
+    /*本机默认不订阅任何主题.*/
     for(int i = 1;i < ABCDK_TIPC_TOPIC_MAX;i++)
         abcdk_bloom_unset(ctx->topic_list,ABCDK_ARRAY_SIZE(ctx->topic_list),i);
 
-    /*重连定时器。*/
+    /*重连定时器.*/
     ctx->reconnect_timer = abcdk_timer_create(_abcdk_tipc_slave_reconnect_cb,ctx);
 
     return ctx;
@@ -540,7 +540,7 @@ static void _abcdk_tipc_prepare_cb(abcdk_stcp_node_t **node, abcdk_stcp_node_t *
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node_p);
 
-    /*准备完毕，返回。*/
+    /*准备完毕, 返回.*/
     *node = node_p;
 }
 
@@ -553,14 +553,14 @@ static void _abcdk_tipc_event_accept(abcdk_stcp_node_t *node, int *result)
 
     abcdk_stcp_get_sockaddr_str(node, NULL, node_ctx_p->remote_addr);
 
-    /*默认：允许。*/
+    /*默认: 允许.*/
     *result = 0;
 
     if (node_ctx_p->father->cfg.accept_cb)
         node_ctx_p->father->cfg.accept_cb(node_ctx_p->father->cfg.opaque, node_ctx_p->remote_addr, result);
 
     if (*result != 0)
-        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("禁止客户端('%s')连接到本机。"), node_ctx_p->remote_addr);
+        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("禁止客户端('%s')连接到本机."), node_ctx_p->remote_addr);
 }
 
 static int _abcdk_tipc_post_register(abcdk_stcp_node_t *node,int rsp);
@@ -574,16 +574,16 @@ static void _abcdk_tipc_event_connect(abcdk_stcp_node_t *node)
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
-    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立。"), node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已建立."), node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
-    /*设置超时。*/
+    /*设置超时.*/
     abcdk_stcp_set_timeout(node, 24 * 3600);
 
-    /*发送注册消息。*/
+    /*发送注册消息.*/
     if (node_ctx_p->flag == 2)
         _abcdk_tipc_post_register(node,0);
     
-    /*已连接到远端，注册读写事件。*/
+    /*已连接到远端, 注册读写事件.*/
     abcdk_stcp_recv_watch(node);
     abcdk_stcp_send_watch(node);
 }
@@ -605,23 +605,23 @@ static void _abcdk_tipc_event_close(abcdk_stcp_node_t *node)
 
     if (node_ctx_p->flag == 0)
     {
-        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭，忽略。"));
+        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("监听关闭, 忽略."));
         return;
     }
 
-    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开。"),node_ctx_p->local_addr, node_ctx_p->remote_addr);
+    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("本机(%s)与远端(%s)的连接已断开."),node_ctx_p->local_addr, node_ctx_p->remote_addr);
 
-    /*取消此链路上的所有等待的。*/
+    /*取消此链路上的所有等待的.*/
     abcdk_waiter_cancel(node_ctx_p->req_waiter);
 
-    /*反注册并返回可用的管道数量。*/
+    /*反注册并返回可用的管道数量.*/
     chk = _abcdk_tipc_slave_unregister(node_ctx_p->father, node);
     if (chk < 0)
         return;
     if (chk > 0)
         return;
 
-    /*当节点的通讯链路全部断掉后，发出通知。*/
+    /*当节点的通讯链路全部断掉后, 发出通知.*/
     if(node_ctx_p->father->cfg.offline_cb)
         node_ctx_p->father->cfg.offline_cb(node_ctx_p->father->cfg.opaque,node_ctx_p->id);
 
@@ -670,7 +670,7 @@ static void _abcdk_tipc_input_cb(abcdk_stcp_node_t *node, const void *data, size
 
     node_ctx_p = (abcdk_tipc_node_t *)abcdk_stcp_get_userdata(node);
 
-    /*默认没有剩余数据。*/
+    /*默认没有剩余数据.*/
     *remain = 0;
 
     if (!node_ctx_p->req_data)
@@ -685,12 +685,12 @@ static void _abcdk_tipc_input_cb(abcdk_stcp_node_t *node, const void *data, size
         *remain = 0;
         goto ERR;
     }
-    else if (chk == 0) /*数据包不完整，继续接收。*/
+    else if (chk == 0) /*数据包不完整, 继续接收.*/
         return;
 
     _abcdk_tipc_process(node);
 
-    /*一定要回收。*/
+    /*一定要回收.*/
     abcdk_receiver_unref(&node_ctx_p->req_data);
 
     /*No Error.*/
@@ -747,12 +747,12 @@ int abcdk_tipc_connect(abcdk_tipc_t *ctx, const char *location, uint64_t id)
     int chk;
 
     assert(ctx != NULL && location != NULL && id > 0 && id < ABCDK_TIPC_SLAVE_MAX);
-    ABCDK_TRACE_ASSERT(ctx->cfg.id != id,ABCDK_GETTEXT("远端ID不能与本机ID相同。"));
+    ABCDK_TRACE_ASSERT(ctx->cfg.id != id,ABCDK_GETTEXT("远端ID不能与本机ID相同."));
 
     chk = abcdk_sockaddr_from_string(&addr, location, 1);
     if (chk != 0)
     {
-        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("远端(ID=%llu,IP='%s')的地址无法识别。"),id, location);
+        abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("远端(ID=%llu,IP='%s')的地址无法识别."),id, location);
         return -4;
     }
 
@@ -797,10 +797,10 @@ static int _abcdk_tipc_post_register(abcdk_stcp_node_t *node,int rsp)
      * |Length  |CMD    |Mine ID  |Your ID |
      * |4 Bytes |1 Byte |8 Bytes  |8 Bytes |
      *
-     * Length：长度(不包含自身)。
-     * CMD：1 注册，2 应答。
-     * ID：我的ID。
-     * ID：你的ID。
+     * Length: 长度(不包含自身).
+     * CMD: 1 注册, 2 应答.
+     * ID: 我的ID.
+     * ID: 你的ID.
      */
 
     msg_p = abcdk_object_alloc2(4+1+8+8);
@@ -846,15 +846,15 @@ static void _abcdk_tipc_process_register_req(abcdk_stcp_node_t *node)
         }
 
         if(chk == -1)
-            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("本机ID(%llu)与远端ID(%llu)相同，不允许注册。"),node_ctx_p->father->cfg.id,node_ctx_p->id);
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("本机ID(%llu)与远端ID(%llu)相同, 不允许注册."),node_ctx_p->father->cfg.id,node_ctx_p->id);
         else if(chk == -3)
-            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("相同的远端ID(%llu)已经注册并且在线，不允许注册。"),node_ctx_p->id);
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("相同的远端ID(%llu)已经注册并且在线, 不允许注册."),node_ctx_p->id);
         else 
-            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("其它错误。"));
+            abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("其它错误."));
     }
     else
     {
-        abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu)，不允许注册。"),node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
+        abcdk_trace_printf(LOG_WARNING,ABCDK_GETTEXT("本机ID(%llu)在远端(ID=%llu)登记错误(ID=%llu), 不允许注册."),node_ctx_p->father->cfg.id,node_ctx_p->id,myid);
     }
 
     abcdk_stcp_set_timeout(node,-1);
@@ -874,7 +874,7 @@ static void _abcdk_tipc_process_register_rsp(abcdk_stcp_node_t *node)
     req_data = abcdk_receiver_data(node_ctx_p->req_data, 0);
     req_size = abcdk_receiver_length(node_ctx_p->req_data);
 
-    /*有应答说明连接没问题，直接完成注册即可。*/
+    /*有应答说明连接没问题, 直接完成注册即可.*/
     _abcdk_tipc_slave_register(node_ctx_p->father, node);
 }
 
@@ -890,10 +890,10 @@ static int _abcdk_tipc_post_message(abcdk_stcp_node_t *node, uint64_t rsp, uint6
      * |Length  |CMD    |MID     |Data    |
      * |4 Bytes |1 Byte |8 Bytes |N Bytes |
      *
-     * Length： 不包含自身。
-     * CMD：3 请求，4 应答。
-     * MID：消息ID。
-     * DATA: 变长数据。
+     * Length:  不包含自身.
+     * CMD: 3 请求, 4 应答.
+     * MID: 消息ID.
+     * DATA: 变长数据.
      */
 
     assert((4 + 1 + 8 + size) <= 0xffffff);
@@ -973,10 +973,10 @@ static int _abcdk_tipc_post_subscribe(abcdk_stcp_node_t *node, uint64_t topic,in
      * |Length  |CMD    |TOPIC    |UNSET  |
      * |4 Bytes |1 Byte |8 Bytes  |1 Byte |
      *
-     * Length： 不包含自身。
-     * CMD：5 订阅。
-     * TOPIC: 主题。
-     * UNSET：0 订阅，1 取消。
+     * Length:  不包含自身.
+     * CMD: 5 订阅.
+     * TOPIC: 主题.
+     * UNSET: 0 订阅, 1 取消.
      */
 
     msg_p = abcdk_object_alloc2(4 + 1 + 8 + 1);
@@ -1012,10 +1012,10 @@ static void _abcdk_tipc_process_subscribe(abcdk_stcp_node_t *node)
     topic = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 40, 64);
     unset = abcdk_bloom_read_number((uint8_t *)req_data, req_size, 104, 8);
     
-    /*更新远端主题订阅列表。*/
+    /*更新远端主题订阅列表.*/
     _abcdk_tipc_slave_subscribe(node_ctx_p->father,node_ctx_p->id,topic,unset);
   
-    abcdk_trace_printf(LOG_INFO,ABCDK_GETTEXT("远端(ID=%llu)%s主题(%llu)。"),node_ctx_p->id,(unset?ABCDK_GETTEXT("取订"):ABCDK_GETTEXT("订阅")), topic);
+    abcdk_trace_printf(LOG_INFO,ABCDK_GETTEXT("远端(ID=%llu)%s主题(%llu)."),node_ctx_p->id,(unset?ABCDK_GETTEXT("取订"):ABCDK_GETTEXT("订阅")), topic);
 }
 
 static int _abcdk_tipc_post_publish(abcdk_stcp_node_t *node, uint64_t topic, const void *data, size_t size)
@@ -1030,10 +1030,10 @@ static int _abcdk_tipc_post_publish(abcdk_stcp_node_t *node, uint64_t topic, con
      * |Length  |CMD    |TOPIC   |Data    |
      * |4 Bytes |1 Byte |8 Bytes |N Bytes |
      *
-     * Length： 不包含自身。
-     * CMD：6 发布。
-     * TOPIC：主题。
-     * DATA: 变长数据。
+     * Length:  不包含自身.
+     * CMD: 6 发布.
+     * TOPIC: 主题.
+     * DATA: 变长数据.
      */
 
     assert((4 + 1 + 8 + size) <= 0xffffff);
@@ -1073,7 +1073,7 @@ static void _abcdk_tipc_process_publish(abcdk_stcp_node_t *node)
     chk = _abcdk_tipc_subscribe_filter(node_ctx_p->father,topic);
     if(chk == 0)
     {
-        /*通知远端主题订阅发生变更，不需要再向当前节点发布信息，以便节省带宽。*/
+        /*通知远端主题订阅发生变更, 不需要再向当前节点发布信息, 以便节省带宽.*/
         _abcdk_tipc_post_subscribe(node,topic,1);
     }
     else
@@ -1225,7 +1225,7 @@ int abcdk_tipc_subscribe(abcdk_tipc_t *ctx, uint64_t topic, int unset)
 
     _abcdk_tipc_subscribe(ctx, topic, unset);
 
-    /*遍历远端，逐个通知。*/
+    /*遍历远端, 逐个通知.*/
     for (int i = 1; i < ABCDK_TIPC_SLAVE_MAX; i++)
     {
         node_p = _abcdk_tipc_slave_find_pipe(ctx, i);
@@ -1246,7 +1246,7 @@ int abcdk_tipc_publish(abcdk_tipc_t *ctx, uint64_t topic, const char *data, size
 
     assert(ctx != NULL && topic > 0 && topic < ABCDK_TIPC_TOPIC_MAX && data != NULL && size > 0);
 
-    /*遍历远端，逐个发布。*/
+    /*遍历远端, 逐个发布.*/
     for (int i = 1; i < ABCDK_TIPC_SLAVE_MAX; i++)
     {
         node_p = _abcdk_tipc_slave_topic_find_pipe(ctx, i, topic);

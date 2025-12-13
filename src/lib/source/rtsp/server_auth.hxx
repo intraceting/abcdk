@@ -22,7 +22,7 @@ namespace abcdk
         {
         private:
             rtsp::rwlock m_db_locker;
-            std::map<std::string, rtsp::pawd> m_db;//固定大小的值，因为查询接口是用指针，但是对象又随时可能被删除。
+            std::map<std::string, rtsp::pawd> m_db;//固定大小的值, 因为查询接口是用指针, 但是对象又随时可能被删除.
         public:
             static auth *createNew(char const *realm = NULL)
             {

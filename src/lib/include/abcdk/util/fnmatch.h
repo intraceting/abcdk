@@ -14,9 +14,9 @@
 __BEGIN_DECLS
 
 /**
- * 智能匹配。
+ * 智能匹配.
  * 
- * @return 0 成功，!0 失败。
+ * @return 0 成功, !0 失败.
 */
 int abcdk_fnmatch(const char *str,const char *pattern,int caseAb,int ispath);
 

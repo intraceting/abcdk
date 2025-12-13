@@ -6,28 +6,28 @@
  */
 #include "abcdk/openssl/cipher.h"
 
-/**简单的加密接口。 */
+/**简单的加密接口. */
 struct _abcdk_openssl_cipher
 {
-    /*方案。*/
+    /*方案.*/
     int scheme;
 
-    /*EVP密钥。*/
+    /*EVP密钥.*/
     abcdk_object_t *evp_key;
 
-    /*EVP向量。*/
+    /*EVP向量.*/
     uint8_t evp_iv[16];
 
-    /*EVP标签。*/
+    /*EVP标签.*/
     uint8_t evp_tag[16];
 
-    /*EVP环境。*/
+    /*EVP环境.*/
     EVP_CIPHER_CTX *evp_ctx;
 
-    /*临时缓存。*/
+    /*临时缓存.*/
     uint8_t tmpbuf[8192];
 
-    /*同步锁。*/
+    /*同步锁.*/
     abcdk_spinlock_t *locker_ctx;
 
 }; // abcdk_openssl_cipher_t;
@@ -53,7 +53,7 @@ void _abcdk_openssl_cipher_rand_generate(uint8_t *buf, int len)
 void abcdk_openssl_cipher_destroy(abcdk_openssl_cipher_t **ctx)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_cipher_t *ctx_p;
@@ -125,7 +125,7 @@ static int _abcdk_openssl_cipher_aes256gcm_update_fragment(abcdk_openssl_cipher_
 
     alen += tlen;
 
-    /*解密时标签要在完成前设置。*/
+    /*解密时标签要在完成前设置.*/
     if (!enc)
     {
         chk = EVP_CIPHER_CTX_ctrl(ctx->evp_ctx, EVP_CTRL_GCM_SET_TAG, 16, ctx->evp_tag);
@@ -139,7 +139,7 @@ static int _abcdk_openssl_cipher_aes256gcm_update_fragment(abcdk_openssl_cipher_
 
     alen += tlen;
 
-    /*加密时标签要在完成后获取。*/
+    /*加密时标签要在完成后获取.*/
     if (enc)
     {
         chk = EVP_CIPHER_CTX_ctrl(ctx->evp_ctx, EVP_CTRL_GCM_GET_TAG, 16, ctx->evp_tag);
@@ -162,7 +162,7 @@ abcdk_object_t *_abcdk_openssl_cipher_aes256gcm_update(abcdk_openssl_cipher_t *c
 
     if (enc)
     {
-        /*生成随机IV。由于它将以明文方式进行传递，因此每次加密前必须重新生成。*/
+        /*生成随机IV.由于它将以明文方式进行传递, 因此每次加密前必须重新生成.*/
         _abcdk_openssl_cipher_rand_generate(ctx->evp_iv, 16);
 
         chk = _abcdk_openssl_cipher_aes256gcm_config(ctx, 1);
@@ -177,7 +177,7 @@ abcdk_object_t *_abcdk_openssl_cipher_aes256gcm_update(abcdk_openssl_cipher_t *c
         if (chk != in_len)
             goto ERR;
 
-        /*在密文的末尾添加IV和TAG。*/
+        /*在密文的末尾添加IV和TAG.*/
         memcpy(out->pptrs[0] + in_len, ctx->evp_iv, 16);
         memcpy(out->pptrs[0] + in_len + 16, ctx->evp_tag, 16);
     }
@@ -186,7 +186,7 @@ abcdk_object_t *_abcdk_openssl_cipher_aes256gcm_update(abcdk_openssl_cipher_t *c
         if (in_len <= 32)
             return NULL;
 
-        /*提取密文末尾的IV和TAG。*/
+        /*提取密文末尾的IV和TAG.*/
         memcpy(ctx->evp_iv, in + in_len - 32, 16);
         memcpy(ctx->evp_tag, in + in_len - 16, 16);
 
@@ -324,7 +324,7 @@ abcdk_object_t *_abcdk_openssl_cipher_aes256cbc_update(abcdk_openssl_cipher_t *c
     {
         align_bsize = abcdk_align(in_len, 16);
 
-        /*生成随机IV。由于它将以明文方式进行传递，因此每次加密前必须重新生成。*/
+        /*生成随机IV.由于它将以明文方式进行传递, 因此每次加密前必须重新生成.*/
         _abcdk_openssl_cipher_rand_generate(ctx->evp_iv, 16);
 
         chk = _abcdk_openssl_cipher_aes256cbc_config(ctx, 1);
@@ -339,7 +339,7 @@ abcdk_object_t *_abcdk_openssl_cipher_aes256cbc_update(abcdk_openssl_cipher_t *c
         if (chk != align_bsize)
             goto ERR;
 
-        /*在密文的末尾添加IV。*/
+        /*在密文的末尾添加IV.*/
         memcpy(out->pptrs[0] + align_bsize, ctx->evp_iv, 16);
     }
     else
@@ -349,11 +349,11 @@ abcdk_object_t *_abcdk_openssl_cipher_aes256cbc_update(abcdk_openssl_cipher_t *c
 
         align_bsize = abcdk_align(in_len - 16, 16);
 
-        /*密文必须是块对齐的。*/
+        /*密文必须是块对齐的.*/
         if ((align_bsize % 16) != 0)
             return NULL;
 
-        /*提取密文末尾的IV。*/
+        /*提取密文末尾的IV.*/
         memcpy(ctx->evp_iv, in + align_bsize, 16);
 
         chk = _abcdk_openssl_cipher_aes256cbc_config(ctx, 0);
@@ -403,7 +403,7 @@ static int _abcdk_openssl_cipher_init(abcdk_openssl_cipher_t *ctx, int scheme, c
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create(int scheme, const uint8_t *key, size_t key_len)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_openssl_cipher_t *ctx;
@@ -436,7 +436,7 @@ ERR:
 abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const char *key_file)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *key;
@@ -458,7 +458,7 @@ abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const 
 abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *out;
@@ -479,7 +479,7 @@ abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const u
 abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return NULL;
 #else //#ifndef HAVE_OPENSSL
     abcdk_object_t *src_p = NULL;
@@ -494,9 +494,9 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
      * |Length  |CRC32   |Data    |
      * |4 Bytes |4 Bytes |N Bytes |
      *
-     * Length：明文长度。
-     * CRC32：校验码。
-     * Data: 明文数据。
+     * Length: 明文长度.
+     * CRC32: 校验码.
+     * Data: 明文数据.
      */
 
     if(enc)
@@ -533,7 +533,7 @@ abcdk_object_t *abcdk_openssl_cipher_update_pack(abcdk_openssl_cipher_t *ctx, co
         if (old_crc32 != new_crc32)
             goto ERR;
 
-        /*跳过头部，指向数据区。*/
+        /*跳过头部, 指向数据区.*/
         dst_p->pptrs[0] += 8;
         dst_p->sizes[0] = old_len;
     }
@@ -552,7 +552,7 @@ ERR:
 void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return;
 #else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL);
@@ -564,7 +564,7 @@ void abcdk_openssl_cipher_lock(abcdk_openssl_cipher_t *ctx)
 int abcdk_openssl_cipher_unlock(abcdk_openssl_cipher_t *ctx,int exitcode)
 {
 #ifndef HAVE_OPENSSL
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具。"));
+    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含OpenSSL工具."));
     return exitcode;
 #else //#ifndef HAVE_OPENSSL
     assert(ctx != NULL);

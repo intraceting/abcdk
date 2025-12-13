@@ -13,30 +13,30 @@
 __BEGIN_DECLS
 
 /**
- * 基于时间的一次性密码。
+ * 基于时间的一次性密码.
  *
  * @note RFC6238
  */
 uint32_t abcdk_openssl_totp_generate(const EVP_MD *evp_md_ctx, const uint8_t *key, int klen, uint64_t counter);
 
 /**
- * 基于时间的一次性密码。
+ * 基于时间的一次性密码.
  *
- * @note RFC6238(sha-1,sha-128）
+ * @note RFC6238(sha-1,sha-128)
  */
 uint32_t abcdk_openssl_totp_generate_sha1(const uint8_t *key, int klen, uint64_t counter);
 
 /**
- * 基于时间的一次性密码。
+ * 基于时间的一次性密码.
  *
- * @note RFC6238(sha-256）
+ * @note RFC6238(sha-256)
  */
 uint32_t abcdk_openssl_totp_generate_sha256(const uint8_t *key, int klen, uint64_t counter);
 
 /**
- * 基于时间的一次性密码。
+ * 基于时间的一次性密码.
  *
- * @note RFC6238(sha-512）
+ * @note RFC6238(sha-512)
  */
 uint32_t abcdk_openssl_totp_generate_sha512(const uint8_t *key, int klen, uint64_t counter);
 

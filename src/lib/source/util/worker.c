@@ -6,33 +6,33 @@
  */
 #include "abcdk/util/worker.h"
 
-/**简单的线程池。*/
+/**简单的线程池.*/
 struct _abcdk_worker
 {
-    /**配置。*/
+    /**配置.*/
     abcdk_worker_config_t cfg;
 
-    /**丢弃算法。 */
+    /**丢弃算法. */
     abcdk_wred_t *wred_ctx;
 
-    /**线程数组。*/
+    /**线程数组.*/
     abcdk_thread_t *threads_ctx;
 
-    /**项目队列。*/
+    /**项目队列.*/
     abcdk_queue_t *queue_ctx;
 
-    /**队列标志。0：运行，1：停止。*/
+    /**队列标志.0: 运行，1: 停止.*/
     int queue_flag;
 
 }; // abcdk_worker_t;
 
-/** 工作项目。*/
+/** 工作项目.*/
 typedef struct _abcdk_worker_item
 {
-    /*事件。*/
+    /*事件.*/
     uint64_t event;
 
-    /*数据。*/
+    /*数据.*/
     void *data;
 
 } abcdk_worker_item_t;
@@ -71,7 +71,7 @@ void *_abcdk_worker_routine(void *opaque)
 
 NEXT:
 
-    /*清理野指针。*/
+    /*清理野指针.*/
     item_p = NULL;
 
     abcdk_queue_lock(ctx->queue_ctx);
@@ -82,7 +82,7 @@ NEXT:
         if (item_p)
             break;
 
-        /*检查退出标志。*/
+        /*检查退出标志.*/
         if(ctx->queue_flag != 0)
             break;
         else 
@@ -91,7 +91,7 @@ NEXT:
 
     abcdk_queue_unlock(ctx->queue_ctx);
 
-    /*只能通知退出时才会生效。*/
+    /*只能通知退出时才会生效.*/
     if(!item_p)
         return NULL;
 
@@ -116,7 +116,7 @@ int _abcdk_worker_start(abcdk_worker_t *ctx)
         if (chk != 0)
             return -1;
 
-        /*尽可能让线程分布在不同的核心上。*/
+        /*尽可能让线程分布在不同的核心上.*/
         cpu_set = abcdk_atomic_add_and_fetch(&cpu_idx, 1) % sysconf(_SC_NPROCESSORS_ONLN);
         
         abcdk_thread_setaffinity2(ctx->threads_ctx[i].handle,cpu_set);
@@ -136,13 +136,13 @@ void abcdk_worker_stop(abcdk_worker_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
-    /*通知退出。*/
+    /*通知退出.*/
     abcdk_queue_lock(ctx_p->queue_ctx);
     ctx_p->queue_flag = 1;
     abcdk_queue_signal(ctx_p->queue_ctx,1);
     abcdk_queue_unlock(ctx_p->queue_ctx);
 
-    /*等待所有线程结束，并删除线程数组。*/
+    /*等待所有线程结束，并删除线程数组.*/
     if(ctx_p->threads_ctx)
     {
         for (int i = 0; i < ctx_p->cfg.numbers; i++)
@@ -158,7 +158,7 @@ void abcdk_worker_stop(abcdk_worker_t **ctx)
 
 static void _abcdk_worker_fix_cfg(abcdk_worker_t *ctx)
 {
-    /*修复不支持的配置和默认值。*/
+    /*修复不支持的配置和默认值.*/
 
     if (ctx->cfg.numbers <= 0)
         ctx->cfg.numbers = sysconf(_SC_NPROCESSORS_ONLN);
@@ -183,7 +183,7 @@ static void _abcdk_worker_fix_cfg(abcdk_worker_t *ctx)
     else
         ctx->cfg.wred_prob = ABCDK_CLAMP(ctx->cfg.wred_prob, 1, 99);
 
-    /*最小阈值和最大阈值必须符合区间要求。*/
+    /*最小阈值和最大阈值必须符合区间要求.*/
     if (ctx->cfg.wred_min_th > ctx->cfg.wred_max_th)
         ABCDK_INTEGER_SWAP(ctx->cfg.wred_min_th, ctx->cfg.wred_max_th);
 }
@@ -250,10 +250,10 @@ int abcdk_worker_dispatch_ex(abcdk_worker_t *ctx,uint64_t event,void *item,int k
 
     abcdk_queue_lock(ctx->queue_ctx);
 
-    /*获取队长列度。*/
+    /*获取队长列度.*/
     qlen = abcdk_queue_length(ctx->queue_ctx);
 
-    /*非关键数据根据WRED算法决定是否添加到队列中。*/
+    /*非关键数据根据WRED算法决定是否添加到队列中.*/
     chk = (key ? 0 : abcdk_wred_update(ctx->wred_ctx, qlen + 1));
     if (chk == 0)
     {
@@ -265,7 +265,7 @@ int abcdk_worker_dispatch_ex(abcdk_worker_t *ctx,uint64_t event,void *item,int k
     }
     else
     {
-        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("处理缓慢，队列积压过长(len=%d)，丢弃当前作业(event=%llu,item=%p)。\n"), qlen, event, item);
+        abcdk_trace_printf(LOG_DEBUG, ABCDK_GETTEXT("处理缓慢，队列积压过长(len=%d)，丢弃当前作业(event=%llu,item=%p).\n"), qlen, event, item);
 
         _abcdk_worker_item_free(&item_p);
         chk = -1;

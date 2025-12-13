@@ -36,7 +36,7 @@ uint32_t abcdk_crc32(const void *data, size_t size, ...)
 
     assert(data != NULL && size > 0);
 
-    /*初始化一次。*/
+    /*初始化一次.*/
     chk = pthread_once(&_abcdk_crc32_table_init_status,_abcdk_crc32_table_init);
     assert(chk == 0);
 

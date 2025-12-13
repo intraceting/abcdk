@@ -6,37 +6,37 @@
  */
 #include "abcdk/util/nonce.h"
 
-/**简单的NONCE环境。 */
+/**简单的NONCE环境. */
 struct _abcdk_nonce
 {
-    /**列表配置。*/
+    /**列表配置.*/
     abcdk_registry_config_t list_cfg;
 
-    /**列表。*/
+    /**列表.*/
     abcdk_registry_t *list_ctx; 
 
-    /**看门狗。*/
+    /**看门狗.*/
     abcdk_timer_t *dog_ctx;
 
-    /**看门狗最近活动记录。*/
+    /**看门狗最近活动记录.*/
     volatile uint64_t dog_latest;
 
-    /**检查的最近活动记录。*/
+    /**检查的最近活动记录.*/
     volatile uint64_t chk_latest;
 
-    /**时间误差(毫秒)。*/
+    /**时间误差(毫秒).*/
     uint64_t time_diff;
 
 
 };// abcdk_nonce_t;
 
-/**节点。*/
+/**节点.*/
 typedef struct _abcdk_nonce_node
 {
-    /*KEY。*/
+    /*KEY.*/
     uint8_t key[32];
     
-    /*计数器。*/
+    /*计数器.*/
     int count;
 
 }abcdk_nonce_node_t;
@@ -79,7 +79,7 @@ abcdk_nonce_t *abcdk_nonce_create(uint64_t diff)
     if (!ctx->dog_ctx)
         goto ERR;
 
-    /*复制时间误差。*/
+    /*复制时间误差.*/
     ctx->time_diff = diff;
 
     return ctx;
@@ -100,7 +100,7 @@ static int _abcdk_nonce_diff_time(abcdk_nonce_t *ctx, const uint8_t key[32])
     uint64_t now_tick, old_tick, diff_tick;
     int chk;
 
-    /*获取现在的时间点。*/
+    /*获取现在的时间点.*/
     now_tick = _abcdk_nonce_clock();
 
     /**
@@ -109,13 +109,13 @@ static int _abcdk_nonce_diff_time(abcdk_nonce_t *ctx, const uint8_t key[32])
      * |16 bytes |8 bytes |8 bytes |
     */
 
-    /*读取旧的时间点。*/
+    /*读取旧的时间点.*/
     old_tick = abcdk_bloom_read_number(key, 32, 16 * 8, 64);
 
-    /*计算误差。*/
+    /*计算误差.*/
     diff_tick = ((now_tick > old_tick) ? (now_tick - old_tick) : (old_tick - now_tick));   
 
-    /*比较误差。*/
+    /*比较误差.*/
     chk = (diff_tick > ctx->time_diff ? -1 : 0);
   
     return chk;
@@ -142,7 +142,7 @@ int abcdk_nonce_generate(abcdk_nonce_t *ctx,const uint8_t prefix[16],uint8_t key
 
     assert(ctx != NULL && key != NULL);
 
-    /*可能未启用。*/
+    /*可能未启用.*/
     if (ctx->time_diff == 0)
         return 0;
 
@@ -166,7 +166,7 @@ static abcdk_context_t *_abcdk_nonce_node_insert(abcdk_nonce_t *ctx,const uint8_
 
     registry_p = abcdk_registry_insert(ctx->list_ctx,key,sizeof(abcdk_nonce_node_t));
     if(registry_p)
-        registry_p = abcdk_context_refer(registry_p);/*增加引用计数。*/
+        registry_p = abcdk_context_refer(registry_p);/*增加引用计数.*/
 
     abcdk_registry_unlock(ctx->list_ctx, 0); 
 
@@ -190,7 +190,7 @@ abcdk_context_t *_abcdk_nonce_node_next(abcdk_nonce_t *ctx,void **it)
 
     registry_p = abcdk_registry_next(ctx->list_ctx,it);
     if(registry_p)
-        registry_p = abcdk_context_refer(registry_p);/*增加引用计数。*/
+        registry_p = abcdk_context_refer(registry_p);/*增加引用计数.*/
 
     abcdk_registry_unlock(ctx->list_ctx, 0); 
 
@@ -211,17 +211,17 @@ static int _abcdk_nonce_node_update(abcdk_nonce_t *ctx,const uint8_t key[32])
 
     abcdk_context_wrlock(node_p);//lock.
 
-    /*累加次数。*/
+    /*累加次数.*/
     node_ctx_p->count += 1;
 
-    /*超过一次表示重复收到。*/
+    /*超过一次表示重复收到.*/
     if (node_ctx_p->count <= 1)
     {
-        /*记录KEY。*/
+        /*记录KEY.*/
         memcpy(node_ctx_p->key,key,32);
     }
     
-    /*复制次数。*/
+    /*复制次数.*/
     chk = node_ctx_p->count;
 
     abcdk_context_unlock(node_p,0);//unlock.
@@ -244,7 +244,7 @@ static int _abcdk_nonce_dog_next_node(abcdk_nonce_t *ctx,abcdk_nonce_node_t *nod
 
     abcdk_context_rdlock(node_p);//lock.
 
-    /*复制。*/
+    /*复制.*/
     *node = *node_ctx_p;
 
     abcdk_context_unlock(node_p,0);//unlock.
@@ -261,7 +261,7 @@ static void _abcdk_nonce_dog_process_node(abcdk_nonce_t *ctx, abcdk_nonce_node_t
 
     chk = _abcdk_nonce_diff_time(ctx, node->key);
 
-    /*超过时差范围，删除。*/
+    /*超过时差范围, 删除.*/
     if (chk != 0)
         _abcdk_nonce_node_remote(ctx, node->key);
 }
@@ -289,7 +289,7 @@ static uint64_t _abcdk_nonce_dog_routine_cb(void *opaque)
 
     interval = (abcdk_atomic_compare(&ctx->dog_latest, ctx->chk_latest) ? 1000 : 0);
 
-    /*仅在更新频率较低时，回收内存。*/
+    /*仅在更新频率较低时, 回收内存.*/
     if (interval != 0)
         abcdk_heap_trim(0);
 
@@ -305,20 +305,20 @@ int abcdk_nonce_check(abcdk_nonce_t *ctx, const uint8_t key[32])
 
     assert(ctx != NULL && key != NULL);
 
-    /*可能未启用。*/
+    /*可能未启用.*/
     if (ctx->time_diff == 0)
         return 0;
 
-    /*更新活动记录。*/
+    /*更新活动记录.*/
     abcdk_atomic_add_and_fetch(&ctx->chk_latest,1);
 
     chk = _abcdk_nonce_diff_time(ctx, key);
 
-    /*超过误差范围，直接返回。*/
+    /*超过误差范围, 直接返回.*/
     if (chk != 0)
         return -1;
 
-    /*更新节点。*/
+    /*更新节点.*/
     chk = _abcdk_nonce_node_update(ctx,key);
     if(chk > 1)
         return -2;

@@ -94,18 +94,18 @@ int abcdk_ffmpeg_image_fill_height(int heights[4], int height, AVPixelFormat pix
 int abcdk_ffmpeg_image_fill_stride(int stride[4], int width, AVPixelFormat pixfmt, int align);
 
 /**
- * 分派存储空间。
+ * 分派存储空间.
  *
  * @param buffer 内存指针. 允许为NULL(0).
  *
- * @return > 0 分派的内存大小， <= 0 失败(格式错误或其它).
+ * @return > 0 分派的内存大小,  <= 0 失败(格式错误或其它).
  */
 int abcdk_ffmpeg_image_fill_pointer(uint8_t *data[4], const int stride[4], int height, AVPixelFormat pixfmt, void *buffer);
 
 /**
  * 计算图像需要的内存大小.
  *
- * @return > 0 分派的内存大小， <= 0 失败(格式错误或其它).
+ * @return > 0 分派的内存大小,  <= 0 失败(格式错误或其它).
  */
 int abcdk_ffmpeg_image_get_size(const int stride[4], int height, AVPixelFormat pixfmt);
 
