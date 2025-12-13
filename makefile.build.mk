@@ -79,7 +79,6 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
 #
 $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cu
 	mkdir -p $(dir $@)
-	rm -f $@
 	$(NVCC) $(NVCC_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
 
 
