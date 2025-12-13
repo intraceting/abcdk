@@ -19,9 +19,6 @@ void abcdk_ffmpeg_deinit();
 /**初始化库环境. */
 void abcdk_ffmpeg_init();
 
-/**日志重定向. */
-void abcdk_ffmpeg_log_redirect();
-
 /**释放.*/
 void abcdk_ffmpeg_io_free(AVIOContext **ctx);
 

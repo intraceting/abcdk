@@ -16,23 +16,7 @@ void abcdk_ffmpeg_deinit()
 #endif // #ifndef HAVE_FFMPEG
 }
 
-void abcdk_ffmpeg_init()
-{
-#ifndef HAVE_FFMPEG
-    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
-    return;
-#else // #ifndef HAVE_FFMPEG
-    avformat_network_init();
-    avdevice_register_all();
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
-    avcodec_register_all();
-#endif // #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
-
-#endif // #ifndef HAVE_FFMPEG
-}
-
 #ifdef HAVE_FFMPEG
-
 static void _abcdk_ffmpeg_log_callback(void *opaque, int level, const char *fmt, va_list v)
 {
     int type;
@@ -50,15 +34,19 @@ static void _abcdk_ffmpeg_log_callback(void *opaque, int level, const char *fmt,
 
     abcdk_trace_vprintf(type, fmt, v);
 }
-
 #endif // #ifdef HAVE_FFMPEG
 
-void abcdk_ffmpeg_log_redirect()
+void abcdk_ffmpeg_init()
 {
 #ifndef HAVE_FFMPEG
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含FFMPEG工具."));
     return;
-#else  // #ifndef HAVE_FFMPEG
+#else // #ifndef HAVE_FFMPEG
+    avformat_network_init();
+    avdevice_register_all();
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 35, 100)
+    avcodec_register_all();
+#endif // #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,35,100)
     av_log_set_callback(_abcdk_ffmpeg_log_callback);
 #endif // #ifndef HAVE_FFMPEG
 }

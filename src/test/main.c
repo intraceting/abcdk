@@ -176,9 +176,7 @@ int main(int argc, char **argv)
     /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);
 
-    abcdk_ffmpeg_log_redirect();
     abcdk_ffmpeg_init();
-    
     abcdk_openssl_init();
 
     errcode = _abcdk_test_dispatch(args);
