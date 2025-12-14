@@ -174,7 +174,7 @@ int main(int argc, char **argv)
     logger = abcdk_logger_open2(log_path, "test.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
-    abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);
+    abcdk_trace_redirect(abcdk_logger_proxy, logger);
 
     abcdk_ffmpeg_init();
     abcdk_openssl_init();

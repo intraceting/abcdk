@@ -892,7 +892,7 @@ void _abcdk_ipcfg_process(abcdk_ipcfg_t *ctx)
     ctx->logger = abcdk_logger_open2(log_path,"ipconfig.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
-    abcdk_trace_printf_redirect(abcdk_logger_proxy,ctx->logger);
+    abcdk_trace_redirect(abcdk_logger_proxy,ctx->logger);
 
     abcdk_trace_printf( LOG_INFO, "启动……");
 
@@ -951,7 +951,7 @@ void _abcdk_ipcfg_daemon(abcdk_ipcfg_t *ctx)
     logger = abcdk_logger_open2(log_path,"ipconfig-daemon.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
-    abcdk_trace_printf_redirect(abcdk_logger_proxy,logger);
+    abcdk_trace_redirect(abcdk_logger_proxy,logger);
 
     while (1)
     {

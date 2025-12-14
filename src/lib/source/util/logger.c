@@ -65,7 +65,9 @@ void abcdk_logger_close(abcdk_logger_t **ctx)
     abcdk_heap_free(ctx_p);
 }
 
-abcdk_logger_t *abcdk_logger_open(const char *name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr)
+abcdk_logger_t *abcdk_logger_open(const char *name,
+                                  size_t segment_max, size_t segment_size,
+                                  int copy2syslog, int copy2stderr)
 {
     abcdk_logger_t *ctx = NULL;
 
@@ -81,13 +83,15 @@ abcdk_logger_t *abcdk_logger_open(const char *name, size_t segment_max, size_t s
     ctx->segment_max = segment_max;
     ctx->copy2stderr = copy2stderr;
     ctx->copy2syslog = copy2syslog;
-    ctx->mask = 0xFFFFFFFF;
+    ctx->mask = 0xFFFFFFFF;//全部
     ctx->locker = abcdk_mutex_create();
 
     return ctx;
 }
 
-abcdk_logger_t *abcdk_logger_open2(const char *path, const char *filename, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr)
+abcdk_logger_t *abcdk_logger_open2(const char *path, const char *filename,
+                                   size_t segment_max, size_t segment_size,
+                                   int copy2syslog, int copy2stderr)
 {
     char name[PATH_MAX] = {0};
 
@@ -163,7 +167,7 @@ static int _abcdk_logger_backup(abcdk_logger_t *ctx)
     return 0;
 }
 
-static void _abcdk_logger_dump2file(abcdk_logger_t *ctx, const char *str)
+static void _abcdk_logger_dump(abcdk_logger_t *ctx, const char *str)
 {
     struct stat attr;
     int chk;
@@ -217,16 +221,19 @@ open_log_file:
     }
 }
 
-static void _abcdk_logger_dump(void *opaque, int type, const char *str)
+void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str)
 {
-    abcdk_logger_t *ctx = (abcdk_logger_t *)opaque;
+    assert(ctx != NULL && str != NULL);
 
     /*如果不需要记录, 直接跳过.*/
     if (!(ctx->mask & (1 << type)))
         return;
 
+    /*加锁, 确保每个线程写操作不被打断.*/
+    abcdk_mutex_lock(ctx->locker, 1);
+
     /*记录到文件.*/
-    _abcdk_logger_dump2file(ctx, str);
+    _abcdk_logger_dump(ctx, str);
 
     /*可能需要复制到stderr.*/
     if (ctx->copy2stderr)
@@ -235,17 +242,6 @@ static void _abcdk_logger_dump(void *opaque, int type, const char *str)
     /*可能需要复制到syslog.*/
     if (ctx->copy2syslog)
         syslog(type, "%s", str);
-}
-
-void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str)
-{
-    assert(ctx != NULL && str != NULL);
-
-    /*加锁, 确保每个线程写操作不被打断.*/
-    abcdk_mutex_lock(ctx->locker, 1);
-
-    /*输出.*/
-    abcdk_trace_output(type, str, _abcdk_logger_dump, ctx);
 
     /*解锁, 给其它线程写入的机会.*/
     abcdk_mutex_unlock(ctx->locker);

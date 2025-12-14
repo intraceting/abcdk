@@ -254,7 +254,7 @@ RETRY:
     else if (chk < 0)
         return -1;
 
-    abcdk_trace_printf_siginfo( LOG_WARNING, &info);
+    abcdk_trace_siginfo( LOG_WARNING, &info);
 
     if (SIGILL == info.si_signo || SIGTERM == info.si_signo || SIGINT == info.si_signo || SIGQUIT == info.si_signo)
         return 1;

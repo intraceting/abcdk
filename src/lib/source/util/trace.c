@@ -6,8 +6,16 @@
  */
 #include "abcdk/util/trace.h"
 
+static void *g_trace_dump_cb_opaque = NULL;
+static abcdk_trace_dump_cb g_trace_dump_cb_func = NULL;
 
-void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, void *opaque)
+void abcdk_trace_redirect(abcdk_trace_dump_cb cb, void *opaque)
+{
+    g_trace_dump_cb_opaque = cb;
+    g_trace_dump_cb_func = opaque;
+}
+
+void abcdk_trace_output(int type, const char *str)
 {
     char buf[8000] = {0};
     uint64_t ts = 0;
@@ -21,23 +29,23 @@ void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, voi
     assert(str != NULL);
 
     /*获取自然时间.*/
-    ts = abcdk_time_clock2kind_with(CLOCK_REALTIME, 6);
+    ts = abcdk_time_realtime(6);
     abcdk_time_sec2tm(&tm, ts / 1000000UL, 0);
 
     /*获进程或线程名称.*/
 #ifndef __USE_GNU
     abcdk_proc_basename(name);
-#else //__USE_GNU
-    abcdk_thread_getname(pthread_self(),name);
+#else  //__USE_GNU
+    abcdk_thread_getname(pthread_self(), name);
 #endif //__USE_GNU
 
-    /*格式化行的头部: 时间, PID, 进程名字*/
-    hdrlen = snprintf(buf, sizeof(buf), "%04d%02d%02dT%02d%02d%02d.%06llu [%d] %s: ",
-                      tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), name);
+    /*格式化行的头部: TIME, PID, TYPE, NAME*/
+    hdrlen = snprintf(buf, sizeof(buf), "[%04d%02d%02dT%02d%02d%02d.%06llu][%d][%d][%s]: ",
+                      tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, ts % 1000000UL, getpid(), type, name);
 
 next_line:
 
-    if(!*str)
+    if (!*str)
         return;
 
     /*从头部之后开始.*/
@@ -77,25 +85,13 @@ next_char:
     /*结束符.*/
     buf[bufpos] = '\0';
 
-    if(cb)
-        cb(opaque,type, buf);
+    if (g_trace_dump_cb_func)
+        g_trace_dump_cb_func(g_trace_dump_cb_opaque, type, buf);
     else
         fprintf(stderr, "%s", buf);
 
     /*下一行.*/
     goto next_line;
-}
-
-
-static void *g_trace_printf_cb_opaque = NULL;
-static abcdk_trace_output_cb g_trace_printf_cb_func = NULL;
-
-void abcdk_trace_printf_redirect(abcdk_trace_output_cb cb,void *opaque)
-{
-    assert(cb);
-
-    g_trace_printf_cb_func = cb;
-    g_trace_printf_cb_opaque = opaque;
 }
 
 void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)
@@ -106,10 +102,7 @@ void abcdk_trace_vprintf(int type, const char *fmt, va_list ap)
 
     vsnprintf(buf, 8000, fmt, ap);
 
-    if (g_trace_printf_cb_func)
-        g_trace_printf_cb_func(g_trace_printf_cb_opaque, type, buf);
-    else
-        abcdk_trace_output(type, buf, NULL, NULL);
+    abcdk_trace_output(type, buf);
 }
 
 void abcdk_trace_printf(int type, const char *fmt, ...)
@@ -122,7 +115,7 @@ void abcdk_trace_printf(int type, const char *fmt, ...)
     va_end(vp);
 }
 
-void abcdk_trace_printf_siginfo(int type, siginfo_t *info)
+void abcdk_trace_siginfo(int type, siginfo_t *info)
 {
     assert(info != NULL);
 
