@@ -82,7 +82,7 @@ int abcdk_proc_vshell(int *exitcode , int *sigcode,const char *cmd,va_list ap);
 /**
  * 拦截信号.
  * 
- * @param news 新的信号集合.NULL(0) 默认所有信号, SIGTRAP、SIGKILL、SIGSEGV、SIGSTOP除外.
+ * @param news 新的信号集合.NULL(0) 默认所有信号, SIGTRAP, SIGKILL, SIGSEGV, SIGSTOP除外.
  * @param olds 旧的信号集合.NULL(0) 忽略.
 
  * @return 0 成功, -1 失败.

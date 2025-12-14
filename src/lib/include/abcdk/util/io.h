@@ -15,7 +15,7 @@ __BEGIN_DECLS
 /**
  * 在描述符上等待事件.
  * 
- * @param event 事件.0x01 读, 0x02 写.可用“|”运算符同时等待.
+ * @param event 事件.0x01 读, 0x02 写.可用"|"运算符同时等待.
  * @param timeout 超时(毫秒).>= 0 有事件或时间过期, < 0 直到有事件或出错.
  * 
  * @return > 0 有事件(监听的事件), 0 超时, < 0 出错.
@@ -156,7 +156,7 @@ int abcdk_futimens(int fd,const struct timespec *atime,const struct timespec *mt
  * @param [in] magic 起始码, NULL(0) 忽略.注: 仅对输入有效.
  * @param [in] mglen 起始码长度, <= 0 忽略.注: 仅对输入有效.
  * 
- * @return > 0 成功(读写的长度), <= 0 失败(出错、空间不足或已到末尾、超时).
+ * @return > 0 成功(读写的长度), <= 0 失败(出错, 空间不足或已到末尾, 超时).
 */
 ssize_t abcdk_transfer(int fd, void *data, size_t size, int direction, time_t timeout,
                        const void *magic, size_t mglen);

@@ -39,7 +39,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
         if(rlen < 0)
             break;
             
-        /*跳过无法存储的(不能超过数组容量), 不然管道中有数据但无“人”读取的话, 会卡死父进程.*/
+        /*跳过无法存储的(不能超过数组容量), 不然管道中有数据但无"人"读取的话, 会卡死父进程.*/
         if (line_c >= max)
             continue;
 

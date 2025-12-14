@@ -13,7 +13,7 @@
 __BEGIN_DECLS
 
 /**
- * 互斥量、事件.
+ * 互斥量, 事件.
 */
 typedef struct _abcdk_mutex abcdk_mutex_t;
 

@@ -43,8 +43,8 @@ abcdk_openssl_cipher_t *abcdk_openssl_cipher_create_from_file(int scheme, const 
 /**
  * 执行.
  * 
- * @note 加密, 输出的数据长度是“密文”的长度.
- * @note 解密, 输出的数据长度是“缓存”的长度.
+ * @note 加密, 输出的数据长度是"密文"的长度.
+ * @note 解密, 输出的数据长度是"缓存"的长度.
 */
 abcdk_object_t *abcdk_openssl_cipher_update(abcdk_openssl_cipher_t *ctx, const uint8_t *in, int in_len, int enc);
 

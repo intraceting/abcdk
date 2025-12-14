@@ -47,7 +47,7 @@ void abcdk_mkdir(const char *path, mode_t mode)
     if (!tmp)
         ABCDK_ERRNO_AND_RETURN0(ENOMEM);
 
-    /* 必须允许当前用户具有读、写、执行权限. */
+    /* 必须允许当前用户具有读, 写, 执行权限. */
     mode |= S_IRWXU;
 
     for (size_t i = 1; i < len; i++)
@@ -129,11 +129,11 @@ char *abcdk_abspath(char *buf, size_t decrease)
         if (!p)
             break;
 
-        /*“.”表示当前目录.*/
+        /*"."表示当前目录.*/
         if (abcdk_strncmp(p, ".", p_next - p, 1) == 0)
             continue;
 
-        /*“..”表示上一层目录, 这里要从堆栈中删除上一层.*/
+        /*".."表示上一层目录, 这里要从堆栈中删除上一层.*/
         if (abcdk_strncmp(p, "..", p_next - p, 1) == 0)
         {
             pos = abcdk_tree_child(stack, 0);

@@ -19,7 +19,7 @@ __BEGIN_DECLS
  * @param [in] ctimeout 连接超时.
  * @param [in] stimeout 读写超时.
  * 
- * @return 0 成功, -1 失败(超时、不支持).
+ * @return 0 成功, -1 失败(超时, 不支持).
 */
 int abcdk_curl_download_fd(int fd,const char *url,size_t offset,size_t count,time_t ctimeout,time_t stimeout);
 

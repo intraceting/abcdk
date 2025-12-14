@@ -9,13 +9,13 @@
 #include <string.h>
 #include "entry.h"
 
-/* 从技术层面来说, 通过单播、多播、广播三种方式都能探测到IPC, 但多播最具实用性*/
+/* 从技术层面来说, 通过单播, 多播, 广播三种方式都能探测到IPC, 但多播最具实用性*/
 #define COMM_TYPE_UNICAST         1                                             // 单播
 #define COMM_TYPE_MULTICAST       2                                             // 多播
 #define COMM_TYPE_BROADCAST       3                                             // 广播
 #define COMM_TYPE                 COMM_TYPE_MULTICAST
 
-/* 发送探测消息(Probe)的目标地址、端口号 */
+/* 发送探测消息(Probe)的目标地址, 端口号 */
 #if COMM_TYPE == COMM_TYPE_UNICAST
 #define CAST_ADDR "100.100.100.15"                                          // 单播地址, 预先知道的IPC地址
 #elif COMM_TYPE == COMM_TYPE_MULTICAST

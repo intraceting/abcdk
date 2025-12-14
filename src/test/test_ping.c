@@ -111,7 +111,7 @@ int abcdk_test_ping(abcdk_option_t *args)
     // 输出域名ip地址信息
     printf("ping %s (%s) : %d bytes of data.\n", dst_p, inet_ntoa(to.sin_addr), (int)ICMP_SIZE);
  
-    //循环发送报文、接收报文 
+    //循环发送报文, 接收报文 
     for(i = 0; i < NUM; i++){
         nsend++;  // 发送次数加1
         memset(&sendicmp, 0, ICMP_SIZE);

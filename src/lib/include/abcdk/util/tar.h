@@ -83,7 +83,7 @@ typedef union _abcdk_tar_hdr
  * gnu tar extensions:
 */
 
-/** 长链接、长路径标识.*/
+/** 长链接, 长路径标识.*/
 #define ABCDK_USTAR_LONGNAME_MAGIC "././@LongLink"
 /** 标识长度(字节, 包括结束符号). */
 #define ABCDK_USTAR_LONGNAME_MAGIC_LEN 14

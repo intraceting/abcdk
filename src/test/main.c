@@ -171,7 +171,7 @@ int main(int argc, char **argv)
     const char *log_path = abcdk_option_get(args, "--log-path", 0, "/tmp/abcdk/log/");
 
     /*打开日志.*/
-    logger = abcdk_logger_open2(log_path, "test.log", "test.%d.log", 10, 10, 0, 1);
+    logger = abcdk_logger_open2(log_path, "test.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);

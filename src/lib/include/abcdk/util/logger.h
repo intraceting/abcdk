@@ -54,22 +54,16 @@ void abcdk_logger_close(abcdk_logger_t **ctx);
  * 打开.
  *
  * @param [in] name 文件名(包括路径).
- * @param [in] segment_name 分段文件名(包括路径), NULL(0) 不分段.注: 分段文件名仅支持一个数值格式控制符.如: %d .
  * @param [in] segment_max 分段数量, 0 不分段.
  * @param [in] segment_size 分段大小(MB), 0 不分段.
- * @param [in] copy2syslog 复制到syslog.!0 是, 0 否.
- * @param [in] copy2stderr 复制到stderr.!0 是, 0 否.
+ * @param [in] copy2syslog 复制到syslog. !0 是, 0 否.
+ * @param [in] copy2stderr 复制到stderr. !0 是, 0 否.
  *
  */
-abcdk_logger_t *abcdk_logger_open(const char *name, const char *segment_name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);
+abcdk_logger_t *abcdk_logger_open(const char *name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);
 
-/**
- * 打开.
- * 
- * @param [in] path 路径.
- * 
-*/
-abcdk_logger_t *abcdk_logger_open2(const char *path,const char *name, const char *segment_name, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);
+/**打开.*/
+abcdk_logger_t *abcdk_logger_open2(const char *path, const char *filename, size_t segment_max, size_t segment_size, int copy2syslog, int copy2stderr);
 
 /**
  * 设置掩码.
@@ -94,7 +88,7 @@ void abcdk_logger_output(abcdk_logger_t *ctx, int type, const char *str);
  * @note 最大支持8000个字符(包括结束符).
  *
  * @param [in] type 类型.
- * @param [in] fmt 格式化字符串.@see vprintf
+ * @param [in] fmt 格式化字符串. @see vprintf
  * @param [in] ap 可变参数.
  *
  */

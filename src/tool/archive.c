@@ -291,7 +291,7 @@ void _abcdk_archive_print_usage(abcdk_option_t *args)
     fprintf(stderr, "\t\t文件或目录清单.注: 最大支持254个.\n");
 
     fprintf(stderr, "\n\t\t归档: 相对于工作路径, 匹配全路径名称(区分大小写).\n");
-    fprintf(stderr, "\t\t回迁: 在归档包内, 匹配全路径名称(区分大小写), 并且支持通配符(“*”匹配多个连续字符; “?”匹配单个字符.).如果未指定, 则回迁归档包内的所有文件和目录.\n");
+    fprintf(stderr, "\t\t回迁: 在归档包内, 匹配全路径名称(区分大小写), 并且支持通配符(\"*\"匹配多个连续字符; \"?\"匹配单个字符.).如果未指定, 则回迁归档包内的所有文件和目录.\n");
 
     fprintf(stderr, "\n\t--save-fullpath\n");
     fprintf(stderr, "\t\t保留完整路径.\n");

@@ -481,7 +481,7 @@ int _abcdk_ipcfg_eth_add(abcdk_ipcfg_node_t *ctx, int idx, int ver, const char *
         goto END;
     }
 
-    /*清除字符串两端“空白”字符.*/
+    /*清除字符串两端"空白"字符.*/
     for (int i = 0; i < addr_conf->numbers; i++)
     {
         abcdk_strtrim(addr_conf->pstrs[i], isspace, 2);
@@ -889,7 +889,7 @@ void _abcdk_ipcfg_process(abcdk_ipcfg_t *ctx)
     _abcdk_ipcfg_find_dhcp_client(ctx);
 
     /*打开日志.*/
-    ctx->logger = abcdk_logger_open2(log_path,"ipconfig.log", "ipconfig.%d.log", 10, 10, 0, 1);
+    ctx->logger = abcdk_logger_open2(log_path,"ipconfig.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy,ctx->logger);
@@ -948,7 +948,7 @@ void _abcdk_ipcfg_daemon(abcdk_ipcfg_t *ctx)
     interval = ABCDK_CLAMP(interval, 1, 60);
 
     /*打开日志.*/
-    logger = abcdk_logger_open2(log_path,"ipconfig-daemon.log", "ipconfig-daemon.%d.log", 10, 10, 0, 1);
+    logger = abcdk_logger_open2(log_path,"ipconfig-daemon.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy,logger);

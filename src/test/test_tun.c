@@ -21,7 +21,7 @@
 #include <linux/if_tun.h>
 #include <arpa/inet.h>
 
-// 打开TUN设备并配置名称、IP地址和掩码
+// 打开TUN设备并配置名称, IP地址和掩码
 static int tun_open(const char *dev_name, const char *ip_addr, const char *netmask)
 {
     int tun_fd;

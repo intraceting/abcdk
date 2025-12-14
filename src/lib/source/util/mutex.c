@@ -7,7 +7,7 @@
 #include "abcdk/util/mutex.h"
 
 /**
- * 互斥量、事件.
+ * 互斥量, 事件.
 */
 struct _abcdk_mutex
 {

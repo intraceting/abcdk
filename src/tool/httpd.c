@@ -266,7 +266,7 @@ static void _abcdk_httpd_reply_dirent_more(abcdk_https_stream_t *stream)
 
         abcdk_basename(tmp3, tmp);
 
-        /*以“.”开头的文件表示具有隐藏属性.*/
+        /*以"."开头的文件表示具有隐藏属性.*/
         if (tmp3[0] == '.')
             continue;
 
@@ -474,7 +474,7 @@ static void _abcdk_httpd_stream_request_cb(void *opaque, abcdk_https_stream_t *s
     /*解码路径.*/
     stream_ctx_p->script_de = abcdk_url_decode2(stream_ctx_p->script_p, strlen(stream_ctx_p->script_p), 1);
 
-    /*转换成绝对路径, 以防路径中存在“..”绕过根目录.*/
+    /*转换成绝对路径, 以防路径中存在".."绕过根目录.*/
     abcdk_url_abspath(stream_ctx_p->script_de->pstrs[0], 0);
     stream_ctx_p->script_de->sizes[0] = strlen(stream_ctx_p->script_de->pstrs[0]);
 
@@ -594,7 +594,7 @@ static void _abcdk_httpd_process(abcdk_httpd_t *ctx)
     log_path = abcdk_option_get(ctx->args, "--log-path", 0, "/tmp/abcdk/log/");
 
     /*打开日志.*/
-    ctx->logger = abcdk_logger_open2(log_path, "httpd.log", "httpd.%d.log", 10, 10, 0, 1);
+    ctx->logger = abcdk_logger_open2(log_path, "httpd.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, ctx->logger);
@@ -721,7 +721,7 @@ static void _abcdk_httpd_daemon(abcdk_httpd_t *ctx)
     interval = ABCDK_CLAMP(interval, 1, 60);
 
     /*打开日志.*/
-    logger = abcdk_logger_open2(log_path, "httpd-daemon.log", "httpd-daemon.%d.log", 10, 10, 0, 1);
+    logger = abcdk_logger_open2(log_path, "httpd-daemon.log", 10, 10, 0, 1);
 
     /*注册为轨迹日志.*/
     abcdk_trace_printf_redirect(abcdk_logger_proxy, logger);

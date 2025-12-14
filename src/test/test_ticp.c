@@ -38,7 +38,7 @@ int abcdk_test_tipc(abcdk_option_t *args)
     const char *listen_p;
     const char *connect_p;
 
-    abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.tipc.log","test.tipc.%d.log",10,10,1,1);
+    abcdk_logger_t *log_ctx = abcdk_logger_open2("/tmp/","test.tipc.log",10,10,1,1);
 
     abcdk_trace_printf_redirect(abcdk_logger_proxy,log_ctx);
 

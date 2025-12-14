@@ -17,7 +17,12 @@ __BEGIN_DECLS
 /**输出回调函数.*/
 typedef void (*abcdk_trace_output_cb)(void *opaque,int type, const char *str);
 
-/**字符串输出.*/
+/**
+ * 轨迹输出.
+ * 
+ * @param [in] cb 回调函数. NULL(0) 输出到终端.
+ * 
+*/
 void abcdk_trace_output(int type, const char *str, abcdk_trace_output_cb cb, void *opaque);
 
 /**

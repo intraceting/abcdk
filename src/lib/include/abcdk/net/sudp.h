@@ -137,7 +137,7 @@ int abcdk_sudp_set_timeout(abcdk_sudp_node_t *node, time_t timeout);
 /**
  * 密钥重置.
  * 
- * @param [in] 标志.0x01 接收, 0x02 发送.可用“|”运算符同时重置.
+ * @param [in] 标志.0x01 接收, 0x02 发送.可用"|"运算符同时重置.
  * 
  * @return 0 成功, -1 失败.
 */

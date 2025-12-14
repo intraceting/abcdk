@@ -210,7 +210,7 @@ int _abcdk_mmc_find(abcdk_tree_t *list, abcdk_tree_t *node)
     abcdk_tree_t *p;
     abcdk_mmc_info_t *dev_p, *dev_q;
 
-    /*链表为空, 直接返回“未找到”.*/
+    /*链表为空, 直接返回"未找到".*/
     if (!list)
         return 0;
 

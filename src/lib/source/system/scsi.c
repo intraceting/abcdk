@@ -367,7 +367,7 @@ int _abcdk_scsi_find(abcdk_tree_t *list, abcdk_tree_t *node)
     abcdk_tree_t *p;
     abcdk_scsi_info_t *dev_p, *dev_q;
 
-    /*链表为空, 直接返回“未找到”.*/
+    /*链表为空, 直接返回"未找到".*/
     if (!list)
         return 0;
 

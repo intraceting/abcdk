@@ -461,7 +461,7 @@ int abcdk_sockaddr_from_string(abcdk_sockaddr_t *dst, const char *src, int try_l
     }
     else if (p = strchr(src, ':'))
     {
-        /*如果字符串内含有两个或以上的“:”, 则按IPV6处理."*/
+        /*如果字符串内含有两个或以上的":", 则按IPV6处理."*/
         if (p = strchr(p + 1, ':'))
             dst->family = AF_INET6;
 
@@ -757,7 +757,7 @@ int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockadd
 
     if(dst->family == AF_INET)
     {
-        /*目标地址和子网地址进行“与”运算.*/
+        /*目标地址和子网地址进行"与"运算.*/
         chk.addr4.sin_addr.s_addr = (dst->addr4.sin_addr.s_addr & net->addr4.sin_addr.s_addr);
 
         /*运算相等时, 表示属于同一个子网.*/
@@ -766,7 +766,7 @@ int abcdk_sockaddr_subnet_check(const abcdk_sockaddr_t *dst, const abcdk_sockadd
     }
     else if(dst->family == AF_INET6)
     {
-        /*目标地址和子网地址进行“与”运算.*/
+        /*目标地址和子网地址进行"与"运算.*/
         for (int i = 0; i < 16; i++)
             chk.addr6.sin6_addr.s6_addr[i] = (dst->addr6.sin6_addr.s6_addr[i] & net->addr6.sin6_addr.s6_addr[i]);
 

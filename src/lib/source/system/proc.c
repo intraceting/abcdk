@@ -300,7 +300,7 @@ int abcdk_proc_subprocess(abcdk_fork_process_cb process_cb, void *opaque,int *ex
             kill(-cid_pgid, 15);
             abcdk_waitpid(cid, 0, exitcode, sigcode);
 
-            chk = 0;//父进程收到终止信号, 返回“正常结束”.
+            chk = 0;//父进程收到终止信号, 返回"正常结束".
             break;
         }
         else
@@ -309,7 +309,7 @@ int abcdk_proc_subprocess(abcdk_fork_process_cb process_cb, void *opaque,int *ex
             cid_chk = abcdk_waitpid(cid, WNOHANG, exitcode, sigcode);
             if (cid_chk < 0)
             {
-                chk = -2;//子进程不存在, 返回“已结束或被终止”.
+                chk = -2;//子进程不存在, 返回"已结束或被终止".
                 break;
             }
         }
@@ -350,7 +350,7 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
             kill(-cid_pgid, 15);
             abcdk_waitpid(cid, 0, exitcode, sigcode);
 
-            chk = 0;//父进程收到终止信号, 返回“正常结束”.
+            chk = 0;//父进程收到终止信号, 返回"正常结束".
             break;
         }
         else
@@ -359,7 +359,7 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
             cid_chk = abcdk_waitpid(cid, 0, exitcode, sigcode);
             if (cid_chk < 0)
             {
-                chk = -2;//子进程不存在, 返回“已结束或被终止”.
+                chk = -2;//子进程不存在, 返回"已结束或被终止".
                 break;
             }
         }

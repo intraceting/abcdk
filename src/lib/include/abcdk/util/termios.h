@@ -36,7 +36,7 @@ int abcdk_tcattr_cbreak(int fd,struct termios *old);
 /** 设置串口参数
  * 
  * @param baudrate 波特率.
- * @param bits 数据位, 5、6、7、8.默认: 8.
+ * @param bits 数据位, 5, 6, 7, 8.默认: 8.
  * @param parity 效验位, 1 奇校验, 2 偶校验, 其它 无校验.默认: 无校验.
  * @param stop 停止位, 1位或2位.默认: 1位.
  * @param old 旧属性的指针, NULL(0)忽略.

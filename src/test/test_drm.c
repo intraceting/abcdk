@@ -79,7 +79,7 @@ int _abcdk_test_drm_work(abcdk_option_t *args)
 
     fd = open(dev_p, O_RDWR | O_CLOEXEC); // 打开card0, card0一般绑定HDMI和LVDS
 
-    resources = drmModeGetResources(fd); // 获取drmModeRes资源,包含fb、crtc、encoder、connector等
+    resources = drmModeGetResources(fd); // 获取drmModeRes资源,包含fb, crtc, encoder, connector等
 
     crtc_id = resources->crtcs[0];      // 获取crtc id
     conn_id = resources->connectors[0]; // 获取connector id
