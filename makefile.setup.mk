@@ -88,7 +88,7 @@ uninstall-tool:
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
 	rm -f ${INSTALL_PREFIX}/share/locale/en_US/LC_MESSAGES/abcdk-tool.mo
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/libabcdk.pot
+	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-tool.pot
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/sample/abcdk-tool
 
 #
@@ -97,7 +97,7 @@ uninstall-lib:
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
 	rm -f ${INSTALL_PREFIX}/share/locale/en_US/LC_MESSAGES/libabcdk.mo
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-tool.pot
+	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/libabcdk.pot
 	
 #
 uninstall-dev:
