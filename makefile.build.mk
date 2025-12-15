@@ -90,11 +90,11 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cu
 #
 xgettext: xgettext-lib xgettext-tool
 
-#把POT文件从share目录复制到build目录进行更新。
+#
 xgettext-lib:
 	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/libabcdk.pot
 
-#把POT文件从share目录复制到build目录进行更新。
+#
 xgettext-tool:
 	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.pot
 
