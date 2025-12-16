@@ -11,8 +11,8 @@ static abcdk_trace_dump_cb g_trace_dump_cb_func = NULL;
 
 void abcdk_trace_redirect(abcdk_trace_dump_cb cb, void *opaque)
 {
-    g_trace_dump_cb_opaque = cb;
-    g_trace_dump_cb_func = opaque;
+    g_trace_dump_cb_func = cb;
+    g_trace_dump_cb_opaque = opaque;
 }
 
 void abcdk_trace_output(int type, const char *str)
