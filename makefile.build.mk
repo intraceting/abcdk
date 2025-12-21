@@ -76,11 +76,6 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXX_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
 
-#
-$(OBJ_PATH)/%.o: $(SRC_DIR)/%.cu
-	mkdir -p $(dir $@)
-	$(NVCC) $(NVCC_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
-
 
 #包含依赖文件(不能晚于此处).
 -include $(LIB_OBJ_DEPS) 

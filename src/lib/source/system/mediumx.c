@@ -64,7 +64,7 @@ int _abcdk_mediumx_element_status_format_cb(size_t depth, abcdk_tree_t *node, vo
         if(param_p->fmt == 2)
         {
             fprintf(param_p->out,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-            fprintf(param_p->out,"\t<elements>\n");
+            fprintf(param_p->out,"<elements>\n");
         }
         else if(param_p->fmt == 3)
         {
@@ -80,8 +80,7 @@ int _abcdk_mediumx_element_status_format_cb(size_t depth, abcdk_tree_t *node, vo
     {
         if(param_p->fmt == 2)
         {
-            fprintf(param_p->out,"\t</elements>\n");
-            fprintf(param_p->out,"</library>\n");
+            fprintf(param_p->out,"</elements>\n");
         }
         else if(param_p->fmt == 3)
         {
@@ -99,7 +98,7 @@ int _abcdk_mediumx_element_status_format_cb(size_t depth, abcdk_tree_t *node, vo
 
         if (param_p->fmt == 2)
         {
-            fprintf(param_p->out, "\t\t<element address=\"%hu\" type=\"%hhu\" full=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
+            fprintf(param_p->out, "\t<element address=\"%hu\" type=\"%hhu\" full=\"%hhu\" dvcid=\"%s\" >%s</element>\n",
                     addr,type,full,dvcid,barcode);
         }
         else if(param_p->fmt == 3)
@@ -108,7 +107,7 @@ int _abcdk_mediumx_element_status_format_cb(size_t depth, abcdk_tree_t *node, vo
             fprintf(param_p->out, "\t\t\t\"address\":\"%hu\",\n",addr);
             fprintf(param_p->out, "\t\t\t\"type\":\"%hhu\",\n",type);
             fprintf(param_p->out, "\t\t\t\"full\":\"%hhu\",\n",full);
-            fprintf(param_p->out, "\t\t\t\"barcode\":\"%s\"\n",barcode);
+            fprintf(param_p->out, "\t\t\t\"barcode\":\"%s\",\n",barcode);
             fprintf(param_p->out, "\t\t\t\"dvcid\":\"%s\",\n",dvcid);
             fprintf(param_p->out, "\t\t}");
             fprintf(param_p->out, "%s\n",(abcdk_tree_sibling(node,0)?",":""));

@@ -63,12 +63,6 @@ CXX_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR}
 CXX_FLAGS += -DABCDK_VERSION_PATCH=${VERSION_PATCH}
 CXX_FLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 
-#
-NVCC_FLAGS += -std=${CXX_STD}
-NVCC_FLAGS += -ccbin ${CXX}
-#抑制“未识别的属性”的诊断消息输出, 让编译日志更简洁.
-NVCC_FLAGS += -Xcudafe --diag_suppress=unrecognized_attribute
-
 #在GCC中, 链接器按照从左到右的顺序解析库, 因此想让这个生效, 必须写在链接参数的第一个.
 LD_FLAGS += -Wl,--as-needed
 
@@ -83,8 +77,6 @@ ifeq (${BUILD_TYPE},release)
 C_FLAGS += -O2
 CXX_FLAGS += -O2
 LD_FLAGS += -s
-#仅保留用于性能分性的调式信息.
-NVCC_FLAGS += -lineinfo
 endif
 
 #
@@ -104,9 +96,6 @@ C_FLAGS += ${EXTRA_C_FLAGS}
 #
 CXX_FLAGS += -I$(MAKEFILE_DIR)/src/lib/include/ 
 CXX_FLAGS += ${EXTRA_C_FLAGS} ${EXTRA_CXX_FLAGS}
-
-#C++编译选项绑定到CUDA编译选项.
-NVCC_FLAGS += $(addprefix -Xcompiler ,${CXX_FLAGS})
 
 #
 LD_FLAGS += -L${BUILD_PATH}

@@ -194,6 +194,8 @@ void _abcdk_mtx_work(abcdk_mtx_t *ctx)
     snprintf(ctx->root->obj->pptrs[1], ctx->root->obj->sizes[1], "%s", ctx->vendor);
     snprintf(ctx->root->obj->pptrs[2], ctx->root->obj->sizes[2], "%s", ctx->product);
 
+    ctx->voltag = ctx->dvcid = 1;
+    
     chk = abcdk_mediumx_inquiry_element_status(ctx->root, ctx->fd, ctx->voltag,ctx->dvcid,-1, &ctx->stat);
     if (chk != 0 || ctx->stat.status != GOOD)
         ABCDK_ERRNO_AND_GOTO1(ctx->errcode = EPERM,print_sense);

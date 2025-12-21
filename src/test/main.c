@@ -24,8 +24,6 @@ static struct _abcdk_test_entry
     */
     int (*func_cb)(abcdk_option_t *args);
 }abcdk_test_entry[] = {
-    {"http",abcdk_test_http},
-    {"http2",abcdk_test_http2},
     {"uri",abcdk_test_uri},
     {"log",abcdk_test_log},
     {"any",abcdk_test_any},
@@ -38,7 +36,6 @@ static struct _abcdk_test_entry
     {"ping",abcdk_test_ping},
     {"onvif",abcdk_test_onvif},
     {"dhcp",abcdk_test_dhcp},
-    {"tipc",abcdk_test_tipc},
     {"timer",abcdk_test_timer},
     {"tun",abcdk_test_tun},
     {"srpc",abcdk_test_srpc},

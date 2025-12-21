@@ -67,7 +67,7 @@ exit_if_error()
 }
 
 #
-${SHELLKITS_HOME}/fast-c-cxx/configure.sh $@
+${SHELLKITS_HOME}/fast-c-cxx/configure.sh "$@"
 exit_if_error $? "Configuration failed." $?
 
 

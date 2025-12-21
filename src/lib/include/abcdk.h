@@ -105,8 +105,6 @@
 
 #include "abcdk/net/stcp.h"
 #include "abcdk/net/sudp.h"
-#include "abcdk/net/tipc.h"
-#include "abcdk/net/https.h"
 #include "abcdk/net/srpc.h"
 
 #include "abcdk/lz4/lz4.h"

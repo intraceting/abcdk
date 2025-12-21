@@ -11,8 +11,6 @@
 
 __BEGIN_DECLS
 
-int abcdk_test_http(abcdk_option_t *args);
-int abcdk_test_http2(abcdk_option_t *args);
 int abcdk_test_uri(abcdk_option_t *args);
 int abcdk_test_log(abcdk_option_t *args);
 int abcdk_test_any(abcdk_option_t *args);
@@ -24,7 +22,6 @@ int abcdk_test_drm(abcdk_option_t *args);
 int abcdk_test_ping(abcdk_option_t *args);
 int abcdk_test_onvif(abcdk_option_t *args);
 int abcdk_test_dhcp(abcdk_option_t *args);
-int abcdk_test_tipc(abcdk_option_t *args);
 int abcdk_test_timer(abcdk_option_t *args);
 int abcdk_test_tun(abcdk_option_t *args);
 int abcdk_test_srpc(abcdk_option_t *args);
