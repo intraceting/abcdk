@@ -87,11 +87,11 @@ xgettext: xgettext-lib xgettext-tool
 
 #
 xgettext-lib:
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/libabcdk.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/abcdk.pot
 
 #
 xgettext-tool:
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk.pot
 
 #
 clean-lib:

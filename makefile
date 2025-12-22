@@ -138,10 +138,10 @@ clean: clean-lib clean-tool clean-test clean-xgettext
 include $(MAKEFILE_DIR)/makefile.setup.mk
 
 #
-install: install-lib install-dev install-tool
+install: install-lib install-dev install-tool install-pot
 
 #
-uninstall: uninstall-lib uninstall-dev uninstall-tool
+uninstall: uninstall-lib uninstall-dev uninstall-tool uninstall-pot
 
 #
 help:
@@ -152,8 +152,10 @@ help:
 	@echo "make install-lib"
 	@echo "make install-dev"
 	@echo "make install-tool"
+	@echo "make install-pot"
 	@echo "make uninstall"
 	@echo "make uninstall-lib"
 	@echo "make uninstall-dev"
 	@echo "make uninstall-tool"
+	@echo "make uninstall-pot"
 
