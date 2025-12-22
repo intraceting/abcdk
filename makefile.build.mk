@@ -111,5 +111,4 @@ clean-test:
 
 #
 clean-xgettext:
-	rm -rf $(BUILD_PATH)/libabcdk.pot
-	rm -rf $(BUILD_PATH)/abcdk-tool.pot
+	rm -rf $(BUILD_PATH)/abcdk.pot
