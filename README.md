@@ -9,7 +9,7 @@ ABCDK(A Better C language Development Kit)
 
 ## 简介
 
-为了支持在Linux/Unix系统中快速开发软件项目而创建的解决方案, 提供关于网络/数据库/链表/多叉树/硬盘/磁带/文件/目录/多媒体等开发接口.
+为了支持在Linux/Unix系统中快速开发通用软件项目而创建的解决方案.
 
 ## 主要模块
 
