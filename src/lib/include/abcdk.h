@@ -97,6 +97,7 @@
 #include "abcdk/system/dmi.h"
 #include "abcdk/system/net.h"
 #include "abcdk/system/mediumx.h"
+#include "abcdk/system/locale.h"
 
 #include "abcdk/mp4/demuxer.h"
 #include "abcdk/mp4/muxer.h"
