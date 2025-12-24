@@ -112,17 +112,6 @@ abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void 
     return (abcdk_srpc_session_t*)node_p;
 }
 
-uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node)
-{
-    abcdk_stcp_node_t *node_p;
-
-    assert(node != NULL);
-
-    node_p = (abcdk_stcp_node_t *)node;
-
-    return abcdk_stcp_get_index(node_p);
-}
-
 SSL *abcdk_srpc_ssl_get_handle(abcdk_srpc_session_t *node)
 {
     abcdk_stcp_node_t *node_p;

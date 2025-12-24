@@ -112,13 +112,6 @@ abcdk_sudp_node_t *abcdk_sudp_refer(abcdk_sudp_node_t *src);
  */
 abcdk_sudp_node_t *abcdk_sudp_alloc(abcdk_sudp_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
-/**
- * 获取索引.
- * 
- * @note 进程内唯一.
- * 
-*/
-uint64_t abcdk_sudp_get_index(abcdk_sudp_node_t *node);
 
 /**
  * 获取用户环境指针.

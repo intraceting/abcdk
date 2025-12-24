@@ -49,9 +49,6 @@ struct _abcdk_sudp_node
     /**配置.*/
     abcdk_sudp_config_t cfg;
 
-    /**索引.*/
-    uint64_t index;
-
     /**状态.*/
     volatile int status;
 #define ABCDK_SUDP_STATUS_STABLE 1
@@ -230,7 +227,6 @@ abcdk_sudp_node_t *abcdk_sudp_alloc(abcdk_sudp_t *ctx, size_t userdata, void (*f
     node->magic = ABCDK_SUDP_NODE_MAGIC;
     node->refcount = 1;
     node->ctx = _abcdk_sudp_ctx_refer(ctx);
-    node->index = abcdk_sequence_num();
     node->status = 0;
     node->pfd = -1;
     node->fd = -1;
@@ -244,13 +240,6 @@ abcdk_sudp_node_t *abcdk_sudp_alloc(abcdk_sudp_t *ctx, size_t userdata, void (*f
 
 
     return node;
-}
-
-uint64_t abcdk_sudp_get_index(abcdk_sudp_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->index;
 }
 
 void *abcdk_sudp_get_userdata(abcdk_sudp_node_t *node)
@@ -414,7 +403,7 @@ static void _abcdk_sudp_perform(abcdk_sudp_t *ctx, int idx)
         node = (abcdk_sudp_node_t *)e.data.ptr;
 
         /*设置线程名字, 日志记录会用到.*/
-        abcdk_thread_setname(0, "%x", node->index);
+        abcdk_thread_setname(pthread_self(), "SUDP-%x", abcdk_sequence_num());
 
         _abcdk_sudp_dispatch(ctx, e.events, node);
     }

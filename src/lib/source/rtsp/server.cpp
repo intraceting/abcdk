@@ -133,8 +133,8 @@ static void *_abcdk_rtsp_server_worker_thread_routine(void *opaque)
 {
     abcdk_rtsp_server_t *ctx = (abcdk_rtsp_server_t *)opaque;
 
-    /*设置线程名字,日志记录会用到.*/
-    abcdk_thread_setname(0, "%x", abcdk_sequence_num());
+    /*设置线程名字, 日志记录会用到.*/
+    abcdk_thread_setname(pthread_self(), "RTSP-SE-%x", abcdk_sequence_num());
 
     ctx->l5_env_ctx->taskScheduler().doEventLoop(&ctx->worker_flag);
 

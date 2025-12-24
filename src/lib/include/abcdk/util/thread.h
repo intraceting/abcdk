@@ -65,12 +65,17 @@ int abcdk_thread_create_group(int count,abcdk_thread_t ctxs[],int joinable);
  * 
  * @return 0 成功; !0 出错.
 */
-int abcdk_thread_setaffinity(pthread_t tid,int cpus[]);
+int abcdk_thread_setaffinity(pthread_t tid, int cpus[]);
 
 /**
  * 设置线程亲源CPU.
  */
-int abcdk_thread_setaffinity2(pthread_t tid,int cpu);
+int abcdk_thread_setaffinity2(pthread_t tid, int cpu);
+
+/**
+ * 设置线程亲源CPU.
+ */
+int abcdk_thread_setaffinity3(pthread_t tid);
 
 /**
  * 选举主线程.

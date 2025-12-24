@@ -122,6 +122,15 @@ int abcdk_thread_setaffinity2(pthread_t tid,int cpu)
     return abcdk_thread_setaffinity(tid,cpus);
 }
 
+int abcdk_thread_setaffinity3(pthread_t tid)
+{
+    static int cpu_idx = 0;
+
+    cpu_idx = abcdk_atomic_add_and_fetch(&cpu_idx, 1) % sysconf(_SC_NPROCESSORS_ONLN);
+
+    return abcdk_thread_setaffinity2(tid,cpu_idx);
+}
+
 int abcdk_thread_leader_vote(volatile pthread_t *tid)
 {
     pthread_t self_tid = pthread_self();

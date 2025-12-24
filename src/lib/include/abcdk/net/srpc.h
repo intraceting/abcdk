@@ -128,14 +128,6 @@ abcdk_srpc_session_t *abcdk_srpc_refer(abcdk_srpc_session_t *src);
 abcdk_srpc_session_t *abcdk_srpc_alloc(abcdk_srpc_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
 /**
- * 获取索引.
- * 
- * @note 进程内唯一.
- * 
- */
-uint64_t abcdk_srpc_get_index(abcdk_srpc_session_t *node);
-
-/**
  * 获取SSL链路句柄.
  * 
  * @warning 应用层不能释放链路句柄.

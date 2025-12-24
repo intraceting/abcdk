@@ -240,14 +240,6 @@ abcdk_stcp_node_t *abcdk_stcp_refer(abcdk_stcp_node_t *src);
 abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*free_cb)(void *userdata));
 
 /**
- * 获取索引.
- * 
- * @note 进程内唯一.
- * 
-*/
-uint64_t abcdk_stcp_get_index(abcdk_stcp_node_t *node);
-
-/**
  * 获取SSL链路句柄.
  * 
  * @warning 应用层不能释放链路句柄.

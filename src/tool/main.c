@@ -85,7 +85,7 @@ int _abcdk_tool_dispatch(abcdk_option_t *args)
         return -22;
     }
 
-    abcdk_thread_setname(0,"%s", entry_p->name);
+    abcdk_thread_setname(pthread_self(),"%s", entry_p->name);
 
     return entry_p->func_cb(args);
 }

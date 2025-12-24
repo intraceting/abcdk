@@ -42,10 +42,7 @@ struct _abcdk_stcp_node
 
     /**配置.*/
     abcdk_stcp_config_t cfg;
-
-    /** 索引.*/
-    uint64_t index;
-
+    
     /**句柄来源.*/
     volatile int flag;
 #define ABCDK_STCP_FLAG_CLIENT 1
@@ -259,7 +256,6 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*f
     node->magic = ABCDK_STCP_NODE_MAGIC;
     node->refcount = 1;
     node->ctx = _abcdk_stcp_ctx_refer(ctx);
-    node->index = abcdk_sequence_num();
     node->pfd = -1;
     node->fd = -1;
     node->userdata = abcdk_object_alloc3(userdata, 1);
@@ -275,13 +271,6 @@ abcdk_stcp_node_t *abcdk_stcp_alloc(abcdk_stcp_t *ctx, size_t userdata, void (*f
     node->openssl_bio = NULL;
 
     return node;
-}
-
-uint64_t abcdk_stcp_get_index(abcdk_stcp_node_t *node)
-{
-    assert(node != NULL);
-
-    return node->index;
 }
 
 SSL *abcdk_stcp_ssl_get_handle(abcdk_stcp_node_t *node)
@@ -924,7 +913,7 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
         node = (abcdk_stcp_node_t *)e.data.ptr;
 
         /*设置线程名字, 日志记录会用到.*/
-        abcdk_thread_setname(0, "%x", node->index);
+        abcdk_thread_setname(pthread_self(), "STCP-%x", abcdk_sequence_num());
 
         _abcdk_stcp_dispatch(ctx, e.events, node);
     }
