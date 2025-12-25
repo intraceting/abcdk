@@ -11,7 +11,6 @@ int abcdk_locale_setup(const char *lang_codeset, const char *domain_name, const 
     const char *tmp_lang_codeset_p = NULL;
     char tmp_domain_name[NAME_MAX] = {0};
     char tmp_domain_path[PATH_MAX] = {0};
-    int chk;
 
     /*如果未指定语言和编码, 则从环境变获取语言配置.*/
     tmp_lang_codeset_p = (lang_codeset ? lang_codeset : getenv("ABCDK_DEFAULT_LANG_CODESET"));
@@ -32,14 +31,10 @@ int abcdk_locale_setup(const char *lang_codeset, const char *domain_name, const 
         abcdk_proc_dirname(tmp_domain_path, domain_path);//相对路径, 则以当前程序为父级路径.
 
     /*绑定域名和路径.*/
-    chk = bindtextdomain(tmp_domain_name, tmp_domain_path);
-    if (chk != 0)
-        return -2;
+    bindtextdomain(tmp_domain_name, tmp_domain_path);
 
     /*激活域名.*/
-    chk = textdomain(tmp_domain_name);
-    if (chk != 0)
-        return -3;
+    textdomain(tmp_domain_name);
 
     return 0;
 }

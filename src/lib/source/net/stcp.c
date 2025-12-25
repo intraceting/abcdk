@@ -912,9 +912,6 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
 
         node = (abcdk_stcp_node_t *)e.data.ptr;
 
-        /*设置线程名字, 日志记录会用到.*/
-        abcdk_thread_setname(pthread_self(), "STCP-%x", abcdk_sequence_num());
-
         _abcdk_stcp_dispatch(ctx, e.events, node);
     }
 
@@ -927,6 +924,9 @@ static void _abcdk_stcp_perform(abcdk_stcp_t *ctx, int idx)
 static void _abcdk_stcp_worker(void *opaque, uint64_t event, void *item)
 {
     abcdk_stcp_t *ctx = (abcdk_stcp_t *)opaque;
+
+    /*设置线程名字, 日志记录会用到.*/
+    abcdk_thread_setname(pthread_self(), "STCP-%x", abcdk_sequence_num());
 
     _abcdk_stcp_perform(ctx, event);
 }

@@ -69,6 +69,9 @@ void *_abcdk_worker_routine(void *opaque)
     abcdk_worker_t *ctx = (abcdk_worker_t *)opaque;
     abcdk_worker_item_t *item_p;
 
+    /*设置线程名字, 日志记录会用到.*/
+    abcdk_thread_setname(pthread_self(), "WORKER-%x", abcdk_sequence_num());
+
 NEXT:
 
     /*清理野指针.*/
