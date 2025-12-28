@@ -6,109 +6,233 @@
 #
 #MAKEFILE_DIR := $(dir $(shell realpath "$(lastword $(MAKEFILE_LIST))"))
 
+#生成LIB安装后执行脚本文件内容.
+define LIB_POST_SHELL_CONTEXT
 #
-SRC_DIR := $(MAKEFILE_DIR)/src/
+endef
+export LIB_POST_SHELL_CONTEXT
 
-#C
-LIB_SRC_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.c)
-
-#C++
-LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cpp)
-
+#生成LIB卸载后执行脚本文件内容.
+define LIB_POSTUN_SHELL_CONTEXT
 #
-TOOL_SRC_FILES = $(wildcard $(SRC_DIR)/tool/*.c)
+endef
+export LIB_POSTUN_SHELL_CONTEXT
 
+#生成DEV安装后执行脚本文件内容.
+define DEV_POST_SHELL_CONTEXT
 #
-TEST_SRC_FILES = $(wildcard $(SRC_DIR)/test/*.c)
+endef
+export DEV_POST_SHELL_CONTEXT
 
+#生成DEV卸载后执行脚本文件内容.
+define DEV_POSTUN_SHELL_CONTEXT
 #
-LIB_OBJ_FILES := $(patsubst $(SRC_DIR)/lib/%, $(OBJ_PATH)/lib/%, $(LIB_SRC_FILES:.c=.o) $(LIB_SRC_CXX_FILES:.cpp=.o))
-LIB_OBJ_DEPS += $(LIB_OBJ_FILES:.o=.d)
+endef
+export DEV_POSTUN_SHELL_CONTEXT
 
+#生成TOOL安装后执行脚本文件内容.
+define TOOL_POST_SHELL_CONTEXT
 #
-TOOL_OBJ_FILES := $(patsubst $(SRC_DIR)/tool/%, $(OBJ_PATH)/tool/%, $(TOOL_SRC_FILES:.c=.o))
-TOOL_OBJ_DEPS += $(TOOL_OBJ_FILES:.o=.d)
-
+echo "export PATH=${INSTALL_PREFIX}/bin:\$${PATH}" > /etc/profile.d/abcdk-tool.sh
+chmod 0755 /etc/profile.d/abcdk-tool.sh
+echo "Run 'source /etc/profile' to update PATH, or restart the system for the change to take effect."
 #
-TEST_OBJ_FILES := $(patsubst $(SRC_DIR)/test/%, $(OBJ_PATH)/test/%, $(TEST_SRC_FILES:.c=.o))
-TEST_OBJ_DEPS += $(TEST_OBJ_FILES:.o=.d)
+endef
+export TOOL_POST_SHELL_CONTEXT
 
-
-#伪目标，告诉make这些都是标志，而不是实体目录。
-#因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
-.PHONY: lib tool test xgettext
-
+#生成TOOL卸载后执行脚本文件内容.
+define TOOL_POSTUN_SHELL_CONTEXT
 #
-lib: lib-src
-	mkdir -p $(BUILD_PATH)
-	$(CXX) -shared -o $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} $(LIB_OBJ_FILES) $(LD_FLAGS) -Wl,-soname,libabcdk.so.${VERSION_STR_MAIN}
-	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
-
+rm -f /etc/profile.d/abcdk-tool.sh
 #
-lib-src: $(LIB_OBJ_FILES)
-
-#
-tool: tool-src lib
-	mkdir -p $(BUILD_PATH)
-	$(CXX) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
+endef
+export TOOL_POSTUN_SHELL_CONTEXT
 
 #
-tool-src: ${TOOL_OBJ_FILES} 
+SYSROOT_TMP = ${BUILD_PATH}/abcdk.sysroot.tmp/
+
+#
+LIB_SYSROOT_TMP = ${SYSROOT_TMP}/lib.sysroot.tmp/
+DEV_SYSROOT_TMP = ${SYSROOT_TMP}/dev.sysroot.tmp/
+TOOL_SYSROOT_TMP = ${SYSROOT_TMP}/tool.sysroot.tmp/
+#
+LIB_FILE_LIST = ${SYSROOT_TMP}/lib.file.list
+DEV_FILE_LIST = ${SYSROOT_TMP}/dev.file.list
+TOOL_FILE_LIST = ${SYSROOT_TMP}/tool.file.list
+#
+LIB_POST_SHELL_FILE = ${SYSROOT_TMP}/lib.post.sh
+LIB_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/lib.postun.sh
+DEV_POST_SHELL_FILE = ${SYSROOT_TMP}/dev.post.sh
+DEV_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/dev.postun.sh
+TOOL_POST_SHELL_FILE = ${SYSROOT_TMP}/tool.post.sh
+TOOL_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/tool.postun.sh
+
+#
+LIB_RPM_SPEC = ${SYSROOT_TMP}/lib.rpm.spec
+LIB_DEB_SPEC =  ${SYSROOT_TMP}/lib.deb.spec
+DEV_RPM_SPEC = ${SYSROOT_TMP}/dev.rpm.spec
+DEV_DEB_SPEC = ${SYSROOT_TMP}/dev.deb.spec
+TOOL_RPM_SPEC = ${SYSROOT_TMP}/tool.rpm.spec
+TOOL_DEB_SPEC = ${SYSROOT_TMP}/tool.deb.spec 
+
+#
+prepare: prepare-lib prepare-dev prepare-tool
+
+#
+prepare-lib:
+	rm -rf ${LIB_SYSROOT_TMP}
+	make -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
+	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX}/lib/
+	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX}/lib/compat/
+	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${LIB_FILE_LIST}
+	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${LIB_FILE_LIST}
+	printf "%s" "$${LIB_POST_SHELL_CONTEXT}" > ${LIB_POST_SHELL_FILE}
+	printf "%s" "$${LIB_POSTUN_SHELL_CONTEXT}" > ${LIB_POSTUN_SHELL_FILE}
+
+#
+prepare-dev:
+	rm -rf ${DEV_SYSROOT_TMP}
+	make -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} install-dev
+	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${DEV_FILE_LIST}
+	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${DEV_FILE_LIST}
+#替换PC文件内部的路径为安装路径。
+	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -name "*.pc" -exec sed -i "s#${DEV_SYSROOT_TMP}/${INSTALL_PREFIX}#${INSTALL_PREFIX}#g" {} \;
+	printf "%s" "$${DEV_POST_SHELL_CONTEXT}" > ${DEV_POST_SHELL_FILE}
+	printf "%s" "$${DEV_POSTUN_SHELL_CONTEXT}" > ${DEV_POSTUN_SHELL_FILE}
+	
+#
+prepare-tool:
+	rm -rf ${TOOL_SYSROOT_TMP}
+	make -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} install-tool
+	find ${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${TOOL_FILE_LIST}
+	find ${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${TOOL_FILE_LIST}
+	printf "%s" "$${TOOL_POST_SHELL_CONTEXT}" > ${TOOL_POST_SHELL_FILE}
+	printf "%s" "$${TOOL_POSTUN_SHELL_CONTEXT}" > ${TOOL_POSTUN_SHELL_FILE}
 
 
 #
-test: test-src lib
-	mkdir -p $(BUILD_PATH)
-	$(CXX) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
+build-deb-lib: prepare-lib
+#生成SPEC文件.
+	${SHELLKITS_HOME}/tools/make.deb.rt.ctl.sh  \
+	-d PACK_NAME=abcdk \
+	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+	-d OUTPUT=${LIB_DEB_SPEC} \
+	-d VERSION_MAJOR=${VERSION_MAJOR} \
+	-d VERSION_MINOR=${VERSION_MINOR} \
+	-d VERSION_RELEASE=${VERSION_PATCH} \
+	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+	-d FILES_NAME=${LIB_FILE_LIST} \
+	-d POST_NAME=${LIB_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${LIB_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="libc-bin"
+#移动SPEC文件.
+	mv ${LIB_DEB_SPEC} ${LIB_SYSROOT_TMP}/DEBIAN
+#生成DEB文件.
+	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/abcdk-${VERSION_STR_FULL}-${TARGET_PLATFORM}.deb
+#移动SPEC文件.
+	mv ${LIB_SYSROOT_TMP}/DEBIAN ${LIB_DEB_SPEC}
 
 #
-test-src: ${TEST_OBJ_FILES} 
-
-# $@: 目标文件
-# $<: 源文件
-# 自动匹配多级路径.
-$(OBJ_PATH)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(dir $@)
-	$(CC) $(C_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
-
-#
-$(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXX_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
-
-
-#包含依赖文件(不能晚于此处).
--include $(LIB_OBJ_DEPS) 
--include $(TOOL_OBJ_DEPS)
--include $(TEST_OBJ_DEPS)
-
-#
-xgettext: xgettext-lib xgettext-tool
+build-deb-dev: prepare-dev
+#生成SPEC文件.
+	${SHELLKITS_HOME}/tools/make.deb.dev.ctl.sh  \
+	-d PACK_NAME=abcdk-dev \
+	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+	-d OUTPUT=${DEV_DEB_SPEC} \
+	-d VERSION_MAJOR=${VERSION_MAJOR} \
+	-d VERSION_MINOR=${VERSION_MINOR} \
+	-d VERSION_RELEASE=${VERSION_PATCH} \
+	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+	-d FILES_NAME=${DEV_FILE_LIST} \
+	-d POST_NAME=${DEV_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${DEV_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
+#移动SPEC文件.
+	mv ${DEV_DEB_SPEC} ${DEV_SYSROOT_TMP}/DEBIAN
+#生成DEB文件.
+	dpkg-deb --build ${DEV_SYSROOT_TMP} ${BUILD_PATH}/abcdk-dev-${VERSION_STR_FULL}-${TARGET_PLATFORM}.deb
+#移动SPEC文件.
+	mv ${DEV_SYSROOT_TMP}/DEBIAN ${DEV_DEB_SPEC}
 
 #
-xgettext-lib:
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/abcdk.pot
+build-deb-tool: prepare-tool
+#生成SPEC文件.
+	${SHELLKITS_HOME}/tools/make.deb.rt.ctl.sh  \
+	-d PACK_NAME=abcdk-tool \
+	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+	-d OUTPUT=${TOOL_DEB_SPEC} \
+	-d VERSION_MAJOR=${VERSION_MAJOR} \
+	-d VERSION_MINOR=${VERSION_MINOR} \
+	-d VERSION_RELEASE=${VERSION_PATCH} \
+	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+	-d FILES_NAME=${TOOL_FILE_LIST} \
+	-d POST_NAME=${TOOL_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${TOOL_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
+#移动SPEC文件.
+	mv ${TOOL_DEB_SPEC} ${TOOL_SYSROOT_TMP}/DEBIAN
+#生成DEB文件.
+	dpkg-deb --build ${TOOL_SYSROOT_TMP} ${BUILD_PATH}/abcdk-tool-${VERSION_STR_FULL}-${TARGET_PLATFORM}.deb
+#移动SPEC文件.
+	mv ${TOOL_SYSROOT_TMP}/DEBIAN ${TOOL_DEB_SPEC}
 
 #
-xgettext-tool:
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk.pot
+build-deb: build-deb-lib build-deb-dev build-deb-tool
 
 #
-clean-lib:
-	rm -rf ${OBJ_PATH}/lib
-	rm -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL}
-	rm -f $(BUILD_PATH)/libabcdk.a
+build-rpm-lib: prepare-lib
+#生成SPEC文件.
+	${SHELLKITS_HOME}/tools/make.rpm.rt.spec.sh \
+	-d PACK_NAME=abcdk \
+	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+	-d OUTPUT=${LIB_RPM_SPEC} \
+	-d VERSION_MAJOR=${VERSION_MAJOR} \
+	-d VERSION_MINOR=${VERSION_MINOR} \
+	-d VERSION_RELEASE=${VERSION_PATCH} \
+	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+	-d FILES_NAME=${LIB_FILE_LIST} \
+	-d POST_NAME=${LIB_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${LIB_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="glibc"
+#生成RPM文件.
+	rpmbuild --noclean --target=${TARGET_PLATFORM} --buildroot ${LIB_SYSROOT_TMP} -bb ${LIB_RPM_SPEC} --define="_rpmdir ${BUILD_PATH}" --define="_rpmfilename abcdk-${VERSION_STR_FULL}-${TARGET_PLATFORM}.rpm"
 
 #
-clean-tool:
-	rm -rf ${OBJ_PATH}/tool
-	rm -f $(BUILD_PATH)/abcdk-tool
+build-rpm-dev: prepare-dev
+#生成SPEC文件.
+	${SHELLKITS_HOME}/tools/make.rpm.dev.spec.sh \
+	-d PACK_NAME=abcdk-devel \
+	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+	-d OUTPUT=${DEV_RPM_SPEC} \
+	-d VERSION_MAJOR=${VERSION_MAJOR} \
+	-d VERSION_MINOR=${VERSION_MINOR} \
+	-d VERSION_RELEASE=${VERSION_PATCH} \
+	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+	-d FILES_NAME=${DEV_FILE_LIST} \
+	-d POST_NAME=${DEV_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${DEV_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
+#生成RPM文件.
+	rpmbuild --noclean --target=${TARGET_PLATFORM} --buildroot ${DEV_SYSROOT_TMP} -bb ${DEV_RPM_SPEC} --define="_rpmdir ${BUILD_PATH}" --define="_rpmfilename abcdk-devel-${VERSION_STR_FULL}-${TARGET_PLATFORM}.rpm"
 
 #
-clean-test:
-	rm -rf ${OBJ_PATH}/test
-	rm -f $(BUILD_PATH)/abcdk-test
+build-rpm-tool: prepare-tool
+#生成SPEC文件.
+	${SHELLKITS_HOME}/tools/make.rpm.rt.spec.sh \
+	-d PACK_NAME=abcdk-tool \
+	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
+	-d OUTPUT=${TOOL_RPM_SPEC} \
+	-d VERSION_MAJOR=${VERSION_MAJOR} \
+	-d VERSION_MINOR=${VERSION_MINOR} \
+	-d VERSION_RELEASE=${VERSION_PATCH} \
+	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
+	-d FILES_NAME=${TOOL_FILE_LIST} \
+	-d POST_NAME=${TOOL_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${TOOL_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
+#生成RPM文件.
+	rpmbuild --noclean --target=${TARGET_PLATFORM} --buildroot ${TOOL_SYSROOT_TMP} -bb ${TOOL_RPM_SPEC} --define="_rpmdir ${BUILD_PATH}" --define="_rpmfilename abcdk-tool-${VERSION_STR_FULL}-${TARGET_PLATFORM}.rpm"
+
 
 #
-clean-xgettext:
-	rm -rf $(BUILD_PATH)/abcdk.pot
+build-rpm: build-rpm-lib build-rpm-dev build-rpm-tool

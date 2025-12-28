@@ -117,20 +117,20 @@ export TMPDIR=${OBJ_PATH}/
 
 #伪目标, 告诉make这些都是标志, 而不是实体目录.
 #因为如果标签和目录同名, 而目录内的文件没有更新的情况下, 编译和链接会跳过.如："XXX is up to date".
-.PHONY: build clean install uninstall help
+.PHONY: compile clean install uninstall build help
 
 #
-all: build
+all: compile
 
 #加载子项目.
 #顺序不能更换.
-include $(MAKEFILE_DIR)/makefile.build.mk
+include $(MAKEFILE_DIR)/makefile.compile.mk
 
 #
-build: lib tool test xgettext
+compile: lib tool test xgettext needed
 
 #
-clean: clean-lib clean-tool clean-test clean-xgettext
+clean: clean-lib clean-tool clean-test clean-xgettext clean-needed
 
 
 #加载子项目.
@@ -142,6 +142,14 @@ install: install-lib install-dev install-tool install-pot
 
 #
 uninstall: uninstall-lib uninstall-dev uninstall-tool uninstall-pot
+
+
+#加载子项目.
+#顺序不能更换.
+include $(MAKEFILE_DIR)/makefile.build.mk
+
+#
+build: build-deb build-rpm
 
 #
 help:
@@ -158,4 +166,7 @@ help:
 	@echo "make uninstall-dev"
 	@echo "make uninstall-tool"
 	@echo "make uninstall-pot"
+	@echo "make build"
+	@echo "make build-deb"
+	@echo "make build-rpm"
 
