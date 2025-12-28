@@ -81,7 +81,7 @@ prepare: prepare-lib prepare-dev prepare-tool
 #
 prepare-lib:
 	rm -rf ${LIB_SYSROOT_TMP}
-	make -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
+	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
 	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX}/lib/
 	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX}/lib/compat/
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${LIB_FILE_LIST}
@@ -92,7 +92,7 @@ prepare-lib:
 #
 prepare-dev:
 	rm -rf ${DEV_SYSROOT_TMP}
-	make -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} install-dev
+	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} install-dev
 	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${DEV_FILE_LIST}
 	find ${DEV_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${DEV_FILE_LIST}
 #替换PC文件内部的路径为安装路径。
@@ -103,7 +103,7 @@ prepare-dev:
 #
 prepare-tool:
 	rm -rf ${TOOL_SYSROOT_TMP}
-	make -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} install-tool
+	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} install-tool
 	find ${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${TOOL_FILE_LIST}
 	find ${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${TOOL_FILE_LIST}
 	printf "%s" "$${TOOL_POST_SHELL_CONTEXT}" > ${TOOL_POST_SHELL_FILE}
@@ -236,3 +236,15 @@ build-rpm-tool: prepare-tool
 
 #
 build-rpm: build-rpm-lib build-rpm-dev build-rpm-tool
+
+#
+clean-build-lib:
+	rm -rf ${LIB_SYSROOT_TMP}
+
+#
+clean-build-dev:
+	rm -rf ${DEV_SYSROOT_TMP}
+
+#
+clean-build-tool:
+	rm -rf ${TOOL_SYSROOT_TMP}

@@ -152,6 +152,9 @@ include $(MAKEFILE_DIR)/makefile.build.mk
 build: build-deb build-rpm
 
 #
+clean-build: clean-build-lib clean-build-dev clean-build-tool
+
+#
 help:
 	@echo "make"
 	@echo "make all"
