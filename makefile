@@ -127,7 +127,8 @@ all: compile
 include $(MAKEFILE_DIR)/makefile.compile.mk
 
 #
-compile: lib tool test xgettext needed
+compile: lib tool test xgettext-lib xgettext-tool needed-lib needed-tool
+
 
 #
 clean: clean-lib clean-tool clean-test clean-xgettext clean-needed

@@ -82,8 +82,6 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
 -include $(TOOL_OBJ_DEPS)
 -include $(TEST_OBJ_DEPS)
 
-#
-xgettext: xgettext-lib xgettext-tool
 
 #
 xgettext-lib:
@@ -93,15 +91,13 @@ xgettext-lib:
 xgettext-tool:
 	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk.pot
 
-#
-needed: needed-lib needed-tool
 
 #
-needed-lib:
+needed-lib: lib
 	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${EXTRA_RPATH} $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
 	
 #
-needed-tool:
+needed-tool: tool
 	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/abcdk-tool ${EXTRA_RPATH} $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
 
 #
