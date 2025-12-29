@@ -120,7 +120,7 @@ int abcdk_mutex_wait(abcdk_mutex_t* ctx,time_t timeout)
     int err = -1;
     struct timespec sys_ts;
     struct timespec out_ts;
-    __clockid_t condclock;
+    clockid_t condclock;
 
     assert(ctx);
 

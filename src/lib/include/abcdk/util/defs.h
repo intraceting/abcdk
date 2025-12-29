@@ -7,7 +7,7 @@
 #ifndef ABCDK_UTIL_DEFS_H
 #define ABCDK_UTIL_DEFS_H
 
-/**/
+
 #include <endian.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -83,7 +83,6 @@
 #endif //_OPENMP
 
 #ifdef __cplusplus
-//
 #include <streambuf>
 #include <iostream>
 #include <string>
@@ -92,18 +91,25 @@
 #include <array>
 #include <queue>
 #include <stack>
-
-//
-#ifndef __BEGIN_DECLS
-#define __BEGIN_DECLS	extern "C" {
-#endif //#ifndef __BEGIN_DECLS
-
-//
-#ifndef __END_DECLS
-#define __END_DECLS	}
-#endif //#ifndef __END_DECLS
-
 #endif //__cplusplus
+
+
+#ifndef __BEGIN_DECLS
+#ifdef __cplusplus
+#define __BEGIN_DECLS extern "C" {
+#else //__cplusplus
+#define __BEGIN_DECLS  
+#endif //__cplusplus
+#endif //__BEGIN_DECLS
+
+
+#ifndef __END_DECLS
+#ifdef __cplusplus
+#define __END_DECLS }
+#else //__cplusplus
+#define __END_DECLS  
+#endif //__cplusplus
+#endif //__END_DECLS
 
 
 /** 转字符串.*/

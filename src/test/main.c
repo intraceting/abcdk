@@ -34,7 +34,6 @@ static struct _abcdk_test_entry
     {"drm",abcdk_test_drm},
     {"worker",abcdk_test_worker},
     {"ping",abcdk_test_ping},
-    {"onvif",abcdk_test_onvif},
     {"dhcp",abcdk_test_dhcp},
     {"timer",abcdk_test_timer},
     {"tun",abcdk_test_tun},

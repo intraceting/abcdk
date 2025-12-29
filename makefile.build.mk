@@ -128,7 +128,7 @@ build-deb-lib: prepare-lib
 #移动SPEC文件.
 	mv ${LIB_DEB_SPEC} ${LIB_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/abcdk-${VERSION_STR_FULL}-${TARGET_PLATFORM}.deb
+	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/abcdk-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 #移动SPEC文件.
 	mv ${LIB_SYSROOT_TMP}/DEBIAN ${LIB_DEB_SPEC}
 
@@ -150,7 +150,7 @@ build-deb-dev: prepare-dev
 #移动SPEC文件.
 	mv ${DEV_DEB_SPEC} ${DEV_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${DEV_SYSROOT_TMP} ${BUILD_PATH}/abcdk-dev-${VERSION_STR_FULL}-${TARGET_PLATFORM}.deb
+	dpkg-deb --build ${DEV_SYSROOT_TMP} ${BUILD_PATH}/abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 #移动SPEC文件.
 	mv ${DEV_SYSROOT_TMP}/DEBIAN ${DEV_DEB_SPEC}
 
@@ -172,7 +172,7 @@ build-deb-tool: prepare-tool
 #移动SPEC文件.
 	mv ${TOOL_DEB_SPEC} ${TOOL_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${TOOL_SYSROOT_TMP} ${BUILD_PATH}/abcdk-tool-${VERSION_STR_FULL}-${TARGET_PLATFORM}.deb
+	dpkg-deb --build ${TOOL_SYSROOT_TMP} ${BUILD_PATH}/abcdk-tool-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 #移动SPEC文件.
 	mv ${TOOL_SYSROOT_TMP}/DEBIAN ${TOOL_DEB_SPEC}
 
@@ -195,7 +195,12 @@ build-rpm-lib: prepare-lib
 	-d POSTUN_NAME=${LIB_POSTUN_SHELL_FILE} \
 	-d REQUIRE_LIST="glibc"
 #生成RPM文件.
-	rpmbuild --noclean --target=${TARGET_PLATFORM} --buildroot ${LIB_SYSROOT_TMP} -bb ${LIB_RPM_SPEC} --define="_rpmdir ${BUILD_PATH}" --define="_rpmfilename abcdk-${VERSION_STR_FULL}-${TARGET_PLATFORM}.rpm"
+	rpmbuild --noclean \
+	--target=${TARGET_PLATFORM} \
+	--buildroot ${LIB_SYSROOT_TMP} \
+	-bb ${LIB_RPM_SPEC} \
+	--define="_rpmdir ${BUILD_PATH}" \
+	--define="_rpmfilename abcdk-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
 
 #
 build-rpm-dev: prepare-dev
@@ -213,7 +218,12 @@ build-rpm-dev: prepare-dev
 	-d POSTUN_NAME=${DEV_POSTUN_SHELL_FILE} \
 	-d REQUIRE_LIST="abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
 #生成RPM文件.
-	rpmbuild --noclean --target=${TARGET_PLATFORM} --buildroot ${DEV_SYSROOT_TMP} -bb ${DEV_RPM_SPEC} --define="_rpmdir ${BUILD_PATH}" --define="_rpmfilename abcdk-devel-${VERSION_STR_FULL}-${TARGET_PLATFORM}.rpm"
+	rpmbuild --noclean \
+	--target=${TARGET_PLATFORM} \
+	--buildroot ${DEV_SYSROOT_TMP} \
+	-bb ${DEV_RPM_SPEC} \
+	--define="_rpmdir ${BUILD_PATH}" \
+	--define="_rpmfilename abcdk-devel-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
 
 #
 build-rpm-tool: prepare-tool
@@ -231,7 +241,12 @@ build-rpm-tool: prepare-tool
 	-d POSTUN_NAME=${TOOL_POSTUN_SHELL_FILE} \
 	-d REQUIRE_LIST="abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
 #生成RPM文件.
-	rpmbuild --noclean --target=${TARGET_PLATFORM} --buildroot ${TOOL_SYSROOT_TMP} -bb ${TOOL_RPM_SPEC} --define="_rpmdir ${BUILD_PATH}" --define="_rpmfilename abcdk-tool-${VERSION_STR_FULL}-${TARGET_PLATFORM}.rpm"
+	rpmbuild --noclean \
+	--target=${TARGET_PLATFORM} \
+	--buildroot ${TOOL_SYSROOT_TMP} \
+	-bb ${TOOL_RPM_SPEC} \
+	--define="_rpmdir ${BUILD_PATH}" \
+	--define="_rpmfilename abcdk-tool-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
 
 
 #

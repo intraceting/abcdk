@@ -73,7 +73,7 @@ time_t abcdk_time_tm2sec(struct tm *tm, int utc)
 {
     assert(tm != NULL);
 
-    return (utc ? timegm(tm) : timelocal(tm));
+    return (utc ? timegm(tm) : mktime(tm));
 }
 
 time_t abcdk_time_diff(struct tm *t1, struct tm *t0, int utc)
@@ -90,8 +90,8 @@ time_t abcdk_time_diff(struct tm *t1, struct tm *t0, int utc)
     }
     else
     {
-        b = timelocal(t0);
-        e = timelocal(t1);
+        b = mktime(t0);
+        e = mktime(t1);
     }
 
     d = difftime(e, b);

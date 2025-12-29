@@ -556,9 +556,9 @@ void _abcdk_archive_read_recover_attr(abcdk_archive_t *ctx)
             fprintf(stderr, "%s -> 未能恢复文件时间, 忽略.\n", name_cp);
 
         /*恢复文件(目录)属性的权限.*/
-        if (file_stat.st_mode & ACCESSPERMS)
+        if (file_stat.st_mode & 0777)
         {
-            chk = fchmod(ctx->fd[0], file_stat.st_mode & ACCESSPERMS);
+            chk = fchmod(ctx->fd[0], file_stat.st_mode & 0777);
             if (chk != 0)
                 fprintf(stderr, "%s -> 未能恢复文件权限, 忽略.\n", name_cp);
         }
