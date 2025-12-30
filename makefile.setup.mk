@@ -43,13 +43,20 @@ install-lib:
 	cp -f $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PREFIX}/lib/
 	chmod 0755 ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
 	ln -sf libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
+#
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
+	cp -f $(BUILD_PATH)/abcdk.pot ${INSTALL_PREFIX}/share/abcdk/locale/
+
 
 #
 uninstall-lib:
 #
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
-	
+#
+	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk.pot
+
+
 #
 install-dev:
 #
@@ -84,15 +91,3 @@ uninstall-dev:
 	rm -rf ${INSTALL_PREFIX}/include/abcdk
 	rm -f ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/lib
-
-	
-#
-install-pot:
-#
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
-	cp -f $(BUILD_PATH)/abcdk.pot ${INSTALL_PREFIX}/share/abcdk/locale/
-
-#
-uninstall-pot:
-#
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk.pot
