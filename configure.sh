@@ -2,7 +2,7 @@
 #
 # This file is part of ABCDK.
 #  
-# Copyright (c) 2021 The ABCDK project authors. All Rights Reserved.
+# Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
 ##
 
 #
@@ -67,7 +67,7 @@ exit_if_error()
 }
 
 #
-${SHELLKITS_HOME}/fast-c-cxx/configure.sh "$@"
+${SHELLKITS_HOME}/fast-c-cxx/configure.sh "$@" -d SOURCE_PATH=${SHELLDIR} -d PRIVATE_CONF_PATH=${SHELLDIR}/configure.d
 exit_if_error $? "Configuration failed." $?
 
 

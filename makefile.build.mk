@@ -82,8 +82,7 @@ prepare: prepare-lib prepare-dev prepare-tool
 prepare-lib:
 	rm -rf ${LIB_SYSROOT_TMP}
 	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
-	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX}/lib/
-	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX}/lib/compat/
+#	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib-compat
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${LIB_FILE_LIST}
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${LIB_FILE_LIST}
 	printf "%s" "$${LIB_POST_SHELL_CONTEXT}" > ${LIB_POST_SHELL_FILE}

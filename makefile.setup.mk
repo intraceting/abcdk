@@ -91,3 +91,15 @@ uninstall-dev:
 	rm -rf ${INSTALL_PREFIX}/include/abcdk
 	rm -f ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/lib
+
+#
+install-lib-compat:
+#
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/compat
+	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${INSTALL_PREFIX}/lib/compat/
+	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${INSTALL_PREFIX}/lib/compat/
+
+#
+uninstall-lib-compat:
+#
+	rm -rf ${INSTALL_PREFIX}/lib/compat/*
