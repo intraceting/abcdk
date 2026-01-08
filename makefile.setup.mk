@@ -22,7 +22,7 @@ endef
 export LIB_PKGCONFIG_CONTEXT
 
 #
-install-tool:
+install-bin:
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/bin
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PREFIX}/bin/abcdk-tool.exe
@@ -31,7 +31,7 @@ install-tool:
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
 
 #
-uninstall-tool:
+uninstall-bin:
 #
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
@@ -93,13 +93,13 @@ uninstall-dev:
 	rm -rf ${INSTALL_PREFIX}/share/abcdk/lib
 
 #
-install-lib-compat:
+install-needed:
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/compat
 	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${INSTALL_PREFIX}/lib/compat/
 	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${INSTALL_PREFIX}/lib/compat/
 
 #
-uninstall-lib-compat:
+uninstall-needed:
 #
 	rm -rf ${INSTALL_PREFIX}/lib/compat/*

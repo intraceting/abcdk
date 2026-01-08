@@ -30,23 +30,23 @@ define DEV_POSTUN_SHELL_CONTEXT
 endef
 export DEV_POSTUN_SHELL_CONTEXT
 
-#生成TOOL安装后执行脚本文件内容.
-define TOOL_POST_SHELL_CONTEXT
+#生成BIN安装后执行脚本文件内容.
+define BIN_POST_SHELL_CONTEXT
 #
-echo "export PATH=${INSTALL_PREFIX}/bin:\$${PATH}" > /etc/profile.d/abcdk-tool.sh
-chmod 0755 /etc/profile.d/abcdk-tool.sh
+echo "export PATH=${INSTALL_PREFIX}/bin:\$${PATH}" > /etc/profile.d/abcdk-bin.sh
+chmod 0755 /etc/profile.d/abcdk-bin.sh
 echo "Run 'source /etc/profile' to update PATH, or restart the system for the change to take effect."
 #
 endef
-export TOOL_POST_SHELL_CONTEXT
+export BIN_POST_SHELL_CONTEXT
 
 #生成TOOL卸载后执行脚本文件内容.
-define TOOL_POSTUN_SHELL_CONTEXT
+define BIN_POSTUN_SHELL_CONTEXT
 #
-rm -f /etc/profile.d/abcdk-tool.sh
+rm -f /etc/profile.d/abcdk-bin.sh
 #
 endef
-export TOOL_POSTUN_SHELL_CONTEXT
+export BIN_POSTUN_SHELL_CONTEXT
 
 #
 SYSROOT_TMP = ${BUILD_PATH}/abcdk.sysroot.tmp/
@@ -54,35 +54,37 @@ SYSROOT_TMP = ${BUILD_PATH}/abcdk.sysroot.tmp/
 #
 LIB_SYSROOT_TMP = ${SYSROOT_TMP}/lib.sysroot.tmp/
 DEV_SYSROOT_TMP = ${SYSROOT_TMP}/dev.sysroot.tmp/
-TOOL_SYSROOT_TMP = ${SYSROOT_TMP}/tool.sysroot.tmp/
+BIN_SYSROOT_TMP = ${SYSROOT_TMP}/bin.sysroot.tmp/
 #
 LIB_FILE_LIST = ${SYSROOT_TMP}/lib.file.list
 DEV_FILE_LIST = ${SYSROOT_TMP}/dev.file.list
-TOOL_FILE_LIST = ${SYSROOT_TMP}/tool.file.list
+BIN_FILE_LIST = ${SYSROOT_TMP}/bin.file.list
 #
 LIB_POST_SHELL_FILE = ${SYSROOT_TMP}/lib.post.sh
 LIB_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/lib.postun.sh
 DEV_POST_SHELL_FILE = ${SYSROOT_TMP}/dev.post.sh
 DEV_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/dev.postun.sh
-TOOL_POST_SHELL_FILE = ${SYSROOT_TMP}/tool.post.sh
-TOOL_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/tool.postun.sh
+BIN_POST_SHELL_FILE = ${SYSROOT_TMP}/bin.post.sh
+BIN_POSTUN_SHELL_FILE = ${SYSROOT_TMP}/bin.postun.sh
 
 #
 LIB_RPM_SPEC = ${SYSROOT_TMP}/lib.rpm.spec
-LIB_DEB_SPEC =  ${SYSROOT_TMP}/lib.deb.spec
+LIB_DEB_SPEC = ${SYSROOT_TMP}/lib.deb.spec
 DEV_RPM_SPEC = ${SYSROOT_TMP}/dev.rpm.spec
 DEV_DEB_SPEC = ${SYSROOT_TMP}/dev.deb.spec
-TOOL_RPM_SPEC = ${SYSROOT_TMP}/tool.rpm.spec
-TOOL_DEB_SPEC = ${SYSROOT_TMP}/tool.deb.spec 
+BIN_RPM_SPEC = ${SYSROOT_TMP}/bin.rpm.spec
+BIN_DEB_SPEC = ${SYSROOT_TMP}/bin.deb.spec 
 
 #
-prepare: prepare-lib prepare-dev prepare-tool
+prepare: prepare-lib prepare-dev prepare-bin
 
 #
 prepare-lib:
 	rm -rf ${LIB_SYSROOT_TMP}
 	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
-#	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib-compat
+ifeq (${INSTALL_NEEDED},yes)
+	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-needed
+endif
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${LIB_FILE_LIST}
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${LIB_FILE_LIST}
 	printf "%s" "$${LIB_POST_SHELL_CONTEXT}" > ${LIB_POST_SHELL_FILE}
@@ -100,20 +102,20 @@ prepare-dev:
 	printf "%s" "$${DEV_POSTUN_SHELL_CONTEXT}" > ${DEV_POSTUN_SHELL_FILE}
 	
 #
-prepare-tool:
-	rm -rf ${TOOL_SYSROOT_TMP}
-	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} install-tool
-	find ${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${TOOL_FILE_LIST}
-	find ${TOOL_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${TOOL_FILE_LIST}
-	printf "%s" "$${TOOL_POST_SHELL_CONTEXT}" > ${TOOL_POST_SHELL_FILE}
-	printf "%s" "$${TOOL_POSTUN_SHELL_CONTEXT}" > ${TOOL_POSTUN_SHELL_FILE}
+prepare-bin:
+	rm -rf ${BIN_SYSROOT_TMP}
+	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} install-bin
+	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${BIN_FILE_LIST}
+	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${BIN_FILE_LIST}
+	printf "%s" "$${BIN_POST_SHELL_CONTEXT}" > ${BIN_POST_SHELL_FILE}
+	printf "%s" "$${BIN_POSTUN_SHELL_CONTEXT}" > ${BIN_POSTUN_SHELL_FILE}
 
 
 #
 build-deb-lib: prepare-lib
 #生成SPEC文件.
 	${SHELLKITS_HOME}/tools/make.deb.rt.ctl.sh  \
-	-d PACK_NAME=abcdk \
+	-d PACK_NAME=abcdk-lib \
 	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
 	-d OUTPUT=${LIB_DEB_SPEC} \
 	-d VERSION_MAJOR=${VERSION_MAJOR} \
@@ -127,7 +129,7 @@ build-deb-lib: prepare-lib
 #移动SPEC文件.
 	mv ${LIB_DEB_SPEC} ${LIB_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/abcdk-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 #移动SPEC文件.
 	mv ${LIB_SYSROOT_TMP}/DEBIAN ${LIB_DEB_SPEC}
 
@@ -145,7 +147,7 @@ build-deb-dev: prepare-dev
 	-d FILES_NAME=${DEV_FILE_LIST} \
 	-d POST_NAME=${DEV_POST_SHELL_FILE} \
 	-d POSTUN_NAME=${DEV_POSTUN_SHELL_FILE} \
-	-d REQUIRE_LIST="abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
+	-d REQUIRE_LIST="abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
 #移动SPEC文件.
 	mv ${DEV_DEB_SPEC} ${DEV_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
@@ -154,35 +156,35 @@ build-deb-dev: prepare-dev
 	mv ${DEV_SYSROOT_TMP}/DEBIAN ${DEV_DEB_SPEC}
 
 #
-build-deb-tool: prepare-tool
+build-deb-bin: prepare-bin
 #生成SPEC文件.
 	${SHELLKITS_HOME}/tools/make.deb.rt.ctl.sh  \
-	-d PACK_NAME=abcdk-tool \
+	-d PACK_NAME=abcdk-bin \
 	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
-	-d OUTPUT=${TOOL_DEB_SPEC} \
+	-d OUTPUT=${BIN_DEB_SPEC} \
 	-d VERSION_MAJOR=${VERSION_MAJOR} \
 	-d VERSION_MINOR=${VERSION_MINOR} \
 	-d VERSION_RELEASE=${VERSION_PATCH} \
 	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
-	-d FILES_NAME=${TOOL_FILE_LIST} \
-	-d POST_NAME=${TOOL_POST_SHELL_FILE} \
-	-d POSTUN_NAME=${TOOL_POSTUN_SHELL_FILE} \
-	-d REQUIRE_LIST="abcdk (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
+	-d FILES_NAME=${BIN_FILE_LIST} \
+	-d POST_NAME=${BIN_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${BIN_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
 #移动SPEC文件.
-	mv ${TOOL_DEB_SPEC} ${TOOL_SYSROOT_TMP}/DEBIAN
+	mv ${BIN_DEB_SPEC} ${BIN_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${TOOL_SYSROOT_TMP} ${BUILD_PATH}/abcdk-tool-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+	dpkg-deb --build ${BIN_SYSROOT_TMP} ${BUILD_PATH}/abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 #移动SPEC文件.
-	mv ${TOOL_SYSROOT_TMP}/DEBIAN ${TOOL_DEB_SPEC}
+	mv ${BIN_SYSROOT_TMP}/DEBIAN ${BIN_DEB_SPEC}
 
 #
-build-deb: build-deb-lib build-deb-dev build-deb-tool
+build-deb: build-deb-lib build-deb-dev build-deb-bin
 
 #
 build-rpm-lib: prepare-lib
 #生成SPEC文件.
 	${SHELLKITS_HOME}/tools/make.rpm.rt.spec.sh \
-	-d PACK_NAME=abcdk \
+	-d PACK_NAME=abcdk-lib \
 	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
 	-d OUTPUT=${LIB_RPM_SPEC} \
 	-d VERSION_MAJOR=${VERSION_MAJOR} \
@@ -199,13 +201,13 @@ build-rpm-lib: prepare-lib
 	--buildroot ${LIB_SYSROOT_TMP} \
 	-bb ${LIB_RPM_SPEC} \
 	--define="_rpmdir ${BUILD_PATH}" \
-	--define="_rpmfilename abcdk-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
+	--define="_rpmfilename abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
 
 #
 build-rpm-dev: prepare-dev
 #生成SPEC文件.
 	${SHELLKITS_HOME}/tools/make.rpm.dev.spec.sh \
-	-d PACK_NAME=abcdk-devel \
+	-d PACK_NAME=abcdk-dev \
 	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
 	-d OUTPUT=${DEV_RPM_SPEC} \
 	-d VERSION_MAJOR=${VERSION_MAJOR} \
@@ -215,50 +217,64 @@ build-rpm-dev: prepare-dev
 	-d FILES_NAME=${DEV_FILE_LIST} \
 	-d POST_NAME=${DEV_POST_SHELL_FILE} \
 	-d POSTUN_NAME=${DEV_POSTUN_SHELL_FILE} \
-	-d REQUIRE_LIST="abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
+	-d REQUIRE_LIST="abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
 #生成RPM文件.
 	rpmbuild --noclean \
 	--target=${TARGET_PLATFORM} \
 	--buildroot ${DEV_SYSROOT_TMP} \
 	-bb ${DEV_RPM_SPEC} \
 	--define="_rpmdir ${BUILD_PATH}" \
-	--define="_rpmfilename abcdk-devel-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
+	--define="_rpmfilename abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
 
 #
-build-rpm-tool: prepare-tool
+build-rpm-bin: prepare-bin
 #生成SPEC文件.
 	${SHELLKITS_HOME}/tools/make.rpm.rt.spec.sh \
-	-d PACK_NAME=abcdk-tool \
+	-d PACK_NAME=abcdk-bin \
 	-d VENDOR_NAME=INTRACETING\(traceting@gmail.com\) \
-	-d OUTPUT=${TOOL_RPM_SPEC} \
+	-d OUTPUT=${BIN_RPM_SPEC} \
 	-d VERSION_MAJOR=${VERSION_MAJOR} \
 	-d VERSION_MINOR=${VERSION_MINOR} \
 	-d VERSION_RELEASE=${VERSION_PATCH} \
 	-d TARGET_PLATFORM=${TARGET_PLATFORM} \
-	-d FILES_NAME=${TOOL_FILE_LIST} \
-	-d POST_NAME=${TOOL_POST_SHELL_FILE} \
-	-d POSTUN_NAME=${TOOL_POSTUN_SHELL_FILE} \
-	-d REQUIRE_LIST="abcdk = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
+	-d FILES_NAME=${BIN_FILE_LIST} \
+	-d POST_NAME=${BIN_POST_SHELL_FILE} \
+	-d POSTUN_NAME=${BIN_POSTUN_SHELL_FILE} \
+	-d REQUIRE_LIST="abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
 #生成RPM文件.
 	rpmbuild --noclean \
 	--target=${TARGET_PLATFORM} \
-	--buildroot ${TOOL_SYSROOT_TMP} \
-	-bb ${TOOL_RPM_SPEC} \
+	--buildroot ${BIN_SYSROOT_TMP} \
+	-bb ${BIN_RPM_SPEC} \
 	--define="_rpmdir ${BUILD_PATH}" \
-	--define="_rpmfilename abcdk-tool-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
+	--define="_rpmfilename abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
 
 
 #
-build-rpm: build-rpm-lib build-rpm-dev build-rpm-tool
+build-rpm: build-rpm-lib build-rpm-dev build-rpm-bin
 
 #
 clean-build-lib:
 	rm -rf ${LIB_SYSROOT_TMP}
-
+	rm -rf ${LIB_FILE_LIST}
+	rm -rf ${LIB_POST_SHELL_FILE}
+	rm -rf ${LIB_POSTUN_SHELL_FILE}
+	rm -rf ${LIB_RPM_SPEC}
+	rm -rf ${LIB_DEB_SPEC}
 #
 clean-build-dev:
 	rm -rf ${DEV_SYSROOT_TMP}
+	rm -rf ${DEV_FILE_LIST}
+	rm -rf ${DEV_POST_SHELL_FILE}
+	rm -rf ${DEV_POSTUN_SHELL_FILE}
+	rm -rf ${DEV_RPM_SPEC}
+	rm -rf ${DEV_DEB_SPEC}
 
 #
-clean-build-tool:
-	rm -rf ${TOOL_SYSROOT_TMP}
+clean-build-bin:
+	rm -rf ${BIN_SYSROOT_TMP}
+	rm -rf ${BIN_FILE_LIST}
+	rm -rf ${BIN_POST_SHELL_FILE}
+	rm -rf ${BIN_POSTUN_SHELL_FILE}
+	rm -rf ${BIN_RPM_SPEC}
+	rm -rf ${BIN_DEB_SPEC}

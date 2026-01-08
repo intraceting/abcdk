@@ -139,10 +139,10 @@ clean: clean-lib clean-tool clean-test clean-xgettext clean-needed
 include $(MAKEFILE_DIR)/makefile.setup.mk
 
 #
-install: install-lib install-dev install-tool
+install: install-lib install-dev install-bin
 
 #
-uninstall: uninstall-lib uninstall-dev uninstall-tool
+uninstall: uninstall-lib uninstall-dev uninstall-bin
 
 
 #加载子项目.
@@ -153,7 +153,7 @@ include $(MAKEFILE_DIR)/makefile.build.mk
 build: build-deb build-rpm
 
 #
-clean-build: clean-build-lib clean-build-dev clean-build-tool
+clean-build: clean-build-lib clean-build-dev clean-build-bin
 
 #
 help:
