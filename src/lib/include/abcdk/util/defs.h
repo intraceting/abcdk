@@ -51,6 +51,7 @@
 
 #include <locale.h>
 #include <malloc.h>
+
 #include <sys/socket.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
@@ -69,6 +70,7 @@
 #include <scsi/scsi_ioctl.h>
 #include <scsi/sg.h>
 #include <sys/syscall.h>
+
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/ip.h>
@@ -79,8 +81,11 @@
 #include <net/if.h>
 #include <net/ethernet.h>
 
-/*for not glibc*/ 
+/*for not glibc*/
+#ifndef __UAPI_DEF_ETHHDR 
 #define __UAPI_DEF_ETHHDR 0
+#endif //#ifndef __UAPI_DEF_ETHHDR 
+
 #include <linux/if_ether.h>
 #include <linux/if_tun.h>
 #include <linux/netlink.h>
