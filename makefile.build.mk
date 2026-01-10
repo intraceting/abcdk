@@ -79,18 +79,35 @@ BIN_DEB_SPEC = ${SYSROOT_TMP}/bin.deb.spec
 ifeq (${INSTALL_NEEDED},yes)
 LIB_RPM_REQUIRE_LIST = "glibc"
 LIB_DEB_REQUIRE_LIST = "libc-bin"
-DEV_RPM_REQUIRE_LIST = "abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
-DEV_DEB_REQUIRE_LIST = "abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
-BIN_RPM_REQUIRE_LIST = "abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
-BIN_DEB_REQUIRE_LIST = "abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
 else
 LIB_RPM_REQUIRE_LIST = "glibc"
 LIB_DEB_REQUIRE_LIST = "libc-bin"
+endif
+
+#
 DEV_RPM_REQUIRE_LIST = "abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
 DEV_DEB_REQUIRE_LIST = "abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
+
+#
 BIN_RPM_REQUIRE_LIST = "abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH}"
 BIN_DEB_REQUIRE_LIST = "abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
+
+#
+ifeq (${INSTALL_NEEDED},yes)
+LIB_DEB_FILENAME = abcdk-lib-full-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+LIB_RPM_FILENAME = abcdk-lib-full-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
+else
+LIB_DEB_FILENAME = abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+LIB_RPM_FILENAME = abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
 endif
+
+#
+DEV_DEB_FILENAME = abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+DEV_RPM_FILENAME = abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
+
+#
+BIN_DEB_FILENAME = abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+BIN_RPM_FILENAME = abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
 
 #
 prepare: prepare-lib prepare-dev prepare-bin
@@ -146,7 +163,7 @@ build-deb-lib: prepare-lib
 #移动SPEC文件.
 	mv ${LIB_DEB_SPEC} ${LIB_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+	dpkg-deb --build ${LIB_SYSROOT_TMP} ${BUILD_PATH}/${LIB_DEB_FILENAME}
 #移动SPEC文件.
 	mv ${LIB_SYSROOT_TMP}/DEBIAN ${LIB_DEB_SPEC}
 
@@ -168,7 +185,7 @@ build-deb-dev: prepare-dev
 #移动SPEC文件.
 	mv ${DEV_DEB_SPEC} ${DEV_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${DEV_SYSROOT_TMP} ${BUILD_PATH}/abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+	dpkg-deb --build ${DEV_SYSROOT_TMP} ${BUILD_PATH}/${DEV_DEB_FILENAME}
 #移动SPEC文件.
 	mv ${DEV_SYSROOT_TMP}/DEBIAN ${DEV_DEB_SPEC}
 
@@ -190,7 +207,7 @@ build-deb-bin: prepare-bin
 #移动SPEC文件.
 	mv ${BIN_DEB_SPEC} ${BIN_SYSROOT_TMP}/DEBIAN
 #生成DEB文件.
-	dpkg-deb --build ${BIN_SYSROOT_TMP} ${BUILD_PATH}/abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+	dpkg-deb --build ${BIN_SYSROOT_TMP} ${BUILD_PATH}/${BIN_DEB_FILENAME}
 #移动SPEC文件.
 	mv ${BIN_SYSROOT_TMP}/DEBIAN ${BIN_DEB_SPEC}
 
@@ -218,7 +235,7 @@ build-rpm-lib: prepare-lib
 	--buildroot ${LIB_SYSROOT_TMP} \
 	-bb ${LIB_RPM_SPEC} \
 	--define="_rpmdir ${BUILD_PATH}" \
-	--define="_rpmfilename abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
+	--define="_rpmfilename ${LIB_RPM_FILENAME}"
 
 #
 build-rpm-dev: prepare-dev
@@ -241,7 +258,7 @@ build-rpm-dev: prepare-dev
 	--buildroot ${DEV_SYSROOT_TMP} \
 	-bb ${DEV_RPM_SPEC} \
 	--define="_rpmdir ${BUILD_PATH}" \
-	--define="_rpmfilename abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
+	--define="_rpmfilename ${DEV_RPM_FILENAME}"
 
 #
 build-rpm-bin: prepare-bin
@@ -264,7 +281,7 @@ build-rpm-bin: prepare-bin
 	--buildroot ${BIN_SYSROOT_TMP} \
 	-bb ${BIN_RPM_SPEC} \
 	--define="_rpmdir ${BUILD_PATH}" \
-	--define="_rpmfilename abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm"
+	--define="_rpmfilename ${BIN_RPM_FILENAME}"
 
 
 #
@@ -278,6 +295,7 @@ clean-build-lib:
 	rm -rf ${LIB_POSTUN_SHELL_FILE}
 	rm -rf ${LIB_RPM_SPEC}
 	rm -rf ${LIB_DEB_SPEC}
+
 #
 clean-build-dev:
 	rm -rf ${DEV_SYSROOT_TMP}
