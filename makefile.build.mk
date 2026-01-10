@@ -93,21 +93,22 @@ BIN_RPM_REQUIRE_LIST = "abcdk-lib = ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_
 BIN_DEB_REQUIRE_LIST = "abcdk-lib (= ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})"
 
 #
-ifeq (${INSTALL_NEEDED},yes)
-LIB_DEB_FILENAME = abcdk-lib-full-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
-LIB_RPM_FILENAME = abcdk-lib-full-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
-else
 LIB_DEB_FILENAME = abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 LIB_RPM_FILENAME = abcdk-lib-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
-endif
 
 #
 DEV_DEB_FILENAME = abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 DEV_RPM_FILENAME = abcdk-dev-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
 
 #
+ifeq (${INSTALL_NEEDED},yes)
+BIN_DEB_FILENAME = abcdk-bin-full-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
+BIN_RPM_FILENAME = abcdk-bin-full-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
+else
 BIN_DEB_FILENAME = abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.deb
 BIN_RPM_FILENAME = abcdk-bin-${VERSION_STR_FULL}-${TARGET_MULTIARCH}.rpm
+endif
+
 
 #
 prepare: prepare-lib prepare-dev prepare-bin
@@ -116,9 +117,6 @@ prepare: prepare-lib prepare-dev prepare-bin
 prepare-lib:
 	rm -rf ${LIB_SYSROOT_TMP}
 	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-lib
-ifeq (${INSTALL_NEEDED},yes)
-	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} install-needed
-endif
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${LIB_FILE_LIST}
 	find ${LIB_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${LIB_FILE_LIST}
 	printf "%s" "$${LIB_POST_SHELL_CONTEXT}" > ${LIB_POST_SHELL_FILE}
@@ -139,6 +137,9 @@ prepare-dev:
 prepare-bin:
 	rm -rf ${BIN_SYSROOT_TMP}
 	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} install-bin
+ifeq (${INSTALL_NEEDED},yes)
+	$(MAKE) -s -C ${MAKEFILE_DIR} INSTALL_PREFIX=${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} install-needed
+endif
 	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type f -printf "${INSTALL_PREFIX}/%P\n" > ${BIN_FILE_LIST}
 	find ${BIN_SYSROOT_TMP}/${INSTALL_PREFIX} -type l -printf "${INSTALL_PREFIX}/%P\n" >> ${BIN_FILE_LIST}
 	printf "%s" "$${BIN_POST_SHELL_CONTEXT}" > ${BIN_POST_SHELL_FILE}

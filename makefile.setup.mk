@@ -21,13 +21,33 @@ Cflags: -I$${includedir}
 endef
 export LIB_PKGCONFIG_CONTEXT
 
+#生成RT0文件内容.
+define BIN_RT0_CONTEXT
+#!/bin/bash
+#
+# This file is part of ABCDK.
+#
+# Automatically generated, do not modify.
+#
+SHELLNAME=$$(basename $${0})
+SHELLDIR=$$(cd `dirname $${0}`; pwd)
+
+#Export the necessary environment variables.
+export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}:$${SHELLDIR}/../lib:$${SHELLDIR}/../lib/abcdk.compat
+
+#Start the executable program.
+$${0}.exe $$@
+exit $$?
+endef
+export BIN_RT0_CONTEXT
+
 #
 install-bin:
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/bin
 	cp -f $(BUILD_PATH)/abcdk-tool ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool.exe
-	cp -f ${SHELLKITS_HOME}/tools/rt0.sh ${INSTALL_PREFIX}/bin/abcdk-tool
+	printf "%s" "$${BIN_RT0_CONTEXT}" > ${INSTALL_PREFIX}/bin/abcdk-tool
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
 
 #
@@ -95,11 +115,11 @@ uninstall-dev:
 #
 install-needed:
 #
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/compat
-	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${INSTALL_PREFIX}/lib/compat/
-	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${INSTALL_PREFIX}/lib/compat/
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/lib/abcdk.compat
+	${SHELLKITS_HOME}/tools/copy-3rdparty-needed.sh ${BUILD_PATH}/abcdk.needed ${INSTALL_PREFIX}/lib/abcdk.compat/
+	${SHELLKITS_HOME}/tools/copy-compiler-needed.sh ${CC} ${INSTALL_PREFIX}/lib/abcdk.compat/
 
 #
 uninstall-needed:
 #
-	rm -rf ${INSTALL_PREFIX}/lib/compat/*
+	rm -rf ${INSTALL_PREFIX}/lib/abcdk.compat
