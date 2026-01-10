@@ -49,12 +49,18 @@ install-bin:
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	printf "%s" "$${BIN_RT0_CONTEXT}" > ${INSTALL_PREFIX}/bin/abcdk-tool
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
+#
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
+	cp -f $(BUILD_PATH)/abcdk-tool.pot ${INSTALL_PREFIX}/share/abcdk/locale/
+	chmod 0644 ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-tool.pot
 
 #
 uninstall-bin:
 #
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
+#
+	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-tool.pot
 
 #
 install-lib:
@@ -65,8 +71,8 @@ install-lib:
 	ln -sf libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
-	cp -f $(BUILD_PATH)/abcdk.pot ${INSTALL_PREFIX}/share/abcdk/locale/
-
+	cp -f $(BUILD_PATH)/abcdk-lib.pot ${INSTALL_PREFIX}/share/abcdk/locale/
+	chmod 0644 ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-lib.pot
 
 #
 uninstall-lib:
@@ -74,7 +80,7 @@ uninstall-lib:
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
 #
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk.pot
+	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-lib.pot
 
 
 #

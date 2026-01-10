@@ -85,11 +85,12 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
 
 #
 xgettext-lib:
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/abcdk.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/abcdk-lib.pot
 
 #
 xgettext-tool: xgettext-lib
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk.pot
+	cp -rf $(BUILD_PATH)/abcdk-lib.pot $(BUILD_PATH)/abcdk-tool.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.pot
 
 
 #
@@ -118,7 +119,8 @@ clean-test:
 
 #
 clean-xgettext:
-	rm -rf $(BUILD_PATH)/abcdk.pot
+	rm -rf $(BUILD_PATH)/abcdk-lib.pot
+	rm -rf $(BUILD_PATH)/abcdk-tool.pot
 
 #
 clean-needed:
