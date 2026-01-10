@@ -31,9 +31,11 @@
 #include <limits.h>
 #include <dirent.h>
 #include <poll.h>
+
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
 #endif //HAVE_ICONV_H
+
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <tar.h>
@@ -42,9 +44,11 @@
 #include <sched.h>
 #include <syslog.h>
 #include <pwd.h>
+
 #ifdef HAVE_LIBINTL_H
 #include <libintl.h>
 #endif //HAVE_LIBINTL_H
+
 #include <locale.h>
 #include <malloc.h>
 #include <sys/socket.h>
@@ -74,6 +78,14 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <net/ethernet.h>
+
+/*for not glibc*/ 
+#define __UAPI_DEF_ETHHDR 0
+#include <linux/if_ether.h>
+#include <linux/if_tun.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+
 #ifdef HAVE_GPIO_H
 #include <linux/gpio.h>
 #endif //HAVE_GPIO_H
