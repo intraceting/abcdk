@@ -36,7 +36,7 @@ SHELLDIR=$$(cd `dirname $${0}`; pwd)
 export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$${SHELLDIR}:$${SHELLDIR}/../lib:$${SHELLDIR}/../lib/abcdk.compat
 
 #Start the executable program.
-$${0}.exe $$@
+$${0}.exe "$$@"
 exit $$?
 endef
 export BIN_RT0_CONTEXT
