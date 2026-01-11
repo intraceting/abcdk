@@ -32,10 +32,8 @@ void abcdk_trace_output(int type, const char *str)
     ts = abcdk_time_realtime(6);
     abcdk_time_sec2tm(&tm, ts / 1000000UL, 0);
 
-    /*获进程或线程名称.*/
+    /*获线程名称.*/
 #ifndef __USE_GNU
-    abcdk_proc_basename(name);
-#else  //__USE_GNU
     abcdk_thread_getname(pthread_self(), name);
 #endif //__USE_GNU
 
