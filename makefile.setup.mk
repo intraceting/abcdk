@@ -23,7 +23,7 @@ export LIB_PKGCONFIG_CONTEXT
 
 #生成RT0文件内容.
 define BIN_RT0_CONTEXT
-#!/bin/bash
+#!/bin/sh
 #
 # This file is part of ABCDK.
 #
