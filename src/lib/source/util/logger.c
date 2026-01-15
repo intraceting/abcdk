@@ -19,7 +19,7 @@ struct _abcdk_logger
     int fd;
 
     /** 文件名(包括路径).*/
-    char name[PATH_MAX];
+    const char *name;
 
     /** 分段数量.*/
     size_t segment_max;
@@ -60,6 +60,7 @@ void abcdk_logger_close(abcdk_logger_t **ctx)
     ctx_p = *ctx;
     *ctx = NULL;
 
+    abcdk_heap_free((void*)ctx_p->name);
     abcdk_closep(&ctx_p->fd);
     abcdk_mutex_destroy(&ctx_p->locker);
     abcdk_heap_free(ctx_p);
@@ -79,6 +80,7 @@ abcdk_logger_t *abcdk_logger_open(const char *name,
 
     ctx->pid = -1;
     ctx->fd = -1;
+    ctx->name = abcdk_strdup_safe(name);
     ctx->segment_size = segment_size * 1024 * 1024;
     ctx->segment_max = segment_max;
     ctx->copy2stderr = copy2stderr;

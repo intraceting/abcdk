@@ -13,6 +13,7 @@
 #include "abcdk/util/uri.h"
 #include "abcdk/util/mutex.h"
 #include "abcdk/util/trace.h"
+#include "abcdk/util/string.h"
 
 
 __BEGIN_DECLS
