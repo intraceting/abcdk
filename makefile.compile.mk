@@ -38,6 +38,10 @@ TEST_OBJ_DEPS += $(TEST_OBJ_FILES:.o=.d)
 #因为如果标签和目录同名，而目录内的文件没有更新的情况下，编译和链接会跳过。如："XXX is up to date"。
 .PHONY: lib tool test xgettext needed
 
+
+#
+lib-src: $(LIB_OBJ_FILES)
+
 #
 lib: lib-src
 	mkdir -p $(BUILD_PATH)
@@ -45,16 +49,7 @@ lib: lib-src
 	$(AR) -cr $(BUILD_PATH)/libabcdk.a $(LIB_OBJ_FILES)
 
 #
-lib-src: $(LIB_OBJ_FILES)
-
-#
-tool: tool-src lib
-	mkdir -p $(BUILD_PATH)
-	$(CXX) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
-
-#
-tool-src: ${TOOL_OBJ_FILES} 
-
+test-src: ${TEST_OBJ_FILES} 
 
 #
 test: test-src lib
@@ -62,7 +57,30 @@ test: test-src lib
 	$(CXX) -o $(BUILD_PATH)/abcdk-test ${TEST_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
 
 #
-test-src: ${TEST_OBJ_FILES} 
+tool-src: ${TOOL_OBJ_FILES} 
+
+#
+tool: tool-src lib
+	mkdir -p $(BUILD_PATH)
+	$(CXX) -o $(BUILD_PATH)/abcdk-tool ${TOOL_OBJ_FILES} -l:libabcdk.a $(LD_FLAGS)
+
+#
+launcher-pre: 
+ifeq ($(HAVE_QT),yes)
+	mkdir -p $(OBJ_PATH)/launcher
+	$(QMAKE) $(SRC_DIR)/launcher/configure.pro -o $(OBJ_PATH)/launcher/makefile QMAKE_CXXFLAGS+="$(CXX_FLAGS)" LIBS+="-l:libabcdk.a $(LD_FLAGS)" BUILD_PATH="$(BUILD_PATH)/" QMAKE_AR=$(AR) QMAKE_CXX=$(CXX) QMAKE_LINK=$(CXX) QMAKE_LINK_SHLIB=$(CXX)
+endif
+
+#
+launcher: launcher-pre lib
+ifeq ($(HAVE_QT),yes)
+	$(MAKE) -C $(OBJ_PATH)/launcher/
+endif
+
+
+#
+bin: tool launcher
+
 
 # $@: 目标文件
 # $<: 源文件
@@ -82,24 +100,35 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
 -include $(TOOL_OBJ_DEPS)
 -include $(TEST_OBJ_DEPS)
 
-
 #
 xgettext-lib:
+	echo "" > $(BUILD_PATH)/abcdk-lib.pot
 	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/lib/ $(BUILD_PATH)/abcdk-lib.pot
 
 #
-xgettext-tool: xgettext-lib
-	cp -rf $(BUILD_PATH)/abcdk-lib.pot $(BUILD_PATH)/abcdk-tool.pot
-	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-tool.pot
+xgettext-bin: xgettext-lib
+	cp -rf $(BUILD_PATH)/abcdk-lib.pot $(BUILD_PATH)/abcdk-bin.pot
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-bin.pot
+ifeq ($(HAVE_QT),yes)
+	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/launcher/ $(BUILD_PATH)/abcdk-bin.pot
+endif
 
+xgettext: xgettext-lib xgettext-bin
 
 #
 needed-lib: lib
-	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} ${EXTRA_RPATH} $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
+	echo "" > $(BUILD_PATH)/abcdk.needed
+	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/libabcdk.so.${VERSION_STR_FULL} "${EXTRA_RPATH}" $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
 	
 #
-needed-tool: tool needed-lib
-	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/abcdk-tool ${EXTRA_RPATH} $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
+needed-bin: tool launcher needed-lib
+	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/abcdk-tool "${EXTRA_RPATH}" $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
+ifeq ($(HAVE_QT),yes)
+	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/abcdk-launcher "${EXTRA_RPATH}" $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
+endif
+
+#
+needed: needed-lib needed-bin
 
 #
 clean-lib:
@@ -108,19 +137,27 @@ clean-lib:
 	rm -f $(BUILD_PATH)/libabcdk.a
 
 #
-clean-tool:
-	rm -rf ${OBJ_PATH}/tool
-	rm -f $(BUILD_PATH)/abcdk-tool
-
-#
 clean-test:
 	rm -rf ${OBJ_PATH}/test
 	rm -f $(BUILD_PATH)/abcdk-test
 
 #
+clean-tool:
+	rm -rf ${OBJ_PATH}/tool
+	rm -f $(BUILD_PATH)/abcdk-tool
+
+#
+clean-launcher:
+	rm -rf ${OBJ_PATH}/launcher
+	rm -f $(BUILD_PATH)/abcdk-launcher
+
+#
+clean-bin: clean-tool clean-launcher
+	
+#
 clean-xgettext:
 	rm -rf $(BUILD_PATH)/abcdk-lib.pot
-	rm -rf $(BUILD_PATH)/abcdk-tool.pot
+	rm -rf $(BUILD_PATH)/abcdk-bin.pot
 
 #
 clean-needed:

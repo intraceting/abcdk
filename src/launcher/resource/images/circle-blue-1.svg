@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>circle-blue-1</title>
+    <g id="主页" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="一张图-按下" transform="translate(-38, -490)">
+            <g id="条件设定" transform="translate(24, 276)">
+                <g id="编组-10备份-2" transform="translate(10, 210)">
+                    <g id="circle-blue-1" transform="translate(4, 4)">
+                        <circle fill-opacity="0.3" fill="#0EADF2" cx="10" cy="10" r="10"></circle>
+                        <circle id="circle-blue" fill="#20ABE2" cx="10" cy="10" r="8"></circle>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

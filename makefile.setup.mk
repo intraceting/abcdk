@@ -51,8 +51,8 @@ install-bin:
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
 #
 	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
-	cp -f $(BUILD_PATH)/abcdk-tool.pot ${INSTALL_PREFIX}/share/abcdk/locale/
-	chmod 0644 ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-tool.pot
+	cp -f $(BUILD_PATH)/abcdk-bin.pot ${INSTALL_PREFIX}/share/abcdk/locale/
+	chmod 0644 ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-bin.pot
 
 #
 uninstall-bin:
@@ -60,7 +60,7 @@ uninstall-bin:
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
 #
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-tool.pot
+	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-bin.pot
 
 #
 install-lib:

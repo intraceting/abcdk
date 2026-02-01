@@ -58,6 +58,7 @@ CXX_FLAGS += -Wno-attributes
 CXX_FLAGS += -Wno-format
 CXX_FLAGS += -Wno-overloaded-virtual
 CXX_FLAGS += -Wno-sign-conversion
+CXX_FLAGS += -Wno-deprecated-copy
 CXX_FLAGS += -DABCDK_VERSION_MAJOR=${VERSION_MAJOR} 
 CXX_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR} 
 CXX_FLAGS += -DABCDK_VERSION_PATCH=${VERSION_PATCH}
@@ -106,7 +107,6 @@ LD_FLAGS += ${EXTRA_LD_FLAGS}
 # -Wl,-rpath-link=aaa/bbb -Wl,-rpath-link=ccc/ddd -Wl,-rpath-link=eee/fff
 LD_FLAGS += $(foreach ONE_PATH,$(subst :, ,$(EXTRA_RPATH)),-Wl,-rpath-link=$(ONE_PATH))
 
- 
 
 #
 OBJ_PATH = ${BUILD_PATH}/abcdk.obj.tmp/
@@ -127,11 +127,11 @@ all: compile
 include $(MAKEFILE_DIR)/makefile.compile.mk
 
 #
-compile: lib tool test xgettext-lib xgettext-tool needed-lib needed-tool
+compile: lib test bin xgettext needed
 
 
 #
-clean: clean-lib clean-tool clean-test clean-xgettext clean-needed
+clean: clean-lib clean-test clean-bin clean-xgettext clean-needed
 
 
 #加载子项目.
