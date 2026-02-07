@@ -13,15 +13,19 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_QT
 
-    abcdk::launcher::metadata::get()->Init(argc,argv);
+    abcdk::launcher::metadata::get()->parseCmdLine(argc,argv);
 
-    if(abcdk::launcher::metadata::get()->IsPrintUsage())
+    if(abcdk::launcher::metadata::get()->isPrintUsage())
     {
-        abcdk::launcher::metadata::get()->PrintUsage();
+        abcdk::launcher::metadata::get()->printUsage();
         return 0;
     }
 
+    abcdk_locale_setup(NULL, NULL, NULL);
+
     abcdk::launcher::application a(argc, argv);
+
+    QApplication::setQuitOnLastWindowClosed(false);
     
     abcdk::launcher::main_window main_win;
     main_win.resize(800, 600);

@@ -33,9 +33,7 @@ void abcdk_trace_output(int type, const char *str)
     abcdk_time_sec2tm(&tm, ts / 1000000UL, 0);
 
     /*获线程名称.*/
-#ifndef __USE_GNU
     abcdk_thread_getname(pthread_self(), name);
-#endif //__USE_GNU
 
     /*格式化行的头部: TIME, PID, TYPE, NAME*/
     hdrlen = snprintf(buf, sizeof(buf), "[%04d%02d%02dT%02d%02d%02d.%06llu][%d][%d][%s]: ",

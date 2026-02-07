@@ -20,8 +20,8 @@ namespace abcdk
 
         void application::Init(int &argc, char *argv[])
         {
-            Q_UNUSED(argc);
-            Q_UNUSED(argv);
+            ABCDK_UNUSED(argc);
+            ABCDK_UNUSED(argv);
         }
 
     } // namespace launcher

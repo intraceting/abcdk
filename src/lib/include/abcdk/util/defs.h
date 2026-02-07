@@ -128,6 +128,8 @@
 #endif //__cplusplus
 #endif //__END_DECLS
 
+/** Avoid "unused parameter" warnings*/
+#define ABCDK_UNUSED(x) (void)x;
 
 /** 转字符串.*/
 #define ABCDK_STR_NOT_USE(s) #s

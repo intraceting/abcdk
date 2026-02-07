@@ -70,6 +70,7 @@ namespace abcdk
 
         Q_SIGNALS:
             void clicked();
+            void doubleClicked();
 
         protected:
             virtual void onRefresh()
@@ -84,6 +85,16 @@ namespace abcdk
                 }
 
                 QLabel::mousePressEvent(event);
+            }
+
+            virtual void mouseDoubleClickEvent(QMouseEvent *event)
+            {
+                if (event->button() == Qt::LeftButton)
+                {
+                    emit doubleClicked();
+                }
+
+                QLabel::mouseDoubleClickEvent(event);
             }
         };
 

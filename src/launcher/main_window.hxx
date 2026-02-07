@@ -8,8 +8,10 @@
 #define ABCDK_LAUNCHER_MAIN_WINDOW_HXX
 
 #include "abcdk.h"
+#include "../common/QUtilEx.hxx"
 #include "../common/QMainWindowEx.hxx"
 #include "main_tabview.hxx"
+#include "main_trayicon.hxx"
 
 
 #ifdef HAVE_QT
@@ -35,10 +37,16 @@ namespace abcdk
             {
                 deInit();
             }
-
+        public:
+            void setStyleSheet(size_t idx);
+        private slots:
+            void onShow();
+            void onAbout();
+            void onQuit();
         protected:
             void deInit();
             void Init();
+            virtual void closeEvent(QCloseEvent *event);
         };
 
     } // namespace launcher

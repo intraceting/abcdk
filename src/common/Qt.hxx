@@ -36,7 +36,14 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QCheckBox>
-
+#include <QMenu>
+#include <QSystemTrayIcon>
+#include <QDialog>
+#include <QFileDialog>
+#include <QCoreApplication>
+#include <QRegularExpression>
+#include <QDebug>
+#include <QMap>
 #endif //#ifdef HAVE_QT
 
 #endif //ABCDK_COMMON_QT_HXX

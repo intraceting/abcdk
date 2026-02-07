@@ -9,10 +9,13 @@
 
 #include "abcdk.h"
 #include "../common/QWidgetEx.hxx"
+#include "../common/QTabWidgetEx.hxx"
+#include "../common/QCheckBoxEx.hxx"
+#include "../common/QPlainTextEditEx.hxx"
+#include "../common/QPushButtonEx.hxx"
+#include "../common/QUtilEx.hxx"
 #include "metadata.hxx"
-#include "task_view_part1.hxx"
-#include "task_view_part2.hxx"
-#include "task_view_part3.hxx"
+#include "task_config.hxx"
 
 #ifdef HAVE_QT
 
@@ -24,21 +27,41 @@ namespace abcdk
         {
             Q_OBJECT
         private:
+            std::shared_ptr<task_info> m_info;
+
+            common::QLineEditEx *m_edit_exec;
+            common::QPushButtonEx *m_btn_conf;
+
+            common::QPushButtonEx *m_btn_clear;
+            common::QCheckBoxEx *m_chk_autoroll;
+            common::QPushButtonEx *m_btn_start;
+            common::QPushButtonEx *m_btn_stop;
+            
+            common::QPlainTextEditEx *m_edit_stdout;
+            common::QPlainTextEditEx *m_edit_stderr;
+            
         public:
-            task_view(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
+            task_view(std::shared_ptr<task_info> &info, QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
                 : common::QWidgetEx(parent, flags)
             {
-                Init();
+                Init(info);
             }
 
             virtual ~task_view()
             {
                 deInit();
             }
-
+        public:
+            std::shared_ptr<task_info> getInfo();
+        private Q_SLOTS:
+            void onPopConfig();
+            void onStart();
+            void onStop();
+        Q_SIGNALS:
+            void updateState(std::shared_ptr<task_info> &info);
         protected:
             void deInit();
-            void Init();
+            void Init(std::shared_ptr<task_info> &info);
             virtual void mousePressEvent(QMouseEvent *event);
         };
 

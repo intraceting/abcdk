@@ -41,6 +41,30 @@ namespace abcdk
                 setGeometry(m_rect_default.x() * x_factor, m_rect_default.y() * y_factor,
                             m_rect_default.width() * x_factor, m_rect_default.height() * y_factor);
             }
+        Q_SIGNALS:
+            void clicked();
+            void doubleClicked();
+
+        protected:
+            virtual void mousePressEvent(QMouseEvent *event)
+            {
+                if (event->button() == Qt::LeftButton)
+                {
+                    emit clicked();
+                }
+
+                QLineEdit::mousePressEvent(event);
+            }
+
+            virtual void mouseDoubleClickEvent(QMouseEvent *event)
+            {
+                if (event->button() == Qt::LeftButton)
+                {
+                    emit doubleClicked();
+                }
+
+                QLineEdit::mouseDoubleClickEvent(event);
+            }
         };
 
     } // namespace common

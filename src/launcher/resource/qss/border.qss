@@ -1,0 +1,13 @@
+
+#main_window {
+     border: 1px solid #A0A0A0; 
+}
+
+#task_window {
+     border: 1px solid #A0A0A0; 
+}
+
+
+#task_config {
+     border: 1px solid #A0A0A0; 
+}

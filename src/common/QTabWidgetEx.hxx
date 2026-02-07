@@ -11,7 +11,6 @@
 
 #ifdef HAVE_QT
 
-
 namespace abcdk
 {
     namespace common
@@ -21,17 +20,22 @@ namespace abcdk
             Q_OBJECT
         private:
             QRect m_rect_default;
+            QTimer *m_refresh_timer;
+
         public:
             QTabWidgetEx(QWidget *parent = nullptr)
                 : QTabWidget(parent)
             {
+                m_refresh_timer = new QTimer(this);
+                connect(m_refresh_timer, &QTimer::timeout, this, &QTabWidgetEx::onRefresh);
             }
 
             virtual ~QTabWidgetEx()
             {
+                m_refresh_timer->deleteLater();
             }
 
-       public:
+        public:
             void scaleGeometry(double x_factor, double y_factor)
             {
                 if (!m_rect_default.isValid())
@@ -45,6 +49,10 @@ namespace abcdk
             void clickedRight(int index, const QPoint &globalPos);
 
         protected:
+            virtual void onRefresh()
+            {
+            }
+
             virtual void mousePressEvent(QMouseEvent *event)
             {
                 if (event->button() == Qt::RightButton)

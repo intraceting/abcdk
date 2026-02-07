@@ -9,6 +9,7 @@
 
 #include "abcdk.h"
 #include "../common/QMainWindowEx.hxx"
+#include "task_view.hxx"
 #include "metadata.hxx"
 
 #ifdef HAVE_QT
@@ -22,20 +23,24 @@ namespace abcdk
             Q_OBJECT
         private:
         public:
-            task_window(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
+            task_window(task_view *view, QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
                 : common::QMainWindowEx(parent, flags)
             {
-                Init();
+                Init(view);
             }
 
             virtual ~task_window()
             {
                 deInit();
             }
-
+        public Q_SLOTS:
+            void updateState(std::shared_ptr<task_info> &info);
+        Q_SIGNALS:
+            void detachView(task_view *view);
         protected:
             void deInit();
-            void Init();
+            void Init(task_view *view);
+            virtual void closeEvent(QCloseEvent *event);
         };
 
     } // namespace launcher

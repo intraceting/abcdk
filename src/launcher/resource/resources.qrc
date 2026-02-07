@@ -2,7 +2,6 @@
 <RCC version="1.0">
   <qresource prefix="/">
     <file>qss/null.qss</file>
-    <file>qss/black.qss</file>
     <file>images/circle-blue.svg</file>
     <file>images/circle-blue-2.svg</file>
     <file>images/circle-blue-3.svg</file>
@@ -11,5 +10,6 @@
     <file>images/circle-grey.svg</file>
     <file>images/circle-red.svg</file>
     <file>images/set.svg</file>
+    <file>qss/border.qss</file>
   </qresource>
 </RCC>

@@ -8,8 +8,11 @@
 #define ABCDK_LAUNCHER_MAIN_TABVIEW_HXX
 
 #include "abcdk.h"
+#include "../common/QMenuEx.hxx"
+#include "../common/QMainWindowEx.hxx"
 #include "../common/QTabWidgetEx.hxx"
 #include "task_view.hxx"
+#include "task_window.hxx"
 
 
 #ifdef HAVE_QT
@@ -34,12 +37,17 @@ namespace abcdk
                 deInit();
             }
 
-        public Q_SLOTS:
+        private Q_SLOTS:
             void showRightClickMenu(int index, const QPoint &globalPos);
-
+            void createTab();
+            void deleteTab(int index);
+            void detachTab(int index);
+            void retrieveView(task_view *view);
+            void updateState(std::shared_ptr<task_info> &info);
         protected:
             void deInit();
             void Init();
+            void reLoad();
         };
 
     } // namespace launcher

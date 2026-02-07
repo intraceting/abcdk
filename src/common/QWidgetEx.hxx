@@ -99,6 +99,7 @@ namespace abcdk
 
         Q_SIGNALS:
             void clicked();
+            void doubleClicked();
 
         protected:
             virtual void paintEvent(QPaintEvent *event)
@@ -132,6 +133,16 @@ namespace abcdk
                 }
 
                 QWidget::mousePressEvent(event);
+            }
+
+            virtual void mouseDoubleClickEvent(QMouseEvent *event)
+            {
+                if (event->button() == Qt::LeftButton)
+                {
+                    emit doubleClicked();
+                }
+
+                QWidget::mouseDoubleClickEvent(event);
             }
 
             virtual void keyPressEvent(QKeyEvent *event)
