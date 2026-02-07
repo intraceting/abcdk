@@ -75,9 +75,15 @@ namespace abcdk
             else
                 cmdline = common::UtilEx::string_format("%s", m_exec.c_str());
 
-            std::shared_ptr<abcdk_object_t> envs = std::shared_ptr<abcdk_object_t>(abcdk_strtok2vector(m_env.c_str(),"\n"),[](void *p){if(p){abcdk_object_unref((abcdk_object_t**)&p);}}); 
+            std::shared_ptr<abcdk_object_t> envs ;
 
-            m_pid_fd = abcdk_popen(cmdline.c_str(), envs->pstrs, uid, gid, (m_rwd.empty() ? NULL : m_rwd.c_str()), (m_cwd.empty() ? NULL : m_rwd.c_str()), NULL, &m_out_fd, &m_err_fd);
+            if (!m_env.empty())
+                envs = std::shared_ptr<abcdk_object_t>(abcdk_strtok2vector(m_env.c_str(), "\n"), [](void *p)
+                                                       {if(p){abcdk_object_unref((abcdk_object_t**)&p);} });
+            else
+                envs = std::shared_ptr<abcdk_object_t>(NULL);
+
+            m_pid_fd = abcdk_popen(cmdline.c_str(), (envs.get()?envs->pstrs:NULL), uid, gid, (m_rwd.empty() ? NULL : m_rwd.c_str()), (m_cwd.empty() ? NULL : m_rwd.c_str()), NULL, &m_out_fd, &m_err_fd);
             if (m_pid_fd < 0)
                 return -127;
 
