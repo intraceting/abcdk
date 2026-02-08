@@ -26,7 +26,7 @@ namespace abcdk
 
         void main_window::onAbout()
         {
-            QMessageBox::about(this, "关于", "应用程序启动器");
+            QMessageBox::about(this, ABCDK_GETTEXT("关于"), ABCDK_GETTEXT("应用程序启动器"));
         }
 
         void main_window::onQuit()
