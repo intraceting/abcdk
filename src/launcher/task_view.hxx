@@ -17,7 +17,7 @@
 #include "metadata.hxx"
 #include "task_config.hxx"
 
-#ifdef HAVE_QT
+#ifdef HAVE_QT5
 
 namespace abcdk
 {
@@ -39,6 +39,8 @@ namespace abcdk
             
             common::QPlainTextEditEx *m_edit_stdout;
             common::QPlainTextEditEx *m_edit_stderr;
+
+            int m_stop_tip;
             
         public:
             task_view(std::shared_ptr<task_info> &info, QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
@@ -54,7 +56,9 @@ namespace abcdk
         public:
             std::shared_ptr<task_info> getInfo();
         private Q_SLOTS:
+            void onEditExecChanged();
             void onPopConfig();
+            void onClear();
             void onStart();
             void onStop();
         Q_SIGNALS:
@@ -63,12 +67,13 @@ namespace abcdk
             void deInit();
             void Init(std::shared_ptr<task_info> &info);
             virtual void mousePressEvent(QMouseEvent *event);
+            virtual void onRefresh();
         };
 
     } // namespace launcher
 
 } // namespace abcdk
 
-#endif // #ifdef HAVE_QT
+#endif // #ifdef HAVE_QT5
 
 #endif // ABCDK_LAUNCHER_TASK_VIEW_HXX

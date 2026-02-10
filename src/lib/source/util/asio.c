@@ -37,10 +37,10 @@ struct _abcdk_asio
     int watchdog_pos;
 
     /**等待线程ID.*/
-    volatile pthread_t wait_leader;
+    pthread_t wait_leader;
 
     /**等待放弃标志.*/
-    volatile int wait_abort;
+    int wait_abort;
     
 };//abcdk_asio_t;
 

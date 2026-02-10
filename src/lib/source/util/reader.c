@@ -10,13 +10,13 @@
 struct _abcdk_reader
 {
     /** 状态.1:  运行, 2: 停止.*/
-    volatile int status;
+    int status;
 
     /** 工作线程.*/
     abcdk_thread_t tid;
 
     /** 文件结束标志.0: 未结束, 1: 已结束.*/
-    volatile int eof;
+    int eof;
 
     /** 文件句柄.*/
     int fd;
@@ -113,7 +113,7 @@ void abcdk_reader_stop(abcdk_reader_t *reader)
 
     assert(reader != NULL);
 
-    if (!abcdk_atomic_compare_and_swap(&reader->status, &expected_status, 2))
+    if (!abcdk_atomic_compare_and_swap(&reader->status, expected_status, 2))
         return;
 
     abcdk_mutex_signal(reader->qlock, 1);
@@ -130,7 +130,7 @@ int abcdk_reader_start(abcdk_reader_t *reader, int fd)
 
     assert(reader != NULL && fd >= 0);
 
-    if (!abcdk_atomic_compare_and_swap(&reader->status, &expected_status, 1))
+    if (!abcdk_atomic_compare_and_swap(&reader->status, expected_status, 1))
         return -2;
 
     reader->tid.opaque = reader;

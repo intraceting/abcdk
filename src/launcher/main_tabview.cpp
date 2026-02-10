@@ -6,7 +6,7 @@
  */
 #include "main_tabview.hxx"
 
-#ifdef HAVE_QT
+#ifdef HAVE_QT5
 
 namespace abcdk
 {
@@ -63,7 +63,7 @@ namespace abcdk
             if (!old_page)
                 return;
 
-            if(old_page->getInfo()->isAlive())
+            if(old_page->getInfo()->alive())
             {
                 QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("不允许删除, 应用程序正在运行."));
                 return;
@@ -124,4 +124,4 @@ namespace abcdk
 
 } // namespace abcdk
 
-#endif // #ifdef HAVE_QT
+#endif // #ifdef HAVE_QT5

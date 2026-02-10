@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
     int chk = 0;
 
-#ifdef HAVE_QT
+#ifdef HAVE_QT5
 
     abcdk::launcher::metadata::get()->parseCmdLine(argc,argv);
 
@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
 
     chk = a.exec();
 
-#else // #ifdef HAVE_QT
+#else // #ifdef HAVE_QT5
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含Qt工具."));
-#endif // #ifdef HAVE_QT
+#endif // #ifdef HAVE_QT5
 
     return abs(chk);
 }

@@ -40,7 +40,7 @@ abcdk_stream_t *abcdk_stream_refer(abcdk_stream_t *src);
 abcdk_stream_t *abcdk_stream_create();
 
 /**获取读或写的数量.*/
-size_t abcdk_stream_size_tell(abcdk_stream_t *ctx,int writer);
+size_t abcdk_stream_tell(abcdk_stream_t *ctx,int writer);
 
 /**
  * 读.

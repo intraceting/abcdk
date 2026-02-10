@@ -105,10 +105,10 @@ pid_t abcdk_waitpid(pid_t pid, int options, int *exitcode, int *sigcode)
         if (WIFEXITED(wstatus) && exitcode != NULL)
             *exitcode = WEXITSTATUS(wstatus);
 
-        if (WIFSIGNALED(wstatus) && sigcode != NULL)
+        if (WIFSIGNALED(wstatus) && sigcode != NULL) //与下面不一样.
             *sigcode = WTERMSIG(wstatus);
 
-        if (WIFSTOPPED(wstatus) && sigcode != NULL)
+        if (WIFSTOPPED(wstatus) && sigcode != NULL) //与上面不一样.
             *sigcode = WSTOPSIG(wstatus);
     }
 

@@ -35,7 +35,7 @@ pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
                  int *stdin_fd, int *stdout_fd, int *stderr_fd);
 
 /**
- * 创建子进程, 并执行SHELL命令.
+ * 创建子进程, 并运行程序或脚本.
  *
  * @param [in] filename 可执行程序或脚本(包括路径).
  * @param [in] args 参数(二维数组, NULL(0)结束).
@@ -52,7 +52,7 @@ pid_t abcdk_system(const char *filename, char *const *args, char *const *envs,
                    int *stdin_fd, int *stdout_fd, int *stderr_fd);
 
 /**
- * 创建子进程, 用于执行shell.
+ * 创建子进程, 并运行SHELL命令.
  *
  * @param cmdline 命令行.
  *

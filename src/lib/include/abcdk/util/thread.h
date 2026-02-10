@@ -84,7 +84,7 @@ int abcdk_thread_setaffinity3(pthread_t tid);
  * 
  * @return 0 当前线程为主线程; !0 当前线程非主线程.
  */
-int abcdk_thread_leader_vote(volatile pthread_t *tid);
+int abcdk_thread_leader_vote(pthread_t *tid);
 
 /**
  * 测试主线程.
@@ -93,7 +93,7 @@ int abcdk_thread_leader_vote(volatile pthread_t *tid);
  * 
  * @return 0 当前线程为主线程; !0 当前线程非主线程.
  */
-int abcdk_thread_leader_test(const volatile pthread_t *tid);
+int abcdk_thread_leader_test(const pthread_t *tid);
 
 /**
  * 主线程退出.
@@ -102,7 +102,7 @@ int abcdk_thread_leader_test(const volatile pthread_t *tid);
  *
  * @return 0 当前线程为主线程; !0 当前线程非主线程.
  */
-int abcdk_thread_leader_quit(volatile pthread_t *tid);
+int abcdk_thread_leader_quit(pthread_t *tid);
 
 /** 设置线程名字.*/ 
 void abcdk_thread_setname(pthread_t ptd, const char *fmt, ...);

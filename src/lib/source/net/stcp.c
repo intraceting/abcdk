@@ -80,10 +80,10 @@ struct _abcdk_stcp_node
     BIO *openssl_bio;
 
     /**读线程.*/
-    volatile pthread_t recv_leader;
+    pthread_t recv_leader;
 
     /**写线程.*/
-    volatile pthread_t send_leader;
+    pthread_t send_leader;
 
     /**用户环境指针.*/
     abcdk_object_t *userdata;

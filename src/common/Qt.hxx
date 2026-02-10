@@ -7,7 +7,7 @@
 #ifndef ABCDK_COMMON_QT_HXX
 #define ABCDK_COMMON_QT_HXX
 
-#ifdef HAVE_QT
+#ifdef HAVE_QT5
 
 #include <QApplication>
 #include <QDateTime>
@@ -44,6 +44,6 @@
 #include <QRegularExpression>
 #include <QDebug>
 #include <QMap>
-#endif //#ifdef HAVE_QT
+#endif //#ifdef HAVE_QT5
 
 #endif //ABCDK_COMMON_QT_HXX

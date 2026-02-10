@@ -59,6 +59,31 @@ namespace abcdk
                 return std::string(buf.data(), size);
             }
 
+            static inline pid_t popen(const char *uid, const char *gid, const char *envs,
+                                      const char *rpath, const char *wpath, const char *cmd,
+                                      int *stdin_fd = NULL, int *stdout_fd = NULL, int *stderr_fd = NULL)
+            {
+                uid_t u_id = ((uid && uid[0]) ? atoi(uid) : 0);
+                gid_t g_id = ((gid && gid[0]) ? atoi(gid) : 0);
+
+                std::shared_ptr<abcdk_object_t> obj_envs;
+
+                if (envs && envs[0])
+                    obj_envs = std::shared_ptr<abcdk_object_t>(abcdk_strtok2vector(envs, "\n"), [](void *p)
+                                                               {if(p){abcdk_object_unref((abcdk_object_t**)&p);} });
+                else
+                    obj_envs = std::shared_ptr<abcdk_object_t>(NULL);
+
+                std::string cmdline;
+
+                if (u_id != 0 || g_id != 0)
+                    cmdline = string_format("pkexec --user root %s", cmd);
+                else
+                    cmdline = string_format("%s", cmd);
+
+                return abcdk_popen(cmdline.c_str(), (obj_envs.get() ? obj_envs->pstrs : NULL), u_id, g_id, rpath, wpath, stdin_fd, stdout_fd, stderr_fd);
+            }
+
         } // namespace UtilEx
 
     } // namespace common

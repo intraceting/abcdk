@@ -9,7 +9,7 @@
 
 #include "Qt.hxx"
 
-#ifdef HAVE_QT
+#ifdef HAVE_QT5
 
 
 namespace abcdk
@@ -46,6 +46,6 @@ namespace abcdk
     } // namespace common
 } // namespace abcdk
 
-#endif // #ifdef HAVE_QT
+#endif // #ifdef HAVE_QT5
 
 #endif // ABCDK_COMMON_QDIALOGEX_HXX

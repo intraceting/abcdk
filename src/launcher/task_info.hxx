@@ -10,10 +10,11 @@
 #include "abcdk.h"
 #include <iostream>
 #include <memory>
+#include <thread>
 #include "../common/Qt.hxx"
 #include "../common/UtilEx.hxx"
 
-#ifdef HAVE_QT
+#ifdef HAVE_QT5
 
 namespace abcdk
 {
@@ -35,10 +36,10 @@ namespace abcdk
         private:
             std::string m_uuid;
             uint64_t m_create_usec;
-            pid_t m_pid_fd;
-            int m_out_fd;
-            int m_err_fd;
-            int m_killed_cnt;
+            std::shared_ptr<abcdk_stream_t> m_out_buf;
+            std::shared_ptr<abcdk_stream_t> m_err_buf;
+            int m_child_state;
+            std::thread m_child_thread;
 
         public:
             task_info(const std::string &uuid = "")
@@ -58,11 +59,14 @@ namespace abcdk
             QIcon getAppIcon();
         public:
             const char *uuid();
-            bool isAlive();
-            bool fetchLog(std::vector<char> &out, std::vector<char> &err);
+            bool alive();
             int start();
             int stop();
+            ssize_t fetch(std::vector<char> &msg, bool out_or_err);
         protected:
+            void childRun();
+            void childStdout(int stdout_fd);
+            void childStderr(int stderr_fd);
             void deInit();
             void Init(const std::string &uuid);
         };
@@ -70,6 +74,6 @@ namespace abcdk
 
 } // namespace abcdk
 
-#endif // #ifdef HAVE_QT
+#endif // #ifdef HAVE_QT5
 
 #endif // ABCDK_LAUNCHER_TASK_CONFIG_HXX

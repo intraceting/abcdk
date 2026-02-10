@@ -169,8 +169,8 @@ pid_t abcdk_system(const char *filename, char *const *args, char *const *envs,
     param.envs = envs;
     param.uid = uid;
     param.gid = gid;
-    param.rpath = rpath;
-    param.wpath = wpath;
+    param.rpath = ((rpath && rpath[0]) ? rpath : NULL);
+    param.wpath = ((wpath && wpath[0]) ? wpath : NULL);
 
     return abcdk_fork(_abcdk_system_process_cb, &param, stdin_fd, stdout_fd, stderr_fd);
 }
@@ -179,13 +179,13 @@ pid_t abcdk_popen(const char *cmdline, char *const *envs, uid_t uid,
                   gid_t gid, const char *rpath, const char *wpath,
                   int *stdin_fd, int *stdout_fd, int *stderr_fd)
 {
-    char * args[5] = {NULL};
+    char *args[5] = {NULL};
 
     assert(cmdline != NULL);
 
-    args[0] = "/bin/sh";//不会执行, 仅做为第一个参数传给/bin/sh.
+    args[0] = "/bin/sh"; // 不会执行, 仅做为第一个参数传给/bin/sh.
     args[1] = "-c";
-    args[2] = (char*)cmdline;
+    args[2] = (char *)cmdline;
     args[3] = NULL;
 
     return abcdk_system("/bin/sh", args, envs, uid, gid, rpath, wpath, stdin_fd, stdout_fd, stderr_fd);

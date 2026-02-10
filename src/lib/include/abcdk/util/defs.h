@@ -108,6 +108,7 @@
 #include <array>
 #include <queue>
 #include <stack>
+#include <memory>
 #endif //__cplusplus
 
 
