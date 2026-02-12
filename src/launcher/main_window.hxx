@@ -10,6 +10,7 @@
 #include "abcdk.h"
 #include "../common/QUtilEx.hxx"
 #include "../common/QMainWindowEx.hxx"
+#include "../common/UtilEx.hxx"
 #include "main_tabview.hxx"
 #include "main_trayicon.hxx"
 

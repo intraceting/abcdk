@@ -8,7 +8,7 @@ DEFINES += HAVE_QT5
 INCLUDEPATH += $$PWD/../common/
 
 HEADERS += $$PWD/../common/QApplicationEx.hxx
-HEADERS += $$PWD/../common/QCheckBoxEX.hxx
+HEADERS += $$PWD/../common/QCheckBoxEx.hxx
 HEADERS += $$PWD/../common/QDialogEx.hxx
 HEADERS += $$PWD/../common/QLabelEx.hxx
 HEADERS += $$PWD/../common/QLineEditEx.hxx

@@ -49,18 +49,30 @@ install-bin:
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	printf "%s" "$${BIN_RT0_CONTEXT}" > ${INSTALL_PREFIX}/bin/abcdk-tool
 	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-tool
+ifeq ($(HAVE_QT5),yes)
+	cp -f $(BUILD_PATH)/abcdk-launcher ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
+	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
+	printf "%s" "$${BIN_RT0_CONTEXT}" > ${INSTALL_PREFIX}/bin/abcdk-launcher
+	chmod 0755 ${INSTALL_PREFIX}/bin/abcdk-launcher
+endif
 #
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
-	cp -f $(BUILD_PATH)/abcdk-bin.pot ${INSTALL_PREFIX}/share/abcdk/locale/
-	chmod 0644 ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-bin.pot
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/bin/
+	cp -rfP $(MAKEFILE_DIR)/share/abcdk/bin/. ${INSTALL_PREFIX}/share/abcdk/bin/
+	cp -f $(BUILD_PATH)/abcdk-bin.pot ${INSTALL_PREFIX}/share/abcdk/bin/locale/
+	find ${INSTALL_PREFIX}/share/abcdk/bin -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PREFIX}/share/abcdk/bin -type f -exec chmod 0644 {} \;	
 
 #
 uninstall-bin:
 #
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool.exe
 	rm -f ${INSTALL_PREFIX}/bin/abcdk-tool
+ifeq ($(HAVE_QT5),yes)
+	rm -f ${INSTALL_PREFIX}/bin/abcdk-launcher.exe
+	rm -f ${INSTALL_PREFIX}/bin/abcdk-launcher
+endif
 #
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-bin.pot
+	rm -rf ${INSTALL_PREFIX}/share/abcdk/bin
 
 #
 install-lib:
@@ -70,9 +82,11 @@ install-lib:
 	chmod 0755 ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
 	ln -sf libabcdk.so.${VERSION_STR_FULL} ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 #
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/locale/
-	cp -f $(BUILD_PATH)/abcdk-lib.pot ${INSTALL_PREFIX}/share/abcdk/locale/
-	chmod 0644 ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-lib.pot
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/lib/
+	cp -rfP $(MAKEFILE_DIR)/share/abcdk/lib/. ${INSTALL_PREFIX}/share/abcdk/lib/
+	cp -f $(BUILD_PATH)/abcdk-lib.pot ${INSTALL_PREFIX}/share/abcdk/lib/locale/
+	find ${INSTALL_PREFIX}/share/abcdk/lib -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PREFIX}/share/abcdk/lib -type f -exec chmod 0644 {} \;	
 
 #
 uninstall-lib:
@@ -80,7 +94,7 @@ uninstall-lib:
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_MAIN}
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so.${VERSION_STR_FULL}
 #
-	rm -f ${INSTALL_PREFIX}/share/abcdk/locale/abcdk-lib.pot
+	rm -rf ${INSTALL_PREFIX}/share/abcdk/lib
 
 
 #
@@ -103,20 +117,23 @@ install-dev:
 	find ${INSTALL_PREFIX}/include/abcdk -type d -exec chmod 0755 {} \;
 	find ${INSTALL_PREFIX}/include/abcdk -type f -exec chmod 0644 {} \;
 #
-	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/lib/
-	cp -rfP $(MAKEFILE_DIR)/share/abcdk/lib/. ${INSTALL_PREFIX}/share/abcdk/lib/
-	find ${INSTALL_PREFIX}/share/abcdk/lib -type d -exec chmod 0755 {} \;
-	find ${INSTALL_PREFIX}/share/abcdk/lib -type f -exec chmod 0644 {} \;	
+	mkdir -p -m 0755 ${INSTALL_PREFIX}/share/abcdk/dev/
+	cp -rfP $(MAKEFILE_DIR)/share/abcdk/dev/. ${INSTALL_PREFIX}/share/abcdk/dev/
+	find ${INSTALL_PREFIX}/share/abcdk/dev -type d -exec chmod 0755 {} \;
+	find ${INSTALL_PREFIX}/share/abcdk/dev -type f -exec chmod 0644 {} \;	
 
 #
 uninstall-dev:
 #
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.so
 	rm -f ${INSTALL_PREFIX}/lib/libabcdk.a
+#
+	rm -f ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
+#
 	rm -f ${INSTALL_PREFIX}/include/abcdk.h
 	rm -rf ${INSTALL_PREFIX}/include/abcdk
-	rm -f ${INSTALL_PREFIX}/lib/pkgconfig/abcdk.pc
-	rm -rf ${INSTALL_PREFIX}/share/abcdk/lib
+#
+	rm -rf ${INSTALL_PREFIX}/share/abcdk/dev
 
 #
 install-needed:

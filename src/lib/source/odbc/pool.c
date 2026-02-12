@@ -13,7 +13,7 @@
 struct _abcdk_odbc_pool
 {
     /** 魔法数.*/
-    uint32_t magic;
+    uint64_t magic;
 
     /** 同步锁.*/
     abcdk_mutex_t *mutex;
@@ -86,7 +86,6 @@ void abcdk_odbc_pool_destroy(abcdk_odbc_pool_t **ctx)
 abcdk_odbc_pool_t *abcdk_odbc_pool_create(size_t size, abcdk_odbc_pool_connect_cb connect_cb, void *opaque)
 {
     abcdk_odbc_pool_t *p = NULL;
-    static volatile uint32_t magic = 1;
     int chk;
 
     ABCDK_TRACE_ASSERT(size > 0 && connect_cb != NULL, ABCDK_GETTEXT("池大小不能为0, 并且连接回调函数指针不能为空."));
@@ -98,7 +97,7 @@ abcdk_odbc_pool_t *abcdk_odbc_pool_create(size_t size, abcdk_odbc_pool_connect_c
     p->mutex = abcdk_mutex_create();
 
     p->pool = abcdk_pool_create(sizeof(abcdk_odbc_t*),size);
-    p->magic = abcdk_atomic_fetch_and_add(&magic,1);
+    p->magic = abcdk_sequence_num();
     p->pool_size = size;
     p->exitflag = 0;
     p->pop_nbs = 0;

@@ -48,7 +48,6 @@ namespace abcdk
         void task_view::onStart()
         {
             m_info->start();
-
             m_stop_tip = 0;
         }
 
@@ -57,7 +56,7 @@ namespace abcdk
             QMessageBox::StandardButton chk = QMessageBox::StandardButton::Yes;
 
             if(!m_stop_tip)
-               chk = QMessageBox::question(this,"提示","正在准备停止作业进程, 所有依赖此作业进程的服务可能无法正常工作, 确定要停止吗?");
+               chk = QMessageBox::question(this,ABCDK_GETTEXT("提示"),ABCDK_GETTEXT("正在准备停止作业进程, 所有依赖此作业进程的服务可能将无法正常工作.\n确定要停止吗?"));
             
             if(chk != QMessageBox::StandardButton::Yes)
                 return;
@@ -88,6 +87,7 @@ namespace abcdk
             m_btn_conf = new common::QPushButtonEx(this);
             m_btn_conf->setIcon(QIcon(":/images/set.svg"));
             m_btn_conf->setToolTip(ABCDK_GETTEXT("配置"));
+            m_btn_conf->setEnabled(false);
 
             layout_part1->addWidget(m_edit_exec, 99);
             layout_part1->addWidget(m_btn_conf, 1);
@@ -104,7 +104,7 @@ namespace abcdk
 
             m_btn_start = new common::QPushButtonEx(this);
             m_btn_start->setText(ABCDK_GETTEXT("(&R)启动"));
-            m_btn_start->setEnabled(true);
+            m_btn_start->setEnabled(false);
 
             m_btn_stop = new common::QPushButtonEx(this);
             m_btn_stop->setText(ABCDK_GETTEXT("(&K)停止"));
@@ -162,6 +162,17 @@ namespace abcdk
         {
             std::vector<char> msg;
             ssize_t chk_size;
+            bool chk_alive;
+
+            chk_alive = m_info->alive();
+
+            m_edit_exec->setEnabled(!chk_alive);
+            m_btn_conf->setEnabled(!chk_alive);
+            m_btn_start->setEnabled(!chk_alive);
+            m_btn_stop->setEnabled(chk_alive);
+
+            if(!chk_alive)
+                return;
 
             chk_size = m_info->fetch(msg, true);
             if (chk_size > 0)
@@ -177,10 +188,6 @@ namespace abcdk
                 m_edit_stderr->moveCursor(m_chk_autoroll->isChecked() ? QTextCursor::End : QTextCursor::NoMove);
             }
 
-            m_edit_exec->setEnabled(!m_info->alive());
-            m_btn_conf->setEnabled(!m_info->alive());
-            m_btn_start->setEnabled(!m_info->alive());
-            m_btn_stop->setEnabled(m_info->alive());
         }
 
     } // namespace launcher

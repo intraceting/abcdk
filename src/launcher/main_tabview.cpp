@@ -48,13 +48,13 @@ namespace abcdk
         void main_tabview::createTab()
         {
             std::shared_ptr<task_info> new_task = task_info::newTask(time(NULL));
-            metadata::get()->m_tasks[new_task->uuid()] = new_task;//save to list;
+            metadata::get()->m_tasks[new_task->uuid()] = new_task; // save to list;
 
-            task_view *new_page = new task_view(new_task,this);
+            task_view *new_page = new task_view(new_task, this);
 
-            new_task->m_tab_index = addTab(new_page, new_task->getAppIcon(), new_task->getAppName());//add to tabview.
-     
-            connect(new_page,&task_view::updateState,this,&main_tabview::updateState);
+            new_task->m_tab_index = addTab(new_page, new_task->getAppIcon(), new_task->getAppName()); // add to tabview.
+
+            connect(new_page, &task_view::updateState, this, &main_tabview::updateState);
         }
 
         void main_tabview::deleteTab(int index)
@@ -63,14 +63,14 @@ namespace abcdk
             if (!old_page)
                 return;
 
-            if(old_page->getInfo()->alive())
+            if (old_page->getInfo()->alive())
             {
                 QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("不允许删除, 应用程序正在运行."));
                 return;
             }
 
             removeTab(index);
-            metadata::get()->m_tasks.erase(old_page->getInfo()->uuid());//remove from list;
+            metadata::get()->m_tasks.erase(old_page->getInfo()->uuid()); // remove from list;
             old_page->deleteLater();
         }
 
@@ -116,10 +116,7 @@ namespace abcdk
             connect(this, &main_tabview::clickedRight, this, &main_tabview::showRightClickMenu);
         }
 
-        void main_tabview::reLoad()
-        {
-            
-        }
+
     } // namespace launcher
 
 } // namespace abcdk

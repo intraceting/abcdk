@@ -92,7 +92,7 @@ typedef enum _abcdk_rtsp_codec_constant
 
 
 /** */
-#define ABCDK_RTSP_SERVER_REALM "ABCDK MediaServer"
+#define ABCDK_RTSP_REALM "ABCDK MediaServer"
 
 
 __END_DECLS

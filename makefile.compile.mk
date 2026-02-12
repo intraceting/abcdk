@@ -66,14 +66,14 @@ tool: tool-src lib
 
 #
 launcher-pre: 
-ifeq ($(HAVE_QT),yes)
+ifeq ($(HAVE_QT5),yes)
 	mkdir -p $(OBJ_PATH)/launcher
-	$(QMAKE) $(SRC_DIR)/launcher/configure.pro -o $(OBJ_PATH)/launcher/makefile QMAKE_CXXFLAGS+="$(CXX_FLAGS)" LIBS+="-l:libabcdk.a $(LD_FLAGS)" BUILD_PATH="$(BUILD_PATH)/" QMAKE_AR=$(AR) QMAKE_CXX=$(CXX) QMAKE_LINK=$(CXX) QMAKE_LINK_SHLIB=$(CXX)
+	$(QMAKE_QT5) $(SRC_DIR)/launcher/configure.pro -o $(OBJ_PATH)/launcher/makefile QMAKE_CXXFLAGS+="$(CXX_FLAGS)" LIBS+="-l:libabcdk.a $(LD_FLAGS)" BUILD_PATH="$(BUILD_PATH)/" QMAKE_AR=$(AR) QMAKE_CXX=$(CXX) QMAKE_LINK=$(CXX) QMAKE_LINK_SHLIB=$(CXX)
 endif
 
 #
 launcher: launcher-pre lib
-ifeq ($(HAVE_QT),yes)
+ifeq ($(HAVE_QT5),yes)
 	$(MAKE) -C $(OBJ_PATH)/launcher/
 endif
 
@@ -109,7 +109,7 @@ xgettext-lib:
 xgettext-bin: xgettext-lib
 	cp -rf $(BUILD_PATH)/abcdk-lib.pot $(BUILD_PATH)/abcdk-bin.pot
 	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/tool/ $(BUILD_PATH)/abcdk-bin.pot
-ifeq ($(HAVE_QT),yes)
+ifeq ($(HAVE_QT5),yes)
 	${SHELLKITS_HOME}/tools/xgettext.sh ABCDK ${VERSION_STR_FULL} ABCDK_GETTEXT $(MAKEFILE_DIR)/src/launcher/ $(BUILD_PATH)/abcdk-bin.pot
 endif
 
@@ -123,7 +123,7 @@ needed-lib: lib
 #
 needed-bin: tool launcher needed-lib
 	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/abcdk-tool "${EXTRA_RPATH}" $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
-ifeq ($(HAVE_QT),yes)
+ifeq ($(HAVE_QT5),yes)
 	${SHELLKITS_HOME}/tools/find-needed.sh $(BUILD_PATH)/abcdk-launcher "${EXTRA_RPATH}" $(BUILD_PATH)/abcdk.needed >>/dev/null 2>&1
 endif
 

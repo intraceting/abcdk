@@ -120,14 +120,14 @@ int _abcdk_system_process_cb(void *opaque)
     abcdk_system_param_t *param_p = (abcdk_system_param_t *)opaque;
     int chk;
 
-    if (param_p->uid != 0)
+    if (param_p->uid != 0 && param_p->uid != UINT32_MAX)
     {
         chk = setuid(param_p->uid);
         if (chk != 0)
             return 125;
     }
 
-    if (param_p->gid != 0)
+    if (param_p->gid != 0 && param_p->gid != UINT32_MAX)
     {
         chk = setgid(param_p->gid);
         if (chk != 0)

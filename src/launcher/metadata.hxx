@@ -48,8 +48,6 @@ namespace abcdk
             std::vector<char> m_cache_path_default;
             std::string m_cache_path;
 
-            size_t m_alive_tasks_count;
-
             std::mutex m_tasks_mutex;
             std::map<std::string, std::shared_ptr<task_info>> m_tasks;
 
@@ -75,7 +73,6 @@ namespace abcdk
             void parseCmdLine(int &argc, char *argv[]);
             void printUsage(FILE *out = stderr);
             bool isPrintUsage();
-
         protected:
             void deInit();
             void Init();

@@ -301,8 +301,8 @@ namespace abcdk
                 param.second.resize(4);
                 param.second[0] = std::to_string(rsp_key);
                 param.second[1] = name;
-                param.second[2] = (info ? info : ABCDK_RTSP_SERVER_REALM);
-                param.second[3] = (desc ? desc : ABCDK_RTSP_SERVER_REALM);
+                param.second[2] = (info ? info : ABCDK_RTSP_REALM);
+                param.second[3] = (desc ? desc : ABCDK_RTSP_REALM);
 
                 m_cmdlist.push(param);
 

@@ -46,33 +46,40 @@ namespace abcdk
 
         void metadata::printUsage(FILE *out /*= stderr*/)
         {
-            fprintf(out, "\n描述:\n");
+            char name[NAME_MAX] = {0};
 
-            fprintf(out, "\n\t简单应用程序启动器.\n");
+            abcdk_proc_basename(name);
 
-            fprintf(stderr, "\n\t--pid-file < FILE >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\tPID文件. 默认: %s\n"), m_pid_file_default.data());
+            fprintf(out, "\n关于:\n");
 
-            fprintf(stderr, "\n\t--log-file < FILE >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\t日志文件.默认: %s\n"), m_log_file_default.data());
+            fprintf(out, "\n\t名称: 应用程序启动器\n");
+            fprintf(out, "\n\t版本: %d.%d.%d\n", ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
 
-            fprintf(stderr, "\n\t--log-verbose < BOOL >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\t记录详细日志. 默认: 0\n"));
+            fprintf(out, "\n选项:\n");
 
-            fprintf(stderr, ABCDK_GETTEXT("\n\t\t0: 否\n"));
-            fprintf(stderr, ABCDK_GETTEXT("\t\t1: 是\n"));
+            fprintf(out, "\n\t--pid-file < FILE >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\tPID文件. 默认: %s\n"), m_pid_file_default.data());
 
-            fprintf(stderr, "\n\t--lang-codeset < LANG.CODESET >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\t语言和编码. 默认: %s\n"), m_lang_codeset_default.data());
+            fprintf(out, "\n\t--log-file < FILE >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\t日志文件.默认: %s\n"), m_log_file_default.data());
 
-            fprintf(stderr, "\n\t--lang-file-name < NAME >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\t语言文件名称. 默认: %s\n"), m_lang_file_name_default.data());
+            fprintf(out, "\n\t--log-verbose < BOOL >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\t记录详细日志. 默认: 0\n"));
 
-            fprintf(stderr, "\n\t--lang-file-path < PATH >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\t语言文件路径. 默认: %s\n"), m_lang_file_path_default.data());
+            fprintf(out, ABCDK_GETTEXT("\n\t\t0: 否\n"));
+            fprintf(out, ABCDK_GETTEXT("\t\t1: 是\n"));
 
-            fprintf(stderr, "\n\t--cache-path < PATH >\n");
-            fprintf(stderr, ABCDK_GETTEXT("\t\t缓存路径. 默认: %s\n"), m_cache_path_default.data());
+            fprintf(out, "\n\t--lang-codeset < LANG.CODESET >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\t语言和编码. 默认: %s\n"), m_lang_codeset_default.data());
+
+            fprintf(out, "\n\t--lang-file-name < NAME >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\t语言文件名称. 默认: %s\n"), m_lang_file_name_default.data());
+
+            fprintf(out, "\n\t--lang-file-path < PATH >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\t语言文件路径. 默认: %s\n"), m_lang_file_path_default.data());
+
+            fprintf(out, "\n\t--cache-path < PATH >\n");
+            fprintf(out, ABCDK_GETTEXT("\t\t缓存路径. 默认: %s\n"), m_cache_path_default.data());
         }
 
         bool metadata::isPrintUsage()
@@ -107,8 +114,6 @@ namespace abcdk
 
             m_cache_path_default.resize(PATH_MAX);
             abcdk_user_dir_home(m_cache_path_default.data(), ".cache/abcdk/launcher/");
-
-            m_alive_tasks_count = 0;
 
             m_args = NULL;
         }

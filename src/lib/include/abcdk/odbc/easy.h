@@ -26,10 +26,10 @@ void abcdk_odbc_free(abcdk_odbc_t **ctx);
  * 
  * @param [in] pool 连接池ID.
 */
-abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool);
+abcdk_odbc_t *abcdk_odbc_alloc(uint64_t pool);
 
 /** 获取连接池ID.*/
-uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx);
+uint64_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx);
 
 /** 
  * 断开连接.

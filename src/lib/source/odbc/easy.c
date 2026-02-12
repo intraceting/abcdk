@@ -10,7 +10,7 @@
 struct _abcdk_odbc
 {
     /** 连接池ID.*/
-    uint32_t pool;
+    uint64_t pool;
 
     /** 环境. */
     SQLHENV env;
@@ -156,7 +156,7 @@ void abcdk_odbc_free(abcdk_odbc_t **ctx)
 #endif //#ifndef HAVE_UNIXODBC
 }
 
-abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool)
+abcdk_odbc_t *abcdk_odbc_alloc(uint64_t pool)
 {
 #ifndef HAVE_UNIXODBC
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具."));
@@ -176,7 +176,7 @@ abcdk_odbc_t *abcdk_odbc_alloc(uint32_t pool)
 #endif //#ifndef HAVE_UNIXODBC
 }
 
-uint32_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx)
+uint64_t abcdk_odbc_get_pool(abcdk_odbc_t *ctx)
 {
 #ifndef HAVE_UNIXODBC
     abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("当前环境在构建时未包含unixODBC工具."));

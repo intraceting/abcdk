@@ -10,6 +10,7 @@
 #include "abcdk.h"
 #include "../common/QSystemTrayIconEx.hxx"
 #include "../common/QMenuEx.hxx"
+#include "../common/QUtilEx.hxx"
 
 
 #ifdef HAVE_QT5

@@ -38,11 +38,7 @@ namespace abcdk
             if (m_logo.empty())
                 return QIcon("");
 
-            QPixmap logo = QPixmap(m_logo.c_str());
-            if (logo.isNull())
-                return QIcon("");
-
-            return QIcon(logo.scaled(QSize(256, 256), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            return common::QUtilEx::getIcon(m_logo.c_str());
         }
 
         const char *task_info::uuid()
@@ -87,6 +83,7 @@ namespace abcdk
         {
             ssize_t chk_size;
 
+            msg.clear();
             msg.resize(200 * 1024);
 
             if (out_or_err)
@@ -116,6 +113,9 @@ namespace abcdk
             {
                 if (abcdk_atomic_compare_and_swap(&m_child_state, 0, 1))
                 {
+                    if(m_exec.empty())
+                        break;
+
                     exec_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), m_env.c_str(), m_rwd.c_str(), m_cwd.c_str(), m_exec.c_str(), NULL, &exec_out_fd, &exec_err_fd);
                     if (exec_pid > 0)
                     {
@@ -197,6 +197,9 @@ namespace abcdk
             std::vector<char> buf(10 * 1024);
             int chk_size;
 
+            if (stdout_fd < 0)
+                return;
+
             while (1)
             {
                 chk_size = read(stdout_fd, buf.data(), buf.size());
@@ -213,6 +216,9 @@ namespace abcdk
         {
             std::vector<char> buf(10 * 1024);
             int chk_size;
+
+            if (stderr_fd < 0)
+                return;
 
             while (1)
             {

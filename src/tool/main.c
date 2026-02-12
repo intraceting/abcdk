@@ -40,7 +40,10 @@ void _abcdk_tool_print_usage()
 
     abcdk_proc_basename(name);
 
-    fprintf(stderr, "\n%s 版本 %d.%d.%d\n", name, ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
+    fprintf(stderr, "\n关于:\n");
+
+    fprintf(stderr, "\n\t名称: 工具箱\n");
+    fprintf(stderr, "\n\t版本: %d.%d.%d\n", ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
 
     fprintf(stderr, "\n命令: \n");
     fprintf(stderr, "\n\t");

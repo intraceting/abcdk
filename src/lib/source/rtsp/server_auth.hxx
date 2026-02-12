@@ -44,7 +44,7 @@ namespace abcdk
 
         protected:
             auth(char const *realm = NULL)
-                : UserAuthenticationDatabase(realm ? realm : ABCDK_RTSP_SERVER_REALM)
+                : UserAuthenticationDatabase(realm ? realm : ABCDK_RTSP_REALM)
             {
 
             }

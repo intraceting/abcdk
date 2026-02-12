@@ -87,6 +87,15 @@ namespace abcdk
                 return QDateTime::currentDateTime().toString(format);
             }
 
+            static inline QIcon getIcon(const QString &file,int w = 256, int h = 256)
+            {
+                QPixmap tmp = QPixmap(file);
+                if (tmp.isNull())
+                    return QIcon("");
+
+                return QIcon(tmp.scaled(QSize(w, h), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+
         } // namespace QUtilEx
 
     } // namespace common

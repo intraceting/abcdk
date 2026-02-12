@@ -11,5 +11,6 @@
     <file>images/circle-red.svg</file>
     <file>images/set.svg</file>
     <file>qss/border.qss</file>
+    <file>images/logo-v1.png</file>
   </qresource>
 </RCC>

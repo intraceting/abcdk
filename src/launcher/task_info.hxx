@@ -11,7 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <thread>
-#include "../common/Qt.hxx"
+#include "../common/QUtilEx.hxx"
 #include "../common/UtilEx.hxx"
 
 #ifdef HAVE_QT5

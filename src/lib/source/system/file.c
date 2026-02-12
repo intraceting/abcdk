@@ -25,7 +25,7 @@ int abcdk_file_wholockme(const char *file,int pids[],int max)
     snprintf(cmd,PATH_MAX,"lsof -F pf \"%s\"",file);
 
     /*如果无法执行查询, 则返回无进程占用文件.*/
-    t = abcdk_popen(cmd,NULL,0,0, NULL, NULL, NULL, &ofd, NULL);
+    t = abcdk_popen(cmd,NULL, 0, 0, NULL, NULL, NULL, &ofd, NULL);
     if (t < 0)
         return -1;
 

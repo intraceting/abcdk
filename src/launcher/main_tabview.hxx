@@ -47,7 +47,6 @@ namespace abcdk
         protected:
             void deInit();
             void Init();
-            void reLoad();
         };
 
     } // namespace launcher

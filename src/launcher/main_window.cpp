@@ -26,7 +26,10 @@ namespace abcdk
 
         void main_window::onAbout()
         {
-            QMessageBox::about(this, ABCDK_GETTEXT("关于"), ABCDK_GETTEXT("应用程序启动器"));
+            std::string text = common::UtilEx::string_format(ABCDK_GETTEXT("名称: 应用程序启动器\n版本: %d.%d.%d"),
+                                                             ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
+
+            QMessageBox::about(this, ABCDK_GETTEXT("关于"), text.c_str());
         }
 
         void main_window::onQuit()
@@ -45,6 +48,7 @@ namespace abcdk
             abcdk_trace_printf(LOG_INFO, "Qt GUI Platform: %s", QGuiApplication::platformName().toStdString().c_str());
 
             setObjectName("main_window");
+            setWindowIcon(common::QUtilEx::getIcon(":/images/logo-v1.png"));
             setWindowTitle(ABCDK_GETTEXT("应用程序启动器"));
             setFullScreenKey(Qt::Key_F11);
 
@@ -70,7 +74,13 @@ namespace abcdk
 
         void main_window::closeEvent(QCloseEvent *event)
         {
-            if (abcdk_atomic_load(&metadata::get()->m_alive_tasks_count) > 0)
+            size_t alive_count = 0;
+
+#pragma message("无锁统计,当其它地方开始加锁时,这里要同步个修改.")
+            for (auto &one : metadata::get()->m_tasks)
+                alive_count += (one.second->alive() ? 1 : 0);
+
+            if (alive_count > 0)
             {
                 QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("还有应用程序正在运行, 主窗体将最小化到托盘."));
 

@@ -104,7 +104,8 @@ namespace abcdk
             layout->setVerticalSpacing(8);
 
             m_lab_name = new common::QLabelEx(this);
-            m_lab_name->setText(ABCDK_GETTEXT("名称:"));
+            m_lab_name->setText(ABCDK_GETTEXT("应用名称:"));
+            m_lab_name->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_name = new common::QLineEditEx(this);
             m_edit_name->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序名称(仅用于显示)."));
@@ -114,51 +115,55 @@ namespace abcdk
             layout->addWidget(m_edit_name,0,1);
 
             m_lab_logo = new common::QLabelEx(this);
-            m_lab_logo->setText(ABCDK_GETTEXT("图标:"));
+            m_lab_logo->setText(ABCDK_GETTEXT("应用图标:"));
+            m_lab_logo->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_logo = new common::QLineEditEx(this);
             m_edit_logo->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序图标文件(仅用于显示), 或双击打开选择对话框."));
             m_edit_logo->setText(m_info->m_logo.c_str());
-
+            
             layout->addWidget(m_lab_logo,1,0);
             layout->addWidget(m_edit_logo,1,1);
-
             
             m_lab_exec = new common::QLabelEx(this);
-            m_lab_exec->setText(ABCDK_GETTEXT("启动:"));
+            m_lab_exec->setText(ABCDK_GETTEXT("启动命令:"));
+            m_lab_exec->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_exec = new common::QLineEditEx(this);
-            m_edit_exec->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序启动(执行)文件, 或双击打开选择对话框."));
+            m_edit_exec->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序启动命令(文件), 或双击打开选择对话框."));
             m_edit_exec->setText(m_info->m_exec.c_str());
             
             layout->addWidget(m_lab_exec,2,0);
             layout->addWidget(m_edit_exec,2,1);
 
             m_lab_kill = new common::QLabelEx(this);
-            m_lab_kill->setText(ABCDK_GETTEXT("停止:"));
+            m_lab_kill->setText(ABCDK_GETTEXT("停止命令:"));
+            m_lab_kill->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_kill = new common::QLineEditEx(this);
-            m_edit_kill->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序停止(执行)文件, 或双击打开选择对话框."));
+            m_edit_kill->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序停止命令(文件), 或双击打开选择对话框."));
             m_edit_kill->setText(m_info->m_kill.c_str());
    
             layout->addWidget(m_lab_kill,3,0);
             layout->addWidget(m_edit_kill,3,1);
 
             m_lab_rwd = new common::QLabelEx(this);
-            m_lab_rwd->setText(ABCDK_GETTEXT("RWD:"));
+            m_lab_rwd->setText(ABCDK_GETTEXT("RootFS:"));
+            m_lab_rwd->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_rwd = new common::QLineEditEx(this);
-            m_edit_rwd->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序运行RWD, 默认使用当前环境的RWD."));
+            m_edit_rwd->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序RootFS, 默认继承启动器的RootFS."));
             m_edit_rwd->setText(m_info->m_rwd.c_str());
 
             layout->addWidget(m_lab_rwd,4,0);
             layout->addWidget(m_edit_rwd,4,1);
 
             m_lab_cwd = new common::QLabelEx(this);
-            m_lab_cwd->setText(ABCDK_GETTEXT("CWD:"));
+            m_lab_cwd->setText(ABCDK_GETTEXT("工作路径:"));
+            m_lab_cwd->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_cwd = new common::QLineEditEx(this);
-            m_edit_cwd->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序运行CWD, 默认使用当前环境的CWD."));
+            m_edit_cwd->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序工作路径, 默认继承启动器的工作路径."));
             m_edit_cwd->setText(m_info->m_cwd.c_str());
 
             layout->addWidget(m_lab_cwd,5,0);
@@ -167,6 +172,7 @@ namespace abcdk
 
             m_lab_uid = new common::QLabelEx(this);
             m_lab_uid->setText(ABCDK_GETTEXT("UID:"));
+            m_lab_uid->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_uid = new common::QLineEditEx(this);
             m_edit_uid->setPlaceholderText(common::UtilEx::string_format(ABCDK_GETTEXT("在这里输入应用程序运行UID, 默认使用当前登录的UID(%d)."),getuid()).c_str());
@@ -177,6 +183,7 @@ namespace abcdk
 
             m_lab_gid = new common::QLabelEx(this);
             m_lab_gid->setText(ABCDK_GETTEXT("GID:"));
+            m_lab_gid->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_gid = new common::QLineEditEx(this);
             m_edit_gid->setPlaceholderText(common::UtilEx::string_format(ABCDK_GETTEXT("在这里输入应用程序运行GID, 默认使用当前登录的GID(%d)."),getgid()).c_str());
@@ -186,10 +193,11 @@ namespace abcdk
             layout->addWidget(m_edit_gid,7,1);
 
             m_lab_env = new common::QLabelEx(this);
-            m_lab_env->setText(ABCDK_GETTEXT("ENV:"));
+            m_lab_env->setText(ABCDK_GETTEXT("环境变量:"));
+            m_lab_env->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
             m_edit_env = new common::QPlainTextEditEx(this);
-            m_edit_env->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序运行ENVs, 默认继承当前环境的ENVs."));
+            m_edit_env->setPlaceholderText(ABCDK_GETTEXT("在这里输入应用程序环境变量, 默认继承启动器的环境变量."));
             m_edit_env->setToolTip(ABCDK_GETTEXT("每行一组KEY=VALUE, 输入多组时需要换行."));
             m_edit_env->appendPlainText(m_info->m_env.c_str());
 
