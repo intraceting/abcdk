@@ -71,9 +71,9 @@ namespace abcdk
         {
             if (abcdk_atomic_compare_and_swap(&m_child_state, 1, 2))
                 return 0;
-            else if (abcdk_atomic_compare_and_swap(&m_child_state, 2, 3))
-                return 0;
             else if (abcdk_atomic_compare_and_swap(&m_child_state, 3, 4))
+                return 0;
+            else if (abcdk_atomic_compare_and_swap(&m_child_state, 5, 6))
                 return 0;
 
             return -1;
@@ -101,6 +101,7 @@ namespace abcdk
             int exec_err_fd = -1;
             int exec_exitcode = 0;
             int exec_sigcode = 0;
+            std::string exec_killer;
             pid_t killer_pid = -1;
             int killer_exitcode = 0;
             int killer_sigcode = 0;
@@ -117,71 +118,84 @@ namespace abcdk
                         break;
 
                     exec_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), m_env.c_str(), m_rwd.c_str(), m_cwd.c_str(), m_exec.c_str(), NULL, &exec_out_fd, &exec_err_fd);
-                    if (exec_pid > 0)
-                    {
-                        m_stdout_thread = std::thread(&task_info::childStdout, this, exec_out_fd);
-                        m_stderr_thread = std::thread(&task_info::childStderr, this, exec_err_fd);
-
-                        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("作业(%s)(%s)进程(PID=%d)已启动."), m_name.c_str(), m_exec.c_str(), exec_pid);
-                    }
-                    else
-                    {
-                        abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("作业(%s)(%s)进程启动失败."), m_name.c_str(), m_exec.c_str());
+                    if (exec_pid < 0)
                         break;
-                    }
+
+                    m_stdout_thread = std::thread(&task_info::childStdout, this, exec_out_fd);
+                    m_stderr_thread = std::thread(&task_info::childStderr, this, exec_err_fd);
                 }
-                else if (abcdk_atomic_compare(&m_child_state, 2))
+                else if (abcdk_atomic_compare_and_swap(&m_child_state, 2, 3))
                 {
                     if (!m_kill.empty())
                     {
-                        killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), m_env.c_str(), m_rwd.c_str(), m_cwd.c_str(), m_kill.c_str(), NULL, NULL, NULL);
-                        if (killer_pid > 0)
+                        exec_killer = m_kill;
+                        killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), m_env.c_str(), m_rwd.c_str(), m_cwd.c_str(), exec_killer.c_str(), NULL, NULL, NULL);
+                    }
+                    else
+                    {
+                        exec_killer = common::UtilEx::string_format("kill -%d -%d",SIGTERM,getpgid(exec_pid));
+                        killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), NULL,NULL,NULL, exec_killer.c_str(), NULL, NULL, NULL);
+                    }
+                }
+                else if (abcdk_atomic_compare_and_swap(&m_child_state, 4,5))
+                {
+                    if (killer_pid > 0)
+                    {
+                        chk_pid = abcdk_waitpid(killer_pid, WNOHANG, &killer_exitcode, &killer_sigcode);
+                        if (chk_pid > 0)
                         {
-                            abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("杀手(%s)(%s)进程已经启动(PID=%d)."), m_name.c_str(), m_kill.c_str(), killer_pid);
-                        }
-                        else
-                        {
-                            abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("杀手(%s)(%s)进程启动失败."), m_name.c_str(), m_kill.c_str());
+                            killer_pid = -1;
+                            abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("杀手(%s)(%s)进程(PID=%d)已结束(EXITCODE=%d,SIGCODE=%d)."), m_name.c_str(), exec_killer.c_str(), chk_pid, killer_exitcode, killer_sigcode);
                         }
                     }
                     else
                     {
-                        kill(exec_pid, SIGTERM);
+                        exec_killer = common::UtilEx::string_format("kill -%d -%d", SIGTERM, getpgid(exec_pid));
+                        killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), NULL, NULL, NULL, exec_killer.c_str(), NULL, NULL, NULL);
                     }
                 }
-                else if (abcdk_atomic_compare(&m_child_state, 3))
+                else if (abcdk_atomic_compare_and_swap(&m_child_state, 6,7))
                 {
-                    kill(exec_pid, SIGTERM);
+                    if (killer_pid > 0)
+                    {
+                        chk_pid = abcdk_waitpid(killer_pid, WNOHANG, &killer_exitcode, &killer_sigcode);
+                        if (chk_pid > 0)
+                        {
+                            killer_pid = -1;
+                            abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("杀手(%s)(%s)进程(PID=%d)已结束(EXITCODE=%d,SIGCODE=%d)."), m_name.c_str(), exec_killer.c_str(), chk_pid, killer_exitcode, killer_sigcode);
+                        }
+                    }
+                    else
+                    {
+                        exec_killer = common::UtilEx::string_format("kill -%d -%d", SIGKILL, getpgid(exec_pid));
+                        killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), NULL, NULL, NULL, exec_killer.c_str(), NULL, NULL, NULL);
+                    }
                 }
-                else if (abcdk_atomic_compare(&m_child_state, 4))
+
+                if (exec_pid > 0)
                 {
-                    kill(exec_pid, SIGKILL);
+                    chk_pid = abcdk_waitpid(exec_pid, WNOHANG, &exec_exitcode, &exec_sigcode);
+                    if (chk_pid > 0)
+                    {
+                        exec_pid = -1;
+                        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("作业(%s)(%s)进程(PID=%d)已结束(EXITCODE=%d,SIGCODE=%d)."), m_name.c_str(), m_exec.c_str(), chk_pid, exec_exitcode, exec_sigcode);
+                    }
                 }
 
-                pid_t chk_pid = abcdk_waitpid(exec_pid, WNOHANG, &exec_exitcode, &exec_sigcode);
-                if (chk_pid > 0)
+                if (killer_pid > 0)
                 {
-                    abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("作业(%s)(%s)进程(PID=%d)已结束(EXITCODE=%d,SIGCODE=%d)."), m_name.c_str(), m_exec.c_str(), chk_pid, exec_exitcode, exec_sigcode);
-
-                    // 如果杀手进程没有启动则直接退出.
-                    if (killer_pid < 0)
-                        break;
-
                     chk_pid = abcdk_waitpid(killer_pid, WNOHANG, &killer_exitcode, &killer_sigcode);
                     if (chk_pid > 0)
                     {
-                        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("杀手(%s)(%s)进程(PID=%d)已结束(EXITCODE=%d,SIGCODE=%d)."), m_name.c_str(), m_kill.c_str(), chk_pid, killer_exitcode, killer_sigcode);
-                        break;
-                    }
-                    else
-                    {
-                        // 强制杀掉.
-                        kill(killer_pid, SIGKILL);
-                        abcdk_waitpid(killer_pid, WNOHANG, NULL, NULL);
+                        killer_pid = -1;
+                        abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("杀手(%s)(%s)进程(PID=%d)已结束(EXITCODE=%d,SIGCODE=%d)."), m_name.c_str(), exec_killer.c_str(), chk_pid, killer_exitcode, killer_sigcode);
                     }
                 }
 
-                usleep(300 * 1000); // 300 milliseconds.
+                if (exec_pid > 0 || killer_pid > 0)
+                    usleep(300 * 1000); // 300 milliseconds.
+                else
+                    break;
             }
 
             if (m_stdout_thread.joinable())

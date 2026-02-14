@@ -33,13 +33,13 @@ namespace abcdk
                 m_qss_enable = false;
                 m_exec_enable = false;
 
-                m_refresh_timer = new QTimer(this);
+                m_refresh_timer = new QTimer(this);//委托给父窗体.
                 connect(m_refresh_timer, &QTimer::timeout, this, &QWidgetEx::onRefresh);
             }
 
             virtual ~QWidgetEx()
             {
-                m_refresh_timer->deleteLater();
+
             }
 
         public:

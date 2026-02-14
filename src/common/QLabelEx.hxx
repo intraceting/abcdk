@@ -26,13 +26,13 @@ namespace abcdk
             QLabelEx(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
                 : QLabel(parent, flags)
             {
-                m_refresh_timer = new QTimer(this);
+                m_refresh_timer = new QTimer(this);//委托给父窗体.
                 connect(m_refresh_timer, &QTimer::timeout, this, &QLabelEx::onRefresh);
             }
 
             virtual ~QLabelEx()
             {
-                m_refresh_timer->deleteLater();
+
             }
 
         public:

@@ -36,6 +36,7 @@ C_FLAGS += -Wno-deprecated-declarations
 C_FLAGS += -Wint-to-pointer-cast
 C_FLAGS += -Wno-attributes
 C_FLAGS += -Wno-format
+C_FLAGS += -Wno-attribute-warning
 C_FLAGS += -DABCDK_VERSION_MAJOR=${VERSION_MAJOR} 
 C_FLAGS += -DABCDK_VERSION_MINOR=${VERSION_MINOR} 
 C_FLAGS += -DABCDK_VERSION_PATCH=${VERSION_PATCH}
@@ -56,6 +57,7 @@ CXX_FLAGS += -Wno-deprecated-declarations
 CXX_FLAGS += -Wint-to-pointer-cast
 CXX_FLAGS += -Wno-attributes
 CXX_FLAGS += -Wno-format
+CXX_FLAGS += -Wno-attribute-warning
 CXX_FLAGS += -Wno-overloaded-virtual
 CXX_FLAGS += -Wno-sign-conversion
 CXX_FLAGS += -Wno-deprecated-copy

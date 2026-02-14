@@ -63,6 +63,8 @@ namespace abcdk
                                       const char *rpath, const char *wpath, const char *cmd,
                                       int *stdin_fd = NULL, int *stdout_fd = NULL, int *stderr_fd = NULL)
             {
+                pid_t cid = -1;
+
                 uid_t u_id = ((uid && uid[0]) ? atoi(uid) : UINT32_MAX);
                 gid_t g_id = ((gid && gid[0]) ? atoi(gid) : UINT32_MAX);
 
@@ -79,7 +81,19 @@ namespace abcdk
                 else
                     cmdline = string_format("%s", cmd);
 
-                return abcdk_popen(cmdline.c_str(), (obj_envs.get() ? obj_envs->pstrs : NULL), u_id, g_id, rpath, wpath, stdin_fd, stdout_fd, stderr_fd);
+                cid = abcdk_popen(cmdline.c_str(), (obj_envs.get() ? obj_envs->pstrs : NULL), u_id, g_id, rpath, wpath, stdin_fd, stdout_fd, stderr_fd);
+                if (cid < 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING, ABCDK_GETTEXT("执行外部命令(%s)失败(errno=%d).\n"), errno);
+                    return -1;
+                }
+
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("执行外部命令(%s)成功, 新的子进程(PID=%d)已经托管到后台执行.\n"), cmdline.c_str(), cid);
+
+                /*创建属于子进程独立的进程组.*/
+                setpgid(cid, cid);
+
+                return cid;
             }
 
         } // namespace UtilEx

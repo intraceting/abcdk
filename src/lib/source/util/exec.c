@@ -150,7 +150,7 @@ int _abcdk_system_process_cb(void *opaque)
 
     chk = execve(param_p->filename, param_p->args, (param_p->envs ? param_p->envs : environ));
     if (chk != 0)
-        return errno;
+        return abs(errno);
 
     /*正常情况下, 永远也不可能到这里.*/
     return 121;

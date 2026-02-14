@@ -26,13 +26,13 @@ namespace abcdk
             QTabWidgetEx(QWidget *parent = nullptr)
                 : QTabWidget(parent)
             {
-                m_refresh_timer = new QTimer(this);
+                m_refresh_timer = new QTimer(this);//委托给父窗体.
                 connect(m_refresh_timer, &QTimer::timeout, this, &QTabWidgetEx::onRefresh);
             }
 
             virtual ~QTabWidgetEx()
             {
-                m_refresh_timer->deleteLater();
+
             }
 
         public:

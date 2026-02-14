@@ -67,6 +67,7 @@ namespace abcdk
 
         void task_view::deInit()
         {
+            stopRefresh();
         }
 
         void task_view::Init(std::shared_ptr<task_info> &info)
@@ -107,7 +108,7 @@ namespace abcdk
             m_btn_start->setEnabled(false);
 
             m_btn_stop = new common::QPushButtonEx(this);
-            m_btn_stop->setText(ABCDK_GETTEXT("(&K)停止"));
+            m_btn_stop->setText(ABCDK_GETTEXT("(&S)停止"));
             m_btn_stop->setEnabled(false);
  
 
