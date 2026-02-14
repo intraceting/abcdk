@@ -44,6 +44,7 @@
 #include <QRegularExpression>
 #include <QDebug>
 #include <QMap>
+#include <QProcess>
 #endif //#ifdef HAVE_QT5
 
 #endif //ABCDK_COMMON_QT_HXX
