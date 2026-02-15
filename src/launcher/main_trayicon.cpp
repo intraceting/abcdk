@@ -19,7 +19,7 @@ namespace abcdk
 
         void main_trayicon::Init()
         {
-            setIcon(common::QUtilEx::getIcon(":/images/logo-v1.png"));
+            setIcon(common::QUtilEx::getIcon(":/images/logo-v2.png"));
             setToolTip(ABCDK_GETTEXT("应用程序启动器"));
 
             common::QMenuEx *menu = new common::QMenuEx;

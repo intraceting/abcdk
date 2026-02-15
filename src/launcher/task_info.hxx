@@ -39,7 +39,14 @@ namespace abcdk
             std::shared_ptr<abcdk_stream_t> m_out_buf;
             std::shared_ptr<abcdk_stream_t> m_err_buf;
             int m_child_state;
-            std::thread m_child_thread;
+            std::thread m_stdout_thread;
+            std::thread m_stderr_thread;
+
+            pid_t m_exec_pid;
+            int m_exec_out_fd;
+            int m_exec_err_fd;
+            std::string m_killer_exec;
+            pid_t m_killer_pid;
 
         public:
             task_info(const std::string &uuid = "")

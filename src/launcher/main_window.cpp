@@ -48,7 +48,7 @@ namespace abcdk
             abcdk_trace_printf(LOG_INFO, "Qt GUI Platform: %s", QGuiApplication::platformName().toStdString().c_str());
 
             setObjectName("main_window");
-            setWindowIcon(common::QUtilEx::getIcon(":/images/logo-v1.png"));
+            setWindowIcon(common::QUtilEx::getIcon(":/images/logo-v2.png"));
             setWindowTitle(ABCDK_GETTEXT("应用程序启动器"));
             setFullScreenKey(Qt::Key_F11);
 

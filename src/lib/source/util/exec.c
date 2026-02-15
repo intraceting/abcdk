@@ -63,7 +63,7 @@ pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
 
         /*执行子进程处理流程.*/
         chk = process_cb(opaque);
-        exit(chk & 0x7F);
+        _exit(chk & 0x7F);
     }
     else
     {
