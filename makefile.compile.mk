@@ -68,7 +68,9 @@ tool: tool-src lib
 launcher-pre: 
 ifeq ($(HAVE_QT5),yes)
 	mkdir -p $(OBJ_PATH)/launcher
-	$(QMAKE_QT5) $(SRC_DIR)/launcher/configure.pro -o $(OBJ_PATH)/launcher/makefile QMAKE_CXXFLAGS+="$(CXX_FLAGS)" LIBS+="-l:libabcdk.a $(LD_FLAGS)" BUILD_PATH="$(BUILD_PATH)/" QMAKE_AR=$(AR) QMAKE_CXX=$(CXX) QMAKE_LINK=$(CXX) QMAKE_LINK_SHLIB=$(CXX)
+	$(QMAKE_QT5) QMAKE_AR=$(AR) QMAKE_CXX=$(CXX) QMAKE_LINK=$(CXX) QMAKE_LINK_SHLIB=$(CXX) \
+QMAKE_CXXFLAGS+="$(CXX_FLAGS)" LIBS+="-l:libabcdk.a $(LD_FLAGS)" BUILD_PATH="$(BUILD_PATH)/" \
+-spec linux-g++ -o $(OBJ_PATH)/launcher/makefile $(SRC_DIR)/launcher/configure.pro
 endif
 
 #
