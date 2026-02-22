@@ -65,6 +65,8 @@ namespace abcdk
             void onOpenIcon();
             void onOpenExec();
             void onOpenKill();
+            void onOpenRootPath();
+            void onOpenWorkPath();
             void onCancle();
             void onSave();
         protected:

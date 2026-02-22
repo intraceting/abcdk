@@ -32,11 +32,6 @@ pid_t abcdk_fork(abcdk_fork_process_cb process_cb, void *opaque,
 
     if (child == 0)
     {
-        /*创建一个新会话并脱离终端控制.*/
-        sid = setsid();
-        if (sid < 0)
-            exit(126);
-
         if (stdin_fd)
             dup2(out2in_fd[0], STDIN_FILENO);
         else

@@ -133,7 +133,7 @@ namespace abcdk
                 }
                 else
                 {
-                    m_killer_exec = common::UtilEx::string_format("kill -%d -%d", SIGTERM, getpgid(m_exec_pid));
+                    m_killer_exec = common::UtilEx::string_format("kill -s %d -%d", SIGTERM, getpgid(m_exec_pid));
                     m_killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), NULL, NULL, NULL, m_killer_exec.c_str(), NULL, NULL, NULL);
                 }
 
@@ -156,7 +156,7 @@ namespace abcdk
                     }
                 }
 
-                m_killer_exec = common::UtilEx::string_format("kill -%d -%d", SIGTERM, getpgid(m_exec_pid));
+                m_killer_exec = common::UtilEx::string_format("kill -s %d -%d", SIGTERM, getpgid(m_exec_pid));
                 m_killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), NULL, NULL, NULL, m_killer_exec.c_str(), NULL, NULL, NULL);
 
                 return (m_killer_pid > 0 ? 0 : -1);
@@ -178,7 +178,7 @@ namespace abcdk
                     }
                 }
 
-                m_killer_exec = common::UtilEx::string_format("kill -%d -%d", SIGKILL, getpgid(m_exec_pid));
+                m_killer_exec = common::UtilEx::string_format("kill -s %d -%d", SIGKILL, getpgid(m_exec_pid));
                 m_killer_pid = common::UtilEx::popen(m_uid.c_str(), m_gid.c_str(), NULL, NULL, NULL, m_killer_exec.c_str(), NULL, NULL, NULL);
 
                 return (m_killer_pid > 0 ? 0 : -1);

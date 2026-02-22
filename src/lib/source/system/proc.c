@@ -283,6 +283,9 @@ int abcdk_proc_subprocess(abcdk_fork_process_cb process_cb, void *opaque,int *ex
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("无法创建子进程, 资源不足.\n"));
         return -1;
     }
+    
+    /*使子进程成为进程组的组长, 以便后续可以通过进程组管理.*/
+    setpgid(cid, cid);
 
     abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("创建子进程(PID=%d)完成, 等待其运行结束.\n"), cid);
 
@@ -292,12 +295,9 @@ int abcdk_proc_subprocess(abcdk_fork_process_cb process_cb, void *opaque,int *ex
         chk = abcdk_proc_wait_exit_signal(300);
         if (chk != 0)
         {
-            /*创建属于子进程独立的进程组.*/
-            setpgid(cid, cid);
-
             /*通知组内所有子进程退出.*/
-            cid_pgid = getpgid(cid);
-            kill(-cid_pgid, 15);
+            kill(-cid, 15);
+
             abcdk_waitpid(cid, 0, exitcode, sigcode);
 
             chk = 0;//父进程收到终止信号, 返回"正常结束".
@@ -333,6 +333,9 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
         abcdk_trace_printf(LOG_ERR, ABCDK_GETTEXT("父进程无法创建子进程, 结束守护服务.\n"));
         return -1;
     }
+    
+    /*使子进程成为进程组的组长, 以便后续可以通过进程组管理.*/
+    setpgid(cid, cid);
 
     abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("创建子进程(PID=%d)完成, 等待其运行结束.\n"), cid);
 
@@ -342,12 +345,9 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
         chk = abcdk_proc_wait_exit_signal(300);
         if (chk != 0)
         {
-            /*创建属于子进程独立的进程组.*/
-            setpgid(cid, cid);
-
             /*通知组内所有子进程退出.*/
-            cid_pgid = getpgid(cid);
-            kill(-cid_pgid, 15);
+            kill(-cid, 15);
+
             abcdk_waitpid(cid, 0, exitcode, sigcode);
 
             chk = 0;//父进程收到终止信号, 返回"正常结束".
@@ -356,7 +356,7 @@ int abcdk_proc_subprocess2(const char *cmdline,int *exitcode, int *sigcode)
         else
         {
             /*查看子进程状态.*/
-            cid_chk = abcdk_waitpid(cid, 0, exitcode, sigcode);
+            cid_chk = abcdk_waitpid(cid, WNOHANG, exitcode, sigcode);
             if (cid_chk < 0)
             {
                 chk = -2;//子进程不存在, 返回"已结束或被终止".

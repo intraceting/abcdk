@@ -26,7 +26,7 @@ namespace abcdk
         {
             int chk;
             task_config pop(m_info, this);
-            pop.resize(600, 300);
+            pop.resize(800, 400);
 
             chk = pop.exec();
 
@@ -56,7 +56,7 @@ namespace abcdk
             QMessageBox::StandardButton chk = QMessageBox::StandardButton::Yes;
 
             if(!m_stop_tip)
-               chk = QMessageBox::question(this,ABCDK_GETTEXT("提示"),ABCDK_GETTEXT("正在准备停止作业进程, 所有依赖此作业进程的服务可能将无法正常工作.\n确定要停止吗?"));
+               chk = QMessageBox::question(this,ABCDK_GETTEXT("提示"),ABCDK_GETTEXT("正在准备停止作业进程.\n注: 所有依赖此作业进程的服务可能将无法正常工作.\n确定要停止吗?"));
             
             if(chk != QMessageBox::StandardButton::Yes)
                 return;
@@ -130,8 +130,8 @@ namespace abcdk
             m_edit_stderr->setMaximumBlockCount(10000);
             m_edit_stderr->setPlaceholderText(ABCDK_GETTEXT("这里将显示错误管道日志, 最新的日志在视图底部."));
 
-            layout_part3->addTab(m_edit_stdout, ABCDK_GETTEXT("stdout"));
-            layout_part3->addTab(m_edit_stderr, ABCDK_GETTEXT("stderr"));
+            layout_part3->addTab(m_edit_stdout, ABCDK_GETTEXT("输出管道"));
+            layout_part3->addTab(m_edit_stderr, ABCDK_GETTEXT("错误管道"));
 
             layout->addLayout(layout_part1, 1);
             layout->addWidget(layout_part3, 98);
@@ -165,16 +165,6 @@ namespace abcdk
             ssize_t chk_size;
             bool chk_alive;
 
-            chk_alive = m_info->alive();
-
-            m_edit_exec->setEnabled(!chk_alive);
-            m_btn_conf->setEnabled(!chk_alive);
-            m_btn_start->setEnabled(!chk_alive);
-            m_btn_stop->setEnabled(chk_alive);
-
-            if(!chk_alive)
-                return;
-
             chk_size = m_info->fetch(msg, true);
             if (chk_size > 0)
             {
@@ -188,6 +178,13 @@ namespace abcdk
                 m_edit_stderr->appendPlainText(msg.data());
                 m_edit_stderr->moveCursor(m_chk_autoroll->isChecked() ? QTextCursor::End : QTextCursor::NoMove);
             }
+
+            chk_alive = m_info->alive();
+
+            m_edit_exec->setEnabled(!chk_alive);
+            m_btn_conf->setEnabled(!chk_alive);
+            m_btn_start->setEnabled(!chk_alive);
+            m_btn_stop->setEnabled(chk_alive);
 
         }
 

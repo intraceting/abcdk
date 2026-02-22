@@ -88,10 +88,10 @@ namespace abcdk
                     return -1;
                 }
 
-                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("执行外部命令(%s)成功, 新的子进程(PID=%d)已经托管到后台执行.\n"), cmdline.c_str(), cid);
-
-                /*创建属于子进程独立的进程组.*/
+                /*使子进程成为进程组的组长, 以便后续可以通过进程组管理.*/
                 setpgid(cid, cid);
+
+                abcdk_trace_printf(LOG_INFO, ABCDK_GETTEXT("执行外部命令(%s)成功, 新的子进程(PID=%d)已经托管到后台执行.\n"), cmdline.c_str(), cid);
 
                 return cid;
             }

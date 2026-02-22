@@ -48,7 +48,7 @@ namespace abcdk
 
             if (abcdk_atomic_fetch_and_add(&tip, 1) == 0)
             {
-                QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("独立窗体即将关闭, 主窗体将会重新接管标签页.\n注: 此提示在启动器活动期间仅出现这一次."));
+                QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("独立窗体关闭后主窗体将会重新接管标签页.\n注: 此提示在启动器活动期间仅出现这一次."));
             }
 
             task_view *view = (task_view*)takeCentralWidget();//解除关系.

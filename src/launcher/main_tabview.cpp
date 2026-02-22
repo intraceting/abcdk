@@ -65,7 +65,7 @@ namespace abcdk
 
             if (old_page->getInfo()->alive())
             {
-                QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("不允许删除, 应用程序正在运行."));
+                QMessageBox::information(this, ABCDK_GETTEXT("提示"), ABCDK_GETTEXT("应用程序正在运行, 不允许删除."));
                 return;
             }
 
@@ -84,7 +84,7 @@ namespace abcdk
             old_page->getInfo()->m_tab_index = -1;
 
             task_window *new_win = new task_window(old_page, NULL, window()->windowFlags());
-            new_win->resize(600, 400);
+            new_win->resize(800, 500);
             new_win->show();
 
             connect(new_win, &task_window::detachView, this, &main_tabview::retrieveView);
