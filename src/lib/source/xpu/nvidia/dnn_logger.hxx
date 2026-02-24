@@ -1,0 +1,58 @@
+/*
+ * This file is part of ABCDK.
+ *
+ * Copyright (c) 2025 The ABCDK project authors. All Rights Reserved.
+ *
+ */
+#ifndef ABCDK_XPU_NVIDIA_DNN_LOGGER_HXX
+#define ABCDK_XPU_NVIDIA_DNN_LOGGER_HXX
+
+#include "abcdk/xpu/types.h"
+#include "../runtime.in.h"
+
+namespace abcdk_xpu
+{
+
+    namespace nvidia
+    {
+        namespace dnn
+        {
+            class logger : public nvinfer1::ILogger
+            {
+            public:
+                logger()
+                {
+                }
+
+                virtual ~logger()
+                {
+                }
+
+            public:
+                void log(nvinfer1::ILogger::Severity level, const char *msg) noexcept
+                {
+                    int type;
+
+                    if (nvinfer1::ILogger::Severity::kVERBOSE == level)
+                        type = LOG_DEBUG;
+                    else if (nvinfer1::ILogger::Severity::kINFO == level)
+                        type = LOG_INFO;
+                    else if (nvinfer1::ILogger::Severity::kWARNING == level)
+                        type = LOG_WARNING;
+                    else if (nvinfer1::ILogger::Severity::kERROR == level)
+                        type = LOG_ERR;
+                    else if (nvinfer1::ILogger::Severity::kINTERNAL_ERROR == level)
+                        type = LOG_ALERT;
+                    else
+                        type = LOG_INFO;
+
+                    abcdk_trace_printf(type, "NvLogger(%d): %s", (int)level, msg);
+                }
+            };
+
+        } // namespace dnn
+    } // namespace nvidia
+
+} // namespace abcdk_xpu
+
+#endif // ABCDK_XPU_NVIDIA_DNN_LOGGER_HXX

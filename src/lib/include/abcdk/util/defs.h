@@ -109,6 +109,7 @@
 #include <queue>
 #include <stack>
 #include <memory>
+#include <algorithm>
 #endif //__cplusplus
 
 

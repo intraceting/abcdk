@@ -1,0 +1,1053 @@
+/*
+ * This file is part of ABVDK.
+ *
+ * Copyright (c) 2025 The ABVDK project authors. All Rights Reserved.
+ *
+ */
+#include "entry.h"
+
+static void _test_any_1(abcdk_option_t *args)
+{
+    int chk;
+
+    for (int i = 0; i < ABVDK_PIXFMT_BGR32 + 1; i++)
+    {
+        int bit = abvdk_pixfmt_get_bit((abvdk_pixfmt_t)i, 1);
+        const char *name = abvdk_pixfmt_get_name((abvdk_pixfmt_t)i);
+        int channel = abvdk_pixfmt_get_channel((abvdk_pixfmt_t)i);
+
+        if (bit <= 0)
+            continue;
+
+        abcdk_trace_printf(LOG_DEBUG, "bit:%d name:%s channel:%d", bit, name, channel);
+    }
+
+    abvdk_image_t *img_src = abvdk_image_alloc();
+    abvdk_image_t *img_dst = abvdk_image_alloc();
+
+    chk = abvdk_image_reset(&img_src, 100, 100, ABVDK_PIXFMT_BGR24, 16);
+    assert(chk == 0);
+    chk = abvdk_image_reset(&img_dst, 100, 100, ABVDK_PIXFMT_NV12, 16);
+    assert(chk == 0);
+
+    // chk = abvdk_image_copy(img_src,img_dst);
+    // assert(chk == 0);
+
+    chk = abvdk_imgproc_convert(img_src, img_dst);
+    assert(chk == 0);
+
+    abvdk_image_t *img_dst2 = abvdk_image_alloc();
+    chk = abvdk_image_reset(&img_dst2, 1000, 1000, ABVDK_PIXFMT_NV12, 32);
+    assert(chk == 0);
+
+    chk = abvdk_imgproc_resize(img_src, NULL, img_dst2, ABVDK_INTER_CUBIC);
+    assert(chk == 0);
+
+    chk = abvdk_imgproc_resize(img_dst2, NULL, img_dst, ABVDK_INTER_CUBIC);
+    assert(chk == 0);
+
+    abvdk_image_free(&img_dst2);
+
+    abvdk_image_free(&img_src);
+    abvdk_image_free(&img_dst);
+}
+
+static void _test_any_2(abcdk_option_t *args)
+{
+    int chk;
+
+    const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+    const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
+    const char *dst_ext = abcdk_option_get(args, "--dst-ext", 0, ".jpg");
+
+    abcdk_object_t *src_data = abcdk_object_copyfrom_file(src_file);
+
+    abvdk_image_t *img_src = abvdk_imgcodec_decode(src_data->pptrs[0], src_data->sizes[0]);
+    abcdk_object_unref(&src_data);
+
+    // abcdk_object_t *dst_data2 = abvdk_imgcodec_encode(img_src, dst_ext);
+    // abcdk_save(dst_file, dst_data2->pptrs[0], dst_data2->sizes[0], 0);
+    // abcdk_object_unref(&dst_data2);
+
+    abvdk_point_t p1 = {100, 100};
+    abvdk_point_t p2 = {200, 200};
+    abvdk_scalar_t scalar = {.u8[0] = 255, .u8[1] = 0, .u8[2] = 0};
+
+    abvdk_imgproc_line(img_src, &p1, &p2, &scalar, 30);
+
+    abvdk_rect_t rect = {333, 333, 444, 444};
+
+    abvdk_imgproc_rectangle(img_src, &rect, 3, &scalar);
+
+    abvdk_rect_t rect2 = {444, 444, 555, 555};
+
+    abvdk_imgproc_stuff(img_src, &rect2, &scalar);
+
+    abvdk_scalar_t alpha = {.f32[0] = 1, .f32[1] = 1, .f32[2] = 1};
+    abvdk_scalar_t bate = {.f32[0] = 100, .f32[1] = 100, .f32[2] = 100};
+
+    abvdk_imgproc_brightness(img_src, &alpha, &bate);
+
+    abcdk_object_t *dst_data = abvdk_imgcodec_encode(img_src, dst_ext);
+    abcdk_save(dst_file, dst_data->pptrs[0], dst_data->sizes[0], 0);
+    abcdk_object_unref(&dst_data);
+
+    abvdk_image_free(&img_src);
+}
+
+static void _test_any_3(abcdk_option_t *args)
+{
+    int chk;
+
+    const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+    const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
+
+    abcdk_object_t *src_data = abcdk_object_copyfrom_file(src_file);
+
+    abvdk_image_t *img_src = abvdk_imgcodec_decode(src_data->pptrs[0], src_data->sizes[0]);
+    abcdk_object_unref(&src_data);
+
+    abvdk_image_t *img_dst = abvdk_image_alloc();
+    abvdk_image_reset(&img_dst, 1000, 2000, ABVDK_PIXFMT_BGR24, 32);
+
+    abvdk_rect_t src_roi = {100,200, 500,500};
+
+ //   chk = abvdk_imgproc_resize(img_src, &src_roi, img_dst, ABVDK_INTER_CUBIC);
+    chk = abvdk_imgproc_resize(img_src, NULL, img_dst, ABVDK_INTER_CUBIC);
+    assert(chk == 0);
+
+    abcdk_object_t *dst_data = abvdk_imgcodec_encode(img_dst, ".jpg");
+    abcdk_save(dst_file, dst_data->pptrs[0], dst_data->sizes[0], 0);
+    abcdk_object_unref(&dst_data);
+
+    abvdk_image_free(&img_dst);
+    abvdk_image_free(&img_src);
+}
+
+static int _load_imgs(abvdk_image_t *img[100], const char *img_path)
+{
+    abcdk_tree_t *dir_ctx = NULL;
+    int count = 0;
+
+    abcdk_dirent_open(&dir_ctx, img_path);
+
+    for (int i = 0; i < 100; i++)
+    {
+        char file[PATH_MAX] = {0};
+        int chk = abcdk_dirent_read(dir_ctx, NULL, file, 1);
+        if (chk != 0)
+            break;
+
+        img[count] = abvdk_imgcodec_decode_from_file(file);
+        assert(img[count]);
+
+        char tmp_file2[100] = {0};
+        snprintf(tmp_file2, 100, "/tmp/ddd/load_imgs-%d.jpg", count);
+
+        abvdk_imgcodec_encode_to_file(img[count], tmp_file2, ".jpg");
+
+        count += 1;
+    }
+
+    abcdk_tree_free(&dir_ctx);
+
+    return count;
+}
+
+static void _test_any_4(abcdk_option_t *args)
+{
+    int chk;
+
+    const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
+    const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+    const char *param_file = abcdk_option_get(args, "--calibrate-param", 0, "calibrate.xml");
+    const char *magic_name = abcdk_option_get(args, "--magic-name", 0, "abvdk");
+
+    abvdk_image_t *src_imgs[100] = {0};
+    _load_imgs(src_imgs, src_file);
+
+    abvdk_calibrate_t *ctx = abvdk_calibrate_alloc();
+
+    chk = abvdk_calibrate_load_parameters_from_file(ctx, param_file, magic_name);
+    if (chk != 0)
+    {
+        abvdk_calibrate_setup(ctx, 7, 9, 40, 40);
+
+        for (int i = 0; i < 100; i++)
+        {
+            if (!src_imgs[i])
+                break;
+
+            abvdk_calibrate_detect_corners(ctx, src_imgs[i]);
+        }
+
+        double rms = abvdk_calibrate_estimate_parameters(ctx);
+
+        abcdk_trace_printf(LOG_DEBUG, "RMS: %.3lf", rms);
+
+        chk = abvdk_calibrate_dump_parameters_to_file(ctx, param_file, magic_name);
+        assert(chk == 0);
+    }
+
+    chk = abvdk_calibrate_build_parameters(ctx, 1);
+    assert(chk == 0);
+
+    abvdk_image_t *dst_img = NULL;
+
+    chk = abvdk_calibrate_undistort(ctx, src_imgs[0], &dst_img, ABVDK_INTER_CUBIC);
+    assert(chk == 0);
+
+    chk = abvdk_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+    assert(chk == 0);
+
+    abvdk_image_free(&dst_img);
+
+    for (int i = 0; i < 100; i++)
+        abvdk_image_free(&src_imgs[i]);
+
+    abvdk_calibrate_free(&ctx);
+}
+
+static void _test_any_5(abcdk_option_t *args)
+{
+    int chk;
+
+    const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
+    const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+    const char *feature_name = abcdk_option_get(args, "--feature-name", 0, "SURF");
+    const char *warper_name = abcdk_option_get(args, "--warper-name", 0, "spherical");
+    int optimize_seam = abcdk_option_get_int(args, "--optimize-seam", 0, 1);
+    const char *param_file = abcdk_option_get(args, "--stitcher-param", 0, "stitcher.xml");
+    const char *magic_name = abcdk_option_get(args, "--magic-name", 0, "abvdk");
+
+    abvdk_image_t *src_imgs[100] = {0};
+    int count = _load_imgs(src_imgs, src_file);
+
+    abvdk_stitcher_t *ctx = abvdk_stitcher_alloc();
+
+    chk = abvdk_stitcher_set_feature_finder(ctx, feature_name);
+    assert(chk == 0);
+
+    chk = abvdk_stitcher_set_warper(ctx, warper_name);
+    assert(chk == 0);
+
+    chk = abvdk_stitcher_load_parameters_from_file(ctx, param_file, magic_name);
+    if (chk != 0)
+    {
+        chk = abvdk_stitcher_estimate_parameters(ctx, count, (const abvdk_image_t **)src_imgs, NULL, 0.8);
+        assert(chk == 0);
+
+        chk = abvdk_stitcher_build_parameters(ctx);
+        assert(chk == 0);
+
+        chk = abvdk_stitcher_dump_parameters_to_file(ctx, param_file, magic_name);
+        assert(chk == 0);
+    }
+    else
+    {
+        chk = abvdk_stitcher_build_parameters(ctx);
+        assert(chk == 0);
+    }
+
+    abvdk_image_t *dst_img = NULL;
+
+    chk = abvdk_stitcher_compose(ctx, count, (const abvdk_image_t **)src_imgs, &dst_img, optimize_seam);
+    assert(chk == 0);
+
+    abvdk_stitcher_free(&ctx);
+
+    chk = abvdk_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+    assert(chk == 0);
+
+    abvdk_image_free(&dst_img);
+
+    for (int i = 0; i < 100; i++)
+        abvdk_image_free(&src_imgs[i]);
+}
+
+static void _test_any_6(abcdk_option_t *args)
+{
+    int chk;
+
+    const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
+    const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+
+    abvdk_venc_t *venc_ctx = abvdk_venc_alloc();
+
+    abvdk_vcodec_params_t venc_params = {0};
+
+    // venc_params.format = ABVDK_VCODEC_ID_H264;
+    venc_params.format = ABVDK_VCODEC_ID_H265;
+    venc_params.bitrate = 15000 * 1000;     // 15Mbps
+    venc_params.max_bitrate = 30000 * 1000; // 30Mbps
+    venc_params.width = 1920;
+    venc_params.height = 1080;
+    venc_params.fps_n = 25;
+    venc_params.fps_d = 1;
+    venc_params.max_b_frames = 0;
+    venc_params.refs = 4;
+    venc_params.hw_preset_type = 0;
+    venc_params.idr_interval = 12;
+    venc_params.iframe_interval = 13;
+    venc_params.insert_spspps_idr = 50;
+    venc_params.mode_vbr = 0;
+    venc_params.level = 51;
+    venc_params.profile = 66;
+    venc_params.qmax = 51;
+    venc_params.qmin = 25;
+
+    chk = abvdk_venc_setup(venc_ctx, &venc_params);
+    assert(chk == 0);
+
+    abvdk_vcodec_params_t venc_params2 = {0};
+    chk = abvdk_venc_get_params(venc_ctx, &venc_params2);
+    assert(chk == 0);
+
+    int dst_fd = abcdk_open(dst_file, 1, 0, 1);
+
+    abcdk_write(dst_fd, venc_params2.ext_data, venc_params2.ext_size);
+
+    abvdk_image_t *src = abvdk_imgcodec_decode_from_file(src_file);
+
+    for (int i = 0; i < 100; i++)
+    {
+        abcdk_object_t *dst = NULL;
+        int64_t dts;
+        chk = abvdk_venc_recv_packet(venc_ctx, &dst, &dts);
+        if (chk == 1)
+        {
+            abcdk_trace_printf(LOG_DEBUG, "dts:%lld", dts);
+            abcdk_write(dst_fd, dst->pptrs[0], dst->sizes[0]);
+        }
+        abcdk_object_unref(&dst);
+
+        chk = abvdk_venc_send_frame(venc_ctx, src, i - 1);
+        assert(chk >= 0);
+    }
+
+    chk = abvdk_venc_send_frame(venc_ctx, NULL, 0);
+    assert(chk >= 0);
+
+    for (int i = 0; i < 100; i++)
+    {
+        abcdk_object_t *dst = NULL;
+        int64_t dts;
+        chk = abvdk_venc_recv_packet(venc_ctx, &dst, &dts);
+        if (chk != 1)
+            break;
+
+        abcdk_trace_printf(LOG_DEBUG, "dts:%lld", dts);
+
+        abcdk_write(dst_fd, dst->pptrs[0], dst->sizes[0]);
+        abcdk_object_unref(&dst);
+    }
+
+    abvdk_image_free(&src);
+
+    abcdk_closep(&dst_fd);
+
+    abvdk_venc_free(&venc_ctx);
+}
+
+static void _test_any_7(abcdk_option_t *args)
+{
+    int chk;
+
+    const char *dst_file = abcdk_option_get(args, "--dst-file", 0, "");
+    const char *src_file = abcdk_option_get(args, "--src-file", 0, "");
+
+    abvdk_vdec_t *vdec_ctx = abvdk_vdec_alloc();
+
+    abcdk_ffmpeg_editor_t *ff_ctx = abcdk_ffmpeg_editor_alloc(0);
+
+    abcdk_ffmpeg_editor_param_t ff_param = {0};
+
+    ff_param.url = src_file;
+    ff_param.timeout = 0;
+    ff_param.read_mp4toannexb = 1;
+    ff_param.read_ignore_audio = 1;
+    ff_param.read_ignore_subtitle = 1;
+    ff_param.read_nodelay = 1;
+
+    chk = abcdk_ffmpeg_editor_open(ff_ctx, &ff_param);
+    assert(chk == 0);
+
+    for (int i = 0; i < abcdk_ffmpeg_editor_stream_nb(ff_ctx); i++)
+    {
+        AVStream *p = abcdk_ffmpeg_editor_stream_ctx(ff_ctx, i);
+
+        if (p->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+        {
+            abvdk_vcodec_params_t venc_params = {0};
+
+            if (p->codecpar->codec_id == AV_CODEC_ID_H264)
+                venc_params.format = ABVDK_VCODEC_ID_H264;
+            if (p->codecpar->codec_id == AV_CODEC_ID_H265)
+                venc_params.format = ABVDK_VCODEC_ID_H265;
+
+            venc_params.ext_data = p->codecpar->extradata;
+            venc_params.ext_size = p->codecpar->extradata_size;
+
+            chk = abvdk_vdec_setup(vdec_ctx, &venc_params);
+            assert(chk == 0);
+        }
+    }
+
+    AVPacket *ff_pkt = av_packet_alloc();
+    abvdk_image_t *dst_img = NULL;
+    int64_t dst_ts = 0;
+
+    for (int i = 0; i < 100000; i++)
+    {
+        chk = abcdk_ffmpeg_editor_read_packet(ff_ctx, ff_pkt);
+        if (chk != 0)
+            break;
+
+        chk = abvdk_vdec_recv_frame(vdec_ctx, &dst_img, &dst_ts);
+        if (chk > 0)
+        {
+            abcdk_trace_printf(LOG_DEBUG, "pts:%.3f", abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, dst_ts));
+            //   chk = abvdk_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+        }
+
+        chk = abvdk_vdec_send_packet(vdec_ctx, ff_pkt->data, ff_pkt->size, ff_pkt->pts);
+        assert(chk > 0);
+    }
+
+    chk = abvdk_vdec_send_packet(vdec_ctx, NULL, 0, 0);
+    assert(chk > 0);
+
+    for (;;)
+    {
+        chk = abvdk_vdec_recv_frame(vdec_ctx, &dst_img, &dst_ts);
+        if (chk <= 0)
+            break;
+
+        abcdk_trace_printf(LOG_DEBUG, "pts:%.3f", abcdk_ffmpeg_editor_stream_ts2sec(ff_ctx, ff_pkt->stream_index, dst_ts));
+        chk = abvdk_imgcodec_encode_to_file(dst_img, dst_file, NULL);
+    }
+
+    abvdk_image_free(&dst_img);
+
+    av_packet_free(&ff_pkt);
+
+    abcdk_ffmpeg_editor_free(&ff_ctx);
+
+    abvdk_vdec_free(&vdec_ctx);
+}
+
+static uint8_t select_color(int idx, int channel)
+{
+    assert(idx >= 0 && channel >= 0);
+
+    static int tables[][3] = {
+        {0, 114, 189},
+        {217, 83, 25},
+        {237, 177, 32},
+        {126, 47, 142},
+        {119, 172, 48},
+        {77, 190, 238},
+        {162, 20, 47},
+        {76, 76, 76},
+        {153, 153, 153},
+        {255, 0, 0},
+        {255, 128, 0},
+        {191, 191, 0},
+        {0, 255, 0},
+        {0, 0, 255},
+        {170, 0, 255},
+        {85, 85, 0},
+        {85, 170, 0},
+        {85, 255, 0},
+        {170, 85, 0},
+        {170, 170, 0},
+        {170, 255, 0},
+        {255, 85, 0},
+        {255, 170, 0},
+        {255, 255, 0},
+        {0, 85, 128},
+        {0, 170, 128},
+        {0, 255, 128},
+        {85, 0, 128},
+        {85, 85, 128},
+        {85, 170, 128},
+        {85, 255, 128},
+        {170, 0, 128},
+        {170, 85, 128},
+        {170, 170, 128},
+        {170, 255, 128},
+        {255, 0, 128},
+        {255, 85, 128},
+        {255, 170, 128},
+        {255, 255, 128},
+        {0, 85, 255},
+        {0, 170, 255},
+        {0, 255, 255},
+        {85, 0, 255},
+        {85, 85, 255},
+        {85, 170, 255},
+        {85, 255, 255},
+        {170, 0, 255},
+        {170, 85, 255},
+        {170, 170, 255},
+        {170, 255, 255},
+        {255, 0, 255},
+        {255, 85, 255},
+        {255, 170, 255},
+        {85, 0, 0},
+        {128, 0, 0},
+        {170, 0, 0},
+        {212, 0, 0},
+        {255, 0, 0},
+        {0, 43, 0},
+        {0, 85, 0},
+        {0, 128, 0},
+        {0, 170, 0},
+        {0, 212, 0},
+        {0, 255, 0},
+        {0, 0, 43},
+        {0, 0, 85},
+        {0, 0, 128},
+        {0, 0, 170},
+        {0, 0, 212},
+        {0, 0, 255},
+        {0, 0, 0},
+        {36, 36, 36},
+        {73, 73, 73},
+        {109, 109, 109},
+        {146, 146, 146},
+        {182, 182, 182},
+        {219, 219, 219},
+        {0, 114, 189},
+        {80, 183, 189},
+        {128, 128, 0},
+        {255, 56, 56},
+        {255, 157, 151},
+        {255, 112, 31},
+        {255, 178, 29},
+        {207, 210, 49},
+        {72, 249, 10},
+        {146, 204, 23},
+        {61, 219, 134},
+        {26, 147, 52},
+        {0, 212, 187},
+        {44, 153, 168},
+        {0, 194, 255},
+        {52, 69, 147},
+        {100, 115, 255},
+        {0, 24, 236},
+        {132, 56, 255},
+        {82, 0, 133},
+        {203, 56, 255},
+        {255, 149, 200},
+        {255, 55, 199}};
+
+    return tables[idx % 100][channel % 3];
+}
+
+static void idx2nyxz(size_t idx, size_t h, size_t w, size_t c)
+{
+    size_t n = idx / (h * w * c);
+    size_t y = (idx / (w * c)) % h;
+    size_t x = (idx / c) % w;
+    size_t z = idx % c;
+
+    abcdk_trace_printf(LOG_DEBUG, "[%zu][%zu][%zu][%zu]", n, y, x, z);
+}
+
+static void _size_dst2src(abvdk_dnn_object_t *obj, double src_w, double src_h, double dst_w, double dst_h, int keep_ratio)
+{
+    abcdk_resize_scale_t r = {0};
+
+    abcdk_resize_ratio_2d(&r, src_w, src_h, dst_w, dst_h, keep_ratio);
+
+    for (int k = 0; k < obj->rect.nb; k++)
+    {
+        abvdk_point_t *pt_p = &obj->rect.pt[k];
+
+        pt_p->x = abcdk_resize_dst2src_2d(&r, pt_p->x, 1);
+        pt_p->y = abcdk_resize_dst2src_2d(&r, pt_p->y, 0);
+    }
+
+    for (int k = 0; k < obj->rrect.nb; k++)
+    {
+        abvdk_point_t *pt_p = &obj->rrect.pt[k];
+
+        pt_p->x = abcdk_resize_dst2src_2d(&r, pt_p->x, 1);
+        pt_p->y = abcdk_resize_dst2src_2d(&r, pt_p->y, 0);
+    }
+
+    for (int k = 0; k < obj->nkeypoint * 3; k += 3)
+    {
+        obj->kp[k + 0] = abcdk_resize_dst2src_2d(&r, obj->kp[k + 0], 1);
+        obj->kp[k + 1] = abcdk_resize_dst2src_2d(&r, obj->kp[k + 1], 0);
+    }
+}
+
+static int _test_any_8(abcdk_option_t *args)
+{
+
+    // for(int i = 0;i<1000;i++)
+    //     idx2nyxz(i,3,3,3);
+
+    int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
+
+    const char *model_p = abcdk_option_get(args, "--model", 0, "");
+    const char *model_name_p = abcdk_option_get(args, "--model-name", 0, "yolo-v11");
+    const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
+
+    int chk;
+
+    abvdk_dnn_post_t *post_ctx = abvdk_dnn_post_alloc();
+
+    abvdk_dnn_post_init(post_ctx, model_name_p, args);
+
+    abvdk_dnn_infer_t *infer_ctx = abvdk_dnn_infer_alloc();
+
+    chk = abvdk_dnn_infer_load_model(infer_ctx, model_p, args);
+    assert(chk == 0);
+
+    abvdk_dnn_tensor_t vec_tensor[100];
+
+    int tensor_num = abvdk_dnn_infer_fetch_tensor(infer_ctx, 100, vec_tensor);
+    assert(tensor_num >= 2);
+
+    abvdk_image_t *vec_img[100] = {0};
+    int count = 0;
+
+    const char *img_src_p = abcdk_option_get(args, "--img-src", 0, "");
+    count = _load_imgs(vec_img,img_src_p);
+
+    for (int t = 0; t < test_count; t++)
+    {
+        uint64_t s = abcdk_time_systime(9);
+
+        abcdk_clock(s, &s);
+
+        chk = abvdk_dnn_infer_forward(infer_ctx, count, vec_img);
+        assert(chk == 0);
+
+        uint64_t step = abcdk_clock(s, &s);
+
+        abcdk_trace_printf(LOG_INFO, "step: %.6lf", ((double)step) / 1000000000.);
+    }
+
+    abvdk_dnn_post_process(post_ctx, tensor_num, vec_tensor, 0.1, 0.1);
+
+    abvdk_dnn_tensor_t *input_tensor_p = &vec_tensor[0];
+
+    for (int i = 0; i < input_tensor_p->dims.d[0]; i++)
+    {
+        abvdk_dnn_object_t vec_obj[100] = {0};
+        chk = abvdk_dnn_post_fetch(post_ctx, i, 100, vec_obj);
+        if (chk <= 0)
+            continue;
+
+        abvdk_image_t *img_p = vec_img[i];
+
+        for (int j = 0; j < chk; j++)
+        {
+            abvdk_dnn_object_t *obj_p = &vec_obj[j];
+
+            _size_dst2src(obj_p, abvdk_image_get_width(img_p), abvdk_image_get_height(img_p), input_tensor_p->dims.d[3], input_tensor_p->dims.d[2], 0);
+
+            abvdk_scalar_t color = {255, 0, 0};
+            int weight = 3;
+            int corner[4] = {obj_p->rect.pt[0].x, obj_p->rect.pt[0].y, obj_p->rect.pt[1].x, obj_p->rect.pt[1].y};
+
+            //   abvdk_imgproc_drawrect(img_p, color, weight, corner);
+
+            //   abcdk_trace_printf(LOG_INFO, "r=%d", obj_p->angle);
+
+            int idx = rand();
+
+            color.u8[0] = select_color(idx, 0);
+            color.u8[1] = select_color(idx, 1);
+            color.u8[2] = select_color(idx, 2);
+
+            for (int k = 0; k < obj_p->rrect.nb; k++)
+            {
+                abvdk_point_t *pt1_p = &obj_p->rrect.pt[k];
+                abvdk_point_t *pt2_p = &obj_p->rrect.pt[(k + 1) % obj_p->rrect.nb];
+#if 1
+
+                abvdk_imgproc_line(img_p, pt1_p, pt2_p, &color, weight);
+#else
+                corner[0] = pt_p->x - 3;
+                corner[1] = pt_p->y - 3;
+                corner[2] = pt_p->x + 3;
+                corner[3] = pt_p->y + 3;
+
+                abvdk_imgproc_drawrect(img_p, color, weight, corner);
+#endif
+            }
+
+            for (int k = 0; k < obj_p->nkeypoint * 3; k += 3)
+            {
+                abvdk_rect_t rect;
+
+                rect.x = obj_p->kp[k + 0] - 10;
+                rect.y = obj_p->kp[k + 1] - 10;
+                rect.width = 20;
+                rect.height = 20;
+
+                weight = 5;
+
+                abvdk_imgproc_rectangle(img_p, &rect, weight, &color);
+            }
+
+            if (obj_p->seg)
+            {
+                abvdk_image_t *seg_img_src = abvdk_image_create(input_tensor_p->dims.d[3], input_tensor_p->dims.d[2], ABVDK_PIXFMT_GRAYF32, 4);
+                abvdk_image_t *seg_img_dst = abvdk_image_create(abvdk_image_get_width(img_p), abvdk_image_get_height(img_p), ABVDK_PIXFMT_GRAYF32, 4);
+
+                uint8_t *seg_data[4] = {(uint8_t *)obj_p->seg, 0, 0, 0};
+                int seg_linesize[4] = {obj_p->seg_step, -1, -1, -1};
+
+                abvdk_image_upload((const uint8_t **)seg_data, (const int *)seg_linesize, seg_img_src);
+
+                abvdk_imgproc_resize(seg_img_src,NULL, seg_img_dst,  ABVDK_INTER_CUBIC);
+
+                abvdk_imgproc_mask(img_p, seg_img_dst, 0.5, &color, 1);
+
+                abvdk_image_free(&seg_img_src);
+                abvdk_image_free(&seg_img_dst);
+            }
+        }
+
+        char tmp_file[100] = {0};
+        snprintf(tmp_file, 100, "/tmp/ccc/dnn-%d.jpg", i);
+
+        abvdk_imgcodec_encode_to_file(img_p, tmp_file, ".jpg");
+    }
+
+    abvdk_dnn_post_free(&post_ctx);
+
+    for (int i = 0; i < 100; i++)
+        abvdk_image_free(&vec_img[i]);
+
+    abvdk_dnn_infer_free(&infer_ctx);
+
+    return 0;
+}
+
+static int _test_any_9(abcdk_option_t *args)
+{
+    const char *src_p = abcdk_option_get(args, "--src-file", 0, "");
+    const char *dst_p = abcdk_option_get(args, "--dst-file", 0, "");
+
+    abvdk_image_t *src_img = abvdk_imgcodec_decode_from_file(src_p);
+    abvdk_image_t *dst_img = NULL;
+
+#if 1
+
+    abvdk_point_t dst_quad[4] = {
+        {30, 30},   // 左上角
+        {220, 50},  // 右上角
+        {210, 220}, // 右下角
+        {50, 230},  // 左下角
+    };
+
+    abvdk_point_t src_quad[4] = {
+        {86, 136},  // 左上角
+        {173, 186}, // 右上角
+        {123, 273}, // 右下角
+        {36, 223},  // 左下角
+    };
+    
+#else
+
+    abvdk_point_t dst_quad[4] = {760,350,1160,350,1220,440,820,440};
+
+    abvdk_point_t src_quad[4] = {770,520,1150,520,1100,610,720,610};
+
+#endif
+
+    int weight = 3;
+    abvdk_scalar_t src_color = {.u8[0] = 255};
+    abvdk_scalar_t dst_color = {.u8[2] = 255};
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(src_img, &src_quad[i], &src_quad[(i + 1) % 4], &src_color, weight);
+
+    dst_img = abvdk_imgcodec_decode_from_file(dst_p);
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(dst_img, &dst_quad[i], &dst_quad[(i + 1) % 4], &dst_color, weight);
+
+    abvdk_imgproc_warp_quad2quad(src_img, src_quad, dst_img, dst_quad, 1, ABVDK_INTER_LINEAR);
+    abvdk_imgcodec_encode_to_file(dst_img, "/tmp/test.warp-1.jpg", NULL);
+    abvdk_image_free(&dst_img);
+
+    dst_img = abvdk_imgcodec_decode_from_file(dst_p);
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(dst_img, &dst_quad[i], &dst_quad[(i + 1) % 4], &dst_color, weight);
+    abvdk_imgproc_warp_quad2quad(src_img, src_quad, dst_img, dst_quad, 2, ABVDK_INTER_LINEAR);
+    abvdk_imgcodec_encode_to_file(dst_img, "/tmp/test.warp-2.jpg", NULL);
+    abvdk_image_free(&dst_img);
+
+    dst_img = abvdk_imgcodec_decode_from_file(dst_p);
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(dst_img, &dst_quad[i], &dst_quad[(i + 1) % 4], &dst_color, weight);
+    abvdk_imgproc_warp_quad2quad(src_img, NULL, dst_img, dst_quad, 1, ABVDK_INTER_LINEAR);
+    abvdk_imgcodec_encode_to_file(dst_img, "/tmp/test-nosrc.warp-1.jpg", NULL);
+    abvdk_image_free(&dst_img);
+
+    dst_img = abvdk_imgcodec_decode_from_file(dst_p);
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(dst_img, &dst_quad[i], &dst_quad[(i + 1) % 4], &dst_color, weight);
+
+    abvdk_imgproc_warp_quad2quad(src_img, NULL, dst_img, dst_quad, 2, ABVDK_INTER_LINEAR);
+    abvdk_imgcodec_encode_to_file(dst_img, "/tmp/test-nosrc.warp-2.jpg", NULL);
+    abvdk_image_free(&dst_img);
+
+    dst_img = abvdk_imgcodec_decode_from_file(dst_p);
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(dst_img, &dst_quad[i], &dst_quad[(i + 1) % 4], &dst_color, weight);
+
+    abvdk_imgproc_warp_quad2quad(src_img, src_quad, dst_img, NULL, 1, ABVDK_INTER_LINEAR);
+    abvdk_imgcodec_encode_to_file(dst_img, "/tmp/test-nodst.warp-1.jpg", NULL);
+    abvdk_image_free(&dst_img);
+
+    dst_img = abvdk_imgcodec_decode_from_file(dst_p);
+
+    for (int i = 0; i < 4; i++)
+        abvdk_imgproc_line(dst_img, &dst_quad[i], &dst_quad[(i + 1) % 4], &dst_color, weight);
+
+    abvdk_imgproc_warp_quad2quad(src_img, src_quad, dst_img, NULL, 2, ABVDK_INTER_LINEAR);
+    abvdk_imgcodec_encode_to_file(dst_img, "/tmp/test-nodst.warp-2.jpg", NULL);
+    abvdk_image_free(&dst_img);
+
+    abvdk_image_free(&src_img);
+}
+
+static int _test_any_10(abcdk_option_t *args)
+{
+    const char *src_p = abcdk_option_get(args, "--src-file", 0, "");
+    const char *dst_p = abcdk_option_get(args, "--dst-file", 0, "");
+
+    abvdk_image_t *src_img = abvdk_imgcodec_decode_from_file(src_p);
+
+    abvdk_image_t *dst_img = abvdk_image_create(200, 90, ABVDK_PIXFMT_BGR24, 16);
+
+    abvdk_point_t src_quad[4] = {
+        {257, 173},  // 左上角
+        {370, 173}, // 右上角
+        {377, 227}, // 右下角
+        {264, 230},  // 左下角
+    };
+
+    abvdk_imgproc_quad2rect(src_img, src_quad, dst_img, ABVDK_INTER_CUBIC);
+
+    abvdk_imgcodec_encode_to_file(dst_img, dst_p, NULL);
+
+    abvdk_image_free(&dst_img);
+
+    abvdk_image_free(&src_img);
+}
+
+static int _test_any_11(abcdk_option_t *args)
+{
+
+    int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
+
+    const char *model_p = abcdk_option_get(args, "--model", 0, "");
+    const char *model_name_p = abcdk_option_get(args, "--model-name", 0, "face-yunet");
+    const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
+
+    int chk;
+
+    abvdk_dnn_post_t *post_ctx = abvdk_dnn_post_alloc();
+
+    abvdk_dnn_post_init(post_ctx, model_name_p, args);
+
+    abvdk_dnn_infer_t *infer_ctx = abvdk_dnn_infer_alloc();
+
+    chk = abvdk_dnn_infer_load_model(infer_ctx, model_p, args);
+    assert(chk == 0);
+
+    abvdk_dnn_tensor_t vec_tensor[100];
+
+    int tensor_num = abvdk_dnn_infer_fetch_tensor(infer_ctx, 100, vec_tensor);
+    assert(tensor_num >= 2);
+
+    abvdk_image_t *vec_img[100] = {0};
+    int count = 0;
+
+    const char *img_src_p = abcdk_option_get(args, "--img-src", 0, "");
+    count = _load_imgs(vec_img,img_src_p);
+
+    chk = abvdk_dnn_infer_forward(infer_ctx, count, vec_img);
+    assert(chk == 0);
+
+    abvdk_dnn_post_process(post_ctx, tensor_num, vec_tensor, 0.1, 0.1);
+
+    abvdk_dnn_tensor_t *input_tensor_p = &vec_tensor[0];
+
+    abvdk_image_t *dst_img = NULL;
+
+    for (int i = 0; i < input_tensor_p->dims.d[0]; i++)
+    {
+        abvdk_dnn_object_t vec_obj[100] = {0};
+        chk = abvdk_dnn_post_fetch(post_ctx, i, 100, vec_obj);
+        if (chk <= 0)
+            continue;
+
+        abvdk_image_t *img_p = vec_img[i];
+
+        for (int j = 0; j < chk; j++)
+        {
+            abvdk_dnn_object_t *obj_p = &vec_obj[j];
+
+            _size_dst2src(obj_p, abvdk_image_get_width(img_p), abvdk_image_get_height(img_p), input_tensor_p->dims.d[3], input_tensor_p->dims.d[2], 0);
+
+            abvdk_point_t face_kpt[5];
+            for (int k = 0; k < obj_p->nkeypoint * 3; k += 3)
+            {
+                face_kpt[k / 3].x = obj_p->kp[k + 0];
+                face_kpt[k / 3].y = obj_p->kp[k + 1];
+            }
+
+            abvdk_imgproc_face_warp(img_p, face_kpt, &dst_img, ABVDK_INTER_CUBIC);
+
+            char tmp_file[100] = {0};
+            snprintf(tmp_file, 100, "/tmp/ccc/face-%d.jpg", j);
+
+            abvdk_imgcodec_encode_to_file(dst_img, tmp_file, ".jpg");
+        }
+    }
+
+    abvdk_image_free(&dst_img);
+
+    abvdk_dnn_post_free(&post_ctx);
+
+    for (int i = 0; i < 100; i++)
+        abvdk_image_free(&vec_img[i]);
+
+    abvdk_dnn_infer_free(&infer_ctx);
+
+    return 0;
+}
+
+static int _test_any_12(abcdk_option_t *args)
+{
+
+    int test_count = abcdk_option_get_int(args, "--test-count", 0, 1);
+
+    const char *model_p = abcdk_option_get(args, "--model", 0, "");
+    const char *model_name_p = abcdk_option_get(args, "--model-name", 0, "face-sface");
+    const char *img_src = abcdk_option_get(args, "--img-src", 0, "");
+
+    int chk;
+
+    abvdk_dnn_post_t *post_ctx = abvdk_dnn_post_alloc();
+
+    abvdk_dnn_post_init(post_ctx, model_name_p, args);
+
+    abvdk_dnn_infer_t *infer_ctx = abvdk_dnn_infer_alloc();
+
+    chk = abvdk_dnn_infer_load_model(infer_ctx, model_p, args);
+    assert(chk == 0);
+
+    abvdk_dnn_tensor_t vec_tensor[100];
+
+    int tensor_num = abvdk_dnn_infer_fetch_tensor(infer_ctx, 100, vec_tensor);
+    assert(tensor_num >= 2);
+
+    abvdk_image_t *vec_img[100] = {0};
+    int count = 0;
+
+    const char *img_src_p = abcdk_option_get(args, "--img-src", 0, "");
+    count = _load_imgs(vec_img,img_src_p);
+
+    chk = abvdk_dnn_infer_forward(infer_ctx, count, vec_img);
+    assert(chk == 0);
+
+    abvdk_dnn_post_process(post_ctx, tensor_num, vec_tensor, 0.1, 0.1);
+
+    abvdk_dnn_tensor_t *input_tensor_p = &vec_tensor[0];
+
+    abvdk_image_t *dst_img = NULL;
+
+    for (int i = 0; i < input_tensor_p->dims.d[0]; i++)
+    {
+        abvdk_dnn_object_t vec_obj[100] = {0};
+        chk = abvdk_dnn_post_fetch(post_ctx, i, 100, vec_obj);
+        if (chk <= 0)
+            continue;
+
+        abvdk_image_t *img_p = vec_img[i];
+
+        for (int j = 0; j < chk; j++)
+        {
+            abvdk_dnn_object_t *obj_p = &vec_obj[j];
+
+           
+        }
+    }
+
+    abvdk_image_free(&dst_img);
+
+    abvdk_dnn_post_free(&post_ctx);
+
+    for (int i = 0; i < 100; i++)
+        abvdk_image_free(&vec_img[i]);
+
+    abvdk_dnn_infer_free(&infer_ctx);
+
+    return 0;
+}
+
+int abvdk_test_any(abcdk_option_t *args)
+{
+    int hwaccel_vendor = abcdk_option_get_int(args, "--hwaccel-vendor", 0, ABVDK_HWACCEL_NONE);
+    int device_id = abcdk_option_get_int(args, "--device-id", 0, 0);
+    int cmd = abcdk_option_get_int(args, "--cmd", 0, 1);
+
+    int chk = abvdk_runtime_init(hwaccel_vendor);
+    assert(chk == 0);
+
+    abvdk_context_t *ctx = abvdk_context_alloc(device_id);
+    assert(ctx != NULL);
+
+    abvdk_context_current_set(ctx);
+    abvdk_context_current_set(ctx);
+    abvdk_context_t *cp_ctx = abvdk_context_refer(ctx);
+
+    if (cmd == 1)
+        _test_any_1(args);
+    if (cmd == 2)
+        _test_any_2(args);
+    if (cmd == 3)
+        _test_any_3(args);
+    if (cmd == 4)
+        _test_any_4(args);
+    if (cmd == 5)
+        _test_any_5(args);
+    if (cmd == 6)
+        _test_any_6(args);
+    if (cmd == 7)
+        _test_any_7(args);
+    if (cmd == 8)
+        _test_any_8(args);
+    if (cmd == 9)
+        _test_any_9(args);
+    if (cmd == 10)
+        _test_any_10(args);
+    if (cmd == 11)
+        _test_any_11(args);
+    if (cmd == 12)
+        _test_any_12(args);
+
+    abvdk_context_current_set(NULL);
+    abvdk_context_unref(&ctx);
+    abvdk_context_unref(&cp_ctx);
+
+    abvdk_runtime_deinit();
+
+    return 0;
+}

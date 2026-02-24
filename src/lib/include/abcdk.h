@@ -150,6 +150,19 @@
 #include "abcdk/qrcode/qrcode.h"
 #include "abcdk/qrcode/util.h"
 
-
+#include "abcdk/xpu/types.h"
+#include "abcdk/xpu/runtime.h"
+#include "abcdk/xpu/context.h"
+#include "abcdk/xpu/pixfmt.h"
+#include "abcdk/xpu/image.h"
+#include "abcdk/xpu/imgproc.h"
+#include "abcdk/xpu/imgcodec.h"
+#include "abcdk/xpu/calibrate.h"
+#include "abcdk/xpu/stitcher.h"
+#include "abcdk/xpu/vdec.h"
+#include "abcdk/xpu/venc.h"
+#include "abcdk/xpu/dnn_infer.h"
+#include "abcdk/xpu/dnn_post.h"
+#include "abcdk/xpu/dnn_track.h"
 
 #endif //ABCDK_H

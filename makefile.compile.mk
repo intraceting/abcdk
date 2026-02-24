@@ -16,13 +16,28 @@ LIB_SRC_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.c)
 LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/*/*.cpp)
 
 #
+ifeq (${HAVE_FFMPEG},yes)
+ifeq (${HAVE_OPENCV},yes)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/common/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/common/bytetrack/*.cpp)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/general/*.cpp)
+endif
+endif
+
+#
+ifeq (${HAVE_CUDA},yes)
+LIB_SRC_CXX_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cpp)
+LIB_SRC_CU_FILES += $(wildcard $(SRC_DIR)/lib/source/xpu/nvidia/*.cu)
+endif
+
+#
 TOOL_SRC_FILES = $(wildcard $(SRC_DIR)/tool/*.c)
 
 #
 TEST_SRC_FILES = $(wildcard $(SRC_DIR)/test/*.c)
 
 #
-LIB_OBJ_FILES := $(patsubst $(SRC_DIR)/lib/%, $(OBJ_PATH)/lib/%, $(LIB_SRC_FILES:.c=.o) $(LIB_SRC_CXX_FILES:.cpp=.o))
+LIB_OBJ_FILES := $(patsubst $(SRC_DIR)/lib/%, $(OBJ_PATH)/lib/%, $(LIB_SRC_FILES:.c=.o) $(LIB_SRC_CXX_FILES:.cpp=.o) $(LIB_SRC_CU_FILES:.cu=.o))
 LIB_OBJ_DEPS += $(LIB_OBJ_FILES:.o=.d)
 
 #
@@ -96,6 +111,10 @@ $(OBJ_PATH)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXX_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
 
+#
+$(OBJ_PATH)/%.o: $(SRC_DIR)/%.cu
+	mkdir -p $(dir $@)
+	$(NVCC) $(NVCC_FLAGS) -MMD -MP -MF $(@:.o=.d) -c $< -o $@
 
 #包含依赖文件(不能晚于此处).
 -include $(LIB_OBJ_DEPS) 
