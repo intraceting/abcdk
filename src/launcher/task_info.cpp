@@ -25,6 +25,11 @@ namespace abcdk
             return one;
         }
 
+        const char *task_info::getUUID()
+        {
+            return m_uuid.c_str();
+        }
+
         const char *task_info::getAppName()
         {
             if (m_name.empty())
@@ -39,11 +44,6 @@ namespace abcdk
                 return QIcon("");
 
             return common::QUtilEx::getIcon(m_logo.c_str());
-        }
-
-        const char *task_info::uuid()
-        {
-            return m_uuid.c_str();
         }
 
         bool task_info::alive()
@@ -259,10 +259,9 @@ namespace abcdk
 
         void task_info::Init(const std::string &uuid)
         {
-            m_tab_index = -1;
-
+            m_index = -1;
             m_uuid = uuid;
-            m_create_usec = abcdk_time_realtime(3); // millisecond.
+            
             m_out_buf = std::shared_ptr<abcdk_stream_t>(abcdk_stream_create(), [](void *p)
                                                         {if(p){abcdk_stream_destroy((abcdk_stream_t**)&p);} });
             m_err_buf = std::shared_ptr<abcdk_stream_t>(abcdk_stream_create(), [](void *p)

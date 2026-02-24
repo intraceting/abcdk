@@ -96,6 +96,28 @@ namespace abcdk
                 return cid;
             }
 
+            static inline int sqlite_check_table_exist(sqlite3 *db, const char *name)
+            {
+                std::string sql = common::UtilEx::string_format("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='%s';", name);
+                int chk;
+
+                auto stmt = abcdk_sqlite_prepare(db, sql.c_str());
+                if (!stmt)
+                    return -1;
+
+                chk = abcdk_sqlite_step(stmt);
+                if (chk <= 0)
+                {
+                    abcdk_sqlite_finalize(stmt);
+                    return -2;
+                }
+
+                chk = sqlite3_column_int(stmt, 0);
+                abcdk_sqlite_finalize(stmt);
+
+                return chk;
+            }
+
         } // namespace UtilEx
 
     } // namespace common

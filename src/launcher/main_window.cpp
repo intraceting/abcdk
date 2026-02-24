@@ -72,6 +72,11 @@ namespace abcdk
             QObject::connect(tray, &main_trayicon::onQuit, this, &main_window::onQuit);
         }
 
+        void main_window::onRefresh()
+        {
+
+        }
+        
         void main_window::closeEvent(QCloseEvent *event)
         {
             size_t alive_count = 0;
@@ -93,6 +98,8 @@ namespace abcdk
                 m_app->exit();
             }
         }
+
+
     } // namespace launcher
 
 } // namespace abcdk

@@ -21,12 +21,16 @@ namespace abcdk
             Q_OBJECT
         private:
             Qt::Key m_fullscreen_key;
+            QTimer *m_refresh_timer;
 
         public:
             QMainWindowEx(QWidget *parent = nullptr, Qt::WindowFlags flags = Qt::WindowFlags())
                 : QMainWindow(parent, flags)
             {
                 m_fullscreen_key = Qt::Key::Key_unknown;
+
+                m_refresh_timer = new QTimer(this);//委托给父窗体.
+                connect(m_refresh_timer, &QTimer::timeout, this, &QMainWindowEx::onRefresh);
             }
 
             virtual ~QMainWindowEx()
@@ -37,6 +41,20 @@ namespace abcdk
             void setFullScreenKey(Qt::Key key)
             {
                 m_fullscreen_key = key;
+            }
+
+            void startRefresh(int msec)
+            {
+                if (m_refresh_timer->isActive())
+                    m_refresh_timer->stop();
+
+                m_refresh_timer->start(msec);
+            }
+
+            void stopRefresh()
+            {
+                if (m_refresh_timer->isActive())
+                    m_refresh_timer->stop();
             }
 
         public Q_SLOTS:
@@ -52,6 +70,11 @@ namespace abcdk
             void fullScreenStateChanged(bool fullscreen);
 
         protected:
+            virtual void onRefresh()
+            {
+
+            }
+
             virtual void keyPressEvent(QKeyEvent *event)
             {
                 if (m_fullscreen_key != Qt::Key_unknown && event->key() == m_fullscreen_key)

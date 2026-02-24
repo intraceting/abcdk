@@ -23,7 +23,8 @@ namespace abcdk
         class task_info
         {
         public:
-            int m_tab_index;
+            int m_index;
+            std::string m_uuid;
             std::string m_name;
             std::string m_logo;
             std::string m_exec;
@@ -34,8 +35,6 @@ namespace abcdk
             std::string m_gid;
             std::string m_env;
         private:
-            std::string m_uuid;
-            uint64_t m_create_usec;
             std::shared_ptr<abcdk_stream_t> m_out_buf;
             std::shared_ptr<abcdk_stream_t> m_err_buf;
             int m_child_state;
@@ -62,16 +61,15 @@ namespace abcdk
             static std::shared_ptr<task_info> newTask(const uint64_t uuid);
             static std::shared_ptr<task_info> newTask(const std::string &uuid);
         public:
+            const char *getUUID();
             const char *getAppName();
             QIcon getAppIcon();
         public:
-            const char *uuid();
             bool alive();
             int start();
             int stop();
             ssize_t fetch(std::vector<char> &msg, bool out_or_err);
         protected:
-            void childRun();
             void childStdout(int stdout_fd);
             void childStderr(int stderr_fd);
             void deInit();

@@ -56,6 +56,19 @@ int abcdk_sqlite_close(sqlite3 *ctx)
 #endif //#ifndef HAVE_SQLITE
 }
 
+int abcdk_sqlite_closep(sqlite3 **ctx)
+{
+    sqlite3 *ctx_p;
+
+    if(!ctx || !*ctx)
+        return SQLITE_OK;
+
+    ctx_p = *ctx;
+    *ctx = NULL;
+
+    return abcdk_sqlite_close(ctx_p);
+}
+
 int abcdk_sqlite_busy_melt(void *opaque, int count)
 {
     /**/

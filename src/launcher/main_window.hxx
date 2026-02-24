@@ -47,7 +47,9 @@ namespace abcdk
         protected:
             void deInit();
             void Init();
-            virtual void closeEvent(QCloseEvent *event);
+            void onRefresh();
+            void closeEvent(QCloseEvent *event);
+            
         };
 
     } // namespace launcher

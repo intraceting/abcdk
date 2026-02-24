@@ -48,12 +48,15 @@ namespace abcdk
             std::vector<char> m_cache_path_default;
             std::string m_cache_path;
 
+            std::string m_main_db_filename;
+            std::string m_main_db_pathfile;
+
             std::mutex m_tasks_mutex;
             std::map<std::string, std::shared_ptr<task_info>> m_tasks;
 
         private:
             abcdk_option_t *m_args;
-
+            sqlite3 *m_main_db;
         protected:
             metadata(QObject *parent = nullptr)
                 : common::QObjectEx(parent)
@@ -73,6 +76,9 @@ namespace abcdk
             void parseCmdLine(int &argc, char *argv[]);
             void printUsage(FILE *out = stderr);
             bool isPrintUsage();
+            int checkCache();
+            void loadTasks();
+            void saveTasks();
         protected:
             void deInit();
             void Init();

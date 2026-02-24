@@ -115,6 +115,14 @@ int abcdk_sqlite_backup(abcdk_sqlite_backup_param *param);
 int abcdk_sqlite_close(sqlite3 *ctx);
 
 /**
+ * 关闭数据库句柄.
+ * 
+ * @return SQLITE_OK(0) 成功, !SQLITE_OK(0) 失败.
+ * 
+*/
+int abcdk_sqlite_closep(sqlite3 **ctx);
+
+/**
  * 忙碌处理函数.
 */
 int abcdk_sqlite_busy_melt(void *opaque, int count);

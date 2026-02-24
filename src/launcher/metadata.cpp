@@ -37,11 +37,9 @@ namespace abcdk
 
             m_lang_codeset = abcdk_option_get(m_args, "--lang-codeset", 0, m_lang_codeset_default.data());
             m_lang_file_name = abcdk_option_get(m_args, "--lang-file-name", 0, m_lang_file_name_default.data());
-            m_lang_file_path = abcdk_option_get(m_args, "--lang-file-path", 0,  m_lang_file_path_default.data());
+            m_lang_file_path = abcdk_option_get(m_args, "--lang-file-path", 0, m_lang_file_path_default.data());
 
-            
             m_cache_path = abcdk_option_get(m_args, "--cache-path", 0, m_cache_path_default.data());
-
         }
 
         void metadata::printUsage(FILE *out /*= stderr*/)
@@ -87,27 +85,146 @@ namespace abcdk
             return (m_help_show);
         }
 
+        int metadata::checkCache()
+        {
+            static int chk_ok_once = 0;
+            std::string sql;
+            int chk, chk2, chk3, chk4;
+
+            if (!abcdk_atomic_compare_and_swap(&chk_ok_once, 0, 1))
+                return 0;
+
+            m_main_db_pathfile = common::UtilEx::string_format("%s/%s", m_cache_path.c_str(), m_main_db_filename.c_str());
+
+            if (access(m_main_db_pathfile.c_str(), F_OK) == 0)
+            {
+                m_main_db = abcdk_sqlite_open(m_main_db_pathfile.c_str());
+                if (!m_main_db)
+                {
+                    abcdk_trace_printf(LOG_WARNING, "打开缓存文件(%s)出错, 已损坏或无权限.", m_main_db_pathfile.c_str());
+                    return -1;
+                }
+
+                abcdk_sqlite_journal_mode(m_main_db, ABCDK_SQLITE_JOURNAL_MEMORY);
+
+                chk = common::UtilEx::sqlite_check_table_exist(m_main_db, "version");
+                if (chk <= 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING, "读缓存文件(%s)出错, 已损坏或不兼容.", m_main_db_pathfile.c_str());
+                    chk = abcdk_sqlite_closep(&m_main_db);
+                    ABCDK_TRACE_ASSERT(chk == SQLITE_OK, "关闭缓存文失败.");
+                    return -2;
+                }
+
+                chk = common::UtilEx::sqlite_check_table_exist(m_main_db, "tasks");
+                if (chk <= 0)
+                {
+                    abcdk_trace_printf(LOG_WARNING, "读缓存文件(%s)出错, 已损坏或不兼容.", m_main_db_pathfile.c_str());
+                    chk = abcdk_sqlite_closep(&m_main_db);
+                    ABCDK_TRACE_ASSERT(chk == SQLITE_OK, "关闭缓存文失败.");
+                    return -3;
+                }
+            }
+            else
+            {
+                //创建可能不存在的路径.
+                abcdk_mkdir(m_main_db_pathfile.c_str(),0755);
+
+                m_main_db = abcdk_sqlite_open(m_main_db_pathfile.c_str());
+                if (!m_main_db)
+                {
+                    abcdk_trace_printf(LOG_WARNING, "打开缓存文件(%s)出错, 无空间或无权限.", m_main_db_pathfile.c_str());
+                    return -4;
+                }
+
+                abcdk_sqlite_journal_mode(m_main_db, ABCDK_SQLITE_JOURNAL_MEMORY);
+
+                abcdk_sqlite_tran_begin(m_main_db);
+
+                sql = "CREATE TABLE version ("
+                      "major INTEGER DEFAULT (0) NOT NULL,"
+                      "minor INTEGER DEFAULT (0) NOT NULL,"
+                      "patch INTEGER DEFAULT (0) NOT NULL"
+                      ");";
+
+                chk2 = abcdk_sqlite_exec_direct(m_main_db, sql.c_str());
+
+                sql = common::UtilEx::string_format("INSERT INTO version (major, minor, patch) VALUES(%d, %d, %d);",
+                                                    ABCDK_VERSION_MAJOR, ABCDK_VERSION_MINOR, ABCDK_VERSION_PATCH);
+
+                chk3 = abcdk_sqlite_exec_direct(m_main_db, sql.c_str());
+
+                sql = "CREATE TABLE tasks ("
+                      "task_index INTEGER DEFAULT (-1),"
+                      "task_uuid TEXT(32) NOT NULL,"
+                      "task_name TEXT(225) NOT NULL,"
+                      "task_logo TEXT(255),"
+                      "task_exec TEXT(40960) NOT NULL,"
+                      "task_kill TEXT(4096),"
+                      "task_uid TEXT(20),"
+                      "task_gid TEXT(20),"
+                      "task_rwd TEXT(4096),"
+                      "task_cwd TEXT(4096),"
+                      "task_envs TEXT(40960),"
+                      "CONSTRAINT tasks_pk PRIMARY KEY (task_uuid)"
+                      ");";
+
+                chk4 = abcdk_sqlite_exec_direct(m_main_db, sql.c_str());
+
+                chk = ((chk2 >= 0 && chk3 >= 0 && chk4 >= 0) ? abcdk_sqlite_tran_commit(m_main_db) : SQLITE_ERROR);
+                if (chk != SQLITE_OK)
+                {
+                    abcdk_sqlite_tran_rollback(m_main_db); // 回滚.
+
+                    abcdk_trace_printf(LOG_WARNING, "写缓存文件(%s)出错 ,无空间或无权限.", m_main_db_pathfile.c_str());
+                    chk = abcdk_sqlite_closep(&m_main_db);
+                    ABCDK_TRACE_ASSERT(chk == SQLITE_OK, "关闭缓存文失败.");
+                    return -5;
+                }
+            }
+
+            return 0;
+        }
+
+        void metadata::loadTasks()
+        {
+            int chk;
+
+            chk = checkCache();
+            if (chk != 0)
+                return;
+        }
+
+        void metadata::saveTasks()
+        {
+        }
+
         void metadata::deInit()
         {
+            int chk;
+
             abcdk_option_free(&m_args);
+
+            chk = abcdk_sqlite_closep(&m_main_db);
+            ABCDK_TRACE_ASSERT(chk == SQLITE_OK, "关闭缓存文失败.");
         }
 
         void metadata::Init()
         {
             m_pid_file_default.resize(PATH_MAX);
-            strcpy(m_pid_file_default.data(),"/tmp/abcdk/launcher/pid.lock");
+            strcpy(m_pid_file_default.data(), "/tmp/abcdk/launcher/pid.lock");
 
             m_log_file_default.resize(PATH_MAX);
-            strcpy(m_log_file_default.data(),"/tmp/abcdk/launcher/log.txt");
+            strcpy(m_log_file_default.data(), "/tmp/abcdk/launcher/log.txt");
 
             m_lang_codeset_default.resize(NAME_MAX);
-            strcpy(m_lang_codeset_default.data(),"zh_CN.UTF-8");
+            strcpy(m_lang_codeset_default.data(), "zh_CN.UTF-8");
 
             m_lang_file_name_default.resize(NAME_MAX);
-            strcpy(m_lang_file_name_default.data(),"abcdk-bin");
+            strcpy(m_lang_file_name_default.data(), "abcdk-bin");
 
             m_lang_file_path_default.resize(PATH_MAX);
-            strcpy(m_lang_file_path_default.data(),"../share/locale/");
+            strcpy(m_lang_file_path_default.data(), "../share/locale/");
 
             m_user_home_path.resize(PATH_MAX);
             abcdk_user_dir_home(m_user_home_path.data(), NULL);
@@ -115,8 +232,12 @@ namespace abcdk
             m_cache_path_default.resize(PATH_MAX);
             abcdk_user_dir_home(m_cache_path_default.data(), ".cache/abcdk/launcher/");
 
+            m_main_db_filename = "main.db";
+
             m_args = NULL;
+            m_main_db = NULL;
         }
+
     } // namespace launcher
 
 } // namespace abcdk

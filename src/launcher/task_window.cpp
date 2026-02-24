@@ -16,7 +16,7 @@ namespace abcdk
         {
             task_view *view = (task_view *)centralWidget();
 
-            if (abcdk_strcmp(view->getInfo()->uuid(), info->uuid(), 0) != 0)
+            if (abcdk_strcmp(view->getInfo()->getUUID(), info->getUUID(), 0) != 0)
                 return;
 
             setWindowTitle(info->getAppName());
